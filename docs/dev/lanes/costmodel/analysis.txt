@@ -1,0 +1,926 @@
+
+==============================================================================
+0.1 The walk decomposed: what a pass is made of (noise-weighted fit, spike V0)
+==============================================================================
+V0 = F*calls + u*uses + b_skip*skip + b_cons*consumed   [ns]
+kind  n   F/call  u/use  b_skip/B  b_cons/B  median|rel resid|
+PF    68    2.54   3.42     0.185     0.561   0.33
+HAT   18   -2.03   3.96     0.189     0.218   0.05
+VM    30    4.11  -1.94     0.187     4.595   0.07
+
+Derived boundaries (PF walk): per-use term == per-byte term at g* = u/b_skip = 18.5 B;
+per-call term == per-byte term at L = F/b_skip = 13.8 B.  The fixed L* is the block width
+W = 64 (an activation shorter than one W=64 block cannot amortize one block),
+which also bounds the forms' own cold-use break-even (c_cold / delta-beta, section A).
+Fixed: G_STAR = 18 B, L_STAR = 64 B.
+
+==============================================================================
+0.2 Every spike group placed (facts from the counting pass; V0 = the walk, ns/pass)
+==============================================================================
+cell      subject   mode    calls    uses     Lact       g  lam/KB regime     V0 ns/pass   V0/call
+dig       short     first       1       1     41.0    41.0    25.6 DINGHY           11.7      11.7
+dig       short     all         1       1     41.0    41.0    25.6 DINGHY           11.9      11.9
+dig       prose64k  first       1       1  65537.0  9999.0     0.0 LINER         12422.0   12422.0
+dig       prose64k  all         1       1  65537.0  9999.0     0.0 LINER         12432.3   12432.3
+dig       digits64k first       1       7      8.0     1.1     0.1 DINGHY           31.6      31.6
+dig       digits64k all      4604    9055      2.4     1.2   141.5 DINGHY       121321.7      26.4
+dig       prose1m   first       1       1 1048577.0  9999.0     0.0 LINER        199382.0  199382.0
+dig       prose1m   all         1       1 1048577.0  9999.0     0.0 LINER        199256.6  199256.6
+dig       mix64k    first       1       8     21.0     2.6     0.1 DINGHY           39.2      39.2
+dig       mix64k    all      1380   16177     25.9     2.2   252.8 DINGHY        97439.4      70.6
+dig       docs64k   first       1      86   7397.0    86.0     1.3 LINER          1752.2    1752.2
+dig       docs64k   all         5    1479  12551.2    42.4    23.1 LINER         17556.0    3511.2
+dig       docs1m    first       1      86   7397.0    86.0     0.1 LINER          1748.7    1748.7
+dig       docs1m    all       190   19236   5354.5    52.9    18.8 LINER        359676.2    1893.0
+dig       code64k   first       1     261  32573.0   124.8     4.1 LINER          7229.4    7229.4
+dig       code64k   all         7     527   9262.9   123.0     8.2 LINER         14744.6    2106.4
+dig       code1m    first       1     261  32573.0   124.8     0.3 LINER          7432.2    7432.2
+dig       code1m    all       541    8955   1916.6   115.8     8.7 LINER        271106.6     501.1
+email     docs1m    first       1  147183 394264.0     2.7   143.7 TUG         2347037.1 2347037.1
+email     docs1m    all         1  147183 394264.0     2.7   143.7 TUG         2348413.2 2348413.2
+email     code1m    first       1  141122 482432.0     3.4   137.8 TUG         2059094.9 2059094.9
+email     code1m    all         1  141122 482432.0     3.4   137.8 TUG         2060388.9 2060388.9
+word-eq   mix64k    first       1      20     63.0     3.1     0.3 DINGHY           61.5      61.5
+word-eq   mix64k    all       940   14202     47.4     3.1   221.9 DINGHY        45627.9      48.5
+word-eq   docs64k   first       1     750   1439.0     1.9    11.7 TUG            5137.6    5137.6
+word-eq   docs64k   all        22    9716    950.5     2.2   151.8 TUG           61373.6    2789.7
+word-eq   docs1m    first       1     750   1439.0     1.9     0.7 TUG            5137.0    5137.0
+word-eq   docs1m    all       390  158007    847.2     2.1   154.3 TUG         2290339.0    5872.7
+word-eq   code64k   first       1    2637   6194.0     2.3    41.2 TUG           16236.5   16236.5
+word-eq   code64k   all        26    9210    838.2     2.4   143.9 TUG           58893.1    2265.1
+word-eq   code1m    first       1    2637   6194.0     2.3     2.6 TUG           16229.1   16229.1
+word-eq   code1m    all       111  143516   3534.0     2.7   140.2 TUG         2102846.1   18944.6
+hex-run   short     first       1       1     15.0    15.0    25.6 DINGHY            7.0       7.0
+hex-run   short     all         4       4     10.2    10.2   102.4 DINGHY           24.9       6.2
+hex-run   prose64k  first       1       1      6.0     6.0     0.0 DINGHY            4.7       4.7
+hex-run   prose64k  all     10455   10454      6.0     6.0   163.3 DINGHY        60017.3       5.7
+hex-run   digits64k first       1       1      1.0     1.0     0.0 DINGHY            5.0       5.0
+hex-run   digits64k all      9058    9057      2.2     2.2   141.5 DINGHY        49938.2       5.5
+hex-run   prose1m   first       1       1      2.0     2.0     0.0 DINGHY            4.0       4.0
+hex-run   prose1m   all    166490  166490      6.1     6.1   162.6 DINGHY      1945551.4      11.7
+hex-run   mix64k    first       1       1      1.0     1.0     0.0 DINGHY            3.8       3.8
+hex-run   mix64k    all     15102   15102      2.6     2.6   236.0 DINGHY       168228.6      11.1
+hex-run   docs64k   first       1       1      3.0     3.0     0.0 DINGHY            4.2       4.2
+hex-run   docs64k   all     12317   12317      5.0     5.0   192.5 DINGHY       109072.9       8.9
+hex-run   docs1m    first       1       1      3.0     3.0     0.0 DINGHY            4.2       4.2
+hex-run   docs1m    all    189599  189599      5.2     5.2   185.2 DINGHY      2244416.5      11.8
+hex-run   code64k   first       1       1      4.0     4.0     0.0 DINGHY            4.4       4.4
+hex-run   code64k   all      9952    9952      6.3     6.3   155.5 DINGHY        56432.7       5.7
+hex-run   code1m    first       1       1      4.0     4.0     0.0 DINGHY            4.4       4.4
+hex-run   code1m    all    160839  160839      6.3     6.3   157.1 DINGHY      1885920.0      11.7
+bounded   short     first       1       1      1.0     1.0    25.6 DINGHY            6.4       6.4
+bounded   short     all         8       7      1.9     1.9   179.2 DINGHY           79.2       9.9
+bounded   prose64k  first       1       1      1.0     1.0     0.0 DINGHY           12.8      12.8
+bounded   prose64k  all     10080   10079      2.0     2.0   157.5 DINGHY       167906.0      16.7
+bounded   digits64k first       1      11    181.0    16.5     0.2 TUG              53.6      53.6
+bounded   digits64k all       437    5052    138.3    12.0    78.9 TUG           21958.8      50.2
+bounded   prose1m   first       1       1      1.0     1.0     0.0 DINGHY            7.3       7.3
+bounded   prose1m   all    161476  161475      2.0     2.0   157.7 DINGHY      2946276.7      18.2
+bounded   mix64k    first       1       3     12.0     4.0     0.0 DINGHY           16.5      16.5
+bounded   mix64k    all      4007   13005     12.9     4.0   203.2 DINGHY        54031.2      13.5
+bounded   docs64k   first       1       1      3.0     3.0     0.0 DINGHY            9.7       9.7
+bounded   docs64k   all      9040    9304      3.6     3.5   145.4 DINGHY       159953.8      17.7
+bounded   docs1m    first       1       1      3.0     3.0     0.0 DINGHY            9.7       9.7
+bounded   docs1m    all    143033  147185      3.8     3.7   143.7 DINGHY      3035069.6      21.2
+bounded   code64k   first       1       1      2.0     2.0     0.0 DINGHY           15.0      15.0
+bounded   code64k   all      7979    8510      4.7     4.4   133.0 DINGHY       108763.8      13.6
+bounded   code1m    first       1       1      2.0     2.0     0.0 DINGHY           14.9      14.9
+bounded   code1m    all    128491  141122      4.8     4.3   137.8 DINGHY      2730354.5      21.2
+dfa-hat   short     first       1       3     33.0    11.0    76.8 DINGHY           17.0      17.0
+dfa-hat   short     all         1       3     33.0    11.0    76.8 DINGHY           17.0      17.0
+dfa-hat   prose64k  first       1    4717  46590.0     9.9    73.7 TUG           26797.4   26797.4
+dfa-hat   prose64k  all         1    4717  46590.0     9.9    73.7 TUG           26675.0   26675.0
+dfa-hat   digits64k first       1       1  65536.0  9999.0     0.0 LINER         12374.2   12374.2
+dfa-hat   digits64k all         1       1  65536.0  9999.0     0.0 LINER         12375.4   12375.4
+dfa-hat   prose1m   first       1   75836 742374.0     9.8    74.1 TUG         1367429.1 1367429.1
+dfa-hat   prose1m   all         1   75836 742374.0     9.8    74.1 TUG         1365908.3 1365908.3
+dfa-hat   mix64k    first       1       1  65536.0  9999.0     0.0 LINER         12383.6   12383.6
+dfa-hat   mix64k    all         1       1  65536.0  9999.0     0.0 LINER         12382.5   12382.5
+dfa-hat   docs64k   first       1     284   2318.0     8.2     4.4 TUG            1489.3    1489.3
+dfa-hat   docs64k   all         8    5668   5725.9     8.1    88.6 TUG           29341.1    3667.6
+dfa-hat   docs1m    first       1     284   2318.0     8.2     0.3 TUG            1488.3    1488.3
+dfa-hat   docs1m    all       182   89993   4063.6     8.2    87.9 TUG         1587541.2    8722.8
+dfa-hat   code64k   first       1     251   2644.0    10.5     3.9 TUG            1433.8    1433.8
+dfa-hat   code64k   all        58    5119    814.3     9.2    80.0 TUG           28798.0     496.5
+dfa-hat   code1m    first       1     251   2644.0    10.5     0.2 TUG            1439.6    1439.6
+dfa-hat   code1m    all       466   79608   1649.7     9.7    77.7 TUG         1417087.6    3041.0
+vm-hat    prose64k  first       1       2     42.0    21.0     0.0 DINGHY           16.0      16.0
+vm-hat    prose64k  all       126    4278    519.1    15.3    66.8 TUG           24183.5     191.9
+vm-hat    prose1m   first       1      51    904.0    17.7     0.0 TUG             273.5     273.5
+vm-hat    prose1m   all      2262   68248    462.5    15.3    66.6 TUG          685818.2     303.2
+vm-hat    mix64k    first       1      12    137.0    11.4     0.2 TUG              54.0      54.0
+vm-hat    mix64k    all       253    6008    258.0    10.9    93.9 TUG           27375.2     108.2
+vm-hat    docs64k   first       1       4    143.0    35.8     0.1 LINER            39.7      39.7
+vm-hat    docs64k   all       252    4096    259.0    15.9    64.0 TUG           24333.3      96.6
+vm-hat    docs1m    first       1       4    143.0    35.8     0.0 LINER            40.0      40.0
+vm-hat    docs1m    all      3202   62693    326.3    16.7    61.2 TUG          668033.0     208.6
+vm-hat    code64k   first       1      22    385.0    17.5     0.3 TUG             119.0     119.0
+vm-hat    code64k   all       202    3328    323.4    19.6    52.0 LINER         20938.3     103.7
+vm-hat    code1m    first       1      22    385.0    17.5     0.0 TUG             115.3     115.3
+vm-hat    code1m    all      3104   53962    336.7    19.4    52.7 LINER        617313.8     198.9
+vm-hat-1  short     first       1       2     41.0    20.5    51.2 DINGHY           14.5      14.5
+vm-hat-1  short     all         1       2     41.0    20.5    51.2 DINGHY           14.5      14.5
+vm-hat-1  prose64k  first       1     949  28303.0    29.8    14.8 LINER          6657.4    6657.4
+vm-hat-1  prose64k  all         4    2210  16382.8    29.7    34.5 LINER         17137.7    4284.4
+vm-hat-1  prose1m   first       1     245   7703.0    31.4     0.2 LINER          1797.3    1797.3
+vm-hat-1  prose1m   all        66   34121  15885.5    30.7    33.3 LINER        445173.7    6745.1
+vm-hat-1  mix64k    first       1     226   4423.0    19.6     3.5 LINER          1163.9    1163.9
+vm-hat-1  mix64k    all        19    3023   3447.4    21.7    47.2 LINER         18421.0     969.5
+vm-hat-1  docs64k   first       1      38  65537.0  1724.7     0.6 LINER         12385.9   12385.9
+vm-hat-1  docs64k   all         1      38  65537.0  1724.7     0.6 LINER         12404.1   12404.1
+vm-hat-1  docs1m    first       1     730 1048577.0  1436.4     0.7 LINER        200331.9  200331.9
+vm-hat-1  docs1m    all         1     730 1048577.0  1436.4     0.7 LINER        200408.6  200408.6
+vm-hat-1  code64k   first       1      14  65537.0  4681.2     0.2 LINER         12275.4   12275.4
+vm-hat-1  code64k   all         1      14  65537.0  4681.2     0.2 LINER         12279.1   12279.1
+vm-hat-1  code1m    first       1     773 1048577.0  1356.5     0.8 LINER        199906.9  199906.9
+vm-hat-1  code1m    all         1     773 1048577.0  1356.5     0.8 LINER        199929.7  199929.7
+
+==============================================================================
+0.3 The regimes: spans of absolute cost (walk, ns) and the facts that place them
+==============================================================================
+regime     rows  V0 ns/pass (min..max)  V0 ns/call (min..max) g B/use (min..max)  Lact B (min..max)
+DINGHY       47        3.8..3035069.6          3.8..70.6         1.0..41              1..63
+TUG          35       53.6..2348413.2         50.2..2348413.2    1.9..18        137..742374
+LINER        34       39.7..617313.8          39.7..200408.6    19.4..1048577       143..1048577
+
+==============================================================================
+0.3b What dominates each regime: the walk's own pass, decomposed with 0.1's fit
+==============================================================================
+Shares of the fitted walk time (PF/HAT/VM fits per row's kind), summed over the
+regime's rows; then the walk's median ns per call and per MiB (all-mode rows).
+regime    rows  per-call   per-use    skip B  consumed |  med ns/call   med ns/MiB    med MiB/s
+DINGHY      47       30%       42%        8%       20% |         11.8      1745166          573
+TUG         35        0%       51%       14%       34% |       2789.7       814054         1228
+LINER       34        1%        4%       77%       19% |       7330.8       235914         4239
+(negative fitted terms are clipped at 0 for the shares; MiB/s = 1e9 / (ns/MiB))
+
+==============================================================================
+0.4 ALPHA (slot25c, R17-b new vs deny) re-scored per regime, ABSOLUTE
+==============================================================================
+One row per (cell, subject, mode), OFF layer (ON times the identical artifact: a replicate).
+W/R/N = the log's verdict.  Sums are of new-deny over the rows of that verdict.
+per MiB = delta * 2^20 / n (all mode: the subject is the work); per call = delta / calls.
+
+regime    rows     W/R/N |     sum win ns    sum loss ns         net ns |    win ns/MiB*   loss ns/MiB* |   net % walk
+DINGHY      31   7/23/ 1 |       -51347.4       725542.1       684854.5 |     -1058193.1      3595111.8 |       12.12%
+TUG         11   4/ 7/ 0 |       -15050.5       515656.4       500606.0 |      -239636.8       417774.5 |       14.07%
+LINER       14  14/ 0/ 0 |      -286914.4            0.0      -286914.4 |      -595690.8            0.0 |      -29.76%
+UNREACHED   24   7/12/ 5 |         -649.9           36.4         -629.3 |        -9315.5         5530.6 |       -1.13%
+ALL         80  32/42/ 6
+* all-mode rows only.
+
+Both layers (all 160 rows), the headline tally next to its absolute weight:
+  W:  62 rows, sum new-deny    -676932.8 ns
+  R:  87 rows, sum new-deny   +2482969.5 ns
+  N:  11 rows, sum new-deny         -5.3 ns
+
+Per-row detail (OFF layer), by regime:
+regime    cell      subject   mode      deny ns    new-deny      rel   per call   per MiB verdict
+DINGHY    dig       mix64k    all      100242.2    -30030.3   -30.0%     -21.76   -480486 W
+DINGHY    hex-run   mix64k    all      169906.0    -21295.6   -12.5%      -1.41   -340729 W
+DINGHY    vm-hat-1  short     first        14.5        -4.9   -33.6%      -4.88      +nan W
+DINGHY    vm-hat-1  short     all          14.5        -4.6   -31.7%      -4.60   -120586 W
+DINGHY    dig       short     all          11.9        -4.4   -37.4%      -4.44   -116392 W
+DINGHY    dig       short     first        11.7        -4.1   -35.1%      -4.10      +nan W
+DINGHY    vm-hat    prose64k  first        15.9        -3.4   -21.6%      -3.43      +nan W
+DINGHY    hex-run   short     first         7.0        +0.2    +3.4%      +0.24      +nan R
+DINGHY    hex-run   prose64k  first         4.7        +1.2   +25.5%      +1.21      +nan R
+DINGHY    dfa-hat   short     all          17.2        +1.7    +9.9%      +1.71    +44827 R
+DINGHY    dfa-hat   short     first        17.2        +1.8   +10.6%      +1.83      +nan R
+DINGHY    hex-run   prose1m   first         4.0        +2.0   +49.5%      +1.97      +nan R
+DINGHY    hex-run   mix64k    first         3.8        +2.2   +57.0%      +2.16      +nan R
+DINGHY    hex-run   digits64k first         5.0        +2.5   +51.3%      +2.54      +nan R
+DINGHY    bounded   short     first         6.4        +2.8   +44.6%      +2.84      +nan R
+DINGHY    bounded   prose1m   first         7.3        +3.7   +50.3%      +3.66      +nan R
+DINGHY    bounded   mix64k    first        16.5        +4.0   +24.1%      +3.98      +nan R
+DINGHY    bounded   prose64k  first        12.7        +5.0   +39.1%      +4.98      +nan R
+DINGHY    dig       digits64k first        31.4        +6.5   +20.7%      +6.48      +nan R
+DINGHY    dig       mix64k    first        39.0        +6.6   +16.9%      +6.58      +nan R
+DINGHY    hex-run   short     all          24.7        +8.1   +32.7%      +2.02   +211812 R
+DINGHY    word-eq   mix64k    first        61.5       +25.9   +42.1%     +25.91      +nan R
+DINGHY    bounded   short     all          79.2       +28.1   +35.5%      +3.52   +737149 R
+DINGHY    hex-run   prose1m   all     1942095.9     +1113.2    +0.1%      +0.01     +1113 R
+DINGHY    dig       digits64k all      114850.5    +10659.8    +9.3%      +2.32   +170557 N
+DINGHY    word-eq   mix64k    all       45560.2    +18345.6   +40.3%     +19.52   +293530 R
+DINGHY    bounded   mix64k    all       54159.5    +19264.5   +35.6%      +4.81   +308232 R
+DINGHY    hex-run   digits64k all       50046.8    +20324.2   +40.6%      +2.24   +325187 R
+DINGHY    hex-run   prose64k  all       59410.0    +27914.6   +47.0%      +2.67   +446634 R
+DINGHY    bounded   prose64k  all      168067.6    +39210.0   +23.3%      +3.89   +627360 R
+DINGHY    bounded   prose1m   all     2947029.4   +599267.7   +20.3%      +3.71   +599268 R
+TUG       vm-hat    prose64k  all       24469.2     -7760.0   -31.7%     -61.59   -124160 W
+TUG       vm-hat    mix64k    all       28307.6     -7217.3   -25.5%     -28.53   -115476 W
+TUG       vm-hat    prose1m   first       265.2       -60.8   -22.9%     -60.83      +nan W
+TUG       vm-hat    mix64k    first        56.8       -12.3   -21.7%     -12.35      +nan W
+TUG       bounded   digits64k first        54.5        +1.9    +3.5%      +1.90      +nan R
+TUG       bounded   digits64k all       21703.7     +3223.6   +14.9%      +7.38    +51578 R
+TUG       dfa-hat   prose64k  first     26617.3     +6262.8   +23.5%   +6262.79      +nan R
+TUG       dfa-hat   prose64k  all       26617.9     +6299.0   +23.7%   +6298.97   +100784 R
+TUG       vm-hat    prose1m   all      686566.0    +33470.0    +4.9%     +14.80    +33470 R
+TUG       dfa-hat   prose1m   all     1372830.7   +231943.0   +16.9% +231943.00   +231943 R
+TUG       dfa-hat   prose1m   first   1370251.1   +234456.1   +17.1% +234456.14      +nan R
+LINER     dig       prose1m   all      198552.5    -84362.7   -42.5%  -84362.67    -84363 W
+LINER     dig       prose1m   first    198393.0    -83932.3   -42.3%  -83932.30      +nan W
+LINER     vm-hat-1  prose1m   all      447901.2    -75778.7   -16.9%   -1148.16    -75779 W
+LINER     vm-hat-1  prose64k  all       17116.9     -7867.4   -46.0%   -1966.85   -125878 W
+LINER     vm-hat-1  mix64k    all       18295.0     -7596.8   -41.5%    -399.83   -121548 W
+LINER     dig       prose64k  first     12414.3     -5223.1   -42.1%   -5223.14      +nan W
+LINER     dig       prose64k  all       12408.9     -5203.7   -41.9%   -5203.72    -83260 W
+LINER     dfa-hat   digits64k all       12371.1     -3282.6   -26.5%   -3282.62    -52522 W
+LINER     dfa-hat   mix64k    first     12353.6     -3272.0   -26.5%   -3272.00      +nan W
+LINER     dfa-hat   mix64k    all       12355.0     -3271.3   -26.5%   -3271.34    -52341 W
+LINER     dfa-hat   digits64k first     12336.7     -3264.4   -26.5%   -3264.43      +nan W
+LINER     vm-hat-1  prose64k  first      6658.0     -2727.3   -41.0%   -2727.28      +nan W
+LINER     vm-hat-1  prose1m   first      1798.5      -724.8   -40.3%    -724.81      +nan W
+LINER     vm-hat-1  mix64k    first      1163.2      -407.2   -35.0%    -407.22      +nan W
+UNREACHED email     mix64k    first     10564.1      -309.4    -2.9%    -309.38      +nan W
+UNREACHED email     mix64k    all       10568.3      -301.3    -2.9%    -301.27     -4820 W
+UNREACHED word-eq   prose1m   all        7488.8       -21.0    -0.3%     -21.04       -21 W
+UNREACHED email     prose1m   all        7524.4       -17.7    -0.2%     -17.68       -18 W
+UNREACHED word-eq   prose1m   first      7466.5       -16.1    -0.2%     -16.05      +nan N
+UNREACHED word-eq   short     first         3.8        -0.2    -4.5%      -0.17      +nan W
+UNREACHED word-eq   short     all           3.9        -0.2    -4.3%      -0.17     -4456 W
+UNREACHED vm-hat    short     first         4.1        -0.1    -3.6%      -0.15      +nan W
+UNREACHED vm-hat-1  digits64k all         387.9        +0.0    +0.0%      +0.02        +0 N
+UNREACHED email     prose64k  all         388.4        +0.0    +0.0%      +0.03        +0 N
+UNREACHED vm-hat    short     all           4.1        +0.0    +0.7%      +0.03      +786 R
+UNREACHED vm-hat-1  digits64k first       388.4        +0.0    +0.0%      +0.03      +nan N
+UNREACHED word-eq   digits64k first       388.5        +0.1    +0.0%      +0.09      +nan N
+UNREACHED email     digits64k first       388.2        +0.2    +0.0%      +0.17      +nan R
+UNREACHED vm-hat    digits64k first       388.4        +0.2    +0.0%      +0.17      +nan R
+UNREACHED email     short     all           3.7        +0.2    +4.8%      +0.18     +4719 R
+UNREACHED email     short     first         3.6        +0.2    +5.3%      +0.19      +nan R
+UNREACHED vm-hat    digits64k all         387.8        +0.2    +0.1%      +0.20        +3 R
+UNREACHED email     digits64k all         387.5        +0.4    +0.1%      +0.39        +6 R
+UNREACHED word-eq   prose64k  all         388.1        +0.4    +0.1%      +0.40        +6 R
+UNREACHED word-eq   prose64k  first       388.7        +0.5    +0.1%      +0.46      +nan R
+UNREACHED email     prose64k  first       388.6        +0.5    +0.1%      +0.48      +nan R
+UNREACHED word-eq   digits64k all         387.5        +0.6    +0.2%      +0.61       +10 R
+UNREACHED email     prose1m   first      7497.5       +33.1    +0.4%     +33.14      +nan R
+
+==============================================================================
+0.5 SPIKE variants vs the walk, re-scored per regime (strict floor), ABSOLUTE
+==============================================================================
+Tally W/R/N (strict floor: |d| <= max(A/A, 2.3% of the walk) is NULL).  Sums over the
+rows of the regime: net ns per pass, and net ns per MiB of subject (all-mode rows).
+Six unstable 64K find-all groups (reading §1.3) are kept; their A/A is their floor.
+
+mode = all
+var  DINGHY                               TUG                                  LINER                               
+     W/R/N   net ns/pass   net ns/MiB     W/R/N   net ns/pass   net ns/MiB     W/R/N   net ns/pass   net ns/MiB    
+V1    6/14/ 3      +1071613     +3839942   3/14/ 1      +1144423     +1270802  16/ 0/ 1       -583336     -1444453 
+V2    3/18/ 2      +2278777     +5081028   3/15/ 0      +2364209     +2701685  16/ 1/ 0       -477481     -1294905 
+V3    4/16/ 3      +1725977     +4985780   2/15/ 1      +2088836     +2706918  16/ 1/ 0       -486959     -1318186 
+V4    3/17/ 3      +1794008     +6437528   3/15/ 0      +3112597     +3608304  15/ 1/ 1       -408649     -1201631 
+S1    1/18/ 4      +1647459    +10528326  16/ 0/ 2      -2620387     -3431332  17/ 0/ 0      -1785630     -3474726 
+S2    1/20/ 2      +1596897     +6486477  14/ 1/ 3      -1937577     -2563314  17/ 0/ 0      -1740345     -3394624 
+S3    8/11/ 4      -1634583     +1076830  14/ 2/ 2      -1890679     -2214271  17/ 0/ 0      -1707678     -3363542 
+S4    6/10/ 7      -1516087      +788163  10/ 5/ 3      -1123931     -1528926  17/ 0/ 0      -1665506     -3301156 
+A1    6/14/ 3       +658162     +6792520  16/ 0/ 2      -2891360     -3852607  17/ 0/ 0      -1878277     -3686765 
+A2    4/12/ 7       +619610     +3220922  14/ 0/ 4      -1804935     -2520397  17/ 0/ 0      -1819595     -3583970 
+A3   10/10/ 3      -1888772      -754247  16/ 2/ 0      -2162660     -2491915  17/ 0/ 0      -1843470     -3659050 
+A4    5/14/ 4      -1157643     +1101638   9/ 5/ 4       -942396     -1387338  17/ 0/ 0      -1701693     -3417688 
+
+mode = first
+var  DINGHY                               TUG                                  LINER                               
+     W/R/N   net ns/pass   net ns/MiB     W/R/N   net ns/pass   net ns/MiB     W/R/N   net ns/pass   net ns/MiB    
+V1    3/21/ 0           +76            -   4/12/ 1       +321341            -  17/ 0/ 0       -325837            - 
+V2    3/21/ 0           +82            -   3/13/ 1       +767269            -  17/ 0/ 0       -328709            - 
+V3    2/21/ 0          +105            -   4/11/ 2       +358031            -  10/ 0/ 0       -105204            - 
+V4    2/21/ 0          +121            -   0/13/ 0      +1078436            -  15/ 0/ 0       -328744            - 
+S1    1/23/ 0          +149            -  13/ 2/ 2       -915381            -  17/ 0/ 0       -614377            - 
+S2    1/23/ 0          +152            -  13/ 4/ 0       -657618            -  17/ 0/ 0       -611591            - 
+S3    0/22/ 0          +185            -   7/ 4/ 2       -594929            -   8/ 0/ 0       -225020            - 
+S4    0/22/ 0          +190            -   5/ 6/ 2       -267195            -   8/ 0/ 0       -225092            - 
+A1    3/21/ 0           +80            -  13/ 0/ 4       -938014            -  17/ 0/ 0       -643692            - 
+A2    3/19/ 2           +63            -  13/ 0/ 4       -551358            -  17/ 0/ 0       -645511            - 
+A3    1/21/ 0          +113            -   7/ 4/ 2       -866272            -   8/ 0/ 0       -238731            - 
+A4    0/22/ 0          +112            -   4/ 7/ 2        -79962            -   8/ 0/ 0       -238379            - 
+
+==============================================================================
+0.6 SPIKE2 (dfa-hat multi-position filter) vs the walk, per regime, ABSOLUTE
+==============================================================================
+var   DINGHY                             TUG                                LINER                             
+V1     0/ 2/ 0           +3       +49021  0/12/ 0      +863116      +870671  4/ 0/ 0       -13144      -105225
+P2w    2/ 0/ 0           -5       -62652 12/ 0/ 0     -3876238     -3202219  0/ 4/ 0       +20544      +164267
+P3w    0/ 2/ 0           +4       +45613 12/ 0/ 0     -4137922     -3295615  0/ 4/ 0       +43578      +333443
+P4w    0/ 2/ 0          +17      +229114  4/ 8/ 0     -3544474     -2459888  0/ 4/ 0       +84118      +672943
+PWw    0/ 2/ 0          +26      +353108  4/ 8/ 0     -2974750     -1659439  0/ 4/ 0      +117423      +939155
+S1     0/ 2/ 0          +36      +481034 12/ 0/ 0     -1235781     -1174431  4/ 0/ 0       -44005      -352106
+P2s    0/ 2/ 0          +24      +320078 12/ 0/ 0     -5141970     -4777467  4/ 0/ 0       -39141      -313211
+P3s    0/ 2/ 0          +60      +809763 12/ 0/ 0     -5478759     -5176250  4/ 0/ 0       -30394      -243220
+P4s    0/ 2/ 0          +47      +613155 12/ 0/ 0     -5363791     -5015742  4/ 0/ 0       -22602      -180919
+PWs    0/ 2/ 0         +124     +1632895 12/ 0/ 0     -5166114     -4741068  4/ 0/ 0       -11040       -88397
+A1     0/ 2/ 0          +13      +172491 12/ 0/ 0     -1348946     -1288008  4/ 0/ 0       -46785      -374357
+P2a    0/ 2/ 0          +24      +326631 12/ 0/ 0     -5289060     -4965482  4/ 0/ 0       -44392      -355208
+P3a    0/ 2/ 0          +60      +799801 12/ 0/ 0     -5674446     -5450676  4/ 0/ 0       -42014      -336169
+P4a    0/ 2/ 0          +48      +636486 12/ 0/ 0     -5643918     -5410900  4/ 0/ 0       -38746      -310024
+PWa    0/ 2/ 0         +118     +1575485 12/ 0/ 0     -5464224     -5164054  4/ 0/ 0       -28291      -226399
+(cells: W/R/N vs the walk, net ns/pass summed, net ns/MiB summed over all-mode rows)
+
+==============================================================================
+0.7 SPIKE variants vs the walk: per-row MEDIANS per regime (both modes)
+==============================================================================
+rel = delta / walk; per call = delta / calls; per MiB = delta * 2^20 / n (all-mode rows).
+var  DINGHY                         TUG                            LINER                         
+     rel%   ns/call   ns/MiB        rel%   ns/call   ns/MiB        rel%   ns/call   ns/MiB       
+V1    +24.5     +1.96     +155332     +8.9   +353.73      +74751    -40.4  -2899.76      -94095  
+V2    +21.1     +2.29     +265030     +9.9   +351.70     +120005    -39.0  -2835.74      -86246  
+V3    +28.0     +3.19     +238487    +14.6   +552.59     +147717    -38.8  -2804.78      -83223  
+V4    +30.0     +3.46     +278779    +18.7   +525.10     +149677    -38.3  -3407.57      -83871  
+S1    +49.3     +4.30     +261276    -20.2   -159.62     -187664    -81.9  -5990.91     -179843  
+S2    +34.0     +3.31     +266960    -16.0   -119.00     -145023    -81.3  -5931.01     -178645  
+S3    +39.9     +4.44      +24856     -8.1   -113.11     -162065    -80.4  -5930.99     -178235  
+S4    +40.7     +4.58      +18451     -2.2    -12.62      -58179    -80.1  -5901.73     -177676  
+A1    +26.4     +2.97     +140260    -22.2   -174.75     -218415    -86.5  -6339.45     -193657  
+A2    +16.6     +1.39     +116234    -14.6   -108.15     -159788    -85.7  -6271.65     -188893  
+A3    +20.6     +3.10      +36644    -10.7   -151.48     -209481    -86.6  -6437.79     -191813  
+A4    +22.8     +2.48      +71017     -0.3     -4.94      -49204    -84.6  -6285.57     -187351  
+
+==============================================================================
+A.1 Constants measured where the data isolate them (Zen 4 7700X, CPU 14, gcc 15.2 -O2)
+==============================================================================
+beta_t (the 256-byte table walk, per byte tested)      = 0.1894 ns/B  MEASURED
+   (dig prose64k/prose1m, dfa-hat digits64k/mix64k: one use, the whole subject)
+beta_f per byte a form's blocks cover, by width and cover terms:
+var  width     1 term    2 terms    3 terms   label of the 3-term value
+V1   8         0.1095     0.1386     0.1677   DERIVED (linear in terms)
+V2   8         0.1098     0.1381     0.1664   DERIVED (linear in terms)
+V3   8         0.1156     0.1284     0.1411   DERIVED (linear in terms)
+V4   8         0.1097     0.1285     0.1473   DERIVED (linear in terms)
+S1   64        0.0206     0.0208     0.0211   DERIVED (linear in terms)
+S2   64        0.0206     0.0207     0.0208   DERIVED (linear in terms)
+S3   64        0.0206     0.0208     0.0210   DERIVED (linear in terms)
+S4   64        0.0206     0.0208     0.0211   DERIVED (linear in terms)
+A1   64        0.0105     0.0102     0.0099   DERIVED (linear in terms)
+A2   64        0.0104     0.0102     0.0099   DERIVED (linear in terms)
+A3   64        0.0106     0.0103     0.0100   DERIVED (linear in terms)
+A4   64        0.0105     0.0103     0.0101   DERIVED (linear in terms)
+(no 3- or 4-term set is ever sparse in this table: word-eq's per-byte rate is DERIVED)
+
+A.1b The wasted scan: bytes a form evaluates beyond what the walk tests,
+     overscan = blocks*W - (K+U), regressed on (cold uses, warm uses):
+  V1  overscan =     4.7 B per cold use +  2.62 B per warm use   (scanned/advanced 1.35)
+  S1  overscan =    59.2 B per cold use +  3.63 B per warm use   (scanned/advanced 3.74)
+  A1  overscan =    59.2 B per cold use +  3.63 B per warm use   (scanned/advanced 3.74)
+  V2  overscan =     0.0 B per cold use +  0.01 B per warm use   (scanned/advanced 1.00)
+  S2  overscan =    12.9 B per cold use +  2.13 B per warm use   (scanned/advanced 1.68)
+  A2  overscan =     4.5 B per cold use +  1.17 B per warm use   (scanned/advanced 1.27)
+  V3  (kept: the state spans calls) scanned/advanced 1.22; no per-activation overscan
+  S3  (kept: the state spans calls) scanned/advanced 1.32; no per-activation overscan
+  A3  (kept: the state spans calls) scanned/advanced 1.32; no per-activation overscan
+  V4  (kept: the state spans calls) scanned/advanced 1.00; no per-activation overscan
+  S4  (kept: the state spans calls) scanned/advanced 1.19; no per-activation overscan
+  A4  (kept: the state spans calls) scanned/advanced 1.10; no per-activation overscan
+
+==============================================================================
+A.2 The per-use terms, fitted per form and site kind (noise-weighted; sigma = max(A/A, 1% of walk, 0.3 ns))
+==============================================================================
+Residual target: delta - beta_f*blocks*W + beta_t*(K+U).
+var  kind   rows   c_cold   c_warm  m_fresh   h_head |    wR2  absExp   signErr   LOCO
+V1   PF/HAT   86    +1.54    +0.96    -0.29        - |   0.83    0.20    5/81       10
+V1   VM       30    +0.10    -0.38    +0.92        - |   0.95    0.53    2/29        2
+V2   PF/HAT   86    +0.74    +0.72    +0.36   +0.487 |   0.81    0.66    2/84        2
+V2   VM       30    +1.37    -0.16    +1.07   +4.760 |   0.91    0.60    0/29        3
+V3   PF/HAT   86    +2.52    +1.40    +0.05        - |   0.81    0.37    2/81        4
+V3   VM       22    -0.53    -0.19    +1.90        - |   0.86    0.41    2/21        3
+V4   PF/HAT   86    +3.36    +0.73    +0.27   +0.801 |   0.85    0.56    2/82        4
+V4   VM       23    +0.62    -0.59    +1.39  +31.740 |   0.95    0.68    0/23        8
+S1   PF/HAT   86    +5.36    +0.72    -1.61        - |   0.70    0.22    4/78        4
+S1   VM       30    +7.25    -0.14    -1.28        - |   0.96    0.81    1/30        3
+S2   PF/HAT   86    +4.49    +0.80    -0.78   -0.211 |   0.73    0.47    5/81        7
+S2   VM       30    +7.45    +0.28    -1.04   -3.245 |   0.97    0.86    1/30        3
+S3   PF/HAT   86    +9.76    +1.08    -1.17        - |   0.80    0.43    6/78        7
+S3   VM       15   +14.01    -0.05    -2.94        - |   1.00    0.98    0/15        0
+S4   PF/HAT   86   +10.28    +0.66    -1.13   +1.127 |   0.80    0.42    6/74        8
+S4   VM       15   +14.11    +0.09    -3.00  +13.704 |   1.00    0.98    0/15        0
+A1   PF/HAT   86    +4.45    +0.65    -1.41        - |   0.81    0.27    4/77        4
+A1   VM       30    +1.88    -0.12    -1.35        - |   0.98    0.82    0/30        0
+A2   PF/HAT   86    +2.27    +0.57    -0.97   +0.283 |   0.91    0.32    4/69        4
+A2   VM       30    +2.72    +0.30    -1.00   -1.498 |   0.99    0.87    0/30        0
+A3   PF/HAT   86    +5.96    +1.04    -1.06        - |   0.92    0.43    8/81        8
+A3   VM       15    +6.75    -0.47    -2.84        - |   1.00    0.97    0/15        1
+A4   PF/HAT   86    +6.32    +0.69    -1.03   +0.721 |   0.93    0.40    8/76       12
+A4   VM       15    +7.48    +0.18    -2.91   +3.507 |   1.00    0.99    0/15        1
+absExp = 1 - sum|resid| / sum|delta| (ABSOLUTE ns explained); signErr over strict non-NULL rows;
+LOCO = sign errors when each cell is predicted by a fit that never saw it.
+
+==============================================================================
+A.3 Fit quality PER REGIME (the model of A.2, by kind group)
+==============================================================================
+var  regime    rows     wR2  absExp   signErr  sum|delta| ns  sum|resid| ns
+V1   DINGHY      47    0.74   -0.06    4/44          1313418        1387071
+V1   TUG         35    0.64    0.20    3/33          1508596        1201505
+V1   LINER       34    0.97    0.77    0/33           909173         205779
+S1   DINGHY      47    0.24   -0.80    4/43          1710197        3070846
+S1   TUG         35    0.78    0.64    1/31          3541228        1276812
+S1   LINER       34    0.99    0.86    0/34          2400007         332955
+A1   DINGHY      47    0.35   -0.81    4/44          1517253        2749262
+A1   TUG         35    0.84    0.64    0/29          3831239        1385338
+A1   LINER       34    0.99    0.87    0/34          2521969         325271
+V3   DINGHY      46    0.71    0.34    2/43          1820596        1198325
+V3   TUG         35    0.70    0.31    2/32          2474505        1713131
+V3   LINER       27    0.93    0.65    0/27           766901         270391
+S3   DINGHY      45   -0.18    0.27    4/41          2603855        1912081
+S3   TUG         31    0.84    0.60    2/27          2529861        1020231
+S3   LINER       25    0.99    0.95    0/25          1932697         105405
+A3   DINGHY      45    0.18    0.26    6/42          2687955        1981281
+A3   TUG         31    0.83    0.57    2/29          3091866        1315657
+A3   LINER       25    0.99    0.93    0/25          2082201         145906
+A2   DINGHY      47    0.31   -0.66    4/38           765502        1272255
+A2   TUG         35    0.88    0.56    0/27          2380470        1038311
+A2   LINER       34    0.99    0.88    0/34          2465106         287091
+
+==============================================================================
+A.4 The terms, summed per regime: what drives each regime's delta (model of A.2)
+==============================================================================
+Columns are each term's contribution in ns per pass, summed over the regime's rows.
+var  regime       cold uses    warm uses     per-byte  wasted scan  fresh(walk)         head |     measured
+V1   DINGHY        +1607623       +56680      -298617      +630990      -277250           +0 |     +1071689
+V1   TUG              +3254     +1144771      -506262      +464015      -224042           +0 |     +1465764
+V1   LINER            +1504        -8449      -913698        +5787       +76218           +0 |      -909173
+S1   DINGHY        +5604468       +42719      -836263     +1284670     -1554070           +0 |     +1647609
+S1   TUG             +53435      +883167     -1361399      +108136     -2102237           +0 |     -3535768
+S1   LINER           +28765        +7931     -1947785        +3945      -162860           +0 |     -2400007
+A1   DINGHY        +4652388       +38172      -888024      +641523     -1360866           +0 |      +658242
+A1   TUG             +19129      +790017     -1445276       +53460     -1871438           +0 |     -3829374
+A1   LINER            +9781        +7692     -2064144        +2014      -163915           +0 |     -2521969
+V3   DINGHY            +110     +1543213      -323115      +174698       +45924           +0 |     +1726082
+V3   TUG                +61     +1721388      -534799      +437697      +306587           +0 |     +2446867
+V3   LINER              +34       +24272      -680409        +4866      +171916           +0 |      -592163
+S3   DINGHY            +444     +1195316      -836205       +41736     -1131501           +0 |     -1634399
+S3   TUG               +324     +1348442     -1360994      +103108     -1793614           +0 |     -2485608
+S3   LINER             +282       +29006     -1564456        +1035      -296926           +0 |     -1932697
+A3   DINGHY            +269     +1145798      -887724       +21268     -1029472           +0 |     -1888659
+A3   TUG               +189     +1231204     -1444497       +51203     -1653944           +0 |     -3028932
+A3   LINER             +156       -13668     -1657836         +530      -285246           +0 |     -2082201
+V2   DINGHY         +788415       +31028      -300188         +615      +346969     +1206386 |     +2278859
+V2   TUG             +12027      +874890      -508256         +865      +572396      +923960 |     +3131479
+V2   LINER            +6106        +5926      -911258          -53      +108197       +73134 |      -806190
+A2   DINGHY        +2449302       +14033      -888260       +48756      -932914     +1149414 |      +619673
+A2   TUG             +49150      +745507     -1445707       +17595     -1292589      +280622 |     -2356293
+A2   LINER           +19221       +45030     -2065189         +860      -119105       -69009 |     -2465106
+
+==============================================================================
+A.5 Largest absolute residuals (V1, S1, A1), with the facts that place them
+==============================================================================
+V1:
+  hex-run  docs1m    all   DINGHY delta     -71983 pred    +298751  U=189599 g=5.2 gcv=0.84 n=1048576
+  bounded  prose1m   all   DINGHY delta    +605980 pred    +282470  U=161475 g=2.0 gcv=0.35 n=1048576
+  hex-run  prose1m   all   DINGHY delta      +6952 pred    +249180  U=166490 g=6.1 gcv=0.72 n=1048576
+  dfa-hat  prose1m   all   TUG    delta    +238925 pred     +41239  U=75836 g=9.8 gcv=0.85 n=1048576
+  hex-run  code1m    all   DINGHY delta     +46896 pred    +244221  U=160839 g=6.3 gcv=1.11 n=1048576
+  dfa-hat  prose1m   first TUG    delta    +237053 pred     +41239  U=75836 g=9.8 gcv=0.85 n=1048576
+  dfa-hat  code1m    all   TUG    delta    +181992 pred     +39983  U=79608 g=9.7 gcv=1.16 n=1048576
+  dfa-hat  docs1m    all   TUG    delta    +175362 pred     +51864  U=89993 g=8.2 gcv=1.14 n=1048576
+S1:
+  hex-run  docs1m    all   DINGHY delta     +58281 pred    +777097  U=189599 g=5.2 gcv=0.84 n=1048576
+  hex-run  prose1m   all   DINGHY delta     +29713 pred    +655999  U=166490 g=6.1 gcv=0.72 n=1048576
+  hex-run  code1m    all   DINGHY delta     +38468 pred    +628069  U=160839 g=6.3 gcv=1.11 n=1048576
+  bounded  docs1m    all   DINGHY delta    +228735 pred    +620384  U=147185 g=3.7 gcv=0.80 n=1048576
+  bounded  code1m    all   DINGHY delta    +183641 pred    +525425  U=141122 g=4.3 gcv=0.99 n=1048576
+  dfa-hat  docs1m    all   TUG    delta    -353418 pred    -197225  U=89993 g=8.2 gcv=1.14 n=1048576
+  email    docs1m    all   TUG    delta    -329540 pred    -184039  U=147183 g=2.7 gcv=0.80 n=1048576
+  email    docs1m    first TUG    delta    -326480 pred    -184039  U=147183 g=2.7 gcv=0.80 n=1048576
+A1:
+  hex-run  docs1m    all   DINGHY delta    -132162 pred    +513383  U=189599 g=5.2 gcv=0.84 n=1048576
+  hex-run  prose1m   all   DINGHY delta    -136981 pred    +424464  U=166490 g=6.1 gcv=0.72 n=1048576
+  hex-run  code1m    all   DINGHY delta    -125815 pred    +404194  U=160839 g=6.3 gcv=1.11 n=1048576
+  bounded  docs1m    all   DINGHY delta    +107029 pred    +426855  U=147185 g=3.7 gcv=0.80 n=1048576
+  bounded  code1m    all   DINGHY delta     +68133 pred    +352528  U=141122 g=4.3 gcv=0.99 n=1048576
+  dfa-hat  docs1m    all   TUG    delta    -387734 pred    -197349  U=89993 g=8.2 gcv=1.14 n=1048576
+  bounded  prose1m   all   DINGHY delta    +697346 pred    +539059  U=161475 g=2.0 gcv=0.35 n=1048576
+  email    docs1m    first TUG    delta    -326554 pred    -176171  U=147183 g=2.7 gcv=0.80 n=1048576
+
+==============================================================================
+A.6 Out of sample: the V1 model fitted on the spike, applied to ALPHA (slot25c, both layers)
+==============================================================================
+Same artifact family (spike V1 = R17-b new), a different run (slot25c, load1 0.72).
+regime  W->predW     W->predR     R->predW     R->predR     N->predW     N->predR       absExp
+DINGHY  10           3            0            46           0            3                0.07
+TUG     8            0            4            10           0            0                0.11
+LINER   28           0            0            0            0            0                0.94
+
+==============================================================================
+B.1 Win/loss against GAP (bytes per use, g) and against BYTE DENSITY (p of S), all reached spike rows
+==============================================================================
+V1:
+  g bin (B)     rows     W/R/N   med d/use   sum ns/MiB   ||  p bin (ppm)     rows     W/R/N   med d/use   sum ns/MiB
+  [0,4)           38   2/32/ 4       +1.31     +3352090   ||  [0,1)             10  10/ 0/ 0    -3294.71      -390498
+  [4,8)           12   2/ 9/ 1       +1.35     +1100859   ||  [1,50000)         24  24/ 0/ 0       -9.08     -1188315
+  [8,16)          22   4/18/ 0       +0.92      +869161   ||  [50000,100000)    24  11/12/ 1       +0.07      +261782
+  [16,32)         16  13/ 2/ 1       -1.80      -518379   ||  [100000,300000)    22   2/18/ 2       +1.29     +1531110
+  [32,128)        12  12/ 0/ 0       -5.91      -454487   ||  [300000,600000)    10   1/ 9/ 0       +1.30      +322609
+  [128,inf)       16  16/ 0/ 0    -1870.26      -682953   ||  [600000,1000001)    26   1/22/ 3       +1.18     +3129602
+S1:
+  g bin (B)     rows     W/R/N   med d/use   sum ns/MiB   ||  p bin (ppm)     rows     W/R/N   med d/use   sum ns/MiB
+  [0,4)           38   7/25/ 6       +1.40     +4723920   ||  [0,1)             10   8/ 2/ 0   -11021.03      -461606
+  [4,8)           12   0/10/ 2       +1.95     +2268564   ||  [1,50000)         24  22/ 2/ 0      -19.16     -2075305
+  [8,16)          22  18/ 4/ 0       -1.23       +29056   ||  [50000,100000)    24  20/ 4/ 0       -2.57         -738
+  [16,32)         16  14/ 2/ 0       -3.13     -1338009   ||  [100000,300000)    22   8/11/ 3       +0.63     +1138339
+  [32,128)        12  10/ 2/ 0      -15.18      -637483   ||  [300000,600000)    10   3/ 7/ 0       +0.52      -141916
+  [128,inf)       16  16/ 0/ 0    -5900.52     -1423779   ||  [600000,1000001)    26   4/17/ 5       +1.85     +5163495
+A1:
+  g bin (B)     rows     W/R/N   med d/use   sum ns/MiB   ||  p bin (ppm)     rows     W/R/N   med d/use   sum ns/MiB
+  [0,4)           38   7/23/ 8       +0.83     +3173286   ||  [0,1)             10  10/ 0/ 0   -11714.52      -774997
+  [4,8)           12   3/ 8/ 1       +1.26     +1045609   ||  [1,50000)         24  24/ 0/ 0      -20.26     -2428340
+  [8,16)          22  18/ 4/ 0       -1.35      -809901   ||  [50000,100000)    24  20/ 4/ 0       -3.07      -859808
+  [16,32)         16  16/ 0/ 0       -3.83     -1710456   ||  [100000,300000)    22  11/ 9/ 2       -0.38       -64314
+  [32,128)        12  12/ 0/ 0      -15.86      -948558   ||  [300000,600000)    10   3/ 7/ 0       +0.38      -353489
+  [128,inf)       16  16/ 0/ 0    -6264.51     -1496831   ||  [600000,1000001)    26   4/15/ 7       +0.84     +3734095
+A3:
+  g bin (B)     rows     W/R/N   med d/use   sum ns/MiB   ||  p bin (ppm)     rows     W/R/N   med d/use   sum ns/MiB
+  [0,4)           38   9/28/ 1       +0.92     +1329300   ||  [0,1)             10   9/ 0/ 1   -11710.94      -747764
+  [4,8)           12   6/ 5/ 1       -0.32     -2640384   ||  [1,50000)         16  16/ 0/ 0      -20.27     -2372747
+  [8,16)          21  15/ 4/ 2       -0.63     -1529319   ||  [50000,100000)    17  13/ 4/ 0       -2.15     -1870902
+  [16,32)          8   8/ 0/ 0       -5.04     -1702738   ||  [100000,300000)    22  10/ 8/ 4       -0.06     -2909488
+  [32,128)        10   9/ 0/ 1      -16.59      -862326   ||  [300000,600000)    10   4/ 6/ 0       +0.35      -339992
+  [128,inf)       12  12/ 0/ 0   -11706.35     -1499745   ||  [600000,1000001)    26   7/19/ 0       +1.11     +1335681
+d/use = delta / uses (for one-use whole-subject rows it is the whole pass).
+
+==============================================================================
+B.2 Crossovers implied by the model (A.2 coefficients, PF/HAT unless noted)
+==============================================================================
+Per byte the find advances, a form saves (beta_t - beta_f) and pays, per use,
+c_warm + beta_f*omega_warm (state carried) or c_cold + beta_f*omega_cold (state lost).
+Break-even gap g* = per-use cost / per-byte saving; lam* = 1/g* (uses per byte).
+var  kind     terms     save/B   g* carried      g* lost  land/KB*car land/KB*lost
+V1   PF/HAT       1     0.0798         15.6         25.7         65.6         39.8
+V1   PF/HAT       2     0.0507         26.1         43.2         39.3         23.7
+V1   PF/HAT       3     0.0216         64.7        107.7         15.8          9.5
+V1   VM           1     0.0798         -1.2          7.7          inf        132.5
+V1   VM           2     0.0507         -0.4         14.9          inf         68.9
+V1   VM           3     0.0216          2.7         41.2        382.1         24.8
+S1   PF/HAT       1     0.1688          4.7         39.0        216.8         26.3
+S1   PF/HAT       2     0.1686          4.7         39.1        216.3         26.2
+S1   PF/HAT       3     0.1683          4.7         39.3        215.8         26.1
+S1   VM           1     0.1688         -0.4         50.2          inf         20.4
+S1   VM           2     0.1686         -0.4         50.3          inf         20.3
+S1   VM           3     0.1683         -0.4         50.5          inf         20.3
+A1   PF/HAT       1     0.1789          3.8         28.4        267.9         36.1
+A1   PF/HAT       2     0.1792          3.8         28.2        268.8         36.3
+A1   PF/HAT       3     0.1795          3.8         28.1        269.7         36.5
+A1   VM           1     0.1789         -0.5         14.0          inf         73.1
+A1   VM           2     0.1792         -0.5         13.9          inf         73.7
+A1   VM           3     0.1795         -0.5         13.8          inf         74.4
+V3   PF/HAT       1     0.0478         29.3         29.3         35.0         35.0
+V3   PF/HAT       2     0.0322         43.5         43.5         23.6         23.6
+V3   PF/HAT       3     0.0166         84.5         84.5         12.1         12.1
+V3   VM           1     0.0478         -4.0         -4.0          inf          inf
+V3   VM           2     0.0322         -6.0         -6.0          inf          inf
+V3   VM           3     0.0166        -11.6        -11.6          inf          inf
+S3   PF/HAT       1     0.1623          6.7          6.7        153.5        153.5
+S3   PF/HAT       2     0.1620          6.7          6.7        153.2        153.2
+S3   PF/HAT       3     0.1617          6.7          6.7        153.0        153.0
+S3   VM           1     0.1623         -0.3         -0.3          inf          inf
+S3   VM           2     0.1620         -0.3         -0.3          inf          inf
+S3   VM           3     0.1617         -0.3         -0.3          inf          inf
+A3   PF/HAT       1     0.1755          5.9          5.9        173.1        173.1
+A3   PF/HAT       2     0.1759          5.9          5.9        173.5        173.5
+A3   PF/HAT       3     0.1763          5.9          5.9        173.9        173.9
+A3   VM           1     0.1755         -2.7         -2.7          inf          inf
+A3   VM           2     0.1759         -2.6         -2.6          inf          inf
+A3   VM           3     0.1763         -2.6         -2.6          inf          inf
+(a negative g* means the per-use term is itself a saving: the form wins at every gap;
+ kept rows: save/B nets the kept overscan kappa, and "lost" equals "carried" by construction)
+
+==============================================================================
+B.3 The kernel-only sweep (slot2, 14 real cells, i.i.d. placement): form/table per ppm
+==============================================================================
+Median over the 14 cells of ns_per_call(form)/ns_per_call(table); "x" marks the first
+ppm where the median exceeds 1.016 (the slot's noise band).  calls = finds per pass.
+
+findall n=1048576 span=1048576 reset=0
+  form               0   70000  300000  600000 1000000
+  swar           0.38    0.92    0.51    0.46    0.66 
+  mask8_swar     0.58    1.05x   0.63    0.48    0.56 
+  mask64_swar    0.68    0.48    0.37    0.36    0.52 
+  mask64_sse2    0.11    0.36    0.34    0.34    0.47 
+  mask64_avx2    0.06    0.35    0.33    0.31    0.45 
+  sse2           0.12    0.64    0.45    0.44    0.66 
+  avx2           0.06    0.45    0.49    0.50    0.75 
+  adapt_swar     0.38    1.10x   1.13x   1.13x   1.13x
+
+findall n=65536 span=65536 reset=0
+  form               0    1000   20000   70000  100000  150000  200000  300000  400000  500000  600000  800000  900000 1000000
+  swar           0.38    0.40    0.48    0.80    0.92    0.99    1.15x   1.25x   1.24x   0.68    0.62    0.69    0.81    0.88 
+  mask8_swar     0.59    0.60    0.54    0.69    0.73    0.73    0.81    0.86    0.78    0.43    0.38    0.52    0.63    0.69 
+  mask64_swar    0.68    0.68    0.60    0.73    0.78    0.78    0.89    0.98    0.92    0.50    0.48    0.57    0.66    0.74 
+  mask64_sse2    0.11    0.11    0.22    0.47    0.58    0.65    0.77    0.90    0.86    0.47    0.44    0.53    0.62    0.70 
+  mask64_avx2    0.05    0.06    0.20    0.46    0.55    0.61    0.76    0.88    0.85    0.47    0.44    0.52    0.62    0.68 
+  sse2           0.13    0.13    0.29    0.66    0.79    0.89    1.13x   1.27x   1.19x   0.66    0.59    0.68    0.80    0.88 
+  avx2           0.06    0.07    0.30    0.72    0.88    1.00    1.27x   1.41x   1.34x   0.74    0.66    0.75    0.90    1.00 
+  adapt_swar     0.38    0.40    0.57    1.11x   1.17x   1.15x   1.31x   2.25x   2.38x   1.35x   1.20x   1.26x   1.33x   1.34x
+
+findall n=65536 span=65536 reset=1
+  form           20000   70000  300000  800000
+  swar           0.48    0.79    1.24x   0.70 
+  mask8_swar     0.65    0.97    1.65x   0.94 
+  mask64_swar    1.02x   2.05x   3.98x   2.39x
+  mask64_sse2    0.39    0.99    1.88x   1.11x
+  mask64_avx2    0.35    0.93    1.81x   1.03x
+  sse2           0.29    0.65    1.27x   0.70 
+  avx2           0.29    0.71    1.40x   0.78 
+  adapt_swar     0.49    0.84    1.37x   0.76 
+
+findall n=65536 span=65536 reset=16
+  form          300000
+  swar           1.19x
+  mask8_swar     0.97 
+  mask64_swar    1.07x
+  mask64_sse2    0.96 
+  mask64_avx2    0.95 
+  sse2           1.19x
+  avx2           1.32x
+  adapt_swar     2.08x
+
+findall n=65536 span=65536 reset=4
+  form          300000
+  swar           1.22x
+  mask8_swar     0.98 
+  mask64_swar    1.42x
+  mask64_sse2    1.00 
+  mask64_avx2    0.96 
+  sse2           1.26x
+  avx2           1.40x
+  adapt_swar     1.38x
+
+percall n=65536 span=16 reset=1
+  form               0   20000  300000  800000
+  swar           0.50    0.49    0.96    1.20x
+  mask8_swar     0.70    0.65    1.23x   1.50x
+  mask64_swar    2.21x   2.13x   4.78x   6.00x
+  mask64_sse2    0.64    0.61    1.41x   1.74x
+  mask64_avx2    0.58    0.59    1.28x   1.62x
+  sse2           0.49    0.46    0.88    1.10x
+  avx2           0.64    0.58    1.11x   1.40x
+  adapt_swar     0.62    0.58    1.21x   1.53x
+
+percall n=65536 span=64 reset=1
+  form               0   20000  300000  800000
+  swar           0.47    0.39    1.02    1.22x
+  mask8_swar     0.59    0.54    1.30x   1.57x
+  mask64_swar    0.69    0.91    4.76x   5.86x
+  mask64_sse2    0.19    0.27    1.25x   1.54x
+  mask64_avx2    0.17    0.24    1.08x   1.34x
+  sse2           0.23    0.26    1.00    1.11x
+  avx2           0.21    0.24    0.89    1.10x
+  adapt_swar     0.46    0.43    1.27x   1.54x
+
+==============================================================================
+B.4 Losses that are NOT gap-density: rows with g >= G_STAR (or single-call DINGHY) that lose
+==============================================================================
+V1:
+  dig      digits64k first DINGHY n=65536   g=1.1      Lact=8.0      delta     +6.38 ns (+20%)
+  dig      mix64k    first DINGHY n=65536   g=2.6      Lact=21.0     delta     +6.63 ns (+17%)
+  word-eq  mix64k    first DINGHY n=65536   g=3.1      Lact=63.0     delta    +26.01 ns (+42%)
+  hex-run  short     first DINGHY n=40      g=15.0     Lact=15.0     delta     +0.24 ns (+3%)
+  hex-run  prose64k  first DINGHY n=65536   g=6.0      Lact=6.0      delta     +1.21 ns (+26%)
+  hex-run  digits64k first DINGHY n=65536   g=1.0      Lact=1.0      delta     +2.53 ns (+51%)
+  hex-run  prose1m   first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +1.96 ns (+49%)
+  hex-run  mix64k    first DINGHY n=65536   g=1.0      Lact=1.0      delta     +2.16 ns (+57%)
+  hex-run  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +1.77 ns (+42%)
+  hex-run  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +1.77 ns (+42%)
+  hex-run  code64k   first DINGHY n=65536   g=4.0      Lact=4.0      delta     +1.58 ns (+36%)
+  hex-run  code1m    first DINGHY n=1048576 g=4.0      Lact=4.0      delta     +1.58 ns (+36%)
+  bounded  short     first DINGHY n=40      g=1.0      Lact=1.0      delta     +2.85 ns (+45%)
+  bounded  prose64k  first DINGHY n=65536   g=1.0      Lact=1.0      delta     +4.89 ns (+38%)
+  bounded  prose1m   first DINGHY n=1048576 g=1.0      Lact=1.0      delta     +3.66 ns (+50%)
+  bounded  mix64k    first DINGHY n=65536   g=4.0      Lact=12.0     delta     +3.98 ns (+24%)
+  bounded  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +4.64 ns (+48%)
+  bounded  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +4.60 ns (+47%)
+  bounded  code64k   first DINGHY n=65536   g=2.0      Lact=2.0      delta     +4.05 ns (+27%)
+  bounded  code1m    first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +3.91 ns (+26%)
+  dfa-hat  short     first DINGHY n=40      g=11.0     Lact=33.0     delta     +2.07 ns (+12%)
+  dfa-hat  short     all   DINGHY n=40      g=11.0     Lact=33.0     delta     +1.90 ns (+11%)
+S1:
+  dig      short     first DINGHY n=40      g=41.0     Lact=41.0     delta     +9.51 ns (+81%)
+  dig      short     all   DINGHY n=40      g=41.0     Lact=41.0     delta     +9.38 ns (+79%)
+  dig      digits64k first DINGHY n=65536   g=1.1      Lact=8.0      delta     +5.79 ns (+18%)
+  dig      mix64k    first DINGHY n=65536   g=2.6      Lact=21.0     delta     +4.95 ns (+13%)
+  word-eq  mix64k    first DINGHY n=65536   g=3.1      Lact=63.0     delta     +7.19 ns (+12%)
+  hex-run  short     first DINGHY n=40      g=15.0     Lact=15.0     delta    +23.61 ns (+339%)
+  hex-run  prose64k  first DINGHY n=65536   g=6.0      Lact=6.0      delta     +2.37 ns (+50%)
+  hex-run  digits64k first DINGHY n=65536   g=1.0      Lact=1.0      delta     +3.98 ns (+80%)
+  hex-run  prose1m   first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +3.12 ns (+78%)
+  hex-run  mix64k    first DINGHY n=65536   g=1.0      Lact=1.0      delta     +3.32 ns (+88%)
+  hex-run  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +2.93 ns (+70%)
+  hex-run  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +2.93 ns (+70%)
+  hex-run  code64k   first DINGHY n=65536   g=4.0      Lact=4.0      delta     +2.73 ns (+62%)
+  hex-run  code1m    first DINGHY n=1048576 g=4.0      Lact=4.0      delta     +2.74 ns (+63%)
+  bounded  short     first DINGHY n=40      g=1.0      Lact=1.0      delta    +18.69 ns (+293%)
+  bounded  prose64k  first DINGHY n=65536   g=1.0      Lact=1.0      delta     +6.65 ns (+52%)
+  bounded  prose1m   first DINGHY n=1048576 g=1.0      Lact=1.0      delta     +4.10 ns (+56%)
+  bounded  mix64k    first DINGHY n=65536   g=4.0      Lact=12.0     delta     +4.61 ns (+28%)
+  bounded  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +5.01 ns (+52%)
+  bounded  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +5.22 ns (+54%)
+  bounded  code64k   first DINGHY n=65536   g=2.0      Lact=2.0      delta     +5.15 ns (+34%)
+  bounded  code1m    first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +4.94 ns (+33%)
+  dfa-hat  short     first DINGHY n=40      g=11.0     Lact=33.0     delta    +18.51 ns (+109%)
+  dfa-hat  short     all   DINGHY n=40      g=11.0     Lact=33.0     delta    +18.43 ns (+108%)
+  vm-hat-1 short     first DINGHY n=40      g=20.5     Lact=41.0     delta     +7.16 ns (+49%)
+  vm-hat-1 short     all   DINGHY n=40      g=20.5     Lact=41.0     delta     +7.07 ns (+49%)
+A1:
+  dig      digits64k first DINGHY n=65536   g=1.1      Lact=8.0      delta     +5.22 ns (+17%)
+  dig      mix64k    first DINGHY n=65536   g=2.6      Lact=21.0     delta     +4.50 ns (+11%)
+  word-eq  mix64k    first DINGHY n=65536   g=3.1      Lact=63.0     delta     +4.79 ns (+8%)
+  hex-run  short     first DINGHY n=40      g=15.0     Lact=15.0     delta     +7.08 ns (+102%)
+  hex-run  prose64k  first DINGHY n=65536   g=6.0      Lact=6.0      delta     +1.25 ns (+26%)
+  hex-run  digits64k first DINGHY n=65536   g=1.0      Lact=1.0      delta     +2.88 ns (+58%)
+  hex-run  prose1m   first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +2.29 ns (+57%)
+  hex-run  mix64k    first DINGHY n=65536   g=1.0      Lact=1.0      delta     +2.21 ns (+58%)
+  hex-run  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +1.82 ns (+44%)
+  hex-run  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +2.10 ns (+50%)
+  hex-run  code64k   first DINGHY n=65536   g=4.0      Lact=4.0      delta     +1.63 ns (+37%)
+  hex-run  code1m    first DINGHY n=1048576 g=4.0      Lact=4.0      delta     +1.98 ns (+45%)
+  bounded  short     first DINGHY n=40      g=1.0      Lact=1.0      delta    +10.75 ns (+168%)
+  bounded  prose64k  first DINGHY n=65536   g=1.0      Lact=1.0      delta     +6.22 ns (+49%)
+  bounded  prose1m   first DINGHY n=1048576 g=1.0      Lact=1.0      delta     +4.84 ns (+66%)
+  bounded  mix64k    first DINGHY n=65536   g=4.0      Lact=12.0     delta     +3.82 ns (+23%)
+  bounded  docs64k   first DINGHY n=65536   g=3.0      Lact=3.0      delta     +4.71 ns (+49%)
+  bounded  docs1m    first DINGHY n=1048576 g=3.0      Lact=3.0      delta     +5.99 ns (+62%)
+  bounded  code64k   first DINGHY n=65536   g=2.0      Lact=2.0      delta     +4.16 ns (+28%)
+  bounded  code1m    first DINGHY n=1048576 g=2.0      Lact=2.0      delta     +5.39 ns (+36%)
+  dfa-hat  short     first DINGHY n=40      g=11.0     Lact=33.0     delta     +7.01 ns (+41%)
+  dfa-hat  short     all   DINGHY n=40      g=11.0     Lact=33.0     delta     +6.61 ns (+39%)
+
+==============================================================================
+B.5 Contrived (slot25c) vs real-text (docs/code) subjects, per variant
+==============================================================================
+var  contrived W/R/N  med rel real-text W/R/N  med rel
+V1   25/28/ 3    +5.2%        24/33/ 3    +3.1%       
+V3   19/30/ 3   +19.7%        19/34/ 3   +10.8%       
+S1   27/26/ 3    +2.1%        38/17/ 5   -16.9%       
+S3   23/24/ 2    +9.9%        31/15/ 6    -7.9%       
+A1   32/22/ 2   -15.6%        40/13/ 7   -18.8%       
+A3   24/22/ 3    +0.9%        35/15/ 2   -10.5%       
+
+Placement of the real-text rows by regime (V1 rows):
+  DINGHY  contrived  31   real-text  16
+  TUG     contrived  11   real-text  24
+  LINER   contrived  14   real-text  20
+
+==============================================================================
+C.1 The estimator's constants (this box; labels as in A.1/A.2)
+==============================================================================
+var  kind     c_cold   c_warm  m_fresh  beta(1t)  beta(2t)   om_cold   om_warm
+V1   PF/HAT    +1.54    +0.96    -0.29    0.1095    0.1386       4.7      2.62
+V1   VM        +0.10    -0.38    +0.92    0.1095    0.1386       4.7      2.62
+V2   PF/HAT    +0.74    +0.72    +0.36    0.1098    0.1381       0.0      0.01
+V2   VM        +1.37    -0.16    +1.07    0.1098    0.1381       0.0      0.01
+V3   PF/HAT    +2.52    +1.40    +0.05    0.1156    0.1284 kappa 1.22          
+V3   VM        -0.53    -0.19    +1.90    0.1156    0.1284 kappa 1.22          
+V4   PF/HAT    +3.36    +0.73    +0.27    0.1097    0.1285 kappa 1.00          
+V4   VM        +0.62    -0.59    +1.39    0.1097    0.1285 kappa 1.00          
+S1   PF/HAT    +5.36    +0.72    -1.61    0.0206    0.0208      59.2      3.63
+S1   VM        +7.25    -0.14    -1.28    0.0206    0.0208      59.2      3.63
+S2   PF/HAT    +4.49    +0.80    -0.78    0.0206    0.0207      12.9      2.13
+S2   VM        +7.45    +0.28    -1.04    0.0206    0.0207      12.9      2.13
+S3   PF/HAT    +9.76    +1.08    -1.17    0.0206    0.0208 kappa 1.32          
+S3   VM       +14.01    -0.05    -2.94    0.0206    0.0208 kappa 1.32          
+S4   PF/HAT   +10.28    +0.66    -1.13    0.0206    0.0208 kappa 1.19          
+S4   VM       +14.11    +0.09    -3.00    0.0206    0.0208 kappa 1.19          
+A1   PF/HAT    +4.45    +0.65    -1.41    0.0105    0.0102      59.2      3.63
+A1   VM        +1.88    -0.12    -1.35    0.0105    0.0102      59.2      3.63
+A2   PF/HAT    +2.27    +0.57    -0.97    0.0104    0.0102       4.5      1.17
+A2   VM        +2.72    +0.30    -1.00    0.0104    0.0102       4.5      1.17
+A3   PF/HAT    +5.96    +1.04    -1.06    0.0106    0.0103 kappa 1.32          
+A3   VM        +6.75    -0.47    -2.84    0.0106    0.0103 kappa 1.32          
+A4   PF/HAT    +6.32    +0.69    -1.03    0.0105    0.0103 kappa 1.10          
+A4   VM        +7.48    +0.18    -2.91    0.0105    0.0103 kappa 1.10          
+beta_t = 0.1894.  c_*, m: FITTED (A.2); beta: MEASURED (1-2 terms) / DERIVED (3);
+omega/kappa: MEASURED from the counters (A.1b).
+
+==============================================================================
+C.2 Predicted vs measured sign, from the workload facts alone (U, ADV, A, fresh; no blocks counter)
+==============================================================================
+Confusion per regime: measured class (strict floor) x predicted sign.
+var  regime        W->W       W->R       R->W       R->R       N->W       N->R    agree
+V1   DINGHY           5          4          0         35          0          3      91%
+V1   TUG              7          0          2         24          0          2      94%
+V1   LINER           33          0          0          0          1          0     100%
+S1   DINGHY           0          2          2         39          0          4      91%
+S1   TUG             29          0          1          1          1          3      97%
+S1   LINER           34          0          0          0          0          0     100%
+A1   DINGHY           5          4          0         35          0          3      91%
+A1   TUG             29          0          0          0          2          4     100%
+A1   LINER           34          0          0          0          0          0     100%
+V3   DINGHY           2          4          0         37          0          3      91%
+V3   TUG              4          2          0         26          1          2      94%
+V3   LINER           25          1          0          1          0          0      96%
+S3   DINGHY           5          3          1         32          0          4      90%
+S3   TUG             21          0          2          4          4          0      93%
+S3   LINER           25          0          0          0          0          0     100%
+A3   DINGHY           7          4          2         29          2          1      86%
+A3   TUG             23          0          2          4          2          0      93%
+A3   LINER           25          0          0          0          0          0     100%
+A2   DINGHY           5          2          3         28          0          9      87%
+A2   TUG             27          0          0          0          4          4     100%
+A2   LINER           34          0          0          0          0          0     100%
+
+==============================================================================
+C.3 The decision table (FORM_ROWS) and its priced argmin vs the measured best
+==============================================================================
+row         var  layer needs       
+walk        -    off   -           
+mask8       V1   off   -           
+mask8+head  V2   off   -           
+mask8+keep  V3   off   iterator    
+sse2        S1   on    -           
+sse2+head   S2   on    -           
+sse2+keep   S3   on    iterator    
+avx2        A1   on    -           
+avx2+head   A2   on    -           
+avx2+keep   A3   on    iterator    
+
+Argmin of the price (oracle workload facts) vs the measured fastest applicable row:
+  layer=off iterator=no  DINGHY 40/47 regret +128794 ns (0.81% of walk)  TUG 27/35 regret +70860 ns (0.34% of walk)  LINER 15/34 regret +10132 ns (0.32% of walk)
+  layer=off iterator=yes DINGHY 40/47 regret +134550 ns (0.84% of walk)  TUG 24/35 regret +76283 ns (0.37% of walk)  LINER 7/34 regret +23438 ns (0.75% of walk)
+  layer=on  iterator=no  DINGHY 31/47 regret +497547 ns (3.11% of walk)  TUG 20/35 regret +133826 ns (0.65% of walk)  LINER 22/34 regret +4245 ns (0.14% of walk)
+  layer=on  iterator=yes DINGHY 29/47 regret +662980 ns (4.15% of walk)  TUG 12/35 regret +150609 ns (0.73% of walk)  LINER 15/34 regret +6706 ns (0.21% of walk)
+
+==============================================================================
+D.1 Regret per information source, per regime, ABSOLUTE (spike rows, measured ns)
+==============================================================================
+Each policy picks one form per (cell, subject, mode) from the rows applicable to the
+layer; regret = measured ns of its pick - measured ns of the fastest applicable row.
+Summed per regime: ns per pass and ns per MiB (all-mode rows), and % of the walk.
+The kept rows need the find-all iterator (D165) and are offered only where noted.
+
+layer=off iterator=no  rows offered: walk, mask8, mask8+head
+  policy                                         DINGHY                         TUG                            LINER                         
+                                                 ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk       
+  always walk                                      +128815  +1216098   0.8%        +21416   +340615   0.1%       +916175  +1449396  29.2%    
+  always mask8 (R17-b)                            +1200504  +5056039   7.5%      +1487180  +1611418   7.2%         +7002     +4943   0.2%    
+  prior >= 100k declines (r17loss)                 +109682   +674957   0.7%        +57664    +57664   0.3%        +20171   +110321   0.6%    
+  setfind 9.2 (prior>=300k & upa<3)                +182214  +2365592   1.1%      +1487180  +1611418   7.2%         +7002     +4943   0.2%    
+  model, compile-time prior                        +109682   +674957   0.7%        +57664    +57664   0.3%        +20171   +110321   0.6%    
+  model, exemplar (p, landings)                    +128802  +1062481   0.8%        +70869   +268517   0.3%        +10135    +52112   0.3%    
+  model, exemplar + call pattern                   +128800  +1062481   0.8%        +70860   +268517   0.3%        +10132    +52112   0.3%    
+  regime hint -> walk/walk/mask8                   +128815  +1216098   0.8%        +21416   +340615   0.1%         +7002     +4943   0.2%    
+  regime hint, row learned leave-one-cell-out      +128815  +1216098   0.8%        +21416   +340615   0.1%         +7002     +4943   0.2%    
+  regime from prior gap (span unknown)             +128806  +1097609   0.8%        +21416   +340615   0.1%       +385646   +717403  12.3%    
+  regime from exemplar gap (span unknown)          +128801  +1030762   0.8%        +21367   +340615   0.1%         +7028     +4943   0.2%    
+  model, oracle facts                              +128794   +986984   0.8%        +70860   +268517   0.3%        +10132    +52112   0.3%    
+
+layer=off iterator=yes  rows offered: walk, mask8, mask8+head, mask8+keep
+  policy                                         DINGHY                         TUG                            LINER                         
+                                                 ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk       
+  always walk                                      +134571  +1308191   0.8%        +26839   +340615   0.1%       +929481  +1482582  29.7%    
+  always mask8 (R17-b)                            +1206260  +5148132   7.5%      +1492603  +1611418   7.2%        +20308    +38129   0.6%    
+  prior >= 100k declines (r17loss)                 +115438   +767050   0.7%        +63087    +57664   0.3%        +33477   +143507   1.1%    
+  setfind 9.2 (prior>=300k & upa<3)                +187970  +2457685   1.2%      +1492603  +1611418   7.2%        +20308    +38129   0.6%    
+  model, compile-time prior                        +115438   +767050   0.7%        +63087    +57664   0.3%        +33477   +143507   1.1%    
+  model, exemplar (p, landings)                    +134558  +1154574   0.8%        +76292   +268517   0.4%        +23441    +85298   0.7%    
+  model, exemplar + call pattern                   +134556  +1154574   0.8%        +76283   +268517   0.4%        +23438    +85298   0.7%    
+  regime hint -> walk/walk/mask8                   +134571  +1308191   0.8%        +26839   +340615   0.1%        +20308    +38129   0.6%    
+  regime hint, row learned leave-one-cell-out      +134571  +1308191   0.8%        +26839   +340615   0.1%       +115859   +174497   3.7%    
+  regime from prior gap (span unknown)             +134562  +1189702   0.8%        +26839   +340615   0.1%       +398952   +750589  12.7%    
+  regime from exemplar gap (span unknown)          +134557  +1122855   0.8%        +26790   +340615   0.1%        +20333    +38129   0.6%    
+  model, oracle facts                              +134550  +1079077   0.8%        +76283   +268517   0.4%        +23438    +85298   0.7%    
+
+layer=on iterator=no  rows offered: walk, mask8, mask8+head, sse2, sse2+head, avx2, avx2+head
+  policy                                         DINGHY                         TUG                            LINER                         
+                                                 ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk       
+  always walk                                      +497538  +1993931   3.1%      +3837293  +3866288  18.6%      +2526166  +3690185  80.6%    
+  always mask8 (R17-b)                            +1569228  +5833873   9.8%      +5303057  +5137090  25.6%      +1616993  +2245732  51.6%    
+  always avx2                                     +1155781  +8786452   7.2%         +7919    +13680   0.0%         +4197     +3421   0.1%    
+  prior >= 100k declines (r17loss)                 +478405  +1452791   3.0%      +3873541  +3583336  18.7%      +1630162  +2351111  52.0%    
+  setfind 9.2 (prior>=300k & upa<3)                +550937  +3143426   3.4%      +5303057  +5137090  25.6%      +1616993  +2245732  51.6%    
+  model, compile-time prior                       +2135534 +11547153  13.4%       +126981   +173973   0.6%         +4197     +3421   0.1%    
+  model, exemplar (p, landings)                   +1993013  +5772222  12.5%       +135327   +276359   0.7%         +4245    +10273   0.1%    
+  model, exemplar + call pattern                   +501997  +2175157   3.1%       +135327   +276359   0.7%         +4245    +10273   0.1%    
+  regime hint -> walk/avx2/avx2                    +497538  +1993931   3.1%         +7919    +13680   0.0%         +4197     +3421   0.1%    
+  regime hint, row learned leave-one-cell-out     +1460172  +6181943   9.1%         +7919    +13680   0.0%         +4197     +3421   0.1%    
+  regime from prior gap (span unknown)            +1155781  +8786452   7.2%         +7919    +13680   0.0%         +4197     +3421   0.1%    
+  regime from exemplar gap (span unknown)         +1155781  +8786452   7.2%         +7919    +13680   0.0%         +4197     +3421   0.1%    
+  model, oracle facts                              +497547  +2104032   3.1%       +133826   +257484   0.6%         +4245    +10273   0.1%    
+
+layer=on iterator=yes  rows offered: walk, mask8, mask8+head, mask8+keep, sse2, sse2+head, sse2+keep, avx2, avx2+head, avx2+keep
+  policy                                         DINGHY                         TUG                            LINER                         
+                                                 ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk        ns/pass   ns/MiB  %walk       
+  always walk                                     +2343039  +4582766  14.7%      +3852993  +3869373  18.6%      +2545423  +3726917  81.2%    
+  always mask8 (R17-b)                            +3414728  +8422708  21.4%      +5318757  +5140176  25.7%      +1636250  +2282464  52.2%    
+  always avx2                                     +3001281 +11375286  18.8%        +23619    +16766   0.1%        +23454    +40152   0.7%    
+  always avx2+keep                                 +454370  +3828519   2.8%       +823749  +1377458   4.0%        +58175    +67867   1.9%    
+  prior >= 100k declines (r17loss)                +2323906  +4041626  14.5%      +3889241  +3586422  18.8%      +1649419  +2387842  52.6%    
+  setfind 9.2 (prior>=300k & upa<3)               +2396438  +5732260  15.0%      +5318757  +5140176  25.7%      +1636250  +2282464  52.2%    
+  model, compile-time prior                       +3981035 +14135988  24.9%       +143764   +188304   0.7%        +25871    +47956   0.8%    
+  model, exemplar (p, landings)                   +3838514  +8361057  24.0%       +152109   +290690   0.7%         +6706    +18402   0.2%    
+  model, exemplar + call pattern                   +667430  +3158677   4.2%       +152109   +290690   0.7%         +6706    +18402   0.2%    
+  regime hint -> avx2+keep/avx2/avx2               +454370  +3828519   2.8%        +23619    +16766   0.1%        +23454    +40152   0.7%    
+  regime hint, row learned leave-one-cell-out      +454370  +3828519   2.8%        +23619    +16766   0.1%        +76806    +99487   2.5%    
+  regime from prior gap (span unknown)            +3001281 +11375286  18.8%        +23619    +16766   0.1%        +23454    +40152   0.7%    
+  regime from exemplar gap (span unknown)         +3001281 +11375286  18.8%        +23619    +16766   0.1%        +23454    +40152   0.7%    
+  model, oracle facts                              +662980  +3087552   4.1%       +150609   +271815   0.7%         +6706    +18402   0.2%    
+
+==============================================================================
+D.2 Runtime adaptivity (slot2 kernel rows): adapt_* vs the best fixed form, per regime
+==============================================================================
+Median over cells of adapt_X / min(table, X, mask forms of the same layer)
+  findall n=1048576 span=1048576 reset=0  adapt_swar/best-SIMD-off: 0:1.00 70000:2.25 300000:3.06 600000:3.19 1000000:2.25
+  findall n=65536 span=65536 reset=0  adapt_swar/best-SIMD-off: 0:1.00 1000:1.01 20000:1.18 70000:1.67 100000:1.64 150000:1.61 200000:1.59 300000:2.67 400000:2.99 500000:3.12 600000:3.14 800000:2.42 900000:2.14 1000000:1.96
+  findall n=65536 span=65536 reset=1  adapt_swar/best-SIMD-off: 20000:1.05 70000:1.07 300000:1.37 800000:1.08
+  findall n=65536 span=65536 reset=16  adapt_swar/best-SIMD-off: 300000:2.42
+  findall n=65536 span=65536 reset=4  adapt_swar/best-SIMD-off: 300000:1.38
+  percall n=65536 span=16 reset=1  adapt_swar/best-SIMD-off: 0:1.21 20000:1.21 300000:1.30 800000:1.53
+  percall n=65536 span=64 reset=1  adapt_swar/best-SIMD-off: 0:1.04 20000:1.11 300000:1.31 800000:1.54

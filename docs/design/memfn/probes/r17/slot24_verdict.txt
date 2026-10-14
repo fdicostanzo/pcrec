@@ -1,0 +1,20 @@
+START 2026-10-12T10:28:19-04:00 tip c6a3bfea ref a080c69a
+BUILD rc=0
+STRICT rc=0
+SABANCHOR rc=0 :: all anchors resolve
+SWEEP plain rc=0 :: movers | 0 floor/manifest lines
+SWEEP start rc=0 :: movers | 0 floor/manifest lines
+SWEEP variants rc=1 :: movers | 24 floor/manifest lines
+SWEEP simd rc=0 :: movers | 0 floor/manifest lines
+SWEEP utf8 rc=1 :: movers | 4 floor/manifest lines
+SWEEP trace rc=0 :: movers | 0 floor/manifest lines
+G2Q rc=0 :: checks passed: 52987686 checks failed: 0 
+G2 rc=0 :: checks passed: 199850927 checks failed: 0 
+N2 rc=4 :: == N2 DONE rc=4 would_decline=0 noend=0 floors=floor_fail=1,floor_placeholder=1,reason_stale=0,reach_dropped=0 ==
+MAKE_TEST rc=2 wall=1099s
+make[1]: *** [Makefile:1515: test-spec-history] Error 1
+RED_LINES make_test
+MECH_START 2026-10-12T11:51:05-04:00
+MECH rc=0 :: == mech run COMPLETE: 67 rows (unexpected: 0, undetected: 1, unreached: 0, anomalies: 0, oracle-skipped: 0)
+MECH_WALL 1417s
+SLOT24_DONE 2026-10-12T12:14:42-04:00

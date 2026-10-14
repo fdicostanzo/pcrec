@@ -1,0 +1,79 @@
+population rule: STRICT (every form timed, all mode)
+replay_proto: IN-SAMPLE replay of regime_tables rev 0.2 on the grid1 slot /home/pcrec/projects/pcrec/worktrees/memfn-slot/grid1
+measurement set: zen4-grid1-v0
+
+==============================================================================
+population: no iterator, 101 groups (DINGHY 35, TUG 33, LINER 33)
+-- SIMD on
+   table S0  D    180.2 us ( 11.1%)  T     19.5 us (  1.2%)  L      0.1 us (  0.0%)   rows fired: {'R7': 99, 'R2': 2}
+   table S1  D     91.5 us (  5.6%)  T      1.2 us (  0.1%)  L      0.1 us (  0.0%)   rows fired: {'R5': 19, 'R7': 80, 'R2': 2}
+   always walk D    148.5 us (  9.1%)  T    337.6 us ( 21.4%)  L    428.4 us ( 73.5%)
+   always V1   D    416.9 us ( 25.6%)  T    499.1 us ( 31.6%)  L    293.5 us ( 50.4%)
+   always A1   D    180.2 us ( 11.1%)  T     19.5 us (  1.2%)  L      0.1 us (  0.0%)
+   A/A floor  D      7.4 us  T     38.4 us  L      4.3 us
+-- SIMD off
+   table S0  D    307.1 us ( 18.8%)  T    262.5 us ( 16.6%)  L      0.5 us (  0.1%)   rows fired: {'R7': 99, 'R2': 2}
+   table S1  D     57.3 us (  3.5%)  T     33.8 us (  2.1%)  L      0.5 us (  0.1%)   rows fired: {'R6': 42, 'R7': 57, 'R2': 2}
+   always walk D     38.7 us (  2.4%)  T    100.9 us (  6.4%)  L    135.3 us ( 23.2%)
+   always V1   D    307.1 us ( 18.8%)  T    262.5 us ( 16.6%)  L      0.5 us (  0.1%)
+   A/A floor  D      7.4 us  T     38.4 us  L      4.3 us
+
+==============================================================================
+population: iterator (all mode, keep arms timed), 101 groups (DINGHY 35, TUG 33, LINER 33)
+-- SIMD on
+   table S2  D     97.4 us (  6.0%)  T     19.5 us (  1.2%)  L      0.1 us (  0.0%)   rows fired: {'R3b': 27, 'R7': 68, 'R3a': 6}
+   table S3  D     97.4 us (  6.0%)  T      1.2 us (  0.1%)  L      0.1 us (  0.0%)   rows fired: {'R3b': 27, 'R5': 13, 'R7': 55, 'R3a': 6}
+   always walk D    186.7 us ( 11.5%)  T    337.6 us ( 21.4%)  L    428.4 us ( 73.5%)
+   always V1   D    455.0 us ( 27.9%)  T    499.1 us ( 31.6%)  L    293.6 us ( 50.4%)
+   always A1   D    218.4 us ( 13.4%)  T     19.5 us (  1.2%)  L      0.1 us (  0.0%)
+   always A3   D     91.4 us (  5.6%)  T    178.6 us ( 11.3%)  L      9.8 us (  1.7%)
+   A/A floor  D      7.4 us  T     38.4 us  L      4.3 us
+-- SIMD off
+   table S2  D    170.9 us ( 10.5%)  T    262.5 us ( 16.6%)  L      5.6 us (  1.0%)   rows fired: {'R7': 95, 'R3a': 6}
+   table S3  D     57.3 us (  3.5%)  T     33.8 us (  2.1%)  L      5.6 us (  1.0%)   rows fired: {'R6': 37, 'R7': 58, 'R3a': 6}
+   always walk D     38.7 us (  2.4%)  T    100.9 us (  6.4%)  L    140.5 us ( 24.1%)
+   always V1   D    307.1 us ( 18.8%)  T    262.5 us ( 16.6%)  L      5.6 us (  1.0%)
+   A/A floor  D      7.4 us  T     38.4 us  L      4.3 us
+
+==============================================================================
+CONTROLS (pre-declared "visibly worse": on the MOVED cells, summed regret increase > max(2 x their summed NULL thresholds, 1 pt of the regime walk) in a target regime)
+  swapped g* (on<->off)        S1/on: WORSE (moved 23, d us -54.3/+118.1/+0.0); S1/off: WORSE (moved 23, d us +124.5/+6.7/+0.0); S3/on+it: WORSE (moved 11, d us -0.0/+118.1/+0.0)
+  g* per site -> PF figure     S1/on: WORSE (moved 4, d us +32.6/+63.6/+0.0); S1/off: WORSE (moved 10, d us +4.4/+56.1/+0.0)
+  old R3 (A3 at span < 14 B)   S2/on+it: NOT-WORSE (moved 6, d us -6.0/+0.0/+0.0); S3/on+it: NOT-WORSE (moved 6, d us -6.0/+0.0/+0.0)
+  delete R0                    S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S2/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R1                    S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S2/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R2                    S0/on: NOT-WORSE (moved 2, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: NOT-WORSE (moved 2, d us +0.0/+0.0/+0.0); S1/off: NOT-WORSE (moved 1, d us -0.0/+0.0/+0.0); S2/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R3a                   S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S2/on+it: WORSE (moved 6, d us +126.2/+0.0/+0.0); S3/on+it: WORSE (moved 4, d us +72.2/+0.0/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R3b                   S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S2/on+it: NOT-WORSE (moved 27, d us -5.2/+0.0/+0.0); S3/on+it: NOT-WORSE (moved 27, d us -39.9/+0.0/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R5                    S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: WORSE (moved 19, d us +88.7/+18.3/+0.0); S1/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S2/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/on+it: NOT-WORSE (moved 13, d us +0.0/+18.3/+0.0); S3/off+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0)
+  delete R6                    S0/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S0/off: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/on: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S1/off: WORSE (moved 42, d us +249.7/+228.7/+0.0); S2/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/on+it: UNREACHED (moved 0, d us +0.0/+0.0/+0.0); S3/off+it: WORSE (moved 37, d us +113.6/+228.7/+0.0)
+  A/A                          regret(walk#b vs walk) summed 50.1 us = 1.32% of the walk (must sit inside the floor: it IS the floor)
+
+==============================================================================
+PER-CELL (filter S1, SIMD on, no iterator): cell subject mode regime row pick best regret_ns
+  bounded  g1-bounded-n64k-g8-L8-u        all   DINGHY R7   A1   walk    30122.1
+  bounded  g1-bounded-n64k-g32-L8-u       all   DINGHY R7   A1   walk    14967.6
+  bounded  g1-bounded-n64k-g32-L8-u-S     all   DINGHY R7   A1   walk    14752.8
+  bounded  g1-bounded-n64k-ginf-L8        all   DINGHY R7   A1   walk    12364.8
+  dfa-hat  g1-dfa-hat-n64k-g2-L32         all   DINGHY R7   A1   walk     7770.9
+  bounded  g1-bounded-n64k-g8-L32-u       all   DINGHY R7   A1   walk     6217.5
+  dig      g1-dig-n64k-g8-L32-u           all   DINGHY R7   A1   walk     2665.1
+  dfa-hat  g1-dfa-hat-n64k-g8-L64k-u      all   TUG    R7   A1   S1       1152.7
+  dig      g1-dig-n64k-ginf-L32           all   DINGHY R7   A1   An        868.4
+  dig      g1-dig-n64k-g256-L32-u         all   DINGHY R7   A1   An        792.3
+  dfa-hat  g1-dfa-hat-n64k-g8-L32-u       all   DINGHY R7   A1   walk      500.4
+  dfa-hat  g1-dfa-hat-n64k-ginf-L32       all   DINGHY R7   A1   An        267.4
+  dig      g1-dig-n64k-g256-L32-u-S       all   DINGHY R7   A1   An        191.7
+  dfa-hat  g1-dfa-hat-n64k-ginf-L1k       all   LINER  R7   A1   An         42.4
+  dfa-hat  g1-dfa-hat-n64k-g4-L64k-u      all   TUG    R7   A1   S1         23.3
+  dig      g1-dig-n64k-ginf-L1k           all   LINER  R7   A1   An         17.5
+  dfa-hat  g1-dfa-hat-n64k-g4-L32-u       all   DINGHY R7   A1   S1         14.2
+  dig      g1-dig-n64k-ginf-L64k          all   LINER  R7   A1   An          7.1
+  bounded  g1-bounded-n64k-ginf-L1k       all   LINER  R7   A1   An          6.0
+  dig      g1-dig-n64-g8-L32-u            all   DINGHY R7   A1   walk        5.0
+  dig      g1-dig-n48-g8-L32-u            all   DINGHY R2   V1   walk        4.1
+  dig      g1-dig-n63-g8-L32-u            all   DINGHY R2   V1   walk        4.1
+  dig      g1-dig-n65-g8-L32-u            all   DINGHY R7   A1   walk        3.4
+  dig      g1-dig-n128-g8-L32-u           all   DINGHY R7   A1   walk        1.4
+  bounded  g1-bounded-n64k-ginf-L64k      all   LINER  R7   A1   An          1.3
+  ... (101 cells; top 25 by regret)

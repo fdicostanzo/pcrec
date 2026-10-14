@@ -1,0 +1,138 @@
+NOTE byte/rep_cd/code NOGROW (15414 -> 15415 bytes for N 64 -> 256)
+NOTE byte-vm/rep_cd/total NOGROW (22598 -> 22600 bytes for N 64 -> 256)
+NOTE byte-vm/rep_cd/code NOGROW (21130 -> 21132 bytes for N 64 -> 256)
+NOTE utf8/rep_cd/code NOGROW (16781 -> 16782 bytes for N 64 -> 256)
+NOTE byte/rep_w/code NOGROW (16352 -> 16355 bytes for N 64 -> 256)
+NOTE byte-vm/rep_w/total NOGROW (26094 -> 26096 bytes for N 64 -> 256)
+NOTE byte-vm/rep_w/code NOGROW (24395 -> 24397 bytes for N 64 -> 256)
+NOTE utf8/rep_w/code NOGROW (17719 -> 17722 bytes for N 64 -> 256)
+NOTE byte/rep_nx/code NOGROW (16255 -> 16256 bytes for N 64 -> 256)
+NOTE byte-vm/rep_nx/total NOGROW (23013 -> 23015 bytes for N 64 -> 256)
+NOTE byte-vm/rep_nx/code NOGROW (21314 -> 21316 bytes for N 64 -> 256)
+NOTE utf8/rep_nx/code NOGROW (17880 -> 16938 bytes for N 64 -> 256)
+NOTE byte/alt_cls/total x0.92 UNREACHED (no convergence)
+NOTE byte/alt_cls/total x0.96 UNREACHED (bracket closed at N=5722..5723)
+NOTE byte/alt_cls/total x1.00 UNREACHED (bracket closed at N=5722..5723)
+NOTE byte/alt_cls/total x1.04 UNREACHED (bracket closed at N=5722..5723)
+NOTE byte/alt_cls/total x1.08 UNREACHED (bracket closed at N=5722..5723)
+NOTE byte/alt_cls/code NOGROW (15900 -> 17593 bytes for N 64 -> 256)
+NOTE byte-vm/alt_cls/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE utf8/alt_cls/total x0.92 UNREACHED (no convergence)
+NOTE utf8/alt_cls/total x0.96 UNREACHED (bracket closed at N=5722..5723)
+NOTE utf8/alt_cls/total x1.00 UNREACHED (bracket closed at N=5722..5723)
+NOTE utf8/alt_cls/total x1.04 UNREACHED (bracket closed at N=5722..5723)
+NOTE utf8/alt_cls/total x1.08 UNREACHED (bracket closed at N=5722..5723)
+NOTE utf8/alt_cls/code NOGROW (17267 -> 18960 bytes for N 64 -> 256)
+NOTE byte/cat_cls/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE byte-vm/cat_cls/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE utf8/cat_cls/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE byte/alt_lit/total NOGROW (21871 -> 23141 bytes for N 64 -> 256)
+NOTE byte/alt_lit/code NOGROW (15729 -> 16655 bytes for N 64 -> 256)
+NOTE byte-vm/alt_lit/total NOMETRIC (code share 0.98: the other cap binds first)
+NOTE utf8/alt_lit/total NOGROW (23238 -> 24508 bytes for N 64 -> 256)
+NOTE utf8/alt_lit/code NOGROW (17096 -> 18022 bytes for N 64 -> 256)
+NOTE byte/backref/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE byte-vm/backref/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE utf8/backref/total NOMETRIC (code share 0.99: the other cap binds first)
+NOTE byte/bref_rep/total NOGROW (47586 -> 47591 bytes for N 64 -> 256)
+NOTE byte/bref_rep/code NOGROW (45887 -> 45892 bytes for N 64 -> 256)
+NOTE byte-vm/bref_rep/total NOGROW (47584 -> 47589 bytes for N 64 -> 256)
+NOTE byte-vm/bref_rep/code NOGROW (45885 -> 45890 bytes for N 64 -> 256)
+NOTE utf8/bref_rep/total NOGROW (49194 -> 49199 bytes for N 64 -> 256)
+NOTE utf8/bref_rep/code NOGROW (47495 -> 47500 bytes for N 64 -> 256)
+byte     rep_cd     total  x0.938 N=7017    base[ok 938225/14603] tip[ok 940438/18290] compiles-both
+byte     rep_cd     total  x0.960 N=7181    base[ok 959889/14603] tip[ok 962102/18290] compiles-both
+byte     rep_cd     total  x1.000 N=7484    base[ok 999865/14603] tip[ok 999871/14609] compiles-both
+byte     rep_cd     total  x1.040 N=13036   base[refused-total 1039984/-] tip[refused-total 1039984/-] refuses-both
+byte     rep_cd     total  x1.080 N=13536   base[refused-total 1080000/-] tip[refused-total 1080000/-] refuses-both
+utf8     rep_cd     total  x0.938 N=7008    base[ok 938286/15840] tip[ok 940499/19527] compiles-both
+utf8     rep_cd     total  x0.960 N=7172    base[ok 959918/15840] tip[ok 962131/19527] compiles-both
+utf8     rep_cd     total  x1.000 N=7475    base[ok 999926/15840] tip[ok 999932/15846] compiles-both
+utf8     rep_cd     total  x1.040 N=13020   base[refused-total 1039941/-] tip[refused-total 1039941/-] refuses-both
+utf8     rep_cd     total  x1.080 N=13520   base[refused-total 1079957/-] tip[refused-total 1079957/-] refuses-both
+byte     rep_w      total  x0.940 N=7042    base[ok 940237/15549] tip[ok 942697/19483] compiles-both
+byte     rep_w      total  x0.960 N=7191    base[ok 959909/15549] tip[ok 962369/19483] compiles-both
+byte     rep_w      total  x1.000 N=7494    base[ok 999917/15549] tip[ok 999923/15555] compiles-both
+byte     rep_w      total  x1.040 N=12227   base[refused-total 1039951/-] tip[refused-total 1039951/-] refuses-both
+byte     rep_w      total  x1.080 N=12692   base[refused-total 1079933/-] tip[refused-total 1079933/-] refuses-both
+utf8     rep_w      total  x0.940 N=7033    base[ok 940298/16786] tip[ok 942758/20720] compiles-both
+utf8     rep_w      total  x0.960 N=7182    base[ok 959970/16786] tip[ok 962430/20720] compiles-both
+utf8     rep_w      total  x1.000 N=7485    base[ok 999978/16786] tip[ok 999984/16792] compiles-both
+utf8     rep_w      total  x1.040 N=12213   base[refused-total 1039984/-] tip[refused-total 1039984/-] refuses-both
+utf8     rep_w      total  x1.080 N=12678   base[refused-total 1079966/-] tip[refused-total 1079966/-] refuses-both
+byte     rep_nx     total  x0.940 N=7043    base[ok 940271/15444] tip[ok 940271/15444] compiles-both
+byte     rep_nx     total  x0.960 N=7192    base[ok 959943/15444] tip[ok 959943/15444] compiles-both
+byte     rep_nx     total  x1.000 N=7495    base[ok 999919/15444] tip[ok 999919/15444] compiles-both
+byte     rep_nx     total  x1.040 N=12229   base[refused-total 1040005/-] tip[refused-total 1040005/-] refuses-both
+byte     rep_nx     total  x1.080 N=12694   base[refused-total 1079987/-] tip[refused-total 1079987/-] refuses-both
+utf8     rep_nx     total  x0.918 N=342     base[ok 917996/16938] tip[ok 917996/16938] compiles-both
+utf8     rep_nx     total  x0.958 N=357     base[ok 957596/16938] tip[ok 957596/16938] compiles-both
+utf8     rep_nx     total  x1.000 N=373     base[ok 999836/16938] tip[ok 999836/16938] compiles-both
+utf8     rep_nx     total  x1.039 N=825     base[refused-total 1038870/-] tip[refused-total 1038870/-] refuses-both
+utf8     rep_nx     total  x1.080 N=858     base[refused-total 1079930/-] tip[refused-total 1079930/-] refuses-both
+byte-vm  alt_cls    code   x0.907 N=823     base[ok 454804/453336] tip[ok 457114/457114] compiles-both
+byte-vm  alt_cls    code   x0.960 N=874     base[ok 481318/479850] tip[ok 483628/483628] compiles-both
+byte-vm  alt_cls    code   x0.999 N=912     base[ok 501072/499604] tip[ok 501072/499604] compiles-both
+byte-vm  alt_cls    code   x1.040 N=951     base[refused-code -/519878] tip[refused-code -/519878] refuses-both
+byte-vm  alt_cls    code   x1.079 N=989     base[refused-code -/539632] tip[refused-code -/539632] refuses-both
+byte     cat_cls    code   x0.926 N=1268    base[ok 464315/462847] tip[ok 466623/466623] compiles-both
+byte     cat_cls    code   x0.960 N=1317    base[ok 481495/480027] tip[ok 483803/483803] compiles-both
+byte     cat_cls    code   x0.999 N=1373    base[ok 501124/499656] tip[ok 501124/499656] compiles-both
+byte     cat_cls    code   x1.040 N=1431    base[refused-code -/519987] tip[refused-code -/519987] refuses-both
+byte     cat_cls    code   x1.080 N=1488    base[refused-code -/539968] tip[refused-code -/539968] refuses-both
+byte-vm  cat_cls    code   x0.926 N=1268    base[ok 464231/462763] tip[ok 466539/466539] compiles-both
+byte-vm  cat_cls    code   x0.960 N=1317    base[ok 481411/479943] tip[ok 483719/483719] compiles-both
+byte-vm  cat_cls    code   x1.000 N=1374    base[ok 501391/499923] tip[ok 501391/499923] compiles-both
+byte-vm  cat_cls    code   x1.040 N=1431    base[refused-code -/519903] tip[refused-code -/519903] refuses-both
+byte-vm  cat_cls    code   x1.080 N=1488    base[refused-code -/539884] tip[refused-code -/539884] refuses-both
+utf8     cat_cls    code   x0.925 N=1263    base[ok 464173/462705] tip[ok 466481/466481] compiles-both
+utf8     cat_cls    code   x0.960 N=1312    base[ok 481348/479880] tip[ok 483656/483656] compiles-both
+utf8     cat_cls    code   x1.000 N=1369    base[ok 501328/499860] tip[ok 501328/499860] compiles-both
+utf8     cat_cls    code   x1.040 N=1426    base[refused-code -/519843] tip[refused-code -/519843] refuses-both
+utf8     cat_cls    code   x1.080 N=1483    base[refused-code -/539826] tip[refused-code -/539826] refuses-both
+byte-vm  alt_lit    code   x0.925 N=1567    base[ok 463851/462383] tip[ok 466133/466133] compiles-both
+byte-vm  alt_lit    code   x0.960 N=1629    base[ok 481490/480022] tip[ok 483772/483772] compiles-both
+byte-vm  alt_lit    code   x0.999 N=1699    base[ok 501209/499741] tip[ok 501209/499741] compiles-both
+byte-vm  alt_lit    code   x1.040 N=1770    base[refused-code -/519937] tip[refused-code -/519937] refuses-both
+byte-vm  alt_lit    code   x1.080 N=1840    base[refused-code -/539873] tip[refused-code -/539873] refuses-both
+byte     backref    code   x0.920 N=357     base[ok 461478/459779] tip[ok 464035/463804] compiles-both
+byte     backref    code   x0.959 N=373     base[ok 481270/479571] tip[ok 483827/483596] compiles-both
+byte     backref    code   x0.999 N=389     base[ok 501062/499363] tip[ok 501068/499369] compiles-both
+byte     backref    code   x1.038 N=405     base[refused-code -/519155] tip[refused-code -/519161] refuses-both
+byte     backref    code   x1.078 N=421     base[refused-code -/538947] tip[refused-code -/538953] refuses-both
+byte-vm  backref    code   x0.920 N=357     base[ok 461476/459777] tip[ok 464033/463802] compiles-both
+byte-vm  backref    code   x0.959 N=373     base[ok 481268/479569] tip[ok 483825/483594] compiles-both
+byte-vm  backref    code   x0.999 N=389     base[ok 501060/499361] tip[ok 501060/499361] compiles-both
+byte-vm  backref    code   x1.038 N=405     base[refused-code -/519153] tip[refused-code -/519153] refuses-both
+byte-vm  backref    code   x1.078 N=421     base[refused-code -/538945] tip[refused-code -/538945] refuses-both
+utf8     backref    code   x0.920 N=356     base[ok 461849/460150] tip[ok 464406/464175] compiles-both
+utf8     backref    code   x0.960 N=372     base[ok 481641/479942] tip[ok 484198/483967] compiles-both
+utf8     backref    code   x0.999 N=388     base[ok 501433/499734] tip[ok 501439/499740] compiles-both
+utf8     backref    code   x1.039 N=404     base[refused-code -/519526] tip[refused-code -/519532] refuses-both
+utf8     backref    code   x1.079 N=420     base[refused-code -/539318] tip[refused-code -/539324] refuses-both
+byte     dfa_states states x-     N=10      base[ok 174198/15498] tip[ok 174198/15498] compiles-both
+byte     dfa_states states x-     N=11      base[ok 336756/15498] tip[ok 336756/15498] compiles-both
+byte     dfa_states states x-     N=12      base[ok 403718/14685] tip[ok 403718/14685] compiles-both
+byte     dfa_states states x-     N=13      base[ok 560626/14662] tip[ok 560626/14662] compiles-both
+byte     dfa_states states x-     N=14      base[ok 29701/26317] tip[ok 29701/26317] compiles-both
+byte     dfa_states states x-     N=15      base[ok 29701/26317] tip[ok 29701/26317] compiles-both
+utf8     dfa_states states x-     N=10      base[ok 175565/16865] tip[ok 175565/16865] compiles-both
+utf8     dfa_states states x-     N=11      base[ok 338123/16865] tip[ok 338123/16865] compiles-both
+utf8     dfa_states states x-     N=12      base[ok 404955/15922] tip[ok 404955/15922] compiles-both
+utf8     dfa_states states x-     N=13      base[ok 561863/15899] tip[ok 561863/15899] compiles-both
+utf8     dfa_states states x-     N=14      base[ok 31309/27925] tip[ok 31309/27925] compiles-both
+utf8     dfa_states states x-     N=15      base[ok 31309/27925] tip[ok 31309/27925] compiles-both
+byte-dfa dfa_states states x-     N=10      base[ok 174196/15496] tip[ok 174196/15496] compiles-both
+byte-dfa dfa_states states x-     N=11      base[ok 336754/15496] tip[ok 336754/15496] compiles-both
+byte-dfa dfa_states states x-     N=12      base[ok 403716/14683] tip[ok 403716/14683] compiles-both
+byte-dfa dfa_states states x-     N=13      base[ok 560624/14660] tip[ok 560624/14660] compiles-both
+byte-dfa dfa_states states x-     N=14      base[refused-other -/-] tip[refused-other -/-] refuses-both
+byte-dfa dfa_states states x-     N=15      base[refused-other -/-] tip[refused-other -/-] refuses-both
+ARM byte     candidates=31 within10%=25 (total=15 code=10) statecap=6 compiles-both=21 refuses-both=10 BAD=0
+FLOOR-FAIL byte: 25 patterns within 10% of a cap < floor 40
+ARM byte-vm  candidates=20 within10%=20 (total=0 code=20) statecap=0 compiles-both=12 refuses-both=8 BAD=0
+FLOOR-FAIL byte-vm: 20 patterns within 10% of a cap < floor 40
+ARM utf8     candidates=31 within10%=25 (total=15 code=10) statecap=6 compiles-both=21 refuses-both=10 BAD=0
+FLOOR-FAIL utf8: 25 patterns within 10% of a cap < floor 40
+ARM byte-dfa  (statecap shapes only) candidates=6 compiles-both=4 refuses-both=2 BAD=0
+BAD 0

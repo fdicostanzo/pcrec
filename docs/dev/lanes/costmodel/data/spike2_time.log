@@ -1,0 +1,570 @@
+# vecspike time.sh Tue Oct 13 07:19:22 PM UTC 2026 frank-desktop load1=1.00 gov=performance cpu=14 launches=5
+# ns = ns per pass (median over launches of each launch's 7-round median); delta = V - V0; floor = |V0b - V0|;
+# per_match = delta / matches (all regime); verdict NULL when |delta| <= floor
+cell      subject   mode  var            ns           V0       delta     floor  per_match verdict
+dfa-hat   short     first V0b         17.12        17.43       -0.31      0.31          - NULL
+dfa-hat   short     first V1          19.03        17.43       +1.60      0.31          - LOSS
+dfa-hat   short     first S1          35.37        17.43      +17.94      0.31          - LOSS
+dfa-hat   short     first A1          23.98        17.43       +6.55      0.31          - LOSS
+dfa-hat   short     first P2w         14.92        17.43       -2.51      0.31          - WIN
+dfa-hat   short     first P3w         19.37        17.43       +1.94      0.31          - LOSS
+dfa-hat   short     first P4w         25.83        17.43       +8.40      0.31          - LOSS
+dfa-hat   short     first PWw         30.18        17.43      +12.75      0.31          - LOSS
+dfa-hat   short     first P2s         28.96        17.43      +11.53      0.31          - LOSS
+dfa-hat   short     first P3s         46.83        17.43      +29.40      0.31          - LOSS
+dfa-hat   short     first P4s         40.79        17.43      +23.36      0.31          - LOSS
+dfa-hat   short     first PWs         79.24        17.43      +61.81      0.31          - LOSS
+dfa-hat   short     first P2a         29.39        17.43      +11.96      0.31          - LOSS
+dfa-hat   short     first P3a         47.25        17.43      +29.82      0.31          - LOSS
+dfa-hat   short     first P4a         41.27        17.43      +23.84      0.31          - LOSS
+dfa-hat   short     first PWa         75.42        17.43      +57.99      0.31          - LOSS
+dfa-hat   short     all   V0b         17.22        17.04       +0.18      0.18          - NULL
+dfa-hat   short     all   V1          18.91        17.04       +1.87      0.18          - LOSS
+dfa-hat   short     all   S1          35.39        17.04      +18.35      0.18          - LOSS
+dfa-hat   short     all   A1          23.62        17.04       +6.58      0.18          - LOSS
+dfa-hat   short     all   P2w         14.65        17.04       -2.39      0.18          - WIN
+dfa-hat   short     all   P3w         18.78        17.04       +1.74      0.18          - LOSS
+dfa-hat   short     all   P4w         25.78        17.04       +8.74      0.18          - LOSS
+dfa-hat   short     all   PWw         30.51        17.04      +13.47      0.18          - LOSS
+dfa-hat   short     all   P2s         29.25        17.04      +12.21      0.18          - LOSS
+dfa-hat   short     all   P3s         47.93        17.04      +30.89      0.18          - LOSS
+dfa-hat   short     all   P4s         40.43        17.04      +23.39      0.18          - LOSS
+dfa-hat   short     all   PWs         79.33        17.04      +62.29      0.18          - LOSS
+dfa-hat   short     all   P2a         29.50        17.04      +12.46      0.18          - LOSS
+dfa-hat   short     all   P3a         47.55        17.04      +30.51      0.18          - LOSS
+dfa-hat   short     all   P4a         41.32        17.04      +24.28      0.18          - LOSS
+dfa-hat   short     all   PWa         77.14        17.04      +60.10      0.18          - LOSS
+dfa-hat   prose64k  first V0b      26699.00     26923.87     -224.87    224.87          - NULL
+dfa-hat   prose64k  first V1       32920.07     26923.87    +5996.20    224.87          - LOSS
+dfa-hat   prose64k  first S1       22375.56     26923.87    -4548.31    224.87          - WIN
+dfa-hat   prose64k  first A1       21760.32     26923.87    -5163.55    224.87          - WIN
+dfa-hat   prose64k  first P2w      20965.62     26923.87    -5958.25    224.87          - WIN
+dfa-hat   prose64k  first P3w      24786.55     26923.87    -2137.32    224.87          - WIN
+dfa-hat   prose64k  first P4w      33448.25     26923.87    +6524.38    224.87          - LOSS
+dfa-hat   prose64k  first PWw      41898.14     26923.87   +14974.27    224.87          - LOSS
+dfa-hat   prose64k  first P2s       6017.81     26923.87   -20906.06    224.87          - WIN
+dfa-hat   prose64k  first P3s       5037.89     26923.87   -21885.98    224.87          - WIN
+dfa-hat   prose64k  first P4s       6760.81     26923.87   -20163.06    224.87          - WIN
+dfa-hat   prose64k  first PWs       9752.34     26923.87   -17171.53    224.87          - WIN
+dfa-hat   prose64k  first P2a       4580.45     26923.87   -22343.42    224.87          - WIN
+dfa-hat   prose64k  first P3a       2173.26     26923.87   -24750.61    224.87          - WIN
+dfa-hat   prose64k  first P4a       2733.03     26923.87   -24190.84    224.87          - WIN
+dfa-hat   prose64k  first PWa       5421.83     26923.87   -21502.04    224.87          - WIN
+dfa-hat   prose64k  all   V0b      26782.58     26841.02      -58.44     58.44          - NULL
+dfa-hat   prose64k  all   V1       32848.86     26841.02    +6007.84     58.44          - LOSS
+dfa-hat   prose64k  all   S1       22362.09     26841.02    -4478.93     58.44          - WIN
+dfa-hat   prose64k  all   A1       21764.26     26841.02    -5076.76     58.44          - WIN
+dfa-hat   prose64k  all   P2w      20963.61     26841.02    -5877.41     58.44          - WIN
+dfa-hat   prose64k  all   P3w      24913.63     26841.02    -1927.39     58.44          - WIN
+dfa-hat   prose64k  all   P4w      33431.51     26841.02    +6590.49     58.44          - LOSS
+dfa-hat   prose64k  all   PWw      41909.10     26841.02   +15068.08     58.44          - LOSS
+dfa-hat   prose64k  all   P2s       6021.43     26841.02   -20819.59     58.44          - WIN
+dfa-hat   prose64k  all   P3s       5040.09     26841.02   -21800.93     58.44          - WIN
+dfa-hat   prose64k  all   P4s       6757.27     26841.02   -20083.75     58.44          - WIN
+dfa-hat   prose64k  all   PWs       9749.54     26841.02   -17091.48     58.44          - WIN
+dfa-hat   prose64k  all   P2a       4582.56     26841.02   -22258.46     58.44          - WIN
+dfa-hat   prose64k  all   P3a       2174.07     26841.02   -24666.95     58.44          - WIN
+dfa-hat   prose64k  all   P4a       2734.06     26841.02   -24106.96     58.44          - WIN
+dfa-hat   prose64k  all   PWa       5418.94     26841.02   -21422.08     58.44          - WIN
+dfa-hat   digits64k first V0b      12344.67     12358.78      -14.11     14.11          - WIN
+dfa-hat   digits64k first V1        9077.94     12358.78    -3280.84     14.11          - WIN
+dfa-hat   digits64k first S1        1364.62     12358.78   -10994.16     14.11          - WIN
+dfa-hat   digits64k first A1         668.86     12358.78   -11689.92     14.11          - WIN
+dfa-hat   digits64k first P2w      17495.76     12358.78    +5136.98     14.11          - LOSS
+dfa-hat   digits64k first P3w      24659.94     12358.78   +12301.16     14.11          - LOSS
+dfa-hat   digits64k first P4w      33391.03     12358.78   +21032.25     14.11          - LOSS
+dfa-hat   digits64k first PWw      41734.49     12358.78   +29375.71     14.11          - LOSS
+dfa-hat   digits64k first P2s       2580.29     12358.78    -9778.49     14.11          - WIN
+dfa-hat   digits64k first P3s       4766.20     12358.78    -7592.58     14.11          - WIN
+dfa-hat   digits64k first P4s       6719.20     12358.78    -5639.58     14.11          - WIN
+dfa-hat   digits64k first PWs       9606.15     12358.78    -2752.63     14.11          - WIN
+dfa-hat   digits64k first P2a       1268.72     12358.78   -11090.06     14.11          - WIN
+dfa-hat   digits64k first P3a       1859.43     12358.78   -10499.35     14.11          - WIN
+dfa-hat   digits64k first P4a       2677.56     12358.78    -9681.22     14.11          - WIN
+dfa-hat   digits64k first PWa       5292.98     12358.78    -7065.80     14.11          - WIN
+dfa-hat   digits64k all   V0b      12347.54     12359.10      -11.56     11.56          - NULL
+dfa-hat   digits64k all   V1        9078.96     12359.10    -3280.14     11.56          - WIN
+dfa-hat   digits64k all   S1        1364.58     12359.10   -10994.52     11.56          - WIN
+dfa-hat   digits64k all   A1         668.38     12359.10   -11690.72     11.56          - WIN
+dfa-hat   digits64k all   P2w      17500.28     12359.10    +5141.18     11.56          - LOSS
+dfa-hat   digits64k all   P3w      22211.98     12359.10    +9852.88     11.56          - LOSS
+dfa-hat   digits64k all   P4w      33400.87     12359.10   +21041.77     11.56          - LOSS
+dfa-hat   digits64k all   PWw      41725.50     12359.10   +29366.40     11.56          - LOSS
+dfa-hat   digits64k all   P2s       2579.76     12359.10    -9779.34     11.56          - WIN
+dfa-hat   digits64k all   P3s       4764.41     12359.10    -7594.69     11.56          - WIN
+dfa-hat   digits64k all   P4s       6713.35     12359.10    -5645.75     11.56          - WIN
+dfa-hat   digits64k all   PWs       9606.39     12359.10    -2752.71     11.56          - WIN
+dfa-hat   digits64k all   P2a       1267.81     12359.10   -11091.29     11.56          - WIN
+dfa-hat   digits64k all   P3a       1860.65     12359.10   -10498.45     11.56          - WIN
+dfa-hat   digits64k all   P4a       2679.73     12359.10    -9679.37     11.56          - WIN
+dfa-hat   digits64k all   PWa       5292.98     12359.10    -7066.12     11.56          - WIN
+dfa-hat   prose1m   first V0b    1369976.08   1370524.94     -548.86    548.86          - NULL
+dfa-hat   prose1m   first V1     1606194.53   1370524.94  +235669.59    548.86          - LOSS
+dfa-hat   prose1m   first S1     1078187.27   1370524.94  -292337.67    548.86          - WIN
+dfa-hat   prose1m   first A1     1052977.89   1370524.94  -317547.05    548.86          - WIN
+dfa-hat   prose1m   first P2w     443977.27   1370524.94  -926547.67    548.86          - WIN
+dfa-hat   prose1m   first P3w     396266.41   1370524.94  -974258.53    548.86          - WIN
+dfa-hat   prose1m   first P4w     535714.46   1370524.94  -834810.48    548.86          - WIN
+dfa-hat   prose1m   first PWw     670940.48   1370524.94  -699584.46    548.86          - WIN
+dfa-hat   prose1m   first P2s      99040.52   1370524.94 -1271484.42    548.86          - WIN
+dfa-hat   prose1m   first P3s      81211.40   1370524.94 -1289313.54    548.86          - WIN
+dfa-hat   prose1m   first P4s     108400.88   1370524.94 -1262124.06    548.86          - WIN
+dfa-hat   prose1m   first PWs     156268.37   1370524.94 -1214256.57    548.86          - WIN
+dfa-hat   prose1m   first P2a      76282.77   1370524.94 -1294242.17    548.86          - WIN
+dfa-hat   prose1m   first P3a      34769.32   1370524.94 -1335755.62    548.86          - WIN
+dfa-hat   prose1m   first P4a      43271.29   1370524.94 -1327253.65    548.86          - WIN
+dfa-hat   prose1m   first PWa      87088.46   1370524.94 -1283436.48    548.86          - WIN
+dfa-hat   prose1m   all   V0b    1368685.06   1369159.23     -474.17    474.17          - NULL
+dfa-hat   prose1m   all   V1     1603830.72   1369159.23  +234671.49    474.17          - LOSS
+dfa-hat   prose1m   all   S1     1077245.34   1369159.23  -291913.89    474.17          - WIN
+dfa-hat   prose1m   all   A1     1053286.61   1369159.23  -315872.62    474.17          - WIN
+dfa-hat   prose1m   all   P2w     443779.40   1369159.23  -925379.83    474.17          - WIN
+dfa-hat   prose1m   all   P3w     396464.60   1369159.23  -972694.63    474.17          - WIN
+dfa-hat   prose1m   all   P4w     535773.30   1369159.23  -833385.93    474.17          - WIN
+dfa-hat   prose1m   all   PWw     670562.81   1369159.23  -698596.42    474.17          - WIN
+dfa-hat   prose1m   all   P2s      99123.18   1369159.23 -1270036.05    474.17          - WIN
+dfa-hat   prose1m   all   P3s      80825.62   1369159.23 -1288333.61    474.17          - WIN
+dfa-hat   prose1m   all   P4s     108388.49   1369159.23 -1260770.74    474.17          - WIN
+dfa-hat   prose1m   all   PWs     156704.00   1369159.23 -1212455.23    474.17          - WIN
+dfa-hat   prose1m   all   P2a      76217.02   1369159.23 -1292942.21    474.17          - WIN
+dfa-hat   prose1m   all   P3a      34915.95   1369159.23 -1334243.28    474.17          - WIN
+dfa-hat   prose1m   all   P4a      43320.23   1369159.23 -1325839.00    474.17          - WIN
+dfa-hat   prose1m   all   PWa      87012.25   1369159.23 -1282146.98    474.17          - WIN
+dfa-hat   mix64k    first V0b      12360.42     12366.65       -6.23      6.23          - NULL
+dfa-hat   mix64k    first V1        9080.34     12366.65    -3286.31      6.23          - WIN
+dfa-hat   mix64k    first S1        1362.08     12366.65   -11004.57      6.23          - WIN
+dfa-hat   mix64k    first A1         668.53     12366.65   -11698.12      6.23          - WIN
+dfa-hat   mix64k    first P2w      17507.13     12366.65    +5140.48      6.23          - LOSS
+dfa-hat   mix64k    first P3w      22803.29     12366.65   +10436.64      6.23          - LOSS
+dfa-hat   mix64k    first P4w      33393.47     12366.65   +21026.82      6.23          - LOSS
+dfa-hat   mix64k    first PWw      41717.13     12366.65   +29350.48      6.23          - LOSS
+dfa-hat   mix64k    first P2s       2579.76     12366.65    -9786.89      6.23          - WIN
+dfa-hat   mix64k    first P3s       4766.83     12366.65    -7599.82      6.23          - WIN
+dfa-hat   mix64k    first P4s       6711.24     12366.65    -5655.41      6.23          - WIN
+dfa-hat   mix64k    first PWs       9604.46     12366.65    -2762.19      6.23          - WIN
+dfa-hat   mix64k    first P2a       1265.51     12366.65   -11101.14      6.23          - WIN
+dfa-hat   mix64k    first P3a       1862.23     12366.65   -10504.42      6.23          - WIN
+dfa-hat   mix64k    first P4a       2678.49     12366.65    -9688.16      6.23          - WIN
+dfa-hat   mix64k    first PWa       5291.19     12366.65    -7075.46      6.23          - WIN
+dfa-hat   mix64k    all   V0b      12361.14     12374.57      -13.43     13.43          - WIN
+dfa-hat   mix64k    all   V1        9078.13     12374.57    -3296.44     13.43          - WIN
+dfa-hat   mix64k    all   S1        1362.46     12374.57   -11012.11     13.43          - WIN
+dfa-hat   mix64k    all   A1         668.00     12374.57   -11706.57     13.43          - WIN
+dfa-hat   mix64k    all   P2w      17500.10     12374.57    +5125.53     13.43          - LOSS
+dfa-hat   mix64k    all   P3w      23361.88     12374.57   +10987.31     13.43          - LOSS
+dfa-hat   mix64k    all   P4w      33391.73     12374.57   +21017.16     13.43          - LOSS
+dfa-hat   mix64k    all   PWw      41705.35     12374.57   +29330.78     13.43          - LOSS
+dfa-hat   mix64k    all   P2s       2578.21     12374.57    -9796.36     13.43          - WIN
+dfa-hat   mix64k    all   P3s       4767.99     12374.57    -7606.58     13.43          - WIN
+dfa-hat   mix64k    all   P4s       6712.87     12374.57    -5661.70     13.43          - WIN
+dfa-hat   mix64k    all   PWs       9602.45     12374.57    -2772.12     13.43          - WIN
+dfa-hat   mix64k    all   P2a       1265.36     12374.57   -11109.21     13.43          - WIN
+dfa-hat   mix64k    all   P3a       1862.46     12374.57   -10512.11     13.43          - WIN
+dfa-hat   mix64k    all   P4a       2677.47     12374.57    -9697.10     13.43          - WIN
+dfa-hat   mix64k    all   PWa       5290.78     12374.57    -7083.79     13.43          - WIN
+dfa-hat   docs64k   first V0b       1503.40      1493.32      +10.08     10.08          - LOSS
+dfa-hat   docs64k   first V1        1844.87      1493.32     +351.55     10.08          - LOSS
+dfa-hat   docs64k   first S1        1261.94      1493.32     -231.38     10.08          - WIN
+dfa-hat   docs64k   first A1        1233.32      1493.32     -260.00     10.08          - WIN
+dfa-hat   docs64k   first P2w       1307.47      1493.32     -185.85     10.08          - WIN
+dfa-hat   docs64k   first P3w       1326.55      1493.32     -166.77     10.08          - WIN
+dfa-hat   docs64k   first P4w       1757.90      1493.32     +264.58     10.08          - LOSS
+dfa-hat   docs64k   first PWw       2180.81      1493.32     +687.49     10.08          - LOSS
+dfa-hat   docs64k   first P2s        518.62      1493.32     -974.70     10.08          - WIN
+dfa-hat   docs64k   first P3s        331.35      1493.32    -1161.97     10.08          - WIN
+dfa-hat   docs64k   first P4s        381.04      1493.32    -1112.28     10.08          - WIN
+dfa-hat   docs64k   first PWs        518.53      1493.32     -974.79     10.08          - WIN
+dfa-hat   docs64k   first P2a        447.76      1493.32    -1045.56     10.08          - WIN
+dfa-hat   docs64k   first P3a        187.47      1493.32    -1305.85     10.08          - WIN
+dfa-hat   docs64k   first P4a        169.38      1493.32    -1323.94     10.08          - WIN
+dfa-hat   docs64k   first PWa        291.37      1493.32    -1201.95     10.08          - WIN
+dfa-hat   docs64k   all   V0b      29259.81     29404.22     -144.41    144.41    -20.630 NULL
+dfa-hat   docs64k   all   V1       35198.26     29404.22    +5794.04    144.41   +827.720 LOSS
+dfa-hat   docs64k   all   S1       23955.16     29404.22    -5449.06    144.41   -778.437 WIN
+dfa-hat   docs64k   all   A1       23386.66     29404.22    -6017.56    144.41   -859.651 WIN
+dfa-hat   docs64k   all   P2w      23631.16     29404.22    -5773.06    144.41   -824.723 WIN
+dfa-hat   docs64k   all   P3w      25270.33     29404.22    -4133.89    144.41   -590.556 WIN
+dfa-hat   docs64k   all   P4w      33965.31     29404.22    +4561.09    144.41   +651.584 LOSS
+dfa-hat   docs64k   all   PWw      42285.47     29404.22   +12881.25    144.41  +1840.179 LOSS
+dfa-hat   docs64k   all   P2s       8568.17     29404.22   -20836.05    144.41  -2976.579 WIN
+dfa-hat   docs64k   all   P3s       5875.11     29404.22   -23529.11    144.41  -3361.301 WIN
+dfa-hat   docs64k   all   P4s       7246.31     29404.22   -22157.91    144.41  -3165.416 WIN
+dfa-hat   docs64k   all   PWs      10069.94     29404.22   -19334.28    144.41  -2762.040 WIN
+dfa-hat   docs64k   all   P2a       7144.41     29404.22   -22259.81    144.41  -3179.973 WIN
+dfa-hat   docs64k   all   P3a       3037.64     29404.22   -26366.58    144.41  -3766.654 WIN
+dfa-hat   docs64k   all   P4a       3149.95     29404.22   -26254.27    144.41  -3750.610 WIN
+dfa-hat   docs64k   all   PWa       5662.19     29404.22   -23742.03    144.41  -3391.719 WIN
+dfa-hat   docs1m    first V0b       1499.25      1494.87       +4.38      4.38          - LOSS
+dfa-hat   docs1m    first V1        1841.69      1494.87     +346.82      4.38          - LOSS
+dfa-hat   docs1m    first S1        1258.53      1494.87     -236.34      4.38          - WIN
+dfa-hat   docs1m    first A1        1233.77      1494.87     -261.10      4.38          - WIN
+dfa-hat   docs1m    first P2w       1302.75      1494.87     -192.12      4.38          - WIN
+dfa-hat   docs1m    first P3w       1322.16      1494.87     -172.71      4.38          - WIN
+dfa-hat   docs1m    first P4w       1751.96      1494.87     +257.09      4.38          - LOSS
+dfa-hat   docs1m    first PWw       2173.75      1494.87     +678.88      4.38          - LOSS
+dfa-hat   docs1m    first P2s        517.42      1494.87     -977.45      4.38          - WIN
+dfa-hat   docs1m    first P3s        330.50      1494.87    -1164.37      4.38          - WIN
+dfa-hat   docs1m    first P4s        380.21      1494.87    -1114.66      4.38          - WIN
+dfa-hat   docs1m    first PWs        518.11      1494.87     -976.76      4.38          - WIN
+dfa-hat   docs1m    first P2a        449.64      1494.87    -1045.23      4.38          - WIN
+dfa-hat   docs1m    first P3a        188.00      1494.87    -1306.87      4.38          - WIN
+dfa-hat   docs1m    first P4a        170.47      1494.87    -1324.40      4.38          - WIN
+dfa-hat   docs1m    first PWa        290.84      1494.87    -1204.03      4.38          - WIN
+dfa-hat   docs1m    all   V0b    1574649.19   1579598.19    -4949.00   4949.00    -27.343 NULL
+dfa-hat   docs1m    all   V1     1764990.06   1579598.19  +185391.87   4949.00  +1024.264 LOSS
+dfa-hat   docs1m    all   S1     1247638.73   1579598.19  -331959.46   4949.00  -1834.030 WIN
+dfa-hat   docs1m    all   A1     1201494.12   1579598.19  -378104.07   4949.00  -2088.973 WIN
+dfa-hat   docs1m    all   P2w     486470.78   1579598.19 -1093127.41   4949.00  -6039.378 WIN
+dfa-hat   docs1m    all   P3w     405877.19   1579598.19 -1173721.00   4949.00  -6484.646 WIN
+dfa-hat   docs1m    all   P4w     544067.60   1579598.19 -1035530.59   4949.00  -5721.163 WIN
+dfa-hat   docs1m    all   PWw     675606.56   1579598.19  -903991.63   4949.00  -4994.429 WIN
+dfa-hat   docs1m    all   P2s     233566.94   1579598.19 -1346031.25   4949.00  -7436.637 WIN
+dfa-hat   docs1m    all   P3s      92144.49   1579598.19 -1487453.70   4949.00  -8217.976 WIN
+dfa-hat   docs1m    all   P4s     116864.36   1579598.19 -1462733.83   4949.00  -8081.402 WIN
+dfa-hat   docs1m    all   PWs     161191.39   1579598.19 -1418406.80   4949.00  -7836.502 WIN
+dfa-hat   docs1m    all   P2a     156395.48   1579598.19 -1423202.71   4949.00  -7862.998 WIN
+dfa-hat   docs1m    all   P3a      46393.08   1579598.19 -1533205.11   4949.00  -8470.746 WIN
+dfa-hat   docs1m    all   P4a      50775.70   1579598.19 -1528822.49   4949.00  -8446.533 WIN
+dfa-hat   docs1m    all   PWa      91052.03   1579598.19 -1488546.16   4949.00  -8224.012 WIN
+dfa-hat   code64k   first V0b       1430.85      1439.15       -8.30      8.30          - WIN
+dfa-hat   code64k   first V1        1656.44      1439.15     +217.29      8.30          - LOSS
+dfa-hat   code64k   first S1        1103.21      1439.15     -335.94      8.30          - WIN
+dfa-hat   code64k   first A1        1070.31      1439.15     -368.84      8.30          - WIN
+dfa-hat   code64k   first P2w       1225.81      1439.15     -213.34      8.30          - WIN
+dfa-hat   code64k   first P3w       1318.63      1439.15     -120.52      8.30          - WIN
+dfa-hat   code64k   first P4w       1817.17      1439.15     +378.02      8.30          - LOSS
+dfa-hat   code64k   first PWw       2266.32      1439.15     +827.17      8.30          - LOSS
+dfa-hat   code64k   first P2s        420.49      1439.15    -1018.66      8.30          - WIN
+dfa-hat   code64k   first P3s        293.54      1439.15    -1145.61      8.30          - WIN
+dfa-hat   code64k   first P4s        385.83      1439.15    -1053.32      8.30          - WIN
+dfa-hat   code64k   first PWs        544.69      1439.15     -894.46      8.30          - WIN
+dfa-hat   code64k   first P2a        343.54      1439.15    -1095.61      8.30          - WIN
+dfa-hat   code64k   first P3a        137.39      1439.15    -1301.76      8.30          - WIN
+dfa-hat   code64k   first P4a        164.28      1439.15    -1274.87      8.30          - WIN
+dfa-hat   code64k   first PWa        305.77      1439.15    -1133.38      8.30          - WIN
+dfa-hat   code64k   all   V0b      28699.12     28840.70     -141.58    141.58     -2.484 WIN
+dfa-hat   code64k   all   V1       33729.35     28840.70    +4888.65    141.58    +85.766 LOSS
+dfa-hat   code64k   all   S1       22990.43     28840.70    -5850.27    141.58   -102.636 WIN
+dfa-hat   code64k   all   A1       22399.83     28840.70    -6440.87    141.58   -112.998 WIN
+dfa-hat   code64k   all   P2w      23205.20     28840.70    -5635.50    141.58    -98.868 WIN
+dfa-hat   code64k   all   P3w      25925.75     28840.70    -2914.95    141.58    -51.139 WIN
+dfa-hat   code64k   all   P4w      34861.13     28840.70    +6020.43    141.58   +105.622 LOSS
+dfa-hat   code64k   all   PWw      43139.52     28840.70   +14298.82    141.58   +250.856 LOSS
+dfa-hat   code64k   all   P2s       8371.48     28840.70   -20469.22    141.58   -359.109 WIN
+dfa-hat   code64k   all   P3s       6617.10     28840.70   -22223.60    141.58   -389.888 WIN
+dfa-hat   code64k   all   P4s       8511.09     28840.70   -20329.61    141.58   -356.660 WIN
+dfa-hat   code64k   all   PWs      11258.50     28840.70   -17582.20    141.58   -308.460 WIN
+dfa-hat   code64k   all   P2a       6873.24     28840.70   -21967.46    141.58   -385.394 WIN
+dfa-hat   code64k   all   P3a       3744.36     28840.70   -25096.34    141.58   -440.287 WIN
+dfa-hat   code64k   all   P4a       4293.91     28840.70   -24546.79    141.58   -430.645 WIN
+dfa-hat   code64k   all   PWa       6708.88     28840.70   -22131.82    141.58   -388.278 WIN
+dfa-hat   code1m    first V0b       1440.85      1436.98       +3.87      3.87          - NULL
+dfa-hat   code1m    first V1        1658.20      1436.98     +221.22      3.87          - LOSS
+dfa-hat   code1m    first S1        1102.81      1436.98     -334.17      3.87          - WIN
+dfa-hat   code1m    first A1        1071.26      1436.98     -365.72      3.87          - WIN
+dfa-hat   code1m    first P2w       1226.08      1436.98     -210.90      3.87          - WIN
+dfa-hat   code1m    first P3w       1342.51      1436.98      -94.47      3.87          - WIN
+dfa-hat   code1m    first P4w       1817.58      1436.98     +380.60      3.87          - LOSS
+dfa-hat   code1m    first PWw       2265.29      1436.98     +828.31      3.87          - LOSS
+dfa-hat   code1m    first P2s        422.59      1436.98    -1014.39      3.87          - WIN
+dfa-hat   code1m    first P3s        294.11      1436.98    -1142.87      3.87          - WIN
+dfa-hat   code1m    first P4s        385.87      1436.98    -1051.11      3.87          - WIN
+dfa-hat   code1m    first PWs        545.86      1436.98     -891.12      3.87          - WIN
+dfa-hat   code1m    first P2a        344.53      1436.98    -1092.45      3.87          - WIN
+dfa-hat   code1m    first P3a        139.42      1436.98    -1297.56      3.87          - WIN
+dfa-hat   code1m    first P4a        165.76      1436.98    -1271.22      3.87          - WIN
+dfa-hat   code1m    first PWa        306.23      1436.98    -1130.75      3.87          - WIN
+dfa-hat   code1m    all   V0b    1412726.22   1414978.12    -2251.90   2251.90     -4.843 WIN
+dfa-hat   code1m    all   V1     1598537.16   1414978.12  +183559.04   2251.90   +394.751 LOSS
+dfa-hat   code1m    all   S1     1116872.58   1414978.12  -298105.54   2251.90   -641.087 WIN
+dfa-hat   code1m    all   A1     1101509.88   1414978.12  -313468.24   2251.90   -674.125 WIN
+dfa-hat   code1m    all   P2w     507841.80   1414978.12  -907136.32   2251.90  -1950.831 WIN
+dfa-hat   code1m    all   P3w     409398.24   1414978.12 -1005579.88   2251.90  -2162.537 WIN
+dfa-hat   code1m    all   P4w     549254.46   1414978.12  -865723.66   2251.90  -1861.771 WIN
+dfa-hat   code1m    all   PWw     682156.79   1414978.12  -732821.33   2251.90  -1575.960 WIN
+dfa-hat   code1m    all   P2s     247575.90   1414978.12 -1167402.22   2251.90  -2510.542 WIN
+dfa-hat   code1m    all   P3s      95374.04   1414978.12 -1319604.08   2251.90  -2837.858 WIN
+dfa-hat   code1m    all   P4s     123881.17   1414978.12 -1291096.95   2251.90  -2776.553 WIN
+dfa-hat   code1m    all   PWs     168899.66   1414978.12 -1246078.46   2251.90  -2679.739 WIN
+dfa-hat   code1m    all   P2a     229413.04   1414978.12 -1185565.08   2251.90  -2549.602 WIN
+dfa-hat   code1m    all   P3a      49828.74   1414978.12 -1365149.38   2251.90  -2935.805 WIN
+dfa-hat   code1m    all   P4a      57268.09   1414978.12 -1357710.03   2251.90  -2919.807 WIN
+dfa-hat   code1m    all   PWa      98351.97   1414978.12 -1316626.15   2251.90  -2831.454 WIN
+
+## per-use counters (counting build bin/<cell>/<V>/cnt, one pass, no clock)
+# calls = rx_search calls in the pass; uses = next_candidate calls; cold = uses that found the state empty;
+# cache_hit = uses answered from the cached mask; cache_pass = uses whose cached block held no member (scan resumed at top);
+# xcall = cache-served uses whose block was filled in an EARLIER call (KEEP only); skipped = candidate tests the cache
+# made unnecessary (lanes already known to miss); head_hit/head_bytes = V2's scalar prologue; blocks = block evaluations
+cell     var  subject    mode   calls  uses   cold  cache_hit  cache_pass  xcall  skipped  head_hit  head_bytes  blocks
+dfa-hat  V1   short      first  1      3      1     0          1           0      1        0         0           5
+dfa-hat  V1   short      all    1      3      1     0          1           0      1        0         0           5
+dfa-hat  V1   prose64k   first  1      4717   1     510        1501        0      4213     0         0           7396
+dfa-hat  V1   prose64k   all    1      4717   1     510        1501        0      4213     0         0           7396
+dfa-hat  V1   digits64k  first  1      1      1     0          0           0      0        0         0           8192
+dfa-hat  V1   digits64k  all    1      1      1     0          0           0      0        0         0           8192
+dfa-hat  V1   prose1m    first  1      75836  1     8359       23285       0      66671    0         0           118004
+dfa-hat  V1   prose1m    all    1      75836  1     8359       23285       0      66671    0         0           118004
+dfa-hat  V1   mix64k     first  1      1      1     0          0           0      0        0         0           8192
+dfa-hat  V1   mix64k     all    1      1      1     0          0           0      0        0         0           8192
+dfa-hat  V1   docs64k    first  1      284    1     43         97          0      308      0         0           381
+dfa-hat  V1   docs64k    all    8      5668   8     990        1855        0      5695     0         0           7393
+dfa-hat  V1   docs1m     first  1      284    1     43         97          0      308      0         0           381
+dfa-hat  V1   docs1m     all    182    89993  182   16024      29046       0      91956    0         0           118437
+dfa-hat  V1   code64k    first  1      251    1     31         83          0      281      0         0           405
+dfa-hat  V1   code64k    all    58     5119   58    886        1581        0      5128     0         0           7400
+dfa-hat  V1   code1m     first  1      251    1     31         83          0      281      0         0           405
+dfa-hat  V1   code1m     all    466    79608  466   13025      26376       0      84820    0         0           118847
+dfa-hat  S1   short      first  1      3      1     1          1           0      2        0         0           1
+dfa-hat  S1   short      all    1      3      1     1          1           0      2        0         0           1
+dfa-hat  S1   prose64k   first  1      4717   1     3709       630         0      32420    0         0           1010
+dfa-hat  S1   prose64k   all    1      4717   1     3709       630         0      32420    0         0           1010
+dfa-hat  S1   digits64k  first  1      1      1     0          0           0      0        0         0           1024
+dfa-hat  S1   digits64k  all    1      1      1     0          0           0      0        0         0           1024
+dfa-hat  S1   prose1m    first  1      75836  1     59701      10175       0      520806   0         0           16151
+dfa-hat  S1   prose1m    all    1      75836  1     59701      10175       0      520806   0         0           16151
+dfa-hat  S1   mix64k     first  1      1      1     0          0           0      0        0         0           1024
+dfa-hat  S1   mix64k     all    1      1      1     0          0           0      0        0         0           1024
+dfa-hat  S1   docs64k    first  1      284    1     232        32          0      1570     0         0           53
+dfa-hat  S1   docs64k    all    8      5668   8     4697       573         0      30105    0         0           1014
+dfa-hat  S1   docs1m     first  1      284    1     232        32          0      1570     0         0           53
+dfa-hat  S1   docs1m     all    182    89993  182   73973      9764        0      507275   0         0           16245
+dfa-hat  S1   code64k    first  1      251    1     198        30          0      1713     0         0           55
+dfa-hat  S1   code64k    all    58     5119   58    4108       579         0      30766    0         0           1035
+dfa-hat  S1   code1m     first  1      251    1     198        30          0      1713     0         0           55
+dfa-hat  S1   code1m     all    466    79608  466   63561      10070       0      511869   0         0           16368
+dfa-hat  A1   short      first  1      3      1     1          1           0      2        0         0           1
+dfa-hat  A1   short      all    1      3      1     1          1           0      2        0         0           1
+dfa-hat  A1   prose64k   first  1      4717   1     3709       630         0      32420    0         0           1010
+dfa-hat  A1   prose64k   all    1      4717   1     3709       630         0      32420    0         0           1010
+dfa-hat  A1   digits64k  first  1      1      1     0          0           0      0        0         0           1024
+dfa-hat  A1   digits64k  all    1      1      1     0          0           0      0        0         0           1024
+dfa-hat  A1   prose1m    first  1      75836  1     59701      10175       0      520806   0         0           16151
+dfa-hat  A1   prose1m    all    1      75836  1     59701      10175       0      520806   0         0           16151
+dfa-hat  A1   mix64k     first  1      1      1     0          0           0      0        0         0           1024
+dfa-hat  A1   mix64k     all    1      1      1     0          0           0      0        0         0           1024
+dfa-hat  A1   docs64k    first  1      284    1     232        32          0      1570     0         0           53
+dfa-hat  A1   docs64k    all    8      5668   8     4697       573         0      30105    0         0           1014
+dfa-hat  A1   docs1m     first  1      284    1     232        32          0      1570     0         0           53
+dfa-hat  A1   docs1m     all    182    89993  182   73973      9764        0      507275   0         0           16245
+dfa-hat  A1   code64k    first  1      251    1     198        30          0      1713     0         0           55
+dfa-hat  A1   code64k    all    58     5119   58    4108       579         0      30766    0         0           1035
+dfa-hat  A1   code1m     first  1      251    1     198        30          0      1713     0         0           55
+dfa-hat  A1   code1m     all    466    79608  466   63561      10070       0      511869   0         0           16368
+dfa-hat  P2w  short      first  1      1                                                                         5
+dfa-hat  P2w  short      all    1      1                                                                         5
+dfa-hat  P2w  prose64k   first  1      563                                                                       8081
+dfa-hat  P2w  prose64k   all    1      563                                                                       8081
+dfa-hat  P2w  digits64k  first  1      1                                                                         8192
+dfa-hat  P2w  digits64k  all    1      1                                                                         8192
+dfa-hat  P2w  prose1m    first  1      9329                                                                      129129
+dfa-hat  P2w  prose1m    all    1      9329                                                                      129129
+dfa-hat  P2w  mix64k     first  1      1                                                                         8192
+dfa-hat  P2w  mix64k     all    1      1                                                                         8192
+dfa-hat  P2w  docs64k    first  1      60                                                                        410
+dfa-hat  P2w  docs64k    all    8      878                                                                       7954
+dfa-hat  P2w  docs1m     first  1      60                                                                        410
+dfa-hat  P2w  docs1m     all    182    10825                                                                     128066
+dfa-hat  P2w  code64k    first  1      45                                                                        429
+dfa-hat  P2w  code64k    all    58     758                                                                       7995
+dfa-hat  P2w  code1m     first  1      45                                                                        429
+dfa-hat  P2w  code1m     all    466    11917                                                                     127741
+dfa-hat  P3w  short      first  1      1                                                                         5
+dfa-hat  P3w  short      all    1      1                                                                         5
+dfa-hat  P3w  prose64k   first  1      35                                                                        8180
+dfa-hat  P3w  prose64k   all    1      35                                                                        8180
+dfa-hat  P3w  digits64k  first  1      1                                                                         8192
+dfa-hat  P3w  digits64k  all    1      1                                                                         8192
+dfa-hat  P3w  prose1m    first  1      552                                                                       130930
+dfa-hat  P3w  prose1m    all    1      552                                                                       130930
+dfa-hat  P3w  mix64k     first  1      1                                                                         8192
+dfa-hat  P3w  mix64k     all    1      1                                                                         8192
+dfa-hat  P3w  docs64k    first  1      10                                                                        420
+dfa-hat  P3w  docs64k    all    8      118                                                                       8150
+dfa-hat  P3w  docs1m     first  1      10                                                                        420
+dfa-hat  P3w  docs1m     all    182    1571                                                                      130592
+dfa-hat  P3w  code64k    first  1      4                                                                         440
+dfa-hat  P3w  code64k    all    58     142                                                                       8162
+dfa-hat  P3w  code1m     first  1      4                                                                         440
+dfa-hat  P3w  code1m     all    466    1564                                                                      130635
+dfa-hat  P4w  short      first  1      1                                                                         5
+dfa-hat  P4w  short      all    1      1                                                                         5
+dfa-hat  P4w  prose64k   first  1      5                                                                         8191
+dfa-hat  P4w  prose64k   all    1      5                                                                         8191
+dfa-hat  P4w  digits64k  first  1      1                                                                         8192
+dfa-hat  P4w  digits64k  all    1      1                                                                         8192
+dfa-hat  P4w  prose1m    first  1      53                                                                        131056
+dfa-hat  P4w  prose1m    all    1      53                                                                        131056
+dfa-hat  P4w  mix64k     first  1      1                                                                         8192
+dfa-hat  P4w  mix64k     all    1      1                                                                         8192
+dfa-hat  P4w  docs64k    first  1      2                                                                         422
+dfa-hat  P4w  docs64k    all    8      46                                                                        8184
+dfa-hat  P4w  docs1m     first  1      2                                                                         422
+dfa-hat  P4w  docs1m     all    182    615                                                                       130931
+dfa-hat  P4w  code64k    first  1      1                                                                         441
+dfa-hat  P4w  code64k    all    58     96                                                                        8170
+dfa-hat  P4w  code1m     first  1      1                                                                         441
+dfa-hat  P4w  code1m     all    466    908                                                                       130839
+dfa-hat  PWw  short      first  1      1                                                                         5
+dfa-hat  PWw  short      all    1      1                                                                         5
+dfa-hat  PWw  prose64k   first  1      12                                                                        8189
+dfa-hat  PWw  prose64k   all    1      12                                                                        8189
+dfa-hat  PWw  digits64k  first  1      1                                                                         8192
+dfa-hat  PWw  digits64k  all    1      1                                                                         8192
+dfa-hat  PWw  prose1m    first  1      142                                                                       131024
+dfa-hat  PWw  prose1m    all    1      142                                                                       131024
+dfa-hat  PWw  mix64k     first  1      1                                                                         8192
+dfa-hat  PWw  mix64k     all    1      1                                                                         8192
+dfa-hat  PWw  docs64k    first  1      1                                                                         423
+dfa-hat  PWw  docs64k    all    8      35                                                                        8186
+dfa-hat  PWw  docs1m     first  1      1                                                                         423
+dfa-hat  PWw  docs1m     all    182    377                                                                       130982
+dfa-hat  PWw  code64k    first  1      1                                                                         441
+dfa-hat  PWw  code64k    all    58     74                                                                        8178
+dfa-hat  PWw  code1m     first  1      1                                                                         441
+dfa-hat  PWw  code1m     all    466    719                                                                       130888
+dfa-hat  P2s  short      first  1      1                                                                         1
+dfa-hat  P2s  short      all    1      1                                                                         1
+dfa-hat  P2s  prose64k   first  1      563                                                                       1023
+dfa-hat  P2s  prose64k   all    1      563                                                                       1023
+dfa-hat  P2s  digits64k  first  1      1                                                                         1024
+dfa-hat  P2s  digits64k  all    1      1                                                                         1024
+dfa-hat  P2s  prose1m    first  1      9329                                                                      16353
+dfa-hat  P2s  prose1m    all    1      9329                                                                      16353
+dfa-hat  P2s  mix64k     first  1      1                                                                         1024
+dfa-hat  P2s  mix64k     all    1      1                                                                         1024
+dfa-hat  P2s  docs64k    first  1      60                                                                        53
+dfa-hat  P2s  docs64k    all    8      878                                                                       1023
+dfa-hat  P2s  docs1m     first  1      60                                                                        53
+dfa-hat  P2s  docs1m     all    182    10825                                                                     16419
+dfa-hat  P2s  code64k    first  1      45                                                                        55
+dfa-hat  P2s  code64k    all    58     758                                                                       1049
+dfa-hat  P2s  code1m     first  1      45                                                                        55
+dfa-hat  P2s  code1m     all    466    11917                                                                     16533
+dfa-hat  P3s  short      first  1      1                                                                         1
+dfa-hat  P3s  short      all    1      1                                                                         1
+dfa-hat  P3s  prose64k   first  1      35                                                                        1024
+dfa-hat  P3s  prose64k   all    1      35                                                                        1024
+dfa-hat  P3s  digits64k  first  1      1                                                                         1024
+dfa-hat  P3s  digits64k  all    1      1                                                                         1024
+dfa-hat  P3s  prose1m    first  1      552                                                                       16382
+dfa-hat  P3s  prose1m    all    1      552                                                                       16382
+dfa-hat  P3s  mix64k     first  1      1                                                                         1024
+dfa-hat  P3s  mix64k     all    1      1                                                                         1024
+dfa-hat  P3s  docs64k    first  1      10                                                                        53
+dfa-hat  P3s  docs64k    all    8      118                                                                       1028
+dfa-hat  P3s  docs1m     first  1      10                                                                        53
+dfa-hat  P3s  docs1m     all    182    1571                                                                      16461
+dfa-hat  P3s  code64k    first  1      4                                                                         56
+dfa-hat  P3s  code64k    all    58     142                                                                       1052
+dfa-hat  P3s  code1m     first  1      4                                                                         56
+dfa-hat  P3s  code1m     all    466    1564                                                                      16584
+dfa-hat  P4s  short      first  1      1                                                                         1
+dfa-hat  P4s  short      all    1      1                                                                         1
+dfa-hat  P4s  prose64k   first  1      5                                                                         1024
+dfa-hat  P4s  prose64k   all    1      5                                                                         1024
+dfa-hat  P4s  digits64k  first  1      1                                                                         1024
+dfa-hat  P4s  digits64k  all    1      1                                                                         1024
+dfa-hat  P4s  prose1m    first  1      53                                                                        16384
+dfa-hat  P4s  prose1m    all    1      53                                                                        16384
+dfa-hat  P4s  mix64k     first  1      1                                                                         1024
+dfa-hat  P4s  mix64k     all    1      1                                                                         1024
+dfa-hat  P4s  docs64k    first  1      2                                                                         53
+dfa-hat  P4s  docs64k    all    8      46                                                                        1028
+dfa-hat  P4s  docs1m     first  1      2                                                                         53
+dfa-hat  P4s  docs1m     all    182    615                                                                       16466
+dfa-hat  P4s  code64k    first  1      1                                                                         56
+dfa-hat  P4s  code64k    all    58     96                                                                        1052
+dfa-hat  P4s  code1m     first  1      1                                                                         56
+dfa-hat  P4s  code1m     all    466    908                                                                       16584
+dfa-hat  PWs  short      first  1      1                                                                         1
+dfa-hat  PWs  short      all    1      1                                                                         1
+dfa-hat  PWs  prose64k   first  1      12                                                                        1024
+dfa-hat  PWs  prose64k   all    1      12                                                                        1024
+dfa-hat  PWs  digits64k  first  1      1                                                                         1024
+dfa-hat  PWs  digits64k  all    1      1                                                                         1024
+dfa-hat  PWs  prose1m    first  1      142                                                                       16383
+dfa-hat  PWs  prose1m    all    1      142                                                                       16383
+dfa-hat  PWs  mix64k     first  1      1                                                                         1024
+dfa-hat  PWs  mix64k     all    1      1                                                                         1024
+dfa-hat  PWs  docs64k    first  1      1                                                                         53
+dfa-hat  PWs  docs64k    all    8      35                                                                        1028
+dfa-hat  PWs  docs1m     first  1      1                                                                         53
+dfa-hat  PWs  docs1m     all    182    377                                                                       16470
+dfa-hat  PWs  code64k    first  1      1                                                                         56
+dfa-hat  PWs  code64k    all    58     74                                                                        1052
+dfa-hat  PWs  code1m     first  1      1                                                                         56
+dfa-hat  PWs  code1m     all    466    719                                                                       16584
+dfa-hat  P2a  short      first  1      1                                                                         1
+dfa-hat  P2a  short      all    1      1                                                                         1
+dfa-hat  P2a  prose64k   first  1      563                                                                       1023
+dfa-hat  P2a  prose64k   all    1      563                                                                       1023
+dfa-hat  P2a  digits64k  first  1      1                                                                         1024
+dfa-hat  P2a  digits64k  all    1      1                                                                         1024
+dfa-hat  P2a  prose1m    first  1      9329                                                                      16353
+dfa-hat  P2a  prose1m    all    1      9329                                                                      16353
+dfa-hat  P2a  mix64k     first  1      1                                                                         1024
+dfa-hat  P2a  mix64k     all    1      1                                                                         1024
+dfa-hat  P2a  docs64k    first  1      60                                                                        53
+dfa-hat  P2a  docs64k    all    8      878                                                                       1023
+dfa-hat  P2a  docs1m     first  1      60                                                                        53
+dfa-hat  P2a  docs1m     all    182    10825                                                                     16419
+dfa-hat  P2a  code64k    first  1      45                                                                        55
+dfa-hat  P2a  code64k    all    58     758                                                                       1049
+dfa-hat  P2a  code1m     first  1      45                                                                        55
+dfa-hat  P2a  code1m     all    466    11917                                                                     16533
+dfa-hat  P3a  short      first  1      1                                                                         1
+dfa-hat  P3a  short      all    1      1                                                                         1
+dfa-hat  P3a  prose64k   first  1      35                                                                        1024
+dfa-hat  P3a  prose64k   all    1      35                                                                        1024
+dfa-hat  P3a  digits64k  first  1      1                                                                         1024
+dfa-hat  P3a  digits64k  all    1      1                                                                         1024
+dfa-hat  P3a  prose1m    first  1      552                                                                       16382
+dfa-hat  P3a  prose1m    all    1      552                                                                       16382
+dfa-hat  P3a  mix64k     first  1      1                                                                         1024
+dfa-hat  P3a  mix64k     all    1      1                                                                         1024
+dfa-hat  P3a  docs64k    first  1      10                                                                        53
+dfa-hat  P3a  docs64k    all    8      118                                                                       1028
+dfa-hat  P3a  docs1m     first  1      10                                                                        53
+dfa-hat  P3a  docs1m     all    182    1571                                                                      16461
+dfa-hat  P3a  code64k    first  1      4                                                                         56
+dfa-hat  P3a  code64k    all    58     142                                                                       1052
+dfa-hat  P3a  code1m     first  1      4                                                                         56
+dfa-hat  P3a  code1m     all    466    1564                                                                      16584
+dfa-hat  P4a  short      first  1      1                                                                         1
+dfa-hat  P4a  short      all    1      1                                                                         1
+dfa-hat  P4a  prose64k   first  1      5                                                                         1024
+dfa-hat  P4a  prose64k   all    1      5                                                                         1024
+dfa-hat  P4a  digits64k  first  1      1                                                                         1024
+dfa-hat  P4a  digits64k  all    1      1                                                                         1024
+dfa-hat  P4a  prose1m    first  1      53                                                                        16384
+dfa-hat  P4a  prose1m    all    1      53                                                                        16384
+dfa-hat  P4a  mix64k     first  1      1                                                                         1024
+dfa-hat  P4a  mix64k     all    1      1                                                                         1024
+dfa-hat  P4a  docs64k    first  1      2                                                                         53
+dfa-hat  P4a  docs64k    all    8      46                                                                        1028
+dfa-hat  P4a  docs1m     first  1      2                                                                         53
+dfa-hat  P4a  docs1m     all    182    615                                                                       16466
+dfa-hat  P4a  code64k    first  1      1                                                                         56
+dfa-hat  P4a  code64k    all    58     96                                                                        1052
+dfa-hat  P4a  code1m     first  1      1                                                                         56
+dfa-hat  P4a  code1m     all    466    908                                                                       16584
+dfa-hat  PWa  short      first  1      1                                                                         1
+dfa-hat  PWa  short      all    1      1                                                                         1
+dfa-hat  PWa  prose64k   first  1      12                                                                        1024
+dfa-hat  PWa  prose64k   all    1      12                                                                        1024
+dfa-hat  PWa  digits64k  first  1      1                                                                         1024
+dfa-hat  PWa  digits64k  all    1      1                                                                         1024
+dfa-hat  PWa  prose1m    first  1      142                                                                       16383
+dfa-hat  PWa  prose1m    all    1      142                                                                       16383
+dfa-hat  PWa  mix64k     first  1      1                                                                         1024
+dfa-hat  PWa  mix64k     all    1      1                                                                         1024
+dfa-hat  PWa  docs64k    first  1      1                                                                         53
+dfa-hat  PWa  docs64k    all    8      35                                                                        1028
+dfa-hat  PWa  docs1m     first  1      1                                                                         53
+dfa-hat  PWa  docs1m     all    182    377                                                                       16470
+dfa-hat  PWa  code64k    first  1      1                                                                         56
+dfa-hat  PWa  code64k    all    58     74                                                                        1052
+dfa-hat  PWa  code1m     first  1      1                                                                         56
+dfa-hat  PWa  code1m     all    466    719                                                                       16584
+time.sh: COMPLETE rows=288 wall=1036s

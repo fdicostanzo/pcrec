@@ -1,0 +1,14 @@
+patterns 4542 every 1
+ARM byte     all-refuse=378 identical=3168 mover=996
+    movers by walk: can_begin_match=527 can_begin_match-bounded=205 start_bytes-bounded=39 start_set=450
+ARM byte-vm  all-refuse=377 identical=1255 mover=2910
+    movers by walk: start_set=5820
+ARM utf8     all-refuse=367 identical=3211 mover=964
+    movers by walk: can_begin_match=520 can_begin_match-bounded=193 start_bytes-bounded=38 start_set=426
+ARM utf8-vm  all-refuse=365 identical=1270 mover=2907
+    movers by walk: start_set=5814
+ARM simd     all-refuse=378 identical=3168 mover=996
+    movers by walk: can_begin_match=527 can_begin_match-bounded=205 start_bytes-bounded=39 start_set=450
+distinct walk sets judged 505 coverable 432
+BAD 0
+CENSUS_DONE rc=0

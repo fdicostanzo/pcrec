@@ -1,0 +1,6 @@
+dig       rx_search      inline-walk  145 insns  helper-walk  154 insns  identical=False
+bounded   rx_search      inline-walk  143 insns  helper-walk  157 insns  identical=False
+dfa-hat   rx_search      inline-walk  146 insns  helper-walk  158 insns  identical=False
+vm-hat    rx_search_in   inline-walk  107 insns  helper-walk  112 insns  identical=False
+hex-run   rx_search      inline-walk  119 insns  helper-walk  116 insns  identical=False
+vm-hat-1  rx_search_in   inline-walk  137 insns  helper-walk  136 insns  identical=False

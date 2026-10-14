@@ -1,0 +1,5 @@
+03:48:18 r17r2 timing: host frank-desktop core 14 R 7 min_ms 50 gcc 15.2.0
+03:50:05 check rc=0: R17R2 CHECK: twins=190 calls=4037733349 mismatches=0
+03:51:32 planted check rc=0: R17R2 PLANT: cache twins caught = 152 of 152
+05:37:42 R17R2 TIMING COMPLETE rc=0 rows=9654 void=0
+0 perf=126

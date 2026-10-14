@@ -257,6 +257,118 @@ its DESIGN record.**
   (L-2, L-4, the x86 survey); both read in `linux_results.md`.
 
 Maintenance: update this file when files are added/removed or change roles.
+
+- `regime_eval.md` — [REGIME-EVAL] the REPLAY EVALUATOR for the knowledge-filtered
+  regime table (lane regeval, 2026-10-13, PROPOSED, design only; REV 1 lane regeval2,
+  2026-10-14, applies main's review: every judge cell STREAMED or ≥ 1 MiB with the
+  repeated 64 KiB column ungated, consumer-bound cells as a counted class with a
+  measured criterion, P-MOVE, Q-REVAL-1..11 resolved; a D6 panel follows). It covers:
+  - the cell and its knowledge record (P/N/M/E/H/A under S0-S3);
+  - measured ns from the grid1 harness at both layers, with the best taken from timed
+    arms, never the model;
+  - the dispatch gap, handed to [REGIME-TWIN];
+  - FIT on grids, published as a D166 set; JUDGE on held-out populations
+    ([REGIME-CORPUS] × D27-blinded patterns, the bench's published patterns, Zen 1;
+    ALPHA/spike reported only);
+  - the pattern→site mapping with a five-class completeness count (K35), and cell and
+    slot estimates;
+  - loose gate bars G1-G4 plus non-gating predictions, committed and hashed before the
+    judge slot (the evaluator refuses otherwise);
+  - failing-direction controls C1-C7 through the build's own knobs (set files, row
+    denies), with a moved-cell "visibly worse" rule and WITNESS cells for reach;
+  - one declared table, read through the kit's pick harness;
+  - diffable results and the plan E0-E12; Q-REVAL-1..11.
+
+  `regime_eval/` holds the in-sample replay PROTOTYPE on grid1's slot (own
+  CLAUDE.md). It reproduces regime_tables §3's S0 row exactly and finds that the
+  S1-off/S3 figures are the cost model's, not the rows', and that R3 lacks a SIMD-off
+  arm.
+- `setfind.md` — R-17 REVISION 2 (lane r17r5, 2026-10-12, design only, nothing
+  run). It designs the small-set FIND as the DEGENERATE CASE of D161's "search
+  for the window" (one span, one position, move-back 0, overshoot 0). Its
+  sections:
+  - §2: the window-contract mapping, with proposed fields W1-W10, each
+    marked as carried now or appended by R-18;
+  - §3: `mf_set_terms(set, K)` (cubes, modular arcs, the complement form,
+    an IDDFS with a labelled budget, EXACT/LOWEST tags);
+  - §4: the row contracts;
+  - §5: the non-wrapping arithmetic;
+  - §6: endianness at the load, with no `#if`;
+  - §7: main's question, answered: what pcrec provides for kit-owned local
+    storage (`mf_locals`, dominance, lifetime, cursor guarantees, stems);
+  - §8: the STATEFUL mask and ring forms, with the proof that they equal the
+    stateless form for every candidate sequence;
+  - §9: the adaptive switch, and the fallback density gate;
+  - §10: the define-time round-trip refusal;
+  - §11: the one routing event (a zero-mover seam, then one byte move);
+  - §12: the checks and sabotage rows S820-S824 and S826-S843;
+  - §13: the follow-up measurement;
+  - §14: pcrec-side needs, drafted as responses.md text;
+  - §R: all 36 ids of panel r3.
+
+  Report: `../../dev/lanes/r17r_report.md`. Harness text:
+  `probes/r17/*_r2.*`.
+  **REVISION 2.1 (lane r17r21, 2026-10-12, text only) applies the r4 light
+  re-check (`../../dev/reviews/2026-10-12-r4-memfn-setfind.md`, 24 ids); read
+  its §R4 first.** Each disposition was checked against the code, and four
+  were corrected there: the kit cannot tell functions apart by sink (K1-5);
+  the VM hat is defined above `<searchfn>_run`, since the prologue is written
+  first (K1-6); no flush change is needed (K2-1); and the new rows are
+  header-free instead of using a back-patched include (K2-6). Also: a helper
+  takes pcrec's table as a parameter (K1-1); the window fields gain D161's
+  origin, a signed move-back, a reserved unbounded value and a stated bit
+  (K2-4); `mf_plan` is dropped and `decl_point` replaces `locals_offered`; the
+  storage point moves to the forward-loop caller, with stems taken from the
+  holding function; and the test readers of the walk text are named. The
+  sabotage ids are renumbered to S826-S843. The harness is unchanged.
+  **REVISION 2.2 (lane r17r22, 2026-10-12, text only) folds every settled
+  direction and the slot2 timing (`probes/r17/reading_slot2.md`); read its
+  §R5 first.** It is the revision a build follows, after the bench relay.
+  - Forms: ONE stateful row, `pf_terms_mask`, whose body is
+    `next_candidate(&state, lo)` (D155 add. 4.1): `mask8_swar` at SWAR,
+    `mask64_sse2`/`mask64_avx2` as the later SIMD arms. The ring, the adaptive
+    switch, the stateless term-OR and `pf_memchr_set` are not built
+    (measured reasons, filed notes); K = 4.
+  - Primitives (D155 add. 4): per-width text over a guarded shared helper
+    block per file, keyed to abi + helper-set version, emitted only where a
+    site uses it (absent at R17-a, first in R17-b's abi event); byte order
+    lives in `load_vector` only.
+  - §9.2 rewritten (D162 add. 1): ADMIT when density is absent; decline only
+    on positive density ≥ ~300k with a state-losing call pattern; the
+    state-lost residual is [FINDALL-NEXT]'s.
+  - R17-b is gated by a bench relay on real subjects
+    (`setfind_bench_request.md`).
+  **REVISION 2.3 (lane r17r23, 2026-10-12, text only) applies the r5 light
+  re-check (`../../dev/reviews/2026-10-12-r5-memfn-setfind22.md`, K3-1..K3-11);
+  read its §R6 first.**
+  - The shared block becomes one sub-block PER WIDTH (W8 / V16 / V32), each
+    emitted only where a site uses that width (§3.4b): a SIMD-off artifact holds
+    W8 only, so the SIMD arms move no SIMD-off byte. The guards carry no
+    version and no value; K80's abi guard is the key (the kit cannot see
+    pcrec's abi).
+  - The body guard reads the bound `<stem>__c.n`; `mf_locals` binds, `mf_use`
+    checks neither; a trace trap compares the bound copy with the live
+    variable. R17-b const-qualifies `subject`/`subject_length` in the bodies
+    holding a stateful site.
+  - §9.2's (P) is uses per activation (the per-retry fact is a proxy only; a
+    trace counter `mfk-upa` is filed); `T_DENSE` is a measured bracket,
+    `B_EVEN` an unmeasured interpolation in (1, 4).
+  - N6: pcrec refuses a `-p` prefix that is `pcrec_mfk` or begins
+    `pcrec_mfk_`, case-folded (cli.md hunk drafted).
+  - Sabotage re-tabulated with S846-S852; two more ids needed for R17-b.
+- `setfind_bench_request.md` — the self-contained bench request DRAFT that
+  gates R17-b (lane r17r22, 2026-10-12): cells, arms, regimes, a proposed
+  numeric regression floor, the subject facts to report, the 64K caveat and
+  the questions for the bench. Main relays it (D78); the kit never writes to
+  pcrec-bench. Relayed as I-148 (advance notice). **Revision 2 (lane r17r23):**
+  the gate rule (reproduce-on-rerun; F from the bench's spread or three
+  layout-perturbed A/A pairs; the absolute criterion on every cell; no 0.05
+  floor) and "state-losing by construction" dropped, with uses per activation
+  asked.
+- `setfind_bench_corrigendum_I148.md` — the SHORT corrigendum to I-148 (lane
+  r17r23, 2026-10-12) that main relays to pcrec-bench before the run: the gate
+  rule and the withdrawn claim, each quoted before and after, applicable
+  without reading the design.
 - `window_search_game.md` — D161's "search for the window" GAMED OUT before any
   request (lane wingame, 2026-10-11, design study, counts only). It derives the span
   list from real patterns with an independent extractor checked against pcrec's
@@ -272,6 +384,37 @@ Maintenance: update this file when files are added/removed or change roles.
   contract needs omin beside omax, a per-route CONSUMER PRICE (three coefficients +
   the no-search cost), and optionally a joint survival rate. The kit does NOT need
   to own the look-forward. Instruments: `window_search_game/` (own CLAUDE.md).
+- `r17b_prime.md` — R17-b′'s DESIGN NOTE (lane r17bp, 2026-10-14, design
+  only, nothing built; a D6 panel follows). It covers the kit's
+  candidate-finder table (D161 add. 11) seeded with regime_tables rows R0,
+  R1/R2, R5/R6 and R7, with no iterator.
+  - **The table (§1).** One declared row table `fd_rows[]`. Each row has a
+    `needs` bitset, a condition over references into the active
+    measurement set, and a (stop, form) pick with an `unpaid` fallback.
+    Rows needing only compile-time knowledge collapse; rows needing N
+    become an emitted per-activation dispatch.
+  - **The dispatch (§2).** The form byte is set at the storage point. Every
+    use is one statement through a `<stem>__next` selector, the only shape
+    the floor rule and D155 allow. The C text is given for WALK+V1,
+    WALK+A1 and WALK+V1+A1.
+  - **The pay rule (§2.5).** It is a no-measurable-overhead rule.
+  - **The measurement table (§3, D166).** 18 families keyed (quantity,
+    form, site kind, shape), in walk-byte units, all from grid1 except
+    the three ABSENT dispatch charges. So the first embedded set needs a
+    new run, and under grid1 R17-b′ reduces to R0 + R7.
+  - **The contract (§4).** The missing facts are `body` (M), `site_kind`
+    and the `start` hook. E is not built. The set's channel is
+    `mf_measures` on `mf_art_begin`.
+  - **Bytes, denies, controls and acceptance (§5-§7).** Covers bytes and
+    the abi event, `<PREFIX>_MEASURES`, four denies, G1/G2, the
+    every-committed-set answer test and 12 sabotage rows. Acceptance and
+    predictions are given against ALPHA and grid1. R17-b′ does not fix
+    dense find-all.
+  - **Also.** The R17-b″ seam (§8), Q-R17P-1..8 (§9) and findings F1-F9
+    (§11).
+- `r17b_prime/` — that note's compile-only instruments and transcripts
+  (cover-shape census of R17-b's movers, multi-form size twins, the
+  walk-in-helper assembly check; own CLAUDE.md).
 - `row_contracts.md` — [MEMFN-ROWCON] light design (rev 1, 2026-10-07,
   Frank after K96): one first-match table mechanism, exported by the kit.
   It has a field vocabulary (`fields.def`), per-row `honours` allowlists

@@ -1,0 +1,1 @@
+PERF	bpr	swar	findall	65536	800000	200	36136	2.782	ok

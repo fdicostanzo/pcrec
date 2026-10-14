@@ -79,6 +79,20 @@ Maintenance: update this file when files are added/removed or change roles.
 - `r15/` — R-15's slot22 evidence (2026-10-11): `slot22_verdict.txt` and the two
   triage reports (G2 quick's phase-shifted population floors; test-axes'
   two load-window axes and the variants sweep's pre-existing tag floors).
+- `r17/` — R-17's scoping instruments (lane r17s, 2026-10-11; small / one-cube /
+  one-range FIND sets): the set-shape census over emitted C (corpus and bench),
+  the twin generator (table / memchr / bounded memchr cascade / SWAR terms /
+  SSE2 / AVX2), the exhaustive answer check with guard pages and a planted
+  control, and the timing harness (written, not run). Report:
+  `docs/dev/lanes/r17s_report.md`. Own CLAUDE.md. Revision 2 (lane r17r5,
+  2026-10-12) adds the follow-up measurement's source text: stateful and
+  adaptive twins, the candidate-sequence check, and the extended grid with
+  branch counters. It is WRITTEN, NOT RUN. Design: `../setfind.md` §13;
+  report: `docs/dev/lanes/r17r_report.md`.
+  Lane r17upa (2026-10-12) adds `r17/upa/` and `r17/reading_upa.md`: uses per
+  activation of every set-FIND site on the bench's own subjects (counts only,
+  an instrumented copy of the emitted C, answer-identical, oracle-checked; the
+  bench request's Q3). Report: `docs/dev/lanes/r17upa_report.md`.
 - `r16/` — R-16's slot23 evidence (2026-10-11): `slot23_verdict.txt`, the
   chain (`slot23_run.sh`), the SIMD-on movers classifier over every pattern
   (`slot23_classify.txt`), the variants sweep's two PRE-EXISTING thin-tag
