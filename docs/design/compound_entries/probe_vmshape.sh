@@ -13,7 +13,6 @@ run_one() {  # label subject pcrec-args...
   for shape in 1 2 3 4; do
     "$PCREC" -p rx "$@" --vm-entry-shape=$shape -o "$S/$label.$shape.c"
     gcc -O2 -std=gnu11 -c -o "$S/$label.$shape.o" "$S/$label.$shape.c"
-    sed 's/#include "'"$label.$shape"'.h"/#include "rx_art.h"/' "$S/$label.$shape.c" > /dev/null
     gcc -O2 -std=gnu11 -DARTIFACT_H="\"$label.$shape.h\"" -I"$S" -o "$S/$label.$shape.exe" "$DRV" "$S/$label.$shape.o"
     st=$(sed -n 's/^#define RX_VM_ENTRY_SHAPE "\(.*\)"/\1/p' "$S/$label.$shape.c" "$S/$label.$shape.h" | head -1)
     tb=$(size -A "$S/$label.$shape.o" | awk '$1==".text"{print $2}')
