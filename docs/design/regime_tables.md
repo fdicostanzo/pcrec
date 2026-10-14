@@ -1,6 +1,6 @@
 # Search-form selection by regime — ONE first-match table, filtered by knowledge (rev 0)
 
-Status: DRAFT rev 0.2 (rev 0.2: role, owner column and arch key A per D161 addendum 11). Was rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
+Status: DRAFT rev 0.3 (rev 0.3: the kit's replay corrections, regime_eval.md §8 @ e8db7c810). Was rev 0.2 (rev 0.2: role, owner column and arch key A per D161 addendum 11). Was rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
 row check, memfn/docs/responses.md on lane/memfn-r17 7b54791db). Not built, not ruled
 beyond its shape. Evidence: docs/dev/lanes/regimefacts_report.md,
 docs/dev/lanes/armread_report.md, the kit's costmodel_report.md (lane/memfn-r17
@@ -66,14 +66,17 @@ per (form, site kind, A); the numbers shown are A = Zen 4.
 | R0 | P | SIMD off, site has >= 2 RANGE terms | WALK | SWAR saving ~0 at 2 range terms; 3-term V1 0.214 vs walk 0.189 ns/B (gridread §2.1/§5.8) [kit 0.1] | a 2-term V1 win out of sample |
 | R1 | P,N,M | one-shot, n < 32 B | WALK | single MEMBER-FREE call pays from ~18-20 B (gridread §4.3); with landings in the call the crossover moves past 32 B [kit 0.1] | a W=64/V1 win at n < 32 on fresh text or Zen 1 |
 | R2 | P,N,M | one-shot, 32 <= n < 64 | V1 if emitted, else WALK | W=64 loses +1.3..+15.8 ns below a block; V1 wins MEMBER-FREE calls at 48/63 (§4.4) but loses dense ones [kit 0.1] | V1 loss at 48/63 out of sample |
-| R3a | H | iterator, previous step span < ~14 B | WALK | A3 still loses to the walk at L ~ 8 in most cells (dig g64 +9.6 us, dfa-hat g4 +17 us); it only beats A1 there [kit 0.1] | F4/F7 |
-| R3b | H | iterator, previous step span ~14-32 B | A3 | A3's measured L* 14-19 B (gridread §4.2) | F4: the real iterator does not reproduce A3's hand-edit win |
+| R3a (PROVISIONAL) | H | iterator, previous step span < ~14 B | WALK | A3 still loses to the walk at L ~ 8 in most cells (dig g64 +9.6 us, dfa-hat g4 +17 us); it only beats A1 there [kit 0.1] | F4/F7 |
+| R3b (PROVISIONAL; SIMD-on only) | H | iterator, previous step span ~14-32 B | A3 | A3's measured L* 14-19 B (gridread §4.2) | F4: the real iterator does not reproduce A3's hand-edit win |
+| (pending) | P,N,M | amended D2: L >= ~16-32 B and g >= ~4 B | W=64 | gridread §6.3 D2; the kit proposes the row (replay F-1: without it S3-on DINGHY is 6.0%, not 0.5%) | replay on J1 |
 | R4 | H,P | iterator, block popcount says g < g*(site kind, layer) | WALK for that block | the g row, learned (§4.1) | F7: observation cost exceeds the regret it removes |
 | R5 | E,P | SIMD on, g < g*(site kind) | WALK | g* per site kind: PF one-term 4.2-4.7 B; dfa-hat/bounded ~2-3 B; fresh irregular text 2-4 B (§4.1) [kit 0.1] | fresh/irregular text (g* -> 2-4 B), Zen 1 |
 | R6 | E,P | SIMD off, g < g*(site kind) | WALK | V1 g* per site kind: PF dig 11-17 B, bounded 21 B, dfa-hat 3.0-3.3 B (§4.1) [kit 0.1]; FRAGILE: 14% regret out of sample | the bench's TUG cells; F2 (walk bimodality) |
 | R7 | P | otherwise | LINER: A1 (SIMD on) / V1 (SIMD off) | always-A1 11.1/1.2/0.0; always-V1 18.8/16.6/0.1 (§6.2) | fresh real text tilting the other way (X2) |
 
-Regret by filter (measured, in sample; LOGO/out of sample in brackets):
+R3 is PROVISIONAL (replay F-5/F-7): the split is not supported on per-pass H (the old-R3 control is not worse; deleting R3b improves regret); it waits for per-step H from the iterator or the twin. R0 and R1 are unreachable on the grid; the evaluator adds witness cells.
+
+Regret by filter. CORRECTION (rev 0.3): the S1-SIMD-off, S2 and S3 figures below are gridread's MODEL policies (an. 7.2), NOT what the declared rows do. Replaying the declared rows (regime_eval.md §8): S0 reproduces exactly; S3-on DINGHY is 6.0% (missing the amended-D2 row); S2 SIMD-off loses to always-walk (10.5% vs 2.4%) because R3 has no SIMD-off arm, so S2 is SIMD-on only.
 
 | filter | SIMD on | SIMD off |
 |---|---|---|
