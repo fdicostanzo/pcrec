@@ -868,10 +868,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: append observations as they surface; evaluate once the playground exists
   refs: [FIND-BOUNDARY-SIDE] [REPEAT-RUN] [OPT-A] [FINDALL-NEXT]; docs/dev/lanes/regimefacts_report.md, armread_report.md; the kit's gridread F2 counts, r17b_prime.md
   NOTES (append, dated): 2026-10-13 F2: `[a-z]+\b` on prose ("bounded", ALPHA's largest loss, +599 us) misses ~145 branches/KiB under EVERY scan form: the misses are the per-match verify's (consumer-bound), not the scan's; no kit form turns it. 2026-10-13 origsurvey: its \W side lands as often as [a-z] by landings, so origin alone does not fix it. 2026-10-13 armread: the DFA's per-match cost falls 7.7 -> 3.2 ns when matches are regular and dense (predictor). Hypothesis (unmeasured): batching (`next_n`) pays one unpredictable exit per block, not per match. 2026-10-14 r17b_prime: dfa-hat prose loses at g = 10.2 B, above every g*: near-hit depth (candidates fail after a few bytes); R17-b′'s honest SIMD-off effect is 5.5% of ALPHA's OFF loss, the 1.17 ms residual is mostly origin/consumer work.
+- [TABLE-JUDGE] STATE:not-started — a TABLE-AGNOSTIC judge: picks.tsv + arm timings, any first-match table one producer
+  filed: 2026-10-14 kit panel r1 T20 (all three critics independently)
+  status (2026-10-14): not built (D77); the kit's [REGIME-EVAL] adopts the INTERFACE only (picks.tsv + arm timings, regime_pick one producer)
+  trigger: a second first-match table with a measured threshold needing a verdict (reseed rows, [PRIOR-COST-UNIFY], [SEL-COST])
+  refs: docs/design/memfn/regime_eval.md; docs/dev/reviews/2026-10-14-r1-memfn-regime-eval.md (lane/memfn-r17 ab77bebaa); [LIST-TABLES] [MEASURE-SET]
+  The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
 - [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-13): filed; D166 ruled the shape (sets, relative units, compile-time load with a default in the binary, rollback, automatic moves with a mover census)
-  trigger: the kit's R17-b′ build (the first selection reading measured thresholds)
+  trigger: the kit's E3 commit (zero-mover table + row denies, regime_eval.md rev 2): schedule [MEASURE-SET]'s build then; until it lands C1/C5/C6 run through the kit's regime_pick
   refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
   A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
 - [DEC-RUNG] STATE:not-started — THE VM RUNG LADDER AS ONE SELECTOR

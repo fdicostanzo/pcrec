@@ -1,6 +1,6 @@
 # Search-form selection by regime — ONE first-match table, filtered by knowledge (rev 0)
 
-Status: DRAFT rev 0.3 (rev 0.3: the kit's replay corrections, regime_eval.md §8 @ e8db7c810). Was rev 0.2 (rev 0.2: role, owner column and arch key A per D161 addendum 11). Was rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
+Status: DRAFT rev 0.4 (rev 0.4: kit panel r1 B-5/B-6: A = the measurement SET id, ISA a separate fact; the amended-D2 row is R8). Was rev 0.3 (rev 0.3: the kit's replay corrections, regime_eval.md §8 @ e8db7c810). Was rev 0.2 (rev 0.2: role, owner column and arch key A per D161 addendum 11). Was rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
 row check, memfn/docs/responses.md on lane/memfn-r17 7b54791db). Not built, not ruled
 beyond its shape. Evidence: docs/dev/lanes/regimefacts_report.md,
 docs/dev/lanes/armread_report.md, the kit's costmodel_report.md (lane/memfn-r17
@@ -40,7 +40,8 @@ on knowledge strategy").
 | M | mode: one-shot `_search` vs the D165 iterator `next`/`next_n` | call entry | free | pcrec API (D165) |
 | E | exemplar landing gap `g` (bigram landings in the analysis bundle) | compile, optional | bundle field | pcrec-analyze / the analysis object (D162) |
 | H | iterator history: previous step's span; candidates per block (mask popcount) | run time, iterator only | one compare per call/block (F7 prices it) | storage pcrec (rx_iter S, D165); content kit |
-| A | declared arch: ISA level + tuning class (gcc `-mtune`-like; ISA alone cannot tell Zen 1 from Zen 4) | compile | free | pcrec passes the target; constants per (form, site kind, A) are the KIT's, measured; each ISA has a GENERIC tuning class with MEASURED constants (envelope over measured boxes); an unmeasured specific class reads generic, never WALK; the listing shows provenance (D161 add. 12) |
+| A | the MEASUREMENT SET id (D166 item 3): the set whose relative constants the rows read; an unmeasured box reads the derived generic envelope set (D161 add. 12), listed with provenance | compile | free | pcrec loads the set (`--measures=`, [MEASURE-SET]); the set's rows are the kit's, measured |
+| I | ISA availability (which forms CAN run: SSE2/AVX2/AVX-512/NEON), a separate fact from A | compile | free | pcrec passes the declared target ISA |
 
 Note: without M = iterator, N in a find-all loop is the REMAINING subject, not the
 step span; dense find-all is then invisible at call time.
@@ -68,7 +69,7 @@ per (form, site kind, A); the numbers shown are A = Zen 4.
 | R2 | P,N,M | one-shot, 32 <= n < 64 | V1 if emitted, else WALK | W=64 loses +1.3..+15.8 ns below a block; V1 wins MEMBER-FREE calls at 48/63 (§4.4) but loses dense ones [kit 0.1] | V1 loss at 48/63 out of sample |
 | R3a (PROVISIONAL) | H | iterator, previous step span < ~14 B | WALK | A3 still loses to the walk at L ~ 8 in most cells (dig g64 +9.6 us, dfa-hat g4 +17 us); it only beats A1 there [kit 0.1] | F4/F7 |
 | R3b (PROVISIONAL; SIMD-on only) | H | iterator, previous step span ~14-32 B | A3 | A3's measured L* 14-19 B (gridread §4.2) | F4: the real iterator does not reproduce A3's hand-edit win |
-| (pending) | P,N,M | amended D2: L >= ~16-32 B and g >= ~4 B | W=64 | gridread §6.3 D2; the kit proposes the row (replay F-1: without it S3-on DINGHY is 6.0%, not 0.5%) | replay on J1 |
+| R8 | P,N,M,A | amended D2: L >= ~16-32 B and g >= ~4 B | W=64 | gridread §6.3 D2; the kit proposes the row (replay F-2, regime_eval.md §8: without it S3-on DINGHY is 6.0%, not 0.5%) | replay on J1 |
 | R4 | H,P | iterator, block popcount says g < g*(site kind, layer) | WALK for that block | the g row, learned (§4.1) | F7: observation cost exceeds the regret it removes |
 | R5 | E,P | SIMD on, g < g*(site kind) | WALK | g* per site kind: PF one-term 4.2-4.7 B; dfa-hat/bounded ~2-3 B; fresh irregular text 2-4 B (§4.1) [kit 0.1] | fresh/irregular text (g* -> 2-4 B), Zen 1 |
 | R6 | E,P | SIMD off, g < g*(site kind) | WALK | V1 g* per site kind: PF dig 11-17 B, bounded 21 B, dfa-hat 3.0-3.3 B (§4.1) [kit 0.1]; FRAGILE: 14% regret out of sample | the bench's TUG cells; F2 (walk bimodality) |
