@@ -1,0 +1,10 @@
+witness	link	subject	Ir_per_iter
+dfa-attempt	static	xxcdxxcd	1353
+dfa-attempt	shared	xxcdxxcd	1424
+dfa-attempt	shared-nsi	xxcdxxcd	1381
+dfa-unanch	static	xxabcxxabc	965
+dfa-unanch	shared	xxabcxxabc	997
+dfa-unanch	shared-nsi	xxabcxxabc	997
+compound-split	static	\ \ ab\ cd\ \ 	1116
+compound-split	shared	\ \ ab\ cd\ \ 	1144
+compound-split	shared-nsi	\ \ ab\ cd\ \ 	1146

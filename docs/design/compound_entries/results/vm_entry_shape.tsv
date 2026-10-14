@@ -1,0 +1,13 @@
+witness	shape	stamp	text_bytes	subject	Ir_per_iter
+hybrid-frameless	1	plain	1832	abababababababab	2415
+hybrid-frameless	2	plain	1832	abababababababab	2415
+hybrid-frameless	3	inline	1448	abababababababab	1998
+hybrid-frameless	4	inline	1448	abababababababab	1998
+forced-frameless	1	plain	1736	abababababababab	2099
+forced-frameless	2	plain	1736	abababababababab	2099
+forced-frameless	3	inline	1496	abababababababab	1432
+forced-frameless	4	inline	1496	abababababababab	1432
+forced-frameless-sparse	1	plain	1736	xxxx	227
+forced-frameless-sparse	2	plain	1736	xxxx	227
+forced-frameless-sparse	3	inline	1496	xxxx	200
+forced-frameless-sparse	4	inline	1496	xxxx	200
