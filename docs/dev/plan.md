@@ -862,6 +862,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: a short design with the kit's per-stop needs
   refs: decisions D161 D162; analyze/CLAUDE.md
   The knowledge key E: the kit derives the gap per candidate stop and needs joint rates for multi-position stops. Carried in the one versioned analysis object (D162), default bundle included.
+- [DENSE-NOTES] STATE:not-started — OBSERVATIONS LOG: dense find-all and consumer-bound losses (notes only)
+  filed: 2026-10-14 Frank
+  status (2026-10-14): notes only (Frank: build the framework first, "keep notes ... we'll get to it later"); unscheduled until [FINDALL-NEXT] and the table plumbing ship
+  next: append observations as they surface; evaluate once the playground exists
+  refs: [FIND-BOUNDARY-SIDE] [REPEAT-RUN] [OPT-A] [FINDALL-NEXT]; docs/dev/lanes/regimefacts_report.md, armread_report.md; the kit's gridread F2 counts, r17b_prime.md
+  NOTES (append, dated): 2026-10-13 F2: `[a-z]+\b` on prose ("bounded", ALPHA's largest loss, +599 us) misses ~145 branches/KiB under EVERY scan form: the misses are the per-match verify's (consumer-bound), not the scan's; no kit form turns it. 2026-10-13 origsurvey: its \W side lands as often as [a-z] by landings, so origin alone does not fix it. 2026-10-13 armread: the DFA's per-match cost falls 7.7 -> 3.2 ns when matches are regular and dense (predictor). Hypothesis (unmeasured): batching (`next_n`) pays one unpredictable exit per block, not per match. 2026-10-14 r17b_prime: dfa-hat prose loses at g = 10.2 B, above every g*: near-hit depth (candidates fail after a few bytes); R17-b′'s honest SIMD-off effect is 5.5% of ALPHA's OFF loss, the 1.17 ms residual is mostly origin/consumer work.
 - [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-13): filed; D166 ruled the shape (sets, relative units, compile-time load with a default in the binary, rollback, automatic moves with a mover census)
