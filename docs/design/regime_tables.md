@@ -40,7 +40,7 @@ on knowledge strategy").
 | M | mode: one-shot `_search` vs the D165 iterator `next`/`next_n` | call entry | free | pcrec API (D165) |
 | E | exemplar landing gap `g` (bigram landings in the analysis bundle) | compile, optional | bundle field | pcrec-analyze / the analysis object (D162) |
 | H | iterator history: previous step's span; candidates per block (mask popcount) | run time, iterator only | one compare per call/block (F7 prices it) | storage pcrec (rx_iter S, D165); content kit |
-| A | declared arch: ISA level + tuning class (gcc `-mtune`-like; ISA alone cannot tell Zen 1 from Zen 4) | compile | free | pcrec passes the target; constants per (form, site kind, A) are the KIT's, measured; an unmeasured A takes one declared fallback row (WALK) and the listing says "unmeasured" (no presumed values) |
+| A | declared arch: ISA level + tuning class (gcc `-mtune`-like; ISA alone cannot tell Zen 1 from Zen 4) | compile | free | pcrec passes the target; constants per (form, site kind, A) are the KIT's, measured; each ISA has a GENERIC tuning class with MEASURED constants (envelope over measured boxes); an unmeasured specific class reads generic, never WALK; the listing shows provenance (D161 add. 12) |
 
 Note: without M = iterator, N in a find-all loop is the REMAINING subject, not the
 step span; dense find-all is then invisible at call time.
