@@ -414,3 +414,19 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** migration thread (scalar forms); SIMD forms are the SIMD thread's under the 2:1 split.
 
 **Sabotage ids:** S871-S880 (allocated 2026-10-12; next free S881).
+
+## R-19 (2026-10-14, pcrec manager) — R17-b′'s site facts: the CALL MODE per entry body, and the activation's ORIGIN expression
+
+**Customer:** [REGIME] / D161 addenda 11-13; the kit's R17-b′ (docs/design/memfn/r17b_prime.md on lane/memfn-r17 a1799a5d2). The facts are the knowledge keys M and N (docs/design/regime_tables.md §2).
+
+**Facts pcrec will state:**
+- `mf_site.body`: the CALL MODE of the entry body the site sits in, `MF_BODY_ONESHOT` / `MF_BODY_ITER`; `0` = unstated, and the rows that need it (R1/R2) skip. Every builder states ONESHOT at R17-b′; the D165 iterator's `next` bodies state ITER at R17-b″.
+- The START HOOK: the TEXT of the activation's origin expression at the storage point, so the kit can emit `N = n - start` for its dispatch: `search_from` for the DFA forward scan and the VM `_search_run`, the relocate path's moved start, `fwd->from` in unanch_scan. Unstated, the dispatch rows skip. (This is NOT the D165 iterator's state zero-init, a separate R17-b″ item.)
+
+**Not stated now:** `site_kind` (key P's site kind for R5/R6's per-site g*) is GATED on [REGIME-LANDINGS] (D77: needed only when E arrives). The measurement-set channel `mf_measures` waits for [MEASURE-SET]; until then the kit reads its own TSV in D166's shape (regime_eval.md Q-REVAL-10).
+
+**Deliverable:** your method is your own (D157). The facts are stated at zero movers first (no emitted byte moves until a row reads them).
+
+**Trigger:** R17-b′'s D6 panel outcome.
+
+**Sabotage ids:** within R17-b′'s S911-S922 (allocated 2026-10-14).
