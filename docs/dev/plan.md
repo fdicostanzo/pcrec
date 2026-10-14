@@ -874,6 +874,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a second first-match table with a measured threshold needing a verdict (reseed rows, [PRIOR-COST-UNIFY], [SEL-COST])
   refs: docs/design/memfn/regime_eval.md; docs/dev/reviews/2026-10-14-r1-memfn-regime-eval.md (lane/memfn-r17 ab77bebaa); [LIST-TABLES] [MEASURE-SET]
   The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
+- [KNOW-SRC] STATE:not-started — ONE KNOWLEDGE-SOURCE MODULE: shared loader, stamp and data-mover census
+  filed: 2026-10-14 Frank (endorsing panel r1's sibling-family finding msc2-9 and unlock U1)
+  status (2026-10-14): endorsed by Frank ("i like the consistent data tool idea ... with consistent loader"); its design rides measure_sets.md revision 2 (lane msetrev)
+  next: msetrev's design, its review, then build ahead of [MEASURE-SET] (implement-then-replace onto the analysis-object loader, zero movers)
+  refs: docs/dev/reviews/2026-10-14-r1-measure-sets.md (msc2-9, msc1 U1/U2); docs/design/measure_sets.md; decisions D162 D166; [MEASURE-SET] [TABLE-JUDGE] [LIST-TABLES]
+  One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
 - [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-13): filed; D166 ruled the shape (sets, relative units, compile-time load with a default in the binary, rollback, automatic moves with a mover census)
