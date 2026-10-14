@@ -163,6 +163,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-12): RQ-3 MERGED 2026-10-09 631771b7 (abi 71) and RQ-2 MERGED 2026-10-09 7b98a046 (D157 ranked rarity array, MF_SITE_ABI 9, S731-S737); R-13 batch 1 (the vrun rows) and the R-14/R-15/R-16 follow-ups are BUILT (docs/dev/lanes/r13_report.md, r14b, r14p, r15b, r16b)…
   refs: docs/design/plan_row_bodies/OPT-SIMD.md; docs/dev/lanes/r13_report.md; studies/simd1; docs/design/memfn/integration.md; decisions D119 D147 D157
   (Frank 2026-08-31: x86-64 AND aarch64/NEON are supported targets, neither primary; D147 addendum 8). The pre-kit text in the full row (studies/simd1, opt3_dfa_scan_measurement.md s.3-4, x86-only measurements) is input to the kit's design, not a plan. Design: docs/design/memfn/integration.md (§R4.9) and memfn/. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/OPT-SIMD.md.
+- [REGIME] STATE:started — THE KNOWLEDGE-FILTERED CANDIDATE FINDER: plan to validated build (umbrella)
+  filed: 2026-10-13 Frank
+  status (2026-10-13): plan filed before any official build; SIMD-on is the point of the effort and must be in every validation; owners: each party owns its pieces and comments on the other's, discussed regularly
+  next: [REGIME-CORPUS] and [REGIME-EVAL] first; then [REGIME-TWIN]; D6 rounds on each design and result
+  refs: docs/design/regime_tables.md; decisions D157 D161 D162 D165 D166; [FINDALL-NEXT] [MEASURE-SET] [REGIME-LANDINGS] [UTF-RW]
+  Order: (1) [REGIME-CORPUS] real subjects + user questions; (2) [REGIME-EVAL] replay evaluator, pre-registered acceptance, held-out populations, failing-direction controls; (3) [REGIME-TWIN] the dispatch timed; (4) D6 critic rounds on designs and on results; (5) prerequisites in parallel: [FINDALL-NEXT] (D165), [REGIME-LANDINGS], [MEASURE-SET], the kit's R17-b′; (6) R17-b″ with F4/F7 and D165's parity gate; (7) official verdict: F5 Zen 1 + a bench run on targeted hardware (D144 add. 4). ACCEPTANCE (Frank 2026-10-13): looser bars are fine; outliers and some regression are accepted for a cleaner, clearer design. OWNERSHIP (Frank): the kit owns its rows, evaluator and twin; pcrec owns knowledge plumbing, arms and its own tables; each comments on the other's work.
+  - [REGIME-CORPUS] STATE:started — REAL-WORLD SUBJECT CORPUS + a blinded "user" agent's questions
+    filed: 2026-10-13 Frank
+    status (2026-10-13): started; lane rwcorpus collects licensed online text into a gitignored cache with a fetch manifest; then a blinded user agent proposes realistic questions (patterns)
+    next: the collection report; then the user-agent lane
+    refs: [UTF-RW] (pattern harvest sibling); [REGIME-EVAL]; docs/design/regime_tables.md
+    Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
 
 ## Candidates ([OPTLOOP])
 - [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model
@@ -832,6 +844,24 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/spec/cli.md; docs/design/decision_families_survey.md; decisions D80 D131
   Companion to Frank's same-day rule that every selection is an ordered first-passing-predicate row table (memory pcrec-decisions-as-first-match-tables; the dfa_pfs[]/DFA_SELECT idiom): a `--list-<x>` listing (the existing family: --list-axes/--list-limits/--list-syntax/--list-analysis, docs/spec/cli.md) that prints each decision table IN ORDER — row name, the predicate stated in words, its deny flag — and, per compiled pattern, which row fired (the RX_*_WHY stamps are the per-artifact half). STEP 0 when opened: a census of the selection tables in src/ (DFA_SELECT users and any selection NOT yet a table — the spiderweb Frank named). Until then NEW tables are designed listable (rows as data carrying a name + predicate description, not code-only), so the listing is a read of existing data, never a retrofit. Spec hunk (D80) when built.
   OPEN QUESTION FROM O-74 (D131, 2026-09-29, [FINDINGS-BENCH-TIERS]'s B115 ledger): PROFILED changed `iso-ts`'s program (`program_sha256` moved fb085cf3 → e094fe46) with NONE of the six stamps the bench reads moving — a decision this listing's own census would need to name, since today no `--list-*`/stamp surface says which table fired. Not investigated further here; a live instance for STEP 0's census when this row opens. 2026-10-06 ADDENDUM ([DEC-STAMPS], decsurvey §3.6 + §4.4 + §4.7): STEP 0's census input is `docs/design/decision_families_survey.md` — §3.6's small stamp-token ladders (`UNROLL_K_WHY`, `VM_PRUNE_CEILING` + the `--emit-ir` listing, `STARTPOS_GUARD`, `UTF_CHECK`, the `REQ_WHY` alias, `VM_PREFILTER` with two sources) plus §4.4 and §4.7. Folded here, not a new row.
+- [REGIME-EVAL] STATE:not-started — test the regime table by REPLAY before any production code
+  filed: 2026-10-13 Frank
+  status (2026-10-13): not started; design next (kit-owned evaluator, pcrec comments)
+  next: a design note, then a D6 panel
+  refs: docs/design/regime_tables.md; the kit's costmodel/gridread scripts; [REGIME-CORPUS]
+  An evaluator: (measurement set, cell knowledge) -> the table's pick vs the measured best form. Pre-registered acceptance (loose, per Frank). Thresholds fitted on synthetic grids, judged on held-out real text, the bench's subjects and later Zen 1. Failing-direction controls: swapped thresholds, the R3 short-span error, a deleted row must score visibly worse. SIMD-on and SIMD-off both.
+- [REGIME-TWIN] STATE:not-started — time the table's own dispatch (a hand-built table arm vs fixed forms vs the per-row best)
+  filed: 2026-10-13 Frank
+  status (2026-10-13): not started; after [REGIME-EVAL]'s design
+  next: design with [REGIME-EVAL]; one grid slot (grid1's harness as the standing instrument)
+  refs: [REGIME-EVAL]; the kit's grid1 harness; docs/dev/lanes/slotarms_report.md
+  Replay cannot see the dispatch compares' cost. A hand-built table arm (run-time rows as real emitted compares) timed in one slot against the fixed forms and the per-row best, on synthetic + [REGIME-CORPUS] subjects. The harness becomes [MEASURE-SET]'s formal method.
+- [REGIME-LANDINGS] STATE:not-started — bigram LANDINGS (incl. joint rates per stop) in the analysis object
+  filed: 2026-10-13 manager (D161 add. 11, kit need 3a)
+  status (2026-10-13): not started; pcrec-analyze already counts bigrams, the bundles do not carry them
+  next: a short design with the kit's per-stop needs
+  refs: decisions D161 D162; analyze/CLAUDE.md
+  The knowledge key E: the kit derives the gap per candidate stop and needs joint rates for multi-position stops. Carried in the one versioned analysis object (D162), default bundle included.
 - [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
   filed: 2026-10-13 Frank
   status (2026-10-13): filed; D166 ruled the shape (sets, relative units, compile-time load with a default in the binary, rollback, automatic moves with a mover census)
