@@ -50,7 +50,31 @@ Lane `msetrev` (opus), from main `58338a09f` (abi 78). Brief: revise
   S951, S952). S953-S960 are PROPOSED: free on main and in every worktree as of
   `58338a09f`, outside the kit-reserved ranges, and main allocates them.
 
-## Questions for Frank (two, per the brief)
+## Round 2 (same day): Frank's rulings folded in
+
+- **D166 addendum 2.** Q-MS-1 and the stale-default policy are written as RULED (§3.4,
+  §2.4, §10.5).
+- **[KNOW-SRC].** §9 is rewritten as that row's design:
+  - the module (reader/validator, resolver, `ks_pick` fill-only precedence, `ksgen` embed
+    generator, stamp/digest builder, the four-view `--list-<kind>` shape);
+  - ONE census tool, `scripts/knowledge_census.sh KIND OLD NEW`, with analysis, measures
+    and limits arms and per-artifact lookup attribution from a debug-build reader trace.
+    It replaces `measure_census.sh`.
+  - Staging: K0-K3 BUILT FIRST at zero movers, ahead of M0 (§9.7, §9.8, §10.1). M0 now
+    only adds the measures kind row.
+- **ROUND-TRIP IDENTITY** (§9.6): the canonical writer, plus checks R1 (Frank's digest),
+  R2 (Frank's bytes), R3 (NEW: structural document equality by the independent python
+  parser) and R4 (committed store file = its canonical view). R3 exists because R1 and R2
+  both pass when a writer consistently drops a non-digested section (`cells`). Derived
+  views are separate `--view=` spellings, and the loader rejects their section names.
+  For the analysis kind, the bare `--list-analysis NAME` keeps its shipped output until
+  §9.9 decides, so the CLI moves once. The analysis store is R4-exempt by name until then.
+- **§9.9, OPEN:** the `.rxt` analysis format against the section TSV, both cases, a priced
+  middle form, the migration cost (input and docs side only; zero artifact movers, since
+  the `_FINDINGS` digest is over derived values), with K3 as the trigger.
+- **New proposed sabotage ids:** S961-S963.
+
+## Questions for Frank (round 1; both RULED since, D166 addendum 2)
 
 - Q-MS-1 as re-put: the latest set through M1, then the envelope from M2 with the flip's
   census (it moves selections even at n=1). Recommend yes.
