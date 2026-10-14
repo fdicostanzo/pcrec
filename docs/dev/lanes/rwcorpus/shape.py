@@ -29,5 +29,30 @@ def main(C, man):
         n, nl, a, b, c9, c99, z, dist, pa, pm, pi, top = shape(f'{C}/{f}')
         print(f'| {f} | {n} | {nl} | {a}/{b}/{c9}/{c99}/{z} | {dist} | {pa:.2f} | {pm:.2f} | {pi:.2f} | `{top}` |'.replace('|`', '| `'))
 
-if __name__ == '__main__':
+if __name__ == '__main__' and len(sys.argv) < 4:
     main(*sys.argv[1:3])
+
+# scripts.py-style appendix: python3 -I shape.py CORPUS MANIFEST --scripts
+def scripts(C, man):
+    import unicodedata
+    B = [(0x0400, 0x04FF, 'Cyrillic'), (0x0370, 0x03FF, 'Greek'), (0x0590, 0x05FF, 'Hebrew'),
+         (0x0600, 0x06FF, 'Arabic'), (0x0900, 0x097F, 'Devanagari'), (0x3040, 0x30FF, 'Kana'),
+         (0x4E00, 0x9FFF, 'CJK'), (0x3400, 0x4DBF, 'CJK-ExtA'), (0xF900, 0xFAFF, 'CJK-compat'),
+         (0x0080, 0x024F, 'Latin-ext')]
+    print('| file | non-ASCII chars | script shares of non-ASCII chars |')
+    print('|---|---|---|')
+    for ln in open(man).read().splitlines()[1:]:
+        f = ln.split('\t')[1]
+        if not f.startswith('nonenglish/'):
+            continue
+        t = open(f'{C}/{f}', 'rb').read().decode('utf-8', 'replace')
+        c = collections.Counter()
+        for ch in t:
+            o = ord(ch)
+            if o >= 128:
+                c[next((n for a, b, n in B if a <= o <= b), 'other')] += 1
+        tot = sum(c.values()) or 1
+        print(f'| {f} | {tot} | ' + ', '.join(f'{k} {100 * v / tot:.0f}%' for k, v in c.most_common(4)) + ' |')
+
+if len(sys.argv) > 3 and sys.argv[3] == '--scripts':
+    scripts(*sys.argv[1:3])
