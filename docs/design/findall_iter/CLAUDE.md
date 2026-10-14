@@ -23,7 +23,9 @@ worktree's `build/` (gitignored), never `/tmp`.
 - `targeted.tsv` — `tests/encseam/findall_cases.txt`'s pairs plus 18 targeted cells.
 - `out/` — `targeted.out` (semprobe over targeted.tsv), `corpus_summary.out` (the
   corpus totals), `corpus_diff.out` (every DIFF line, each cut to 400 chars),
-  `nullable_census.out`.
+  `nullable_census.out`, `retry_anchoring.out` (the anchored retry against an
+  unanchored NOTEMPTY_ATSTART variant: 0 corpus pairs differ, a `\G` cell does; the variant is
+  `semprobe.c` with `| PCRE2_ANCHORED` deleted from the retry's options).
 
 Reproduce: `python3 -I sem/harvest.py build/pcrec . > P; semprobe < P > O;
 python3 -I sem/nullable_census.py build/pcrec O`.

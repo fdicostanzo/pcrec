@@ -390,6 +390,10 @@ past q in the same call when the retry fails, so it never repeats. `lo > n` ends
 **The rule, pcre2demo.c's:** after an EMPTY match whose reported span is `(q, q)`, retry at q,
 ANCHORED, under NOTEMPTY_ATSTART. On a match, report it. On no match, advance one character
 and search on. An empty match at `q == n` ends the iterator with no retry.
+The retry is ANCHORED, as pcre2demo's is. On every corpus pair an unanchored retry answers
+the same, but `\G` tells them apart: `\G|b` over `"xb"` gives `(0,0) (1,1) (1,2) (2,2)`
+anchored and `(0,0) (1,2) (2,2)` unanchored, because an unanchored retry still reads `\G`
+at q (`sem/out/retry_anchoring.out`).
 NOTEMPTY_ATSTART rejects a match whose REPORTED span is `(q, q)` with the report starting at
 q. It tests the reported start, not the consumed one (PCRE2's `Fstart_match ==
 start_offset`). That is why `ab\K` gives `(2,2) (4,4) (6,6)`: the retry at 2 consumes `ab` and
@@ -870,7 +874,7 @@ answer-equivalent mutant is declared, with its structural detector.
 | S923 | the non-empty advance uses `end`, not `__adv(end − 1)` (K75) | `run_iter_diff.sh` utf8 arm: `a`/`.` over `a\x80a` | `mc_illformed_utf8` + utf8 harvest |
 | S924 | the empty advance steps from `lo`, not the reported start | `(?=a)` over `"xax"` (1, not 2) | lookahead corpus |
 | S925 | the retry bit is never set | every diverging pair (1,063) | the diverging floor |
-| S926 | the retry runs UNANCHORED | `(?<=a)\|b`-family pairs. An unanchored retry reports a later match early | retry cells; the cell is constructed and its reach confirmed at I1 |
+| S926 | the retry runs UNANCHORED | `\G\|b` over `"xb"` (4 matches anchored, 3 unanchored: the unanchored retry reads `\G` at q, not at q+1). NO corpus pair distinguishes the two (0 of 29,502, `sem/out/retry_anchoring.out`), so I1 adds this cell as an `mg` line | the added cell |
 | S927 | the retry also fires after a non-empty match | double reports on `a*?`/`aaa` | retry cells |
 | S928 | a failed retry does not advance | watchdog (wall) on `|a` over `"b"`: the iterator spins. Detected as a timeout (a firing timeout is a finding) | retry cells |
 | S929 | `rc` not sticky after a give-up | a `--step-budget=3` cell: the call after the give-up must return 0 | `tests/findall/` give-up cells |
