@@ -1,6 +1,7 @@
 # Search-form selection by regime — ONE first-match table, filtered by knowledge (rev 0)
 
-Status: DRAFT rev 0 (Frank + manager, 2026-10-13, session 112). Not built, not ruled
+Status: DRAFT rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
+row check, memfn/docs/responses.md on lane/memfn-r17 7b54791db). Not built, not ruled
 beyond its shape. Evidence: docs/dev/lanes/regimefacts_report.md,
 docs/dev/lanes/armread_report.md, the kit's costmodel_report.md (lane/memfn-r17
 abfece617) and gridread_report.md (lane/memfn-r17 137499324). All constants are
@@ -40,17 +41,21 @@ S3 = S0 + E + H.
 ## 3. The table
 
 Regret = measured pick minus the fastest form, % of the walk, DINGHY / TUG / LINER
-(gridread §6.2). Forms: WALK (scalar table walk), V1 (SWAR W=8), A1 (W=64: AVX2,
-else SSE2), A3 (A1 with state kept across iterator calls).
+(gridread §6.2). Forms: WALK (scalar table walk), V1 (SWAR W=8), A1 (W=64 AVX2), A3 (A1 with state kept
+across iterator calls). S1/S3 (W=64 SSE2) are DISTINCT arms, not A1's fallback spelling: SSE2
+regrets more (TUG 2.8% vs 1.2%; a larger sub-block tail) [kit 0.1]; where AVX2 is absent the
+rows read S1/S3 with their own thresholds, owed per box (F5).
 
 | id | needs | condition | pick | evidence | refuted by |
 |---|---|---|---|---|---|
-| R1 | P,N,M | one-shot, n < 32 B | WALK | single call pays from ~18-20 B (gridread §4.3) | a W=64/V1 win at n < 32 on fresh text or Zen 1 |
-| R2 | P,N,M | one-shot, 32 <= n < 64 | V1 if emitted, else WALK | W=64 loses +1.3..+15.8 ns below a block; V1 wins at 48/63 (§4.4) | V1 loss at 48/63 out of sample |
-| R3 | H | iterator, previous step span < ~16 B | A3 | only kept forms win at L = 8 (§5.6; D3) | F4: the real iterator does not reproduce A3's hand-edit win |
-| R4 | H | iterator, block popcount says g < 4 B (SIMD on) / < 11-21 B (SIMD off) | WALK for that block | the g row, learned (§4.1) | F7: observation cost exceeds the regret it removes |
-| R5 | E | SIMD on, g < 4 B | WALK | W=64 g* 4.2-4.7 B repeated (§4.1) | fresh/irregular text (g* -> 2-4 B), Zen 1 |
-| R6 | E | SIMD off, g < 11-21 B | WALK | V1 g* (§4.1); FRAGILE: 14% regret out of sample | the bench's TUG cells; F2 (walk bimodality) |
+| R0 | P | SIMD off, site has >= 2 RANGE terms | WALK | SWAR saving ~0 at 2 range terms; 3-term V1 0.214 vs walk 0.189 ns/B (gridread §2.1/§5.8) [kit 0.1] | a 2-term V1 win out of sample |
+| R1 | P,N,M | one-shot, n < 32 B | WALK | single MEMBER-FREE call pays from ~18-20 B (gridread §4.3); with landings in the call the crossover moves past 32 B [kit 0.1] | a W=64/V1 win at n < 32 on fresh text or Zen 1 |
+| R2 | P,N,M | one-shot, 32 <= n < 64 | V1 if emitted, else WALK | W=64 loses +1.3..+15.8 ns below a block; V1 wins MEMBER-FREE calls at 48/63 (§4.4) but loses dense ones [kit 0.1] | V1 loss at 48/63 out of sample |
+| R3a | H | iterator, previous step span < ~14 B | WALK | A3 still loses to the walk at L ~ 8 in most cells (dig g64 +9.6 us, dfa-hat g4 +17 us); it only beats A1 there [kit 0.1] | F4/F7 |
+| R3b | H | iterator, previous step span ~14-32 B | A3 | A3's measured L* 14-19 B (gridread §4.2) | F4: the real iterator does not reproduce A3's hand-edit win |
+| R4 | H,P | iterator, block popcount says g < g*(site kind, layer) | WALK for that block | the g row, learned (§4.1) | F7: observation cost exceeds the regret it removes |
+| R5 | E,P | SIMD on, g < g*(site kind) | WALK | g* per site kind: PF one-term 4.2-4.7 B; dfa-hat/bounded ~2-3 B; fresh irregular text 2-4 B (§4.1) [kit 0.1] | fresh/irregular text (g* -> 2-4 B), Zen 1 |
+| R6 | E,P | SIMD off, g < g*(site kind) | WALK | V1 g* per site kind: PF dig 11-17 B, bounded 21 B, dfa-hat 3.0-3.3 B (§4.1) [kit 0.1]; FRAGILE: 14% regret out of sample | the bench's TUG cells; F2 (walk bimodality) |
 | R7 | P | otherwise | LINER: A1 (SIMD on) / V1 (SIMD off) | always-A1 11.1/1.2/0.0; always-V1 18.8/16.6/0.1 (§6.2) | fresh real text tilting the other way (X2) |
 
 Regret by filter (measured, in sample; LOGO/out of sample in brackets):
@@ -58,8 +63,8 @@ Regret by filter (measured, in sample; LOGO/out of sample in brackets):
 | filter | SIMD on | SIMD off |
 |---|---|---|
 | S0 {P,N,M} | 11.1 / 1.2 / 0.0 (find-all; R1/R2 only help one-shot) | 18.8 / 16.6 / 0.1 |
-| S1 +E | 6.6 / 0.1 / 0.0 | 2.7 / 0.4 [14.0] / 0.1 |
-| S2 +H (hint form) | 5.6 / 1.2 / 0.0 | — (V3 never ranks first) |
+| S1 +E | 6.6 / 0.1 / 0.0 | 2.7 / 0.4 / 0.1 (in sample; the [14.0] LOGO belongs to gap+span, row S3) |
+| S2 +H (the hint A3/A1/A1; in-sample UPPER BOUND, LOCO 14.6% in DINGHY) | 5.6 / 1.2 / 0.0 | — (V3 never ranks first) |
 | S3 +E+H | 0.5 / 0.1 / 0.1 [1.5 / 1.1 / 0.1] | 1.5 / 0.4 / 0.1 [5.1 / 14.0 / 0.1] |
 
 ## 4. Answers recorded with the shape (Frank's points, 2026-10-13)
