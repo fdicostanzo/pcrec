@@ -9652,6 +9652,14 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Validity:** zero-init + the same unchanged (s, n); no previous match end and no reset on `lo` jumps (a `lo` outside the cached block falls to a fresh scan; monotone `lo` is where the cache pays). Position-independent: copying an iterator is safe.
 - **Reading (manager):** item 5's "init writes one validity word, never a memset of S" means NO memset of the whole buffer; zeroing a row's declared bytes (24 B here, three words) is within it. S's first measured row is therefore 24 B / align 8, so S need not be cache-line sized for the kit today.
 
+### D165 addendum 2 — the iterator's four questions (Frank, 2026-10-14, session 112; docs/design/findall_iter.md §10)
+
+- **Q1 (agree):** the iterator matches PCRE2's GLOBAL iteration (the anchored NOTEMPTY_ATSTART retry after an empty match), gated on `reports_empty`; `_search` and the §3.1.3 loop are untouched.
+- **Q2 (time it), REFRAMED by Frank:** "the batching was in my mind an internal thing ... a way to get rid of the per call overhead by caching the results internally (say at the compound function level) and then providing them with next calls." The target is INTERNAL batching: the controller finds several matches per internal pass, holds them in the iterator's state and hands them out one per `next`, so the API stays `next` and the per-call cost is amortized. A public `next_n` is an optional extra, not the mechanism. Both are timed in the parity slot before anything ships. Open for the revision: the buffer's size against S (spans only; captures per buffered match need K x slots or a capture-free rule), and in-order delivery of buffered matches before a later give-up.
+- **Q3 (bind, for sure):** `rx_iter it = RX_ITER_INIT(s, n)` binds s and n once; `next(&it, caps)` takes no subject. A mismatch is impossible by construction.
+- **Q4 (agree):** `PCREC_ERR_ITER` (-10), below `PCREC_ERR_FLOOR`, refuses a foreign, uninitialized or mis-bound iterator; never a silent rebind.
+- **Error reporting (Frank asked how the iterator says there was an error; per findall_iter.md §2.1):** `next` returns 1 for a match and 0 otherwise; `it.rc` says why it stopped: 0 = done, a give-up code (§4, D158) or `PCREC_ERR_ITER` = it ended there. The state is sticky (later calls return 0 with no work). A three-valued return was rejected because `while (next(...))` would spin on a give-up read as a match.
+
 ## D166 — decision-making MEASUREMENTS are versioned, internally consistent SETS, loaded at compile time with a default in the binary (Frank, 2026-10-13, session 112)
 
 **Context.** D161 addendum 12 made decision-making measurements a class distinct from limits and D149 constants (visible data with provenance, a formal method, remeasurement). Frank then ruled their organization.
