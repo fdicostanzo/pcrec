@@ -122,7 +122,7 @@ Header (one line each, `key<TAB>value`): `format`, `id`, `rev`, `class` (ISA lev
 §3.4, NOT a selection input: "ISA availability stays a separate fact"), `tier`
 (`scratch` | `official` | `local` | `synthetic`: D144 add. 4; `local` is §7's, `synthetic`
 is the test fixtures'), `composite` (1 for an envelope), `members` (envelope only: `id@rev:digest16`
-list), `unit_key`, `method`, `run`, `box`, `compiler`, `code_commit`, `rows`, `values_digest`.
+list), `unit_key`, `method`, `run`, `box`, `compiler`, `code_commit`, `counters` (§7.4a), `rows`, `values_digest`.
 One run means the header's provenance is the set's and every row inherits it. Row-level
 columns carry only what varies by row.
 
@@ -588,6 +588,28 @@ hash>-<date>`; it can be used by `--measures=FILE` or installed as the build's d
 `make DEFAULT_MEASURES=path` (a build-time re-embed; no environment variable, no hidden
 run-time state). The stamp then reads `local-...@1:digest`, and a shipped artifact says
 it was built under a local measurement.
+
+### 7.4a Perf counters are OPTIONAL (D166 addendum 1, addendum 1.1)
+
+No set, method, gate or tool may REQUIRE perf counters (`kernel.perf_event_paranoid`
+varies per box). Every set must be producible from TIMING ALONE, and every gate in §7.3
+reads timing only (A/A floors, the NULL rule). A branch-miss pass (gridread F2's
+predictability diagnosis) is an optional DIAGNOSTIC: when counters are unavailable it
+SKIPS LOUDLY (one stderr line naming the cause) and the skip is RECORDED in the set's
+provenance. Header gains `counters` = `none` | `skipped:<reason>` | `branch-misses` (and the
+paranoid value read), so a listing shows whether the diagnosis exists for that set. No row's
+`status` or selection depends on it; counter-derived rows, if a method adds any, are
+`measured` extras that readers may not require (an absent counter row is skipped like any
+absent row).
+
+When counters are unavailable the tool PRINTS A SUGGESTION AND NEVER ACTS ON IT (it does not
+run sudo, sysctl or write /etc). The text shows the current `kernel.perf_event_paranoid`
+value; that 2 or lower enables the optional counter pass; what it adds (branch misses, the
+predictability diagnosis); and the commands: one-off
+`sudo sysctl kernel.perf_event_paranoid=2`; persistent: put
+`kernel.perf_event_paranoid = 2` in `/etc/sysctl.d/99-perf.conf`. A check asserts the
+suggestion text is printed with counters denied and that no set content differs between a
+counters-on and counters-off run except the `counters` header and optional extras.
 
 ### 7.5 Wall time
 
