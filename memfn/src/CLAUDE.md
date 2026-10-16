@@ -193,7 +193,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `pf_walk_bounded_arm` (a set pcrec names by table: the in-place walk
   `while (lo < n && !T[s[lo]]) lo++;`, `result` IS `lo`, miss the range's
   end), form id `pf_walk`. The guards around the statement stay pcrec's
-  (the memchr rows' empty range is EXCLUDED; the walk's NOP). M4 prep (R-7)
+  (the memchr rows' empty range is EXCLUDED; the walk's NOP). Since R17-b′ B2 (KW-3) the rows ALSO serve pcrec's new shape and write those guards themselves: the memchr's `if (lo >= n) on_miss` (empty MISS), the bounded memchr's `if (lo + 1 < n) { ... }` block (empty NOP), the walk's post-test (empty MISS, a leaving on_miss), and on the two bounded rows the `moved` hook under `if (result > skip_from)` (`moved_open`/`moved_close`, one statement: `one_stmt`); a memchr row serves a one-member set whether or not a table is offered (PR-1). M4 prep (R-7)
   added a FIFTH row, `pf_memchr_back_arm` (form id `pf_memchr`, the same
   renderer): MLINE's `(?m)^` skip, its one-byte term at offset -1 (the
   candidate's predecessor), `floor` the text of `lo`, `empty` AT_N
@@ -328,6 +328,16 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   prints `MFTRACE FD` records (phase `shadow`, never counted as chosen) per
   slot and layer and writes NOTHING to any sink. `mf_finder_rows` is the
   R-MS4 listing into caller-owned storage. No artifact text.
+  **R17-b′ B2 (lane fdb2):** D1, D1c and D1w are ROUTED (and so locked);
+  `fd_route` is the routed decision `compose.c`'s `select_arm` asks first
+  (OFF variant, the site's stated kind): a routed pick renders through its
+  arm (LIBC `pf_memchr[_bounded]`, LIBC_BACK `pf_memchr_back`, WALK
+  `pf_walk[_bounded]`), asked on its own and REFUSED if it declines; else the
+  arms walk. `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
+  trace record. R0/R7's null floor is `kit.eps.streamed.slope` (rev 3 [C4]).
+  `compose.c` also carries R-MS6's arm-entry counter (`mf_reach`,
+  `mf_reach_table`; a counter statement at each routed site's use, only on
+  an art the host asked).
 - **terms.c** — R17-b's cover search (`mf_set_terms`, lane memfn-r17),
   ported search only: the finder reads a set site's cover SHAPE
   (`r<R>e<E>c<C>`). Its renderers land at B4.

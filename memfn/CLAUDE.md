@@ -87,6 +87,15 @@ readers gained a trace-build reader shadow over `mf_ask` (`src/gen/emit_dfa.c`,
 `cand_ask_*`). Checks: `make test-memfn-finder`; the finder rows in
 `tests/memfn/rows.tsv` as `pending-site:<step>`. Report:
 `docs/dev/lanes/fdb1_report.md`.
+R17-b′ B2 (lane fdb2, 2026-10-16; row B2, "ST2: one-byte FIND routed") made
+MF_SITE_ABI 13 with NO `MF_VOCAB` move and NO pcrec byte moved: `mf_need`
+re-numbered with an UNSTATED zero (refused wherever read), `mf_site.site_kind`
+(PR-3), `mf_hooks.moved` (PR-2) and `mf_result.row`, `mf_class.proven_prev`
+(`MF_CLASS_V` 2); the finder rows D1, D1c, D1w ROUTED (`fd_route`, the PF rows
+writing the guard, post-test, bounded block and moved test, KW-3); pcrec's
+G1/R4/L4 read `mf_ask` and the reader shadow is retired; the harness-only
+arm-entry counter `mf_reach`/`mf_reach_table` (R-MS6); R0/R7's floor token
+`kit.eps.streamed.slope`. Report: `docs/dev/lanes/fdb2_report.md`.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

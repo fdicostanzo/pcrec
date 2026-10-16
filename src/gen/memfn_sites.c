@@ -412,9 +412,9 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
 #ifdef PCREC_CAND_TRACE
     {
-        mf_result r;
-        kit_check(cx, art, mf_defined(art, handle, &r));
-        routed_record(id, s, r.row);
+        mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
+        kit_check(cx, art, mf_defined(art, handle, r));
+        routed_record(id, s, r->row);
     }
 #endif
     return handle;
@@ -458,9 +458,9 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     deleg_check(cx, id, s);
     pcrec_memfn_sink(&ps, body);
 #ifdef PCREC_CAND_TRACE
-    mf_result r;
-    kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, &r));
-    routed_record(id, s, r.row);
+    mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
+    kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, r));
+    routed_record(id, s, r->row);
 #else
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
 #endif
