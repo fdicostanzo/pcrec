@@ -920,8 +920,9 @@ uses the built artifacts.
 
 ### 6.1 The abi event (one, at I1; D76/D94 readers found by grep)
 
-I1 bumps `PCREC_ARTIFACT_ABI` (78 at this lane's base; "the next number at landing"). Its
-readers, by grep at `ee01f4dbb`:
+I1 bumps `PCREC_ARTIFACT_ABI` (78 at both revisions' bases; "the next number at landing").
+Its readers, by grep at `ee01f4dbb` (revision 1; the line numbers are revision 1's, and the
+commit re-derives them):
 
 | reader | site |
 |---|---|
@@ -938,22 +939,31 @@ readers, by grep at `ee01f4dbb`:
 and the readers are re-derived at the commit.
 
 **What changes on EVERY artifact:**
-- the shared block (rx_iter, the PCREC_ITER_* constants, PCREC_ERR_ITER, the two inline
-  helpers);
+- the shared block (`rx_iter`, the `PCREC_ITER_*` constants, `PCREC_ERR_ITER`,
+  `rx_iter_init` and the two unprefixed setters);
 - `_search`'s text (body moved into `__find`);
-- `_next` (+ `_next_n`), its declaration, and the `<PREFIX>_ITER_RETRY` stamp (§6.3).
+- `_next` (+ `_next_n` if ruled in), its declaration, and the `<PREFIX>_ITER_RETRY` stamp
+  (§6.3);
+- the residual twins and the exported residuals' forwarding bodies (§2.4);
+- if batching ships in I1: `<prefix>_buffers` gains `batch`/`nbatch`, the header gains
+  `<PREFIX>_BATCH_ENTRY_SIZE` and `<prefix>_iter_buffers` (§2.3). These are byte-count
+  readers' movers too (the header's size).
 
 **On `reports_empty` artifacts only:** the retry machinery (VM accept guard / DFA notempty
 root).
 
-**Not moved:** `rx_info`'s fields.
+**Not moved:** `rx_info`'s fields. A batch-entry size field for an FFI consumer
+(`rx_info.batch_entry_size`, as §10.4¶1 mirrors the frame sizes) is NOT added in I1: no
+consumer has asked (D77); it is filed with [IFACE-PUSH].
 
 ### 6.2 Spec hunks (D80), each in I1's commit
 
 - **`docs/spec/match_api.md`:**
-  - §1¶2: the per-artifact symbol list gains `<prefix>_next` (`_next_n`).
-  - §1¶5, ¶6: the shared block's type list gains `rx_iter` and its two inline helpers; the
-    contract constants gain `PCREC_ITER_*` and `PCREC_ERR_ITER`.
+  - §1¶2: the per-artifact symbol list gains `<prefix>_next` (`_next_n`); the residuals'
+    forwarding to static twins is not caller-visible and needs no hunk.
+  - §1¶5, ¶6: the shared block's type list gains `rx_iter`, `rx_iter_init` and the setters;
+    the contract constants gain `PCREC_ITER_*` and `PCREC_ERR_ITER`. The per-artifact header
+    list gains `<prefix>_iter_buffers` (and `<PREFIX>_BATCH_ENTRY_SIZE` with batching).
   - §2: the verbatim block.
   - §3¶1: the entry table.
   - **NEW §3.8 "The find-all iterator"**: the contract of §1-§3 above, in facts-only spec
@@ -965,7 +975,13 @@ root).
   - §4¶10: no row change. An iterator is never called from a generated call site.
   - §5.3: the iterator is caller-owned state.
   - §9.2¶6: the iterator meets the guard only at bind.
-  - §10: no `_in` variant; the tiered default applies per call.
+  - §10: an iterator bound to `<prefix>_buffers` uses `frames`/`trail` for its searches
+    (no `_next_in` entry); with batching, §10.2 gains the `batch` region, its stride, and its
+    lifetime rule (not scratch while bound; one live iterator per region), and §10.6's
+    example is re-spelled with designated initializers (§11 F11). Without `_in` memory the
+    tiered default applies per logical search.
+  - §4¶10: the call-site code table's iterator row: none. §3.8 states the one-meter-per-
+    logical-search rule (§3.4) beside D163 add. 6 Q1's per-exported-call wording.
   - §6.3: the new stamp.
   - The contents table is regenerated (`scripts/spec_toc.py`).
 - **`docs/spec/rxt_format.md`:**
@@ -976,7 +992,7 @@ root).
     held to the `mc` count, and that is VALID only on a non-`reports_empty` block.
   - The parser (three legs, `rxt_schema.def`) gains the row. The spelling is the manager's
     (memory `pcrec-dd13b-syntax-is-managers`).
-- **`docs/spec/vars.md`:** variables bound in the iterator.
+- **`docs/spec/vars.md`:** variables bound in the iterator by `rx_iter_vars`.
 - **`docs/spec/facts_listing.md`:** the `reports_empty` fact (I0).
 
 ### 6.3 Observability (D46)
@@ -999,6 +1015,10 @@ and its population is small: `reports_empty` DFA artifacts.
 
 The check is the mover census of §6.7: every artifact's non-iterator text against I1's parent.
 
+The layout ATTRIBUTES on `__find` and the twins are the part-layout row's, and that row
+renders them after every length decision (`compound_entries.md` I5), so a non-zero dial
+position cannot move a length decision through this design either.
+
 ### 6.5 The in-tree drivers' migration (in I1's commit)
 
 | driver | today | after I1 |
@@ -1014,7 +1034,8 @@ The check is the mover census of §6.7: every artifact's non-iterator text again
 
 DRAFT inbox text:
 
-> pcrec abi N adds `<prefix>_next(rx_iter *, s, n, caps)`, the find-all iterator (D165). Your
+> pcrec abi N adds `<prefix>_next(rx_iter *, caps)` over `rx_iter it = RX_ITER_INIT(s, n)`,
+> the find-all iterator (D165). Your
 > find-all cells call `_search` in the K75 loop and see none of its gain until the adapter
 > uses it. Suggested: an adapter mode `iter` for every find-all cell, keeping the loop as
 > `loop` for one release so the ledger shows both.
@@ -1025,7 +1046,8 @@ DRAFT inbox text:
 > equal-answer checks against pcre2/rust must take the iterator's count where the testee runs
 > the iterator. Rust's `find_iter` semantics for empty matches is the bench's to check.
 >
-> Optional: `next_n` (if built) for a batched arm.
+> Optional: a batched arm (`<prefix>_iter_buffers` with `nbatch` = 64), if batching ships;
+> `next_n` if it is built.
 
 ### 6.7 The checks (I1), each with its independent control
 
@@ -1036,14 +1058,17 @@ DRAFT inbox text:
 | `mg` lines | the harness, per block | written from libpcre2's global loop, oracle-verified at authoring | every diverging corpus pair gets one (generator in I1) |
 | S derivation | pcrec build | the table's max vs the literal (§1.3 check 1) | every row |
 | the artifact's `_Static_assert` | per artifact | S, against the C compiler's layout | EMPTY at I1 (declared UNREACHED, trigger I2) |
-| binding / sticky / NULL caps / `next_n` | `drv.c`'s arms (`B`, `rc`, `Z`, `N`) promoted into `tests/findall/` | the iterator's own `next` arm (the twin's design) | every pair above |
+| owner / sticky / NULL caps / setters / `next_n` | `drv.c`'s arms (`B` now the foreign-owner arm, `rc`, `Z`, `N`) plus a setter-on-BOUND arm, promoted into `tests/findall/` | the iterator's own `next` arm (the twin's design) | every pair above |
+| batching identity (§3.4a) | every pair through `next` at `nbatch` ∈ {absent, 2, 3, 64}, byte and utf8, `--engine=auto` and `vm`, with the give-up cells | libpcre2's global loop (as `run_iter_diff.sh`), and the K = 1 sequence for the give-up cells | as `run_iter_diff.sh`; the give-up cells' own floor (every `tests/findall/` give-up cell) |
+| no internal call to an exported residual (§2.4) | every artifact's `-fPIC` object | the artifact's own exported symbol list (`nm`), checked against its relocations (`objdump -dr`): a relocation from a function of the artifact to one of its exported residuals fails | every artifact; floor = the 97 corpus compound artifacts F-1 names |
 | mover census | every artifact's text minus the iterator scaffolding, against I1's parent | the parent's bytes | full corpus, both arms (emit_sweep's population) |
 | `-futf-check` once | utf8 ill-formed cells through `next` against the checking artifact's loop | the loop | `tests/utfcheck/`'s pinned sets |
 
-### 6.8 The sabotage plan (S923-S942)
+### 6.8 The sabotage plan (PROPOSED: revision 1's S923-S942 as labels, new rows P-a..P-h; the manager allocates)
 
 Every plant's detector is named, and its witness REACHES the site (the reach column). An
-answer-equivalent mutant is declared, with its structural detector.
+answer-equivalent mutant is declared, with its structural detector. Revision 2 retargets
+S931 and S935, drops nothing, and adds P-a..P-h.
 
 | id | plant | detector | reach |
 |---|---|---|---|
@@ -1055,11 +1080,11 @@ answer-equivalent mutant is declared, with its structural detector.
 | S928 | a failed retry does not advance | watchdog (wall) on `|a` over `"b"`: the iterator spins. Detected as a timeout (a firing timeout is a finding) | retry cells |
 | S929 | `rc` not sticky after a give-up | a `--step-budget=3` cell: the call after the give-up must return 0 | `tests/findall/` give-up cells |
 | S930 | `rc` not sticky after done | `drv.c`'s post-end call (`STICKY-FAIL`) | every pair |
-| S931 | the binding check removed | `B=-10` arm | every pair |
+| S931 | the OWNER compare removed (rev 2: the `(s, n)` half no longer exists) | the foreign-owner `B` arm: an iterator bound by artifact A passed to B's `next` must give `PCREC_ERR_ITER` | `tests/findall/` |
 | S932 | the header check accepts any word | an uninitialized-word cell (`hdr = 0`) must give `PCREC_ERR_ITER` | `tests/findall/` |
 | S933 | `CHECKED` set before validation | utf8 ill-formed cells through a `-futf-check` artifact's `next` | `tests/utfcheck/` |
 | S934 | validation runs every call (answer-equivalent) | STRUCTURAL: the codegen check counts one validator call in `__enter`'s bind path and none on BOUND | every `-futf-check` artifact |
-| S935 | the startpos guard at bind removed | `RX_ITER_INIT_AT(mid-char)` must give `PCREC_ERR_STARTPOS` | utf8 `_AT` cells |
+| S935 | the startpos guard at bind removed | `rx_iter_at(&it, mid-char)` must give `PCREC_ERR_STARTPOS` | utf8 `rx_iter_at` cells |
 | S936 | the storage rows not zeroed at bind | UNREACHED at I1 (no row). Its trigger is I2 | declared |
 | S937 | `PCREC_ITER_STATE_SIZE` decremented below a held row | the artifact's `_Static_assert` | UNREACHED at I1, DETECTED at I2 |
 | S938 | `next_n` writes `k + 1` spans | an ASan cell with an exact-size `out` (if `next_n` is built) | `tests/findall/` |
@@ -1067,18 +1092,29 @@ answer-equivalent mutant is declared, with its structural detector.
 | S940 | `next` writes only the span, not the groups | VM caps differential: `next` vs `_search` per call | captures corpus |
 | S941 | the VM accept guard tests the consumed start, not the reported start | `ab\K` over `"ababab"` (3, not 2) | `\K` cells |
 | S942 | the DFA notempty root keeps the accept-pruned order | `a??b?` over `"ab"` on the DFA arm (`(0,2)`, not `(1,2)`) | DFA `reports_empty` cells |
+| P-a | a fill delivers its pending code before the matches found ahead of it | the batching-identity arm's give-up cells at `nbatch` = 4: the sequence must equal K = 1's | `tests/findall/` give-up cells |
+| P-b | a fill reuses ONE meter across its steps | a `--step-budget` cell where each logical search fits and their sum does not: batched must equal K = 1 (no give-up) | a constructed `tests/findall/` cell (UNREACHED in the corpus harvest: none of its cells has a sub-budget sum; the cell ships with the plant) |
+| P-c | the retry R shares SEARCH's meter (the `meter` cell `shared` on the retry row) | a `--step-budget` cell whose retry and following search each fit and their sum does not | a constructed cell, as P-b |
+| P-d | the compound controller calls the exported `_next_pos` instead of `__adv` (answer-equivalent) | STRUCTURAL: the relocation check (§6.7) | the 97 compound artifacts |
+| P-e | the batch entry stride is one pair, not `NCAPS` | the batching arm on the captures corpus: `next`'s groups vs `_search`'s per match | VM artifacts with `NCAPS` > 1 |
+| P-f | a setter on a BOUND iterator is accepted (rebinds `lo`) | the setter-on-BOUND arm: the next call must give `PCREC_ERR_ITER` | `tests/findall/` |
+| P-g | the ENDED state is not set on a refusal (sticky lost after `PCREC_ERR_ITER`) | `drv.c`'s post-refusal call: 0 with `rc` unchanged | `tests/findall/` |
+| P-h | the fill does not stop at `nbatch` (writes entry `nbatch`) | an ASan cell with an exact-size `batch` region | `tests/findall/`, every `nbatch` arm |
 
 ### 6.9 Staged commits
 
+E0 (`compound_entries.md` §5.1: the zero-mover `entry_rows[]` with its rank column) lands
+before I0b's tables are read and before I1 (D163 add. 7 Q4; memory `pcrec-remodel-first`).
+
 | stage | what | movers | abi |
 |---|---|---|---|
-| **I0** | (a) the `reports_empty` E1 fact + its `--emit-facts` row; (b) the notempty root as a subset-construction parameter, listed in `--emit-facts` and never emitted into an artifact, with its control: anchored NOTEMPTY_ATSTART against libpcre2 over every `reports_empty` block; (c) `iter_rows.def` + the derivation check; (d) `tests/findall/` (the global-loop oracle, the harvest, the `mg` generator) and the `mg` line in all three `.rxt` legs, before any artifact reads it | ZERO emitted bytes (emit_sweep, all streams). The facts listing gains rows | none |
-| **I1** | the shared block; `_next` (+ `_next_n` if Q2 says now); the body refactor; the retry machinery; spec hunks; drivers; checks; S923-S942 | every artifact (text) | ONE |
-| **I2** | R17-b″: the kit's ITER form, its `kit-find`/`kit-h` regions; R-20 (`MF_BODY_PARAM`) | kit-form artifacts | a pcrec abi event (a kit byte move, D147) |
+| **I0** | (a) the `reports_empty` E1 fact + its `--emit-facts` row; (b) the notempty root as a subset-construction parameter, listed in `--emit-facts` and never emitted into an artifact, with its control (anchored NOTEMPTY_ATSTART against libpcre2 over every `reports_empty` block); (c) the storage-row declarations as the STATE part's column of `entry_rows[]` (§8a), the S derivation check, and the `first-nonzero` row's `meter` column (split's cell `shared`, byte-identical); (d) `tests/findall/` (the global-loop oracle, the harvest, the `mg` generator) and the `mg` line in all three `.rxt` legs | ZERO emitted bytes (emit_sweep, all streams). The facts listing gains rows | none |
+| **parity slot** | the twin re-spelled (binding at init, the fused compare) plus its `B64` fill arm; §5.3's pre-build run, launched by main in a box window | none | none |
+| **I1** | the shared block; `_next` as an `iterate` row; STEP as the guarded `first-nonzero`; the body refactor; the residual twins (§2.4, F-1); the retry machinery; spec hunks; drivers; checks; the sabotage rows. **Batching** (the `<prefix>_buffers` region, the fill, `<prefix>_iter_buffers`) is IN I1 if the parity slot's `B64` beats `I` beyond the floor on cells 1 and 3; otherwise it is filed as I4 with that trigger. `next_n` likewise, by its `N64` arm | every artifact (text) | ONE |
+| **I2** | R17-b″: the kit's ITER form and its 40 B row; R-20 (`MF_BODY_PARAM`) | kit-form artifacts | a pcrec abi event (a kit byte move, D147) |
 | **I3** | `pair-hits`: K5's linear pair arm | the 61 corpus / 11 bench two-stream artifacts | one |
-| **I4** | `next_n` if Q2 holds it for a trigger | every artifact | one |
-
----
+| **I4** | batching or `next_n`, if the parity slot filed them; its trigger is the arm beating `I` on a re-run | every artifact | one |
+| **S shrink** | K5 retired by a single-pass proof (§1.3): S 64 → 48 B, only when another abi event moves the shared block | every artifact | rides that event |
 
 ## 7. The standing design questions (docs/design/CLAUDE.md)
 
