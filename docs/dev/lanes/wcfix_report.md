@@ -44,8 +44,8 @@ changed. Branch `lane/wcfix` from main `2288ad1cb`.
   C-PERT bucket selected by the fallback stamp.
 - **F-6 (filed):** findings.md 3a¶3's "is refused at compile" reads two ways;
   the code refuses only when asked. A wording fix, not a contract change.
-- **Sabotage:** S991-S998 kept (S992, S995, S996 updated); **S1009-S1016
-  PROPOSED** for the manager to allocate (S1011 declared UNREACHED until B4).
+- **Sabotage:** S991-S998 kept (S992, S995, S996 updated); **S1027-S1034
+  PROPOSED** for the manager to allocate (S1029 declared UNREACHED until B4).
 
 ## Open questions (for Frank, in the note's §12)
 

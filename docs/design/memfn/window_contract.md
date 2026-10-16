@@ -48,18 +48,18 @@ selection below is an ordered first-match table (memory
 ## §R3.1. What revision 3.1 changed (finding → section, disposition)
 
 Every panel r4 finding was ACCEPTED by the manager (2026-10-16). No finding was
-rejected. Sabotage ids marked PROPOSED start at S1009 and are the manager's to
+rejected. Sabotage ids marked PROPOSED start at S1027 and are the manager's to
 allocate.
 
 | finding | where | disposition |
 |---|---|---|
 | Q3 | §3.7.3, §12 Q3, header | **RULED: CONSULTED** (D167 add. 2). §3.7.5's OFFERED build text is withdrawn to a pointer (it is in revision 3's git text) |
 | **B1** (blocker): the offer's derivation can refuse a compile that succeeds today | **§3.7.1, §3.2 (T-KIND), §3.3 rule 9, §3.7.4a, §3.7.7 G1-E1** | **Discharged.** The panel's witness REPRODUCES on main `2288ad1cb` (`window_contract_rev31/b1_witness.out`). The derivation splits into a NON-RAISING `find_derive_byte_rate_status` that the offer calls, and the ASK path that keeps today's `pcrec_ctx_fail`, so a refusal stays the asker's. T-KIND gains two `underivable` rows. A new rule 9 says an underivable kind refuses the compile iff it is CONSULTED, which keeps today's refusal set at E-1 and at B3b. G1-E1 is widened to deny arms × {no analysis, `--analysis weblog`, an `-I` user bundle, the `l1none` fixture}, with floors MEASURED by a census (`analysiscount.out`): 1,905 / 3,246 / 5,367 utf8 compiles succeed today with `""` under `l1none` and refuse when asked. The D80 route (making the spec's unconditional refusal true) is NOT taken |
-| M1: `arrives` does not keep a MEASURED-ONLY kind absent | §3.2 | The column is renamed `unmeasured` (`ARRIVES` / `ABSENT`) after what it decides, and it is a conjunct of every non-measured PRESENT row. An `authored-absent` row precedes the fall-through. Witness: UNREACHED until B4 gives `run-rarity` a shape (then a user `-I` authored `bigram` bundle reaches it); sabotage S1011 PROPOSED. The header cites D162 add. 3's refinement, and check C-E1-5 holds the column to the kinds pcrec itself reads |
+| M1: `arrives` does not keep a MEASURED-ONLY kind absent | §3.2 | The column is renamed `unmeasured` (`ARRIVES` / `ABSENT`) after what it decides, and it is a conjunct of every non-measured PRESENT row. An `authored-absent` row precedes the fall-through. Witness: UNREACHED until B4 gives `run-rarity` a shape (then a user `-I` authored `bigram` bundle reaches it); sabotage S1029 PROPOSED. The header cites D162 add. 3's refinement, and check C-E1-5 holds the column to the kinds pcrec itself reads |
 | M2: provenance re-derived from the chain LINK although each block declares it | §3.1, §3.2, §3.6, §3.7.1, **§12 Q5** | Design of record, PENDING Q5: `mf_prov.source` is read from the answering block's own `provenance` stanza (`source authored` → AUTHORED, anything else → MEASURED). `mf_prov` also carries `bytes` (the evidence strength, now built, not filed) and `fidelity`. `PcrecFindTblBlock`, `findgen`'s pre-parse and `rxt_find.c`'s copy carry the stanza. Link identity stays as C-E1-1's cross-check. This changes the manager's reading of D162 add. 3 ("pcrec's prior vs measured from a bundle") for a user's authored block, so it is Q5, in discussion form, with a leaning |
-| M3: the CONSULTED design's render point was unplaced | **§3.7.3a (new)**, §3.7.9, §9 family 7 | ONE render point: the art-end pass, AFTER `mf_art_end`, for `_FINDINGS` and `.findings =` and, at M0, for `_MEASURES` and `.measures =`. The lines keep their byte positions through marks, so the move alone is zero-byte. It is its own commit, RP, landing no later than the first of B3b/M0 and before any OR. Check C-RP, sabotage S1014 PROPOSED. `measure_sets.md` needs the same sentence: an OWED sibling edit (§3.7.3a), not made here |
+| M3: the CONSULTED design's render point was unplaced | **§3.7.3a (new)**, §3.7.9, §9 family 7 | ONE render point: the art-end pass, AFTER `mf_art_end`, for `_FINDINGS` and `.findings =` and, at M0, for `_MEASURES` and `.measures =`. The lines keep their byte positions through marks, so the move alone is zero-byte. It is its own commit, RP, landing no later than the first of B3b/M0 and before any OR. Check C-RP, sabotage S1032 PROPOSED. `measure_sets.md` needs the same sentence: an OWED sibling edit (§3.7.3a), not made here |
 | M4: C-CONS is blind on its population | §3.7.7 | `consulted` is read from a named trace record (`KSRCTRACE`'s new `consulted` field), compared directly. The stamp half runs on the deny arms crossed with `-fmemfn-simd`, with a floor of kit-only consumers. C-PERT (X1) is the stamp half's independent partner |
-| M5: the offer was built at a lazy, first-caller-wins point | §3.7.1, §3.3 rule 3 | Built EAGERLY at one stated point: `compile_driver`, right after `pcrec_find_resolve`, stored on `Job`. `pcrec_memfn_art` only passes it. Sabotage S1013 PROPOSED |
+| M5: the offer was built at a lazy, first-caller-wins point | §3.7.1, §3.3 rule 3 | Built EAGERLY at one stated point: `compile_driver`, right after `pcrec_find_resolve`, stored on `Job`. `pcrec_memfn_art` only passes it. Sabotage S1031 PROPOSED |
 | m1: `find_kinds[]` should own the vocabulary | §3.2, §3.7.1, §3.7.6 F-3 | Renamed `find_queries[]` and made the query vocabulary's ONE home. `find_derivs[]`'s third column becomes a row index into it, and `rxt_find.c`, `findings_dump.c` and `rxt_source.c`'s error text read it. F-3 is RETIRED at E-1, not filed |
 | m2: C-E1-4 shares a source with what it checks | §3.7.7, §3.7.8 | Labelled an AGREEMENT check; C-E1-1's python digest is named as the independent line. S996's plant site is stated |
 | m3: G1-E1 omits the VM deny arm | §3.7.7 | Added (`--engine=vm -fno-req-byte -fno-req-run`, 5,337 `""`), with a floor of its own |
@@ -67,7 +67,7 @@ allocate.
 | m5: rule 7 names kit rows and their outcome (D157) | §3.3 rule 7 | Cut to the fact. The row list and the KEEP default are a pointer to r17b′ |
 | m6: `have ∧ ¬asked` is a new state | §3.7.6, §3.7.7 C-E1-6 | The record's comment is re-worded. `req_rate_why` reads `pcrec_find_byte_rate`'s return. A structural check (C-E1-6) holds that `byte_rate_have` and `byte_rate_status` have no reader outside `findings.c` |
 | U1-U4 (the panel's unlocks) | §13 | U3 is BUILT here (the render point, RP). U4 is BUILT for the build point (M5); its retirement half stays filed. U1 and U2 are filed with their triggers (U2 is mostly built by M2) |
-| **X1** (manager): nothing detects a kit row that reads a kind but reports `consulted = false` | **§3.7.7 C-PERT (new)**, §3.7.8 | An independent PERTURBATION check: compile the population twice, with each kind's data held and perturbed under the same bundle name and stop. Any artifact whose bytes outside the stamp lines move while its stamp omits that kind FAILS. It reads only emitted bytes and the stamp text. A prototype ran on main (`window_contract_rev31/perturb_proto.py`). Planted sabotage: a kit row that drops its consulted bit (S1015, B3b's) and a pcrec accessor that marks only on derivation (S1016, E-1's) |
+| **X1** (manager): nothing detects a kit row that reads a kind but reports `consulted = false` | **§3.7.7 C-PERT (new)**, §3.7.8 | An independent PERTURBATION check: compile the population twice, with each kind's data held and perturbed under the same bundle name and stop. Any artifact whose bytes outside the stamp lines move while its stamp omits that kind FAILS. It reads only emitted bytes and the stamp text. A prototype ran on main (`window_contract_rev31/perturb_proto.py`). Planted sabotage: a kit row that drops its consulted bit (S1033, B3b's) and a pcrec accessor that marks only on derivation (S1034, E-1's) |
 | a finding from the prototype | **§3.7.6 F-5, §12 Q6** | **The stamp reports the FINAL attempt only.** A compile whose earlier attempt consulted the byte-rate and whose final attempt did not stamps `""`, yet its bytes move with the data. Two corpus witnesses (`(\p{Xwd})x`, `x(\p{Xwd})y` under `-e utf8 -fno-req-byte`). C-PERT finds them on day one. Q6 asks for the union over attempts |
 
 ## §R3. What revision 3 changed (input → section, disposition)
@@ -944,7 +944,7 @@ proven while the OR cannot yet change a stamp.
   against its parent: 0 movers, tokens and refusals identical. A mark left
   unreplaced is an internal-error refusal (as for the kit's mark), so a lost
   splice cannot ship.
-- **Sabotage S1014 PROPOSED (lands with B3b)**: the stamp is rendered before
+- **Sabotage S1032 PROPOSED (lands with B3b)**: the stamp is rendered before
   `mf_art_end` with the OR present. It is detectable only where the kit is the
   only consumer, so its detectors are B3b's emit_sweep and C-PERT on the
   kit-only population.
@@ -1209,11 +1209,11 @@ from it.
   `size-cap-retry` or another ladder token), never the findings record. The
   bucket carries a floor (≥ 2) and an exact-membership pin, so it cannot grow
   silently and goes red when F-5 is fixed.
-- **Sabotage.** S1015 (B3b's: a kit row reads a kind and drops its
-  `consulted` bit) and S1016 (E-1's: `pcrec_find_byte_rate` marks `asked` only
+- **Sabotage.** S1033 (B3b's: a kit row reads a kind and drops its
+  `consulted` bit) and S1034 (E-1's: `pcrec_find_byte_rate` marks `asked` only
   when it derives, so after the eager offer no ask marks). Both are §3.7.8's.
 
-#### 3.7.8 Sabotage (S991-S998 ALLOCATED by the manager; S1009-S1016 PROPOSED `[rev3.1]`)
+#### 3.7.8 Sabotage (S991-S998 ALLOCATED by the manager; S1027-S1034 PROPOSED `[rev3.1]`)
 
 | id | plant | detector | reach witness |
 |---|---|---|---|
@@ -1225,17 +1225,17 @@ from it.
 | S996 `[rev3.1 m2]` | the provenance digest computed over the COUNTS, not the derived ppm. The plant site is the offer's own digest computation: `pcrec_find_offer` computes `digest` itself from the payload it returns (`pcrec_find_byte_rate_digest(ppm)`), and the plant feeds it the block's counts. A copy of `fr->byte_rate_digest` would make the plant undetectable | C-E1-4 (object digest ≠ stamp digest) and C-E1-1 (≠ the python recompute) | any byte compile that asks |
 | S997 (B3b's) | pcrec does not OR the kit's per-kind `consulted` into the stamp | B3b's zero-mover emit_sweep (stamps drop to `""` where a moved pick was the only asker) and C-PERT | the five ported picks' population |
 | S998 (B3b's) | a SIMD-only kit row sets `consulted` | C-CONS (the `KSRCTRACE` `consulted` field, compared directly) | `-fmemfn-simd` arm, deny arms |
-| S1009 PROPOSED (E-1) `[rev3.1 B1]` | the offer derives through the RAISING path (the status split folded back) | G1-E1's `l1none` cells (a compile that succeeds today refuses), and, in `make test`, a new cell in `tests/findings/run_findings_tests.sh`'s section 12, beside the existing "a block all of whose code points drop is refused" cell: the same fixture under `-fno-req-byte` COMPILES and stamps `""` | `-e utf8 -I L1 --analysis l1none --pattern '^abc' -fno-req-byte` |
-| S1010 PROPOSED (E-1) `[rev3.1 B1]` | T-KIND's `underivable*` rows deleted, so an underivable block falls to `measured` with a NULL payload | C-E1-3 (payload invariant) and C-E1-1's `l1none` cell | `-e utf8 -I L1 --analysis l1none` on any pattern under a deny arm |
-| S1011 PROPOSED (E-1) `[rev3.1 M1]` | the `authored` row loses its `unmeasured = ARRIVES` conjunct | C-E1-1's authored-`bigram` cell (expected ABSENT, got PRESENT/AUTHORED) | **UNREACHED until B4** gives `run-rarity` a shape; then a user `-I` bundle with an authored `bigram` block. Declared UNREACHED with that trigger |
-| S1012 PROPOSED (E-1) `[rev3.1 M2]` | provenance by LINK: MEASURED iff the answering link is not the store's terminal (revision 3's rule) | C-E1-1's `-I DIR/default.rxt` copy cell and the `mine` (`source authored`) cell (expected AUTHORED, got MEASURED) | the `-I` fixtures |
-| S1013 PROPOSED (E-1) `[rev3.1 M5]` | the object is built lazily, on the first kit call, instead of after `pcrec_find_resolve` | C-E1-1's ordering assertion: each attempt's `KSRCTRACE` build record comes immediately after its chain-resolution record and before any parse record | any compile under the trace build |
-| S1014 PROPOSED (B3b) `[rev3.1 M3]` | the stamp is rendered before `mf_art_end` with the OR present | B3b's zero-mover emit_sweep and C-PERT on the kit-only population | the five ported picks under the deny arms, where the kit is the only consumer |
-| S1015 PROPOSED (B3b) `[rev3.1 X1]` | a kit row that reads a kind drops its `consulted` bit | C-PERT (`moved`: the bytes change with the data while the stamp omits the kind) | the kit-only population of C-CONS's floor |
-| S1016 PROPOSED (E-1) `[rev3.1 X1]` | `pcrec_find_byte_rate` marks `asked` only when it derives (tests `byte_rate_derived` where it should test `byte_rate_asked`), so after the eager offer no ask marks | C-PERT at the default arms (every consulted artifact's stamp drops to `""` while its bytes move: 1,161 byte, 707 utf8 in the prototype) and findings §4 | any default compile |
+| S1027 PROPOSED (E-1) `[rev3.1 B1]` | the offer derives through the RAISING path (the status split folded back) | G1-E1's `l1none` cells (a compile that succeeds today refuses), and, in `make test`, a new cell in `tests/findings/run_findings_tests.sh`'s section 12, beside the existing "a block all of whose code points drop is refused" cell: the same fixture under `-fno-req-byte` COMPILES and stamps `""` | `-e utf8 -I L1 --analysis l1none --pattern '^abc' -fno-req-byte` |
+| S1028 PROPOSED (E-1) `[rev3.1 B1]` | T-KIND's `underivable*` rows deleted, so an underivable block falls to `measured` with a NULL payload | C-E1-3 (payload invariant) and C-E1-1's `l1none` cell | `-e utf8 -I L1 --analysis l1none` on any pattern under a deny arm |
+| S1029 PROPOSED (E-1) `[rev3.1 M1]` | the `authored` row loses its `unmeasured = ARRIVES` conjunct | C-E1-1's authored-`bigram` cell (expected ABSENT, got PRESENT/AUTHORED) | **UNREACHED until B4** gives `run-rarity` a shape; then a user `-I` bundle with an authored `bigram` block. Declared UNREACHED with that trigger |
+| S1030 PROPOSED (E-1) `[rev3.1 M2]` | provenance by LINK: MEASURED iff the answering link is not the store's terminal (revision 3's rule) | C-E1-1's `-I DIR/default.rxt` copy cell and the `mine` (`source authored`) cell (expected AUTHORED, got MEASURED) | the `-I` fixtures |
+| S1031 PROPOSED (E-1) `[rev3.1 M5]` | the object is built lazily, on the first kit call, instead of after `pcrec_find_resolve` | C-E1-1's ordering assertion: each attempt's `KSRCTRACE` build record comes immediately after its chain-resolution record and before any parse record | any compile under the trace build |
+| S1032 PROPOSED (B3b) `[rev3.1 M3]` | the stamp is rendered before `mf_art_end` with the OR present | B3b's zero-mover emit_sweep and C-PERT on the kit-only population | the five ported picks under the deny arms, where the kit is the only consumer |
+| S1033 PROPOSED (B3b) `[rev3.1 X1]` | a kit row that reads a kind drops its `consulted` bit | C-PERT (`moved`: the bytes change with the data while the stamp omits the kind) | the kit-only population of C-CONS's floor |
+| S1034 PROPOSED (E-1) `[rev3.1 X1]` | `pcrec_find_byte_rate` marks `asked` only when it derives (tests `byte_rate_derived` where it should test `byte_rate_asked`), so after the eager offer no ask marks | C-PERT at the default arms (every consulted artifact's stamp drops to `""` while its bytes move: 1,161 byte, 707 utf8 in the prototype) and findings §4 | any default compile |
 
-S991-S996 and S1009-S1013, S1016 land with E-1. S1014 lands with B3b (the
-RP commit has no OR to plant against). S997, S998 and S1015 land with B3b.
+S991-S996 and S1027-S1031, S1034 land with E-1. S1032 lands with B3b (the
+RP commit has no OR to plant against). S997, S998 and S1033 land with B3b.
 Sixteen ids in all; the eight new ones are the manager's to allocate.
 
 #### 3.7.9 D80 spec hunks
@@ -1984,7 +1984,7 @@ number is reused below.)
      cross-check (C-E1-1: an answer through the store's terminal must read
      AUTHORED). §3.2 is written that way, marked pending this ruling. Link
      identity would change §3.2's `measured`/`authored` predicates and
-     S992/S1012's cells, and nothing else.
+     S992/S1030's cells, and nothing else.
 6. **`[rev3.1 F-5]` What does the stamp record when a compile takes more than
    one attempt?**
    - **The problem.** `_FINDINGS` reads the FINAL attempt's record, because
