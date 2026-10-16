@@ -14074,13 +14074,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         /* [EMIT-ENTRIES] the entry chain's shape, stated before the
          * prologue's declarations: the entry rung (`en.fwd_entries`), the
          * hybrid's embedded search, the subject check, and the variables'
-         * validity entry where the backend carries one (`vm_plan`'s mask). */
+         * validity entry where the backend carries one (`vm_plan`'s mask).
+         * Whether the retry re-enters the embedded search reads the two
+         * facts the search body's `retry_win`/`retry_seed` read: the clamp
+         * count and the re-seed row (the edge's rank, entries.c). */
         PcrecEntryShape sh = {
             .vm = true,
             .fwd = en.fwd_entries,
             .hybrid = cx->job->fit.prefilter,
             .utf_check = pcrec_utf_check_on(cx),
             .vars = (cx->job->enc_mask & PCREC_ENCE_VAR_VALID) != 0,
+            .prefilter_retry = cx->job->fit.prefilter &&
+                (v.nclamp > 0 || (rs.row && pcrec_cand_reseed(rs.row)->action !=
+                                            CAND_RS_A_FIXED)),
         };
         pcrec_entry_shape(cx, &sh);
     }

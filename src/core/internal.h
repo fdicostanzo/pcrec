@@ -47,9 +47,11 @@ typedef void (*PcrecFactsHook)(Ctx *cx, const char *artifact, size_t len,
  * a caller, can name. The PUBLIC rows are the caller-facing set
  * (docs/spec/match_api.md §3¶1 plus `--emit-main`'s `main`); the INTERNAL
  * rows are definitions an entry calls that a request can never export
- * (the VM's per-entry `_run` bodies, the hybrid's embedded DFA search).
+ * (the VM's per-entry `_run` bodies, the hybrid's embedded DFA search, a
+ * compound controller's two operands `<p>__<role>_search`).
  * Declared this early because `Ctx` carries the request. Design:
- * docs/design/compound.md §A.4 (B0). */
+ * docs/design/compound.md §A.4 (B0); the operands' rows are
+ * docs/design/compound_entries.md §4.1's (E0). */
 typedef enum {
     PCREC_ENTRY_SEARCH, PCREC_ENTRY_SEARCH_IN,
     PCREC_ENTRY_MATCH, PCREC_ENTRY_MATCH_IN,
@@ -60,10 +62,22 @@ typedef enum {
     PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
     PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
     PCREC_ENTRY_PREFILTER,
+    PCREC_ENTRY_COMP_A, PCREC_ENTRY_COMP_B,
     PCREC_ENTRY_N
 } PcrecEntry;
 
 #define PCREC_ENTRY_BIT(e) (1u << (e))
+
+/* [COMPOUND] E0 (docs/design/compound_entries.md §3.2): an edge's RANK, how
+ * often its call site runs per exported call, read off the caller's place in
+ * the controller. R3 inside a per-candidate or per-attempt loop; R2 once per
+ * call; R1 on a data-dependent subset of calls; R0 on an error, tie or
+ * fallback path. The part-layout row (E1) reads it; nothing emits it. */
+typedef enum {
+    PCREC_RANK_R0_RARE, PCREC_RANK_R1_CONDITIONAL, PCREC_RANK_R2_PER_CALL,
+    PCREC_RANK_R3_INNER,
+    PCREC_RANK_N
+} PcrecEdgeRank;
 
 /* A linkage request: the entries to EXPORT and the entries to KEEP static
  * whether or not an exported one reaches them. Everything else an exported
@@ -146,6 +160,11 @@ typedef struct {
      * the last walk's verdict, the first failing conjunct's id or "admit";
      * untouched where no walk ran (NULL: not wanted). */
     const char **comp_verdict;
+    /* [EMIT-ENTRIES] out (E0's rank fixture, compound_entries.md §3.6): the
+     * shipped attempt's edge relation as `entry_rows[]` derives it for the
+     * stated shape, `edge_rank[from][to]` = the edge's PcrecEdgeRank + 1, and
+     * 0 where the shape has no such edge (NULL: not wanted). */
+    unsigned char (*edge_rank)[PCREC_ENTRY_N];
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -7151,6 +7170,15 @@ typedef struct {
                          * verified at its start) */
     bool utf_check;     /* the entries' prologue calls `<p>_valid_upto` */
     bool vars;          /* VM: the `_run` bodies call `<p>_var_valid` */
+    bool prefilter_retry; /* VM hybrid: the attempt loop's retry re-enters
+                         * the embedded search (an MRL clamp's recompute or
+                         * an adaptive re-seed row), not only the entry */
+    bool compound;      /* DFA: the entries are a compound's controller
+                         * (`pcrec_emit_compound_body`) */
+    bool comp_b;        /* compound: the second operand is emitted (not
+                         * `never`), so the search relocates to it */
+    bool comp_floor_any; /* compound: the first operand is asked on every
+                         * call (`\G`), not only at offset 0 */
 } PcrecEntryShape;
 
 typedef enum {
@@ -7164,6 +7192,9 @@ typedef enum {
  * request). Refuses, as an internal error, a request whose closure reaches
  * no matcher entry or keeps `info`/`main` static. */
 void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape);
+/* The entry's name in the edge listings (`search`, `search_run`, `comp_a`):
+ * its emitted suffix where it has one. */
+const char *pcrec_entry_name(PcrecEntry e);
 /* [COMPOUND] True iff this compile renders a PART of a compound
  * (`PcrecEmitIn.part_role`). */
 static inline bool pcrec_is_part(const Ctx *cx)
