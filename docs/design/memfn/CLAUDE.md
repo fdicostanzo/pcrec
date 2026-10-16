@@ -490,6 +490,29 @@ Maintenance: update this file when files are added/removed or change roles.
     - **Also:** R17-b″'s seam (§6: a 40 B kit row; S = 48 B if pcrec's K5
       row retires), rev 1's Q-R17P-1..8 closed and Q-R17P-9..14 new (§7),
       sabotage S911-S922 and S964-S980 by step (§8.3), findings F10-F21.
+  - **REVISION 3 (lane r17bp4, 2026-10-16, design only) applies the D6 panel
+    r1 (`../../dev/reviews/2026-10-16-r1-memfn-r17bp.md`, 70 ids, the kit
+    manager's dispositions), D167 + addendum 1 and the E-1 agreement; read its
+    §0 and §R3 (by finding id) first; changed text is marked `[rev3]`.**
+    - **The read-back is a DEFINE-TIME QUERY** (§4.5): `mf_ask(art, site, def,
+      &class)`, pure, made before row selection, facts in and the form CLASS out
+      (`exists`, `proven0`, `libc_free`, `includes`, presence links), agreeing
+      with `mf_define` by check; it lands in B1 and B2 depends on it.
+    - **Sites per ACTIVATION** (§2.1): the storage point above the first use,
+      START = `search_from`; `attempt_entry` is a third caller (kind
+      DFA_ATTEMPT); a VM hybrid holds two sites.
+    - **The table is a `kit_table` over `kit_walk`** with one comparator plus
+      derived keys, PRES picks as chain-link attributes, mandatory `basis` and
+      `refuted_by`, a per-row `routed` bit; 23 rows (19 locked at B4): D1c
+      (MLINE's context stop), D1w (the VM hat's \|S\| = 1 stays WALK, D167
+      add. 1 A7; `fd-d1`'s OFF arm), F2 (its measured move, B5), R7 gated on a
+      measured shape key with R7w (WALK) behind it.
+    - **Zero-mover means artifacts**, at SIMD-on and `-fcomments` by lane
+      sweeparm's arms; listing streams move by declared deltas; routing made
+      observable by a pcrec-side count and the reverse plant.
+    - **M is a parameter** (`MF_BODY_PARAM`, M24); K5 retires only on a proven
+      single-pass form, S derived; grid2 ≈ 91-129 min required (3.4-5
+      launches); predictions against main's walk; Q-R17P-15..25 new.
 - `r17b_prime/` — that note's compile-only instruments and transcripts
   (cover-shape census of R17-b's movers, multi-form size twins, the
   walk-in-helper assembly check; own CLAUDE.md).
