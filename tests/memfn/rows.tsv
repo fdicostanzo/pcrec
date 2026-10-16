@@ -52,7 +52,12 @@
 # B1 site can reach (it reads the consumer kind, stated from B2; E, read by no
 # row before B3a; H, B9's; a W64 pick, B6's; or B3a's presence facts) has
 # witness kind `-` and prints UNREACHED with its step. Each routing step flips
-# its rows to `pcrec` with a census floor and a witness.
+# its rows to `pcrec` with a census floor and a witness. R17-b' B2 (lane fdb2)
+# routed D1, D1c and D1w: their reach is `pcrec`, their witness a pattern,
+# and their signature is read from the traced compile's `MFTRACE FDROUTE`
+# record (row and arm), not the artifact, because a routed row's pick renders
+# exactly the text its pre-table arm did (zero movers): the text cannot tell
+# the routed decision apart (r17b_prime.md §1.6 [rev3 B5]).
 #
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
@@ -88,9 +93,9 @@ fd	R3b	pending-site:B9	-	-	-	-	-	-
 fd	R4	pending-site:B9	-	-	-	-	-	-
 fd	R1	pending-site:B4	-	-	-	-	-	-
 fd	R2	pending-site:B6	-	-	-	-	-	-
-fd	D1	pending-site:B2	-	-	-	-	-	-
-fd	D1c	pending-site:B2	-	-	-	-	-	-
-fd	D1w	pending-site:B2	-	-	-	-	-	-
+fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
+fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
+fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
 fd	D2	pending-site:B3b	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
 fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
 fd	R7w	pending-site:B4	fixture	-	fd-R7w	 row=R7w pick=WALK	-	fd-R7

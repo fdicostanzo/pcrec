@@ -191,6 +191,7 @@ static void t_byte(mf_term *t, int off, int b)
     t->offset = off;
     t->set[b >> 3] = (uint8_t)(1u << (b & 7));
     t->ppm_hi = MF_PPM_FULL;
+    t->need = MF_REQUIRED;      /* MF_SITE_ABI 13: a need is stated, 0 refused */
 }
 
 static void t_set(mf_term *t, int off, const char *members, uint32_t ref)
@@ -211,6 +212,7 @@ static void t_run(mf_term *t, int off, const char *run, const uint8_t *mask)
     t->mask = mask;
     t->run_len = (uint32_t)strlen(run);
     t->ppm_hi = MF_PPM_FULL;
+    t->need = MF_REQUIRED;      /* MF_SITE_ABI 13: a need is stated, 0 refused */
 }
 
 static mf_site base_site(void)
@@ -224,6 +226,7 @@ static mf_site base_site(void)
     s.empty = MF_EMPTY_MISS;
     s.consumer = MF_C_ENGINE;
     s.policy = MF_P_PORTABLE_ONLY;
+    s.pred.need = MF_REQUIRED;  /* MF_SITE_ABI 13: stated (0 is refused where read) */
     return s;
 }
 
@@ -260,6 +263,7 @@ static mf_site run_site(const char *run, const uint8_t *mask, int off,
     s.pred.term[0].mask = mask;
     s.pred.term[0].run_len = (uint32_t)strlen(run);
     s.pred.term[0].ppm_hi = MF_PPM_FULL;
+    s.pred.term[0].need = MF_REQUIRED;
     return s;
 }
 
@@ -281,6 +285,7 @@ static void p_byte(mf_pred *p, int b)
 {
     memset(p, 0, sizeof *p);
     p->nterm = 1;
+    p->need = MF_REQUIRED;
     t_byte(&p->term[0], 0, b);
 }
 
@@ -289,6 +294,7 @@ static void p_run(mf_pred *p, const char *run, const uint8_t *mask, int pos,
 {
     memset(p, 0, sizeof *p);
     p->nterm = 1;
+    p->need = MF_REQUIRED;
     t_run(&p->term[0], 0, run, mask);
     p->plan_pos = (uint16_t)pos;
     p->fn_ref = fn_ref;
@@ -1337,18 +1343,29 @@ static int fd_render(const char *dir, const char *name, const mf_site *s,
     int table = s->op == MF_OP_FIND && s->pred.term[0].kind == MF_T_SET &&
                 s->pred.term[0].table_ref;
     int pre = s->op == MF_OP_ALL_PRESENT;
+    /* B2's PF shape (MF_SITE_ABI 13): an unbounded site whose empty range
+       runs the miss states the leaving on_miss; a bounded one its `n - 1`
+       miss and, on the DFA hat, its moved statement; MLINE's context stop
+       (a term below the candidate) its floor and `break;` */
+    int back = s->op == MF_OP_FIND && s->pred.term[0].offset < 0;
+    int miss_runs = pre || (!table && !s->end_back) ||
+                    (s->empty == MF_EMPTY_MISS && !s->end_back);
     mf_hooks h = { .s = "subject", .n = "subject_length", .lo = pre ? "search_from" : "scan_position",
                    .result = pre ? "handoff_position" : "scan_position",
-                   .miss = MF_MISS_N,
-                   .on_miss = (!table && !pre) || pre ? "return 0;" : NULL,
+                   .miss = s->end_back ? "subject_length - 1" : MF_MISS_N,
+                   .on_miss = back ? "break;" : miss_runs ? "return 0;" : NULL,
+                   .floor = back ? "scan_position" : NULL,
                    .table_name = h_table_name, .fn_name = h_fn_name,
-                   .note = h_note, .note_tag = h_note_tag,
-                   .indent = "    ", .u = &fx, .start = "search_from" };
+                   .note = pre ? h_note : NULL, .note_tag = pre ? h_note_tag : NULL,
+                   .indent = "    ", .u = &fx, .start = "search_from",
+                   .moved = s->site_kind == MF_SK_DFA_HAT ? "state = 1;" : NULL };
     uint8_t consulted = 9;
     uint32_t hd = 0;
+    mf_result res;
+    memset(&res, 0, sizeof res);
     int rc = mf_define(art, FXW(s), &h, &sd, &hd) ||
              (s->decl_point && mf_locals(art, hd, &h, &su)) ||
-             mf_use(art, hd, &h, &su, NULL) ||
+             mf_use(art, hd, &h, &su, &res) ||
              mf_flush_helpers(art, &sd) ||
              mf_art_end(art, &consulted);
     if (rc) {
@@ -1370,6 +1387,10 @@ static int fd_render(const char *dir, const char *name, const mf_site *s,
         fclose(f);
     }
     printf("CONSULTED\t%u\n", (unsigned)consulted);
+    printf("ROUTED\t%s\n", res.row[0] ? res.row : "-");
+    printf("TEXT\t");
+    for (const char *c = use.p ? use.p : ""; *c; c++) putchar(*c == '\n' ? '|' : *c);
+    printf("\n");
     free(def.p);
     free(use.p);
     return 0;
@@ -1382,6 +1403,26 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
     else if (!strcmp(name, "set10-nobody")) *s = fd_pf_site("0123456789", 1, MF_BODY_UNSTATED);
     else if (!strcmp(name, "set2r"))        *s = fd_pf_site("0123456789abcdefghijklmnopqrstuvwxyz", 1, MF_BODY_ONESHOT);
     else if (!strcmp(name, "byte1"))        *s = fd_pf_site("x", 0, MF_BODY_ONESHOT);
+    /* R17-b' B2: the one-byte sites as pcrec states them since MF_SITE_ABI 13
+       (the set at every count with its table OFFERED, the consumer kind, the
+       miss and moved behaviour as facts): rows D1, D1w, D1c route them */
+    else if (!strcmp(name, "byte1t") || !strcmp(name, "byte1vm") ||
+             !strcmp(name, "hat1")) {
+        int hat = !strcmp(name, "hat1");
+        *s = fd_pf_site("x", 1, MF_BODY_ONESHOT);
+        s->empty = hat ? MF_EMPTY_NOP : MF_EMPTY_MISS;
+        s->end_back = (uint8_t)hat;
+        s->on_miss_leaves = !hat;
+        s->site_kind = !strcmp(name, "byte1vm") ? MF_SK_VM_ATTEMPT
+                     : hat ? MF_SK_DFA_HAT : MF_SK_DFA_SCAN;
+    } else if (!strcmp(name, "mline")) {
+        *s = pf_site(0, 0);
+        t_byte(&s->pred.term[0], -1, '\n');
+        s->empty = MF_EMPTY_AT_N;
+        s->on_miss_leaves = 1;
+        s->body = MF_BODY_ONESHOT;
+        s->site_kind = MF_SK_DFA_ATTEMPT;
+    }
     else if (!strcmp(name, "run3")) {
         *s = pf_site(0, 0);
         t_run(&s->pred.term[0], 0, "abc", NULL);
