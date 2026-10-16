@@ -768,7 +768,7 @@ which is pcre2demo's "advance one character and search on". R runs with its OWN 
 pcre2demo's retry is its own `pcre2_match` call (the combinator row's `per-operand` meter
 cell, §2.1; CONDITIONAL on Q-I1). pcre2demo's advance after a failed retry steps over a
 whole CRLF under the CRLF/ANY/ANYCRLF newline conventions. pcrec refuses newline verbs today
-(`src/parse/mod_verbs.c:174-177`; `DEF_NEWLINE_CONV` is reserved, `docs/spec/registry.md:197`), so the
+(`src/parse/mod_verbs.c:174-177`; `DEF_NEWLINE_CONV` is reserved, `docs/spec/registry.md §9¶1`), so the
 one-character advance is exact now. The newline-aware arm is filed as U16 (IT14).
 
 - **VM (and the VM hybrid).** The accept label gains one guard: reject when
@@ -1545,7 +1545,7 @@ storage rows) is placed in the entry table.
 | U13 | `__find`'s `shared` linkage for every body at `0` (`compound_entries.md` U1) | `I_shared` within the noise floor of `I` (§5.3) |
 | U14 | S shrink to 48 B | K5 retired by a kit form's single-pass proof AND another abi event moving the shared block (§1.3) |
 | U15 | a per-box batch size suggestion (`rx_info` or a header hint) | a measured `B64` vs `B8` crossover that differs across boxes; it would be a D166 set row (§8a) |
-| U16 | a newline-aware failed-retry advance (pcre2demo steps over a whole CRLF under CRLF/ANY/ANYCRLF); the non-empty advance is unchanged (IT14) | `DEF_NEWLINE_CONV` gains a producer (`docs/spec/registry.md:197`) |
+| U16 | a newline-aware failed-retry advance (pcre2demo steps over a whole CRLF under CRLF/ANY/ANYCRLF); the non-empty advance is unchanged (IT14) | `DEF_NEWLINE_CONV` gains a producer (`docs/spec/registry.md §9¶1`) |
 | U17 | a general "twin-forwarding" check: no exported-to-exported edge inside an artifact, which would also cover `compound_entries.md` I3's wrapper edges (itcrit2's unlock) | `compound_entries.md` I3 lands |
 | U18 | debug-only misuse checks under a `-DPCREC_ITER_CHECK`-style switch: an owner tag, and a batch region shared by two live iterators. D165 add. 3 allows a debug build to add checks; none ships in the hot path | the first user report of a foreign iterator or a shared batch region |
 
@@ -1630,7 +1630,7 @@ replaced by the STATE part of the `iterate` row).
 - **F8.** A var-bearing artifact's `_search` has a non-uniform signature (18 corpus
   patterns). `next`'s is uniform, because the iterator carries `vars`.
 - **F9 (rev 2; corrected in rev 3, IC9).** D165 add. 2 writes the `_in` descriptor as
-  `rx_buffers`. That is the example prefix `rx` (match_api.md:3108 uses it the same way), not
+  `rx_buffers`. That is the example prefix `rx` (match_api.md §10.6¶1 uses it the same way), not
   a different type. The shipped type is per-artifact `<prefix>_buffers` (match_api.md
   §10.2¶2). What remains true: a binding typed to the descriptor must be per-prefix (Q-I2).
 - **F10 (rev 2).** D163 add. 6 Q1's "one meter per exported call", read literally, would make
