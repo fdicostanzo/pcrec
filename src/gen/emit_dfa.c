@@ -1601,6 +1601,9 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     mf_hooks h = {
         .fn_name = req_site_fn_name, .note_tag = req_site_note_tag,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+        /* R-19 (R17-b' B1): every use point's position is the activation's
+           origin (pcrec_emit_req_byte_check asserts it) */
+        .start = PCREC_MF_ORIGIN,
     };
     pre->site = s;
     pre->handle = pcrec_memfn_define(cx, DELEG_PRE, s, &h, c);
@@ -1660,6 +1663,10 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     const mf_site *s = pre->site;
     const char *from = posvar;
     PcrecMfU u = { cx, s, pre, indent };
+    if (strcmp(posvar, PCREC_MF_ORIGIN))
+        pcrec_ctx_fail(cx, 0, "internal error: the pre-check is used from `%s`, not "
+                       "the activation's origin its define states (R-19's START "
+                       "hook, src/gen/memfn_sites.h PCREC_MF_ORIGIN)", posvar);
     mf_hooks h = {
         .s = subjvar, .n = lenvar, .lo = posvar, .indent = indent,
         .on_miss = REQ_ON_MISS, .result = "handoff_position",
@@ -6537,7 +6544,7 @@ static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
                      .table_name = table ? find_table_name : NULL,
                      .fn_name = f->stem ? find_fn_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
-                     .u = u };
+                     .u = u, .start = f->start };
 }
 
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
@@ -6631,7 +6638,8 @@ static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
                         .set = f->cand.set,
                         .byte = f->cand.byte, .pos = "scan_position",
                         .subject = "subject", .len = "subject_length",
-                        .holdback = holdback, .on_miss = on_miss };
+                        .holdback = holdback, .on_miss = on_miss,
+                        .start = PCREC_MF_ORIGIN };
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -7491,7 +7499,8 @@ static PcrecFind vm_hat_find_of(const CandSel *s, const char *p, uint8_t v[256])
     return (PcrecFind){ .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
                         .table = PCREC_FIND_START_SET, .set = v,
                         .pos = "attempt_position", .subject = "subject",
-                        .len = "subject_length", .holdback = 0 };
+                        .len = "subject_length", .holdback = 0,
+                        .start = PCREC_MF_ORIGIN };
 }
 
 /* [MEMFN] R17-a THE VM HAT's ONE SITE (setfind.md §7.5, §11.1): defined
@@ -13177,7 +13186,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                          .offset = -cand.offset, .floor = "start",
                          .pos = "start", .subject = "subject",
                          .len = "subject_length", .holdback = 0,
-                         .on_miss = "break;" };
+                         .on_miss = "break;", .start = PCREC_MF_ORIGIN };
         pcrec_emit_find(c, "            ", &fd);
         pcrec_sb_puts(c, "        }\n");
     }

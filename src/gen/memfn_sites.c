@@ -70,9 +70,14 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
         ma->u = &cx->arena;
         ma->alloc = arena_alloc;
+        /* R17-b' B1: the set is the harness lever's (a test build's), else
+           none; the analysis object is DECLARED and handed nothing until
+           E-1 (window_contract S1) fills it, with no kit edit */
+        const mf_measures *ms = cx->emit_in && cx->emit_in->harness
+                              ? cx->emit_in->harness->measures : NULL;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags));
+                               pcrec_memfn_denies(cx->opt->flags), ms, NULL);
         if (!job->mf) pcrec_ctx_nomem(cx);
     }
     return job->mf;
@@ -201,6 +206,9 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 {
     mf_site *s = pcrec_arena_alloc(&cx->arena, sizeof *s);
     s->abi = MF_SITE_ABI;
+    /* R-19 (R17-b' B1): every entry body is one-shot until R17-b'''s
+       iterator; stated by every builder, here at their common start */
+    s->body = MF_BODY_ONESHOT;
     s->ret_pred = MF_NO_PRED;
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
@@ -527,7 +535,10 @@ void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 
 void pcrec_memfn_art_end(Ctx *cx, mf_art *art)
 {
-    if (mf_art_end(art))
+    /* `consulted` (R-MS2) is not asked before [MEASURE-SET] M0 (B4), whose
+       `<PREFIX>_MEASURES` stamp is its reader: through B3b no routed finder
+       row reads a set key, so it would read 0 on every compile */
+    if (mf_art_end(art, NULL))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's artifact end "
                        "failed: %s", mf_art_error(art));
     if ((mf_includes(art) & MF_INC_STRING_H) && !cx->job->string_h)

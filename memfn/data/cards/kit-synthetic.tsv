@@ -1,0 +1,27 @@
+# memfn/data/cards/kit-synthetic.tsv — the cards of the SYNTHETIC sets
+# (`kit-synthetic@1`, tier synthetic; r17b_prime.md §1.6 [rev3 B6], §8.1-§8.2):
+# test inputs, never measured, so their method is no measurement. Every
+# quantity a finder row (or its pay rule) reads has a card here, so a
+# synthetic set holding every derivable key is on-card. The pay rule's
+# operand quantities (delta, dfloor, cdisp_call, cfloor, ffloor, cdisp_use,
+# ufloor, wfloor) are PROVISIONAL spellings (memfn/src/finder.c) until
+# kit-grid@2's cards fix them.
+#
+#owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
+kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
+kit	eps	1	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
+kit	xover	1	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	block	1	form	bytes	synthetic	-	-	-	-	-	-	-
+kit	gstar	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	lstar	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	g8	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3a	1	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3b	1	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	delta	1	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	dfloor	1	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_call	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cfloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ffloor	1	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_use	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ufloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	wfloor	1	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-

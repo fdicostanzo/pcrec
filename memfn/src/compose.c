@@ -258,12 +258,50 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
-                             gate_verdict *why)
+                             gate_verdict *why, int quiet)
 {
-    gate_in in = { s, def, NULL };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0 };
+    gate_in in = { s, def, NULL, NULL };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
+}
+
+/* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12) -----------------
+ *
+ * What row `a`'s text for site `s` proves, as facts (D157): every row today
+ * writes a search text (exists 1: NONE is not built, F0 lands at B5); its
+ * libc column; and, on a FIND, the bytes every candidate's offset-0 byte
+ * lies in: the intersection over the predicate's terms at offset 0 (a SET
+ * term's set, a RUN term's first position under its mask), all ones where
+ * no term sits there or the op yields no candidate. One function serves the
+ * define (site_rec.cls, mf_defined) and the query (mf_ask), so the two agree
+ * by construction on one selection; the checks that do not share it are
+ * G2's query family and the fixtures' independent oracle. */
+static void kit_class(const arm *a, const mf_site *s, mf_class *out)
+{
+    memset(out, 0, sizeof *out);
+    out->v = MF_CLASS_V;
+    out->exists = 1;
+    out->libc_free = !a->libc;
+    out->includes = a->includes;
+    memset(out->proven0, 0xFF, sizeof out->proven0);
+    if (s->op != MF_OP_FIND) return;
+    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++) {
+        const mf_term *tm = &s->pred.term[t];
+        if (tm->offset != 0) continue;
+        uint8_t b[32];
+        memset(b, 0, sizeof b);
+        if (tm->kind == MF_T_SET) {
+            memcpy(b, tm->set, sizeof b);
+        } else if (tm->kind == MF_T_RUN && tm->run && tm->run_len) {
+            unsigned m = tm->mask ? tm->mask[0] : 0xFFu;
+            for (unsigned x = 0; x < 256; x++)
+                if ((x & m) == tm->run[0]) b[x >> 3] |= (uint8_t)(1u << (x & 7));
+        } else {
+            continue;
+        }
+        for (unsigned i = 0; i < 32; i++) out->proven0[i] &= b[i];
+    }
 }
 
 const gate_contract *kit_arm_contract(size_t i)
@@ -427,6 +465,10 @@ static const char *site_check(const mf_site *s)
     if (s->count_by_caller && s->handoff != MF_H_ADVANCE)
         return "`count_by_caller` is for an ADVANCE site only (Q-R4h-1 (a))";
     if (!in_enum(s->fold_kind, MF_FOLD_UCP)) return "`fold_kind` outside mf_fold";
+    if (!in_enum(s->body, MF_BODY_PARAM)) return "`body` outside mf_body";
+    if (s->body == MF_BODY_PARAM)
+        return "`body` PARAM is reserved for R17-b'' (its mode-expression hook): no "
+               "row serves it yet";
     if (s->fold_kind && s->op != MF_OP_MISMATCH)
         return "`fold_kind` is for a MISMATCH site only (Q-R8-4)";
     if (s->op == MF_OP_MISMATCH) {
@@ -488,8 +530,28 @@ static const char *site_check(const mf_site *s)
 
 /* ---- mf_art -------------------------------------------------------------- */
 
+/* The set's rows as R-MS1 hands them (memfn.h mf_measures), NULL iff they
+ * are, else why not: a `kit.`-owned key, no key twice, every value inside
+ * MF_MEASURE_MAX (refused, never clamped: r17b_prime.md §2.5 [D9]). */
+static const char *measures_check(const mf_measures *ms)
+{
+    if (ms->nrows && !ms->rows) return "rows missing (nrows > 0, rows NULL)";
+    for (uint32_t i = 0; i < ms->nrows; i++) {
+        const mf_measure *r = &ms->rows[i];
+        if (!r->key || strncmp(r->key, "kit.", 4))
+            return "a row whose key is not the kit's (`kit.`): pcrec hands the kit "
+                   "its own rows only (R-MS1)";
+        if (r->value_e6 > MF_MEASURE_MAX || r->value_e6 < -MF_MEASURE_MAX)
+            return "a value past MF_MEASURE_MAX (refused, never clamped)";
+        for (uint32_t j = 0; j < i; j++)
+            if (!strcmp(ms->rows[j].key, r->key)) return "a key twice";
+    }
+    return NULL;
+}
+
 mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
-                     uint64_t denies)
+                     uint64_t denies, const mf_measures *ms,
+                     const mf_analysis *an)
 {
     mf_art *art = a->alloc(a->u, sizeof *art);
     if (!art) return NULL;
@@ -499,7 +561,12 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     art->prefix = prefix ? prefix : "mf";
     art->policy = policy;
     art->denies = denies;
+    art->ms = ms;
+    art->an = an;       /* DECLARED (E-1): no row reads it before B3a */
     gate_trace_art(art);
+    const char *why = ms ? measures_check(ms) : NULL;
+    if (why) kit_fail(art, "mf_art_begin: the measurement set `%s` is refused: %s",
+                      ms->id ? ms->id : "(no id)", why);
     return art;
 }
 
@@ -538,6 +605,34 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
+/* THE DEFINE-TIME QUERY's body (r17b_prime.md §4.5): mf_define's checks and
+ * selection over the phases `gphases`, writing nothing: no text, no handle,
+ * no helper, no art state, no error, and no trace record of its walk (the
+ * walk is quiet: a query is not a selection). The class of the row the
+ * define would choose, or -1 where the define would refuse. */
+static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                   unsigned gphases, mf_class *out)
+{
+    memset(out, 0, sizeof *out);
+    if (art->err[0] || s->abi != MF_SITE_ABI || site_check(s) || s->denies != art->denies)
+        return -1;
+    gate_verdict declined = { 0, 0 };
+    const arm *row = select_arm(art, s, def, gphases, &declined, 1);
+    if (!row) return -1;
+    kit_class(row, s, out);
+    return 0;
+}
+
+int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class *out)
+{
+    int rc = ask_sel(art, site, def, MF_PH_DEFINE, out);
+#ifdef MF_TRACE
+    fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u\n",
+            art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes);
+#endif
+    return rc;
+}
+
 /* mf_define's body, over the phases the selection gate reads. */
 static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                       mf_sink *file_scope, uint32_t *handle, unsigned gphases)
@@ -556,11 +651,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
-    const arm *row = select_arm(art, s, def, gphases, &declined);
+    const arm *row = select_arm(art, s, def, gphases, &declined, 0);
     if (!row) {
         /* the generic row applies to every site, so only the gate can leave
            a site with no row: name what it declined (ruling (d)) */
-        gate_in in = { s, def, NULL };
+        gate_in in = { s, def, NULL, NULL };
         char f[200];
         gate_describe(f, sizeof f, &declined, &in);
         return kit_fail(art, "mf_define: no row serves this site: %s",
@@ -580,12 +675,32 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     memset(r, 0, sizeof *r);
     r->site = *s;
     r->arm = row;
+    kit_class(row, s, &r->cls);
     if (s->decl_point) {
         int oom = 0;
         r->def_s = art_copy(art, def ? def->s : NULL, &oom);
         r->def_n = art_copy(art, def ? def->n : NULL, &oom);
+        r->def_start = art_copy(art, def ? def->start : NULL, &oom);
         if (oom) return kit_fail(art, "mf_define: out of memory");
     }
+#ifdef MF_TRACE
+    /* §4.5 rule 2, the trace build's half: the query, re-asked over the
+       define's own phases, answers the class the define chose, and a class
+       that searches nothing proves nothing (Q-R17P-25) */
+    {
+        mf_class q;
+        if (ask_sel(art, s, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
+            return kit_fail(art, "mf_define: the define-time query's class differs "
+                            "from the define's (r17b_prime.md §4.5 rule 2)");
+        if (!r->cls.exists)
+            for (unsigned i = 0; i < 32; i++)
+                if (r->cls.proven0[i] != 0xFF)
+                    return kit_fail(art, "mf_define: a class with exists 0 proves "
+                                    "bytes (Q-R17P-25)");
+    }
+    /* the finder table's trace-only shadow (finder.c): records, no byte */
+    fd_shadow(art, h, s, def);
+#endif
 
     if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
@@ -611,8 +726,8 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
         return kit_fail(art, "mf_use: handle %u is used before its mf_locals "
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
-    gate_in in = { &r->site, use, NULL };
-    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0 };
+    gate_in in = { &r->site, use, NULL, NULL };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
@@ -665,6 +780,11 @@ int mf_locals(mf_art *art, uint32_t handle, const mf_hooks *at, mf_sink *body)
     if (!same_text(at ? at->n : NULL, r->def_n))
         return kit_fail(art, "mf_locals: handle %u's `n` text differs from its "
                         "define's", handle);
+    /* R-19's START hook binds as `s`/`n` do (MF_SITE_ABI 12): N = n - start
+       is read once, here, so the point must name the define's origin */
+    if (!same_text(at ? at->start : NULL, r->def_start))
+        return kit_fail(art, "mf_locals: handle %u's `start` text differs from its "
+                        "define's", handle);
     /* No row keeps storage yet (R17-b's are the first), so nothing is
        written: `body` is the point a storage row's declarations go to. */
     (void)body;
@@ -682,6 +802,7 @@ int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
     out->handle = handle;
     out->reads_table = r->arm->reads_table && site_tabled(&r->site);
     out->includes = r->arm->includes;
+    out->cls = r->cls;
     return 0;
 }
 
@@ -705,7 +826,7 @@ int mf_call(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body)
     return mf_use(art, handle, h, body, NULL);
 }
 
-int mf_art_end(mf_art *art)
+int mf_art_end(mf_art *art, uint8_t *consulted)
 {
     if (art->err[0]) return -1;
     for (uint32_t i = 0; i < art->nsites; i++) {
@@ -721,6 +842,7 @@ int mf_art_end(mf_art *art)
             return kit_fail(art, "mf_art_end: handle %u defined, never used",
                             i + 1);
     }
+    if (consulted) *consulted = art->consulted;
     return 0;
 }
 
