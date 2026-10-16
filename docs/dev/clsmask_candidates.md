@@ -413,3 +413,23 @@ that does not yet have a consumer.
 `docs/dev/clsmask_candidates/run_all.sh` from the repo root after `make`. Inputs:
 pcrec-bench read-only, and the corpus cache. Work goes to `build/cs` (gitignored).
 Regenerating moves every number here. Committed outputs are in `results/`.
+
+## 10. Discussion 2026-10-16 (Frank, session 114)
+
+Design points raised after the census. Discussion, not rulings; nothing is scheduled
+(the row is NOT SCHEDULED, information-gathering only, to be taken up much later under
+[OPTLOOP]).
+
+- **A NEW kit contract.** A classify primitive is not one of the kit's existing search
+  sites. It would be a new contract, to be written as facts-only (D157) when the row is
+  taken up.
+- **Input.** A byte-language DAG, encoding-blind (the depth-1 case being plain byte
+  classes), plus frequency facts (how often the class is tested, run share, coverage per
+  block, from the §1 instrument).
+- **Division of labour.** pcrec decides WHETHER to cache a class; the kit decides HOW to
+  fill it. A fill never declines: it can always iterate (a scalar loop is a legal fill).
+- **Fill modes.** (1) SIMD block (one classify of a 64-byte block); (2) scalar block;
+  (3) per-position memo (known + value bits per position, filled on first test).
+- **Caching may matter more than SIMD.** Reuse under backtracking (§0 re-visit factors of
+  2.7-5.7) is available to the scalar and memo modes too, so the first question for the
+  timing study is how much of a gain is reuse and how much is batching.
