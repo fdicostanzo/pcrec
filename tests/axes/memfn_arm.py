@@ -62,7 +62,34 @@ from concurrent.futures import ThreadPoolExecutor
 # pass, `-p rx --features all`; byte base nothing, utf8 base `-e utf8`; streams
 # c-default = the default engine, c-vm = --engine=vm). Counts are in the
 # report (docs/dev/lanes/runaxes_report.md).
-MEMFN_CLASS = {}
+MEMFN_CLASS = {
+    ("precheck-assign-byte", "default"): ("DIFFER",
+        {("byte", "c-default"): 176, ("byte", "c-vm"): 0, ("utf8", "c-default"): 244, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+    ("precheck-assign-byte", "simd"): ("DIFFER",
+        {("byte", "c-default"): 176, ("byte", "c-vm"): 0, ("utf8", "c-default"): 244, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+    ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
+    ("vrun-kb", "simd"): ("DIFFER",
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+    ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
+    ("vrun-pad", "simd"): ("DIFFER",
+        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 14, ("utf8", "c-vm"): 14},
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+    ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
+    ("vrun-trim", "simd"): ("DIFFER",
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+    ("vrun-w16", "default"): ("ASSERT_ZERO", {}, []),
+    ("vrun-w16", "simd"): ("DIFFER",
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+    ("vrun-w32", "default"): ("ASSERT_ZERO", {}, []),
+    ("vrun-w32", "simd"): ("DIFFER",
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+}
 
 STREAMS = {"c-default": [], "c-vm": ["--engine=vm"]}
 ENCS = {"byte": [], "utf8": ["-e", "utf8"]}
