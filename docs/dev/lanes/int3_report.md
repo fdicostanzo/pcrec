@@ -34,7 +34,7 @@ them with sed was refused by the auto-mode permission classifier, so I stopped r
 work around it. The tree is unedited (`git status` clean apart from this report).
 
 1. test-plan-lint PL14: `docs/dev/lanes/winreq_report.md:106` (arrives with the kit B0
-   delivery, absent on main) cites a plan line number, `` (`plan.md:859`, not started) ``.
+   delivery, absent on main) cites a plan.md line number beside `[REGIME-LANDINGS]` (fixed by the manager, 6b5b47938 and the next commit).
    Mechanical fix: drop the parenthetical; the row is already cited by its ID
    `[REGIME-LANDINGS]`. `winreq_report.md` is a kit-authored file, so the kit may prefer
    to fix it on its own branch.
