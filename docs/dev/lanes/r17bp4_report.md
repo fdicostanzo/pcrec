@@ -2,8 +2,11 @@
 
 Lane r17bp4 (opus, design only), branch `lane/memfn-r17bp4`, worktree
 `worktrees/r17bp4`. Parent: the kit manager. Nothing under `src/`, `memfn/src/`, `tests/`
-or `lib/` changed; no timing; no `make` (the only check run was a markdown table-shape
-check over the two documents written).
+or `lib/` changed; no timing. Checks run: a markdown table-shape check over the documents
+written, and `make test-spec-history` (light): 143/2 at the end, both reds
+`docs/dev/lanes/fddocs_report.md:37` (`tuning §2.49`, `limits §8.4¶2b`), present on this
+branch's base 39f13e397 and not this lane's; this lane's own two dangling `§2.49`
+citations were found by it and removed (76070e8d7).
 
 ## Deliverables
 
@@ -120,4 +123,4 @@ rows with their triggers, unscheduled.
 | grid2 additions as the slot spec (C3, C5, C7, C8) | done (§5.4) |
 | §12 updated; first delivery stays B0-B3b zero-mover | done |
 | WIP commits after each section; report; CLAUDE.md index entries | done |
-| DESIGN ONLY; no code, timing or `make` | done (a markdown table-shape check only) |
+| DESIGN ONLY; no code, timing or heavy `make` | done (table-shape check; `make test-spec-history` 143/2, both reds pre-existing in fddocs_report.md) |
