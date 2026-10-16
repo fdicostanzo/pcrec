@@ -605,9 +605,9 @@ transition, not to a set:
      text PRE-PARSED into static const arrays.
   3. **The pointers.** `ksgen` also writes the default pointers from `DEFAULTS`, as a
      table in the same `.inc`.
-- **`ksgen` is C.** It links a STAGE-0 build of the knowledge-source module (§9: the one
-  section-TSV reader and the measures-kind validator, built with an empty table, as
-  `PCREC_FIND_STAGE0` does for findgen). It parses with the reader the library uses at
+- **`ksgen` is C.** It links a STAGE-0 build of the knowledge-source PARTS and the
+  measures row (§9.2: the one section-TSV reader and the measures-kind validator, with no
+  store, as `PCREC_FIND_STAGE0` does for findgen) [r2 M8]. It parses with the reader the library uses at
   run time, in its no-filesystem buffer mode.
 - **No python writes an embedded byte.** Revision 1's `generate.py` wrote both the text and
   the pre-parse that the structural check then verified against its own python twin. That
@@ -2206,6 +2206,12 @@ measurement.
   (§8.2).
 - **The embed** is gated by regeneration plus `git diff`, with an independent awk read of
   `DEFAULTS` (§8.3).
+- **The loader's interpretation** is checked by R5 against an independent reader per kind
+  (python `ks_ref.py` for the TSV kinds, `analyze/`'s reader for analysis). Every other
+  round-trip check runs the one C reader on both sides (§9.6) [r2 M3].
+- **Dispatch reach** is counted by the kit's R-MS6 hook. The admitted arms come from the
+  kit's fired-rows section, and that section is checked against the `dispatch` set's
+  construction through §5.4's census, which is a different kit output (§8.1) [r2 M7].
 - **Population counts** (statuses, census artifacts by emit_sweep's per-stream reach floors,
   sites per arm) are counted by awk over TSVs (K35).
 - **Directions** come from two owners' declarations that must agree (§6.2).
