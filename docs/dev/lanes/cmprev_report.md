@@ -69,4 +69,7 @@ report).
 ## Validation
 
 No validation runs are owed. This lane changed documents only, so no build, suite or probe
-was run, and revision 1's probes are unchanged.
+was run, and revision 1's probes are unchanged. Two light doc checks were run on the branch.
+`scripts/plan_lint.sh` passed. `make test-spec-history` read 144 passed and 1 failed. The one
+failure is `docs/design/findall_iter.md:753`'s line-number citation. It is in the base commit
+`7ee8d7ae7`, this lane does not touch it, and main has since fixed it in `b785a6e6a`.
