@@ -1,4 +1,4 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-14, session close)
+# memfn wake — kit session hand-off (rewritten 2026-10-16 ~16:40, session close)
 
 This is the kit session's orientation file. Run it as `/pcrec-memfn-manager`;
 its §1 is the wake order. It is rewritten at every pause and holds the current
@@ -7,106 +7,115 @@ state. The history is `journal.md`.
 ## 1. Who you are and where you work
 
 - You are the pcrec-memory-functions kit manager (`pcrecdev3`). The pcrec
-  manager is "main" (`pcrecdev1`; run ListAgents). Stale sessions can share a
-  name.
-- Main files requests in `requests.md` (it is the ONLY writer). You answer in
+  manager is "main" (`pcrecdev1`; run ListAgents).
+- Main files requests in `requests.md` and is its only writer. You answer in
   `responses.md` and are its only writer.
 - **Box:** the Linux dev box, repo `/home/pcrec/projects/pcrec`.
   - Use `gnutimeout` (bare `timeout` is uutils).
   - Commit with `git -c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
-- **The kit's RECORD branch is lane/memfn-r17 (worktree `worktrees/memfn-r17`).**
-  It carries the kit's docs, ledger and reports, plus OLD R17-b code at abi 77.
-  - It does NOT merge cleanly with main (17 conflicts, aborted). Do NOT
-    merge main into it.
-  - Ship docs to main via a docs-only branch cut FROM main (like
-    lane/memfn-docs, already merged).
-  - BUILDS go on FRESH branches cut from main.
-- Never merge to main, never push, never `cd` (use `git -C` and absolute
-  paths; `cd` moved the session cwd twice this session).
+- **THE KIT BRANCH IS `lane/memfn-fd`** (worktree `worktrees/memfn-fd`). It was cut
+  from main 063b4a4b4 and has main @ 353249282 merged in. Builds and lanes are
+  cut from it. `lane/memfn-r17` is the RECORD branch: old R17-b code at abi 77,
+  never merged. Its compiler is what grid2 times the V1 arms with.
+- Never merge to main, never push, never `cd` (use `git -C` and absolute paths).
 - **Scratch:** `worktrees/memfn-slot/` (one dir per slot).
 
 ## 2. Read, in this order
 
-1. `memfn/CLAUDE.md` (boundary table now includes the regime table, evaluator
-   and measurement sets).
-2. `requests.md` on MAIN (R-19, R-20, R-21 are newest) and `responses.md` on
-   lane/memfn-r17 (the last notices: R17-b′ rev 2, the pause notice).
-3. The tail of `journal.md` (2026-10-13/14).
-4. `docs/design/memfn/r17b_prime.md` rev 2 (THE design; §9 questions) and
-   `docs/design/memfn/regime_eval.md` rev 2.4 (the evaluator; §3.0a parameter
-   table = `regime_eval/regime-eval.evaluator-params.tsv`).
-5. Main: `docs/design/regime_tables.md` (rev 0.4+), `docs/design/measure_sets.md`
-   (rev 2.1), decisions D161 add. 11-15, D165, D166 (+ add. 1/1.1/2), [KNOW-SRC].
-6. `memfn/docs/finder_history.md` (row edits until LOCKDOWN, D161 add. 13).
+1. `memfn/CLAUDE.md`.
+2. `requests.md` on main (newest is R-21) and `responses.md` on lane/memfn-fd.
+3. The tail of `journal.md` (the 2026-10-16 entries).
+4. `docs/design/memfn/r17b_prime.md` REV 3 (THE design; §3.1 is the step plan)
+   and the panel record `docs/dev/reviews/2026-10-16-r1-memfn-r17bp.md`.
+5. On main: decisions D167 + addendum 1, D163 addendum 8 (layout switches),
+   D165 + addenda.
+6. Reports: `docs/dev/lanes/fdb0_report.md`, `fdb1_report.md`,
+   `runaxes_report.md`, `grid2r3_report.md`, `comppin_report.md`.
 7. BOILERPLATE before briefing.
 
 ## 3. Rules in force
 
-- **BUILD HOLD (Frank, 2026-10-14):** design notes and D6 panels only. No
-  build lane, no E3, no timing/slot run (grid2 included) without Frank's
-  explicit go for that item, relayed by main. An agreed order is NOT a go.
-- **D166:** measurements are SETS (one box, one run, one method), relative
-  units, versioned; A = the set id, I = ISA. **D166 add. 1:** perf counters are
-  NEVER required (an optional diagnostic that skips loudly; scripts print the
-  paranoid suggestion and never act on it).
-- **D161 add. 13:** until LOCKDOWN (the table passing the judge plus R17-b′'s
-  routing commit = B4) the kit edits rows freely. Log every edit in
-  finder_history.md and tell main.
-- One heavy suite at a time across both sessions; ask main for the GO before
-  any slot. Light work needs no slot.
-- Running lanes MISS mid-run messages (it happened four times this
-  session). Settle scope before briefing; apply new rulings with a short
-  follow-up lane and VERIFY them in the delivery.
+- **The build hold is LIFTED (D167).** The R17-b′ build is GO (B0-B3b first,
+  LOCKDOWN at B4) and the grid2 timing slot is GO.
+- **Main's answers to Q-R17P-15..25 bind** (journal 2026-10-16). In particular:
+  - Q-19: PCREC_NO_REQ_SET_LEAD is a WORKING ALIAS or a refusal, never a silent no-op.
+  - Q-21: helpers follow D163 add. 8's RESOLVED layout controls.
+  - S1017-S1025 = SN-1..SN-9; S1026 = runaxes.
+- **/close (Frank, 2026-10-16):** never interrupt in-flight work. Wait for the
+  lanes to finish, then close.
+- One heavy suite at a time across both sessions. Agree each heavy slot with main.
+  Lanes may run light work pinned `taskset -c 12-15 -j4`.
+- A lane's rulings file only works if its brief says "re-read before EVERY heavy
+  command" (grid2r3 missed a HOLD).
+- Running lanes miss mid-run messages: settle scope before briefing.
 - Heartbeat cron `17,47 * * * *`. Recreate it at wake, delete it at close.
 
-## 4. Current state (2026-10-14 close)
+## 4. Current state (2026-10-16 close)
 
-- **Nothing is running.** Main is closed.
-- **R17-b′ design rev 2** (`docs/design/memfn/r17b_prime.md`, @ 158b83a85):
-  - 21 rows (15 FIND, 6 PRES), with D1 + R7 = Q-WR-1's UNMEASURED-DEFAULT;
-  - steps B0-B3b are a ZERO-MOVER first delivery (MF_SITE_ABI 10→14, no pcrec
-    abi event);
-  - B4 is the one censused mover = LOCKDOWN;
-  - B5-B9 come later;
-  - 8 ABSENT measurement families (M16-M23).
-  - **Its D6 panel is the NEXT kit work** (allowed under the hold). Use 3
-    critics: contract-vs-main-emitters/opus, zero-mover+checks/sonnet,
-    measurement+sets/sonnet, plus an unlock lens.
-- **regime_eval rev 2.4:**
-  - Frank's rulings are applied: the lean plan, the constants plus both
-    loosenings, k = 3 as a visible lever.
-  - The parameters are the [KNOW-SRC] kind `evaluator-params`.
-  - OWED before E5: declare the value vs provenance columns, rename the
-    domain to `pcrec-evaluator-params-1`, recompute the digest with an
-    INDEPENDENT script, and record the domain in the header.
-- **Waiting on Frank (via main):**
-  - the zen4-grid2 go (≈88 min required / 96 with optional items; it needs a
-    grid1 harness extension first, also held);
-  - Q-R17P-9..14;
-  - the build go for B0-B3b.
-- **Waiting on the bench:** I-152 (can the kit import the bench's text libs
-  with kit seeds?). The default path is a byte transfer arranged by main.
-- **Population facts (sbscope, compiled):** 170/172 rwquest questions have a
-  start-search site. J1b is SEALED (sha f41abc63…, 165 rows; unseal only at the
-  J1b judge step).
-- **Sabotage ids:** S911-S922 and S964-S980 are mapped per step; B6 needs new ids.
+**Delivered to main:**
+- **B0** @ 10d9f43f4: the R17-a seam on main, MF_SITE_ABI 11, no pcrec abi event.
+- Validation: make test 70/70, mech 57 rows clean, floored simd/comments sweeps 0
+  movers, G2 full 199,850,927/0.
+- Main is reviewing it. Its merge waits for main's evening chains, and main runs
+  ONE integration make test on e0c + ksrc + B0.
+
+**On lane/memfn-fd, NOT yet delivered:**
+- **B1** (fdb1, merged @ 6800f833b): the finder table in shadow, mf_ask, the
+  mf_analysis slot, R-MS1..5 seams; MF_SITE_ABI 12.
+  - Light checks green: strict, spec-history, registry 79/0, G2 quick 52,987,691/0,
+    finder 868/0.
+  - OWED (heavy slot): full make test, mech derived rows, G2 full, N2 census.
+  - Findings to act on:
+    - (a) R0/R7's floor token: fdb1 picked `kit.eps.findall.l64k`. CHECK it
+      against rev 3 §2.5 / C4 (regime-matched floors).
+    - (b) fields.def class space is full at 64.
+    - (c) the record branch's R17-b also claims MF_SITE_ABI 12: renumber at B4.
+    - (d) F-B1-3, an MLINE ATTEMPT reader disagreement, goes to B2.
+    - (e) an emit_sweep one-sided ASSERT_ZERO mode for new denies is owed.
+- **runaxes** (merged @ 8c549afea): run_axes.sh `--memfn=` arm, S1026 DETECTED,
+  AXES=--memfn answer-identical. It is MAIN's file, for main's review with the
+  next delivery.
+- **comppin**: COMPOSITION_EXTRA_PINS for -fmemfn-simd/-fcomments (37/106).
+- The close-skill edit (9175611a3).
+
+**IN FLIGHT: grid2 ARMED.**
+- `worktrees/memfn-slot/grid2/arm.sh` (detached, armed 15:52) waits for `grid2/.go`.
+  Main touches it ~18:00 on a quiet box.
+- The run: `worktrees/grid2r3/docs/dev/lanes/grid2/slot.sh`, CPU 14, ~75-80 min,
+  compiler worktrees/memfn-r17/build/pcrec (c90d65e53, abi 77).
+- Status: `grid2/arm.status` (ARMED → TRIGGER → SLOT_EXIT) and `grid2/slot.status`
+  (ends COMPLETE or FAILED).
+- If arm.sh died before TRIGGER, re-run it detached:
+  `setsid nohup bash /home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2/arm.sh >/dev/null 2>&1 </dev/null & disown`.
+- A red stage gets a TRIAGE lane before you read its log.
+
+**Waiting on main / Frank:**
+- B0's review and merge.
+- Heavy slots for B1's owed runs.
+- The I-152 bench answer.
+- D163 add. 8's layout controls (compound_entries rev 4, lane cmprev4) before B4's helpers.
 
 **Worktrees:**
-- Keep: memfn-r17 (the record branch); memfn-slot (scratch: spike1, grid1 logs
-  that gridread reads); grid1 (its harness, docs/dev/lanes/grid1/, is merged
-  but slot.sh is run from that worktree).
-- Prunable via wtprune (merged into lane/memfn-r17): costmodel, regeval,
-  regeval2-7, sbscope, pcscope, winreq, r17bp, r17bp3, gridread, memfn-docs
-  (merged into main).
-- slotpc: a detached main build at 3182dddf5, used for slotarms. Prunable.
-- Older ones are as listed in the previous wakes.
+- Keep:
+  - memfn-fd (the kit branch);
+  - memfn-r17 (the record branch + grid2's compiler);
+  - memfn-slot (scratch);
+  - grid2r3 (slot.sh runs from it);
+  - fdb0 (its ref063 reference binary);
+  - fdmech and fdb0-mt (logs, prunable after B0 merges);
+  - fdb1 (logs).
+- Prunable via wtprune once merged: fddocs, sweeparm, grid2p, r17bp4, comppin,
+  runaxes, and the 10-14 list (costmodel, regeval*, sbscope, pcscope, winreq,
+  r17bp, r17bp3, gridread).
 
 ## 5. Next actions on wake
 
-1. Recreate the heartbeat cron, run ListAgents, and read requests.md on main
-   for new items (ack them).
-2. Run R17-b′ rev 2's D6 panel (read-only critics). Consolidate in
-   docs/dev/reviews/YYYY-MM-DD-rN-memfn-r17bp.md; a revision lane follows.
-3. If main relays a grid2 go: brief the grid1 extension for grid2's spec
-   (r17b_prime rev 2 §4), check it, then run the slot detached.
-4. Before E5: the evaluator-params digest work.
+1. Recreate the heartbeat cron, run ListAgents, read requests.md for new items.
+2. Read grid2's result (arm.status / slot.status). If COMPLETE, a READING lane
+   (sonnet) works against rev 3 §5.4/§9.3, both layers, and reports constants and
+   predictions to main.
+3. Ask main for the heavy slot for B1's owed runs, then deliver B1 (+ runaxes).
+4. Brief B2 (ST2: one-byte FIND routed; rev 3 §3.1 row B2), with F-B1-3 and the
+   Q-19 alias rule in the brief. B2 waits on nothing else; E-1 (main) follows B2.
+5. Before E5: the evaluator-params digest work (rename the domain to
+   `pcrec-evaluator-params-1`, recompute independently).

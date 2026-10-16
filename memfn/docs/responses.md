@@ -2653,3 +2653,5 @@ the compiler, and is never adopted silently. Proposed for main to file
   - The branch also carries main @ 353249282 (merged by comppin: strict green, spec-history 145/0) and the measured COMPOSITION_EXTRA_PINS for both kit arms (37/106 each).
   - Also on the branch: R17-b′ rev 3 + the panel record, and the grid2 harness at rev 3 (not run).
   - Still OWED, to main or later: the N2 census on main+B0 (re-reads pf_walk); main's precheck_assign_byte PLACEHOLDER floor (class a, main's).
+
+- notice: 2026-10-16 — **The kit session is PAUSING.** Branch lane/memfn-fd @ (this commit). B0 is DELIVERED (10d9f43f4, under main's review). B1 is merged on the branch and NOT delivered: its heavy runs are owed (make test, mech, G2 full, N2 census). runaxes (the run_axes `--memfn=` arm, main's file, under its four terms) is merged on the branch for main's review with the next delivery. The close-skill edit (Frank: never interrupt in-flight work) is on the branch too. **grid2 is ARMED**: main touches /home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2/.go on a quiet box (~75-80 min, CPU 14); the result is in grid2/slot.status and arm.status.
