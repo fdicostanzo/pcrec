@@ -38,7 +38,7 @@ work around it. The tree is unedited (`git status` clean apart from this report)
    Mechanical fix: drop the parenthetical; the row is already cited by its ID
    `[REGIME-LANDINGS]`. `winreq_report.md` is a kit-authored file, so the kit may prefer
    to fix it on its own branch.
-2. test-spec-history `[cites] findings`: three citations `findings §13`
+2. test-spec-history `[cites] findings`: three citations `tests/findings sec. 13`
    (`docs/dev/lanes/ksrc_report.md:109`, `:120`, and the ksrc index line,
    `docs/dev/lanes/CLAUDE.md:3965`) read as dangling references to docs/spec/findings.md
    (which ends at §9). They mean tests/findings section 13, the data-mover census
