@@ -752,11 +752,13 @@ mutable state, like `caps`:
 - **pcrec gives the kit:**
   - a REGION of `st`: an lvalue's text and its byte offset;
   - the region's guarantees: zero at the first use of an iterator; persistent across calls of
-    the same iterator; `lo` monotone; the same unchanged `(s, n)`; one thread.
-- **The kit declares, per stateful form:** its bytes and alignment (`mf_result` / the form's
-  row), and that ZERO is its fresh state (addendum 1: "zero-init + the same unchanged
-  (s, n)").
-- **Zeroing.** pcrec's bind code zeroes the region's DECLARED bytes, 24 or 32. It never
+    the same iterator; `lo` monotone; the same unchanged `(s, n)` (bound at init, §1.2); one
+    thread. The steps of one batch fill (§2.3) are consecutive calls in this sense.
+- **The kit declares, per stateful form:** its carried WORDS (8 B each, D167 add. 1 A10) and
+  alignment (`mf_result` / the form's row), and that ZERO is its fresh state (addendum 1:
+  "zero-init + the same unchanged (s, n)"). Today's declaration is r17b_prime.md §6's 5
+  words / 40 B (§1.3).
+- **Zeroing.** pcrec's bind code zeroes the region's DECLARED bytes (40 today). It never
   memsets S: D165 item 5 as the manager read it in addendum 1. This is R17-b″'s zero-init
   hook, carried as a fact rather than as the kit's code.
 - **How the kit's text reaches the region is the kit's choice.** It may copy in at the
@@ -771,7 +773,8 @@ mutable state, like `caps`:
 ### 4.2 M, N and H reach the kit's dispatch (D161 add. 11, R-19)
 
 - **M (the call mode).** `<p>__find` takes the mode as a parameter: `_search` passes ONESHOT
-  and `next` passes ITER. In the inlined form the parameter is a constant at each call site,
+  and `next` passes ITER (the batch fill's steps included). It is the `mode` column of the
+  entry's `entry_rows[]` row (`compound_entries.md` §4.1). In the inlined form the parameter is a constant at each call site,
   so a kit dispatch on M folds to one arm per entry. In the `shared` (static-label) form it
   is one runtime branch per call, not per use.
   - **This changes R-19's fact shape.** R-19 states `mf_site.body` per BODY, and
@@ -792,7 +795,8 @@ mutable state, like `caps`:
   - Inside an iterator N is still the REMAINING subject. regime_tables.md §2's note ("dense
     find-all is invisible at call time") is answered by H, not by N.
 - **H.** The kit's own, in its region. The previous step's span is `lo_now − lo_prev`; the
-  kit keeps `lo_prev` (the `kit-h` row's 8 B), and the mask's popcount is in its 24 B.
+  kit keeps it in one of its row's 5 words (r17b_prime.md §6: "the previous step span (8 B,
+  H)"), and the mask's popcount is in its 24 B core.
   pcrec does not compute H. It promises only the region and `lo`'s monotonicity.
 
 ### 4.3 The contract facts (D161 add. 11)
@@ -820,25 +824,29 @@ They DO sum with pcrec's own rows: the pre-check's `pair-hits` and the hybrid's
 
 ### 5.1 The call and instruction count, per match
 
-| | today's loop (§3.1.3) | the iterator `next` | `next_n` (per match, amortized) |
+| | today's loop (§3.1.3) | `next`, K = 1 | `next`, batched (per match, amortized) |
 |---|---|---|---|
-| exported calls | 2 (`_search`, `_next_pos`) | **1** | 1/k |
-| entry checks | `startpos > n`; utf8 guard; `-futf-check` O(n); var check | `hdr` compare; one fused binding compare; `rc` test; `lo > n` | per batch |
+| exported calls | 2 (`_search`, `_next_pos`) | **1** | 1/K |
+| entry checks | `startpos > n`; utf8 guard; `-futf-check` O(n); var check | one fused header/owner compare; `bhead < bcount`; `lo > n` | the same compare and cursor test per call; the step's `lo > n` per fill step |
 | advance | the caller's two-arm expression + the `_next_pos` call | inlined `__adv` | inlined |
-| per-iterator, once | — | bind (6 stores + the declared rows' zeroing); the guard/check/vars once | same |
-| init | — | **1 store** (`RX_ITER_INIT`), 2 (`_AT`) | same |
+| result | written by `_search` into `caps` | written by STEP into `caps` | written by STEP into the batch; one copy of `NCAPS` pairs per delivery |
+| per-iterator, once | — | bind (≈ 7 stores + the declared rows' zeroing); the guard/check/vars once | same |
+| init | — | **3 stores** (`RX_ITER_INIT(s, n)`), PREDICTED; +2 per setter | same + the buffers setter |
 
-The iterator's per-call additions are three L1 loads and two predictable branches. It removes
-an exported call (a PLT call under `-fPIC`), the caller's advance expression, the per-call
-utf8 guard, and the O(n) validation per call. So parity or better is the prediction on every
-cell. The prediction is UNMEASURED and is exactly what the gate decides.
+The per-call additions at K = 1 are two L1 loads (header, owner) fused into one branch, and
+the cursor test. Revision 1's per-call `(s, n)` compare is gone (binding at init). The
+iterator removes an exported call (a PLT call under `-fPIC`), the caller's advance
+expression, the per-call utf8 guard and the O(n) validation per call. So parity or better is
+the prediction on every cell at K = 1, and batching is predicted to amortize the remaining
+exported call. Both predictions are UNMEASURED; the gate decides them.
 
 ### 5.2 Static internals
 
-`__find`, `__adv`, `__step`, `__enter` and (on `reports_empty` artifacts) `__retry` and the
-notempty root are static. The kit's bodies stay static (D88 add. 1). A compound's parts stay
-static. The only new exported symbols are `<prefix>_next` and, if Q2 rules it in,
-`<prefix>_next_n`.
+`__find`, `__enter`, `__deliver`, `__fill`, the STEP body, the residual twins `__adv`,
+`__valid_upto`, `__var_valid` (§2.4) and, on `reports_empty` DFA artifacts, the notempty
+root are static. The kit's bodies stay static (D88 add. 1). A compound's parts stay static.
+The only new exported symbol is `<prefix>_next`, plus `<prefix>_next_n` if the parity slot
+rules it in. `<prefix>_iter_buffers` is a header `static inline`, not a symbol.
 
 ### 5.3 The PARITY GATE (designed here; run later on a quiet box via main)
 
@@ -846,7 +854,7 @@ D165 item 5's named measurement: "iterator vs today's `_search` loop on dense ti
 at parity or better; worse is a finding, not a tolerance."
 
 **Cells.** D165 names cells 1, 3 and 5. Cells 2, 4 and 6 are added because the body linkage
-differs on them.
+differs on them; cell 7 because batching has a cost there (§2.3's over-fill).
 
 | # | pattern | subject | regime |
 |---|---|---|---|
@@ -856,20 +864,26 @@ differs on them.
 | 4 | `(a)` | `a` × 4 KiB | the VM route (captures), one match per byte |
 | 5 | `\w+` | one-byte subject `"x"` | per-iteration fixed cost |
 | 6 | `^a\|b` `--engine=dfa` (an `attempt`-scan artifact; confirm the stamp) | `b` × 4 KiB | the `shared` (static-label) body linkage |
+| 7 | `a` | `a` × 4 KiB, the caller stopping after 3 matches | the over-fill cost of a batch the caller abandons (`B64` only) |
 
 **Arms**, each a separate binary, interleaved:
 - `L_old`: today's `_search` loop against the PRE-iterator build (main at I1's parent),
   §3.1.3's code verbatim.
 - `L_new`: the same loop against the I1 build. Its gap to `L_old` is the cost the refactor
   puts on `_search` itself.
-- `I`: `<prefix>_next` with caps.
-- `I_shared`: the twin's `TWIN_SHARED=1` form (§2.2's alternative rule).
-- `N64`: `next_n` with k = 64 (Q2's evidence).
-- `I0`: `next` with the binding check removed (§1.2's price).
+- `I`: `<prefix>_next` with caps, no `_in` memory (K = 1).
+- `B64`: `next` with a bound batch, `nbatch` = 64 (D165 add. 2 Q2's internal batching).
+- `I_shared`: `__find` at its `−2` layout (the twin's `TWIN_SHARED=1` form; §2.2).
+- `N64`: the public `next_n` with k = 64 (the optional extra; D165 add. 2 says both are
+  timed).
+- `I0`: `next` with the owner compare removed (§1.2's price).
 - `A`: an A/A arm (`L_new` built twice) for the noise floor.
 
-The pre-build run uses the TWIN for `I`, `I_shared`, `N64` and `I0` (`findall_iter/twin/`
-builds them today). The post-build gate uses the built artifacts.
+The pre-build run uses the TWIN for `I`, `B64`, `I_shared`, `N64` and `I0`. The twin
+(`findall_iter/twin/`) builds revision 1's `I`, `I_shared`, `N64` and `I0` today; it owes
+revision 2's re-spelling (binding at init, the fused compare) and a `B64` fill arm, and its
+answer driver (`drv.c`) gains a batched `I == B` check before any timing. The post-build gate
+uses the built artifacts.
 
 **Regimes:**
 - R1: artifact `.o` linked statically into the driver (direct calls).
@@ -884,7 +898,12 @@ builds them today). The post-build gate uses the built artifacts.
   max(|median ratio − 1|, IQR/median).
 - A worse cell is a FINDING, recorded with its numbers.
 - `L_new / L_old` within the floor is the "`_search` unharmed" half.
-- `N64` and `I_shared` are reported for Q2 and §2.2, not gated.
+- `B64` is gated the same way (`B64 / L_old ≤ 1 + floor`) on cells 1-6 if batching is to
+  ship in I1, and it must beat `I` beyond the floor on the dense cells 1 and 3 to earn the
+  `<prefix>_buffers` change (§6.9). Cell 7 is reported as batching's stated cost, not gated.
+- `N64` and `I_shared` are reported (the optional `next_n`; §2.2's `I_shared` trigger), not
+  gated. The gate binds the `0`, `+1` and `+2` layouts; at `−1`/`−2` the gap is that
+  cell's stated cost (D163 add. 7 Q3).
 
 **Async discipline.**
 - The run is a detached chain script (BOILERPLATE: `nohup setsid`, a `.lift` waiter, one
