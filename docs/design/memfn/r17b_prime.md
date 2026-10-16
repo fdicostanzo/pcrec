@@ -1798,18 +1798,35 @@ fewer bits.
 
 ## 8. Denies, controls and sabotage
 
-### 8.1 G1: pcrec's gate, by step `[rev2]`
+### 8.1 G1: pcrec's gate, by step `[rev2]` `[rev3: B1-B5, B15, B17, C1, C6, C11]`
 
-- **B0-B3b:** byte identity over emit_sweep's full population, every stream (incl.
-  `--emit-facts`), the start arms, `-e utf8`, `--engine=vm`, the lowsize/lowboth variants,
-  at SIMD-off and SIMD-on: 0 movers. The trace SET compare admits only the new `fd`
-  shadow records. No timing.
-- **B4 (rev 1 §6.2, kept):** the population is a pcrec-side artifact diff (the census
+- **B0-B3b** `[rev3]`: byte identity of ARTIFACTS (emit_sweep streams 1-4) over the full
+  population, the start arms, `-e utf8`, `--engine=vm`, the lowsize/lowboth variants, at
+  SIMD-off, at SIMD-on (`[rev3 B1]` sweeparm's `-fmemfn-simd` arm with its DIFFER_PINS
+  floor, S981) and under `-fcomments` (`[rev3 B2]` sweeparm's arm, S982): 0 movers against
+  the step's base (main; main-after-E-1 from B3a). `[rev3 B3]` Streams 5 and 6 move only
+  by the step's DECLARED delta, checked both ways. `[rev3 B17]` The population includes
+  rwquest's and the bench's patterns (`--patterns-file`, the patterns the delivery is
+  justified by, §9.3) and the long-prefix and prefix-invariance runs
+  (`run_longprefix_sweep.sh`, `run_prefix_invariance.sh`: the kit now writes stems from
+  the prefix, K79/K80). `[rev3 C11]` B2 and B3b also run under the test-build lever's
+  synthetic sets (`all-walk`, `all-v1`, `all-wide`, every-derivable-key): 0 movers, which
+  checks the routing rule rather than arguing it. `[rev3 B4]` The trace compare admits
+  exactly the step's DECLARED trace delta (new `fd` records at B1; the retired or
+  re-sourced `cand_rows[]` records at B2 and B3b). `[rev3 B5]` The routed-record floors
+  (§1.6) per (kind, row) from B2. No timing.
+- **B4 (rev 1 §6.2, kept)**: the population is a pcrec-side artifact diff (the census
   reader extended), never the kit's `moved`. SIMD-off: default against
-  `--memfn=no-pf-terms-mask` (the whole move against main's walk), against
-  `--memfn=no-fd-r0` (R0's own effect on its population), against `--memfn=no-fd-ndisp`
-  (the dispatch's, if paid). Kit tier on the Linux dev box (D144 add. 1): taskset-pinned,
-  A/A, layout-perturbed pairs (the I-148 corrigendum's rule). Both layers reported.
+  `--memfn=no-pf-terms-mask` (the whole move against MAIN's walk, `[rev3 C6]` the baseline
+  every prediction is stated against), against `--memfn=no-fd-r0` (R0's own effect on its
+  population), against `--memfn=no-fd-ndisp` (the dispatch's, if paid). Kit tier on the
+  Linux dev box (D144 add. 1): taskset-pinned, A/A, layout-perturbed pairs (the I-148
+  corrigendum's rule). Both layers reported. `[rev3 B15]` **Every kit deny at once ==
+  main modulo a COMMITTED normalizer** (it strips the abi digit and the `<PREFIX>_MEASURES`
+  line, and compares `-fcomments` text separately; the +27-byte precedent of
+  `dialtrain_byteid.md` used one): the independent control for B4's census. `[rev3 C1]`
+  The one-byte and presence populations are 0 movers under the synthetic set holding
+  every derivable `xover` key.
 - **B6:** `-fmemfn-simd` against `-fmemfn-simd --memfn=no-pf-terms-w32` (A1's effect) and
   against both W64 denies (the SIMD layer against the CURRENT scalar, D147).
 
@@ -1824,9 +1841,15 @@ fewer bits.
   pages, ASan, UBSan.
 - **Form-independence of the cache** (B4): a test build flips `f` between uses; answers
   stay equal.
-- `[rev2]` **One-byte family** (B2, KW-10): the count rule; NONE's answer identity at DFA
-  consumers (through the shadow until B5); NONE refused where `need` is REQUIRED; MLINE's
-  generic shape and its LOOP_EXIT refusal under `fd-d1`.
+- `[rev2]` **One-byte family** (B2, KW-10): the count rule (D1, D1w at the seek role, D1c
+  for a context stop); NONE's answer identity at DFA consumers (through the shadow until
+  B5); NONE refused where `need` is REQUIRED; MLINE's generic shape. `[rev3 A5, A17]`
+  `fd-d1` renders D1w's WALK on DFA and hybrid one-byte sites (answers identical) and
+  does not reach a DFA_ATTEMPT site.
+- `[rev3 A4]` **The query family** (B1): for every generated site, `mf_ask` then
+  `mf_define`; the classes agree; `mf_ask` leaves the art unchanged (a second define of
+  the same site after an ask is byte-identical to one without); `exists = 0 ⇒ proven0`
+  all ones.
 - `[rev2]` **Presence family** (B3b, KW-10): absent-at-end discovered lazily; REQUIRED-all
   on proof routes; EMPTY before the first element; re-asked ranges with `omin` ≥ 0 at a
   raised `start`; plants reach NON-DFA routes only.
@@ -1840,12 +1863,17 @@ fewer bits.
   file, the stamp names the loaded set, and a REACH floor per dispatch arm is met on
   generated boundary subjects (measure_sets F7: 97.8% of corpus subjects are under 36 B).
 
-### 8.3 Sabotage, by step `[rev2]`
+### 8.3 Sabotage, by step `[rev2]` `[rev3: A13, A16, B5, B6, B11, B14, B16, C2, C3, D4, D9, D10]`
 
 Ids: S911-S922 (R17-b′, allocated; R-19's rows are inside it) and S964-S980 (R-21's
-SW-1..SW-17, allocated). pcrec-side [MEASURE-SET] rows are S943-S963 (main's). Ports
-carry their own: R17-a's rows at B0 and R17-b's (S820-S843, S850-S854, S867-S870) at B4,
-re-aimed by `scripts/sabotage_anchors.py --step` at each build. Main's rows anchored on
+SW-1..SW-17, allocated). pcrec-side [MEASURE-SET] rows are S943-S963 (main's). S981/S982
+are lane sweeparm's (the two emit_sweep arms, delivered with B0). `[rev3]` Revision 3's
+new plants SN-1..SN-9 need ids (Q-R17P-23: a block of 10). Ports carry their own,
+`[rev3 A16]` listed exactly (from `lane/memfn-r17`'s tree): at B0 R17-a's S846-S849; at B4
+R-17's r17d rows S820-S824 and S826-S843 (the V1 forms, covers and storage), R17-b's
+S850-S854 and R17-c's S867-S870 (the size rung). S825 is MAIN's own row
+(`S825_span_match_exported.sh`, [LOSS-REVIEW]) and is not a port. All are re-aimed by
+`[rev3 A13]` `docs/design/start_table/sabotage_anchors.py --step NAME=A..B` at each build. Main's rows anchored on
 pcrec's encoding (`cand_derive`, `find_site`, the pre-check and handoff sites:
 S266/S288/S294, S457-S477, S800-S814 among them) are re-aimed or re-run by the same tool
 at B2 and B3b; the list is derived there, not counted here. Every presence plant must
@@ -1856,25 +1884,25 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S911 | a dispatch literal off by one | §8.2's structural arm; G2's form-choice check | B4/B8 | a paid dispatch site; UNREACHED (declared) while no set pays |
 | S912 | the dispatch compare inverted | the same | B4/B8 | the same |
 | S913 | the form byte never written (always 0) | the REACH floor per arm; the trace | B4/B8 | the same |
-| S914 | the bounded walk arm ignores `end_back` | answers (G2, corpus bounded cells); ASan over-read | B4 | a bounded set site (`[a-z]+\b`) |
-| S915 | the walk arm passed the wrong table (`start_bytes` vs `can_begin_match`) | answers on dfa-hat cells | B4 | a DFA-hat set site |
-| S916 | R0 counts EQ terms as RANGE | movers by ID against `census_shapes.py` | B4 | a (2,1,0)-shaped cover |
+| S914 | the bounded walk arm ignores `end_back` | answers (G2, corpus bounded cells); ASan over-read | B4 | `[rev3 B11]` needs `__walk` emitted (a paid dispatch or a T3-passing walk-only scaffold): UNREACHED (declared) until either exists |
+| S915 | the walk arm passed the wrong table (`start_bytes` vs `can_begin_match`) | answers on dfa-hat cells | B4 | `[rev3 B11]` as S914: UNREACHED until `__walk` is emitted |
+| S916 | R0 counts EQ terms as RANGE | movers by ID against `[rev3 B16]` `r17b_movers.py`'s independent cover search | B4 | `[rev3 B11]` a (1,1,0)-shaped cover (one RANGE plus an EQ: the plant puts it in r2, the truth does not), under a synthetic set holding the saving keys of BOTH (1,1,0) and the r2 class, so the row's skip cannot hide the plant |
 | S917 | an ABSENT set key read as 0 | the totality test (the key removed ⇒ the next row/R7) | B1 (regime_pick, shadow), B4 | R0's key |
 | S918 | the pay rule ignores C_disp | the per-set expected-emission manifest | B4/B8 | a set with a failing C_disp |
 | S919 | `body` UNSTATED read as ONESHOT | G2: N/M rows must skip (an oracle case; the trace) | B1 | a builder with `body` 0 (a G2 site) |
-| S920 | the START hook's text replaced by `0` | the structural arm: `__form(`'s argument equals the builder's stated start; the trace | B1 (stated), B4 (read) | a relocate-path site (start ≠ 0) |
+| S920 | the START hook's text replaced by `0` | `[rev3 B11]` an INDEPENDENT reader of the activation origin in the emitted C (the variable the entry's guard reads, located by pcrec's own emitted-text census), compared with `__form(`'s argument; not the builder's stated start (a shared source) | B4 (read; `__form(` emitted only with a paid dispatch, UNREACHED until then) | a relocate-path site (start ≠ 0) |
 | S921 | the shadow call emits a byte | emit_sweep's 1-in-8 sample at SIMD-off | B1 | every FIND site |
 | S922 | `fd_route` routes a SHADOW group early (the set group at B2) | emit_sweep: V1 movers appear | B2 | a one-RANGE-term set site (`[0-9]+x`) |
 | S964 | SW-1 K65-narrow: a REQUIRED set answered by one member on a no-DFA route | give-up (W1) | B3b | W1 |
 | S965 | SW-2 K66-window: a REQUIRED run answered by its window | give-up | B3b | K66's regression (`k66_precheck_whole_run.rxt`) |
-| S966 | SW-3 decided-late: a candidate yielded before every REQUIRED span is verified | give-up (G-2) | B3b | W1 with the VM hat |
+| S966 | SW-3 decided-late: a candidate yielded before every REQUIRED span is verified | give-up (G-2) | `[rev3 B11]` B4 (the VM hat's FIND routes at B4; at B3b the merged site holds no hat span 0 that could yield early) | W1 with the VM hat |
 | S967 | SW-4 edge-first: the edge attempt emitted before the verdict | give-up (W2) | B3b | W2 |
-| S968 | SW-5 an unconstrained reply where span 0 is REQUIRED (NONE at VM_ATTEMPT) | give-up (W3, GIVEUP1 F5) | B4 (the VM hat routes) | W3 |
+| S968 | SW-5 an unconstrained reply where span 0 is REQUIRED (NONE at VM_ATTEMPT) | give-up (W3, GIVEUP1 F5) | `[rev3 B11]` B5 (F0, the only row that can pick NONE, is built at B5): UNREACHED (declared) until then | W3 |
 | S969 | SW-6 `omin` mis-signed | answers | B5 (UNREACHED while every `omin` is 0, declared) | a true-`omin` site |
 | S970 | SW-7 the unbounded one-byte row loses its `pos ≥ n` guard | ASan over-read | B2 | a `(NULL, 0)` subject on `memchr` PF |
 | S971 | SW-8 the bounded row loses the `n − 1` clamp / wrapper | ASan | B2 | a `memchr-bounded` site |
 | S972 | SW-9 the DFA hat's re-seed after a moved skip dropped | lost match (ssedge's mutants) | B2 | `first-memchr-bounded` |
-| S973 | SW-10 the VM hat at \|S\| = 1 rendered with memchr per attempt | structural census only, declared (perf-only, Q-R5) | B2 (trace), B4 (bytes) | `(x[a-z]+)y\1` |
+| S973 | SW-10 the VM hat at \|S\| = 1 rendered with memchr per attempt | structural census only, declared (perf-only, Q-R5) | B2 (D1w routes the hat's \|S\| = 1 seek, `[rev3 A7]`) | `(x[a-z]+)y\1` |
 | S974 | SW-11 the read-back says "scan present" when NONE was chosen | give-up (K65) via G1 on a proof-only route | B5 (UNREACHED until F0 fires) | a NONE site beside a REQUIRED span |
 | S975 | SW-12 `MEMFN_LIBC` omits a libc symbol the text still calls | C11 `nm -u` | B2 | any LIBC site |
 | S976 | SW-13 the libc row used under a stale `libc:` key | the `libc-mismatch` listing flag (§5.3) | B5 | F1's keys |
@@ -1882,6 +1910,15 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S978 | SW-15 the pre-scan row prices from a `prior-*` kind as if measured | the listing / per-set manifest | B5 (at Q-WR-9's trigger) | P1 |
 | S979 | SW-16 a carried presence verdict not invalidated when `start > valid_until` | answers | B9 (R17-b″) | an iterator over a late occurrence |
 | S980 | SW-17 member order swapped in a tie (PR-7) | the B3a shadow comparator, not answers | B3a | a tie between two set members |
+| `[rev3]` SN-1 (B5) | a row's `routed` bit left 0 after its routing step (the REVERSE of S922) | the pcrec-side routed-record count per (kind, row) falls below its floor (§1.6); byte identity cannot see it | B2, B3b, B4 | each routed group's disagreement witness (§1.6) |
+| `[rev3]` SN-2 (A4) | `mf_ask` reports `exists` = 1 where the rendered form is NONE (or a wrong `proven0`) | the query/define agreement check (§4.5 rule 2); G2's query family | B1 (trace), B2 | a site whose terminal differs between two rows' readings (a NONE site under the synthetic set that makes F0 fire, in the test build) |
+| `[rev3]` SN-3 (D4) | G1's reader asks the start site before FIRST's selection is closed (or reads `pres` it did not declare) | the trace-build undeclared-read / open-selection trap | B1 | any G1-admitted artifact (`req-admit` "dominated") |
+| `[rev3]` SN-4 (C2) | a row's `basis` left UNSTATED, or a key-free row marked MEASURED | the table self-check (kit build) | B1 | the table itself (every build) |
+| `[rev3]` SN-5 (B14, C1) | R1's fast-terminal condition dropped | B4's every-derivable-key synthetic set: one-byte movers appear | B4 | a one-byte DFA_SCAN site (`a+b` shape) under that set |
+| `[rev3]` SN-6 (B6, D10) | the five-pick comparator returns "agree" always (or one pick's port drops its tie rule) | the planted disagreement per pick (a site where port and pcrec must differ under the plant); the per-pick floor on non-trivial sites | B3a | per pick: a set with two equally rare members (P3), a G1-kept span (P2), a strictly-rarer set (P4) |
+| `[rev3]` SN-7 (B9) | a row edit after a routing step with no `finder_history.md` entry | the lockdown digest check | B2 onward | any routed row |
+| `[rev3]` SN-8 (C3) | R7 fires without its shape's saving key (the comparator's absent-key rule inverted) | B4's census by shape measured / not measured: a mover on an unmeasured shape | B4 | a (0,3,0)-shaped cover (not in grid2's three shapes) |
+| `[rev3]` SN-9 (D9) | the pay rule's tie direction flipped (a T1 tie pays) | the arithmetic grid with planted off-by-ones | B1 (regime_pick, shadow), B4 | a synthetic set whose saving equals the charge exactly |
 
 Rev 1's SB6 (the W64 tail read), SB11 (the SIMD-on use differs; C18 already detects it)
 and SB12 (w32 routes `f == 1` to W64) move to B6, which requests its own ids; SB10 (the
