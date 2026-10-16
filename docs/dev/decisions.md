@@ -9748,3 +9748,8 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 ### D162 addendum 4 — provenance is the answering BLOCK's own declaration, not its chain position (Frank, 2026-10-16, session 113; window_contract.md rev 3.1 Q5 / panel M2)
 
 - **Ruling (Frank: "agree"):** a query's provenance (`measured` / `prior-authored` / `prior-none`) is read from the provenance stanza of the BLOCK that answered it (`source`, closed `fidelity`, `bytes`). `measured` requires `source measured` and a non-synthesized `fidelity`. The chain (findings.md §7: the named bundle, its `include`s, then the built-in `default` terminal) decides only WHICH block answers, first-match per query; the answering block's data decides how far it is trusted. Provenance is therefore per QUERY: a bundle may answer byte-rate as `measured` while run-rarity falls through to `default` as `prior-authored`. A byte-identical copy of `default.rxt` under another name stays `prior-authored`.
+
+### D163 addendum 9 — the part rank is STATIC (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q7)
+
+- **Ruling (Frank): "static and predictable."** The edge rank R0-R3 is a property of the call site, defined in tuning.md. A typed `--part-inline-rank=R1` means the same parts for the same pattern and controls on every box, under any analysis object. Profile-driven hotness, if ever wanted, arrives as a NEW threshold value (e.g. `profiled`), never as a redefinition of a rank (U9, re-shaped).
+- **And (Frank): every such choice is visible on an opt-in DECISION CHANNEL** (plan row [DECISION-LOG]), not in one-off notes. This replaces the manager's proposed one-off stderr note for a demoted analysis bundle (D162 addendum 4's observability gap): that report is a member of the channel.
