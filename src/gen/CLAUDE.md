@@ -1149,10 +1149,31 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   derived edges and closure to `entry_edges[]` over the corpus (7 arms,
   29,848 compiles, 0 disagreements); E0b deleted the hand list. A closure
   reaching an entry with no row is an internal error. The relation is
-  reported through `PcrecEmitIn.edge_rank` (the unit drive's `ranks`); E0c
-  (each emitter's entries through a per-combinator emitter) is not built.
+  reported through `PcrecEmitIn.edge_rank` (the unit drive's `ranks`).
   Check: `tests/compound/check_entry_ranks.py` + `entry_ranks.tsv`; sabotage
-  S1008.
+  S1008. **E0c (lane e0c, 2026-10-16):** the combinator column is READ — it
+  is `PcrecEntryComb` (core/internal.h), stored per entry at
+  `pcrec_entry_shape` (`Job.entry_comb`) and answered by `pcrec_entry_comb`,
+  which `emit_comb.c` dispatches on.
+
+- **emit_comb.c** — [COMPOUND] E0c (lane e0c, 2026-10-16;
+  `docs/design/compound_entries.md` §4.1, §5.1 E0c; zero movers, no abi
+  event): THE COMBINATOR EMITTERS. Every exported matcher entry is written by
+  `pcrec_emit_entry`, which reads the entry's `entry_rows[]` combinator and
+  calls that combinator's ONE emitter: `forward` (`comb_forward`: the DFA's
+  three inert `_in` entries, the VM's three `_in` entries and its three
+  un-suffixed entries on every entry rung — `vm_emit_default_entry` moved
+  here as `fwd_own`; the `_in` texts are one format per binding over
+  `fwd_sigs[]`), `finish-at` (`comb_finish_at`: axis G's dispatch on the
+  FINISH form — search-and-filter, the anchored machine's own body via
+  emit_dfa.c's `pcrec_emit_dfa_anchored_match`, nomatch — plus the compound's
+  one-attempt form via emit_compound.c), `locate-then-finish`
+  (`pcrec_emit_dfa_engine`, as `<p>_search` and the hybrid's embedded
+  search), and `first-nonzero` (emit_compound.c's
+  `pcrec_emit_compound_search`). The engine emitters hand a `PcrecEntryText`
+  (one member per combinator) and keep the ORDER of the file; a row whose
+  member was not supplied is an internal error. The VM's `_run` bodies
+  (internal rows) are still written by emit_vm.c. Sabotage S1069-S1078.
 
 - **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05; abi 62 -> 63 at lane memfnbump;
   `docs/design/memfn/integration.md` §R4.3.3, §18; D147 addendum 10): the
@@ -4204,7 +4225,12 @@ which moves every artifact (the cpset manifest's re-record).
 - **emit_compound.c** (new) — the compound artifact's BODY: the parts' texts
   (each spliced with its CPU-guarded byte record, `pcrec_sb_splice`'s rule)
   and the CONTROLLER, `<p>_search`/`_match`/`_match_caps`, written by the one
-  combinator built (`first-nonzero`, docs/design/compound.md §B.2/§B.3). Every
+  combinator built (`first-nonzero`, docs/design/compound.md §B.2/§B.3).
+  [COMPOUND] E0c: `pcrec_emit_compound_parts` writes the parts;
+  `pcrec_emit_entry` (emit_comb.c) writes the three controller entries
+  through their rows, calling `pcrec_emit_compound_search` (the
+  `first-nonzero` emitter) and `pcrec_emit_compound_match` (the `finish-at`
+  emitter's PART form). Every
   part call's return goes through `callsite_rows[]`, THE ONE CALL-SITE CODE
   TABLE (§A.14, match_api.md §4¶10): a first-match row list over code classes,
   a row emitted only where the callee can return it (read off the part's own
@@ -4213,7 +4239,8 @@ which moves every artifact (the cpset manifest's re-record).
   emitter here plus its `compound_rows[]` row; a new code class is a row.
 - **emit_dfa.c — the SHELL** — `pcrec_emit_dfa`'s shell branch (a Job with a
   `comp_shell`): P's prologue, stamps, residuals, `rx_info` and `main`, with
-  `pcrec_emit_compound_body` in place of P's engine and entries; the
+  `pcrec_emit_compound_parts` and the controller's three entries (through
+  `pcrec_emit_entry`, E0c) in place of P's engine and entries; the
   orientation block and DECODE are skipped, rx_info's scan/prefilter/
   match_form/search_form read `"compound"`. `pcrec_emit_search_head` is the
   search head for that caller (P's caller-position prologue included).

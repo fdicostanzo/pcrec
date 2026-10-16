@@ -8,7 +8,11 @@
  * texts (each the unchanged pipeline run on a derived input, rendered under
  * `<prefix>__<role>` with every entry static) and the CONTROLLER, the three
  * matcher entries `<p>_search`, `<p>_match`, `<p>_match_caps`. The `_in`
- * entries are the DFA emitter's own, which call these.
+ * entries are the DFA emitter's own, which call these. [COMPOUND] E0c: the
+ * three controller entries are written through their `entry_rows[]` rows
+ * (src/gen/emit_comb.c's `pcrec_emit_entry`), which call this file's
+ * `first-nonzero` emitter for `_search` and its one-attempt text for the
+ * `finish-at` pair.
  *
  * THE CONTROLLER IS A COMBINATOR OVER THE PARTS, NEVER A ROW'S OWN TEXT.
  * `first-nonzero(A @ x, B @ next_pos(x))` is the one combinator with a client
@@ -107,14 +111,17 @@ static void part_splice(StrBuf *c, const char *text, const PcrecPartFacts *f)
 
 /* ---- the combinator ------------------------------------------------------- */
 
-/* `first-nonzero(A @ x, B @ next_pos(x))` as `<p>_search` (§B.2): A is asked
- * only where its floor can be live (offset 0, or every position when P
+/* `first-nonzero(A @ x, B @ next_pos(x))` as `<p>_search` (§B.2), the
+ * combinator's ONE emitter (`pcrec_emit_entry` calls it for the row): A is
+ * asked only where its floor can be live (offset 0, or every position when P
  * carries `\G`); its match is final, its no match relocates B to the next
  * character; a never B ends the search. B's success pads the slots B does
  * not write (its own `NCAPS` below P's), the pad rule read off `groups`. */
-static void emit_first_nonzero_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
-                                      const char *searchfn, const char *upper)
+void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
+                                const char *searchfn, const char *upper)
 {
+    if (sh->comb != COMB_FIRST_NONZERO)
+        pcrec_ctx_fail(cx, 0, "internal error: compound: a combinator with no emitter");
     const char *p = cx->opt->prefix;
     const char *a = pcrec_sb_fragf(&cx->arena, "%s__%s_search", p, sh->role[0]);
     const char *b = sh->text[1]
@@ -149,55 +156,50 @@ static void emit_first_nonzero_search(Ctx *cx, StrBuf *c, const PcrecCompShell *
     pcrec_sb_puts(c, "}\n");
 }
 
-/* The match-here pair (§B.3): P's anchored prologue, then A's one bounded
- * attempt at `ctx->pos` -- its answer IS the match at exactly that position
- * (`match_api.md` §3.2¶1), so `_match` is one attempt where a search-filter
- * form runs the whole attempt loop. */
-static void emit_first_nonzero_match(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
-                                     const char *matchfn, const char *matchcapsfn,
-                                     const char *upper)
+/* One of the match-here pair (§B.3), `e` named `fn`: P's anchored prologue,
+ * then A's one bounded attempt at `ctx->pos` -- its answer IS the match at
+ * exactly that position (`match_api.md` §3.2¶1), so `_match` is one attempt
+ * where a search-filter form runs the whole attempt loop. The `finish-at`
+ * emitter's PART form calls it, for each entry the closure keeps. */
+void pcrec_emit_compound_match(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
+                               PcrecEntry e, const char *fn, const char *upper)
 {
     const char *a = pcrec_sb_fragf(&cx->arena, "%s__%s_search", cx->opt->prefix,
                                    sh->role[0]);
-    for (int caps = 0; caps < 2; caps++) {
-        const PcrecEntry e = caps ? PCREC_ENTRY_MATCH_CAPS : PCREC_ENTRY_MATCH;
-        if (!pcrec_entry_emitted(cx, e)) continue;
-        if (caps)
-            pcrec_sb_printf(c, "\n%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n{\n",
-                            pcrec_entry_storage(cx, e), matchcapsfn);
-        else
-            pcrec_sb_printf(c, "\n%sptrdiff_t %s(const rx_ctx *ctx)\n{\n",
-                            pcrec_entry_storage(cx, e), matchfn);
-        pcrec_emit_startpos_guard(cx, c, "    ", "ctx->pos", "ctx->subject",
-                                  "ctx->len", true);
-        pcrec_sb_printf(c,
-            "    if (ctx->pos > ctx->len) return -1;\n"
-            "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
-            "    int r = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n",
-            upper, a);
-        const char *succ = caps
-            ? pcrec_sb_fragf(&cx->arena,
-                "{\n"
-                "        if (capture_spans_out)\n"
-                "            for (int k = 0; k < %s_NCAPS; k++) {\n"
-                "                capture_spans_out[k][0] = capture_spans[k][0];\n"
-                "                capture_spans_out[k][1] = capture_spans[k][1];\n"
-                "            }\n"
-                "        return capture_spans[0][1] - capture_spans[0][0];\n"
-                "    }", upper)
-            : "return capture_spans[0][1] - capture_spans[0][0];";
-        callsite_emit(c, "    ", &sh->facts[0], succ, "return (ptrdiff_t)r;", "return -1;");
-        pcrec_sb_puts(c, "}\n");
-    }
+    const bool caps = e == PCREC_ENTRY_MATCH_CAPS;
+    if (caps)
+        pcrec_sb_printf(c, "\n%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n{\n",
+                        pcrec_entry_storage(cx, e), fn);
+    else
+        pcrec_sb_printf(c, "\n%sptrdiff_t %s(const rx_ctx *ctx)\n{\n",
+                        pcrec_entry_storage(cx, e), fn);
+    pcrec_emit_startpos_guard(cx, c, "    ", "ctx->pos", "ctx->subject",
+                              "ctx->len", true);
+    pcrec_sb_printf(c,
+        "    if (ctx->pos > ctx->len) return -1;\n"
+        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
+        "    int r = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n",
+        upper, a);
+    const char *succ = caps
+        ? pcrec_sb_fragf(&cx->arena,
+            "{\n"
+            "        if (capture_spans_out)\n"
+            "            for (int k = 0; k < %s_NCAPS; k++) {\n"
+            "                capture_spans_out[k][0] = capture_spans[k][0];\n"
+            "                capture_spans_out[k][1] = capture_spans[k][1];\n"
+            "            }\n"
+            "        return capture_spans[0][1] - capture_spans[0][0];\n"
+            "    }", upper)
+        : "return capture_spans[0][1] - capture_spans[0][0];";
+    callsite_emit(c, "    ", &sh->facts[0], succ, "return (ptrdiff_t)r;", "return -1;");
+    pcrec_sb_puts(c, "}\n");
 }
 
-void pcrec_emit_compound_body(Ctx *cx, const PcrecCompShell *sh,
-                              const char *searchfn, const char *matchfn,
-                              const char *matchcapsfn, const char *upper)
+/* The parts' texts, ahead of the controller's entries (the shell's body,
+ * less the entries `pcrec_emit_entry` writes through their rows). */
+void pcrec_emit_compound_parts(Ctx *cx, const PcrecCompShell *sh)
 {
     StrBuf *c = &cx->job->csb;
-    if (sh->comb != COMB_FIRST_NONZERO)
-        pcrec_ctx_fail(cx, 0, "internal error: compound: a combinator with no emitter");
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
         "/* [COMPOUND] row `%s`: this artifact is a CONTROLLER over its PARTS,\n"
@@ -209,6 +211,4 @@ void pcrec_emit_compound_body(Ctx *cx, const PcrecCompShell *sh,
     for (int i = 0; i < PCREC_COMP_MAXPARTS; i++)
         if (sh->text[i]) part_splice(c, sh->text[i], &sh->facts[i]);
     pcrec_sb_puts(c, "\n");
-    emit_first_nonzero_search(cx, c, sh, searchfn, upper);
-    emit_first_nonzero_match(cx, c, sh, matchfn, matchcapsfn, upper);
 }

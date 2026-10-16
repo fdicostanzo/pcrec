@@ -61,7 +61,7 @@
 # docs/dev/learnings.md §3. Every verdict below is derived from the EMITTED
 # MATCHER TEXT — the anchored tables, the scan loop, the entry bodies — and
 # compared against the stamp. The two come out of different write sites in the
-# emitter (`emit_dfa_stamps` writes the macro, `emit_anchored_entries` writes
+# emitter (`emit_dfa_stamps` writes the macro, `pcrec_emit_dfa_anchored_match` writes
 # the body), so a stamp that drifts from the mechanism it names is a RED here.
 #
 # The DISCRIMINATOR for "this artifact carries the anchored machine" is the

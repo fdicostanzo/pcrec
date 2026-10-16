@@ -36,11 +36,14 @@
 # against the `-fno-anchored-dfa` build's delivered array. It is a RUN, not a
 # grep, which is the only kind of check a bound can be wrong in front of.
 SAB_ID="S190-anchored-dead-group-fill-empty"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="src/gen/emit_comb.c"
 SAB_SUITES="anchdiff anchoredmatch harness"
 SAB_HARNESS_TARGET="tests/base/groups.rxt"
 SAB_DESC="the unwrapped <prefix>_match_caps's dead-group fill loop is bounded at 1 instead of RX_NCAPS, so every group slot above 0 is returned to the caller UNWRITTEN — spec §3.3's 'all written on success' broken on a DFA artifact with RX_NCAPS >= 2, while all four of run_anchored_match.sh §3's grep predicates still pass and run_anchored_diff.sh §1's 147,620 --no-captures cells stay green"
 SAB_DOC_FIGURE="CANONICAL RUN 2026-08-29 (run_sabotage_matrix.sh S190 at cf05077): anchdiff:9fail/5pass, anchoredmatch:1fail/15pass, corpus:0fail/26pass -- DETECTED. THE DETECTION IS anchdiff §2 ALONE: on the same planted tree §3's four grep predicates all PASS and §1 stays green on 147,620 --no-captures cells, and the single anchoredmatch failure is §4b's reference-build-produced-warnings check firing on gcc's complaint about the plant's own dead loop -- an incidental red, not a detection. §2's signature is 7 of 8 witnesses diverging as default=(-7,-7) vs denied=(-1,-1): the delivered build hands back the driver's poison where the ground truth writes PCREC_UNSET"
+# [COMPOUND] E0c 2026-10-16 (lane e0c): RE-ANCHORED, SAB_FILE only. The
+# anchored form's `_match_caps` delegate moved verbatim (same column) to
+# src/gen/emit_comb.c, the `finish-at` combinator's emitter.
 SAB_COUNT=1
 # THE ANCHOR CARRIES THE PRECEDING LINE, and it has to: the SAME fill loop is
 # emitted at TWO sites — `emit_search_head`'s (the search-and-filter form's,
