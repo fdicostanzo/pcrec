@@ -1149,9 +1149,9 @@ hands over, never a method. Spellings are PROPOSED; the layout is the kit's to f
 (window_contract §3.1's convention). Each piece cites the winreq C-item it implements;
 §4.8 maps all sixteen.
 
-### 4.1 The site: span 0 and the PRESENCE spans (C-1, C-2, C-4, C-16)
+### 4.1 The site: span 0 and the PRESENCE spans (C-1, C-2, C-4, C-16) `[rev3: A1, A5, A20]`
 
-One `mf_site` per search entry (§1.1). It carries:
+One `mf_site` per search-entry ACTIVATION (§1.1, §2.1 `[rev3]`). It carries:
 - **span 0** in `pred`: the candidate set as a SET term at every count, one member
   included, with the table offered (`table_name`, PR-1). A handoff landmark longer than
   one byte is a RUN term (D2). Absent on a presence-only site (`pred.nterm = 0`).
@@ -1183,14 +1183,20 @@ origin (PR-6's "K as h_max"); pcrec keeps `c − K` and the utf8 round-up in its
   the whole run is one span with its mask. The pick, the window and set-leads are the
   kit's rows (P3, P4), no longer pcrec's encoding. `req_set` is asked only where today
   asks (Q-WR-12).
-- **Context predicates** stay as window_contract §2.2 has them: MLINE's `{\n}` at −1 is
-  a CONTEXT span, never presence, and the edge stays pcrec's (D161 add. 7).
+- **Context predicates** stay as window_contract §2.2 and §2.5 have them `[rev3 A5]`:
+  MLINE's `{\n}` one byte before the origin is a context PREDICATE, not a span (D161
+  add. 7: "context checks are not spans"), never presence, and the edge stays pcrec's.
+  MLINE's site has NO span 0 (`pred.nterm = 0`); its stop is the context byte, which slot
+  FIND's row D1c decides. Rev 2 gave it "span 0 `need` OPTIONAL" in §4.6; withdrawn.
 - **C-4** follows: no site keeps the ALL_PRESENT → VERDICT reply. ALL_PRESENT's
   renderers (`precheck`, `precheck_assign`, `precheck_assign_byte`) survive as the
   merged site's ENTRY-USE rendering at B3b (KW-7), not as a separate reply type.
 
-`[rev2]` **Why `omin` is measured from the match start and not from span 0** (a
-refinement of C-1, which writes "`omin ≥ −h_max` when the origin's head is bounded").
+`[rev2]` **Why `omin` is measured from the match start and not from span 0.**
+`[rev3 A20]` This DEPARTS from main's filed contract: R-21 PR-6 says "offsets relative to
+the chosen origin" and window_contract C-1 says "`omin ≥ −h_max` when the origin's head is
+bounded". It is therefore a QUESTION to main (Q-R17P-17: amend PR-6 and C-1), not a
+silent refinement; the reasoning for it:
 Presence is a fact of the MATCH, and the binding is per ACTIVATION (§4.4): every match of
 an activation begins at or after the activation's start (R-19's START hook), and every
 presence byte lies inside the match. So the verdict window is `[start + omin, n)`, which
@@ -1198,13 +1204,13 @@ at `omin = 0` is exactly today's `[posvar, n)` (zero-mover), and is sound for a 
 origin with no read before `start`. Measured from span 0, the same window would be
 `[lo − h_max, n)`: wider than today's (a mover), and reading below the call's floor.
 
-### 4.2 The facts R-19 and R-21 add to the site (PR-3, PR-4; C-11, C-14)
+### 4.2 The facts R-19 and R-21 add to the site (PR-3, PR-4; C-11, C-14) `[rev3: A2, A6, A21]`
 
 | fact | values | stated by | step | why |
 |---|---|---|---|---|
-| `body` (R-19) | `MF_BODY_ONESHOT`, `MF_BODY_ITER`; 0 = UNSTATED, N/M rows skip | every builder (the three FIND points, MLINE, the PRE composite) | B1 | key M: R1/R2's "one-shot" |
+| `body` (R-19) | `MF_BODY_ONESHOT`; `[rev3 A6]` `MF_BODY_PARAM` plus the mode-expression hook at R17-b″ (R-20; `MF_BODY_ITER` withdrawn); 0 = UNSTATED, N/M rows skip | every builder (§2.1's table: the DFA body, the VM hat's `_search_run`, `attempt_entry`, both hybrid sites, the relocate path; `[rev3 A21]` R-19's list amended, Q-R17P-16) | B1 | key M: R1/R2/R8's "one-shot"; the M24 charge on a shared PARAM body (§2.4) |
 | START hook (R-19) | the text of the activation's origin at the storage point | the same builders | B1 | key N (`n − start`); the presence window (§4.1) |
-| `site_kind` (PR-3, Q-WR-8) | §4.3's kinds; 0 = UNSTATED | every PF/MLINE/PRE builder | B2 | D1 excludes the VM hat's seek (Q-R5); F0 excludes the give-up-exposed kinds; g\* is per kind (R5/R6) |
+| `site_kind` (PR-3, Q-WR-8) | §4.3's kinds; 0 = UNSTATED | every PF/MLINE/PRE builder | B2 | the rows' gate contracts (§1.2): D1 excludes the VM hat's seek role (Q-R5); F0 excludes the give-up-exposed kinds; g\* is per kind (R5) |
 | `need` re-numbered (PR-4) | `{UNSTATED = 0, REQUIRED, OPTIONAL}`, stated on every span | every builder | B2 (stated), B3b (binds presence) | the EFFORT fact (C-14): REQUIRED exactly where dropping, narrowing or answering unconstrained could let a budgeted engine do more work on an input the denied build answers (D158) |
 | `head_max` (PR-6) | bytes | the PRE builder; 0 elsewhere | B3a | §4.1 |
 
@@ -1216,7 +1222,7 @@ origin with no read before `start`. Measured from span 0, the same window would 
   presence on those sites instead. `use = DISCARD` already exists for the Q10 collapsed
   hybrid.
 
-### 4.3 The consumer kinds
+### 4.3 The consumer kinds `[rev3: A2]`
 
 | `site_kind` | what consumes the candidates | budgeted? | sites |
 |---|---|---|---|
@@ -1224,9 +1230,14 @@ origin with no read before `start`. Measured from span 0, the same window would 
 | DFA_HAT | a seeded DFA scan that RE-SEEDS where the skip moved (`pf_emit_moved_reseed`) | no | `first-*-bounded` |
 | HYB_PF | a VM hybrid's inner DFA prefilter (exact or count-collapsed) | the VM behind it is; the prefilter is not | PF inside a hybrid; PRE on a hybrid route |
 | VM_ATTEMPT | the VM attempt loop (the hat's seek, and the entry of a no-DFA VM route) | YES (steps, frames, work per call) | VM hat; PRE on a no-DFA route |
-| ATTEMPT_PRED | ENG_ATTEMPT's predecessor seek (MLINE) | no (a DFA attempt) | MLINE |
+| DFA_ATTEMPT `[rev3 A2]` (rev 2's ATTEMPT_PRED, widened) | ENG_ATTEMPT's attempt loop: MLINE's predecessor seek (a context FIND, row D1c) and the attempt entry's presence pre-check (`attempt_entry`, the third caller of `pcrec_emit_req_byte_check`) | no (a DFA attempt) | MLINE; PRE at the attempt entry |
 
-### 4.4 The reply: one stream, bound at range level (C-3, C-5, D161 add. 7 and 14)
+`[rev3 A2]` The kind is the CONSUMER, so one kind covers both uses on an ENG_ATTEMPT entry:
+nothing about the attempt loop is budgeted, so its presence is OPTIONAL (§4.6). R-21
+PR-3's five kinds lack it; main is asked to rename ATTEMPT_PRED and add the third caller
+(Q-R17P-16). Its population was not counted by pcscope and is owed at B2's census.
+
+### 4.4 The reply: one stream, bound at range level (C-3, C-5, D161 add. 7 and 14) `[rev3: A3]`
 
 - **The stream** (D161 add. 7): candidates are span 0's starts, COMPLETE, ASCENDING, no
   repeats; stateless (`result`) or stateful (`next_candidate(&state, lo)`), the same
@@ -1238,9 +1249,14 @@ origin with no read before `start`. Measured from span 0, the same window would 
   (window_contract §2.4).
 - **Decided first (C-3 ii, G-2).** EMPTY or the first element is returned only after every
   REQUIRED presence span is established over its whole window. Today's order already does
-  this (the pre-check at the entry); the entry use renders it.
+  this (the pre-check at the entry); the entry use renders it. `[rev3 A3]` On a VM hybrid
+  the presence site in `_search_run` returns its verdict before `_search_run` calls the
+  static `_prefilter` for the first time, so the find site's first element is never
+  yielded before the verdict, across the call boundary.
 - **One verdict per activation** `[rev2]`: later uses in the same activation (the loop's
   next candidate, the handoff's re-entry) yield candidates only and never re-verify.
+  `[rev3 A3]` On a hybrid each `_prefilter` call is a new activation of a FIND-ONLY site,
+  which has no verdict to repeat; the verdict is the `_search_run` site's, once.
   pcscope §3.2's re-asked-range rule (from `lo′ − h_max`) is the ITERATOR's, where a
   verdict is carried across calls (§6), not a one-shot rule.
 - **Per-candidate use is a PERMISSION (C-3 iii, Q-WR-6).** A candidate `c` whose implied
@@ -1260,43 +1276,105 @@ origin with no read before `start`. Measured from span 0, the same window would 
   and the re-entry. The re-entry is a further USE of the same site at `scan_position`
   (C-5's row in window_contract §2.5 is rewritten accordingly).
 
-### 4.5 The PROVEN-facts channel: what the kit reports at `mf_define` (PR-9, KW-4)
+### 4.5 The define-time QUERY: facts in, the form CLASS out (PR-9, KW-4) `[rev3: A4, A11, A18, A19, D4]`
 
-D161 add. 8: at compile time the kit states what every candidate of the site has PROVEN,
-the same in every layer (§1.5 rule 1), and pcrec emits code from it. D161 add. 14's
-clarification makes this the read-back for pcrec's readers of "the scan form": they read
-FACTS, never a form name. `mf_result` gains (PROPOSED):
+`[rev3 A4]` **Why rev 2's channel cannot work.** Rev 2 had the kit report the proven facts
+"at `mf_define`" in `mf_result`. On main, `mf_result` is the out-parameter of
+`mf_use`/`mf_emit` only (`mf_define` returns a handle), and the readers run during pcrec's
+ROW SELECTION, before any site exists: `start_landing_applies` is a RECOVER row predicate,
+`req_landmark_admits` a NEXT row predicate, G1 runs inside the admission
+(`req_dominated_applies`), and the PF site itself is built only at its use
+(`pcrec_emit_find` → `mf_emit`, inside the scan loop). A fact produced at define arrives
+after the decision that needs it. D167 add. 1 (A4) notes the direction; this section is
+the CONTRACT PROPOSAL main reviews (Q-R17P-15).
 
-| fact | meaning | B-step |
-|---|---|---|
-| `proven0` | the byte set every candidate's byte at offset 0 is proven to lie in (all 256 = nothing proven) | B2 |
-| `scan_exists` | 1 iff a search text precedes the consumer at the use (0 for NONE) | B2 |
-| `includes` | the headers the site's text needs (R17-a's `mf_defined.includes`, ported at B0) | B0 |
-| `pres_kept[i]` | per presence span: KEPT, DROPPED, or PICKED (with the kept member) | B3b |
+**The query** (PROPOSED; `memfn/include/memfn.h`):
 
-pcrec's six readers, each mapped to one fact kind:
+```c
+/* The form CLASS of a site: facts about the text the kit WOULD render for it, never
+ * the text or the form's name (D157). Answers for the OFF variant (§1.5 rule 1),
+ * which every layer inherits. */
+#define MF_CLASS_V 1
+typedef struct {
+    uint8_t  v;            /* MF_CLASS_V, written by the kit                          */
+    uint8_t  exists;       /* 1 iff a search text precedes the consumer at its use;
+                              0 for NONE                                               */
+    uint8_t  libc_free;    /* 1 iff the text calls no C-library function               */
+    uint8_t  proven0[32];  /* bitset: every candidate's byte at offset 0 lies in it;
+                              all ones = nothing proven                                */
+    uint32_t includes;     /* MF_INC_* bits the text needs (MF_INC_STRING: <string.h>) */
+    uint8_t  npres;        /* presence spans answered (0 before B3b)                   */
+    mf_link  pres[MF_MAX_PRES]; /* per presence span: the chain-link attributes
+                              (verify, proven_by, member, order; §1.4)                 */
+} mf_class;
 
-| reader (main) | reads today | reads after its step |
-|---|---|---|
-| G1 (`dfa_cand_scan`, `req_byte_dominated_by`) | pcrec's own scan row and byte | `proven0` at B2; at B3b G1 itself is the kit's row P2 and pcrec's reader retires |
-| R4 (`pcrec_dfa_cand_ppm`) | the scan's candidate set, and "no scan means 10^6" | `scan_exists` + the mass of `proven0` under pcrec's prior; NONE reads 10^6 by the fact (a5inv's deliberate branch, now on the fact rather than on a row name) |
-| the handoff K admission (`req_landmark_admits`) | the displaced start-byte row's scan | `scan_exists` + `proven0` of the start-set site |
-| `landing` L4 (`start_landing_applies`) | whether the NEXT block stores `landing_position` | `scan_exists` (0 ⇒ L4 declines; sbscope §2's second option, chosen because it keeps no store on every byte) |
-| `<string.h>` | whether `memchr` is emitted | `includes` |
-| the stamps (`REQ_WHY`, `REQ_HANDOFF`, `dfa_prefilter_name`, `REQ_BYTE`, `REQ_RUN`) | pcrec's rows | `REQ_WHY` reads `pres_kept`; the rest stay pcrec ROW identities with unchanged values (sbscope F7) |
+/* Ask the class of `site` under `def` (the define hooks the row contracts read) and
+ * the art's state (denies, measures, analysis, layer). PURE: writes no text, defines
+ * no handle, registers no helper, changes no art state (the MF_TRACE build records
+ * one "ask" line). Returns 0, or exactly the refusal mf_define would return. */
+int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class *out);
+```
 
-No reader receives a form name; the rename of the method-named count fact
-(`DFA_PF_MEMCHR`, `use_memchr` → the count it is) rides B2 (PR-9). Through B1 the
-readers run both ways in the trace build and must agree (the reader shadow, §3.1).
+**Its rules:**
+1. **Pure.** A site asked and never defined (a selection's rejected alternative) leaves
+   nothing behind: no helpers to discard, no handle to use (D4's "what happens to a
+   discarded site's helpers": nothing exists to discard).
+2. **Agreement.** `mf_define` of the same site, under the same hooks and art state,
+   renders text whose class EQUALS the ask's: `mf_defined` gains the `mf_class` it
+   rendered, the trace build re-asks at define and asserts equality, and G2 asks then
+   defines every generated site and compares. SN-2 plants a lying `exists` (§8.3).
+3. **What it answers for.** The class of what will actually be RENDERED: before a row is
+   routed (§1.6) that is the pre-table form, after it the table's pick. So a reader's
+   value is today's until its group routes, and the switch of a reader at B2 is
+   zero-mover by construction (proven by the B1 reader shadow, rule 6).
+4. **The order** (`[rev3 D4]`). Every site whose class a selection reads is ASKED before
+   that selection; sites are DEFINED where they are today (R17-a's points, §2.1). Asks
+   are free of order among themselves (pure).
+5. **Declared reads.** pcrec's selection DAG (`CandNode.reads`, stc5b's C5b mechanism)
+   gains one edge kind, "reader → ask(site X)": X's description depends only on the
+   FIRST slot's selection (the start set or the landmark), so each edge points from
+   PRESENCE or RECOVER back to FIRST, never forward, and no cycle can close through the
+   kit. The kit's own cross-slot read (PRES P2 → FIND's `proven0`) is declared in the
+   kit's table. The trace build traps an undeclared read: an `mf_ask` issued while the
+   selection that fixes the site's description is still open, or a reader reading a
+   class field it did not declare (SN-3, §8.3).
+6. **Steps.** The query and its trace-build reader SHADOW land at B1 (each reader
+   computed from its own row AND from the class, asserted equal over emit_sweep's
+   population); B2 switches the readers to the class and retires the shadow. So the
+   query belongs IN B1 (a kit API addition, inside B1's MF_SITE_ABI bump, no pcrec byte),
+   and B2 depends on it and on main's review (Q-R17P-15).
 
-### 4.6 The K65 obligation, per consumer (C-10, C-12, C-13, C-14; G-1..G-5)
+**pcrec's readers, each mapped to one class fact** (no reader receives a form name):
+
+| reader (main) | reads today | reads after its step | from |
+|---|---|---|---|
+| G1 (`req_dominated_applies` → `req_byte_dominated_by`, `dfa_cand_scan`) | pcrec's own scan row and byte | `proven0` (and `exists`) of the start-search site, from the ask, B2; at B3b G1 IS the kit's row P2 (reading FIND's `proven0` inside the kit) and pcrec's reader retires | ask |
+| R4 (`pcrec_dfa_cand_ppm`) | the scan's candidate set, and "no scan means 10^6" | `exists` = 0 ⇒ 10^6 (a5inv's deliberate branch, now on the fact); else the mass of `proven0` under pcrec's own prior | ask |
+| `landing` L4 (`start_landing_applies`) | whether the NEXT block stores `landing_position` | `exists` (0 ⇒ L4 declines; sbscope §2's second option, chosen because it keeps no store on every byte) | ask |
+| the handoff K admission (`req_landmark_admits`) | the displaced start-byte row's scan | `[rev3 A11]` NO kit fact: the start set's PRIOR mass, h and K, all pcrec's (D167 add. 1). It is the D157 exception rev 2 did not name, restated at B2 (main-side, zero movers) | — |
+| `<string.h>` | whether `memchr` is emitted | `includes` from `mf_defined` (R17-a, B0): the include line is written after every site is defined, so the define result suffices; the class's `includes` equals it (rule 2) | define |
+| the stamps (`REQ_WHY`, `REQ_HANDOFF`, `dfa_prefilter_name`, `REQ_BYTE`, `REQ_RUN`) | pcrec's rows | written after define, from `mf_defined`'s class. `[rev3 A18]` `REQ_WHY` reads pcrec's OWN withholding reason first (`one-attempt`, LOCATE `whole` under `dominated`, `compound`, `none`: no presence span is sent there), then the presence links (`proven_by` ⇒ `dominated`; `verify` with a lowered `order` ⇒ the set-leads' `emitted`; `verify` ⇒ `emitted`). The rest stay pcrec ROW identities with unchanged values (sbscope F7) | define |
+
+`[rev3 A19]` **`exists` is not independent of `proven0`.** On this delivery's forms,
+`exists` = 0 exactly when `proven0` is all ones (NONE proves nothing, and no form scans
+the full byte set). It is kept as its own bit because L4's question is "is there a search
+text at the use" (a store per landing), which `proven0` answers only through that
+coincidence, and because D167 add. 1's A4 note names it in the query's vocabulary. The
+trace build asserts `exists = 0 ⇒ proven0 = all ones` at every ask; if main prefers to
+derive it, L4 reads `proven0` instead (Q-R17P-25).
+
+The rename of the method-named count fact (`DFA_PF_MEMCHR`, `use_memchr` → the count it
+is) rides B2 (PR-9).
+
+### 4.6 The K65 obligation, per consumer (C-10, C-12, C-13, C-14; G-1..G-5) `[rev3: A2, A5]`
 
 | consumer (§4.3), route | span 0 `need` | presence `need` | NONE (unconstrained) | what an EMPTY stream must preserve | give-up posture |
 |---|---|---|---|---|---|
 | DFA_SCAN, DFA body | OPTIONAL | OPTIONAL | legal (no budget) | nothing (the DFA proves absence itself) | — |
 | DFA_HAT | OPTIONAL | OPTIONAL | legal | nothing | — |
 | HYB_PF, exact or count-collapsed front | OPTIONAL | OPTIONAL: every DFA-scan front enforces the necessary set and run (W4; `nfa.c`'s `X{m,n} → X{min(m,1),}` keeps every `rmin ≥ 1` byte), held by PR-11's control | legal | nothing | — |
-| ATTEMPT_PRED (MLINE) | OPTIONAL | — | answer-safe, but no row until measured (Q-WR-2) | — | — |
+| DFA_ATTEMPT `[rev3 A2, A5]`: MLINE's seek | no span 0 (a context stop, row D1c) | — | answer-safe, but no row until measured (Q-WR-2) | — | — |
+| DFA_ATTEMPT `[rev3 A2]`: the attempt entry's presence (`attempt_entry`) | — (or MLINE's context stop) | OPTIONAL (the DFA attempt is not budgeted) | — | nothing (the DFA attempt proves absence itself) | — |
 | VM_ATTEMPT, VM hat, no DFA front | REQUIRED (D148 Q6; G-4; W3) | REQUIRED (K64, K65, K66; W1, W2) | NOT legal (F0 excludes the kind; the applicability rule refuses it besides) | every give-up → NOMATCH conversion the pre-check makes today (G-1): every member, the WHOLE run | through B3b: no move in either direction (Q-WR-3); from B5: D158 per measured cell (answer → give-up never; give-up → answer allowed, direction-checked by GIVEUP1) |
 | VM_ATTEMPT, presence-only (no hat) | — | REQUIRED | the range `[lo, n)` (today's reply) | the same | the same |
 | framed one-attempt VM (K64) | — | REQUIRED | — | the same | the same |
@@ -1308,7 +1386,7 @@ The witnesses (pcscope §2.3) become the reach witnesses of §8.3's plants: W1
 (`(?=(?:a|b|x)*c)x`, `--engine=vm --backtrack-frames=8`: a match today, `frames` under
 `-fno-start-set`), W4 (the collapsed-front control: NOMATCH with `@` untested).
 
-### 4.7 The measurement set's channel (R-20: R-MS1..R-MS5)
+### 4.7 The measurement set's channel (R-20: R-MS1..R-MS5) `[rev3: C2, E-1]`
 
 - **In (R-MS1):** `mf_art_begin(..., const mf_measures *ms)`: the `kit.` rows of the set
   pcrec LOADED (key, `value_e6`, unit, source) plus the set's `id`, `rev`,
@@ -1319,7 +1397,17 @@ The witnesses (pcscope §2.3) become the reach witnesses of §8.3's plants: W1
   resolved a key, found or absent. pcrec ORs it with its own readers to decide whether
   `<PREFIX>_MEASURES` is `""` (measure_sets §3.5). Through B3b no ROUTED row reads a key,
   so `consulted` is false on every default compile (the shadow's reads are trace-only
-  and do not set it).
+  and do not set it). `[rev3 C2]` `consulted` stays one boolean per compile; what it
+  cannot say (which sites were decided by a DEFAULT row) is said per site by the facts
+  section's `basis` and its per-compile default count (§1.7), so an artifact stamped with
+  a set never reads as "every selection came from it".
+- `[rev3]` **The analysis object (the E-1 agreement with main):** B1 declares
+  `mf_art_begin(..., const mf_analysis *an)`, NULL-tolerant and read by no kit row before
+  B3a (the ported PRES picks are its first readers). Main's E-1 (window_contract S1, main's
+  own abi event, main also owning window_contract rev 3 with C-7/C-8) fills it after B2
+  merges, with no kit edit. Rev 2 placed the object on the site (`mf_site.analysis`,
+  window_contract §6 S1's text); the agreement puts it on the art, once per compile, the
+  same channel as `mf_measures` (window_contract rev 3 carries the change, main's).
 - **Form hashes (R-MS3):** `mf_form_hash(form_id)` over the canonical instance with
   scaffolding normalized out, for every form a card names: `walk`, `V1`, `libc`, the
   one-byte libc-free forms, `none`, the dispatch twin, `W64`. `[rev2]` The `libc` form's
@@ -1336,7 +1424,7 @@ The witnesses (pcscope §2.3) become the reach witnesses of §8.3's plants: W1
 
 | C | change | implemented by | step |
 |---|---|---|---|
-| C-1 | the PRESENCE class: `omin`, no `omax`, its own binding; "below the origin" split into necessary-before-origin and CONTEXT | §4.1 (`mf_span_class`; `omin` from the match start, `[rev2]` refinement) | B3a |
+| C-1 | the PRESENCE class: `omin`, no `omax`, its own binding; "below the origin" split into necessary-before-origin and CONTEXT | §4.1 (`mf_span_class`; `omin` from the match start, `[rev3 A20]` an amendment asked of main, Q-R17P-17) | B3a |
 | C-2 | presence carved out of "bounded only"; the unbounded sentinels and `window_stated 0` stay refused on window spans | §4.1 rules | B3a |
 | C-3 | range binding; decided-first; per-candidate permission; the range form of an unconstrained reply | §4.4 | B3b |
 | C-4 | delete "presence sites keep the VERDICT reply" | §4.1 | B3b |
@@ -1344,24 +1432,31 @@ The witnesses (pcscope §2.3) become the reach witnesses of §8.3's plants: W1
 | C-6 | T-PRES superseded: `dominated` is the kit's (P2), presence is not a separate site, `none` stays pcrec's sub-problem choice (Q-WR-4) | §1.4, §4.2 | B3b |
 | C-7 | R-18's text and window_contract §11 changed in step | main's ledger edit | with window_contract rev 3 |
 | C-8 | unlock (c) "presence as a chain link" becomes the contract | main's doc edit | with rev 3 |
-| C-9 | the APPLICABILITY rule for REQUIRED spans | `fd_row.kinds` + P0's precedence (§1.3, §1.4) | B3b |
+| C-9 | the APPLICABILITY rule for REQUIRED spans | the rows' gate contracts over `need` and `site_kind` (`[rev3 D1]`) + P0's precedence (§1.3, §1.4) | B3b |
 | C-10 | G-5's direction per consumer | §4.6's posture column (Q-WR-3) | B3b, B5 |
 | C-11 | `consumer` replaced by the kind, not dropped | §4.2 | B2 (kind), S3 (retire) |
 | C-12 | NONE's safety per consumer | §4.6 | B2 (stated), B5 (F0 reachable) |
 | C-13 | the VM-route EXCLUSION | §4.6 rows 5-7 | B2/B3b |
 | C-14 | the EFFORT fact is `need` | §4.2 | B2 |
-| C-15 | an evidence-reading row reads only MEASURED provenance | §1.3 (F0, R5, R6, R8), §1.4 (P1) | B1 |
+| C-15 | an evidence-reading row reads only MEASURED provenance | §1.3 (F0, R5, R8), §1.4 (P1) | B1 |
 | C-16 | member order and per-member offsets as span fields | §4.1 (`member_order`, `omin`) | B3a |
 
-### 4.9 `MF_SITE_ABI`, by step
+### 4.9 `MF_SITE_ABI`, by step `[rev3: A4, A15]`
 
-Main's 10 (the kit branch's 11 and 12 are not on main). B0 → 11 (R17-a's window fields
-and storage), B1 → 12 (`body`, the START hook; `mf_art_begin`'s `mf_measures` and
-`mf_art_end`'s `consulted` change the art calls in the same bump), B2 → 13 (`site_kind`,
-`need` re-numbered, the moved-candidate hook, `proven0`/`scan_exists`), B3a → 14 (the
-presence class, `omin`, `member_order`, `head_max`; `pres_kept` read at B3b), B4 → 15
-(R17-b's `needs_const_subject` and the W8 sub-block). Each is a kit contract event moving
-no pcrec byte except B4's.
+`[rev3 A15]` Numbered RELATIVELY: each step below is the next number from whatever main
+holds when it lands (main holds 10 today; the kit branch's 11 and 12 are not on main), and
+main's E-1 takes its own bump between B2 and B3a.
+- B0: R17-a's window fields and storage;
+- B1: `body`, the START hook, `[rev3 A4]` `mf_ask` and `mf_class` (with `mf_defined`'s
+  class member), and the art calls' `mf_measures`, `mf_analysis` (declared) and
+  `consulted`, in ONE bump;
+- B2: `site_kind` (DFA_ATTEMPT included), `need` re-numbered, the moved-candidate hook;
+- (main) E-1: main's bump (its fill of `mf_analysis`; window_contract S1);
+- B3a: the presence class, `omin`, `member_order`, `head_max`, the class's `pres` links
+  (read at B3b), and the merged site's ENTRY use if main takes Q-R17P-18's spelling;
+- B4: R17-b's `needs_const_subject` and the W8 sub-block.
+
+Each kit bump is a kit contract event moving no pcrec byte except B4's.
 
 ---
 
