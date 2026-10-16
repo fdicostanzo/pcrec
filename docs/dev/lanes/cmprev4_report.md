@@ -91,7 +91,7 @@ Every time effect is UNMEASURED (instruction counts from revision 1 only).
 ## Validation
 
 Design text only. The probes ran (outputs committed); `make` built the worktree's
-`build/pcrec` for them. No suite was run or owed: nothing under `src/` changed.
+`build/pcrec` for them. `make test-spec-history` 145/0 (its first run caught two citations of the unborn tuning.md section for `--part-inline-rank=`; reworded). No other suite was run or is owed: nothing under `src/` changed.
 
 ## Resume point for a follow-up
 
