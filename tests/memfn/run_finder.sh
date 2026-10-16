@@ -40,6 +40,20 @@ python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
 rc=$?
 # R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
 # (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
+# R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's
+# class of MLINE's context stop (`proven_prev`, row D1c), whose byte is the
+# necessary one: `(?m)^\n`'s one-byte pre-check stays DOMINATED (pcrec's
+# reading before B2). A class that proves nothing below the candidate makes it
+# "emitted" (the artifact moves).
+P="$ROOT/build/pcrec"
+mkdir -p "$WORK/f3"
+if "$P" -p rx --features all -o "$WORK/f3/o.c" --pattern '(?m)^\n' >/dev/null 2>&1 &&
+   grep -q '^#define RX_REQ_WHY "dominated"' "$WORK/f3/o.c"; then
+    echo "ok   F-B1-3: (?m)^\\n's pre-check is dominated through D1c's proven_prev"
+else
+    echo "FAIL: F-B1-3: (?m)^\\n's pre-check is not dominated (G1 lost the context stop's byte)"
+    rc=1
+fi
 echo "run_finder: the arm-entry counter (R-MS6)"
 TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" || rc=1
 exit $rc
