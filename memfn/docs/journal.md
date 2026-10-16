@@ -2338,3 +2338,10 @@ pointer when a kit change merges to main.
 - **B0 delivered** to main (10d9f43f4): make test 70/70, mech 57 rows clean, floored sweeps 0 movers, g2-full 199,850,927/0. Main is reviewing it; the merge waits for main's chains.
 - **grid2 ARMED** (worktrees/memfn-slot/grid2/arm.sh, armed 15:52): it starts when main touches grid2/.go (~18:00, quiet box). Compiler: the record branch c90d65e53 (abi 77).
 - **Frank (2026-10-16), /close:** never interrupt in-flight work at a close; wait for the lanes to finish. I had told fdb1/runaxes to wrap up, then retracted. The rule is in the close skill (9175611a3, on this branch) and in memory.
+
+## 2026-10-16 (evening wake) — R-22 acked; B2 briefed; B1 heavy chain arming
+
+- Woke (pcrecdev3), heartbeat `17,47`. grid2 still ARMED (waits on main's evening chain).
+- **R-22 (R-MS6, harness-only arm-entry counter) acked into B2** (285590dc6). Main allocated S1079-S1088 to B2 + R-MS6; next free S1089.
+- **B2 briefed** to lane fdb2 (opus, worktree fdb2 off lane/memfn-fd @ 285590dc6), plus F-B1-3, the fdb1 floor-token check, R-MS6 and drafts of main's C10 fixtures and C17 `site_kind` columns as a proposed diff. Main owns the landmark facts (its lane, tomorrow). The box must stay quiet 18:05-18:40 (maskbench timing); a rulings file in the fdb2 worktree carries this.
+- **B1's owed heavy runs** (make test, mech derived + kit rows, G2 full, N2 census) are being armed by lane b1heavy (sonnet) on `worktrees/memfn-slot/b1heavy/.go`, pinned at 285590dc6 in detached worktree fdb1-mt. Main touches .go after grid2 finishes (~21:00-21:30); the chain runs overnight.
