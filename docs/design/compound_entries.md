@@ -925,27 +925,41 @@ none either. The stamp makes it visible to a build script, and the listing to a 
   `−2` does. Only the internal batch fill (R3, HELD) would separate them on an iterator
   artifact [r3 F4]. `+1` inlines `__find` when `θ_hot` ≤ R2. Otherwise (`θ_hot` = R3, or
   T1/T2's decline) `__find` keeps its `0` layout, which is §2.2's design of record, so `+1`
-  is never slower than `0` on it [r3 F3, Q8 note].
+  is never slower than `0` on it [r3 F3, Q8 note]. [r4] The gate binds the PRESETS `0`, `+1`
+  and `+2`, not a caller's explicit controls: a caller who types `find:shared` (or
+  `--part-residual=shared`) asks for the `I_shared` layout and takes its cost, as a caller
+  who types `--vm-entry-shape=1` takes `plain`'s. The gate's two arms are exactly those two
+  control values, so it measures what the controls do.
 - **M folds only where the locate part is inlined.** `findall_iter.md` §4.2 makes the call
   mode M a parameter of `__find`: a compile-time constant in each entry when inlined, one
-  runtime branch per call when shared. So the layout row also decides whether the kit's
-  dispatch on M (regime_tables.md R1-R3) costs a branch: it costs one at `−2`/`−1`, at P2
-  (the attempt route's label-table body, shared at every position), and wherever `__find`
-  is shared at `0` by §2.2. The size positions pay that branch knowingly, as part of their
-  cited cost.
+  runtime branch per call when shared. So the layout controls also decide whether the kit's
+  dispatch on M (regime_tables.md R1-R3) costs a branch: it costs one wherever `__find` is
+  shared (`find:shared`, a `shared` residual, `−2`/`−1`'s presets), at P2 (the attempt
+  route's label-table body, shared under every control), and wherever `__find` is shared at
+  `0` by §2.2. A size-leaning control pays that branch knowingly, as part of its cited
+  cost.
 - **The kit's helpers (A7) are the kit's** (D157: pcrec sends facts, not methods).
   pcrec can tell the kit the dial position as a fact (it already does for the class kit,
-  D131); how the kit lays out its helpers is its choice. A request, not a pcrec cell.
+  D131); how the kit lays out its helpers is its choice. A request, not a pcrec cell. [r4]
+  The resolved layout controls are facts of the same kind; whether the kit wants them is
+  its request to make (U8).
 
 ### 3.6 Checks (each with its independent control)
+
+[r4] Revision 3's checks keyed on the POSITION; revision 4's key on the RESOLVED CONTROLS, and
+the position enters only through the preset check. Because explicit controls are live from
+E1, every row is reachable at E1 by flags on corpus artifacts. Revision 3's arms that were
+UNREACHED "until the first live cell" are reached at E1.
 
 - **`0` is byte-identical** [r3 CE-10]: `scripts/emit_sweep.py` against pre-E1 main, every
   stream. That is the only control cited. `run_tune_dial.sh` section 1 checks one pattern
   and both sides go through the same `tune.c` resolver, so it is not an independent control.
-- **A non-zero cell's layout is read from the OBJECT and judged against an expected set
-  that shares no code with the table** [r3 CE-7, CE-8]. A separate evaluator, a script under
-  `tests/` that links nothing from `src/`, computes the expected layout per artifact from
-  three inputs:
+  [r4] The same sweep with `--part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto
+  --part-residual=auto --part-inline-rank=none` must also be byte-identical (T0).
+- **A layout is read from the OBJECT and judged against an expected set that shares no code
+  with the tables** [r3 CE-7, CE-8]. A separate evaluator, a script under `tests/` that links
+  nothing from `src/`, computes the expected layout per artifact and control setting from
+  four inputs:
   - the call graph of a COPY of the emitted C with every `always_inline`, `noinline` and
     `noclone` deleted by text, compiled `-O2 -fno-inline` and read from `objdump -dr`
     relocations. It is needed because under `-fno-inline` an `always_inline` function is
@@ -953,7 +967,11 @@ none either. The stamp makes it visible to a build script, and the listing to a 
     and its bytes do not move;
   - the owners' attributes, read from the ORIGINAL emitted text, to fold owned
     `always_inline` functions into their callers (the `callers` definition, §3.2);
-  - the hand-written rank fixture, and the position's policy text from tuning.md §5.4.
+  - the hand-written rank fixture and a hand-written class map (function-name pattern →
+    control class, from §3.1's table);
+  - [r4] the RESOLVED controls, computed by the evaluator from the compile's own arguments
+    and tuning.md §5.4's preset rows (read from the spec text, as `run_tune_dial.sh` does),
+    never from `tune.c`, and the row order from the spec's prose.
 
   `nm` on the real object must show each shared subject part as one local symbol and each
   inlined one absent. The compiler is the judge of what was inlined; the evaluator is the
@@ -962,53 +980,80 @@ none either. The stamp makes it visible to a build script, and the listing to a 
   C, names one witness artifact per rank, and lands with E0's rank column. A rank with no
   witness (R3 and R1 today, §3.2) is reported UNWITNESSED, never passed. The census reports
   `callers` as distinct functions, never call sites.
-- **Synthetic witnesses carry a hand-written expected layout** [r3 CE-7, Q9 note]. Where a
-  row has no corpus population, a synthetic artifact exercises it. Its expected `nm` set is
-  written by hand in the fixture, and the result is read from the object. The synthetic
-  witness is never also the control.
+- **Corpus first, synthetic only where the corpus has no SUBJECT** [r3 CE-7, Q9; r4]. With
+  controls live, a row is exercised by setting the control that reaches it on a corpus
+  artifact that has a subject of that class: P5 by `prefilter:inline` on the `(a)b`-class
+  hybrids, P8 by `--part-residual=shared`, P7 by `--part-inline-rank=R2`, P2 by
+  `compound:inline` on split. A synthetic artifact is used only where NO corpus artifact has
+  the subject (an R3 prefilter re-entered by the retry, an R1 copyable part, a copyable
+  multi-caller compound part). Its expected `nm` set is written by hand in the fixture, and
+  the result is read from the object. The synthetic witness is never also the control.
+- **Preset resolution** [r4]. For each position, the evaluator's resolved controls (from
+  tuning.md §5.4) and the artifact's `<PREFIX>_PART_LAYOUT` agree, over the corpus. While
+  every layout preset cell is `†`, every position must resolve to T0 and carry no
+  `_PART_LAYOUT` stamp. That is a real check today: it fails if a `†` cell leaks.
+- **Precedence** [r4]: a fixture of control combinations with hand-written expected rows per
+  part: an explicit value beats the preset's for the same control; a class value (P4-P6)
+  beats the threshold (P7); the threshold beats the residual (P8-P10); `measured` declines
+  only through T1/T2.
+- **Held requests are reported** [r4]: `compound:inline` on split stamps `compound=inline/held`
+  and lists P2 for F and P3 for Q in `--emit-facts`; `wrap:shared` before I3 stamps
+  `wrap=shared/none`. Expected strings are hand-written.
 - **H1/H2 and LK-9 by construction**: a planted `always_inline` on an attempt body must fail
   the build, and so must one on an exported callee under `-fPIC`. The gcc error is the
   detector.
-- **Clones** [r3 LK-3]: per artifact and position, count `.constprop`, `.isra` and `.part.N`
-  symbols derived from each shared part's name; any is a failure.
-- **A1 and the layout row are disjoint** [r3 CE-2]: per VM artifact and position, the set
-  of functions P1 assigns to A1 and the set any position row writes are disjoint, checked on
-  the emitted text.
+- **Clones** [r3 LK-3]: per artifact and control setting, count `.constprop`, `.isra` and
+  `.part.N` symbols derived from each shared part's name; any is a failure.
+- **A1 and the layout controls are disjoint** [r3 CE-2]: per VM artifact and control
+  setting, the set of functions P1 assigns to A1 and the set any control row writes are
+  disjoint, checked on the emitted text.
 - **The seam is copyable** [r3 LK-6]: the fixture of §3.4.
-- **Stamp neutrality** [r3 CE-9]. `make test-axes` compares answers and refused-key sets
+- **Stamp neutrality** [r3 CE-9; r4]. `make test-axes` compares answers and refused-key sets
   (DIAL-S3), not stamps. The new arm diffs every `#define <PREFIX>_*` except
-  `<PREFIX>_TUNE` and `<PREFIX>_PART_LAYOUT_*` between a position's artifact and the SAME
-  position's artifact built from the cell diff's parent (where the layout cell is `†`). The
-  parent is the control because other dial rows (A1's term, λ, the ladder) legitimately move
-  stamps between positions. While every cell is `†` the arm compares an artifact with
-  itself, so it is reported UNREACHED until the first live cell.
+  `<PREFIX>_TUNE` and `<PREFIX>_PART_LAYOUT*` between an artifact built WITH a layout
+  control and the same compile WITHOUT it. Revision 3 used the cell diff's parent as the
+  control and was UNREACHED while every cell was `†`; with controls live, the no-control
+  build is the control and the arm is reached at E1. A preset cell's own diff keeps
+  revision 3's parent-based arm, because other dial rows (A1's term, λ, the ladder)
+  legitimately move stamps between positions.
+- **Answer identity**: `make test-axes` sweeps the controls as value axes, on
+  `--vm-entry-shape`'s tiered precedent (tuning.md §2.21¶6): every run sweeps
+  `--part-residual=shared` and `--part-residual=inline` (the two ends); `AXES_FULL=1` sweeps
+  each class value and each rank value. The summary prints its tier.
 - **Length neutrality on every emitter** [r3 LK-8]: the near-cap witnesses (the lowered-cap
   manifests of `r17c_nearcap.py`, the K59 and `[ART-SIZE]` witnesses) refuse and select
-  identically at every position on the VM, DFA and compound emitters. This tests I5.
-- **The decline is visible**: a `+1` compile against a set without `θ_hot` carries
-  `_WHY "threshold-unmeasured"`, and its object equals `0`'s.
+  identically under every control setting on the VM, DFA and compound emitters. This tests
+  I5. [r4] The same witnesses carry the owed near-cap SIZE reading (§3.2.5): each class's
+  `.o` delta on the largest artifacts, recorded, not gated.
+- **The decline is visible**: a compile with the threshold resolving to `measured` against
+  a set without `θ_hot` carries `_WHY "threshold-unmeasured"`; with no other control its
+  object equals `0`'s and it carries no `_PART_LAYOUT`.
 - **The attribute census**: every `__attribute__((always_inline|noinline|noclone))` and every
   `static inline` in an emitted artifact belongs to a row of §3.4 or a class of §3.1. An
   unlisted writer fails. This is the "single attribute-writing table" unlock's check, built
   at E1 even though the writers themselves stay where they are (§5.3).
-- **Totality and population, per row** [r3 CE-4]: every (subject part, position) in the
-  census reaches exactly one row, and each row's population is counted per position (K35).
-  A row whose population is zero is listed with its reason.
+- **Totality and population, per row** [r3 CE-4]: every (subject part, control setting) in
+  the census reaches exactly one row, and each row's population is counted per control value
+  and per preset (K35). A row whose population is zero is listed with its reason.
 
-**Sabotage, PROPOSED ids** (allocated S999-S1008 by the manager 2026-10-16):
+**Sabotage, PROPOSED ids** (S999-S1008 allocated by the manager 2026-10-16, re-aimed for
+revision 4's rows; three new plants have NO id yet and need three from the manager):
 
 | proposed id | plant | detector |
 |---|---|---|
-| S999 | P1 drops `_deep` (A2) | the object check: `_deep` must stay a local symbol at every position |
-| S1000 | P1 drops A1's functions | the A1-disjointness check; the `-Werror` harness compile (gcc 15.2 warns "ignoring attribute 'noinline' because it conflicts with attribute 'always_inline'" [-Wattributes], checked on a two-line probe in the lane's scratch) |
-| S1001 | T1/T2 moved below the part table | emit_sweep: `+1` without `θ_hot` must equal `0` byte for byte |
-| S1002 | P2 dropped | the build: gcc refuses `always_inline` on a label-table body at `+2` |
-| S1003 | `noclone` dropped from P2/P4/P6 | the clone-symbol count |
-| S1004 | `forwardable` always true | the build and answer checks on the compound `_match` at `−2` |
+| S999 | P1 drops `_deep` (A2) | the object check: `_deep` must stay a local symbol under every control setting |
+| S1000 | P1 drops A1's functions | the A1-disjointness check under `--part-residual=shared`; the `-Werror` harness compile (gcc 15.2 warns "ignoring attribute 'noinline' because it conflicts with attribute 'always_inline'" [-Wattributes], checked on a two-line probe in revision 3's scratch) |
+| S1001 | T1/T2 moved below T0 (or T0 evaluated before them) | emit_sweep: `+1` without `θ_hot` must equal `0` byte for byte and carry `_WHY` |
+| S1002 | P2 dropped | the build: gcc refuses `always_inline` on a label-table body under `compound:inline` |
+| S1003 | `noclone` dropped from P2/P4/P8 | the clone-symbol count |
+| S1004 | `forwardable` always true | the build and answer checks on the compound `_match` under `wrap:shared` (after I3) |
 | S1005 | `callers` counts call sites | the evaluator's expected set against `nm` on a two-site, one-function part |
-| S1006 | `θ_hot = none` read as R3 | the `none` witness: `+1`'s object must equal `0`'s and carry `_THETA "none"` |
+| S1006 | `θ_hot = none` read as R3 | the `none` witness: the object must equal `0`'s and carry `_WHY "no-material-rank"` and no `rank=R3@set` |
 | S1007 | the layout pass rendered before the size caps | the near-cap refusal arm |
 | S1008 | the rank column's R3 cell read as R2 | the rank fixture |
+| (new, id owed) | row K takes the preset's cell over a set caller value | the precedence fixture |
+| (new, id owed) | P7 placed above P4-P6 (the threshold beats a class value) | the precedence fixture: `prefilter:shared --part-inline-rank=R2` must keep the prefilter shared |
+| (new, id owed) | the `/held` marker dropped | the held-request fixture's hand-written stamp |
 
 ### 3.7 Which family the row belongs to (the sibling-of-a-family lens)
 
