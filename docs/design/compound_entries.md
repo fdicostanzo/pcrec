@@ -554,9 +554,10 @@ T0 makes `0`, and every position whose cell is still `†`, byte-identical by co
 nothing below it runs. Because T1 and T2 sit above the part table, a `+1` decline gives the
 `0` object exactly. In revision 2 it did not: L1-L4 ran first and L4 added `always_inline`.
 
-**The part table, evaluated per subject part at a live non-zero position.** Constraint rows
-P1-P3 come before every position row, so no position overrides them (Q2). Each position ends
-in an unconditional row, so the table is total.
+**The part table, evaluated per SUBJECT or OWNED function (§3.1) at a live non-zero
+position.** Constraint rows P1-P3 come before every position row, so no position overrides
+them (Q2): P1 is the row that keeps every owned function out of the position rows. Each
+position ends in an unconditional row, so the table is total.
 
 | # | row | conjuncts (all hold) | layout written | evidence |
 |---|---|---|---|---|
