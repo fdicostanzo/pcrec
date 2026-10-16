@@ -9,7 +9,8 @@ on a difference). Never edit a set by hand. Each file carries its
   values relative to u = beta_walk(DFA_SCAN, r1e0c0), the derived `saving`
   rows computed in `generate.py` from the measured absolute betas. A TEST
   INPUT (Q-REVAL-10): it is what the predicted-mover manifest
-  (`docs/design/memfn/r17b_prime/fdb1/predicted_movers_B4.tsv`) was read
+  (`docs/design/memfn/r17b_prime/fdb2/predicted_movers_B4.tsv`, which
+  supersedes B1's `fdb1/` one after B2's floor-token correction) was read
   under.
 - `synthetic-all-walk.tsv`, `synthetic-all-v1.tsv`, `synthetic-all-wide.tsv`
   — the extreme sets (every saving 0 / 0.5 / 0.5 with W64 open).

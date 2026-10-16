@@ -14,5 +14,7 @@ R17-b′ step B1 (lane fdb1, 2026-10-16; `../../r17b_prime.md` rev 3 §1.6
   (`cli/main.c -DPCREC_HARNESS` linked against `build/libpcrec_mftrace.a`).
 - `predicted_movers_B4.tsv` — the COMMITTED PREDICTED-MOVER MANIFEST: the
   manifest run under `memfn/data/sets/kit-interim-grid1.tsv`. B4's movers
-  by ID are held to it. Regenerate with `shadow_census.py manifest` (the
+  by ID were held to it. Regenerate with `shadow_census.py manifest` (the
   command is in its header); the counts are in `docs/dev/lanes/fdb1_report.md`.
+  SUPERSEDED for B4 by `../fdb2/predicted_movers_B4.tsv` (B2's floor-token
+  correction, rev 3 [C4]); this file stays as B1 wrote it, B1's record.
