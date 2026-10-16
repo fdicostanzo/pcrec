@@ -916,8 +916,8 @@ int mf_reach(mf_art *art, const char *stem)
         return kit_fail(art, "mf_reach: called twice on one art");
     if (art->nsites)
         return kit_fail(art, "mf_reach: called after the first define");
-    if (!kit_is_ident(stem))
-        return kit_fail(art, "mf_reach: the stem is not a C identifier");
+    if (!stem || !*stem)
+        return kit_fail(art, "mf_reach: no stem");
     int oom = 0;
     art->reach_stem = art_copy(art, stem, &oom);
     if (oom) return kit_fail(art, "mf_reach: out of memory");

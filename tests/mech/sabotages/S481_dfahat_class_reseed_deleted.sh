@@ -13,7 +13,7 @@
 # every-startpos differential, and [dfa-iff]/[dfa-reseed] (no conditional
 # re-seed line).
 SAB_ID='S481-dfahat-class-reseed-deleted'
-SAB_FILE='src/gen/emit_dfa.c'
+SAB_FILE='memfn/src/pffind.c'
 SAB_SUITES='dfahat'
 SAB_DESC='first-class-bounded never re-seeds after its skip (the conditional re-seed emitted as if (0 && ...)), so a landing keeps the stale start state'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/ssbuild3_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S481.'
@@ -21,5 +21,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\b(?:
 SAB_REACH_EXPECT='REACH-CLASS-MOVER'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pf_emit_moved_reseed(c, f, in4);'
-SAB_AFTER='    pcrec_sb_printf(c, "%sif (0 && %s > skip_from) %s = %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]];\n", in4, f->dir->posv, f->dir->statev, f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv);   /* SABOTAGE S481 */'
+# RE-AIMED 2026-10-16 (lane fdb2, R17-b' B2, KW-3): the DFA hat's conditional
+# re-seed is the memfn kit's text since B2 (pcrec states it as the site's
+# moved-candidate hook, PR-2; the kit writes `size_t skip_from = lo;` and
+# `if (result > skip_from) <moved>` around its search, memfn/src/pffind.c
+# `moved_open`/`moved_close`). The plant is the same fault at its new site;
+# its intent, witness and detectors are unchanged.
+SAB_BEFORE='    if (r->site.end_back == 1) moved_close(o, ind, h);'
+SAB_AFTER='    if (r->site.end_back == 1 && h->moved) kit_out(o, "%sif (0 && %s > skip_from) %s\n", ind, h->result, h->moved);   /* SABOTAGE S481 */'

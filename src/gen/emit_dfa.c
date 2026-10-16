@@ -343,6 +343,9 @@ static bool revend_tie_asked(Ctx *cx);
 /* [OPT-REVEND] L0 the path's finisher route, a field read without a
  * selection (defined beside `cand_route_of`). */
 static CandRoute cand_finish_of(Ctx *cx);
+/* the route of the artifact's DFA-shaped body (defined with it; read by the
+ * pre-check's consumer kind, R17-b' B2) */
+static CandRoute cand_route_of(Ctx *cx);
 /* [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's question (locate_finish.md
  * §5.1): NULL where the selected path asks `slot` on route `rt` (an entry
  * slot on any route), so the stamp reads the slot's selection, else the
@@ -1519,6 +1522,18 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
  * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
 #define REQ_ON_MISS "return 0;"
 
+/* [MEMFN] R17-b' B2 THE PRE-CHECK's CONSUMER KIND (PR-3, r17b_prime.md §4.3):
+ * the search entry it fronts, the route's. A VM finisher's entry is a
+ * hybrid's `_search_run` (a DFA scan in front: HYB_PF) or a no-DFA VM route's
+ * (VM_ATTEMPT); a DFA entry is ENG_ATTEMPT's `attempt_entry` (DFA_ATTEMPT)
+ * or a DFA body's (DFA_SCAN, the rev-end relocate path's included). */
+static uint8_t req_site_kind(Ctx *cx)
+{
+    if (cand_finish_of(cx) == CAND_ROUTE_VM)
+        return pcrec_artifact_has_dfa_scan(cx) ? MF_SK_HYB_PF : MF_SK_VM_ATTEMPT;
+    return cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? MF_SK_DFA_ATTEMPT : MF_SK_DFA_SCAN;
+}
+
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
  * NULL, and nothing defined, where no pre-check is emitted. Each predicate
  * is read from the call the text writers above read: the admission, the
@@ -1593,6 +1608,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->empty = MF_EMPTY_MISS;
     s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
     s->consumer = MF_C_ENGINE;
+    s->site_kind = req_site_kind(cx);
     s->npred = (uint16_t)np;
     s->preds = p;
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */

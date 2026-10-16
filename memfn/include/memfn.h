@@ -981,8 +981,9 @@ int      mf_stamps(const mf_art *, mf_sink *);
  * by a ROUTED finder decision (mf_result.row non-empty) counts the times its
  * text is ENTERED, one counter per dispatch ARM of the site (one arm while no
  * dispatch is emitted), in a file-scope array the host names: `stem` is
- * pcrec's reserved internal name for it (a C identifier, written through
- * `vprintf` only, never inspected). Each arm's first statement increments
+ * pcrec's reserved internal name for it (an identifier once the host
+ * renders its own prefix in it, written through `vprintf` only and never
+ * inspected, as a STMT site's stem is). Each arm's first statement increments
  * `<stem>[k]` through a block-scope `extern` declaration. mf_reach_table
  * then writes, at file scope after every use, the definitions:
  *   unsigned long <stem>[N];                       the counts, zero at load
@@ -990,8 +991,8 @@ int      mf_stamps(const mf_art *, mf_sink *);
  *   const unsigned <stem>_n = N;                   N (0: no arm, and then
  *                                                  `<stem>[1]` so C allows it)
  * mf_reach is called at most once, before the first define (refused after,
- * or twice); mf_reach_table writes nothing on an art mf_reach was never
- * called on. */
+ * or twice, or with no stem); mf_reach_table writes nothing on an art
+ * mf_reach was never called on. */
 int      mf_reach(mf_art *, const char *stem);
 int      mf_reach_table(const mf_art *, mf_sink *file_scope);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
