@@ -1013,6 +1013,9 @@ whose best 2-chain loses to a measured 3-chain twin. wingame §2.1 found 18 of
 
 ### 4.3 [KIT-VERIFY]'s two directions
 
+`[rev3, D161 add. 10]` Both directions apply only to spans whose `byte_form` is
+EXACT (§2.2). A SUPERSET span is a filter only.
+
 **(1) pcrec → kit, "verify span k".** This is `need = REQUIRED` on span k
 (§2.4 obligation 4). It names no method. pcrec marks a span REQUIRED where its
 consumer would otherwise re-test it. Everything else stays OPTIONAL, so the
@@ -1194,19 +1197,32 @@ segment, read off a stamp-free census. The trigger population is wingame §2.1's
   window site carrying all of them. The offset-pinned union span (start set, k-set) stays its own
   single-span site until unlock (b).
 
-### 5.4a Whether a PRESENCE site rides beside it: T-PRES (first match) `[r4 E3]`
+### 5.4a Presence: SUPERSEDED as a separate site; T-WITHHOLD is what stays pcrec's `[rev3 C-6]`
 
-Presence is no longer a T-CUT row, so it is not exclusive with a window site.
+Revision 2's T-PRES (`dominated` → `presence` → `none`) sent presence as its OWN
+site beside the window site. D161 add. 14's clarification makes presence a span
+class of the ONE request (§2.2), so:
+- **`dominated` is the kit's.** It is r17b′'s row P2 (G1's question: are the
+  presence span's bytes already tested by the scan), ported at B3a under the
+  shadow comparator and routed at B3b.
+- **`presence` stops being a site.** Every necessary-set member and the whole
+  run are PRESENCE spans of the window site, unpicked (PR-5). The pick is the
+  kit's.
+- **What remains pcrec's is the sub-problem choice**: whether a presence span
+  is SENT at all. That is one table:
 
-| row | predicate | sends | deny |
+**T-WITHHOLD (first match; D161 add. 4, Q-WR-4):**
+
+| row | predicate | presence spans sent | deny |
 |---|---|---|---|
-| `dominated` | the window site's spans include the presence span's bytes at a bounded offset (G1's question) | nothing | `-fno-req-byte`/`-fno-req-run` (the sources' own) |
-| `presence` | a presence span exists | a PRESENCE site (VERDICT), run before the window site | `-fno-req-byte`/`-fno-req-run` |
-| `none` | always | nothing | none |
+| `one-attempt` | G2's linear one-attempt VM route (`req_route_one_attempt`) | none (withheld; today's text keeps its own pre-check decision) | none (structural) |
+| `locate-whole` | LOCATE `whole` (the body decides presence) | none (withheld) | none (structural) |
+| `asked` | today's asking rule holds: `req_set` is asked only where today asks (Q-WR-12, the `--emit-facts` `used` column) | every necessary-set member and the whole run, unpicked, each with its `need` (§2.3) | the sources' own (`-fno-req-byte`, `-fno-req-run`) remove their spans |
+| `none` | always | none | none |
 
-`a.*zxq` now sends segment 0 (`a`) AND the `zxq` presence site, which keeps
-reqpos_2b's measured win (1.46 of 10.284). Whether presence becomes the
-chain's zero-cost first link is unlock (c).
+`a.*zxq` sends segment 0 (`a`) AND the `zxq` presence span in ONE site.
+reqpos_2b's measured win (1.46 of 10.284) is the kit's to keep: its default rows
+port today's pre-check (D1/P-rows, zero movers through B3b).
 
 ### 5.5 What stays pcrec's: the unbounded cuts
 
@@ -1220,7 +1236,7 @@ chain's zero-cost first link is unlock (c).
 | the context edge (`(?m)^` at `search_from`/0) | pcrec's edge attempt (§2.4) |
 | a backreference's relaxed language | `locate_finish.md` §4.5 (filed) |
 | the VM hybrid's retry policy (R4 `cand_rs_dense_applies`) | RETRY, the [ADAPTIVE-ARM] family (chunk 5) |
-| unbounded-offset presence | the PRESENCE site's existence is pcrec's (T-PRES); its FORM is the kit's |
+| unbounded-offset presence `[rev3]` | whether a PRESENCE span is sent is pcrec's (T-WITHHOLD); its pick and form are the kit's |
 
 ### 5.6 The position-pin fact family `[r4 E2]`
 
@@ -1255,9 +1271,9 @@ own ranking second, the retirement third.
 
 | step | what | movers | events |
 |---|---|---|---|
-| **S1** frequency kind | `mf_analysis` in `memfn.h`; `mf_site.analysis` appended last; pcrec builds the object per attempt from `Job.find` and states it on every site; the kit's one-object check (§3.3 rule 3) | **every artifact whose `<PREFIX>_FINDINGS` is `""` today** `[r4 R1]`: building the object sets `byte_rate_asked`, so `pcrec_find_stamp` stops returning `""` and the stamp and `rx_info.findings` move to `byte-rate=default:<digest>` (`-e byte`) or `byte-rate=none` (`-e utf8`). Census owed: an `emit_sweep` compare over the corpus and bench, both encodings | `MF_SITE_ABI` bump (layout); a **pcrec abi event** (readers found by grep, the byte-count class included); **D80 hunk**: `docs/spec/findings.md` §5 and the stamp sentences in `docs/spec/match_api.md` — the stamp now means the kinds OFFERED to the kit, one entry per kind this pcrec knows, provenance-coded (today's `byte-rate=` spelling is the single-kind case). Consequence: after S1 every regeneration of the default prior moves every artifact's stamp digest, an abi event each time (§10.3) |
-| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a SHADOW comparator: the kit's order equals `pcrec_find_run_rank`'s for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order | 0 (same order, proven by the shadow) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
-| **S3** retirement | see the file list below | 0 | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
+| **S1** frequency kind = **main's E-1** `[rev3]` (§3.7) | the kit's B1 declares `mf_analysis` and its slot on `mf_art_begin` (NULL-tolerant); E-1, after B2, builds the object per attempt from `Job.find` through `find_kinds[]` and fills that slot with no kit edit. The offer does not mark the query asked (§3.7.1) | **0** in every arm (CONSULTED, §3.7.3). Under the OFFERED alternative: exactly the `""` population, which is 0 at default flags and up to every artifact on the deny arms (§3.7.4) | CONSULTED: no pcrec abi event, no `MF_SITE_ABI` move at E-1 (B1 took it), no D80 hunk; census = G1-E1 (§3.7.7). OFFERED: §3.7.5's abi event, hunks and re-aims |
+| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a SHADOW comparator: the kit's order equals `pcrec_find_run_rank`'s for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order. `[rev3]` From REPLACE, `vrun` is a kit row that reads `byte-rate`, so the kit's per-kind `consulted` (§3.3 rule 8) is owed in that commit, unless B3b has already delivered it | 0 (same order, proven by the shadow); the stamp is 0-mover while pcrec still fills `rank_*` (it asks) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
+| **S3** retirement | see the file list below. `[rev3 C-11]` `mf_site.consumer` is REPLACED by `site_kind` (stated from B2, Q-WR-8), not dropped | 0, including the stamp: once pcrec stops calling `pcrec_find_run_rank` on the default compile, the kit's `consulted` must carry `byte-rate` wherever that call was the only asker (the deny arms; §3.7.4). G1 includes those arms | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
 | **S4** the picks | `plan_hint`/`plan_pos` and the prior-reading decisions of §5.1 move into the kit with R-18's multi-span site. Each is implement-then-replace at zero movers, then its own form event. **The shadow retires here** `[r4 R5]`: with the picks moved, both NONE-rule spellings live in the kit, and `pcrec_find_run_rank` (plus its debug dump) is deleted | per form event | each a pcrec abi event when bytes move, with its own `--memfn=` deny. Stamps that report a pick (`REQ_BYTE`, `REQ_RUN`, `DFA_PREFILTER`'s offset form) become kit-attributed; their readers found by grep |
 
 **Why the shadow lives to S4** `[r4 R5]`. Until S4, pcrec's own picks still
@@ -1295,6 +1311,10 @@ the `consumer` setters; re-derived by the same grep at S3:
   retired by `scripts/sabotage_anchors.py --step` over the edit set;
 - `plan_hint`/`plan_pos` are NOT in S3: kit arms READ them (`vrun.c`,
   `precheck.c`, `ofsskip.c`, `compose.c`). They retire at S4.
+- `[rev3 C-11]` the six `consumer` setters are deleted only because each
+  builder already states `site_kind` (from B2). S3's grep checks that every
+  builder that set `consumer` sets `site_kind`, so the fact is REPLACED and not
+  lost.
 
 - **Consumer price.** It was never built, so nothing is deleted. The text
   retires: setfind.md §2.2's W9 row is struck (§7); wingame §5.5 item 2 and
@@ -1364,10 +1384,14 @@ the `consumer` setters; re-derived by the same grep at S3:
 | a new analysis kind no row reads | no | no | YES on every artifact it is offered on (the per-kind stamp entry) | YES (the stamp's grammar gains the kind) |
 | a kind's payload shape changes | no | no (its own `version`) | only if a row's bytes move | no |
 | the `mf_analysis`/`mf_akind`/`mf_prov` layout changes `[r4 R9]` | no | YES (layout; the list's `list_v` moves only if the list's own shape does) | only if a byte moves | no |
-| the per-site analysis slot is filled `[r4 R9]` | no | YES | yes iff a byte moves | no |
-| S1: the object first built | no | YES | YES (the stamp moves from `""`) | YES |
+| the per-site analysis slot is filled `[r4 R9]` (the RESERVED per-site fact, §3.3 rule 4; not the object) | no | YES | yes iff a byte moves | no |
+| `[rev3]` the object's slot declared on `mf_art_begin` (the kit's B1) | no | YES (with B1's other art fields) | no | no |
+| `[rev3]` E-1: pcrec fills the slot (CONSULTED) | no | no | **no** (the offer is not an ask) | no |
+| `[rev3]` E-1 under the OFFERED alternative | no | no | YES on the `""` population (0 at default) | YES (§3.7.9) |
+| `[rev3]` the kit's per-kind `consulted` joins the stamp (B3b, or S2's REPLACE if earlier) | no | YES (the `mf_art_end` output) | no iff the union of askers is preserved (S989) | YES (findings.md §5's CONSULTED wording) |
+| S1: the object first built (revision 2's row; `[rev3]` superseded by the three E-1 rows above) | — | — | — | — |
 | a kit row starts reading a kind or a field | no | no | yes iff a byte moves, same commit, own deny | only if a stamp's meaning moves |
-| bundle or prior data regenerated | no | no | YES after S1 (every artifact's stamp digest); also wherever a row reads it | no |
+| bundle or prior data regenerated | no | no | YES on every artifact that CONSULTS it (`[rev3]`: today, every default compile asks, §3.7.4); also wherever a row's bytes move | no |
 | a new site field (fact) | no | YES (layout + meaning) | yes iff a byte moves | no |
 | a new reading of an existing field: W7's `preds` on FIND, `need` binding the stream `[r4 R9]` | no | YES (meaning) | yes iff a byte moves | no |
 | an enum re-numbered for an UNSTATED zero (`mf_need`) | no | YES (values) | no if every builder states it | no |
