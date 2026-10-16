@@ -46,7 +46,7 @@ PHASE=${PHASE:-any}
 CELLS_RE=${CELLS_RE:-.}
 METHOD=kit-grid@2
 SEC_REP=${SEC_REP:-0.65}        # a launch of a small subject (grid1 measured 0.45-0.85 s)
-SEC_STREAM=${SEC_STREAM:-0.75}  # a launch of a streamed 4 MiB subject; replaced by the DRY run's measured figure
+SEC_STREAM=${SEC_STREAM:-0.65}  # a launch of a streamed 4 MiB subject: MEASURED by the DRY run (0.61-0.65 s; grid1's 64 MiB streams cost 0.95 s)
 RERUN_SHARE=${RERUN_SHARE:-0.2} # estimate only: EP69
 STEP=${1:-time}
 cd "$OUT" || exit 2

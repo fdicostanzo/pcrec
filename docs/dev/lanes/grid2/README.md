@@ -84,7 +84,7 @@ slot; the optional passes never do.
 
 Subjects are directories of distinct buffers under `subj/` (`.manifest.tsv` carries every
 buffer's sha256): `streamgen.py` fixes the size at 4 MiB of distinct data per subject (64 x 64 KiB;
-16 buffers at 1 MiB; at most 1024 buffers for tiny n), the same generator `regime_eval` E4
+16 buffers at 1 MiB; at most 1024 buffers for tiny n; `GRID2_STREAM_MIB=64` restores grid1's 64 MiB, ~0.95 s per launch instead of ~0.63 s), the same generator `regime_eval` E4
 imports (`write_stream`, `verify_stream`, `disjoint`, `window_stream`, `nbuf_for`).
 `fit_map.tsv` maps every grid1 fit group to its grid2 streamed group.
 

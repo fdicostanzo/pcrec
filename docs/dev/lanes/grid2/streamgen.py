@@ -34,13 +34,13 @@ subject, so a 64 KiB subject has 64 buffers (regime_eval §2.4's 64 x 64 KiB),
 clamped to [NBUF_MIN, NBUF_MAX] buffers: a 1 MiB subject keeps 16 buffers
 (F2's fresh size), a 48-byte subject keeps 1024 distinct buffers (the cap on
 file count; the buffers still differ, but the stream is 48 KiB, not 4 MiB).
-grid1 streamed 64 MiB per subject; 4 MiB fits the 7700X's 32 MiB L3 as
+grid1 streamed 64 MiB per subject (GRID2_STREAM_MIB=64 restores that total); 4 MiB fits the 7700X's 32 MiB L3 as
 regime_eval §2.4 ([r1 M-also]) states for the judge, and the load time per
 launch falls from ~0.3 s to ~0.02 s.
 """
 import hashlib, os, sys
 
-STREAM_BYTES = 4 << 20
+STREAM_BYTES = int(os.environ.get("GRID2_STREAM_MIB", "4")) << 20      # GRID2_STREAM_MIB=64 reproduces grid1's streamed total
 NBUF_MIN = 16
 NBUF_MAX = 1024
 MANIFEST = ".manifest.tsv"
