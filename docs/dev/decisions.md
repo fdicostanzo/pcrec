@@ -9693,3 +9693,21 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **Q-MS-1 (Frank: agree):** until a SECOND OFFICIAL set exists (stage M2, the F5 Zen 1 run), a bare compile reads the LATEST set (D166's literal reading). The generic envelope becomes the default at M2. Reason: before M2 the envelope cannot be built from official members, and at n=1 it would drop the cost rows and move selections.
 - **Stale default (Frank: agree):** when a measured form's (normalized) body changes after its set was measured, the default set is CARRIED STALE: the listing flags the stale rows and a manager reviews them; it is never a landing gate (a re-measure needs a quiet box or a bench window, and kit text changes must not wait on one).
+
+## D167 — the build hold is LIFTED; zen4-grid2 GO (one streamed condition); R17-b′ build GO; Q-R17P-9..14 ruled (Frank, 2026-10-16, session 113)
+
+**Context.** Session 112 closed under a build hold (designs + panels only). The kit delivered R17-b′ rev 2 (`docs/design/memfn/r17b_prime.md` on lane/memfn-r17 c90d65e53) with a grid2 GO REQUEST and six questions for main/Frank.
+
+**Ruling (Frank):** "build hold lifted. full steam ahead. zen4-grid2 go per your rec. proceed to r17-b."
+1. **Build hold lifted** for main and the kit: builds proceed on their designs (panels still precede or accompany them per D6).
+2. **zen4-grid2 GO, Q-R17P-9 option (B):** ONE streamed condition gives both the set's constants and regime_eval's in-sample reference R_in (~96 min with the optional items; the grid1-extension harness build first). Cost accepted: regime_tables §3's S0 row is re-derived on grid2; grid1 prototype figures stop being directly comparable (nothing gated reads them after B4).
+3. **R17-b′ build GO** (the step plan B0..B9 of r17b_prime.md §3, first delivery B0-B3b; LOCKDOWN at B4).
+
+**Main's rulings on the kit's questions (manager, under Frank's "full steam ahead"; each was the stated recommendation):**
+- **Q-R17P-10:** retire pcrec's 16 B K5 pair-hit row when presence becomes the kit's; S = 48 B, changed once at the iterator's own abi event. If a path the merge does not cover still needs it, S = 64 B (re-raise then).
+- **Q-R17P-11:** the landmark admission (`req_landmark_admits`) stays pcrec's (a choice of ORIGIN, D161 add. 9); the kit computes it in the B3a shadow only, as evidence for framing (b).
+- **Q-R17P-12:** the PF comment's text change rides B4's commit (its abi event), so B2 stays zero-mover on every arm incl. `-fcomments`.
+- **Q-R17P-13:** Q-REVAL-11's "the routing commit waits for PASS" gates the first commit whose picks MOVE a byte (B4). B2/B3b route only rows that reproduce today, gated by byte identity + the shadow comparator, and may land while the judge runs. LOCKDOWN stays at B4. (Manager reading of Frank's ruling; flagged to him.)
+- **Q-R17P-14:** `libc:<name>@<version>` is provenance in a measured row's `deps` plus a SET-level `libc-mismatch` listing flag (as `compiler-mismatch`), never row staleness — the artifact runs against the caller's library. Main (measure_sets' owner) takes the third dependency owner on these terms.
+
+**Consequences.** Main's own step in the plan, E-1 (window_contract S1: `mf_analysis` with the frequency kind always present), is now buildable and sits between the kit's B2 and B3a. E0 (zero-mover `entry_rows[]`, compound_entries.md) is buildable after the cmprev revision.
