@@ -48,10 +48,10 @@ hand-C probe (`docs/design/findall_iter/rev3/`).
 
 ## For the manager
 
-- **Sabotage allocation.** The new rows are unnumbered proposals P-i..P-q (findall_iter.md
-  §6.8; the next free id is S1035): P-i IT2 counted work, P-j `_valid_upto` twin, P-k
-  `_var_valid` twin, P-l split's meter mirror (IC5), P-m bind normalization, P-n setter on
-  ENDED, P-o check order, P-p NULL-caps local width, P-q `S >= max`. S931 is withdrawn and
+- **Sabotage allocation.** The new rows take S1038..S1046 (findall_iter.md
+  §6.8; S1035-S1037 are compound_entries.md revision 4's): S1038 IT2 counted work, S1039 `_valid_upto` twin, S1040
+  `_var_valid` twin, S1041 split's meter mirror (IC5), S1042 bind normalization, S1043 setter on
+  ENDED, S1044 check order, S1045 NULL-caps local width, S1046 `S >= max`. S931 is withdrawn and
   retired.
 - **Two readings to confirm.** (a) Under the IC2 deferral, D167 add. 1 A10's "S re-derived
   at the iterator's abi event" is read as "at the event that first holds a row (I2)". (b)

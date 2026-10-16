@@ -132,32 +132,32 @@ note's §R3 is the same map from the design's side.
 
 | finding | disposition | discharged in | how |
 |---|---|---|---|
-| IC1 | ACCEPTED | §2.4, §6.7, §6.8 | one plant per twin (S1012 kept, P-j `_valid_upto`, P-k `_var_valid`) and one population floor per leaf, counted from the objects. The build is `gcc -O2 -fPIC -c` with default visibility, where an exported function is interposable and cannot be inlined away. The check is `tests/codegen/run_residual_twins.sh` in `make test-codegen`, on the `[LOSS-REVIEW c1]` `-fPIC` precedent. If the corpus has no utf8 var-bearing artifact, the `_var_valid` floor ships its own fixture |
+| IC1 | ACCEPTED | §2.4, §6.7, §6.8 | one plant per twin (S1012 kept, S1039 `_valid_upto`, S1040 `_var_valid`) and one population floor per leaf, counted from the objects. The build is `gcc -O2 -fPIC -c` with default visibility, where an exported function is interposable and cannot be inlined away. The check is `tests/codegen/run_residual_twins.sh` in `make test-codegen`, on the `[LOSS-REVIEW c1]` `-fPIC` precedent. If the corpus has no utf8 var-bearing artifact, the `_var_valid` floor ships its own fixture |
 | IC2 | ACCEPTED: S DEFERRED to I2 | §1.3, §6.9 | I1 ships no `st` or S. S, the first held row, check 2 (`_Static_assert`) and S936/S937 land together in I2's commit, inside I2's existing abi event. A10's "re-derived at the iterator's abi event" is read as "at the event that first holds a row", which is flagged to the manager. The synthetic-row alternative is declined (a test-only compiler knob for a buffer nothing uses, D77) |
 | IC3 | ACCEPTED, manager's fix (with IT3) | §2.3, §6.1, §6.9 | the batch region comes through `rx_iter_batch`, not `<prefix>_buffers`. None of the three sites moves (`emit_buffers_surface`, `<p>_no_buffers`, the sizing macros/stamp inventory), and `<PREFIX>_BATCH_ENTRY_SIZE` is not added (capacity in pairs). ONE event: the batch ABI is in I1 unconditionally, and the fill is an `iterate`-row `batch` cell (`fill`/`off`) that the parity slot sets before I1. A later flip is one cell plus a mover census, never a layout event |
 | IC4 | ACCEPTED | §0.2, §2.1, §8.2 | "one combinator emitter" is marked as depending on E0 (`emit_compound.c:115` is split-only). If E0 lands without the columns, I1 adds them |
-| IC5 | ACCEPTED | §6.8 | P-l plants split's `meter` cell flipped to `per-operand`, with a constructed `tests/compound/` cell. Every budget cell states its engine: S1010, S1011 and P-l are VM (`--engine=vm`); S1011 adds a DFA (`dfa-root`) cell that reads identical, a declared answer-equivalence |
-| IC6 | ACCEPTED | §6.7, §6.8 | every check and sabotage row has a target column. The ASan cells (S938, S1016, P-m, P-p) are built with `-fsanitize=address` inside `make test-findall`, a new `make test` section, not left to the opt-in `make asan` |
+| IC5 | ACCEPTED | §6.8 | S1041 plants split's `meter` cell flipped to `per-operand`, with a constructed `tests/compound/` cell. Every budget cell states its engine: S1010, S1011 and S1041 are VM (`--engine=vm`); S1011 adds a DFA (`dfa-root`) cell that reads identical, a declared answer-equivalence |
+| IC6 | ACCEPTED | §6.7, §6.8 | every check and sabotage row has a target column. The ASan cells (S938, S1016, S1042, S1045) are built with `-fsanitize=address` inside `make test-findall`, a new `make test` section, not left to the opt-in `make asan` |
 | IC7 | ACCEPTED (regression-only) | §6.7, §7 item 2 | give-up identity under batching is DECLARED a regression control: libpcre2's limits count a different unit from pcrec's meters, so it cannot be an independent oracle for where pcrec gives up. Answers stay against libpcre2 |
 | IC8 | ACCEPTED | §6.9, §11 F16 | this note's stage ids are its own, and `compound_entries.md`'s are cited with the document name. `compound_entries.md` is mid-revision (D163 add. 8), so F16 hands off the part rows (`__enter`/`__fill`/`__deliver`/STEP), `__adv`'s stage and the stale HELD lines for its revision 4 |
 | IC9 | ACCEPTED | §11 F9 | F9 corrected: `rx_buffers` is the example prefix |
 | F12 (stale HELD notes) | ACCEPTED | §11 F16 | listed for `compound_entries.md` revision 4 (not edited here) |
 | F13 (stale S cites) | ACCEPTED | §11 F13; `docs/design/CLAUDE.md`; `docs/dev/lanes/CLAUDE.md` | the `compound_entries.md` half is removed. The design index's revision 1 entry and the lanes index's iterdes entry are annotated as superseded. `r17b_prime.md` is for the kit manager, `decisions.md:9707` for the manager, and `iterdes_report.md` is left as a dated record |
-| sabotage ids | ACCEPTED | §6.8 | existing ids kept; S931 withdrawn and retired; new rows are unnumbered proposals P-i..P-q (next free S1035, manager allocates) |
+| sabotage ids | ACCEPTED | §6.8 | existing ids kept; S931 withdrawn and retired; new rows take S1038..S1046 (S1035-S1037 are compound_entries.md revision 4's) |
 | NEW-DATASET (UNREACHED rows) | ACCEPTED, dissolved | §1.3, §6.9 | with S at I2 no row ships UNREACHED at I1, so no plan.md trigger row is needed. S936/S937/check 2 are I2's landing bar |
 | UNLOCKS (itcrit2) | ACCEPTED | §9 U17, U18 | twin-forwarding as a general check (trigger: `compound_entries.md` I3); a debug-only batch-sharing/owner check (trigger: the first user report) |
-| IT1 | ACCEPTED | §1.2, §2.3, §6.7, §6.8 P-m | bind normalizes every optional field (NULL/0 when its bit is clear) and writes K into `nbatch`, then stores the bare BOUND word. A dirty-init arm detects the plant |
-| IT2 | ACCEPTED | §2.3, §3.4, §6.7, §6.8 P-i | `__fill` begins with `if (rc_next != 1) end(rc_next)`. The counted-work cell uses `tests/compound/loads_drv.c`'s load counter, with K = 4 required equal to K = 1 |
+| IT1 | ACCEPTED | §1.2, §2.3, §6.7, §6.8 S1042 | bind normalizes every optional field (NULL/0 when its bit is clear) and writes K into `nbatch`, then stores the bare BOUND word. A dirty-init arm detects the plant |
+| IT2 | ACCEPTED | §2.3, §3.4, §6.7, §6.8 S1038 | `__fill` begins with `if (rc_next != 1) end(rc_next)`. The counted-work cell uses `tests/compound/loads_drv.c`'s load counter, with K = 4 required equal to K = 1 |
 | IT3 | ACCEPTED, manager's fix | §2.3, §10 Q-I3 | see IC3; `shim.c` and `budget_main.c` untouched |
 | IT4 | REJECTED by D165 add. 3 | §1.1, §1.2, §6.2, §6.8 | no owner field, compare or setter store. Misuse across artifacts (an iterator or its buffers) is UNDEFINED, stated in spec §3.8 beside IT5. S931 and the foreign-owner arm are withdrawn |
 | IT5 | ACCEPTED | §1.2, §6.2 | spec §3.8: `s[0,n)`, the `vars` contents, the bound descriptor and the batch region must not change while the iterator is live; each violation is undefined |
 | IT6 | ACCEPTED | §0.3, §2.1, §3.4, §3.4a, §10 | conditional on Q-I1, with the per-logical-search reading as the design of record pending the ruling. §3.4a states what changes under the literal reading |
-| IT7 | ACCEPTED | §1.3, §6.8 P-q | check 1 asserts `S >= max`; the census reports the headroom |
-| IT8 | ACCEPTED | §1.1, §6.8 P-n | a setter on an ENDED iterator is a no-op |
+| IT7 | ACCEPTED | §1.3, §6.8 S1046 | check 1 asserts `S >= max`; the census reports the headroom |
+| IT8 | ACCEPTED | §1.1, §6.8 S1043 | a setter on an ENDED iterator is a no-op |
 | IT9 | dissolved by D165 add. 3 | §1.1, §5.1 | no owner, so no third load. Measured: one `cmpl $imm32, (%rdi)` under `-fPIC` |
-| IT10 | ACCEPTED | §2.1, §6.8 P-p | STEP's destination is always `NCAPS` pairs |
+| IT10 | ACCEPTED | §2.1, §6.8 S1045 | STEP's destination is always `NCAPS` pairs |
 | IT11 | ACCEPTED | §3.4, §6.2 | `it.lo` is defined only after an end with `rc < 0`; the FRAMES recipe reads it then |
-| IT12 | ACCEPTED | §1.2, §6.8 P-o, §11 F15 | bind runs the checks through `pcrec_emit_startpos_guard`, the guard then the check. The rule is match_api.md §9.4¶4 (the panel cited §3.2¶2) |
+| IT12 | ACCEPTED | §1.2, §6.8 S1044, §11 F15 | bind runs the checks through `pcrec_emit_startpos_guard`, the guard then the check. The rule is match_api.md §9.4¶4 (the panel cited §3.2¶2) |
 | IT13 | ACCEPTED | §3.3 | `reports_empty` is the minimum reported width = 0, from one analysis |
 | IT14 | ACCEPTED | §3.3, §9 U16 | filed with trigger "`DEF_NEWLINE_CONV` gains a producer" |
 | IT15 | ACCEPTED | §6.4, §6.7 | the mover census counts refusal-set and `<PREFIX>_ENGINE` changes |

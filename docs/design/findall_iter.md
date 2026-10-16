@@ -12,8 +12,8 @@ hand-C probe at gcc 15.2 (§1.1).
 
 **Revision 2** (lane `iterrev`, 2026-10-16, from main `64e77cf9a`, abi 78) is the SHORT
 revision that D163 addendum 7 Q4 orders after E0 and before this note's D6 panel. It restates
-the iterator as COMPOUND CONTROLLERS (`compound_entries.md` revision 3, branch
-`lane/cmprev2`, not yet on main when this was written) and applies D165 addendum 2 (Frank's
+the iterator as COMPOUND CONTROLLERS (`compound_entries.md` revision 3 when this was written;
+revision 4, now on main, is the revision cited from revision 3 on) and applies D165 addendum 2 (Frank's
 rulings on revision 1's Q1-Q4) and D167 addendum 1 A10 (S is derived from declared carried
 words). Read §R2 first. Revision 1: lane `iterdes`, 2026-10-14, from main `ee01f4dbb`
 (abi 78). DESIGN ONLY: nothing under `src/`, `cli/`, `lib/` or `tests/` changes. The probes
@@ -61,7 +61,7 @@ optimization is a later row with its own trigger (§9).
 | IC8 + F12 | ACCEPTED | stage ids are qualified across documents. `compound_entries.md` is not edited here; §11 F16 is the hand-off list for its revision 4 | §6.9, §11 |
 | IC9 | ACCEPTED | F9 corrected: `rx_buffers` in D165 add. 2 is the example prefix, not a different type | §11 |
 | F13 (itcrit2) | ACCEPTED | F13's `compound_entries.md` claim removed; `docs/design/CLAUDE.md`'s revision 1 entry and the lanes index annotated | §11 |
-| sabotage ids | ACCEPTED | existing ids kept (S931 withdrawn, retired). New rows are PROPOSALS P-i..P-q, unnumbered; the next free id is S1035 and the manager allocates | §6.8 |
+| sabotage ids | ACCEPTED | existing ids kept (S931 withdrawn, retired). New rows take S1038..S1046 (S1035-S1037 are compound_entries.md revision 4's) | §6.8 |
 | NEW-DATASET (UNREACHED rows) | ACCEPTED, dissolved | with S at I2, no row ships UNREACHED at I1; S936/S937/check 2 are I2's landing bar | §1.3, §6.9 |
 | UNLOCKS | ACCEPTED | twin-forwarding as a general check (U17); a debug-only misuse check (U18) | §9 |
 
@@ -76,11 +76,11 @@ layout measures 96 B at I1 and 160 B at I2 (§1.1).
 | input | what it says | what changed here | where |
 |---|---|---|---|
 | D163 add. 7 (model) | every exported entry is a compound controller over parts; `next` is an `iterate` combinator; the retry is `first-nonzero` | `next` is an `iterate` row of `entry_rows[]`. Its STEP is a GUARDED `first-nonzero(R@q, SEARCH@LOWER(adv(q)))`, which is split's controller shape exactly, guard included (split: "floor can be live"; here: the retry bit). Revision 1's `__step` retry arm is no longer iterator-specific machinery | §2.1, §3.3 |
-| D163 add. 7 Q4 + `compound_entries.md` r3 I4, §3.8 | the find body's layout comes from the part-layout row | revision 1's §2.2 two-row rule is KEPT as the `0` cell's content. At a non-zero position `__find` is a SUBJECT part, laid out by `compound_entries.md` §3.4's tables (P2 for the attempt route's label-table body, with `noclone` added). The batch fill gives `__find` a designed R3 in-edge, which `compound_entries.md` §3.8 listed as HELD | §2.2 |
+| D163 add. 7 Q4 + `compound_entries.md` §3.0 I4, §3.8 | the find body's layout comes from the part-layout row | revision 1's §2.2 two-row rule is KEPT as the `0` cell's content. At a non-zero position `__find` is a SUBJECT part, laid out by `compound_entries.md` §3.4's tables (row P2 `not-copyable` for the attempt route's label-table body, with `noclone` added; otherwise the control rows P4-P10, class `find`). The batch fill gives `__find` a designed R3 in-edge, which `compound_entries.md` §3.8 listed as HELD | §2.2 |
 | D165 add. 2 Q2 (reframed) | INTERNAL batching: the controller finds several matches per pass, holds them, hands one out per `next`; results in the caller's `_in` memory; a public `next_n` is optional | designed (§2.3): the `iterate` combinator owns a FILL loop over STEP writing into a BATCH region of the bound `<prefix>_buffers`; delivery copies one entry per call. No `_in` memory = no batching (K = 1, written straight to `caps`). The answers and give-ups equal the unbatched iterator's, by construction (§3.4a). `next_n` stays an optional extra, timed beside it | §2.3, §3.4a, §5.3 |
 | D165 add. 2 Q3 | bind `(s, n)` at init; `next(&it, caps)` takes no subject | `RX_ITER_INIT(s, n)`; the per-call binding compare is gone. The optional start position, variables and buffers are SETTERS on a FRESH iterator: one mechanism, not one init macro per combination | §1.1, §1.2 |
 | D165 add. 2 Q4 + error reporting | `PCREC_ERR_ITER` (-10); `next` returns 1/0 and `it.rc` says why; sticky | unchanged from revision 1, now RULED. Batching adds `rc_next`: a code met by a fill is delivered only after the matches found before it | §2.1, §3.4 |
-| D163 add. 7 Q5 + `compound_entries.md` F-1 | no exported entry calls an exported sibling; static twins, applied where a change already moves the bytes | every RESIDUAL leaf (`_next_pos`, `_valid_upto`, `_var_valid`) gets a static twin in I1; every internal caller, the compound controller included, calls the twin; the exported residual forwards to it | §2.4 |
+| D163 add. 7 Q5 + `compound_entries.md` §6 F-1 | no exported entry calls an exported sibling; static twins, applied where a change already moves the bytes | every RESIDUAL leaf (`_next_pos`, `_valid_upto`, `_var_valid`) gets a static twin in I1; every internal caller, the compound controller included, calls the twin; the exported residual forwards to it | §2.4 |
 | D167 add. 1 A10 | do not retire K5's 16 B pair-hit row on the merge alone; S from declared carried positions, 8 B each, re-derived at the iterator's abi event; "S = 48 B" withdrawn | §1.3 is a DERIVATION: S = max over paths of Σ 8 × declared words. Today's declarations give **64 B** (kit FIND row 40 + K5 16 + reseed hint 8). K5 retires only on a proof that a kit form is single-pass over its spans | §1.3 |
 | D163 add. 6 Q1 (one meter per exported call) | a compound's parts charge the caller's meter | READ as one meter per LOGICAL search: the retry and the following search are two logical searches (pcre2demo makes two `pcre2_match` calls), and a fill is up to K. Inside one logical search, Q1 holds as ruled. Put to Frank as Q-I1 | §3.4, §10 |
 | brief lenses | general mechanism; sibling of a family; NEW-DATASET | §8 updated; NEW §8a names each new table, column or record and its home | §8, §8a |
@@ -149,7 +149,8 @@ this revision as P-a..P-h) were allocated S1009..S1016 in order (P-a = S1009 ...
    parity slot. I2 adds `st`/S with the kit's row, in an event I2 has anyway.
 9. **Questions for Frank** (§10): Q-I1, the meter's unit under batching and the retry, is
    still OPEN. Q-I2 and Q-I3 are settled (the typed buffers setter; the batch setter). Q-I4,
-   the entry stride, stays in discussion with a leaning; it is answer-free.
+   the entry stride, is RULED (manager, 2026-10-16: decided per the leaning, full captures per
+   entry).
 
 ---
 
@@ -323,7 +324,8 @@ exist before a row is held. Revision 3 therefore defers S, and with it the `st` 
 - D167 add. 1 A10's "re-derived at the iterator's abi event" reads, under this deferral, as
   "at the event that first holds a row", which is I2. The derivation and the sizing policy
   below are unchanged; only their first event moves. This is a reading of A10, flagged to the
-  manager.
+  manager. **CONFIRMED (manager, 2026-10-16): S is derived at the abi event that first
+  holds a row (I2).**
 - The alternative IC2 offered was a real I1 control: a synthetic row forced into one test
   artifact. That would build a test-only declaration path (a compiler knob) to check a buffer
   nothing uses yet (D77), so it is not taken.
@@ -482,11 +484,11 @@ int <p>_next(rx_iter *it, ptrdiff_t (*caps)[2]) {
 
 ### 2.2 The find body's layout comes from the part-layout row
 
-`compound_entries.md` revision 3 makes `__find` a SUBJECT part of the part-layout dial row
-and fixes how this design's own rule survives:
+`compound_entries.md` revision 4 makes `__find` a SUBJECT part (class `find`) of the
+part-layout controls and fixes how this design's own rule survives:
 
 - **At position `0` (the default), revision 1's two-row rule is KEPT as the `0` cell's
-  content** (that note's invariant I4 and §3.8). The rule:
+  content** (that note's §3.0 invariant I4, and §3.8's `__find` row). The rule:
 
   | row | when | `__find` linkage at `0` |
   |---|---|---|
@@ -496,10 +498,14 @@ and fixes how this design's own rule survives:
   The measurements behind it are unchanged (revision 1 §2.2, `twin/out/run_twin_inline.out`):
   `_search`'s instructions are identical to today's on five of eight DFA twins once its body
   moves into `__find`; the cost is `.text` (`_next` 433-1,079 B inline, 321-666 B shared).
-- **At a non-zero position** `__find` goes through `compound_entries.md` §3.4's tables: P2
-  (`copyable(part)` false) gives the label-table body `static noinline noclone` at every
-  position, which is the `shared` row above with `noclone` added; otherwise the position's
-  row (P4/P6 shared at `−2`/`−1`, P7/P8 at `+1` by `θ_hot`, P9 inline at `+2`).
+- **Under a non-trivial layout control** (a caller-set `--part-layout=find:V`,
+  `--part-inline-rank` or `--part-residual`; the artifact table's row T3 `per-part`, with T0
+  `as-emitted` leaving the `0` layout untouched) `__find` goes through `compound_entries.md`
+  §3.4's part table: row P2 `not-copyable` (`copyable(part)` false) gives the label-table
+  body `static noinline noclone` at every setting, which is the `shared` row above with
+  `noclone` added; otherwise the control rows P4 `class-shared`, P5 `class-inline`, P7
+  `rank-hot`, P8-P10 (the residual). The five positions are presets of those controls
+  (§3.2.4 there): `−2` is residual `shared`, `−1` is residual `shared` plus threshold `R3`.
 - **`__find`'s in-edges and ranks** (`compound_entries.md` §3.2): from `_search` R2 and from
   the STEP inside `_next` R2 without batching. With the batch fill (§2.3) the STEP runs in a
   loop whose trip count pcrec does not bound (the caller's region size does), so `__find`'s
@@ -508,13 +514,14 @@ and fixes how this design's own rule survives:
   then, and R2 while the cell is `off` (§2.3, §6.9). `compound_entries.md` §3.8 lists this
   edge as HELD;
   revision 2 designs it, which gives that note's `−2`/`−1` pair its first designed witness:
-  at `−1` row P5 inlines an R3 part, so `__find` is inlined at `−1` and shared at `−2`.
-  The parity gate's `I_shared` arm is then the `−2` layout alone.
+  at `−1` row P7 `rank-hot` (threshold `R3`) inlines an R3 part, so `__find` is inlined at
+  `−1` and shared at `−2` (row P8 `residual-shared`). The parity gate's `I_shared` arm is then
+  the `−2` layout alone (`find:shared` in controls).
 - **`__enter`, `__deliver`, `__fill`, the STEP body**: one caller each (`_next`), so row P3
-  keeps their `0` layout at every position. The retry R is a body inside STEP with no symbol
+  `single-caller` keeps their `0` layout at every position. The retry R is a body inside STEP with no symbol
   of its own, so it is not a part (`compound_entries.md` §3.8).
-- **The `I_shared` trigger** stays as revision 1 stated it, now `compound_entries.md` U1's
-  trigger: if the parity gate's `I_shared` arm is within the noise floor of `I`, promoting
+- **The `I_shared` trigger** stays as revision 1 stated it, now the trigger in `compound_entries.md` §3.8's
+  `I_shared` row: if the parity gate's `I_shared` arm is within the noise floor of `I`, promoting
   "shared for every body" to the `0` cell is a ruled diff of THIS design.
 - **M (the mode) folds where `__find` is inlined** and is one branch per call where it is
   shared (§4.2; `compound_entries.md` §3.5).
@@ -586,7 +593,7 @@ deliver(it, caps):
   fill, and re-ran the failed (or exhausted) search with a fresh meter before ending. The
   answer was the same, because the search is deterministic, but it cost a full budgeted
   search that K = 1 never pays, and it contradicted revision 2's own "the NEXT call ends".
-  Its detector is a counted-work cell (§6.7) with its own plant (§6.8 P-i).
+  Its detector is a counted-work cell (§6.7) with its own plant (§6.8 S1038).
 - **No batch region, or a region of fewer than two entries, is K = 1**: STEP writes straight
   into `caps` (or the local), and no copy happens. That is the unbatched iterator, the
   degenerate case of the same loop, not a second path. Revision 1's design is exactly this
@@ -616,7 +623,7 @@ symbol, enters I1 only if its `N64` arm wins there, and is otherwise filed (U1).
 
 ### 2.4 The residual twins (D163 add. 7 Q5; `compound_entries.md` F-1)
 
-`compound_entries.md` F-1: B4's compound controller calls the exported `<p>_next_pos`
+`compound_entries.md` §6 F-1: B4's compound controller calls the exported `<p>_next_pos`
 (`emit_compound.c:129`), and under `-futf-check` P's prologue calls the exported
 `<p>_valid_upto`. Under `-fPIC` both are PLT calls on every compound search. Revision 1
 already gave `next_pos` a static twin (`__adv`) for the iterator alone. Revision 2 makes it
@@ -630,15 +637,15 @@ anyway:
 | `<p>_var_valid` | `<p>__var_valid` | `__enter`'s once-per-iterator variable check (§3.7); the `_search` prologue of a var-bearing artifact |
 
 - **One emitter writes each body once**, as the twin, and the exported residual is
-  `return <p>__twin(args);` (`compound_entries.md` W1's forward shape: an unchanged argument
+  `return <p>__twin(args);` (`compound_entries.md` §3.4's wrapper-table row W1 `forward`: an unchanged argument
   list compiles to `jmp`). The two cannot drift.
 - **`noclone` on the twins**, under `__has_attribute` (K24's spelling). `compound_entries.md`
-  F-3 found gcc partially inlining `_valid_upto` into a `.part.0` clone under `-futf-check`,
+  §6 F-3 found gcc partially inlining `_valid_upto` into a `.part.0` clone under `-futf-check`,
   K24's shape on a residual. The twins' layout at non-zero positions is the part-layout
-  row's (they are subject parts after I3, `compound_entries.md` §3.1).
+  row's (they are subject parts once I3 holds for them, `compound_entries.md` §3.0 I3 and §3.1).
 - **Not applied here**: the wrapper edges (`_search_in` → `_search` and the DFA `rev-end`
-  tie's `SEARCH → MATCH`). Those are `compound_entries.md`'s wrapper step (its I3, "the
-  first live cell diff for the wrappers"), so I1 does not grow their scope.
+  tie's `SEARCH → MATCH`). Those are `compound_entries.md`'s wrapper step (its §3.0 invariant I3, "the
+  first live cell diff for the wrappers", and §5.1's E1′ precondition), so I1 does not grow their scope.
 - **Movers**: every artifact moves at I1 anyway. The internal call targets move on three
   populations, one per leaf: the compound artifacts' `LOWER(next_pos(f))` (97 corpus, bench
   0); every `-futf-check` entry prologue (`emit_utf_check`, `src/gen/emit_dfa.c:809`,
@@ -667,8 +674,8 @@ anyway:
     (c) `_var_valid` callers = the utf8 var-bearing blocks of `tests/vars/`. Each floor is
     pinned at I1's census. If (c) counts 0 on the corpus, the script carries its own fixture
     (one utf8 `${name}` pattern), so that floor is never vacuous.
-  - **Plants, one per leaf** (§6.8): S1012 (`_next_pos`, kept) and the new proposals P-j
-    (`_valid_upto`) and P-k (`_var_valid`). Each makes the emitter call the exported symbol
+  - **Plants, one per leaf** (§6.8): S1012 (`_next_pos`, kept) and the new proposals S1039
+    (`_valid_upto`) and S1040 (`_var_valid`). Each makes the emitter call the exported symbol
     at one internal site. All three are answer-equivalent, so each detector is this
     structural check.
 
@@ -1270,7 +1277,7 @@ pattern refused, or move its engine, and a caller can see both. The census count
 changes as movers; it does not read them as text.
 
 The layout ATTRIBUTES on `__find` and the twins are the part-layout row's, and that row
-renders them after every length decision (`compound_entries.md` I5), so a non-zero dial
+renders them after every length decision (`compound_entries.md` §3.0 I5), so a non-zero dial
 position cannot move a length decision through this design either.
 
 ### 6.5 The in-tree drivers' migration (in I1's commit)
@@ -1323,13 +1330,13 @@ ASan cells: `tests/findall/` builds its handful of exact-size cells with
 | `-futf-check` once | utf8 ill-formed cells through `next` against the checking artifact's loop | the loop | `tests/utfcheck/`'s pinned sets | `make test-utfcheck` |
 | S (I2) | check 1 (`S >= max`), check 2 (the artifact's `_Static_assert`), check 3 (census + headroom) | §1.3 | from I2's first held row | I2's commit: pcrec's build (1), every artifact compile (2), `make test-findall` (3) |
 
-### 6.8 The sabotage plan (existing ids kept; new rows PROPOSED, unnumbered)
+### 6.8 The sabotage plan (existing ids kept; new rows S1038..S1046)
 
 Every plant's detector is named, and its witness REACHES the site (the reach column). An
 answer-equivalent mutant is declared, with its structural detector. Revision 3 keeps every
 existing id and WITHDRAWS S931 (D165 add. 3: the owner compare it planted no longer exists;
-the id stays retired, never reused). New rows are proposals P-i..P-q. The next free id is
-S1035, and the manager allocates ids. The target column is IC6's.
+the id stays retired, never reused). New rows take S1038..S1046, in table order
+(S1035-S1037 are compound_entries.md revision 4's). The target column is IC6's.
 
 | id | plant | detector | reach | target |
 |---|---|---|---|---|
@@ -1361,24 +1368,25 @@ S1035, and the manager allocates ids. The target column is IC6's.
 | S1014 | a setter on a BOUND iterator is accepted (rebinds `lo`) | the setter-on-BOUND arm: the next call must give `PCREC_ERR_ITER` | `tests/findall/` | `test-findall` |
 | S1015 | the ENDED state is not set on a refusal (sticky lost after `PCREC_ERR_ITER`) | `drv.c`'s post-refusal call: 0 with `rc` unchanged | `tests/findall/` | `test-findall` |
 | S1016 | the fill does not stop at K (writes entry K) | an ASan cell with an exact-size batch region | `tests/findall/`, every K arm | `test-findall` (ASan built in) |
-| P-i | `__fill` drops the IT2 test (a drained batch with a pending code re-runs STEP; answer-equivalent) | the counted-work cell (§6.7): K = 4's subject loads exceed K = 1's | the two constructed counted-work cells | `test-findall` |
-| P-j | the `-futf-check` prologue calls the exported `<p>_valid_upto` instead of `__valid_upto` (answer-equivalent) | STRUCTURAL: the relocation check | the `_valid_upto` population floor (§2.4) | `test-codegen` |
-| P-k | the var-bearing prologue calls the exported `<p>_var_valid` instead of `__var_valid` (answer-equivalent) | STRUCTURAL: the relocation check | the `_var_valid` population floor or the script's own fixture (§2.4) | `test-codegen` |
-| P-l | split's `meter` cell flips from `shared` to `per-operand` (IC5's mirror of S1011) | a `--step-budget` cell on a compound artifact (split; its F and Q run on the VM, `--engine=vm`) where F's attempt and Q's search each fit and their sum does not: today's compound gives up, and the plant answers | a constructed `tests/compound/` cell (split.rxt has no sub-budget-sum cell; it ships with the plant) | `test-compound` |
-| P-m | bind does not normalize an optional field whose bit is clear (IT1) | the dirty-init arm: `vars` left as `0xA5…` on a var-bearing artifact must still give `PCREC_ERR_UNSET_VAR`; `batch` left as `0xA5…` must not be written (ASan) | the dirty-init cells | `test-findall` (ASan built in) |
-| P-n | a setter on an ENDED iterator poisons the header (IT8) | the setter-on-ENDED arm: after a give-up, `rx_iter_at` then `next` must leave `rc` the give-up code | `tests/findall/` give-up cells | `test-findall` |
-| P-o | bind runs the `-futf-check` validation before the boundary guard (IT12) | the check-order arm: a mid-character, ill-formed `rx_iter_at` start must give `PCREC_ERR_STARTPOS`, `_search`'s code | utf8 `-futf-check` `rx_iter_at` cells | `test-findall` |
-| P-p | STEP's NULL-caps local is one pair (IT10) | an ASan cell: K = 1, NULL `caps`, `NCAPS` > 1 | VM artifacts with `NCAPS` > 1 | `test-findall` (ASan built in) |
-| P-q | check 1 asserts `S == max` (IT7) | a synthetic row retirement at pcrec's build: one declared row marked retired must still build | pcrec's build (from I2) | I2's commit |
+| S1038 | `__fill` drops the IT2 test (a drained batch with a pending code re-runs STEP; answer-equivalent) | the counted-work cell (§6.7): K = 4's subject loads exceed K = 1's | the two constructed counted-work cells | `test-findall` |
+| S1039 | the `-futf-check` prologue calls the exported `<p>_valid_upto` instead of `__valid_upto` (answer-equivalent) | STRUCTURAL: the relocation check | the `_valid_upto` population floor (§2.4) | `test-codegen` |
+| S1040 | the var-bearing prologue calls the exported `<p>_var_valid` instead of `__var_valid` (answer-equivalent) | STRUCTURAL: the relocation check | the `_var_valid` population floor or the script's own fixture (§2.4) | `test-codegen` |
+| S1041 | split's `meter` cell flips from `shared` to `per-operand` (IC5's mirror of S1011) | a `--step-budget` cell on a compound artifact (split; its F and Q run on the VM, `--engine=vm`) where F's attempt and Q's search each fit and their sum does not: today's compound gives up, and the plant answers | a constructed `tests/compound/` cell (split.rxt has no sub-budget-sum cell; it ships with the plant) | `test-compound` |
+| S1042 | bind does not normalize an optional field whose bit is clear (IT1) | the dirty-init arm: `vars` left as `0xA5…` on a var-bearing artifact must still give `PCREC_ERR_UNSET_VAR`; `batch` left as `0xA5…` must not be written (ASan) | the dirty-init cells | `test-findall` (ASan built in) |
+| S1043 | a setter on an ENDED iterator poisons the header (IT8) | the setter-on-ENDED arm: after a give-up, `rx_iter_at` then `next` must leave `rc` the give-up code | `tests/findall/` give-up cells | `test-findall` |
+| S1044 | bind runs the `-futf-check` validation before the boundary guard (IT12) | the check-order arm: a mid-character, ill-formed `rx_iter_at` start must give `PCREC_ERR_STARTPOS`, `_search`'s code | utf8 `-futf-check` `rx_iter_at` cells | `test-findall` |
+| S1045 | STEP's NULL-caps local is one pair (IT10) | an ASan cell: K = 1, NULL `caps`, `NCAPS` > 1 | VM artifacts with `NCAPS` > 1 | `test-findall` (ASan built in) |
+| S1046 | check 1 asserts `S == max` (IT7) | a synthetic row retirement at pcrec's build: one declared row marked retired must still build | pcrec's build (from I2) | I2's commit |
 
 ### 6.9 Staged commits
 
-E0 (`compound_entries.md` §5.1: the zero-mover `entry_rows[]` with its rank column) lands
+E0 (`compound_entries.md` §5.1, rows E0a-E0c: the zero-mover `entry_rows[]` with its rank column) lands
 before I0b's tables are read and before I1 (D163 add. 7 Q4; memory `pcrec-remodel-first`).
 
 **Stage ids** (IC8). The I-ids below are this note's. `compound_entries.md` uses I1-I5 for
-its own stages (its I3 is the wrapper step, this note's I3 is `pair-hits`). This note cites
-those as "`compound_entries.md` I3", never bare.
+its own INVARIANTS (§3.0; its I3 is the no-exported-sibling-call rule, this note's I3 is
+`pair-hits`) and E0a-E1′ for its stages (§5.1). This note cites those as
+"`compound_entries.md` §3.0 I3", never bare.
 
 | stage | what | movers | abi |
 |---|---|---|---|
@@ -1433,7 +1441,7 @@ those as "`compound_entries.md` I3", never bare.
    - Populations are counted by the harvest: 29,502 compared byte pairs; 686 gate-true
      patterns; 233 static-label bodies; 97 compound artifacts for F-1; one floor per
      residual leaf; 67 patterns for K5's retirement bound.
-   - Each sabotage row names its reach and its target. S1010, S1011, P-i and P-l ship their
+   - Each sabotage row names its reach and its target. S1010, S1011, S1038 and S1041 ship their
      own constructed cells because no harvested cell reaches them.
 3. **What moves when the data is regenerated. RELEVANT.**
    - S is derived from the declarations. A declaration change that moves the max moves the
@@ -1505,10 +1513,10 @@ batching apart (`B64`), so each keeps its own evidence.
 
 | new item | kind | home | argument |
 |---|---|---|---|
-| the storage-row declarations (revision 1's proposed `src/gen/iter_rows.def`) | rows (owner, words, align, held-when) | **the STATE part's column in `entry_rows[]`** (`compound_entries.md` §4.1), with the kit's rows arriving as its form's declared words on `mf_result` | Revision 1 proposed a standalone file. The entry table already lists each entry's parts, and "held at once on a path" is a closure over exactly those part references (a compound's parts SUM because they are the same row's parts). A separate file would restate the part list. The kit's words stay the kit's facts (D157). If E0 lands without a per-part declaration slot, the fallback is revision 1's file beside `entries.c`, named as a debt. `entry_rows[]` does not exist yet (`compound_entries.md` §4.1, r3 LK-1). Since S lands at I2 (rev 3), the slot is needed by I2, not by I1 |
+| the storage-row declarations (revision 1's proposed `src/gen/iter_rows.def`) | rows (owner, words, align, held-when) | **the STATE part's column in `entry_rows[]`** (`compound_entries.md` §4.1), with the kit's rows arriving as its form's declared words on `mf_result` | Revision 1 proposed a standalone file. The entry table already lists each entry's parts, and "held at once on a path" is a closure over exactly those part references (a compound's parts SUM because they are the same row's parts). A separate file would restate the part list. The kit's words stay the kit's facts (D157). If E0 lands without a per-part declaration slot, the fallback is revision 1's file beside `entries.c`, named as a debt. `entry_rows[]` does not exist yet (`compound_entries.md` §3.0 I2 and §4.1). Since S lands at I2 (rev 3), the slot is needed by I2, not by I1 |
 | S | a derived constant | the shared block's literal, checked against the declarations | already revision 1's; A10 changes only the unit (words) |
 | `reports_empty` | an E1 fact | **PATFACTS** (`src/facts/`, D120), listed by `--emit-facts` (`docs/spec/facts_listing.md`) | a per-pattern analysis fact; PATFACTS is its home by charter |
-| the notempty root | a machine ROLE | the machine-role vocabulary of the anchored machine (`anchored_match_unwrapped.md` §2), placed by `compound_place[]` row 3 as an in-Job role (`compound_entries.md` §4.2) | a parameter of an existing construction, not a new machine kind |
+| the notempty root | a machine ROLE | the machine-role vocabulary of the anchored machine (`anchored_match_unwrapped.md` §2), placed by `compound_place[]` as an in-Job role (`compound_entries.md` §4.2, the notempty-retry row) | a parameter of an existing construction, not a new machine kind |
 | the `first-nonzero` row's guard and `meter` columns | two columns | `compound.md` §A.2's combinator table | split's guard exists in prose (§B.2); the meter column records a difference the two rows already have |
 | the `iterate` combinator | a row of the combinator vocabulary | `compound.md` §A.2 / `compound_entries.md` §4.1's `CompComb` enum (which already names `iterate`) | no new table |
 | the `mode` (M) per entry | a column | `entry_rows[]`'s `mode` (`compound_entries.md` §4.1) | already there |
@@ -1542,11 +1550,11 @@ storage rows) is placed in the entry table.
 | U10 | a streaming sibling `rx_stream` ([M3]) | [M3] opens |
 | U11 | `empty_pref`, the structural narrowing of the retry gate | a measured cost of the futile retry on a gate-true, non-diverging pattern |
 | U12 | spans-only batch entries (Q-I4's alternative) | a VM find-all cell whose batch fill is dominated by capture copying |
-| U13 | `__find`'s `shared` linkage for every body at `0` (`compound_entries.md` U1) | `I_shared` within the noise floor of `I` (§5.3) |
+| U13 | `__find`'s `shared` linkage for every body at `0` (`compound_entries.md` §3.8, the `I_shared` row) | `I_shared` within the noise floor of `I` (§5.3) |
 | U14 | S shrink to 48 B | K5 retired by a kit form's single-pass proof AND another abi event moving the shared block (§1.3) |
 | U15 | a per-box batch size suggestion (`rx_info` or a header hint) | a measured `B64` vs `B8` crossover that differs across boxes; it would be a D166 set row (§8a) |
 | U16 | a newline-aware failed-retry advance (pcre2demo steps over a whole CRLF under CRLF/ANY/ANYCRLF); the non-empty advance is unchanged (IT14) | `DEF_NEWLINE_CONV` gains a producer (`docs/spec/registry.md §9¶1`) |
-| U17 | a general "twin-forwarding" check: no exported-to-exported edge inside an artifact, which would also cover `compound_entries.md` I3's wrapper edges (itcrit2's unlock) | `compound_entries.md` I3 lands |
+| U17 | a general "twin-forwarding" check: no exported-to-exported edge inside an artifact, which would also cover `compound_entries.md` §3.0 I3's wrapper edges (itcrit2's unlock) | the first wrapper-twin cell diff (`compound_entries.md` §5.1, E1′) |
 | U18 | debug-only misuse checks under a `-DPCREC_ITER_CHECK`-style switch: an owner tag, and a batch region shared by two live iterators. D165 add. 3 allows a debug build to add checks; none ships in the hot path | the first user report of a foreign iterator or a shared batch region |
 
 ---
@@ -1571,7 +1579,7 @@ per-call owner check. Revision 2's four, as revision 3 leaves them:
   `_search` call or one `pcre2_match` call would be). Q1 then holds unchanged inside each
   logical search, and the combinator row carries the difference as its `meter` column.
 - *What depends on it* (IT6): §0.3, §2.1's `meter` column, §3.4's first bullets, §3.4a,
-  S1010, S1011, P-l and the batching-identity check's give-up cells. §3.4a states what each
+  S1010, S1011, S1041 and the batching-identity check's give-up cells. §3.4a states what each
   becomes under the literal ruling. The panel (itcrit1 IT6) found revision 2 had made these
   read as settled, which they are not.
 
@@ -1588,8 +1596,8 @@ caller memory, through the iterator's own setter `rx_iter_batch` (§2.3). It doe
 callers (IT3), the every-artifact header move, the positional `<p>_no_buffers` warning and
 the sizing macro (IC3). The lifetime rule attaches to the iterator, and F11 is withdrawn.
 
-**Q-I4. What does one batch entry hold? In discussion; answer-free, so the manager may rule
-it.**
+**Q-I4. What does one batch entry hold? RULED (manager, 2026-10-16): full captures per entry,
+spans-only filed as U12. (Answer-free, so the manager's call.)**
 - *The problem.* A caller passes `caps` per call, but the fill runs before the caller says
   whether the next call wants captures.
 - *The forces.* Full captures per entry (`<PREFIX>_NCAPS` pairs) always answers whatever the
@@ -1602,6 +1610,8 @@ it.**
 - *Leaning.* Full captures per entry. Spans-only stays filed as U12 with a measured trigger.
   Both choices give identical answers and only the copy cost differs, so this is the
   manager's call (memory `pcrec-answer-free-choices-are-mine`) unless Frank wants it.
+- *RULED (manager, 2026-10-16):* decided per the leaning above: full captures per entry
+  (`<PREFIX>_NCAPS` pairs). Spans-only stays filed as U12 with its measured trigger.
 
 ## 11. Findings (for the manager)
 
@@ -1620,7 +1630,7 @@ replaced by the STATE part of the `iterate` row).
 - **F5.** Every DFA `attempt`-scan artifact keeps label addresses in a static table, so its
   search body cannot be duplicated by inlining (233 of 4,243 byte artifacts). Any design
   that inlines a body into two entries must special-case them by a declared row (§2.2), not
-  by an assumption. (Now `compound_entries.md`'s `copyable(part)` fact, row P2.)
+  by an assumption. (Now `compound_entries.md`'s `copyable(part)` fact, §3.4 row P2 `not-copyable`.)
 - **F6.** `rx_iter it = { MAGIC }` trips `-Wmissing-field-initializers` under the harness's
   own `-Wextra -Werror`, and any aggregate initializer is a full memset. The
   static-inline-returning spelling costs one store per written field, warning-free.
@@ -1653,9 +1663,9 @@ replaced by the STATE part of the `iterate` row).
   (Q-R17P-10): the kit's row grew to 40 B and K5 stays. Revision 2 said
   `compound_entries.md` cites 48/56; it does not (itcrit2's grep of its rev 3), and that half
   is removed. The stale cites that do exist: `r17b_prime.md` on `lane/memfn-r17` (lines 97,
-  126, 1115-1120, 1162-1164, 1422, 1453), for the kit manager; `docs/dev/decisions.md:9707`
-  (Q-R17P-10's 48 B), historical and superseded by A10 at `:9718`, the manager's to annotate
-  if wanted; `docs/design/CLAUDE.md`'s revision 1 entry and `docs/dev/lanes/CLAUDE.md`'s
+  126, 1115-1120, 1162-1164, 1422, 1453), for the kit manager; `docs/dev/decisions.md` D167
+  (Q-R17P-10's 48 B), historical and superseded by D167 addendum 1 A10, the manager's to
+  annotate if wanted; `docs/design/CLAUDE.md`'s revision 1 entry and `docs/dev/lanes/CLAUDE.md`'s
   iterdes entry, annotated by this lane; `docs/dev/lanes/iterdes_report.md:18,103`, a dated
   lane record left as written. Every one should cite §1.3's derivation rather than a number.
 - **F14 (rev 3).** Revision 2's `sizeof(rx_iter)` = 160 B was a miscount: that layout is 152
@@ -1663,15 +1673,18 @@ replaced by the STATE part of the `iterate` row).
 - **F15 (rev 3).** The rule IT12 needs is match_api.md §9.4¶4 ("the boundary guard first,
   then the check"), not §3.2¶2 as the panel cited it. The rule is the same.
 - **F16 (rev 3, IC8 + itcrit2 F12): a hand-off list for `compound_entries.md` revision 4.**
-  That note is mid-revision (D163 add. 8), so it is not edited here. Its next revision
-  should:
+  Revision 4 is now on main (D163 add. 8, controls and presets). Its §3.8 is unchanged on
+  these points (it renumbered the `__find` row's part-table rows only), so the items still
+  stand against it, cited by section and row name. It should:
   - replace `__step` with this note's parts: `__enter`, `__fill`, `__deliver` and the STEP
     body, each with one caller (`_next`). Of these, `__fill`'s call of `__find` is the R3
-    edge while the `batch` cell is `fill` (§2.2). Give `__fill` its own row;
-  - re-label `__adv` "I1's static twin" (it says "I3's", `:772-774`) and qualify stage ids
-    across the two notes;
-  - retire the stale HELD notes: `:54` (the F4 row's "batch-fill R3 witness HELD with
-    Q2"), `:192` (`_next_n` held), `:440` ("not designed in `findall_iter.md`", now false),
-    `:664`, `:776`, `:781`;
-  - re-read `:757` ("two dial rows ... disjoint subjects") against the `-1` witness that
-    §2.2 designs.
+    edge while the `batch` cell is `fill` (§2.2). Give `__fill` its own row in §3.8, beside
+    the `__enter` and `__step` rows;
+  - re-label `__adv` "I1's static twin" (§3.8's `__adv` row says "I3's static twin", where
+    §3.0 I3 is the invariant) and qualify stage ids across the two notes;
+  - retire the stale HELD notes: §R3's F4 row ("batch-fill R3 witness HELD with Q2"), the
+    `<p>_next_n` row of §1.2 (held), §3.8's `__find` row ("R3 only with the HELD internal
+    batch fill") and its `_next_n`'s-calls row, and §3.5's HELD remark on the batch fill
+    ("Only the internal batch fill (R3, HELD) would separate them");
+  - re-read §3.1's "co-resident ... disjoint subjects" claim (the A1 VM entry chain against
+    this row, now through P1 `owned`) against the `-1` witness that §2.2 designs.

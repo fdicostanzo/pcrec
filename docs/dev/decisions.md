@@ -9753,3 +9753,9 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **Ruling (Frank): "static and predictable."** The edge rank R0-R3 is a property of the call site, defined in tuning.md. A typed `--part-inline-rank=R1` means the same parts for the same pattern and controls on every box, under any analysis object. Profile-driven hotness, if ever wanted, arrives as a NEW threshold value (e.g. `profiled`), never as a redefinition of a rank (U9, re-shaped).
 - **And (Frank): every such choice is visible on an opt-in DECISION CHANNEL** (plan row [DECISION-LOG]), not in one-off notes. This replaces the manager's proposed one-off stderr note for a demoted analysis bundle (D162 addendum 4's observability gap): that report is a member of the channel.
+
+### D163 addendum 10 — pcrec, not gcc, decides part layout wherever a control or preset applies (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q8)
+
+- **Ruling (Frank):** "if we have the switches/tuner then it should decide the outcome. predictability is important here. gcc deciding suggests it could change depending on the version/arch."
+- **Rule:** at every non-zero dial position, and under any explicit control, every part's layout is PINNED by pcrec with explicit attributes (`always_inline`, or `static noinline noclone`, LK-3). No preset or control value leaves a part to gcc's heuristics. `auto` is withdrawn as a preset value. Q8 is answered: the `+1` preset is hot parts inline, the residual `shared`.
+- **Open (to Frank):** whether position `0` also pins every part, which would move every artifact's emitted text (one abi event, at or after E1), or stays "as emitted" for zero-mover continuity.
