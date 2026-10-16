@@ -15,6 +15,16 @@ its report is **`G2M7_REPORT.md`**.
 Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
 its report is **`G2M6_REPORT.md`**.
 
+## The window, stated at the kit call (lane r17a, R17-a; MF_SITE_ABI 11)
+
+NOT blinded text: from MF_SITE_ABI 11 a forward FIND STATES its window
+(`mf_pred.window_stated` 1, `move_back` = d_min, `overshoot` 0; memfn.h), and
+a 0 is refused. `g2_gen.c` and `g2_simd_gen.c` state it with `g2_win` /
+`G2W(site)` at every `mf_emit`/`mf_define` call, AFTER every perturbation,
+so each refusal case keeps the refusal it was written for and no generated
+site's description changes. The window's own rules are C5's gate cases
+(tests/memfn/arm_fixtures.c `seq_cases`), not a G2 family.
+
 ## The landmark gate sites (lane r15b, R-15)
 
 NOT written blinded (the row's author wrote them; a D27-blinded pass over

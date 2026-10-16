@@ -15,6 +15,13 @@ brute force shares no code with pcrec: it enumerates each cube's members
 itself and reads the rate from the `--list-analysis default` listing (NONE
 wherever the listing's resolution row has no digest, `-e utf8` today).
 
+N4, THE FIND DOOR (R17-a, setfind.md §11.1 item 4): the same probe build
+asserts, wherever pcrec emits the table a DEFINED FIND names (the DFA set
+rows' `can_begin_match`/`start_bytes`, the VM hat's `start_set`), that its
+bytes are the set the kit was handed; a pass prints one `FINDDOOR` line, a
+difference fails the compile with an `N4 door` internal error. Red on any
+such error; the passes are floored per table (K35).
+
 NON-VACUITY (K35): floors on the run predicates seen, per site (PRE, OFS),
 per encoding, on masked runs, on rankings the rate moves off the positional
 order (a positional ranking is red there), on data ties broken by the rule
@@ -44,6 +51,11 @@ NAMED = [
     '(?i)cat', 'it\\Nm', '/user|/users', 'abcdefghijklmn', '(?i)enzyme',
     'x[0-9]+Qz',
 ]
+# N4's door floors (R17-a): set from lane r17a's landing measurement
+# (r17a_report.md, the figure beside each), ~10% below it.
+DOOR_CBM_FLOOR = 1400   # 1,574
+DOOR_SB_FLOOR = 70      # 78
+DOOR_SS_FLOOR = 3100    # 3,441
 # Floors, measured at the landing (rq2_report.md, the figure in each comment)
 # and set ~10% below it: a FLOOR, never an equality pin.
 FLOORS = {
@@ -55,6 +67,10 @@ FLOORS = {
     'prior-not-positional': 590,  # the ranking is not [n-1, ..., 0] (653)
     'data-tie': 225,       # >= 2 positions share a mass under a real rate (252)
     'norun': 4000,         # predicates that must carry rank_n 0 (4,643)
+    # R17-a (lane r17a): N4's door passes, per table (measured at landing)
+    'door-can_begin_match': DOOR_CBM_FLOOR,
+    'door-start_bytes': DOOR_SB_FLOOR,
+    'door-start_set': DOOR_SS_FLOOR,
 }
 
 
@@ -89,6 +105,17 @@ def brute_rank(rate, run, mask):
     """[(pos, mass)] rarest first, ties to the rightmost."""
     cost = [(cube_cost(rate, run[i], mask[i]), -i) for i in range(len(run))]
     return [(-ni, c) for c, ni in sorted(cost)]
+
+
+def doors(stderr):
+    """(FINDDOOR passes per table, whether an `N4 door` error was raised)."""
+    text = stderr.decode('utf-8', 'replace')
+    n = {}
+    for ln in text.splitlines():
+        if ln.startswith('FINDDOOR\t'):
+            tag = ln.split('\t')[1]
+            n[tag] = n.get(tag, 0) + 1
+    return n, 'N4 door' in text
 
 
 def parse(stderr):
@@ -135,15 +162,19 @@ def main():
         cmd = [a.probe, '-p', 'rx', '--features', 'all'] + argv + ['-o', '-'] \
             + es._pattern_argv(a.probe, pat)
         rc, _, err = es.run(cmd, a.timeout)
-        return pat, arm, rc, parse(err)
+        return pat, arm, rc, parse(err), doors(err)
 
     jobs = [(p, arm, argv) for p in pats for arm, argv in ARMS]
     n = {k: 0 for k in FLOORS}
     n['ofs-ka-rank0'] = 0
     longest = {}
-    wrong, ka_wrong, norun_wrong = [], [], []
+    wrong, ka_wrong, norun_wrong, door_bad = [], [], [], []
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-        for pat, arm, rc, recs in ex.map(one, jobs):
+        for pat, arm, rc, recs, (dn, derr) in ex.map(one, jobs):
+            for tag, k in dn.items():
+                n['door-' + tag] = n.get('door-' + tag, 0) + k
+            if derr:
+                door_bad.append((pat, arm))
             enc = 'utf8' if arm == 'utf8' else 'byte'
             rate = rates.get(enc)
             for site, run, mask, ka, rn, pos, mass in recs:
@@ -181,6 +212,13 @@ def main():
         bad('%d predicates without a RUN term carry a ranking' % len(norun_wrong))
     else:
         ok('every predicate without a RUN term carries rank_n 0 (%d)' % n['norun'])
+    for w in door_bad[:20]:
+        print('  %r [%s]: N4 door: a FIND set differs from its emitted table' % w)
+    if door_bad:
+        bad('%d compiles raised the N4 door assertion' % len(door_bad))
+    else:
+        ok('N4 door: every defined FIND\'s set equals its emitted table (%d tables)'
+           % sum(v for k, v in n.items() if k.startswith('door-')))
     for w in ka_wrong[:20]:
         print('  %r [%s] %s: scanned %r, rank_pos[0] %r' % w)
     if ka_wrong:

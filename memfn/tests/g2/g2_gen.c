@@ -31,6 +31,27 @@
 #include "memfn.h"
 #include "g2.h"
 
+/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
+ * and today's window IS its candidate: window_stated 1, move_back the least
+ * term offset (d_min), overshoot 0. pcrec's builders state it; G2 states it
+ * at the kit call, after every perturbation, so a refusal case keeps the
+ * refusal it was written for. A site with no terms, or that states a window
+ * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+static mf_site g2_win(const mf_site *s)
+{
+    mf_site w = *s;
+    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
+        int32_t d = w.pred.term[0].offset;
+        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
+            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
+        w.pred.window_stated = 1;
+        w.pred.move_back = d;
+        w.pred.overshoot = 0;
+    }
+    return w;
+}
+#define G2W(s) (&(struct { mf_site v; }){ g2_win(s) }.v)
+
 /* ---- deterministic randomness -------------------------------------------- */
 
 static uint64_t rng_state = 0x9e3779b97f4a7c15ULL;
@@ -1059,7 +1080,7 @@ static int render_text(const mf_site *s, const mf_hooks *h, int cmt, buf *out, c
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result r;
     memset(&r, 0, sizeof r);
-    int rc = a ? mf_emit(a, s, h, &sb, &sf, &r) : 1;
+    int rc = a ? mf_emit(a, G2W(s), h, &sb, &sf, &r) : 1;
     if (rc) snprintf(err, errn, "%s", a && mf_art_error(a) ? mf_art_error(a) : "(no text)");
     else {
         bclear(out);
@@ -1089,7 +1110,7 @@ static int render_via(const mf_site *s, const mf_hooks *h, int via, int cmt, cha
     int stage = 0;
     memset(&r, 0, sizeof r);
     if (!a) { stage = 1; snprintf(err, errn, "(no art)"); }
-    else if (mf_define(a, s, h, &sf, &handle)) stage = 1;
+    else if (mf_define(a, G2W(s), h, &sf, &handle)) stage = 1;
     else if (mf_use(a, handle, h, &sb, &r)) stage = 2;
     else if (via == 2 && mf_call(a, handle, h, &sb2)) stage = 3;
     if (stage && a) snprintf(err, errn, "%s", mf_art_error(a) ? mf_art_error(a) : "(no text)");
@@ -1822,10 +1843,10 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     int rc;
     member_calls_bad = 0;
     if (g->d.via == 0) {
-        rc = mf_emit(art, &site, &h, &sb, &sf, &res);
+        rc = mf_emit(art, G2W(&site), &h, &sb, &sf, &res);
     } else {
         uint32_t handle = 0;
-        rc = mf_define(art, &site, &h, &sf, &handle);
+        rc = mf_define(art, G2W(&site), &h, &sf, &handle);
         if (!rc) rc = mf_use(art, handle, &h, &sb, &res);
         if (!rc && g->d.via == 2) rc = mf_call(art, handle, &h, &sb2);
     }
@@ -2120,7 +2141,7 @@ static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char 
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result res;
     memset(&res, 0, sizeof res);
-    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
     const char *err = rc ? mf_art_error(art) : NULL;
     if (pend == G2_PEND_LOOPX && !rc) {
         /* Q-R7-3: only the GENERIC row is known (by the contract) to serve no LOOP_EXIT;
@@ -2219,7 +2240,7 @@ static void refusal_table(void)
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
         mf_result res;
-        int rc = mf_emit(art, &s0, &h0, &sb, &sf, &res);
+        int rc = mf_emit(art, G2W(&s0), &h0, &sb, &sf, &res);
         if (rc || !body.n) {
             n_refusal_fail++;
             fprintf(g_res, "FAIL refusal-control: the baseline site does not render (rc=%d)\n", rc);
@@ -2396,10 +2417,10 @@ static void refusal_table(void)
         mf_result res;
         mf_site bad = s0;
         bad.empty = (mf_empty)9;
-        int rc1 = mf_emit(art, &bad, &h0, &sb, &sf, &res);
+        int rc1 = mf_emit(art, G2W(&bad), &h0, &sb, &sf, &res);
         char first[512];
         snprintf(first, sizeof first, "%s", mf_art_error(art) ? mf_art_error(art) : "");
-        int rc2 = mf_emit(art, &s0, &h0, &sb, &sf, &res);
+        int rc2 = mf_emit(art, G2W(&s0), &h0, &sb, &sf, &res);
         const char *e2 = mf_art_error(art) ? mf_art_error(art) : "";
         api_result(rc1 && rc2 && first[0] && !strcmp(first, e2),
                    "sticky-error: refusal rc=%d, then a valid site rc=%d, error \"%s\" then \"%s\"", rc1, rc2, first, e2);
@@ -2445,7 +2466,7 @@ static void refusal_table(void)
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 }, us = { &st, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), ss = mk_sink(&us);
         mf_result res;
-        int rc = mf_emit(art, &s, &h, &sb, &sf, &res);
+        int rc = mf_emit(art, G2W(&s), &h, &sb, &sf, &res);
         int rs = rc ? 1 : mf_stamps(art, &ss);
         int calls_chr = (body.p && strstr(body.p, "memchr(")) || (file.p && strstr(file.p, "memchr("));
         int calls_cmp = (body.p && strstr(body.p, "memcmp(")) || (file.p && strstr(file.p, "memcmp("));
@@ -2464,7 +2485,7 @@ static void refusal_table(void)
         sinku uf = { &file, 0, 0, 0 };
         mf_sink sf = mk_sink(&uf);
         uint32_t handle = 0;
-        int rc = mf_define(art, &s0, &h0, &sf, &handle);
+        int rc = mf_define(art, G2W(&s0), &h0, &sf, &handle);
         int rc_end = mf_art_end(art);
         if (!rc && rc_end && mf_art_error(art) && *mf_art_error(art)) {
             n_api_pass++;
@@ -3610,7 +3631,7 @@ static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, con
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result res;
     memset(&res, 0, sizeof res);
-    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
     const char *err = rc ? mf_art_error(art) : NULL;
     mm_ref_cases++;
     if (rc && err && *err) {
@@ -3643,7 +3664,7 @@ static int mm_renders(const mf_site *s, const mf_hooks *h, const char *what)
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result res;
     memset(&res, 0, sizeof res);
-    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
     int ok = !rc && body.n;
     if (ok) { n_refusal_pass++; fprintf(g_res, "PASS refusal-control mm: %s renders (form %s)\n", what, res.form_id); }
     else { n_refusal_fail++; fprintf(g_res, "FAIL refusal-control mm: %s does not render (rc=%d %s)\n", what, rc, rc ? mf_art_error(art) : ""); }
@@ -4152,7 +4173,7 @@ static int st_try(const mf_site *s, const mf_hooks *h, char *err, size_t errn, c
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result res;
     memset(&res, 0, sizeof res);
-    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
     if (rc) snprintf(err, errn, "%s", mf_art_error(art) && *mf_art_error(art) ? mf_art_error(art) : "(empty)");
     else { err[0] = 0; if (form) snprintf(form, formn, "%s", res.form_id); }
     int has_text = body.n > 0;

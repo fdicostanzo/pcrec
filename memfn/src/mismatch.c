@@ -272,6 +272,7 @@ static const gate_contract inplace_ct = {
     [FLD_note_tag]        = MF_ANY,
     [FLD_indent]          = MF_ANY,
     [FLD_comment_tier]    = MF_ANY,
+    MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
     [FLD_ref]             = MF_ANY,
     [FLD_reflen]          = MF_ANY,
@@ -286,4 +287,6 @@ const arm mismatch_inplace_arm = {
     inplace_use,
     &inplace_ct,
     NULL,
+    0,          /* a REF term carries no table */
+    0,          /* its loop is plain C: no header */
 };

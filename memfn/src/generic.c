@@ -843,6 +843,7 @@ static const gate_contract generic_ct = {
     [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
     [FLD_indent]          = MF_ANY,     /* :390, :489, :566 */
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
+    MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
     [FLD_fold_kind]       = MF_ANY,     /* mm_render: NONE exact, else the fold text */
     [FLD_ref]             = MF_ANY,     /* mm_render parenthesizes a non-identifier */
@@ -862,4 +863,6 @@ const arm generic_arm = {
     generic_use,
     &generic_ct,
     NULL,       /* no deny: the total fallback (§14.6) */
+    0,          /* a set is `member` or its own test: no table is named */
+    0,          /* its compares are its own: no header */
 };

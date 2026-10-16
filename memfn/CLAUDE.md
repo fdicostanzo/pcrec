@@ -50,8 +50,7 @@ offset i, forward only), `MF_MAX_TERM` 32, a strided site's kit-owned reads
 at `s[cursor + i]`, `span_hi` an iteration count; the generic row renders it
 (`stmt_advance`, one `(member)` per term), K1 `mf_ref_skip_blocks`; kit-only,
 no pcrec byte moved.
-R17-a (on the record branch lane/memfn-r17, not on main; lands at R17-b′ B0;
-R-17's zero-mover seam, lane r17a, 2026-10-12; `docs/design/memfn/
+R17-a (R-17's zero-mover seam, lane r17a, 2026-10-12; `docs/design/memfn/
 setfind.md` rev 2.3 §11.1) made it 11 with NO `MF_VOCAB` move: the window
 fields W0-W2 (`mf_pred.window_stated`/`move_back`/`overshoot`, stated on
 every forward FIND and only there; today's window is the candidate), the

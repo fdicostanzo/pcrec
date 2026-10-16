@@ -308,6 +308,7 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     [FLD_note_tag]        = MF_ANY,                   /* not read */ \
     [FLD_indent]          = MF_ANY,                   /* pcrec's prefix, as given */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment is written */ \
+    MF_SERVES_WINDOW_TODAY \
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 
 static const gate_use pf_memchr_uses[] = {
@@ -451,23 +452,24 @@ static const gate_contract pf_memchr_back_ct = {
 
 const arm pf_memchr_arm = {
     "pf_memchr", 1, pf_memchr_applies, pf_define, pf_memchr_use, &pf_memchr_ct, NULL,
+    0, MF_INC_STRING_H,
 };
 
 const arm pf_memchr_bounded_arm = {
     "pf_memchr", 0, pf_memchr_bounded_applies, pf_define, pf_memchr_use,
-    &pf_memchr_bounded_ct, NULL,
+    &pf_memchr_bounded_ct, NULL, 0, MF_INC_STRING_H,
 };
 
 const arm pf_walk_arm = {
-    "pf_walk", 0, pf_walk_applies, pf_define, pf_walk_use, &pf_walk_ct, NULL,
+    "pf_walk", 0, pf_walk_applies, pf_define, pf_walk_use, &pf_walk_ct, NULL, 1, 0,
 };
 
 const arm pf_memchr_back_arm = {
     "pf_memchr", 1, pf_memchr_back_applies, pf_define, pf_memchr_use,
-    &pf_memchr_back_ct, NULL,
+    &pf_memchr_back_ct, NULL, 0, MF_INC_STRING_H,
 };
 
 const arm pf_walk_bounded_arm = {
     "pf_walk", 0, pf_walk_bounded_applies, pf_define, pf_walk_use,
-    &pf_walk_bounded_ct, NULL,
+    &pf_walk_bounded_ct, NULL, 1, 0,
 };

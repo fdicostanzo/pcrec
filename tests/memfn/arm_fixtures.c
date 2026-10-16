@@ -55,6 +55,27 @@
 
 #include "memfn.h"
 
+/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
+ * and today's window IS its candidate: window_stated 1, move_back the least
+ * term offset (d_min), overshoot 0, as pcrec's builders state it. Applied at
+ * the kit call, so every fixture keeps its description; a site with no
+ * terms, or that states a window itself, is passed unchanged. The window
+ * cases (seq_case) call the kit on the site as written. */
+static mf_site fx_win(const mf_site *s)
+{
+    mf_site w = *s;
+    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
+        int32_t d = w.pred.term[0].offset;
+        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
+            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
+        w.pred.window_stated = 1;
+        w.pred.move_back = d;
+        w.pred.overshoot = 0;
+    }
+    return w;
+}
+#define FXW(s) (&(struct { mf_site v; }){ fx_win(s) }.v)
+
 /* ---- a growable text sink ------------------------------------------------ */
 
 typedef struct { char *p; size_t len, cap; } Text;
@@ -311,7 +332,7 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
                     .table_name = h_table_name, .note = h_note, .u = &fu };
     mf_result res = { 0 };
     uint32_t h = 0;
-    int rc = mf_define(art, s, &hd, &sd, &h) ||
+    int rc = mf_define(art, FXW(s), &hd, &sd, &h) ||
              (s->form == MF_FORM_FUNC ? mf_call(art, h, &hu, &su)
                                       : mf_use(art, h, &hu, &su, &res)) ||
              mf_flush_helpers(art, &sd) ||
@@ -388,7 +409,7 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_hooks h = *hp;
     mf_result res = { 0 };
-    if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
+    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
     }
@@ -570,7 +591,7 @@ static int render_adv_x(const char *dir, const char *name, const mf_site *s, Adv
         h.indent = x->indent;
     }
     mf_result res = { 0 };
-    if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
+    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
     }
@@ -678,7 +699,7 @@ static int render_stride(const char *dir, const StrideFx *x)
                    .member = x->own ? NULL : h_stride_member,
                    .indent = "        ", .u = &su };
     mf_result res = { 0 };
-    if (mf_emit(art, &s, &h, &sk, &sd, &res) || mf_art_end(art)) {
+    if (mf_emit(art, FXW(&s), &h, &sk, &sd, &res) || mf_art_end(art)) {
         fprintf(stderr, "%s: the kit refused: %s\n", x->name, mf_art_error(art));
         return 1;
     }
@@ -737,11 +758,101 @@ static void gate_case(const char *name, const mf_site *s, const mf_hooks *hd,
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
     uint32_t h = 0;
-    int rc = mf_define(art, s, hd, &sd, &h) || mf_use(art, h, hu, &su, &res);
+    int rc = mf_define(art, FXW(s), hd, &sd, &h) || mf_use(art, h, hu, &su, &res);
     if (rc) printf("%s\tREFUSE\t%s\n", name, mf_art_error(art) ? mf_art_error(art) : "");
     else    printf("%s\tRENDER\t%s\n", name, res.form_id);
     free(def.p);
     free(use.p);
+}
+
+/* R17-a (MF_SITE_ABI 11): one case of the storage point's protocol and the
+ * window fields' rules, the site as WRITTEN (no fx_win). `ops` is the call
+ * sequence after mf_define with `hd`: `L` mf_locals with `hl`, `U` mf_use
+ * with `hu`, `E` mf_art_end. Prints the outcome line as gate_case does: the
+ * first refusal, or RENDER and the form id once every call passed. */
+static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
+                     const mf_hooks *hl, const mf_hooks *hu, const char *ops)
+{
+    if (skip_fixture(name)) return;
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), su = sink_of(&use);
+    mf_result res = { 0 };
+    uint32_t h = 0;
+    int rc = mf_define(art, s, hd, &sd, &h);
+    for (const char *o = ops; !rc && *o; o++)
+        rc = *o == 'L' ? mf_locals(art, h, hl, &su)
+           : *o == 'U' ? mf_use(art, h, hu, &su, &res)
+           : mf_art_end(art);
+    if (rc) printf("%s\tREFUSE\t%s\n", name, mf_art_error(art) ? mf_art_error(art) : "");
+    else    printf("%s\tRENDER\t%s\n", name, res.form_id);
+    free(def.p);
+    free(use.p);
+}
+
+/* The R17-a cases: the PF walk site as pcrec's set rows define it (a table
+ * FIND offering its declaration point, W4, with a stem, W5), through the
+ * protocol define -> locals -> use(s) -> end, then each refusal; and the
+ * window rules over FIND, SKIP and reverse sites. */
+static void seq_cases(void)
+{
+    mf_site w = pf_site(0, 1);
+    t_set(&w.pred.term[0], 0, "xyz", 1);
+    w.pred.term[0].need = MF_REQUIRED;
+    w.pred.window_stated = 1;
+    w.decl_point = 1;
+    w.pred.fn_ref = 1;
+    Fx f = { &w, "rx_search_pf", "    " };
+    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "scan_position",
+                   .result = "scan_position", .miss = MF_MISS_N,
+                   .table_name = h_table_name, .fn_name = h_fn_name,
+                   .indent = "    ", .u = &f };
+    mf_hooks hn = h, hs = h;
+    hn.n = "len";
+    hs.s = "subj";
+    seq_case("locals-protocol", &w, &h, &h, &h, "LUUE");
+    seq_case("locals-n-differs", &w, &h, &hn, &h, "LUE");             /* S846 */
+    seq_case("locals-s-differs", &w, &h, &hs, &h, "LUE");
+    seq_case("locals-twice", &w, &h, &h, &h, "LLUE");                 /* S847 */
+    seq_case("locals-unread", &w, &h, &h, &h, "LE");                  /* S848 */
+    seq_case("locals-never-placed", &w, &h, &h, &h, "E");
+    seq_case("locals-use-first", &w, &h, &h, &h, "ULE");
+    mf_site nd = w;
+    nd.decl_point = 0;
+    seq_case("locals-no-point", &nd, &h, &h, &h, "LUE");
+    seq_case("locals-none-offered", &nd, &h, &h, &h, "UE");
+    mf_site d2 = w;
+    d2.decl_point = 2;
+    seq_case("decl-point-2", &d2, &h, &h, &h, "LUE");
+    mf_site w0 = nd;
+    w0.pred.window_stated = 0;
+    seq_case("window-unstated", &w0, &h, &h, &h, "UE");               /* S849 */
+    mf_site wb = nd;
+    wb.pred.move_back = -1;
+    seq_case("window-back-negative", &wb, &h, &h, &h, "UE");
+    mf_site wp = nd;
+    wp.pred.move_back = 1;
+    seq_case("window-back-positive", &wp, &h, &h, &h, "UE");
+    mf_site wu = nd;
+    wu.pred.move_back = MF_MOVE_UNBOUNDED;
+    seq_case("window-back-unbounded", &wu, &h, &h, &h, "UE");
+    mf_site wo = nd;
+    wo.pred.overshoot = 1;
+    seq_case("window-overshoot", &wo, &h, &h, &h, "UE");
+    mf_site w2 = nd;
+    w2.pred.window_stated = 2;
+    seq_case("window-stated-2", &w2, &h, &h, &h, "UE");
+    mf_site wr = nd;
+    wr.reverse = 1;
+    seq_case("window-reverse", &wr, &h, &h, &h, "UE");
+    mf_site ws = adv_site(0, MF_SPAN_UNBOUNDED);
+    ws.pred.window_stated = 1;
+    mf_hooks vh = adv_hooks((AdvH){ "pos < n", "subject[pos]", "pos++;", NULL, 0 }, &f);
+    seq_case("window-on-skip", &ws, &vh, &vh, &vh, "UE");
+    mf_site wz = adv_site(0, MF_SPAN_UNBOUNDED);
+    wz.pred.move_back = 3;
+    seq_case("window-unstated-move-back", &wz, &vh, &vh, &vh, "UE");
 }
 
 /* The define and use hooks render_h passes, with `miss`, `floor` and `s`
@@ -1077,6 +1188,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--gate")) {
         if (argc > 3 && !strcmp(argv[2], "--gate-only")) only = argv[3];
         gate_cases();
+        seq_cases();
         if (only && only_seen != 1) {
             fprintf(stderr, "arm_fixtures: --gate-only %s matched %d cases\n", only, only_seen);
             return 2;

@@ -48,6 +48,12 @@
 # 20261005, `memfn/tests/run_g2_gate.sh`, 2026-10-11): those sites draw from
 # their own stream, so the quick tier's generator renders the same ones and
 # its count is at least that; a quick-tier reading is owed.
+# The row `pf_walk`'s pcrec floor is floor(0.9 x 478404), slot24's census (kit
+# branch lane/memfn-r17 c6a3bfea, 2026-10-12): R17-a (f2b16c801; ported to main
+# as B0, lane fdb0) defines the VM hat's one-byte table once per site and uses it
+# at both seeks, so 3204 hat sites count 1 define + 2 uses where they counted two
+# defines (no byte moved; the identity sweeps are 0-mover). Re-read at main's
+# next full N2 census (OWED, fdb0_report.md).
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
@@ -57,7 +63,7 @@ arms	precheck_assign_byte	PLACEHOLDER	721
 arms	runcmp	56617	17829
 arms	pf_memchr	80268	3306
 arms	pf_memchr_bounded	25484	2842
-arms	pf_walk	608765	3679
+arms	pf_walk	430563	3679
 arms	pf_walk_bounded	27462	3366
 arms	pf_memchr_back	3271	4109
 arms	mismatch_inplace	2116	2403

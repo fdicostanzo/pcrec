@@ -13141,6 +13141,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's search blocks, at file
      * scope above the one search loop whose pre-check below calls them. */
     pcrec_emit_req_run_blocks(v->cx, c);
+    /* [MEMFN] R17-a the VM hat's FIND, defined here for both of its seeks. */
+    pcrec_emit_vm_start_define(v->cx, c, v->p,
+                               pcrec_sb_fragf(&v->cx->arena, "%s_run_pf", g->searchfn));
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* The search loop. Called by both entries below with a run state\n"

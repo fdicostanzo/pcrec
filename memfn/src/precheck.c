@@ -398,6 +398,7 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_note_tag]        = MF_ANY,                   /* :142 a comment tag, as given */ \
     [FLD_indent]          = MF_ANY,                   /* :208, :244 pcrec's prefix, as given */ \
     [FLD_comment_tier]    = MF_ANY,                   /* :141 handed to cmt_open as given */ \
+    MF_SERVES_WINDOW_TODAY \
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 
 static const gate_contract precheck_ct = {
@@ -454,6 +455,8 @@ const arm precheck_arm = {
     precheck_use,
     &precheck_ct,
     NULL,       /* transcribed from pcrec: no deny */
+    1,                  /* the run blocks' offset tables, the set rest's */
+    MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
 };
 
 /* The same renderer as precheck_arm, and the same form id: only the
@@ -466,6 +469,8 @@ const arm precheck_assign_arm = {
     precheck_use,
     &precheck_assign_ct,
     NULL,       /* transcribed from pcrec: no deny */
+    1,                  /* the run blocks' offset tables, the set rest's */
+    MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
 };
 
 /* The same renderer again (R-15): the ASSIGN site whose kept position is its
@@ -479,4 +484,6 @@ const arm precheck_assign_byte_arm = {
     precheck_use,
     &precheck_assign_byte_ct,
     "precheck-assign-byte",
+    1,                  /* the run blocks' offset tables, the set rest's */
+    MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
 };
