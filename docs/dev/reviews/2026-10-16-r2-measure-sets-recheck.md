@@ -1,6 +1,6 @@
 # 2026-10-16 r2: light re-check of docs/design/measure_sets.md (lane msrecheck)
 
-One read-only critic (opus) with the unlock lens. The subject is `docs/design/measure_sets.md` at `e8d35840e`. The brief calls it "rev 2.1": rev 2 plus Frank's same-day rulings, and its header still says "revision 2". It is checked against the r1 panel (`2026-10-14-r1-measure-sets.md`), D166 and its addenda 1, 1.1 and 2, and the [KNOW-SRC] plan row (`docs/dev/plan.md:877-884`).
+One read-only critic (opus) with the unlock lens. The subject is `docs/design/measure_sets.md` at `e8d35840e`. The brief calls it "rev 2.1": rev 2 plus Frank's same-day rulings, and its header still says "revision 2". It is checked against the r1 panel (`2026-10-14-r1-measure-sets.md`), D166 and its addenda 1, 1.1 and 2, and the [KNOW-SRC] plan row (`docs/dev/plan.md` (the [MEASURE-SET] row`).
 
 Totals: 0 BLOCKER, 8 MAJOR, 11 MINOR. The r1 discharge is good: every blocker is DISCHARGED or PARTIAL with a narrow residual. The new findings are concentrated in §9 ([KNOW-SRC]), which has not been reviewed before.
 
@@ -36,7 +36,7 @@ All r1 minors are discharged.
 
 ### M1 (MAJOR): the fourth ruled kind, the EVALUATOR PARAMETER TABLE, is absent from §9
 
-- **Evidence.** The plan row `docs/dev/plan.md:884` reads: "KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: ... harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one."
+- **Evidence.** The plan row `docs/dev/plan.md` ([MEASURE-SET] row) reads: "KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: ... harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one."
   - That row was committed at `5cfd2e1c0`, after `e8d35840e`. The note therefore predates the ruling, but the note is the row's design of record.
   - §9.1, §9.2's `KsKind` comment, §9.5 and §10.3 all list three kinds.
   - The kit's `prereg.tsv` (`memfn/docs/responses.md:2447`) is the live instance, and "until built, canonical format from day one" binds it now.
