@@ -58,7 +58,7 @@ _Static_assert(MF_CMT_NONESSENTIAL == PCREC_CMT_NONESSENTIAL,
 
 /* ---- the attempt's kit state --------------------------------------------- */
 
-static void *arena_alloc(void *u, size_t n)
+void *pcrec_memfn_arena_alloc(void *u, size_t n)
 {
     return pcrec_arena_alloc(u, n);
 }
@@ -69,7 +69,7 @@ mf_art *pcrec_memfn_art(Ctx *cx)
     if (!job->mf) {
         mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
         ma->u = &cx->arena;
-        ma->alloc = arena_alloc;
+        ma->alloc = pcrec_memfn_arena_alloc;
         /* R17-b' B1: the set is the harness lever's (a test build's), else
            none; the analysis object is DECLARED and handed nothing until
            E-1 (window_contract S1) fills it, with no kit edit */

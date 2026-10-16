@@ -19,8 +19,10 @@
  * THE NORMALIZATION (what moves the hash and what does not):
  *   - comments (`/ * ... * /`, `//`) are dropped, outside string and
  *     character literals;
- *   - each line is trimmed of white space at both ends, and blank lines are
- *     dropped (layout is scaffolding);
+ *   - white space is layout: each line is trimmed at both ends, blank
+ *     lines are dropped, and inside a line a run of white space survives
+ *     only as ONE space between two word characters (`unsigned char`), so
+ *     indentation, alignment and a removed inline comment move nothing;
  *   - every IDENTIFIER that is not in the kept list below (the C keywords,
  *     the standard types and the C-library names a form calls) is replaced
  *     by `$k`, k its order of first appearance: a renamed helper, a renamed
@@ -131,6 +133,15 @@ void mf_form_hash_text(const char *text, char out[17])
         while (m && (s[m - 1] == ' ' || s[m - 1] == '\t' || s[m - 1] == '\r')) m--;
         line.len = 0;
         for (size_t i = 0; i < m; ) {
+            if (s[i] == ' ' || s[i] == '\t') {
+                /* layout: one space survives only between two word characters */
+                size_t j = i;
+                while (j < m && (s[j] == ' ' || s[j] == '\t')) j++;
+                if (line.len && j < m && id_char(line.p[line.len - 1]) && id_char(s[j]))
+                    nb_put(&line, " ", 1);
+                i = j;
+                continue;
+            }
             if (s[i] == '"' || s[i] == '\'') {
                 char q = s[i];
                 size_t j = i + 1;

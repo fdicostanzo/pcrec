@@ -511,6 +511,15 @@ DIFFER_PINS = {
     ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
+    # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
+    # finder table's five denies. No finder row is ROUTED at B1, so each deny
+    # moves no byte: ASSERT_ZERO (below) on both bases and both streams. Each
+    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r0/fd-r5/
+    # fd-ndisp at B4, fd-r8 at B6), so `--extra` never runs a kit deny
+    # without a floor.
+    **{(base, "--memfn=no-" + row, stream): (0, 0, None)
+       for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
+       for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1")},
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -518,7 +527,11 @@ DIFFER_PINS = {
 # every non-boundary encoding, so -fno-end-window cannot act at utf8 — and a
 # utf8 base that lost `-e utf8` reads byte's 288 here.
 ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
-               ("utf8", "-fno-end-window", "c-vm")}
+               ("utf8", "-fno-end-window", "c-vm")} | {
+    # [MEMFN] R17-b' B1: the finder table's denies, inert until their rows route
+    (base, "--memfn=no-" + row, stream)
+    for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
+    for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the
