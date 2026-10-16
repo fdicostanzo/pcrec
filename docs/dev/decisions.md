@@ -9722,3 +9722,8 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 ### D167 addendum 2 — knowledge stamps mean CONSULTED (Frank, 2026-10-16, session 113; window_contract.md rev 3 Q3)
 
 - **Ruling (Frank): "q3: consulted."** `<PREFIX>_FINDINGS` and its [KNOW-SRC] sibling `<PREFIX>_MEASURES` list a kind iff a pcrec reader asked it OR a kit row read it (the kit's per-kind, layer-invariant `consulted` bit at `mf_art_end`, from B3b). They never list what was merely OFFERED. Consequences: E-1 is zero-mover in every arm (no abi event, no D80 hunk); findings.md 5¶9 stays true; findings §6 #22 / S314 keep their `""` witness.
+
+### D166 addendum 3 — a defined format may have several readers (Frank, 2026-10-16, session 113; measure_sets.md rev 3 OQ-1)
+
+- **Ruling (Frank):** "we currently have 3? readers for rxt format. the value in have a defined format is that you can have different readers for data. insofar as the mechanism is parsing, i think this is ok."
+- **Rule:** the evaluator-params kind has ONE format and digest spec (measure_sets.md §9, the [KNOW-SRC] home). pcrec's knowledge module owns storage, listing, digest and stamp; the kit keeps its own reader. Several readers of one DEFINED format is not a parallel mechanism when the shared thing is parsing. The format is the contract, and R5 cross-checks the readers. The scattered-data concern (the NEW-DATASET lens) is answered by the single home and spec, not by a single reader.
