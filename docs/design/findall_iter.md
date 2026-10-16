@@ -750,7 +750,7 @@ readers, by grep at `ee01f4dbb`:
 | reader | site |
 |---|---|
 | the constant | `src/gen/emit_dfa.c:54` |
-| the shared-block guard text and `rx_info.abi` row | `docs/spec/match_api.md:168-172`, `:1260` |
+| the shared-block guard text and `rx_info.abi` row | `docs/spec/match_api.md` §1¶7, §6 (the `abi` row of the `rx_info` table) |
 | the change log | `docs/dev/history/abi_changelog.md` (+ the entry) |
 | `ABI_EXPECT` | `tests/codegen/run_codegen_tests.sh:3149` |
 | recursion-identity (B) FILEPIN self-pin | `tests/codegen/run_recursion_identity.sh:1251` |
