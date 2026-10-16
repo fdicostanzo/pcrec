@@ -461,13 +461,19 @@ live cell, in that cell's abi event (D76/D94: its readers are found by grep). Th
   today's `_search` loop on dense tiny matches. At `shared`, `next` calls a shared `__find`
   once per match (the gate's `I_shared` arm); the twin prices it at a smaller constant
   `.text` (+832-989 B instead of +997-2,587 B). The gate is stated against the DEFAULT
-  build. The proposal: the gate binds positions `0`, `+1` and `+2`; at `−1`/`−2` the gap is
-  that cell's cited time cost, reported, not gated (§6 Q3).
+  build. **RULED (Q3):** the gate binds positions `0`, `+1` and `+2`; at `−1`/`−2` the gap is
+  that cell's cited time cost, reported, not gated. Under §3.2 the find body is rank R2
+  (one call per `_search` or `_next`), so `−1` shares it like `−2` does; only the internal
+  batch fill (R3) separates them on an iterator artifact. `+1` inlines it whenever
+  `θ_hot` ≤ R2, and otherwise (`θ_hot` = R3, or L8's decline) leaves it to the `0` layout,
+  which the gate binds anyway.
 - **M folds only where the locate part is inlined.** `findall_iter.md` §4.2 makes the call
   mode M a parameter of `__find`: a compile-time constant in each entry when inlined, one
   runtime branch per call when shared. So the layout row also decides whether the kit's
-  dispatch on M (regime_tables.md R1-R3) costs a branch. This is a second reason the
-  locate part is `hot`.
+  dispatch on M (regime_tables.md R1-R3) costs a branch: it costs one at `−2`/`−1`, at L1
+  (the attempt route's label-table body, shared at every position), and at `+1` when the
+  find body ranks below `θ_hot`. The size positions pay that branch knowingly, as part of
+  their cited cost.
 - **The kit's helpers (member 4) are the kit's** (D157: pcrec sends facts, not methods).
   pcrec can tell the kit the dial position as a fact (it already does for the class kit,
   D131); how the kit lays out its helpers is its choice. A request, not a pcrec cell.
@@ -484,6 +490,45 @@ live cell, in that cell's abi event (D76/D94: its readers are found by grep). Th
   (the gcc error is the detector).
 - **H6 neutrality**: every position's refusal set and every stamped selection equal `0`'s
   over the corpus (`make test-axes` sweeps the dial already).
+- **The table's inputs, checked against sources pcrec does not write.** A part's caller
+  count is checked against the call graph of the same emitted C compiled `-O2 -fno-inline`,
+  where every call is visible, read by `objdump -dr` relocations (the `probe_entries.py`
+  method, fixed in b3153da98). A part's rank is checked against a hand-written expected rank
+  per witness artifact, read from the emitted C, in a fixture that names its witness for
+  each of R0-R3. A rank class with no witness is reported UNREACHED, not passed.
+- **L8's decline is visible**: a `+1` compile against a set without `θ_hot` carries
+  `_WHY "threshold-unmeasured"`, and its object layout equals `0`'s.
+- **Totality**: every (part class, position) in the corpus census reaches exactly one row,
+  and each row's population is counted (K35). A row whose population is zero is listed
+  with its reason.
+
+### 3.7 Which family the row belongs to (the sibling-of-a-family lens)
+
+| candidate family | member? | why |
+|---|---|---|
+| **the dial's policy table** (tuning.md §5.4, D103) | **YES: one more row of it** | It is a speed/size trade with a pinned policy per position, and the VM entry chain (member 1) is already a row there. It is the first row whose cell reads a value from a measurement set (`θ_hot`), which is Q1's D103 clarification. Its acceptance is the dial's: answer identity at every position, `balanced` byte-identical. |
+| **the eight inline/shared deciders** (§3.1) | **it IS that family, unified** | Members 2, 5, 6 and 7 become rows' subjects. Member 5's two-row table (`findall_iter.md` §2.2) dissolves into L0 + L1 (§3.8). Member 1 joins by its own ruled diff (§3.4). Members 3, 4 and 8 stay outside with stated reasons. |
+| **`entry_rows[]` and `compound_place[]`** (§4.1, `compound.md` §A.2) | **sibling, not merged** | All three answer "where does a part's body live". `compound_place[]` decides whether a second machine is an in-Job row or a compound part (machine composition); `entry_rows[]` decides which parts an entry calls (the edges); this row decides how an existing part is linked to its callers. The layout row reads `entry_rows[]`'s edges and is applied by it. Merging it with `compound_place[]` would mix a semantic choice (which machines) with an answer-free one (copies). |
+| **engine selection** (`select_engine.c`, `--engine`) | no | Engine selection chooses the machine and can move answers and refusals (GATE 2). Part layout sits below the machine and moves neither. |
+| **the deny/force axes** (`axes.def`, tuning.md §2) | no | It is not a bit and has no deny or force spelling, like `--vm-entry-shape`'s value field and the `[ART-SIZE]` ladder's parameters. An explicit override spelling (a `--part-layout=` value, `--vm-entry-shape`'s precedent) is caller-observable CLI, so it is FILED for [IFACE-PUSH] and not designed here. `make test-axes` sweeps the row through the dial's existing arm. |
+| **`regime_tables.md`** | no; a neighbour with two shared edges | Regime rows are run-time form selection inside the LOCATE part, owned by the kit (D157); this row is compile-time linkage of whole parts. Shared edge 1: this row decides whether M is a compile-time constant in the kit's dispatch (§3.5). Shared edge 2: both read the measurement set, through the same knowledge key A (regime_tables.md §2), so a set change re-selects both, in one mover census. |
+
+So: a dial row (D103) that unifies the inline/shared family, applied by `entry_rows[]`, and
+a sibling of `compound_place[]` under that table. It is not a new family and not a new axis.
+
+### 3.8 Where the iterator consumes this row (for `findall_iter.md`'s short revision; not edited here)
+
+Q4 puts a short revision of `findall_iter.md` after E0. This is what that revision would
+read from this row; this note does not edit `findall_iter.md`.
+
+| `findall_iter.md` piece | what it becomes under the row |
+|---|---|
+| §2.2's two-row emission rule (`shared` for a label table, else `inline`) | L1 + the position rows: at `0` L0 (as emitted, which IS §2.2's design of record once I1 emits it); at non-zero positions L1 for the attempt route, then the position's row. The two-row table is deleted, not kept beside the row |
+| `__find`'s rank | R2 from `_search` and `_next`; R3 from the internal batch fill (D165 add. 2), which calls it once per buffered match inside one `next` call |
+| the NOTEMPTY retry R | R1 (only after an empty match), a part of the `first-nonzero` row; at `+1` it is inlined only when `θ_hot` = R1 |
+| `__adv` (the residual's static twin) | I3's static twin; rank R2. One caller per entry, so L4 inlines it at non-zero positions |
+| the parity gate's `I` and `I_shared` arms (§5.3) | `I` = the `0` / `+1` / `+2` layout of `__find`; `I_shared` = the `−2` / `−1` layout. The gate binds the first (Q3) |
+| M as a constant (§4.2) | constant where `__find` is inlined, a branch where it is shared (§3.5) |
 
 ---
 
