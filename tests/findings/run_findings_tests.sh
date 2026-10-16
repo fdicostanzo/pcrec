@@ -28,6 +28,8 @@
 #   §12 SHIPPED  [B5] the generated bundles against their generators, their
 #                byte-rates against the reference, and `cpfreq`'s two
 #                derivations against Python's own UTF-8 codec.
+#   §13 CENSUS   [KNOW-SRC] K0: emit_sweep.py's data mode reproduces a
+#                hand-made movers list on data_census/'s fixture change.
 #
 # Verdict: this script's own `checks failed: 0` line, and under make, the
 # absence of `*** [test-findings] Error` (BOILERPLATE, r2 S-F13).
@@ -681,6 +683,43 @@ res_stamp "§12 encode-latin1 stamps the reference digest" \
     -e utf8 -I "$R/L1" --analysis l1 --pattern 'caf.'
 res_refuse "§12 a block every code point of which drops is refused" \
     "counts nothing via encode-latin1" -e utf8 -I "$R/L1" --analysis l1none --pattern 'caf.'
+
+# =========================================================================
+# §13 THE DATA-MOVER CENSUS ([KNOW-SRC] K0; docs/design/measure_sets.md
+# rev 3 §9.3): `scripts/emit_sweep.py --data analysis` over data_census/'s
+# fixture change (Z and @ trade rarity) must reproduce the HAND-MADE movers
+# list, written before the census ran, with every mover ATTRIBUTED to a
+# traced reader and every artifact's stamp agreeing with its final attempt's
+# trace. It needs a -DPCREC_KS_TRACE build of THIS tree, made here into the
+# scratch dir. The control: the same census against the hand list with one
+# row removed must FAIL naming that row (a compare that cannot fail proves
+# nothing). Sabotage S963 (the attribution written empty).
+# =========================================================================
+DC="$SCRIPT_DIR/data_census"
+KST="$WORKDIR/kst"
+if ! make -C "$ROOT_DIR" -s -j4 CC="$CC" BUILD_DIR="$KST" \
+        CFLAGS="-O2 -g -DPCREC_KS_TRACE" "$KST/pcrec" > "$WORKDIR/kst.log" 2>&1; then
+    bad "§13 could not build the -DPCREC_KS_TRACE binary: $(tail -3 "$WORKDIR/kst.log")"
+else
+    census() { # census EXPECT-FILE LOG
+        python3 "$ROOT_DIR/scripts/emit_sweep.py" --data analysis \
+            "$DC/old/fx.rxt" "$DC/new/fx.rxt" --bin "$KST/pcrec" --no-corpus \
+            --patterns-file "$DC/patterns.txt" --expect-movers "$1" \
+            --out "$WORKDIR/dc" --jobs 4 > "$2" 2>&1
+    }
+    if census "$DC/analysis_movers.tsv" "$WORKDIR/dc.log"; then
+        ok "§13 the analysis census reproduces the hand-made movers list ($(grep -c '^  MOVER' "$WORKDIR/dc.log") movers, every one attributed, stamp = trace on every artifact)"
+    else
+        bad "§13 the analysis census disagrees with the hand-made list: $(grep -E 'FAIL|Error|error' "$WORKDIR/dc.log" | head -3 | tr '\n' ' ')"
+    fi
+    grep -v '^c-vm	utf8	Z' "$DC/analysis_movers.tsv" > "$WORKDIR/short.tsv"
+    if ! census "$WORKDIR/short.tsv" "$WORKDIR/dc_ctl.log" &&
+       grep -q 'UNEXPECTED MOVER: c-vm utf8 Z' "$WORKDIR/dc_ctl.log"; then
+        ok "§13 control: a hand list missing one mover FAILS, naming it"
+    else
+        bad "§13 control: a hand list missing a mover did not fail by name (the compare cannot fail)"
+    fi
+fi
 
 echo "== Summary =="
 echo "checks passed: $pass"

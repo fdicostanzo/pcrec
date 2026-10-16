@@ -216,6 +216,17 @@ OPTIONS
                         trace record counts as python source.
   --trace-order S=M      repeatable: trace_diff's per-slot compare mode
                         (`fallback=ordered` for refactor B).
+  --data KIND OLD NEW    [KNOW-SRC] the DATA-MOVER CENSUS (see the data
+                        mode's section below): the sides differ only by a
+                        data argument (KIND analysis: two bundle files under
+                        one -DPCREC_KS_TRACE --bin; KIND limits: NAME=VALUE,
+                        two -D builds of --ref, default HEAD). Streams 1, 2
+                        (+ their stderr) at --bases, and 4. --ref is not
+                        needed. Writes --movers FILE (default
+                        OUT/movers_KIND.tsv).
+  --expect-movers FILE   with --data: a hand-made movers list the census
+                        must reproduce exactly (stream, base, pattern
+                        [, attribution]).
 
   When the two sides are the SAME binary (realpath), every argv compile runs
   once and is mirrored: identity is trivial and said so, and the run is a
@@ -2470,6 +2481,264 @@ TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 293099, 'c-vm': 128394},
  'plain': {'c-default': 270131, 'c-vm': 120691}}
 
 
+# ---------------------------------------------------------------------------
+# THE DATA MODE ([KNOW-SRC] K0, docs/design/measure_sets.md rev 3 §9.3):
+# `--data KIND OLD NEW`, the data-mover census. The two sides differ ONLY by
+# a data argument; the population is this tool's own (the corpus and/or
+# --patterns-file), and each mover is ATTRIBUTED.
+#
+#   analysis  OLD/NEW are bundle files (`DIR/NAME.rxt`, or `REV:PATH`, read
+#             with `git show` into scratch). Both sides are ONE working
+#             binary, built with -DPCREC_KS_TRACE (--bin), compiling under
+#             `-I DIR --analysis NAME` for each version. Attribution is the
+#             LOOKUP TRACE (src/core/findings.h): the readers that asked,
+#             with the stamp as its CROSS-CHECK — the final attempt's traced
+#             (query, bundle) items must equal the `<PREFIX>_FINDINGS`
+#             stamp's, per artifact and side. The shipped `default` is
+#             found by identity, never by -I, so a change to it goes through
+#             the ordinary two-build sweep (--ref/--tree-rev), not this mode.
+#   limits    OLD/NEW are `NAME=VALUE` for one limits.def row. The sides are
+#             two builds of --ref (default HEAD) with `-DNAME=VALUE`, this
+#             tool's existing -D variant path. Attribution is the limit and
+#             the artifact's token change (a `*_WHY`/ENGINE_SEL stamp or a
+#             refusal). The per-compile `--max-...` flag shortcut is not
+#             built: every limit has the -D route and no measurement asks
+#             for the faster one (D77).
+#   measures  joins at [MEASURE-SET] M1, its first use (§9.8).
+#
+# Streams: 1 and 2 (`.c` at the default engine and at --engine=vm) at each
+# --bases base, their stderr compared verbatim with the KSTRACE records
+# removed (stream 8's comparison), and stream 4 (composition) with the
+# data argument on the file operand. The stamp lines are removed before the
+# byte compare (§2.4's normalization): a data change that moved ONLY the
+# stamp is not a mover.
+#
+# Output: one movers TSV (`--movers FILE`, default OUT/movers_KIND.tsv):
+#   kind stream base pattern old_hash new_hash old_tokens new_tokens
+#   old_refused new_refused attribution
+# `--expect-movers FILE` holds a hand-made list (stream, base, pattern
+# [, attribution]) the census must reproduce exactly. Exit 1 on: an
+# unattributed analysis mover (S963), a stamp/trace disagreement, an empty
+# population (K35), or a hand-list mismatch.
+
+DATA_KINDS = ("analysis", "limits")
+DATA_STAMP_RE = re.compile(rb'^(#define [A-Za-z0-9_]+_FINDINGS |    \.findings = ).*\n', re.M)
+DATA_STAMP_VAL = re.compile(rb'^#define [A-Za-z0-9_]+_FINDINGS "(.*)"$', re.M)
+DATA_TOKEN_RE = re.compile(rb'^#define [A-Za-z0-9]+_([A-Z0-9_]*_WHY|ENGINE_SEL) (.*)$', re.M)
+DATA_TSV_HEADER = ("kind\tstream\tbase\tpattern\told_hash\tnew_hash\told_tokens\t"
+                   "new_tokens\told_refused\tnew_refused\tattribution")
+
+
+def data_trace(err):
+    """(stderr without KSTRACE records, every attempt's records, the FINAL
+    attempt's records); a record is (query, reader, bundle)."""
+    keep, attempts = [], [[]]
+    for ln in err.split(b"\n"):
+        if ln.startswith(b"KSTRACE\t"):
+            f = ln.decode("utf-8", "replace").split("\t")
+            if len(f) >= 5 and f[3] == "resolve":
+                attempts.append([])
+            elif len(f) >= 5:
+                attempts[-1].append((f[2], f[3], f[4]))
+        else:
+            keep.append(ln)
+    every = [r for a in attempts for r in a]
+    return b"\n".join(keep), every, attempts[-1]
+
+
+def data_stamp_items(out):
+    """The `<PREFIX>_FINDINGS` stamp's (query, bundle) items, bundle `none`
+    where nothing answered; None for an artifact with no stamp line."""
+    m = DATA_STAMP_VAL.search(out or b"")
+    if not m:
+        return None
+    items = set()
+    for it in m.group(1).decode().split(";"):
+        if not it:
+            continue
+        q, _, v = it.partition("=")
+        items.add((q, v.split(":")[0]))
+    return items
+
+
+def data_tokens(ok, out):
+    if not ok:
+        return "-"
+    return ",".join(f"{k.decode()}={v.decode().strip()}"
+                    for k, v in sorted(DATA_TOKEN_RE.findall(out))) or "-"
+
+
+def data_compile(pcrec_bin, pattern, base_args, data_args, engine, timeout):
+    """One stream-1/2 compile, both outputs kept: (ok, normalized bytes,
+    raw bytes, clean stderr, every-attempt trace, final-attempt trace)."""
+    ok, out, err = compile_stream_c(pcrec_bin, pattern, timeout, engine=engine,
+                                    extra=list(base_args) + list(data_args),
+                                    want_err=True)
+    clean, every, final = data_trace(err or b"")
+    norm = DATA_STAMP_RE.sub(b"", out) if ok else None
+    return ok, norm, out, clean, every, final
+
+
+def data_side_args(args, kind, spec, side, out_dir, tree):
+    """The data argument for one side: (pcrec_bin, extra argv)."""
+    if kind == "analysis":
+        path = spec
+        if not os.path.exists(spec) and ":" in spec:
+            rev, _, rel = spec.partition(":")
+            d = os.path.join(out_dir, f"data_{side}")
+            os.makedirs(d, exist_ok=True)
+            path = os.path.join(d, os.path.basename(rel))
+            r = subprocess.run(["git", "-C", tree, "show", f"{rev}:{rel}"],
+                               capture_output=True)
+            if r.returncode != 0:
+                raise SystemExit(f"[emit_sweep] --data analysis: git show {spec} failed")
+            with open(path, "wb") as fh:
+                fh.write(r.stdout)
+        if not path.endswith(".rxt") or not os.path.isfile(path):
+            raise SystemExit(f"[emit_sweep] --data analysis: {spec} is not a DIR/NAME.rxt file")
+        name = os.path.basename(path)[:-4]
+        if name == "default":
+            raise SystemExit("[emit_sweep] --data analysis: the shipped `default` is "
+                             "found by identity, never by -I: census a change to it "
+                             "with --ref/--tree-rev (two store builds)")
+        pcrec_bin = os.path.abspath(args.bin) if args.bin else os.path.join(tree, "build", "pcrec")
+        return pcrec_bin, ["-I", os.path.dirname(os.path.abspath(path)), "--analysis", name]
+    name, _, value = spec.partition("=")
+    if not re.fullmatch(r"PCREC_[A-Z0-9_]+", name) or not value:
+        raise SystemExit(f"[emit_sweep] --data limits: {spec} is not NAME=VALUE")
+    cflags = f"{args.build_cflags or DEFAULT_BUILD_CFLAGS} -D{name}={value}"
+    pcrec_bin, _ = build_from_rev(tree, args.ref or "HEAD", out_dir, resolve_cc(tree),
+                                  f"data_{side}", cflags=cflags)
+    return pcrec_bin, []
+
+
+def read_expect_movers(path):
+    """A hand-made movers list: `stream<TAB>base<TAB>pattern[<TAB>attribution]`
+    per line, the pattern in --list-source escapes; `#`/blank skipped."""
+    rows = {}
+    with open(path, encoding="utf-8", errors="surrogateescape") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if not line.strip() or line.startswith("#"):
+                continue
+            f = line.split("\t")
+            rows[(f[0], f[1], f[2])] = f[3] if len(f) > 3 else None
+    return rows
+
+
+def run_data_census(args):
+    kind, old_spec, new_spec = args.data
+    if kind not in DATA_KINDS:
+        raise SystemExit(f"[emit_sweep] --data: kind {kind!r} not in {DATA_KINDS} "
+                         "(`measures` joins at [MEASURE-SET] M1)")
+    tree = os.path.abspath(args.tree)
+    out_dir = os.path.abspath(args.out) if args.out else os.path.join(tree, "build-emitsweep")
+    os.makedirs(out_dir, exist_ok=True)
+    if kind == "limits" and old_spec.partition("=")[0] != new_spec.partition("=")[0]:
+        raise SystemExit("[emit_sweep] --data limits: OLD and NEW must name ONE limit")
+    bin_a, data_a = data_side_args(args, kind, old_spec, "old", out_dir, tree)
+    bin_b, data_b = data_side_args(args, kind, new_spec, "new", out_dir, tree)
+    bases = [b for b in args.bases.split(",") if b]
+    log(f"[emit_sweep] --data {kind}: old={old_spec} ({bin_a} {data_a}) "
+        f"new={new_spec} ({bin_b} {data_b}) bases={bases}")
+    if kind == "analysis":
+        _, _, err = compile_stream_c(bin_a, "abc", args.timeout, extra=data_a, want_err=True)
+        if b"KSTRACE\t" not in (err or b""):
+            raise SystemExit(f"[emit_sweep] --data analysis: {bin_a} writes no KSTRACE "
+                             "record; build it with -DPCREC_KS_TRACE and pass --bin")
+
+    patterns = [] if args.no_corpus else enumerate_corpus(bin_a, tree, args.timeout)
+    for pf in args.patterns_file:
+        patterns += read_patterns_file(pf)
+    pats = distinct_patterns(patterns, args.every)
+    if args.limit:
+        pats = pats[:args.limit]
+    cells = [(st, b, p) for p in pats for b in bases for st in ("c-default", "c-vm")]
+    if not cells:
+        raise SystemExit("[emit_sweep] --data: empty population (K35)")
+    engine_of = {"c-default": None, "c-vm": "vm"}
+
+    def one(cell):
+        st, b, p = cell
+        a = data_compile(bin_a, p, ARM_BASES[b], data_a, engine_of[st], args.timeout)
+        z = data_compile(bin_b, p, ARM_BASES[b], data_b, engine_of[st], args.timeout)
+        return cell, a, z
+
+    movers, problems, compiled = [], [], 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as ex:
+        for (st, b, p), a, z in ex.map(one, cells):
+            compiled += 1
+            pe = encode_escape(p if isinstance(p, bytes) else
+                               p.encode("utf-8", "surrogateescape"))
+            if kind == "analysis":
+                for side, r in (("old", a), ("new", z)):
+                    stamp = data_stamp_items(r[2]) if r[0] else None
+                    traced = {(q, bun) for q, _, bun in r[5]}
+                    if stamp is not None and stamp != traced:
+                        problems.append(f"STAMP/TRACE {st} {b} {pe} ({side}): stamp "
+                                        f"{sorted(stamp)} != final attempt's trace {sorted(traced)}")
+            moved = a[0] != z[0] or a[1] != z[1] or a[3] != z[3]
+            if not moved:
+                continue
+            if kind == "analysis":
+                att = ",".join(sorted({f"{q}@{rd}" for q, rd, _ in a[4] + z[4]}))
+            else:
+                att = f"limit:{old_spec.partition('=')[0]}"
+                if data_tokens(a[0], a[2]) != data_tokens(z[0], z[2]) or a[0] != z[0]:
+                    att += "+tokens"
+            if kind == "analysis" and not att:
+                problems.append(f"UNATTRIBUTED {st} {b} {pe}: the artifact moved and "
+                                "no reader is traced (an empty attribution, S963)")
+            movers.append((kind, st, b, pe,
+                           sha(a[1])[:16] if a[0] else "-", sha(z[1])[:16] if z[0] else "-",
+                           data_tokens(a[0], a[2]), data_tokens(z[0], z[2]),
+                           "0" if a[0] else "1", "0" if z[0] else "1", att or "-"))
+
+    # stream 4: composition, the data argument on the file operand
+    comp = [] if args.no_corpus else find_files(tree, (".rxt", ".rxtin"))
+    if args.limit:
+        comp = comp[:args.limit]
+    for i, f in enumerate(comp):
+        ra, fa, _ = run_composition(bin_a, f, os.path.join(out_dir, "data_comp"), f"a{i}",
+                                    args.comp_timeout or 90, extra=data_a)
+        rb, fb, _ = run_composition(bin_b, f, os.path.join(out_dir, "data_comp"), f"b{i}",
+                                    args.comp_timeout or 90, extra=data_b)
+        na = {k: DATA_STAMP_RE.sub(b"", v) for k, v in fa.items()}
+        nb = {k: DATA_STAMP_RE.sub(b"", v) for k, v in fb.items()}
+        compiled += 1
+        if ra != rb or na != nb:
+            movers.append((kind, "composition", "-", os.path.relpath(f, tree), "-", "-",
+                           "-", "-", "0" if ra == 0 else "1", "0" if rb == 0 else "1",
+                           "composition"))
+
+    mpath = args.movers or os.path.join(out_dir, f"movers_{kind}.tsv")
+    with open(mpath, "w") as fh:
+        fh.write(DATA_TSV_HEADER + "\n")
+        for m in sorted(movers):
+            fh.write("\t".join(m) + "\n")
+    print(f"[data {kind}] {compiled} artifacts compiled per side, {len(movers)} movers "
+          f"-> {mpath}")
+    for m in sorted(movers):
+        print(f"  MOVER {m[1]} {m[2]} {m[3]}  tokens {m[6]} -> {m[7]}  "
+              f"refused {m[8]}->{m[9]}  attribution {m[10]}")
+    if args.expect_movers:
+        want = read_expect_movers(args.expect_movers)
+        got = {(m[1], m[2], m[3]): m[10] for m in movers}
+        for k in sorted(set(want) - set(got)):
+            problems.append(f"EXPECTED MOVER MISSING: {' '.join(k)}")
+        for k in sorted(set(got) - set(want)):
+            problems.append(f"UNEXPECTED MOVER: {' '.join(k)} ({got[k]})")
+        for k in sorted(set(want) & set(got)):
+            if want[k] is not None and want[k] != got[k]:
+                problems.append(f"ATTRIBUTION {' '.join(k)}: census {got[k]}, "
+                                f"hand list {want[k]}")
+        print(f"[data {kind}] hand list {args.expect_movers}: {len(want)} rows")
+    for pr in problems:
+        print(f"  FAIL {pr}")
+    print(f"[data {kind}] {'OK' if not problems else 'FAIL'} ({len(problems)} problem(s))")
+    return 0 if not problems else 1
+
+
 STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
                "emit-ir-auto", "stderr")
 
@@ -2533,8 +2802,13 @@ def main():
     ap.add_argument("--no-variant-floor", action="store_true")
     ap.add_argument("--emit-pins")
     ap.add_argument("--trace-order", action="append", default=[])
+    ap.add_argument("--data", nargs=3, metavar=("KIND", "OLD", "NEW"))
+    ap.add_argument("--movers")
+    ap.add_argument("--expect-movers")
     args = ap.parse_args()
 
+    if args.data:
+        sys.exit(run_data_census(args))
     if not args.ref and not args.ref_bin:
         ap.error("one of --ref / --ref-bin is required")
     if args.bin and args.tree_rev:

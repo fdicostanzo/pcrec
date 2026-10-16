@@ -1,0 +1,8 @@
+# [KNOW-SRC] K0's findings fixture population (tests/findings/data_census/
+# CLAUDE.md): old/fx.rxt makes `Z` rare and `@` common, new/fx.rxt the
+# reverse, every other count identical (so every other byte's rate is too).
+(x?)([a-z]+)+Z.@\1
+Z[^@]*@
+abc
+xyz
+[0-9]+

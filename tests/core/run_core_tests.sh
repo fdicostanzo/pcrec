@@ -165,6 +165,22 @@ else
     bad "flag_access_check: $(grep -c '^FAIL' "$OUT6") finding(s) — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [KNOW-SRC] K0 the knowledge module's DEPENDENCY RULE (S989): the parts
+# (src/core/ksrc.c/.h) include libc + core/ksrc.h only and their object calls
+# nothing `pcrec_`. A text scan and a standalone compile + `nm -u`, with a
+# planted-include control; see ksrc_deps_check.sh's header.
+# ---------------------------------------------------------------------------
+OUT7="$WORKDIR/ksrc_deps_check.out"
+mkdir -p "$WORKDIR/ksrc"
+CC="$CC" bash "$SCRIPT_DIR/ksrc_deps_check.sh" "$ROOT_DIR" "$WORKDIR/ksrc" | tee "$OUT7"
+bin7_rc="${PIPESTATUS[0]}"
+if [ "$bin7_rc" -eq 0 ]; then
+    ok "ksrc_deps_check: $(grep -c '^PASS' "$OUT7") sub-checks green"
+else
+    bad "ksrc_deps_check: $(grep -c '^FAIL' "$OUT7") sub-check(s) failed — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"
