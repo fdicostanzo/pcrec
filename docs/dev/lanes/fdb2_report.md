@@ -40,7 +40,31 @@ CLAUDE.md`, `compose.c`'s `s->abi` check, G2 (reads the macro). The other
 Chain `build/land/chain.sh` at c5808f920; later commits are check fixes
 and docs (listed under each row where they matter).
 
-VALIDATION_TABLE
+Pinned `taskset -c 12-15`, `-j4` (re-runs on 8-11 in an archived copy of
+the tip, `build/land/rerun/`, so the running chain's `build/` was not
+touched). Both layers: SIMD-off is every row; SIMD-on is the `simd` sweep,
+`test-memfn-simdfloor`, `test-memfn-guarded` and `test-memfn-stamps`.
+
+| run | result | log |
+|---|---|---|
+| `make`, `make strict` | rc 0, rc 0 | `chain.log` |
+| `test-memfn-finder` (incl. `run_arm_reach.sh`, F-B1-3 witness) | 13/0 (arm-reach 13/0) | `test-memfn-finder.log` |
+| `test-memfn-arms` / `-rows` / `-forms` | 383/0, 232/0, 5/0 | |
+| `test-memfn-deleg` | chain: red (`mf_result` by value); fixed 0f2c115ab; re-run 5/0 | `rerun/test-memfn-deleg.log` |
+| `test-memfn-stamps` / `-guarded` / `-simdfloor` | 25/0, 10/0 (4,088 cells), 51/0 (44 movers, floor 39) | |
+| `test-memfn-rank` / `-manifest` / `-link` / `-reach` / `-arch` | 15/0, 11/0, 8/0, 4/0, 15/0 | |
+| `test-registry` | chain: red (limits `[code]` on `CAND_ASKF_PROVEN_PREV`); fixed 975bd1821; re-run 79/0 | `rerun/test-registry.log` |
+| `test-rxtsource` / `test-prechecks` / `test-startset` | 298/0, 395/0, 35/0 | |
+| `test-cand-oracle` | 100/0 (75 witness lines, 48 rows) | |
+| `test-compound` / `test-ci-shards` | 0 failed / 9/0 | |
+| `test-codegen` | re-run 35/0 + ONE FAIL: [K37] `tests/axes/run_axes.sh:1185`, pre-existing on the base (F-B2-2); my own K37 hit fixed | `rerun/test-codegen.log` |
+| `test-memfn-g2` (quick) | 52,987,694 / 0 | `test-memfn-g2.log` |
+| emit_sweep plain (5,790 rows, 11 streams incl. dumps, composition 386 files) | 0 movers, 0 asymmetric | `sweep_plain.log` |
+| emit_sweep `--arms start` | every arm/stream 0 movers EXCEPT `--memfn=no-fd-d1` c-default 1,004 byte / 985 utf8 (§2.3, the declared flip; c-vm 0); DIFFER_PINS updated in 9543303e7 | `sweep_start.log` |
+| emit_sweep `-fmemfn-simd` / `-fcomments` / `-e utf8` | 0 movers each | `sweep_{simd,comments,utf8}.log` |
+| emit_sweep synthetic sets (all-walk, all-v1, all-wide, every-key) | 0 movers each | `sweep_syn-*.log` |
+| emit_sweep `--engine=vm`, rwquest, variants, trace; mech rows; SKB2; CTRACE census | RUNNING in the detached chain at hand-off (§9a) | `verdict.txt` |
+| hand checks before the chain | `build/tmp/cmp.sh`: 65 cells identical vs ref285 (plain, `-fcomments`, `--engine=vm`, `-fmemfn-simd`, `-e utf8`); lever fence PASS; SAB anchors 748/748 | |
 
 ### 2.3 The one declared byte delta: `--memfn=no-fd-d1`
 
@@ -56,7 +80,16 @@ measurement. Answer identity of the deny arm is test-axes' `--memfn=` arm's
 
 ## 3. The declared trace delta
 
-TRACE_DELTA
+Declared (the step's whole intended trace change), checked by the `trace`
+sweep still running in the chain (`build/land/sweep_trace.log`):
+
+- **new** `MFTRACE FDROUTE art=<a> site=<s> row=<D1|D1c|D1w> arm=<pf_memchr|pf_memchr_bounded|pf_memchr_back|pf_walk|pf_walk_bounded>` (kit, MF_TRACE build) on every one-byte PF/MLINE/VM-hat site;
+- **new** `MFROUTED\t<site>\t<kind>\t<row>` (pcrec, `PCREC_CAND_TRACE` build with `PCREC_MF_ROUTE_TRACE` set; absent otherwise, so the default trace build's record set is unchanged);
+- **changed** `MFTRACE` arm-walk records for the PF sites: the site now states `site_kind`, `empty`, `on_miss` and the table offer, so field values in the existing records move (no record added or dropped);
+- **changed** test-cand-oracle's witness reads: G1/R4/L4 ask `mf_ask` (`cand_ask`), so the reader shadow's `CANDASK` comparison records are gone and the trap lines (`cand_ask_check`, `cand_ask_field`) take their place; PRESENCE/RETRY declare `CAND_ASKF_PROVEN_PREV` (re-pinned: 75 witness lines, 48 rows, 100/0);
+- **inventory_check / start-table reads DAG**: one new member `req_site_kind` (dispositioned NOTSTART), and `dfa_cand_scan`/`attempt_next_read` re-enter the graph (F-B2-3).
+
+No other record kind moves; artifacts are byte-identical (§2).
 
 ## 4. Findings
 
@@ -189,7 +222,34 @@ SKB2-3 (counter adds 0) are its plants. Not built: per-interval counters
 
 ## 8. Sabotage (each solo)
 
-SABOTAGE_TABLE
+Each row runs solo in the chain (`run_sabotage_matrix.sh <id>` /
+`run_skb2.sh`); verdicts land in `build/land/verdict.txt` (`MECH <id>` and
+`SKB2` lines), still running at hand-off.
+
+| id | plant | expected (verdict in verdict.txt) | detector |
+|---|---|---|---|
+| S288 (re-aimed) | `one_byte` member test broken | DETECTED | test-cand-oracle / prechecks |
+| S481-S485 (re-aimed to pffind.c) | walk `moved_close` dropped; memchr `moved_close` dropped; moved test inverted; guard dropped; NOP block dropped | DETECTED | emit_sweep identity + startset hat diff |
+| S495 (re-aimed) | `dfa_cand_ppm_of` re-reads the row by name | DETECTED | `[cand-no-name-strcmp]` |
+| S289 (re-aimed) | `DFA_PF_ONE_BYTE` row predicate | DETECTED | cand-oracle |
+| S922 (new) | a finder row routed one step early | DETECTED | finder_check K/A |
+| S1019 | (derived re-run) | DETECTED | — |
+| SKB2-1 | D1 unrouted | DETECTED | finder_check K |
+| SKB2-2 | arm-reach counter written with the lever off | DETECTED | run_arm_reach lever-off identity |
+| SKB2-3 | counter adds 0 | DETECTED | run_arm_reach entering fixture |
+| SKB2-4 | walk post-test dropped | DETECTED | arms pins + answers |
+| SKB2-5 | `proven_prev` not filled | DETECTED | `(?m)^\n` dominated witness |
+
+The SKB2 ids are placeholders for real `tests/mech` ids (OWED, §9).
+
+## 9a. The chain still running at hand-off
+
+`build/land/chain.sh` (tip c5808f920; `run_skb2.sh` and mech archive HEAD
+at run time). Remaining: sweeps `vm`, `rwquest`, `variants`, `trace`; MECH
+S288 S481-S485 S495 S1019 S922; SKB2; CTRACE build; ROUTED_CENSUS
+(writes `build/land/routed_floors_measured.tsv`, the D1/D1c/D1w floors to
+pin into `tests/memfn/row_floors.tsv`). Completion line: `CHAIN_DONE` in
+`build/land/verdict.txt`.
 
 ## 9. OWED (heavy runs, the manager's slot)
 
