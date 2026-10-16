@@ -2141,12 +2141,12 @@ kit.reval.outlier.ns	ns	50000000	G3: outlier floor, per call
 - **Keys** follow §1.3's grammar: an owner, a quantity, then tokens. The owner's own
   declaration orders the tokens. No placeholders.
 - **Values** are integers in `value_e6` under §1.7's literal rounding rule. The units are
-  `ratio` (a fraction × 10^6), `ns` (ns × 10^6) and `count` (× 10^6, so an integer count
+  `ratio` (a fraction × 10^6), `ns` (ns × 10^6; unit byte `0x05`, a new row of §1.6's table) and `count` (× 10^6, so an integer count
   is `n000000`), and each has a code in the spec's unit table beside §1.6's. A percentage
   bar is a `ratio`. There is no float, so two readers cannot disagree on a bar.
 - **`note`** is free text. It is display only, and the digest does not cover it.
 - **The ITEM digest IS the prereg hash.** It is FNV-1a-64 over the 13 domain bytes
-  `pcrec-eval-1 `. Then, for each `params` row in canonical (bytewise) key order, it
+  `pcrec-eval-1\0`. Then, for each `params` row in canonical (bytewise) key order, it
   takes the key, a NUL, the unit byte, and `value_e6` as int64 LE. This is §1.6's row
   digest with the status byte dropped, since a parameter has no status. It is a
   hand-written row digest like every other kind's. Deriving every kind's item digest
