@@ -1,0 +1,30 @@
+patterns 5790
+default/byte	ok-consulted-moved	1161
+default/byte	ok-consulted-same	4175
+default/byte	refused-both	454
+default/utf8	ok-consulted-moved	707
+default/utf8	ok-consulted-same	4657
+default/utf8	refused-both	426
+noreq-pf/byte	ok-consulted-moved	263
+noreq-pf/byte	ok-consulted-same	1798
+noreq-pf/byte	ok-quiet	3275
+noreq-pf/byte	refused-both	454
+noreq-pf/utf8	ok-consulted-moved	279
+noreq-pf/utf8	ok-consulted-same	1839
+noreq-pf/utf8	ok-quiet	3246
+noreq-pf/utf8	refused-both	426
+noreq-vm/byte	ok-quiet	5337
+noreq-vm/byte	refused-both	453
+noreq-vm/utf8	ok-quiet	5367
+noreq-vm/utf8	refused-both	423
+noreqbyte/byte	ok-consulted-moved	557
+noreqbyte/byte	ok-consulted-same	2806
+noreqbyte/byte	ok-quiet	1973
+noreqbyte/byte	refused-both	454
+noreqbyte/utf8	FAIL-moved	2
+noreqbyte/utf8	ok-consulted-moved	539
+noreqbyte/utf8	ok-consulted-same	2918
+noreqbyte/utf8	ok-quiet	1905
+noreqbyte/utf8	refused-both	426
+#	noreqbyte/utf8	FAIL-moved	tests/uprops/size_ladder_prefilter_drop.rxt	b'(\\p{Xwd})x'
+#	noreqbyte/utf8	FAIL-moved	tests/utf8/wclass_illformed.rxt	b'x(\\p{Xwd})y'

@@ -417,6 +417,9 @@ Maintenance: update this file when files are added/removed or change roles.
   walk-in-helper assembly check; own CLAUDE.md).
 - `window_contract_rev3/` — window_contract.md revision 3's stamp census
   (own CLAUDE.md).
+- `window_contract_rev31/` — window_contract.md revision 3.1's evidence: the
+  B1 witness, the analysis-axis refusal census and the C-PERT prototype (own
+  CLAUDE.md).
 - `row_contracts.md` — [MEMFN-ROWCON] light design (rev 1, 2026-10-07,
   Frank after K96): one first-match table mechanism, exported by the kit.
   It has a field vocabulary (`fields.def`), per-row `honours` allowlists
@@ -482,3 +485,21 @@ Maintenance: update this file when files are added/removed or change roles.
       alternative is stated exactly in §3.7.5.
     - Q3 (the stamp's meaning) and Q4 (F-2, the `rate:builtin-prior`
       mislabel) are new.
+  - **REVISION 3.1 (lane `wcfix`, 2026-10-16) answers the light panel r4
+    (`../../dev/reviews/2026-10-16-r4-window-contract-rev3.md`, 1 blocker, 5
+    majors, 6 minors, all ACCEPTED) and Frank's Q3 ruling (CONSULTED, D167
+    add. 2); read its §R3.1 first.**
+    - B1: the offer derives through a NON-RAISING status derivation, the
+      refusal stays on the ASK path, and an underivable kind refuses iff it is
+      consulted (rule 9), so no refusal moves at E-1 or B3b. The panel's
+      witness is reproduced and the refusal population is counted across the
+      analysis axis; G1-E1 gains it with floors.
+    - The render point for `_FINDINGS` and `_MEASURES` moves after
+      `mf_art_end` in its own zero-mover commit RP (§3.7.3a); the object is
+      built eagerly after the chain resolves; `find_queries[]` is the query
+      vocabulary's one home.
+    - Provenance is read from each block's own `provenance` stanza, with
+      `bytes`/`fidelity` carried (pending Q5, discussion form).
+    - X1: C-PERT, a perturbation check of the stamp against the bytes, with a
+      prototype on main: 0 null-control failures and exactly 2 FAILs, which
+      are F-5 (the stamp reports only the final attempt; Q6).
