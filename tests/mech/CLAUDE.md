@@ -3867,6 +3867,16 @@ so the new DIFFER_PINS arms read byte-identical to their base. Arm `emitsweep`
 (`scripts/tests/emit_sweep.py.test`'s `--arms start` over the manifests),
 DETECTED 1fail/43pass each (lane tip a6b933692).
 
+**S922, S1079-S1083 (lane fdb2, 2026-10-16, [MEMFN] R17-b′ B2;
+r17b_prime.md rev 3 §8.3, R-MS6):** S922 a finder row (R7) routed before its
+step; S1079 D1's routed bit left 0 (one-byte sites render their pre-table
+form, same text, so byte identity cannot see it); S1080 the arm-entry counter
+written with the harness lever off; S1081 the counter adds 0; S1082 the kit's
+walk post-test dropped; S1083 the context stop's class proves nothing
+(`proven_prev` unfilled, F-B1-3). All arm `memfnfinder`
+(tests/memfn/run_finder.sh, which runs run_arm_reach.sh). S1084-S1088 are
+allocated to fdb2 and unused. Figures: `docs/dev/lanes/fdb2_report.md`.
+
 **S917, S919, S921, S1018-S1020, S1025 (lane fdb1, 2026-10-16, [MEMFN] R17-b′
 B1; r17b_prime.md rev 3 §8.3):** the B1 rows of S911-S922 and SN-1..SN-9
 (SN-k = S(1016+k)). S917 an absent set key read as 0 (`fd_lookup`), S919 an
