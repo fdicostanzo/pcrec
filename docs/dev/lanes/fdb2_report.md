@@ -29,7 +29,7 @@ NOT hold and is corrected in its own commit (16770a07c, §5.2).
 | the routed-record count (§1.6 [rev3 B5]) | `memfn_sites.c` `routed_record` (pcrec's `MFROUTED` record from `mf_result.row`, trace build + `PCREC_MF_ROUTE_TRACE`); census `docs/design/memfn/r17b_prime/fdb2/routed_census.py` |
 | checks | `tests/memfn/finder_check.py` K (routing), A (routed set per step); `run_finder.sh` F-B1-3 witness; `rows.tsv` D1/D1c/D1w → `pcrec` (signature from `MFTRACE FDROUTE`), `row_floors.tsv`; `scripts/emit_sweep.py` fd-d1 DIFFER floors |
 | floor token (item 3) | separate commit 16770a07c: `finder.c` `K_EPS`, `memfn/data/sets/generate.py` + four synthetic sets, B4's predicted-mover manifest regenerated |
-| sabotage | re-aimed S288, S481-S485, S495; new S922 (allocated, design §8.3); staged SKB2-1..5 (`docs/design/memfn/r17b_prime/fdb2/sabotage/`); §8 |
+| sabotage | re-aimed S288, S481-S485, S495; new S922 (allocated, design §8.3); S1079-S1083 (`tests/mech/sabotages/`); §8 |
 
 `MF_SITE_ABI` readers by grep: `memfn.h` (value + log), `memfn/include/
 CLAUDE.md`, `compose.c`'s `s->abi` check, G2 (reads the macro). The other
@@ -63,7 +63,8 @@ touched). Both layers: SIMD-off is every row; SIMD-on is the `simd` sweep,
 | emit_sweep `--arms start` | every arm/stream 0 movers EXCEPT `--memfn=no-fd-d1` c-default 1,004 byte / 985 utf8 (§2.3, the declared flip; c-vm 0); DIFFER_PINS updated in 9543303e7 | `sweep_start.log` |
 | emit_sweep `-fmemfn-simd` / `-fcomments` / `-e utf8` | 0 movers each | `sweep_{simd,comments,utf8}.log` |
 | emit_sweep synthetic sets (all-walk, all-v1, all-wide, every-key) | 0 movers each | `sweep_syn-*.log` |
-| emit_sweep `--engine=vm`, rwquest, variants, trace; mech rows; SKB2; CTRACE census | RUNNING in the detached chain at hand-off (§9a) | `verdict.txt` |
+| emit_sweep `--engine=vm` / rwquest (177 questions, `--no-corpus`) | 0 movers each | `sweep_{vm,rwquest}.log` |
+| emit_sweep variants, trace; mech rows; CTRACE census | in `chain2.sh` (§9a) | `verdict.txt` |
 | hand checks before the chain | `build/tmp/cmp.sh`: 65 cells identical vs ref285 (plain, `-fcomments`, `--engine=vm`, `-fmemfn-simd`, `-e utf8`); lever fence PASS; SAB anchors 748/748 | |
 
 ### 2.3 The one declared byte delta: `--memfn=no-fd-d1`
@@ -145,7 +146,7 @@ offset -1) and read `proven_prev` (declared `CAND_ASKF_PROVEN_PREV` on
 PRESENCE and RETRY); its one byte is the scanned byte, and a candidate found
 at or after `start` puts it in the pre-check's window, which is the
 soundness G1's identity needs. Zero movers on every sweep; the witness
-`(?m)^\n` (dominated) is in `make test-memfn-finder`; SKB2-5 plants the
+`(?m)^\n` (dominated) is in `make test-memfn-finder`; S1083 plants the
 regression (DETECTED, §8).
 
 ### 5.2 fdb1's `kit.eps.findall.l64k`: does NOT hold
@@ -188,43 +189,52 @@ compiler's and names no counter; lever on, the row's arm counts ≥ 1 on a
 subject that enters it and 0 on one that does not (a start past the end, or
 a first attempt that matches before MLINE's seek). The lever's fence
 (compound.md §A.11) holds: no new global in `libpcrec.a`, and the check is
-on `run_lever_fence.sh`'s allowlist. SKB2-2 (counter written lever-off) and
-SKB2-3 (counter adds 0) are its plants. Not built: per-interval counters
+on `run_lever_fence.sh`'s allowlist. S1080 (counter written lever-off) and
+S1081 (counter adds 0) are its plants. Not built: per-interval counters
 (no dispatch exists yet); the M0 REACH floor itself is [MEASURE-SET]'s.
 
 ## 7. Proposed main-side diffs (main's files; not edited)
 
-1. **C17 `tests/memfn/site_manifest.tsv`, the `site_kind` column.** Add a
-   column `kind` (the consumer kinds a row's instances state), with C17
-   checking each instance's stated kind against it:
-   `PF	… 	kind=DFA_SCAN,DFA_HAT,HYB_PF,VM_ATTEMPT`;
-   `MLINE	…	kind=DFA_ATTEMPT`;
-   `PRE	…	kind=DFA_SCAN,HYB_PF,VM_ATTEMPT,DFA_ATTEMPT`; every other row `-`.
-   The PF row's `companions` lose nothing (every listed function still
-   exists; `pf_emit_skip`, `pf_find_kind`, `pf_moved_reseed_of` may join).
-2. **C10 fixtures for the one-byte rows** (`memfn_sites.c`'s C10 /
-   `tests/memfn/run_deleg_sites.sh`): one fixture per one-byte kind, each a
-   `PcrecFind` through `find_site`: DFA_SCAN (`x+y`'s memchr, unbounded),
-   DFA_HAT (`\B(?<!a)d`, bounded with a moved hook), HYB_PF (`(x+)y` under a
-   hybrid), VM_ATTEMPT-presence (the PRE composite on a no-DFA VM route,
-   `(x[a-z]+)y\1`'s pre-check) and DFA_ATTEMPT (`(?m)^ab`'s MLINE stop); each
-   asserting the kit's `mf_result.row` (D1, D1, D1, -, D1c) and that the
-   site states its kind. The kit-side twins already run in
-   `finder_check.py` K (`byte1t`, `byte1vm`, `hat1`, `mline`).
-3. **The landmark admission's input restated as facts** (`emit_dfa.c`
-   `req_landmark_admits`, names and comments only): the input is the start
-   set's PRIOR mass, h and K (D167 add. 1); the comment that prices "what
-   the displaced scan skips" (~7920-7934 on main) becomes "the prior mass of
-   the start set the displaced row tests". No code moves.
-4. **`tests/axes/run_axes.sh`'s `--memfn=` arm**: `fd-d1` flips from
+Drafted as applyable diffs under `docs/design/memfn/r17b_prime/fdb2/proposed/`
+(`git apply --check` clean against this tip). Main reviews and merges them;
+the landmark-admission facts are main's own lane and are not drafted here
+(rulings file, item 3c).
+
+1. **C17, the `site_kind` columns** (`c17_tsv.diff`, `c17_check.diff`).
+   `tests/memfn/site_manifest.tsv` gains a `kinds` column after `op`: PF
+   `DFA_SCAN,DFA_HAT,HYB_PF,VM_ATTEMPT`, MLINE `DFA_ATTEMPT`, PRE
+   `DFA_SCAN,HYB_PF,VM_ATTEMPT,DFA_ATTEMPT`, every other row `-`.
+   `site_manifest_check.py` reads nine columns, checks each listed kind
+   against `memfn.h`'s `mf_site_kind` enum (read independently of the
+   manifest; UNSTATED refused), and gains `rule5()`: the column against the
+   kinds the corpus pass OBSERVES per site, both directions (an observed kind
+   not listed; a listed kind never observed). Not yet wired: rule 5's caller
+   in `rule2()`, which needs `site_census`'s traced record to carry
+   `s->site_kind` beside the caller (one field). The two diffs land together:
+   the column alone makes the 8-column reader fail.
+2. **C10's one-byte fixtures** (`c10_fixtures.diff`, `c10_check.diff`). A
+   new `tests/memfn/c10_onebyte.tsv`, one fixture per one-byte consumer
+   kind, each with the site, the stated kind and the routed finder row:
+   `x+y` PF/DFA_SCAN/D1, `\B(?<!a)d` PF/DFA_HAT/D1, `(x+)y` PF/HYB_PF/D1,
+   `(x[a-z]+)y\1` PF/VM_ATTEMPT/D1w, `(?m)^ab` MLINE/DFA_ATTEMPT/D1c (PRE
+   states a kind but is not a routed site, so it has no record).
+   `run_deleg_sites.sh` gains check 5: a `-DPCREC_CAND_TRACE` build compiles
+   each fixture with `PCREC_MF_ROUTE_TRACE=1` and its `MFROUTED` records must
+   hold exactly that (site, kind, row) and no record of another kind, with a
+   fixture-count floor and a planted kind swap that must be flagged. The
+   expected values come from the design (§1.6, §4.3), not from a record;
+   they were NOT run here (a trace build fell inside a HOLD), so the first
+   run of check 5 is their verification. Cost: check 5 adds one trace build
+   to `make test-memfn-deleg`; sharing `run_cand_oracle.sh`'s trace build is
+   the cheaper alternative.
+3. **`tests/axes/run_axes.sh`'s `--memfn=` arm**: `fd-d1` flips from
    ASSERT_ZERO to DIFFER with floor 1,004 (byte) / 985 (utf8) c-default, as
    emit_sweep now has it.
 
 ## 8. Sabotage (each solo)
 
-Each row runs solo in the chain (`run_sabotage_matrix.sh <id>` /
-`run_skb2.sh`); verdicts land in `build/land/verdict.txt` (`MECH <id>` and
-`SKB2` lines), still running at hand-off.
+Each row runs solo in the chain (`run_sabotage_matrix.sh <id>`); verdicts
+land in `build/land/verdict.txt` (`MECH <id>` lines).
 
 | id | plant | expected (verdict in verdict.txt) | detector |
 |---|---|---|---|
@@ -234,22 +244,24 @@ Each row runs solo in the chain (`run_sabotage_matrix.sh <id>` /
 | S289 (re-aimed) | `DFA_PF_ONE_BYTE` row predicate | DETECTED | cand-oracle |
 | S922 (new) | a finder row routed one step early | DETECTED | finder_check K/A |
 | S1019 | (derived re-run) | DETECTED | — |
-| SKB2-1 | D1 unrouted | DETECTED | finder_check K |
-| SKB2-2 | arm-reach counter written with the lever off | DETECTED | run_arm_reach lever-off identity |
-| SKB2-3 | counter adds 0 | DETECTED | run_arm_reach entering fixture |
-| SKB2-4 | walk post-test dropped | DETECTED | arms pins + answers |
-| SKB2-5 | `proven_prev` not filled | DETECTED | `(?m)^\n` dominated witness |
+| S1079 | D1 unrouted | DETECTED | finder_check K |
+| S1080 | arm-reach counter written with the lever off | DETECTED | run_arm_reach lever-off identity |
+| S1081 | counter adds 0 | DETECTED | run_arm_reach entering fixture |
+| S1082 | walk post-test dropped | DETECTED | arms pins + answers |
+| S1083 | `proven_prev` not filled | DETECTED | `(?m)^\n` dominated witness |
 
-The SKB2 ids are placeholders for real `tests/mech` ids (OWED, §9).
+S1079-S1083 are main's allocation (S1079-S1088 to fdb2; S1084-S1088 unused), moved into `tests/mech/sabotages/` (81add5444); the matrix runs them.
 
-## 9a. The chain still running at hand-off
+## 9a. The chain's remaining steps
 
-`build/land/chain.sh` (tip c5808f920; `run_skb2.sh` and mech archive HEAD
-at run time). Remaining: sweeps `vm`, `rwquest`, `variants`, `trace`; MECH
-S288 S481-S485 S495 S1019 S922; SKB2; CTRACE build; ROUTED_CENSUS
-(writes `build/land/routed_floors_measured.tsv`, the D1/D1c/D1w floors to
-pin into `tests/memfn/row_floors.tsv`). Completion line: `CHAIN_DONE` in
-`build/land/verdict.txt`.
+`chain.sh` was stopped (safekill) at its `variants` sweep when the rulings
+file's HOLD rule arrived; the steps it had not reached run in
+`build/land/chain2.sh` at the tip 81add5444, each started only while
+`fdb2_rulings.md` has no `HOLD` line: MECH S1079-S1083 S922 S288 S481-S485
+S495 S1019 (solo), the `trace` and `variants` sweeps, the CTRACE build and
+ROUTED_CENSUS (writes `build/land/routed_floors_measured.tsv`, the D1/D1c/D1w
+floors for `tests/memfn/row_floors.tsv`). Verdict lines append to
+`build/land/verdict.txt`; completion line `CHAIN2_DONE`.
 
 ## 9. OWED (heavy runs, the manager's slot)
 
@@ -273,10 +285,10 @@ pin into `tests/memfn/row_floors.tsv`). Completion line: `CHAIN_DONE` in
 | PR-3: `site_kind`, categorical, DFA_ATTEMPT | yes | `mf_site_kind` (`MF_SK_*`), every builder |
 | PR-4: `need` re-numbered, UNSTATED zero, stated by every builder | yes | `mf_need`; `pred_kinds` refuses; G2 + fixtures state it |
 | PR-9: G1, R4, L4 switched to `mf_ask`; reader shadow retired | yes | `cand_ask`, `dfa_cand_scan`, `dfa_cand_ppm_of`, `start_landing_applies` |
-| A11: landmark admission's input restated (names/comments) | NO, proposed as a main-side diff | §7 item 3 (main's file region; the brief listed it as main's) |
+| A11: landmark admission's input restated (names/comments) | NO: main's own lane (rulings 3c) | — |
 | KW-1 (D1), KW-2, KW-3, KW-4 | yes | pffind.c (guard, post-test, NOP block, moved hook) |
 | KW-10 (the G2 one-byte family) | partial: count rule in finder_check K; NONE not built | OWED (§9) |
-| A8: C10 fixtures, C17 `site_kind` columns | proposed diffs, not edited (main's files) | §7 items 1-2 |
+| A8: C10 fixtures, C17 `site_kind` columns | drafted as applyable diffs (main's files) | §7 items 1-2, `fdb2/proposed/` |
 | PR-10 (PF comment) unchanged, proven by `-fcomments` arm | yes | §2 SWEEP comments: 0 movers |
 | zero-mover | yes, every arm except the declared `fd-d1` flip | §2, §2.3 |
 | F-B1-3 | yes | §5.1, `proven_prev`, witness in `test-memfn-finder` |
@@ -285,5 +297,5 @@ pin into `tests/memfn/row_floors.tsv`). Completion line: `CHAIN_DONE` in
 | Q-19: `PCREC_NO_REQ_SET_LEAD` alias, bit 45 untouched | yes (not touched) | `git diff 285590dc6.. -- lib/pcrec.h src/core/axes.def` shows no bit-45 line |
 | declared trace delta | yes | §3 |
 | no pcrec byte move without a stop | none found (no abi event) | §2 |
-| sabotage SK-B2-n, each solo, DETECTED | yes (SKB2-1..5) + re-aims | §8 |
+| sabotage SK-B2-n -> S1079-S1088, each solo, DETECTED | S1079-S1083 + S922 + re-aims; verdicts in the chain | §8 |
 | CLAUDE.md files updated | yes | memfn/, memfn/include, memfn/src, src/gen, tests/memfn, cli, docs/design/memfn/r17b_prime |
