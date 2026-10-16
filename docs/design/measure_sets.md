@@ -1,10 +1,55 @@
-# Measurement sets — the format, the store, loading, the kit channel, the tool (rev 2)
+# Measurement sets — the format, the store, loading, the kit channel, the tool (rev 3)
 
-Status: DESIGN ONLY, revision 2 (lane msetrev, 2026-10-14, from main `58338a09f`, abi 78).
-Revision 1 was lane msetdes (same day). Nothing is built; nothing under `src/`, `cli/`,
-`lib/` or `tests/` changes. Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166
-and its addenda 1/1.1 and 2
-(read D161 addenda 11-13, D162 and its addenda, D149 and D157 with it). It is part of the
+Status: DESIGN ONLY, revision 3 (lane msrev3, 2026-10-16, from main `063b4a4b4`, abi 78).
+Revision record: rev 3 + sibling edit, 2026-10-16 (lane msib: `<PREFIX>_MEASURES` render
+point and union-over-attempts, from `memfn/window_contract.md` rev 3.1 §3.7.3a and D167
+addenda 2 and 3; §3.5, §4.2, §9.2 part 5).
+Revision 2 was lane msetrev (2026-10-14, from `58338a09f`); revision 1 was lane msetdes
+(same day). Nothing is built; nothing under `src/`, `cli/`, `lib/` or `tests/` changes.
+Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166 and its addenda 1/1.1 and 2,
+and by D167 (Q-R17P-14)
+(read D161 addenda 11-13, D162 and its addenda, D149 and D157 with it).
+
+**Revision 3 answers the light re-check r2
+(`../dev/reviews/2026-10-16-r2-measure-sets-recheck.md`: 0 BLOCKER, 8 MAJOR, 11 MINOR,
+5 unlocks).** Read §R3 first. Changed text carries `[r2 <id>]` in place. Revision 2's
+own record (§R2) follows it unchanged.
+
+## R3. What revision 3 changed, by finding
+
+Every finding is ACCEPTED. None is rejected. One MINOR is accepted in part, with the rest
+deferred to a named trigger (n7).
+
+| finding | disposition | section | how |
+|---|---|---|---|
+| M1 the evaluator parameter table missing | ACCEPTED | §9.1, §9.1a, §9.5, §9.11 (new) | A fourth kind row, `evaluator-params`: FILE only, no store, no flag, no artifact stamp; its item digest IS the prereg hash. The placement rule is a first-match row table (§9.1a). §9.11 states the canonical format the kit's `prereg.tsv` uses from today. Whether the kit reads it through pcrec's parts or its own reader is OQ-1 (§10.6) |
+| M2 the shared resolver contradicts the analysis kind | ACCEPTED | §3.2, §9.2 part 2, §9.5, §9.7 | Every divergence is a declared column of the kind row: `flag_classify`, `list_classify`, `s2_mismatch`, `s2_multi`, `revs`. Measures adopt the SHIPPED `name-else-file` classification. Measures REFUSE an S2 mismatch, analysis FALLS THROUGH, and §3.2 says why they differ. K1's zero-mover witnesses name `tests/findings/res_fixtures.py` |
+| M3 the round trip shares its reader and writer with its subject | ACCEPTED | §9.6, §8.5, §5.2, §3.2 | (a) A new check R5, decoded = independent: the C loader's field-by-field decode equals the python parser's decode; for analysis, the resolution digests equal `findings_ref.py bundle-digest`. S983 plants a symmetric column swap that R1-R4 miss. (b) R3's independent side for the analysis kind is `analyze/`'s own bundle-text reader, extended at K3 to every section; that extension is priced. (c) Fixed by M2: `--measures=f.tsv` is now a FILE |
+| M4 the census tool duplicates `emit_sweep.py` | ACCEPTED | §9.3, §8.4, §8.5 | The census is an `emit_sweep.py` MODE (`--data KIND OLD NEW`), with an attribution stream and a movers-TSV writer. Its population is emit_sweep's pinned streams. `knowledge_census.sh` and `census_population.tsv` are withdrawn. S952 re-aims onto emit_sweep's existing reach floor |
+| M5 one digest column cannot express analysis's two digests | ACCEPTED | §9.2 part 5, §9.5, §9.6, §1.6 | Each kind row has two digest ROLES, ITEM and STAMP. Each role is a literal domain BYTE STRING with its length, plus a sub-key policy (`none` or `query`). The shipped `pcrec-find-1\0<query>` and `pcrec-find-rows-1` are grandfathered byte for byte. No domain is renamed or derived. R1 uses the ITEM digest. A K1 gate pins every shipped `_FINDINGS` stamp and `rows_digest` unchanged. The note states what `rows_digest` does not cover |
+| M6 the `lib` resolver is an unplaced third member | ACCEPTED | §9.1, §9.5, §9.7, §11 F12 | `lib` is a resolve-only kind row: no stamp, no digest, no flag, and its own stops (the source's directory, then `-I`). Its entry match is a COLUMN, `entry_match = probe-exists`, which keeps K1 zero-mover. The case-exactness drift is filed as finding F12 against `rxt_source.c`. Fixing it flips that column to `exact`, as its own caller-visible change. The reserved `lib <store-name>` is U4 |
+| M7 the reach lever crosses the kit boundary | ACCEPTED | §4.4 (R-MS6), §8.1, §8.5 | R-MS6 asks the kit for a harness-only arm-entry counter under the reserved prefix. The admitted-arm list is the `memfn` fired-rows section (R-MS4), checked against the synthetic `dispatch` set's construction. Python reads no kit predicate. S956 re-aims at the hook |
+| M8 a core→parse link edge in a "dependency-free" module | ACCEPTED | §9.2, §7.1 | The kind-independent PARTS (`src/core/ksrc.c`) include only libc and `ksrc.h`. They allocate and write through two small callback structs, and hold no kinds table. The table `ksrc_kinds[]` is assembled at the library tier. The analysis row is registered from `src/parse/`. `pcrec-measure` compiles the parts plus the measures row and nothing else. Its dependency set is stated, with a link check (S989) |
+| r1 msc1-5 PARTIAL | ACCEPTED | as M7 | discharged by M7's fix |
+| r1 msc2-9 PARTIAL | ACCEPTED | as M1, M2, M4, M6 | the family is complete: four ruled kinds plus `lib`, limits placed (§9.1a, U3), emit_sweep unified, the resolver's divergences declared |
+| n1 sabotage re-aims not derived | ACCEPTED | §9.7 | K1 delivers a DERIVED edit set and derived re-aims (re-aim or re-run) for every `SAB_FILE=` row anchored in `rxt_find.c` or `findings.c`, plus `limits_check.sh`'s `PCREC_FIND_NTBL/NBUNDLES` reader |
+| n2 `analyze/` is a second writer and reader | ACCEPTED | §9.1, §9.6, §9.9 | It is a DELIBERATELY INDEPENDENT TWIN, not a member that "exists once". It serves as R3's control |
+| n3 per-kind special cases written as prose | ACCEPTED | §9.5 | They become columns: `bare_view` (`canonical` or `shipped`) and `r4` (`required` or `exempt`) |
+| n4 two attribution mechanisms for analysis | ACCEPTED | §9.3 | Attribution is the lookup TRACE. The `_FINDINGS` stamp items are its cross-check |
+| n5 shadow rule keyed on id only | ACCEPTED | §3.2, §3.3, §9.6 | The shadow check is keyed on (id, rev). `NAME@REV` at S2 requires the header `rev` to match. S988 |
+| n6 digest codes undefined | ACCEPTED | §1.6 | A code table for the unit byte and the status byte |
+| n7 the pcrec-side dependency hash over-stales | ACCEPTED in part | §2.4 | Recorded: pcrec rows over-stale BY DESIGN until M4. Body normalization is DEFERRED to M4, the first stage with a `pcrec.` row |
+| n8 an excluded key versus the card's `env` | ACCEPTED | §6.2 | The cross-check runs only on keys with an agreed derived direction. An excluded key lists the card's `env` beside `excluded` in an always-printed INFO bucket |
+| n9 MOVERS for a default rollback | ACCEPTED | §2.1, §8.4 | The census is keyed by TRANSITION: `measure_store/DEFAULTS.log` and `measure_store/movers/<seq>.tsv`. A rev directory holds no MOVERS file |
+| n10 oracle capture per set | ACCEPTED | §8.1, §10.1 | A set's landing bar includes the libpcre2 `match-at` capture of its generated boundary subjects. That needs the local adapter's box |
+| n11 the `ks_pick` tier | ACCEPTED | §9.2 part 3 | `ks_pick` returns the decision and the disagreement as data. The CLI prints the note through `cli_err` |
+| U1-U5 | FILED, not built | §10.4 | each with its trigger |
+| D167 Q-R17P-14 (ruled 2026-10-16) | FOLDED | §1.2, §2.4, §5.1 | `libc:<name>@<version>` is provenance in `deps`, plus a SET-level `libc-mismatch` listing flag beside `compiler-mismatch`. It is never row staleness |
+
+One question goes to Frank (§10.6, OQ-1): whether the evaluator-parameter kind's READER is
+pcrec's shared parts or the kit's own, with one shared format and digest spec either way.
+Every other choice above changes no answer and is the manager's
+(`pcrec-answer-free-choices-are-mine`). It is part of the
 framework Frank wants before further optimization (plan row [REGIME]). Its first customer
 is the kit's R17-b′ (`memfn/r17b_prime.md` §3, whose measurement table is the needs list);
 the interim shape is the kit's TSV from `memfn/regime_eval.md` Q-REVAL-10. The method a set
@@ -104,12 +149,14 @@ Recommendations (each priced below):
    - `make gen-measures` (called from `gen-tables`) embeds every non-synthetic committed rev
      as text and as a C pre-parse, written by `scripts/ksgen.c` with the one C reader
      [r1 msc1-2].
-   - A rev is immutable. `MOVERS.tsv` is the census at its landing commit [r1 msc1-1].
+   - A rev is immutable. Each `DEFAULTS` transition has a census at its landing commit,
+     `movers/<seq>.tsv`, logged in `DEFAULTS.log` [r1 msc1-1, r2 n9].
    - Staleness is COMPUTED and transitive. A stale default is CARRIED STALE, with a
      listing flag and manager review, never a landing gate (RULED, D166 add. 2)
      [r1 msc1-7/msc1-8].
 3. **Loading (§3): `--measures=NAME|NAME@REV|FILE`** and a config line `measures`, with
-   exactly `--analysis`'s precedence.
+   exactly `--analysis`'s precedence. A value is a NAME if it passes the name grammar and
+   a FILE otherwise: the shipped `--list-analysis` rule [r2 M2].
    - A bare compile reads the LATEST set at M0/M1. The envelope becomes the default at M2
      (RULED, D166 add. 2) [r1 msc2-2+msc1-4].
    - The stamp is `<PREFIX>_MEASURES`, mirrored in `rx_info.measures`, both added in M0's
@@ -145,23 +192,31 @@ Recommendations (each priced below):
      [r1 msc1-5].
    - Derived and fitted rows are recomputed by an independent python from the closed
      registry and the raw cells [r1 msc3-7].
-   - The census is at landing [r1 msc1-1]. Sabotage S943-S952, plus PROPOSED S953-S963.
-9. **[KNOW-SRC] (§9), built FIRST.** ONE knowledge-source module in `src/core/` serves the
-   analysis object, measurement sets and [TABLE-JUDGE]'s picks file:
-   - the reader/validator, the resolver, fill-only precedence, the embed generator, the
-     stamp/digest builder and the `--list-<kind>` shape;
-   - with ROUND-TRIP IDENTITY (§9.6).
+   - The census is at landing, keyed by `DEFAULTS` transition [r1 msc1-1, r2 n9].
+     Sabotage S943-S963 (allocated), plus PROPOSED S983-S990 [r2].
+9. **[KNOW-SRC] (§9), built FIRST.** The module has kind-independent PARTS in `src/core/ksrc.c`
+   (libc only) and a kinds table assembled at the library tier [r2 M8]. It serves the four
+   ruled kinds, the analysis object, measurement sets, [TABLE-JUDGE]'s picks file and the
+   EVALUATOR PARAMETER TABLE [r2 M1], plus `lib` references as a resolve-only row
+   [r2 M6]:
+   - the reader/validator, the resolver (its per-kind divergences as declared columns,
+     [r2 M2]), fill-only precedence, the embed generator, the item and stamp digests
+     (two roles, literal domains, [r2 M5]) and the `--list-<kind>` shape;
+   - with ROUND-TRIP IDENTITY (§9.6), whose R5 compares the C decode with an independent
+     reader [r2 M3].
 
-   ONE census tool serves findings, measures and limits changes. The analysis loader
-   migrates onto it at zero movers (K0-K3) before M0 [r1 msc2-9, msc1 U1]. The analysis
-   `.rxt` format is an OPEN item for the module (§9.9).
+   The data-mover census is a MODE of `scripts/emit_sweep.py` and serves findings,
+   measures and limits changes [r2 M4]. The analysis loader migrates onto the module at
+   zero movers (K0-K3) before M0 [r1 msc2-9, msc1 U1]. The analysis `.rxt` format is an
+   OPEN item for the module (§9.9).
 10. **Plan (§10).**
     - K0-K3 ([KNOW-SRC]) first.
     - M0 rides R17-b′, with the requests, and adds the measures kind.
     - M1: `--measures=` and the census's measures arm.
     - M2: the envelope and its default flip.
     - M3: the tool. M4: pcrec's own rows.
-    - Both panel questions are RULED (D166 add. 2).
+    - Both panel questions are RULED (D166 add. 2). One question is open for Frank:
+      OQ-1, the evaluator-parameter kind's reader (§10.6).
 
 ## 1. The set FORMAT
 
@@ -207,6 +262,7 @@ method	kit-grid@2
 run	slot grid2, 2026-10-xx
 box	AMD Ryzen 7 7700X; governor performance; kernel ...
 compiler	gcc 15.2.0 -O2
+libc	glibc@<version>
 code_commit	<measured-code commit>
 counters	skipped:perf_event_paranoid=4
 partial	0
@@ -253,6 +309,9 @@ field means "none" (`table_contract.md` §2¶5): the non-envelope `members` abov
 - `unit_key`.
 - `method`: the card table's `owner-name@ver` (§7.2).
 - `run`, `box`, `compiler`, `code_commit`.
+- `libc`: `<name>@<version>` of the C library the measured code ran against. It is
+  provenance, and the source of the set-level `libc-mismatch` listing flag (§2.4; D167
+  Q-R17P-14).
 - `counters`: `none` | `skipped:<reason>` | `branch-misses` (§7.4a).
 - `partial`: 1 when §7.3's PARTIAL outcome wrote the set [r1 msc3-4].
 - `rows`, `values_digest`.
@@ -413,9 +472,22 @@ the registry is refused at load.
 **Self-checking:**
 
 - `rows` equals the row count of the `rows` section (K35: the producer is not the counter).
-- **`values_digest`** is FNV-1a-64, 16 lowercase hex. It is computed over `pcrec-meas-1\0`
-  followed, for each row in canonical order (§1.7), by the key, `\0`, the unit byte, the
-  status byte, and `value_e6` as int64 LE (an empty value is `INT64_MIN`).
+- **`values_digest`** is FNV-1a-64, 16 lowercase hex. It is computed over the 13 domain
+  bytes `pcrec-meas-1\0`, a literal byte string like every kind's domain (§9.2 part 5)
+  [r2 M5]. Then, for each row in canonical order (§1.7), it takes the key, `\0`, the unit
+  byte, the status byte, and `value_e6` as int64 LE (an empty value is `INT64_MIN`).
+- **The unit and status BYTES [r2 n6]** are fixed codes in `docs/spec/measures.md`. C and
+  python each read them from the spec's table. Neither reads them from the other's source:
+
+  | unit | byte | | status | byte |
+  |---|---|---|---|---|
+  | `ratio` | `0x01` | | `measured` | `0x01` |
+  | `walkbytes` | `0x02` | | `fitted` | `0x02` |
+  | `bytes` | `0x03` | | `derived` | `0x03` |
+  | `count` | `0x04` | | `null` | `0x04` |
+
+  `0x00` is never assigned. A new unit or status is a spec row with a new code, never a
+  reuse. The python checker's digest (§8.2(d)) is written from this table.
 - **What the digest excludes.** It leaves out every provenance column (`abs_ns_e6`,
   `noise_e6`, `n`, `source`, `deps`, `tags`) and the cards and cells sections. So the same
   values from any provenance give the same digest, the property of the `<PREFIX>_FINDINGS`
@@ -471,7 +543,10 @@ measure_store/
       set.tsv                     # the set, self-checking (§1.6)
       PROVENANCE.md               # what derives from it; sha-256 of set.tsv; the run, the method card
                                   #   version, the reader script + commit; the raw transcript's location + hash
-      MOVERS.tsv                  # the census AT ITS LANDING COMMIT (§8.4); absent for a set that moves no default
+  DEFAULTS.log                    # append-only: one row per DEFAULTS transition: seq, class, old id@rev:digest16,
+                                  #   new id@rev:digest16, the movers file  [r2 n9]
+  movers/
+    0001.tsv                      # the census of transition 1, AT ITS LANDING COMMIT (§8.4)
 ```
 
 This is `oracle_store/`'s shape (one directory per source, a self-checking TSV,
@@ -484,20 +559,26 @@ box. It is not `third_party/` (nothing is vendored from outside). The analysis o
 - **The directory is `measure_store/`**, not R17-b′'s `measures/`. That was Q-MS-4,
   settled by the manager as a one-token choice (§10.5).
 
-**`MOVERS.tsv` [r1 msc1-1].**
+**The movers census, keyed by TRANSITION [r1 msc1-1, r2 n9].** Revision 2 wrote
+`MOVERS.tsv` into the new default's rev directory. That fails for a ROLLBACK: moving
+`DEFAULTS` back to an older rev that already holds MOVERS from its own landing leaves
+nowhere to write, because that directory is immutable. The census therefore belongs to the
+transition, not to a set:
 
-- **Its header** names `old` (`id@rev:digest16` of the default it replaces, per class),
-  `new`, `code_commit` (the HEAD the census ran on, that is the landing commit's parent
-  tree plus the set) and the population manifest's sha.
-- **When it is written.** It is written once, by [KNOW-SRC]'s `scripts/knowledge_census.sh
-  measures` (§9.3), in the commit
-  that adds the set as a class's default or moves a `DEFAULTS` pointer to it. It is
-  immutable from then on, like the set.
-- **What it describes.** It states what moved AT that commit. A later code change that
-  moves selections under the same default is that change's own movers (`emit_sweep`, the
-  identity gate), not this file's.
-- **A set that moves no default** (an older or alternative set, a scratch set) has no
-  MOVERS file.
+- **`DEFAULTS.log`** is append-only. Each `DEFAULTS` change appends one row: `seq`,
+  `class`, `old` and `new` (`id@rev:digest16`), and the movers file's name. `DEFAULTS` is
+  the log's last row per class, and §8.3 checks that equality.
+- **`movers/<seq>.tsv`** has a header naming `old`, `new`, `code_commit` (the HEAD the
+  census ran on: the landing commit's parent tree plus the change) and the emit_sweep
+  population's pin (§9.3). It is written once, by the census mode of
+  `scripts/emit_sweep.py` (§9.3), in the commit that changes `DEFAULTS`. It is immutable
+  from then on.
+- **What it describes.** It states what moved AT that transition. A later code change
+  that moves selections under the same default is that change's own movers (`emit_sweep`,
+  the identity gate), not this file's.
+- **A set that moves no default** (an older or alternative set, a scratch set) appears in
+  no transition. A rollback to `zen4-grid1@1` is a new transition with its own
+  `movers/<seq>.tsv`.
 
 ### 2.2 Naming, versions, rollback
 
@@ -527,9 +608,9 @@ box. It is not `third_party/` (nothing is vendored from outside). The analysis o
      text PRE-PARSED into static const arrays.
   3. **The pointers.** `ksgen` also writes the default pointers from `DEFAULTS`, as a
      table in the same `.inc`.
-- **`ksgen` is C.** It links a STAGE-0 build of the knowledge-source module (§9: the one
-  section-TSV reader and the measures-kind validator, built with an empty table, as
-  `PCREC_FIND_STAGE0` does for findgen). It parses with the reader the library uses at
+- **`ksgen` is C.** It links a STAGE-0 build of the knowledge-source PARTS and the
+  measures row (§9.2: the one section-TSV reader and the measures-kind validator, with no
+  store, as `PCREC_FIND_STAGE0` does for findgen) [r2 M8]. It parses with the reader the library uses at
   run time, in its no-filesystem buffer mode.
 - **No python writes an embedded byte.** Revision 1's `generate.py` wrote both the text and
   the pre-parse that the structural check then verified against its own python twin. That
@@ -558,6 +639,18 @@ one `fold_tables.inc`. Rollback must work from a release build (Q-MS-7, settled 
   It is the hash of the pcrec emitter's output for the card's named probe pattern, with
   the stamp lines stripped (`emit_sweep`'s normalization).
 
+  **This over-stales BY DESIGN until M4 [r2 n7].** An abi bump or any unrelated emission
+  change moves the hash, unlike the kit's body-normalized form hash. No `pcrec.` row
+  exists before M4, so nothing stales falsely before then. M4 is the stage that adds the
+  first pcrec quantity. It replaces this hash with the measured FUNCTION BODY under the
+  same normalization R-MS3 asks of the kit (prefix, identifiers, comments, blank lines),
+  or it records in the card why the whole artifact is the measured instance. That choice
+  is deferred to M4, because the right instance depends on what pcrec's probe measures.
+- `libc:<name>@<version>` (D167 Q-R17P-14): the C library the measured code ran against.
+  It is PROVENANCE, never a staleness dependency. The artifact runs against the caller's
+  library, so a library that differs from the measuring one is not a change to the
+  measured code.
+
 **The canonical instance [r1 msc1-8/msc2-6].** A form hash is over the form's BODY with
 SCAFFOLDING NORMALIZED OUT. It is the text the kit emits for a fixed canonical site (fixed
 set, fixed span, fixed prefix), with the prefix, generated identifiers, comments and blank
@@ -569,8 +662,9 @@ have staled every row.
 
 **A row is STALE iff any of:**
 
-1. any `deps` hash differs from the current one (the kit's `mf_form_hash`, pcrec's
-   recomputed hash);
+1. any `kit:` or `pcrec:` `deps` hash differs from the current one (the kit's
+   `mf_form_hash`, pcrec's recomputed hash). A `libc:` item never stales a row;
+   it feeds only the set-level flag below;
 2. any input row of a `derived`/`fitted` row is stale (transitive through `inputs`);
 3. the UNIT row is stale, for every `ratio`/`walkbytes` row. Every relative value is
    relative to it.
@@ -579,6 +673,11 @@ have staled every row.
 and the card's flags) is a SET-level listing flag, `compiler-mismatch`, not row staleness.
 The emitted text is the same and the machine code may not be, so it is reported, never
 computed into a verdict.
+
+**A libc mismatch** (the set header's `libc` against the build's C library, read with the
+same probe the header was written with) is a second SET-level flag, `libc-mismatch`,
+reported the same way and never row staleness (D167 Q-R17P-14). Main owns this third
+dependency owner on those terms.
 
 **Where it is computed.** Staleness is COMPUTED, by `make test-measures` and by
 `--list-measurements` against the linked kit. It is never written into a committed file,
@@ -618,27 +717,50 @@ ahead of a measured need (D77).
 - **The library** gets a `pcrec_options` field, appended in the same [IFACE-PUSH] batch
   the analysis field belongs to.
 
-### 3.2 Resolution, in a stated order [r1 msc2-8, msc1-14]
+### 3.2 Resolution, in a stated order [r1 msc2-8, msc1-14, r2 M2, M3c, n5]
 
 Classification is by spelling alone, with NO existence probe, so the same argument means
-the same thing in every directory:
+the same thing in every directory. It is the SHIPPED rule `--list-analysis` already uses
+(`pcrec_find_name_ok(X)` means NAME, else FILE; `cli/main.c:1808-1809`, `2233-2236`)
+[r2 M2]:
 
-1. A value containing `/` is a FILE (`./mine.measures.tsv` reads a file in the cwd).
-2. Otherwise, a value matching the id grammar, optionally with `@REV`, is a NAME.
-3. Anything else is refused, naming both rules.
+1. A value that passes the name grammar, optionally followed by `@REV` (§2.2: `@` then
+   decimal digits), is a NAME.
+2. Anything else is a FILE.
 
-**A NAME** is looked up through [KNOW-SRC]'s resolver (§9.2 part 2), in the stops the analysis uses minus S1
-(a set is never defined inside a `.rxt`):
+Revision 2's rule (a `/` means FILE, the grammar means NAME, anything else is refused)
+disagreed with the shipped analysis surface on every value with no `/` that fails the
+grammar. It also refused the note's own example, `--measures=f.tsv`. Under the shipped
+rule, `--measures=f.tsv`, `--measures=mine.measures.tsv` and `--measures=./f.tsv` are all
+FILEs, because `.` is not in the name grammar [r2 M3c]. A file literally named
+`zen4-grid2` in the cwd is read as a NAME. That is the same as `--list-analysis` today,
+and `./zen4-grid2` is the FILE spelling. The rule is the kind row's `flag_classify` and
+`list_classify` columns (§9.5), so it is data, not a measures-only branch.
+
+**A NAME** is looked up through [KNOW-SRC]'s resolver (§9.2 part 2), in the stops the
+analysis uses minus S1 (a set is never defined inside a `.rxt`):
 
 - S2, `DIR/NAME.measures.tsv` for each `-I DIR` in order, with the directory entry matched
   exactly (`rxt_find.c`'s `dir_has_exact`);
 - S3, the store.
 
-A file found at S2 must carry a header `id` equal to NAME, or it is refused [r1 msc1-14]:
-the stamp names the id, so a file answering a name it does not carry would make the stamp
-lie. An unknown name refuses the compile and names the stops searched (`stops_text`).
+**An S2 file whose header names something else is REFUSED** (the kind row's
+`s2_mismatch = refuse`) [r1 msc1-14]. Its header `id` must equal NAME and, for
+`NAME@REV`, its header `rev` must equal REV [r2 n5]. The stamp names `id@rev`, so a file
+answering a name or rev it does not carry would make the stamp lie. An unknown name
+refuses the compile and names the stops searched (`stops_text`).
 
-**A FILE** is read directly. Its header `id` is what the stamp carries.
+**Why the analysis kind does the opposite.** An analysis S2 file of another name FALLS
+THROUGH to the next stop, with a note (`s2_mismatch = fallthrough-note`;
+`docs/spec/findings.md` S2 row, `rxt_find.c:12-15`). A `.rxt` in a `-I` directory is
+often a `lib` library that legitimately sits beside the bundles, so a mismatch there is
+normal. A `.measures.tsv` has no such neighbour: its suffix says it is a set, so a
+mismatch is an error, and silently skipping it would hide a typo'd id. Both kinds refuse
+a file defining two or more items (`s2_multi = refuse`). The divergence is a declared
+column value, and K1's resolution fixtures witness it for the analysis kind (§9.7).
+
+**A FILE** is read directly. Its header `id` and `rev` are what the stamp carries,
+subject to §3.3's shadow rule.
 
 ### 3.3 Precedence (D93)
 
@@ -650,10 +772,18 @@ Identical to `--analysis`: fill-only.
   and this file's measures Y disagree; using the file's value (--measures is fill-only)".
 - There is a single value per compile. Sets are never mixed, so there is no per-quantity
   precedence and no chain.
-- **A user set may NOT take a committed id.** A `-I` or FILE set whose `id` is in the store
-  with a different `values_digest` is refused ("id X is a committed set; rename"). The
-  stamp names a set by `id@rev:digest`, so a shadow would make a stamp point at a set that
-  does not carry those values.
+- **A user set may NOT shadow a committed rev [r2 n5].** The check is keyed on
+  (`id`, `rev`), not on `id` alone:
+  - a `-I` or FILE set whose (`id`, `rev`) is in the store is accepted only with the same
+    `values_digest` (it IS that set, the round trip of §9.6);
+  - one whose `id` is in the store under a `rev` the store does NOT hold is refused ("id
+    X has no committed rev N; rename"). Revision 2 accepted `id zen4-grid2`, `rev 7` with
+    rev 1's digest, and that stamped `zen4-grid2@7:…`, a rev that does not exist;
+  - one whose (`id`, `rev`) is in the store with a different digest is refused ("X@N is
+    a committed set; rename").
+
+  The stamp names a set by `id@rev:digest`, so a shadow would make a stamp point at a set
+  that does not carry those values. S988 plants the id-only key.
 
 ### 3.4 What a bare compile reads [r1 msc2-2, msc1-4]
 
@@ -707,6 +837,14 @@ target.
 - **Otherwise `"<id>@<rev>:<digest16>"`**, the set the compile LOADED. Revision 1 used
   `"none"` for nothing asked, which inverted the `_FINDINGS` reading, where `none` means
   "asked, and nothing answered".
+- **Rendered ONCE, after `mf_art_end`.** `<PREFIX>_MEASURES`, like `<PREFIX>_FINDINGS`,
+  is written at the single render point of `docs/design/memfn/window_contract.md` §3.7.3a
+  (the finishing pass, after `mf_art_end` returns), never in `emit_info_def`. It reads the
+  kit's layer-invariant `consulted` (§4.2), so the emptiness test sees the kit's last
+  read. This is the layer-invariance obligation revision 3 lacked (wcrev3 finding F-4).
+- **The union over compile attempts.** The stamp lists the set iff ANY attempt of the
+  compile consulted it (a pcrec reader asked or a kit row read it), not only the final
+  attempt (D167 addendum 3; window_contract.md §3.7.3a).
 - **No `asked-and-nothing-answered` spelling.** A lookup that found nothing still makes the
   artifact depend on the set (an absent row skipped a dispatch), so it stamps the set.
 
@@ -773,7 +911,7 @@ event, pre-1.0, under the ritual (`pcrec-abi-changes-pre-release`), in one commi
 - the readers by grep;
 - the identity gate's (B) pin;
 - the EMITTED_BYTES readers;
-- the set's `MOVERS.tsv` (§8.4).
+- the transition's `DEFAULTS.log` row and `movers/<seq>.tsv` (§2.1, §8.4) [r2 n9].
 
 Revision 1's Q-MS-2 ("not an abi event", on findings.md 5¶9's precedent) is WITHDRAWN.
 D162 ruled the data side, so no re-ruling is sought. A NEW non-default set is not an event,
@@ -819,7 +957,10 @@ ONE fact: after `mf_art_end`, `consulted` (a boolean). It is true iff any kit ro
 compile resolved a key against the set, found or absent.
 
 - **The stamp.** pcrec ORs `consulted` with its own readers' lookups to decide whether the
-  stamp is empty (§3.5). The stamp's CONTENT was fixed when the set was LOADED, which is
+  stamp is empty (§3.5). The OR is computed once, at the render point after `mf_art_end`
+  (window_contract.md §3.7.3a), over the union of every compile attempt's asks (D167
+  addendum 3), and `consulted` is layer-invariant there (the same boolean under every
+  layer setting). The stamp's CONTENT was fixed when the set was LOADED, which is
   what stamp-on-load means: no per-key traffic shapes the bytes.
 - **Why a boolean.** Revision 1 asked for a per-key "looked up" report. That is the kit
   narrating its method to pcrec (D157's concern from the other side). It also puts a second
@@ -847,9 +988,10 @@ needing E is skipped when E is absent (r17b_prime.md §3.4).
 ### 4.4 The requests main files, with their landing bars [r1 msc2-10]
 
 `memfn/docs/requests.md` is single-writer MAIN (`pcrec-requests-are-mine-to-file`).
-Revision 1 named the kit facts but put them in no landing bar. They are now five requests,
-and M0's trigger is R17-b′ landing WITH R-MS1, R-MS2, R-MS3 and R-MS5 (R-MS4's safe
-directions are M2's):
+Revision 1 named the kit facts but put them in no landing bar. They are now SIX requests
+(revision 3 adds R-MS6, [r2 M7]). M0's trigger is R17-b′ landing WITH R-MS1, R-MS2, R-MS3,
+R-MS5 and R-MS6. R-MS4's keys and fired-rows section are M0's too, and its safe
+directions are M2's:
 
 | id | the request (facts, D157) | landing bar | needed by |
 |---|---|---|---|
@@ -858,6 +1000,7 @@ directions are M2's):
 | R-MS3 | `mf_form_hash(form_id)` over the canonical instance (§2.4), and the form ids the kit's cards name in `deps` | the hash is unchanged under a zero-mover kit refactor (renamed helper, comment edit) and changed under a one-instruction body edit, both as kit fixtures; every form id a kit card names resolves | M0 (staleness listing) |
 | R-MS4 | the kit's READER DECLARATION: per finder-table row, the keys it reads and, per threshold key, its SAFE direction (`max`/`min`/`none`: the side of its conservative or `unpaid` pick), as data the kit's listing exposes in [LIST-TABLES]' census shape (§5.4); and, per artifact, which finder rows fired per site, as the `--emit-facts` section `memfn` (§4.5) | keys: every key a row reads is declared (the kit-side half of §8.6's ⊆ check); directions: each declared direction agrees with the row's comparison operator by a kit test | keys M0 (the listing's readers); directions M2 (the envelope) |
 | R-MS5 | the kit's METHOD CARDS for its quantities (§7.2), as a section TSV in the kit tree, versioned `kit-grid@N` | each quantity R17-b′ §3.2 lists has a card; grid1's and grid2's rows are on-card (`make test-measures` §8.2) | M0 (the first committed set must be on a card) |
+| R-MS6 [r2 M7] | a HARNESS-ONLY arm-entry counter: under a lever reached only through `build/pcrec-harness` (the reserved internal name prefix and one-global fence of compound.md §A.11), each dispatch arm the kit emits increments a per-arm counter, exported under the reserved prefix with the arm's kit row id. The default emission is byte-identical with the lever off. pcrec states that it needs arm REACH; HOW the kit counts is the kit's (D157) | the lever off → zero movers on every emit_sweep arm; the lever on → each fired row's arm counts ≥ 1 on a kit fixture that enters it, and 0 on one that does not | M0 (§8.1's REACH floor) |
 
 ### 4.5 [r1 msc2-9] The kit's own listing, consumed not duplicated
 
@@ -881,7 +1024,7 @@ Section `sets`, with the columns:
 - `default_for` (the classes it is the default of);
 - `rows`, `null_rows`;
 - `stale_rows` (computed against the linked kit);
-- `compiler_mismatch`;
+- `compiler_mismatch`, `libc_mismatch` (D167 Q-R17P-14);
 - `values_digest`;
 - `source` (store | `-I` file);
 - `build_default_overridden` (§7.5).
@@ -892,7 +1035,8 @@ Section `sets`, with the columns:
 `--view=canonical`). It is exactly the set's own sections, `header`, `cards`, `rows`,
 `cells` and `members`, written by the canonical writer. Under ROUND-TRIP IDENTITY (§9.6)
 it IS a loadable set: `--list-measurements=zen4-grid2 > f.tsv`, then `--measures=f.tsv`,
-stamps the same `id@rev:digest`. A committed set file equals its own canonical view
+stamps the same `id@rev:digest`. `f.tsv` fails the name grammar, so it is a FILE under
+§3.2's shipped rule. Revision 2's rule refused this very example [r2 M3c]. A committed set file equals its own canonical view
 (§9.6, R4).
 
 **DERIVED views** are separate (`--view=decoded`, `--view=readers`, `--view=stale`). They
@@ -975,10 +1119,17 @@ g\*. The same key read by two rows with opposite comparisons has no single safe 
   - If all agree, that is the key's direction.
   - If they disagree, or any says `none`, the key is EXCLUDED, and the exclusion is listed
     with the disagreeing rows.
-- **The cross-check.** The card's `env` (the method's declaration) must equal the derived
-  direction. If it does not, `make test-measures` fails, naming the key, the card and the
-  rows. Two declarations from two owners' artifacts must agree, which neither can satisfy
-  by construction.
+- **The cross-check.** For a key with an AGREED derived direction, the card's `env` (the
+  method's declaration) must equal it. If it does not, `make test-measures` fails, naming
+  the key, the card and the rows. Two declarations from two owners' artifacts must agree,
+  which neither can satisfy by construction.
+- **An EXCLUDED key [r2 n8]** has no derived direction to compare with. The cross-check
+  skips it, and `test-measures` prints an always-printed INFO line per excluded key: the
+  card's `env`, the word `excluded`, and the disagreeing rows. The exclusion is visible
+  where the card claims a direction, and it is never a failure, because a disagreement
+  among readers is a property of the readers and not an error of the card. Revision 2
+  required `env` to equal a direction that does not exist for these keys, so every
+  excluded key would have failed.
 - **No shared helper.** `envelope.py` (the producer) and `tests/measures/recompute.py`
   (§8.2) share no code. The checker re-derives the directions from the census TSV and the
   members' files with its own parser.
@@ -1035,8 +1186,13 @@ g\*. The same key read by two rows with opposite comparisons has no single safe 
   - the NULL rule;
   - the set writer and its self-check;
   - naming and immutability.
-- **Its reader and writer are §9's module**, compiled into the driver as source. That is
-  allowed because the module has no dependency on the compiler.
+- **Its reader and writer are §9's PARTS plus the measures row** (`src/core/ksrc.c`,
+  `src/core/ks_measures.c`), compiled into the driver as source with the driver's own
+  malloc/stdio adapters and a one-row table [r2 M8]. That is allowed because the parts
+  include only libc, `<dirent.h>` and `core/ksrc.h`, and the kinds table, which names
+  the `.rxt` reader, is not among them (§9.2). Revision 2 compiled "the module", and its
+  kinds table would have pulled in the `.rxt` parser, `Arena` and `StrBuf`. S989's link
+  check holds the line.
 - **What owners supply.** Owners supply METHOD CARDS (§7.2) and PROBES. A kit quantity is
   measured by the kit's harness mode: the forms and their timing arms are the kit's
   (D157). A pcrec quantity is measured by pcrec's probes (armread's engine arms). The
@@ -1231,22 +1387,44 @@ by `--measures=FILE` from M1, and by the harness lever until then.
 
 **The expectation.** The `.rxt` cells' oracle-verified answers. For generated subjects, it
 is libpcre2's answer through `oracle_store`'s `match-at` kind (captured once by the local
-adapter, committed, so the check runs on any box). The artifact is compared with the
+adapter, committed, so the check runs on any box).
+
+**Every set needs its own capture [r2 n10].** The generated subjects depend on THAT set's
+L\* and W. So every new committed set, and every edit to a synthetic set, needs a new
+`match-at` capture of its boundary subjects in `oracle_store/`. That capture is part of
+the set's landing bar (§10.1). It needs the box with the local libpcre2 10.46 adapter
+(the Linux dev box; docs/testing.md "The boxes"). A set landed without it fails
+`test-measures-answers` as STOREUNCOVERED, the C3 tier's own clean-miss bucket, and never
+falls back silently to an unchecked subject. The artifact is compared with the
 oracle, not with another artifact, so the control shares no source with the subject
 (learnings §3). A secondary arm compares artifacts built under two sets on the same
 subjects, a differential that catches the case where both are wrong the same way.
 
-**The REACH floor per dispatch ARM [r1 msc1-5].** It is a run-time counter, not a compile
-count:
+**The REACH floor per dispatch ARM [r1 msc1-5, r2 M7].** It is a run-time counter, not a
+compile count. The dispatch arms are KIT-emitted text (D157, D161 add. 14), so pcrec
+cannot place a counter in them. Revision 2's lever, which "compiles a counter increment
+into each emitted dispatch arm", had no owner:
 
-- The artifact is built through `build/pcrec-harness` with a harness-only lever,
-  `--harness=reach-dispatch` (compound.md's `--harness=no-compound` precedent: a
-  reserved-name internal entry, fenced by the same one-global check). The lever compiles a
-  counter increment into each emitted dispatch arm.
-- Per synthetic set, every arm the set's rows admit must execute ≥ 1 time over the
-  population. Zero reach for an admitted arm FAILS ([MECH-REACH]).
-- The admitted-arm list is derived from the set's rows by the python parser, not read from
-  the artifact.
+- **The counter is the kit's, by request R-MS6 (§4.4).** The artifact is built through
+  `build/pcrec-harness` with a harness-only lever, `--harness=reach-dispatch`. It follows
+  compound.md §A.11's `--harness=no-compound` precedent: a reserved-name internal entry,
+  fenced by the same one-global check. The lever asks the kit for its arm counters.
+  pcrec reads the exported counts and never writes into kit text.
+- **The admitted-arm list is the kit's FIRED-ROWS fact**, the `memfn` `--emit-facts`
+  section of R-MS4 (§4.5): per site, which finder rows fired under this set. Revision 2
+  derived it "from the set's rows by the python parser". Knowing which arm a row admits
+  needs the row's PREDICATE, and R-MS4 declares only keys and directions. So python would
+  have re-implemented the kit's selection, the method presumption D157 forbids.
+- **The fired list is checked against the `dispatch` set's CONSTRUCTION**, not against
+  itself. `dispatch` prices every pay rule to pay and puts every crossover at a small
+  length. So every reader row that §5.4's census declares as reading a dispatch key
+  (M16-M18 and the crossovers) must appear among the fired rows of some sampled site. The
+  python check joins the census TSV with the facts section. A declared reader that never
+  fires under `dispatch` FAILS, naming the row. This is the control: the census
+  (declarations) and the fired-rows section (emission) come from two different kit
+  outputs.
+- **The floor.** Per synthetic set, every fired row's arm must count ≥ 1 over the
+  population. Zero reach for a fired arm FAILS ([MECH-REACH]).
 
 **The stamp arm (one direction only) [r1 msc1-6].** An artifact whose `<PREFIX>_MEASURES`
 is empty must be byte-identical across every set. Revision 1 also demanded the converse
@@ -1285,44 +1463,53 @@ text, and any difference fails.
 The secondary checks are:
 
 - `tests/measures/` compares each embedded text with `set.tsv` byte for byte;
-- the pre-parse is compared with a fresh library parse (findings tests §2/§3's shape);
+- the pre-parse is compared with a fresh library parse (findings tests §2/§3's shape).
+  Both sides of that compare run the one C reader, so it catches a stale `.inc` and
+  nothing about the reader itself. The reader's INTERPRETATION is checked by §9.6's R5
+  against the independent python parser [r2 M3a];
 - `PROVENANCE.md`'s and `index.tsv`'s `file_sha256` are compared with a fresh
   `hashlib.sha256` of `set.tsv` (the sha is KEPT, now with its checker);
-- the default pointer table is compared with `DEFAULTS` read by awk (S947, §8.5).
+- the default pointer table is compared with `DEFAULTS` read by awk (S947, §8.5);
+- `DEFAULTS` equals `DEFAULTS.log`'s last row per class, read by a second awk [r2 n9].
 
-### 8.4 The mover census, at landing [r1 msc1-1, msc1-9]
+### 8.4 The mover census, at landing [r1 msc1-1, msc1-9, r2 M4, n9]
 
 This is the mechanism for D166's "selections move automatically, with a mover census in
-the same commit". It is the `measures` arm of [KNOW-SRC]'s ONE census tool (§9.3).
-`scripts/knowledge_census.sh measures OLD NEW` does the following:
+the same commit". It is the `measures` arm of `scripts/emit_sweep.py`'s data mode
+(§9.3), which serves every knowledge kind. Revision 2's `knowledge_census.sh` is
+withdrawn [r2 M4]. `emit_sweep.py --data measures OLD NEW` does the following:
 
-1. It compiles a pinned POPULATION under `--measures=OLD` and `--measures=NEW`.
+1. It compiles emit_sweep's pinned streams under `--measures=OLD` and `--measures=NEW`,
+   with one working binary on both sides. The two sides differ only by the data argument.
 2. It strips the stamp line (and the `rx_info.measures` initializer) and compares emitted
-   bytes.
+   bytes. That is emit_sweep's existing normalization.
 3. It records, per artifact, the `*_WHY`/ladder tokens and any REFUSAL, under both sets
-   [r1 msc1-9]. A set can move a near-cap artifact across a size cap or onto another rung,
-   and that is a mover even when the selection the set feeds did not change.
+   [r1 msc1-9]. emit_sweep's stderr and tally streams already do this. A set can move a
+   near-cap artifact across a size cap or onto another rung, and that is a mover even
+   when the selection the set feeds did not change.
 
-Its output is `MOVERS.tsv` in NEW's directory:
+Its output is `measure_store/movers/<seq>.tsv` for the `DEFAULTS` transition being made
+(§2.1):
 
-- the artifact id;
+- the artifact id (emit_sweep's stream and pattern key);
 - old and new byte hashes;
 - old and new tokens and refusal;
-- the attribution: the fired reader rows (from the owners' decision listings, §5.3) whose
-  declared keys have different values in OLD and NEW.
+- the attribution: the ATTRIBUTION stream's fired reader rows (§9.3) whose declared keys
+  have different values in OLD and NEW.
 
-The population is [KNOW-SRC]'s one `tests/knowledge/census_population.tsv` (§9.3, pinned
-at K3).
+The population is emit_sweep's own pinned streams and their reach floors (§9.3). There is
+no second population file.
 
-**When the census is verified.** Only in the commit that adds the set as a default or
-moves a `DEFAULTS` pointer. There the landing lane runs `make test-measures-census`, which
-re-runs the census and requires byte equality with the committed `MOVERS.tsv`; this is
-part of that commit's delivery bar.
+**When the census is verified.** Only in the commit that changes `DEFAULTS` (a new
+default, a flip, or a rollback). There the landing lane runs `make test-measures-census`,
+which re-runs the data mode and requires byte equality with the new `movers/<seq>.tsv`.
+This is part of that commit's delivery bar.
 
 **What every build checks**, with no git history needed (CI is shallow):
 
-- the structure: every `DEFAULTS` target that has a predecessor has a `MOVERS.tsv`;
-- its header's `old`/`new` digests equal `index.tsv`'s;
+- the structure: every `DEFAULTS.log` row after a class's first names a `movers/<seq>.tsv`
+  that exists;
+- each movers file's header `old`/`new` digests equal its log row's, and `index.tsv`'s;
 - its `code_commit` names a commit (a 40-hex string, not checked for ancestry).
 
 Revision 1 re-ran every set's census at HEAD on every build. That reds forever once any
@@ -1333,9 +1520,9 @@ gate's (B) pin and the EMITTED_BYTES readers.
 
 ### 8.5 Sabotage plan
 
-S943-S952 are revision 1's allocation. S953-S963 are PROPOSED: they are free on main and
-in every worktree as of `58338a09f`, and are outside every kit-reserved range; main
-allocates them. Each has a REACH counter (the number of times the planted branch executed
+S943-S963 are allocated (main's ledger: S943-S952 revision 1, S953-S963 revision 2).
+S983-S990 are PROPOSED by revision 3 [r2]. They are main's next free ids as of
+`063b4a4b4`, past S964-S980 (R-21); the manager allocated them to this lane (renumbered from S981-S988). Each has a REACH counter (the number of times the planted branch executed
 in the sampled run), and each fails the named check.
 
 | id | plant | detected by |
@@ -1349,18 +1536,26 @@ in the sampled run), and each fails the named check.
 | S949 | the envelope takes `min` where the readers' direction is `max` | §8.2(e) |
 | S950 | the staleness comparison always reports fresh | a kit form-body change fixture must flag its rows and their transitive dependants; REACH counts stale rows seen |
 | S951 | the install tool's per-group gate never fires | a recorded 20% A/A-spread group fixture must be dropped (PARTIAL, exit 4) and a failing unit group must REFUSE (exit 3) |
-| S952 | the census population shrinks silently (a class skipped) [r1 msc1-11] | a compiled-ARTIFACT manifest: the census writes one line per artifact it compiled, awk counts them against `census_population.tsv`'s row count; a shortfall fails |
+| S952 | the census population shrinks silently (a stream or class skipped) [r1 msc1-11; RE-AIMED r2 M4] | emit_sweep's own per-stream REACH floors (its pinned populations), which the data mode inherits: a stream compiling fewer artifacts than its floor fails. No second manifest |
 | S953 | a fitted row's value edited | §8.2(b) |
 | S954 | a ratio row computed against a non-unit row | §8.2(c), exact compare |
 | S955 | a row off its card (n below `launches × rounds`) accepted | §8.2(f) |
-| S956 | the dispatch arm's counter never incremented (reach lever disconnected) | §8.1 REACH floor reads 0 on the `dispatch` set |
+| S956 | the reach lever disconnected: pcrec never reads the kit's R-MS6 counters (they read 0) [RE-AIMED r2 M7] | §8.1 REACH floor reads 0 for a fired arm on the `dispatch` set |
 | S957 | a derived row with a NULL input written non-NULL | §8.2(d) |
 | S958 | a `-I` file whose header `id` differs from NAME accepted | the CLI fixture (§3.2) |
 | S959 | `MOVERS.tsv` omits refusal/token changes | a near-cap synthetic pair of sets whose only difference re-rungs one artifact; the census must list it |
 | S960 | the envelope ignores a reader that disagrees on direction | §6.2's exclusion listing; §8.2(e) |
 | S961 | the canonical writer omits the `cells` section ([KNOW-SRC]) | R3 (§9.6). R1 and R2 both stay green, which is why R3 exists |
 | S962 | a derived section (`stale`) written into the canonical view, or accepted by the loader | the loader-rejects fixture: a `--view=stale` dump fed to `--measures=` must refuse naming the section; R4 on the store |
-| S963 | the census tool drops the attribution for one kind (the `analysis` arm writes it empty) | K0's findings fixture change, whose attributable artifacts are hand-listed; an empty attribution on a moved artifact fails |
+| S963 | emit_sweep's data mode drops the attribution for one kind (the `analysis` arm writes it empty) [RE-AIMED r2 M4] | K0's findings fixture change, whose attributable artifacts are hand-listed; an empty attribution on a moved artifact fails |
+| S983 [r2 M3a] | a SYMMETRIC column swap: the C reader resolves `noise_e6` into the `abs_ns_e6` field and the canonical writer writes that field back under `noise_e6` | R5 (§9.6): the decoded view's `abs_ns` ≠ the python decode. R1-R4 all stay green, which is the point of the row |
+| S984 [r2 M3b] | the analysis canonical writer drops every `serves … when … via` declaration consistently | R3 (§9.6) with `analyze/`'s reader as the independent side; `rows_digest` does not cover `serves`, so R1 stays green |
+| S985 [r2 M2] | the measures kind row's `s2_mismatch` reads `fallthrough-note` (a mismatched `-I` file skipped silently) | the CLI fixture of S958, and `tests/findings/res_fixtures.py` unchanged for the analysis row |
+| S986 [r2 M5] | `ks_digest` hashes the analysis stamp domain without its trailing NUL | K1's shipped-digest pin: every `_FINDINGS` stamp and `rows_digest` of the three shipped bundles and the `-I` fixtures, byte-identical; emit_sweep's stamp-carrying streams |
+| S987 [r2 M7] | the `memfn` fired-rows section omits one row under the `dispatch` set | §8.1's construction check: a declared dispatch-key reader that never fires fails, naming it |
+| S988 [r2 n5] | the shadow check keyed on `id` alone (a FILE with a committed id and an uncommitted rev accepted) | the CLI fixture `id zen4-grid2`, `rev 7`, rev 1's digest: must refuse |
+| S989 [r2 M8] | `ksrc.c` includes `core/internal.h` (the parts pick up the compiler's types) | the dependency check (§9.2): `ksrc.c`'s include list is libc + `core/ksrc.h` only, and `pcrec-measure` links with no `pcrec_`-prefixed symbol outside the parts and the measures row (`nm -u`) |
+| S990 [r2 M1] | the evaluator-params item digest skips its last row | R1 and R5 on the `evaluator-params` fixture (§9.11) |
 
 S944 and S946 are answer-NEUTRAL (every form answers alike) except through the structural
 arm. The plan declares them so, as R17-b′ declared SB12.
@@ -1378,7 +1573,7 @@ Every key a selection actually LOOKS UP is in some declared reader row's `reads`
 So the census (§5.4) cannot miss a reader, and `readers` in the listing is complete by a
 check, not by assumption.
 
-## 9. [KNOW-SRC]: ONE knowledge-source module and ONE data-mover census tool, built FIRST [r1 msc2-9, msc1 U1]
+## 9. [KNOW-SRC]: ONE knowledge-source module and ONE data-mover census, built FIRST [r1 msc2-9, msc1 U1, r2 M1-M8]
 
 Frank endorsed this unification on 2026-10-14: "i like the consistent data tool idea ...
 with consistent loader". It is filed as plan row [KNOW-SRC]. This section is that row's
@@ -1386,46 +1581,149 @@ design. It is BUILT FIRST, implement-then-replace onto the analysis-object loade
 movers, before any [MEASURE-SET] stage (§9.8, §10.1). [MEASURE-SET]'s M0 then adds a kind
 row; it does not build a loader.
 
-### 9.1 The family
+### 9.1 The family [r2 M1, M6, n2]
 
-Each member is a named, versioned, provenanced body of knowledge. It is loaded by name or
-path and stamped into what it shapes:
+Each member is a named, versioned, provenanced body of knowledge, loaded by name or path.
+Most are stamped into what they shape. The plan row RULES four kinds (Frank, 2026-10-14);
+revision 2 listed three [r2 M1]. The `lib` reference resolver is a fifth, resolve-only
+member that revision 2 left unplaced [r2 M6]:
 
-| member | content | loaded by | stamp/digest | store |
+| member | content | loaded by | digests: ITEM / STAMP (§9.2 part 5) | store |
 |---|---|---|---|---|
-| the analysis object (D162, `--analysis`) | counts with derivations, an `include` chain, `.rxt` blocks | `--analysis`, the `analysis` config line, `-I DIR/<n>.rxt`, the store | `<PREFIX>_FINDINGS` + `rx_info.findings`, FNV-1a-64 `pcrec-find-1` | `src/findings/*.rxt`, embedded text + pre-parse (findgen.c) |
-| measurement sets (this note) | keyed integer rows, cards, cells | `--measures`, the `measures` config line, `-I DIR/<n>.measures.tsv`, the store | `<PREFIX>_MEASURES` + `rx_info.measures`, FNV-1a-64 `pcrec-meas-1` | `measure_store/`, embedded text + pre-parse (ksgen) |
-| [TABLE-JUDGE]'s picks file | (cell, table, row, pick) plus arm timings | a FILE operand of the judge | a digest in the judge's report | none (FILE only) |
+| the analysis object (D162, `--analysis`) | counts with derivations, an `include` chain, `.rxt` blocks | `--analysis` (NAME only), the `analysis` config line, `-I DIR/<n>.rxt`, the store | ITEM `rows_digest` (domain `pcrec-find-rows-1\0`). STAMP per query (domain `pcrec-find-1\0`, then the query and a NUL), rendered as `<PREFIX>_FINDINGS` + `rx_info.findings` | `src/findings/*.rxt`, embedded text + pre-parse (findgen.c) |
+| measurement sets (this note) | keyed integer rows, cards, cells | `--measures` (NAME, NAME@REV or FILE), the `measures` config line, `-I DIR/<n>.measures.tsv`, the store | ITEM = STAMP = `values_digest` (domain `pcrec-meas-1\0`), rendered as `<PREFIX>_MEASURES` + `rx_info.measures` | `measure_store/`, embedded text + pre-parse (ksgen) |
+| [TABLE-JUDGE]'s picks file | (cell, table, row, pick) plus arm timings | a FILE operand of the judge | ITEM a row digest (domain `pcrec-pick-1\0`). No artifact STAMP: the judge's report header carries the item digest | none (FILE only) |
+| the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]) [r2 M1] | the evaluator's verdict-changing constants: the G1-G4 bars, the regime caps, the outlier thresholds, the frozen population totals | a FILE (the kit's judge mode; the canonical view through the module's harness driver, §9.2 part 6) | ITEM a row digest (domain `pcrec-eval-1\0`), which IS the PREREG HASH posted to main before a judge slot. No artifact STAMP: its "stamp" is that prereg commitment | none (committed in the kit's tree beside the evaluator) |
+| `lib` references (resolve-only) [r2 M6] | a `.rxt` library a source names by `lib "path"` | the `.rxt` source's `lib` line | none | none today; the reserved `lib <store-name>` form is [LIB]'s store (U4) |
+
+- **Why a fourth kind and not a set.** The evaluator's constants are not measured
+  decision inputs. No selection reads them, and they change verdicts, not bytes. The
+  placement rule (§9.1a) sends them to a kind of their own. That kind has no artifact
+  stamp, so its digest has a different role from the other kinds' (§9.2 part 5).
+- **Why `lib` is a member.** `src/parse/rxt_source.c:4283-4340` resolves `lib "path"`
+  over the source's directory and then each `-I` directory, with its own chain text
+  (`lib_chain_text`), over the SAME `-I` list the analysis resolver reads
+  (`cli/main.c:1812-1818`). It is a third resolver, and it has ALREADY drifted from the
+  analysis one. It probes with `path_is_file(join_path(...))`, where `rxt_find.c`
+  deliberately replaced that probe with `dir_has_exact` so that a case-insensitive
+  filesystem cannot answer `log` with `Log.rxt` ([r2 M-S6], `rxt_find.c:9-12`). That is
+  the drift §9.4 predicts ("they agree today and drift tomorrow"). Moving `lib` onto
+  `ks_resolve` makes the difference a column value (`entry_match`, §9.5) that the
+  listing shows, rather than a second copy of the loop. K1 keeps the shipped
+  `probe-exists` value, so the move is zero-mover. The fix is finding F12 (§11), its own
+  caller-visible change.
+- **Limits (`limits.def`) are not a loadable kind.** They share the census (§9.3),
+  because a limits default change moves bytes the same way a data change does.
+  emit_sweep's `-D` limit VARIANTS already build the two sides. A read-only `limits`
+  kind row is unlock U3, filed.
+- **`analyze/` is a deliberately independent TWIN, not a member [r2 n2].** By charter
+  `pcrec-analyze` is zero-dependency, with its own bundle-text writer and reader and its
+  own SHA-256 (`analyze/CLAUDE.md`). It cannot call the module and must not. Its
+  independence is what makes it R3's control for the analysis kind (§9.6). It is the one
+  place the analysis format deliberately exists twice, and the module's "each piece
+  exists once" does not include it.
 
 Revision 1 built the second member as a copy of the first. It had a second name grammar, a
 second `-I` probe, a second embed path, a second digest and stamp, and a second census
 script. That is the parallel mechanism `pcrec-general-mechanisms-not-special-cases`
-forbids, and the third member is already filed. Limits (`limits.def`) are not a loadable
-kind, but they share the census tool (§9.3): a limits default change moves bytes the same
-way a data change does.
+forbids, and the third and fourth members are already ruled.
 
-### 9.2 The module: `src/core/ksrc.c` / `ksrc.h`
+### 9.1a The placement rule, as a first-match table [r2 M1]
 
-ONE module, parameterised by a KIND row:
+The plan row's rule ("compiler numbers -> limits.def; measured decision numbers ->
+measurement sets; harness thresholds -> a [KNOW-SRC] kind") is a declared first-match
+table (`pcrec-decisions-as-first-match-tables`). A number is placed by the FIRST row that
+matches:
+
+| row | the number is … | it lives in | example |
+|---|---|---|---|
+| P1 | MEASURED, and read by a compile-time selection | a measurement set (§1) | β by shape, L\*, the M16-M18 charges |
+| P2 | read by the compiler, and CHOSEN rather than measured (a D149 constant: a cap, a bound, a default) | `src/core/limits.def` | `PCREC_MAX_EMIT_BYTES`, the step budget |
+| P3 | read only by a harness, evaluator or checker, and it changes a VERDICT | a [KNOW-SRC] kind of its own: today `evaluator-params` (§9.11) | the G2 regime caps, the G3 outlier bars |
+| P4 | none of the above | REFUSED: no home until its reader is named | a constant "for later" |
+
+P1 comes before P2 because a measured number that a selection reads is a set row even if
+a person once chose its first value (D149's measured branch). P4 is the row that keeps
+the table total. A card's `gate_e6` (§7.2) matches P3 and is a field of the owner's card
+table, which is that kind's file for the install tool. Making the gate itself measured
+is §10.4's "D149 constants as measured rows" unlock.
+
+### 9.2 The module: kind-independent PARTS in `src/core/ksrc.c`, the kinds table at the library tier [r2 M8]
+
+Revision 2 put the kinds table inside the module it called dependency-free. A table in
+`src/core` naming the analysis row's `.rxt` reader avoids the INCLUDE but not the LINK
+edge, so `pcrec-measure` would have linked the `.rxt` parser, `Arena` and `PcrecSb`
+[r2 M8]. That contradicts the `analyze/` zero-dependency precedent §7.1 cites, and
+`encoding_data_layout.md` §2 treats a measured `core → enc` back-edge of the same shape
+as a defect. Revision 3 separates the two:
+
+- **The PARTS**, `src/core/ksrc.c` + `src/core/ksrc.h`. These are the reader/validator,
+  the resolver, `ks_pick`, the digest and stamp builders and the listing writers. They
+  hold NO kinds table and include only libc, POSIX `<dirent.h>` (for the exact-entry
+  probe) and `core/ksrc.h`. They allocate through a caller-supplied `KsAlloc`, write
+  through a caller-supplied `KsOut`, and report errors in a fixed-buffer `KsErr`. None of
+  them sees `Arena`, `StrBuf`, `Ctx` or `pcrec_error`, which all live behind
+  `core/internal.h` and pull in the compiler (`arena.c` and `sb.c` include it).
+- **The ROWS.** One TU per kind defines that kind's `KsKind` object:
+  - `src/parse/ks_analysis.c` wraps the `.rxt` reader, so the parse layer registers the
+    analysis row;
+  - `src/core/ks_measures.c` uses the parts only;
+  - `src/parse/ks_lib.c` is the resolve-only row;
+  - picks and evaluator-params land when their kinds build (§9.8, OQ-1).
+- **The TABLE** `ksrc_kinds[]` lives in `src/core/ksrc_kinds.c`, which only libpcrec
+  compiles. It assembles the rows. The library tier already links core to parse
+  (`compile.c:2471` calls `pcrec_find_resolve`), so this adds no new edge to libpcrec,
+  and the parts stay edge-free.
+- **What `pcrec-measure` compiles** (§7.1): `ksrc.c`, `ks_measures.c` and its own
+  one-row table in `measure/`, with malloc/stdio adapters for `KsAlloc`/`KsOut`. Nothing
+  else from `src/`. The dependency CHECK (S989) is a grep of `ksrc.c`'s and
+  `ks_measures.c`'s include lines (libc, `<dirent.h>`, `core/ksrc.h` only) plus
+  `nm -u` on the linked `pcrec-measure`: no `pcrec_`-prefixed symbol outside the parts
+  and the measures row.
 
 ```c
-/* One knowledge kind: a row of the closed kinds table (ksrc_kinds[]). */
+/* src/core/ksrc.h — the kind-independent parts (libc + <dirent.h> only). */
+typedef struct { void *(*alloc)(void *ctx, size_t n); void *ctx; } KsAlloc; /* zeroed */
+typedef struct { int (*write)(void *ctx, const char *p, size_t n); void *ctx; } KsOut;
+typedef struct { char msg[256]; } KsErr;
+
+/* One digest ROLE [r2 M5]: domain BYTES (literal, grandfathered, explicit length because
+ * the shipped tags hash their NUL), an optional sub-key, then the kind's own row fold. */
 typedef struct {
-    const char *kind;          /* "analysis", "measures", "picks" */
-    const char *suffix;        /* ".rxt", ".measures.tsv", ".picks.tsv" */
-    const char *digest_domain; /* "pcrec-find-1", "pcrec-meas-1", "pcrec-pick-1" */
-    uint8_t     stops;         /* KS_STOP_S1 | KS_STOP_DIRS | KS_STOP_STORE */
-    const char *cli_flag;      /* "--analysis", "--measures", NULL */
-    const char *cfg_line;      /* "analysis", "measures", NULL */
-    int  (*parse)(Arena *, const char *text, size_t len, void **doc, pcrec_error *);
-    int  (*validate)(const void *doc, pcrec_error *);
-    int  (*write_canonical)(PcrecSb *, const void *doc);   /* §9.6 */
+    const unsigned char *domain;     /* NULL = this kind has no such role */
+    size_t      domain_len;          /* e.g. 13 for "pcrec-find-1\0"; 18 for "pcrec-find-rows-1\0" */
+    uint8_t     subkey;              /* KS_SUB_NONE | KS_SUB_QUERY: the query's bytes, then NUL */
+    uint64_t  (*fold)(uint64_t h, const void *doc, const char *subkey_val);
+} KsDigest;
+
+/* One knowledge kind: a row of the closed kinds table. Every per-kind divergence the
+ * resolver, the listing and the round trip have is a COLUMN here [r2 M2, n3]. */
+typedef struct {
+    const char *kind;           /* "analysis", "measures", "picks", "evaluator-params", "lib" */
+    const char *suffix;         /* ".rxt", ".measures.tsv", ".picks.tsv", ".eval.tsv", ".rxt" */
+    uint8_t     stops;          /* KS_STOP_SRCDIR | KS_STOP_S1 | KS_STOP_DIRS | KS_STOP_STORE */
+    uint8_t     flag_classify;  /* KS_CLS_NAME_ONLY | KS_CLS_NAME_ELSE_FILE | KS_CLS_FILE_ONLY */
+    uint8_t     list_classify;  /* the same domain, for --list-<kind> X */
+    uint8_t     revs;           /* 1: NAME@REV is accepted (and is a NAME, §3.2) */
+    uint8_t     s2_mismatch;    /* KS_S2_FALLTHROUGH_NOTE | KS_S2_REFUSE */
+    uint8_t     s2_multi;       /* KS_S2_REFUSE for every kind today */
+    uint8_t     entry_match;    /* KS_ENTRY_EXACT | KS_ENTRY_PROBE_EXISTS [r2 M6] */
+    uint8_t     bare_view;      /* KS_VIEW_CANONICAL | KS_VIEW_SHIPPED [r2 n3] */
+    uint8_t     r4;             /* KS_R4_REQUIRED | KS_R4_EXEMPT [r2 n3] */
+    uint8_t     list_surface;   /* KS_LIST_CLI | KS_LIST_HARNESS (no CLI flag) */
+    const char *cli_flag, *cfg_line, *list_flag;   /* NULL where the kind has none */
+    KsDigest    item;           /* identity of the loadable item: R1, the shadow rule, the census */
+    KsDigest    stamp;          /* what a compile consumed; .domain NULL = no artifact stamp */
+    int  (*parse)(const KsAlloc *, const char *text, size_t len, void **doc, KsErr *);
+    int  (*validate)(const void *doc, KsErr *);
+    int  (*write_canonical)(const KsOut *, const void *doc);   /* §9.6 */
+    int  (*write_decoded)(const KsOut *, const void *doc);     /* §9.6 R5 */
     const char *const *derived_sections;  /* section names the loader REJECTS, §9.6 */
-    const KsStore *store;      /* embedded text + pre-parse, or NULL */
+    const KsStore *store;       /* embedded text + pre-parse, or NULL */
 } KsKind;
 ```
 
-It has six parts, each existing once:
+The parts are six, and each exists once:
 
 1. **The section-TSV reader/validator** (`ks_tsv_read`). It reads `table_contract.md`'s
    §2/§4 shape from a buffer, with no filesystem access:
@@ -1437,122 +1735,216 @@ It has six parts, each existing once:
 
    It returns sections as rows indexed by header name. A kind's `validate` adds that
    kind's rules (§1.6 for measures). The analysis kind's `parse` is its existing `.rxt`
-   reader, reached through the pointer, so `src/core` does not include `src/parse` (§9.9
-   reconsiders that format).
-2. **The name resolver** (`ks_resolve`). It handles:
-   - the one name grammar (`pcrec_find_name_ok` today);
-   - §3.2's spelling classification (`/` means FILE, then `NAME[@REV]`);
-   - the stops: S1 the compiling file where the kind allows it, S2 `-I DIR/<name><suffix>`
-     with exact entry match, S3 the kind's store;
-   - the rule that an S2 file's declared name must equal NAME;
-   - the refusal text naming the stops searched.
+   reader, registered from `src/parse/ks_analysis.c` (§9.9 reconsiders that format).
+2. **The name resolver** (`ks_resolve`) [r2 M2]. One loop, driven by the kind row's
+   columns:
+   - the name grammar (`pcrec_find_name_ok` today), plus `@REV` where `revs = 1`;
+   - classification by `flag_classify` or `list_classify` (§3.2): `name-only` (the
+     shipped `--analysis`, `cli/main.c:1103`), `name-else-file` (the shipped
+     `--list-analysis`, `cli/main.c:1808-1809`, `2233-2236`, and both measures
+     surfaces), `file-only` (picks, evaluator-params);
+   - the stops: `KS_STOP_SRCDIR` (the source's own directory, `lib` only), S1 the
+     compiling file where the kind allows it, S2 `-I DIR/<name><suffix>`, S3 the kind's
+     store;
+   - the entry match at S2, by `entry_match`: `exact` (`dir_has_exact`) or
+     `probe-exists` (`lib`'s shipped `path_is_file`, kept for zero movers, F12);
+   - an S2 file naming something else: `s2_mismatch` (`fallthrough-note` for analysis,
+     with its note text; `refuse` for measures, §3.2 says why); two or more items in one
+     file: `s2_multi = refuse`;
+   - the refusal text naming the stops searched (`stops_text`).
 
    These are `rxt_find.c`'s `probe_dir`, `dir_has_exact`, `stops_text` and
-   `find_bundle`'s stop loop, today. The analysis `include` chain (the self-name
-   `#include_next` and the terminal `default`) stays in the analysis kind: it is that
-   kind's semantics, and the other kinds refuse it.
-3. **Fill-only precedence** (`ks_pick`). For a kind with both a CLI flag and a config
-   line, it applies D93 fill-only: the file's value wins for its targets, the flag fills
-   targets that name none, and a disagreement prints `tune`'s note with the kind's own
-   flag and line names. That rule is spelled for `--analysis` today, and §3.3 restates
-   it for `--measures`. It becomes one routine, with two kinds reading it.
+   `find_bundle`'s stop loop, and `rxt_source.c`'s `lib` search, today. The analysis
+   `include` chain (the self-name `#include_next` and the terminal `default`) stays in the
+   analysis kind: it is that kind's semantics, and the other kinds refuse it. Revision 2
+   made "an S2 file's declared name must equal NAME" a SHARED refusal and the
+   classification a shared `/` rule. Both contradicted the analysis kind's shipped,
+   spec'd behaviour (`docs/spec/findings.md` S2 row; `rxt_find.c:12-15`), so K1's
+   "zero movers" was false as specified [r2 M2]. As columns, the shipped values are
+   reproduced exactly, and the difference between kinds is listed, not hidden.
+3. **Fill-only precedence** (`ks_pick`) [r2 n11]. For a kind with both a CLI flag and a
+   config line, it applies D93 fill-only: the file's value wins for its targets, and the
+   flag fills targets that name none. It RETURNS the decision and any disagreement as data
+   (`{chosen, source, flag_value, file_value}`) and prints nothing. The CLI prints
+   `tune`'s note through `cli_err` with the kind's own flag and line names, as
+   `apply_target` does today (`cli/main.c:1458-1474`). The library has no stderr, so
+   moving the print into `src/core` would have made the library print a CLI note.
 4. **The embed generator** (`scripts/ksgen.c KIND OUT FILE...` plus
    `scripts/embed_text.sh`). It writes, from the committed text, the kind's text table
-   and its PRE-PARSE, by linking a stage-0 build of `ksrc.c` and the kind's parser (the
-   `PCREC_FIND_STAGE0` trick, generalized). One Makefile pattern rule
-   (`gen-<kind>`, all called from `gen-tables`) replaces `gen-findings`' recipe. Python
-   never writes an embedded byte (§2.3).
-5. **The stamp/digest builder** (`ks_digest`, `ks_stamp`). It provides FNV-1a-64 with
-   the kind's domain prefix (findings.c's one `fnv1a` today), the 16-hex rendering, and
-   the stamp grammar: EMPTY = nothing asked; otherwise the kind's item text. It also
-   builds the `rx_info` mirror string, the same bytes as the macro.
+   and its PRE-PARSE. It links a stage-0 build of the parts and the kind's row (the
+   `PCREC_FIND_STAGE0` trick, generalized; the analysis row brings the `.rxt` reader, as
+   findgen does today). One Makefile pattern rule (`gen-<kind>`, all called from
+   `gen-tables`) replaces `gen-findings`' recipe. Python never writes an embedded byte
+   (§2.3).
+5. **The digests and the stamp** (`ks_digest`, `ks_stamp`) [r2 M5]. Each kind row has
+   TWO digest ROLES, because the analysis kind already has two digests that mean
+   different things (`docs/spec/findings.md` 8.1¶1: `rows_digest` is "a DIFFERENT hash
+   from the stamp's"):
+   - **ITEM**: the identity of the loadable item. R1 (§9.6), the shadow rule (§3.3), the
+     index views and the census read it. It is `rows_digest` for analysis,
+     `values_digest` for measures, and a row digest for picks and evaluator-params.
+   - **STAMP**: what a compile consumed. For analysis it is per QUERY. The shipped query
+     is `byte-rate`, over the 256 derived ppm values (`src/core/findings.c:332-344`,
+     `docs/spec/findings.md` 5¶6). `findings/design.md` §7's table gives later queries
+     their own consumed values (derived values for some queries, rows for others), so
+     the role carries the query as a sub-key. Its stamp grammar is
+     `query=bundle:digest`.
+     For measures it is the item digest itself (stamp-on-load, §3.5). Picks and
+     evaluator-params have none (`stamp.domain = NULL`).
+     The stamp text is rendered ONCE per compile, at the single render point after
+     `mf_art_end` (window_contract.md §3.7.3a), from the kit's layer-invariant `consulted`
+     ORed with the union over compile attempts (D167 addenda 2 and 3); `ks_stamp` builds
+     the text and does not choose when it is written.
+
+   `ks_digest(role, doc, subkey)` is FNV-1a-64 over the role's DOMAIN BYTES, then the
+   sub-key's bytes and a NUL where `subkey = KS_SUB_QUERY`, then the role's `fold`. It
+   is findings.c's one `fnv1a`, kept once, and it renders as 16 lowercase hex.
+   **Domains are LITERAL byte strings, never derived.** Revision 2 implied a
+   `pcrec-<kind>-<N>` pattern that the shipped domains do not follow (`find`,
+   `find-rows`, `meas`, `pick`). `pcrec-find-1` CANNOT be renamed: every
+   `<PREFIX>_FINDINGS` stamp would move, which is an abi event as a side effect. The
+   shipped domains are grandfathered byte for byte, NUL included. The shipped tags are
+   hashed with `sizeof`, which counts the terminator (`findings.c:334`, `:348`), so
+   `domain_len` is explicit. K1's gate pins every shipped digest unchanged (§9.7).
+   **What `rows_digest` does not cover** is `serves`, `include` and provenance. A writer
+   that loses one of those keeps R1 green, which is why R3 and R5 are load-bearing for
+   the analysis kind (§9.6, S984). `ks_stamp` builds the stamp grammar (EMPTY = nothing
+   asked; otherwise the kind's item text) and the `rx_info` mirror string, the same
+   bytes as the macro.
 6. **The `--list-<kind>` shape** (`ks_list`). Every kind has the same four views, each a
    `table_contract.md` section stream:
 
    | view | spelling | content | an input? |
    |---|---|---|---|
-   | index | `--list-<kinds>` (`--list-analyses`, `--list-measurements` bare) | one row per item reachable (store + `-I`), with `default_for`, digest, source | no |
+   | index | `--list-<kinds>` (`--list-analyses`, `--list-measurements` bare) | one row per item reachable (store + `-I`), with `default_for`, item digest, source | no |
    | CANONICAL | `--list-<kind> NAME|FILE --view=canonical` | the item itself, written by `write_canonical` | YES (§9.6) |
-   | derived | `--list-<kind> NAME|FILE --view=<v>` | the kind's derived views (measures: `decoded`, `readers`, `stale`; analysis: today's `chain`, `resolution`, …) | no |
+   | derived | `--list-<kind> NAME|FILE --view=<v>` | the kind's derived views (measures: `decoded`, `readers`, `stale`; analysis: today's `chain`, `resolution`, …, plus `decoded`) | no |
    | per-target | `--list-<kind> FILE.rxt` | per target: the resolved item, its stop, its stamp, its lookups | no |
 
-   For measures, the bare `--list-measurements NAME` IS the canonical view. For the
-   analysis kind, the bare `--list-analysis NAME` keeps its shipped output (the derived
-   `chain`/`resolution`/… sections, `findings.md` §6) until the §9.9 format decision. That
-   decision is a caller-visible change in any case, so the default view moves with it, in
-   one spec change, not two. `--view=canonical` exists for every kind from K3.
+   What a bare `--list-<kind> NAME` prints is the `bare_view` column [r2 n3]:
+   `canonical` for measures and `shipped` for analysis. The analysis value keeps today's
+   output (the derived `chain`/`resolution`/… sections, `findings.md` §6) until the §9.9
+   format decision. That decision is a caller-visible change either way, so the default
+   view moves with it in one spec change, and the move is a one-cell edit.
+   `--view=canonical` exists for every kind with a CLI surface from K3. A kind with
+   `list_surface = harness` (picks, evaluator-params: no `pcrec` flag) gets the same
+   views from the module's test driver, `tests/knowledge/ksdump`, which links the parts
+   and the rows and is what `make test-knowledge` runs. Under `name-else-file`, a
+   `--list-measurements` FILE whose name ends in `.rxt` is the per-target view, and any
+   other FILE is one set. That is a spelling rule with no probe, like §3.2.
 
 The kinds table is a declared first-match table (`pcrec-decisions-as-first-match-tables`).
 [LIST-TABLES] lists it once that row opens. No flag is added for it before then.
 
-### 9.3 The data-mover census tool [msc1 U1; Frank 2026-10-14]
+### 9.3 The data-mover census: a MODE of `scripts/emit_sweep.py` [msc1 U1; Frank 2026-10-14; r2 M4, n4]
 
-There is ONE tool, `scripts/knowledge_census.sh KIND OLD NEW [POPULATION]`. Revision 1's
-`measure_census.sh` is withdrawn. The tool compiles a pinned population under two data
-versions, with a per-artifact lookup attribution, and serves every kind of data change:
+Revision 2 specified a new tool, `scripts/knowledge_census.sh`, with its own pinned
+population (`tests/knowledge/census_population.tsv`) and its own artifact manifest. It
+duplicated `scripts/emit_sweep.py` piece by piece [r2 M4]. emit_sweep already:
 
-| KIND | OLD/NEW are | how the two compiles differ | attribution read from |
-|---|---|---|---|
-| `analysis` | two versions of a bundle (a committed rev, or a path) | `--analysis=` (or `-I` dirs) for each version; for the shipped `default`, a stage build of each text, since the terminal is found by identity | the artifact's `_FINDINGS` stamp items: the (query, bundle) pairs it asked whose derived rates differ between the two versions |
-| `measures` | two sets | `--measures=` for each | the fired reader rows whose declared keys differ in value (§8.4); `consulted` for the kit's |
-| `limits` | two `limits.def` values for one limit | the limit's `--max-…` override where one exists, else two stage builds | the limit's readers as `--list-limits` names them, and the artifact's refusal or `*_WHY` token change |
+- builds two sides, including `git archive` stage builds with `-D` limit VARIANTS
+  (`plain`, `lowsize`, `lowdfa`, `lowboth`, `lowthr`), which is exactly the limits arm;
+- compiles PINNED populations over eight streams, with reach floors per stream;
+- strips stamps, the normalization §2.4 already borrows;
+- records refusals and stderr (stream 8) and tallies `*_WHY`/prefilter tags against
+  pinned floors (`VARIANT_PINS`).
 
-**Common to every kind:**
+Revision 3 withdraws `knowledge_census.sh` and `census_population.tsv`. The census is an
+emit_sweep MODE, `--data KIND OLD NEW`, and adds three pieces to the existing tool:
 
-- **The comparison.** Stamp lines and their `rx_info` initializers are stripped, and the
-  emitted bytes are compared.
-- **Tokens and refusals.** Every `*_WHY` and ladder token, and every REFUSAL, is recorded
-  under both versions [r1 msc1-9].
-- **The output** is one movers TSV in one shape, with a `kind` column. For measures it is
-  committed as `MOVERS.tsv` (§8.4); for the others, the census goes in the commit message
-  or a review file, as the change requires.
-- **The population** is `tests/knowledge/census_population.tsv`, ONE pinned file (the
-  identity gate's corpus as the start, pinned by grep at K3). A compiled-ARTIFACT manifest
-  is counted against it by awk (§8.5 S952).
+1. **Data-argument sides.** Both sides are ONE working binary, and the two sides differ
+   only by a data argument:
 
-**Per-artifact lookup attribution needs a lookup trace.** A debug build's accessor for
-each kind takes the READER's id (§8.6) and writes `(artifact, kind, key, reader)` to a
-trace stream. The census joins that trace with the OLD/NEW difference.
+   | KIND | OLD/NEW are | the two sides differ by | attribution |
+   |---|---|---|---|
+   | `analysis` | two versions of a bundle (a committed rev, or a path) | `--analysis=` (or `-I` dirs) for each version; for the shipped `default`, which is found by identity, two stage builds of the store text, through emit_sweep's existing two-build path | the lookup TRACE, cross-checked by the `_FINDINGS` stamp items (below) [r2 n4] |
+   | `measures` | two sets | `--measures=` for each | the trace's pcrec readers, plus the kit's fired rows (the `memfn` facts section, R-MS4) whose declared keys differ in value; `consulted` for the kit's |
+   | `limits` | two `limits.def` values for one limit | the limit's `--max-…` override as a data argument where one exists, else emit_sweep's existing `-D` VARIANT builds | the limit's readers as `--list-limits` names them, and the artifact's refusal or `*_WHY` token change |
+
+2. **An ATTRIBUTION stream**, from the lookup trace (below).
+3. **A movers-TSV writer.** It writes one shape with a `kind` column. For measures the
+   output is committed as `measure_store/movers/<seq>.tsv` (§2.1, §8.4). For the other
+   kinds the census goes in the commit message or a review file, as the change requires.
+
+**The population** is emit_sweep's own pinned streams (1-4 always, and 6-8 where the change
+can reach them) and their reach floors. There is no second population file, and S952
+re-aims onto those floors (§8.5).
+
+**Per-artifact attribution has ONE mechanism, the lookup TRACE [r2 n4].** A debug build's
+accessor for each kind takes the READER's id (§8.6) and writes
+`(artifact, kind, key, reader)` to a trace stream. The census joins that trace with the
+OLD/NEW difference.
 
 - Findings readers are already one accessor per question kind (findings.c's header), so
   their trace is one line at each.
+- **The `_FINDINGS` stamp is the trace's cross-check, not a second attribution.** For
+  every analysis artifact, the set of queries the trace records equals the set of
+  (query, bundle) items its stamp carries. A disagreement fails the census and names the
+  artifact. Two independent sources agree: the accessor side and the emitter's
+  scaffolding. Revision 2's table said attribution was read from the stamp, and its prose
+  said it was read from the trace. Revision 3 picks the trace and uses the stamp as the
+  check.
 - The kit's lookups are not traced key by key (§4.2). Its attribution is the fired rows
   from the `memfn` facts section (R-MS4).
+
+The generalization of this to ANY world pair, with one movers shape for all of them (a code
+revision, a limit variant, a data version, an option set), is unlock U1. It is filed and
+not built (§10.4).
 
 ### 9.4 Why one module and not a shared helper file
 
 A helper file shared by copy-and-adapt would keep two stop loops, two embed generators,
 two precedence rules, two stamp grammars and two census scripts. They agree today and drift
-tomorrow. The `compare_stack.md` §2 record is the house's measured instance: definitions
-that exist more than once, each with its own agreement check. The module and the tool make
-each piece exist once.
+tomorrow. The `lib` resolver is that drift, already present (§9.1) [r2 M6]. The
+`compare_stack.md` §2 record is the house's measured instance: definitions that exist
+more than once, each with its own agreement check. The module's parts and emit_sweep's
+data mode make each piece exist once. The deliberate exception is `analyze/`'s twin,
+which is kept independent as a control (§9.1).
 
-### 9.5 What each kind sets
+### 9.5 What each kind sets [r2 M1, M2, M5, M6, n3]
 
-| | analysis | measures | picks |
-|---|---|---|---|
-| suffix | `.rxt` | `.measures.tsv` | `.picks.tsv` |
-| stops | S1, S2, S3 | S2, S3 (FILE always) | FILE only |
-| parse | the `.rxt` reader (unchanged; §9.9) | `ks_tsv_read` + §1.6 | `ks_tsv_read` + its own |
-| chain | `include`, terminal `default` | none (refused) | none |
-| precedence | fill-only (D93) via `ks_pick` | fill-only (D93) via `ks_pick` | n/a (one operand) |
-| stamp | `query=bundle:digest;…` / `query=none` / empty | `id@rev:digest` / empty | the judge's report header |
-| canonical view | a normalized `.rxt` bundle (§9.6) | the set file's own sections | the picks file's own sections |
-| derived sections the loader rejects | `chain`, `resolution`, `declarations`, `targets` | `decoded`, `readers`, `stale`, `sets` | `verdicts` |
+Every per-kind difference is a cell here, which is the kinds table's content. Revision 2
+had per-kind behaviour in prose that the table did not show: the S2 rule, the
+classification, "bare is canonical", and "exempt from R4 by name" [r2 n3].
 
-### 9.6 ROUND-TRIP IDENTITY (Frank, 2026-10-14, [KNOW-SRC])
+| column | analysis | measures | picks | evaluator-params | lib |
+|---|---|---|---|---|---|
+| suffix | `.rxt` | `.measures.tsv` | `.picks.tsv` | `.eval.tsv` | `.rxt` |
+| stops | S1, S2, S3 | S2, S3 | FILE only | FILE only | SRCDIR, S2 |
+| `flag_classify` | `name-only` (`--analysis`) | `name-else-file` | `file-only` | `file-only` | n/a (a `lib "path"` line is a path) |
+| `list_classify` | `name-else-file` | `name-else-file` | n/a | n/a | n/a |
+| `revs` | 0 | 1 (`NAME@REV`) | 0 | 0 | 0 |
+| `s2_mismatch` | `fallthrough-note` | `refuse` (§3.2) | n/a | n/a | n/a (no name to mismatch) |
+| `s2_multi` | `refuse` | `refuse` | n/a | n/a | n/a |
+| `entry_match` | `exact` | `exact` | n/a | n/a | `probe-exists` (shipped; F12) |
+| parse | the `.rxt` reader (unchanged; §9.9) | `ks_tsv_read` + §1.6 | `ks_tsv_read` + its own | `ks_tsv_read` + §9.11 | none (resolve only) |
+| chain | `include`, terminal `default` | none (refused) | none | none | none |
+| precedence | fill-only (D93) via `ks_pick` | fill-only (D93) via `ks_pick` | n/a (one operand) | n/a (one operand) | n/a |
+| ITEM digest | `rows_digest`, `pcrec-find-rows-1\0` (18 bytes) | `values_digest`, `pcrec-meas-1\0` (13) | row digest, `pcrec-pick-1\0` (13) | row digest, `pcrec-eval-1\0` (13): the prereg hash | none |
+| STAMP digest | per query, `pcrec-find-1\0` (13) + query + NUL | = ITEM | none | none | none |
+| stamp | `query=bundle:digest;…` / `query=none` / empty | `id@rev:digest` / empty | the judge's report header | the prereg commitment | none |
+| `bare_view` | `shipped` | `canonical` | n/a | n/a | n/a |
+| `r4` | `exempt` (until §9.9) | `required` | `required` | `required` | n/a |
+| `list_surface` | `cli` | `cli` | `harness` | `harness` | none |
+| canonical view | a normalized `.rxt` bundle (§9.6) | the set file's own sections | the picks file's own sections | the file's own sections (§9.11) | none |
+| derived sections the loader rejects | `chain`, `resolution`, `declarations`, `targets`, `decoded` | `decoded`, `readers`, `stale`, `sets` | `verdicts`, `decoded` | `decoded` | none |
+
+The `lib` row exists so the resolver is one loop. It has no load, list or round trip of
+its own: the file it finds is a `.rxt` library that the `.rxt` reader parses as a source.
+
+### 9.6 ROUND-TRIP IDENTITY (Frank, 2026-10-14, [KNOW-SRC]) [r2 M3, M5, n3, n5]
 
 **The rule.** For every kind, the listing's CANONICAL view of one item IS a loadable input
 of that kind:
 
 ```
 pcrec --list-measurements=zen4-grid2 --view=canonical > f.tsv
-pcrec --measures=f.tsv --pattern ...      # loads f.tsv; stamps zen4-grid2@1:<same digest>
+pcrec --measures=f.tsv --pattern ...      # f.tsv is a FILE (§3.2); stamps zen4-grid2@1:<same digest>
 ```
 
-Section 3.3's shadow rule allows exactly this: a FILE whose `id` is committed with the SAME
-`values_digest` is the same set. A FILE whose `id` is committed with a different digest is
-refused.
+Section 3.3's shadow rule allows exactly this: a FILE whose (`id`, `rev`) is committed
+with the SAME `values_digest` is the same set. Any other FILE with a committed `id` is
+refused [r2 n5].
 
 **The canonical writer** (`write_canonical`) is deterministic and total over a valid
 document:
@@ -1566,20 +1958,60 @@ document:
 Free prose in a hand-written file is not carried. For measures, prose lives in
 `PROVENANCE.md`. For analysis, that loss is one of §9.9's costs.
 
+**The DECODED writer** (`write_decoded`, the `--view=decoded` derived view) prints the
+LOADED document field by field: every section, every row, and every column under the name
+the loader resolved it to, with each value as the loader interprets it (§5.2 for
+measures). It is a derived view and never an input. It exists so that R5 can compare the C
+loader's interpretation with an independent reader.
+
 **The checks**, over every committed store item, every test fixture and every kind, as
 `make test-knowledge`:
 
 | check | statement | catches |
 |---|---|---|
-| R1 load→list→load | digest(load(list(load(x)))) = digest(load(x)), with digest = the kind's stamp digest (`values_digest` for measures) | a writer that changes a VALUE |
+| R1 load→list→load | digest(load(list(load(x)))) = digest(load(x)), with digest = the kind's ITEM digest (§9.2 part 5) [r2 M5] | a writer that changes a VALUE the item digest covers |
 | R2 list→load→list | list(load(list(load(x)))) = list(load(x)), byte for byte | a writer that is not a fixed point (order, spelling, an unstable field) |
-| R3 structural | load(list(load(x))) = load(x) as DOCUMENTS, every section and every column, compared by the independent python parser, not by the C loader | a writer that drops a non-digested section CONSISTENTLY. R1 and R2 are both blind to that: omit `cells`, and the digest (values only) and the second listing (also without cells) both agree |
-| R4 committed = canonical | for every store item, list(load(file)) = the committed file's bytes | a store file that is not canonical (so the embed IS the canonical text, and the drift gate of §8.3 covers both) |
+| R3 structural | load(list(load(x))) = load(x) as DOCUMENTS, every section and every column, compared by an INDEPENDENT reader, not by the C loader | a writer that drops a section the digest does not cover, CONSISTENTLY. R1 and R2 are both blind to that: omit `cells`, and the digest (values only) and the second listing (also without cells) both agree |
+| R4 committed = canonical | for every store item of a kind with `r4 = required`, list(load(file)) = the committed file's bytes | a store file that is not canonical (so the embed IS the canonical text, and the drift gate of §8.3 covers both) |
+| R5 decoded = independent [r2 M3a] | for every store item and fixture, `--list-<kind> X --view=decoded` = the independent reader's decode of the FILE `x`, field by field | a reader/writer pair that is wrong SYMMETRICALLY, which R1-R4 cannot see |
 
-R3 is this revision's addition to Frank's two checks. Without it, the round trip can pass
-while losing data the stamp does not cover (S961, §8.5). R4 holds for `measure_store/`
-from M0. For the analysis kind it waits on §9.9, because the shipped bundles carry prose
-by design: until then the analysis store is exempt from R4 by name, and R1-R3 run on it.
+**Why R5 [r2 M3a].** R1, R2 and R4, the drift gate (§8.3) and the pre-parse-versus-fresh-
+parse compare all run the SAME C reader on both sides. A symmetric defect passes all of
+them. For example, suppose the reader resolves `noise_e6` into the `abs_ns_e6` field and
+the writer writes that field back under `noise_e6`. The text then round-trips
+byte-identically. R1 and R2 stay green. R4 stays green. R3 stays green too, because it
+compares the independent reader's view of `list(load(x))` with its view of `x`, and the
+two texts are identical. Yet the loaded document is wrong. That is learnings §3's
+pattern: the control shares its source with what it controls. R5 compares the C
+INTERPRETATION with an independent reader of the original FILE, so a swap shows up as
+`abs_ns` ≠ the file's `abs_ns_e6` (S983). For the analysis kind, R5 also requires
+`--list-analysis`'s resolution digests to equal `tests/findings/findings_ref.py
+bundle-digest` on the same files. That compare already exists in `tests/findings/` and
+is named here as a gate.
+
+**The independent reader, per kind [r2 M3b]:**
+
+| kind | R3's and R5's independent side | why it is independent |
+|---|---|---|
+| measures, picks, evaluator-params | `tests/knowledge/ks_ref.py`: a python section-TSV parser and per-kind decoder written from `docs/spec/` (the shapes and the §1.6 code table), sharing no code with `ks_tsv_read`, `envelope.py` or `ksgen` | written from the spec, in another language, by a separate reader |
+| analysis | `analyze/`'s own bundle-text reader (`parse_bundle`), extended at K3 to every section the canonical writer emits, with a `--dump-doc` mode that prints the document in R3's comparison shape | zero-dependency by charter (`analyze/CLAUDE.md`): it links nothing under `src/`, so it cannot share the C loader's code. It is the deliberate twin of §9.1 |
+
+`findings_ref.py` cannot be R3's analysis side: it reads only `row` lines, by regex, and
+R3 compares every section. **The K3 extension is priced:** `parse_bundle` reads today what
+`pcrec-analyze` renders (the blocks, their provenance and the derived `serves`). The
+addition is `include`, the hand-written `serves … when … via` declarations, and the
+`--dump-doc` printer, plus `analyze/`'s own tests for them. It is about the size of one
+`analyze/` command form. The alternative, a new python `.rxt` bundle parser, would be a
+third reader of a grammar with two already, so it is not taken. S984 plants a canonical
+writer that drops `serves`. `rows_digest` does not cover `serves`, so R1 stays green, and
+R3 through `analyze/` catches the plant.
+
+R3 is revision 2's addition to Frank's two checks, and R5 is revision 3's. Without R3,
+the round trip can pass while losing data the digest does not cover (S961). Without R5,
+it can pass while misreading data consistently (S983). R4 holds for `measure_store/`
+from M0. For the analysis kind, `r4 = exempt` until §9.9 decides the format, because the
+shipped bundles carry prose by design. R1-R3 and R5 run on it. The exemption is a column
+value (§9.5), not a name in a script [r2 n3].
 
 **Derived views are not inputs.**
 
@@ -1588,26 +2020,50 @@ by design: until then the analysis store is exempt from R4 by name, and R1-R3 ru
   row), naming the section and pointing at `--view=canonical`. So a derived dump fed back
   as an input fails loudly, rather than loading with extra sections silently ignored under
   `table_contract.md` §3¶2.
-- Stale flags, reader rows, per-target lookups and the sets index are derived (S962).
+- Stale flags, reader rows, per-target lookups, the decoded view and the sets index are
+  derived (S962).
 
-### 9.7 Migrating the analysis loader: implement-then-replace, zero movers
+### 9.7 Migrating the analysis loader: implement-then-replace, zero movers [r2 M2, M4, M5, M6, n1]
 
 | step | what | gate |
 |---|---|---|
-| K0 | `ksrc.c` lands with the ANALYSIS kind as its only row, its parts implemented beside the shipped paths; `knowledge_census.sh` lands, run on a findings fixture change and a limits fixture change | `make strict`; the census reproduces a hand-made movers list on each fixture; S963 |
-| K1 | the shipped paths become calls into `ksrc`: `rxt_find.c`'s stop loop, `probe_dir`, `dir_has_exact`, `stops_text`, `pcrec_find_name_ok`, the `--analysis` fill-only routine, and findings.c's `fnv1a`. The chain logic stays where it is. During K1 a debug build resolves every name BOTH ways and asserts equal results | ZERO MOVERS: `emit_sweep.py` over the corpus (all arms), byte-identical; `tests/findings/` and `--list-analysis`/`--list-analyses` outputs byte-identical; the refusal texts byte-identical (the `-I` fixtures, named by grep at build) |
+| K0 | `ksrc.c` (the parts, §9.2) lands with the ANALYSIS and `lib` rows, implemented beside the shipped paths. emit_sweep's `--data` mode lands (§9.3), run on a findings fixture change and a limits fixture change | `make strict`; the dependency check (S989); the data mode reproduces a hand-made movers list on each fixture; S963 |
+| K1 | the shipped paths become calls into the parts: `rxt_find.c`'s stop loop, `probe_dir`, `dir_has_exact`, `stops_text`, `pcrec_find_name_ok`, `rxt_source.c`'s `lib` search (`entry_match = probe-exists`), the `--analysis` fill-only decision (`ks_pick`; the note stays in the CLI), and findings.c's `fnv1a` behind `ks_digest`. The chain logic stays where it is. During K1 a debug build resolves every name BOTH ways and asserts equal results | ZERO MOVERS: `emit_sweep.py` over the corpus (all arms), byte-identical; `tests/findings/` and `--list-analysis`/`--list-analyses` outputs byte-identical; the refusal and fall-through-note texts byte-identical, witnessed by `tests/findings/res_fixtures.py` (the `-I` resolution fixtures: an S2 file of another name falls through with its note, a two-bundle file refuses, a `NAME`/`FILE` spelling of each classification) [r2 M2]; `lib` resolution byte-identical over `tests/rxtsource/`; the DIGEST PIN: every shipped `_FINDINGS` stamp and every `rows_digest` of the three shipped bundles and the fixtures, byte-identical (S986) [r2 M5] |
 | K2 | the old functions are deleted; `findgen.c` becomes `ksgen analysis`; `gen-findings` is the pattern rule | `make gen-tables && git diff --exit-code` clean (the regenerated `findings_table.inc` byte-identical); the K1 gates again |
-| K3 | the canonical view (`--view=canonical`, a normalized `.rxt` bundle writer) and `make test-knowledge`'s R1-R3 for the analysis kind; the census population pinned | R1-R3 green over the three shipped bundles and the fixtures; S961, S962 |
+| K3 | the canonical and decoded views (`--view=canonical`, a normalized `.rxt` bundle writer; `--view=decoded`), `analyze/`'s reader extension and `--dump-doc` (§9.6), and `make test-knowledge`'s R1-R3 and R5 for the analysis kind | R1-R3 and R5 green over the three shipped bundles and the fixtures; S961, S962, S984 |
 
-There is no abi event: no emitted byte moves. K3 is a caller-observable addition (a new
-view), so `findings.md` and `cli.md` get their spec hunks in K3's commit (D80).
+**K1's derived edit set and re-aims [r2 n1].** K1 and K2 delete or relocate `rxt_find.c`'s
+stop loop, `dir_has_exact`, `stops_text`, `find_bundle` and findings.c's `fnv1a`. Sabotage
+rows anchor there. On main (`063b4a4b4`), S309, S310 and S315 anchor in
+`src/parse/rxt_find.c`, and **15** rows anchor in `src/core/findings.c`: 11 spelled
+`SAB_FILE="…"` and 4 spelled `SAB_FILE='…'`. The re-check counted 11, because its grep
+matched one quote style. That is this paragraph's argument in miniature: a hand count of
+the rows a move touches misses rows. Following the start_table and dec_fallback
+precedent, K1 DELIVERS:
+
+- an edit-set file listing every function K1/K2 moves or deletes;
+- the derived map from that edit set to every `SAB_FILE=` row whose anchor falls in it,
+  each marked RE-AIM (the planted line moves into `ksrc.c` or a row TU) or RE-RUN (the
+  anchor survives, and the row is re-run to show it still reaches);
+- the moved READERS outside `tests/mech`, found by grep. The known one is
+  `tests/registry/limits_check.sh:365`, which reads `PCREC_FIND_NTBL`/`NBUNDLES` "in
+  `src/core/findings.c`". If the store's table moves into the module, that reader moves
+  in the same commit.
+
+The edit set is the input and the map is derived from it, so a row the hand list missed
+cannot be lost.
+
+There is no abi event: no emitted byte moves. K3 is a caller-observable addition (two
+new views), so `findings.md` and `cli.md` get their spec hunks in K3's commit (D80).
 
 ### 9.8 Where [KNOW-SRC] sits in the build
 
 K0-K3 complete before [MEASURE-SET]'s M0 (§10.1). M0 then adds the `measures` kind row, its
-validator and canonical writer (the set's own sections), its store, and R1-R4 for sets.
-The census tool's `measures` arm is M1's first use. [TABLE-JUDGE] adds the `picks` row when
-it builds.
+validator, canonical and decoded writers (the set's own sections), its store, and R1-R5
+for sets. emit_sweep's `measures` data arm is M1's first use. [TABLE-JUDGE] adds the
+`picks` row when it builds. The `evaluator-params` row lands when OQ-1 is ruled. Until
+then the kit's `prereg.tsv` uses §9.11's canonical format from day one, as the plan row
+requires, so adding the row later needs no migration of the file.
 
 **The D77 trigger.** A second kind needs a loader (the measures kind, when [MEASURE-SET] is
 scheduled). [KNOW-SRC] is therefore scheduled AHEAD of [MEASURE-SET] by the same trigger.
@@ -1627,7 +2083,9 @@ keep `.rxt`, so the question is off the critical path. The case, both ways:
   R4 would hold for the analysis store too. Today it needs an exemption.
 - **Half the shape exists already.** The analysis LISTING is already section TSV
   (`--list-analysis`' data-kind sections, `findings.md` §6), so the canonical and derived
-  views would share a shape. `pcrec-analyze`'s output would be one table write.
+  views would share a shape. `pcrec-analyze`'s output would be a section-TSV write. It
+  would stay its OWN writer, because `analyze/` is zero-dependency by charter and cannot
+  call the module; it is the deliberate twin of §9.1, and R3's control [r2 n2].
 - **One generator.** `ksgen`'s analysis arm would stop needing the `.rxt` reader at stage
   0.
 
@@ -1658,7 +2116,8 @@ justification: that the inline case cannot be served by S2/S3 references.
 - the S1 inline stop: either withdrawn (a caller-observable removal) or kept through a
   wrapping block;
 - `ksgen`'s analysis arm;
-- `pcrec-analyze`'s writer and `analyze/` tests;
+- `pcrec-analyze`'s writer and reader (both twins: they change with the format, and
+  stay independent of the module) and `analyze/` tests;
 - the `tests/findings/` fixtures;
 - spec hunks in `findings.md`, `rxt_format.md` and `cli.md` (D80);
 - user `-I` bundles, needing a converter or a deprecation period.
@@ -1678,18 +2137,68 @@ canonical, derived and per-target views are `ks_list`'s for the measures kind (�
 part 6). The analysis listing moves onto `ks_list` at K1 for its resolution sections, with
 byte-identical output.
 
+### 9.11 The evaluator-parameter file's canonical format, from today [r2 M1]
+
+The plan row says "until built, each kind's file uses the canonical format from day
+one". The kit's `prereg.tsv` ([REGIME-EVAL], `memfn/docs/responses.md:2447`: committed
+alone, its hash posted to main before the judge slot) is the live instance. It is bound
+NOW, before the kind row exists. So that adding the row later needs no migration, the
+file is a `table_contract.md` §4 section TSV with this shape:
+
+```
+# pcrec evaluator parameters (spec: docs/spec/evaluator_params.md)
+#section header
+#key	value
+format	1
+id	reval-r17bp
+rev	1
+owner	kit
+evaluator	regime_eval@<ver>
+rows	<count>
+item_digest	<16 hex>
+#section params
+#key	unit	value_e6	note
+kit.reval.cap.simd_on.s1	ratio	150000	G2: regime cap, SIMD on, S1
+kit.reval.outlier.ns	ns	50000000	G3: outlier floor, per call
+...
+```
+
+- **Keys** follow §1.3's grammar: an owner, a quantity, then tokens. The owner's own
+  declaration orders the tokens. No placeholders.
+- **Values** are integers in `value_e6` under §1.7's literal rounding rule. The units are
+  `ratio` (a fraction × 10^6), `ns` (ns × 10^6; unit byte `0x05`, a new row of §1.6's table) and `count` (× 10^6, so an integer count
+  is `n000000`), and each has a code in the spec's unit table beside §1.6's. A percentage
+  bar is a `ratio`. There is no float, so two readers cannot disagree on a bar.
+- **`note`** is free text. It is display only, and the digest does not cover it.
+- **The ITEM digest IS the prereg hash.** It is FNV-1a-64 over the 13 domain bytes
+  `pcrec-eval-1\0`. Then, for each `params` row in canonical (bytewise) key order, it
+  takes the key, a NUL, the unit byte, and `value_e6` as int64 LE. This is §1.6's row
+  digest with the status byte dropped, since a parameter has no status. It is a
+  hand-written row digest like every other kind's. Deriving every kind's item digest
+  from `write_canonical` plus a column list is unlock U2, filed (§10.4). The header's
+  `item_digest` is self-checking, and `rows` counts the `params` section (K35).
+- **"The report's prereg diff = the census tool's diff"** (the plan row) is emit_sweep's
+  data mode with `KIND = evaluator-params` once the row exists. It is a keyed diff of two
+  files' `params`, with no compile, since no artifact reads these values. Until the row
+  exists, the kit's own diff of two committed `prereg.tsv` revs is that diff, written in
+  the same keyed shape.
+- **Who reads it** is OQ-1 (§10.6). The FORMAT and the DIGEST above are fixed either way.
+  The kit adopts them in its next `prereg.tsv` commit, and main relays that by request,
+  since `memfn/docs/requests.md` is main's to write.
+
 ## 10. Staged build, standing questions, lenses, unlocks, questions
 
 ### 10.1 Stages (each with its D77 trigger)
 
 | stage | content | trigger |
 |---|---|---|
-| K0-K3 ([KNOW-SRC], §9.7) | `ksrc.c` with the ANALYSIS kind; `knowledge_census.sh` (analysis and limits arms); the analysis loader replaced at ZERO movers; `findgen.c` → `ksgen analysis`; the canonical view and R1-R3 for the analysis kind; the census population pinned; S961-S963 | [MEASURE-SET] scheduled (a second kind needs a loader); built AHEAD of M0 (Frank, 2026-10-14) |
-| M0 | the MEASURES kind row (validator, canonical writer, store, R1-R4); `measure_store/` with ONE set (`zen4-grid1` as scratch, replaced by `zen4-grid2` when run); `ksgen.c`; the embed; the `<PREFIX>_MEASURES` stamp AND `rx_info.measures` (the abi event); the bare compile reads the LATEST set; cards (pcrec's file empty; the kit's via R-MS5); staleness listing; `--list-measurements` sets and one-set views over [LIST-TABLES]' census slice; `mf_measures` + `consulted`; spec `docs/spec/measures.md`; `test-measures` (recompute, drift gate, coverage) and `-answers` (with the synthetic sets incl. `dispatch`, boundary subjects, REACH floors, near-cap); S943-S945, S947, S948, S950, S953-S958 | R17-b′'s build, landing WITH R-MS1, R-MS2, R-MS3, R-MS5 (D166) |
-| M1 | `--measures=`, the config line (through `ks_pick`), `-I` resolution (§3.2), precedence tests, the per-target view, the census tool's `measures` arm + `MOVERS.tsv`; S946, S952, S959 | the first second set (grid2 after grid1, or a rollback need) |
+| K0-K3 ([KNOW-SRC], §9.7) | the PARTS `ksrc.c` (libc only) with the ANALYSIS and `lib` rows, the kinds table at the library tier, and the dependency check; emit_sweep's `--data` mode (analysis and limits arms, the attribution stream, the movers writer); the analysis loader replaced at ZERO movers (the resolution fixtures, the digest pin, the derived edit set and re-aims); `findgen.c` → `ksgen analysis`; the canonical and decoded views, `analyze/`'s `--dump-doc`, and R1-R3 + R5 for the analysis kind; S961-S963, S984-S986, S989 | [MEASURE-SET] scheduled (a second kind needs a loader); built AHEAD of M0 (Frank, 2026-10-14) |
+| M0 | the MEASURES kind row (validator, canonical and decoded writers, store, R1-R5 with `ks_ref.py`); `measure_store/` with ONE set (`zen4-grid1` as scratch, replaced by `zen4-grid2`, GO since D167, when run) and its `match-at` boundary capture (§8.1) [r2 n10]; `ksgen.c`; the embed; the `<PREFIX>_MEASURES` stamp AND `rx_info.measures` (the abi event); the bare compile reads the LATEST set; cards (pcrec's file empty; the kit's via R-MS5); staleness listing with `compiler-mismatch` and `libc-mismatch`; `--list-measurements` sets and one-set views over [LIST-TABLES]' census slice; `mf_measures` + `consulted`; spec `docs/spec/measures.md` (with §1.6's code table); `test-measures` (recompute, drift gate, coverage) and `-answers` (with the synthetic sets incl. `dispatch`, boundary subjects, REACH floors through R-MS6, the fired-rows construction check, near-cap); S943-S945, S947, S948, S950, S953-S958, S983, S987 | R17-b′'s build (GO, D167), landing WITH R-MS1, R-MS2, R-MS3, R-MS5, R-MS6 (D166) |
+| M1 | `--measures=`, the config line (through `ks_pick`), `-I` resolution (§3.2: `name-else-file`, `s2_mismatch = refuse`, the (id, rev) shadow key), precedence tests, the per-target view, emit_sweep's `measures` data arm + `DEFAULTS.log` and `movers/<seq>.tsv`; S946, S952, S959, S985, S988 | the first second set (grid2 after grid1, or a rollback need) |
 | M2 | the envelope script, R-MS4's safe directions, the cross-member loss test, class defaults, the DEFAULT FLIP to the envelope with its census (an abi event; RULED, D166 add. 2); S949, S960 | a second box's OFFICIAL set (F5 Zen 1) |
-| M3 | `pcrec-measure`, the quick profile, per-group gates and PARTIAL, `local` tier, `DEFAULT_MEASURES` into `build/`; S951 | a stated install-time need (D166 item 3 names it; no scheduler for it until a user asks) |
-| M4 | pcrec's own quantities (`pcrec.c_call`, `pcrec.c_byte`), their cards, and `cand_rows[]` as readers in the census | the regime table's pcrec-side build |
+| M3 | `pcrec-measure` (the parts + the measures row only, §7.1), the quick profile, per-group gates and PARTIAL, `local` tier, `DEFAULT_MEASURES` into `build/`; S951 | a stated install-time need (D166 item 3 names it; no scheduler for it until a user asks) |
+| M4 | pcrec's own quantities (`pcrec.c_call`, `pcrec.c_byte`), their cards, the pcrec-side dependency hash's body normalization (§2.4) [r2 n7], and `cand_rows[]` as readers in the census | the regime table's pcrec-side build |
+| E-P | the `evaluator-params` kind row (§9.11), its harness listing, R1-R5 over the kit's committed `prereg.tsv` revs; S990 | OQ-1 ruled; until then the kit's file uses §9.11's format |
 
 ### 10.2 The three standing questions (docs/design/CLAUDE.md)
 
@@ -1716,7 +2225,13 @@ measurement.
   (§8.2).
 - **The embed** is gated by regeneration plus `git diff`, with an independent awk read of
   `DEFAULTS` (§8.3).
-- **Population counts** (statuses, census artifacts by a compiled-artifact manifest,
+- **The loader's interpretation** is checked by R5 against an independent reader per kind
+  (python `ks_ref.py` for the TSV kinds, `analyze/`'s reader for analysis). Every other
+  round-trip check runs the one C reader on both sides (§9.6) [r2 M3].
+- **Dispatch reach** is counted by the kit's R-MS6 hook. The admitted arms come from the
+  kit's fired-rows section, and that section is checked against the `dispatch` set's
+  construction through §5.4's census, which is a different kit output (§8.1) [r2 M7].
+- **Population counts** (statuses, census artifacts by emit_sweep's per-stream reach floors,
   sites per arm) are counted by awk over TSVs (K35).
 - **Directions** come from two owners' declarations that must agree (§6.2).
 - **The unavoidable shared source** is the measured numbers' own truth. It is controlled by
@@ -1736,7 +2251,7 @@ measurement.
 - (d) **[KNOW-SRC]'s K0-K3** move no emitted byte (§9.7). K3 adds a caller-visible view
   (`--view=canonical`) with its spec hunks.
 - (d′) **A change to any knowledge kind's shipped data** (a findings bundle, a set, a
-  `limits.def` default) is censused by the ONE tool (§9.3), whose output names the movers
+  `limits.def` default) is censused by emit_sweep's ONE data mode (§9.3), whose output names the movers
   and their attribution.
 - (e) **Spec:**
   - a new `docs/spec/measures.md` (the format, the key grammar, the registry with its
@@ -1755,8 +2270,12 @@ measurement.
 
 | sibling | what it teaches | what a set does differently |
 |---|---|---|
-| analysis object / findings (D162) | NOW SHARED, not imitated ([KNOW-SRC], §9): name grammar, `-I` search, store, embed generator, digest, stamp grammar, `rx_info` mirror, fill-only precedence, the `--list-<kind>` shape, round trip, the census tool | no chain, no `include`, no `serves`; keyed integer rows, not counts; its `.rxt` format is reconsidered (§9.9) |
+| analysis object / findings (D162) | NOW SHARED, not imitated ([KNOW-SRC], §9): name grammar, `-I` search, store, embed generator, digest roles, stamp grammar, `rx_info` mirror, fill-only precedence, the `--list-<kind>` shape, round trip, the census (emit_sweep's data mode). Its divergences (classification, the S2 rule, two digests) are declared columns, not copies [r2 M2, M5] | no chain, no `include`, no `serves`; keyed integer rows, not counts; its `.rxt` format is reconsidered (§9.9) |
 | [TABLE-JUDGE] picks file | the third kind of §9's module; the interface the envelope's cross-member loss test and §7.3's replay claim use | FILE only, no store, no stamp in artifacts |
+| [REGIME-EVAL]'s evaluator parameters [r2 M1] | the fourth kind (§9.11): the placement rule's P3 row; the prereg hash is its item digest | not measured and not read by a compile; it changes verdicts, never bytes |
+| `lib` references [r2 M6] | the resolver's fifth row: one stop loop over the same `-I` list | resolve only; its entry match differs today (F12) |
+| `analyze/` (`pcrec-analyze`) [r2 n2] | the deliberate independent twin of the analysis format, and R3's control | never a member: zero-dependency by charter |
+| `scripts/emit_sweep.py` [r2 M4] | the two-side compare, pinned streams, reach floors, stamp normalization, refusal and tag tallies | the census is its `--data` mode, not a second tool |
 | [LIST-TABLES] | the census of declared tables; the reader index IS its census with a `reads` column (§5.4) | a set adds a column, never a scanner |
 | limits (`limits.def`, `--list-limits`) | one declared table, listing and binary cannot disagree | limits are D149 constants chosen by people; set rows are MEASURED, provenanced and versioned |
 | axes (`--list-axes`) | a registry whose rows are the options | a set is not an option; `--measures` is one axis whose VALUE is a set |
@@ -1777,6 +2296,19 @@ The design lenses (memory `pcrec-design-evaluation-lenses`):
 - **Unlocks** are filed in §10.4.
 
 ### 10.4 Unlocks, filed with triggers (not built)
+
+**The re-check's unlocks (r2 U1-U5) [r2].** Each is an idea filed with its trigger. None
+is built into this design, and no stage above depends on one.
+
+| id | the idea | what it would unlock | trigger |
+|---|---|---|---|
+| r2-U1 | ONE TWO-WORLD COMPARE: emit_sweep's two-side machinery for ANY world pair (a code revision, a limit variant, a data version of any kind, an option set, [OPT-SETS]), with one movers and attribution TSV shape for all four | one census reading for every kind of change; a code change's movers and a data change's movers become diffable against each other | K0, the first census written (the data mode lands then; the generalization is decided on what it shows) |
+| r2-U2 | ITEM DIGEST = FNV over the canonical writer's bytes of the kind's declared VALUE columns | R1 and the digest could not disagree about what is a "value"; every new kind's digest follows from `write_canonical` plus a column list, with no hand-written fold. The shipped `rows_digest` and `pcrec-find-1` stay grandfathered (§9.2 part 5) | the `evaluator-params` row's build (E-P), the first kind whose digest would otherwise be hand-written new |
+| r2-U3 | LIMITS AS A READ-ONLY KIND: a kinds-table row with store only, no flag and no stamp | `--list-limits` gets the canonical view, R4 and the trace's attribution free; §9.1a's placement rule becomes rows of one table | the first `limits.def` default change censused by emit_sweep's data mode |
+| r2-U4 | THE [LIB] STORE AS A RESOLVER KIND: `lib <store-name>` (reserved today in `rxt_source.c`) resolves through `ks_resolve`'s S3 | the `lib` row (§9.5) gains a store, and named libraries are found the way bundles and sets are | [LIB]'s build |
+| r2-U5 | AN INLINE TABLE BLOCK: if §9.9 keeps `.rxt`, a `.rxt` DATA block `table KIND { … section TSV … }` serves ANY kind inline (S1 for measures and evaluator parameters too) | one inline spelling for every kind, in place of §9.9's "middle form" with two spellings for one kind | the §9.9 decision at K3 |
+
+**Revision 2's list (r1 unlocks), unchanged:**
 
 - **The shared knowledge-source module and the one census tool (U1).** MOVED INTO SCOPE as
   [KNOW-SRC] (§9), endorsed by Frank 2026-10-14 and built FIRST. Recorded here because the
@@ -1847,6 +2379,47 @@ migration cost. Its trigger is K3.
 None of the settled choices changes an answer, and each was the manager's to make
 (`pcrec-answer-free-choices-are-mine`).
 
+**Revision 3 (manager-settled, answer-free).** Each choice below changes no answer, so each
+is the manager's (`pcrec-answer-free-choices-are-mine`):
+
+- the shipped `name-else-file` classification for measures;
+- `s2_mismatch = refuse` for measures;
+- the census as emit_sweep's mode;
+- the two digest roles with literal grandfathered domains;
+- `lib` kept at `probe-exists` through K1;
+- the movers log keyed by transition;
+- R5 and its readers.
+
+### 10.6 Open question for Frank
+
+**OQ-1: who READS the evaluator-parameter kind?**
+
+- **The problem.** The plan row places [REGIME-EVAL]'s verdict-changing constants in "a
+  [KNOW-SRC] kind" (Frank, 2026-10-14). Its only reader is the kit's judge mode, which is
+  kit code in the kit's tree (`memfn/`, 0BSD, its own project and lanes). pcrec's
+  compiler never reads these values. §9.11 fixes the FORMAT and the DIGEST now, so the
+  file is canonical from day one either way. The open part is whether "a [KNOW-SRC]
+  kind" means one READER across both projects, or one FORMAT with each project reading it
+  its own way.
+- **Forces for one reader (the kit compiles pcrec's parts).** It is Frank's "consistent
+  loader". One reader cannot drift, and after M8 the parts are libc-only and can be
+  compiled into the kit's harness as source, as `pcrec-measure` compiles them.
+- **Forces against it.**
+  - It makes the kit's harness depend on pcrec source (MIT into a 0BSD project, both
+    Frank's).
+  - It couples the kit's judge to pcrec's module revisions.
+  - It inverts D146/D157's boundary in a small way: pcrec would supply method code to the
+    kit, not only facts.
+  - A kit-side reader of a pcrec-specified format is also a free R5 control: two readers
+    of one spec, with one of them independent.
+- **Leaning.** One FORMAT and one DIGEST spec (`docs/spec/evaluator_params.md`), and the
+  kit keeps its own reader. pcrec's module adds the `evaluator-params` row (E-P) for the
+  listing, the round trip and the census diff over the committed revs, and R5 compares
+  the two readers. If the kit later wants pcrec's parts, it asks by request, and nothing
+  in §9 prevents it. The decision changes no answer and no emitted byte. It goes to Frank
+  because it sets a precedent for code crossing the pcrec/kit boundary, and that boundary
+  is his.
+
 ## 11. Findings
 
 - **F1.** R17-b′ §3.5 proposes `measures/<name>/`. `oracle_store/`'s shape fits better,
@@ -1885,3 +2458,22 @@ None of the settled choices changes an answer, and each was the manager's to mak
   Per-group A/A p90 is 3.37% on F1 and 0.17% on F3, and the per-launch p90 is 6.96%. The
   noise is the walk's on 64 KiB find-all groups (gridread §1.1), so gating is per group,
   with a PARTIAL outcome.
+- **F12 (new) [r2 M6].** The `lib` reference resolver (`src/parse/rxt_source.c:4283-4340`)
+  probes `-I` directories with `path_is_file(join_path(...))`. The analysis resolver
+  deliberately replaced that probe with an exact directory-entry match ([r2 M-S6],
+  `rxt_find.c:9-12`). On a case-insensitive filesystem (the Mac), `lib "Foo.rxt"` can
+  therefore resolve `foo.rxt`, where a bundle name cannot. K1 keeps the shipped behaviour
+  as the `lib` row's `entry_match = probe-exists`, so the move is zero-mover. The FIX is
+  a one-cell flip to `exact`. It is caller-observable on case-insensitive filesystems only,
+  and it lands as its own change with its `rxt_format.md` hunk (D80). It is filed for the
+  manager as a known-issues row, not fixed here.
+- **F13 (new) [r2 n1].** The re-check's count of sabotage rows anchored in
+  `src/core/findings.c` (11) missed 4 of 15, because their `SAB_FILE=` uses single
+  quotes. Any hand-run anchor census needs both quote styles, which is why K1's re-aims
+  are derived from an edit set (§9.7).
+- **F14 (new) [r2 M3].** Every round-trip check revision 2 named (R1-R4, the drift gate,
+  pre-parse against a fresh parse) runs the one C reader on both sides. A symmetric
+  reader/writer defect passes all of them. Only a comparison of the C INTERPRETATION with
+  an independent reader of the original file (R5) sees it. The same holds for any future
+  kind: every kind needs a named independent reader (§9.6's table) before its round trip
+  means anything.

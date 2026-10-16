@@ -1,0 +1,11 @@
+== gcc 15.2.0 -O2 -Wall -Wextra, LP64, x86_64, main 37086a1db
+rev2 152 rev3-I1 96 rev3-I2 160
+== -O2 -fPIC fast path
+fast:
+.LFB25:
+	.cfi_startproc
+	endbr64
+	cmpl	$1230242306, (%rdi)
+	jne	.L7
+	movl	32(%rdi), %eax
+	ret

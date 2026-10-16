@@ -57,3 +57,11 @@ python3 -I sem/nullable_census.py build/pcrec O`.
   scan stamp.
 - `out/` — `run_twin_inline.out`, `run_twin_shared.out` (60 case lines each, ALL
   OK), `init_spellings.out`, `label_census.out`.
+
+## rev3/ — revision 3's one measurement (lane `iterrev3`, 2026-10-16)
+
+- `layout.c` — `sizeof(rx_iter)` at revision 2's layout (152 B, not the 160 B revision 2
+  predicted), at revision 3's I1 layout (96 B: no `owner`, the batch setter's fields, no
+  `st`) and at I2 (160 B, `st` with S = 64); and the BOUND fast path's instructions under
+  `-fPIC` (one `cmpl $imm32, (%rdi)`, no GOT load). Its header has the build lines.
+- `out/layout.out` — its output at gcc 15.2.0, main `37086a1db`.

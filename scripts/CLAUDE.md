@@ -467,6 +467,14 @@ pcrec (the Makefile owns that).
   (a trace pair per variant, `--trace-order SLOT=ordered|set` passed to
   `trace_diff.compare`). `--emit-pins FILE` writes a measurement as the
   pins' python source. See `docs/dev/lanes/decfbB0_report.md`.
+  **FLOORS ARE PER ARM ([SWFIX], 2026-10-16).** The plain composition floors
+  (`PINS`) apply to the plain arm only; an `--extra` arm is held to its own
+  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`), and an arm with no
+  entry prints `COMPOSITION FLOORS: NOT APPLIED` rather than borrowing the plain
+  numbers (the `--engine=vm` arm read 86 < 100 ref-vs-ref). `VARIANT_PINS` was
+  re-pinned at b72291d84 with each fall attributed to a compiler event in the
+  pin comment. The self-test plants each declared floor +1 (`EMIT_SWEEP_VARIANT_
+  PLANTS=1` adds the variant cell); mech rows S1047/S1048.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between

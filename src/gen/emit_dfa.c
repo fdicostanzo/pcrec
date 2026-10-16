@@ -14393,13 +14393,17 @@ void pcrec_emit_dfa(Ctx *cx)
         /* [EMIT-ENTRIES] the shape that decides which entry calls which,
          * stated before the first declaration: `_match` has its own body on
          * the nomatch and anchored forms (axis G's dispatch below), and on a
-         * compound (the controller's one bounded attempt). */
+         * compound (the controller's one bounded attempt), whose operands
+         * and floor the controller's own rows read. */
         PcrecEntryShape sh = {
             .vm = false,
             .match_own = shell || dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH ||
                          dfa_match_is_unwrapped(cx),
             .search_match = !shell && dfa_search_calls_match(cx),
             .utf_check = pcrec_utf_check_on(cx),
+            .compound = shell != NULL,
+            .comp_b = shell && shell->text[1],
+            .comp_floor_any = shell && shell->floor_any,
         };
         pcrec_entry_shape(cx, &sh);
     }

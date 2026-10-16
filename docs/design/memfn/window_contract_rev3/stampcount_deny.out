@@ -1,0 +1,15 @@
+patterns 5790
+noreq-pf	EMPTY	3275
+noreq-pf	REFUSED	454
+noreq-pf	byte-rate=default	2061
+noreq-pf-utf8	EMPTY	3246
+noreq-pf-utf8	REFUSED	426
+noreq-pf-utf8	none	2118
+noreq-vm	EMPTY	5337
+noreq-vm	REFUSED	453
+noreqbyte	EMPTY	1973
+noreqbyte	REFUSED	454
+noreqbyte	byte-rate=default	3363
+noreqbyte-run	EMPTY	1973
+noreqbyte-run	REFUSED	454
+noreqbyte-run	byte-rate=default	3363

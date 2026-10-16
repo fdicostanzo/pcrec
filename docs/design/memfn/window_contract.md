@@ -13,13 +13,84 @@ run.
 
 **Revision 2.1: lane `wcrev2`, 2026-10-12.** It applies D161 add. 9 (see §R2.1).
 
-**Status: PROPOSED, revision 2.1.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is
-a leaning. The R-18 outline (§11) is the manager's to file.
+**Revision 3: lane `wcrev3`, 2026-10-16, from main `063b4a4b4` (pcrec abi 78).**
+It is the design main's build step **E-1** implements (§3.7). It applies the
+kit's winreq C-items C-1..C-16 (`lane/memfn-r17:docs/dev/lanes/winreq_report.md`
+§4) and R17-b′ revision 2 (`lane/memfn-r17:docs/design/memfn/r17b_prime.md`,
+`c90d65e53`, §3-§4). It also applies D161 add. 10-15, D162 add. 4, D166 (+ add.
+1-2) and D167, and the kit's relayed sequencing (B1 declares the slot, E-1 fills
+it after B2). Read §R3 first. DESIGN ONLY: nothing under `src/`, `cli/`, `lib/`,
+`memfn/` or `tests/` changes. One compile-only census was run
+(`window_contract_rev3/`).
+
+**Revision 3.1: lane `wcfix`, 2026-10-16, from main `2288ad1cb` (pcrec abi
+78).** It answers the light panel r4
+(`../../dev/reviews/2026-10-16-r4-window-contract-rev3.md`: 1 blocker, 5 majors,
+6 minors, all ACCEPTED by the manager) and Frank's Q3 ruling (D167 add. 2:
+CONSULTED). It adds the manager's finding X1, an independent PERTURBATION check
+of the stamp (§3.7.7 C-PERT). Read §R3.1 first. DESIGN ONLY again, plus two
+compile-only censuses and one prototype run on main's binary
+(`window_contract_rev31/`).
+
+**Status: PROPOSED, revision 3.1.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is a
+leaning; **Q3 is RULED (D167 add. 2: CONSULTED)**; Q4 is the manager's; Q5 and
+Q6 are new and in discussion form. Q5 asks whether a kind's provenance may be
+read from the answering block's own declared `provenance` stanza (the design of
+record, pending the ruling). Q6 asks what the stamp records when a compile takes
+more than one attempt. The R-18 ledger edit (§11, Appendix A) is main's to
+apply.
 
 The contract carries FACTS only, never the kit's method (D157). Every
 selection below is an ordered first-match table (memory
 `pcrec-decisions-as-first-match-tables`). Revision-2 changes are tagged
 `[r4 ID]` or `[D161.7]`/`[D161.8]` where they land.
+
+## §R3.1. What revision 3.1 changed (finding → section, disposition)
+
+Every panel r4 finding was ACCEPTED by the manager (2026-10-16). No finding was
+rejected. Sabotage ids marked PROPOSED start at S1027 and are the manager's to
+allocate.
+
+| finding | where | disposition |
+|---|---|---|
+| Q3 | §3.7.3, §12 Q3, header | **RULED: CONSULTED** (D167 add. 2). §3.7.5's OFFERED build text is withdrawn to a pointer (it is in revision 3's git text) |
+| **B1** (blocker): the offer's derivation can refuse a compile that succeeds today | **§3.7.1, §3.2 (T-KIND), §3.3 rule 9, §3.7.4a, §3.7.7 G1-E1** | **Discharged.** The panel's witness REPRODUCES on main `2288ad1cb` (`window_contract_rev31/b1_witness.out`). The derivation splits into a NON-RAISING `find_derive_byte_rate_status` that the offer calls, and the ASK path that keeps today's `pcrec_ctx_fail`, so a refusal stays the asker's. T-KIND gains two `underivable` rows. A new rule 9 says an underivable kind refuses the compile iff it is CONSULTED, which keeps today's refusal set at E-1 and at B3b. G1-E1 is widened to deny arms × {no analysis, `--analysis weblog`, an `-I` user bundle, the `l1none` fixture}, with floors MEASURED by a census (`analysiscount.out`): 1,905 / 3,246 / 5,367 utf8 compiles succeed today with `""` under `l1none` and refuse when asked. The D80 route (making the spec's unconditional refusal true) is NOT taken |
+| M1: `arrives` does not keep a MEASURED-ONLY kind absent | §3.2 | The column is renamed `unmeasured` (`ARRIVES` / `ABSENT`) after what it decides, and it is a conjunct of every non-measured PRESENT row. An `authored-absent` row precedes the fall-through. Witness: UNREACHED until B4 gives `run-rarity` a shape (then a user `-I` authored `bigram` bundle reaches it); sabotage S1029 PROPOSED. The header cites D162 add. 3's refinement, and check C-E1-5 holds the column to the kinds pcrec itself reads |
+| M2: provenance re-derived from the chain LINK although each block declares it | §3.1, §3.2, §3.6, §3.7.1, **§12 Q5** | Design of record, PENDING Q5: `mf_prov.source` is read from the answering block's own `provenance` stanza (`source authored` → AUTHORED, anything else → MEASURED). `mf_prov` also carries `bytes` (the evidence strength, now built, not filed) and `fidelity`. `PcrecFindTblBlock`, `findgen`'s pre-parse and `rxt_find.c`'s copy carry the stanza. Link identity stays as C-E1-1's cross-check. This changes the manager's reading of D162 add. 3 ("pcrec's prior vs measured from a bundle") for a user's authored block, so it is Q5, in discussion form, with a leaning |
+| M3: the CONSULTED design's render point was unplaced | **§3.7.3a (new)**, §3.7.9, §9 family 7 | ONE render point: the art-end pass, AFTER `mf_art_end`, for `_FINDINGS` and `.findings =` and, at M0, for `_MEASURES` and `.measures =`. The lines keep their byte positions through marks, so the move alone is zero-byte. It is its own commit, RP, landing no later than the first of B3b/M0 and before any OR. Check C-RP, sabotage S1032 PROPOSED. `measure_sets.md` needs the same sentence: an OWED sibling edit (§3.7.3a), not made here |
+| M4: C-CONS is blind on its population | §3.7.7 | `consulted` is read from a named trace record (`KSRCTRACE`'s new `consulted` field), compared directly. The stamp half runs on the deny arms crossed with `-fmemfn-simd`, with a floor of kit-only consumers. C-PERT (X1) is the stamp half's independent partner |
+| M5: the offer was built at a lazy, first-caller-wins point | §3.7.1, §3.3 rule 3 | Built EAGERLY at one stated point: `compile_driver`, right after `pcrec_find_resolve`, stored on `Job`. `pcrec_memfn_art` only passes it. Sabotage S1031 PROPOSED |
+| m1: `find_kinds[]` should own the vocabulary | §3.2, §3.7.1, §3.7.6 F-3 | Renamed `find_queries[]` and made the query vocabulary's ONE home. `find_derivs[]`'s third column becomes a row index into it, and `rxt_find.c`, `findings_dump.c` and `rxt_source.c`'s error text read it. F-3 is RETIRED at E-1, not filed |
+| m2: C-E1-4 shares a source with what it checks | §3.7.7, §3.7.8 | Labelled an AGREEMENT check; C-E1-1's python digest is named as the independent line. S996's plant site is stated |
+| m3: G1-E1 omits the VM deny arm | §3.7.7 | Added (`--engine=vm -fno-req-byte -fno-req-run`, 5,337 `""`), with a floor of its own |
+| m4: F-2 is not reachable through the listing it names | §3.7.6 F-2, §12 Q4 | Restated as LATENT. Trigger: the first path that lists facts under a non-default analysis |
+| m5: rule 7 names kit rows and their outcome (D157) | §3.3 rule 7 | Cut to the fact. The row list and the KEEP default are a pointer to r17b′ |
+| m6: `have ∧ ¬asked` is a new state | §3.7.6, §3.7.7 C-E1-6 | The record's comment is re-worded. `req_rate_why` reads `pcrec_find_byte_rate`'s return. A structural check (C-E1-6) holds that `byte_rate_have` and `byte_rate_status` have no reader outside `findings.c` |
+| U1-U4 (the panel's unlocks) | §13 | U3 is BUILT here (the render point, RP). U4 is BUILT for the build point (M5); its retirement half stays filed. U1 and U2 are filed with their triggers (U2 is mostly built by M2) |
+| **X1** (manager): nothing detects a kit row that reads a kind but reports `consulted = false` | **§3.7.7 C-PERT (new)**, §3.7.8 | An independent PERTURBATION check: compile the population twice, with each kind's data held and perturbed under the same bundle name and stop. Any artifact whose bytes outside the stamp lines move while its stamp omits that kind FAILS. It reads only emitted bytes and the stamp text. A prototype ran on main (`window_contract_rev31/perturb_proto.py`). Planted sabotage: a kit row that drops its consulted bit (S1033, B3b's) and a pcrec accessor that marks only on derivation (S1034, E-1's) |
+| a finding from the prototype | **§3.7.6 F-5, §12 Q6** | **The stamp reports the FINAL attempt only.** A compile whose earlier attempt consulted the byte-rate and whose final attempt did not stamps `""`, yet its bytes move with the data. Two corpus witnesses (`(\p{Xwd})x`, `x(\p{Xwd})y` under `-e utf8 -fno-req-byte`). C-PERT finds them on day one. Q6 asks for the union over attempts |
+
+## §R3. What revision 3 changed (input → section, disposition)
+
+| input | where | disposition |
+|---|---|---|
+| E-1 (r17b′ §3.1 row "(main) E-1"; D167's consequences) | **§3.7 (new)** | The build step, stated in full: the object, where it is built, the slot it fills, the stamp, the census, the readers, the spec hunks, the checks and the sabotage |
+| the per-site slot vs the kit's per-`mf_art_begin` slot | §3.1, §3.3 rule 3, §3.7.2 | **The object rides `mf_art_begin`**, not `mf_site.analysis`. One object per art, stated once. Rule 3's same-pointer check and its NULL-mixing refusal dissolve, because nothing can differ. Reasons in §3.7.2 |
+| rev 2 open question 5 (S1's mover population) | §3.7.4, §14 item 5 | **MEASURED** (`window_contract_rev3/`). At default flags the population is EMPTY: 0 of 5,336 byte, 0 of 5,364 utf8 and 0 of 5,337 `--engine=vm` corpus artifacts stamp `""` today. Every default compile already asks, by the findings design's byte-rate rule 1 (docs/design/findings/design.md). The `""` population is entirely in the deny arms: 1,973 of 5,336 under `-fno-req-byte`, and every artifact under `--engine=vm -fno-req-byte -fno-req-run` |
+| the sibling-of-a-family check against [KNOW-SRC] (`measure_sets.md` §9) | **§3.7.3**, §9 family 7, F-1 | **A conflict, found.** Rev 2's R1 makes `_FINDINGS` mean OFFERED. [KNOW-SRC] §9.2 part 5 has ONE stamp grammar for the family ("EMPTY = nothing asked"), and `<PREFIX>_MEASURES` means CONSULTED (§3.5: a pcrec reader asked, or the kit returned `consulted`). Two siblings would have two rules. This revision's design of record is **CONSULTED** for both. Under it, E-1 is ZERO-MOVER and not an abi event. The OFFERED alternative's event is also stated exactly (§3.7.5). Q3 asks Frank |
+| general-mechanism lens on the object | §3.2 (T-KIND), §3.7.1 | Rev 2's T-KIND row "the kind is `byte-rate`" was a special case for one kind. It becomes an `arrives` COLUMN of ONE kinds table keyed by the [FINDINGS] query vocabulary: `ALWAYS` for `byte-rate` (D162 add. 2), `MEASURED-ONLY` for the rest. Provenance is decided by the answering LINK's identity, not by its name |
+| C-1, C-2, C-16 (the PRESENCE class; member order, `omin`) | §2.2, §2.3 | ADOPTED as r17b′ §4.1 states it: `mf_span_class` gains PRESENCE; `omin` is measured from the match start, ≥ 0, and 0 is a sound under-estimate; `head_max`; `member_order`. Carved out of "bounded only" |
+| C-3, C-4, C-12 (the reply) | §0 item 2, §2.4 | ADOPTED. ALL_PRESENT → VERDICT is deleted. Every span's presence is part of FIND: range binding, EMPTY = NOMATCH, decided first, one verdict per activation, per-candidate use as a PERMISSION, the unconstrained reply as a range. NONE's safety per consumer is r17b′ §4.6's table |
+| C-5 (the K82/L1 and run-pre-check rows) | §2.5 | ADOPTED (Q-WR-5 (a)): origin = the landmark |
+| C-6 (T-PRES superseded) | §5.4a, §9 | ADOPTED. `dominated` is the kit's row P2. Presence is not a separate site. Withholding presence (Q-WR-4) is pcrec's sub-problem choice and stays here as a one-row table, T-WITHHOLD |
+| **C-7** (R-18's text and §11 in step) | **§11, Appendix A** | DONE here for §11. The ledger edit to `memfn/docs/requests.md` R-18 is drafted verbatim in Appendix A for main (single writer) |
+| **C-8** (unlock (c) becomes the contract) | **§13** | DONE: unlock (c) is struck. Its trigger dissolves, because presence is a span class of the one request (D161 add. 14's clarification) |
+| C-9, C-13, C-14 (applicability; the VM-route exclusion; `need` is the effort fact) | §2.3 | ADOPTED as rules |
+| C-10 (give-up direction per consumer) | §2.4, §10 | ADOPTED: D161 add. 15's Q-WR-3. No move in either direction through ST3. From B5, D158 applies per measured cell, direction-checked by GIVEUP1 |
+| C-11 (`consumer` replaced, not dropped) | §6 S3 | ADOPTED: S3 retires `mf_site.consumer` with `site_kind` as its replacement (Q-WR-8), and `site_kind` is stated from B2 |
+| C-15 (evidence rows read MEASURED only) | §3.3 rule 7 | ADOPTED (D162 add. 3, D161 add. 15 Q-WR-9) |
+| D161 add. 10 (verify and proofs only on EXACT spans) | §2.2, §4.3 | ADOPTED: a per-span `byte_form` fact, EXACT or SUPERSET, required. A proof or verify request is legal only on EXACT |
+| a finding from the stamp's readers | §3.7.6 F-2 | `req.c`'s `req_rate_why` writes `rate:builtin-prior` whenever ANY block answered, `--analysis weblog` included. facts_listing.md 4.1.3¶4 says "the shipped byte-frequency prior". FILED, not fixed by E-1 |
 
 ## §R2.1. What revision 2.1 changed
 
@@ -75,17 +146,22 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
    (every covered position where all spans hold appears), ASCENDING with no
    repeats, and each candidate IS span 0's start. pcrec matches from each
    candidate. A context check is not a span: pcrec tries the edge itself and
-   the stream covers the positions after it `[r4 E1]`. Presence sites keep the
-   VERDICT reply. Because every candidate has one meaning, the reply needs no
+   the stream covers the positions after it `[r4 E1]`. `[rev3 C-3, C-4]` There
+   is no separate presence reply: a PRESENCE span (unbounded offset) is a span
+   class of the same site, and an EMPTY stream is NOMATCH (D161 add. 14). Because every candidate has one meaning, the reply needs no
    span index (§7).
 3. **The ANALYSIS object** (D162) is a versioned list of kinds keyed by the
    [FINDINGS] query name (`byte-rate`, later `run-rarity`). Each kind is
-   PRESENT or explicitly ABSENT and carries a PROVENANCE: `prior-authored`,
-   `prior-none` or `measured`, plus the bundle identity and the same digest
-   the `<PREFIX>_FINDINGS` stamp reports. Every enum has an UNSTATED zero
-   `[r4 R4]`. `byte-rate` is always present. Under `-e utf8` today it is
-   `prior-none` with no table (§3.2). The kit is encoding-blind (D147 add. 14),
-   so `cpfreq` is never sent.
+   PRESENT or explicitly ABSENT and carries a PROVENANCE: `authored`,
+   `prior-none` or `measured`, plus the bundle identity, the same digest
+   the `<PREFIX>_FINDINGS` stamp reports and, for `measured`, the evidence
+   strength (`bytes`, `fidelity`). `[rev3.1 M2]` The source is read from the
+   answering block's own declared `provenance` stanza, pending Q5. Every enum
+   has an UNSTATED zero `[r4 R4]`. `byte-rate` is always present. Under
+   `-e utf8` today it is `prior-none` with no table (§3.2). The kit is encoding-blind (D147 add. 14),
+   so `cpfreq` is never sent. `[rev3]` The object reaches the kit ONCE per
+   art, on `mf_art_begin` (the slot the kit's B1 declares), not per site
+   (§3.7.2).
 4. **The kit's job is a CHAIN of 1-2 simple searches inside one site** (D161
    add. 5, quoted in §4.1). The contract states the facts a chain reads and
    the obligations its stream meets; the chain itself is the kit's `[r4 R3]`.
@@ -110,7 +186,7 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
    the offset-k selection, the landmark K admission, G1 and `plan_hint`.
    Unbounded cuts stay pcrec's.
 7. **Retirement sequence** (D161 add. 6, D162 add. 3): the frequency kind
-   lands first (S1, a pcrec abi event `[r4 R1]`), then the kit's own ranking,
+   lands first (S1 = main's E-1, §3.7; ZERO-MOVER, D167 add. 2), then the kit's own ranking,
    implement-then-replace (S2), then the retirement of `mf_pred.rank_*`, the
    never-filled `ppm_*`/`cand_ppm_*` and the unread `mf_site.consumer` in one
    `MF_SITE_ABI` bump with zero pcrec movers (S3). `pcrec_find_run_rank`
@@ -121,6 +197,29 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
    N5 in its per-width rev-2.3 form, and N6. **Rejected**: the span-index
    field (setfind's W8) and W9 (consumer price). **Moved**: W10 (joint
    survival) becomes the analysis kind `run-rarity`.
+9. **E-1, main's build step** `[rev3]` (§3.7). pcrec builds the analysis object
+   per compile attempt from `Job.find` through ONE table over the [FINDINGS]
+   query vocabulary (`find_queries[]`). `byte-rate` is ALWAYS present:
+   measured, authored or prior-none. pcrec builds it EAGERLY, right after the
+   attempt's chain resolves, and hands it to the slot the kit's B1 declares on
+   `mf_art_begin`, with no kit edit, after B2 merges.
+   - **The stamp.** `<PREFIX>_FINDINGS` means CONSULTED, the [KNOW-SRC]
+     family's one rule (RULED, D167 add. 2). Building the object is an OFFER,
+     and an offer is not an ask.
+   - **The offer never refuses** `[rev3.1 B1]`. It derives through a
+     NON-RAISING status derivation; the refusal of an underivable block stays
+     on the ASK path, so it fires only where a reader consults the kind, as
+     today. With both, E-1 moves no byte and no refusal in any arm: it is not
+     a pcrec abi event and not a D80 event.
+   - **What the stamp gains later.** The kit's per-kind `consulted` joins the
+     stamp at the first commit that ROUTES a kit row reading a kind (B3b).
+     Before that, a zero-mover commit (RP) moves the stamp's render point to
+     after `mf_art_end` (§3.7.3a). B3b carries the findings.md §5 hunk.
+   - **The honesty check** `[rev3.1 X1]`. A perturbation check (C-PERT)
+     compiles every artifact with each kind's data held and perturbed, and
+     fails any artifact whose bytes move while its stamp omits the kind. It
+     does not read pcrec's ask record or the kit's report. Its prototype
+     found that the stamp reports only the FINAL attempt (F-5, Q6).
 
 ## 1. Inputs, and what is already built
 
@@ -131,6 +230,14 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
 - D157 (facts, never method);
 - D161 + add. 1-8 (add. 7: the stream; add. 8: proven facts kept);
 - D162 + add. 1-4.
+- `[rev3]` D161 add. 10 (EXACT byte form gates verify and proof), add. 11-13
+  (the candidate finder table; measured generic class; lockdown), add. 14 and
+  its clarification (single-byte sites and presence are ONE window request),
+  add. 15 (Q-WR-1/2/3/6/9); D166 + add. 1-2 (measurement sets); D167 (build GO;
+  E-1 sits between the kit's B2 and B3a);
+- `[rev3]` the kit's merged list `winreq_report.md` §4 (C-1..C-16) and R17-b′
+  rev 2 §3-§4, both on `lane/memfn-r17` at `c90d65e53`. Requests R-18..R-21 on
+  main (`memfn/docs/requests.md`).
 
 Memory rules that also bind: no silent defaults (a value a row USES must be
 stated; unused fields are wildcards); K96 row contracts (applicability covers
@@ -187,6 +294,39 @@ A site carries `1 + npred` predicates: `pred` (span 0) and `preds[0..npred)`
 | `need` | UNSTATED (the zero fill, refused at define), REQUIRED (every candidate satisfies this span), OPTIONAL (the kit may use or ignore it) `[r4 R4]` | `mf_pred.need` | values re-numbered (§2.3) |
 | `spans_seq` (site-level) | UNSTATED (zero fill), SEQ (the sequence rule holds, §2.3), NOT-SEQ (it does not; no row may read a pairwise distance) `[r4 R4]` | — | **yes** (R-18) |
 
+**PRESENCE spans** `[rev3 C-1, C-2, C-16]`. A span with no bounded distance to
+the origin, but necessary for every match, is a PRESENCE span. Examples are an
+unbounded-offset necessary byte or run (`zxq` in `a.*zxq`), or each member of a
+necessary set. It rides in the SAME site, as `mf_span_class = MF_SPAN_PRESENCE`.
+r17b′ §4.1 is the field text, adopted here:
+- It states `window_stated 0`, `omin ≥ 0` and a `need`. `move_back` and
+  `overshoot` are not read.
+- `omin` is measured from the MATCH START, not from span 0. Presence is a fact
+  of the match, and binding is per activation (§2.4), so the verdict window is
+  `[start + omin, n)`. At `omin = 0` that is today's `[posvar, n)`. `0` is the
+  sound under-estimate B3a states; the true `omin` is B5's.
+- The UNPICKED form (PR-5): every necessary-set member is its own one-byte
+  presence span, carrying `member_order`, its position in pattern order (PR-7).
+  The whole run is one span with its mask. The pick, the window and set-leads
+  are the kit's rows.
+- The site gains `head_max` (`h_max`, PR-6): the largest distance from a match
+  start to span 0's start. It is 0 for a head-0 origin and K for the handoff's
+  landmark origin.
+
+**The span class enum** `[rev3]` is `{UNSTATED = 0, BOUNDED, CONTEXT, PRESENCE}`.
+It replaces the reading "a negative `move_back` is a context predicate" with a
+stated fact. C-1's split of "below the origin" falls out of it: a bounded span
+with a negative offset is BOUNDED, and a byte only read for context is CONTEXT.
+
+**The byte form** `[rev3, D161 add. 10]`. Every span states `byte_form`:
+`{UNSTATED = 0, EXACT, SUPERSET}`. EXACT means the per-position byte sets accept
+exactly the span's language (literal bytes, single-byte classes, a multi-byte
+class whose cross product is the class). SUPERSET means a filter only (`[α-ω]`
+under `-e utf8` arrives as `{CE,CF}{80..BF}`). pcrec knows which, because it
+did the lowering. Only an EXACT span may be marked for verify (§4.3 direction
+(1)) or receive a proof (direction (2)). A SUPERSET span's candidates remain
+COMPLETE, and pcrec re-checks them.
+
 **Context predicates** `[r4 E1]`. A predicate whose every term lies below the
 origin (Q-R7-1's reads-below FIND) is a CONTEXT check, not a span (D161 add. 7).
 `(?m)^`'s preceding `\n` is the one built today: R-17 spells it as the `{\n}`
@@ -228,6 +368,21 @@ sub-block `pcrec_mfk_w8_*`.
   the PROVEN RANGE), which is a fact about the call, while an unbounded
   `move_back` would be an offset inside the sub-problem, which D161 add. 5
   rules is automata and pcrec's.
+  `[rev3 C-2]` The rule binds BOUNDED and CONTEXT spans. A PRESENCE span is
+  carved out as its own class: it has no `omax` and states `window_stated 0`.
+  The unbounded sentinels stay refused on every class, and a PRESENCE span
+  carries no pairwise distance, so `spans_seq` never covers it.
+- **`need` is the EFFORT fact** `[rev3 C-14]`. A span is REQUIRED exactly where
+  dropping it, narrowing it, or answering unconstrained over it could let a
+  budgeted engine do more work on an input the denied build answers (D158).
+  It is OPTIONAL elsewhere. No separate effort field exists.
+- **Applicability** `[rev3 C-9]` (K96). A kit row that would drop, narrow or
+  answer unconstrained over a REQUIRED span does not apply to the site.
+- **The VM-route exclusion** `[rev3 C-13]`. On a route with no DFA scan in front
+  of a budgeted engine (the VM hat, the no-DFA VM route's pre-check, the framed
+  one-attempt VM of K64), pcrec states every presence span REQUIRED (K64, K65,
+  K66) and states the VM hat's span 0 REQUIRED. r17b′ §4.6's table is the
+  per-consumer statement.
 - **No silent defaults** `[r4 R4]`. Every stated enum has an UNSTATED zero:
   - `window_stated`: 0 = unstated, refused on a window site (R17-a's rule).
   - `mf_need`: re-numbered `{MF_NEED_UNSTATED = 0, MF_REQUIRED,
@@ -281,12 +436,18 @@ sub-block `pcrec_mfk_w8_*`.
 
 ### 2.4 The reply
 
-A site's reply is one of two TYPES, keyed on its op:
+`[rev3 C-3, C-4]` A site's reply has ONE type: the STREAM. Revision 2's
+`ALL_PRESENT → VERDICT` row is deleted (D161 add. 14's clarification: the
+pre-scan and the candidate search are one request).
 
 | op | reply | meaning |
 |---|---|---|
-| FIND (a window site) | STREAM of candidates `[D161.7]`. Stateless: each FIND call returns the next candidate `≥ lo` (W3's `result`). Stateful: `next_candidate(&state, lo)` (D155 add. 4.1, R-17's forms). Both deliver the same sequence | see the obligations below |
-| ALL_PRESENT (a presence site) | VERDICT (and, under ASSIGN, the leftmost hit of `preds[ret_pred]`, unchanged) | Every REQUIRED predicate occurs somewhere in `[lo, hi)`. No window fields: such spans state `window_stated` 0, which R17-a already requires on non-FIND sites |
+| FIND (every window site, presence spans included) | STREAM of candidates `[D161.7]`. Stateless: each FIND call returns the next candidate `≥ lo` (W3's `result`). Stateful: `next_candidate(&state, lo)` (D155 add. 4.1, R-17's forms). Both deliver the same sequence | see the obligations below |
+
+ALL_PRESENT's renderers (`precheck`, `precheck_assign`, `precheck_assign_byte`)
+survive as the merged site's ENTRY-USE rendering (KW-7, B3b), not as a separate
+reply type. A presence-only site (no span 0, `pred.nterm = 0`) replies with the
+range form of obligation 6 below.
 
 **The stream's obligations** (D161 add. 7):
 
@@ -301,6 +462,35 @@ A site's reply is one of two TYPES, keyed on its op:
    satisfies every REQUIRED span at an offset inside its interval. A
    candidate may fail an OPTIONAL span (a superset is legal). So a stream
    that yields every position in range is legal iff no span is REQUIRED.
+5. **Range-level binding of PRESENCE spans** `[rev3 C-3 (i), (ii)]`. If a
+   REQUIRED presence span has no occurrence in `[start + omin, n)`, the stream
+   is EMPTY, and EMPTY = NOMATCH (with §2.4's edge rule below where a context
+   predicate exists). EMPTY or the first element is returned only after every
+   REQUIRED presence span is established over its whole window: DECIDED
+   FIRST. One verdict per activation. Later uses in the same activation (the
+   loop's next candidate, the handoff's re-entry) yield candidates and never
+   re-verify. Where a pre-check today turns an engine give-up into NOMATCH
+   (K65), the empty complete stream does the same.
+6. **The unconstrained reply is a RANGE** `[rev3 C-3 (iv)]`. "Every position in
+   `[lo, hi′]`" with `hi′ = n` is legal iff span 0 is OPTIONAL or absent. A
+   presence-only site replies this way: today's VM entry runs every position
+   after the pre-check. No output hook is added. A `result_hi` hook is filed for
+   the iterator's cut (Q-WR-6).
+7. **Per-candidate use is a PERMISSION** `[rev3 C-3 (iii), D161 add. 15
+   Q-WR-6]`. The kit MAY end the stream after the last occurrence `p` of a
+   REQUIRED presence span, at `c > p − omin + head_max`. This is never
+   required. It is exercised only by the D165 iterator, after its build, with
+   `S` raised once.
+
+**NONE's safety per consumer, and the give-up direction** `[rev3 C-10, C-12]`.
+r17b′ §4.6 is the per-consumer table, adopted as the contract's worked
+statement. It follows from obligation 4 once `need` is stated (§2.3). An
+unconstrained reply is answer- and give-up-safe on DFA_SCAN, DFA_HAT, HYB_PF and
+ATTEMPT_PRED. It is NOT legal on VM_ATTEMPT, whose span 0 and presence spans are
+REQUIRED. The give-up direction is D161 add. 15's Q-WR-3: through the
+zero-mover steps (B0-B3b) nothing moves in either direction. From B5, D158
+applies per measured cell (an answer never becomes a give-up; a give-up may
+become an answer, direction-checked by GIVEUP1).
 
 **Coverage and the edge** `[r4 E1]`. A position is COVERED unless deciding a
 context predicate there would need a byte the site does not offer as context,
@@ -317,8 +507,9 @@ there is no edge, and an exhausted stream is NOMATCH outright.
 - **No resume rule** `[r4 E7]`. Revision 1's `U` and resume-at-`U + 1` are
   gone: the next candidate after one pcrec rejected is the stream's next
   element. The 2-chain ambiguity in `U` dissolves with it.
-- **A bounded span's presence is part of FIND.** An exhausted stream has
-  proved that no covered position carries all spans. So the pre-check the
+- **Every span's presence is part of FIND** `[rev3 C-3]` (revision 2 said
+  "a bounded span's"; PRESENCE spans now join, by obligation 5). An exhausted
+  stream has proved that no covered position carries all spans. So the pre-check the
   K82/L1 handoff fuses today (presence plus location in one pass) is a FIND
   whose span 0 is the landmark. **Correction to revision 1**: pcrec's `c - K`
   text does NOT retire. `K` is the bounded head before span 0 (`h_max`, §2.1),
@@ -332,8 +523,8 @@ there is no edge, and an exhausted stream is NOMATCH outright.
 | PF FIND, DFA hat, VM hat (R-17) | one span, one position, class `S` (an offset-pinned union, §5.6) | 0 / 0 | stream; candidate = the hit |
 | MLINE `(?m)^` | no span; one context predicate `{\n}` one byte before the origin | -1 / 0 (R-17's spelling) | stream from edge + 1; candidate = the hit + 1; the edge is pcrec's |
 | offset-skip FUNC | one span: the k-set positions 0..k (an offset-pinned union, from the k-set, not from `span_facts`) | 0 / 0 | stream; candidate = the hit |
-| run pre-check (unbounded offset) | the run, as a presence predicate | none (`window_stated` 0) | VERDICT |
-| K82/L1 handoff | span 0 = the landmark; head `[0, K]` is pcrec's | 0 / 0 | today: a VERDICT plus pcrec's `c - K`. At R-18: a stream; pcrec keeps `c - K` |
+| run pre-check (unbounded offset) `[rev3 C-5]` | the run as a PRESENCE span (and each necessary-set member as its own, unpicked), beside span 0 where one exists | none (`window_stated` 0); `omin` 0 at B3a | the same stream: EMPTY = NOMATCH (obligation 5); on a presence-only site, the range `[lo, n)` (obligation 6) |
+| K82/L1 handoff `[rev3 C-5, Q-WR-5 (a)]` | origin = the landmark: span 0 is the landmark (one byte, or a RUN term); presence is fused (an exhausted stream is the landmark's absence); `head_max` = K | 0 / 0 | a stream; pcrec keeps `max(lo, c − K)`, the utf8 round-up and the re-entry (a further USE of the same site at `scan_position`). Framing (b), origin = the match start, is a later byte move behind its own deny |
 
 ## 3. Object B: the ANALYSIS object
 
@@ -342,16 +533,32 @@ there is no edge, and an exhausted stream is NOMATCH outright.
 ```c
 #define MF_ANALYSIS_LIST_V 1        /* the LIST's own shape, not any kind's */
 typedef enum { MF_PROV_UNSTATED = 0,      /* refused at define              */
-               MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
+               MF_PROV_AUTHORED, MF_PROV_PRIOR_NONE,
                MF_PROV_MEASURED } mf_prov_source;
+typedef enum { MF_FID_UNSTATED = 0,       /* the block declares no fidelity */
+               MF_FID_VERBATIM, MF_FID_ADAPTED,
+               MF_FID_SYNTHESIZED } mf_prov_fidelity;
 typedef enum { MF_KIND_UNSTATED = 0,      /* refused at define              */
                MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_state;
 typedef struct {
-    uint8_t     source;     /* mf_prov_source                                  */
-    const char *bundle;     /* MEASURED: the answering bundle; PRIOR: "default" */
-    uint64_t    digest;     /* what was consumed: pcrec_find_byte_rate_digest,
-                               the value `<PREFIX>_FINDINGS` reports; 0 under
-                               PRIOR_NONE                                      */
+    uint8_t     source;     /* mf_prov_source, read from the answering block's
+                               own `provenance` stanza [rev3.1 M2, pending Q5]  */
+    uint8_t     fidelity;   /* mf_prov_fidelity: the stanza's `fidelity` row;
+                               UNSTATED where the block declares none (the
+                               schema requires it only under a pattern block)
+                               [rev3.1 M2]                                      */
+    const char *bundle;     /* the answering bundle's name (AUTHORED and
+                               MEASURED); NULL under PRIOR_NONE (stated,
+                               checked at build) [rev3]                         */
+    uint64_t    bytes;      /* MEASURED: the stanza's `bytes` row, the
+                               exemplar's size (the evidence strength, §3.6);
+                               0 under AUTHORED and PRIOR_NONE, where the
+                               schema forbids or does not ask for it
+                               [rev3.1 M2]                                      */
+    uint64_t    digest;     /* the kind's digest of what it carries, the value
+                               the kind's `<PREFIX>_FINDINGS` item reports when
+                               a reader consults it (byte-rate:
+                               pcrec_find_byte_rate_digest); 0 under PRIOR_NONE */
 } mf_prov;
 typedef struct {
     const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */
@@ -367,22 +574,96 @@ typedef struct mf_analysis {
 } mf_analysis;
 ```
 
+`[rev3.1 M2]` `bytes` and `fidelity` are in the layout from its first
+declaration. The layout is new at the kit's B1, so adding them now costs no
+extra `MF_SITE_ABI` event; adding them after B1 lands would. If B1 has already
+merged a layout without them when this revision is read, the kit's B1 owes the
+two fields in a re-declaration before E-1, which is still one event.
+
 **The payload invariant** `[r4 R4]`, checked at define: `payload` is non-NULL
-iff `present == MF_KIND_PRESENT` and `prov.source` is `PRIOR_AUTHORED` or
+iff `present == MF_KIND_PRESENT` and `prov.source` is `AUTHORED` or
 `MEASURED`. So `byte-rate` under `-e utf8` today reads `PRESENT`,
 `PRIOR_NONE`, `payload == NULL`, and that combination is stated, not
 accidental. An `ABSENT` kind has `source == MF_PROV_UNSTATED` and no payload.
 
-The site reaches the object as `mf_site.analysis`, appended last (D162 ruling
-1). NULL is "none stated" and is legal only for a stand-alone K3 caller.
+`[rev3]` **The object reaches the kit on `mf_art_begin`**, in the slot the kit's
+B1 declares (NULL-tolerant; no kit row reads it before B3a). Revision 2's
+`mf_site.analysis` is WITHDRAWN (§3.7.2 gives the reasons). NULL is "none
+stated", legal for a stand-alone K3 caller and for every pcrec compile before
+E-1 lands.
 
-### 3.2 The kinds today, and their provenance
+### 3.2 The kinds table, and provenance `[rev3: one table; rev3.1: the vocabulary's home, an `unmeasured` column, content provenance]`
 
-| tag | when present | provenance | payload |
+The object is built from ONE pcrec-side table, `find_queries[]`
+`[rev3.1 m1]`, whose rows ARE the [FINDINGS] query vocabulary. It is the
+vocabulary's one home: `find_derivs[]`'s third column becomes a row index into
+it, and every other spelling reads it (§3.7.1, F-3). Each row has a tag, a
+payload version (`0` = pcrec carries no payload for the kind yet), and an
+`unmeasured` column. No row names a kind in a predicate.
+
+`[rev3.1 M1]` **`unmeasured`** says what the kind is when nothing MEASURED
+answers it: `ARRIVES` (it is present anyway, as an authored table or as
+pcrec's no-information answer) or `ABSENT`. The column is D162 add. 2 stated
+as data: the frequency kind always arrives, and every other kind is present
+only when measured. Its values are not free choices: D162 add. 3's refinement
+("a derived fact pcrec also uses is sent ALWAYS") puts `ARRIVES` on exactly the
+kinds a pcrec reader asks, and check C-E1-5 holds the column to that.
+
+| tag | payload version | `unmeasured` | payload |
 |---|---|---|---|
-| `byte-rate` | ALWAYS (D162 add. 2) | `measured` (bundle, digest) when a `--analysis` block answers; `prior-authored` ("default", digest) under `-e byte`, which is `default.rxt`'s unigram block; `prior-none` under any encoding no shipped block serves, which today is `-e utf8` | `uint32_t ppm[256]`, summing to 1,000,000 (`pcrec_find_normalize`'s rule). NULL under `prior-none` |
-| `run-rarity` | when a bundle's `bigram` block answers ([FINDINGS] B4, not landed) | `measured` only | B4's shape; the kit sees the kind only once a row reads it |
+| `byte-rate` | 1 | `ARRIVES` (D162 add. 2; pcrec's readers ask it) | `uint32_t ppm[256]`, summing to 1,000,000 (`pcrec_find_normalize`'s rule); NULL under `prior-none` |
+| `run-rarity` | 0 until [FINDINGS] B4 lands its shape | `ABSENT` (D162 add. 2; no pcrec reader asks it) | none yet; B4's shape |
 
+**T-KIND, one kind's state (first match, the same rows for every kind):**
+
+"A block answers" is `pcrec_find_chain_answer`'s selection: the ONE block the
+chain's first answering link declares for (query, encoding). "Derives" is the
+NON-RAISING status derivation of §3.7.1 returning OK.
+
+| row | predicate | `present` | `prov` (source, bundle, digest, bytes, fidelity) |
+|---|---|---|---|
+| `no-shape` | the row's payload version is 0 | ABSENT | UNSTATED |
+| `underivable-arrives` `[rev3.1 B1]` | a block answers, its derivation FAILS, and `unmeasured` is `ARRIVES` | PRESENT | PRIOR_NONE (NULL, 0, 0, UNSTATED) |
+| `underivable` `[rev3.1 B1]` | a block answers and its derivation FAILS | ABSENT | UNSTATED |
+| `measured` | a block answers, derives, and its `provenance` declares a `source` other than `authored` | PRESENT | MEASURED (the answering bundle, the kind's digest, the stanza's `bytes`, its `fidelity`) |
+| `authored` `[rev3.1 M1, M2]` | a block answers, derives, declares `source authored`, and `unmeasured` is `ARRIVES` | PRESENT | AUTHORED (the answering bundle, the kind's digest, 0, the stanza's `fidelity`) |
+| `authored-absent` `[rev3.1 M1]` | a block answers and declares `source authored` | ABSENT | UNSTATED |
+| `prior-none` | nothing answers, and `unmeasured` is `ARRIVES` | PRESENT | PRIOR_NONE (NULL, 0, 0, UNSTATED) |
+| `absent` | else | ABSENT | UNSTATED |
+
+- **Why `underivable` reads PRIOR_NONE for an arriving kind** `[rev3.1 B1]`.
+  The block that answers has no table to carry, so no payload exists, and
+  falling through to a later link would break the selection rule (the FIRST
+  answering block is the answer, findings design §4.4). D162 add. 2 still asks
+  the kind to arrive, and pcrec's answer with no table IS the no-information
+  answer, so the state is the one `prior-none` already states. It is never
+  observable on an artifact: rule 9 (§3.3) refuses the compile the moment any
+  reader, pcrec's or the kit's, consults the kind. The state matters only for
+  compiles in which nothing reads it.
+- **Provenance from the block's own declaration** `[rev3.1 M2, pending Q5]`.
+  Every data block carries a schema-validated `provenance` stanza
+  (`rxt_schema.def`: `bytes` and `sha256` are required under a data block iff
+  `source` is not `authored`; `fidelity` is a closed vocabulary,
+  `verbatim adapted synthesized`). The source is read from it: `source
+  authored` → AUTHORED, any other value → MEASURED. Revision 3 decided the
+  source by the answering LINK's identity instead (the store's `default` →
+  `prior-authored`, anything else → `measured`). That called a byte-identical
+  user copy of `default.rxt` "measured", and rule 7 would have admitted the
+  authored prior as EVIDENCE (M2's probe, reproduced on main:
+  `window_contract_rev31/b1_witness.out` shows the copy resolving at link 0,
+  stop `-I`, with the store's own digest `1822fb973b95a4da`). Link identity
+  stays as a CROSS-CHECK (C-E1-1): an answer reached through
+  `PCREC_FIND_STOP_DEFAULT` must be AUTHORED, because the store's `default`
+  is authored by construction (E-1 adds that assertion to `findgen`'s
+  pre-parse, §3.7.1).
+- **Today's cells.** Under `-e byte` with no `--analysis`, `byte-rate` is
+  `authored` (bundle `default`). Under `-e utf8` with no `--analysis`, it is
+  `prior-none`: `default.rxt` declares `serves byte-rate when byte` only.
+  Naming `weblog` or `log` makes it `measured` under both encodings (`cpfreq`
+  via `encode-utf8` under utf8), with `bytes` 1,000,000 and 999,960. `log`'s
+  stanza says `fidelity synthesized`, `weblog`'s states no fidelity. A user's
+  `-I` bundle is `authored` or `measured` by what its own stanza declares, and
+  the `l1none` fixture is `underivable-arrives` under `-e utf8`.
 - **Why `prior-none` carries no table.** pcrec's own answer with no data is
   per question kind (D126 Q4): MASS is cardinality, PICK ties to its
   reader's rightmost, and COMPARE is false. A uniform table would answer
@@ -390,10 +671,9 @@ The site reaches the object as `mf_site.analysis`, appended last (D162 ruling
   (the "false confidence" of D162 add. 2). So the kind ARRIVES, honouring
   D162 add. 2, and its provenance states that pcrec's prior here is the
   no-information answer. When D160's authored utf8 prior lands, the utf8 kind
-  becomes `prior-authored` with a table.
-- **Evidence.** A row that needs EVIDENCE (D162 add. 1's decline on positive
-  density) reads only `measured` (D162 add. 3). How MUCH evidence is a filed
-  fact (§3.6).
+  becomes `authored` with a table.
+- **Evidence.** A row that needs EVIDENCE reads only `measured` (D162 add. 3).
+  How MUCH evidence is now carried in `bytes` (§3.6).
 - **`cpfreq` is never a kind.** The kit is encoding-blind (D147 add. 14), so
   pcrec derives the byte-domain kind (`encode-utf8`, `findings.c`) and sends
   that.
@@ -406,18 +686,49 @@ The site reaches the object as `mf_site.analysis`, appended last (D162 ruling
 2. **Every kind this pcrec knows is LISTED, present or absent.** An absent
    entry is the explicit absence D162 asks for. A tag missing from the list
    can only mean an older pcrec, and the kit treats it as absent too.
-3. **One object per compile attempt.** pcrec builds it from `Job.find`, which
-   is per attempt, at the first site ask. Every site of one `mf_art` states
-   the SAME pointer. The kit refuses a site whose pointer differs from the
-   art's first, and NULL counts as a pointer value: an art whose sites mix
-   NULL and non-NULL is refused `[r4 R9]`.
-4. **The per-site slot stays RESERVED** (D162 ruling 1). No field is added
-   until a measured case needs a fact the kit cannot derive. Filling it is an
-   `MF_SITE_ABI` event (§8.2).
+3. **One object per compile attempt, stated once** `[rev3]`. pcrec builds it
+   from `Job.find`, which is per attempt. `[rev3.1 M5]` It is built EAGERLY,
+   in `compile_driver` right after `pcrec_find_resolve` (the attempt's chain is
+   resolved there, before the parse), and stored on `Job`.
+   `pcrec_memfn_art` only passes the stored object to `mf_art_begin`, so the
+   build point does not depend on which kit call comes first. It is stated
+   ONCE, on `mf_art_begin`. Revision 2's same-pointer check and its NULL-mixing refusal
+   `[r4 R9]` dissolve: one value per art cannot differ from itself.
+4. **The per-site slot stays RESERVED** (D162 ruling 1). It is a different
+   thing from the object: a per-SITE fact the kit cannot derive (match density,
+   the activation fact of §13). No field is added until a measured case needs
+   one. Filling it is an `MF_SITE_ABI` event (§8.2).
 5. **Totality.** Every kit selection is TOTAL when the object, or any kind in
    it, is absent or `prior-none` (D162 ruling 2).
-6. **Lifetime.** The object lives in pcrec's arena until the attempt ends,
-   which outlives `mf_art_end`.
+6. **Lifetime.** The object lives in the arena the art's `mf_arena` wraps, for
+   the attempt. That outlives `mf_art_end`, and a retry attempt builds a new
+   one with its new art.
+7. **Evidence reads MEASURED only** `[rev3 C-15; rev3.1 m5]`. A reader of a
+   kind as EVIDENCE reads it only under `measured` provenance (D162 add. 3).
+   That is the whole of pcrec's obligation: the provenance FACT. Which kit
+   rows read a kind as evidence, and what they select otherwise, is the
+   kit's method and is stated in r17b′ (`lane/memfn-r17:docs/design/memfn/
+   r17b_prime.md` §3-§4), not here (D157).
+8. **What the kit reports back** `[rev3]` (§3.7.3). From the first commit that
+   ROUTES a kit row reading a kind, the kit returns, at `mf_art_end`, a
+   per-kind `consulted` bit: true iff a kit row of this art read that kind.
+   This is R-MS2's boolean per knowledge source, at the analysis object's grain
+   of one bit per kind, never per key. It is LAYER-INVARIANT: the same under
+   `-fno-memfn-simd`, `-fmemfn-simd` at every level and every `--memfn=` deny,
+   by the same rule as `proven` (§4.3). The checks are C-CONS and C-PERT
+   (§3.7.7).
+9. **An underivable kind refuses iff it is consulted** `[rev3.1 B1]`. A kind
+   in an `underivable*` state (§3.2) refuses the compile with today's
+   diagnostic ("analysis 'X': its 'K' block at line N counts nothing via V, so
+   it has no byte-rate") exactly when a reader consults it: a pcrec reader's
+   ask raises at the ask, as today; from B3b, a kit row's read is reported in
+   the kit's `consulted` and pcrec raises the same refusal at the art-end
+   pass (§3.7.3a), before the stamp renders. A compile in which nothing
+   consults the kind compiles, as it does today. So the refusal set is the
+   same before E-1, after E-1 and after B3b. This is today's reading of
+   `docs/spec/findings.md` 3a¶3 ("is refused at compile"), which holds only
+   when something asks; the alternative reading, an unconditional refusal,
+   would be a caller-observable change with a D80 hunk, and is not taken.
 
 ### 3.4 What the object is not
 
@@ -445,12 +756,531 @@ holds no consumer price (D161 add. 6).
 
 ### 3.6 Filed analysis facts `[r4 R10]`
 
-- **Evidence strength** (`mf_prov`): how much data a `measured` kind rests on
-  (the exemplar's byte count, or its sample count). Today `measured` from a
-  64-byte exemplar and from a 1 GiB one read the same. **Trigger:** the first
-  kit row that reads `measured` provenance as EVIDENCE (D162 add. 1's decline
-  on positive density). It would be a new `mf_prov` field, an `MF_SITE_ABI`
-  layout event.
+- ~~**Evidence strength**~~ `[rev3.1 M2]`: BUILT, no longer filed. Its trigger
+  ("the first kit row that reads `measured` provenance as EVIDENCE") fires
+  inside this very plan, at B3a/B3b, and the fact already lives in each data
+  block's `provenance bytes` row. So `mf_prov.bytes` (and `fidelity`) are in
+  the layout from its first declaration (§3.1), at no extra `MF_SITE_ABI`
+  event. A SAMPLE count (for a kind whose exemplar is not a byte stream) is
+  the remaining filed half: **trigger**, the first measured kind whose
+  provenance states no `bytes`.
+
+### 3.7 E-1: main's build step (window_contract S1) `[rev3]`
+
+E-1 is r17b′ §3.1's "(main) E-1" row. pcrec builds `mf_analysis` with the
+frequency kind ALWAYS present (`authored`, `prior-none` or `measured`;
+`underivable-arrives` reads `prior-none`) and states it to the kit. D167 makes it buildable now. It lands AFTER the kit's
+B2 merges and BEFORE B3a, whose five ported picks read it (KW-8: "a NULL
+analysis would move bytes").
+
+#### 3.7.1 What E-1 builds
+
+| piece | where | what |
+|---|---|---|
+| the query table `[rev3.1 m1]` | `src/core/findings.c` | `find_queries[]`, the §3.2 rows: tag, payload version, `unmeasured`. It is the query vocabulary's ONE home. `find_derivs[]`'s third column becomes an index into it (a compile-time constant, so a `_Static_assert` on the row count holds). `rxt_find.c`'s `queries[]` (`chain_serves_enc`), `findings_dump.c`'s `FIND_QUERIES[]` and `rxt_source.c`'s error text ("query (byte-rate, run-rarity)") read it through one accessor. F-3 is retired here, not filed. The name avoids [KNOW-SRC]'s `ksrc_kinds[]`, which lists knowledge SOURCES, one tier up |
+| the non-raising derivation `[rev3.1 B1]` | `src/core/findings.c` | `find_derive_byte_rate_status(Ctx *, PcrecFindRec *)` returns a status: OK, NONE (nothing answers), UNDERIVABLE (the answering block normalizes to nothing, today's `nr == -1`) or BROKEN (today's postcondition arm). It never calls `pcrec_ctx_fail`. It memoizes into the record: `byte_rate_derived` (the memo is filled) and `byte_rate_status`. Today's `find_derive_byte_rate` becomes this function plus the raise, and the raise lives only on the ASK path |
+| the ASK path | `src/core/findings.c` | `pcrec_find_byte_rate` sets `byte_rate_asked`, calls the status derivation, and on UNDERIVABLE or BROKEN calls `pcrec_ctx_fail` with today's two messages verbatim. Its observable behaviour is unchanged: the same compiles refuse, with the same text and offset |
+| the OFFER accessor | `src/core/findings.c` / `.h` | `pcrec_find_offer(Ctx *, size_t query, PcrecFindOffer *)`: evaluates T-KIND (§3.2) for one row through the status derivation and returns `{present, source, bundle, digest, bytes, fidelity, payload}`. It never sets `byte_rate_asked` and never refuses. The split between `asked` (consumption) and `derived` (the memo) is what keeps E-1 zero-mover |
+| provenance in the block `[rev3.1 M2]` | `src/core/findings.h`, `scripts/findgen.c`, `src/parse/rxt_find.c` | `PcrecFindTblBlock` gains `prov_source` (the stanza's `source` token), `prov_bytes` (its `bytes`, 0 if absent) and `prov_fidelity` (its `fidelity`, or none). `findgen`'s pre-parse writes them into the committed `findings_table.inc`; `link_from_source` copies them for a runtime (`-I`, S1) bundle, from `RxtFindBlock`, which gains the same three fields from the source parser. `findgen` asserts that the store's `default` bundle declares `source authored` on every block (the cross-check of §3.2). `findings_table.inc` changes; no emitted byte does |
+| the object builder `[rev3.1 M5]` | `src/core/compile.c` (the build point) and `src/gen/memfn_sites.c` (the mapping) | In `compile_driver`, right after `pcrec_find_resolve(&cx, …)`, one call builds the object for the attempt and stores it on `Job` (`job->analysis`), in the attempt's arena. The mapping `PcrecFind*` → `MF_PROV_*`/`MF_KIND_*`/`MF_FID_*` stays in `memfn_sites.c`, the one file that includes `memfn.h` for art state; `src/core` never includes `memfn.h`, so the call is through a `src/gen` function compile.c already links against. It asserts the payload invariant (§3.1). `pcrec_memfn_art` passes `job->analysis` to `mf_art_begin` and builds nothing |
+| the record's comment `[rev3.1 m6]` | `src/core/findings.h` | `byte_rate_have`'s comment is re-worded from "... and a block answered" to "the memo holds a table (a block answered and derived), whether or not anything asked". `req_rate_why` (`src/facts/req.c`) reads `pcrec_find_byte_rate`'s return instead of `byte_rate_have`, so no reader outside `findings.c` reads the memo fields (C-E1-6 holds that) |
+| nothing else | — | no emitter text, no stamp code, no flag, no listing. `pcrec_find_stamp` is UNCHANGED at E-1. Its generalization over the kinds table belongs to [KNOW-SRC]'s `ks_stamp` (`measure_sets.md` §9.2 part 5), so it is not built twice |
+
+**Every attempt builds it** `[rev3.1 M5]`, at one stated point, whether or not
+the attempt reaches a kit call. That is D162's "pcrec should send what it has",
+stated once per art.
+
+**Compile cost.** At default flags every compile already derives `byte-rate`
+(§3.7.4), so the offer adds no derivation. It adds one derivation per attempt
+only on the deny arms that ask nothing today: one normalization of 256 counts
+(`pcrec_find_normalize`) over the pre-parsed store. The parse itself was moved
+out of compile time by [FINDINGS] B1. `[rev3.1 M5]` The eager build also runs
+on attempts that later refuse for an unrelated reason (a parse error), which
+today never derive; the cost is the same one normalization. This is
+UNMEASURED but bounded by that arithmetic. The E-1 census run reports compile
+time beside its byte compare, with no gate on it.
+
+**Compound artifacts.** Each part is its own compile (`part_compile` calls
+`pcrec_compile_driver`) with its own `Job`, record and art, under the parent's
+analysis and encoding. So each part builds an object of equal content at the
+same eager point. C-E1-4's compound fixture checks the equality.
+
+#### 3.7.2 The slot: per `mf_art_begin`, not per site (the reconciliation)
+
+Revision 2 §3.1 put `mf_site.analysis` on every site. The kit's B1 declares the
+slot on `mf_art_begin`, and E-1 fills it there. **The choice is per art**, for
+five reasons:
+
+1. **D162 ruling 1 is "ONE `mf_analysis` per compile".** A per-site pointer
+   restates one compile-wide value on every site. Revision 2 then needed rule
+   3's same-pointer check and the R9 NULL-mixing refusal to keep the copies
+   equal. Stated once, the object cannot disagree with itself, so the check,
+   its refusal and its sabotage row all disappear.
+2. **The sibling knowledge source already rides there.** `mf_measures` is on
+   `mf_art_begin` (R-MS1, `measure_sets.md` §4.1), and `consulted` comes back
+   from `mf_art_end` (R-MS2). [KNOW-SRC]'s two knowledge kinds reach the kit
+   through ONE channel shape.
+3. **The memo keys exactly.** D162 add. 4's memo lives in `mf_art` and is a
+   pure function of (object, the art's kit options) (§3.5). Handing the object
+   to the art that owns the memo makes the key the art's own input.
+4. **The art already carries compile-wide facts that way.** `mf_art_begin`
+   takes `prefix`, `policy` and `denies`, which are compile-wide.
+5. **The per-site slot D162 reserves is a different fact.** It is a per-SITE
+   fact the kit cannot derive (match density, §13's activation fact). It stays
+   reserved and is not spent on a compile-wide value.
+
+**What revision 2 loses: nothing.** A site never needed a different object from
+its art's. A stand-alone K3 caller passes NULL at `mf_art_begin`, and totality
+holds.
+
+#### 3.7.3 The stamp: CONSULTED, the [KNOW-SRC] family's one rule (RULED, D167 add. 2)
+
+**The conflict revision 3 found.** Revision 2's R1 disposition made
+`<PREFIX>_FINDINGS` mean OFFERED, while its sibling `<PREFIX>_MEASURES`
+(`measure_sets.md` §3.5) means CONSULTED and [KNOW-SRC] (§9.2 part 5) builds
+ONE stamp grammar for the family. Frank ruled CONSULTED for both ("q3:
+consulted", D167 add. 2).
+
+**The rule.**
+- A kind's item appears in `<PREFIX>_FINDINGS` iff the kind was consulted: a
+  pcrec reader asked it (`pcrec_find_byte_rate`, as today), OR a kit row read
+  it (§3.3 rule 8's per-kind `consulted`). The item's text is today's
+  (`query=bundle:digest`, or `query=none` where nothing answered).
+- **The offer is not an ask.** Building the object (§3.7.1's
+  `pcrec_find_offer`) does not set `byte_rate_asked`, and it never refuses
+  (§3.3 rule 9).
+- **So E-1 moves NO byte and no refusal.** It is not a pcrec abi event, it
+  moves no byte-count reader, and it carries no D80 hunk. The object is an
+  internal kit channel, and nothing caller-observable changes (§3.7.9).
+  Revision 3 claimed this without the second half; B1 showed the offer's
+  raising derivation would have moved the refusal set (§3.7.4a).
+- **When the stamp's meaning becomes observable.** The kit's per-kind
+  `consulted` joins the stamp at the first commit that ROUTES a kit row reading
+  a kind. In r17b′'s plan that is **B3b**: the five ported picks route there
+  and pcrec's own pick readers retire. That commit is zero-mover in the stamp
+  iff, on every artifact, (kit consulted ∪ pcrec asked) equals today's pcrec
+  asked set. Its emit_sweep compare proves that, S997 (§3.7.8) plants the OR's
+  loss, and C-PERT (§3.7.7) checks the stamp against the bytes. B3b carries
+  the findings.md §5 / match_api hunks of §3.7.9. S2's kit ranking, if it
+  routes earlier than B3b, takes the same obligations at its own commit.
+- **Where the OR is computed: after `mf_art_end`** (§3.7.3a). The render
+  point moves there in its own zero-mover commit, RP, before any OR exists.
+
+**What CONSULTED keeps** (the reasons it was the leaning): one rule for the
+family (`ks_stamp` once, one census attribution); findings.md 5¶9's "moves the
+digest of every artifact that CONSUMED it" stays true, so a regeneration of the
+default prior does not move unread artifacts; and findings §6 #22 / S314 keep
+their `""` witness.
+
+**What CONSULTED costs:**
+- **One more kit output.** It is the per-kind `consulted` bit, R-MS2's shape,
+  owed at B3b and not at E-1.
+- **A layer-invariance obligation.** If a SIMD-only row consulted a kind that
+  SIMD-off did not, the pattern-level `_FINDINGS` stamp would differ by layer,
+  which breaks the floor rule (SIMD-on = SIMD-off + guarded text). So
+  `consulted` must be a function of the site request, the same in every layer,
+  as `proven` is (§4.3). The check is C-CONS (§3.7.7). The same obligation
+  already binds `<PREFIX>_MEASURES`'s `consulted`, and `measure_sets.md` does
+  not state it (F-4).
+- **An honesty obligation** `[rev3.1 X1]`. A stamp built from the readers' own
+  reports can only be as honest as the reports. A kit row that reads a kind
+  and does not report it, or a pcrec reader that reads the memo without
+  asking, gives an artifact whose bytes depend on data its stamp does not
+  name. Nothing in revision 3 detected that. C-PERT (§3.7.7) does, from the
+  bytes alone.
+
+#### 3.7.3a The ONE render point: after `mf_art_end` `[rev3.1 M3, U3]`
+
+**The problem.** Today `<PREFIX>_FINDINGS` and its `rx_info` initializer
+`.findings = "…"` are written in `emit_info_def` (`src/gen/emit_dfa.c`, the
+stamp beside its comment "the stamp must read the record after the LAST
+reader"), on both engines' paths. The kit's per-kind `consulted` exists only at
+`mf_art_end`, which pcrec calls at the end of `pcrec_memfn_stamps_render`
+(`src/gen/memfn_stamps.c`), the finishing pass `compile.c` runs after the
+engine emitter and before the size caps measure the text. So the OR of §3.7.3
+has no point at which both of its inputs exist and the stamp is still unwritten.
+Once the kit can consult, the kit IS the last reader, and findings design §6.4
+rule 2 moves the stamp after it.
+
+**The render point, stated once for the family.**
+1. **When.** In the finishing pass, after the kit's own three stamp lines
+   (`mf_stamps`) are rendered and AFTER `mf_art_end` returns (the art's last
+   act, which also reports the per-kind `consulted` from B3b on), and before
+   the pass splices its lines and returns, so still before the size caps
+   measure the artifact. The order inside `pcrec_memfn_stamps_render`
+   becomes: libc scan, `mf_stamps`, `mf_art_end` (`pcrec_memfn_art_end`'s
+   checks), §3.3 rule 9's refusal check, then pcrec's knowledge stamps, then
+   the splices.
+2. **What.** `_FINDINGS`: the `#define <PREFIX>_FINDINGS` line and the
+   `.findings = "…"` initializer. `_MEASURES` (at M0): the
+   `#define <PREFIX>_MEASURES` line and the `.measures = "…"` initializer.
+   Both are rendered by one call, the natural single call site of [KNOW-SRC]'s
+   `ks_stamp` (before [KNOW-SRC], `pcrec_find_stamp` for `_FINDINGS` and
+   M0's renderer for `_MEASURES`, at the same call site).
+3. **Where in the text: unchanged.** The engine emitters write a MARK in place
+   of each line and initializer, at today's byte positions (the same
+   placeholder-lead mechanism as `pcrec_emit_memfn_mark`, a second mark kind),
+   and the pass splices the rendered text over them. So the move changes no
+   byte, and no reader of the stamp's position or of the rx_info layout moves.
+4. **Both engines, and compounds.** The DFA's `emit_info_def` and the VM's
+   epilogue (`vm_emit_epilogue` → `pcrec_emit_info`) reach the same info
+   writer, so both write the marks. A compound artifact's `rx_info` is the
+   shell's (P's, written by the DFA emitter's shell branch,
+   `src/gen/emit_compound.c`'s header). Its stamp is the union of what P's
+   attempt and every part's attempt consulted, because the artifact's bytes
+   depend on all of them. Each part's finishing pass hands its consulted set
+   up; the shell's pass renders the union. Whether today's shell already
+   unions its parts' asks is not verified here. The perturbation prototype ran
+   over the whole corpus, which includes the compound-admitted patterns, and
+   found no compound FAIL (§3.7.7 C-PERT), so the rule is stated to keep that
+   true.
+5. **The prefix.** The pass renders at the prefix placeholder, as the kit's
+   stamps do, so `-p` cannot move it (K79).
+
+**The commit, RP.** It is its own commit and lands no later than the first of
+B3b and M0, ahead of any OR in that series, so its zero-byte property is
+proven while the OR cannot yet change a stamp.
+- **Check C-RP**: emit_sweep, every stream and arm of G1-E1, the RP tree
+  against its parent: 0 movers, tokens and refusals identical. A mark left
+  unreplaced is an internal-error refusal (as for the kit's mark), so a lost
+  splice cannot ship.
+- **Sabotage S1032 PROPOSED (lands with B3b)**: the stamp is rendered before
+  `mf_art_end` with the OR present. It is detectable only where the kit is the
+  only consumer, so its detectors are B3b's emit_sweep and C-PERT on the
+  kit-only population.
+
+**The sibling edit owed** (not made here): `measure_sets.md` §3.5 and §4.2 need
+the same render-point sentence for `_MEASURES` and `.measures =`, and §9.2
+part 5 needs it for `ks_stamp`'s call site. It belongs in that note's next
+revision, beside F-4 (layer invariance). Until then, M0's builder reads §3.7.3a
+here.
+
+#### 3.7.4 The mover population (revision 2's open question 5): MEASURED
+
+**Instrument:** `window_contract_rev3/stampcount.py` and `stampcount_deny.py`.
+They compile emit_sweep's own corpus enumeration (the argv stream: 5,790
+`pattern` lines over every `tests/**/*.rxt`, `-p rx --features all -o -`) with
+this tree's `build/pcrec` (main `063b4a4b4`) and tally each artifact's
+`#define RX_FINDINGS` value. Run on the Linux dev box, 2026-10-16.
+
+| arm | compiled | `""` today | `byte-rate=default:…` | `byte-rate=none` |
+|---|---|---|---|---|
+| default, `-e byte` | 5,336 | **0** | 5,336 | 0 |
+| default, `-e utf8` | 5,364 | **0** | 0 | 5,364 |
+| `--engine=vm` | 5,337 | **0** | 5,337 | 0 |
+| `-fno-req-byte` | 5,336 | 1,973 | 3,363 | 0 |
+| `-fno-req-byte -fno-req-run` | 5,336 | 1,973 | 3,363 | 0 |
+| `-fno-req-byte -fno-req-run -fno-prefilter` | 5,336 | 3,275 | 2,061 | 0 |
+| the same, `-e utf8` | 5,364 | 3,246 | 0 | 2,118 |
+| `--engine=vm -fno-req-byte -fno-req-run` | 5,337 | **5,337** | 0 | 0 |
+
+(The remaining 454 / 426 / 453 lines are compile refusals in each arm.)
+
+**The answer.** "Every artifact with `""` today" IS the whole population of
+the OFFERED event, because a non-empty stamp cannot move: the same derivation
+gives the same bundle and digest. That population is EMPTY at default flags in
+all three default arms. Every default compile already asks, by design:
+`pcrec_req_window` asks the byte-rate "FIRST, before any branch, so whether the
+compile consumed it does not depend on the pattern" (findings design §6.4
+rule 1, `req.c`). The `""` artifacts exist only where the asking readers are
+denied, which is the test-axes deny arms and the findings "nothing asked" cell.
+
+Two consequences:
+- **The OFFERED event's default-population cost is zero.** Its cost falls on
+  the deny arms (up to every artifact of `--engine=vm -fno-req-byte
+  -fno-req-run`) and on the two checks that read `""` (§3.7.6).
+- **A zero-mover gate for E-1 is VACUOUS on the default arms**, because no
+  default artifact can show the offer leaking into the stamp. The E-1 gate must
+  include a deny arm (§3.7.7 G1-E1); that is the K35 point here.
+
+**Not measured:** the bench's patterns (read-only, not compiled here) and the
+composition stream (`--source FILE`). Both are owed by the E-1 census
+(§3.7.7).
+
+#### 3.7.4a The refusal population (B1): MEASURED `[rev3.1]`
+
+**The defect revision 3 carried.** Revision 3's offer derived through
+`find_derive_byte_rate`, which calls `pcrec_ctx_fail` when the answering block
+normalizes to nothing ("counts nothing via V"). Today that refusal is LAZY: it
+fires only when a reader asks. An offer on every attempt would have fired it on
+compiles that ask nothing.
+
+**The witness, reproduced on main `2288ad1cb`**
+(`window_contract_rev31/b1_witness.sh`, transcript `b1_witness.out`), with
+`tests/findings`' own `l1none` fixture (one `cpfreq` block, `serves byte-rate
+when utf8 via encode-latin1`, one row `U+20AC`), all under
+`-e utf8 -I L1 --analysis l1none`:
+
+| invocation | today |
+|---|---|
+| `--pattern 'abc'` | refused: "counts nothing via encode-latin1" |
+| `--pattern 'caf.'` | refused, same |
+| `--pattern '^abc' -fno-req-byte` | compiles, `RX_FINDINGS ""` |
+| `--pattern '^abc' -fno-req-byte -fno-req-run -fno-prefilter` | compiles, `""` |
+| `--pattern 'caf.' --engine=vm -fno-req-byte -fno-req-run` | compiles, `""` |
+
+Revision 3's E-1 would have refused the last three.
+
+**The population, crossed with the analysis axis**
+(`window_contract_rev31/analysiscount.py`, output `analysiscount.out`, the
+same argv stream as §3.7.4, 5,790 `pattern` lines, main `2288ad1cb`, Linux dev
+box). Per arm, the count of compiles that SUCCEED today with `""` under
+`l1none`. Each of them refuses when asked, so each is a compile a raising offer
+would have refused:
+
+| arm (all `-e utf8 -I L1 --analysis l1none`) | compiles `""` | refused underivable | refused other |
+|---|---|---|---|
+| default | 0 | 5,364 | 426 |
+| `--engine=vm` | 0 | 5,367 | 423 |
+| `-fno-req-byte` | **1,905** | 3,459 | 426 |
+| `-fno-req-byte -fno-req-run -fno-prefilter` | **3,246** | 2,118 | 426 |
+| `--engine=vm -fno-req-byte -fno-req-run` | **5,367** | 0 | 423 |
+
+The other analysis cells (none, `weblog`, `log`, a measured user `-I` bundle
+`mine`) never refuse underivable, and their `""` counts equal the no-analysis
+arm's exactly (1,973 / 3,275 / 5,337 under byte, 1,907 / 3,246 / 5,367 under
+utf8). So the analysis axis does not move WHICH compiles ask; it moves only
+whether an ask can refuse. Two utf8 patterns are `""` with no analysis but
+refuse under `l1none` in the `-fno-req-byte` arm (1,907 against 1,905): they
+are F-5's two witnesses, whose EARLIER attempt asked (§3.7.6 F-5).
+
+**The fix**, §3.7.1: the offer derives through the non-raising status
+derivation, the ASK path keeps the raise, and §3.3 rule 9 keeps the refusal
+the consumer's at B3b. G1-E1 (§3.7.7) holds the bold cells as floors.
+
+#### 3.7.5 The OFFERED alternative: NOT TAKEN (D167 add. 2)
+
+Frank ruled CONSULTED. Revision 3's exact build text for OFFERED (the abi
+event, the stamp change, the movers, the census, the re-aims, the sibling) is
+kept in that revision (`git show cd9fda38d:docs/design/memfn/window_contract.md`,
+§3.7.5) and is not carried forward. One fact from it stays true and is used
+above: a deny-arm artifact within 68 bytes of either size cap would change its
+ladder decision if its stamp grew, which is why §3.7.3a moves no byte.
+
+#### 3.7.6 Readers, found by grep (`063b4a4b4`)
+
+**Readers of the stamp's VALUE and of the consumption record** (grep
+`FINDINGS`, `byte_rate_asked`, `byte_rate_have`, `\.findings`, `byte-rate=`,
+`nothing asked`):
+
+| reader | what it reads | E-1 (CONSULTED) | OFFERED |
+|---|---|---|---|
+| `src/core/findings.c` `pcrec_find_stamp`; the accessor `pcrec_find_byte_rate` | `byte_rate_asked` | the stamp unchanged; the accessor gains the status derivation and keeps the raise (§3.7.1); the record gains `byte_rate_derived` and `byte_rate_status` | `asked` is set by the build; `""` unreachable |
+| `src/core/findings.h` (the record, `byte_rate_have`'s comment; the stamp's "the empty string when nothing was asked") | the record's comment | `byte_rate_derived`/`byte_rate_status` added; `byte_rate_have`'s comment re-worded `[rev3.1 m6]`; the stamp comment unchanged | comment changes |
+| `src/gen/emit_dfa.c` `emit_info_def` (the stamp and its comment; the `.findings =` initializer) | the stamp text | unchanged at E-1; at RP the two become marks rendered by the finishing pass (§3.7.3a), the comment moving with them | comment changes |
+| `src/facts/req.c` `req_rate_why` | `byte_rate_have` DIRECTLY, not through the accessor | `[rev3.1 m6]` reads `pcrec_find_byte_rate`'s return instead (its two callers ask first, so the value is the same); C-E1-6 holds that no reader outside `findings.c` reads the memo fields. See F-2 | same |
+| `tests/findings/run_findings_tests.sh:19-22`, `:141-166` (§4 incl. `check_stamp "nothing asked" ""`), `:392-403` (§6 #22, `_FINDINGS ""` on `t_quiet.c`) | the stamp, `""` included | unchanged; they become E-1's own detectors (§3.7.7) | re-aimed |
+| `tests/mech/sabotages/S314_findings_record_outlives_compile.sh` (`SAB_BEFORE` = the `return "";` line; `SAB_REACH` greps `_FINDINGS ""`) | the anchor and a `""` witness | unchanged | re-aimed or retired |
+| `tests/resource/run_resource_tests.sh:665-669`; `tests/codegen/run_cpset_structure.sh:772` | byte counts (+55 macro, +56 initializer) | unchanged | re-measured at the same `-o` basename |
+| `tests/codegen/run_encoding_checks.sh:599-606`, `:642`, `:1506-1508` | utf8 side `== byte-rate=none`, byte side `!= none` | unchanged (holds: every default utf8 compile asks) | unchanged |
+| `tests/codegen/run_recursion_identity.sh:1135-1140` | the (B) pin's named-lines narrative | unchanged | re-pin (abi event) |
+| `docs/spec/findings.md` §5¶1-¶9; `docs/spec/match_api.md` 6.3.10¶10-¶11, the `rx_info` row 28 (`:1287`), 6¶14, the stamp-class table (`:2467`) | the stamp's meaning | unchanged at E-1; B3b's hunk (§3.7.9) | E-1's hunk |
+| `docs/design/measure_sets.md` §3.5, §9.2 part 5, §9.3, §9.5 | the sibling's statement of the shared rule | consistent | reopened |
+| `lib/pcrec.h:1582` | "built under it" | unchanged | unchanged |
+| `src/core/findings.c` `find_derivs[]`; `src/parse/rxt_find.c` `chain_serves_enc`'s `queries[]`; `src/dump/findings_dump.c` `FIND_QUERIES[]`; `src/parse/rxt_source.c` the "(byte-rate, run-rarity)" error text `[rev3.1 m1]` | the query vocabulary, four spellings | read `find_queries[]` (§3.7.1); the error text and the listings print identical bytes | n/a |
+| `src/core/findings.h` `PcrecFindTblBlock`; `scripts/findgen.c`; `src/core/findings_table.inc`; `src/parse/rxt_find.c` `link_from_source`; `src/core/internal.h` `RxtFindBlock` `[rev3.1 M2]` | the block's fields | gain the provenance stanza's `source`, `bytes`, `fidelity`; `findings_table.inc` regenerated (`make gen-findings`); `tests/findings`' block-for-block agreement check (embedded text parsed vs the table) covers the new fields | n/a |
+| `src/core/compile.c` `compile_driver`, after `pcrec_find_resolve`; `src/gen/memfn_sites.c` `pcrec_memfn_art` `[rev3.1 M5]` | where the object is built | the eager build and the hand-over (§3.7.1) | n/a |
+
+**Readers of the abi NUMBER** (OFFERED only; grep `78` beside `abi`/`ABI`):
+`src/gen/emit_dfa.c:54` `PCREC_ARTIFACT_ABI`; `match_api.md §1¶7`
+(the K80 `#error` text) and its "abi is N" sentence;
+`docs/dev/history/abi_changelog.md`; `tests/codegen/run_codegen_tests.sh:3149`
+`ABI_EXPECT`; `tests/codegen/run_recursion_identity.sh:1251` FILEPIN;
+`tests/mech/sabotages/S693_abi_not_bumped.sh:51`. The rest of the reader list
+is re-derived by grep at landing (D94): the byte-count class (r17b′ §3.4's
+list), the alpha normalizers, then the registry, codegen and rxtsource suites
+and `make test-codegen`. At E-1 under CONSULTED none of these moves.
+
+**Findings from the grep:**
+- **F-2, LATENT** `[rev3.1 m4]`. `req_rate_why` writes `rate:builtin-prior`
+  iff `byte_rate_have`, which is true for ANY answering block, a measured
+  bundle included. `docs/spec/facts_listing.md` 4.1.3¶4 defines
+  `rate:builtin-prior` as "the shipped byte-frequency prior". But no CLI path
+  can list facts under a non-default analysis today: `pcrec -p rx --analysis
+  weblog --emit-facts --pattern abc` is refused ("--analysis applies to a
+  compile (a file operand or --pattern) or to --list-analysis FILE only"). So
+  the token is wrong in the record and unreachable through the listing.
+  **Trigger:** the first path that lists facts under a non-default analysis.
+  E-1's T-KIND names the provenance (`measured` vs `authored`) that a fix
+  would read.
+- ~~**F-3**~~ `[rev3.1 m1]`: RETIRED at E-1. The query vocabulary's four
+  spellings read `find_queries[]` (§3.7.1).
+- **F-4.** `measure_sets.md` §4.2's `consulted` has the layer-invariance
+  obligation of §3.7.3 and does not state it. That is for its next revision,
+  beside §3.7.3a's render-point sentence.
+- **F-5, the stamp reports the FINAL attempt only** `[rev3.1, found by the
+  C-PERT prototype]`. `Job.find` is per attempt, so `<PREFIX>_FINDINGS` reads
+  the final attempt's record. A compile whose earlier attempt consulted the
+  byte-rate and whose final attempt did not stamps `""`, yet the artifact
+  depends on that earlier read: the ladder's decision to retry, and the size a
+  `_WHY` text quotes, both come from the earlier attempt. Witnesses, under
+  `-e utf8 -fno-req-byte`: `(\p{Xwd})x` (`tests/uprops/
+  size_ladder_prefilter_drop.rxt`) and `x(\p{Xwd})y` (`tests/utf8/
+  wclass_illformed.rxt`). Attempt 0 builds the hybrid prefilter, asks the
+  byte-rate and overflows the size cap; the final attempt drops the
+  prefilter (`RX_ENGINE_SEL "size-cap-retry"`) and asks nothing. Under
+  `--analysis weblog` the artifact's `RX_VM_PREFILTER_WHY` reads "hybrid
+  1040437 > 1000000" where with no analysis it reads "hybrid 1040399 >
+  1000000", with the stamp `""` in both. Under the `l1none` fixture attempt 0's
+  ask REFUSES the compile, so these two are also the 1,907-vs-1,905 gap of
+  §3.7.4a. C-PERT FAILS on exactly these two over the whole prototype run
+  (`perturb_proto.out`). Q6 (§12) asks what the stamp should record; the
+  leaning is the union over the compile's attempts.
+- **F-6, a spec sentence that reads two ways** `[rev3.1 B1]`.
+  `docs/spec/findings.md` 3a¶3 says a block all of whose code points drop "is
+  refused at compile". The code refuses only when a reader asks (§3.7.4a).
+  §3.3 rule 9 keeps the code's reading. The sentence should say "a compile
+  that consults the byte-rate is refused". That is a wording fix to match
+  shipped behaviour, not a contract change. FILED for the manager (doc
+  findings are filed, not fixed in a design lane); B3b's findings.md hunk is
+  a natural carrier.
+
+#### 3.7.7 Checks (each against a source the subject does not share, unless labelled)
+
+| id | checks | expectation from | population and reach |
+|---|---|---|---|
+| **G1-E1** zero-mover `[rev3.1 B1, m3]` | emit_sweep, every stream, over the arm × analysis product below, plus the bench patterns read-only: 0 movers; tokens, stderr and refusals identical (the refusal SET compared as keys) | the pre-E-1 binary | **Arms**: default, `-e utf8`, `--engine=vm`, and the deny arms `-fno-req-byte`, `-fno-req-byte -fno-req-run -fno-prefilter` (both encodings) and `--engine=vm -fno-req-byte -fno-req-run` (both encodings). **Analysis cells** for every arm: no analysis, `--analysis weblog`, a measured `-I` user bundle, and the `l1none` fixture (utf8 arms; it serves utf8 only). The deny arms are REQUIRED: the default arms hold 0 `""` artifacts (§3.7.4). **Floors**, literals measured at `2288ad1cb` (`analysiscount.out`): ≥ 1,900 `""` in `-fno-req-byte` byte; ≥ 5,300 `""` in the VM deny arm byte and utf8 (m3); and in the `l1none` cells, ≥ 1,900 / 3,200 / 5,300 compiles that SUCCEED with `""` in the three utf8 deny arms (§3.7.4a's bold cells, the compiles that refuse when asked and compile when not; B1's population) |
+| **C-E1-1** object content | a trace-build record per attempt (`-DPCREC_CAND_TRACE`, a `KSRCTRACE` line: query, tag, state, source, bundle, digest, bytes, fidelity, and from B3b `consulted`), over fixtures: `-e byte`/`-e utf8` × {no `--analysis`, `weblog`, `log`, a user `-I DIR/default.rxt` byte-identical copy, a user `-I` bundle named `default` that declares a measured source, a user `-I` bundle `mine` that declares `source authored`, `include default` by name, a two-link `include` chain, `l1none`} | a HAND-WRITTEN expected (state, source, bundle, bytes, fidelity) table per fixture, and each digest recomputed in python from the fixture's rows (`tests/findings`' `bdig`/`res_fixtures.py`, which re-derive digests independently). The link-identity CROSS-CHECK (§3.2): every answer through `PCREC_FIND_STOP_DEFAULT` reads AUTHORED | 18 cells; every T-KIND row that can fire at E-1 (`no-shape` on `run-rarity`, `underivable-arrives`, `measured`, `authored`, `prior-none`) fires at least once, a reach floor per row. `underivable`, `authored-absent` and `absent` need a payload-carrying MEASURED-ONLY kind and are declared UNREACHED until B4 gives `run-rarity` a shape (then a user `-I` authored `bigram` bundle reaches `authored-absent`) |
+| **C-E1-2** query completeness | the object lists every tag once, in vocabulary order | a hand-written list in the test (`byte-rate`, `run-rarity`), cross-read with findings.md 5¶2's query order | the `run-rarity` entry is ABSENT through `no-shape` until B4 |
+| **C-E1-3** payload invariant | non-NULL iff PRESENT and source ∈ {AUTHORED, MEASURED}; a byte-rate payload sums to 1,000,000; PRIOR_NONE has bundle NULL, digest 0, bytes 0; MEASURED has bytes equal to the stanza's `bytes` row | the trace record, recomputed (the build's own assertion is the second, shared-source line) | every fixture of C-E1-1 |
+| **C-E1-4** stamp/object AGREEMENT `[rev3.1 m2]` | wherever `_FINDINGS` has `byte-rate=B:D`, the object's byte-rate is PRESENT with bundle B, digest D; `byte-rate=none` ⇔ PRIOR_NONE; `""` with the object PRESENT is the OFFERED-NOT-ASKED cell (CONSULTED's own evidence); a compound fixture's parts carry equal objects | **SHARED SOURCE**: the stamp and the object both come from `find_derive_byte_rate_status`'s memo, so a wrong memo agrees with itself. This is an agreement check only. The independent line it leans on is C-E1-1's python digest | `multi.rxt` (findings §6 #22's fixture: `t_asks`, `t_quiet`) plus a compound split fixture |
+| **C-E1-5** the `unmeasured` column `[rev3.1 M1]` | the rows marked `ARRIVES` are exactly the queries a pcrec reader asks | a grep of `src/` for the query accessors' callers outside `findings.c` (today: `pcrec_find_byte_rate`'s callers in `src/facts/req.c`, `src/facts/facts.c` and `src/gen/emit_dfa.c`), derived by the test, not read from the table | both rows of `find_queries[]` |
+| **C-E1-6** the memo has no outside reader `[rev3.1 m6]` | `byte_rate_have`, `byte_rate_status`, `byte_rate_derived` and `byte_rate[]` are read nowhere outside `src/core/findings.c` | `tests/findings/structural_check.py`, which already polices the gate, gains the field list | the whole tree |
+| **C-RP** the render point moves no byte `[rev3.1 M3]` | emit_sweep, G1-E1's arm × analysis product, the RP commit against its parent: 0 movers | the parent binary | lands with RP (§3.7.3a), before any OR |
+| **C-CONS** layer invariance (owed at B3b) `[rev3.1 M4]` | the per-kind `consulted` bits, read DIRECTLY from the `KSRCTRACE` record's `consulted` field, are identical under `-fno-memfn-simd`, `-fmemfn-simd` at every live level, and every `--memfn=` deny; and `_FINDINGS` is identical across the same layers | the SIMD-off compile | the stamp half runs on the deny arms of G1-E1 crossed with `-fmemfn-simd`, where `""` exists; the default arms are blind to it, because pcrec's own ask masks the OR. **Floor**: at least one artifact per deny arm where the kit is the ONLY consumer (the trace shows `consulted` from the kit and no pcrec ask), counted at B3b's landing |
+| **C-PERT** perturbation honesty `[rev3.1 X1]` | see below | the artifact's own bytes, under data that changed | see below |
+| ASan/LSan | the object outlives `mf_art_end` and is freed with the attempt | — | `make asan` over `test-findings` and `test-memfn` |
+
+**C-PERT, the perturbation check** `[rev3.1 X1]`. The stamp claims "these are
+the kinds this artifact read". C-PERT tests the claim from outside, by changing
+the data and watching the bytes. It reads neither pcrec's ask record nor the
+kit's `consulted` report, so a reader that reads and does not report
+(learnings §3: a control sharing a source with what it controls) cannot hide
+from it.
+
+- **The method.** For each kind with a payload shape (`find_queries[]` rows of
+  payload version > 0; today `byte-rate`), compile every artifact of the
+  population twice, under the SAME analysis name and stop, `-I DIR --analysis
+  default`:
+  - BASE: `DIR/default.rxt` is a verbatim copy of the store's.
+  - PERT: the same file with the kind's data perturbed. For `byte-rate`, the
+    256 `freq` rows' values reversed by rank (rarest ↔ commonest), plus one
+    `cpfreq` block serving `utf8` (so under `-e utf8`, where pcrec's prior is
+    `prior-none`, data is added, not perturbed).
+  Keeping the name and the stop means only the DATA differs, so the digest is
+  the only stamp text that can change, and its length is fixed.
+- **The verdicts.** Per artifact, reading only the emitted bytes and the stamp
+  text:
+  - FAIL `moved`: BASE's stamp omits the kind, and the bytes outside the two
+    stamp lines (`#define <P>_FINDINGS`, `.findings =`) differ;
+  - FAIL `refusal`: BASE's stamp omits the kind, and exactly one side refuses;
+  - FAIL `stamp`: BASE's stamp omits the kind and PERT's lists it (a
+    consultation that depends on the data must have read the data first);
+  - otherwise legal (`consulted-moved`, `consulted-same`, `quiet`).
+- **The null control**, per artifact: BASE must equal a bare compile (no
+  `-I`, no `--analysis`) BYTE FOR BYTE, the whole file. This proves the
+  `-I`/`--analysis default` route itself moves nothing, so a FAIL is the
+  data's doing.
+- **The power control.** A consulted artifact that MOVES under PERT is one a
+  dropped stamp item would turn red. Its count is the check's power, and it
+  carries a floor per arm, so a perturbation too weak to move anything cannot
+  read green.
+- **Each kind's perturber is a row** of a declared table in the test (tag →
+  perturber). A kind with a payload shape and no perturber FAILS the check, so
+  a new kind cannot ship unperturbed.
+- **Arms.** G1-E1's arms (the deny arms are where `""` exists, so they are
+  where the check has teeth: at default every artifact is consulted by pcrec's
+  own ask), each under `-fno-memfn-simd` and, from B3b, `-fmemfn-simd`.
+- **The prototype**, run on main `2288ad1cb` over the full corpus argv stream
+  in eight arms (`window_contract_rev31/perturb_proto.py`, output
+  `perturb_proto.out`): **0 null-control failures** in any arm. **Power**
+  (consulted artifacts that moved): 1,161 default byte, 707 default utf8, 557
+  `-fno-req-byte` byte, 539 utf8, 263 / 279 in the `-fno-prefilter` arms;
+  the VM deny arm is all `quiet` (5,337 / 5,367, nothing consulted). **FAILs:
+  exactly 2**, both `moved`, both in `-fno-req-byte` utf8, the F-5 witnesses
+  (§3.7.6).
+- **Where it runs.** A fixed 1-in-16 slice of the population in `make
+  test-findings` (with its own literal floors, measured at landing), and the
+  full population in the E-1 census and at B3b's landing.
+- **Its standing exception.** F-5's two witnesses FAIL today, by a defect the
+  check exists to find. Until Q6 is ruled and fixed, they are a NAMED bucket,
+  selected by an INDEPENDENT criterion: the artifact's own fallback stamp
+  says an earlier attempt was discarded (`<PREFIX>_ENGINE_SEL` is
+  `size-cap-retry` or another ladder token), never the findings record. The
+  bucket carries a floor (≥ 2) and an exact-membership pin, so it cannot grow
+  silently and goes red when F-5 is fixed.
+- **Sabotage.** S1033 (B3b's: a kit row reads a kind and drops its
+  `consulted` bit) and S1034 (E-1's: `pcrec_find_byte_rate` marks `asked` only
+  when it derives, so after the eager offer no ask marks). Both are §3.7.8's.
+
+#### 3.7.8 Sabotage (S991-S998 ALLOCATED by the manager; S1027-S1034 PROPOSED `[rev3.1]`)
+
+| id | plant | detector | reach witness |
+|---|---|---|---|
+| S991 | the offer marks the query asked (`pcrec_find_offer` sets `byte_rate_asked`) | findings §4 "nothing asked" (`-fno-req-byte --pattern '^abc'` stamps `byte-rate=default:…` where `""` is expected) and §6 #22; G1-E1's deny arm | `-fno-req-byte '^abc'` compiles and builds the object (every attempt does) |
+| S992 `[rev3.1 M2]` | provenance by NAME: AUTHORED iff the bundle is named `"default"` | C-E1-1's cell for a user `-I` bundle NAMED `default` that declares a measured source (expected MEASURED, got AUTHORED) | the `-I` fixture answers through `PCREC_FIND_STOP_DIR` |
+| S993 | `prior-none` carries a uniform table as payload (D126 Q4's false confidence) | C-E1-3 | `-e utf8` with no `--analysis` |
+| S994 | the object is built once per PROCESS (a static cache), not per attempt | C-E1-4 on `multi.rxt` extended with a target under a different `analysis` line | two targets in one invocation |
+| S995 `[rev3.1 M1]` | byte-rate's `unmeasured` cell flipped to `ABSENT` | C-E1-1's `-e utf8` cells (expected PRESENT/prior-none, got ABSENT) and C-E1-5 | `-e utf8` with no `--analysis` |
+| S996 `[rev3.1 m2]` | the provenance digest computed over the COUNTS, not the derived ppm. The plant site is the offer's own digest computation: `pcrec_find_offer` computes `digest` itself from the payload it returns (`pcrec_find_byte_rate_digest(ppm)`), and the plant feeds it the block's counts. A copy of `fr->byte_rate_digest` would make the plant undetectable | C-E1-4 (object digest ≠ stamp digest) and C-E1-1 (≠ the python recompute) | any byte compile that asks |
+| S997 (B3b's) | pcrec does not OR the kit's per-kind `consulted` into the stamp | B3b's zero-mover emit_sweep (stamps drop to `""` where a moved pick was the only asker) and C-PERT | the five ported picks' population |
+| S998 (B3b's) | a SIMD-only kit row sets `consulted` | C-CONS (the `KSRCTRACE` `consulted` field, compared directly) | `-fmemfn-simd` arm, deny arms |
+| S1027 PROPOSED (E-1) `[rev3.1 B1]` | the offer derives through the RAISING path (the status split folded back) | G1-E1's `l1none` cells (a compile that succeeds today refuses), and, in `make test`, a new cell in `tests/findings/run_findings_tests.sh`'s section 12, beside the existing "a block all of whose code points drop is refused" cell: the same fixture under `-fno-req-byte` COMPILES and stamps `""` | `-e utf8 -I L1 --analysis l1none --pattern '^abc' -fno-req-byte` |
+| S1028 PROPOSED (E-1) `[rev3.1 B1]` | T-KIND's `underivable*` rows deleted, so an underivable block falls to `measured` with a NULL payload | C-E1-3 (payload invariant) and C-E1-1's `l1none` cell | `-e utf8 -I L1 --analysis l1none` on any pattern under a deny arm |
+| S1029 PROPOSED (E-1) `[rev3.1 M1]` | the `authored` row loses its `unmeasured = ARRIVES` conjunct | C-E1-1's authored-`bigram` cell (expected ABSENT, got PRESENT/AUTHORED) | **UNREACHED until B4** gives `run-rarity` a shape; then a user `-I` bundle with an authored `bigram` block. Declared UNREACHED with that trigger |
+| S1030 PROPOSED (E-1) `[rev3.1 M2]` | provenance by LINK: MEASURED iff the answering link is not the store's terminal (revision 3's rule) | C-E1-1's `-I DIR/default.rxt` copy cell and the `mine` (`source authored`) cell (expected AUTHORED, got MEASURED) | the `-I` fixtures |
+| S1031 PROPOSED (E-1) `[rev3.1 M5]` | the object is built lazily, on the first kit call, instead of after `pcrec_find_resolve` | C-E1-1's ordering assertion: each attempt's `KSRCTRACE` build record comes immediately after its chain-resolution record and before any parse record | any compile under the trace build |
+| S1032 PROPOSED (B3b) `[rev3.1 M3]` | the stamp is rendered before `mf_art_end` with the OR present | B3b's zero-mover emit_sweep and C-PERT on the kit-only population | the five ported picks under the deny arms, where the kit is the only consumer |
+| S1033 PROPOSED (B3b) `[rev3.1 X1]` | a kit row that reads a kind drops its `consulted` bit | C-PERT (`moved`: the bytes change with the data while the stamp omits the kind) | the kit-only population of C-CONS's floor |
+| S1034 PROPOSED (E-1) `[rev3.1 X1]` | `pcrec_find_byte_rate` marks `asked` only when it derives (tests `byte_rate_derived` where it should test `byte_rate_asked`), so after the eager offer no ask marks | C-PERT at the default arms (every consulted artifact's stamp drops to `""` while its bytes move: 1,161 byte, 707 utf8 in the prototype) and findings §4 | any default compile |
+
+S991-S996 and S1027-S1031, S1034 land with E-1. S1032 lands with B3b (the
+RP commit has no OR to plant against). S997, S998 and S1033 land with B3b.
+Sixteen ids in all; the eight new ones are the manager's to allocate.
+
+#### 3.7.9 D80 spec hunks
+
+**E-1 carries NONE.** The object is the kit's input, and `docs/spec/` describes
+no `memfn.h` struct. No stamp, flag, limit, listing, entry or diagnostic
+changes, and no refusal moves (§3.7.4a). `findings_table.inc` gains fields; no
+listing prints them. (F-6's wording fix to findings.md 3a¶3 is a doc finding,
+FILED, not an E-1 obligation.)
+
+**RP carries NONE.** The render point moves; no byte moves (C-RP).
+
+**B3b carries these**, because the stamp's meaning becomes observable there:
+- `findings.md` 5¶2: "One `query=bundle:digest` item per query the compile
+  CONSULTED (a pcrec reader asked it, or a pcrec-memory-functions row read it),
+  in the fixed query order…"
+- 5¶4: "The empty string when nothing was consulted."
+- a new 5¶10: "Every compile OFFERS the kit the analysis object (`byte-rate`
+  always, with its provenance; other kinds when measured). An offer that no
+  reader consults is not stamped, and an underivable block refuses the compile
+  only when consulted. `<PREFIX>_MEASURES` follows the same rule
+  (`measures.md`)."
+- `match_api.md` 6.3.10¶11: "ASKED" → "CONSULTED (asked by a pcrec reader or
+  read by a kit row)". In ¶10's example, `/* nothing asked */` →
+  `/* nothing consulted */`. In the `rx_info` member row 28: "`""` when none was
+  consulted".
+- If Q6 is ruled for the union over attempts, its hunk ("consulted by any
+  attempt of the compile") joins whichever commit lands it, with its own abi
+  event (it moves F-5's two artifacts' stamps).
+
+#### 3.7.10 What E-1 does not do
+
+- **No kit edit, and no `MF_SITE_ABI` move.** B1 declared the slot, and E-1
+  fills it. (`bytes` and `fidelity` must be in B1's declaration, §3.1.)
+- **No kit row reads the object.** That begins at B3a, as a trace-only shadow
+  that does not set `consulted`, and is routed at B3b.
+- **No `run-rarity` payload.** That is B4's.
+- **No `ks_stamp`.** That is [KNOW-SRC]'s; §3.7.3a fixes its call site.
+- **No render-point move.** That is RP's, its own zero-mover commit.
+- **No `req_rate_why` re-source** (F-2, latent).
+- **No new caller-observable surface, and no new refusal.**
+- **The order with [KNOW-SRC] is free.** If K0-K3 land first, E-1's
+  `pcrec_find_offer` reads the record through `ksrc`'s analysis kind. If E-1
+  lands first, K-steps migrate it at zero movers like the rest of the loader
+  (`measure_sets.md` §9.7).
 
 ## 4. The kit's job: a chain of simple searches `[r4 R3]`
 
@@ -484,6 +1314,9 @@ whose best 2-chain loses to a measured 3-chain twin. wingame §2.1 found 18 of
 327 patterns with two or more bounded spans.
 
 ### 4.3 [KIT-VERIFY]'s two directions
+
+`[rev3, D161 add. 10]` Both directions apply only to spans whose `byte_form` is
+EXACT (§2.2). A SUPERSET span is a filter only.
 
 **(1) pcrec → kit, "verify span k".** This is `need = REQUIRED` on span k
 (§2.4 obligation 4). It names no method. pcrec marks a span REQUIRED where its
@@ -666,19 +1499,32 @@ segment, read off a stamp-free census. The trigger population is wingame §2.1's
   window site carrying all of them. The offset-pinned union span (start set, k-set) stays its own
   single-span site until unlock (b).
 
-### 5.4a Whether a PRESENCE site rides beside it: T-PRES (first match) `[r4 E3]`
+### 5.4a Presence: SUPERSEDED as a separate site; T-WITHHOLD is what stays pcrec's `[rev3 C-6]`
 
-Presence is no longer a T-CUT row, so it is not exclusive with a window site.
+Revision 2's T-PRES (`dominated` → `presence` → `none`) sent presence as its OWN
+site beside the window site. D161 add. 14's clarification makes presence a span
+class of the ONE request (§2.2), so:
+- **`dominated` is the kit's.** It is r17b′'s row P2 (G1's question: are the
+  presence span's bytes already tested by the scan), ported at B3a under the
+  shadow comparator and routed at B3b.
+- **`presence` stops being a site.** Every necessary-set member and the whole
+  run are PRESENCE spans of the window site, unpicked (PR-5). The pick is the
+  kit's.
+- **What remains pcrec's is the sub-problem choice**: whether a presence span
+  is SENT at all. That is one table:
 
-| row | predicate | sends | deny |
+**T-WITHHOLD (first match; D161 add. 4, Q-WR-4):**
+
+| row | predicate | presence spans sent | deny |
 |---|---|---|---|
-| `dominated` | the window site's spans include the presence span's bytes at a bounded offset (G1's question) | nothing | `-fno-req-byte`/`-fno-req-run` (the sources' own) |
-| `presence` | a presence span exists | a PRESENCE site (VERDICT), run before the window site | `-fno-req-byte`/`-fno-req-run` |
-| `none` | always | nothing | none |
+| `one-attempt` | G2's linear one-attempt VM route (`req_route_one_attempt`) | none (withheld; today's text keeps its own pre-check decision) | none (structural) |
+| `locate-whole` | LOCATE `whole` (the body decides presence) | none (withheld) | none (structural) |
+| `asked` | today's asking rule holds: `req_set` is asked only where today asks (Q-WR-12, the `--emit-facts` `used` column) | every necessary-set member and the whole run, unpicked, each with its `need` (§2.3) | the sources' own (`-fno-req-byte`, `-fno-req-run`) remove their spans |
+| `none` | always | none | none |
 
-`a.*zxq` now sends segment 0 (`a`) AND the `zxq` presence site, which keeps
-reqpos_2b's measured win (1.46 of 10.284). Whether presence becomes the
-chain's zero-cost first link is unlock (c).
+`a.*zxq` sends segment 0 (`a`) AND the `zxq` presence span in ONE site.
+reqpos_2b's measured win (1.46 of 10.284) is the kit's to keep: its default rows
+port today's pre-check (D1/P-rows, zero movers through B3b).
 
 ### 5.5 What stays pcrec's: the unbounded cuts
 
@@ -692,7 +1538,7 @@ chain's zero-cost first link is unlock (c).
 | the context edge (`(?m)^` at `search_from`/0) | pcrec's edge attempt (§2.4) |
 | a backreference's relaxed language | `locate_finish.md` §4.5 (filed) |
 | the VM hybrid's retry policy (R4 `cand_rs_dense_applies`) | RETRY, the [ADAPTIVE-ARM] family (chunk 5) |
-| unbounded-offset presence | the PRESENCE site's existence is pcrec's (T-PRES); its FORM is the kit's |
+| unbounded-offset presence `[rev3]` | whether a PRESENCE span is sent is pcrec's (T-WITHHOLD); its pick and form are the kit's |
 
 ### 5.6 The position-pin fact family `[r4 E2]`
 
@@ -727,9 +1573,9 @@ own ranking second, the retirement third.
 
 | step | what | movers | events |
 |---|---|---|---|
-| **S1** frequency kind | `mf_analysis` in `memfn.h`; `mf_site.analysis` appended last; pcrec builds the object per attempt from `Job.find` and states it on every site; the kit's one-object check (§3.3 rule 3) | **every artifact whose `<PREFIX>_FINDINGS` is `""` today** `[r4 R1]`: building the object sets `byte_rate_asked`, so `pcrec_find_stamp` stops returning `""` and the stamp and `rx_info.findings` move to `byte-rate=default:<digest>` (`-e byte`) or `byte-rate=none` (`-e utf8`). Census owed: an `emit_sweep` compare over the corpus and bench, both encodings | `MF_SITE_ABI` bump (layout); a **pcrec abi event** (readers found by grep, the byte-count class included); **D80 hunk**: `docs/spec/findings.md` §5 and the stamp sentences in `docs/spec/match_api.md` — the stamp now means the kinds OFFERED to the kit, one entry per kind this pcrec knows, provenance-coded (today's `byte-rate=` spelling is the single-kind case). Consequence: after S1 every regeneration of the default prior moves every artifact's stamp digest, an abi event each time (§10.3) |
-| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a SHADOW comparator: the kit's order equals `pcrec_find_run_rank`'s for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order | 0 (same order, proven by the shadow) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
-| **S3** retirement | see the file list below | 0 | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
+| **S1** frequency kind = **main's E-1** `[rev3]` (§3.7) | the kit's B1 declares `mf_analysis` and its slot on `mf_art_begin` (NULL-tolerant); E-1, after B2, builds the object EAGERLY per attempt from `Job.find` through `find_queries[]` and fills that slot with no kit edit. The offer does not mark the query asked and never refuses (§3.7.1) | **0** in every arm, refusals included (CONSULTED, RULED D167 add. 2; §3.7.3, §3.7.4a) | no pcrec abi event, no `MF_SITE_ABI` move at E-1 (B1 took it, with `bytes`/`fidelity`), no D80 hunk; census = G1-E1 (§3.7.7) |
+| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a SHADOW comparator: the kit's order equals `pcrec_find_run_rank`'s for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order. `[rev3]` From REPLACE, `vrun` is a kit row that reads `byte-rate`, so the kit's per-kind `consulted` (§3.3 rule 8) is owed in that commit, unless B3b has already delivered it | 0 (same order, proven by the shadow); the stamp is 0-mover while pcrec still fills `rank_*` (it asks) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
+| **S3** retirement | see the file list below. `[rev3 C-11]` `mf_site.consumer` is REPLACED by `site_kind` (stated from B2, Q-WR-8), not dropped | 0, including the stamp: once pcrec stops calling `pcrec_find_run_rank` on the default compile, the kit's `consulted` must carry `byte-rate` wherever that call was the only asker (the deny arms; §3.7.4). G1 includes those arms | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
 | **S4** the picks | `plan_hint`/`plan_pos` and the prior-reading decisions of §5.1 move into the kit with R-18's multi-span site. Each is implement-then-replace at zero movers, then its own form event. **The shadow retires here** `[r4 R5]`: with the picks moved, both NONE-rule spellings live in the kit, and `pcrec_find_run_rank` (plus its debug dump) is deleted | per form event | each a pcrec abi event when bytes move, with its own `--memfn=` deny. Stamps that report a pick (`REQ_BYTE`, `REQ_RUN`, `DFA_PREFILTER`'s offset form) become kit-attributed; their readers found by grep |
 
 **Why the shadow lives to S4** `[r4 R5]`. Until S4, pcrec's own picks still
@@ -767,6 +1613,10 @@ the `consumer` setters; re-derived by the same grep at S3:
   retired by `scripts/sabotage_anchors.py --step` over the edit set;
 - `plan_hint`/`plan_pos` are NOT in S3: kit arms READ them (`vrun.c`,
   `precheck.c`, `ofsskip.c`, `compose.c`). They retire at S4.
+- `[rev3 C-11]` the six `consumer` setters are deleted only because each
+  builder already states `site_kind` (from B2). S3's grep checks that every
+  builder that set `consumer` sets `site_kind`, so the fact is REPLACED and not
+  lost.
 
 - **Consumer price.** It was never built, so nothing is deleted. The text
   retires: setfind.md §2.2's W9 row is struck (§7); wingame §5.5 item 2 and
@@ -836,10 +1686,14 @@ the `consumer` setters; re-derived by the same grep at S3:
 | a new analysis kind no row reads | no | no | YES on every artifact it is offered on (the per-kind stamp entry) | YES (the stamp's grammar gains the kind) |
 | a kind's payload shape changes | no | no (its own `version`) | only if a row's bytes move | no |
 | the `mf_analysis`/`mf_akind`/`mf_prov` layout changes `[r4 R9]` | no | YES (layout; the list's `list_v` moves only if the list's own shape does) | only if a byte moves | no |
-| the per-site analysis slot is filled `[r4 R9]` | no | YES | yes iff a byte moves | no |
-| S1: the object first built | no | YES | YES (the stamp moves from `""`) | YES |
+| the per-site analysis slot is filled `[r4 R9]` (the RESERVED per-site fact, §3.3 rule 4; not the object) | no | YES | yes iff a byte moves | no |
+| `[rev3]` the object's slot declared on `mf_art_begin` (the kit's B1) | no | YES (with B1's other art fields) | no | no |
+| `[rev3]` E-1: pcrec fills the slot (CONSULTED) | no | no | **no** (the offer is not an ask) | no |
+| `[rev3]` E-1 under the OFFERED alternative | no | no | YES on the `""` population (0 at default) | YES (§3.7.9) |
+| `[rev3]` the kit's per-kind `consulted` joins the stamp (B3b, or S2's REPLACE if earlier) | no | YES (the `mf_art_end` output) | no iff the union of askers is preserved (S997) | YES (findings.md §5's CONSULTED wording) |
+| S1: the object first built (revision 2's row; `[rev3]` superseded by the three E-1 rows above) | — | — | — | — |
 | a kit row starts reading a kind or a field | no | no | yes iff a byte moves, same commit, own deny | only if a stamp's meaning moves |
-| bundle or prior data regenerated | no | no | YES after S1 (every artifact's stamp digest); also wherever a row reads it | no |
+| bundle or prior data regenerated | no | no | YES on every artifact that CONSULTS it (`[rev3]`: today, every default compile asks, §3.7.4); also wherever a row's bytes move | no |
 | a new site field (fact) | no | YES (layout + meaning) | yes iff a byte moves | no |
 | a new reading of an existing field: W7's `preds` on FIND, `need` binding the stream `[r4 R9]` | no | YES (meaning) | yes iff a byte moves | no |
 | an enum re-numbered for an UNSTATED zero (`mf_need`) | no | YES (values) | no if every builder states it | no |
@@ -856,11 +1710,12 @@ the `consumer` setters; re-derived by the same grep at S3:
 | table | owner | rows (in order) |
 |---|---|---|
 | T-CUT: which ORIGIN (§5.4); all bounded spans go with it | pcrec | `anchored` → `rev-inner` → `segment-0` → `none`; deny column per row |
-| T-PRES: whether a presence site rides beside it (§5.4a) | pcrec | `dominated` → `presence` → `none`; deny column per row |
-| T-REPLY: reply type by op (§2.4) | contract | FIND → STREAM; ALL_PRESENT → VERDICT; others unchanged |
+| T-WITHHOLD `[rev3]`: whether presence spans are sent (§5.4a; supersedes T-PRES) | pcrec | `one-attempt` → `locate-whole` → `asked` → `none`; deny column per row |
+| T-REPLY: reply type by op (§2.4) | contract | `[rev3]` FIND → STREAM (presence spans included); ALL_PRESENT's VERDICT row DELETED |
 | T-NEED: a span's `need` (§4.3) | pcrec | `the FIND definition requires it` (today's single-span terms) → REQUIRED; `pcrec's consumer would re-test it and wants it verified` → REQUIRED; `else` → OPTIONAL. Never left UNSTATED |
 | T-PROOF: consuming a proof (§4.3) | pcrec | `report` (the proof covers the whole sub-problem and nothing else remains) → `dfa-exact-prefix` (unseeded PLAIN machine, exact proven bytes) → `vm-literal-prefix` (no capture, no assertion skipped, no meter change) → `verify-rest` (a kit VERIFY site for the unproven positions) → `ignore`; one deny for the family, `-fno-kit-proof` (PROPOSED) |
-| T-KIND: one kind's state (§3.2) | pcrec | `a --analysis block answers` → PRESENT/measured; `a shipped block serves this encoding` → PRESENT/prior-authored; `the kind is byte-rate` → PRESENT/prior-none; `else` → ABSENT |
+| T-KIND: one kind's state (§3.2) `[rev3; rev3.1]` | pcrec | `no-shape` → `underivable-arrives` → `underivable` (a block answers, its derivation fails) → `measured` (the block declares a non-authored source) → `authored` (`source authored`, `unmeasured` ARRIVES) → `authored-absent` → `prior-none` (nothing answers, `unmeasured` ARRIVES) → `absent`. No row names a kind |
+| `find_queries[]` `[rev3; rev3.1 m1]`: the query vocabulary's one home, and the kinds the object lists (§3.2) | pcrec | one row per [FINDINGS] query: tag, payload version, `unmeasured`; `find_derivs[]` indexes it |
 
 T-MEMO is no longer a table `[r4 R10]`: its one row was a trigger. §3.5 holds
 it as a placement with that trigger.
@@ -874,9 +1729,10 @@ it as a placement with that trigger.
    pcrec-side reader of the prior that chooses among spans.
 2. **The start table's site-building rows.** PF FIND, `offset-set`,
    `run-pinned`, the handoff gate, `set-leads` and the req pre-check each
-   build a kit site from one row of `cand_rows[]`. Under T-CUT and T-PRES they
-   become one window site of hull spans per segment, the union-span site
-   (until unlock (b)), and at most one PRESENCE site.
+   build a kit site from one row of `cand_rows[]`. Under T-CUT and
+   T-WITHHOLD `[rev3]` they become one window site per segment: hull spans plus
+   the PRESENCE spans T-WITHHOLD sends. The union-span site stays separate until
+   unlock (b). There is no separate presence site.
 3. **"A pick sent as a fact"**: `plan_hint`/`plan_pos`, `rank_*`,
    `cand_ppm`, `ppm_*`, retired by one sequence (§6).
 4. **The reverse walks** (RECOVER, `rev-end`, `rev-inner`): pcrec's unbounded
@@ -886,10 +1742,39 @@ it as a placement with that trigger.
    planner beside them.
 6. **The position-pin fact family** (§5.6), with `span_facts` as its newest
    member and one proposed unification.
+7. **The knowledge-source family** `[rev3]` ([KNOW-SRC], `measure_sets.md` §9):
+   the analysis object, measurement sets and [TABLE-JUDGE]'s picks. The
+   SIBLING-OF-A-FAMILY check, member by member:
+
+   | property | analysis object (this note) | measurement set (`measure_sets.md`) | verdict |
+   |---|---|---|---|
+   | reaches the kit | `mf_art_begin` slot (§3.7.2; revision 2 had `mf_site.analysis`) | `mf_art_begin` (R-MS1) | **aligned by this revision** |
+   | the kit reports back | per-kind `consulted` at `mf_art_end` (§3.3 rule 8) | one `consulted` boolean at `mf_art_end` (R-MS2) | aligned: one bit per knowledge source; the object holds several sources (kinds). U1 (§13) makes them one out-channel shape |
+   | the stamp's render point `[rev3.1 M3]` | after `mf_art_end`, through marks (§3.7.3a) | not stated | **aligned by this revision for both**; the sentence is an owed sibling edit to `measure_sets.md` §3.5/§4.2 |
+   | stamp honesty against the bytes `[rev3.1 X1]` | C-PERT (§3.7.7) | not stated | the same perturbation shape applies to a measurement set (two sets differing in one row's value); filed for `measure_sets.md`'s next revision beside F-4 |
+   | stamp meaning | CONSULTED (§3.7.3; RULED, D167 add. 2) | CONSULTED (§3.5) | **aligned, RULED** |
+   | stamp item | `query=bundle:digest` / `query=none` (digest of what was consumed) | `id@rev:values_digest` (stamp-on-load) | different on purpose: a set has an immutable `id@rev` and a bundle has only its name and digest (`measure_sets.md` §3.5's own argument) |
+   | provenance | per kind: `authored` / `prior-none` / `measured`, read from the block's own `provenance` stanza, with `bytes` and `fidelity` (§3.2, pending Q5) | per row: `measured` / `fitted` / `derived` / `null`, plus the set's `class` and `tier` | different vocabularies over different contents; both state "how derived" (D162 add. 3, D166), and both now read it from the data's own declaration |
+   | evidence rule | rows needing evidence read only `measured` (§3.3 rule 7) | the envelope's safe direction belongs to the reader row (§6.2) | compatible |
+   | layer invariance of `consulted` | stated (§3.3 rule 8, C-CONS) | NOT stated (F-4) | a gap in the sibling, filed for its next revision |
+   | the stamp builder | `pcrec_find_stamp` today, `ks_stamp` at [KNOW-SRC] | `ks_stamp` | one builder, once [KNOW-SRC] lands; E-1 does not pre-empt it (§3.7.10) |
+   | the query vocabulary | ONE home, `find_queries[]` (§3.7.1); F-3 retired at E-1 | the card table, closed (§7.2) | aligned; [KNOW-SRC]'s analysis kind reads `find_queries[]` and does not re-spell it |
 
 ## 10. The three standing questions
 
-1. **Measurement regime: RELEVANT, and no number decides this note.** The
+1. **Measurement regime: RELEVANT, and no number decides this note.**
+   `[rev3]` Revision 3 adds one COUNT, not a timing: §3.7.4's stamp census
+   (corpus argv stream, three default arms and five deny arms, this tree's
+   binary on the Linux dev box). A count of stamp values does not depend on the
+   box, compiler or libc. Different data would flip only the OFFERED
+   alternative's mover population, not the design of record, which is
+   zero-mover by construction. E-1's compile-time cost is unmeasured and
+   bounded (§3.7.1). `[rev3.1]` Revision 3.1 adds two more COUNTS and one
+   prototype run, same stream, main `2288ad1cb`, Linux dev box: the analysis-axis
+   refusal census (§3.7.4a) and C-PERT's prototype (§3.7.7). Both are counts
+   of stamp values, refusals and byte equality, so box, compiler and libc do
+   not enter; a different corpus would move the floors, which is why they are
+   literals measured at landing, not the design. The
    evidence it leans on is counts: wingame's survivors, regions and policy
    flips on the bench's 256 KiB throughput subjects; the R-17 timings in
    setfind §13; reqpos_2b's presence win (§5.4a). No consumer price exists any
@@ -905,59 +1790,110 @@ it as a placement with that trigger.
      generated subject; the edge is checked by pcrec's own differential with
      a `(?m)^` cell at `search_from` 0 and > 0.
    - The memo's order-independence is checked by rendering in two orders.
+   - `[rev3]` E-1's checks (§3.7.7). The object's content is checked against a
+     hand-written expectation table and digests recomputed in python, not
+     against `--list-analysis`, which asks the same `pcrec_find_chain_answer`.
+     G1-E1's zero-mover gate needs a DENY arm: the default arms hold no `""`
+     artifact, so they cannot see the offer leak into the stamp (K35). The
+     `absent` T-KIND row is declared UNREACHED until B4.
+   - `[rev3.1]` The refusal set is compared as KEYS across the arm × analysis
+     product, with floors on B1's population (§3.7.7 G1-E1).
+   - `[rev3.1 X1]` The stamp itself is held to the BYTES by C-PERT, which reads
+     neither pcrec's ask record nor the kit's report: the data is perturbed
+     and the artifact's own bytes say whether anything read it. Its null
+     control (the `-I`/`--analysis default` route moves nothing) and its power
+     floor (consulted artifacts that move) keep it from reading green on a
+     weak perturbation. C-E1-4 is labelled an AGREEMENT check: it shares the
+     memo with what it checks.
    - S2's ranking is held to the shadow until S4, then to an independent
      brute force.
    - K35: a multi-span floor (§5.3). [MECH-REACH]: every sabotage row named
      here (memo order, proof over-claim, proof layer-dependence, sequence-rule
      under-estimate, C-SP1 vacuity) gets a witness that reaches its site.
 3. **What moves when data is regenerated: RELEVANT.**
-   - **After S1 every regeneration of the prior or a bundle moves every
-     artifact's `<PREFIX>_FINDINGS` digest** `[r4 R1]`: an abi event each
-     time, beyond any kit row that reads the kind.
+   - **A regeneration of the prior or a bundle moves the `<PREFIX>_FINDINGS`
+     digest of every artifact that CONSULTS it** `[rev3]`. Today that is every
+     default compile, because every default compile asks (§3.7.4), so in
+     practice every default `-e byte` artifact. Each such regeneration is an
+     abi event, as findings.md 5¶9 already says. Revision 2's "after S1, every
+     artifact" held only under the OFFERED alternative, which is not taken
+     (D167 add. 2).
    - The digest in each kind's provenance is the stamp's value, so "which data
-     built this artifact" has one answer.
+     built this artifact" has one answer. `[rev3.1 F-5]` Except across
+     attempts: a multi-attempt compile's stamp names only the final attempt's
+     consults (Q6).
+   - `[rev3.1 M2]` `findings_table.inc` gains the provenance fields; a
+     regeneration that changes only a block's `provenance` (its `bytes`,
+     `fidelity` or `source`) moves no emitted byte at E-1 (nothing reads the
+     fields in pcrec), and from B3a may move a kit selection that reads
+     `measured` as evidence, which is then an abi event in that commit.
    - D160's authored utf8 prior turns `-e utf8`'s kind from `prior-none` to
-     `prior-authored`, moving every utf8 artifact's stamp. S2's shadow covers
+     `authored`, moving every utf8 artifact's stamp. S2's shadow covers
      `-e utf8` explicitly.
    - A proof is a function of the site request, which includes the analysis
      object; a regeneration that changes a proof moves pcrec's bytes, an abi
      event in the same commit.
 
-## 11. The R-18 outline (facts only; main files it)
+## 11. The R-18 outline (facts only; main files it) `[rev3 C-7]`
+
+Revision 3 changes this outline in step with the contract (C-7). The ledger
+entry R-18 in `memfn/docs/requests.md` (main, single writer) is amended by the
+text in Appendix A. That edit is main's to apply.
 
 **R-18: THE WINDOW SEARCH (D161), the general category**
 
-- **Customer.** D161 and add. 1-8; chunk 3. It supersedes the per-shape
-  interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and the PF/OFS/
-  PRE sites. Their forms and measurements carry over.
+- **Customer.** D161 and add. 1-15; D162 and add. 1-4; chunk 3. It supersedes
+  the per-shape interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and
+  the PF/OFS/PRE sites. Their forms and measurements carry over. R-21 (the one
+  window request: single-byte FIND, presence, handoff) is R-18's first
+  delivery, built as R17-b′'s B0-B3b.
 - **Facts pcrec will state** (this note §2-§3):
-  - a site is a bounded sub-problem whose origin is span 0's start, the one
-    thing pcrec chooses; it sends every span bounded to that origin and the
-    kit chooses which to search (D161 add. 9);
-  - spans are `mf_pred`s with stated `move_back`/`overshoot` and `need`;
-  - context predicates (negative offsets) are not spans;
-  - `spans_seq` states the sequence rule (tri-state);
-  - presence sites carry no window;
-  - `mf_site.analysis` (S1, possibly landed first).
-- **Obligations on the reply:** the stream (COMPLETE, ASCENDING without
-  repeats, span-0 starts, REQUIRED spans satisfied); totality; an exhausted
-  stream means no covered candidate; and, when [KIT-VERIFY] builds, a
-  layer-invariant `proven`.
+  - a site is a bounded sub-problem whose origin is span 0's start. The origin
+    is the one thing pcrec chooses (T-CUT). pcrec sends every span bounded to
+    that origin, and the kit chooses which to search (D161 add. 9);
+  - spans are `mf_pred`s with a CLASS (`BOUNDED`, `CONTEXT`, `PRESENCE`), a
+    `byte_form` (EXACT or SUPERSET, D161 add. 10) and a `need` (the effort
+    fact, C-14). A BOUNDED span states `move_back`/`overshoot`. A PRESENCE span
+    states `omin ≥ 0` from the match start and no `omax`; set members are
+    unpicked, with `member_order`. The site states `head_max`;
+  - context predicates are not spans to be searched for (D161 add. 7), and the
+    edge is pcrec's;
+  - `spans_seq` states the sequence rule over BOUNDED spans (tri-state);
+  - **presence is a span class of the one request, not a separate site** (D161
+    add. 14's clarification; supersedes revision 2's "presence sites carry no
+    window");
+  - the consumer's `site_kind` (from B2, replacing `consumer` at S3), and
+    `body` plus the START hook (R-19);
+  - the analysis object, ONCE per art on `mf_art_begin` (§3.7.2; supersedes
+    "`mf_site.analysis`"), with `byte-rate` always present and every kind's
+    provenance.
+- **Obligations on the reply:** ONE stream (COMPLETE, ASCENDING without
+  repeats, span-0 starts, REQUIRED spans satisfied) with range-level binding of
+  presence (EMPTY = NOMATCH, decided first, one verdict per activation, the K65
+  give-up conversions preserved); the unconstrained reply as a range; the
+  per-candidate cut as a PERMISSION; totality; and when [KIT-VERIFY] builds, a
+  layer-invariant `proven` on EXACT spans only.
+- **What the kit reports back:** at `mf_define`, the PROVEN facts (r17b′ §4.5:
+  `proven0`, `scan_exists`, `includes`, `pres_kept`). At `mf_art_end`, a
+  per-kind `consulted`, layer-invariant (§3.3 rule 8), due by the first routed
+  row that reads a kind.
 - **Facts pcrec will NOT state:** a consumer price, a span index, a scan
-  position (`plan_hint` retires), a ranking (`rank_*` retires), per-site
-  rates.
-- **Deliverable.** The kit's method is its own. It must serve every degenerate
-  site at zero SIMD-off movers first, then multi-span sites behind their own
-  denies, and land each SIMD-off byte move together with pcrec's abi event.
+  position (`plan_hint` retires at S4), a ranking (`rank_*` retires at S3),
+  per-site rates.
+- **Deliverable.** The kit's method is its own. It serves every degenerate site
+  at zero SIMD-off movers first. A degenerate site is one BOUNDED span of length
+  1, a CONTEXT-only site, or a PRESENCE-only site. It then serves multi-span
+  sites behind their own denies, and lands each SIMD-off byte move together with
+  pcrec's abi event.
 - **Capability pcrec provides:** storage as ratified (§7).
-- **Trigger.** This note, ratified. R-17's PF routing event merged. The first
-  multi-span consumer: the K82/L1 handoff's fused gate re-routed as a stream
-  (§2.4), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's
+- **Trigger.** R-21's first delivery is built (R17-b′ B0-B3b, D167). The first
+  multi-span BOUNDED consumer: the K82/L1 handoff's fused gate as a stream
+  (§2.5), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's
   syslogbase-expanded and the refine witnesses.
-- **Sequencing (main's).** S1-S3 (§6) may land before the R-18 build. S4
-  rides it.
-- **Sabotage ids.** Main allocates at filing (consult `requests.md`'s
-  reserved ranges).
+- **Sequencing (main's).** E-1 (= S1, §3.7) lands after B2 and before B3a. S2-S3
+  may land before the multi-span build. S4 rides it.
+- **Sabotage ids.** S871-S880 (R-18's) stay R-18's multi-span rows. R-21's are
+  S964-S980. E-1's are proposed at S991-S998 (§3.7.8).
 
 ## 12. Questions for Frank (discussion, each with a leaning)
 
@@ -972,9 +1908,10 @@ it as a placement with that trigger.
      pre-selects among them. The kit chooses which spans to search and how, and
      streams candidate origins (D161 add. 7). So pcrec prices no span, and the
      consumer-price problem (D161 add. 6) does not return one level up.
-   - **What stays.** T-PRES (§5.4a) still sends the unbounded-offset presence
-     span (`zxq` beside segment 0 in `a.*zxq`) as its own site, because it has
-     no bounded distance to the origin. "Send both origins and let the kit say
+   - **What stays.** The unbounded-offset presence span (`zxq` beside segment
+     0 in `a.*zxq`) is still sent, because it has no bounded distance to the
+     origin. `[rev3]` It is now a PRESENCE span of the same site (§2.2,
+     T-WITHHOLD), not its own site. "Send both origins and let the kit say
      which it can search" stays rejected: it is a capability query, the K0
      shape D146 retired.
 2. **Proven facts only at fixed offsets (v1).** A leaning, not a question.
@@ -985,7 +1922,93 @@ it as a placement with that trigger.
    - **The alternative.** Specify the occurrence now: a runtime write per
      candidate on every site that states it, for a consumer nobody has timed.
 
-(Revision 1's Q3, "`U` now or later", is deleted: D161 add. 7 removed `U`.)
+(Revision 1's Q3, "`U` now or later", was deleted: D161 add. 7 removed `U`. The
+number is reused below.)
+
+3. **`[rev3]` What does `<PREFIX>_FINDINGS` mean once the kit receives the
+   analysis: what was CONSULTED, or what was OFFERED?** **RULED: CONSULTED**
+   (Frank, "q3: consulted", D167 add. 2), for `_FINDINGS` and `_MEASURES`
+   alike. The design of record is §3.7.3. Revision 3's argument and the OFFERED
+   build text are in that revision's git text (§3.7.5). The panel r4 then
+   showed the ruling's "E-1 is zero-mover in every arm" needed a non-raising
+   offer to be true (B1); revision 3.1 supplies it, so the ruling's stated
+   consequences hold as ruled.
+4. **`[rev3]` When does `--emit-facts`' `rate:builtin-prior` stop mislabelling
+   a measured bundle (F-2)?** This is the manager's unless Frank wants it.
+   - **The problem.** The token is written whenever ANY block answered, but the
+     spec defines it as the shipped prior. `[rev3.1 m4]` It is LATENT: no CLI
+     path lists facts under a non-default analysis today (`--analysis` with
+     `--emit-facts` is refused).
+   - **The forces.** E-1 creates the provenance that would name it correctly.
+     Re-sourcing the token is a caller-visible listing change (a
+     `facts_listing.md` hunk), but it becomes visible only when some path can
+     list facts under `--analysis`.
+   - **The leaning.** Trigger it on that path (the first path that lists facts
+     under a non-default analysis), not on B3b alone. Spell it
+     `rate:<provenance>` (`rate:authored`, `rate:measured(<bundle>)`,
+     `rate:none(<enc>)->rightmost`). Until then, correct the spec sentence to
+     say what the code does.
+5. **`[rev3.1 M2]` May a kind's provenance be read from the answering block's
+   own declared `provenance` stanza?**
+   - **The problem.** D162 add. 3's manager reading names two provenances,
+     "pcrec's prior vs measured from a [FINDINGS] bundle, and the bundle's
+     identity when measured". Revision 3 implemented that literally, by the
+     answering LINK: the store's `default` is the prior, and any other answer
+     is measured. The panel showed two things. A byte-identical user copy of
+     `default.rxt` named by `-I` then reads "measured", so a row that wants
+     EVIDENCE would accept the authored prior as evidence (reproduced on main,
+     `b1_witness.out`). And every data block already DECLARES how it was
+     derived: a schema-validated `provenance` stanza with `source` (`authored`
+     or an exemplar's name), `bytes` (required iff not authored) and an
+     optional `fidelity` from a closed vocabulary.
+   - **The forces.** Frank's ruling text is "do mark facts with how it was
+     derived". The block's own stanza IS how it was derived, written by the
+     person or tool that derived it and checked by the schema. Reading it is
+     the general mechanism; a link test is a parallel one that can disagree
+     with it. It also gives the evidence strength (`bytes`) for free, at no
+     extra `MF_SITE_ABI` event while the layout is new. What changes: a user's
+     bundle that declares `source authored` (the test fixtures `l1`/`l1none`
+     do) becomes AUTHORED, not MEASURED. It is a guess by a person, and a row
+     that wants evidence will no longer treat it as evidence. That is a change
+     to the manager's reading of D162 add. 3, which only said "at least" two
+     values, not to Frank's text. The cost: one more pre-parse field set in
+     `findgen` and the runtime copy, and trusting a declared `source`. A
+     mislabelled exemplar would read as measured, but the schema already ties
+     `bytes` and `sha256` to that claim, which a link test does not check at
+     all.
+   - **The other way.** Keep link identity, and treat a user's authored
+     block as measured. Then §3.6's evidence-strength fact must still be
+     added, and the byte-identical-copy case must be explained away (a user
+     who names `-I DIR/default.rxt` is asserting the data is theirs).
+   - **The leaning.** Content-sourced, with link identity kept as a
+     cross-check (C-E1-1: an answer through the store's terminal must read
+     AUTHORED). §3.2 is written that way, marked pending this ruling. Link
+     identity would change §3.2's `measured`/`authored` predicates and
+     S992/S1030's cells, and nothing else.
+6. **`[rev3.1 F-5]` What does the stamp record when a compile takes more than
+   one attempt?**
+   - **The problem.** `_FINDINGS` reads the FINAL attempt's record, because
+     `Job.find` is per attempt. A compile whose earlier attempt consulted the
+     byte-rate and whose final attempt did not stamps `""`. Its artifact still
+     depends on the earlier read: the retry decision, and the size the
+     `RX_VM_PREFILTER_WHY` text quotes, come from the earlier attempt. Two
+     corpus artifacts, found by C-PERT's prototype (§3.7.6 F-5).
+   - **The forces.** "Which data built this artifact" is the stamp's job, and
+     an earlier attempt's read is part of that. The union over the compile's
+     attempts answers it: the kinds ANY attempt consulted, with the FINAL
+     attempt's bundle and digest (every attempt resolves the same chain, so
+     they agree). It moves exactly the multi-attempt artifacts whose earlier
+     attempt asked and whose final attempt did not (`""` →
+     `byte-rate=…`), which is a pcrec abi event and a match_api/findings
+     hunk. Leaving it costs a named exception bucket in C-PERT, and an
+     `[ART-MGR]` cache keyed on the stamp would miss a dependence. A narrower
+     fix would make the quoted sizes in `_WHY` texts stamp-free (they count
+     the earlier attempt's own stamp bytes, which is how the bundle NAME
+     leaks), but the ladder's DECISION would still depend on the earlier read.
+   - **The leaning.** The union over attempts, landed as its own small abi
+     event in the same series as RP (both touch the finishing pass), with
+     C-PERT's bucket retired in that commit. Not part of E-1, which stays
+     zero-mover.
 
 ## 13. Filed facts and unlocks (each with its trigger)
 
@@ -996,17 +2019,38 @@ it as a placement with that trigger.
   (find-all under today's API). No slot exists. It would fill D162's reserved
   per-site slot. **Trigger:** the decline arm is built (a measured dense cell
   with a state-losing call pattern, D162 add. 1).
-- **The EVIDENCE-STRENGTH fact** (§3.6). **Trigger:** the first kit row that
-  reads `measured` provenance as evidence.
+- ~~**The EVIDENCE-STRENGTH fact**~~ `[rev3.1 M2]`: BUILT (`mf_prov.bytes`,
+  `fidelity`, §3.1). Its remaining half, a SAMPLE count for a kind whose
+  exemplar is not a byte stream, stays filed (§3.6).
+- **U1, one kit out-channel for the knowledge-source family** `[rev3.1, panel
+  r4]`. One `mf_art_end` record of `consulted` keyed by (knowledge source,
+  item), so `ks_stamp` reads one shape for the analysis object's per-kind bits
+  and the measurement set's boolean. **Trigger:** the second kit output
+  landing, whichever of B3b's per-kind bits and M0's R-MS2 lands second.
+- **U2, content-sourced provenance** `[rev3.1, panel r4]`: mostly BUILT by M2
+  (the stanza reaches the kit). The rest: `--list-analysis` shows the
+  provenance (source, bytes, fidelity) per kind. **Trigger:** B3a, the first
+  ported row reading `measured`.
+- **U3, one stamp render point** `[rev3.1, panel r4]`: BUILT as RP (§3.7.3a).
+  It also lets a future consumed-subset digest (`measure_sets.md` §10.4) be
+  computed after every reader.
+- **U4, an eager per-attempt object on `Job`** `[rev3.1, panel r4]`: the build
+  point is BUILT (M5, §3.7.1). The rest: the same value feeds pcrec's own
+  readers through one accessor, and the `byte_rate_*` record fields retire into
+  it. **Trigger:** [KNOW-SRC]'s K-steps migrating the loader (§3.7.10).
+- **U5, C-PERT for measurement sets** `[rev3.1 X1]`. The same perturbation
+  shape (two sets differing in one row's value, same id) checks `_MEASURES`'s
+  honesty against the bytes. **Trigger:** M0.
 - **(a) End-origin spans**: spans measured back from a match END, for a
   kit-delegated reverse walk. **Trigger:** the first kit-delegated reverse
   walk, or [OPT-ENDWIN-ENC].
 - **(b) Offset-pinned union spans with per-group `spans_seq`**: the start set
   and the k-set carried in the SAME site as hull spans, each group sequenced
   within itself. **Trigger:** S4's offset-k move into the kit.
-- **(c) Presence as a chain link**: T-PRES's presence site becomes a
-  zero-cost first link of the window chain. **Trigger:** the first
-  `a.*zxq`-shaped bench cell with both a window site and a presence site.
+- ~~**(c) Presence as a chain link**~~ `[rev3 C-8]`: STRUCK, and it is now the
+  contract. Presence is a span class of the one request (§2.2), and the kit's
+  chain may test it first, fuse it, or drop it where OPTIONAL. The trigger
+  dissolves.
 - **The position-pin family unification** (§5.6). **Trigger:** U3's own, or
   S4's offset-k move.
 
@@ -1022,7 +2066,77 @@ it as a placement with that trigger.
 3. **Layer invariance of the proof (§4.3).** Can a form under a `--memfn=`
    deny be unable to test a position another form proves, so that the
    invariance forces a weaker proof everywhere? Is that the right trade?
-4. **T-PRES's `dominated` row.** Is it G1's predicate exactly, and does it
-   read the window site's spans or the prefilter's language?
-5. **S1's mover population.** Is "every artifact with `""` today" the whole
-   population, or do some artifacts already ask?
+4. **`dominated` (now the kit's P2, `[rev3]`).** Is it G1's predicate exactly,
+   and does it read the window site's spans or the prefilter's language? The
+   B3a shadow comparator answers this, pick by pick.
+5. **S1's mover population.** ANSWERED `[rev3]` (§3.7.4): every default corpus
+   compile already asks, so the `""` population is 0 at default. It exists only
+   on deny arms. `[rev3.1]` The refusal population is ANSWERED too (§3.7.4a).
+6. `[rev3]` **The offer/ask split (§3.7.1).** Can any path read `byte_rate_have`
+   or the payload before an ask, so that the earlier derivation changes its
+   answer? `[rev3.1 m6]` `req_rate_why` now reads the accessor's return, and
+   C-E1-6 makes "no reader outside `findings.c`" a check rather than a grep.
+7. `[rev3]` **The slot choice (§3.7.2).** Is there a site whose kit row would
+   need a DIFFERENT analysis from its art's? A compound part is its own
+   compile, so no. A future per-site override would be the reserved per-site
+   slot, not the object.
+8. `[rev3]` **C-CONS.** Can a kit row's knowledge filter (`needs` ∋ E) be
+   evaluated only under one layer, so that `consulted` is layer-dependent by
+   construction? r17b′'s W64 rows (B6) are the place to look.
+9. `[rev3]` **The presence class (§2.2).** Is `omin` from the MATCH start sound
+   for every origin the T-CUT table can choose, including `rev-inner`, where
+   pcrec recovers the head? r17b′ §4.1 argues it for head-0 and the landmark
+   origin only.
+10. `[rev3.1]` **The non-raising split (§3.7.1).** Is there a path on which
+    the eager offer's status memo is read by an asker of a DIFFERENT encoding
+    or chain (none exists per attempt, but check retries and compound parts),
+    or a raise reachable from the offer through a callee
+    (`pcrec_find_normalize`, the chain walk)?
+11. `[rev3.1]` **C-PERT's perturbation (§3.7.7).** Is rank reversal strong
+    enough to move every reader that reads the byte-rate? A reader that reads
+    only whether ONE byte's rate exceeds a threshold could be blind to a
+    reversal that keeps that byte on the same side. The power floor bounds the
+    aggregate, not each reader. Is a second perturber (a single-byte spike)
+    owed?
+12. `[rev3.1]` **The render-point marks (§3.7.3a).** Does any byte-count
+    reader measure the artifact between the engine emitter and the finishing
+    pass, so that a mark (one placeholder byte) where the stamp line was
+    changes a size decision? The kit's own stamp mark already lives there, so
+    the class exists; are the knowledge-stamp lines inside a region any
+    decision view measures early?
+13. `[rev3.1]` **F-5 (§3.7.6, Q6).** Are there multi-attempt shapes other than
+    the size-cap retry whose earlier attempt reads the byte-rate (the K53 drop
+    ladder, `[PF-DROP]`, `drop-compound`)? The prototype's population found
+    two; its arms did not include the lowered-cap variants.
+
+## Appendix A. The R-18 ledger amendment (C-7), for main to apply `[rev3]`
+
+`memfn/docs/requests.md` has one writer, main. This lane does not edit it. The
+text below is a dated amendment to append under R-18, replacing nothing above
+it (the ledger is append-only in spirit):
+
+> **R-18 amendment (2026-10-16, pcrec manager; window_contract.md revision 3,
+> C-7).** Three bullets of R-18 are superseded:
+> - "Presence sites carry no window (their own table)" → **presence is a span
+>   class of the one window request** (D161 add. 14 and its clarification;
+>   R-21). A PRESENCE span states `omin ≥ 0` from the match start, no `omax`,
+>   a `need`, and, for a set member, its `member_order`. An EMPTY stream is
+>   NOMATCH, decided before the first element, one verdict per activation, and
+>   K65's give-up conversions are preserved (contract §2.2, §2.4 obligations
+>   5-7).
+> - "`mf_site.analysis`: the per-compile analysis object" → **the analysis
+>   object is stated ONCE per art, in the `mf_art_begin` slot your B1
+>   declares** (contract §3.7.2). From the first commit that routes a row
+>   reading a kind (B3b, or S2's REPLACE if earlier), you return a per-kind
+>   `consulted` at `mf_art_end`, the same in every layer (contract §3.3 rule
+>   8). pcrec ORs it into `<PREFIX>_FINDINGS`.
+> - "Serve every degenerate site (one span, length 1) at zero SIMD-off movers
+>   first" → **every degenerate site: one BOUNDED span of length 1, a
+>   CONTEXT-only site (MLINE), or a PRESENCE-only site**, at zero SIMD-off
+>   movers first.
+>
+> Two facts are added: every span's `byte_form` (EXACT or SUPERSET, D161 add.
+> 10; verify and proofs on EXACT only) and the span class enum
+> (`UNSTATED`, `BOUNDED`, `CONTEXT`, `PRESENCE`). Main's E-1 fills the
+> analysis slot after your B2 merges, with no kit edit. Under the contract's
+> CONSULTED stamp rule it moves no byte.

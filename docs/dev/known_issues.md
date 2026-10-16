@@ -79,6 +79,14 @@ D158 (Frank): an optimization never reduces any pattern's ability to complete. P
 
 ---
 
+## K111 — OPEN (filed 2026-10-16, manager, from lane msrev3's finding F12 — docs/design/measure_sets.md §9.5, §11) — CASE-EXACTNESS DRIFT: the `lib` reference resolver probes with `path_is_file`, the analysis resolver with `dir_has_exact`
+
+`rxt_source.c`'s `lib` search (`src/parse/rxt_source.c:4283-4340`) probes the source's directory and each `-I` directory with `path_is_file(join_path(...))`. The analysis resolver (`rxt_find.c:9-12`, [r2 M-S6]) deliberately replaced that probe with `dir_has_exact`, an exact directory-entry match, so a case-insensitive filesystem cannot answer `log` with `Log.rxt`. On a case-insensitive filesystem (the Mac) `lib "Foo.rxt"` can therefore resolve `foo.rxt`, where a bundle name cannot. Linux is unaffected. Answers of the resolved file are unaffected; the defect is WHICH file a name finds.
+
+**Repro (Mac, case-insensitive volume; not run on Linux):** a `-I` directory holding only `foo.rxt`, and a source that says `lib "Foo.rxt"`: the `lib` resolver finds `foo.rxt`; the analysis resolver on the same directory and name `Foo` finds nothing. The report gives no mechanical repro beyond this.
+
+**Fix shape (not built):** flip the `lib` row's `entry_match` from `probe-exists` to `exact` once [KNOW-SRC] K1 moves it onto `ks_resolve` (K1 keeps `probe-exists` so it stays zero-mover). It is caller-observable on case-insensitive filesystems only, so it lands as its own change with its `rxt_format.md` hunk (D80). Owner: [KNOW-SRC]. Scheduled: unscheduled; Frank's call.
+
 ## K101 — OPEN (filed 2026-10-09, manager, from lane walksurvey's class "K5" — docs/dev/walk_survey.md §K5, not to be confused with this file's own K5) — PERFORMANCE CLIFF: the caseless folded-run gate restarts every find-all call, a LATENT QUADRATIC
 
 `[OPT-LITSCAN]` S4's two-stream folded required-run arm (`litscan_s4.md` §2.3.4; e.g. `RX_REQ_RUN "434154@0/dfdfdf"` for `(?i)cat`) keeps one pending hit per case variant but sets `fresh = 1` on every call, so both streams are searched from `search_from`. When one variant is ABSENT from the text (the uppercase variant in lowercase prose or logs), its `memchr` runs to `n` on EVERY call, making a find-all `O(n × matches)`. Answers are unaffected; this is time only.

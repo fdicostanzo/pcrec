@@ -516,6 +516,11 @@ Maintenance: update this file when files are added/removed or change roles.
 - `r17b_prime/` — that note's compile-only instruments and transcripts
   (cover-shape census of R17-b's movers, multi-form size twins, the
   walk-in-helper assembly check; own CLAUDE.md).
+- `window_contract_rev3/` — window_contract.md revision 3's stamp census
+  (own CLAUDE.md).
+- `window_contract_rev31/` — window_contract.md revision 3.1's evidence: the
+  B1 witness, the analysis-axis refusal census and the C-PERT prototype (own
+  CLAUDE.md).
 - `row_contracts.md` — [MEMFN-ROWCON] light design (rev 1, 2026-10-07,
   Frank after K96): one first-match table mechanism, exported by the kit.
   It has a field vocabulary (`fields.def`), per-row `honours` allowlists
@@ -562,3 +567,40 @@ Maintenance: update this file when files are added/removed or change roles.
     §R2.1): pcrec chooses only the ORIGIN of the handed sub-problem and sends
     ALL spans bounded to it with the analysis object; the kit chooses which
     spans to search and how. T-CUT is now the origin table. Q1 is ANSWERED.
+  - **REVISION 3 (lane `wcrev3`, 2026-10-16) is the design main's build step
+    E-1 implements; read its §R3 first.**
+    - It applies winreq's C-1..C-16 (C-7: §11 plus Appendix A's ledger text;
+      C-8: unlock (c) struck) and R17-b′ rev 2 §4. That brings the PRESENCE
+      span class, the `byte_form` fact (D161 add. 10), ONE stream reply with
+      ALL_PRESENT → VERDICT deleted, and T-WITHHOLD in place of T-PRES.
+    - §3.7 is E-1. The analysis object is built per attempt from ONE kinds
+      table with an `arrives` column, so no kind is special-cased. It is handed
+      ONCE on `mf_art_begin`, the slot the kit's B1 declares, not per site.
+    - The SIBLING check against [KNOW-SRC] finds a conflict. Revision 2 made
+      `_FINDINGS` mean OFFERED, while `_MEASURES` means CONSULTED. Revision 3
+      chooses CONSULTED for both: the offer is not an ask, so E-1 is
+      ZERO-MOVER and no abi event. The kit's per-kind `consulted` joins the
+      stamp at B3b.
+    - Census (`window_contract_rev3/`): 0 default corpus artifacts stamp `""`
+      today, so the OFFERED alternative's movers are deny-arm only. The
+      alternative is stated exactly in §3.7.5.
+    - Q3 (the stamp's meaning) and Q4 (F-2, the `rate:builtin-prior`
+      mislabel) are new.
+  - **REVISION 3.1 (lane `wcfix`, 2026-10-16) answers the light panel r4
+    (`../../dev/reviews/2026-10-16-r4-window-contract-rev3.md`, 1 blocker, 5
+    majors, 6 minors, all ACCEPTED) and Frank's Q3 ruling (CONSULTED, D167
+    add. 2); read its §R3.1 first.**
+    - B1: the offer derives through a NON-RAISING status derivation, the
+      refusal stays on the ASK path, and an underivable kind refuses iff it is
+      consulted (rule 9), so no refusal moves at E-1 or B3b. The panel's
+      witness is reproduced and the refusal population is counted across the
+      analysis axis; G1-E1 gains it with floors.
+    - The render point for `_FINDINGS` and `_MEASURES` moves after
+      `mf_art_end` in its own zero-mover commit RP (§3.7.3a); the object is
+      built eagerly after the chain resolves; `find_queries[]` is the query
+      vocabulary's one home.
+    - Provenance is read from each block's own `provenance` stanza, with
+      `bytes`/`fidelity` carried (pending Q5, discussion form).
+    - X1: C-PERT, a perturbation check of the stamp against the bytes, with a
+      prototype on main: 0 null-control failures and exactly 2 FAILs, which
+      are F-5 (the stamp reports only the final attempt; Q6).

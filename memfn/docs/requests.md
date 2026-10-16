@@ -415,6 +415,32 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 
 **Sabotage ids:** S871-S880 (allocated 2026-10-12; next free S881).
 
+> **R-18 amendment (2026-10-16, pcrec manager; window_contract.md revision 3,
+> C-7).** Three bullets of R-18 are superseded:
+> - "Presence sites carry no window (their own table)" → **presence is a span
+>   class of the one window request** (D161 add. 14 and its clarification;
+>   R-21). A PRESENCE span states `omin ≥ 0` from the match start, no `omax`,
+>   a `need`, and, for a set member, its `member_order`. An EMPTY stream is
+>   NOMATCH, decided before the first element, one verdict per activation, and
+>   K65's give-up conversions are preserved (contract §2.2, §2.4 obligations
+>   5-7).
+> - "`mf_site.analysis`: the per-compile analysis object" → **the analysis
+>   object is stated ONCE per art, in the `mf_art_begin` slot your B1
+>   declares** (contract §3.7.2). From the first commit that routes a row
+>   reading a kind (B3b, or S2's REPLACE if earlier), you return a per-kind
+>   `consulted` at `mf_art_end`, the same in every layer (contract §3.3 rule
+>   8). pcrec ORs it into `<PREFIX>_FINDINGS`.
+> - "Serve every degenerate site (one span, length 1) at zero SIMD-off movers
+>   first" → **every degenerate site: one BOUNDED span of length 1, a
+>   CONTEXT-only site (MLINE), or a PRESENCE-only site**, at zero SIMD-off
+>   movers first.
+>
+> Two facts are added: every span's `byte_form` (EXACT or SUPERSET, D161 add.
+> 10; verify and proofs on EXACT only) and the span class enum
+> (`UNSTATED`, `BOUNDED`, `CONTEXT`, `PRESENCE`). Main's E-1 fills the
+> analysis slot after your B2 merges, with no kit edit. Under the contract's
+> CONSULTED stamp rule it moves no byte.
+
 ## R-19 (2026-10-14, pcrec manager) — R17-b′'s site facts: the CALL MODE per entry body, and the activation's ORIGIN expression
 
 **Customer:** [REGIME] / D161 addenda 11-13; the kit's R17-b′ (docs/design/memfn/r17b_prime.md on lane/memfn-r17 a1799a5d2). The facts are the knowledge keys M and N (docs/design/regime_tables.md §2).
@@ -430,6 +456,8 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Trigger:** R17-b′'s D6 panel outcome.
 
 **Sabotage ids:** within R17-b′'s S911-S922 (allocated 2026-10-14).
+
+**Amendment (2026-10-16, main, Q-R17P-16; r17b_prime.md rev 3 on lane/memfn-fd a8ee399fe):** the builder list gains `req_site_define`, MLINE and `attempt_entry` (every builder states `body`). The original text above is unchanged.
 
 ## R-20 (2026-10-14, pcrec manager) — [MEASURE-SET] M0's kit seams: the set in, "consulted" out, form hashes, reader declarations, method cards
 
@@ -469,8 +497,24 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 | PR-11 | control | the claim "every DFA-scan front enforces the necessary set and run" checked as a census over collapsed hybrids, with a planted collapse that drops `rmin` | argument + one probe only (`nfa.c:803`, `:818-821`; W4) | M | ST3 (gates PR-4's OPTIONAL) | not a fact, a pcrec check. Share no source with the walk (learnings §3) |
 
 
-**Rulings (main's, answer-free, 2026-10-14):** Q-WR-4 withhold presence at ST3; Q-WR-5 handoff (a) first, (b) later behind its own deny; Q-WR-8 ungate `site_kind` for the categorical kinds ST2 reads, and S3 replaces `consumer` rather than dropping it; Q-WR-10 ST2 on main's baseline, R17-b′'s set-site move its own abi event, ST3 after E-1; Q-WR-11 the PF comment method-neutral in pcrec; Q-WR-12 ask `req_set` only where today asks, flip `used` and the deny in the same commit as the row move. Q-WR-7 RULED by Frank (libc-free is future work). **Frank's:** Q-WR-1, Q-WR-2, Q-WR-3, Q-WR-6, Q-WR-9 (pending).
+**Rulings (main's, answer-free, 2026-10-14):** Q-WR-4 withhold presence at ST3; Q-WR-5 handoff (a) first, (b) later behind its own deny; Q-WR-8 ungate `site_kind` for the categorical kinds ST2 reads, and S3 replaces `consumer` rather than dropping it; Q-WR-10 ST2 on main's baseline, R17-b′'s set-site move its own abi event, ST3 after E-1; Q-WR-11 the PF comment method-neutral in pcrec; Q-WR-12 ask `req_set` only where today asks, flip `used` and the deny in the same commit as the row move. Q-WR-7 RULED by Frank (libc-free is future work). **Frank's:** Q-WR-1, Q-WR-2, Q-WR-3, Q-WR-6, Q-WR-9 RULED 2026-10-14 (D161 add. 15, Frank session 112: "agree with 1-5"). State as of 2026-10-16 (kit finding A23, r17b_prime.md rev 3): R-21 TAKEN 2026-10-14; the kit folded it into the R17-b' design note (rev 2, then rev 3 + panel r1 delivered on lane/memfn-fd a8ee399fe); design only, B1 is briefed after B0 merges.
+
+**Amendment (2026-10-16, main, Q-R17P-16; r17b_prime.md rev 3 on lane/memfn-fd a8ee399fe):** PR-3's consumer kind ATTEMPT_PRED is renamed DFA_ATTEMPT and now includes `attempt_entry` as its third caller (with MLINE's seek and the attempt entry's presence). The original PR-3 text above is unchanged.
 
 **Kit work list:** winreq §3 KW-1..KW-13. **Contract:** winreq §4, window_contract.md revisions.
 
 **Sabotage ids:** S964-S980 (17 rows, winreq §7 SW-1..SW-17; allocated 2026-10-14). Every presence-side plant must reach a route with no DFA scan in front.
+
+## R-22 (2026-10-16, pcrec manager) — R-MS6 ([MEASURE-SET] seam addendum): the harness-only arm-entry counter
+
+**Customer:** [MEASURE-SET] M0's REACH floor (docs/design/measure_sets.md revision 3, §4.4 R-MS6 and §8.1; r2 re-check major M7; docs/dev/reviews/2026-10-16-r2-measure-sets-recheck.md). One item, numbered R-MS6 on the main side, an addendum to R-20's R-MS1..R-MS5:
+
+| item | what pcrec needs (facts) | landing bar | needed by |
+|---|---|---|---|
+| R-MS6 | a count of how many times each dispatch arm the kit emits was ENTERED, reachable only through `build/pcrec-harness` (the reserved internal name prefix and one-global fence of compound.md §A.11), exported under the reserved prefix with the arm's kit row id. The default emission is byte-identical with the lever off | the lever off: zero movers on every emit_sweep arm; the lever on: each fired row's arm counts at least 1 on a kit fixture that enters it, and 0 on one that does not | M0 (§8.1's REACH floor) |
+
+**Sequencing:** with R-MS1, R-MS2, R-MS3 and R-MS5 for M0's trigger (R-20).
+
+**Facts only (D157):** pcrec states that it needs arm REACH counts; how the kit counts is the kit's.
+
+**Sabotage ids:** pcrec-side S983-S990 (allocated 2026-10-16, measure_sets.md §8.5); kit-side ids on request.

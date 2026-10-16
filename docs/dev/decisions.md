@@ -9711,3 +9711,60 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Q-R17P-14:** `libc:<name>@<version>` is provenance in a measured row's `deps` plus a SET-level `libc-mismatch` listing flag (as `compiler-mismatch`), never row staleness — the artifact runs against the caller's library. Main (measure_sets' owner) takes the third dependency owner on these terms.
 
 **Consequences.** Main's own step in the plan, E-1 (window_contract S1: `mf_analysis` with the frequency kind always present), is now buildable and sits between the kit's B2 and B3a. E0 (zero-mover `entry_rows[]`, compound_entries.md) is buildable after the cmprev revision.
+
+### D167 addendum 1 — three rulings re-read on the kit's R17-b′ rev-2 panel (manager, 2026-10-16, session 113)
+
+- **A7, the reading of Q-WR-1 / D161 add. 15 ("R7 LINER governs covers of 2+ terms"):** MEMBERS, not cover terms. One-member covers follow D1, and the VM hat seek at |S| = 1 stays on WALK. The hat's |S| = 1 move to V1 leaves B4 and becomes a MEASURED B5 row, fed by grid2 item 3's one-byte arms (WALK vs V1 one-term at the one-byte hat consumers (DFA_HAT and VM_ATTEMPT)). This shrinks B4's mover set. Reason: the move then rests on a measurement, not on R17-b's precedent (D77). It is answer-identical either way. Flagged to Frank as a reading of his ruling. (Wording corrected 2026-10-16 per the kit's Q-R17P-20: the VM hat is a VM_ATTEMPT consumer; grid2 item 3 gains VM_ATTEMPT cells.)
+- **A10, amending Q-R17P-10:** do NOT retire K5's 16 B pair-hit row on the merge alone. One 8 B `valid_until` does not keep find-all linear when there are 2+ REQUIRED spans or a two-stream form (K5's shape), because a far span is rescanned on each expiry; 67 corpus patterns sit on P0's no-DFA routes with 2+ required spans. The new rule: retire K5 when a kit form is proven single-pass over its spans. S is derived from the DECLARED carried positions (8 B per position per form, D165 item 6) and re-derived at the iterator's abi event. "S = 48 B" is withdrawn as a fixed number.
+- **A11, refining Q-R17P-11:** the landmark admission stays pcrec's. Its input is restated as a FACT: the start set's prior mass, h and K, with no read-back of the kit's form or of "what the displaced scan skips" (`emit_dfa.c` ~7920-7934 priced a kit method, contrary to D157). The arithmetic is the same and nothing moves; only comments and names change. Until it is restated in code, it is recorded as a D157 exception.
+- **A4 (noted, not ruled):** the kit's rev 3 will propose a define-time query (facts in, form CLASS out: exists / proven0 / libc-free, never the form) for readers that run during row selection, before any site is defined. It is a contract change, main reviews it at rev 3, and B2 depends on it.
+
+### D167 addendum 2 — knowledge stamps mean CONSULTED (Frank, 2026-10-16, session 113; window_contract.md rev 3 Q3)
+
+- **Ruling (Frank): "q3: consulted."** `<PREFIX>_FINDINGS` and its [KNOW-SRC] sibling `<PREFIX>_MEASURES` list a kind iff a pcrec reader asked it OR a kit row read it (the kit's per-kind, layer-invariant `consulted` bit at `mf_art_end`, from B3b). They never list what was merely OFFERED. Consequences: E-1 is zero-mover in every arm (no abi event, no D80 hunk); findings.md 5¶9 stays true; findings §6 #22 / S314 keep their `""` witness.
+
+### D166 addendum 3 — a defined format may have several readers (Frank, 2026-10-16, session 113; measure_sets.md rev 3 OQ-1)
+
+- **Ruling (Frank):** "we currently have 3? readers for rxt format. the value in have a defined format is that you can have different readers for data. insofar as the mechanism is parsing, i think this is ok."
+- **Rule:** the evaluator-params kind has ONE format and digest spec (measure_sets.md §9, the [KNOW-SRC] home). pcrec's knowledge module owns storage, listing, digest and stamp; the kit keeps its own reader. Several readers of one DEFINED format is not a parallel mechanism when the shared thing is parsing. The format is the contract, and R5 cross-checks the readers. The scattered-data concern (the NEW-DATASET lens) is answered by the single home and spec, not by a single reader.
+
+### D163 addendum 8 — part layout is SWITCHES first; the dial positions are presets over them (Frank, 2026-10-16, session 113; compound_entries.md rev 3 Q6)
+
+- **Q6 (Frank: agree):** when the set has no `θ_hot`, `+1` falls back to the `0` layout, with two distinct stamped reasons (`threshold-unmeasured`, `no-material-rank`).
+- **Plus (Frank):** "we need to have this be switches or a --X=y type parameter so that someone can set this directly. then the tuner simply dials in the switches. in practice, this is a huge impact on .o size and should have finer grain control."
+- **Rule:** the part-layout policy is exposed as caller-settable controls, finer-grained than the five positions (a valued `--X=y` parameter and/or deny/force switches; the grain, e.g. per part class and/or per rank threshold, is the design revision's to propose). The dial's five positions become PRESETS, each a declared row of switch settings (first-match, D103's policy-table shape). An explicit switch overrides the dial's preset. This supersedes rev 2/3's filing of the override spelling to [IFACE-PUSH] as U10. The controls are designed now. Their final CLI spelling, and whether a control is a flag bit or a valued field, follow the interface rules ([FLAG-ACCESS], the ≤4-free-bits trigger); a valued parameter consumes no flag bits.
+- **Consequences:** compound_entries.md revision 4. E0 (position 0, zero movers) is unaffected. E1 (the first live non-zero cell) builds on the switch form.
+
+### D165 addendum 3 — no per-call misuse guard on the iterator (Frank, 2026-10-16, session 113; findall_iter.md rev 2 panel IT4)
+
+- **Ruling (Frank):** "i a weary about too much hand holding ... if the user is using the wrong calls, thats on them."
+- **Rule:** `<prefix>_next` does NOT check the iterator's owner. Passing an iterator bound by artifact A (or carrying A's buffers) to artifact B's `next` is UNDEFINED, stated in the spec hunk like the subject-immutability rule (IT5). The `owner` field, its per-call compare, its setter store (IT4's fix), S931 and the foreign-owner `B` arm are dropped. The header word stays: FRESH/BOUND/ENDED is the iterator's own state machine (stickiness, bind-on-first-call), not a guard. PCRE2 precedent: `pcre2_match` does not verify that match data belongs to the code. A debug build may add checks later; none ships in the hot path.
+
+### D167 addendum 3 — a knowledge stamp is the UNION over compile attempts (manager, 2026-10-16, session 113; window_contract.md rev 3.1 Q6 / F-5)
+
+- **Finding F-5 (lane wcfix's C-PERT prototype):** the stamp reports only the FINAL attempt's asks. On `(\p{Xwd})x` and `x(\p{Xwd})y` under `-e utf8 -fno-req-byte`, the stamp is `""` although attempt 0 asked and the emitted bytes move with the data.
+- **Ruling (manager, a stamp-correctness fix):** `_FINDINGS`/`_MEASURES` list a kind iff ANY attempt of the compile consulted it (a pcrec reader asked or a kit row read it), rendered once at the single render point after `mf_art_end` (rev 3.1 §3.7.3a). It is its own small abi event, landing beside the render-point commit RP, with a mover census. C-PERT is its standing control.
+
+### D162 addendum 4 — provenance is the answering BLOCK's own declaration, not its chain position (Frank, 2026-10-16, session 113; window_contract.md rev 3.1 Q5 / panel M2)
+
+- **Ruling (Frank: "agree"):** a query's provenance (`measured` / `prior-authored` / `prior-none`) is read from the provenance stanza of the BLOCK that answered it (`source`, closed `fidelity`, `bytes`). `measured` requires `source measured` and a non-synthesized `fidelity`. The chain (findings.md §7: the named bundle, its `include`s, then the built-in `default` terminal) decides only WHICH block answers, first-match per query; the answering block's data decides how far it is trusted. Provenance is therefore per QUERY: a bundle may answer byte-rate as `measured` while run-rarity falls through to `default` as `prior-authored`. A byte-identical copy of `default.rxt` under another name stays `prior-authored`.
+
+### D163 addendum 9 — the part rank is STATIC (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q7)
+
+- **Ruling (Frank): "static and predictable."** The edge rank R0-R3 is a property of the call site, defined in tuning.md. A typed `--part-inline-rank=R1` means the same parts for the same pattern and controls on every box, under any analysis object. Profile-driven hotness, if ever wanted, arrives as a NEW threshold value (e.g. `profiled`), never as a redefinition of a rank (U9, re-shaped).
+- **And (Frank): every such choice is visible on an opt-in DECISION CHANNEL** (plan row [DECISION-LOG]), not in one-off notes. This replaces the manager's proposed one-off stderr note for a demoted analysis bundle (D162 addendum 4's observability gap): that report is a member of the channel.
+
+### D163 addendum 10 — pcrec, not gcc, decides part layout wherever a control or preset applies (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q8)
+
+- **Ruling (Frank):** "if we have the switches/tuner then it should decide the outcome. predictability is important here. gcc deciding suggests it could change depending on the version/arch."
+- **Rule:** at every non-zero dial position, and under any explicit control, every part's layout is PINNED by pcrec with explicit attributes (`always_inline`, or `static noinline noclone`, LK-3). No preset or control value leaves a part to gcc's heuristics. `auto` is withdrawn as a preset value. Q8 is answered: the `+1` preset is hot parts inline, the residual `shared`.
+- **Position `0` (Frank, same day: "0 as [emitted] is fine"):** position `0` stays AS EMITTED, the zero-mover baseline. Its layout may follow gcc version and arch, as today. Only non-zero positions and explicit controls pin.
+
+### D163 addendum 11 — part-layout checks are per ROW through flags (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q9)
+
+- **Ruling (Frank: "agree"):** each layout row is checked by setting its control on corpus artifacts with a subject of its class. A synthetic witness, with a hand-written expected `nm` set, is used only where no corpus artifact has the subject. Preset populations are reported per position with a K35 floor, and adjacent presets are NOT required to differ on the corpus. Explicit controls go live at E1, independent of the pinned preset cells.
+
+### D165 addendum 4 — the iterator meters per LOGICAL SEARCH (manager, 2026-10-16, session 113; findall_iter.md rev 3 Q-I1)
+
+- **Ruling (manager; Frank: "this was your call", then concurred: "each logical search should have its own"):** the give-up budget is one meter per LOGICAL search: what one `_search` call or one `pcre2_match` call would be. Inside the iterator, the NOTEMPTY retry, the following search and each search of a batch fill each get their own meter. D163 add. 6 Q1 ("one meter per exported call") stays true WITHIN a logical search: a compound's parts (split's F and Q) serve one `_search` and share one meter. The combinator row carries the difference as its `meter` column: `shared` (split) or `per-search` (iterate).
+- **Reasoning, recorded so a future contention weighs it rather than the label:** (1) A give-up is an observable answer (D158): it must not move when an internal choice changes. Under one meter per `next`, batching or the retry would let earlier searches' work exhaust a later search's budget, so the same subject would give up at different matches with batching on and off. (2) PCRE2's own global loop gives the retry its own `pcre2_match` call and limits, which pcrec's iteration semantics follow (D165 add. 2 Q1). (3) Q1's intent was "the caller's one operation is metered once", and for the iterator that one operation is one search.
