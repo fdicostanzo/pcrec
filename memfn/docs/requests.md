@@ -474,3 +474,17 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Kit work list:** winreq §3 KW-1..KW-13. **Contract:** winreq §4, window_contract.md revisions.
 
 **Sabotage ids:** S964-S980 (17 rows, winreq §7 SW-1..SW-17; allocated 2026-10-14). Every presence-side plant must reach a route with no DFA scan in front.
+
+## R-22 (2026-10-16, pcrec manager) — R-MS6 ([MEASURE-SET] seam addendum): the harness-only arm-entry counter
+
+**Customer:** [MEASURE-SET] M0's REACH floor (docs/design/measure_sets.md revision 3, §4.4 R-MS6 and §8.1; r2 re-check major M7; docs/dev/reviews/2026-10-16-r2-measure-sets-recheck.md). One item, numbered R-MS6 on the main side, an addendum to R-20's R-MS1..R-MS5:
+
+| item | what pcrec needs (facts) | landing bar | needed by |
+|---|---|---|---|
+| R-MS6 | a count of how many times each dispatch arm the kit emits was ENTERED, reachable only through `build/pcrec-harness` (the reserved internal name prefix and one-global fence of compound.md §A.11), exported under the reserved prefix with the arm's kit row id. The default emission is byte-identical with the lever off | the lever off: zero movers on every emit_sweep arm; the lever on: each fired row's arm counts at least 1 on a kit fixture that enters it, and 0 on one that does not | M0 (§8.1's REACH floor) |
+
+**Sequencing:** with R-MS1, R-MS2, R-MS3 and R-MS5 for M0's trigger (R-20).
+
+**Facts only (D157):** pcrec states that it needs arm REACH counts; how the kit counts is the kit's.
+
+**Sabotage ids:** pcrec-side S983-S990 (allocated 2026-10-16, measure_sets.md §8.5); kit-side ids on request.

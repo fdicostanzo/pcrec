@@ -43,6 +43,8 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
 - libpcre2-8 10.46 headers are installed and it IS the reference oracle
   here, so PC-3/PC-4/uprops RUN rather than skip (a red is real, not
   U13-expected).
+- The interactive `grep` here may be a ugrep function that silently skips
+  worktree contents; scripts and lanes use `command grep`.
 - Bare `timeout` is uutils (~105 ms/call): use `gnutimeout`
   (`/usr/bin/gnutimeout`); in test scripts `tests/lib/timeout_bin.sh` ->
   `"$TIMEOUT_BIN"`. sed/xargs/wc are GNU here, but keep new test-script

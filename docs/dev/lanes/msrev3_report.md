@@ -34,7 +34,7 @@ Nothing is rejected.
 - **M4.** The census is emit_sweep's `--data` mode. `knowledge_census.sh` and
   `census_population.tsv` are withdrawn, and S952 is re-aimed.
 - **M5.** Each kind has two digest roles (ITEM, STAMP) with literal domain bytes of
-  explicit length, all grandfathered. K1 carries a digest pin (S984).
+  explicit length, all grandfathered. K1 carries a digest pin (S986).
 - **M6.** `lib` is a resolve-only row with `entry_match = probe-exists`, which keeps K1
   zero-mover. The case-exactness drift is filed as F12.
 - **M7.** Request R-MS6 asks the kit for an arm counter. The admitted arms come from the
@@ -42,7 +42,7 @@ Nothing is rejected.
   S956 is re-aimed.
 - **M8.** The parts are libc-only and the kinds table sits at the library tier.
   `pcrec-measure` compiles the parts plus the measures row only, held by the dependency
-  check (S987).
+  check (S989).
 - **Minors.** n9: the movers census is keyed by transition (`DEFAULTS.log` and
   `movers/<seq>.tsv`). n6: a code table defines the unit and status bytes. The
   (id, rev) shadow key is new (n5). n8, n10 and n11 are fixed as the re-check proposed.
@@ -60,7 +60,7 @@ Nothing is rejected.
 
 ## Proposed ids (main allocates)
 
-S981-S988 are main's next free ids per `worktrees/.mgr/sabotage_ids.txt`, past R-21's
+S983-S990 are main's next free ids per `worktrees/.mgr/sabotage_ids.txt`, past R-21's
 S964-S980.
 
 ## Open for Frank
