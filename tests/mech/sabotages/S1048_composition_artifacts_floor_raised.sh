@@ -5,7 +5,7 @@ SAB_ID='S1048-composition-artifacts-floor-raised'
 SAB_FILE='scripts/emit_sweep.py'
 SAB_SUITES='emitsweep'
 SAB_DESC='the --engine=vm arm'\''s composition artifacts floor (86, AT the measured value) raised by one, so the arm'\''s clean ref-vs-ref sweep reads a COMPOSITION ARTIFACTS FLOOR VIOLATION'
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/swfix_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1048.'
+SAB_DOC_FIGURE='Validated by plant at landing (lane swfix, scripts/tests/emit_sweep.py.test); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1048.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                       "composition_artifacts_floor": 86},'
