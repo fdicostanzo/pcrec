@@ -314,7 +314,7 @@ Validation chain `build/land/chain3.sh`, verdicts `build/land/verdict3.txt`.
 |---|---|---|---|
 | 1 | S1080 could not catch its plant: the kit-side plant `reach_k >= 0 \|\| r->fd_row` writes `{ extern unsigned long (null)[]; (null)[-1]++; }` into BOTH builds, and the lever-off grep looked only for `pcrec_harness_` | `run_arm_reach.sh`: lever off must hold NO counter shape (`pcrec_harness_\|extern unsigned long\|\[[0-9]+\]\+\+`), and that shape grep is held to the lever-on artifact (it must find the counter's increment there, so a changed counter text cannot leave it reading nothing). S1080 RE-PLANTED as the realistic fault, pcrec arming `mf_reach` without the option (`memfn_sites.c`); the old kit-side plant kept as the new S1084 (identity cannot see it; only the shape grep does) | 92ec25906, f227becdb (S1080's header off the fence's `--harness=` spelling) |
 | 2 | the readers asked about a hand-rebuilt site nothing tied to the define | BOTH remedies. ONE constructor per site: `pf_site_of(cx, pf, set, views)` (read by `pf_find_of` at the define and `cand_pf_site` in G1/R4/L4; the set is `pf_scan_set_of`'s on both sides, the bound `views` on both, prefix/direction/bound of the built form asserted equal in `pf_find_of`) and `mline_find_of(cx, cand)` (`emit_attempt`'s define and `dfa_cand_scan`'s ATTEMPT ask). PLUS the independent control in the trace build: `cand_asked_hold` records the class each reader consumed and the class the define reports (`mf_defined` at `pf_define_find_at`; the kit's own query of the site at MLINE's one-call emit), per site, and aborts (`CANDORACLE asked-class-differs` / `-twice`) on any difference in either order, over the CAND_ASKF fields. Planted divergence S1085 (the readers' site carries E, not the DFA hat's T): DETECTED, candoracle 1fail/99pass | 92ec25906, edbe95025 |
-| 3 | routed-record floors PLACEHOLDER | see §10.2 (routed census) and §10.5 | @@F3@@ |
+| 3 | routed-record floors PLACEHOLDER | see §10.2 (routed census) and §10.5 | OWED (§10.6) |
 | 4 | the floor-token change edited fdb1's artifact in place | fdb1's `predicted_movers_B4.tsv` restored byte-identical to 16770a07c^; the regenerated manifest is the NEW `r17b_prime/fdb2/predicted_movers_B4.tsv`, its second header line naming the token change (`kit.eps.findall.l64k` → `kit.eps.streamed.slope`) and the reason ([C4]: the saving keys' operands are the `beta` slopes, measured in the streamed single-call regime); §3.5 restated `[rev3 C4]`: 285 + 15 + 20 byte / 495 + 25 + 23 byte-vm site movers, 860 (arm, pattern), R0's (2,0,0) 20 / 23 sites move; `finder_history.md` line; readers (fdb1/CLAUDE.md, sets/CLAUDE.md, r17b_prime/CLAUDE.md) repointed | 3e80d1e65 |
 | 5.7 | `one_byte` now given to any BYTE/SET row with a one-byte proven0 | trace-build assert `one-byte-off-memchr-row` in `dfa_cand_scan`, with the invariant in its comment (a one-member set ranks onto a PF_SCAN_BYTE row) | 92ec25906 |
 | 5.8 | "does not enter" subjects could not tell arm entry from search entry | new case `\B(?<!a)d` (D1, DFA hat) with `xd` from 1: the seed from the word predecessor parks the machine off state 0, so the search body runs and matches (RC 1, asserted) while the site's parked test skips the find (count 0); MLINE's `ab` case now asserts RC 1 too. 16/0 | 92ec25906 |
@@ -323,17 +323,65 @@ Validation chain `build/land/chain3.sh`, verdicts `build/land/verdict3.txt`.
 | 5.11 | no fdb2/CLAUDE.md | `docs/design/memfn/r17b_prime/fdb2/CLAUDE.md` | 3e80d1e65, f227becdb |
 | 5.12 | `fd_route` mapped an UNSTATED span need to REQUIRED | an UNSTATED need is REFUSED there (a named row with no arm, the caller's refusal), never defaulted; `pred_kinds` still refuses it first, so unreachable and zero-mover | 92ec25906 |
 | 6 | the lever-fence ALLOW and the R-MS6 wiring are main's | main's rulings 4/5 superseded "leave in place": the ALLOW widening is REVERTED and proposed as `fdb2/proposed/lever_fence_allow.diff` (§10.5); the R-MS6 split is §10.5 | f227becdb |
-| 7 | SAB figures claimed a run that did not exist | every fdb2/fdb2fix row (S922, S1079-S1085) reads `PENDING: ... no figure is measured yet` until its own solo run; §8's column is labelled EXPECTED; the measured verdicts are §10.3 | 92ec25906, @@F7@@ |
+| 7 | SAB figures claimed a run that did not exist | every fdb2/fdb2fix row (S922, S1079-S1085) reads `PENDING: ... no figure is measured yet` until its own solo run; §8's column is labelled EXPECTED; the measured verdicts are §10.3 | 92ec25906, figures from §10.3 |
 | 8 | the remaining sweeps | §10.2 | — |
 | 9 | inventory_check red on the base | PRE-EXISTING, NOT B2's: on a fresh call graph the BASE 285590dc6 reads 204 family+seeds / 166 dispositions, 43 undispositioned + 5 not-in-graph (`build/land/inv_base.txt`). B2's own deltas are dispositioned: `req_site_kind` (fdb2), `cand_pf_site` (fdb2fix: it now reads `pf_scan_set_of`, so it joins the family; READER), and `dfa_cand_scan`/`attempt_next_read` are back in the graph. The tip's residue (43 + 3, `build/land/inv_tip.txt`) is the base's list minus those two, line for line. The charter (§3.1 B2) asks B2 to re-pin the inventory for ITS change, which is done; re-deriving the 43 + 3 inherited members is a start-table row, not B2's | 80e1b5003 |
 
 ### 10.2 Measured verdicts (sweeps, suites, census)
 
-@@RUNS@@
+Pinned `taskset -c 12-15`, `-j4`; all against the base 285590dc6 build
+`build/ref285/pcrec` where a reference is read. Logs `build/land/fix_*.log`
+(hand runs) and `build/land/f3_*.log` (chain3, `verdict3.txt`).
+
+| run | result | log |
+|---|---|---|
+| `make`, `make strict` (tip) | rc 0; strict clean (`-Werror -Wshadow`) | `fix_build.log`, `fix_strict.log` |
+| emit_sweep PLAIN after the code changes (5,790 argv, 386 composition files, 11 streams incl. dumps) | **0 movers, 0 asymmetric** | `fix_sweep_plain.log` |
+| `run_arm_reach.sh` (5 cases incl. the parked-test subject) | 16 / 0 | `fix_armreach.log` |
+| test-memfn-finder / -arms / -rows / -deleg / -stamps | 0 failed / 383/0 / 232/0 / 5/0 (after edbe95025; the first chain3 start read `mf_result` by value, fixed) / 25/0 | `f3_*.log` |
+| test-registry / test-prechecks / test-startset / test-cand-oracle | 79/0 / 395/0 / 35/0 / 100/0 | |
+| test-memfn-g2 (quick) | 52,987,694 / 0 | |
+| test-compound | RED on run_lever_fence (c) only, by main's ruling 4 (§10.5 a); 7/0 elsewhere | `f3_test-compound.log`, `fix_fence.log` |
+| test-codegen | the ONE pre-existing [K37] FAIL (`tests/axes/run_axes.sh:1185`, F-B2-2, red on the base) | `f3_test-codegen.log` |
+| inventory_check | residue = the base's (item 9) | `inv_base.txt`, `inv_tip.txt` |
+| drop_rms6.diff in `worktrees/fdb2drop` | make 0, strict clean, finder 0 failed, plain sweep 0 movers (§10.5 b) | `worktrees/fdb2drop/build/tmp/` |
+| simd, start (updated DIFFER_PINS), prefix-invariance, long-prefix, CTRACE build + routed census, trace, variants | **OWED**: chain3 was SIGSTOPped by the kit manager's pause guard for main's HOLD (grid2 F3, then B1's overnight chain) after S485; it resumes on its own (§10.6) | `verdict3.txt` |
 
 ### 10.3 Sabotage, each solo (`run_sabotage_matrix.sh <id>`)
 
-@@MECH@@
+Measured solo by chain3 at 38cbde1b9 (the trailer's sha), each its own
+`== mech run COMPLETE` line (`build/land/f3_mech_<id>.log`):
+
+| id | verdict | arm figure |
+|---|---|---|
+| S1079 | DETECTED | memfnfinder 4fail/882pass |
+| S1080 (re-planted) | **UNDETECTED** (see below) | memfnfinder 0fail |
+| S1081 | **UNDETECTED** (see below) | memfnfinder 0fail |
+| S1082 | DETECTED | memfnfinder 2fail/883pass |
+| S1083 | **UNDETECTED** (see below) | memfnfinder 0fail |
+| S1084 (new) | DETECTED | memfnfinder 5fail/880pass |
+| S1085 (new) | DETECTED (hand run, `fix_mech_S1085.log`) | candoracle 1fail/99pass |
+| S922 | DETECTED | memfnfinder 8fail/852pass |
+| S288, S289 | DETECTED, DETECTED | |
+| S481, S482, S483, S484, S485 | DETECTED each | dfahat 77fail, 54fail, ... (`verdict3.txt`) |
+| S495, S1019 | OWED (chain3 paused before them) | |
+
+**THE THREE UNDETECTED ROWS ARE ONE DEFECT, IN THE ARM'S READING, found
+here.** The mech arm `memfnfinder` scores the FIRST `checks failed:` line
+(`grep -m1`), which `run_finder.sh` printed from `finder_check.py` before
+its two later parts ran: the F-B1-3 witness (S1083's detector) and
+`run_arm_reach.sh` (S1080's, S1081's). Both parts set run_finder's exit
+status, which the arm does not read, so their failures never reached a
+verdict; fdb2's report §8 had marked all three DETECTED from the design,
+never from a run (the review's item 7 exactly). S1084 is DETECTED because
+`finder_check`'s own fixtures see the kit writing the counter unasked.
+FIXED in `run_finder.sh` (commit below): each part's counts are re-labelled
+and summed into ONE `checks passed/failed` pair printed last, the only
+unlabelled one, with a part that prints no counts, or exits non-zero with
+none failed, counted as a failure. NOT YET RE-RUN (the HOLD came down
+first): S1080, S1081, S1083 re-run solo are OWED, and their
+`SAB_DOC_FIGURE`s stay PENDING until then. The other rows' figures are
+written from this table.
 
 ### 10.4 Learnings-§3 caveat (item 9 of the review)
 
@@ -407,7 +455,9 @@ composition files); the lever fence there reads red on `cli/CLAUDE.md`
 alone (fdb1's pre-existing sentence). **Main ACCEPTS R-MS6 by merging the
 branch as is (and rules on the fence entry for `run_arm_reach.sh`), or DROPS
 it by merging and then applying `drop_rms6.diff` (`git apply`) in the same
-merge commit**; the kit's `mf_reach` stays either way, unused. The throwaway
+merge commit**; the kit's `mf_reach` stays either way, unused. The diff was REGENERATED after `run_finder.sh`'s count fix (§10.3; its
+R-MS6 hunk moved): that revision is `git apply --check` clean at the tip, and
+the throwaway verification above is of the first revision. The throwaway
 worktree `worktrees/fdb2drop` is left for removal by `scripts/wtprune`
 (detached; not a lane branch).
 
@@ -416,8 +466,47 @@ C10's one-byte fixtures, `run_axes.sh`'s fd-d1 DIFFER flip, plus (a).
 
 ### 10.6 OWED (the manager's heavy slot)
 
-@@OWED@@
+Exact commands, from `/home/pcrec/projects/pcrec/worktrees/fdb2`, each
+only while `fdb2_rulings.md` has no `HOLD` line, `export
+TMPDIR=$PWD/build/tmp`, `taskset -c 12-15`:
+
+| item | command | note |
+|---|---|---|
+| chain3's remainder | resumes by itself (the kit manager's pause guard; do not relaunch). Steps left: MECH S495, S1019, S1085 (KEEP=1), sweeps simd + start, `run_prefix_invariance.sh`, `run_longprefix_sweep.sh`, CTRACE build + `routed_census.py --write build/land/routed_floors_measured.tsv`, sweeps trace + variants; trailer `CHAIN3_DONE` in `build/land/verdict3.txt` | a gnutimeout that fires after the resume is a pause artifact: re-run that step once |
+| the run_finder.sh fix, validated | `make test-memfn-finder` (must read `checks failed: 0` last), then `bash tests/mech/run_sabotage_matrix.sh S1080`, `S1081`, `S1083`, `S1079`, `S1082`, `S1084`, `S922` (every memfnfinder row, since the arm's counts changed) | fill the SAB_DOC_FIGUREs from the trailers |
+| routed-record floors (item 3) | from `routed_floors_measured.tsv`: commit it as `docs/design/memfn/r17b_prime/fdb2/routed_floors.tsv`, the file `routed_census.py --floors` reads (its own floor(0.9 x measured)) | see below |
+| full `make test` | `scripts/perfrun --label fdb2 -- build/land/test.log` | merge slot |
+| G2 full | `make test-memfn-g2-full` | merge slot |
+| N2 census (row_floors' D1/D1c/D1w `pcrec_floor`) | the N2 census (`row_floors.tsv` header's command) | merge slot |
+| test-axes, the deny arm's answer identity | `make test-axes AXES="--memfn=no-fd-d1"` | merge slot |
+| bench patterns in the sweep | `scripts/emit_sweep.py --patterns-file <bench list> --no-corpus ...` | when main names the list |
+
+**Item 3, the floors, and why `row_floors.tsv` stays PLACEHOLDER.** That
+file's `pcrec_floor` column is DEFINED as the N2 census's count (selections
+from MF_TRACE REACH lines over every `--list-axes` arm and both comment
+tiers). The routed census counts a different thing over a different
+population: pcrec's `MFROUTED` define records over three arms (default,
+`-e utf8`, `--engine=vm`). Pinning one into the other's column would be a
+floor from another instrument (and `--engine=vm`/`-e utf8` may not be N2's
+arms, so it could even exceed N2's count). So D1/D1c/D1w's `pcrec_floor`
+stay PLACEHOLDER, OWED to N2, explicitly; and the routed-record floors
+[rev3 B5] asks for get their own file, pinned from the routed census by its
+own rule once chain3 reaches it. Their `g2_floor` stays PLACEHOLDER too: G2
+chooses D1/D1c/D1w 0 times today (`f3_test-memfn-g2.log`: `row-chosen fd D1
+0`), since KW-10's G2 one-byte family is not built; a 0 is not a floor.
 
 ### 10.7 Charter checklist, re-closed (row B2 + review)
 
-@@CHARTER@@
+Re-closed after the review (§10 in the same rows as §10's table above):
+
+| chartered / reviewed | state |
+|---|---|
+| zero pcrec bytes moved (abi rule) | yes: plain sweep 0 movers after every code fix; simd/start/variants/trace re-runs OWED (chain3) |
+| PR-9: readers on `mf_ask`, tied to the define | yes, now by ONE constructor per site plus the trace-build class hold (S1085 DETECTED) |
+| `inventory_check` / reads DAG re-pinned for B2's change | yes for B2's members; 43 + 3 inherited from the base, not B2's (item 9) |
+| routed-record floors (§1.6 [rev3 B5]) | OWED: own file from the routed census (chain3); `row_floors.tsv` stays N2's |
+| sabotage S1079-S1088, each solo, DETECTED | S1079, S1082, S1084, S1085, S922 and the re-aims DETECTED; S1080, S1081, S1083 UNDETECTED by the arm's first-count reading, FIXED, re-run OWED; S495, S1019 OWED |
+| declared trace delta (§3) | unchanged by the fixes except the trace-build-only `CANDORACLE asked-class-*` aborts (none fire); the trace sweep is OWED |
+| floor token | kept (`kit.eps.streamed.slope`), manifest as a new fdb2/ file, §3.5 restated |
+| lever fence / R-MS6 | main's rulings 4 (reverted, proposed diff) and 5 (stays; `drop_rms6.diff`) |
+| CLAUDE.md files | memfn/data/sets, r17b_prime (+ fdb1, + new fdb2), src/gen, tests/mech |

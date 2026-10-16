@@ -84,38 +84,55 @@ index ba1961645..d906986bb 100644
      pcrec_memfn_art_end(cx, art);
  }
 diff --git a/tests/memfn/run_finder.sh b/tests/memfn/run_finder.sh
-index db8d1313f..5e8a0a49b 100755
+index d40107abd..3a3b764ea 100755
 --- a/tests/memfn/run_finder.sh
 +++ b/tests/memfn/run_finder.sh
-@@ -38,8 +38,6 @@ echo "run_finder: $n kit sources traced"
- python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
-     --fxt "$WORK/fxt" --tmp "$WORK"
+@@ -39,8 +39,8 @@ echo "run_finder: $n kit sources traced"
+ # lines are re-labelled and summed into the totals printed LAST, which are the
+ # only unlabelled ones: a reader that takes the first count (the mech arm
+ # `memfnfinder` does, `grep -m1`) would otherwise score finder_check alone and
+-# never see the parts below it (S1080, S1081 and S1083 read UNDETECTED that
+-# way; lane fdb2fix).
++# never see the parts below it (S1083 read UNDETECTED that way; lane
++# fdb2fix).
+ tp=0 tf=0
+ part() {   # part LABEL LOG: relabel LOG's counts, add them to the totals
+     local p f
+@@ -58,8 +58,6 @@ python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
  rc=$?
+ part finder_check "$WORK/check.log"
+ [ "$rc" -eq 0 ] || [ "$tf" -gt 0 ] || { echo "FAIL: finder_check exited $rc with no failed check"; tf=$((tf + 1)); }
 -# R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
 -# (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
  # R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's
  # class of MLINE's context stop (`proven_prev`, row D1c), whose byte is the
  # necessary one: `(?m)^\n`'s one-byte pre-check stays DOMINATED (pcrec's
-@@ -54,6 +52,4 @@ else
+@@ -74,11 +72,6 @@ else
      echo "FAIL: F-B1-3: (?m)^\\n's pre-check is not dominated (G1 lost the context stop's byte)"
-     rc=1
+     tf=$((tf + 1))
  fi
 -echo "run_finder: the arm-entry counter (R-MS6)"
--TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" || rc=1
- exit $rc
+-TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&1
+-rc=$?
+-part arm_reach "$WORK/reach.log"
+-[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/reach.log")" -gt 0 ] || { echo "FAIL: run_arm_reach exited $rc with no failed check"; tf=$((tf + 1)); }
+ echo "checks passed: $tp"
+ echo "checks failed: $tf"
+ [ "$tf" -eq 0 ]
 diff --git a/tests/memfn/CLAUDE.md b/tests/memfn/CLAUDE.md
-index c3846b90e..8d1a6988d 100644
+index e1dd6a824..5f2d80f92 100644
 --- a/tests/memfn/CLAUDE.md
 +++ b/tests/memfn/CLAUDE.md
-@@ -474,10 +474,7 @@ D1w routed and locked; each decides its fixture, `mf_result.row` and
- set sites decided by no routed row; `--memfn=no-fd-d1` moves the byte site to
+@@ -475,10 +475,8 @@ set sites decided by no routed row; `--memfn=no-fd-d1` moves the byte site to
  D1w's walk); `arm_fixtures.c`'s `--fd-site` gains `byte1t`, `byte1vm`,
  `hat1` and `mline` (the B2 shape) and prints ROUTED/TEXT; rows.tsv reads a
--routed `fd` row's signature from the traced compile's FDROUTE record.
+ routed `fd` row's signature from the traced compile's FDROUTE record.
 -**run_arm_reach.sh** is R-MS6's check (the harness-only arm-entry counter:
 -lever off byte-identical, lever on >= 1 / 0 per fired row), run by
--run_finder.sh.)
-+routed `fd` row's signature from the traced compile's FDROUTE record.)
+-run_finder.sh, which sums its parts' counts into ONE final `checks
+-passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
++run_finder.sh sums its parts' counts into ONE final `checks passed/failed`
++pair (the mech arm reads the first count; lane fdb2fix).)
  
  - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
    TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
@@ -339,7 +356,7 @@ index 041bc98c2..000000000
 -SAB_AFTER='        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d] += 0; }\n",   /* SABOTAGE S1081 */'
 diff --git a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh b/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
 deleted file mode 100755
-index b73421d97..000000000
+index 9aad134af..000000000
 --- a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -355,7 +372,7 @@ index b73421d97..000000000
 -SAB_FILE="memfn/src/compose.c"
 -SAB_SUITES="memfnfinder"
 -SAB_DESC="mf_use writes the arm-entry counter on every routed site, the lever off included"
--SAB_DOC_FIGURE="PENDING: lane fdb2fix's solo mech run of this row is owed (docs/dev/lanes/fdb2_report.md §10); no figure is measured yet."
+-SAB_DOC_FIGURE="MEASURED 2026-10-16 by lane fdb2fix, solo (run_sabotage_matrix.sh S1084): DETECTED, memfnfinder 5fail/880pass (docs/dev/lanes/fdb2_report.md §10.3). The memfnfinder arm's counts changed with run_finder.sh's summed totals after this run; re-read from a run."
 -SAB_EXPECT=DETECTED
 -SAB_COUNT=1
 -SAB_BEFORE='    if (r->reach_k >= 0)

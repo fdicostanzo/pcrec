@@ -477,7 +477,8 @@ D1w's walk); `arm_fixtures.c`'s `--fd-site` gains `byte1t`, `byte1vm`,
 routed `fd` row's signature from the traced compile's FDROUTE record.
 **run_arm_reach.sh** is R-MS6's check (the harness-only arm-entry counter:
 lever off byte-identical, lever on >= 1 / 0 per fired row), run by
-run_finder.sh.)
+run_finder.sh, which sums its parts' counts into ONE final `checks
+passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
 
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
   TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
