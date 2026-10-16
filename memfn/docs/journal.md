@@ -2314,3 +2314,10 @@ pointer when a kit change merges to main.
 - E-1 agreed with main: B1 declares the `mf_analysis` slot (NULL-tolerant, unread before B3a); main fills it after B2.
 - Panel so far: D (0 B / 5 M / 6 m / 6 unlocks). D1 = make the finder table a `kit_table` over `kit_walk` (B1 brief takes it). C (0 B / 6 M / 7 m). C3 adds ~3 cover shapes and C5 adds N=33..46 to grid2; these go to a follow-up lane after grid2p, since running lanes miss addenda. C7 puts the honest slot estimate at 88-113 min.
 - Slip: I ran one `cd` into worktrees/memfn-fd (the kit's own worktree; no stray write). Absolute paths only from here on.
+
+## 2026-10-16 (cont.) — panel closed; rev 3; main's Q-R17P-15..25
+
+- Panel r1 on rev 2: A 0/11/12, B 1/9/7, C 0/6/7, D 0/5/6 + U1-U6. Record docs/dev/reviews/2026-10-16-r1-memfn-r17bp.md, 70/70 ids dispositioned. Main ruled A7/A10/A11 as D167 add. 1 (members; K5 retires only on a proven single-pass form, S derived; admission input as a fact).
+- sweeparm merged (emit_sweep -fmemfn-simd/-fcomments floors, S981/S982). rev 3 merged (r17bp4): kit_table finder, mf_ask define-time query, 23 rows, grid2 1,501 group-arms (~91-129 min). I fixed two dangling spec cites in lane reports (test-spec-history 145/0).
+- Main's answers: Q-15 mf_ask ACCEPTED; Q-16 accepted (main's ledger edit, + A23); Q-17, Q-18 (MF_USE_ENTRY), Q-20 (A7 wording → DFA_HAT and VM_ATTEMPT), Q-24, Q-25 accepted. **Q-19 AMENDED:** PCREC_NO_REQ_SET_LEAD stays a WORKING ALIAS of --memfn=no-pres-set-lead until [IFACE-PUSH], else refused with a diagnostic naming the replacement; never a silent no-op. **Q-21 updated by D163 add. 8 (Frank):** part layout = caller-settable switches (per part class + rank threshold), the five positions are presets; kit helpers follow the RESOLVED layout controls as facts (compound_entries rev 4, lane cmprev4, §R4); .o size is Frank's concern. **Q-22:** a kit lane adds run_axes.sh's --memfn= arm under emit_sweep's four terms. **Q-23:** S1017-S1026 for SN-1..SN-9 (+ spare for the run_axes plant).
+- Next: runaxes lane now; B1 after B0 merges; grid2 harness → rev 3 spec after grid2p.

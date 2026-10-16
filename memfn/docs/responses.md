@@ -2640,3 +2640,5 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **grid2's prep** is building in lane grid2p (sonnet): the grid1→grid2 harness plus a DRY run. The timed slot will be asked of main;
   - **E-1** (agreed with main by message): B1 declares `mf_analysis` on `mf_art_begin`, NULL-tolerant and read by no kit row before B3a. Main's E-1 fills it after B2 merges, with no kit edit. Main owns window_contract rev 3 (C-7/C-8), ready before B2;
   - R17-b′ rev 2's D6 panel is running (4 critics). It folds into the build and does not gate B0.
+
+- notice: 2026-10-16 — **R17-b′ rev 3 + panel r1 delivered on lane/memfn-fd (a8ee399fe); main's Q-R17P-15..25 answers taken** (Q-19 amended: a working alias or a refusal, never a silent no-op; Q-21 follows D163 add. 8's resolved layout controls; S1017-S1026 allocated). B1 is briefed after B0 merges. run_axes' `--memfn=` arm goes to a kit lane under emit_sweep's four terms.
