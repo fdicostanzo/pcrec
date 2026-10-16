@@ -56,7 +56,7 @@ for c in "${cases[@]}"; do
     # lever OFF: three artifacts, one text
     "$TIMEOUT_BIN" 60 "$P" -p rx --features all $flags -o "$d/p/o.c" --pattern "$pat" >/dev/null 2>&1
     "$TIMEOUT_BIN" 60 "$H" -p rx --features all $flags -o "$d/off/o.c" --pattern "$pat" >/dev/null 2>&1
-    if ! cmp -s "$d/p/o.c" "$d/off/o.c"; then bad "$pat [$flags]: the harness build's artifact differs from build/pcrec's (lever off)"; continue; fi
+    if ! cmp -s "$d/p/o.c" "$d/off/o.c"; then bad "$pat [$flags]: the harness build's artifact differs from the shipped compiler's (lever off)"; continue; fi
     if grep -q pcrec_harness_ "$d/off/o.c"; then bad "$pat [$flags]: a counter is named with the lever off"; continue; fi
     ok
     # lever ON
