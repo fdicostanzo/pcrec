@@ -47,3 +47,18 @@ Launched detached with `setsid nohup`; live PID in `build/v/waiter.pid`
 created: the manager creates it when the box slot opens. Read the verdict
 with `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' build/v/test.log` plus the
 perfrun note `build/v/test.log.perfrun` (triage rule in BOILERPLATE).
+
+## Landing
+Landed on main by a landing lane, 2026-10-16. Merge commit `61c92ed22`
+(`Merge branch 'lane/e0sw'`, e0sw tip `69c7782e0`, carrying E0 from lane/e0b and swfix).
+
+- Full `make test` at tree stamp `bdb7397d8` is CONTAMINATED: 70/70 sections ran with one red,
+  test-codegen's `[K37]` allowlist. The K37 fix (`29c6d9adb`) was committed mid-run, so the run
+  did not test the final tree. perfrun class RED-REAL, contaminated=YES. Log:
+  `worktrees/e0sw/build/v/test.log`.
+- Repair evidence: `make test-codegen` re-run on `69c7782e0`, rc 0 and 13 `checks failed: 0`
+  lines (`worktrees/e0sw/build/v/codegen_rerun.log`). No full `make test` was repeated on the tip.
+- E0 zero-mover evidence: the e0tri triage, `docs/dev/lanes/e0build_report.md`.
+- Post-merge checks on main at `61c92ed22` (no heavy suite; the box was held for the kit's mech
+  run): `make strict` clean (-Werror -Wshadow), `make test-plan-lint` 2/0 (self-test 32 plants,
+  17/17 rules), `make test-spec-history` 145/0.

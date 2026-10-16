@@ -67,8 +67,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Client 7 CONCATENATION SPLIT (DFA prefix A, VM suffix B; unique-end A; PARKED, trigger: a VM-routed bench cell dominated by a DFA-able unique-ended prefix). Client 8 LOOKAHEAD-AS-CHECK (D164 add. 2: unbounded trailing lookahead as X-DFA + anchored Y-check; unique-end X; monotone Y = Σ*·Z only; PARKED, trigger: a bench cell held on the VM by an unbounded trailing lookahead).
     - [ENTRY-TABLE] STATE:started — ENTRY TABLE: every exported entry is a compound controller over shared parts (E0, E0c, E1)
       filed: 2026-10-16 manager (D163 add. 7-11, Frank, session 113)
-      status (2026-10-16): E0 (E0a entry_rows[] with a per-edge rank column + E0b the closure reading it) BUILT on lane/e0b (f6fef2ec1), merge pending a make test; E0c and E1 not built
-      next: merge E0 after its make test; then E0c (per-combinator entry emitters re-spelled through the table); E1 after E0 (needs its rank column)
+      status (2026-10-16): E0 (E0a entry_rows[] with a per-edge rank column + E0b the closure reading it) MERGED to main at 61c92ed22 (lane/e0sw = e0b + swfix; full make test contaminated by a mid-run K37 fix, test-codegen re-run green on the tip, see e0sw_report.md Landing); E0c and E1 not built
+      next: E0c (per-combinator entry emitters re-spelled through the table); E1 after E0c (needs E0's rank column)
       refs: docs/design/compound_entries.md (rev 4); docs/dev/lanes/e0build_report.md; decisions D163 add. 7-11
       Steps. E0 = E0a+E0b, zero movers. E0c = the per-combinator entry emitters re-spelled through entry_rows[]. E1 = the part-layout controls go live in ONE abi event: the stamp vocabulary plus the controls' spec hunks (D80), the first live non-zero cell; position 0 stays as emitted (add. 10). Part rank static (add. 9), layout per row through flags (add. 11), switches first with the dial as presets (add. 8).
   - [MATCH-SPLIT] STATE:started — GENERAL SPLIT MATCH
