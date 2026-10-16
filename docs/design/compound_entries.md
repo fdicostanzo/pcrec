@@ -226,7 +226,7 @@ one `_match` probe per position (`drv.c`).
 Per call: the frameless hybrid's prefilter is called on each of 9 `_search` calls per
 iteration, so inlining it saves about 29 instructions per call (25 on the sparse subject).
 Split's Q, called once per `_search`, moves about 5 either way. These are instruction counts,
-not time; §3.4 says what the cells need beyond them.
+not time; §3.3 says what the cells need beyond them.
 
 ### 2.3 Sharing through an exported sibling: the PLT
 
@@ -244,7 +244,7 @@ INTERNAL exported-to-exported edges; the driver's calls go through the PLT in bo
 So a part shared through a static function costs only its call; a part shared through an
 exported entry costs the PLT stub and the optimization gcc may not do across an interposable
 symbol. The rule that follows is not a dial question: an entry should reach a shared body
-through a STATIC part, never through an exported sibling (§3.3 H5).
+through a STATIC part, never through an exported sibling (§3.0 I3).
 
 ### 2.4 The existing row, measured the same way
 
@@ -433,7 +433,7 @@ L0 comes first so `0` is byte-identical by construction. At `0`, gcc enforces L1
 |---|---|
 | H4: `info` and `main` are not static | they are entries, not parts (`entries.c:157`) |
 | H5 / I3: no exported-to-exported call | a linkage rule of `entry_rows[]` (§3.0) |
-| H6: attribute text is excluded from every length decision | a property every row satisfies, checked over the corpus (§3.6) |
+| H6: attribute text is excluded from every length decision | a property every row satisfies: the emitted-size caps and every length decision read the layout-neutral length (D84; [EMIT-VERB]/RQ-3's decision view, `pcrec_sb_len_decide`, `emit_vm.c:10963`), so no position moves the refusal set or a selection; checked over the corpus (§3.6) |
 | H7: `noclone` on every search head | an orthogonal attribute (K24), at every position |
 | member 4, the kit's FUNC helpers | the kit's (D157); pcrec can pass the position as a fact (U8) |
 | member 1, the VM entry chain | keeps its own term and §5.4 cells (4,096 at `0`, 8,192 at `+1`/`+2`) until a ruled diff migrates it under this row. That diff's content would be: `−2`/`−1` take the `shared` rung where it is legal, and AUTO's term otherwise (F-5: `plain` is not the size end below the term); `+2` takes `inline` on a frameless artifact. It is `†` like every other non-zero cell |
@@ -569,7 +569,7 @@ typedef struct {
 |---|---|
 | `__find(…, M)`, one body, two entries (§2.1) | the search controller's body as a part, called by `_search` (M = ONESHOT) and `_next` (M = ITER) |
 | §2.2's two-row rule (`shared` for a label table, else `inline`) | the layout table's L0 at `0` plus L1 elsewhere (§3.4, §3.8): the same answer, no separate table |
-| the NOTEMPTY retry (§3.3) | `first-nonzero(R@q, SEARCH@next_pos(q))`: split's combinator, with R = FINISH `verify-at` on the notempty root (an in-Job machine role, `compound_place` row 3) on the DFA, or the VM's guarded attempt |
+| the NOTEMPTY retry (`findall_iter.md` §3.3) | `first-nonzero(R@q, SEARCH@next_pos(q))`: split's combinator, with R = FINISH `verify-at` on the notempty root (an in-Job machine role, `compound_place` row 3) on the DFA, or the VM's guarded attempt |
 | `__step`, `__enter`, `__adv` | `iterate(STATE; …)`: `__enter` is the state part's bind/check, `__adv` the residual's static twin (H5) |
 | the storage-row table (§1.3) | the STATE part's declared rows; a compound's parts SUM (D165 item 4) |
 | `next_n` (§2.3) | another `iterate` row with a batch sink, behind Q2's trigger |
