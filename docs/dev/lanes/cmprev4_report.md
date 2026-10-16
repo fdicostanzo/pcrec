@@ -85,8 +85,8 @@ Every time effect is UNMEASURED (instruction counts from revision 1 only).
 - **F-7**: `findall_iter.md` rev 2 §2.2 cites revision 3's position rows (P4/P6/P7/P8/P9). Translation: §3.4's last column. Not edited here.
 - **F-8**: the value parameters have no single-source table. Eight with this note. Unlock U-V proposes one (`axes.def`'s sibling), filed, not scheduled.
 - **F-9**: the largest `.o` lever is the owned VM entry chain, which already has a control (`--vm-entry-shape`).
-- **E1's abi** (§5.1): the leaning is ONE abi event, because the stamp vocabulary moves (D94 readers), although no default byte moves. This is the manager's call.
-- **Sabotage**: S999-S1008 are re-aimed. THREE NEW plants need ids (precedence ×2, held marker; §3.6). None were taken.
+- **E1's abi** (§5.1): ONE abi event, because the stamp vocabulary moves (D94 readers), although no default byte moves (the manager's reading, 2026-10-16).
+- **Sabotage**: S999-S1008 are re-aimed. THREE NEW plants (precedence ×2, held marker; §3.6) take S1035-S1037, in the doc's table order.
 
 ## Validation
 

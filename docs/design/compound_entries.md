@@ -61,8 +61,7 @@ bytes per part class (`results/rev4_osize_cls.tsv`), per witness and link regime
 witnesses (`results/rev4_vmshape_o.tsv`). §3.2.5 reads them.
 
 Sabotage: revision 3's S999-S1008 are re-aimed at the renumbered rows. Three new plants
-(precedence, held reporting, preset resolution) have NO ids; the manager allocates them
-(§3.6).
+(two precedence plants, held reporting) take S1035-S1037 (§3.6).
 
 ---
 
@@ -1044,7 +1043,7 @@ UNREACHED "until the first live cell" are reached at E1.
   and per preset (K35). A row whose population is zero is listed with its reason.
 
 **Sabotage, PROPOSED ids** (S999-S1008 allocated by the manager 2026-10-16, re-aimed for
-revision 4's rows; three new plants have NO id yet and need three from the manager):
+revision 4's rows; the three new plants take S1035-S1037, in table order):
 
 | proposed id | plant | detector |
 |---|---|---|
@@ -1058,9 +1057,9 @@ revision 4's rows; three new plants have NO id yet and need three from the manag
 | S1006 | `θ_hot = none` read as R3 | the `none` witness: the object must equal `0`'s and carry `_WHY "no-material-rank"` and no `rank=R3@set` |
 | S1007 | the layout pass rendered before the size caps | the near-cap refusal arm |
 | S1008 | the rank column's R3 cell read as R2 | the rank fixture |
-| (new, id owed) | row K takes the preset's cell over a set caller value | the precedence fixture |
-| (new, id owed) | P7 placed above P4-P6 (the threshold beats a class value) | the precedence fixture: `prefilter:shared --part-inline-rank=R2` must keep the prefilter shared |
-| (new, id owed) | the `/held` marker dropped | the held-request fixture's hand-written stamp |
+| S1035 | row K takes the preset's cell over a set caller value | the precedence fixture |
+| S1036 | P7 placed above P4-P6 (the threshold beats a class value) | the precedence fixture: `prefilter:shared --part-inline-rank=R2` must keep the prefilter shared |
+| S1037 | the `/held` marker dropped | the held-request fixture's hand-written stamp |
 
 ### 3.7 Which family the row belongs to (the sibling-of-a-family lens)
 
@@ -1230,6 +1229,11 @@ IF the table already exists, which is why E0 goes first (§5.1).
 | I0 | `findall_iter.md` §6.9, unchanged | ZERO | none |
 | I1 | `next` as an `iterate` row; the retry as `first-nonzero`; the STATE part | every artifact | ONE (as designed) |
 | F-1 fix | the compound controller calls static twins of `_next_pos`/`_valid_upto` | compound artifacts (97 corpus, bench 0) | fold into I1, which adds `__adv` anyway |
+
+[r4] E1's abi reading (the manager's, 2026-10-16): ONE abi event at E1. It covers the stamp
+vocabulary (`_PART_LAYOUT`, `_WHY`, `_THETA`) and the controls' spec hunks together, although no
+default byte moves; the D94 readers are found by grep in that one commit, and E1′'s cell diffs
+are separate events.
 
 Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitters and
 `entries.c`, exactly where I1 and B5-B8 work. It goes first or it is re-done. [r4] E1 also
