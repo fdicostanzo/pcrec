@@ -43,8 +43,8 @@ census was run (`docs/design/memfn/window_contract_rev3/`). Deliverable:
 - **D161 add. 10.** A `byte_form` (EXACT/SUPERSET) per span gates verify and
   proofs.
 - **Checks (§3.7.7):** G1-E1, C-E1-1..4, C-CONS (B3b), ASan.
-- **Sabotage (§3.7.8):** proposed S983-S990, the manager allocates. S983-S988
-  belong to E-1, S989-S990 to B3b.
+- **Sabotage (§3.7.8):** proposed S991-S998, the manager allocates. S991-S996
+  belong to E-1, S997-S998 to B3b.
 - **Findings.**
   - F-2: `req_rate_why` writes `rate:builtin-prior` for any answering bundle,
     contradicting facts_listing.md 4.1.3¶4 (read from code).

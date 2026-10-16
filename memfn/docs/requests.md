@@ -415,6 +415,32 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 
 **Sabotage ids:** S871-S880 (allocated 2026-10-12; next free S881).
 
+> **R-18 amendment (2026-10-16, pcrec manager; window_contract.md revision 3,
+> C-7).** Three bullets of R-18 are superseded:
+> - "Presence sites carry no window (their own table)" → **presence is a span
+>   class of the one window request** (D161 add. 14 and its clarification;
+>   R-21). A PRESENCE span states `omin ≥ 0` from the match start, no `omax`,
+>   a `need`, and, for a set member, its `member_order`. An EMPTY stream is
+>   NOMATCH, decided before the first element, one verdict per activation, and
+>   K65's give-up conversions are preserved (contract §2.2, §2.4 obligations
+>   5-7).
+> - "`mf_site.analysis`: the per-compile analysis object" → **the analysis
+>   object is stated ONCE per art, in the `mf_art_begin` slot your B1
+>   declares** (contract §3.7.2). From the first commit that routes a row
+>   reading a kind (B3b, or S2's REPLACE if earlier), you return a per-kind
+>   `consulted` at `mf_art_end`, the same in every layer (contract §3.3 rule
+>   8). pcrec ORs it into `<PREFIX>_FINDINGS`.
+> - "Serve every degenerate site (one span, length 1) at zero SIMD-off movers
+>   first" → **every degenerate site: one BOUNDED span of length 1, a
+>   CONTEXT-only site (MLINE), or a PRESENCE-only site**, at zero SIMD-off
+>   movers first.
+>
+> Two facts are added: every span's `byte_form` (EXACT or SUPERSET, D161 add.
+> 10; verify and proofs on EXACT only) and the span class enum
+> (`UNSTATED`, `BOUNDED`, `CONTEXT`, `PRESENCE`). Main's E-1 fills the
+> analysis slot after your B2 merges, with no kit edit. Under the contract's
+> CONSULTED stamp rule it moves no byte.
+
 ## R-19 (2026-10-14, pcrec manager) — R17-b′'s site facts: the CALL MODE per entry body, and the activation's ORIGIN expression
 
 **Customer:** [REGIME] / D161 addenda 11-13; the kit's R17-b′ (docs/design/memfn/r17b_prime.md on lane/memfn-r17 a1799a5d2). The facts are the knowledge keys M and N (docs/design/regime_tables.md §2).

@@ -39,7 +39,7 @@ selection below is an ordered first-match table (memory
 |---|---|---|
 | E-1 (r17b′ §3.1 row "(main) E-1"; D167's consequences) | **§3.7 (new)** | The build step, stated in full: the object, where it is built, the slot it fills, the stamp, the census, the readers, the spec hunks, the checks and the sabotage |
 | the per-site slot vs the kit's per-`mf_art_begin` slot | §3.1, §3.3 rule 3, §3.7.2 | **The object rides `mf_art_begin`**, not `mf_site.analysis`. One object per art, stated once. Rule 3's same-pointer check and its NULL-mixing refusal dissolve, because nothing can differ. Reasons in §3.7.2 |
-| rev 2 open question 5 (S1's mover population) | §3.7.4, §14 item 5 | **MEASURED** (`window_contract_rev3/`). At default flags the population is EMPTY: 0 of 5,336 byte, 0 of 5,364 utf8 and 0 of 5,337 `--engine=vm` corpus artifacts stamp `""` today. Every default compile already asks, by findings §6.4 rule 1. The `""` population is entirely in the deny arms: 1,973 of 5,336 under `-fno-req-byte`, and every artifact under `--engine=vm -fno-req-byte -fno-req-run` |
+| rev 2 open question 5 (S1's mover population) | §3.7.4, §14 item 5 | **MEASURED** (`window_contract_rev3/`). At default flags the population is EMPTY: 0 of 5,336 byte, 0 of 5,364 utf8 and 0 of 5,337 `--engine=vm` corpus artifacts stamp `""` today. Every default compile already asks, by the findings design's byte-rate rule 1 (docs/design/findings/design.md). The `""` population is entirely in the deny arms: 1,973 of 5,336 under `-fno-req-byte`, and every artifact under `--engine=vm -fno-req-byte -fno-req-run` |
 | the sibling-of-a-family check against [KNOW-SRC] (`measure_sets.md` §9) | **§3.7.3**, §9 family 7, F-1 | **A conflict, found.** Rev 2's R1 makes `_FINDINGS` mean OFFERED. [KNOW-SRC] §9.2 part 5 has ONE stamp grammar for the family ("EMPTY = nothing asked"), and `<PREFIX>_MEASURES` means CONSULTED (§3.5: a pcrec reader asked, or the kit returned `consulted`). Two siblings would have two rules. This revision's design of record is **CONSULTED** for both. Under it, E-1 is ZERO-MOVER and not an abi event. The OFFERED alternative's event is also stated exactly (§3.7.5). Q3 asks Frank |
 | general-mechanism lens on the object | §3.2 (T-KIND), §3.7.1 | Rev 2's T-KIND row "the kind is `byte-rate`" was a special case for one kind. It becomes an `arrives` COLUMN of ONE kinds table keyed by the [FINDINGS] query vocabulary: `ALWAYS` for `byte-rate` (D162 add. 2), `MEASURED-ONLY` for the rest. Provenance is decided by the answering LINK's identity, not by its name |
 | C-1, C-2, C-16 (the PRESENCE class; member order, `omin`) | §2.2, §2.3 | ADOPTED as r17b′ §4.1 states it: `mf_span_class` gains PRESENCE; `omin` is measured from the match start, ≥ 0, and 0 is a sound under-estimate; `head_max`; `member_order`. Carved out of "bounded only" |
@@ -737,7 +737,7 @@ the parallel-mechanism shape [KNOW-SRC] exists to remove.
   a kind. In r17b′'s plan that is **B3b**: the five ported picks route there
   and pcrec's own pick readers retire. That commit is zero-mover in the stamp
   iff, on every artifact, (kit consulted ∪ pcrec asked) equals today's pcrec
-  asked set. Its emit_sweep compare proves that, and S989 (§3.7.8) plants the
+  asked set. Its emit_sweep compare proves that, and S997 (§3.7.8) plants the
   OR's loss. That commit carries the findings.md §5 / match_api hunk of
   §3.7.9. S2's kit ranking, if it routes earlier than B3b, takes the same
   obligation at its own commit.
@@ -875,7 +875,7 @@ composition stream (`--source FILE`). Both are owed by the E-1 census
 | `lib/pcrec.h:1582` | "built under it" | unchanged | unchanged |
 
 **Readers of the abi NUMBER** (OFFERED only; grep `78` beside `abi`/`ABI`):
-`src/gen/emit_dfa.c:54` `PCREC_ARTIFACT_ABI`; `docs/spec/match_api.md:169`
+`src/gen/emit_dfa.c:54` `PCREC_ARTIFACT_ABI`; `match_api.md §1¶7`
 (the K80 `#error` text) and its "abi is N" sentence;
 `docs/dev/history/abi_changelog.md`; `tests/codegen/run_codegen_tests.sh:3149`
 `ABI_EXPECT`; `tests/codegen/run_recursion_identity.sh:1251` FILEPIN;
@@ -917,20 +917,20 @@ and `make test-codegen`. At E-1 under CONSULTED none of these moves.
 | **C-CONS** (owed at B3b) | `consulted` per kind and `_FINDINGS` are byte-identical under `-fno-memfn-simd`, `-fmemfn-simd` at every live level, and every `--memfn=` deny | the SIMD-off compile | emit_sweep's `-fmemfn-simd` arm (S981-S982's) |
 | ASan/LSan | the object outlives `mf_art_end` and is freed with the attempt | — | `make asan` over `test-findings` and `test-memfn` |
 
-#### 3.7.8 Sabotage (ids PROPOSED from `worktrees/.mgr/sabotage_ids.txt`'s next free, S983; the manager allocates)
+#### 3.7.8 Sabotage (ids PROPOSED at S983-S990, ALLOCATED by the manager as S991-S998)
 
 | proposed id | plant | detector | reach witness |
 |---|---|---|---|
-| S983 | the offer marks the query asked (`pcrec_find_offer` sets `byte_rate_asked`) | findings §4 "nothing asked" (`-fno-req-byte --pattern '^abc'` stamps `byte-rate=default:…` where `""` is expected) and §6 #22; G1-E1's deny arm | `-fno-req-byte '^abc'` compiles and builds the object (every art does) |
-| S984 | provenance by NAME: `prior-authored` iff the bundle is named `"default"` | C-E1-1's `-I DIR/default.rxt` cell (expected MEASURED) | the `-I` fixture answers through `PCREC_FIND_STOP_DIR` |
-| S985 | `prior-none` carries a uniform table as payload (D126 Q4's false confidence) | C-E1-3 | `-e utf8` with no `--analysis` |
-| S986 | the object is built once per PROCESS (a static cache), not per attempt | C-E1-4 on `multi.rxt` extended with a target under a different `analysis` line | two targets in one invocation |
-| S987 | byte-rate's `arrives` cell flipped to `MEASURED-ONLY` | C-E1-1's `-e utf8` cells (expected PRESENT/prior-none, got ABSENT) | `-e utf8` with no `--analysis` |
-| S988 | the provenance digest computed over the COUNTS, not the derived ppm | C-E1-4 (object digest ≠ stamp digest) | any byte compile that asks |
-| S989 (B3b's) | pcrec does not OR the kit's per-kind `consulted` into the stamp | B3b's zero-mover emit_sweep (stamps drop to `""` where a moved pick was the only asker) | the five ported picks' population |
-| S990 (B3b's) | a SIMD-only kit row sets `consulted` | C-CONS | `-fmemfn-simd` arm |
+| S991 | the offer marks the query asked (`pcrec_find_offer` sets `byte_rate_asked`) | findings §4 "nothing asked" (`-fno-req-byte --pattern '^abc'` stamps `byte-rate=default:…` where `""` is expected) and §6 #22; G1-E1's deny arm | `-fno-req-byte '^abc'` compiles and builds the object (every art does) |
+| S992 | provenance by NAME: `prior-authored` iff the bundle is named `"default"` | C-E1-1's `-I DIR/default.rxt` cell (expected MEASURED) | the `-I` fixture answers through `PCREC_FIND_STOP_DIR` |
+| S993 | `prior-none` carries a uniform table as payload (D126 Q4's false confidence) | C-E1-3 | `-e utf8` with no `--analysis` |
+| S994 | the object is built once per PROCESS (a static cache), not per attempt | C-E1-4 on `multi.rxt` extended with a target under a different `analysis` line | two targets in one invocation |
+| S995 | byte-rate's `arrives` cell flipped to `MEASURED-ONLY` | C-E1-1's `-e utf8` cells (expected PRESENT/prior-none, got ABSENT) | `-e utf8` with no `--analysis` |
+| S996 | the provenance digest computed over the COUNTS, not the derived ppm | C-E1-4 (object digest ≠ stamp digest) | any byte compile that asks |
+| S997 (B3b's) | pcrec does not OR the kit's per-kind `consulted` into the stamp | B3b's zero-mover emit_sweep (stamps drop to `""` where a moved pick was the only asker) | the five ported picks' population |
+| S998 (B3b's) | a SIMD-only kit row sets `consulted` | C-CONS | `-fmemfn-simd` arm |
 
-S983-S988 land with E-1; S989-S990 land with B3b. Eight ids in all.
+S991-S996 land with E-1; S997-S998 land with B3b. Eight ids in all.
 
 #### 3.7.9 D80 spec hunks
 
@@ -1388,7 +1388,7 @@ the `consumer` setters; re-derived by the same grep at S3:
 | `[rev3]` the object's slot declared on `mf_art_begin` (the kit's B1) | no | YES (with B1's other art fields) | no | no |
 | `[rev3]` E-1: pcrec fills the slot (CONSULTED) | no | no | **no** (the offer is not an ask) | no |
 | `[rev3]` E-1 under the OFFERED alternative | no | no | YES on the `""` population (0 at default) | YES (§3.7.9) |
-| `[rev3]` the kit's per-kind `consulted` joins the stamp (B3b, or S2's REPLACE if earlier) | no | YES (the `mf_art_end` output) | no iff the union of askers is preserved (S989) | YES (findings.md §5's CONSULTED wording) |
+| `[rev3]` the kit's per-kind `consulted` joins the stamp (B3b, or S2's REPLACE if earlier) | no | YES (the `mf_art_end` output) | no iff the union of askers is preserved (S997) | YES (findings.md §5's CONSULTED wording) |
 | S1: the object first built (revision 2's row; `[rev3]` superseded by the three E-1 rows above) | — | — | — | — |
 | a kit row starts reading a kind or a field | no | no | yes iff a byte moves, same commit, own deny | only if a stamp's meaning moves |
 | bundle or prior data regenerated | no | no | YES on every artifact that CONSULTS it (`[rev3]`: today, every default compile asks, §3.7.4); also wherever a row's bytes move | no |
@@ -1568,7 +1568,7 @@ text in Appendix A. That edit is main's to apply.
 - **Sequencing (main's).** E-1 (= S1, §3.7) lands after B2 and before B3a. S2-S3
   may land before the multi-span build. S4 rides it.
 - **Sabotage ids.** S871-S880 (R-18's) stay R-18's multi-span rows. R-21's are
-  S964-S980. E-1's are proposed at S983-S990 (§3.7.8).
+  S964-S980. E-1's are proposed at S991-S998 (§3.7.8).
 
 ## 12. Questions for Frank (discussion, each with a leaning)
 
