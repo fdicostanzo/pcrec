@@ -1,73 +1,97 @@
-# [FINDALL-NEXT] — the find-all iterator `rx_iter` / `<prefix>_next` (DESIGN NOTE, revision 1)
+# [FINDALL-NEXT] — the find-all iterator `rx_iter` / `<prefix>_next` (DESIGN NOTE, revision 2)
 
-Lane `iterdes`, 2026-10-14, from main `ee01f4dbb` (abi 78). DESIGN ONLY: nothing under
-`src/`, `cli/`, `lib/` or `tests/` changes in this lane. The probes behind every measured
-sentence are in `findall_iter/` (own CLAUDE.md); no clock was read anywhere.
+**Revision 2** (lane `iterrev`, 2026-10-16, from main `64e77cf9a`, abi 78) is the SHORT
+revision that D163 addendum 7 Q4 orders after E0 and before this note's D6 panel. It restates
+the iterator as COMPOUND CONTROLLERS (`compound_entries.md` revision 3, branch
+`lane/cmprev2`, not yet on main when this was written) and applies D165 addendum 2 (Frank's
+rulings on revision 1's Q1-Q4) and D167 addendum 1 A10 (S is derived from declared carried
+words). Read §R2 first. Revision 1: lane `iterdes`, 2026-10-14, from main `ee01f4dbb`
+(abi 78). DESIGN ONLY: nothing under `src/`, `cli/`, `lib/` or `tests/` changes. The probes
+behind every measured sentence are in `findall_iter/` (own CLAUDE.md). Revision 2 measured
+nothing new and read no clock. Where its design moves a revision-1 number (the init store
+count, `sizeof(rx_iter)`), the number is marked PREDICTED and its re-measurement is owed by
+the twin (§5.3).
 
-Ruled inputs this note designs TO, not re-opens: D165 items 1-6 and addendum 1, D41 item 5
-(the history), D161 addenda 11-13, D166 (the seam only), R-19 (`mf_site.body`, the start
-hook). Frank's charter (2026-10-14): "we need a framework to build into ... set this up with
-its iters and such so we have the playground before we start playing with further
-optimizations." So the first build is the FRAMEWORK: the struct, the entries, the semantics,
-the storage rows and their checks. Every state-carrying optimization is a later row with its
-own trigger (§9).
+Ruled inputs this note designs TO, not re-opens: D165 items 1-6 and addenda 1-2, D163
+addenda 6-7, D167 addendum 1 (A10), D41 item 5 (the history), D161 addenda 11-13, D166 (the
+seam only), R-19 (`mf_site.body`, the start hook). Frank's charter (2026-10-14): "we need a
+framework to build into ... set this up with its iters and such so we have the playground
+before we start playing with further optimizations." So the first build is the FRAMEWORK: the
+struct, the entries, the semantics, the storage rows and their checks. Every state-carrying
+optimization is a later row with its own trigger (§9).
+
+---
+
+## R2. What revision 2 changed (ruling → section)
+
+| input | what it says | what changed here | where |
+|---|---|---|---|
+| D163 add. 7 (model) | every exported entry is a compound controller over parts; `next` is an `iterate` combinator; the retry is `first-nonzero` | `next` is an `iterate` row of `entry_rows[]`. Its STEP is a GUARDED `first-nonzero(R@q, SEARCH@LOWER(adv(q)))`, which is split's controller shape exactly, guard included (split: "floor can be live"; here: the retry bit). Revision 1's `__step` retry arm is no longer iterator-specific machinery | §2.1, §3.3 |
+| D163 add. 7 Q4 + `compound_entries.md` r3 I4, §3.8 | the find body's layout comes from the part-layout row | revision 1's §2.2 two-row rule is KEPT as the `0` cell's content. At a non-zero position `__find` is a SUBJECT part, laid out by `compound_entries.md` §3.4's tables (P2 for the attempt route's label-table body, with `noclone` added). The batch fill gives `__find` a designed R3 in-edge, which `compound_entries.md` §3.8 listed as HELD | §2.2 |
+| D165 add. 2 Q2 (reframed) | INTERNAL batching: the controller finds several matches per pass, holds them, hands one out per `next`; results in the caller's `_in` memory; a public `next_n` is optional | designed (§2.3): the `iterate` combinator owns a FILL loop over STEP writing into a BATCH region of the bound `<prefix>_buffers`; delivery copies one entry per call. No `_in` memory = no batching (K = 1, written straight to `caps`). The answers and give-ups equal the unbatched iterator's, by construction (§3.4a). `next_n` stays an optional extra, timed beside it | §2.3, §3.4a, §5.3 |
+| D165 add. 2 Q3 | bind `(s, n)` at init; `next(&it, caps)` takes no subject | `RX_ITER_INIT(s, n)`; the per-call binding compare is gone. The optional start position, variables and buffers are SETTERS on a FRESH iterator: one mechanism, not one init macro per combination | §1.1, §1.2 |
+| D165 add. 2 Q4 + error reporting | `PCREC_ERR_ITER` (-10); `next` returns 1/0 and `it.rc` says why; sticky | unchanged from revision 1, now RULED. Batching adds `rc_next`: a code met by a fill is delivered only after the matches found before it | §2.1, §3.4 |
+| D163 add. 7 Q5 + `compound_entries.md` F-1 | no exported entry calls an exported sibling; static twins, applied where a change already moves the bytes | every RESIDUAL leaf (`_next_pos`, `_valid_upto`, `_var_valid`) gets a static twin in I1; every internal caller, the compound controller included, calls the twin; the exported residual forwards to it | §2.4 |
+| D167 add. 1 A10 | do not retire K5's 16 B pair-hit row on the merge alone; S from declared carried positions, 8 B each, re-derived at the iterator's abi event; "S = 48 B" withdrawn | §1.3 is a DERIVATION: S = max over paths of Σ 8 × declared words. Today's declarations give **64 B** (kit FIND row 40 + K5 16 + reseed hint 8). K5 retires only on a proof that a kit form is single-pass over its spans | §1.3 |
+| D163 add. 6 Q1 (one meter per exported call) | a compound's parts charge the caller's meter | READ as one meter per LOGICAL search: the retry and the following search are two logical searches (pcre2demo makes two `pcre2_match` calls), and a fill is up to K. Inside one logical search, Q1 holds as ruled. Put to Frank as Q-I1 | §3.4, §10 |
+| brief lenses | general mechanism; sibling of a family; NEW-DATASET | §8 updated; NEW §8a names each new table, column or record and its home | §8, §8a |
+| revision 1 §10 | Q1-Q4 | RULED (D165 add. 2); §10 records them and carries this revision's Q-I1..Q-I4 | §10 |
+
+Sabotage ids in §6.8 are PROPOSALS. Revision 1's S923-S942 are kept as labels; the new rows
+are labelled P-a..P-h. The manager allocates.
 
 ---
 
 ## 0. Answers first
 
 1. **The struct** (§1). `rx_iter` is one fixed, unprefixed type in the shared ABI block.
-   - Its first eight bytes are a STABLE PREFIX that never moves across layouts: a header
-     word (a tag, the layout version, and one of three states FRESH / FRESH_AT / BOUND)
-     and `rc`.
-   - Then `flags`, `lo`, the bound `s`/`n`/`owner`, `vars`/`nvars`, and an inline buffer
-     `st` of `PCREC_ITER_STATE_SIZE` = S bytes at alignment 8.
-   - `rx_iter it = RX_ITER_INIT;` compiles to ONE 32-bit store at -O1..-O3/-Os, warning-free
-     under `-Wall -Wextra -Werror`. The aggregate spelling is a `rep stosq` over the whole
-     struct, and its unnamed form trips `-Wmissing-field-initializers`
-     (`findall_iter/twin/out/init_spellings.out`).
-   - **S is derived, not picked.** It is the maximum over every search path of the SUM of
-     the storage rows held across calls at once. Today's declared rows give
-     32 (kit FIND + H) + 16 (pcrec K5 pair hits) + 8 (pcrec reseed hint) = **56 B**,
-     align 8 (§1.3).
-2. **The entries** (§2). Every artifact gains `int <prefix>_next(rx_iter *, s, n, caps)`,
-   and with it ONE exported call per match where today's loop makes two (`_search` and
-   `_next_pos`).
-   - The search body is one emitted function with a call-MODE parameter. It is inlined into
-     `_search` and `_next`, except where it holds a STATIC label table: the DFA attempt
-     route, 233 of 4,243 compiled corpus artifacts. Gcc cannot copy such a body, so it stays
-     one static function both entries call.
-   - **Batching (`next_n`) is designed, twinned and HELD for a measured trigger** (Q2):
-     the twin's `next_n` is answer-identical to `next` and is 392-1,286 B of `.text`.
-3. **Semantics** (§3). The iterator matches **PCRE2's global iteration**, i.e. pcre2demo's
-   loop: after an EMPTY match at q it retries at q, anchored, with NOTEMPTY_ATSTART.
-   - Measured against libpcre2 10.46 on the corpus's own byte-mode blocks: 1,063 of 29,502
-     (pattern, subject) pairs (160 of 3,778 patterns) answer differently from today's
-     §3.1.3 loop.
-   - **§3.1.3¶9's "always an omission / strict subset" claim is false on 374 of those 1,063
-     pairs.** `a??b?` over `"ab"` makes the loop report `(1,2)`, which neither libpcre2 nor
-     python reports.
-   - The retry's gate is `reports_empty` (nullable OR `\K`), not bare nullability: `ab\K` is
-     non-nullable and diverges.
-   - The hand twin reproduces libpcre2's global loop on all 25 retry cells, `\K` included
-     (`twin/out/run_twin_inline.out`).
-4. **The kit seam** (§4). Each storage row is a region of `st`, zero at the first call
-   (pcrec zeroes the ROW's bytes, never S) and persistent across calls.
-   - M is the body's mode PARAMETER, a compile-time constant after inlining. R-19's `body`
-     fact gains a PARAM value; that is a request to the kit.
-   - N is unchanged. H lives in the kit's own region.
-5. **Overhead and the gate** (§5). 1 exported call per match (today 2). Init is 1 store.
-   - Per call: one header compare, one fused binding compare, one `rc` test.
-   - The parity gate is designed in full (§5.3) and OWED to main on a quiet box. It has
-     four arms, six cells, two link regimes and an A/A noise floor.
-6. **The abi event and its plan** (§6). One pcrec abi event, I1, preceded by zero-mover I0;
-   readers by grep; spec hunks; the three drivers migrated; a new `.rxt` line `mg`; a new
-   check (the iterator against libpcre2's global loop over the whole corpus); sabotage
-   S923-S942; staged commits I0 → I1 → (I2 kit, I3 K5, I4 `next_n`) each behind its own
-   trigger.
-7. **Questions for Frank** (§10): NOTEMPTY semantics (recommend PCRE2's); `next_n` now or on
-   a measured trigger (recommend the trigger); the per-call `(s, n)` against binding at init
-   (D165 as ruled, with the alternative priced); a new refusal code `PCREC_ERR_ITER`.
+   - Its first eight bytes are a STABLE PREFIX: a header word (tag, layout version, state
+     FRESH / BOUND / ENDED, and option bits) and `rc`.
+   - `rx_iter it = RX_ITER_INIT(s, n);` binds the subject (D165 add. 2 Q3). PREDICTED: three
+     stores (`hdr`, `s`, `n`), never a memset. Revision 1 measured one store for its
+     one-field init; the three-store figure is owed by the twin's `init_spellings` probe.
+   - Optional inputs are setters on a FRESH iterator: `rx_iter_at(&it, pos)`,
+     `rx_iter_vars(&it, vars, nvars)`, and `<prefix>_iter_buffers(&it, &bufs)` (typed, a
+     header `static inline`, Q-I2).
+   - **S is derived** (§1.3): the maximum over every search path of 8 B × the DECLARED
+     carried words of the rows held there at once (D167 add. 1 A10). Today: kit FIND row
+     40 + K5 pair hits 16 + reseed hint 8 = **64 B**, align 8.
+2. **The entries are controllers** (§2). `int <prefix>_next(rx_iter *, caps)` is an `iterate`
+   row of `entry_rows[]` over a STATE part (`__enter`: bind or check), a STEP and a BATCH.
+   - STEP = `first-nonzero(R@q, SEARCH@LOWER(adv(q)))` guarded by the retry bit, else
+     `SEARCH@lo`. This is split's controller (`compound.md` §B.2) with a different guard, so
+     both use one combinator emitter.
+   - SEARCH is `__find(ITER)`. Its layout at `0` is revision 1's §2.2 table (inline, except
+     the 233 label-table bodies, which stay one shared static function). At other positions
+     the part-layout row decides (§2.2).
+   - One exported call per match at most; with batching, one per K matches.
+3. **Internal batching** (§2.3). With `_in` memory bound, a call that finds the batch empty
+   FILLS it: STEP runs until the batch region holds `nbatch` matches or the iterator ends.
+   Each later call copies one entry out. A code met during the fill waits in `rc_next` until
+   the matches before it are delivered. Without `_in` memory, K = 1 and STEP writes straight
+   into `caps`. Answers and give-ups are those of the unbatched iterator (§3.4a).
+4. **Semantics** (§3), unchanged from revision 1 and RULED (D165 add. 2 Q1): PCRE2's global
+   iteration, the NOTEMPTY_ATSTART retry gated by `reports_empty` (nullable OR `\K`). 1,063
+   of 29,502 corpus pairs differ from today's §3.1.3 loop, and on 374 of those the loop
+   reports a span no oracle reports.
+5. **The error contract** (§2.1, §3.4). `next` returns 1 for a match, 0 otherwise. `it.rc`
+   says why it stopped: 0 = done, a give-up code (D158) or a refusal (`PCREC_ERR_ITER`,
+   `_UTF`, `_STARTPOS`, `_UNSET_VAR`) = it ended there. The ended state is sticky and costs
+   nothing on later calls (the header word moves to ENDED, so the one fused header/owner
+   compare routes every later call to the slow path).
+6. **F-1's static twins** (§2.4). `__adv`, `__valid_upto` and `__var_valid` are the static
+   bodies; the exported residuals forward to them; no internal call reaches an exported
+   symbol, so nothing pays a PLT call under `-fPIC`. Folded into I1 (97 corpus compound
+   artifacts move anyway).
+7. **The kit seam** (§4), unchanged in shape: each storage row is a region of `st`, zero at
+   bind, persistent across calls; M is `__find`'s mode parameter (R-20 requested).
+8. **The abi event** (§6). One pcrec abi event, I1, after E0 and the zero-mover I0. It
+   carries the shared block, `_next`, the residual twins, the retry machinery, and the
+   `<prefix>_buffers` batch region IF the parity slot's batch arm wins (§5.3); otherwise the
+   batch region is filed with that trigger.
+9. **Questions for Frank** (§10): Q-I1 the meter's unit under batching and the retry; Q-I2
+   the typed buffers binder; Q-I3 the batch region's home (extend `<prefix>_buffers`); Q-I4
+   the batch entry's stride (full captures per match).
 
 ---
 
