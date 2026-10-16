@@ -268,6 +268,24 @@ fixed rung.
 
 ## 3. The dial row
 
+### 3.0 The invariants the row works inside (kept from revision 1, ruled by D163 addendum 7)
+
+- **I1. Every exported entry is a compound controller over parts** (LOCATE, FINISH, STATE,
+  the residual leaves, the controller's prologue; §1). The part-layout row decides only how a
+  part's body is LINKED into its callers: a copy in each caller, or one out-of-line static
+  body they call. It never decides which parts exist or what they compute, so every position
+  is answer-identical by construction (§5.5's acceptance still checks it).
+- **I2. E0 before I1, and E1 after E0.** The row reads each part's callers and each edge's
+  rank (§3.2) off `entry_rows[]` (§4.1). Without the table there is no edge list to read
+  except `entries.c`'s hand list, which has drifted once (cpb02 finding 1).
+- **I3. No exported entry calls an exported sibling** (H5, Q5). A body reached from more than
+  one entry is a STATIC part; the wrappers reach it through static twins. Applied where a
+  change already moves the bytes (I1 for the residual twins, including F-1's `_next_pos` and
+  `_valid_upto`; the first live cell diff for the wrappers), never as its own every-artifact
+  event. It is a linkage rule of `entry_rows[]` that holds at every position where it is
+  applied, so it is not a row of the layout table.
+
+
 ### 3.1 The sibling family: eight places that decide inline or shared today
 
 | # | member | where | decided by |
@@ -287,67 +305,155 @@ dial position), applied by the entry table at every place one body is reachable 
 one entry. Members 1 and 5 are the only ones with a decision today; the rest are fixed or
 gcc's.
 
-### 3.2 The proposed row
+### 3.2 The five positions: five distinct policies
 
-A row of tuning.md §5.4, in its format (a value or an em-dash; `†` = pending a named
-measurement):
+A position's POLICY is pinned (D103, Q1): it is the definition of what the position does,
+fixed in tuning.md §5.4's row, and it changes only by a ruled diff. Whether the position's
+CELL is live (moves bytes) is a separate fact: every non-zero cell stays `†` until its own
+ruled diff cites a size AND a time measurement (D103 item 3). The policies below are what
+those diffs switch on.
 
-| axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
-|---|---|---|---|---|---|---|
-| part layout | `shared` `†` | `shared` `†` | **as emitted** (no attribute; gcc decides) | `hot-inline` `†` | `inline` `†` | §3.1's eight members as one row; H1-H5 (§3.3) are not cells; `†` = the call cost and part bytes of §3.4 are not in a measurement set |
+**Hotness is an edge rank, read off the table, not a profile.** Each edge from a controller
+to a part has a rank, given by the combinator that emits the call. A part's rank is the
+highest rank among its in-edges.
 
-- **`as emitted` at `0`** keeps D103's no-op acceptance cell: `balanced` is byte-identical to
-  no flag, so this row adds nothing at `0` by construction. gcc's default is in effect
-  "single-caller inline, multi-caller shared, uncopyable shared", which is close to
-  `hot-inline` without the hot test.
-- **`shared`**: every part with two or more callers `noinline`; `_in` and `_match_caps`
-  wrappers tail-jump to their sibling's static body. Measured on one framed VM: −5.2% `.text`
-  at +3.9% Ir; on the frameless hybrid it is a no-op (gcc already shared).
-- **`hot-inline`**: a part reached on every call (the controller's locate part, the advance,
-  the retry R on a `reports_empty` artifact) `always_inline` into each caller; a part reached
-  once per find-all or on a rare edge (split's F after the floor, a `rev-end` tie's
-  `verify-at`, the reverse walk) stays shared. Hotness is read off the combinator's edge kind
-  (per call / per match / per find-all / rare), so it needs no profile.
-- **`inline`**: every copyable part `always_inline`. Measured: +4.4% to +21.2% `.text` for
-  −2% to −13% Ir.
-- **An explicit `--vm-entry-shape=N`** keeps overriding member 1, as today (tuning.md
-  §2.21¶7). Member 1's own term becomes this row's term for VM bodies; its cells (4,096 at
-  `0`, 8,192 at `+1`/`+2`) carry over unchanged.
-
-### 3.3 Constraint rows: what the dial cannot override
-
-| id | constraint | evidence | effect |
+| rank | edge kind | calls of the part per exported call | witnesses today |
 |---|---|---|---|
-| H1 | a body with a static label table is never copied | gcc error (§2.1) | always `shared` at every position; findall_iter.md §2.2's `shared` row |
-| H2 | a body with a computed goto is never inlined | gcc error (§2.1) | always `shared`; the VM chain's rungs 2-4 already fall back (tuning.md §2.21¶3) |
-| H3 | a single-caller part is never `shared` | +112 B for nothing (§2.1) | the `shared` cell applies to parts with ≥ 2 callers only |
-| H4 | `info` and `main` are not static | `entries.c:157` | unchanged |
-| H5 | an entry never reaches a shared body through an exported sibling | 4.8 Ir/call through the PLT (§2.3) | the shared body is a STATIC part (the iterator's `__adv` shape); not a dial cell |
-| H6 | the emitted-size caps and every length decision read the layout-neutral length | D84; [EMIT-VERB]/RQ-3's decision view (`pcrec_sb_len_decide`, `emit_vm.c:10963`) | attribute text is bracketed out of every size decision, so no position moves the refusal set or a selection (tuning.md §5.5's acceptance) |
-| H7 | `noclone` stays on every search head | K24 | member 8 is not a cell |
+| R3 `inner` | inside the controller's per-candidate or per-attempt loop | unbounded; grows with the subject | the VM hybrid's prefilter where the artifact's reseed row re-enters it (`hyb_reseed.md` §4); VM `_search_run` → `match_anchored`; the iterator's internal batch fill (D165 add. 2), which calls the find body once per buffered match |
+| R2 `per-call` | once on every call | 1 | split's Q from `_search`; the sibling body behind a DFA `_match_caps`/`_in` wrapper; the controller's advance; `__find` from `_search` and from `_next` |
+| R1 `conditional` | on a data-dependent subset of calls | at most 1 | split's F (while the floor can be live); the iterator's NOTEMPTY retry R (after an empty match, `reports_empty` artifacts only) |
+| R0 `rare` | an error, tie or fallback path | about 0 | the `rev-end` tie's `verify-at` (`<p>__q_match`, kept static, `compound.md` §A.4) |
 
-H6 is what makes the row safe to add: the layout moves OBJECT bytes; the caps measure emitted
-C bytes, and the few bytes of attribute text are excluded from every decision the same way
-`-fmemfn-simd`'s guarded bytes are.
+Revision 1's "per call / per match / per find-all / rare" folds into this: per match in an
+`iterate` row is R2 of `_next`, and once per find-all is R1.
 
-### 3.4 The measurement it needs (D166 set quantities)
+**The five policies:**
 
-The cells read two quantities per part class, which belong in the measurement set (D166):
+| position | policy token | layout of a part with two or more callers | what decides it | cell today |
+|---|---|---|---|---|
+| −2 `min-size` | `all-shared` | one `static noinline` body; every wrapper entry (`_in`, `_match_caps`, un-suffixed forwards) a tail-forward to that body with no frame of its own | caller count | `†` |
+| −1 `size` | `shared-but-inner` | as `−2`, except a part of rank R3 is `always_inline` into each caller | caller count, rank = R3 | `†` |
+| 0 `balanced` | `as-emitted` | no attribute; gcc decides; byte-identical to no flag | nothing (D103's no-op cell) | live (the default) |
+| +1 `speed` | `hot-inline` | a copyable part of rank ≥ `θ_hot` is `always_inline`; every other part as at `0` (no attribute). With no `θ_hot` in the active set the position DECLINES to `as-emitted`, stamped (§3.3) | rank, `θ_hot` from the set | `†` |
+| +2 `max-speed` | `all-inline` | every copyable part `always_inline` into every caller | copyability | `†` |
+
+A part with ONE caller is never shared at any non-zero position (§3.4 row L4). The forwarding
+in `−2`/`−1` is part of the policy, not optional: F-5 measured that one body behind six entries
+that each keep a frame and a canary (`plain`) is LARGER than `inline` on a small VM artifact,
+so "shared" means one body behind frameless forwards (the VM chain's `shared` rung, §2.4).
+`+1` never shares a part that `0` would have let gcc inline. A speed position that shared
+more than the default would not be speed-leaning.
+
+#### 3.2.1 Where adjacent positions differ
+
+The policies are distinct by construction: each adjacent pair disagrees on a named part class.
+Whether a given artifact carries that class is a population question.
+
+| pair | they disagree on | witness (§1.3, §2.2) |
+|---|---|---|
+| −2 / −1 | a multi-caller part of rank R3 | the frameless hybrid `(a)b`'s `rx_prefilter` (2 callers) on an artifact whose reseed row re-enters it; inlining it measured about 25-29 Ir per call fewer |
+| −1 / 0 | every multi-caller part and wrapper body gcc copies (`−1` shares it) | the DFA attempt `^ab\|cd` and split: gcc copies `_match` into `_match_in` (110-142 B) without `-fPIC` |
+| 0 / +1 | a part of rank ≥ `θ_hot` that gcc kept out of line | the framed hybrid's `search_run` (R2, kept out of line by gcc) when `θ_hot` ≤ R2 |
+| +1 / +2 | a multi-caller part ranked below `θ_hot`, at least every R0 part (`θ_hot` is never R0, §3.3) | split's tie path `<p>__q_match` (R0) on a `rev-end` Q that can tie |
+
+The populations are NOT counted here. E1 owes a census with a K35 floor per part class (§5.2
+item 2). A pair that disagrees on no corpus artifact is reported as such, as D103 reported `+2`
+declared-vacuous, and not hidden. On split alone every position coincides (F-4: L1 pins F and
+L4 pins Q).
+
+### 3.3 `θ_hot`: the one value a position reads from the measurement set
+
+- **What it is.** The lowest edge rank that `+1` inlines. Its domain is {R3, R2, R1}. R0 is
+  never in it, so `+1` never inlines a rare-edge part and stays distinct from `+2`.
+- **Why it comes from the set** (Q1). A shared part's call cost is hardware-dependent. Zen 4,
+  Zen 1 and the M1 differ, which is what D166 sets exist for. The policy that reads it is
+  pinned.
+- **Its derivation**, a DERIVED row of the set (D166 item 2, the closed derivation registry of
+  `measure_sets.md`). The inputs are, per rank r, the measured overhead of reaching a shared
+  static part over its inlined form, per exported call, on the set's reference short-call
+  cell, in units of the scalar walk's per-byte cost; and the materiality bar `y` (tuning.md
+  §5.2). `θ_hot` is the lowest r whose overhead is material against that cell's walk. The
+  overhead grows with rank (more calls per call), so the derived row is monotone, and if R1
+  is material so are R2 and R3. If no rank is material on the reference cell, the derived
+  value is R3. This is an argument, not a presumed constant: an R3 part is called a number
+  of times that grows with the subject, so its overhead is material at some subject length
+  on every box. The derivation states that argument as its own row.
+- **When the set has no `θ_hot`**, `+1` does not presume one (no silent defaults). Row L8
+  (§3.4) declines to `as-emitted` and stamps `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`.
+  This is TODAY's state: no set carries the inputs. The only measurement is revision 1's
+  callgrind Ir on Zen 4 (5-29 Ir per call, §2.2), which is an instruction count, not a cost
+  in set units, and is LABELLED UNMEASURED for the set.
+- **What moves when the set changes.** Only `+1` artifacts, through `θ_hot`. `−2`, `−1`, `0`
+  and `+2` read nothing from the set. A default-set change carries its mover census (D166
+  item 1, Q1), and at `0` no set change can move a byte.
+
+The quantities the cells need, owed per box (unchanged from revision 1, now named as the
+inputs above):
 
 | quantity | unit (D166 item 2: relative) | measured here | owed |
 |---|---|---|---|
-| `C_part`: one static part call over the inlined form | per call, in units of the scalar walk's per-byte cost | 5-29 Ir per call (callgrind, Zen 4) | ns per call, short-call regime, per box (a quiet slot) |
-| `C_plt`: an exported-sibling call over a static part call | per call | ≈ 4.8 Ir per call (one witness) | ns per call, `.so` regime |
-| `b_part`: the part's object bytes | bytes | the per-function sizes in `layout.tsv` | the corpus distribution by part class |
+| `C_part(r)`: one static part call over the inlined form, per rank | per call, in units of the scalar walk's per-byte cost | 5-29 Ir per call (callgrind, Zen 4; UNMEASURED in set units) | ns per call, short-call regime, per box (a quiet slot) |
+| `C_plt`: an exported-sibling call over a static part call | per call | ≈ 4.8 Ir per call (one witness) | not read by any row: I3 removes the edge instead of pricing it |
+| `b_part`: the part's object bytes | bytes | the per-function sizes in `layout.tsv` | the corpus distribution by part class, for each cell diff's size axis |
 
-The proposal rubric (D103 item 2) for a cell: `inline` is argued where `C_part · calls per
-byte` is material against the walk and the extra `.text` is `(k − 1) · b_part` against the
-position's size budget. Each `†` lifts only by its own ruled diff citing a two-axis
-measurement (size AND time), never when the measurement lands (D103 item 1).
+A cell diff (E1′) is argued with D103's rubric. `inline` is argued where `C_part · calls` is
+material against the walk and the extra `.text`, `(k − 1) · b_part`, fits the position's size
+budget. The diff cites both axes.
 
-**A tension to rule (Q1).** D103 pins dial cells; D166 lets measured selections move with the
-set. This row can be either: a pinned POLICY per position (`hot-inline`), with the threshold
-inside it read from the set; or a pinned cell with a pinned threshold. §6 Q1.
+### 3.4 The declared first-match table
+
+The policy and the constraints as ONE table, evaluated per (part, position): the first row
+whose conjuncts all hold writes the layout. The conjuncts are listed, so the listing can
+show them (D163 add. 4); there is no if-then logic outside the table. Constraint rows come
+before every non-zero position row, so no position overrides them (Q2). Each position ends in
+an unconditional row, so the table is total.
+
+| # | row | conjuncts (all hold) | layout written | evidence |
+|---|---|---|---|---|
+| L0 | `balanced` | position = 0 | no attribute (as emitted) | D103's no-op cell; Q2 |
+| L1 | `label-table` | the body defines a static label table | `static noinline`, one body | gcc error (§2.1 H1) |
+| L2 | `computed-goto` | the body contains a computed goto | `static noinline`, one body | gcc error (§2.1 H2) |
+| L3 | `seam` | the part is an encoding-seam entry (`_span_match*`, `_back_step`) | `static inline`, as today | [LOSS-REVIEW] candidate 1 (abi 76); member 3 |
+| L4 | `single-caller` | callers = 1 | `static inline always_inline` | sharing measured +112 B for nothing (§2.1 H3) |
+| L5 | `min-size` | position = −2 | `static noinline`; wrappers tail-forward | §3.2 |
+| L6 | `size-inner` | position = −1; rank = R3 | `always_inline` | §3.2 |
+| L7 | `size` | position = −1 | `static noinline`; wrappers tail-forward | §3.2 |
+| L8 | `speed-unmeasured` | position = +1; `θ_hot` absent from the active set | no attribute; `_WHY "threshold-unmeasured"` | §3.3 |
+| L9 | `speed-hot` | position = +1; rank ≥ `θ_hot` | `always_inline` | §3.3 |
+| L10 | `speed` | position = +1 | no attribute | §3.2 |
+| L11 | `max-speed` | position = +2 | `always_inline` | §3.2 |
+
+L0 comes first so `0` is byte-identical by construction. At `0`, gcc enforces L1/L2 itself
+(it refuses to copy), and L3/L4 are what gcc already does.
+
+**Not rows of this table, and why:**
+
+| item | where it lives |
+|---|---|
+| H4: `info` and `main` are not static | they are entries, not parts (`entries.c:157`) |
+| H5 / I3: no exported-to-exported call | a linkage rule of `entry_rows[]` (§3.0) |
+| H6: attribute text is excluded from every length decision | a property every row satisfies, checked over the corpus (§3.6) |
+| H7: `noclone` on every search head | an orthogonal attribute (K24), at every position |
+| member 4, the kit's FUNC helpers | the kit's (D157); pcrec can pass the position as a fact (U8) |
+| member 1, the VM entry chain | keeps its own term and §5.4 cells (4,096 at `0`, 8,192 at `+1`/`+2`) until a ruled diff migrates it under this row. That diff's content would be: `−2`/`−1` take the `shared` rung where it is legal, and AUTO's term otherwise (F-5: `plain` is not the size end below the term); `+2` takes `inline` on a frameless artifact. It is `†` like every other non-zero cell |
+
+#### 3.4.1 What a caller can observe, per position
+
+| observable | −2 | −1 | 0 | +1 | +2 |
+|---|---|---|---|---|---|
+| answers, captures, give-up codes | identical | identical | identical | identical | identical |
+| refusal set, every stamped selection | identical (H6) | identical | identical | identical | identical |
+| `RX_TUNE` | `"min-size"` | `"size"` | `"balanced"` | `"speed"` | `"max-speed"` |
+| `<PREFIX>_PART_LAYOUT` (proposed; non-zero positions only, once a cell is live) | `"all-shared"` | `"shared-but-inner"` | absent | `"hot-inline"` | `"all-inline"` |
+| `<PREFIX>_PART_LAYOUT_WHY` | absent | absent | absent | `"threshold-unmeasured"` on L8 only | absent |
+| object symbols (`nm`) | one local symbol per multi-caller part | the same, R3 parts absent | gcc's choice | R ≥ `θ_hot` parts absent | copyable parts absent |
+| layout flips with `-fPIC` (F-2) | no | no | yes, as today | for hot parts no, for the rest yes | no |
+| time | the cell's cited cost (Q3: not gated) | the cell's cited cost | the default | gated at parity (Q3) | gated at parity |
+
+The stamp is absent at `0`, so `0` stays byte-identical. It first appears with the first
+live cell, in that cell's abi event (D76/D94: its readers are found by grep). There is no
+`rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves differently).
+
 
 ### 3.5 Interaction with the iterator's parity gate and the mode M
 
