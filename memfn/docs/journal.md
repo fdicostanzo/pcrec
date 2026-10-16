@@ -2350,3 +2350,9 @@ pointer when a kit change merges to main.
 - **Ruling (kit):** keep fdb1's eps token fix to `kit.eps.streamed.slope` (rev 3 C4). B4's manifest becomes a new file, §3.5 is restated in the same commit, and fdb1's artifact is restored.
 - **Tonight:** B1's chain runs ALONE at 285590dc6, as originally armed; B2 is not merged. Main has the lever-fence ALLOW edit and the R-MS6 wiring (cli/main.c, internal.h) to rule on.
 - **HOLD maintainer:** `worktrees/memfn-slot/fdb2hold/hold.sh`, the source of the HOLD line in fdb2_rulings.md. It holds over maskbench, grid2 and B1's chain, and exits when B1's chain ends.
+- **19:38 slot incident.** Main touched b1heavy/.go early, at 19:38:29, because its check matched grid2's intermediate `F1 time.sh: COMPLETE` line. My HOLD maintainer had the same loose `COMPLETE|FAILED` match and lifted HOLD at F1's end. So F3 (started 19:38:11) overlapped two runs:
+  - B1's chain, 19:38:33-19:39:06 (build no-op, strict, ~17 s of make test);
+  - fdb2fix's chain3, 19:38:14-19:38:34 and 19:39:14-19:39:24.
+
+  I safekilled B1's chain at 19:39:06 and fixed the HOLD regex to grid2's anchored end line `^(COMPLETE|FAILED) ` (slot.sh:162/56). chain3 is SIGSTOPped under HOLD by pause3.sh. B1 is re-armed (pid 795431) with `b1heavy/trigger.sh` touching .go itself 120 s after grid2's end line. The grid2 reading must treat F3 groups timed 19:38:11-19:39:30 as contaminated.
+  - **Lesson:** an end marker is an ANCHORED line, never a substring match; one slot.status can carry several "COMPLETE" words.
