@@ -46,7 +46,7 @@ restructuring discharges all three:
 | CE-9 | MAJOR | a stamp arm diffs every `<PREFIX>_*` except `TUNE`/`PART_LAYOUT_*` against the same position on the cell diff's parent; UNREACHED until the first live cell | §3.6 |
 | LK-1 | MAJOR | `entry_rows[]` does not exist; E0 ADDS a per-edge rank column (new data, a shape predicate) and its hand fixture, a precondition of E1 | §3.0 I2, §4.1, §5.1 E0a |
 | LK-2 | MAJOR | the per-wrapper legality predicate `forwardable(w)` and the fallback row W2 (`adapt`), with witnesses | §3.2, §3.4 W-table |
-| LK-3 | MAJOR | P2/P4/P6 write `noclone` with `noinline`; a check counts clone symbols per part | §3.4, §3.6, S987 |
+| LK-3 | MAJOR | P2/P4/P6 write `noclone` with `noinline`; a check counts clone symbols per part | §3.4, §3.6, S1003 |
 | LK-4 (+SIB-1) | MAJOR | one legality fact `copyable(part)`: label table, or computed goto, which on the VM is `may_attr = !has_push`, read rather than re-derived; other refusal causes have zero population, held by the census | §3.4 P2 |
 | LK-5 (+CE-13) | MAJOR | I3 is a precondition of the first live cell; the `-fPIC` "no flip" row is qualified | §3.0 I3, §3.4.1, §5.1 E1′ |
 | LK-7 (+CE-12) | MAJOR | `<PREFIX>_PART_LAYOUT` dropped (`RX_TUNE` names the position); only `_WHY` and `_THETA` are stamped, by `+1`, from its first live cell, with D80 hunks, D94 readers and the suites named | §3.4.1, §5.1 E1′ |
@@ -64,7 +64,7 @@ restructuring discharges all three:
 | SIB-2, family sibling | — | `θ_hot` and A1's size term named as sibling cutovers; λ, `--vm-entry-shape`, `-fno-tiered-entry` named as the row's siblings | §3.1, §5.3 U-B |
 | unlocks | — | U-T (one attribute-writing table; its check built at E1), U-A, U-B, UNL-1, UNL-2, F5's trigger | §5.3 |
 
-Sabotage ids in §3.6 are PROPOSALS (S983-S992); the manager allocates.
+Sabotage ids in §3.6 are PROPOSALS (S999-S1008, allocated by the manager 2026-10-16).
 
 ---
 
@@ -734,20 +734,20 @@ There is no `rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves di
   census reaches exactly one row, and each row's population is counted per position (K35).
   A row whose population is zero is listed with its reason.
 
-**Sabotage, PROPOSED ids** (S983 is the next free id; the manager allocates):
+**Sabotage, PROPOSED ids** (allocated S999-S1008 by the manager 2026-10-16):
 
 | proposed id | plant | detector |
 |---|---|---|
-| S983 | P1 drops `_deep` (A2) | the object check: `_deep` must stay a local symbol at every position |
-| S984 | P1 drops A1's functions | the A1-disjointness check; the `-Werror` harness compile (gcc 15.2 warns "ignoring attribute 'noinline' because it conflicts with attribute 'always_inline'" [-Wattributes], checked on a two-line probe in the lane's scratch) |
-| S985 | T1/T2 moved below the part table | emit_sweep: `+1` without `θ_hot` must equal `0` byte for byte |
-| S986 | P2 dropped | the build: gcc refuses `always_inline` on a label-table body at `+2` |
-| S987 | `noclone` dropped from P2/P4/P6 | the clone-symbol count |
-| S988 | `forwardable` always true | the build and answer checks on the compound `_match` at `−2` |
-| S989 | `callers` counts call sites | the evaluator's expected set against `nm` on a two-site, one-function part |
-| S990 | `θ_hot = none` read as R3 | the `none` witness: `+1`'s object must equal `0`'s and carry `_THETA "none"` |
-| S991 | the layout pass rendered before the size caps | the near-cap refusal arm |
-| S992 | the rank column's R3 cell read as R2 | the rank fixture |
+| S999 | P1 drops `_deep` (A2) | the object check: `_deep` must stay a local symbol at every position |
+| S1000 | P1 drops A1's functions | the A1-disjointness check; the `-Werror` harness compile (gcc 15.2 warns "ignoring attribute 'noinline' because it conflicts with attribute 'always_inline'" [-Wattributes], checked on a two-line probe in the lane's scratch) |
+| S1001 | T1/T2 moved below the part table | emit_sweep: `+1` without `θ_hot` must equal `0` byte for byte |
+| S1002 | P2 dropped | the build: gcc refuses `always_inline` on a label-table body at `+2` |
+| S1003 | `noclone` dropped from P2/P4/P6 | the clone-symbol count |
+| S1004 | `forwardable` always true | the build and answer checks on the compound `_match` at `−2` |
+| S1005 | `callers` counts call sites | the evaluator's expected set against `nm` on a two-site, one-function part |
+| S1006 | `θ_hot = none` read as R3 | the `none` witness: `+1`'s object must equal `0`'s and carry `_THETA "none"` |
+| S1007 | the layout pass rendered before the size caps | the near-cap refusal arm |
+| S1008 | the rank column's R3 cell read as R2 | the rank fixture |
 
 ### 3.7 Which family the row belongs to (the sibling-of-a-family lens)
 

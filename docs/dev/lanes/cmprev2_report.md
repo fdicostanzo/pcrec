@@ -42,7 +42,7 @@ All three had one root: revision 2's table ignored attributes the emitters alrea
 gcc 15.2 `-O2 -Wall` on a two-line probe (lane scratch, `build/probe/`, not committed):
 `noinline` together with `always_inline` gives "ignoring attribute 'noinline' because it
 conflicts with attribute 'always_inline'" [-Wattributes], rc 0 without `-Werror`. This is
-the detector named for proposed row S984.
+the detector named for proposed row S1000.
 
 ## Not discharged, or discharged by statement only
 
@@ -64,5 +64,5 @@ Q6-Q9 (§5.5), updated with the panel's notes, in discussion form:
 
 ## For the manager
 
-- Sabotage ids S983-S992 in §3.6 are PROPOSALS, to be allocated by the manager.
+- Sabotage ids S999-S1008 in §3.6 are PROPOSALS, to be allocated by the manager.
 - No validation suite applies to a docs-only change. No `make` was run.

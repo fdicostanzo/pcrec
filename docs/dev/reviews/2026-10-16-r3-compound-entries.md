@@ -96,7 +96,7 @@ Section numbers are revision 3's. Its §R3 carries the same map with what change
 | CE-9 | §3.6 | stamp arm against the same position on the cell diff's parent; UNREACHED until the first live cell |
 | LK-1 | §3.0 I2, §4.1, §5.1 E0a | E0 ADDS the rank column (a shape predicate per part reference) and its hand fixture, a precondition of E1 |
 | LK-2 | §3.2, §3.4 W-table | `forwardable(w)`; fallback W2 `adapt` with the compound `_match` witness |
-| LK-3 | §3.4, §3.6 | `noclone` with `noinline` on P2/P4/P6; clone-symbol count check (proposed S987) |
+| LK-3 | §3.4, §3.6 | `noclone` with `noinline` on P2/P4/P6; clone-symbol count check (proposed S1003) |
 | LK-4 (+SIB-1) | §3.4 P2 | one fact `copyable(part)`; on the VM it reads `vm_plan_entry`'s `may_attr`; other refusal causes held at zero population by the census |
 | LK-5 (+CE-13) | §3.0 I3, §3.4.1, §5.1 E1′ | I3 a precondition of the first live cell; the `-fPIC` row qualified |
 | LK-7 (+CE-12) | §3.4.1, §5.1 E1′ | `<PREFIX>_PART_LAYOUT` dropped; `_WHY`/`_THETA` only, from `+1`'s first live cell, with the D80 hunks, D94 readers and suites named |
@@ -119,4 +119,4 @@ Nothing was left undischarged. Two discharges rest on a statement rather than a 
 and the revision says so where it makes them. LK-3: the linkage critic's test did not clone,
 so the clone check carries the proof. LK-4: the zero population of the other gcc refusal
 causes is a grep at `74ac73f7f`, held by E1's census. Sabotage ids in the revision are
-PROPOSALS (S983-S992).
+PROPOSALS (S999-S1008).
