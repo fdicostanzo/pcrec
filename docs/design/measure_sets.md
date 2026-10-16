@@ -1762,9 +1762,12 @@ The parts are six, and each exists once:
    - **ITEM**: the identity of the loadable item. R1 (§9.6), the shadow rule (§3.3), the
      index views and the census read it. It is `rows_digest` for analysis,
      `values_digest` for measures, and a row digest for picks and evaluator-params.
-   - **STAMP**: what a compile consumed. For analysis it is per QUERY (`byte-rate`,
-     `via`, `run-rarity`; `src/core/findings.c:332-344`). It covers DERIVED values for
-     some queries and rows for others, and its stamp grammar is `query=bundle:digest`.
+   - **STAMP**: what a compile consumed. For analysis it is per QUERY. The shipped query
+     is `byte-rate`, over the 256 derived ppm values (`src/core/findings.c:332-344`,
+     `docs/spec/findings.md` 5¶6). `findings/design.md` §7's table gives later queries
+     their own consumed values (derived values for some queries, rows for others), so
+     the role carries the query as a sub-key. Its stamp grammar is
+     `query=bundle:digest`.
      For measures it is the item digest itself (stamp-on-load, §3.5). Picks and
      evaluator-params have none (`stamp.domain = NULL`).
 
@@ -1776,7 +1779,7 @@ The parts are six, and each exists once:
    `find-rows`, `meas`, `pick`). `pcrec-find-1` CANNOT be renamed: every
    `<PREFIX>_FINDINGS` stamp would move, which is an abi event as a side effect. The
    shipped domains are grandfathered byte for byte, NUL included. The shipped tags are
-   hashed with `sizeof`, which counts the terminator (`findings.c:335`, `:348`), so
+   hashed with `sizeof`, which counts the terminator (`findings.c:334`, `:348`), so
    `domain_len` is explicit. K1's gate pins every shipped digest unchanged (§9.7).
    **What `rows_digest` does not cover** is `serves`, `include` and provenance. A writer
    that loses one of those keeps R1 green, which is why R3 and R5 are load-bearing for
@@ -1867,36 +1870,56 @@ not built (§10.4).
 
 A helper file shared by copy-and-adapt would keep two stop loops, two embed generators,
 two precedence rules, two stamp grammars and two census scripts. They agree today and drift
-tomorrow. The `compare_stack.md` §2 record is the house's measured instance: definitions
-that exist more than once, each with its own agreement check. The module and the tool make
-each piece exist once.
+tomorrow. The `lib` resolver is that drift, already present (§9.1) [r2 M6]. The
+`compare_stack.md` §2 record is the house's measured instance: definitions that exist
+more than once, each with its own agreement check. The module's parts and emit_sweep's
+data mode make each piece exist once. The deliberate exception is `analyze/`'s twin,
+which is kept independent as a control (§9.1).
 
-### 9.5 What each kind sets
+### 9.5 What each kind sets [r2 M1, M2, M5, M6, n3]
 
-| | analysis | measures | picks |
-|---|---|---|---|
-| suffix | `.rxt` | `.measures.tsv` | `.picks.tsv` |
-| stops | S1, S2, S3 | S2, S3 (FILE always) | FILE only |
-| parse | the `.rxt` reader (unchanged; §9.9) | `ks_tsv_read` + §1.6 | `ks_tsv_read` + its own |
-| chain | `include`, terminal `default` | none (refused) | none |
-| precedence | fill-only (D93) via `ks_pick` | fill-only (D93) via `ks_pick` | n/a (one operand) |
-| stamp | `query=bundle:digest;…` / `query=none` / empty | `id@rev:digest` / empty | the judge's report header |
-| canonical view | a normalized `.rxt` bundle (§9.6) | the set file's own sections | the picks file's own sections |
-| derived sections the loader rejects | `chain`, `resolution`, `declarations`, `targets` | `decoded`, `readers`, `stale`, `sets` | `verdicts` |
+Every per-kind difference is a cell here, which is the kinds table's content. Revision 2
+had per-kind behaviour in prose that the table did not show: the S2 rule, the
+classification, "bare is canonical", and "exempt from R4 by name" [r2 n3].
 
-### 9.6 ROUND-TRIP IDENTITY (Frank, 2026-10-14, [KNOW-SRC])
+| column | analysis | measures | picks | evaluator-params | lib |
+|---|---|---|---|---|---|
+| suffix | `.rxt` | `.measures.tsv` | `.picks.tsv` | `.eval.tsv` | `.rxt` |
+| stops | S1, S2, S3 | S2, S3 | FILE only | FILE only | SRCDIR, S2 |
+| `flag_classify` | `name-only` (`--analysis`) | `name-else-file` | `file-only` | `file-only` | n/a (a `lib "path"` line is a path) |
+| `list_classify` | `name-else-file` | `name-else-file` | n/a | n/a | n/a |
+| `revs` | 0 | 1 (`NAME@REV`) | 0 | 0 | 0 |
+| `s2_mismatch` | `fallthrough-note` | `refuse` (§3.2) | n/a | n/a | n/a (no name to mismatch) |
+| `s2_multi` | `refuse` | `refuse` | n/a | n/a | n/a |
+| `entry_match` | `exact` | `exact` | n/a | n/a | `probe-exists` (shipped; F12) |
+| parse | the `.rxt` reader (unchanged; §9.9) | `ks_tsv_read` + §1.6 | `ks_tsv_read` + its own | `ks_tsv_read` + §9.11 | none (resolve only) |
+| chain | `include`, terminal `default` | none (refused) | none | none | none |
+| precedence | fill-only (D93) via `ks_pick` | fill-only (D93) via `ks_pick` | n/a (one operand) | n/a (one operand) | n/a |
+| ITEM digest | `rows_digest`, `pcrec-find-rows-1\0` (18 bytes) | `values_digest`, `pcrec-meas-1\0` (13) | row digest, `pcrec-pick-1\0` (13) | row digest, `pcrec-eval-1\0` (13): the prereg hash | none |
+| STAMP digest | per query, `pcrec-find-1\0` (13) + query + NUL | = ITEM | none | none | none |
+| stamp | `query=bundle:digest;…` / `query=none` / empty | `id@rev:digest` / empty | the judge's report header | the prereg commitment | none |
+| `bare_view` | `shipped` | `canonical` | n/a | n/a | n/a |
+| `r4` | `exempt` (until §9.9) | `required` | `required` | `required` | n/a |
+| `list_surface` | `cli` | `cli` | `harness` | `harness` | none |
+| canonical view | a normalized `.rxt` bundle (§9.6) | the set file's own sections | the picks file's own sections | the file's own sections (§9.11) | none |
+| derived sections the loader rejects | `chain`, `resolution`, `declarations`, `targets`, `decoded` | `decoded`, `readers`, `stale`, `sets` | `verdicts`, `decoded` | `decoded` | none |
+
+The `lib` row exists so the resolver is one loop. It has no load, list or round trip of
+its own: the file it finds is a `.rxt` library that the `.rxt` reader parses as a source.
+
+### 9.6 ROUND-TRIP IDENTITY (Frank, 2026-10-14, [KNOW-SRC]) [r2 M3, M5, n3, n5]
 
 **The rule.** For every kind, the listing's CANONICAL view of one item IS a loadable input
 of that kind:
 
 ```
 pcrec --list-measurements=zen4-grid2 --view=canonical > f.tsv
-pcrec --measures=f.tsv --pattern ...      # loads f.tsv; stamps zen4-grid2@1:<same digest>
+pcrec --measures=f.tsv --pattern ...      # f.tsv is a FILE (§3.2); stamps zen4-grid2@1:<same digest>
 ```
 
-Section 3.3's shadow rule allows exactly this: a FILE whose `id` is committed with the SAME
-`values_digest` is the same set. A FILE whose `id` is committed with a different digest is
-refused.
+Section 3.3's shadow rule allows exactly this: a FILE whose (`id`, `rev`) is committed
+with the SAME `values_digest` is the same set. Any other FILE with a committed `id` is
+refused [r2 n5].
 
 **The canonical writer** (`write_canonical`) is deterministic and total over a valid
 document:
@@ -1910,20 +1933,60 @@ document:
 Free prose in a hand-written file is not carried. For measures, prose lives in
 `PROVENANCE.md`. For analysis, that loss is one of §9.9's costs.
 
+**The DECODED writer** (`write_decoded`, the `--view=decoded` derived view) prints the
+LOADED document field by field: every section, every row, and every column under the name
+the loader resolved it to, with each value as the loader interprets it (§5.2 for
+measures). It is a derived view and never an input. It exists so that R5 can compare the C
+loader's interpretation with an independent reader.
+
 **The checks**, over every committed store item, every test fixture and every kind, as
 `make test-knowledge`:
 
 | check | statement | catches |
 |---|---|---|
-| R1 load→list→load | digest(load(list(load(x)))) = digest(load(x)), with digest = the kind's stamp digest (`values_digest` for measures) | a writer that changes a VALUE |
+| R1 load→list→load | digest(load(list(load(x)))) = digest(load(x)), with digest = the kind's ITEM digest (§9.2 part 5) [r2 M5] | a writer that changes a VALUE the item digest covers |
 | R2 list→load→list | list(load(list(load(x)))) = list(load(x)), byte for byte | a writer that is not a fixed point (order, spelling, an unstable field) |
-| R3 structural | load(list(load(x))) = load(x) as DOCUMENTS, every section and every column, compared by the independent python parser, not by the C loader | a writer that drops a non-digested section CONSISTENTLY. R1 and R2 are both blind to that: omit `cells`, and the digest (values only) and the second listing (also without cells) both agree |
-| R4 committed = canonical | for every store item, list(load(file)) = the committed file's bytes | a store file that is not canonical (so the embed IS the canonical text, and the drift gate of §8.3 covers both) |
+| R3 structural | load(list(load(x))) = load(x) as DOCUMENTS, every section and every column, compared by an INDEPENDENT reader, not by the C loader | a writer that drops a section the digest does not cover, CONSISTENTLY. R1 and R2 are both blind to that: omit `cells`, and the digest (values only) and the second listing (also without cells) both agree |
+| R4 committed = canonical | for every store item of a kind with `r4 = required`, list(load(file)) = the committed file's bytes | a store file that is not canonical (so the embed IS the canonical text, and the drift gate of §8.3 covers both) |
+| R5 decoded = independent [r2 M3a] | for every store item and fixture, `--list-<kind> X --view=decoded` = the independent reader's decode of the FILE `x`, field by field | a reader/writer pair that is wrong SYMMETRICALLY, which R1-R4 cannot see |
 
-R3 is this revision's addition to Frank's two checks. Without it, the round trip can pass
-while losing data the stamp does not cover (S961, §8.5). R4 holds for `measure_store/`
-from M0. For the analysis kind it waits on §9.9, because the shipped bundles carry prose
-by design: until then the analysis store is exempt from R4 by name, and R1-R3 run on it.
+**Why R5 [r2 M3a].** R1, R2 and R4, the drift gate (§8.3) and the pre-parse-versus-fresh-
+parse compare all run the SAME C reader on both sides. A symmetric defect passes all of
+them. For example, suppose the reader resolves `noise_e6` into the `abs_ns_e6` field and
+the writer writes that field back under `noise_e6`. The text then round-trips
+byte-identically. R1 and R2 stay green. R4 stays green. R3 stays green too, because it
+compares the independent reader's view of `list(load(x))` with its view of `x`, and the
+two texts are identical. Yet the loaded document is wrong. That is learnings §3's
+pattern: the control shares its source with what it controls. R5 compares the C
+INTERPRETATION with an independent reader of the original FILE, so a swap shows up as
+`abs_ns` ≠ the file's `abs_ns_e6` (S981). For the analysis kind, R5 also requires
+`--list-analysis`'s resolution digests to equal `tests/findings/findings_ref.py
+bundle-digest` on the same files. That compare already exists in `tests/findings/` and
+is named here as a gate.
+
+**The independent reader, per kind [r2 M3b]:**
+
+| kind | R3's and R5's independent side | why it is independent |
+|---|---|---|
+| measures, picks, evaluator-params | `tests/knowledge/ks_ref.py`: a python section-TSV parser and per-kind decoder written from `docs/spec/` (the shapes and the §1.6 code table), sharing no code with `ks_tsv_read`, `envelope.py` or `ksgen` | written from the spec, in another language, by a separate reader |
+| analysis | `analyze/`'s own bundle-text reader (`parse_bundle`), extended at K3 to every section the canonical writer emits, with a `--dump-doc` mode that prints the document in R3's comparison shape | zero-dependency by charter (`analyze/CLAUDE.md`): it links nothing under `src/`, so it cannot share the C loader's code. It is the deliberate twin of §9.1 |
+
+`findings_ref.py` cannot be R3's analysis side: it reads only `row` lines, by regex, and
+R3 compares every section. **The K3 extension is priced:** `parse_bundle` reads today what
+`pcrec-analyze` renders (the blocks, their provenance and the derived `serves`). The
+addition is `include`, the hand-written `serves … when … via` declarations, and the
+`--dump-doc` printer, plus `analyze/`'s own tests for them. It is about the size of one
+`analyze/` command form. The alternative, a new python `.rxt` bundle parser, would be a
+third reader of a grammar with two already, so it is not taken. S982 plants a canonical
+writer that drops `serves`. `rows_digest` does not cover `serves`, so R1 stays green, and
+R3 through `analyze/` catches the plant.
+
+R3 is revision 2's addition to Frank's two checks, and R5 is revision 3's. Without R3,
+the round trip can pass while losing data the digest does not cover (S961). Without R5,
+it can pass while misreading data consistently (S981). R4 holds for `measure_store/`
+from M0. For the analysis kind, `r4 = exempt` until §9.9 decides the format, because the
+shipped bundles carry prose by design. R1-R3 and R5 run on it. The exemption is a column
+value (§9.5), not a name in a script [r2 n3].
 
 **Derived views are not inputs.**
 
@@ -1932,26 +1995,47 @@ by design: until then the analysis store is exempt from R4 by name, and R1-R3 ru
   row), naming the section and pointing at `--view=canonical`. So a derived dump fed back
   as an input fails loudly, rather than loading with extra sections silently ignored under
   `table_contract.md` §3¶2.
-- Stale flags, reader rows, per-target lookups and the sets index are derived (S962).
+- Stale flags, reader rows, per-target lookups, the decoded view and the sets index are
+  derived (S962).
 
-### 9.7 Migrating the analysis loader: implement-then-replace, zero movers
+### 9.7 Migrating the analysis loader: implement-then-replace, zero movers [r2 M2, M4, M5, M6, n1]
 
 | step | what | gate |
 |---|---|---|
-| K0 | `ksrc.c` lands with the ANALYSIS kind as its only row, its parts implemented beside the shipped paths; `knowledge_census.sh` lands, run on a findings fixture change and a limits fixture change | `make strict`; the census reproduces a hand-made movers list on each fixture; S963 |
-| K1 | the shipped paths become calls into `ksrc`: `rxt_find.c`'s stop loop, `probe_dir`, `dir_has_exact`, `stops_text`, `pcrec_find_name_ok`, the `--analysis` fill-only routine, and findings.c's `fnv1a`. The chain logic stays where it is. During K1 a debug build resolves every name BOTH ways and asserts equal results | ZERO MOVERS: `emit_sweep.py` over the corpus (all arms), byte-identical; `tests/findings/` and `--list-analysis`/`--list-analyses` outputs byte-identical; the refusal texts byte-identical (the `-I` fixtures, named by grep at build) |
+| K0 | `ksrc.c` (the parts, §9.2) lands with the ANALYSIS and `lib` rows, implemented beside the shipped paths. emit_sweep's `--data` mode lands (§9.3), run on a findings fixture change and a limits fixture change | `make strict`; the dependency check (S987); the data mode reproduces a hand-made movers list on each fixture; S963 |
+| K1 | the shipped paths become calls into the parts: `rxt_find.c`'s stop loop, `probe_dir`, `dir_has_exact`, `stops_text`, `pcrec_find_name_ok`, `rxt_source.c`'s `lib` search (`entry_match = probe-exists`), the `--analysis` fill-only decision (`ks_pick`; the note stays in the CLI), and findings.c's `fnv1a` behind `ks_digest`. The chain logic stays where it is. During K1 a debug build resolves every name BOTH ways and asserts equal results | ZERO MOVERS: `emit_sweep.py` over the corpus (all arms), byte-identical; `tests/findings/` and `--list-analysis`/`--list-analyses` outputs byte-identical; the refusal and fall-through-note texts byte-identical, witnessed by `tests/findings/res_fixtures.py` (the `-I` resolution fixtures: an S2 file of another name falls through with its note, a two-bundle file refuses, a `NAME`/`FILE` spelling of each classification) [r2 M2]; `lib` resolution byte-identical over `tests/rxtsource/`; the DIGEST PIN: every shipped `_FINDINGS` stamp and every `rows_digest` of the three shipped bundles and the fixtures, byte-identical (S984) [r2 M5] |
 | K2 | the old functions are deleted; `findgen.c` becomes `ksgen analysis`; `gen-findings` is the pattern rule | `make gen-tables && git diff --exit-code` clean (the regenerated `findings_table.inc` byte-identical); the K1 gates again |
-| K3 | the canonical view (`--view=canonical`, a normalized `.rxt` bundle writer) and `make test-knowledge`'s R1-R3 for the analysis kind; the census population pinned | R1-R3 green over the three shipped bundles and the fixtures; S961, S962 |
+| K3 | the canonical and decoded views (`--view=canonical`, a normalized `.rxt` bundle writer; `--view=decoded`), `analyze/`'s reader extension and `--dump-doc` (§9.6), and `make test-knowledge`'s R1-R3 and R5 for the analysis kind | R1-R3 and R5 green over the three shipped bundles and the fixtures; S961, S962, S982 |
 
-There is no abi event: no emitted byte moves. K3 is a caller-observable addition (a new
-view), so `findings.md` and `cli.md` get their spec hunks in K3's commit (D80).
+**K1's derived edit set and re-aims [r2 n1].** K1 and K2 delete or relocate `rxt_find.c`'s
+stop loop, `dir_has_exact`, `stops_text`, `find_bundle` and findings.c's `fnv1a`. Sabotage
+rows anchor there. On main, `grep '^SAB_FILE='` puts S309, S310 and S315 in
+`src/parse/rxt_find.c` and 11 rows in `src/core/findings.c`. Following the start_table
+and dec_fallback precedent, K1 DELIVERS:
+
+- an edit-set file listing every function K1/K2 moves or deletes;
+- the derived map from that edit set to every `SAB_FILE=` row whose anchor falls in it,
+  each marked RE-AIM (the planted line moves into `ksrc.c` or a row TU) or RE-RUN (the
+  anchor survives, and the row is re-run to show it still reaches);
+- the moved READERS outside `tests/mech`, found by grep. The known one is
+  `tests/registry/limits_check.sh:365`, which reads `PCREC_FIND_NTBL`/`NBUNDLES` "in
+  `src/core/findings.c`". If the store's table moves into the module, that reader moves
+  in the same commit.
+
+The edit set is the input and the map is derived from it, so a row the hand list missed
+cannot be lost.
+
+There is no abi event: no emitted byte moves. K3 is a caller-observable addition (two
+new views), so `findings.md` and `cli.md` get their spec hunks in K3's commit (D80).
 
 ### 9.8 Where [KNOW-SRC] sits in the build
 
 K0-K3 complete before [MEASURE-SET]'s M0 (§10.1). M0 then adds the `measures` kind row, its
-validator and canonical writer (the set's own sections), its store, and R1-R4 for sets.
-The census tool's `measures` arm is M1's first use. [TABLE-JUDGE] adds the `picks` row when
-it builds.
+validator, canonical and decoded writers (the set's own sections), its store, and R1-R5
+for sets. emit_sweep's `measures` data arm is M1's first use. [TABLE-JUDGE] adds the
+`picks` row when it builds. The `evaluator-params` row lands when OQ-1 is ruled. Until
+then the kit's `prereg.tsv` uses §9.11's canonical format from day one, as the plan row
+requires, so adding the row later needs no migration of the file.
 
 **The D77 trigger.** A second kind needs a loader (the measures kind, when [MEASURE-SET] is
 scheduled). [KNOW-SRC] is therefore scheduled AHEAD of [MEASURE-SET] by the same trigger.
