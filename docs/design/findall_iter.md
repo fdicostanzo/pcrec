@@ -502,10 +502,11 @@ bytes, `twin/out/run_twin_inline.out`).
 
 ### 3.2 `lo` and termination
 
-`lo` is only ever written by `__step`, and every write is strictly greater than the previous
+`lo` is only ever written by STEP (§2.1), and every write is strictly greater than the previous
 match's start: `__adv` returns a position `> pos`. The retry keeps `lo == q`, then advances
 past q in the same call when the retry fails, so it never repeats. `lo > n` ends the iterator
 (`rc = 0`). So `lo` is monotone non-decreasing (D165 item 1) and the iterator terminates.
+A batch fill is a sequence of STEPs, so the argument holds across a fill unchanged.
 
 ### 3.3 NOTEMPTY_ATSTART: the iterator matches PCRE2's global iteration (RULED, D165 add. 2 Q1)
 
@@ -561,7 +562,8 @@ nullable OR the pattern holds `\K`.
   the gate includes `\K`.
 
 **Where the retry machinery is emitted:** only on `reports_empty` artifacts (686/3,778 =
-18.2%). Elsewhere `__step`'s retry arm is absent from the text, and the iterator is §3.1.3's
+18.2%). Elsewhere STEP's `first-nonzero` has no R operand (the row degenerates to
+`SEARCH@lo`, no guard emitted), and the iterator is §3.1.3's
 loop exactly (twin: 35 cells, `I == L`). A sharper structural fact, `empty_pref` ("some empty
 path precedes a non-empty path in priority order", false for `a*`, `a|`, `(a|)`), would arm
 only patterns that can diverge. It is FILED as unlock U11, with this census as its control:
