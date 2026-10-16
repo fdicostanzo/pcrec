@@ -1,0 +1,13 @@
+pattern	requested	got	program_bytes	text	o_file
+([a-z]+)@([a-z]+)\.com	1	plain	2106	2808	8320
+([a-z]+)@([a-z]+)\.com	2	plain	2106	2808	8320
+([a-z]+)@([a-z]+)\.com	3	inline	2106	3928	8960
+([a-z]+)@([a-z]+)\.com	4	inline	2106	3928	8960
+(\d{3})-(\d{3})-(\d{4})	1	plain	3066	3432	8328
+(\d{3})-(\d{3})-(\d{4})	2	plain	3066	3432	8328
+(\d{3})-(\d{3})-(\d{4})	3	inline	3066	5832	10208
+(\d{3})-(\d{3})-(\d{4})	4	inline	3066	5832	10208
+(GET|POST|PUT|DELETE|HEAD|OPTIONS) (/[a-z0-9/]{1,40}) HTTP/1\.[01]	1	plain	5383	3544	20216
+(GET|POST|PUT|DELETE|HEAD|OPTIONS) (/[a-z0-9/]{1,40}) HTTP/1\.[01]	2	plain	5383	3544	20216
+(GET|POST|PUT|DELETE|HEAD|OPTIONS) (/[a-z0-9/]{1,40}) HTTP/1\.[01]	3	inline	5383	6600	25000
+(GET|POST|PUT|DELETE|HEAD|OPTIONS) (/[a-z0-9/]{1,40}) HTTP/1\.[01]	4	inline	5383	6600	25000
