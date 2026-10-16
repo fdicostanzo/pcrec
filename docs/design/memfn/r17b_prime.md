@@ -1,11 +1,16 @@
 # R17-b′ — the kit's first candidate-finder delivery: one table over (stop, form), one window request, zero movers first
 
-**Revision 2 (2026-10-14), lane r17bp3, design only.** Branch `lane/memfn-r17bp3`, cut
-from the kit branch `lane/memfn-r17` (`aea223614`). Revision 1 is commit `830bbce39`
-(lane r17bp); text below marked `[rev2]` is new or changed in this revision, and
-everything unmarked is carried from revision 1. Nothing under `src/`, `memfn/src/`,
-`tests/` or `lib/` changes. No timing was run; no measured constant enters any source.
-The compile-only instruments of revision 1 stay in `r17b_prime/` (own CLAUDE.md).
+**Revision 3 (2026-10-16), lane r17bp4, design only.** It applies the D6 panel on
+revision 2 (`docs/dev/reviews/2026-10-16-r1-memfn-r17bp.md`: 70 ids, the kit manager's
+dispositions binding), D167 and its addendum 1 (build GO; A7, A10, A11 ruled), the E-1
+agreement with main, lane sweeparm's two emit_sweep arms, D163 addendum 7 with
+`compound_entries.md` rev 2, and D165 with its addenda and `findall_iter.md`. Text marked
+`[rev3]` is new or changed in this revision; read §0 and §R3 first. Revision 2
+(2026-10-14, lane r17bp3, commit c90d65e53 on lane/memfn-r17) is marked `[rev2]`;
+revision 1 is commit `830bbce39` (lane r17bp), and unmarked text is carried from it.
+Nothing under `src/`, `memfn/src/`, `tests/` or `lib/` changes. No timing was run; no
+measured constant enters any source. The compile-only instruments of revision 1 stay in
+`r17b_prime/` (own CLAUDE.md).
 
 `[rev2]` **The baseline is MAIN.** The kit branch carries R17-a (MF_SITE_ABI 11) and
 R17-b (MF_SITE_ABI 12, pcrec abi 77 on that branch); main (abi 78, MF_SITE_ABI 10)
@@ -18,12 +23,14 @@ Labels: **MEASURED** (read from a row or a counter), **DERIVED** (follows from a
 measured value or from the form's text), **INTERPRETATION** (my inference),
 **PROPOSED** (this note's design, for review), **RULED** (a decision of record).
 
-How to read it: §0 first, then §R2 (what moved and why), then §1 (the table) and §3
-(the step plan). §4 is the contract, §5 the measurements and the grid2 slot.
+How to read it: §0 first, then §R3 (what revision 3 moved, by finding id) and §R2, then
+§1 (the table) and §3 (the step plan). §4 is the contract (§4.5 is revision 3's
+define-time query, the one contract change main reviews), §5 the measurements and the
+grid2 slot.
 
 ---
 
-## 0. Answers first `[rev2]`
+## 0. Answers first `[rev2]` `[rev3]`
 
 1. **Scope (§1.1).** One delivery covers every FIND site that searches for a match's
    START plus the presence pre-checks and handoffs that front it, all stated as ONE
@@ -33,75 +40,111 @@ How to read it: §0 first, then §R2 (what moved and why), then §1 (the table) 
      (`first-class`, |S| = 1 included);
    - the one-byte stops (D161 add. 14): the DFA prefilter's `memchr[-bounded]`, the DFA
      hat's `first-memchr-bounded`, the hybrid's, and MLINE's `(?m)^` back FIND
-     (Q-WR-2: in scope);
+     (Q-WR-2: in scope; `[rev3 A5]` a CONTEXT stop with no span 0);
    - the presence pre-checks (`REQ_BYTE`, `REQ_RUN`, set-leads, K65 set-rest, K66
      whole run) and the K82/L1 handoff (FIRST and the NEXT re-entry), merged with the
-     find they front.
+     find they front. `[rev3 A2]` `pcrec_emit_req_byte_check` has THREE callers (the
+     DFA entry, the VM `_search_run`, and ENG_ATTEMPT's `attempt_entry`); all three are
+     in scope.
 
    Out: OFS/run-pinned FUNCs (multi-position spans, R-18), the ADVANCE/VERIFY/
    MISMATCH sites, the compound route.
-2. **The table (§1).** ONE declared first-match table `fd_rows[]` with a SLOT column,
-   **21 rows**: 15 in slot FIND (the candidate stream's form for span 0) and 6 in slot
-   PRES (each presence span: keep, drop, order, which member). Every row has `needs`
-   (knowledge keys P/N/M/E/H/A/I), a condition over set references, a pick, an
-   `unpaid` fallback and a deny. 18 rows are built by B4 and LOCKED there; F0 (NONE),
-   F1 (a measured libc row) and P1 (the priced pre-scan) are designed now and added
-   after lockdown as formal edits at B5. The no-data DEFAULT rows are exactly Q-WR-1's: D1
-   (one member, not a VM attempt seek → the libc row, labelled UNMEASURED-DEFAULT)
-   and R7 (LINER for every other cover). PRES's default is KEEP (Q-WR-9). NONE is a
-   row that never applies where span 0 is REQUIRED (the VM hat, the no-DFA VM route).
-3. **The step plan (§3).** Nine build steps B0-B8 plus the evaluator's E-steps,
-   in one order:
 
-   | step | what | zero-mover? | pcrec abi |
+   `[rev3 A1, A3]` "One window request per search entry" is defined PER EMITTER (§2.1):
+   one site per ACTIVATION of the function that holds it, its storage point above its
+   first use, START = `search_from`. A VM hybrid holds TWO sites (presence-only in
+   `_search_run`, find-only in the static `_prefilter`), because they are two
+   functions with two activations.
+2. **The table (§1).** `[rev3 D1]` `fd_rows[]` IS a `kit_table` walked by `kit_walk`
+   (`memfn/src/kit.h`), with slots FIND and PRES: the kit's fourth table on its one walk,
+   not a fourth walk. This is row_contracts.md §6 H1's trigger (a real table adopts the
+   engine). `[rev3 D2]` Conditions are ONE comparator `(lhs, op, key)` plus boolean
+   site facts; every threshold is a set KEY with its R-MS4 safe direction. `[rev3 D3]`
+   PRES picks are chain-link attributes (`verify`, `proven_by`, `member`, `order`), not
+   a private pick enum. `[rev3 C2]` Every row has a mandatory `basis`
+   (MEASURED / DERIVED / UNMEASURED-DEFAULT); `[rev3 D11]` and a `refuted_by`.
+
+   **23 rows designed** `[rev3]`: 17 in slot FIND, 6 in slot PRES. **19 are built by B4
+   and LOCKED there**; F0 (NONE), F1 (a measured libc row), F2 (the VM hat's measured
+   |S| = 1 move, D167 add. 1 A7) and P1 (the priced pre-scan) are added after lockdown
+   as formal edits at B5. The no-data DEFAULT rows are Q-WR-1's, read as D167 add. 1
+   rules it (A7: "2+ terms" means MEMBERS):
+   - D1 (one member, not a VM attempt seek → the libc row);
+   - `[rev3 A5]` D1c (no span 0, one context byte, i.e. MLINE → the libc back row);
+   - `[rev3 A7, A17]` D1w (one member anywhere else → WALK: today's VM-hat rule, and
+     `fd-d1`'s OFF arm);
+   - `[rev3 C3]` R7 (LINER V1) only where the cover's shape has a measured
+     `kit.beta.V1` key, else R7w (WALK, today's form).
+
+   Every default row is labelled UNMEASURED-DEFAULT in its `basis` column. PRES's
+   default is KEEP (Q-WR-9). NONE is a row that never applies where span 0 is REQUIRED
+   (the VM hat, the no-DFA VM route).
+3. **The step plan (§3).** Nine build steps B0-B8 plus the evaluator's E-steps,
+   in one order. `[rev3 B3, A9]` "Zero-mover" means ARTIFACT bytes (emit_sweep's
+   streams 1-4) at SIMD-off AND SIMD-on (`[rev3 B1]` lane sweeparm's `-fmemfn-simd`
+   arm, S981) and under `-fcomments` (`[rev3 B2]` sweeparm's arm, S982); the listing
+   streams (5 `dumps`, 6 `facts`) move only by a DECLARED delta, checked both ways.
+
+   | step | what | zero-mover? (artifacts) | pcrec abi |
    |---|---|---|---|
-   | B0 | port R17-a's seam to main | yes (proven on the kit branch) | none |
-   | B1 | ST1 + R-19 + R-20 (kit half) + E3: facts, table, pick function, trace-only shadow | yes (nothing routed) | none |
-   | B2 | ST2: one-byte FIND rows routed | yes (the default rows ARE today's rule) | none |
-   | B3 | ST3: presence + handoff merged and routed (after E-1) | yes (five priced picks ported verbatim under a shadow) | none of its own (E-1 is window_contract's S1 event) |
+   | B0 | port R17-a's seam to main | yes, proven by B0's own run on main (`[rev3 B12]`) | none |
+   | B1 | ST1 + R-19 + R-20 (kit half) + E3: facts, the define-time QUERY (`[rev3 A4]`), table, pick function, trace-only shadow | yes (nothing routed); a DECLARED `--list-axes` delta | none |
+   | B2 | ST2: one-byte FIND rows routed; pcrec's readers switched to the query | yes (the default rows ARE today's rule) | none |
+   | (main) | E-1 = window_contract S1, main's own step and abi event (`[rev3 B10, A15]`) | — | main's |
+   | B3a/B3b | ST3: presence + handoff merged (B3a shadow, B3b routed), against main-after-E-1 | yes (five priced picks ported verbatim under a shadow); B3b a DECLARED registry delta | none |
    | — | **first delivery COMPLETE**; then grid2 → E4b → E5-E8 judge → LOCKDOWN | | |
-   | B4 | R17-b′'s set-site ROUTING (LINER V1, R0 WALK), M0's stamp, the kit size rung | NO: the one censused mover | ONE event, 78 → next |
-   | B5 | ST4: measured rows (libc, NONE, priced pre-scan), one census each | NO | one per default-moving row |
+   | B4 | R17-b′'s set-site ROUTING (V1 on measured shapes, R0 WALK), M0's stamp, the kit size rung | NO: the one censused mover | ONE event, 78 → next |
+   | B5 | ST4: measured rows (libc, NONE, the VM hat's |S| = 1, priced pre-scan), one census each | NO | one per default-moving row |
    | B6 | the W64 SIMD rows (CANDIDATE) | SIMD-off yes | none |
    | B7 | ST5: the libc class deny + three libc-free rows | yes at default | none |
    | B8 | ST6: the N-dispatch rows, if not already paid at B4 | NO | one |
 
-   R17-b″ (D165 iterator) follows as B9 (§6).
-4. **The contract (§4).** One `mf_site` per search entry holds span 0 (`pred`) and
-   PRESENCE spans (`preds[]`, a new span class with `omin` and no `omax`, C-1/C-2).
-   Presence binds at RANGE level, once per activation: a REQUIRED presence span absent
-   from `[start + omin, n)` (`omin` measured from the match start, `start` R-19's hook)
-   makes the stream EMPTY, and EMPTY = NOMATCH, decided before the first element (C-3,
-   G-1, G-2). An unconstrained reply is the range `[lo, n)`, legal iff span 0 is
-   OPTIONAL or absent (G-4); the per-candidate cut `hi' = p − omin + head_max` is a
-   PERMISSION exercised only by the iterator (Q-WR-6). The kit reports, at
-   `mf_define`, the PROVEN facts (D161 add. 8) as `mf_result.proven0` +
-   `scan_exists` + `includes` + `pres_kept`, and each of pcrec's six readers maps to
-   one of those kinds (no per-form read-back). The K65 obligation is a per-consumer
-   table keyed by `need` (§4.6). The set arrives on `mf_art_begin` (`mf_measures`,
-   R-MS1) and `consulted` comes back from `mf_art_end` (R-MS2).
-5. **Measurements (§5).** 23 quantity families keyed (owner.quantity, form, site
-   kind, shape), relative to u = β_walk. grid1 holds 15 (M1-M15). ABSENT: the three
-   dispatch charges (M16-M18), the one-byte libc and libc-free costs and their
-   crossover (M19-M21), NONE's effort (M22), the pre-scan gate's quantities (M23).
-   Each has a method card row under `kit-grid@2` (R-MS5).
-6. **zen4-grid2 (§5.4): ONE slot, ~88 min required + ~8 min optional ≈ 96 min**
-   (plus quiet-gate waits): the 149 fit groups STREAMED (regime_eval's in-sample
-   reference, ~56 min, and under Q-R17P-9's recommendation also the set's constant
-   rows), the dispatch twins (~5 min), the one-byte and NONE arms (~17 min), the
-   build and answer gate (~10 min); optional: the F2 perf passes (~6 min) and a
-   pre-scan trigger probe (~2 min). Perf is never required (D166 add. 1); without
-   counters every script prints the paranoid SUGGESTION (add. 1.1) and skips loudly.
+   `[rev3 B10]` **The KIT's steps carry no pcrec abi event through B3b; E-1 is main's**,
+   placed between B2 and B3a (D167). The first delivery's window therefore contains one
+   pcrec abi event, main's own. R17-b″ (D165 iterator) follows as B9 (§6), after E0,
+   `findall_iter.md`'s revision, its panel and I1 (`[rev3 A6]`).
+4. **The contract (§4).** One `mf_site` per search-entry activation holds span 0
+   (`pred`) and PRESENCE spans (`preds[]`, a new span class with `omin` and no `omax`,
+   C-1/C-2). Presence binds at RANGE level, once per activation: a REQUIRED presence
+   span absent from `[start + omin, n)` (`omin` measured from the match start, `start`
+   R-19's hook; `[rev3 A20]` an amendment to PR-6/C-1 main is asked for) makes the
+   stream EMPTY, and EMPTY = NOMATCH, decided before the first element (C-3, G-1, G-2).
+   An unconstrained reply is the range `[lo, n)`, legal iff span 0 is OPTIONAL or absent
+   (G-4); the per-candidate cut `hi' = p − omin + head_max` is a PERMISSION exercised only
+   by the iterator (Q-WR-6). `[rev3 A4]` **The read-back is a DEFINE-TIME QUERY**,
+   `mf_ask`, made BEFORE row selection: pcrec hands it the site's facts and gets back the
+   form CLASS (`exists`, `proven0`, `libc_free`, `includes`), never the form (D157); each
+   pcrec reader maps to one class fact, and the K admission reads none (`[rev3 A11]`).
+   The K65 obligation is a per-consumer table keyed by `need` (§4.6). The set arrives on
+   `mf_art_begin` (`mf_measures`, R-MS1) and `consulted` comes back from `mf_art_end`
+   (R-MS2); `[rev3]` per the E-1 agreement, B1 also declares `mf_analysis` on
+   `mf_art_begin` (NULL-tolerant, read by no kit row before B3a), which main's E-1 fills
+   after B2 merges with no kit edit.
+5. **Measurements (§5).** 24 quantity families `[rev3 A6: M24]` keyed (owner.quantity,
+   form, site kind, shape), relative to u = β_walk. grid1 holds 15 (M1-M15). ABSENT:
+   the three dispatch charges (M16-M18), the one-byte libc and libc-free costs and their
+   crossover (M19-M21), NONE's effort (M22), the pre-scan gate's quantities (M23) and the
+   shared-body mode branch (M24). Each has a method card row under `kit-grid@2` (R-MS5).
+   `[rev3 C4, C13]` The null floor is per REGIME (`eps.<subject>.<lenclass>`), not one
+   pooled 3.1%.
+6. **zen4-grid2 (§5.4): ONE slot, ≈ 91 min required at 3.4 launches, ≈ 128 min at 5
+   launches** `[rev3 C7]` (rev 2's items are C7's 88-113; revision 3 adds ~3.4 / ~5.0
+   min), plus ~8 min optional and the quiet-gate waits. Revision 3 adds `[rev3 C3]` three
+   cover shapes for R7's gate, `[rev3 C5]` N = 33..46 for the dispatch literal,
+   `[rev3 A7]` the VM_ATTEMPT one-byte cell for F2, and `[rev3 C8]` NONE as an extra
+   arm inside item 3's groups (item 4 deleted). Perf is never required (D166 add. 1);
+   without counters every script prints the paranoid SUGGESTION (add. 1.1) and skips
+   loudly. D167 ruled Q-R17P-9 (B): one streamed condition gives the constants and R_in.
 7. **R17-b″'s seam (§6).** H rows (R3a, R3b, R4 and R8 under H), the form A3, the
-   presence carry (`valid_until`, 8 B) and Q-WR-6's cut-off as a permission; the
-   kit's state row grows 32 → 40 B. `findall_iter.md`'s S then reads 48 B if pcrec's
-   K5 pair-hit row retires into the kit's carry, 64 B if not (Q-R17P-10).
-8. **Questions (§7).** Rev 1's Q-R17P-1..8 are CLOSED with their rulings. Six new
-   ones, Q-R17P-9..14, each with a recommendation: grid2's fit condition (9), S (10),
-   the landmark admission's owner (11), the PF comment's `-fcomments` move (12),
-   whether zero-mover routing may precede the judge (13), and the `libc:` dependency
-   owner for measure_sets (14).
-
+   presence carry and Q-WR-6's cut-off as a permission. `[rev3 A6]` The find body's mode
+   M is a PARAMETER (`MF_BODY_PARAM`, findall_iter §4.2). `[rev3 A10]` The carry is one
+   position per REQUIRED span or per stream of a multi-stream form (8 B × k, declared per
+   form); K5's 16 B pair-hit row retires only when a kit form is proven single-pass over
+   its spans, and S is derived from the declared carried positions at the iterator's abi
+   event ("S = 48 B" is withdrawn, D167 add. 1).
+8. **Questions (§7).** Rev 1's Q-R17P-1..8 and rev 2's Q-R17P-9..14 are CLOSED with their
+   rulings (D167). `[rev3]` Eleven new ones, Q-R17P-15..25, each with a recommendation;
+   Q-R17P-15 (the define-time query's contract) is the one B2 waits on.
 ---
 
 ## R2. What revision 2 changed, by input `[rev2]`
@@ -132,6 +175,88 @@ WITHDRAWN: `--list-finder` (R-MS4's listing replaces it), the `"none"` stamp spe
 (measure_sets §3.5), "the first set needs grid2 before anything ships" (the first
 delivery reads no set, §3.2), the `FS_SPAN0`-only stop (the PRES slot adds presence
 spans), SB1-SB12 as numbered in rev 1 (remapped to S911-S922 in §8.3).
+
+---
+
+## R3. What revision 3 changed, by finding id `[rev3]`
+
+The panel record is `docs/dev/reviews/2026-10-16-r1-memfn-r17bp.md` (70 ids; the kit
+manager's dispositions are binding). Every id below is applied; none is rejected. Rulings
+that bind this revision: D167 (build GO; grid2 (B); Q-R17P-10..14) and D167 addendum 1
+(A7 MEMBERS; A10 K5's retirement amended; A11 the landmark admission's input as a fact;
+A4 noted for review here).
+
+| id | what changed | where |
+|---|---|---|
+| A1 | the storage point is above the PRE use, START = `search_from` for the activation, the handoff's `c − K` a later use's argument; stated per emitter | §2.1 |
+| A2 | `attempt_entry` is the third caller; ATTEMPT_PRED widened and renamed DFA_ATTEMPT (the DFA attempt loop: MLINE's seek and the attempt entry's presence); R-21 PR-3 amendment asked | §1.1, §2.1, §4.3, §4.6, Q-R17P-16 |
+| A3 | a VM hybrid holds two sites: presence-only in `_search_run`, find-only in `_prefilter`; "decided first" across the call boundary stated | §1.1, §2.1, §4.4 |
+| A4 | the read-back is the define-time query `mf_ask` (facts in, form CLASS out), made before row selection, landing at B1, read from B2 | §4.5, §3.1, §4.9, Q-R17P-15 |
+| A5 | MLINE has no span 0; its stop is a one-byte CONTEXT predicate served by row D1c; D161 add. 7 kept | §1.3, §4.1, §4.6 |
+| A6 | `MF_BODY_PARAM`; an M-reading row on a shared find part prices a runtime compare (M24); F4 rewritten; B9's dependencies E0 → findall_iter revision → its panel → I1 | §2.4, §5.2, §6, §3.1, §11 |
+| A7 | RULED (D167 add. 1): MEMBERS. The VM hat at |S| = 1 stays WALK (D1w); its move is the measured B5 row F2 fed by grid2's one-byte cells (VM_ATTEMPT added) | §1.3, §3.1, §3.5, §5.4 |
+| A8 | DELEG_SITES, C10's fixtures, C17's site manifest and MF_VOCAB listed as main-side requests at B2, B3a, B3b | §3.4, Q-R17P-18 |
+| A9 | no `--emit-facts` section at B1 (R-20 schedules it at M0, B4); B1's `--list-axes` rows are a declared registry event | §1.7, §3.1, §3.4, §8.1 |
+| A10 | RULED (D167 add. 1): one carried position per REQUIRED span or stream; K5 retires on a proven single-pass form; S derived, "48 B" withdrawn | §6, §7.1 |
+| A11 | RULED (D167 add. 1): the admission reads the start set's prior mass, h and K; no read-back; a D157 exception until restated (zero movers, main-side, at B2) | §1.4, §4.5, §3.1, §7.1 |
+| A12 | `S693_abi_not_bumped.sh:51` and match_api's K80 `#define PCREC_RX_ABI_H 78` added to the readers | §3.4 |
+| A13 | `docs/design/start_table/sabotage_anchors.py` | §8.3 |
+| A14 | tuning.md "§2.49 (new: bit 55's section)" and "§3's dial table" | §3.4 |
+| A15 | MF_SITE_ABI numbered relatively; E-1 placed in the plan as main's event; B3a/B3b zero-mover against main-after-E-1 | §0, §3.1, §4.9 |
+| A16 | the ported sabotage ids listed exactly, S825 excluded | §8.3 |
+| A17 | `no-fd-d1` renders WALK through D1w from B2 | §1.3, §3.4 |
+| A18 | REQ_WHY reads pcrec's withholding reason first, then the link attributes; `order` expresses LEAD | §4.5 |
+| A19 | `exists` stated as dependent on `proven0` (exists = 0 ⇒ `proven0` all-ones), kept as the class bit D167 add. 1's A4 note names, and self-checked | §4.5, Q-R17P-25 |
+| A20 | `omin` from the match start is a question to main (PR-6, C-1), not a silent refinement | §4.1, Q-R17P-17 |
+| A21 | R-19's builder list (`req_site_define`, MLINE, `attempt_entry`) is a question to main | §2.4, §11 F19, Q-R17P-16 |
+| A22 | `site_kind` (stated, UNSTATED zero) separate from the row's applicability bitset; `FK_ANY` gone | §1.2 |
+| A23 | relayed to main: requests.md R-21's "(pending)" line is stale | the record, the report |
+| B1 | THE SIMD-on instrument is lane sweeparm's `-fmemfn-simd` arm (S981), delivered with B0 | §0, §3.1, §8.1 |
+| B2 | THE `-fcomments` instrument is sweeparm's arm (S982); Q-R17P-12's "B2 zero-mover on every arm" rests on it | §3.1, §8.1, §7.1 |
+| B3 | per step a DECLARED delta for streams 5 and 6, checked both ways; zero-mover means artifacts | §0, §3.1, §8.1 |
+| B4 | the `cand_rows` readers (test-cand-oracle, inventory_check, the startset readers) per step; a declared trace delta | §3.4, §8.1 |
+| B5 | the reverse plant (SN-1); a pcrec-side routed-record count with floors; disagreement witnesses per routed group | §1.6, §8.1, §8.3 |
+| B6 | the shadow runs under the interim set and the synthetic sets; interval literals recorded; B1's picks are B4's committed predicted-mover manifest; the denominator from emitted C; a comparator plant (SN-6) | §1.6, §3.1, §3.2, §8.3 |
+| B7 | `fd_rows[]` in rows.tsv / row_floors.tsv at B1; each deny classed DIFFER / ASSERT_ZERO / REFUSES; `run_axes.sh`'s sweep a request to main | §3.4, §8.2, Q-R17P-22 |
+| B8 | resolved by D167 (Q-R17P-13) | §3.3, §7.1 |
+| B9 | LOCKDOWN = a committed digest of `fd_rows[]`'s listing plus an edit check; rows lock when routed; finder_history logs edits at commit time (rev 2's and rev 3's logged in this commit) | §1.8, §3.3, `memfn/docs/finder_history.md` |
+| B10 | "the KIT's steps carry no pcrec abi event; E-1 is main's" | §0, §3.1, §4.9 |
+| B11 | S916's witness (1,1,0) with a set holding both shapes; S966 → B4; S968 UNREACHED until B5; S914/S915 UNREACHED until `__walk` is emitted; S920's detector an independent reader of the activation origin | §8.3 |
+| B12 | "port, then gate": B0's claim is its own run on main | §3.1 |
+| B13 | emit_sweep's DIFFER_PINS maintained per step; `PCREC_NO_REQ_SET_LEAD`'s fate asked | §3.4, Q-R17P-19 |
+| B14 | R1/R2 applicability is row data (terminal ∈ {V1, W64}); planted (SN-5) | §1.3, §8.3 |
+| B15 | a committed normalizer; "every kit deny at once == main modulo it" a B4 gate | §8.1 |
+| B16 | B4's pre-move census is `r17b_movers.py`'s independent cover search; R0's population is an upper bound | §3.5, §8.3 |
+| B17 | rwquest and the bench patterns in every B2/B3b/B4 sweep; `run_longprefix_sweep.sh` and `run_prefix_invariance.sh` | §8.1 |
+| C1 | as B14; a synthetic set holding every derivable `xover` key at B4; the converter's derived-card list named | §1.3, §5.2, §8.1 |
+| C2 | the `basis` column, the table self-check, a per-site default count in the facts section, a plant (SN-4) | §1.2-§1.4, §4.7, §8.3 |
+| C3 | R7 gated on its shape's `kit.beta.V1` key, R7w (WALK) the fallback; grid2 item 3a adds three cover shapes | §1.3, §5.4 |
+| C4 | the null floor per regime; T1-T3 as upper-bound tests in absolute units against the cell's own A/A | §2.5, §5.2 |
+| C5 | grid2 item 2a adds N = 33..46; the literal is derived on the measured staircase or labelled INTERPOLATED | §2.6, §5.4 |
+| C6 | predictions restated against MAIN's walk on named grid2 groups; bullet 3 corrected; §9.4 gains a floor and the Zen 1 bench regression | §9.2-§9.4 |
+| C7 | 3.4 to 5 launches stated; a cross-launch spread trigger | §5.4 |
+| C8 | NONE an extra arm inside item 3's groups; g_none INTERPOLATED; DFA_ATTEMPT (MLINE) NONE evidence-only | §5.4 |
+| C9 | `cdisp_*` cards keyed `kind;layer;nforms` | §5.2 |
+| C10 | moot: D167 ruled (B); in-sample by design stated | §5.4, §7.1 |
+| C11 | the PRES constants carry `basis`; the B2/B3b gate also runs under the synthetic sets through the B1 lever | §1.4, §3.2, §8.1 |
+| C12 | stated; a second official set waits for M1 (a question to main) | §5.5, Q-R17P-24 |
+| C13 | M6 says it is the pooled F1+F3 figure; the regime-split values listed | §5.2 |
+| D1 | `fd_rows[]` is a `kit_table` over `kit_walk`; ROWCON H1's trigger cited | §1.2, §1.5 |
+| D2 | one comparator plus derived keys | §1.2, §1.3 |
+| D3 | PRES picks as chain-link attributes | §1.2, §1.4 |
+| D4 | declared reads and the ask/define order; a B1 undeclared-read / cycle trap (SN-3) | §4.5, §3.4, §8.3 |
+| D5 | the helpers are member 4 of D163 add. 7's family; their layout follows the dial position passed as a fact; nothing fixed here | §2.2, §3.6, Q-R17P-21 |
+| D6 | a per-row `routed` bit replaces `fd_route[]` | §1.6 |
+| D7 | rows lock when routed | §1.8, §3.3 |
+| D8 | R5/R6 one row (the layer's LINER form), R7/R7s one row; one sentence on sub-block spans | §1.3 |
+| D9 | ties decline; integer scaled arithmetic under a static bound | §2.5 |
+| D10 | per-pick floors on non-trivial sites; a planted disagreement per pick | §3.1, §8.3 |
+| D11 | `refuted_by` per row, in the listing | §1.2, §1.7 |
+| U1-U6 | recorded with their triggers; U1 and U3 proposed to main as plan rows; nothing scheduled | §11 |
+
+Also re-read against main (the brief): D163 add. 7 and `compound_entries.md` rev 2 (the
+find part's layout is the L-table's, §2.2, §6); D165 add. 1-2 and `findall_iter.md` (M a
+parameter, internal batching in `_in` memory, S from declared rows, §6); E-1 (§3.1, §4.7).
 
 ---
 
