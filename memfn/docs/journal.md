@@ -2304,3 +2304,13 @@ pointer when a kit change merges to main.
   - R17-b′ rev 2's D6 panel is the next kit work;
   - the I-152 bench answer;
   - the evaluator-params digest (independent recompute, domain `pcrec-evaluator-params-1`) is owed before E5.
+
+## 2026-10-16 — wake; D167 (build hold lifted); lane/memfn-fd; B0, grid2 prep, panel
+
+- Woke from the 10-14 wake (lane/memfn-r17 c90d65e53). No new requests since R-21.
+- Launched R17-b′ rev 2's D6 panel under the hold: critics A (contract vs main's emitters, opus), B (zero-mover + checks), C (measurement), D (unlocks). Findings in worktrees/memfn-slot/panel-r17bp/.
+- Main relayed **D167** (Frank: "build hold lifted. full steam ahead."): grid2 GO (B), R17-b′ build GO, Q-R17P-10..14 ruled. Cut **lane/memfn-fd** from main 063b4a4b4.
+- Lanes: fddocs (docs sync, merged ff @ 90958d846; I fixed the R17-a marker to "lands at B0"), fdb0 (B0, opus), grid2p (grid2 harness + DRY, sonnet).
+- E-1 agreed with main: B1 declares the `mf_analysis` slot (NULL-tolerant, unread before B3a); main fills it after B2.
+- Panel so far: D (0 B / 5 M / 6 m / 6 unlocks). D1 = make the finder table a `kit_table` over `kit_walk` (B1 brief takes it). C (0 B / 6 M / 7 m). C3 adds ~3 cover shapes and C5 adds N=33..46 to grid2; these go to a follow-up lane after grid2p, since running lanes miss addenda. C7 puts the honest slot estimate at 88-113 min.
+- Slip: I ran one `cd` into worktrees/memfn-fd (the kit's own worktree; no stray write). Absolute paths only from here on.

@@ -2633,3 +2633,10 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the build go for R17-b′ B0-B3b;
     - the I-152 bench answer (J2a default = byte transfer).
   - **Docs main may want merged:** a docs-only branch can be re-cut from main like lane/memfn-docs (already merged). It would carry regime_eval rev 2.4, r17b_prime rev 2, the scoping reports, winreq, finder_history and this ledger.
+
+- ack: 2026-10-16 — **D167 taken** (main 9a0bc65e9 / 063b4a4b4: build hold lifted; zen4-grid2 GO under Q-R17P-9 (B); R17-b′ build GO, first delivery B0-B3b, LOCKDOWN at B4; Q-R17P-10..14 as ruled). Where it went:
+  - the new kit branch **lane/memfn-fd**, cut from main @ 063b4a4b4. lane/memfn-r17 stays the record branch. The first commit is the kit docs sync (lane/fddocs @ 90958d846: r17b_prime rev 2, regime_eval rev 2.4, finder_history, the winreq/sbscope/pcscope reports, this ledger);
+  - **B0** is building in lane fdb0 (opus): the R17-a seam ported to main, MF_SITE_ABI 10→11, zero movers, no pcrec abi event;
+  - **grid2's prep** is building in lane grid2p (sonnet): the grid1→grid2 harness plus a DRY run. The timed slot will be asked of main;
+  - **E-1** (agreed with main by message): B1 declares `mf_analysis` on `mf_art_begin`, NULL-tolerant and read by no kit row before B3a. Main's E-1 fills it after B2 merges, with no kit edit. Main owns window_contract rev 3 (C-7/C-8), ready before B2;
+  - R17-b′ rev 2's D6 panel is running (4 critics). It folds into the build and does not gate B0.
