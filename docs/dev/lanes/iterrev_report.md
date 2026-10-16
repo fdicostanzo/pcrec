@@ -40,7 +40,7 @@ and §B.2; `match_api.md` §10; r17b_prime.md §6 on `lane/memfn-r17` `c90d65e53
 6. **F-1 static twins**: `__adv`, `__valid_upto`, `__var_valid` for every residual leaf; all
    internal callers (the compound controller included) call the twins; exported residuals
    forward. Folded into I1. A relocation check (no internal reloc to an own exported
-   residual) and sabotage P-d.
+   residual) and sabotage S1012.
 7. **S as a derivation** (A10): S = max over paths of Σ 8 B × declared carried words. Today
    **64 B** = kit FIND row 40 (r17b_prime.md §6: base, top, mask, H, `valid_until`) + K5
    pair hits 16 (kept until a kit form is proven single-pass over its spans) + reseed hint
@@ -73,13 +73,13 @@ and §B.2; `match_api.md` §10; r17b_prime.md §6 on `lane/memfn-r17` `c90d65e53
   batching lands; `compound_entries.md` §3.8 lists it HELD (not edited here).
 - F13: S today is 64 B; `compound_entries.md` and r17b_prime.md cite 48/56.
 
-## Sabotage (PROPOSED; the manager allocates)
+## Sabotage (new rows allocated S1009..S1016, in order from the proposed P-a..P-h)
 
 Revision 1's S923-S942 kept as labels (S931 retargeted to the owner compare, S935 to
-`rx_iter_at`). New: P-a (pending code delivered early), P-b (one meter across a fill), P-c
-(retry shares SEARCH's meter), P-d (compound calls exported `_next_pos`, structural), P-e
-(batch stride one pair), P-f (setter on BOUND accepted), P-g (ENDED not set on refusal),
-P-h (fill overruns `nbatch`, ASan). P-b and P-c ship constructed cells (no harvested cell
+`rx_iter_at`). New: S1009 (pending code delivered early), S1010 (one meter across a fill), S1011
+(retry shares SEARCH's meter), S1012 (compound calls exported `_next_pos`, structural), S1013
+(batch stride one pair), S1014 (setter on BOUND accepted), S1015 (ENDED not set on refusal),
+S1016 (fill overruns `nbatch`, ASan). S1010 and S1011 ship constructed cells (no harvested cell
 reaches them).
 
 ## Owed (not this lane's)

@@ -37,8 +37,8 @@ optimization is a later row with its own trigger (§9).
 | brief lenses | general mechanism; sibling of a family; NEW-DATASET | §8 updated; NEW §8a names each new table, column or record and its home | §8, §8a |
 | revision 1 §10 | Q1-Q4 | RULED (D165 add. 2); §10 records them and carries this revision's Q-I1..Q-I4 | §10 |
 
-Sabotage ids in §6.8 are PROPOSALS. Revision 1's S923-S942 are kept as labels; the new rows
-are labelled P-a..P-h. The manager allocates.
+Sabotage ids in §6.8: revision 1's S923-S942 are kept as labels; the new rows (proposed in
+this revision as P-a..P-h) were allocated S1009..S1016 in order (P-a = S1009 ... P-h = S1016).
 
 ---
 
@@ -485,7 +485,7 @@ anyway:
 - **Check**: no relocation from inside an artifact's object to one of its own exported
   residuals (`objdump -dr` on the `-fPIC` build: no `R_X86_64_PLT32 <p>_next_pos` /
   `_valid_upto` / `_var_valid` from any function of the same artifact). Its sabotage row is
-  P-d (§6.8).
+  S1012 (§6.8).
 
 ---
 
@@ -1066,11 +1066,11 @@ DRAFT inbox text:
 | mover census | every artifact's text minus the iterator scaffolding, against I1's parent | the parent's bytes | full corpus, both arms (emit_sweep's population) |
 | `-futf-check` once | utf8 ill-formed cells through `next` against the checking artifact's loop | the loop | `tests/utfcheck/`'s pinned sets |
 
-### 6.8 The sabotage plan (PROPOSED: revision 1's S923-S942 as labels, new rows P-a..P-h; the manager allocates)
+### 6.8 The sabotage plan (revision 1's S923-S942 as labels; the new rows S1009..S1016, allocated)
 
 Every plant's detector is named, and its witness REACHES the site (the reach column). An
 answer-equivalent mutant is declared, with its structural detector. Revision 2 retargets
-S931 and S935, drops nothing, and adds P-a..P-h.
+S931 and S935, drops nothing, and adds S1009..S1016.
 
 | id | plant | detector | reach |
 |---|---|---|---|
@@ -1094,14 +1094,14 @@ S931 and S935, drops nothing, and adds P-a..P-h.
 | S940 | `next` writes only the span, not the groups | VM caps differential: `next` vs `_search` per call | captures corpus |
 | S941 | the VM accept guard tests the consumed start, not the reported start | `ab\K` over `"ababab"` (3, not 2) | `\K` cells |
 | S942 | the DFA notempty root keeps the accept-pruned order | `a??b?` over `"ab"` on the DFA arm (`(0,2)`, not `(1,2)`) | DFA `reports_empty` cells |
-| P-a | a fill delivers its pending code before the matches found ahead of it | the batching-identity arm's give-up cells at `nbatch` = 4: the sequence must equal K = 1's | `tests/findall/` give-up cells |
-| P-b | a fill reuses ONE meter across its steps | a `--step-budget` cell where each logical search fits and their sum does not: batched must equal K = 1 (no give-up) | a constructed `tests/findall/` cell (UNREACHED in the corpus harvest: none of its cells has a sub-budget sum; the cell ships with the plant) |
-| P-c | the retry R shares SEARCH's meter (the `meter` cell `shared` on the retry row) | a `--step-budget` cell whose retry and following search each fit and their sum does not | a constructed cell, as P-b |
-| P-d | the compound controller calls the exported `_next_pos` instead of `__adv` (answer-equivalent) | STRUCTURAL: the relocation check (§6.7) | the 97 compound artifacts |
-| P-e | the batch entry stride is one pair, not `NCAPS` | the batching arm on the captures corpus: `next`'s groups vs `_search`'s per match | VM artifacts with `NCAPS` > 1 |
-| P-f | a setter on a BOUND iterator is accepted (rebinds `lo`) | the setter-on-BOUND arm: the next call must give `PCREC_ERR_ITER` | `tests/findall/` |
-| P-g | the ENDED state is not set on a refusal (sticky lost after `PCREC_ERR_ITER`) | `drv.c`'s post-refusal call: 0 with `rc` unchanged | `tests/findall/` |
-| P-h | the fill does not stop at `nbatch` (writes entry `nbatch`) | an ASan cell with an exact-size `batch` region | `tests/findall/`, every `nbatch` arm |
+| S1009 | a fill delivers its pending code before the matches found ahead of it | the batching-identity arm's give-up cells at `nbatch` = 4: the sequence must equal K = 1's | `tests/findall/` give-up cells |
+| S1010 | a fill reuses ONE meter across its steps | a `--step-budget` cell where each logical search fits and their sum does not: batched must equal K = 1 (no give-up) | a constructed `tests/findall/` cell (UNREACHED in the corpus harvest: none of its cells has a sub-budget sum; the cell ships with the plant) |
+| S1011 | the retry R shares SEARCH's meter (the `meter` cell `shared` on the retry row) | a `--step-budget` cell whose retry and following search each fit and their sum does not | a constructed cell, as S1010 |
+| S1012 | the compound controller calls the exported `_next_pos` instead of `__adv` (answer-equivalent) | STRUCTURAL: the relocation check (§6.7) | the 97 compound artifacts |
+| S1013 | the batch entry stride is one pair, not `NCAPS` | the batching arm on the captures corpus: `next`'s groups vs `_search`'s per match | VM artifacts with `NCAPS` > 1 |
+| S1014 | a setter on a BOUND iterator is accepted (rebinds `lo`) | the setter-on-BOUND arm: the next call must give `PCREC_ERR_ITER` | `tests/findall/` |
+| S1015 | the ENDED state is not set on a refusal (sticky lost after `PCREC_ERR_ITER`) | `drv.c`'s post-refusal call: 0 with `rc` unchanged | `tests/findall/` |
+| S1016 | the fill does not stop at `nbatch` (writes entry `nbatch`) | an ASan cell with an exact-size `batch` region | `tests/findall/`, every `nbatch` arm |
 
 ### 6.9 Staged commits
 
@@ -1151,7 +1151,7 @@ before I0b's tables are read and before I1 (D163 add. 7 Q4; memory `pcrec-remode
    - Populations are counted by the harvest: 29,502 compared byte pairs; 686 gate-true
      patterns; 233 static-label bodies; 97 compound artifacts for F-1; 67 patterns for K5's
      retirement bound.
-   - Each sabotage row names its reach; P-b and P-c ship their own constructed cells
+   - Each sabotage row names its reach; S1010 and S1011 ship their own constructed cells
      because no harvested cell reaches them.
 3. **What moves when the data is regenerated. RELEVANT.**
    - S is derived from the declarations. A declaration change that moves the max moves the
