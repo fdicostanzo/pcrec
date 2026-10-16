@@ -1008,6 +1008,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry)
   Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. An API addition and abi event; build it BEFORE [IFACE-PUSH] (Frank 2026-10-13: features first, so the push knows what the new API must hold). Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
 
+- [DEBUG-CHECKS] STATE:not-started — an opt-in CHECKED generation mode: caller-misuse and invariant checks for development
+  filed: 2026-10-16 Frank (session 113, from D165 addendum 3: the iterator owner check dropped from the hot path)
+  status (2026-10-16): not started; filed, not scheduled. Charter = inventory first: every dropped or declined guard plus every UB clause the spec states, each as a candidate row
+  next: STEP 0 inventory lane (read-only) on Frank's word: list candidate checks with site, cost class and the spec UB clause each would detect
+  refs: decisions D165 add. 3, D133 (-futf-check), D45, D158; docs/spec/match_api.md §5.3, §10; findall_iter.md rev 3 (IT4, IT5)
+  One opt-in generation axis (a compile-time contract value; never default, never in timing cells) that emits checks for what the release artifact leaves undefined: the iterator's owner/foreign-buffer compare (dropped by D165 add. 3), subject/vars/buffer immutability while an iterator is BOUND (a captured hash or length+pointer compare), descriptor sanity (frame/trail sizes vs the artifact's stamps), startpos/caps/NULL arguments, buffer-overrun canaries on caller-provided frames, and internal invariant asserts (cursor monotonicity, LOWER-handoff progress, MRL bound).
+  Questions for its design: one axis or per-check denies (the [OPT-SETS] set shape: `debug` as a named set over check rows); the report channel (a distinct give-up code vs __builtin_trap); whether `-futf-check` and `-fstartpos-guard` fold in as members; how test-axes and the sanitizer battery use it (a natural pairing with make asan/ubsan); the abi/stamp rule (a CHECKED stamp so a checked artifact is never benchmarked by mistake).
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank
