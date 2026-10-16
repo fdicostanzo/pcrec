@@ -1,6 +1,9 @@
-# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 3)
+# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 4)
 
-Status: PROPOSED, assessment and design only, nothing built. **Revision 3** (lane
+Status: PROPOSED, assessment and design only, nothing built. **Revision 4** (lane
+`cmprev4`, 2026-10-16, from main `8eec6f874`, abi 78) applies D163 addendum 8: the part
+layout becomes CALLER-SETTABLE CONTROLS, and the dial's five positions become PRESETS over
+them. Read §R4 first. **Revision 3** (lane
 `cmprev2`, 2026-10-16, from main `74ac73f7f`, abi 78) answers the D6 panel
 `docs/dev/reviews/2026-10-16-r3-compound-entries.md` (3 blockers, 15 majors, 9 minors, all
 ACCEPTED by the manager): read §R3 first. **Revision 2** (lane `cmprev`, 2026-10-16, from
@@ -20,6 +23,46 @@ and dynamic instruction counts (Ir) from `valgrind --tool=callgrind`. No clock w
 probes and their outputs are in `compound_entries/` (own CLAUDE.md). Revisions 2 and 3
 measured nothing new; revision 3's facts about the emitters were read from the source at
 `74ac73f7f` and are cited by symbol.
+
+---
+
+## R4. What revision 4 changed (D163 addendum 8, ruling → section)
+
+D163 addendum 8 (Frank, 2026-10-16): "we need to have this be switches or a --X=y type
+parameter so that someone can set this directly. then the tuner simply dials in the
+switches. in practice, this is a huge impact on .o size and should have finer grain
+control." Revision 3 decided the layout from the POSITION (rows P4-P9 each named a position).
+Revision 4 decides it from CONTROLS, and a position only supplies default control values.
+
+| ruling item | what changed | where |
+|---|---|---|
+| controls finer than the five positions | THREE valued controls: `--part-layout=CLASS:V` (per part class: `auto`, `shared`, `inline`), `--part-inline-rank=R` (a rank threshold: `none`, `R3`..`R0`, `measured`), and `--part-residual=V` (the layout of every subject part no class value and no threshold decided). Four classes: `prefilter`, `compound`, `find`, `wrap`. The owned VM entry chain keeps its existing control, `--vm-entry-shape=N` | §3.2.2 (the controls), §3.2.3 (why this grain) |
+| the positions become presets | each position is a declared row of control values in the dial's pinned table, first-match by position (D103's shape). The rows set only the threshold and the residual; every class cell is em-dash. A `†` cell resolves as unset | §3.2.4 |
+| an explicit switch overrides the preset | each control resolves on its own: the caller's value if set, else the preset's. No provenance-dependent ordering is needed, because the presets never set a class value | §3.2.4, §3.4 (row K) |
+| the part table | the position rows P4-P9 become control rows: P4-P6 (class value), P7 (rank ≥ threshold), P8-P10 (residual). Constraint rows P1-P3 still come first, so no control overrides them | §3.4 |
+| how a held request is reported | a constraint row that holds an explicit request is a selection outcome, never a refusal (tuning.md §2.21¶3's rule). It is stamped (`/held` on that class's token in `<PREFIX>_PART_LAYOUT`) and listed per part by `--emit-facts` | §3.4.2 |
+| Q6 RULED | `+1` with no `θ_hot` falls back to the `0` layout, with the two stamped reasons. Under switches the decline belongs to the threshold VALUE `measured`, not to the position: T1/T2 resolve it to `none`. With `+1`'s preset alone the object is `0`'s exactly | §3.3, §3.4 (T1/T2), §5.4 |
+| `θ_hot` gets a direct manual setting | `--part-inline-rank=R2` (say) bypasses the measurement set. Only the value `measured` reads it | §3.3 |
+| .o size | each control's expected size and speed direction, with numbers from three new SCRATCH-GRADE compile-only probes; every time number is labelled UNMEASURED | §3.2.5, `compound_entries/rev4_*` |
+| the override spelling was filed to [IFACE-PUSH] as U10 | SUPERSEDED: the controls are designed now. They are valued parameters, so they consume no flag bits; the CLI spelling and the field representation are proposals that [IFACE-PUSH] may respell | §3.7, §5.3 (U10 struck) |
+| stamps | `<PREFIX>_PART_LAYOUT` returns (revision 3 dropped it because a position determined the layout; it no longer does). It is written only on an artifact where some control resolves to a non-trivial value. `_THETA` folds into its `rank=` token. `_WHY` stays, for the decline | §3.4.1 |
+| Q7-Q9 | reframed for the switch form, still as discussion with leanings. Q9 changes most: every row is now reachable by flags on corpus artifacts, so synthetic witnesses shrink to rows whose SUBJECT the corpus lacks | §5.5 |
+| NEW-DATASET lens | every new item (the preset columns, the class table, the fields, the stamp vocabulary, the listing section) names its home and its contract section | §3.9 |
+| D80 | the spec hunks are listed as OWED AT E1, because the controls are caller-observable from E1 (not from E1′). `docs/spec/` is not written now | §3.9, §5.1 |
+
+Unchanged from revision 3: the invariants I1-I5, the part population (§3.1), edge rank and
+`callers` (§3.2), the constraint rows P1-P3, the wrapper table, the checks' independence
+(§3.6), the iterator's consumption (§3.8, renumbered rows only), §4 and the findings. E0 is
+unaffected (addendum 8: "E0 ... is unaffected").
+
+**Measured in revision 4** (scratch-grade, compile-only, no clock): `.text` and whole-`.o`
+bytes per part class (`results/rev4_osize_cls.tsv`), per witness and link regime
+(`results/rev4_osize.tsv`), and the owned VM entry chain at its four rungs on three larger
+witnesses (`results/rev4_vmshape_o.tsv`). §3.2.5 reads them.
+
+Sabotage: revision 3's S999-S1008 are re-aimed at the renumbered rows. Three new plants
+(precedence, held reporting, preset resolution) have NO ids; the manager allocates them
+(§3.6).
 
 ---
 
@@ -122,27 +165,34 @@ design-text change.
    2-13% of instructions. An exported sibling call through the PLT costs about 4.8
    instructions per call more than the same call bound locally, in lost optimization as well
    as the stub (§2.3).
-5. **The dial row (§3), revised for D163 addendum 7 and the r3 panel.** ONE `part-layout`
-   row decides how a PART (a callable static body reached from entries) is linked: copied
-   into each caller, or one out-of-line static body they call. Its subjects are the parts gcc
-   lays out today: the hybrid's prefilter, compound parts, and after I1 the iterator's
-   `__find`. The VM entry chain (`--vm-entry-shape`, tuning.md §2.21), [OPT-1]'s `_deep` and
-   the encoding seam already write their own attributes. They are OWNED, kept by a
-   constraint row at every position, and co-resident with this row rather than unified
-   under it (§3.1; the recount finds two deciding sites, not eight). There are five pinned
-   policies (§3.2): `−2` `all-shared` (one out-of-line body per multi-caller part, wrappers
-   forward where they legally can); `−1` `shared-but-inner` (as `−2`, except a part called
-   from inside a per-candidate loop is inlined); `0` `as-emitted` (every function keeps its
-   owner's layout, byte-identical to no flag); `+1` `hot-inline` (a part whose hottest edge
-   ranks at or above `θ_hot` is inlined, the rest keep the `0` layout; with `θ_hot` absent
-   or `none` the whole artifact takes the `0` layout, stamped); `+2` `all-inline` (every
-   copyable part inlined). Hotness is an EDGE RANK (per-candidate / per-call / conditional /
-   rare), a new column `entry_rows[]` must carry, with no profile. The decision is an
-   artifact table (`0`, `†` cells and `+1`'s decline, evaluated first) and a per-part table
-   whose constraint rows (owned, not copyable, single caller) come before any position row
-   (§3.4). Each non-zero CELL stays `†` until its own ruled diff with a size AND time
-   measurement (D103 item 3). `0`/`+1` are declared-coincident until a set carries `θ_hot`,
-   and two other adjacent pairs have no witness yet (§3.2.1).
+5. **The layout controls and the dial's presets (§3), revised for D163 addendum 8.** The
+   layout of a PART (a callable static body reached from entries: copied into each caller,
+   or one out-of-line static body they call) is set by three caller-settable VALUED controls
+   (§3.2.2):
+   - `--part-layout=CLASS:V`: per part class (`prefilter`, `compound`, `find`, `wrap`), one
+     of `auto` (the owner's `0` layout, I4), `shared` or `inline`;
+   - `--part-inline-rank=R`: a copyable part whose hottest edge ranks at or above `R` is
+     inlined; `measured` reads `θ_hot` from the measurement set;
+   - `--part-residual=V`: the layout of every part that no class value and no threshold
+     decided.
+
+   The dial's five positions are PRESETS: rows of control values in the pinned policy table
+   (§3.2.4). `−2` = residual `shared`; `−1` = residual `shared` + rank `R3`; `0` = nothing set
+   (byte-identical); `+1` = rank `measured` (with `θ_hot` absent or `none`, it falls back to
+   the `0` layout, stamped: Q6, RULED); `+2` = residual `inline`. An explicit control beats
+   the preset's value for that control. The VM entry chain, [OPT-1]'s `_deep` and the
+   encoding seam stay OWNED: no control names them, and a constraint row keeps them ahead of
+   every control row. The VM entry chain's own control is the existing `--vm-entry-shape=N`
+   (§3.1). Hotness is an EDGE RANK (per-candidate / per-call / conditional / rare), a new
+   column `entry_rows[]` must carry, with no profile. The decision is an artifact table
+   (control resolution, then `measured`'s declines, then the all-`auto` short cut) and a
+   per-part table whose constraint rows (owned, not copyable, single caller) come before
+   any control row (§3.4). A request a constraint holds is stamped and listed, never
+   refused. Explicit controls are live from E1; each preset CELL stays `†` until its own
+   ruled diff with a size AND time measurement (D103 item 3). The controls move `.o` size
+   by up to +18% `.text` (the prefilter class, inline) and the owned VM entry chain by up
+   to +86% (`--vm-entry-shape`, inline against plain); these are compile-only scratch
+   numbers, and every time effect is UNMEASURED (§3.2.5).
 6. **Convergence (§4): yes, one declared entry table, `entry_rows[]`.** It is [EMIT-ENTRIES]'
    table with the controller made a column: each row names an entry, its combinator, its
    parts and its mode. The edge list is DERIVED from the rows instead of hand-written
@@ -156,8 +206,10 @@ design-text change.
    a few percent either way. The value is the one entry table: one place that says what each
    exported call is, derived edges, and one place for every later entry (`next`, `next_n`,
    captures-on-demand, arch dispatch). The layout row is cheap once the table exists. The
-   recommendation is E0 now (before I1), the layout row's mechanism at all-em-dash cells, and
-   cells only when a measurement asks for one.
+   recommendation is E0 now (before I1), then the controls' mechanism (E1: explicit controls
+   live, every preset cell em-dash), and preset cells only when a measurement asks for one.
+   Revision 4 adds one reason to build E1 that revision 3 lacked: the controls give a caller
+   direct `.o`-size control that the five positions could not (§3.2.5).
 
 ---
 
@@ -323,7 +375,7 @@ fixed rung.
 
 ---
 
-## 3. The dial row
+## 3. The layout controls and the dial's presets
 
 ### 3.0 The invariants the row works inside (kept from revision 1, ruled by D163 addendum 7)
 
@@ -348,7 +400,12 @@ fixed rung.
   cell** [r3 LK-5, CE-13]: a cell may lay out a part only if every exported-to-exported edge
   into or out of that part has its static twin, either from I1 or from the cell's own diff.
   Until then the DFA wrappers are exported entries, not parts, and no position moves them.
-- **I4. The `0` layout is the owning design's layout** [r3 F3, CE-11]. At `0` every function
+  **[r4] The same holds for an explicit control.** A part is in a class's SUBJECT set only
+  once its exported-sibling edges have static twins. Until I3 the `wrap` class has no
+  subject, so `--part-layout=wrap:V` is accepted and lays out nothing, and the census
+  reports that with its reason (§3.4.2).
+- **I4. The `0` layout is the owning design's layout** [r3 F3, CE-11]. [r4] The control
+  value `auto` means exactly this layout. At `0` every function
   keeps the attributes its emitter writes today (§3.1's writers) and, after I1, the iterator's
   `findall_iter.md` §2.2 attributes, which are that design's `0` cell. "As emitted" in this
   note always means this: the part's `0` layout, written by its owner, which is often but not
@@ -421,13 +478,33 @@ three classes, and E1's census checks that the classes cover every emitted funct
 
 A function that fits none of the three classes is a census failure, not a default.
 
-### 3.2 The five positions: five pinned policies
+**[r4] The control classes.** Revision 4 splits the SUBJECT class into four CONTROL classes,
+one per kind of part, because their size and speed trades differ (§3.2.5). Each subject
+function is in exactly one control class, and the census checks that too:
+
+| control class | subject functions | owner of the part's `0` layout |
+|---|---|---|
+| `prefilter` | the hybrid's `<p>_prefilter` | gcc (group C) |
+| `compound` | compound parts `<p>__<role>_search` | gcc (group C) |
+| `find` | after I1, the iterator's parts: `__find`, `__step`, `__enter` | `findall_iter.md` §2.2 for `__find`, §2.1's `always_inline` for the other two (group B) |
+| `wrap` | after I3, the static twins of wrapper bodies and of the residual leaves (the iterator's `__adv` is one) | gcc, or `findall_iter.md` §2.1's `always_inline` for `__adv` |
+
+The OWNED and NOT-A-PART functions have no control class, so no control can name them.
+That is the first half of "no control overrides a load-bearing row". The second half is the
+constraint rows' place in the part table (§3.4). The owned VM entry chain (A1) already has a
+caller-settable control, `--vm-entry-shape=N` (tuning.md §2.21). It is that class's control
+and is not respelled here (§3.7; unlock U-B).
+
+### 3.2 Edge rank, the five policies, and the controls that express them
 
 A position's POLICY is pinned (D103, Q1): it is the definition of what the position does,
 fixed in tuning.md §5.4's row, and it changes only by a ruled diff. Whether the position's
 CELL is live (moves bytes) is a separate fact: every non-zero cell stays `†` until its own
-ruled diff cites a size AND a time measurement (D103 item 3). The policies below are what
-those diffs switch on.
+ruled diff cites a size AND a time measurement (D103 item 3). [r4] Since D163 addendum 8 a
+policy is no longer a mechanism of its own. It is a PRESET: a row of values for the
+caller-settable controls of §3.2.2 (§3.2.4). The table of five policies below says what each
+preset MEANS. §3.2.4 says how it is spelled in controls, and the part table (§3.4) reads only
+controls.
 
 **Hotness is an edge rank, carried by `entry_rows[]`, not a profile.** Each edge from a
 function to a part has a rank, given by the call site's place in the controller. E0 adds the
@@ -449,18 +526,18 @@ prefilter's two sites inside one `_search_run` are one caller. It depends on the
 decision: on the `(a)b` hybrid at a forward or inline rung, `_search_run` folds into
 `_search` and `_search_in`, so the prefilter has two callers; at the `plain` rung it has one.
 
-**The five policies:**
+**The five policies** (what each preset means; [r4] the last column is its spelling in controls, §3.2.4):
 
-| position | policy token | layout of a subject part with two or more callers | what decides it | cell today |
+| position | policy token | layout of a subject part with two or more callers | what decides it | cell today | [r4] preset row |
 |---|---|---|---|---|
-| −2 `min-size` | `all-shared` | one `static noinline noclone` body; each wrapper that calls it is a tail-forward where `forwardable` holds, and keeps its adaptation and a call where it does not (§3.4 W-table) | caller count | `†` |
-| −1 `size` | `shared-but-inner` | as `−2`, except a part of rank R3 is `always_inline` into each caller | caller count, rank = R3 | `†` |
-| 0 `balanced` | `as-emitted` | the owning design's layout (I4); byte-identical to no flag | nothing (D103's no-op cell) | live (the default) |
-| +1 `speed` | `hot-inline` | a copyable part of rank ≥ `θ_hot` is `always_inline`; every other part keeps its `0` layout. With `θ_hot` absent from the active set, or `none`, the WHOLE ARTIFACT takes the `0` layout, stamped (§3.3, rows T1/T2) | rank, `θ_hot` from the set | `†` |
-| +2 `max-speed` | `all-inline` | every copyable part `always_inline` into every caller | copyability | `†` |
+| −2 `min-size` | `all-shared` | one `static noinline noclone` body; each wrapper that calls it is a tail-forward where `forwardable` holds, and keeps its adaptation and a call where it does not (§3.4 W-table) | caller count | `†` | residual `shared` |
+| −1 `size` | `shared-but-inner` | as `−2`, except a part of rank R3 is `always_inline` into each caller | caller count, rank = R3 | `†` | residual `shared`, rank `R3` |
+| 0 `balanced` | `as-emitted` | the owning design's layout (I4); byte-identical to no flag | nothing (D103's no-op cell) | live (the default) | nothing set |
+| +1 `speed` | `hot-inline` | a copyable part of rank ≥ `θ_hot` is `always_inline`; every other part keeps its `0` layout. With `θ_hot` absent from the active set, or `none`, the threshold resolves to `none` and, with no explicit control, the WHOLE ARTIFACT takes the `0` layout, stamped (§3.3, rows T1/T2; Q6 RULED) | rank, `θ_hot` from the set | `†` | rank `measured` |
+| +2 `max-speed` | `all-inline` | every copyable part `always_inline` into every caller | copyability | `†` | residual `inline` |
 
-A subject part with ONE caller keeps its `0` layout at every position (§3.4 row P3): it is
-never shared, and no position adds an attribute to it [r3 CE-1]. `+1` never shares a part
+A subject part with ONE caller keeps its `0` layout at every position and under every
+control (§3.4 row P3): it is never shared, and nothing adds an attribute to it [r3 CE-1]. `+1` never shares a part
 that `0` would have let gcc inline: a speed position that shared more than the default would
 not be speed-leaning.
 
@@ -490,6 +567,140 @@ make it live:
 On split alone every position coincides (F-4: P2 pins F and P3 keeps Q). E1's census counts
 each ROW's population per position, not each part class (§3.6), so a row with zero
 population is reported with its reason.
+
+#### 3.2.2 The controls [r4, D163 addendum 8]
+
+The layout is set by three caller-settable controls. All three are VALUED parameters: a CLI
+`--X=y` and a `pcrec_options` field, like `--unroll=K` and `--vm-entry-shape=N`
+(tuning.md §2.10, §2.21). None is a flag bit. The spellings below are PROPOSALS: addendum 8
+leaves the final CLI spelling and the field representation to the interface rules
+([IFACE-PUSH], [FLAG-ACCESS]), and §3.7 gives the reasoning against the alternatives.
+
+| # | control | CLI (proposed) | `pcrec_options` field (proposed) | values | subjects | rows that can hold it (§3.4) |
+|---|---|---|---|---|---|---|
+| C1 | class value, `prefilter` | `--part-layout=prefilter:V` | `part_layout`, the `PCREC_PART_PREFILTER` slot | unset (0), `auto`, `shared`, `inline` | `<p>_prefilter` | P3 where the prefilter has one caller (the `plain` rung; a framed hybrid, where `_search_run` is its only caller). P2 if a prefilter's own scan is ever the attempt route (none today: the prefilter is an unanchored scan) |
+| C2 | class value, `compound` | `--part-layout=compound:V` | the `PCREC_PART_COMPOUND` slot | as C1 | `<p>__<role>_search` | P2 for split's F (label table), P3 for split's Q (one caller): **every member is held today** (F-4) |
+| C3 | class value, `find` | `--part-layout=find:V` | the `PCREC_PART_FIND` slot | as C1 | `__find`, `__step`, `__enter` (after I1) | P2 for `__find` on the attempt route (233 byte corpus artifacts); P3 for `__step`/`__enter` (one caller each) |
+| C4 | class value, `wrap` | `--part-layout=wrap:V` | the `PCREC_PART_WRAP` slot | as C1 | static twins of wrapper bodies and residual leaves (after I3), `__adv` | P3 for `__adv`; no subject before I3 (§3.0 I3) |
+| C5 | rank threshold | `--part-inline-rank=R` | `part_inline_rank` | unset (0), `none`, `R3`, `R2`, `R1`, `R0`, `measured` | every subject part whose class value is unset | P1-P3, then a class value (P4-P6) |
+| C6 | residual | `--part-residual=V` | `part_residual` | unset (0), `auto`, `shared`, `inline` | every subject part that no class value and no threshold decided | P1-P3, P4-P7 |
+
+- **Values.** `auto` is the owner's `0` layout (I4): the attribute the owning design writes,
+  often none. `shared` is one `static noinline noclone` body; a wrapper that calls it takes
+  the W-table (§3.4). `inline` is `always_inline` into each caller. Unset (the field's 0)
+  means "the preset decides", which is a defined meaning, not a presumed value (memory
+  `pcrec-no-silent-defaults`): with no preset value either, the control is inert.
+- **The threshold.** `R3` inlines a copyable part whose hottest in-edge is R3 (an inner
+  loop), `R2` adds per-call parts, `R1` conditional ones, `R0` every copyable part. `none`
+  inlines nothing by rank. `measured` reads `θ_hot` from the active measurement set (§3.3);
+  it is the only value that reads the set and the only one that can decline (Q6, RULED).
+  The set's derivation never yields `R0` (§3.3), but a caller may type it.
+- **Multiple classes in one flag.** `--part-layout=prefilter:shared,find:inline`. Each class
+  is its own axis. On the command line a later value for the same class wins; across
+  sources the general file-wins rule (cli.md §1.1.4¶4) applies per class, so a file that
+  sets `find:` does not unset the command line's `prefilter:`. A config's raw
+  `pcrec --part-layout=...` line carries all three; typed `.rxt` rows are not proposed
+  (format spelling is the manager's, memory `pcrec-dd13b-syntax-is-managers`, and the raw
+  line suffices).
+- **The owned VM entry chain** is not a class here. Its control already exists:
+  `--vm-entry-shape=N`, whose rungs are its class values under other names (`plain` ≈ no
+  attribute, `shared`, `forward`, `inline`). Giving it a second spelling as
+  `--part-layout=vm-entry:V` would be a parallel mechanism over one field. Joining the
+  spellings is unlock U-B's, at the ruled diff that migrates A1 (§5.3).
+- **What no control can name**: A2's `_deep` (load-bearing), A4's seam, A3's `noclone`,
+  the kit's helpers (D157), and every not-a-part function (§3.1). They are not in any class,
+  so they cannot be requested, and P1 keeps the owned ones ahead of every control row
+  regardless.
+
+#### 3.2.3 Why this grain [r4]
+
+The manager's leaning was "by PART CLASS plus an explicit RANK THRESHOLD". Revision 4 keeps
+it and adds the residual mode, because the leaning alone cannot spell `−1` and `+2` without
+the presets setting class values (below). The alternatives, and the evidence against each:
+
+| grain | for | against |
+|---|---|---|
+| one switch (`shared`/`inline` everywhere) | simplest; it is what `−2`/`+2` mean | it is what the five positions already are; addendum 8 asks for finer control. And the classes trade differently: the prefilter class costs 0 to +18% `.text` inlined, the `find` class's `_next` is 433-1,079 B inlined against 321-666 B shared, and the compound class has no movable member at all (§3.2.5) |
+| per function (name each part) | finest | a part's name is pattern-dependent (`<p>__q_search` exists only on split), so a caller cannot name it before compiling, and a build script cannot carry it across patterns |
+| per rank only | one value; it is `θ_hot`'s own unit | it cannot keep the prefilter shared while inlining `__find`, which both rank R2 on the `(a)b`-class hybrid with an iterator. And rank says nothing about size, which is Frank's stated concern |
+| per class only | direct `.o` control per kind of part | `−1` ("shared except the inner loop") and `+1` ("inline the hot parts") cut ACROSS classes by rank. Without a threshold the presets would need a `hot` value per class plus a below-threshold fallback per class: more values, same expressive power |
+| per size cutover (inline a part only if its body is under N bytes) | A1's term already has this shape; it speaks `.o` size directly | the layout pass sees SOURCE bytes and the inlined copy's object bytes are 0.55× to 1.75× the standalone body's on the scratch witnesses (§3.2.5), so a source cutover would need a measured conversion, which is a suspect constant (memory `pcrec-suspect-tuning-constants`). FILED as unlock U-S, with a trigger |
+| **class + threshold + residual** (chosen) | the class value is absolute and per kind; the threshold cuts across classes by hotness; the residual is the default for the rest. Each of the five presets is one or two control values (§3.2.4), and no preset sets a class value | three controls instead of one |
+
+The residual is the "residual sharing mode" the manager's leaning left open. Without it, `−1`
+would be "every class `shared` plus rank `R3`", and a class value set by a preset would then
+have to lose to the threshold while a class value set by a caller wins. That is an ordering
+that depends on where a value came from. With the residual, the presets never set a class
+value, and every control means the same thing whoever sets it.
+
+#### 3.2.4 The presets: the dial's rows of control values [r4]
+
+Each position is a row of the dial's pinned policy table (tuning.md §5.4, D103), and its
+cells are control values. The table is first-match by position: one row per position, and
+no row reads another. **Home**: three new columns of `src/core/tune.c`'s `TUNE_TABLE`
+(`part_inline_rank`, `part_residual`, and one class-value column per class), whose contract
+copy is tuning.md §5.4. The existing `--vm-entry-shape` term column is the A1 class's
+preset, which the table already carries.
+
+| position | `part_residual` | `part_inline_rank` | class values (C1-C4) | `--vm-entry-shape` term (existing) | cell today |
+|---|---|---|---|---|---|
+| −2 `min-size` | `shared` | — | — | — | `†` |
+| −1 `size` | `shared` | `R3` | — | — | `†` |
+| 0 `balanced` | — | — | — | **4,096** | live: every layout cell em-dash |
+| +1 `speed` | — | `measured` | — | **8,192** | `†` |
+| +2 `max-speed` | `inline` | — | — | **8,192** | `†` |
+
+- **Resolution.** For each control: the caller's value if set, else the preset's cell, else
+  unset. A `†` cell is an em-dash until its own ruled diff, so today every position
+  resolves every layout control to unset, and an artifact's layout changes only when the
+  caller sets a control. This is tuning.md §1¶9's rule ("an explicit per-axis flag beats the
+  dial wherever a spelling exists") applied to three more axes. Every control now has a
+  spelling, so no layout cell is one "no spelling could override".
+- **Why no preset sets a class value.** A class value is absolute (P4-P6 run before the
+  threshold). If a preset set one, the threshold could never reach that class at that
+  position. The columns exist so a future ruled cell CAN set one (say, `−1` sharing `find`
+  only once the parity gate prices it), and that cell diff then states which classes it takes
+  out of the threshold's reach.
+- **What `+2` means against `+1` on this row.** With `θ_hot` absent, `+1` is the `0` layout
+  and `+2` inlines every copyable part, so the two differ wherever a copyable multi-caller
+  part exists (the `(a)b`-class prefilter today).
+- **The presets are checked like the rest of the table.** `run_tune_dial.sh` reads each
+  position's expected control values from tuning.md §5.4, not from `tune.c` (§3.6).
+
+#### 3.2.5 Expected size and speed direction, per control [r4]
+
+Size is read from three SCRATCH-GRADE probes (lane `cmprev4`: one run, compile-only, gcc 15.2
+`-O2`, x86-64, the Linux dev box; `compound_entries/rev4_*`). Every speed entry is an
+instruction count (callgrind Ir, revision 1's §2.2) or an argument, and is **UNMEASURED as
+time**. "`.o`" is the whole object file, which also carries the symbol table and
+`.eh_frame` (each out-of-line function adds an FDE, 24-56 B here).
+
+| control value | `.text` / `.o` direction | measured (scratch unless noted) | speed direction | evidence for speed |
+|---|---|---|---|---|
+| `prefilter:inline` | UP | `(a)b` +64 B (+4.4%) / `.o` +160 B; `(foo\|bar\|baz\|qux\|quux)\d+` +320 B (+8.9%) / +352 B; `([a-z]+)@([a-z]+)\.com` +704 B (+17.9%) / +1,112 B (+12.4%). The inlined copy is 0.55× to 1.75× the standalone body | faster per call | −5 to −29 Ir per call; `(a)b` −13.3% Ir dense (revision 1, MEASURED Ir). Time UNMEASURED |
+| `prefilter:shared` | 0 where gcc already keeps it out of line (all three witnesses above); where it has one caller, held by P3 (shared there would cost +128 B, measured, framed `(a\|ab)(c\|bcd)(d*)`) | as left | 0, or +5 to +29 Ir per call where it moves | as left |
+| `compound:` any | 0: every member is held today (F by P2, Q by P3) | split: shared would cost +112 B / `.o` +208 B, which P3 prevents | 0 | F-4 |
+| `find:inline` / `find:shared` | inline UP, shared DOWN | `_next` 433-1,079 B inlined against 321-666 B shared (`findall_iter.md` twin, MEASURED compile-only, not scratch) | inline faster, by the parity gate's `I` vs `I_shared` arms | owed (the parity gate, `findall_iter.md` §5.3) |
+| `wrap:shared` (W1 forwards) | DOWN | proxy: gcc's own `-fPIC` layout turns the `_in` copies into 9 B tail jumps: split 1,256 → 1,080 B (−14%), DFA attempt 984 → 808 B (−18%), frameless hybrid 1,448 → 1,416 B (−2.2%); +6.7% on the vars witness (revision 1, MEASURED) | about 0 for a W1 forward (one `jmp`); a W2 wrapper keeps a frame and a call | revision 1 §1.3, §2.3 |
+| `wrap:inline` | UP | the non-`-fPIC` layout gcc already picks on most witnesses (the 110-142 B copies) | about 0 | — |
+| `part-inline-rank` lower (`none` → `R3` → … → `R0`) | monotone UP: each step adds the parts of the next rank, each at its class's `inline` cost | the sum of the class rows above over the newly reached parts | monotone faster per call, a few % Ir at most on the measured witnesses | revision 1 §2.2 |
+| `part-residual:shared` | DOWN or 0 | as the class `shared` rows over the parts it reaches; F-5 caveat: on a small VM artifact one body behind framed entries can be LARGER | slower per call by the call | as above |
+| `part-residual:inline` | UP | as the class `inline` rows | faster per call | as above |
+| (owned, existing) `--vm-entry-shape` `plain` → `inline` | UP, the largest lever | `([a-z]+)@([a-z]+)\.com` 2,808 → 3,928 B (+40%) / `.o` +7.7%; `(\d{3})-(\d{3})-(\d{4})` 3,432 → 5,832 B (+70%) / +22.6%; the HTTP request-line witness 3,544 → 6,600 B (+86%) / +23.7% | faster: `inline` measured at `forward`'s time, `shared` at `plain`'s (tuning.md §2.21¶4) | `ccd2_report.md` |
+
+Three readings:
+
+- **Frank's "huge impact on .o size" holds most strongly for the class that already has a
+  control.** The owned VM entry chain moves `.text` by 40-86% between its end rungs on these
+  witnesses. Among the new classes, the prefilter class moves up to 18% and the `find`
+  class's `_next` 35-62%. The compound class moves nothing today.
+- **Relative is large, absolute is small** on every measured witness: hundreds of bytes,
+  at most about 3 KB. No artifact near the emitted-size caps was measured. Whether a class
+  value moves a near-cap artifact by tens of KB is UNMEASURED; E1's census owes it (§3.6).
+- **Link regime.** Under `-fPIC` the `shared`/`inline` deltas for the prefilter class are
+  the same within 8 B (`results/rev4_osize.tsv`). The `wrap` class is where the link regime
+  matters: gcc already forwards there under `-fPIC` (F-2), so `wrap:shared` buys its size
+  mainly in a static link.
 
 ### 3.3 `θ_hot`: the one value a position reads from the measurement set
 
