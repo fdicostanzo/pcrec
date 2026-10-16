@@ -49,6 +49,72 @@ sweep --extra=-fno-scan-edge; rc=$?
 [ "$rc" = 1 ] && grep -q 'NO DIFFER FLOOR PINNED' "$T/log" \
     && ok "an unpinned --extra arm FAILS" || bad "unpinned arm rc=$rc (want 1, NO DIFFER FLOOR PINNED)"
 
+# [SWFIX] composition floors are PER ARM: an --extra arm is held to its own
+# COMPOSITION_EXTRA_PINS entry, never to the plain arm's (the `--engine=vm`
+# arm read 86 < 100, ref-vs-ref), and an arm with no entry says so. The
+# composition stream alone, FULL population (~13 s each), one binary.
+csweep() { "$TIMEOUT_BIN" 300 python3 "${ESX:-$ES}" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
+    --streams composition --no-differ-floor --tree "$here/.." --out "$T/out" --jobs 4 "$@" > "$T/log" 2>&1; }
+csweep --extra=--engine=vm; rc=$?
+[ "$rc" = 0 ] && ok "composition floors: the --engine=vm arm is clean at its own floors" \
+    || bad "vm-arm composition rc=$rc: $(grep 'VIOLATION' "$T/log" | head -3)"
+csweep --extra=-fno-scan-edge; rc=$?
+[ "$rc" = 0 ] && grep -q 'COMPOSITION FLOORS: NOT APPLIED' "$T/log" \
+    && ok "an --extra arm with no composition entry says NOT APPLIED (and borrows nothing)" \
+    || bad "unlisted arm: rc=$rc, want 0 with 'COMPOSITION FLOORS: NOT APPLIED'"
+# PLANTS: each declared floor raised by one must go red (a floor that cannot
+# fail is not a check). The plant is a sed'ed COPY of the script; the real
+# floor is AT the measured value, so +1 is the smallest red.
+cp "$ES" "$T/es_plant.py"
+vm_pin=$(python3 - "$here" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+d = es.COMPOSITION_EXTRA_PINS[("--engine=vm",)]
+print(d["composition_producing_floor"], d["composition_artifacts_floor"])
+PY
+)
+set -- $vm_pin
+for which in producing artifacts; do
+    cur=$1; [ "$which" = artifacts ] && cur=$2
+    sed -i.bak "/(\"--engine=vm\",): {/,/}/ s/\"composition_${which}_floor\": $cur/\"composition_${which}_floor\": $((cur+1))/" "$T/es_plant.py"
+    ESX="$T/es_plant.py" csweep --extra=--engine=vm; rc=$?
+    [ "$rc" = 1 ] && grep -q "COMPOSITION ${which^^} FLOOR VIOLATION: $cur < $((cur+1))" "$T/log" \
+        && ok "plant: vm-arm $which composition floor $cur -> $((cur+1)) goes red" \
+        || bad "plant vm $which floor +1: rc=$rc (want 1 with a $which VIOLATION line)"
+    cp "$ES" "$T/es_plant.py"
+done
+
+# [SWFIX] OPT-IN (EMIT_SWEEP_VARIANT_PLANTS=1; needs git history, builds two
+# compilers, ~2 min): the VARIANT_PINS floors are held on a FULL-population
+# variant run only, so the planted checks run one real cell (plain, utf8): clean
+# at the pins, then red with a tag floor and a reach floor each raised by one.
+if [ "${EMIT_SWEEP_VARIANT_PLANTS:-0}" = 1 ]; then
+    vsweep() { PYTHONPATH="$here" "$TIMEOUT_BIN" 900 python3 "$1" --ref HEAD --tree-rev HEAD --variant plain --bases utf8 \
+        --no-self-check --tree "$here/.." --out "$T/vout" --jobs 4 > "$T/vlog" 2>&1; }
+    vsweep "$ES"; rc=$?
+    [ "$rc" = 0 ] && ok "variant cell plain/utf8 clean at its pins" || bad "variant cell rc=$rc: $(grep 'FLOOR' "$T/vlog" | head -3)"
+    cur=$(python3 - "$here" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+c = es.VARIANT_PINS[("plain", "utf8")]
+print(c["tags"]["stderr"]["stderr-default"], c["reach"]["c-default"])
+PY
+)
+    set -- $cur
+    python3 - "$ES" "$T/es_vplant.py" "$1" "$2" <<'PY'
+import sys
+src = open(sys.argv[1]).read()
+hook = 'if __name__ == "__main__":\n    main()'
+assert src.count(hook) == 1
+plant = ('VARIANT_PINS[("plain", "utf8")]["tags"]["stderr"]["stderr-default"] += 1\n'
+         'VARIANT_PINS[("plain", "utf8")]["reach"]["c-default"] += 1\n')
+open(sys.argv[2], "w").write(src.replace(hook, plant + hook))
+PY
+    vsweep "$T/es_vplant.py"; rc=$?
+    [ "$rc" = 1 ] && grep -q "TAG FLOOR side a: stderr-default $1 < $(($1+1))" "$T/vlog" \
+        && grep -q "REACH FLOOR VIOLATION: $2 < floor $(($2+1))" "$T/vlog" \
+        && ok "plant: variant tag floor $1 -> $(($1+1)) and reach floor $2 -> $(($2+1)) go red" \
+        || bad "variant plant: rc=$rc (want 1 with a TAG FLOOR and a REACH FLOOR VIOLATION line)"
+fi
+
 # [DEC-FALLBACK] B0: the tally streams over hand-written witnesses (decoded
 # --list-source escapes). Each line below is the expected tag tally of one
 # stream, read from the compiler at B0's base, so an arm lost in the stream's

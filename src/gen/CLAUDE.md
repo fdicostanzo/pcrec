@@ -1132,6 +1132,27 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `"static "` is now its closure answer. A request this table cannot honour
   (an internal row exported, `info`/`main` kept static, a closure without the
   search entry) is an internal error. Check: `tests/compound/` (B0).
+  **[COMPOUND] E0 (lane e0build, 2026-10-16; `docs/design/compound_entries.md`
+  rev 3 §4.1, §5.1 E0a/E0b; zero movers, no abi event):** the edges are
+  DERIVED. `entry_rows[]` states each entry as a CONTROLLER row (entry,
+  shape `when`, combinator, part references, call mode), first match per
+  entry; a part reference is `{part, when, rank}`, where `rank` is the
+  edge's `PcrecEdgeRank` (R0 rare .. R3 inner) as a shape predicate — new
+  data written by hand from the emitters' call sites (the hybrid's
+  `search_run -> prefilter` is R3 where `PcrecEntryShape.prefilter_retry`,
+  the clamp count or an adaptive re-seed row, makes the retry re-enter it).
+  The compound controller has its own rows and two operand ids
+  (`PCREC_ENTRY_COMP_A`/`_B`, `<p>__<role>_search`), so the derived set
+  states what `emit_compound.c` calls (`_next_pos`, each operand) where
+  B0's hand list carried a spurious `match_caps -> match`; a compound is
+  only compiled under the default request, so no linkage moved. E0a held the
+  derived edges and closure to `entry_edges[]` over the corpus (7 arms,
+  29,848 compiles, 0 disagreements); E0b deleted the hand list. A closure
+  reaching an entry with no row is an internal error. The relation is
+  reported through `PcrecEmitIn.edge_rank` (the unit drive's `ranks`); E0c
+  (each emitter's entries through a per-combinator emitter) is not built.
+  Check: `tests/compound/check_entry_ranks.py` + `entry_ranks.tsv`; sabotage
+  S1008.
 
 - **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05; abi 62 -> 63 at lane memfnbump;
   `docs/design/memfn/integration.md` §R4.3.3, §18; D147 addendum 10): the

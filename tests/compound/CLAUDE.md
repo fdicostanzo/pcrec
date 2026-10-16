@@ -13,7 +13,23 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   the check never reads the closure the compiler computed; `parts` (B1)
   compiles a witness's plain artifact and the split client's two parts
   through `pcrec_compile_part`; `selfcheck` (B1) runs the table-build
-  self-check over stated and unstated parts. Built by `tests/lib/unit_cc.sh`.
+  self-check over stated and unstated parts; `ranks` (E0) compiles each
+  case as the default build does and prints the edge relation
+  `entry_rows[]` derived for its shape, with each edge's rank
+  (`PcrecEmitIn.edge_rank`). Built by `tests/lib/unit_cc.sh`.
+- **entry_ranks.tsv** — E0's HAND RANK FIXTURE
+  (`docs/design/compound_entries.md` §3.2, §3.6; a precondition of E1):
+  one witness artifact per rank R0..R3 (or an `UNWITNESSED` row), each an
+  edge `from -> to`, its rank, and the call-site text in `from`'s emitted
+  body with its exact count. Written from the emitted C, never from
+  `src/gen/entries.c`.
+- **check_entry_ranks.py** — E0: the fixture's ranks against the drive's
+  `ranks` output, each witness held to its call site in the artifact; then
+  every N-th corpus artifact whose `search_run` calls the hybrid's embedded
+  search is R3 exactly where that body holds a second call site (the
+  retry's re-seed), read from the text, with floors on the R3 and R2
+  populations. MEASURED at EVERY=1: 910 R3, 449 R2, 0 failures; the S1008
+  plant (R3 read as R2) fails 115 lines at EVERY=8.
 - **check_entries.py** — B0 ([EMIT-ENTRIES] internal, compound.md §A.4):
   every request's artifact compiles under the harness's warnings with
   `-Werror` (an over-kept entry is an unused static, an under-kept one an
@@ -105,8 +121,8 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   - **run_shell_checks.sh** — the call-site rows (a DFA part's calls get rows
     1, 2, 8 only), the namespace table's two rows, and `drop-compound` under
     a cap between the compiler's own plain and compound sizes.
-- **run_compound_unit.sh** — the section script. `EVERY` (default 1 here,
+- **run_compound_unit.sh** — the section script (B0, E0, B1, B2, B4). `EVERY` (default 1 here,
   8 from the Makefile), `JOBS`, `KEEP=1`. The mech arm `compound` runs it
-  from a sabotaged tree (rows S891-S910).
+  from a sabotaged tree (rows S891-S910, S1008).
 
 Maintenance: update this file when a build step adds its check.
