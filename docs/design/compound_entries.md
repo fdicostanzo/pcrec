@@ -1059,16 +1059,19 @@ revision 4's rows; three new plants have NO id yet and need three from the manag
 
 | candidate family | member? | why |
 |---|---|---|
-| **the dial's policy table** (tuning.md §5.4, D103) | **YES: one more row of it** | It is a speed/size trade with a pinned policy per position. Its acceptance is the dial's: answer identity at every position, `balanced` byte-identical. It is the first row whose cell reads a value from a measurement set (`θ_hot`, Q1's D103 clarification). Its nearest siblings in that table are the λ row, the `--vm-entry-shape` term row and the `-fno-tiered-entry` row (§3.1) [r3 F2] |
+| **the dial's policy table** (tuning.md §5.4, D103) | **YES: the presets are rows of it** [r4] | The presets are new COLUMNS of the dial's table (`part_residual`, `part_inline_rank`, one per class), each cell a control value, as the `--vm-entry-shape` term column already is for A1. Its acceptance is the dial's: answer identity at every position, `balanced` byte-identical. `measured` is the first cell value that reads a measurement set (`θ_hot`, Q1's D103 clarification). Its nearest siblings in that table are the λ row, the `--vm-entry-shape` term row and the `-fno-tiered-entry` row (§3.1) [r3 F2] |
 | **the inline/shared writers** (§3.1) | **co-resident, not unified** [r3 CE-2, F7] | Two decisions exist (A1, §2.2) and four fixed writers. The row SUBJECTS are group C plus the designed iterator parts; the owners A1, A2 and A4 are kept by P1. `findall_iter.md` §2.2's table stays as the `0` cell's content (§3.8). A1 joins only by its own ruled diff (§3.4). Until that diff lands, two dial rows lay out parts on a VM artifact with disjoint subjects, which §3.6 checks |
 | **`entry_rows[]` and `compound_place[]`** (§4.1, `compound.md` §A.2) | **sibling, not merged** | All three answer "where does a part's body live". `compound_place[]` decides whether a second machine is an in-Job row or a compound part (machine composition); `entry_rows[]` decides which parts an entry calls (the edges); this row decides how an existing part is linked to its callers. The layout row reads `entry_rows[]`'s edges and is applied by it. Merging it with `compound_place[]` would mix a semantic choice (which machines) with an answer-free one (copies) |
 | **engine selection** (`select_engine.c`, `--engine`) | no | Engine selection chooses the machine and can move answers and refusals (GATE 2). Part layout sits below the machine and moves neither |
-| **the deny/force axes** (`axes.def`, tuning.md §2) | no | It is not a bit and has no deny or force spelling, like `--vm-entry-shape`'s value field and the `[ART-SIZE]` ladder's parameters. An explicit override spelling (a `--part-layout=` value, `--vm-entry-shape`'s precedent) is caller-observable CLI, so it is FILED for [IFACE-PUSH] and not designed here. `make test-axes` sweeps the row through the dial's existing arm, plus the stamp arm (§3.6) |
+| **the deny/force axes** (`axes.def`, tuning.md §2) | **no** [r4, measured against the bit budget] | A deny/force spelling per class would be `-fno-part-inline-CLASS` / `-fpart-inline-CLASS`: two bits per class, eight for four classes, plus the threshold, which is not two-valued at all. `lib/pcrec.h` has 57 of 64 bits allocated (0-54, 56; bit 55 reserved for the kit's `-fno-kit-size-drop`), so seven remain, and eight would cross [IFACE-PUSH]'s hard trigger (≤ 4 free) twice over. A deny/force pair is also only three-valued (deny, force, neither), and the class controls are four-valued (unset, `auto`, `shared`, `inline`). So the controls are VALUED, consume no flag bits, and are not `axes.def` rows |
+| **the VALUE parameters** (`--unroll=K`, `--vm-entry-shape=N`, `--engine=`, `--tune=`, `--memfn=`) | **YES: three more members** [r4] | Each is a `pcrec_options` field and a `--X=y` spelling, with 0 meaning "the compiler (or the dial) decides", and `make test-axes` sweeps two of them with a tiered value set. The three controls follow `--vm-entry-shape`'s shape exactly: an explicit value beats the dial's cell (tuning.md §1¶9, §2.21¶7), and a value the artifact cannot honour is a selection outcome (§2.21¶3). **Finding**: unlike the bit axes, the value parameters have NO single-source table. Each has a hand parser in `cli/main.c`, a hand row in tuning.md §4 and its own `tune.c` accessor. With these three there are eight. Memory `pcrec-forest-for-trees` asks for a unification proposal at about three members, so revision 4 proposes one: unlock U-V (§5.3), a value-parameter table as `axes.def`'s sibling. The class list itself is the first piece of data in that shape (§3.9) |
 | **`regime_tables.md`** | no; a neighbour with two shared edges | Regime rows are run-time form selection inside the LOCATE part, owned by the kit (D157); this row is compile-time linkage of whole parts. Shared edge 1: this row decides whether M is a compile-time constant in the kit's dispatch (§3.5). Shared edge 2: both read the measurement set, through the same knowledge key A (regime_tables.md §2), so a set change re-selects both, in one mover census |
 
 So the row is a dial row (D103) whose subjects are the parts gcc lays out today. It sits
 beside the owners and does not absorb them, and it is applied by `entry_rows[]`. It is a
-sibling of `compound_place[]` under that table, not a new family and not a new axis.
+sibling of `compound_place[]` under that table, not a new family and not a new axis. [r4]
+Its controls are three new members of the value-parameter family, and its presets are
+columns of the dial's table; neither is a new mechanism.
 
 ### 3.8 Where the iterator consumes this row (for `findall_iter.md`'s short revision; not edited here)
 
@@ -1077,16 +1080,41 @@ read from this row. This note does not edit `findall_iter.md`.
 
 | `findall_iter.md` piece | what it becomes under the row |
 |---|---|
-| §2.2's two-row emission rule (`shared` for a label table, else `inline`) | **KEPT, as the `0` cell's content** [r3 F3]: by I4 it is `__find`'s `0` layout, and T0 leaves it untouched. At non-zero positions `__find` is a subject part: P2 for the attempt route (the same `static noinline` as §2.2's `shared` row, now with `noclone`), then the position's row. §2.2's explicit `static noinline` is what makes `_search` a 9-byte tail jump, and P2 keeps it |
+| §2.2's two-row emission rule (`shared` for a label table, else `inline`) | **KEPT, as the `0` cell's content** [r3 F3]: by I4 it is `__find`'s `0` layout, and T0 leaves it untouched. Under any non-trivial control `__find` is a subject part: P2 for the attempt route (the same `static noinline` as §2.2's `shared` row, now with `noclone`), then the control rows. §2.2's explicit `static noinline` is what makes `_search` a 9-byte tail jump, and P2 keeps it |
 | §2.2's trigger: "inline until `I_shared` is measured" (D77) | **KEPT, as unlock U1's trigger** [r3 F5]. `I_shared` is the `−1`/`−2` layout of `__find`, and the gate measures it anyway (Q3). If `I_shared` is within the noise floor of `I`, promoting "shared for every body" to the `0` cell is a ruled diff of the ITERATOR's design, not of this row |
-| `__find` | callers `_search` and `_next` (`_next_n` HELD): 2; rank R2 (R3 only with the HELD internal batch fill, D165 add. 2 Q2); rows P2/P4/P6/P7/P8/P9 by route and position |
-| `__adv` (the residual's static twin) | I3's static twin; called from `__step`, which folds into `_next`: 1 caller; rank R2; P3 (keeps §2.1's `always_inline`) |
-| `__step` | 1 caller (`_next`); rank R2; P3 [r3 F4] |
-| `__enter` | 1 caller (`_next`); rank R2; P3 [r3 F4] |
+| `__find` | callers `_search` and `_next` (`_next_n` HELD): 2; rank R2 (R3 only with the HELD internal batch fill, D165 add. 2 Q2); class `find` [r4]; rows P2 and P4-P10 by route and control (revision 3's P2/P4/P6/P7/P8/P9 by route and position; the translation is §3.4's last column) |
+| `__adv` (the residual's static twin) | I3's static twin; called from `__step`, which folds into `_next`: 1 caller; rank R2; class `wrap` [r4]; P3 (keeps §2.1's `always_inline`) |
+| `__step` | 1 caller (`_next`); rank R2; class `find` [r4]; P3 [r3 F4] |
+| `__enter` | 1 caller (`_next`); rank R2; class `find` [r4]; P3 [r3 F4] |
 | the NOTEMPTY retry R | NOT a part: it is a body inside `__step` with no symbol of its own [r3 F4]. Revision 2's "`θ_hot` = R1 inlines the retry" is withdrawn. If the retry becomes its own static part (the `first-nonzero` emitter's shape, §4.2), it is rank R1 and a subject |
 | `_next_n`'s calls | HELD with `findall_iter.md` Q2 (D165 add. 2 Q2 reframes it as internal batching) |
-| the parity gate's `I` and `I_shared` arms (§5.3) | `I` = the `0` / `+1` / `+2` layout of `__find`; `I_shared` = the `−2` / `−1` layout. The gate binds the first (Q3) |
+| the parity gate's `I` and `I_shared` arms (§5.3) | `I` = the `0` / `+1` / `+2` layout of `__find`; `I_shared` = the `−2` / `−1` layout. [r4] In controls: `I` = `find:auto` (or `inline`), `I_shared` = `find:shared`. The gate binds the presets `0`, `+1`, `+2` (Q3) |
 | M as a constant (§4.2) | constant where `__find` is inlined, a branch where it is shared (§3.5) |
+
+### 3.9 Where each new item lives, and its spec home (the NEW-DATASET lens) [r4]
+
+Each new piece of data or vocabulary has one home in the tree and one contract section.
+Nothing under `docs/spec/` is written now: the hunks are OWED AT E1 (D80), because the
+controls are caller-observable from E1.
+
+| item | home (code) | contract (spec section, owed at E1) | regenerated or edited how |
+|---|---|---|---|
+| the control CLASS table (`prefilter`, `compound`, `find`, `wrap`: token, slot index, subject predicate, the `_WHY` tokens) | a new `src/core/part_layout.def`, an X-macro beside `axes.def` in the same single-source style (D111): every reader (the CLI parser, the `--list-axes` section, the stamp writer, the listing) is derived from it | tuning.md, new §2.51 (`--part-layout=`) | edited by hand; a new class is one row plus its spec hunk |
+| the three controls' fields | `lib/pcrec.h` `pcrec_options`: `part_layout` (one 2-bit slot per class in a `uint32_t`, read and written through accessor macros, so a fifth class is not a struct-layout change), `part_inline_rank` (`int`), `part_residual` (`int`), each 0 = unset | tuning.md §4 (three mirror rows); `match_api.md` §8.2 (the struct) | edited by hand. The representation is a proposal: [IFACE-PUSH] decides it with the other value fields (its [FLAG-ACCESS] residue is the bit word's typing) |
+| the CLI spellings | `cli/main.c`, parsing through the class table | cli.md, a new §1.x beside §1.14 (`--tune`), plus a sentence in §1.1.4 (per-class file-wins) | derived from the `.def` |
+| the threshold's and residual's values | the class table's companion rows in `part_layout.def` | tuning.md, new §2.52 (`--part-inline-rank=`) and §2.53 (`--part-residual=`) | edited by hand |
+| the PRESET cells | new columns of `src/core/tune.c`'s `TUNE_TABLE` (the dial's one home; addendum 8: "each a declared row of switch settings") | tuning.md §5.4: three new rows (`part-residual`, `part-inline-rank`, one per class, each `†` or em-dash today) | edited only by a ruled cell diff (D103); `run_tune_dial.sh` reads the spec's copy |
+| the stamps `<PREFIX>_PART_LAYOUT`, `<PREFIX>_PART_LAYOUT_WHY` and their token grammar | the shared prologue writer, reading the resolved controls | tuning.md §5.3 (beside `RX_TUNE`); `match_api.md` §6.3's stamp list | derived per artifact; the `_WHY` token list is a closed list in `part_layout.def` |
+| the `--list-axes` view | a `#section part-layout` of `--list-axes`, one row per (control, value) from the `.def` | registry.md §6 (the section's columns); cli.md §2.4 | derived |
+| the per-part listing | a `part-layout` section of `--emit-facts` (§3.4.2) | cli.md §2.11 | derived per compile |
+| the edge RANK column and its fixture | `entry_rows[]` (E0, §4.1); the fixture under `tests/` | none: internal. The RANK VOCABULARY (R0-R3 and the call-site kind each names) becomes caller-visible through `--part-inline-rank=`, so its definitions go in tuning.md §2.52 | rank cells by hand from the emitters' call sites (§4.1); the fixture by hand |
+| `θ_hot` | a DERIVED row of the measurement set (`measure_sets.md`'s closed derivation registry), read only by `measured` | `measure_sets.md`'s set contract, when it is a spec; tuning.md §2.52 names the dependency | regenerated with the set, with its mover census (D166) |
+| the size probes | `compound_entries/rev4_*` and `results/rev4_*` (this note's) | none (design evidence) | re-run by hand; scratch-grade |
+
+Each home is an existing table extended (`TUNE_TABLE`, `pcrec_options`, `--list-axes`,
+`--emit-facts`, the stamp list) except `part_layout.def`. That file is new because the value
+parameters have no single-source table (§3.7). It is written in the shape unlock U-V would
+generalize, so U-V absorbs it rather than replacing it.
 
 ---
 
