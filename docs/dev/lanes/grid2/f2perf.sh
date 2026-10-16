@@ -50,7 +50,18 @@ pstat() {   # K bin subj mode off -> "event value" lines
 echo "# grid2 f2perf $(date -u) $(uname -n) paranoid=$par cpu=$CPU launches=$LAUNCHES events=$EVENTS"
 printf '%-8s %-9s %-5s %16s %16s %14s %14s %12s\n' cell subject arm cycles/pass instr/pass branches/pass misses/pass misses/KiB
 rows=0
-python3 -I "$G1/arms.py" "$OUT" groups f2 | awk -F'\t' -v w="$F2_ITEM" 'w=="both" || (w=="7") == ($2 ~ /^g2-real-/)' > "$OUT/tmp/f2.groups"
+# item 6: the K arms {walk V1 A1} of every item-1 group, read from groups2.tsv (item 1, 2 or 12;
+# f3-wcls is not an item-1 group); item 7: arms_f2.tsv's g2-real-* rows (the gate-only rows are never perf'd)
+: > "$OUT/tmp/f2.groups"
+if [ "$F2_ITEM" = 6 ] || [ "$F2_ITEM" = both ]; then
+  awk -F'\t' 'NR > 1 && ($1 == 1 || $1 == 12 || $1 == 2) && $2 != "f3-wcls" {
+      n = split($5, a, ","); o = ""
+      for (i = 1; i <= n; i++) if (a[i] == "walk" || a[i] == "V1" || a[i] == "A1") o = o (o == "" ? "" : ",") a[i]
+      print $2 "\t" $3 "\t" $4 "\t" o }' "$OUT/groups2.tsv" >> "$OUT/tmp/f2.groups"
+fi
+if [ "$F2_ITEM" = 7 ] || [ "$F2_ITEM" = both ]; then
+  python3 -I "$G1/arms.py" "$OUT" groups f2 | awk -F'\t' '$2 ~ /^g2-real-/' >> "$OUT/tmp/f2.groups"
+fi
 while IFS=$'\t' read -r c s m arms; do
   nm=${s%@*}; off=0; [ "$s" != "$nm" ] && off=${s#*@}
   if [ -d "subj/$nm" ]; then n=$(stat -c %s "subj/$nm/$(ls "subj/$nm" | grep -v '^\.' | head -1)"); else n=$(stat -c %s "subj/$nm"); fi

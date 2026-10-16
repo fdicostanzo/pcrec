@@ -106,11 +106,14 @@ def main(out):
     if os.path.exists(f2log) and "SKIPPED" not in open(f2log).read():
         m = re.search(r"^F2_DONE item=\S+ rows=(\d+)", st, re.M); w = span("F2")
         if m and w:
-            rows_dry = int(m.group(1)); frows = 0
-            for r in read_tsv(os.path.join(full, "arms_f2.tsv")) if False else []: pass
-            # full f2 rows = arms_f2 lines' subjects x arms
-            fl = [l.split("\t") for l in open(os.path.join(full, "arms_f2.tsv")).read().splitlines() if l and not l.startswith("#")]
-            frows = sum(len(l[3].split(",")) for l in fl)
+            rows_dry = int(m.group(1))
+            # full f2 rows: item 6 = the K arms of every item-1 group (groups2.tsv); item 7 = arms_f2.tsv's g2-real-* rows
+            frows = 0
+            for g in read_tsv(os.path.join(full, "groups2.tsv")):
+                if g["item"] in ("1", "12", "2") and g["cell"] != "f3-wcls":
+                    frows += len([a for a in g["arms"].split(",") if a in ("walk", "V1", "A1")])
+            for l in open(os.path.join(full, "arms_f2.tsv")).read().splitlines():
+                if l and not l.startswith("#") and "\tg2-real-" in l: frows += 1
             f2_full = w / max(1, rows_dry) * frows; perf_note = "measured %.1f s/row x %d rows" % (w / max(1, rows_dry), frows)
     # ---- the table
     spec = {"F1": ("items 1+2 (F1 part)", 56.1 + 5.2 * 0.6), "F3": ("items 1+2 (F3 part)", 0), "OB": ("items 3+4", 13.5 + 2.4), "TRIG": ("item 8 (optional)", 2.0)}

@@ -81,6 +81,14 @@ OB_LENS = [8, 32, 64, 1 << 20]             # item 3 member-free lengths
 OB_N = 65536                               # item 3/4 find-all buffer size
 OB_L = 65536                               # one planted match per buffer: a find-all pass is two calls
 
+# GATE-ONLY groups (checked by check.sh, never timed): the F3 groups hold NO match, so a wrong
+# twin/scaffold helper on hex-run / word-eq / quad / wcls could not change an answer there.
+# These dense subjects (random bytes over the cell's pattern alphabet plus punctuation: matches
+# everywhere) carry the same arms through the gate's legs O, R, L, C. They ride arms_f2.tsv, so
+# time.sh never times them and f2perf.sh skips them (g2-gate- subjects).
+GATE_CELLS = {"hex-run": b"0123456789abcdefABCDEF_= .,;-+", "word-eq": b"abcxyzABCXYZ_=0 .,;-+", "quad": b"0123456789abcdefABCDEF_= .,;-+", "wcls": b"abcxyzABCXYZ_09= .,;-+"}
+GATE_ARMS = {"hex-run": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2", "sc0"], "word-eq": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2", "sc0"],
+             "quad": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2"], "wcls": ["walk", "V1", "S1", "A1", "A3", "sc0"]}
 PICK_ALL = ["walk", "V1", "S1", "A1", "A3"]
 PICK_FIRST = ["walk", "V1", "S1", "A1"]
 TW = ["tw0", "tw1", "tw2"]
@@ -204,15 +212,19 @@ def build(dry):
         subjects = {g.subj: g.spec for g in groups}
     for g in ob + trig:
         subjects[g.subj] = g.spec
+    for c in (["hex-run"] if dry else sorted(GATE_CELLS)):
+        subjects[f"g2-gate-{c}-S"] = (f"gate-{c}", 65536, 0, 0, "u", "S")
     return groups, ob, trig, subjects
 
 def f2_rows(groups, dry):
-    """items 6 and 7: arms_f2.tsv rows (cell, arm, role, subjects, modes)"""
+    """arms_f2.tsv rows: item 7 (the streamed real-text perf pass) and the GATE-ONLY groups.
+    Item 6 (the K arms of every item-1 group) needs no row here: f2perf.sh reads those groups
+    from groups2.tsv. A second table row for a timed group's key would make check.sh's
+    `group` run the key twice and the second run truncate the first's results."""
     rows = []
-    for g in groups:
-        if g.item in (1, 12) and g.cell != "f3-wcls":
-            rows.append((g.cell, g.mode, g.tok, [a for a in K_ARMS if a in g.arms]))
-    real = [] if dry else [(c, s) for c in ("hex-run", "bounded", "dfa-hat") for s in ("prose", "docs", "code")]
+    for c in (["hex-run"] if dry else sorted(GATE_CELLS)):
+        rows.append((c, "all", f"g2-gate-{c}-S", GATE_ARMS[c]))
+    real = [(c, s) for c in ("hex-run", "bounded", "dfa-hat") for s in ("prose", "docs", "code")]
     if dry: real = [("hex-run", "prose")]
     for c, s in real:
         rows.append((c, "all", f"g2-real-{s}-S", grid.F4))
@@ -298,6 +310,10 @@ def gen_one(a):
     tm = tl = 0
     def mk(seed):
         nonlocal tm, tl
+        if fam.startswith("gate-"):
+            import numpy as np
+            alpha = np.frombuffer(GATE_CELLS[fam[5:]], np.uint8)
+            return (alpha[np.random.default_rng(seed).integers(len(alpha), size=n)].tobytes(),)
         if fam.startswith("trig-"): b, m, l = gen_trig(fam, n, g, shape, seed)
         else: b, m, l = grid.gen_buffer(fam, n, g, L, shape if not fam.startswith(("o-",)) or shape in ("reg", "u", "burst") else "u", seed)
         # the planted-count self-check against python re (the generator's, as grid1's): the planted
@@ -330,7 +346,8 @@ def gen(out, jobs):
     gen_real(out)
     with open(os.path.join(out, "subj_facts.tsv"), "w") as f:
         f.write("name\tfamily\tn\tg\tL\tshape\treuse\tnbuf\tplanted_matches\tplanted_landings\n")
-        f.write("\n".join(facts) + "\n")
+        # leg G (landing fidelity) reads planted counts; a GATE-ONLY subject plants nothing, so it has no row
+        f.write("\n".join(r for r in facts if not r.startswith("g2-gate-")) + "\n")
     print(f"gen: {len(facts)} subjects")
 
 # ---- the oracle: libpcre2 through tests/oracle/'s local adapter
