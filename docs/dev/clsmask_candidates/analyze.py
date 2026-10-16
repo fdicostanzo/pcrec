@@ -7,7 +7,11 @@ Reads WORK/compiled.tsv, WORK/static.tsv, WORK/runs.tsv and each VM
 artifact's own --emit-ir / --emit-facts / emitted-C stamps. Writes:
   OUTDIR/artifacts.tsv.gz  one row per VM-routed artifact (config auto|vm),
                            every column below
-  OUTDIR/top_vm.tsv, top_auto.tsv   the ranked top 20 per config
+  OUTDIR/top_<config>_<real|corpus|rescan>.tsv   the ranked top 20 per
+                           config, over the REAL populations (bench / rw /
+                           ref) and the shipped corpus alone, RESCAN
+                           artifacts (panel re-visit >= 8) excluded from both
+                           and ranked in their own table
   OUTDIR/population.txt    the K35 population ledger
 and prints the summary the memo quotes.
 
@@ -175,7 +179,7 @@ for (h, cfg), c in comp.items():
         pcls[s["cls"]]["forms"].add(s["form"]); pcls[s["cls"]]["kinds"].add(s["kind"])
     poss, summ = ir_info(h, cfg)
     runsites = [s for s in prog if s["kind"] in ("run_c", "run_u")]
-    nrun_poss = sum(1 for s in runsites if poss.get(s["label"], False))
+    nrun_poss = sum(1 for s in runsites if poss.get(s["label"].replace("rx_", "", 1), False))
     ss, ssn = start_set(h, cfg)
     shared = "?"
     if ss is not None:
@@ -250,24 +254,49 @@ SHOW = ["pid", "pattern", "config", "enc", "classes", "nrun", "nrun_poss", "stra
         "panel_att_kib", "panel_fails_kib", "npids", "sources"]
 
 
-def top(cfg, k=20):
+REAL = ("bench", "rw", "ref")
+
+
+def top(cfg, popname, keep, k=20):
+    """the ranked top k (deduplicated on pattern text + encoding + case)"""
     seen = set(); out = []
-    for r in sorted((r for r in rows if r["config"] == cfg), key=lambda r: -float(r.get("panel_score") or 0)):
+    for r in sorted((r for r in rows if r["config"] == cfg and keep(r)), key=lambda r: -float(r.get("panel_score") or 0)):
         key = (r["pattern"], r["enc"], r["icase"])
         if key in seen:
             continue
         seen.add(key); out.append(r)
         if len(out) == k:
             break
-    with open(os.path.join(OUT, "top_%s.tsv" % cfg), "w") as f:
-        f.write("rank\t" + "\t".join(SHOW) + "\n")
+    with open(os.path.join(OUT, "top_%s_%s.tsv" % (cfg, popname)), "w") as f:
+        f.write("rank\t" + "\t".join(SHOW) + "\tflag\n")
         for i, r in enumerate(out, 1):
-            f.write("%d\t" % i + "\t".join(str(r.get(c2, "")).replace("\t", " ") for c2 in SHOW) + "\n")
+            # a re-visit factor this high is an algorithmic re-scan (an attempt
+            # loop re-reading a whole tail per start): owned by the walk rows,
+            # a mask only makes the same quadratic cheaper per byte
+            flag = "RESCAN" if float(r.get("panel_rev") or 0) >= 8 else ""
+            f.write("%d\t" % i + "\t".join(str(r.get(c2, "")).replace("\t", " ").replace("\n", "\\n") for c2 in SHOW)
+                    + "\t" + flag + "\n")
     return out
 
 
+# REAL = a pattern some user population carries (bench, rw questions, the
+# reference row), whatever else carries it; CORPUS = the shipped .rxt only
+# RESCAN (panel re-visit factor >= 8) is ranked APART: an attempt loop that
+# re-reads a whole tail per start is quadratic, owned by the walk rows
+# ([OPT-REVEND], [OPT-ATTEMPT-SPLIT], walk_survey K10/K11); masks would make
+# each re-read cheaper, never remove it, so it is not this row's evidence.
+def rescan(r):
+    return float(r.get("panel_rev") or 0) >= 8
+
+
+def real(r):
+    return any(x in r["sources"].split(",") for x in REAL)
+
+
 for cfg in ("vm", "auto"):
-    top(cfg)
+    top(cfg, "real", lambda r: real(r) and not rescan(r))
+    top(cfg, "corpus", lambda r: r["sources"] == "corpus" and not rescan(r))
+    top(cfg, "rescan", lambda r: rescan(r))
 
 # ---- K35 population ledger ---------------------------------------------
 L = []

@@ -1,0 +1,16 @@
+distinct pattern keys (enc, icase, extra, pattern): 5283
+  keys per source (a key in two sources counts in both): bench 344, corpus 4816, ref 1, rw 173
+config auto: REFUSED/- 402, ok/dfa 2682, ok/vm 2199
+config vm: REFUSED/- 400, ok/vm 4883
+config auto VM-routed artifacts analysed: 2199; instrument status: {'ok': 2179, 'BUILDFAIL': 20}
+  with unwrapped subject reads > 0: 0; with literal-run compares: 188; with backref compares: 479
+  with zero program class sites: 29; with >= 1 run site: 769; with >= 1 multi-byte class (size>=3 or utf8): 579
+  subject runs with a timeout/abnormal exit: panel 0, own 0
+  start set shared with program classes: {'yes': 1698, 'no': 78, '?': 320, 'part': 103}
+  expensive forms: {'-': 1668, 'big+bitmap': 424, 'ucls': 64, 'bitmap': 37, 'atom+big': 3, 'atom': 1, 'bitmap+ucls': 1, 'big+bitmap+ucls': 1}
+config vm VM-routed artifacts analysed: 4883; instrument status: {'ok': 4863, 'BUILDFAIL': 20}
+  with unwrapped subject reads > 0: 0; with literal-run compares: 557; with backref compares: 479
+  with zero program class sites: 204; with >= 1 run site: 1813; with >= 1 multi-byte class (size>=3 or utf8): 2041
+  subject runs with a timeout/abnormal exit: panel 0, own 0
+  start set shared with program classes: {'yes': 3382, 'no': 593, '?': 758, 'part': 150}
+  expensive forms: {'-': 3068, 'big+bitmap': 1200, 'ucls': 364, 'bitmap': 203, 'big': 35, 'big+bitmap+ucls': 8, 'atom+big': 3, 'atom': 1}
