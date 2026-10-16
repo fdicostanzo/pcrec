@@ -189,3 +189,4 @@ CandLocate	TYPE	LOCATE	[OPT-REVEND] L0: u.locate (emit/scan per route, nomatch)
 CandFinish	TYPE	FINISH	[OPT-REVEND] L0: u.finish (act, take[route][] CT_* hand masks)
 CandNeeds	TYPE	every walked slot	[OPT-REVEND] L0: needs[route] (mach, cells, front), §2.7's declaration
 req_site_kind	NOTSTART	(reads the routes)	[MEMFN] R17-b' B2 (lane fdb2): the pre-check site's consumer kind stated to the memfn kit (PR-3), from the finisher and body routes; selects nothing
+cand_pf_site	READER	NEXT	[MEMFN] R17-b' B2 (lane fdb2fix): the PF site G1/R4/L4 ask the memfn kit about (pf_site_of over pf_scan_set_of's set, the define's own constructor); selects nothing
