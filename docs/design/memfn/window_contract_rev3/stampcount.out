@@ -1,0 +1,7 @@
+patterns 5790
+byte	REFUSED	454
+byte	byte-rate=default	5336
+byte-vm	REFUSED	453
+byte-vm	byte-rate=default	5337
+utf8	REFUSED	426
+utf8	none	5364

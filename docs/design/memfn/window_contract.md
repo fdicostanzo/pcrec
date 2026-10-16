@@ -13,13 +13,47 @@ run.
 
 **Revision 2.1: lane `wcrev2`, 2026-10-12.** It applies D161 add. 9 (see §R2.1).
 
-**Status: PROPOSED, revision 2.1.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is
-a leaning. The R-18 outline (§11) is the manager's to file.
+**Revision 3: lane `wcrev3`, 2026-10-16, from main `063b4a4b4` (pcrec abi 78).**
+It is the design main's build step **E-1** implements (§3.7). It applies the
+kit's winreq C-items C-1..C-16 (`lane/memfn-r17:docs/dev/lanes/winreq_report.md`
+§4) and R17-b′ revision 2 (`lane/memfn-r17:docs/design/memfn/r17b_prime.md`,
+`c90d65e53`, §3-§4). It also applies D161 add. 10-15, D162 add. 4, D166 (+ add.
+1-2) and D167, and the kit's relayed sequencing (B1 declares the slot, E-1 fills
+it after B2). Read §R3 first. DESIGN ONLY: nothing under `src/`, `cli/`, `lib/`,
+`memfn/` or `tests/` changes. One compile-only census was run
+(`window_contract_rev3/`).
+
+**Status: PROPOSED, revision 3.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is a
+leaning; Q3-Q5 are new and in discussion form. Q3 (what the `_FINDINGS` stamp
+means) decides whether E-1 is an abi event. The R-18 ledger edit (§11, Appendix
+A) is main's to apply.
 
 The contract carries FACTS only, never the kit's method (D157). Every
 selection below is an ordered first-match table (memory
 `pcrec-decisions-as-first-match-tables`). Revision-2 changes are tagged
 `[r4 ID]` or `[D161.7]`/`[D161.8]` where they land.
+
+## §R3. What revision 3 changed (input → section, disposition)
+
+| input | where | disposition |
+|---|---|---|
+| E-1 (r17b′ §3.1 row "(main) E-1"; D167's consequences) | **§3.7 (new)** | The build step, stated in full: the object, where it is built, the slot it fills, the stamp, the census, the readers, the spec hunks, the checks and the sabotage |
+| the per-site slot vs the kit's per-`mf_art_begin` slot | §3.1, §3.3 rule 3, §3.7.2 | **The object rides `mf_art_begin`**, not `mf_site.analysis`. One object per art, stated once. Rule 3's same-pointer check and its NULL-mixing refusal dissolve, because nothing can differ. Reasons in §3.7.2 |
+| rev 2 open question 5 (S1's mover population) | §3.7.4, §14 item 5 | **MEASURED** (`window_contract_rev3/`). At default flags the population is EMPTY: 0 of 5,336 byte, 0 of 5,364 utf8 and 0 of 5,337 `--engine=vm` corpus artifacts stamp `""` today. Every default compile already asks, by findings §6.4 rule 1. The `""` population is entirely in the deny arms: 1,973 of 5,336 under `-fno-req-byte`, and every artifact under `--engine=vm -fno-req-byte -fno-req-run` |
+| the sibling-of-a-family check against [KNOW-SRC] (`measure_sets.md` §9) | **§3.7.3**, §9 family 7, F-1 | **A conflict, found.** Rev 2's R1 makes `_FINDINGS` mean OFFERED. [KNOW-SRC] §9.2 part 5 has ONE stamp grammar for the family ("EMPTY = nothing asked"), and `<PREFIX>_MEASURES` means CONSULTED (§3.5: a pcrec reader asked, or the kit returned `consulted`). Two siblings would have two rules. This revision's design of record is **CONSULTED** for both. Under it, E-1 is ZERO-MOVER and not an abi event. The OFFERED alternative's event is also stated exactly (§3.7.5). Q3 asks Frank |
+| general-mechanism lens on the object | §3.2 (T-KIND), §3.7.1 | Rev 2's T-KIND row "the kind is `byte-rate`" was a special case for one kind. It becomes an `arrives` COLUMN of ONE kinds table keyed by the [FINDINGS] query vocabulary: `ALWAYS` for `byte-rate` (D162 add. 2), `MEASURED-ONLY` for the rest. Provenance is decided by the answering LINK's identity, not by its name |
+| C-1, C-2, C-16 (the PRESENCE class; member order, `omin`) | §2.2, §2.3 | ADOPTED as r17b′ §4.1 states it: `mf_span_class` gains PRESENCE; `omin` is measured from the match start, ≥ 0, and 0 is a sound under-estimate; `head_max`; `member_order`. Carved out of "bounded only" |
+| C-3, C-4, C-12 (the reply) | §0 item 2, §2.4 | ADOPTED. ALL_PRESENT → VERDICT is deleted. Every span's presence is part of FIND: range binding, EMPTY = NOMATCH, decided first, one verdict per activation, per-candidate use as a PERMISSION, the unconstrained reply as a range. NONE's safety per consumer is r17b′ §4.6's table |
+| C-5 (the K82/L1 and run-pre-check rows) | §2.5 | ADOPTED (Q-WR-5 (a)): origin = the landmark |
+| C-6 (T-PRES superseded) | §5.4a, §9 | ADOPTED. `dominated` is the kit's row P2. Presence is not a separate site. Withholding presence (Q-WR-4) is pcrec's sub-problem choice and stays here as a one-row table, T-WITHHOLD |
+| **C-7** (R-18's text and §11 in step) | **§11, Appendix A** | DONE here for §11. The ledger edit to `memfn/docs/requests.md` R-18 is drafted verbatim in Appendix A for main (single writer) |
+| **C-8** (unlock (c) becomes the contract) | **§13** | DONE: unlock (c) is struck. Its trigger dissolves, because presence is a span class of the one request (D161 add. 14's clarification) |
+| C-9, C-13, C-14 (applicability; the VM-route exclusion; `need` is the effort fact) | §2.3 | ADOPTED as rules |
+| C-10 (give-up direction per consumer) | §2.4, §10 | ADOPTED: D161 add. 15's Q-WR-3. No move in either direction through ST3. From B5, D158 applies per measured cell, direction-checked by GIVEUP1 |
+| C-11 (`consumer` replaced, not dropped) | §6 S3 | ADOPTED: S3 retires `mf_site.consumer` with `site_kind` as its replacement (Q-WR-8), and `site_kind` is stated from B2 |
+| C-15 (evidence rows read MEASURED only) | §3.3 rule 7 | ADOPTED (D162 add. 3, D161 add. 15 Q-WR-9) |
+| D161 add. 10 (verify and proofs only on EXACT spans) | §2.2, §4.3 | ADOPTED: a per-span `byte_form` fact, EXACT or SUPERSET, required. A proof or verify request is legal only on EXACT |
+| a finding from the stamp's readers | §3.7.6 F-2 | `req.c`'s `req_rate_why` writes `rate:builtin-prior` whenever ANY block answered, `--analysis weblog` included. facts_listing.md 4.1.3¶4 says "the shipped byte-frequency prior". FILED, not fixed by E-1 |
 
 ## §R2.1. What revision 2.1 changed
 
