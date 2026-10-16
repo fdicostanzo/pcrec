@@ -305,6 +305,71 @@ typedef struct { const char *n, *miss, *floor; } Bounds;
 static const char *only;
 static int only_seen;
 
+/* ---- R17-b' B1 THE QUERY FAMILY (--query; r17b_prime.md §4.5 rule 2, §8.2)
+ *
+ * With --query every fixture is ASKED (mf_ask, the define hooks) before it
+ * is defined, and the class is held three ways: to the define's own class
+ * (mf_defined), to an INDEPENDENT reading of the site and of the rendered
+ * text (proven0: the intersection of the offset-0 terms, computed here from
+ * the description; libc_free: the rendered text calls no `memchr(`/
+ * `memcmp(`; exists: a FIND renders text), and to the art: the same fixture
+ * rendered with and without the preceding ask gives the same bytes (the
+ * query is pure). One `QUERY<TAB>fixture<TAB>verdict` line per fixture on
+ * stderr; run_finder.sh reads them. A class that cannot be asked prints its
+ * own verdict. */
+static int query_mode;
+
+/* proven0 as this file reads the site: the offset-0 terms' intersection on a
+ * FIND, all ones elsewhere (never through the kit). */
+static void q_proven0(const mf_site *s, uint8_t out[32])
+{
+    memset(out, 0xFF, 32);
+    if (s->op != MF_OP_FIND) return;
+    for (unsigned t = 0; t < s->pred.nterm; t++) {
+        const mf_term *tm = &s->pred.term[t];
+        uint8_t b[32] = { 0 };
+        if (tm->offset != 0) continue;
+        if (tm->kind == MF_T_SET) memcpy(b, tm->set, 32);
+        else if (tm->kind == MF_T_RUN) {
+            for (unsigned x = 0; x < 256; x++)
+                if ((x & (tm->mask ? tm->mask[0] : 0xFFu)) == tm->run[0])
+                    b[x >> 3] |= (uint8_t)(1u << (x & 7));
+        } else continue;
+        for (int i = 0; i < 32; i++) out[i] &= b[i];
+    }
+}
+
+/* `full`: the fixture was DEFINED (mf_define), so the query's class equals
+ * the define's in every field. 0: it was rendered in one call (mf_emit),
+ * which selects over its use hooks as well, while the query answers the
+ * define phase (memfn.h mf_ask): the two may part on `libc_free` and
+ * `includes` (fdb1_report.md F-B1-4: pf-emit-result-decl, the r4gfix
+ * fixture whose stated result_decl declines the PF row at the use), never on
+ * what every FIND row proves, `exists` and `proven0`, which is what B2's
+ * readers read. */
+static void q_check(const char *name, const mf_site *s, int ask_rc, const mf_class *qa,
+                    const mf_art *art, uint32_t handle, const char *text, int full)
+{
+    mf_result dr;
+    uint8_t p0[32];
+    const char *why = NULL;
+    if (ask_rc) why = "ASK-REFUSED";
+    else if (mf_defined(art, handle, &dr)) why = "DEFINED-REFUSED";
+    else if (full ? memcmp(qa, &dr.cls, sizeof *qa) != 0
+                  : qa->exists != dr.cls.exists || memcmp(qa->proven0, dr.cls.proven0, 32))
+        why = "ASK!=DEFINE";
+    else {
+        q_proven0(s, p0);
+        int calls = text && (strstr(text, "memchr(") || strstr(text, "memcmp("));
+        if (qa->v != MF_CLASS_V) why = "VERSION";
+        else if (memcmp(qa->proven0, p0, 32)) why = "PROVEN0";
+        else if (!qa->exists) why = "EXISTS";
+        else if (qa->libc_free && calls) why = "LIBC_FREE";
+        else if (qa->npres) why = "NPRES";
+    }
+    fprintf(stderr, "QUERY\t%s\t%s\n", name, why ? why : "agree");
+}
+
 static int skip_fixture(const char *name)
 {
     if (!only) return 0;
@@ -318,7 +383,7 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
 {
     if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fd = { s, fn1, NULL }, fu = { s, fn1, "    " };
@@ -332,14 +397,23 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
                     .table_name = h_table_name, .note = h_note, .u = &fu };
     mf_result res = { 0 };
     uint32_t h = 0;
+    mf_class qa;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &hd, &qa) : 0;
     int rc = mf_define(art, FXW(s), &hd, &sd, &h) ||
              (s->form == MF_FORM_FUNC ? mf_call(art, h, &hu, &su)
                                       : mf_use(art, h, &hu, &su, &res)) ||
              mf_flush_helpers(art, &sd) ||
-             mf_art_end(art);
+             mf_art_end(art, NULL);
     if (rc) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
+    }
+    if (query_mode) {
+        Text all = { 0 };
+        if (def.p) text_put(&all, def.p, def.len);
+        if (use.p) text_put(&all, use.p, use.len);
+        q_check(name, s, qrc, &qa, art, h, all.p, 1);
+        free(all.p);
     }
     if (s->form == MF_FORM_FUNC) {
         /* a FUNC site's form id: render its call once more through mf_use */
@@ -404,14 +478,25 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
                        const mf_hooks *hp)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_hooks h = *hp;
     mf_result res = { 0 };
-    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art)) {
+    mf_class qa;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &h, &qa) : 0;
+    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art, NULL)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
+    }
+    if (query_mode) {
+        /* mf_emit selects over its use hooks too; the query answers the
+           define phase: the two agree on every fixture or the line says so */
+        Text all = { 0 };
+        if (def.p) text_put(&all, def.p, def.len);
+        if (use.p) text_put(&all, use.p, use.len);
+        q_check(name, s, qrc, &qa, art, res.handle, all.p, 0);
+        free(all.p);
     }
     char path[1024];
     snprintf(path, sizeof path, "%s/%s.def", dir, name);
@@ -579,7 +664,7 @@ static int render_adv_x(const char *dir, const char *name, const mf_site *s, Adv
 {
     if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     AdvFx ax = { { s, NULL, "    " }, x ? x->member : NULL };
@@ -591,7 +676,7 @@ static int render_adv_x(const char *dir, const char *name, const mf_site *s, Adv
         h.indent = x->indent;
     }
     mf_result res = { 0 };
-    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art)) {
+    if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art, NULL)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
     }
@@ -690,7 +775,7 @@ static int render_stride(const char *dir, const StrideFx *x)
         su.member[i] = mtext[i];
     }
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s.denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s.denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), sk = sink_of(&use);
     mf_hooks h = { .more = more, .peek = "subject[rx_span_cursor + 0]", .step = step,
@@ -699,7 +784,7 @@ static int render_stride(const char *dir, const StrideFx *x)
                    .member = x->own ? NULL : h_stride_member,
                    .indent = "        ", .u = &su };
     mf_result res = { 0 };
-    if (mf_emit(art, FXW(&s), &h, &sk, &sd, &res) || mf_art_end(art)) {
+    if (mf_emit(art, FXW(&s), &h, &sk, &sd, &res) || mf_art_end(art, NULL)) {
         fprintf(stderr, "%s: the kit refused: %s\n", x->name, mf_art_error(art));
         return 1;
     }
@@ -753,7 +838,7 @@ static void gate_case(const char *name, const mf_site *s, const mf_hooks *hd,
 {
     if (skip_fixture(name)) return;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
@@ -775,7 +860,7 @@ static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
 {
     if (skip_fixture(name)) return;
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies, NULL, NULL);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
@@ -784,7 +869,7 @@ static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
     for (const char *o = ops; !rc && *o; o++)
         rc = *o == 'L' ? mf_locals(art, h, hl, &su)
            : *o == 'U' ? mf_use(art, h, hu, &su, &res)
-           : mf_art_end(art);
+           : mf_art_end(art, NULL);
     if (rc) printf("%s\tREFUSE\t%s\n", name, mf_art_error(art) ? mf_art_error(art) : "");
     else    printf("%s\tRENDER\t%s\n", name, res.form_id);
     free(def.p);
@@ -1182,9 +1267,322 @@ static void gate_cases(void)
     gate_case("stride-cursor-unstated", &sw, &shc, &shc);
 }
 
+/* ---- R17-b' B1: the finder table's fixtures and the kit's B1 entries -----
+ *
+ * (r17b_prime.md rev 3 §1, §4.5, §4.7; lane fdb1.) No finder row is ROUTED at
+ * B1, so a finder decision renders nothing: it is the MF_TRACE build's
+ * SHADOW (memfn/src/finder.c `fd_shadow`), whose `MFTRACE FD` records are
+ * what these fixtures produce. They render only when named:
+ *
+ *   arm_fixtures OUTDIR --only fd-<name>   one shadow witness (rows.tsv's
+ *       table `fd`): a site rendered under a fixture set; its .def/.use are
+ *       the pre-table form's text, its FD records the shadow's decision
+ *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR]   one site under
+ *       a set FILE and a `--memfn=` string
+ *       (measure_sets §1.2's section TSV, its `rows` section read here, with
+ *       no pcrec code), printing `CONSULTED<TAB>0|1` (R-MS2): the R-MS1/R-MS4
+ *       loops of tests/memfn/finder_check.py
+ *   arm_fixtures --finder-rows     mf_finder_rows as TSV (R-MS4's listing)
+ *   arm_fixtures --hash            R-MS3's fixtures (mf_form_hash)
+ *   arm_fixtures --pay-grid        the pay rule over stdin's operand lines
+ *
+ * Every expectation is finder_check.py's, never this file's. */
+
+/* A fixture's own sets, written here (they share no source with the kit). */
+static const mf_measure FDS_R0_ROWS[] = {
+    { "kit.saving.V1.WALK.r2", 0, "ratio", "fixture" },
+    { "kit.saving.V1.WALK.r2e0c0", 0, "ratio", "fixture" },
+    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
+};
+static const mf_measure FDS_R7_ROWS[] = {
+    { "kit.saving.V1.WALK.r1e0c0", 500000, "ratio", "fixture" },
+    { "kit.saving.V1.WALK.r2e0c0", 500000, "ratio", "fixture" },
+    { "kit.saving.V1.WALK.r2", 500000, "ratio", "fixture" },
+    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
+};
+static const mf_measures FDS_R0 = { "fixture-r0", 1, "0000000000000000", "-", "synthetic", 0,
+                                    3, FDS_R0_ROWS };
+static const mf_measures FDS_R7 = { "fixture-r7", 1, "0000000000000000", "-", "synthetic", 0,
+                                    4, FDS_R7_ROWS };
+
+/* The finder fixtures' sites: the PF shape pcrec's find_site states (one
+ * term, the window the candidate, `body` ONESHOT, a storage point on a
+ * table site), the pre-check composite, and a RUN landmark. */
+static mf_site fd_pf_site(const char *members, int table, int body)
+{
+    mf_site s = pf_site(0, table);
+    if (table) {
+        t_set(&s.pred.term[0], 0, members, 1);
+        s.pred.term[0].need = MF_REQUIRED;
+        s.decl_point = 1;
+        s.pred.fn_ref = 1;
+    } else {
+        t_byte(&s.pred.term[0], 0, (unsigned char)members[0]);
+    }
+    s.pred.need = MF_REQUIRED;
+    s.body = (uint8_t)body;
+    return s;
+}
+
+/* One site's define, storage point (where it offers one) and use, in an art
+ * begun with `ms`; `CONSULTED` from its end. */
+static int fd_render(const char *dir, const char *name, const mf_site *s,
+                     const mf_measures *ms)
+{
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, ms, NULL);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), su = sink_of(&use);
+    Fx fx = { s, "rx_pf", "    " };
+    int table = s->op == MF_OP_FIND && s->pred.term[0].kind == MF_T_SET &&
+                s->pred.term[0].table_ref;
+    int pre = s->op == MF_OP_ALL_PRESENT;
+    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = pre ? "search_from" : "scan_position",
+                   .result = pre ? "handoff_position" : "scan_position",
+                   .miss = MF_MISS_N,
+                   .on_miss = (!table && !pre) || pre ? "return 0;" : NULL,
+                   .table_name = h_table_name, .fn_name = h_fn_name,
+                   .note = h_note, .note_tag = h_note_tag,
+                   .indent = "    ", .u = &fx, .start = "search_from" };
+    uint8_t consulted = 9;
+    uint32_t hd = 0;
+    int rc = mf_define(art, FXW(s), &h, &sd, &hd) ||
+             (s->decl_point && mf_locals(art, hd, &h, &su)) ||
+             mf_use(art, hd, &h, &su, NULL) ||
+             mf_flush_helpers(art, &sd) ||
+             mf_art_end(art, &consulted);
+    if (rc) {
+        fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
+        printf("REFUSED\t%s\n", mf_art_error(art) ? mf_art_error(art) : "-");
+        return 1;
+    }
+    if (dir) {
+        char path[1024];
+        snprintf(path, sizeof path, "%s/%s.def", dir, name);
+        FILE *f = fopen(path, "w");
+        if (!f) { perror(path); return 1; }
+        fputs(def.p ? def.p : "", f);
+        fclose(f);
+        snprintf(path, sizeof path, "%s/%s.use", dir, name);
+        f = fopen(path, "w");
+        if (!f) { perror(path); return 1; }
+        fputs(use.p ? use.p : "", f);
+        fclose(f);
+    }
+    printf("CONSULTED\t%u\n", (unsigned)consulted);
+    free(def.p);
+    free(use.p);
+    return 0;
+}
+
+/* The named site (fd fixtures and --fd-site). */
+static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
+{
+    if (!strcmp(name, "set10"))            *s = fd_pf_site("0123456789", 1, MF_BODY_ONESHOT);
+    else if (!strcmp(name, "set10-nobody")) *s = fd_pf_site("0123456789", 1, MF_BODY_UNSTATED);
+    else if (!strcmp(name, "set2r"))        *s = fd_pf_site("0123456789abcdefghijklmnopqrstuvwxyz", 1, MF_BODY_ONESHOT);
+    else if (!strcmp(name, "byte1"))        *s = fd_pf_site("x", 0, MF_BODY_ONESHOT);
+    else if (!strcmp(name, "run3")) {
+        *s = pf_site(0, 0);
+        t_run(&s->pred.term[0], 0, "abc", NULL);
+        s->pred.term[0].need = MF_REQUIRED;
+        s->pred.need = MF_REQUIRED;
+        s->empty = MF_EMPTY_MISS;
+        s->on_miss_leaves = 1;
+        s->body = MF_BODY_ONESHOT;
+    } else if (!strcmp(name, "pre-req")) {
+        p_byte(&p[0], 'q');
+        p[0].need = p[0].term[0].need = MF_REQUIRED;
+        *s = pre_site(p, 1, -1);
+        s->body = MF_BODY_ONESHOT;
+    } else if (!strcmp(name, "pre-opt")) {
+        p_byte(&p[0], 'q');
+        p[0].need = p[0].term[0].need = MF_OPTIONAL;
+        *s = pre_site(p, 1, -1);
+        s->body = MF_BODY_ONESHOT;
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
+/* --only fd-<row>: the shadow witnesses and their controls. */
+static int fd_fixture(const char *dir, const char *name)
+{
+    static const struct { const char *name, *site; const mf_measures *ms; } fx[] = {
+        { "fd-R0",      "set2r",  &FDS_R0 },    /* r2 cover, saving inside eps: R0 */
+        { "fd-R7-r2",   "set2r",  &FDS_R7 },    /* the same cover, saving > eps: R7 */
+        { "fd-R7",      "set10",  &FDS_R7 },    /* r1 cover, saving > eps: R7     */
+        { "fd-R7w",     "set10",  NULL },       /* no set: R7w                    */
+        { "fd-D2",      "run3",   NULL },       /* a RUN landmark: D2             */
+        { "fd-P0",      "pre-req", NULL },      /* a REQUIRED presence span: P0   */
+        { "fd-P9",      "pre-opt", NULL },      /* an OPTIONAL one: P9            */
+        { "fd-nobody",  "set10-nobody", &FDS_R7 }, /* body UNSTATED: S919's witness */
+    };
+    for (size_t i = 0; i < sizeof fx / sizeof fx[0]; i++) {
+        if (strcmp(name, fx[i].name)) continue;
+        mf_site s;
+        mf_pred p[2];
+        only_seen++;
+        if (fd_site_of(fx[i].site, &s, p)) return 2;
+        return fd_render(dir, name, &s, fx[i].ms) ? 1 : 0;
+    }
+    return 2;
+}
+
+/* A set FILE's `rows` section (key, unit, value_e6 by header name). */
+static int fd_load_set(const char *path, mf_measures *ms)
+{
+    static mf_measure rows[2048];
+    static char keys[2048][128];
+    FILE *f = fopen(path, "r");
+    if (!f) { perror(path); return -1; }
+    char line[4096];
+    int sect = 0, ck = -1, cv = -1;
+    memset(ms, 0, sizeof *ms);
+    ms->id = path;
+    ms->rows = rows;
+    while (fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (!strncmp(line, "#section ", 9)) { sect = !strcmp(line + 9, "rows"); continue; }
+        if (line[0] == '#') {
+            if (!sect) continue;
+            int c = 0;
+            for (char *t = strtok(line + 1, "\t"); t; t = strtok(NULL, "\t"), c++) {
+                if (!strcmp(t, "key")) ck = c;
+                if (!strcmp(t, "value_e6")) cv = c;
+            }
+            continue;
+        }
+        if (!sect || !line[0] || ck < 0 || cv < 0 || ms->nrows >= 2048) continue;
+        char *cell[32];
+        int n = 0;
+        for (char *t = line; n < 32; n++) {
+            cell[n] = t;
+            char *e = strchr(t, '\t');
+            if (!e) { n++; break; }
+            *e = 0;
+            t = e + 1;
+        }
+        if (ck >= n || cv >= n || !cell[cv][0]) continue;
+        snprintf(keys[ms->nrows], sizeof keys[0], "%s", cell[ck]);
+        rows[ms->nrows] = (mf_measure){ keys[ms->nrows], strtoll(cell[cv], NULL, 10), "-", "-" };
+        ms->nrows++;
+    }
+    fclose(f);
+    return 0;
+}
+
+static int fd_site_mode(const char *site, const char *setpath, const char *opts)
+{
+    mf_site s;
+    mf_pred p[2];
+    mf_measures ms;
+    if (fd_site_of(site, &s, p)) { fprintf(stderr, "no fd site %s\n", site); return 2; }
+    s.opts = opts;
+    if (setpath && fd_load_set(setpath, &ms)) return 2;
+    return fd_render(NULL, site, &s, setpath ? &ms : NULL) ? 1 : 0;
+}
+
+static int finder_rows_mode(void)
+{
+    static mf_finder_listing l;
+    mf_finder_rows(&l);
+    size_t n = l.n;
+    const mf_finder_row *r = l.rows;
+    printf("#id\tslot\tneeds\tpick\tunpaid\tdeny\tbasis\trouted\tlocked\tstep\tkeys\n");
+    for (size_t i = 0; i < n; i++) {
+        printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%u\t%u\t%s\t", r[i].id, r[i].slot, r[i].needs,
+               r[i].pick, r[i].unpaid, r[i].deny, r[i].basis, r[i].routed, r[i].locked,
+               r[i].step);
+        for (unsigned k = 0; k < r[i].nkeys; k++)
+            printf("%s%s", k ? ";" : "", r[i].keys[k].key);
+        printf("%s\n", r[i].nkeys ? "" : "-");
+    }
+    size_t no;
+    const mf_option *o = mf_options(&no);
+    for (size_t i = 0; i < no; i++) printf("OPTION\t%s\n", o[i].name);
+    return 0;
+}
+
+/* R-MS3's fixtures: the forms that render resolve, others are refused; the
+ * text hash ignores a rename, a comment and layout, and moves on a one-
+ * operator edit. */
+static int hash_mode(void)
+{
+    static const char *const ids[] = { "walk", "libc", "V1", "W64", "NONE", "dispatch-twin", NULL };
+    for (unsigned i = 0; ids[i]; i++) {
+        char h[17] = "-";
+        int rc = mf_form_hash(ids[i], h);
+        printf("FORM\t%s\t%d\t%s\n", ids[i], rc, rc ? "-" : h);
+    }
+    static const struct { const char *name, *text; } tx[] = {
+        { "base",    "    while (pos < n && !mf_tbl[subject[pos]]) pos++;\n" },
+        { "rename",  "    while (cursor < len && !my_table[s[cursor]]) cursor++;\n" },
+        { "comment", "/* the walk */\n\n    while (pos < n && /* x */ !mf_tbl[subject[pos]]) pos++; // y\n" },
+        { "layout",  "while (pos < n && !mf_tbl[subject[pos]]) pos++;\n\n\n" },
+        { "edit",    "    while (pos < n && !mf_tbl[subject[pos]]) pos += 2;\n" },
+        { "edit2",   "    while (pos <= n && !mf_tbl[subject[pos]]) pos++;\n" },
+    };
+    for (unsigned i = 0; i < sizeof tx / sizeof tx[0]; i++) {
+        char h[17];
+        mf_form_hash_text(tx[i].text, h);
+        printf("TEXT\t%s\t%s\n", tx[i].name, h);
+    }
+    return 0;
+}
+
+/* The pay rule over stdin: one case per line, `npt s0 f0 ... has_call call
+ * cfloor has_next nfloor has_use use ufloor has_wmin wfloor`; prints the
+ * bits. */
+static int pay_mode(void)
+{
+    char line[4096];
+    while (fgets(line, sizeof line, stdin)) {
+        mf_pay_operands in;
+        memset(&in, 0, sizeof in);
+        char *t = line, *e;
+        long long v[64];
+        int n = 0;
+        while (n < 64) {
+            v[n] = strtoll(t, &e, 10);
+            if (e == t) break;
+            n++;
+            t = e;
+        }
+        if (n < 1) continue;
+        in.npt = (unsigned)v[0];
+        int k = 1;
+        for (unsigned i = 0; i < in.npt && i < MF_PAY_MAXPT; i++) {
+            in.saving_e6[i] = v[k++];
+            in.saving_floor_e6[i] = v[k++];
+        }
+        in.has_call = (uint8_t)v[k++]; in.call_e6 = v[k++]; in.call_floor_e6 = v[k++];
+        in.has_next = (uint8_t)v[k++]; in.next_floor_e6 = v[k++];
+        in.has_use = (uint8_t)v[k++]; in.use_e6 = v[k++]; in.use_floor_e6 = v[k++];
+        in.has_wmin = (uint8_t)v[k++]; in.wmin_floor_e6 = v[k++];
+        printf("%u\n", mf_finder_pay(&in));
+    }
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] | --gate [--gate-only CASE]\n", stderr); return 2; }
+    if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
+                          "--fd-site SITE [--fd-set FILE] | --finder-rows | --hash | --pay-grid\n", stderr); return 2; }
+    if (!strcmp(argv[1], "--fd-site") && argc > 2) {
+        const char *set = NULL, *opts = NULL;
+        for (int i = 3; i + 1 < argc; i += 2) {
+            if (!strcmp(argv[i], "--fd-set")) set = argv[i + 1];
+            else if (!strcmp(argv[i], "--opts")) opts = argv[i + 1];
+        }
+        return fd_site_mode(argv[2], set, opts);
+    }
+    if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
+    if (!strcmp(argv[1], "--hash")) return hash_mode();
+    if (!strcmp(argv[1], "--pay-grid")) return pay_mode();
+    for (int i = 2; i < argc; i++)
+        if (!strcmp(argv[i], "--query")) query_mode = 1;
     if (!strcmp(argv[1], "--gate")) {
         if (argc > 3 && !strcmp(argv[2], "--gate-only")) only = argv[3];
         gate_cases();
@@ -1198,6 +1596,11 @@ int main(int argc, char **argv)
     const char *dir = argv[1];
     int perturb = argc > 2 && !strcmp(argv[2], "--perturb");
     if (argc > 3 && !strcmp(argv[2], "--only")) only = argv[3];
+    if (only && !strncmp(only, "fd-", 3)) {         /* the finder shadow's fixtures */
+        int rc = fd_fixture(dir, only);
+        if (rc == 2) fprintf(stderr, "arm_fixtures: --only %s matched no fixture\n", only);
+        return rc;
+    }
     static const uint8_t ci3[] = { 0xDF, 0xDF, 0xDF };           /* caseless letters */
     static const uint8_t ci3b[] = { 0xFF, 0xDF, 0xFF };          /* one cube, mid   */
     int bad = 0;

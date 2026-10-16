@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 11  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 12  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -71,7 +71,17 @@
                            fn_ref's STMT reading, the storage stem (W5);
                            mf_result.reads_table/includes; the entries
                            mf_locals and mf_defined. No MF_VOCAB move; no
-                           pcrec byte moved. */
+                           pcrec byte moved. 12 (R17-b' B1, lane fdb1;
+                           r17b_prime.md rev 3 §3.1, §4.5, §4.7): the
+                           facts mf_site.body (R-19) and mf_hooks.start
+                           (R-19's START hook), each appended LAST; the
+                           art calls' measurement set and analysis object
+                           (mf_art_begin) and `consulted` (mf_art_end):
+                           R-MS1, R-MS2 and E-1's declaration; the
+                           define-time QUERY mf_ask with mf_class, and
+                           mf_result.cls (appended LAST); mf_form_hash
+                           (R-MS3); mf_finder_rows (R-MS4). No MF_VOCAB
+                           move; no pcrec byte moved. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -259,6 +269,15 @@ typedef enum { MF_T_SET, MF_T_RUN, MF_T_REF } mf_term_kind;
 typedef enum { MF_FOLD_NONE, MF_FOLD_ASCII, MF_FOLD_UCP } mf_fold;
 
 typedef enum { MF_C_RESULT, MF_C_ENGINE } mf_consumer;  /* §8.2 `consumer` */
+
+/* The CALL MODE of the entry body a site sits in (R-19, MF_SITE_ABI 12;
+ * r17b_prime.md §2.4, §4.2): a FACT, the knowledge key M. UNSTATED (0) is
+ * not a mode: a row that reads M skips. ONESHOT: one call answers one search
+ * (every builder states it through B8: there is no iterator yet). PARAM: the
+ * body is shared and M is a run-time parameter (findall_iter.md §4.2);
+ * RESERVED for R17-b'' with its mode-expression hook, so a site stating it
+ * is refused, naming `body`. */
+typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
 typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
 
 /* policy bits (§8.5): every bit arch-neutral. pcrec's ONE bit of SIMD
@@ -436,6 +455,11 @@ typedef struct {
        ("placed, never read"). OBLIG: 0 is a stated value, set by every
        builder; 0 or 1, else refused                                       */
     uint8_t         decl_point;
+    /* THE CALL MODE (R-19, MF_SITE_ABI 12; appended LAST): mf_body. 0 is
+       UNSTATED (a row reading M skips; G2's sites leave it there); PARAM is
+       reserved (refused) until R17-b''. Read by the finder table's gate
+       (finder.c) only; no rendering reads it */
+    uint8_t         body;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -618,6 +642,17 @@ typedef struct {
     const char *ref;
     const char *reflen;
     const char *fold;
+    /* THE START HOOK (R-19, MF_SITE_ABI 12; r17b_prime.md §2.1, §4.2;
+       appended LAST): the text of the ACTIVATION's origin, a side-effect-
+       free C expression (rule 1) naming the position every match of the
+       function holding the site begins at or after (`search_from`). It is
+       the knowledge key N's other operand (N = n - start, read once at the
+       storage point). Stated on a site that offers its declaration point,
+       at its define AND at its mf_locals, which BINDS it as it binds `s`/`n`
+       (a differing text is refused, naming it). NULL is UNSTATED: a row
+       that reads N skips. No rendering reads it before a dispatch row
+       routes (B4/B8) */
+    const char *start;
 } mf_hooks;
 
 /* The `miss` token: pass MF_MISS_N as mf_hooks.miss to STATE "the miss value
@@ -635,6 +670,42 @@ extern const char mf_miss_n[];
 #define MF_TOK_ACCEPT "\x01mfA"
 #define MF_TOK_REJECT "\x01mfR"
 
+/* ---- the form CLASS: the define-time query's answer (r17b_prime.md §4.5) -
+ *
+ * FACTS about the text the kit WOULD render for a site, never the text or
+ * the form's name (D157), for pcrec's readers that run during its ROW
+ * SELECTION, before any site is defined (PR-9; Q-R17P-15). It answers for
+ * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
+ * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
+ * same. */
+#define MF_CLASS_V 1
+/* Presence spans one class answers (npres). A SHAPE BOUND, not a tuning
+ * constant: CHOSEN as MF_MAX_TERM until B3a states the presence spans
+ * (PR-5), where the bound is re-read against pcrec's largest unpicked
+ * necessary set plus its run. */
+#define MF_MAX_PRES MF_MAX_TERM
+/* One presence span's CHAIN-LINK attributes (r17b_prime.md §1.4, R-18's
+ * vocabulary, winreq C-8). Answered from B3b; zero before. */
+typedef struct {
+    uint8_t verify;     /* 1: the link is verified over [start + omin, n)     */
+    uint8_t proven_by;  /* 1: span 0's proof stands for it, no test           */
+    uint8_t member;     /* 0: every member; else 1 + the chosen member        */
+    uint8_t order;      /* the chain-order key: lower is tested first         */
+} mf_link;
+typedef struct {
+    uint8_t  v;            /* MF_CLASS_V, written by the kit                     */
+    uint8_t  exists;       /* 1 iff a search text precedes the consumer at its
+                              use; 0 for a form that searches nothing (NONE).
+                              exists 0 implies proven0 all ones (Q-R17P-25)  */
+    uint8_t  libc_free;    /* 1 iff the text calls no C-library function      */
+    uint8_t  proven0[32];  /* bitset (mf_term.set's layout): every candidate's
+                              byte at offset 0 lies in it; all ones = nothing
+                              proven                                          */
+    uint32_t includes;     /* MF_INC_* bits the text needs                     */
+    uint8_t  npres;        /* presence spans answered (0 before B3b)           */
+    mf_link  pres[MF_MAX_PRES];
+} mf_class;
+
 /* ---- the result and the per-artifact state (§14.0, §14.8) ---------------- */
 
 typedef struct {
@@ -651,9 +722,76 @@ typedef struct {
     uint32_t includes;      /* the MF_INC_* bits the chosen ROW's text can
                                need (a row-level bound: the art's own
                                mf_includes stays the end-of-art control)   */
+    /* The CLASS of what the define chose (MF_SITE_ABI 12; appended LAST):
+       the same answer mf_ask gives for the same site, hooks and art state
+       (§4.5 rule 2; a trace build re-asks at define and fails on a
+       difference). Filled by mf_defined; mf_use leaves it zero. */
+    mf_class cls;
 } mf_result;
 
 typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits) */
+
+/* ---- the measurement set (R-MS1; measure_sets.md §4.1, D166) -------------
+ *
+ * The `kit.` rows of the set pcrec LOADED for this compile, present and
+ * non-NULL (a NULL row is not handed over, so NULL and absent read alike: a
+ * skip), and the set's identity. FACTS only (D157): pcrec computes no
+ * threshold and never presumes how a row is read. NULL `mf_measures` is no
+ * set. The kit refuses, at mf_art_begin (sticky, the first mf_define fails
+ * with it), a row whose key is not `kit.`-owned or whose value lies past
+ * MF_MEASURE_MAX: a value is never clamped (r17b_prime.md §2.5 [D9]). */
+#define MF_MEASURE_MAX 1000000000000000LL /* |value_e6| bound: 1e9 in units.
+                                             A SHAPE BOUND, not a tuning
+                                             constant: the finder's
+                                             comparisons add at most four
+                                             values (r17b_prime.md §2.5),
+                                             which stays inside int64      */
+typedef struct {
+    const char *key;        /* owner.quantity.tokens (measure_sets §1.3)        */
+    int64_t     value_e6;   /* the value x 1e6                                  */
+    const char *unit;       /* the row's unit token                             */
+    const char *source;     /* display only; no selection reads it              */
+} mf_measure;
+typedef struct mf_measures {
+    const char       *id;
+    uint32_t          rev;
+    const char       *values_digest;    /* 16 hex (measure_sets §1.6)          */
+    const char       *cls;              /* the header's `class`               */
+    const char       *tier;             /* scratch|official|local|synthetic   */
+    uint8_t           composite;
+    uint32_t          nrows;
+    const mf_measure *rows;             /* distinct keys, any order            */
+} mf_measures;
+
+/* ---- the analysis object (window_contract.md §3.1; DECLARED at B1) --------
+ *
+ * The E-1 agreement (r17b_prime.md §4.7): B1 declares the object on
+ * mf_art_begin, NULL-tolerant, and NO kit row reads it before B3a; main's
+ * E-1 (window_contract S1) fills it with no kit edit. The layout is
+ * window_contract.md §3.1's, spelled as there. */
+#define MF_ANALYSIS_LIST_V 1        /* the LIST's own shape, not any kind's */
+typedef enum { MF_PROV_UNSTATED = 0, MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
+               MF_PROV_MEASURED } mf_prov_source;
+typedef enum { MF_KIND_UNSTATED = 0, MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_state;
+typedef struct {
+    uint8_t     source;     /* mf_prov_source                                  */
+    const char *bundle;     /* MEASURED: the answering bundle; PRIOR: "default" */
+    uint64_t    digest;     /* what was consumed (the `<PREFIX>_FINDINGS`
+                               digest); 0 under PRIOR_NONE                     */
+} mf_prov;
+typedef struct {
+    const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */
+    uint32_t    version;    /* this kind's payload shape                        */
+    uint8_t     present;    /* mf_kind_state                                    */
+    mf_prov     prov;
+    const void *payload;    /* per tag: non-NULL iff PRESENT and PRIOR_AUTHORED
+                               or MEASURED                                     */
+} mf_akind;
+typedef struct mf_analysis {
+    uint32_t        list_v;     /* MF_ANALYSIS_LIST_V                          */
+    uint16_t        nkinds;
+    const mf_akind *kinds;      /* every kind THIS pcrec knows, by tag         */
+} mf_analysis;
 
 /* The kit's entry points. Every int-returning call returns 0, or nonzero on
  * a LOUD internal error whose text mf_art_error() returns (pcrec raises it
@@ -678,17 +816,29 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
 #define mf_options        MF_NS(options)
 #define mf_opts_check     MF_NS(opts_check)
 #define mf_run_rows       MF_NS(run_rows)
+#define mf_ask            MF_NS(ask)
+#define mf_form_hash      MF_NS(form_hash)
+#define mf_form_hash_text MF_NS(form_hash_text)
+#define mf_finder_rows    MF_NS(finder_rows)
 
 /* Begin an artifact's kit state. `prefix` is pcrec's D143 placeholder, the
  * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
  * every site defined on the art must carry the same (RULED Q-M1b-1; refused
- * at mf_define). NULL only when the arena failed. */
+ * at mf_define). `ms` is the compile's measurement set (R-MS1, NULL: none)
+ * and `an` its analysis object (DECLARED, E-1; NULL-tolerant, read by no kit
+ * row before B3a); both must outlive the art. NULL only when the arena
+ * failed. */
 mf_art  *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
-                      uint64_t denies);
+                      uint64_t denies, const mf_measures *ms,
+                      const mf_analysis *an);
 /* End it: fails if a defined handle was never used (§14.0 item 1), and, on
  * a `decl_point` site, if its mf_locals never came or no use followed it.
- * CHOSEN: the design asserts "at artifact end" but names no end call. */
-int      mf_art_end(mf_art *);
+ * CHOSEN: the design asserts "at artifact end" but names no end call.
+ * `consulted` (R-MS2; NULL: not asked) is written on success: 1 iff some
+ * kit row whose decision the art's text CARRIES resolved a key against the
+ * set, found or absent; a trace build's shadow reads never set it. pcrec ORs
+ * it with its own readers' lookups for the `<PREFIX>_MEASURES` stamp. */
+int      mf_art_end(mf_art *, uint8_t *consulted);
 const char *mf_art_error(const mf_art *);
 
 /* The define/use split (§14.0 [rev4.1]): FUNC parts at file scope once,
@@ -720,8 +870,19 @@ int mf_use   (mf_art *, uint32_t handle, const mf_hooks *use,
  * -> pcrec's table iff mf_defined says the form reads it -> mf_use. */
 int mf_locals(mf_art *, uint32_t handle, const mf_hooks *at, mf_sink *body);
 /* What site `handle`'s define chose (mf_result: form_id, handle,
- * reads_table, includes; `moved` 0). Valid from the define on. */
+ * reads_table, includes, cls; `moved` 0). Valid from the define on. */
 int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
+/* THE DEFINE-TIME QUERY (r17b_prime.md §4.5, PR-9; Q-R17P-15): the CLASS of
+ * the text mf_define WOULD render for `site` under the define hooks `def`
+ * and the art's state (denies, opts, measures, layer), before any site
+ * exists. PURE: it writes no text, defines no handle, registers no helper
+ * and changes no art state (an MF_TRACE build records one `MFTRACE ASK`
+ * line). Asked and never defined, a site leaves nothing behind. It answers
+ * for what is RENDERED: before a finder row routes, the pre-table form.
+ * Returns 0, or exactly the refusal mf_define would return (the art's
+ * error is NOT set: the query is pure, so the caller reads the text from
+ * mf_art_error only after a define). */
+int mf_ask(const mf_art *, const mf_site *site, const mf_hooks *def, mf_class *out);
 /* = mf_define + mf_use, for a site whose parts all sit at one point */
 int mf_emit  (mf_art *, const mf_site *, const mf_hooks *,
               mf_sink *body, mf_sink *file_scope, mf_result *res);
@@ -779,6 +940,86 @@ typedef struct {
 
 /* Row `i` of the table, in first-match order, or NULL past the last. */
 const mf_run_row *mf_run_rows(size_t i);
+
+/* ---- form hashes (R-MS3; measure_sets.md §2.4) ----------------------------
+ *
+ * A form's hash over its CANONICAL INSTANCE: the text the kit renders for
+ * one fixed canonical site of the form (fixed set, span and prefix), with
+ * the scaffolding normalized out (comments, blank lines and line-edge white
+ * space dropped, every identifier the kit or pcrec generated for the site
+ * replaced by a placeholder in order of first appearance), FNV-1a-64, 16
+ * lowercase hex. It moves when the instruction text the timing measured
+ * moves, not when a name, a comment or a neighbouring declaration moves.
+ * pcrec compares the strings and nothing else. Returns 0 and writes out[17]
+ * (with its NUL), or -1 when `form_id` names no form this kit renders (a
+ * card naming a form a later step builds: V1 at B4, the W64 rows at B6). */
+int mf_form_hash(const char *form_id, char out[17]);
+/* The same normalization and hash over `text` (the kit's own fixtures and
+ * any tool that hashes a rendering it holds). */
+void mf_form_hash_text(const char *text, char out[17]);
+
+/* ---- the finder table's listing (R-MS4; r17b_prime.md §1.7) ---------------
+ *
+ * One entry per row of `fd_rows[]`, in first-match order within each slot,
+ * in [LIST-TABLES]' census shape: the row's id, slot, the knowledge keys it
+ * needs, its pick (slot FIND) or link (slot PRES), its unpaid pick, its
+ * deny, its BASIS, its evidence and refutation texts, its routing state and
+ * the set keys it reads. A key is a TEMPLATE: `<...>` tokens are filled per
+ * site (the cover shape, the layer's form, the kind, the terminal pick).
+ * `safe` is the key's SAFE direction (`max`/`min`/`none`), "" until M2
+ * (R-MS4: keys at M0, directions at M2). */
+typedef struct {
+    const char *key;
+    const char *safe;
+} mf_finder_key;
+typedef struct {
+    const char          *id;
+    const char          *slot;      /* "FIND" | "PRES"                          */
+    const char          *needs;     /* the knowledge keys: P E A I M N H        */
+    const char          *pick;      /* FIND: the form; PRES: the link           */
+    const char          *unpaid;    /* "-" for none                            */
+    const char          *deny;      /* its options.def name, "-" for none      */
+    const char          *basis;     /* MEASURED|DERIVED|UNMEASURED-DEFAULT      */
+    const char          *evidence;
+    const char          *refuted_by;
+    uint8_t              routed;    /* 1 once its routing step has landed       */
+    uint8_t              locked;    /* = routed until B4 (§1.8)                 */
+    const char          *step;      /* the step that routes it                  */
+    uint8_t              nkeys;
+    const mf_finder_key *keys;
+} mf_finder_row;
+/* The listing, written into storage the CALLER owns (the kit keeps no
+ * mutable state): `rows[0..n)`, whose strings point into the listing
+ * itself or at the kit's constants. MF_FINDER_MAX is a SHAPE BOUND on the
+ * table (finder.c asserts its rows fit), not a tuning constant. */
+#define MF_FINDER_MAX  32
+#define MF_FINDER_KEYS 16
+typedef struct {
+    size_t        n;
+    mf_finder_row rows[MF_FINDER_MAX];
+    char          needs[MF_FINDER_MAX][8];
+    char          pick[MF_FINDER_MAX][24];
+    mf_finder_key keys[MF_FINDER_MAX][MF_FINDER_KEYS];
+} mf_finder_listing;
+void mf_finder_rows(mf_finder_listing *out);
+
+/* THE PAY RULE's arithmetic (r17b_prime.md §2.5), over stated operands in
+ * value_e6 u·B, for its arithmetic grid (SN-9) and any mirror of the rule:
+ * the bits of the tests that pass, 1 T1 (every point's saving lower bound
+ * beats the call charge's upper bound STRICTLY; at least one point), 2 T2
+ * (the call charge's upper bound is within the next form's floor; a tie
+ * passes), 4 T3 (the per-use charge's upper bound is within the cheapest
+ * warm use's floor; a tie passes). An operand not `has_*` fails its test.
+ * Points past MF_PAY_MAXPT are ignored. */
+#define MF_PAY_MAXPT 16
+#define mf_finder_pay MF_NS(finder_pay)
+typedef struct {
+    unsigned npt;
+    int64_t  saving_e6[MF_PAY_MAXPT], saving_floor_e6[MF_PAY_MAXPT];
+    uint8_t  has_call, has_next, has_use, has_wmin;
+    int64_t  call_e6, call_floor_e6, next_floor_e6, use_e6, use_floor_e6, wmin_floor_e6;
+} mf_pay_operands;
+unsigned mf_finder_pay(const mf_pay_operands *in);
 
 /* ---- the kit's option registry (§R4.4.1; memfn/src/options.def) --------- */
 

@@ -33,6 +33,10 @@ The spike sources are read read-only from
 build tree). Outputs go to a scratch directory the caller names (never
 `/tmp`).
 
+- `fdb1/` — step B1's instruments (lane fdb1, 2026-10-16): the reader-shadow
+  and predicted-mover censuses, the traced-harness builder, and the
+  COMMITTED predicted-mover manifest B4 is held to. Own CLAUDE.md.
+
 Revision 2 of the note (lane r17bp3, 2026-10-14) adds no instrument and
 re-runs none. It cites these transcripts as revision 1's evidence, which was
 taken on the KIT branch (R17-b built); its step plan re-counts every

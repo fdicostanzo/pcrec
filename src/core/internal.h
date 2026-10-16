@@ -125,8 +125,17 @@ typedef struct PcrecPartFacts PcrecPartFacts;
  * force-declines the whole compound family: the walk runs the complete
  * admission and ships the plain text, stamped "forced-off" exactly where
  * the default build would have shipped a row name. */
+/* [MEMFN] R17-b' B1 (r17b_prime.md §1.6 [rev3 B6], §3.1): the second
+ * harness lever, `--harness=measures=FILE`: the measurement set the compile
+ * hands the memfn kit (mf_art_begin's `mf_measures`, R-MS1) in a test build,
+ * until [MEASURE-SET] M0 gives a shipped compile one. Only the kit's trace
+ * build's SHADOW reads it before B4 (no routed row reads a set key through
+ * B3b), so an artifact under any set is byte-identical to one without: the
+ * B2/B3b gates' synthetic-set arms check exactly that. NULL: no set. */
+struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
+    const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
  * prefix beginning with it, and the archive carries exactly one global

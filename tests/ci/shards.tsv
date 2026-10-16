@@ -83,6 +83,7 @@ test-fallback-table	1	40.5	ci-measured sections.tsv
 test-memfn-guarded	1	140.1	ci-measured sections.tsv
 test-memfn-simdfloor	3	59.8	ci-measured sections.tsv
 test-memfn-rank	3	27.1	ci-measured sections.tsv
+test-memfn-finder	3	3.0	ESTIMATED (lane fdb1: about 3 s on the Linux dev box; a CI run measures it)
 test-spec-history	3	5.1	ci-measured sections.tsv
 test-plan-lint	2	3.6	ci-measured sections.tsv
 test-compound	2	286.3	ci-measured sections.tsv

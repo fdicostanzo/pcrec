@@ -8,5 +8,8 @@ SAB_DESC='RETRY'\''s re-locate (E7) loses its RAISE class: the self-check must r
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/lfl0_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S743.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                             .raise = CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER) },'
-SAB_AFTER='                             .raise = CN(CAND_NODE_VERIFIER) },   /* SABOTAGE S743 */'
+SAB_BEFORE='                             .raise = CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),'
+SAB_AFTER='                             .raise = CN(CAND_NODE_VERIFIER),   /* SABOTAGE S743 */'
+# Re-aimed by lane fdb1 (R17-b' B1, 2026-10-16): RETRY's node gained the kit-ask
+# fields after `.raise`, so its line ends in a comma; the plant still drops
+# NEXT from RETRY's raise set and nothing else (intent re-verified).

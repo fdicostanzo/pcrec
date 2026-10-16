@@ -352,7 +352,7 @@ static int define_ok(vsite *u, const char *name, const mf_site *s)
     snprintf(u->name, sizeof u->name, "%s", want);
     tb bd = { 0 };
     mf_sink sd = sink_of(&bd, 1);
-    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies);
+    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies, NULL, NULL);
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = u;
@@ -376,7 +376,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
                   char *forms)
 {
     mf_sink sd = sink_of(def, brackets), sc = sink_of(call, 0);
-    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies);
+    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = v;
@@ -388,7 +388,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
     }
     char cap[256] = "";
     mf_sink st = { .u = cap, .stamp = stamp_cap, .stamp_int = sk_stamp_int };
-    if (mf_stamps(art, &st) || mf_art_end(art)) return -1;
+    if (mf_stamps(art, &st) || mf_art_end(art, NULL)) return -1;
     if (forms) snprintf(forms, 256, "%s", cap);
     return 0;
 }

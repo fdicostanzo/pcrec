@@ -466,6 +466,36 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   nonzero (rc 5: a would-decline or a no-row selection). Floor 8 on the
   pattern file. The full census stays a slot run.
 
+### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
+
+- **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
+  TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
+  fixture drivers (`arm_fixtures.c` against `build/libpcrec.a`, and against
+  the kit's sources compiled `-DMF_TRACE`), then: A the table's listing and
+  self-check (every row's `basis` one of three and DERIVED wherever it reads
+  a derived key, its pick, its routing step, the last rows); B form hashes
+  (R-MS3: `walk`/`libc` against fixture texts, other forms UNREACHED until
+  their step); C the cards and sets (every key on-card, every set's digest
+  recomputed, `generate.py --check`); D R-MS1: every finder site under no
+  set, the full synthetic set, and each key its decision read REMOVED in
+  turn (the reading row must stop deciding; S917); E R-MS4: every key read
+  is listed; F `consulted`; G the define-time QUERY family: every fixture
+  asked then defined, the class against the define's and an independent
+  reading of the site (`--query`), and purity (plain and query renderings
+  byte-identical; S1018); H the pay rule's arithmetic grid at, below and
+  above every boundary and magnitude, expected bits computed here (S1025);
+  I the call-mode gate (`body` UNSTATED declines R1; S919); J every deny's
+  reach (UNREACHED with its step where no B1 site can reach the row).
+- `arm_fixtures.c` gains `--query` (QUERY lines on stderr), the `fd-*`
+  fixtures, `--fd-site SITE [--fd-set FILE] [--opts STR]`, `--finder-rows`,
+  `--hash` and `--pay-grid`.
+- **rows.tsv** / **row_floors.tsv**: table `fd`, 19 rows, every reach
+  `pending-site:<routing step>`; six witnessed by a fixture's SHADOW records
+  (`rows_check.py` reads a `fd` signature from `MFTRACE FD` lines), the
+  thirteen no B1 site reaches with witness kind `-` (UNREACHED with their
+  step). `ROWS_FLOOR` 39, `KIT_SRC_FLOOR` 15. A finder row's deny (`fd-r8`)
+  is not a SIMD form and needs no `simd_accept.tsv` line.
+
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** —

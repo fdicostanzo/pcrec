@@ -452,24 +452,24 @@ static const gate_contract pf_memchr_back_ct = {
 
 const arm pf_memchr_arm = {
     "pf_memchr", 1, pf_memchr_applies, pf_define, pf_memchr_use, &pf_memchr_ct, NULL,
-    0, MF_INC_STRING_H,
+    0, MF_INC_STRING_H, 1,
 };
 
 const arm pf_memchr_bounded_arm = {
     "pf_memchr", 0, pf_memchr_bounded_applies, pf_define, pf_memchr_use,
-    &pf_memchr_bounded_ct, NULL, 0, MF_INC_STRING_H,
+    &pf_memchr_bounded_ct, NULL, 0, MF_INC_STRING_H, 1,
 };
 
 const arm pf_walk_arm = {
-    "pf_walk", 0, pf_walk_applies, pf_define, pf_walk_use, &pf_walk_ct, NULL, 1, 0,
+    "pf_walk", 0, pf_walk_applies, pf_define, pf_walk_use, &pf_walk_ct, NULL, 1, 0, 0,
 };
 
 const arm pf_memchr_back_arm = {
     "pf_memchr", 1, pf_memchr_back_applies, pf_define, pf_memchr_use,
-    &pf_memchr_back_ct, NULL, 0, MF_INC_STRING_H,
+    &pf_memchr_back_ct, NULL, 0, MF_INC_STRING_H, 1,
 };
 
 const arm pf_walk_bounded_arm = {
     "pf_walk", 0, pf_walk_bounded_applies, pf_define, pf_walk_use,
-    &pf_walk_bounded_ct, NULL, 1, 0,
+    &pf_walk_bounded_ct, NULL, 1, 0, 0,
 };

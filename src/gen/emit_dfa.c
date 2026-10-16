@@ -1601,6 +1601,9 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     mf_hooks h = {
         .fn_name = req_site_fn_name, .note_tag = req_site_note_tag,
         .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+        /* R-19 (R17-b' B1): every use point's position is the activation's
+           origin (pcrec_emit_req_byte_check asserts it) */
+        .start = PCREC_MF_ORIGIN,
     };
     pre->site = s;
     pre->handle = pcrec_memfn_define(cx, DELEG_PRE, s, &h, c);
@@ -1660,6 +1663,10 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     const mf_site *s = pre->site;
     const char *from = posvar;
     PcrecMfU u = { cx, s, pre, indent };
+    if (strcmp(posvar, PCREC_MF_ORIGIN))
+        pcrec_ctx_fail(cx, 0, "internal error: the pre-check is used from `%s`, not "
+                       "the activation's origin its define states (R-19's START "
+                       "hook, src/gen/memfn_sites.h PCREC_MF_ORIGIN)", posvar);
     mf_hooks h = {
         .s = subjvar, .n = lenvar, .lo = posvar, .indent = indent,
         .on_miss = REQ_ON_MISS, .result = "handoff_position",
@@ -6537,7 +6544,7 @@ static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
                      .table_name = table ? find_table_name : NULL,
                      .fn_name = f->stem ? find_fn_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
-                     .u = u };
+                     .u = u, .start = f->start };
 }
 
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
@@ -6631,7 +6638,8 @@ static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
                         .set = f->cand.set,
                         .byte = f->cand.byte, .pos = "scan_position",
                         .subject = "subject", .len = "subject_length",
-                        .holdback = holdback, .on_miss = on_miss };
+                        .holdback = holdback, .on_miss = on_miss,
+                        .start = PCREC_MF_ORIGIN };
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -7491,7 +7499,8 @@ static PcrecFind vm_hat_find_of(const CandSel *s, const char *p, uint8_t v[256])
     return (PcrecFind){ .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
                         .table = PCREC_FIND_START_SET, .set = v,
                         .pos = "attempt_position", .subject = "subject",
-                        .len = "subject_length", .holdback = 0 };
+                        .len = "subject_length", .holdback = 0,
+                        .start = PCREC_MF_ORIGIN };
 }
 
 /* [MEMFN] R17-a THE VM HAT's ONE SITE (setfind.md §7.5, §11.1): defined
@@ -7696,11 +7705,31 @@ typedef struct {
     bool run_verified;  /* its test refuses every window lacking the run */
 } CandScan;
 
+/* [MEMFN] R17-b' B1 THE FIELDS OF THE KIT'S FORM CLASS a reader may read
+ * (`CandNode.kfields`; memfn.h mf_class): r17b_prime.md §4.5's table maps G1
+ * and R4 to `exists`/`proven0`, `landing` L4 to `exists`. */
+enum { CAND_ASKF_EXISTS = 1u, CAND_ASKF_PROVEN0 = 2u, CAND_ASKF_LIBC_FREE = 4u,
+       CAND_ASKF_INCLUDES = 8u };
+
+#ifdef PCREC_CAND_TRACE
+/* THE READER SHADOW's entry points (defined in the trace block below the slot
+ * graph, which they check against). */
+static void cand_shadow_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
+                             const CandRow *pf, const CandScan *cs, const char *arm);
+static void cand_shadow_ppm(Ctx *cx, unsigned ppm);
+static void cand_shadow_landing(Ctx *cx, const UnanchStart *us, const CandRow *pf);
+#endif
+
 static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
 {
     memset(cs, 0, sizeof *cs);
     cs->byte = -1;
-    if (!pcrec_artifact_has_dfa_scan(cx)) return;
+    if (!pcrec_artifact_has_dfa_scan(cx)) {
+#ifdef PCREC_CAND_TRACE
+        cand_shadow_scan(cx, reader, NULL, NULL, cs, "no-scan");
+#endif
+        return;
+    }
     if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) {
         CandSet acand;
         /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
@@ -7708,6 +7737,9 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
         cs->memchr_form = true;
         cs->byte = attempt_next_read(cx, reader, &acand)->u.pf.scan == PF_SCAN_BYTE
                    ? acand.byte : -1;
+#ifdef PCREC_CAND_TRACE
+        cand_shadow_scan(cx, reader, NULL, NULL, cs, "attempt");
+#endif
         return;
     }
     {
@@ -7722,11 +7754,21 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
         if (ofs_test_of(cx, &us, pf, &t)) {
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
+#ifdef PCREC_CAND_TRACE
+            cand_shadow_scan(cx, reader, &us, pf, cs, "ofs");
+#endif
         } else if (pf->u.pf.scan == PF_SCAN_BYTE) {
             CandSet sc;
             pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
             cs->memchr_form = true;
             cs->byte = sc.byte;
+#ifdef PCREC_CAND_TRACE
+            cand_shadow_scan(cx, reader, &us, pf, cs, "pf");
+#endif
+        } else {
+#ifdef PCREC_CAND_TRACE
+            cand_shadow_scan(cx, reader, &us, pf, cs, "pf");
+#endif
         }
     }
 }
@@ -7742,7 +7784,7 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
  * NONE is answered inside the MASS primitive (cardinality), never here
  * (D126 Q4). Its one reader is RETRY's `adaptive-dense` row (R4), so its
  * selection reads are RETRY's ([START-TABLE] C6, `cand_nodes`). */
-unsigned pcrec_dfa_cand_ppm(Ctx *cx)
+static unsigned dfa_cand_ppm_of(Ctx *cx)
 {
     uint8_t set[256];
     CandScan cs;
@@ -7766,6 +7808,15 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
         }
     }
     return pcrec_find_set_ppm(cx, set);
+}
+
+unsigned pcrec_dfa_cand_ppm(Ctx *cx)
+{
+    unsigned ppm = dfa_cand_ppm_of(cx);
+#ifdef PCREC_CAND_TRACE
+    cand_shadow_ppm(cx, ppm);
+#endif
+    return ppm;
 }
 
 /* Does the artifact's search route try exactly ONE start position?
@@ -8733,7 +8784,11 @@ static bool start_landing_applies(const CandSel *s)
     if (!cand_recover_asked(cx)) return false;
     if (!pcrec_fact_land_char(cx)->holds) return false;
     unanch_start(cx, &us);
-    return dfa_pf_read(cx, CAND_SLOT_RECOVER, &us)->u.pf.emit != NULL;
+    const CandRow *pf = dfa_pf_read(cx, CAND_SLOT_RECOVER, &us);
+#ifdef PCREC_CAND_TRACE
+    cand_shadow_landing(cx, &us, pf);
+#endif
+    return pf->u.pf.emit != NULL;
 }
 
 /* THE ONE SELECTION, `cand_select(RECOVER)` on the route of the artifact's
@@ -8929,6 +8984,20 @@ typedef struct CandNode {
      * reader of FIRST, carries that deny. The self-check follows an edge
      * only where the bits gathered on the way do not deny its readers. */
     uint64_t    under[CAND_NSLOTS], by[CAND_NSLOTS];
+    /* [MEMFN] R17-b' B1 THE KIT ASKS (r17b_prime.md §4.5 rules 4-5 [rev3
+     * D4]): `kask[t]`, CAND_ON(route) for each route on which a predicate of
+     * this slot ASKS the memfn kit (mf_ask) about the search site slot `t`'s
+     * selection describes; `kfields`, the CAND_ASKF_* fields of the answer
+     * (the form CLASS) those predicates read. An ask is a READ of `t`'s
+     * selection, so `kask[t]` must lie inside `reads[t]` (the self-check's
+     * `table-ask-unread`), which puts every ask edge inside the graph the
+     * `table-read-cycle` walk follows: no cycle can close through the kit.
+     * The trace build traps an ask not declared here, an ask while slot `t`'s
+     * own selection is still open on the predicate stack, and a read of a
+     * field not in `kfields` (`CANDORACLE undeclared-ask`, `ask-while-open`,
+     * `undeclared-ask-field`). */
+    unsigned    kask[CAND_NSLOTS];
+    unsigned    kfields;
 } CandNode;
 
 /* FIRST accepts LOWER as well as §1.2's HIT, because edge E2 hands it the
@@ -8993,7 +9062,12 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              /* [REQ-HANDOFF-L1] G1 reads the scan below the
                               * handoff's re-entry, which presupposes the
                               * pre-check G1 is deciding */
-                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
+                             /* [MEMFN] R17-b' B1 G1 asks the kit about the
+                              * start-search site NEXT's row describes */
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) |
+                                                          CAND_ON(CAND_ROUTE_ATTEMPT) },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
     /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members) */
@@ -9024,7 +9098,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              /* E7 re-locates into the prefilter, the step
                               * hands the next candidate: both after K49's
                               * advance */
-                             .raise = CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER) },
+                             .raise = CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
+                             /* [MEMFN] R17-b' B1 R4 asks about the same site */
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) |
+                                                          CAND_ON(CAND_ROUTE_ATTEMPT) },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
     [CAND_SLOT_BOUND]    = { "BOUND",    0,
                              CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_LOOP) },
@@ -9040,7 +9118,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
                              .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA),
                                         [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },
-                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
+                             /* [MEMFN] R17-b' B1 `landing` (L4) asks whether a
+                              * search text precedes the machine */
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .kfields = CAND_ASKF_EXISTS },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
      * relocate to LOCATE (E-FL, `rank`; E-FC, the match-here entry's search,
@@ -9649,6 +9731,12 @@ static bool cand_takes(const CandRow *r, const CandSel *s)
 static _Thread_local int cand_eval_depth;
 static _Thread_local int cand_eval_base;   /* the stack's bottom for the current walk */
 static _Thread_local CandSlot cand_eval_slot[CAND_EVAL_MAX];
+/* [MEMFN] R17-b' B1: the deny bits each running predicate's slot is being
+ * selected under, so the reader shadow's ask trap names a SELECTION (slot
+ * and bits) as the cycle walk does, never the slot alone: G1 reads NEXT
+ * under the handoff's deny while NEXT's unmasked selection is open (the
+ * [REQ-HANDOFF-L1] cycle the slot graph declares acyclic in its rows). */
+static _Thread_local uint64_t cand_eval_flags[CAND_EVAL_MAX];
 
 /* `pcrec_cand_eval_reset` (internal.h): empties the stack. */
 void pcrec_cand_eval_reset(void)
@@ -9672,11 +9760,13 @@ static void cand_nested_read(CandSlot slot, const CandSel *s)
 }
 
 /* Row `r`'s predicate, with its slot on the stack while it runs. */
-static bool cand_applies(CandSlot slot, const CandRow *r, const CandSel *s)
+static bool cand_applies(CandSlot slot, const CandRow *r, const CandSel *s,
+                         uint64_t flags)
 {
     bool a;
     if (cand_eval_depth >= CAND_EVAL_MAX)
         cand_oracle_fail("table-read-recursion", cand_nodes[slot].name, "-", r->c.name);
+    cand_eval_flags[cand_eval_depth] = flags;
     cand_eval_slot[cand_eval_depth++] = slot;
     a = r->c.applies(s);
     cand_eval_depth--;
@@ -9684,7 +9774,7 @@ static bool cand_applies(CandSlot slot, const CandRow *r, const CandSel *s)
 }
 #else
 #define cand_nested_read(slot, s) ((void)0)
-#define cand_applies(slot, r, s) ((r)->c.applies(s))
+#define cand_applies(slot, r, s, flags) ((r)->c.applies(s))
 #endif
 
 static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flags)
@@ -9696,7 +9786,7 @@ static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flag
         if (pcrec_flags_has(flags, r->c.deny)) continue;
         if (!(r->routes & CAND_ON(s->route))) continue;
         if ((CN(slot) & CAND_HANDED_SLOTS) && !cand_takes(r, s)) continue;
-        if (cand_applies(slot, r, s)) return r;
+        if (cand_applies(slot, r, s, flags)) return r;
     }
     return NULL;
 }
@@ -9902,6 +9992,13 @@ static void cand_rows_selfcheck(void)
                 cand_oracle_fail("table-read-unasked", cand_nodes[sl].name,
                                  cand_nodes[t].name, "selfcheck");
         }
+    /* [MEMFN] R17-b' B1 an ask is a read: every kit-ask edge lies inside the
+       read graph the cycle walk below follows */
+    for (int sl = 0; sl < CAND_NSLOTS; sl++)
+        for (int t = 0; t < CAND_NSLOTS; t++)
+            if (cand_nodes[sl].kask[t] & ~cand_nodes[sl].reads[t])
+                cand_oracle_fail("table-ask-unread", cand_nodes[sl].name,
+                                 cand_nodes[t].name, "selfcheck");
     for (int sl = 0; sl < CAND_NSLOTS; sl++) {
         int ps[64];
         uint64_t pm[64];
@@ -10211,6 +10308,234 @@ static void cand_read_hit(CandSlot reader, CandSlot slot, const CandSel *s,
 }
 #define CAND_READ_HIT(reader, slot, sel, row, site)                           \
     cand_read_hit((reader), (slot), (sel), (row), (site))
+
+/* ---- [MEMFN] R17-b' B1 THE READER SHADOW (r17b_prime.md §4.5 rules 4-6) ----
+ *
+ * pcrec's readers of the scan FORM (G1's single-byte dominance, R4's re-seed
+ * density, `landing`'s L4) are computed TWICE in this trace build: from
+ * their own NEXT row, as they are emitted from, and from the memfn kit's
+ * define-time QUERY (`mf_ask`, the form CLASS of the start-search site the
+ * row describes: `exists`, `proven0`), and asserted equal. B2 switches the
+ * readers to the class and retires this shadow; until then it proves the
+ * switch is zero-mover, over every population the trace build compiles.
+ *
+ * THE SITE ASKED is the one the row's emitter defines (`find_site` over the
+ * row's scan: `pf_find_of`'s table/byte/set, R17-a's stem on a set row, the
+ * activation's origin), in a SCRATCH art (the query is pure; the compile's
+ * own art is never created by a read). Its SCOPE is R17-b''s (§1.1): the
+ * one-byte and set prefilter FINDs (PF_SCAN_BYTE, PF_SCAN_SET) are asked and
+ * ASSERTED; the offset-set and run-pinned FUNCs (PF_SCAN_OFS, R-18's) and the
+ * handoff landmark are out of the delivery and RECORDED as such; ENG_ATTEMPT's
+ * predecessor seek (MLINE, a context stop with no span 0) is asked and its
+ * disagreement RECORDED, not asserted: the class proves no byte at offset
+ * 0 there while G1/R4 read the predecessor byte (fdb1_report.md F-B1-3).
+ *
+ * THE TRAPS (§4.5 rules 4-5, [rev3 D4]; sabotage S1019): an ask must be a
+ * declared edge of the slot graph (`CandNode.kask`), the selection that fixes
+ * the site's description (NEXT) must be CLOSED (off the predicate stack), and
+ * a reader reads only the class fields it declares (`kfields`).
+ *
+ * THE RECORD. With PCREC_MF_ASK_TRACE set in the environment each reader
+ * prints `MFASK<TAB>reader<TAB>arm<TAB>verdict` (agree, disagree,
+ * out-of-scope): the reach census of tests/memfn/run_finder.sh. Unset, it
+ * prints nothing, so the CANDTRACE stream (emit_sweep --trace) is unchanged. */
+
+/* The last class the scan shadow asked, for R4's density shadow, which runs
+ * right after its own dfa_cand_scan(RETRY) (pcrec_dfa_cand_ppm). */
+static _Thread_local struct {
+    const Ctx *cx;
+    int        asked;           /* 1: `cls` holds the asked class          */
+    const char *arm;
+    mf_class   cls;
+} cand_shadow_last;
+
+/* The ask of reader `reader` about the site slot `site_slot`'s selection
+ * describes, on `route`, under the compile's deny bits `flags`: a declared
+ * edge, and the selection fixing the description (the slot under `flags`
+ * plus the reader's own `under` bits, the selection `cand_read` made) is
+ * CLOSED: no predicate of that slot is running under those bits. */
+static void cand_ask_check(CandSlot reader, CandSlot site_slot, CandRoute route,
+                           uint64_t flags)
+{
+    uint64_t want = flags | cand_nodes[reader].under[site_slot];
+    if (!(cand_nodes[reader].kask[site_slot] & CAND_ON(route)))
+        cand_oracle_fail("undeclared-ask", cand_nodes[reader].name,
+                         cand_nodes[site_slot].name, CAND_ROUTE_NAME(route));
+    for (int k = 0; k < cand_eval_depth; k++)
+        if (cand_eval_slot[k] == site_slot && cand_eval_flags[k] == want)
+            cand_oracle_fail("ask-while-open", cand_nodes[reader].name,
+                             cand_nodes[site_slot].name, CAND_ROUTE_NAME(route));
+}
+
+/* Reader `reader` reads field `f` of the class. */
+static void cand_ask_field(CandSlot reader, unsigned f)
+{
+    if (!(cand_nodes[reader].kfields & f))
+        cand_oracle_fail("undeclared-ask-field", cand_nodes[reader].name,
+                         f == CAND_ASKF_EXISTS ? "exists" : f == CAND_ASKF_PROVEN0
+                         ? "proven0" : "class", "reader-shadow");
+}
+
+static void cand_shadow_note(const char *reader, const char *arm, const char *verdict)
+{
+    /* a trace build only; read per record, so the library keeps no
+     * function-local state (coding_guide.md §1.5) */
+    if (getenv("PCREC_MF_ASK_TRACE")) fprintf(stderr, "MFASK\t%s\t%s\t%s\n", reader, arm, verdict);
+}
+
+/* Asks the kit for the class of the PF site row `pf` describes (DFA route):
+ * 1 and *cls, or 0 for a scan outside the delivery's scope. */
+static int cand_ask_pf(Ctx *cx, CandSlot reader, const UnanchStart *us,
+                       const CandRow *pf, mf_class *cls)
+{
+    if (pf->u.pf.scan != PF_SCAN_BYTE && pf->u.pf.scan != PF_SCAN_SET) return 0;
+    cand_ask_check(reader, CAND_SLOT_NEXT, cand_route_of(cx), cx->opt->flags);
+    CandSet sc;
+    {   /* the scanned set, derived quietly: a shadow is not a read */
+        int base = cand_eval_base;
+        pcrec_cand_trace_quiet++;
+        cand_eval_base = cand_eval_depth;
+        pf_scan_set_of(cx, &cx->job->dfa, us, pf, &sc);
+        cand_eval_base = base;
+        pcrec_cand_trace_quiet--;
+    }
+    bool byte = pf->u.pf.scan == PF_SCAN_BYTE;
+    uint8_t *set = pcrec_arena_alloc(&cx->arena, 256);
+    memcpy(set, sc.set, 256);
+    PcrecFind fd = { .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
+                     .table = byte ? PCREC_FIND_MEMCHR
+                            : pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
+                            : PCREC_FIND_CAN_BEGIN,
+                     .set = set, .byte = sc.byte, .pos = "scan_position",
+                     .subject = "subject", .len = "subject_length", .holdback = 0,
+                     .on_miss = byte ? "return 0;" : NULL,
+                     .stem = byte ? NULL : "pcrec_shadow_pf", .start = PCREC_MF_ORIGIN };
+    mf_site *site = find_site(&fd);
+    mf_hooks h;
+    PcrecMfU u;
+    find_hooks(&fd, site, NULL, &h, &u);
+    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
+    ma->u = &cx->arena;
+    ma->alloc = pcrec_memfn_arena_alloc;
+    const mf_measures *ms = cx->emit_in && cx->emit_in->harness
+                          ? cx->emit_in->harness->measures : NULL;
+    mf_art *art = mf_art_begin(ma, cx->opt->prefix, pcrec_memfn_policy(cx->opt->flags),
+                               pcrec_memfn_denies(cx->opt->flags), ms, NULL);
+    if (!art || mf_ask(art, site, &h, cls))
+        cand_oracle_fail("reader-shadow-ask-refused", cand_nodes[reader].name, pf->tok,
+                         "reader-shadow");
+    return 1;
+}
+
+static unsigned popcount256_u8(const uint8_t *b)
+{
+    unsigned n = 0;
+    for (int i = 0; i < 32; i++) n += (unsigned)__builtin_popcount(b[i]);
+    return n;
+}
+
+/* G1's and R4's scan reading, from the class: the one byte every candidate
+ * is proven to begin with, else -1. */
+static int cand_class_byte(CandSlot reader, const mf_class *cls)
+{
+    cand_ask_field(reader, CAND_ASKF_EXISTS);
+    cand_ask_field(reader, CAND_ASKF_PROVEN0);
+    if (!cls->exists || popcount256_u8(cls->proven0) != 1) return -1;
+    for (int b = 0; b < 256; b++)
+        if (cls->proven0[b >> 3] >> (b & 7) & 1) return b;
+    return -1;
+}
+
+static void cand_shadow_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
+                             const CandRow *pf, const CandScan *cs, const char *arm)
+{
+    const char *rn = cand_nodes[reader].name;
+    mf_class cls;
+    cand_shadow_last.cx = cx;
+    cand_shadow_last.asked = 0;
+    cand_shadow_last.arm = arm;
+    if (!strcmp(arm, "no-scan")) {
+        /* no site: nothing searched, nothing proven */
+        cand_shadow_note(rn, arm, cs->byte < 0 && !cs->memchr_form ? "agree" : "disagree");
+        if (cs->byte >= 0)
+            cand_oracle_fail("reader-shadow-differs", rn, arm, "reader-shadow");
+        return;
+    }
+    if (!strcmp(arm, "ofs")) {
+        cand_shadow_note(rn, arm, "out-of-scope");
+        return;
+    }
+    if (!strcmp(arm, "attempt")) {
+        /* MLINE's context stop: asked, recorded, not asserted (F-B1-3) */
+        cand_ask_check(reader, CAND_SLOT_NEXT, CAND_ROUTE_ATTEMPT, cx->opt->flags);
+        cand_shadow_note(rn, arm, cs->byte < 0 ? "agree" : "disagree");
+        return;
+    }
+    if (!cand_ask_pf(cx, reader, us, pf, &cls)) {
+        cand_shadow_note(rn, pf->u.pf.scan == PF_SCAN_LANDMARK ? "landmark" : "none",
+                         cs->byte < 0 ? "agree" : "out-of-scope");
+        return;
+    }
+    cand_shadow_last.asked = 1;
+    cand_shadow_last.cls = cls;
+    int b = cand_class_byte(reader, &cls);
+    bool memchr_form = b >= 0;
+    bool agree = b == cs->byte && memchr_form == cs->memchr_form && !cs->run_verified;
+    cand_shadow_note(rn, pf->u.pf.scan == PF_SCAN_BYTE ? "pf-byte" : "pf-set",
+                     agree ? "agree" : "disagree");
+    if (!agree)
+        cand_oracle_fail("reader-shadow-differs", rn, pf->tok, "reader-shadow");
+}
+
+static void cand_shadow_ppm(Ctx *cx, unsigned ppm)
+{
+    if (cand_shadow_last.cx != cx) return;
+    if (!cand_shadow_last.asked) {
+        /* the arms with no site: `no-scan` prices every position */
+        if (!strcmp(cand_shadow_last.arm, "no-scan")) {
+            cand_shadow_note("RETRY-ppm", "no-scan", ppm == 1000000u ? "agree" : "disagree");
+            if (ppm != 1000000u)
+                cand_oracle_fail("reader-shadow-differs", "RETRY", "no-scan", "reader-shadow");
+        } else {
+            cand_shadow_note("RETRY-ppm", cand_shadow_last.arm, "out-of-scope");
+        }
+        return;
+    }
+    const mf_class *cls = &cand_shadow_last.cls;
+    cand_ask_field(CAND_SLOT_RETRY, CAND_ASKF_EXISTS);
+    cand_ask_field(CAND_SLOT_RETRY, CAND_ASKF_PROVEN0);
+    unsigned want = 1000000u;
+    if (cls->exists && popcount256_u8(cls->proven0) < 256) {
+        uint8_t set[256];
+        for (int b = 0; b < 256; b++) set[b] = cls->proven0[b >> 3] >> (b & 7) & 1;
+        want = pcrec_find_set_ppm(cx, set);
+    }
+    cand_shadow_note("RETRY-ppm", cand_shadow_last.arm, want == ppm ? "agree" : "disagree");
+    if (want != ppm)
+        cand_oracle_fail("reader-shadow-differs", "RETRY", "ppm", "reader-shadow");
+}
+
+static void cand_shadow_landing(Ctx *cx, const UnanchStart *us, const CandRow *pf)
+{
+    mf_class cls;
+    bool has = pf->u.pf.emit != NULL;
+    if (pf->u.pf.scan == PF_SCAN_NONE) {
+        /* no site: no search text precedes the machine */
+        cand_shadow_note("RECOVER", "none", !has ? "agree" : "disagree");
+        if (has) cand_oracle_fail("reader-shadow-differs", "RECOVER", pf->tok, "reader-shadow");
+        return;
+    }
+    if (!cand_ask_pf(cx, CAND_SLOT_RECOVER, us, pf, &cls)) {
+        cand_shadow_note("RECOVER", pf->u.pf.scan == PF_SCAN_OFS ? "ofs" : "landmark",
+                         "out-of-scope");
+        return;
+    }
+    cand_ask_field(CAND_SLOT_RECOVER, CAND_ASKF_EXISTS);
+    bool agree = (cls.exists != 0) == has;
+    cand_shadow_note("RECOVER", pf->u.pf.scan == PF_SCAN_BYTE ? "pf-byte" : "pf-set",
+                     agree ? "agree" : "disagree");
+    if (!agree) cand_oracle_fail("reader-shadow-differs", "RECOVER", pf->tok, "reader-shadow");
+}
 #else
 #define CAND_READ_HIT(reader, slot, sel, row, site) ((void)(reader), (void)(site))
 #endif /* PCREC_CAND_TRACE */
@@ -13177,7 +13502,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                          .offset = -cand.offset, .floor = "start",
                          .pos = "start", .subject = "subject",
                          .len = "subject_length", .holdback = 0,
-                         .on_miss = "break;" };
+                         .on_miss = "break;", .start = PCREC_MF_ORIGIN };
         pcrec_emit_find(c, "            ", &fd);
         pcrec_sb_puts(c, "        }\n");
     }

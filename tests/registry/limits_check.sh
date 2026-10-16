@@ -381,7 +381,11 @@ done <<< "$anchored"
 #     [START-LANDING] SL2 — the first of the four RECOVER action tags
 #     `CandRecover.act` carries (SEARCH_FROM / END_MINUS_W / LANDING /
 #     REVERSE), CAND_FIN_REPORT's shape on the RECOVER slot: its `= 1`
-#     reserves 0 for a zero-initialised payload. A tag ordinal).
+#     reserves 0 for a zero-initialised payload. A tag ordinal), and
+#     CAND_ASKF_EXISTS / _PROVEN0 / _LIBC_FREE / _INCLUDES (src/gen/emit_dfa.c,
+#     [MEMFN] R17-b' B1, lane fdb1 — the bits of `CandNode.kfields`, which
+#     class fields a slot's kit ask may read: a bit set, 1/2/4/8 forced by
+#     being one bit each; nothing is measured against them).
 #     These are numbers nothing can be measured against by construction.
 #   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
 #     EW_EOL_SLACK (src/facts/endwin.c, [OPT-ENDWIN]). It is how many bytes
@@ -581,6 +585,10 @@ PCREC_FIND_NBUNDLES
 SCAN_TEST_CALLS
 EM_ANY
 CAND_FIN_REPORT
+CAND_ASKF_EXISTS
+CAND_ASKF_PROVEN0
+CAND_ASKF_LIBC_FREE
+CAND_ASKF_INCLUDES
 CRA_SEARCH_FROM
 PCREC_PART_NEED_SEARCH
 PCREC_PART_NEED_MATCH_CAPS

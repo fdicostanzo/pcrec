@@ -138,6 +138,24 @@ MF_CLASS(UNSAT,       "a RUN term with a run byte outside its mask (Q-G2-13: nev
 MF_CLASS(PORTABLE,    "policy carries MF_P_PORTABLE_ONLY (-fmemfn-simd not forced)")
 MF_CLASS(INLOOP,      "policy carries MF_P_INLOOP (D91 budget 2)")
 MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by nothing yet)")
+/* the finder table's gate fields (R17-b' B1, MF_SITE_ABI 12; r17b_prime.md
+   §1.2 [rev3 D1, A22]): the call mode (R-19), the site's consumer kind
+   (§4.3; STATED by pcrec from B2, PR-3), the layer variant the finder walk
+   evaluates and the decided span's need. These twelve classes fill the
+   class space to its 64-bit mask (kit.h's _Static_assert): the next class
+   needs the mask widened first */
+MF_CLASS(ONESHOT,     "mf_site.body MF_BODY_ONESHOT: one call answers one search")
+MF_CLASS(PARAM,       "mf_site.body MF_BODY_PARAM: a shared body, M a run-time parameter (reserved)")
+MF_CLASS(DFA_SCAN,    "site kind: a DFA body's forward scan")
+MF_CLASS(DFA_HAT,     "site kind: a seeded DFA scan that re-seeds where the skip moved")
+MF_CLASS(HYB_PF,      "site kind: a VM hybrid's inner DFA prefilter")
+MF_CLASS(VM_ATTEMPT,  "site kind: the VM attempt loop (budgeted)")
+MF_CLASS(DFA_ATTEMPT, "site kind: ENG_ATTEMPT's attempt loop (MLINE's seek, the attempt entry)")
+MF_CLASS(L_OFF,       "the finder walk's layer variant: SIMD-off")
+MF_CLASS(L_W16,       "the finder walk's layer variant: the 16-byte SIMD layer")
+MF_CLASS(L_W32,       "the finder walk's layer variant: the 32-byte SIMD layer")
+MF_CLASS(N_REQUIRED,  "the decided span's need: MF_REQUIRED")
+MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -236,6 +254,30 @@ MF_FIELD(decl_point, MF_PH_DEFINE, OBLIG, cl_decl_point,
          "OBLIG: W4, site.decl_point (MF_SITE_ABI 11, setfind.md §7.1), a HOST CAPABILITY set by "
          "every builder: YES, pcrec calls mf_locals once at a dominating point. A row may use it "
          "or not; every row born before R17-a keeps no storage and serves MF_ANY")
+MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
+         CM(ONESHOT) | CM(PARAM) | CM(OTHER),
+         "site.body, the CALL MODE (R-19, MF_SITE_ABI 12): ONESHOT or PARAM (reserved: refused "
+         "by site_check). 0 is UNSTATED, as a hook ID's 0 is (so HOOK): a finder row that reads "
+         "M USES it and declines an unstated one (R1). Every row born before B1 renders the "
+         "same text for any mode and serves MF_ANY")
+
+/* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
+
+MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
+         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) | CM(OTHER),
+         "the site's consumer kind (r17b_prime.md §4.3), read in the finder walk only (fd_facts; "
+         "elsewhere unstated): pcrec STATES it from B2 (PR-3), so at B1 every site reads "
+         "UNSTATED and a row that reads the kind (D1, D1c, D1w) declines (R1). There is no ANY "
+         "kind ([rev3 A22]): a row serving every kind serves every kind class and does not USE "
+         "the field")
+MF_FIELD(layer, MF_PH_DEFINE, VALUE, cl_layer,
+         CM(L_OFF) | CM(L_W16) | CM(L_W32) | CM(OTHER),
+         "the layer variant the finder walk evaluates (a fact of the walk's input, not of the "
+         "site; read in the finder walk only, unstated elsewhere)")
+MF_FIELD(need, MF_PH_DEFINE, VALUE, cl_need,
+         CM(N_REQUIRED) | CM(N_OPTIONAL) | CM(OTHER),
+         "the need of the span the finder row decides (span 0's, or a presence span's; read in "
+         "the finder walk only, unstated elsewhere)")
 
 /* ---- the fields: mf_hooks ------------------------------------------------ */
 
@@ -320,6 +362,12 @@ MF_FIELD(fold, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_fold,
          "FOLD_STMT), as ruling F1 reads s/n/lo. OTHER where the site's "
          "fold_kind is F_NONE (a fold stated where the fact says exact: no row serves it) or "
          "where the text has no `@` or no lexical shape")
+MF_FIELD(start, MF_PH_DEFINE, HOOK, cl_start,
+         CM(OTHER),
+         "THE START HOOK (R-19, MF_SITE_ABI 12): the activation's origin text, N's other operand. "
+         "Read at define (pcrec states it there and at its mf_locals, which binds it); a finder "
+         "row that reads N USES it and declines an unstated one (R1). Every row born before B1 "
+         "reads no START and serves MF_ANY")
 MF_FIELD(cursor, MF_PH_USE, HOOK, cl_cursor,
          CM(IDENT) | CM(OTHER),
          "ADVANCE: the cursor lvalue's text (RULED Q-G2-14: a NULL cursor is accepted at W = 1; "

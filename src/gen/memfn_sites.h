@@ -41,6 +41,11 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
 
 /* ---- the attempt's kit state, and the adapters --------------------------- */
 
+/* The kit's arena op over a pcrec Arena (`u`): the attempt's own art and the
+ * reader shadow's scratch arts (src/gen/emit_dfa.c, R17-b' B1) allocate
+ * through it. */
+void *pcrec_memfn_arena_alloc(void *u, size_t n);
+
 /* The attempt's mf_art, begun on first ask (one per Job attempt, so the
  * size ladder's re-emission starts clean). */
 mf_art *pcrec_memfn_art(Ctx *cx);
@@ -154,6 +159,17 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
  * search, its NULL test and the position store (the hit is a pointer inside
  * the kit's text); the guards around it, and what a miss does, are the
  * caller's (`on_miss`, the bounded clamp, the guard after a walk). */
+/* [MEMFN] R17-b' B1 THE ACTIVATION'S ORIGIN (R-19's START hook; r17b_prime.md
+ * §2.1 [rev3 A1]): the text every function holding a delegated start-search
+ * site names its activation's start by, its `size_t search_from` parameter
+ * (the DFA `_search` body and its rev-end relocate, which reassigns it
+ * before the scan; the VM `_search_run`; the hybrid's static `_prefilter`;
+ * ENG_ATTEMPT's body; the pre-check's three use points). Stated on every
+ * such site (`PcrecFind.start`, the pre-check's define); the pre-check's use
+ * asserts its position IS this text, so the stated fact cannot drift from
+ * the emitted one unseen. */
+#define PCREC_MF_ORIGIN "search_from"
+
 typedef enum {
     PCREC_FIND_MEMCHR = 0,      /* the memchr form: no table, `byte`          */
     PCREC_FIND_CAN_BEGIN,       /* `<p>_can_begin_match` (byte-class rows)    */
@@ -191,6 +207,9 @@ typedef struct {
                            * rows, the VM hat), which then also offers its
                            * declaration point (W4); NULL on a FIND emitted
                            * in one call (the byte forms, MLINE)            */
+    const char *start;    /* [MEMFN] R17-b' B1 the activation's origin text
+                           * (R-19's START hook, PCREC_MF_ORIGIN), stated by
+                           * every builder                                   */
 } PcrecFind;
 /* The memchr form's statement declares `const void *q`, the hit or NULL, in
  * the caller's block; nothing after it reads `q`. */
