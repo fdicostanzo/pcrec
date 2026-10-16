@@ -3842,3 +3842,9 @@ S901 (CMP-11, `^(?<=xy)a|b$`: as built every admitted P and Q stamp the same
 `(?:^(a)|b)(?1)`). S893 is detected by the compound arm only: the plant makes
 the part refuse, the row declines at A2 and every answer stays right. S627-S636
 were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.
+
+**S981-S982 (lane sweeparm, 2026-10-16, [SWEEPARM]):** `emit_sweep.py`'s
+`opt_argv` drops `-fmemfn-simd` (S981) or `-fcomments` (S982) and nothing else,
+so the new DIFFER_PINS arms read byte-identical to their base. Arm `emitsweep`
+(`scripts/tests/emit_sweep.py.test`'s `--arms start` over the manifests),
+DETECTED 1fail/43pass each at 1adc371b9.

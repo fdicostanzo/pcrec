@@ -178,7 +178,8 @@ OPTIONS
   --extra-base=ARGS      the arm's base (default nothing; `-e utf8` is the
                         utf8 base), also on every stream.
   --arms start           every DIFFER_PINS arm (the start-family deny arms at
-                        byte and utf8, plain `-e utf8`, `-i`, the null arm),
+                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd`,
+                        `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
   --patterns-file FILE   constructed witnesses (one per line, --list-source
@@ -464,6 +465,19 @@ DIFFER_PINS = {
     ("byte", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("byte", "-fno-length-prune", "c-default"): (449, 112, b"(a)*b"),
     ("byte", "-fno-length-prune", "c-vm"): (678, 0, b"(a)*b"),
+    # the two non-start-family flags, the ONLY floors that let a SIMD-on or a
+    # comments-on zero-mover sweep run ([SWEEPARM]): neither moves a start stamp
+    # (stamp floor 0). MEASURED, not estimated, at lane/memfn-fd 39f13e397 (main
+    # 063b4a4b4 + docs, no code differs): `--extra=-fmemfn-simd` /
+    # `--extra=-fcomments`, one binary, streams c-default,c-vm, 4,624 distinct
+    # patterns. -fmemfn-simd renders a guarded helper only on a few forms
+    # (`(?i)cat` is the shortest); -fcomments adds the artifact's prose to
+    # EVERY compiled pattern, so its floor is "nearly all" and the manifest `a`
+    # (its commentary diff is the orientation + legend blocks) is the witness.
+    ("byte", "-fmemfn-simd", "c-default"): (20, 0, b"(?i)cat"),
+    ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
+    ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
+    ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
     # the same arms, utf8 base
     ("utf8", "-fno-offset-skip", "c-default"): (604, 604, b"SS"),
     ("utf8", "-fno-offset-skip", "c-vm"): (0, 0, None),
@@ -493,6 +507,10 @@ DIFFER_PINS = {
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
+    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
+    ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
