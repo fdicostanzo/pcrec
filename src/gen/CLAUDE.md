@@ -151,7 +151,7 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   one-byte FIND routed. Every PF site states its candidate set as a SET term
   at EVERY count with its table OFFERED (`PcrecFind.table`; PR-1:
   `PCREC_FIND_NO_TABLE` is MLINE's context stop only), its consumer kind
-  (`PcrecFind.kind`, PR-3: DFA_SCAN, DFA_HAT, HYB_PF via `pf_find_kind`;
+  (`PcrecFind.kind`, PR-3: DFA_SCAN, DFA_HAT, HYB_PF, in `pf_site_of`;
   VM_ATTEMPT on the VM hat; DFA_ATTEMPT on MLINE; the PRE composite's by
   `req_site_kind`) and its miss/move behaviour (PR-2: an unbounded site's
   leaving `on_miss`, a bounded one's `len - 1`, the DFA hat's re-seed as the
@@ -162,7 +162,13 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   is emitted iff the kit's form reads it. G1 (`dfa_cand_scan`), R4
   (`dfa_cand_ppm_of`) and L4 (`start_landing_applies`) read the kit's
   define-time QUERY (`cand_ask`, `cand_pf_site`): `proven0` for a PF site,
-  `proven_prev` for ENG_ATTEMPT's context stop (F-B1-3); the offset-set,
+  `proven_prev` for ENG_ATTEMPT's context stop (F-B1-3). The site a reader
+  asks about and the site the define writes come from ONE constructor each
+  (`pf_site_of` for PF, read by `pf_find_of` and `cand_pf_site`;
+  `mline_find_of` for MLINE, read by `emit_attempt` and `dfa_cand_scan`), and
+  the trace build holds the class a reader consumed equal to the define's
+  report (`cand_asked_hold`, `Job.cand_asked`; S1085; lane fdb2fix, review
+  item 2), with `one_byte` held to a PF_SCAN_BYTE row; the offset-set,
   run-pinned and landmark rows keep their row reading (outside the
   delivery). The B1 reader shadow is retired; its traps (`cand_ask_check`,
   `cand_ask_field`, `CAND_ASKF_PROVEN_PREV`) stay in the trace build. PR-9's

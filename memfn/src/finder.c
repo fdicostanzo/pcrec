@@ -945,6 +945,15 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     q.ff.kind = kind_cl(s->site_kind);
     q.ff.layer = CL_L_OFF;
     find_facts(&q);
+    /* An UNSTATED span need never reaches a routed decision: pred_kinds
+       refuses the site before any selection (PR-4). Were one to arrive, the
+       mapping below would decide REQUIRED for a fact nobody stated (a silent
+       default), so it is REFUSED here instead: a row named with no arm is the
+       caller's refusal. */
+    if (q.span && q.span->need == MF_NEED_UNSTATED) {
+        *row = "?need";
+        return NULL;
+    }
     q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     gate_in in = { s, def, NULL, &q.ff };
     gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet };

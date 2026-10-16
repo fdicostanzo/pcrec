@@ -10,7 +10,7 @@ SAB_ID="S1082-walk-post-test-dropped"
 SAB_FILE="memfn/src/pffind.c"
 SAB_SUITES="memfnfinder"
 SAB_DESC="pf_walk no longer writes the post-test an empty-MISS site needs (KW-3)"
-SAB_DOC_FIGURE="HAND-MEASURED by lane fdb2: see docs/dev/lanes/fdb2_report.md (the solo mech run of this row)."
+SAB_DOC_FIGURE="PENDING: lane fdb2fix's solo mech run of this row is owed (docs/dev/lanes/fdb2_report.md §10); no figure is measured yet."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (r->site.empty == MF_EMPTY_MISS)

@@ -6517,17 +6517,18 @@ static mf_site *find_site(const PcrecFind *f)
                        "row %s (src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id);
     if (back && (table || f->holdback || f->offset != -1 || !f->floor))
-        pcrec_ctx_fail(cx, 0, "internal error: a FIND below its candidate is the "
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND below its candidate is the "
                        "unbounded memchr form at -1 with a floor (src/gen/emit_dfa.c, "
-                       "find_site)");
+                       "find_site)", pcrec_deleg_sites[f->site].id);
     if (!back && !table)
-        pcrec_ctx_fail(cx, 0, "internal error: a PF FIND offers no table (R17-b' "
-                       "B2, PR-1: the candidate set at every count) (src/gen/emit_dfa.c, "
-                       "find_site)");
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND at its candidate offers no "
+                       "table (R17-b' B2, PR-1: the candidate set at every count) "
+                       "(src/gen/emit_dfa.c, find_site)", pcrec_deleg_sites[f->site].id);
     if (!f->kind || !f->holdback != (f->on_miss != NULL) || (f->moved && !f->holdback))
-        pcrec_ctx_fail(cx, 0, "internal error: a FIND states no consumer kind, an "
-                       "on_miss that is not its unbounded miss, or a moved hook off "
-                       "a bounded site (src/gen/emit_dfa.c, find_site)");
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND (consumer kind %u) states no "
+                       "consumer kind, an on_miss that is not its unbounded miss, or a "
+                       "moved hook off a bounded site (src/gen/emit_dfa.c, find_site)",
+                       pcrec_deleg_sites[f->site].id, (unsigned)f->kind);
     mf_site *s = pcrec_memfn_site(cx, f->site);
     s->form = MF_FORM_STMT;
     s->op = MF_OP_FIND;
@@ -6654,16 +6655,70 @@ static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
 }
 #endif
 
-/* The consumer kind of axis B's FIND (PR-3, r17b_prime.md §4.3): the DFA hat
- * (a row with its own scanned set, `scan_set`, re-seeds where the skip moved),
- * a VM hybrid's inner prefilter (the VM finishes: `cand_finish_of`), or a DFA
- * body's forward scan. A DFA hat inside a hybrid is the hat: the re-seed is
- * the consumer's distinguishing fact. */
-static uint8_t pf_find_kind(const DfaForm *f)
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B2 (review item 2) THE ASKED CLASS, HELD TO THE DEFINE (trace
+ * build only): the class the readers' query (`cand_ask`: G1, R4, L4)
+ * consumed for this attempt's start-search site, one per DELEG_SITES row it
+ * asks (PF, MLINE), and the class that site's define reports (`mf_defined`;
+ * for MLINE's one-call emit, the kit's own query of its site), held equal in
+ * whichever order the two arrive. `pf_site_of` and `mline_find_of` make the
+ * two one site by construction; this is the control that shares none of
+ * their source, since it compares the kit's ANSWERS: a reader fed another
+ * fact (a set, a row, a bound) is caught where the artifact is written. Two
+ * asks of one site must agree too. Compared over the fields a reader may
+ * declare (CAND_ASKF_*). Per attempt: `Job.cand_asked`. */
+struct CandAsked { bool held[2][2]; mf_class cls[2][2]; };   /* [site][asked, defined] */
+
+/* Whether two classes agree on every field a reader may declare. */
+static bool cand_class_eq(const mf_class *a, const mf_class *b)
 {
-    if (f->pf->u.pf.scan_set) return MF_SK_DFA_HAT;
-    return cand_finish_of(f->cx) == CAND_ROUTE_VM ? MF_SK_HYB_PF : MF_SK_DFA_SCAN;
+    return a->exists == b->exists && a->libc_free == b->libc_free &&
+           a->includes == b->includes &&
+           !memcmp(a->proven0, b->proven0, sizeof a->proven0) &&
+           !memcmp(a->proven_prev, b->proven_prev, sizeof a->proven_prev);
 }
+
+/* Records `cls` for `site` (PF or MLINE) as a reader's ask (`defined` 0) or
+ * its define's report (1), and fails where it differs from either class
+ * already held for that site. */
+static void cand_asked_hold(Ctx *cx, DelegSite site, int defined, const mf_class *cls)
+{
+    Job *job = cx->job;
+    unsigned i = site == DELEG_MLINE;
+    if (!job->cand_asked) job->cand_asked = pcrec_arena_alloc(&cx->arena, sizeof *job->cand_asked);
+    struct CandAsked *a = job->cand_asked;
+    for (int k = 0; k < 2; k++)
+        if (a->held[i][k] && !cand_class_eq(&a->cls[i][k], cls))
+            pcrec_fit_invariant_fail(k == defined ? "asked-class-twice" : "asked-class-differs",
+                                     defined ? "the define's class" : "a reader's asked class",
+                                     k ? "the class the site's define reports"
+                                       : "the class a reader already consumed",
+                                     pcrec_deleg_sites[site].id);
+    a->held[i][defined] = true;
+    a->cls[i][defined] = *cls;
+}
+
+/* MLINE's define is one call (`pcrec_emit_find`): the kit's own query of the
+ * site it is about to write stands for its define (the kit holds the two to
+ * one class, §4.5 rule 2). */
+static void cand_asked_verify_emit(Ctx *cx, const PcrecFind *fd)
+{
+    mf_class cls;
+    mf_hooks h;
+    PcrecMfU u;
+    mf_site *site = find_site(fd);
+    find_hooks(fd, site, NULL, &h, &u);
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls))
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the %s site "
+                       "it is about to write", pcrec_deleg_sites[fd->site].id);
+    cand_asked_hold(cx, fd->site, 1, &cls);
+}
+#define CAND_ASKED_VERIFY_EMIT(cx, fd) cand_asked_verify_emit((cx), (fd))
+#else
+#define CAND_ASKED_VERIFY_EMIT(cx, fd) ((void)(cx), (void)(fd))
+#endif
+
+static const DfaDir dfa_dir_forward;
 
 /* The DFA hat's CONDITIONAL re-seed, as the moved-candidate statement the
  * kit runs where the skip moved past its entry position (PR-2): the landing
@@ -6675,24 +6730,50 @@ static const char *pf_moved_reseed_of(Ctx *cx, const char *p, const DfaDir *dir)
                      dir->statev, p, dir->c.name, p, dir->c.name, dir->posv);
 }
 
-/* The description of the FIND over axis B's candidate set: the set and the
- * table the ROW names OFFERED at every count (R17-b' B2, PR-1; the DFA hat's
- * `start_bytes`, else `can_begin_match`), the scan position and the subject
- * the DFA scan's own, `holdback` the D11 bound. Unbounded, a miss leaves the
- * whole search (`return 0;`); bounded, it clamps to n-1 and the DFA hat
- * re-seeds where the skip moved (PR-2). The form (one memchr, a walk) is the
- * kit's, from the facts. */
+/* THE PF SITE: the FIND axis B's row `pf` describes on the forward search
+ * machine over its scanned set `set` (`pf_scan_set_of`'s), with the D11 bound
+ * `views`. The ONE constructor of that site, read by its define (`pf_find_of`,
+ * from the built form) and by the readers' query (`cand_pf_site`, G1/R4/L4,
+ * from `unanch_start`), so the site a reader asks the kit about is the site
+ * the define writes rather than a second derivation of it (R17-b' B2 review
+ * item 2). Everything else is a fact of the row: the table it OFFERS at every
+ * count (PR-1; the DFA hat's `start_bytes`, else `can_begin_match`); the
+ * consumer kind (PR-3, §4.3: the DFA hat, whose re-seed is its distinguishing
+ * fact even inside a hybrid, a VM hybrid's inner prefilter, or a DFA body's
+ * forward scan); unbounded, a miss leaves the whole search (`return 0;`),
+ * bounded it clamps to n-1, and the DFA hat re-seeds where the skip moved
+ * (PR-2). The form (one memchr, a walk) is the kit's, from the facts. */
+static PcrecFind pf_site_of(Ctx *cx, const CandRow *pf, const uint8_t *set, bool views)
+{
+    bool hat = pf->u.pf.scan_set != NULL;
+    return (PcrecFind){ .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
+                        .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
+                        .set = set, .pos = "scan_position", .subject = "subject",
+                        .len = "subject_length", .holdback = views ? 1 : 0,
+                        .on_miss = views ? NULL : "return 0;",
+                        .start = PCREC_MF_ORIGIN,
+                        .kind = hat ? MF_SK_DFA_HAT
+                              : cand_finish_of(cx) == CAND_ROUTE_VM ? MF_SK_HYB_PF
+                              : MF_SK_DFA_SCAN,
+                        .moved = hat ? pf_moved_reseed_of(cx, cx->opt->prefix,
+                                                          &dfa_dir_forward) : NULL };
+}
+
+/* The PF site of built form `f`, whose row asked for the D11 bound
+ * `holdback`. Only the forward search machine selects a PF row
+ * (`dfa_form_derive`), and a row is bounded exactly where the form's `views`
+ * holds (the `-bounded` rows' predicates; the DFA hat asserts it), so `f`'s
+ * prefix, direction and bound are the ones `pf_site_of` states: checked here
+ * rather than assumed, since a disagreement would move the define off the
+ * site the readers asked about. */
 static PcrecFind pf_find_of(const DfaForm *f, int holdback)
 {
-    return (PcrecFind){ .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
-                        .table = f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
-                               : PCREC_FIND_CAN_BEGIN,
-                        .set = f->cand.set, .pos = "scan_position",
-                        .subject = "subject", .len = "subject_length",
-                        .holdback = holdback, .on_miss = holdback ? NULL : "return 0;",
-                        .start = PCREC_MF_ORIGIN, .kind = pf_find_kind(f),
-                        .moved = f->pf->u.pf.scan_set
-                               ? pf_moved_reseed_of(f->cx, f->p, f->dir) : NULL };
+    if (f->dir != &dfa_dir_forward || f->p != f->cx->opt->prefix ||
+        holdback != (f->views ? 1 : 0))
+        pcrec_ctx_fail(f->cx, 0, "internal error: a prefilter FIND off the forward "
+                       "search machine, or with a D11 bound its form's `views` does "
+                       "not hold (src/gen/emit_dfa.c, pf_find_of)");
+    return pf_site_of(f->cx, f->pf, f->cand.set, f->views);
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -6708,6 +6789,13 @@ static void pf_define_find_at(StrBuf *c, DfaForm *f, int holdback)
                        "defined with no stem (src/gen/emit_dfa.c, pf_define_find)");
     fd.stem = f->pf_stem;
     f->pf_find = find_define(c, &fd);
+#ifdef PCREC_CAND_TRACE
+    {
+        mf_result r;
+        pcrec_memfn_defined(f->cx, f->pf_find.handle, &r);
+        cand_asked_hold(f->cx, DELEG_PF, 1, &r.cls);
+    }
+#endif
 }
 static void pf_define_find(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 0); }
 static void pf_define_find_bounded(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 1); }
@@ -7752,8 +7840,6 @@ static void cand_ask_field(CandSlot reader, unsigned f);
 #define CAND_ASK_FIELD(reader, f) ((void)(reader), (void)(f))
 #endif
 
-static const DfaDir dfa_dir_forward;
-
 /* [MEMFN] R17-b' B2 THE READERS' QUERY (r17b_prime.md §4.5, PR-9): the CLASS
  * the memfn kit answers for the start-search site `fd` (mf_ask: pure, asked of
  * the compile's own art, before the selection that reads it; the site is
@@ -7776,6 +7862,9 @@ static void cand_ask(Ctx *cx, CandSlot reader, CandRoute route, const PcrecFind 
     if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the start-search "
                        "site a selection reads (its define would refuse it too)");
+#ifdef PCREC_CAND_TRACE
+    cand_asked_hold(cx, fd->site, 0, &cs->cls);
+#endif
     cs->asked = true;
 }
 
@@ -7789,26 +7878,32 @@ static int cand_proven_byte(const uint8_t set[32])
 }
 
 /* THE PF SITE axis B's row `pf` defines for the forward machine of `us`, as
- * the reader asks it: the row's scanned set with the table it offers, its
- * D11 bound (every bounded row is the `views` case), the kind and the moved
- * statement (`pf_find_of`'s, from the facts rather than a built form). */
-static PcrecFind cand_pf_site(Ctx *cx, const UnanchStart *us, const CandRow *pf,
-                              const CandSet *sc)
+ * the reader asks it: `pf_site_of` over the row's scanned set and `us`'s D11
+ * bound, the same constructor and the same facts the define reads off its
+ * form (`dfa_form_derive` takes `f->cand` from `pf_scan_set_of` and
+ * `f->views` from `us`). The set outlives the call (the kit's site keeps it). */
+static PcrecFind cand_pf_site(Ctx *cx, const UnanchStart *us, const CandRow *pf)
 {
-    bool hat = pf->u.pf.scan_set != NULL;
-    uint8_t *set = pcrec_arena_alloc(&cx->arena, 256);
-    memcpy(set, sc->set, 256);
-    return (PcrecFind){ .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
-                        .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
-                        .set = set, .pos = "scan_position", .subject = "subject",
-                        .len = "subject_length", .holdback = us->views ? 1 : 0,
-                        .on_miss = us->views ? NULL : "return 0;",
-                        .start = PCREC_MF_ORIGIN,
-                        .kind = hat ? MF_SK_DFA_HAT
-                              : cand_finish_of(cx) == CAND_ROUTE_VM ? MF_SK_HYB_PF
-                              : MF_SK_DFA_SCAN,
-                        .moved = hat ? pf_moved_reseed_of(cx, cx->opt->prefix,
-                                                          &dfa_dir_forward) : NULL };
+    CandSet *sc = pcrec_arena_alloc(&cx->arena, sizeof *sc);
+    pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
+    return pf_site_of(cx, pf, sc->set, us->views);
+}
+
+/* THE MLINE SITE: ENG_ATTEMPT's predecessor-byte FIND (DELEG_SITES row MLINE,
+ * integration.md §15.7) over candidate set `cand`: the term is the
+ * candidate's PREDECESSOR (`-cand->offset`, -1), the floor is `start` (no read
+ * below it: the attempt loop's guard has already tested `subject[start - 1]`),
+ * and a miss leaves the attempt loop. The ONE constructor of that site, read
+ * by its define (`emit_attempt`) and by the readers' query (`dfa_cand_scan`'s
+ * ATTEMPT route), as `pf_site_of` is for PF. */
+static PcrecFind mline_find_of(Ctx *cx, const CandSet *cand)
+{
+    return (PcrecFind){ .cx = cx, .site = DELEG_MLINE, .p = cx->opt->prefix,
+                        .table = PCREC_FIND_NO_TABLE, .byte = cand->byte,
+                        .offset = -cand->offset, .floor = "start", .pos = "start",
+                        .subject = "subject", .len = "subject_length", .holdback = 0,
+                        .on_miss = "break;", .start = PCREC_MF_ORIGIN,
+                        .kind = MF_SK_DFA_ATTEMPT };
 }
 
 static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
@@ -7827,12 +7922,7 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
          * nothing by charter (its own header), so a scan is one byte. */
         cs->one_byte = true;
         if (attempt_next_read(cx, reader, &acand)->u.pf.scan != PF_SCAN_BYTE) return;
-        PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = cx->opt->prefix,
-                         .table = PCREC_FIND_NO_TABLE, .byte = acand.byte,
-                         .offset = -acand.offset, .floor = "start", .pos = "start",
-                         .subject = "subject", .len = "subject_length", .holdback = 0,
-                         .on_miss = "break;", .start = PCREC_MF_ORIGIN,
-                         .kind = MF_SK_DFA_ATTEMPT };
+        PcrecFind fd = mline_find_of(cx, &acand);
         cand_ask(cx, reader, CAND_ROUTE_ATTEMPT, &fd, cs);
         CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN_PREV);
         cs->byte = cand_proven_byte(cs->cls.proven_prev);
@@ -7853,14 +7943,24 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
         } else if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
-            CandSet sc;
-            pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
-            PcrecFind fd = cand_pf_site(cx, &us, pf, &sc);
+            PcrecFind fd = cand_pf_site(cx, &us, pf);
             cand_ask(cx, reader, cand_route_of(cx), &fd, cs);
             CAND_ASK_FIELD(reader, CAND_ASKF_EXISTS);
             CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN0);
             if (cs->cls.exists) cs->byte = cand_proven_byte(cs->cls.proven0);
             cs->one_byte = cs->byte >= 0;
+#ifdef PCREC_CAND_TRACE
+            /* `one_byte` is the memchr form's guard (G1's density, S288), and
+             * it is read off the class, not off the row: a one-member set
+             * ranks onto a PF_SCAN_BYTE row (`memchr[-bounded]`,
+             * `first-memchr-bounded`), so the class proves one byte only
+             * there. Held, since a SET row proving one byte would hand that
+             * guard to a table walk. */
+            if (cs->one_byte && pf->u.pf.scan != PF_SCAN_BYTE)
+                pcrec_fit_invariant_fail("one-byte-off-memchr-row", pf->tok,
+                                         "a one-byte proof only on a PF_SCAN_BYTE row",
+                                         "dfa_cand_scan");
+#endif
         }
     }
 }
@@ -8871,10 +8971,8 @@ static bool start_landing_applies(const CandSel *s)
      * outside this delivery (r17b_prime.md §1.1) and read their own row */
     if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
         CandScan cs;
-        CandSet sc;
         memset(&cs, 0, sizeof cs);
-        pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
-        PcrecFind fd = cand_pf_site(cx, &us, pf, &sc);
+        PcrecFind fd = cand_pf_site(cx, &us, pf);
         cand_ask(cx, CAND_SLOT_RECOVER, CAND_ROUTE_DFA, &fd, &cs);
         CAND_ASK_FIELD(CAND_SLOT_RECOVER, CAND_ASKF_EXISTS);
         return cs.cls.exists != 0;
@@ -13398,19 +13496,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   gseed ? "search_from" : "0",
                   cand.offset, cand.byte);
         /* [MEMFN] M4: the skip itself is THE FIND, DELEG_SITES row MLINE
-         * (integration.md §15.7): the term is the candidate's PREDECESSOR
-         * (`-cand.offset`, -1), the floor is `start` (no read below it: the
-         * guard above has already tested `subject[start - 1]`), and a miss
-         * leaves the attempt loop. The guard, its lower bound X and every
-         * start decision above stay this function's; the kit writes the
-         * search, the NULL test and the store. */
-        PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = p,
-                         .table = PCREC_FIND_NO_TABLE, .byte = cand.byte,
-                         .offset = -cand.offset, .floor = "start",
-                         .pos = "start", .subject = "subject",
-                         .len = "subject_length", .holdback = 0,
-                         .on_miss = "break;", .start = PCREC_MF_ORIGIN,
-                         .kind = MF_SK_DFA_ATTEMPT };
+         * (`mline_find_of`, the site G1/R4 asked about). The guard, its lower
+         * bound X and every start decision above stay this function's; the
+         * kit writes the search, the NULL test and the store. */
+        PcrecFind fd = mline_find_of(cx, &cand);
+        CAND_ASKED_VERIFY_EMIT(cx, &fd);
         pcrec_emit_find(c, "            ", &fd);
         pcrec_sb_puts(c, "        }\n");
     }
