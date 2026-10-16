@@ -2356,3 +2356,15 @@ pointer when a kit change merges to main.
 
   I safekilled B1's chain at 19:39:06 and fixed the HOLD regex to grid2's anchored end line `^(COMPLETE|FAILED) ` (slot.sh:162/56). chain3 is SIGSTOPped under HOLD by pause3.sh. B1 is re-armed (pid 795431) with `b1heavy/trigger.sh` touching .go itself 120 s after grid2's end line. The grid2 reading must treat F3 groups timed 19:38:11-19:39:30 as contaminated.
   - **Lesson:** an end marker is an ANCHORED line, never a substring match; one slot.status can carry several "COMPLETE" words.
+- **fdb2fix delivered** (lane/fdb2 @ 01ffd2f2d, report §10; zero pcrec bytes):
+  - one site constructor for define + readers (pf_site_of / mline_find_of), plus the trace hold check (S1085 DETECTED);
+  - S1080 re-planted pcrec-side;
+  - B4 manifest as a new file, §3.5 restated;
+  - fence ALLOW reverted into proposed/lever_fence_allow.diff;
+  - R-MS6 droppable via proposed/drop_rms6.diff.
+
+  **Finding:** S1080/S1081/S1083 read UNDETECTED, because the memfnfinder arm scored finder_check's FIRST count. fdb2's "DETECTED" had never been run. run_finder.sh now sums into one final count, NOT yet re-run.
+  - **chain3** (verdict3.txt) is SIGSTOPped at S495 under HOLD and resumes after B1's chain. Since its tip only run_finder.sh and the figure lines changed.
+  - **Owed after resume:** test-memfn-finder + the memfnfinder mech rows solo (S1079-S1084, S922).
+  - **Owed in B2's heavy slot:** make test, G2 full, N2 census, test-axes --memfn=no-fd-d1, the bench-pattern sweep.
+  - worktrees/fdb2drop: prune after B2 merges (wtprune KEEPs it as unmerged).
