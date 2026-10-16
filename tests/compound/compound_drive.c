@@ -11,6 +11,7 @@
  *   compound_drive selfcheck
  *   compound_drive derive OUTDIR < CASES
  *   compound_drive walk < CASES
+ *   compound_drive ranks OUTDIR < CASES
  *
  * PATTERNS is `id<TAB>hex-pattern` per line. For each pattern it writes the
  * plain artifact (`OUTDIR/<id>.plain.c/.h`, the default request) and one
@@ -51,6 +52,16 @@
  * of stdout is `id<TAB>ok|declined|refused<TAB>killed<TAB>killed_g<TAB>
  * pruned<TAB>kept_never<TAB>never<TAB>has_g<TAB>msg<TAB>p_ok`, the
  * derivation's own report and whether P compiles plainly at all.
+ *
+ * `ranks` (E0, docs/design/compound_entries.md §3.6): CASES is
+ * `id<TAB>arms<TAB>P-hex` per line, `arms` a comma list of `utf8`,
+ * `utfcheck`, `vm` (or `-`). Each P is compiled as the default build
+ * compiles it (`--features all`, `-p rx`, the default request) under its
+ * arms, the artifact written to `OUTDIR/<id>.c`, and one line printed per
+ * edge of the relation `entry_rows[]` derived for the shipped attempt's
+ * shape: `id<TAB>from<TAB>to<TAB>R<rank>` (entry names as
+ * `pcrec_entry_name` spells them), or one `id<TAB>refused` line. The
+ * checker reads the call sites from the artifact itself.
  *
  * Exit 0 unless the driver itself breaks (a refusal is a row, not an error;
  * `selfcheck` exits 1 on a wrong verdict); 2 on bad usage or I/O. */
@@ -335,6 +346,61 @@ static int drive_walk(int argc, char **argv)
     return 0;
 }
 
+/* `ranks` (E0): the derived edge relation and its ranks, per case. */
+static int drive_ranks(int argc, char **argv)
+{
+    if (argc != 1) return 2;
+    const char *dir = argv[0];
+    char line[1 << 16];
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *f[3] = { line, NULL, NULL };
+        for (int i = 1; i < 3; i++) {
+            f[i] = strchr(f[i - 1], '\t');
+            if (!f[i]) break;
+            *f[i]++ = 0;
+        }
+        if (!f[2]) continue;
+        char *p = unhex(f[2]);
+        if (!p) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
+        pcrec_options o;
+        pcrec_default_options(&o);
+        o.features = "all";
+        for (char *a = strtok(f[1], ","); a; a = strtok(NULL, ",")) {
+            if (!strcmp(a, "utf8")) o.encoding = PCREC_ENC_UTF8;
+            else if (!strcmp(a, "utfcheck")) o.flags |= PCREC_FORCE_UTF_CHECK;
+            else if (!strcmp(a, "vm")) o.engine = PCREC_ENGINE_VM;
+            else if (strcmp(a, "-")) {
+                fprintf(stderr, "compound_drive: unknown arm '%s'\n", a);
+                free(p);
+                return 2;
+            }
+        }
+        unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N];
+        memset(er, 0, sizeof er);
+        const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .edge_rank = er };
+        pcrec_output out;
+        pcrec_error err;
+        if (pcrec_compile_driver(p, &o, &out, &err, NULL, NULL, NULL, NULL, NULL, &in)) {
+            printf("%s\trefused\n", f[0]);
+            free(p);
+            continue;
+        }
+        char cname[512];
+        snprintf(cname, sizeof cname, "%.400s.c", f[0]);
+        int io = put_file(dir, cname, out.c_src);
+        pcrec_output_free(&out);
+        free(p);
+        if (io) return 2;
+        for (int a = 0; a < PCREC_ENTRY_N; a++)
+            for (int b = 0; b < PCREC_ENTRY_N; b++)
+                if (er[a][b])
+                    printf("%s\t%s\t%s\tR%d\n", f[0], pcrec_entry_name((PcrecEntry)a),
+                           pcrec_entry_name((PcrecEntry)b), er[a][b] - 1);
+    }
+    return 0;
+}
+
 static int drive_derive(int argc, char **argv)
 {
     if (argc != 1) return 2;
@@ -526,9 +592,11 @@ int main(int argc, char **argv)
     if (argc == 2 && !strcmp(argv[1], "selfcheck")) return drive_selfcheck();
     if (argc >= 2 && !strcmp(argv[1], "derive")) return drive_derive(argc - 2, argv + 2);
     if (argc == 2 && !strcmp(argv[1], "walk")) return drive_walk(argc - 2, argv + 2);
+    if (argc >= 2 && !strcmp(argv[1], "ranks")) return drive_ranks(argc - 2, argv + 2);
     fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n"
                     "       compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES\n"
                     "       compound_drive selfcheck\n"
-                    "       compound_drive derive OUTDIR < CASES\n");
+                    "       compound_drive derive OUTDIR < CASES\n"
+                    "       compound_drive ranks OUTDIR < CASES\n");
     return 2;
 }
