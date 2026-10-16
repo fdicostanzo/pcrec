@@ -202,7 +202,7 @@ A4 noted for review here).
 | A11 | RULED (D167 add. 1): the admission reads the start set's prior mass, h and K; no read-back; a D157 exception until restated (zero movers, main-side, at B2) | §1.4, §4.5, §3.1, §7.1 |
 | A12 | `S693_abi_not_bumped.sh:51` and match_api's K80 `#define PCREC_RX_ABI_H 78` added to the readers | §3.4 |
 | A13 | `docs/design/start_table/sabotage_anchors.py` | §8.3 |
-| A14 | tuning.md "§2.49 (new: bit 55's section)" and "§3's dial table" | §3.4 |
+| A14 | the B4 tuning hunk names "a NEW section for bit 55 (its number given at B4)" and "§3's dial table", not a section number that does not exist yet | §3.4 |
 | A15 | MF_SITE_ABI numbered relatively; E-1 placed in the plan as main's event; B3a/B3b zero-mover against main-after-E-1 | §0, §3.1, §4.9 |
 | A16 | the ported sabotage ids listed exactly, S825 excluded | §8.3 |
 | A17 | `no-fd-d1` renders WALK through D1w from B2 | §1.3, §3.4 |
@@ -1032,7 +1032,7 @@ of the list, from rev 1 §5.2, measure_sets §3.6 and findall_iter.md's abi plan
 | B1 | `registry.md` §6¶8a (the five `fd-*` rows) and §6¶8b (floor). `[rev3 A9]` No `facts_listing.md` hunk (the section rides B4) |
 | B2 | none (no byte, stamp, listing or flag moves) |
 | B3b | `tuning.md` §2.40 (bit 45 retired, reserved; the kit deny named), §2.29 and §2.41 (`req-admit`/`req-use`: which rows are now the kit's, and the listing's projection); `registry.md` §6 (those axes) and §6¶8a/8b; `lib/pcrec.h`'s bit-45 comment (Q-R17P-19); `facts_listing.md` (`used`/`why` re-sourced, values unchanged) |
-| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, `[rev3 A14]` §2.49 (new: bit 55's section) and §3's dial table (the `size` cells); `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row; `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0); `[rev3 A9]` `facts_listing.md` §3 (the `memfn` section) |
+| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, `[rev3 A14]` a NEW section for bit 55 (numbered at B4, after §2.48) and §3's dial table (the `size` cells); `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row; `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0); `[rev3 A9]` `facts_listing.md` §3 (the `memfn` section) |
 | B5 | per row: `registry.md` (its deny), `measures.md` (new keys' cards) |
 | B6 | `limits.md` §8.3¶3 (guarded bound), `match_api.md` §6.3.10¶4 (the PF token in `MEMFN_FORMS`), `registry.md` |
 | B7 | `registry.md` and `tuning.md` §2.43 (the libc class deny) |
