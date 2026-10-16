@@ -1,0 +1,160 @@
+== rwquest: 177 compiles, 172 ok, 5 refused, 0 timeout
+  artifacts with a start-search site (PF/MLINE/VMHAT): 170
+  artifacts with ANY single-byte search (an SB-* class): 74
+  classes:
+        76  RUN-PRE
+        50  RUN-HANDOFF
+        38  OFS-DFA
+        29  SET-PF-DFA
+        25  NEXT-HANDOFF
+        23  SB-MLINE
+        19  SB-PRE
+        18  SB-PF-HYB
+        16  SB-PF-DFA
+         8  OFS-HYB
+         8  SET-PF-HYB
+         6  SB-HANDOFF
+         5  SET-VMHAT
+         1  SB-VMHAT-1
+  sites (stamp-level):
+        76  PRE:run
+        50  HANDOFF:run
+        25  PF:DFA:handoff
+        23  MLINE
+        19  PRE:byte
+        17  PF:DFA:byte-class
+        16  PF:HYB:memchr
+        14  PF:DFA:memchr
+        14  PF:DFA:offset-set
+        11  PF:DFA:offset-set-bounded
+        10  PF:DFA:first-class-bounded
+         9  PF:DFA:run-pinned
+         6  HANDOFF:byte
+         5  PF:HYB:byte-class
+         5  VMHAT
+         4  PF:DFA:run-pinned-bounded
+         3  PF:HYB:offset-set-bounded
+         3  PF:HYB:run-pinned
+         2  PF:DFA:byte-class-bounded
+         2  PF:HYB:byte-class-bounded
+         2  PF:HYB:memchr-bounded
+         2  PF:HYB:offset-set
+         1  PF:DFA:first-memchr-bounded
+         1  PF:DFA:memchr-bounded
+         1  PF:HYB:first-class-bounded
+         1  VMHAT:1
+  RX_MEMFN_LIBC:
+        89  memchr
+        54  memchr,memcmp
+        27  none
+         2  memcmp
+  DFA candidate-table sizes (can_begin_match/start_bytes): b:2:5, c:3-4:5, d:5-8:2, e:9-16:7, f:17-64:13, g:65-255:5
+  VM hat table sizes (start_set): a:1:1, d:5-8:1, f:17-64:3
+== bench: 367 compiles, 343 ok, 24 refused, 0 timeout
+  artifacts with a start-search site (PF/MLINE/VMHAT): 278
+  artifacts with ANY single-byte search (an SB-* class): 74
+  classes:
+       102  SET-PF-DFA
+        69  OFS-DFA
+        58  RUN-PRE
+        46  RUN-HANDOFF
+        35  SB-PF-DFA
+        29  SB-PRE
+        17  SET-VMHAT
+        16  SET-PF-HYB
+        15  OFS-HYB
+        14  NEXT-HANDOFF
+         8  SB-PF-HYB
+         8  SB-VMHAT-1
+         6  SB-HANDOFF
+         2  SB-MLINE
+  sites (stamp-level):
+        91  PF:DFA:byte-class
+        58  PRE:run
+        46  HANDOFF:run
+        36  PF:DFA:offset-set
+        33  PF:DFA:memchr
+        29  PRE:byte
+        25  PF:DFA:run-pinned
+        17  VMHAT
+        14  PF:DFA:handoff
+         9  PF:DFA:first-class-bounded
+         8  PF:DFA:offset-set-bounded
+         8  PF:HYB:byte-class
+         8  PF:HYB:run-pinned
+         8  VMHAT:1
+         7  PF:HYB:first-class-bounded
+         6  HANDOFF:byte
+         6  PF:HYB:memchr
+         5  PF:HYB:offset-set
+         2  MLINE
+         2  PF:DFA:byte-class-bounded
+         2  PF:DFA:memchr-bounded
+         2  PF:HYB:first-memchr-bounded
+         2  PF:HYB:offset-set-bounded
+         1  PF:HYB:byte-class-bounded
+  RX_MEMFN_LIBC:
+       171  none
+       117  memchr
+        53  memchr,memcmp
+         2  memcmp
+  DFA candidate-table sizes (can_begin_match/start_bytes): b:2:9, c:3-4:17, d:5-8:4, e:9-16:34, f:17-64:39, g:65-255:15
+  VM hat table sizes (start_set): a:1:8, b:2:1, e:9-16:1, f:17-64:7
+== corpus: 5790 compiles, 5336 ok, 454 refused, 0 timeout
+  artifacts with a start-search site (PF/MLINE/VMHAT): 3369
+  artifacts with ANY single-byte search (an SB-* class): 1790
+  classes:
+       764  SET-PF-DFA
+       648  SB-PRE
+       626  SB-PF-HYB
+       581  SB-PF-DFA
+       349  OFS-DFA
+       341  RUN-PRE
+       318  OFS-HYB
+       264  RUN-HANDOFF
+       257  SET-VMHAT
+       241  SET-PF-HYB
+       226  SB-HANDOFF
+       181  NEXT-HANDOFF
+       112  SB-VMHAT-1
+        56  COMPOUND
+        52  SB-MLINE
+  sites (stamp-level):
+       648  PRE:byte
+       581  PF:HYB:memchr
+       552  PF:DFA:byte-class
+       383  PF:DFA:memchr
+       341  PRE:run
+       264  HANDOFF:run
+       257  VMHAT
+       248  PF:HYB:offset-set
+       226  HANDOFF:byte
+       191  PF:DFA:offset-set
+       181  PF:DFA:handoff
+       181  PF:HYB:byte-class
+       178  PF:DFA:byte-class-bounded
+       160  PF:DFA:memchr-bounded
+       112  VMHAT:1
+        97  PF:DFA:run-pinned
+        56  COMPOUND
+        54  PF:HYB:run-pinned
+        53  PF:DFA:offset-set-bounded
+        52  MLINE
+        46  PF:HYB:byte-class-bounded
+        38  PF:DFA:first-memchr-bounded
+        38  PF:HYB:memchr-bounded
+        34  PF:DFA:first-class-bounded
+        14  PF:HYB:first-class-bounded
+        13  PF:HYB:offset-set-bounded
+         8  PF:DFA:run-pinned-bounded
+         7  PF:HYB:first-memchr-bounded
+         3  PF:HYB:run-pinned-bounded
+  RX_MEMFN_LIBC:
+      2700  none
+      2360  memchr
+       215  memchr,memcmp
+        44  memcmp,strlen
+        16  memcmp
+         1  memchr,memcmp,strlen
+  DFA candidate-table sizes (can_begin_match/start_bytes): b:2:319, c:3-4:90, d:5-8:48, e:9-16:91, f:17-64:201, g:65-255:256
+  VM hat table sizes (start_set): a:1:112, b:2:62, c:3-4:5, f:17-64:57, g:65-255:21

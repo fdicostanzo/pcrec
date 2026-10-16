@@ -2171,3 +2171,136 @@ pointer when a kit change merges to main.
   This answer goes into regime_eval Q-2 after the panel. Pending decisions on
   evidence: R2, R3b, the amended-D2 row.
 - Fixed a dangling §17 citation in costmodel_report (spec-history 145/0).
+
+## 2026-10-14 — regime_eval panel, D166 add. 1 / 1.1, grid2 scope items
+
+- The regime_eval D6 panel is consolidated
+  (docs/dev/reviews/2026-10-14-r1-memfn-regime-eval.md): 33 ids, 2 blockers
+  (I-1, I-2), all ACCEPTED. Rev 2 is in flight (lane regeval3). Main applied
+  B-5/B-6/B-2/T20: regime_tables rev 0.4 has A = set id, I = ISA, R8 =
+  amended D2, [MEASURE-SET] triggered by E3, and [TABLE-JUDGE] is filed.
+- D166 add. 1 (Frank): perf counters are NEVER required by a set, method,
+  gate, bar or tool. They are optional diagnostics that skip loudly into
+  provenance, and sets are producible from timing alone. The consumer-bound
+  class goes timing-only (sent to regeval3; VERIFY in the delivery, with a
+  fresh follow-up if it is missed).
+- D166 add. 1.1 (Frank): when counters are unavailable, every measuring
+  script prints a SUGGESTION and never acts on it. The suggestion gives the
+  current paranoid value, says that ≤ 2 enables the optional pass and what
+  it adds, and shows the commands (`sudo sysctl kernel.perf_event_paranoid=2`;
+  persistent: /etc/sysctl.d/99-perf.conf). Scripts never change system
+  settings.
+- zen4-grid2 scope so far (to be sent to main once rev 2 lands):
+  - R17-b′'s three absent quantities: the per-call dispatch charge, the
+    per-use dispatch charge, and the helper-walk scaffold;
+  - regime_eval's streamed in-sample fit cells (to re-derive the G2 caps);
+  - an OPTIONAL F2 streamed perf pass;
+  - the harness prints the paranoid suggestion (add. 1.1);
+  - one run, one method version (D166).
+
+## 2026-10-14 — [REGIME-CORPUS] done (main); queued for regime_eval rev 2.2
+
+- J1 population ready on main:
+  - docs/dev/lanes/rwcorpus/ (fetch.sh, manifest.tsv: 88 files, 7 classes;
+    bytes in worktrees/.corpus/);
+  - docs/dev/lanes/rwquest/questions.tsv (177 blinded questions).
+- Caveats to fold into regime_eval (rev 2.2, after regeval4's rev 2.1 lands):
+  - prose/nonenglish are CRLF (`$`/`^$` semantics);
+  - streamed buffers are taken across WHOLE files, never heads (`^TX\t` is
+    0 in the first 4 MiB and 1,863 in the whole file);
+  - pg8186/pg8453 (accents stripped) and pg20175 (mojibake) are
+    MISLABELLED: report them separately or drop them;
+  - the gazetteer is fixed-width, and tar members are NUL-padded;
+  - the user agent saw spawn-time CLAUDE.md injections (the lanes index),
+    so possible priming toward rare-literal/anchor cases goes in the §5
+    independence table.
+- FYI rulings:
+  - D166 add. 2: the latest set until M2; stale defaults are carried with a
+    flag;
+  - [KNOW-SRC]: one shared knowledge-source module with round-trip identity;
+    the listing's canonical view IS the input format.
+
+## 2026-10-14 — J1b sealed; coverage finding with Frank
+
+- J1b is SEALED on main (86a9638da, docs/dev/lanes/rwquest2/SEALED.md):
+  - 165 questions, sha256 f41abc634bad5e498726b5fbe14a1b379ba8fbdb6fac185f541057bd631b32fe;
+  - the bytes are in worktrees/.corpus/sealed/ (gitignored, unread);
+  - unseal ONLY at the J1b judge step;
+  - the prereg records the hash.
+  The author never read rwquest's files (the lanes index injected its
+  one-line summary, which goes in the §5.1 disclosure).
+- The coverage finding (rev 2.2) went to Frank: only 31% of real questions
+  reach the finder table. Main agrees with routing single-byte FIND and MLINE
+  through the table (D161 add. 3/11): memchr/SWAR/W64 become form rows.
+  Coverage would go to ~80%. A design note for later: the libc arm's staleness
+  dep owner is `libc:<name>@<ver>`, a third owner for R-MS3. Waiting on Frank;
+  nothing briefed.
+- Open with Frank: Q-REVAL-12 (lean), 16 (constants + 2 loosenings),
+  17 (k = 3).
+
+## 2026-10-14 — D161 add. 14 scoped; R-21 filed
+
+- sbscope and pcscope (read-only, on main's code) scoped single-byte FIND
+  and the presence/handoff merge. winreq consolidated them into one request
+  list.
+- Coverage correction: rev 2.2's no-compile estimate (54/116) was wrong.
+  Compiled: 170 of 172 have a start-search site; today's set-FIND table sees
+  ~24%; single byte + presence/handoff bring nearly all of them under one
+  request.
+- NONE is unsafe on the VM hat and the no-DFA VM route.
+- The pre-scan's benefit is the consumer's saved scan (add. 6's dropped
+  price), so it defaults to KEEP.
+- R-21 is filed (S964-S980), with main's answer-free rulings in.
+- With Frank: Q-WR-1/2/3/6/9 and Q-REVAL-12/16/17.
+- Next: revise R17-b′ for R-19/20/21 + add. 14 once Q-WR-1 is ruled, then a
+  D6 panel, then build on a fresh branch from main. zen4-grid2 scope follows.
+
+## 2026-10-14 — the evaluator parameters became a [KNOW-SRC] kind; digest spec (owed before E5)
+
+- regime_eval rev 2.3 (a 72-row parameter table; k a visible lever) and rev
+  2.4 (the [KNOW-SRC] kind `evaluator-params`; 4 derived rows moved to the
+  measurement set under kit.reval_* keys) are merged.
+- Digest spec (main, measure_sets §1/§9): FNV-1a-64, 16 lowercase hex. The
+  input is the domain + `\0`, then each row in LC_ALL=C key order: key, `\0`,
+  then the VALUE columns in declared order (int64 LE; empty = INT64_MIN; enums
+  as their byte), with provenance columns excluded. The domain is
+  `pcrec-<kind>-<N>`, i.e. `pcrec-evaluator-params-1`.
+- OWED before E5 (fold into the E-step brief):
+  - declare the value vs provenance columns in the file;
+  - rename the domain;
+  - recompute the digest with an INDEPENDENT script (not the producer);
+  - record the domain in the header.
+
+## 2026-10-14 — BUILD HOLD (Frank, via main)
+
+- "don't start build yet." Under [REGIME], design notes and D6 panels
+  proceed. NO build lane starts (kit or pcrec), and no slot-producing or
+  set-producing timing run (zen4-grid2 included), until Frank gives an
+  explicit go for that item, relayed by main.
+- Held: the R17-b′ build, E3, the zen4-grid2 slot, and any other build.
+  Allowed: r17bp3 (the R17-b′ design rev 2) and its D6 panel.
+
+## 2026-10-14 — session close (pcrecdev3)
+
+- **Done this session, in order:**
+  1. The vecspike slot was read (the kept-vector table).
+  2. D165 facts were answered (24 B / align 8).
+  3. The costmodel regimes (DINGHY/TUG/LINER on L and g).
+  4. The grid1 harness, then the joint slot run with main's arms, then gridread (L* for W=64 is 8-32 B; the fresh-data loss is the walk's branch predictor).
+  5. The F2 perf pass (predictor confirmed; bounded prose is consumer-bound).
+  6. The regime_eval design note, rev 1 → 2.4, through one D6 panel (33 ids) and Frank's rulings: the lean plan, the constants and loosenings, k = 3 as a visible lever, the parameters as a [KNOW-SRC] kind.
+  7. The R17-b′ design note, rev 1 → 2, folding in D161 add. 11-15, D166 (+ add. 1/1.1/2), R-19/20/21, and the single-byte and one-window-request rulings.
+  8. sbscope/pcscope/winreq scoping, filed by main as R-21.
+  9. lane/memfn-docs (docs to main, merged).
+  10. finder_history.md (row edits under add. 13).
+- **Errors to remember:**
+  - The rev 2.2 no-compile population estimate gave a wrong coverage figure (54/116). Corrected by sbscope's compiled census.
+  - Two lanes missed mid-run rulings and needed follow-ups. Rulings to running lanes keep failing; prefer a short follow-up lane.
+  - One conflict marker was committed and fixed in the next commit (29df767d3).
+  - The heartbeat `cd` habit: bash `cd` in a command moved the session cwd twice. Use `git -C` and absolute paths only.
+- **Open:**
+  - the BUILD HOLD (Frank): no build or timing without a go relayed by main;
+  - the grid2 go request plus Q-R17P-9..14 with Frank;
+  - R17-b′ rev 2's D6 panel is the next kit work;
+  - the I-152 bench answer;
+  - the evaluator-params digest (independent recompute, domain `pcrec-evaluator-params-1`) is owed before E5.

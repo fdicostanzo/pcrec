@@ -1,0 +1,82 @@
+# pcrec evaluator-params (kind evaluator-params; contract: docs/design/memfn/regime_eval.md 3.0a, docs/design/measure_sets.md 9)
+#section header
+#key	value
+format	1
+kind	evaluator-params
+id	regime-eval
+rev	1
+tier	design
+owner	kit
+spec	docs/design/memfn/regime_eval.md rev 2.4 3.0a
+rows	62
+values_digest	6154252826080120
+#section params
+#id	name	value	unit	class	provenance	gates	override	printed	placement
+EP01	noise-factor	2	× N(S)	CHOSEN	CHOSEN (about two standard errors); list RULED by Frank 2026-10-14 (Q-REVAL-16)	every bar's noise allowance (G1, G2, controls' WORSE test, C7 a)	--noise-factor=	header block	harness
+EP02	g1-min-cells	10	cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G1 UNDERPOWERED: fewer differing cells than this	--g1-min-cells=	header block	harness
+EP03	g1-min-visible	0.05	of W(D(P))	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G1 UNDERPOWERED: 2·N above this share of walk cost	--g1-min-visible=	header block	harness
+EP04	g2-power-frac	0.5	of cap	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G2 UNDERPOWERED: 2·N/W_exCB above this share of the cap	--g2-power-frac=	header block	harness
+EP05	g3-min-cells	40	non-CB RT cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G3 UNDERPOWERED below this	--g3-min-cells=	header block	harness
+EP06	m-min	5	moved cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a control's UNDERPOWERED line; witness cells per scorable row (§2.1, §4.4)	--m-min=	header block	harness
+EP07	g0-min-cells	20	RT cells per layer × regime × filter	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G0 UNREACHED below this	--g0-min-cells=	header block	harness
+EP08	g0-min-patterns	5	patterns	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G0 UNREACHED below this	--g0-min-patterns=	header block	harness
+EP09	w-min	0.25	RT share of J1 patterns	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G0 weight: below it every PASS reads LOW-WEIGHT PASS	--w-min=	header block	harness
+EP10	cap-mult	1.25	× R_in(r)	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	cap(DINGHY), cap(TUG)	--cap-mult=	header block	harness
+EP11	cap-add	2	points of walk	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	cap(DINGHY), cap(TUG)	--cap-add=	header block	harness
+EP12	cap-mult-liner	1.0	× R_in(LINER)	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	cap(LINER)	--cap-mult-liner=	header block	harness
+EP13	cap-add-liner	2	points of walk	RULED	RULED by Frank, 2026-10-14 (Q-REVAL-16), loosening 1	cap(LINER); was 1 before the ruling (LINER cap R_in + 2)	--cap-add-liner=	header block	harness
+EP15	g3-floor-calls	3	× w_call	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the per-call floor F = 3·w_call of an outlier	--g3-floor-calls=	header block	harness
+EP17	g3-walk-frac	0.25	× ns_walk	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	an outlier's per-pass threshold max(F, this·ns_walk)	--g3-walk-frac=	header block	harness
+EP18	g3-rate	0.05	of non-CB RT cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G3 (a): outlier share allowed	--g3-rate=	header block	harness
+EP19	g3-budget-frac	0.25	of the table's summed saving	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	G3 (b): summed outlier excess allowed	--g3-budget-frac=	header block	harness
+EP20	partial-cap	0.10	of a gate population's RT cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a gate reads UNREACHED above this share of partial cells	--partial-cap=	header block	harness
+EP21	cb-k	3	× NULL_c	RULED	RULED by Frank, 2026-10-14 (Q-REVAL-17); value CHOSEN; re-read on grid2's streamed data before E5	consumer-bound condition 2: the ns spread over K at most k·NULL_c	--cb-k=	header block; beside the k = 2 / 4 counts in the CB block and in P-CB	harness; condition-bearing (Q-REVAL-17)
+EP22	cb-k-report	2;4	× NULL_c	CHOSEN	CHOSEN; printed beside k by Q-REVAL-17 condition	reported only: the CB count at each, beside the gated k (P-CB)	--cb-k-report=	header block; the CB block	harness
+EP23	cb-null-mult	1	× NULL_c	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	CB conditions 1 and 3 (walk − best, pick − best)	--cb-null-mult=	header block	harness
+EP24	cb-arms	walk;V1;A1	arm set K	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the arms the CB spread is taken over	--cb-arms=	header block	harness
+EP25	cb-perf-misses	50	misses/KiB	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	OPTIONAL, ungated corroboration only (cb_perf column)	--cb-perf-misses=	header block	harness
+EP26	cb-perf-spread	0.20	of the walk's misses	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	OPTIONAL, ungated corroboration only (cb_perf column)	--cb-perf-spread=	header block	harness
+EP27	launches	3	per judge group	RULED	RULED by main, 2026-10-14 (Q-REVAL-8)	cross-fit and NULL (the paired-sign rule)	--launches=	header block	harness
+EP28	launches-witness	5	per WITNESS group	RULED	RULED by main, 2026-10-14 (Q-REVAL-8)	witness power	--launches-witness=	header block	harness
+EP29	rerun-extra	2	launches added	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a group whose walk vs walk#b disagrees beyond NULL in any launch	--rerun-extra=	header block	harness
+EP31	noisy-factor	2	× grid2's ν	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a slot reads NOISY (flagged like DRIFT) above this	--noisy-factor=	header block	harness
+EP32	c7-best-disagree	0.05	of cells with top-two arms differing beyond NULL_c	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	C7 (b), the split-half best-arm disagreement	--c7-best-disagree=	header block	harness
+EP33	anchor-n	30	FIT anchor groups	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the per-slot anchor replay (chosen at E4b)	--anchor-n=	header block	harness
+EP34	anchor-dev-factor	2	× NULL_c/ns_walk	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	an anchor DEVIATES when a form's walk-relative ratio differs by more	--anchor-dev-factor=	header block	harness
+EP35	setmismatch-frac	0.20	of anchors	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	SET-MISMATCH when more than this share deviate	--setmismatch-frac=	header block	harness
+EP36	drift-n	10	anchors re-timed	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the end-of-slot drift check	--drift-n=	header block	harness
+EP37	drift-factor	2	× AA	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	an anchor's walk ns moved by more than this	--drift-factor=	header block	harness
+EP38	drift-max	3	anchors of drift-n	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	DRIFT when more than this many moved	--drift-max=	header block	harness
+EP39	w2-drift-agree	7	of 10 anchors within 2·AA	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	LEAN plan: W2 inherits W1's SET-MISMATCH reading (else a full replay)	--w2-drift-agree=	header block	harness
+EP40	load1-max	1.5	load1	CHOSEN	CHOSEN, inherited from grid1's quiet gate; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a group at or above it at either sample is discarded (reason load)	--load1-max=	header block	harness
+EP41	load-consecutive	3	discarded groups in a row	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	slot ABORTS (BREACH)	--load-consecutive=	header block	harness
+EP42	load-persist	5	minutes	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	slot ABORTS (BREACH)	--load-persist=	header block	harness
+EP43	load-requeue	1	re-queues	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a twice-discarded group is GATE-EXCLUDED for good	--load-requeue=	header block	harness
+EP44	sealed-share	0.30	of RT patterns, rounded up	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	J1-sealed size	--sealed-share=	header block	harness
+EP45	sealed-min-class	5	patterns per class of 15 or more	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	J1-sealed size	--sealed-min-class=	header block	harness
+EP46	sealed-pooled-final	on	flag	RULED	RULED by Frank, 2026-10-14 (Q-REVAL-16), loosening 2	the final reading judges a sealed regime below G0 on the pooled population, sealed-only figure beside it	--sealed-pooled-final=	header block	harness
+EP47	prereg-salt	unset	bytes	CHOSEN	CHOSEN once, at random, committed in prereg.tsv	the sealed split, the window draws, the second parser's cells	--prereg-salt=	header block	harness; value drawn once at E5 (note 2)
+EP48	window-bytes	65536	bytes	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	size of one streamed (S) buffer	--window-bytes=	header block	harness
+EP49	windows-max	64	windows (4 MiB)	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	most windows per streamed subject	--windows-max=	header block	harness
+EP50	window-floor	16	windows (1 MiB)	CHOSEN	CHOSEN (F2's fresh size); list RULED by Frank 2026-10-14 (Q-REVAL-16)	below it a pool cannot stream: short-pool, GATE-EXCLUDED	--window-floor=	header block	harness
+EP51	reserve-frac	0.125	of the pool	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the exemplar reserve R = max(reserve-min, this·pool)	--reserve-frac=	header block	harness
+EP52	reserve-min	65536	bytes	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the exemplar reserve R	--reserve-min=	header block	harness
+EP53	w-subject-min	1048576	bytes	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a (W) subject's minimum size (F2's fresh size)	--w-subject-min=	header block	harness
+EP54	bucket-min-bytes	65536	bytes of lines	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	a lines bucket below it has no group	--bucket-min-bytes=	header block	harness
+EP55	rep64k-per-class	2	patterns	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the ungated rep64k column (LEAN)	--rep64k-per-class=	header block	harness
+EP56	regime-L	64	bytes per activation	RULED	RULED by main, 2026-10-14 (Q-REVAL-9)	DINGHY if L below it (a REPORTING bucket; never a pick)	--regime-L=	header block	harness; reporting-bucket edge ruled by main, not a measurement (note 1)
+EP57	regime-g	18.5	bytes per use	RULED	RULED by main, 2026-10-14 (Q-REVAL-9)	TUG if g below it, else LINER (reporting only)	--regime-g=	header block	harness; reporting-bucket edge ruled by main, not a measurement (note 1)
+EP59	p-r1	0.80 of lines cells with N < 32	share	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-R1 CONFIRMED / REFUTED	--p-r1=	header block	harness
+EP60	p-r5	0.5	of SIMD-on DINGHY regret	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-R5	--p-r5=	header block	harness
+EP61	p-e	2	points of walk	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-E	--p-e=	header block	harness
+EP62	p-rt	0.40	of J1 patterns	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-RT (written before any reading; not moved by §2.3a)	--p-rt=	header block	harness
+EP63	p-bnd	1	× NULL_c	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-BND	--p-bnd=	header block	harness
+EP64	pmove-top	5;10;25	percent of cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	P-MOVE's concentration shares (reported)	--pmove-top=	header block	harness
+EP65	row-unexercised	10	RT cells	RULED	RULED by main, 2026-10-14 (Q-REVAL-2)	Q-REVAL-2's deletion proposal and the unexercised label (§4.2)	--row-unexercised=	header block	harness
+EP66	second-parser-cells	30	cells	CHOSEN	CHOSEN; list RULED by Frank 2026-10-14 (Q-REVAL-16)	the second parser's spot check (§5.3)	--second-parser-cells=	header block	harness
+#section bindings
+#id	name	measurement_key	unit	source	override
+EP14	r-in	kit.reval_r_in.<layer>.<regime>.<filter>	points of walk	zen4-grid2 streamed fit cells (E4b)	--r-in=VALUE|FILE
+EP16	w-call	kit.reval_w_call	ns per DINGHY call	the active set walk cost per DINGHY call (a row of the active set itself)	--w-call=VALUE|FILE
+EP30	nu	kit.reval_nu.<slot>	ratio	median abs(walk - walk#c)/walk over the slot walk#c groups; grid2 value is the NOISY reference	--nu=VALUE|FILE
+EP58	bucket-edges	(derived view, no key)	bytes	every N-boundary of the sets named in prereg.tsv, computed from their rows each run	--bucket-edges=VALUE|FILE

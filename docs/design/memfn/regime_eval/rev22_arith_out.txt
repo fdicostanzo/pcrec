@@ -1,0 +1,132 @@
+== 0. population (ESTIMATE, rev22_population.tsv): 177 questions, 54 RT, 37 J1-open, 17 J1-sealed
+   sealed (stand-in salt; the prereg's salt re-draws it): B12 B22 C01 C16 L02 L12 L18 M18 M20 N01 N17 P02 P04 P07 P13 P22 P27
+
+== 1. the cut ladder (cumulative; minutes; J1 = all RT patterns, open + sealed)
+   per group: arms x (L + 2 f_rerun) x 0.95 s + 4.0 s check; WITNESS L = 5; rep64k 0.65 s, no reruns
+  FULL (rev 2.1 shapes, real population)                                          340 J1 groups   243.7 + 65.0 fixed =  308.7 min
+  cut 1: J1 iter/S out (emulated; S2/S3 never gate)                               286 J1 groups   216.9 + 65.0 fixed =  281.9 min  (-26.9)
+  cut 2: J1 all/W out (S is the gating condition; W stays for J2a)                255 J1 groups   201.5 + 65.0 fixed =  266.5 min  (-15.4)
+  cut 3: arms per layer 8/6 -> 5 (drop S1 = LV_X86_W16 and the kept V3/A3)        255 J1 groups   154.5 + 65.0 fixed =  219.5 min  (-47.0)
+  cut 4: J2a 40 x 3 -> 20 patterns x 1 (W, the transferred bench subjects)        255 J1 groups   120.9 + 65.0 fixed =  185.9 min  (-33.6)
+  cut 5: rep64k on a 2-per-class subsample (ungated)                              255 J1 groups   111.8 + 65.0 fixed =  176.8 min  (-9.2)
+  cut 6: two windows; full anchor replay in window 1, drift anchors in window 2   255 J1 groups   111.8 + 19.0 fixed =  130.8 min  (-46.0)
+
+  units, FULL (rev 2.1 shapes, real population):
+    all/S                54 groups x 8 arms    26.9 min
+    all/W                31 groups x 8 arms    15.4 min
+    first/S              54 groups x 6 arms    21.0 min
+    iter/S               54 groups x 8 arms    26.9 min
+    lines               147 groups x 6 arms    57.3 min
+    J2a (W)             120 groups x 8 arms    59.7 min
+    WITNESS              35 groups x 6 arms    19.0 min
+    rep64k (ungated)     54 groups x 8 arms    17.6 min
+    fixed (anchors)                            65.0 min
+    TOTAL                                     308.7 min
+  units, cut 6: two windows; full anchor replay in window 1, drift anchors in window 2:
+    all/S                54 groups x 5 arms    18.1 min
+    first/S              54 groups x 5 arms    18.1 min
+    lines               147 groups x 5 arms    49.4 min
+    J2a (W)              20 groups x 5 arms     6.7 min
+    WITNESS              35 groups x 5 arms    16.2 min
+    rep64k (ungated)     14 groups x 5 arms     3.2 min
+    fixed (anchors)                            19.0 min
+    TOTAL                                     130.8 min
+
+  lever: lines buckets 4 -> 3 (drop C1's 14 edge)              -3.4 min, 255 -> 245 J1 groups (not taken)
+  lever: first/S only where the question's own mode is `first` -18.1 min, 255 -> 201 J1 groups (not taken)
+  lever: LAUNCHES 3 -> 2                                       saves ~32.9 min of timing (not taken: Q-REVAL-8 ruled 3; cross-fit on one launch per fold)
+
+== 1b. gated J1 cells per corpus class x regime (one layer x filter; open + sealed), lower / upper reading
+  FULL (rev 2.1 shapes, real population)
+    class       cells  DINGHY      TUG         LINER      
+    logs           56    46 / 6       0 / 35     10 / 15   
+    code           64    54 / 24      0 / 25     10 / 15   
+    prose         101    88 / 33      0 / 29     13 / 39   
+    structured     10    10 / 0       0 / 10      0 / 0    
+    markup         24    19 / 9       0 / 5       5 / 10   
+    nonenglish     52    48 / 28      0 / 20      4 / 4    
+    binary         33    28 / 14      0 / 9       5 / 10   
+    ALL           340   293 / 114     0 / 133    47 / 93   
+  LEAN
+    class       cells  DINGHY      TUG         LINER      
+    logs           36    30 / 6       0 / 21      6 / 9    
+    code           48    42 / 24      0 / 15      6 / 9    
+    prose          81    72 / 33      0 / 21      9 / 27   
+    structured      6     6 / 0       0 / 6       0 / 0    
+    markup         18    15 / 9       0 / 3       3 / 6    
+    nonenglish     42    39 / 24      0 / 15      3 / 3    
+    binary         24    21 / 12      0 / 6       3 / 6    
+    ALL           255   225 / 108     0 / 87     30 / 60   
+
+== 2. power per plan (J1-open only; J2a adds cells of unknown regime)
+   G0: cells/patterns per regime (D T L), floor 20 cells from 5 patterns
+   G1: |D(P)| = cells where the table's S0/S1 pick differs from always-P; floor 10
+   G2: n >= 2 (4 r / cap)^2 at r = 1.0 / 1.5 / 3.09%% of walk; cap from §8 PICKABLE as the R_in proxy
+   G3: non-CB cells = cells x (1 - 0.17); floor 40
+  FULL (rev 2.1 shapes, real population) -- lower reading, 231 gated cells per layer x filter
+    off S0 | G0 D 199/36p ok T 0/0p UNR L 32/7p ok | G1 |D| walk:86 V1:145 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L ok/UNDER/UNDER | G3 192
+    off S1 | G0 D 199/36p ok T 0/0p UNR L 32/7p ok | G1 |D| walk:45 V1:186 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L ok/UNDER/UNDER | G3 192
+    on  S0 | G0 D 199/36p ok T 0/0p UNR L 32/7p ok | G1 |D| walk:202 V1:198 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L ok/UNDER/UNDER | G3 192
+    on  S1 | G0 D 199/36p ok T 0/0p UNR L 32/7p ok | G1 |D| walk:138 V1:198 A1:126 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L ok/UNDER/UNDER | G3 192
+  FULL (rev 2.1 shapes, real population) -- upper reading, 231 gated cells per layer x filter
+    off S0 | G0 D 79/33p ok T 88/19p ok L 64/14p ok | G1 |D| walk:86 V1:145 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/ok/UNDER | G3 192
+    off S1 | G0 D 79/33p ok T 88/19p ok L 64/14p ok | G1 |D| walk:45 V1:186 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/ok/UNDER | G3 192
+    on  S0 | G0 D 79/33p ok T 88/19p ok L 64/14p ok | G1 |D| walk:202 V1:198 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 192
+    on  S1 | G0 D 79/33p ok T 88/19p ok L 64/14p ok | G1 |D| walk:138 V1:198 A1:126 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 192
+
+  LEAN = cut 6: two windows; full anchor replay in window 1, drift anchors in window 2 -- lower reading, 173 gated cells per layer x filter
+    off S0 | G0 D 152/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:62 V1:111 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 144
+    off S1 | G0 D 152/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:35 V1:138 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 144
+    on  S0 | G0 D 152/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:144 V1:140 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 144
+    on  S1 | G0 D 152/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:102 V1:140 A1:104 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 144
+  LEAN = cut 6: two windows; full anchor replay in window 1, drift anchors in window 2 -- upper reading, 173 gated cells per layer x filter
+    off S0 | G0 D 74/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:62 V1:111 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 144
+    off S1 | G0 D 74/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:35 V1:138 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 144
+    on  S0 | G0 D 74/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:144 V1:140 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 144
+    on  S1 | G0 D 74/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:102 V1:140 A1:104 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/UNDER L ok/UNDER/UNDER | G3 144
+
+  LEAN + lever: lines buckets 4 -> 3 (drop C1's 14 edge) (not taken) -- lower reading, 166 gated cells per layer x filter
+    off S0 | G0 D 145/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:62 V1:104 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 138
+    off S1 | G0 D 145/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:35 V1:131 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 138
+    on  S0 | G0 D 145/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:144 V1:133 A1:55 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 138
+    on  S1 | G0 D 145/36p ok T 0/0p UNR L 21/7p ok | G1 |D| walk:102 V1:133 A1:97 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNDER/UNDER/UNDER | G3 138
+  LEAN + lever: lines buckets 4 -> 3 (drop C1's 14 edge) (not taken) -- upper reading, 166 gated cells per layer x filter
+    off S0 | G0 D 67/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:62 V1:104 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 138
+    off S1 | G0 D 67/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:35 V1:131 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 138
+    on  S0 | G0 D 67/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:144 V1:133 A1:55 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 138
+    on  S1 | G0 D 67/33p ok T 57/19p ok L 42/14p ok | G1 |D| walk:102 V1:133 A1:97 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/UNDER L ok/UNDER/UNDER | G3 138
+
+  LEAN + lever: first/S only where the question's own mode is `first` (not taken) -- lower reading, 136 gated cells per layer x filter
+    off S0 | G0 D 122/36p ok T 0/0p UNR L 14/7p UNR | G1 |D| walk:46 V1:90 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 113
+    off S1 | G0 D 122/36p ok T 0/0p UNR L 14/7p UNR | G1 |D| walk:28 V1:108 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 113
+    on  S0 | G0 D 122/36p ok T 0/0p UNR L 14/7p UNR | G1 |D| walk:107 V1:103 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 113
+    on  S1 | G0 D 122/36p ok T 0/0p UNR L 14/7p UNR | G1 |D| walk:79 V1:103 A1:90 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 113
+  LEAN + lever: first/S only where the question's own mode is `first` (not taken) -- upper reading, 136 gated cells per layer x filter
+    off S0 | G0 D 70/33p ok T 38/19p ok L 28/14p ok | G1 |D| walk:46 V1:90 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 113
+    off S1 | G0 D 70/33p ok T 38/19p ok L 28/14p ok | G1 |D| walk:28 V1:108 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L ok/UNDER/UNDER | G3 113
+    on  S0 | G0 D 70/33p ok T 38/19p ok L 28/14p ok | G1 |D| walk:107 V1:103 A1:62 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/ok L UNDER/UNDER/UNDER | G3 113
+    on  S1 | G0 D 70/33p ok T 38/19p ok L 28/14p ok | G1 |D| walk:79 V1:103 A1:90 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T ok/ok/UNDER L UNDER/UNDER/UNDER | G3 113
+
+  LEAN without lines (illustration: what lines buys) -- lower reading, 37 gated cells per layer x filter
+    off S0 | G0 D 30/30p ok T 0/0p UNR L 7/7p UNR | G1 |D| walk:16 V1:21 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    off S1 | G0 D 30/30p ok T 0/0p UNR L 7/7p UNR | G1 |D| walk:7!UND V1:30 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    on  S0 | G0 D 30/30p ok T 0/0p UNR L 7/7p UNR | G1 |D| walk:37 V1:37 A1:0!UND | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    on  S1 | G0 D 30/30p ok T 0/0p UNR L 7/7p UNR | G1 |D| walk:23 V1:37 A1:14 | G2 [r=1.0/1.5/3.09%] D ok/ok/ok T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+  LEAN without lines (illustration: what lines buys) -- upper reading, 37 gated cells per layer x filter
+    off S0 | G0 D 4/4p UNR T 19/19p UNR L 14/14p UNR | G1 |D| walk:16 V1:21 | G2 [r=1.0/1.5/3.09%] D UNREACHED T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    off S1 | G0 D 4/4p UNR T 19/19p UNR L 14/14p UNR | G1 |D| walk:7!UND V1:30 | G2 [r=1.0/1.5/3.09%] D UNREACHED T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    on  S0 | G0 D 4/4p UNR T 19/19p UNR L 14/14p UNR | G1 |D| walk:37 V1:37 A1:0!UND | G2 [r=1.0/1.5/3.09%] D UNREACHED T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+    on  S1 | G0 D 4/4p UNR T 19/19p UNR L 14/14p UNR | G1 |D| walk:23 V1:37 A1:14 | G2 [r=1.0/1.5/3.09%] D UNREACHED T UNREACHED L UNREACHED | G3 31 UNDERPOWERED
+
+  LEAN with cap(LINER) = R_in + 2 (proposed) -- lower reading: G2 L off S0:ok/ok/UNDER need 7/16/69 off S1:ok/ok/UNDER need 7/16/69 on S0:ok/ok/UNDER need 8/18/76 on S1:ok/ok/UNDER need 8/18/76
+  LEAN with cap(LINER) = R_in + 2 (proposed) -- upper reading: G2 L off S0:ok/ok/UNDER need 7/16/69 off S1:ok/ok/UNDER need 7/16/69 on S0:ok/ok/UNDER need 8/18/76 on S1:ok/ok/UNDER need 8/18/76
+
+  J1-sealed alone (final reading), FULL (rev 2.1 shapes, real p, lower: 109 cells; G0 D 94/17p ok T 0/0p UNREACHED L 15/3p UNREACHED; G3 91 ok
+  J1-sealed alone (final reading), FULL (rev 2.1 shapes, real p, upper: 109 cells; G0 D 35/15p ok T 45/10p ok L 29/6p ok; G3 91 ok
+  J1-sealed alone (final reading), LEAN, lower: 82 cells; G0 D 73/17p ok T 0/0p UNREACHED L 9/3p UNREACHED; G3 68 ok
+  J1-sealed alone (final reading), LEAN, upper: 82 cells; G0 D 34/15p ok T 30/10p ok L 18/6p UNREACHED; G3 68 ok
+
+== 3. LEAN split into two quiet-box windows
+  window 1: anchors (full) 10 + J1 all/S 18.1 + J1 first/S 18.1 + WITNESS 16.2 + rep64k 3.2 + drift 3 = 68.7 min
+  window 2: drift anchors 3 + J1 lines 49.4 + J2a 6.7 + drift 3 = 62.1 min
+  total 130.8 min; plus zen4-grid2's required ~56 min, separately (rev 2.1 §2.1)

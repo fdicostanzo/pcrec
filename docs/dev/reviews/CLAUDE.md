@@ -550,3 +550,21 @@ Maintenance: add a file per checkpoint and list it here.
 - `plan_triage_2026-10-12.md` — [PLAN-LINT] step 1 (lane plantri, sonnet, read-only): plan.md classified item by item (262 rows + 40 free-text blocks: COMPLETED / SUPERSEDED / DUPLICATE / STALE / JUNK / LIVE with evidence and a proposed action each), Frank's named examples answered, the file's own rule violations listed, format inconsistencies counted by kind, and a proposed canonical row format with lint rules P1-P19 for step 3. A record of the file at main 43f78acc1; line numbers are that commit's.
 - `2026-10-12-r1-memfn-r17b.md` (+ `-critA.md`, `-critB.md`) — LIGHT code review of [MEMFN] R17-b (lane/r17b 174f3e320, abi 77): critic A emitted-code correctness/opus, critic B contract + package/sonnet. 0 BLOCKER, 10 SHOULD. No wrong answer, over-read or UB (exhaustive W8 masks; stateful == stateless for n <= 20). The SHOULDs: `mf_use` does not check s/n; the budget is a visible constant (lane r17b2); compile time 3-7x; slot25's judges are toothless; four doc misstatements; no artifact-level cover check; the +2.2 KB per site moves the refusal set (main ruled a general size-ladder rung declared by kit row attribute, same commit). By-id disposition table inside; fixes go to lane r17c.
 - `2026-10-14-r1-measure-sets.md` — D6 panel (msc1 checks/independence/staleness opus, msc2 contract/boundaries/family sonnet, msc3 measurement validity sonnet) on [MEASURE-SET] measure_sets.md (lane msetdes). 4 blockers (immutable MOVERS vs HEAD census; the python pre-parse checked against its own twin; the envelope default unbuildable before a second official set and moving selections at n=1; answer identity unable to reach runtime dispatch), 22 majors (invented wire shape; stamp vs `_FINDINGS` conventions; kit-vocabulary key columns; staleness not transitive and gating on the bench; per-column envelope; unpinned units and regimes; install gate), the SIBLING FAMILY (one knowledge-source module for analysis/measures/picks). All ACCEPTED; Q-MS-1 re-put and the stale-default policy go to Frank; revision lane msetrev.
+- `2026-10-14-r1-memfn-regime-eval.md` — D6 panel (crit-meas measurement/pre-registration, crit-indep independence, crit-contract boundary/staleness; all sonnet, read-only) on [REGIME-EVAL] regime_eval.md rev 1. Three ACCEPT-WITH-FIXES verdicts with two BLOCKERS:
+  - I-1: the pick checks compare the kit's one selection function with itself; a blinded prose-row oracle is needed.
+  - I-2: G4 cannot pass and row deletion passes vacuously; unscorable rows go to the twin, and controls are tested per moved cell.
+
+  Majors:
+  - the caps come from repeated-buffer data but gate streamed cells;
+  - noise is summed linearly;
+  - the consumer-bound class hides pick losses;
+  - winner's curse, and a tautological A/A;
+  - held-out contamination and no sealed holdout;
+  - uncounted populations;
+  - undetectable evaluator plants;
+  - a wrong-box set is blamed on the table;
+  - J2a's generators would write into pcrec-bench;
+  - unbuilt knobs; no shadow trace before routing;
+  - the census is misnamed.
+
+  33 ids in 20 themes, all ACCEPTED; rev 2 by lane regeval3. All three critics converged on the same unlock: a table-agnostic judge interface (picks.tsv), with only the interface accepted (D77).

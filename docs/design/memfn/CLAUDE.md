@@ -262,7 +262,16 @@ Maintenance: update this file when files are added/removed or change roles.
   regime table (lane regeval, 2026-10-13, PROPOSED, design only; REV 1 lane regeval2,
   2026-10-14, applies main's review: every judge cell STREAMED or ≥ 1 MiB with the
   repeated 64 KiB column ungated, consumer-bound cells as a counted class with a
-  measured criterion, P-MOVE, Q-REVAL-1..11 resolved; a D6 panel follows). It covers:
+  measured criterion, P-MOVE, Q-REVAL-1..11 resolved; REV 2 lane regeval3, 2026-10-14,
+  applies the D6 panel r1 (`../../dev/reviews/2026-10-14-r1-memfn-regime-eval.md`, 33 ids,
+  marked `[r1 <id>]`, mapped by id in its §R): a D27-blinded pick oracle (§5.4); H-keyed
+  rows and C2 UNSCORABLE and twin-owned; every bar a formula in walk-cost units with
+  quadrature noise over timing groups, power floors and G0; G2 caps from a STREAMED
+  in-sample replay of zen4-grid2's fit cells (E5 waits for grid2); CB out of the
+  denominator only, with condition 3b; cross-fit regret, split-half C7, `walk#c`, null
+  mutation C8; a sealed ~30% of J1 and J1b; SET-MISMATCH anchors and an ISA key; J2a
+  under the bench boundary; the `picks.tsv` + `arm_ns.tsv` interface; ~431 min in five
+  judge slots; Q-REVAL-12..16 open). It covers:
   - the cell and its knowledge record (P/N/M/E/H/A under S0-S3);
   - measured ns from the grid1 harness at both layers, with the best taken from timed
     arms, never the model;
@@ -278,6 +287,40 @@ Maintenance: update this file when files are added/removed or change roles.
     denies), with a moved-cell "visibly worse" rule and WITNESS cells for reach;
   - one declared table, read through the kit's pick harness;
   - diffable results and the plan E0-E12; Q-REVAL-1..11.
+
+  **REV 2.2 (lane regeval5, 2026-10-14; marked `[r2.2]`, mapped in §R.4)** folds in the
+  REAL J1 population from main (rwcorpus: 88 manifest rows in 7 classes; rwquest: 177
+  blinded questions).
+  - Placement estimate, without a compile: 54 RT (31%), 116 OTHER (one literal lead byte
+    or `(?m)^`), 2 UNREACHED, 1 NOSITE, 4 GATE-EXCLUDED `short-pool`, 0 REFUSE (5 `ucp`
+    at risk). Cells are counted per class × regime under two bracketing readings.
+  - The corpus caveats are applied: CRLF labels (all prose and non-English, plus two log
+    files); a stratified salt-derived window rule across whole files and same-family
+    pools, with one exemplar reserve per pool and a 1 MiB floor; mislabelled files
+    reported apart; subject-shape labels; the blinded author's disclosure as a §5.1 row,
+    with a primed / unprimed headline split.
+  - The LEAN plan is THE plan (Q-REVAL-12, ruled by Frank 2026-10-14): ~131 min in two
+    quiet-box windows, plus grid2's ~56. Each of its six cuts and five untaken levers is
+    priced in power. Rev 2.1's plan is a documented alternative only (~309 min on the
+    real population).
+  - cap(LINER) = R_in + 2 and a pooled final reading for an underpowered sealed regime
+    are RULED (Q-REVAL-16). J2a's byte-transfer fallback is the default.
+  - REV 2.3 (lane regeval6, 2026-10-14): ONE evaluator parameter table (§3.0a, 72 rows),
+    every chosen constant that can change a verdict a declared, visible row with name,
+    value, unit, what it gates, provenance (CHOSEN / DERIVED / RULED), override option and
+    where it is printed (Frank, Q-REVAL-17: k = 3 "shouldn't be hidden"). The prereg
+    pins and hashes the table; every report prints it with its diff against the prereg; a
+    run whose parameters differ is NON-GATING ("advisory: parameters differ from prereg
+    <hash>") and `--final` refuses any override.
+  - REV 2.4 (lane regeval7, 2026-10-14): Frank's [KNOW-SRC] ruling. The parameter table
+    is one more [KNOW-SRC] KIND, `evaluator-params`, in
+    `regime_eval/regime-eval.evaluator-params.tsv` (canonical `#section` shape, the source
+    of truth; §3.0a mirrors it). The prereg hash IS the kind's digest, the report's diff IS
+    the census tool's diff, the table lists through `--list-evaluator-params`. The
+    placement rule checked per row: 62 stay as harness thresholds; EP14 r-in, EP16 w-call,
+    EP30 nu and EP58 bucket-edges are derived from timing and MOVE to the measurement set;
+    EP67-EP72 are plan arithmetic and leave the kind.
+  - Instruments: `regime_eval/rev22_population.py`, `rev22_arith.py`.
 
   `regime_eval/` holds the in-sample replay PROTOTYPE on grid1's slot (own
   CLAUDE.md). It reproduces regime_tables §3's S0 row exactly and finds that the
@@ -412,6 +455,41 @@ Maintenance: update this file when files are added/removed or change roles.
     dense find-all.
   - **Also.** The R17-b″ seam (§8), Q-R17P-1..8 (§9) and findings F1-F9
     (§11).
+  - **REVISION 2 (lane r17bp3, 2026-10-14, design only): the ONE design for the
+    kit's first candidate-finder delivery, against MAIN's code (abi 78,
+    MF_SITE_ABI 10; R17-a and R17-b are PORTED steps). Read its §0 and §R2
+    first; changed text is marked `[rev2]`.** It folds R-19/R-20/R-21, D161
+    add. 8/10/11-15 (Q-WR-1/2/3/6/9), D166 + add. 1/1.1/2, winreq's lists,
+    sbscope/pcscope, regime_eval rev 2.2, regime_tables rev 0.5 and
+    measure_sets rev 2.1.
+    - **Scope and table (§1):** set FIND, the one-byte stops (PF, DFA hat,
+      hybrid, MLINE), and the presence pre-checks + handoffs merged into ONE
+      window request per search entry. `fd_rows[]` gains a SLOT column:
+      21 rows designed (18 locked at B4; F0, F1, P1 added at B5 as formal
+      edits), 15 FIND (F0 NONE, F1 measured libc, R0-R8, D1 the
+      UNMEASURED-DEFAULT libc row of Q-WR-1, D2 runs, R7/R7s LINER) and
+      6 PRES (P0 REQUIRED keep-all, P1 priced at its trigger, P2-P4 pcrec's
+      ported picks, P9 KEEP). A temporary `fd_route[]` keeps groups SHADOW
+      until their step.
+    - **Step plan (§3):** B0 port R17-a; B1 facts + table + shadow (= ST1,
+      R-19, R-20, E3); B2 one-byte routed; B3a/B3b presence + handoff
+      (after E-1): the first delivery, ZERO movers, no pcrec abi event; then
+      grid2, the judge, and B4 the routing commit (LOCKDOWN, the one
+      censused mover, one abi event, M0's stamp); B5 measured rows; B6 SIMD;
+      B7 libc deny; B8 dispatch; B9 R17-b″.
+    - **Contract (§4):** a PRESENCE span class with `omin` from the match
+      start; range-level binding, EMPTY = NOMATCH, decided first; the
+      unconstrained reply as `[lo, n)`; proven facts (`proven0`,
+      `scan_exists`, `includes`, `pres_kept`) as the read-back for pcrec's
+      six readers; the K65 obligation per consumer; every winreq C-item
+      mapped.
+    - **Measurements (§5):** 23 families, 8 ABSENT; method cards
+      `kit-grid@2`; the `libc:` dependency as provenance plus a set-level
+      flag; ONE zen4-grid2 slot, ~88 min required, ~96 with the optional
+      perf passes and pre-scan probe.
+    - **Also:** R17-b″'s seam (§6: a 40 B kit row; S = 48 B if pcrec's K5
+      row retires), rev 1's Q-R17P-1..8 closed and Q-R17P-9..14 new (§7),
+      sabotage S911-S922 and S964-S980 by step (§8.3), findings F10-F21.
 - `r17b_prime/` — that note's compile-only instruments and transcripts
   (cover-shape census of R17-b's movers, multi-form size twins, the
   walk-in-helper assembly check; own CLAUDE.md).

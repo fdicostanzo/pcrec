@@ -1,0 +1,109 @@
+== 1. consumer-bound condition 2 (misses/KiB spread / walk misses/KiB)
+cell     subject    walk m/K   spread K spread all  SIMD-off: V1 pick vs best  SIMD-on: A1 pick vs best  
+bounded  code1m        229.2      39.8%      39.8%  c3  +0.0% 3b  +5.2% --     c3  +0.0% 3b  +1.9% ok    
+bounded  code64k        94.6      91.7%      91.7%  c3  +0.3% 3b  +0.0% ok     c3  +0.3% 3b  +6.6% --    
+bounded  docs1m        250.9      40.1%      40.1%  c3  +0.0% 3b  +4.2% --     c3  +0.0% 3b  +2.8% ok    
+bounded  docs64k       168.1      45.2%      45.2%  c3  +0.0% 3b  +4.2% --     c3  +0.0% 3b  +6.9% --    
+bounded  prose1m       145.1       0.9%      10.6%  c3  +0.0% 3b +15.8% --     c3  +0.0% 3b +19.0% --    
+bounded  prose64k      115.3       4.2%      12.8%  c3  +0.0% 3b +18.2% --     c3  +0.0% 3b +20.9% --    
+dfa-hat  code1m        170.3      36.5%      38.4%  c3  +0.0% 3b  +7.8% --     c3 +14.8% 3b  +0.0% --    
+dfa-hat  code64k         0.6     137.7%     137.7%  c3  +0.0% 3b  +6.0% --     c3  +8.8% 3b  +0.0% --    
+dfa-hat  docs1m        193.8      34.6%      37.9%  c3  +0.0% 3b  +7.7% --     c3 +15.3% 3b  +0.0% --    
+dfa-hat  docs64k         0.9      80.8%      97.0%  c3  +0.0% 3b  +8.6% --     c3  +7.0% 3b  +0.0% --    
+dfa-hat  prose1m       156.1      44.4%      44.4%  c3  +0.0% 3b +10.5% --     c3 +14.9% 3b  +0.0% --    
+dfa-hat  prose64k        0.4      27.1%      65.1%  c3  +0.0% 3b  +7.6% --     c3  +7.1% 3b  +0.0% --    
+hex-run  code1m        201.5      79.4%      79.4%  c3  +0.0% 3b  +1.2% ok     c3  +5.4% 3b  +0.0% --    
+hex-run  code64k         4.7      95.8%      95.8%  c3  +0.0% 3b +24.2% --     c3  +0.0% 3b +29.5% --    
+hex-run  docs1m        250.1      77.4%      77.4%  c3  +3.0% 3b  +0.0% ok     c3  +4.9% 3b  +0.0% --    
+hex-run  docs64k       150.2      99.8%      99.8%  c3  +9.4% 3b  +0.0% --     c3  +9.4% 3b  +5.8% --    
+hex-run  prose1m       209.4      81.4%      81.4%  c3  +0.9% 3b  +0.0% ok     c3  +6.3% 3b  +0.0% --    
+hex-run  prose64k       22.0      98.4%      98.4%  c3  +0.0% 3b +18.9% --     c3  +0.0% 3b +24.5% --    
+  cond 1: walk misses/KiB >= 50; cond 2: spread K <= 20%; cond 3/3b: (walk-best)/walk and (pick-best)/walk <= NULL (3.09% of walk, cycles proxy)
+  'ok' = conditions 3 and 3b hold for that layer; CB needs all four.
+
+== 1b. timing-only consumer-bound rule, cycles/pass as the ns proxy
+   NULL proxy = 3.09% of walk (gridread's grid p90 A/A; a cell's NULL_c is >= this)
+cell     subject     tspread  in NULL | layer: timing-CB at k=2,3,4 | perf-CB (misses>=50/KiB, spread K<=20%)
+bounded  code1m         5.2%     1.7  off -- -- --  perf --
+bounded  code1m         5.2%     1.7  on  CB CB CB  perf --
+bounded  code64k        6.6%     2.1  off -- CB CB  perf --
+bounded  code64k        6.6%     2.1  on  -- -- --  perf --
+bounded  docs1m         4.2%     1.4  off -- -- --  perf --
+bounded  docs1m         4.2%     1.4  on  CB CB CB  perf --
+bounded  docs64k        6.9%     2.2  off -- -- --  perf --
+bounded  docs64k        6.9%     2.2  on  -- -- --  perf --
+bounded  prose1m       19.0%     6.2  off -- -- --  perf --
+bounded  prose1m       19.0%     6.2  on  -- -- --  perf --
+bounded  prose64k      20.9%     6.8  off -- -- --  perf --
+bounded  prose64k      20.9%     6.8  on  -- -- --  perf --
+dfa-hat  code1m        22.6%     7.3  off -- -- --  perf --
+dfa-hat  code1m        22.6%     7.3  on  -- -- --  perf --
+dfa-hat  code64k       14.9%     4.8  off -- -- --  perf --
+dfa-hat  code64k       14.9%     4.8  on  -- -- --  perf --
+dfa-hat  docs1m        22.9%     7.4  off -- -- --  perf --
+dfa-hat  docs1m        22.9%     7.4  on  -- -- --  perf --
+dfa-hat  docs64k       15.6%     5.0  off -- -- --  perf --
+dfa-hat  docs64k       15.6%     5.0  on  -- -- --  perf --
+dfa-hat  prose1m       25.4%     8.2  off -- -- --  perf --
+dfa-hat  prose1m       25.4%     8.2  on  -- -- --  perf --
+dfa-hat  prose64k      14.7%     4.8  off -- -- --  perf --
+dfa-hat  prose64k      14.7%     4.8  on  -- -- --  perf --
+hex-run  code1m         6.6%     2.1  off -- CB CB  perf --
+hex-run  code1m         6.6%     2.1  on  -- -- --  perf --
+hex-run  code64k       29.5%     9.6  off -- -- --  perf --
+hex-run  code64k       29.5%     9.6  on  -- -- --  perf --
+hex-run  docs1m         4.9%     1.6  off CB CB CB  perf --
+hex-run  docs1m         4.9%     1.6  on  -- -- --  perf --
+hex-run  docs64k        9.4%     3.0  off -- -- --  perf --
+hex-run  docs64k        9.4%     3.0  on  -- -- --  perf --
+hex-run  prose1m        6.3%     2.1  off -- CB CB  perf --
+hex-run  prose1m        6.3%     2.1  on  -- -- --  perf --
+hex-run  prose64k      24.5%     7.9  off -- -- --  perf --
+hex-run  prose64k      24.5%     7.9  on  -- -- --  perf --
+  k=2: timing-CB on 3 of 36 (cell, layer) rows; disagrees with perf-CB on 3
+  k=3: timing-CB on 6 of 36 (cell, layer) rows; disagrees with perf-CB on 6
+  k=4: timing-CB on 6 of 36 (cell, layer) rows; disagrees with perf-CB on 6
+
+== 2. judge wall estimate (minutes), WITHOUT the optional perf pass (the required path)
+unit             groups    timed   perf  check    total
+J1 first/S           70     22.6    0.0    4.7     27.3
+J1 all/S             70     30.1    0.0    4.7     34.8
+J1 all/W             70     30.1    0.0    4.7     34.8
+J1 iter/S            70     30.1    0.0    4.7     34.8
+J1 lines/S b1        70     22.6    0.0    4.7     27.3
+J1 lines/S b2        70     22.6    0.0    4.7     27.3
+J1 lines/S b3        70     22.6    0.0    4.7     27.3
+J1 lines/S b4        70     22.6    0.0    4.7     27.3
+J2a                 120     51.7    0.0    8.0     59.7
+rep64k column        70     18.2    0.0    4.7     22.9
+WITNESS              35     16.6    0.0    2.3     19.0
+SUM                 785    290.0    0.0   52.3    342.3
+five slots (unit totals + 13 min fixed per slot):
+  J-a1    82.6  J1 all/S + J1 all/W
+  J-a2    75.1  J1 iter/S + J1 first/S
+  J-a3    86.5  J1 lines/S b1 + J1 lines/S b2 + WITNESS
+  J-a4    79.0  J1 lines/S b3 + J1 lines/S b4 + rep64k column/2
+  J-b     84.1  J2a + rep64k column/2
+  total  407.3 min (6.8 h)
+
+== 2. judge wall estimate (minutes), WITH the optional perf pass
+unit             groups    timed   perf  check    total
+J1 first/S           70     22.6    2.1    4.7     29.4
+J1 all/S             70     30.1    2.1    4.7     36.9
+J1 all/W             70     30.1    2.1    4.7     36.9
+J1 iter/S            70     30.1    2.1    4.7     36.9
+J1 lines/S b1        70     22.6    2.1    4.7     29.4
+J1 lines/S b2        70     22.6    2.1    4.7     29.4
+J1 lines/S b3        70     22.6    2.1    4.7     29.4
+J1 lines/S b4        70     22.6    2.1    4.7     29.4
+J2a                 120     51.7    3.6    8.0     63.3
+rep64k column        70     18.2    2.1    4.7     25.0
+WITNESS              35     16.6    1.1    2.3     20.0
+SUM                 785    290.0   23.6   52.3    365.9
+five slots (unit totals + 13 min fixed per slot):
+  J-a1    86.8  J1 all/S + J1 all/W
+  J-a2    79.3  J1 iter/S + J1 first/S
+  J-a3    91.8  J1 lines/S b1 + J1 lines/S b2 + WITNESS
+  J-a4    84.2  J1 lines/S b3 + J1 lines/S b4 + rep64k column/2
+  J-b     88.8  J2a + rep64k column/2
+  total  430.9 min (7.2 h)
