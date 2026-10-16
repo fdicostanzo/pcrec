@@ -588,54 +588,84 @@ Notes:
   comes from slot FIND's rows evaluated for the span's shape (D1 for one byte, D2 for a
   run). One form table, not a second one.
 
-### 1.5 Evaluation: one table, two times (rev 1 §1.2, with three `[rev2]` rules)
+### 1.5 Evaluation: one table, two times (rev 1 §1.2, with three `[rev2]` rules) `[rev3: D1]`
 
-Per site, per slot, per layer variant: walk the rows; skip rows whose `layers` or `kinds`
-exclude the variant; skip rows whose `needs` are unavailable (E absent or prior-only for
-an evidence row, H outside an iterator, M unstated, a set reference ABSENT); a
-compile-time row that holds is the terminal; an N-row becomes an emitted dispatch
-interval; adjacent same-pick intervals merge; each dispatch interval must pay (§2.5) or
-take its `unpaid`; one surviving form means no dispatch at all.
+`[rev3 D1]` Per site, per slot, per layer variant, the evaluation is `kit_walk` plus ONE
+residual step:
+- **the terminal**: `kit_walk(fd_table, slot, ...)` over the rows whose `needs` exclude
+  N and H returns the first row whose deny, contract and predicate pass; its pick is the
+  TERMINAL. A row whose `needs` are unavailable (E absent or prior-only for an evidence
+  row, H outside an iterator, M unstated, a set key ABSENT) does not hold;
+- **the residual (N-interval) step**: each row ABOVE the terminal that needs N is asked
+  on its own (`kit_ask`, the same three tests); a holding N-row becomes an emitted
+  dispatch interval; adjacent same-pick intervals merge; each interval must pay (§2.5) or
+  take its `unpaid`; one surviving form means no dispatch at all.
 
-`[rev2]` Three rules this revision adds:
+`[rev2]` Three rules:
 1. **Proven facts are decided once per site, at layer OFF.** A row whose pick changes
    what the site PROVES (F0 NONE proves nothing; LIBC proves byte b at offset 0; WALK and
-   V1 prove S at offset 0; PRES DROP removes a verdict) is decided at the OFF variant,
-   and the W16/W32 variants inherit that decision. They may pick a different form only
-   among forms with the same proven fact. DERIVED from D161 add. 8 (the proof is the
-   site's statement, identical in every layer) and the floor rule (a SIMD-on artifact is
-   the SIMD-off one plus guarded text, so pcrec's own text, which reads the proof,
-   cannot differ by layer).
+   V1 prove S at offset 0; a PRES `proven_by` link removes a verdict) is decided at the
+   OFF variant, and the W16/W32 variants inherit that decision. They may pick a different
+   form only among forms with the same proven fact. DERIVED from D161 add. 8 (the proof is
+   the site's statement, identical in every layer) and the floor rule (a SIMD-on artifact
+   is the SIMD-off one plus guarded text, so pcrec's own text, which reads the proof,
+   cannot differ by layer). `[rev3 A4]` It is also why the define-time query (§4.5) has
+   one answer per site: it answers for the OFF decision.
 2. **A span whose byte form is a SUPERSET** (D161 add. 10: a utf8 multi-byte class
    lowered to per-position byte sets) proves only the byte sets, never the class; its
    candidates are a filter and pcrec re-checks. No row of this delivery verifies a span.
 3. **Totality.** NULL `mf_measures`, an unknown key, a NULL analysis and every absent
-   kind make the reading rows skip; the last row of each slot (R7/R7s, P9) reads nothing.
-   For layer W16/W32 with no W64 form built, R7s does not apply and the variant adds no
-   text (the floor rule), so a SIMD-on artifact is byte-identical to SIMD-off until B6.
+   kind make the reading rows skip; the last row of each slot reads nothing (`[rev3]` R7w
+   at OFF, P9). At W16/W32 with no W64 form built, R7 does not apply and no row is chosen:
+   the variant adds no text (the floor rule), so a SIMD-on artifact is byte-identical to
+   SIMD-off until B6.
 
-### 1.6 Routing state: shadow until each step routes `[rev2]`
+### 1.6 Routing state: a per-row `routed` bit until B4 `[rev2]` `[rev3: D6, B5, B6]`
 
-The table is built whole at B1 (E3) and judged whole by [REGIME-EVAL]. It must not move
-a byte before the judge (Q-REVAL-11). The two are reconciled by ONE temporary declared
-list, `fd_route[]`, first-match over (slot, group predicate):
+The table is built whole at B1 (E3) and judged whole by [REGIME-EVAL]. It must not move a
+byte before the judge (Q-REVAL-11; D167 Q-R17P-13: the judge gates B4 only). `[rev3 D6]`
+Rev 2 reconciled the two with a temporary list `fd_route[]` of group predicates, which
+restated the rows' own conditions in a second language (two statements of one
+population). Revision 3 replaces it with ONE bit per row, `fd_row.routed`:
+- **A site renders the table's pick iff the FIRST matching row (the terminal, and every
+  interval row above it) is routed.** Otherwise it renders its pre-table form (main's kit
+  rows, pcrec's encoding) and, in the MF_TRACE build only, writes the table's
+  (site, slot, row, form, interval literals) record: zero bytes (regime_eval §5.3's
+  trace-only shadow, r4ccore's I1 pattern).
+- **The commit that routes a group sets its rows' bits** (the "routed at" column of §1.3
+  and §1.4): D1, D1c, D1w at B2; D2 and the PRES rows at B3b; R0, R1, R5, R7, R7w at B4
+  (R2, R8 at B6; F0-F2, P1 at B5; R3a, R3b, R4 at B9).
+- At B4 every row is routed; the field is DELETED in B4's commit. It is
+  implement-then-replace's switch written as data on the rows themselves.
 
-| group | state at B1 | routed at |
-|---|---|---|
-| FIND, \|S\| = 1, kind ≠ VM_ATTEMPT (D1's population, MLINE included) | SHADOW | B2 |
-| FIND, span 0 a RUN (D2: handoff landmarks) | SHADOW | B3b |
-| PRES, every span | SHADOW (no presence span exists until B3a states them) | B3b |
-| FIND, every other site (set covers; the VM hat at any \|S\|) | SHADOW | B4 |
+`[rev3 B5]` **Routing at zero movers must be OBSERVABLE.** A routed row whose pick is
+today's form is byte-identical by design, so neither emit_sweep nor G2 can tell
+"routed and identical" from "never routed". Three things make it visible:
+1. **a pcrec-side routed-record count**: in the trace build, pcrec counts the sites whose
+   decision came from a routed row, per (site kind, row), read from pcrec's own trace
+   records (the reader that consumed the kit's rendering), never from the kit's own
+   counter; each routing step pins a floor per (kind, row) and checks it both ways (a
+   count that falls is a row that stopped routing, one that rises past its population is
+   a row routing early);
+2. **disagreement witnesses** per routed group, where pcrec's old rule and the kit's row
+   CAN differ, so a decision still taken by pcrec shows as a trace or stamp difference: a
+   one-byte count boundary for D1 (`|S|` 1 vs 2, the VM-hat role vs a presence span), a
+   G1-dominated and a G1-kept span for P2, a tie for P3's member order;
+3. **the reverse plant** SN-1 (a row's `routed` bit left 0 after its step): detector,
+   the count above (§8.3).
 
-- **SHADOW** renders the site's pre-table form (main's kit rows, pcrec's encoding) and,
-  in the MF_TRACE build only, writes the table's (site, slot, row, form) record, zero
-  bytes (regime_eval §5.3's trace-only shadow, r4ccore's I1 pattern).
-- **ROUTED** renders the table's pick.
-- At B4 every group is ROUTED; the list is empty and is DELETED in B4's commit. It is
-  implement-then-replace's switch written as data, not a parallel table: it holds no
-  pick, only which groups the one table drives yet.
+`[rev3 B6]` **The shadow is run where B4 will first exercise it.** At B1 the trace-build
+shadow runs under the NULL set, the kit's interim TSV (Q-REVAL-10) and each synthetic
+extreme set (`all-walk`, `all-v1`, `all-wide`, and one holding every derivable key),
+through a trace/test-build-only lever (the B4 harness lever `measures=FILE`, built at B1
+for the trace build only, §3.1). It records each dispatch's interval literals. B1's
+shadow picks under the interim set are committed as B4's PREDICTED MOVER MANIFEST: B4's
+movers-by-ID are held to it (a difference is explained or the manifest is wrong). The
+shadow's denominator is a pcrec-side census of search-entry activations from emitted C
+(the PF/MLINE/PRE site census of §3.5), not the shadow's own record count; and the
+comparator itself is planted (SN-6).
 
-### 1.7 The listings `[rev2: --list-finder WITHDRAWN]`
+### 1.7 The listings `[rev2: --list-finder WITHDRAWN]` `[rev3: A9, B3, C2, D11]`
 
 Rev 1 proposed a new CLI flag `--list-finder`. Withdrawn: a new CLI surface waits for
 [IFACE-PUSH] (memory `pcrec-iface-push-later`), and R-20's R-MS4 already carries the
@@ -643,19 +673,40 @@ same information through existing channels:
 - **The rows**: `mf_finder_rows(size_t *n)` beside `mf_options()`, read by
   [LIST-TABLES]' census in its shape (measure_sets §5.4), with each row's `needs`, the
   keys it reads and, per threshold key, its SAFE direction (`max`/`min`/`none`, R-MS4;
-  directions due at M2).
-- **Per artifact**: a new `--emit-facts` section `memfn` (measure_sets §4.5): per site,
-  the slot, the row that fired, its pick, and for a dispatch the interval literals. It is
-  an APPEND to facts_listing.md §3's section set (a D80 hunk at B1).
+  directions due at M2), `[rev3]` its `basis`, its `refuted_by` and its `routed` bit.
+- **Per artifact**: the `--emit-facts` section `memfn` (measure_sets §4.5): per site,
+  the slot, the row that fired, its pick, its `basis`, and for a dispatch the interval
+  literals; `[rev3 C2]` plus a per-compile count of sites decided by an
+  UNMEASURED-DEFAULT row, so a default is never read as measured (`consulted` stays one
+  boolean, R-MS2). `[rev3 A9, B3]` It is NOT added at B1: R-20 schedules it with M0 (B4),
+  where artifacts move anyway; adding it at B1 would move every `--emit-facts` output
+  (facts_listing.md §3¶3: "no other section is printed") inside a step gated at zero.
+  The D80 hunk (facts_listing.md §3) rides B4.
 - **The set's provenance** is the set's own listing (`--list-measurements`, M0).
 
-### 1.8 The row-edit log
+### 1.8 The row-edit log and LOCKDOWN `[rev3: B9, D7]`
 
-D161 add. 13: until LOCKDOWN (B4, §3.3) row edits are free and logged in
-`memfn/docs/finder_history.md`; this revision's edits (F0, F1, D1, D2, the PRES slot,
-R1's terminal-relative key) are logged there at B1's build, since that is when the
-rows become source. regime_tables.md mirrors the FIND slot; the PRES slot is not a
-regime row (it is not judged by [REGIME-EVAL]'s grid) and needs no mirror there.
+D161 add. 13: until LOCKDOWN a row edit is free and logged in
+`memfn/docs/finder_history.md`. `[rev3 B9]` An edit is logged in the COMMIT that makes it,
+not later: revision 2's row edits (F0, F1, D1, D2, the PRES slot, R1's terminal-relative
+key) and revision 3's (D1c, D1w, F2, R7w, R5 ∪ R6, R7 ∪ R7s, the comparator, the link
+attributes, `basis`, `refuted_by`, R1/R2's fast-terminal condition) are logged in this
+revision's commit. regime_tables.md mirrors the FIND slot (main's mirror, updated by main
+from the log); the PRES slot is not a regime row (it is not judged by [REGIME-EVAL]'s
+grid) and needs no mirror there.
+
+`[rev3 D7]` **A row locks when it is ROUTED**, not at B4: D1, D1c, D1w (B2), D2 and the
+PRES rows (B3b) are byte-identity-gated from their routing commit, so an edit to one of
+them is a mover and an abi event. The listing carries a `locked` column (= `routed`
+until B4). B4 locks the rest.
+
+`[rev3 B9]` **LOCKDOWN is a checkable state** (§3.3): a committed digest of `fd_rows[]`'s
+listing (`mf_finder_rows`' canonical text) plus a check that fails on any digest change
+not paired with a `finder_history.md` entry citing its ruling (after B4) or its free-edit
+reason (before). The judged subset is named: [REGIME-EVAL] scores the FIND rows its replay
+can score; the PRES rows, R3a, R3b and R4 are EXEMPT from the judge's verdict (unscorable
+by replay, regime_eval F-5/F-7) and lock on their routing or on byte identity, not on a
+judge PASS.
 
 ---
 
@@ -665,23 +716,40 @@ Nothing in this section is emitted by the first delivery (B0-B3): the dispatch r
 R1/R2 need M16-M18 to pay (§2.5), and those are measured at the earliest in grid2. The
 text is kept so the build has its shape, and so R-19's two facts have their reader.
 
-### 2.1 Where it sits `[rev2: main's points]`
+### 2.1 Where it sits `[rev2: main's points]` `[rev3: A1, A2, A3]`
 
-- **The storage point** is R17-a's (setfind.md §7.1), ported to main at B0. pcrec calls
-  `mf_locals` there once per activation:
-  - the DFA forward scan, in `unanch_scan` (main `src/gen/emit_dfa.c`), ahead of
-    `size_t scan_position = <from>;`;
-  - the VM hat, at the entry seek in `<searchfn>_run` (`pf_vm_emit_first_class`);
-  - the rev-end relocate path's own activation, with its own `from`;
-  - `[rev2]` the PRE composite's entry, `pcrec_emit_req_byte_check` (its two callers,
-    the DFA entry and `emit_vm.c`'s `_search_run`), which under §1.1's merge is the same
-    site's first use. Its `posvar` is the start (winreq §1.1's extension of R-19).
-- **The START hook (R-19)** is the TEXT of the activation's origin at that point:
-  `search_from` (DFA forward scan, VM `_search_run`), `fwd->from` in `unanch_scan`, the
-  relocate path's moved start, and the PRE entry's `posvar`. The kit emits
-  `N = n - start` from it. Unstated, every N-row skips (§1.5).
+`[rev3 A1]` Rev 2 put the storage point at `unanch_scan`'s `scan_position` declaration and
+at the VM hat's entry seek, and named the PRE composite's entry "the same site's first
+use". On main the PRE use is emitted ABOVE both points (`fwd.from =
+pcrec_emit_req_byte_check(...)` at `emit_dfa.c` ~11749, before `unanch_scan` at ~11756;
+VM `emit_vm.c` ~13214, before the hat's seek at ~13477), and the DFA body had two STARTs
+(`search_from` for the PRE use, `fwd->from` for the scan, the second computed by the
+first). Revision 3 states, per emitter, ONE storage point above the first use and ONE
+START per activation:
+
+| emitter (main) | function holding the site | storage point (`mf_locals`) | START (R-19's hook) | uses, in order |
+|---|---|---|---|---|
+| DFA body, unanchored forward scan | `<p>_search` (DFA) | the entry, after `pcrec_emit_search_head` and the end-window clamp, ABOVE the PRE use | `search_from` | (1) the entry use (presence verdict; on a handoff route the landmark's first candidate `c`); (2) each loop use in `unanch_scan` (the next candidate from `scan_position`); (3) the handoff's NEXT re-entry |
+| VM hat route | `<p>_search_run` (`pf_vm_emit_first_class`) | the entry, ABOVE the PRE use (`emit_vm.c` ~13214) | `search_from` | (1) the entry use (presence); (2) the hat's seek and each re-seek |
+| `[rev3 A2]` DFA attempt (ENG_ATTEMPT) | `attempt_entry`'s function (`emit_dfa.c` ~12604) | the entry, ABOVE the PRE use (guarded `cand_finish_of(cx) != CAND_ROUTE_VM`) | `search_from` | (1) the entry use (presence); (2) MLINE's predecessor seek per attempt, where present (a context FIND, row D1c) |
+| `[rev3 A3]` VM hybrid, presence | `<p>_search_run` | its entry, above the PRE use | `search_from` | (1) the entry use (presence only) |
+| `[rev3 A3]` VM hybrid, find | the static `<p>_prefilter` | its entry (each call is an activation: every VM retry re-enters at `attempt_position`) | the prefilter's own `search_from` | (1) each FIND use in the inlined DFA body |
+| rev-end relocate path | its own activation | its entry | its moved start | its FIND use |
+
+- **The handoff's `c − K` is a USE's argument, never a second START.** On a handoff route
+  the entry use yields the landmark candidate `c`; pcrec computes `max(lo, c − K)` and the
+  utf8 round-up in its own text (window_contract §2.1) and passes it to the next use as
+  `lo`. N = `n − start` is read once, at the storage point, from `search_from`.
 - **The form byte** is written in the site struct's initializer at the storage point.
   The use stays where today's use is. `<stem>__next_candidate` is never the dispatch.
+- **R-19 is asked for every builder above** (`[rev3 A21]`, Q-R17P-16): R-19 on main names
+  the DFA forward scan, VM `_search_run`, the relocate start and `fwd->from`; it does not
+  name `req_site_define`, MLINE or `attempt_entry`. Rev 2 assumed it did; revision 3 asks.
+  Unstated, every N-row skips (§1.5).
+- **The hybrid's two sites carry one window request between them.** The presence site is
+  presence-only (`pred.nterm = 0`); the find site is find-only and its stream never
+  re-verifies (§4.4). Population: rev 2's hybrid rows (626 / 8 / 18 one-byte; 241 / 16 / 8
+  set), re-counted at B2/B3a.
 
 ### 2.2 The C text (rev 1 §2.2, unchanged except the start expression)
 
@@ -749,6 +817,19 @@ bare walk, decided by T3 (§2.5). `[rev2]` A LIBC site (D1) and a NONE site (F0)
 carry a scaffold: neither has a SIMD arm in this design, so F5's reason for the scaffold
 does not arise.
 
+`[rev3 D5]` **The helpers' layout is not fixed here.** `__walk`, `__form`, `__form__body`,
+`__next` and `__next__body` are written `static inline` above because that is what the
+kit emits today, i.e. the layout of D163 add. 7's position `0` (`compound_entries.md`
+§3.4 row L0, "as emitted"). They are member 4 of that note's inline/shared family (§3.1:
+"the kit's FUNC helpers and D155 selector"), which stays the kit's (D157): pcrec can
+pass the dial position as a FACT (that note's U8) and the kit lays out its own helpers
+to the position's policy (all-shared at `−2`, shared-but-inner at `−1`, hot-inline at
+`+1`, all-inline at `+2`), under the same hard rows (a single-caller helper is never
+shared; L4). Nothing in this note pins a layout. Whether the kit's size-adding rows
+(`pf-terms-mask`, `fd-ndisp`, `pf-terms-w*`, all `MF_SZ_ADDS`) belong in the dial's pinned
+table or stay outside it (they are FORM denies the size ladder's `drop-kit-bytes` rung
+reads, not layouts) is Q-R17P-21.
+
 ### 2.3 Why behind `__next` and not in the use (rev 1, kept)
 
 Only the selector shape keeps the use identical in every layer (D155: no `#if` in a body).
@@ -757,45 +838,93 @@ helper and reached through the struct changes the holding function by −3 to +1
 instructions on six cells, none identical. That is C_scaffold (M18), measured, never
 assumed free.
 
-### 2.4 What N is, and what M is (rev 1, kept; `[rev2]` M is now a STATED fact)
+### 2.4 What N is, and what M is (rev 1, kept; `[rev2]` M is now a STATED fact; `[rev3 A6]` M is a PARAMETER)
 
 - **N** = `n − start` at the storage point, once per activation. For one `_search` call
   it is the span the call may scan; inside a find-all loop over `_search` it is the
   REMAINING subject, so dense 1 MiB find-all stays LINER-picked and R17-b′ does not fix
   ALPHA's dense find-all rows (bounded prose1m all +599 µs; dfa-hat prose1m all/first
-  +232/+234 µs). Those belong to E (R5/R6) and to the iterator (R17-b″).
-- **M** is fixed per entry BODY, so no row ever emits a compare on M. `[rev2]` R-19 makes
-  it a fact: `mf_site.body` = `MF_BODY_ONESHOT` from every builder at B1 (the three FIND
-  points, MLINE, and the PRE composite: winreq §1.1 asks that R-19's "every builder"
-  include `req_site_define` and MLINE, and this note assumes it does), `MF_BODY_ITER`
-  from `next` bodies at R17-b″, `0` = UNSTATED and N/M rows skip.
+  +232/+234 µs). Those belong to E (R5) and to the iterator (R17-b″).
+- **M** `[rev3 A6]`: rev 2's "M is fixed per entry BODY, so no row ever emits a compare on
+  M" is FALSE under main's iterator design. `findall_iter.md` §4.2 makes M a PARAMETER of
+  one shared `<p>__find` (`_search` passes ONESHOT, `next` passes ITER), and D163 add. 7's
+  part-layout row decides whether that body is inlined (M a constant per call site, the
+  dispatch on M folds to one arm) or shared (M one runtime branch per call). The body is
+  shared at `−2`/`−1`, at `+1` when it ranks below `θ_hot`, and at EVERY position on the
+  DFA attempt route, whose body holds a static label table (row L1; 233 of 4,243 corpus
+  artifacts). So:
+  - the fact is `mf_site.body` ∈ {UNSTATED = 0, `MF_BODY_ONESHOT`, `MF_BODY_PARAM`}
+    with, for PARAM, a hook naming the C expression of the mode (findall_iter §4.2's
+    REQUEST, filed by main as R-20 at R17-b″). Through B8 every builder states ONESHOT
+    (there is no iterator); `MF_BODY_ITER` (rev 2's spelling) is withdrawn;
+  - an M-reading row (R1, R2, R8) on a PARAM body whose find part is SHARED emits a
+    runtime compare on the mode. That charge is a quantity, M24 `cmode_call` (§5.2), read
+    by the pay rule beside C_disp_call: ABSENT, it fails T2 (§2.5), so on a shared PARAM
+    body an M-reading row takes its `unpaid` until M24 is measured;
+  - where the find part is inlined, the compare folds and M24 is not charged.
+- **B9 waits on main's order** (D163 add. 7 Q4): E0 (the zero-mover `entry_rows[]`), then
+  `findall_iter.md`'s short revision (the retry as `first-nonzero`, the find body's
+  layout from the row, internal batching in `_in` memory), its D6 panel, then I1; and
+  R-19's amended body fact (R-20). §3.1's B9 row lists them.
 
-### 2.5 The pay rule (rev 1, kept: Q-R17P-3 stands as the kit's design, §7.1)
+### 2.5 The pay rule (rev 1, kept: Q-R17P-3 stands as the kit's design, §7.1) `[rev3: C4, D9]`
 
 Every quantity in walk-byte units from the active set; no call-length distribution is
 assumed. For a dispatch row r with interval I_r = [a_r, b_r), pick p_r and alternative
-a′_r (its `unpaid`, else the pick its interval would fall to), ε the set's null floor
-(M6), cost(f, N) the measured single-call cost:
-- **T1 (pays where it fires):** max over measured N ∈ I_r of
-  [cost(a′_r, N) − cost(p_r, N)] > C_disp_call + ε·cost(a′_r, N).
-- **T2 (nothing measurable where it does not fire):** C_disp_call ≤ ε·cost(f_next, b_r).
-- **T3 (nothing measurable per use):** C_disp_use ≤ ε·w_min (and C_scaffold ≤ ε·w_walk
-  on a walk-only scaffold site).
+a′_r (its `unpaid`, else the pick its interval would fall to), cost(f, N) the measured
+single-call cost:
+
+`[rev3 C4]` **The floor is regime-matched and absolute.** Rev 2 used one ε (M6, 3.1%, a
+pooled F1+F3 p90) for every test; the single-call quantities T1-T3 read have their own,
+much smaller A/A floor (F3 member-free p90 0.173%, EXT 0.382%; gridread). Each test now
+reads the floor of the regime its operands were measured in, `floor(cell)` = the A/A
+spread of that cell's own group in the set, in absolute u·B (D144 add. 1: an absolute
+delta next to the noise floor measured the same way), and compares an UPPER BOUND, not a
+point estimate:
+- **T1 (pays where it fires):** min over measured N ∈ I_r of
+  [cost(a′_r, N) − cost(p_r, N)] − floor > C_disp_call + floor(C_disp_call) (the saving's
+  LOWER bound beats the charge's UPPER bound at every measured N in the interval).
+- **T2 (nothing measurable where it does not fire):** C_disp_call + floor(C_disp_call)
+  ≤ floor(f_next, b_r) (the charge's upper bound is inside the next form's own noise).
+- **T3 (nothing measurable per use):** C_disp_use + floor(C_disp_use) ≤ floor(w_min) (and
+  C_scaffold likewise against w_walk on a walk-only scaffold site); `[rev3 A6]` on a
+  shared PARAM body, M24 is added to C_disp_call.
 
 A row failing T1/T2 takes its `unpaid` pick or is dropped; a site failing T3 gets no
-dispatch; an ABSENT C_disp_call, C_disp_use or C_scaffold fails the test it appears in.
+dispatch; an ABSENT C_disp_call, C_disp_use, C_scaffold or (where charged) M24 fails the
+test it appears in.
+
+`[rev3 D9]` **Arithmetic conventions** (the PCU convention, `prior_cost_unify.md` §2,
+copied, not linked: the kit cannot link pcrec core): integer arithmetic on set values in
+fixed-point u·B (`value_e6`), no division (each comparison is cross-multiplied into
+scaled numerators), every operand under a static magnitude bound asserted when the set is
+loaded (a value past the bound refuses the set, it is not clamped), and a TIE DECLINES
+(a T1 tie does not pay; a T2/T3 tie passes, since equality is "not measurable"). The
+arithmetic grid with planted off-by-ones (`prior_cost_unify/grid.py`'s shape) is the
+pay rule's check (SN-9, §8.3).
+
 `[rev2]` With M16-M18 measured by grid2's TWINS (§5.4), T1-T3 may pass at B4; the BUILT
 dispatch is then re-measured by [REGIME-TWIN] (E10) as the official dispatch term, and
 the twin rows go STALE by their form hash (measure_sets §2.4) and are carried stale until
 that re-measure. If grid2's twins fail T1-T3, no dispatch ships at B4 and B8 waits for
 [REGIME-TWIN].
 
-### 2.6 The thresholds are literals from the set (rev 1, kept)
+### 2.6 The thresholds are literals from the set (rev 1, kept) `[rev3: C5]`
 
 The literals in `__form__*` are resolved from the active set at compile time and written
 as integer constants. A different set produces different literals, so a default-set change
 moves bytes and is an abi event with its census (D162 ruling 1, D166 item 1,
 measure_sets §3.6).
+
+`[rev3 C5]` **The crossover literal is read off a measured staircase, or labelled.** V1's
+per-activation cost is a staircase in N (8-byte blocks plus a tail; M8), and grid1's
+V1 − walk delta swings from +3.2 ns at N = 32 to −23.8 ns at N = 48, so rev 2's 36 B
+(M9) is an interpolation inside a 27 ns bracket. grid2 item 2a (§5.4) measures
+N ∈ {33, 34, 36, 38, 40, 42, 44, 46}; the `xover` derivation then reads the literal as
+the smallest measured N from which V1 − walk ≤ −floor at every measured point above it.
+A literal that cannot be read that way (a set without the points) is labelled
+`INTERPOLATED(lo, hi)` in its key's provenance and its row's `basis` is DERIVED, never
+MEASURED.
 
 ---
 
