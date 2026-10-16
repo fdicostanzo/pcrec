@@ -128,6 +128,25 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   offset and tests `cand_routed` BEFORE `applies` ([cand-route-walk]);
   `DFA_SELECT_ROUTED` is the walk over `dfa_pfs[]`, `DFA_SELECT` every other
   list (all DFA-only). No row serves the VM route until stage 2.
+- **R17-b′ B1 (lane fdb1, 2026-10-16; MF_SITE_ABI 12, zero movers).**
+  `pcrec_memfn_site` states `body` ONESHOT on every site (R-19), and every
+  FIND's hooks carry `start` (`PcrecFind.start`; `PCREC_MF_ORIGIN`
+  `"search_from"` for the PF, VM-hat and MLINE sites, and the PRE composite's
+  `req_site_define`). `pcrec_memfn_art_begin` hands the kit the harness's
+  measurement set (`--harness=measures=`, NULL in every shipped compile) and
+  no analysis object; `mf_art_end`'s `consulted` is read by nobody before
+  B4. The kit's arena op is exported as `pcrec_memfn_arena_alloc`.
+  `cand_nodes[]` declare their KIT ASKS (`kask[slot]` route masks, inside
+  `reads`, and `kfields`: PRESENCE and RETRY ask NEXT's site on DFA|ATTEMPT
+  for EXISTS|PROVEN0, RECOVER on DFA for EXISTS; self-check
+  `table-ask-unread`), and under `PCREC_CAND_TRACE` the READER SHADOW
+  (`cand_ask_check`/`cand_ask_field`/`cand_ask_pf`/`cand_shadow_*`)
+  recomputes G1, R4 (`pcrec_dfa_cand_ppm`, split into `dfa_cand_ppm_of`)
+  and L4 from the kit's class (`mf_ask`) beside pcrec's own row: an
+  in-scope disagreement aborts (`CANDORACLE reader-shadow-differs`), an
+  undeclared ask aborts (`undeclared-ask`, sabotage S1019), the ATTEMPT arm
+  is recorded only (MLINE's context stop; fdb1_report.md F-B1-3).
+  `PCREC_MF_ASK_TRACE=1` prints one `MFASK` record per shadow verdict.
 - **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** ([MEMFN]
   R17-a, lane r17a, MF_SITE_ABI 11, zero movers: the SET sites are DEFINED
   then USED. `find_site` states the window, W0-W2, on every FIND through

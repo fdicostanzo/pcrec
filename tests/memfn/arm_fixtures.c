@@ -1486,8 +1486,10 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts)
 
 static int finder_rows_mode(void)
 {
-    size_t n;
-    const mf_finder_row *r = mf_finder_rows(&n);
+    static mf_finder_listing l;
+    mf_finder_rows(&l);
+    size_t n = l.n;
+    const mf_finder_row *r = l.rows;
     printf("#id\tslot\tneeds\tpick\tunpaid\tdeny\tbasis\trouted\tlocked\tstep\tkeys\n");
     for (size_t i = 0; i < n; i++) {
         printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%u\t%u\t%s\t", r[i].id, r[i].slot, r[i].needs,

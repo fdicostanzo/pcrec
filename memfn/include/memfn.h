@@ -988,9 +988,20 @@ typedef struct {
     uint8_t              nkeys;
     const mf_finder_key *keys;
 } mf_finder_row;
-/* The rows; `*n` gets the count. Built from the kit's const table on the
- * first call; not for a concurrent first call (no compile path calls it). */
-const mf_finder_row *mf_finder_rows(size_t *n);
+/* The listing, written into storage the CALLER owns (the kit keeps no
+ * mutable state): `rows[0..n)`, whose strings point into the listing
+ * itself or at the kit's constants. MF_FINDER_MAX is a SHAPE BOUND on the
+ * table (finder.c asserts its rows fit), not a tuning constant. */
+#define MF_FINDER_MAX  32
+#define MF_FINDER_KEYS 16
+typedef struct {
+    size_t        n;
+    mf_finder_row rows[MF_FINDER_MAX];
+    char          needs[MF_FINDER_MAX][8];
+    char          pick[MF_FINDER_MAX][24];
+    mf_finder_key keys[MF_FINDER_MAX][MF_FINDER_KEYS];
+} mf_finder_listing;
+void mf_finder_rows(mf_finder_listing *out);
 
 /* THE PAY RULE's arithmetic (r17b_prime.md §2.5), over stated operands in
  * value_e6 u·B, for its arithmetic grid (SN-9) and any mirror of the rule:

@@ -900,12 +900,6 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
 
 static const char *const needs_names = "PEAIMNH";
 
-typedef struct {
-    char          needs[8];
-    char          pick[24];
-    mf_finder_key keys[12];
-} fd_list_aux;
-
 /* The pay rule's operand keys (pay_fill, PROVISIONAL spellings), declared
  * on every N-dispatch row: `<alt>` its alternative, `<pick>` its pick, `<N>`
  * a measured point or the interval's end, `<layer>`, `<nforms>`. */
@@ -916,49 +910,40 @@ static const char *const pay_keys[] = {
     "kit.ufloor.<kind>.<layer>.<nforms>", "kit.wfloor.<pick>.<kind>",
 };
 
-static mf_finder_row fd_list[FD_NROWS];
-static fd_list_aux   fd_aux[FD_NROWS];
-static int           fd_listed;
+_Static_assert(FD_NROWS <= MF_FINDER_MAX, "the finder table outgrew MF_FINDER_MAX");
+_Static_assert(6 + sizeof pay_keys / sizeof pay_keys[0] <= MF_FINDER_KEYS,
+               "a row's keys outgrew MF_FINDER_KEYS");
 
-static void list_fill(void)
+/* The listing, from the const table into the caller's storage. */
+void mf_finder_rows(mf_finder_listing *out)
 {
+    out->n = FD_NROWS;
     for (size_t i = 0; i < FD_NROWS; i++) {
         const fd_row *r = &fd_rows[i];
-        mf_finder_row *o = &fd_list[i];
-        fd_list_aux *x = &fd_aux[i];
+        char *needs = out->needs[i], *pick = out->pick[i];
+        mf_finder_key *keys = out->keys[i];
         unsigned n = 0;
         for (unsigned b = 0; b < 7; b++)
-            if (r->needs >> b & 1) x->needs[n++] = needs_names[b];
-        x->needs[n] = '\0';
+            if (r->needs >> b & 1) needs[n++] = needs_names[b];
+        needs[n] = '\0';
+        pick[0] = '\0';
         if (r->slot == FD_PRES)
-            snprintf(x->pick, sizeof x->pick, "v%dp%dm%do%d", r->link.verify,
+            snprintf(pick, sizeof out->pick[i], "v%dp%dm%do%d", r->link.verify,
                      r->link.proven_by, r->link.member, r->link.order);
         unsigned nk = 0;
         for (unsigned k = 0; k < 2 && r->cmp[k].lhs != FL_NONE; k++) {
-            if (r->cmp[k].lhs == FL_KEY) x->keys[nk++] = (mf_finder_key){ r->cmp[k].lkey, "" };
-            x->keys[nk++] = (mf_finder_key){ r->cmp[k].key, "" };
-            if (r->cmp[k].op == FO_IN) x->keys[nk++] = (mf_finder_key){ r->cmp[k].key2, "" };
+            if (r->cmp[k].lhs == FL_KEY) keys[nk++] = (mf_finder_key){ r->cmp[k].lkey, "" };
+            keys[nk++] = (mf_finder_key){ r->cmp[k].key, "" };
+            if (r->cmp[k].op == FO_IN) keys[nk++] = (mf_finder_key){ r->cmp[k].key2, "" };
         }
         for (unsigned k = 0; r->pay && k < sizeof pay_keys / sizeof pay_keys[0]; k++)
-            x->keys[nk++] = (mf_finder_key){ pay_keys[k], "" };
-        *o = (mf_finder_row){
-            r->id, r->slot == FD_FIND ? "FIND" : "PRES", x->needs,
-            r->slot == FD_FIND ? (r->liner ? "LINER" : ff_name[r->pick]) : x->pick,
+            keys[nk++] = (mf_finder_key){ pay_keys[k], "" };
+        out->rows[i] = (mf_finder_row){
+            r->id, r->slot == FD_FIND ? "FIND" : "PRES", needs,
+            r->slot == FD_FIND ? (r->liner ? "LINER" : ff_name[r->pick]) : pick,
             ff_name[r->unpaid], r->opt ? r->opt : "-", fb_name[r->basis],
             r->evidence, r->refuted_by, r->routed, r->routed, r->step,
-            (uint8_t)nk, x->keys,
+            (uint8_t)nk, keys,
         };
     }
-}
-
-/* The listing is built from the const table on first use; every call
- * builds it identically, so concurrent first calls write equal bytes. */
-const mf_finder_row *mf_finder_rows(size_t *n)
-{
-    if (!fd_listed) {
-        list_fill();
-        fd_listed = 1;
-    }
-    *n = FD_NROWS;
-    return fd_list;
 }

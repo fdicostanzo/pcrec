@@ -10378,9 +10378,9 @@ static void cand_ask_field(CandSlot reader, unsigned f)
 
 static void cand_shadow_note(const char *reader, const char *arm, const char *verdict)
 {
-    static int on = -1;
-    if (on < 0) on = getenv("PCREC_MF_ASK_TRACE") != NULL;
-    if (on) fprintf(stderr, "MFASK\t%s\t%s\t%s\n", reader, arm, verdict);
+    /* a trace build only; read per record, so the library keeps no
+     * function-local state (coding_guide.md §1.5) */
+    if (getenv("PCREC_MF_ASK_TRACE")) fprintf(stderr, "MFASK\t%s\t%s\t%s\n", reader, arm, verdict);
 }
 
 /* Asks the kit for the class of the PF site row `pf` describes (DFA route):
