@@ -3847,4 +3847,4 @@ were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.
 `opt_argv` drops `-fmemfn-simd` (S981) or `-fcomments` (S982) and nothing else,
 so the new DIFFER_PINS arms read byte-identical to their base. Arm `emitsweep`
 (`scripts/tests/emit_sweep.py.test`'s `--arms start` over the manifests),
-DETECTED 1fail/43pass each at 1adc371b9.
+DETECTED 1fail/43pass each (lane tip a6b933692).
