@@ -20,6 +20,10 @@ pcrec's `make`.
   files, not edited by the lane): `c17_tsv.diff` + `c17_check.diff` (the
   `site_kind` columns of `tests/memfn/site_manifest.tsv`, landing together),
   `c10_fixtures.diff` + `c10_check.diff` (C10's one-byte fixtures and
-  `run_deleg_sites.sh` check 5). Applyable with `git apply`.
+  `run_deleg_sites.sh` check 5), and `lever_fence_allow.diff` (main's
+  ruling 4: the two lever-fence ALLOW entries, `cli/CLAUDE.md` and
+  `tests/memfn/run_arm_reach.sh`, reverted from the tree and proposed here;
+  the argument for each is in `docs/dev/lanes/fdb2_report.md` §10).
+  Applyable with `git apply`.
 
 B2's sabotage plants live in `tests/mech/sabotages/` (S1079-S1084).
