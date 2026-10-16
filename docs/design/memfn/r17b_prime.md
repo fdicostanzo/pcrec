@@ -928,63 +928,91 @@ MEASURED.
 
 ---
 
-## 3. The step plan `[rev2]`
+## 3. The step plan `[rev2]` `[rev3]`
 
-### 3.1 One ordered plan
+### 3.1 One ordered plan `[rev3: A4, A8, A9, A11, A15, B1-B3, B6, B7, B10, B12, D10]`
 
 R-21's ST1-ST6, R-19, R-20 (R-MS1..5) and [REGIME-EVAL]'s E-steps, merged into one
 order. Kit steps are B-steps; main's prerequisites and the evaluator's steps are listed
-where they gate one. "Zero-mover" means byte-identical to main at SIMD-off AND SIMD-on
-over emit_sweep's full population and every stream (the first delivery adds no SIMD row,
-so SIMD-on is identical too).
+where they gate one.
+
+`[rev3 B1, B2, B3]` **"Zero-mover" means ARTIFACT bytes**: byte-identical to the step's
+base over emit_sweep's full population on streams 1-4, at SIMD-off AND SIMD-on and under
+`-fcomments`. The SIMD-on and `-fcomments` claims are made by THE instruments lane
+sweeparm delivers with B0 (emit_sweep's `-fmemfn-simd` and `-fcomments` arms with their
+DIFFER_PINS floors, sabotage rows S981/S982); `tests/memfn/run_simd_floor.sh` (C18) stays
+a necessary but not sufficient check (it compares ON vs OFF of one build, never old vs
+new). The listing streams (5 `dumps`, which carries `--list-axes`; 6 `facts`) move only
+by a DECLARED delta committed with the step (`listing_declared_C7.tsv` / `listing_diff.py`'s
+precedent, `docs/design/start_table/`), checked in both directions (every declared line
+moved, nothing undeclared moved).
+
+`[rev3 A15, B10]` **The KIT's steps carry no pcrec abi event through B3b; E-1 is main's.**
+MF_SITE_ABI is numbered relatively ("the next number at landing"): each kit row below is
+one bump from whatever main holds then, and E-1 is main's own bump between B2 and B3a.
 
 | step | content | R-items | zero-mover? (why) | pcrec abi | MF_SITE_ABI | depends on |
 |---|---|---|---|---|---|---|
-| **B0** | port R17-a's seam to main: W0-W2 on every forward FIND, `decl_point`, `mf_locals` (binding `s`/`n`), `mf_defined` (`reads_table`, `includes`), the storage refusals, the set FIND sites DEFINED at file scope | (R-17's seam) | yes: R17-a was zero-mover on the kit branch (slot24), and nothing it adds is read by a row that moves a byte | none | 10 → 11 | — |
-| **B1** | ST1: the facts and the table, unrouted. `mf_site.body` + the START hook (R-19); `mf_measures` on `mf_art_begin` (NULL until M0) and `consulted` from `mf_art_end` (R-MS1, R-MS2); `mf_form_hash` (R-MS3); the reader declarations (R-MS4 keys) and the `--emit-facts` section `memfn`; the kit's method cards `kit-grid@1` (R-MS5); E3: `fd_rows[]` (§1.3-§1.4: the 18 rows of the locked table; F0, F1, P1 wait for B5), `mf_finder_pick`, `fd_route[]` all SHADOW, the trace-only shadow call, and pcrec's PR-9 reader shadow (each reader computed both ways in the trace build, asserted equal) | R-19, R-MS1..5, PR-9 (shadow) | yes: every group is SHADOW; the shadow writes only to the MF_TRACE build's trace; the reader shadow is `#ifdef`-only | none | 11 → 12 | B0; E3b (oracle cell) runs beside |
-| **B2** | ST2: one-byte FIND routed. PR-1 (the candidate set as a SET term at every count, one member included, plus the table offer), PR-2 (miss and move behaviour as hooks: `empty`/`on_miss`, the `n − 1` bound, a moved-candidate hook for the DFA hat's re-seed), PR-3's kind (`site_kind`, categorical, Q-WR-8), `need` re-numbered with an UNSTATED zero and stated by every builder, PR-9's switch for the one-byte readers (G1's memchr test, R4, the K admission, `landing` L4, `<string.h>`, the stamps), `mf_result.proven`/`scan_exists`; kit: KW-1 (the libc row as D1; the libc-free one-byte forms reachable by `fd-d1`), KW-2, KW-3 (the kit writes the guard, post-test, wrapper and moved hook), KW-4; `fd_route` group 1 ROUTED | PR-1, PR-2, PR-3 (kind), PR-4 (stated), PR-9 (one-byte), KW-1..4, KW-10 | yes: D1 IS today's count rule, the kit renders today's guard/post-test text, stamp VALUES stay pcrec row identities (sbscope F7). The PF comment (PR-10) is NOT changed here (Q-R17P-12) | none | 12 → 13 | B1 |
-| (main) | E-1 = window_contract S1: `mf_analysis` with the frequency kind always present (`prior-authored`, `prior-none`, `measured`) | — | (window_contract's own) | **S1's own event** | (its own) | window_contract rev 3 (winreq §4's C-items) |
-| **B3a** | ST3 shadow: presence spans STATED (PR-5 unpicked, PR-6 offsets with `omin` = 0 as a sound under-estimate, PR-7 member order) on the merged site, PRES SHADOW; the kit's ports of the five priced picks run in the trace build beside pcrec's and must agree on 100% of sites over corpus, bench and rwquest (KW-8); PR-11's control lands (the census over collapsed hybrids + a planted collapse that drops `rmin`) | PR-5, PR-6, PR-7, PR-11, KW-8 | yes: nothing routed | none | 13 → 14 (the presence class, `omin`) | E-1, B2 |
-| **B3b** | ST3 route: PRES and D2 groups ROUTED; KW-5..7 (the presence class, G-1/G-2, the applicability rule, the PRE composite's several uses inside the one site); handoff framing (a) (Q-WR-5); presence withheld at G2's linear one-attempt and LOCATE `whole` (Q-WR-4); `-fno-req-set-lead` (bit 45) retired to `--memfn=no-pres-set-lead` in the same commit, with `--emit-facts`' `used`/`why` and the `--list-axes` `req-admit`/`req-use` rows re-sourced (Q-WR-12, KW-11); PR-8 checked (the verdict precedes the edge attempt, today's order) | PR-4, PR-8, PR-9 (presence), KW-5..8, KW-11 | yes for artifacts: the default rows are the ported picks, proven equal at B3a. NOT zero for the registry: bit 45 and two `--list-axes` axes move (a declared registry event, no artifact byte) | none | (14) | B3a |
+| **B0** | port R17-a's seam to main: W0-W2 on every forward FIND, `decl_point`, `mf_locals` (binding `s`/`n`), `mf_defined` (`reads_table`, `includes`), the storage refusals, the set FIND sites DEFINED at file scope; `[rev3 B1, B2]` sweeparm's emit_sweep arms land with it | (R-17's seam) | `[rev3 B12]` PORT, THEN GATE: the claim is B0's own emit_sweep run on main (every arm incl. SIMD-on and `-fcomments`), not the kit branch's slot24 measurement (main differs: R-15, abi 78) | none | next | — |
+| **B1** | ST1: the facts, the query and the table, unrouted. `mf_site.body` (ONESHOT from every builder) + the START hook (R-19); `[rev3 A4]` the DEFINE-TIME QUERY `mf_ask` (§4.5) and its trace-build reader shadow (each pcrec reader computed from its own row AND from the query, asserted equal); `mf_measures` on `mf_art_begin` (NULL until M0) and `consulted` from `mf_art_end` (R-MS1, R-MS2); `[rev3]` `mf_analysis` declared on `mf_art_begin`, NULL-tolerant, read by no kit row before B3a (the E-1 agreement); `mf_form_hash` (R-MS3); the reader declarations (R-MS4 keys); method cards `kit-grid@1` (R-MS5); E3: `fd_rows[]` as a `kit_table` (§1.2-§1.4: the 19 rows of the locked table; F0, F1, F2, P1 wait for B5), every `routed` bit 0, the trace-only shadow, `[rev3 B6]` the trace/test-build `measures=` lever with the synthetic sets and the committed predicted-mover manifest; `[rev3 B7]` `fd_rows[]`'s rows in `tests/memfn/rows.tsv` / `row_floors.tsv` (reach reason `pending-site:<step>`); `[rev3 D4]` the declared read list and the undeclared-read / cycle trap; `[rev3 C2]` the table self-check | R-19, R-MS1..5, PR-9 (shadow) | yes: no row is routed; the shadow writes only to the MF_TRACE build's trace; the reader shadow is `#ifdef`-only. `[rev3 A9]` No `--emit-facts` section (it rides M0, B4). NOT zero for stream 5: five `--list-axes` rows (`fd-r0`, `fd-r5`, `fd-r8`, `fd-ndisp`, `fd-d1`), a DECLARED registry delta, the identity gate's registry stream re-pinned in the same commit | none | next | B0; E3b (oracle cell) runs beside |
+| **B2** | ST2: one-byte FIND routed (D1, D1c, D1w `routed` = 1). PR-1 (the candidate set as a SET term at every count, one member included, plus the table offer), PR-2 (miss and move behaviour as hooks: `empty`/`on_miss`, the `n − 1` bound, a moved-candidate hook for the DFA hat's re-seed), PR-3's kind (`site_kind`, categorical, Q-WR-8; `[rev3 A2]` DFA_ATTEMPT), `need` re-numbered with an UNSTATED zero and stated by every builder, `[rev3 A4]` pcrec's readers SWITCHED to `mf_ask` (G1's memchr test, R4, `landing` L4; §4.5) and the reader shadow retired; `[rev3 A11]` main-side: the landmark admission's input restated as facts (names and comments only); kit: KW-1 (D1), KW-2, KW-3 (the kit writes the guard, post-test, wrapper and moved hook), KW-4; `[rev3 A8]` main-side requests at the step: C10 fixtures for the one-byte rows, C17 site-manifest columns for `site_kind` | PR-1, PR-2, PR-3 (kind), PR-4 (stated), PR-9 (one-byte), KW-1..4, KW-10 | yes: D1/D1c/D1w ARE today's rules, the kit renders today's guard/post-test text, stamp VALUES stay pcrec row identities (sbscope F7). The PF comment (PR-10) is NOT changed here (Q-R17P-12, ruled: it rides B4), proven by sweeparm's `-fcomments` arm | none | next | B1; Q-R17P-15 (the query's contract) |
+| (main) | E-1 = window_contract S1: `mf_analysis` filled, with the frequency kind always present (`prior-authored`, `prior-none`, `measured`); no kit edit (the B1 declaration) | — | main's own (its stamp moves: `<PREFIX>_FINDINGS` means OFFERED) | **main's event** | main's bump | window_contract rev 3 (main's, incl. C-7, C-8); B2 merged |
+| **B3a** | ST3 shadow: presence spans STATED (PR-5 unpicked, PR-6 offsets with `omin` = 0 as a sound under-estimate, PR-7 member order) on the merged site, PRES unrouted; the kit's ports of the five priced picks run in the trace build beside pcrec's and must agree on 100% of sites over corpus, bench and rwquest (KW-8), `[rev3 D10]` with a per-pick FLOOR on NON-TRIVIAL sites (where the pick differs from its family default, or the choice has ≥ 2 live alternatives) and a planted disagreement per pick the comparator must catch (SN-6); PR-11's control lands (the census over collapsed hybrids + a planted collapse that drops `rmin`); `[rev3 A8]` main-side requests: DELEG_SITES' PRE row merged into the FIND rows of its route as their ENTRY use, the site manifest's use points moved, C10 fixtures (Q-R17P-18) | PR-5, PR-6, PR-7, PR-11, KW-8 | yes against MAIN-AFTER-E-1 (`[rev3 A15]`: B3a's `--ref` is main after E-1; B0-B2 re-run against it once) | none | next (the presence class, `omin`) | E-1, B2 |
+| **B3b** | ST3 route: PRES rows and D2 `routed` = 1; KW-5..7 (the presence class, G-1/G-2, the applicability rule, the PRE composite's several uses inside the one site); handoff framing (a) (Q-WR-5); presence withheld at G2's linear one-attempt and LOCATE `whole` (Q-WR-4); `-fno-req-set-lead` (bit 45) retired to `--memfn=no-pres-set-lead` in the same commit, with `--emit-facts`' `used`/`why` and the `--list-axes` `req-admit`/`req-use` rows re-sourced (Q-WR-12, KW-11); PR-8 checked (the verdict precedes the edge attempt, today's order); `[rev3 A8]` the new use kind (an MF_VOCAB event) if main takes Q-R17P-18's spelling | PR-4, PR-8, PR-9 (presence), KW-5..8, KW-11 | yes for artifacts: the routed rows are the ported picks, proven equal at B3a. NOT zero for stream 5: bit 45 and two `--list-axes` axes move, plus three kit rows; a DECLARED registry delta | none | (B3a's) | B3a |
 | | **FIRST DELIVERY COMPLETE (B0-B3b).** | | | | | |
-| (kit) | zen4-grid2: ONE slot (§5.4) | KW-12 | — | — | — | its prep lane, after this note's panel |
+| (kit) | zen4-grid2: ONE slot (§5.4), GO by D167 (Q-R17P-9 (B)) | KW-12 | — | — | — | its prep lane (the harness extension) |
 | (kit) | E4 evaluator build → E4b in-sample streamed replay on grid2 → E5 pre-registration → E6 site census → E7 judge (LEAN: two windows) → E8 results | — | — | — | — | B1, E3b; grid2 |
 | (main) | [KNOW-SRC] K0-K3, then [MEASURE-SET] M0 (store, `ksgen`, the embed, the `measures` kind) | (R-MS1..5 consumed) | K0-K3 yes | M0's stamp rides B4 (measure_sets §3.6) | — | — |
-| **B4** | THE ROUTING COMMIT and LOCKDOWN: `fd_route` group 4 ROUTED and the list deleted; R7 LINER (V1 = `pf_terms_mask` over `mask8_swar`, R17-b's form, ported: `terms.c`, the W8 shared sub-block, `needs_const_subject`, N6's reserved prefix) on set covers and the VM hat at any \|S\|; R0 → WALK on ≥ 2 RANGE terms; R1/R2 iff grid2's twins pay T1-T3; the `drop-kit-bytes` size rung with its pcrec bit 55 (`-fno-kit-size-drop`, r17c); PR-10's method-neutral PF comment; M0's `<PREFIX>_MEASURES` + `rx_info.measures` | (R-17's move), ST6 if paid, PR-10 | **NO**: the one censused mover (R17-b's movers less R0's population, plus the VM hat at \|S\| = 1; §3.5) | **ONE event**, 78 → the next number at landing | 14 → 15 | B3b; E8 PASS or PROVISIONAL PASS (Q-REVAL-11); M0 (else the stamp is a second event); the default set committed |
-| **B5** | ST4: measured rows, each its own censused commit and a FORMAL row addition (post-lockdown: a ruled diff with its replay delta): (a) F1 (a measured libc row may displace D1, Q-WR-1); (b) F0 NONE where E is measured; (c) P1, only once Q-WR-9's trigger fires; (d) PR-6's true `omin`; (e) Q-WR-3's posture relaxed per measured cell (D158: give-up → answer allowed, direction-checked by GIVEUP1) | PR-4 (NONE), PR-6, KW-12, KW-13 | NO where a default compile moves; a row that fires only under a measured `--analysis` bundle moves no default byte | one per default-moving commit | per row | B4; the quantities in the default set |
-| **B6** | the W64 rows (A1/S1, `pf-terms-w32`/`-w16`) as guarded selector arms over `__next`; CANDIDATE until a bench verdict (D144 add. 4) | (SIMD thread) | SIMD-off yes; SIMD-on moves (`MEMFN_FORMS` gains the PF site's token) | none (vrun's precedent) | — | B4 (F5: the scaffold exists) |
+| **B4** | THE ROUTING COMMIT and LOCKDOWN: R0, R1, R5, R7, R7w `routed` = 1 and the bit deleted; R7 (V1 = `pf_terms_mask` over `mask8_swar`, R17-b's form, ported: `terms.c`, the W8 shared sub-block, `needs_const_subject`, N6's reserved prefix) on set covers whose SHAPE is measured, R7w (main's walk) on the rest; R0 → WALK on the r2 class; R1/R2 iff grid2's twins pay T1-T3; the `drop-kit-bytes` size rung with its pcrec bit 55 (`-fno-kit-size-drop`, r17c); PR-10's method-neutral PF comment; M0's `<PREFIX>_MEASURES` + `rx_info.measures`; the `--emit-facts` section `memfn` (R-20, `[rev3 A9]`) | (R-17's move), ST6 if paid, PR-10 | **NO**: the one censused mover (R17-b's movers on measured shapes, less R0's population; `[rev3 A7]` the VM hat at \|S\| = 1 is NOT in it; §3.5) | **ONE event**, 78 → the next number at landing | next (R17-b's `needs_const_subject`, the W8 sub-block) | B3b; E8 PASS or PROVISIONAL PASS (Q-REVAL-11, D167); M0 (else the stamp is a second event); the default set committed |
+| **B5** | ST4: measured rows, each its own censused commit and a FORMAL row addition (post-lockdown: a ruled diff with its replay delta): (a) F1 (a measured libc row may displace D1, Q-WR-1); (b) F0 NONE where E is measured; `[rev3 A7]` (c) F2, the VM hat at \|S\| = 1 → V1 where grid2's VM_ATTEMPT one-byte cells show the saving; (d) P1, only once Q-WR-9's trigger fires; (e) PR-6's true `omin`; (f) Q-WR-3's posture relaxed per measured cell (D158: give-up → answer allowed, direction-checked by GIVEUP1) | PR-4 (NONE), PR-6, KW-12, KW-13 | NO where a default compile moves; a row that fires only under a measured `--analysis` bundle moves no default byte | one per default-moving commit | per row | B4; the quantities in the default set |
+| **B6** | the W64 rows (A1/S1, `pf-terms-w32`/`-w16`) as guarded selector arms over `__next`; R2 and R8 routed; CANDIDATE until a bench verdict (D144 add. 4) | (SIMD thread) | SIMD-off yes; SIMD-on moves (`MEMFN_FORMS` gains the PF site's token) | none (vrun's precedent) | — | B4 (F5: the scaffold exists) |
 | **B7** | ST5: the libc class deny and the three libc-free rows (the OFS BODY, MLINE's back FIND, the exact compare outside `overlap`'s lengths), KW-9 | Q-WR-7 | yes at default (reachable only under the deny) | none | — | future work (Q-WR-7, ruled) |
 | **B8** | ST6: the N-dispatch rows, if B4 did not ship them | ST6 | NO | one | — | B4; [REGIME-TWIN] E10 |
-| B9 | R17-b″ (§6) | — | — | per its own plan | — | D165's build |
+| B9 | R17-b″ (§6) | R-20 (`MF_BODY_PARAM`) | — | per its own plan | — | `[rev3 A6]` E0 (`entry_rows[]`, zero-mover) → `findall_iter.md`'s short revision → its D6 panel → I1 (D163 add. 7 Q4); D165's build |
 
-### 3.2 Why the first delivery needs no measurement set `[rev2]`
+### 3.2 Why the first delivery needs no measurement set `[rev2]` `[rev3: C11, B6]`
 
-Rev 1 said nothing could ship before grid2 (F8). With the routing state of §1.6 that is
-no longer so: through B3b every ROUTED group is decided by a row that reads no set value
-(D1, D2, P0, P2-P4, P9). The set-reading rows are either in a SHADOW group (R0, R1, R2
-on set sites), or read a key a NULL set cannot hold (R1 on a one-byte site, whose
-terminal is LIBC), or are not built until B5 (F0, F1, P1). So B0-B3b need no
-compiled-in set, no `mf_measures` value, and no `<PREFIX>_MEASURES` stamp. The shadow and `regime_pick` read the kit's interim TSV in
+Rev 1 said nothing could ship before grid2 (F8). With the routing bits of §1.6 that is
+no longer so: through B3b every ROUTED row is decided by a row that reads no set value
+(D1, D1c, D1w, D2, P0, P2-P4, P9). The set-reading rows are either unrouted (R0, R1, R2,
+R5, R7 on set sites), or cannot apply where the routed rows apply (`[rev3 B14]` R1/R2
+need a fast terminal, which one-byte and presence sites never have), or are not built
+until B5 (F0, F1, F2, P1). So B0-B3b need no compiled-in set, no `mf_measures` value, and
+no `<PREFIX>_MEASURES` stamp. The shadow and `regime_pick` read the kit's interim TSV in
 D166's shape (regime_eval Q-REVAL-10) as a TEST input only.
 
-### 3.3 Lockdown, and where the judge sits
+`[rev3 C11]` Two caveats, now stated:
+- the routed PRES rows read the frequency PRIOR and carry their own constants; their
+  `basis` says so (UNMEASURED-DEFAULT, §1.4);
+- first-match order puts R0-R2 above D1, so "no routed row reads a set" depends on the
+  routing rule (§1.6: a site renders the table's pick only if its first matching row is
+  routed). That is CHECKED, not argued: the B2 and B3b byte-identity gates also run with
+  the test-build lever's synthetic sets (`all-walk`, `all-v1`, `all-wide`, and the set
+  holding every derivable key), and every artifact stays byte-identical (§8.1).
+
+### 3.3 Lockdown, and where the judge sits `[rev3: B8, B9, D7]`
 
 D161 add. 13 puts LOCKDOWN at "the table that passes [REGIME-EVAL]'s judge and ships with
 R17-b′'s routing commit". In this plan that is B4. Q-REVAL-11 orders "R17-b′'s ROUTING
-commit only after a PASS or PROVISIONAL PASS". B2 and B3b route too, but only rows that
-reproduce today, proven by byte identity rather than by timing; this note reads
-Q-REVAL-11 as gating the first commit whose picks MOVE a byte (Q-R17P-13 asks main to
-confirm). After B4, a row edit is FORMAL: a ruled diff with its evidence, its replay delta
-and its mover census.
+commit only after a PASS or PROVISIONAL PASS"; `[rev3 B8]` D167 (Q-R17P-13, confirmed by
+Frank) rules that this gates the first commit whose picks MOVE a byte (B4): B2 and B3b
+route only rows that reproduce today, gated by byte identity and the shadow comparator,
+and may land while the judge runs. `[rev3 D7]` Those rows lock when they are routed
+(§1.8). `[rev3 B9]` LOCKDOWN is the committed digest of the table's listing plus the edit
+check (§1.8); at B4 the digest covers every built row. After B4, a row edit is FORMAL: a
+ruled diff with its evidence, its replay delta and its mover census.
 
-### 3.4 Per step: abi readers, spec hunks, denies and floors, checks, sabotage
+### 3.4 Per step: abi readers, spec hunks, denies and floors, checks, main-side requests `[rev3: A8, A12, A14, B4, B7, B13]`
 
 **Abi readers, found BY GREP at B4 (and at every later default-moving step).** The floor
 of the list, from rev 1 §5.2, measure_sets §3.6 and findall_iter.md's abi plan:
 - the digit's readers: `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:54` on main), match_api's
-  K80 `#error` text, its "abi is N" sentence, §6.3's stamp table and §6's `rx_info` member
-  table, `docs/dev/history/abi_changelog.md`, `run_codegen_tests.sh`'s `ABI_EXPECT`,
-  `run_recursion_identity.sh`'s FILEPIN / `ABI_SUBJ`, the alpha scripts' normalizers;
+  K80 `#error` text `[rev3 A12]` and the K80 block's `#define PCREC_RX_ABI_H 78` line beside
+  it, its "abi is N" sentence, §6.3's stamp table and §6's `rx_info` member table,
+  `docs/dev/history/abi_changelog.md`, `run_codegen_tests.sh`'s `ABI_EXPECT`,
+  `run_recursion_identity.sh`'s FILEPIN / `ABI_SUBJ`, the alpha scripts' normalizers,
+  `[rev3 A12]` and the sabotage anchor `tests/mech/sabotages/S693_abi_not_bumped.sh`'s
+  `SAB_BEFORE` (re-aimed at every bump by its own header);
 - the byte-count readers (their text cites no digit, their values move): the
   `EMITTED_BYTES` rows of `tests/codegen/manifests/m5_stage1_stamps.tsv`,
   `run_resource_tests.sh`'s K59-PREMUL pin (`a{5,25000}`), the size-term and K59/K53
@@ -1000,60 +1028,95 @@ of the list, from rev 1 §5.2, measure_sets §3.6 and findall_iter.md's abi plan
 | step | hunk |
 |---|---|
 | B0 | none (no caller-observable surface) |
-| B1 | `registry.md` §6¶8a (the six `fd-*` rows) and §6¶8b (floor); `facts_listing.md` §3 (the `memfn` section of `--emit-facts`) |
+| B1 | `registry.md` §6¶8a (the five `fd-*` rows) and §6¶8b (floor). `[rev3 A9]` No `facts_listing.md` hunk (the section rides B4) |
 | B2 | none (no byte, stamp, listing or flag moves) |
-| B3b | `tuning.md` §2.40 (bit 45 retired, reserved; the kit deny named), §2.29 and §2.41 (`req-admit`/`req-use`: which rows are now the kit's, and the listing's projection); `registry.md` §6 (those axes) and §6¶8a/8b; `lib/pcrec.h`'s bit-45 comment; `facts_listing.md` (`used`/`why` re-sourced, values unchanged) |
-| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, §2.49 (the `size` rows), and the bit-55 axis section; `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row; `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0) |
+| B3b | `tuning.md` §2.40 (bit 45 retired, reserved; the kit deny named), §2.29 and §2.41 (`req-admit`/`req-use`: which rows are now the kit's, and the listing's projection); `registry.md` §6 (those axes) and §6¶8a/8b; `lib/pcrec.h`'s bit-45 comment (Q-R17P-19); `facts_listing.md` (`used`/`why` re-sourced, values unchanged) |
+| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, `[rev3 A14]` §2.49 (new: bit 55's section) and §3's dial table (the `size` cells); `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row; `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0); `[rev3 A9]` `facts_listing.md` §3 (the `memfn` section) |
 | B5 | per row: `registry.md` (its deny), `measures.md` (new keys' cards) |
 | B6 | `limits.md` §8.3¶3 (guarded bound), `match_api.md` §6.3.10¶4 (the PF token in `MEMFN_FORMS`), `registry.md` |
 | B7 | `registry.md` and `tuning.md` §2.43 (the libc class deny) |
 
 **Denies and the `memfn` floor** (`registry.md` §6¶8b; main's floor is 6; each commit
-raises it by the rows it adds, so the numbers below assume this order):
+raises it by the rows it adds, so the numbers below assume this order). `[rev3 B7]` Each
+deny is classed for the sweep (`tests/axes/run_axes.sh` gains the `--memfn=` arm, a
+request to main, Q-R17P-22): DIFFER (moves bytes on a floor population), ASSERT_ZERO
+(inert at default, with the step that flips it) or REFUSES (a named refusal):
 
-| step | rows added to `options.def` | floor |
-|---|---|---|
-| B1 | `fd-r0`, `fd-r5`, `fd-r6`, `fd-r8`, `fd-ndisp`, `fd-d1`: one per built row the evaluator can score (regime_eval §5.2: C3/C4 are row denies; E3 creates them) | 6 → 12 |
-| B3b | `fd-pres-g1`, `fd-pres-pick`, `pres-set-lead` | 12 → 15 |
-| B4 | `pf-terms-mask` (the V1 FORM deny, R17-b's) | 15 → 16 |
-| B5 | `fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE), `fd-pres-priced`, each with its row | +1 each |
-| B6 | `pf-terms-w32`, `pf-terms-w16` | +2 |
-| B7 | `libc` (the class deny) | +1 |
-| B9 | `fd-r3a`, `fd-r3b`, `fd-r4` | +3 |
+| step | rows added to `options.def` | class at landing | floor |
+|---|---|---|---|
+| B1 | `fd-r0`, `fd-r5`, `fd-r8`, `fd-ndisp`, `fd-d1` `[rev3 D8: R5 ∪ R6]`: one per built row the evaluator can score (regime_eval §5.2) | ASSERT_ZERO (no row routed), except `fd-d1` from B2 | 6 → 11 |
+| B2 | — (`fd-d1` flips) | `fd-d1`: DIFFER, floor = the one-byte DFA/hybrid population (its OFF arm is D1w, WALK, `[rev3 A17]`) | 11 |
+| B3b | `fd-pres-g1`, `fd-pres-pick`, `pres-set-lead` | DIFFER (floors per pick, §3.1 B3a) | 11 → 14 |
+| B4 | `pf-terms-mask` (the V1 FORM deny, R17-b's); `fd-r0`/`fd-ndisp` flip | DIFFER | 14 → 15 |
+| B5 | `fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE), `[rev3 A7]` `fd-vm-hat-1b`, `fd-pres-priced`, each with its row | per row | +1 each |
+| B6 | `pf-terms-w32`, `pf-terms-w16` | DIFFER at SIMD-on | +2 |
+| B7 | `libc` (the class deny) | REFUSES on DFA_ATTEMPT until its back row exists, else DIFFER | +1 |
+| B9 | `fd-r3a`, `fd-r3b`, `fd-r4` | per row | +3 |
 
 pcrec's own registry: bit 45 retires at B3b; bit 55 is taken at B4 (free on main: B3
-took 56), leaving bits 57-63 (seven, above [IFACE-PUSH]'s ≤ 4 trigger).
+took 56), leaving bits 57-63 (seven, above [IFACE-PUSH]'s ≤ 4 trigger). `[rev3 B13]`
+emit_sweep's maintenance is part of each step: B3b removes bit 45's two DIFFER_PINS rows
+(`(14, 0, "é{2}cat")`, `(16, 0, ...)`, both bases) and adds the three PRES denies' arms;
+B1's five denies get ASSERT_ZERO arms, flipped to DIFFER with floors at their routing
+step; B4 adds `pf-terms-mask`'s; so `--extra` never runs a kit deny without a floor.
+Whether `PCREC_NO_REQ_SET_LEAD` stays in `lib/pcrec.h` as a reserved, ignored name is
+Q-R17P-19.
+
+**`fd_rows[]` in the kit's row-reach machinery** `[rev3 B7]`: B1 adds the table's rows to
+`tests/memfn/rows.tsv` (the ROWCON/N4 manifest: "a row added to the kit adds its line
+here in the same commit") with reach reason `pending-site:<routing step>`, and to
+`row_floors.tsv`; each routing step flips its rows to `pcrec` with a census floor and a
+witness.
 
 **Checks per step (G1 = pcrec's gate, G2 = the kit's generated space):**
 
 | step | G1 | G2 and other checks |
 |---|---|---|
-| B0 | emit_sweep full population, every stream and arm, 0 movers | R17-a's refusal cases (window fields, storage) ported |
-| B1 | emit_sweep 0 movers; the trace SET compare (new records only under MF_TRACE) | R-MS1's bar (every finder row run with NULL, with each key absent in turn, with the full set; no kit row reads a `pcrec.` key); R-MS2's bar (no key read → false; an absent key read → true; a present key → true); R-MS3's fixtures (a zero-mover refactor keeps the hash, a one-instruction edit moves it); the blinded oracle E3b (regime_eval §5.4) and, at E4, the agreement check (regime_pick vs the shadow on every FIT cell) |
-| B2 | emit_sweep 0 movers incl. `-e utf8`, `--engine=vm` and the start arms; the reader shadow's equality, then its retirement | KW-10's one-byte family: the count rule, NONE's answer identity at DFA consumers (shadow), NONE refused where `need` is REQUIRED, MLINE's generic shape |
-| B3a | the five-pick shadow: 100% agreement, reported per pick | PR-11's control (shares no source with the req walk) |
-| B3b | emit_sweep 0 movers on artifacts; the registry diff declared | KW-10's presence family (absent-at-end discovery, REQUIRED-all on proof routes, re-asked ranges with `omin` < 0); plants reaching NON-DFA routes only (a DFA-route-only green is vacuous) |
-| B4 | G1 timing at both layers (§8.1) on the pcrec-side mover population; the mover census by ID (§3.5) | G2's setfind family; `make test-memfn-sets` (§8.2); measure_sets §8.1 (answers under every committed set and the synthetic extremes, REACH floors per arm on generated boundary subjects) |
+| B0 | emit_sweep full population, streams 1-4, every arm incl. SIMD-on and `-fcomments` (sweeparm), 0 movers, against MAIN | R17-a's refusal cases (window fields, storage) ported |
+| B1 | emit_sweep 0 artifact movers; stream 5's DECLARED delta; the trace compare: new `fd` shadow records only (B1 retires none) | R-MS1's bar (every finder row run with NULL, with each key absent in turn, with the full set; no kit row reads a `pcrec.` key); R-MS2's bar; R-MS3's fixtures; the table self-check (`basis`, picks, last rows); the read-list trap (SN-3); the query/define agreement (§4.5); the blinded oracle E3b and, at E4, the agreement check (regime_pick vs the shadow on every FIT cell) |
+| B2 | emit_sweep 0 artifact movers incl. `-e utf8`, `--engine=vm`, the start arms, SIMD-on, `-fcomments`, `[rev3 C11]` and under the lever's synthetic sets; `[rev3 B17]` plus rwquest's and the bench's patterns (`--patterns-file`) and the prefix sweeps; the routed-record floors (§1.6); `[rev3 B4]` a DECLARED trace delta: the `cand_rows[]` records G1, R4 and L4 retire or re-source (the readers now read `mf_ask`), with `make test-cand-oracle` ("every row reached", its 42 witnesses), `inventory_check` and the start-table `reads` DAG re-pinned in the same commit | KW-10's one-byte family: the count rule, NONE's answer identity at DFA consumers (shadow), NONE refused where `need` is REQUIRED, MLINE's generic shape (D1c); the reader shadow's last run before it retires |
+| B3a | the five-pick shadow: 100% agreement, reported per pick, with per-pick floors on non-trivial sites (`[rev3 D10]`) | PR-11's control (shares no source with the req walk); SN-6's planted disagreements |
+| B3b | as B2 (artifacts, synthetic sets, rwquest/bench, prefix sweeps); stream 5's DECLARED registry delta; `[rev3 B4]` the declared trace delta for `PRESENCE`/`NEXT`'s `req-admit`/`req-use` records, with the startset readers and test-cand-oracle re-pinned | KW-10's presence family (absent-at-end discovery, REQUIRED-all on proof routes, re-asked ranges with `omin` < 0); plants reaching NON-DFA routes only (a DFA-route-only green is vacuous) |
+| B4 | G1 timing at both layers (§8.1) on the pcrec-side mover population; the mover census by ID (§3.5) held to B1's predicted manifest; `[rev3 B15]` every kit deny at once == main modulo the committed normalizer; `[rev3 C1]` the one-byte and presence populations 0 movers under the set holding every derivable `xover` key | G2's setfind family; `make test-memfn-sets` (§8.2); measure_sets §8.1 (answers under every committed set and the synthetic extremes, REACH floors per arm on generated boundary subjects) |
 
-**Sabotage** is in §8.3 (S911-S922 and S964-S980, each with its step).
+**Main-side requests, per step** `[rev3 A8]` (the kit files nothing on main; main files
+the request, D78). The merge changes three things C10 and C17 read:
 
-### 3.5 Which artifacts move at B4 (rev 1 §5.1, re-based on main)
+| step | DELEG_SITES (`src/gen/memfn_sites.def`) | C10 (`memfn_sites.c` fixtures) | C17 (`tests/memfn/site_manifest.tsv`) | MF_VOCAB |
+|---|---|---|---|---|
+| B2 | PF and MLINE rows unchanged (op `MF_OP_FIND`); the one-byte predicate becomes a SET term (PR-1) | a fixture per one-byte kind (DFA_SCAN, DFA_HAT, HYB_PF, VM_ATTEMPT-presence, DFA_ATTEMPT) | the `site_kind` column | no move |
+| B3a | the PRE row (`MF_OP_ALL_PRESENT`, ON_MISS\|ASSIGN, `MF_USE_DISCARD`; SETREST and VERIFY ride it) merges into the FIND row of its route as that site's ENTRY use; a presence-only site (no-DFA VM, hybrid `_search_run`, `attempt_entry` without MLINE) keeps a FIND row with no span 0 | fixtures for the merged rows and a presence-only row | the PRE rows' use points (`req_site_define`, `pcrec_emit_req_byte_check`, `emit_req_reentry_use`) move under the merged sites | a new use kind (proposed `MF_USE_ENTRY`) is a vocabulary event; Q-R17P-18 |
+| B3b | the merged rows routed | the ALL_PRESENT renderers (`precheck`, `precheck_assign`, `precheck_assign_byte`) as the ENTRY use's renderings (KW-7) | `delegated` on every merged row | — |
+
+### 3.5 Which artifacts move at B4 (rev 1 §5.1, re-based on main) `[rev3: A7, C3, B16]`
 
 Rev 1's census (`r17b_prime/out/census_shapes.out`) counted R17-b's movers on the kit
 branch: 996 byte / 2,910 byte-vm artifacts, one stateful site each, of which R0's ≥ 2
-RANGE population is 219 / 243 (mostly `\w`, shape (3,0,1)). Against MAIN at B4:
-- the set sites outside R0 (777 / 2,667) move to V1 behind `__next` (plus the dispatch if
-  paid);
+RANGE population is 219 / 243 (mostly `\w`, shape (3,0,1)), and the one-member covers
+(0,1,0) 157 / 1,673. Against MAIN at B4 `[rev3]`:
+- `[rev3 C3]` the set sites outside R0 move to V1 behind `__next` (plus the dispatch if
+  paid) ONLY where their cover shape's saving key is in the default set and exceeds the
+  regime floor (R7). Byte arm: of 620 candidate movers, 300 sit on grid1's measured
+  shapes ((1,0,0) 285, (0,1,1) 15) and 266 on grid2 item 3a's three shapes ((0,2,0) 132,
+  (0,0,1) 84, (1,1,0) 50); the other 54 stay on R7w (main's walk). byte-vm arm: of 994,
+  509 sit on grid1's shapes; the share of the other 485 on item 3a's shapes is re-counted
+  at B4. Each is an UPPER bound: a measured shape whose saving does not clear its floor
+  stays WALK. B4's census reports movers split by shape measured / not measured;
 - R0's sites stay byte-identical to main except the abi digit and the new stamp (bare
   walk), or take the walk-only scaffold if T3 passes (§2.5);
-- the VM hat at \|S\| = 1 (112 / 8 / 1, inside the byte-vm count) moves from main's table
-  walk to V1's one-term cover;
-- one-byte sites (D1) and presence (P-rows) do not move;
+- `[rev3 A7]` the VM hat at \|S\| = 1 (112 / 8 / 1) does NOT move at B4: D1w keeps
+  main's table walk; F2 moves it at B5 on measurement;
+- one-byte sites (D1, D1c), the one-member covers and presence (P-rows) do not move;
 - every artifact moves by the abi digit and `<PREFIX>_MEASURES` (`""` where nothing
   consulted, measure_sets §3.5).
 
 These counts are re-taken against main at B4 by a pcrec-side reader of the emitted C (the
-census never reads the kit's `moved`). The utf8 arms' split (964 / 2,907 R17-b movers)
+census never reads the kit's `moved`). `[rev3 B16]` That reader is NOT
+`census_shapes.py`, which reads the `<stem>__mask` R17-b emits (absent on main): B4's
+pre-move census is `r17b_movers.py`'s independent cover search over main's artifacts
+(its cover search shares no code with `terms.c`, checked at B4), and the post-move census
+reads B4's own emitted masks. R0's firing population is itself an upper bound (R0 also
+needs its saving key below the floor). The utf8 arms' split (964 / 2,907 R17-b movers)
 was not re-run for R0.
 
 ### 3.6 Size (rev 1 §5.4, MEASURED on hand twins, SIZE ONLY; kept)
@@ -1073,6 +1136,9 @@ V1 alone (B4 with no dispatch) is R17-b's +256..+608 B per site over main; a pai
 dispatch adds +320..+416 B more; the SIMD-on forms are guarded (outside the caps,
 counted by `SIMD_GUARDED_BYTES`). `pf-terms-mask` is `MF_SZ_ADDS`, so the size ladder's
 `drop-kit-bytes` rung denies it on a cap refusal and the site takes the walk.
+`[rev3 D5]` These are position `0`'s sizes (the helpers as emitted, `static inline`); the
+size positions of D163 add. 7 would share them (§2.2), and their cells are the dial's,
+measured by its own diffs, not here.
 
 ---
 
