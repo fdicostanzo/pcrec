@@ -116,6 +116,24 @@
 # past each other at once. See the job-list build and DIAL-S3's own header
 # below for the full design citation.
 #
+# [RUNAXES] THE KIT'S `--memfn=` DENIES, AS A SIXTH KIND OF AXIS (lane
+# runaxes, 2026-10-16). The memfn kit's per-form denies (`--memfn=no-NAME`,
+# memfn/src/options.def) are no pcrec axis, so nothing above ever swept them.
+# The `memfn` section of `pcrec --list-axes` is READ (never a hand list) and
+# each row becomes two answer-identity jobs against the default baseline, one
+# per layer: the shipped SIMD-off layer (`default`, where a SIMD row is
+# accepted and inert) and `-fmemfn-simd` (`simd`). tests/axes/memfn_arm.py
+# then compiles the corpus with the cells' OWN flag text and holds every cell
+# to its measured class -- DIFFER (a floor of distinct corpus patterns whose
+# artifact moves, and a named witness that does), ASSERT_ZERO (exactly 0
+# move), REFUSES -- plus a null arm and an unknown-name refusal control,
+# because an answer sweep reads AGREE on a flag that never arrived. A row the
+# kit adds with no classification is RED. `AXES=--memfn` (or one row's
+# spelling) selects it; `MEMFN_REACH_ONLY=1` runs the reach alone (sabotage
+# S1026, mech arm `axesmemfn`); `MEMFN_EVERY=K` samples the corpus for it.
+# See tests/axes/CLAUDE.md "The --memfn= arm" and
+# docs/dev/lanes/runaxes_report.md.
+#
 # THE DETECT DEMONSTRATION (docs/dev/learnings.md §3: "ask of any new guard
 # ... what would have to be true for it to fail, and who chose that input").
 # Performed once, 2026-08-26, in a SCRATCH copy under the session scratchpad
@@ -280,7 +298,8 @@ fi
 # [MEMFN] R4a: pcrec's axis table is `--list-axes`' leading anonymous table;
 # the kit's `memfn` section after it is not pcrec flags (its rows are
 # `--memfn=` options), so the pipe SELECTS the main table (table_main,
-# table_contract.md §4¶6) before reading any row.
+# table_contract.md §4¶6) before reading any row. Those rows are NOT dropped:
+# [RUNAXES] sweeps them as their own arm, further down.
 # The pairing now comes off `pcrec --list-axes`, whose deny/force macro and
 # `cli_flag` columns are rendered from `src/core/axes.def` — the same row
 # `cli_axis_apply` parses. One derivation, read by the sweep instead of two
@@ -1098,6 +1117,84 @@ declare -A GIVEUP1_ALLOWANCE=(
 )
 
 # ============================================================================
+# [RUNAXES] THE `--memfn=` ARM (lane runaxes, 2026-10-16; the kit's per-form
+# denies, memfn/src/options.def). This sweep derived every pcrec deny/force
+# flag and NEVER the kit's: `--memfn=no-NAME` is no pcrec axis (no flags bit,
+# no axes.def row), so the registry derivation above cannot find it -- the
+# `memfn` section of `--list-axes` is the one enumeration point (memfn/
+# CLAUDE.md "The kit's option namespace"), and the table pipe above SELECTS
+# the main table precisely so that section is not read as pcrec flags.
+#
+# THE POPULATION IS READ, never listed: every row of that section, at TWO
+# LAYERS -- `default` (the shipped SIMD-off layer: a SIMD row is accepted and
+# inert here, a scalar row is live) and `simd` (`-fmemfn-simd` on, the flag
+# spelling derived from the axis table like every other). Each (row, layer)
+# is one answer-identity JOB below, against the default baseline, exactly as
+# a bit-flag axis is: the deny's answers must equal the default's.
+#
+# ANSWER IDENTITY CANNOT SEE ITS OWN PLUMBING (a dropped `--memfn=` compiles
+# the base artifact and agrees on every case), so the cells' OWN flag text is
+# handed to tests/axes/memfn_arm.py, which compiles the corpus with exactly
+# those flags and holds each cell to its measured class (DIFFER with a
+# floor and a witness / ASSERT_ZERO / REFUSES). The flags below are the ONE
+# place a cell's flags are composed: the jobs and the reach read the same
+# strings, so a loss here is seen by both. Selected by the empty AXES=, by the
+# token `--memfn`, or by a row's own spelling.
+#   MEMFN_REACH_ONLY=1   run only the reach (no baseline, no jobs), then exit
+#                        -- tests/mech's `axesmemfn` arm (S1026) runs this
+#   MEMFN_EVERY=K        reach over every K-th distinct corpus pattern
+#                        (floors not applied; witnesses and classes still are)
+# ============================================================================
+declare -a memfn_cell_name=() memfn_cell_layer=() memfn_cell_flags=()
+memfn_arm_ran=0
+memfn_verdict="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
+    MEMFN_DUMP="$WORKDIR/axes_dump.tsv"
+    "$TIMEOUT_BIN" 60 "$PCREC" --list-axes > "$MEMFN_DUMP" \
+        || { echo "run_axes.sh: FATAL: --list-axes failed while reading the memfn section" >&2; exit 1; }
+    memfn_simd_flag="${macro_flag[PCREC_FORCE_MEMFN_SIMD]:-}"
+    if [ -z "$memfn_simd_flag" ]; then
+        echo "run_axes.sh: FATAL: PCREC_FORCE_MEMFN_SIMD has no CLI spelling in --list-axes -- the kit's SIMD layer cannot be addressed" >&2
+        exit 1
+    fi
+    memfn_names="$(bash "$ROOT_DIR/tests/lib/table.sh" table-field "$MEMFN_DUMP" memfn name)" \
+        || { echo "run_axes.sh: FATAL: --list-axes has no readable memfn section" >&2; exit 1; }
+    memfn_spells="$(bash "$ROOT_DIR/tests/lib/table.sh" table-field "$MEMFN_DUMP" memfn spelling)" \
+        || { echo "run_axes.sh: FATAL: --list-axes memfn section has no spelling column" >&2; exit 1; }
+    if [ -z "$memfn_names" ]; then
+        echo "run_axes.sh: FATAL: derived ZERO rows from --list-axes' memfn section (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
+        exit 1
+    fi
+    while IFS=$'\t' read -r _mname _mspell; do
+        if [ -n "$AXES" ]; then
+            case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
+        fi
+        for _mlayer in default simd; do
+            _mflags="$_mspell"
+            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
+            memfn_cell_name+=("$_mname"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+        done
+    done < <(paste -d '\t' <(printf '%s\n' "$memfn_names") <(printf '%s\n' "$memfn_spells"))
+fi
+# the reach: ONE call, the cells' own flags on its command line
+run_memfn_reach() {
+    local -a cargs=() _i
+    for _i in "${!memfn_cell_name[@]}"; do
+        cargs+=(--cell "${memfn_cell_name[$_i]}|${memfn_cell_layer[$_i]}|${memfn_cell_flags[$_i]}")
+    done
+    python3 -I "$SCRIPT_DIR/memfn_arm.py" --pcrec "$PCREC" --root "$ROOT_DIR" \
+        --jobs "$PROCS" --every "${MEMFN_EVERY:-1}" "${cargs[@]}"
+}
+if [ "${MEMFN_REACH_ONLY:-0}" = "1" ]; then
+    if [ "${#memfn_cell_name[@]}" -eq 0 ]; then
+        echo "run_axes.sh: FATAL: MEMFN_REACH_ONLY=1 selected no memfn cells (AXES=\"$AXES\")" >&2
+        exit 1
+    fi
+    run_memfn_reach
+    exit $?
+fi
+
+# ============================================================================
 # THE BASELINE
 # ============================================================================
 
@@ -1631,6 +1728,16 @@ else
     echo "axes: --tune positions not run (filtered out by AXES=)"
 fi
 
+# [RUNAXES] THE `--memfn=` ARM's answer jobs (cells composed above): one per
+# (kit row, layer), `lost_ok` 0 -- a kit deny may never refuse a pattern the
+# default compiles (a refusal it ever documents would be its own
+# REFUSAL_PATTERN entry, none exists today).
+for _i in "${!memfn_cell_name[@]}"; do
+    job_label+=("${memfn_cell_flags[$_i]} (kit row ${memfn_cell_name[$_i]}, layer ${memfn_cell_layer[$_i]}, memfn arm)")
+    job_flags+=("${memfn_cell_flags[$_i]}"); job_lost_ok+=("0")
+    memfn_arm_ran=1
+done
+
 # ============================================================================
 # [TT-12 STEP 1] RUN THE JOB LIST PAIRWISE — two axes concurrently, each at
 # PROCS/2 (rounded up). docs/dev/tt12_step0_profile.md §4 measured why this
@@ -2046,6 +2153,25 @@ if [ "$lever_ran" = 1 ]; then
 fi
 
 # ============================================================================
+# [RUNAXES] THE `--memfn=` ARM's REACH (tests/axes/memfn_arm.py; the block
+# above says why the jobs cannot do this for themselves).
+# ============================================================================
+if [ "$memfn_arm_ran" -eq 1 ]; then
+    echo
+    echo "axes: --memfn= arm reach (the cells' own flags, classes and floors measured at c2b6e927b)..."
+    if run_memfn_reach > "$WORKDIR/memfn_arm.out" 2>&1; then
+        memfn_verdict="OK — $(grep -m1 '^memfn arm: [0-9]' "$WORKDIR/memfn_arm.out")"
+        cat "$WORKDIR/memfn_arm.out"
+    else
+        cat "$WORKDIR/memfn_arm.out" >&2
+        memfn_verdict="FAIL — $(grep -m1 '^checks failed:' "$WORKDIR/memfn_arm.out")"
+        echo "AXIS FAIL: [RUNAXES] --memfn= arm reach: $memfn_verdict" >&2
+        fail=1
+    fi
+    echo "  $memfn_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -2063,6 +2189,7 @@ echo "[START-LANDING] product arm reach: $landing_verdict"
 echo "[START-SET] product arm (--engine=vm x -fno-start-set): $startset_verdict"
 echo "[START-SET] DFA hat population (-fno-start-set vs default): $dfahat_verdict"
 echo "[COMPOUND] the lever's property: $lever_verdict"
+echo "[RUNAXES] --memfn= arm reach (kit denies; classes and floors): $memfn_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then

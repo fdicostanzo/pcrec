@@ -3879,3 +3879,13 @@ PRESENCE's kit ask left undeclared in the slot graph: arm `candoracle`
 `docs/dev/lanes/fdb1_report.md`). S743 and S844 re-aimed in the same change
 (RETRY's and RECOVER's nodes gained the kit-ask fields after their
 `.raise`/`.under`), intent unchanged.
+
+**S1026 (lane runaxes, 2026-10-16, [RUNAXES]):** `run_axes.sh` composes each
+`--memfn=` cell's flags without the row's `--memfn=no-NAME` spelling and
+nothing else, so the arm's answer-identity jobs compile the base build on both
+sides and pass; only `tests/axes/memfn_arm.py` (the cells' own flag text) sees
+it. New arm `axesmemfn` (`run_axes.sh` with `MEMFN_REACH_ONLY=1 MEMFN_EVERY=40
+AXES=--memfn`: the reach alone over a 1-in-40 corpus sample, trailer
+`checks passed:`/`checks failed:`; vocabulary entry in
+`run_sabotage_matrix.sh`). DETECTED (figure in the lane report).
+
