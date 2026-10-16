@@ -587,6 +587,11 @@ leaves the final CLI spelling and the field representation to the interface rule
 | C5 | rank threshold | `--part-inline-rank=R` | `part_inline_rank` | unset (0), `none`, `R3`, `R2`, `R1`, `R0`, `measured` | every subject part whose class value is unset | P1-P3, then a class value (P4-P6) |
 | C6 | residual | `--part-residual=V` | `part_residual` | unset (0), `auto`, `shared`, `inline` | every subject part that no class value and no threshold decided | P1-P3, P4-P7 |
 
+**Ranks per class today** (§3.2's table): `prefilter` R2, or R3 where the hybrid's retry
+re-enters it; `compound` F R1 and Q R2 (both held); `find` R2 (`__find`), R2 (`__step`,
+`__enter`, held by P3); `wrap` R2 for wrapper-body twins, R0 for the `rev-end` tie's verify
+once I3 makes it a part.
+
 - **Values.** `auto` is the owner's `0` layout (I4): the attribute the owning design writes,
   often none. `shared` is one `static noinline noclone` body; a wrapper that calls it takes
   the W-table (§3.4). `inline` is `always_inline` into each caller. Unset (the field's 0)
