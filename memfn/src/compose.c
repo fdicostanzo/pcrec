@@ -280,7 +280,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     return i < NARMS ? arms[i] : NULL;
 }
 
-/* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12) -----------------
+/* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13) -------------
  *
  * What row `a`'s text for site `s` proves, as facts (D157): every row today
  * writes a search text (exists 1: NONE is not built, F0 lands at B5); its
