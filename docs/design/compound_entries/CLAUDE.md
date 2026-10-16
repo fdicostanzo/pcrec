@@ -33,6 +33,19 @@ worktree's `build/` (gitignored); only the result tables are committed.
 - `drv.c` — the driver all three dynamic probes link: N iterations of a
   find-all with `<p>_search` and the spec's advance, then one `<p>_match` per
   position, summed into a printed checksum.
+- `rev4_osize.py`, `rev4_osize_cls.py`, `rev4_vmshape_o.sh` — revision 4's
+  SCRATCH-GRADE size probes (lane `cmprev4`, 2026-10-16, main `8eec6f874`;
+  single run, compile-only, gcc 15.2 `-O2`, no clock). `rev4_osize.py`: the
+  whole-`.o` bytes (`.text`, `.eh_frame`, allocated total, file, stripped file)
+  of the layout witnesses under `gcc`/`shared`/`inline` at `-O2` and
+  `-O2 -fPIC` (it imports `probe_layout.py`'s `variant()`). `rev4_osize_cls.py`:
+  the same, with the attribute written on ONE part class at a time (prefilter,
+  compound, and the owned VM entry chain for reference). `rev4_vmshape_o.sh`:
+  three larger VM witnesses at `--vm-entry-shape=1..4`. Outputs
+  `results/rev4_osize.tsv`, `results/rev4_osize_cls.tsv`,
+  `results/rev4_vmshape_o.tsv`. The `o_file` column carries the source file
+  name in the object's symbol table, so it moves by a few bytes with the
+  scratch path; `.text` does not.
 - `results/` — `entries.tsv`, `layout.tsv`, `plt.tsv`, `vm_entry_shape.tsv`:
   the outputs the note cites (gcc 15.2, x86-64, the Linux dev box, main
   `d6e7fa993`).
