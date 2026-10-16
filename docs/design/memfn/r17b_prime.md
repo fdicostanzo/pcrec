@@ -127,9 +127,10 @@ grid2 slot.
    shared-body mode branch (M24). Each has a method card row under `kit-grid@2` (R-MS5).
    `[rev3 C4, C13]` The null floor is per REGIME (`eps.<subject>.<lenclass>`), not one
    pooled 3.1%.
-6. **zen4-grid2 (§5.4): ONE slot, ≈ 91 min required at 3.4 launches, ≈ 128 min at 5
-   launches** `[rev3 C7]` (rev 2's items are C7's 88-113; revision 3 adds ~3.4 / ~5.0
-   min), plus ~8 min optional and the quiet-gate waits. Revision 3 adds `[rev3 C3]` three
+6. **zen4-grid2 (§5.4): ONE slot, ≈ 91 min required at 3.4 launches, ≈ 129 min at 5
+   launches** `[rev3 C7]` (rev 2's required items: 87-124 min with the gate, C7's
+   "88-113"; revision 3 adds 67 group-arms, +3.6 / +5.3 min), plus ~8-9 min optional and
+   the quiet-gate waits. Revision 3 adds `[rev3 C3]` three
    cover shapes for R7's gate, `[rev3 C5]` N = 33..46 for the dispatch literal,
    `[rev3 A7]` the VM_ATTEMPT one-byte cell for F2, and `[rev3 C8]` NONE as an extra
    arm inside item 3's groups (item 4 deleted). Perf is never required (D166 add. 1);
@@ -1474,7 +1475,7 @@ Each kit bump is a kit contract event moving no pcrec byte except B4's.
   is a card field (measure_sets §1.2's `subject`), so a streamed and a repeated
   measurement of one quantity are two cards, never one key with a tag.
 
-### 5.2 Every quantity the table reads `[rev2: M19-M23 added; the card column]`
+### 5.2 Every quantity the table reads `[rev2: M19-M23 added; the card column]` `[rev3: M24; M6 per regime; C1, C5, C9, C13]`
 
 "in grid1?" = the value exists in the one run grid1 (Zen 4 7700X, CPU 14, 2026-10-13,
 read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
@@ -1486,10 +1487,10 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
 | M3 | β V1 by shape | V1 / – / ANY / (1,0,0), (2,0,0), (2,0,1), (3,1,0), (0,1,1) | 0.572, 0.978, 1.132, 1.410, 0.731 | 0.1082, 0.1851, 0.2141, 0.2667, 0.1384 | §2.1; an. 2.3 | R0, T1 | yes |
 | M4 | β S1 by shape | S1 / same five | 0.108, 0.177, 0.220, 0.285, 0.112 | 0.0205 … 0.0212 | §2.1; an. 2.3 | T1 (W16) | yes |
 | M5 | β A1 by shape | A1 / same five | 0.056, 0.079, 0.101, 0.143, 0.057 | 0.0106 … 0.0107 | §2.1; an. 2.3 | T1 (W32) | yes |
-| M6 | null floor ε | – | 0.031 | p90 A/A over 141 F1 groups | §1.2 | R0, T1-T3, F1 | yes |
+| M6 | null floor ε, `[rev3 C4, C13]` PER REGIME: `kit.eps.<subject>.<lenclass>` | – / – / – / regime | `[rev3 C13]` rev 2's 0.031 was the POOLED F1+F3 "FRG" figure (3.090%), not F1's own p90 (3.365%); regime-split: F1 find-all p90 3.365% (median 0.195%), F3 member-free single calls 0.173%, EXT 0.382%; per-launch spread p90 6.96% | the A/A pairs of each regime's own groups | gridread analysis.txt lines 5-15 | R0, R7, F2 (`kit.eps` per regime); T1-T3 read each cell's own `floor(cell)` (§2.5) | yes (per regime) |
 | M7 | single-call fixed part F, n ≥ 64 | walk, V1, S1, A1 / – / PF | 25.1, 22.1, 24.8, 26.3 u·B | 4.74, 4.18, 4.70, 4.98 ns | §2.2 | T1, T2 | yes |
 | M8 | F at n = 48 (sub-block tail) | walk, V1, S1, A1 / – / PF | 25.6, 22.0, 129.7, 77.9 u·B | 4.84, 4.17, 24.54, 14.73 ns | §2.2 | T1, T2 | yes |
-| M9 | single-call crossover | V1 / walk / ANY / member-free | 36 B (bracket 32-48) | | §4.3 interp., §4.4 | R1 | yes |
+| M9 | single-call crossover | V1 / walk / ANY / member-free | 36 B (bracket 32-48), `[rev3 C5]` INTERPOLATED(32, 48) on grid1; grid2 item 2a measures N = 33..46 (§2.6) | | §4.3 interp., §4.4 | R1 | yes, as an interpolation |
 | M10 | single-call crossover | S1, A1 / walk / ANY | 18 B, 20 B | interpolated | §4.3 | listed only | yes |
 | M11 | block step | W64 / V1 / ANY | 64 B | DERIVED (W = 64), step MEASURED at n 63→64 | §4.4 | R2 | yes |
 | M12 | single-call delta at N | V1 − walk / PF / N = 8, 32, 48, 63 | +12.2, +3.2, −23.8, −29.6 u·B | +2.3, +0.6, −4.5, −5.6 ns | §4.3, §4.4 | T1 | yes |
@@ -1500,14 +1501,21 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
 | M17 | dispatch charge per use | dispatch / none / ANY | — | — | — | T3 | **ABSENT** |
 | M18 | scaffold charge per use | walk-in-helper / walk-inline / PF, VM_ATTEMPT | — | asm differs by −3..+14 insns (`r17b_prime/out/walk_helper_asm.out`) | — | T3 (R0 sites) | **ABSENT** |
 | M19 `[rev2]` | libc one-byte F and β | LIBC / – / DFA_SCAN (fwd, bounded), DFA_HAT, HYB_PF, ATTEMPT_PRED (back) / (0,1,0) | — | glibc F 3.24 ns (`linux_results.md`, method-mixed, not a set) | — | F1, D1's replacement | **ABSENT** |
-| M20 `[rev2]` | libc-free one-byte F and β | V1 one-term, WALK at \|S\| = 1, the generic byte loop / – / the same kinds / (0,1,0) | — | — | — | F1 | **ABSENT** (grid1's sets are all ≥ 2 members or one RANGE term) |
+| M20 `[rev2]` | libc-free one-byte F and β | V1 one-term, WALK at \|S\| = 1, the generic byte loop / – / the same kinds `[rev3 A7]` plus VM_ATTEMPT / (0,1,0) | — | — | — | F1, `[rev3]` F2 | **ABSENT** (grid1's sets are all ≥ 2 members or one RANGE term) |
 | M21 `[rev2]` | one-byte dominance points | each libc-free form / LIBC / kind | — | DERIVED from M19, M20 | — | F1 | **ABSENT** |
 | M22 `[rev2]` | NONE's gap threshold g_none | NONE / the next pick / DFA_SCAN, DFA_HAT, HYB_PF (ATTEMPT_PRED: measured only for Q-WR-2's decision) / shape | — | — | — | F0 | **ABSENT** |
 | M23 `[rev2]` | the pre-scan gate: KEEP − DROP per presence shape, route and position (early, late, absent) | gate / – / DFA_SCAN, HYB_PF / one byte, set 2-4, run 2-8 | — | — | — | P1 | **ABSENT** (and P1 waits for Q-WR-9's trigger) |
+| M24 `[rev3 A6]` | the mode branch on a SHARED PARAM find body, per call | dispatch / none / kind / layer | — | — | — | T2 (beside C_disp_call, §2.4-§2.5) | **ABSENT** (no PARAM body exists before R17-b″; measured at [REGIME-TWIN] or the iterator's parity slot) |
 
-- **15 of 23 families exist in grid1; 8 are ABSENT**: rev 1's three dispatch charges
-  (M16-M18), the one-byte libc and libc-free costs and their crossover (M19-M21), NONE's
-  effort (M22), the pre-scan gate (M23).
+- **15 of 24 families exist in grid1; 9 are ABSENT** `[rev3]`: rev 1's three dispatch
+  charges (M16-M18), the one-byte libc and libc-free costs and their crossover (M19-M21),
+  NONE's effort (M22), the pre-scan gate (M23) and the shared-body mode branch (M24).
+- `[rev3 C1]` **The converter's derived keys** (measure_sets §1.6's closed registry, the
+  converter `set_to_measures.py`, regime_eval E14) are, exhaustively: `kit.saving.<f>.<g>.<shape>`
+  (R0, R7, F2; from M2-M5 and M20), `kit.xover.<f>.<g>.<kind>` (R1; from M7, M8, M12 and,
+  once grid2 measures them, M19/M20, which is exactly why R1's applicability is row data
+  and not key absence), `kit.block.W64` (R2; M11), `kit.dom.<f>.LIBC.<kind>` (F1; M19-M21),
+  `kit.lstar`/`kit.g8` (R8). B4's check runs a synthetic set holding every one of them.
 - **INTERPRETATION, recorded so the arm is built (not a value any row reads):** grid1's
   EXT arms put the DFA's own per-byte step at 0.1885 ns/B (armread), within 0.4% of u.
   So on a DFA consumer NONE costs about what WALK costs per byte, and its saving against
@@ -1519,12 +1527,13 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
 | quantity | `dims` | `subject` | `lengths` | `deps` |
 |---|---|---|---|---|
 | `beta` (M1-M5, M19β, M20β) | form;kind;shape | streamed (Q-R17P-9) | the slope 64 KiB → 1 MiB, member-free single calls | `kit:form.<form>`; for LIBC also `libc:<name>@<ver>` (§5.3) |
-| `eps` (M6) | — | streamed | the F1 groups' A/A pairs | — |
+| `eps` (M6) | `[rev3 C4]` subject;lenclass | per regime: streamed find-all, member-free single calls, EXT | each regime's own groups' A/A pairs | — |
 | `f` (M7, M8, M19F, M20F) | form;kind;lenclass | fresh buffers, member-free | n ∈ {8, 32, 48, 63, 64, 1 Ki} | as `beta` |
 | `xover` (M9, M10), `block` (M11), `delta` (M12), `dom` (M21) | form;vs;kind | derived (registry formula, measure_sets §1.6) | — | the inputs' `deps` |
 | `ccold` (M13), `wuse` (M14) | form;kind | streamed find-all | L ∈ {32, 1 Ki, 64 Ki}; g grid | as `beta` |
 | `gstar` (M15), `gnone` (M22) | form;kind;shape | streamed find-all | g ∈ {2, 4, 8, 16, 32, 64, 256, 4096, absent} | as `beta`, plus `kit:form.none` for M22 |
-| `cdisp_call`, `cdisp_use`, `cscaffold` (M16-M18) | kind | fresh buffers (call) / streamed (use) | M12's N points; F1 dense groups | `kit:form.dispatch-twin` (stale when the BUILT dispatch differs: §2.5) |
+| `cdisp_call`, `cdisp_use`, `cscaffold` (M16-M18) | `[rev3 C9]` kind;layer;nforms (the OFF two-form chain and the W16/W32 three-form selector cost differently; R2 is W16/W32-only) | fresh buffers (call) / streamed (use) | M12's N points plus item 2a's N = 33..46; F1 dense groups | `kit:form.dispatch-twin` (stale when the BUILT dispatch differs: §2.5) |
+| `cmode_call` (M24) `[rev3]` | kind;layer | fresh buffers | the short-call cell | `kit:form.dispatch-twin` |
 | `gate` (M23) | shape;kind;position | streamed find-all | 64 Ki, 1 Mi | `kit:form.libc`, `libc:<name>@<ver>`, `pcrec:<probe>` (the consumer is pcrec's emitted DFA) |
 
 ### 5.3 The libc rows' dependency owner `[rev2]`
@@ -1542,28 +1551,56 @@ provenance `libc:<name>@<version>`; this note adds what it means for staleness:
   (the form hash of the CALL text) stays row staleness as for any form. Q-R17P-14 asks
   main, as measure_sets' owner, to take the third owner on these terms.
 
-### 5.4 zen4-grid2: ONE slot spec `[rev2]`
+### 5.4 zen4-grid2: ONE slot spec `[rev2]` `[rev3: A7, C3, C5, C7, C8, C10]`
+
+GO by D167 (Q-R17P-9 (B): one streamed condition gives both the set's constants and
+regime_eval's in-sample reference R_in; `[rev3 C10]` R_in is therefore in-sample by
+design, and grid1's prototype figures stop being directly comparable). This section is
+the slot SPEC; a separate lane extends the grid1 harness from it.
 
 One run under D166's rule: one box (the Linux dev box, Zen 4 7700X, CPU 14 via
 `taskset`, governor `performance`), one method version (`kit-grid@2`), gcc 15.2 `-O2`,
 the grid1 harness (`docs/dev/lanes/grid1/`, arm contract `grid1/README.md`) with
 rotated interleaving, 7 rounds per launch, the per-launch median, LAUNCHES 3 (+2 by the
 pre-registered rerun rule), the quiet gate at every group boundary. Costs use
-regime_eval §2.1's own formula: groups × arms × 3.4 launches × 0.95 s.
+regime_eval §2.1's own formula: group-arms × launches × 0.95 s per launch.
 
-| # | item | for | groups × arms | wall |
-|---|---|---|---|---|
-| 1 | the 149 fit groups (F1 141 + F3 8) re-timed STREAMED, every pickable arm at both layers plus `walk#b` and `walk#c` | regime_eval's in-sample reference R_in (E4b) AND, under Q-R17P-9 (B), the set's M1-M15 | 149 × ~7 | **56.1 min** |
-| 2 | dispatch TWINS: the WALK+V1 scaffold with `f` forced to each form against the single-form artifact (`mkvar.py` gains the variant): F3's member-free points, 20 dense F1 groups, 6 R0-shaped scaffold groups (hex-run, word-eq, `\w`) | M16, M17, M18 | 8×3 + 20×3 + 6×2 | **5.2 min** |
-| 3 | one-byte arms (LIBC, WALK at \|S\| = 1, V1 one-term, the generic loop, `walk#b`) at five kinds (DFA_SCAN fwd, DFA_SCAN bounded, DFA_HAT, HYB_PF, ATTEMPT_PRED back), over 6 gaps {2, 8, 32, 256, 4096, absent} find-all streamed + 4 member-free lengths {8, 32, 64, 1 Mi}. ATTEMPT_PRED takes LIBC-back and a hand back-walk only | M19, M20 (M21 derived) | 50 × 5 | **13.5 min** |
-| 4 | NONE arms (the use's FIND statement deleted by `mkvar.py`: the consumer walks) at DFA_SCAN, DFA_HAT, HYB_PF and ATTEMPT_PRED over the 6 gaps | M22 | 30 × ~1.5 | **2.4 min** |
-| 5 | build and the correctness gate first (`check.sh` legs R, L, C: every arm's answers and match lists equal the base's; the base equals libpcre2 10.46 through `tests/oracle/`'s local adapter); a pickable arm's answer failure FAILS the run | all | every arm | **~10 min** (INTERPRETATION: grid1's gate scaled) |
-| | **required** | | | **≈ 88 min** |
-| 6 | OPTIONAL: F2's perf pass on the K arms {walk, V1, A1} of every item-1 group (regime_eval §2.1 item 2) | CB corroboration (ungated) | | ~5 min |
-| 7 | OPTIONAL: F2's streamed perf pass (hex-run, bounded, dfa-hat × 4 arms × prose/docs/code) | the panel's ask; no bar reads it | 36 rows × 0.6 s | < 1 min |
-| 8 | OPTIONAL: a pre-scan TRIGGER PROBE: KEEP vs DROP (`-fno-req-byte`/`-fno-req-run` as the DROP arm) on DFA-route TUG cells with OPTIONAL presence | whether Q-WR-9's trigger fires (no row is built from it) | 36 group-arms | ~2 min |
-| | **with the optional items** | | | **≈ 96 min**, plus quiet-gate waits |
+`[rev3 C7]` **Launches.** Rev 2 costed 3.4 launches (3 plus the expected reruns); grid1
+and spike1 both ran at 5 (grid1 F1: 4,407 s for 1,124 rows, 0.78 s per row-launch). The
+estimate is therefore a RANGE, 3.4 to 5 launches, and the rerun rule gains a
+CROSS-LAUNCH trigger: a group whose any arm's per-launch medians spread (max − min) by
+more than the group's own A/A floor gets +2 launches (pre-registered beside the
+within-launch walk/walk#b rule; gridread found the walk bimodal ACROSS launches on
+repeated u-shape groups, which the within-launch rule cannot see).
 
+| # | item | for | group-arms | wall at 3.4 launches | at 5 launches |
+|---|---|---|---|---|---|
+| 1 | the 149 fit groups (F1 141 + F3 8) re-timed STREAMED, every pickable arm at both layers plus `walk#b` and `walk#c` | R_in (E4b) and the set's M1-M15 | 149 × ~7 = 1,043 | 56.1 min | 82.6 min |
+| 2 | dispatch TWINS: the WALK+V1 scaffold with `f` forced to each form against the single-form artifact (`mkvar.py` gains the variant): F3's member-free points, 20 dense F1 groups, 6 R0-shaped scaffold groups (hex-run, word-eq, `\w`) | M16, M17, M18 | 8×3 + 20×3 + 6×2 = 96 | 5.2 min | 7.6 min |
+| 2a | `[rev3 C5]` the crossover staircase: member-free single calls at N ∈ {33, 34, 36, 38, 40, 42, 44, 46}, arms V1, walk, `walk#b` | M9 read off measured points (§2.6), M12 | 8 × 3 = 24 | 1.3 min | 1.9 min |
+| 3 | one-byte arms (LIBC, WALK at \|S\| = 1, V1 one-term, the generic loop, `walk#b`) at five kinds (DFA_SCAN fwd, DFA_SCAN bounded, DFA_HAT, HYB_PF, DFA_ATTEMPT back), over 6 gaps {2, 8, 32, 256, 4096, absent} find-all streamed + 4 member-free lengths {8, 32, 64, 1 Mi}. DFA_ATTEMPT takes LIBC-back and a hand back-walk only | M19, M20 (M21 derived) | 50 × 5 = 250 | 13.5 min | 19.8 min |
+| 3 (VM) | `[rev3 A7]` the same at VM_ATTEMPT (the VM hat's seek at \|S\| = 1): WALK, V1 one-term, LIBC (evidence only: Q-R5's per-attempt memchr), `walk#b`, over the same 6 gaps + 4 lengths | F2 (D167 add. 1 A7; Q-R17P-20) | 10 × 4 = 40 | 2.2 min | 3.2 min |
+| 3 (NONE) | `[rev3 C8]` NONE as one EXTRA ARM inside item 3's gap groups (the use's FIND statement deleted by `mkvar.py`: the consumer walks), at DFA_SCAN fwd, DFA_SCAN bounded, DFA_HAT, HYB_PF and DFA_ATTEMPT (the last evidence-only: Q-WR-2 writes no key for it until a measurement is ruled in) | M22 | 5 × 6 = 30 | 1.6 min | 2.4 min |
+| 3a | `[rev3 C3]` three unmeasured cover shapes (0,2,0), (0,0,1), (1,1,0) (83% of R17-b's 320 unmeasured byte V1 movers): V1 vs walk β, member-free, 64 KiB and 1 MiB, arms V1, walk, `walk#b` | M3 for those shapes (R7's keys) | 6 × 3 = 18 | 1.0 min | 1.4 min |
+| 5 | build and the correctness gate first (`check.sh` legs R, L, C: every arm's answers and match lists equal the base's; the base equals libpcre2 10.46 through `tests/oracle/`'s local adapter); a pickable arm's answer failure FAILS the run | all | every arm | ~10 min (INTERPRETATION: grid1's gate scaled; not launch-scaled) | ~10 min |
+| | **required** | | **1,501** | **≈ 91 min** | **≈ 129 min** |
+| 6 | OPTIONAL: F2's perf pass on the K arms {walk, V1, A1} of every item-1 group (regime_eval §2.1 item 2) | CB corroboration (ungated) | | ~5 min | ~5 min |
+| 7 | OPTIONAL: F2's streamed perf pass (hex-run, bounded, dfa-hat × 4 arms × prose/docs/code) | the panel's ask; no bar reads it | 36 rows × 0.6 s | < 1 min | < 1 min |
+| 8 | OPTIONAL: a pre-scan TRIGGER PROBE: KEEP vs DROP (`-fno-req-byte`/`-fno-req-run` as the DROP arm) on DFA-route TUG cells with OPTIONAL presence | whether Q-WR-9's trigger fires (no row is built from it) | 36 | ~2 min | ~3 min |
+| | **with the optional items** | | | **≈ 99 min** | **≈ 138 min**, plus quiet-gate waits |
+
+- **Against rev 2.** Rev 2's required items were 1,434 group-arms (C7's count): 77.2 min
+  at 3.4 launches and 113.5 at 5 (C7's "88-113" quotes the 3.4-launch figure WITH the
+  10-minute gate and the 5-launch figure without it; with the gate both ends are 87 and
+  124). Revision 3 adds 67 group-arms net (item 2a 24, item 3a 18, the VM_ATTEMPT cells
+  40, the NONE arms 30, less rev 2's separate NONE item 4's 45): +3.6 min at 3.4 launches,
+  +5.3 at 5.
+- **NONE inside item 3's groups** `[rev3 C8]`: a separate NONE group compared NONE with
+  the picks across groups (different times), against D166's same-run interleaving; as an
+  arm of the same group it is interleaved with the arms it is judged against, and the
+  group's `walk#b` gives its A/A. `g_none` is read on the six gaps {2, 8, 32, 256, 4096,
+  absent}, a factor-4 to factor-16 grid, so its key is labelled `INTERPOLATED` in its
+  provenance and F0's `basis` stays MEASURED only for the measured gap points.
 - **Perf is never required** (D166 add. 1). Items 6-7 skip loudly when counters are
   unavailable (`F2_SKIPPED`, the set header's `counters skipped:perf_event_paranoid=N`),
   and nothing downstream changes. **The paranoid SUGGESTION** (D166 add. 1.1): when
@@ -1577,31 +1614,36 @@ regime_eval §2.1's own formula: groups × arms × 3.4 launches × 0.95 s.
   first, so it moves into grid2's PREP lane, with its check (the text appears when the
   probe is forced to fail; the skip reaches the provenance; no `sysctl`/`sudo` in the
   scripts). This box reads 2, so items 6-7 run here.
-- **Prep (a lane, before the slot):** `mkvar.py`'s three new variants (dispatch scaffold
-  with forced `f`, NONE, V1 one-term), the one-byte and NONE cell manifests, the streamed
-  subject generator for item 1 (the same generator E4 uses), the suggestion text and its
-  check. Nothing in prep moves pcrec bytes.
+- **Prep (a lane, before the slot):** `mkvar.py`'s variants (dispatch scaffold with forced
+  `f`, NONE, V1 one-term `[rev3]` incl. at the VM hat), the one-byte (five kinds plus
+  VM_ATTEMPT) and NONE-arm cell manifests, `[rev3]` item 2a's N points and item 3a's
+  shapes, the streamed subject generator for item 1 (the same generator E4 uses), the
+  cross-launch rerun trigger, the suggestion text and its check. Nothing in prep moves
+  pcrec bytes.
 - **Outputs** stay in the kit's slot directory (gitignored); E4b reads the logs; the set
   file is written at M0 by the converter (`set_to_measures.py`, regime_eval E14), with
   each row's `deps` computed by R-MS3 then. A form changed between the slot and M0 makes
   its rows STALE, carried and flagged (D166 add. 2).
-- **Option (A), for comparison (Q-R17P-9):** keep the constants in grid1's own subject
-  condition (mostly repeated 64 KiB) by re-timing F1/F3 in it as well: +~80 min (grid1's
-  own estimate, 79.9 min), ≈ 176 min in all.
+- **Option (A)** (rev 2's comparison) is moot: D167 ruled (B).
 
-### 5.5 How the set reaches the build
+### 5.5 How the set reaches the build `[rev3: C12]`
 
 - **B0-B3b read no set** (§3.2). The shadow and `regime_pick` read the kit's interim TSV
   (Q-REVAL-10) as a test input.
 - **B4 reads the LATEST committed set** (D166 add. 2: the latest until M2). If grid2 and
   M0 both precede B4, that is `zen4-grid2`, and B4's census contains its selections: ONE
   abi event. grid1 is never embedded (a provisional design-time set).
-- **If B4 precedes grid2** (not recommended), B4 reads grid1 through M0: R0 fires, R1/R2
-  are unpaid (M16-M18 absent), and grid2's later landing is a default-set change, its own
-  abi event with its `MOVERS.tsv` (measure_sets §3.6).
-- **Zen 1 (F5)** gets its own set through a bench window; selections for a Zen 1 target
-  read that set, never Zen 4's. The generic envelope becomes the default only at M2
-  (D166 add. 2, D161 add. 12).
+- **If B4 precedes grid2** (not recommended), B4 reads grid1 through M0: R0 fires, R7
+  fires only on grid1's measured shapes (`[rev3 C3]`), R1/R2 are unpaid (M16-M18 absent),
+  and grid2's later landing is a default-set change, its own abi event with its
+  `MOVERS.tsv` (measure_sets §3.6).
+- **Zen 1 (F5)** gets its own set through a bench window. `[rev3 C12]` Selecting it for a
+  Zen 1 target needs M1's `--measures=`. Until M2, a bare compile reads the LATEST
+  committed set (D166 add. 2), so between a committed Zen 1 set and M1 EVERY bare compile,
+  Zen 4 and arm64 included, would read Zen 1's literals; and until then every box reads
+  Zen 4's (an arm64/Mac compile at B4 reads Zen 4 literals). Recommendation (Q-R17P-24):
+  no second official set is committed before M1 lands. The generic envelope becomes the
+  default only at M2 (D166 add. 2, D161 add. 12).
 
 ---
 
