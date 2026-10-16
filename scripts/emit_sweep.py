@@ -1579,15 +1579,28 @@ TRACE_EXTRA_PINS = {
 # artifacts 6 below it (plain: 100 against 106).
 #   ("-e", "utf8"): producing 36, artifacts 98 -- measured at a080c69a and at
 #   fae3987e8, population 384 composition files.
+#   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
+#   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
+#   reshapes blocks the default engine compiles, so 20 fewer files are written.
+# A FLOOR IS PER ARM: the plain floors were measured on the plain arm and are
+# applied to it ONLY. An --extra arm with no entry here has no composition
+# floor (the run says so), never the plain arm's (the `--engine=vm` run read
+# 86 < 100 on both sides, ref-vs-ref).
 COMPOSITION_EXTRA_PINS = {
     ("-e", "utf8"): {"composition_producing_floor": 36,
                      "composition_artifacts_floor": 98},
+    ("--engine=vm",): {"composition_producing_floor": 37,
+                       "composition_artifacts_floor": 86},
 }
 
 
 def composition_floor(name, run_extra):
-    """The composition floor `name` (a PINS key) for a run at `run_extra`."""
-    return COMPOSITION_EXTRA_PINS.get(tuple(run_extra), {}).get(name, PINS[name])
+    """The composition floor `name` (a PINS key) for a run at `run_extra`:
+    the plain floor for the plain arm, the arm's own entry for an --extra arm,
+    None for an --extra arm with no entry (nothing was measured on it)."""
+    if not run_extra:
+        return PINS[name]
+    return COMPOSITION_EXTRA_PINS.get(tuple(run_extra), {}).get(name)
 
 
 # [DEC-FALLBACK] B1: the fallback trace's site keys (src/core/compile.c's
@@ -2792,12 +2805,17 @@ def main():
                       f"{PINS['composition_files_floor']}")
             fl_producing = composition_floor("composition_producing_floor", run_extra)
             fl_artifacts = composition_floor("composition_artifacts_floor", run_extra)
-            if producing < fl_producing:
-                run_ok = False
-                print(f"COMPOSITION PRODUCING FLOOR VIOLATION: {producing} < {fl_producing}")
-            if artifacts < fl_artifacts:
-                run_ok = False
-                print(f"COMPOSITION ARTIFACTS FLOOR VIOLATION: {artifacts} < {fl_artifacts}")
+            if fl_producing is None or fl_artifacts is None:
+                print(f"COMPOSITION FLOORS: NOT APPLIED (no COMPOSITION_EXTRA_PINS entry for "
+                      f"--extra {' '.join(run_extra)!r}; the plain floors were measured on the "
+                      f"plain arm). Measured here: producing={producing} artifacts={artifacts}")
+            else:
+                if producing < fl_producing:
+                    run_ok = False
+                    print(f"COMPOSITION PRODUCING FLOOR VIOLATION: {producing} < {fl_producing}")
+                if artifacts < fl_artifacts:
+                    run_ok = False
+                    print(f"COMPOSITION ARTIFACTS FLOOR VIOLATION: {artifacts} < {fl_artifacts}")
 
             # -- the DELIVER witness --
             missing_fixtures = [n for n, hit in fixtures_hit.items() if not hit]

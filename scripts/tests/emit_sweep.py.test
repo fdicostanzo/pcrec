@@ -49,6 +49,40 @@ sweep --extra=-fno-scan-edge; rc=$?
 [ "$rc" = 1 ] && grep -q 'NO DIFFER FLOOR PINNED' "$T/log" \
     && ok "an unpinned --extra arm FAILS" || bad "unpinned arm rc=$rc (want 1, NO DIFFER FLOOR PINNED)"
 
+# [SWFIX] composition floors are PER ARM: an --extra arm is held to its own
+# COMPOSITION_EXTRA_PINS entry, never to the plain arm's (the `--engine=vm`
+# arm read 86 < 100, ref-vs-ref), and an arm with no entry says so. The
+# composition stream alone, FULL population (~13 s each), one binary.
+csweep() { "$TIMEOUT_BIN" 300 python3 "${ESX:-$ES}" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
+    --streams composition --no-differ-floor --tree "$here/.." --out "$T/out" --jobs 4 "$@" > "$T/log" 2>&1; }
+csweep --extra=--engine=vm; rc=$?
+[ "$rc" = 0 ] && ok "composition floors: the --engine=vm arm is clean at its own floors" \
+    || bad "vm-arm composition rc=$rc: $(grep 'VIOLATION' "$T/log" | head -3)"
+csweep --extra=-fno-scan-edge; rc=$?
+[ "$rc" = 0 ] && grep -q 'COMPOSITION FLOORS: NOT APPLIED' "$T/log" \
+    && ok "an --extra arm with no composition entry says NOT APPLIED (and borrows nothing)" \
+    || bad "unlisted arm: rc=$rc, want 0 with 'COMPOSITION FLOORS: NOT APPLIED'"
+# PLANTS: each declared floor raised by one must go red (a floor that cannot
+# fail is not a check). The plant is a sed'ed COPY of the script; the real
+# floor is AT the measured value, so +1 is the smallest red.
+cp "$ES" "$T/es_plant.py"
+vm_pin=$(python3 - "$here" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+d = es.COMPOSITION_EXTRA_PINS[("--engine=vm",)]
+print(d["composition_producing_floor"], d["composition_artifacts_floor"])
+PY
+)
+set -- $vm_pin
+for which in producing artifacts; do
+    cur=$1; [ "$which" = artifacts ] && cur=$2
+    sed -i.bak "/(\"--engine=vm\",): {/,/}/ s/\"composition_${which}_floor\": $cur/\"composition_${which}_floor\": $((cur+1))/" "$T/es_plant.py"
+    ESX="$T/es_plant.py" csweep --extra=--engine=vm; rc=$?
+    [ "$rc" = 1 ] && grep -q "COMPOSITION ${which^^} FLOOR VIOLATION: $cur < $((cur+1))" "$T/log" \
+        && ok "plant: vm-arm $which composition floor $cur -> $((cur+1)) goes red" \
+        || bad "plant vm $which floor +1: rc=$rc (want 1 with a $which VIOLATION line)"
+    cp "$ES" "$T/es_plant.py"
+done
+
 # [DEC-FALLBACK] B0: the tally streams over hand-written witnesses (decoded
 # --list-source escapes). Each line below is the expected tag tally of one
 # stream, read from the compiler at B0's base, so an arm lost in the stream's
