@@ -6628,6 +6628,16 @@ int  pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
                             PcrecFindChain *out, pcrec_error *err);
 void pcrec_find_resolve(Ctx *cx, bool notes);
 
+/* ---- [KNOW-SRC] the knowledge kinds' ROWS (src/parse/ks_analysis.c,
+ * src/parse/ks_lib.c) and their TABLE (src/core/ksrc_kinds.c, the library
+ * tier; docs/design/measure_sets.md rev 3 §9.2). The resolver they drive is
+ * src/core/ksrc.h's, which includes nothing of this header. `pcrec_ks_kind`
+ * is the table's lookup by kind name, NULL for no such kind. */
+extern const KsKind pcrec_ks_analysis;
+extern const KsKind pcrec_ks_lib;
+extern const KsKind *const pcrec_ks_kinds[];
+const KsKind *pcrec_ks_kind(const char *name);
+
 int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */

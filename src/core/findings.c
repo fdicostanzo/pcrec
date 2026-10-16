@@ -132,14 +132,10 @@ bool pcrec_find_store_link(const char *name, PcrecFindStop stop,
     return false;
 }
 
+/* The knowledge module's one name rule ([KNOW-SRC] K1). */
 bool pcrec_find_name_ok(const char *s, size_t n)
 {
-    if (n == 0 || s[0] < 'a' || s[0] > 'z') return false;
-    for (size_t i = 1; i < n; i++)
-        if (!((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= '0' && s[i] <= '9') ||
-              s[i] == '_' || s[i] == '-'))
-            return false;
-    return true;
+    return pcrec_ks_name_ok(s, n);
 }
 
 /* ---- NORMALIZATION: counts -> byte-rate ppm (design §2.5, ONE function) ---- */
@@ -317,57 +313,72 @@ static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
 
 /* ---- THE STAMP AND THE DIGEST (design §7) -------------------------------- */
 
-/* One FNV-1a-64 step over `n` bytes. FNV and not SHA-256: this is identity
- * against accidental change, not an adversarial setting, and it keeps
- * libpcrec dependency-free (design §7). */
-static uint64_t fnv1a(uint64_t h, const unsigned char *p, size_t n)
+/* The byte-rate's fold: the 256 derived ppm values, uint32 little-endian,
+ * in byte order. FNV and its step are the knowledge module's one copy
+ * (`pcrec_ks_fnv1a`, src/core/ksrc.c). */
+static uint64_t find_rate_fold(uint64_t h, const void *doc, const char *query)
 {
-    for (size_t i = 0; i < n; i++) {
-        h ^= p[i];
-        h *= 0x100000001b3ull;
-    }
-    return h;
-}
-
-uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256])
-{
-    const unsigned char tag[] = "pcrec-find-1\0byte-rate";
-    uint64_t h = fnv1a(0xcbf29ce484222325ull, tag, sizeof tag);
+    const uint32_t *ppm = doc;
+    (void)query;
     for (int b = 0; b < 256; b++) {
         unsigned char le[4] = { (unsigned char)ppm[b],
                                 (unsigned char)(ppm[b] >> 8),
                                 (unsigned char)(ppm[b] >> 16),
                                 (unsigned char)(ppm[b] >> 24) };
-        h = fnv1a(h, le, 4);
+        h = pcrec_ks_fnv1a(h, le, 4);
     }
     return h;
 }
 
-uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n)
+/* The rows' fold: per block, its kind and a NUL, then each nonzero
+ * (key, count) ascending — a `cpfreq` row as `u32le, u64le`, a `freq` row as
+ * `u8, u64le`. */
+static uint64_t find_rows_fold(uint64_t h, const void *doc, const char *sub)
 {
-    const unsigned char tag[] = "pcrec-find-rows-1";
-    uint64_t h = fnv1a(0xcbf29ce484222325ull, tag, sizeof tag);
-    for (size_t i = 0; i < n; i++) {
-        h = fnv1a(h, (const unsigned char *)blocks[i].kind,
-                  strlen(blocks[i].kind) + 1);
-        for (size_t j = 0; j < blocks[i].ncps; j++) {
-            uint32_t cp = blocks[i].cps[j].cp;
-            unsigned long long c = blocks[i].cps[j].count;
+    const PcrecFindRowsDoc *d = doc;
+    (void)sub;
+    for (size_t i = 0; i < d->n; i++) {
+        const PcrecFindTblBlock *bl = &d->blocks[i];
+        h = pcrec_ks_fnv1a(h, bl->kind, strlen(bl->kind) + 1);
+        for (size_t j = 0; j < bl->ncps; j++) {
+            uint32_t cp = bl->cps[j].cp;
+            unsigned long long c = bl->cps[j].count;
             unsigned char row[12];
             for (int k = 0; k < 4; k++) row[k] = (unsigned char)(cp >> (8 * k));
             for (int k = 0; k < 8; k++) row[4 + k] = (unsigned char)(c >> (8 * k));
-            h = fnv1a(h, row, sizeof row);
+            h = pcrec_ks_fnv1a(h, row, sizeof row);
         }
-        for (int b = 0; blocks[i].counts && b < 256; b++) {
-            unsigned long long c = blocks[i].counts[b];
+        for (int b = 0; bl->counts && b < 256; b++) {
+            unsigned long long c = bl->counts[b];
             unsigned char row[9];
             if (!c) continue;
             row[0] = (unsigned char)b;
             for (int k = 0; k < 8; k++) row[1 + k] = (unsigned char)(c >> (8 * k));
-            h = fnv1a(h, row, sizeof row);
+            h = pcrec_ks_fnv1a(h, row, sizeof row);
         }
     }
     return h;
+}
+
+/* The two shipped domains are GRANDFATHERED byte for byte, terminator
+ * included (`KS_DOMAIN` takes the literal's `sizeof`): renaming either moves
+ * every `<PREFIX>_FINDINGS` stamp or every `rows_digest` (§9.2 part 5). */
+const KsDigest pcrec_find_rate_role = {
+    KS_DOMAIN("pcrec-find-1"), KS_SUB_QUERY, find_rate_fold
+};
+const KsDigest pcrec_find_rows_role = {
+    KS_DOMAIN("pcrec-find-rows-1"), KS_SUB_NONE, find_rows_fold
+};
+
+uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256])
+{
+    return pcrec_ks_digest(&pcrec_find_rate_role, ppm, "byte-rate");
+}
+
+uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n)
+{
+    PcrecFindRowsDoc d = { blocks, n };
+    return pcrec_ks_digest(&pcrec_find_rows_role, &d, NULL);
 }
 
 const char *pcrec_find_stamp(Ctx *cx)

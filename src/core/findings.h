@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "core/ksrc.h"
+
 typedef struct Ctx Ctx;
 
 /* One `serves` line of a pre-parsed store block (the same three fields the
@@ -203,6 +205,19 @@ uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256]);
  * confused (§7): this one covers a bundle's rows, the stamp's covers what a
  * compile consumed. */
 uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n);
+
+/* [KNOW-SRC] the analysis kind's two digest ROLES (measure_sets.md §9.2
+ * part 5), the two functions above as `pcrec_ks_digest` data: the STAMP role
+ * (domain `pcrec-find-1\0`, the QUERY as its sub-key, a fold over the 256
+ * ppm values; its document is a `const uint32_t[256]`) and the ITEM role
+ * (domain `pcrec-find-rows-1\0`, no sub-key, a fold over the blocks; its
+ * document is a `PcrecFindRowsDoc`). The analysis kind's row names both. */
+typedef struct {
+    const PcrecFindTblBlock *blocks;
+    size_t                   n;
+} PcrecFindRowsDoc;
+extern const KsDigest pcrec_find_rate_role;
+extern const KsDigest pcrec_find_rows_role;
 
 /* ---- THE ACCESSOR AND THE PRIMITIVES (design §6.1) -----------------------
  *
