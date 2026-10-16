@@ -457,6 +457,8 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 
 **Sabotage ids:** within R17-b′'s S911-S922 (allocated 2026-10-14).
 
+**Amendment (2026-10-16, main, Q-R17P-16; r17b_prime.md rev 3 on lane/memfn-fd a8ee399fe):** the builder list gains `req_site_define`, MLINE and `attempt_entry` (every builder states `body`). The original text above is unchanged.
+
 ## R-20 (2026-10-14, pcrec manager) — [MEASURE-SET] M0's kit seams: the set in, "consulted" out, form hashes, reader declarations, method cards
 
 **Customer:** [MEASURE-SET] and [KNOW-SRC] (docs/design/measure_sets.md revision 2.1, §4.4 and §10.1; D166 + addenda 1-2; panel docs/dev/reviews/2026-10-14-r1-measure-sets.md). Five items, with the landing bars as in the note (main-side numbering R-MS1..R-MS5):
@@ -495,7 +497,9 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 | PR-11 | control | the claim "every DFA-scan front enforces the necessary set and run" checked as a census over collapsed hybrids, with a planted collapse that drops `rmin` | argument + one probe only (`nfa.c:803`, `:818-821`; W4) | M | ST3 (gates PR-4's OPTIONAL) | not a fact, a pcrec check. Share no source with the walk (learnings §3) |
 
 
-**Rulings (main's, answer-free, 2026-10-14):** Q-WR-4 withhold presence at ST3; Q-WR-5 handoff (a) first, (b) later behind its own deny; Q-WR-8 ungate `site_kind` for the categorical kinds ST2 reads, and S3 replaces `consumer` rather than dropping it; Q-WR-10 ST2 on main's baseline, R17-b′'s set-site move its own abi event, ST3 after E-1; Q-WR-11 the PF comment method-neutral in pcrec; Q-WR-12 ask `req_set` only where today asks, flip `used` and the deny in the same commit as the row move. Q-WR-7 RULED by Frank (libc-free is future work). **Frank's:** Q-WR-1, Q-WR-2, Q-WR-3, Q-WR-6, Q-WR-9 (pending).
+**Rulings (main's, answer-free, 2026-10-14):** Q-WR-4 withhold presence at ST3; Q-WR-5 handoff (a) first, (b) later behind its own deny; Q-WR-8 ungate `site_kind` for the categorical kinds ST2 reads, and S3 replaces `consumer` rather than dropping it; Q-WR-10 ST2 on main's baseline, R17-b′'s set-site move its own abi event, ST3 after E-1; Q-WR-11 the PF comment method-neutral in pcrec; Q-WR-12 ask `req_set` only where today asks, flip `used` and the deny in the same commit as the row move. Q-WR-7 RULED by Frank (libc-free is future work). **Frank's:** Q-WR-1, Q-WR-2, Q-WR-3, Q-WR-6, Q-WR-9 RULED 2026-10-14 (D161 add. 15, Frank session 112: "agree with 1-5"). State as of 2026-10-16 (kit finding A23, r17b_prime.md rev 3): R-21 TAKEN 2026-10-14; the kit folded it into the R17-b' design note (rev 2, then rev 3 + panel r1 delivered on lane/memfn-fd a8ee399fe); design only, B1 is briefed after B0 merges.
+
+**Amendment (2026-10-16, main, Q-R17P-16; r17b_prime.md rev 3 on lane/memfn-fd a8ee399fe):** PR-3's consumer kind ATTEMPT_PRED is renamed DFA_ATTEMPT and now includes `attempt_entry` as its third caller (with MLINE's seek and the attempt entry's presence). The original PR-3 text above is unchanged.
 
 **Kit work list:** winreq §3 KW-1..KW-13. **Contract:** winreq §4, window_contract.md revisions.
 
