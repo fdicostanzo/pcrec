@@ -47,4 +47,8 @@ the change that adds the file.
 | `src/finder.c` | original | 0BSD | THE FINDER TABLE (R17-b' B1): `fd_rows[]`, its walk, lookups and pay rule, the shadow's `MFTRACE FD` records and the `mf_finder_rows()` listing; no artifact text (no finder row is routed at B1) |
 | `src/terms.c` | pcrec 608dc8b44: R17-b's cover search (`mf_set_terms`, lane memfn-fd), carried at B1; original kit text | 0BSD | the set-membership cover a finder row reads as `shape`; no artifact text at B1 (its renderers land at B4) |
 | `src/formhash.c` | original | 0BSD | `mf_form_hash()` / `mf_form_hash_text()` (R-MS3): a form's normalized-text identity; no artifact text |
-| `data/cards/*.tsv`, `data/sets/*.tsv`, `data/sets/generate.py` | original; the interim set's values are bench grid1's (pcrec-bench gridread, cited in generate.py) | 0BSD | the method cards (kit-grid@1) and the measurement sets the harness lever reads (R-MS5); no artifact text, no compile reads them but through `--harness=measures=` |
+
+`data/` (R17-b′ B1) is outside C16's table (include/ and src/ only): the method
+cards and the measurement sets, original kit text, 0BSD; the interim set's
+values are bench grid1's (gridread, cited in `data/sets/generate.py`). No
+artifact text; no compile reads them but through `--harness=measures=`.
