@@ -696,6 +696,8 @@ res_refuse "§12 a block every code point of which drops is refused" \
 # nothing). Sabotage S963 (the attribution written empty).
 # =========================================================================
 DC="$SCRIPT_DIR/data_census"
+FX="$WORKDIR/fx"
+python3 "$DC/fx_bundles.py" "$FX"
 KST="$WORKDIR/kst"
 if ! make -C "$ROOT_DIR" -s -j4 CC="$CC" BUILD_DIR="$KST" \
         CFLAGS="-O2 -g -DPCREC_KS_TRACE" "$KST/pcrec" > "$WORKDIR/kst.log" 2>&1; then
@@ -703,7 +705,7 @@ if ! make -C "$ROOT_DIR" -s -j4 CC="$CC" BUILD_DIR="$KST" \
 else
     census() { # census EXPECT-FILE LOG
         python3 "$ROOT_DIR/scripts/emit_sweep.py" --data analysis \
-            "$DC/old/fx.rxt" "$DC/new/fx.rxt" --bin "$KST/pcrec" --no-corpus \
+            "$FX/old/fx.rxt" "$FX/new/fx.rxt" --bin "$KST/pcrec" --no-corpus \
             --patterns-file "$DC/patterns.txt" --expect-movers "$1" \
             --out "$WORKDIR/dc" --jobs 4 > "$2" 2>&1
     }

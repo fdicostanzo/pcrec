@@ -5,9 +5,12 @@ reproduces a HAND-MADE movers list on each fixture change below. Each list
 was written from the change's meaning BEFORE the census ran; its header says
 the reasoning.
 
-- `old/fx.rxt`, `new/fx.rxt` — one analysis bundle `fx` in two versions:
-  `Z` rare and `@` common, then the reverse, every other count identical (so
-  every other byte's normalized rate is identical too).
+- `fx_bundles.py DIR` — writes the fixture change, `DIR/old/fx.rxt` and
+  `DIR/new/fx.rxt`: one analysis bundle `fx` in two versions, `Z` rare and
+  `@` common, then the reverse, every other count identical (so every other
+  byte's normalized rate is identical too). Written per run, never
+  committed: a committed `.rxt` joins the corpus that every population pin
+  counts (res_fixtures.py's precedent).
 - `patterns.txt` — the analysis fixture's population (5 patterns).
 - `analysis_movers.tsv` — its hand-made list: the two patterns with both `Z`
   and `@` necessary, at both bases, on both engines (8 movers). Checked by
