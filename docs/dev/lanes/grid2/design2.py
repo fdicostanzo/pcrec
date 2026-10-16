@@ -28,12 +28,21 @@ THE ITEMS (r17b_prime.md §5.4; one row of the table each):
      points (F3's 8 + the n = 48..128 points + new n = 8, 32), and sc0 (the walk moved
      into the scaffold's helper, no dispatch) on the R0-shaped member-free groups
      (hex-run, word-eq, \\w).
-  3  one-byte arms at five kinds (o-fwd o-bnd o-hat o-hyb o-back): walk (the table
-     walk at |S| = 1; o-back: the hand walk), libc (the artifact as the compiler emits
-     it), v1 (one-term SWAR), loop (the generic byte loop); 6 gaps find-all streamed
-     + 4 member-free lengths.
-  4  NONE (arm `none`: the use's FIND statement deleted, the consumer walks) rides
-     item 3's six gap groups of every kind.
+  2a [rev3 C5] the crossover staircase: dig member-free single calls at N = 33, 34, 36,
+     38, 40, 42, 44, 46, arms walk, V1 (walk#b / walk#c are the harness's copies).
+  3  one-byte arms at five kinds (o-fwd o-bnd o-hat o-hyb o-back; o-back is DFA_ATTEMPT,
+     rev 3's name for ATTEMPT_PRED): walk (the table walk at |S| = 1; o-back: the hand
+     walk), libc (the artifact as the compiler emits it), v1 (one-term SWAR), loop (the
+     generic byte loop); 6 gaps find-all streamed + 4 member-free lengths.
+  3v [rev3 A7] the same at VM_ATTEMPT (cell o-vm: the VM hat's seek at |S| = 1; arms walk
+     = the compiler's table walk, v1 = the compiler's own V1 text, libc = memchr
+     (evidence only)), 6 gaps + 4 lengths.
+  3n [rev3 C8] NONE (arm `none`: the use's FIND statement deleted, the consumer walks) is
+     an EXTRA ARM inside item 3's six gap groups of the five DFA kinds (rev 2's item 4 is
+     deleted; o-back's none is evidence-only).
+  3a [rev3 C3] three unmeasured cover shapes (range, eq, cube) = (0,2,0) c020 `[ad]+=`,
+     (0,0,1) c001 `[xy]+=`, (1,1,0) c110 `[0-9_]+=`: member-free, 64 KiB and 1 MiB, arms
+     walk, V1.
   6  F2 perf on {walk, V1, A1} of every item-1 group (arms_f2.tsv, F2 rows);
   7  F2 streamed perf: hex-run, bounded, dfa-hat x 4 arms x prose/docs/code streamed;
   8  the pre-scan trigger probe: trig-dig / trig-word, keep (base) vs drop
@@ -69,6 +78,13 @@ CELLS2 = {
     "o-hat":     (rb"\bx[a-z]+\b", NONWORD, b"x", [b" xab ", b" xyz "], b"", rb"x"),
     "o-hyb":     (rb"xy+z", LOW, b"x", [b"xyz"], b"", rb"x"),
     "o-back":    (rb"(?m)^xy+z", LOW, b"\n", [b"\nxyz"], b"", rb"\n"),
+    # item 3a [rev3 C3]: the three cover shapes (range, eq, cube) R17-b's movers have that no grid1
+    # group timed. provcheck.py asserts each artifact's V1 mask holds EXACTLY that shape.
+    "c020":      (rb"[ad]+=", PUNCT, b"", [], b"=", rb"[ad]"),      # (0,2,0): two EQ terms, no cube, no range
+    "c001":      (rb"[xy]+=", PUNCT, b"", [], b"=", rb"[xy]"),      # (0,0,1): one cube
+    "c110":      (rb"[0-9_]+=", PUNCT, b"", [], b"=", rb"[0-9_]"),  # (1,1,0): one range + one EQ
+    # item 3v [rev3 A7]: the VM hat at |S| = 1 (xy+z on --engine=vm: RX_VM_START_SCAN "first-class")
+    "o-vm":      (rb"xy+z", LOW, b"x", [b"xyz"], b"", rb"x"),
     # item 8: grid1's dig / word-eq with their REQ byte present (the pre-check exists)
     "trig-dig":  (rb"[0-9]+x", grid.CELLS["dig"][1], b"0123456789", [], b"x", rb"[0-9]"),
     "trig-word": (rb"[A-Za-z_]+=", PUNCT, b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_", [], b"=", rb"[A-Za-z_]"),
@@ -86,9 +102,11 @@ OB_L = 65536                               # one planted match per buffer: a fin
 # These dense subjects (random bytes over the cell's pattern alphabet plus punctuation: matches
 # everywhere) carry the same arms through the gate's legs O, R, L, C. They ride arms_f2.tsv, so
 # time.sh never times them and f2perf.sh skips them (g2-gate- subjects).
-GATE_CELLS = {"hex-run": b"0123456789abcdefABCDEF_= .,;-+", "word-eq": b"abcxyzABCXYZ_=0 .,;-+", "quad": b"0123456789abcdefABCDEF_= .,;-+", "wcls": b"abcxyzABCXYZ_09= .,;-+"}
+GATE_CELLS = {"hex-run": b"0123456789abcdefABCDEF_= .,;-+", "word-eq": b"abcxyzABCXYZ_=0 .,;-+", "quad": b"0123456789abcdefABCDEF_= .,;-+", "wcls": b"abcxyzABCXYZ_09= .,;-+",
+              "c020": b"adbcxz= .,;-+", "c001": b"xyzab= .,;-+", "c110": b"0123456789_ab= .,;-+"}
 GATE_ARMS = {"hex-run": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2", "sc0"], "word-eq": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2", "sc0"],
-             "quad": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2"], "wcls": ["walk", "V1", "S1", "A1", "A3", "sc0"]}
+             "quad": ["walk", "V1", "S1", "A1", "A3", "tw0", "tw1", "tw2"], "wcls": ["walk", "V1", "S1", "A1", "A3", "sc0"],
+             "c020": ["walk", "V1"], "c001": ["walk", "V1"], "c110": ["walk", "V1"]}
 PICK_ALL = ["walk", "V1", "S1", "A1", "A3"]
 PICK_FIRST = ["walk", "V1", "S1", "A1"]
 TW = ["tw0", "tw1", "tw2"]
@@ -100,13 +118,18 @@ DENSE20 = ([("dig", g, L) for g in (2, 8, 32) for L in (32, 1024, 65536)] +
            [("bounded", 2, 8), ("bounded", 2, 1024), ("bounded", 8, 32), ("bounded", 32, 8), ("bounded", 32, 1024)])
 EXTRA_POINTS = [8, 32]                     # new member-free dig points (M12's N = 8, 32)
 SC0_CELLS = ("f3-hex-run", "f3-word-eq", "f3-wcls")
+N_STAIR = [33, 34, 36, 38, 40, 42, 44, 46]          # item 2a [rev3 C5]
+COVER_CELLS = ["c020", "c001", "c110"]              # item 3a [rev3 C3]
+COVER_LENS = [65536, 1 << 20]
 
 # the DRY subset (2-3 groups per item): substrings of the grid2 subject names
 DRY_ITEM1 = [("dig", "g2-dig-n64k-g8-L1k-u-S", "all"), ("dfa-hat", "g2-dfa-hat-n64k-g8-L1k-u-S", "all"),
              ("dig", "g2-dig-n64k-g8-L32-u-S", "first"), ("f3-dig", "g2-f3-dig-n64k-ginf-Lnone-S", "first"),
              ("f3-hex-run", "g2-f3-hex-run-n64k-ginf-Lnone-S", "first"), ("f3-dig", "g2-f3-dig-n1m-ginf-Lnone-S", "first")]
-DRY_OB = [("o-fwd", 8), ("o-hat", 8), ("o-back", 8)]
-DRY_OBLEN = [("o-fwd", 64), ("o-fwd", 1 << 20)]
+DRY_OB = [("o-fwd", 8), ("o-hat", 8), ("o-back", 8), ("o-vm", 8)]
+DRY_OBLEN = [("o-fwd", 64), ("o-fwd", 1 << 20), ("o-vm", 64)]
+DRY_N = [36, 46]                                    # item 2a in the DRY subset (plants.sh drops one)
+DRY_COVER = [(c, 65536) for c in COVER_CELLS]
 DRY_TRIG = [("trig-dig", "early", 8), ("trig-dig", "late", 8), ("trig-dig", "absent", 8)]
 
 # ---- subject naming
@@ -180,18 +203,29 @@ def build(dry):
     for n in (65536, 1 << 20):
         spec = ("f3-wcls", n, INF, 0, "u", "S")
         add(Group(2, "f3-wcls", sname2(*spec), "first", PICK_FIRST + ["sc0"], None, spec))
+    # item 2a [rev3 C5]: the N staircase (dig member-free single calls); arms walk, V1 (+ the harness's walk#b, walk#c)
+    for n in (DRY_N if dry else N_STAIR):
+        spec = ("dig", n, INF, 0, "u", "S")
+        add(Group("2a", "dig", sname2(*spec), "first", ["walk", "V1"], None, spec))
+    # item 3a [rev3 C3]: three cover shapes, member-free, 64 KiB and 1 MiB; arms walk, V1
+    for cell in COVER_CELLS:
+        for n in COVER_LENS:
+            if dry and (cell, n) not in DRY_COVER: continue
+            spec = ("f3-" + cell, n, INF, 0, "u", "S")
+            add(Group("3a", "f3-" + cell, sname2(*spec), "first", ["walk", "V1"], None, spec))
     # item 3/4 (ext set "ob"): own subjects ob_*
     ob, trig = [], []
-    for cell in ("o-fwd", "o-bnd", "o-hat", "o-hyb", "o-back"):
-        back = cell == "o-back"
+    for cell in ("o-fwd", "o-bnd", "o-hat", "o-hyb", "o-back", "o-vm"):
+        back, vm = cell == "o-back", cell == "o-vm"
         for g in GAPS:
             spec = (cell, OB_N, g, OB_L, "u", "S")
-            arms = ["walk", "libc", "none"] if back else ["walk", "libc", "v1", "loop", "none"]
-            ob.append(Group(34, cell, ob_name(cell, OB_N, g, OB_L), "all", arms, None, spec))
+            # NONE is an extra arm of the five DFA-consumer kinds' gap groups (rev3 C8); VM_ATTEMPT has none
+            arms = ["walk", "libc", "none"] if back else ["walk", "libc", "v1"] if vm else ["walk", "libc", "v1", "loop", "none"]
+            ob.append(Group("3v-gap" if vm else 34, cell, ob_name(cell, OB_N, g, OB_L), "all", arms, None, spec))
         for n in OB_LENS:
             spec = (cell, n, INF, 0, "u", "S")
-            arms = ["walk", "libc"] if back else ["walk", "libc", "v1", "loop"]
-            ob.append(Group(3, cell, ob_name(cell, n, INF, 0), "first", arms, None, spec))
+            arms = ["walk", "libc"] if back else ["walk", "libc", "v1"] if vm else ["walk", "libc", "v1", "loop"]
+            ob.append(Group("3v-len" if vm else 3, cell, ob_name(cell, n, INF, 0), "first", arms, None, spec))
     # item 8 (ext set "trig")
     for cell in ("trig-dig", "trig-word"):
         for pos in ("early", "late", "absent"):
@@ -204,10 +238,11 @@ def build(dry):
         for c, s, m in DRY_ITEM1:
             sel += [g for g in groups if g.cell == c and g.subj == s and g.mode == m and g.off is None]
         for g in groups:
+            if g.item in ("2a", "3a"): sel.append(g)       # already restricted to the DRY subset above
             if g.item == 2 and g.cell in ("f3-wcls",) and g.spec[1] == 65536: sel.append(g)
             if g.item == 2 and g.cell == "dig" and g.spec[1] == 8: sel.append(g)
         groups = sel
-        ob = [g for g in ob if (g.item == 34 and (g.cell, g.spec[2]) in DRY_OB) or (g.item == 3 and (g.cell, g.spec[1]) in DRY_OBLEN)]
+        ob = [g for g in ob if (g.item in (34, "3v-gap") and (g.cell, g.spec[2]) in DRY_OB) or (g.item in (3, "3v-len") and (g.cell, g.spec[1]) in DRY_OBLEN)]
         trig = [g for g in trig if (g.cell, g.spec[4], g.spec[2]) in DRY_TRIG]
         subjects = {g.subj: g.spec for g in groups}
     for g in ob + trig:
@@ -251,7 +286,7 @@ def write_tables(out, dry):
                     if toks:
                         f.write(f"{cell}\t{a}\t{'base' if a == base_of(cell) else 'arm'}\t{','.join(dict.fromkeys(toks))}\t{mode}\n")
     write_arms(os.path.join(out, "arms.tsv"), groups, lambda c: "walk", "grid2 own arms (items 1, 2)")
-    write_arms(os.path.join(out, "ext", "ob", "arms.tsv"), ob, lambda c: "walk", "grid2 ext ob (items 3, 4)")
+    write_arms(os.path.join(out, "ext", "ob", "arms.tsv"), ob, lambda c: "walk", "grid2 ext ob (item 3, its NONE arms, item 3v)")
     write_arms(os.path.join(out, "ext", "trig", "arms.tsv"), trig, lambda c: "keep", "grid2 ext trig (item 8)")
     with open(os.path.join(out, "arms_f2.tsv"), "w") as f:
         f.write("# grid2 F2 rows (items 6, 7; perf; never timed by time.sh). Same columns.\n")
@@ -271,6 +306,8 @@ def write_tables(out, dry):
         for g in groups:
             for blk, c, s1, m in g.g1:
                 f.write(f"{blk}\t{c}\t{s1}\t{m}\t{g.cell}\t{g.tok}\n")
+    with open(os.path.join(out, "design.mode"), "w") as f:      # provcheck.py census reads which expectation set applies
+        f.write("dry\n" if dry else "full\n")
     print(f"design: {len(groups)} own groups, {len(ob)} ob groups, {len(trig)} trig groups, {len(subjects)} subjects" + (" (DRY)" if dry else ""))
 
 def count(out, dry):
@@ -280,17 +317,21 @@ def count(out, dry):
         print(f"{name:34} groups={len(gs):4} launches/round={launches:5}")
         return launches
     it1 = [g for g in groups if g.item in (1, 12)]
+    new_items = [("2a", [g for g in groups if g.item == "2a"]), ("3a", [g for g in groups if g.item == "3a"]),
+                 ("3v (VM_ATTEMPT)", [g for g in ob if g.item in ("3v-gap", "3v-len")])]
     print(f"item 1 fit groups (grid1 149 -> {len({tuple(x[1:4]) for g in groups for x in g.g1})} distinct grid1 groups, {len(it1)} grid2 groups)")
     t = 0
     base_arms = lambda g: [a for a in g.arms if not a.startswith(("tw", "sc"))]
-    l1 = sum(len(base_arms(g)) + 2 for g in groups)
-    l2 = sum(len(g.arms) - len(base_arms(g)) for g in groups)
-    print(f"{'item 1 (pickable arms + #b #c)':34} groups={len(groups):4} launches/round={l1:5}")
+    l1 = sum(len(base_arms(g)) + 2 for g in groups if g.item not in ("2a", "3a"))
+    l2 = sum(len(g.arms) - len(base_arms(g)) for g in groups if g.item not in ("2a", "3a"))
+    print(f"{'item 1 (pickable arms + #b #c)':34} groups={len([g for g in groups if g.item not in ("2a", "3a")]):4} launches/round={l1:5}")
     print(f"{'item 2 (twin/scaffold arms)':34} groups={sum(1 for g in groups if len(g.arms) != len(base_arms(g))):4} launches/round={l2:5}")
-    l3 = sum(len([a for a in g.arms if a != 'none']) + 2 for g in ob)
+    l3 = sum(len([a for a in g.arms if a != 'none']) + 2 for g in ob if g.item not in ("3v-gap", "3v-len"))
     l4 = sum(1 for g in ob if 'none' in g.arms)
-    print(f"{'item 3 (one-byte arms + #b #c)':34} groups={len(ob):4} launches/round={l3:5}")
-    print(f"{'item 4 (none arms)':34} groups={l4:4} launches/round={l4:5}")
+    print(f"{'item 3 (one-byte arms + #b #c)':34} groups={len([g for g in ob if g.item in (3, 34)]):4} launches/round={l3:5}")
+    print(f"{'item 3n (NONE, extra arm)':34} groups={l4:4} launches/round={l4:5}")
+    for nm, gs in new_items:
+        print(f"{'item ' + nm + ' (rev 3)':34} groups={len(gs):4} launches/round={sum(len(g.arms) + 2 for g in gs):5}")
     l8 = sum(len(g.arms) + 2 for g in trig)
     print(f"{'item 8 (trigger probe, optional)':34} groups={len(trig):4} launches/round={l8:5}")
 

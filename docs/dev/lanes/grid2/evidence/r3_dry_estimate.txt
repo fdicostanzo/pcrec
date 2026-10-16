@@ -1,0 +1,10 @@
+phase  groups  min @3.4   min @5  basis / items
+F1        123      32.5     47.7  {'measured': 123} items {'12': 28, '1': 85, '2': 2, '2a': 8}
+F3         16       3.7      5.5  {'measured': 16} items {'12': 8, '2': 2, '3a': 6}
+OB         60      13.3     19.5  {'measured': 60} items {'34': 30, '3': 20, '3v-gap': 6, '3v-len': 4}
+TRIG       12       1.7      2.5  {'measured': 12} items {'8': 12}
+BUILD               0.9      0.9  dry build 45 s + generator 8 s (830 MiB at 1s/100.2 MiB)
+CHECK               1.1      1.1  dry check 7 s x 9.1 (arms x bytes ratio, an assumption)
+PERF                1.6      1.6  measured 0.2 s/row x 405 rows
+spec (r17b_prime rev 3 s5.4, priced at grid1's 0.95 s per launch / 64 MiB streams): required 91 / 129 min, with optional 99 / 138 min
+ESTIMATE required=51 / 75 min with-optional=55 / 79 min at 3.4 / 5 launches (+ quiet-gate waits; spec 91 / 129 and 99 / 138)

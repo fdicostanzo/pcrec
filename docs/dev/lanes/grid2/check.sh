@@ -16,6 +16,12 @@
 #     wrong kit form is not a timing question. Pickable = every arm the tables can pick
 #     (walk V1 S1 A1 A3, libc v1 loop none, keep drop). Twin/scaffold arms (tw0-2, sc0)
 #     are instruments: they may be excluded under ALLOW_EXCLUDED=1.
+#   - leg P (rev 3): provcheck.py check -- the COMPILER's commit/abi/staleness and every timed arm's
+#     SIGNATURE (a walk built from the V1 text, a VM_ATTEMPT cell built as a DFA hat, a deny the
+#     compiler does not take: all answer right, only this leg can see them); leg M: provcheck.py
+#     census -- the arm tables hold the rev-3 items (N = 33..46, the three cover shapes, the
+#     VM_ATTEMPT groups, NONE's 30 arms) against literal expectations. A failure of P or M ends
+#     check.sh with exit 4 and `PROV-FAIL` / `CENSUS-FAIL` lines in check2.status.
 #   OUT=... bash check.sh      -> $OUT/check.log, $OUT/excluded, $OUT/unreached, $OUT/check2.status
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -47,6 +53,13 @@ fi
 echo "reach (U2): $u2n one-byte groups, $u2 FAIL"; grep ' FAIL ' "$OUT/res_u2.txt" 2>/dev/null | head
 echo "U2 groups=$u2n fail=$u2" >> "$S"
 
+# ---- legs P and M: provenance and the manifest census
+python3 -I "$HERE/provcheck.py" "$OUT" check > "$OUT/prov.out" 2>&1; prc=$?
+python3 -I "$HERE/provcheck.py" "$OUT" census > "$OUT/census.out" 2>&1; mrc=$?
+grep -h -E '^(PROV|CENSUS)-FAIL' "$OUT/prov.out" "$OUT/census.out" >> "$S"
+echo "provenance (P): rc=$prc $(tail -1 "$OUT/prov.out" | cut -c1-110)"; echo "census (M): rc=$mrc $(tail -1 "$OUT/census.out" | cut -c1-110)"
+echo "P rc=$prc M rc=$mrc" >> "$S"
+
 # ---- pickable arms in `excluded`
 PICKABLE=" walk V1 S1 A1 A3 libc v1 loop none keep drop "
 pfail=0
@@ -61,8 +74,11 @@ verdict=OK
 [ "$u2" -gt 0 ] && verdict=FAILED
 [ "$pfail" -gt 0 ] && verdict=FAILED
 [ "$rc" != 0 ] && [ ! -s "$OUT/excluded" ] && verdict=FAILED       # grid1's check failed for a reason other than arm exclusion
+[ "$prc" != 0 ] && verdict=FAILED
+[ "$mrc" != 0 ] && verdict=FAILED
 echo "$verdict wall=$(( $(date +%s) - start ))s $(date -Is)" | sed 's/^/CHECK_/' >> "$S"
 echo "grid2 check: $verdict"
 [ "$pfail" -gt 0 ] && exit 3
+[ "$prc" != 0 ] || [ "$mrc" != 0 ] && exit 4
 [ "$verdict" = OK ] || exit 1
 exit 0

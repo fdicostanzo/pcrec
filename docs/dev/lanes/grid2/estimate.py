@@ -23,7 +23,10 @@ Quiet-gate waits are not estimated (they are the box's).
 import collections, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LAUNCHES, EXTRA, SHARE = 3, 2, 0.2
+# Two launch scenarios [rev3 C7]: 3.4 = LAUNCHES 3 + RERUN_EXTRA 2 at a 20% rerun share (rev 2's figure, EP69,
+# an estimate), 5.0 = LAUNCHES 3 + 2 on EVERY group (grid1 and spike1 both ran at 5; the cross-launch trigger
+# makes that plausible). Per-launch seconds are the dry run's, by phase and subject class.
+SCEN = (("3.4", 3.4), ("5", 5.0))
 
 def klass(n):
     return "tiny" if n <= 128 else ("mid" if n <= 131072 else "big")
@@ -34,7 +37,7 @@ def read_tsv(p):
     return [dict(zip(h, l.split("\t"))) for l in L[1:] if l]
 
 def spec_phase(cell, item):
-    if str(item) in ("34", "3"): return "OB"
+    if str(item) in ("34", "3", "3v-gap", "3v-len"): return "OB"
     if str(item) == "8": return "TRIG"
     return "F3" if cell.startswith("f3-") else "F1"
 
@@ -71,9 +74,10 @@ def main(out):
         arms = [a for a in g["arms"].split(",")]
         per_round = len(arms) + 2
         s, why = per(ph, klass(n))
-        launches = per_round * (LAUNCHES + EXTRA * SHARE)
-        t = tab.setdefault(ph, [0, 0.0, 0.0, collections.Counter()])
-        t[0] += 1; t[1] += launches; t[2] += launches * s; t[3][why.split(" n=")[0]] += 1
+        t = tab.setdefault(ph, [0, [0.0] * len(SCEN), [0.0] * len(SCEN), collections.Counter(), collections.Counter()])
+        t[0] += 1; t[3][why.split(" n=")[0]] += 1; t[4][g["item"]] += 1
+        for i, (_, ln) in enumerate(SCEN):
+            t[1][i] += per_round * ln; t[2][i] += per_round * ln * s
     # ---- build, check, gen
     bt = re.findall(r"^gen: wall=(\d+)s bytes=(\d+)", open(os.path.join(out, "build.log")).read(), re.M)
     dry_gen_s, dry_gen_b = (int(bt[0][0]), int(bt[0][1])) if bt else (0, 1)
@@ -116,23 +120,23 @@ def main(out):
                 if l and not l.startswith("#") and "\tg2-real-" in l: frows += 1
             f2_full = w / max(1, rows_dry) * frows; perf_note = "measured %.1f s/row x %d rows" % (w / max(1, rows_dry), frows)
     # ---- the table
-    spec = {"F1": ("items 1+2 (F1 part)", 56.1 + 5.2 * 0.6), "F3": ("items 1+2 (F3 part)", 0), "OB": ("items 3+4", 13.5 + 2.4), "TRIG": ("item 8 (optional)", 2.0)}
-    print(f"{'phase':6} {'groups':>6} {'launches':>9} {'est min':>8}  basis")
-    req = 0.0; opt = 0.0
+    print(f"{'phase':6} {'groups':>6} {'min @3.4':>9} {'min @5':>8}  basis / items")
+    req = [0.0] * len(SCEN); opt = [0.0] * len(SCEN)
     for ph in ("F1", "F3", "OB", "TRIG"):
         if ph not in tab: continue
-        g, l, s, why = tab[ph]
-        print(f"{ph:6} {g:6d} {l:9.0f} {s / 60:8.1f}  {dict(why)}")
-        if ph == "TRIG": opt += s
-        else: req += s
-    print(f"{'BUILD':6} {'':6} {'':9} {(dry_build + max(0, gen_full - dry_gen_s)) / 60:8.1f}  dry build {dry_build:.0f} s + generator {gen_full:.0f} s ({fbytes / 2**20:.0f} MiB at {dry_gen_s}s/{dry_gen_b / 2**20:.1f} MiB)")
-    req += dry_build + max(0, gen_full - dry_gen_s)
-    print(f"{'CHECK':6} {'':6} {'':9} {check_full / 60:8.1f}  dry check {dry_check:.0f} s x {ratio:.1f} (arms x bytes ratio, an assumption)")
-    req += check_full
-    print(f"{'PERF':6} {'':6} {'':9} {f2_full / 60:8.1f}  {perf_note}")
-    opt += f2_full
-    print(f"spec: required 88 min, with optional 96 min")
-    print(f"ESTIMATE required={req / 60:.0f} min with-optional={(req + opt) / 60:.0f} min (+ quiet-gate waits; spec 88 / 96)")
+        g, l, s, why, items = tab[ph]
+        print(f"{ph:6} {g:6d} {s[0] / 60:9.1f} {s[1] / 60:8.1f}  {dict(why)} items {dict(items)}")
+        for i in range(len(SCEN)):
+            if ph == "TRIG": opt[i] += s[i]
+            else: req[i] += s[i]
+    bt = dry_build + max(0, gen_full - dry_gen_s)
+    print(f"{'BUILD':6} {'':6} {bt / 60:9.1f} {bt / 60:8.1f}  dry build {dry_build:.0f} s + generator {gen_full:.0f} s ({fbytes / 2**20:.0f} MiB at {dry_gen_s}s/{dry_gen_b / 2**20:.1f} MiB)")
+    print(f"{'CHECK':6} {'':6} {check_full / 60:9.1f} {check_full / 60:8.1f}  dry check {dry_check:.0f} s x {ratio:.1f} (arms x bytes ratio, an assumption)")
+    print(f"{'PERF':6} {'':6} {f2_full / 60:9.1f} {f2_full / 60:8.1f}  {perf_note}")
+    for i in range(len(SCEN)):
+        req[i] += bt + check_full; opt[i] += f2_full
+    print("spec (r17b_prime rev 3 s5.4, priced at grid1's 0.95 s per launch / 64 MiB streams): required 91 / 129 min, with optional 99 / 138 min")
+    print(f"ESTIMATE required={req[0] / 60:.0f} / {req[1] / 60:.0f} min with-optional={(req[0] + opt[0]) / 60:.0f} / {(req[1] + opt[1]) / 60:.0f} min at 3.4 / 5 launches (+ quiet-gate waits; spec 91 / 129 and 99 / 138)")
 
 if __name__ == "__main__":
     main(sys.argv[1])

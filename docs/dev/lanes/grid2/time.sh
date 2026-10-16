@@ -10,6 +10,12 @@
 #     RERUN_EXTRA (2) more launches, once. NULL here is RERUN_NULL x median(base), RERUN_NULL
 #     = 0.031 (M6, the null floor eps of the one grid1 run); the decision uses nothing else.
 #     The share of groups rerun is reported;
+#   - the CROSS-LAUNCH TRIGGER [rev3 C7] beside it: a group in which ANY arm's per-launch medians
+#     spread (max - min over the launches) by more than the group's own A/A floor
+#     |median(base#b) - median(base)| gets the same RERUN_EXTRA more launches, once (the within-launch
+#     rule cannot see a walk that is bimodal ACROSS launches, which gridread found). The threshold is
+#     max(that A/A floor, NULL): a floor that happens to be ~0 must not make every group rerun
+#     (DEVIATION from the spec's text, which names the A/A floor alone; stated in grid2r3_report.md);
 #   - the quiet gate waits at every group boundary (as grid1), records load1 before and after
 #     the group, and re-queues a group whose end load1 reached LOADBREACH once at the end of
 #     the phase (`requeued`); a group that breaches twice is kept and marked `BREACH`;
@@ -123,14 +129,14 @@ RAWDIR=${RAWDIR:-$OUT/time}; mkdir -p "$RAWDIR"
 RAW=$RAWDIR/raw_${RAW_TAG:-$PHASE}.tsv
 printf 'phase\tcell\tsubject\tmode\tround\tpos\tarm\tns\tanswer\tload1\tts\n' > "$RAW"
 [ "${NOCLOCK:-0}" = 1 ] && echo "# NOCLOCK RUN: no clock; every ns below is the placeholder 1.00"
-echo "# grid2 time.sh method=$METHOD $(date -u) $(uname -n) phase=$PHASE load1=$(cut -d' ' -f1 /proc/loadavg) gov=$(cat /sys/devices/system/cpu/cpu$CPU/cpufreq/scaling_governor 2>/dev/null) cpu=$CPU launches=$LAUNCHES rerun_extra=$RERUN_EXTRA rerun_null=$RERUN_NULL base_copies=$BASE_COPIES loadmax=$LOADMAX loadbreach=$LOADBREACH"
+echo "# grid2 time.sh method=$METHOD $(date -u) $(uname -n) phase=$PHASE load1=$(cut -d' ' -f1 /proc/loadavg) gov=$(cat /sys/devices/system/cpu/cpu$CPU/cpufreq/scaling_governor 2>/dev/null) cpu=$CPU launches=$LAUNCHES rerun_extra=$RERUN_EXTRA rerun_null=$RERUN_NULL cross_launch_trigger=on base_copies=$BASE_COPIES loadmax=$LOADMAX loadbreach=$LOADBREACH"
 echo "# ns = ns per pass (median over launches of each launch's 7-round median); delta = arm - base; floor = |base#b - base| (A/A); aac = |base#c - base| (the held-out A/A);"
 echo "# spread = per-launch min..max as % of the arm's median; per_match = delta / matches (all mode); verdict NULL when |delta| <= floor"
 echo "# raw per-launch values: $RAW"
 st=${PASS_STATUS:-$OUT/time_${PHASE}.status}; : > "$st"
 if ! perf_probe; then echo "# optional counter passes (items 6-7) will skip loudly:"; paranoid_report /dev/null "$st"; fi
 printf '%-10s %-38s %-5s %-6s %12s %12s %11s %9s %9s %13s %10s %s\n' cell subject mode arm ns base delta floor aac spread per_match verdict
-rows=0; groups_done=0; reruns=0; requeued=0
+rows=0; groups_done=0; reruns=0; xreruns=0; requeued=0
 med() { tr ' ' '\n' <<<"$1" | grep . | sort -g | awk '{a[NR]=$1} END{print a[int((NR+1)/2)]}'; }
 launch() {   # cell subjtoken mode V round pos -> sets LNS LAN, appends the raw row
   local c=$1 s=$2 m=$3 V=$4 i=$5 p=$6 b=${4%%#*} nm off out
@@ -158,12 +164,27 @@ run_group() {   # cell subjtoken mode arms requeue-flag
     done
     if [ "$i" = "$LAUNCHES" ] && [ "$rr" = 0 ] && [ "$BASE_COPIES" -ge 2 ] && [ "$RERUN_EXTRA" -gt 0 ] && [ "${NOCLOCK:-0}" != 1 ]; then
       # the pre-registered rerun rule: any launch with |base_i - base#b_i| > NULL
-      local medb nullv j bad=0
+      local medb nullv j bad=0 xbad=0 xthr flnow xarm xlo xhi pv
       medb=$(med "${M[$B]}"); nullv=$(awk -v m="$medb" -v e="$RERUN_NULL" 'BEGIN{print m*e}')
       for ((j = 1; j <= LAUNCHES; j++)); do
         awk -v a="${PL["$B,$j"]}" -v b="${PL["$B#b,$j"]}" -v n="$nullv" 'BEGIN{d=a-b; if(d<0)d=-d; exit !(d>n)}' && bad=1
       done
-      if [ "$bad" = 1 ]; then rr=1; reruns=$((reruns + 1)); nlaunch=$((LAUNCHES + RERUN_EXTRA)); echo "# rerun: $c $s $m (A/A disagreement beyond NULL=$nullv in a launch): +$RERUN_EXTRA launches"; fi
+      # the cross-launch trigger [rev3 C7]
+      flnow=$(awk -v a="$(med "${M[$B]}")" -v b="$(med "${M["$B#b"]:-${M[$B]}}")" 'BEGIN{d=a-b; if(d<0)d=-d; print d}')
+      xthr=$(awk -v f="$flnow" -v n="$nullv" 'BEGIN{print (f>n)?f:n}')
+      for V in "${A[@]}"; do
+        xlo=; xhi=
+        for ((j = 1; j <= LAUNCHES; j++)); do
+          pv=${PL["$V,$j"]}
+          xlo=$(awk -v a="$xlo" -v b="$pv" 'BEGIN{print (a==""||b<a)?b:a}'); xhi=$(awk -v a="$xhi" -v b="$pv" 'BEGIN{print (a==""||b>a)?b:a}')
+        done
+        awk -v lo="$xlo" -v hi="$xhi" -v t="$xthr" 'BEGIN{exit !(hi-lo>t)}' && { xbad=1; xarm=$V; }
+      done
+      if [ "$bad" = 1 ] || [ "$xbad" = 1 ]; then
+        rr=1; reruns=$((reruns + 1)); nlaunch=$((LAUNCHES + RERUN_EXTRA))
+        [ "$xbad" = 1 ] && xreruns=$((xreruns + 1))
+        echo "# rerun: $c $s $m (within-launch A/A beyond NULL=$nullv: $bad; cross-launch spread of ${xarm:-none} beyond max(A/A floor, NULL)=$xthr: $xbad): +$RERUN_EXTRA launches"
+      fi
     fi
   done
   l1=$(cut -d' ' -f1 /proc/loadavg)
@@ -208,4 +229,4 @@ if [ -s "$OUT/counts.tsv" ]; then
   echo "## counters (counting builds bin/<cell>/<arm>/cnt, one pass, no clock; site(G1) = the cell's site counters, the walk's own)"
   awk -F'\t' -v re="$CELLS_RE" 'NR==1 || $1 ~ re' "$OUT/counts.tsv"
 fi
-echo "time.sh: COMPLETE rows=$rows groups=$groups_done reruns=$reruns requeued=$requeued wall=$(( $(date +%s) - start ))s"
+echo "time.sh: COMPLETE rows=$rows groups=$groups_done reruns=$reruns xreruns=$xreruns requeued=$requeued wall=$(( $(date +%s) - start ))s"
