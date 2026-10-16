@@ -23,15 +23,52 @@ it after B2). Read §R3 first. DESIGN ONLY: nothing under `src/`, `cli/`, `lib/`
 `memfn/` or `tests/` changes. One compile-only census was run
 (`window_contract_rev3/`).
 
-**Status: PROPOSED, revision 3.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is a
-leaning; Q3-Q4 are new and in discussion form. Q3 (what the `_FINDINGS` stamp
-means) decides whether E-1 is an abi event. The R-18 ledger edit (§11, Appendix
-A) is main's to apply.
+**Revision 3.1: lane `wcfix`, 2026-10-16, from main `2288ad1cb` (pcrec abi
+78).** It answers the light panel r4
+(`../../dev/reviews/2026-10-16-r4-window-contract-rev3.md`: 1 blocker, 5 majors,
+6 minors, all ACCEPTED by the manager) and Frank's Q3 ruling (D167 add. 2:
+CONSULTED). It adds the manager's finding X1, an independent PERTURBATION check
+of the stamp (§3.7.7 C-PERT). Read §R3.1 first. DESIGN ONLY again, plus two
+compile-only censuses and one prototype run on main's binary
+(`window_contract_rev31/`).
+
+**Status: PROPOSED, revision 3.1.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is a
+leaning; **Q3 is RULED (D167 add. 2: CONSULTED)**; Q4 is the manager's; Q5 and
+Q6 are new and in discussion form. Q5 asks whether a kind's provenance may be
+read from the answering block's own declared `provenance` stanza (the design of
+record, pending the ruling). Q6 asks what the stamp records when a compile takes
+more than one attempt. The R-18 ledger edit (§11, Appendix A) is main's to
+apply.
 
 The contract carries FACTS only, never the kit's method (D157). Every
 selection below is an ordered first-match table (memory
 `pcrec-decisions-as-first-match-tables`). Revision-2 changes are tagged
 `[r4 ID]` or `[D161.7]`/`[D161.8]` where they land.
+
+## §R3.1. What revision 3.1 changed (finding → section, disposition)
+
+Every panel r4 finding was ACCEPTED by the manager (2026-10-16). No finding was
+rejected. Sabotage ids marked PROPOSED start at S1009 and are the manager's to
+allocate.
+
+| finding | where | disposition |
+|---|---|---|
+| Q3 | §3.7.3, §12 Q3, header | **RULED: CONSULTED** (D167 add. 2). §3.7.5's OFFERED build text is withdrawn to a pointer (it is in revision 3's git text) |
+| **B1** (blocker): the offer's derivation can refuse a compile that succeeds today | **§3.7.1, §3.2 (T-KIND), §3.3 rule 9, §3.7.4a, §3.7.7 G1-E1** | **Discharged.** The panel's witness REPRODUCES on main `2288ad1cb` (`window_contract_rev31/b1_witness.out`). The derivation splits into a NON-RAISING `find_derive_byte_rate_status` that the offer calls, and the ASK path that keeps today's `pcrec_ctx_fail`, so a refusal stays the asker's. T-KIND gains two `underivable` rows. A new rule 9 says an underivable kind refuses the compile iff it is CONSULTED, which keeps today's refusal set at E-1 and at B3b. G1-E1 is widened to deny arms × {no analysis, `--analysis weblog`, an `-I` user bundle, the `l1none` fixture}, with floors MEASURED by a census (`analysiscount.out`): 1,905 / 3,246 / 5,367 utf8 compiles succeed today with `""` under `l1none` and refuse when asked. The D80 route (making the spec's unconditional refusal true) is NOT taken |
+| M1: `arrives` does not keep a MEASURED-ONLY kind absent | §3.2 | The column is renamed `unmeasured` (`ARRIVES` / `ABSENT`) after what it decides, and it is a conjunct of every non-measured PRESENT row. An `authored-absent` row precedes the fall-through. Witness: UNREACHED until B4 gives `run-rarity` a shape (then a user `-I` authored `bigram` bundle reaches it); sabotage S1011 PROPOSED. The header cites D162 add. 3's refinement, and check C-E1-5 holds the column to the kinds pcrec itself reads |
+| M2: provenance re-derived from the chain LINK although each block declares it | §3.1, §3.2, §3.6, §3.7.1, **§12 Q5** | Design of record, PENDING Q5: `mf_prov.source` is read from the answering block's own `provenance` stanza (`source authored` → AUTHORED, anything else → MEASURED). `mf_prov` also carries `bytes` (the evidence strength, now built, not filed) and `fidelity`. `PcrecFindTblBlock`, `findgen`'s pre-parse and `rxt_find.c`'s copy carry the stanza. Link identity stays as C-E1-1's cross-check. This changes the manager's reading of D162 add. 3 ("pcrec's prior vs measured from a bundle") for a user's authored block, so it is Q5, in discussion form, with a leaning |
+| M3: the CONSULTED design's render point was unplaced | **§3.7.3a (new)**, §3.7.9, §9 family 7 | ONE render point: the art-end pass, AFTER `mf_art_end`, for `_FINDINGS` and `.findings =` and, at M0, for `_MEASURES` and `.measures =`. The lines keep their byte positions through marks, so the move alone is zero-byte. It is its own commit, RP, landing no later than the first of B3b/M0 and before any OR. Check C-RP, sabotage S1014 PROPOSED. `measure_sets.md` needs the same sentence: an OWED sibling edit (§3.7.3a), not made here |
+| M4: C-CONS is blind on its population | §3.7.7 | `consulted` is read from a named trace record (`KSRCTRACE`'s new `consulted` field), compared directly. The stamp half runs on the deny arms crossed with `-fmemfn-simd`, with a floor of kit-only consumers. C-PERT (X1) is the stamp half's independent partner |
+| M5: the offer was built at a lazy, first-caller-wins point | §3.7.1, §3.3 rule 3 | Built EAGERLY at one stated point: `compile_driver`, right after `pcrec_find_resolve`, stored on `Job`. `pcrec_memfn_art` only passes it. Sabotage S1013 PROPOSED |
+| m1: `find_kinds[]` should own the vocabulary | §3.2, §3.7.1, §3.7.6 F-3 | Renamed `find_queries[]` and made the query vocabulary's ONE home. `find_derivs[]`'s third column becomes a row index into it, and `rxt_find.c`, `findings_dump.c` and `rxt_source.c`'s error text read it. F-3 is RETIRED at E-1, not filed |
+| m2: C-E1-4 shares a source with what it checks | §3.7.7, §3.7.8 | Labelled an AGREEMENT check; C-E1-1's python digest is named as the independent line. S996's plant site is stated |
+| m3: G1-E1 omits the VM deny arm | §3.7.7 | Added (`--engine=vm -fno-req-byte -fno-req-run`, 5,337 `""`), with a floor of its own |
+| m4: F-2 is not reachable through the listing it names | §3.7.6 F-2, §12 Q4 | Restated as LATENT. Trigger: the first path that lists facts under a non-default analysis |
+| m5: rule 7 names kit rows and their outcome (D157) | §3.3 rule 7 | Cut to the fact. The row list and the KEEP default are a pointer to r17b′ |
+| m6: `have ∧ ¬asked` is a new state | §3.7.6, §3.7.7 C-E1-6 | The record's comment is re-worded. `req_rate_why` reads `pcrec_find_byte_rate`'s return. A structural check (C-E1-6) holds that `byte_rate_have` and `byte_rate_status` have no reader outside `findings.c` |
+| U1-U4 (the panel's unlocks) | §13 | U3 is BUILT here (the render point, RP). U4 is BUILT for the build point (M5); its retirement half stays filed. U1 and U2 are filed with their triggers (U2 is mostly built by M2) |
+| **X1** (manager): nothing detects a kit row that reads a kind but reports `consulted = false` | **§3.7.7 C-PERT (new)**, §3.7.8 | An independent PERTURBATION check: compile the population twice, with each kind's data held and perturbed under the same bundle name and stop. Any artifact whose bytes outside the stamp lines move while its stamp omits that kind FAILS. It reads only emitted bytes and the stamp text. A prototype ran on main (`window_contract_rev31/perturb_proto.py`). Planted sabotage: a kit row that drops its consulted bit (S1015, B3b's) and a pcrec accessor that marks only on derivation (S1016, E-1's) |
+| a finding from the prototype | **§3.7.6 F-5, §12 Q6** | **The stamp reports the FINAL attempt only.** A compile whose earlier attempt consulted the byte-rate and whose final attempt did not stamps `""`, yet its bytes move with the data. Two corpus witnesses (`(\p{Xwd})x`, `x(\p{Xwd})y` under `-e utf8 -fno-req-byte`). C-PERT finds them on day one. Q6 asks for the union over attempts |
 
 ## §R3. What revision 3 changed (input → section, disposition)
 
