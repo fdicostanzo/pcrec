@@ -94,7 +94,7 @@ grid2 slot.
    | B3a/B3b | ST3: presence + handoff merged (B3a shadow, B3b routed), against main-after-E-1 | yes (five priced picks ported verbatim under a shadow); B3b a DECLARED registry delta | none |
    | — | **first delivery COMPLETE**; then grid2 → E4b → E5-E8 judge → LOCKDOWN | | |
    | B4 | R17-b′'s set-site ROUTING (V1 on measured shapes, R0 WALK), M0's stamp, the kit size rung | NO: the one censused mover | ONE event, 78 → next |
-   | B5 | ST4: measured rows (libc, NONE, the VM hat's |S| = 1, priced pre-scan), one census each | NO | one per default-moving row |
+   | B5 | ST4: measured rows (libc, NONE, the VM hat's \|S\| = 1, priced pre-scan), one census each | NO | one per default-moving row |
    | B6 | the W64 SIMD rows (CANDIDATE) | SIMD-off yes | none |
    | B7 | ST5: the libc class deny + three libc-free rows | yes at default | none |
    | B8 | ST6: the N-dispatch rows, if not already paid at B4 | NO | one |
@@ -195,7 +195,7 @@ A4 noted for review here).
 | A4 | the read-back is the define-time query `mf_ask` (facts in, form CLASS out), made before row selection, landing at B1, read from B2 | §4.5, §3.1, §4.9, Q-R17P-15 |
 | A5 | MLINE has no span 0; its stop is a one-byte CONTEXT predicate served by row D1c; D161 add. 7 kept | §1.3, §4.1, §4.6 |
 | A6 | `MF_BODY_PARAM`; an M-reading row on a shared find part prices a runtime compare (M24); F4 rewritten; B9's dependencies E0 → findall_iter revision → its panel → I1 | §2.4, §5.2, §6, §3.1, §11 |
-| A7 | RULED (D167 add. 1): MEMBERS. The VM hat at |S| = 1 stays WALK (D1w); its move is the measured B5 row F2 fed by grid2's one-byte cells (VM_ATTEMPT added) | §1.3, §3.1, §3.5, §5.4 |
+| A7 | RULED (D167 add. 1): MEMBERS. The VM hat at \|S\| = 1 stays WALK (D1w); its move is the measured B5 row F2 fed by grid2's one-byte cells (VM_ATTEMPT added) | §1.3, §3.1, §3.5, §5.4 |
 | A8 | DELEG_SITES, C10's fixtures, C17's site manifest and MF_VOCAB listed as main-side requests at B2, B3a, B3b | §3.4, Q-R17P-18 |
 | A9 | no `--emit-facts` section at B1 (R-20 schedules it at M0, B4); B1's `--list-axes` rows are a declared registry event | §1.7, §3.1, §3.4, §8.1 |
 | A10 | RULED (D167 add. 1): one carried position per REQUIRED span or stream; K5 retires on a proven single-pass form; S derived, "48 B" withdrawn | §6, §7.1 |
@@ -1496,14 +1496,14 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
 | M12 | single-call delta at N | V1 − walk / PF / N = 8, 32, 48, 63 | +12.2, +3.2, −23.8, −29.6 u·B | +2.3, +0.6, −4.5, −5.6 ns | §4.3, §4.4 | T1 | yes |
 | M13 | c_cold per activation | V1, S1, A1 / walk / PF | +13.1, +15.3, +15.4 u·B | +2.47, +2.90, +2.91 ns | §2.4 | T1 checks | yes |
 | M14 | per warm use, absolute | walk, V1, S1, A1 / – / PF | 8.8, 12.6, 11.7, 11.8 u·B | 1.67, 2.38, 2.22, 2.23 ns | §2.3 | T3 (w_min) | yes |
-| M15 | g\* | V1, S1, A1 / walk / PF, DFA-hat, bounded | V1 10.8-16.7 / 3.0-3.3 / 21.5 B; S1 4.3-4.7 / 2.1-2.4 / 3.6-5.8; A1 4.2-4.4 / 2.1-2.3 / 2.4-3.0 | log2-interpolated | §4.1 | R5, R6 (and R8's g8) | yes |
+| M15 | g\* | V1, S1, A1 / walk / PF, DFA-hat, bounded | V1 10.8-16.7 / 3.0-3.3 / 21.5 B; S1 4.3-4.7 / 2.1-2.4 / 3.6-5.8; A1 4.2-4.4 / 2.1-2.3 / 2.4-3.0 | log2-interpolated | §4.1 | R5 (`[rev3 D8]` rev 2's R5 and R6), R4 (and R8's g8) | yes |
 | M16 | dispatch charge per activation | dispatch / none / ANY | — | — | — | T1, T2 | **ABSENT** |
 | M17 | dispatch charge per use | dispatch / none / ANY | — | — | — | T3 | **ABSENT** |
 | M18 | scaffold charge per use | walk-in-helper / walk-inline / PF, VM_ATTEMPT | — | asm differs by −3..+14 insns (`r17b_prime/out/walk_helper_asm.out`) | — | T3 (R0 sites) | **ABSENT** |
-| M19 `[rev2]` | libc one-byte F and β | LIBC / – / DFA_SCAN (fwd, bounded), DFA_HAT, HYB_PF, ATTEMPT_PRED (back) / (0,1,0) | — | glibc F 3.24 ns (`linux_results.md`, method-mixed, not a set) | — | F1, D1's replacement | **ABSENT** |
+| M19 `[rev2]` | libc one-byte F and β | LIBC / – / DFA_SCAN (fwd, bounded), DFA_HAT, HYB_PF, DFA_ATTEMPT (back; `[rev3 A2]` rev 2's ATTEMPT_PRED), `[rev3 A7]` VM_ATTEMPT / (0,1,0) | — | glibc F 3.24 ns (`linux_results.md`, method-mixed, not a set) | — | F1, D1's replacement | **ABSENT** |
 | M20 `[rev2]` | libc-free one-byte F and β | V1 one-term, WALK at \|S\| = 1, the generic byte loop / – / the same kinds `[rev3 A7]` plus VM_ATTEMPT / (0,1,0) | — | — | — | F1, `[rev3]` F2 | **ABSENT** (grid1's sets are all ≥ 2 members or one RANGE term) |
 | M21 `[rev2]` | one-byte dominance points | each libc-free form / LIBC / kind | — | DERIVED from M19, M20 | — | F1 | **ABSENT** |
-| M22 `[rev2]` | NONE's gap threshold g_none | NONE / the next pick / DFA_SCAN, DFA_HAT, HYB_PF (ATTEMPT_PRED: measured only for Q-WR-2's decision) / shape | — | — | — | F0 | **ABSENT** |
+| M22 `[rev2]` | NONE's gap threshold g_none | NONE / the next pick / DFA_SCAN, DFA_HAT, HYB_PF (DFA_ATTEMPT: measured only for Q-WR-2's decision) / shape | — | — | — | F0 | **ABSENT** |
 | M23 `[rev2]` | the pre-scan gate: KEEP − DROP per presence shape, route and position (early, late, absent) | gate / – / DFA_SCAN, HYB_PF / one byte, set 2-4, run 2-8 | — | — | — | P1 | **ABSENT** (and P1 waits for Q-WR-9's trigger) |
 | M24 `[rev3 A6]` | the mode branch on a SHARED PARAM find body, per call | dispatch / none / kind / layer | — | — | — | T2 (beside C_disp_call, §2.4-§2.5) | **ABSENT** (no PARAM body exists before R17-b″; measured at [REGIME-TWIN] or the iterator's parity slot) |
 
@@ -1892,7 +1892,7 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S919 | `body` UNSTATED read as ONESHOT | G2: N/M rows must skip (an oracle case; the trace) | B1 | a builder with `body` 0 (a G2 site) |
 | S920 | the START hook's text replaced by `0` | `[rev3 B11]` an INDEPENDENT reader of the activation origin in the emitted C (the variable the entry's guard reads, located by pcrec's own emitted-text census), compared with `__form(`'s argument; not the builder's stated start (a shared source) | B4 (read; `__form(` emitted only with a paid dispatch, UNREACHED until then) | a relocate-path site (start ≠ 0) |
 | S921 | the shadow call emits a byte | emit_sweep's 1-in-8 sample at SIMD-off | B1 | every FIND site |
-| S922 | `fd_route` routes a SHADOW group early (the set group at B2) | emit_sweep: V1 movers appear | B2 | a one-RANGE-term set site (`[0-9]+x`) |
+| S922 | `[rev3 D6]` a row's `routed` bit set before its step (R7's at B2) | emit_sweep: V1 movers appear; the routed-record count rises past its floor | B2 | a one-RANGE-term set site (`[0-9]+x`) |
 | S964 | SW-1 K65-narrow: a REQUIRED set answered by one member on a no-DFA route | give-up (W1) | B3b | W1 |
 | S965 | SW-2 K66-window: a REQUIRED run answered by its window | give-up | B3b | K66's regression (`k66_precheck_whole_run.rxt`) |
 | S966 | SW-3 decided-late: a candidate yielded before every REQUIRED span is verified | give-up (G-2) | `[rev3 B11]` B4 (the VM hat's FIND routes at B4; at B3b the merged site holds no hat span 0 that could yield early) | W1 with the VM hat |
@@ -2195,3 +2195,20 @@ plan rows with their triggers):
 | 7. Standing questions answered; this checklist | §10, §12 | done |
 | `[rev2]` markers, change log, memfn/CLAUDE.md + r17b_prime/CLAUDE.md, the lane report | §R2; `docs/design/memfn/CLAUDE.md`; `r17b_prime/CLAUDE.md`; `docs/dev/lanes/r17bp3_report.md` | done |
 | DESIGN ONLY: no `src/`/`memfn/src/` change, no measured constants in source, no timing | nothing under `src/`, `memfn/`, `tests/`, `lib/` changed | done |
+
+`[rev3]` **Revision 3's brief (lane r17bp4, 2026-10-16):**
+
+| brief item | where | status |
+|---|---|---|
+| Read BOILERPLATE, memfn/CLAUDE.md, docs/design/CLAUDE.md; scope mandate (worktree only) | — | done |
+| (1) the panel record with a by-id completeness table, critic B's (and C's) header count corrected, its index entry | `docs/dev/reviews/2026-10-16-r1-memfn-r17bp.md`, `docs/dev/reviews/CLAUDE.md` | done (70 of 70 ids dispositioned; B 1/9/7, C 6/7) |
+| (2) fold every accepted finding per dispositions.md, `[rev3]` markers, §R3 by id | §R3 and throughout | done |
+| D167 + addendum 1 (A7 MEMBERS, A10 K5, A11 the landmark input as a fact) | §1.3, §1.4, §3.1, §4.5, §6, §7.1b | done |
+| The E-1 agreement (B1 declares `mf_analysis` on `mf_art_begin`, NULL-tolerant, unread before B3a; main fills it after B2, no kit edit) | §0 item 4, §3.1, §4.7, §4.9 | done |
+| Sweeparm's `-fmemfn-simd` / `-fcomments` arms (S981/S982) as THE instruments | §0, §3.1, §8.1 | done |
+| Re-read §2.1, §6 and B9 against D163 add. 7 / compound_entries rev 2 and D165 + addenda / findall_iter | §2.1, §2.2, §2.4, §6, §3.1 B9 | done |
+| A4: the define-time query designed concretely (signature, when called, readers, B-step), as a contract proposal | §4.5, Q-R17P-15 | done (lands in B1; B2 depends on it) |
+| grid2 additions (C3 shapes, C5 N = 33..46, C7 launches, C8 NONE arms) as the slot spec | §5.4 | done (≈ 91-129 min required) |
+| Keep §12 updated; the first delivery stays B0-B3b zero-mover | §12, §3.1 | done |
+| Report with new questions Q-R17P-15.. and a charter checklist | `docs/dev/lanes/r17bp4_report.md` | done |
+| DESIGN ONLY: no code, no timing, no `make` beyond a light docs check | nothing under `src/`, `memfn/src`, `tests/`, `lib/` changed | done |
