@@ -9758,4 +9758,4 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **Ruling (Frank):** "if we have the switches/tuner then it should decide the outcome. predictability is important here. gcc deciding suggests it could change depending on the version/arch."
 - **Rule:** at every non-zero dial position, and under any explicit control, every part's layout is PINNED by pcrec with explicit attributes (`always_inline`, or `static noinline noclone`, LK-3). No preset or control value leaves a part to gcc's heuristics. `auto` is withdrawn as a preset value. Q8 is answered: the `+1` preset is hot parts inline, the residual `shared`.
-- **Open (to Frank):** whether position `0` also pins every part, which would move every artifact's emitted text (one abi event, at or after E1), or stays "as emitted" for zero-mover continuity.
+- **Position `0` (Frank, same day: "0 as [emitted] is fine"):** position `0` stays AS EMITTED, the zero-mover baseline. Its layout may follow gcc version and arch, as today. Only non-zero positions and explicit controls pin.
