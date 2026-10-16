@@ -702,7 +702,14 @@ Three readings:
   matters: gcc already forwards there under `-fPIC` (F-2), so `wrap:shared` buys its size
   mainly in a static link.
 
-### 3.3 `θ_hot`: the one value a position reads from the measurement set
+### 3.3 `θ_hot`: the one value a control reads from the measurement set
+
+[r4] `θ_hot` is now what the threshold control's value `measured` reads. It is no longer a
+property of a position: `+1`'s preset holds `measured`, and a caller may type it at any
+position. A caller who types a rank (`--part-inline-rank=R2`) sets the threshold DIRECTLY,
+and the set is not read. That is the direct manual setting addendum 8 asks for, and it
+makes the threshold reproducible across boxes for a caller who wants that. Everything below
+applies to `measured` only.
 
 - **What it is.** The lowest edge rank that `+1` inlines, or `none`. Its domain is
   {R3, R2, R1, `none`} [r3 CE-6]. R0 is never in it, so `+1` never inlines a rare-edge part
@@ -724,14 +731,20 @@ Three readings:
   override a measurement that said nothing was material, which is a presumed value [r3
   CE-6]. A set that wants R3 to count at long subjects carries a measured long-subject cell
   as a second input row, and the derivation reads it like any other.
-- **When the set has no `θ_hot`**, `+1` does not presume one (no silent defaults). Artifact
-  row T1 (§3.4) gives the whole artifact the `0` layout and stamps
-  `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`. This is TODAY's state: no set carries the
+- **When the set has no `θ_hot`**, `measured` does not presume one (no silent defaults).
+  **RULED (Q6, D163 addendum 8): fall back to the `0` layout, with two distinct stamped
+  reasons.** Under switches, artifact row T1 (§3.4) resolves the threshold to `none` and
+  stamps `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`. With `+1`'s preset alone, every
+  other layout control is unset, so the artifact takes the `0` layout exactly (row T0).
+  An explicit class value or residual still applies: the ruling made the position fall back,
+  and an explicit control beats the position (addendum 8). This is TODAY's state: no set carries the
   inputs. The only measurement is revision 1's callgrind Ir on Zen 4 (5-29 Ir per call,
   §2.2), which is an instruction count, not a cost in set units, and is LABELLED UNMEASURED
-  for the set. Both stamps are reachable only once `+1`'s cell is live (§3.4.1).
-- **What moves when the set changes.** Only `+1` artifacts, through `θ_hot`. `−2`, `−1`, `0`
-  and `+2` read nothing from the set. A default-set change carries its mover census (D166
+  for the set. [r4] Both stamps are reachable from E1, by `--part-inline-rank=measured`;
+through `+1`'s preset only once that cell is live (§3.4.1).
+- **What moves when the set changes.** Only artifacts whose threshold resolves to
+  `measured` (today: `+1`'s preset, or a caller who typed it), through `θ_hot`. No other
+  control value reads the set. A default-set change carries its mover census (D166
   item 1, Q1), and at `0` no set change can move a byte.
 
 The quantities the cells need, owed per box (unchanged from revision 1, named as the
@@ -751,36 +764,52 @@ budget. The diff cites both axes.
 
 The decision is two first-match tables and one small wrapper table. Every conjunct is listed,
 so the listing can show it (D163 add. 4), and there is no if-then logic outside the tables.
+[r4] The position appears in no row of either table. It reaches them only through the
+preset cells that row K reads.
 
-**The artifact table, evaluated once per artifact before any part** [r3 CE-1, CE-12, F3].
+**The artifact table, evaluated once per artifact before any part** [r3 CE-1, CE-12, F3; r4].
+Unlike the part table it applies EVERY row in order (K, then T1 or T2 at most once, then T0
+or T3), because K and T1/T2 compute values that T0/T3 read.
 
 | # | row | conjuncts (all hold) | effect | stamp |
 |---|---|---|---|---|
-| T0 | `as-emitted` | position = 0, or the position's cell is `†` | every function keeps its `0` layout (I4); the part table is not consulted | none |
-| T1 | `speed-unmeasured` | position = +1; the active set has no `θ_hot` | as A0 | `_WHY "threshold-unmeasured"` |
-| T2 | `speed-none` | position = +1; `θ_hot` = `none` | as A0 | `_WHY "no-material-rank"`, `_THETA "none"` |
-| T3 | `per-part` | (otherwise) | consult the part table for each part | `_THETA` at `+1` |
+| K | `resolve` | (always) | each control C1-C6 := the caller's value if set, else the position's preset cell (§3.2.4; a `†` cell is an em-dash), else unset | — |
+| T1 | `rank-unmeasured` | the threshold resolved to `measured`; the active set has no `θ_hot` | the threshold := `none` | `_WHY "threshold-unmeasured"` |
+| T2 | `rank-none` | the threshold resolved to `measured`; `θ_hot` = `none` | the threshold := `none` | `_WHY "no-material-rank"` |
+| T0 | `as-emitted` | every class value is unset or `auto`; the threshold is unset or `none`; the residual is unset or `auto` | every function keeps its `0` layout (I4); the part table is not consulted | `_WHY` only if T1/T2 fired |
+| T3 | `per-part` | (otherwise) | consult the part table for each part | `<PREFIX>_PART_LAYOUT` (§3.4.1) |
 
-T0 makes `0`, and every position whose cell is still `†`, byte-identical by construction:
-nothing below it runs. Because T1 and T2 sit above the part table, a `+1` decline gives the
-`0` object exactly. In revision 2 it did not: L1-L4 ran first and L4 added `always_inline`.
+T0 makes `0` with no control, every position whose cells are still `†`, and an all-`auto`
+request byte-identical by construction: nothing below it runs. Because T1/T2 run before T0,
+`+1`'s preset with no `θ_hot` reaches T0 and gives the `0` object exactly (Q6, RULED). In
+revision 2 it did not: L1-L4 ran first and L4 added `always_inline`. In revision 3, T1/T2
+were decided by the position; in revision 4 by the threshold's value, so a caller's
+`--part-inline-rank=measured` declines the same way.
 
-**The part table, evaluated per SUBJECT or OWNED function (§3.1) at a live non-zero
-position.** Constraint rows P1-P3 come before every position row, so no position overrides
-them (Q2): P1 is the row that keeps every owned function out of the position rows. Each
-position ends in an unconditional row, so the table is total.
+**The part table, evaluated per SUBJECT or OWNED function (§3.1) when T3 fires.** Constraint
+rows P1-P3 come before every control row, so no control overrides them (Q2): P1 keeps every
+owned function out of the control rows. The table ends in an unconditional row, so it is
+total.
 
-| # | row | conjuncts (all hold) | layout written | evidence |
-|---|---|---|---|---|
-| P1 | `owned` | the function is in the OWNED class (§3.1): A1's helpers and matcher (its rung's attribute), A2's `_deep` (`noinline`, load-bearing), A4's seam (`static inline`) | its owner's attribute, unchanged | [r3 CE-1, CE-2, LK-6]; [OPT-1]; [LOSS-REVIEW] candidate 1 |
-| P2 | `not-copyable` | `copyable(part)` is false | `static noinline noclone`, one body | gcc errors (§2.1 H1, H2); [r3 LK-4, LK-3] |
-| P3 | `single-caller` | `callers(part)` = 1 | its `0` layout (no attribute added) | H3: sharing measured +112 B for nothing; [r3 CE-1] |
-| P4 | `min-size` | position = −2 | `static noinline noclone`; wrappers by the W-table | §3.2 |
-| P5 | `size-inner` | position = −1; rank = R3 | `always_inline` | §3.2 |
-| P6 | `size` | position = −1 | `static noinline noclone`; wrappers by the W-table | §3.2 |
-| P7 | `speed-hot` | position = +1; rank ≥ `θ_hot` | `always_inline` | §3.3 |
-| P8 | `speed` | position = +1 | its `0` layout | §3.2; Q8 |
-| P9 | `max-speed` | position = +2 | `always_inline` | §3.2 |
+| # | row | conjuncts (all hold) | layout written | evidence | revision 3 row |
+|---|---|---|---|---|---|
+| P1 | `owned` | the function is in the OWNED class (§3.1): A1's helpers and matcher (its rung's attribute), A2's `_deep` (`noinline`, load-bearing), A4's seam (`static inline`) | its owner's attribute, unchanged | [r3 CE-1, CE-2, LK-6]; [OPT-1]; [LOSS-REVIEW] candidate 1 | P1 |
+| P2 | `not-copyable` | `copyable(part)` is false | `static noinline noclone`, one body | gcc errors (§2.1 H1, H2); [r3 LK-4, LK-3] | P2 |
+| P3 | `single-caller` | `callers(part)` = 1 | its `0` layout (no attribute added) | H3: sharing measured +112 B for nothing; [r3 CE-1] | P3 |
+| P4 | `class-shared` | the part's class value = `shared` | `static noinline noclone`; wrappers by the W-table | §3.2.2 C1-C4 | — |
+| P5 | `class-inline` | the part's class value = `inline` | `always_inline` | §3.2.2 | — |
+| P6 | `class-auto` | the part's class value = `auto` | its `0` layout | §3.2.2; I4 | — |
+| P7 | `rank-hot` | the threshold is a rank; the part's rank ≥ it | `always_inline` | §3.2.2 C5, §3.3 | P5 (`−1`, R3), P7 (`+1`) |
+| P8 | `residual-shared` | the residual = `shared` | `static noinline noclone`; wrappers by the W-table | §3.2.2 C6 | P4 (`−2`), P6 (`−1`) |
+| P9 | `residual-inline` | the residual = `inline` | `always_inline` | §3.2.2 C6 | P9 (`+2`) |
+| P10 | `residual-auto` | (otherwise: the residual is `auto` or unset) | its `0` layout | I4; Q8 | P8 (`+1`) |
+
+**The two constraint kinds.** P1 and P2 are HARD: P1 is a load-bearing owner's attribute
+(A2's `_deep`: inlined, its arrays move onto the entry's frame) or another row's subject
+(A1, CE-2); P2 is a gcc error. P3 is a MEASURED POLICY row: sharing a single-caller part is
+a measured loss (H3), and an inline request on one adds nothing gcc does not already do at
+`-O2` (a static function called once is inlined). A later ruled diff may relax P3; a control
+may not. Both kinds hold a request the same way, and §3.4.2 says how that is reported.
 
 - **`copyable(part)` is ONE legality fact** [r3 LK-4, SIB-1]. It is false where the body
   defines a static label table (the DFA attempt route, H1) or contains a computed goto (H2).
@@ -794,18 +823,18 @@ position ends in an unconditional row, so the table is total.
   migrates (U-B).
 - **P1 comes first** [r3 CE-1, CE-2]. A2's `noinline` on `_deep` is load-bearing (inlined,
   its arrays sit on the entry's frame and gcc probes every page on every call), so no
-  position may override it. A1's attributes are the `--vm-entry-shape` row's: until the
+  position and no control may override it. A1's attributes are the `--vm-entry-shape` row's: until the
   ruled diff that migrates A1 under this row, the two dial rows are CO-RESIDENT on a VM
   artifact with DISJOINT subjects [r3 CE-2, F7]. P1 excludes A1's functions from every
-  position row, so the two rows never write the same function. That disjointness is
-  checked (§3.6), and without it the `−2` row would write `static noinline` on a matcher
-  the `inline` rung marks `always_inline`.
+  control row, so the two rows never write the same function. That disjointness is
+  checked (§3.6), and without it `--part-residual=shared` (or `−2`'s preset) would write
+  `static noinline` on a matcher the `inline` rung marks `always_inline`.
 - **The seam inside P1** [r3 LK-6]. A seam body is a small loop with no label table and no
   computed goto, so `{seam} ∩ {not copyable}` is empty. A fixture asserts it, because P1's
   owner attribute (`static inline`) on a non-copyable body would be a build error.
 - **P2 adds `noclone`** [r3 LK-3]. `noinline` does not stop ipa-cp (`.constprop`), ipa-sra
   (`.isra`) or partial-inlining (`.part.N`) clones; K24 found `noclone` on the callee was
-  the only cure. P2, P4 and P6 write it under `__has_attribute`, A3's spelling. The linkage
+  the only cure. P2, P4 and P8 write it under `__has_attribute`, A3's spelling. The linkage
   critic's three-caller test did not clone, so the observable is carried by a check that
   counts clone symbols per part, not by an argument (§3.6).
 - **Every row writes only on a STATIC function** [r3 LK-9]. gcc rejects `always_inline` on
@@ -814,8 +843,8 @@ position ends in an unconditional row, so the table is total.
   before a cell lays it out. A negative test (§3.6) plants `always_inline` on an exported
   callee and expects the `-fPIC` build to fail.
 
-**The wrapper table, at `−2` and `−1` only** [r3 LK-2]: for each wrapper that calls a body
-P4 or P6 shared.
+**The wrapper table** [r3 LK-2]: for each wrapper that calls a body P4 or P8 shared (in
+revision 3, at `−2` and `−1` only).
 
 | # | row | conjuncts | wrapper written | witness |
 |---|---|---|---|---|
@@ -837,34 +866,55 @@ artifact writes no working storage), and joining the two is unlock UNL-2.
 | the kit's FUNC helpers (A7) | the kit's (D157); pcrec can pass the position as a fact (U8) |
 | A1's migration under this row | its own ruled diff: `−2`/`−1` take the `shared` rung where it is legal and AUTO's term otherwise (F-5: `plain` is not the size end below the term); `+2` takes `inline` on a frameless artifact. Until then, P1 |
 
-#### 3.4.1 What a caller can observe, per position
+#### 3.4.1 What a caller can observe [r4: per control, not per position]
 
-| observable | −2 | −1 | 0 | +1 | +2 |
-|---|---|---|---|---|---|
-| answers, captures, give-up codes | identical | identical | identical | identical | identical |
-| refusal set, every stamped selection | identical (I5) | identical | identical | identical | identical |
-| `RX_TUNE` | `"min-size"` | `"size"` | `"balanced"` | `"speed"` | `"max-speed"` |
-| `<PREFIX>_PART_LAYOUT_WHY` (proposed) | absent | absent | absent | `"threshold-unmeasured"` (T1) or `"no-material-rank"` (T2); absent on T3 | absent |
-| `<PREFIX>_PART_LAYOUT_THETA` (proposed) | absent | absent | absent | the `θ_hot` used (`"R3"`, `"R2"`, `"R1"`, `"none"`); absent on T1 | absent |
-| object symbols (`nm`) | one local symbol per shared subject part; owned symbols as at `0` | the same, R3 subject parts absent | the owners' choices (A1 and A2 already decide some symbols) and gcc's | subject parts of rank ≥ `θ_hot` absent | copyable subject parts absent |
-| layout flips with `-fPIC` (F-2) | no, for subject parts | no, for subject parts | yes, as today | no, for parts it inlines; the rest as at `0` | no, for subject parts |
-| time | the cell's cited cost (Q3: not gated) | the cell's cited cost | the default | gated at parity (Q3) | gated at parity |
+| observable | every control value, every position |
+|---|---|
+| answers, captures, give-up codes | identical (I1: layout never decides which parts exist or what they compute) |
+| refusal set, every stamped selection other than the layout's own | identical (I5: the layout renders after every length decision) |
+| `RX_TUNE` | the position's token, as today; it no longer determines the layout |
+| `<PREFIX>_PART_LAYOUT` (proposed) | absent when T0 fires. Otherwise the RESOLVED non-trivial controls, in a fixed order: `residual=V`, `rank=R` (`rank=R@set` when it came from `measured`), then each class with a set value as `CLASS=V`, with `/held` appended when a constraint row held at least one part of that class (§3.4.2). Example: `"residual=shared;rank=R3;find=inline/held"` |
+| `<PREFIX>_PART_LAYOUT_WHY` (proposed) | `"threshold-unmeasured"` (T1) or `"no-material-rank"` (T2); absent otherwise |
+| object symbols (`nm`) | one local symbol per part a `shared` row wrote; no symbol for a part an `inline` row wrote; the owners' choices for owned parts; gcc's own for `auto` |
+| layout flips with `-fPIC` (F-2) | no, for a part a `shared` or `inline` row wrote; yes, for an `auto` part, as today |
+| time | each control value's cost (§3.2.5); the parity gate binds presets `0`, `+1`, `+2` only (§3.5) |
 
-The "no flip" rows hold only for parts with no exported-sibling edge, which I3 guarantees
-before a cell is live [r3 LK-5]. Without I3 a hot part that calls `<p>_next_pos` or
-`<p>_valid_upto` (F-1) still pays the PLT under `-fPIC`.
+- **Why `<PREFIX>_PART_LAYOUT` returns** [r4]. Revision 3 dropped it (LK-7) because the
+  layout was a pure function of the position plus `θ_hot`, and `RX_TUNE` already named the
+  position. Under switches the layout is a function of six controls, five of them not
+  recorded anywhere else, so D46's observability rule needs a stamp. It is written ONLY when
+  T3 fires, so an artifact with no layout control (every artifact today, and every one at
+  `0`) is byte-identical: E1 moves no default artifact.
+- **`_THETA` is folded into the `rank=` token** (`rank=R2@set`), so revision 3's `_THETA`
+  stamp is withdrawn. `_WHY` stays a separate stamp because Q6's ruling names two stamped
+  reasons, and a decline can happen with T0 firing, where `_PART_LAYOUT` is absent.
+- **Both stamps are caller-observable from E1**, not from `+1`'s first live cell as revision 3
+  had it: a caller can type `--part-inline-rank=measured` or `--part-layout=...` at E1. So
+  their D80 hunks (tuning.md §5.3, `match_api.md` §6.3's stamp list), D94's reader grep
+  (`stamp_kinds.c`, `memfn_stamps.c`, the registry's stamp tests) and `make test-codegen`
+  plus the registry suites are E1's (§3.9, §5.1).
+- **No `rx_info` mirror** (tuning.md §5.3¶2: nothing at run time behaves differently).
+- **The stamp grammar is a proposal.** Its spelling is the manager's call and [STAMP-REVIEW]
+  may respell it; the content (resolved values, source of the rank, `/held`) is what this
+  note fixes.
 
-**The stamps state only what the position does not** [r3 LK-7, CE-12]. `RX_TUNE` already
-names the position, and the policy is a pure function of the position apart from `θ_hot` and
-the decline. So revision 2's `<PREFIX>_PART_LAYOUT` (the policy token) is dropped. Only the
-decline reason and the `θ_hot` used are stamped, and only by `+1`. Both appear with `+1`'s
-first live cell, in that cell's abi event:
-- the D80 spec hunks (tuning.md §5.3 for the stamp, §5.4 for the row, `match_api.md`
-  §6.3.11's stamp list);
-- the D94 reader grep (`stamp_kinds.c`, `memfn_stamps.c`, the registry's stamp tests);
-- `make test-codegen` and the registry suites, per the root CLAUDE.md abi row.
+#### 3.4.2 How a held request is reported [r4]
 
-There is no `rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves differently).
+A caller can ask for something a constraint row will not do: `compound:inline` (split's F
+has a label table, P2), `prefilter:shared` on a framed hybrid (one caller, P3), `wrap:V`
+before I3 (no subject). The rule is tuning.md §2.21¶3's: **a value the artifact cannot honour
+is a selection outcome, never a refusal.** A refusal would break a build over a choice that
+cannot change an answer, and a build script setting one control across many patterns would
+fail on every pattern where the class happens to be held. It is reported at three levels:
+
+| level | what it shows | where |
+|---|---|---|
+| the stamp | `CLASS=V/held` when at least one part of the class was held by P1-P3; a class with NO subject in the artifact is written `CLASS=V/none` | `<PREFIX>_PART_LAYOUT` |
+| the listing | one row per subject and owned function: its control class (or `owned`), callers, rank, `copyable`, the row that fired, the layout written | a new `part-layout` section of `--emit-facts` (cli.md §2.11) |
+| the census | per (class, value), how many parts each row fired on, corpus-wide | E1's per-row census (§3.6) |
+
+No stderr note: a held request is not an error, and the VM entry chain's fallback rungs emit
+none either. The stamp makes it visible to a build script, and the listing to a person.
 
 ### 3.5 Interaction with the iterator's parity gate and the mode M
 
