@@ -6791,9 +6791,9 @@ static void pf_define_find_at(StrBuf *c, DfaForm *f, int holdback)
     f->pf_find = find_define(c, &fd);
 #ifdef PCREC_CAND_TRACE
     {
-        mf_result r;
-        pcrec_memfn_defined(f->cx, f->pf_find.handle, &r);
-        cand_asked_hold(f->cx, DELEG_PF, 1, &r.cls);
+        mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
+        pcrec_memfn_defined(f->cx, f->pf_find.handle, r);
+        cand_asked_hold(f->cx, DELEG_PF, 1, &r->cls);
     }
 #endif
 }
