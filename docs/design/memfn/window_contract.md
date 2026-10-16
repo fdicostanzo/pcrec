@@ -1427,9 +1427,10 @@ it as a placement with that trigger.
    pcrec-side reader of the prior that chooses among spans.
 2. **The start table's site-building rows.** PF FIND, `offset-set`,
    `run-pinned`, the handoff gate, `set-leads` and the req pre-check each
-   build a kit site from one row of `cand_rows[]`. Under T-CUT and T-PRES they
-   become one window site of hull spans per segment, the union-span site
-   (until unlock (b)), and at most one PRESENCE site.
+   build a kit site from one row of `cand_rows[]`. Under T-CUT and
+   T-WITHHOLD `[rev3]` they become one window site per segment: hull spans plus
+   the PRESENCE spans T-WITHHOLD sends. The union-span site stays separate until
+   unlock (b). There is no separate presence site.
 3. **"A pick sent as a fact"**: `plan_hint`/`plan_pos`, `rank_*`,
    `cand_ppm`, `ppm_*`, retired by one sequence (§6).
 4. **The reverse walks** (RECOVER, `rev-end`, `rev-inner`): pcrec's unbounded
@@ -1582,9 +1583,10 @@ text in Appendix A. That edit is main's to apply.
      pre-selects among them. The kit chooses which spans to search and how, and
      streams candidate origins (D161 add. 7). So pcrec prices no span, and the
      consumer-price problem (D161 add. 6) does not return one level up.
-   - **What stays.** T-PRES (§5.4a) still sends the unbounded-offset presence
-     span (`zxq` beside segment 0 in `a.*zxq`) as its own site, because it has
-     no bounded distance to the origin. "Send both origins and let the kit say
+   - **What stays.** The unbounded-offset presence span (`zxq` beside segment
+     0 in `a.*zxq`) is still sent, because it has no bounded distance to the
+     origin. `[rev3]` It is now a PRESENCE span of the same site (§2.2,
+     T-WITHHOLD), not its own site. "Send both origins and let the kit say
      which it can search" stays rejected: it is a capability query, the K0
      shape D146 retired.
 2. **Proven facts only at fixed offsets (v1).** A leaning, not a question.
@@ -1673,8 +1675,9 @@ number is reused below.)
 3. **Layer invariance of the proof (§4.3).** Can a form under a `--memfn=`
    deny be unable to test a position another form proves, so that the
    invariance forces a weaker proof everywhere? Is that the right trade?
-4. **T-PRES's `dominated` row.** Is it G1's predicate exactly, and does it
-   read the window site's spans or the prefilter's language?
+4. **`dominated` (now the kit's P2, `[rev3]`).** Is it G1's predicate exactly,
+   and does it read the window site's spans or the prefilter's language? The
+   B3a shadow comparator answers this, pick by pick.
 5. **S1's mover population.** ANSWERED `[rev3]` (§3.7.4): every default corpus
    compile already asks, so the `""` population is 0 at default. It exists only
    on deny arms, and it is the whole of the OFFERED event's movers.
