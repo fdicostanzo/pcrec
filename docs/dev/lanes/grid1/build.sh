@@ -40,6 +40,10 @@ JOBS=${JOBS:-4}
 CC=${CC:-gcc}
 CELLS=${CELLS:-"dig bounded dfa-hat hex-run word-eq quad"}
 QUAD_PAT='[0-9A-Fa-f_]+='
+# cells emitted by THIS worktree's compiler instead of copied from ALPHA: quad, plus any
+# "cell=pattern" words in EMIT_CELLS (grid2 adds wcls=\w+= ; unset = grid1 exactly)
+declare -A EMIT_PAT=([quad]="$QUAD_PAT")
+for kv in ${EMIT_CELLS:-}; do EMIT_PAT[${kv%%=*}]=${kv#*=}; done
 grep -qw avx2 /proc/cpuinfo || { echo "FATAL: this box has no AVX2"; exit 1; }
 mkdir -p "$OUT/tmp" "$OUT/bin" "$OUT/lib" "$OUT/ext"
 TMPDIR=$OUT/tmp; export TMPDIR
@@ -77,11 +81,11 @@ cp "$HERE/gdrv.c" "$HERE/gchk.c" "$HERE/gload.h" "$HERE/keep.h" "$OUT/lib/"
 for c in $CELLS; do
   for side in new deny; do
     d=$OUT/art/$c/$side; mkdir -p "$d"
-    if [ "$c" = quad ]; then
+    if [ -n "${EMIT_PAT[$c]:-}" ]; then
       [ -x "$WT/build/pcrec" ] || { echo "FATAL: build pcrec in $WT first (make -j4)"; exit 1; }
       extra=""; [ "$side" = deny ] && extra=--memfn=no-pf-terms-mask
       # shellcheck disable=SC2086
-      "$WT/build/pcrec" -p rx $extra -o "$d/art.c" --pattern "$QUAD_PAT" || { echo "EMIT FAILED quad $side"; exit 1; }
+      "$WT/build/pcrec" -p rx $extra -o "$d/art.c" --pattern "${EMIT_PAT[$c]}" || { echo "EMIT FAILED $c $side"; exit 1; }
     else
       cp "$ALPHA/art/$c/off/$side/art.c" "$ALPHA/art/$c/off/$side/art.h" "$d/"
     fi

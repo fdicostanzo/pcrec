@@ -50,7 +50,9 @@ start=$(date +%s)
 
 python3 -I "$HERE/arms.py" "$OUT" validate all > "$OUT/tmp/validate.out" 2>&1 || { cat "$OUT/tmp/validate.out"; echo "check: ARM TABLES INVALID"; exit 1; }
 tail -1 "$OUT/tmp/validate.out"
-taskset -c "$CPUS" python3 -I "$HERE/grid.py" oracles "$OUT" -j "$JOBS" || { echo "check: ORACLE FAILED"; exit 1; }
+# ORACLE_CMD (grid2: libpcre2 through tests/oracle/'s adapter) replaces python `re`; unset = grid1 exactly
+if [ -n "${ORACLE_CMD:-}" ]; then taskset -c "$CPUS" bash -c "$ORACLE_CMD" || { echo "check: ORACLE FAILED"; exit 1; }
+else taskset -c "$CPUS" python3 -I "$HERE/grid.py" oracles "$OUT" -j "$JOBS" || { echo "check: ORACLE FAILED"; exit 1; }; fi
 
 . "$HERE/checklib.sh"
 
