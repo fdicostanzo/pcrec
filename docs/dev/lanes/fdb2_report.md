@@ -387,7 +387,29 @@ with three options (allow it; build X/Y in a scratch index with git
 plumbing, not done without an explicit OK since it routes around the
 denial; or split at merge). The kit side (`mf_reach`/`mf_reach_table` in
 `memfn.h`/`compose.c`) is the kit's contract and stays in B2's body in every
-option: unused, it writes nothing. @@SPLIT@@
+option: unused, it writes nothing. **RESOLVED by the kit manager's ruling** (option b NOT taken, the deleting
+form not retried): the R-MS6 wiring STAYS in the branch, and
+`docs/design/memfn/r17b_prime/fdb2/proposed/drop_rms6.diff` removes ALL of it
+cleanly: the pcrec-side wiring (`cli/main.c`, `internal.h`'s `arm_reach` and
+its comment, the `memfn_sites.c` `mf_reach` call, the `memfn_stamps.c`
+`mf_reach_table` call, `run_finder.sh`'s invocation, the lines in
+`cli/CLAUDE.md`, `src/gen/CLAUDE.md`, `tests/memfn/CLAUDE.md`,
+`tests/mech/CLAUDE.md`) and its R-MS6-only files (`run_arm_reach.sh`, S1080,
+S1081, S1084). Generated with `git diff --no-index` over scratch copies and
+`git diff --no-index <file> /dev/null` for the deletions (nothing deleted in
+the worktree). Verified: `git apply --check` clean at the tip; applied in a
+throwaway `git worktree add --detach worktrees/fdb2drop` copy, no
+`arm_reach`/`arm-reach`/`harness_reach`/`mf_reach_table` reference is left
+under `cli/ src/ tests/`, `make` rc 0, `make strict` clean,
+`make test-memfn-finder` 0 failed, and the plain sweep against the base
+285590dc6 build reads 0 movers on all 11 streams (5,790 argv, 386
+composition files); the lever fence there reads red on `cli/CLAUDE.md`
+alone (fdb1's pre-existing sentence). **Main ACCEPTS R-MS6 by merging the
+branch as is (and rules on the fence entry for `run_arm_reach.sh`), or DROPS
+it by merging and then applying `drop_rms6.diff` (`git apply`) in the same
+merge commit**; the kit's `mf_reach` stays either way, unused. The throwaway
+worktree `worktrees/fdb2drop` is left for removal by `scripts/wtprune`
+(detached; not a lane branch).
 
 **(c) Main-side diffs still pending main** (§7): C17's `site_kind` columns,
 C10's one-byte fixtures, `run_axes.sh`'s fd-d1 DIFFER flip, plus (a).

@@ -24,6 +24,8 @@ pcrec's `make`.
   ruling 4: the two lever-fence ALLOW entries, `cli/CLAUDE.md` and
   `tests/memfn/run_arm_reach.sh`, reverted from the tree and proposed here;
   the argument for each is in `docs/dev/lanes/fdb2_report.md` §10).
+  `drop_rms6.diff` removes all of R-MS6 (the pcrec-side wiring and its own
+  check and sabotage rows) for main to apply if it drops it (report §10.5).
   Applyable with `git apply`.
 
 B2's sabotage plants live in `tests/mech/sabotages/` (S1079-S1084).
