@@ -20,6 +20,10 @@ nothing to it here.
    where closing loses the least: a lane delivery accepted, a merge done, a run's
    verdict read, a ruling recorded. Do not start new work. Do not take on work that
    would push the opportunity further out.
+   **Do NOT interrupt work already in flight** (Frank, 2026-10-16): never tell a
+   running lane to wrap up, deliver early or write a status handback, and never
+   stop or cut short a run, because the session is closing. Let each lane finish
+   its brief on its own schedule and close at the first natural point after it.
 3. **Before acting, tell Frank in one or two lines** what you are waiting for (or
    that you are closing now), so he knows when the reset will be safe.
 4. **Then run your manager skill's close procedure.** When it is done, say so plainly.
