@@ -31,7 +31,8 @@ probes and their outputs are in `compound_entries/` (own CLAUDE.md).
 | brief | sibling-of-a-family lens | §3.7 |
 
 Revision 1's §3.2 (a four-policy row with `−2`/`−1` both `shared`) and its §5.4 Q1-Q5 are
-superseded; §5.4 now records the rulings and carries this revision's own open questions.
+superseded; §5.4 now records the rulings and §5.5 carries this revision's own questions
+(Q6-Q9).
 Nothing measured in revision 1 moved, and nothing new was measured: this revision is a
 design-text change.
 
@@ -567,7 +568,7 @@ typedef struct {
 | iterator piece (`findall_iter.md`) | as a row of the table |
 |---|---|
 | `__find(…, M)`, one body, two entries (§2.1) | the search controller's body as a part, called by `_search` (M = ONESHOT) and `_next` (M = ITER) |
-| §2.2's two-row rule (`shared` for a label table, else `inline`) | the layout row at `0` plus H1 (§3.2-§3.3): the same answer, no separate table |
+| §2.2's two-row rule (`shared` for a label table, else `inline`) | the layout table's L0 at `0` plus L1 elsewhere (§3.4, §3.8): the same answer, no separate table |
 | the NOTEMPTY retry (§3.3) | `first-nonzero(R@q, SEARCH@next_pos(q))`: split's combinator, with R = FINISH `verify-at` on the notempty root (an in-Job machine role, `compound_place` row 3) on the DFA, or the VM's guarded attempt |
 | `__step`, `__enter`, `__adv` | `iterate(STATE; …)`: `__enter` is the state part's bind/check, `__adv` the residual's static twin (H5) |
 | the storage-row table (§1.3) | the STATE part's declared rows; a compound's parts SUM (D165 item 4) |
@@ -614,8 +615,8 @@ IF the table already exists, which is why E0 goes first (§5.1).
 | **E0a** | `entry_rows[]` beside today's emitters; the derived edge set held against `entries.c`'s hand list for every corpus artifact (the trace-build both-walks oracle shape, `stc2`) | ZERO | none |
 | **E0b** | the closure reads the derived edges; the hand list deleted | ZERO | none |
 | **E0c** | each emitter's entries written through the row's combinator emitter | ZERO (emit_sweep, every stream) | none |
-| **E1** | the layout row: mechanism + H1-H7, every non-zero cell `†` (em-dash) | ZERO | none |
-| **E1′** | each cell, by its own ruled diff with its measurement | that position's artifacts | one per cell diff (bytes move at that position) |
+| **E1** | the layout row: §3.4's table L0-L11 as a declared first-match table, read by `entry_rows[]`, every non-zero cell `†` (so every position emits as `0`); the rank fixture and caller-count check (§3.6) | ZERO | none |
+| **E1′** | each cell, by its own ruled diff with its size and time measurement; the first one adds `<PREFIX>_PART_LAYOUT` (§3.4.1) and applies I3 to the DFA wrappers | that position's artifacts | one per cell diff (bytes move at that position) |
 | I0 | `findall_iter.md` §6.9, unchanged | ZERO | none |
 | I1 | `next` as an `iterate` row; the retry as `first-nonzero`; the STATE part | every artifact | ONE (as designed) |
 | F-1 fix | the compound controller calls static twins of `_next_pos`/`_valid_upto` | compound artifacts (97 corpus, bench 0) | fold into I1, which adds `__adv` anyway |
@@ -628,7 +629,9 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 1. **Measurement regime — RELEVANT.** Every number is gcc 15.2 `-O2` on x86-64 (the Linux dev
    box). `.text` and function sizes are compile-only; instruction counts are callgrind Ir,
    deterministic, with no clock. Ir is not time: it ignores branch prediction, cache and the
-   PLT's indirect jump cost, so a cell needs ns before it lifts (§3.4). Two regimes flip a
+   PLT's indirect jump cost, so a cell needs ns before it lifts (§3.3). `θ_hot` is read in
+   the set's reference short-call regime; a long-subject regime would rank fewer edges as
+   material, which is why the threshold is a set row and not a constant. Two regimes flip a
    decision: the link regime (static vs `-fPIC`, measured to flip gcc's own layout) and the
    compiler (clang inlines the VM chain where gcc stops, `ccdiff_step0.md`). Zen 1 and the Mac
    are the bench's official verdict (D144 add. 4).
@@ -639,15 +642,15 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
    label-table artifacts (`findall_iter.md`'s census), the 97 admitted compounds
    (`admitted.tsv`), VM framed/frameless from the size log; a K35 floor per part class at E1.
 3. **What moves when regenerated — RELEVANT.** E0 and E1 move nothing (emit_sweep). A cell
-   diff moves that position's artifacts and is an abi event with D94's reader grep. If Q1
-   rules the threshold into the measurement set, a set change moves selections at non-zero
-   positions only, with D166's mover census.
+   diff moves that position's artifacts and is an abi event with D94's reader grep. Q1 ruled
+   `θ_hot` into the measurement set: once `+1` is live, a set change moves `+1` artifacts
+   only (no other position reads the set), with D166's mover census in the same commit.
 
 ### 5.3 Unlocks (each with its trigger)
 
 | # | unlock | trigger |
 |---|---|---|
-| U1 | the layout row's non-zero cells | a measured short-call cell where `C_part` is material (the parity gate's `I_shared` arm, or a bench cell traced to a shared part) |
+| U1 | the layout row's non-zero cells (their policies are fixed by §3.2; each lifts from `†` by its own diff) | a measured short-call cell where `C_part` is material (the parity gate's `I_shared` arm, or a bench cell traced to a shared part); `+1` additionally needs `θ_hot`'s inputs in a set |
 | U2 | `rx_entries` (one struct of entry pointers, [V-E] item 1, [ART-MGR] S1): the EXPORTED rows are its fields | [IFACE-PUSH] |
 | U3 | the public [EMIT-ENTRIES] request (a caller names the entry set): the rows already carry it | [IFACE-PUSH] |
 | U4 | one-attempt `_match` on every attempt route (`compound.md` A-U1): a `finish-at` row swap | `locate_finish.md` Q7's measurement |
@@ -655,51 +658,62 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 | U6 | artifact-grain arch dispatch | D144 add. 4: a SIMD form that must ship beside its scalar form |
 | U7 | shared tables between parts (`compound.md` U6) | a compound pushed to `drop-compound` by size |
 | U8 | the dial position passed to the kit as a fact for its helper layout | a kit request; the class kit's D131 is the precedent |
+| U9 | an exemplar-refined edge rank (the analysis object says how often a conditional edge fires) | a bench cell traced to an R1 part that `+1` left out of line (Q7) |
+| U10 | an explicit override spelling for the row (a `--part-layout=` value, `--vm-entry-shape`'s precedent) | [IFACE-PUSH] (§3.7) |
 
-### 5.4 Questions for Frank (discussion: problem, forces, leaning)
+### 5.4 Revision 1's questions: RULED (D163 addendum 7)
 
-**Q1. Is "what is inline" a pinned dial cell (D103) or a measured selection (D166)?**
-*Problem:* D103 pins dial cells (a cell never moves because a measurement lands); D166 says
-decision measurements live in versioned sets and selections move when the set changes.
-"Inline where the call cost is material against the part's bytes" is naturally the second.
-*Forces:* a pinned cell is predictable across releases (D103's reason); a measured threshold
-tracks hardware, which matters more here than elsewhere because call cost differs between Zen
-4, Zen 1 and the M1. *Leaning:* pin the POLICY per position (`shared`, `hot-inline`,
-`inline`) and let the one threshold inside `hot-inline` come from the set, with D166's mover
-census. Positions `−2`, `−1`, `0` and `+2` read no threshold, so only `+1` moves with a set.
-Recorded as a D103 clarification.
+| Q | ruling | applied in |
+|---|---|---|
+| Q1 pinned cell or measured selection | the POLICY is a pinned cell per position (D103); only `hot-inline`'s threshold comes from the set (D166), with its mover census; a D103 clarification | §3.2, §3.3 |
+| Q2 `balanced` | stays as emitted; FIVE distinct positions; hard constraints are rows no position overrides | §3.2, §3.2.1, §3.4 |
+| Q3 parity gate | binds `0`, `+1`, `+2`; at `−1`/`−2` the gap is the cell's cost | §3.5 |
+| Q4 E0 before I1 | yes; then the short `findall_iter.md` revision, its panel, then I1 | §5.1, §3.8 |
+| Q5 exported-to-exported calls | never; static twins; applied where a change already moves the bytes | §3.0 I3 |
 
-**Q2. Should `balanced` stay "as emitted", or become explicit `hot-inline`?**
-*Problem:* the framing has `balanced` = hot parts inline. Today's `0` is gcc's choice,
-which already comes close, and the dial's no-op cell requires `0` to be byte-identical to no
-flag. *Forces:* explicit `hot-inline` at `0` makes the layout pcrec's decision in the default
-build (it stops depending on `-fPIC`); it is an every-artifact mover and an abi event with no
-measured gain. *Leaning:* keep `0` as emitted; put `hot-inline` at `+1`; revisit `0` if the
-`-fPIC` layout flip shows up in a bench cell.
+### 5.5 Questions for Frank from this revision (discussion: problem, forces, leaning)
 
-**Q3. Does the iterator's parity gate bind at the size positions?**
-*Problem:* D165 item 5 says `next` must be at parity with today's loop on dense tiny matches;
-at `shared`, `next` makes one internal call per match. *Forces:* the size end explicitly
-trades speed for bytes, and a gate there would forbid the cell it is meant to price.
-*Leaning:* the gate binds `0`, `+1`, `+2`; at `−1`/`−2` the measured gap is the cell's cited
-cost.
+**Q6. What does `+1` do when the set has no `θ_hot`: decline to the `0` layout, or refuse?**
+*Problem:* no set carries `θ_hot`'s inputs today, and none will until a quiet-box run measures
+`C_part` per rank. So every `+1` compile meets a missing value. Using a presumed value would
+be a silent default. *Forces:* a refusal makes the gap loud but breaks every `--tune=speed`
+build until a set lands, over a choice that cannot change an answer. A decline keeps the
+build working and is visible only if someone reads the stamp. tuning.md §2.21¶3's rule ("a
+value the artifact cannot honour is a selection outcome, never a refusal") covers the
+nearest case. *Leaning:* decline (L8), with the `_WHY` stamp, and the listing showing the
+missing row as the reason. The cell is `†` anyway until its diff, so the decline is only
+reachable once `+1` is live against a set that lacks the row (a rolled-back or user set).
 
-**Q4. Should E0 (the entry table) land before the iterator's I1?**
-*Problem:* the iterator panel was held for this lane. If I1 builds first, E0 later re-spells
-I1's entries; if E0 builds first, I1 waits for a zero-mover refactor of three emitters.
-*Forces:* remodel-first (D153) ranks in-flight refactors ahead; E0 is mechanical and gated by
-emit_sweep; the iterator design needs only a short revision (§4.2's table) to be expressed as
-rows. *Leaning:* E0 first, then a short revision of `findall_iter.md` (the retry as
-`first-nonzero`, `__find`'s layout from the row), then its panel, then I1.
+**Q7. Is a static edge rank enough to say what is hot, or should the analysis object refine it?**
+*Problem:* rank reads the combinator: inside the loop, once, conditional, rare. A conditional
+edge (R1) can be hot in practice. One example is the NOTEMPTY retry on a pattern whose matches
+are mostly empty. The exemplar bundle (D162) could measure how often such an edge fires.
+*Forces:* a static rank is free, needs no profile and gives the same layout for the same
+pattern on every box. Only `θ_hot` moves, and it moves with the set. An exemplar-refined rank
+would make the layout depend on the analysis object as well, which an artifact already
+depends on (D166's (pattern, options, analysis, measurements)). But it adds a reader to that
+object for a few-percent effect. *Leaning:* static rank now. File the exemplar refinement as
+an unlock (U9 below), triggered by a bench cell traced to an R1 part that `+1` left shared.
 
-**Q5. Should an exported entry ever call an exported sibling?**
-*Problem:* today four kinds do (`_match` → `_search` on `search-filter`, `_match_caps` →
-`_match`, the `_in` forwards, the compound controller → `_next_pos`/`_valid_upto`). In a
-shared object each is a PLT call. *Forces:* routing them through static twins costs a few
-bytes of text per artifact and is an abi event wherever it moves bytes; the measured gain is
-about 4.8 instructions per call on one witness. *Leaning:* adopt H5 as a rule, applied where
-an event already moves those bytes (I1 for the residual twins, E1′ for the wrappers), never as
-its own every-artifact event.
+**Q8. At `+1`, are the parts below `θ_hot` left to gcc, or shared?**
+*Problem:* revision 1 said cold parts "stay shared". This revision leaves them as at `0`
+(no attribute), so `+1` never shares something `0` would have inlined. *Forces:* leaving
+them to gcc keeps `+1` a pure speed-leaning step from `0`. The cost is that `+1`'s cold
+parts still flip with `-fPIC` (F-2), as they do at `0`. Sharing them makes `+1`'s whole
+layout pcrec's own, with no flip, but can make `+1` slower than `0` on a cold part gcc
+would have inlined. That inverts the dial on that part. *Leaning:* leave them to gcc, as
+§3.2 and row L10 state. Revisit only if a bench cell shows the `-fPIC` flip costing
+something at `+1`, which is the same trigger Q2 keeps for `0`.
+
+**Q9. A position that differs from its neighbour on no corpus artifact: report it, or reshape the policy?**
+*Problem:* §3.2.1 shows each adjacent pair disagrees on a named part class, but the corpus
+may not carry every class. For example, `−2`/`−1` differ only on a multi-caller R3 part.
+*Forces:* reshaping a policy until each pair has a corpus population ties the dial's
+meaning to today's corpus. Keeping it means a caller's pattern with that class gets the
+promised layout even though no corpus case exercises it. D103 already accepted a
+declared-vacuous `+2`. *Leaning:* keep the policies as defined. E1's census reports each
+pair's population with a K35 floor. A pair with zero population is listed with its reason,
+and a synthetic witness per part class carries the check (§3.6) so no row ships UNREACHED.
 
 ---
 
