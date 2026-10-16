@@ -24,7 +24,7 @@ it after B2). Read §R3 first. DESIGN ONLY: nothing under `src/`, `cli/`, `lib/`
 (`window_contract_rev3/`).
 
 **Status: PROPOSED, revision 3.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is a
-leaning; Q3-Q5 are new and in discussion form. Q3 (what the `_FINDINGS` stamp
+leaning; Q3-Q4 are new and in discussion form. Q3 (what the `_FINDINGS` stamp
 means) decides whether E-1 is an abi event. The R-18 ledger edit (§11, Appendix
 A) is main's to apply.
 
@@ -1408,11 +1408,12 @@ the `consumer` setters; re-derived by the same grep at S3:
 | table | owner | rows (in order) |
 |---|---|---|
 | T-CUT: which ORIGIN (§5.4); all bounded spans go with it | pcrec | `anchored` → `rev-inner` → `segment-0` → `none`; deny column per row |
-| T-PRES: whether a presence site rides beside it (§5.4a) | pcrec | `dominated` → `presence` → `none`; deny column per row |
-| T-REPLY: reply type by op (§2.4) | contract | FIND → STREAM; ALL_PRESENT → VERDICT; others unchanged |
+| T-WITHHOLD `[rev3]`: whether presence spans are sent (§5.4a; supersedes T-PRES) | pcrec | `one-attempt` → `locate-whole` → `asked` → `none`; deny column per row |
+| T-REPLY: reply type by op (§2.4) | contract | `[rev3]` FIND → STREAM (presence spans included); ALL_PRESENT's VERDICT row DELETED |
 | T-NEED: a span's `need` (§4.3) | pcrec | `the FIND definition requires it` (today's single-span terms) → REQUIRED; `pcrec's consumer would re-test it and wants it verified` → REQUIRED; `else` → OPTIONAL. Never left UNSTATED |
 | T-PROOF: consuming a proof (§4.3) | pcrec | `report` (the proof covers the whole sub-problem and nothing else remains) → `dfa-exact-prefix` (unseeded PLAIN machine, exact proven bytes) → `vm-literal-prefix` (no capture, no assertion skipped, no meter change) → `verify-rest` (a kit VERIFY site for the unproven positions) → `ignore`; one deny for the family, `-fno-kit-proof` (PROPOSED) |
-| T-KIND: one kind's state (§3.2) | pcrec | `a --analysis block answers` → PRESENT/measured; `a shipped block serves this encoding` → PRESENT/prior-authored; `the kind is byte-rate` → PRESENT/prior-none; `else` → ABSENT |
+| T-KIND: one kind's state (§3.2) `[rev3]` | pcrec | `no-shape` → `measured` (a non-default LINK answers) → `prior-authored` (the store's `default` bundle answers, by identity) → `prior-none` (nothing answers and the row's `arrives` is ALWAYS) → `absent`. No row names a kind |
+| `find_kinds[]` `[rev3]`: the kinds the object lists (§3.2) | pcrec | one row per [FINDINGS] query: tag, payload version, `arrives` |
 
 T-MEMO is no longer a table `[r4 R10]`: its one row was a trigger. §3.5 holds
 it as a placement with that trigger.
@@ -1438,10 +1439,32 @@ it as a placement with that trigger.
    planner beside them.
 6. **The position-pin fact family** (§5.6), with `span_facts` as its newest
    member and one proposed unification.
+7. **The knowledge-source family** `[rev3]` ([KNOW-SRC], `measure_sets.md` §9):
+   the analysis object, measurement sets and [TABLE-JUDGE]'s picks. The
+   SIBLING-OF-A-FAMILY check, member by member:
+
+   | property | analysis object (this note) | measurement set (`measure_sets.md`) | verdict |
+   |---|---|---|---|
+   | reaches the kit | `mf_art_begin` slot (§3.7.2; revision 2 had `mf_site.analysis`) | `mf_art_begin` (R-MS1) | **aligned by this revision** |
+   | the kit reports back | per-kind `consulted` at `mf_art_end` (§3.3 rule 8) | one `consulted` boolean at `mf_art_end` (R-MS2) | aligned: one bit per knowledge source; the object holds several sources (kinds) |
+   | stamp meaning | CONSULTED (§3.7.3; revision 2 had OFFERED) | CONSULTED (§3.5) | **aligned by this revision**; the OFFERED alternative would split them (Q3) |
+   | stamp item | `query=bundle:digest` / `query=none` (digest of what was consumed) | `id@rev:values_digest` (stamp-on-load) | different on purpose: a set has an immutable `id@rev` and a bundle has only its name and digest (`measure_sets.md` §3.5's own argument) |
+   | provenance | per kind: `prior-authored` / `prior-none` / `measured` | per row: `measured` / `fitted` / `derived` / `null`, plus the set's `class` and `tier` | different vocabularies over different contents; both state "how derived" (D162 add. 3, D166) |
+   | evidence rule | rows needing evidence read only `measured` (§3.3 rule 7) | the envelope's safe direction belongs to the reader row (§6.2) | compatible |
+   | layer invariance of `consulted` | stated (§3.3 rule 8, C-CONS) | NOT stated (F-4) | a gap in the sibling, filed for its next revision |
+   | the stamp builder | `pcrec_find_stamp` today, `ks_stamp` at [KNOW-SRC] | `ks_stamp` | one builder, once [KNOW-SRC] lands; E-1 does not pre-empt it (§3.7.10) |
+   | the query vocabulary | spelled four times today (F-3); `find_kinds[]` keyed by `findings.c`'s table | the card table, closed (§7.2) | F-3 filed under [KNOW-SRC]'s analysis kind |
 
 ## 10. The three standing questions
 
-1. **Measurement regime: RELEVANT, and no number decides this note.** The
+1. **Measurement regime: RELEVANT, and no number decides this note.**
+   `[rev3]` Revision 3 adds one COUNT, not a timing: §3.7.4's stamp census
+   (corpus argv stream, three default arms and five deny arms, this tree's
+   binary on the Linux dev box). A count of stamp values does not depend on the
+   box, compiler or libc. Different data would flip only the OFFERED
+   alternative's mover population, not the design of record, which is
+   zero-mover by construction. E-1's compile-time cost is unmeasured and
+   bounded (§3.7.1). The
    evidence it leans on is counts: wingame's survivors, regions and policy
    flips on the bench's 256 KiB throughput subjects; the R-17 timings in
    setfind §13; reqpos_2b's presence win (§5.4a). No consumer price exists any
@@ -1457,15 +1480,25 @@ it as a placement with that trigger.
      generated subject; the edge is checked by pcrec's own differential with
      a `(?m)^` cell at `search_from` 0 and > 0.
    - The memo's order-independence is checked by rendering in two orders.
+   - `[rev3]` E-1's checks (§3.7.7). The object's content is checked against a
+     hand-written expectation table and digests recomputed in python, not
+     against `--list-analysis`, which asks the same `pcrec_find_chain_answer`.
+     G1-E1's zero-mover gate needs a DENY arm: the default arms hold no `""`
+     artifact, so they cannot see the offer leak into the stamp (K35). The
+     `absent` T-KIND row is declared UNREACHED until B4.
    - S2's ranking is held to the shadow until S4, then to an independent
      brute force.
    - K35: a multi-span floor (§5.3). [MECH-REACH]: every sabotage row named
      here (memo order, proof over-claim, proof layer-dependence, sequence-rule
      under-estimate, C-SP1 vacuity) gets a witness that reaches its site.
 3. **What moves when data is regenerated: RELEVANT.**
-   - **After S1 every regeneration of the prior or a bundle moves every
-     artifact's `<PREFIX>_FINDINGS` digest** `[r4 R1]`: an abi event each
-     time, beyond any kit row that reads the kind.
+   - **A regeneration of the prior or a bundle moves the `<PREFIX>_FINDINGS`
+     digest of every artifact that CONSULTS it** `[rev3]`. Today that is every
+     default compile, because every default compile asks (§3.7.4), so in
+     practice every default `-e byte` artifact. Each such regeneration is an
+     abi event, as findings.md 5¶9 already says. Revision 2's "after S1, every
+     artifact" holds only under the OFFERED alternative, where the deny-arm
+     artifacts move too.
    - The digest in each kind's provenance is the stamp's value, so "which data
      built this artifact" has one answer.
    - D160's authored utf8 prior turns `-e utf8`'s kind from `prior-none` to
@@ -1475,41 +1508,66 @@ it as a placement with that trigger.
      object; a regeneration that changes a proof moves pcrec's bytes, an abi
      event in the same commit.
 
-## 11. The R-18 outline (facts only; main files it)
+## 11. The R-18 outline (facts only; main files it) `[rev3 C-7]`
+
+Revision 3 changes this outline in step with the contract (C-7). The ledger
+entry R-18 in `memfn/docs/requests.md` (main, single writer) is amended by the
+text in Appendix A. That edit is main's to apply.
 
 **R-18: THE WINDOW SEARCH (D161), the general category**
 
-- **Customer.** D161 and add. 1-8; chunk 3. It supersedes the per-shape
-  interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and the PF/OFS/
-  PRE sites. Their forms and measurements carry over.
+- **Customer.** D161 and add. 1-15; D162 and add. 1-4; chunk 3. It supersedes
+  the per-shape interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and
+  the PF/OFS/PRE sites. Their forms and measurements carry over. R-21 (the one
+  window request: single-byte FIND, presence, handoff) is R-18's first
+  delivery, built as R17-b′'s B0-B3b.
 - **Facts pcrec will state** (this note §2-§3):
-  - a site is a bounded sub-problem whose origin is span 0's start, the one
-    thing pcrec chooses; it sends every span bounded to that origin and the
-    kit chooses which to search (D161 add. 9);
-  - spans are `mf_pred`s with stated `move_back`/`overshoot` and `need`;
-  - context predicates (negative offsets) are not spans;
-  - `spans_seq` states the sequence rule (tri-state);
-  - presence sites carry no window;
-  - `mf_site.analysis` (S1, possibly landed first).
-- **Obligations on the reply:** the stream (COMPLETE, ASCENDING without
-  repeats, span-0 starts, REQUIRED spans satisfied); totality; an exhausted
-  stream means no covered candidate; and, when [KIT-VERIFY] builds, a
-  layer-invariant `proven`.
+  - a site is a bounded sub-problem whose origin is span 0's start. The origin
+    is the one thing pcrec chooses (T-CUT). pcrec sends every span bounded to
+    that origin, and the kit chooses which to search (D161 add. 9);
+  - spans are `mf_pred`s with a CLASS (`BOUNDED`, `CONTEXT`, `PRESENCE`), a
+    `byte_form` (EXACT or SUPERSET, D161 add. 10) and a `need` (the effort
+    fact, C-14). A BOUNDED span states `move_back`/`overshoot`. A PRESENCE span
+    states `omin ≥ 0` from the match start and no `omax`; set members are
+    unpicked, with `member_order`. The site states `head_max`;
+  - context predicates are not spans to be searched for (D161 add. 7), and the
+    edge is pcrec's;
+  - `spans_seq` states the sequence rule over BOUNDED spans (tri-state);
+  - **presence is a span class of the one request, not a separate site** (D161
+    add. 14's clarification; supersedes revision 2's "presence sites carry no
+    window");
+  - the consumer's `site_kind` (from B2, replacing `consumer` at S3), and
+    `body` plus the START hook (R-19);
+  - the analysis object, ONCE per art on `mf_art_begin` (§3.7.2; supersedes
+    "`mf_site.analysis`"), with `byte-rate` always present and every kind's
+    provenance.
+- **Obligations on the reply:** ONE stream (COMPLETE, ASCENDING without
+  repeats, span-0 starts, REQUIRED spans satisfied) with range-level binding of
+  presence (EMPTY = NOMATCH, decided first, one verdict per activation, the K65
+  give-up conversions preserved); the unconstrained reply as a range; the
+  per-candidate cut as a PERMISSION; totality; and when [KIT-VERIFY] builds, a
+  layer-invariant `proven` on EXACT spans only.
+- **What the kit reports back:** at `mf_define`, the PROVEN facts (r17b′ §4.5:
+  `proven0`, `scan_exists`, `includes`, `pres_kept`). At `mf_art_end`, a
+  per-kind `consulted`, layer-invariant (§3.3 rule 8), due by the first routed
+  row that reads a kind.
 - **Facts pcrec will NOT state:** a consumer price, a span index, a scan
-  position (`plan_hint` retires), a ranking (`rank_*` retires), per-site
-  rates.
-- **Deliverable.** The kit's method is its own. It must serve every degenerate
-  site at zero SIMD-off movers first, then multi-span sites behind their own
-  denies, and land each SIMD-off byte move together with pcrec's abi event.
+  position (`plan_hint` retires at S4), a ranking (`rank_*` retires at S3),
+  per-site rates.
+- **Deliverable.** The kit's method is its own. It serves every degenerate site
+  at zero SIMD-off movers first. A degenerate site is one BOUNDED span of length
+  1, a CONTEXT-only site, or a PRESENCE-only site. It then serves multi-span
+  sites behind their own denies, and lands each SIMD-off byte move together with
+  pcrec's abi event.
 - **Capability pcrec provides:** storage as ratified (§7).
-- **Trigger.** This note, ratified. R-17's PF routing event merged. The first
-  multi-span consumer: the K82/L1 handoff's fused gate re-routed as a stream
-  (§2.4), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's
+- **Trigger.** R-21's first delivery is built (R17-b′ B0-B3b, D167). The first
+  multi-span BOUNDED consumer: the K82/L1 handoff's fused gate as a stream
+  (§2.5), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's
   syslogbase-expanded and the refine witnesses.
-- **Sequencing (main's).** S1-S3 (§6) may land before the R-18 build. S4
-  rides it.
-- **Sabotage ids.** Main allocates at filing (consult `requests.md`'s
-  reserved ranges).
+- **Sequencing (main's).** E-1 (= S1, §3.7) lands after B2 and before B3a. S2-S3
+  may land before the multi-span build. S4 rides it.
+- **Sabotage ids.** S871-S880 (R-18's) stay R-18's multi-span rows. R-21's are
+  S964-S980. E-1's are proposed at S983-S990 (§3.7.8).
 
 ## 12. Questions for Frank (discussion, each with a leaning)
 
@@ -1537,7 +1595,47 @@ it as a placement with that trigger.
    - **The alternative.** Specify the occurrence now: a runtime write per
      candidate on every site that states it, for a consumer nobody has timed.
 
-(Revision 1's Q3, "`U` now or later", is deleted: D161 add. 7 removed `U`.)
+(Revision 1's Q3, "`U` now or later", was deleted: D161 add. 7 removed `U`. The
+number is reused below.)
+
+3. **`[rev3]` What does `<PREFIX>_FINDINGS` mean once the kit receives the
+   analysis: what was CONSULTED, or what was OFFERED?** This is Frank's: it is
+   the meaning of a caller-visible stamp, and it decides whether E-1 is an abi
+   event.
+   - **The problem.** Revision 2 accepted the panel's R1 by redefining the stamp
+     as OFFERED, the kinds handed to the kit. Two days later
+     `measure_sets.md` defined its sibling `<PREFIX>_MEASURES` as CONSULTED,
+     explicitly "following the `_FINDINGS` meanings". [KNOW-SRC] then built
+     ONE stamp grammar for both. The two notes now disagree, and one module
+     cannot hold both rules without a per-kind special case.
+   - **The forces.** CONSULTED keeps the stamp's job ("which data built this
+     artifact"). It keeps one rule for the family, it keeps the per-compile
+     isolation check's `""` witness (S314, findings §6 #22), and it lands E-1
+     at zero movers. It costs a per-kind `consulted` bit from the kit, owed at
+     B3b, which must be layer-invariant. OFFERED needs nothing back from the
+     kit and can never under-report a kit read. But it makes E-1 an abi event
+     on the deny arms, retires a working check, and forks [KNOW-SRC] unless
+     `<PREFIX>_MEASURES` follows it.
+   - **The measured fact that lowers the stakes.** At default flags the two
+     readings give the SAME stamp on every corpus artifact: every default
+     compile already asks (§3.7.4). They differ only on deny arms, and from
+     B3b on what the kit reads.
+   - **The leaning.** CONSULTED, for both siblings (§3.7.3). If Frank prefers
+     OFFERED, §3.7.5 is the build text, and `measure_sets.md` §3.5 is reopened
+     in the same ruling so the family keeps one rule.
+4. **`[rev3]` When does `--emit-facts`' `rate:builtin-prior` stop mislabelling
+   a measured bundle (F-2)?** This is the manager's unless Frank wants it.
+   - **The problem.** The token is written whenever ANY block answered, but the
+     spec defines it as the shipped prior.
+   - **The forces.** E-1 creates the provenance that would name it correctly.
+     Re-sourcing the token is a caller-visible listing change (a
+     `facts_listing.md` hunk) and moves `--emit-facts` output under
+     `--analysis`, which is emit_sweep's stream 6.
+   - **The leaning.** Do it in B3b's commit, which already carries the
+     findings-stamp hunks and re-sources `--emit-facts`' `used`/`why` (r17b′
+     §3.4). Spell it `rate:<provenance>` (`rate:prior-authored`,
+     `rate:measured(<bundle>)`, `rate:none(<enc>)->rightmost`). Until then,
+     correct the spec sentence to say what the code does.
 
 ## 13. Filed facts and unlocks (each with its trigger)
 
@@ -1556,9 +1654,10 @@ it as a placement with that trigger.
 - **(b) Offset-pinned union spans with per-group `spans_seq`**: the start set
   and the k-set carried in the SAME site as hull spans, each group sequenced
   within itself. **Trigger:** S4's offset-k move into the kit.
-- **(c) Presence as a chain link**: T-PRES's presence site becomes a
-  zero-cost first link of the window chain. **Trigger:** the first
-  `a.*zxq`-shaped bench cell with both a window site and a presence site.
+- ~~**(c) Presence as a chain link**~~ `[rev3 C-8]`: STRUCK, and it is now the
+  contract. Presence is a span class of the one request (§2.2), and the kit's
+  chain may test it first, fuse it, or drop it where OPTIONAL. The trigger
+  dissolves.
 - **The position-pin family unification** (§5.6). **Trigger:** U3's own, or
   S4's offset-k move.
 
@@ -1576,5 +1675,54 @@ it as a placement with that trigger.
    invariance forces a weaker proof everywhere? Is that the right trade?
 4. **T-PRES's `dominated` row.** Is it G1's predicate exactly, and does it
    read the window site's spans or the prefilter's language?
-5. **S1's mover population.** Is "every artifact with `""` today" the whole
-   population, or do some artifacts already ask?
+5. **S1's mover population.** ANSWERED `[rev3]` (§3.7.4): every default corpus
+   compile already asks, so the `""` population is 0 at default. It exists only
+   on deny arms, and it is the whole of the OFFERED event's movers.
+6. `[rev3]` **The offer/ask split (§3.7.1).** Can any path read `byte_rate_have`
+   or the payload before an ask, so that the earlier derivation changes its
+   answer? `req_rate_why` reads `have` directly, and its two callers ask first
+   (§3.7.6). Is there a third? A grep found none, so attack with a reader added
+   since.
+7. `[rev3]` **The slot choice (§3.7.2).** Is there a site whose kit row would
+   need a DIFFERENT analysis from its art's? A compound part is its own
+   compile, so no. A future per-site override would be the reserved per-site
+   slot, not the object.
+8. `[rev3]` **C-CONS.** Can a kit row's knowledge filter (`needs` ∋ E) be
+   evaluated only under one layer, so that `consulted` is layer-dependent by
+   construction? r17b′'s W64 rows (B6) are the place to look.
+9. `[rev3]` **The presence class (§2.2).** Is `omin` from the MATCH start sound
+   for every origin the T-CUT table can choose, including `rev-inner`, where
+   pcrec recovers the head? r17b′ §4.1 argues it for head-0 and the landmark
+   origin only.
+
+## Appendix A. The R-18 ledger amendment (C-7), for main to apply `[rev3]`
+
+`memfn/docs/requests.md` has one writer, main. This lane does not edit it. The
+text below is a dated amendment to append under R-18, replacing nothing above
+it (the ledger is append-only in spirit):
+
+> **R-18 amendment (2026-10-16, pcrec manager; window_contract.md revision 3,
+> C-7).** Three bullets of R-18 are superseded:
+> - "Presence sites carry no window (their own table)" → **presence is a span
+>   class of the one window request** (D161 add. 14 and its clarification;
+>   R-21). A PRESENCE span states `omin ≥ 0` from the match start, no `omax`,
+>   a `need`, and, for a set member, its `member_order`. An EMPTY stream is
+>   NOMATCH, decided before the first element, one verdict per activation, and
+>   K65's give-up conversions are preserved (contract §2.2, §2.4 obligations
+>   5-7).
+> - "`mf_site.analysis`: the per-compile analysis object" → **the analysis
+>   object is stated ONCE per art, in the `mf_art_begin` slot your B1
+>   declares** (contract §3.7.2). From the first commit that routes a row
+>   reading a kind (B3b, or S2's REPLACE if earlier), you return a per-kind
+>   `consulted` at `mf_art_end`, the same in every layer (contract §3.3 rule
+>   8). pcrec ORs it into `<PREFIX>_FINDINGS`.
+> - "Serve every degenerate site (one span, length 1) at zero SIMD-off movers
+>   first" → **every degenerate site: one BOUNDED span of length 1, a
+>   CONTEXT-only site (MLINE), or a PRESENCE-only site**, at zero SIMD-off
+>   movers first.
+>
+> Two facts are added: every span's `byte_form` (EXACT or SUPERSET, D161 add.
+> 10; verify and proofs on EXACT only) and the span class enum
+> (`UNSTATED`, `BOUNDED`, `CONTEXT`, `PRESENCE`). Main's E-1 fills the
+> analysis slot after your B2 merges, with no kit edit. Under the contract's
+> CONSULTED stamp rule it moves no byte.
