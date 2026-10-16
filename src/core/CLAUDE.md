@@ -4,6 +4,34 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **ksrc.c** / **ksrc.h** / **ksrc_kinds.c** — [KNOW-SRC] K0/K1 (lane ksrc,
+  2026-10-16; `docs/design/measure_sets.md` rev 3 §9.2-§9.7): THE KNOWLEDGE-
+  SOURCE MODULE's kind-independent PARTS. A KIND (the analysis object, `lib`
+  references; measurement sets, picks and evaluator parameters when their
+  steps build) is ONE ROW, a `KsKind`, and every way two kinds differ is a
+  COLUMN of it (§9.5: stops, classification, `s2_mismatch`/`s2_multi`,
+  `entry_match`, `join`, the nouns the shared refusals say, the two digest
+  ROLES). The parts: `pcrec_ks_name_ok`/`pcrec_ks_classify` (the name rule
+  and name-only / name-else-file / file-only), `pcrec_ks_resolve` (the ONE
+  stop loop — the compiling file, the source directory, `-I` with the row's
+  entry match, the store — with `pcrec_ks_stops_text`/
+  `pcrec_ks_refuse_unknown` for the refusal), `pcrec_ks_pick` (D93 fill-only,
+  returned as DATA; the caller prints its own note) and `pcrec_ks_digest`
+  (FNV-1a over a role's LITERAL domain bytes, NUL included, a sub-key, then
+  the role's fold; `pcrec_ks_fnv1a` is the tree's one FNV-64 step).
+  **DEPENDENCY RULE (S989): `ksrc.c`/`ksrc.h` include libc + `core/ksrc.h`
+  only** — no `Arena`, `StrBuf`, `Ctx` or `pcrec_error`; the caller supplies
+  a `KsAlloc` and reads a fixed `KsErr` — so a tool that links the parts
+  (`pcrec-measure`, §7.1) links nothing else of `src/`;
+  `tests/core/ksrc_deps_check.sh` holds it. The ROWS live in their own TUs
+  (`src/parse/ks_analysis.c`, `src/parse/ks_lib.c`); `ksrc_kinds.c` is the
+  TABLE (`pcrec_ks_kinds[]`, `pcrec_ks_kind`), at the library tier and in
+  this directory only because libpcrec compiles it — it has no reader until
+  [LIST-TABLES]/K3's harness driver. NOT HERE YET, by step: the section-TSV
+  reader (part 1, with the `measures` kind, M0), the embed generator (part
+  4, K2's `ksgen`), the `--list-<kind>` views (part 6, K3); a row column
+  joins `KsKind` in the step that first reads it.
+
 - **findings.c** / **findings.h** — [FINDINGS] B1 = [PATFACTS] step 3.1
   (2026-09-27, D122/D123/D126; `docs/design/findings/design.md` §6,
   `docs/spec/findings.md`): THE FINDINGS SEAM. The byte-rate accessor
@@ -93,6 +121,23 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   emit_dfa.c), which states the result as `mf_pred.rank_*`. Under `-e utf8`
   the byte-rate is NONE, so the order is by cube size, then positional
   (U8-PICK).
+
+  **[KNOW-SRC] K1 (lane ksrc, 2026-10-16): the two digests are ROLES of the
+  knowledge module.** `pcrec_find_rate_role` (the STAMP role: domain
+  `pcrec-find-1\0`, the query as sub-key, a fold over the 256 ppm values)
+  and `pcrec_find_rows_role` (the ITEM role: `pcrec-find-rows-1\0`, a fold
+  over the blocks) are `KsDigest` data, and `pcrec_find_byte_rate_digest`/
+  `pcrec_find_rows_digest` are one `pcrec_ks_digest` call each; the old file-
+  local `fnv1a` is `ksrc.c`'s. `pcrec_find_name_ok` is `pcrec_ks_name_ok`.
+  Every shipped stamp and `rows_digest` is unchanged (S986 plants the
+  domain's NUL dropped). **THE LOOKUP TRACE** (`-DPCREC_KS_TRACE`, findings.h):
+  `pcrec_find_byte_rate`/`pcrec_find_set_ppm` become macros over
+  `_at(cx, __func__)` variants, so every rate read writes
+  `KSTRACE analysis byte-rate <reader> <bundle>` (consecutive repeats of one
+  reader are one record, `PcrecFindRec.trace_last`) and `pcrec_find_resolve`
+  marks each attempt; findings.c defines `PCREC_FIND_DEFINING` so its own
+  definitions are not rewritten. It is `scripts/emit_sweep.py --data`'s
+  attribution; the default build is untouched.
 
 - **compound.c** — [COMPOUND] build step B1 (lane cpb02, 2026-10-12;
   `docs/design/compound.md` §A.1, §A.5): the compound tool's PARTS, at the
