@@ -37,3 +37,9 @@ done
 echo "run_finder: $n kit sources traced"
 python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
     --fxt "$WORK/fxt" --tmp "$WORK"
+rc=$?
+# R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
+# (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
+echo "run_finder: the arm-entry counter (R-MS6)"
+TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" || rc=1
+exit $rc
