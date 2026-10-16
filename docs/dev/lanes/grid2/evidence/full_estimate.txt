@@ -1,0 +1,4 @@
+estimate F1  groups=115 launches=2938 wall=36.7 min (+ quiet-gate waits)
+estimate F3  groups=10 launches=306 wall=3.8 min (+ quiet-gate waits)
+estimate EXT groups=62 launches=1217 wall=15.2 min (+ quiet-gate waits)
+estimate ALL groups=187 launches=4461 wall=55.8 min

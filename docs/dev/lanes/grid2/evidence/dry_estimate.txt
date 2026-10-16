@@ -1,0 +1,10 @@
+phase  groups  launches  est min  basis
+F1        115      2938     36.1  {'measured': 115}
+F3         10       306      3.9  {'measured': 10}
+OB         50      1054     11.8  {'measured': 50}
+TRIG       12       163      1.7  {'measured': 12}
+BUILD                        1.2  dry build 54 s + generator 17 s (717 MiB at 2s/84.1 MiB)
+CHECK                        1.4  dry check 9 s x 9.3 (arms x bytes ratio, an assumption)
+PERF                         1.6  measured 0.2 s/row x 405 rows
+spec: required 88 min, with optional 96 min
+ESTIMATE required=54 min with-optional=58 min (+ quiet-gate waits; spec 88 / 96)
