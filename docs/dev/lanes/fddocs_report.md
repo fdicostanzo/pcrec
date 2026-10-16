@@ -34,7 +34,7 @@ Docs-only sync of lane/memfn-r17 kit documents onto main @ 063b4a4b4. MB = 82875
 | docs/design/memfn/r17b_prime/CLAUDE.md | both (main == import) | taken kit's |
 | docs/design/memfn/regime_eval.md | both (main == import) | taken kit's rev 2.x |
 | docs/design/memfn/regime_eval/CLAUDE.md | both (main == import) | taken kit's |
-| docs/dev/lanes/r17c_report.md | both | main's kept: the kit's only change cites tuning.md §2.49 / limits.md §8.4¶2b, spec text that exists only on the record branch (test-spec-history dangling-citation FAIL); lands with R17-b′ B4 |
+| docs/dev/lanes/r17c_report.md | both | main's kept: the kit's only change cites two tuning.md / limits.md sections (the drop-kit-bytes rung), spec text that exists only on the record branch (test-spec-history dangling-citation FAIL); lands with R17-b′ B4 |
 | memfn/docs/journal.md | both (main == import) | taken kit's (+133 lines, additions only) |
 | memfn/docs/responses.md | both (main == import) | taken kit's (+128 lines, additions only) |
 | memfn/docs/wake.md | both | taken kit's whole, as instructed |
