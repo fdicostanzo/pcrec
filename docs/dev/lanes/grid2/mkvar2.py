@@ -30,6 +30,16 @@ is untouched and still builds the W8/SSE2/AVX2 arms; this file adds
                 the consumer walks (r17b_prime §1.3 F0)
         Every variant but `none` replaces only the memchr CALL by a call of an inline
         helper with memchr's signature, so the consumer's text is untouched.
+  mkvar2.py vm    DENY.c NEW.c OUT.c VARIANT BYTE        [rev3 A7, item 3v]
+        the VM_ATTEMPT cell (the VM hat's seek at |S| = 1; the compiler on `--engine=vm`
+        emits RX_VM_START_SCAN "first-class"). DENY.c is the artifact compiled with
+        `--memfn=no-pf-terms-mask` (the table walk `rx_start_set`, two sites), NEW.c the
+        default compile (the compiler's own V1 text behind `__next_candidate`, STATEFUL).
+          walk  DENY.c with each walk statement preceded by the call/byte tick (inert
+                unless -DG2_COUNT): the cell's base, and the reach leg's `cnt` build
+          libc  the two walk statements replaced by memchr(BYTE) (evidence only: Q-R5's
+                per-attempt memchr)
+          v1    NEW.c verbatim: V1 one-term as the compiler emits it at the VM hat
 """
 import re, sys
 
@@ -180,6 +190,33 @@ static inline const void *g2_find(const void *vp, int b, size_t len)
 """
 
 
+VM_WALK = re.compile(r"^(\s*)while \(attempt_position < subject_length && !rx_start_set\[subject\[attempt_position\]\]\) attempt_position\+\+;$", re.M)
+
+
+def vm(deny_p, new_p, out_p, variant, byte):
+    if variant == "v1":
+        txt = open(new_p).read()
+        if "PCREC_MFK_W8_H" not in txt or "__next_candidate" not in txt:
+            die("NEW.c carries no V1 text (not the kit compiler's default compile)")
+        open(out_p, "w").write(txt); return
+    txt = open(deny_p).read()
+    if "PCREC_MFK_W8_H" in txt: die("DENY.c carries V1 text (the deny flag did not take)")
+    sites = VM_WALK.findall(txt)
+    if len(sites) != 2: die("expected 2 table-walk statements in DENY.c, found %d" % len(sites))
+    def one(m):
+        ind = m.group(1)
+        tick = f"{ind}G2_TICK(subject_length - attempt_position);\n"
+        if variant == "walk": return tick + m.group(0)
+        if variant == "libc":
+            return (tick + f"{ind}{{ const void *g2q = memchr(subject + attempt_position, {byte}, subject_length - attempt_position);\n"
+                    f"{ind}  attempt_position = g2q ? (size_t)((const unsigned char *)g2q - subject) : subject_length; }}")
+        die("variant " + variant)
+    txt = VM_WALK.sub(one, txt)
+    txt, k = re.subn(r"(#include \"[^\"]+\"\n)", lambda m: m.group(1) + "#include <string.h>\n" + TICK, txt, count=1)
+    if k != 1: die("no #include anchor")
+    open(out_p, "w").write(txt)
+
+
 def ob(art_p, out_p, variant, byte, hdr_p=None):
     txt = open(art_p).read()
     if variant == "libc":
@@ -232,4 +269,5 @@ if __name__ == "__main__":
     if a[0] == "disp": disp(a[1], a[2], a[3], int(a[4]), a[5] if len(a) > 5 else None)
     elif a[0] == "scaf": scaf(a[1], a[2])
     elif a[0] == "ob": ob(a[1], a[2], a[3], int(a[4]), a[5] if len(a) > 5 else None)
+    elif a[0] == "vm": vm(a[1], a[2], a[3], a[4], int(a[5]))
     else: die(__doc__)

@@ -22,7 +22,7 @@
 #
 # STATUS FILE $OUT/slot.status -- one line per event; it ENDS with exactly one of
 #   COMPLETE <date> required=ok optional=<done|skipped:...>         exit 0
-#   FAILED <why> <date>                                              exit 1 (3: a pickable arm failed)
+#   FAILED <why> <date>                                              exit 1 (3: a pickable arm failed; 4: provenance or manifest census)
 # Progress lines: SLOT_START, BUILD_START/END rc=, CHECK_START/END rc=, CHECK_OK, QUIET load1=
 # waited= ok|NOT-QUIET-proceeding, ESTIMATE, <PHASE>_START, <PHASE>_PROGRESS groups=N (every
 # 60 s while a phase runs), <PHASE>_END rc=, <PHASE> <the phase log's completion line>,
@@ -80,6 +80,11 @@ if ! perf_probe; then
   paranoid_report /dev/null "$S" > /dev/null
 fi
 
+# the compiler's provenance (the set header's source, R-MS3 / D166 add. 2): commit, abi, sha, staleness
+python3 -I "$HERE/provcheck.py" "$OUT" record > "$OUT/tmp/compiler.record" 2> "$OUT/tmp/compiler.err" \
+  || fail "compiler-provenance: $(head -1 "$OUT/tmp/compiler.err")"
+log "COMPILER $(grep -E '^compiler_(commit|abi|sha256|branch)=' "$OUT/tmp/compiler.record" | tr '\n' ' ')"
+
 # ---- BUILD
 if [ "${SKIP_BUILD:-0}" != 1 ]; then
   log "BUILD_START $(date -Is)"
@@ -92,6 +97,7 @@ if [ "${SKIP_CHECK:-0}" != 1 ]; then
   log "CHECK_START $(date -Is)"
   bash "$HERE/check.sh" > "$OUT/check.out" 2>&1; rc=$?
   log "CHECK_END rc=$rc $(date -Is)"; log "CHECK $(tail -1 "$OUT/check.out")"
+  [ "$rc" = 4 ] && { FAILRC=4; fail "provenance-or-manifest: $(grep -h -E '^(PROV|CENSUS)-FAIL' "$OUT/check2.status" | head -3 | tr '\n' ';')"; }
   [ "$rc" = 3 ] && { FAILRC=3; fail "pickable-arm-answer-failure: $(grep '^PICKABLE-FAIL' "$OUT/check2.status" | tr '\n' ',')"; }
   [ "$rc" = 0 ] || [ -s "$OUT/excluded" ] || fail "check ($OUT/check.out)"
 else

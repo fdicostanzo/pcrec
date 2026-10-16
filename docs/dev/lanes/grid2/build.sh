@@ -32,6 +32,7 @@ TMPDIR=$OUT/tmp; export TMPDIR
 { echo "# grid2 build provenance $(date -u)"; echo "pcrec=$PCREC"; "$PCREC" --version 2>&1 | head -1
   echo "pcrec_sha256=$(sha256sum "$PCREC" | cut -d' ' -f1)"; echo "gcc=$($CC --version | head -1)"
   echo "grid2_commit=$(git -C "$HERE" rev-parse HEAD 2>/dev/null)"; } > "$OUT/provenance.txt"
+python3 -I "$HERE/provcheck.py" "$OUT" record >> "$OUT/provenance.txt" || { echo "FATAL: compiler provenance (see above): a stale, dirty or unidentifiable compiler is refused"; exit 1; }
 
 echo "== 1. design"
 python3 -I "$HERE/design2.py" design "$OUT" $DRYF || exit 1
@@ -39,9 +40,10 @@ cp "$HERE/ext_ob/build.sh" "$OUT/ext/ob/build.sh"; cp "$HERE/ext_trig/build.sh" 
 
 echo "== 2. grid1's build (cells, arms, G1 control, ext sets)"
 WT=$(dirname "$(dirname "$PCREC")")
-SKIP_GEN=1 WT=$WT OUT=$OUT CELLS="dig bounded dfa-hat hex-run word-eq quad wcls" EMIT_CELLS='wcls=\w+=' \
+SKIP_GEN=1 WT=$WT OUT=$OUT CELLS="dig bounded dfa-hat hex-run word-eq quad wcls c020 c001 c110" \
+  EMIT_CELLS='wcls=\w+= c020=[ad]+= c001=[xy]+= c110=[0-9_]+=' \
   bash "$G1/build.sh" || { echo "grid1 build FAILED"; exit 1; }
-ln -sfn wcls "$OUT/bin/f3-wcls"
+for c in wcls c020 c001 c110; do ln -sfn "$c" "$OUT/bin/f3-$c"; done
 python3 -I "$HERE/design2.py" design "$OUT" $DRYF || exit 1      # grid1's build overwrote the root tables
 
 echo "== 3. item 2 arms: tw0 tw1 tw2 sc0"
@@ -75,4 +77,6 @@ if [ "${SKIP_GEN:-0}" != 1 ]; then
   taskset -c "$CPUS" python3 -I "$HERE/design2.py" gen "$OUT" -j "$JOBS" || { echo "GEN FAILED"; exit 1; }
   echo "gen: wall=$(( $(date +%s) - g0 ))s bytes=$(awk -F'\t' 'NR>1{b+=$3*$8} END{print b}' "$OUT/subjects.tsv")"
 fi
+echo "== 5. provenance: the compiler record and the arm signatures (provcheck.py; a wrong arm fails the build loudly)"
+python3 -I "$HERE/provcheck.py" "$OUT" check || { echo "PROVENANCE CHECK FAILED (see $OUT/prov.status)"; exit 1; }
 echo "build: done"
