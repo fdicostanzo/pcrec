@@ -1,0 +1,15 @@
+PLANT v1lane: DETECTED  (expect pickable, check rc=3, excluded: o-fwd v1,)  -- the one-term SWAR find answers one byte late
+PLANT walktab: DETECTED  (expect pickable, check rc=3, excluded: o-fwd libc,o-fwd loop,o-fwd none,o-fwd v1,o-fwd walk,)  -- the BASE walk's table holds the wrong member byte (leg O: base vs libpcre2)
+PLANT nonerev: DETECTED  (expect pickable, check rc=3, excluded: o-fwd none,)  -- the NONE arm's match start one byte late
+PLANT tw0walk: DETECTED  (expect instrument, check rc=0, excluded: dig tw0,)  -- the twin's walk helper inverted
+PLANT tw1mask: DETECTED  (expect instrument, check rc=0, excluded: dig tw1,)  -- the twin's V1 mask misses the digit 9
+PLANT sc0walk: DETECTED  (expect instrument, check rc=0, excluded: hex-run sc0,)  -- the scaffold's walk helper inverted (only a GATE-ONLY dense group can see it)
+PLANT tw2cycle: DETECTED  (expect instrument, check rc=0, excluded: dig tw2,f3-dig tw2,)  -- the streamed timed loop re-times buffer 0 forever (leg C)
+PLANT n_dropped: DETECTED  (expect rc 4 + 'CENSUS-FAIL item 2a', got rc=4; legs R/L/C/O: 0 failing lines)  -- the N=46 point silently dropped from the arm tables (nothing answers wrong, the staircase just has a hole)
+PLANT cover_dropped: DETECTED  (expect rc 4 + 'CENSUS-FAIL item 3a', got rc=4; legs R/L/C/O: 0 failing lines)  -- one cover-shape group (c001, 64 KiB) dropped
+PLANT vm_as_dfa: DETECTED  (expect rc 4 + '^PROV-FAIL o-vm v1', got rc=4; legs R/L/C/O: 0 failing lines)  -- the VM_ATTEMPT v1 arm silently built as a DFA hat (same pattern, same answers, wrong ROUTE)
+PLANT walk_as_v1: DETECTED  (expect rc 4 + '^PROV-FAIL c020 walk', got rc=4; legs R/L/C/O: 0 failing lines)  -- the c020 walk arm silently built from the V1 text (the deny never took; legs R/L/C/O all green)
+PLANT abi_mismatch: DETECTED  (expect rc 4 + '^PROV-FAIL compiler', got rc=4; legs R/L/C/O: 0 failing lines)  -- the compiler's abi is not the expected one (EXPECT_ABI)
+PLANT no_deny: DETECTED  (expect rc 4 + '^PROV-FAIL compiler', got rc=4; legs R/L/C/O: 0 failing lines)  -- main's compiler (no pf-terms-mask deny): the walk arms could not be built
+restore: check.sh green again
+plants: ALL DETECTED

@@ -1,0 +1,16 @@
+arms: 141 (cell, arm) pairs, 227 groups, 1070 items, 0 problems
+oracles: 210 (cell, subject, mode) lines from libpcre2 10.46
+groups: 227
+counts: 734 rows in /home/pcrec/projects/pcrec/worktrees/grid2r3/build/full/counts.tsv
+landing fidelity (G): 84 ok, 0 FAIL
+reach (U): 155 site rows, 0 unreached
+legs OK:   2974
+  O 218  R 843  L 843  C 1070  E 0  N 0  F 0  A 0
+legs FAIL: 0
+excluded (cell arm): 0
+check: done wall=53s
+reach (U2): 60 one-byte groups, 0 FAIL
+provenance (P): rc=0 provcheck: 67 arm signatures checked, compiler c90d65e53a39 abi 77
+census (M): rc=0 census (full): item 2a 8 N points, item 3a 6 groups, item 3v 10 groups, NONE 30 groups, item 3 50 groups
+pickable arm failures: 0
+grid2 check: OK

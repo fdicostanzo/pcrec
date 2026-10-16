@@ -31,7 +31,8 @@ export OUT PCREC CPUS JOBS CC G2=$HERE
 TMPDIR=$OUT/tmp; export TMPDIR
 { echo "# grid2 build provenance $(date -u)"; echo "pcrec=$PCREC"; "$PCREC" --version 2>&1 | head -1
   echo "pcrec_sha256=$(sha256sum "$PCREC" | cut -d' ' -f1)"; echo "gcc=$($CC --version | head -1)"
-  echo "grid2_commit=$(git -C "$HERE" rev-parse HEAD 2>/dev/null)"; } > "$OUT/provenance.txt"
+  echo "grid2_commit=$(git -C "$HERE" rev-parse HEAD 2>/dev/null)"
+  echo "grid2_harness_dirty_files=$(git -C "$HERE" status --porcelain -- "$HERE" "$G1" 2>/dev/null | wc -l)"; } > "$OUT/provenance.txt"
 python3 -I "$HERE/provcheck.py" "$OUT" record >> "$OUT/provenance.txt" || { echo "FATAL: compiler provenance (see above): a stale, dirty or unidentifiable compiler is refused"; exit 1; }
 
 echo "== 1. design"

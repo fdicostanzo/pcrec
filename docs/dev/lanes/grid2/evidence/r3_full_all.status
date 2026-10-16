@@ -1,0 +1,8 @@
+FULL_START 2026-10-16T11:44:33-04:00
+BUILD rc=0 build: done 2026-10-16T11:45:53-04:00
+CHECK rc=0 grid2 check: OK 2026-10-16T11:46:47-04:00
+F1 rc=0 time.sh: COMPLETE rows=773 groups=123 reruns=0 xreruns=0 requeued=0 wall=101s 2026-10-16T11:48:28-04:00
+F3 rc=0 time.sh: COMPLETE rows=98 groups=16 reruns=0 xreruns=0 requeued=0 wall=10s 2026-10-16T11:48:38-04:00
+OB rc=0 time.sh: COMPLETE rows=300 groups=60 reruns=0 xreruns=0 requeued=0 wall=29s 2026-10-16T11:49:07-04:00
+TRIG rc=0 time.sh: COMPLETE rows=36 groups=12 reruns=0 xreruns=0 requeued=0 wall=3s 2026-10-16T11:49:10-04:00
+FULL_DONE 2026-10-16T11:49:10-04:00

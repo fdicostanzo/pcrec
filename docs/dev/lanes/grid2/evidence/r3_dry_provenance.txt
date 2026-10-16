@@ -1,0 +1,18 @@
+# grid2 build provenance Fri Oct 16 03:39:42 PM UTC 2026
+pcrec=/home/pcrec/projects/pcrec/worktrees/memfn-r17/build/pcrec
+pcrec 0.2.0-beta
+pcrec_sha256=8952969605e87ba3051a3b08d40f2c58d855d828f4137fdc8695501fe72aaf5f
+gcc=gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+grid2_commit=73b5f96d9ff3e86073ace391adf9208b021c9dcf
+compiler_path=/home/pcrec/projects/pcrec/worktrees/memfn-r17/build/pcrec
+compiler_realpath=/home/pcrec/projects/pcrec/worktrees/memfn-r17/build/pcrec
+compiler_sha256=8952969605e87ba3051a3b08d40f2c58d855d828f4137fdc8695501fe72aaf5f
+compiler_mtime=2026-10-12T16:29:16-0400
+compiler_version=pcrec 0.2.0-beta
+compiler_abi=77
+compiler_worktree=/home/pcrec/projects/pcrec/worktrees/memfn-r17
+compiler_commit=c90d65e53a397aa300f6472f7f017403d8624e53
+compiler_branch=lane/memfn-r17
+compiler_inputs_last_commit=16e8e0aa2cce5a8e52b09c91db45e974febed270 2026-10-12T16:11:44-04:00
+compiler_inputs_dirty_files=0
+compiler_pf_terms_mask_deny=moves-text
