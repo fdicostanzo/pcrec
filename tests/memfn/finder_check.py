@@ -396,7 +396,7 @@ def check_sites(root, fx, fxt, tmp, rows):
     (ok() if nkey >= 3 else bad("only %d read keys were removed in turn (K35 floor 3)" % nkey))
     # refusals: a pcrec. row; a value past the bound
     for name, body in (("pcrec-row", "pcrec.beta.WALK.DFA_SCAN.r1e0c0\tratio\t1000000\t-\t-\t-\tmeasured"),
-                       ("too-big", "kit.eps.findall.l64k\tratio\t2000000000000000000\t-\t-\t-\tmeasured")):
+                       ("too-big", "kit.eps.streamed.slope\tratio\t2000000000000000000\t-\t-\t-\tmeasured")):
         path = os.path.join(tmp, name + ".tsv")
         with open(path, "w") as fh:
             fh.write("#section header\n#key\tvalue\nid\t%s\n#section rows\n"
@@ -422,7 +422,7 @@ def check_sites(root, fx, fxt, tmp, rows):
     with open(r0set, "w") as fh:
         fh.write("#section header\n#key\tvalue\nid\tr0\n#section rows\n#key\tunit\tvalue_e6\n"
                  "kit.saving.V1.WALK.r2\tratio\t0\nkit.saving.V1.WALK.r2e0c0\tratio\t0\n"
-                 "kit.eps.findall.l64k\tratio\t10000\n")
+                 "kit.eps.streamed.slope\tratio\t10000\n")
     _, d_on, _, _, _, _ = fd_run(fxt, "set2r", r0set)
     _, d_off, _, _, _, _ = fd_run(fxt, "set2r", r0set, "no-fd-r0")
     on = [d.get("row") for d in d_on if d.get("slot") == "FIND"]

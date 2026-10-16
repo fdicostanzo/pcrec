@@ -49,13 +49,16 @@
  * (the layer's LINER form: V1 at OFF, W64 at W16/W32), `<kind>` (the
  * consumer kind; unresolvable while unstated), `<t>` (the terminal pick).
  * A key ABSENT from the set does not hold (§1.5 rule 3; never read as 0:
- * S917). The REGIME token of the null floor R0/R7 compare against is
- * streamed find-all's (`kit.eps.findall.l64k`, gridread's F1 A/A p90): the
- * design leaves `<regime>` unspelled, and F1's floor is the one under which
- * r17b_prime.md §3.5's predicted byte movers (285 + 15 on grid1's measured
- * shapes, the (2,0,0) r2 cover staying on the walk) come out, while the beta
- * slope's own F3 floor would move the (2,0,0) cover's sites too
- * (fdb1_report.md finding F-B1-2). The pay rule's operand keys (`delta`,
+ * S917). The REGIME token of the null floor R0/R7 compare against is the
+ * regime their OPERANDS were measured in ([rev3 C4]: "each test reads the
+ * floor of the regime its operands were measured in"): a `saving` key is
+ * derived from `beta` slopes, which the card measures over member-free
+ * single calls (kit-grid@1 `beta`: subject streamed, slope 64Ki-1Mi), so the
+ * floor is that regime's A/A p90, `kit.eps.streamed.slope` (gridread F3,
+ * 0.173%). Lane fdb1 had spelled streamed find-all's (`kit.eps.findall.l64k`,
+ * F1, 3.365%), chosen because it reproduced §3.5's predicted movers; lane
+ * fdb2 corrected it (fdb2_report.md, finder_history.md): a floor is read
+ * from the operands' regime, never chosen by the outcome it gives. The pay rule's operand keys (`delta`,
  * `dfloor`, `cdisp_call`, `cfloor`, `ffloor`, `cdisp_use`, `ufloor`,
  * `wfloor`: one quantity per floored cell kind, so each card has one arity)
  * are spelled here first and are PROVISIONAL until kit-grid@2's cards
@@ -230,7 +233,7 @@ FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,   
  * edit to a row is logged in memfn/docs/finder_history.md in the commit that
  * makes it (§1.8); a routed row is LOCKED. */
 #define K_SAVE   "kit.saving.<liner>.WALK.<shape>"
-#define K_EPS    "kit.eps.findall.l64k"
+#define K_EPS    "kit.eps.streamed.slope"
 static const fd_row fd_rows[] = {
     { "R0", FD_FIND, KN_P | KN_A, SF_SPAN0 | SF_COVER_R2, 0,
       { { FL_KEY, "kit.saving.V1.WALK.r2", FO_LE, K_EPS, NULL } },

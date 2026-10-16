@@ -26,9 +26,10 @@ THE INTERIM SET IS A TEST INPUT (Q-REVAL-10): no compile reads it but through
 the harness lever (`build/pcrec-harness --harness=measures=FILE`), and no
 ROUTED finder row reads any set before B4. Its header says so. The interim's
 `kit.eps.streamed.slope` is gridread's F3 A/A p90 (member-free single calls,
-the beta slope's own regime). R0/R7 compare against `kit.eps.findall.l64k`,
-gridread's F1 A/A p90 (streamed find-all): finder.c's header and
-fdb1_report.md F-B1-2 say why.
+the beta slope's own regime), and it is the floor R0/R7 compare against: the
+`saving` keys derive from those slopes ([rev3 C4]; finder.c's header,
+fdb2_report.md). `kit.eps.findall.l64k` (F1, streamed find-all) is kept as a
+measured row no B2 row reads.
 
 values_digest: measure_sets §1.6's FNV-1a-64 over `pcrec-meas-1\\0` then, per
 row in canonical (bytewise key) order, key, \\0, the unit's first byte, the
@@ -153,7 +154,7 @@ def synthetic_rows(saving, xover, block, every=False):
     for f in FORMS:
         for sh in ALL_SHAPES + ("r2",):
             rows.append(row("kit.saving.%s.WALK.%s" % (f, sh), "ratio", saving, "synthetic", "synthetic"))
-    rows.append(row("kit.eps.findall.l64k", "ratio", 0.01, "synthetic", "synthetic"))
+    rows.append(row("kit.eps.streamed.slope", "ratio", 0.01, "synthetic", "synthetic"))
     for f in FORMS:
         for k in KINDS:
             rows.append(row("kit.xover.%s.WALK.%s" % (f, k), "bytes", xover, "synthetic", "synthetic"))

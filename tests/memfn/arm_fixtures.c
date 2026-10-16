@@ -1298,13 +1298,13 @@ static void gate_cases(void)
 static const mf_measure FDS_R0_ROWS[] = {
     { "kit.saving.V1.WALK.r2", 0, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2e0c0", 0, "ratio", "fixture" },
-    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
+    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
 };
 static const mf_measure FDS_R7_ROWS[] = {
     { "kit.saving.V1.WALK.r1e0c0", 500000, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2e0c0", 500000, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2", 500000, "ratio", "fixture" },
-    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
+    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
 };
 static const mf_measures FDS_R0 = { "fixture-r0", 1, "0000000000000000", "-", "synthetic", 0,
                                     3, FDS_R0_ROWS };

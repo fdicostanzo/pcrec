@@ -20,7 +20,7 @@ code_commit	-
 counters	skipped:not-taken
 partial	0
 rows	344
-values_digest	9ab2aa65098a2252
+values_digest	8a976cc72a4ab335
 #section cards
 #owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
 kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
@@ -193,7 +193,7 @@ kit.dfloor.W64.WALK.HYB_PF.n32	walkbytes	1000000	-	-	-	synthetic	-	-	-	-	synthet
 kit.dfloor.W64.WALK.HYB_PF.n8	walkbytes	1000000	-	-	-	synthetic	-	-	-	-	synthetic
 kit.dfloor.W64.WALK.VM_ATTEMPT.n32	walkbytes	1000000	-	-	-	synthetic	-	-	-	-	synthetic
 kit.dfloor.W64.WALK.VM_ATTEMPT.n8	walkbytes	1000000	-	-	-	synthetic	-	-	-	-	synthetic
-kit.eps.findall.l64k	ratio	10000	-	-	-	synthetic	-	-	-	-	synthetic
+kit.eps.streamed.slope	ratio	10000	-	-	-	synthetic	-	-	-	-	synthetic
 kit.ffloor.V1.DFA_ATTEMPT.n128	walkbytes	5000000	-	-	-	synthetic	-	-	-	-	synthetic
 kit.ffloor.V1.DFA_ATTEMPT.n36	walkbytes	5000000	-	-	-	synthetic	-	-	-	-	synthetic
 kit.ffloor.V1.DFA_ATTEMPT.n64	walkbytes	5000000	-	-	-	synthetic	-	-	-	-	synthetic
