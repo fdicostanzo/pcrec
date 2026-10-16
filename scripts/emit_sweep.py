@@ -1600,6 +1600,9 @@ TRACE_EXTRA_PINS = {
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
 #   reshapes blocks the default engine compiles, so 20 fewer files are written.
+#   ("-fmemfn-simd",) and ("-fcomments",): producing 37, artifacts 106 each,
+#   AT the measured value ([COMPPIN], lane/comppin 4464e1c10): neither flag
+#   changes which fixtures compile, so both read the plain arm's population.
 # A FLOOR IS PER ARM: the plain floors were measured on the plain arm and are
 # applied to it ONLY. An --extra arm with no entry here has no composition
 # floor (the run says so), never the plain arm's (the `--engine=vm` run read
@@ -1609,6 +1612,16 @@ COMPOSITION_EXTRA_PINS = {
                      "composition_artifacts_floor": 98},
     ("--engine=vm",): {"composition_producing_floor": 37,
                        "composition_artifacts_floor": 86},
+    # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
+    # changes WHICH composition files compile, only the text: both read the
+    # plain arm's population, producing 37 / artifacts 106, measured at
+    # lane/comppin 4464e1c10 (`--streams composition --extra=FLAG`, one
+    # binary, 386 composition files). Floors AT the measured value (the
+    # counts are deterministic), the --engine=vm entry's stance.
+    ("-fmemfn-simd",): {"composition_producing_floor": 37,
+                        "composition_artifacts_floor": 106},
+    ("-fcomments",): {"composition_producing_floor": 37,
+                      "composition_artifacts_floor": 106},
 }
 
 

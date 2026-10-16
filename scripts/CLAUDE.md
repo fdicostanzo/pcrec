@@ -469,7 +469,8 @@ pcrec (the Makefile owns that).
   pins' python source. See `docs/dev/lanes/decfbB0_report.md`.
   **FLOORS ARE PER ARM ([SWFIX], 2026-10-16).** The plain composition floors
   (`PINS`) apply to the plain arm only; an `--extra` arm is held to its own
-  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`), and an arm with no
+  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`, and [COMPPIN]
+  `-fmemfn-simd` / `-fcomments`, 37 / 106 each, planted +1 in the self-test), and an arm with no
   entry prints `COMPOSITION FLOORS: NOT APPLIED` rather than borrowing the plain
   numbers (the `--engine=vm` arm read 86 < 100 ref-vs-ref). `VARIANT_PINS` was
   re-pinned at b72291d84 with each fall attributed to a compiler event in the
