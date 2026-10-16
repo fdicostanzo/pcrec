@@ -1,0 +1,14 @@
+== B1: -e utf8 -I L1 --analysis l1none
+rc=1	--pattern abc	counts nothing via encode-latin1
+rc=1	--pattern caf.	counts nothing via encode-latin1
+rc=0	--pattern ^abc -fno-req-byte	#define RX_FINDINGS ""
+rc=0	--pattern ^abc -fno-req-byte -fno-req-run -fno-prefilter	#define RX_FINDINGS ""
+rc=0	--pattern caf. --engine=vm -fno-req-byte -fno-req-run	#define RX_FINDINGS ""
+== M2: a byte-identical user copy of the store's default.rxt
+store default:  #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+user -I copy:   #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+#section chain
+# one row per link, in search order; the last is the built-in default (by identity)
+#link	bundle	stop	location	include
+0	default	-I	build/wcfix_scr/w/M2/default.rxt	
+1	default	store-default		
