@@ -151,7 +151,8 @@ Recommendations (each priced below):
      listing flag and manager review, never a landing gate (RULED, D166 add. 2)
      [r1 msc1-7/msc1-8].
 3. **Loading (§3): `--measures=NAME|NAME@REV|FILE`** and a config line `measures`, with
-   exactly `--analysis`'s precedence.
+   exactly `--analysis`'s precedence. A value is a NAME if it passes the name grammar and
+   a FILE otherwise: the shipped `--list-analysis` rule [r2 M2].
    - A bare compile reads the LATEST set at M0/M1. The envelope becomes the default at M2
      (RULED, D166 add. 2) [r1 msc2-2+msc1-4].
    - The stamp is `<PREFIX>_MEASURES`, mirrored in `rx_info.measures`, both added in M0's
@@ -187,23 +188,31 @@ Recommendations (each priced below):
      [r1 msc1-5].
    - Derived and fitted rows are recomputed by an independent python from the closed
      registry and the raw cells [r1 msc3-7].
-   - The census is at landing [r1 msc1-1]. Sabotage S943-S952, plus PROPOSED S953-S963.
-9. **[KNOW-SRC] (§9), built FIRST.** ONE knowledge-source module in `src/core/` serves the
-   analysis object, measurement sets and [TABLE-JUDGE]'s picks file:
-   - the reader/validator, the resolver, fill-only precedence, the embed generator, the
-     stamp/digest builder and the `--list-<kind>` shape;
-   - with ROUND-TRIP IDENTITY (§9.6).
+   - The census is at landing, keyed by `DEFAULTS` transition [r1 msc1-1, r2 n9].
+     Sabotage S943-S963 (allocated), plus PROPOSED S981-S988 [r2].
+9. **[KNOW-SRC] (§9), built FIRST.** The module has kind-independent PARTS in `src/core/ksrc.c`
+   (libc only) and a kinds table assembled at the library tier [r2 M8]. It serves the four
+   ruled kinds, the analysis object, measurement sets, [TABLE-JUDGE]'s picks file and the
+   EVALUATOR PARAMETER TABLE [r2 M1], plus `lib` references as a resolve-only row
+   [r2 M6]:
+   - the reader/validator, the resolver (its per-kind divergences as declared columns,
+     [r2 M2]), fill-only precedence, the embed generator, the item and stamp digests
+     (two roles, literal domains, [r2 M5]) and the `--list-<kind>` shape;
+   - with ROUND-TRIP IDENTITY (§9.6), whose R5 compares the C decode with an independent
+     reader [r2 M3].
 
-   ONE census tool serves findings, measures and limits changes. The analysis loader
-   migrates onto it at zero movers (K0-K3) before M0 [r1 msc2-9, msc1 U1]. The analysis
-   `.rxt` format is an OPEN item for the module (§9.9).
+   The data-mover census is a MODE of `scripts/emit_sweep.py` and serves findings,
+   measures and limits changes [r2 M4]. The analysis loader migrates onto the module at
+   zero movers (K0-K3) before M0 [r1 msc2-9, msc1 U1]. The analysis `.rxt` format is an
+   OPEN item for the module (§9.9).
 10. **Plan (§10).**
     - K0-K3 ([KNOW-SRC]) first.
     - M0 rides R17-b′, with the requests, and adds the measures kind.
     - M1: `--measures=` and the census's measures arm.
     - M2: the envelope and its default flip.
     - M3: the tool. M4: pcrec's own rows.
-    - Both panel questions are RULED (D166 add. 2).
+    - Both panel questions are RULED (D166 add. 2). One question is open for Frank:
+      OQ-1, the evaluator-parameter kind's reader (§10.6).
 
 ## 1. The set FORMAT
 
@@ -249,6 +258,7 @@ method	kit-grid@2
 run	slot grid2, 2026-10-xx
 box	AMD Ryzen 7 7700X; governor performance; kernel ...
 compiler	gcc 15.2.0 -O2
+libc	glibc@<version>
 code_commit	<measured-code commit>
 counters	skipped:perf_event_paranoid=4
 partial	0
@@ -295,6 +305,9 @@ field means "none" (`table_contract.md` §2¶5): the non-envelope `members` abov
 - `unit_key`.
 - `method`: the card table's `owner-name@ver` (§7.2).
 - `run`, `box`, `compiler`, `code_commit`.
+- `libc`: `<name>@<version>` of the C library the measured code ran against. It is
+  provenance, and the source of the set-level `libc-mismatch` listing flag (§2.4; D167
+  Q-R17P-14).
 - `counters`: `none` | `skipped:<reason>` | `branch-misses` (§7.4a).
 - `partial`: 1 when §7.3's PARTIAL outcome wrote the set [r1 msc3-4].
 - `rows`, `values_digest`.
@@ -455,9 +468,22 @@ the registry is refused at load.
 **Self-checking:**
 
 - `rows` equals the row count of the `rows` section (K35: the producer is not the counter).
-- **`values_digest`** is FNV-1a-64, 16 lowercase hex. It is computed over `pcrec-meas-1\0`
-  followed, for each row in canonical order (§1.7), by the key, `\0`, the unit byte, the
-  status byte, and `value_e6` as int64 LE (an empty value is `INT64_MIN`).
+- **`values_digest`** is FNV-1a-64, 16 lowercase hex. It is computed over the 13 domain
+  bytes `pcrec-meas-1\0`, a literal byte string like every kind's domain (§9.2 part 5)
+  [r2 M5]. Then, for each row in canonical order (§1.7), it takes the key, `\0`, the unit
+  byte, the status byte, and `value_e6` as int64 LE (an empty value is `INT64_MIN`).
+- **The unit and status BYTES [r2 n6]** are fixed codes in `docs/spec/measures.md`. C and
+  python each read them from the spec's table. Neither reads them from the other's source:
+
+  | unit | byte | | status | byte |
+  |---|---|---|---|---|
+  | `ratio` | `0x01` | | `measured` | `0x01` |
+  | `walkbytes` | `0x02` | | `fitted` | `0x02` |
+  | `bytes` | `0x03` | | `derived` | `0x03` |
+  | `count` | `0x04` | | `null` | `0x04` |
+
+  `0x00` is never assigned. A new unit or status is a spec row with a new code, never a
+  reuse. The python checker's digest (§8.2(d)) is written from this table.
 - **What the digest excludes.** It leaves out every provenance column (`abs_ns_e6`,
   `noise_e6`, `n`, `source`, `deps`, `tags`) and the cards and cells sections. So the same
   values from any provenance give the same digest, the property of the `<PREFIX>_FINDINGS`
@@ -513,7 +539,10 @@ measure_store/
       set.tsv                     # the set, self-checking (§1.6)
       PROVENANCE.md               # what derives from it; sha-256 of set.tsv; the run, the method card
                                   #   version, the reader script + commit; the raw transcript's location + hash
-      MOVERS.tsv                  # the census AT ITS LANDING COMMIT (§8.4); absent for a set that moves no default
+  DEFAULTS.log                    # append-only: one row per DEFAULTS transition: seq, class, old id@rev:digest16,
+                                  #   new id@rev:digest16, the movers file  [r2 n9]
+  movers/
+    0001.tsv                      # the census of transition 1, AT ITS LANDING COMMIT (§8.4)
 ```
 
 This is `oracle_store/`'s shape (one directory per source, a self-checking TSV,
@@ -526,20 +555,26 @@ box. It is not `third_party/` (nothing is vendored from outside). The analysis o
 - **The directory is `measure_store/`**, not R17-b′'s `measures/`. That was Q-MS-4,
   settled by the manager as a one-token choice (§10.5).
 
-**`MOVERS.tsv` [r1 msc1-1].**
+**The movers census, keyed by TRANSITION [r1 msc1-1, r2 n9].** Revision 2 wrote
+`MOVERS.tsv` into the new default's rev directory. That fails for a ROLLBACK: moving
+`DEFAULTS` back to an older rev that already holds MOVERS from its own landing leaves
+nowhere to write, because that directory is immutable. The census therefore belongs to the
+transition, not to a set:
 
-- **Its header** names `old` (`id@rev:digest16` of the default it replaces, per class),
-  `new`, `code_commit` (the HEAD the census ran on, that is the landing commit's parent
-  tree plus the set) and the population manifest's sha.
-- **When it is written.** It is written once, by [KNOW-SRC]'s `scripts/knowledge_census.sh
-  measures` (§9.3), in the commit
-  that adds the set as a class's default or moves a `DEFAULTS` pointer to it. It is
-  immutable from then on, like the set.
-- **What it describes.** It states what moved AT that commit. A later code change that
-  moves selections under the same default is that change's own movers (`emit_sweep`, the
-  identity gate), not this file's.
-- **A set that moves no default** (an older or alternative set, a scratch set) has no
-  MOVERS file.
+- **`DEFAULTS.log`** is append-only. Each `DEFAULTS` change appends one row: `seq`,
+  `class`, `old` and `new` (`id@rev:digest16`), and the movers file's name. `DEFAULTS` is
+  the log's last row per class, and §8.3 checks that equality.
+- **`movers/<seq>.tsv`** has a header naming `old`, `new`, `code_commit` (the HEAD the
+  census ran on: the landing commit's parent tree plus the change) and the emit_sweep
+  population's pin (§9.3). It is written once, by the census mode of
+  `scripts/emit_sweep.py` (§9.3), in the commit that changes `DEFAULTS`. It is immutable
+  from then on.
+- **What it describes.** It states what moved AT that transition. A later code change
+  that moves selections under the same default is that change's own movers (`emit_sweep`,
+  the identity gate), not this file's.
+- **A set that moves no default** (an older or alternative set, a scratch set) appears in
+  no transition. A rollback to `zen4-grid1@1` is a new transition with its own
+  `movers/<seq>.tsv`.
 
 ### 2.2 Naming, versions, rollback
 
@@ -600,6 +635,18 @@ one `fold_tables.inc`. Rollback must work from a release build (Q-MS-7, settled 
   It is the hash of the pcrec emitter's output for the card's named probe pattern, with
   the stamp lines stripped (`emit_sweep`'s normalization).
 
+  **This over-stales BY DESIGN until M4 [r2 n7].** An abi bump or any unrelated emission
+  change moves the hash, unlike the kit's body-normalized form hash. No `pcrec.` row
+  exists before M4, so nothing stales falsely before then. M4 is the stage that adds the
+  first pcrec quantity. It replaces this hash with the measured FUNCTION BODY under the
+  same normalization R-MS3 asks of the kit (prefix, identifiers, comments, blank lines),
+  or it records in the card why the whole artifact is the measured instance. That choice
+  is deferred to M4, because the right instance depends on what pcrec's probe measures.
+- `libc:<name>@<version>` (D167 Q-R17P-14): the C library the measured code ran against.
+  It is PROVENANCE, never a staleness dependency. The artifact runs against the caller's
+  library, so a library that differs from the measuring one is not a change to the
+  measured code.
+
 **The canonical instance [r1 msc1-8/msc2-6].** A form hash is over the form's BODY with
 SCAFFOLDING NORMALIZED OUT. It is the text the kit emits for a fixed canonical site (fixed
 set, fixed span, fixed prefix), with the prefix, generated identifiers, comments and blank
@@ -611,8 +658,9 @@ have staled every row.
 
 **A row is STALE iff any of:**
 
-1. any `deps` hash differs from the current one (the kit's `mf_form_hash`, pcrec's
-   recomputed hash);
+1. any `kit:` or `pcrec:` `deps` hash differs from the current one (the kit's
+   `mf_form_hash`, pcrec's recomputed hash). A `libc:` item never stales a row;
+   it feeds only the set-level flag below;
 2. any input row of a `derived`/`fitted` row is stale (transitive through `inputs`);
 3. the UNIT row is stale, for every `ratio`/`walkbytes` row. Every relative value is
    relative to it.
@@ -621,6 +669,11 @@ have staled every row.
 and the card's flags) is a SET-level listing flag, `compiler-mismatch`, not row staleness.
 The emitted text is the same and the machine code may not be, so it is reported, never
 computed into a verdict.
+
+**A libc mismatch** (the set header's `libc` against the build's C library, read with the
+same probe the header was written with) is a second SET-level flag, `libc-mismatch`,
+reported the same way and never row staleness (D167 Q-R17P-14). Main owns this third
+dependency owner on those terms.
 
 **Where it is computed.** Staleness is COMPUTED, by `make test-measures` and by
 `--list-measurements` against the linked kit. It is never written into a committed file,
@@ -660,27 +713,50 @@ ahead of a measured need (D77).
 - **The library** gets a `pcrec_options` field, appended in the same [IFACE-PUSH] batch
   the analysis field belongs to.
 
-### 3.2 Resolution, in a stated order [r1 msc2-8, msc1-14]
+### 3.2 Resolution, in a stated order [r1 msc2-8, msc1-14, r2 M2, M3c, n5]
 
 Classification is by spelling alone, with NO existence probe, so the same argument means
-the same thing in every directory:
+the same thing in every directory. It is the SHIPPED rule `--list-analysis` already uses
+(`pcrec_find_name_ok(X)` means NAME, else FILE; `cli/main.c:1808-1809`, `2233-2236`)
+[r2 M2]:
 
-1. A value containing `/` is a FILE (`./mine.measures.tsv` reads a file in the cwd).
-2. Otherwise, a value matching the id grammar, optionally with `@REV`, is a NAME.
-3. Anything else is refused, naming both rules.
+1. A value that passes the name grammar, optionally followed by `@REV` (§2.2: `@` then
+   decimal digits), is a NAME.
+2. Anything else is a FILE.
 
-**A NAME** is looked up through [KNOW-SRC]'s resolver (§9.2 part 2), in the stops the analysis uses minus S1
-(a set is never defined inside a `.rxt`):
+Revision 2's rule (a `/` means FILE, the grammar means NAME, anything else is refused)
+disagreed with the shipped analysis surface on every value with no `/` that fails the
+grammar. It also refused the note's own example, `--measures=f.tsv`. Under the shipped
+rule, `--measures=f.tsv`, `--measures=mine.measures.tsv` and `--measures=./f.tsv` are all
+FILEs, because `.` is not in the name grammar [r2 M3c]. A file literally named
+`zen4-grid2` in the cwd is read as a NAME. That is the same as `--list-analysis` today,
+and `./zen4-grid2` is the FILE spelling. The rule is the kind row's `flag_classify` and
+`list_classify` columns (§9.5), so it is data, not a measures-only branch.
+
+**A NAME** is looked up through [KNOW-SRC]'s resolver (§9.2 part 2), in the stops the
+analysis uses minus S1 (a set is never defined inside a `.rxt`):
 
 - S2, `DIR/NAME.measures.tsv` for each `-I DIR` in order, with the directory entry matched
   exactly (`rxt_find.c`'s `dir_has_exact`);
 - S3, the store.
 
-A file found at S2 must carry a header `id` equal to NAME, or it is refused [r1 msc1-14]:
-the stamp names the id, so a file answering a name it does not carry would make the stamp
-lie. An unknown name refuses the compile and names the stops searched (`stops_text`).
+**An S2 file whose header names something else is REFUSED** (the kind row's
+`s2_mismatch = refuse`) [r1 msc1-14]. Its header `id` must equal NAME and, for
+`NAME@REV`, its header `rev` must equal REV [r2 n5]. The stamp names `id@rev`, so a file
+answering a name or rev it does not carry would make the stamp lie. An unknown name
+refuses the compile and names the stops searched (`stops_text`).
 
-**A FILE** is read directly. Its header `id` is what the stamp carries.
+**Why the analysis kind does the opposite.** An analysis S2 file of another name FALLS
+THROUGH to the next stop, with a note (`s2_mismatch = fallthrough-note`;
+`docs/spec/findings.md` S2 row, `rxt_find.c:12-15`). A `.rxt` in a `-I` directory is
+often a `lib` library that legitimately sits beside the bundles, so a mismatch there is
+normal. A `.measures.tsv` has no such neighbour: its suffix says it is a set, so a
+mismatch is an error, and silently skipping it would hide a typo'd id. Both kinds refuse
+a file defining two or more items (`s2_multi = refuse`). The divergence is a declared
+column value, and K1's resolution fixtures witness it for the analysis kind (§9.7).
+
+**A FILE** is read directly. Its header `id` and `rev` are what the stamp carries,
+subject to §3.3's shadow rule.
 
 ### 3.3 Precedence (D93)
 
@@ -692,10 +768,18 @@ Identical to `--analysis`: fill-only.
   and this file's measures Y disagree; using the file's value (--measures is fill-only)".
 - There is a single value per compile. Sets are never mixed, so there is no per-quantity
   precedence and no chain.
-- **A user set may NOT take a committed id.** A `-I` or FILE set whose `id` is in the store
-  with a different `values_digest` is refused ("id X is a committed set; rename"). The
-  stamp names a set by `id@rev:digest`, so a shadow would make a stamp point at a set that
-  does not carry those values.
+- **A user set may NOT shadow a committed rev [r2 n5].** The check is keyed on
+  (`id`, `rev`), not on `id` alone:
+  - a `-I` or FILE set whose (`id`, `rev`) is in the store is accepted only with the same
+    `values_digest` (it IS that set, the round trip of §9.6);
+  - one whose `id` is in the store under a `rev` the store does NOT hold is refused ("id
+    X has no committed rev N; rename"). Revision 2 accepted `id zen4-grid2`, `rev 7` with
+    rev 1's digest, and that stamped `zen4-grid2@7:…`, a rev that does not exist;
+  - one whose (`id`, `rev`) is in the store with a different digest is refused ("X@N is
+    a committed set; rename").
+
+  The stamp names a set by `id@rev:digest`, so a shadow would make a stamp point at a set
+  that does not carry those values. S986 plants the id-only key.
 
 ### 3.4 What a bare compile reads [r1 msc2-2, msc1-4]
 
@@ -889,9 +973,10 @@ needing E is skipped when E is absent (r17b_prime.md §3.4).
 ### 4.4 The requests main files, with their landing bars [r1 msc2-10]
 
 `memfn/docs/requests.md` is single-writer MAIN (`pcrec-requests-are-mine-to-file`).
-Revision 1 named the kit facts but put them in no landing bar. They are now five requests,
-and M0's trigger is R17-b′ landing WITH R-MS1, R-MS2, R-MS3 and R-MS5 (R-MS4's safe
-directions are M2's):
+Revision 1 named the kit facts but put them in no landing bar. They are now SIX requests
+(revision 3 adds R-MS6, [r2 M7]). M0's trigger is R17-b′ landing WITH R-MS1, R-MS2, R-MS3,
+R-MS5 and R-MS6. R-MS4's keys and fired-rows section are M0's too, and its safe
+directions are M2's:
 
 | id | the request (facts, D157) | landing bar | needed by |
 |---|---|---|---|
@@ -900,6 +985,7 @@ directions are M2's):
 | R-MS3 | `mf_form_hash(form_id)` over the canonical instance (§2.4), and the form ids the kit's cards name in `deps` | the hash is unchanged under a zero-mover kit refactor (renamed helper, comment edit) and changed under a one-instruction body edit, both as kit fixtures; every form id a kit card names resolves | M0 (staleness listing) |
 | R-MS4 | the kit's READER DECLARATION: per finder-table row, the keys it reads and, per threshold key, its SAFE direction (`max`/`min`/`none`: the side of its conservative or `unpaid` pick), as data the kit's listing exposes in [LIST-TABLES]' census shape (§5.4); and, per artifact, which finder rows fired per site, as the `--emit-facts` section `memfn` (§4.5) | keys: every key a row reads is declared (the kit-side half of §8.6's ⊆ check); directions: each declared direction agrees with the row's comparison operator by a kit test | keys M0 (the listing's readers); directions M2 (the envelope) |
 | R-MS5 | the kit's METHOD CARDS for its quantities (§7.2), as a section TSV in the kit tree, versioned `kit-grid@N` | each quantity R17-b′ §3.2 lists has a card; grid1's and grid2's rows are on-card (`make test-measures` §8.2) | M0 (the first committed set must be on a card) |
+| R-MS6 [r2 M7] | a HARNESS-ONLY arm-entry counter: under a lever reached only through `build/pcrec-harness` (the reserved internal name prefix and one-global fence of compound.md §A.11), each dispatch arm the kit emits increments a per-arm counter, exported under the reserved prefix with the arm's kit row id. The default emission is byte-identical with the lever off. pcrec states that it needs arm REACH; HOW the kit counts is the kit's (D157) | the lever off → zero movers on every emit_sweep arm; the lever on → each fired row's arm counts ≥ 1 on a kit fixture that enters it, and 0 on one that does not | M0 (§8.1's REACH floor) |
 
 ### 4.5 [r1 msc2-9] The kit's own listing, consumed not duplicated
 
@@ -1017,10 +1103,17 @@ g\*. The same key read by two rows with opposite comparisons has no single safe 
   - If all agree, that is the key's direction.
   - If they disagree, or any says `none`, the key is EXCLUDED, and the exclusion is listed
     with the disagreeing rows.
-- **The cross-check.** The card's `env` (the method's declaration) must equal the derived
-  direction. If it does not, `make test-measures` fails, naming the key, the card and the
-  rows. Two declarations from two owners' artifacts must agree, which neither can satisfy
-  by construction.
+- **The cross-check.** For a key with an AGREED derived direction, the card's `env` (the
+  method's declaration) must equal it. If it does not, `make test-measures` fails, naming
+  the key, the card and the rows. Two declarations from two owners' artifacts must agree,
+  which neither can satisfy by construction.
+- **An EXCLUDED key [r2 n8]** has no derived direction to compare with. The cross-check
+  skips it, and `test-measures` prints an always-printed INFO line per excluded key: the
+  card's `env`, the word `excluded`, and the disagreeing rows. The exclusion is visible
+  where the card claims a direction, and it is never a failure, because a disagreement
+  among readers is a property of the readers and not an error of the card. Revision 2
+  required `env` to equal a direction that does not exist for these keys, so every
+  excluded key would have failed.
 - **No shared helper.** `envelope.py` (the producer) and `tests/measures/recompute.py`
   (§8.2) share no code. The checker re-derives the directions from the census TSV and the
   members' files with its own parser.
@@ -1273,22 +1366,44 @@ by `--measures=FILE` from M1, and by the harness lever until then.
 
 **The expectation.** The `.rxt` cells' oracle-verified answers. For generated subjects, it
 is libpcre2's answer through `oracle_store`'s `match-at` kind (captured once by the local
-adapter, committed, so the check runs on any box). The artifact is compared with the
+adapter, committed, so the check runs on any box).
+
+**Every set needs its own capture [r2 n10].** The generated subjects depend on THAT set's
+L\* and W. So every new committed set, and every edit to a synthetic set, needs a new
+`match-at` capture of its boundary subjects in `oracle_store/`. That capture is part of
+the set's landing bar (§10.1). It needs the box with the local libpcre2 10.46 adapter
+(the Linux dev box; docs/testing.md "The boxes"). A set landed without it fails
+`test-measures-answers` as STOREUNCOVERED, the C3 tier's own clean-miss bucket, and never
+falls back silently to an unchecked subject. The artifact is compared with the
 oracle, not with another artifact, so the control shares no source with the subject
 (learnings §3). A secondary arm compares artifacts built under two sets on the same
 subjects, a differential that catches the case where both are wrong the same way.
 
-**The REACH floor per dispatch ARM [r1 msc1-5].** It is a run-time counter, not a compile
-count:
+**The REACH floor per dispatch ARM [r1 msc1-5, r2 M7].** It is a run-time counter, not a
+compile count. The dispatch arms are KIT-emitted text (D157, D161 add. 14), so pcrec
+cannot place a counter in them. Revision 2's lever, which "compiles a counter increment
+into each emitted dispatch arm", had no owner:
 
-- The artifact is built through `build/pcrec-harness` with a harness-only lever,
-  `--harness=reach-dispatch` (compound.md's `--harness=no-compound` precedent: a
-  reserved-name internal entry, fenced by the same one-global check). The lever compiles a
-  counter increment into each emitted dispatch arm.
-- Per synthetic set, every arm the set's rows admit must execute ≥ 1 time over the
-  population. Zero reach for an admitted arm FAILS ([MECH-REACH]).
-- The admitted-arm list is derived from the set's rows by the python parser, not read from
-  the artifact.
+- **The counter is the kit's, by request R-MS6 (§4.4).** The artifact is built through
+  `build/pcrec-harness` with a harness-only lever, `--harness=reach-dispatch`. It follows
+  compound.md §A.11's `--harness=no-compound` precedent: a reserved-name internal entry,
+  fenced by the same one-global check. The lever asks the kit for its arm counters.
+  pcrec reads the exported counts and never writes into kit text.
+- **The admitted-arm list is the kit's FIRED-ROWS fact**, the `memfn` `--emit-facts`
+  section of R-MS4 (§4.5): per site, which finder rows fired under this set. Revision 2
+  derived it "from the set's rows by the python parser". Knowing which arm a row admits
+  needs the row's PREDICATE, and R-MS4 declares only keys and directions. So python would
+  have re-implemented the kit's selection, the method presumption D157 forbids.
+- **The fired list is checked against the `dispatch` set's CONSTRUCTION**, not against
+  itself. `dispatch` prices every pay rule to pay and puts every crossover at a small
+  length. So every reader row that §5.4's census declares as reading a dispatch key
+  (M16-M18 and the crossovers) must appear among the fired rows of some sampled site. The
+  python check joins the census TSV with the facts section. A declared reader that never
+  fires under `dispatch` FAILS, naming the row. This is the control: the census
+  (declarations) and the fired-rows section (emission) come from two different kit
+  outputs.
+- **The floor.** Per synthetic set, every fired row's arm must count ≥ 1 over the
+  population. Zero reach for a fired arm FAILS ([MECH-REACH]).
 
 **The stamp arm (one direction only) [r1 msc1-6].** An artifact whose `<PREFIX>_MEASURES`
 is empty must be byte-identical across every set. Revision 1 also demanded the converse
