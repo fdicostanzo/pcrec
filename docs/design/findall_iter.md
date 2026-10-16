@@ -279,144 +279,210 @@ raises `PCREC_ITER_STATE_ALIGN`, an abi event.
 
 ---
 
-## 2. The entries
+## 2. The entries, as compound controllers
 
-### 2.1 `<prefix>_next` (exported, contains the search body)
+### 2.1 `<prefix>_next` is an `iterate` row of `entry_rows[]`
 
 ```c
-int <prefix>_next(rx_iter *it, const unsigned char *s, size_t n, ptrdiff_t (*caps)[2]);
+int <prefix>_next(rx_iter *it, ptrdiff_t (*caps)[2]);
 ```
 
 - **Returns 1** when a match was found. Then `caps` (if non-NULL) holds `<PREFIX>_NCAPS`
-  pairs, exactly as `<prefix>_search` would write them for this position.
-- **Returns 0** otherwise. `it->rc` says why: 0 means done; a give-up or refusal code means it
-  ended there (§3.4). Every later call returns 0 again with no work (sticky).
-- **Two-valued on purpose.** `while (<prefix>_next(...))` is D165's idiom, and §3.1¶3 records
-  what a three-valued return does in a `while`: a give-up read as a match spins forever. The
-  code lives in `it->rc`.
-- **`caps` may be NULL.** `next` then uses a local `<PREFIX>_NCAPS`-pair array for the advance
-  (it needs the span). The twin's `Z` arm checks the count with `caps == NULL`.
+  pairs, exactly as `<prefix>_search` would write them for this match.
+- **Returns 0** otherwise. `it->rc` says why: 0 = done; a give-up code (`[PCREC_ERR_FLOOR,
+  −2]`, D158) or a refusal (below the floor) = it ended there. Every later call returns 0
+  with no work (sticky, §1.2). RULED (D165 add. 2): a three-valued return was rejected
+  because `while (next(...))` would spin on a give-up read as a match.
+- **`caps` may be NULL.** The span still reaches the advance through the step's own local
+  (or the batch entry).
+- **The signature is uniform** (no subject, no vars), so `rx_entries.next` ([V-E], [ART-MGR]
+  S1) is `int (*)(rx_iter *, ptrdiff_t (*)[2])` for every artifact, with no trampoline.
 
-**The emitted shape** (each piece measured in the twin, `findall_iter/twin/mktwin.py`):
+**As a row** (`compound_entries.md` §4.1's `EntryRow`; the field values are this design's):
+
+```
+next  = iterate( STATE = __enter ;  STEP ;  BATCH = the bound <prefix>_buffers.batch )   mode ITER
+STEP  = first-nonzero( R @ q ,  SEARCH @ LOWER(adv(q)) )   asked only if RETRY is set (q = lo)
+        else SEARCH @ lo
+SEARCH = __find(ITER)            the artifact's search body: locate-then-finish, or the
+                                 compound controller on a compound artifact
+R      = verify-at q under the NOTEMPTY_ATSTART predicate (§3.3): the DFA's notempty root, or
+         the VM's guarded attempt; on a compound, F's bounded attempt under the root
+_search = locate-then-finish = __find(ONESHOT)                                mode ONESHOT
+```
+
+- **`first-nonzero` is split's combinator, guard included.** `compound.md` §B.2 asks F "only
+  if the floor can be live" and otherwise asks Q at `x`; on F's NOMATCH it asks Q at
+  `LOWER(next_pos(f))`. The retry is the same expression with the retry bit as the guard:
+  RETRY clear → SEARCH at `lo`; RETRY set → R at `q`, and on R's NOMATCH, SEARCH at
+  `LOWER(adv(q))`. R's give-ups PROPAGATE by the call-site code table (§A.14 rows 3-5, 7),
+  which is revision 1's "the retry's give-ups are its own". One combinator emitter serves
+  both (`compound_entries.md` F-6).
+- **The guard is the one per-row difference, and the meter is the second.** Split's F and Q
+  serve one logical search, so they share one meter (D163 add. 6 Q1). R and SEARCH are two
+  logical searches, as pcre2demo makes two `pcre2_match` calls, so each gets a fresh meter.
+  The combinator row therefore carries a `meter` column (`shared` for split, `per-operand`
+  for the retry). This is this revision's reading of Q1, put to Frank as Q-I1 (§10).
+- **`iterate` is the new combinator.** It owns three things: the STATE part's bind/check
+  (`__enter`), the delivery (one result per call, from the batch or straight from STEP), and
+  the fill loop (§2.3). It writes no search logic. Its first client is `next`; `next_n`
+  (HELD) would be a second `iterate` row with a span sink (§2.3).
+- **Nothing in this chain is a second exported call** (D165 item 5). `_next` does not call
+  `_search`. `__find`, `__enter`, the STEP body and the residual twins (§2.4) are static.
+
+**The emitted shape** (the twin's, `findall_iter/twin/mktwin.py`, re-spelled for binding at
+init and batching; the twin's re-run is owed, §5.3):
 
 ```c
-static inline __attribute__((always_inline))   /* or static noinline: §2.2 */
-int <p>__find(const unsigned char *subject, size_t subject_length, size_t search_from,
-              ptrdiff_t (*capture_spans)[2] /*, the mode: §4.2 */) { <today's _search body> }
-
-__attribute__((noclone))                        /* K24, as today */
-int <p>_search(...) { return <p>__find(..., ONESHOT); }
-
-static inline __attribute__((always_inline)) size_t <p>__adv(s, n, pos)  { <next_pos's body> }
-static inline __attribute__((always_inline)) int <p>__step(rx_iter *it, s, n, c) {
-    /* the RETRY arm (§3.3), the search from it->lo, the advance (§3.1) */ }
-static inline __attribute__((always_inline)) int <p>__enter(rx_iter *it, s, n) {
-    /* §1.2: bind or check; the once-per-iterator checks */ }
-
-__attribute__((noclone))
-int <p>_next(rx_iter *it, s, n, caps) {
-    if (!<p>__enter(it, s, n)) return 0;
-    ptrdiff_t local[<P>_NCAPS][2];
-    int r = <p>__step(it, s, n, caps ? caps : local);
-    if (r == 1) return 1;
-    it->rc = r; return 0;
+int <p>_next(rx_iter *it, ptrdiff_t (*caps)[2]) {
+    if (__builtin_expect(((it->hdr ^ PCREC_ITER_BOUND)
+                          | ((uintptr_t)it->owner ^ (uintptr_t)&<p>_info)) != 0, 0))
+        if (!<p>__enter(it)) return 0;           /* bind; or refuse; or ENDED */
+    if (it->bhead < it->bcount)                   /* deliver a buffered match */
+        return <p>__deliver(it, caps);
+    return <p>__fill(it, caps);                   /* §2.3: STEP once (K = 1) or up to nbatch */
 }
 ```
 
-- **Nothing in this chain is a second exported call**, as D165 item 5 requires. `_next`
-  does not call `_search`. `__find`, `__adv`, `__step` and `__enter` are static, so no PLT
-  or semantic-interposition indirection reaches them under `-fPIC`. That PLT cost on the
-  exported seam entries was the cost [LOSS-REVIEW] candidate 1 removed.
-- **`<prefix>_next_pos` stays exported and unchanged** (§3.1.1). The iterator calls its
-  static twin `__adv`. One emitter writes both from one string, so they cannot drift.
-  Today's loop pays one exported `_next_pos` call per match; the iterator pays none.
-- **`rx->entries->next`** (D165 item 3, [V-E] S1). `<prefix>_next`'s type is
-  prefix-independent: `int (*)(rx_iter *, const unsigned char *, size_t, ptrdiff_t (*)[2])`.
-  It is variable-independent too, because vars ride `rx_iter`. So the pointer in
-  `rx_entries` is the function itself, with no trampoline.
+### 2.2 The find body's layout comes from the part-layout row
 
-### 2.2 The body: one source function, inlined where gcc can copy it
+`compound_entries.md` revision 3 makes `__find` a SUBJECT part of the part-layout dial row
+and fixes how this design's own rule survives:
 
-**Measured in the twin** (`twin/out/run_twin_inline.out`; gcc 15.2 `-O2`, x86-64).
+- **At position `0` (the default), revision 1's two-row rule is KEPT as the `0` cell's
+  content** (that note's invariant I4 and §3.8). The rule:
 
-**DFA artifacts: `_search`'s instructions are IDENTICAL to today's** once the body moves into
-`__find`. `_search` keeps the same size, and its `objdump` matches after relative-address
-normalization. This holds on `a`, `\w+`, `a*`, `(?:ab|a)` and utf8 `a`. On `[0-9]+x`
-(579 → 563 B), `a(b|c)+d` and utf8 `.` the instructions DIFFER. Gcc schedules the inlined
-copy differently; no source change caused it. The parity gate's `L_old` against `L_new` arm
-(§5.3) decides whether that matters.
+  | row | when | `__find` linkage at `0` |
+  |---|---|---|
+  | `shared` | the body defines a static label table (the DFA attempt route: 233 of 4,243 byte, 232 of 4,254 utf8 corpus artifacts, `twin/out/label_census.out`) | `static noinline`; `_search` tail-jumps, `_next` calls |
+  | `inline` | otherwise | `static inline always_inline`; a copy in each entry |
 
-**The cost is `.text`.** `_next` and `_next_n` each carry a copy of the body:
+  The measurements behind it are unchanged (revision 1 §2.2, `twin/out/run_twin_inline.out`):
+  `_search`'s instructions are identical to today's on five of eight DFA twins once its body
+  moves into `__find`; the cost is `.text` (`_next` 433-1,079 B inline, 321-666 B shared).
+- **At a non-zero position** `__find` goes through `compound_entries.md` §3.4's tables: P2
+  (`copyable(part)` false) gives the label-table body `static noinline noclone` at every
+  position, which is the `shared` row above with `noclone` added; otherwise the position's
+  row (P4/P6 shared at `−2`/`−1`, P7/P8 at `+1` by `θ_hot`, P9 inline at `+2`).
+- **`__find`'s in-edges and ranks** (`compound_entries.md` §3.2): from `_search` R2 and from
+  the STEP inside `_next` R2 without batching. With the batch fill (§2.3) the STEP runs in a
+  loop, so `__find`'s in-edge from `_next` is **R3** on an artifact with `_in` batching
+  compiled in. `compound_entries.md` §3.8 lists this edge as HELD; revision 2 designs it,
+  which gives that note's `−2`/`−1` pair its first designed witness. Its rank column is a
+  shape predicate (batching compiled in or not), as that note's §4.1 allows.
+- **`__enter`, `__deliver`, `__fill`, the STEP body**: one caller each (`_next`), so row P3
+  keeps their `0` layout at every position. The retry R is a body inside STEP with no symbol
+  of its own, so it is not a part (`compound_entries.md` §3.8).
+- **The `I_shared` trigger** stays as revision 1 stated it, now `compound_entries.md` U1's
+  trigger: if the parity gate's `I_shared` arm is within the noise floor of `I`, promoting
+  "shared for every body" to the `0` cell is a ruled diff of THIS design.
+- **M (the mode) folds where `__find` is inlined** and is one branch per call where it is
+  shared (§4.2; `compound_entries.md` §3.5).
 
-| twin | plain `.text` | + `_next` + `_next_n` (inline) | + both (shared noinline body) |
-|---|---|---|---|
-| `a` | 1,576 | +1,136 | +840 |
-| `\w+` | 2,718 | +1,546 | +832 |
-| `[0-9]+x` | 2,564 | +1,724 | +840 |
-| utf8 `.` | 3,509 | +2,587 | +989 |
-| VM hybrid `a(b|c)+d` | 3,574 | +1,587 | +848 |
+### 2.3 Internal batching in the caller's `_in` memory (D165 add. 2 Q2)
 
-`next` alone is about half of each "+" column (`_next` 433-1,079 B inline, 321-666 B shared).
-These are OBJECT bytes. The emitted-C SOURCE bytes the size caps count grow by a fixed amount
-(the wrappers' text), and §6.4 keeps them out of every length decision.
+Frank's reframing: "the batching was in my mind an internal thing ... a way to get rid of the
+per call overhead by caching the results internally (say at the compound function level) and
+then providing them with next calls", with the results in the `_in` memory ("_in versions
+provide memory. perhaps the buffered results live there?").
 
-**One body that gcc cannot copy: the DFA attempt route.** Its direct-threaded dispatch keeps
-label addresses in a `static const void *const <p>_targets_N[]`. Gcc refuses to inline such
-a function anywhere, with "can never be copied because it saves address of local label in a
-static variable" (twin case `\G\w+`).
-- The census (`twin/label_census.py`) finds this shape on exactly the DFA `attempt`-scan
-  artifacts: 233 of 4,243 compiled byte artifacts and 232 of 4,254 utf8. The VM and the
-  other DFA routes have none in their search body.
-- For those bodies `__find` is `static __attribute__((noinline))`, and both entries call it.
-  `_search` becomes a 9-byte tail jump, and `_next` makes one internal direct call per
-  match.
-
-**The emission rule**, a two-row first-match table read off the body the emitter just wrote:
-
-| row | when | `__find` linkage |
-|---|---|---|
-| `shared` | the body defines a static label table | `static noinline`; `_search` tail-jumps, `_next` calls |
-| `inline` | otherwise | `static inline always_inline`; a copy in each entry |
-
-**The alternative: one rule, `shared` for every body.** It is priced in the twin's
-`TWIN_SHARED=1` arm. `.text` grows by a constant +832..+989 B instead of +997..+2,587, and
-`next` makes one internal call per match. The parity gate has an `I_shared` arm for exactly
-this. If `I_shared` is within the noise floor of `I`, the one-row rule wins on size and on
-simplicity (D77: decided by measurement). Until it is measured, `inline` is the design of
-record, because D165 item 5 asks for one call per match.
-
-### 2.3 Batching: `<prefix>_next_n` (designed and twinned, HELD — Q2)
+**The region.** `<prefix>_buffers` (match_api.md §10.2) gains a third region (Q-I3):
 
 ```c
-size_t <prefix>_next_n(rx_iter *it, const unsigned char *s, size_t n,
-                       ptrdiff_t (*out)[2], size_t k);
+typedef struct {
+    void   *frames;  size_t nframes;   /* unchanged */
+    void   *trail;   size_t ntrail;    /* unchanged */
+    void   *batch;   size_t nbatch;    /* NEW: capacity in MATCHES */
+} <prefix>_buffers;
+
+#define <PREFIX>_BATCH_ENTRY_SIZE  (<PREFIX>_NCAPS * 2 * sizeof(ptrdiff_t))  /* bytes per match */
 ```
 
-- **Writes** up to `k` whole-match spans into `out[0..k)` and returns the count. A count below
-  `k` means the iterator ended, and `it->rc` says how. The iterator state is the same as for
-  `next`, so `next` and `next_n` calls may be MIXED on one iterator.
-- **Spans only.** Captures are deferred to [CAPTURE-ARRAY], whose array model (one row per
-  match, opt-in per group) is where a batched capture layout belongs. A caller wanting
-  captures calls `next`.
-- **One body.** `next` and `next_n` share `__step` (inlined into both). `next` is not
-  literally `next_n(K = 1)`, because it writes full captures where `next_n` writes spans. The
-  sharing is the step, so the semantics cannot diverge. The twin checks `I == N` on every
-  case, batch boundaries crossed at K = 3.
+- The `_in` entries IGNORE `batch` (their behaviour is unchanged).
+- An iterator bound to the buffers by `<prefix>_iter_buffers` uses all three regions: its
+  searches run on `frames`/`trail` as `_search_in`'s do (so the iterator gets `_in`'s depth
+  with no `_next_in` entry: revision 1 §6.2's "no `_in` variant" is superseded), and its
+  results go to `batch`.
+- **Lifetime.** `frames` and `trail` stay scratch (§10.3¶4). `batch` is NOT scratch while an
+  iterator is bound to it: it must outlive the iterator, and the caller must not write it
+  or bind a second live iterator to it (§1.2's copy rule).
+- **Stride: full captures per match** (Q-I4). Each entry holds `<PREFIX>_NCAPS` pairs, so a
+  caller passing non-NULL `caps` gets exactly what the unbatched `next` writes. On a DFA
+  artifact `NCAPS` = 1, so an entry is one span. The caller sizes K, so S does not
+  constrain captures (D165 add. 2).
 
-**Its price against the parity gate:**
-- per match it saves the exported call, `__enter`'s checks and the epilogue (§5.1);
-- per artifact it costs 392-1,286 B `.text` (twin, both forms);
-- the DENSE-NOTES hypothesis ("batching pays one unpredictable exit per block, not per match")
-  is unmeasured.
+**The fill and the delivery** (the `iterate` combinator's two halves):
 
-**D41 item 5 rejected "batch find-all as a PRIMITIVE"** because "capacity negotiation
-reinvents the cursor with worse ergonomics". `next_n` is a METHOD of the cursor D41 named as
-the additive extension. Capacity is the caller's `k`, and the cursor continues.
+```
+fill(it, caps):
+    K   = (it has OPT_IN and nbatch >= 2) ? nbatch : 1
+    dst = (K == 1) ? caps-or-local : batch[0]
+    i = 0
+    while i < K:
+        r = STEP(it, dst_i)            -- same code, same lo, a fresh meter (§3.4a)
+        if r == 1: i += 1; continue
+        it->rc_next = r; break          -- 0 (done) or a code
+    if K == 1: (i == 1) ? return 1 : end with rc = rc_next, return 0
+    it->bhead = 0; it->bcount = i
+    if i > 0: return deliver(it, caps)
+    end with rc = rc_next; return 0
 
-**Recommendation.** Time the twin's `N` arm in the parity slot. Fold `next_n` into I1 if it
-beats `I` by more than the noise floor on the dense cells; otherwise file it with that
-trigger (I4). Adding it later is a second every-artifact abi event, and that is the price of
-waiting.
+deliver(it, caps):
+    copy batch[bhead] to caps (if non-NULL); bhead += 1; return 1
+    -- when bhead == bcount and rc_next != 1, the NEXT call ends with rc = rc_next
+```
+
+- **No `_in` memory, or `nbatch` < 2, is K = 1**: STEP writes straight into `caps`, and no
+  copy happens. That is the unbatched iterator, the degenerate case of the same loop, not a
+  second path. Revision 1's design is exactly this case.
+- **Per match**, a batched call that finds the batch non-empty costs the one fused header
+  compare, one cursor compare and one copy of `NCAPS` pairs. The search work moves into the
+  fill, one exported call per K matches.
+- **Over-fill is the caller's choice.** A caller that stops consuming after a few matches has
+  paid for up to `nbatch − 1` searches it never reads. The caller sizes `nbatch` (a "first
+  three matches" caller passes a small one or none). pcrec picks no K, so there is no
+  tuning constant here (memory `pcrec-suspect-tuning-constants`).
+- **The kit's carried rows** see the fill's steps as consecutive calls: `lo` is monotone
+  across them, which is the condition the kit's cache pays on (D165 add. 1).
+
+**The public `next_n` stays optional and HELD.** Revision 1 designed and twinned it
+(`size_t <prefix>_next_n(rx_iter *, ptrdiff_t (*out)[2], size_t k)`, spans only,
+392-1,286 B `.text`, answer-identical to `next` in the twin). D165 add. 2 makes it "an
+optional extra, not the mechanism". Under revision 2 it is a second `iterate` row whose sink
+is the caller's `out` instead of the bound batch. Both it and the internal fill are timed in
+the parity slot (§5.3) before either ships.
+
+### 2.4 The residual twins (D163 add. 7 Q5; `compound_entries.md` F-1)
+
+`compound_entries.md` F-1: B4's compound controller calls the exported `<p>_next_pos`
+(`emit_compound.c:129`), and under `-futf-check` P's prologue calls the exported
+`<p>_valid_upto`. Under `-fPIC` both are PLT calls on every compound search. Revision 1
+already gave `next_pos` a static twin (`__adv`) for the iterator alone. Revision 2 makes it
+the general rule for the residual leaves, applied in I1, which moves every artifact's text
+anyway:
+
+| residual (exported, unchanged contract) | static twin | internal callers after I1 |
+|---|---|---|
+| `<p>_next_pos` | `<p>__adv` | STEP's advances (§3.1); the compound controller's `LOWER(next_pos(f))` |
+| `<p>_valid_upto` | `<p>__valid_upto` | `__enter`'s once-per-iterator `-futf-check` (§3.6); every `-futf-check` entry prologue, the compound's included |
+| `<p>_var_valid` | `<p>__var_valid` | `__enter`'s once-per-iterator variable check (§3.7); the `_search` prologue of a var-bearing artifact |
+
+- **One emitter writes each body once**, as the twin, and the exported residual is
+  `return <p>__twin(args);` (`compound_entries.md` W1's forward shape: an unchanged argument
+  list compiles to `jmp`). The two cannot drift.
+- **`noclone` on the twins**, under `__has_attribute` (K24's spelling). `compound_entries.md`
+  F-3 found gcc partially inlining `_valid_upto` into a `.part.0` clone under `-futf-check`,
+  K24's shape on a residual. The twins' layout at non-zero positions is the part-layout
+  row's (they are subject parts after I3, `compound_entries.md` §3.1).
+- **Not applied here**: the wrapper edges (`_search_in` → `_search` and the DFA `rev-end`
+  tie's `SEARCH → MATCH`). Those are `compound_entries.md`'s wrapper step (its I3, "the
+  first live cell diff for the wrappers"), so I1 does not grow their scope.
+- **Movers**: every artifact moves at I1 anyway. The compound controller's call targets move
+  on the 97 corpus compound artifacts (bench 0), which is the F-1 fix.
+- **Check**: no relocation from inside an artifact's object to one of its own exported
+  residuals (`objdump -dr` on the `-fPIC` build: no `R_X86_64_PLT32 <p>_next_pos` /
+  `_valid_upto` / `_var_valid` from any function of the same artifact). Its sabotage row is
+  P-d (§6.8).
 
 ---
 
