@@ -71,6 +71,8 @@ for c in hex-run word-eq wcls; do for b in run chk; do [ -x "$OUT/bin/$c/sc0/$b"
 
 echo "== 4. subjects"
 if [ "${SKIP_GEN:-0}" != 1 ]; then
+  g0=$(date +%s)
   taskset -c "$CPUS" python3 -I "$HERE/design2.py" gen "$OUT" -j "$JOBS" || { echo "GEN FAILED"; exit 1; }
+  echo "gen: wall=$(( $(date +%s) - g0 ))s bytes=$(awk -F'\t' 'NR>1{b+=$3*$8} END{print b}' "$OUT/subjects.tsv")"
 fi
 echo "build: done"

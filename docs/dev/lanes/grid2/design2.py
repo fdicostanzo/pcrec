@@ -96,9 +96,9 @@ SC0_CELLS = ("f3-hex-run", "f3-word-eq", "f3-wcls")
 # the DRY subset (2-3 groups per item): substrings of the grid2 subject names
 DRY_ITEM1 = [("dig", "g2-dig-n64k-g8-L1k-u-S", "all"), ("dfa-hat", "g2-dfa-hat-n64k-g8-L1k-u-S", "all"),
              ("dig", "g2-dig-n64k-g8-L32-u-S", "first"), ("f3-dig", "g2-f3-dig-n64k-ginf-Lnone-S", "first"),
-             ("f3-hex-run", "g2-f3-hex-run-n64k-ginf-Lnone-S", "first")]
+             ("f3-hex-run", "g2-f3-hex-run-n64k-ginf-Lnone-S", "first"), ("f3-dig", "g2-f3-dig-n1m-ginf-Lnone-S", "first")]
 DRY_OB = [("o-fwd", 8), ("o-hat", 8), ("o-back", 8)]
-DRY_OBLEN = [("o-fwd", 64)]
+DRY_OBLEN = [("o-fwd", 64), ("o-fwd", 1 << 20)]
 DRY_TRIG = [("trig-dig", "early", 8), ("trig-dig", "late", 8), ("trig-dig", "absent", 8)]
 
 # ---- subject naming
