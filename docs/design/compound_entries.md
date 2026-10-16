@@ -1,20 +1,70 @@
-# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 2)
+# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 3)
 
-Status: PROPOSED, assessment and design only, nothing built. **Revision 2** (lane `cmprev`,
-2026-10-16, from main `7ee8d7ae7`, abi 78) applies Frank's rulings on revision 1's Q1-Q5
-(D163 addendum 7): read §R2 first. Revision 1: lane `cmpentry`, 2026-10-14, from main
-`d6e7fa993`, abi 78. Charter: Frank, 2026-10-14: "we have compound artifacts. are
-these pieces better composed in compound functions from parts? we issue several function
-interfaces, would these parts compose into the individual compound functions?" and "we have
-the dial controller. if we set it all up as compounds, the dial could decide whats inline".
-The model assessed is the manager's framing, Frank-endorsed: every exported entry is a
-compound controller (D163, `compound.md`) over a small set of shared parts, and the
-INLINE-vs-SHARED layout of those parts is a row of the dial's pinned table ([OPT-DIAL], D103).
+Status: PROPOSED, assessment and design only, nothing built. **Revision 3** (lane
+`cmprev2`, 2026-10-16, from main `74ac73f7f`, abi 78) answers the D6 panel
+`docs/dev/reviews/2026-10-16-r3-compound-entries.md` (3 blockers, 15 majors, 9 minors, all
+ACCEPTED by the manager): read §R3 first. **Revision 2** (lane `cmprev`, 2026-10-16, from
+main `7ee8d7ae7`, abi 78) applied Frank's rulings on revision 1's Q1-Q5 (D163 addendum 7),
+§R2. Revision 1: lane `cmpentry`, 2026-10-14, from main `d6e7fa993`, abi 78. Charter: Frank,
+2026-10-14: "we have compound artifacts. are these pieces better composed in compound
+functions from parts? we issue several function interfaces, would these parts compose into
+the individual compound functions?" and "we have the dial controller. if we set it all up as
+compounds, the dial could decide whats inline". The model assessed is the manager's framing,
+Frank-endorsed: every exported entry is a compound controller (D163, `compound.md`) over a
+small set of shared parts, and the INLINE-vs-SHARED layout of those parts is a row of the
+dial's pinned table ([OPT-DIAL], D103).
 
 Evidence is compile-only plus clockless instruction counts: gcc 15.2 `-O2` on the Linux dev
 box (Zen 4), `.text` and per-function sizes from `nm`/`size`, call edges from `objdump -dr`,
 and dynamic instruction counts (Ir) from `valgrind --tool=callgrind`. No clock was read. The
-probes and their outputs are in `compound_entries/` (own CLAUDE.md).
+probes and their outputs are in `compound_entries/` (own CLAUDE.md). Revisions 2 and 3
+measured nothing new; revision 3's facts about the emitters were read from the source at
+`74ac73f7f` and are cited by symbol.
+
+---
+
+## R3. What revision 3 changed (panel r3, finding → section)
+
+The three blockers had one root. Revision 2's table did not respect attributes the emitters
+already write: L0 assumed "no attribute" at `0`, and L4 ran before `+1`'s decline. One
+restructuring discharges all three:
+- an ARTIFACT table evaluated first (T0 `0` and `†` cells, T1/T2 `+1`'s declines);
+- an OWNED constraint row P1 ahead of every part row;
+- I4: the `0` layout is the owner's layout.
+
+| finding | sev | what changed | where |
+|---|---|---|---|
+| CE-1 | BLOCKER | `+1`'s decline is artifact row T1, ahead of every part row, so it gives the `0` object exactly. The load-bearing [OPT-1] `_deep` `noinline` is OWNED (row P1), kept at every position. P3 (single caller) keeps the `0` layout and adds no attribute | §3.4 (T1, P1, P3), §3.1 (A2) |
+| CE-2 (+F7) | BLOCKER | A1 (the VM entry chain) is OWNED by P1, so no position row writes its functions. The two dial rows are "co-resident, not unified", with disjoint subjects, and that is checked | §3.4 (P1 note), §3.7, §3.6 (disjointness) |
+| F3 (+CE-11) | BLOCKER | I4: the `0` layout is the owning design's (today's attributes, and after I1 `findall_iter.md` §2.2's). T0 replaces L0. §2.2's table is KEPT as the `0` cell's content. P2 keeps §2.2's explicit `static noinline` on label-table bodies | §3.0 I4, §3.4 T0, §3.8 |
+| CE-3 (+F2) | MAJOR | the part population is enumerated in three classes (subject / owned / not a part) and every emitted function must fall in one; `_deep`, clskit's `<p>_wcls%d`, the DFA state helpers and the λ row are named | §3.1 |
+| CE-4 | MAJOR | each adjacent pair has an emitted witness or is UNWITNESSED with its candidate population; `<p>__q_match` withdrawn (not emitted); the 25-29 Ir figure labelled R2; the census counts per ROW | §3.2 (rank table), §3.2.1, §3.6 |
+| CE-5 | MAJOR | `0`/`+1` declared-coincident until a set carries `θ_hot` | §3.2.1 |
+| CE-6 | MAJOR | `θ_hot`'s domain gains `none` (stamped); revision 2's "R3 by argument" removed | §3.3, §3.4 T2 |
+| CE-7 (+Q9 note) | MAJOR | the expected layout comes from a separate evaluator (stripped `-fno-inline` call graph + owners' attributes + hand rank fixture + policy text), never from the table's derivation; synthetic witnesses carry hand-written expected sets | §3.6 |
+| CE-8 | MAJOR | `callers` = distinct functions holding a call site after owned `always_inline` functions fold into their callers; the census compile strips attributes by text in the checker | §3.2, §3.6 |
+| CE-9 | MAJOR | a stamp arm diffs every `<PREFIX>_*` except `TUNE`/`PART_LAYOUT_*` against the same position on the cell diff's parent; UNREACHED until the first live cell | §3.6 |
+| LK-1 | MAJOR | `entry_rows[]` does not exist; E0 ADDS a per-edge rank column (new data, a shape predicate) and its hand fixture, a precondition of E1 | §3.0 I2, §4.1, §5.1 E0a |
+| LK-2 | MAJOR | the per-wrapper legality predicate `forwardable(w)` and the fallback row W2 (`adapt`), with witnesses | §3.2, §3.4 W-table |
+| LK-3 | MAJOR | P2/P4/P6 write `noclone` with `noinline`; a check counts clone symbols per part | §3.4, §3.6, S987 |
+| LK-4 (+SIB-1) | MAJOR | one legality fact `copyable(part)`: label table, or computed goto, which on the VM is `may_attr = !has_push`, read rather than re-derived; other refusal causes have zero population, held by the census | §3.4 P2 |
+| LK-5 (+CE-13) | MAJOR | I3 is a precondition of the first live cell; the `-fPIC` "no flip" row is qualified | §3.0 I3, §3.4.1, §5.1 E1′ |
+| LK-7 (+CE-12) | MAJOR | `<PREFIX>_PART_LAYOUT` dropped (`RX_TUNE` names the position); only `_WHY` and `_THETA` are stamped, by `+1`, from its first live cell, with D80 hunks, D94 readers and the suites named | §3.4.1, §5.1 E1′ |
+| F1 | MAJOR | honest recount: one built decision (A1), one designed (§2.2), four fixed writers, the kit's; "past the unification threshold" DROPPED | §3.1, §0 item 5 |
+| F4 (+LK-1, CE-4 on R3) | MAJOR | every `findall_iter.md` §2.1 helper listed with callers, rank and row; the retry is not a part; the batch-fill R3 witness HELD with Q2 | §3.8, §3.2 |
+| CE-10 | MINOR | the `0` check cites only `emit_sweep.py` against pre-E1 main | §3.6 |
+| CE-12 | MINOR | (with LK-7) the decline is an artifact-level row evaluated once | §3.4 T1/T2 |
+| CE-13 | MINOR | (with LK-5) the `−1`/`0` pair has no DFA-wrapper population until I3 | §3.2.1, §3.0 I3 |
+| LK-6 | MINOR | the seam is inside P1; a fixture asserts {seam} ∩ {not copyable} = ∅ | §3.4, §3.6 |
+| LK-8 | MINOR | I5: the layout is rendered after every length decision on every emitter (the K79 render's position); the near-cap refusal check runs on VM, DFA and compound | §3.0 I5, §3.6 |
+| LK-9 | MINOR | rows write only on static functions; a negative `-fPIC` test | §3.4, §3.6 |
+| F5 | MINOR | §2.2's `I_shared` trigger kept as U1's trigger | §3.8, §5.3 U1 |
+| F6 | MINOR | `pcrec_sb_len_decide` and H4 cited by symbol; new citations by symbol | §0 item 3, §2.1, §3 |
+| Q6-Q9 notes | — | folded into the questions | §5.5 |
+| SIB-2, family sibling | — | `θ_hot` and A1's size term named as sibling cutovers; λ, `--vm-entry-shape`, `-fno-tiered-entry` named as the row's siblings | §3.1, §5.3 U-B |
+| unlocks | — | U-T (one attribute-writing table; its check built at E1), U-A, U-B, UNL-1, UNL-2, F5's trigger | §5.3 |
+
+Sabotage ids in §3.6 are PROPOSALS (S983-S992); the manager allocates.
 
 ---
 
@@ -63,7 +113,8 @@ design-text change.
    a static variable"), and a body with a computed goto cannot be inlined (the framed VM's
    `match_anchored`). Two soft ones: a part with ONE caller must never be shared (it costs
    +112 B and saves nothing, measured on split's Q), and `info`/`main` cannot be static
-   (`entries.c:157`).
+   (`pcrec_entry_shape`'s request check). A third hard constraint is already in the tree:
+   the VM's `has_push` (`vm_plan_entry`'s `may_attr`) is the computed-goto fact (§3.4).
 4. **The per-call cost of a shared part is small, and so is the byte saving (§2.2).** A
    static part call costs 5-29 instructions per call over the inlined form (callgrind; split's
    Q about 5, the VM hybrid's prefilter about 25-29). Sharing a multi-caller part saves 0-160 B
@@ -71,22 +122,27 @@ design-text change.
    2-13% of instructions. An exported sibling call through the PLT costs about 4.8
    instructions per call more than the same call bound locally, in lost optimization as well
    as the stub (§2.3).
-5. **The dial row (§3), revised for D163 addendum 7.** The VM entry chain
-   (`--vm-entry-shape`, tuning.md §2.21) ALREADY IS this row for one family, with a size
-   term the dial moves. ONE `part-layout` row generalizes it over the sibling family (§3.1:
-   eight members today), with five DISTINCT pinned policies (§3.2): `−2` `all-shared`
-   (one out-of-line body per multi-caller part, wrappers forward to it); `−1`
-   `shared-but-inner` (as `−2`, except a part called from inside a per-candidate loop is
-   inlined); `0` `as-emitted` (no attribute, byte-identical to no flag); `+1` `hot-inline`
-   (a part whose hottest edge ranks at or above the threshold `θ_hot` is inlined, the rest
-   shared; `θ_hot` is the one value read from the measurement set, and absent from the set
-   the position DECLINES to `as-emitted` with a stamped reason); `+2` `all-inline` (every
-   copyable part inlined). Hotness is the combinator's EDGE RANK (per-candidate / per-call /
-   conditional / rare), read off `entry_rows[]`, with no profile. The decision is one
-   declared first-match table (§3.4) whose constraint rows (label table, computed goto, a
-   single caller, the encoding seam) come before any position row. Each non-zero position's
-   CELL stays `†` until its own ruled diff with a size AND time measurement (D103 item 3);
-   the policies define what that diff would switch on.
+5. **The dial row (§3), revised for D163 addendum 7 and the r3 panel.** ONE `part-layout`
+   row decides how a PART (a callable static body reached from entries) is linked: copied
+   into each caller, or one out-of-line static body they call. Its subjects are the parts gcc
+   lays out today: the hybrid's prefilter, compound parts, and after I1 the iterator's
+   `__find`. The VM entry chain (`--vm-entry-shape`, tuning.md §2.21), [OPT-1]'s `_deep` and
+   the encoding seam already write their own attributes. They are OWNED, kept by a
+   constraint row at every position, and co-resident with this row rather than unified
+   under it (§3.1; the recount finds two deciding sites, not eight). There are five pinned
+   policies (§3.2): `−2` `all-shared` (one out-of-line body per multi-caller part, wrappers
+   forward where they legally can); `−1` `shared-but-inner` (as `−2`, except a part called
+   from inside a per-candidate loop is inlined); `0` `as-emitted` (every function keeps its
+   owner's layout, byte-identical to no flag); `+1` `hot-inline` (a part whose hottest edge
+   ranks at or above `θ_hot` is inlined, the rest keep the `0` layout; with `θ_hot` absent
+   or `none` the whole artifact takes the `0` layout, stamped); `+2` `all-inline` (every
+   copyable part inlined). Hotness is an EDGE RANK (per-candidate / per-call / conditional /
+   rare), a new column `entry_rows[]` must carry, with no profile. The decision is an
+   artifact table (`0`, `†` cells and `+1`'s decline, evaluated first) and a per-part table
+   whose constraint rows (owned, not copyable, single caller) come before any position row
+   (§3.4). Each non-zero CELL stays `†` until its own ruled diff with a size AND time
+   measurement (D103 item 3). `0`/`+1` are declared-coincident until a set carries `θ_hot`,
+   and two other adjacent pairs have no witness yet (§3.2.1).
 6. **Convergence (§4): yes, one declared entry table, `entry_rows[]`.** It is [EMIT-ENTRIES]'
    table with the controller made a column: each row names an entry, its combinator, its
    parts and its mode. The edge list is DERIVED from the rows instead of hand-written
@@ -197,7 +253,7 @@ Probe `probe_layout.py` forces each static part `always_inline` and records gcc'
 | **H1 a static label table** | split's F part; every DFA `attempt`-scan body | "function 'rx__f_search' can never be copied because it saves address of local label in a static variable" | 233 of 4,243 compiled byte corpus artifacts carry it in `_search` (`findall_iter.md` F5); every split compound's F (97 admitted (pattern, arm) rows, `tests/compound/admitted.tsv`) |
 | **H2 a computed goto** | the framed VM's `match_anchored` | "function 'rx_match_anchored' can never be inlined because it contains a computed goto" | every framed VM artifact; the entry chain's rungs 2-4 already decline on it (tuning.md §2.21¶3) |
 | **H3 a part with one caller is never shared** | split's Q (one caller, `_search`) | — (not an error: a measured loss) | shared costs +112 B `.text`, Ir −11 to +5 per iteration over four subjects (a few instructions either way) |
-| **H4 `info` and `main` are not static** | — | `entries.c:157-160` refuses the request | every artifact |
+| **H4 `info` and `main` are not static** | — | `pcrec_entry_shape` (`entries.c`) refuses a request that keeps them static | every artifact |
 
 H1 decides split by itself: F must be shared across its five callers, and Q is single-caller,
 so gcc's default (F out of line, Q inlined) is the only sensible layout. The dial has nothing
@@ -275,38 +331,97 @@ fixed rung.
   the residual leaves, the controller's prologue; §1). The part-layout row decides only how a
   part's body is LINKED into its callers: a copy in each caller, or one out-of-line static
   body they call. It never decides which parts exist or what they compute, so every position
-  is answer-identical by construction (§5.5's acceptance still checks it).
+  is answer-identical by construction (§3.6's acceptance still checks it).
 - **I2. E0 before I1, and E1 after E0.** The row reads each part's callers and each edge's
-  rank (§3.2) off `entry_rows[]` (§4.1). Without the table there is no edge list to read
-  except `entries.c`'s hand list, which has drifted once (cpb02 finding 1).
+  rank (§3.2) off `entry_rows[]` (§4.1). **`entry_rows[]` does not exist yet** [r3 LK-1]:
+  the only edge source today is `entries.c`'s `entry_edges[]`, which holds `{from, to,
+  shape-predicate}` between entry ids, with no combinator and no rank. E0 must therefore ADD
+  a rank column to every edge. That is new data written by hand from the emitters' call
+  sites, not a derivation, and it carries its own hand-written fixture (§3.6, a precondition
+  of E1, not a check made after it).
 - **I3. No exported entry calls an exported sibling** (H5, Q5). A body reached from more than
   one entry is a STATIC part; the wrappers reach it through static twins. Applied where a
   change already moves the bytes (I1 for the residual twins, including F-1's `_next_pos` and
   `_valid_upto`; the first live cell diff for the wrappers), never as its own every-artifact
   event. It is a linkage rule of `entry_rows[]` that holds at every position where it is
-  applied, so it is not a row of the layout table.
+  applied, so it is not a row of the layout table. **It is a precondition of the first live
+  cell** [r3 LK-5, CE-13]: a cell may lay out a part only if every exported-to-exported edge
+  into or out of that part has its static twin, either from I1 or from the cell's own diff.
+  Until then the DFA wrappers are exported entries, not parts, and no position moves them.
+- **I4. The `0` layout is the owning design's layout** [r3 F3, CE-11]. At `0` every function
+  keeps the attributes its emitter writes today (§3.1's writers) and, after I1, the iterator's
+  `findall_iter.md` §2.2 attributes, which are that design's `0` cell. "As emitted" in this
+  note always means this: the part's `0` layout, written by its owner, which is often but not
+  always "no attribute".
+- **I5. The layout is rendered after every length decision** [r3 LK-8]. The rows' attribute
+  text and the `−2`/`−1` forwarding wrappers are written by one pass over the assembled
+  artifact AFTER the emitted-size caps, the size term, the VM entry-shape term and every
+  other length decision have read the text, as the K79 prefix placeholder is rendered last
+  (`pcrec_sb_render_prefix`). No decision can read layout bytes, on the VM, DFA or compound
+  emitters alike, so H6 holds by construction and §3.6 checks it on the near-cap witnesses.
+  The caps bound the `0`-layout text; a cell diff reports its layout delta on its size axis.
 
+### 3.1 The family: who writes inline/shared today [r3 F1, CE-3, F2]
 
-### 3.1 The sibling family: eight places that decide inline or shared today
+Revision 2 counted "eight deciders". A grep of `src/` and `memfn/src/` for every emitted
+`always_inline`, `noinline`, `noclone` and `static inline` finds the real sites. They fall
+into three groups.
 
-| # | member | where | decided by |
-|---|---|---|---|
-| 1 | the VM entry chain (`plain`/`shared`/`forward`/`inline`) | `emit_vm.c:10961-10998`; tuning.md §2.21 | a size term (4,096 / 8,192 at `+1`), the dial's existing row |
-| 2 | the hybrid's embedded DFA search | `emit_vm.c:12773` | the closure (B0): static, gcc decides inlining |
-| 3 | the encoding seam (`_span_match*`, `_back_step`) | `src/enc/enc.c:191` `inline_def` | fixed `static inline` ([LOSS-REVIEW] candidate 1) |
-| 4 | the kit's FUNC helpers and D155 selector | `memfn/src/ofsskip.c` (`<fn>__body`, the selector) | the kit (`static inline`) |
-| 5 | the iterator's `__find` | `findall_iter.md` §2.2's two-row table | static label table → `shared`, else `inline` (designed) |
-| 6 | compound parts | `emit_compound.c:101` | gcc |
-| 7 | the DFA `_in` and `_match_caps` wrappers | `emit_dfa.c:2727`, `:2788` | gcc, and the link regime (§1.3) |
-| 8 | `noclone` on search heads | `pcrec_emit_search_head` (K24) | fixed: stop gcc's partial-inlining split |
+**Group A: sites that write an attribute or a linkage today.**
 
-Eight members is past the unification threshold (memory `pcrec-forest-for-trees`). The
-general form is ONE row: a part's layout as a function of (its callers, its copyability, the
-dial position), applied by the entry table at every place one body is reachable from more than
-one entry. Members 1 and 5 are the only ones with a decision today; the rest are fixed or
-gcc's.
+| # | writer | where (by symbol) | what it writes | decided per artifact? |
+|---|---|---|---|---|
+| A1 | the VM entry chain (`plain`/`shared`/`forward`/`inline`) | `emit_vm.c` `vm_plan_entry` (`en->ai`, `en->ai_body`); tuning.md §2.21 | `always_inline` on the thin helpers and the matcher body, or `noinline` on the matcher body (`shared` rung), or nothing | **yes**: a size term (4,096; 8,192 at `+1`/`+2`), the dial's existing row, gated by the legality fact `may_attr = !has_push` |
+| A2 | [OPT-1]'s deep tier `<name>_deep` | `emit_vm.c`, the `tiered` arm of the entry emitter | `static __attribute__((noinline))`, load-bearing: "inlined, these arrays would be back on the entry's own frame" | whether `_deep` exists (`-fno-tiered-entry`, tuning.md §2.12); the attribute is fixed |
+| A3 | K24's `noclone` on every search head | `emit_dfa.c` `emit_search_head` (behind `pcrec_emit_search_head`) | `__attribute__((noclone))` under `__has_attribute` | no: fixed |
+| A4 | the encoding seam (`_span_match*`, `_back_step`, utf8 `_decode`) | `src/enc/enc_byte.c`, `enc_utf8.c` templates (`inline_def`) | `static inline` | no: fixed ([LOSS-REVIEW] candidate 1, abi 76) |
+| A5 | the class kit's predicates `<p>_wcls%d` | `clskit.c` (the seven matcher emitters), called from the VM emitter's class section | `static inline` | no: fixed (the λ row picks the FORM, not the linkage) |
+| A6 | the DFA machine's state helpers (`_step`, `_is_stop`, `_accepts`, `_accepts_class`, `_is_dead`, `_row`, `_view_live`, `_view_take`) | `emit_dfa.c`, the machine-helper emitter | `static inline` | no: fixed |
+| A7 | the kit's FUNC helpers and D155 selector | `memfn/src/ofsskip.c` and siblings | `static inline` | the kit's (D157) |
 
-### 3.2 The five positions: five distinct policies
+**Group B: designed, not built.** The iterator's `__find`, `__adv`, `__step`, `__enter`
+(`findall_iter.md` §2.1-§2.2): `__find` is `always_inline` or `static noinline` by §2.2's
+two-row table; the other three are `always_inline`.
+
+**Group C: no attribute; gcc decides, and the link regime (§1.3).** The hybrid's embedded
+DFA search `<p>_prefilter` (emitted by `pcrec_emit_dfa_engine`, so it carries A3's
+`noclone` and nothing else), compound parts `<p>__<role>_search` (`part_splice`), and the
+DFA `_in`/`_match_caps` wrappers. Revision 2 called these "members 2, 6, 7"; they have no
+decision in the code [r3 F1].
+
+**The honest recount.** Decisions about inline-vs-shared that vary per artifact: ONE built
+(A1) and ONE designed (§2.2). A2's existence varies but its attribute does not. Fixed
+writers: A3-A6, plus the kit's A7. Revision 2's "eight members is past the unification
+threshold" does not survive the recount: two decisions are below the `~3` trigger of memory
+`pcrec-forest-for-trees`, so that argument is DROPPED. The row is justified by its charter
+(Frank, 2026-10-14: "the dial could decide what's inline") and by the entry table it rides
+on (§4), not by a family size.
+
+**The siblings the row sits beside** [r3 F2, family sibling statement]. Four existing rows
+or axes decide how a body is laid out or what form a body takes, by a size or speed trade:
+- tuning.md §5.4's **λ row** (the class-matcher form `P3`/`K`/`P2`/`B1`; A5 is its output);
+- the **`--vm-entry-shape` term row** (A1);
+- the **`-fno-tiered-entry` axis** (A2's existence, tuning.md §2.12);
+- the **`[ART-SIZE]` ladder rows** (bar, threshold).
+
+The layout row is the fifth, not "a new family". Its threshold `θ_hot` (§3.3) and A1's size
+term are both position-indexed cutovers on an unmeasured quantity [r3 SIB-2], so both fall
+under memory `pcrec-suspect-tuning-constants`, and both belong in one row table once A1
+migrates (unlock U-B, §5.3).
+
+**The part population** [r3 CE-3]. The table's subject is a PART: a callable static body
+reachable from one or more entries. Every function the emitters write is in exactly one of
+three classes, and E1's census checks that the classes cover every emitted function:
+
+| class | functions | rows that touch it |
+|---|---|---|
+| **subject** (the layout row decides it at non-zero positions) | the hybrid's `<p>_prefilter`; compound parts `<p>__<role>_search`; after I1, `__find`, `__adv`, `__step`, `__enter`; after I3, the static twins of wrapper bodies and residual leaves | §3.4's P2-P9 |
+| **owned** (an owner writes its attribute; the row keeps it at every position) | A1's thin helpers (bind, init, reset, report_captures, the three `_run`s) and matcher body; A2's `_deep`; A4's seam | §3.4's P1 |
+| **not a part** (an expression helper inside one part's body, or not static) | A5's `<p>_wcls%d`; A6's DFA state helpers; A7's kit helpers; every exported entry; `info`; `main` | none; A3's `noclone` is an orthogonal attribute on entries and is kept (H7) |
+
+A function that fits none of the three classes is a census failure, not a default.
+
+### 3.2 The five positions: five pinned policies
 
 A position's POLICY is pinned (D103, Q1): it is the definition of what the position does,
 fixed in tuning.md §5.4's row, and it changes only by a ruled diff. Whether the position's
@@ -314,86 +429,106 @@ CELL is live (moves bytes) is a separate fact: every non-zero cell stays `†` u
 ruled diff cites a size AND a time measurement (D103 item 3). The policies below are what
 those diffs switch on.
 
-**Hotness is an edge rank, read off the table, not a profile.** Each edge from a controller
-to a part has a rank, given by the combinator that emits the call. A part's rank is the
-highest rank among its in-edges.
+**Hotness is an edge rank, carried by `entry_rows[]`, not a profile.** Each edge from a
+function to a part has a rank, given by the call site's place in the controller. E0 adds the
+rank as a column of every edge (I2, [r3 LK-1]); where one edge has call sites of two kinds,
+the column is a shape predicate (as `entry_edges[]`'s `when` already is) and the edge takes
+the higher rank. A part's rank is the highest rank among its in-edges.
 
-| rank | edge kind | calls of the part per exported call | witnesses today |
+| rank | edge kind | calls of the part per exported call | witnesses |
 |---|---|---|---|
-| R3 `inner` | inside the controller's per-candidate or per-attempt loop | unbounded; grows with the subject | the VM hybrid's prefilter where the artifact's reseed row re-enters it (`hyb_reseed.md` §4); VM `_search_run` → `match_anchored`; the iterator's internal batch fill (D165 add. 2), which calls the find body once per buffered match |
-| R2 `per-call` | once on every call | 1 | split's Q from `_search`; the sibling body behind a DFA `_match_caps`/`_in` wrapper; the controller's advance; `__find` from `_search` and from `_next` |
-| R1 `conditional` | on a data-dependent subset of calls | at most 1 | split's F (while the floor can be live); the iterator's NOTEMPTY retry R (after an empty match, `reports_empty` artifacts only) |
-| R0 `rare` | an error, tie or fallback path | about 0 | the `rev-end` tie's `verify-at` (`<p>__q_match`, kept static, `compound.md` §A.4) |
+| R3 `inner` | inside a per-candidate or per-attempt loop | unbounded; grows with the subject | the hybrid's `_search_run` → `<p>_prefilter` edge on an artifact whose retry re-enters the prefilter: an MRL clamp (`nclamp > 0`) or an ADAPTIVE re-seed row (`hyb_reseed.md`, the `retry_win`/`retry_seed` text in the VM emitter). UNWITNESSED among this note's measured artifacts: `(a)b`'s prefilter is called only from the entry [r3 CE-4]. The iterator's internal batch fill is ruled as a direction (D165 add. 2 Q2) but not designed in `findall_iter.md`, so it is HELD with `findall_iter.md`'s Q2 and is not a witness [r3 F4] |
+| R2 `per-call` | once on every call | 1 | the same `_search_run` → `<p>_prefilter` edge where no retry re-enters (the `(a)b` hybrid, measured); split's Q from `_search`; `__find` from `_search` and `_next` (designed) |
+| R1 `conditional` | on a data-dependent subset of calls | at most 1 | split's F (while the floor can be live). F is not copyable (H1), so no position row moves an R1 part today: R1 has no movable witness |
+| R0 `rare` | an error, tie or fallback path | about 0 | the DFA `rev-end` tie's verify (`entry_edges[]`'s `SEARCH → MATCH` edge, `sh_dfa_tie`). It is an exported-to-exported edge today, so it becomes a part only by I3 [r3 CE-4]: revision 2's `<p>__q_match` is not emitted by any `src/gen` file |
 
-Revision 1's "per call / per match / per find-all / rare" folds into this: per match in an
-`iterate` row is R2 of `_next`, and once per find-all is R1.
+**Callers** [r3 CE-8]. `callers(part)` is the number of distinct functions that hold a call
+site to the part, counted in the emitted C after every function an OWNED row makes
+`always_inline` is folded into its callers. It counts functions, not call sites: the
+prefilter's two sites inside one `_search_run` are one caller. It depends on the owner's
+decision: on the `(a)b` hybrid at a forward or inline rung, `_search_run` folds into
+`_search` and `_search_in`, so the prefilter has two callers; at the `plain` rung it has one.
 
 **The five policies:**
 
-| position | policy token | layout of a part with two or more callers | what decides it | cell today |
+| position | policy token | layout of a subject part with two or more callers | what decides it | cell today |
 |---|---|---|---|---|
-| −2 `min-size` | `all-shared` | one `static noinline` body; every wrapper entry (`_in`, `_match_caps`, un-suffixed forwards) a tail-forward to that body with no frame of its own | caller count | `†` |
+| −2 `min-size` | `all-shared` | one `static noinline noclone` body; each wrapper that calls it is a tail-forward where `forwardable` holds, and keeps its adaptation and a call where it does not (§3.4 W-table) | caller count | `†` |
 | −1 `size` | `shared-but-inner` | as `−2`, except a part of rank R3 is `always_inline` into each caller | caller count, rank = R3 | `†` |
-| 0 `balanced` | `as-emitted` | no attribute; gcc decides; byte-identical to no flag | nothing (D103's no-op cell) | live (the default) |
-| +1 `speed` | `hot-inline` | a copyable part of rank ≥ `θ_hot` is `always_inline`; every other part as at `0` (no attribute). With no `θ_hot` in the active set the position DECLINES to `as-emitted`, stamped (§3.3) | rank, `θ_hot` from the set | `†` |
+| 0 `balanced` | `as-emitted` | the owning design's layout (I4); byte-identical to no flag | nothing (D103's no-op cell) | live (the default) |
+| +1 `speed` | `hot-inline` | a copyable part of rank ≥ `θ_hot` is `always_inline`; every other part keeps its `0` layout. With `θ_hot` absent from the active set, or `none`, the WHOLE ARTIFACT takes the `0` layout, stamped (§3.3, rows T1/T2) | rank, `θ_hot` from the set | `†` |
 | +2 `max-speed` | `all-inline` | every copyable part `always_inline` into every caller | copyability | `†` |
 
-A part with ONE caller is never shared at any non-zero position (§3.4 row L4). The forwarding
-in `−2`/`−1` is part of the policy, not optional: F-5 measured that one body behind six entries
-that each keep a frame and a canary (`plain`) is LARGER than `inline` on a small VM artifact,
-so "shared" means one body behind frameless forwards (the VM chain's `shared` rung, §2.4).
-`+1` never shares a part that `0` would have let gcc inline. A speed position that shared
-more than the default would not be speed-leaning.
+A subject part with ONE caller keeps its `0` layout at every position (§3.4 row P3): it is
+never shared, and no position adds an attribute to it [r3 CE-1]. `+1` never shares a part
+that `0` would have let gcc inline: a speed position that shared more than the default would
+not be speed-leaning.
 
-#### 3.2.1 Where adjacent positions differ
+The forwarding in `−2`/`−1` is part of the policy, and it is legal only per wrapper [r3
+LK-2]. F-5 measured that one body behind six entries that each keep a frame and a canary
+(`plain`) is LARGER than `inline` on a small VM artifact. gcc 15.2 `-O2` turns a wrapper into
+`jmp body` only when its argument list passes through unchanged. A wrapper that adapts its
+arguments keeps a frame and a `call`: the compound `_match` builds a local
+`capture_spans[NCAPS][2]` from `ctx` (`emit_first_nonzero_match`), and with
+`-fstack-protector-strong` it also carries a canary. So `−2` does not claim a smaller object
+on every artifact. Each cell diff's size axis states it per artifact class.
 
-The policies are distinct by construction: each adjacent pair disagrees on a named part class.
-Whether a given artifact carries that class is a population question.
+#### 3.2.1 Where adjacent positions differ [r3 CE-4, CE-5, CE-13]
 
-| pair | they disagree on | witness (§1.3, §2.2) |
+Each adjacent pair differs on a named part class. Revision 2 called this "distinct by
+construction"; that is true of the policies and says nothing about populations. Below, each
+pair has a named emitted witness or is marked UNWITNESSED, with the population that would
+make it live:
+
+| pair | they disagree on | witness, or UNWITNESSED |
 |---|---|---|
-| −2 / −1 | a multi-caller part of rank R3 | the frameless hybrid `(a)b`'s `rx_prefilter` (2 callers) on an artifact whose reseed row re-enters it; inlining it measured about 25-29 Ir per call fewer |
-| −1 / 0 | every multi-caller part and wrapper body gcc copies (`−1` shares it) | the DFA attempt `^ab\|cd` and split: gcc copies `_match` into `_match_in` (110-142 B) without `-fPIC` |
-| 0 / +1 | a part of rank ≥ `θ_hot` that gcc kept out of line | the framed hybrid's `search_run` (R2, kept out of line by gcc) when `θ_hot` ≤ R2 |
-| +1 / +2 | a multi-caller part ranked below `θ_hot`, at least every R0 part (`θ_hot` is never R0, §3.3) | split's tie path `<p>__q_match` (R0) on a `rev-end` Q that can tie |
+| −2 / −1 | a copyable multi-caller subject part of rank R3 | **UNWITNESSED.** Candidate population: hybrids whose retry re-enters a copyable prefilter (an MRL clamp or an adaptive re-seed row). Revision 2's "25-29 Ir per call" for `(a)b`'s prefilter is an R2 (entry) number, not an R3 one |
+| −1 / 0 | a copyable multi-caller subject part that the `0` layout inlines | **UNWITNESSED today.** On `(a)b` gcc already keeps the prefilter out of line ("gcc = shared", §2.2), so `−1` changes its text and not its object. The DFA wrappers have no population until I3 makes them parts [r3 CE-13]. The designed witness is `__find` on a non-attempt artifact after I1: `always_inline` at `0` (§2.2) and shared at `−1` (the parity gate's `I` and `I_shared` arms) |
+| 0 / +1 | a copyable part of rank ≥ `θ_hot` that the `0` layout keeps out of line | **DECLARED-COINCIDENT until a set carries `θ_hot`** [r3 CE-5]: no set does, so `+1` takes the `0` layout on every artifact (row T1), as D103 treated `+2`. Once `θ_hot` ≤ R2: `(a)b`'s `<p>_prefilter` (R2, two callers at the forward rung, kept out of line by gcc, measured −13.3% Ir dense when inlined) |
+| +1 / +2 | a copyable multi-caller part ranked below `θ_hot` | with `θ_hot` = R3: `(a)b`'s `<p>_prefilter` (R2), left at `0` by `+1` and inlined by `+2`. With `θ_hot` ≤ R2: UNWITNESSED until I3 turns the `rev-end` tie's verify into a static R0 part |
 
-The populations are NOT counted here. E1 owes a census with a K35 floor per part class (§5.2
-item 2). A pair that disagrees on no corpus artifact is reported as such, as D103 reported `+2`
-declared-vacuous, and not hidden. On split alone every position coincides (F-4: L1 pins F and
-L4 pins Q).
+On split alone every position coincides (F-4: P2 pins F and P3 keeps Q). E1's census counts
+each ROW's population per position, not each part class (§3.6), so a row with zero
+population is reported with its reason.
 
 ### 3.3 `θ_hot`: the one value a position reads from the measurement set
 
-- **What it is.** The lowest edge rank that `+1` inlines. Its domain is {R3, R2, R1}. R0 is
-  never in it, so `+1` never inlines a rare-edge part and stays distinct from `+2`.
+- **What it is.** The lowest edge rank that `+1` inlines, or `none`. Its domain is
+  {R3, R2, R1, `none`} [r3 CE-6]. R0 is never in it, so `+1` never inlines a rare-edge part
+  and stays distinct from `+2` wherever an R0 part exists. `none` means the set measured
+  every rank and found none material: `+1` then inlines nothing beyond `0`, and says so in
+  its stamp.
 - **Why it comes from the set** (Q1). A shared part's call cost is hardware-dependent. Zen 4,
   Zen 1 and the M1 differ, which is what D166 sets exist for. The policy that reads it is
-  pinned.
+  pinned. A static rank makes the same layout for the same pattern on every box with the same
+  set; only `θ_hot` moves, and it moves with the set (Q7 note).
 - **Its derivation**, a DERIVED row of the set (D166 item 2, the closed derivation registry of
   `measure_sets.md`). The inputs are, per rank r, the measured overhead of reaching a shared
   static part over its inlined form, per exported call, on the set's reference short-call
   cell, in units of the scalar walk's per-byte cost; and the materiality bar `y` (tuning.md
   §5.2). `θ_hot` is the lowest r whose overhead is material against that cell's walk. The
-  overhead grows with rank (more calls per call), so the derived row is monotone, and if R1
-  is material so are R2 and R3. If no rank is material on the reference cell, the derived
-  value is R3. This is an argument, not a presumed constant: an R3 part is called a number
-  of times that grows with the subject, so its overhead is material at some subject length
-  on every box. The derivation states that argument as its own row.
-- **When the set has no `θ_hot`**, `+1` does not presume one (no silent defaults). Row L8
-  (§3.4) declines to `as-emitted` and stamps `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`.
-  This is TODAY's state: no set carries the inputs. The only measurement is revision 1's
-  callgrind Ir on Zen 4 (5-29 Ir per call, §2.2), which is an instruction count, not a cost
-  in set units, and is LABELLED UNMEASURED for the set.
+  overhead grows with rank, so the derived value is monotone: if R1 is material, so are R2
+  and R3. **If no rank is material on the reference cell, the derived value is `none`.**
+  Revision 2 derived R3 here from an argument about longer subjects; that let an argument
+  override a measurement that said nothing was material, which is a presumed value [r3
+  CE-6]. A set that wants R3 to count at long subjects carries a measured long-subject cell
+  as a second input row, and the derivation reads it like any other.
+- **When the set has no `θ_hot`**, `+1` does not presume one (no silent defaults). Artifact
+  row T1 (§3.4) gives the whole artifact the `0` layout and stamps
+  `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`. This is TODAY's state: no set carries the
+  inputs. The only measurement is revision 1's callgrind Ir on Zen 4 (5-29 Ir per call,
+  §2.2), which is an instruction count, not a cost in set units, and is LABELLED UNMEASURED
+  for the set. Both stamps are reachable only once `+1`'s cell is live (§3.4.1).
 - **What moves when the set changes.** Only `+1` artifacts, through `θ_hot`. `−2`, `−1`, `0`
   and `+2` read nothing from the set. A default-set change carries its mover census (D166
   item 1, Q1), and at `0` no set change can move a byte.
 
-The quantities the cells need, owed per box (unchanged from revision 1, now named as the
+The quantities the cells need, owed per box (unchanged from revision 1, named as the
 inputs above):
 
 | quantity | unit (D166 item 2: relative) | measured here | owed |
 |---|---|---|---|
-| `C_part(r)`: one static part call over the inlined form, per rank | per call, in units of the scalar walk's per-byte cost | 5-29 Ir per call (callgrind, Zen 4; UNMEASURED in set units) | ns per call, short-call regime, per box (a quiet slot) |
+| `C_part(r)`: one static part call over the inlined form, per rank | per call, in units of the scalar walk's per-byte cost | 5-29 Ir per call (callgrind, Zen 4; R2 only; UNMEASURED in set units) | ns per call, short-call regime, per box (a quiet slot); R3 needs a witness first (§3.2.1) |
 | `C_plt`: an exported-sibling call over a static part call | per call | ≈ 4.8 Ir per call (one witness) | not read by any row: I3 removes the edge instead of pricing it |
 | `b_part`: the part's object bytes | bytes | the per-function sizes in `layout.tsv` | the corpus distribution by part class, for each cell diff's size axis |
 
@@ -401,132 +536,249 @@ A cell diff (E1′) is argued with D103's rubric. `inline` is argued where `C_pa
 material against the walk and the extra `.text`, `(k − 1) · b_part`, fits the position's size
 budget. The diff cites both axes.
 
-### 3.4 The declared first-match table
+### 3.4 The declared tables
 
-The policy and the constraints as ONE table, evaluated per (part, position): the first row
-whose conjuncts all hold writes the layout. The conjuncts are listed, so the listing can
-show them (D163 add. 4); there is no if-then logic outside the table. Constraint rows come
-before every non-zero position row, so no position overrides them (Q2). Each position ends in
-an unconditional row, so the table is total.
+The decision is two first-match tables and one small wrapper table. Every conjunct is listed,
+so the listing can show it (D163 add. 4), and there is no if-then logic outside the tables.
+
+**The artifact table, evaluated once per artifact before any part** [r3 CE-1, CE-12, F3].
+
+| # | row | conjuncts (all hold) | effect | stamp |
+|---|---|---|---|---|
+| T0 | `as-emitted` | position = 0, or the position's cell is `†` | every function keeps its `0` layout (I4); the part table is not consulted | none |
+| T1 | `speed-unmeasured` | position = +1; the active set has no `θ_hot` | as A0 | `_WHY "threshold-unmeasured"` |
+| T2 | `speed-none` | position = +1; `θ_hot` = `none` | as A0 | `_WHY "no-material-rank"`, `_THETA "none"` |
+| T3 | `per-part` | (otherwise) | consult the part table for each part | `_THETA` at `+1` |
+
+T0 makes `0`, and every position whose cell is still `†`, byte-identical by construction:
+nothing below it runs. Because T1 and T2 sit above the part table, a `+1` decline gives the
+`0` object exactly. In revision 2 it did not: L1-L4 ran first and L4 added `always_inline`.
+
+**The part table, evaluated per SUBJECT or OWNED function (§3.1) at a live non-zero
+position.** Constraint rows P1-P3 come before every position row, so no position overrides
+them (Q2): P1 is the row that keeps every owned function out of the position rows. Each
+position ends in an unconditional row, so the table is total.
 
 | # | row | conjuncts (all hold) | layout written | evidence |
 |---|---|---|---|---|
-| L0 | `balanced` | position = 0 | no attribute (as emitted) | D103's no-op cell; Q2 |
-| L1 | `label-table` | the body defines a static label table | `static noinline`, one body | gcc error (§2.1 H1) |
-| L2 | `computed-goto` | the body contains a computed goto | `static noinline`, one body | gcc error (§2.1 H2) |
-| L3 | `seam` | the part is an encoding-seam entry (`_span_match*`, `_back_step`) | `static inline`, as today | [LOSS-REVIEW] candidate 1 (abi 76); member 3 |
-| L4 | `single-caller` | callers = 1 | `static inline always_inline` | sharing measured +112 B for nothing (§2.1 H3) |
-| L5 | `min-size` | position = −2 | `static noinline`; wrappers tail-forward | §3.2 |
-| L6 | `size-inner` | position = −1; rank = R3 | `always_inline` | §3.2 |
-| L7 | `size` | position = −1 | `static noinline`; wrappers tail-forward | §3.2 |
-| L8 | `speed-unmeasured` | position = +1; `θ_hot` absent from the active set | no attribute; `_WHY "threshold-unmeasured"` | §3.3 |
-| L9 | `speed-hot` | position = +1; rank ≥ `θ_hot` | `always_inline` | §3.3 |
-| L10 | `speed` | position = +1 | no attribute | §3.2 |
-| L11 | `max-speed` | position = +2 | `always_inline` | §3.2 |
+| P1 | `owned` | the function is in the OWNED class (§3.1): A1's helpers and matcher (its rung's attribute), A2's `_deep` (`noinline`, load-bearing), A4's seam (`static inline`) | its owner's attribute, unchanged | [r3 CE-1, CE-2, LK-6]; [OPT-1]; [LOSS-REVIEW] candidate 1 |
+| P2 | `not-copyable` | `copyable(part)` is false | `static noinline noclone`, one body | gcc errors (§2.1 H1, H2); [r3 LK-4, LK-3] |
+| P3 | `single-caller` | `callers(part)` = 1 | its `0` layout (no attribute added) | H3: sharing measured +112 B for nothing; [r3 CE-1] |
+| P4 | `min-size` | position = −2 | `static noinline noclone`; wrappers by the W-table | §3.2 |
+| P5 | `size-inner` | position = −1; rank = R3 | `always_inline` | §3.2 |
+| P6 | `size` | position = −1 | `static noinline noclone`; wrappers by the W-table | §3.2 |
+| P7 | `speed-hot` | position = +1; rank ≥ `θ_hot` | `always_inline` | §3.3 |
+| P8 | `speed` | position = +1 | its `0` layout | §3.2; Q8 |
+| P9 | `max-speed` | position = +2 | `always_inline` | §3.2 |
 
-L0 comes first so `0` is byte-identical by construction. At `0`, gcc enforces L1/L2 itself
-(it refuses to copy), and L3/L4 are what gcc already does.
+- **`copyable(part)` is ONE legality fact** [r3 LK-4, SIB-1]. It is false where the body
+  defines a static label table (the DFA attempt route, H1) or contains a computed goto (H2).
+  On the VM, H2 is `has_push`: `vm_plan_entry`'s own invariant is that the `goto *` count is
+  `(has_push ? 1 : 0)` plus shared-callee bodies, both terms of `has_push`, so `may_attr =
+  !has_push` already IS this fact for VM bodies. P2 reads `may_attr` and the label-table
+  fact; it does not compute a second copy of either. gcc's other refusal causes (`alloca`,
+  `setjmp`, variadic functions, recursion through the part) appear nowhere in emitted text
+  at this tip (grep of `src/gen`, `src/enc`, `memfn/src`). E1's census holds that population
+  at zero, and a planted one fails the build. Member A1 consumes the same fact when it
+  migrates (U-B).
+- **P1 comes first** [r3 CE-1, CE-2]. A2's `noinline` on `_deep` is load-bearing (inlined,
+  its arrays sit on the entry's frame and gcc probes every page on every call), so no
+  position may override it. A1's attributes are the `--vm-entry-shape` row's: until the
+  ruled diff that migrates A1 under this row, the two dial rows are CO-RESIDENT on a VM
+  artifact with DISJOINT subjects [r3 CE-2, F7]. P1 excludes A1's functions from every
+  position row, so the two rows never write the same function. That disjointness is
+  checked (§3.6), and without it the `−2` row would write `static noinline` on a matcher
+  the `inline` rung marks `always_inline`.
+- **The seam inside P1** [r3 LK-6]. A seam body is a small loop with no label table and no
+  computed goto, so `{seam} ∩ {not copyable}` is empty. A fixture asserts it, because P1's
+  owner attribute (`static inline`) on a non-copyable body would be a build error.
+- **P2 adds `noclone`** [r3 LK-3]. `noinline` does not stop ipa-cp (`.constprop`), ipa-sra
+  (`.isra`) or partial-inlining (`.part.N`) clones; K24 found `noclone` on the callee was
+  the only cure. P2, P4 and P6 write it under `__has_attribute`, A3's spelling. The linkage
+  critic's three-caller test did not clone, so the observable is carried by a check that
+  counts clone symbols per part, not by an argument (§3.6).
+- **Every row writes only on a STATIC function** [r3 LK-9]. gcc rejects `always_inline` on
+  an exported callee under `-fPIC` ("function body can be overwritten at link time").
+  Exported entries are never parts (§3.1), and I3 gives every multi-entry body a static twin
+  before a cell lays it out. A negative test (§3.6) plants `always_inline` on an exported
+  callee and expects the `-fPIC` build to fail.
 
-**Not rows of this table, and why:**
+**The wrapper table, at `−2` and `−1` only** [r3 LK-2]: for each wrapper that calls a body
+P4 or P6 shared.
+
+| # | row | conjuncts | wrapper written | witness |
+|---|---|---|---|---|
+| W1 | `forward` | `forwardable(w)`: the wrapper's parameters pass to the body unchanged and in order, with no local array and no adapted argument | `return body(args);`, which gcc compiles to `jmp body` with no frame | the `_search_in`/`_search` shape (measured: identical argument lists compile to `jmp`) |
+| W2 | `adapt` | (otherwise) | the wrapper keeps its adaptation and calls the body: a frame, a `call`, a canary under `-fstack-protector-strong` | the compound `_match` (`emit_first_nonzero_match`: a local `capture_spans[NCAPS][2]`, `caps` adapted) |
+
+W2 is the fallback revision 2 left implicit: it fell back silently to `plain`'s shape [r3
+LK-2]. The VM chain's `may_fwd` is a sibling fact (it adds the storage condition: the
+artifact writes no working storage), and joining the two is unlock UNL-2.
+
+**Not rows of these tables, and why:**
 
 | item | where it lives |
 |---|---|
-| H4: `info` and `main` are not static | they are entries, not parts (`entries.c:157`) |
+| H4: `info` and `main` are not static | they are entries, not parts (`pcrec_entry_shape`'s request check) |
 | H5 / I3: no exported-to-exported call | a linkage rule of `entry_rows[]` (§3.0) |
-| H6: attribute text is excluded from every length decision | a property every row satisfies: the emitted-size caps and every length decision read the layout-neutral length (D84; [EMIT-VERB]/RQ-3's decision view, `pcrec_sb_len_decide`, `emit_vm.c:10963`), so no position moves the refusal set or a selection; checked over the corpus (§3.6) |
-| H7: `noclone` on every search head | an orthogonal attribute (K24), at every position |
-| member 4, the kit's FUNC helpers | the kit's (D157); pcrec can pass the position as a fact (U8) |
-| member 1, the VM entry chain | keeps its own term and §5.4 cells (4,096 at `0`, 8,192 at `+1`/`+2`) until a ruled diff migrates it under this row. That diff's content would be: `−2`/`−1` take the `shared` rung where it is legal, and AUTO's term otherwise (F-5: `plain` is not the size end below the term); `+2` takes `inline` on a frameless artifact. It is `†` like every other non-zero cell |
+| H6: layout text is excluded from every length decision | I5: the layout pass renders after every decision, on every emitter |
+| H7: `noclone` on every search head | an orthogonal attribute (A3, K24), kept at every position |
+| the kit's FUNC helpers (A7) | the kit's (D157); pcrec can pass the position as a fact (U8) |
+| A1's migration under this row | its own ruled diff: `−2`/`−1` take the `shared` rung where it is legal and AUTO's term otherwise (F-5: `plain` is not the size end below the term); `+2` takes `inline` on a frameless artifact. Until then, P1 |
 
 #### 3.4.1 What a caller can observe, per position
 
 | observable | −2 | −1 | 0 | +1 | +2 |
 |---|---|---|---|---|---|
 | answers, captures, give-up codes | identical | identical | identical | identical | identical |
-| refusal set, every stamped selection | identical (H6) | identical | identical | identical | identical |
+| refusal set, every stamped selection | identical (I5) | identical | identical | identical | identical |
 | `RX_TUNE` | `"min-size"` | `"size"` | `"balanced"` | `"speed"` | `"max-speed"` |
-| `<PREFIX>_PART_LAYOUT` (proposed; non-zero positions only, once a cell is live) | `"all-shared"` | `"shared-but-inner"` | absent | `"hot-inline"` | `"all-inline"` |
-| `<PREFIX>_PART_LAYOUT_WHY` | absent | absent | absent | `"threshold-unmeasured"` on L8 only | absent |
-| object symbols (`nm`) | one local symbol per multi-caller part | the same, R3 parts absent | gcc's choice | R ≥ `θ_hot` parts absent | copyable parts absent |
-| layout flips with `-fPIC` (F-2) | no | no | yes, as today | for hot parts no, for the rest yes | no |
+| `<PREFIX>_PART_LAYOUT_WHY` (proposed) | absent | absent | absent | `"threshold-unmeasured"` (T1) or `"no-material-rank"` (T2); absent on T3 | absent |
+| `<PREFIX>_PART_LAYOUT_THETA` (proposed) | absent | absent | absent | the `θ_hot` used (`"R3"`, `"R2"`, `"R1"`, `"none"`); absent on T1 | absent |
+| object symbols (`nm`) | one local symbol per shared subject part; owned symbols as at `0` | the same, R3 subject parts absent | the owners' choices (A1 and A2 already decide some symbols) and gcc's | subject parts of rank ≥ `θ_hot` absent | copyable subject parts absent |
+| layout flips with `-fPIC` (F-2) | no, for subject parts | no, for subject parts | yes, as today | no, for parts it inlines; the rest as at `0` | no, for subject parts |
 | time | the cell's cited cost (Q3: not gated) | the cell's cited cost | the default | gated at parity (Q3) | gated at parity |
 
-The stamp is absent at `0`, so `0` stays byte-identical. It first appears with the first
-live cell, in that cell's abi event (D76/D94: its readers are found by grep). There is no
-`rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves differently).
+The "no flip" rows hold only for parts with no exported-sibling edge, which I3 guarantees
+before a cell is live [r3 LK-5]. Without I3 a hot part that calls `<p>_next_pos` or
+`<p>_valid_upto` (F-1) still pays the PLT under `-fPIC`.
+
+**The stamps state only what the position does not** [r3 LK-7, CE-12]. `RX_TUNE` already
+names the position, and the policy is a pure function of the position apart from `θ_hot` and
+the decline. So revision 2's `<PREFIX>_PART_LAYOUT` (the policy token) is dropped. Only the
+decline reason and the `θ_hot` used are stamped, and only by `+1`. Both appear with `+1`'s
+first live cell, in that cell's abi event:
+- the D80 spec hunks (tuning.md §5.3 for the stamp, §5.4 for the row, `match_api.md`
+  §6.3.11's stamp list);
+- the D94 reader grep (`stamp_kinds.c`, `memfn_stamps.c`, the registry's stamp tests);
+- `make test-codegen` and the registry suites, per the root CLAUDE.md abi row.
+
+There is no `rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves differently).
 
 ### 3.5 Interaction with the iterator's parity gate and the mode M
 
 - **The parity gate** (D165 item 5, `findall_iter.md` §5.3): `next` at parity or better than
-  today's `_search` loop on dense tiny matches. At `shared`, `next` calls a shared `__find`
-  once per match (the gate's `I_shared` arm); the twin prices it at a smaller constant
-  `.text` (+832-989 B instead of +997-2,587 B). The gate is stated against the DEFAULT
-  build. **RULED (Q3):** the gate binds positions `0`, `+1` and `+2`; at `−1`/`−2` the gap is
-  that cell's cited time cost, reported, not gated. Under §3.2 the find body is rank R2
-  (one call per `_search` or `_next`), so `−1` shares it like `−2` does; only the internal
-  batch fill (R3) separates them on an iterator artifact. `+1` inlines it whenever
-  `θ_hot` ≤ R2, and otherwise (`θ_hot` = R3, or L8's decline) leaves it to the `0` layout,
-  which the gate binds anyway.
+  today's `_search` loop on dense tiny matches. **RULED (Q3):** the gate binds positions
+  `0`, `+1` and `+2`; at `−1`/`−2` the gap is that cell's cited time cost, reported, not
+  gated. `__find` is rank R2 (one call per `_search` or `_next`), so `−1` shares it like
+  `−2` does. Only the internal batch fill (R3, HELD) would separate them on an iterator
+  artifact [r3 F4]. `+1` inlines `__find` when `θ_hot` ≤ R2. Otherwise (`θ_hot` = R3, or
+  T1/T2's decline) `__find` keeps its `0` layout, which is §2.2's design of record, so `+1`
+  is never slower than `0` on it [r3 F3, Q8 note].
 - **M folds only where the locate part is inlined.** `findall_iter.md` §4.2 makes the call
   mode M a parameter of `__find`: a compile-time constant in each entry when inlined, one
   runtime branch per call when shared. So the layout row also decides whether the kit's
-  dispatch on M (regime_tables.md R1-R3) costs a branch: it costs one at `−2`/`−1`, at L1
-  (the attempt route's label-table body, shared at every position), and at `+1` when the
-  find body ranks below `θ_hot`. The size positions pay that branch knowingly, as part of
-  their cited cost.
-- **The kit's helpers (member 4) are the kit's** (D157: pcrec sends facts, not methods).
+  dispatch on M (regime_tables.md R1-R3) costs a branch: it costs one at `−2`/`−1`, at P2
+  (the attempt route's label-table body, shared at every position), and wherever `__find`
+  is shared at `0` by §2.2. The size positions pay that branch knowingly, as part of their
+  cited cost.
+- **The kit's helpers (A7) are the kit's** (D157: pcrec sends facts, not methods).
   pcrec can tell the kit the dial position as a fact (it already does for the class kit,
   D131); how the kit lays out its helpers is its choice. A request, not a pcrec cell.
 
 ### 3.6 Checks (each with its independent control)
 
-- **The `0` cell is byte-identical**: `scripts/emit_sweep.py` against main, every stream;
-  `run_tune_dial.sh` section 1 already asserts `balanced` = no flag.
-- **Each non-zero cell's layout is recovered from the OBJECT, not from pcrec**: `nm` must show
-  each `shared` part as exactly one local symbol and each `inline` part absent; the expected
-  set is read from tuning.md §5.4 (`run_tune_dial.sh`'s rule: never from `tune.c`). The
-  compiler is the independent judge of what was inlined.
-- **H1/H2 by construction**: a planted `always_inline` on an attempt body must fail the build
-  (the gcc error is the detector).
-- **H6 neutrality**: every position's refusal set and every stamped selection equal `0`'s
-  over the corpus (`make test-axes` sweeps the dial already).
-- **The table's inputs, checked against sources pcrec does not write.** A part's caller
-  count is checked against the call graph of the same emitted C compiled `-O2 -fno-inline`,
-  where every call is visible, read by `objdump -dr` relocations (the `probe_entries.py`
-  method, fixed in b3153da98). A part's rank is checked against a hand-written expected rank
-  per witness artifact, read from the emitted C, in a fixture that names its witness for
-  each of R0-R3. A rank class with no witness is reported UNREACHED, not passed.
-- **L8's decline is visible**: a `+1` compile against a set without `θ_hot` carries
-  `_WHY "threshold-unmeasured"`, and its object layout equals `0`'s.
-- **Totality**: every (part class, position) in the corpus census reaches exactly one row,
-  and each row's population is counted (K35). A row whose population is zero is listed
-  with its reason.
+- **`0` is byte-identical** [r3 CE-10]: `scripts/emit_sweep.py` against pre-E1 main, every
+  stream. That is the only control cited. `run_tune_dial.sh` section 1 checks one pattern
+  and both sides go through the same `tune.c` resolver, so it is not an independent control.
+- **A non-zero cell's layout is read from the OBJECT and judged against an expected set
+  that shares no code with the table** [r3 CE-7, CE-8]. A separate evaluator, a script under
+  `tests/` that links nothing from `src/`, computes the expected layout per artifact from
+  three inputs:
+  - the call graph of a COPY of the emitted C with every `always_inline`, `noinline` and
+    `noclone` deleted by text, compiled `-O2 -fno-inline` and read from `objdump -dr`
+    relocations. It is needed because under `-fno-inline` an `always_inline` function is
+    still inlined and shows no edge; the stripping happens in the checker, so the emitter
+    and its bytes do not move;
+  - the owners' attributes, read from the ORIGINAL emitted text, to fold owned
+    `always_inline` functions into their callers (the `callers` definition, §3.2);
+  - the hand-written rank fixture, and the position's policy text from tuning.md §5.4.
+
+  `nm` on the real object must show each shared subject part as one local symbol and each
+  inlined one absent. The compiler is the judge of what was inlined; the evaluator is the
+  judge of what should have been.
+- **The rank fixture is a precondition of E1** [r3 LK-1]. It is hand-written from the emitted
+  C, names one witness artifact per rank, and lands with E0's rank column. A rank with no
+  witness (R3 and R1 today, §3.2) is reported UNWITNESSED, never passed. The census reports
+  `callers` as distinct functions, never call sites.
+- **Synthetic witnesses carry a hand-written expected layout** [r3 CE-7, Q9 note]. Where a
+  row has no corpus population, a synthetic artifact exercises it. Its expected `nm` set is
+  written by hand in the fixture, and the result is read from the object. The synthetic
+  witness is never also the control.
+- **H1/H2 and LK-9 by construction**: a planted `always_inline` on an attempt body must fail
+  the build, and so must one on an exported callee under `-fPIC`. The gcc error is the
+  detector.
+- **Clones** [r3 LK-3]: per artifact and position, count `.constprop`, `.isra` and `.part.N`
+  symbols derived from each shared part's name; any is a failure.
+- **A1 and the layout row are disjoint** [r3 CE-2]: per VM artifact and position, the set
+  of functions P1 assigns to A1 and the set any position row writes are disjoint, checked on
+  the emitted text.
+- **The seam is copyable** [r3 LK-6]: the fixture of §3.4.
+- **Stamp neutrality** [r3 CE-9]. `make test-axes` compares answers and refused-key sets
+  (DIAL-S3), not stamps. The new arm diffs every `#define <PREFIX>_*` except
+  `<PREFIX>_TUNE` and `<PREFIX>_PART_LAYOUT_*` between a position's artifact and the SAME
+  position's artifact built from the cell diff's parent (where the layout cell is `†`). The
+  parent is the control because other dial rows (A1's term, λ, the ladder) legitimately move
+  stamps between positions. While every cell is `†` the arm compares an artifact with
+  itself, so it is reported UNREACHED until the first live cell.
+- **Length neutrality on every emitter** [r3 LK-8]: the near-cap witnesses (the lowered-cap
+  manifests of `r17c_nearcap.py`, the K59 and `[ART-SIZE]` witnesses) refuse and select
+  identically at every position on the VM, DFA and compound emitters. This tests I5.
+- **The decline is visible**: a `+1` compile against a set without `θ_hot` carries
+  `_WHY "threshold-unmeasured"`, and its object equals `0`'s.
+- **The attribute census**: every `__attribute__((always_inline|noinline|noclone))` and every
+  `static inline` in an emitted artifact belongs to a row of §3.4 or a class of §3.1. An
+  unlisted writer fails. This is the "single attribute-writing table" unlock's check, built
+  at E1 even though the writers themselves stay where they are (§5.3).
+- **Totality and population, per row** [r3 CE-4]: every (subject part, position) in the
+  census reaches exactly one row, and each row's population is counted per position (K35).
+  A row whose population is zero is listed with its reason.
+
+**Sabotage, PROPOSED ids** (S983 is the next free id; the manager allocates):
+
+| proposed id | plant | detector |
+|---|---|---|
+| S983 | P1 drops `_deep` (A2) | the object check: `_deep` must stay a local symbol at every position |
+| S984 | P1 drops A1's functions | the A1-disjointness check; the `-Werror` harness compile (gcc 15.2 warns "ignoring attribute 'noinline' because it conflicts with attribute 'always_inline'" [-Wattributes], checked on a two-line probe in the lane's scratch) |
+| S985 | T1/T2 moved below the part table | emit_sweep: `+1` without `θ_hot` must equal `0` byte for byte |
+| S986 | P2 dropped | the build: gcc refuses `always_inline` on a label-table body at `+2` |
+| S987 | `noclone` dropped from P2/P4/P6 | the clone-symbol count |
+| S988 | `forwardable` always true | the build and answer checks on the compound `_match` at `−2` |
+| S989 | `callers` counts call sites | the evaluator's expected set against `nm` on a two-site, one-function part |
+| S990 | `θ_hot = none` read as R3 | the `none` witness: `+1`'s object must equal `0`'s and carry `_THETA "none"` |
+| S991 | the layout pass rendered before the size caps | the near-cap refusal arm |
+| S992 | the rank column's R3 cell read as R2 | the rank fixture |
 
 ### 3.7 Which family the row belongs to (the sibling-of-a-family lens)
 
 | candidate family | member? | why |
 |---|---|---|
-| **the dial's policy table** (tuning.md §5.4, D103) | **YES: one more row of it** | It is a speed/size trade with a pinned policy per position, and the VM entry chain (member 1) is already a row there. It is the first row whose cell reads a value from a measurement set (`θ_hot`), which is Q1's D103 clarification. Its acceptance is the dial's: answer identity at every position, `balanced` byte-identical. |
-| **the eight inline/shared deciders** (§3.1) | **it IS that family, unified** | Members 2, 5, 6 and 7 become rows' subjects. Member 5's two-row table (`findall_iter.md` §2.2) dissolves into L0 + L1 (§3.8). Member 1 joins by its own ruled diff (§3.4). Members 3, 4 and 8 stay outside with stated reasons. |
-| **`entry_rows[]` and `compound_place[]`** (§4.1, `compound.md` §A.2) | **sibling, not merged** | All three answer "where does a part's body live". `compound_place[]` decides whether a second machine is an in-Job row or a compound part (machine composition); `entry_rows[]` decides which parts an entry calls (the edges); this row decides how an existing part is linked to its callers. The layout row reads `entry_rows[]`'s edges and is applied by it. Merging it with `compound_place[]` would mix a semantic choice (which machines) with an answer-free one (copies). |
-| **engine selection** (`select_engine.c`, `--engine`) | no | Engine selection chooses the machine and can move answers and refusals (GATE 2). Part layout sits below the machine and moves neither. |
-| **the deny/force axes** (`axes.def`, tuning.md §2) | no | It is not a bit and has no deny or force spelling, like `--vm-entry-shape`'s value field and the `[ART-SIZE]` ladder's parameters. An explicit override spelling (a `--part-layout=` value, `--vm-entry-shape`'s precedent) is caller-observable CLI, so it is FILED for [IFACE-PUSH] and not designed here. `make test-axes` sweeps the row through the dial's existing arm. |
-| **`regime_tables.md`** | no; a neighbour with two shared edges | Regime rows are run-time form selection inside the LOCATE part, owned by the kit (D157); this row is compile-time linkage of whole parts. Shared edge 1: this row decides whether M is a compile-time constant in the kit's dispatch (§3.5). Shared edge 2: both read the measurement set, through the same knowledge key A (regime_tables.md §2), so a set change re-selects both, in one mover census. |
+| **the dial's policy table** (tuning.md §5.4, D103) | **YES: one more row of it** | It is a speed/size trade with a pinned policy per position. Its acceptance is the dial's: answer identity at every position, `balanced` byte-identical. It is the first row whose cell reads a value from a measurement set (`θ_hot`, Q1's D103 clarification). Its nearest siblings in that table are the λ row, the `--vm-entry-shape` term row and the `-fno-tiered-entry` row (§3.1) [r3 F2] |
+| **the inline/shared writers** (§3.1) | **co-resident, not unified** [r3 CE-2, F7] | Two decisions exist (A1, §2.2) and four fixed writers. The row SUBJECTS are group C plus the designed iterator parts; the owners A1, A2 and A4 are kept by P1. `findall_iter.md` §2.2's table stays as the `0` cell's content (§3.8). A1 joins only by its own ruled diff (§3.4). Until that diff lands, two dial rows lay out parts on a VM artifact with disjoint subjects, which §3.6 checks |
+| **`entry_rows[]` and `compound_place[]`** (§4.1, `compound.md` §A.2) | **sibling, not merged** | All three answer "where does a part's body live". `compound_place[]` decides whether a second machine is an in-Job row or a compound part (machine composition); `entry_rows[]` decides which parts an entry calls (the edges); this row decides how an existing part is linked to its callers. The layout row reads `entry_rows[]`'s edges and is applied by it. Merging it with `compound_place[]` would mix a semantic choice (which machines) with an answer-free one (copies) |
+| **engine selection** (`select_engine.c`, `--engine`) | no | Engine selection chooses the machine and can move answers and refusals (GATE 2). Part layout sits below the machine and moves neither |
+| **the deny/force axes** (`axes.def`, tuning.md §2) | no | It is not a bit and has no deny or force spelling, like `--vm-entry-shape`'s value field and the `[ART-SIZE]` ladder's parameters. An explicit override spelling (a `--part-layout=` value, `--vm-entry-shape`'s precedent) is caller-observable CLI, so it is FILED for [IFACE-PUSH] and not designed here. `make test-axes` sweeps the row through the dial's existing arm, plus the stamp arm (§3.6) |
+| **`regime_tables.md`** | no; a neighbour with two shared edges | Regime rows are run-time form selection inside the LOCATE part, owned by the kit (D157); this row is compile-time linkage of whole parts. Shared edge 1: this row decides whether M is a compile-time constant in the kit's dispatch (§3.5). Shared edge 2: both read the measurement set, through the same knowledge key A (regime_tables.md §2), so a set change re-selects both, in one mover census |
 
-So: a dial row (D103) that unifies the inline/shared family, applied by `entry_rows[]`, and
-a sibling of `compound_place[]` under that table. It is not a new family and not a new axis.
+So the row is a dial row (D103) whose subjects are the parts gcc lays out today. It sits
+beside the owners and does not absorb them, and it is applied by `entry_rows[]`. It is a
+sibling of `compound_place[]` under that table, not a new family and not a new axis.
 
 ### 3.8 Where the iterator consumes this row (for `findall_iter.md`'s short revision; not edited here)
 
 Q4 puts a short revision of `findall_iter.md` after E0. This is what that revision would
-read from this row; this note does not edit `findall_iter.md`.
+read from this row. This note does not edit `findall_iter.md`.
 
 | `findall_iter.md` piece | what it becomes under the row |
 |---|---|
-| §2.2's two-row emission rule (`shared` for a label table, else `inline`) | L1 + the position rows: at `0` L0 (as emitted, which IS §2.2's design of record once I1 emits it); at non-zero positions L1 for the attempt route, then the position's row. The two-row table is deleted, not kept beside the row |
-| `__find`'s rank | R2 from `_search` and `_next`; R3 from the internal batch fill (D165 add. 2), which calls it once per buffered match inside one `next` call |
-| the NOTEMPTY retry R | R1 (only after an empty match), a part of the `first-nonzero` row; at `+1` it is inlined only when `θ_hot` = R1 |
-| `__adv` (the residual's static twin) | I3's static twin; rank R2. One caller per entry, so L4 inlines it at non-zero positions |
+| §2.2's two-row emission rule (`shared` for a label table, else `inline`) | **KEPT, as the `0` cell's content** [r3 F3]: by I4 it is `__find`'s `0` layout, and T0 leaves it untouched. At non-zero positions `__find` is a subject part: P2 for the attempt route (the same `static noinline` as §2.2's `shared` row, now with `noclone`), then the position's row. §2.2's explicit `static noinline` is what makes `_search` a 9-byte tail jump, and P2 keeps it |
+| §2.2's trigger: "inline until `I_shared` is measured" (D77) | **KEPT, as unlock U1's trigger** [r3 F5]. `I_shared` is the `−1`/`−2` layout of `__find`, and the gate measures it anyway (Q3). If `I_shared` is within the noise floor of `I`, promoting "shared for every body" to the `0` cell is a ruled diff of the ITERATOR's design, not of this row |
+| `__find` | callers `_search` and `_next` (`_next_n` HELD): 2; rank R2 (R3 only with the HELD internal batch fill, D165 add. 2 Q2); rows P2/P4/P6/P7/P8/P9 by route and position |
+| `__adv` (the residual's static twin) | I3's static twin; called from `__step`, which folds into `_next`: 1 caller; rank R2; P3 (keeps §2.1's `always_inline`) |
+| `__step` | 1 caller (`_next`); rank R2; P3 [r3 F4] |
+| `__enter` | 1 caller (`_next`); rank R2; P3 [r3 F4] |
+| the NOTEMPTY retry R | NOT a part: it is a body inside `__step` with no symbol of its own [r3 F4]. Revision 2's "`θ_hot` = R1 inlines the retry" is withdrawn. If the retry becomes its own static part (the `first-nonzero` emitter's shape, §4.2), it is rank R1 and a subject |
+| `_next_n`'s calls | HELD with `findall_iter.md` Q2 (D165 add. 2 Q2 reframes it as internal batching) |
 | the parity gate's `I` and `I_shared` arms (§5.3) | `I` = the `0` / `+1` / `+2` layout of `__find`; `I_shared` = the `−2` / `−1` layout. The gate binds the first (Q3) |
 | M as a constant (§4.2) | constant where `__find` is inlined, a branch where it is shared (§3.5) |
 
@@ -537,9 +789,20 @@ read from this row; this note does not edit `findall_iter.md`.
 ### 4.1 `entry_rows[]`
 
 [EMIT-ENTRIES] already has the entry ENUM and a linkage closure over a hand-written edge list
-(`entries.c:58-107`). The proposal adds the controller as a column, so the edges are DERIVED:
+(`entries.c`'s `entry_edges[]`: `{from, to, when}` between entry ids, with no combinator
+and no rank). **`entry_rows[]` does not exist** [r3 LK-1]. The proposal adds the controller
+as a column, so the edges are DERIVED, and adds a RANK to every part reference, which is new
+data, not a derivation:
 
 ```c
+typedef struct {
+    PartId part;                 /* the static part or in-Job row called            */
+    EdgeRank (*rank)(const PcrecEntryShape *s);   /* R0..R3 for this shape (§3.2):  */
+                                 /* a shape predicate, as `when` is, because one     */
+                                 /* edge can hold call sites of two kinds (the       */
+                                 /* prefilter's entry call R2, its retry re-seed R3) */
+} PartRef;
+
 typedef struct {
     PcrecEntry entry;            /* the exported (or kept) entry this row defines   */
     bool (*when)(const PcrecEntryShape *s);   /* the shape this row serves        */
@@ -550,6 +813,13 @@ typedef struct {
 } EntryRow;
 ```
 
+The rank cells are written by hand from the emitters' call sites, so they need an
+independent check from the start: the hand-written rank fixture lands with them in E0 and is
+a precondition of E1 (§3.6). Some rank sources are call sites INSIDE a body that the edge
+list does not see today, such as the hybrid's retry re-seed in `_search_run`'s text. The
+rank predicate reads the same facts the emitter reads to write that site (`nclamp`, the
+re-seed row), never a scan of the text.
+
 - **The edges are the rows' part references**, so the closure reads what the controller
   calls. `entries.c` missed the `rev-end` tie's `search -> match` edge in B0 and the check
   found it (cpb02 finding 1); a derived list cannot drift from the emitter that uses it.
@@ -557,8 +827,8 @@ typedef struct {
   `forward` is today's `emit_in_entry_defs` and the VM's forwards; `finish-at` is axis G's
   dispatch; `locate-then-finish` is the body. Moving them under the table is a re-spelling,
   byte-identical (§5.1 E0c).
-- **The layout row (§3) is applied once, by the table**, to every part reachable from more
-  than one entry.
+- **The layout row (§3) is applied once, by the table**, to every SUBJECT part (§3.1's
+  population), after every length decision (I5).
 - **It is D88 addendum 1 stated as data**: one exported call interface per file is the set of
   EXPORTED rows, and everything else is KEPT STATIC or OMITTED by the closure.
 
@@ -567,7 +837,7 @@ typedef struct {
 | iterator piece (`findall_iter.md`) | as a row of the table |
 |---|---|
 | `__find(…, M)`, one body, two entries (§2.1) | the search controller's body as a part, called by `_search` (M = ONESHOT) and `_next` (M = ITER) |
-| §2.2's two-row rule (`shared` for a label table, else `inline`) | the layout table's L0 at `0` plus L1 elsewhere (§3.4, §3.8): the same answer, no separate table |
+| §2.2's two-row rule (`shared` for a label table, else `inline`) | the `0` cell's content (I4), kept; at non-zero positions the part table's P2 and position rows (§3.4, §3.8) |
 | the NOTEMPTY retry (`findall_iter.md` §3.3) | `first-nonzero(R@q, SEARCH@next_pos(q))`: split's combinator, with R = FINISH `verify-at` on the notempty root (an in-Job machine role, `compound_place` row 3) on the DFA, or the VM's guarded attempt |
 | `__step`, `__enter`, `__adv` | `iterate(STATE; …)`: `__enter` is the state part's bind/check, `__adv` the residual's static twin (H5) |
 | the storage-row table (§1.3) | the STATE part's declared rows; a compound's parts SUM (D165 item 4) |
@@ -611,11 +881,11 @@ IF the table already exists, which is why E0 goes first (§5.1).
 
 | stage | what | movers | abi |
 |---|---|---|---|
-| **E0a** | `entry_rows[]` beside today's emitters; the derived edge set held against `entries.c`'s hand list for every corpus artifact (the trace-build both-walks oracle shape, `stc2`) | ZERO | none |
+| **E0a** | `entry_rows[]` beside today's emitters; the derived edge set held against `entries.c`'s hand list for every corpus artifact (the trace-build both-walks oracle shape, `stc2`). ADDS the rank column (new data, §4.1) and its hand-written rank fixture, one witness per rank or UNWITNESSED [r3 LK-1] | ZERO | none |
 | **E0b** | the closure reads the derived edges; the hand list deleted | ZERO | none |
 | **E0c** | each emitter's entries written through the row's combinator emitter | ZERO (emit_sweep, every stream) | none |
-| **E1** | the layout row: §3.4's table L0-L11 as a declared first-match table, read by `entry_rows[]`, every non-zero cell `†` (so every position emits as `0`); the rank fixture and caller-count check (§3.6) | ZERO | none |
-| **E1′** | each cell, by its own ruled diff with its size and time measurement; the first one adds `<PREFIX>_PART_LAYOUT` (§3.4.1) and applies I3 to the DFA wrappers | that position's artifacts | one per cell diff (bytes move at that position) |
+| **E1** | the layout row: §3.4's artifact table T0-T3, part table P1-P9 and wrapper table W1-W2 as declared first-match tables, read by `entry_rows[]` and rendered after every length decision (I5); every non-zero cell `†`, so T0 makes every position emit as `0`. The checks of §3.6 that can run at `†`: the separate evaluator, the attribute census, the A1-disjointness and seam fixtures, the per-row population census; the stamp arm is UNREACHED | ZERO | none |
+| **E1′** | each cell, by its own ruled diff with its size and time measurement. PRECONDITION: I3 holds for every part the cell lays out, from I1 (residual twins, F-1) or from the cell's own diff (wrapper twins) [r3 LK-5]. `+1`'s first live cell adds `<PREFIX>_PART_LAYOUT_WHY`/`_THETA` with their D80 hunks (tuning.md §5.3/§5.4, `match_api.md` §6.3.11) and D94's reader grep (`stamp_kinds.c`, `memfn_stamps.c`, the registry's stamp tests), then `make test-codegen` and the registry suites [r3 LK-7] | that position's artifacts | one per cell diff (bytes move at that position) |
 | I0 | `findall_iter.md` §6.9, unchanged | ZERO | none |
 | I1 | `next` as an `iterate` row; the retry as `first-nonzero`; the STATE part | every artifact | ONE (as designed) |
 | F-1 fix | the compound controller calls static twins of `_next_pos`/`_valid_upto` | compound artifacts (97 corpus, bench 0) | fold into I1, which adds `__adv` anyway |
@@ -637,9 +907,12 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 2. **Independent control — RELEVANT.** The derived edges are checked against the hand list
    (E0a) and then against the object's own call graph (`objdump -dr`, as this lane's probe
    does), which shares no source with pcrec. A layout cell is checked from `nm`'s view of the
-   object against tuning.md §5.4's text. H1/H2 are gcc's own errors. Population: the 233
-   label-table artifacts (`findall_iter.md`'s census), the 97 admitted compounds
-   (`admitted.tsv`), VM framed/frameless from the size log; a K35 floor per part class at E1.
+   object against a separate evaluator's expected set, built from an attribute-stripped
+   `-fno-inline` call graph, the owners' attributes, the hand rank fixture and §5.4's
+   policy text; it shares no code with the table (§3.6, [r3 CE-7, CE-8]). H1/H2 are gcc's
+   own errors. Population: the 233 label-table artifacts (`findall_iter.md`'s census), the
+   97 admitted compounds (`admitted.tsv`), VM framed/frameless from the size log; a K35
+   floor per ROW and position at E1 [r3 CE-4].
 3. **What moves when regenerated — RELEVANT.** E0 and E1 move nothing (emit_sweep). A cell
    diff moves that position's artifacts and is an abi event with D94's reader grep. Q1 ruled
    `θ_hot` into the measurement set: once `+1` is live, a set change moves `+1` artifacts
@@ -649,7 +922,7 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 
 | # | unlock | trigger |
 |---|---|---|
-| U1 | the layout row's non-zero cells (their policies are fixed by §3.2; each lifts from `†` by its own diff) | a measured short-call cell where `C_part` is material (the parity gate's `I_shared` arm, or a bench cell traced to a shared part); `+1` additionally needs `θ_hot`'s inputs in a set |
+| U1 | the layout row's non-zero cells (their policies are fixed by §3.2; each lifts from `†` by its own diff) | a measured short-call cell where `C_part` is material: the parity gate's `I_shared` arm, which is `findall_iter.md` §2.2's own D77 trigger, kept [r3 F5], or a bench cell traced to a shared part. `+1` additionally needs `θ_hot`'s inputs in a set |
 | U2 | `rx_entries` (one struct of entry pointers, [V-E] item 1, [ART-MGR] S1): the EXPORTED rows are its fields | [IFACE-PUSH] |
 | U3 | the public [EMIT-ENTRIES] request (a caller names the entry set): the rows already carry it | [IFACE-PUSH] |
 | U4 | one-attempt `_match` on every attempt route (`compound.md` A-U1): a `finish-at` row swap | `locate_finish.md` Q7's measurement |
@@ -659,6 +932,11 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 | U8 | the dial position passed to the kit as a fact for its helper layout | a kit request; the class kit's D131 is the precedent |
 | U9 | an exemplar-refined edge rank (the analysis object says how often a conditional edge fires) | a bench cell traced to an R1 part that `+1` left out of line (Q7) |
 | U10 | an explicit override spelling for the row (a `--part-layout=` value, `--vm-entry-shape`'s precedent) | [IFACE-PUSH] (§3.7) |
+| U-T | ONE attribute-writing table: the owners' writers (A1's rung, A2's `_deep`, A3's `noclone`, A4's seam, A5/A6) become declared rows with owner and reason, so the table is the one place any linkage attribute is written. E1 already builds its CHECK (the attribute census, §3.6) and declares the owned rows; this unlock moves the writers [r3 unlock "single attribute-writing table"] | E1 itself for the check; the move waits for a writer that needs a position-dependent attribute |
+| U-A | one `part_facts{callers, copyable, rank, forced_attr}` record per part as every row's input, so `_deep`, K24 and the seam read as rows rather than exceptions | the first non-zero cell going live |
+| U-B | A1 migrates under this row: its size term and `θ_hot` become two cutovers of one row table (both position-indexed and unmeasured, [r3 SIB-2]); A1 consumes `copyable` instead of its own `may_attr` read; the λ row's form ladder and the layout rows share one "pick a form by size and speed" ladder | the ruled diff that migrates A1 (§3.4) |
+| UNL-1 | the same edge rank drives `cold`/`hot` hints and `noclone` per part | a measured K24-style splitting loss on a part. Not before |
+| UNL-2 | `forwardable(w)` (§3.4 W-table) and A1's `may_fwd` joined as one "forwardable" fact per entry | the first `−2` cell diff |
 
 ### 5.4 Revision 1's questions: RULED (D163 addendum 7)
 
@@ -670,7 +948,10 @@ Remodel overlap (memory `pcrec-remodel-first`): E0 touches the three entry emitt
 | Q4 E0 before I1 | yes; then the short `findall_iter.md` revision, its panel, then I1 | §5.1, §3.8 |
 | Q5 exported-to-exported calls | never; static twins; applied where a change already moves the bytes | §3.0 I3 |
 
-### 5.5 Questions for Frank from this revision (discussion: problem, forces, leaning)
+### 5.5 Questions for Frank (revision 2's Q6-Q9, updated by the r3 panel; discussion: problem, forces, leaning)
+
+The r3 panel read all four as sound and attached a note to each. The notes are folded in
+below. None is ruled.
 
 **Q6. What does `+1` do when the set has no `θ_hot`: decline to the `0` layout, or refuse?**
 *Problem:* no set carries `θ_hot`'s inputs today, and none will until a quiet-box run measures
@@ -679,40 +960,59 @@ be a silent default. *Forces:* a refusal makes the gap loud but breaks every `--
 build until a set lands, over a choice that cannot change an answer. A decline keeps the
 build working and is visible only if someone reads the stamp. tuning.md §2.21¶3's rule ("a
 value the artifact cannot honour is a selection outcome, never a refusal") covers the
-nearest case. *Leaning:* decline (L8), with the `_WHY` stamp, and the listing showing the
-missing row as the reason. The cell is `†` anyway until its diff, so the decline is only
-reachable once `+1` is live against a set that lacks the row (a rolled-back or user set).
+nearest case. The panel added two things. First, the decline must give the `0` object
+EXACTLY, which revision 2's table did not (r3 CE-1). Revision 3 moves it to the artifact
+table, ahead of every part row (T1). Second, the `_WHY` token is a caller-observable name,
+so it needs its spec hunk and a D94 reader grep when the cell goes live (r3 LK-7). Revision
+3 lists both in E1′. The panel's CE-6 also created a second decline: a set can say `none`
+(no rank material). *Leaning:* decline, with T1's `"threshold-unmeasured"` and T2's
+`"no-material-rank"` kept distinct, because they mean different things to a reader: "nobody
+measured" versus "measured, and nothing pays". Both are reachable only once `+1`'s cell is
+live against a set that lacks the row or says `none`.
 
 **Q7. Is a static edge rank enough to say what is hot, or should the analysis object refine it?**
 *Problem:* rank reads the combinator: inside the loop, once, conditional, rare. A conditional
 edge (R1) can be hot in practice. One example is the NOTEMPTY retry on a pattern whose matches
 are mostly empty. The exemplar bundle (D162) could measure how often such an edge fires.
-*Forces:* a static rank is free, needs no profile and gives the same layout for the same
-pattern on every box. Only `θ_hot` moves, and it moves with the set. An exemplar-refined rank
-would make the layout depend on the analysis object as well, which an artifact already
-depends on (D166's (pattern, options, analysis, measurements)). But it adds a reader to that
-object for a few-percent effect. *Leaning:* static rank now. File the exemplar refinement as
-an unlock (U9 below), triggered by a bench cell traced to an R1 part that `+1` left shared.
+*Forces:* a static rank is free and needs no profile. As the panel added, it also gives the
+same layout for the same pattern on every box with the same set, which fits the amended
+D166 tuple: only `θ_hot` moves, and it moves with the set. An exemplar-refined rank would
+make the layout depend on the analysis object as well, which an artifact already depends on
+(D166's (pattern, options, analysis, measurements)). But it adds a reader to that object for
+a few-percent effect. The recount (§3.2) also weakens the case today: no R1 part is movable
+(split's F is not copyable, and the retry is not a part). *Leaning:* static rank now. Keep
+the exemplar refinement as U9, triggered by a bench cell traced to an R1 part that `+1` left
+shared. That needs an R1 part that is a subject first.
 
-**Q8. At `+1`, are the parts below `θ_hot` left to gcc, or shared?**
-*Problem:* revision 1 said cold parts "stay shared". This revision leaves them as at `0`
-(no attribute), so `+1` never shares something `0` would have inlined. *Forces:* leaving
-them to gcc keeps `+1` a pure speed-leaning step from `0`. The cost is that `+1`'s cold
+**Q8. At `+1`, are the parts below `θ_hot` left at their `0` layout, or shared?**
+*Problem:* revision 1 said cold parts "stay shared". Revisions 2 and 3 give them the `0`
+layout (row P8), so `+1` never shares something `0` would have inlined. *Forces:* the
+`0` layout keeps `+1` a pure speed-leaning step from `0`. The cost is that `+1`'s cold
 parts still flip with `-fPIC` (F-2), as they do at `0`. Sharing them makes `+1`'s whole
 layout pcrec's own, with no flip, but can make `+1` slower than `0` on a cold part gcc
-would have inlined. That inverts the dial on that part. *Leaning:* leave them to gcc, as
-§3.2 and row L10 state. Revisit only if a bench cell shows the `-fPIC` flip costing
-something at `+1`, which is the same trigger Q2 keeps for `0`.
+would have inlined. The panel found where revision 2 inverted this. Revision 2 defined "as
+at `0`" as "no attribute", so `__find` at `+1` with `θ_hot` = R3 would lose §2.2's
+`always_inline` and be slower than `0` (r3 Q8 note, F3). Revision 3 defines the `0` layout
+as the owner's (I4), so `__find` keeps §2.2's attribute and the tension is gone.
+*Leaning:* the `0` layout, as P8 states. Revisit only if a bench cell shows the `-fPIC` flip
+costing something at `+1`, which is the same trigger Q2 keeps for `0`.
 
 **Q9. A position that differs from its neighbour on no corpus artifact: report it, or reshape the policy?**
-*Problem:* §3.2.1 shows each adjacent pair disagrees on a named part class, but the corpus
-may not carry every class. For example, `−2`/`−1` differ only on a multi-caller R3 part.
-*Forces:* reshaping a policy until each pair has a corpus population ties the dial's
-meaning to today's corpus. Keeping it means a caller's pattern with that class gets the
-promised layout even though no corpus case exercises it. D103 already accepted a
-declared-vacuous `+2`. *Leaning:* keep the policies as defined. E1's census reports each
-pair's population with a K35 floor. A pair with zero population is listed with its reason,
-and a synthetic witness per part class carries the check (§3.6) so no row ships UNREACHED.
+*Problem:* §3.2.1 now shows how thin the populations are. `0`/`+1` is declared-coincident
+until a set carries `θ_hot`. `−2`/`−1` has no witness: it needs an R3 subject, which means a
+prefilter re-entered by the retry. `−1`/`0` has none until I1 (`__find`) or I3 (the DFA
+wrappers). *Forces:* reshaping a policy until each pair has a corpus population ties the
+dial's meaning to today's corpus. Keeping it means a caller's pattern with that class gets
+the promised layout even though no corpus case exercises it. D103 already accepted a
+declared-vacuous `+2`. The panel's note: a synthetic witness that is also the check's
+control proves nothing (r3 CE-7, K35). Revision 3 gives each synthetic witness a hand-written
+expected layout and reads the result from the object. *Leaning:* keep the policies as
+defined. E1's census reports each row's population per position with a K35 floor. A pair or
+row with zero population is listed with its reason, and a synthetic witness with a
+hand-written expected `nm` set carries the check, so no row ships with a check that cannot
+fail. This leaning matters more now than in revision 2: with populations this thin, the
+practical first cell is likely `+2` on the `(a)b`-class hybrids (a copyable two-caller
+prefilter that gcc keeps out of line), not the iterator.
 
 ---
 
