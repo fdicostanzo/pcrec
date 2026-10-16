@@ -1021,7 +1021,8 @@ Section `sets`, with the columns:
 `--view=canonical`). It is exactly the set's own sections, `header`, `cards`, `rows`,
 `cells` and `members`, written by the canonical writer. Under ROUND-TRIP IDENTITY (§9.6)
 it IS a loadable set: `--list-measurements=zen4-grid2 > f.tsv`, then `--measures=f.tsv`,
-stamps the same `id@rev:digest`. A committed set file equals its own canonical view
+stamps the same `id@rev:digest`. `f.tsv` fails the name grammar, so it is a FILE under
+§3.2's shipped rule. Revision 2's rule refused this very example [r2 M3c]. A committed set file equals its own canonical view
 (§9.6, R4).
 
 **DERIVED views** are separate (`--view=decoded`, `--view=readers`, `--view=stale`). They
