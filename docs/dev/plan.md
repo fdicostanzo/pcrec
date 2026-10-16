@@ -67,8 +67,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Client 7 CONCATENATION SPLIT (DFA prefix A, VM suffix B; unique-end A; PARKED, trigger: a VM-routed bench cell dominated by a DFA-able unique-ended prefix). Client 8 LOOKAHEAD-AS-CHECK (D164 add. 2: unbounded trailing lookahead as X-DFA + anchored Y-check; unique-end X; monotone Y = Σ*·Z only; PARKED, trigger: a bench cell held on the VM by an unbounded trailing lookahead).
     - [ENTRY-TABLE] STATE:started — ENTRY TABLE: every exported entry is a compound controller over shared parts (E0, E0c, E1)
       filed: 2026-10-16 manager (D163 add. 7-11, Frank, session 113)
-      status (2026-10-16): E0 (E0a entry_rows[] with a per-edge rank column + E0b the closure reading it) MERGED to main at 61c92ed22 (lane/e0sw = e0b + swfix; full make test contaminated by a mid-run K37 fix, test-codegen re-run green on the tip, see e0sw_report.md Landing); E0c and E1 not built
-      next: E0c (per-combinator entry emitters re-spelled through the table); E1 after E0c (needs E0's rank column)
+      status (2026-10-16): E0 MERGED (61c92ed22, e0sw_report.md); E0c BUILT on lane/e0c, zero movers; landing in lane/int3 (e0c + ksrc + kit B0), its make test running; E1 not built
+      next: land lane/int3 on a green integration make test; then E1 (part-layout controls, one abi event)
       refs: docs/design/compound_entries.md (rev 4); docs/dev/lanes/e0build_report.md; decisions D163 add. 7-11
       Steps. E0 = E0a+E0b, zero movers. E0c = the per-combinator entry emitters re-spelled through entry_rows[]. E1 = the part-layout controls go live in ONE abi event: the stamp vocabulary plus the controls' spec hunks (D80), the first live non-zero cell; position 0 stays as emitted (add. 10). Part rank static (add. 9), layout per row through flags (add. 11), switches first with the dial as presets (add. 8).
   - [MATCH-SPLIT] STATE:started — GENERAL SPLIT MATCH
@@ -889,8 +889,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
 - [KNOW-SRC] STATE:not-started — ONE KNOWLEDGE-SOURCE MODULE: shared loader, stamp and data-mover census
   filed: 2026-10-14 Frank (endorsing panel r1's sibling-family finding msc2-9 and unlock U1)
-  status (2026-10-16): measure_sets.md rev 3 merged (r2 re-check discharged; OQ-1 ruled D166 add. 3). Next: the K0-K3 build
-  next: K0-K3 queued as a build (zero movers), measure_sets.md rev 3 §9; ahead of [MEASURE-SET]
+  status (2026-10-16): K0+K1 BUILT on lane/ksrc (zero movers on every emit_sweep arm, both-ways build 0 aborts; make test red only on its own report's 'findings §13' cite, fixed in lane/int3); landing via lane/int3
+  next: land lane/int3; then K2 (ksgen analysis, gen-findings) + K3 (canonical/decoded views, spec hunks) in a fresh lane; ahead of [MEASURE-SET]
   refs: docs/dev/reviews/2026-10-14-r1-measure-sets.md (msc2-9, msc1 U1/U2); docs/design/measure_sets.md; decisions D162 D166; [MEASURE-SET] [TABLE-JUDGE] [LIST-TABLES]
   One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
   ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
