@@ -1,7 +1,9 @@
-# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 1)
+# Every exported entry as a compound controller over shared PARTS, and the dial deciding what is inline (ASSESSMENT / DESIGN NOTE, revision 2)
 
-Status: PROPOSED, assessment and design only, nothing built (lane `cmpentry`, 2026-10-14,
-from main `d6e7fa993`, abi 78). Charter: Frank, 2026-10-14: "we have compound artifacts. are
+Status: PROPOSED, assessment and design only, nothing built. **Revision 2** (lane `cmprev`,
+2026-10-16, from main `7ee8d7ae7`, abi 78) applies Frank's rulings on revision 1's Q1-Q5
+(D163 addendum 7): read §R2 first. Revision 1: lane `cmpentry`, 2026-10-14, from main
+`d6e7fa993`, abi 78. Charter: Frank, 2026-10-14: "we have compound artifacts. are
 these pieces better composed in compound functions from parts? we issue several function
 interfaces, would these parts compose into the individual compound functions?" and "we have
 the dial controller. if we set it all up as compounds, the dial could decide whats inline".
@@ -13,6 +15,25 @@ Evidence is compile-only plus clockless instruction counts: gcc 15.2 `-O2` on th
 box (Zen 4), `.text` and per-function sizes from `nm`/`size`, call edges from `objdump -dr`,
 and dynamic instruction counts (Ir) from `valgrind --tool=callgrind`. No clock was read. The
 probes and their outputs are in `compound_entries/` (own CLAUDE.md).
+
+---
+
+## R2. What revision 2 changed (D163 addendum 7, ruling → section)
+
+| ruling | what it says | where it lands |
+|---|---|---|
+| model | every exported entry is a compound controller over LOCATE / FINISH / STATE parts; one `entry_rows[]`, the controller a column, edges derived | unchanged (§1, §4); restated as an invariant in §3.0 |
+| Q1 | the part-layout POLICY is a pinned dial cell per position (D103); only `hot-inline`'s threshold is read from the measurement set (D166), with its mover census | §3.2 (policy per position), §3.3 (the threshold `θ_hot`, its derivation inputs, its decline when absent) |
+| Q2 | `0` stays as emitted; FIVE DISTINCT layouts; hard constraints are rows no position overrides | §3.2's five policies and §3.4's first-match table (constraint rows first); §3.2.1 shows where adjacent positions differ and which population makes them differ |
+| Q3 | the iterator's parity gate binds `0`, `+1`, `+2`; at `−1`/`−2` the gap is the cell's stated cost | §3.5 (marked RULED) |
+| Q4 | E0 before I1; then a short revision of `findall_iter.md`, its panel, then I1 | §5.1 (order unchanged); §3.8 lists what that revision consumes from this row, without editing `findall_iter.md` |
+| Q5 | no exported entry calls an exported sibling; static twins; applied where a change already moves the bytes | §3.0 invariant I3; §3.4 keeps H5 OUT of the layout table (it is a linkage rule of `entry_rows[]`, not a position) |
+| brief | sibling-of-a-family lens | §3.7 |
+
+Revision 1's §3.2 (a four-policy row with `−2`/`−1` both `shared`) and its §5.4 Q1-Q5 are
+superseded; §5.4 now records the rulings and carries this revision's own open questions.
+Nothing measured in revision 1 moved, and nothing new was measured: this revision is a
+design-text change.
 
 ---
 
@@ -49,15 +70,22 @@ probes and their outputs are in `compound_entries/` (own CLAUDE.md).
    2-13% of instructions. An exported sibling call through the PLT costs about 4.8
    instructions per call more than the same call bound locally, in lost optimization as well
    as the stub (§2.3).
-5. **The dial row (§3).** The VM entry chain (`--vm-entry-shape`, tuning.md §2.21) ALREADY IS
-   this row for one family, with a size term the dial moves. This note proposes ONE
-   `part-layout` row that generalizes it over the sibling family (§3.1: eight members today).
-   Proposed cells: position `0` = today's bytes exactly (no attribute; gcc decides), so the
-   dial's no-op acceptance cell holds; `−2`/`−1` = `shared` (every multi-caller part
-   `noinline`); `+1` = hot parts `always_inline`; `+2` = every copyable part `always_inline`.
-   Every non-zero cell is `†` (an em-dash pending its time measurement) until the D166 set
-   carries the two quantities it reads: the static-part call cost and the part's object
-   bytes. Constraint rows the dial cannot override: H1-H5 (§3.3).
+5. **The dial row (§3), revised for D163 addendum 7.** The VM entry chain
+   (`--vm-entry-shape`, tuning.md §2.21) ALREADY IS this row for one family, with a size
+   term the dial moves. ONE `part-layout` row generalizes it over the sibling family (§3.1:
+   eight members today), with five DISTINCT pinned policies (§3.2): `−2` `all-shared`
+   (one out-of-line body per multi-caller part, wrappers forward to it); `−1`
+   `shared-but-inner` (as `−2`, except a part called from inside a per-candidate loop is
+   inlined); `0` `as-emitted` (no attribute, byte-identical to no flag); `+1` `hot-inline`
+   (a part whose hottest edge ranks at or above the threshold `θ_hot` is inlined, the rest
+   shared; `θ_hot` is the one value read from the measurement set, and absent from the set
+   the position DECLINES to `as-emitted` with a stamped reason); `+2` `all-inline` (every
+   copyable part inlined). Hotness is the combinator's EDGE RANK (per-candidate / per-call /
+   conditional / rare), read off `entry_rows[]`, with no profile. The decision is one
+   declared first-match table (§3.4) whose constraint rows (label table, computed goto, a
+   single caller, the encoding seam) come before any position row. Each non-zero position's
+   CELL stays `†` until its own ruled diff with a size AND time measurement (D103 item 3);
+   the policies define what that diff would switch on.
 6. **Convergence (§4): yes, one declared entry table, `entry_rows[]`.** It is [EMIT-ENTRIES]'
    table with the controller made a column: each row names an entry, its combinator, its
    parts and its mode. The edge list is DERIVED from the rows instead of hand-written
