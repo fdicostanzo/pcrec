@@ -24,99 +24,31 @@
  * the caller's -Werror build), and a missing one would omit a callee (an
  * implicit declaration). Both directions are the unit check's
  * (`tests/compound/run_compound_unit.sh` B0: every corpus artifact under
- * several requests, compiled -Werror). */
+ * several requests, compiled -Werror).
+ *
+ * [COMPOUND] E0 (docs/design/compound_entries.md §4.1): THE EDGES ARE
+ * DERIVED from `entry_rows[]`, where each entry is a controller row over
+ * the parts its body calls. B0's hand list `entry_edges[]` was held against
+ * the derivation over the corpus (E0a's both-walks oracle, 0
+ * disagreements) and deleted (E0b). */
 #include "core/internal.h"
 #include "enc/enc.h"
 
 #include <string.h>
 
-/* One dependency edge: `from`'s emitted body calls `to`, on the shapes
- * `when` accepts. */
-typedef struct {
-    PcrecEntry from, to;
-    bool (*when)(const PcrecEntryShape *s);
-} EntryEdge;
-
-static bool sh_dfa(const PcrecEntryShape *s)        { return !s->vm; }
-static bool sh_vm(const PcrecEntryShape *s)         { return s->vm; }
-static bool sh_vm_fwd(const PcrecEntryShape *s)     { return s->vm && s->fwd; }
-static bool sh_vm_direct(const PcrecEntryShape *s)  { return s->vm && !s->fwd; }
-static bool sh_vm_hybrid(const PcrecEntryShape *s)  { return s->vm && s->hybrid; }
-static bool sh_dfa_wrap(const PcrecEntryShape *s)   { return !s->vm && !s->match_own; }
-static bool sh_dfa_own(const PcrecEntryShape *s)    { return !s->vm && s->match_own; }
-static bool sh_dfa_utf(const PcrecEntryShape *s)    { return !s->vm && s->utf_check; }
-static bool sh_dfa_tie(const PcrecEntryShape *s)    { return !s->vm && s->search_match; }
-static bool sh_dfa_own_utf(const PcrecEntryShape *s)
-{
-    return !s->vm && s->match_own && s->utf_check;
-}
-static bool sh_vm_utf(const PcrecEntryShape *s)     { return s->vm && s->utf_check; }
-static bool sh_vm_vars(const PcrecEntryShape *s)    { return s->vm && s->vars; }
-static bool sh_always(const PcrecEntryShape *s)     { (void)s; return true; }
-
-/* The edges, read from the emitted text of each shape (emit_dfa.c's
- * `pcrec_emit_dfa`, emit_vm.c's `vm_emit_entries`, the src/enc/ residual
- * templates, `pcrec_emit_main`). */
-static const EntryEdge entry_edges[] = {
-    /* DFA: the `_in` entries are the un-suffixed ones plus an unused
-     * descriptor (`emit_in_entry_defs`). */
-    { PCREC_ENTRY_SEARCH_IN,     PCREC_ENTRY_SEARCH,         sh_dfa },
-    { PCREC_ENTRY_MATCH_IN,      PCREC_ENTRY_MATCH,          sh_dfa },
-    { PCREC_ENTRY_MATCH_CAPS_IN, PCREC_ENTRY_MATCH_CAPS,     sh_dfa },
-    /* DFA: the search-and-filter `_match` pair wraps the search entry;
-     * where `_match` has its own body (the anchored and nomatch forms)
-     * `_match_caps` delegates to it. */
-    { PCREC_ENTRY_MATCH,         PCREC_ENTRY_SEARCH,         sh_dfa_wrap },
-    { PCREC_ENTRY_MATCH_CAPS,    PCREC_ENTRY_SEARCH,         sh_dfa_wrap },
-    { PCREC_ENTRY_MATCH_CAPS,    PCREC_ENTRY_MATCH,          sh_dfa_own },
-    /* DFA: a `rev-end` walk that can tie verifies the tie with `_match`. */
-    { PCREC_ENTRY_SEARCH,        PCREC_ENTRY_MATCH,          sh_dfa_tie },
-    /* DFA: every caller-position prologue runs the subject check
-     * (`pcrec_emit_startpos_guard`). A variable forces the VM, so a DFA
-     * entry never resolves one. */
-    { PCREC_ENTRY_SEARCH,        PCREC_ENTRY_VALID_UPTO,     sh_dfa_utf },
-    { PCREC_ENTRY_MATCH,         PCREC_ENTRY_VALID_UPTO,     sh_dfa_own_utf },
-    /* VM: an un-suffixed entry runs its `_run` body on its own storage, or
-     * forwards to its `_in` sibling ([CC-DIFF]'s forward rungs); an `_in`
-     * entry calls its un-suffixed sibling on a NULL descriptor and its
-     * `_run` body otherwise. */
-    { PCREC_ENTRY_SEARCH,        PCREC_ENTRY_SEARCH_RUN,     sh_vm_direct },
-    { PCREC_ENTRY_SEARCH,        PCREC_ENTRY_SEARCH_IN,      sh_vm_fwd },
-    { PCREC_ENTRY_SEARCH_IN,     PCREC_ENTRY_SEARCH,         sh_vm },
-    { PCREC_ENTRY_SEARCH_IN,     PCREC_ENTRY_SEARCH_RUN,     sh_vm },
-    { PCREC_ENTRY_MATCH,         PCREC_ENTRY_MATCH_RUN,      sh_vm_direct },
-    { PCREC_ENTRY_MATCH,         PCREC_ENTRY_MATCH_IN,       sh_vm_fwd },
-    { PCREC_ENTRY_MATCH_IN,      PCREC_ENTRY_MATCH,          sh_vm },
-    { PCREC_ENTRY_MATCH_IN,      PCREC_ENTRY_MATCH_RUN,      sh_vm },
-    { PCREC_ENTRY_MATCH_CAPS,    PCREC_ENTRY_MATCH_CAPS_RUN, sh_vm_direct },
-    { PCREC_ENTRY_MATCH_CAPS,    PCREC_ENTRY_MATCH_CAPS_IN,  sh_vm_fwd },
-    { PCREC_ENTRY_MATCH_CAPS_IN, PCREC_ENTRY_MATCH_CAPS,     sh_vm },
-    { PCREC_ENTRY_MATCH_CAPS_IN, PCREC_ENTRY_MATCH_CAPS_RUN, sh_vm },
-    /* VM: the search loop asks the hybrid's embedded DFA search for its
-     * window; every `_run` body runs the subject check and resolves the
-     * variables. */
-    { PCREC_ENTRY_SEARCH_RUN,    PCREC_ENTRY_PREFILTER,      sh_vm_hybrid },
-    { PCREC_ENTRY_SEARCH_RUN,    PCREC_ENTRY_VALID_UPTO,     sh_vm_utf },
-    { PCREC_ENTRY_MATCH_RUN,     PCREC_ENTRY_VALID_UPTO,     sh_vm_utf },
-    { PCREC_ENTRY_MATCH_CAPS_RUN, PCREC_ENTRY_VALID_UPTO,    sh_vm_utf },
-    { PCREC_ENTRY_SEARCH_RUN,    PCREC_ENTRY_VAR_VALID,      sh_vm_vars },
-    { PCREC_ENTRY_MATCH_RUN,     PCREC_ENTRY_VAR_VALID,      sh_vm_vars },
-    { PCREC_ENTRY_MATCH_CAPS_RUN, PCREC_ENTRY_VAR_VALID,     sh_vm_vars },
-    /* Both: the residual validator steps through the subject validator
-     * (enc.h's `requires`), and `main` drives the search entry. */
-    { PCREC_ENTRY_VAR_VALID,     PCREC_ENTRY_VALID_UPTO,     sh_always },
-    { PCREC_ENTRY_MAIN,          PCREC_ENTRY_SEARCH,         sh_always },
-};
-
 /* ---- [COMPOUND] E0: `entry_rows[]` (docs/design/compound_entries.md §4.1)
  *
- * The same edges stated the other way round: each entry is a CONTROLLER, a
- * combinator over the parts its body calls, and the edge list is DERIVED
- * from the rows' part references. Every part reference carries the edge's
- * RANK (§3.2), new data written by hand from the emitters' call sites and
- * held by tests/compound/entry_ranks.tsv. A rank is a shape predicate, as
- * `when` is, because one edge can hold call sites of two kinds (the
- * hybrid's entry call is per call, its retry's re-seed per attempt). */
+ * Each entry is a CONTROLLER, a combinator over the parts its body calls,
+ * and the edge list is DERIVED from the rows' part references. Every part
+ * reference carries the edge's RANK (§3.2), new data written by hand from
+ * the emitters' call sites and held by tests/compound/entry_ranks.tsv. A
+ * rank is a shape predicate, as `when` is, because one edge can hold call
+ * sites of two kinds (the hybrid's entry call is per call, its retry's
+ * re-seed per attempt). A part reference has its own `when` too: a
+ * controller's body holds a call only on some of the shapes its row serves
+ * (the subject check, a `rev-end` tie). The combinator and mode columns
+ * are recorded for the layout row (E1) and the iterator (I1); nothing
+ * reads them yet. */
 
 /* The combinator an entry's body is (compound_entries.md §1.2): only the
  * ones with an emitted client today. */
@@ -170,6 +102,13 @@ typedef struct {
     EntryMode mode;
 } EntryRow;
 
+/* The shapes a row or a part reference serves. */
+static bool sh_always(const PcrecEntryShape *s)     { (void)s; return true; }
+static bool sh_dfa(const PcrecEntryShape *s)        { return !s->vm; }
+static bool sh_vm(const PcrecEntryShape *s)         { return s->vm; }
+static bool sh_vm_fwd(const PcrecEntryShape *s)     { return s->vm && s->fwd; }
+static bool sh_vm_direct(const PcrecEntryShape *s)  { return s->vm && !s->fwd; }
+static bool sh_vm_hybrid(const PcrecEntryShape *s)  { return s->vm && s->hybrid; }
 static bool sh_plain_dfa(const PcrecEntryShape *s)  { return !s->vm && !s->compound; }
 static bool sh_plain_wrap(const PcrecEntryShape *s) { return sh_plain_dfa(s) && !s->match_own; }
 static bool sh_plain_own(const PcrecEntryShape *s)  { return sh_plain_dfa(s) && s->match_own; }
@@ -352,69 +291,21 @@ static PcrecEntryReq entry_default_req(const Ctx *cx)
     return r;
 }
 
-/* The request's closure over the shape's edges: every entry reachable from
- * an exported or kept one, to a fixpoint. */
-static unsigned entry_closure(const PcrecEntryShape *s, unsigned roots)
+/* The request's closure over the shape's derived edges `er`: every entry
+ * reachable from an exported or kept one, to a fixpoint. */
+static unsigned entry_closure(unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N],
+                              unsigned roots)
 {
     unsigned live = roots;
     for (;;) {
         unsigned m = live;
-        for (size_t i = 0; i < sizeof entry_edges / sizeof *entry_edges; i++) {
-            const EntryEdge *ed = &entry_edges[i];
-            if ((m & PCREC_ENTRY_BIT(ed->from)) && ed->when(s))
-                m |= PCREC_ENTRY_BIT(ed->to);
-        }
-        if (m == live) return live;
-        live = m;
-    }
-}
-
-/* E0a's BOTH-WALKS ORACLE (compound_entries.md §5.1), until E0b deletes the
- * hand list: the derived edges equal `entry_edges[]`'s on every shape, but
- * for a compound's controller, where the rows state what
- * emit_compound.c writes (each matcher calls the first operand; the search
- * relocates with `_next_pos` to the second; `_match_caps` runs its own
- * prologue and never calls `_match`); and the closure the derived edges give
- * the request is the hand list's, but for the operands. */
-static void entry_e0a_oracle(Ctx *cx, const PcrecEntryShape *s,
-                             unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N],
-                             unsigned roots, unsigned live)
-{
-    unsigned char hand[PCREC_ENTRY_N][PCREC_ENTRY_N];
-    memset(hand, 0, sizeof hand);
-    for (size_t i = 0; i < sizeof entry_edges / sizeof *entry_edges; i++)
-        if (entry_edges[i].when(s)) hand[entry_edges[i].from][entry_edges[i].to] = 1;
-    const unsigned ops = PCREC_ENTRY_BIT(PCREC_ENTRY_COMP_A) | PCREC_ENTRY_BIT(PCREC_ENTRY_COMP_B);
-    for (int f = 0; f < PCREC_ENTRY_N; f++)
-        for (int t = 0; t < PCREC_ENTRY_N; t++) {
-            if (s->compound && ((ops & (PCREC_ENTRY_BIT(f) | PCREC_ENTRY_BIT(t))) ||
-                (f == PCREC_ENTRY_SEARCH && t == PCREC_ENTRY_NEXT_POS) ||
-                (f == PCREC_ENTRY_MATCH_CAPS &&
-                 (t == PCREC_ENTRY_MATCH || t == PCREC_ENTRY_VALID_UPTO))))
-                continue;
-            if (!hand[f][t] != !er[f][t])
-                pcrec_ctx_fail(cx, 0, "internal error: E0a: edge %s -> %s is %s",
-                               pcrec_entry_name((PcrecEntry)f),
-                               pcrec_entry_name((PcrecEntry)t),
-                               hand[f][t] ? "hand-only" : "derived-only");
-        }
-    unsigned dlive = roots;
-    for (;;) {
-        unsigned m = dlive;
         for (int f = 0; f < PCREC_ENTRY_N; f++)
             if (m & PCREC_ENTRY_BIT(f))
                 for (int t = 0; t < PCREC_ENTRY_N; t++)
                     if (er[f][t]) m |= PCREC_ENTRY_BIT(t);
-        if (m == dlive) break;
-        dlive = m;
+        if (m == live) return live;
+        live = m;
     }
-    for (int e = 0; e < PCREC_ENTRY_N; e++)
-        if ((dlive & PCREC_ENTRY_BIT(e)) && !entry_row_of(s, (PcrecEntry)e))
-            pcrec_ctx_fail(cx, 0, "internal error: E0a: %s reached with no row",
-                           pcrec_entry_name((PcrecEntry)e));
-    if ((dlive & ~ops) != (live & ~ops))
-        pcrec_ctx_fail(cx, 0, "internal error: E0a: closure 0x%x != hand 0x%x",
-                       dlive, live);
 }
 
 void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape)
@@ -433,12 +324,18 @@ void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape)
         (PCREC_ENTRY_BIT(PCREC_ENTRY_INFO) | PCREC_ENTRY_BIT(PCREC_ENTRY_MAIN))))
         pcrec_ctx_fail(cx, 0, "internal error: an entry request exports an "
                        "internal entry or keeps info/main static");
-    unsigned live = entry_closure(shape, r->exported | r->kept);
     unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N];
     entry_derive(shape, er);
-    entry_e0a_oracle(cx, shape, er, r->exported | r->kept, live);
     if (cx->emit_in && cx->emit_in->edge_rank)
         memcpy(cx->emit_in->edge_rank, er, sizeof er);
+    unsigned live = entry_closure(er, r->exported | r->kept);
+    /* An entry the closure reaches with no row on this shape would be
+     * emitted from no controller: the table's gap, never the request's. */
+    for (int e = 0; e < PCREC_ENTRY_N; e++)
+        if ((live & PCREC_ENTRY_BIT(e)) && !entry_row_of(shape, (PcrecEntry)e))
+            pcrec_ctx_fail(cx, 0, "internal error: entry %s reached with no "
+                           "row of entry_rows[] on this shape",
+                           pcrec_entry_name((PcrecEntry)e));
     if (!(live & ENTRY_MATCHER_MASK))
         pcrec_ctx_fail(cx, 0, "internal error: an entry request whose "
                        "closure does not reach the search entry");

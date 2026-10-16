@@ -1,0 +1,31 @@
+# tests/compound/entry_ranks.tsv -- E0's HAND RANK FIXTURE
+# (docs/design/compound_entries.md §3.2, §3.6; a precondition of E1).
+#
+# Written by hand from the EMITTED C, never from src/gen/entries.c: each row
+# names a witness artifact, one edge `from -> to` of its call graph, the
+# rank that edge's call site has by its place in the controller, and the
+# call-site text in `from`'s body with its exact count, so the checker can
+# hold the witness to the site it is meant to reach ([MECH-REACH]).
+#
+#   R3 inner        inside a per-candidate or per-attempt loop
+#   R2 per-call     once on every call
+#   R1 conditional  on a data-dependent subset of calls
+#   R0 rare         an error, tie or fallback path
+#
+# Columns: rank, witness id, arms (comma list of utf8/utfcheck/vm, or -),
+# pattern (verbatim; no tab), from, to, site (a substring of `from`'s body),
+# count (its exact number of occurrences there). A rank with no witness is a
+# row `RANK<TAB>UNWITNESSED<TAB>reason`, reported and never passed; a rank
+# with neither is a failure.
+#
+# rank	id	arms	pattern	from	to	site	count
+R0	tie	-	(?:\s+|x\s*?)$	search	match	rx_match(	1
+R1	vm-in	-	(a)b	search_in	search	return rx_search(	1
+R1	split-f	-	^\s+|\s+$	search	comp_a	rx__f_search(	1
+R1	split-np	-	^\s+|\s+$	search	next_pos	rx_next_pos(	1
+R2	hyb-entry	-	(a)b	search_run	prefilter	rx_prefilter(	1
+R2	split-q	-	^\s+|\s+$	search	comp_b	rx__q_search(	1
+R2	gfloor	-	a\Gb	search	comp_a	rx__f_search(	1
+R2	utf	utf8,utfcheck	abc	search	valid_upto	rx_valid_upto(	1
+R3	hyb-clamp	-	(a+)bcd	search_run	prefilter	rx_prefilter(	2
+R3	hyb-adapt	-	(?>a\Kb)c	search_run	prefilter	rx_prefilter(	2

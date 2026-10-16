@@ -4,6 +4,10 @@
 #
 #   B0  check_entries.py: an [EMIT-ENTRIES] request leaves exactly its
 #       closure, every corpus pattern under three arms (see its header).
+#   E0  check_entry_ranks.py: the rank column of `entry_rows[]`
+#       (docs/design/compound_entries.md §3.2, §3.6) against the hand
+#       fixture entry_ranks.tsv, each witness held to its call site in the
+#       emitted C, and the hybrid re-seed population's R3 against the text.
 #   B1  check_parts.py: part mode and the parts' options -- the split
 #       client's F and Q of six witnesses plus a hand controller in one
 #       TU -Werror, run against the plain artifact; the 60-byte prefix; K79;
@@ -49,6 +53,9 @@ fi
 echo "== B0: entry requests leave exactly their closure =="
 CC="$CC" python3 "$SCRIPT_DIR/check_entries.py" "$DRIVE" "$PCREC" "$ROOT_DIR" \
     "$WORKDIR/b0" --every "$EVERY" --jobs "$JOBS" || rc=1
+echo "== E0: entry_rows[]' rank column against its hand fixture and the text =="
+CC="$CC" python3 "$SCRIPT_DIR/check_entry_ranks.py" "$DRIVE" "$PCREC" "$ROOT_DIR" \
+    "$WORKDIR/e0" --every "$EVERY" || rc=1
 echo "== B1: part mode, the parts' options, one TU =="
 CC="$CC" python3 "$SCRIPT_DIR/check_parts.py" "$DRIVE" "$WORKDIR/b1" || rc=1
 echo "== B2: the split derivation against the twin's, by language =="
