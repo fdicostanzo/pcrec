@@ -9739,3 +9739,8 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **Ruling (Frank):** "i a weary about too much hand holding ... if the user is using the wrong calls, thats on them."
 - **Rule:** `<prefix>_next` does NOT check the iterator's owner. Passing an iterator bound by artifact A (or carrying A's buffers) to artifact B's `next` is UNDEFINED, stated in the spec hunk like the subject-immutability rule (IT5). The `owner` field, its per-call compare, its setter store (IT4's fix), S931 and the foreign-owner `B` arm are dropped. The header word stays: FRESH/BOUND/ENDED is the iterator's own state machine (stickiness, bind-on-first-call), not a guard. PCRE2 precedent: `pcre2_match` does not verify that match data belongs to the code. A debug build may add checks later; none ships in the hot path.
+
+### D167 addendum 3 — a knowledge stamp is the UNION over compile attempts (manager, 2026-10-16, session 113; window_contract.md rev 3.1 Q6 / F-5)
+
+- **Finding F-5 (lane wcfix's C-PERT prototype):** the stamp reports only the FINAL attempt's asks. On `(\p{Xwd})x` and `x(\p{Xwd})y` under `-e utf8 -fno-req-byte`, the stamp is `""` although attempt 0 asked and the emitted bytes move with the data.
+- **Ruling (manager, a stamp-correctness fix):** `_FINDINGS`/`_MEASURES` list a kind iff ANY attempt of the compile consulted it (a pcrec reader asked or a kit row read it), rendered once at the single render point after `mf_art_end` (rev 3.1 §3.7.3a). It is its own small abi event, landing beside the render-point commit RP, with a mover census. C-PERT is its standing control.
