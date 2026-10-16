@@ -1121,59 +1121,123 @@ before I0b's tables are read and before I1 (D163 add. 7 Q4; memory `pcrec-remode
 1. **The measurement regime. RELEVANT.**
    - Every number here is compile-only: `.text` sizes, instruction identity, store counts.
      All were taken at gcc 15.2 `-O2` x86-64 on the Linux dev box, plus answer differentials
-     against libpcre2 10.46 (byte mode, options 0). None reads a clock.
+     against libpcre2 10.46 (byte mode, options 0). None reads a clock. Revision 2 measured
+     nothing; its two new numbers (three init stores, `sizeof(rx_iter)` = 160 B) are
+     PREDICTED and owed by the twin's re-run.
    - The sizes are compiler-dependent. Another gcc may inline differently, which is why
      `L_new` vs `L_old` is a gate arm.
-   - The parity gate (§5.3) is the one timed decision. It is in the latency regime (dependent
-     calls, dense matches), on one box, in two link regimes. The PLT regime could widen the
-     margin but is not predicted to flip its sign.
+   - The parity gate (§5.3) is the one timed decision, and since revision 2 it decides two
+     things: the iterator's parity (gated) and whether batching earns its abi change (`B64`
+     beats `I`). Both are the latency regime (dependent calls, dense matches), one box, two
+     link regimes. Batching's sign could flip with the regime: under R1 (static link) the
+     exported call it amortizes is cheapest, so R1 is where `B64`'s margin is smallest and
+     where the decision is made conservatively.
    - A different box (Zen 1, the Mac) is the bench's official verdict, not this gate's
      (D144 add. 4).
 2. **The independent control. RELEVANT.**
-   - Semantics is checked against libpcre2's own global loop. The probe is pcre2demo.c's
-     loop over the library, which shares no source with pcrec. It is cross-checked by python
-     on the targeted cells.
+   - Semantics is checked against libpcre2's own global loop (pcre2demo.c's loop over the
+     library, sharing no source with pcrec), cross-checked by python on the targeted cells.
+   - Batching is checked against the same oracle at four `nbatch` values, so the batched
+     answer is never checked only against the unbatched one (which shares its STEP). The
+     give-up cells, which the oracle cannot answer, compare against K = 1 and are named as
+     the regression control they are.
    - The iterator-equals-loop check shares pcrec's engine with its subject, so it is named
      the REGRESSION control, not the semantics one.
-   - S is checked by the C compiler's layout against the literal.
+   - S: the C compiler's layout against the literal; the literal against the declarations'
+     max at pcrec's build.
+   - The residual twins: relocations against the artifact's own exported symbol list.
    - Populations are counted by the harvest: 29,502 compared byte pairs; 686 gate-true
-     patterns; 233 static-label bodies.
-   - Each sabotage row names its reach.
-   - The gate's soundness control (gate false ⇒ never diverges) was run and caught this
-     lane's first gate (bare nullability, 2 counterexamples).
+     patterns; 233 static-label bodies; 97 compound artifacts for F-1; 67 patterns for K5's
+     retirement bound.
+   - Each sabotage row names its reach; P-b and P-c ship their own constructed cells
+     because no harvested cell reaches them.
 3. **What moves when the data is regenerated. RELEVANT.**
-   - S is generated from the row table. A row change that changes the max moves the shared
-     block on EVERY artifact (an abi event, with the readers of §6.1) and `sizeof(rx_iter)`
-     for callers.
+   - S is derived from the declarations. A declaration change that moves the max moves the
+     shared block on EVERY artifact (an abi event, with the readers of §6.1) and
+     `sizeof(rx_iter)` for callers. Under A10, S is re-derived AT I1, so a kit row change
+     before I1 costs no extra event; after I1, growth is an event and a shrink rides one
+     (§1.3).
    - The `mg` expectations are regenerated from libpcre2. A new oracle version is a store key
      (`oracle_store/`), so a moved count is a clean miss, never silent.
    - The `reports_empty` fact gates the retry machinery. A change to its derivation moves
-     exactly the artifacts whose gate flips (a mover census by ID).
-   - The stamp `<PREFIX>_ITER_RETRY` moves with it.
+     exactly the artifacts whose gate flips (a mover census by ID). The stamp
+     `<PREFIX>_ITER_RETRY` moves with it.
+   - A measurement-set change (D166) moves `__find`'s layout only at `+1`, through `θ_hot`
+     (`compound_entries.md` §3.3). At `0`, nothing in this design reads the set.
 
 ---
 
-## 8. The sibling-family lens: state carried across the calls of one find-all
+## 8. The sibling-family lens
+
+### 8.1 State carried across the calls of one find-all
 
 D165 item 2 named three members. The survey finds these:
 
-| member | carried what | owner | status |
-|---|---|---|---|
-| the kit's FIND cache (A3, R3/R4's H) | block mask, base/top, lo_prev | kit | I2 |
-| the empty-match retry | one bit + `lo == q` | pcrec | I1 |
-| `-futf-check` validated | one bit | pcrec | I1 |
-| variables validated | one bit (CHECKED) | pcrec | I1 |
-| K5's pair-arm pending hits | `ha`, `hb` | pcrec | I3 |
-| the hybrid's reseed hint | the adaptive block | pcrec | FILED (U5) |
-| [FINDALL-REENTRY]: the forward DFA's state at the previous match end | state + position (≈16 B) | pcrec | BOONIES (U6) |
-| the hand-off re-entry's landmark ([REQ-HANDOFF-L1], K105) | the next landmark position | pcrec | U7 |
-| a compound's per-part caches (`compound.md` §C) | per part | pcrec | via the sum rule |
-| **streaming** ([M3]: state across subject CHUNKS, not across matches) | the automaton state at a chunk boundary | pcrec | U10, a SIBLING type |
+| member | carried what | owner | where it lives | status |
+|---|---|---|---|---|
+| the kit's FIND cache (A3, R3/R4's H, the presence carry) | 5 words: base, top, mask, H, `valid_until` | kit | a row of `st` | I2 |
+| the empty-match retry | one bit + `lo == q` | pcrec | `flags` | I1 |
+| `-futf-check` validated | one bit | pcrec | `flags` (CHECKED) | I1 |
+| variables validated | one bit (CHECKED) | pcrec | `flags` | I1 |
+| **the result batch** (rev 2) | K entries of `NCAPS` pairs + the cursor + `rc_next` | pcrec | the caller's `_in` memory; the cursor in FIXED fields | I1 or I4 (§6.9) |
+| K5's pair-arm pending hits | `ha`, `hb` | pcrec | a row of `st` | I3 |
+| the hybrid's reseed hint | the adaptive block | pcrec | a row of `st` | FILED (U5) |
+| [FINDALL-REENTRY]: the forward DFA's state at the previous match end | state + position (≈16 B) | pcrec | a row of `st` (would be) | BOONIES (U6) |
+| the hand-off re-entry's landmark ([REQ-HANDOFF-L1], K105) | the next landmark position | pcrec | a row of `st` (would be) | U7 |
+| a compound's per-part caches (`compound.md` §C) | per part | pcrec | summed rows | via the sum rule |
+| **streaming** ([M3]: state across subject CHUNKS, not across matches) | the automaton state at a chunk boundary | pcrec | its own type | U10, a SIBLING type |
 
-All but streaming fit ONE mechanism: a declared row in S, zero-fresh, persistent, owned by the
-artifact that bound the iterator. Streaming breaks the "same unchanged subject" invariant that
-every row's validity rests on, so it gets its own type with its own invariants rather than a
-mode of this one.
+All but streaming and the batch fit ONE mechanism: a declared row of S, zero-fresh,
+persistent, owned by the artifact that bound the iterator. The batch is the one member whose
+size the CALLER chooses, which is why it lives in caller memory and not in S (D165 add. 2):
+S is a public constant and cannot carry a caller's K. Streaming breaks the "same unchanged
+subject" invariant every row rests on, so it gets its own type.
+
+### 8.2 The combinator family (`compound.md` §A.2, `compound_entries.md` §4.1)
+
+| combinator | clients | what revision 2 adds |
+|---|---|---|
+| `first-nonzero(A@x, B@LOWER(g(x)))`, guarded | split (`F@f`, `Q@LOWER(next_pos(f))`, guard: the floor can be live); **the retry** (`R@q`, `SEARCH@LOWER(adv(q))`, guard: RETRY) | the guard is named as a row column (split had it in prose, §B.2); a `meter` column (`shared` for split, `per-operand` for the retry, Q-I1) |
+| `locate-then-finish` | `_search`; SEARCH | none |
+| `iterate(STATE; STEP; BATCH)` | **`next`** (new); `next_n` (HELD) | the new member: bind/check, deliver, fill |
+| `select-by-arg`, `dispatch`, `min-start-then-finish` | captures on demand, arch variants, 4c | none; an `iterate` row may nest any of them inside STEP |
+
+The retry is therefore not a sibling mechanism to split: it is a second ROW of split's
+combinator. The one new combinator, `iterate`, is the only place the iterator adds control
+logic, and its first client is the only one designed.
+
+### 8.3 Where batching sits among the "per-call overhead" levers
+
+The parity gate's levers are siblings by purpose: binding at init (removes a compare per
+call), the residual twins (remove a PLT call per match under `-fPIC`), `__find`'s layout
+(removes or adds a call per match, the part-layout row), and batching (amortizes the exported
+call itself). They are not one mechanism: each sits in a different table (the struct, the
+linkage rule I3, the dial row, the `iterate` row). The gate measures them together (`I`) and
+batching apart (`B64`), so each keeps its own evidence.
+
+---
+
+## 8a. NEW-DATASET: every new table, column or record, and its home
+
+| new item | kind | home | argument |
+|---|---|---|---|
+| the storage-row declarations (revision 1's proposed `src/gen/iter_rows.def`) | rows (owner, words, align, held-when) | **the STATE part's column in `entry_rows[]`** (`compound_entries.md` §4.1), with the kit's rows arriving as its form's declared words on `mf_result` | Revision 1 proposed a standalone file. The entry table already lists each entry's parts, and "held at once on a path" is a closure over exactly those part references (a compound's parts SUM because they are the same row's parts). A separate file would restate the part list. The kit's words stay the kit's facts (D157). If E0 lands without a per-part declaration slot, the fallback is revision 1's file beside `entries.c`, named as a debt |
+| S | a derived constant | the shared block's literal, checked against the declarations | already revision 1's; A10 changes only the unit (words) |
+| `reports_empty` | an E1 fact | **PATFACTS** (`src/facts/`, D120), listed by `--emit-facts` (`docs/spec/facts_listing.md`) | a per-pattern analysis fact; PATFACTS is its home by charter |
+| the notempty root | a machine ROLE | the machine-role vocabulary of the anchored machine (`anchored_match_unwrapped.md` §2), placed by `compound_place[]` row 3 as an in-Job role (`compound_entries.md` §4.2) | a parameter of an existing construction, not a new machine kind |
+| the `first-nonzero` row's guard and `meter` columns | two columns | `compound.md` §A.2's combinator table | split's guard exists in prose (§B.2); the meter column records a difference the two rows already have |
+| the `iterate` combinator | a row of the combinator vocabulary | `compound.md` §A.2 / `compound_entries.md` §4.1's `CompComb` enum (which already names `iterate`) | no new table |
+| the `mode` (M) per entry | a column | `entry_rows[]`'s `mode` (`compound_entries.md` §4.1) | already there |
+| the batch region | a record (a third region of the descriptor) | **`<prefix>_buffers`** (`match_api.md` §10.2), D165 add. 2's ruled home | Q-I3 discusses a separate `rx_batch` type and leans against it |
+| the batch cursor, `rc_next`, the option bits | FIXED fields | `rx_iter` | every artifact can batch; S cannot carry a caller-sized K |
+| `<PREFIX>_ITER_RETRY` | a stamp | the stamp inventory (`match_api.md` §6.3.2, `stamp_kinds.c`) | one strategy choice per artifact |
+| `<PREFIX>_BATCH_ENTRY_SIZE` | a header macro | beside §10.4's five sizing macros | the same "publish the arithmetic" rule |
+| the `mg` `.rxt` line | a line kind | `rxt_schema.def` (all three legs) and `docs/spec/rxt_format.md` | the existing schema |
+| the parity gate's results | an acceptance record | a lane report plus `findall_iter/` probe outputs | NOT a D166 measurement set: no selection reads it. If batching's decision ever became per-box, its crossover would be a set row; today it is one ruled yes/no |
+| `θ_hot` (read, not added) | a measurement-set row | `measure_sets.md`'s derivation registry (`compound_entries.md` §3.3) | this design only reads it through the part-layout row |
+
+No new standalone table is proposed. The one place this revision could have added one (the
+storage rows) is placed in the entry table.
 
 ---
 
@@ -1181,62 +1245,86 @@ mode of this one.
 
 | # | unlock | trigger |
 |---|---|---|
-| U1 | `next_n` batching | the twin's `N64` arm beats `I` by more than the noise floor on cells 1/3 (§5.3) |
+| U1 | internal batching (§2.3) if not in I1; the public `next_n` | the twin's `B64` (resp. `N64`) arm beats `I` by more than the noise floor on cells 1/3 (§5.3) |
 | U2 | validate-once (`-futf-check` O(n) once) | built in I1, no trigger |
 | U3 | K5 linear (the `pair-hits` row), ~200× off-bench | its witness exists (walk_survey K5); the first post-framework optimization (I3) |
 | U4 | the kit's A3 and R3/R4 rows (R17-b″) | the kit's |
 | U5 | the reseed hint row ([OPT-HYB-RESEED-XCALL]) | its restated trigger (a bench find-all cell averaging > 1 re-seed per call, losing to `-fno-hyb-reseed`) + GIVEUP1's direction check |
 | U6 | [FINDALL-REENTRY] carried DFA state | a bench find-all cell where re-entry is a measured share |
 | U7 | the hand-off re-entry's landmark cache | K105's witness re-measured under the iterator |
-| U8 | the substitution global loop ([M4-SUBST]) = `next` + a splice. replace_design.md §3.8's "the §3.1 loop cannot express the retry" seam DISSOLVES: the iterator expresses it | [M4-SUBST] opens |
-| U9 | `rx_entries.next` ([V-E] item (1), [ART-MGR] S1): the uniform signature is ready | [V-E]'s trigger |
+| U8 | the substitution global loop ([M4-SUBST]) = an `iterate` row with a splice sink. replace_design.md §3.8's "the §3.1 loop cannot express the retry" seam DISSOLVES | [M4-SUBST] opens |
+| U9 | `rx_entries.next` ([V-E] item (1), [ART-MGR] S1): the uniform signature `(rx_iter *, caps)` is ready | [V-E]'s trigger |
 | U10 | a streaming sibling `rx_stream` ([M3]) | [M3] opens |
 | U11 | `empty_pref`, the structural narrowing of the retry gate | a measured cost of the futile retry on a gate-true, non-diverging pattern |
-| U12 | captures in `next_n` | [CAPTURE-ARRAY]'s design |
-| U13 | `next`'s `shared` linkage for every body (one rule, smaller `.text`) | `I_shared` within the noise floor of `I` (§5.3) |
+| U12 | spans-only batch entries (Q-I4's alternative) | a VM find-all cell whose batch fill is dominated by capture copying |
+| U13 | `__find`'s `shared` linkage for every body at `0` (`compound_entries.md` U1) | `I_shared` within the noise floor of `I` (§5.3) |
+| U14 | S shrink to 48 B | K5 retired by a kit form's single-pass proof AND another abi event moving the shared block (§1.3) |
+| U15 | a per-box batch size suggestion (`rx_info` or a header hint) | a measured `B64` vs `B8` crossover that differs across boxes; it would be a D166 set row (§8a) |
 
 ---
 
 ## 10. Questions for Frank (discussion: the problem, the forces, the leaning)
 
-**Q1. Do we match PCRE2's global iteration (the empty-match retry), or keep today's loop
-semantics?**
-- *The problem.* The two answer differently on 160 of 3,778 corpus patterns. The real-world
-  CSV idiom `(?:^|,)([^,]*)` loses fields under the loop. The loop is not a subset of PCRE2's
-  answer (374 pairs report spans no oracle reports).
-- *The forces.* D26: PCRE2 is the source of truth for what a pattern MATCHES, and python
-  agrees. The cost is the retry machinery: a VM guard, and on DFA artifacts a mandatory
-  notempty root. It is emitted only on the 18% of patterns that can report an empty match.
-  `_search` and its documented loop are untouched.
-- *Leaning.* Match PCRE2. The iterator is new, so it has no installed base to break, and
-  shipping it lossy would freeze a known-wrong answer into a second entry.
+**Revision 1's Q1-Q4 are RULED (D165 add. 2):** Q1 match PCRE2's global iteration; Q2
+internal batching in `_in` memory, `next_n` optional, both timed; Q3 bind `(s, n)` at init;
+Q4 `PCREC_ERR_ITER` (-10) with the 1/0 + `it.rc` contract. Revision 2's four:
 
-**Q2. Batching `next_n` now or on a measured trigger?**
-- *The problem.* It costs an every-artifact abi event whenever it lands, and 392-1,286 B
-  `.text` per artifact. Its win is the per-match exported call, which the parity slot can
-  measure on the twin before I1.
-- *Leaning.* Measure in the parity slot first (the twin is ready). Fold it into I1 if it
-  beats `next` beyond the noise floor on dense cells, otherwise file it. Captures stay with
-  [CAPTURE-ARRAY].
+**Q-I1. What is "one meter per exported call" for the iterator?**
+- *The problem.* D163 add. 6 Q1 rules one budget meter per EXPORTED call, so a compound's
+  parts charge the caller's meter. Read literally, one `next` call is one exported call,
+  so the retry and the following search, and a whole batch fill, would share one meter.
+- *The forces.* A shared meter would make the iterator give up where today's loop does not
+  (two searches' work against one budget), and would make batching change WHERE it gives up,
+  which breaks §3.4a's identity and D158's spirit (an internal change moving a give-up).
+  pcre2demo's loop gives the retry its own `pcre2_match` call and so its own limits. Split's
+  F and Q are different: they serve one `_search`, so one meter is right there.
+- *Leaning.* One meter per LOGICAL search (what one `_search` call or one `pcre2_match` call
+  would be). Q1 then holds unchanged inside each logical search, and the combinator row
+  carries the difference as its `meter` column.
 
-**Q3. `(s, n)` per call (D165 as ruled) or bound at init?**
-- *The problem.* D165's shape passes `s, n` on every call, and the iterator must then check
-  them (§1.2) or trust them.
-- *The alternative.* `rx_iter it = RX_ITER_INIT(s, n); while (<p>_next(&it, caps))`. This
-  makes the mismatch impossible by construction, needs no per-call compare, and costs three
-  init stores instead of one. `rx_entries.next` gets a shorter signature.
-- *Leaning.* Keep D165's ruled shape with the checked binding. The alternative is recorded
-  here because it is cheap to adopt BEFORE I1 and costly after.
+**Q-I2. How does an iterator get the caller's `_in` memory?**
+- *The problem.* `rx_iter` is one unprefixed type, but `<prefix>_buffers` is per-artifact
+  (match_api.md §10.2¶2: frame sizes differ). D165 add. 2 sketched
+  `RX_ITER_INIT_IN(s, n, &bufs)`, which would have to take `const void *`.
+- *The forces.* A `void *` binding loses the C type check: one artifact's buffers handed to
+  another's iterator is undetectable (the owner check catches a foreign ITERATOR, not foreign
+  buffers). A typed binder must be per-prefix. As a header `static inline`
+  (`<prefix>_iter_buffers(&it, &bufs)`) it is no exported symbol and no call, and the caller
+  sizing the buffers already names the artifact's macros. `rx_entries.next` stays uniform
+  because binding happens before the call.
+- *Leaning.* The typed header binder, as a setter (§1.1). It also gives the iterator `_in`'s
+  depth on VM artifacts with no `_next_in` entry.
 
-**Q4. A new refusal code `PCREC_ERR_ITER` (−10)?**
-- *The problem.* A foreign, uninitialized or misbound iterator must not be silently rebound
-  (re-reported matches) or trusted (a wrong answer through the kit's cache).
-- *The alternatives.* Silent rebind (cheaper, silent); undefined behavior (cheapest).
-- *Leaning.* The code. It is one row in §4's table, and generated call sites never meet it.
+**Q-I3. Where does the batch region live?**
+- *The problem.* D165 add. 2 ruled "caller-provided `_in` memory". The existing descriptor
+  has two regions, both scratch.
+- *The forces.* Extending `<prefix>_buffers` with `batch`/`nbatch` keeps ONE descriptor for
+  one binding, so the iterator's searches and its results come from the same caller memory,
+  and the `_in` entries simply ignore the new region. Its cost: a positional initializer
+  `{f, nf, t, nt}` now leaves two members out, which `-Wmissing-field-initializers` flags under
+  `-Wextra` (the harness's own flags, and match_api.md §10.6's example). A separate fixed
+  `rx_batch` type avoids touching the descriptor but adds a second binding and a second
+  lifetime rule.
+- *Leaning.* Extend `<prefix>_buffers` (the ruled home), and re-spell §10.6's example and the
+  in-tree callers with designated initializers in the same commit (F11). The batch region's
+  lifetime differs from the scratch regions' and is stated per region.
+
+**Q-I4. What does one batch entry hold?**
+- *The problem.* A caller passes `caps` per call, but the fill runs before the caller says
+  whether the next call wants captures.
+- *The forces.* Full captures per entry (`<PREFIX>_NCAPS` pairs) always answers whatever the
+  caller passes; on a DFA artifact `NCAPS` = 1, so it costs nothing there. On a VM artifact
+  with many groups it copies `NCAPS` pairs per match even for a caller that only wants spans.
+  A spans-only mode would need a bind-time flag and a refusal when a non-NULL `caps` meets a
+  spans-only batch.
+- *Leaning.* Full captures per entry. Spans-only is filed as U12 with a measured trigger.
 
 ---
 
 ## 11. Findings (for the manager)
+
+Revision 1's F1-F8 stand (F7's "superseded" now reads: `compound.md` §C's session pointer is
+replaced by the STATE part of the `iterate` row).
 
 - **F1.** §3.1.3¶9's "the loop's spans are a strict subset" is false on 374 of 1,063
   diverging corpus pairs. The witness is `a??b?` over `"ab"` (the loop reports `(1,2)`; no
@@ -1250,12 +1338,30 @@ semantics?**
 - **F5.** Every DFA `attempt`-scan artifact keeps label addresses in a static table, so its
   search body cannot be duplicated by inlining (233 of 4,243 byte artifacts). Any design
   that inlines a body into two entries must special-case them by a declared row (§2.2), not
-  by an assumption.
+  by an assumption. (Now `compound_entries.md`'s `copyable(part)` fact, row P2.)
 - **F6.** `rx_iter it = { MAGIC }` trips `-Wmissing-field-initializers` under the harness's
   own `-Wextra -Werror`, and any aggregate initializer is a full memset. The
-  static-inline-returning spelling costs one store, warning-free at every `-O` level.
+  static-inline-returning spelling costs one store per written field, warning-free.
 - **F7.** `compound.md` §C's `rx_ctx` session pointer is superseded by D165's iterator
   (§3.7). That design's foreign-cache hazard needs no owner-tagged region once the state
   lives only in the top-level artifact's iterator.
 - **F8.** A var-bearing artifact's `_search` has a non-uniform signature (18 corpus
   patterns). `next`'s is uniform, because the iterator carries `vars`.
+- **F9 (rev 2).** D165 add. 2 names the `_in` descriptor `rx_buffers`, but the shipped type
+  is per-artifact `<prefix>_buffers` (match_api.md §10.2¶2). The binding therefore cannot be
+  an unprefixed macro without losing the type check (Q-I2).
+- **F10 (rev 2).** D163 add. 6 Q1's "one meter per exported call", read literally, would make
+  the retry and any internal batching move give-ups. The two clients of `first-nonzero`
+  already differ on it (Q-I1).
+- **F11 (rev 2).** Growing `<prefix>_buffers` warns every positional initializer of it under
+  `-Wextra`, including match_api.md §10.6's own example. Any future region added to the
+  descriptor has the same cost; designated initializers in the spec's examples remove it for
+  good.
+- **F12 (rev 2).** `compound_entries.md` §3.8 rates `__find`'s in-edge from `_next` R2 with
+  the batch fill HELD. Designing the fill makes that edge R3 on every artifact once batching
+  lands (the loop is always compiled; K is a run-time value), which gives that note's
+  `−2`/`−1` pair its first designed witness and makes `I_shared` the `−2` layout alone.
+  `compound_entries.md` is not edited here.
+- **F13 (rev 2).** Under A10, S today is 64 B, not 56 (revision 1) or 48 (Q-R17P-10): the
+  kit's row grew to 40 B and K5 stays. `compound_entries.md` and r17b_prime.md both cite
+  48/56; their next revisions should cite §1.3's derivation rather than a number.
