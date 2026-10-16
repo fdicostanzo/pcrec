@@ -1,6 +1,9 @@
 # Measurement sets — the format, the store, loading, the kit channel, the tool (rev 3)
 
 Status: DESIGN ONLY, revision 3 (lane msrev3, 2026-10-16, from main `063b4a4b4`, abi 78).
+Revision record: rev 3 + sibling edit, 2026-10-16 (lane msib: `<PREFIX>_MEASURES` render
+point and union-over-attempts, from `memfn/window_contract.md` rev 3.1 §3.7.3a and D167
+addenda 2 and 3; §3.5, §4.2, §9.2 part 5).
 Revision 2 was lane msetrev (2026-10-14, from `58338a09f`); revision 1 was lane msetdes
 (same day). Nothing is built; nothing under `src/`, `cli/`, `lib/` or `tests/` changes.
 Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166 and its addenda 1/1.1 and 2,
@@ -834,6 +837,14 @@ target.
 - **Otherwise `"<id>@<rev>:<digest16>"`**, the set the compile LOADED. Revision 1 used
   `"none"` for nothing asked, which inverted the `_FINDINGS` reading, where `none` means
   "asked, and nothing answered".
+- **Rendered ONCE, after `mf_art_end`.** `<PREFIX>_MEASURES`, like `<PREFIX>_FINDINGS`,
+  is written at the single render point of `docs/design/memfn/window_contract.md` §3.7.3a
+  (the finishing pass, after `mf_art_end` returns), never in `emit_info_def`. It reads the
+  kit's layer-invariant `consulted` (§4.2), so the emptiness test sees the kit's last
+  read. This is the layer-invariance obligation revision 3 lacked (wcrev3 finding F-4).
+- **The union over compile attempts.** The stamp lists the set iff ANY attempt of the
+  compile consulted it (a pcrec reader asked or a kit row read it), not only the final
+  attempt (D167 addendum 3; window_contract.md §3.7.3a).
 - **No `asked-and-nothing-answered` spelling.** A lookup that found nothing still makes the
   artifact depend on the set (an absent row skipped a dispatch), so it stamps the set.
 
@@ -946,7 +957,10 @@ ONE fact: after `mf_art_end`, `consulted` (a boolean). It is true iff any kit ro
 compile resolved a key against the set, found or absent.
 
 - **The stamp.** pcrec ORs `consulted` with its own readers' lookups to decide whether the
-  stamp is empty (§3.5). The stamp's CONTENT was fixed when the set was LOADED, which is
+  stamp is empty (§3.5). The OR is computed once, at the render point after `mf_art_end`
+  (window_contract.md §3.7.3a), over the union of every compile attempt's asks (D167
+  addendum 3), and `consulted` is layer-invariant there (the same boolean under every
+  layer setting). The stamp's CONTENT was fixed when the set was LOADED, which is
   what stamp-on-load means: no per-key traffic shapes the bytes.
 - **Why a boolean.** Revision 1 asked for a per-key "looked up" report. That is the kit
   narrating its method to pcrec (D157's concern from the other side). It also puts a second
@@ -1777,6 +1791,10 @@ The parts are six, and each exists once:
      `query=bundle:digest`.
      For measures it is the item digest itself (stamp-on-load, §3.5). Picks and
      evaluator-params have none (`stamp.domain = NULL`).
+     The stamp text is rendered ONCE per compile, at the single render point after
+     `mf_art_end` (window_contract.md §3.7.3a), from the kit's layer-invariant `consulted`
+     ORed with the union over compile attempts (D167 addenda 2 and 3); `ks_stamp` builds
+     the text and does not choose when it is written.
 
    `ks_digest(role, doc, subkey)` is FNV-1a-64 over the role's DOMAIN BYTES, then the
    sub-key's bytes and a NUL where `subkey = KS_SUB_QUERY`, then the role's `fold`. It
