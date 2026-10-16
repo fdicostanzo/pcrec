@@ -475,6 +475,11 @@ void pcrec_find_resolve(Ctx *cx, bool notes)
         if (!owned) pcrec_ctx_fail(cx, 0, "%s", ferr.msg);
         s1 = owned;
     }
+#ifdef PCREC_KS_TRACE
+    /* The lookup trace's ATTEMPT marker (findings.h): every record after it
+     * belongs to this attempt. */
+    fprintf(stderr, "KSTRACE\tanalysis\t-\tresolve\t-\n");
+#endif
     rc = pcrec_find_chain_build(&cx->arena, o->analysis, s1, o->analysis_dirs,
                                 notes, &cx->job->find.chain, &ferr);
     if (owned) pcrec_rxt_source_free(owned);

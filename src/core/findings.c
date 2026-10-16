@@ -40,9 +40,13 @@
  * compare would be a second mechanism with its own cost question and no
  * measured need (D77). */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/* The accessor's own file defines the functions the trace build's macros
+ * (findings.h) stand in for, so it never sees those macros. */
+#define PCREC_FIND_DEFINING
 #include "core/internal.h"
 #include "core/findings.h"
 #include "enc/enc.h"
@@ -407,6 +411,27 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx)
     }
     return fr->byte_rate_have ? fr->byte_rate : NULL;
 }
+
+#ifdef PCREC_KS_TRACE
+/* The trace build's reader-attributed accessor (findings.h): the read, then
+ * its record, so the record names the bundle that answered. */
+const uint32_t *pcrec_find_byte_rate_at(Ctx *cx, const char *reader)
+{
+    const uint32_t *r = pcrec_find_byte_rate(cx);
+    PcrecFindRec *fr = &cx->job->find;
+    if (fr->trace_last != reader)
+        fprintf(stderr, "KSTRACE\tanalysis\tbyte-rate\t%s\t%s\n", reader,
+                fr->byte_rate_have ? fr->byte_rate_bundle : "none");
+    fr->trace_last = reader;
+    return r;
+}
+
+unsigned pcrec_find_set_ppm_at(Ctx *cx, const uint8_t set[256],
+                               const char *reader)
+{
+    return pcrec_find_set_mass(pcrec_find_byte_rate_at(cx, reader), set);
+}
+#endif
 
 /* ---- THE PRIMITIVES: one per rate QUESTION KIND, its NONE answer inside ----
  *
