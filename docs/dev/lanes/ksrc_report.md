@@ -106,7 +106,7 @@ grep:** none moved. `tests/registry/limits_check.sh:365`'s
 
 | id | plant | detector |
 |---|---|---|
-| S963 | the census's analysis attribution written empty (`emit_sweep.py`) | findings §13 (UNATTRIBUTED) |
+| S963 | the census's analysis attribution written empty (`emit_sweep.py`) | tests/findings sec. 13 (UNATTRIBUTED) |
 | S986 | `pcrec_ks_digest` drops a sub-keyed domain's NUL | findings §4/§6 (digest vs independent FNV) |
 | S989 | `ksrc.c` includes `core/internal.h` | core: `tests/core/ksrc_deps_check.sh` |
 | S1049 | the analysis row's `s2_mismatch` = refuse | findings §6 #7 |
@@ -117,7 +117,7 @@ Single-row mech verdicts: see "Validation".
 
 ## New checks
 
-- **findings §13**: builds a trace binary of the tree, runs the analysis census on
+- **tests/findings sec. 13**: builds a trace binary of the tree, runs the analysis census on
   `tests/findings/data_census/`, and requires the hand list. The control is a list
   missing one mover, which must FAIL by name.
 - **core `ksrc_deps_check.sh`** (S989's detector):
