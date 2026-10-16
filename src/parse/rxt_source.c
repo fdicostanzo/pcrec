@@ -55,6 +55,7 @@
 
 #include "pcrec.h"
 #include "core/internal.h"
+#include "core/ksrc.h"
 #include "enc/enc.h"
 
 /* [LIM-1] (D90, 2026-08-30) THE FOUR CAPS THIS HEAD PARSER HAS ALWAYS HAD
@@ -4077,6 +4078,60 @@ static const char *lib_chain_text(Arena *a, const char *own,
     return out;
 }
 
+/* The resolver's allocator: the source's arena. */
+static void *lib_alloc(void *a, size_t n)
+{
+    return pcrec_arena_alloc(a, n);
+}
+
+#ifdef PCREC_KSRC_BOTHWAYS
+/* The pre-K1 search, kept verbatim for the both-ways check (K2 deletes it). */
+static const char *old_lib_find(Arena *a, const char *own,
+                                const char *const *dirs, size_t ndirs,
+                                const char *ref)
+{
+    if (ref[0] == '/') return path_is_file(ref) ? ref : NULL;
+    const char *cand = join_path(a, own, ref);
+    if (path_is_file(cand)) return cand;
+    for (size_t d = 0; d < ndirs; d++) {
+        cand = join_path(a, dirs[d], ref);
+        if (path_is_file(cand)) return cand;
+    }
+    return NULL;
+}
+#endif
+
+/* [KNOW-SRC] K1: a `lib "path"` reference's file, by the knowledge module's
+ * one stop loop under the `lib` kind's row (src/parse/ks_lib.c): an absolute
+ * path as written, else the naming file's own directory (`own`, "" for
+ * none) and then each `--lib-path` in order, matched by existence
+ * (`entry_match = probe-exists`, F12). The resolved path (arena-owned) or
+ * NULL. Under `-DPCREC_KSRC_BOTHWAYS` the pre-K1 loop must agree. */
+static const char *lib_find(Arena *a, const char *own,
+                            const char *const *dirs, size_t ndirs,
+                            const char *ref)
+{
+    KsAlloc al = { lib_alloc, a };
+    KsErr kerr;
+    KsWalk kw = {
+        .kind = &pcrec_ks_lib, .dirs = dirs, .ndirs = ndirs, .srcdir = own,
+        .alloc = &al, .err = &kerr
+    };
+    KsHit hit;
+    const char *path = pcrec_ks_resolve(&kw, KS_REQ_PATH, ref, 0, &hit) ==
+                       KS_RES_FOUND ? hit.path : NULL;
+#ifdef PCREC_KSRC_BOTHWAYS
+    const char *old = old_lib_find(a, own, dirs, ndirs, ref);
+    if (!old != !path || (old && strcmp(old, path) != 0)) {
+        fprintf(stderr, "pcrec: internal error: [KNOW-SRC] K1 both-ways: "
+                "lib \"%s\" resolves to '%s' (old) and '%s' (new)\n", ref,
+                old ? old : "(none)", path ? path : "(none)");
+        abort();
+    }
+#endif
+    return path;
+}
+
 /* ---- [DD-13b.W1.3] THE `flags` LETTER MAPPING, with ONE home -----------
  *
  * `flags i` means the same thing on a `config` line, on a pattern block and
@@ -4149,14 +4204,7 @@ typedef struct {
 static const char *lib_resolve(RxtClosure *cl, const char *own,
                                const char *ref)
 {
-    if (ref[0] == '/') return path_is_file(ref) ? ref : NULL;
-    const char *cand = join_path(&cl->root->arena, own, ref);
-    if (path_is_file(cand)) return cand;
-    for (size_t d = 0; d < cl->ndirs; d++) {
-        cand = join_path(&cl->root->arena, cl->dirs[d], ref);
-        if (path_is_file(cand)) return cand;
-    }
-    return NULL;
+    return lib_find(&cl->root->arena, own, cl->dirs, cl->ndirs, ref);
 }
 
 /* True iff `path` is already in the lib-closure's visited set `cl->seen`
@@ -4327,14 +4375,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             unq[rl - 2] = 0;
             ref = unq;
         }
-        int found = 0;
-        if (ref[0] == '/') found = path_is_file(ref);
-        else {
-            found = path_is_file(join_path(&src->arena, own, ref));
-            for (size_t d = 0; !found && d < nlib; d++)
-                found = path_is_file(join_path(&src->arena, libdirs[d], ref));
-        }
-        if (!found)
+        if (!lib_find(&src->arena, own, libdirs, nlib, ref))
             return rxt_fail(&p, RXTD_VALUE_SHAPE, r->line,
                             "'lib %s' names no readable file; searched %s",
                             r->value, chain);

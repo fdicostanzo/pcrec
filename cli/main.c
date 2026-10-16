@@ -1092,7 +1092,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * item 2; `apply_target`). It sets a `pcrec_options` field, so a
          * config's `pcrec` line could reach it — which the `.rxt` reader
          * refuses by name before this parser ever sees that line. The name
-         * grammar is `src/core/findings.c`'s one rule. */
+         * grammar is the knowledge module's one rule, under the analysis
+         * row's `flag_classify` (name-only; src/core/ksrc.c). */
         else if (!strcmp(a, "--analysis") || !strncmp(a, "--analysis=", 11)) {
             const char *v;
             if (a[10] == '=') v = a + 11;
@@ -1100,7 +1101,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
                 cli_err("missing value for %s", a);
                 return 1;
             } else v = argv[++i];
-            if (!pcrec_find_name_ok(v, strlen(v))) {
+            if (pcrec_ks_classify(pcrec_ks_analysis.flag_classify, v) !=
+                KS_REQ_NAME) {
                 cli_err("--analysis '%s': analysis names are LOWERCASE — a "
                         "letter a-z, then a-z, 0-9, '_' or '-'", v);
                 return 1;
@@ -1463,15 +1465,20 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
      * §3.2), which the file can show and `--list-source` can list; an
      * invisible command-line override of what the file says is exactly
      * what this rule refuses to be. `ts.opt.analysis` already carries the
-     * CLI's value (it is `cli->opt`'s copy), so the fill is the else arm. */
-    if (t->analysis) {
-        if (ts.opt.analysis && strcmp(ts.opt.analysis, t->analysis) != 0)
+     * CLI's value (it is `cli->opt`'s copy), so a target naming none keeps
+     * it. [KNOW-SRC] K1: the decision is the knowledge module's one
+     * fill-only rule (`pcrec_ks_pick`), returned as data; the note naming
+     * this kind's flag and line stays here, because the library has no
+     * stderr. */
+    {
+        KsPick pk = pcrec_ks_pick(ts.opt.analysis, t->analysis);
+        if (pk.disagree)
             cli_err("%s:%zu: target '%s': CLI --analysis %s and this file's "
                     "analysis %s disagree; using the file's value "
                     "(--analysis is fill-only)",
                     src_path, t->analysis_line, t->prefix,
-                    ts.opt.analysis, t->analysis);
-        ts.opt.analysis = t->analysis;
+                    pk.flag_value, pk.file_value);
+        ts.opt.analysis = pk.chosen;
     }
 
     /* `budget frames=` sizes the ARTIFACT's resume stack, which is
@@ -1806,7 +1813,8 @@ int main(int argc, char **argv)
     {
         const unsigned m0 = cli_modes_active(&st);
         const int la_file = st.list_analysis &&
-            !pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis));
+            pcrec_ks_classify(pcrec_ks_analysis.list_classify,
+                              st.list_analysis) == KS_REQ_FILE;
         const int resolves = st.nfiles || st.list_analysis ||
                              (st.pattern && m0 == 0);
         if ((st.libdirs && !resolves) ||
@@ -2230,7 +2238,8 @@ static int cli_dispatch(CliState st)
         }
         if (st.list_analyses)
             v = pcrec_find_list_names();
-        else if (pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis)))
+        else if (pcrec_ks_classify(pcrec_ks_analysis.list_classify,
+                                   st.list_analysis) == KS_REQ_NAME)
             v = pcrec_find_list_name(st.list_analysis, st.libdirs, &lerr);
         else
             v = pcrec_find_list_file(st.list_analysis, st.libdirs,

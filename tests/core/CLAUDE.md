@@ -370,4 +370,14 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   keys parsed, accessor uses seen) make a scan that reached nothing a
   failure. Sabotage row S792 plants a raw read in `callgraph.c`.
 
+- **ksrc_deps_check.sh** -- [KNOW-SRC] K0 (lane ksrc, 2026-10-16): the
+  knowledge module's DEPENDENCY RULE (`docs/design/measure_sets.md` rev 3
+  §9.2, sabotage S989). Two halves, each blind where the other sees: (a) the
+  quoted `#include` lines of `src/core/ksrc.c`/`ksrc.h` are `core/ksrc.h`
+  only (a population floor of 3 lines read, and a planted-`internal.h`
+  control that must be reported); (b) `ksrc.c` compiles ALONE with `-Isrc`
+  and no `-Ilib`, and `nm -u` on that object names no `pcrec_` symbol. The
+  `nm -u` half on the linked `pcrec-measure` binary joins at M3. Run by
+  `run_core_tests.sh` (a source scan plus one compile, no library link).
+
 Maintenance: update this file when files are added/removed or their roles change.

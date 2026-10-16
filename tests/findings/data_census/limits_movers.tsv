@@ -1,0 +1,9 @@
+# The HAND-MADE movers list for PCREC_MAX_AUTO_DFA_ELEMS 30000000 -> 3000
+# over limits_patterns.txt, written BEFORE the census ran. The budget is read
+# only on the AUTO route's DFA attempt (limits.def's row), so --engine=vm
+# (stream c-vm) moves nothing; on the default engine only the pattern whose
+# subset construction passes 3000 elements falls back (`lowdfa`'s own
+# witness, ENGINE_SEL "collapsed-prefilter"), at both bases; abc, xyz,
+# [0-9]+ and (a|b)*c build machines far below it.
+c-default	byte	(?:a|b)*a(?:a|b){11}	limit:PCREC_MAX_AUTO_DFA_ELEMS+tokens
+c-default	utf8	(?:a|b)*a(?:a|b){11}	limit:PCREC_MAX_AUTO_DFA_ELEMS+tokens

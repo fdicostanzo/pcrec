@@ -1650,6 +1650,33 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `.rxt` reader's own arena is detached, so an allocation failure inside an
   `-I` or `analysis_source` parse aborts rather than routing through
   `pcrec_ctx_nomem` (K7's shape; the reader was CLI-only until now).
+  **[KNOW-SRC] K1 (lane ksrc, 2026-10-16): THE STOP LOOP IS THE KNOWLEDGE
+  MODULE'S.** `find_bundle` is `pcrec_ks_resolve` under `pcrec_ks_analysis`
+  (`find_has` answers S1 and the store, `find_note` prints the note) and
+  builds the link from where it landed; the chain, `#include_next`, the cycle
+  and depth refusals and the terminal stay here. Under
+  `-DPCREC_KSRC_BOTHWAYS` the pre-K1 loop (`old_find_bundle`, `old_probe_dir`,
+  `old_dir_has_exact`, `old_stops_text`, verbatim) runs beside it on every
+  lookup and any disagreement aborts (`find_bothways`); K2 deletes it.
+  `rxt_source.c`'s `lib` search is the same move: `lib_find` (the existence
+  loop and `lib_resolve`) is `pcrec_ks_resolve` under `pcrec_ks_lib`, with its
+  own both-ways copy (`old_lib_find`); `lib_chain_text` stays, because the
+  `lib` refusal words its stops differently from the analysis one (a third
+  kind divergence, listed in the K1 report, not unified).
+- **ks_analysis.c** / **ks_lib.c** — [KNOW-SRC] K0 (lane ksrc, 2026-10-16;
+  `docs/design/measure_sets.md` rev 3 §9.2, §9.5): two ROWS of the knowledge
+  module's kinds table (`src/core/ksrc.c` holds the kind-independent parts).
+  `pcrec_ks_analysis` is the analysis object's row — stops S1, `-I`, the
+  store; `--analysis` name-only, `--list-analysis` name-else-file; the S2
+  fall-through note and the two-bundle refusal as columns; exact entry
+  match; the `SLASH` join (`-I d/` reports `d//x.rxt`, shipped); the two
+  digest roles from findings.c — and its file probe (`analysis_probe`: the
+  `PCREC_MAX_FIND_BUNDLE_BYTES` refusal, the `.rxt` parse, the bundle count),
+  which is why it is a parse-layer TU. `pcrec_ks_lib` is the RESOLVE-ONLY
+  `lib "path"` row — the naming file's directory then each `--lib-path`,
+  `entry_match = probe-exists` (F12, kept for zero movers) and the `CLEAN`
+  join — with no probe, item, stamp or listing.
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be
