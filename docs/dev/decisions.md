@@ -9759,3 +9759,7 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Ruling (Frank):** "if we have the switches/tuner then it should decide the outcome. predictability is important here. gcc deciding suggests it could change depending on the version/arch."
 - **Rule:** at every non-zero dial position, and under any explicit control, every part's layout is PINNED by pcrec with explicit attributes (`always_inline`, or `static noinline noclone`, LK-3). No preset or control value leaves a part to gcc's heuristics. `auto` is withdrawn as a preset value. Q8 is answered: the `+1` preset is hot parts inline, the residual `shared`.
 - **Position `0` (Frank, same day: "0 as [emitted] is fine"):** position `0` stays AS EMITTED, the zero-mover baseline. Its layout may follow gcc version and arch, as today. Only non-zero positions and explicit controls pin.
+
+### D163 addendum 11 — part-layout checks are per ROW through flags (Frank, 2026-10-16, session 113; compound_entries.md rev 4 Q9)
+
+- **Ruling (Frank: "agree"):** each layout row is checked by setting its control on corpus artifacts with a subject of its class. A synthetic witness, with a hand-written expected `nm` set, is used only where no corpus artifact has the subject. Preset populations are reported per position with a K35 floor, and adjacent presets are NOT required to differ on the corpus. Explicit controls go live at E1, independent of the pinned preset cells.
