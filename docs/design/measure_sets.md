@@ -2009,9 +2009,12 @@ value (§9.5), not a name in a script [r2 n3].
 
 **K1's derived edit set and re-aims [r2 n1].** K1 and K2 delete or relocate `rxt_find.c`'s
 stop loop, `dir_has_exact`, `stops_text`, `find_bundle` and findings.c's `fnv1a`. Sabotage
-rows anchor there. On main, `grep '^SAB_FILE='` puts S309, S310 and S315 in
-`src/parse/rxt_find.c` and 11 rows in `src/core/findings.c`. Following the start_table
-and dec_fallback precedent, K1 DELIVERS:
+rows anchor there. On main (`063b4a4b4`), S309, S310 and S315 anchor in
+`src/parse/rxt_find.c`, and **15** rows anchor in `src/core/findings.c`: 11 spelled
+`SAB_FILE="…"` and 4 spelled `SAB_FILE='…'`. The re-check counted 11, because its grep
+matched one quote style. That is this paragraph's argument in miniature: a hand count of
+the rows a move touches misses rows. Following the start_table and dec_fallback
+precedent, K1 DELIVERS:
 
 - an edit-set file listing every function K1/K2 moves or deletes;
 - the derived map from that edit set to every `SAB_FILE=` row whose anchor falls in it,
@@ -2055,7 +2058,9 @@ keep `.rxt`, so the question is off the critical path. The case, both ways:
   R4 would hold for the analysis store too. Today it needs an exemption.
 - **Half the shape exists already.** The analysis LISTING is already section TSV
   (`--list-analysis`' data-kind sections, `findings.md` §6), so the canonical and derived
-  views would share a shape. `pcrec-analyze`'s output would be one table write.
+  views would share a shape. `pcrec-analyze`'s output would be a section-TSV write. It
+  would stay its OWN writer, because `analyze/` is zero-dependency by charter and cannot
+  call the module; it is the deliberate twin of §9.1, and R3's control [r2 n2].
 - **One generator.** `ksgen`'s analysis arm would stop needing the `.rxt` reader at stage
   0.
 
@@ -2086,7 +2091,8 @@ justification: that the inline case cannot be served by S2/S3 references.
 - the S1 inline stop: either withdrawn (a caller-observable removal) or kept through a
   wrapping block;
 - `ksgen`'s analysis arm;
-- `pcrec-analyze`'s writer and `analyze/` tests;
+- `pcrec-analyze`'s writer and reader (both twins: they change with the format, and
+  stay independent of the module) and `analyze/` tests;
 - the `tests/findings/` fixtures;
 - spec hunks in `findings.md`, `rxt_format.md` and `cli.md` (D80);
 - user `-I` bundles, needing a converter or a deprecation period.
@@ -2105,6 +2111,55 @@ The listing's reader index is [LIST-TABLES]' census (§5.4). The `sets` index an
 canonical, derived and per-target views are `ks_list`'s for the measures kind (§9.2
 part 6). The analysis listing moves onto `ks_list` at K1 for its resolution sections, with
 byte-identical output.
+
+### 9.11 The evaluator-parameter file's canonical format, from today [r2 M1]
+
+The plan row says "until built, each kind's file uses the canonical format from day
+one". The kit's `prereg.tsv` ([REGIME-EVAL], `memfn/docs/responses.md:2447`: committed
+alone, its hash posted to main before the judge slot) is the live instance. It is bound
+NOW, before the kind row exists. So that adding the row later needs no migration, the
+file is a `table_contract.md` §4 section TSV with this shape:
+
+```
+# pcrec evaluator parameters (spec: docs/spec/evaluator_params.md)
+#section header
+#key	value
+format	1
+id	reval-r17bp
+rev	1
+owner	kit
+evaluator	regime_eval@<ver>
+rows	<count>
+item_digest	<16 hex>
+#section params
+#key	unit	value_e6	note
+kit.reval.cap.simd_on.s1	ratio	150000	G2: regime cap, SIMD on, S1
+kit.reval.outlier.ns	ns	50000000	G3: outlier floor, per call
+...
+```
+
+- **Keys** follow §1.3's grammar: an owner, a quantity, then tokens. The owner's own
+  declaration orders the tokens. No placeholders.
+- **Values** are integers in `value_e6` under §1.7's literal rounding rule. The units are
+  `ratio` (a fraction × 10^6), `ns` (ns × 10^6) and `count` (× 10^6, so an integer count
+  is `n000000`), and each has a code in the spec's unit table beside §1.6's. A percentage
+  bar is a `ratio`. There is no float, so two readers cannot disagree on a bar.
+- **`note`** is free text. It is display only, and the digest does not cover it.
+- **The ITEM digest IS the prereg hash.** It is FNV-1a-64 over the 13 domain bytes
+  `pcrec-eval-1 `. Then, for each `params` row in canonical (bytewise) key order, it
+  takes the key, a NUL, the unit byte, and `value_e6` as int64 LE. This is §1.6's row
+  digest with the status byte dropped, since a parameter has no status. It is a
+  hand-written row digest like every other kind's. Deriving every kind's item digest
+  from `write_canonical` plus a column list is unlock U2, filed (§10.4). The header's
+  `item_digest` is self-checking, and `rows` counts the `params` section (K35).
+- **"The report's prereg diff = the census tool's diff"** (the plan row) is emit_sweep's
+  data mode with `KIND = evaluator-params` once the row exists. It is a keyed diff of two
+  files' `params`, with no compile, since no artifact reads these values. Until the row
+  exists, the kit's own diff of two committed `prereg.tsv` revs is that diff, written in
+  the same keyed shape.
+- **Who reads it** is OQ-1 (§10.6). The FORMAT and the DIGEST above are fixed either way.
+  The kit adopts them in its next `prereg.tsv` commit, and main relays that by request,
+  since `memfn/docs/requests.md` is main's to write.
 
 ## 10. Staged build, standing questions, lenses, unlocks, questions
 
