@@ -262,7 +262,7 @@ parameter, internal batching in `_in` memory, S from declared rows, §6); E-1 (�
 
 ## 1. The table: scope and rows
 
-### 1.1 Scope `[rev2]`
+### 1.1 Scope `[rev2]` `[rev3: A2, A3]`
 
 The first delivery covers every site at which an artifact asks "where can the next match
 START", and the presence pre-checks and handoffs that front such a site. On main
@@ -279,8 +279,9 @@ pcscope §7 (main `4e6464777`, trace build); re-counted at each step's census.
 | set DFA prefilter / DFA hat | `byte-class[-bounded]`, `first-class-bounded` → `pf_walk[_bounded]` | PF | DFA_SCAN / DFA_HAT | 764 / 102 / 29 |
 | set hybrid prefilter | the same, inside a hybrid | PF | HYB_PF | 241 / 16 / 8 |
 | VM hat, any \|S\| | `first-class` → `pf_walk` (a table walk even at \|S\| = 1, Q-R5) | PF | VM_ATTEMPT | 257 / 17 / 5 (of which \|S\| = 1: 112 / 8 / 1) |
-| MLINE | `pred-memchr` → `pf_memchr_back` (LOOP_EXIT `on_miss`) | MLINE | ATTEMPT_PRED | 52 / 2 / 23 |
-| presence: one byte | REQ admission `emitted` → `precheck` | PRE | the route's (DFA_SCAN, HYB_PF or VM_ATTEMPT) | 292 corpus default (160 give-up-exposed) |
+| MLINE | `pred-memchr` → `pf_memchr_back` (LOOP_EXIT `on_miss`); `[rev3 A5]` no span 0, one context byte | MLINE | DFA_ATTEMPT `[rev3]` | 52 / 2 / 23 |
+| presence: one byte | REQ admission `emitted` → `precheck` | PRE | the route's (DFA_SCAN, HYB_PF, VM_ATTEMPT or `[rev3 A2]` DFA_ATTEMPT) | 292 corpus default (160 give-up-exposed) |
+| `[rev3 A2]` presence at the DFA attempt entry | `pcrec_emit_req_byte_check`'s third caller, `attempt_entry` (ENG_ATTEMPT, guarded `cand_finish_of(cx) != CAND_ROUTE_VM`) | PRE | DFA_ATTEMPT | not counted by pcscope; owed at B2's census (a pcrec-side reader of emitted C) |
 | presence: run window / K66 whole run | `emitted` (+ K66) → `precheck` | PRE | " | 52 (12) / 4 (4) |
 | presence: K65 set rest | `emitted` on a no-DFA route → `precheck`'s `rq_set` loop | PRE | VM_ATTEMPT | 67 (67) |
 | presence: set-leads | `set-leads` (bit 45) → `precheck`'s pair arm | PRE | " | 5 (5) |
@@ -302,179 +303,281 @@ Not in this delivery, each with its reason:
 
 `[rev2]` **What "one window request" means here.** Today a search entry asks the kit
 twice: once at the entry (the PRE site's pre-check) and once in the loop (the PF/VM-hat
-FIND). Under D161 add. 14's clarification it asks ONCE: one `mf_site` per search entry
-whose span 0 is the candidate set and whose PRESENCE spans are the necessary bytes and
-runs, with several USES (the entry use decides presence and may yield the first
-candidate; each loop use yields the next; the handoff's re-entry is a further use).
-A site with no candidate set (a no-DFA VM route without a VM hat) is presence-only; a
-site with no presence span is find-only. One site, one handle (`mf_locals`), so D165's
-"one stateful site per search path" holds by construction (rev 1 F1's count stays true).
+FIND). Under D161 add. 14's clarification it asks ONCE: one `mf_site` whose span 0 is the
+candidate set and whose PRESENCE spans are the necessary bytes and runs, with several USES
+(the entry use decides presence and may yield the first candidate; each loop use yields
+the next; the handoff's re-entry is a further use). A site with no candidate set (a
+no-DFA VM route without a VM hat) is presence-only; a site with no presence span is
+find-only.
 
-### 1.2 The C shape (PROPOSED; `memfn/src/finder.c`, `finder.h`) `[rev2: slot, kinds, I]`
+`[rev3 A1, A3]` **"One" is per ACTIVATION of the function that holds the site.** The
+storage point (`mf_locals`) is that function's entry, above the first use, and START is
+`search_from` for the whole activation (§2.1 gives each emitter's point). Where the entry
+and the find are two functions with two activations, they are two sites:
+- **a VM hybrid**: the presence pre-check runs in `<prefix>_search_run`
+  (`emit_vm.c` ~13214, "ABOVE ... the prefilter entry"), the HYB_PF FIND in the static
+  `<prefix>_prefilter`, which every VM retry calls again at `attempt_position` (fresh
+  locals, its own `search_from`). So the hybrid holds a PRESENCE-ONLY site in
+  `_search_run` and a FIND-ONLY site in `_prefilter`. C-3's "decided first" holds across
+  the call: the presence verdict is returned before `_search_run` makes its first
+  `_prefilter` call (today's order). Q-WR-6's carry (§6) belongs to the presence site,
+  whose activation spans the whole call.
+- every other entry (the DFA body, the VM hat's `_search_run`, `attempt_entry`, the
+  rev-end relocate path) is one function, so one site per activation.
+
+rev 1's F1 ("one stateful site per search path") stays true: a presence-only site keeps
+no FIND state in a one-shot call, and under the iterator its carried positions are
+declared rows of S (D165 item 4's sum rule, §6).
+
+### 1.2 The C shape (PROPOSED; `memfn/src/finder.c`, `finder.h`) `[rev2: slot, kinds, I]` `[rev3: D1, D2, D3, C2, D6, D11, A22]`
+
+`[rev3 D1]` **`fd_rows[]` is a `kit_table`** (`memfn/src/kit.h`: `kit_table`,
+`kit_walk`, `kit_ask`), the kit's fourth table on its ONE walk beside the composer's
+arms, the run compare's rows and `fn_rows[]`; its slots are FIND (0) and PRES (1),
+`fn_rows[]`'s BODY/PREFIX precedent. The walk asks each row, in table order and only in
+the asked slot, the DENY (`opt`, `no-<opt>` in the site's `--memfn=` string), then the
+CONTRACT (the gate over the row's `uses`/`serves`), then the row's own predicate; the
+MF_TRACE records and the per-row reach counters (ROWCON N4) come with it. This adoption is
+row_contracts.md §6 H1's trigger ("a real table, kit or pcrec, wants to adopt it"): the
+table adopts the kit's existing walk, so no general engine is built for it (H1 stays filed
+for pcrec's tables, U3).
+
+**Applicability is the GATE's, not a column the predicate re-tests** (`[rev3 D1, A22]`).
+Four facts become `fields.def` gate fields, each with an UNSTATED zero class and a closed
+class set, and each row's contract states which classes it serves:
+- `site_kind` (§4.3): the fact pcrec STATES on the site (PR-3); `[rev3 A22]` there is no
+  "ANY" kind: a row serving every kind lists every kind's class;
+- `need` (REQUIRED / OPTIONAL) of the span the row decides;
+- `body` (ONESHOT / PARAM, §2.4);
+- `layer` (OFF / W16 / W32): the variant the walk is evaluating, a fact of the walk's
+  input, not of the site.
 
 ```c
 /* The knowledge keys (regime_tables.md §2, rev 0.5). A row's `needs` names the
- * keys its condition reads. KN_COMPILE keys are known when the site is defined;
+ * keys its comparator reads. KN_COMPILE keys are known when the site is asked;
  * KN_N at the storage point; KN_H only inside an iterator body (R17-b''). */
 enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2,   /* A: the measurement SET */
        KN_I = 1u << 3,                                     /* I: ISA availability    */
-       KN_M = 1u << 4,                                     /* fixed per entry body   */
+       KN_M = 1u << 4,       /* the body's mode: a constant per entry, or the
+                                MF_BODY_PARAM parameter (§2.4) [rev3 A6]          */
        KN_N = 1u << 5, KN_H = 1u << 6 };
-#define KN_COMPILE (KN_P | KN_E | KN_A | KN_I | KN_M)
+#define KN_COMPILE (KN_P | KN_E | KN_A | KN_I)
 
-/* Which question a row answers (the house's cand_rows[] shape: one table, slots). */
-typedef enum { FD_FIND, FD_PRES } fd_slot;
-
-/* The layer a row applies under. A SIMD-on artifact evaluates the table once per
- * variant it renders (the floor body OFF, then W16, W32). */
-enum { FL_OFF = 1u << 0, FL_W16 = 1u << 1, FL_W32 = 1u << 2 };
-
-/* The consumer kinds (§4.3), a categorical fact pcrec states (R-21 PR-3). */
-typedef enum { FK_UNSTATED = 0, FK_DFA_SCAN, FK_DFA_HAT, FK_HYB_PF,
-               FK_VM_ATTEMPT, FK_ATTEMPT_PRED, FK_ANY } fd_kind;
-
-typedef enum {                       /* forms; the kit's names, never pcrec's (D157) */
-    FF_NONE,       /* slot FIND: no scan; the consumer runs its own loop             */
-    FF_LIBC,       /* one byte: libc memchr (forward, bounded, or back), today's     */
-    FF_WALK,       /* the table walk                                                  */
-    FF_V1,         /* pf_terms_mask over mask8_swar (W8, SIMD-off)                   */
-    FF_W64,        /* A1 at w32, S1 at w16 (B6)                                      */
-    FF_RUN,        /* a RUN span: the nested fn_rows[] walk, unchanged              */
-    FF_A3,         /* W64 with state in rx_iter (R17-b'')                           */
-    FP_KEEP, FP_DROP, FP_PICK, FP_LEAD   /* slot PRES picks                          */
-} fd_form;
+enum { FD_FIND = 0, FD_PRES = 1 };   /* the kit_table slots                       */
 
 /* A reference into the active measurement set (measure_sets.md §1.3: owner.quantity
  * then dimension tokens in the card's order). Resolved by the kit, never by pcrec. */
 typedef struct { const char *quantity; uint8_t form, other, kind; const char *shape; } fd_ref;
 
-typedef enum {
-    FC_ALWAYS,          /* R7, R7s, D1's shape test, P9                               */
-    FC_ONE_MEMBER,      /* D1/F1: |S| = 1, and not span 0 of a VM_ATTEMPT site       */
-    FC_NO_SAVING,       /* R0: cover has >= 2 RANGE terms and V1's saving <= epsilon  */
-    FC_DOMINATES,       /* F1: a libc-free form is no worse than libc at every
-                           measured point of this kind                                */
-    FC_G_BELOW, FC_G_AT_LEAST,          /* R5/R6 and F0: E (measured) vs a g* ref     */
-    FC_N_BELOW, FC_N_AT_LEAST,          /* R1/R2 and R8: N vs a crossover ref         */
-    FC_NEED_REQUIRED,   /* P0                                                          */
-    FC_PROVEN_BY_FIND,  /* P2 (G1): span 0's proven fact covers this presence span    */
-    FC_PRICED,          /* P1: expected-cost argmin over {KEEP, DROP}, measured E only */
-    FC_H_SPAN_BELOW, FC_H_SPAN_IN, FC_H_POP_BELOW   /* R3a/R3b/R4, R17-b''            */
-} fd_cond;
+/* [rev3 D2] ONE comparator. lhs OP key, where lhs is a site or iterator quantity or a
+ * DERIVED key (measure_sets §1.6's closed registry: `kit.saving.<f>.<g>.<shape>`,
+ * `kit.dom.<f>.LIBC.<kind>`, `kit.xover.<f>.<g>.<kind>`). Every threshold is a key, so
+ * R-MS4's SAFE direction attaches to the key, once. */
+typedef enum { FL_NONE = 0,                     /* no comparison: a facts-only row */
+               FL_E_G, FL_N, FL_H_SPAN, FL_H_POP, FL_KEY } fd_lhs;
+typedef enum { FO_LT = 1, FO_LE, FO_GT, FO_GE, FO_IN } fd_op; /* FO_IN: [key, key2) */
+typedef struct { fd_lhs lhs; fd_ref lkey; fd_op op; fd_ref key, key2; } fd_cmp;
+
+/* Boolean site facts a row requires (all must hold); the comparators are the only
+ * numeric conditions. A comparator whose key is ABSENT from the active set does not
+ * hold (§1.5 rule 3), which is how a row is gated on a key's presence ([rev3 C3]). */
+enum { SF_ONE_MEMBER   = 1u << 0,  /* the stop is one byte                          */
+       SF_CONTEXT_STOP = 1u << 1,  /* no span 0; one context predicate (MLINE) [A5] */
+       SF_SEEK_ROLE    = 1u << 2,  /* the span is span 0 of a VM_ATTEMPT site       */
+       SF_RUN_TERM     = 1u << 3,  /* span 0 is a RUN term (a handoff landmark)     */
+       SF_PROVEN       = 1u << 4,  /* span 0's proven fact covers this span (P2)    */
+       SF_E_MEASURED   = 1u << 5,  /* the frequency kind is at MEASURED provenance  */
+       SF_TERMINAL_FAST = 1u << 6  /* the terminal pick is V1 or W64 (R1/R2,
+                                      [rev3 B14, C1])                               */ };
+
+/* Slot FIND: a form; the kit's names, never pcrec's (D157). 0 is UNSTATED and the
+ * table self-check refuses it. */
+typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_WALK, FF_V1, FF_W64,
+               FF_RUN, FF_A3 } fd_form;
+
+/* [rev3 D3] Slot PRES: a pick is a set of CHAIN-LINK attributes (R-18's vocabulary,
+ * winreq C-8): no private pick enum. */
+typedef struct {
+    uint8_t verify;     /* 1: the link is verified over [start + omin, n) (KEEP)     */
+    uint8_t proven_by;  /* 1: span 0's proof stands for the link, no test (DROP)     */
+    uint8_t member;     /* 0: every member; else 1 + the chosen member (PICK)        */
+    uint8_t order;      /* the chain-order key: lower is tested first (LEAD)         */
+} fd_link;
+
+/* [rev3 C2] Every row states its basis; 0 is refused by the self-check. */
+typedef enum { FB_UNSTATED = 0, FB_MEASURED, FB_DERIVED, FB_UNMEASURED_DEFAULT } fd_basis;
 
 typedef struct {
-    const char *id;       /* "R1": listed; cited by `evidence` and the decision record */
-    fd_slot     slot;
-    uint8_t     needs;    /* KN_*                                                      */
-    uint8_t     layers;   /* FL_*                                                      */
-    uint32_t    kinds;    /* bitset over fd_kind the row may apply to                  */
-    fd_cond     cond;
-    fd_ref      a, b;     /* the condition's operands (set references)                 */
-    fd_form     pick;
-    fd_form     unpaid;   /* the pick when a dispatch cannot pay (§2.5); FF_NONE here
-                             means the row is dropped and its interval falls through   */
-    const char *deny;     /* memfn/src/options.def name, or NULL                       */
-    const char *evidence; /* listing text                                              */
+    const char *id;          /* "R1": listed; cited by `evidence` and the record     */
+    int         slot;        /* FD_FIND or FD_PRES                                    */
+    uint8_t     needs;       /* KN_*                                                  */
+    uint8_t     facts;       /* SF_*, all required                                    */
+    fd_cmp      cmp[2];      /* a conjunction; lhs FL_NONE ends it (R8 has two)       */
+    fd_form     pick;        /* slot FIND                                             */
+    fd_form     unpaid;      /* the pick when a dispatch cannot pay (§2.5); FF_UNSTATED
+                                here means the row is dropped and its interval falls
+                                through                                               */
+    fd_link     link;        /* slot PRES                                             */
+    uint8_t     routed;      /* [rev3 D6] 1 once the step that routes the row has
+                                landed; deleted at B4 when every row is 1 (§1.6)      */
+    const char *opt;         /* memfn/src/options.def name, or NULL                   */
+    fd_basis    basis;       /* [rev3 C2] mandatory                                   */
+    const char *evidence;    /* listing text                                          */
+    const char *refuted_by;  /* [rev3 D11] listing text: the measurement that would
+                                flip the row (regime_tables §3's column)              */
+    const gate_contract *ct; /* the row's uses/serves over site_kind, need, body,
+                                layer and the hooks it renders (ROWCON)               */
 } fd_row;
 ```
 
-Notes on the shape (rev 1's, kept): this is the house first-match idiom, not a
-planner; R-18's priced argmin over candidate CHAINS becomes one more `fd_cond` kind;
-R7 is two rows, one per layer family, because under the floor rule a SIMD-on artifact
-carries the SIMD-off body as well. `[rev2]` New: the SLOT column (one table, two
-questions, `cand_rows[]`'s shape), the `kinds` column (applicability per consumer, so
-the K65/G-4 exclusions are row data, not special cases), the separate I key (regime_tables
-rev 0.4: A is the set, I the ISA), and the PRES picks.
+Notes on the shape:
+- It is the house first-match idiom, not a planner (rev 1, kept). R7 is ONE row
+  `[rev3 D8]`: its pick is "the layer's LINER form" (V1 at OFF; W64 at W16/W32 where the
+  form is built and I offers it); at a SIMD layer with no W64 form the row does not apply
+  and the variant adds nothing (the floor rule). R5 is likewise one row over the layer's
+  LINER form's `g*` (rev 2's R5/R6 pair).
+- **The self-check** `[rev3 C2]` runs at kit build (a `_Static_assert` where C allows it,
+  else a test in `make test-memfn`): every row states `basis`, a non-PRES row states
+  `pick`, a row whose comparator reads no set key (FL_NONE, or a site-only lhs against a
+  literal) is `FB_UNMEASURED_DEFAULT` or `FB_DERIVED`, never `FB_MEASURED`; a row whose
+  key is a derived one is `FB_DERIVED`; the last row of each slot reads nothing.
+- R-18's priced argmin over candidate CHAINS becomes a second evaluator over the same
+  link attributes (U2), not a new condition kind.
 
-### 1.3 Slot FIND: the rows `[rev2]`
+### 1.3 Slot FIND: the rows `[rev2]` `[rev3: A5, A7, A17, B14, C1, C2, C3, D2, D8]`
 
-Evaluated per site and per layer variant, first match (§1.5). Set references name the
-quantity ids of §5.2. "Reachable at" = the first step whose data can make the condition
-true on a default compile.
+Evaluated per site and per layer variant, first match (§1.5). Keys name the quantity ids
+of §5.2 (`kit.<quantity>.<tokens>`, measure_sets §1.3); "derived" keys come from §5.2's
+derivation rows. The kinds column is the row's gate contract over `site_kind` (§1.2).
+"Routed at" = the step whose commit sets the row's `routed` bit (§1.6); "built" rows are
+source from B1 unless marked.
 
-| # | id | needs | layers | kinds | condition (set references) | pick | unpaid | deny | reachable at |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | F0 `none` | P,E,A | off,w16,w32 | DFA_SCAN, DFA_HAT, HYB_PF (MLINE only once its M22 key exists, Q-WR-2) | span 0 OPTIONAL ∧ E's frequency kind MEASURED ∧ g(span 0) < `kit.gnone.<kind>.<shape>` (M22) | NONE | — | `fd-none` (PAIR, with the row at B5) | B5 (measured E + M22) |
-| 2 | F1 `libc-m` | P,A | off,w16,w32 | all | \|S\| = 1 ∧ not span 0 of a VM_ATTEMPT site ∧ a libc-free one-byte form dominates libc at every measured point of this kind (`kit.f.*`, `kit.beta.*`, M19-M21) | that form | — | `fd-libc-m` (with the row at B5) | B5 (M19-M21 in the default set) |
-| 3 | R0 | P,A | off | all | cover ≥ 2 RANGE terms ∧ 1 − β(V1, r2)/β(walk) ≤ ε (M3, M6) | WALK | — | `fd-r0` | B4 (routing) |
-| 4 | R5 | P,E,A | w16,w32 | all | E MEASURED ∧ g < g\*(W64, kind) (M15) | WALK | — | `fd-r5` | E-1 + a measured bundle, B4 |
-| 5 | R6 | P,E,A | off | all | E MEASURED ∧ g < g\*(V1, kind) (M15) — FRAGILE | WALK | — | `fd-r6` | same |
-| 6 | R8 | P,N,M,E,A | w16,w32 | all | body ONESHOT ∧ N ≥ L\*(W64, kind) ∧ g ≥ g8 (gridread §6.3 D2; regime_tables rev 0.5) | W64 | V1 | `fd-r8` | B6 + measured E |
-| 7 | R3a | H | w16,w32 | all | iterator ∧ previous step span < h3a | WALK | — | `fd-r3a` | R17-b″ (PROVISIONAL) |
-| 8 | R3b | H | w16,w32 | all | iterator ∧ previous step span in [h3a, h3b) | A3 | — | `fd-r3b` | R17-b″ (PROVISIONAL) |
-| 9 | R4 | H,P | off,w16,w32 | all | iterator ∧ block popcount says g < g\*(kind, layer) | WALK for that block | — | `fd-r4` | R17-b″ |
-| 10 | R1 | P,M,N,A | off,w16,w32 | all | body ONESHOT ∧ N < xover(t, WALK), t = the terminal pick (M9; absent for t = LIBC) | WALK | — (row dropped) | `fd-ndisp` | B4 or B8 (needs M16-M18 to pay) |
-| 11 | R2 | P,M,N,A | w16,w32 | all | body ONESHOT ∧ N < block(W64) (M11) | V1 | WALK | `fd-ndisp` | B6 + B8 |
-| 12 | D1 `default-1b` | P | off,w16,w32 | all | \|S\| = 1 ∧ not span 0 of a VM_ATTEMPT site (UNMEASURED-DEFAULT, Q-WR-1: today's count rule) | LIBC (forward; bounded for `end_back` 1; back for ATTEMPT_PRED) | — | `fd-d1` (refused on ATTEMPT_PRED until a libc-free back row exists, Q-WR-7) | B2 |
-| 13 | D2 `run` | P | off,w16,w32 | all | span 0 is a RUN term (a handoff landmark longer than one byte) | RUN (the nested `fn_rows[]` walk; its BODY/PREFIX rows and their denies unchanged) | — | none (the nested table's denies) | B3b |
-| 14 | R7 | P | off | all | always (the LINER default; D162, D161 add. 12) | V1 | — | none (terminal; the FORM deny `pf-terms-mask` reaches it) | B4 |
-| 15 | R7s | P,I | w16,w32 | all | the W64 form is BUILT for this level and I offers it | W64 | — (no row: the layer adds nothing, floor rule) | none (`pf-terms-w32`/`-w16` at B6) | B6 |
+| # | id | needs | layers | kinds | facts ∧ comparators | pick | unpaid | deny | basis | routed at |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | F0 `none` | P,E,A | all | DFA_SCAN, DFA_HAT, HYB_PF (DFA_ATTEMPT only once its M22 key exists, Q-WR-2) | span 0 `need` OPTIONAL (gate) ∧ E measured ∧ E.g < `kit.gnone.<kind>.<shape>` (M22) | NONE | — | `fd-none` (PAIR) | MEASURED | B5 (built at B5) |
+| 2 | F1 `libc-m` | P,A | all | all | one member ∧ not the seek role ∧ `kit.dom.<f>.LIBC.<kind>` ≥ 1 (derived from M19-M21) | that form | — | `fd-libc-m` | DERIVED | B5 (built at B5) |
+| 3 | `[rev3 A7]` F2 `vm-hat-1b` | P,A | off | VM_ATTEMPT | one member ∧ the seek role ∧ `kit.saving.V1.WALK.VM_ATTEMPT.(0,1,0)` > `kit.eps.<regime>` (derived from grid2 item 3's VM_ATTEMPT cells) | V1 | — | `fd-vm-hat-1b` | DERIVED | B5 (built at B5) |
+| 4 | R0 | P,A | off | all | cover's shape class r2 (≥ 2 RANGE terms) ∧ `kit.saving.V1.WALK.r2` ≤ `kit.eps.<regime>` (derived from M2, M3, M6) | WALK | — | `fd-r0` | DERIVED | B4 |
+| 5 | R5 `[rev3 D8: R5 ∪ R6]` | P,E,A | all | all | E measured ∧ E.g < `kit.gstar.<LINER(layer)>.<kind>` (M15); FRAGILE at OFF | WALK | — | `fd-r5` | MEASURED | B4 (reachable with a measured bundle) |
+| 6 | R8 | P,N,M,E,A | w16,w32 | all | body ONESHOT (gate) ∧ E measured ∧ N ≥ `kit.lstar.W64.<kind>` ∧ E.g ≥ `kit.g8.W64.<kind>` (gridread §6.3 D2; regime_tables rev 0.5) | W64 | V1 | `fd-r8` | MEASURED | B6 |
+| 7 | R3a | H | w16,w32 | all | iterator ∧ H.span < `kit.h3a` | WALK | — | `fd-r3a` (B9) | MEASURED, PROVISIONAL | B9 |
+| 8 | R3b | H | w16,w32 | all | iterator ∧ H.span in [`kit.h3a`, `kit.h3b`) | A3 | — | `fd-r3b` (B9) | MEASURED, PROVISIONAL | B9 |
+| 9 | R4 | H,P | all | all | iterator ∧ H.pop says g < `kit.gstar.<form>.<kind>` | WALK for that block | — | `fd-r4` (B9) | MEASURED | B9 |
+| 10 | R1 | P,M,N,A | all | all | body ONESHOT ∧ `[rev3 B14, C1]` the terminal pick is V1 or W64 ∧ N < `kit.xover.<t>.WALK.<kind>` (M9; t = the terminal) | WALK | — (row dropped) | `fd-ndisp` | DERIVED | B4 or B8 (needs M16-M18 to pay) |
+| 11 | R2 | P,M,N,A | w16,w32 | all | body ONESHOT ∧ the terminal is W64 ∧ N < `kit.block.W64` (M11) | V1 | WALK | `fd-ndisp` | DERIVED | B6 + B8 |
+| 12 | D1 `default-1b` | P | all | all | one member ∧ not the seek role (Q-WR-1: today's count rule) | LIBC (forward; bounded for `end_back` 1) | — | `fd-d1` | UNMEASURED-DEFAULT | B2 |
+| 13 | `[rev3 A5]` D1c `context-1b` | P | all | DFA_ATTEMPT | no span 0 ∧ one context predicate of one byte (MLINE's `{\n}` at −1) | LIBC back (`pf_memchr_back`, LOOP_EXIT) | — | none (B7's `libc` class deny reaches it) | UNMEASURED-DEFAULT | B2 |
+| 14 | `[rev3 A7, A17]` D1w `walk-1b` | P | all | every kind but DFA_ATTEMPT | one member | WALK (the table walk over the one-member table) | — | none | UNMEASURED-DEFAULT | B2 |
+| 15 | D2 `run` | P | all | all | span 0 is a RUN term (a handoff landmark longer than one byte) | RUN (the nested `fn_rows[]` walk; its BODY/PREFIX rows and their denies unchanged) | — | none (the nested table's denies) | UNMEASURED-DEFAULT (today's rule) | B3b |
+| 16 | R7 `liner` `[rev3 C3, D8]` | P,A (+I at w16/w32) | all | all | `kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.<regime>` (M3/M4/M5 → derived; an ABSENT key, i.e. an unmeasured shape, does not hold) | the layer's LINER form: V1 at OFF; W64 at W16/W32 where it is BUILT and I offers it | — | none (the FORM denies `pf-terms-mask` at B4, `pf-terms-w32`/`-w16` at B6) | DERIVED | B4 (W64: B6) |
+| 17 | `[rev3 C3]` R7w `walk-default` | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT | B4 |
 
 Notes:
-- **Built when** `[rev2]`: rows 3-15 are source from B1 (the evaluator judges them; E3
-  retires the Python mirror). F0 and F1 are DESIGNED here and BUILT at B5, after
-  lockdown, each as a formal row addition with its replay delta and mover census
-  (D161 add. 13): grid2 measures their quantities (M19-M22), so if they were source at
-  B4 they would fire under grid2's default set and fold their movers into B4's census.
+- **Built when** `[rev2]` `[rev3]`: rows 4-17 are source from B1 (the evaluator judges
+  them; E3 retires the Python mirror). F0, F1 and F2 are DESIGNED here and BUILT at B5,
+  after lockdown, each as a formal row addition with its replay delta and mover census
+  (D161 add. 13): grid2 measures their quantities (M19-M22 and item 3's VM_ATTEMPT cells),
+  so if they were source at B4 they would fire under grid2's default set and fold their
+  movers into B4's census (F21).
 - **Order.** Rows needing only compile-time keys and true become the TERMINAL pick;
   N-rows above the terminal become emitted dispatch intervals (rev 1 §1.2, kept, §1.5).
-  F0/F1 sit first because, when their data exists, they decide the form for every N.
+  F0/F1/F2 sit first because, when their data exists, they decide the form for every N.
   R0 sits above R1 so that a WALK terminal swallows R1's WALK interval (merge).
-- **R1 reads the crossover between the interval's pick and the TERMINAL** `[rev2]`:
-  `xover(t, WALK)`. Rev 1 read `xover(V1, WALK)` regardless of the terminal; under D1
-  the terminal of a one-member site is LIBC, `kit.xover.LIBC.WALK` is not in grid1, so
-  R1 is skipped there and the one-byte sites stay zero-mover even after grid2 pays the
-  set sites' dispatch. One general rule, no one-byte special case.
-- **D1 is a DEFAULT row, not evidence** (D149, `pcrec-no-silent-defaults`): its
-  listing text reads `UNMEASURED-DEFAULT: today's count rule (Q-WR-1)`. It is replaced
-  only by F1 firing on measured rows (a censused mover at B5), never edited in place.
+- **R1 and R2 apply only above a FAST terminal** `[rev3 B14, C1]`. Rev 2 kept one-byte
+  sites zero-mover by the ABSENCE of `kit.xover.LIBC.WALK`; grid2 measures LIBC's and
+  WALK's F and β, so a converter could derive that key and R1 would fire on one-byte
+  sites at B4. The applicability is now ROW DATA (`SF_TERMINAL_FAST`: t ∈ {V1, W64}), so
+  the one-byte and presence populations are 0 movers for ANY set; B4's check runs a
+  synthetic set holding every derivable `xover` key (§8.1) and SN-5 plants the dropped
+  condition (§8.3).
+- **The default rows** (D149, `pcrec-no-silent-defaults`) are D1, D1c, D1w, D2, R7w (and
+  PRES's P2-P4, P9): their `basis` is UNMEASURED-DEFAULT, printed in the listing and
+  per site in the facts section (§1.7, §4.7). D1/D1c are replaced only by F1 firing on
+  measured rows (a censused mover at B5), never edited in place; D1w on the VM hat only
+  by F2.
 - **D1 excludes the VM hat's seek** (span 0 of a VM_ATTEMPT site) because Q-R5 measured
   memchr per failed attempt at ×0.6 at 80% density; that is today's rule
-  (`cand_derive`'s `use_memchr` plus the VM hat's table). The VM hat at \|S\| = 1
-  therefore falls to R7 (V1 one-term cover) at B4, which is R17-b's own move there
-  (112 / 8 / 1). A PRESENCE span on a VM route is not a per-attempt seek (one FIND of
-  its first occurrence per activation), so D1 applies to it and renders today's
-  `memchr`. The exclusion is a predicate on the span's role, not on the route.
-- **MLINE's row is D1's back case.** It has no NONE row (Q-WR-2: F0's MLINE key is
-  never written until a measurement is ruled in) and no libc-free row (the generic row
-  never serves LOOP_EXIT, Q-R7-3), so `fd-d1` on an ATTEMPT_PRED site is a NAMED REFUSAL
-  until B7 builds the back FIND row (D161 add. 14 point 4).
+  (`cand_derive`'s `use_memchr` plus the VM hat's table). `[rev3 A7]` Under D167 add. 1
+  ("2+ terms" means MEMBERS) the VM hat at |S| = 1 stays on WALK: row D1w renders today's
+  table walk there, zero-mover from B2. Its move to V1's one-term cover is F2, a MEASURED
+  row at B5 fed by grid2's VM_ATTEMPT one-byte cells; B4's mover set no longer contains it.
+  A PRESENCE span on a VM route is not a per-attempt seek (one FIND of its first
+  occurrence per activation), so D1 applies to it and renders today's `memchr`. The
+  exclusion is a predicate on the span's ROLE (`SF_SEEK_ROLE`), not on the route.
+- **D1w is also `fd-d1`'s OFF arm** `[rev3 A17, B7]`: with D1 denied, a one-byte DFA or
+  hybrid site falls to D1w and renders the table walk over its one-member table, a form
+  main has (`pf_walk`), answer-identical, from B2. On a DFA_ATTEMPT site `fd-d1` does
+  not reach anything: MLINE's row is D1c, which has no deny until B7 builds a libc-free
+  back FIND (Q-WR-7).
+- **MLINE has no span 0** `[rev3 A5]` (window_contract §2.5: "no span; one context
+  predicate `{\n}` one byte before the origin"; D161 add. 7: context checks are not
+  spans). Its stop is that context byte, which row D1c keys on directly, so D161 add. 7
+  stands with no amendment. It has no NONE row (Q-WR-2: F0's DFA_ATTEMPT key is never
+  written until a measurement is ruled in) and no libc-free row (the generic row never
+  serves LOOP_EXIT, Q-R7-3).
+- **R7 is gated on a measured key** `[rev3 C3]`. 52% of R17-b's byte V1 movers (320 of
+  620; byte-vm 485 of 994) have a cover shape no grid1 group timed, and β(V1)/β(walk)
+  depends on the shape (0.572 .. 1.410). So R7 fires only where its shape's saving key
+  exists and exceeds the regime's null floor; every other set site falls to R7w, main's
+  walk, zero-mover. grid2 item 3a times the three commonest unmeasured shapes
+  ((0,2,0), (0,0,1), (1,1,0): 83% of the 320) so that B4 can route them; the rest stay
+  WALK until a set holds them. B4's census reports movers split by shape measured / not
+  (§3.5).
+- **One row per layer family** `[rev3 D8]`: R5 and R7 read "the layer's LINER form"
+  (V1 at OFF, W64 at W16/W32), so rev 2's R5/R6 and R7/R7s pairs are one row each.
+  **Sub-block spans are owned once**: a SIMD helper never runs a span below its own block
+  (its derived reach, vrun's `reach_w16`/`reach_w32`, hands the tail to the next rung
+  inside the helper); R2 is the selector-level reading of the SAME fact, read from the
+  same derived key `kit.block.W64` (M11), so the question "short span: use the lower
+  rung" has one source.
 - **NONE never applies where span 0 is REQUIRED**: the VM hat and the no-DFA VM route
-  state span 0 REQUIRED (PR-4, §4.6), and F0's applicability excludes those kinds
-  structurally besides (C-12, C-13). An unconstrained reply there turns answers into
-  `frames` give-ups (pcscope W3, GIVEUP1 F5).
-- **Rows R5/R6/R8/F0 read E only at MEASURED provenance** (D162 add. 3, C-15). The
-  frequency kind is always present after E-1 (D162 add. 2) but carries
+  state span 0 REQUIRED (PR-4, §4.6), and F0's contract serves only the OPTIONAL class of
+  `need` and excludes those kinds (C-12, C-13). An unconstrained reply there turns
+  answers into `frames` give-ups (pcscope W3, GIVEUP1 F5).
+- **Rows reading E read it only at MEASURED provenance** (D162 add. 3, C-15): R5, R8, F0
+  (and P1). The frequency kind is always present after E-1 (D162 add. 2) but carries
   `prior-authored`/`prior-none` on a default compile, so these rows skip there.
 
-### 1.4 Slot PRES: the rows `[rev2]`
+### 1.4 Slot PRES: the rows `[rev2]` `[rev3: D3, C2, C11, A11]`
 
-Evaluated once per PRESENCE span of a site (§4.1), after slot FIND (P2 reads FIND's
-proven fact, a declared cross-slot read, `cand_rows[]`'s `reads` precedent). The picks
-are KEEP (verify over `[start + omin, n)` before the first element, §4.1), DROP (send no test),
-PICK (keep only the chosen member of a set, or the chosen window of a run) and LEAD (an
-ORDER: this span is tested before the run).
+Evaluated once per PRESENCE span of a site (§4.1), after slot FIND. P2 reads FIND's proven
+fact (`proven0`), a declared cross-slot read (§4.5's read list, `cand_rows[]`'s `reads`
+precedent). `[rev3 D3]` A pick is a set of CHAIN-LINK attributes (§1.2 `fd_link`), so
+R-18's chain links consume the slot's output unchanged:
 
-| # | id | needs | kinds | condition | pick | unpaid | deny | reachable at |
-|---|---|---|---|---|---|---|---|---|
-| 1 | P0 `required` | P | all | the span's `need` is REQUIRED | KEEP, every member and the WHOLE run (K65, K66), before the first element (G-1, G-2) | — | none: undeniable (a deny would let a budgeted engine give up where today answers, D158) | B3b |
-| 2 | P1 `priced` | P,E,A,N,M | all | `need` OPTIONAL ∧ E MEASURED ∧ the set has the gate's quantities (M23) | argmin {KEEP, DROP} by expected cost | KEEP | `fd-pres-priced` (with the row) | B5, and only once Q-WR-9's trigger fires (a TUG cell measured losing for want of it) |
-| 3 | P2 `dominated` (G1, ported) | P,E | all | `need` OPTIONAL ∧ span 0's PROVEN fact covers this span (identity; `run_verified`; or the density conjunct read from the frequency kind, prior included: a default row, not evidence) | DROP | — | `fd-pres-g1` | B3b |
-| 4 | P3 `pick` (ported) | P,E | all | `need` OPTIONAL ∧ the span is one member of a necessary set, or the window of a run | PICK: the rarest member by the frequency kind, ties to the higher PATTERN ORDER (PR-7); the run's scan index / window start | — | `fd-pres-pick` (deny = keep every member) | B3b |
-| 5 | P4 `set-leads` (ported) | P,E | all | the set's pick is strictly rarer than the run's scan member | LEAD | — | `pres-set-lead` (replaces pcrec's `-fno-req-set-lead`, bit 45, in the SAME commit: KW-11, Q-WR-12) | B3b |
-| 6 | P9 `default` | P | all | always | KEEP (Q-WR-9: the total default) | — | none | B3b |
+| rev 2's pick | link attributes | meaning |
+|---|---|---|
+| KEEP | `verify` = 1 | the link is verified over `[start + omin, n)` before the first element (§4.1) |
+| DROP | `proven_by` = 1, `verify` = 0 | span 0's proof stands for the link; no test |
+| PICK | `verify` = 1, `member` = 1 + i (or the run's window) | only the chosen member of a set, or the chosen window of a run, is verified |
+| LEAD | `verify` = 1, `order` lower than the run's | an ORDER: this link is tested before the run |
+
+| # | id | needs | kinds | condition | link | unpaid | deny | basis | routed at |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | P0 `required` | P | all | the span's `need` is REQUIRED (gate) | `verify` = 1, `member` = 0 (every member) and the WHOLE run (K65, K66), before the first element (G-1, G-2) | — | none: undeniable (a deny would let a budgeted engine give up where today answers, D158) | DERIVED (from the answer contract) | B3b |
+| 2 | P1 `priced` | P,E,A,N,M | all | `need` OPTIONAL ∧ E measured ∧ the set has the gate's quantities (M23) | argmin {`verify` = 1, `verify` = 0} by expected cost | `verify` = 1 | `fd-pres-priced` (with the row) | MEASURED | B5, and only once Q-WR-9's trigger fires (a TUG cell measured losing for want of it); built at B5 |
+| 3 | P2 `dominated` (G1, ported) | P,E | all | `need` OPTIONAL ∧ span 0's `proven0` covers this span (identity; `run_verified`; or the density conjunct read from the frequency kind, prior included) | `proven_by` = 1 | — | `fd-pres-g1` | UNMEASURED-DEFAULT (the density conjunct's prior and its constant, `[rev3 C11]`) | B3b |
+| 4 | P3 `pick` (ported) | P,E | all | `need` OPTIONAL ∧ the span is one member of a necessary set, or the window of a run | `member` = the rarest by the frequency kind, ties to the higher PATTERN ORDER (PR-7); the run's scan index / window start | — | `fd-pres-pick` (deny = keep every member) | UNMEASURED-DEFAULT (the prior's "rarest") | B3b |
+| 5 | P4 `set-leads` (ported) | P,E | all | the set's pick is strictly rarer than the run's scan member | `order` before the run | — | `pres-set-lead` (replaces pcrec's `-fno-req-set-lead`, bit 45, in the SAME commit: KW-11, Q-WR-12) | UNMEASURED-DEFAULT ("strictly rarer" on the prior) | B3b |
+| 6 | P9 `default` | P | all | always | `verify` = 1 (Q-WR-9: the total default) | — | none | UNMEASURED-DEFAULT | B3b |
 
 Notes:
-- **These are pcrec's five priced picks, ported verbatim** (KW-8): the set pick (P3,
-  with member order), the run scan index / window start (P3), set-leads (P4), G1 (P2:
+- **These are pcrec's priced picks, ported verbatim** (KW-8): the set pick (P3, with
+  member order), the run scan index / window start (P3), set-leads (P4), G1 (P2:
   identity / `run_verified` / density). The fifth, the landmark admission
   (`req_landmark_admits`), is NOT a kit row: under framing (a) (Q-WR-5, ruled) it chooses
-  the ORIGIN, which is pcrec's only choice (D161 add. 9). The kit computes it in the
-  shadow only, as evidence for framing (b) (Q-R17P-11).
+  the ORIGIN, which is pcrec's only choice (D161 add. 9; D167 Q-R17P-11). `[rev3 A11]`
+  D167 add. 1 refines it: its input is restated as pcrec FACTS (the start set's PRIOR
+  mass, h and K), with no read-back of the kit's form or of "what the displaced scan
+  skips" (`emit_dfa.c` ~7920-7934 priced a kit method, contrary to D157). The arithmetic
+  is unchanged and nothing moves; only names and comments change, main-side, at B2
+  (§3.1). Until that commit it is recorded as a D157 exception. The kit computes it in
+  the B3a shadow only, as evidence for framing (b) (Q-R17P-11).
 - **The ported rows read the frequency kind at any provenance.** They are the total
   default reproducing today (D162 ruling 2), which is why ST3 needs E-1 first: with a
   NULL analysis they would read nothing and move bytes (pcscope §5). Only P1 is an
-  evidence row (C-15).
+  evidence row (C-15). `[rev3 C11]` Their constants (G1's density conjunct, P4's
+  "strictly rarer", P3's ties) are labelled UNMEASURED-DEFAULT in `basis`.
 - **P1 is DESIGNED, not built** until Q-WR-9's trigger fires; it lands at B5 as a
   formal row addition. The locked PRES slot is P0, P2, P3, P4, P9.
 - **P0 before P2/P3.** A REQUIRED span is never dropped or narrowed (the applicability
