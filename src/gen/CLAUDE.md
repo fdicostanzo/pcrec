@@ -148,7 +148,7 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   (called by emit_vm.c's `vm_emit_search_body` beside the run blocks, stem
   `<searchfn>_run_pf`, record `Job.mf_vmhat`), then at the entry seek
   mf_locals, `start_set` iff `reads_table`, a use, and a use at each retry.
-  `ofs_test_of` now keys on `PF_SCAN_OFS`, not on `emit_block`. Under
+  `ofs_test_of` still keys on `emit_block` (unchanged). Under
   `-DPCREC_RANK_PROBE` `find_door` is N4's door assertion: where a defined
   FIND's table is emitted, its bytes equal the set the kit was handed
   (`FINDDOOR` on stderr, an internal error otherwise). The byte rows and
