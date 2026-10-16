@@ -178,7 +178,8 @@ OPTIONS
   --extra-base=ARGS      the arm's base (default nothing; `-e utf8` is the
                         utf8 base), also on every stream.
   --arms start           every DIFFER_PINS arm (the start-family deny arms at
-                        byte and utf8, plain `-e utf8`, `-i`, the null arm),
+                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd`,
+                        `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
   --patterns-file FILE   constructed witnesses (one per line, --list-source
@@ -475,6 +476,19 @@ DIFFER_PINS = {
     ("byte", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("byte", "-fno-length-prune", "c-default"): (449, 112, b"(a)*b"),
     ("byte", "-fno-length-prune", "c-vm"): (678, 0, b"(a)*b"),
+    # the two non-start-family flags, the ONLY floors that let a SIMD-on or a
+    # comments-on zero-mover sweep run ([SWEEPARM]): neither moves a start stamp
+    # (stamp floor 0). MEASURED, not estimated, at lane/memfn-fd 39f13e397 (main
+    # 063b4a4b4 + docs, no code differs): `--extra=-fmemfn-simd` /
+    # `--extra=-fcomments`, one binary, streams c-default,c-vm, 4,624 distinct
+    # patterns. -fmemfn-simd renders a guarded helper only on a few forms
+    # (`(?i)cat` is the shortest); -fcomments adds the artifact's prose to
+    # EVERY compiled pattern, so its floor is "nearly all" and the manifest `a`
+    # (its commentary diff is the orientation + legend blocks) is the witness.
+    ("byte", "-fmemfn-simd", "c-default"): (20, 0, b"(?i)cat"),
+    ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
+    ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
+    ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
     # the same arms, utf8 base
     ("utf8", "-fno-offset-skip", "c-default"): (604, 604, b"SS"),
     ("utf8", "-fno-offset-skip", "c-vm"): (0, 0, None),
@@ -504,6 +518,10 @@ DIFFER_PINS = {
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
+    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
+    ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -1593,6 +1611,9 @@ TRACE_EXTRA_PINS = {
 #   ("--engine=vm",): producing 37, artifacts 86 (BOTH AT the measured value: the counts are deterministic) -- measured ref-vs-ref at
 #   b72291d84 (the plain arm reads 37 / 106 there): `--engine=vm` refuses or
 #   reshapes blocks the default engine compiles, so 20 fewer files are written.
+#   ("-fmemfn-simd",) and ("-fcomments",): producing 37, artifacts 106 each,
+#   AT the measured value ([COMPPIN], lane/comppin 4464e1c10): neither flag
+#   changes which fixtures compile, so both read the plain arm's population.
 # A FLOOR IS PER ARM: the plain floors were measured on the plain arm and are
 # applied to it ONLY. An --extra arm with no entry here has no composition
 # floor (the run says so), never the plain arm's (the `--engine=vm` run read
@@ -1602,6 +1623,16 @@ COMPOSITION_EXTRA_PINS = {
                      "composition_artifacts_floor": 98},
     ("--engine=vm",): {"composition_producing_floor": 37,
                        "composition_artifacts_floor": 86},
+    # [COMPPIN] the two non-start-family DIFFER_PINS arms ([SWEEPARM]). Neither
+    # changes WHICH composition files compile, only the text: both read the
+    # plain arm's population, producing 37 / artifacts 106, measured at
+    # lane/comppin 4464e1c10 (`--streams composition --extra=FLAG`, one
+    # binary, 386 composition files). Floors AT the measured value (the
+    # counts are deterministic), the --engine=vm entry's stance.
+    ("-fmemfn-simd",): {"composition_producing_floor": 37,
+                        "composition_artifacts_floor": 106},
+    ("-fcomments",): {"composition_producing_floor": 37,
+                      "composition_artifacts_floor": 106},
 }
 
 

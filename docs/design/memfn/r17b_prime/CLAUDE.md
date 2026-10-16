@@ -32,3 +32,8 @@ The spike sources are read read-only from
 `worktrees/memfn-slot/spike1/bin/<cell>/{V0,V1,A1}/` (the vecspike slot's
 build tree). Outputs go to a scratch directory the caller names (never
 `/tmp`).
+
+Revision 2 of the note (lane r17bp3, 2026-10-14) adds no instrument and
+re-runs none. It cites these transcripts as revision 1's evidence, which was
+taken on the KIT branch (R17-b built); its step plan re-counts every
+population against MAIN at each build step (`../r17b_prime.md` §3.5).

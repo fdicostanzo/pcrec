@@ -1,0 +1,179 @@
+# rev22_population.py output: one row per question; est / rlo / rup are ESTIMATES
+id	cls	file	fam	eol	flags	mode	shape	S	est	why	g	bpm	rlo	rup	pool	pooln	primed	ucp	eolsens	runs	w	b0	b1	b2	b3	medlong
+L01	logs	logs/hadoop.log	logs/hadoop.log	crlf	-	line	lines	1	OTHER	pf_memchr (one first byte)	375.0	77816.2	LINER	LINER	64	1	-	-	-	1	y	90628	4807	3511472	38336028	109
+L02	logs	logs/apache_access.log	logs/apache_access.log	lf	-	find-all	all	10	RT	set FIND, |S| = 10	4.2	232.0	DINGHY	TUG	31	1	-	-	-	1	y	1	0	0	2369603	230
+L03	logs	logs/apache_error.log	logs/apache_error.log	lf	-	find-all	all	10	RT	set FIND, |S| = 10	5.2	164.6	DINGHY	TUG	64	1	keyword-alt	-	-	1	y	0	0	309157	4812690	98
+L04	logs	logs/zookeeper.log	logs/zookeeper.log	crlf	-	find-all	all	10	RT	set FIND, |S| = 10	3.5	142.5	DINGHY	TUG	64	1	-	-	-	1	y	1	0	0	10599180	139
+L05	logs	logs/linux_syslog.log	logs/linux_syslog.log	lf	i	line	lines	2	RT	set FIND, |S| = 2	43.7	583.1	DINGHY	LINER	30	1	-	-	-	2	y	1	3065	77069	2221933	74
+L06	logs	logs/apache_access.log	logs/apache_access.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.5	789867.7	DINGHY	LINER	31	1	-	-	-	1	y	1	0	0	2369603	230
+L07	logs	logs/apache_access.log	logs/apache_access.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.5	237.0	DINGHY	LINER	31	1	keyword-alt	-	-	1	y	1	0	0	2369603	230
+L08	logs	logs/apache_access.log	logs/apache_access.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.5	107709.2	DINGHY	LINER	31	1	rare-literal	-	-	1	y	1	0	0	2369603	230
+L09	logs	logs/hadoop.log	logs/hadoop.log	crlf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	37.1	11453.6	DINGHY	LINER	64	1	-	-	-	1	y	90628	4807	3511472	38336028	109
+L10	logs	logs/hadoop.log	logs/hadoop.log	crlf	-	find-all	all	26	RT	set FIND, |S| = 26	1.7	2244.7	DINGHY	TUG	64	1	-	-	-	1	y	90628	4807	3511472	38336028	109
+L11	logs	logs/openstack.log	logs/openstack.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	68.9	323.8	LINER	LINER	64	1	-	-	-	1	y	1	0	0	41942978	317
+L12	logs	logs/openstack.log	logs/openstack.log	lf	i	count	all	22	RT	set FIND, |S| = 22	1.7	227.1	DINGHY	TUG	64	1	-	-	-	3	y	1	0	0	41942978	317
+L13	logs	logs/openstack.log	logs/openstack.log	lf	-	line	lines	4	RT	set FIND, |S| = 4	130.1	17418.2	LINER	LINER	64	1	keyword-alt	-	-	4	y	1	0	0	41942978	317
+L14	logs	logs/openstack.log	logs/openstack.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	51.9	585.7	DINGHY	LINER	64	1	-	-	-	1	y	1	0	0	41942978	317
+L15	logs	logs/bgl.log	logs/bgl.log	lf	-	line	lines	1	OTHER	pf_memchr (one first byte)	32.2	440.4	DINGHY	LINER	64	1	-	-	-	1	y	1	0	0	41942927	127
+L16	logs	logs/bgl.log	logs/bgl.log	lf	-	line	lines	250	NOSITE	anchored at the subject (or line) start	1.1	470.3	DINGHY	TUG	64	1	anchor	-	-	3	y	1	0	0	41942927	127
+L17	logs	logs/bgl.log	logs/bgl.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	32.2	67.8	DINGHY	LINER	64	1	-	-	-	1	y	1	0	0	41942927	127
+L18	logs	logs/linux_syslog.log	logs/linux_syslog.log	lf	i	find-all	all	63	RT	set FIND, |S| = 63	1.3	6026.4	DINGHY	TUG	30	1	backref	-	-	4	y	1	3065	77069	2221933	74
+L19	logs	logs/apache_error.log	logs/apache_error.log	lf	i	find-all	all	2	RT	set FIND, |S| = 2	80.6	1827.3	LINER	LINER	64	1	keyword-alt	-	-	2	y	0	0	309157	4812690	98
+L20	logs	logs/zookeeper.log	logs/zookeeper.log	crlf	i	find-all	all	1	OTHER	pf_memchr (one first byte)	26.9	1450.0	DINGHY	LINER	64	1	-	-	-	1	y	1	0	0	10599180	139
+L21	logs	logs/hadoop.log	logs/hadoop.log	crlf	-	first	first	1	OTHER	pf_memchr (one first byte)	375.0	41942934.0	LINER	LINER	64	1	-	-	-	1	y	90628	4807	3511472	38336028	109
+L22	logs	logs/zookeeper.log	logs/zookeeper.log	crlf	-	count	all	1	OTHER	pf_memchr (one first byte)	116.5	1020.3	LINER	LINER	64	1	-	-	-	1	y	1	0	0	10599180	139
+L23	logs	logs/linux_syslog.log	logs/linux_syslog.log	lf	-	find-all	all	6	RT	set FIND, |S| = 6	7.0	226.0	DINGHY	TUG	30	1	keyword-alt	-	-	6	y	1	3065	77069	2221933	74
+L24	logs	logs/zookeeper.log	logs/zookeeper.log	crlf	m	find-all	all	255	OTHER	MLINE ((?m)^ line-start site)	1.0	215.8	DINGHY	TUG	64	1	anchor	-	eol-sensitive	2	y	1	0	0	10599180	139
+L25	logs	logs/linux_syslog.log	logs/linux_syslog.log	lf	i	first	first	2	UNREACHED	required run absent: the pre-check answers	99.4	inf	LINER	LINER	30	1	rare-literal	-	-	2	y	1	3065	77069	2221933	74
+L26	logs	logs/apache_access.log	logs/apache_access.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	237.3	693.5	LINER	LINER	31	1	-	-	-	1	y	1	0	0	2369603	230
+L27	logs	logs/openstack.log	logs/openstack.log	lf	m	find-all	all	255	OTHER	MLINE ((?m)^ line-start site)	1.0	202623.1	DINGHY	TUG	64	1	rare-literal,anchor	-	-	2	y	1	0	0	41942978	317
+L28	logs	logs/apache_error.log	logs/apache_error.log	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	38.0	98.5	DINGHY	LINER	64	1	keyword-alt	-	-	1	y	0	0	309157	4812690	98
+C01	code	code/java.src	code/java.src	lf	-	find-all	all	4	RT	set FIND, |S| = 4	96.5	17399.8	LINER	LINER	64	1	keyword-alt	-	-	4	y	1318579	3051607	10834022	12896539	81
+C02	code	code/c.src	code/c.src	lf	m	find-all	all	53	OTHER	MLINE ((?m)^ line-start site)	1.6	1413.7	DINGHY	TUG	64	1	anchor	-	-	3	y	202919	975991	2869510	3182786	74
+C03	code	code/c.src	code/c.src	lf	m	find-all	all	7	OTHER	MLINE ((?m)^ line-start site)	3.9	4836.9	DINGHY	TUG	64	1	anchor	-	-	3	y	202919	975991	2869510	3182786	74
+C04	code	code/c.src	code/c.src	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	1181.8	7326.4	LINER	LINER	64	1	anchor	-	-	1	y	202919	975991	2869510	3182786	74
+C05	code	code/c.src	code/c.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	116.4	234.2	LINER	LINER	64	1	-	-	-	1	y	202919	975991	2869510	3182786	74
+C06	code	code/python.src	code/python.src	lf	m	find-all	all	7	OTHER	MLINE ((?m)^ line-start site)	3.2	601.3	DINGHY	TUG	64	1	anchor	-	-	3	y	584112	2431174	8247936	5748600	74
+C07	code	code/python.src	code/python.src	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	54.8	2629.7	DINGHY	LINER	64	1	anchor	-	-	1	y	584112	2431174	8247936	5748600	74
+C08	code	code/python.src	code/python.src	lf	m	find-all	all	2	OTHER	MLINE ((?m)^ line-start site)	20.1	1666.4	DINGHY	LINER	64	1	anchor	-	-	2	y	584112	2431174	8247936	5748600	74
+C09	code	code/java.src	code/java.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	258.5	899.8	LINER	LINER	64	1	keyword-alt	-	-	1	y	1318579	3051607	10834022	12896539	81
+C10	code	code/java.src	code/java.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	54.3	8716.1	DINGHY	LINER	64	1	-	-	-	1	y	1318579	3051607	10834022	12896539	81
+C11	code	code/javascript.src	code/javascript.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	65.9	2245.1	LINER	LINER	36	1	-	-	-	1	y	125588	449549	969000	1185912	78
+C12	code	code/javascript.src	code/javascript.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	1135.4	88066.1	LINER	LINER	36	1	-	-	-	1	y	125588	449549	969000	1185912	78
+C13	code	code/go.src	code/go.src	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	55.5	836.9	DINGHY	LINER	6	1	anchor	-	-	1	-	21152	69854	201266	174730	75
+C14	code	code/rust.src	code/rust.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	60.5	638.7	DINGHY	LINER	22	1	-	-	-	1	y	83896	257558	719322	631101	74
+C15	code	code/rust.src	code/rust.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	59.6	422969.0	DINGHY	LINER	22	1	rare-literal	-	-	1	y	83896	257558	719322	631101	74
+C16	code	code/java.src	code/java.src	lf	m	count	all	2	RT	set FIND, |S| = 2	5.5	inf	DINGHY	TUG	64	1	anchor	-	-	2	y	1318579	3051607	10834022	12896539	81
+C17	code	code/c.src	code/c.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	323.6	48531.6	LINER	LINER	64	1	-	-	-	1	y	202919	975991	2869510	3182786	74
+C18	code	code/c.src	code/c.src	lf	-	find-all	all	4	RT	set FIND, |S| = 4	11.4	4309.4	DINGHY	TUG	64	1	keyword-alt	-	-	4	y	202919	975991	2869510	3182786	74
+C19	code	code/java.src	code/java.src	lf	i	find-all	all	8	RT	set FIND, |S| = 8	5.0	936691.5	DINGHY	TUG	64	1	rare-literal,backref,keyword-alt	-	-	8	y	1318579	3051607	10834022	12896539	81
+C20	code	code/python.src	code/python.src	lf	-	find-all	all	66	RT	set FIND, |S| = 66	1.6	19287.8	DINGHY	TUG	64	1	-	-	-	6	y	584112	2431174	8247936	5748600	74
+C21	code	code/python.src	code/python.src	lf	-	find-all	all	10	RT	set FIND, |S| = 10	114.6	26874.9	LINER	LINER	64	1	-	-	-	1	y	584112	2431174	8247936	5748600	74
+C22	code	code/c.src	code/c.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	93.6	8537.4	LINER	LINER	64	1	-	-	-	1	y	202919	975991	2869510	3182786	74
+C23	code	code/go.src	code/go.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	117.3	8648.2	LINER	LINER	6	1	-	-	-	1	-	21152	69854	201266	174730	75
+C24	code	code/java.src	code/java.src	lf	i	count	all	2	RT	set FIND, |S| = 2	50.9	31503.1	DINGHY	LINER	64	1	-	-	-	2	y	1318579	3051607	10834022	12896539	81
+C25	code	code/python.src	code/python.src	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	57.7	22682.4	DINGHY	LINER	64	1	-	-	-	1	y	584112	2431174	8247936	5748600	74
+C26	code	code/c.src	code/c.src	lf	-	find-all	all	2	RT	set FIND, |S| = 2	16.3	1446241.0	DINGHY	TUG	64	1	rare-literal	-	-	2	y	202919	975991	2869510	3182786	74
+C27	code	code/javascript.src	code/javascript.src	lf	m	count	all	255	OTHER	MLINE ((?m)^ line-start site)	1.0	3933.8	DINGHY	TUG	36	1	anchor	-	-	2	y	125588	449549	969000	1185912	78
+P01	prose	prose/pg2701.txt	prose-en	crlf	i	count	all	2	RT	set FIND, |S| = 2	56.4	851.4	DINGHY	LINER	64	12	-	-	-	2	-	9821	20772	96214	1149509	70
+P02	prose	prose/pg1342.txt	prose-en	crlf	i	find-all	all	63	RT	set FIND, |S| = 63	1.3	257462.0	DINGHY	TUG	64	12	backref	-	-	4	-	9587	16756	64423	681621	71
+P03	prose	prose/pg1661.txt	prose-en	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	91.1	315.0	LINER	LINER	64	12	-	-	-	1	-	8409	18479	67112	513607	71
+P04	prose	prose/pg1342.txt	prose-en	crlf	-	find-all	all	26	RT	set FIND, |S| = 26	47.6	25746.2	DINGHY	LINER	64	12	keyword-alt	-	-	1	-	9587	16756	64423	681621	71
+P05	prose	prose/pg1342.txt	prose-en	crlf	-	find-all	all	2	RT	set FIND, |S| = 2	311.6	679.3	LINER	LINER	64	12	keyword-alt	-	-	2	-	9587	16756	64423	681621	71
+P06	prose	prose/pg98.txt	prose-en	crlf	s	find-all	all	26	RT	set FIND, |S| = 26	48.8	888.0	DINGHY	LINER	64	12	-	-	-	1	-	12007	22958	80787	691446	71
+P07	prose	prose/pg84.txt	prose-en	crlf	-	find-all	all	63	RT	set FIND, |S| = 63	1.3	393.4	DINGHY	TUG	64	12	-	-	-	4	-	3696	5646	37050	402494	70
+P08	prose	prose/pg2600.txt	prose-en	crlf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	9011.2	20238.6	LINER	LINER	64	12	-	-	-	1	y	46642	77269	285669	2950031	71
+P09	prose	prose/pg2701.txt	prose-en	crlf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	1043.2	4727.1	LINER	LINER	64	12	rare-literal,anchor	-	eol-sensitive	1	-	9821	20772	96214	1149509	70
+P10	prose	prose/pg1342.txt	prose-en	crlf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	1081.5	13550.6	LINER	LINER	64	12	rare-literal,anchor	-	eol-sensitive	1	-	9587	16756	64423	681621	71
+P11	prose	prose/pg1342.txt	prose-en	crlf	-	count	all	7	RT	set FIND, |S| = 7	140.1	275.2	LINER	LINER	64	12	keyword-alt	-	-	4	-	9587	16756	64423	681621	71
+P12	prose	prose/pg1342.txt	prose-en	crlf	-	find-all	all	26	RT	set FIND, |S| = 26	47.6	1065.4	DINGHY	LINER	64	12	-	-	-	1	-	9587	16756	64423	681621	71
+P13	prose	prose/pg345.txt	prose-en	crlf	-	find-all	all	63	RT	set FIND, |S| = 63	1.3	318.3	DINGHY	TUG	64	12	-	-	-	4	-	8054	14954	60004	807337	71
+P14	prose	prose/pg1184.txt	prose-en	crlf	-	find-all	all	52	RT	set FIND, |S| = 52	1.4	1414.8	DINGHY	TUG	64	12	-	-	-	2	y	54756	99658	376330	2256381	71
+P15	prose	prose/pg2600.txt	prose-en	crlf	-	find-all	all	26	RT	set FIND, |S| = 26	48.1	3051.4	DINGHY	LINER	64	12	-	-	-	1	y	46642	77269	285669	2950031	71
+P16	prose	prose/pg84.txt	prose-en	crlf	-	first	first	1	OTHER	pf_memchr (one first byte)	54613.3	448885.0	LINER	LINER	64	12	rare-literal	-	-	1	-	3696	5646	37050	402494	70
+P17	prose	prose/pg1661.txt	prose-en	crlf	-	count	all	1	OTHER	pf_memchr (one first byte)	801.7	inf	LINER	LINER	64	12	rare-literal	-	-	1	-	8409	18479	67112	513607	71
+P18	prose	prose/pg345.txt	prose-en	crlf	-	count	all	1	OTHER	pf_memchr (one first byte)	235.7	609.4	LINER	LINER	64	12	-	-	-	1	-	8054	14954	60004	807337	71
+P19	prose	prose/pg2701.txt	prose-en	crlf	m	count	all	63	RT	set FIND, |S| = 63	1.3	inf	DINGHY	TUG	64	12	anchor	-	eol-sensitive	4	-	9821	20772	96214	1149509	70
+P20	prose	prose/pg98.txt	prose-en	crlf	i	count	all	2	RT	set FIND, |S| = 2	14.9	97.9	DINGHY	TUG	64	12	-	-	-	2	-	12007	22958	80787	691446	71
+P21	prose	prose/pg98.txt	prose-en	crlf	m	count	all	0	OTHER	MLINE ((?m)^ line-start site)	inf	807197.0	LINER	LINER	64	12	anchor	-	eol-sensitive	0	-	12007	22958	80787	691446	71
+P22	prose	prose/pg135.txt	prose-en	crlf	-	find-all	all	10	RT	set FIND, |S| = 10	1237.1	168460.4	LINER	LINER	64	12	-	-	-	1	y	57752	101874	407633	2801949	70
+P23	prose	prose/pg84.txt	prose-en	crlf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	61.1	13202.5	DINGHY	LINER	64	12	-	-	-	1	-	3696	5646	37050	402494	70
+P24	prose	prose/pg996.txt	prose-en	crlf	utf	find-all	all	26	RT	set FIND, |S| = 26	37.8	3232.0	DINGHY	LINER	64	12	-	-	-	1	y	23884	42006	171238	2154551	70
+P25	prose	prose/pg1400.txt	prose-en	crlf	s	first	first	1	OTHER	pf_memchr (one first byte)	76458.7	1058204.0	LINER	LINER	64	12	-	-	-	1	-	13954	27449	109367	907435	71
+S01	structured	structured/census_gazetteer_places.tsv	structured/census_gazetteer_places.tsv	lf	m	find-all	all	26	OTHER	MLINE ((?m)^ line-start site)	37.0	637.1	DINGHY	LINER	64	1	anchor	-	-	1	y	1	0	0	6498405	200
+S02	structured	structured/census_gazetteer_places.tsv	structured/census_gazetteer_places.tsv	lf	m	count	all	1	OTHER	MLINE ((?m)^ line-start site)	1271.4	3488.1	LINER	LINER	64	1	anchor	-	-	1	y	1	0	0	6498405	200
+S03	structured	structured/census_gazetteer_places.tsv	structured/census_gazetteer_places.tsv	lf	m	find-all	all	11	RT	set FIND, |S| = 11	3.9	201.0	DINGHY	TUG	64	1	anchor	-	-	2	y	1	0	0	6498405	200
+S04	structured	structured/census_gazetteer_places.tsv	structured/census_gazetteer_places.tsv	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	18.3	478.3	DINGHY	TUG	64	1	-	-	-	1	y	1	0	0	6498405	200
+S05	structured	structured/usgs_2024q1.csv	structured/usgs_2024q1.csv	lf	m	find-all	all	256	OTHER	MLINE ((?m)^ line-start site)	1.0	8287.2	DINGHY	TUG	27	1	rare-literal,anchor	-	-	1	y	1	0	0	2038655	189
+S06	structured	structured/usgs_2024q1.csv	structured/usgs_2024q1.csv	lf	-	find-all	all	10	RT	set FIND, |S| = 10	2.2	96.7	DINGHY	TUG	27	1	-	-	-	1	y	1	0	0	2038655	189
+S07	structured	structured/usgs_2024q1.csv	structured/usgs_2024q1.csv	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	97.1	193.3	LINER	LINER	27	1	-	-	-	1	y	1	0	0	2038655	189
+S08	structured	structured/usgs_2024q1.csv	structured/usgs_2024q1.csv	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	97.1	472.5	LINER	LINER	27	1	-	-	-	1	y	1	0	0	2038655	189
+S09	structured	structured/usgs_2024q1.csv	structured/usgs_2024q1.csv	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	8.8	194.7	DINGHY	TUG	27	1	keyword-alt	-	-	1	y	1	0	0	2038655	189
+S10	structured	structured/usgs_2024q1.geojson	structured/usgs_2024q1.geojson	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	7.6	792.4	DINGHY	TUG	55	1	-	-	-	1	y	0	0	0	4172802	712
+S11	structured	structured/usgs_2024q1.geojson	structured/usgs_2024q1.geojson	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	7.6	716.2	DINGHY	TUG	55	1	-	-	-	1	y	0	0	0	4172802	712
+S12	structured	structured/usgs_2024q1.geojson	structured/usgs_2024q1.geojson	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	7.6	24.7	DINGHY	DINGHY	55	1	-	-	-	1	y	0	0	0	4172802	712
+S13	structured	structured/usgs_2024q1.geojson	structured/usgs_2024q1.geojson	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	7.6	5779.5	DINGHY	TUG	55	1	-	-	-	1	y	0	0	0	4172802	712
+S14	structured	structured/ne_10m_admin_0_countries.geojson	structured/ne_10m_admin_0_countries.geojson	one-line	-	find-all	all	1	OTHER	pf_memchr (one first byte)	94.9	51500.9	LINER	LINER	64	1	-	-	-	1	y	1	0	0	13287234	13287233
+S15	structured	structured/ne_10m_admin_0_countries.geojson	structured/ne_10m_admin_0_countries.geojson	one-line	-	find-all	all	1	OTHER	pf_memchr (one first byte)	94.9	56541.4	LINER	LINER	64	1	-	-	-	1	y	1	0	0	13287234	13287233
+S16	structured	structured/ne_10m_admin_0_countries.geojson	structured/ne_10m_admin_0_countries.geojson	one-line	-	count	all	1	OTHER	pf_memchr (one first byte)	23.8	24.3	DINGHY	DINGHY	64	1	-	-	-	1	y	1	0	0	13287234	13287233
+S17	structured	structured/ne_10m_admin_0_countries.geojson	structured/ne_10m_admin_0_countries.geojson	one-line	-	find-all	all	1	OTHER	pf_memchr (one first byte)	94.9	949088.1	LINER	LINER	64	1	rare-literal	-	-	1	y	1	0	0	13287234	13287233
+S18	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.8	79.9	DINGHY	LINER	64	1	-	-	-	1	y	106084	254037	337775	41245105	383
+S19	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.8	21732.1	DINGHY	LINER	64	1	-	-	-	1	y	106084	254037	337775	41245105	383
+S20	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	326.8	6270.4	LINER	LINER	64	1	-	-	-	1	y	106084	254037	337775	41245105	383
+S21	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	11459.8	14639.8	LINER	LINER	64	1	-	-	-	1	y	106084	254037	337775	41245105	383
+S22	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.8	18918.8	DINGHY	LINER	64	1	rare-literal	-	-	1	y	106084	254037	337775	41245105	383
+S23	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	s	find-all	all	1	OTHER	pf_memchr (one first byte)	39.8	inf	DINGHY	LINER	64	1	rare-literal	-	-	1	y	106084	254037	337775	41245105	383
+S24	structured	structured/govinfo_bills.xml	structured/govinfo_bills.xml	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	80659.7	55849.5	LINER	LINER	64	1	-	-	-	1	y	106084	254037	337775	41245105	383
+M01	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	511.7	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M02	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	24.1	DINGHY	DINGHY	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M03	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	25.7	1719.5	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M04	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	5272.5	DINGHY	LINER	64	1	backref	-	-	1	y	1100954	1489337	3881670	35471032	114
+M05	markup	markup/python_docs.html	markup/python_docs.html	lf	s	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	13980997.3	DINGHY	LINER	64	1	rare-literal	-	-	1	y	1100954	1489337	3881670	35471032	114
+M06	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	27.4	4403.0	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M07	markup	markup/python_docs.html	markup/python_docs.html	lf	i	find-all	all	1	OTHER	pf_memchr (one first byte)	763.9	642.1	LINER	LINER	64	1	keyword-alt	-	-	1	y	1100954	1489337	3881670	35471032	114
+M08	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	26990.3	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M09	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	9147.9	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M10	markup	markup/django_docs.rst	markup/django_docs.rst	lf	m	count	all	4	OTHER	MLINE ((?m)^ line-start site)	29.4	888.7	DINGHY	LINER	64	1	anchor	-	-	4	y	139698	561638	1511807	3614114	75
+M11	markup	markup/django_docs.rst	markup/django_docs.rst	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	51.0	1610.2	DINGHY	LINER	64	1	anchor	-	-	1	y	139698	561638	1511807	3614114	75
+M12	markup	markup/django_docs.rst	markup/django_docs.rst	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	87.5	672.3	LINER	LINER	64	1	keyword-alt	-	-	1	y	139698	561638	1511807	3614114	75
+M13	markup	markup/django_docs.rst	markup/django_docs.rst	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	40.5	206.2	DINGHY	LINER	64	1	-	-	-	1	y	139698	561638	1511807	3614114	75
+M14	markup	markup/django_docs.rst	markup/django_docs.rst	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	51.0	132437.6	DINGHY	LINER	64	1	anchor	-	-	1	y	139698	561638	1511807	3614114	75
+M15	markup	markup/jquery_md.md	markup/jquery_md.md	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	321.4	435.8	LINER	LINER	0	1	-	-	-	1	-	1060	1534	4737	18382	110
+M16	markup	markup/jquery_md.md	markup/jquery_md.md	lf	m	find-all	all	1	OTHER	MLINE ((?m)^ line-start site)	124.3	598.0	LINER	LINER	0	1	anchor	-	-	1	-	1060	1534	4737	18382	110
+M17	markup	markup/jquery_md.md	markup/jquery_md.md	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	39.5	395.6	DINGHY	LINER	0	1	-	-	-	1	-	1060	1534	4737	18382	110
+M18	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	3	RT	set FIND, |S| = 3	350.0	9958.0	LINER	LINER	64	1	-	-	-	2	y	1100954	1489337	3881670	35471032	114
+M19	markup	markup/python_docs.html	markup/python_docs.html	lf	-	find-all	all	1	OTHER	pf_memchr (one first byte)	24.1	1279.0	DINGHY	LINER	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M20	markup	markup/django_docs.rst	markup/django_docs.rst	lf	i	count	all	2	RT	set FIND, |S| = 2	33.5	8207.4	DINGHY	LINER	64	1	-	-	-	2	y	139698	561638	1511807	3614114	75
+M21	markup	markup/python_docs.html	markup/python_docs.html	lf	-	count	all	1	OTHER	pf_memchr (one first byte)	90.0	1048574.8	LINER	LINER	64	1	rare-literal	-	-	1	y	1100954	1489337	3881670	35471032	114
+M22	markup	markup/python_docs.html	markup/python_docs.html	lf	-	count	all	1	OTHER	pf_memchr (one first byte)	24.1	24.1	DINGHY	DINGHY	64	1	-	-	-	1	y	1100954	1489337	3881670	35471032	114
+M23	markup	markup/django_docs.rst	markup/django_docs.rst	lf	i	find-all	all	63	RT	set FIND, |S| = 63	1.4	18797.6	DINGHY	TUG	64	1	backref	-	-	4	y	139698	561638	1511807	3614114	75
+M24	markup	markup/python_docs.html	markup/python_docs.html	lf	m	count	all	6	OTHER	MLINE ((?m)^ line-start site)	9.2	1097.7	DINGHY	TUG	64	1	anchor	-	-	2	y	1100954	1489337	3881670	35471032	114
+N01	nonenglish	nonenglish/pg4580.txt	ne-cjk	crlf	utf	find-all	all	7	RT	set FIND, |S| = 7	3.7	19.7	DINGHY	DINGHY	24	6	-	-	-	1	-	4830	7930	33392	621729	73
+N02	nonenglish	nonenglish/pg31617.txt	ne-kana	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	3.9	13.5	DINGHY	DINGHY	18	5	-	-	-	1	-	522	2258	13122	549028	199
+N03	nonenglish	nonenglish/pg31617.txt	ne-kana	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	3.9	5593.4	DINGHY	TUG	18	5	-	-	-	1	-	522	2258	13122	549028	199
+N04	nonenglish	nonenglish/pg31617.txt	ne-kana	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	3.9	28.1	DINGHY	DINGHY	18	5	-	-	-	1	-	522	2258	13122	549028	199
+N05	nonenglish	nonenglish/pg31617.txt	ne-kana	crlf	utf	find-all	all	6	RT	set FIND, |S| = 6	17.7	28.3	DINGHY	DINGHY	18	5	-	-	-	1	-	522	2258	13122	549028	199
+N06	nonenglish	nonenglish/pg2790.txt	ne-cyrillic	crlf	utf,ucp	find-all	all	1	OTHER	pf_memchr (one first byte)	4.1	204.0	DINGHY	TUG	16	7	-	ucp	-	1	-	850	972	49129	16770	69
+N07	nonenglish	nonenglish/pg11291.txt	ne-cyrillic	crlf	utf	find-all	all	4	RT	set FIND, |S| = 4	2.5	12.0	DINGHY	DINGHY	16	7	-	-	-	1	-	2510	4136	15487	407905	113
+N08	nonenglish	nonenglish/pg17814.txt	ne-greek	crlf	utf	find-all	all	3	GATE-EXCLUDED	short-pool	2.5	23.7	DINGHY	DINGHY	8	3	-	-	-	1	-	1966	13219	41316	132512	83
+N09	nonenglish	nonenglish/pg43740.txt	ne-hebrew	crlf	utf	find-all	all	2	GATE-EXCLUDED	short-pool	2.5	10.6	DINGHY	DINGHY	5	2	-	-	-	1	-	852	802	9703	238120	129
+N10	nonenglish	nonenglish/pg43740.txt	ne-hebrew	crlf	utf	count	all	2	GATE-EXCLUDED	short-pool	2.5	15592.2	DINGHY	TUG	5	2	rare-literal	-	-	1	-	852	802	9703	238120	129
+N11	nonenglish	nonenglish/pg8186.txt	nonenglish/pg8186.txt	crlf	utf,ucp,i	count	all	114	UNREACHED	required run absent: the pre-check answers	1.3	inf	DINGHY	TUG	12	1	-	ucp	-	5	-	10636	20464	126383	764744	68
+N12	nonenglish	nonenglish/pg6696.txt	ne-latin-ext	crlf	utf,ucp	find-all	all	114	RT	set FIND, |S| = 114	1.3	67.7	DINGHY	TUG	24	2	-	ucp	-	5	-	1417	3070	46861	544495	70
+N13	nonenglish	nonenglish/pg6696.txt	ne-latin-ext	crlf	utf,ucp	find-all	all	1	OTHER	pf_memchr (one first byte)	26.1	171.3	DINGHY	LINER	24	2	keyword-alt	ucp	-	1	-	1417	3070	46861	544495	70
+N14	nonenglish	nonenglish/pg2790.txt	ne-cyrillic	crlf	utf	find-all	all	4	RT	set FIND, |S| = 4	3.0	104.2	DINGHY	TUG	16	7	-	-	-	1	-	850	972	49129	16770	69
+N15	nonenglish	nonenglish/pg4580.txt	ne-cjk	crlf	utf	count	all	2	RT	set FIND, |S| = 2	24.2	24.5	DINGHY	DINGHY	24	6	-	-	-	2	-	4830	7930	33392	621729	73
+N16	nonenglish	nonenglish/pg31617.txt	ne-kana	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	3.9	875.9	DINGHY	TUG	18	5	-	-	-	1	-	522	2258	13122	549028	199
+N17	nonenglish	nonenglish/pg4580.txt	ne-cjk	crlf	utf	find-all	all	6	RT	set FIND, |S| = 6	3.8	280.5	DINGHY	TUG	24	6	-	-	-	1	-	4830	7930	33392	621729	73
+N18	nonenglish	nonenglish/pg4573.txt	ne-cjk	crlf	utf	line	lines	51	RT	set FIND, |S| = 51	3.5	83.7	DINGHY	TUG	24	6	-	-	-	1	-	911	1102	7621	91320	73
+P26	prose	prose/pg98.txt	prose-en	crlf	m	count	all	6	OTHER	MLINE ((?m)^ line-start site)	5.1	238.3	DINGHY	TUG	64	12	anchor	-	eol-sensitive	2	-	12007	22958	80787	691446	71
+P27	prose	prose/pg2701.txt	prose-en	crlf	m	count	all	63	RT	set FIND, |S| = 63	1.3	inf	DINGHY	TUG	64	12	anchor	-	eol-sensitive	4	-	9821	20772	96214	1149509	70
+N19	nonenglish	nonenglish/pg4573.txt	ne-cjk	crlf	utf,m	count	all	128	OTHER	MLINE ((?m)^ line-start site)	7.5	525.8	DINGHY	TUG	24	6	anchor	-	eol-sensitive	1	-	911	1102	7621	91320	73
+N20	nonenglish	nonenglish/pg20175.txt	nonenglish/pg20175.txt	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	2.5	19.7	DINGHY	DINGHY	5	1	-	-	-	1	-	904	2713	29230	419238	124
+N21	nonenglish	nonenglish/pg2890.txt	ne-cyrillic	crlf	utf	find-all	all	1	OTHER	pf_memchr (one first byte)	3.8	5759.8	DINGHY	TUG	16	7	-	-	-	1	-	531	725	7816	106124	71
+N22	nonenglish	nonenglish/pg17839.txt	ne-greek	crlf	utf	count	all	2	GATE-EXCLUDED	short-pool	inf	inf	LINER	LINER	8	3	-	-	-	1	-	3966	11876	18585	151725	80
+N23	nonenglish	nonenglish/pg14741.txt	ne-cyrillic	crlf	utf	find-all	all	59	RT	set FIND, |S| = 59	13.7	72.8	DINGHY	TUG	16	7	-	-	-	3	-	3529	5001	153393	58607	71
+N24	nonenglish	nonenglish/pg6698.txt	ne-latin-ext	crlf	utf	count	all	10	RT	set FIND, |S| = 10	7598.4	11146.6	LINER	LINER	24	2	-	-	-	1	-	3168	6663	167336	1048964	69
+N25	nonenglish	nonenglish/pg11291.txt	ne-cyrillic	crlf	utf,ucp,i	count	all	1	OTHER	pf_memchr (one first byte)	3.4	261.7	DINGHY	TUG	16	7	-	ucp	-	1	-	2510	4136	15487	407905	113
+B01	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	find-all	all	1	OTHER	pf_memchr (one first byte)	50.6	18082.1	DINGHY	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B02	binary	binary/libpng-1.6.43.tar	binary/libpng-1.6.43.tar	binary	-	find-all	all	1	OTHER	pf_memchr (one first byte)	8289.1	32910.6	LINER	LINER	64	1	-	-	-	1	y	281847	828751	2392016	3112427	73
+B03	binary	binary/libpng-1.6.43.tar.gz	binary/libpng-1.6.43.tar.gz	binary	-	find-all	all	1	OTHER	pf_memchr (one first byte)	258.8	777357.5	LINER	LINER	20	1	-	-	-	1	-	2639	9674	32040	1510363	238
+B04	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	8.8	885.7	DINGHY	TUG	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B05	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	74.6	4993.6	LINER	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B06	binary	binary/BILLS-118-1-hr.zip	binary/BILLS-118-1-hr.zip	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	240.6	6351.9	LINER	LINER	64	1	-	-	-	1	y	76408	272319	927853	46617062	242
+B07	binary	binary/BILLS-118-1-hr.zip	binary/BILLS-118-1-hr.zip	binary	s	find-all	all	1	OTHER	pf_memchr (one first byte)	240.6	6351.9	LINER	LINER	64	1	-	-	-	1	y	76408	272319	927853	46617062	242
+B08	binary	binary/python-3.12.7-docs-html.tar.bz2	binary/python-3.12.7-docs-html.tar.bz2	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	244.9	599316.8	LINER	LINER	64	1	rare-literal	-	-	1	y	21638	70585	213603	8084610	219
+B09	binary	binary/libpng-1.6.43.tar.gz	binary/libpng-1.6.43.tar.gz	binary	-	count	all	95	RT	set FIND, |S| = 95	2.7	3737.3	DINGHY	TUG	20	1	-	-	-	1	-	2639	9674	32040	1510363	238
+B10	binary	binary/BILLS-118-1-hr.zip	binary/BILLS-118-1-hr.zip	binary	-	count	all	128	RT	set FIND, |S| = 128	2.0	32.0	DINGHY	DINGHY	64	1	-	-	-	1	y	76408	272319	927853	46617062	242
+B11	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	5991.9	39683.1	LINER	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B12	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	8	RT	set FIND, |S| = 8	22.7	2494.8	DINGHY	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B13	binary	binary/libpng-1.6.43.tar	binary/libpng-1.6.43.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	45.3	1183.6	DINGHY	LINER	64	1	-	-	-	1	y	281847	828751	2392016	3112427	73
+B14	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	m	count	all	1	OTHER	MLINE ((?m)^ line-start site)	769.9	inf	LINER	LINER	64	1	anchor	-	-	1	y	1611768	5938199	12958312	29452682	76
+B15	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	6316.7	49960960.0	LINER	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B16	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	4481.1	359431.4	LINER	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B17	binary	binary/libpng-1.6.43.tar	binary/libpng-1.6.43.tar	binary	-	find-all	all	1	OTHER	pf_memchr (one first byte)	69.4	41087.2	LINER	LINER	64	1	-	-	-	1	y	281847	828751	2392016	3112427	73
+B18	binary	binary/libpng-1.6.43.tar.gz	binary/libpng-1.6.43.tar.gz	binary	-	first	first	1	OTHER	pf_memchr (one first byte)	258.8	inf	LINER	LINER	20	1	-	-	-	1	-	2639	9674	32040	1510363	238
+B19	binary	binary/BILLS-118-1-hr.zip	binary/BILLS-118-1-hr.zip	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	240.6	47893641.0	LINER	LINER	64	1	-	-	-	1	y	76408	272319	927853	46617062	242
+B20	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	i	count	all	2	RT	set FIND, |S| = 2	80.6	8326826.7	LINER	LINER	64	1	-	-	-	2	y	1611768	5938199	12958312	29452682	76
+B21	binary	binary/django-5.0.tar	binary/django-5.0.tar	binary	-	count	all	1	OTHER	pf_memchr (one first byte)	6442.9	inf	LINER	LINER	64	1	-	-	-	1	y	1611768	5938199	12958312	29452682	76
+B22	binary	binary/python-3.12.7-docs-html.tar.bz2	binary/python-3.12.7-docs-html.tar.bz2	binary	-	count	all	95	RT	set FIND, |S| = 95	2.7	65550.3	DINGHY	TUG	64	1	-	-	-	1	y	21638	70585	213603	8084610	219

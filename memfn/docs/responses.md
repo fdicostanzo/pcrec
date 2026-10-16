@@ -2505,3 +2505,151 @@ the compiler, and is never adopted silently. Proposed for main to file
 
 - ack: 2026-10-14 — **R-19 taken** (R17-b′'s site facts: `mf_site.body`, the call mode; the start hook, the activation's origin text; `site_kind` gated on [REGIME-LANDINGS]; `mf_measures` after [MEASURE-SET], the kit's TSV meanwhile). Trigger: R17-b′'s D6 panel outcome. It queues behind that panel, which starts once regime_eval's panel reports.
   - **Branching note:** lane/memfn-r17 carries R17-b's code at abi 77, and merging today's main (abi 78, B3) conflicts in 17 files (code, abi pins, specs). The merge was ABORTED, not resolved. R17-b′ supersedes R17-b's code, so the R17-b′ build gets a FRESH branch cut from a main that contains R-19 (one branch per delivered unit), carrying only the reusable kit pieces forward. lane/memfn-r17 stays the design/record branch until then (docs, reports, journal, ledger). Its docs-only content can be merged into main independently whenever you want it.
+
+- ack: 2026-10-14 — **R-20 taken** ([MEASURE-SET] M0's kit seams R-MS1..R-MS5, measure_sets.md rev 2.1). It is QUEUED into the R17-b′ build. R-MS1, 2, 3 and 5 land with R17-b′ (M0's trigger); R-MS4's keys land at M0 and its safe directions at M2. That build waits on R17-b′'s D6 panel, which follows regime_eval rev 2.2.
+  - **D157 check: no presumption found.**
+    - The set arrives as kit rows only, the kit sees a NULL row as absent, and pcrec computes no threshold.
+    - `consulted` is one boolean, not a per-key narration.
+    - The kit owns the form-hash definition and the canonical instance (§2.4): the body for a fixed canonical site, with prefix, identifiers, comments and blank lines normalized.
+    - Reader declarations and method cards are the kit's own data.
+  - **One note for the record:** the form hash covers the kit's emitted body only. A timing that measures a form through a pcrec-emitted consumer is staled by the `pcrec:<id>` dep, as §2.4 already provides. The kit's cards will declare that dep for every quantity measured through an engine consumer: every PF/DFA-hat/VM-hat site quantity is one.
+  - **Interim set TSV:** it takes measure_sets §1's canonical shape (`#section` header / cards / rows / cells / members) from its first commit, so it loads unchanged when [KNOW-SRC] lands.
+  - **Kit-side sabotage ids:** requested when the R17-b′ build is briefed (with S911-S922 already allocated).
+
+- notice: 2026-10-14 — **regime_eval rev 2.2 merged (lane/memfn-r17 @ b741e0b07): the real J1 population and a LEAN plan.**
+  - **Population** (estimated before compile; regime_eval/rev22_population.py): of the 177 blinded questions, **54 (31%) reach the finder table.**
+    - **116 are OTHER:** 92 start with a single literal byte (the `pf_memchr` path) and 24 with `(?m)^` (MLINE).
+    - The rest: 2 UNREACHED, 1 NOSITE, 4 GATE-EXCLUDED (short Greek/Hebrew pools), 0 REFUSE. 5 `ucp` questions are at risk.
+    - So P-RT (≥ 40%) will read REFUTED.
+    - TUG may hold NO cells (it depends on the activation reading), and LINER has only 7-20 patterns.
+  - **Corpus caveats applied:**
+    - per-cell `eol` labels (hadoop.log and zookeeper.log are also CRLF);
+    - salt-derived stratified windows across whole files, with a 16-window floor;
+    - the mislabelled files reported apart;
+    - `periodic-200` / `nul-padded` / `compressed` labels;
+    - the priming disclosure in §5.1, with the headline also printed primed-only and unprimed-only.
+  - **Lean plan, LEADS:** ~131 min in two windows (~69 + ~62), plus grid2 (~56) separately, with ~39 min of resume margin. Six cuts are priced; the full plan on the real population is now ~309 min.
+  - **Power:** G0 DINGHY/LINER, G1 and G3 are powered. TUG is possibly empty in both plans. G2-LINER is UNDERPOWERED at central noise in both plans. The sealed set alone cannot reach LINER's G0.
+  - **J2a:** the byte transfer of the bench's 11 subjects of ≥ 1 MiB, sha-checked against the bench manifest, is the DEFAULT. Importing the bench's libraries is the alternative, pending I-152.
+  - **For main:**
+    - **J1b is OWED.** rwquest delivered one list, and the sealed reserve list needs a second blinded pass, committed hash-only.
+    - **Coverage finding (§R.2 item 8):** two thirds of real questions route through single-byte memchr or MLINE, outside the finder table.
+  - **Questions for Frank:** Q-REVAL-12 (lean vs full), Q-REVAL-16 (the constants, plus two proposed loosenings: LINER cap +2; judge a sealed regime below G0 on the pooled population at the final reading) and Q-REVAL-17 (k = 3). The kit manager sends them.
+
+- notice: 2026-10-14 — **sbscope delivered (single-byte FIND scoping, read-only, on main's code): docs/dev/lanes/sbscope_report.md, merged (lane/memfn-sbscope @ 6e3ea9656). It also CORRECTS the kit's coverage numbers.**
+  - **CORRECTION to the rev 2.2 coverage finding** (the kit's own error): "54 reach / 116 OTHER (92 single literal byte, 24 MLINE)" came from rev 2.2's NO-COMPILE estimate. sbscope compiled all 177 on main: 172 compile, 5 are refused, and **170 have a start-search site**. By compiled class:
+    - **one-byte FIND (SB-\*, 74 artifacts):** SB-PF 34, SB-MLINE 23, SB-PRE 19, SB-HANDOFF 6, SB-VMHAT 1;
+    - **set FIND (R-17's scope today):** SET-PF 37, SET-VMHAT 5, about 42/172, roughly 24%;
+    - **presence and handoff (pcscope's side):** RUN-PRE 76, RUN-HANDOFF 50, NEXT-HANDOFF 25;
+    - **OFS:** 46.
+
+    The DIRECTION holds: today's table sees about a quarter, and add. 14 (single byte) plus the one-request clarification (presence and handoff) bring nearly every compiled question under one window request. The "92 of 177" figure should not be cited again. regime_eval's §2.3a population is re-derived from this census at its next revision.
+  - **What pcrec decides today:**
+    - Main emits no memchr text. pcrec picks the form CLASS by HOW it states the site: a one-member set → `term_byte`, no table → the kit's memchr rows; else a table → walk rows. The VM hat always gets a table.
+    - pcrec writes the guard/post-test around the site, and that text differs by form.
+    - Six pcrec readers depend on the scan FORM and need a define-time read-back: G1, R4's density, the handoff K admission, landing L4, the prefilter stamps, and `<string.h>`.
+  - **NONE (no pre-scan):**
+    - answer- and give-up-SAFE on DFA consumers (DFA PF, DFA hat, the hybrid's inner prefilter, MLINE);
+    - NOT safe on the VM hat or the no-DFA-scan VM-route pre-check (GIVEUP1 groups F5, E/F; D158);
+    - a NONE row needs an effort fact (P4).
+  - **Zero-mover at default flags** is possible for one-byte sites given facts F1-F8, but the default no-data rows must reproduce TODAY's count rule, not R17-b′'s R7. That needs a ruling and an UNMEASURED-DEFAULT label. `-fcomments` moves unless the kit takes the PF comment.
+  - **libc** today is memchr and memcmp only. No deny reaches the plain PF memchr rows or MLINE. Three sites have no libc-free row yet: the OFS FUNC body, MLINE's back FIND, and runcmp outside the overlap lengths.
+  - **Requests:** P1-P8 pcrec-side (facts) and K1-K8 kit-side. They are held until pcscope delivers, then merged into ONE request list.
+
+- notice: 2026-10-14 — **ONE window-request list for D161 add. 14 + the one-request clarification: docs/dev/lanes/winreq_report.md (merged @ 49971f3d0). It merges sbscope + pcscope and is ready for main to file.**
+  - **11 pcrec-side items** (§1): 7 facts, 3 pcrec changes, 1 control, deduped from 17 source ids (one dropped).
+    - PR-9 is the PROVEN-FACTS channel (add. 8/10): pcrec's six form-readers consume what the scan proved (bytes proven, whether a scan precedes the engine, the includes), never which form ran (D157).
+    - E-1 (mf_analysis) is a prerequisite.
+    - sbscope's "effort fact" is just `need` on span 0 (contract §2.4 rule 4).
+    - sbscope's P6 (prior mass per term) is dropped: `ppm_*` retire at S3.
+  - **13 kit items** (§3): one-byte rows incl. the libc row with `libc:<name>@<ver>`, the proven-facts report at `mf_define`, the pre-scan row, and the five-pick shadow ports.
+  - **16 window_contract.md revision items** (§4): the presence class, range-level binding, the unconstrained reply as a range, NONE's safety per consumer (not on the VM hat or the no-DFA VM route), and R-18's presence carve-out removed.
+  - **12 rulings, Q-WR-1..12** (§5), with recommendations. Q-WR-7 (the libc-free sites) is already RULED as future-deny work. Kit recommendations:
+    - Q-WR-1: today's count rule as the UNMEASURED-DEFAULT, zero-mover first (main's recommendation, pending Frank);
+    - Q-WR-2: MLINE in scope, with no NONE row until measured;
+    - Q-WR-3: D158 is the single give-up rule, with Q10's stricter posture kept for the first step only;
+    - Q-WR-6: per-candidate cut-off as a permission after D165;
+    - Q-WR-8: ungate `site_kind` for the categorical kinds the default rows read;
+    - Q-WR-9: the pre-scan defaults to KEEP unless `need` is OPTIONAL and E is MEASURED. Its real price is the consumer's saved scan (add. 6's dropped consumer price), deferred to the TUG trigger;
+    - Q-WR-10: land the first step on main's baseline.
+  - **rx_iter sizing (D165):** 24 B (the kit state) → 32 (+ prev span) → 40 (+ an 8 B valid_until for the per-candidate cut-off / presence carry) → 48 if a form byte lives in the buffer. A presence bit fits padding only at 40 B, and needs a position word to be sound.
+  - **Sabotage:** 17 ids are needed. S911-S922 are already spoken for by R17-b′, so the kit asks for a FRESH 17 (from S964, after the highest cited S963; verify against tests/mech at filing).
+  - Scope note: the lane briefly wrote and deleted a /tmp scratch file; nothing remained.
+
+- ack: 2026-10-14 — **R-21 taken** (main 90fadc01b: PR-1..PR-11 from winreq §1.2, steps ST1-ST6, sabotage S964-S980). Main's answer-free rulings are noted: Q-WR-4 (withhold presence at ST3), Q-WR-5 ((a), then (b) behind its own deny), Q-WR-8 (ungate `site_kind` for ST2's categorical kinds; S3 replaces `consumer`), Q-WR-10 (ST2 on main's baseline; R17-b′'s set-site move is its own abi event; ST3 after E-1), Q-WR-11 (a method-neutral PF comment) and Q-WR-12 (the row move and its `used`/deny flip in one commit).
+  - **Where it went:** the kit folds R-21 into the R17-b′ design note's revision, alongside R-19/R-20. That covers the single-byte stops, the merged presence + find request, the proven-facts channel and the window_contract revision items. The revision waits on Frank's Q-WR-1/2/3/6/9, because Q-WR-1 sets the default rows. A D6 panel follows the revision, then the build on a FRESH branch cut from main.
+
+- notice: 2026-10-14 — **regime_eval rev 2.3 + 2.4 merged (lane/memfn-r17 @ eda3adc8d). Frank's Q-REVAL-12/16/17 rulings and the [KNOW-SRC] ruling are applied.**
+  - **The plan:** the lean plan is THE plan, and the LINER cap + 2 and the pooled final reading are RULED.
+  - **k is a visible lever:** EP21, overridable with `--cb-k=`, printed in every report beside the k = 2/4 counts.
+  - **The [KNOW-SRC] kind** `evaluator-params`, file `docs/design/memfn/regime_eval/regime-eval.evaluator-params.tsv` (sections header / params / bindings):
+    - 62 harness thresholds (none is a compiler number, so nothing goes to limits.def);
+    - 4 DERIVED rows moved to the kit's measurement set: EP14 r_in, EP16 w_call, EP30 ν, and EP58 (a derived view). The kit CONFIRMS the proposed keys `kit.reval_r_in.*`, `kit.reval_w_call` and `kit.reval_nu.<slot>`, with method cards owed under R-MS5;
+    - 6 plan-arithmetic rows stay script literals.
+  - **Hash and diff:** the prereg hash is the kind's digest, `regime-eval@1:<digest16>`, the report diff is `knowledge_census.sh evaluator-params OLD NEW`, and the listing is `--list-evaluator-params`.
+  - **CAVEAT:** the file's `values_digest` was computed BY HAND (FNV-1a-64, domain `pcrec-eparm-1`) and is UNVERIFIED until [KNOW-SRC]'s loader exists. The kit treats it as a placeholder and recomputes it with the real loader before E5's prereg commit. Main: please confirm the digest domain/format belongs to [KNOW-SRC]'s spec rather than the kit's.
+  - **Overrides:** advisory only (exit 3, `advisory/`), and `--final` refuses any override.
+
+- notice: 2026-10-14 — **R17-b′ design REV 2 delivered (design only): docs/design/memfn/r17b_prime.md + docs/dev/lanes/r17bp3_report.md, merged into lane/memfn-r17 @ 158b83a85. Its D6 panel is next (the next kit session). Under Frank's BUILD HOLD nothing is built.**
+  - **Baseline:** main (abi 78, MF_SITE_ABI 10). R17-a/R17-b are PORTED steps.
+  - **Scope:** set FIND; one-byte stops (PF, DFA hat, hybrid, MLINE); presence pre-checks and handoffs. Each search entry makes ONE window request. OUT: OFS, the ADVANCE/VERIFY sites, the compound route.
+  - **Table:** `fd_rows[]` with a SLOT column, 21 rows: 15 FIND (F0 NONE, F1 measured-libc, R0-R8, D1, the D2 runs, R7/R7s) and 6 PRES (P0-P4, P9). D1 + R7 = Q-WR-1's UNMEASURED-DEFAULT. 18 rows lock at B4; F0/F1/P1 are formal additions at B5.
+  - **Step plan:**
+
+    | step | content | movers | MF_SITE_ABI |
+    |---|---|---|---|
+    | B0 | port R17-a | zero | 11 |
+    | B1 | ST1 + R-19 + R-20 kit half + E3: table, pick fn, trace-only shadow, 6 denies; floor 6→12 | zero | 12 |
+    | B2 | ST2, one-byte routed | zero | 13 |
+    | (E-1) | main's S1 event | | |
+    | B3a | presence shadow, five-pick comparator at 100% | zero | 14 |
+    | B3b | presence + handoff routed | zero artifact movers; registry event (bit 45 → `--memfn=no-pres-set-lead`) | |
+
+    That completes the FIRST DELIVERY. Then grid2 and the E4-E8 judge. **B4** is the routing commit = LOCKDOWN: the ONE censused mover and ONE pcrec abi event. B5-B9 follow (measured rows, SIMD, the libc deny, dispatch, R17-b″).
+  - **Contract:**
+    - a PRESENCE span class (omin from the match start; member_order; head_max);
+    - range binding once per activation; EMPTY = NOMATCH, decided first;
+    - an unconstrained reply [lo, n), legal iff span 0 is OPTIONAL or absent;
+    - proven facts (proven0 / scan_exists / includes / pres_kept) mapped to pcrec's six readers;
+    - a K65 table per consumer;
+    - C-1..C-16 mapped.
+  - **Measurements:** 23 families, 8 ABSENT (M16-M23: dispatch, one-byte libc/libc-free crossovers, NONE's g threshold, the pre-scan gate). Cards kit-grid@2.
+  - **GO REQUEST for Frank (via main): zen4-grid2.** ONE slot of ≈ 88 min required, ≈ 96 min with the optional items. It carries:
+    - 149 streamed fit groups for the evaluator;
+    - dispatch twins;
+    - one-byte crossovers;
+    - NONE;
+    - the optional F2 perf pass;
+    - the paranoid suggestion.
+    It needs a small harness build (grid1 extension) first, which is ALSO under the hold. Q-R17P-9 asks for streamed-refit (96 min) against grid1-condition + streamed (176 min); the recommendation is 96.
+  - **New questions for Frank/main** (Q-R17P-9..14, each with a recommendation in §9): grid2's extent; S = 48 B if pcrec's K5 row retires, else 64; the landmark admission stays pcrec's; the PF comment rides B4; zero-mover routing may precede the judge; the `libc:` dep owner.
+  - **Sabotage:** S911-S922 and S964-S980 mapped per step. B6 (SIMD) will need its own ids.
+
+- notice: 2026-10-14 — **The kit session is PAUSING.** Main is closed. Kit branch: lane/memfn-r17 (the record branch; it does NOT merge cleanly into main: old R17-b code at abi 77). Builds are fresh branches from main.
+  - **Nothing running.**
+  - **Waiting on Frank (via the next main):**
+    - the zen4-grid2 go, plus Q-R17P-9 (its extent);
+    - Q-R17P-10..14;
+    - the build go for R17-b′ B0-B3b;
+    - the I-152 bench answer (J2a default = byte transfer).
+  - **Docs main may want merged:** a docs-only branch can be re-cut from main like lane/memfn-docs (already merged). It would carry regime_eval rev 2.4, r17b_prime rev 2, the scoping reports, winreq, finder_history and this ledger.
+
+- ack: 2026-10-16 — **D167 taken** (main 9a0bc65e9 / 063b4a4b4: build hold lifted; zen4-grid2 GO under Q-R17P-9 (B); R17-b′ build GO, first delivery B0-B3b, LOCKDOWN at B4; Q-R17P-10..14 as ruled). Where it went:
+  - the new kit branch **lane/memfn-fd**, cut from main @ 063b4a4b4. lane/memfn-r17 stays the record branch. The first commit is the kit docs sync (lane/fddocs @ 90958d846: r17b_prime rev 2, regime_eval rev 2.4, finder_history, the winreq/sbscope/pcscope reports, this ledger);
+  - **B0** is building in lane fdb0 (opus): the R17-a seam ported to main, MF_SITE_ABI 10→11, zero movers, no pcrec abi event;
+  - **grid2's prep** is building in lane grid2p (sonnet): the grid1→grid2 harness plus a DRY run. The timed slot will be asked of main;
+  - **E-1** (agreed with main by message): B1 declares `mf_analysis` on `mf_art_begin`, NULL-tolerant and read by no kit row before B3a. Main's E-1 fills it after B2 merges, with no kit edit. Main owns window_contract rev 3 (C-7/C-8), ready before B2;
+  - R17-b′ rev 2's D6 panel is running (4 critics). It folds into the build and does not gate B0.
+
+- notice: 2026-10-16 — **R17-b′ rev 3 + panel r1 delivered on lane/memfn-fd (a8ee399fe); main's Q-R17P-15..25 answers taken** (Q-19 amended: a working alias or a refusal, never a silent no-op; Q-21 follows D163 add. 8's resolved layout controls; S1017-S1026 allocated). B1 is briefed after B0 merges. run_axes' `--memfn=` arm goes to a kit lane under emit_sweep's four terms.
+
+- done: 2026-10-16 — **R17-b′ B0 (the R17-a seam on main), with the kit docs, sweeparm and comppin: branch lane/memfn-fd.** Report: docs/dev/lanes/fdb0_report.md (+ sweeparm_report.md, comppin_report.md, fddocs_report.md). MF_SITE_ABI 10→11; no pcrec abi event (78).
+  - Validation, on the B0 code (977fea388 / 2f492bbc8):
+    - make test GREEN, 70/70 sections, 3202 s;
+    - mech, 57 rows (51 derived src + S526 S619 S681 S682 S722 S803): all `unexpected: 0` (S284 undetected as declared);
+    - emit_sweep 0 movers on every arm, including the FLOORED `--extra=-fmemfn-simd` and `-fcomments` (sweeparm, S981/S982);
+    - test-memfn-g2-full: 199,850,927 passed / 0 failed;
+    - S846-S849 solo DETECTED.
+  - The branch also carries main @ 353249282 (merged by comppin: strict green, spec-history 145/0) and the measured COMPOSITION_EXTRA_PINS for both kit arms (37/106 each).
+  - Also on the branch: R17-b′ rev 3 + the panel record, and the grid2 harness at rev 3 (not run).
+  - Still OWED, to main or later: the N2 census on main+B0 (re-reads pf_walk); main's precheck_assign_byte PLACEHOLDER floor (class a, main's).

@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 10  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 11  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -63,7 +63,15 @@
                            10 (R4e' batch 1, R-13, 2026-10-09; renumbered
                            after RQ-2 landed first): mf_sink.simd_open and
                            simd_close, appended LAST (§R4.9.2.4). No
-                           MF_VOCAB move. */
+                           MF_VOCAB move. 11 (R17-a, R-17's zero-mover
+                           seam, setfind.md §11.1): the window fields
+                           mf_pred.window_stated/move_back/overshoot (W0-W2)
+                           and mf_site.decl_point (W4), each appended LAST;
+                           FIND's result named the window's beginning (W3);
+                           fn_ref's STMT reading, the storage stem (W5);
+                           mf_result.reads_table/includes; the entries
+                           mf_locals and mf_defined. No MF_VOCAB move; no
+                           pcrec byte moved. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -96,6 +104,11 @@
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
 #define MF_NO_PRED        0xFFu       /* ret_pred / plan_hint: none            */
+/* The window fields' reserved "no bound" values (W1/W2, MF_SITE_ABI 11):
+ * RESERVED for R-18; no row serves either today, so a site stating one is
+ * refused, naming the field. */
+#define MF_MOVE_UNBOUNDED INT32_MAX   /* mf_pred.move_back: no bound           */
+#define MF_OVER_UNBOUNDED UINT32_MAX  /* mf_pred.overshoot: no bound           */
 
 /* ---- the operation vocabulary (§8.2, §14.0, §14.3) ----------------------- */
 
@@ -123,7 +136,21 @@ typedef enum {
                                lo + d > n. Every other FIND, and every other
                                op, keeps [lo, n - end_back). (A later "resume
                                at hit + 1", [ENG-TACTICS], is this range;
-                               nothing here is designed for it.)            */
+                               nothing here is designed for it.)
+                               THE WINDOW (W3, MF_SITE_ABI 11, setfind.md
+                               §2.2): a STMT / ASSIGN FIND's result is the
+                               WINDOW's beginning, never below lo. With
+                               back = pred.move_back - d_min (d_min the
+                               least term offset, a constant of the site)
+                               and c the first candidate the range admits:
+                               back == 0, c; back > 0, c - lo >= back ?
+                               c - back : lo (never formed below lo, never
+                               wrapped); move_back MF_MOVE_UNBOUNDED, lo.
+                               back < 0 is refused (R-18 defines it). A
+                               miss is unchanged. Every row today serves
+                               back == 0 only (the window IS the candidate),
+                               so the result is c, as before. Not extended
+                               to ALL_PRESENT's ret_pred reply            */
     MF_OP_SKIP,             /* first cand in [lo,hi) whose byte is NOT in the
                                one SET term, which sits at offset 0 (RULED
                                Q-G2-9: any other offset is refused). RULED
@@ -285,7 +312,15 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
                                        A FUNC site's OWN name is always its
                                        `site.pred.fn_ref`, for every op
                                        (K-1); a FUNC site stating 0 states
-                                       no name and is refused (R1)           */
+                                       no name and is refused (R1). On a
+                                       STMT site (W5, MF_SITE_ABI 11) it is
+                                       the STEM of every identifier the kit
+                                       declares for the site, fn_name's text
+                                       (`<holding function>_pf`): the kit
+                                       declares only `<stem>__<role>`, pcrec
+                                       reserves that namespace, and the stem
+                                       is opaque (written through `puts` /
+                                       `vprintf` only, never inspected)     */
     /* THE POSITION RANKING (RQ-2, D157, MF_SITE_ABI 9; appended LAST): a
      * FACT pcrec states about the RUN term plan_hint names. rank_n positions
      * of that term (offsets within it), ordered by pcrec's prior rate,
@@ -298,6 +333,29 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
     uint8_t  rank_n;                /* 0..MF_RANK_MAX                         */
     uint16_t rank_pos[MF_RANK_MAX];
     uint32_t rank_ppm[MF_RANK_MAX];
+    /* THE WINDOW (W0-W2, MF_SITE_ABI 11, setfind.md §2.1-§2.2; appended
+     * LAST): the predicate is ONE SPAN, positions d_min..d_max (d_min the
+     * least term offset), and these state where the WINDOW the site answers
+     * begins relative to it. FACTS pcrec states on every FORWARD FIND, and
+     * only there (D161's degenerate case; R-18 widens them).
+     *   window_stated  1: move_back and overshoot are STATED. 0 is the
+     *                  zero-fill and means UNSTATED, never "move-back 0": a
+     *                  forward FIND stating 0 is REFUSED, and so is 1 on any
+     *                  other site (a non-FIND, a reverse site, a preds[]
+     *                  entry), where no window is defined.
+     *   move_back      bytes from the span's beginning (c + d_min) back to
+     *                  the window's beginning, SIGNED: negative, the window
+     *                  begins after the span's beginning (MLINE's term at
+     *                  -1 states -1). MF_MOVE_UNBOUNDED is reserved. The
+     *                  window IS the candidate exactly at move_back ==
+     *                  d_min; back = move_back - d_min < 0 is refused.
+     *   overshoot      how far the window's beginning may lie before the
+     *                  match's; MF_OVER_UNBOUNDED reserved. omin =
+     *                  move_back - overshoot is derived, no field.
+     * Under window_stated 0 both must be 0 (refused otherwise). */
+    uint8_t  window_stated;
+    int32_t  move_back;
+    uint32_t overshoot;
 } mf_pred;
 
 typedef struct {
@@ -364,6 +422,20 @@ typedef struct {
        OBLIG: MF_FOLD_NONE is a stated value (exact), set by every MISMATCH
        builder; on every other site it must be 0                            */
     uint8_t         fold_kind;
+    /* THE DECLARATION POINT (W4, MF_SITE_ABI 11, setfind.md §7; appended
+       LAST): a HOST CAPABILITY. 1: pcrec calls mf_locals for this site
+       exactly once, at a point in the function holding every use that
+       DOMINATES every use (no jump skips it), and the storage it places
+       there is automatic and lives for one activation of that function; the
+       site's `s`/`n` and bytes s[0..n) do not change over that lifetime.
+       0: no point is offered (a row that keeps storage declines, R1).
+       The kit may write nothing there. With 1 the kit refuses, naming
+       `decl_point`: an mf_use before the site's mf_locals, a second
+       mf_locals ("placed twice"), and at mf_art_end a site whose mf_locals
+       never came ("never placed") or whose storage no use followed
+       ("placed, never read"). OBLIG: 0 is a stated value, set by every
+       builder; 0 or 1, else refused                                       */
+    uint8_t         decl_point;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -569,6 +641,16 @@ typedef struct {
     char     form_id[48];   /* opaque; consumers never parse it (§R4.3.3)      */
     uint32_t handle;        /* the site's id for mf_call / mf_use              */
     uint8_t  moved;         /* G2's property test only; never a pcrec guard input */
+    /* What the DEFINE decided, read through mf_defined (MF_SITE_ABI 11,
+       setfind.md §11.1 item 3; appended LAST). A REPORT of the chosen form,
+       never a prediction: pcrec defines before it emits anything the form
+       may read, so no selection runs twice. */
+    uint8_t  reads_table;   /* 1 iff the chosen form's text names a table of
+                               pcrec's (a SET term's table_ref, rule 7):
+                               pcrec emits the site's table iff this is 1 */
+    uint32_t includes;      /* the MF_INC_* bits the chosen ROW's text can
+                               need (a row-level bound: the art's own
+                               mf_includes stays the end-of-art control)   */
 } mf_result;
 
 typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits) */
@@ -584,6 +666,8 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
 #define mf_art_error      MF_NS(art_error)
 #define mf_define         MF_NS(define)
 #define mf_use            MF_NS(use)
+#define mf_locals         MF_NS(locals)
+#define mf_defined        MF_NS(defined)
 #define mf_emit           MF_NS(emit)
 #define mf_call           MF_NS(call)
 #define mf_flush_helpers  MF_NS(flush_helpers)
@@ -601,7 +685,8 @@ typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits
  * at mf_define). NULL only when the arena failed. */
 mf_art  *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
                       uint64_t denies);
-/* End it: fails if a defined handle was never used (§14.0 item 1).
+/* End it: fails if a defined handle was never used (§14.0 item 1), and, on
+ * a `decl_point` site, if its mf_locals never came or no use followed it.
  * CHOSEN: the design asserts "at artifact end" but names no end call. */
 int      mf_art_end(mf_art *);
 const char *mf_art_error(const mf_art *);
@@ -625,6 +710,18 @@ int mf_define(mf_art *, const mf_site *, const mf_hooks *def,
               mf_sink *file_scope, uint32_t *handle);
 int mf_use   (mf_art *, uint32_t handle, const mf_hooks *use,
               mf_sink *body, mf_result *res);
+/* THE STORAGE POINT (MF_SITE_ABI 11, setfind.md §7.1): writes the
+ * declarations (with initializers) of site `handle`'s kit-owned local storage
+ * into `body` at `at`'s indent, or nothing when the chosen form keeps none.
+ * Called once per site whose `decl_point` is 1, before its first mf_use, at
+ * the point that site fact promises. It BINDS the site's `s` and `n`: `at`'s
+ * texts must equal the define's, byte for byte (a differing one is refused,
+ * naming it). The order on every route: mf_define (file scope) -> mf_locals
+ * -> pcrec's table iff mf_defined says the form reads it -> mf_use. */
+int mf_locals(mf_art *, uint32_t handle, const mf_hooks *at, mf_sink *body);
+/* What site `handle`'s define chose (mf_result: form_id, handle,
+ * reads_table, includes; `moved` 0). Valid from the define on. */
+int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
 /* = mf_define + mf_use, for a site whose parts all sit at one point */
 int mf_emit  (mf_art *, const mf_site *, const mf_hooks *,
               mf_sink *body, mf_sink *file_scope, mf_result *res);

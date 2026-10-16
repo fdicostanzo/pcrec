@@ -115,6 +115,33 @@ PY
         || bad "variant plant: rc=$rc (want 1 with a TAG FLOOR and a REACH FLOOR VIOLATION line)"
 fi
 
+# [COMPPIN] the two non-start-family arms carry their own composition entries:
+# clean at their floors with the floors APPLIED (no NOT APPLIED line), and each
+# floor raised by one goes red. (A dropped FLAG is S981/S982's: the DIFFER
+# manifest does not differ.)
+for arm in -fmemfn-simd -fcomments; do
+    csweep --extra=$arm; rc=$?
+    [ "$rc" = 0 ] && ! grep -q 'COMPOSITION FLOORS: NOT APPLIED' "$T/log" \
+        && ok "composition floors: the $arm arm is clean with its floors APPLIED" \
+        || bad "$arm composition rc=$rc: $(grep 'VIOLATION\|NOT APPLIED' "$T/log" | head -3)"
+    arm_pin=$(python3 - "$here" "$arm" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+d = es.COMPOSITION_EXTRA_PINS[(sys.argv[2],)]
+print(d["composition_producing_floor"], d["composition_artifacts_floor"])
+PY
+)
+    set -- $arm_pin
+    for which in producing artifacts; do
+        cur=$1; [ "$which" = artifacts ] && cur=$2
+        cp "$ES" "$T/es_plant.py"
+        sed -i.bak "/(\"$arm\",): {/,/}/ s/\"composition_${which}_floor\": $cur/\"composition_${which}_floor\": $((cur+1))/" "$T/es_plant.py"
+        ESX="$T/es_plant.py" csweep --extra=$arm; rc=$?
+        [ "$rc" = 1 ] && grep -q "COMPOSITION ${which^^} FLOOR VIOLATION: $cur < $((cur+1))" "$T/log" \
+            && ok "plant: $arm $which composition floor $cur -> $((cur+1)) goes red" \
+            || bad "plant $arm $which floor +1: rc=$rc (want 1 with a $which VIOLATION line)"
+    done
+done
+
 # [DEC-FALLBACK] B0: the tally streams over hand-written witnesses (decoded
 # --list-source escapes). Each line below is the expected tag tally of one
 # stream, read from the compiler at B0's base, so an arm lost in the stream's

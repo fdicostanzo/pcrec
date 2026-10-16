@@ -1,0 +1,14 @@
+arms: 126 (cell, arm) pairs, 200 groups, 1006 items, 0 problems
+oracles: 183 (cell, subject, mode) lines from libpcre2 10.46
+groups: 200
+counts: 690 rows in <worktree>/build/full/counts.tsv
+landing fidelity (G): 84 ok, 0 FAIL
+reach (U): 138 site rows, 0 unreached
+legs OK:   2809
+  O 191  R 806  L 806  C 1006  E 0  N 0  F 0  A 0
+legs FAIL: 0
+excluded (cell arm): 0
+check: done wall=69s
+reach (U2): 50 one-byte groups, 0 FAIL
+pickable arm failures: 0
+grid2 check: OK

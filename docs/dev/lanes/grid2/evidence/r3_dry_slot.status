@@ -1,0 +1,35 @@
+SLOT_START 2026-10-16T11:39:41-04:00 method=kit-grid@2 dry=1 host=frank-desktop cpu=13 launches=1 rerun_extra=0 loadmax=999 gov=performance out=/home/pcrec/projects/pcrec/worktrees/grid2r3/build/dry
+COMPILER compiler_sha256=8952969605e87ba3051a3b08d40f2c58d855d828f4137fdc8695501fe72aaf5f compiler_abi=77 compiler_commit=c90d65e53a397aa300f6472f7f017403d8624e53 compiler_branch=lane/memfn-r17 
+BUILD_START 2026-10-16T11:39:42-04:00
+BUILD_END rc=0 2026-10-16T11:40:27-04:00
+BUILD build: done
+CHECK_START 2026-10-16T11:40:27-04:00
+CHECK_END rc=0 2026-10-16T11:40:34-04:00
+CHECK grid2 check: OK
+CHECK_OK arms: 69 (cell, arm) pairs, 25 groups, 110 items, 0 problems check.log=2026-10-16 11:40:34
+QUIET load1=13.59 waited=0s ok
+COUNTS counts: 60 rows in /home/pcrec/projects/pcrec/worktrees/grid2r3/build/dry/counts.tsv
+ESTIMATE estimate ALL groups=23 launches=143 wall=1.5 min
+F1_START 2026-10-16T11:40:34-04:00
+F1_END rc=0 2026-10-16T11:41:04-04:00
+F1 time.sh: COMPLETE rows=37 groups=6 reruns=0 xreruns=0 requeued=0 wall=29s
+F3_START 2026-10-16T11:41:04-04:00
+F3_END rc=0 2026-10-16T11:41:34-04:00
+F3 time.sh: COMPLETE rows=40 groups=7 reruns=0 xreruns=0 requeued=0 wall=28s
+OB_START 2026-10-16T11:41:34-04:00
+OB_END rc=0 2026-10-16T11:42:04-04:00
+OB time.sh: COMPLETE rows=34 groups=7 reruns=0 xreruns=0 requeued=0 wall=28s
+F2_START 2026-10-16T11:42:05-04:00
+F2_DONE item=6 rows=21 wall=3s 2026-10-16T11:42:08-04:00
+F2_END rc=0 2026-10-16T11:42:10-04:00
+F2 f2perf: COMPLETE rows=21 wall=3s
+F2S_START 2026-10-16T11:42:10-04:00
+F2_DONE item=7 rows=4 wall=1s 2026-10-16T11:42:11-04:00
+F2S_END rc=0 2026-10-16T11:42:15-04:00
+F2S f2perf: COMPLETE rows=4 wall=1s
+TRIG_START 2026-10-16T11:42:15-04:00
+TRIG_END rc=0 2026-10-16T11:42:25-04:00
+TRIG time.sh: COMPLETE rows=9 groups=3 reruns=0 xreruns=0 requeued=0 wall=7s
+DRY_ESTIMATE ESTIMATE required=51 / 75 min with-optional=55 / 79 min at 3.4 / 5 launches (+ quiet-gate waits; spec 91 / 129 and 99 / 138)
+WALL 164s
+COMPLETE 2026-10-16T11:42:25-04:00 required=ok optional=done

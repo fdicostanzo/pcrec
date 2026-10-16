@@ -24,3 +24,4 @@
 Items in the ledger pair are numbered and never deleted; a superseded
 item says so in place. Live coordination stays interprocess
 (SendMessage); these files carry what must survive a session boundary.
+- `finder_history.md` — the edit history of the kit's candidate-finder table rows (D161 add. 11/13): one line per row edit with evidence and commit; main mirrors it in docs/design/regime_tables.md. Formal ruled diffs after LOCKDOWN.

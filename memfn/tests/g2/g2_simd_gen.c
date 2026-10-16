@@ -62,6 +62,27 @@
 
 #include "memfn.h"
 
+/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
+ * and today's window IS its candidate: window_stated 1, move_back the least
+ * term offset (d_min), overshoot 0. pcrec's builders state it; G2 states it
+ * at the kit call, after every perturbation, so a refusal case keeps the
+ * refusal it was written for. A site with no terms, or that states a window
+ * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+static mf_site g2_win(const mf_site *s)
+{
+    mf_site w = *s;
+    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
+        int32_t d = w.pred.term[0].offset;
+        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
+            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
+        w.pred.window_stated = 1;
+        w.pred.move_back = d;
+        w.pred.overshoot = 0;
+    }
+    return w;
+}
+#define G2W(s) (&(struct { mf_site v; }){ g2_win(s) }.v)
+
 /* ---- text buffers --------------------------------------------------------- */
 
 typedef struct { char *p; size_t len, cap; long guarded; int open; } tb;
@@ -336,7 +357,7 @@ static int define_ok(vsite *u, const char *name, const mf_site *s)
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = u;
     uint32_t handle = 0;
-    int ok = mf_define(art, s, &h, &sd, &handle) == 0;
+    int ok = mf_define(art, G2W(s), &h, &sd, &handle) == 0;
     free(bd.p);
     snprintf(u->name, sizeof u->name, "%s", keep);
     return ok;
@@ -360,7 +381,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = v;
     uint32_t handle = 0;
-    if (mf_define(art, &v->site, &h, &sd, &handle) || mf_call(art, handle, &h, &sc)) {
+    if (mf_define(art, G2W(&v->site), &h, &sd, &handle) || mf_call(art, handle, &h, &sc)) {
         fprintf(stderr, "g2v: site %u (%s) refused: %s\n", v->id, class_name[v->cls],
                 mf_art_error(art));
         return -1;

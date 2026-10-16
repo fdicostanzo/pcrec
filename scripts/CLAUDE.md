@@ -419,6 +419,18 @@ pcrec (the Makefile owns that).
   `tests/emit_sweep.py.test` (the arms over their own manifests, ~5 s); the
   mech `emitsweep` arm runs it. See `docs/dev/lanes/stc0_report.md`.
 
+  **THE `-fmemfn-simd` AND `-fcomments` ARMS ([SWEEPARM], 2026-10-16).** Both
+  flags have DIFFER_PINS cells (byte and utf8, c-default and c-vm, stamp floor
+  0: neither moves a start stamp), so `--extra=-fmemfn-simd` /
+  `--extra=-fcomments` (and `--arms start`, which runs every DIFFER_PINS arm)
+  can prove ZERO MOVERS with the flag on. Floors are MEASURED at lane/memfn-fd
+  39f13e397 (byte simd 20/19, comments 4243/4244; utf8 simd 15/15, comments
+  4255/4257); witnesses `(?i)cat` (renders the guarded `rx_reqrun__w16`
+  helper) and `a` (the comment blocks). The `-fcomments` floor is "nearly
+  every pattern" by nature; the manifest is what proves the flag arrived.
+  Planted by mech S981 / S982 (`opt_argv` drops that one flag; detector
+  `tests/emit_sweep.py.test`). See `docs/dev/lanes/sweeparm_report.md`.
+
   **ONE POOL ACROSS THE STREAMS ([admin1008b], 2026-10-07).** The argv
   streams (1, 2, 3, 6) and the composition stream used to run as a pool each,
   waited out before the next began, so every stream's slowest compile (the
@@ -457,7 +469,8 @@ pcrec (the Makefile owns that).
   pins' python source. See `docs/dev/lanes/decfbB0_report.md`.
   **FLOORS ARE PER ARM ([SWFIX], 2026-10-16).** The plain composition floors
   (`PINS`) apply to the plain arm only; an `--extra` arm is held to its own
-  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`), and an arm with no
+  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`, and [COMPPIN]
+  `-fmemfn-simd` / `-fcomments`, 37 / 106 each, planted +1 in the self-test), and an arm with no
   entry prints `COMPOSITION FLOORS: NOT APPLIED` rather than borrowing the plain
   numbers (the `--engine=vm` arm read 86 < 100 ref-vs-ref). `VARIANT_PINS` was
   re-pinned at b72291d84 with each fall attributed to a compiler event in the

@@ -1,0 +1,123 @@
+# grid2 time.sh method=kit-grid@2 Fri Oct 16 03:44:55 PM UTC 2026 frank-desktop phase=F3 load1=12.33 gov=performance cpu=15 launches=3 rerun_extra=2 rerun_null=0.031 cross_launch_trigger=on base_copies=3 loadmax=999 loadbreach=999
+# ns = ns per pass (median over launches of each launch's 7-round median); delta = arm - base; floor = |base#b - base| (A/A); aac = |base#c - base| (the held-out A/A);
+# spread = per-launch min..max as % of the arm's median; per_match = delta / matches (all mode); verdict NULL when |delta| <= floor
+# raw per-launch values: /home/pcrec/projects/pcrec/worktrees/grid2r3/build/dry/tmp/xtest/raw_xtest.tsv
+cell       subject                                mode  arm              ns         base       delta     floor       aac        spread  per_match verdict
+# rerun: f3-dig g2-f3-dig-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=943.949: 1; cross-launch spread of tw2 beyond max(A/A floor, NULL)=943.949: 1): +2 launches
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first walk#b     30518.59     30449.97      +68.62     68.62  20510.55  -5.8..+72.9%          - A/A
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first walk#c     50960.52     30449.97   +20510.55     68.62  20510.55 -62.9..+29.3%          - A/A
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first V1         20701.49     30449.97    -9748.48     68.62  20510.55  -46.3..+9.3%          - WIN
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first S1          2825.49     30449.97   -27624.48     68.62  20510.55 -24.6..+59.9%          - WIN
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first A1          1634.95     30449.97   -28815.02     68.62  20510.55 -49.0..+76.9%          - WIN
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first tw0        26304.67     30449.97    -4145.30     68.62  20510.55 -40.4..+66.0%          - WIN
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first tw1        11234.80     30449.97   -19215.17     68.62  20510.55 -22.9..+123.2%          - WIN
+f3-dig     g2-f3-dig-n64k-ginf-Lnone-S            first tw2         1935.48     30449.97   -28514.49     68.62  20510.55 -43.5..+37.3%          - WIN
+# group 1 done: f3-dig g2-f3-dig-n64k-ginf-Lnone-S first load1-at-start=12.33 load1-at-end=16.80 waits=0 launches=5
+# rerun: f3-dig g2-f3-dig-n1m-ginf-Lnone-S first (within-launch A/A beyond NULL=14736.6: 1; cross-launch spread of tw1 beyond max(A/A floor, NULL)=92611.6: 1): +2 launches
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first walk#b    567986.06    475374.45   +92611.61  92611.61  28022.42 -13.3..+27.7%          - A/A
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first walk#c    503396.87    475374.45   +28022.42  92611.61  28022.42 -17.9..+57.9%          - A/A
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first V1        318678.23    475374.45  -156696.22  92611.61  28022.42 -24.4..+17.9%          - WIN
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first S1         75530.92    475374.45  -399843.53  92611.61  28022.42 -50.0..+16.1%          - WIN
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first A1         52147.70    475374.45  -423226.75  92611.61  28022.42 -58.6..+63.3%          - WIN
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first tw0       462860.75    475374.45   -12513.70  92611.61  28022.42 -16.1..+82.4%          - NULL
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first tw1       325453.83    475374.45  -149920.62  92611.61  28022.42 -37.0..+48.8%          - WIN
+f3-dig     g2-f3-dig-n1m-ginf-Lnone-S             first tw2        48153.59    475374.45  -427220.86  92611.61  28022.42 -54.5..+98.4%          - WIN
+# group 2 done: f3-dig g2-f3-dig-n1m-ginf-Lnone-S first load1-at-start=16.80 load1-at-end=19.50 waits=0 launches=5
+# rerun: f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=632.94: 1; cross-launch spread of sc0 beyond max(A/A floor, NULL)=7898.97: 1): +2 launches
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first walk#b     28316.39     25647.30    +2669.09   2669.09   3213.99 -17.0..+39.5%          - A/A
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first walk#c     22433.31     25647.30    -3213.99   2669.09   3213.99 -20.0..+26.2%          - A/A
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first V1         16370.08     25647.30    -9277.22   2669.09   3213.99  -9.5..+97.8%          - WIN
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first S1          5533.12     25647.30   -20114.18   2669.09   3213.99 -20.1..+22.0%          - WIN
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first A1          2712.22     25647.30   -22935.08   2669.09   3213.99 -27.5..+32.5%          - WIN
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first tw0        34387.84     25647.30    +8740.54   2669.09   3213.99 -24.8..+34.9%          - LOSS
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first tw1        25397.65     25647.30     -249.65   2669.09   3213.99 -37.3..+26.8%          - NULL
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first tw2         2648.09     25647.30   -22999.21   2669.09   3213.99  -29.0..+9.4%          - WIN
+f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S        first sc0        39459.14     25647.30   +13811.84   2669.09   3213.99 -58.8..+12.8%          - LOSS
+# group 3 done: f3-hex-run g2-f3-hex-run-n64k-ginf-Lnone-S first load1-at-start=19.50 load1-at-end=19.68 waits=0 launches=5
+# rerun: f3-wcls g2-f3-wcls-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=493.513: 1; cross-launch spread of sc0 beyond max(A/A floor, NULL)=493.513: 1): +2 launches
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first walk#b     16260.53     15919.79     +340.74    340.74    564.07  -2.8..+51.5%          - A/A
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first walk#c     15355.72     15919.79     -564.07    340.74    564.07  -5.7..+67.0%          - A/A
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first V1         21392.16     15919.79    +5472.37    340.74    564.07  -5.9..+22.7%          - LOSS
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first S1          4686.02     15919.79   -11233.77    340.74    564.07  -4.7..+21.9%          - WIN
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first A1          2678.76     15919.79   -13241.03    340.74    564.07 -11.2..+93.7%          - WIN
+f3-wcls    g2-f3-wcls-n64k-ginf-Lnone-S           first sc0        15988.95     15919.79      +69.16    340.74    564.07  -5.8..+85.0%          - NULL
+# group 4 done: f3-wcls g2-f3-wcls-n64k-ginf-Lnone-S first load1-at-start=19.68 load1-at-end=18.02 waits=0 launches=5
+# rerun: f3-c020 g2-f3-c020-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=465.776: 1; cross-launch spread of V1 beyond max(A/A floor, NULL)=1002.97: 1): +2 launches
+f3-c020    g2-f3-c020-n64k-ginf-Lnone-S           first walk#b     14022.07     15025.04    -1002.97   1002.97     95.52  -2.6..+80.8%          - A/A
+f3-c020    g2-f3-c020-n64k-ginf-Lnone-S           first walk#c     15120.56     15025.04      +95.52   1002.97     95.52  -9.1..+29.6%          - A/A
+f3-c020    g2-f3-c020-n64k-ginf-Lnone-S           first V1          8731.60     15025.04    -6293.44   1002.97     95.52  -5.4..+53.2%          - WIN
+# group 5 done: f3-c020 g2-f3-c020-n64k-ginf-Lnone-S first load1-at-start=18.02 load1-at-end=17.52 waits=0 launches=5
+# rerun: f3-c001 g2-f3-c001-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=455.703: 1; cross-launch spread of V1 beyond max(A/A floor, NULL)=632.24: 1): +2 launches
+f3-c001    g2-f3-c001-n64k-ginf-Lnone-S           first walk#b     22480.85     18319.84    +4161.01   4161.01   6167.79 -40.0..+17.3%          - A/A
+f3-c001    g2-f3-c001-n64k-ginf-Lnone-S           first walk#c     24487.63     18319.84    +6167.79   4161.01   6167.79 -29.2..+36.3%          - A/A
+f3-c001    g2-f3-c001-n64k-ginf-Lnone-S           first V1          8348.45     18319.84    -9971.39   4161.01   6167.79 -23.2..+69.6%          - WIN
+# group 6 done: f3-c001 g2-f3-c001-n64k-ginf-Lnone-S first load1-at-start=17.52 load1-at-end=16.68 waits=0 launches=5
+# rerun: f3-c110 g2-f3-c110-n64k-ginf-Lnone-S first (within-launch A/A beyond NULL=814.966: 1; cross-launch spread of walk#c beyond max(A/A floor, NULL)=9858.06: 1): +2 launches
+f3-c110    g2-f3-c110-n64k-ginf-Lnone-S           first walk#b     16780.95     23638.78    -6857.83   6857.83   5339.63  -6.1..+77.9%          - A/A
+f3-c110    g2-f3-c110-n64k-ginf-Lnone-S           first walk#c     28978.41     23638.78    +5339.63   6857.83   5339.63 -42.9..+10.0%          - A/A
+f3-c110    g2-f3-c110-n64k-ginf-Lnone-S           first V1         20259.97     23638.78    -3378.81   6857.83   5339.63  -37.4..+6.9%          - NULL
+# group 7 done: f3-c110 g2-f3-c110-n64k-ginf-Lnone-S first load1-at-start=16.68 load1-at-end=16.25 waits=0 launches=5
+
+## counters (counting builds bin/<cell>/<arm>/cnt, one pass, no clock; site(G1) = the cell's site counters, the walk's own)
+cell	arm	subject	mode	counters
+dfa-hat	A1	g2-dfa-hat-n64k-g8-L1k-u-S	all	uses=523831 cold=4096 cache_hit=458295 cache_pass=45941 xcall=0 skipped=2879262 head_hit=0 head_bytes=0 blocks=65536 calls=4160 nbuf=64
+dfa-hat	A3	g2-dfa-hat-n64k-g8-L1k-u-S	all	uses=523831 cold=64 cache_hit=458406 cache_pass=49120 xcall=16467 skipped=2886574 head_hit=0 head_bytes=0 blocks=65425 calls=4160 nbuf=64
+dfa-hat	S1	g2-dfa-hat-n64k-g8-L1k-u-S	all	uses=523831 cold=4096 cache_hit=458295 cache_pass=45941 xcall=0 skipped=2879262 head_hit=0 head_bytes=0 blocks=65536 calls=4160 nbuf=64
+dfa-hat	V1	g2-dfa-hat-n64k-g8-L1k-u-S	all	uses=523831 cold=4096 cache_hit=73426 cache_pass=316361 xcall=0 skipped=1223649 head_hit=0 head_bytes=0 blocks=515800 calls=4160 nbuf=64
+dig	A1	g2-dig-n64k-g8-L1k-u-S	all	uses=526282 cold=4096 cache_hit=460746 cache_pass=45952 xcall=0 skipped=2886978 head_hit=0 head_bytes=0 blocks=65536 calls=4160 nbuf=64
+dig	A1	g2-dig-n64k-g8-L32-u-S	first	uses=292 cold=64 cache_hit=228 cache_pass=0 xcall=0 skipped=1144 head_hit=0 head_bytes=0 blocks=64 calls=64 nbuf=64
+dig	A1	g2-dig-n8-ginf-Lnone-S	first	uses=231 cold=231 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=231 calls=1024 nbuf=1024
+dig	A3	g2-dig-n64k-g8-L1k-u-S	all	uses=526282 cold=64 cache_hit=460847 cache_pass=49107 xcall=17491 skipped=2894404 head_hit=0 head_bytes=0 blocks=65435 calls=4160 nbuf=64
+dig	S1	g2-dig-n64k-g8-L1k-u-S	all	uses=526282 cold=4096 cache_hit=460746 cache_pass=45952 xcall=0 skipped=2886978 head_hit=0 head_bytes=0 blocks=65536 calls=4160 nbuf=64
+dig	S1	g2-dig-n64k-g8-L32-u-S	first	uses=292 cold=64 cache_hit=228 cache_pass=0 xcall=0 skipped=1144 head_hit=0 head_bytes=0 blocks=64 calls=64 nbuf=64
+dig	S1	g2-dig-n8-ginf-Lnone-S	first	uses=231 cold=231 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=231 calls=1024 nbuf=1024
+dig	V1	g2-dig-n36-ginf-Lnone-S	first	uses=727 cold=727 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=3635 calls=1024 nbuf=1024
+dig	V1	g2-dig-n46-ginf-Lnone-S	first	uses=780 cold=780 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=4680 calls=1024 nbuf=1024
+dig	V1	g2-dig-n64k-g8-L1k-u-S	all	uses=526282 cold=4096 cache_hit=74202 cache_pass=317803 xcall=0 skipped=1228636 head_hit=0 head_bytes=0 blocks=517584 calls=4160 nbuf=64
+dig	V1	g2-dig-n64k-g8-L32-u-S	first	uses=292 cold=64 cache_hit=52 cache_pass=140 xcall=0 skipped=436 head_hit=0 head_bytes=0 blocks=256 calls=64 nbuf=64
+dig	V1	g2-dig-n8-ginf-Lnone-S	first	uses=231 cold=231 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=231 calls=1024 nbuf=1024
+f3-c001	V1	g2-f3-c001-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-c020	V1	g2-f3-c020-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-c110	V1	g2-f3-c110-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-dig	A1	g2-f3-dig-n1m-ginf-Lnone-S	first	uses=16 cold=16 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=262144 calls=16 nbuf=16
+f3-dig	A1	g2-f3-dig-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-dig	S1	g2-f3-dig-n1m-ginf-Lnone-S	first	uses=16 cold=16 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=262144 calls=16 nbuf=16
+f3-dig	S1	g2-f3-dig-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-dig	V1	g2-f3-dig-n1m-ginf-Lnone-S	first	uses=16 cold=16 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=2097152 calls=16 nbuf=16
+f3-dig	V1	g2-f3-dig-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-hex-run	A1	g2-f3-hex-run-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-hex-run	S1	g2-f3-hex-run-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-hex-run	V1	g2-f3-hex-run-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-wcls	A1	g2-f3-wcls-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-wcls	S1	g2-f3-wcls-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=65536 calls=64 nbuf=64
+f3-wcls	V1	g2-f3-wcls-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+hex-run	A1	g2-gate-hex-run-S	all	uses=1043915 cold=1043915 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=1043915 calls=1043950 nbuf=64
+hex-run	A1	g2-real-prose-S	all	uses=166298 cold=166298 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=166298 calls=166301 nbuf=16
+hex-run	A3	g2-gate-hex-run-S	all	uses=1043915 cold=64 cache_hit=978930 cache_pass=30669 xcall=1009599 skipped=1866130 head_hit=0 head_bytes=0 blocks=64957 calls=1043950 nbuf=64
+hex-run	A3	g2-real-prose-S	all	uses=166298 cold=16 cache_hit=149901 cache_pass=13151 xcall=163052 skipped=773711 head_hit=0 head_bytes=0 blocks=16384 calls=166301 nbuf=16
+hex-run	S1	g2-gate-hex-run-S	all	uses=1043915 cold=1043915 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=1043915 calls=1043950 nbuf=64
+hex-run	V1	g2-gate-hex-run-S	all	uses=1043915 cold=1043915 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=1048944 calls=1043950 nbuf=64
+hex-run	V1	g2-real-prose-S	all	uses=166298 cold=166298 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=209056 calls=166301 nbuf=16
+o-back	walk	ob_o-back-n64k-g8-L64k-S	all	g2_find calls=524318 bytes=17177726344
+o-fwd	walk	ob_o-fwd-n1m-ginf-Lnone-S	first	g2_find calls=16 bytes=16777216
+o-fwd	walk	ob_o-fwd-n64-ginf-Lnone-S	first	g2_find calls=1024 bytes=65536
+o-fwd	walk	ob_o-fwd-n64k-g8-L64k-S	all	g2_find calls=524546 bytes=17191316438
+o-hat	walk	ob_o-hat-n64k-g8-L64k-S	all	g2_find calls=524612 bytes=17193247483
+o-vm	walk	ob_o-vm-n64-ginf-Lnone-S	first	g2_find calls=1024 bytes=65536
+o-vm	walk	ob_o-vm-n64k-g8-L64k-S	all	g2_find calls=524692 bytes=17201616304
+dfa-hat	site(G1)	g2-dfa-hat-n64k-g8-L1k-u-S	all	uses=523831 cold=4096 cache_hit=73426 cache_pass=316361 xcall=0 skipped=1223649 head_hit=0 head_bytes=0 blocks=515800 calls=4160 nbuf=64
+dig	site(G1)	g2-dig-n36-ginf-Lnone-S	first	uses=727 cold=727 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=3635 calls=1024 nbuf=1024
+dig	site(G1)	g2-dig-n46-ginf-Lnone-S	first	uses=780 cold=780 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=4680 calls=1024 nbuf=1024
+dig	site(G1)	g2-dig-n64k-g8-L1k-u-S	all	uses=526282 cold=4096 cache_hit=74202 cache_pass=317803 xcall=0 skipped=1228636 head_hit=0 head_bytes=0 blocks=517584 calls=4160 nbuf=64
+dig	site(G1)	g2-dig-n64k-g8-L32-u-S	first	uses=292 cold=64 cache_hit=52 cache_pass=140 xcall=0 skipped=436 head_hit=0 head_bytes=0 blocks=256 calls=64 nbuf=64
+dig	site(G1)	g2-dig-n8-ginf-Lnone-S	first	uses=231 cold=231 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=231 calls=1024 nbuf=1024
+f3-c001	site(G1)	g2-f3-c001-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-c020	site(G1)	g2-f3-c020-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-c110	site(G1)	g2-f3-c110-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-dig	site(G1)	g2-f3-dig-n1m-ginf-Lnone-S	first	uses=16 cold=16 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=2097152 calls=16 nbuf=16
+f3-dig	site(G1)	g2-f3-dig-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-hex-run	site(G1)	g2-f3-hex-run-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+f3-wcls	site(G1)	g2-f3-wcls-n64k-ginf-Lnone-S	first	uses=64 cold=64 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=524288 calls=64 nbuf=64
+hex-run	site(G1)	g2-gate-hex-run-S	all	uses=1043915 cold=1043915 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=1048944 calls=1043950 nbuf=64
+hex-run	site(G1)	g2-real-prose-S	all	uses=166298 cold=166298 cache_hit=0 cache_pass=0 xcall=0 skipped=0 head_hit=0 head_bytes=0 blocks=209056 calls=166301 nbuf=16
+time.sh: COMPLETE rows=40 groups=7 reruns=7 xreruns=7 requeued=0 wall=170s

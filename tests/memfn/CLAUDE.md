@@ -221,7 +221,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 ### C5 and C10 (lane r4ccore, R4c)
 
-- **arm_fixtures.c** — C5's fixture renderer: fourteen FIXED site
+- **arm_fixtures.c** — (R17-a, MF_SITE_ABI 11, lane r17a: every kit call
+  states a forward FIND's window as pcrec's builders do, `fx_win`/`FXW`,
+  applied after the fixture's own description; and `--gate` also runs
+  `seq_cases`, the storage point's protocol over a decl_point PF walk site
+  and the window fields' rules, each case's call sequence its own
+  `seq_case` with the site as written; run_arm_pins.sh check 6 holds them,
+  sabotage S846-S849.) C5's fixture renderer: fourteen FIXED site
   descriptions (four offset-skip shapes: a table and a byte around a scan
   at 3, a run-pinned run, a scan at 0, the pair arm; four pre-check shapes:
   the one-byte gate with a set rest, a lead before a handoff window, a
@@ -523,7 +529,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   their floors PLACEHOLDER until the slot census and a G2 count pin them.
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 
-- **run_rank.sh**, **rank_check.py** — `make test-memfn-rank` (in
+- **run_rank.sh**, **rank_check.py** — (R17-a, lane r17a: the same probe build also carries N4's door assertion, `find_door` in src/gen/emit_dfa.c: where a defined FIND's table is emitted, its bytes equal the set the kit was handed; rank_check counts the `FINDDOOR` passes per table against literal floors (1400 / 70 / 3100, measured 1,574 / 78 / 3,441) and fails on any `N4 door` error; a planted set mismatch fired it on all three tables, r17a_report.md.) `make test-memfn-rank` (in
   TEST_SECTIONS; mech arm `rank`; about 7 s plus the probe build). Builds
   the PROBE compiler (`-DPCREC_RANK_PROBE`: `pcrec_memfn_define` prints one
   `RANK` line per predicate of every PRE/OFS site, with the

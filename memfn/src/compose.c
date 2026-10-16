@@ -373,6 +373,42 @@ static const char *skip_check(const mf_site *s)
     return NULL;
 }
 
+/* The window fields' rules (W0-W3, MF_SITE_ABI 11; setfind.md §2.2), NULL
+ * iff they hold: a forward FIND states its window (W0 1; a 0 is unstated,
+ * never "move-back 0", so a builder that forgot is refused here rather than
+ * read as a zero-fill); every other site, and every preds[] entry, states
+ * none; W1/W2 are stated only under W0; and back = move_back - d_min is not
+ * negative (R-18 defines it). The decl_point capability (W4) is 0 or 1. */
+static const char *window_check(const mf_site *s)
+{
+    const mf_pred *p = &s->pred;
+    if (s->decl_point > 1) return "`decl_point` is not 0 or 1";
+    for (unsigned i = 0; s->preds && i < s->npred; i++)
+        if (s->preds[i].window_stated || s->preds[i].move_back || s->preds[i].overshoot)
+            return "a preds[] entry states a window (`window_stated`): only a forward "
+                   "FIND's pred has one";
+    if (!kit_window_site(s)) {
+        if (p->window_stated)
+            return "`window_stated` is for a forward FIND only: no window is defined "
+                   "on this site";
+    } else if (p->window_stated != 1) {
+        return p->window_stated
+             ? "`window_stated` is not 0 or 1"
+             : "a forward FIND states its window (`window_stated` 1): 0 is unstated, "
+               "never move-back 0";
+    }
+    if (!p->window_stated) {
+        if (p->move_back || p->overshoot)
+            return "`move_back`/`overshoot` are stated only under `window_stated` 1";
+        return NULL;
+    }
+    if (p->move_back != MF_MOVE_UNBOUNDED &&
+        (int64_t)p->move_back - kit_d_min(p) < 0)
+        return "`move_back` is below the span's beginning (back < 0): no meaning "
+               "is defined for it yet (R-18)";
+    return NULL;
+}
+
 static const char *site_check(const mf_site *s)
 {
     const char *why = NULL;
@@ -447,7 +483,7 @@ static const char *site_check(const mf_site *s)
             if (s->pred.term[t].offset < 0)
                 return "guard_by_caller needs every term offset >= 0";
     }
-    return NULL;
+    return window_check(s);
 }
 
 /* ---- mf_art -------------------------------------------------------------- */
@@ -470,6 +506,26 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
 const char *mf_art_error(const mf_art *art)
 {
     return art && art->err[0] ? art->err : NULL;
+}
+
+/* A copy of `t` in the art's arena (NULL for NULL); *oom set on failure. */
+static const char *art_copy(mf_art *art, const char *t, int *oom)
+{
+    if (!t) return NULL;
+    size_t len = strlen(t);
+    char *c = art->a->alloc(art->a->u, len + 1);
+    if (!c) { *oom = 1; return NULL; }
+    memcpy(c, t, len + 1);
+    return c;
+}
+
+/* 1 iff two hook texts are the same bytes (both unstated included). The
+ * comparison is of UNRENDERED text: equal before pcrec renders its prefix
+ * placeholder implies equal after, so an accept is right and the only
+ * possible error is a loud false refusal (setfind.md §7.6, r5 K3-11). */
+static int same_text(const char *a, const char *b)
+{
+    return a == b || (a && b && !strcmp(a, b));
 }
 
 /* The record behind `handle`, or NULL after recording why. */
@@ -524,6 +580,12 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     memset(r, 0, sizeof *r);
     r->site = *s;
     r->arm = row;
+    if (s->decl_point) {
+        int oom = 0;
+        r->def_s = art_copy(art, def ? def->s : NULL, &oom);
+        r->def_n = art_copy(art, def ? def->n : NULL, &oom);
+        if (oom) return kit_fail(art, "mf_define: out of memory");
+    }
 
     if (row->define(art, h, def, file_scope)) return -1;
     *handle = h;
@@ -545,6 +607,10 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
     /* the gate's re-check of the chosen row against the use hooks: the
        definition is written, so a use it does not serve is REFUSED, naming
        the fields; it cannot re-select (N3) */
+    if (r->site.decl_point && !r->placed)
+        return kit_fail(art, "mf_use: handle %u is used before its mf_locals "
+                        "(`decl_point` 1: its storage point dominates every use)",
+                        handle);
     gate_in in = { &r->site, use, NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
@@ -564,6 +630,58 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
         snprintf(res->form_id, sizeof res->form_id, "%s", r->arm->id);
         res->handle = handle;
     }
+    return 0;
+}
+
+/* 1 iff some SET term of the site (its pred, or any of its preds) names a
+ * table of pcrec's (rule 7). */
+static int site_tabled(const mf_site *s)
+{
+    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
+        if (s->pred.term[t].kind == MF_T_SET && s->pred.term[t].table_ref) return 1;
+    for (unsigned i = 0; s->preds && i < s->npred; i++)
+        for (unsigned t = 0; t < s->preds[i].nterm && t < MF_MAX_TERM; t++)
+            if (s->preds[i].term[t].kind == MF_T_SET && s->preds[i].term[t].table_ref)
+                return 1;
+    return 0;
+}
+
+int mf_locals(mf_art *art, uint32_t handle, const mf_hooks *at, mf_sink *body)
+{
+    if (art->err[0]) return -1;
+    site_rec *r = rec_of(art, handle, "mf_locals");
+    if (!r) return -1;
+    if (!r->site.decl_point)
+        return kit_fail(art, "mf_locals: handle %u offers no declaration point "
+                        "(`decl_point` 0)", handle);
+    if (r->placed)
+        return kit_fail(art, "mf_locals: storage for handle %u placed twice "
+                        "(`decl_point`: one mf_locals per site)", handle);
+    /* the binding: the storage is the define's `s`/`n` (setfind.md §4.3,
+       K3-9), so the point must name the same texts */
+    if (!same_text(at ? at->s : NULL, r->def_s))
+        return kit_fail(art, "mf_locals: handle %u's `s` text differs from its "
+                        "define's", handle);
+    if (!same_text(at ? at->n : NULL, r->def_n))
+        return kit_fail(art, "mf_locals: handle %u's `n` text differs from its "
+                        "define's", handle);
+    /* No row keeps storage yet (R17-b's are the first), so nothing is
+       written: `body` is the point a storage row's declarations go to. */
+    (void)body;
+    r->placed = 1;
+    return 0;
+}
+
+int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
+{
+    if (art->err[0]) return -1;
+    site_rec *r = rec_of((mf_art *)art, handle, "mf_defined");
+    if (!r) return -1;
+    memset(out, 0, sizeof *out);
+    snprintf(out->form_id, sizeof out->form_id, "%s", r->arm->id);
+    out->handle = handle;
+    out->reads_table = r->arm->reads_table && site_tabled(&r->site);
+    out->includes = r->arm->includes;
     return 0;
 }
 
@@ -590,10 +708,19 @@ int mf_call(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body)
 int mf_art_end(mf_art *art)
 {
     if (art->err[0]) return -1;
-    for (uint32_t i = 0; i < art->nsites; i++)
-        if (!art->sites[i].used)
+    for (uint32_t i = 0; i < art->nsites; i++) {
+        const site_rec *r = &art->sites[i];
+        if (r->site.decl_point && !r->placed)
+            return kit_fail(art, "mf_art_end: handle %u declared storage, never "
+                            "placed (`decl_point` 1, no mf_locals)", i + 1);
+        if (r->placed && !r->used)
+            return kit_fail(art, "mf_art_end: handle %u's storage placed, never "
+                            "read (`decl_point`: an mf_locals no use followed)",
+                            i + 1);
+        if (!r->used)
             return kit_fail(art, "mf_art_end: handle %u defined, never used",
                             i + 1);
+    }
     return 0;
 }
 

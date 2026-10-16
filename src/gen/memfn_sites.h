@@ -116,12 +116,23 @@ void pcrec_memfn_term_set(mf_term *t, int off, const uint8_t set[256],
 void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
                           const unsigned char *mask, int len, mf_need need);
 
+/* States the window facts (W0-W2, MF_SITE_ABI 11; setfind.md §2.2) of a
+ * forward FIND's predicate `p`, its terms already filled, whose window IS its
+ * candidate, as every FIND pcrec builds today: window_stated 1, move_back the
+ * least term offset (d_min, the span's beginning: 0 at offset 0, -1 for
+ * MLINE's predecessor term), overshoot 0. */
+void pcrec_memfn_window_is_candidate(mf_pred *p);
+
 /* The kit's define, use and call for DELEG_SITES row `id`; each fails the
  * compile with the kit's refusal text (pcrec_ctx_fail's internal-error
  * tier). Define checks the site against its row first (C10). */
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file);
 void pcrec_memfn_use(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
+/* [MEMFN] R17-a the kit's mf_locals (site `handle`'s storage point, at `h`'s
+ * indent, binding `h`'s `s`/`n`) and mf_defined (what its define chose). */
+void pcrec_memfn_locals(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
+void pcrec_memfn_defined(Ctx *cx, uint32_t handle, mf_result *out);
 void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
 /* The kit's mf_emit for a site whose one part is an EXPR in a body (the
  * VMRUN door, M1b): checked against row `id` first (C10), no file-scope part
@@ -174,6 +185,12 @@ typedef struct {
                            * `len - 1` (D11's bound) */
     const char *on_miss;  /* the unbounded memchr form's statement on a NULL
                            * hit (it must leave the site); NULL otherwise */
+    const char *stem;     /* [MEMFN] R17-a the storage stem (W5): the
+                           * holding function's name plus `_pf`, on a set
+                           * FIND defined above that function (the DFA set
+                           * rows, the VM hat), which then also offers its
+                           * declaration point (W4); NULL on a FIND emitted
+                           * in one call (the byte forms, MLINE)            */
 } PcrecFind;
 /* The memchr form's statement declares `const void *q`, the hit or NULL, in
  * the caller's block; nothing after it reads `q`. */
