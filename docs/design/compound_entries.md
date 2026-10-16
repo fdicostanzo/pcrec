@@ -202,8 +202,10 @@ design-text change.
    `next` is a new combinator, `iterate`, over the state part. The compound's B-steps become
    rows. **The iterator can stay zero-mover up to I0**, and I1 stays ONE abi event, provided
    the entry table lands first as a zero-mover (E0, §5.1).
-7. **Is it worth building?** The layout row on its own is low-impact: the measured effects are
-   a few percent either way. The value is the one entry table: one place that says what each
+7. **Is it worth building?** The layout row on its own is low-impact on TIME: the measured
+   instruction effects are a few percent either way. [r4] On SIZE it is larger than revision
+   3 said: up to +18% `.text` per class on the scratch witnesses, though only hundreds of
+   bytes in absolute terms (§3.2.5). The value is the one entry table: one place that says what each
    exported call is, derived edges, and one place for every later entry (`next`, `next_n`,
    captures-on-demand, arch dispatch). The layout row is cheap once the table exists. The
    recommendation is E0 now (before I1), then the controls' mechanism (E1: explicit controls
@@ -472,7 +474,7 @@ three classes, and E1's census checks that the classes cover every emitted funct
 
 | class | functions | rows that touch it |
 |---|---|---|
-| **subject** (the layout row decides it at non-zero positions) | the hybrid's `<p>_prefilter`; compound parts `<p>__<role>_search`; after I1, `__find`, `__adv`, `__step`, `__enter`; after I3, the static twins of wrapper bodies and residual leaves | §3.4's P2-P9 |
+| **subject** (the layout controls decide it; [r4] in one of four control classes, below) | the hybrid's `<p>_prefilter`; compound parts `<p>__<role>_search`; after I1, `__find`, `__adv`, `__step`, `__enter`; after I3, the static twins of wrapper bodies and residual leaves | §3.4's P2-P10 |
 | **owned** (an owner writes its attribute; the row keeps it at every position) | A1's thin helpers (bind, init, reset, report_captures, the three `_run`s) and matcher body; A2's `_deep`; A4's seam | §3.4's P1 |
 | **not a part** (an expression helper inside one part's body, or not static) | A5's `<p>_wcls%d`; A6's DFA state helpers; A7's kit helpers; every exported entry; `info`; `main` | none; A3's `noclone` is an orthogonal attribute on entries and is kept (H7) |
 
@@ -516,7 +518,7 @@ the higher rank. A part's rank is the highest rank among its in-edges.
 |---|---|---|---|
 | R3 `inner` | inside a per-candidate or per-attempt loop | unbounded; grows with the subject | the hybrid's `_search_run` → `<p>_prefilter` edge on an artifact whose retry re-enters the prefilter: an MRL clamp (`nclamp > 0`) or an ADAPTIVE re-seed row (`hyb_reseed.md`, the `retry_win`/`retry_seed` text in the VM emitter). UNWITNESSED among this note's measured artifacts: `(a)b`'s prefilter is called only from the entry [r3 CE-4]. The iterator's internal batch fill is ruled as a direction (D165 add. 2 Q2) but not designed in `findall_iter.md`, so it is HELD with `findall_iter.md`'s Q2 and is not a witness [r3 F4] |
 | R2 `per-call` | once on every call | 1 | the same `_search_run` → `<p>_prefilter` edge where no retry re-enters (the `(a)b` hybrid, measured); split's Q from `_search`; `__find` from `_search` and `_next` (designed) |
-| R1 `conditional` | on a data-dependent subset of calls | at most 1 | split's F (while the floor can be live). F is not copyable (H1), so no position row moves an R1 part today: R1 has no movable witness |
+| R1 `conditional` | on a data-dependent subset of calls | at most 1 | split's F (while the floor can be live). F is not copyable (H1), so no position row (and [r4] no control) moves an R1 part today: R1 has no movable witness |
 | R0 `rare` | an error, tie or fallback path | about 0 | the DFA `rev-end` tie's verify (`entry_edges[]`'s `SEARCH → MATCH` edge, `sh_dfa_tie`). It is an exported-to-exported edge today, so it becomes a part only by I3 [r3 CE-4]: revision 2's `<p>__q_match` is not emitted by any `src/gen` file |
 
 **Callers** [r3 CE-8]. `callers(part)` is the number of distinct functions that hold a call
@@ -1171,7 +1173,7 @@ re-seed row), never a scan of the text.
 | iterator piece (`findall_iter.md`) | as a row of the table |
 |---|---|
 | `__find(…, M)`, one body, two entries (§2.1) | the search controller's body as a part, called by `_search` (M = ONESHOT) and `_next` (M = ITER) |
-| §2.2's two-row rule (`shared` for a label table, else `inline`) | the `0` cell's content (I4), kept; at non-zero positions the part table's P2 and position rows (§3.4, §3.8) |
+| §2.2's two-row rule (`shared` for a label table, else `inline`) | the `0` cell's content (I4), kept; under a non-trivial control the part table's P2 and control rows (§3.4, §3.8) |
 | the NOTEMPTY retry (`findall_iter.md` §3.3) | `first-nonzero(R@q, SEARCH@next_pos(q))`: split's combinator, with R = FINISH `verify-at` on the notempty root (an in-Job machine role, `compound_place` row 3) on the DFA, or the VM's guarded attempt |
 | `__step`, `__enter`, `__adv` | `iterate(STATE; …)`: `__enter` is the state part's bind/check, `__adv` the residual's static twin (H5) |
 | the storage-row table (§1.3) | the STATE part's declared rows; a compound's parts SUM (D165 item 4) |
@@ -1393,3 +1395,17 @@ cell.
   and canary. A size end must be chosen by size, as the existing VM term does.
 - **F-6. The NOTEMPTY retry is split's combinator** (§4.2): `first-nonzero(R@q,
   SEARCH@next_pos(q))`. The iterator and the compound share their one combinator emitter.
+- **F-7. [r4] `findall_iter.md` revision 2 cites revision 3's position rows.** Its §2.2 says
+  "the position's row (P4/P6 shared at `−2`/`−1`, P7/P8 at `+1` by `θ_hot`, P9 inline at
+  `+2`)". Revision 4 renumbers them as control rows (P4-P10; §3.4's last column is the
+  translation). It is not edited here. Its next revision, or its D6 panel, picks this up.
+- **F-8. [r4] The value parameters have no single-source table** (§3.7). The bit axes have
+  had one since D111 (`axes.def`). The value parameters (`--unroll`, `--vm-entry-shape`,
+  `--engine`, `--tune`, `--memfn`) each have a hand parser, a hand tuning.md §4 row and
+  their own accessor, and this note adds three more. Unlock U-V proposes the table. Filed,
+  not scheduled.
+- **F-9. [r4] The largest `.o` lever in the family already has a control.** On the scratch
+  witnesses the owned VM entry chain moves `.text` by 40-86% between `plain` and `inline`
+  (`results/rev4_vmshape_o.tsv`), more than any new class (prefilter ≤ 18%, `find`'s `_next`
+  35-62%). If Frank's ".o size" concern is mostly about VM artifacts, `--vm-entry-shape`
+  already serves it, and its dial term (4,096 / 8,192) is its preset.
