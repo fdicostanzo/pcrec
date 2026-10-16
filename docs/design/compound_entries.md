@@ -455,7 +455,6 @@ The stamp is absent at `0`, so `0` stays byte-identical. It first appears with t
 live cell, in that cell's abi event (D76/D94: its readers are found by grep). There is no
 `rx_info` mirror (tuning.md §5.3¶2: nothing at run time behaves differently).
 
-
 ### 3.5 Interaction with the iterator's parity gate and the mode M
 
 - **The parity gate** (D165 item 5, `findall_iter.md` §5.3): `next` at parity or better than
