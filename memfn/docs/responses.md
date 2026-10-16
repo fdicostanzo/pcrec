@@ -2642,3 +2642,14 @@ the compiler, and is never adopted silently. Proposed for main to file
   - R17-b′ rev 2's D6 panel is running (4 critics). It folds into the build and does not gate B0.
 
 - notice: 2026-10-16 — **R17-b′ rev 3 + panel r1 delivered on lane/memfn-fd (a8ee399fe); main's Q-R17P-15..25 answers taken** (Q-19 amended: a working alias or a refusal, never a silent no-op; Q-21 follows D163 add. 8's resolved layout controls; S1017-S1026 allocated). B1 is briefed after B0 merges. run_axes' `--memfn=` arm goes to a kit lane under emit_sweep's four terms.
+
+- done: 2026-10-16 — **R17-b′ B0 (the R17-a seam on main), with the kit docs, sweeparm and comppin: branch lane/memfn-fd.** Report: docs/dev/lanes/fdb0_report.md (+ sweeparm_report.md, comppin_report.md, fddocs_report.md). MF_SITE_ABI 10→11; no pcrec abi event (78).
+  - Validation, on the B0 code (977fea388 / 2f492bbc8):
+    - make test GREEN, 70/70 sections, 3202 s;
+    - mech, 57 rows (51 derived src + S526 S619 S681 S682 S722 S803): all `unexpected: 0` (S284 undetected as declared);
+    - emit_sweep 0 movers on every arm, including the FLOORED `--extra=-fmemfn-simd` and `-fcomments` (sweeparm, S981/S982);
+    - test-memfn-g2-full: 199,850,927 passed / 0 failed;
+    - S846-S849 solo DETECTED.
+  - The branch also carries main @ 353249282 (merged by comppin: strict green, spec-history 145/0) and the measured COMPOSITION_EXTRA_PINS for both kit arms (37/106 each).
+  - Also on the branch: R17-b′ rev 3 + the panel record, and the grid2 harness at rev 3 (not run).
+  - Still OWED, to main or later: the N2 census on main+B0 (re-reads pf_walk); main's precheck_assign_byte PLACEHOLDER floor (class a, main's).
