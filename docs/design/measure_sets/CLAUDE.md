@@ -14,7 +14,11 @@ built or run by `make`.
   `docs/design/start_table/call_graph.py PRE_TREE`'s output. The full output
   is committed; the K1 rows are those whose `commits` (RE-AIM) or `rerun_at`
   (RE-RUN, from the step's own diff) name `K1`. The start-family columns of
-  that tool mean nothing here.
+  that tool mean nothing here. Derived at K1 head `c136b70a2`; the tool
+  exits 2 on five UNRESOLVED rows that are unrelated to K1 and unresolved on
+  main too (S176, S571, S640, S897, S906).
+- `k1_anchors.summary` — the same run's stderr summary (counts, the step's
+  hunk/reach totals, the UNRESOLVED list).
 
 Maintenance: update this file when files are added/removed or their roles
 change.
