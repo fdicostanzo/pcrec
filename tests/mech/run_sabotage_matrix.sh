@@ -508,6 +508,16 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   axesmemfn — added 2026-10-16 ([RUNAXES], lane runaxes); runs
+#     tests/axes/run_axes.sh with MEMFN_REACH_ONLY=1 AXES=--memfn
+#     MEMFN_EVERY=40 from the sabotaged tree (its build/pcrec, python3): the
+#     `--memfn=` arm's REACH alone (tests/axes/memfn_arm.py over the cells
+#     run_axes.sh composes, a 1-in-40 corpus sample). Its own arm because the
+#     arm's answer-identity JOBS cannot see their own plumbing: a cell that
+#     lost its `--memfn=` spelling compiles the base build on both sides and
+#     agrees on every case. Needs no baseline and no harness run (~15 s).
+#     Verdict: the script's `checks passed:`/`checks failed:` trailer.
+#     Registered before S1026.
 #   compound — added 2026-10-12 (lane cpb4, [COMPOUND] B4); runs
 #     tests/compound/run_compound_unit.sh (`make test-compound`) from the
 #     SABOTAGED tree: the part/derive/entry unit checks, the split compound
@@ -3174,6 +3184,16 @@ run_one() {
                 p="$(grep '^checks passed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 f="$(grep '^checks failed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 score_arm "$work/emitsweep.log" "$f" "emitsweep:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            axesmemfn)
+                # [RUNAXES] see the vocabulary entry above.
+                PCREC="$tree/build/pcrec" TMPDIR="$work" SKIP_ORACLE=1 \
+                    MEMFN_REACH_ONLY=1 MEMFN_EVERY=40 AXES="--memfn" \
+                    bash "$tree/tests/axes/run_axes.sh" \
+                    > "$work/axesmemfn.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/axesmemfn.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/axesmemfn.log" | grep -oE '[0-9]+')"
+                score_arm "$work/axesmemfn.log" "$f" "axesmemfn:${f:-ERR}fail/${p:-?}pass"
                 ;;
             fallbacktable)
                 # [decfb B0] see the vocabulary entry above. The script builds

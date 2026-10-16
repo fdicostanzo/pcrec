@@ -3848,3 +3848,13 @@ were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.
 so the new DIFFER_PINS arms read byte-identical to their base. Arm `emitsweep`
 (`scripts/tests/emit_sweep.py.test`'s `--arms start` over the manifests),
 DETECTED 1fail/43pass each (lane tip a6b933692).
+
+**S1026 (lane runaxes, 2026-10-16, [RUNAXES]):** `run_axes.sh` composes each
+`--memfn=` cell's flags without the row's `--memfn=no-NAME` spelling and
+nothing else, so the arm's answer-identity jobs compile the base build on both
+sides and pass; only `tests/axes/memfn_arm.py` (the cells' own flag text) sees
+it. New arm `axesmemfn` (`run_axes.sh` with `MEMFN_REACH_ONLY=1 MEMFN_EVERY=40
+AXES=--memfn`: the reach alone over a 1-in-40 corpus sample, trailer
+`checks passed:`/`checks failed:`; vocabulary entry in
+`run_sabotage_matrix.sh`). DETECTED (figure in the lane report).
+
