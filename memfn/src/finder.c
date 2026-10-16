@@ -180,7 +180,8 @@ typedef struct {
     [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, \
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
-    [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY,
+    [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
+    [FLD_moved] = MF_ANY,
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -277,18 +278,18 @@ static const fd_row fd_rows[] = {
       "a sub-block call on which W64's tail beats V1", &ct_r2, 0, 1 },
     { "D1", FD_FIND, KN_P, SF_SPAN0 | SF_ONE_MEMBER, SF_SEEK_ROLE,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_LIBC, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-d1", FB_UNMEASURED_DEFAULT, "B2",
+      FF_LIBC, FF_UNSTATED, { 0, 0, 0, 0 }, 1, "fd-d1", FB_UNMEASURED_DEFAULT, "B2",
       "Q-WR-1's count rule, today's: one member, not a VM attempt seek: the libc search",
       "a measured libc-free one-byte form beating libc (F1, M19-M21)", &ct_d1, 0, 0 },
     { "D1c", FD_FIND, KN_P, SF_CONTEXT_STOP, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_LIBC_BACK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_UNMEASURED_DEFAULT, "B2",
+      FF_LIBC_BACK, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B2",
       "MLINE: no span 0, one context byte one before the origin: the libc back search "
       "(pf_memchr_back, LOOP_EXIT)",
       "a measured libc-free back FIND beating libc on (?m)^ (B7, Q-WR-7)", &ct_d1c, 0, 0 },
     { "D1w", FD_FIND, KN_P, SF_SPAN0 | SF_ONE_MEMBER, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_UNMEASURED_DEFAULT, "B2",
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B2",
       "one member anywhere else (the VM hat's seek, Q-R5; fd-d1's OFF arm): the table walk "
       "over the one-member table",
       "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0, 0 },
@@ -373,6 +374,21 @@ static int layer_ix(int layer_cls)
     return layer_cls == CL_L_W16 ? 1 : layer_cls == CL_L_W32 ? 2 : 0;
 }
 static const char *const layer_name[] = { "OFF", "W16", "W32" };
+
+/* The gate class of the consumer kind pcrec STATES (mf_site.site_kind, PR-3,
+ * MF_SITE_ABI 13), or -1 for UNSTATED. */
+static int kind_cl(uint8_t k)
+{
+    switch ((mf_site_kind)k) {
+    case MF_SK_UNSTATED:    return -1;
+    case MF_SK_DFA_SCAN:    return CL_DFA_SCAN;
+    case MF_SK_DFA_HAT:     return CL_DFA_HAT;
+    case MF_SK_HYB_PF:      return CL_HYB_PF;
+    case MF_SK_VM_ATTEMPT:  return CL_VM_ATTEMPT;
+    case MF_SK_DFA_ATTEMPT: return CL_DFA_ATTEMPT;
+    }
+    return CL_OTHER;
+}
 
 /* The class names of the kinds (the key token and the record). */
 static const char *kind_name(int k)
@@ -793,8 +809,8 @@ static void find_facts(fd_x *q)
         if (t->run_len > 1) q->facts |= SF_RUN_TERM;
         else q->facts |= SF_ONE_MEMBER;
     }
-    /* SF_SEEK_ROLE needs the kind (VM_ATTEMPT), stated from B2 */
-    if (q->ff.kind == CL_VM_ATTEMPT) q->facts |= SF_SEEK_ROLE;
+    /* SF_SEEK_ROLE: span 0 of a VM_ATTEMPT site (the kind pcrec states, B2) */
+    if (q->ff.kind == CL_VM_ATTEMPT && (q->facts & SF_SPAN0)) q->facts |= SF_SEEK_ROLE;
 }
 
 /* 1 iff the site is one the finder table decides (§1.1): a forward FIND /
@@ -875,7 +891,7 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
                 q.site = s;
                 q.pred_ix = slot == FD_FIND ? -1 : pi;
                 q.trace = 1;
-                q.ff.kind = -1;         /* pcrec states the kind from B2 (PR-3) */
+                q.ff.kind = kind_cl(s->site_kind);  /* PR-3, stated from B2 */
                 q.ff.layer = lyc[l];
                 if (slot == FD_FIND) {
                     find_facts(&q);
@@ -894,6 +910,60 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
             }
         }
     }
+}
+
+/* ---- THE ROUTED DECISION (§1.6 [rev3 D6]; R17-b' B2) ------------------------- *
+ *
+ * A site in slot FIND's scope renders the TABLE's pick iff the decision's
+ * first matching row (the terminal, and every interval row above it) is
+ * routed; otherwise it renders its pre-table form (the composer's arms,
+ * fd_route answering NULL). The decision is the OFF variant's (§1.5 rule 1:
+ * a proven fact is decided once, and every layer inherits it), over the
+ * consumer kind pcrec STATES. The pick names the arm that renders it: LIBC
+ * the memchr rows (bounded by end_back), LIBC_BACK the memchr below the
+ * candidate, WALK the walks. A routed row whose pick has no arm here is a
+ * kit build error, refused loudly by the caller (no B2 row has one).
+ *
+ * `quiet`: the query's walk (mf_ask) records nothing and counts no reach; a
+ * define's is a SELECTION (phase define), traced and counted. The routed
+ * rows read no set key (§3.2), so a routed decision never sets
+ * `consulted` here; the first one that does is B4's. */
+const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
+                    const mf_hooks *def, int quiet, const char **row)
+{
+    *row = NULL;
+    if (!(fd_scope(s) & (1 << FD_FIND))) return NULL;
+    fd_x q;
+    memset(&q, 0, sizeof q);
+    q.art = art;
+    q.handle = handle;
+    q.site = s;
+    q.pred_ix = -1;
+    q.ff.kind = kind_cl(s->site_kind);
+    q.ff.layer = CL_L_OFF;
+    find_facts(&q);
+    q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
+    gate_in in = { s, def, NULL, &q.ff };
+    gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet };
+    fd_decision d;
+    fd_decide(&q, FD_FIND, &tc, &d);
+    if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) return NULL;
+    for (unsigned j = 0; j < d.npiece; j++) {
+        size_t ri = 0;
+        while (ri < FD_NROWS && strcmp(fd_rows[ri].id, d.row[j])) ri++;
+        if (ri >= FD_NROWS || !fd_rows[ri].routed) return NULL;
+    }
+    if (d.npiece != 1) return NULL;     /* a routed DISPATCH: none before B4/B8 */
+    const arm *a = NULL;
+    switch (d.pick[0]) {
+    case FF_LIBC:      a = s->end_back ? &pf_memchr_bounded_arm : &pf_memchr_arm; break;
+    case FF_LIBC_BACK: a = &pf_memchr_back_arm; break;
+    case FF_WALK:      a = s->end_back ? &pf_walk_bounded_arm : &pf_walk_arm; break;
+    case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_RUN: case FF_A3:
+        break;
+    }
+    *row = fd_rows[d.terminal].id;
+    return a;
 }
 
 /* ---- the listing (R-MS4) -------------------------------------------------------- */

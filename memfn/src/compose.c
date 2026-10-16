@@ -258,10 +258,24 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
-                             gate_verdict *why, int quiet)
+                             gate_verdict *why, int quiet, const char **row)
 {
     gate_in in = { s, def, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
+    /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
+       ROUTED row renders the table's pick, through the arm that renders it,
+       asked on its own (deny, gate, predicate); a pick its arm does not
+       serve is REFUSED (no fall-back to the walk below, which could render
+       another form under the routed row's name). Everything else walks. */
+    const char *rid = NULL;
+    const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
+    *row = rid;
+    if (rid) {
+        for (size_t i = 0; ra && i < NARMS; i++)
+            if (arms[i] == ra)
+                return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc) ? ra : NULL;
+        return NULL;
+    }
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
 }
@@ -285,7 +299,13 @@ static void kit_class(const arm *a, const mf_site *s, mf_class *out)
     out->libc_free = !a->libc;
     out->includes = a->includes;
     memset(out->proven0, 0xFF, sizeof out->proven0);
+    memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
     if (s->op != MF_OP_FIND) return;
+    /* a FIND over ONE SET term one byte below the candidate (a context stop,
+       MLINE's): its candidate follows a member (MF_CLASS_V 2) */
+    if (s->pred.nterm == 1 && s->pred.term[0].kind == MF_T_SET &&
+        s->pred.term[0].offset == -1)
+        memcpy(out->proven_prev, s->pred.term[0].set, sizeof out->proven_prev);
     for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++) {
         const mf_term *tm = &s->pred.term[t];
         if (tm->offset != 0) continue;
@@ -361,10 +381,18 @@ static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
     if (p->nterm == 0) { *why = "a predicate with no terms (nterm 0)"; return 0; }
     if (p->nterm > MF_MAX_TERM) { *why = "nterm > MF_MAX_TERM"; return 0; }
     if (!in_enum(p->need, MF_OPTIONAL)) { *why = "predicate need outside mf_need"; return 0; }
+    if (p->need == MF_NEED_UNSTATED) {
+        *why = "predicate need UNSTATED (`need`: 0 is no need, MF_SITE_ABI 13)";
+        return 0;
+    }
     for (unsigned t = 0; t < p->nterm; t++) {
         const mf_term *tm = &p->term[t];
         if (tm->offset < -MF_MAX_BACK) { *why = "term offset < -MF_MAX_BACK"; return 0; }
         if (!in_enum(tm->need, MF_OPTIONAL)) { *why = "term need outside mf_need"; return 0; }
+        if (tm->need == MF_NEED_UNSTATED) {
+            *why = "term need UNSTATED (`need`: 0 is no need, MF_SITE_ABI 13)";
+            return 0;
+        }
         if (tm->kind == MF_T_SET) {
             *kinds |= MF_TK_SET;
         } else if (tm->kind == MF_T_RUN) {
@@ -466,6 +494,7 @@ static const char *site_check(const mf_site *s)
         return "`count_by_caller` is for an ADVANCE site only (Q-R4h-1 (a))";
     if (!in_enum(s->fold_kind, MF_FOLD_UCP)) return "`fold_kind` outside mf_fold";
     if (!in_enum(s->body, MF_BODY_PARAM)) return "`body` outside mf_body";
+    if (!in_enum(s->site_kind, MF_SK_DFA_ATTEMPT)) return "`site_kind` outside mf_site_kind";
     if (s->body == MF_BODY_PARAM)
         return "`body` PARAM is reserved for R17-b'' (its mode-expression hook): no "
                "row serves it yet";
@@ -617,7 +646,8 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     if (art->err[0] || s->abi != MF_SITE_ABI || site_check(s) || s->denies != art->denies)
         return -1;
     gate_verdict declined = { 0, 0 };
-    const arm *row = select_arm(art, s, def, gphases, &declined, 1);
+    const char *rid;
+    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
     if (!row) return -1;
     kit_class(row, s, out);
     return 0;
@@ -651,7 +681,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
-    const arm *row = select_arm(art, s, def, gphases, &declined, 0);
+    const char *rid;
+    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
+    if (!row && rid)
+        return kit_fail(art, "mf_define: the finder row %s's routed pick does not serve "
+                        "this site (its arm declines it)", rid);
     if (!row) {
         /* the generic row applies to every site, so only the gate can leave
            a site with no row: name what it declined (ruling (d)) */
@@ -675,7 +709,28 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     memset(r, 0, sizeof *r);
     r->site = *s;
     r->arm = row;
+    r->fd_row = rid;
+    r->reach_k = -1;
+    if (art->reach_stem && rid) {
+        /* R-MS6: one counter per arm of a routed site (one arm: no dispatch
+           is emitted before B4/B8) */
+        if (art->nreach == art->reach_cap) {
+            uint32_t cap = art->reach_cap ? art->reach_cap * 2 : 8;
+            const char **g = art->a->alloc(art->a->u, cap * sizeof *g);
+            if (!g) return kit_fail(art, "mf_define: out of memory");
+            if (art->nreach) memcpy(g, art->reach_row, art->nreach * sizeof *g);
+            art->reach_row = g;
+            art->reach_cap = cap;
+        }
+        r->reach_k = (int)art->nreach;
+        art->reach_row[art->nreach++] = rid;
+    }
     kit_class(row, s, &r->cls);
+#ifdef MF_TRACE
+    if (rid)
+        fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
+                art->trace_id, h, rid, row->ct->row);
+#endif
     if (s->decl_point) {
         int oom = 0;
         r->def_s = art_copy(art, def ? def->s : NULL, &oom);
@@ -738,12 +793,19 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
         return kit_fail(art, "mf_use: row `%s` does not serve this use of handle %u: %s",
                         r->arm->ct->row, handle, f);
     }
+    /* R-MS6: the arm's first statement counts its entry (a block-scope
+       extern: the definition is mf_reach_table's, after every use) */
+    if (r->reach_k >= 0)
+        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d]++; }\n",
+                use && use->indent ? use->indent : "", art->reach_stem,
+                art->reach_stem, r->reach_k);
     if (r->arm->use(art, handle, use, body)) return -1;
     r->used = 1;
     if (res) {
         memset(res, 0, sizeof *res);
         snprintf(res->form_id, sizeof res->form_id, "%s", r->arm->id);
         res->handle = handle;
+        snprintf(res->row, sizeof res->row, "%s", r->fd_row ? r->fd_row : "");
     }
     return 0;
 }
@@ -803,6 +865,7 @@ int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
     out->reads_table = r->arm->reads_table && site_tabled(&r->site);
     out->includes = r->arm->includes;
     out->cls = r->cls;
+    snprintf(out->row, sizeof out->row, "%s", r->fd_row ? r->fd_row : "");
     return 0;
 }
 
@@ -843,6 +906,36 @@ int mf_art_end(mf_art *art, uint8_t *consulted)
                             i + 1);
     }
     if (consulted) *consulted = art->consulted;
+    return 0;
+}
+
+int mf_reach(mf_art *art, const char *stem)
+{
+    if (art->err[0]) return -1;
+    if (art->reach_stem)
+        return kit_fail(art, "mf_reach: called twice on one art");
+    if (art->nsites)
+        return kit_fail(art, "mf_reach: called after the first define");
+    if (!kit_is_ident(stem))
+        return kit_fail(art, "mf_reach: the stem is not a C identifier");
+    int oom = 0;
+    art->reach_stem = art_copy(art, stem, &oom);
+    if (oom) return kit_fail(art, "mf_reach: out of memory");
+    return 0;
+}
+
+int mf_reach_table(const mf_art *art, mf_sink *out)
+{
+    if (art->err[0]) return -1;
+    if (!art->reach_stem) return 0;
+    if (kit_sink_ok((mf_art *)art, out, "mf_reach_table")) return -1;
+    const char *st = art->reach_stem;
+    uint32_t n = art->nreach;
+    kit_out(out, "unsigned long %s[%u];\n", st, n ? n : 1u);
+    kit_out(out, "const char *const %s_row[%u] = {", st, n ? n : 1u);
+    for (uint32_t k = 0; k < n; k++) kit_out(out, "%s\"%s\"", k ? ", " : " ", art->reach_row[k]);
+    kit_out(out, "%s};\n", n ? " " : " 0 ");
+    kit_out(out, "const unsigned %s_n = %u;\n", st, n);
     return 0;
 }
 

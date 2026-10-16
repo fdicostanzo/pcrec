@@ -368,6 +368,13 @@ MF_FIELD(start, MF_PH_DEFINE, HOOK, cl_start,
          "Read at define (pcrec states it there and at its mf_locals, which binds it); a finder "
          "row that reads N USES it and declines an unstated one (R1). Every row born before B1 "
          "reads no START and serves MF_ANY")
+MF_FIELD(moved, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_moved,
+         CM(OTHER),
+         "THE MOVED-CANDIDATE HOOK (PR-2, MF_SITE_ABI 13): pcrec's one statement, run where the "
+         "written position moved off lo (the DFA hat's re-seed). Read at define (a form that "
+         "cannot tell a moved candidate declines a site stating it) and pasted at the use; its "
+         "one-statement shape is the serving rows' predicate (pffind.c `one_stmt`), the class "
+         "space being full. Only the two bounded PF rows serve it")
 MF_FIELD(cursor, MF_PH_USE, HOOK, cl_cursor,
          CM(IDENT) | CM(OTHER),
          "ADVANCE: the cursor lvalue's text (RULED Q-G2-14: a NULL cursor is accepted at W = 1; "

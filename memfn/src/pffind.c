@@ -15,10 +15,18 @@
  *   the position written, the range [lo, n - end_back).
  *
  * Everything around the statement stays pcrec's text: the entry test and its
- * brace, the guards (`lo >= n` before a memchr, `lo + 1 < n` around a bounded
- * one, `lo >= n` after a walk), the re-seed, the comments. The guards are why
- * the two memchr rows declare their empty range EXCLUDED: pcrec's text has
- * proven it non-empty before the site.
+ * brace and the comments. Since MF_SITE_ABI 13 (R17-b' B2, KW-3) the guards
+ * are the KIT's, from facts pcrec states (PR-2): an empty range that runs the
+ * miss (`empty` MISS, a leaving `on_miss`) is the `lo >= n` test before a
+ * memchr and after a walk; a bounded range whose empty is NOP is the
+ * `lo + 1 < n` block around a bounded memchr (a bounded walk's own loop test
+ * covers it); and a `moved` hook (the DFA hat's re-seed) is written after
+ * the store, under `if (result > skip_from)`, `skip_from` being lo's value
+ * at entry. The pre-B2 shape (pcrec's own guards, `empty` EXCLUDED or a
+ * guard-free walk) is still served, so G2's sites keep their rows.
+ * pcrec states the candidate set as a SET term at EVERY count, one member
+ * included, with its table OFFERED (PR-1): a memchr row serves a one-member
+ * set whether or not a table is named, and reads no table.
  *
  * TWO RENDERERS, FIVE ROWS (N3's split: a shape-dependent row is split, so
  * each row's contract names exactly the values its text is right for):
@@ -46,9 +54,9 @@
  *                      defined and misses, so no empty test is written),
  *                      and its on_miss may be LOOP_EXIT (Q-R7-3: the text
  *                      opens no loop around it).
- * The two walk rows write nothing on an empty range (NOP): the loop's own
- * test fails before any step. The memchr rows' local is `q`, pcrec's
- * pre-migration name (a transcribed spelling, block-scoped by pcrec's brace).
+ * The memchr rows' local is `q` and the moved test's `skip_from`, pcrec's
+ * pre-migration names (transcribed spellings, block-scoped by pcrec's brace
+ * or the kit's bounded block).
  *
  * D149: nothing here is a tuning constant. There is no unroll, no block size
  * and no cut-over; the one-byte/table split is the SITE's (one member or a
@@ -107,12 +115,34 @@ static int miss_is_end(const mf_site *s, const mf_hooks *h)
     return !strncmp(m, h->n, ln) && !strcmp(m + ln, " - 1");
 }
 
-/* A one-member set, no table: the memchr rows. */
+/* A one-member set, its table offered or not (PR-1): the memchr rows. */
 static int memchr_shape(const mf_site *s)
 {
     int b;
-    return pf_shape(s) && s->empty == MF_EMPTY_EXCLUDED &&
-           s->pred.term[0].table_ref == 0 && set_size(&s->pred.term[0], &b) == 1;
+    return pf_shape(s) && set_size(&s->pred.term[0], &b) == 1;
+}
+
+/* 1 iff `text` is ONE C statement with no brace: its one `;` last, no `{`/`}`
+ * (the moved hook is pasted as an `if`'s one statement). A lexical check, as
+ * gate.c's classes are; text a count cannot see through (a quote, a comment)
+ * is not one. */
+static int one_stmt(const char *text)
+{
+    size_t n = text ? strlen(text) : 0;
+    while (n && (text[n - 1] == ' ' || text[n - 1] == '\t' || text[n - 1] == '\n')) n--;
+    if (!n || text[n - 1] != ';') return 0;
+    for (size_t i = 0; i < n; i++)
+        if (text[i] == '{' || text[i] == '}' || text[i] == '"' || text[i] == '\'' ||
+            (text[i] == ';' && i + 1 < n) ||
+            (text[i] == '/' && i + 1 < n && (text[i + 1] == '*' || text[i + 1] == '/')))
+            return 0;
+    return 1;
+}
+
+/* The moved hook, where stated, is one statement (KW-3: the bounded rows). */
+static int moved_ok(const mf_hooks *h)
+{
+    return !h || !h->moved || one_stmt(h->moved);
 }
 
 /* 1 iff the hooks state a `floor` whose text IS lo's: nothing below lo is
@@ -133,21 +163,30 @@ static int pf_memchr_back_applies(const mf_site *s, const mf_hooks *def)
            floor_is_lo(def);
 }
 
+/* The unbounded memchr: pcrec's guard precedes it (EXCLUDED), or the kit
+ * writes it from the miss (MISS: `if (lo >= n) on_miss`). */
 static int pf_memchr_applies(const mf_site *s, const mf_hooks *def)
 {
     (void)def;
-    return memchr_shape(s) && s->end_back == 0;
+    return memchr_shape(s) && s->end_back == 0 &&
+           (s->empty == MF_EMPTY_EXCLUDED || s->empty == MF_EMPTY_MISS);
 }
 
+/* The bounded memchr: pcrec's `lo + 1 < n` block encloses it (EXCLUDED), or
+ * the kit writes that block (NOP: nothing runs on an empty range); a moved
+ * hook is written after the store. */
 static int pf_memchr_bounded_applies(const mf_site *s, const mf_hooks *def)
 {
-    return memchr_shape(s) && s->end_back == 1 && def && miss_is_end(s, def);
+    return memchr_shape(s) && s->end_back == 1 && def && miss_is_end(s, def) &&
+           (s->empty == MF_EMPTY_EXCLUDED || s->empty == MF_EMPTY_NOP) && moved_ok(def);
 }
 
-/* A set pcrec names by table, walked in place: `result` is `lo`'s text. */
+/* A set pcrec names by table, walked in place: `result` is `lo`'s text. Its
+ * empty range is NOP (the loop test fails first), or, unbounded, MISS: the
+ * kit's `lo >= n` test after the walk runs a leaving on_miss. */
 static int walk_applies(const mf_site *s, const mf_hooks *def)
 {
-    return pf_shape(s) && s->empty == MF_EMPTY_NOP &&
+    return pf_shape(s) &&
            s->pred.term[0].table_ref != 0 && def && def->table_name &&
            def->lo && def->result && !strcmp(def->lo, def->result) &&
            miss_is_end(s, def);
@@ -155,12 +194,15 @@ static int walk_applies(const mf_site *s, const mf_hooks *def)
 
 static int pf_walk_applies(const mf_site *s, const mf_hooks *def)
 {
-    return s->end_back == 0 && walk_applies(s, def);
+    return s->end_back == 0 && walk_applies(s, def) &&
+           ((s->empty == MF_EMPTY_NOP && !s->on_miss_leaves) ||
+            (s->empty == MF_EMPTY_MISS && s->on_miss_leaves));
 }
 
 static int pf_walk_bounded_applies(const mf_site *s, const mf_hooks *def)
 {
-    return s->end_back == 1 && walk_applies(s, def);
+    return s->end_back == 1 && walk_applies(s, def) && s->empty == MF_EMPTY_NOP &&
+           moved_ok(def);
 }
 
 /* ---- the text ------------------------------------------------------------- */
@@ -188,7 +230,24 @@ static int pf_use_ok(mf_art *art, const site_rec *r, const mf_hooks *h,
     if (r->site.pred.term[0].offset < 0 && !floor_is_lo(h))
         return kit_fail(art, "%s: a term below the candidate needs `floor` to be lo's "
                         "text, `%s`", who, h->lo);
+    if (r->site.empty == MF_EMPTY_MISS && r->site.end_back == 0 && !h->on_miss)
+        return kit_fail(art, "%s: an empty range that runs the miss needs the on_miss "
+                        "hook", who);
+    if (!moved_ok(h))
+        return kit_fail(art, "%s: the moved hook is not one statement", who);
     return 0;
+}
+
+/* The moved test's two halves (KW-3): `size_t skip_from = lo;` before the
+ * search, `if (result > skip_from) moved` after the store, where the hook is
+ * stated. */
+static void moved_open(mf_sink *o, const char *ind, const mf_hooks *h)
+{
+    if (h->moved) kit_out(o, "%ssize_t skip_from = %s;\n", ind, h->lo);
+}
+static void moved_close(mf_sink *o, const char *ind, const mf_hooks *h)
+{
+    if (h->moved) kit_out(o, "%sif (%s > skip_from) %s\n", ind, h->result, h->moved);
 }
 
 /* `const void *q = memchr(s + lo, b, n[ - 1] - lo);` then the store: on the
@@ -205,6 +264,19 @@ static int pf_memchr_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     if (pf_use_ok(art, r, h, o, "pf_memchr")) return -1;
     set_size(&r->site.pred.term[0], &b);
     int32_t k = -r->site.pred.term[0].offset;   /* 0, or 1 on pf_memchr_back */
+    const char *bind = ind;                     /* the bounded block's indent */
+    if (r->site.empty == MF_EMPTY_MISS && r->site.end_back == 0 && k == 0)
+        kit_out(o, "%sif (%s >= %s) %s\n", ind, h->lo, h->n, h->on_miss);
+    if (r->site.empty == MF_EMPTY_NOP && r->site.end_back == 1) {
+        kit_out(o, "%sif (%s + 1 < %s) {\n", ind, h->lo, h->n);
+        size_t li = strlen(ind);
+        char *in4 = art->a->alloc(art->a->u, li + 5);
+        if (!in4) return kit_fail(art, "pf_memchr: out of memory");
+        memcpy(in4, ind, li);
+        memcpy(in4 + li, "    ", 5);
+        ind = in4;
+    }
+    if (r->site.end_back == 1) moved_open(o, ind, h);
     kit_out(o, "%sconst void *q = memchr(%s + %s, %d, %s%s - %s);\n",
             ind, h->s, h->lo, b, h->n, r->site.end_back ? " - 1" : "", h->lo);
     if (r->site.end_back == 0) {
@@ -220,6 +292,8 @@ static int pf_memchr_use(mf_art *art, uint32_t handle, const mf_hooks *h,
                    "%s%*s: %s;\n",
                 ind, h->result, h->s, ind, (int)strlen(h->result) + 5, "",
                 kit_miss(h));
+        moved_close(o, ind, h);
+        if (ind != bind) kit_out(o, "%s}\n", bind);
     }
     art->includes |= MF_INC_STRING_H;
     return mf_art_note_libc(art, "memchr");
@@ -236,13 +310,20 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
         return kit_fail(art, "pf_walk: the walk is in place: result must be lo");
     if (!h->table_name)
         return kit_fail(art, "pf_walk: needs the table_name hook");
+    if (r->site.empty != MF_EMPTY_MISS && h->on_miss)
+        return kit_fail(art, "pf_walk: an on_miss is run only where the empty range runs "
+                        "the miss (`empty` MISS): a stated one would be dropped");
     const char *t = h->table_name(h->u, r->site.pred.term[0].table_ref);
     if (!t || !*t)
         return kit_fail(art, "pf_walk: table_name gave no name for table_ref %u",
                         r->site.pred.term[0].table_ref);
+    if (r->site.end_back == 1) moved_open(o, ind, h);
     kit_out(o, "%swhile (%s%s < %s && !%s[%s[%s]]) %s++;\n",
             ind, h->lo, r->site.end_back ? " + 1" : "", h->n, t, h->s, h->lo,
             h->lo);
+    if (r->site.end_back == 1) moved_close(o, ind, h);
+    if (r->site.empty == MF_EMPTY_MISS)
+        kit_out(o, "%sif (%s >= %s) %s\n", ind, h->lo, h->n, h->on_miss);
     return 0;
 }
 
@@ -336,12 +417,14 @@ static const gate_contract pf_memchr_ct = {
     sizeof pf_memchr_uses / sizeof pf_memchr_uses[0], {
     PF_SERVES
     PF_AT_ZERO
-    [FLD_empty]           = CM(E_EXCLUDED),           /* memchr_shape: pcrec's `lo >= n` guard
-                                                         precedes the site */
+    [FLD_empty]           = CM(E_EXCLUDED) | CM(E_MISS), /* pf_memchr_applies: pcrec's `lo >= n`
+                                                         guard precedes the site, or (B2,
+                                                         KW-3) pf_memchr_use writes it */
     [FLD_end_back]        = CM(ZERO),                 /* pf_memchr_applies */
     [FLD_on_miss_leaves]  = CM(YES),                  /* the miss_leaves column: nothing after
                                                          the NULL test may run on a miss */
-    [FLD_table_ref]       = CM(NONE),                 /* memchr_shape: the one bit is read */
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* memchr_shape: the one bit is read; an
+                                                         offered table is not (PR-1) */
     [FLD_table_name]      = MF_ANY,                   /* not read */
     [FLD_miss]            = MF_ANY,                   /* not read: a miss runs on_miss, which
                                                          leaves; no value is stored */
@@ -354,9 +437,13 @@ static const gate_contract pf_memchr_bounded_ct = {
     sizeof pf_memchr_bounded_uses / sizeof pf_memchr_bounded_uses[0], {
     PF_SERVES
     PF_AT_ZERO
-    [FLD_empty]           = CM(E_EXCLUDED),           /* memchr_shape: pcrec's `lo + 1 < n`
-                                                         block encloses the site */
+    [FLD_empty]           = CM(E_EXCLUDED) | CM(E_NOP), /* pf_memchr_bounded_applies: pcrec's
+                                                         `lo + 1 < n` block encloses the
+                                                         site, or (B2, KW-3) pf_memchr_use
+                                                         writes it */
     [FLD_end_back]        = CM(ONE),                  /* pf_memchr_bounded_applies */
+    [FLD_moved]           = CM(OTHER),                /* moved_close; one_stmt holds it to one
+                                                         statement (B2, PR-2) */
     [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
                                                          although moot: it is the DEFINE-time
                                                          witness of an on_miss the use will
@@ -364,7 +451,8 @@ static const gate_contract pf_memchr_bounded_ct = {
                                                          a leaving ASSIGN goes to the generic
                                                          row at mf_define instead of being
                                                          refused at mf_use (r4gfix) */
-    [FLD_table_ref]       = CM(NONE),                 /* memchr_shape */
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* memchr_shape; an offered table is not
+                                                         read (PR-1) */
     [FLD_table_name]      = MF_ANY,                   /* not read */
     [FLD_miss]            = CM(OTHER),                /* stored after `: `; miss_is_end holds it
                                                          to `n - 1` exactly (not MISS_N: `n` is
@@ -377,19 +465,22 @@ static const gate_contract pf_walk_ct = {
     sizeof pf_walk_uses / sizeof pf_walk_uses[0], {
     PF_SERVES
     PF_AT_ZERO
-    [FLD_empty]           = CM(E_NOP),                /* walk_applies: the loop test fails first */
+    [FLD_empty]           = CM(E_NOP) | CM(E_MISS),   /* pf_walk_applies: the loop test fails
+                                                         first (NOP); or (B2, KW-3) the kit's
+                                                         `lo >= n` test after it runs on_miss */
     [FLD_end_back]        = CM(ZERO),                 /* pf_walk_applies */
-    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
-                                                         although moot: it is the DEFINE-time
-                                                         witness of an on_miss the use will
-                                                         state (on_miss itself is use-only), so
-                                                         a leaving ASSIGN goes to the generic
-                                                         row at mf_define instead of being
-                                                         refused at mf_use (r4gfix) */
+    [FLD_on_miss_leaves]  = CM(NO) | CM(YES),         /* pf_walk_applies pairs them: NO with a
+                                                         NOP empty (no on_miss is run: the
+                                                         DEFINE-time witness r4gfix kept, so a
+                                                         leaving ASSIGN under NOP goes to the
+                                                         generic row), YES with MISS (the
+                                                         post-test runs it and leaves) */
     [FLD_table_ref]       = CM(REF),                  /* walk_applies: pcrec's table is read */
     [FLD_table_name]      = MF_ANY,                   /* pf_walk_use: any name, as given */
     [FLD_miss]            = CM(MISS_N),               /* a miss leaves the cursor at n */
-    [FLD_on_miss]         = 0,                        /* never run: a stated one declines (R2) */
+    [FLD_on_miss]         = CM(JUMP) | CM(BRACED),    /* pf_walk_use: `if (lo >= n) %s`, under
+                                                         MISS only (pf_use_ok requires it
+                                                         there) */
 }};
 
 static const gate_contract pf_walk_bounded_ct = {
@@ -397,8 +488,10 @@ static const gate_contract pf_walk_bounded_ct = {
     sizeof pf_walk_uses / sizeof pf_walk_uses[0], {
     PF_SERVES
     PF_AT_ZERO
-    [FLD_empty]           = CM(E_NOP),                /* walk_applies */
+    [FLD_empty]           = CM(E_NOP),                /* pf_walk_bounded_applies */
     [FLD_end_back]        = CM(ONE),                  /* pf_walk_bounded_applies */
+    [FLD_moved]           = CM(OTHER),                /* moved_close; one_stmt holds it to one
+                                                         statement (B2, PR-2) */
     [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
                                                          although moot: it is the DEFINE-time
                                                          witness of an on_miss the use will

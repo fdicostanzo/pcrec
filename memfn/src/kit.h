@@ -217,6 +217,12 @@ typedef struct {
        reports it; the query must agree with it) */
     const char       *def_start;
     mf_class          cls;
+    /* R17-b' B2 (MF_SITE_ABI 13): the finder row whose ROUTED decision chose
+       the arm (mf_result.row), NULL for the pre-table form; and the site's
+       arm-entry counter slot (R-MS6: its index in the art's reach array,
+       -1 when the art does not count) */
+    const char       *fd_row;
+    int               reach_k;
 } site_rec;
 
 struct mf_art {
@@ -249,6 +255,12 @@ struct mf_art {
     const mf_measures *ms;
     const mf_analysis *an;
     uint8_t     consulted;
+    /* R17-b' B2, R-MS6: the arm-entry counter (mf_reach): the host's stem
+       (NULL: the art does not count, every shipped compile), and per counter
+       slot its finder row id */
+    const char  *reach_stem;
+    const char **reach_row;
+    uint32_t     nreach, reach_cap;
     char        err[256];
 };
 
@@ -401,6 +413,15 @@ int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
  * MFTRACE records: no byte, no art state, never `consulted`. Called by an
  * MF_TRACE build only (compose.c); elsewhere it would write nothing. */
 void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def);
+/* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
+ * that renders the table's pick for FIND site `s` (handle `handle`, the next
+ * handle at a define) where the decision's rows are routed, and *row its
+ * terminal row's id; NULL where the site renders its pre-table form (*row
+ * NULL), or where a routed pick has no arm (*row set: a kit build error the
+ * caller refuses). `quiet` 1 for the query (no record, no reach). */
+#define fd_route MF_NS(fd_route)
+const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
+                           const mf_hooks *def, int quiet, const char **row);
 
 /* ---- writing to a sink --------------------------------------------------- */
 
