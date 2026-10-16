@@ -15,3 +15,10 @@ Branch lane/runaxes (base c2b6e927b). Session closed before the classes were mea
 ## Measurement in flight (detached nohup, pinned 12-15)
 Log: build/rascratch/measure_full.log (48 of 48 lines when last read; each line = one (cell,enc,stream), differ over 4624 distinct corpus patterns). Command: python3 -I tests/axes/memfn_arm.py --pcrec build/pcrec --root . --jobs 4 --measure --cell 'NAME|default|--memfn=no-NAME' --cell 'NAME|simd|-fmemfn-simd --memfn=no-NAME' for the 6 rows (args in build/rascratch/cellargs.txt). Complete when 48 lines.
 Partial so far: precheck-assign-byte differs 176 (byte c-default) / 244 (utf8 c-default) at both layers, 0 at c-vm; vrun-kb at default 0. Provisional classes: precheck-assign-byte DIFFER at both layers; vrun-* ASSERT_ZERO at default, DIFFER at simd (witness (?i)cat, hand-verified for all five vrun rows on the default and vm engines). No FINDING (answer difference) observed yet; jobs not run.
+
+## UPDATE: the measurement FINISHED (48/48), transcript docs/dev/lanes/runaxes_measure.log
+Classes (distinct corpus patterns, 4624, byte|utf8 x c-default|c-vm):
+- precheck-assign-byte, both layers: DIFFER 176|0 byte, 244|0 utf8 (c-vm 0).
+- vrun-w32/w16/kb/trim/pad at layer default: ASSERT_ZERO (all 0). At layer simd: DIFFER ~19-20 (c-default) / 18-19 (c-vm) byte, 14-15 utf8 (e.g. w32 20/19/15/15, pad 19/18/14/14); read exact per-row numbers from the log. Witness (?i)cat.
+- REFUSES: no `--memfn=no-NAME` is refused today; the force spelling `--memfn=NAME` of every kind=deny row and an unknown name are (controls in memfn_arm.py).
+Process finished; nothing running. Still owed: fill MEMFN_CLASS from the log, S1026 plant/unplanted runs, the AXES=--memfn answer-identity run.
