@@ -1277,7 +1277,8 @@ static void gate_cases(void)
  *   arm_fixtures OUTDIR --only fd-<name>   one shadow witness (rows.tsv's
  *       table `fd`): a site rendered under a fixture set; its .def/.use are
  *       the pre-table form's text, its FD records the shadow's decision
- *   arm_fixtures --fd-site SITE [--fd-set FILE]   one site under a set FILE
+ *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR]   one site under
+ *       a set FILE and a `--memfn=` string
  *       (measure_sets §1.2's section TSV, its `rows` section read here, with
  *       no pcrec code), printing `CONSULTED<TAB>0|1` (R-MS2): the R-MS1/R-MS4
  *       loops of tests/memfn/finder_check.py
@@ -1291,13 +1292,13 @@ static void gate_cases(void)
 static const mf_measure FDS_R0_ROWS[] = {
     { "kit.saving.V1.WALK.r2", 0, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2e0c0", 0, "ratio", "fixture" },
-    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
+    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
 };
 static const mf_measure FDS_R7_ROWS[] = {
     { "kit.saving.V1.WALK.r1e0c0", 500000, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2e0c0", 500000, "ratio", "fixture" },
     { "kit.saving.V1.WALK.r2", 500000, "ratio", "fixture" },
-    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
+    { "kit.eps.findall.l64k", 10000, "ratio", "fixture" },
 };
 static const mf_measures FDS_R0 = { "fixture-r0", 1, "0000000000000000", "-", "synthetic", 0,
                                     3, FDS_R0_ROWS };
@@ -1472,12 +1473,13 @@ static int fd_load_set(const char *path, mf_measures *ms)
     return 0;
 }
 
-static int fd_site_mode(const char *site, const char *setpath)
+static int fd_site_mode(const char *site, const char *setpath, const char *opts)
 {
     mf_site s;
     mf_pred p[2];
     mf_measures ms;
     if (fd_site_of(site, &s, p)) { fprintf(stderr, "no fd site %s\n", site); return 2; }
+    s.opts = opts;
     if (setpath && fd_load_set(setpath, &ms)) return 2;
     return fd_render(NULL, site, &s, setpath ? &ms : NULL) ? 1 : 0;
 }
@@ -1566,8 +1568,14 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] | --finder-rows | --hash | --pay-grid\n", stderr); return 2; }
-    if (!strcmp(argv[1], "--fd-site") && argc > 2)
-        return fd_site_mode(argv[2], argc > 4 && !strcmp(argv[3], "--fd-set") ? argv[4] : NULL);
+    if (!strcmp(argv[1], "--fd-site") && argc > 2) {
+        const char *set = NULL, *opts = NULL;
+        for (int i = 3; i + 1 < argc; i += 2) {
+            if (!strcmp(argv[i], "--fd-set")) set = argv[i + 1];
+            else if (!strcmp(argv[i], "--opts")) opts = argv[i + 1];
+        }
+        return fd_site_mode(argv[2], set, opts);
+    }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();
     if (!strcmp(argv[1], "--pay-grid")) return pay_mode();

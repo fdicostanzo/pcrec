@@ -49,9 +49,12 @@
  * (the layer's LINER form: V1 at OFF, W64 at W16/W32), `<kind>` (the
  * consumer kind; unresolvable while unstated), `<t>` (the terminal pick).
  * A key ABSENT from the set does not hold (§1.5 rule 3; never read as 0:
- * S917). The REGIME token of the null floor R0/R7 compare against is the
- * saving's own card's (`beta`: the streamed slope of member-free single
- * calls, `kit.eps.streamed.slope`): the design leaves `<regime>` unspelled
+ * S917). The REGIME token of the null floor R0/R7 compare against is
+ * streamed find-all's (`kit.eps.findall.l64k`, gridread's F1 A/A p90): the
+ * design leaves `<regime>` unspelled, and F1's floor is the one under which
+ * r17b_prime.md §3.5's predicted byte movers (285 + 15 on grid1's measured
+ * shapes, the (2,0,0) r2 cover staying on the walk) come out, while the beta
+ * slope's own F3 floor would move the (2,0,0) cover's sites too
  * (fdb1_report.md finding F-B1-2). The pay rule's operand keys (`delta`,
  * `dfloor`, `cdisp_call`, `cfloor`, `ffloor`, `cdisp_use`, `ufloor`,
  * `wfloor`: one quantity per floored cell kind, so each card has one arity)
@@ -226,7 +229,7 @@ FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,   
  * edit to a row is logged in memfn/docs/finder_history.md in the commit that
  * makes it (§1.8); a routed row is LOCKED. */
 #define K_SAVE   "kit.saving.<liner>.WALK.<shape>"
-#define K_EPS    "kit.eps.streamed.slope"
+#define K_EPS    "kit.eps.findall.l64k"
 static const fd_row fd_rows[] = {
     { "R0", FD_FIND, KN_P | KN_A, SF_SPAN0 | SF_COVER_R2, 0,
       { { FL_KEY, "kit.saving.V1.WALK.r2", FO_LE, K_EPS, NULL } },
@@ -242,7 +245,7 @@ static const fd_row fd_rows[] = {
     { "R8", FD_FIND, KN_P | KN_N | KN_M | KN_E | KN_A, SF_SPAN0 | SF_E_MEASURED, 0,
       { { FL_N, NULL, FO_GE, "kit.lstar.W64.<kind>", NULL },
         { FL_E_G, NULL, FO_GE, "kit.g8.W64.<kind>", NULL } },
-      FF_W64, FF_V1, { 0, 0, 0, 0 }, 0, "fd-r8", FB_MEASURED, "B6",
+      FF_W64, FF_V1, { 0, 0, 0, 0 }, 0, "fd-r8", FB_DERIVED, "B6",
       "a long one-shot call with a measured sparse gap: the 64-byte form (gridread §6.3 D2)",
       "a sparse long call on which W64 loses to V1", &ct_r8, 0, 0 },
     { "R3a", FD_FIND, KN_H, SF_SPAN0, 0,

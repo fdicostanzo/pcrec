@@ -66,6 +66,7 @@ def reader(a):
     pats = population(a.bin, a.every)
     items = [(p, arm, extra) for p in pats for arm, extra in READER_ARMS]
     tally, aborts, nfail = Counter(), [], 0
+    pats_of = {}                         # key -> distinct patterns
 
     def task(item):
         p, arm, extra = item
@@ -77,18 +78,20 @@ def reader(a):
     with ThreadPoolExecutor(a.jobs) as ex:
         for p, arm, rc, recs, orc in ex.map(task, items):
             for r in recs:
-                tally[(arm,) + tuple(x.decode() for x in r[1:4])] += 1
+                k = (arm,) + tuple(x.decode() for x in r[1:4])
+                tally[k] += 1
+                pats_of.setdefault(k, set()).add(p)
             if orc:
                 aborts.append((arm, es.encode_escape(p), orc[0].decode("utf-8", "replace")))
             elif rc not in (0, 1):
                 nfail += 1
     with open(a.out, "w") as fh:
         fh.write("# reader-shadow census (shadow_census.py reader): arm, reader, "
-                 "shadow-arm, verdict, records\n")
+                 "shadow-arm, verdict, records, distinct patterns\n")
         fh.write("# population: %d distinct patterns x %d arms (every %d)\n"
                  % (len(pats), len(READER_ARMS), a.every))
         for k in sorted(tally):
-            fh.write("\t".join(k) + "\t%d\n" % tally[k])
+            fh.write("\t".join(k) + "\t%d\t%d\n" % (tally[k], len(pats_of[k])))
         fh.write("# CANDORACLE aborts: %d\n" % len(aborts))
         for ab in aborts:
             fh.write("# ABORT\t%s\t%s\t%s\n" % ab)

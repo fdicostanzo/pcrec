@@ -19,5 +19,9 @@ SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/pathreads_report.m
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },
-                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },'
-SAB_AFTER='                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) } },   /* SABOTAGE S844 */'
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },'
+SAB_AFTER='                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },   /* SABOTAGE S844 */'
+# Re-aimed by lane fdb1 (R17-b' B1, 2026-10-16): RECOVER's node gained the
+# kit-ask fields after `.under`, so the node no longer closes there; the plant
+# still drops RECOVER's read-under deny bits and nothing else (intent
+# re-verified).

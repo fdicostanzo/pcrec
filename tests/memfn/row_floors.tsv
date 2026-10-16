@@ -55,6 +55,13 @@
 # defines (no byte moved; the identity sweeps are 0-mover). Re-read at main's
 # next full N2 census (OWED, fdb0_report.md).
 #
+# The finder table's rows (table `fd`, R17-b' B1, lane fdb1): reach
+# `pending-site:<step>` (rows.tsv), so pcrec_floor `-`, and the census reads
+# them chosen 0 times: a finder decision is the MF_TRACE build's SHADOW, whose
+# END records are phase `shadow` and never counted as chosen (memfn/src/gate.c).
+# g2_floor PLACEHOLDER: G2 counts no shadow decision. Each routing step pins
+# both columns for the rows it routes.
+#
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
 arms	precheck	253352	2061
@@ -76,3 +83,22 @@ fn	fn-pair	5205	10422
 fn	fn-memchr	117902	18981
 fn	vrun-w16	70	743
 fn	vrun-w32	70	743
+fd	R0	-	PLACEHOLDER
+fd	R5	-	PLACEHOLDER
+fd	R8	-	PLACEHOLDER
+fd	R3a	-	PLACEHOLDER
+fd	R3b	-	PLACEHOLDER
+fd	R4	-	PLACEHOLDER
+fd	R1	-	PLACEHOLDER
+fd	R2	-	PLACEHOLDER
+fd	D1	-	PLACEHOLDER
+fd	D1c	-	PLACEHOLDER
+fd	D1w	-	PLACEHOLDER
+fd	D2	-	PLACEHOLDER
+fd	R7	-	PLACEHOLDER
+fd	R7w	-	PLACEHOLDER
+fd	P0	-	PLACEHOLDER
+fd	P2	-	PLACEHOLDER
+fd	P3	-	PLACEHOLDER
+fd	P4	-	PLACEHOLDER
+fd	P9	-	PLACEHOLDER
