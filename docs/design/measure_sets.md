@@ -1,10 +1,52 @@
-# Measurement sets — the format, the store, loading, the kit channel, the tool (rev 2)
+# Measurement sets — the format, the store, loading, the kit channel, the tool (rev 3)
 
-Status: DESIGN ONLY, revision 2 (lane msetrev, 2026-10-14, from main `58338a09f`, abi 78).
-Revision 1 was lane msetdes (same day). Nothing is built; nothing under `src/`, `cli/`,
-`lib/` or `tests/` changes. Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166
-and its addenda 1/1.1 and 2
-(read D161 addenda 11-13, D162 and its addenda, D149 and D157 with it). It is part of the
+Status: DESIGN ONLY, revision 3 (lane msrev3, 2026-10-16, from main `063b4a4b4`, abi 78).
+Revision 2 was lane msetrev (2026-10-14, from `58338a09f`); revision 1 was lane msetdes
+(same day). Nothing is built; nothing under `src/`, `cli/`, `lib/` or `tests/` changes.
+Plan rows [MEASURE-SET] and, for §9, [KNOW-SRC]; ruled by D166 and its addenda 1/1.1 and 2,
+and by D167 (Q-R17P-14)
+(read D161 addenda 11-13, D162 and its addenda, D149 and D157 with it).
+
+**Revision 3 answers the light re-check r2
+(`../dev/reviews/2026-10-16-r2-measure-sets-recheck.md`: 0 BLOCKER, 8 MAJOR, 11 MINOR,
+5 unlocks).** Read §R3 first. Changed text carries `[r2 <id>]` in place. Revision 2's
+own record (§R2) follows it unchanged.
+
+## R3. What revision 3 changed, by finding
+
+Every finding is ACCEPTED. None is rejected. One MINOR is accepted in part, with the rest
+deferred to a named trigger (n7).
+
+| finding | disposition | section | how |
+|---|---|---|---|
+| M1 the evaluator parameter table missing | ACCEPTED | §9.1, §9.1a, §9.5, §9.11 (new) | A fourth kind row, `evaluator-params`: FILE only, no store, no flag, no artifact stamp; its item digest IS the prereg hash. The placement rule is a first-match row table (§9.1a). §9.11 states the canonical format the kit's `prereg.tsv` uses from today. Whether the kit reads it through pcrec's parts or its own reader is OQ-1 (§10.6) |
+| M2 the shared resolver contradicts the analysis kind | ACCEPTED | §3.2, §9.2 part 2, §9.5, §9.7 | Every divergence is a declared column of the kind row: `flag_classify`, `list_classify`, `s2_mismatch`, `s2_multi`, `revs`. Measures adopt the SHIPPED `name-else-file` classification. Measures REFUSE an S2 mismatch, analysis FALLS THROUGH, and §3.2 says why they differ. K1's zero-mover witnesses name `tests/findings/res_fixtures.py` |
+| M3 the round trip shares its reader and writer with its subject | ACCEPTED | §9.6, §8.5, §5.2, §3.2 | (a) A new check R5, decoded = independent: the C loader's field-by-field decode equals the python parser's decode; for analysis, the resolution digests equal `findings_ref.py bundle-digest`. S981 plants a symmetric column swap that R1-R4 miss. (b) R3's independent side for the analysis kind is `analyze/`'s own bundle-text reader, extended at K3 to every section; that extension is priced. (c) Fixed by M2: `--measures=f.tsv` is now a FILE |
+| M4 the census tool duplicates `emit_sweep.py` | ACCEPTED | §9.3, §8.4, §8.5 | The census is an `emit_sweep.py` MODE (`--data KIND OLD NEW`), with an attribution stream and a movers-TSV writer. Its population is emit_sweep's pinned streams. `knowledge_census.sh` and `census_population.tsv` are withdrawn. S952 re-aims onto emit_sweep's existing reach floor |
+| M5 one digest column cannot express analysis's two digests | ACCEPTED | §9.2 part 5, §9.5, §9.6, §1.6 | Each kind row has two digest ROLES, ITEM and STAMP. Each role is a literal domain BYTE STRING with its length, plus a sub-key policy (`none` or `query`). The shipped `pcrec-find-1\0<query>` and `pcrec-find-rows-1` are grandfathered byte for byte. No domain is renamed or derived. R1 uses the ITEM digest. A K1 gate pins every shipped `_FINDINGS` stamp and `rows_digest` unchanged. The note states what `rows_digest` does not cover |
+| M6 the `lib` resolver is an unplaced third member | ACCEPTED | §9.1, §9.5, §9.7, §11 F12 | `lib` is a resolve-only kind row: no stamp, no digest, no flag, and its own stops (the source's directory, then `-I`). Its entry match is a COLUMN, `entry_match = probe-exists`, which keeps K1 zero-mover. The case-exactness drift is filed as finding F12 against `rxt_source.c`. Fixing it flips that column to `exact`, as its own caller-visible change. The reserved `lib <store-name>` is U4 |
+| M7 the reach lever crosses the kit boundary | ACCEPTED | §4.4 (R-MS6), §8.1, §8.5 | R-MS6 asks the kit for a harness-only arm-entry counter under the reserved prefix. The admitted-arm list is the `memfn` fired-rows section (R-MS4), checked against the synthetic `dispatch` set's construction. Python reads no kit predicate. S956 re-aims at the hook |
+| M8 a core→parse link edge in a "dependency-free" module | ACCEPTED | §9.2, §7.1 | The kind-independent PARTS (`src/core/ksrc.c`) include only libc and `ksrc.h`. They allocate and write through two small callback structs, and hold no kinds table. The table `ksrc_kinds[]` is assembled at the library tier. The analysis row is registered from `src/parse/`. `pcrec-measure` compiles the parts plus the measures row and nothing else. Its dependency set is stated, with a link check (S987) |
+| r1 msc1-5 PARTIAL | ACCEPTED | as M7 | discharged by M7's fix |
+| r1 msc2-9 PARTIAL | ACCEPTED | as M1, M2, M4, M6 | the family is complete: four ruled kinds plus `lib`, limits placed (§9.1a, U3), emit_sweep unified, the resolver's divergences declared |
+| n1 sabotage re-aims not derived | ACCEPTED | §9.7 | K1 delivers a DERIVED edit set and derived re-aims (re-aim or re-run) for every `SAB_FILE=` row anchored in `rxt_find.c` or `findings.c`, plus `limits_check.sh`'s `PCREC_FIND_NTBL/NBUNDLES` reader |
+| n2 `analyze/` is a second writer and reader | ACCEPTED | §9.1, §9.6, §9.9 | It is a DELIBERATELY INDEPENDENT TWIN, not a member that "exists once". It serves as R3's control |
+| n3 per-kind special cases written as prose | ACCEPTED | §9.5 | They become columns: `bare_view` (`canonical` or `shipped`) and `r4` (`required` or `exempt`) |
+| n4 two attribution mechanisms for analysis | ACCEPTED | §9.3 | Attribution is the lookup TRACE. The `_FINDINGS` stamp items are its cross-check |
+| n5 shadow rule keyed on id only | ACCEPTED | §3.2, §3.3, §9.6 | The shadow check is keyed on (id, rev). `NAME@REV` at S2 requires the header `rev` to match. S986 |
+| n6 digest codes undefined | ACCEPTED | §1.6 | A code table for the unit byte and the status byte |
+| n7 the pcrec-side dependency hash over-stales | ACCEPTED in part | §2.4 | Recorded: pcrec rows over-stale BY DESIGN until M4. Body normalization is DEFERRED to M4, the first stage with a `pcrec.` row |
+| n8 an excluded key versus the card's `env` | ACCEPTED | §6.2 | The cross-check runs only on keys with an agreed derived direction. An excluded key lists the card's `env` beside `excluded` in an always-printed INFO bucket |
+| n9 MOVERS for a default rollback | ACCEPTED | §2.1, §8.4 | The census is keyed by TRANSITION: `measure_store/DEFAULTS.log` and `measure_store/movers/<seq>.tsv`. A rev directory holds no MOVERS file |
+| n10 oracle capture per set | ACCEPTED | §8.1, §10.1 | A set's landing bar includes the libpcre2 `match-at` capture of its generated boundary subjects. That needs the local adapter's box |
+| n11 the `ks_pick` tier | ACCEPTED | §9.2 part 3 | `ks_pick` returns the decision and the disagreement as data. The CLI prints the note through `cli_err` |
+| U1-U5 | FILED, not built | §10.4 | each with its trigger |
+| D167 Q-R17P-14 (ruled 2026-10-16) | FOLDED | §1.2, §2.4, §5.1 | `libc:<name>@<version>` is provenance in `deps`, plus a SET-level `libc-mismatch` listing flag beside `compiler-mismatch`. It is never row staleness |
+
+One question goes to Frank (§10.6, OQ-1): whether the evaluator-parameter kind's READER is
+pcrec's shared parts or the kit's own, with one shared format and digest spec either way.
+Every other choice above changes no answer and is the manager's
+(`pcrec-answer-free-choices-are-mine`). It is part of the
 framework Frank wants before further optimization (plan row [REGIME]). Its first customer
 is the kit's R17-b′ (`memfn/r17b_prime.md` §3, whose measurement table is the needs list);
 the interim shape is the kit's TSV from `memfn/regime_eval.md` Q-REVAL-10. The method a set
