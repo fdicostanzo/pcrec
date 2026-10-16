@@ -102,151 +102,180 @@ are labelled P-a..P-h. The manager allocates.
 ```c
 #define PCREC_ERR_ITER (-10)  /* [FINDALL-NEXT] below PCREC_ERR_FLOOR: NOT a give-up -- the iterator was refused */
 
-#define PCREC_ITER_STATE_SIZE  56   /* S: derived from the storage-row table (§1.3) */
+#define PCREC_ITER_STATE_SIZE  64   /* S: derived, §1.3 */
 #define PCREC_ITER_STATE_ALIGN 8
-#define PCREC_ITER_LAYOUT      1u   /* bumps with any change to rx_iter's layout or to S */
-#define PCREC_ITER_FRESH    (0x49540000u | (PCREC_ITER_LAYOUT << 8) | 0x01u)
-#define PCREC_ITER_FRESH_AT (0x49540000u | (PCREC_ITER_LAYOUT << 8) | 0x02u)
-#define PCREC_ITER_BOUND    (0x49540000u | (PCREC_ITER_LAYOUT << 8) | 0x03u)
+#define PCREC_ITER_LAYOUT      2u   /* bumps with any change to rx_iter's layout or to S */
+#define PCREC_ITER_TAG       (0x49540000u | (PCREC_ITER_LAYOUT << 8))
+#define PCREC_ITER_FRESH     (PCREC_ITER_TAG | 0x01u)
+#define PCREC_ITER_BOUND     (PCREC_ITER_TAG | 0x02u)
+#define PCREC_ITER_ENDED     (PCREC_ITER_TAG | 0x03u)
+#define PCREC_ITER_OPT_AT    0x10u  /* option bits, set by the setters on a FRESH iterator */
+#define PCREC_ITER_OPT_VARS  0x20u
+#define PCREC_ITER_OPT_IN    0x40u
+#define PCREC_ITER_STATE_MASK 0x0Fu
 
 typedef struct rx_iter {
-    uint32_t hdr;      /* STABLE PREFIX: PCREC_ITER_FRESH / _FRESH_AT / _BOUND */
+    uint32_t hdr;      /* STABLE PREFIX: tag | layout | state | option bits */
     int32_t  rc;       /* STABLE PREFIX: 1 live, 0 done, < 0 the code that ended it */
     uint32_t flags;    /* RX_ITER_F_RETRY, RX_ITER_F_CHECKED */
-    uint32_t reserved_;
-    size_t   lo;       /* the next search position; never decreases */
-    const unsigned char *s;   /* bound at the first call */
+    int32_t  rc_next;  /* the code a batch fill met, delivered after the batch drains (§2.3) */
+    const unsigned char *s;   /* bound at init */
     size_t   n;
-    const void *owner;        /* &<prefix>_info of the artifact that bound it */
-    const rx_var *vars;       /* bound by RX_ITER_INIT_VARS; NULL = none */
+    size_t   lo;       /* the next search position; never decreases */
+    const void *owner;        /* &<prefix>_info of the artifact that bound it, at the first call */
+    const rx_var *vars;       /* rx_iter_vars; read only if OPT_VARS */
     size_t   nvars;
+    const void *bufs;         /* the binding artifact's <prefix>_buffers; read only if OPT_IN */
+    size_t   bhead, bcount;   /* the batch cursor: entries [bhead, bcount) are undelivered */
     union { unsigned char b[PCREC_ITER_STATE_SIZE]; uint64_t align_; } st;   /* the storage rows */
 } rx_iter;
 
-static inline rx_iter rx_iter_fresh(void) { rx_iter it; it.hdr = PCREC_ITER_FRESH; return it; }
-static inline rx_iter rx_iter_fresh_at(size_t pos)
-{ rx_iter it; it.hdr = PCREC_ITER_FRESH_AT; it.lo = pos; return it; }
-#define RX_ITER_INIT        rx_iter_fresh()
-#define RX_ITER_INIT_AT(p_) rx_iter_fresh_at(p_)
+static inline rx_iter rx_iter_init(const unsigned char *s, size_t n)
+{ rx_iter it; it.hdr = PCREC_ITER_FRESH; it.s = s; it.n = n; return it; }
+#define RX_ITER_INIT(s_, n_) rx_iter_init((s_), (n_))
+
+/* Setters: legal only on a FRESH iterator. On any other state they poison the header,
+   so the next call refuses with PCREC_ERR_ITER rather than rebinding silently. */
+static inline void rx_iter_at(rx_iter *it, size_t pos)
+{ if ((it->hdr & ~0xF0u) == PCREC_ITER_FRESH) { it->lo = pos; it->hdr |= PCREC_ITER_OPT_AT; }
+  else it->hdr = 0; }
+static inline void rx_iter_vars(rx_iter *it, const rx_var *v, size_t nv)
+{ if ((it->hdr & ~0xF0u) == PCREC_ITER_FRESH) { it->vars = v; it->nvars = nv; it->hdr |= PCREC_ITER_OPT_VARS; }
+  else it->hdr = 0; }
 ```
 
-The twin carries exactly this, as `findall_iter/twin/iter_abi.h`. On LP64, sizeof = 64 + S =
-120 B. The fields, and why each is where it is:
+and, in each artifact's HEADER (not the shared block, because its argument type is the
+artifact's own, match_api.md §10.2¶2):
+
+```c
+static inline void <prefix>_iter_buffers(rx_iter *it, const <prefix>_buffers *b)
+{ if ((it->hdr & ~0xF0u) == PCREC_ITER_FRESH) { it->bufs = b; it->hdr |= PCREC_ITER_OPT_IN; }
+  else it->hdr = 0; }
+```
+
+On LP64, sizeof = 96 + S = 160 B (PREDICTED; revision 1's was 120 B at S = 56). The fields,
+and what revision 2 changed:
 
 | field | storage class | why |
 |---|---|---|
-| `hdr` | FIXED, stable prefix | the validity word. Init writes it alone, so it is the "one validity word" of D165 item 5. Its three values let `next` tell a fresh iterator from a bound one from a foreign one with one compare. The layout version makes it the versioned-caller-struct field: under [ART-MGR] the TU guard does not run, and the header word refuses a struct of another layout |
-| `rc` | FIXED, stable prefix | done (0) and gave-up/refused (< 0) must stay distinct after `next` has returned 0. It sits at the fixed offset 4, so a struct of ANOTHER layout can still be told why it was refused |
-| `flags` | FIXED | `RETRY` is the empty-match retry bit (D165 item 2's "retry bit"). `CHECKED` means the once-per-iterator entry checks ran |
+| `hdr` | FIXED, stable prefix | the validity word. Its state values tell a fresh iterator from a bound, an ended, or a foreign one. ENDED makes stickiness free: the BOUND fast path is one fused compare (below), and an ended iterator fails it. The option bits record which setters ran, so init writes no optional field (**rev 2**: replaces revision 1's FRESH_AT state and its `RX_ITER_INIT_AT`/`_VARS` macro family) |
+| `rc` | FIXED, stable prefix | unchanged: done (0) and gave-up/refused (< 0) stay distinct after `next` has returned 0, at a fixed offset any layout can read |
+| `flags` | FIXED | `RETRY` (the empty-match retry bit) and `CHECKED` (the once-per-iterator checks ran) |
+| `rc_next` | FIXED | **rev 2**: the pending code under batching (§2.3). It reuses revision 1's `reserved_` word, so it costs no bytes |
+| `s`, `n` | FIXED | **rev 2**: bound at INIT (D165 add. 2 Q3). A subject mismatch is impossible by construction |
 | `lo` | FIXED | the search position, monotone (D165 item 1) |
-| `s`, `n`, `owner` | FIXED | the binding (§1.2) |
-| `vars`, `nvars` | FIXED | the variable environment, constant for one find-all. Holding it here makes `next`'s signature UNIFORM. Today a var-bearing artifact's `_search` takes two extra parameters (`match_api.md` §3¶3); 18 corpus patterns have that signature (`twin/out/label_census.out`, `nosig`). A uniform `next` can sit in [V-E]'s `rx_entries` without a per-artifact type |
+| `owner` | FIXED | written at the first call; checked on every later one (§1.2) |
+| `vars`, `nvars` | FIXED | unchanged in role; now set by `rx_iter_vars` |
+| `bufs`, `bhead`, `bcount` | FIXED | **rev 2**: the `_in` binding and the batch cursor (§2.3). FIXED, not storage rows: every artifact can batch, as every artifact can need the retry bit |
 | `st` | BUFFER | every storage row (§1.3) |
 
-**The reseed hint is a BUFFER row, not a field.** The brief lists the hint among the layout's
-parts. It is a storage user of one route (adaptive VM hybrids), so by D165 item 4 it is a row
-in S, not a field every artifact carries.
+**Why setters and not an init macro per combination.** Revision 1 already had `RX_ITER_INIT`
+and `_AT`, and needed `_VARS` and `_AT_VARS`; D165 add. 2 adds `_IN`. That is 2³ spellings
+for three independent options, and each new option would double it again. The setters are
+one rule (an option is a setter on a FRESH iterator, recorded by a header bit) that a fourth
+option joins without touching the others. A setter is `static inline`, so it is no exported
+symbol and no call. Init still writes no optional field, so D165 item 5's "never a memset"
+holds.
 
-**The retry bit and the checked bit are FIXED flag bits.** They are rows of the table (§1.3)
-whose storage class is "a bit of `flags`". Every artifact can need the retry bit; it costs no
-bytes of S.
+### 1.2 Binding (D165 add. 2 Q3: bind at init)
 
-### 1.2 Binding `s` and `n` (D165 item 1)
+- **INIT.** `RX_ITER_INIT(s, n)` writes `hdr = FRESH`, `s`, `n`. The setters add `lo`,
+  `vars`, `bufs` and their option bits.
+- **FRESH → BOUND, at the first call.** `next` records `owner = &<prefix>_info`, sets
+  `rc = 1`, `rc_next = 1`, `flags = 0`, `bhead = bcount = 0`, and `lo = 0` unless `OPT_AT`
+  set it. It zeroes the storage rows THIS artifact declares (never S). It runs the
+  once-per-iterator checks (§3.5-§3.7: the startpos guard on an `OPT_AT` start, the
+  `-futf-check` validation, the variables' validation), then stores `BOUND`.
+- **BOUND, the fast path.** One fused compare:
+  `((it->hdr ^ PCREC_ITER_BOUND) | ((uintptr_t)it->owner ^ (uintptr_t)&<prefix>_info)) != 0`.
+  Revision 1's per-call `(s, n)` compare is gone (Q3). The owner compare stays: an iterator
+  bound by artifact A and handed to artifact B's `next` would give B A's carried rows, a
+  WRONG ANSWER through the kit's cache, not merely a cost.
+- **Anything else** (ENDED, garbage, an uninitialized struct, a poisoned header, another
+  layout) takes the slow path: ENDED returns 0 with no work; everything else sets
+  `rc = PCREC_ERR_ITER` at the stable offset, moves the header to ENDED, and returns 0.
 
-D165's call shape passes `(s, n)` on every call: `while (<prefix>_next(&it, s, n, caps))`.
-The iterator BINDS them at its first call:
+**Copying** an iterator is legal at any point, as in revision 1: every field is
+position-independent and the kit says its state is too (D165 add. 1). A copy made while the
+batch holds undelivered entries SHARES the batch region with the original, so the two copies
+must not both continue (they would overwrite each other's batch). The spec hunk states this
+as the `_in` lifetime rule's corollary: one live iterator per batch region.
 
-- **FRESH → BOUND.** At the first call `next` records `s`, `n` and `owner = &<prefix>_info`,
-  sets `rc = 1` and `flags = 0`, and sets `lo = 0` (FRESH) or keeps the caller's `lo`
-  (FRESH_AT). It zeroes the storage rows THIS artifact declares. It then runs the
-  once-per-iterator entry checks (§3.5-§3.7) and stores `BOUND`.
-- **BOUND, the fast path.** One compare of `hdr` against `PCREC_ITER_BOUND`, then
-  `((s ^ it->s) | (n ^ it->n) | (owner ^ it->owner)) != 0`, which gcc fuses into one branch.
-  A mismatch sets `rc = PCREC_ERR_ITER` and returns 0. It never rebinds: a caller who reuses
-  an iterator for another subject or another pattern without re-initializing it gets a loud
-  refusal, never a fresh find-all from 0 that re-reports matches. The twin checks this on
-  every case (`B=-10`).
-- **Anything else** (garbage, an uninitialized struct, another layout) sets
-  `rc = PCREC_ERR_ITER` at the stable offset and returns 0.
+### 1.3 S is DERIVED: the declared carried words (D167 add. 1 A10)
 
-**Why check at all, when D165's terms make the kit's own guard redundant (addendum 1).** The
-kit's state is valid only for one artifact's site on one subject. An iterator bound by
-artifact A and handed to artifact B's `next` would give B A's cached candidate mask, a WRONG
-ANSWER and not merely a cost. `compound.md` §C made the same argument for its owner tag. The
-check costs three L1 loads on the iterator's first cache line and one predictable branch.
-The parity gate measures it (§5.3 arm `I` against the twin's unchecked `I0` arm). If it cannot
-be paid, the fallback is the contract-only form (unchecked, misuse undefined). That fallback
-is priced in Q3 and is not the recommendation.
+S is a public constant in the shared block, so changing it changes every artifact (an abi
+event, D165 item 4). It is derived from the owners' declarations, never picked.
 
-**Copying** an iterator is legal at any point: every field is position-independent, and the
-kit says its state is too (addendum 1). Two copies continue independently. Each copy belongs
-to one thread at a time (§3.9).
+**The rule.** Every storage user declares a ROW: the words it carries across calls, at 8 B
+each (a position, a mask, a span: D165 item 6 as A10 reads it), its alignment, and the paths
+on which it is held. Then
 
-### 1.3 S is DERIVED: the storage-row table
+  S = max over every search path π of Σ { 8 × words(r) : r held on π at once },
 
-S is a public constant in the shared block, so a change to it changes every artifact (an abi
-event, D165 item 4). The design therefore derives it from ONE declared table, and an
-independent check holds every artifact to it.
+rounded up to `PCREC_ITER_STATE_ALIGN`. "Held at once" means held ACROSS CALLS by one
+iterator, not live inside one call. The composition rules are revision 1's:
+- distinct sites on mutually exclusive ROUTES of one artifact are a union (one artifact takes
+  one route for every call);
+- the rev-end route's relocate path and the forward scan's FIND site are one site
+  (r17b_prime.md §2.1), so one region;
+- a compound's parts SUM (D165 item 4).
 
-**The table** (proposed home `src/gen/iter_rows.def`, one row per storage user, pcrec's own
-rows and the kit's declared ones):
+**The declared rows today** (the home of these declarations is §8a):
 
-| row | owner | bytes / align | class | held when | status | source of the size |
+| row | owner | words → bytes | class | held when | declared by | status |
 |---|---|---|---|---|---|---|
-| `retry` | pcrec | 1 bit of `flags` | FIXED | a `reports_empty` artifact (§3.3) | I1 (framework) | — |
-| `checked` | pcrec | 1 bit of `flags` | FIXED | every artifact | I1 | — |
-| `kit-find` | kit | 24 / 8 per stateful FIND site | BUFFER | a site whose kit form keeps state (R17-b's `mask8_swar` and its SIMD siblings) | I2 (R17-b″) | D165 add. 1, `memfn/docs/responses.md` item 1 |
-| `kit-h` | kit | +8 / 8 per such site | BUFFER | the kit's H rows (R3/R4) | I2 | responses.md: "32 B, align 8" |
-| `pair-hits` | pcrec | 16 / 8 | BUFFER | the S4 two-stream run pre-check (K5) | I3 | two `size_t` pending hits, `ha`/`hb` (walk_survey.md K5) |
-| `reseed-hint` | pcrec | 8 / 4 | BUFFER | adaptive VM hybrids (`RX_VM_RESEED "adaptive*"`) | FILED ([OPT-HYB-RESEED-XCALL], HELD) | xcall.md §5: two `uint32_t` |
+| `retry` | pcrec | a bit of `flags` | FIXED | a `reports_empty` artifact | §3.3 | I1 |
+| `checked` | pcrec | a bit of `flags` | FIXED | every artifact | §1.2 | I1 |
+| `kit-find` | kit | 5 → 40 B, align 8: `base`, `top`, the u64 mask, H's previous step span, `valid_until` | BUFFER | a site whose kit form keeps state (A3 and its SIMD siblings) | r17b_prime.md §6 (rev 2, on `lane/memfn-r17` `c90d65e53`): 24 B (D165 add. 1) + H 8 B + the presence carry 8 B | I2 (R17-b″) |
+| `pair-hits` | pcrec | 2 → 16 B: `ha`, `hb` | BUFFER | the two-stream run pre-check (K5) | walk_survey.md K5 | I3; KEPT by A10 |
+| `reseed-hint` | pcrec | 1 → 8 B: two `uint32_t` | BUFFER | adaptive VM hybrids | xcall.md §5 | FILED (U5) |
 
-**"Held at once"** means held ACROSS CALLS by one iterator, not live inside one call. Two
-alternatives of one artifact that can run in different calls of one iteration must SUM, unless
-the region carries a tag that a switch re-initializes.
-- The rev-end route's relocate path and the forward scan's FIND site are the same SITE
-  (r17b_prime.md §2.1), so they share one region.
-- Distinct sites on mutually exclusive ROUTES of one artifact are unions; one artifact takes
-  one route for every call.
-- A compound's parts SUM (D165 item 4).
+**Today's value: S = 40 + 16 + 8 = 64 B, align 8.** The worst path is revision 1's: one FIND
+site (PF, MLINE, OFS or the VM hat; r17b_prime.md F1 counted one `__next_candidate` site on
+all 3,906 R17-b movers), plus the run pre-check, plus, on an adaptive hybrid, the reseed
+hint. A compound's worst sum is smaller: split's F holds no row, its Q at most
+`kit-find + pair-hits` = 56 B.
 
-**Per search path today:**
-- one FIND site: PF, MLINE, OFS or the VM hat. They are one per route, and r17b_prime.md F1
-  counted exactly one `__next_candidate` site on all 3,906 R17-b movers;
-- plus the run pre-check (PRESENCE);
-- plus, on an adaptive hybrid, the RETRY slot's hint.
+How the value moved from revision 1's 56 B: the kit's row grew 32 → 40 B (the presence carry
+`valid_until`, r17b_prime.md §6), and K5's 16 B stays (A10). Q-R17P-10's "48 B" assumed K5
+retired on the merge; A10 withdrew that.
 
-So the worst path is `kit-find + kit-h + pair-hits + reseed-hint` = 24 + 8 + 16 + 8 =
-**56 B**, align 8. A compound's worst sum is smaller. Split's F part is one bounded attempt
-and holds no FIND or PRESENCE row (G2 declines the pre-check on a linear one attempt). Its Q
-part is at most `kit-find + kit-h + pair-hits` = 48 B.
+**K5's retirement is a proof, not a merge.** A10: one `valid_until` does not keep find-all
+linear where there are two or more REQUIRED spans or a two-stream form, because a far span is
+rescanned on each expiry (67 corpus patterns on P0's no-DFA routes with 2+ required spans).
+So `pair-hits` retires only when a kit form DECLARES that it is single-pass over its spans and
+that declaration is checked (the kit's evidence, D157: a fact, not its method). The check is
+the kit's to name; pcrec's side is a find-all differential over the 67-pattern population
+held to a linear work bound (the `run_iter_diff.sh` population, §6.7, with a counted-loads
+arm). Retiring it re-derives S to 48 B.
 
-**The sizing policy.** S covers every row whose owner has DECLARED a size, filed rows
-included, so landing a declared row is never an S change. The alternative is to size over
-built rows only. That gives S = 0 today, 32 at I2 and 48 at I3: three S changes, each an
-every-artifact abi event, for 120 − 64 = 56 bytes of caller stack. This is an answer-free
-choice (no answer moves either way), so the manager decides it; the recommendation is the
-declared-rows policy.
+**The sizing policy (answer-free, the manager's call).** Revision 1's policy stands: S covers
+every DECLARED row, filed rows included, so landing a declared row never changes S. Two
+consequences A10 makes explicit:
+- S is re-derived AT the iterator's abi event (I1) from the declarations then current. If
+  the kit's declaration or K5's status moves before I1, I1 takes the new value with no extra
+  event.
+- A row that RETIRES after I1 (K5) shrinks the max. Shrinking S is also an every-artifact
+  abi event, and it buys 16 B of caller stack. The leaning is to shrink only when another
+  abi event already moves the shared block, never as its own event; until then S keeps 16 B
+  of headroom that no row uses, and the census (check 3) reports it.
 
-**The checks (independent controls):**
-1. **pcrec's derivation check.** At pcrec's own build, a `_Static_assert` holds
-   `PCREC_ITER_STATE_SIZE` (the literal in the emitted shared block) equal to the table's
-   computed maximum. A row edit that outgrows S fails pcrec's build, naming the row.
-2. **The artifact's own check, by the C compiler, not by pcrec's arithmetic.** An artifact
-   that holds at least one BUFFER row emits a struct `<p>__iter_state` with one member per
-   held row (unions for alternatives, sums for concurrent rows). It also emits
+**The checks (independent controls)**, revision 1's three, re-sourced:
+1. **pcrec's derivation check.** At pcrec's build, a `_Static_assert` holds
+   `PCREC_ITER_STATE_SIZE` (the literal in the emitted shared block) equal to the max the
+   declarations compute. A declaration that outgrows S fails pcrec's build, naming the row.
+2. **The artifact's own check, by the C compiler.** An artifact holding at least one BUFFER
+   row emits `struct <p>__iter_state` with one member per held row (unions for alternatives,
+   sums for concurrent rows), in the rows' real C types, and
    `_Static_assert(sizeof(struct <p>__iter_state) <= PCREC_ITER_STATE_SIZE && _Alignof(...) <= PCREC_ITER_STATE_ALIGN, ...)`.
-   The expectation (S) and the subject (the compiler's layout of the rows' actual C types)
-   share no source. **In I1 this check's population is EMPTY**, because no row is held yet.
-   It is declared UNREACHED with its trigger (I2's first kit row). Its sabotage row (S937)
-   ships UNREACHED and turns DETECTED at I2. Nothing reads it vacuously meanwhile.
+   The expectation (S) and the subject (the compiler's layout) share no source. EMPTY at I1
+   (no row held yet): declared UNREACHED with its trigger (I2's first kit row).
 3. **The census** (`make test-iter`, I2 onward). Every corpus artifact's
-   `sizeof(<p>__iter_state)`, read off a probe TU, is reported against S as headroom. A
-   floor on the number of artifacts holding each row guards against a row whose population
-   silently drops to zero (K35).
+   `sizeof(<p>__iter_state)` against S as headroom, with a floor per row on the number of
+   artifacts holding it (K35). The `pair-hits` floor is the 67-pattern population.
 
-**Alignment.** 8: no row keeps a vector register (addendum 1). A row needing 16/32/64 raises
-`PCREC_ITER_STATE_ALIGN`, which is an abi event, and the union member `align_` changes type
-with it.
+**Alignment.** 8: no row keeps a vector register (D165 add. 1). A row needing 16/32/64
+raises `PCREC_ITER_STATE_ALIGN`, an abi event.
 
 ---
 
