@@ -366,10 +366,13 @@ and fixes how this design's own rule survives:
   row (P4/P6 shared at `−2`/`−1`, P7/P8 at `+1` by `θ_hot`, P9 inline at `+2`).
 - **`__find`'s in-edges and ranks** (`compound_entries.md` §3.2): from `_search` R2 and from
   the STEP inside `_next` R2 without batching. With the batch fill (§2.3) the STEP runs in a
-  loop, so `__find`'s in-edge from `_next` is **R3** on an artifact with `_in` batching
-  compiled in. `compound_entries.md` §3.8 lists this edge as HELD; revision 2 designs it,
-  which gives that note's `−2`/`−1` pair its first designed witness. Its rank column is a
-  shape predicate (batching compiled in or not), as that note's §4.1 allows.
+  loop whose trip count pcrec does not bound (the caller's `nbatch` does), so `__find`'s
+  in-edge from `_next` is **R3**. The fill loop is in every `_next` once batching lands (K
+  is a run-time value), so the edge is R3 on every artifact from that commit, and R2 if the
+  parity slot files batching (§5.3). `compound_entries.md` §3.8 lists this edge as HELD;
+  revision 2 designs it, which gives that note's `−2`/`−1` pair its first designed witness:
+  at `−1` row P5 inlines an R3 part, so `__find` is inlined at `−1` and shared at `−2`.
+  The parity gate's `I_shared` arm is then the `−2` layout alone.
 - **`__enter`, `__deliver`, `__fill`, the STEP body**: one caller each (`_next`), so row P3
   keeps their `0` layout at every position. The retry R is a body inside STEP with no symbol
   of its own, so it is not a part (`compound_entries.md` §3.8).
@@ -504,7 +507,7 @@ match's start: `__adv` returns a position `> pos`. The retry keeps `lo == q`, th
 past q in the same call when the retry fails, so it never repeats. `lo > n` ends the iterator
 (`rc = 0`). So `lo` is monotone non-decreasing (D165 item 1) and the iterator terminates.
 
-### 3.3 NOTEMPTY_ATSTART: the iterator matches PCRE2's global iteration (Q1)
+### 3.3 NOTEMPTY_ATSTART: the iterator matches PCRE2's global iteration (RULED, D165 add. 2 Q1)
 
 **The rule, pcre2demo.c's:** after an EMPTY match whose reported span is `(q, q)`, retry at q,
 ANCHORED, under NOTEMPTY_ATSTART. On a match, report it. On no match, advance one character
@@ -566,8 +569,12 @@ a pattern it marks false must never diverge. Its trigger is a measured cost of t
 retry on a gate-true, non-diverging pattern (one failing anchored attempt per empty match,
 e.g. `a*` over `"bbb..."`).
 
-**The retry, per route.** The retry is an anchored attempt at q under a NOTEMPTY_ATSTART
-predicate. It runs with its OWN budget, as pcre2demo's retry is its own `pcre2_match` call.
+**The retry, per route.** The retry is the operand R of STEP's `first-nonzero` (§2.1): an
+anchored attempt at q under a NOTEMPTY_ATSTART predicate, asked only when the RETRY bit is
+set. On R's NOMATCH the combinator relocates to `LOWER(__adv(q))` and asks SEARCH there,
+which is pcre2demo's "advance one character and search on". R runs with its OWN meter, as
+pcre2demo's retry is its own `pcre2_match` call (the combinator row's `per-operand` meter
+cell, §2.1; Q-I1).
 
 - **VM (and the VM hybrid).** The accept label gains one guard: reject when
   `reported_start == scan_position && reported_start == ctx->pos`. Here `reported_start` is
@@ -601,29 +608,59 @@ predicate. It runs with its OWN budget, as pcre2demo's retry is its own `pcre2_m
     before any artifact emits it (§7, I0b).
 - **Compound.** The controller's `_match` is F's one attempt at `ctx->pos` (`compound.md`
   §B.3), so the retry is F's attempt under the notempty root. F is P bounded to one attempt,
-  correct at any position.
+  correct at any position. On a compound artifact STEP nests the two uses of the one
+  combinator: `first-nonzero(R@q, first-nonzero(F@f, Q@LOWER(adv(f)))@LOWER(adv(q)))`, each
+  with its own guard and meter cell.
 
 ### 3.4 `rc` and the give-up codes (D158)
 
-- `it->rc` is 1 while live, 0 when done, and a code when a call ended in a give-up
+- `it->rc` is 1 while live, 0 when done, and a code when the iterator ended in a give-up
   (`[PCREC_ERR_FLOOR, −2]`) or a refusal (below the floor: STARTPOS, UNSET_VAR, UTF,
-  INTERNAL, ITER). It is sticky: after a non-1 `rc`, `next` returns 0 with no work.
+  INTERNAL, ITER). It is sticky (§1.2: the header moves to ENDED).
 - On the call that ends it, `caps` is untouched (§3.1¶4 holds per call).
-- **Budgets per call, as today.** Each `next` call's search gets the fresh budget a
-  `_search` call gets. The retry gets its own, like pcre2demo's separate `pcre2_match` call.
-  The tiered default (§10.9) applies per call exactly as in `_search`.
-  - Hence: **on every call that does not run a retry, the iterator gives up exactly where
-    today's loop gives up**, same call, same code. The body is the same code at the same
-    `lo`, and the carried rows of §1.3 are exact caches that move no attempt position.
+- **One meter per LOGICAL search.** A logical search is what one `_search` call (or one
+  `pcre2_match` call in pcre2demo's loop) would be: SEARCH at `lo`, or the retry R at q.
+  Each gets the fresh budget a `_search` call gets, and the tiered default (§10.9) applies
+  to each exactly as in `_search`. Inside one logical search, D163 add. 6 Q1 holds as ruled:
+  a compound's parts all charge that search's meter. This reading of Q1 is Q-I1 (§10).
+  - Hence: **on every logical search that is not a retry, the iterator gives up exactly
+    where today's loop gives up**, same search, same code. The body is the same code at the
+    same `lo`, and the carried rows of §1.3 are exact caches that move no attempt position.
   - The retry is NEW work, run only where the global semantics needs it. It is not an
     optimization, so D158's direction rule does not apply to it. Its give-ups are stated in
     the spec hunk as the retry's own.
+- **Under batching, a code waits its turn.** A fill that meets a code after finding `i`
+  matches stores it in `rc_next` and delivers the `i` matches first; the call after the last
+  of them ends the iterator with `rc = rc_next`. So the caller sees the same sequence (the
+  matches, then the code) as without batching (§3.4a). A code met before any match ends the
+  iterator on the filling call.
 - **A carried row that is an OPTIMIZATION** (the reseed hint, [OPT-HYB-RESEED-XCALL]) changes
   which positions the VM attempts, so D158 binds it. Its admission is GIVEUP1's direction
   check ([GIVEUP-DIFF]) before it lands (§9 U5).
-- **After a give-up** a caller can deliberately skip on, e.g. with
-  `RX_ITER_INIT_AT(lo + 1)` after reading the failing position from a FRESH iterator's
-  record, but nothing resumes a gave-up iterator implicitly. PCRE2's demo stops the same way.
+- **After a give-up** a caller can deliberately skip on with a FRESH iterator and
+  `rx_iter_at(&it, pos)`, but nothing resumes a gave-up iterator implicitly. PCRE2's demo
+  stops the same way. On a VM artifact a `PCREC_ERR_FRAMES` give-up is retryable with larger
+  buffers (§10.3¶3): a fresh iterator bound to the larger `<prefix>_buffers` at the failing
+  `lo`.
+
+### 3.4a Batching is answer- and give-up-identical to K = 1, by construction
+
+Claim: for every subject, the sequence of `next` results (each match with its captures, then
+the final `rc`) is the same for every `nbatch`, including no `_in` memory.
+
+1. The fill calls STEP, and STEP reads only `s`, `n`, `lo`, `flags` (RETRY), `vars`, the
+   storage rows and its scratch (`frames`/`trail`). The delivery reads and writes only
+   `bhead`, `bcount`, `rc_next` and the batch region, which STEP never reads.
+2. So the j-th STEP of a fill sees exactly the state the j-th call's STEP would see at
+   K = 1: the same `lo`, the same RETRY bit, the same carried rows. It is the same code with
+   a fresh meter (§3.4), so it returns the same result.
+3. The delivery hands the entries out in the order STEP wrote them, and `rc_next` only after
+   the last. K = 1 is the case where every fill stops after one STEP.
+
+What does differ is WHEN the work happens (up to `nbatch − 1` searches ahead of the caller,
+§2.3's over-fill) and which exported call pays for it, never what is answered. The check is
+the `nbatch` arm of `run_iter_diff.sh` (§6.7): every pair at `nbatch` ∈ {absent, 2, 3, 64}
+against the global-loop oracle, with the give-up cells, whose sequence must be identical.
 
 ### 3.5 `\G`, `^`, and the start position
 
@@ -635,14 +672,14 @@ predicate. It runs with its OWN budget, as pcre2demo's retry is its own `pcre2_m
   - `\G\w+` over `"ab ab ab"` stays a tokenizer: `(0,2)` then done (twin case `rg`, all
     cells `I == L == libpcre2`).
 - **`^`/`\A` assert at absolute offset 0** (§3.1¶7), unchanged.
-- **The first position.** FRESH starts at 0. FRESH_AT starts at the caller's `pos`, which is
-  checked ONCE at bind by the artifact's startpos guard. A mid-character `pos > 0` gives
+- **The first position.** A FRESH iterator starts at 0. One with `rx_iter_at(&it, pos)`
+  starts at `pos`, which is checked ONCE at bind by the artifact's startpos guard. A mid-character `pos > 0` gives
   `rc = PCREC_ERR_STARTPOS` (§9.2), or is aligned forward once under
   `-fstartpos-guard=align` (D133).
 - **No later call runs the guard**, because every `lo` the iterator computes is a character
   boundary (§3.1.3¶6, §9.5). So `next` emits no guard on the BOUND path, which saves one
   load and branch per call under utf8. Sabotage S935 plants the guard's removal at bind and
-  is detected by an `RX_ITER_INIT_AT` mid-character cell.
+  is detected by an `rx_iter_at` mid-character cell.
 
 ### 3.6 UTF-8 boundaries and `-futf-check`
 
@@ -665,7 +702,7 @@ predicate. It runs with its OWN budget, as pcre2demo's retry is its own `pcre2_m
 
 ### 3.7 Variables and callouts
 
-- **Variables.** `RX_ITER_INIT_VARS(vars, nvars)` (and `_AT`) record them in the iterator.
+- **Variables.** `rx_iter_vars(&it, vars, nvars)` records them in the iterator (§1.1).
   They are constant for one find-all, as the subject is. A var-bearing artifact validates
   them ONCE at bind; an unset or ill-formed variable gives `rc = PCREC_ERR_UNSET_VAR`, which
   is sticky. An artifact with no variables ignores the fields. `docs/spec/vars.md` gains the
@@ -691,19 +728,20 @@ predicate. It runs with its OWN budget, as pcre2demo's retry is its own `pcre2_m
   - The prefilter-less VM's start-set hat (§3.1¶12) and the hybrid's re-seed are per-call
     logic in the body, unchanged.
   - The reseed hint is the one row that would carry across calls (FILED, §9 U5).
-- **Compound:** `next`'s body is the controller (`first-nonzero(F, Q)`), whose parts are
-  static. Parts that hold rows get SUMMED regions (§1.3). F runs only where the floor can be
+- **Compound:** SEARCH is the controller (`first-nonzero(F, Q)`), whose parts are static,
+  and STEP wraps it in the retry's `first-nonzero` (§3.3). Parts that hold rows get SUMMED regions (§1.3). F runs only where the floor can be
   live (`lo == 0` or `\G`), so in a find-all it runs at most at the first call unless P has
   `\G`.
 
 ### 3.9 Reentrancy (§5.3)
 
 The artifact still holds no mutable state of its own; TS-1 and TS-2 are unchanged, since
-`rx_iter_fresh*` are `static inline` with no static object. The iterator is CALLER-owned
+`rx_iter_init` and the setters are `static inline` with no static object. The iterator is CALLER-owned
 mutable state, like `caps`:
 - any number of iterators may run concurrently, one thread each;
 - two threads sharing one iterator is a data race in the caller;
-- a callout that re-enters the same artifact's `next` uses its own iterator.
+- a callout that re-enters the same artifact's `next` uses its own iterator;
+- a bound batch region belongs to one live iterator (§1.2, §2.3).
 
 ---
 
