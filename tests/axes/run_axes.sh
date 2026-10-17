@@ -1182,7 +1182,9 @@ run_memfn_reach() {
     for _i in "${!memfn_cell_name[@]}"; do
         cargs+=(--cell "${memfn_cell_name[$_i]}|${memfn_cell_layer[$_i]}|${memfn_cell_flags[$_i]}")
     done
-    python3 -I "$SCRIPT_DIR/memfn_arm.py" --pcrec "$PCREC" --root "$ROOT_DIR" \
+    # [K37] bounded as a whole by "$TIMEOUT_BIN"; memfn_arm.py also bounds each
+    # compile it makes (TIMEOUT = 30 s), the whole-run ceiling is a backstop.
+    "$TIMEOUT_BIN" "${MEMFN_REACH_SECS:-3600}" python3 -I "$SCRIPT_DIR/memfn_arm.py" --pcrec "$PCREC" --root "$ROOT_DIR" \
         --jobs "$PROCS" --every "${MEMFN_EVERY:-1}" "${cargs[@]}"
 }
 if [ "${MEMFN_REACH_ONLY:-0}" = "1" ]; then
