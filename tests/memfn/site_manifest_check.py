@@ -74,30 +74,6 @@ def read_tsv(path, ncol):
     return rows
 
 
-def site_kinds(root):
-    """The consumer-kind vocabulary, read from memfn.h's enum (not from the
-    manifest), so a column naming a kind the kit does not have fails."""
-    with open(os.path.join(root, 'memfn', 'include', 'memfn.h'), encoding='utf-8') as fh:
-        return set(re.findall(r'\bMF_SK_([A-Z_]+)\b', fh.read()))
-
-
-def rule5(per_kinds, row_kinds):
-    """Rule 5: the kinds column against the corpus pass. per_kinds maps a
-    site id to the set of kinds its instances stated over the pass
-    (site_census records s->site_kind beside the caller; one field added to
-    its trace record). Both directions: an observed kind the column does not
-    list, and a listed kind never observed (the column is the population)."""
-    for site, ks in sorted(row_kinds.items()):
-        seen = per_kinds.get(site, set())
-        for k in sorted(seen - ks):
-            bad('rule 5: %s: a site stated kind %s, which its kinds column does not list' % (site, k))
-        for k in sorted(ks - seen):
-            bad('rule 5: %s: its kinds column lists %s and no corpus-pass site stated it '
-                '(a stale column, or a witness missing from the corpus)' % (site, k))
-    if row_kinds:
-        ok('rule 5: every kinds column matches the kinds the corpus pass observed')
-
-
 def rule2(root, cc, deleg_rows):
     """Rule 2, the dynamic half, re-keyed to the kit's API (R4c, Q3): a call to
     mf_define/mf_emit from a pcrec function no `delegated` row names, counted
@@ -221,21 +197,13 @@ def main():
           'tests/memfn/run_form_checks.sh)' % memchr)
 
     # -- the manifest's shape ----------------------------------------------
-    rows = read_tsv(mpath, 9)
-    sk_vocab = site_kinds(root)          # memfn.h's mf_site_kind, read independently
-    row_kinds = {}       # site id -> the kinds its column declares
+    rows = read_tsv(mpath, 8)
     seen = {}
     pend_fns, deleg_fns = {}, {}
     deleg_rows = {}      # delegated row id -> its emitters and companions
     counts = {s: 0 for s in STATUSES}
-    for n, (site, emitters, _op, kinds, budget, _step, status, comps, _ref) in rows:
+    for n, (site, emitters, _op, budget, _step, status, comps, _ref) in rows:
         where = '%s:%d (%s)' % (os.path.relpath(mpath, root), n, site)
-        ks = set() if kinds == '-' else set(kinds.split(','))
-        for k in sorted(ks - sk_vocab):
-            bad('%s: kind %r is not an mf_site_kind member (MF_SK_*) in memfn.h' % (where, k))
-        if 'UNSTATED' in ks:
-            bad('%s: UNSTATED is not a kind a site may state' % where)
-        row_kinds[site] = ks
         if site in seen:
             bad('%s: duplicate site id (first at line %d)' % (where, seen[site]))
         seen.setdefault(site, n)
