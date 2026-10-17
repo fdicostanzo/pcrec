@@ -478,6 +478,18 @@ const ReqRun *pcrec_fact_req_whole_run_stated(Ctx *cx)
     return &cx->job->pf.req_run;
 }
 
+const ReqRun *pcrec_fact_req_run_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_REQ_RUN, false);
+    return &cx->job->pf.req_run;
+}
+
+int pcrec_fact_req_byte_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_REQ_BYTE, false);
+    return cx->job->pf.req_byte;
+}
+
 const ReqRun *pcrec_fact_req_run(Ctx *cx)
 {
     pf_ask(cx, PF_REQ_RUN, true);

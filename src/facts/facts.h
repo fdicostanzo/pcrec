@@ -457,6 +457,11 @@ const ReqRun  *pcrec_fact_req_run(Ctx *cx);
  * the kit; no selection and no rendering reads what it states before B3b. */
 const ReqSet  *pcrec_fact_req_set_stated(Ctx *cx);
 const ReqRun  *pcrec_fact_req_whole_run_stated(Ctx *cx);
+/* The same non-pass reads of the window and of `req_byte`, for the trace
+ * build's pick shadow (`req_pick_shadow`): a check, not a pass, so the
+ * trace build's `used` column is the default build's. */
+const ReqRun  *pcrec_fact_req_run_stated(Ctx *cx);
+int            pcrec_fact_req_byte_stated(Ctx *cx);
 /* E2 derived: the window's `maxoff` where a run shipped, -1 where none
  * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
 long long      pcrec_fact_req_run_maxoff(Ctx *cx);

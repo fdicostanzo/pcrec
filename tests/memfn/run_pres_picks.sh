@@ -102,6 +102,40 @@ while IFS=$'\t' read -r pick nt pc flags pat; do
     fi
 done < "$WIT"
 
+# THE SHADOW IS NOT A PASS (lane b3afix, review MINOR-6a): `--emit-facts`'
+# `used` column of every witness is the same from the trace build as from
+# the default build ($PRES_PICKS_DEFAULT_BIN, else TREE/build/pcrec). The
+# population that makes the comparison bite is counted: witnesses whose
+# default build never asks `req_set` while the shadow reads it (set-leads'
+# own pick asks it as a pass), floored at 1 (K35).
+DEF="${PRES_PICKS_DEFAULT_BIN:-$TREE/build/pcrec}"
+used_cols() {
+    "$TIMEOUT_BIN" 60 "$1" --features all "${@:2}" --emit-facts 2>/dev/null |
+        awk -F'\t' '/^#section facts/ {f = 1; next} /^#section/ {f = 0}
+                    f && !/^#/ {print $1, $2, $6}'
+}
+if [ ! -x "$DEF" ]; then
+    bad "[pres-picks-used] no default build at $DEF to compare the used column against"
+else
+    nused=0; nbite=0
+    while IFS=$'\t' read -r pick nt pc flags pat; do
+        case "$pick" in ''|'#'*) continue ;; esac
+        fl=(); [ "$flags" != "-" ] && read -r -a fl <<< "$flags"
+        a="$(used_cols "$DEF" "${fl[@]}" --pattern "$pat")"
+        b="$(used_cols "$BIN" "${fl[@]}" --pattern "$pat")"
+        nused=$((nused + 1))
+        if [ -z "$a" ] || [ "$a" != "$b" ]; then
+            bad "[pres-picks-used] $flags $pat: the trace build's used column differs: $(diff <(echo "$a") <(echo "$b") | grep '^[<>]' | head -2 | tr '\n' ' ')"
+        fi
+        grep -q ' req_set no$' <<< "$a" && nbite=$((nbite + 1))
+    done < "$WIT"
+    if [ "$nbite" -ge 1 ]; then
+        ok "[pres-picks-used] $nused witnesses: the used column is the default build's ($nbite where the default never asks req_set)"
+    else
+        bad "[pres-picks-used] no witness leaves req_set unasked in the default build: the comparison cannot bite (K35)"
+    fi
+fi
+
 if [ "$nwit" -ge 1 ]; then ok "[pres-picks-population] $nwit witness lines"
 else bad "[pres-picks-population] no witness line read (K35)"; fi
 for p in $PICKS; do

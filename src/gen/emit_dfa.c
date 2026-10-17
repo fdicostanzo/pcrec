@@ -8100,10 +8100,14 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 /* The necessary SET's own pick (`pcrec_find_set_pick`, the reader
  * src/facts/req.c's `req_byte` answers through where no exact run member
  * is scanned), or -1 for an empty set. */
+static int req_set_pick_of(Ctx *cx, const ReqSet *set)
+{
+    return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
+}
+
 static int req_set_pick(Ctx *cx)
 {
-    const ReqSet *set = pcrec_fact_req_set(cx);
-    return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
+    return req_set_pick_of(cx, pcrec_fact_req_set(cx));
 }
 
 /* The admission's rows, each a predicate over the compile alone (`s->cx`;
@@ -10169,7 +10173,9 @@ static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
  * THE EXPECTATION IS THIS FILE'S CODE, the subject the kit's port (§10 Q2:
  * the shadow shares no source with the port). It runs QUIET (no CANDTRACE
  * record, no CANDROW hit; a check walk, not a read), so the trace record
- * stream stays the compile's own, and it writes nothing to the artifact.
+ * stream stays the compile's own; it reads the facts it states without a
+ * pass's ask and restores `used` on exit, so `--emit-facts`' `used` column
+ * is the default build's; and it writes nothing to the artifact.
  *
  * SN-6's LEVER: `PCREC_PICK_PLANT=<pick>` perturbs the KIT's answer for that
  * pick before the compare (another member, the next position or window, the
@@ -10197,6 +10203,9 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
     ReqAdmit adm = req_admit(cx);
     const char *kind = pick_kind_name[site_kind_of(cx, SKS_PRE)];
     int base = cand_eval_base;
+    /* the facts' `used` record stays the compile's own too: pcrec's own
+     * picks below (set-leads reads `req_set_pick`) ask as passes */
+    uint32_t used = cx->job->pf.used;
     pcrec_cand_trace_quiet++;
     cand_eval_base = cand_eval_depth;
     if (adm == REQ_ADMIT_ONE_ATTEMPT) {
@@ -10265,14 +10274,14 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
         fprintf(stderr, "MFPICKSITE\tstated\t%s\n", kind);
         /* set */
-        int pc = req_set_pick(cx);
+        int pc = req_set_pick_of(cx, set);
         int kb = k.set_pick >= 0 ? mf_term_byte(&site->pspans[k.set_pick].term[0]) : -1;
         if (pick_plant("set") && nm >= 2)
             kb = mf_term_byte(&site->pspans[(k.set_pick + 1) % nm].term[0]);
         pick_rec("set", pc, kb, nm >= 2, pc >= 0 && pc != set->rightmost, kind);
         /* the run: scan position and window */
         if (run->whole_len >= 2) {
-            const ReqRun *w = pcrec_fact_req_run(cx);
+            const ReqRun *w = pcrec_fact_req_run_stated(cx);
             int n = run->whole_len, ps = w->at + w->idx, ks = k.run_scan;
             if (pick_plant("scan")) ks = (ks + 1) % n;
             pick_rec("scan", ps, ks, 1, ps != n - 1, kind);
@@ -10294,7 +10303,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
         /* G1 */
         {
-            int pd = req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte(cx));
+            int pd = req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte_stated(cx));
             int kd = k.dominated < 0 ? 0 : k.dominated;
             if (pick_plant("dominated")) kd = !kd;
             pick_rec("dominated", pd, kd, cs.byte >= 0, pd, kind);
@@ -10308,6 +10317,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
     }
 out:
+    cx->job->pf.used = used;
     cand_eval_base = base;
     pcrec_cand_trace_quiet--;
 }
