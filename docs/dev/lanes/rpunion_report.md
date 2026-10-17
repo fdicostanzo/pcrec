@@ -50,7 +50,18 @@ every stream, the arms default, `-fno-req-byte`, the deny-pf arm and the VM
 deny arm × byte/utf8, and the analysis cells none, weblog, `-I` mine and
 l1none (utf8 only). The summary is `rpunion_evidence/crp_summary.tsv`.
 
-C_RP_TABLE
+| enc | arm | cells | streams | movers | asymmetric | run rc |
+|---|---|---|---|---|---|---|
+| byte | default / `-fno-req-byte` / deny-pf / VM deny | none, weblog, mine | 11-12 each | **0** | **0** | 0 / 1 / 1 |
+| utf8 | default / `-fno-req-byte` / deny-pf / VM deny | none, weblog, mine, l1none | 12 each | **0** | **0** | 0 / 1 / 1 / 1 |
+
+**28 runs, 0 movers and 0 asymmetric refusals on every stream of every run**
+(3,164 s wall at `-j4`). Every rc 1 is the same instrument floor e1build
+recorded, identical on both sides. `emit-ir-vm` reaches 0 because
+`--emit-ir` refuses `--analysis` (e.g. `es_byte_default_weblog.log`:
+`REACH FLOOR VIOLATION: 0 < floor 4920`). On the l1none cells, stream 1
+reaches 1,905 because the asking compiles refuse on both sides (§3.7.4a's
+population, compared as keys). Every run with no analysis cell has rc 0.
 
 **(b) Artifact census, unmasked** (`rpunion_evidence/census.py REF NEW`,
 output `census_rp.out`). It covers emit_sweep's corpus population, 5,275
@@ -205,7 +216,7 @@ gitignored).
 | `test-spec-history` | green (145 / 0) |
 | `test-plan-lint` | green (2 / 0) |
 | `test-memfn-stamps` | green (25 / 0) |
-| `test-recursion-identity` (the (B) gate at the self-pin) | RECID_RESULT |
+| `test-recursion-identity` (the (B) gate at the self-pin) | green, 18/0, 1,924 s: (B) 0 differing vs the self-pin across 3,866 call-free patterns; (A) program region vs `ac4917d` holds, with only the named exceptions; the VM positive control refuses 420/420 |
 
 The verdict was read from make's `*** [...test-X] Error` lines (none) and
 from each suite's own failed count.
