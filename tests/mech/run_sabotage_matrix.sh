@@ -448,6 +448,7 @@
 #     build/libpcrec.a and compiles its memfn/src with -DMF_TRACE.
 #     Registered before S917, S919, S1018, S1020 and S1025. S1089 (R-23)
 #     joined it: the finder check's call-mode family; S919 is retired UNREACHED.
+#     S1092 (R-24) joined it too: the finder check's provenance family L.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their

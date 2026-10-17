@@ -138,6 +138,16 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   no analysis object; `mf_art_end`'s `consulted` is read by nobody before
   B4. The kit's arena op, `pcrec_memfn_arena_alloc`, is `memfn_sites.c`'s
   own (static: the attempt's art is its only user).
+- **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
+  `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
+  `memfn_sites.c` maps an answering block's provenance stanza onto the kit's
+  `mf_prov.bytes`/`.fidelity` (`prov_fidelity_rows[]`, one row per token of the
+  findings vocabulary `closed fidelity verbatim adapted synthesized` in
+  `src/parse/rxt_schema.def`; NULL is the UNSTATED zero; a word outside the
+  set returns -1 and writes nothing). Nothing in the compiler calls it on this
+  base: the analysis object is E-1's ([WINDOW-E1]), whose merge calls it where
+  it fills each kind's `prov` (see `docs/dev/lanes/r24_report.md`). Checked by
+  `tests/memfn/prov_check.c` (finder_check family L); sabotage S1092.
   `cand_nodes[]` declare their KIT ASKS (`kask[slot]` route masks, inside
   `reads`, and `kfields`: PRESENCE and RETRY ask NEXT's site on DFA|ATTEMPT
   for EXISTS|PROVEN0, RECOVER on DFA for EXISTS; self-check
