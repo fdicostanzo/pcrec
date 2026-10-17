@@ -167,7 +167,7 @@
 | `fd-r5` | the finder table's row R5: a measured candidate gap below the form's crossover gap keeps the walk. Denied, the row is skipped. Inert, as `fd-r0` |
 | `fd-r8` | the finder table's row R8: a long one-shot call with a measured sparse gap takes the 64-byte vector form; a `simd` row. Denied, the row is skipped. Inert, as `fd-r0` |
 | `fd-ndisp` | the finder table's dispatch rows R1 and R2: a one-shot call shorter than a measured crossover takes the shorter call's form behind a run-time dispatch. Denied, the site carries no dispatch. Inert, as `fd-r0` |
-| `fd-d1` | the finder table's row D1: a one-member stop outside a VM attempt seek is searched by the C library. Denied, the site takes the table walk over its one-member table (row D1w). Inert, as `fd-r0` |
+| `fd-d1` | the finder table's row D1: a one-member stop outside a VM attempt seek is searched by the C library. Denied, the site takes the table walk over its one-member table (row D1w), answer-identical. A MOVING deny: D1 is routed, so the deny moves the artifact at every one-byte search site of a DFA body or a hybrid's prefilter (the arm's count is `scripts/emit_sweep.py`'s `DIFFER_PINS` floor); under `--engine=vm` it moves nothing, the VM hat's one-byte seek being D1w's already |
 
 <a id="s6-p8b"></a>[6¶8b] `memfn` section floor: 11
 
