@@ -1,5 +1,5 @@
 diff --git a/tests/memfn/site_manifest.tsv b/tests/memfn/site_manifest.tsv
-index 27ea9f40a..eb0b35fe1 100644
+index 27ea9f4..eb0b35f 100644
 --- a/tests/memfn/site_manifest.tsv
 +++ b/tests/memfn/site_manifest.tsv
 @@ -47,8 +47,8 @@

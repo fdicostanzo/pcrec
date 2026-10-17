@@ -1,5 +1,5 @@
 diff --git a/src/gen/memfn_sites.c b/src/gen/memfn_sites.c
-index 842781fdc..927861e24 100644
+index 842781f..927861e 100644
 --- a/src/gen/memfn_sites.c
 +++ b/src/gen/memfn_sites.c
 @@ -18,8 +18,8 @@
@@ -14,7 +14,7 @@ index 842781fdc..927861e24 100644
  #undef DELEG_SITE
  };
 diff --git a/src/gen/memfn_sites.def b/src/gen/memfn_sites.def
-index 92a3647f3..eb0644223 100644
+index 92a3647..eb06442 100644
 --- a/src/gen/memfn_sites.def
 +++ b/src/gen/memfn_sites.def
 @@ -5,7 +5,7 @@
@@ -79,7 +79,7 @@ index 92a3647f3..eb0644223 100644
 -           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION)
 +           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
 diff --git a/src/gen/memfn_sites.h b/src/gen/memfn_sites.h
-index 98404bbc1..e72fc69a5 100644
+index de589f8..a0ae407 100644
 --- a/src/gen/memfn_sites.h
 +++ b/src/gen/memfn_sites.h
 @@ -22,12 +22,17 @@ typedef enum { DELEG_SCAN, DELEG_LOOP } DelegBudget;    /* D91 budgets 1 and 2 *
@@ -110,7 +110,7 @@ index 98404bbc1..e72fc69a5 100644
  
  extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
 diff --git a/tests/memfn/run_deleg_sites.sh b/tests/memfn/run_deleg_sites.sh
-index 45b9afbb6..cee02b969 100755
+index 45b9afb..cee02b9 100755
 --- a/tests/memfn/run_deleg_sites.sh
 +++ b/tests/memfn/run_deleg_sites.sh
 @@ -26,9 +26,15 @@
@@ -189,7 +189,7 @@ index 45b9afbb6..cee02b969 100755
  echo "checks passed: $pass"
  echo "checks failed: $fail"
 diff --git a/tests/memfn/site_census.py b/tests/memfn/site_census.py
-index 978029e22..8515ffe20 100644
+index 978029e..8515ffe 100644
 --- a/tests/memfn/site_census.py
 +++ b/tests/memfn/site_census.py
 @@ -413,7 +413,7 @@ def selftest(cc):
