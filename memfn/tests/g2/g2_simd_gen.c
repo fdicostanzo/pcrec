@@ -76,9 +76,17 @@
  * an out-of-enum 5) is passed unchanged, and the one refusal case that
  * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
  * of the blinded text: lane fdb2.) */
+/* MF_SITE_ABI 14 (R-23): mf_site.body is STATED too (its zero is UNSTATED and
+ * refused). G2's sites were written before the field existed, so at the kit
+ * call an unstated body is stated ONESHOT, the call mode every entry body of
+ * the checked kit has; a value G2 sets itself (PARAM, an out-of-enum 9) is
+ * passed unchanged, and the refusal case that tests an UNSTATED body clears
+ * `g2_body_fill` for its own call. (Not part of the blinded text: lane r23.) */
+static int g2_body_fill = 1;
 static int g2_need_fill = 1;
 static void g2_need(mf_site *w)
 {
+    if (g2_body_fill && w->body == MF_BODY_UNSTATED) w->body = MF_BODY_ONESHOT;
     if (!g2_need_fill) return;
     if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
         w->pred.need = MF_REQUIRED;

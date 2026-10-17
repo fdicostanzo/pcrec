@@ -2682,3 +2682,24 @@ the compiler, and is never adopted silently. Proposed for main to file
     - main's integration make test on merge;
     - grid2's reading is on lane/grid2read @ a9edffd59 (docs only, not in this branch).
   - **Branch note:** lane/memfn-fd lags this branch because my fast-forward of it was denied by the permission classifier (Frank asked). Deliver from lane/fdb2land.
+
+- ack: 2026-10-17 — **R-23 taken** (`mf_site.body` becomes a STATED fact: an UNSTATED zero, refused where read; MF_SITE_ABI 13→14). Where it went: the new kit branch **lane/memfn-r23**, cut from main @ 08ac08a03 (B1+B2 are on main, so the stale lane/memfn-fd is retired from the path), served by lane r23 (sonnet). The kit edits memfn.h, the readers, the fixture and the sabotage row, plus pcrec's builder lines in the same commit. Kit-side sabotage ids: please allocate 2 (S1089-S1090 if free).
+
+- notice: 2026-10-17 — **Frank ruling to the kit (runtime ISA dispatch), proposed D-entry text for main to file** (an addendum to D155 / `[MEMFN-RTDISPATCH]`, with a cross-reference in compound_entries' part-layout, D163):
+  > When `[MEMFN-RTDISPATCH]` triggers, runtime ISA dispatch is a COMPOUND-CONTROLLER fact. Each ISA level is a separate target-attributed part (gcc compiles one ISA per function body; per-function `target()` lets one artifact carry several levels). The controller works out which level runs, and the facts decide which part is chosen. A one-shot search pays the feature check per call (Frank: "search can pay the cost", ~0.44-0.59 ns on Linux x86, linux_results.md). The iterator stores the decision in its caller-held state (D165), "where intercall data is saved", so frequent and inter-call use pays no repeated check. The decision is never an artifact static (match_api.md §5.3). No new caller struct is needed, so this does NOT go to [IFACE-PUSH]. The SIMD-off artifact stays portable C, and the dual-ISA artifact is a SIMD-on form with a scalar floor.
+  - The context was a discussion with Frank (2026-10-17): grid2 shows SWAR has its place, and code must eventually support SIMD and non-SIMD in one artifact. Frank first weighed a predicate on the SIMD rung inside the cascade. He moved to the compound controller once told that one function body is one ISA, and that a target-attributed helper is not inlined into a default caller.
+  - Trigger unchanged (D77): more than one architecture selected for runtime support AND a hot-loop SIMD form. NOT scheduled.
+  - B4's cascade table should keep its rung guards a general predicate list (not `reach` alone), so that an ISA term later is a row, not a remodel.
+
+- ack: 2026-10-17 — **R-24 taken** (`mf_prov` gains `bytes` and `fidelity`, UNSTATED zero; MF_SITE_ABI 14→15, stacked on R-23). Where it went: lane r24 (sonnet), cut from lane/memfn-r23 (R-23 + main 08ac08a03). Light validation only while R-23's heavy chain runs. It lands before B3a, and no kit row reads the fields before B3a. Kit-side sabotage id: please allocate 1 (S1092 if free). Delivery: R-23's done: goes when its chain is green; R-24 follows on its own lane branch.
+
+- done: 2026-10-17 — **R-23 (`mf_site.body` is a STATED fact): branch lane/memfn-r23 @ (this commit); code validated at 062417c75.** Report: docs/dev/lanes/r23_report.md.
+  - **The change:** MF_SITE_ABI 13→14, no pcrec abi event. site_check refuses an UNSTATED body, and all six pcrec builders state ONESHOT. S1089 DETECTED; S919 is retired as a declared UNREACHED row.
+  - **Heavy validation at 062417c75** (worktrees/memfn-slot/r23heavy/chain.status, `CHAIN COMPLETE 11:13:24`):
+    - make test green, perfrun class=green, uncontaminated (row 20261017T095911_r23_j16p1);
+    - 12 solo mech rows OK (derived S460 S526 S919, plus kit S1089 S1079-S1085 S922);
+    - G2 full 199,850,938/0;
+    - N2 `rc=0 would_decline=0`, every floor clean;
+    - the memfn reach arm and the form census green.
+  - **Light validation:** emit_sweep 0 movers on six arms.
+  - **After 062417c75:** docs-only commits (the D155 add. 5 notice, the R-24 ack, this entry).

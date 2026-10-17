@@ -4416,6 +4416,7 @@ static void vm_isl_die(Vm *v, VmIsl *t, int x)
 static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
 {
     mf_site *s = pcrec_memfn_site(v->cx, DELEG_VMRUN);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
     s->form = MF_FORM_EXPR;
     s->op = MF_OP_VERIFY;
     s->handoff = MF_H_BOOL;

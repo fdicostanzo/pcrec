@@ -46,8 +46,12 @@ design's text, sharing no code with the kit):
   H. THE PAY RULE'S ARITHMETIC GRID (§2.5 [D9]; SN-9, S1025): T1/T2/T3 over a
      grid of operands at, below and above every boundary, the expected bits
      computed here; at least PAY_TIE_FLOOR ties.
-  I. THE CALL MODE GATE (S919): a site with `body` UNSTATED declines R1 on
-     `body` (the trace names it); one with ONESHOT does not.
+  I. THE CALL MODE IS A STATED FACT (R-23, MF_SITE_ABI 14; S1089): a site with
+     `body` UNSTATED is REFUSED at the define (the kit's refusal names `body`),
+     never classed as any mode; PARAM (reserved) and a value outside mf_body
+     are refused too; ONESHOT is accepted and R1's gate does not name `body`.
+     (S919's gate plant reads a state no site reaches since the refusal: it
+     is retired, declared UNREACHED.)
      Also (lane n2fix): no PRES shadow decision is declined on `need` (the
      OPTIONAL span on `pre-opt` is on the record, so the control is not blind).
   J. A DENY reaches its row: `--memfn=no-fd-r0` skips R0 on its witness.
@@ -80,7 +84,7 @@ DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
 B1_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1"]
 PENDING_DENIES = {"fd-pres-g1": "B3b", "fd-pres-pick": "B3b", "pres-set-lead": "B3b"}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
-FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt", "set10-nobody",
+FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
 # the rows the design routes at B2 (r17b_prime.md §1.6, §3.1 row B2)
 ROUTED_B2 = {"D1", "D1c", "D1w"}
@@ -423,15 +427,19 @@ def check_sites(root, fx, fxt, tmp, rows):
     (ok() if rc == 0 and cons == 0 else bad("plain build: consulted %s (rc %d %s)" % (cons, rc, ref)))
     unreached.append("R-MS2: consulted's true arms (an ABSENT and a present key read by a ROUTED "
                      "row) have no routed reader before B4")
-    # I: the call mode gate
-    _, _, _, _, _, err_nb = fd_run(fxt, "set10-nobody", full)
-    _, _, _, _, _, err_b = fd_run(fxt, "set10", full)
-    r1_nb = [ln for ln in err_nb.splitlines() if "table=fd" in ln and " row=R1 " in ln and "verdict=" in ln]
+    # I: the call mode is a stated fact (R-23): every body value is stated
+    # once; the three that are not a mode are refused naming `body`
+    for site, want in (("set10-nobody", "`body` UNSTATED"),
+                       ("set10-param", "`body` PARAM is reserved"),
+                       ("set10-bodyoor", "`body` outside mf_body")):
+        rc, dec, _, _, ref, _ = fd_run(fxt, site, full)
+        (ok() if ref and want in ref and not dec else
+         bad("%s: the kit did not refuse a bad call mode naming %s (rc %d, refusal %s, %d "
+             "decisions)" % (site, want, rc, ref, len(dec))))
+    _, _, _, _, ref_b, err_b = fd_run(fxt, "set10", full)
     r1_b = [ln for ln in err_b.splitlines() if "table=fd" in ln and " row=R1 " in ln and "verdict=" in ln]
-    (ok() if r1_nb and all("body:R1:UNSTATED" in ln for ln in r1_nb) else
-     bad("body UNSTATED: R1's gate does not name `body` (S919): %s" % (r1_nb[:1],)))
-    (ok() if r1_b and not any("body:R1" in ln for ln in r1_b) else
-     bad("body ONESHOT: R1's gate names `body`: %s" % (r1_b[:1],)))
+    (ok() if not ref_b and r1_b and not any("body:R1" in ln for ln in r1_b) else
+     bad("body ONESHOT: refused (%s) or R1's gate names `body`: %s" % (ref_b, r1_b[:1])))
     # J: a deny reaches its row (R0's witness under the R0 set, its key set)
     r0set = os.path.join(tmp, "r0.tsv")
     with open(r0set, "w") as fh:

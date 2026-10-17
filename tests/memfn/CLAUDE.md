@@ -496,7 +496,7 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   reading of the site (`--query`), and purity (plain and query renderings
   byte-identical; S1018); H the pay rule's arithmetic grid at, below and
   above every boundary and magnitude, expected bits computed here (S1025);
-  I the call-mode gate (`body` UNSTATED declines R1; S919); J every deny's
+  I the call mode is a stated fact (`body` UNSTATED, PARAM and out-of-enum are refused naming `body`, ONESHOT accepted; R-23, S1089; S919 retired UNREACHED); J every deny's
   reach (UNREACHED with its step where no B1 site can reach the row).
 - `arm_fixtures.c` gains `--query` (QUERY lines on stderr), the `fd-*`
   fixtures, `--fd-site SITE [--fd-set FILE] [--opts STR]`, `--finder-rows`,

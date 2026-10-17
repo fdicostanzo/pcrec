@@ -75,7 +75,7 @@ R17-b′ B1 (lane fdb1, 2026-10-16; `docs/design/memfn/r17b_prime.md` rev 3
 MF_SITE_ABI 12 on main with NO `MF_VOCAB` move and NO pcrec byte moved (R17-b's
 record-branch 12 above renumbers when B4 ports it, as R-13's 10 did after RQ-2;
 its `src/terms.c` cover search is carried here, search only):
-`mf_site.body` (R-19's call mode, ONESHOT from every pcrec builder) and the
+`mf_site.body` (R-19's call mode, ONESHOT from every pcrec builder; UNSTATED refused since MF_SITE_ABI 14) and the
 `start` hook; the define-time QUERY `mf_ask` (pure, the form CLASS, checked
 equal to `mf_define`'s under MF_TRACE); the measurement set's channel
 (`mf_measures` on `mf_art_begin`, `consulted` from `mf_art_end`; R-MS1/2);
@@ -96,6 +96,12 @@ writing the guard, post-test, bounded block and moved test, KW-3); pcrec's
 G1/R4/L4 read `mf_ask` and the reader shadow is retired; the harness-only
 arm-entry counter `mf_reach`/`mf_reach_table` (R-MS6); R0/R7's floor token
 `kit.eps.streamed.slope`. Report: `docs/dev/lanes/fdb2_report.md`.
+R-23 (lane r23, 2026-10-17) made MF_SITE_ABI 14 with NO `MF_VOCAB` move, no
+layout move and NO pcrec byte moved: `mf_site.body` is a STATED fact. Its zero
+is UNSTATED and `site_check` (read by `mf_define` and `mf_ask`) REFUSES a site
+that leaves it; pcrec's common constructor no longer writes ONESHOT and every
+builder states it. Check: finder_check family I; mech S1089 (S919 retired
+UNREACHED). Report: `docs/dev/lanes/r23_report.md`.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

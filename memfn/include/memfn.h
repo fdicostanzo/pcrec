@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 13  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 14  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -94,7 +94,14 @@
                            the PF rows write the guard, post-test, bounded
                            wrapper and moved hook (KW-3); the arm-entry
                            counter mf_reach / mf_reach_table (R-MS6). No
-                           MF_VOCAB move; no pcrec byte moved. */
+                           MF_VOCAB move; no pcrec byte moved. 14 (R-23, lane
+                           r23): mf_site.body is a STATED fact: its zero is
+                           UNSTATED (it was already the enum's zero, and the
+                           builders' common constructor wrote ONESHOT over it)
+                           and a site that leaves it is REFUSED where the
+                           kit checks a site (site_check: mf_define, mf_ask),
+                           never read as a mode. No layout move; no MF_VOCAB
+                           move; no pcrec byte moved. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -290,7 +297,8 @@ typedef enum { MF_C_RESULT, MF_C_ENGINE } mf_consumer;  /* §8.2 `consumer` */
 
 /* The CALL MODE of the entry body a site sits in (R-19, MF_SITE_ABI 12;
  * r17b_prime.md §2.4, §4.2): a FACT, the knowledge key M. UNSTATED (0) is
- * not a mode: a row that reads M skips. ONESHOT: one call answers one search
+ * not a mode and is REFUSED (R-23, MF_SITE_ABI 14): every site states its
+ * call mode, so no builder inherits one by omission. ONESHOT: one call answers one search
  * (every builder states it through B8: there is no iterator yet). PARAM: the
  * body is shared and M is a run-time parameter (findall_iter.md §4.2);
  * RESERVED for R17-b'' with its mode-expression hook, so a site stating it
@@ -492,9 +500,10 @@ typedef struct {
        builder; 0 or 1, else refused                                       */
     uint8_t         decl_point;
     /* THE CALL MODE (R-19, MF_SITE_ABI 12; appended LAST): mf_body. 0 is
-       UNSTATED (a row reading M skips; G2's sites leave it there); PARAM is
-       reserved (refused) until R17-b''. Read by the finder table's gate
-       (finder.c) only; no rendering reads it */
+       UNSTATED and a site that leaves it is refused (R-23, MF_SITE_ABI 14):
+       every builder states it; PARAM is reserved (refused) until R17-b''.
+       Read by the finder table's gate (finder.c) only; no rendering reads
+       it */
     uint8_t         body;
     /* THE CONSUMER KIND (PR-3, MF_SITE_ABI 13; appended LAST): mf_site_kind.
        0 is UNSTATED. Read by the finder table's gate (finder.c) only: no

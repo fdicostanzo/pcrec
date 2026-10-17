@@ -227,6 +227,7 @@ static mf_site base_site(void)
     s.consumer = MF_C_ENGINE;
     s.policy = MF_P_PORTABLE_ONLY;
     s.pred.need = MF_REQUIRED;  /* MF_SITE_ABI 13: stated (0 is refused where read) */
+    s.body = MF_BODY_ONESHOT;   /* MF_SITE_ABI 14: stated (0 is refused where read) */
     return s;
 }
 
@@ -1401,6 +1402,8 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
 {
     if (!strcmp(name, "set10"))            *s = fd_pf_site("0123456789", 1, MF_BODY_ONESHOT);
     else if (!strcmp(name, "set10-nobody")) *s = fd_pf_site("0123456789", 1, MF_BODY_UNSTATED);
+    else if (!strcmp(name, "set10-param"))  *s = fd_pf_site("0123456789", 1, MF_BODY_PARAM);
+    else if (!strcmp(name, "set10-bodyoor")) *s = fd_pf_site("0123456789", 1, 9);
     else if (!strcmp(name, "set2r"))        *s = fd_pf_site("0123456789abcdefghijklmnopqrstuvwxyz", 1, MF_BODY_ONESHOT);
     else if (!strcmp(name, "byte1"))        *s = fd_pf_site("x", 0, MF_BODY_ONESHOT);
     /* R17-b' B2: the one-byte sites as pcrec states them since MF_SITE_ABI 13
@@ -1458,7 +1461,7 @@ static int fd_fixture(const char *dir, const char *name)
         { "fd-D2",      "run3",   NULL },       /* a RUN landmark: D2             */
         { "fd-P0",      "pre-req", NULL },      /* a REQUIRED presence span: P0   */
         { "fd-P9",      "pre-opt", NULL },      /* an OPTIONAL one: P9            */
-        { "fd-nobody",  "set10-nobody", &FDS_R7 }, /* body UNSTATED: S919's witness */
+        { "fd-nobody",  "set10-nobody", &FDS_R7 }, /* body UNSTATED: refused (R-23, S1089's witness) */
     };
     for (size_t i = 0; i < sizeof fx / sizeof fx[0]; i++) {
         if (strcmp(name, fx[i].name)) continue;
