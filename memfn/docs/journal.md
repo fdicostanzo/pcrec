@@ -2394,3 +2394,12 @@ pointer when a kit change merges to main.
   - (1) an rc code is a priority-ordered summary: read the tool's rc table before naming a cause;
   - (2) a check prescribed in a report can be impossible by construction: run it once before prescribing it;
   - (3) I `cd`'d into fdb2land once (no lanes running).
+
+## 2026-10-17 (day) — Frank ruling: runtime ISA dispatch lives in compound + iterator state
+
+- Frank, after grid2 (SWAR has its place): code will need SIMD and non-SIMD in one artifact. He first weighed a predicate on the SIMD rung of the find-window cascade. Told that a function body is one ISA (per-function `target()`; target helpers are not inlined into default callers) and that a cpu check costs ~0.5 ns per call, he ruled:
+  - the compound controller decides the dispatch;
+  - one-shot search pays the check ("search can pay the cost");
+  - the iterator saves it in its state ("where intercall data is saved").
+- Posted as a responses.md notice with proposed D-entry text for main. Unscheduled; `[MEMFN-RTDISPATCH]`'s trigger is unchanged.
+- **Lesson:** state the compiler's granularity (function, not file) before a dispatch design discussion; it changed Frank's direction.
