@@ -1654,13 +1654,13 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   MODULE'S.** `find_bundle` is `pcrec_ks_resolve` under `pcrec_ks_analysis`
   (`find_has` answers S1 and the store, `find_note` prints the note) and
   builds the link from where it landed; the chain, `#include_next`, the cycle
-  and depth refusals and the terminal stay here. Under
-  `-DPCREC_KSRC_BOTHWAYS` the pre-K1 loop (`old_find_bundle`, `old_probe_dir`,
-  `old_dir_has_exact`, `old_stops_text`, verbatim) runs beside it on every
-  lookup and any disagreement aborts (`find_bothways`); K2 deletes it.
+  and depth refusals and the terminal stay here. K1's
+  `-DPCREC_KSRC_BOTHWAYS` debug copy of the pre-K1 loop was DELETED at K2
+  (lane ksrc23, 2026-10-17), with the wrapper `pcrec_find_name_ok`: the
+  name rule is `pcrec_ks_name_ok` at every caller.
   `rxt_source.c`'s `lib` search is the same move: `lib_find` (the existence
-  loop and `lib_resolve`) is `pcrec_ks_resolve` under `pcrec_ks_lib`, with its
-  own both-ways copy (`old_lib_find`); `lib_chain_text` stays, because the
+  loop and `lib_resolve`) is `pcrec_ks_resolve` under `pcrec_ks_lib` (its
+  both-ways copy `old_lib_find` deleted at K2); `lib_chain_text` stays, because the
   `lib` refusal words its stops differently from the analysis one (a third
   kind divergence, listed in the K1 report, not unified).
   **[WINDOW-E1] (lane e1build, 2026-10-17):** `chain_serves_enc` reads the

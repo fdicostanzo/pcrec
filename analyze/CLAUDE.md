@@ -59,7 +59,7 @@ after a clone has it). `ANALYZEFLAGS` in the top-level Makefile is its own
 small flag set (`$(CFLAGS) $(WARN) -std=gnu11`) — deliberately NOT
 `$(ALLFLAGS)`, whose `-Ilib -Isrc` would misstate a dependency this binary
 does not have. `make strict` covers `analyze/`'s three `.c` files
-alongside `scripts/findgen.c` (another standalone build tool) and
+alongside `scripts/ksgen.c` (another standalone build tool) and
 `cli/main.c`.
 
 ## Tests

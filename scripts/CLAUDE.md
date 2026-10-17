@@ -565,7 +565,15 @@ pcrec (the Makefile owns that).
   and only the hex pairs are consumed. `tests/findings/` reads each bundle
   back through the library and compares it with its file.
 
-- **findgen.c** — [FINDINGS] B1: the findings store's PRE-PARSE generator
+- **ksgen.c** — [KNOW-SRC] K2 (lane ksrc23, 2026-10-17): the knowledge
+  module's EMBED GENERATOR, `ksgen KIND OUT FILE...` (measure_sets.md rev 3
+  §9.2 part 4), one arm per kind with a store, chosen from `gen_arms[]` by
+  the kind's row in the kinds table (`pcrec_ks_kind`, which also supplies
+  the file suffix). Run by the Makefile's static-pattern rule `gen-<store>`
+  (`gen-findings` for the `analysis` kind) beside `embed_text.sh`. Its
+  `analysis` arm is what `findgen.c` was until K2, writing the same tables
+  (only the generated file's first comment line names the new program).
+  As `findgen.c`, [FINDINGS] B1: the findings store's PRE-PARSE generator
   (`make gen-findings`): runs the one `.rxt` reader over each
   `src/findings/<name>.rxt` in its no-filesystem buffer mode and writes every
   data block as a C table, `src/core/findings_table.inc` (committed), so a

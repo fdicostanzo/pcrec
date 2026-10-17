@@ -30,7 +30,7 @@ typedef struct {
 
 /* One DATA block of a store bundle, PRE-PARSED at build time (design §13 B1
  * (3)): what the one `.rxt` reader returns for the embedded text, generated
- * from that text by `scripts/findgen.c` into
+ * from that text by `scripts/ksgen.c` into
  * `src/core/findings_table.inc` (committed; `make gen-findings`), so a
  * compile reads a table and never parses.
  * `tests/findings/` parses the embedded text through the library and checks
@@ -157,11 +157,6 @@ const PcrecFindTblBundle *pcrec_find_store_bundles(size_t *n);
  * chain's terminal. */
 bool pcrec_find_store_link(const char *name, PcrecFindStop stop,
                            PcrecFindLink *out);
-
-/* Is `s[0..n)` a legal analysis name: a lowercase letter, then lowercase
- * letters, digits, `_` or `-` (design §3.1 [r2 M-S6])? The ONE home of the
- * rule; the `.rxt` reader, the resolver and the CLI all ask it. */
-bool pcrec_find_name_ok(const char *s, size_t n);
 
 /* THE SELECTION RULE (design §2.4, §4.4), its one spelling: the FIRST block
  * along `chain` with a `serves <query> when …<enc>…` line, or NULL (NONE).

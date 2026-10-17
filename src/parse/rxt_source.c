@@ -528,8 +528,8 @@ static int var_line_ok(RxtP *p, size_t line, const char *tok, int has_value)
  * matched byte for byte, so `Log` and `log` must never both be spellable:
  * on a case-insensitive filesystem they would name one file. Narrower than
  * `defname_ok` on purpose (no uppercase, no `.`). [FINDINGS] B2: the rule's
- * one home is `pcrec_find_name_ok` (src/core/findings.c), which the resolver
- * and the CLI's `--analysis` ask too. */
+ * one home is `pcrec_ks_name_ok` (src/core/ksrc.c, [KNOW-SRC]), which the
+ * resolver and the CLI's `--analysis` ask too. */
 /* Refuses a malformed analysis name on `line`, naming WHICH rule failed —
  * an uppercase letter gets the lowercase rule by name, since that is the
  * one an author coming from `defname` will trip over. `what` is the line
@@ -537,7 +537,7 @@ static int var_line_ok(RxtP *p, size_t line, const char *tok, int has_value)
 static int analysis_name_check(RxtP *p, size_t line, const char *what,
                                const char *v, size_t n)
 {
-    if (pcrec_find_name_ok(v, n)) return 0;
+    if (pcrec_ks_name_ok(v, n)) return 0;
     for (size_t i = 0; i < n; i++)
         if (v[i] >= 'A' && v[i] <= 'Z')
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
@@ -4095,29 +4095,12 @@ static void *lib_alloc(void *a, size_t n)
     return pcrec_arena_alloc(a, n);
 }
 
-#ifdef PCREC_KSRC_BOTHWAYS
-/* The pre-K1 search, kept verbatim for the both-ways check (K2 deletes it). */
-static const char *old_lib_find(Arena *a, const char *own,
-                                const char *const *dirs, size_t ndirs,
-                                const char *ref)
-{
-    if (ref[0] == '/') return path_is_file(ref) ? ref : NULL;
-    const char *cand = join_path(a, own, ref);
-    if (path_is_file(cand)) return cand;
-    for (size_t d = 0; d < ndirs; d++) {
-        cand = join_path(a, dirs[d], ref);
-        if (path_is_file(cand)) return cand;
-    }
-    return NULL;
-}
-#endif
-
 /* [KNOW-SRC] K1: a `lib "path"` reference's file, by the knowledge module's
  * one stop loop under the `lib` kind's row (src/parse/ks_lib.c): an absolute
  * path as written, else the naming file's own directory (`own`, "" for
  * none) and then each `--lib-path` in order, matched by existence
  * (`entry_match = probe-exists`, F12). The resolved path (arena-owned) or
- * NULL. Under `-DPCREC_KSRC_BOTHWAYS` the pre-K1 loop must agree. */
+ * NULL. */
 static const char *lib_find(Arena *a, const char *own,
                             const char *const *dirs, size_t ndirs,
                             const char *ref)
@@ -4131,15 +4114,6 @@ static const char *lib_find(Arena *a, const char *own,
     KsHit hit;
     const char *path = pcrec_ks_resolve(&kw, KS_REQ_PATH, ref, 0, &hit) ==
                        KS_RES_FOUND ? hit.path : NULL;
-#ifdef PCREC_KSRC_BOTHWAYS
-    const char *old = old_lib_find(a, own, dirs, ndirs, ref);
-    if (!old != !path || (old && strcmp(old, path) != 0)) {
-        fprintf(stderr, "pcrec: internal error: [KNOW-SRC] K1 both-ways: "
-                "lib \"%s\" resolves to '%s' (old) and '%s' (new)\n", ref,
-                old ? old : "(none)", path ? path : "(none)");
-        abort();
-    }
-#endif
     return path;
 }
 
