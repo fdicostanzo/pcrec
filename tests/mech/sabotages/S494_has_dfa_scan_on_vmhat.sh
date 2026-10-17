@@ -16,5 +16,16 @@ SAB_REACH_EXPECT='REACH-VMHAT'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter;'
-SAB_AFTER='    return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter ||   /* SABOTAGE S494 */
-           (cx->job->fit.chosen == ENGM_VM && strcmp(pcrec_vm_start_scan_name(cx), "none") != 0);'
+# The vm-start-scan name reaches back here (cand_stamp_absent -> cand_path_of
+# -> this function), so an unguarded plant recursed until SIGSEGV: ~6.7 s of
+# apport per crash x ~3900 cases = ~94 min, past the 7200 s bound. The
+# re-entrancy guard keeps the plant's verdict (true on a scanning VM hat)
+# and bounds the recursion at one level; the inner call reads the base verdict.
+SAB_AFTER='    static int s494_in;   /* SABOTAGE S494 */
+    int s494_vm = 0;
+    if (!s494_in && cx->job->fit.chosen == ENGM_VM) {
+        s494_in = 1;
+        s494_vm = strcmp(pcrec_vm_start_scan_name(cx), "none") != 0;
+        s494_in = 0;
+    }
+    return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter || s494_vm;'
