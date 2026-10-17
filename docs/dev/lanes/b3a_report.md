@@ -81,7 +81,32 @@ pcrec's five priced picks run in the TRACE build beside pcrec's own picks. **Zer
 
 ## 2. Validation (light; `taskset -c 12-15`, `-j4`)
 
-VALIDATION_TABLE
+The light chain is `build/land/chain.sh`, run at tip 6fc627f49 and pinned to `taskset -c 12-15` at `-j4`. Logs are in `build/land/`; verdicts are in `build/land/verdict.txt`. Every suite verdict uses the `\*\*\* \[(Makefile:[0-9]+: )?test-` grep.
+
+| check | result |
+|---|---|
+| make, make strict | rc 0 |
+| test-memfn-finder (now incl. `part pr11`) | 953/0 |
+| test-memfn-rows / arms / deleg / stamps | 232/0, 383/0, 9/0, 25/0 |
+| test-memfn-manifest / link / forms / reach / rank | 13/0, 8/0, 5/0, 4/0, 15/0 |
+| test-memfn-guarded / simdfloor / arch | 10/0, 51/0, 15/0 |
+| test-memfn-g2 (quick) | 52,987,697/0 |
+| test-registry | 79/0 |
+| test-cand-oracle (incl. run_pres_picks.sh, 40 checks) | 140/0 |
+| test-spec-history | 145/0 |
+| test-compound | 7/0 |
+| test-codegen | **1 red at 6fc627f49**: `[cand-route-init]` flagged `CandSel ns = { 0 }` in `req_pick_shadow` (a trace-build-only line). Fixed after the chain (in 37936a462) by giving `ns` a designated initializer that states `.route`. The re-run gave test-codegen rc 0, 0 verdict lines; also rerun clean: make strict, test-cand-oracle 140/0 and run_pres_picks 40/0 |
+| emit_sweep vs a `git archive` build of 184fc9110, `--no-self-check --streams c-default,c-vm,emit-ir,composition,facts,emit-ir-auto,stderr` | **0 movers, 0 asymmetric** on every stream of every arm: plain (+dumps), `-fmemfn-simd`, `-fcomments`, `-e utf8` (`--no-differ-floor`), `--engine=vm` (`--no-differ-floor`), `--arms start`, and two partial populations (rwquest 173, bench 364 patterns) |
+| emit_sweep `--trace` (ref 184fc9110 vs tip) | trace build vs default build: stdout differs on 0/0. SET gate **CLEAN** (rc 0), 24/24 site keys reached. The ordered diagnostic (not gating) DIFFERS: working has more records (c-default 512,307 -> 528,814, c-vm 179,405 -> 185,615). These are repeats of records already present, issued by the shadow's quiet `cand_select(NEXT, ...)` (the displaced set) and the `dfa_cand_scan(PRESENCE)` proof walk. stc0's rule says an extra ask false-alarms the ordered compare, so SET is the gate |
+| `MEMFN_REACH_ONLY=1 AXES=--memfn bash tests/axes/run_axes.sh` | memfn arm OK, 257/0 |
+| KW-8 pick census at tip, with floors | `PICK_CENSUS_DONE fails=0` (§3) |
+| PR-11 census at tip | `PR11_CENSUS_DONE collapsed=20 fails=0` (§4) |
+| proposed diffs: `git archive` tip + apply all three, build, deleg/manifest/finder, 1-in-8 emit_sweep vs the tip binary (c-default, c-vm, facts, dumps) | apply rc 0, build rc 0, 9/0, 13/0, 953/0, 0 movers |
+| sabotage S1093-S1101 solo (`run_skb3a.sh`) | 9/9 DETECTED (§6) |
+
+**Collision guard.** B3a does not touch `src/gen/memfn_stamps.c` (`pcrec_memfn_stamps_render`) or the `consulted` return path after `mf_art_end`; confirmed by grepping the diff against 184fc9110.
+
+**Zero artifact movers vs main 184fc9110.** PRES stays unrouted. The only pcrec lines that run in a default build are `req_pres_spans`, the `head_max` store and the two non-pass fact reads. These are statements on the kit site; no row renders them.
 
 ## 3. KW-8 census (`docs/design/memfn/r17b_prime/b3a/pick_census.py`)
 
@@ -126,7 +151,7 @@ Withheld shadows, which state no spans (Q-WR-4):
 The window pick's non-trivial population is small because a real window tie needs a run longer than 8. The
 named witnesses carry a real tie (`-e utf8 (?i:x)abcdefg(?i:y)`).
 
-The census was re-run at the tip in the chain: PICK_CENSUS_TIP. Transcript: `b3a/out/pick_census_full.txt`.
+The census was re-run at the tip in the chain: identical counts, every floor PASS, `fails=0` (`b3a/out/pick_census_tip.txt`). Transcript: `b3a/out/pick_census_full.txt`.
 Named witnesses: `tests/memfn/pres_pick_witnesses.tsv` (17 lines, 40 checks, one plant per non-trivial line).
 
 ## 4. PR-11 control (`tests/memfn/run_pr11.sh`, `b3a/pr11_census.py`)
@@ -157,7 +182,7 @@ are harvested by running the artifact's own `_search` over the population's text
 - A **no-claims** artifact states no req_set and no req_whole_run, so it has nothing to enforce.
 - An **unchecked** artifact found no matching subject in its texts.
 
-The tip re-run is PR11_TIP (`b3a/out/pr11_census.txt`).
+The tip re-run is identical, `collapsed=20 fails=0` (`b3a/out/pr11_census.txt`).
 
 **The planted collapse drops rmin (S1100, nfa.c): DETECTED.** finder reported 3 failures.
 
@@ -213,29 +238,67 @@ Each plant was run SOLO in a `git archive HEAD` copy by `b3a/sabotage/run_skb3a.
 SN-6's per-pick planted disagreement is also built into the witness runner: `PCREC_PICK_PLANT` runs on every
 non-trivial witness line.
 
-## 7. OWED heavy runs (manager's slot; none run here)
+## 7. OWED heavy runs (the manager's slot; none were run here)
 
-Each run below is launched from the worktree root:
+Run each from the worktree root, with `TMPDIR` under the worktree:
 
 ```
-# full make test
-scripts/perfrun -- make test > build/land/make_test.log 2>&1
-#   verdict: grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'
+# the full suite, through perfrun (BOILERPLATE heavy-chain template)
+scripts/perfrun --label b3a -- build/land/test.log
+#   verdict: grep -cE '\*\*\* \[(Makefile:[0-9]+: )?test-' build/land/test.log
 
 # G2 full
 make test-memfn-g2-full > build/land/g2_full.log 2>&1
 
-# mech
-#   - the derived memfn rows: anchors in compose.c, emit_dfa.c and memfn_sites.c moved
-#     (SABANCHOR in test-codegen passed);
-#   - the S1093..9 rows, once main allocates their ids:
-make test-mech > build/land/mech.log 2>&1
-
-# N2 census, per its runner
+# the new rows, solo, through the matrix
+PROCS=4 bash tests/mech/run_sabotage_matrix.sh S1093 S1094 S1095 S1096 S1097 S1098 S1099 S1100 S1101 \
+  > build/land/mech_b3a.log 2>&1
 ```
+
+The mech list also needs the rows anchored in the files B3a edits: `memfn/src/compose.c`, `src/gen/emit_dfa.c` (`req_site_define`'s neighbourhood) and `src/gen/memfn_sites.c`. Derive them with
+
+    python3 scripts/sabotage_anchors.py --step 184fc9110..HEAD
+
+and run them solo. SABANCHOR (inside `make test-codegen`) and `scripts/m6read_check_sab_anchors.py` both resolve every anchor (794 rows, 821 sites).
+
+Also owed:
+
+- the N2 census, by its runner;
+- `make test-axes` if the slot wants it beyond the memfn reach arm already run here.
+
+None of these is expected to move an artifact. Every default-build edit only states facts on the kit site, and the emit_sweep arms above read 0 movers.
+
+The rebase onto main's moved base (RP + the union stamp, abi 79) is a follow-up lane's job. Expected conflict sites:
+
+- `MF_SITE_ABI`'s history sentence in `memfn/include/memfn.h`;
+- the readers of `MF_SITE_ABI` in the CLAUDE.md files;
+- this index.
 
 ## 8. Charter vs committed
 
-CHECKLIST
+| charter item | committed |
+|---|---|
+| presence spans STATED on the merged site, PRES unrouted | yes: `req_pres_spans` -> `mf_site.pspans`; no finder row reads them (§1, deviation 1) |
+| PR-5 unpicked: each member a one-byte span, the run one span with mask | yes |
+| PR-6 `omin` = 0 | yes, and `kit_presence_check` refuses omin < 0 |
+| PR-7 member order | yes: `member_order` from the fact's rightmost order, `MF_ORDER_UNKNOWN` otherwise (deviation 3) |
+| `head_max` on the site | yes, stated under ASSIGN only |
+| withheld presence (Q-WR-4) at G2 one-attempt and LOCATE whole | yes: no spans stated; the shadow records `withheld-one-attempt` (783 corpus / 45 bench) and `withheld-whole` (132 corpus) |
+| KW-8 ports in the TRACE build beside pcrec's own | yes (`memfn/src/presence.c`, `req_pick_shadow`) |
+| 100% agreement over corpus, bench, rwquest | yes, 0 disagreements (§3) |
+| [rev3 D10] per-pick floor on non-trivial sites | yes (`pick_floors.tsv`, 18 floors, all PASS) |
+| SN-6 a planted disagreement per pick, caught | yes: `PCREC_PICK_PLANT` per witness line, plus S1094-S1099 in the ports and S1093 in the comparator |
+| PR-11 control: census over collapsed hybrids + planted collapse dropping rmin | yes: `run_pr11.sh` (in `run_finder.sh`), census 20 collapsed / 14 checked / 0 failures, S1100 DETECTED |
+| zero artifact movers vs main 184fc9110 | yes, every arm (§2) |
+| (a) DELEG_SITES PRE merged into FIND rows as ENTRY use, PROPOSED | yes: `deleg_entry.diff`, applies, builds, C10 check 6 |
+| (b) site manifest use points moved, PROPOSED | yes: `c17_use_points.diff`, C17 13/0 |
+| (c) C10 fixtures for presence, PROPOSED | yes: `c10_presence.diff` (+ MFPRES in the lane's own commits) |
+| pcrec builder lines in my own commit, flagged | yes (§1, "FLAGGED FOR MAIN'S REVIEW") |
+| kit struct change bumps MF_SITE_ABI 15 -> 16, readers by grep | yes: memfn.h, memfn/CLAUDE.md, memfn/include/CLAUDE.md; the abi-15 readers left are R-24's historical sentences |
+| new kit deny rows in options.def, floor raised, MEMFN_CLASS measured | not applicable: B3a adds no kit row and no deny (PRES unrouted); memfn reach arm 257/0 |
+| MF_NS, static internals, D157, UNSTATED zero on every enum | yes: `mf_pres_ports` is MF_NS'd and every helper is static; the kit receives only facts (spans, rates, K, the displaced set); `mf_span_class` has an UNSTATED 0, and `member_order` uses an explicit UNKNOWN sentinel |
+| sabotage ids | S1093-S1101 (kit manager's allocation), in `tests/mech/sabotages/` |
+| light validation list | all run (§2); test-codegen's one red fixed and re-run green |
+| do not touch `pcrec_memfn_stamps_render` / `consulted` path | confirmed untouched |
 
-Tip: TIPSHA
+Code tip: 37936a462. The report commit follows it, and its sha is in the lane's handback message.
