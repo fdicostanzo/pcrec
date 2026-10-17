@@ -511,9 +511,22 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   byte-identical; S1018); H the pay rule's arithmetic grid at, below and
   above every boundary and magnitude, expected bits computed here (S1025);
   I the call mode is a stated fact (`body` UNSTATED, PARAM and out-of-enum are refused naming `body`, ONESHOT accepted; R-23, S1089; S919 retired UNREACHED); J every deny's
-  reach (UNREACHED with its step where no B1 site can reach the row).
+  reach (UNREACHED with its step where no B1 site can reach the row);
+  L (R-24, MF_SITE_ABI 15; S1092) provenance `bytes` and `fidelity`: pcrec's
+  stanza mapping (`pcrec_memfn_prov_stanza`, driven through **prov_check.c**,
+  built by run_finder.sh against `build/libpcrec.a` with `-Werror`; its
+  `_Static_assert`s hold mf_prov's layout, the three B1 fields at their offsets
+  and the two R-24 fields appended after them) maps each token of the closed set
+  read off `pcrec --list-schema` to its own nonzero enumerator (hand-written
+  expectation: verbatim 1, adapted 2, synthesized 3), a block declaring none to
+  the UNSTATED zero, refuses a word outside the set without a write, passes
+  `bytes` through exactly; no `memfn/src` file names mf_prov/fidelity; and a
+  site renders byte-identically (plain and traced drivers) with no analysis
+  object and with `arm_fixtures --fd-site SITE --fd-an FID` stating each
+  fidelity (UNSTATED and an out-of-enum 9 included).
 - `arm_fixtures.c` gains `--query` (QUERY lines on stderr), the `fd-*`
-  fixtures, `--fd-site SITE [--fd-set FILE] [--opts STR]`, `--finder-rows`,
+  fixtures, `--fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an FID]` (R-24:
+  an analysis object stating fidelity FID), `--finder-rows`,
   `--hash` and `--pay-grid`.
 - **rows.tsv** / **row_floors.tsv**: table `fd`, 19 rows, every reach
   `pending-site:<routing step>`; six witnessed by a fixture's SHADOW records

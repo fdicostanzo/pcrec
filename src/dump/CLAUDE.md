@@ -259,6 +259,9 @@ one.
   (`findings_ref.py`), never against this file. A `table_contract.md`
   producer at birth: every table a named `#section`, every cell through
   `pcrec_sb_row`.
+  [WINDOW-E1] (lane e1build, 2026-10-17): the `resolution` rows walk the
+  query vocabulary through `pcrec_find_query` (its local `FIND_QUERIES[]`
+  copy is gone); the listing is byte-identical.
 
 ## Conventions
 

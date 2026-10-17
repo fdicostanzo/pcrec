@@ -138,6 +138,16 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   no analysis object; `mf_art_end`'s `consulted` is read by nobody before
   B4. The kit's arena op, `pcrec_memfn_arena_alloc`, is `memfn_sites.c`'s
   own (static: the attempt's art is its only user).
+- **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
+  `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
+  `memfn_sites.c` maps an answering block's provenance stanza onto the kit's
+  `mf_prov.bytes`/`.fidelity` (`prov_fidelity_rows[]`, one row per token of the
+  findings vocabulary `closed fidelity verbatim adapted synthesized` in
+  `src/parse/rxt_schema.def`; NULL is the UNSTATED zero; a word outside the
+  set returns -1 and writes nothing). Nothing in the compiler calls it on this
+  base: the analysis object is E-1's ([WINDOW-E1]), whose merge calls it where
+  it fills each kind's `prov` (see `docs/dev/lanes/r24_report.md`). Checked by
+  `tests/memfn/prov_check.c` (finder_check family L); sabotage S1092.
   `cand_nodes[]` declare their KIT ASKS (`kask[slot]` route masks, inside
   `reads`, and `kfields`: PRESENCE and RETRY ask NEXT's site on DFA|ATTEMPT
   for EXISTS|PROVEN0, RECOVER on DFA for EXISTS; self-check
@@ -182,6 +192,17 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   (R-MS6) hands the kit the counter stem `pcrec_harness_reach_<prefix>`
   (`pcrec_memfn_art`) and appends its table at the artifact's end
   (`memfn_stamps.c`).
+  [WINDOW-E1] (lane e1build, 2026-10-17; window_contract.md rev 3.1
+  §3.7.1): `pcrec_memfn_analysis_build` builds the attempt's `mf_analysis`
+  (every `pcrec_find_query` row's `pcrec_find_offer`, mapped onto the kit's
+  `MF_KIND_*`/`MF_PROV_*` by two declared cell tables, its §3.1 invariant
+  checked as an internal error) into `Job.analysis`; `compile_driver` calls
+  it right after the chain resolves, and `pcrec_memfn_art` only passes it to
+  `mf_art_begin`. Under `-DPCREC_KS_TRACE` each kind writes one
+  `KSRCTRACE object` record (`analysis_trace`), the input of
+  `tests/findings/e1_object_check.py`. The kit's B1 layout carries no
+  `bytes`/`fidelity`; they stay in pcrec's `PcrecFindOffer` and the trace
+  until the kit re-declares them.
 - **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** ([MEMFN]
   R17-a, lane r17a, MF_SITE_ABI 11, zero movers: the SET sites are DEFINED
   then USED. `find_site` states the window, W0-W2, on every FIND through

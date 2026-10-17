@@ -20,9 +20,11 @@
  *                                     derived 256 byte counts on one line,
  *                                     then `dropped N` — or `error N`
  *
- * A block line is `bundle kind line nserves serve;serve;… ROWS`, each serve
- * `query|encs|via`; ROWS is `c0,c1,…,c255` for a `freq` block and
- * `U+HHHH:count,…` (ascending) for a `cpfreq` block ([FINDINGS] B5). */
+ * A block line is `bundle kind line nserves serve;serve;… ROWS PROV`, each
+ * serve `query|encs|via`; ROWS is `c0,c1,…,c255` for a `freq` block and
+ * `U+HHHH:count,…` (ascending) for a `cpfreq` block ([FINDINGS] B5); PROV
+ * is the block's provenance stanza, `source|bytes|fidelity` (`-` for an
+ * absent fidelity) ([WINDOW-E1]). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +36,9 @@ static void block_line(const char *bundle, const char *kind, size_t line,
                        size_t nserves, const char *const *q,
                        const char *const *e, const char *const *v,
                        const unsigned long long *counts,
-                       const PcrecFindCp *cps, size_t ncps)
+                       const PcrecFindCp *cps, size_t ncps,
+                       const char *psrc, unsigned long long pbytes,
+                       const char *pfid)
 {
     printf("%s %s %zu %zu ", bundle, kind, line, nserves);
     for (size_t j = 0; j < nserves; j++)
@@ -45,7 +49,7 @@ static void block_line(const char *bundle, const char *kind, size_t line,
     for (size_t j = 0; j < ncps; j++)
         printf("%sU+%04lX:%llu", j ? "," : "", (unsigned long)cps[j].cp,
                cps[j].count);
-    printf("\n");
+    printf(" %s|%llu|%s\n", psrc ? psrc : "(null)", pbytes, pfid ? pfid : "-");
 }
 
 int main(int argc, char **argv)
@@ -75,7 +79,9 @@ int main(int argc, char **argv)
                     v[j] = fb->serves[j].via;
                 }
                 block_line(fb->bundle, fb->kind, fb->line, fb->nserves, q, e, v,
-                           fb->counts, fb->cps, fb->ncps);
+                           fb->counts, fb->cps, fb->ncps, fb->prov_source,
+                           fb->prov_bytes ? strtoull(fb->prov_bytes, NULL, 10) : 0,
+                           fb->prov_fidelity);
             }
             pcrec_rxt_source_free(src);
         }
@@ -90,7 +96,9 @@ int main(int argc, char **argv)
                 v[j] = tbl[i].serves[j].via;
             }
             block_line(tbl[i].bundle, tbl[i].kind, tbl[i].line, tbl[i].nserves,
-                       q, e, v, tbl[i].counts, tbl[i].cps, tbl[i].ncps);
+                       q, e, v, tbl[i].counts, tbl[i].cps, tbl[i].ncps,
+                       tbl[i].prov_source, tbl[i].prov_bytes,
+                       tbl[i].prov_fidelity);
         }
         return 0;
     }

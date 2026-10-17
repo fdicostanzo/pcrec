@@ -153,9 +153,35 @@ int main(int argc, char **argv)
                 snprintf(counts, sizeof counts, "pcrec_find_tbl_counts_%zu", nb);
             if (fb->ncps)
                 snprintf(cps, sizeof cps, "pcrec_find_tbl_cps_%zu", nb);
+            /* [WINDOW-E1] the block's provenance stanza, which a query's
+             * provenance is read from (D162 add. 4). The store's `default`
+             * is the chain's terminal, reached by identity, so it must be
+             * AUTHORED on every block: an answer through
+             * PCREC_FIND_STOP_DEFAULT is a prior by construction
+             * (window_contract.md §3.2's cross-check). */
+            if (!fb->prov_source) {
+                fprintf(stderr, "findgen: %s: the '%s' block at line %zu has "
+                        "no provenance source\n", argv[a], fb->kind, fb->line);
+                return 1;
+            }
+            if (!strcmp(fb->bundle, "default") &&
+                strcmp(fb->prov_source, "authored") != 0) {
+                fprintf(stderr, "findgen: %s: the store's default must declare "
+                        "'source authored' on every block (line %zu says '%s')\n",
+                        argv[a], fb->line, fb->prov_source);
+                return 1;
+            }
+            check_plain(fb->prov_source, "provenance source");
+            if (fb->prov_fidelity) check_plain(fb->prov_fidelity, "fidelity");
             fprintf(out, "    { \"%s\", \"%s\", %zu, pcrec_find_tbl_serves_%zu, %zu, "
-                    "%s, %s, %zu },\n", fb->bundle, fb->kind, fb->line, nb,
-                    fb->nserves, counts, cps, fb->ncps);
+                    "%s, %s, %zu, \"%s\", %lluull, ", fb->bundle, fb->kind,
+                    fb->line, nb, fb->nserves, counts, cps, fb->ncps,
+                    fb->prov_source,
+                    fb->prov_bytes ? strtoull(fb->prov_bytes, NULL, 10) : 0ull);
+            if (fb->prov_fidelity)
+                fprintf(out, "\"%s\" },\n", fb->prov_fidelity);
+            else
+                fprintf(out, "NULL },\n");
         }
         pcrec_rxt_source_free(src);
         free(text);

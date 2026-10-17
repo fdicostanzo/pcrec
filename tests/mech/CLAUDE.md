@@ -3916,3 +3916,12 @@ and demands the refusal naming `body`), hand-measured DETECTED (figure in
 ONESHOT) is RETIRED as declared UNREACHED: nothing delivers an unstated body
 to the gate any more; its REACH_POP reads NOW REACHED if the finder check
 does. S1090 was requested and is unused.
+
+**S1092 (lane r24, 2026-10-17, [MEMFN] R-24; MF_SITE_ABI 15):** `mf_prov` carries the
+answering block's `bytes` and `fidelity`; pcrec's mapping
+`pcrec_memfn_prov_stanza` (`src/gen/memfn_sites.c`) is where a stanza's
+`fidelity` word becomes the enumerator. S1092 writes the UNSTATED zero whatever
+the block declares; arm `memfnfinder` (finder_check.py family L maps every
+token of the closed set read off `pcrec --list-schema` through
+`tests/memfn/prov_check.c` and demands its own nonzero enumerator), hand-measured
+DETECTED (figure in `docs/dev/lanes/r24_report.md`). No artifact moves.

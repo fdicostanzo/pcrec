@@ -147,6 +147,12 @@ static void link_from_source(FindWalk *w, const RxtSource *src,
         bl[k].serves = sv;
         bl[k].nserves = fb->nserves;
         bl[k].counts = c;
+        /* [WINDOW-E1] the stanza a query's provenance is read from */
+        bl[k].prov_source = fb->prov_source
+            ? find_strndup(w->a, fb->prov_source, strlen(fb->prov_source)) : NULL;
+        bl[k].prov_bytes = fb->prov_bytes ? strtoull(fb->prov_bytes, NULL, 10) : 0;
+        bl[k].prov_fidelity = fb->prov_fidelity
+            ? find_strndup(w->a, fb->prov_fidelity, strlen(fb->prov_fidelity)) : NULL;
         k++;
     }
     out->blocks = bl;
@@ -446,12 +452,13 @@ int pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
     return 0;
 }
 
-/* Does any link of `chain` declare any query under encoding `enc`? */
+/* Does any link of `chain` declare any query (the vocabulary,
+ * `pcrec_find_query`) under encoding `enc`? */
 static bool chain_serves_enc(const PcrecFindChain *chain, const char *enc)
 {
-    static const char *const queries[] = { "byte-rate", "run-rarity" };
-    for (size_t q = 0; q < sizeof queries / sizeof *queries; q++)
-        if (pcrec_find_chain_answer(chain, queries[q], enc, NULL, NULL))
+    const PcrecFindQuery *q;
+    for (size_t i = 0; (q = pcrec_find_query(i)); i++)
+        if (pcrec_find_chain_answer(chain, q->tag, enc, NULL, NULL))
             return true;
     return false;
 }

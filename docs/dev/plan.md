@@ -183,8 +183,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
   - [WINDOW-E1] STATE:started — E-1: pcrec builds the analysis object per compile attempt (with RP and the stamp-union event)
     filed: 2026-10-16 manager (D167 add. 2-3, D162 add. 4)
-    status (2026-10-16): designed, window_contract.md rev 3.1 §3.7; not built; sits between the kit's B2 and B3a (R17-b' build GO, D167)
-    next: after the kit's B2 merges: E-1, then the render-point commit RP, then the union-over-attempts abi event
+    status (2026-10-17): E-1 BUILT on lane/e1build (not merged; docs/dev/lanes/e1build_report.md): zero movers by emit_sweep, light suites green, make test + mech rows owed; RP and the union event not started
+    next: merge E-1 after its owed make test + mech rows; then the render-point commit RP, then the union-over-attempts abi event
     refs: docs/design/memfn/window_contract.md (rev 3.1 §3.7, §3.7.3a); decisions D162 add. 4 D167 add. 2-3
     Filed under [REGIME], not [MEMFN]: it is pcrec-side work (main builds the object from Job.find through one find_queries[] table, byte-rate always present) that feeds the kit's R17-b' and is a REGIME prerequisite; [MEMFN] rows are the kit's. E-1 and RP are zero-mover (stamp = CONSULTED, offer never refuses); the union over attempts (D167 add. 3) is its own small abi event beside RP.
 

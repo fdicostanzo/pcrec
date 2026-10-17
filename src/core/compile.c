@@ -2469,6 +2469,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * attempt only, since every attempt resolves the same inputs to the
          * same chain. */
         pcrec_find_resolve(&cx, attempt == 0);
+        /* [WINDOW-E1] THE ANALYSIS OBJECT, built here and nowhere else: once
+         * per attempt, EAGERLY, from the chain just resolved, so its build
+         * point does not depend on which kit call comes first
+         * (window_contract.md §3.7.1, §3.3 rule 3). It is an OFFER, never an
+         * ask: no stamp item and no refusal follows from it. */
+        pcrec_memfn_analysis_build(&cx);
 
         Ast *root = pcrec_parse(&cx);
 

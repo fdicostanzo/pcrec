@@ -1663,6 +1663,14 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   own both-ways copy (`old_lib_find`); `lib_chain_text` stays, because the
   `lib` refusal words its stops differently from the analysis one (a third
   kind divergence, listed in the K1 report, not unified).
+  **[WINDOW-E1] (lane e1build, 2026-10-17):** `chain_serves_enc` reads the
+  query vocabulary through `pcrec_find_query` (no local list), and
+  `link_from_source` copies each block's provenance stanza
+  (`prov_source`/`prov_bytes`/`prov_fidelity`) from `RxtFindBlock`, which
+  `rxt_source.c`'s `close_section_frame` fills when a data block's
+  `provenance` frame closes (the frame's `fbi` names its block).
+  `serves_check` validates the query against `pcrec_find_query` and names
+  the vocabulary through `pcrec_find_query_tags` (byte-identical text).
 - **ks_analysis.c** / **ks_lib.c** — [KNOW-SRC] K0 (lane ksrc, 2026-10-16;
   `docs/design/measure_sets.md` rev 3 §9.2, §9.5): two ROWS of the knowledge
   module's kinds table (`src/core/ksrc.c` holds the kind-independent parts).

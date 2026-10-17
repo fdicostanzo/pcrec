@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 14  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 15  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -101,7 +101,13 @@
                            and a site that leaves it is REFUSED where the
                            kit checks a site (site_check: mf_define, mf_ask),
                            never read as a mode. No layout move; no MF_VOCAB
-                           move; no pcrec byte moved. */
+                           move; no pcrec byte moved. 15 (R-24, lane r24;
+                           window_contract.md rev 3.1 §3.1, §3.6): mf_prov
+                           gains `bytes` (the exemplar byte count the
+                           answering block declares, 0 when it declares none)
+                           and `fidelity` (mf_prov_fidelity, an UNSTATED zero),
+                           each appended LAST. No kit row reads either before
+                           B3a. No MF_VOCAB move; no pcrec byte moved. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -844,11 +850,23 @@ typedef struct mf_measures {
 typedef enum { MF_PROV_UNSTATED = 0, MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
                MF_PROV_MEASURED } mf_prov_source;
 typedef enum { MF_KIND_UNSTATED = 0, MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_state;
+/* The answering block's `fidelity` row (R-24): pcrec's findings vocabulary
+ * (src/parse/rxt_schema.def, `closed fidelity verbatim adapted synthesized`),
+ * one enumerator per token and the zero for "the block declares none" (the
+ * schema requires the row under a PATTERN block only, so a data block states
+ * none). A FACT about the block; a row that weighs it is the kit's (D157). */
+typedef enum { MF_FID_UNSTATED = 0, MF_FID_VERBATIM, MF_FID_ADAPTED,
+               MF_FID_SYNTHESIZED } mf_prov_fidelity;
 typedef struct {
     uint8_t     source;     /* mf_prov_source                                  */
     const char *bundle;     /* MEASURED: the answering bundle; PRIOR: "default" */
     uint64_t    digest;     /* what was consumed (the `<PREFIX>_FINDINGS`
                                digest); 0 under PRIOR_NONE                     */
+    uint64_t    bytes;      /* R-24, MF_SITE_ABI 15 (appended LAST): the
+                               exemplar byte count the answering block's
+                               `provenance bytes` row declares; 0 when it
+                               declares none                                   */
+    uint8_t     fidelity;   /* R-24 (appended LAST): mf_prov_fidelity          */
 } mf_prov;
 typedef struct {
     const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */

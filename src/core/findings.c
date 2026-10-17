@@ -178,16 +178,16 @@ int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256])
 /* ---- THE DERIVATIONS (design §2.4): the closed vocabulary, and the
  * arithmetic of each byte-rate derivation ------------------------------- */
 
-/* The vocabulary as DATA. The query vocabulary is this table's third column,
- * never a second list; a row whose kind the schema does not admit yet
- * (`bigram`, B4) is still the spec-stated vocabulary, so the reader refuses
- * `via markov1` on a `freq` block as the wrong KIND's derivation rather than
- * as an unknown word. */
+/* The derivation vocabulary as DATA, each word naming its query by a row of
+ * `find_queries[]` (below), never by a second spelling of the tag; a row
+ * whose kind the schema does not admit yet (`bigram`, B4) is still the
+ * spec-stated vocabulary, so the reader refuses `via markov1` on a `freq`
+ * block as the wrong KIND's derivation rather than as an unknown word. */
 static const PcrecFindDeriv find_derivs[] = {
-    { "freq",   "unigram",       "byte-rate"  },
-    { "cpfreq", "encode-utf8",   "byte-rate"  },
-    { "cpfreq", "encode-latin1", "byte-rate"  },
-    { "bigram", "markov1",       "run-rarity" },
+    { "freq",   "unigram",       PCREC_FQ_BYTE_RATE  },
+    { "cpfreq", "encode-utf8",   PCREC_FQ_BYTE_RATE  },
+    { "cpfreq", "encode-latin1", PCREC_FQ_BYTE_RATE  },
+    { "bigram", "markov1",       PCREC_FQ_RUN_RARITY },
 };
 
 const PcrecFindDeriv *pcrec_find_deriv(size_t i)
@@ -278,12 +278,18 @@ const PcrecFindTblBlock *pcrec_find_chain_answer(const PcrecFindChain *chain,
     return NULL;
 }
 
-/* The byte-rate this compile's CHAIN declares for its encoding, into `fr`:
- * the ONE block the selection rule picks (§2.4, §4.4), derived by its
- * `serves` line's `via`. No such block -> NONE (`byte_rate_have` stays
- * false). A chain the attempt never resolved (a `Ctx` built outside `compile_driver`) reads
- * as the built-in `default` alone — the terminal every chain ends in. */
-static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
+/* The byte-rate this compile's CHAIN declares for its encoding, into `fr`'s
+ * memo, and what deriving it came to: the ONE block the selection rule picks
+ * (§2.4, §4.4), derived by its `serves` line's `via`. No such block -> NONE
+ * (`byte_rate_have` stays false). A chain the attempt never resolved (a
+ * `Ctx` built outside `compile_driver`) reads as the built-in `default`
+ * alone — the terminal every chain ends in. Derives once per attempt and
+ * NEVER refuses: an answering block that normalizes to nothing is
+ * UNDERIVABLE and a broken postcondition is BROKEN, both left for the ASK
+ * path to raise (`find_raise_byte_rate`), so the analysis object's offer,
+ * which derives on every attempt, refuses nothing (window_contract.md
+ * §3.7.4a). */
+static PcrecFindStatus find_derive_byte_rate_status(Ctx *cx, PcrecFindRec *fr)
 {
     const char *enc = pcrec_enc_by_id(cx->opt->encoding)->name;
     PcrecFindLink dflt;
@@ -293,26 +299,41 @@ static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
     const PcrecFindServe *sv = NULL;
     size_t link = 0;
     int nr;
+    if (fr->byte_rate_status != PCREC_FIND_ST_UNDERIVED)
+        return fr->byte_rate_status;
     if (chain->n == 0) {
         if (pcrec_find_store_link("default", PCREC_FIND_STOP_DEFAULT, &dflt))
             one.n = 1;
         chain = &one;
     }
     fb = pcrec_find_chain_answer(chain, "byte-rate", enc, &link, &sv);
-    if (!fb) return;
+    if (!fb) return fr->byte_rate_status = PCREC_FIND_ST_NONE;
+    fr->byte_rate_block = fb;
+    fr->byte_rate_via = sv->via;
+    fr->byte_rate_bundle = chain->links[link].bundle;
     nr = pcrec_find_block_byte_rate(fb, sv->via, fr->byte_rate, NULL);
-    if (nr == -1)
+    if (nr == -1) return fr->byte_rate_status = PCREC_FIND_ST_UNDERIVABLE;
+    if (nr != 0) return fr->byte_rate_status = PCREC_FIND_ST_BROKEN;
+    fr->byte_rate_have = true;
+    fr->byte_rate_digest = pcrec_find_byte_rate_digest(fr->byte_rate);
+    return fr->byte_rate_status = PCREC_FIND_ST_OK;
+}
+
+/* The ASK path's refusal of a byte-rate the derivation could not produce:
+ * today's two diagnostics, verbatim, raised only where a reader asked. */
+static void find_raise_byte_rate(Ctx *cx, const PcrecFindRec *fr,
+                                 PcrecFindStatus st)
+{
+    const PcrecFindTblBlock *fb = fr->byte_rate_block;
+    if (st == PCREC_FIND_ST_UNDERIVABLE)
         pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
                        "%zu counts nothing via %s, so it has no byte-rate",
-                       fb->bundle, fb->kind, fb->line, sv->via);
-    if (nr != 0)
+                       fb->bundle, fb->kind, fb->line, fr->byte_rate_via);
+    if (st == PCREC_FIND_ST_BROKEN)
         pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
                        "'%s' block at line %zu normalizes to a "
                        "byte-rate that breaks its own postcondition",
                        fb->bundle, fb->kind, fb->line);
-    fr->byte_rate_have = true;
-    fr->byte_rate_bundle = chain->links[link].bundle;
-    fr->byte_rate_digest = pcrec_find_byte_rate_digest(fr->byte_rate);
 }
 
 /* ---- THE STAMP AND THE DIGEST (design §7) -------------------------------- */
@@ -407,9 +428,159 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx)
     PcrecFindRec *fr = &cx->job->find;
     if (!fr->byte_rate_asked) {
         fr->byte_rate_asked = true;
-        find_derive_byte_rate(cx, fr);
+        find_raise_byte_rate(cx, fr, find_derive_byte_rate_status(cx, fr));
     }
     return fr->byte_rate_have ? fr->byte_rate : NULL;
+}
+
+/* ---- THE QUERY VOCABULARY AND THE OFFER ([WINDOW-E1]) ----------------------
+ *
+ * window_contract.md §3.2 and §3.7.1. `find_queries[]` is the [FINDINGS]
+ * query vocabulary's ONE home (findings.h's `PcrecFindQuery`), plus, per
+ * row, what the offer needs that the vocabulary's readers do not: the
+ * query's NON-RAISING derivation and its payload's digest. A row with no
+ * payload shape (version 0) has neither: T-KIND lists it ABSENT before
+ * asking anything of it. */
+
+/* One query's answer for the offer: what deriving it came to, and on OK its
+ * payload, its answering block and that block's bundle. Never refuses. */
+typedef PcrecFindStatus (*FindAnswerFn)(Ctx *cx, PcrecFindRec *fr,
+                                        const void **payload,
+                                        const PcrecFindTblBlock **block,
+                                        const char **bundle);
+
+/* The byte-rate's answer: the memoized status derivation, read back. */
+static PcrecFindStatus find_byte_rate_answer(Ctx *cx, PcrecFindRec *fr,
+                                             const void **payload,
+                                             const PcrecFindTblBlock **block,
+                                             const char **bundle)
+{
+    PcrecFindStatus st = find_derive_byte_rate_status(cx, fr);
+    *payload = fr->byte_rate_have ? fr->byte_rate : NULL;
+    *block = fr->byte_rate_block;
+    *bundle = fr->byte_rate_bundle;
+    return st;
+}
+
+/* The digest of a byte-rate payload, computed from the payload the offer
+ * hands over (never copied from the record), the stamp's own spelling. */
+static uint64_t find_byte_rate_payload_digest(const void *payload)
+{
+    return pcrec_find_byte_rate_digest(payload);
+}
+
+static const struct {
+    PcrecFindQuery q;
+    FindAnswerFn   answer;
+    uint64_t     (*digest)(const void *payload);
+} find_queries[] = {
+    [PCREC_FQ_BYTE_RATE]  = { { "byte-rate",  1, PCREC_FIND_UNMEASURED_ARRIVES },
+                              find_byte_rate_answer,
+                              find_byte_rate_payload_digest },
+    [PCREC_FQ_RUN_RARITY] = { { "run-rarity", 0, PCREC_FIND_UNMEASURED_ABSENT },
+                              NULL, NULL },
+};
+_Static_assert(sizeof find_queries / sizeof *find_queries == PCREC_FQ_N,
+               "find_queries[] has one row per PCREC_FQ_* index");
+
+const PcrecFindQuery *pcrec_find_query(size_t i)
+{
+    return i < PCREC_FQ_N ? &find_queries[i].q : NULL;
+}
+
+const char *pcrec_find_query_tags(Arena *a)
+{
+    const char *t = "";
+    for (size_t i = 0; i < PCREC_FQ_N; i++)
+        t = pcrec_sb_fragf(a, "%s%s%s", t, i ? ", " : "", find_queries[i].q.tag);
+    return t;
+}
+
+/* The facts T-KIND reads about one query of this attempt. */
+typedef struct {
+    bool shaped;    /* the row carries a payload shape (version > 0) */
+    bool answers;   /* a block along the chain serves it */
+    bool derives;   /* ... and its derivation came to OK */
+    bool prior;     /* ... and its stanza is a PRIOR's: `source authored`,
+                       or `fidelity synthesized` (D162 add. 4: `measured`
+                       needs a measured source and a non-synthesized
+                       fidelity) */
+    bool arrives;   /* the row's `unmeasured` column is ARRIVES */
+} FindKindFacts;
+
+static bool fk_no_shape(const FindKindFacts *f)  { return !f->shaped; }
+static bool fk_undrv_arr(const FindKindFacts *f) { return f->answers && !f->derives && f->arrives; }
+static bool fk_undrv(const FindKindFacts *f)     { return f->answers && !f->derives; }
+static bool fk_measured(const FindKindFacts *f)  { return f->answers && f->derives && !f->prior; }
+static bool fk_authored(const FindKindFacts *f)  { return f->answers && f->derives && f->prior && f->arrives; }
+static bool fk_auth_abs(const FindKindFacts *f)  { return f->answers && f->prior; }
+static bool fk_prior_none(const FindKindFacts *f) { return f->arrives; }
+static bool fk_absent(const FindKindFacts *f)    { (void)f; return true; }
+
+/* T-KIND (window_contract.md §3.2), first match, the same rows for every
+ * query. A row's `table` says whether the answer's payload, bundle and
+ * digest travel (PRIOR_AUTHORED and MEASURED). `underivable-arrives` reads
+ * PRIOR_NONE: the answering block has no table, falling through to a later
+ * link would break the selection rule, and pcrec's answer with no table IS
+ * the no-information answer; nothing observes it unless a reader consults
+ * the kind, which refuses the compile (§3.3 rule 9). */
+static const struct {
+    const char        *name;
+    bool             (*applies)(const FindKindFacts *);
+    PcrecFindKindState present;
+    PcrecFindSource    source;
+    bool               table;
+} find_kind_rows[] = {
+    { "no-shape",            fk_no_shape,   PCREC_FIND_KIND_ABSENT,  PCREC_FIND_SRC_UNSTATED,       false },
+    { "underivable-arrives", fk_undrv_arr,  PCREC_FIND_KIND_PRESENT, PCREC_FIND_SRC_PRIOR_NONE,     false },
+    { "underivable",         fk_undrv,      PCREC_FIND_KIND_ABSENT,  PCREC_FIND_SRC_UNSTATED,       false },
+    { "measured",            fk_measured,   PCREC_FIND_KIND_PRESENT, PCREC_FIND_SRC_MEASURED,       true  },
+    { "authored",            fk_authored,   PCREC_FIND_KIND_PRESENT, PCREC_FIND_SRC_PRIOR_AUTHORED, true  },
+    { "authored-absent",     fk_auth_abs,   PCREC_FIND_KIND_ABSENT,  PCREC_FIND_SRC_UNSTATED,       false },
+    { "prior-none",          fk_prior_none, PCREC_FIND_KIND_PRESENT, PCREC_FIND_SRC_PRIOR_NONE,     false },
+    { "absent",              fk_absent,     PCREC_FIND_KIND_ABSENT,  PCREC_FIND_SRC_UNSTATED,       false },
+};
+
+/* Is the answering block's own stanza a prior's (FindKindFacts.prior)? */
+static bool find_block_prior(const PcrecFindTblBlock *fb)
+{
+    return (fb->prov_source && !strcmp(fb->prov_source, "authored")) ||
+           (fb->prov_fidelity && !strcmp(fb->prov_fidelity, "synthesized"));
+}
+
+void pcrec_find_offer(Ctx *cx, size_t query, PcrecFindOffer *out)
+{
+    PcrecFindRec *fr = &cx->job->find;
+    const PcrecFindTblBlock *fb = NULL;
+    const char *bundle = NULL;
+    const void *payload = NULL;
+    PcrecFindStatus st = PCREC_FIND_ST_NONE;
+    FindKindFacts f = { 0 };
+    size_t r = 0;
+    f.shaped = find_queries[query].q.version > 0;
+    f.arrives = find_queries[query].q.unmeasured == PCREC_FIND_UNMEASURED_ARRIVES;
+    if (f.shaped)
+        st = find_queries[query].answer(cx, fr, &payload, &fb, &bundle);
+    f.answers = st != PCREC_FIND_ST_NONE;
+    f.derives = st == PCREC_FIND_ST_OK;
+    f.prior = fb && find_block_prior(fb);
+    while (!find_kind_rows[r].applies(&f)) r++;   /* the last row applies */
+    memset(out, 0, sizeof *out);
+    out->row = find_kind_rows[r].name;
+    out->present = find_kind_rows[r].present;
+    out->source = find_kind_rows[r].source;
+    if (!find_kind_rows[r].table) return;
+    out->bundle = bundle;
+    out->payload = payload;
+    out->digest = find_queries[query].digest(payload);
+    out->bytes = out->source == PCREC_FIND_SRC_MEASURED ? fb->prov_bytes : 0;
+    out->fidelity = fb->prov_fidelity;
+}
+
+bool pcrec_find_byte_rate_answers(Ctx *cx)
+{
+    pcrec_find_byte_rate(cx);
+    return cx->job->find.byte_rate_have;
 }
 
 #ifdef PCREC_KS_TRACE
