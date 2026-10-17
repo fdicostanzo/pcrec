@@ -28,7 +28,9 @@
 #
 # Usage: bash tests/memfn/run_pres_picks.sh [TREE]   (default: this repo)
 # Env:   PRES_PICKS_BIN=TRACE_PCREC to skip the build (run_cand_oracle.sh
-#        hands its own trace build); CC as tests/lib/cc_resolve.sh resolves.
+#        hands its own trace build); CC as tests/lib/cc_resolve.sh resolves;
+#        PRES_PICKS_EXTRA="FLAGS" runs the agreement-only extra arm (below);
+#        PRES_PICKS_DEFAULT_BIN the default build the used column is held to.
 set -u
 export LC_ALL=C
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,6 +59,52 @@ else
 fi
 
 PICKS="set scan window leads dominated landmark"
+
+# AN EXTRA ARM (lane b3afix, review MINOR-5): PRES_PICKS_EXTRA="FLAGS" appends
+# FLAGS to every witness compile and checks AGREEMENT only. The table's
+# reach, non-trivial and value columns are stated for the default arm, so
+# they are not asserted here; every record must agree, no port may refuse,
+# and each non-trivial line's plant must still be reported where its pick is
+# recorded. A witness the arm refuses to compile is counted, not failed.
+if [ -n "${PRES_PICKS_EXTRA:-}" ]; then
+    read -r -a ex <<< "$PRES_PICKS_EXTRA"
+    nl=0; nc=0; nrec=0; nplant=0; nref=0
+    while IFS=$'\t' read -r pick nt pc flags pat; do
+        case "$pick" in ''|'#'*) continue ;; esac
+        nl=$((nl + 1))
+        fl=(); [ "$flags" != "-" ] && read -r -a fl <<< "$flags"
+        if ! "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all "${fl[@]}" "${ex[@]}" -o "$WORK/w.c" \
+                --pattern "$pat" > /dev/null 2> "$WORK/err"; then
+            nref=$((nref + 1)); continue
+        fi
+        nc=$((nc + 1))
+        nrec=$((nrec + $(grep -c $'^MFPICK\t' "$WORK/err")))
+        if grep -q $'^MFPICKSITE\tport-refused' "$WORK/err"; then
+            bad "[pres-picks-arm] the port refused the stated spans of $flags $pat"; continue
+        fi
+        if awk -F'\t' '$1=="MFPICK" && $3!="1" {f=1} END {exit !f}' "$WORK/err"; then
+            bad "[pres-picks-arm] a disagreement on $flags $pat: $(awk -F'\t' '$1=="MFPICK" && $3!="1"' "$WORK/err" | head -1 | tr '\t' ' ')"
+            continue
+        fi
+        ok "[pres-picks-arm] $flags $pat: every record agrees"
+        if [ "$nt" = 1 ] && awk -F'\t' -v p="$pick" '$1=="MFPICK" && $2==p && $4=="1" {f=1} END {exit !f}' "$WORK/err"; then
+            PCREC_PICK_PLANT="$pick" "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all "${fl[@]}" "${ex[@]}" \
+                -o "$WORK/w.c" --pattern "$pat" > /dev/null 2> "$WORK/err2"
+            if awk -F'\t' -v p="$pick" '$1=="MFPICK" && $2==p && $3=="0" {f=1} END {exit !f}' "$WORK/err2"; then
+                nplant=$((nplant + 1))
+            else
+                bad "[pres-picks-arm] the planted '$pick' disagreement on $flags $pat was not reported"
+            fi
+        fi
+    done < "$WIT"
+    if [ "$nrec" -ge 1 ]; then ok "[pres-picks-arm] $nrec records"
+    else bad "[pres-picks-arm] no MFPICK record under the arm (K35)"; fi
+    echo "PRES_PICKS_ARM extra=[$PRES_PICKS_EXTRA] lines=$nl compiled=$nc refused=$nref records=$nrec plants=$nplant"
+    echo "checks passed: $pass"
+    echo "checks failed: $fail"
+    [ "$fail" -eq 0 ]; exit
+fi
+
 declare -A have_nt=()
 nwit=0
 while IFS=$'\t' read -r pick nt pc flags pat; do

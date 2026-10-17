@@ -6,7 +6,7 @@ floors on non-trivial sites" [rev3 D10]).
 
     pick_census.py --bin TRACE_PCREC --ls-bin PCREC [--pop corpus,bench,rwquest]
                    [--bench-dir DIR] [--every N] [--jobs J] [--arm FLAGS]...
-                   [--floors FILE] [--write FILE] [--tmp DIR]
+                   [--floors FILE] [--write FILE] [--tmp DIR] [--nonascii]
 
 WHAT IT COUNTS. Every pattern of each population compiled by a pcrec built
 with -DPCREC_CAND_TRACE, under each arm (default: no flag, `-e utf8`,
@@ -133,6 +133,9 @@ def main():
     ap.add_argument("--floors")
     ap.add_argument("--write")
     ap.add_argument("--tmp", default=os.environ.get("TMPDIR", "/tmp"))
+    ap.add_argument("--nonascii", action="store_true",
+                    help="keep only the patterns holding a byte >= 0x80 (lane b3afix's "
+                         "non-ASCII caseless UTF-8 arm)")
     a = ap.parse_args()
     arms = [x.split() for x in (a.arm or ["", "-e utf8", "--engine=vm"])]
     pops = {}
@@ -145,6 +148,9 @@ def main():
             pops[p] = rwquest(a.tree)
         else:
             raise SystemExit("unknown population %r" % p)
+        if a.nonascii:
+            pops[p] = [(args, pat) for args, pat in pops[p]
+                       if any(b >= 0x80 for b in pat.encode("utf-8", "surrogateescape"))]
         pops[p] = pops[p][::a.every]
     cnt = collections.Counter()
     sites = collections.Counter()
