@@ -18,7 +18,7 @@ SAB_SUITES="memfnmanifest"
 SAB_DESC='an if (0) call to mf_define is planted in pcrec_memfn_stamps_render, a function no delegated row names: an unlisted site for C17 rule 2'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S528.'
 SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_site_manifest.sh" "$TREE"'
-SAB_REACH_EXPECT='PASS: selftest: the shim logs a synthetic caller
+SAB_REACH_EXPECT='PASS: selftest: the shim logs a synthetic door caller
 PASS: rule 2 (dynamic half): every function that reached the kit'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
