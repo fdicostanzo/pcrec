@@ -20,7 +20,7 @@ Lane r24 (sonnet, 2026-10-17), branch `lane/r24` cut from `lane/memfn-r23` (e097
 ## 1. The fidelity vocabulary's source
 
 `src/parse/rxt_schema.def:278`, the PROVENANCE row `fidelity`: `closed fidelity verbatim adapted synthesized`
-(`build/pcrec --list-schema` line 89 prints it; docs/spec/rxt_format.md:908). The same closure is the `adaptation`
+(`build/pcrec --list-schema` line 89 prints it; docs/spec/rxt_format.md §1.9). The same closure is the `adaptation`
 row's rule at `:279` ("required-if fidelity != verbatim"). It is also carried as a string in `RxtFindBlock.fidelity`
 (`src/core/internal.h:6114`) and printed by `src/parse/rxt_source.c:4771` and `src/dump/findings_dump.c:246`. No C enum of
 the tokens exists in pcrec on this base: the mapping table is the first enumerated spelling, so check family L reads
