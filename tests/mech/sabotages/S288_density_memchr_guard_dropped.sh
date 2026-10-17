@@ -25,8 +25,11 @@ SAB_COUNT=1
 # [FINDINGS] B1: the anchor's context line was the density conjunct's own
 # encoding test, which B1 deleted (the gate lives in the byte-rate accessor
 # now); it re-anchors on the COMPARE call that replaced it.
+# RE-AIMED 2026-10-16 (lane fdb2, R17-b' B2, PR-9): `memchr_form` is the
+# method-free `one_byte` (the scan proves one byte, read from the kit's
+# class); the guard and its intent are unchanged.
 SAB_BEFORE='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
-    if (!cs->memchr_form) return false;
+    if (!cs->one_byte) return false;
     return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);'
 SAB_AFTER='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
     /* SABOTAGE S288: memchr-form guard dropped */

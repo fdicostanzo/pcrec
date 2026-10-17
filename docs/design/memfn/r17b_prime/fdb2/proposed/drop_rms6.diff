@@ -1,0 +1,381 @@
+diff --git a/cli/main.c b/cli/main.c
+index 2bb39c05f..ce8ec0473 100644
+--- a/cli/main.c
++++ b/cli/main.c
+@@ -1108,8 +1108,6 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
+         /* [MEMFN] R17-b' B1: the set handed to the kit (a test build's) */
+         else if (!strncmp(a, "--harness=measures=", 19))
+             st->harness.measures = harness_measures_load(a + 19);
+-        /* [MEMFN] R17-b' B2 (R-MS6): the kit's arm-entry counter */
+-        else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
+ #endif
+         else if (!strncmp(a, "--engine=", 9)) {
+             const char *v = a + 9;
+diff --git a/cli/CLAUDE.md b/cli/CLAUDE.md
+index eed2bd1fe..d871cc1a8 100644
+--- a/cli/CLAUDE.md
++++ b/cli/CLAUDE.md
+@@ -231,7 +231,7 @@ R20/MOD07-9: "1 row DISAGREES", "2 rows DISAGREE".
+ 
+ The tool normalizes output paths (e.g., -o out.c generates out.h automatically; -o - prints self-contained C to stdout). It writes the generated .c/.h files to the filesystem.
+ 
+-**The harness build** (`build/pcrec-harness`, `main.c` with `-DPCREC_HARNESS`; the Makefile rule's comment) adds test-only options the shipped `build/pcrec` lacks (their spellings live only in `main.c`, `tests/compound/`, `tests/memfn/run_arm_reach.sh` and the harness-pairing allowlist of `tests/compound/run_lever_fence.sh`, the G7 fence): one that force-declines the compound family; since R17-b′ B1 (lane fdb1), one that takes a measurement-set file, which reads a kit measurement-set section TSV (`harness_measures_load`: `kit.` rows with a value, `null` rows skipped) and hands it to the kit's `mf_art_begin` through `PcrecHarnessOptions.measures`; and since R17-b′ B2 (lane fdb2), one that sets `PcrecHarnessOptions.arm_reach`, so the kit counts each routed finder site's arm entries in the artifact under a reserved counter name (R-MS6; `tests/memfn/run_arm_reach.sh` drives and reads it).
++**The harness build** (`build/pcrec-harness`, `main.c` with `-DPCREC_HARNESS`; the Makefile rule's comment) adds test-only options the shipped `build/pcrec` lacks (their spellings live only in `main.c`, `tests/compound/` and the harness-pairing allowlist of `tests/compound/run_lever_fence.sh`, the G7 fence): one that force-declines the compound family and, since R17-b′ B1 (lane fdb1), one that takes a measurement-set file, which reads a kit measurement-set section TSV (`harness_measures_load`: `kit.` rows with a value, `null` rows skipped) and hands it to the kit's `mf_art_begin` through `PcrecHarnessOptions.measures`.
+ 
+ Compilation goes through lib/pcrec.h, the public header. The SR-3 syntax queries are the one exception: they include src/core/internal.h, because the construct registry is deliberately NOT public surface — the CLI and the test suite are its only consumers today. main.c touches no registry type even so; it calls two functions that return finished text. Promoting one of them into lib/pcrec.h if a library caller ever wants it is easy in a way that un-promoting it would not be.
+ 
+diff --git a/src/core/internal.h b/src/core/internal.h
+index 7f7cd108a..57a65108d 100644
+--- a/src/core/internal.h
++++ b/src/core/internal.h
+@@ -132,16 +132,9 @@ typedef struct PcrecPartFacts PcrecPartFacts;
+  * build's SHADOW reads it before B4 (no routed row reads a set key through
+  * B3b), so an artifact under any set is byte-identical to one without: the
+  * B2/B3b gates' synthetic-set arms check exactly that. NULL: no set. */
+-/* [MEMFN] R17-b' B2 (R-MS6, R-22): the third, `--harness=arm-reach`: the
+- * memfn kit counts how often each arm of a routed finder decision is ENTERED
+- * (mf_reach), in a file-scope array of the artifact under the reserved
+- * prefix, `pcrec_harness_reach_<prefix>` (with its row ids and count; the
+- * definitions are appended to the artifact's end, mf_reach_table). Off on
+- * every shipped compile, so a default artifact is untouched by it. */
+ struct mf_measures;
+ typedef struct {
+     unsigned compound_off : 1;
+-    unsigned arm_reach : 1;
+     const struct mf_measures *measures;
+ } PcrecHarnessOptions;
+ /* The lever's RESERVED symbol prefix: the namespace table refuses a user
+diff --git a/src/gen/memfn_sites.c b/src/gen/memfn_sites.c
+index 6a56a4e18..e6167b96c 100644
+--- a/src/gen/memfn_sites.c
++++ b/src/gen/memfn_sites.c
+@@ -79,14 +79,6 @@ mf_art *pcrec_memfn_art(Ctx *cx)
+                                pcrec_memfn_policy(cx->opt->flags),
+                                pcrec_memfn_denies(cx->opt->flags), ms, NULL);
+         if (!job->mf) pcrec_ctx_nomem(cx);
+-        /* R17-b' B2 (R-MS6): the harness lever's arm-entry counter, under the
+-           reserved prefix and the artifact's own (placeholder, rendered with
+-           the rest of the text); never on a shipped compile */
+-        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach &&
+-            mf_reach(job->mf, pcrec_sb_fragf(&cx->arena, "%sreach_%s",
+-                                             PCREC_HARNESS_PREFIX, cx->opt->prefix)))
+-            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
+-                           "counter: %s", mf_art_error(job->mf));
+     }
+     return job->mf;
+ }
+diff --git a/src/gen/memfn_stamps.c b/src/gen/memfn_stamps.c
+index ba1961645..d906986bb 100644
+--- a/src/gen/memfn_stamps.c
++++ b/src/gen/memfn_stamps.c
+@@ -275,14 +275,5 @@ void pcrec_memfn_stamps_render(Ctx *cx)
+     if (!ok)
+         pcrec_ctx_fail(cx, 0, "internal error: the artifact holds no single "
+                        "memfn stamp mark (pcrec_emit_memfn_mark)");
+-    /* R17-b' B2 (R-MS6): under the harness lever, the arm-entry counter's
+-       definitions at the artifact's end, after every use (nothing without it) */
+-    if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach) {
+-        PcrecMfSink ps;
+-        pcrec_memfn_sink(&ps, &job->csb);
+-        if (mf_reach_table(art, &ps.s))
+-            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
+-                           "counter's table: %s", mf_art_error(art));
+-    }
+     pcrec_memfn_art_end(cx, art);
+ }
+diff --git a/tests/memfn/run_finder.sh b/tests/memfn/run_finder.sh
+index d40107abd..3a3b764ea 100755
+--- a/tests/memfn/run_finder.sh
++++ b/tests/memfn/run_finder.sh
+@@ -39,8 +39,8 @@ echo "run_finder: $n kit sources traced"
+ # lines are re-labelled and summed into the totals printed LAST, which are the
+ # only unlabelled ones: a reader that takes the first count (the mech arm
+ # `memfnfinder` does, `grep -m1`) would otherwise score finder_check alone and
+-# never see the parts below it (S1080, S1081 and S1083 read UNDETECTED that
+-# way; lane fdb2fix).
++# never see the parts below it (S1083 read UNDETECTED that way; lane
++# fdb2fix).
+ tp=0 tf=0
+ part() {   # part LABEL LOG: relabel LOG's counts, add them to the totals
+     local p f
+@@ -58,8 +58,6 @@ python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
+ rc=$?
+ part finder_check "$WORK/check.log"
+ [ "$rc" -eq 0 ] || [ "$tf" -gt 0 ] || { echo "FAIL: finder_check exited $rc with no failed check"; tf=$((tf + 1)); }
+-# R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
+-# (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
+ # R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's
+ # class of MLINE's context stop (`proven_prev`, row D1c), whose byte is the
+ # necessary one: `(?m)^\n`'s one-byte pre-check stays DOMINATED (pcrec's
+@@ -74,11 +72,6 @@ else
+     echo "FAIL: F-B1-3: (?m)^\\n's pre-check is not dominated (G1 lost the context stop's byte)"
+     tf=$((tf + 1))
+ fi
+-echo "run_finder: the arm-entry counter (R-MS6)"
+-TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&1
+-rc=$?
+-part arm_reach "$WORK/reach.log"
+-[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/reach.log")" -gt 0 ] || { echo "FAIL: run_arm_reach exited $rc with no failed check"; tf=$((tf + 1)); }
+ echo "checks passed: $tp"
+ echo "checks failed: $tf"
+ [ "$tf" -eq 0 ]
+diff --git a/tests/memfn/CLAUDE.md b/tests/memfn/CLAUDE.md
+index e1dd6a824..5f2d80f92 100644
+--- a/tests/memfn/CLAUDE.md
++++ b/tests/memfn/CLAUDE.md
+@@ -475,10 +475,8 @@ set sites decided by no routed row; `--memfn=no-fd-d1` moves the byte site to
+ D1w's walk); `arm_fixtures.c`'s `--fd-site` gains `byte1t`, `byte1vm`,
+ `hat1` and `mline` (the B2 shape) and prints ROUTED/TEXT; rows.tsv reads a
+ routed `fd` row's signature from the traced compile's FDROUTE record.
+-**run_arm_reach.sh** is R-MS6's check (the harness-only arm-entry counter:
+-lever off byte-identical, lever on >= 1 / 0 per fired row), run by
+-run_finder.sh, which sums its parts' counts into ONE final `checks
+-passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
++run_finder.sh sums its parts' counts into ONE final `checks passed/failed`
++pair (the mech arm reads the first count; lane fdb2fix).)
+ 
+ - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
+   TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
+diff --git a/src/gen/CLAUDE.md b/src/gen/CLAUDE.md
+index e827b004d..482c2e48d 100644
+--- a/src/gen/CLAUDE.md
++++ b/src/gen/CLAUDE.md
+@@ -175,10 +175,7 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
+   rename: `DFA_PF_ONE_BYTE`, `CandSet.one_member`, `CandScan.one_byte`.
+   Under `PCREC_CAND_TRACE` with `PCREC_MF_ROUTE_TRACE` set, every defined
+   site prints `MFROUTED<TAB>site<TAB>kind<TAB>row` from the define's report
+-  (`memfn_sites.c` `routed_record`). The harness lever `--harness=arm-reach`
+-  (R-MS6) hands the kit the counter stem `pcrec_harness_reach_<prefix>`
+-  (`pcrec_memfn_art`) and appends its table at the artifact's end
+-  (`memfn_stamps.c`).
++  (`memfn_sites.c` `routed_record`).
+ - **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** ([MEMFN]
+   R17-a, lane r17a, MF_SITE_ABI 11, zero movers: the SET sites are DEFINED
+   then USED. `find_site` states the window, W0-W2, on every FIND through
+diff --git a/tests/mech/CLAUDE.md b/tests/mech/CLAUDE.md
+index 4a0ac86bd..6de9aa11c 100644
+--- a/tests/mech/CLAUDE.md
++++ b/tests/mech/CLAUDE.md
+@@ -3870,14 +3870,11 @@ DETECTED 1fail/43pass each (lane tip a6b933692).
+ **S922, S1079-S1084 (lanes fdb2/fdb2fix, 2026-10-16, [MEMFN] R17-b′ B2;
+ r17b_prime.md rev 3 §8.3, R-MS6):** S922 a finder row (R7) routed before its
+ step; S1079 D1's routed bit left 0 (one-byte sites render their pre-table
+-form, same text, so byte identity cannot see it); S1080 pcrec arms the
+-arm-entry counter (`mf_reach`) without the harness lever (`memfn_sites.c`);
+-S1081 the counter adds 0; S1082 the kit's walk post-test dropped; S1083 the
+-context stop's class proves nothing (`proven_prev` unfilled, F-B1-3); S1084
+-the kit writes the counter unasked (`compose.c`: both builds agree, so only
+-the lever-off counter-SHAPE check sees it; it was S1080's first plant, which
+-the harness-vs-shipped identity could not catch). All arm `memfnfinder`
+-(tests/memfn/run_finder.sh, which runs run_arm_reach.sh). S1085 (fdb2fix):
++form, same text, so byte identity cannot see it); S1082 the kit's walk
++post-test dropped; S1083 the context stop's class proves nothing
++(`proven_prev` unfilled, F-B1-3). All arm `memfnfinder`
++(tests/memfn/run_finder.sh). S1080, S1081 and S1084 were R-MS6's (the
++arm-entry counter) and left with it (drop_rms6.diff). S1085 (fdb2fix):
+ the readers' PF site carries the escape set E instead of the row's scanned
+ set (a DFA hat's T), arm `candoracle`: the trace build's asked-class hold
+ (`cand_asked_hold`) aborts where the define's class differs. S1086-S1088 are
+diff --git a/tests/memfn/run_arm_reach.sh b/tests/memfn/run_arm_reach.sh
+deleted file mode 100755
+index 7c0a77464..000000000
+--- a/tests/memfn/run_arm_reach.sh
++++ /dev/null
+@@ -1,130 +0,0 @@
+-#!/usr/bin/env bash
+-# tests/memfn/run_arm_reach.sh — [MEMFN] R17-b' B2 (lane fdb2): R-MS6 (R-22,
+-# measure_sets.md rev 3 §4.4 R-MS6 and §8.1), the memfn kit's HARNESS-ONLY
+-# arm-entry counter: how many times each arm of a site a ROUTED finder row
+-# decided was ENTERED, reached only through build/pcrec-harness
+-# `--harness=arm-reach`, exported under the reserved prefix with the arm's
+-# finder row id (`pcrec_harness_reach_<prefix>`, `..._row`, `..._n`).
+-#
+-# THE BAR (R-22):
+-#   lever OFF: the harness build's artifact is byte-identical to build/pcrec's
+-#              (and to the harness's own artifact without the option), and
+-#              holds no counter shape, named or not;
+-#   lever ON : every fired row's arm counts >= 1 on a fixture subject that
+-#              enters it, and 0 on one that does not, read from the RUNNING
+-#              artifact by a driver written here (never from the kit's own
+-#              records), each site's row id held to this file's table.
+-# Controls: the counters are real (a fixture that never enters reads 0), and
+-# a lever that wrote no counter fails (K35: at least CASE_FLOOR cases ran).
+-#
+-# Env: CC (tests/lib/cc_resolve.sh's), TMPDIR.
+-set -u
+-export LC_ALL=C
+-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+-. "$ROOT/tests/lib/cc_resolve.sh"
+-. "$ROOT/tests/lib/timeout_bin.sh"
+-P="$ROOT/build/pcrec"
+-H="$ROOT/build/pcrec-harness"
+-W="$(mktemp -d "${TMPDIR:-/tmp}/armreach.XXXXXX")"
+-trap 'rm -rf "$W"' EXIT
+-CASE_FLOOR=5
+-# the counter's text, from the lever's side: its increment statement, and any
+-# counter shape a lever-off artifact must not hold
+-CTR_INC='\{ extern unsigned long [A-Za-z0-9_]+\[\]; [A-Za-z0-9_]+\[[0-9]+\]\+\+; \}'
+-CTR_SHAPE='pcrec_harness_|extern unsigned long|\[[0-9]+\]\+\+'
+-pass=0 fail=0
+-ok()  { pass=$((pass + 1)); }
+-bad() { echo "FAIL: $*"; fail=$((fail + 1)); }
+-for b in "$P" "$H"; do
+-    [ -x "$b" ] || { echo "FAIL: $b not built (make first)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
+-done
+-
+-# One case (`|`-separated, no field holds one; `\n` in a subject is a newline): PATTERN, FLAGS, the row its one routed site is
+-# decided by, a subject that ENTERS the site (count >= 1) and one that does
+-# NOT (count 0), with the search start the latter is asked from: a start past
+-# the subject's end (the entry refuses it before any site), a subject the
+-# entry's presence pre-check answers first (no necessary byte), or one that
+-# RUNS the search body while the site's parked test skips the site: MLINE's
+-# first attempt matching (the predecessor seek runs only after a failed
+-# attempt), and the DFA hat's seed state from a word predecessor (the find
+-# runs only from state 0). The last field, when set, is the return the
+-# not-entering subject must give: 1 says the search body ran and matched, so
+-# arm entry is told apart from search entry.
+-cases=(
+-    'x+y||D1|aaaxyz|aaa|9'
+-    'x+y|--memfn=no-fd-d1|D1w|aaaxyz|aaa|9'
+-    '(x[a-z]+)y\1||D1w|zzxabyab|zzz|0'
+-    '(?m)^ab||D1c|zzab\nab|ab|0|1'
+-    '\B(?<!a)d||D1|zzd|xd|1|1'
+-)
+-n=0
+-for c in "${cases[@]}"; do
+-    IFS='|' read -r pat flags row hit miss mstart mrc <<<"$c"
+-    hit=${hit//\\n/$'\n'}; miss=${miss//\\n/$'\n'}
+-    d="$W/c$n"; mkdir -p "$d/p" "$d/h" "$d/off" "$d/on"
+-    # lever OFF: three artifacts, one text
+-    "$TIMEOUT_BIN" 60 "$P" -p rx --features all $flags -o "$d/p/o.c" --pattern "$pat" >/dev/null 2>&1
+-    "$TIMEOUT_BIN" 60 "$H" -p rx --features all $flags -o "$d/off/o.c" --pattern "$pat" >/dev/null 2>&1
+-    if ! cmp -s "$d/p/o.c" "$d/off/o.c"; then bad "$pat [$flags]: the harness build's artifact differs from the shipped compiler's (lever off)"; continue; fi
+-    # identity alone cannot see a counter both builds write (the kit is linked
+-    # into both), so lever off must also hold no counter SHAPE at all, named
+-    # or not: the reserved prefix, the counter's declaration, an indexed
+-    # increment (the shape is held to the lever-on artifact below, so a
+-    # changed counter text cannot leave this grep reading nothing)
+-    if grep -qE "$CTR_SHAPE" "$d/off/o.c"; then bad "$pat [$flags]: a counter shape is written with the lever off: $(grep -m1 -E "$CTR_SHAPE" "$d/off/o.c")"; continue; fi
+-    ok
+-    # lever ON
+-    if ! "$TIMEOUT_BIN" 60 "$H" -p rx --features all $flags --harness=arm-reach -o "$d/on/o.c" --pattern "$pat" >"$d/on/err" 2>&1; then
+-        bad "$pat [$flags]: the lever's compile failed: $(head -2 "$d/on/err")"; continue
+-    fi
+-    if [ "$(grep -cE "$CTR_INC" "$d/on/o.c")" -lt 1 ]; then
+-        bad "$pat [$flags]: the lever-on artifact holds no counter increment, so the lever-off shape grep is not reading the counter's text"; continue
+-    fi
+-    cat > "$d/on/drv.c" <<'DRV'
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
+-#include <stddef.h>
+-#include "o.c"
+-extern unsigned long pcrec_harness_reach_rx[];
+-extern const char *const pcrec_harness_reach_rx_row[];
+-extern const unsigned pcrec_harness_reach_rx_n;
+-int main(int argc, char **argv)
+-{
+-    ptrdiff_t caps[RX_NCAPS][2];
+-    const char *subj = argc > 1 ? argv[1] : "";
+-    size_t from = argc > 2 ? (size_t)atol(argv[2]) : 0;
+-    int r = rx_search((const unsigned char *)subj, strlen(subj), from, caps);
+-    printf("RC\t%d\n", r);
+-    for (unsigned k = 0; k < pcrec_harness_reach_rx_n; k++)
+-        printf("ARM\t%u\t%s\t%lu\n", k, pcrec_harness_reach_rx_row[k], pcrec_harness_reach_rx[k]);
+-    return 0;
+-}
+-DRV
+-    if ! "$CC" -std=gnu11 -O1 -I"$d/on" -o "$d/on/drv" "$d/on/drv.c" >"$d/on/cc" 2>&1; then
+-        bad "$pat [$flags]: the counted artifact does not build: $(head -3 "$d/on/cc")"; continue
+-    fi
+-    for which in hit miss; do
+-        s=${!which}
+-        st=0; [ "$which" = miss ] && st=$mstart
+-        out=$("$TIMEOUT_BIN" 10 "$d/on/drv" "$s" "$st")
+-        if [ "$which" = miss ] && [ -n "$mrc" ]; then
+-            rc=$(printf '%s\n' "$out" | awk -F'\t' '$1=="RC"{print $2}')
+-            if [ "$rc" != "$mrc" ]; then bad "$pat [$flags]: '$s' from $st returned '$rc', not $mrc: it no longer runs the search body past the site's parked test"; continue; fi
+-        fi
+-        rows=$(printf '%s\n' "$out" | awk -F'\t' '$1=="ARM"{print $3}' | sort -u | tr '\n' ' ')
+-        cnt=$(printf '%s\n' "$out" | awk -F'\t' -v r="$row" '$1=="ARM" && $3==r {s+=$4} END {print s+0}')
+-        narm=$(printf '%s\n' "$out" | awk -F'\t' -v r="$row" '$1=="ARM" && $3==r' | grep -c .)
+-        if [ "$narm" -lt 1 ]; then bad "$pat [$flags]: no arm of row $row is counted (arms: $rows)"; continue; fi
+-        if [ "$which" = hit ]; then
+-            [ "$cnt" -ge 1 ] && ok || bad "$pat [$flags]: row $row's arm counted $cnt on '$s', which enters it"
+-        else
+-            [ "$cnt" -eq 0 ] && ok || bad "$pat [$flags]: row $row's arm counted $cnt on '$s', which does not enter it"
+-        fi
+-    done
+-    n=$((n + 1))
+-done
+-[ "$n" -ge "$CASE_FLOOR" ] && ok || bad "only $n of the cases ran (CASE_FLOOR $CASE_FLOOR)"
+-echo "checks passed: $pass"
+-echo "checks failed: $fail"
+-[ "$fail" -eq 0 ]
+diff --git a/tests/mech/sabotages/S1080_reach-counter-lever-off.sh b/tests/mech/sabotages/S1080_reach-counter-lever-off.sh
+deleted file mode 100755
+index 520dec399..000000000
+--- a/tests/mech/sabotages/S1080_reach-counter-lever-off.sh
++++ /dev/null
+@@ -1,17 +0,0 @@
+-#!/usr/bin/env bash
+-# S1080 (R-MS6; lane fdb2, [MEMFN] R17-b' B2) -- THE ARM-ENTRY COUNTER ARMED WITHOUT
+-# THE LEVER: pcrec asks the kit for the counter (mf_reach) on every harness
+-# compile, whether or not the arm-reach option was given, so the harness
+-# build's lever-off artifact carries counters the shipped compiler's does not.
+-# The realistic fault: the host-side gate on the option dropped.
+-# Detector (memfnfinder): run_arm_reach.sh's lever-off identity (harness vs
+-# shipped) and its no-counter-shape check.
+-SAB_ID="S1080-reach-counter-lever-off"
+-SAB_FILE="src/gen/memfn_sites.c"
+-SAB_SUITES="memfnfinder"
+-SAB_DESC="pcrec arms the arm-entry counter on every harness compile, the lever off included"
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1080) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 6fail/886pass (docs/dev/lanes/fdb2land_report.md)."
+-SAB_EXPECT=DETECTED
+-SAB_COUNT=1
+-SAB_BEFORE='        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach &&'
+-SAB_AFTER='        if (cx->emit_in && cx->emit_in->harness &&   /* SABOTAGE S1080 */'
+diff --git a/tests/mech/sabotages/S1081_reach-counter-never-counts.sh b/tests/mech/sabotages/S1081_reach-counter-never-counts.sh
+deleted file mode 100755
+index c522573e8..000000000
+--- a/tests/mech/sabotages/S1081_reach-counter-never-counts.sh
++++ /dev/null
+@@ -1,13 +0,0 @@
+-#!/usr/bin/env bash
+-# S1081 (R-MS6; lane fdb2, [MEMFN] R17-b' B2) -- THE COUNTER NEVER COUNTS: its statement is
+-# written but adds nothing, so every arm reads 0 on a subject that enters it.
+-# Detector (memfnfinder): run_arm_reach.sh's ">= 1 on a fixture that enters".
+-SAB_ID="S1081-reach-counter-never-counts"
+-SAB_FILE="memfn/src/compose.c"
+-SAB_SUITES="memfnfinder"
+-SAB_DESC="the arm-entry counter's statement adds 0: an entered arm reads 0"
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1081) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 6fail/891pass (docs/dev/lanes/fdb2land_report.md)."
+-SAB_EXPECT=DETECTED
+-SAB_COUNT=1
+-SAB_BEFORE='        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d]++; }\n",'
+-SAB_AFTER='        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d] += 0; }\n",   /* SABOTAGE S1081 */'
+diff --git a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh b/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
+deleted file mode 100755
+index 95b000209..000000000
+--- a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
++++ /dev/null
+@@ -1,19 +0,0 @@
+-#!/usr/bin/env bash
+-# S1084 (R-MS6; lane fdb2fix, [MEMFN] R17-b' B2) -- THE KIT WRITES THE ARM-ENTRY
+-# COUNTER UNASKED: mf_use writes the counter statement on every routed site
+-# whether or not the host called mf_reach (an unset stem renders as text), so
+-# the shipped compiler's artifacts move. Both builds link the kit, so they
+-# agree byte for byte: harness-vs-shipped identity cannot see this one.
+-# Detector (memfnfinder): run_arm_reach.sh's lever-off no-counter-shape check
+-# (`extern unsigned long`), the row the review found blind before it.
+-SAB_ID="S1084-reach-counter-kit-unasked"
+-SAB_FILE="memfn/src/compose.c"
+-SAB_SUITES="memfnfinder"
+-SAB_DESC="mf_use writes the arm-entry counter on every routed site, the lever off included"
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1084) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 11fail/881pass (docs/dev/lanes/fdb2land_report.md)."
+-SAB_EXPECT=DETECTED
+-SAB_COUNT=1
+-SAB_BEFORE='    if (r->reach_k >= 0)
+-        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d]++; }\n",'
+-SAB_AFTER='    if (r->reach_k >= 0 || r->fd_row)   /* SABOTAGE S1084 */
+-        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d]++; }\n",'

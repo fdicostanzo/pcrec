@@ -213,8 +213,8 @@ static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_ro
  * declined (a domain's total fallback), when no row serves. */
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
-    gate_in in = { NULL, NULL, t };
-    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0 };
+    gate_in in = { NULL, NULL, t, NULL };
+    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&rc_table, 0, &in, MF_PH_RUN, art->denies, r, &tc, &why);
     if (i < NROWS) return &rows[i];
@@ -597,6 +597,7 @@ const arm runcmp_arm = {
     NULL,
     0,                  /* one RUN term: no table */
     MF_INC_STRING_H,    /* the memcmp row; the words row's memcpy loads */
+    1,                  /* the memcmp row (a constant memcpy is a load, §R4.3.3) */
 };
 
 /* Every row reads the term's bytes, mask and length (rc_of, :123-127). */

@@ -9,7 +9,7 @@
 # python-verified). Detectors (arm dfahat): that cell, the differential,
 # [dfa-iff]/[dfa-reseed].
 SAB_ID='S483-dfahat-class-clamp-reseed-deleted'
-SAB_FILE='src/gen/emit_dfa.c'
+SAB_FILE='memfn/src/pffind.c'
 SAB_SUITES='dfahat'
 SAB_DESC='first-class-bounded re-seeds only where its skip stopped on a T byte before n-1, never at the n-1 clamp, so a clamp landing keeps the stale start state'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/ssbuild3_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S483.'
@@ -17,5 +17,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''\B(?<
 SAB_REACH_EXPECT='REACH-CLASS-RESTRICTIVE'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pf_emit_moved_reseed(c, f, in4);'
-SAB_AFTER='    pcrec_sb_printf(c, "%sif (%s + 1 < subject_length && %s > skip_from) %s = %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]];\n", in4, f->dir->posv, f->dir->posv, f->dir->statev, f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv);   /* SABOTAGE S483 */'
+# RE-AIMED 2026-10-16 (lane fdb2, R17-b' B2, KW-3): the DFA hat's conditional
+# re-seed is the memfn kit's text since B2 (pcrec states it as the site's
+# moved-candidate hook, PR-2; the kit writes `size_t skip_from = lo;` and
+# `if (result > skip_from) <moved>` around its search, memfn/src/pffind.c
+# `moved_open`/`moved_close`). The plant is the same fault at its new site;
+# its intent, witness and detectors are unchanged.
+SAB_BEFORE='    if (r->site.end_back == 1) moved_close(o, ind, h);'
+SAB_AFTER='    if (r->site.end_back == 1 && h->moved) kit_out(o, "%sif (%s + 1 < %s && %s > skip_from) %s\n", ind, h->result, h->n, h->result, h->moved);   /* SABOTAGE S483 */'

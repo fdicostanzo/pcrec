@@ -392,8 +392,8 @@ const gate_contract *fn_row_contract(size_t i)
 static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
-    gate_in in = { &art->sites[handle - 1].site, h, NULL };
-    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX };
+    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL };
+    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
     if (i < NFN) return &fn_rows[i];
@@ -423,8 +423,8 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     unsigned nr = 0;
     rung[nr++] = top;
-    gate_in in = { &art->sites[handle - 1].site, h, NULL };
-    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1 };
+    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL };
+    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
         if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc))
@@ -803,6 +803,7 @@ const arm ofsskip_arm = {
     NULL,
     1,                  /* a multi-byte offset reads pcrec's table (table_of) */
     MF_INC_STRING_H,    /* fn-memchr's memchr, the run compare's memcmp */
+    1,                  /* fn-memchr's memchr, the run compare's memcmp */
 };
 
 /* ---- fn_rows[]' contracts ------------------------------------------------

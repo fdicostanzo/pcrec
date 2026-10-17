@@ -61,6 +61,9 @@ EMPTY documented column. Anchor on numbers a human does not maintain.
   -9). It reads each case's subject and block (pattern, encoding) back out
   of the `.rxt` file by line; a line it cannot place is counted, never
   dropped.
+- **memfn_arm.py** — [RUNAXES] the `--memfn=` ARM's reach (below, "The
+  `--memfn=` arm"). The classification of every kit row, per layer, with its
+  measured floors and witnesses, lives in its `MEMFN_CLASS`.
 - **dump_diff.awk** — the comparator: two `RXTDUMP` files keyed by
   `<.rxt file>:<line>` (unique — one case per source line), classifying
   every case AGREE / REFUSED / BUDGET / GIVEUP1 / LOST / MISMATCH / GAINED
@@ -606,3 +609,50 @@ block is in **start_landing_movers.tsv** (the corpus blocks whose default
 compile selects `end-minus-width` or `landing`, generated from
 `studies/start_landing/movers_sl2.py`'s output), held to `SL_MOVER_FLOOR`
 (4,000: half the manifest blocks' 8,149 static case lines).
+
+## The `--memfn=` arm ([RUNAXES], lane runaxes, 2026-10-16)
+
+The memfn kit's per-form denies (`--memfn=no-NAME`, `memfn/src/options.def`)
+are not pcrec axes — no `pcrec_options.flags` bit, no `axes.def` row — so the
+registry derivation never found them, and `run_axes.sh`'s own comment at the
+`--list-axes` pipe said so. They are now swept, in two halves that cannot
+substitute for each other.
+
+- **The jobs (`run_axes.sh`).** The `memfn` section of `pcrec --list-axes`
+  is READ (`tests/lib/table.sh table-field`, never a hand list) and every row
+  becomes TWO answer-identity jobs against the default baseline, one per
+  layer: `default` (flags = the row's own spelling; the shipped SIMD-off layer,
+  where a SIMD row is accepted and inert and a scalar row is live) and `simd`
+  (`-fmemfn-simd` plus the spelling; the flag text is derived from the axis
+  table). The flags are composed in ONE place (the `[RUNAXES]` block before
+  THE BASELINE); the jobs and the reach read the same strings.
+- **The reach (`memfn_arm.py`).** An answer sweep reads AGREE on a flag that
+  never arrived, so identity alone cannot fail on this arm's own plumbing
+  (emit_sweep.py's `DIFFER_PINS` is the same idea, [SWEEPARM] S981/S982). The
+  script gets the cells' own flag text, compiles every distinct corpus pattern
+  (`-p rx --features all`, byte and `-e utf8`, the default engine and
+  `--engine=vm`) with and without the row's spelling, and holds each
+  (row, layer) cell to its class in `MEMFN_CLASS`: **DIFFER** (a floor of
+  distinct patterns whose artifact differs, per encoding x stream, measured
+  at the lane base, AND named witnesses that differ), **ASSERT_ZERO** (exactly
+  0 differ), **REFUSES** (rc != 0). Beside them: the row set equals
+  `MEMFN_CLASS`'s rows both ways (a kit row added with no classification is
+  RED, as is a classification whose row is gone), each cell's flags carry the
+  row's spelling (and `-fmemfn-simd` iff layer `simd`), a NULL arm reads 0, an
+  unknown name (`--memfn=no-zz-no-such-row`) is refused (the REFUSES
+  detector's positive control), and the bare force spelling of every
+  `kind=deny` row is refused (the REFUSES class's real population).
+- **Selecting it.** The empty `AXES=`, the token `AXES=--memfn`, or one row's
+  spelling (`AXES=--memfn=no-vrun-w32`). `MEMFN_REACH_ONLY=1` runs the reach
+  alone (no baseline, no harness; seconds on a sample) and exits;
+  `MEMFN_EVERY=K` takes every K-th distinct pattern (floors are then not
+  applied — witnesses, classes, the null arm and the controls still are).
+- **Planted.** Sabotage `S1026` drops the spelling from the composed cell
+  flags (mech arm `axesmemfn` = `MEMFN_REACH_ONLY=1 MEMFN_EVERY=40
+  AXES=--memfn`); the unplanted arm is green.
+- **A new kit row** lands with its `MEMFN_CLASS` entries (both layers) in the
+  same change, measured with `memfn_arm.py --measure --cell ...`; the
+  classification is a table because what a deny does per layer is a fact about
+  the row that nothing else enumerates. See `docs/dev/lanes/runaxes_report.md`
+  for the measuring command, the counts and the transcripts.
+

@@ -865,4 +865,5 @@ const arm generic_arm = {
     NULL,       /* no deny: the total fallback (§14.6) */
     0,          /* a set is `member` or its own test: no table is named */
     0,          /* its compares are its own: no header */
+    0,          /* plain loops: no C-library call */
 };

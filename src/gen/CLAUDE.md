@@ -128,6 +128,59 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   offset and tests `cand_routed` BEFORE `applies` ([cand-route-walk]);
   `DFA_SELECT_ROUTED` is the walk over `dfa_pfs[]`, `DFA_SELECT` every other
   list (all DFA-only). No row serves the VM route until stage 2.
+- **R17-b′ B1 (lane fdb1, 2026-10-16; MF_SITE_ABI 12, zero movers).**
+  `pcrec_memfn_site` states `body` ONESHOT on every site (R-19), and every
+  FIND's hooks carry `start` (`PcrecFind.start`; `PCREC_MF_ORIGIN`
+  `"search_from"` for the PF, VM-hat and MLINE sites, and the PRE composite's
+  `req_site_define`). `pcrec_memfn_art_begin` hands the kit the harness's
+  measurement set (`--harness=measures=`, NULL in every shipped compile) and
+  no analysis object; `mf_art_end`'s `consulted` is read by nobody before
+  B4. The kit's arena op, `pcrec_memfn_arena_alloc`, is `memfn_sites.c`'s
+  own (static: the attempt's art is its only user).
+  `cand_nodes[]` declare their KIT ASKS (`kask[slot]` route masks, inside
+  `reads`, and `kfields`: PRESENCE and RETRY ask NEXT's site on DFA|ATTEMPT
+  for EXISTS|PROVEN0, RECOVER on DFA for EXISTS; self-check
+  `table-ask-unread`), and under `PCREC_CAND_TRACE` the READER SHADOW
+  (`cand_ask_check`/`cand_ask_field`/`cand_ask_pf`/`cand_shadow_*`)
+  recomputes G1, R4 (`pcrec_dfa_cand_ppm`, split into `dfa_cand_ppm_of`)
+  and L4 from the kit's class (`mf_ask`) beside pcrec's own row: an
+  in-scope disagreement aborts (`CANDORACLE reader-shadow-differs`), an
+  undeclared ask aborts (`undeclared-ask`, sabotage S1019), the ATTEMPT arm
+  is recorded only (MLINE's context stop; fdb1_report.md F-B1-3).
+  `PCREC_MF_ASK_TRACE=1` prints one `MFASK` record per shadow verdict.
+- **R17-b′ B2 (lane fdb2, 2026-10-16; MF_SITE_ABI 13, zero movers).** ST2,
+  one-byte FIND routed. Every PF site states its candidate set as a SET term
+  at EVERY count with its table OFFERED (`PcrecFind.table`; PR-1:
+  `PCREC_FIND_NO_TABLE` is MLINE's context stop only), its consumer kind
+  (`PcrecFind.kind`, PR-3: DFA_SCAN, DFA_HAT, HYB_PF, in `pf_site_of`;
+  VM_ATTEMPT on the VM hat; DFA_ATTEMPT on MLINE; the PF and PRE sites' both
+  from ONE first-match table, `site_kind_of`/`site_kinds[]`, the one reader
+  of the hybrid fact for the kind) and its miss/move behaviour (PR-2: an unbounded site's
+  leaving `on_miss`, a bounded one's `len - 1`, the DFA hat's re-seed as the
+  `moved` statement, `pf_moved_reseed_of`). The kit writes the guard, the
+  post-test, the bounded block and the moved test (KW-3), so the six axis-B
+  emitters are one `pf_emit_skip` (comment, entry test, FIND, close); every
+  PF row is DEFINED above the body (`pf_define_find[_bounded]`), so its table
+  is emitted iff the kit's form reads it. G1 (`dfa_cand_scan`), R4
+  (`dfa_cand_ppm_of`) and L4 (`start_landing_applies`) read the kit's
+  define-time QUERY (`cand_ask`, `cand_pf_site`): `proven0` for a PF site,
+  `proven_prev` for ENG_ATTEMPT's context stop (F-B1-3). The site a reader
+  asks about and the site the define writes come from ONE constructor each
+  (`pf_site_of` for PF, read by `pf_find_of` and `cand_pf_site`;
+  `mline_find_of` for MLINE, read by `emit_attempt` and `dfa_cand_scan`), and
+  the trace build holds the class a reader consumed equal to the define's
+  report (`cand_asked_hold`, `Job.cand_asked`; S1085; lane fdb2fix, review
+  item 2), with `one_byte` held to a PF_SCAN_BYTE row; the offset-set,
+  run-pinned and landmark rows keep their row reading (outside the
+  delivery). The B1 reader shadow is retired; its traps (`cand_ask_check`,
+  `cand_ask_field`, `CAND_ASKF_PROVEN_PREV`) stay in the trace build. PR-9's
+  rename: `DFA_PF_ONE_BYTE`, `CandSet.one_member`, `CandScan.one_byte`.
+  Under `PCREC_CAND_TRACE` with `PCREC_MF_ROUTE_TRACE` set, every defined
+  site prints `MFROUTED<TAB>site<TAB>kind<TAB>row` from the define's report
+  (`memfn_sites.c` `routed_record`). The harness lever `--harness=arm-reach`
+  (R-MS6) hands the kit the counter stem `pcrec_harness_reach_<prefix>`
+  (`pcrec_memfn_art`) and appends its table at the artifact's end
+  (`memfn_stamps.c`).
 - **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** ([MEMFN]
   R17-a, lane r17a, MF_SITE_ABI 11, zero movers: the SET sites are DEFINED
   then USED. `find_site` states the window, W0-W2, on every FIND through

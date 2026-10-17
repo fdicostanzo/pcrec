@@ -1,0 +1,143 @@
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+axes: registry derived — 50 bit-flag axes (bits 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,35,36,37,38,39,40,42,43,44,45,46,47,48,49,50,51,52,53,54,56), matching tuning.md §2's own 50 documented bit mentions
+
+axes: HARNESS_BATCH unset (0) — unbatched per-pattern compile, this sweep's historical shape
+axes: baseline run (no extra flags)...
+group cases pending-vm: 0
+under expectations skipped: 3
+oracle declarations skipped: 0
+entry files: 258
+fragments spliced: 0
+parallel: 258 of 258 file workers reported (PROCS=4)
+axes: baseline: 62360 cases dumped, 699s
+axes: --tune positions not run (filtered out by AXES=)
+axes: pairing two axes at a time, PROCS=2 each (was 4 sequential)
+
+axes: axis --memfn=no-vrun-w32 (kit row vrun-w32, layer default, memfn arm) (RXTFLAGS="--memfn=no-vrun-w32")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-vrun-w32 (kit row vrun-w32, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-vrun-w32")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis --memfn=no-vrun-w16 (kit row vrun-w16, layer default, memfn arm) (RXTFLAGS="--memfn=no-vrun-w16")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-vrun-w16 (kit row vrun-w16, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-vrun-w16")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis --memfn=no-vrun-kb (kit row vrun-kb, layer default, memfn arm) (RXTFLAGS="--memfn=no-vrun-kb")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-vrun-kb (kit row vrun-kb, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-vrun-kb")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis --memfn=no-vrun-trim (kit row vrun-trim, layer default, memfn arm) (RXTFLAGS="--memfn=no-vrun-trim")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-vrun-trim (kit row vrun-trim, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-vrun-trim")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis --memfn=no-vrun-pad (kit row vrun-pad, layer default, memfn arm) (RXTFLAGS="--memfn=no-vrun-pad")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-vrun-pad (kit row vrun-pad, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-vrun-pad")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis --memfn=no-precheck-assign-byte (kit row precheck-assign-byte, layer default, memfn arm) (RXTFLAGS="--memfn=no-precheck-assign-byte")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: axis -fmemfn-simd --memfn=no-precheck-assign-byte (kit row precheck-assign-byte, layer simd, memfn arm) (RXTFLAGS="-fmemfn-simd --memfn=no-precheck-assign-byte")...
+  keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0
+  agree=62360 budget-bound=0 giveup1-allowed=0 giveup1-unallowed=0 refused-documented=0 (floor none) lost-other=0 mismatches=0 gained=0
+
+axes: --memfn= arm reach (the cells' own flags, classes and floors measured at c2b6e927b)...
+memfn arm: 6 kit rows, 12 cells, 4624 distinct corpus patterns (+0 witness-only), every=1
+  precheck-assign-byte @default byte/c-default   DIFFER      differ=176 refused=0 of 4624 floor=176
+  precheck-assign-byte @default byte/c-vm        DIFFER      differ=0 refused=0 of 4624 floor=0
+  precheck-assign-byte @default utf8/c-default   DIFFER      differ=244 refused=0 of 4624 floor=244
+  precheck-assign-byte @default utf8/c-vm        DIFFER      differ=0 refused=0 of 4624 floor=0
+  precheck-assign-byte @simd byte/c-default      DIFFER      differ=176 refused=0 of 4624 floor=176
+  precheck-assign-byte @simd byte/c-vm           DIFFER      differ=0 refused=0 of 4624 floor=0
+  precheck-assign-byte @simd utf8/c-default      DIFFER      differ=244 refused=0 of 4624 floor=244
+  precheck-assign-byte @simd utf8/c-vm           DIFFER      differ=0 refused=0 of 4624 floor=0
+  vrun-kb @default byte/c-default                ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-kb @default byte/c-vm                     ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-kb @default utf8/c-default                ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-kb @default utf8/c-vm                     ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-kb @simd byte/c-default                   DIFFER      differ=20 refused=0 of 4624 floor=20
+  vrun-kb @simd byte/c-vm                        DIFFER      differ=19 refused=0 of 4624 floor=19
+  vrun-kb @simd utf8/c-default                   DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-kb @simd utf8/c-vm                        DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-pad @default byte/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-pad @default byte/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-pad @default utf8/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-pad @default utf8/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-pad @simd byte/c-default                  DIFFER      differ=19 refused=0 of 4624 floor=19
+  vrun-pad @simd byte/c-vm                       DIFFER      differ=18 refused=0 of 4624 floor=18
+  vrun-pad @simd utf8/c-default                  DIFFER      differ=14 refused=0 of 4624 floor=14
+  vrun-pad @simd utf8/c-vm                       DIFFER      differ=14 refused=0 of 4624 floor=14
+  vrun-trim @default byte/c-default              ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-trim @default byte/c-vm                   ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-trim @default utf8/c-default              ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-trim @default utf8/c-vm                   ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-trim @simd byte/c-default                 DIFFER      differ=20 refused=0 of 4624 floor=20
+  vrun-trim @simd byte/c-vm                      DIFFER      differ=19 refused=0 of 4624 floor=19
+  vrun-trim @simd utf8/c-default                 DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-trim @simd utf8/c-vm                      DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-w16 @default byte/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w16 @default byte/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w16 @default utf8/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w16 @default utf8/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w16 @simd byte/c-default                  DIFFER      differ=20 refused=0 of 4624 floor=20
+  vrun-w16 @simd byte/c-vm                       DIFFER      differ=19 refused=0 of 4624 floor=19
+  vrun-w16 @simd utf8/c-default                  DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-w16 @simd utf8/c-vm                       DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-w32 @default byte/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w32 @default byte/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w32 @default utf8/c-default               ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w32 @default utf8/c-vm                    ASSERT_ZERO differ=0 refused=0 of 4624
+  vrun-w32 @simd byte/c-default                  DIFFER      differ=20 refused=0 of 4624 floor=20
+  vrun-w32 @simd byte/c-vm                       DIFFER      differ=19 refused=0 of 4624 floor=19
+  vrun-w32 @simd utf8/c-default                  DIFFER      differ=15 refused=0 of 4624 floor=15
+  vrun-w32 @simd utf8/c-vm                       DIFFER      differ=15 refused=0 of 4624 floor=15
+memfn arm: OK
+checks passed: 160
+checks failed: 0
+  OK — memfn arm: 6 kit rows, 12 cells, 4624 distinct corpus patterns (+0 witness-only), every=1
+
+== axes summary ==
+  --memfn=no-vrun-w32 (kit row vrun-w32, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|541s
+  -fmemfn-simd --memfn=no-vrun-w32 (kit row vrun-w32, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|543s
+  --memfn=no-vrun-w16 (kit row vrun-w16, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|569s
+  -fmemfn-simd --memfn=no-vrun-w16 (kit row vrun-w16, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|570s
+  --memfn=no-vrun-kb (kit row vrun-kb, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|519s
+  -fmemfn-simd --memfn=no-vrun-kb (kit row vrun-kb, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|521s
+  --memfn=no-vrun-trim (kit row vrun-trim, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|538s
+  -fmemfn-simd --memfn=no-vrun-trim (kit row vrun-trim, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|538s
+  --memfn=no-vrun-pad (kit row vrun-pad, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|600s
+  -fmemfn-simd --memfn=no-vrun-pad (kit row vrun-pad, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|603s
+  --memfn=no-precheck-assign-byte (kit row precheck-assign-byte, layer default, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|606s
+  -fmemfn-simd --memfn=no-precheck-assign-byte (kit row precheck-assign-byte, layer simd, memfn arm)|OK|keys_base=62360 keys_axis=62360 agree=62360 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|603s
+oracle cross-check: SKIPPED
+--vm-entry-shape tier: not run (filtered out by AXES=)
+DIAL-S3 (tune refusal-set, keyed): SKIPPED (no --tune positions ran under this AXES= filter)
+-futf-check arm (contract, own oracle): not run (filtered out by AXES=)
+[START-LANDING] product arm reach: not run (filtered out by AXES=)
+[START-SET] product arm (--engine=vm x -fno-start-set): not run (filtered out by AXES=)
+[START-SET] DFA hat population (-fno-start-set vs default): not run (filtered out by AXES=)
+[COMPOUND] the lever's property: not run (filtered out by AXES=)
+[RUNAXES] --memfn= arm reach (kit denies; classes and floors): OK — memfn arm: 6 kit rows, 12 cells, 4624 distinct corpus patterns (+0 witness-only), every=1
+HARNESS_BATCH: 0
+total wall time: 4247s
+run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: not run (filtered out by AXES=); oracle cross-check SKIPPED; DIAL-S3 SKIPPED (no --tune positions ran under this AXES= filter); -futf-check arm not run (filtered out by AXES=)

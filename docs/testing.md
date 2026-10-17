@@ -3735,6 +3735,17 @@ one line per case whose BLOCK failed to COMPILE, with a sentinel
 (default, one per axis) are compared by `tests/axes/dump_diff.awk`, keyed
 by `<file>:<line>` (unique — one `.rxt` case per source line).
 
+**The `--memfn=` arm ([RUNAXES], 2026-10-16).** The kit's per-form denies
+(`--memfn=no-NAME`) are no pcrec axis, so the derivation above never reached
+them. The `memfn` section of `--list-axes` is read and every row becomes two
+answer-identity jobs (layer `default` = SIMD-off, layer `simd` = `-fmemfn-simd`),
+and `tests/axes/memfn_arm.py` holds each (row, layer) to a measured class —
+DIFFER (floor + witness) / ASSERT_ZERO / REFUSES — compiling with the jobs' own
+flag text, because an answer sweep reads AGREE on a flag that never arrived.
+`AXES=--memfn` selects it; `MEMFN_REACH_ONLY=1` runs its reach alone (mech arm
+`axesmemfn`, S1026). `tests/axes/CLAUDE.md` has the mechanism and
+`docs/dev/lanes/runaxes_report.md` the measured table.
+
 ### The classification rule (manager's ruling, 2026-08-26)
 
 The FIRST full-corpus run of `make test-axes` FAILED four axes with **zero

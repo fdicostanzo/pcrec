@@ -193,7 +193,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `pf_walk_bounded_arm` (a set pcrec names by table: the in-place walk
   `while (lo < n && !T[s[lo]]) lo++;`, `result` IS `lo`, miss the range's
   end), form id `pf_walk`. The guards around the statement stay pcrec's
-  (the memchr rows' empty range is EXCLUDED; the walk's NOP). M4 prep (R-7)
+  (the memchr rows' empty range is EXCLUDED; the walk's NOP). Since R17-b′ B2 (KW-3) the rows ALSO serve pcrec's new shape and write those guards themselves: the memchr's `if (lo >= n) on_miss` (empty MISS), the bounded memchr's `if (lo + 1 < n) { ... }` block (empty NOP), the walk's post-test (empty MISS, a leaving on_miss), and on the two bounded rows the `moved` hook under `if (result > skip_from)` (`moved_open`/`moved_close`, one statement: `one_stmt`); a memchr row serves a one-member set whether or not a table is offered (PR-1). M4 prep (R-7)
   added a FIFTH row, `pf_memchr_back_arm` (form id `pf_memchr`, the same
   renderer): MLINE's `(?m)^` skip, its one-byte term at offset -1 (the
   candidate's predecessor), `floor` the text of `lo`, `empty` AT_N
@@ -312,6 +312,52 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `decl_point` (OBLIG, every site); `gate.c` their classifiers. No row keeps
   storage yet: `mf_locals` writes nothing (R17-b's stateful row is the
   first).
+
+- **finder.c** — THE FINDER TABLE (R17-b′ B1, lane fdb1;
+  `docs/design/memfn/r17b_prime.md` rev 3 §1, §2.5): `fd_rows[]`, 19 rows
+  (FIND: R0, R5, R8, R3a, R3b, R4, R1, R2, D1, D1c, D1w, D2, R7, R7w; PRES:
+  P0, P2, P3, P4, P9) as a `kit_table` over `kit_walk`, each with its
+  `needs`, its facts, at most two comparators over measurement-set keys
+  (templates `<shape>`/`<liner>`/`<kind>`/`<t>`, expanded per site), its pick
+  or chain link, mandatory `basis`/`evidence`/`refuted_by`, its routing step
+  and its `routed` bit (0 on every row at B1) and its contract (`FD_CT`).
+  A key ABSENT from the set does not hold (never read as 0; S917). `fd_decide`
+  walks the terminal rows and the residual N intervals with the PAY RULE
+  (`fd_pay`, `mf_finder_pay`: T1 strict, T2/T3 ties pass; operand keys
+  PROVISIONAL). `fd_shadow` is the define's shadow call: under MF_TRACE it
+  prints `MFTRACE FD` records (phase `shadow`, never counted as chosen) per
+  slot and layer and writes NOTHING to any sink. `mf_finder_rows` is the
+  R-MS4 listing into caller-owned storage. No artifact text.
+  **R17-b′ B2 (lane fdb2):** D1, D1c and D1w are ROUTED (and so locked);
+  `fd_route` is the routed decision `compose.c`'s `select_arm` asks first
+  (OFF variant, the site's stated kind): a routed pick renders through its
+  arm (LIBC `pf_memchr[_bounded]`, LIBC_BACK `pf_memchr_back`, WALK
+  `pf_walk[_bounded]`), asked on its own and REFUSED if it declines; else the
+  arms walk. `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
+  trace record. R0/R7's null floor is `kit.eps.streamed.slope` (rev 3 [C4]).
+  `compose.c` also carries R-MS6's arm-entry counter (`mf_reach`,
+  `mf_reach_table`; a counter statement at each routed site's use, only on
+  an art the host asked).
+- **terms.c** — R17-b's cover search (`mf_set_terms`, lane memfn-r17),
+  ported search only: the finder reads a set site's cover SHAPE
+  (`r<R>e<E>c<C>`). Its renderers land at B4.
+- **formhash.c** — `mf_form_hash`/`mf_form_hash_text` (R-MS3): a form's
+  normalized-text identity (comments dropped, whitespace collapsed,
+  non-kept identifiers renamed, FNV-1a-64) over canonical instances
+  rendered through the kit itself (`walk`, `libc`; other forms from their
+  build step, -1 before). Allocates its scratch arena with `malloc`: a
+  listing entry, never reached by a compile.
+- **B1 across the other files** — `fields.def` gains twelve classes (the
+  class space is FULL at 64: the next class needs a wider mask) and the
+  fields `body` (site), `site_kind`/`layer`/`need` (the finder walk's facts,
+  from `gate_in.fd`) and `start` (hook); `gate.c` their classifiers and the
+  `shadow` trace phase; `compose.c` the QUERY (`mf_ask`/`ask_sel`: the walk
+  `mf_define` would take, no state written; `kit_class` the class of an
+  arm on a site), the set's checks (`measures_check`: `kit.` keys only,
+  values in bound, no duplicate) and `consulted`, `site_check`'s `body`
+  rule (PARAM refused until B8), and under MF_TRACE the define's re-ask
+  (class must equal; `exists=0` must prove all bytes); `arms` gain a `libc`
+  column (the class's `libc_free`).
 
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,

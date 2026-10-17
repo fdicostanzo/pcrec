@@ -1,0 +1,39 @@
+# memfn/data/cards/kit-grid.tsv — THE KIT'S METHOD CARDS, `kit-grid@N` (R-MS5;
+# docs/design/measure_sets.md §7.2; r17b_prime.md §5.2). One row per
+# (owner, quantity, ver), APPEND-ONLY by version: a committed row never
+# changes. `ver 1` is grid1's method (the run zen4-grid1, gridread @
+# 540649453: docs/dev/lanes/grid1_report.md, gridread_report.md), the method
+# every row of the interim set kit-interim-grid1 was measured under. `ver 2`
+# (grid2's: the dispatch charges, the one-byte libc rows, NONE, the pre-scan
+# gate, the mode branch, M16-M24) is grid2's prep lane's, NOT written here.
+#
+# Columns (measure_sets.md §7.2): owner quantity ver dims unit subject
+# lengths launches rounds aa_rule gate_e6 env deps.
+#   dims     the key's dimension names in order (§1.3): a key
+#            `kit.<quantity>.<t1>...` has exactly this many tokens
+#   unit     ratio (to u = beta_walk(DFA_SCAN, r1e0c0) = 0.1892 ns/B, or a
+#            dimensionless ratio), walkbytes (cost in u.B), bytes
+#   gate_e6  the group's refusal gate: UNMEASURED DEFAULT (D149) until derived
+#            from committed sets (§7.3); `-` where the row is derived
+#   env      the method's declared safe direction (`-` until M2, R-MS4)
+#   deps     the dependency ids the producer hashes (§2.4): kit:form.<id>
+#            (mf_form_hash; `walk`, `libc` render at B1, V1 at B4, S1/A1
+#            (the W64 rows) at B6: tests/memfn/run_finder.sh lists the
+#            unresolved as OWED, never as a pass)
+#
+# Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
+# lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
+# `kit.gstar.<liner>.<kind>` (two tokens). The card follows the READER; a
+# shape split, if grid2 measures one, is a ver bump and a row edit.
+#
+#owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
+kit	beta	1	form;kind;shape	ratio	streamed	slope 64Ki-1Mi member-free single calls	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	saving	1	form;vs;shape	ratio	derived	-	-	-	-	-	-	kit:form.<form>;kit:form.<vs>
+kit	eps	1	subject;lenclass	ratio	per-regime	the regime's own groups	5	5	pair-per-group	-	-	-
+kit	f	1	form;kind;lenclass	walkbytes	fresh	n in {48,64,128} member-free	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	xover	1	form;vs;kind	bytes	derived	-	-	-	-	-	-	kit:form.<form>;kit:form.<vs>
+kit	block	1	form	bytes	derived	-	-	-	-	-	-	kit:form.<form>
+kit	delta	1	form;vs;kind;lenclass	walkbytes	fresh	n in {8,32,48,63}	5	5	pair-per-group	30000	-	kit:form.<form>;kit:form.<vs>
+kit	ccold	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	wuse	1	form;kind	walkbytes	streamed	L in {32,1Ki,64Ki}	5	5	pair-per-group	30000	-	kit:form.<form>
+kit	gstar	1	form;kind	bytes	streamed	g in {2,4,8,16,32,64,256,4096,absent}	5	5	pair-per-group	-	-	kit:form.<form>

@@ -473,6 +473,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `memfnfinder` → `tests/memfn/run_finder.sh` ([MEMFN] R17-b′ B1, lane fdb1,
+  2026-10-16): the kit's finder table and its B1 entries (self-check, form
+  hashes, cards and sets, the set's channel, the shadow's decisions with each
+  read key removed in turn, the query family, the pay grid); seconds. Its own
+  arm because no finder row is routed before B2, so no artifact or answer
+  moves. Links the sabotaged tree's `build/libpcrec.a` and traces its kit
+  sources. Rows S917, S919, S1018, S1020, S1025.
 - `g2gate` → `memfn/tests/run_g2_gate.sh` ([MEMFN] R-15, lane r15b,
   2026-10-11): G2's gate family ALONE (`g2_gen --gate-only 1`: the §15.5
   composite and R-15's landmark sites with their near-misses) against G2's
@@ -3859,3 +3866,42 @@ were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.
 so the new DIFFER_PINS arms read byte-identical to their base. Arm `emitsweep`
 (`scripts/tests/emit_sweep.py.test`'s `--arms start` over the manifests),
 DETECTED 1fail/43pass each (lane tip a6b933692).
+
+**S922, S1079-S1084 (lanes fdb2/fdb2fix, 2026-10-16, [MEMFN] R17-b′ B2;
+r17b_prime.md rev 3 §8.3, R-MS6):** S922 a finder row (R7) routed before its
+step; S1079 D1's routed bit left 0 (one-byte sites render their pre-table
+form, same text, so byte identity cannot see it); S1080 pcrec arms the
+arm-entry counter (`mf_reach`) without the harness lever (`memfn_sites.c`);
+S1081 the counter adds 0; S1082 the kit's walk post-test dropped; S1083 the
+context stop's class proves nothing (`proven_prev` unfilled, F-B1-3); S1084
+the kit writes the counter unasked (`compose.c`: both builds agree, so only
+the lever-off counter-SHAPE check sees it; it was S1080's first plant, which
+the harness-vs-shipped identity could not catch). All arm `memfnfinder`
+(tests/memfn/run_finder.sh, which runs run_arm_reach.sh). S1085 (fdb2fix):
+the readers' PF site carries the escape set E instead of the row's scanned
+set (a DFA hat's T), arm `candoracle`: the trace build's asked-class hold
+(`cand_asked_hold`) aborts where the define's class differs. S1086-S1088 are
+allocated to fdb2 and unused. Figures: `docs/dev/lanes/fdb2_report.md` §10.
+
+**S917, S919, S921, S1018-S1020, S1025 (lane fdb1, 2026-10-16, [MEMFN] R17-b′
+B1; r17b_prime.md rev 3 §8.3):** the B1 rows of S911-S922 and SN-1..SN-9
+(SN-k = S(1016+k)). S917 an absent set key read as 0 (`fd_lookup`), S919 an
+UNSTATED `body` classed ONESHOT (`cl_body`), S1018 (SN-2) the query's class
+lies (`ask_sel`), S1020 (SN-4) R0's basis UNSTATED, S1025 (SN-9) the pay rule's
+T1 tie pays: arm `memfnfinder`. S921 the shadow's define writes a byte: arm
+`memfnarms` (the pins see the byte with no reference build). S1019 (SN-3)
+PRESENCE's kit ask left undeclared in the slot graph: arm `candoracle`
+(`CANDORACLE undeclared-ask`). Each run solo DETECTED (figures:
+`docs/dev/lanes/fdb1_report.md`). S743 and S844 re-aimed in the same change
+(RETRY's and RECOVER's nodes gained the kit-ask fields after their
+`.raise`/`.under`), intent unchanged.
+
+**S1026 (lane runaxes, 2026-10-16, [RUNAXES]):** `run_axes.sh` composes each
+`--memfn=` cell's flags without the row's `--memfn=no-NAME` spelling and
+nothing else, so the arm's answer-identity jobs compile the base build on both
+sides and pass; only `tests/axes/memfn_arm.py` (the cells' own flag text) sees
+it. New arm `axesmemfn` (`run_axes.sh` with `MEMFN_REACH_ONLY=1 MEMFN_EVERY=40
+AXES=--memfn`: the reach alone over a 1-in-40 corpus sample, trailer
+`checks passed:`/`checks failed:`; vocabulary entry in
+`run_sabotage_matrix.sh`). DETECTED (figure in the lane report).
+

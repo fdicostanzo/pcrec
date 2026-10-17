@@ -70,6 +70,32 @@ the body holding such a site), the test-only `MF_P_TRACE` rendering and the
 identity reference `mf_shared_block`. pcrec's abi 76 -> 77 in the same commit;
 `MEMFN_FORMS` stays `none` (no SIMD form). G2's setfind family is
 `tests/run_g2_setfind.py`.
+R17-b′ B1 (lane fdb1, 2026-10-16; `docs/design/memfn/r17b_prime.md` rev 3
+§3.1's B1 row, "ST1: the facts, the query and the table, unrouted") made
+MF_SITE_ABI 12 on main with NO `MF_VOCAB` move and NO pcrec byte moved (R17-b's
+record-branch 12 above renumbers when B4 ports it, as R-13's 10 did after RQ-2;
+its `src/terms.c` cover search is carried here, search only):
+`mf_site.body` (R-19's call mode, ONESHOT from every pcrec builder) and the
+`start` hook; the define-time QUERY `mf_ask` (pure, the form CLASS, checked
+equal to `mf_define`'s under MF_TRACE); the measurement set's channel
+(`mf_measures` on `mf_art_begin`, `consulted` from `mf_art_end`; R-MS1/2);
+the DECLARED `mf_analysis` (E-1); `mf_form_hash` (R-MS3); the FINDER TABLE
+`fd_rows[]` (`src/finder.c`, 19 rows, every one unrouted: a decision is the
+trace build's SHADOW, `MFTRACE FD`), its listing (R-MS4), method cards
+(R-MS5) and the pay rule's arithmetic; five deny rows (`fd-*`). pcrec's G1/R4/L4
+readers gained a trace-build reader shadow over `mf_ask` (`src/gen/emit_dfa.c`,
+`cand_ask_*`). Checks: `make test-memfn-finder`; the finder rows in
+`tests/memfn/rows.tsv` as `pending-site:<step>`. Report:
+`docs/dev/lanes/fdb1_report.md`.
+R17-b′ B2 (lane fdb2, 2026-10-16; row B2, "ST2: one-byte FIND routed") made
+MF_SITE_ABI 13 with NO `MF_VOCAB` move and NO pcrec byte moved: `mf_need`
+re-numbered with an UNSTATED zero (refused wherever read), `mf_site.site_kind`
+(PR-3), `mf_hooks.moved` (PR-2) and `mf_result.row`, `mf_class.proven_prev`
+(`MF_CLASS_V` 2); the finder rows D1, D1c, D1w ROUTED (`fd_route`, the PF rows
+writing the guard, post-test, bounded block and moved test, KW-3); pcrec's
+G1/R4/L4 read `mf_ask` and the reader shadow is retired; the harness-only
+arm-entry counter `mf_reach`/`mf_reach_table` (R-MS6); R0/R7's floor token
+`kit.eps.streamed.slope`. Report: `docs/dev/lanes/fdb2_report.md`.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
@@ -271,6 +297,9 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
   `precheck-assign-byte`, since R-15) and its accessor/parser (R4a); the scalar
   arms arrive with the migration steps.
 - `tests/` — G2, the kit's own tests (R4a's blinded lane).
+- `data/` — the kit's measured data (R17-b′ B1): method cards
+  (`data/cards/`, R-MS5) and the measurement-set files with their writer
+  (`data/sets/generate.py`). Own CLAUDE.md.
 
 ## Slot runs of `make test` ([TT-JTUNE], 2026-10-08)
 The kit's slot runs of the full suite go through `scripts/perfrun --label NAME

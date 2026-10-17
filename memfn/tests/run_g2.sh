@@ -965,7 +965,10 @@ reach_lines() { grep -E '^MFTRACE REACH table=[^ ]+ row=[^ ]+ chosen=[0-9]+$' "$
 # (d) as a function: reach_has_lines FILE -> 0 when the process printed any
 reach_has_lines() { [ -n "$(reach_lines "$1" | head -1)" ]; }
 # rows_zero FILE: the rows of a row-chosen file with n == 0
-rows_zero() { awk '$4 == 0 {printf "%s/%s ", $2, $3}' "$1"; }
+# The finder table (`fd`, R17-b' B1) is a trace-only SHADOW until its rows are
+# routed: its decisions are never counted as chosen, so its rows are exempt here
+# (tests/memfn/rows.tsv carries their reach as pending-site:<step>).
+rows_zero() { awk '$4 == 0 && $2 != "fd" {printf "%s/%s ", $2, $3}' "$1"; }
 if [ "$rows" = 1 ]; then
     echo "== rows: kit selection-table rows chosen over the whole tier (MFTRACE REACH, summed)"
     nproc_files=0; noreach=""

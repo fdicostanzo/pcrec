@@ -45,6 +45,11 @@ void kb_printf(kb *b, const char *fmt, ...) __attribute__((format(printf, 2, 3))
 
 /* Where the gate reads a field (fields.def's `phase` column). */
 enum { MF_PH_DEFINE = 1u, MF_PH_USE = 2u, MF_PH_RUN = 4u };
+/* A TRACE label, never a gate phase (no field is read at it): the finder
+ * table's trace-only shadow (finder.c, R17-b' B1). Its selections render
+ * nothing, so its records say `phase=shadow` and the reach counters never
+ * count them as chosen (as a use's re-check is never counted). */
+enum { MF_PH_SHADOW = 8u };
 
 /* CL_<class>: fields.def's classes; CL_N counts them. */
 enum {
@@ -97,12 +102,24 @@ typedef struct {
     uint64_t        serves[FLD_N];
 } gate_contract;
 
+/* The finder walk's own facts (finder.c, R17-b' B1): the fields.def fields
+ * `site_kind`, `layer` and `need`, which are no field of the site's. Each is
+ * a CL_* class, or -1 for UNSTATED. */
+typedef struct fd_facts {
+    int kind;       /* the consumer kind (§4.3); -1 until pcrec states it (B2) */
+    int layer;      /* CL_L_OFF / CL_L_W16 / CL_L_W32                           */
+    int need;       /* CL_N_REQUIRED / CL_N_OPTIONAL, the decided span's       */
+} fd_facts;
+
 /* What the gate reads: the site and the hooks of the phase (define or use),
- * or, in the run compare's walk, the RUN term. */
+ * or, in the run compare's walk, the RUN term; in the finder walk also its
+ * own facts (`fd`, NULL in every other walk, where its fields read
+ * unstated). */
 typedef struct {
     const mf_site  *s;
     const mf_hooks *h;
     const mf_term  *t;
+    const fd_facts *fd;
 } gate_in;
 
 /* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
@@ -165,12 +182,16 @@ static inline int32_t kit_d_min(const mf_pred *p)
  * storage: it serves the window AS THE CANDIDATE (W0 YES, W1 == d_min, W2
  * ZERO) and any declaration point (W4), which is exactly today's sites
  * (setfind.md §11.1 "Kit side"). A row that reads a window, or keeps
- * storage, states its own. */
+ * storage, states its own. R17-b' B1 (MF_SITE_ABI 12) adds the two facts
+ * R-19 states on every site: no row born before B1 reads the call mode or
+ * the START hook, so each renders the same for any value of either. */
 #define MF_SERVES_WINDOW_TODAY \
     [FLD_window_stated]   = CM(YES), \
     [FLD_move_back]       = CM(D_MIN), \
     [FLD_overshoot]       = CM(ZERO), \
-    [FLD_decl_point]      = MF_ANY,
+    [FLD_decl_point]      = MF_ANY, \
+    [FLD_body]            = MF_ANY, \
+    [FLD_start]           = MF_ANY,
 
 /* ---- the per-artifact state ---------------------------------------------- */
 
@@ -191,6 +212,17 @@ typedef struct {
        whether its mf_locals has come */
     const char       *def_s, *def_n;
     int               placed;
+    /* R17-b' B1 (MF_SITE_ABI 12): the define's START text (copied; bound by
+       mf_locals as `s`/`n` are) and the CLASS of what it chose (mf_defined
+       reports it; the query must agree with it) */
+    const char       *def_start;
+    mf_class          cls;
+    /* R17-b' B2 (MF_SITE_ABI 13): the finder row whose ROUTED decision chose
+       the arm (mf_result.row), NULL for the pre-table form; and the site's
+       arm-entry counter slot (R-MS6: its index in the art's reach array,
+       -1 when the art does not count) */
+    const char       *fd_row;
+    int               reach_k;
 } site_rec;
 
 struct mf_art {
@@ -216,6 +248,19 @@ struct mf_art {
        included (bit LV_*: once per artifact per level, [r9 C-7]) */
     kb          forms;
     unsigned    simd_inc;
+    /* R17-b' B1 (MF_SITE_ABI 12): the compile's measurement set (R-MS1) and
+       analysis object (DECLARED, E-1: read by no row before B3a), both the
+       host's; `consulted` (R-MS2), set when a ROUTED finder decision resolves
+       a key (never by the trace build's shadow) */
+    const mf_measures *ms;
+    const mf_analysis *an;
+    uint8_t     consulted;
+    /* R17-b' B2, R-MS6: the arm-entry counter (mf_reach): the host's stem
+       (NULL: the art does not count, every shipped compile), and per counter
+       slot its finder row id */
+    const char  *reach_stem;
+    const char **reach_row;
+    uint32_t     nreach, reach_cap;
     char        err[256];
 };
 
@@ -263,6 +308,12 @@ typedef struct arm {
        bound (the art's mf_includes stays the exact end-of-art record). */
     uint8_t     reads_table;
     uint32_t    includes;
+    /* 1 iff the row's text can call a C-library function (MF_SITE_ABI 12,
+       the form CLASS's `libc_free` is its negation; appended last, so a
+       row that leaves it out states 0, libc-free). A row-level bound, as
+       `includes` is: a constant 1-8 byte memcpy is a register load, not a
+       call (§R4.3.3's exclusion) */
+    uint8_t     libc;
 } arm;
 
 #define generic_arm         MF_NS(generic_arm)
@@ -310,6 +361,67 @@ extern const arm mismatch_inplace_arm;  /* MISMATCH, a FOLD_STMT fold        */
 /* Writes MISMATCH site `handle`'s loop with the use hooks `h` into `b`: the
  * shape is the site's fold_kind and the `fold` text's class. */
 int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
+
+/* ---- the set's term cover (terms.c; setfind.md §3) ------------------------
+ *
+ * R17-b's search, ported by R17-b' B1 for the finder shadow's cover SHAPE
+ * (its renderings land with R17-b's form at B4). Declarations as R17-b's
+ * (lane/memfn-r17 memfn/src/kit.h), text for text. */
+
+enum { MF_ST_CUBE = 0, MF_ST_ARC = 1 };
+
+/* K, the term limit of a set row (§3.3): MEASURED-UNOFFICIAL (slot2, dev box
+ * Zen 4, gcc 15.2.0 -O2, 2026-10-12): the largest term count whose best
+ * SIMD-off form won every sparse regime (reading_slot2.md answer 5). It moves
+ * bytes once a cover renders (B4): re-measuring it is a pcrec abi event
+ * (§16.3). */
+#define MF_SET_K 4
+/* The compile-time search's node cap per derivation (§3.3), a SAFETY BOUND,
+ * not a selection constant. DERIVED (MEASURED, lane r17b2, 2026-10-12, Linux
+ * dev box): BUDGET = 4 x M, M = 787, the most nodes the pruned search used
+ * over the stated population (R17-b's tests/memfn/pins/setfind_t3_sets.txt,
+ * the corpus tables, G2's setfind space and a generated space of 1,354,644
+ * sets, docs/dev/lanes/r17b_report.md). The factor 4 is T3's margin. It
+ * moves bytes only for a set outside the population needing more than BUDGET
+ * nodes (§16.3). */
+#define MF_SET_BUDGET 3148
+
+/* One term: CUBE, a = the care mask M, b = the value V (V & ~M == 0; EQ is
+ * M 0xFF); ARC, a = the first byte L, b = the width W, 1 <= W <= 128. */
+typedef struct { uint8_t kind, a, b; } mf_sterm;
+/* A cover: its terms in canonical order, whether they cover the set's
+ * COMPLEMENT (the mask is then negated once), and the search's node count. */
+typedef struct {
+    unsigned n;
+    int      complement;
+    unsigned nodes;
+    mf_sterm t[MF_SET_K];
+} mf_cover;
+
+#define mf_set_terms MF_NS(set_terms)
+/* The fewest-terms cover of `set` (bit x of set[x >> 3] at x & 7) within K
+ * (<= MF_SET_K) terms: 1 and *out, or 0 (DECLINE: no cover, the budget
+ * exceeded, |S| 0 or 256). Deterministic. */
+int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
+
+/* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */
+
+#define fd_shadow MF_NS(fd_shadow)
+/* THE TRACE-ONLY SHADOW (§1.6, regime_eval §5.3): the finder table's
+ * decision for site `handle` (slot FIND for a FIND / STMT site, slot PRES for
+ * each predicate of an ALL_PRESENT site), per layer variant, written as
+ * MFTRACE records: no byte, no art state, never `consulted`. Called by an
+ * MF_TRACE build only (compose.c); elsewhere it would write nothing. */
+void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def);
+/* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
+ * that renders the table's pick for FIND site `s` (handle `handle`, the next
+ * handle at a define) where the decision's rows are routed, and *row its
+ * terminal row's id; NULL where the site renders its pre-table form (*row
+ * NULL), or where a routed pick has no arm (*row set: a kit build error the
+ * caller refuses). `quiet` 1 for the query (no record, no reach). */
+#define fd_route MF_NS(fd_route)
+const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
+                           const mf_hooks *def, int quiet, const char **row);
 
 /* ---- writing to a sink --------------------------------------------------- */
 
@@ -500,6 +612,7 @@ int run_cmp_sat(const mf_term *t);
 #define kit_arm_contract MF_NS(kit_arm_contract)
 #define rc_row_contract  MF_NS(rc_row_contract)
 #define fn_row_contract  MF_NS(fn_row_contract)
+#define fd_row_contract  MF_NS(fd_row_contract)
 
 /* Row `i`'s contract in first-match order, or NULL past the last: the
  * composer's arms (compose.c), the run compare's rows (runcmp.c) and the
@@ -507,6 +620,8 @@ int run_cmp_sat(const mf_term *t);
 const gate_contract *kit_arm_contract(size_t i);
 const gate_contract *rc_row_contract(size_t i);
 const gate_contract *fn_row_contract(size_t i);
+/* the finder table's rows (finder.c `fd_rows[]`, both slots; R17-b' B1) */
+const gate_contract *fd_row_contract(size_t i);
 
 /* One selection's context, repeated on each of its records. `site` is the
  * handle (0 in the run walk, which has none). */
@@ -518,6 +633,9 @@ typedef struct {
     int            optional;    /* the slot needs no row (a PREFIX walk, a
                                    named rung): choosing none is no refusal,
                                    END says `chosen=none` (R4e' batch 1)     */
+    int            quiet;       /* the walk records nothing and counts no
+                                   reach (mf_ask, R17-b' B1: a pure query
+                                   writes one ASK line instead)             */
 } gate_tctx;
 
 /* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------

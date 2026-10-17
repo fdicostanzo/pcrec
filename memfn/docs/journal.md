@@ -2329,3 +2329,68 @@ pointer when a kit change merges to main.
 - **Process:** grid2r3 never re-read its rulings file and ran its no-clock gate 11:44-11:49 inside the HOLD. Disclosed to main. Lesson (again): a rulings file only works if the brief says "re-read before EVERY heavy command" up front. fdb1's brief says so.
 - **B1 building** (fdb1, opus) from 608dc8b44. Sabotage S1017-S1025 = SN-1..SN-9; S1026 = runaxes' plant.
 - OWED (main's message, 2026-10-16, before its reset): main's lane/swfix (6c81f60ac, PARKED until a make test) adds per-arm composition floors (COMPOSITION_EXTRA_PINS). An `--extra` arm without an entry then prints "COMPOSITION FLOORS: NOT APPLIED". Trigger: swfix merged into main, then main merged into lane/memfn-fd. Action: a kit lane adds MEASURED COMPOSITION_EXTRA_PINS entries for -fmemfn-simd and -fcomments beside sweeparm's DIFFER_PINS rows (same four terms). Expect a small merge overlap in emit_sweep.py.
+
+## 2026-10-16 (close) — B1 merged; runaxes delivered; grid2 armed; session close
+
+- **B1 (fdb1) merged** @ 6800f833b. It adds the finder table as a kit_table in shadow (19 rows, nothing routed), mf_ask with the reader shadow (census 240,967 asks, 0 aborts), the mf_analysis slot, mf_measures/consulted, form hashes, reader decls and method cards; MF_SITE_ABI 11→12, no pcrec abi event. Zero artifact movers; the declared --list-axes delta (5 fd-* rows) is confirmed by dumps_delta.py; the trace SET gate is clean. S917/S919/S921/S1018/S1019/S1020/S1025 DETECTED solo. Re-runs green: registry 79/0, G2 quick 52,987,691/0, link 8/0, rows 226/0, finder 868/0. OWED: full make test, mech derived rows, G2 full, N2 census; an emit_sweep one-sided ASSERT_ZERO mode for new denies. Findings: the R0/R7 floor token was unnamed (fdb1 chose kit.eps.findall.l64k; CHECK it); fields.def class space is full at 64; the record branch's R17-b also claims MF_SITE_ABI 12 (renumber at B4); R8's basis is DERIVED; F-B1-3 (MLINE ATTEMPT reader disagreement) goes to B2.
+- **runaxes merged** @ 8c549afea: run_axes.sh `--memfn=` arm (precheck-assign-byte DIFFER both layers; vrun-* ASSERT_ZERO at default, DIFFER at SIMD-on; no REFUSES row). S1026 DETECTED (axesmemfn 36 fail); the full AXES=--memfn run took 4247 s with 12 jobs all agreeing (62,360 cells), no finding.
+- **comppin merged** (main @ 353249282 in; COMPOSITION_EXTRA_PINS 37/106 for both kit arms).
+- **B0 delivered** to main (10d9f43f4): make test 70/70, mech 57 rows clean, floored sweeps 0 movers, g2-full 199,850,927/0. Main is reviewing it; the merge waits for main's chains.
+- **grid2 ARMED** (worktrees/memfn-slot/grid2/arm.sh, armed 15:52): it starts when main touches grid2/.go (~18:00, quiet box). Compiler: the record branch c90d65e53 (abi 77).
+- **Frank (2026-10-16), /close:** never interrupt in-flight work at a close; wait for the lanes to finish. I had told fdb1/runaxes to wrap up, then retracted. The rule is in the close skill (9175611a3, on this branch) and in memory.
+
+## 2026-10-16 (evening wake) — R-22 acked; B2 briefed; B1 heavy chain arming
+
+- Woke (pcrecdev3), heartbeat `17,47`. grid2 still ARMED (waits on main's evening chain).
+- **R-22 (R-MS6, harness-only arm-entry counter) acked into B2** (285590dc6). Main allocated S1079-S1088 to B2 + R-MS6; next free S1089.
+- **B2 briefed** to lane fdb2 (opus, worktree fdb2 off lane/memfn-fd @ 285590dc6), plus F-B1-3, the fdb1 floor-token check, R-MS6 and drafts of main's C10 fixtures and C17 `site_kind` columns as a proposed diff. Main owns the landmark facts (its lane, tomorrow). The box must stay quiet 18:05-18:40 (maskbench timing); a rulings file in the fdb2 worktree carries this.
+- **B1's owed heavy runs** (make test, mech derived + kit rows, G2 full, N2 census) are being armed by lane b1heavy (sonnet) on `worktrees/memfn-slot/b1heavy/.go`, pinned at 285590dc6 in detached worktree fdb1-mt. Main touches .go after grid2 finishes (~21:00-21:30); the chain runs overnight.
+- **B2 built** (fdb2, lane/fdb2 @ 8d3540593, MF_SITE_ABI 13, no pcrec abi event). Light suites are green and 10 sweep arms show 0 movers, apart from the declared no-fd-d1 DIFFER flip. fdb2 stopped its first chain at the 18:00 HOLD, and its HOLD-gated chain2 never ran a step. I untracked the rulings file it had committed (a38419d84).
+- **B2 review (b2review, opus, read-only): MERGE-WITH-FIXES**, 6 majors. The worst is that the readers ask mf_ask about a hand-rebuilt site that nothing ties to the define once the shadow is retired (a parallel mechanism). The others: S1080 cannot catch its plant; the routed floors are PLACEHOLDER; no sabotage row ever ran; charter sweeps owed (variants, trace, prefix); the floor-token change moved B4's manifest in place. Lane **fdb2fix** (opus) is fixing them in the fdb2 worktree, with runs gated on HOLD.
+- **Ruling (kit):** keep fdb1's eps token fix to `kit.eps.streamed.slope` (rev 3 C4). B4's manifest becomes a new file, §3.5 is restated in the same commit, and fdb1's artifact is restored.
+- **Tonight:** B1's chain runs ALONE at 285590dc6, as originally armed; B2 is not merged. Main has the lever-fence ALLOW edit and the R-MS6 wiring (cli/main.c, internal.h) to rule on.
+- **HOLD maintainer:** `worktrees/memfn-slot/fdb2hold/hold.sh`, the source of the HOLD line in fdb2_rulings.md. It holds over maskbench, grid2 and B1's chain, and exits when B1's chain ends.
+- **19:38 slot incident.** Main touched b1heavy/.go early, at 19:38:29, because its check matched grid2's intermediate `F1 time.sh: COMPLETE` line. My HOLD maintainer had the same loose `COMPLETE|FAILED` match and lifted HOLD at F1's end. So F3 (started 19:38:11) overlapped two runs:
+  - B1's chain, 19:38:33-19:39:06 (build no-op, strict, ~17 s of make test);
+  - fdb2fix's chain3, 19:38:14-19:38:34 and 19:39:14-19:39:24.
+
+  I safekilled B1's chain at 19:39:06 and fixed the HOLD regex to grid2's anchored end line `^(COMPLETE|FAILED) ` (slot.sh:162/56). chain3 is SIGSTOPped under HOLD by pause3.sh. B1 is re-armed (pid 795431) with `b1heavy/trigger.sh` touching .go itself 120 s after grid2's end line. The grid2 reading must treat F3 groups timed 19:38:11-19:39:30 as contaminated.
+  - **Lesson:** an end marker is an ANCHORED line, never a substring match; one slot.status can carry several "COMPLETE" words.
+- **fdb2fix delivered** (lane/fdb2 @ 01ffd2f2d, report §10; zero pcrec bytes):
+  - one site constructor for define + readers (pf_site_of / mline_find_of), plus the trace hold check (S1085 DETECTED);
+  - S1080 re-planted pcrec-side;
+  - B4 manifest as a new file, §3.5 restated;
+  - fence ALLOW reverted into proposed/lever_fence_allow.diff;
+  - R-MS6 droppable via proposed/drop_rms6.diff.
+
+  **Finding:** S1080/S1081/S1083 read UNDETECTED, because the memfnfinder arm scored finder_check's FIRST count. fdb2's "DETECTED" had never been run. run_finder.sh now sums into one final count, NOT yet re-run.
+  - **chain3** (verdict3.txt) is SIGSTOPped at S495 under HOLD and resumes after B1's chain. Since its tip only run_finder.sh and the figure lines changed.
+  - **Owed after resume:** test-memfn-finder + the memfnfinder mech rows solo (S1079-S1084, S922).
+  - **Owed in B2's heavy slot:** make test, G2 full, N2 census, test-axes --memfn=no-fd-d1, the bench-pattern sweep.
+  - worktrees/fdb2drop: prune after B2 merges (wtprune KEEPs it as unmerged).
+- **20:13 B1 chain started**, after clearing the stale empty chain.lock from the 19:39 kill; grid2 itself ended `COMPLETE 20:06:22 required=ok`. arm.sh truncates arm.status on each arm, so the history line was re-appended.
+- **grid2 read** (grid2read, lane/grid2read @ a9edffd59, NOT yet merged into lane/memfn-fd):
+  - contamination: 1 group visit (45/5,163 rows), re-timed by the harness's requeue;
+  - eps slope 0.113% (find-all 1.316%: the regime split is real, the C4 fix is confirmed);
+  - **M9 contradicted** (V1 beats the walk at every N>=8, no N*) and **M15 contradicted** (g* is landing predictability, not gap): both reshape rev 3's B4 table;
+  - pay rule: no dispatch at B4; R0 silent; R2's WALK fallback should be terminal or dropped;
+  - D1/LIBC stands, NONE effectively dead;
+  - M23: Q-WR-9's trigger fires on the letter.
+  - OWED: a ~2 min quiet re-time (f3-word-eq, f3-quad); the cells the slot never had; checking the slot's walk against main's.
+  - Main is told. A design revision of rev 3 (M9/M15 into B4's table) comes before B4.
+
+## 2026-10-17 — B1 + B2 delivered from lane/fdb2land
+
+- The B1 chain (285590dc6) went red on three kit-branch-only items (fixed by b1fix: cli/CLAUDE.md reword, K37 bound, PL14 via main) plus two of main's (S494, the precheck_assign_byte floor; main fixed both in aa66dbd64). fdclass measured the five fd-* classes ASSERT_ZERO (memfn arm 245/0).
+- My `git merge --ff-only lane/b1fix` into lane/memfn-fd was DENIED by the auto-mode classifier ("Modify Shared Resources"). I did not work around it; Frank was asked. Work continued on lane branches: b1fix → fdclass → fdb2land.
+- chain3 (fdb2's remainder) went clean: routed census 5/0, trace 0 movers, variants CLEAN, prefix invariance 9/0, long-prefix 5790/0. fdb2land put B2 on the new base: the fd-d1 class DIFFER 1004/985, the memfnfinder rows DETECTED (the summed-count fix).
+- Main ruled R-MS6 + both fence entries ACCEPTED (applied as c0e465e99) and gave GO for a heavy slot.
+- The B1+B2 heavy chain (c0e465e99): make test green, 84 mech OK, G2 full green. Two reds:
+  - N2 rc=5 was would_decline 1439 (P0's predicate looser than its contract), NOT the placeholders. B1's triage had misread the same rc;
+  - test-axes' filtered command cannot pass by construction.
+
+  n2fix fixed them; the full N2 re-ran rc=0.
+- **Lessons:**
+  - (1) an rc code is a priority-ordered summary: read the tool's rc table before naming a cause;
+  - (2) a check prescribed in a report can be impossible by construction: run it once before prescribing it;
+  - (3) I `cd`'d into fdb2land once (no lanes running).

@@ -2653,3 +2653,32 @@ the compiler, and is never adopted silently. Proposed for main to file
   - The branch also carries main @ 353249282 (merged by comppin: strict green, spec-history 145/0) and the measured COMPOSITION_EXTRA_PINS for both kit arms (37/106 each).
   - Also on the branch: R17-b′ rev 3 + the panel record, and the grid2 harness at rev 3 (not run).
   - Still OWED, to main or later: the N2 census on main+B0 (re-reads pf_walk); main's precheck_assign_byte PLACEHOLDER floor (class a, main's).
+
+- notice: 2026-10-16 — **The kit session is PAUSING.** Branch lane/memfn-fd @ (this commit). B0 is DELIVERED (10d9f43f4, under main's review). B1 is merged on the branch and NOT delivered: its heavy runs are owed (make test, mech, G2 full, N2 census). runaxes (the run_axes `--memfn=` arm, main's file, under its four terms) is merged on the branch for main's review with the next delivery. The close-skill edit (Frank: never interrupt in-flight work) is on the branch too. **grid2 is ARMED**: main touches /home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2/.go on a quiet box (~75-80 min, CPU 14); the result is in grid2/slot.status and arm.status.
+
+- ack: 2026-10-16 — **R-22 taken** (R-MS6, the harness-only arm-entry counter; main's S983-S990). Where it went: into **B2**, beside ST2, the step that routes the first R17-b′ arm. The counter then covers the new arm and every arm the kit already emits, and B2 provides fixtures that enter each arm and fixtures that do not. M0 needs it, and M0 follows main's K0-K3, so B2's slot comes before M0's trigger. Its bar is the one you stated: lever off, zero movers on every emit_sweep arm; lever on, ≥1 on a fixture that enters the arm and 0 on one that does not. The kit-side sabotage ids get requested when B2 is briefed.
+
+- done: 2026-10-17 — **R17-b′ B1 + B2 (with R-22 / R-MS6): branch lane/fdb2land @ 1de861442** (one delivery, as agreed). MF_SITE_ABI 11 → 13. No pcrec abi event (78), and zero artifact movers on every arm apart from the declared `--memfn=no-fd-d1` DIFFER flip (1004 byte / 985 utf8 c-default, 0 c-vm, floored).
+  - **Reports:**
+    - docs/dev/lanes/fdb1_report.md (B1);
+    - b1fix_report.md and fdclass_report.md (B1's triage fixes; main @ 554a06fdb merged; the fd-* MEMFN_CLASS measured);
+    - fdb2_report.md (B2, §10 the review fixes);
+    - fdb2land_report.md (B2 onto the new base with main @ aa66dbd64; §9 the heavy-slot triage fixes).
+  - **Heavy validation** at c0e465e99, worktrees/memfn-slot/b2heavy/chain.status:
+    - make test GREEN, perfrun class=green, uncontaminated;
+    - 84 solo mech rows OK (66 derived via sabotage_anchors --step aa66dbd64..c0e465e99, plus 18 kit rows);
+    - G2 full 199,850,935/0.
+  - **Reds, triaged and fixed** (b2heavy/triage/triage_report.md):
+    - N2's would_decline 1439 (a kit P0 contract defect, shadow-only), fixed in 4f9adcdcc;
+    - placeholder and stale floors pinned (11dcfc628, e0eff90ee);
+    - the full N2 census re-run at e0eff90ee: `rc=0 would_decline=0 floor_fail=0 placeholder=0 stale=0`.
+  - **test-axes:** the prescribed filter `AXES=--memfn=no-fd-d1` cannot go green by construction. The evidence: full memfn arm 257/0, fd-d1 62360/62360 answer-agree, form census 1/0.
+  - **After c0e465e99**, only the table data, the shadow-only P0 fact and the report changed. Their re-runs are green: strict, rows 232/0, finder 914/0, codegen 35/0 incl. SABANCHOR, the memfnfinder mech rows DETECTED, and plain emit_sweep 0 movers.
+  - **Main's rulings applied:** R-MS6 + both fence ALLOW entries accepted, fence commit c0e465e99. drop_rms6.diff is moot.
+  - **OWED:**
+    - the bench-pattern sweep (skipped, no list committed);
+    - the C10/C17 proposed diffs (docs/design/memfn/r17b_prime/fdb2/proposed/, main's to review);
+    - the landmark-admission facts (main's lane);
+    - main's integration make test on merge;
+    - grid2's reading is on lane/grid2read @ a9edffd59 (docs only, not in this branch).
+  - **Branch note:** lane/memfn-fd lags this branch because my fast-forward of it was denied by the permission classifier (Frank asked). Deliver from lane/fdb2land.

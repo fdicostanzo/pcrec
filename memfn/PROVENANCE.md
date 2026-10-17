@@ -44,3 +44,11 @@ the change that adds the file.
 | `src/vrun.c` | pcrec 631771b7 (relicensed 0BSD by its author, D145 addendum 1): `docs/design/memfn/probes/twins/tb_r4b.c` (`f_ffl`, R-1's hand twin: the block loop, lane mask and overlapped final block), transcribed at R-13; the vector operations are the compiler's documented intrinsics, named, no third-party text | 0BSD | THE FIRST SIMD ROWS `vrun-w16`/`vrun-w32` (R4e' batch 1): the body of every guarded `<fn>__w16`/`<fn>__w32` helper a `-fmemfn-simd` artifact carries |
 | `src/fields.def` | original | 0BSD | the row contracts' field and class table ([MEMFN-ROWCON] N1); no artifact text |
 | `src/gate.c` | original | 0BSD | the row-contract gate and the MF_TRACE records ([MEMFN-ROWCON] N1); no artifact text |
+| `src/finder.c` | original | 0BSD | THE FINDER TABLE (R17-b' B1): `fd_rows[]`, its walk, lookups and pay rule, the shadow's `MFTRACE FD` records and the `mf_finder_rows()` listing; no artifact text (no finder row is routed at B1) |
+| `src/terms.c` | pcrec 608dc8b44: R17-b's cover search (`mf_set_terms`, lane memfn-fd), carried at B1; original kit text | 0BSD | the set-membership cover a finder row reads as `shape`; no artifact text at B1 (its renderers land at B4) |
+| `src/formhash.c` | original | 0BSD | `mf_form_hash()` / `mf_form_hash_text()` (R-MS3): a form's normalized-text identity; no artifact text |
+
+`data/` (R17-b′ B1) is outside C16's table (include/ and src/ only): the method
+cards and the measurement sets, original kit text, 0BSD; the interim set's
+values are bench grid1's (gridread, cited in `data/sets/generate.py`). No
+artifact text; no compile reads them but through `--harness=measures=`.

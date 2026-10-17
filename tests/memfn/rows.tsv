@@ -43,6 +43,27 @@
 # `-fno-req-handoff`; their pattern's pre-check handoff otherwise re-enters
 # (NEXT's `handoff` row ranks above the start-byte rows).
 #
+# [MEMFN] R17-b' B1 (lane fdb1): table `fd`, the finder table (memfn/src/
+# finder.c `fd_rows[]`), 19 rows. None is routed at B1, so none renders a
+# byte: a `fd` row's "rendering" is the MF_TRACE build's SHADOW record
+# (`MFTRACE FD ... row=<id> pick=<form>`), and rows_check.py reads a `fd`
+# witness's signature from the fixture's FD records. Every `fd` row's reach is
+# `pending-site:<its routing step>` (r17b_prime.md §3.4 [rev3 B7]); a row no
+# B1 site can reach (it reads the consumer kind, stated from B2; E, read by no
+# row before B3a; H, B9's; a W64 pick, B6's; or B3a's presence facts) has
+# witness kind `-` and prints UNREACHED with its step. Each routing step flips
+# its rows to `pcrec` with a census floor and a witness. R17-b' B2 (lane fdb2)
+# routed D1, D1c and D1w: their reach is `pcrec`, their witness a pattern,
+# and their signature is read from the traced compile's `MFTRACE FDROUTE`
+# record (row and arm), not the artifact, because a routed row's pick renders
+# exactly the text its pre-table arm did (zero movers): the text cannot tell
+# the routed decision apart (r17b_prime.md §1.6 [rev3 B5]).
+# R7w is `pcrec` too, as the walk's UNROUTED default terminal (lane n2fix):
+# from B2 the finder's decision is a live DEFINE-phase selection at every FIND
+# site, and R7w is what every site no D1 row claims reads (it returns NULL and
+# renders the pre-table arm until B4), so the census chooses it; its signature
+# is the `MFTRACE FD` record's, and its control is a one-byte site D1 claims.
+#
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
 # run_rows.sh also holds every signature to EVERY artifact it compiled and
@@ -69,3 +90,22 @@ fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
+fd	R0	pending-site:B4	fixture	-	fd-R0	 row=R0 pick=WALK	-	fd-R7-r2
+fd	R5	pending-site:B4	-	-	-	-	-	-
+fd	R8	pending-site:B6	-	-	-	-	-	-
+fd	R3a	pending-site:B9	-	-	-	-	-	-
+fd	R3b	pending-site:B9	-	-	-	-	-	-
+fd	R4	pending-site:B9	-	-	-	-	-	-
+fd	R1	pending-site:B4	-	-	-	-	-	-
+fd	R2	pending-site:B6	-	-	-	-	-	-
+fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
+fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
+fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
+fd	D2	pending-site:B3b	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
+fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
+fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
+fd	P0	pending-site:B3b	fixture	-	fd-P0	 row=P0 link=v1p0m0o0	-	fd-P9
+fd	P2	pending-site:B3b	-	-	-	-	-	-
+fd	P3	pending-site:B3b	-	-	-	-	-	-
+fd	P4	pending-site:B3b	-	-	-	-	-	-
+fd	P9	pending-site:B3b	fixture	-	fd-P9	 row=P9 link=v1p0m0o0	-	fd-P0

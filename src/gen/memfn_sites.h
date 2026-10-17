@@ -154,8 +154,21 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
  * search, its NULL test and the position store (the hit is a pointer inside
  * the kit's text); the guards around it, and what a miss does, are the
  * caller's (`on_miss`, the bounded clamp, the guard after a walk). */
+/* [MEMFN] R17-b' B1 THE ACTIVATION'S ORIGIN (R-19's START hook; r17b_prime.md
+ * §2.1 [rev3 A1]): the text every function holding a delegated start-search
+ * site names its activation's start by, its `size_t search_from` parameter
+ * (the DFA `_search` body and its rev-end relocate, which reassigns it
+ * before the scan; the VM `_search_run`; the hybrid's static `_prefilter`;
+ * ENG_ATTEMPT's body; the pre-check's three use points). Stated on every
+ * such site (`PcrecFind.start`, the pre-check's define); the pre-check's use
+ * asserts its position IS this text, so the stated fact cannot drift from
+ * the emitted one unseen. */
+#define PCREC_MF_ORIGIN "search_from"
+
 typedef enum {
-    PCREC_FIND_MEMCHR = 0,      /* the memchr form: no table, `byte`          */
+    PCREC_FIND_NO_TABLE = 0,    /* no table offered: MLINE's context stop,
+                                 * its one `byte` (every PF site offers its
+                                 * table at every count, PR-1)                */
     PCREC_FIND_CAN_BEGIN,       /* `<p>_can_begin_match` (byte-class rows)    */
     PCREC_FIND_START_BYTES,     /* `<p>_start_bytes` (the DFA hat's table)    */
     PCREC_FIND_START_SET,       /* `<p>_start_set` (the VM hat's table)       */
@@ -166,9 +179,13 @@ typedef struct {
     DelegSite   site;     /* the DELEG_SITES row the statement is (PF, MLINE);
                            * stated by every caller, never defaulted          */
     const char *p;        /* the artifact prefix: the table is `<p>_<tag>`    */
-    PcrecFindTable table; /* the membership table; PCREC_FIND_MEMCHR = memchr */
+    PcrecFindTable table; /* the membership table OFFERED (R17-b' B2, PR-1:
+                           * the candidate set is a SET term at every count,
+                           * one member included, and the kit decides whether
+                           * its form reads the table); PCREC_FIND_NO_TABLE
+                           * only for MLINE, whose stop is one context byte */
     const uint8_t *set;   /* the table's contents, 256 bytes, nonzero = in    */
-    int         byte;     /* the memchr form's one byte */
+    int         byte;     /* PCREC_FIND_NO_TABLE: the one byte                */
     int         offset;   /* the term's offset from the candidate: 0 (the
                            * candidate's own byte), or -1 (its predecessor:
                            * MLINE, the memchr form only). A caller sending
@@ -183,14 +200,26 @@ typedef struct {
     const char *len;      /* the subject length */
     int         holdback; /* 0: the scan may reach `len`; 1: it stops at
                            * `len - 1` (D11's bound) */
-    const char *on_miss;  /* the unbounded memchr form's statement on a NULL
-                           * hit (it must leave the site); NULL otherwise */
+    const char *on_miss;  /* an UNBOUNDED site's statement where no candidate
+                           * is left in [pos, len) (it must leave the site):
+                           * the kit writes the test around it (R17-b' B2,
+                           * PR-2, KW-3); NULL on a bounded site, whose miss
+                           * is `len - 1`                                    */
     const char *stem;     /* [MEMFN] R17-a the storage stem (W5): the
                            * holding function's name plus `_pf`, on a set
                            * FIND defined above that function (the DFA set
                            * rows, the VM hat), which then also offers its
                            * declaration point (W4); NULL on a FIND emitted
                            * in one call (the byte forms, MLINE)            */
+    const char *start;    /* [MEMFN] R17-b' B1 the activation's origin text
+                           * (R-19's START hook, PCREC_MF_ORIGIN), stated by
+                           * every builder: NULL is refused (find_site)      */
+    uint8_t     kind;     /* [MEMFN] R17-b' B2 the consumer kind (PR-3,
+                           * mf_site_kind), stated by every builder: 0 is
+                           * refused (find_site)                             */
+    const char *moved;    /* [MEMFN] R17-b' B2 the statement run where the
+                           * candidate moved off `pos` (PR-2: the DFA hat's
+                           * re-seed), NULL for none                         */
 } PcrecFind;
 /* The memchr form's statement declares `const void *q`, the hit or NULL, in
  * the caller's block; nothing after it reads `q`. */

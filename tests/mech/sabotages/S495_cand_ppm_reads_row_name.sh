@@ -27,7 +27,15 @@ SAB_COUNT=1
 # `cand_rows[]` NEXT row since C3 and its scan kind is its payload's
 # (`pf->u.pf.scan`, was `DfaPf.scan`); the plant is unchanged (the two
 # byte-class rows recognised by `strcmp` on their identity, which C3 kept).
-SAB_BEFORE='        if (pf->u.pf.scan != PF_SCAN_SET)
+# RE-AIMED 2026-10-16 (lane fdb2, R17-b' B2, PR-9): R4 reads the memfn kit's
+# CLASS of the start-search site (mf_ask), not the row, so the plant re-reads
+# the row it no longer needs and classifies it by NAME: the K84 shape at the
+# reader's new site; the detector ([cand-no-name-strcmp]) is unchanged.
+SAB_BEFORE='        if (!cs.asked || !cs.cls.exists || cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
             return 1000000u;'
-SAB_AFTER='        if (strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded"))   /* SABOTAGE S495 */
+SAB_AFTER='        UnanchStart s495_us;
+        unanch_start(cx, &s495_us);
+        if (!cs.asked || !cs.cls.exists || cand_route_of(cx) == CAND_ROUTE_ATTEMPT ||
+            (strcmp(dfa_pf_read(cx, CAND_SLOT_RETRY, &s495_us)->c.name, "byte-class") &&
+             strcmp(dfa_pf_read(cx, CAND_SLOT_RETRY, &s495_us)->c.name, "byte-class-bounded")))   /* SABOTAGE S495 */
             return 1000000u;'

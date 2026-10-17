@@ -56,6 +56,15 @@ subject):
      at least CLASS_CASE_FLOOR cases (a literal in run_rows.sh), each narrow
      class expected at least twice and OTHER at least twice per field.
 
+  THE FINDER TABLE (R17-b' B1, lane fdb1; table `fd`, memfn/src/finder.c):
+     its rows render nothing until their routing step (a finder decision is
+     the MF_TRACE build's SHADOW), so a `fd` row's witness is a fixture whose
+     SHADOW records (`MFTRACE FD`, stderr) carry the signature, and the trace
+     must show the row chosen there (its END record, phase `shadow`). A `fd`
+     row no B1 site can reach (it reads the consumer kind, E, H, a W64 pick,
+     or B3a's presence facts) has witness kind `-` and prints UNREACHED with
+     its step, never a pass.
+
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
 rows); a row whose witness stops being chosen in the corpus but stays chosen
@@ -178,9 +187,19 @@ def build(root, cc, tmp):
     return fx, tp
 
 
+def fd_records(err):
+    """The finder table's trace records (R17-b' B1/B2): the shadow's `MFTRACE FD`
+    decisions and, since B2, the ROUTED decisions' `MFTRACE FDROUTE` (row and the
+    arm that rendered it). A `fd` row's signature is read from these: a routed
+    row's pick renders the text its pre-table arm would (zero movers, §1.6), so
+    the artifact cannot tell it apart, and the record is its observation."""
+    return "\n".join(ln for ln in err.decode("utf-8", "replace").splitlines()
+                     if ln.startswith(("MFTRACE FD ", "MFTRACE FDROUTE ")))
+
+
 class Art:
-    def __init__(self, label, text, chosen):
-        self.label, self.text, self.chosen = label, text, chosen
+    def __init__(self, label, text, chosen, fdtext=""):
+        self.label, self.text, self.chosen, self.fdtext = label, text, chosen, fdtext
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -194,22 +213,27 @@ def compile_pattern(root, tp, flags, pat, label):
     if rt.stdout != rp.stdout:
         bad("%s: the MF_TRACE pcrec's artifact differs from build/pcrec's" % label)
         return None
-    return Art(label, rp.stdout.decode("utf-8", "replace"), trace_chosen(rt.stderr))
+    return Art(label, rp.stdout.decode("utf-8", "replace"), trace_chosen(rt.stderr),
+               fd_records(rt.stderr))
 
 
-def render_fixture(fx, tmp, name, label):
+def render_fixture(fx, tmp, name, label, shadow=False):
     d = os.path.join(tmp, "fx_" + re.sub(r"\W", "_", name))
     os.makedirs(d, exist_ok=True)
     r = run([fx, d, "--only", name])
     if r.returncode:
         bad("%s: fixture %s does not render (rc %d)" % (label, name, r.returncode))
         return None
+    if shadow:
+        # a finder row's rendering is its SHADOW record (R17-b' B1)
+        text = fd_records(r.stderr)
+        return Art(label, text, trace_chosen(r.stderr), text)
     text = ""
     for part in ("def", "use"):
         p = os.path.join(d, "%s.%s" % (name, part))
         if os.path.exists(p):
             text += open(p, encoding="utf-8", errors="replace").read()
-    return Art(label, text, trace_chosen(r.stderr))
+    return Art(label, text, trace_chosen(r.stderr), fd_records(r.stderr))
 
 
 def spec_runcmp_rows(root):
@@ -355,6 +379,15 @@ def main():
     # transcript that exists (C19's binding; its digest half is UNREACHED
     # until a timing run writes one).
     simd_rows = axes_simd_rows(root)
+    # a finder ROW's deny (R17-b' B1: fd-r8, whose row picks W64 at the SIMD
+    # layers) is no SIMD FORM: it has no level, and its pick's forms carry
+    # their own acceptance lines when they are built (B6). The finder rows'
+    # denies are read off the kit's own listing (arm_fixtures --finder-rows).
+    fdl = run([fx, "--finder-rows"]).stdout.decode().splitlines()
+    fd_denies = {ln.split("\t")[5] for ln in fdl if ln and not ln.startswith(("#", "OPTION"))}
+    if not fd_denies:
+        bad("arm_fixtures --finder-rows listed no finder row (the reader is blind)")
+    simd_rows = [r for r in simd_rows if r not in fd_denies]
     acc = read_tsv(os.path.join(root, "tests/memfn/simd_accept.tsv"), 18)
     if not simd_rows:
         bad("pcrec --list-axes: no simd-layer row in the memfn section (the reader is blind)")
@@ -403,6 +436,11 @@ def main():
                 "pending-site:<trigger>, contract-reach:<G2 family %s>)" % (t, rw, why, ",".join(fams)))
             continue
         want = "pattern" if why == "pcrec" else "fixture"
+        if t == "fd" and wk == "-" and why.startswith("pending-site:"):
+            unreached.append("fd/%s: no B1 site can reach it (its witness arrives with %s)"
+                             % (rw, why[len("pending-site:"):]))
+            ok()
+            continue
         if wk != want:
             bad("%s/%s: reach %s needs a %s witness, not %s" % (t, rw, why, want, wk))
         else:
@@ -417,6 +455,8 @@ def main():
         t, rw, why, wk, wf, wit, sig, cf, ctl = c
         sig = unesc(sig)
         key = (t, rw)
+        if t == "fd" and wk == "-":
+            continue                    # UNREACHED at B1 (check B printed it)
         if len(sig) < 4:
             bad("%s/%s: signature %r is too short to mean anything" % (t, rw, sig))
             continue
@@ -427,15 +467,16 @@ def main():
             cpat = wit if ctl == "=" else ctl
             k = compile_pattern(root, tp, cflags, cpat, "%s/%s control" % key)
         else:
-            w = render_fixture(fx, a.tmp, wit, "%s/%s witness" % key)
-            k = render_fixture(fx, a.tmp, ctl, "%s/%s control" % key) if ctl not in ("=", "-") else None
+            sh = t == "fd"
+            w = render_fixture(fx, a.tmp, wit, "%s/%s witness" % key, sh)
+            k = render_fixture(fx, a.tmp, ctl, "%s/%s control" % key, sh) if ctl not in ("=", "-") else None
             if k is None and ctl in ("=", "-"):
                 bad("%s/%s: a fixture witness needs another fixture as its control" % key)
         for art, want in ((w, True), (k, False)):
             if art is None:
                 continue
             arts.append(art)
-            has, chose = sig in art.text, key in art.chosen
+            has, chose = sig in (art.fdtext if t == "fd" else art.text), key in art.chosen
             if has == want and chose == want:
                 ok()
             else:
@@ -458,8 +499,10 @@ def main():
     excl = 0
     for c in rows:
         key, sig = (c[0], c[1]), unesc(c[6])
+        if c[0] == "fd" and c[3] == "-":
+            continue
         for art in arts:
-            if sig in art.text and key not in art.chosen:
+            if sig in (art.fdtext if c[0] == "fd" else art.text) and key not in art.chosen:
                 bad("signature of %s/%s appears in %s, where the trace did not choose it"
                     % (key[0], key[1], art.label))
             else:

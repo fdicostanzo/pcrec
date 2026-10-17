@@ -536,6 +536,23 @@ static int cl_decl_point(const gate_in *in)
     return in->s ? flag01(in->s->decl_point) : CL_OTHER;
 }
 
+/* The call mode (R-19, MF_SITE_ABI 12): 0 is UNSTATED, as a hook ID's 0. */
+static int cl_body(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    switch (in->s->body) {
+    case MF_BODY_UNSTATED: return -1;
+    case MF_BODY_ONESHOT:  return CL_ONESHOT;
+    case MF_BODY_PARAM:    return CL_PARAM;
+    }
+    return CL_OTHER;
+}
+
+/* The finder walk's own facts (kit.h fd_facts): unstated off that walk. */
+static int cl_site_kind(const gate_in *in) { return in->fd ? in->fd->kind : -1; }
+static int cl_layer(const gate_in *in)     { return in->fd ? in->fd->layer : -1; }
+static int cl_need(const gate_in *in)      { return in->fd ? in->fd->need : -1; }
+
 /* `s`, `n`, `lo`: IDENT iff a bare identifier. */
 static int ident_or_other(const char *text)
 {
@@ -635,6 +652,8 @@ HOOK_STATED(fn_name)
 HOOK_STATED(note)
 HOOK_STATED(note_tag)
 HOOK_STATED(indent)
+HOOK_STATED(start)
+HOOK_STATED(moved)
 #undef HOOK_STATED
 
 static int cl_run(const gate_in *in)
@@ -762,7 +781,7 @@ void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in
 
 /* Process-wide on purpose (trace builds only): the reach is summed over
  * every art one process renders, and printed once at exit. */
-enum { REACH_ROWS = 32 };   /* rows of every table (17 at R4e'.0), with room */
+enum { REACH_ROWS = 64 };   /* rows of every table (39 at R17-b' B1), with room */
 static const gate_contract *reach_row[REACH_ROWS];
 static unsigned long reach_chosen[REACH_ROWS];
 static unsigned long reach_cell[REACH_ROWS][FLD_N][CL_N + 1];   /* CL_N: unstated */
@@ -772,7 +791,8 @@ static int reach_armed;
 
 static const char *phase_name(unsigned phase)
 {
-    return phase == MF_PH_DEFINE ? "define" : phase == MF_PH_USE ? "use" : "run";
+    return phase == MF_PH_DEFINE ? "define" : phase == MF_PH_USE ? "use"
+         : phase == MF_PH_SHADOW ? "shadow" : "run";
 }
 
 static const char *deny_name(uint64_t deny)
@@ -797,10 +817,11 @@ static void put_fields(const gate_verdict *v, const gate_in *in)
 
 static void reach_print(void)
 {
-    for (int pass = 0; pass < 3; pass++) {
+    for (int pass = 0; pass < 4; pass++) {
         for (size_t i = 0;; i++) {
             const gate_contract *c = pass == 0 ? kit_arm_contract(i)
-                                   : pass == 1 ? rc_row_contract(i) : fn_row_contract(i);
+                                   : pass == 1 ? rc_row_contract(i)
+                                   : pass == 2 ? fn_row_contract(i) : fd_row_contract(i);
             if (!c) break;
             unsigned slot = 0;
             while (slot < REACH_ROWS && reach_row[slot] != c) slot++;
@@ -851,6 +872,7 @@ static void head(const gate_tctx *t, const char *what)
 
 void gate_trace_sel(const gate_tctx *t)
 {
+    if (t->quiet) return;
     head(t, "SEL");
     if (t->phase == MF_PH_RUN)
         fprintf(stderr, " run=%s len=%u\n", class_names[class_of(FLD_run, t->in)],
@@ -863,6 +885,7 @@ void gate_trace_sel(const gate_tctx *t)
 void gate_trace_row(const gate_tctx *t, const gate_contract *c, const char *verdict,
                     uint64_t deny, const gate_verdict *v)
 {
+    if (t->quiet) return;
     head(t, "ROW");
     fprintf(stderr, " row=%s verdict=%s", c->row, verdict);
     if (deny) fprintf(stderr, ":%s", deny_name(deny));
@@ -884,6 +907,7 @@ static void put_moved(const gate_contract *mc)
 void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdict *v,
                     const gate_contract *mc, const gate_verdict *mv)
 {
+    if (t->quiet) return;
     head(t, "END");
     if (!c) {
         /* no row serves: the kit refuses, naming `v`'s fields (the last row
@@ -913,7 +937,9 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
         reach_dropped++;
         return;
     }
-    if (t->phase != MF_PH_USE) reach_chosen[slot]++;   /* a use re-checks, never selects */
+    /* a use re-checks and the finder's shadow decides nothing it renders:
+       neither selects */
+    if (t->phase != MF_PH_USE && t->phase != MF_PH_SHADOW) reach_chosen[slot]++;
     uint64_t uses = uses_at(c, t->phase, t->in);
     for (unsigned f = 0; f < FLD_N; f++) {
         if (!(uses >> f & 1) || !(fields[f].phase & t->phase)) continue;

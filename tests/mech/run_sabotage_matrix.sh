@@ -437,6 +437,16 @@
 #     another row, or not at all, moves no pcrec answer and no artifact byte
 #     (S617-S619: the `+ k` store, the read-bounded range, LOOP_EXIT).
 #     Links the sabotaged tree's build/libpcrec.a. Registered before S617.
+#   memfnfinder — added 2026-10-16 ([MEMFN] R17-b' B1, lane fdb1); runs
+#     tests/memfn/run_finder.sh: the kit's FINDER TABLE and its B1 entries
+#     (the table's self-check, form hashes, the method cards and sets, the
+#     set's channel and the shadow's decisions under no set, the full
+#     synthetic set and each read key removed in turn, the define-time query
+#     family, the pay rule's arithmetic grid; seconds). Its own arm because
+#     no finder row is routed before B2: a broken row, query, lookup or pay
+#     rule moves no artifact byte and no answer. Links the sabotaged tree's
+#     build/libpcrec.a and compiles its memfn/src with -DMF_TRACE.
+#     Registered before S917, S919, S1018, S1020 and S1025.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
 #     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their
@@ -508,6 +518,16 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   axesmemfn — added 2026-10-16 ([RUNAXES], lane runaxes); runs
+#     tests/axes/run_axes.sh with MEMFN_REACH_ONLY=1 AXES=--memfn
+#     MEMFN_EVERY=40 from the sabotaged tree (its build/pcrec, python3): the
+#     `--memfn=` arm's REACH alone (tests/axes/memfn_arm.py over the cells
+#     run_axes.sh composes, a 1-in-40 corpus sample). Its own arm because the
+#     arm's answer-identity JOBS cannot see their own plumbing: a cell that
+#     lost its `--memfn=` spelling compiles the base build on both sides and
+#     agrees on every case. Needs no baseline and no harness run (~15 s).
+#     Verdict: the script's `checks passed:`/`checks failed:` trailer.
+#     Registered before S1026.
 #   compound — added 2026-10-12 (lane cpb4, [COMPOUND] B4); runs
 #     tests/compound/run_compound_unit.sh (`make test-compound`) from the
 #     SABOTAGED tree: the part/derive/entry unit checks, the split compound
@@ -3047,6 +3067,17 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnarms.log" "$f" "memfnarms:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            memfnfinder)
+                # [MEMFN] R17-b' B1 tests/memfn/run_finder.sh — see the
+                # vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a and traces its own kit sources.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/memfn/run_finder.sh" \
+                    > "$work/memfnfinder.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfnfinder.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfnfinder.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfnfinder.log" "$f" "memfnfinder:${f:-ERR}fail/${p:-?}pass"
+                ;;
             g2gate)
                 # [MEMFN] R-15 memfn/tests/run_g2_gate.sh — see the
                 # vocabulary entry above. Links the sabotaged tree's own
@@ -3174,6 +3205,16 @@ run_one() {
                 p="$(grep '^checks passed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 f="$(grep '^checks failed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 score_arm "$work/emitsweep.log" "$f" "emitsweep:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            axesmemfn)
+                # [RUNAXES] see the vocabulary entry above.
+                PCREC="$tree/build/pcrec" TMPDIR="$work" SKIP_ORACLE=1 \
+                    MEMFN_REACH_ONLY=1 MEMFN_EVERY=40 AXES="--memfn" \
+                    bash "$tree/tests/axes/run_axes.sh" \
+                    > "$work/axesmemfn.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/axesmemfn.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/axesmemfn.log" | grep -oE '[0-9]+')"
+                score_arm "$work/axesmemfn.log" "$f" "axesmemfn:${f:-ERR}fail/${p:-?}pass"
                 ;;
             fallbacktable)
                 # [decfb B0] see the vocabulary entry above. The script builds

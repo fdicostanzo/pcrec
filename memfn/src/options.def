@@ -50,3 +50,28 @@ MF_OPT("vrun-pad", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
 MF_OPT("precheck-assign-byte", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the pre-check's kept one-byte landmark as one memchr (an ASSIGN pre-check whose kept "
        "position is its first byte's); denied, the generic row renders the site")
+/* R17-b' B1 (lane fdb1; r17b_prime.md rev 3 §3.4 [rev3 B7, D8]): the finder
+ * table's denies, one per built row the evaluator can score (regime_eval
+ * §5.2). Each denies its fd_rows[] row through the shared walk (kit_walk's
+ * `no-<opt>`). At B1 NO row is routed, so every one is ASSERT_ZERO: accepted,
+ * and it moves no byte (its row decides nothing that renders). `fd-d1` flips
+ * to DIFFER at B2 (its OFF arm is D1w, the walk), `fd-r0`/`fd-r5`/`fd-ndisp`
+ * at B4, `fd-r8` at B6. */
+MF_OPT("fd-r0", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's row R0: a set cover of two or more RANGE terms whose measured V1 "
+       "saving is inside the null floor keeps the walk; denied, the row is skipped (ASSERT_ZERO "
+       "until it routes at B4)")
+MF_OPT("fd-r5", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's row R5: a measured candidate gap below the layer's g* keeps the walk; "
+       "denied, the row is skipped (ASSERT_ZERO until it routes at B4)")
+MF_OPT("fd-r8", MF_OPT_DENY, MF_B_ANY, MF_L_SIMD,
+       "the finder table's row R8: a long one-shot call with a measured sparse gap takes the "
+       "64-byte form; denied, the row is skipped (ASSERT_ZERO until it routes at B6)")
+MF_OPT("fd-ndisp", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's N-dispatch rows R1 and R2: a one-shot call shorter than a crossover "
+       "takes the shorter call's form behind a run-time dispatch; denied, no dispatch "
+       "(ASSERT_ZERO until a dispatch pays, B4 or B8)")
+MF_OPT("fd-d1", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's row D1: a one-member stop outside a VM attempt seek is searched by "
+       "the C library; denied, the site takes D1w's table walk (ASSERT_ZERO until it routes "
+       "at B2)")
