@@ -1,0 +1,5 @@
+# docs/design/memfn/r17b_prime/b3a/pr11_floors.tsv -- PR-11 census floors on the CHECKED (`ok`) collapsed artifacts per population, all arms summed (lane b3afix, review MINOR-3): floor(0.9 x measured) at the rebased tip, the house rule of pick_floors.tsv. Read by pr11_census.py --floors (the default).
+# pop	floor
+corpus	1
+bench	10
+rwquest	2
