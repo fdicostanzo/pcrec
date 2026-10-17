@@ -606,7 +606,7 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   matching one by deleting a stated necessary byte or breaking the stated
   run must be refused by the static prefilter, and a control witness's
   subject must pass it. Hooked into `run_finder.sh` (`part pr11`); planted
-  collapse dropping rmin is SK-B3A-8. The corpus/bench/rwquest census is
+  collapse dropping rmin is S1100. The corpus/bench/rwquest census is
   `docs/design/memfn/r17b_prime/b3a/pr11_census.py`.
 - **rows.tsv**/**row_floors.tsv**: the `fn` rows `vrun-w16`/`vrun-w32`
   (witness `(?i)cat` under `-fmemfn-simd`, control the row's own deny);

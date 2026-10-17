@@ -48,7 +48,7 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
 - `b3a/` — lane b3a's instruments (R17-b′ B3a, 2026-10-17): `pick_census.py`
   (KW-8 over corpus, bench and rwquest, three arms, `--floors
   pick_floors.tsv`), `pr11_census.py` (the PR-11 control over every
-  count-collapsed hybrid), `sabotage/` (SK-B3A-1..9 + `run_skb3a.sh`, each
+  count-collapsed hybrid), `sabotage/` (S1093..9 + `run_skb3a.sh`, each
   plant solo in a `git archive` copy), `proposed/` (main-side diffs, never
   applied in place: `deleg_entry.diff`, `c17_use_points.diff`,
   `c10_presence.diff`, applied in that order) and `out/` (the census

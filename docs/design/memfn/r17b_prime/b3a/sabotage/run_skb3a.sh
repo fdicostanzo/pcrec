@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh [OUTDIR] [ID...] --
-# runs each SK-B3A-*.sh plant here SOLO, the matrix's way
+# runs each S1093..S1101 (S[0-9]*_*.sh) plant here SOLO, the matrix's way
 # (tests/mech/run_sabotage_matrix.sh): a fresh `git archive HEAD` tree per
 # plant, the edit through tests/mech/lib/replace.py (refused unless the anchor
 # appears SAB_COUNT times), `make -j4`, then the row's suite: `candoracle` =
 # tests/codegen/run_cand_oracle.sh (which runs tests/memfn/run_pres_picks.sh
 # on its trace build), `memfnfinder` = tests/memfn/run_finder.sh. DETECTED iff
-# the suite fails. PLACEHOLDER ids (SK-B3A-n): main allocates real ids and
+# the suite fails. PLACEHOLDER ids (S1093..S1101): main allocates real ids and
 # moves them into tests/mech/sabotages/. Each plant also runs the suite on the
 # UNPLANTED tree first only once (the control), so a red control is not read
 # as a detection.
@@ -23,7 +23,7 @@ suite() { # SUITE TREE LOG
     esac
 }
 mkdir -p "$OUT/tmp"
-ids=("$@"); [ "${#ids[@]}" -gt 0 ] || ids=($(cd "$HERE" && ls SK-B3A-*.sh | sed 's/\.sh$//' | sort -t- -k3 -n))
+ids=("$@"); [ "${#ids[@]}" -gt 0 ] || ids=($(cd "$HERE" && ls S[0-9]*_*.sh | sed 's/\.sh$//' | sort))
 for id in "${ids[@]}"; do
     f="$HERE/$id.sh"; [ -f "$f" ] || f="$(ls "$HERE"/"$id"_*.sh 2>/dev/null | head -1)"
     id=$(basename "$f" .sh)

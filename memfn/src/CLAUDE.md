@@ -347,7 +347,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (cardinality masses under PRIOR_NONE): the set pick, the run's scan index
   and window start, set-leads, G1 (byte dominated) and the landmark
   admission. Read by pcrec's `-DPCREC_CAND_TRACE` build only (the MFPICK
-  comparator in `src/gen/emit_dfa.c`); no row reads it. Plants SK-B3A-2..7.
+  comparator in `src/gen/emit_dfa.c`); no row reads it. Plants S1094..7.
 - **formhash.c** — `mf_form_hash`/`mf_form_hash_text` (R-MS3): a form's
   normalized-text identity (comments dropped, whitespace collapsed,
   non-kept identifiers renamed, FNV-1a-64) over canonical instances
