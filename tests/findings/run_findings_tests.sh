@@ -778,7 +778,7 @@ fi
 # =========================================================================
 # §15 C-PERT, THE STAMP'S HONESTY FROM OUTSIDE ([WINDOW-E1];
 # window_contract.md rev 3.1 §3.7.7): c_pert.py compiles a fixed 1-in-16
-# slice of the corpus (plus F-5's two pinned witnesses) BARE, under a
+# slice of the corpus (plus F-5's two former witnesses) BARE, under a
 # verbatim copy of the store's default, and under a PERTURBED copy, in eight
 # arms; an artifact whose stamp omits a kind may not move with that kind's
 # data. Reads emitted bytes and the stamp text only. Power floors per arm.

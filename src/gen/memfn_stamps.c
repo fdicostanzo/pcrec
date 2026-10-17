@@ -254,9 +254,23 @@ static bool splice_mark(StrBuf *sb, const char *mark, const char *text)
     return true;
 }
 
+/* The queries the compile consulted, for its knowledge stamp (D167
+ * addendum 3): this attempt's asks, every earlier attempt's
+ * (`Ctx.find_union`) and, on a compound shell, every part's, because the
+ * artifact's bytes depend on all of them (§3.7.3a item 4). */
+static unsigned ks_consulted(Ctx *cx)
+{
+    unsigned q = pcrec_find_asked(cx) | (cx->find_union ? *cx->find_union : 0u);
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i]) q |= sh->facts[i].find_consulted;
+    return q;
+}
+
 /* [WINDOW-E1] RP: renders pcrec's knowledge stamps over the `rx_info`
  * writer's marks in csb, each line's text `pcrec_emit_findings_line`'s and
- * the value `pcrec_find_stamp`'s, read now, after every reader. An artifact
+ * the value `pcrec_find_stamp`'s over `ks_consulted`, read now, after every
+ * reader. An artifact
  * that omits `rx_info` (an entry request) holds neither mark; one that has
  * it holds each exactly once, and anything else is an internal error. */
 static void ks_stamps_render(Ctx *cx)
@@ -269,7 +283,7 @@ static void ks_stamps_render(Ctx *cx)
                        "stamp marks and %zu initializer marks (pcrec_emit_ks_mark)",
                        nd, ni);
     if (!nd) return;
-    const char *value = pcrec_find_stamp(cx);
+    const char *value = pcrec_find_stamp(cx, ks_consulted(cx));
     for (size_t m = 0; m < sizeof ks_marks / sizeof ks_marks[0]; m++) {
         StrBuf line = { .cx = cx };
         pcrec_emit_findings_line(cx, &line, (PcrecKsMark)m, value);

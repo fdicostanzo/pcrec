@@ -3429,6 +3429,13 @@ struct Ctx {
      * owned by `compile_driver` and lent to every attempt; NULL = none, and
      * `pcrec_build_min_dfa` then builds exactly as the two calls it wraps. */
     struct DfaMemo      *dfa_memo;
+    /* [WINDOW-E1] F-5 (D167 addendum 3): the queries the compile's EARLIER
+     * attempts consulted (a bit per `PCREC_FQ_*` row), owned by
+     * `compile_driver` and lent to every attempt like `dfa_memo`; each
+     * attempt's end (`job_cleanup`) ORs its own asks in, and the knowledge
+     * stamp reads it, so the stamp is the union over the compile's attempts.
+     * NULL outside `compile_driver` (no earlier attempt). */
+    unsigned            *find_union;
     /* [SEL-1] (2026-08-28) `auto`'s DFA-cap-overflow contract (plan row
      * [SEL-1]): a `--engine=auto` compile whose DFA build overflows a cap
      * falls back to the VM instead of refusing, and an auto-selected
@@ -7593,6 +7600,9 @@ struct PcrecPartFacts {
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     Arena *into;            /* in: where the strings below are copied */
     const char *memfn_forms;/* its `MEMFN_FORMS` value (in `into`) */
+    unsigned find_consulted;/* the queries any of its attempts consulted
+                               (a bit per `PCREC_FQ_*` row), for the shell's
+                               knowledge stamp (window_contract.md §3.7.3a) */
 };
 
 /* ---- [COMPOUND] THE ROW TABLE (src/core/compound.c; compound.md §A.1-§A.3)
