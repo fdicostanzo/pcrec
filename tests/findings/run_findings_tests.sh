@@ -748,7 +748,7 @@ if [ -x "$KST/pcrec" ]; then
     E1="$WORKDIR/e1"
     mkdir -p "$E1/fx" "$E1/w"
     python3 "$SCRIPT_DIR/e1_fixtures.py" "$ROOT_DIR" "$E1/fx"
-    python3 "$SCRIPT_DIR/e1_object_check.py" "$ROOT_DIR" "$KST/pcrec" "$E1/fx" "$R" \
+    "$TIMEOUT_BIN" 600 python3 "$SCRIPT_DIR/e1_object_check.py" "$ROOT_DIR" "$KST/pcrec" "$E1/fx" "$R" \
         "$E1/w" > "$E1/out" 2>&1
     while IFS= read -r ln; do
         case "$ln" in
@@ -775,7 +775,7 @@ fi
 # =========================================================================
 CP="$WORKDIR/cpert"
 mkdir -p "$CP"
-python3 -I "$SCRIPT_DIR/c_pert.py" "$ROOT_DIR" "$PCREC" "$CP" --every 16 --jobs 4 \
+"$TIMEOUT_BIN" 900 python3 -I "$SCRIPT_DIR/c_pert.py" "$ROOT_DIR" "$PCREC" "$CP" --every 16 --jobs 4 \
     > "$CP.out" 2>&1
 while IFS= read -r ln; do
     case "$ln" in
