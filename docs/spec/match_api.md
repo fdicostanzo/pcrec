@@ -165,11 +165,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 78
-#error "pcrec: this artifact (abi 78) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 79
+#error "pcrec: this artifact (abi 79) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 78
+#define PCREC_RX_ABI_H 79
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1257,7 +1257,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `78` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `79` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1284,7 +1284,7 @@ compile time, where one exists.
 | 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"end-minus-width"` / `"landing"` / `"reverse-pass"` / `"attempt-start"`, `"compound"` on a compound; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
 | 26 | `vars` | `const char *const *` | the variable NAMES the pattern mentions, in first-mention order; `NULL` when none (`docs/spec/vars.md`) | — |
 | 27 | `nvars` | `int` | entries in `vars[]` | `<PREFIX>_NVARS` (var-bearing artifacts) |
-| 28 | `findings` | `const char *` | which findings each query the compile asked was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
+| 28 | `findings` | `const char *` | which findings each query the compile asked (on any attempt) was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
 
 <a id="s6-p2"></a>[6¶2] Every field listed without a mirror is reachable only by reading
 `<prefix>_info` at run time — `ngroups` included.
@@ -1398,7 +1398,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `78` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `79` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2410,11 +2410,15 @@ mirrored byte for byte by `rx_info.findings`.
 <a id="s6-3-10-p11"></a>[6.3.10¶11] One `query=bundle:digest` item per findings query the compile ASKED, in the
 fixed query order, `;`-joined; `query=none` where the analysis declares
 nothing for this compile's encoding; the empty string when no reader asked
-(`docs/spec/findings.md` §5: the grammar and the digest's byte layout).
+(`docs/spec/findings.md` §5: the grammar and the digest's byte layout). A
+query counts if ANY attempt of the compile asked it, a discarded retry
+attempt included (`findings.md` §5¶2); a compound's stamp counts P's compile
+and every part's (§6.3.12).
 `bundle` is the analysis whose block answered, and the digest covers exactly
 what the readers consumed, so two artifacts built from the same rates carry
-the same stamp. It is written after every reader has run, so an ask made while
-the engine body is emitted is recorded. The bundle name is plain text in the
+the same stamp. It is written after every reader has run, the search-code
+kit included (its artifact end), so an ask made while the engine body is
+emitted is recorded. The bundle name is plain text in the
 artifact.
 
 <a id="s6-3-11"></a>
@@ -2464,8 +2468,9 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_FINDINGS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
+| pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, the VM's string stamps | `"compound"` |
 | machine (count) | `_DFA_UNIFORM_FOLDS`, `_RUN_WORDS`, the VM's counts and masks | `-1` |
 

@@ -1248,7 +1248,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # abi 77 -> 78: the match-end mark on rev-end (forms F0-F4, the distance-set
 # accept, prio-const); `cb4174451` (the merge with B4) is the lane's last src commit, and the
 # manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cb4174451}"   # D164 B3 SELF-PIN (lane b3build/b3land, 2026-10-13), abi 78 (was cd1d2d8f9, cpb4's abi-77 self-pin)
+# [WINDOW-E1] the knowledge-stamp union SELF-PIN (lane rpunion, 2026-10-17),
+# abi 78 -> 79: `<PREFIX>_FINDINGS`/`.findings` list a query any attempt (or
+# compound part) asked, rendered after `mf_art_end`; beyond the abi digits
+# only compiles whose asking attempt was discarded move (F-5). `c10643bbb` is
+# the lane's last src commit; the manager re-pins to the merge (the self-pin
+# convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c10643bbb}"   # [WINDOW-E1] union SELF-PIN (lane rpunion, 2026-10-17), abi 79 (was cb4174451, b3build's abi-78 self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

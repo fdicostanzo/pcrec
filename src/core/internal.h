@@ -3429,6 +3429,13 @@ struct Ctx {
      * owned by `compile_driver` and lent to every attempt; NULL = none, and
      * `pcrec_build_min_dfa` then builds exactly as the two calls it wraps. */
     struct DfaMemo      *dfa_memo;
+    /* [WINDOW-E1] F-5 (D167 addendum 3): the queries the compile's EARLIER
+     * attempts consulted (a bit per `PCREC_FQ_*` row), owned by
+     * `compile_driver` and lent to every attempt like `dfa_memo`; each
+     * attempt's end (`job_cleanup`) ORs its own asks in, and the knowledge
+     * stamp reads it, so the stamp is the union over the compile's attempts.
+     * NULL outside `compile_driver` (no earlier attempt). */
+    unsigned            *find_union;
     /* [SEL-1] (2026-08-28) `auto`'s DFA-cap-overflow contract (plan row
      * [SEL-1]): a `--engine=auto` compile whose DFA build overflows a cap
      * falls back to the VM instead of refusing, and an auto-selected
@@ -6555,6 +6562,16 @@ void pcrec_emit_memfn_mark(StrBuf *c);
  * (src/gen/emit_dfa.c); also the memfn sink's `legend_byte` op. */
 void pcrec_emit_legend_byte(StrBuf *c, int b);
 void pcrec_memfn_stamps_render(Ctx *cx);
+/* [WINDOW-E1] RP (window_contract.md §3.7.3a, src/gen/memfn_stamps.c): the
+ * second mark kind, a KNOWLEDGE-stamp mark. The `rx_info` writer puts one
+ * where `#define <PREFIX>_FINDINGS` goes and one where `.findings = …`
+ * goes; the finishing pass renders both after `mf_art_end`, the one render
+ * point of the knowledge stamps. */
+typedef enum { PCREC_KS_MARK_DEFINE, PCREC_KS_MARK_INIT } PcrecKsMark;
+void pcrec_emit_ks_mark(StrBuf *c, PcrecKsMark m);
+/* The two lines those marks stand for, `value` being the stamp's text
+ * (src/gen/emit_dfa.c, the `rx_info` writer's own spelling of them). */
+void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
 /* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
  * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
  * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
@@ -7583,6 +7600,9 @@ struct PcrecPartFacts {
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     Arena *into;            /* in: where the strings below are copied */
     const char *memfn_forms;/* its `MEMFN_FORMS` value (in `into`) */
+    unsigned find_consulted;/* the queries any of its attempts consulted
+                               (a bit per `PCREC_FQ_*` row), for the shell's
+                               knowledge stamp (window_contract.md §3.7.3a) */
 };
 
 /* ---- [COMPOUND] THE ROW TABLE (src/core/compound.c; compound.md §A.1-§A.3)

@@ -26,13 +26,28 @@
  * WHY THE MARK IS A PLACEHOLDER-LEAD BYTE. A mark the pass failed to replace
  * then fails `pcrec_sb_render_prefix` loudly as a stray lead byte, so it can
  * never reach a caller as text. The pass runs on every attempt, before the
- * size measurement, so the size term measures the artifact it ships. */
+ * size measurement, so the size term measures the artifact it ships.
+ *
+ * [WINDOW-E1] RP, THE SECOND MARK KIND: pcrec's KNOWLEDGE stamps
+ * (`<PREFIX>_FINDINGS` and its `.findings =` initializer; `_MEASURES` joins
+ * at [MEASURE-SET] M0) render here too, at THE ONE RENDER POINT of
+ * window_contract.md §3.7.3a: after `mf_art_end`, because from B3b on the
+ * kit's consulted kinds join the stamp and the kit is then the last reader.
+ * The `rx_info` writer marks each line at its byte position, so moving the
+ * render here moved no byte. */
 #include <string.h>
 
 #include "gen/memfn_sites.h"
 
 /* The mark: a placeholder-lead byte that is not the prefix placeholder. */
 #define MEMFN_MARK "\x01M\n"
+/* The knowledge-stamp marks, one per line they stand for, indexed by
+ * `PcrecKsMark`. The letter is not a hex digit, so `\x01` ends where it
+ * should. */
+static const char *const ks_marks[] = {
+    [PCREC_KS_MARK_DEFINE] = "\x01K\n",
+    [PCREC_KS_MARK_INIT]   = "\x01k\n",
+};
 
 void pcrec_emit_memfn_mark(StrBuf *c)
 {
@@ -40,6 +55,11 @@ void pcrec_emit_memfn_mark(StrBuf *c)
     pcrec_memfn_simd_witness(c);   /* RQ-3's file-scope block, both engines */
 #endif
     pcrec_sb_puts(c, MEMFN_MARK);
+}
+
+void pcrec_emit_ks_mark(StrBuf *c, PcrecKsMark m)
+{
+    pcrec_sb_puts(c, ks_marks[m]);
 }
 
 /* The C library's functions, by the headers that declare them: C17
@@ -208,13 +228,22 @@ static void sink_stamp_int(void *u, const char *name, long long value)
     pcrec_sb_stampf(s->sb, s->upper, name, "%lld", value);
 }
 
-/* Replaces the one mark in `sb` with `text`; false if `sb` holds no mark or
- * more than one. */
-static bool splice_mark(StrBuf *sb, const char *text)
+/* How many times `mark` occurs in `sb`. */
+static size_t mark_count(const StrBuf *sb, const char *mark)
 {
-    const char *m = sb->p ? strstr(sb->p, MEMFN_MARK) : NULL;
-    if (!m || strstr(m + 1, MEMFN_MARK)) return false;
-    size_t at = (size_t)(m - sb->p), cut = sizeof MEMFN_MARK - 1;
+    size_t n = 0;
+    for (const char *m = sb->p ? strstr(sb->p, mark) : NULL; m; m = strstr(m + 1, mark))
+        n++;
+    return n;
+}
+
+/* Replaces the one `mark` in `sb` with `text`; false if `sb` holds no such
+ * mark or more than one. */
+static bool splice_mark(StrBuf *sb, const char *mark, const char *text)
+{
+    const char *m = sb->p ? strstr(sb->p, mark) : NULL;
+    if (!m || strstr(m + 1, mark)) return false;
+    size_t at = (size_t)(m - sb->p), cut = strlen(mark);
     StrBuf tail = { .cx = sb->cx };
     pcrec_sb_puts(&tail, sb->p + at + cut);
     sb->len = at;
@@ -223,6 +252,44 @@ static bool splice_mark(StrBuf *sb, const char *text)
     pcrec_sb_puts(sb, tail.p ? tail.p : "");
     pcrec_sb_free(&tail);
     return true;
+}
+
+/* The queries the compile consulted, for its knowledge stamp (D167
+ * addendum 3): this attempt's asks, every earlier attempt's
+ * (`Ctx.find_union`) and, on a compound shell, every part's, because the
+ * artifact's bytes depend on all of them (§3.7.3a item 4). */
+static unsigned ks_consulted(Ctx *cx)
+{
+    unsigned q = pcrec_find_asked(cx) | (cx->find_union ? *cx->find_union : 0u);
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i]) q |= sh->facts[i].find_consulted;
+    return q;
+}
+
+/* [WINDOW-E1] RP: renders pcrec's knowledge stamps over the `rx_info`
+ * writer's marks in csb, each line's text `pcrec_emit_findings_line`'s and
+ * the value `pcrec_find_stamp`'s over `ks_consulted`, read now, after every
+ * reader. An artifact
+ * that omits `rx_info` (an entry request) holds neither mark; one that has
+ * it holds each exactly once, and anything else is an internal error. */
+static void ks_stamps_render(Ctx *cx)
+{
+    StrBuf *c = &cx->job->csb;
+    size_t nd = mark_count(c, ks_marks[PCREC_KS_MARK_DEFINE]);
+    size_t ni = mark_count(c, ks_marks[PCREC_KS_MARK_INIT]);
+    if (nd != ni || nd > 1)
+        pcrec_ctx_fail(cx, 0, "internal error: the artifact holds %zu findings "
+                       "stamp marks and %zu initializer marks (pcrec_emit_ks_mark)",
+                       nd, ni);
+    if (!nd) return;
+    const char *value = pcrec_find_stamp(cx, ks_consulted(cx));
+    for (size_t m = 0; m < sizeof ks_marks / sizeof ks_marks[0]; m++) {
+        StrBuf line = { .cx = cx };
+        pcrec_emit_findings_line(cx, &line, (PcrecKsMark)m, value);
+        (void)splice_mark(c, ks_marks[m], line.p ? line.p : "");
+        pcrec_sb_free(&line);
+    }
 }
 
 uint32_t pcrec_memfn_policy(uint64_t flags)
@@ -237,7 +304,12 @@ uint32_t pcrec_memfn_policy(uint64_t flags)
  * before anything measures the text. It ENDS the attempt's kit state
  * ([MEMFN] R4c): the art the emitters' sites were rendered through is the
  * one the libc record is noted on, and its end checks every defined site
- * was used (`pcrec_memfn_art_end`). */
+ * was used (`pcrec_memfn_art_end`). Then, after `mf_art_end`, pcrec's own
+ * knowledge stamps render over their marks ([WINDOW-E1] RP, §3.7.3a): the
+ * order is libc scan, `mf_stamps`, the kit lines' splice, `mf_art_end`,
+ * the knowledge stamps. (The kit lines splice BEFORE `mf_art_end`, so no
+ * buffer is held across a call that can refuse; nothing they carry depends
+ * on the kit's end.) */
 void pcrec_memfn_stamps_render(Ctx *cx)
 {
     Job *job = cx->job;
@@ -267,7 +339,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
         pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
                         (unsigned long long)(job->csb.simd_guarded +
                                              job->hsb.simd_guarded));
-    bool ok = !rc && splice_mark(&job->csb, lines.p ? lines.p : "");
+    bool ok = !rc && splice_mark(&job->csb, MEMFN_MARK, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
@@ -285,4 +357,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
                            "counter's table: %s", mf_art_error(art));
     }
     pcrec_memfn_art_end(cx, art);
+    /* §3.3 rule 9's refusal (an underivable kind a kit row consulted) has no
+       case before B3b: no routed kit row consults a kind yet */
+    ks_stamps_render(cx);
 }

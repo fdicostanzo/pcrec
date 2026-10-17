@@ -40,15 +40,17 @@ THE POWER FLOOR. consulted-moved per arm, held to FLOORS (literals measured at
 landing, ~80% of the measured count, for the slice this runs at): a
 perturbation too weak to move anything cannot read green.
 
-THE STANDING EXCEPTION, F-5 (window_contract.md §3.7.6, D167 add. 3): the
-stamp reports the FINAL attempt only, so a compile whose discarded attempt
-read the kind stamps "" while its bytes move. Those artifacts are a NAMED
-bucket, selected by an INDEPENDENT criterion — the artifact's own
-`<P>_ENGINE_SEL` says a ladder retry shipped (`size-cap-retry`) — never by
-the findings record; the bucket has an exact-membership pin (F5_PIN) and a
-floor, so it cannot grow silently and goes red when F-5 is fixed (then the
-pin is re-cut, with the union-over-attempts abi event). The pinned witnesses
-are always ADDED to the population, so a slice cannot lose them.
+F-5, FIXED (window_contract.md §3.7.6, D167 add. 3; lane rpunion, abi 79):
+the stamp reported the FINAL attempt only, so a compile whose discarded
+attempt read the kind stamped "" while its bytes moved. Until the fix those
+artifacts were a NAMED bucket (selected by the artifact's own
+`<P>_ENGINE_SEL "size-cap-retry"`, never by the findings record) with an
+exact-membership pin; the stamp is now the union over the compile's
+attempts, so there is no exception: such an artifact FAILS `moved` like any
+other. The two former witnesses (F5_WITNESSES) are always ADDED to the
+population, so a slice cannot lose them, and each must read CONSULTED in its
+arm and still ship from a retry (`size-cap-retry`): the population the fix
+is about stays reached (K35).
 
 THE KIND TABLE. A kind with a payload shape and no PERTURBERS row FAILS: a new
 kind cannot ship unperturbed.
@@ -110,9 +112,10 @@ def perturb_byte_rate(src):
 
 
 PERTURBERS = {"byte-rate": perturb_byte_rate}
-# The F-5 bucket's exact membership (file, pattern): the two corpus witnesses
-# whose discarded attempt asked (window_contract.md §3.7.6 F-5).
-F5_PIN = {("tests/uprops/size_ladder_prefilter_drop.rxt", r"(\p{Xwd})x", "noreqbyte/utf8"),
+# F-5's two corpus witnesses (file, pattern, arm), whose discarded attempt
+# asked (window_contract.md §3.7.6 F-5): the bucket they formed before the
+# union-over-attempts fix (abi 79) is gone, and each must now read CONSULTED.
+F5_WITNESSES = {("tests/uprops/size_ladder_prefilter_drop.rxt", r"(\p{Xwd})x", "noreqbyte/utf8"),
           ("tests/utf8/wclass_illformed.rxt", r"x(\p{Xwd})y", "noreqbyte/utf8")}
 # Power floors per arm at --every 16 (measured at landing, ~80%); the full
 # population (--every 1) is held to the prototype's own counts' ~80%.
@@ -155,7 +158,7 @@ arms = [(n + "/" + e, (["-e", "utf8"] if e == "utf8" else []) + f)
 pats = es.enumerate_corpus(a.pcrec, a.tree, 60)
 keyed = sorted(set((f, p) for f, _k, p in pats))
 pop = [x for i, x in enumerate(keyed) if i % a.every == 0]
-pinned = {(f, p.encode()) for f, p, _ in F5_PIN}
+pinned = {(f, p.encode()) for f, p, _ in F5_WITNESSES}
 pop = sorted(set(pop) | {x for x in keyed if (x[0], x[1]) in pinned})
 ST = re.compile(rb'^#define [A-Z0-9_]+_FINDINGS "(.*)"$', re.M)
 MASK = re.compile(rb'^(#define [A-Z0-9_]+_FINDINGS .*|    \.findings = .*)$', re.M)
@@ -195,13 +198,12 @@ def one(item):
 
 items = [(arm, extra, x) for arm, extra in arms for x in pop]
 c = collections.Counter()
-f5 = set()
+f5 = {}
 with ThreadPoolExecutor(a.jobs) as ex:
     for arm, v, f, p, sel in ex.map(one, items):
         key = (f, p.decode("utf-8", "replace"), arm)
-        if v == "FAIL-moved" and sel == b"size-cap-retry":
-            f5.add(key)              # F-5's bucket, by the artifact's own stamp
-            v = "f5-bucket"
+        if key in F5_WITNESSES:
+            f5[key] = (v, sel)
         c[(arm, v)] += 1
         if v.startswith("FAIL"):
             bad(f"C-PERT {arm} {v[5:]}: {f}: {p.decode('utf-8', 'replace')}")
@@ -221,10 +223,12 @@ nf = sum(1 for (arm, v) in c if v.startswith("FAIL"))
 if not nf and not nfloor and floors is not None:
     ok(f"C-PERT no artifact's bytes, refusal or stamp moves with data its stamp omits "
        f"({len(items)} artifacts x 3 compiles; power floors held in all {len(arms)} arms)")
-if f5 == F5_PIN:
-    ok(f"C-PERT the F-5 bucket (an earlier attempt's ask, stamp \"\") is exactly its "
-       f"{len(F5_PIN)} pinned witnesses (window_contract.md §3.7.6; D167 add. 3 fixes it)")
+f5_ok = [k for k, (v, sel) in f5.items()
+         if v.startswith("consulted-") and sel == b"size-cap-retry"]
+if sorted(f5_ok) == sorted(F5_WITNESSES):
+    ok(f"C-PERT F-5's {len(F5_WITNESSES)} former witnesses ship from a retry and read "
+       "CONSULTED: the stamp is the union over attempts (D167 add. 3)")
 else:
-    bad(f"C-PERT the F-5 bucket is {sorted(f5)}, pinned {sorted(F5_PIN)}: re-cut the pin only "
-        "with the union-over-attempts event")
+    bad(f"C-PERT F-5's former witnesses read {sorted(f5.items())}, each expected "
+        "consulted-* with ENGINE_SEL size-cap-retry (a missing one: the population lost it)")
 sys.exit(1 if fails else 0)

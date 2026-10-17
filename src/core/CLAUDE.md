@@ -160,6 +160,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `tests/findings/` §14 (C-E1-1..5), §15 (C-PERT), `structural_check.py`
   S4 (no memo reader outside this file).
 
+- **compile.c / findings.c ([WINDOW-E1] the union, lane rpunion,
+  2026-10-17; D167 addendum 3, abi 79)** — the knowledge stamp lists a query
+  ANY attempt of the compile asked: `compile_driver` owns `find_union` and
+  lends it to every attempt (`Ctx.find_union`, `dfa_memo`'s shape);
+  `job_cleanup`, every attempt's end, ORs the attempt's asks
+  (`pcrec_find_asked`, a `PCREC_FQ_BIT` per query) into it; a part's facts
+  carry its own compile's union (`PcrecPartFacts.find_consulted`).
+  `pcrec_find_stamp(cx, consulted)` renders a consulted SET, deriving this
+  attempt's memo if another attempt or a part was the asker (a consulted
+  underivable answer refuses, as the ask did). The render is
+  src/gen/memfn_stamps.c's (RP).
+
 - **compile.c ([WINDOW-E1] addition, lane e1build, 2026-10-17)** —
   `compile_driver` builds the attempt's ANALYSIS OBJECT right after
   `pcrec_find_resolve` (`pcrec_memfn_analysis_build`, src/gen/memfn_sites.c,

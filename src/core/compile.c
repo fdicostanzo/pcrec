@@ -193,6 +193,9 @@ static const NsReserve *ns_reserved_by(const char *p)
 static void job_cleanup(Ctx *cx)
 {
     if (cx->job) {
+        /* [WINDOW-E1] F-5: the attempt's end, so its asks join the
+         * compile's union before its record is freed (D167 addendum 3). */
+        if (cx->find_union) *cx->find_union |= pcrec_find_asked(cx);
         free(cx->job->nfa.st);
         free(cx->job->rnfa.st);
         free(cx->job->dfa.st);
@@ -1978,6 +1981,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * and nothing here is cached in a register across the `setjmp`. */
     DfaMemo dmemo;
     memset(&dmemo, 0, sizeof dmemo);
+    /* [WINDOW-E1] F-5 the queries every finished attempt consulted
+       (`Ctx.find_union`): the knowledge stamp is their union */
+    unsigned find_union = 0;
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
      * way `overflow_why` is and for exactly the same reason: `job_cleanup`
@@ -2119,6 +2125,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.fit_seq = fit_seq_cells;
         cx.fit_nseq = fit_nseq;
         cx.dfa_memo = &dmemo;
+        cx.find_union = &find_union;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -3275,6 +3282,7 @@ facts_force:
                 pcrec_ctx_fail(&cx, 0, "internal error: a part's facts have no "
                                "arena or its forms were never stamped");
             pf->memfn_forms = pcrec_sb_fragf(pf->into, "%s", cx.job->memfn_forms);
+            pf->find_consulted = find_union | pcrec_find_asked(&cx);
         }
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;

@@ -1,0 +1,709 @@
+census: 5275 patterns x 9 arms (every 1), mask-abi=True
+  default/byte	refused-both	441
+  default/byte	same	4834
+  default/utf8	refused-both	420
+  default/utf8	same	4855
+  noreq-pf/byte	mover-stamp	27
+  noreq-pf/byte	refused-both	441
+  noreq-pf/byte	same	4807
+  noreq-pf/utf8	mover-stamp	29
+  noreq-pf/utf8	refused-both	420
+  noreq-pf/utf8	same	4826
+  noreq-vm/byte	refused-both	440
+  noreq-vm/byte	same	4835
+  noreq-vm/utf8	refused-both	418
+  noreq-vm/utf8	same	4857
+  noreqbyte/byte	mover-stamp	27
+  noreqbyte/byte	refused-both	441
+  noreqbyte/byte	same	4807
+  noreqbyte/utf8	mover-stamp	31
+  noreqbyte/utf8	refused-both	420
+  noreqbyte/utf8	same	4824
+  vm/byte	refused-both	440
+  vm/byte	same	4835
+movers+asymmetric: 114
+MOVER	noreqbyte/byte	mover-stamp	tests/assertions/rev_end.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/base/anchors.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	(?i)^(?:select|union)\b|\bor\s+1=1\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	\A\s+|\s+\z
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	\G\n|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	\Ga\n?|a$|a\n$|$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^"|"$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^#|//.*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^(?:GET|POST)\s|HTTP/\d\.\d$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^/+|/+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^[ \t]+|[ \t]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^['"]|['"]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^[\s\x{a0}]+|[\s\x{a0}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\(|\)$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\.+|\.+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\W+|\W+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\[|\]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\s*\{|\}\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^\s+|\s+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^q|\s*?$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^q|a$|a\n$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^x|a$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^x|a$(?=\n)
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^|end$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/byte	mover-stamp	tests/compound/split.rxt	^|x$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreqbyte/utf8	mover-stamp	tests/assertions/rev_end.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/base/anchors.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	(?i)^(?:select|union)\b|\bor\s+1=1\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	\A\s+|\s+\z
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	\G\n|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	\Ga\n?|a$|a\n$|$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^"|"$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^#|//.*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^(?:GET|POST)\s|HTTP/\d\.\d$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^/+|/+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^[ \t]+|[ \t]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^['"]|['"]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^[\s\x{200c}]+|[\s\x{200c}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^[\s\x{a0}]+|[\s\x{a0}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\(|\)$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\.+|\.+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\W+|\W+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\[|\]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\s*\{|\}\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\s*|\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^\s+|\s+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^q|\s*?$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^q|a$|a\n$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^x|a$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^x|a$(?=\n)
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^|end$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/compound/split.rxt	^|x$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/uprops/size_ladder_prefilter_drop.rxt	(\p{Xwd})x
+  ENGINE_SEL=size-cap-retry COMPOUND=none FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreqbyte/utf8	mover-stamp	tests/utf8/wclass_illformed.rxt	x(\p{Xwd})y
+  ENGINE_SEL=size-cap-retry COMPOUND=none FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/byte	mover-stamp	tests/assertions/rev_end.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/base/anchors.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	(?i)^(?:select|union)\b|\bor\s+1=1\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	\A\s+|\s+\z
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	\G\n|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	\Ga\n?|a$|a\n$|$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^"|"$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^#|//.*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^(?:GET|POST)\s|HTTP/\d\.\d$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^/+|/+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^[ \t]+|[ \t]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^['"]|['"]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^[\s\x{a0}]+|[\s\x{a0}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\(|\)$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\.+|\.+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\W+|\W+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\[|\]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\s*\{|\}\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^\s+|\s+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^q|\s*?$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^q|a$|a\n$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^x|a$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^x|a$(?=\n)
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^|end$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/byte	mover-stamp	tests/compound/split.rxt	^|x$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=default:1822fb973b95a4da'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=default:1822fb973b95a4da",
+MOVER	noreq-pf/utf8	mover-stamp	tests/assertions/rev_end.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/base/anchors.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	(?i)^(?:select|union)\b|\bor\s+1=1\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	\A\s+|\s+\z
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	\G\n|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	\Ga$|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	\Ga\n?|a$|a\n$|$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^"|"$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^#|//.*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^(?:GET|POST)\s|HTTP/\d\.\d$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^/+|/+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^[ \t]+|[ \t]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^['"]|['"]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^[\s\x{200c}]+|[\s\x{200c}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^[\s\x{a0}]+|[\s\x{a0}]+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\(|\)$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\.+|\.+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\W+|\W+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\[|\]$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\s*\{|\}\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\s*|\s*$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^\s+|\s+$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^a|b$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^q|\s*?$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^q|a$|a\n$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^x|a$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^x|a$(?=\n)
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^|end$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+MOVER	noreq-pf/utf8	mover-stamp	tests/compound/split.rxt	^|x$
+  ENGINE_SEL=selected COMPOUND=split FINDINGS '' -> 'byte-rate=none'
+  | -#define RX_FINDINGS ""
+  | +#define RX_FINDINGS "byte-rate=none"
+  | -    .findings = "",
+  | +    .findings = "byte-rate=none",
+== census COMPLETE

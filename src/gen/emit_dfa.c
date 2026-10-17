@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 78
+#define PCREC_ARTIFACT_ABI 79
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2980,17 +2980,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     }
 
     /* [FINDINGS] B1 `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS ARTIFACT WAS
-     * BUILT FROM: one `query=bundle:digest` item per query the compile asked,
-     * `query=none` where the analysis declared nothing for this encoding, ""
-     * where nothing asked (findings design §7). It is written HERE, beside
-     * its `rx_info` mirror and after every emitter has run, and not in the
-     * prologue with `<PREFIX>_REQ_BYTE`'s family, because the stamp must read
-     * the record after the LAST reader (§6.4 rule 2): the offset-k selection
-     * asks while the DFA body is being written, which is after the prologue
-     * on a build where the necessary-byte analysis was denied. The value is
-     * the final attempt's record, since `Job` is per attempt. */
-    const char *findings = pcrec_find_stamp(cx);
-    pcrec_sb_stamp_str(c, upper, "FINDINGS", findings);
+     * BUILT FROM (findings design §7). Its PLACE is here, beside its
+     * `rx_info` mirror and not in the prologue with `<PREFIX>_REQ_BYTE`'s
+     * family; its VALUE is not written here. [WINDOW-E1] RP: the stamp must
+     * read the record after the LAST reader (§6.4 rule 2), and the memfn
+     * kit, whose consultations end at `mf_art_end`, reads after every
+     * emitter. So this writes a MARK, and the finishing pass renders the
+     * line over it after `mf_art_end` (src/gen/memfn_stamps.c,
+     * window_contract.md §3.7.3a); the text is `pcrec_emit_findings_line`'s,
+     * below. The initializer's mark further down is the same event. */
+    pcrec_emit_ks_mark(c, PCREC_KS_MARK_DEFINE);
     pcrec_sb_printf(c, "const struct rx_info %s = {\n", infoname);
     /* THE `abi` NUMBER, and where its change log lives.
      *
@@ -3289,10 +3288,27 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                         cx->opt->prefix, cx->n_vars);
     else
         pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
-    pcrec_sb_puts(c, "    .findings = ");
-    emit_c_string_literal(c, findings, strlen(findings));
-    pcrec_sb_puts(c, ",\n");
+    pcrec_emit_ks_mark(c, PCREC_KS_MARK_INIT);
     pcrec_sb_puts(c,   "};\n");
+}
+
+/* [WINDOW-E1] RP: writes the `<PREFIX>_FINDINGS` line (`m` DEFINE) or the
+ * `.findings = …` initializer line (`m` INIT) for the stamp text `value`, the
+ * two lines `emit_info_def` marks. Called by the finishing pass, once per
+ * mark, at the placeholder prefix. */
+void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value)
+{
+    switch (m) {
+    case PCREC_KS_MARK_DEFINE:
+        pcrec_sb_stamp_str(c, pcrec_sb_upper(&cx->arena, cx->opt->prefix),
+                           "FINDINGS", value);
+        return;
+    case PCREC_KS_MARK_INIT:
+        pcrec_sb_puts(c, "    .findings = ");
+        emit_c_string_literal(c, value, strlen(value));
+        pcrec_sb_puts(c, ",\n");
+        return;
+    }
 }
 
 /* [M5-SEAM] (D58, DD-12 (7)) THE RESIDUAL EMBED. The artifact's ONE encoding

@@ -252,12 +252,21 @@ int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256]);
 
 /* ---- THE STAMP (design §7) ----------------------------------------------- */
 
-/* The `<PREFIX>_FINDINGS` / `rx_info.findings` value for this attempt's
- * record: one `query=bundle:digest` item per query the compile ASKED
- * (`query=none` where nothing answered it), in the fixed query order,
- * `;`-joined; the empty string when nothing was asked. Arena text. Read
- * after the last reader has run (§6.4 rule 2). */
-const char *pcrec_find_stamp(Ctx *cx);
+/* The queries a reader ASKED on this attempt, a bit per `PCREC_FQ_*` row
+ * (`PCREC_FQ_BIT`). The knowledge stamp ORs it with every other attempt's
+ * and every compound part's (D167 addendum 3). */
+#define PCREC_FQ_BIT(q) (1u << (q))
+unsigned pcrec_find_asked(const Ctx *cx);
+
+/* The `<PREFIX>_FINDINGS` / `rx_info.findings` value for `consulted`, the
+ * queries ANY attempt of the compile (and any compound part) consulted, a
+ * bit per `PCREC_FQ_*` row (D167 addendum 3): one `query=bundle:digest`
+ * item per query in it (`query=none` where nothing answered it), in the
+ * fixed query order, `;`-joined; the empty string when it is empty. The
+ * bundle and digest are this attempt's derivation, which every attempt of
+ * one compile shares. Arena text. Read after the last reader has run (§6.4
+ * rule 2; window_contract.md §3.7.3a). */
+const char *pcrec_find_stamp(Ctx *cx, unsigned consulted);
 
 /* The digest of a byte-rate, as the stamp spells it: FNV-1a-64 over the tag
  * `pcrec-find-1\0byte-rate\0` and the 256 derived ppm values, uint32
