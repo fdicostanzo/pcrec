@@ -30,15 +30,27 @@
  *
  * EAGER: every name is resolved before the compile, so a bad name refuses
  * even a pattern that would never ask a query — predictability over
- * laziness (§4.3). */
+ * laziness (§4.3).
+ *
+ * [KNOW-SRC] K1: THE STOP LOOP IS THE KNOWLEDGE MODULE'S. One link's lookup
+ * (`find_bundle`) is `pcrec_ks_resolve` driven by the analysis kind's row
+ * (src/parse/ks_analysis.c: the exact entry match, the S2 fall-through note
+ * and the two-bundle refusal are its COLUMNS); this file keeps what is the
+ * analysis kind's own — the chain, `#include_next`, the cycle and depth
+ * refusals, the terminal — and builds a link from wherever the resolver
+ * landed. Under `-DPCREC_KSRC_BOTHWAYS` every lookup is ALSO made by the
+ * pre-K1 loop, kept verbatim below, and the two must agree (measure_sets.md
+ * §9.7 K1; K2 deletes the old loop). */
 
 #include <dirent.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
 #include "core/internal.h"
+#include "core/ksrc.h"
 #include "enc/enc.h"
 
 /* One resolution in progress: where to look, where to put the answer, and
@@ -73,11 +85,6 @@ static const char *find_strndup(Arena *a, const char *s, size_t n)
     d[n] = 0;
     return d;
 }
-
-/* The stop index space: 0 is S1, 1..ndirs are the `-I` directories in
- * order, ndirs + 1 is the store. A stop that is absent (no S1) is skipped
- * rather than renumbered, so `next(s)` is always `s + 1`. */
-static size_t stop_store(const FindWalk *w) { return w->ndirs + 1; }
 
 /* The bundle's own row in `src`, or NULL. */
 static const RxtRow *bundle_row(const RxtSource *src, const char *name)
@@ -146,11 +153,43 @@ static void link_from_source(FindWalk *w, const RxtSource *src,
     out->nblocks = nb;
 }
 
+/* The resolver's allocator: the walk's arena. */
+static void *find_alloc(void *a, size_t n)
+{
+    return pcrec_arena_alloc(a, n);
+}
+
+/* The two stops that are this walk's own data: does the compiling file (S1)
+ * or the store (S3) define bundle `name`? */
+static bool find_has(void *ctx, KsAt at, const char *name)
+{
+    const FindWalk *w = ctx;
+    PcrecFindLink tmp;
+    if (at == KS_AT_S1) return bundle_row(w->s1, name) != NULL;
+    return pcrec_find_store_link(name, PCREC_FIND_STOP_STORE, &tmp);
+}
+
+/* §9's fall-through note, on stderr. */
+static void find_note(void *ctx, const char *text)
+{
+    (void)ctx;
+    fprintf(stderr, "pcrec: note: %s\n", text);
+}
+
+#ifdef PCREC_KSRC_BOTHWAYS
+/* ---- THE PRE-K1 LOOP, kept verbatim for the both-ways check (K2 deletes
+ * it). ---------------------------------------------------------------- */
+
+/* The stop index space: 0 is S1, 1..ndirs are the `-I` directories in
+ * order, ndirs + 1 is the store. A stop that is absent (no S1) is skipped
+ * rather than renumbered, so `next(s)` is always `s + 1`. */
+static size_t stop_store(const FindWalk *w) { return w->ndirs + 1; }
+
 /* Does directory `dir` hold an entry named EXACTLY `fname`? An equality
  * test over the entries, never discovery: a case-insensitive filesystem
  * would open `Log.rxt` for `log.rxt`, and this is what refuses that
  * [r2 M-S6]. */
-static bool dir_has_exact(const char *dir, const char *fname)
+static bool old_dir_has_exact(const char *dir, const char *fname)
 {
     DIR *d = opendir(dir);
     struct dirent *e;
@@ -167,7 +206,7 @@ typedef enum { PROBE_ABSENT, PROBE_FOUND, PROBE_PASS, PROBE_ERROR } ProbeRes;
 
 /* Stop S2 at directory `dir`: `DIR/<name>.rxt`, exact-name, one bundle per
  * file (§4.1). A file naming no bundle `name` is PROBE_PASS, with the note. */
-static ProbeRes probe_dir(FindWalk *w, const char *dir, const char *name,
+static ProbeRes old_probe_dir(FindWalk *w, const char *dir, const char *name,
                           PcrecFindLink *out)
 {
     size_t nlen = strlen(name), dlen = strlen(dir);
@@ -180,7 +219,7 @@ static ProbeRes probe_dir(FindWalk *w, const char *dir, const char *name,
     size_t nbundles = 0;
     snprintf(fname, nlen + 5, "%s.rxt", name);
     snprintf(path, dlen + 1 + nlen + 5, "%s/%s", dir, fname);
-    if (!dir_has_exact(dir, fname)) return PROBE_ABSENT;
+    if (!old_dir_has_exact(dir, fname)) return PROBE_ABSENT;
     if (stat(path, &sb) == 0 &&
         (unsigned long long)sb.st_size > PCREC_MAX_FIND_BUNDLE_BYTES) {
         find_fail(w, "%s: %llu bytes, over PCREC_MAX_FIND_BUNDLE_BYTES "
@@ -220,7 +259,7 @@ static ProbeRes probe_dir(FindWalk *w, const char *dir, const char *name,
 
 /* The stops searched, for the unknown-name refusal: the list is the
  * diagnostic's contract, so it comes before anything that merely helps. */
-static const char *stops_text(FindWalk *w)
+static const char *old_stops_text(FindWalk *w)
 {
     size_t n = 64;
     char *t;
@@ -239,7 +278,7 @@ static const char *stops_text(FindWalk *w)
 
 /* `find(name, from)` of design §4.3: the first stop >= `from` defining
  * `name`, into `*out` and `*at`. -1 with the refusal filled. */
-static int find_bundle(FindWalk *w, const char *name, size_t from,
+static int old_find_bundle(FindWalk *w, const char *name, size_t from,
                        PcrecFindLink *out, size_t *at)
 {
     for (size_t s = from; s <= stop_store(w); s++) {
@@ -252,7 +291,7 @@ static int find_bundle(FindWalk *w, const char *name, size_t from,
                 return 0;
             }
         } else if (s <= w->ndirs) {
-            ProbeRes r = probe_dir(w, w->dirs[s - 1], name, out);
+            ProbeRes r = old_probe_dir(w, w->dirs[s - 1], name, out);
             if (r == PROBE_ERROR) return -1;
             if (r == PROBE_FOUND) { *at = s; return 0; }
         } else if (pcrec_find_store_link(name, PCREC_FIND_STOP_STORE, out)) {
@@ -261,7 +300,94 @@ static int find_bundle(FindWalk *w, const char *name, size_t from,
         }
     }
     return find_fail(w, "unknown analysis '%s' (searched: %s)", name,
-                     stops_text(w));
+                     old_stops_text(w));
+}
+
+/* Both derivations of one lookup must agree: return code, stop, bundle,
+ * location, block count and refusal text. A disagreement is an internal
+ * error in a debug build, by design loud. */
+static void find_bothways(FindWalk *w, const char *name, size_t from, int rc,
+                          const PcrecFindLink *out, size_t at)
+{
+    pcrec_error oerr = { 0 };
+    FindWalk ow = *w;
+    PcrecFindLink ol;
+    size_t oat = 0;
+    int orc;
+    ow.err = &oerr;
+    ow.notes = false;
+    memset(&ol, 0, sizeof ol);
+    orc = old_find_bundle(&ow, name, from, &ol, &oat);
+    if (orc != rc ||
+        (rc == 0 && (oat != at || ol.stop != out->stop ||
+                     strcmp(ol.bundle, out->bundle) != 0 ||
+                     ol.nblocks != out->nblocks ||
+                     !ol.location != !out->location ||
+                     (ol.location && strcmp(ol.location, out->location)))) ||
+        (rc != 0 && strcmp(oerr.msg, w->err->msg) != 0)) {
+        fprintf(stderr, "pcrec: internal error: [KNOW-SRC] K1 both-ways: "
+                "analysis '%s' from stop %zu resolves differently "
+                "(old rc %d at %zu '%s', new rc %d at %zu '%s')\n",
+                name, from, orc, oat, orc ? oerr.msg : ol.bundle, rc, at,
+                rc ? w->err->msg : out->bundle);
+        abort();
+    }
+}
+#endif
+
+/* `find(name, from)` of design §4.3: the first stop >= `from` defining
+ * `name`, into `*out` and `*at` (the stop index space is ksrc.h's `KsAt`:
+ * 0 S1, 1..ndirs the `-I` directories, ndirs + 1 the store, so `next(s)` is
+ * always `s + 1`). -1 with the refusal filled. The stop loop
+ * is `pcrec_ks_resolve`'s; the link is built here from where it landed. */
+static int find_bundle(FindWalk *w, const char *name, size_t from,
+                       PcrecFindLink *out, size_t *at)
+{
+    KsAlloc al = { find_alloc, w->a };
+    KsErr kerr;
+    KsWalk kw = {
+        .kind = &pcrec_ks_analysis, .dirs = w->dirs, .ndirs = w->ndirs,
+        .s1 = w->s1 != NULL, .srcdir = "", .alloc = &al, .ctx = w,
+        .has = find_has, .note = w->notes ? find_note : NULL, .err = &kerr
+    };
+    KsHit hit;
+    int rc = 0;
+    switch (pcrec_ks_resolve(&kw, KS_REQ_NAME, name, from, &hit)) {
+    case KS_RES_ABSENT:
+        pcrec_ks_refuse_unknown(&kw, name);
+        rc = find_fail(w, "%s", kerr.msg);
+        break;
+    case KS_RES_ERROR:
+        rc = find_fail(w, "%s", kerr.msg);
+        break;
+    case KS_RES_FOUND:
+        switch (hit.at) {
+        case KS_AT_S1:
+            link_from_source(w, w->s1, bundle_row(w->s1, name),
+                             PCREC_FIND_STOP_SOURCE, NULL, out);
+            break;
+        case KS_AT_DIRS: {
+            RxtSource *src = hit.doc;
+            link_from_source(w, src, bundle_row(src, name),
+                             PCREC_FIND_STOP_DIR, hit.path, out);
+            pcrec_rxt_source_free(src);
+            break;
+        }
+        case KS_AT_STORE:
+            pcrec_find_store_link(name, PCREC_FIND_STOP_STORE, out);
+            break;
+        case KS_AT_SRCDIR:   /* not an analysis stop (its row's `stops`) */
+            rc = find_fail(w, "internal error: analysis '%s' resolved at a "
+                           "source-directory stop", name);
+            break;
+        }
+        *at = hit.stop;
+        break;
+    }
+#ifdef PCREC_KSRC_BOTHWAYS
+    find_bothways(w, name, from, rc, out, rc ? 0 : *at);
+#endif
+    return rc;
 }
 
 int pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
@@ -349,6 +475,11 @@ void pcrec_find_resolve(Ctx *cx, bool notes)
         if (!owned) pcrec_ctx_fail(cx, 0, "%s", ferr.msg);
         s1 = owned;
     }
+#ifdef PCREC_KS_TRACE
+    /* The lookup trace's ATTEMPT marker (findings.h): every record after it
+     * belongs to this attempt. */
+    fprintf(stderr, "KSTRACE\tanalysis\t-\tresolve\t-\n");
+#endif
     rc = pcrec_find_chain_build(&cx->arena, o->analysis, s1, o->analysis_dirs,
                                 notes, &cx->job->find.chain, &ferr);
     if (owned) pcrec_rxt_source_free(owned);

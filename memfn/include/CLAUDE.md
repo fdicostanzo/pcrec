@@ -1,7 +1,7 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 10 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 11 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
   `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a);
   6: M4 prep, R-7: a reads-below FIND's range bounded by its reads
   (Q-R7-1, at `MF_OP_FIND`), `MF_EMPTY_AT_N` (Q-R7-2) and `on_miss`'s
@@ -14,7 +14,7 @@
   count (Q-R10-5); no MF_VOCAB move; 9: RQ-2 (D157, pcrec's lane rq2):
   `mf_pred.rank_n`/`rank_pos`/`rank_ppm`, a predicate's RUN-term positions
   ordered by pcrec's prior rate with each one's rate, and `MF_RANK_MAX`,
-  appended last; no kit row reads them yet; 10: R-13, R4e′ batch 1: `mf_sink.simd_open`/`simd_close`, appended last, renumbered from 9 when RQ-2 landed first), `MF_VOCAB` 3 (M7 prep: `MF_OP_MISMATCH`, F8, the compare loop
+  appended last; no kit row reads them yet; 10: R-13, R4e′ batch 1: `mf_sink.simd_open`/`simd_close`, appended last, renumbered from 9 when RQ-2 landed first; 11: R17-a, R-17's zero-mover seam (setfind.md §11.1, lane r17a): the WINDOW fields `mf_pred.window_stated`/`move_back`/`overshoot` (W0-W2, with the reserved `MF_MOVE_UNBOUNDED`/`MF_OVER_UNBOUNDED`; stated on every forward FIND and only there, the window today the candidate) and `mf_site.decl_point` (W4, the host capability: pcrec calls `mf_locals` once at a dominating point), each appended last; `MF_OP_FIND`'s result named the window's beginning (W3); `fn_ref`'s STMT reading, the storage stem (W5); `mf_result.reads_table`/`includes`; the entries `mf_locals` (the storage point, binding `s`/`n`) and `mf_defined` (what the define chose)), `MF_VOCAB` 3 (M7 prep: `MF_OP_MISMATCH`, F8, the compare loop
   of the subject against a run-time reference span; `MF_H_ON_DIFF`, k
   written and then `on_miss`, which may read it; `MF_T_REF`, a term with
   no data; the `mf_fold` fact NONE/ASCII/UCP, Q-R8-4/5) and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under
@@ -23,7 +23,7 @@
   arena (`mf_arena`) and the hooks (`mf_hooks`); the result and the
   per-artifact state (`mf_result`, `mf_art`) with the entry points
   `mf_art_begin`/`mf_art_end`/`mf_art_error`, `mf_define`/`mf_use`/
-  `mf_emit`/`mf_call`, `mf_flush_helpers`/`mf_includes`/`mf_stamps`, `mf_art_note_libc` (R4a′, the libc record's writer) and
+  `mf_emit`/`mf_call`, `mf_locals`/`mf_defined` (MF_SITE_ABI 11), `mf_flush_helpers`/`mf_includes`/`mf_stamps`, `mf_art_note_libc` (R4a′, the libc record's writer) and
   `mf_vocab_has`; the option registry's view (`mf_option`, `mf_options()`,
   which `--list-axes` prints as its `memfn` section, and `mf_opts_check()`,
   which validates the opaque `--memfn=` string); and K1's reference

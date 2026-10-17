@@ -141,6 +141,37 @@ static inline const char *kit_miss(const mf_hooks *h)
     return h->miss == MF_MISS_N ? h->n : h->miss;
 }
 
+/* ---- the window (W0-W3, MF_SITE_ABI 11; setfind.md §2.2) ---------------- */
+
+/* 1 iff site `s` is one the window fields describe: a FORWARD FIND. Its
+ * pred states window_stated 1; every other site and every preds[] entry
+ * states 0 (site_check). */
+static inline int kit_window_site(const mf_site *s)
+{
+    return s->op == MF_OP_FIND && !s->reverse;
+}
+
+/* d_min, the span's beginning: the least term offset of predicate `p`
+ * (nterm >= 1, site_check's pred_kinds). */
+static inline int32_t kit_d_min(const mf_pred *p)
+{
+    int32_t d = p->term[0].offset;
+    for (unsigned t = 1; t < p->nterm && t < MF_MAX_TERM; t++)
+        if (p->term[t].offset < d) d = p->term[t].offset;
+    return d;
+}
+
+/* Every row born before the window fields reads none of them and keeps no
+ * storage: it serves the window AS THE CANDIDATE (W0 YES, W1 == d_min, W2
+ * ZERO) and any declaration point (W4), which is exactly today's sites
+ * (setfind.md §11.1 "Kit side"). A row that reads a window, or keeps
+ * storage, states its own. */
+#define MF_SERVES_WINDOW_TODAY \
+    [FLD_window_stated]   = CM(YES), \
+    [FLD_move_back]       = CM(D_MIN), \
+    [FLD_overshoot]       = CM(ZERO), \
+    [FLD_decl_point]      = MF_ANY,
+
 /* ---- the per-artifact state ---------------------------------------------- */
 
 struct arm;
@@ -155,6 +186,11 @@ typedef struct {
                                    its function's name, or NULL              */
     unsigned          params;   /* FUNC: which PARAM_* the definition takes   */
     int               used;
+    /* a decl_point site (W4, MF_SITE_ABI 11): the define's `s`/`n` texts
+       (copied: mf_locals binds them and refuses a differing one) and
+       whether its mf_locals has come */
+    const char       *def_s, *def_n;
+    int               placed;
 } site_rec;
 
 struct mf_art {
@@ -219,6 +255,14 @@ typedef struct arm {
                            site's `opts` (D144 item 4); NULL on the rows
                            transcribed from pcrec, which moved no byte and
                            carry no deny, and on the generic row            */
+    /* What mf_defined reports for a site this row renders (MF_SITE_ABI 11,
+       setfind.md §11.1 item 3; appended last, so a row that leaves them
+       out states 0): `reads_table` 1 iff the row's text names the site's
+       tables through pcrec's table_name (rule 7) wherever a SET term states
+       one; `includes` the MF_INC_* bits its text can need, a ROW-level
+       bound (the art's mf_includes stays the exact end-of-art record). */
+    uint8_t     reads_table;
+    uint32_t    includes;
 } arm;
 
 #define generic_arm         MF_NS(generic_arm)

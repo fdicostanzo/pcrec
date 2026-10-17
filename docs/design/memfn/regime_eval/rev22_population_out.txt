@@ -1,0 +1,297 @@
+== 1. subject files (derived rows of manifest.tsv; raw archives excluded)
+file                                              bytes eol         lines  medln  NUL%  win W  lines % <14/<32/<64/64+ label
+binary/BILLS-118-1-hr.zip                      47893641 binary     183038    176   1.0   64 y  0/1/2/97            
+binary/django-5.0.tar                          49960960 binary    1054705     16  13.4   64 y  3/12/26/59          
+binary/libpng-1.6.43.tar                        6615040 binary     178809     29   6.1   64 y  4/13/36/47          
+binary/libpng-1.6.43.tar.gz                     1554715 binary       6068    171   0.4   20 -  0/1/2/97            
+binary/python-3.12.7-docs-html.tar.bz2          8390435 binary      38165    143   0.6   64 y  0/1/3/96            
+code/c.src                                      7231205 lf         191918     34   0.0   64 y  3/13/40/44          
+code/go.src                                      467001 lf          15272     24   0.0    6 -  5/15/43/37          
+code/java.src                                  28100746 lf         786097     33   0.0   64 y  5/11/39/46          
+code/javascript.src                             2730048 lf          82159     23   0.0   36 y  5/16/35/43          
+code/python.src                                17011821 lf         463514     33   0.0   64 y  3/14/48/34          
+code/rust.src                                   1691876 lf          50217     30   0.0   22 y  5/15/43/37          
+logs/apache_access.log                          2369603 lf          10000    230   0.0   31 y  0/0/0/100           
+logs/apache_error.log                           5121846 lf          56481     96   0.0   64 y  0/0/6/94            
+logs/bgl.log                                   41942927 lf         309536    127   0.0   64 y  0/0/0/100           
+logs/hadoop.log                                41942934 crlf       355100    129   0.0   64 y  0/0/8/91            
+logs/linux_syslog.log                           2302067 lf          25567     74   0.0   30 y  0/0/3/97            
+logs/openstack.log                             41942978 lf         140875    317   0.0   64 y  0/0/0/100           
+logs/zookeeper.log                             10599180 crlf        74380    139   0.0   64 y  0/0/0/100           
+markup/django_docs.rst                          5827256 lf         155958     32   0.0   64 y  2/10/26/62          
+markup/jquery_md.md                               25712 lf            651      7   0.0    0 -  4/6/18/71           
+markup/python_docs.html                        41942992 lf         514933     42   0.0   64 y  3/4/9/85            
+nonenglish/pg11291.txt                           430037 crlf         5292    108   0.0    5 -  1/1/4/95            
+nonenglish/pg14741.txt                           220529 crlf         5655     45   0.0    2 -  2/2/70/27           
+nonenglish/pg15008.txt                           239177 crlf         4767     34   0.0    2 -  2/3/12/84           
+nonenglish/pg17814.txt                           189012 crlf         3853     46   0.0    1 -  1/7/22/70           
+nonenglish/pg17839.txt                           186151 crlf         3310     68   0.0    1 -  2/6/10/82           
+nonenglish/pg1982.txt                             38473 crlf          594     68   0.0    0 -  1/2/10/87           
+nonenglish/pg20175.txt                           452084 crlf         3149     84   0.0    5 -  0/1/6/93            MISLABELLED
+nonenglish/pg26731.txt                           227670 crlf         3531     71   0.0    2 -  1/3/11/85           
+nonenglish/pg2790.txt                             67720 crlf         1641     44   0.0    0 -  1/1/73/25           
+nonenglish/pg2890.txt                            115195 crlf         1834     70   0.0    1 -  0/1/7/92            
+nonenglish/pg30774.txt                           102381 crlf         1387     70   0.0    1 -  1/2/7/91            
+nonenglish/pg31617.txt                           564929 crlf         1933    115   0.0    7 -  0/0/2/97            
+nonenglish/pg31757.txt                           180913 crlf         1320     68   0.0    1 -  0/2/6/92            
+nonenglish/pg33307.txt                           223791 crlf         1474     67   0.0    2 -  0/1/6/92            
+nonenglish/pg34013.txt                           367445 crlf         1074     70   0.0    4 -  0/0/2/97            
+nonenglish/pg37196.txt                            72242 crlf          986     70   0.0    0 -  1/1/6/92            
+nonenglish/pg43740.txt                           249476 crlf         2544    127   0.0    2 -  0/0/4/95            
+nonenglish/pg4572.txt                             95985 crlf         1680     73   0.0    1 -  1/1/9/89            
+nonenglish/pg4573.txt                            100953 crlf         1726     73   0.0    1 -  1/1/8/90            
+nonenglish/pg4580.txt                            667880 crlf        11106     73   0.0    8 -  1/1/5/93            
+nonenglish/pg61024.txt                           156148 crlf         1836    120   0.0    1 -  0/1/5/93            
+nonenglish/pg6696.txt                            595842 crlf         9152     69   0.0    7 -  0/1/8/91            
+nonenglish/pg6698.txt                           1226130 crlf        19355     68   0.0   16 -  0/1/14/86           
+nonenglish/pg7221.txt                            382970 crlf        10046     37   0.0    4 -  3/2/47/47           
+nonenglish/pg7290.txt                            217952 crlf         2625     97   0.0    2 -  0/1/4/95            
+nonenglish/pg7317.txt                            338372 crlf         6942     37   0.0    4 -  2/0/1/96            
+nonenglish/pg8186.txt                            922226 crlf        17811     66   0.0   12 -  1/2/14/83           MISLABELLED
+nonenglish/pg8453.txt                            726547 crlf        15332     65   0.0    9 -  2/3/15/81           MISLABELLED
+nonenglish/pg9000.txt                             35209 crlf          850     50   0.0    0 -  2/1/51/46           
+prose/pg1184.txt                                2787124 crlf        61680     64   0.0   37 y  2/4/14/81           
+prose/pg1342.txt                                 772386 crlf        14915     69   0.0   10 -  1/2/8/88            
+prose/pg135.txt                                 3369207 crlf        73590     66   0.0   44 y  2/3/12/83           
+prose/pg1400.txt                                1058204 crlf        20780     68   0.0   14 -  1/3/10/86           
+prose/pg1661.txt                                 607606 crlf        12310     67   0.0    8 -  1/3/11/85           
+prose/pg2600.txt                                3359610 crlf        66041     68   0.0   44 y  1/2/9/88            
+prose/pg2701.txt                                1276315 crlf        22331     69   0.0   17 -  1/2/8/90            
+prose/pg345.txt                                  890348 crlf        15853     70   0.0   11 -  1/2/7/91            
+prose/pg76.txt                                   622460 crlf        12350     68   0.0    8 -  2/3/9/86            
+prose/pg84.txt                                   448885 crlf         7741     69   0.0    5 -  1/1/8/90            
+prose/pg98.txt                                   807197 crlf        16283     68   0.0   10 -  1/3/10/86           
+prose/pg996.txt                                 2391678 crlf        43289     69   0.0   31 y  1/2/7/90            
+structured/census_gazetteer_places.tsv          6498405 lf          32330    200   0.0   64 y  0/0/0/100           
+structured/govinfo_bills.xml                   41943000 lf          69592    130   0.0   64 y  0/1/1/98            
+structured/ne_10m_admin_0_countries.geojson    13287234 one-line        1 13287233   0.0   64 y  0/0/0/100           
+structured/usgs_2024q1.csv                      2038655 lf          10547    189   0.0   27 y  0/0/0/100           
+structured/usgs_2024q1.geojson                  4172801 lf           5825    712   0.0   55 y  0/0/0/100           
+  line-ending classes per corpus class:
+    binary      binary     5 files
+    code        lf         6 files
+    logs        crlf       2 files
+    logs        lf         5 files
+    markup      lf         3 files
+    nonenglish  crlf      29 files
+    prose       crlf      12 files
+    structured  lf         4 files
+    structured  one-line   1 files
+
+== 2. questions: expected class (ESTIMATE), shape, g_est, regime brackets
+id   class      shape  eol    |S| est              g_est   B/match rlo    rup     pool why
+L01  logs       lines  crlf     1 OTHER            375.0     77816 LINER  LINER     64 pf_memchr (one first byte)
+L02  logs       all    lf      10 RT                 4.2       232 DINGHY TUG       31 set FIND, |S| = 10
+L03  logs       all    lf      10 RT                 5.2       165 DINGHY TUG       64 set FIND, |S| = 10
+L04  logs       all    crlf    10 RT                 3.5       143 DINGHY TUG       64 set FIND, |S| = 10
+L05  logs       lines  lf       2 RT                43.7       583 DINGHY LINER     30 set FIND, |S| = 2
+L06  logs       all    lf       1 OTHER             39.5    789868 DINGHY LINER     31 pf_memchr (one first byte)
+L07  logs       all    lf       1 OTHER             39.5       237 DINGHY LINER     31 pf_memchr (one first byte)
+L08  logs       all    lf       1 OTHER             39.5    107709 DINGHY LINER     31 pf_memchr (one first byte)
+L09  logs       all    crlf     1 OTHER             37.1     11454 DINGHY LINER     64 pf_memchr (one first byte)
+L10  logs       all    crlf    26 RT                 1.7      2245 DINGHY TUG       64 set FIND, |S| = 26
+L11  logs       all    lf       1 OTHER             68.9       324 LINER  LINER     64 pf_memchr (one first byte)
+L12  logs       all    lf      22 RT                 1.7       227 DINGHY TUG       64 set FIND, |S| = 22
+L13  logs       lines  lf       4 RT               130.1     17418 LINER  LINER     64 set FIND, |S| = 4
+L14  logs       all    lf       1 OTHER             51.9       586 DINGHY LINER     64 pf_memchr (one first byte)
+L15  logs       lines  lf       1 OTHER             32.2       440 DINGHY LINER     64 pf_memchr (one first byte)
+L16  logs       lines  lf     250 NOSITE             1.1       470 DINGHY TUG       64 anchored at the subject (or line) start
+L17  logs       all    lf       1 OTHER             32.2        68 DINGHY LINER     64 pf_memchr (one first byte)
+L18  logs       all    lf      63 RT                 1.3      6026 DINGHY TUG       30 set FIND, |S| = 63
+L19  logs       all    lf       2 RT                80.6      1827 LINER  LINER     64 set FIND, |S| = 2
+L20  logs       all    crlf     1 OTHER             26.9      1450 DINGHY LINER     64 pf_memchr (one first byte)
+L21  logs       first  crlf     1 OTHER            375.0  41942934 LINER  LINER     64 pf_memchr (one first byte)
+L22  logs       all    crlf     1 OTHER            116.5      1020 LINER  LINER     64 pf_memchr (one first byte)
+L23  logs       all    lf       6 RT                 7.0       226 DINGHY TUG       30 set FIND, |S| = 6
+L24  logs       all    crlf   255 OTHER              1.0       216 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+L25  logs       first  lf       2 UNREACHED         99.4 1000000000 LINER  LINER     30 required run absent: the pre-check answers
+L26  logs       all    lf       1 OTHER            237.3       693 LINER  LINER     31 pf_memchr (one first byte)
+L27  logs       all    lf     255 OTHER              1.0    202623 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+L28  logs       all    lf       1 OTHER             38.0        98 DINGHY LINER     64 pf_memchr (one first byte)
+C01  code       all    lf       4 RT                96.5     17400 LINER  LINER     64 set FIND, |S| = 4
+C02  code       all    lf      53 OTHER              1.6      1414 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+C03  code       all    lf       7 OTHER              3.9      4837 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+C04  code       all    lf       1 OTHER           1181.8      7326 LINER  LINER     64 MLINE ((?m)^ line-start site)
+C05  code       all    lf       1 OTHER            116.4       234 LINER  LINER     64 pf_memchr (one first byte)
+C06  code       all    lf       7 OTHER              3.2       601 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+C07  code       all    lf       1 OTHER             54.8      2630 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+C08  code       all    lf       2 OTHER             20.1      1666 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+C09  code       all    lf       1 OTHER            258.5       900 LINER  LINER     64 pf_memchr (one first byte)
+C10  code       all    lf       1 OTHER             54.3      8716 DINGHY LINER     64 pf_memchr (one first byte)
+C11  code       all    lf       1 OTHER             65.9      2245 LINER  LINER     36 pf_memchr (one first byte)
+C12  code       all    lf       1 OTHER           1135.4     88066 LINER  LINER     36 pf_memchr (one first byte)
+C13  code       all    lf       1 OTHER             55.5       837 DINGHY LINER      6 MLINE ((?m)^ line-start site)
+C14  code       all    lf       1 OTHER             60.5       639 DINGHY LINER     22 pf_memchr (one first byte)
+C15  code       all    lf       1 OTHER             59.6    422969 DINGHY LINER     22 pf_memchr (one first byte)
+C16  code       all    lf       2 RT                 5.5 1000000000 DINGHY TUG       64 set FIND, |S| = 2
+C17  code       all    lf       1 OTHER            323.6     48532 LINER  LINER     64 pf_memchr (one first byte)
+C18  code       all    lf       4 RT                11.4      4309 DINGHY TUG       64 set FIND, |S| = 4
+C19  code       all    lf       8 RT                 5.0    936692 DINGHY TUG       64 set FIND, |S| = 8
+C20  code       all    lf      66 RT                 1.6     19288 DINGHY TUG       64 set FIND, |S| = 66
+C21  code       all    lf      10 RT               114.6     26875 LINER  LINER     64 set FIND, |S| = 10
+C22  code       all    lf       1 OTHER             93.6      8537 LINER  LINER     64 pf_memchr (one first byte)
+C23  code       all    lf       1 OTHER            117.3      8648 LINER  LINER      6 pf_memchr (one first byte)
+C24  code       all    lf       2 RT                50.9     31503 DINGHY LINER     64 set FIND, |S| = 2
+C25  code       all    lf       1 OTHER             57.7     22682 DINGHY LINER     64 pf_memchr (one first byte)
+C26  code       all    lf       2 RT                16.3   1446241 DINGHY TUG       64 set FIND, |S| = 2
+C27  code       all    lf     255 OTHER              1.0      3934 DINGHY TUG       36 MLINE ((?m)^ line-start site)
+P01  prose      all    crlf     2 RT                56.4       851 DINGHY LINER     64 set FIND, |S| = 2
+P02  prose      all    crlf    63 RT                 1.3    257462 DINGHY TUG       64 set FIND, |S| = 63
+P03  prose      all    crlf     1 OTHER             91.1       315 LINER  LINER     64 pf_memchr (one first byte)
+P04  prose      all    crlf    26 RT                47.6     25746 DINGHY LINER     64 set FIND, |S| = 26
+P05  prose      all    crlf     2 RT               311.6       679 LINER  LINER     64 set FIND, |S| = 2
+P06  prose      all    crlf    26 RT                48.8       888 DINGHY LINER     64 set FIND, |S| = 26
+P07  prose      all    crlf    63 RT                 1.3       393 DINGHY TUG       64 set FIND, |S| = 63
+P08  prose      all    crlf     1 OTHER           9011.2     20239 LINER  LINER     64 pf_memchr (one first byte)
+P09  prose      all    crlf     1 OTHER           1043.2      4727 LINER  LINER     64 MLINE ((?m)^ line-start site)
+P10  prose      all    crlf     1 OTHER           1081.5     13551 LINER  LINER     64 MLINE ((?m)^ line-start site)
+P11  prose      all    crlf     7 RT               140.1       275 LINER  LINER     64 set FIND, |S| = 7
+P12  prose      all    crlf    26 RT                47.6      1065 DINGHY LINER     64 set FIND, |S| = 26
+P13  prose      all    crlf    63 RT                 1.3       318 DINGHY TUG       64 set FIND, |S| = 63
+P14  prose      all    crlf    52 RT                 1.4      1415 DINGHY TUG       64 set FIND, |S| = 52
+P15  prose      all    crlf    26 RT                48.1      3051 DINGHY LINER     64 set FIND, |S| = 26
+P16  prose      first  crlf     1 OTHER          54613.3    448885 LINER  LINER     64 pf_memchr (one first byte)
+P17  prose      all    crlf     1 OTHER            801.7 1000000000 LINER  LINER     64 pf_memchr (one first byte)
+P18  prose      all    crlf     1 OTHER            235.7       609 LINER  LINER     64 pf_memchr (one first byte)
+P19  prose      all    crlf    63 RT                 1.3 1000000000 DINGHY TUG       64 set FIND, |S| = 63
+P20  prose      all    crlf     2 RT                14.9        98 DINGHY TUG       64 set FIND, |S| = 2
+P21  prose      all    crlf     0 OTHER              inf    807197 LINER  LINER     64 MLINE ((?m)^ line-start site)
+P22  prose      all    crlf    10 RT              1237.1    168460 LINER  LINER     64 set FIND, |S| = 10
+P23  prose      all    crlf     1 OTHER             61.1     13202 DINGHY LINER     64 pf_memchr (one first byte)
+P24  prose      all    crlf    26 RT                37.8      3232 DINGHY LINER     64 set FIND, |S| = 26
+P25  prose      first  crlf     1 OTHER          76458.7   1058204 LINER  LINER     64 pf_memchr (one first byte)
+S01  structured all    lf      26 OTHER             37.0       637 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+S02  structured all    lf       1 OTHER           1271.4      3488 LINER  LINER     64 MLINE ((?m)^ line-start site)
+S03  structured all    lf      11 RT                 3.9       201 DINGHY TUG       64 set FIND, |S| = 11
+S04  structured all    lf       1 OTHER             18.3       478 DINGHY TUG       64 pf_memchr (one first byte)
+S05  structured all    lf     256 OTHER              1.0      8287 DINGHY TUG       27 MLINE ((?m)^ line-start site)
+S06  structured all    lf      10 RT                 2.2        97 DINGHY TUG       27 set FIND, |S| = 10
+S07  structured all    lf       1 OTHER             97.1       193 LINER  LINER     27 pf_memchr (one first byte)
+S08  structured all    lf       1 OTHER             97.1       472 LINER  LINER     27 pf_memchr (one first byte)
+S09  structured all    lf       1 OTHER              8.8       195 DINGHY TUG       27 pf_memchr (one first byte)
+S10  structured all    lf       1 OTHER              7.6       792 DINGHY TUG       55 pf_memchr (one first byte)
+S11  structured all    lf       1 OTHER              7.6       716 DINGHY TUG       55 pf_memchr (one first byte)
+S12  structured all    lf       1 OTHER              7.6        25 DINGHY DINGHY    55 pf_memchr (one first byte)
+S13  structured all    lf       1 OTHER              7.6      5780 DINGHY TUG       55 pf_memchr (one first byte)
+S14  structured all    one-l    1 OTHER             94.9     51501 LINER  LINER     64 pf_memchr (one first byte)
+S15  structured all    one-l    1 OTHER             94.9     56541 LINER  LINER     64 pf_memchr (one first byte)
+S16  structured all    one-l    1 OTHER             23.8        24 DINGHY DINGHY    64 pf_memchr (one first byte)
+S17  structured all    one-l    1 OTHER             94.9    949088 LINER  LINER     64 pf_memchr (one first byte)
+S18  structured all    lf       1 OTHER             39.8        80 DINGHY LINER     64 pf_memchr (one first byte)
+S19  structured all    lf       1 OTHER             39.8     21732 DINGHY LINER     64 pf_memchr (one first byte)
+S20  structured all    lf       1 OTHER            326.8      6270 LINER  LINER     64 pf_memchr (one first byte)
+S21  structured all    lf       1 OTHER          11459.8     14640 LINER  LINER     64 pf_memchr (one first byte)
+S22  structured all    lf       1 OTHER             39.8     18919 DINGHY LINER     64 pf_memchr (one first byte)
+S23  structured all    lf       1 OTHER             39.8 1000000000 DINGHY LINER     64 pf_memchr (one first byte)
+S24  structured all    lf       1 OTHER          80659.7     55850 LINER  LINER     64 pf_memchr (one first byte)
+M01  markup     all    lf       1 OTHER             24.1       512 DINGHY LINER     64 pf_memchr (one first byte)
+M02  markup     all    lf       1 OTHER             24.1        24 DINGHY DINGHY    64 pf_memchr (one first byte)
+M03  markup     all    lf       1 OTHER             25.7      1720 DINGHY LINER     64 pf_memchr (one first byte)
+M04  markup     all    lf       1 OTHER             24.1      5273 DINGHY LINER     64 pf_memchr (one first byte)
+M05  markup     all    lf       1 OTHER             24.1  13980997 DINGHY LINER     64 pf_memchr (one first byte)
+M06  markup     all    lf       1 OTHER             27.4      4403 DINGHY LINER     64 pf_memchr (one first byte)
+M07  markup     all    lf       1 OTHER            763.9       642 LINER  LINER     64 pf_memchr (one first byte)
+M08  markup     all    lf       1 OTHER             24.1     26990 DINGHY LINER     64 pf_memchr (one first byte)
+M09  markup     all    lf       1 OTHER             24.1      9148 DINGHY LINER     64 pf_memchr (one first byte)
+M10  markup     all    lf       4 OTHER             29.4       889 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+M11  markup     all    lf       1 OTHER             51.0      1610 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+M12  markup     all    lf       1 OTHER             87.5       672 LINER  LINER     64 pf_memchr (one first byte)
+M13  markup     all    lf       1 OTHER             40.5       206 DINGHY LINER     64 pf_memchr (one first byte)
+M14  markup     all    lf       1 OTHER             51.0    132438 DINGHY LINER     64 MLINE ((?m)^ line-start site)
+M15  markup     all    lf       1 OTHER            321.4       436 LINER  LINER      0 pf_memchr (one first byte)
+M16  markup     all    lf       1 OTHER            124.3       598 LINER  LINER      0 MLINE ((?m)^ line-start site)
+M17  markup     all    lf       1 OTHER             39.5       396 DINGHY LINER      0 pf_memchr (one first byte)
+M18  markup     all    lf       3 RT               350.0      9958 LINER  LINER     64 set FIND, |S| = 3
+M19  markup     all    lf       1 OTHER             24.1      1279 DINGHY LINER     64 pf_memchr (one first byte)
+M20  markup     all    lf       2 RT                33.5      8207 DINGHY LINER     64 set FIND, |S| = 2
+M21  markup     all    lf       1 OTHER             90.0   1048575 LINER  LINER     64 pf_memchr (one first byte)
+M22  markup     all    lf       1 OTHER             24.1        24 DINGHY DINGHY    64 pf_memchr (one first byte)
+M23  markup     all    lf      63 RT                 1.4     18798 DINGHY TUG       64 set FIND, |S| = 63
+M24  markup     all    lf       6 OTHER              9.2      1098 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+N01  nonenglish all    crlf     7 RT                 3.7        20 DINGHY DINGHY    24 set FIND, |S| = 7
+N02  nonenglish all    crlf     1 OTHER              3.9        13 DINGHY DINGHY    18 pf_memchr (one first byte)
+N03  nonenglish all    crlf     1 OTHER              3.9      5593 DINGHY TUG       18 pf_memchr (one first byte)
+N04  nonenglish all    crlf     1 OTHER              3.9        28 DINGHY DINGHY    18 pf_memchr (one first byte)
+N05  nonenglish all    crlf     6 RT                17.7        28 DINGHY DINGHY    18 set FIND, |S| = 6
+N06  nonenglish all    crlf     1 OTHER              4.1       204 DINGHY TUG       16 pf_memchr (one first byte)
+N07  nonenglish all    crlf     4 RT                 2.5        12 DINGHY DINGHY    16 set FIND, |S| = 4
+N08  nonenglish all    crlf     3 GATE-EXCLUDED      2.5        24 DINGHY DINGHY     8 short-pool
+N09  nonenglish all    crlf     2 GATE-EXCLUDED      2.5        11 DINGHY DINGHY     5 short-pool
+N10  nonenglish all    crlf     2 GATE-EXCLUDED      2.5     15592 DINGHY TUG        5 short-pool
+N11  nonenglish all    crlf   114 UNREACHED          1.3 1000000000 DINGHY TUG       12 required run absent: the pre-check answers
+N12  nonenglish all    crlf   114 RT                 1.3        68 DINGHY TUG       24 set FIND, |S| = 114
+N13  nonenglish all    crlf     1 OTHER             26.1       171 DINGHY LINER     24 pf_memchr (one first byte)
+N14  nonenglish all    crlf     4 RT                 3.0       104 DINGHY TUG       16 set FIND, |S| = 4
+N15  nonenglish all    crlf     2 RT                24.2        24 DINGHY DINGHY    24 set FIND, |S| = 2
+N16  nonenglish all    crlf     1 OTHER              3.9       876 DINGHY TUG       18 pf_memchr (one first byte)
+N17  nonenglish all    crlf     6 RT                 3.8       281 DINGHY TUG       24 set FIND, |S| = 6
+N18  nonenglish lines  crlf    51 RT                 3.5        84 DINGHY TUG       24 set FIND, |S| = 51
+P26  prose      all    crlf     6 OTHER              5.1       238 DINGHY TUG       64 MLINE ((?m)^ line-start site)
+P27  prose      all    crlf    63 RT                 1.3 1000000000 DINGHY TUG       64 set FIND, |S| = 63
+N19  nonenglish all    crlf   128 OTHER              7.5       526 DINGHY TUG       24 MLINE ((?m)^ line-start site)
+N20  nonenglish all    crlf     1 OTHER              2.5        20 DINGHY DINGHY     5 pf_memchr (one first byte)
+N21  nonenglish all    crlf     1 OTHER              3.8      5760 DINGHY TUG       16 pf_memchr (one first byte)
+N22  nonenglish all    crlf     2 GATE-EXCLUDED      inf 1000000000 LINER  LINER      8 short-pool
+N23  nonenglish all    crlf    59 RT                13.7        73 DINGHY TUG       16 set FIND, |S| = 59
+N24  nonenglish all    crlf    10 RT              7598.4     11147 LINER  LINER     24 set FIND, |S| = 10
+N25  nonenglish all    crlf     1 OTHER              3.4       262 DINGHY TUG       16 pf_memchr (one first byte)
+B01  binary     all    binar    1 OTHER             50.6     18082 DINGHY LINER     64 pf_memchr (one first byte)
+B02  binary     all    binar    1 OTHER           8289.1     32911 LINER  LINER     64 pf_memchr (one first byte)
+B03  binary     all    binar    1 OTHER            258.8    777358 LINER  LINER     20 pf_memchr (one first byte)
+B04  binary     all    binar    1 OTHER              8.8       886 DINGHY TUG       64 pf_memchr (one first byte)
+B05  binary     all    binar    1 OTHER             74.6      4994 LINER  LINER     64 pf_memchr (one first byte)
+B06  binary     all    binar    1 OTHER            240.6      6352 LINER  LINER     64 pf_memchr (one first byte)
+B07  binary     all    binar    1 OTHER            240.6      6352 LINER  LINER     64 pf_memchr (one first byte)
+B08  binary     all    binar    1 OTHER            244.9    599317 LINER  LINER     64 pf_memchr (one first byte)
+B09  binary     all    binar   95 RT                 2.7      3737 DINGHY TUG       20 set FIND, |S| = 95
+B10  binary     all    binar  128 RT                 2.0        32 DINGHY DINGHY    64 set FIND, |S| = 128
+B11  binary     all    binar    1 OTHER           5991.9     39683 LINER  LINER     64 pf_memchr (one first byte)
+B12  binary     all    binar    8 RT                22.7      2495 DINGHY LINER     64 set FIND, |S| = 8
+B13  binary     all    binar    1 OTHER             45.3      1184 DINGHY LINER     64 pf_memchr (one first byte)
+B14  binary     all    binar    1 OTHER            769.9 1000000000 LINER  LINER     64 MLINE ((?m)^ line-start site)
+B15  binary     all    binar    1 OTHER           6316.7  49960960 LINER  LINER     64 pf_memchr (one first byte)
+B16  binary     all    binar    1 OTHER           4481.1    359431 LINER  LINER     64 pf_memchr (one first byte)
+B17  binary     all    binar    1 OTHER             69.4     41087 LINER  LINER     64 pf_memchr (one first byte)
+B18  binary     first  binar    1 OTHER            258.8 1000000000 LINER  LINER     20 pf_memchr (one first byte)
+B19  binary     all    binar    1 OTHER            240.6  47893641 LINER  LINER     64 pf_memchr (one first byte)
+B20  binary     all    binar    2 RT                80.6   8326827 LINER  LINER     64 set FIND, |S| = 2
+B21  binary     all    binar    1 OTHER           6442.9 1000000000 LINER  LINER     64 pf_memchr (one first byte)
+B22  binary     all    binar   95 RT                 2.7     65550 DINGHY TUG       64 set FIND, |S| = 95
+
+== 3. expected class per corpus class (ESTIMATE; REFUSE needs pcrec: see ucp risk)
+class          n        REFUSE        NOSITE         OTHER     UNREACHED GATE-EXCLUDED            RT
+logs          28             0             1            16             1             0            10 
+code          27             0             0            19             0             0             8 
+prose         27             0             0            11             0             0            16 
+structured    24             0             0            22             0             0             2 
+markup        24             0             0            21             0             0             3 
+nonenglish    25             0             0            10             1             4            10 
+binary        22             0             0            17             0             0             5 
+ALL          177             0             1           116             2             4            54
+  ucp (REFUSE risk until [UCP] ships its route): N06 N11 N12 N13 N25
+  GATE-EXCLUDED reasons: N08 short-pool, N09 short-pool, N10 short-pool, N22 short-pool
+
+== 4. RT patterns per class x regime, own call shape (lower: L = g / upper: L = bytes per match)
+class         RT  DINGHY         TUG            LINER        
+logs          10    8 /   0        0 /   7        2 /   3    
+code           8    6 /   0        0 /   5        2 /   3    
+prose         16   13 /   0        0 /   7        3 /   9    
+structured     2    2 /   0        0 /   2        0 /   0    
+markup         3    2 /   0        0 /   1        1 /   2    
+nonenglish    10    9 /   4        0 /   5        1 /   1    
+binary         5    4 /   1        0 /   2        1 /   2    
+ALL           54   44 /   5        0 /  29       10 /  20    
+  RT by own shape: all 51, first 0, lines 3
+  RT by eol: lf 21, crlf 28, one-line 0, binary 5, mixed 0
+  RT eol-sensitive (CRLF file and a line anchor): P19 P27
+  RT primed-intent split (§5.1): 18 primed, 36 not; primed ids: L03 L13 L18 L19 L23 C01 C16 C18 C19 C26 P02 P04 P05 P11 P19 S03 M23 P27
+  all questions primed-intent: 63 of 177
+
+== 5. RT per class (own shape) with g_est bands (B per landing)
+  logs        g<18.5   7  18.5..64   1  >=64   2
+  code        g<18.5   5  18.5..64   1  >=64   2
+  prose       g<18.5   7  18.5..64   6  >=64   3
+  structured  g<18.5   2  18.5..64   0  >=64   0
+  markup      g<18.5   1  18.5..64   1  >=64   1
+  nonenglish  g<18.5   8  18.5..64   1  >=64   1
+  binary      g<18.5   3  18.5..64   1  >=64   1

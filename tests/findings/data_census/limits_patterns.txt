@@ -1,0 +1,7 @@
+# [KNOW-SRC] K0's limits fixture population: PCREC_MAX_AUTO_DFA_ELEMS
+# 30000000 -> 3000 (emit_sweep's own `lowdfa` variant's value).
+(?:a|b)*a(?:a|b){11}
+abc
+xyz
+[0-9]+
+(a|b)*c

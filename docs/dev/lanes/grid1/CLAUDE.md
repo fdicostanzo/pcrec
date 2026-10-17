@@ -15,3 +15,5 @@ lives in the slot directory (`worktrees/memfn-slot/grid1/`, never committed).
 
 Run with `python3 -I` / `bash`; the slot directory is `$OUT`. Compile/check work pins
 to CPUs 12-15; timing only through `slot.sh` on a quiet box.
+
+Two env-gated hooks were added for `../grid2/` (lane grid2p) and are inert when unset: `build.sh`'s `EMIT_CELLS` (more cells emitted by the kit compiler, `quad`'s mechanism) and `check.sh`'s `ORACLE_CMD` (a replacement for the python `re` oracle step).

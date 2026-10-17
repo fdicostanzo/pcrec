@@ -789,6 +789,7 @@ static const gate_contract ofsskip_ct = {
     [FLD_note_tag]        = MF_ANY,                   /* not read */
     [FLD_indent]          = MF_ANY,                   /* not read: the definition is file scope */
     [FLD_comment_tier]    = MF_ANY,                   /* legend: handed to cmt_open as given */
+    MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 }};
 
@@ -800,6 +801,8 @@ const arm ofsskip_arm = {
     ofsskip_use,
     &ofsskip_ct,
     NULL,
+    1,                  /* a multi-byte offset reads pcrec's table (table_of) */
+    MF_INC_STRING_H,    /* fn-memchr's memchr, the run compare's memcmp */
 };
 
 /* ---- fn_rows[]' contracts ------------------------------------------------
@@ -863,6 +866,7 @@ const arm ofsskip_arm = {
     [FLD_note_tag]        = MF_ANY,                   /* not read */ \
     [FLD_indent]          = MF_ANY,                   /* not read: file scope */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: the body writes no comment */ \
+    MF_SERVES_WINDOW_TODAY \
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 
 static const gate_contract fn_pair_ct = {

@@ -260,6 +260,16 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
     term_unknown_density(t);
 }
 
+void pcrec_memfn_window_is_candidate(mf_pred *p)
+{
+    int32_t d = p->term[0].offset;
+    for (unsigned i = 1; i < p->nterm && i < MF_MAX_TERM; i++)
+        if (p->term[i].offset < d) d = p->term[i].offset;
+    p->window_stated = 1;
+    p->move_back = d;
+    p->overshoot = 0;
+}
+
 /* ---- C10: a site against its DELEG_SITES row ------------------------------ */
 
 /* The MF_TK_* kinds a predicate's terms use. */
@@ -371,6 +381,20 @@ void pcrec_memfn_use(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
     PcrecMfSink ps;
     pcrec_memfn_sink(&ps, body);
     kit_check(cx, art, mf_use(art, handle, h, &ps.s, NULL));
+}
+
+void pcrec_memfn_locals(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
+{
+    mf_art *art = pcrec_memfn_art(cx);
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, body);
+    kit_check(cx, art, mf_locals(art, handle, h, &ps.s));
+}
+
+void pcrec_memfn_defined(Ctx *cx, uint32_t handle, mf_result *out)
+{
+    mf_art *art = pcrec_memfn_art(cx);
+    kit_check(cx, art, mf_defined(art, handle, out));
 }
 
 void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)

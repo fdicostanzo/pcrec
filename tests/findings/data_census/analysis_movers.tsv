@@ -1,0 +1,14 @@
+# The HAND-MADE movers list for old/fx.rxt -> new/fx.rxt over patterns.txt,
+# written BEFORE the census ran: a pattern moves iff it has two necessary
+# bytes whose order of rarity the change swaps (Z and @), at both bases
+# (the bundle serves byte and utf8) and on both engines (the necessary-byte
+# pick is a fact both engines' pre-check reads). abc/xyz/[0-9]+ name no byte
+# whose rate moves.
+c-default	byte	(x?)([a-z]+)+Z.@\\1
+c-vm	byte	(x?)([a-z]+)+Z.@\\1
+c-default	utf8	(x?)([a-z]+)+Z.@\\1
+c-vm	utf8	(x?)([a-z]+)+Z.@\\1
+c-default	byte	Z[^@]*@
+c-vm	byte	Z[^@]*@
+c-default	utf8	Z[^@]*@
+c-vm	utf8	Z[^@]*@

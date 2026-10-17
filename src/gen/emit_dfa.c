@@ -594,7 +594,7 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  * `vars` GOES BEFORE THE `_in` DESCRIPTOR, not after it, and the compiler is
  * what settled that: the `_in` entries are built as "the un-suffixed sibling
  * in every respect, PLUS one argument naming where the working storage lives"
- * (spec §10.2) — a rule `vm_emit_default_entry` implements by APPENDING the
+ * (spec §10.2) — a rule `fwd_own` (src/gen/emit_comb.c) implements by APPENDING the
  * descriptor to the un-suffixed parameter list. Putting the pair after the
  * descriptor made the two spellings disagree, which the first build of a
  * var-bearing artifact caught as a conflicting declaration. The descriptor
@@ -2652,103 +2652,7 @@ static BufSurface pcrec_bufsurface_inert(void)
     return bs;
 }
 
-/* Writes the `<prefix>_match` entry: an anchored match-here test built by reusing `<prefix>_search`'s own leftmost-first priority.
- *
- * [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
- * on every generated matcher (F1/F2) and RETROFITTED onto the existing DFA
- * search — nothing at [M4.4] requires a second, genuinely-anchored
- * automaton. `<prefix>_search`'s own leftmost-first priority already makes
- * this exact: a match beginning at ctx->pos exists iff the search's
- * highest-priority thread (which always tries "match starting here" before
- * "skip a byte and try later", by construction of the unanchored wrap) finds
- * one, so checking the reported start against ctx->pos is not an
- * approximation of anchored matching, it IS anchored matching, reusing the
- * existing forward+reverse walk rather than a new one.
- *
- * [K28 fix, 2026-08-19, repair slice] `caps` IS INITIALIZED, and the
- * initializer is not defensive padding — it is the only shape that compiles.
- * When the pattern's DFA is a single dead state, `<prefix>_search` always
- * returns 0, gcc -O1 inlines it here, and then reports this array as
- * maybe-uninitialized even though `found != 1` short-circuits the read. The
- * warning is bogus (the read is unreachable) but the artifact is source
- * SOMEONE ELSE compiles, and the harness's own GENCFLAGS are
- * `-O1 -Wall -Wextra -Werror`, so it is a build failure rather than a
- * blemish. Two things measured before choosing this:
- *   - it fires at -O1 ONLY: -O0, -O2, -O3 and -Os are all clean, measured,
- *     all five. Why only -O1 was not established and is not asserted here;
- *     what matters is that -O1 is exactly tests/harness/run.sh's default
- *     GENCFLAGS, so "compile it at a different level" is not a fix.
- *   - SPLITTING the `||` into two `if`s does NOT silence it. The dominance
- *     gcc cannot see is not the short-circuit; restructuring the test is not
- *     available and the initializer is the smallest thing that works.
- * The same three lines are owed by `emit_match_caps_def` and
- * `pcrec_emit_main` below, which have the identical shape and warn for the
- * identical reason -- the `-Werror` build merely stopped at the first one.
- * Full history, the six corpus spellings it cost, and the repro:
- * docs/dev/known_issues.md K28. */
-static void emit_match_def(StrBuf *c, const char *storage, const char *matchfn,
-                           const char *searchfn, const char *upper)
-{
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "/* D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
-        " * Unreachable on this engine — a DFA artifact has no counter to\n"
-        " * exhaust — but written uniformly on purpose: the contract of\n"
-        " * rx_matchfn is one contract, and a wrapper that discards codes it\n"
-        " * merely happens never to see is the shape that goes wrong when a\n"
-        " * later engine shares this emitter. */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "%sptrdiff_t %s(const rx_ctx *ctx)\n"
-        "{\n", storage, matchfn);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
-        "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
-        "    if (found < 0) return (ptrdiff_t)found;\n"
-        "    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;\n"
-        "    return capture_spans[0][1] - capture_spans[0][0];\n"
-        "}\n",
-        upper, searchfn);
-}
 
-/* Writes the `<prefix>_match_caps` entry: `<prefix>_match`'s capture-delivering sibling.
- *
- * [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
- * sibling of <prefix>_match — same anchoring test, plus a capture_spans_out
- * parameter that gets every RX_NCAPS pair on success and is left UNTOUCHED
- * on failure (A-8's "untouched wins" rule, shared with <prefix>_search). At
- * [M4.4] RX_NCAPS is always 1, so capture_spans_out[0] is the only slot ever
- * written; the loop is written against the macro rather than hardcoded so
- * nothing here needs revisiting when [M4.5] grows it. */
-static void emit_match_caps_def(StrBuf *c, const char *storage, const char *fn,
-                                const char *searchfn, const char *upper)
-{
-    pcrec_sb_printf(c,
-        "%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
-        "{\n", storage, fn);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
-        "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
-        "    if (found < 0) return (ptrdiff_t)found;\n"
-        "    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;\n"
-        "    if (capture_spans_out) {\n"
-        "        for (int k = 0; k < %s_NCAPS; k++) {\n"
-        "            capture_spans_out[k][0] = capture_spans[k][0];\n"
-        "            capture_spans_out[k][1] = capture_spans[k][1];\n"
-        "        }\n"
-        "    }\n"
-        "    return capture_spans[0][1] - capture_spans[0][0];\n"
-        "}\n",
-        upper, searchfn, upper);
-}
 
 /* Writes the three `_in` entries a DFA artifact carries so a caller can call it uniformly regardless of which engine was selected -- present, and INERT.
  *
@@ -2785,9 +2689,7 @@ static void emit_match_caps_def(StrBuf *c, const char *storage, const char *fn,
  * THE DELEGATION RUNS `_in` -> UN-SUFFIXED here exactly as it does on a VM
  * artifact (design §5.2), so the direction is one rule across both engines
  * rather than a coincidence that holds twice. */
-static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const char *searchfn,
-                               const char *matchfn, const char *matchcapsfn,
-                               const char *prefix)
+static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const GenNames *g)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -2800,43 +2702,20 @@ static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const char *searchfn,
         " * happened to select (spec S10.4). */\n");
     pcrec_sb_cmt_close(c);
     /* [EMIT-ENTRIES] each entry is written where the closure keeps it, a
-     * blank line between two that are. */
+     * blank line between two that are. [COMPOUND] E0c: each through its
+     * row's `forward` emitter, INERT (src/gen/emit_comb.c). */
+    const PcrecEntry ins[] = {
+        PCREC_ENTRY_SEARCH_IN, PCREC_ENTRY_MATCH_IN, PCREC_ENTRY_MATCH_CAPS_IN,
+    };
+    const PcrecFwd inert = { PCREC_FWD_INERT, NULL };
+    const PcrecEntryText t = { .fwd = &inert };
     const char *sep = "";
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_SEARCH_IN)) {
-        pcrec_sb_printf(c,
-            "%sint %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-            "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
-            "{\n"
-            "    (void)buffers;\n"
-            "    return %s(subject, subject_length, search_from, capture_spans);\n"
-            "}\n",
-            pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN), searchfn, prefix,
-            searchfn);
+    for (size_t i = 0; i < sizeof ins / sizeof *ins; i++) {
+        if (!pcrec_entry_emitted(cx, ins[i])) continue;
+        pcrec_sb_puts(c, sep);
+        pcrec_emit_entry(cx, g, ins[i], &t);
         sep = "\n";
     }
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_IN)) {
-        pcrec_sb_printf(c,
-            "%s"
-            "%sptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
-            "{\n"
-            "    (void)buffers;\n"
-            "    return %s(ctx);\n"
-            "}\n",
-            sep, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_IN), matchfn, prefix,
-            matchfn);
-        sep = "\n";
-    }
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS_IN))
-        pcrec_sb_printf(c,
-            "%s"
-            "%sptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
-            "                const %s_buffers *buffers)\n"
-            "{\n"
-            "    (void)buffers;\n"
-            "    return %s(ctx, capture_spans_out);\n"
-            "}\n",
-            sep, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS_IN), matchcapsfn,
-            prefix, matchcapsfn);
 }
 
 /* [M4.4] (match_api_m4.md §5, D43.1/D44.5): the static reflection structure,
@@ -5257,6 +5136,15 @@ typedef struct CandPf {
      * It is emitted from the same place `repr->emit_token` is, so the VM
      * hybrid's inlined prefilter gets it by construction. */
     void  (*emit_block)(StrBuf *c, DfaForm *f);
+    /* [MEMFN] R17-a THE ROW's KIT-SITE DEFINE POINT, at FILE SCOPE above the
+     * body like `emit_block` (so the hybrid gets it too), but AFTER the run
+     * pre-check's site (`pcrec_emit_req_run_blocks`): the set rows' FIND
+     * (`pf_define_find`), which writes whatever its form needs ahead of the
+     * function, today nothing. After, because the kit numbers handles in
+     * define order and a row's local names may carry its handle (R-15's
+     * `<p>_mf<handle>_q`): defined first, the find renumbered the pre-check
+     * and moved its text. NULL == no site to define. */
+    void  (*emit_define)(StrBuf *c, DfaForm *f);
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
     /* [OPT-EDGE] STEP 1.1 — DOES THIS FORM WRITE THE STATE VARIABLE?
      *
@@ -5575,6 +5463,17 @@ struct DfaDir {
     const char *scan_back;
 };
 
+/* [MEMFN] R17-a THE DEFINED FIND (setfind.md §11.1): a set FIND defined at
+ * a file-scope point above the function holding its uses, then, in that
+ * function, its storage point (`find_locals`), its table iff the define
+ * reports the form reads it (`reads_table`), and each use (`find_use`). The
+ * builder's record: the site, its handle and the define's report. */
+struct MemfnFind {
+    const mf_site *site;
+    uint32_t       handle;
+    bool           reads_table;
+};
+
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
     /* [OPT-K] the Ctx, originally for `pcrec_ctx_fail` alone. Two arms of the
@@ -5631,6 +5530,15 @@ struct DfaForm {
      * point), which every call of it (`pf_emit_ofs[_bounded]`) uses; 0
      * before the block is written. */
     uint32_t       ofs_site;
+    /* [MEMFN] R17-a the set rows' FIND (`pf_define_find[_bounded]`, the
+     * define point): its record, which the storage point (`unanch_scan`),
+     * the table (`pf_tables_bcls`/`pf_tables_first`, iff `reads_table`) and
+     * the use (`pf_emit_find`) read; all zero where the row defines none.
+     * `pf_stem` is the stem it states (W5), `<fn>_pf` for the body `fn`
+     * holding the forward scan, set by that body's emitter before the
+     * block. */
+    struct MemfnFind pf_find;
+    const char    *pf_stem;
     /* [OPT-REVEND] L1 THE WALK's TWO PARAMETERS beyond its direction
      * (`emit_reverse_block`, revend.md §8): `lbl`, the stem its edge labels
      * are named from (the direction's name, until a second copy of the same
@@ -6439,9 +6347,19 @@ static const char *find_table_name(void *u, uint32_t ref)
     return dfa_fragf(pu->cx, "%s_%s", f->p, find_table_tag[ref]);
 }
 
-/* The site and its hooks for FIND `f` at indent `ind`. */
-static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
-                          PcrecMfU *u)
+/* [MEMFN] R17-a the kit's `fn_name` hook on a storage-offering FIND: the
+ * stem of every identifier the kit declares for the site (W5, setfind.md
+ * §7.6), the holding function's name plus `_pf`. */
+static const char *find_fn_name(void *u, uint32_t fn_ref)
+{
+    (void)fn_ref;
+    return ((const PcrecFind *)((const PcrecMfU *)u)->own)->stem;
+}
+
+/* The site for FIND `f`: its window is its candidate (W0-W2, R17-a), and a
+ * FIND that names a storage stem (`f->stem`, the set sites) offers its
+ * declaration point (W4) and states the stem's hook id (W5). */
+static mf_site *find_site(const PcrecFind *f)
 {
     Ctx *cx = f->cx;
     bool table = f->table != PCREC_FIND_MEMCHR;
@@ -6470,6 +6388,21 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
                              MF_REQUIRED);
     else
         pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
+    pcrec_memfn_window_is_candidate(&s->pred);
+    s->decl_point = f->stem != NULL;
+    s->pred.fn_ref = f->stem != NULL;
+    pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
+    return s;
+}
+
+/* The hooks for FIND `f`, site `s`, at indent `ind` (NULL at a define, which
+ * reads no indent). */
+static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
+                       mf_hooks *h, PcrecMfU *u)
+{
+    Ctx *cx = f->cx;
+    bool table = f->table != PCREC_FIND_MEMCHR;
+    bool back = f->offset < 0;
     *u = (PcrecMfU){ .cx = cx, .site = s, .own = f, .indent = ind };
     /* `miss`: the range's end at offset 0 (MF_MISS_N, or `len - 1` held
      * back). Below the candidate it is NOT stated: there the range reaches
@@ -6481,36 +6414,131 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
                            : back ? NULL : MF_MISS_N,
                      .on_miss = !table && !f->holdback ? f->on_miss : NULL,
                      .table_name = table ? find_table_name : NULL,
+                     .fn_name = f->stem ? find_fn_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
                      .u = u };
-    pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
-    return s;
 }
 
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 {
     mf_hooks h;
     PcrecMfU u;
-    mf_site *s = find_site(f, ind, &h, &u);
+    if (f->stem)
+        pcrec_ctx_fail(f->cx, 0, "internal error: a FIND that offers a storage "
+                       "point is defined and used, never emitted in one call "
+                       "(src/gen/emit_dfa.c, pcrec_emit_find)");
+    mf_site *s = find_site(f);
+    find_hooks(f, s, ind, &h, &u);
     pcrec_memfn_emit(f->cx, f->site, s, &h, c);
 }
 
-/* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
+/* Defines FIND `f` (its `stem` stated) into `file` and returns its record. */
+static struct MemfnFind find_define(StrBuf *file, const PcrecFind *f)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
+    struct MemfnFind d = { find_site(f), 0, false };
+    find_hooks(f, d.site, NULL, &h, &u);
+    d.handle = pcrec_memfn_define(f->cx, f->site, d.site, &h, file);
+    pcrec_memfn_defined(f->cx, d.handle, r);
+    d.reads_table = r->reads_table;
+    return d;
+}
+
+/* Writes defined FIND `d`'s storage point at indent `ind` (nothing, while no
+ * form keeps storage). */
+static void find_locals(StrBuf *c, const char *ind, const PcrecFind *f,
+                        const struct MemfnFind *d)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    find_hooks(f, d->site, ind, &h, &u);
+    pcrec_memfn_locals(f->cx, d->handle, &h, c);
+}
+
+/* Writes one use of defined FIND `d` at indent `ind`; `f` must describe the
+ * site `d` defined (its `end_back` is checked here, loudly). */
+static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
+                     const struct MemfnFind *d)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    if (d->site->end_back != (f->holdback ? 1 : 0))
+        pcrec_ctx_fail(f->cx, 0, "internal error: a FIND used with a D11 bound "
+                       "its define did not state (src/gen/emit_dfa.c, find_use)");
+    find_hooks(f, d->site, ind, &h, &u);
+    pcrec_memfn_use(f->cx, d->handle, &h, c);
+}
+
+#ifdef PCREC_RANK_PROBE
+#include <stdio.h>
+/* [MEMFN] R17-a N4, THE DOOR ASSERTION (setfind.md §11.1 item 4, C1-13),
+ * compiled only into the probe build `-DPCREC_RANK_PROBE`
+ * (tests/memfn/run_rank.sh): where pcrec emits the table a defined FIND
+ * names, the set it handed the kit is that table's bytes. A difference is
+ * an internal error; an agreement prints one `FINDDOOR` record (the probe's
+ * reach). */
+static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
+                      const uint8_t table[256])
+{
+    const uint8_t *set = d->site->pred.term[0].set;
+    for (int b = 0; b < 256; b++)
+        if (((set[b >> 3] >> (b & 7)) & 1) != (table[b] != 0))
+            pcrec_ctx_fail(cx, 0, "internal error: N4 door: the FIND's set and "
+                           "the emitted `%s` table differ at byte 0x%02x", tag, b);
+    fprintf(stderr, "FINDDOOR\t%s\tok\n", tag);
+}
+#else
+static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
+                      const uint8_t table[256])
+{
+    (void)cx; (void)d; (void)tag; (void)table;
+}
+#endif
+
+/* The description of the FIND over axis B's candidate set, its form the ROW's
  * (`u.pf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
  * and the subject are the DFA scan's own, `holdback` the D11 bound. `on_miss`
  * is the unbounded memchr's statement on a NULL hit (NULL elsewhere). */
+static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
+{
+    return (PcrecFind){ .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
+                        .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
+                               : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
+                               : PCREC_FIND_CAN_BEGIN,
+                        .set = f->cand.set,
+                        .byte = f->cand.byte, .pos = "scan_position",
+                        .subject = "subject", .len = "subject_length",
+                        .holdback = holdback, .on_miss = on_miss };
+}
+
+/* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
+ * file scope above the body, as `pf_block_ofs` is): the row's FIND, its D11
+ * bound the row's own (`_bounded`: byte-class-bounded, first-class-bounded),
+ * DEFINED with the body's stem, so any text its form needs ahead of the
+ * function is written here and the use point below has its record. */
+static void pf_define_find_at(StrBuf *c, DfaForm *f, int holdback)
+{
+    PcrecFind fd = pf_find_of(f, holdback, NULL);
+    if (!f->pf_stem)
+        pcrec_ctx_fail(f->cx, 0, "internal error: a set prefilter's FIND is "
+                       "defined with no stem (src/gen/emit_dfa.c, pf_define_find)");
+    fd.stem = f->pf_stem;
+    f->pf_find = find_define(c, &fd);
+}
+static void pf_define_find(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 0); }
+static void pf_define_find_bounded(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 1); }
+
+/* The FIND over axis B's candidate set at indent `ind`: the defined site's
+ * use where the row defined one (the set rows), else the one-call FIND (the
+ * memchr rows). */
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback,
                          const char *on_miss)
 {
-    PcrecFind fd = { .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
-                     .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
-                            : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
-                            : PCREC_FIND_CAN_BEGIN,
-                     .set = f->cand.set,
-                     .byte = f->cand.byte, .pos = "scan_position",
-                     .subject = "subject", .len = "subject_length",
-                     .holdback = holdback, .on_miss = on_miss };
-    pcrec_emit_find(c, ind, &fd);
+    PcrecFind fd = pf_find_of(f, holdback, on_miss);
+    if (f->pf_find.handle) find_use(c, ind, &fd, &f->pf_find);
+    else pcrec_emit_find(c, ind, &fd);
 }
 
 /* AXIS B, `memchr`: while nothing has matched and the machine is still parked
@@ -6832,6 +6860,8 @@ static const char *ofsk_tbl_name(Ctx *cx, const char *p, int k)
  * comment that says it is speed only and never changes an answer. */
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 {
+    if (!f->pf_find.reads_table) return;    /* [MEMFN] R17-a: the define's report */
+    find_door(f->cx, &f->pf_find, "can_begin_match", f->cand.set);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
                "     * forward loop uses this to skip over bytes that cannot begin\n"
@@ -6898,6 +6928,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->use = MF_USE_POSITION;
     s->consumer = MF_C_ENGINE;
     ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
+    pcrec_memfn_window_is_candidate(&s->pred);
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
@@ -7213,6 +7244,8 @@ static void pf_comment_first(StrBuf *c, const DfaForm *f)
 /* The DFA hat's table: `S` (= `T`), the bytes a match can begin with. */
 static void pf_tables_first(StrBuf *c, const DfaForm *f)
 {
+    if (!f->pf_find.reads_table) return;    /* [MEMFN] R17-a: the define's report */
+    find_door(f->cx, &f->pf_find, "start_bytes", f->cand.set);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* 1 for each byte a match can BEGIN with (the start set). The\n"
                "     * forward loop skips over every other byte; speed only, it\n"
@@ -7331,24 +7364,41 @@ static bool pf_vm_start_applies(const CandSel *s)
  * `|S|` (a dense one-byte `S` read by `memchr` per failed attempt measured
  * x0.6 at 80% density; the `|S| = 1 -> memchr` cut-over is an unmeasured
  * default for VM attempts, D149, and is not taken). */
+static PcrecFind vm_hat_find_of(const CandSel *s, const char *p, uint8_t v[256])
+{
+    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+    return (PcrecFind){ .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
+                        .table = PCREC_FIND_START_SET, .set = v,
+                        .pos = "attempt_position", .subject = "subject",
+                        .len = "subject_length", .holdback = 0 };
+}
+
+/* [MEMFN] R17-a THE VM HAT's ONE SITE (setfind.md §7.5, §11.1): defined
+ * once above `<searchfn>_run` (`pcrec_emit_vm_start_define`), its storage
+ * point and its table (iff the define reports the form reads it) at the
+ * ENTRY, then one use there and one at each retry, the same handle. */
 static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
                                    const char *ind, bool entry)
 {
     uint8_t v[256];
-    PcrecFind fd = { .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
-                     .table = PCREC_FIND_START_SET, .set = v,
-                     .pos = "attempt_position", .subject = "subject",
-                     .len = "subject_length", .holdback = 0 };
-    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+    PcrecFind fd = vm_hat_find_of(s, p, v);
+    const struct MemfnFind *d = s->cx->job->mf_vmhat;
+    if (!d)
+        pcrec_ctx_fail(s->cx, 0, "internal error: the VM hat's seek has no "
+                       "defined FIND (pcrec_emit_vm_start_define was skipped)");
     if (entry) {
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
-                         "     * An attempt at a position holding any other byte fails, so the\n"
-                         "     * loop starts no attempt there. */\n");
-        pcrec_sb_cmt_close(c);
-        emit_u8_table(c, p, "start_set", v, 256);
+        find_locals(c, ind, &fd, d);
+        if (d->reads_table) {
+            find_door(s->cx, d, "start_set", v);
+            pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+            pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
+                             "     * An attempt at a position holding any other byte fails, so the\n"
+                             "     * loop starts no attempt there. */\n");
+            pcrec_sb_cmt_close(c);
+            emit_u8_table(c, p, "start_set", v, 256);
+        }
     }
-    pcrec_emit_find(c, ind, &fd);
+    find_use(c, ind, &fd, d);
     pcrec_sb_printf(c, "%sif (attempt_position >= subject_length) return 0;\n", ind);
 }
 
@@ -7409,6 +7459,19 @@ static const CandRow *vm_start_row(Ctx *cx, CandSel *s)
     PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s->route), pf->tok, "vm-start");
     CAND_HIT(CAND_SLOT_NEXT, s, pf, "vm-start");
     return pf;
+}
+
+void pcrec_emit_vm_start_define(Ctx *cx, StrBuf *c, const char *p, const char *stem)
+{
+    CandSel s;
+    uint8_t v[256];
+    const CandRow *pf = vm_start_row(cx, &s);
+    if (!pf->u.pf.emit_vm) return;
+    PcrecFind fd = vm_hat_find_of(&s, p, v);
+    fd.stem = stem;
+    struct MemfnFind *d = pcrec_arena_alloc(&cx->arena, sizeof *d);
+    *d = find_define(c, &fd);
+    cx->job->mf_vmhat = d;
 }
 
 /* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row spelling. */
@@ -9172,7 +9235,8 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 7, "first-class-bounded" } },
       .desc = "[START-SET] the DFA hat, as first-memchr-bounded with T of several bytes: a 256-entry start_bytes table walk stopped at n-1, re-seeding where the skip moved",
-      .u.pf = { .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
+      .u.pf = { .emit_tables = pf_tables_first, .emit_define = pf_define_find_bounded,
+                .emit = pf_emit_first_class_bounded,
                 .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set } },
     /* [START-SET] stage 2: the VM hat, routed on the VM route alone (the DFA
      * hat is `-bounded`-only). */
@@ -9197,13 +9261,14 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class-bounded" } },
       .desc = "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept",
-      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded,
-                .scan = PF_SCAN_SET } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_define = pf_define_find_bounded,
+                .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET } },
     { .c = { "byte-class", 0, pf_bcls_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "byte-class" } },
       .desc = "forward scan, several candidate bytes",
-      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_define = pf_define_find,
+                .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
     /* N12: the ATTEMPT route's predecessor-byte skip; it STAMPS `"memchr"`
      * (D-1) but is not N9, so its identity is its own. No listing. Its scan
      * is one byte (`attempt_cand` is memchr-or-nothing by charter); it emits
@@ -11545,6 +11610,14 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
         cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
         pcrec_ctx_fail(cx, 0, "internal error: the composite's SPAN is finished by "
                        "a row that is not `report` (locate_finish.md §2.3)");
+    /* [MEMFN] R17-a the set FIND's storage point (setfind.md §7.1): here, in
+     * the forward scan's one caller, above the scan's comment and `scan_position` (so
+     * sabotage S07's anchor keeps its text), before the scan loop and its
+     * `seedhead` jump, dominating every use in this body. */
+    if (fwd->pf_find.handle) {
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back, NULL);
+        find_locals(c, "    ", &fd, &fwd->pf_find);
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
                "    // One byte per iteration. The loop keeps the LAST accepting\n"
@@ -11719,10 +11792,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (rmem) rev.repr->emit_token(c, &rev);
     emit_scan_defs(c, &fwd);
     if (rmem) emit_scan_defs(c, &rev);
+    fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
     if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
      * condition as its call below. */
     if (cand_finish_of(cx) != CAND_ROUTE_VM) pcrec_emit_req_run_blocks(cx, c);
+    if (fwd.pf->u.pf.emit_define) fwd.pf->u.pf.emit_define(c, &fwd);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", cand_finish_of(cx) != CAND_ROUTE_VM ? "entry" : "inlined",
                          "entry-gate");
 
@@ -12246,7 +12321,9 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     rev.repr->emit_token(c, &rev);
     if (relocate) emit_scan_defs(c, &fwd);
     emit_scan_defs(c, &rev);
+    if (relocate) fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
     if (relocate && fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
+    if (relocate && fwd.pf->u.pf.emit_define) fwd.pf->u.pf.emit_define(c, &fwd);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", entry ? "entry" : "inlined", "entry-gate");
 
     emit_search_head(cx, c, fn, storage);
@@ -12463,58 +12540,15 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
                "}\n");
 }
 
-/* The capture-delivering sibling. It delegates to `<prefix>_match` rather than
- * re-emitting the scan — one machine, one loop, one place a change lands.
- *
- * IT WRITES THE DEAD GROUPS ITSELF, and that is not optional. On the
- * search-and-filter form those come from `emit_dead_group_fill`, which
- * fills slots 1..NCAPS-1 with PCREC_UNSET on `<prefix>_search`'s success
- * paths (wave G's dead-capture elision: a DFA artifact can promise groups it
- * can never write,
- * because PCRE2 counts them and reports them unset). This form never calls
- * `<prefix>_search`, so the fill has to happen here or those slots would come
- * back as whatever the caller's array held. `RX_NCAPS` is 1 on almost every
- * DFA artifact and the loop then emits nothing at run time.
- *
- * `caps_out[0] == [ctx->pos, ctx->pos + length)` is spec S3.3's own sentence,
- * true here BY CONSTRUCTION rather than by a filter that proved it. On every
- * negative return `caps_out` is UNTOUCHED (A-8's rule) -- every write is
- * below the early return. */
-static void emit_anchored_match_caps_def(StrBuf *c, const char *storage,
-                                         const char *fn, const char *matchfn,
-                                         const char *upper)
-{
-    pcrec_sb_printf(c,
-        "%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
-        "{\n"
-        "    ptrdiff_t rx_len = %s(ctx);\n"
-        "    if (rx_len < 0) return rx_len;\n"
-        "    if (capture_spans_out) {\n"
-        "        capture_spans_out[0][0] = (ptrdiff_t)ctx->pos;\n"
-        "        capture_spans_out[0][1] = (ptrdiff_t)ctx->pos + rx_len;\n"
-        "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n",
-        storage, fn, matchfn, upper);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "            /* every group this artifact promises is reached only\n"
-        "               through a subroutine call or sits under a {0}, so no\n"
-        "               match can set it (PCRE2 reports the same) */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c,
-        "            capture_spans_out[rx_g][0] = PCREC_UNSET;\n"
-        "            capture_spans_out[rx_g][1] = PCREC_UNSET;\n"
-        "        }\n"
-        "    }\n"
-        "    return rx_len;\n"
-        "}\n");
-}
-
-/* THE ASSEMBLY, and the only place axis G's two forms are told apart.
+/* Writes the anchored match-here entry, axis G's `unwrapped` form of
+ * `<prefix>_match`: the anchored machine's accessor block, then the body.
+ * The `finish-at` emitter's VERIFY form calls it (src/gen/emit_comb.c);
+ * `_match_caps` is that emitter's delegate.
  *
  * Layer 2 -- the anchored machine's state-accessor block -- goes at FILE
  * SCOPE above the entry, exactly where `emit_unanchored` puts the search
  * machines' blocks and for the same reason. */
-static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
+void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g)
 {
     UnanchStart us, aus;
     DfaForm anch;
@@ -12526,31 +12560,6 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
     anch.repr->emit_token(c, &anch);
     emit_scan_defs(c, &anch);
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
-    pcrec_sb_puts(c, "\n");
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS))
-        emit_anchored_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
-                                     g->matchcapsfn, g->matchfn, g->upper);
-}
-
-/* [OPT-REVEND] L2 THE MATCH-HERE ENTRY OF A BODY THAT MATCHES NOTHING
- * (FINISH `nomatch` on the meet `caller ⊓ empty`, locate_finish.md LR-G8):
- * `-1` at once, after K50's startpos guard (which the search-and-filter form
- * reached through `<prefix>_search`, so the refusal is unchanged). Its
- * `_match_caps` is the anchored form's delegate, which never writes. */
-static void emit_nomatch_match_def(Ctx *cx, StrBuf *c, const char *matchfn)
-{
-    pcrec_sb_printf(c,
-        "%sptrdiff_t %s(const rx_ctx *ctx)\n"
-        "{\n"
-        "    const unsigned char *subject = ctx->subject;\n"
-        "    size_t subject_length = ctx->len;\n"
-        "    size_t search_from = ctx->pos;\n",
-        pcrec_entry_storage(cx, PCREC_ENTRY_MATCH), matchfn);
-    pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
-                              "subject_length", true);
-    pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from;\n"
-               "    return -1;\n"
-               "}\n");
 }
 
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
@@ -14222,9 +14231,18 @@ void pcrec_emit_dfa(Ctx *cx)
      * the two artifact kinds put their engine line at the same point of the
      * file and a reader (or a grep) finds it in one place. */
     emit_dfa_stamps(cx, c, g.upper);
+    /* [COMPOUND] E0c: every matcher entry below is written through its
+     * `entry_rows[]` row's combinator emitter (src/gen/emit_comb.c); this
+     * function says what each is built from and in which order. */
     if (shell) {
-        pcrec_emit_compound_body(cx, shell, g.searchfn, g.matchfn, g.matchcapsfn,
-                                 g.upper);
+        /* the parts, then the controller: `first-nonzero` as `_search`, the
+         * first part's one attempt as the `finish-at` pair */
+        const PcrecFinish part = { PCREC_FIN_PART, shell };
+        const PcrecEntryText t = { .fin = &part, .shell = shell };
+        pcrec_emit_compound_parts(cx, shell);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_SEARCH, &t);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH, &t);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH_CAPS, &t);
         pcrec_sb_puts(c, "\n");
         goto in_entries;
     }
@@ -14232,42 +14250,32 @@ void pcrec_emit_dfa(Ctx *cx)
      * guard's DECODE), ahead of the search body that calls them; nothing on
      * an artifact whose mask holds none. */
     pcrec_emit_residual_inline(cx, c);
-    pcrec_emit_dfa_engine(cx, g.searchfn,
-                          pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH));
+    {
+        const PcrecEntryText t = { .body = g.searchfn };
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_SEARCH, &t);
+    }
 
     pcrec_sb_puts(c, "\n");
-    /* [ENG-ABS] AXIS G, and this is its ONE dispatch. `dfa_match_of` is the
-     * same call `<PREFIX>_DFA_MATCH` and `rx_info.match_form` are written
-     * from, so the stamp names the body that was actually emitted rather than
-     * a second reading of the predicate that chose it. */
+    /* [ENG-ABS] AXIS G, and this is its ONE dispatch: the `finish-at`
+     * emitter's form is the FINISH row's action. `dfa_match_of` is the same
+     * call `<PREFIX>_DFA_MATCH` and `rx_info.match_form` are written from, so
+     * the stamp names the body that was actually emitted rather than a second
+     * reading of the predicate that chose it. */
     /* [EMIT-ENTRIES] `_match_caps` reaches `_match` on the first two forms,
      * so an omitted `_match` is an omitted pair there. */
-    const bool em_match = pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH);
-    const bool em_caps = pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS);
-    if (!em_match && !em_caps) {
-        /* neither: an entry request that asked for neither */
-    } else if (dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH) {
-        emit_nomatch_match_def(cx, c, g.matchfn);
-        pcrec_sb_puts(c, "\n");
-        if (em_caps)
-            emit_anchored_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
-                                         g.matchcapsfn, g.matchfn, g.upper);
-    } else if (dfa_match_is_unwrapped(cx)) {
-        emit_anchored_entries(cx, c, &g);
-    } else {
-        if (em_match) {
-            emit_match_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH),
-                           g.matchfn, g.searchfn, g.upper);
-            pcrec_sb_puts(c, "\n");
-        }
-        if (em_caps)
-            emit_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
-                                g.matchcapsfn, g.searchfn, g.upper);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH) ||
+        pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS)) {
+        const PcrecFinish fin = {
+            dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH ? PCREC_FIN_NOMATCH
+            : dfa_match_is_unwrapped(cx) ? PCREC_FIN_VERIFY : PCREC_FIN_FILTER,
+            NULL };
+        const PcrecEntryText t = { .fin = &fin };
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH, &t);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH_CAPS, &t);
     }
     pcrec_sb_puts(c, "\n");
 in_entries:
-    emit_in_entry_defs(cx, c, g.searchfn, g.matchfn, g.matchcapsfn,
-                       cx->opt->prefix);
+    emit_in_entry_defs(cx, c, &g);
     pcrec_sb_puts(c, "\n");
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);

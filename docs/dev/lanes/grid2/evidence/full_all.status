@@ -1,0 +1,6 @@
+build rc=0 wall=78s
+check rc=0 wall=70s
+noclock F1 rc=0 time.sh: COMPLETE rows=749 groups=115 reruns=0 requeued=0 wall=58s
+noclock F3 rc=0 time.sh: COMPLETE rows=80 groups=10 reruns=0 requeued=0 wall=6s
+noclock EXT rc=0 time.sh: COMPLETE rows=296 groups=62 reruns=0 requeued=0 wall=23s
+ALLDONE

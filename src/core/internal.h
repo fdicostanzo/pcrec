@@ -79,6 +79,23 @@ typedef enum {
     PCREC_RANK_N
 } PcrecEdgeRank;
 
+/* [COMPOUND] E0 (docs/design/compound_entries.md §1.2): the combinator an
+ * entry's body is, `entry_rows[]`'s column. Only the ones with an emitted
+ * client: E0c writes each of the first four through its ONE emitter
+ * (`pcrec_emit_entry`, src/gen/emit_comb.c); the last three are written by
+ * no combinator emitter. */
+typedef enum {
+    PCREC_COMB_LOCATE_FINISH,   /* a search body: locate, then finish */
+    PCREC_COMB_FINISH_AT,       /* finish at the caller's position (own body,
+                                 * or search-and-filter) */
+    PCREC_COMB_FORWARD,         /* call a sibling for the same answer,
+                                 * binding storage or not */
+    PCREC_COMB_FIRST_NONZERO,   /* a compound controller (compound.md §A.2) */
+    PCREC_COMB_LEAF,            /* a residual: no controller */
+    PCREC_COMB_DATA,            /* `info` */
+    PCREC_COMB_DRIVER           /* `main` */
+} PcrecEntryComb;
+
 /* A linkage request: the entries to EXPORT and the entries to KEEP static
  * whether or not an exported one reaches them. Everything else an exported
  * or kept entry reaches through the dependency edges is kept static too;
@@ -3072,6 +3089,10 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [MEMFN] R17-a the VM hat's FIND, defined above `<searchfn>_run`
+     * (`pcrec_emit_vm_start_define`) for its entry and retry seeks
+     * (src/gen/emit_dfa.c's `struct MemfnFind`); NULL where none. */
+    const struct MemfnFind *mf_vmhat;
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
@@ -3081,6 +3102,10 @@ typedef struct {
      * `entry_shaped` says it has been. */
     unsigned entry_exported, entry_static;
     bool entry_shaped;
+    /* [COMPOUND] E0c: each entry's combinator on this attempt's shape, from
+     * its `entry_rows[]` row (PcrecEntryComb + 1; 0 where the entry has no
+     * row on the shape). Read only through `pcrec_entry_comb`. */
+    unsigned char entry_comb[PCREC_ENTRY_N];
     /* [COMPOUND] the compound this attempt emits in place of the plain
      * artifact's engine and entries (compound.md §A.3, §A.5), or NULL: the
      * walk's record, owned here (`job_cleanup` frees it with its texts). */
@@ -6482,6 +6507,12 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
 const char *pcrec_vm_start_scan_name(Ctx *cx);
 void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
                               const char *ind, bool entry);
+/* [MEMFN] R17-a the VM hat's define point (setfind.md §11.1): at file scope
+ * above `<searchfn>_run`, beside the run pre-check's blocks, it DEFINES the
+ * seek's one FIND site with the storage stem `stem` (`<searchfn>_run_pf`)
+ * where the VM route selects a seek, and records it on the Job
+ * (`mf_vmhat`) for both seeks; nothing where the row is `none`. */
+void pcrec_emit_vm_start_define(Ctx *cx, StrBuf *c, const char *p, const char *stem);
 
 /* [MEMFN] R4a′ (src/gen/memfn_stamps.c): the mark both engines write where
  * the kit's `<PREFIX>_MEMFN_FORMS`/`_MEMFN_LIBC` lines go, and the driver's
@@ -6627,6 +6658,16 @@ int  pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
                             const char *const *dirs, bool notes,
                             PcrecFindChain *out, pcrec_error *err);
 void pcrec_find_resolve(Ctx *cx, bool notes);
+
+/* ---- [KNOW-SRC] the knowledge kinds' ROWS (src/parse/ks_analysis.c,
+ * src/parse/ks_lib.c) and their TABLE (src/core/ksrc_kinds.c, the library
+ * tier; docs/design/measure_sets.md rev 3 §9.2). The resolver they drive is
+ * src/core/ksrc.h's, which includes nothing of this header. `pcrec_ks_kind`
+ * is the table's lookup by kind name, NULL for no such kind. */
+extern const KsKind pcrec_ks_analysis;
+extern const KsKind pcrec_ks_lib;
+extern const KsKind *const pcrec_ks_kinds[];
+const KsKind *pcrec_ks_kind(const char *name);
 
 int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
 
@@ -7174,7 +7215,7 @@ typedef struct {
                          * the embedded search (an MRL clamp's recompute or
                          * an adaptive re-seed row), not only the entry */
     bool compound;      /* DFA: the entries are a compound's controller
-                         * (`pcrec_emit_compound_body`) */
+                         * (src/gen/emit_compound.c) */
     bool comp_b;        /* compound: the second operand is emitted (not
                          * `never`), so the search relocates to it */
     bool comp_floor_any; /* compound: the first operand is asked on every
@@ -7216,6 +7257,10 @@ PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
 const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e);
 /* True iff `e` is emitted at all (not OMITTED). */
 bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
+/* [COMPOUND] E0c: the combinator of `e`'s `entry_rows[]` row on the stated
+ * shape. Asked of an entry with no row there, or before the shape is
+ * stated, it fails as an internal error. */
+PcrecEntryComb pcrec_entry_comb(const Ctx *cx, PcrecEntry e);
 /* The residual (src/enc/) entries' masks: `pcrec_enc` ids whose entry is
  * OMITTED (to drop from the artifact's mask) and kept STATIC. */
 unsigned pcrec_entry_enc_omit(const Ctx *cx);
@@ -7587,12 +7632,82 @@ typedef struct PcrecCompShell {
 } PcrecCompShell;
 
 /* src/gen/emit_compound.c -- the shell's body: the parts' texts (their
- * CPU-guarded byte records carried into `csb`) and the controller's three
- * matcher entries, `<p>_search`, `<p>_match`, `<p>_match_caps`, each part
- * call handled by the ONE call-site code table (compound.md §A.14). */
-void pcrec_emit_compound_body(Ctx *cx, const PcrecCompShell *sh,
-                              const char *searchfn, const char *matchfn,
-                              const char *matchcapsfn, const char *upper);
+ * CPU-guarded byte records carried into `csb`), ahead of the controller's
+ * three matcher entries, which `pcrec_emit_entry` writes through their rows:
+ * `<p>_search` by the `first-nonzero` emitter below, `<p>_match` and
+ * `<p>_match_caps` by the `finish-at` emitter's PART form, which calls
+ * `pcrec_emit_compound_match`. Each part call is handled by the ONE
+ * call-site code table (compound.md §A.14). */
+void pcrec_emit_compound_parts(Ctx *cx, const PcrecCompShell *sh);
+/* The `first-nonzero` combinator's ONE emitter, as `<p>_search` (§B.2). */
+void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
+                                const char *searchfn, const char *upper);
+/* The first part's one bounded attempt at `ctx->pos`, as `e` (`_match` or
+ * `_match_caps`) named `fn` (§B.3). */
+void pcrec_emit_compound_match(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
+                               PcrecEntry e, const char *fn, const char *upper);
+
+/* ---- [COMPOUND] E0c THE COMBINATOR EMITTERS (src/gen/emit_comb.c;
+ * docs/design/compound_entries.md §4.1, §5.1) -----------------------------
+ *
+ * An entry is written by its ROW's combinator emitter: `entry_rows[]` says
+ * which combinator the entry is on this shape, and the engine emitter says
+ * only what that combinator is built from, one member per combinator. The
+ * row picks the member read; a row whose member the engine did not supply is
+ * an internal error, so the table and the emitters cannot disagree in
+ * silence. */
+
+/* `forward(storage)`: how a forwarding entry binds the working storage. */
+typedef enum {
+    PCREC_FWD_INERT,      /* DFA `_in`: the descriptor is unused; call the
+                           * un-suffixed sibling (spec §10.4) */
+    PCREC_FWD_CALLER,     /* VM `_in`: a NULL descriptor IS the un-suffixed
+                           * call; else bind the caller's and run `_run` */
+    PCREC_FWD_OWN,        /* VM un-suffixed: bind the stamped default
+                           * storage and run `_run` */
+    PCREC_FWD_OWN_TIERED, /* ... on the fast tier, escalating to the deep
+                           * tier on a FRAMES give-up ([OPT-1]) */
+    PCREC_FWD_EMPTY       /* ... forward to `_in` through the empty
+                           * descriptor (the [CC-DIFF] forward rungs) */
+} PcrecFwdBind;
+
+typedef struct {
+    PcrecFwdBind bind;
+    const char *frames_code;   /* OWN_TIERED: the give-up code that escalates */
+} PcrecFwd;
+
+/* `finish-at`: which body answers `_match`/`_match_caps` -- axis G's forms
+ * (the FINISH row's action) and the compound's. */
+typedef enum {
+    PCREC_FIN_FILTER,     /* search from `ctx->pos`, keep a match there */
+    PCREC_FIN_VERIFY,     /* the anchored machine's own body (`unwrapped`) */
+    PCREC_FIN_NOMATCH,    /* a body that matches nothing */
+    PCREC_FIN_PART        /* a compound's first part, one attempt */
+} PcrecFinForm;
+
+typedef struct {
+    PcrecFinForm form;
+    const PcrecCompShell *shell;   /* PART */
+} PcrecFinish;
+
+/* What an engine emitter hands `pcrec_emit_entry`: the member for the
+ * combinator(s) the entry can be on its shapes, NULL elsewhere. */
+typedef struct {
+    const PcrecFwd *fwd;            /* forward */
+    const PcrecFinish *fin;         /* finish-at */
+    const char *body;               /* locate-then-finish: the DFA body's name */
+    const PcrecCompShell *shell;    /* first-nonzero */
+} PcrecEntryText;
+
+/* Writes entry `e` into `csb` through its row's combinator emitter, or
+ * nothing where the closure omits `e`; true iff it wrote. */
+bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
+                      const PcrecEntryText *t);
+
+/* src/gen/emit_dfa.c -- the anchored match-here entry (axis G's
+ * `unwrapped` form): the anchored machine's accessor block and `_match`'s
+ * own body. The `finish-at` emitter's VERIFY form calls it. */
+void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g);
 
 /* src/gen/emit_dfa.c -- the DFA search entry's head (K24's `noclone`, the
  * signature, P's caller-position prologue), shared with the controller. */

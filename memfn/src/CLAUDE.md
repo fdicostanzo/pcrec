@@ -290,6 +290,29 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   what `--list-axes` prints and what `--memfn=` accepts are one table; and
   `kit_opt_denied()` (R-13), the walk's read of a site's `no-<name>`.
 
+- **R17-a, the zero-mover seam (lane r17a, MF_SITE_ABI 11; setfind.md rev
+  2.3 §11.1)** — across these files, no byte any row writes moved:
+  `compose.c` gains `window_check` (the last of `site_check`'s rules: a
+  forward FIND states W0 `window_stated` 1, every other site and preds[]
+  entry 0; W1/W2 only under W0; back = move_back - d_min not negative;
+  `decl_point` 0/1), the storage point's protocol (`mf_locals`: refused where
+  `decl_point` is 0, a second time ("placed twice"), or with an `s`/`n` text
+  other than the define's, which `mf_define` copies into the site record;
+  `mf_use` refuses a decl_point site before its `mf_locals`; `mf_art_end`
+  refuses "never placed" and "placed, never read" before "never used") and
+  `mf_defined` (the define's form id, `reads_table` = the row's column and a
+  tabled SET term, `includes` = the row's column). `kit.h` gains
+  `kit_window_site`/`kit_d_min`, the site record's `def_s`/`def_n`/`placed`,
+  two arm columns appended last (`reads_table`: the PF walk rows, ofsskip and
+  the three precheck rows; `includes`: every row that can write a libc call)
+  and `MF_SERVES_WINDOW_TODAY`, which every contract (the arms' and
+  `fn_rows[]`') includes: W0 YES, W1 D_MIN, W2 ZERO, W4 any. `fields.def`
+  gains the class D_MIN and the fields `window_stated`, `move_back`,
+  `overshoot` (read on a forward FIND under W0 only, unstated elsewhere) and
+  `decl_point` (OBLIG, every site); `gate.c` their classifiers. No row keeps
+  storage yet: `mf_locals` writes nothing (R17-b's stateful row is the
+  first).
+
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,
 pcrec's abi event and `tests/memfn/pins/arms.tsv` re-pin in the same commit.

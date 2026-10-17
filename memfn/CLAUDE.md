@@ -50,6 +50,26 @@ offset i, forward only), `MF_MAX_TERM` 32, a strided site's kit-owned reads
 at `s[cursor + i]`, `span_hi` an iteration count; the generic row renders it
 (`stmt_advance`, one `(member)` per term), K1 `mf_ref_skip_blocks`; kit-only,
 no pcrec byte moved.
+R17-a (R-17's zero-mover seam, lane r17a, 2026-10-12; `docs/design/memfn/
+setfind.md` rev 2.3 §11.1) made it 11 with NO `MF_VOCAB` move: the window
+fields W0-W2 (`mf_pred.window_stated`/`move_back`/`overshoot`, stated on
+every forward FIND and only there; today's window is the candidate), the
+host capability W4 (`mf_site.decl_point`), W5 (`fn_ref` on a STMT site is
+the storage stem), `mf_locals` (the storage point, binding `s`/`n`, with its
+refusals) and `mf_defined` (`reads_table`, `includes`). pcrec's set FIND
+sites are DEFINED at a file-scope point (the DFA set rows'
+`pf_define_find`, after the run pre-check's site; the VM hat once above `_run`), then storage point, table
+iff `reads_table`, use(s). No row keeps storage yet; no byte moved.
+R17-b (on the record branch lane/memfn-r17, not on main; lands at R17-b′ B4;
+R-17's one SIMD-off byte move, lane r17b, 2026-10-12; setfind.md
+rev 2.3 §11.2) made it 12 with NO `MF_VOCAB` move: the stateful row
+`pf_terms_mask` (`mask8_swar` behind `<stem>__next_candidate`, a cover of at
+most 4 terms from `src/terms.c`, the W8 sub-block from `src/mfk.c`, deny
+`--memfn=no-pf-terms-mask`), `mf_result.needs_const_subject` (renamed from `keeps_storage` by r17c, r1 B-N4; pcrec const-qualifies
+the body holding such a site), the test-only `MF_P_TRACE` rendering and the
+identity reference `mf_shared_block`. pcrec's abi 76 -> 77 in the same commit;
+`MEMFN_FORMS` stays `none` (no SIMD form). G2's setfind family is
+`tests/run_g2_setfind.py`.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
@@ -159,6 +179,9 @@ first; K3 second.
 | the CHECKED SITE MANIFEST (`tests/memfn/site_manifest.tsv`, C17): every emitted search site `delegated` or `pending` | the delegated sites' code; the `MEMFN_FORMS`/`MEMFN_LIBC` stamp values for them |
 | the hooks' text (subject, bounds, `on_miss`, escapers, table names) | everything between the hooks |
 | the guard: pcrec's own timing, kit change on vs its deny, both layers | its own exhaustive tests (G2) and its own timed control (K-5) |
+| the knowledge keys the regime table reads (P/N/M/E/H, the ISA level; [REGIME-LANDINGS], D165's iterator) and `docs/design/regime_tables.md`, main's MIRROR of the joint contract | the REGIME TABLE itself (the candidate-finder rows, D161 add. 11; the kit's copy is the source of truth) and its pick function |
+| the MEASUREMENT SET's format, loader, store and stamp ([MEASURE-SET], D166) | the set's VALUES and the METHOD that measures them (until [MEASURE-SET], a labelled kit-private interim TSV) |
+| D166's mover census (artifact bytes, emit_sweep-shaped); the official verdict (pcrec-bench on targeted hardware, D144 add. 4); comments on the evaluator | the REPLAY EVALUATOR [REGIME-EVAL] (`docs/design/memfn/regime_eval.md`), `regime_pick`, its advisory pick census, and the twin [REGIME-TWIN] |
 
 pcrec's sources reach the kit only through `memfn/include/memfn.h`. The
 kit links nothing from `src/`, `cli/` or `lib/`. Generated artifacts

@@ -494,6 +494,7 @@ const mf_formdecl vrun_w32_decl = {
     [FLD_note_tag]        = MF_ANY,                   /* not read */ \
     [FLD_indent]          = MF_ANY,                   /* not read: file scope */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment */ \
+    MF_SERVES_WINDOW_TODAY \
     [FLD_policy]          = CM(NONE) | CM(SIZE),      /* SIMD layer: never PORTABLE, never INLOOP */
 
 const gate_contract vrun_w16_ct = {

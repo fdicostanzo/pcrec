@@ -1,0 +1,24 @@
+# measure_sets.md rev 3 §9.7: [KNOW-SRC] K1/K2's EDIT SET, written once as data against the
+# branch point 61c92ed22 (the pre-K1 text). docs/design/start_table/sabotage_anchors.py derives
+# the re-aim/re-run map from it (k1_anchors.tsv): a row is RE-AIM iff its anchor sits in a `def`
+# below or OVERLAPS a `line` occurrence, in EVERY file; nothing else states a re-aim count.
+# K1 = lane ksrc; K2 deletes the pre-K1 copies kept under -DPCREC_KSRC_BOTHWAYS (the same defs).
+# kind	value	commit	why
+def	probe_dir	K1	rxt_find.c: stop S2's probe -> pcrec_ks_resolve (ksrc.c ks_probe_dir) + the analysis row's probe (ks_analysis.c); the old copy kept under PCREC_KSRC_BOTHWAYS, deleted at K2
+def	dir_has_exact	K1	rxt_find.c -> pcrec_ks_dir_has_exact (ksrc.c), the entry_match = exact column
+def	stops_text	K1	rxt_find.c -> pcrec_ks_stops_text (ksrc.c)
+def	stop_store	K1	rxt_find.c: the stop index space -> ksrc.h's KsAt (moves into the BOTHWAYS block)
+def	find_bundle	K1	rxt_find.c: the stop loop -> pcrec_ks_resolve; find_bundle builds the link from the hit
+def	fnv1a	K1	findings.c -> pcrec_ks_fnv1a (ksrc.c), behind pcrec_ks_digest
+def	pcrec_find_byte_rate_digest	K1	findings.c: the STAMP role's digest -> pcrec_ks_digest(&pcrec_find_rate_role)
+def	pcrec_find_rows_digest	K1	findings.c: the ITEM role's digest -> pcrec_ks_digest(&pcrec_find_rows_role)
+def	pcrec_find_name_ok	K1	findings.c: the name rule -> pcrec_ks_name_ok (ksrc.c)
+def	lib_resolve	K1	rxt_source.c: the closure's lib search -> lib_find -> pcrec_ks_resolve under the lib row
+line	if (ref[0] == '/') found = path_is_file(ref);	K1	rxt_source.c pcrec_rxt_source_resolve: the existence loop -> lib_find
+line	found = path_is_file(join_path(&src->arena, own, ref));	K1	rxt_source.c: the existence loop -> lib_find
+line	found = path_is_file(join_path(&src->arena, libdirs[d], ref));	K1	rxt_source.c: the existence loop -> lib_find
+line	if (ts.opt.analysis && strcmp(ts.opt.analysis, t->analysis) != 0)	K1	cli/main.c apply_target: fill-only -> pcrec_ks_pick (ksrc.c); the note stays
+line	ts.opt.analysis = t->analysis;	K1	cli/main.c apply_target: -> ts.opt.analysis = pk.chosen
+line	if (!pcrec_find_name_ok(v, strlen(v))) {	K1	cli/main.c --analysis: -> pcrec_ks_classify(flag_classify)
+line	!pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis));	K1	cli/main.c the -I lift: -> pcrec_ks_classify(list_classify)
+line	else if (pcrec_find_name_ok(st.list_analysis, strlen(st.list_analysis)))	K1	cli/main.c --list-analysis: -> pcrec_ks_classify(list_classify)

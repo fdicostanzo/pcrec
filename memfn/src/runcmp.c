@@ -583,6 +583,7 @@ static const gate_contract runcmp_ct = {
     [FLD_note_tag]        = MF_ANY,                   /* not read */
     [FLD_indent]          = MF_ANY,                   /* not read: an expression, no statement */
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment */
+    MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 }};
 
@@ -594,6 +595,8 @@ const arm runcmp_arm = {
     runcmp_use,
     &runcmp_ct,
     NULL,
+    0,                  /* one RUN term: no table */
+    MF_INC_STRING_H,    /* the memcmp row; the words row's memcpy loads */
 };
 
 /* Every row reads the term's bytes, mask and length (rc_of, :123-127). */
