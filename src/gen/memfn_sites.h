@@ -41,11 +41,6 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
 
 /* ---- the attempt's kit state, and the adapters --------------------------- */
 
-/* The kit's arena op over a pcrec Arena (`u`): the attempt's own art and the
- * reader shadow's scratch arts (src/gen/emit_dfa.c, R17-b' B1) allocate
- * through it. */
-void *pcrec_memfn_arena_alloc(void *u, size_t n);
-
 /* The attempt's mf_art, begun on first ask (one per Job attempt, so the
  * size ladder's re-emission starts clean). */
 mf_art *pcrec_memfn_art(Ctx *cx);

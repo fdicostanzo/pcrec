@@ -58,7 +58,9 @@ _Static_assert(MF_CMT_NONESSENTIAL == PCREC_CMT_NONESSENTIAL,
 
 /* ---- the attempt's kit state --------------------------------------------- */
 
-void *pcrec_memfn_arena_alloc(void *u, size_t n)
+/* The kit's arena op over a pcrec Arena (`u`): the attempt's art allocates
+ * through it. */
+static void *pcrec_memfn_arena_alloc(void *u, size_t n)
 {
     return pcrec_arena_alloc(u, n);
 }

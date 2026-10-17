@@ -135,7 +135,8 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `req_site_define`). `pcrec_memfn_art_begin` hands the kit the harness's
   measurement set (`--harness=measures=`, NULL in every shipped compile) and
   no analysis object; `mf_art_end`'s `consulted` is read by nobody before
-  B4. The kit's arena op is exported as `pcrec_memfn_arena_alloc`.
+  B4. The kit's arena op, `pcrec_memfn_arena_alloc`, is `memfn_sites.c`'s
+  own (static: the attempt's art is its only user).
   `cand_nodes[]` declare their KIT ASKS (`kask[slot]` route masks, inside
   `reads`, and `kfields`: PRESENCE and RETRY ask NEXT's site on DFA|ATTEMPT
   for EXISTS|PROVEN0, RECOVER on DFA for EXISTS; self-check
