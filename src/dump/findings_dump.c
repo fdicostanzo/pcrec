@@ -10,7 +10,11 @@
  * named bundle's own blocks, declarations and provenance.
  * `--list-analysis FILE` is the per-TARGET view [r2 M-S8]: what each target
  * of a `.rxt` file resolves to after config joins and the fill-only
- * `--analysis`.
+ * `--analysis`. [KNOW-SRC] K3: `--list-analysis NAME --view=V` is one of the
+ * analysis KIND's own views of the named bundle (canonical: a loadable
+ * `.rxt`; decoded: the loaded document field by field), written by the
+ * kind row's writer columns (src/parse/ks_analysis.c) through the knowledge
+ * module's view dispatch (`pcrec_ks_view_write`).
  *
  * THE RESOLUTION SECTION IS THE STAMP'S ANSWER BY CONSTRUCTION: it asks the
  * compile's own resolver (`pcrec_find_chain_build`), its own selection rule
@@ -28,6 +32,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "core/ksrc.h"
 #include "enc/enc.h"
 #include "pcrec.h"
 
@@ -352,6 +357,45 @@ char *pcrec_find_list_name(const char *name, const char *const *dirs,
     bundle_sections(&sb, &a, src, chain.links[0].bundle);
     pcrec_rxt_source_free(src);
     pcrec_arena_free(&a);
+    return pcrec_sb_take(&sb);
+}
+
+/* `KsOut`'s writer over a `StrBuf`: an append that cannot fail (an
+ * unattached buffer aborts on OOM, as every listing's does). */
+static int view_sb_write(void *ctx, const char *p, size_t n)
+{
+    StrBuf *sb = ctx;
+    for (size_t i = 0; i < n; i++) pcrec_sb_putc(sb, p[i]);
+    return 0;
+}
+
+char *pcrec_find_list_view(const char *name, const char *const *dirs,
+                           const char *view, pcrec_error *err)
+{
+    StrBuf sb = { 0 };
+    Arena a = { 0 };
+    PcrecFindChain chain;
+    RxtSource *src;
+    KsErr kerr = { { 0 } };
+    KsOut out = { view_sb_write, &sb };
+    PcrecKsAnalysisItem it;
+    int rc;
+    memset(err, 0, sizeof *err);
+    if (pcrec_find_chain_build(&a, name, NULL, dirs, true, &chain, err) != 0 ||
+        !(src = link_source(&chain.links[0], err))) {
+        pcrec_arena_free(&a);
+        return NULL;
+    }
+    it.src = src;
+    it.bundle = chain.links[0].bundle;
+    rc = pcrec_ks_view_write(&pcrec_ks_analysis, view, &out, &it, &kerr);
+    pcrec_rxt_source_free(src);
+    pcrec_arena_free(&a);
+    if (rc != 0) {
+        snprintf(err->msg, sizeof err->msg, "%s", kerr.msg);
+        pcrec_sb_free(&sb);
+        return NULL;
+    }
     return pcrec_sb_take(&sb);
 }
 

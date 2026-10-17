@@ -3925,3 +3925,16 @@ the block declares; arm `memfnfinder` (finder_check.py family L maps every
 token of the closed set read off `pcrec --list-schema` through
 `tests/memfn/prov_check.c` and demands its own nonzero enumerator), hand-measured
 DETECTED (figure in `docs/dev/lanes/r24_report.md`). No artifact moves.
+
+**S961, S962, S984 (lane ksrc23, 2026-10-17, [KNOW-SRC] K3; the new arm
+`knowledge`, `tests/knowledge/run_knowledge_tests.sh`):** measure_sets.md
+§8.5 wrote these for the measures kind; K3 maps them onto the analysis kind.
+S961 (the canonical writer omits the bundle's `description`, a part of the
+document `rows_digest` does not cover) and S984 (the canonical writer keeps
+only the first encoding of each `serves` `when` list — §8.5's "drops every
+`serves`" would make the view refuse to load, since `serves` is required)
+leave R1 and R2 green by construction; only R3 (analyze/'s `--dump-doc`)
+detects them. S962 plants the resolver's derived-section refusal out
+(`ks_probe_dir`, src/core/ksrc.c), so a listing fed back reaches the `.rxt`
+reader and is refused for an unrelated reason; the detector holds the
+refusal's CLASS. Solo verdicts in `docs/dev/lanes/ksrc23_report.md`.

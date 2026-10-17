@@ -1974,7 +1974,8 @@ static const char *frame_field(const RxtFrame *f, const RxtSchemaRow *rowbase,
  * `#section` row — called from `RXT_CLOSE_FRAME` after `frame_constraints`
  * has already passed, so a record missing a `required` field never reaches
  * here at all. [FINDINGS] B2: a DATA frame's declarations are kept on its
- * block. A no-op for every other scope (CONFIG/FILE frames close through
+ * block. [KNOW-SRC] K3: a BUNDLE frame's `description` is kept on its
+ * `analysis` row. A no-op for every other scope (CONFIG/FILE frames close through
  * the same macro and carry nothing to report). */
 static void close_section_frame(Arena *a, RxtSource *src,
                                 const RxtSchemaRow *rowbase, size_t nrows,
@@ -2012,6 +2013,12 @@ static void close_section_frame(Arena *a, RxtSource *src,
         fb->question = frame_field(f, rowbase, nrows, "question");
         fb->reader   = frame_field(f, rowbase, nrows, "reader");
         fb->analyzer = frame_field(f, rowbase, nrows, "analyzer");
+    } else if (f->scope == RXT_SCOPE_BUNDLE && f->row) {
+        /* [KNOW-SRC] K3: a bundle's own `description` (as written; prose, so
+         * untrimmed or block-scalar), for the analysis kind's canonical and
+         * decoded views. `--list-source` reports a row's `description` for
+         * pattern rows only, so this moves no dump. */
+        f->row->description = frame_field(f, rowbase, nrows, "description");
     } else if (f->scope == RXT_SCOPE_VARIANT) {
         RxtVariant *r = variant_push(a, src);
         r->line = f->open_line;

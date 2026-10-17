@@ -27,10 +27,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (`src/parse/ks_analysis.c`, `src/parse/ks_lib.c`); `ksrc_kinds.c` is the
   TABLE (`pcrec_ks_kinds[]`, `pcrec_ks_kind`), at the library tier and in
   this directory only because libpcrec compiles it — it has no reader until
-  [LIST-TABLES]/K3's harness driver. NOT HERE YET, by step: the section-TSV
-  reader (part 1, with the `measures` kind, M0), the embed generator (part
-  4, K2's `ksgen`), the `--list-<kind>` views (part 6, K3); a row column
-  joins `KsKind` in the step that first reads it.
+  [LIST-TABLES]/K3's harness driver (since K2 `scripts/ksgen.c` looks a
+  kind up through it). NOT HERE YET: the section-TSV reader (part 1, with the
+  `measures` kind, M0); a row column joins `KsKind` in the step that first
+  reads it. **K2 (lane ksrc23, 2026-10-17)**: the embed generator (part 4)
+  is `scripts/ksgen.c`, linking these parts. **K3 (same lane): part 6, the
+  views** — `KsOut` (the caller's writer), the row's `write_canonical`/
+  `write_decoded`/`derived_sections` columns, `pcrec_ks_view_write` (a view
+  NAME to its writer column, a first-match table of offsets) and
+  `pcrec_ks_derived_section` (a file's first `#section` line named for one of
+  the kind's DERIVED views), which `ks_probe_dir` reads before the kind's
+  probe: a listing fed back through `-I` is refused naming the section and
+  `--view=canonical` (S962).
 
 - **findings.c** / **findings.h** — [FINDINGS] B1 = [PATFACTS] step 3.1
   (2026-09-27, D122/D123/D126; `docs/design/findings/design.md` §6,

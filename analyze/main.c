@@ -394,9 +394,37 @@ static int cmd_check(const char *bundle_path, const char *file)
  * argv wiring
  * --------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------
+ * Command: dump-doc ([KNOW-SRC] K3, docs/design/measure_sets.md §9.6)
+ * --------------------------------------------------------------------- */
+
+/* Prints the one bundle in `file` as its DOCUMENT (dump_doc): R3's and R5's
+ * independent side for pcrec's analysis kind. */
+static int cmd_dump_doc(const char *file)
+{
+    unsigned char *text;
+    size_t len;
+    Bundle bd;
+    char *err = NULL;
+    if (read_whole_file(file, &text, &len) != 0) {
+        fprintf(stderr, "pcrec-analyze: %s: %s\n", file ? file : "-",
+                strerror(errno));
+        return 2;
+    }
+    if (parse_bundle((const char *)text, len, &bd, &err) != 0) {
+        fprintf(stderr, "pcrec-analyze: %s: %s\n", file ? file : "-", err);
+        free(err);
+        free(text);
+        return 2;
+    }
+    dump_doc(stdout, &bd);
+    free(text);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-    int opt_merge = 0, opt_digest_only = 0;
+    int opt_merge = 0, opt_digest_only = 0, opt_dump_doc = 0;
     const char *opt_check = NULL;
     const char *opt_name = NULL, *opt_retrieved = NULL, *opt_scan = NULL;
     const char *opt_source = NULL, *opt_url = NULL, *opt_ref = NULL, *opt_license = NULL;
@@ -413,6 +441,7 @@ int main(int argc, char **argv)
 #define NEXTVAL() (i + 1 < argc ? argv[++i] : NULL)
         if (!strcmp(a, "--merge")) opt_merge = 1;
         else if (!strcmp(a, "--digest-only")) opt_digest_only = 1;
+        else if (!strcmp(a, "--dump-doc")) opt_dump_doc = 1;
         else if (!strcmp(a, "--check")) {
             const char *v = NEXTVAL();
             if (!v) { fprintf(stderr, "pcrec-analyze: --check requires a value\n"); return 2; }
@@ -462,6 +491,7 @@ int main(int argc, char **argv)
     const char *file = npos ? pos[0] : NULL;
 
     if (opt_digest_only) return cmd_digest_only(file);
+    if (opt_dump_doc) return cmd_dump_doc(file);
     if (opt_check) return cmd_check(opt_check, file);
 
     if (!opt_name || !opt_retrieved) {

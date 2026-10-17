@@ -551,6 +551,11 @@ typedef struct {
      * bundle NAME or a `.rxt` FILE (the per-target view). */
     int         list_analyses;
     const char *list_analysis;
+    /* [KNOW-SRC] K3 `--view=V`: `--list-analysis NAME`'s view of the
+     * bundle itself (`canonical` or `decoded`, docs/spec/findings.md
+     * §8.4/§8.5) instead of the chain-and-resolution listing; NULL for that
+     * listing. A modifier of that one mode, not a mode of its own. */
+    const char *list_view;
     const char *target;
     const char **libdirs;
     size_t      nlibdirs, libcap;
@@ -1220,6 +1225,13 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             opt.analysis = v;
         }
         else if (!strcmp(a, "--list-analyses")) st->list_analyses = 1;
+        else if (!strcmp(a, "--view") || !strncmp(a, "--view=", 7)) {
+            if (a[6] == '=') st->list_view = a + 7;
+            else if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            } else st->list_view = argv[++i];
+        }
         else if (!strcmp(a, "--list-analysis")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
@@ -1941,6 +1953,19 @@ int main(int argc, char **argv)
         st.opt.analysis_dirs = st.libdirs;
     }
 
+    /* [KNOW-SRC] K3: `--view` selects a view of ONE bundle, so it applies to
+     * `--list-analysis NAME` and to nothing else (a FILE has targets, not an
+     * item; every other mode has no item at all). */
+    if (st.list_view &&
+        !(st.list_analysis &&
+          pcrec_ks_classify(pcrec_ks_analysis.list_classify,
+                            st.list_analysis) == KS_REQ_NAME)) {
+        cli_err("--view applies to --list-analysis NAME only");
+        free(st.libdirs);
+        free(st.files);
+        return 1;
+    }
+
     /* [REL-1.10] D118 item 2: `--pattern` and a FILE OPERAND never combine
      * — each names a different, exclusive way to give pcrec a pattern. */
     if (st.pattern && st.nfiles) {
@@ -2348,6 +2373,9 @@ static int cli_dispatch(CliState st)
         }
         if (st.list_analyses)
             v = pcrec_find_list_names();
+        else if (st.list_view)
+            v = pcrec_find_list_view(st.list_analysis, st.libdirs,
+                                     st.list_view, &lerr);
         else if (pcrec_ks_classify(pcrec_ks_analysis.list_classify,
                                    st.list_analysis) == KS_REQ_NAME)
             v = pcrec_find_list_name(st.list_analysis, st.libdirs, &lerr);

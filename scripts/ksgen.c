@@ -101,6 +101,15 @@ static int gen_analysis(const KsKind *kind, FILE *out, char **files, int nfiles)
         }
         memcpy(name, base, nlen - slen);
         name[nlen - slen] = 0;
+        {   /* [KNOW-SRC] K3: a listing's derived view is never a store text */
+            const char *sec = pcrec_ks_derived_section(kind, path);
+            if (sec) {
+                fprintf(stderr, "ksgen: %s carries '#section %s', a derived "
+                        "view of %s and never an input\n", path, sec,
+                        kind->list_flag);
+                return 1;
+            }
+        }
         src = pcrec_rxt_source_parse_buf(path, text, len, &err);
         if (!src) { fprintf(stderr, "ksgen: %s\n", err.msg); return 1; }
         for (size_t r = 0; r < src->nrows; r++)

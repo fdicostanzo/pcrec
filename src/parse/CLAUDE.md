@@ -1683,7 +1683,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   which is why it is a parse-layer TU. `pcrec_ks_lib` is the RESOLVE-ONLY
   `lib "path"` row — the naming file's directory then each `--lib-path`,
   `entry_match = probe-exists` (F12, kept for zero movers) and the `CLEAN`
-  join — with no probe, item, stamp or listing.
+  join — with no probe, item, stamp or listing. **K3 (lane ksrc23,
+  2026-10-17)**: the analysis row's two VIEWS of one bundle
+  (`PcrecKsAnalysisItem`, the parse plus the bundle name):
+  `analysis_write_canonical`, a normalized `.rxt` bundle that IS a loadable
+  analysis (blocks in FILE order, because `rows_digest` folds that order;
+  prose values untrimmed and block-scalar when multi-line), and
+  `analysis_write_decoded`, the loaded document as one `#section decoded`
+  row per field plus the `item` digest — the shape `pcrec-analyze
+  --dump-doc` prints from analyze/'s independent reader (R3/R5). Its
+  `derived_sections` column names the listing sections the loader refuses.
+  `rxt_source.c` keeps a bundle's `description` on its `analysis` row
+  (`close_section_frame`) for these views; `--list-source` reads a row's
+  `description` for pattern rows only, so no dump moves.
 
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every

@@ -355,7 +355,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples test-findings test-ucp \
+      test-uprops test-core test-vars test-examples test-findings test-knowledge test-ucp \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
@@ -1641,6 +1641,17 @@ test-findings: all
 	bash tests/findings/run_findings_tests.sh
 	python3 tests/findings/run_analyzer_tests.py
 	python3 tests/findings/run_analyzer_pinned.py
+
+# [KNOW-SRC] K3 (docs/design/measure_sets.md rev 3 §9.6, §9.7): ROUND-TRIP
+# IDENTITY for the analysis kind — R1 (load->list->load keeps the item
+# digest), R2 (list->load->list is a fixed point), R3 (the canonical view and
+# the original read as one document by analyze/'s INDEPENDENT reader) and R5
+# (pcrec's decoded view = that reader's decode of the file), plus the
+# loader's refusal of a derived view fed back, over the shipped bundles and
+# the fixtures. ~2 s. Verdict: `*** [test-knowledge] Error`.
+test-knowledge: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-knowledge.ran"; fi
+	bash tests/knowledge/run_knowledge_tests.sh
 
 # [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md
 # "Tiered testing" has the per-section numbers this was chosen from). The

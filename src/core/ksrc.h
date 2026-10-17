@@ -20,10 +20,12 @@
  * links nothing else of `src/`.
  *
  * WHAT IS NOT HERE YET, by step (§9.7): the section-TSV reader (part 1)
- * lands with its first reader, the `measures` kind (M0); the embed
- * generator (part 4) is K2's `ksgen`; the `--list-<kind>` views (part 6),
- * and the row columns they read (`parse`, `write_canonical`, ...), are K3's.
- * A column joins `KsKind` in the step that first reads it. */
+ * lands with its first reader, the `measures` kind (M0). The embed
+ * generator (part 4) is `scripts/ksgen.c` (K2), which links these parts. The
+ * views (part 6) are here since K3: `pcrec_ks_view_write` dispatches a view
+ * NAME to the row's writer columns, and `pcrec_ks_derived_section` is the
+ * loader's refusal of a derived view fed back as an input (§9.6). A column
+ * joins `KsKind` in the step that first reads it. */
 #ifndef PCREC_KSRC_H
 #define PCREC_KSRC_H
 
@@ -43,6 +45,14 @@ typedef struct {
 typedef struct {
     char msg[256];
 } KsErr;
+
+/* A writer the caller supplies (a view's destination): `write` appends `n`
+ * bytes and returns 0, or nonzero on failure. The parts never see the
+ * caller's buffer type. */
+typedef struct {
+    int  (*write)(void *ctx, const char *p, size_t n);
+    void  *ctx;
+} KsOut;
 
 /* ---- the row's column vocabularies (§9.5) ---------------------------- */
 
@@ -132,6 +142,17 @@ typedef struct KsKind {
      * every other answer the probe has released it. */
     KsFile (*probe)(const char *path, const char *name, void **doc,
                     size_t *nitems, KsErr *err);
+    /* §9.6's two views of ONE loaded item (`doc` is the kind's own item
+     * handle, not the probe's parse): the CANONICAL view, which IS a
+     * loadable input of the kind, and the DECODED view, the loaded document
+     * field by field (a derived view, never an input). NULL: the kind has
+     * no such view. 0, or -1 with `err` filled. */
+    int  (*write_canonical)(const KsOut *o, const void *doc, KsErr *err);
+    int  (*write_decoded)(const KsOut *o, const void *doc, KsErr *err);
+    /* The section names of the kind's DERIVED views (§9.5's last row),
+     * NULL-terminated: a file carrying `#section <one of them>` is a listing
+     * fed back, and the loader refuses it naming the section. NULL: none. */
+    const char *const *derived_sections;
 } KsKind;
 
 /* ---- part 2: the resolver -------------------------------------------- */
@@ -207,6 +228,23 @@ typedef struct {
     bool        disagree;
 } KsPick;
 KsPick pcrec_ks_pick(const char *flag_value, const char *file_value);
+
+/* ---- part 6: the views (§9.2 part 6, §9.6) ---------------------------- */
+
+/* Writes `s` (NUL-terminated) to `o`; 0, or nonzero when the writer fails. */
+int pcrec_ks_out(const KsOut *o, const char *s);
+
+/* Writes view `view` ("canonical" or "decoded") of item `doc` through the
+ * row's writer column. -1 with `err` filled on an unknown view, a view the
+ * kind has no writer for, or the writer's own refusal. */
+int pcrec_ks_view_write(const KsKind *k, const char *view, const KsOut *o,
+                        const void *doc, KsErr *err);
+
+/* The first `#section NAME` line (at column 1) of the file at `path` whose
+ * NAME is one of `k->derived_sections`, or NULL (none, an unreadable file,
+ * or a kind with no derived sections). The returned name is the row's own
+ * string. */
+const char *pcrec_ks_derived_section(const KsKind *k, const char *path);
 
 /* ---- part 5: the digests --------------------------------------------- */
 
