@@ -1,0 +1,20 @@
+# tests/memfn/pr11_witnesses.tsv -- PR-11's control's fixed witnesses (R17-b'
+# B3a, lane b3a; r17b_prime.md rev 3 §4.6 HYB_PF). Read by
+# tests/memfn/run_pr11.sh through tests/memfn/pr11_front.py. Each line is a
+# pattern whose VM hybrid prefilter is COUNT-COLLAPSED, and a subject the
+# pattern MATCHES (in the .rxt subject escapes: \xNN \t \n \r \\). The check
+# deletes each claimed necessary byte (and every occurrence of the claimed
+# run) from the subject and requires the EMITTED front to find no candidate;
+# the undeleted subject must find one. The first two lines are pcscope's W4
+# (both encodings). The first three claim a byte ONLY a collapsed repeat's
+# rmin keeps (`@`, `b`): a plant that collapses X{m,n} to X{0,} instead of
+# X{min(m,1),} drops it, and the front then finds a candidate. The fourth is
+# the control whose claims (`q`, `z`) lie outside every repeat. Each compiles
+# in well under a second (the slow collapse-by-retry witnesses are the
+# census's, docs/design/memfn/r17b_prime/b3a/pr11_census.py).
+#
+# flags	pattern	matching subject
+-	(x?)([a-zZ]+)+ZZZ(?:@[ab]){1,16000}	aZZZ@a
+-e utf8	(x?)([a-zZ]+)+ZZZ(?:@[ab]){1,16000}	aZZZ@b
+-	(x+)y(?:b|bb){2,9000}z	xybbz
+-	(\w+)q(?:ab|cd){2,9000}z	wqabcdz
