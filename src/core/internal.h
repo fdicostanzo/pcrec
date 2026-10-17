@@ -6555,6 +6555,16 @@ void pcrec_emit_memfn_mark(StrBuf *c);
  * (src/gen/emit_dfa.c); also the memfn sink's `legend_byte` op. */
 void pcrec_emit_legend_byte(StrBuf *c, int b);
 void pcrec_memfn_stamps_render(Ctx *cx);
+/* [WINDOW-E1] RP (window_contract.md §3.7.3a, src/gen/memfn_stamps.c): the
+ * second mark kind, a KNOWLEDGE-stamp mark. The `rx_info` writer puts one
+ * where `#define <PREFIX>_FINDINGS` goes and one where `.findings = …`
+ * goes; the finishing pass renders both after `mf_art_end`, the one render
+ * point of the knowledge stamps. */
+typedef enum { PCREC_KS_MARK_DEFINE, PCREC_KS_MARK_INIT } PcrecKsMark;
+void pcrec_emit_ks_mark(StrBuf *c, PcrecKsMark m);
+/* The two lines those marks stand for, `value` being the stamp's text
+ * (src/gen/emit_dfa.c, the `rx_info` writer's own spelling of them). */
+void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
 /* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
  * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
  * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
