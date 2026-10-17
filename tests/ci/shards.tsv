@@ -63,7 +63,7 @@ test-core	1	2.2	ci-measured sections.tsv
 test-vars	3	7.6	ci-measured sections.tsv
 test-examples	3	0.5	ci-measured sections.tsv
 test-findings	2	154.3	ci-measured sections.tsv
-test-knowledge	1	5.0	ESTIMATED (lane ksrc23: 2.3 s wall locally, never run on a runner)
+test-knowledge	1	2.3	measured on the Linux dev box, not a runner (lane ksval: 5 quiet runs of make test-knowledge, 2.33 s each; the full make test's section wall was 2.3 s)
 test-ucp	1	28.5	ci-measured sections.tsv
 test-clskit	3	416	ci-measured sections.tsv
 test-encoding-checks	3	56	ci-measured sections.tsv
