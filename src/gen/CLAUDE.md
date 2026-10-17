@@ -129,7 +129,8 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `DFA_SELECT_ROUTED` is the walk over `dfa_pfs[]`, `DFA_SELECT` every other
   list (all DFA-only). No row serves the VM route until stage 2.
 - **R17-b′ B1 (lane fdb1, 2026-10-16; MF_SITE_ABI 12, zero movers).**
-  `pcrec_memfn_site` states `body` ONESHOT on every site (R-19), and every
+  every builder states `body` ONESHOT (R-19; since R-23 the common
+  constructor `pcrec_memfn_site` writes none), and every
   FIND's hooks carry `start` (`PcrecFind.start`; `PCREC_MF_ORIGIN`
   `"search_from"` for the PF, VM-hat and MLINE sites, and the PRE composite's
   `req_site_define`). `pcrec_memfn_art_begin` hands the kit the harness's

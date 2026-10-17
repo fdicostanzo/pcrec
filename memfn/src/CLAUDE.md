@@ -355,7 +355,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `mf_define` would take, no state written; `kit_class` the class of an
   arm on a site), the set's checks (`measures_check`: `kit.` keys only,
   values in bound, no duplicate) and `consulted`, `site_check`'s `body`
-  rule (PARAM refused until B8), and under MF_TRACE the define's re-ask
+  rule (PARAM refused until B8; an UNSTATED body refused since R-23, MF_SITE_ABI 14), and under MF_TRACE the define's re-ask
   (class must equal; `exists=0` must prove all bytes); `arms` gain a `libc`
   column (the class's `libc_free`).
 

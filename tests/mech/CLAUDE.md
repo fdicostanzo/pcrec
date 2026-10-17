@@ -3905,3 +3905,14 @@ AXES=--memfn`: the reach alone over a 1-in-40 corpus sample, trailer
 `checks passed:`/`checks failed:`; vocabulary entry in
 `run_sabotage_matrix.sh`). DETECTED (figure in the lane report).
 
+
+**S1089, S919 retired (lane r23, 2026-10-17, [MEMFN] R-23; MF_SITE_ABI 14):**
+`mf_site.body` is a STATED fact (its zero UNSTATED), refused by the kit's
+`site_check`. S1089 removes that refusal (`memfn/src/compose.c`): an UNSTATED
+site then reaches the gate and the finder shadow; arm `memfnfinder`
+(finder_check.py family I renders the UNSTATED, PARAM and out-of-enum sites
+and demands the refusal naming `body`), hand-measured DETECTED (figure in
+`docs/dev/lanes/r23_report.md`). S919 (the gate reads an UNSTATED body as
+ONESHOT) is RETIRED as declared UNREACHED: nothing delivers an unstated body
+to the gate any more; its REACH_POP reads NOW REACHED if the finder check
+does. S1090 was requested and is unused.
