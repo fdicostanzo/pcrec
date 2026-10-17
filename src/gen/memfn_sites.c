@@ -386,8 +386,10 @@ static void rank_probe(DelegSite id, const mf_site *s)
  * trace build with PCREC_MF_ROUTE_TRACE set (unset, nothing, so the trace
  * build's CANDTRACE stream is unchanged). The floors per (kind, row) are the
  * routing census's (docs/design/memfn/r17b_prime/fdb2/routed_census.py). */
-static const char *const routed_kind_name[] = { "UNSTATED", "DFA_SCAN", "DFA_HAT",
-                                                 "HYB_PF", "VM_ATTEMPT", "DFA_ATTEMPT" };
+static const char *const routed_kind_name[] = {
+    [MF_SK_UNSTATED] = "UNSTATED", [MF_SK_DFA_SCAN] = "DFA_SCAN",
+    [MF_SK_DFA_HAT] = "DFA_HAT", [MF_SK_HYB_PF] = "HYB_PF",
+    [MF_SK_VM_ATTEMPT] = "VM_ATTEMPT", [MF_SK_DFA_ATTEMPT] = "DFA_ATTEMPT" };
 static void routed_record(DelegSite id, const mf_site *s, const char *row)
 {
     const char *const *kn = routed_kind_name;
