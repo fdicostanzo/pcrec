@@ -222,7 +222,10 @@ defect traced to that edge (design §4.2.1, §10).
   `pcrec_req_pick`, `facts.def`'s owner column): each asks the byte-rate
   accessor FIRST, before any branch (findings design §6.4 rule 1), and hands
   the answer untested to the rate readers in `src/core/findings.c`, which
-  take plain byte arrays so the findings layer needs no facts type. The
+  take plain byte arrays so the findings layer needs no facts type. [WINDOW-E1] (lane e1build, 2026-10-17) `req_rate_why` asks
+  `pcrec_find_byte_rate_answers` instead of reading the consumption record's
+  memo (`byte_rate_have`), so no reader outside findings.c reads the memo
+  the analysis object's offer also fills (structural_check.py S4). The
   readers live beside the primitives (carve-out (b)); the compositions that
   turn their answers into the facts live here, with the walk, because a
   `src/core/` file including `facts_derive.h` would point the include graph

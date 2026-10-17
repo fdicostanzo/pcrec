@@ -44,6 +44,14 @@ typedef struct {
     const unsigned long long *counts;   /* freq: 256 entries; else NULL */
     const PcrecFindCp        *cps;      /* cpfreq: its rows, ascending */
     size_t                    ncps;     /* ... and how many; else 0 */
+    /* [WINDOW-E1] the block's own `provenance` stanza (required under a data
+     * block by the schema): its `source` token, its `bytes` row (0 where
+     * the stanza has none: `source authored` forbids it) and its closed
+     * `fidelity` token, NULL where it declares none. A query's provenance
+     * is read from these (D162 add. 4), never from the chain position. */
+    const char               *prov_source;
+    unsigned long long        prov_bytes;
+    const char               *prov_fidelity;
 } PcrecFindTblBlock;
 
 /* One BUNDLE of the pre-parsed store: its name, its `include <x>` name (the
@@ -90,15 +98,38 @@ typedef struct {
     size_t               n;
 } PcrecFindChain;
 
+/* What deriving a query's answer came to ([WINDOW-E1], window_contract.md
+ * §3.7.1). The derivation never refuses: the refusal of an UNDERIVABLE or
+ * BROKEN answer belongs to the reader that ASKS (the ask path), so offering
+ * the answer to the kit cannot refuse a compile that asks nothing (§3.3
+ * rule 9). */
+typedef enum {
+    PCREC_FIND_ST_UNDERIVED,    /* not derived yet: the memo is empty */
+    PCREC_FIND_ST_OK,           /* a block answered and derived a table */
+    PCREC_FIND_ST_NONE,         /* nothing along the chain answers */
+    PCREC_FIND_ST_UNDERIVABLE,  /* the answering block normalizes to nothing */
+    PCREC_FIND_ST_BROKEN        /* its table breaks the postcondition */
+} PcrecFindStatus;
+
 /* THE CONSUMPTION RECORD for one compile ATTEMPT (design §6.4): the chain
- * this attempt resolved, and the derived answer of each query it ASKED,
- * memoized so every reader derives once. It lives in `Job`, so the
- * `compile_driver` retry ladder resets it with every other per-attempt field
- * and the stamp (§7) reads the FINAL attempt's record. */
+ * this attempt resolved, the memo of each query's derived answer, and which
+ * queries a reader ASKED. The memo (`*_status` ... `byte_rate[]`) is filled
+ * by whoever derives first — the ask or the analysis object's offer — and
+ * the ASK alone (`*_asked`) is consumption, the stamp's input. It lives in
+ * `Job`, so the `compile_driver` retry ladder resets it with every other
+ * per-attempt field and the stamp (§7) reads the FINAL attempt's record.
+ * Only `src/core/findings.c` reads the memo fields
+ * (tests/findings/structural_check.py S4). */
 typedef struct {
     PcrecFindChain chain;         /* resolved at the attempt's start (§4.3) */
     bool        byte_rate_asked;  /* `pcrec_find_byte_rate` was called */
-    bool        byte_rate_have;   /* ... and a block answered (else NONE) */
+    PcrecFindStatus byte_rate_status; /* what the derivation came to;
+                                     UNDERIVED until the memo is filled */
+    const PcrecFindTblBlock *byte_rate_block; /* the answering block, or NULL */
+    const char *byte_rate_via;    /* ... and its `serves` line's derivation */
+    bool        byte_rate_have;   /* the memo holds a table (a block answered
+                                     and derived), whether or not anything
+                                     asked */
     const char *byte_rate_bundle; /* the bundle whose block answered */
     uint64_t    byte_rate_digest; /* what it consumed (design §7) */
     uint32_t    byte_rate[256];   /* the answer: ppm, sum 1,000,000 */
@@ -143,12 +174,46 @@ const PcrecFindTblBlock *pcrec_find_chain_answer(const PcrecFindChain *chain,
                                                  size_t *link,
                                                  const PcrecFindServe **serve);
 
-/* One word of the closed DERIVATION vocabulary (design §2.4): the block KIND
- * that may declare it and the QUERY it answers. The vocabulary's one home —
- * the `.rxt` reader validates `serves ... via` against it and
- * `pcrec_find_derive_counts` implements it, beside each other here. */
+/* ---- THE QUERY VOCABULARY ([WINDOW-E1], window_contract.md §3.2) ---------
+ *
+ * One row per [FINDINGS] query, in the stamp's fixed order: the query's
+ * tag, the version of the payload pcrec carries for it (0: none yet, so the
+ * kind is listed ABSENT), and what the kind is when nothing MEASURED
+ * answers it — `ARRIVES` (present anyway, as an authored table or as
+ * pcrec's no-information answer: D162 add. 2, on exactly the queries a
+ * pcrec reader asks, add. 3's refinement) or `ABSENT`. The vocabulary's ONE
+ * home: the derivation table, the `.rxt` reader, the chain's no-query note
+ * and the listings all read it through `pcrec_find_query`. */
+typedef enum {
+    PCREC_FIND_UNMEASURED_UNSTATED,   /* refused by the table's self-check */
+    PCREC_FIND_UNMEASURED_ARRIVES,
+    PCREC_FIND_UNMEASURED_ABSENT
+} PcrecFindUnmeasured;
+
 typedef struct {
-    const char *kind, *name, *query;
+    const char         *tag;
+    uint32_t            version;
+    PcrecFindUnmeasured unmeasured;
+} PcrecFindQuery;
+
+/* The rows by index: the derivation table names its query by one of these. */
+enum { PCREC_FQ_BYTE_RATE, PCREC_FQ_RUN_RARITY, PCREC_FQ_N };
+
+/* The vocabulary's `i`th query, or NULL past the last. */
+const PcrecFindQuery *pcrec_find_query(size_t i);
+
+/* The tags joined with ", " in vocabulary order ("byte-rate, run-rarity"),
+ * arena text for a diagnostic that lists the vocabulary. */
+const char *pcrec_find_query_tags(Arena *a);
+
+/* One word of the closed DERIVATION vocabulary (design §2.4): the block KIND
+ * that may declare it and the QUERY it answers (a `pcrec_find_query` row).
+ * The vocabulary's one home — the `.rxt` reader validates `serves ... via`
+ * against it and `pcrec_find_derive_counts` implements it, beside each other
+ * here. */
+typedef struct {
+    const char *kind, *name;
+    size_t      query;
 } PcrecFindDeriv;
 
 /* The vocabulary's `i`th derivation, or NULL past the last. */
@@ -232,6 +297,53 @@ extern const KsDigest pcrec_find_rows_role;
  * (NONE: nothing declares byte-rate under this compile's encoding). Derived
  * once per attempt and memoized in `Job.find`; the call records the ask. */
 const uint32_t *pcrec_find_byte_rate(Ctx *cx);
+
+/* The same ask, answered as a fact rather than a table: does a byte-rate
+ * table answer THIS compile (else NONE)? For a reader that reports which
+ * rule a pick answered by and must not test a rate pointer. */
+bool pcrec_find_byte_rate_answers(Ctx *cx);
+
+/* ---- THE OFFER: one query's state for the kit's analysis object ----------
+ * ([WINDOW-E1], window_contract.md §3.2 T-KIND, §3.7.1).
+ *
+ * The facts pcrec states about one query of this attempt, in pcrec's own
+ * vocabulary (src/gen/memfn_sites.c maps them onto `memfn.h`'s
+ * `mf_analysis`; `src/core` never includes the kit's header). The source
+ * is the answering block's own provenance stanza (D162 add. 4), never its
+ * chain position: `prior-authored` for `source authored` or `fidelity
+ * synthesized`, `measured` otherwise, `prior-none` when no table exists. */
+typedef enum {
+    PCREC_FIND_KIND_UNSTATED,
+    PCREC_FIND_KIND_PRESENT,
+    PCREC_FIND_KIND_ABSENT
+} PcrecFindKindState;
+
+typedef enum {
+    PCREC_FIND_SRC_UNSTATED,     /* an ABSENT kind */
+    PCREC_FIND_SRC_PRIOR_AUTHORED,
+    PCREC_FIND_SRC_PRIOR_NONE,
+    PCREC_FIND_SRC_MEASURED
+} PcrecFindSource;
+
+typedef struct {
+    const char        *row;      /* the T-KIND row that decided (a trace word) */
+    PcrecFindKindState present;
+    PcrecFindSource    source;
+    const char        *bundle;   /* the answering bundle; NULL unless
+                                    PRIOR_AUTHORED or MEASURED */
+    uint64_t           digest;   /* the payload's digest; 0 without one */
+    unsigned long long bytes;    /* MEASURED: the stanza's `bytes`; else 0 */
+    const char        *fidelity; /* the stanza's `fidelity`, NULL if none */
+    const void        *payload;  /* non-NULL iff PRESENT and PRIOR_AUTHORED
+                                    or MEASURED (byte-rate: uint32_t[256]) */
+} PcrecFindOffer;
+
+/* Query `query`'s offer for THIS attempt, into `*out`: evaluates T-KIND
+ * through the query's NON-RAISING derivation. It never records an ask and
+ * never refuses (an underivable answer offers `prior-none` or ABSENT, and
+ * refuses only when a reader asks: §3.3 rule 9), so building the object
+ * moves no stamp and no refusal. */
+void pcrec_find_offer(Ctx *cx, size_t query, PcrecFindOffer *out);
 
 /* PICK: which of n candidates to scan. Candidate i is the CUBE
  * (cand[i], care[i]): its members are the bytes b with (b & care[i]) ==

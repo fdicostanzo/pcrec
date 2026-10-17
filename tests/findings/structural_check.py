@@ -13,6 +13,15 @@ the source text ([FINDINGS] B1).
       under src/.
   S3  NO TABLE POINTER IN A *Sel STRUCT (R39): no member of a struct whose
       typedef name ends in `Sel` is a `uint32_t *`/`unsigned *` pointer.
+  S4  THE MEMO HAS NO OUTSIDE READER ([WINDOW-E1] C-E1-6, window_contract.md
+      §3.7.1): the consumption record's memo fields (`byte_rate_have`,
+      `_status`, `_block`, `_via`, `_bundle`, `_digest` and `byte_rate[]`)
+      are named by a member access (`.f` / `->f`) nowhere under src/, cli/
+      or lib/ but src/core/findings.c. The memo is filled by whoever derives
+      first, the ask or the analysis object's offer, so a reader outside the
+      seam that read it would consume without ASKING: its artifact would
+      depend on data its stamp does not name. `byte_rate_asked` is not a
+      memo field (it IS the ask).
 
 WHAT IT CANNOT SEE (coding_guide §5 item 4): a function is found by a
 top-level `name(...) {` line and its body by brace depth, so a call through a
@@ -164,5 +173,29 @@ if nsel == 0:
     bad("S3 found no *Sel struct at all — the check has lost its population")
 elif not s3:
     ok(f"S3 no *Sel struct carries a table pointer ({nsel} structs)")
+
+# S4
+MEMO = re.compile(r"(?:\.|->)\s*(byte_rate(?:_have|_status|_block|_via|_bundle|_digest)?)\b(?!\s*\()")
+s4, inside = 0, 0
+for d in ("src", "cli", "lib"):
+    for dd, _, fs in os.walk(os.path.join(ROOT, d)):
+        for f in fs:
+            if not f.endswith((".c", ".h")):
+                continue
+            path = os.path.join(dd, f)
+            rel = os.path.relpath(path, ROOT)
+            text = code_only(open(path, encoding="latin-1").read())
+            for n, line in enumerate(text.split("\n"), 1):
+                for m in MEMO.finditer(line):
+                    if rel == "src/core/findings.c":
+                        inside += 1
+                        continue
+                    s4 += 1
+                    bad(f"S4 {rel}:{n}: reads the memo field '{m.group(1)}' outside "
+                        "src/core/findings.c — ask the accessor (window_contract.md §3.7.1)")
+if inside == 0:
+    bad("S4 found no memo read even in src/core/findings.c — the check has lost its population")
+elif not s4:
+    ok(f"S4 the consumption record's memo is read only in src/core/findings.c ({inside} reads there)")
 
 sys.exit(1 if fails else 0)

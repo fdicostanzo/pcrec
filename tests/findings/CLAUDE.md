@@ -58,7 +58,9 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   `libpcrec.a` (store names and texts, the pre-parsed table, a fresh parse,
   the normalization, the default's digest) for the script to judge. [B5]
   `derive VIA`: the library's `cpfreq` derivation of stdin's code points;
-  a `cpfreq` block's table line carries `U+HHHH:count` rows.
+  a `cpfreq` block's table line carries `U+HHHH:count` rows. [WINDOW-E1]
+  each block line ends with its provenance `source|bytes|fidelity`, so §3's
+  agreement covers the new table fields.
 - `findings_ref.py` — [B1] the INDEPENDENT reference: §2.5's normalization
   and §7's digest written from the spec text, never from the C (learnings
   §3), plus the three §2.5 test vectors. [B2] `bundle-digest RXT [NAME]`:
@@ -73,7 +75,8 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   readers as its REACH population; S2 no rate-table identifier outside
   `src/core/findings.c`; S3 no table pointer in a `*Sel` struct. Its header
   says what a brace-depth scan cannot see. Sabotage S301 is its failing
-  direction.
+  direction. [WINDOW-E1] S4: the consumption record's memo fields are read
+  nowhere under src/, cli/ or lib/ but findings.c (C-E1-6).
 - `default_ppm.tsv` — [B1] the PINNED oracle for the default's values:
   RUNEST's own dump of the table B1 replaced
   (`docs/dev/findings_measure/data/byte_freq_ppm.tsv`, copied verbatim;
@@ -131,6 +134,35 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   census to reproduce `data_census/analysis_movers.tsv`, every mover
   attributed and every artifact's stamp equal to its final attempt's trace,
   plus a control (a list missing one mover must FAIL by name). Sabotage S963.
+- §14/§15 of `run_findings_tests.sh` — [WINDOW-E1] (lane e1build,
+  2026-10-17; `docs/design/memfn/window_contract.md` rev 3.1 §3.7.7): §14
+  runs `e1_object_check.py` on §13's `-DPCREC_KS_TRACE` binary (the kit's
+  ANALYSIS OBJECT: C-E1-1 content against a hand-written table and
+  `findings_ref.py` digests, the eager-build ordering assertion, C-E1-2
+  vocabulary order, C-E1-3 payload invariant, C-E1-4 stamp agreement incl.
+  two targets under two analyses and a compound's parts, C-E1-5 the
+  `unmeasured` column against a grep of the readers); §15 runs `c_pert.py
+  --every 16` (C-PERT). §12 gained the "an offer is not an ask" cell (the
+  all-dropped `l1none` block under `-fno-req-byte` compiles, stamping "").
+  Sabotage S991-S996, S1027-S1031 (S1029 declared UNREACHED until B4), S1034.
+- `e1_fixtures.py` — [WINDOW-E1] writes §14's fixture tree (a verbatim `-I`
+  copy of the store's default, a measured bundle NAMED `default`, an
+  authored user bundle, an explicit `include <default>`, a two-link user
+  chain, `l1none`, and a two-target two-analysis `.rxt`), fresh per run.
+- `e1_object_check.py` — [WINDOW-E1] §14's checker over the trace build's
+  `KSRCTRACE object` records (see its header for each check's independent
+  source).
+- `data_trace_check.py` — [WINDOW-E1] §14b: `emit_sweep.py --data`'s `data_trace`
+  drops ONLY `KSRCTRACE\t` lines (the mover test compares the clean stderr, so a
+  wider drop hides movers). Hand-written blobs; widening the drop to
+  `startswith(b"KS")` fails two of its five checks (shown once, e1val).
+- `c_pert.py` — [WINDOW-E1] C-PERT, the stamp's honesty from outside: the
+  population compiled bare, under a verbatim copy of the store's default and
+  under a PERTURBED copy (same name and stop); an artifact whose stamp omits
+  a kind must not move with that kind's data. Reads emitted bytes and the
+  stamp text only; power floors per arm; F-5's two witnesses are a pinned
+  bucket selected by the artifact's own `ENGINE_SEL`. `--every 16` in
+  `make test`, `--every 1` at a census.
 - `fixtures/` — [B3] small committed inputs for the analyzer: `basic.txt`,
   `ascii_only.txt` / `utf8_mixed.txt` (the two collision-free observed rows of
   design §10.2), `invalid_utf8.bin` (R26), `shard1_first_byte.bin` ([r2 A-1]),

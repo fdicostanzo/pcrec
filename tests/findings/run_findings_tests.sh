@@ -30,6 +30,10 @@
 #                derivations against Python's own UTF-8 codec.
 #   §13 CENSUS   [KNOW-SRC] K0: emit_sweep.py's data mode reproduces a
 #                hand-made movers list on data_census/'s fixture change.
+#   §14 OBJECT   [WINDOW-E1]: the kit's analysis object, per attempt, against
+#                a hand-written table, independent digests and the stamp.
+#   §15 C-PERT   [WINDOW-E1]: no artifact moves with data its stamp omits
+#                (a perturbed default under the same name and stop).
 #
 # Verdict: this script's own `checks failed: 0` line, and under make, the
 # absence of `*** [test-findings] Error` (BOILERPLATE, r2 S-F13).
@@ -123,7 +127,7 @@ done < "$WORKDIR/files"
 "$PROBE" reparse > "$WORKDIR/reparse.txt"
 nb="$(wc -l < "$WORKDIR/table.txt" | tr -d ' ')"
 if [ "$nb" -ge 1 ] && cmp -s "$WORKDIR/table.txt" "$WORKDIR/reparse.txt"; then
-    ok "§3 the pre-parsed table equals the library reader's parse of the embedded text ($nb block(s): bundle, kind, line, serves, 256 counts)"
+    ok "§3 the pre-parsed table equals the library reader's parse of the embedded text ($nb block(s): bundle, kind, line, serves, 256 counts, provenance source|bytes|fidelity)"
 else
     bad "§3 the pre-parsed table ($nb block(s)) and a fresh parse of the embedded text DISAGREE:"
     diff <(cut -c1-120 "$WORKDIR/table.txt") <(cut -c1-120 "$WORKDIR/reparse.txt") | head -6 >&2
@@ -683,6 +687,13 @@ res_stamp "§12 encode-latin1 stamps the reference digest" \
     -e utf8 -I "$R/L1" --analysis l1 --pattern 'caf.'
 res_refuse "§12 a block every code point of which drops is refused" \
     "counts nothing via encode-latin1" -e utf8 -I "$R/L1" --analysis l1none --pattern 'caf.'
+# [WINDOW-E1] ... and refused ONLY when something asks (window_contract.md
+# §3.3 rule 9, §3.7.4a): the same bundle under a compile that asks nothing
+# compiles and stamps "". Every attempt OFFERS the byte-rate to the kit's
+# analysis object, and an offer that raised would refuse this compile
+# (sabotage S1027).
+res_stamp "§12 the same block under a compile that asks nothing compiles (an offer is not an ask)" \
+    "" -e utf8 -I "$R/L1" --analysis l1none --pattern '^abc' -fno-req-byte
 
 # =========================================================================
 # §13 THE DATA-MOVER CENSUS ([KNOW-SRC] K0; docs/design/measure_sets.md
@@ -722,6 +733,69 @@ else
         bad "§13 control: a hand list missing a mover did not fail by name (the compare cannot fail)"
     fi
 fi
+
+# =========================================================================
+# §14 THE ANALYSIS OBJECT ([WINDOW-E1]; docs/design/memfn/window_contract.md
+# rev 3.1 §3.7.7 C-E1-1..C-E1-5): every compile attempt builds the kit's
+# `mf_analysis` once, eagerly, after its chain resolves. e1_object_check.py
+# reads the -DPCREC_KS_TRACE binary §13 built (its `KSRCTRACE object`
+# records) over e1_fixtures.py's tree and holds the object to a hand-written
+# table, findings_ref.py's digests, the stamp (agreement only), the
+# vocabulary order and a grep of the readers. Sabotage S991-S996,
+# S1027-S1031, S1034.
+# =========================================================================
+if [ -x "$KST/pcrec" ]; then
+    E1="$WORKDIR/e1"
+    mkdir -p "$E1/fx" "$E1/w"
+    python3 "$SCRIPT_DIR/e1_fixtures.py" "$ROOT_DIR" "$E1/fx"
+    "$TIMEOUT_BIN" 600 python3 "$SCRIPT_DIR/e1_object_check.py" "$ROOT_DIR" "$KST/pcrec" "$E1/fx" "$R" \
+        "$E1/w" > "$E1/out" 2>&1
+    while IFS= read -r ln; do
+        case "$ln" in
+            PASS:*) ok "§14 ${ln#PASS: }" ;;
+            FAIL:*) bad "§14 ${ln#FAIL: }" ;;
+        esac
+    done < "$E1/out"
+    if ! grep -q '^PASS:' "$E1/out"; then
+        bad "§14 e1_object_check.py reported nothing: $(tail -3 "$E1/out" | tr '\n' ' ')"
+    fi
+else
+    bad "§14 needs §13's -DPCREC_KS_TRACE binary, which did not build"
+fi
+
+# §14b data_trace DROPS ONLY `KSRCTRACE\t` ([WINDOW-E1], e1val): the --data
+# census's mover test compares the clean stderr, so a drop wider than the
+# analysis object's record would hide movers. data_trace_check.py holds it to
+# hand-written blobs (a differing KSRCTRACE line is no mover; a differing
+# plain or near-miss line is).
+if "$TIMEOUT_BIN" 60 python3 "$SCRIPT_DIR/data_trace_check.py" "$ROOT_DIR/scripts/emit_sweep.py" \
+    > "$WORKDIR/dtc.out" 2>&1; then
+    ok "§14b data_trace drops only KSRCTRACE lines ($(grep -c '^PASS:' "$WORKDIR/dtc.out") checks)"
+else
+    bad "§14b data_trace drop is not exactly KSRCTRACE: $(grep '^FAIL:' "$WORKDIR/dtc.out" | tr '\n' ' ')"
+fi
+
+# =========================================================================
+# §15 C-PERT, THE STAMP'S HONESTY FROM OUTSIDE ([WINDOW-E1];
+# window_contract.md rev 3.1 §3.7.7): c_pert.py compiles a fixed 1-in-16
+# slice of the corpus (plus F-5's two pinned witnesses) BARE, under a
+# verbatim copy of the store's default, and under a PERTURBED copy, in eight
+# arms; an artifact whose stamp omits a kind may not move with that kind's
+# data. Reads emitted bytes and the stamp text only. Power floors per arm.
+# The full population is the E-1/B3b census's run (`--every 1`). Sabotage
+# S1034 (the ask marks only when it derives).
+# =========================================================================
+CP="$WORKDIR/cpert"
+mkdir -p "$CP"
+"$TIMEOUT_BIN" 900 python3 -I "$SCRIPT_DIR/c_pert.py" "$ROOT_DIR" "$PCREC" "$CP" --every 16 --jobs 4 \
+    > "$CP.out" 2>&1
+while IFS= read -r ln; do
+    case "$ln" in
+        PASS:*) ok "§15 ${ln#PASS: }" ;;
+        FAIL:*) bad "§15 ${ln#FAIL: }" ;;
+    esac
+done < "$CP.out"
+grep -q '^PASS:' "$CP.out" || bad "§15 c_pert.py reported nothing: $(tail -3 "$CP.out" | tr '\n' ' ')"
 
 echo "== Summary =="
 echo "checks passed: $pass"

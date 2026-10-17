@@ -645,12 +645,15 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
 }
 
 /* The rate rule a derived pick answered by, for `--emit-facts`' `why`
- * column: the byte-rate the compile consumed, or its NONE answer. Read off
- * the consumption record, not off the rate pointer, so no reader here tests
- * a rate (findings design §6.3's structural rule). */
+ * column: the byte-rate the compile consumed, or its NONE answer. Asked of
+ * the accessor's own answer (`pcrec_find_byte_rate_answers`), never of the
+ * record's memo and never off the rate pointer, so no reader here tests a
+ * rate (findings design §6.3's structural rule) and none reads the memo
+ * (window_contract.md §3.7.1). Its two callers ask first, so the answer is
+ * theirs. */
 static PfWhyCode req_rate_why(Ctx *cx)
 {
-    return cx->job->find.byte_rate_have ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+    return pcrec_find_byte_rate_answers(cx) ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 }
 
 /* THE WINDOW, the `req_run` fact's derived half, cut from the whole run the

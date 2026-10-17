@@ -35,10 +35,6 @@
 static const char *const FIND_KINDS[] = { "freq", "cpfreq", "bigram" };
 #define N_FIND_KINDS (sizeof FIND_KINDS / sizeof *FIND_KINDS)
 
-/* The two queries, in the stamp's fixed order (§7). */
-static const char *const FIND_QUERIES[] = { "byte-rate", "run-rarity" };
-#define N_FIND_QUERIES (sizeof FIND_QUERIES / sizeof *FIND_QUERIES)
-
 /* The name a listing gives a stop (§5.2's `stop` column). */
 static const char *stop_name(PcrecFindStop s)
 {
@@ -129,18 +125,19 @@ static int resolution_rows(StrBuf *sb, const PcrecFindChain *chain,
                            const char *const *lead, size_t nlead,
                            pcrec_error *err)
 {
-    for (size_t q = 0; q < N_FIND_QUERIES; q++)
+    const PcrecFindQuery *q;
+    for (size_t qi = 0; (q = pcrec_find_query(qi)); qi++)   /* stamp order (§7) */
         for (int id = 0; pcrec_enc_by_id(id); id++) {
             const PcrecEnc *e = pcrec_enc_by_id(id);
             char lk[24], dg[24], dr[24];
             const char *res[6], *cells[10];
             size_t n = 0;
             if (!pcrec_enc_ready(e)) continue;
-            if (resolution_cells(chain, FIND_QUERIES[q], e->name, lk, dg, dr,
+            if (resolution_cells(chain, q->tag, e->name, lk, dg, dr,
                                  res, err) != 0)
                 return -1;
             for (size_t i = 0; i < nlead; i++) cells[n++] = lead[i];
-            cells[n++] = FIND_QUERIES[q];
+            cells[n++] = q->tag;
             cells[n++] = e->name;
             for (size_t i = 0; i < 6; i++) cells[n++] = res[i];
             pcrec_sb_row(sb, cells, n);

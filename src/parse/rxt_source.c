@@ -233,7 +233,9 @@ typedef struct {
      * strictly-ascending rule (`have_key` false before the first). */
     const char     *open_kind;
     /* [FINDINGS] B1 — DATA-frame-only: this block's index in
-     * `RxtSource.fblocks`, where its `serves` lines and counts are kept. */
+     * `RxtSource.fblocks`, where its `serves` lines and counts are kept.
+     * [WINDOW-E1] also on a PROVENANCE frame under a data block: the
+     * block its stanza is copied onto when it closes. */
     size_t          fbi;
     /* [FINDINGS] B2 — PROVENANCE-frame-only: when the parent frame is a
      * DATA block, that block's kind and line, so a data block's provenance
@@ -608,14 +610,16 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
 
     int qknown = 0;
     const PcrecFindDeriv *dv = NULL, *x;
-    for (size_t i = 0; (x = pcrec_find_deriv(i)); i++) {
-        if (word_is(q, qn, x->query)) qknown = 1;
+    const PcrecFindQuery *fq;
+    for (size_t i = 0; (fq = pcrec_find_query(i)); i++)
+        if (word_is(q, qn, fq->tag)) qknown = 1;
+    for (size_t i = 0; (x = pcrec_find_deriv(i)); i++)
         if (word_is(d, dn, x->name)) dv = x;
-    }
     if (!qknown)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves' names query '%.*s', which is not a findings "
-                        "query (byte-rate, run-rarity)", (int)qn, q);
+                        "query (%s)", (int)qn, q,
+                        pcrec_find_query_tags(p->arena));
     if (!dv)
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves' names derivation '%.*s', which is not one "
@@ -625,10 +629,10 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'serves ... via %s' is a '%s' derivation; this is a "
                         "'%s' block", dv->name, dv->kind, kind);
-    if (!word_is(q, qn, dv->query))
+    if (!word_is(q, qn, pcrec_find_query(dv->query)->tag))
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'via %s' answers '%s', not '%.*s'",
-                        dv->name, dv->query, (int)qn, q);
+                        dv->name, pcrec_find_query(dv->query)->tag, (int)qn, q);
 
     const char *qs = arena_strndup(p->arena, q, qn);
     /* [FINDINGS] B1: the block KEEPS the line — (query, encodings, via) —
@@ -1994,6 +1998,12 @@ static void close_section_frame(Arena *a, RxtSource *src,
         r->sha256        = frame_field(f, rowbase, nrows, "sha256");
         r->data_kind     = f->data_kind;
         r->data_line     = f->data_line;
+        if (f->data_kind) {   /* [WINDOW-E1] a data block's own stanza */
+            RxtFindBlock *fb = &src->fblocks[f->fbi];
+            fb->prov_source   = r->source;
+            fb->prov_bytes    = r->bytes;
+            fb->prov_fidelity = r->fidelity;
+        }
     } else if (f->scope == RXT_SCOPE_DATA) {
         /* [FINDINGS] B2: a data block's DECLARATIONS, for
          * `--list-analysis`'s `declarations` section (design §5.2). */
@@ -2931,6 +2941,7 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 if (ndepth >= 2 && st[ndepth - 2].scope == RXT_SCOPE_DATA) {
                     st[ndepth - 1].data_kind = st[ndepth - 2].open_kind;
                     st[ndepth - 1].data_line = st[ndepth - 2].open_line;
+                    st[ndepth - 1].fbi = st[ndepth - 2].fbi;
                 }
             }
         } else {
