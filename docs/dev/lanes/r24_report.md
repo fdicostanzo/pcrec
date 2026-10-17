@@ -74,7 +74,7 @@ in `prov_check.c` (source 0, bundle 8, digest 16, bytes 24, fidelity 32 on LP64)
 
 ## 5. Fixtures and sabotage
 
-- finder_check.py family L (23 new checks; finder_check alone 908 -> 931, the section total 925 -> 948 with run_finder's other parts): the closed set read off the schema
+- finder_check.py family L (40 new checks, section 908 -> 948: 1 vocabulary + 3 tokens + 1 reached set + 1 NULL + 7 outside words + 6 byte values + 1 kit grep + 20 renders): the closed set read off the schema
   equals the contract's three tokens; each token maps to its own nonzero enumerator (1, 2, 3), the set of reached
   enumerators is exactly {1,2,3}; NULL -> UNSTATED with bytes 0; seven outside words refused with the sentinels
   untouched; six `bytes` values (0, 1, 999,960, 1,000,000, 2^40+7, 2^63+5) pass through exactly; the kit-source grep;
@@ -92,7 +92,7 @@ Tip under test 649d0f294 (the report commit adds no code). Verdict reading: no
 | step | result |
 |---|---|
 | make, make strict | rc 0, rc 0 (`-Werror -Wshadow` clean) |
-| test-memfn-finder | 948 passed / 0 failed (R-23 base: 908 + finder_check's 23 new family-L checks + run_finder's parts) |
+| test-memfn-finder | 948 passed / 0 failed (R-23 base 908 + family L's 40) |
 | test-memfn-arms / rows / forms / deleg | 383/0, 232/0, 5/0, 5/0 |
 | test-memfn-stamps / guarded / simdfloor / rank | 25/0, 10/0, 51/0, 15/0 |
 | test-memfn-manifest / link / reach / arch | 11/0, 8/0, 4/0, 15/0 |
