@@ -6693,9 +6693,10 @@ static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdb
 
 /* THE ONE PREFILTER SKIP every axis-B start-byte row emits (R17-b' B2): its
  * comment (pcrec's, by row: PR-10 rides B4), the entry test, the FIND at the
- * test's indent and the close. Everything between the entry test and the
- * close is the kit's (KW-3): the guard before a memchr, the test after a
- * walk, the bounded block, the moved test. */
+ * test's indent and the close. The text between the entry test and the
+ * close is the kit's (KW-3); pcrec states the facts it rests on: an
+ * unbounded site's empty [pos, n) holds no candidate and runs `on_miss`, a
+ * bounded site's miss is n - 1, and a candidate off `pos` runs `moved`. */
 static void pf_emit_skip(StrBuf *c, const DfaForm *f,
                          void (*comment)(StrBuf *, const DfaForm *), int holdback)
 {
@@ -6706,18 +6707,15 @@ static void pf_emit_skip(StrBuf *c, const DfaForm *f,
 }
 
 /* AXIS B, `memchr`: while nothing has matched and the machine is still parked
- * in its start state, one `memchr` for the single candidate byte replaces the
- * stepped scan, and a miss ends the whole search. The `pos >= n` guard is the
- * K27 fix rather than padding — spec §3.1 makes a (NULL, 0) subject legal,
- * and this line used to reach `memchr(NULL, c, 0)`, technical UB in EMITTED
- * code under a user's own sanitizer. */
+ * in its start state, one search for the single candidate byte replaces the
+ * stepped scan, and a miss ends the whole search. */
 static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
 {
-    /* [K27] The kit's `pos >= n` guard (R17-b' B2: an unbounded site's empty
-     * range runs the miss) is the FIX, and it is not defensive padding:
+    /* [K27] An unbounded site's empty range is a miss that runs `on_miss`
+     * (R17-b' B2), and that fact is the FIX, not defensive padding:
      * docs/spec/match_api.md §3.1 makes (s == NULL, n == 0) a LEGAL subject,
-     * and on it this skip used to call memchr(NULL, c, 0) — technical UB in
-     * EMITTED code. The BOUNDED form below needs no such guard — its own
+     * and on it this skip used to search a NULL subject — technical UB in
+     * EMITTED code. The BOUNDED form below states no such fact — its own
      * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
     pf_emit_skip(c, f, pf_comment_memchr, 0);
 }
@@ -7517,8 +7515,9 @@ static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
             emit_u8_table(c, p, "start_set", v, 256);
         }
     }
-    /* the kit writes the `attempt_position >= subject_length` test after its
-     * walk: no attempt at `subject_length` can succeed (R17-b' B2, KW-3) */
+    /* no attempt at `subject_length` can succeed, so a site with no
+     * candidate left in [attempt_position, subject_length) runs `on_miss`
+     * (R17-b' B2, KW-3) */
     find_use(c, ind, &fd, d);
 }
 
