@@ -139,6 +139,35 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   definitions are not rewritten. It is `scripts/emit_sweep.py --data`'s
   attribution; the default build is untouched.
 
+  **[WINDOW-E1] (lane e1build, 2026-10-17; `docs/design/memfn/
+  window_contract.md` rev 3.1 §3.7): THE QUERY VOCABULARY, THE NON-RAISING
+  DERIVATION AND THE OFFER.** `find_queries[]` is the [FINDINGS] query
+  vocabulary's ONE home (tag, payload version, `unmeasured` ARRIVES/ABSENT;
+  `pcrec_find_query`, `pcrec_find_query_tags`, the `PCREC_FQ_*` indices that
+  `find_derivs[]`'s third column now holds); `rxt_find.c`'s no-query note,
+  `findings_dump.c`'s resolution rows and `rxt_source.c`'s `serves` refusal
+  read it. The byte-rate derivation is split: `find_derive_byte_rate_status`
+  memoizes (`PcrecFindRec.byte_rate_status`, `_block`, `_via`) and NEVER
+  refuses; `find_raise_byte_rate` raises today's two diagnostics verbatim, on
+  the ASK path only (`pcrec_find_byte_rate`). `pcrec_find_offer` evaluates
+  T-KIND (`find_kind_rows[]`, a first-match table over `FindKindFacts`) for
+  one query and never records an ask, so building the kit's analysis object
+  moves no stamp and no refusal. Provenance is the answering block's own
+  stanza (`PcrecFindTblBlock.prov_source`/`prov_bytes`/`prov_fidelity`,
+  D162 add. 4): `source authored` or `fidelity synthesized` is a PRIOR,
+  anything else MEASURED. `pcrec_find_byte_rate_answers` is the ask answered
+  as a fact (for `req_rate_why`, which no longer reads the memo). Checks:
+  `tests/findings/` §14 (C-E1-1..5), §15 (C-PERT), `structural_check.py`
+  S4 (no memo reader outside this file).
+
+- **compile.c ([WINDOW-E1] addition, lane e1build, 2026-10-17)** —
+  `compile_driver` builds the attempt's ANALYSIS OBJECT right after
+  `pcrec_find_resolve` (`pcrec_memfn_analysis_build`, src/gen/memfn_sites.c,
+  into `Job.analysis`), once per attempt, eagerly, before the parse; it is
+  an offer, never an ask. `internal.h` gains `Job.analysis` and the
+  builder's declaration in the gen group, and `RxtFindBlock` gains the
+  block's provenance stanza (`prov_source`/`prov_bytes`/`prov_fidelity`).
+
 - **compound.c** — [COMPOUND] build step B1 (lane cpb02, 2026-10-12;
   `docs/design/compound.md` §A.1, §A.5): the compound tool's PARTS, at the
   driver tier. `CompPart` (internal.h's driver group) states every field —

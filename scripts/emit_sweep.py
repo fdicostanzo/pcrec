@@ -2593,6 +2593,9 @@ def data_trace(err):
     attempt's records); a record is (query, reader, bundle)."""
     keep, attempts = [], [[]]
     for ln in err.split(b"\n"):
+        if ln.startswith(b"KSRCTRACE\t"):
+            continue   # [WINDOW-E1] the analysis object's record: an OFFER, not a
+                       # read, and it carries the data's digest (never compared)
         if ln.startswith(b"KSTRACE\t"):
             f = ln.decode("utf-8", "replace").split("\t")
             if len(f) >= 5 and f[3] == "resolve":

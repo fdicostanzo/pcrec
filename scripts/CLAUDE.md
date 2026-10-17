@@ -500,6 +500,10 @@ pcrec (the Makefile owns that).
   reproduce. Its standing check is `tests/findings/run_findings_tests.sh`
   §13 (the `data_census/` fixture, with a must-fail control); sabotage S963
   plants an empty attribution.
+  [WINDOW-E1] (lane e1build, 2026-10-17) the same trace build also writes
+  the analysis object's `KSRCTRACE object` records; `data_trace` drops them
+  (an offer is not a read, and they carry the data's digest), so neither the
+  attribution nor the stderr compare sees them.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between
@@ -572,6 +576,11 @@ pcrec (the Makefile owns that).
   second `main` would break them. `tests/findings/` §3 is its drift check.
   [B5] a `cpfreq` block is written as its sparse code-point rows
   (`PcrecFindCp`), a `freq` block as its 256 counts.
+  [WINDOW-E1] (lane e1build, 2026-10-17) each block row also carries its
+  provenance stanza (`source`, `bytes`, `fidelity`), and the generator
+  REFUSES a block with no provenance source and a store `default` block
+  whose source is not `authored` (the terminal is a prior by construction,
+  window_contract.md §3.2's cross-check).
 
 - **pcrec_analyze.py — DELETED at [FINDINGS] B6** (lane `findb6`,
   implement-then-replace, design.md §10.1/§12): this was the `[FINDINGS]`

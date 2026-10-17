@@ -181,6 +181,17 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   (R-MS6) hands the kit the counter stem `pcrec_harness_reach_<prefix>`
   (`pcrec_memfn_art`) and appends its table at the artifact's end
   (`memfn_stamps.c`).
+  [WINDOW-E1] (lane e1build, 2026-10-17; window_contract.md rev 3.1
+  §3.7.1): `pcrec_memfn_analysis_build` builds the attempt's `mf_analysis`
+  (every `pcrec_find_query` row's `pcrec_find_offer`, mapped onto the kit's
+  `MF_KIND_*`/`MF_PROV_*` by two declared cell tables, its §3.1 invariant
+  checked as an internal error) into `Job.analysis`; `compile_driver` calls
+  it right after the chain resolves, and `pcrec_memfn_art` only passes it to
+  `mf_art_begin`. Under `-DPCREC_KS_TRACE` each kind writes one
+  `KSRCTRACE object` record (`analysis_trace`), the input of
+  `tests/findings/e1_object_check.py`. The kit's B1 layout carries no
+  `bytes`/`fidelity`; they stay in pcrec's `PcrecFindOffer` and the trace
+  until the kit re-declares them.
 - **THE FIND (`pcrec_emit_find`, gen/memfn_sites.h `PcrecFind`).** ([MEMFN]
   R17-a, lane r17a, MF_SITE_ABI 11, zero movers: the SET sites are DEFINED
   then USED. `find_site` states the window, W0-W2, on every FIND through
