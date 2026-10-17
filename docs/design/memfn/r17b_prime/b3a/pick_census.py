@@ -32,7 +32,10 @@ WHAT IT CHECKS (exit 1 on any):
   - no shadow was refused by the port (`port-refused`);
   - with --floors FILE: every (population, pick) non-trivial-agree count
     holds at least its floor ([rev3 D10]; a count that FALLS is a pick the
-    shadow stopped reaching);
+    shadow stopped reaching), and for the boolean picks (scan, leads,
+    dominated, landmark) both values of `differs` hold theirs (a row's
+    fourth column names the counter: `differs`, or `same` = records -
+    differs);
   - K35: every population is non-empty and every pick is reached somewhere.
 --write FILE writes floor(0.9 x measured) per (population, pick) for a
 reviewed pin.
@@ -46,6 +49,10 @@ import subprocess
 import sys
 
 PICKS = ("set", "scan", "window", "leads", "dominated", "landmark")
+# the picks whose answer is a family default or not (MFPICK `differs`):
+# floored on BOTH values (lane b3afix, MINOR-4), so a port that answers one
+# constant cannot agree, and neither can a pcrec side that stopped varying
+BOOLEAN_PICKS = ("scan", "leads", "dominated", "landmark")
 
 
 def tree_default():
@@ -200,21 +207,32 @@ def main():
             for ln in fh:
                 if ln.startswith("#") or not ln.strip():
                     continue
-                pop, pick, fl = ln.split("\t")[:3]
+                f = ln.rstrip("\n").split("\t")
+                pop, pick, fl = f[:3]
+                what = f[3] if len(f) > 3 and f[3] else "nt_agree"
                 if pop not in pops:
                     continue
-                got = cnt[(pop, pick, "nt_agree")]
+                if what == "same":       # records whose pick IS its family default
+                    got = cnt[(pop, pick, "records")] - cnt[(pop, pick, "differs")]
+                elif what in ("nt_agree", "differs"):
+                    got = cnt[(pop, pick, what)]
+                else:
+                    raise SystemExit("unknown floor counter %r" % what)
                 if got < int(fl):
-                    print("FAIL: floor %s %s nt_agree %d < %s" % (pop, pick, got, fl))
+                    print("FAIL: floor %s %s %s %d < %s" % (pop, pick, what, got, fl))
                     fails += 1
                 else:
-                    print("PASS: floor %s %s nt_agree %d >= %s" % (pop, pick, got, fl))
+                    print("PASS: floor %s %s %s %d >= %s" % (pop, pick, what, got, fl))
     if a.write:
         with open(a.write, "w") as fh:
-            fh.write("# pop\tpick\tfloor (floor(0.9 x measured non-trivial agreeing records))\n")
+            fh.write("# pop\tpick\tfloor (floor(0.9 x measured))\tcounter (nt_agree when empty)\n")
             for pop in pops:
                 for pick in PICKS:
                     fh.write("%s\t%s\t%d\n" % (pop, pick, int(cnt[(pop, pick, "nt_agree")] * 9 // 10)))
+                for pick in BOOLEAN_PICKS:
+                    d = cnt[(pop, pick, "differs")]
+                    fh.write("%s\t%s\t%d\tdiffers\n" % (pop, pick, d * 9 // 10))
+                    fh.write("%s\t%s\t%d\tsame\n" % (pop, pick, (cnt[(pop, pick, "records")] - d) * 9 // 10))
     print("PICK_CENSUS_DONE fails=%d" % fails)
     return 1 if fails else 0
 
