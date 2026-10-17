@@ -45,9 +45,17 @@
  * an out-of-enum 5) is passed unchanged, and the one refusal case that
  * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
  * of the blinded text: lane fdb2.) */
+/* MF_SITE_ABI 14 (R-23): mf_site.body is STATED too (its zero is UNSTATED and
+ * refused). G2's sites were written before the field existed, so at the kit
+ * call an unstated body is stated ONESHOT, the call mode every entry body of
+ * the checked kit has; a value G2 sets itself (PARAM, an out-of-enum 9) is
+ * passed unchanged, and the refusal case that tests an UNSTATED body clears
+ * `g2_body_fill` for its own call. (Not part of the blinded text: lane r23.) */
+static int g2_body_fill = 1;
 static int g2_need_fill = 1;
 static void g2_need(mf_site *w)
 {
+    if (g2_body_fill && w->body == MF_BODY_UNSTATED) w->body = MF_BODY_ONESHOT;
     if (!g2_need_fill) return;
     if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
         w->pred.need = MF_REQUIRED;
@@ -2162,6 +2170,7 @@ static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char 
     memset(&res, 0, sizeof res);
     int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
     g2_need_fill = 1;
+    g2_body_fill = 1;
     const char *err = rc ? mf_art_error(art) : NULL;
     if (pend == G2_PEND_LOOPX && !rc) {
         /* Q-R7-3: only the GENERIC row is known (by the contract) to serve no LOOP_EXIT;
@@ -2280,6 +2289,9 @@ static void refusal_table(void)
     CASE("term-kind-out-of-enum",   s.pred.term[0].kind = (mf_term_kind)5);
     CASE("need-out-of-enum",        s.pred.term[0].need = (mf_need)5);
     CASE("site-kind-out-of-enum",   s.site_kind = 9);   /* MF_SITE_ABI 13, PR-3 (lane fdb2) */
+    CASE("body-out-of-enum",        s.body = 9);        /* MF_SITE_ABI 14, R-23 (lane r23) */
+    CASE("body-unstated",           (g2_body_fill = 0, s.body = MF_BODY_UNSTATED));
+    CASE("body-param-reserved",     s.body = MF_BODY_PARAM);
     CASE("need-unstated",           (g2_need_fill = 0, s.pred.need = MF_REQUIRED,
                                      s.pred.term[0].need = MF_NEED_UNSTATED));
     CASE("pred-need-unstated",      (g2_need_fill = 0, s.pred.term[0].need = MF_REQUIRED,

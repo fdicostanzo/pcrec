@@ -216,9 +216,8 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 {
     mf_site *s = pcrec_arena_alloc(&cx->arena, sizeof *s);
     s->abi = MF_SITE_ABI;
-    /* R-19 (R17-b' B1): every entry body is one-shot until R17-b'''s
-       iterator; stated by every builder, here at their common start */
-    s->body = MF_BODY_ONESHOT;
+    /* `body` is NOT written here (R-23, MF_SITE_ABI 14): it is a stated fact
+       with an UNSTATED zero, and every builder states it */
     s->ret_pred = MF_NO_PRED;
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
@@ -487,6 +486,7 @@ static uint8_t span_fold_kind(PcrecEncFoldKind k)
 mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h)
 {
     mf_site *s = pcrec_memfn_site(cx, DELEG_N7);
+    s->body = MF_BODY_ONESHOT;          /* R-23: every entry body is one-shot (no iterator yet) */
     s->form = MF_FORM_STMT;
     s->op = MF_OP_MISMATCH;
     s->handoff = MF_H_ON_DIFF;
@@ -543,6 +543,7 @@ mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                        "stride %d (1..%d; no stride is presumed)",
                        pcrec_deleg_sites[id].id, a->stride, MF_MAX_TERM);
     mf_site *s = pcrec_memfn_site(cx, id);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
     s->form = MF_FORM_STMT;
     s->op = MF_OP_SKIP;
     s->handoff = MF_H_ADVANCE;

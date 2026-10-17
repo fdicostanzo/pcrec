@@ -536,7 +536,10 @@ static int cl_decl_point(const gate_in *in)
     return in->s ? flag01(in->s->decl_point) : CL_OTHER;
 }
 
-/* The call mode (R-19, MF_SITE_ABI 12): 0 is UNSTATED, as a hook ID's 0. */
+/* The call mode (R-19, MF_SITE_ABI 12): 0 is UNSTATED, as a hook ID's 0.
+ * site_check refuses an UNSTATED body (R-23, MF_SITE_ABI 14) before any
+ * selection runs, so the -1 arm is the class's own vocabulary and no site
+ * reaches it. */
 static int cl_body(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;

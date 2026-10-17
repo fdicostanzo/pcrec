@@ -494,6 +494,8 @@ static const char *site_check(const mf_site *s)
         return "`count_by_caller` is for an ADVANCE site only (Q-R4h-1 (a))";
     if (!in_enum(s->fold_kind, MF_FOLD_UCP)) return "`fold_kind` outside mf_fold";
     if (!in_enum(s->body, MF_BODY_PARAM)) return "`body` outside mf_body";
+    if (s->body == MF_BODY_UNSTATED)
+        return "`body` UNSTATED (`body`: 0 is no call mode, MF_SITE_ABI 14)";
     if (!in_enum(s->site_kind, MF_SK_DFA_ATTEMPT)) return "`site_kind` outside mf_site_kind";
     if (s->body == MF_BODY_PARAM)
         return "`body` PARAM is reserved for R17-b'' (its mode-expression hook): no "

@@ -1627,6 +1627,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
 
     struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
     mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
     mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
     if (gate >= 0) {
         if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
@@ -6452,6 +6453,7 @@ static mf_site *find_site(const PcrecFind *f)
                        "(src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id, (unsigned)f->kind);
     mf_site *s = pcrec_memfn_site(cx, f->site);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
     s->form = MF_FORM_STMT;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_ASSIGN;
@@ -7102,6 +7104,7 @@ static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
 {
     mf_site *s = pcrec_memfn_site(f->cx, DELEG_OFS);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
     s->form = MF_FORM_FUNC;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_RETURN;
