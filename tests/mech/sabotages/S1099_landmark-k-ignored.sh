@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S1099 (PLACEHOLDER id; lane b3a, [MEMFN] R17-b' B3a) -- the fifth port ignores K where K x h reaches the whole rate; caught by the .{0,100}e declined witness
+# S1099 (lane b3a, [MEMFN] R17-b' B3a) -- the fifth port ignores K where K x h reaches the whole rate; caught by the .{0,100}e declined witness
 SAB_ID="S1099-landmark-k-ignored"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="candoracle"

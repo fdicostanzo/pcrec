@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S1095 (PLACEHOLDER id; lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the run-scan port drops its tie rule (a tie goes to the leftmost position); caught by the -e utf8 abcd tie witness
+# S1095 (lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the run-scan port drops its tie rule (a tie goes to the leftmost position); caught by the -e utf8 abcd tie witness
 SAB_ID="S1095-scan-tie-leftmost"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="candoracle"

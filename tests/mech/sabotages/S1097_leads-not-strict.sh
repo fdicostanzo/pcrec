@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S1097 (PLACEHOLDER id; lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the set-leads port leads on an EQUALLY rare set pick; caught by the -e utf8 x.*abc tie witness
+# S1097 (lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the set-leads port leads on an EQUALLY rare set pick; caught by the -e utf8 x.*abc tie witness
 SAB_ID="S1097-leads-not-strict"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="candoracle"

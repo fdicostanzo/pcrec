@@ -10186,16 +10186,17 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
                                 (uint8_t)cs.run_verified };
         /* the K admission's displaced row, where NEXT prices it */
         UnanchStart us;
-        CandSel ns = { 0 };
+        CandSel ns = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                       .route = CAND_ROUTE_DFA };
         bool priced = false;
         uint8_t disp[32], *dp = NULL;
         if (site->handoff == MF_H_ASSIGN && cand_route_of(cx) == CAND_ROUTE_DFA &&
             pcrec_artifact_has_dfa_scan(cx) && cand_finish_of(cx) != CAND_ROUTE_VM) {
             unanch_start(cx, &us);
             if (!us.empty) {
-                ns = (CandSel){ .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true,
-                                .st = -1, .route = CAND_ROUTE_DFA,
-                                .ss = pcrec_fact_start_set(cx) };
+                ns.d = &cx->job->dfa;
+                ns.us = &us;
+                ns.ss = pcrec_fact_start_set(cx);
                 priced = true;
                 const CandRow *below = cand_select(CAND_SLOT_NEXT, &ns,
                                                    cx->opt->flags | PCREC_NO_REQ_HANDOFF);

@@ -6,13 +6,14 @@
 # appears SAB_COUNT times), `make -j4`, then the row's suite: `candoracle` =
 # tests/codegen/run_cand_oracle.sh (which runs tests/memfn/run_pres_picks.sh
 # on its trace build), `memfnfinder` = tests/memfn/run_finder.sh. DETECTED iff
-# the suite fails. PLACEHOLDER ids (S1093..S1101): main allocates real ids and
-# moves them into tests/mech/sabotages/. Each plant also runs the suite on the
+# the suite fails. The rows (S1093..S1101, allocated by the kit manager) live in
+# tests/mech/sabotages/, where make mech runs them too. Each plant also runs the suite on the
 # UNPLANTED tree first only once (the control), so a red control is not read
 # as a detection.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(git -C "$SELF" rev-parse --show-toplevel)"
+HERE="$ROOT/tests/mech/sabotages"
 OUT="${1:-$ROOT/build/land/skb3a}"; shift || true
 mkdir -p "$OUT"
 suite() { # SUITE TREE LOG
@@ -23,7 +24,7 @@ suite() { # SUITE TREE LOG
     esac
 }
 mkdir -p "$OUT/tmp"
-ids=("$@"); [ "${#ids[@]}" -gt 0 ] || ids=($(cd "$HERE" && ls S[0-9]*_*.sh | sed 's/\.sh$//' | sort))
+ids=("$@"); [ "${#ids[@]}" -gt 0 ] || ids=($(cd "$HERE" && ls S109[3-9]_*.sh S110[01]_*.sh | sed 's/\.sh$//' | sort))
 for id in "${ids[@]}"; do
     f="$HERE/$id.sh"; [ -f "$f" ] || f="$(ls "$HERE"/"$id"_*.sh 2>/dev/null | head -1)"
     id=$(basename "$f" .sh)

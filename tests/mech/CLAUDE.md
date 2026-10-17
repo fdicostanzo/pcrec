@@ -3925,3 +3925,16 @@ the block declares; arm `memfnfinder` (finder_check.py family L maps every
 token of the closed set read off `pcrec --list-schema` through
 `tests/memfn/prov_check.c` and demands its own nonzero enumerator), hand-measured
 DETECTED (figure in `docs/dev/lanes/r24_report.md`). No artifact moves.
+
+**S1093-S1101 (lane b3a, 2026-10-17, [MEMFN] R17-b′ B3a; MF_SITE_ABI 16):** KW-8's
+comparator and the kit's ports of pcrec's five priced presence picks
+(`memfn/src/presence.c`, the MFPICK records of `src/gen/emit_dfa.c`
+`req_pick_shadow`), plus PR-11's planted collapse. S1093 the comparator always
+agrees; S1094 the set port's tie order swapped; S1095 the scan tie leftmost;
+S1096 the window tie rightmost; S1097 set-leads not strict; S1098 G1's identity
+dropped; S1099 the landmark admission ignores K; S1100 `src/ir/nfa.c`'s count
+collapse drops rmin (suite `memfnfinder`, `tests/memfn/run_pr11.sh`); S1101 pcrec
+states its presence spans with an UNSTATED class (`kit_presence_check` refuses).
+All suite `candoracle` except S1100; each hand-measured DETECTED solo by
+`docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh` (figures in
+`docs/dev/lanes/b3a_report.md` §6). No artifact moves.

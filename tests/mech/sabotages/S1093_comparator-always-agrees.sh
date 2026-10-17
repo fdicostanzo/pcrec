@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S1093 (PLACEHOLDER id; lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the five-pick comparator reports agree whatever the two answers are; caught by the planted disagreements (PCREC_PICK_PLANT)
+# S1093 (lane b3a, [MEMFN] R17-b' B3a) -- SN-6: the five-pick comparator reports agree whatever the two answers are; caught by the planted disagreements (PCREC_PICK_PLANT)
 SAB_ID="S1093-comparator-always-agrees"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="candoracle"

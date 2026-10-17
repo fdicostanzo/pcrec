@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S1101 (PLACEHOLDER id; lane b3a, [MEMFN] R17-b' B3a) -- a stated presence span leaves span_class UNSTATED: the kit refuses the site (presence_check); caught by the witness compiles
+# S1101 (lane b3a, [MEMFN] R17-b' B3a) -- a stated presence span leaves span_class UNSTATED: the kit refuses the site (presence_check); caught by the witness compiles
 SAB_ID="S1101-pspan-class-unstated"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="candoracle"
