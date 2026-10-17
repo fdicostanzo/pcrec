@@ -282,18 +282,18 @@ static const struct {
 int pcrec_ks_view_write(const KsKind *k, const char *view, const KsOut *o,
                         const void *doc, KsErr *err)
 {
+    const char *who = k->list_flag ? k->list_flag : k->kind;  /* `lib` has none */
     for (size_t i = 0; i < sizeof ks_views / sizeof *ks_views; i++) {
         KsWriter w;
         if (strcmp(ks_views[i].view, view) != 0) continue;
         memcpy(&w, (const char *)k + ks_views[i].col, sizeof w);
         if (!w) {
-            ks_fail(err, "%s has no %s view", k->list_flag, view);
+            ks_fail(err, "%s has no %s view", who, view);
             return -1;
         }
         return w(o, doc, err);
     }
-    ks_fail(err, "%s: unknown view '%s' (canonical, decoded)", k->list_flag,
-            view);
+    ks_fail(err, "%s: unknown view '%s' (canonical, decoded)", who, view);
     return -1;
 }
 
