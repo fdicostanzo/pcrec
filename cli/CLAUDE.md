@@ -231,6 +231,8 @@ R20/MOD07-9: "1 row DISAGREES", "2 rows DISAGREE".
 
 The tool normalizes output paths (e.g., -o out.c generates out.h automatically; -o - prints self-contained C to stdout). It writes the generated .c/.h files to the filesystem.
 
+**The harness build** (`build/pcrec-harness`, `main.c` with `-DPCREC_HARNESS`; the Makefile rule's comment) adds test-only options the shipped `build/pcrec` lacks (their spellings live only in `main.c`, `tests/compound/`, `tests/memfn/run_arm_reach.sh` and the harness-pairing allowlist of `tests/compound/run_lever_fence.sh`, the G7 fence): one that force-declines the compound family; since R17-b′ B1 (lane fdb1), one that takes a measurement-set file, which reads a kit measurement-set section TSV (`harness_measures_load`: `kit.` rows with a value, `null` rows skipped) and hands it to the kit's `mf_art_begin` through `PcrecHarnessOptions.measures`; and since R17-b′ B2 (lane fdb2), one that sets `PcrecHarnessOptions.arm_reach`, so the kit counts each routed finder site's arm entries in the artifact under a reserved counter name (R-MS6; `tests/memfn/run_arm_reach.sh` drives and reads it).
+
 Compilation goes through lib/pcrec.h, the public header. The SR-3 syntax queries are the one exception: they include src/core/internal.h, because the construct registry is deliberately NOT public surface — the CLI and the test suite are its only consumers today. main.c touches no registry type even so; it calls two functions that return finished text. Promoting one of them into lib/pcrec.h if a library caller ever wants it is easy in a way that un-promoting it would not be.
 
 Maintenance: update this file when files are added/removed or their roles change.

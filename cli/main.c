@@ -25,6 +25,11 @@
 /* [M5-SEAM] the ENCODING REGISTRY: the one table the `byte`/`utf8` names are
  * defined by, so this file maps no encoding name of its own (see D58/SR-10). */
 #include "enc/enc.h"
+#ifdef PCREC_HARNESS
+/* [MEMFN] R17-b' B1 the harness lever `--harness=measures=FILE` hands the
+ * kit a measurement set (memfn.h `mf_measures`, R-MS1). */
+#include "gen/memfn_sites.h"
+#endif
 
 /* ---- THE CLI DIAGNOSTIC CHANNEL ([REVW.1] wave 1) -----------------------
  *
@@ -63,6 +68,106 @@ static int cli_err(const char *fmt, ...)
     fputc('\n', stderr);
     return 1;
 }
+
+#ifdef PCREC_HARNESS
+/* [MEMFN] R17-b' B1 (r17b_prime.md §1.6 [rev3 B6], §3.1): THE HARNESS'S SET
+ * READER, the test build's `--harness=measures=FILE` lever until [MEASURE-SET]
+ * M0's loader ([KNOW-SRC]'s ksrc.c) gives a shipped compile one. FILE is a set
+ * in measure_sets.md §1.2's section shape (TAB-separated; `#section NAME`;
+ * each section's columns named by its last `#` line before data): the
+ * `header` section's `id`/`rev`/`values_digest`/`class`/`tier`/`composite`
+ * rows, and the `rows` section's `key`/`unit`/`value_e6`/`status`/`source`
+ * columns. Only `kit.` rows with a value and a status other than `null` are
+ * handed over (R-MS1: pcrec hands the kit its own rows, NULL ones not at all).
+ * It checks nothing the kit checks (the kit refuses a bad set at
+ * mf_art_begin); a file it cannot read is a usage error. */
+static char *hm_dup(const char *p, size_t n)
+{
+    char *d = malloc(n + 1);
+    if (!d) { perror("malloc"); exit(1); }
+    memcpy(d, p, n);
+    d[n] = '\0';
+    return d;
+}
+
+static const mf_measures *harness_measures_load(const char *path)
+{
+    FILE *f = fopen(path, "r");
+    if (!f) { cli_err("--harness=measures=%s: cannot open", path); exit(2); }
+    mf_measures *ms = calloc(1, sizeof *ms);
+    mf_measure *rows = NULL;
+    size_t cap = 0;
+    char line[8192], cols[16][32];
+    int ncol = 0, sect = 0;     /* 1 header, 2 rows, 0 other */
+    while (fgets(line, sizeof line, f)) {
+        size_t n = strlen(line);
+        while (n && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = '\0';
+        if (!strncmp(line, "#section ", 9)) {
+            sect = !strcmp(line + 9, "header") ? 1 : !strcmp(line + 9, "rows") ? 2 : 0;
+            ncol = 0;
+            continue;
+        }
+        if (line[0] == '#') {           /* the latest `#` line names the columns */
+            ncol = 0;
+            for (char *t = line + 1; ncol < 16; ) {
+                char *e = strchr(t, '\t');
+                size_t l = e ? (size_t)(e - t) : strlen(t);
+                snprintf(cols[ncol++], sizeof cols[0], "%.*s", (int)l, t);
+                if (!e) break;
+                t = e + 1;
+            }
+            continue;
+        }
+        if (!n || !sect) continue;
+        const char *cell[16] = { 0 };
+        size_t clen[16] = { 0 };
+        int nc = 0;
+        for (char *t = line; nc < 16; ) {
+            char *e = strchr(t, '\t');
+            cell[nc] = t;
+            clen[nc++] = e ? (size_t)(e - t) : strlen(t);
+            if (!e) break;
+            t = e + 1;
+        }
+        const char *get[6] = { 0 };     /* key value unit value_e6 status source */
+        size_t gl[6] = { 0 };
+        static const char *const want[6] = { "key", "value", "unit", "value_e6",
+                                             "status", "source" };
+        for (int c = 0; c < ncol && c < nc; c++)
+            for (int w = 0; w < 6; w++)
+                if (!strcmp(cols[c], want[w])) { get[w] = cell[c]; gl[w] = clen[c]; }
+        if (sect == 1 && get[0] && get[1]) {
+            char *v = hm_dup(get[1], gl[1]);
+            if (gl[0] == 2 && !strncmp(get[0], "id", 2)) ms->id = v;
+            else if (gl[0] == 3 && !strncmp(get[0], "rev", 3)) ms->rev = (uint32_t)strtoul(v, NULL, 10);
+            else if (gl[0] == 13 && !strncmp(get[0], "values_digest", 13)) ms->values_digest = v;
+            else if (gl[0] == 5 && !strncmp(get[0], "class", 5)) ms->cls = v;
+            else if (gl[0] == 4 && !strncmp(get[0], "tier", 4)) ms->tier = v;
+            else if (gl[0] == 9 && !strncmp(get[0], "composite", 9)) ms->composite = (uint8_t)atoi(v);
+            else free(v);
+        } else if (sect == 2 && get[0] && get[3]) {
+            if (gl[0] < 4 || strncmp(get[0], "kit.", 4) || !gl[3]) continue;
+            if (get[4] && gl[4] == 4 && !strncmp(get[4], "null", 4)) continue;
+            if (ms->nrows == cap) {
+                cap = cap ? cap * 2 : 64;
+                rows = realloc(rows, cap * sizeof *rows);
+                if (!rows) { perror("realloc"); exit(1); }
+            }
+            char *v = hm_dup(get[3], gl[3]), *end;
+            long long x = strtoll(v, &end, 10);
+            if (*end) { cli_err("--harness=measures=%s: value_e6 %s is not an integer", path, v); exit(2); }
+            free(v);
+            rows[ms->nrows++] = (mf_measure){ hm_dup(get[0], gl[0]), x,
+                                              get[2] ? hm_dup(get[2], gl[2]) : NULL,
+                                              get[5] ? hm_dup(get[5], gl[5]) : NULL };
+        }
+    }
+    fclose(f);
+    ms->rows = rows;
+    if (!ms->id) { cli_err("--harness=measures=%s: no `id` in its header section", path); exit(2); }
+    return ms;
+}
+#endif
 
 /* [ART-SIZE] Parse a RAISE-ONLY size override. Shared by both caps so the
  * two cannot drift in what they accept, and so the "below the default is a
@@ -1000,6 +1105,11 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
 #ifdef PCREC_HARNESS
         /* [COMPOUND] the harness build's one extra option (§A.11). */
         else if (!strcmp(a, "--harness=no-compound")) st->harness.compound_off = 1;
+        /* [MEMFN] R17-b' B1: the set handed to the kit (a test build's) */
+        else if (!strncmp(a, "--harness=measures=", 19))
+            st->harness.measures = harness_measures_load(a + 19);
+        /* [MEMFN] R17-b' B2 (R-MS6): the kit's arm-entry counter */
+        else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;

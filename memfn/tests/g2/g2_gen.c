@@ -37,9 +37,28 @@
  * at the kit call, after every perturbation, so a refusal case keeps the
  * refusal it was written for. A site with no terms, or that states a window
  * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+/* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
+ * zero, and every term and read predicate STATES its need. G2's sites were
+ * written when 0 meant REQUIRED (their memset/zero-filled terms say
+ * REQUIRED that way), so at the kit call a zero need is stated REQUIRED, the
+ * meaning those sites were written with; a value G2 sets itself (OPTIONAL,
+ * an out-of-enum 5) is passed unchanged, and the one refusal case that
+ * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
+ * of the blinded text: lane fdb2.) */
+static int g2_need_fill = 1;
+static void g2_need(mf_site *w)
+{
+    if (!g2_need_fill) return;
+    if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
+        w->pred.need = MF_REQUIRED;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++)
+        if (w->pred.term[i].need == MF_NEED_UNSTATED) w->pred.term[i].need = MF_REQUIRED;
+}
+
 static mf_site g2_win(const mf_site *s)
 {
     mf_site w = *s;
+    g2_need(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
@@ -1074,7 +1093,7 @@ static int pend_named(int pend, const char *msg)
  * "BODY:" body "FILE:" file-scope text. 0, or nonzero with the error in err */
 static int render_text(const mf_site *s, const mf_hooks *h, int cmt, buf *out, char *err, size_t errn)
 {
-    mf_art *a = mf_art_begin(&g_arena, "g2x", s->policy, s->denies);
+    mf_art *a = mf_art_begin(&g_arena, "g2x", s->policy, s->denies, NULL, NULL);
     buf b = { 0 }, f = { 0 };
     sinku ub = { &b, cmt, 0, 0 }, uf = { &f, cmt, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -1101,7 +1120,7 @@ static int render_text(const mf_site *s, const mf_hooks *h, int cmt, buf *out, c
  * form does not serve, naming the field, with no re-selection. */
 static int render_via(const mf_site *s, const mf_hooks *h, int via, int cmt, char *err, size_t errn)
 {
-    mf_art *a = mf_art_begin(&g_arena, "g2v", s->policy, s->denies);
+    mf_art *a = mf_art_begin(&g_arena, "g2v", s->policy, s->denies, NULL, NULL);
     buf b = { 0 }, f = { 0 }, b2 = { 0 };
     sinku ub = { &b, cmt, 0, 0 }, uf = { &f, cmt, 0, 0 }, ub2 = { &b2, cmt, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), sb2 = mk_sink(&ub2);
@@ -2135,13 +2154,14 @@ static void cap_opt(gsite *g)
  * enforcement (today a form may still render it). */
 static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char *field, int pend)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2r", MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&g_arena, "g2r", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
     mf_result res;
     memset(&res, 0, sizeof res);
     int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
+    g2_need_fill = 1;
     const char *err = rc ? mf_art_error(art) : NULL;
     if (pend == G2_PEND_LOOPX && !rc) {
         /* Q-R7-3: only the GENERIC row is known (by the contract) to serve no LOOP_EXIT;
@@ -2235,7 +2255,7 @@ static void refusal_table(void)
     /* control: the baseline itself must render (else every case below
      * "passes" for the wrong reason) */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -2259,6 +2279,11 @@ static void refusal_table(void)
     CASE("empty-out-of-enum",       s.empty = (mf_empty)9);
     CASE("term-kind-out-of-enum",   s.pred.term[0].kind = (mf_term_kind)5);
     CASE("need-out-of-enum",        s.pred.term[0].need = (mf_need)5);
+    CASE("site-kind-out-of-enum",   s.site_kind = 9);   /* MF_SITE_ABI 13, PR-3 (lane fdb2) */
+    CASE("need-unstated",           (g2_need_fill = 0, s.pred.need = MF_REQUIRED,
+                                     s.pred.term[0].need = MF_NEED_UNSTATED));
+    CASE("pred-need-unstated",      (g2_need_fill = 0, s.pred.term[0].need = MF_REQUIRED,
+                                     s.pred.need = MF_NEED_UNSTATED));
     CASE("nterm-over-max",          s.pred.nterm = MF_MAX_TERM + 1);
     CASE("offset-below-max-back",   s.pred.term[0].offset = -MF_MAX_BACK - 1);
     CASE("end-back-2",              s.end_back = 2);
@@ -2410,7 +2435,7 @@ static void refusal_table(void)
     /* the art's error is STICKY (memfn.h): after a refusal, a valid site on
      * the same art fails with the first error's text */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -2429,11 +2454,11 @@ static void refusal_table(void)
     /* mf_art_note_libc: a non-identifier name is refused loudly; a noted name
      * reaches MEMFN_LIBC, once (idempotent), sorted */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         int rc = mf_art_note_libc(art, "mem chr");
         api_result(rc && mf_art_error(art) && *mf_art_error(art),
                    "note_libc(\"mem chr\") refused: rc=%d \"%s\"", rc, mf_art_error(art) ? mf_art_error(art) : "");
-        mf_art *a2 = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0);
+        mf_art *a2 = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         int r1 = mf_art_note_libc(a2, "strlen"), r2 = mf_art_note_libc(a2, "memchr"), r3 = mf_art_note_libc(a2, "strlen");
         buf st = { 0 };
         sinku us = { &st, 0, 0, 0 };
@@ -2461,7 +2486,7 @@ static void refusal_table(void)
         s.pred.fn_ref = 1;
         h.floor = NULL;
         h.miss = "n";
-        mf_art *art = mf_art_begin(&g_arena, "g2f", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2f", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 }, st = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 }, us = { &st, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), ss = mk_sink(&us);
@@ -2480,13 +2505,13 @@ static void refusal_table(void)
 
     /* the define/use lifecycle (§14.0 item 1) */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         buf file = { 0 };
         sinku uf = { &file, 0, 0, 0 };
         mf_sink sf = mk_sink(&uf);
         uint32_t handle = 0;
         int rc = mf_define(art, G2W(&s0), &h0, &sf, &handle);
-        int rc_end = mf_art_end(art);
+        int rc_end = mf_art_end(art, NULL);
         if (!rc && rc_end && mf_art_error(art) && *mf_art_error(art)) {
             n_api_pass++;
             fprintf(g_res, "PASS api defined-never-used fails at mf_art_end: \"%s\"\n", mf_art_error(art));
@@ -2497,7 +2522,7 @@ static void refusal_table(void)
         free(file.p);
     }
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         buf body = { 0 };
         sinku ub = { &body, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub);
@@ -2513,8 +2538,8 @@ static void refusal_table(void)
         free(body.p);
     }
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0);
-        int rc = mf_art_end(art);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        int rc = mf_art_end(art, NULL);
         if (!rc) { n_api_pass++; fprintf(g_res, "PASS api empty-artifact ends clean\n"); }
         else { n_api_fail++; fprintf(g_res, "FAIL api empty-artifact: art_end rc=%d %s\n", rc, mf_art_error(art)); }
     }
@@ -2606,7 +2631,7 @@ static void flush_batch(const char *outdir, int bi, mf_art *art, batchbuf *B, FI
         n_api_fail++;
         fprintf(g_res, "FAIL api batch %d mf_stamps: %s\n", bi, mf_art_error(art));
     } else n_api_pass++;
-    if (mf_art_end(art)) {
+    if (mf_art_end(art, NULL)) {
         n_api_fail++;
         fprintf(g_res, "FAIL api batch %d mf_art_end: %s\n", bi, mf_art_error(art));
     } else n_api_pass++;
@@ -2655,7 +2680,7 @@ static void open_batch(void)
     snprintf(px, 16, "g2b%d", g_bi);
     g_batch_denies = g_force_denies >= 0 ? (uint64_t)g_force_denies
                    : g_bi % 3 == 2 ? MF_D_RUN_OVERLAP : 0;
-    g_art = mf_art_begin(&g_arena, px, g_bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies);
+    g_art = mf_art_begin(&g_arena, px, g_bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies, NULL, NULL);
 }
 
 /* render g into the current batch; a full batch is flushed and the next one
@@ -2677,7 +2702,7 @@ static void next_site(gsite *g)
 static void force_batch(uint64_t denies)
 {
     if (g_B.nsite) { flush_batch(g_outdir, g_bi, g_art, &g_B, g_all); g_bi++; }
-    else mf_art_end(g_art);
+    else mf_art_end(g_art, NULL);
     g_force_denies = (int64_t)denies;
     open_batch();
 }
@@ -3625,7 +3650,7 @@ static void gen_fam_mismatch(void)
 static long mm_ref_cases, mm_ref_named, mm_ref_soft_yes, mm_ref_soft_no;
 static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, const char *req, const char *soft)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2q", MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&g_arena, "g2q", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -3658,7 +3683,7 @@ static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, con
 
 static int mm_renders(const mf_site *s, const mf_hooks *h, const char *what)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -4167,7 +4192,7 @@ static int st_names_any(const char *err, const char *req)
 }
 static int st_try(const mf_site *s, const mf_hooks *h, char *err, size_t errn, char *form, size_t formn)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0);
+    mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -4918,7 +4943,7 @@ int main(int argc, char **argv)
     /* (8) the PENDING-ENFORCE queue, in pending-only batches */
     flush_pending();
     if (g_B.nsite) { flush_batch(outdir, g_bi, g_art, &g_B, all); g_bi++; }
-    else mf_art_end(g_art);
+    else mf_art_end(g_art, NULL);
     int bi = g_bi, nsites = g_nsites;
 
     /* the K35 witnesses (run_g2.sh holds each to a floor): per family, per

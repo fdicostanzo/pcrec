@@ -58,7 +58,7 @@ _Static_assert(MF_CMT_NONESSENTIAL == PCREC_CMT_NONESSENTIAL,
 
 /* ---- the attempt's kit state --------------------------------------------- */
 
-static void *arena_alloc(void *u, size_t n)
+void *pcrec_memfn_arena_alloc(void *u, size_t n)
 {
     return pcrec_arena_alloc(u, n);
 }
@@ -69,11 +69,24 @@ mf_art *pcrec_memfn_art(Ctx *cx)
     if (!job->mf) {
         mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
         ma->u = &cx->arena;
-        ma->alloc = arena_alloc;
+        ma->alloc = pcrec_memfn_arena_alloc;
+        /* R17-b' B1: the set is the harness lever's (a test build's), else
+           none; the analysis object is DECLARED and handed nothing until
+           E-1 (window_contract S1) fills it, with no kit edit */
+        const mf_measures *ms = cx->emit_in && cx->emit_in->harness
+                              ? cx->emit_in->harness->measures : NULL;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags));
+                               pcrec_memfn_denies(cx->opt->flags), ms, NULL);
         if (!job->mf) pcrec_ctx_nomem(cx);
+        /* R17-b' B2 (R-MS6): the harness lever's arm-entry counter, under the
+           reserved prefix and the artifact's own (placeholder, rendered with
+           the rest of the text); never on a shipped compile */
+        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach &&
+            mf_reach(job->mf, pcrec_sb_fragf(&cx->arena, "%sreach_%s",
+                                             PCREC_HARNESS_PREFIX, cx->opt->prefix)))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
+                           "counter: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }
@@ -201,6 +214,9 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 {
     mf_site *s = pcrec_arena_alloc(&cx->arena, sizeof *s);
     s->abi = MF_SITE_ABI;
+    /* R-19 (R17-b' B1): every entry body is one-shot until R17-b'''s
+       iterator; stated by every builder, here at their common start */
+    s->body = MF_BODY_ONESHOT;
     s->ret_pred = MF_NO_PRED;
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
@@ -360,6 +376,28 @@ static void rank_probe(DelegSite id, const mf_site *s)
 }
 #endif
 
+#ifdef PCREC_CAND_TRACE
+#include <stdio.h>
+#include <stdlib.h>
+/* [MEMFN] R17-b' B2 THE ROUTED-RECORD (r17b_prime.md §1.6 [rev3 B5] item 1):
+ * pcrec's own record of a site the kit decided with a ROUTED finder row, read
+ * from the define's REPORT (mf_result.row), never from a kit counter or
+ * trace: `MFROUTED<TAB>site<TAB>kind<TAB>row`, one per defined site, in the
+ * trace build with PCREC_MF_ROUTE_TRACE set (unset, nothing, so the trace
+ * build's CANDTRACE stream is unchanged). The floors per (kind, row) are the
+ * routing census's (docs/design/memfn/r17b_prime/fdb2/routed_census.py). */
+static const char *const routed_kind_name[] = { "UNSTATED", "DFA_SCAN", "DFA_HAT",
+                                                 "HYB_PF", "VM_ATTEMPT", "DFA_ATTEMPT" };
+static void routed_record(DelegSite id, const mf_site *s, const char *row)
+{
+    const char *const *kn = routed_kind_name;
+    if (!getenv("PCREC_MF_ROUTE_TRACE")) return;
+    fprintf(stderr, "MFROUTED\t%s\t%s\t%s\n", pcrec_deleg_sites[id].id,
+            s->site_kind < sizeof routed_kind_name / sizeof kn[0] ? kn[s->site_kind] : "?",
+            row && row[0] ? row : "-");
+}
+#endif
+
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file)
 {
@@ -372,6 +410,13 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
 #endif
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
+#ifdef PCREC_CAND_TRACE
+    {
+        mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
+        kit_check(cx, art, mf_defined(art, handle, r));
+        routed_record(id, s, r->row);
+    }
+#endif
     return handle;
 }
 
@@ -412,7 +457,13 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     PcrecMfSink ps;
     deleg_check(cx, id, s);
     pcrec_memfn_sink(&ps, body);
+#ifdef PCREC_CAND_TRACE
+    mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
+    kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, r));
+    routed_record(id, s, r->row);
+#else
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
+#endif
 }
 
 /* ---- the encoding seam's span compare (N7, [MEMFN] M7) ------------------- */
@@ -527,7 +578,10 @@ void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 
 void pcrec_memfn_art_end(Ctx *cx, mf_art *art)
 {
-    if (mf_art_end(art))
+    /* `consulted` (R-MS2) is not asked before [MEASURE-SET] M0 (B4), whose
+       `<PREFIX>_MEASURES` stamp is its reader: through B3b no routed finder
+       row reads a set key, so it would read 0 on every compile */
+    if (mf_art_end(art, NULL))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's artifact end "
                        "failed: %s", mf_art_error(art));
     if ((mf_includes(art) & MF_INC_STRING_H) && !cx->job->string_h)

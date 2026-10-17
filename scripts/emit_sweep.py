@@ -522,6 +522,27 @@ DIFFER_PINS = {
     ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
+    # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
+    # finder table's five denies. No finder row is ROUTED at B1, so each deny
+    # moves no byte: ASSERT_ZERO (below) on both bases and both streams. Each
+    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r0/fd-r5/
+    # fd-ndisp at B4, fd-r8 at B6), so `--extra` never runs a kit deny
+    # without a floor.
+    **{(base, "--memfn=no-" + row, stream): (0, 0, None)
+       for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
+       for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp")},
+    # [MEMFN] R17-b' B2 (lane fdb2; r17b_prime.md §3.4 [rev3 A17]): fd-d1
+    # FLIPS. D1 is routed, so its deny moves every one-byte DFA and hybrid
+    # site to D1w's walk over the offered table (answer-identical; no start
+    # stamp moves: DFA_PREFILTER stays pcrec's row identity). MEASURED at
+    # lane/fdb2 c5808f920, 4,624 distinct patterns: 1,004 (byte) and 985
+    # (utf8) on c-default. c-vm stays an exact 0 (ASSERT_ZERO below): under
+    # --engine=vm the one-byte seek is the VM hat's, which D1w already
+    # decides, and a hybrid's prefilter is not built there.
+    ("byte", "--memfn=no-fd-d1", "c-default"): (1004, 0, b" \\w?+\\b"),
+    ("utf8", "--memfn=no-fd-d1", "c-default"): (985, 0, b" \\w?+\\b"),
+    ("byte", "--memfn=no-fd-d1", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-fd-d1", "c-vm"): (0, 0, None),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -529,7 +550,14 @@ DIFFER_PINS = {
 # every non-boundary encoding, so -fno-end-window cannot act at utf8 — and a
 # utf8 base that lost `-e utf8` reads byte's 288 here.
 ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
-               ("utf8", "-fno-end-window", "c-vm")}
+               ("utf8", "-fno-end-window", "c-vm")} | {
+    # [MEMFN] R17-b' B1: the finder table's denies, inert until their rows route
+    (base, "--memfn=no-" + row, stream)
+    for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
+    for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp")} | {
+    # R17-b' B2: fd-d1 acts on the DFA body's and the hybrid's one-byte sites
+    # only; under --engine=vm it has none
+    ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the

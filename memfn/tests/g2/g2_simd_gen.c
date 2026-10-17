@@ -68,9 +68,28 @@
  * at the kit call, after every perturbation, so a refusal case keeps the
  * refusal it was written for. A site with no terms, or that states a window
  * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+/* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
+ * zero, and every term and read predicate STATES its need. G2's sites were
+ * written when 0 meant REQUIRED (their memset/zero-filled terms say
+ * REQUIRED that way), so at the kit call a zero need is stated REQUIRED, the
+ * meaning those sites were written with; a value G2 sets itself (OPTIONAL,
+ * an out-of-enum 5) is passed unchanged, and the one refusal case that
+ * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
+ * of the blinded text: lane fdb2.) */
+static int g2_need_fill = 1;
+static void g2_need(mf_site *w)
+{
+    if (!g2_need_fill) return;
+    if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
+        w->pred.need = MF_REQUIRED;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++)
+        if (w->pred.term[i].need == MF_NEED_UNSTATED) w->pred.term[i].need = MF_REQUIRED;
+}
+
 static mf_site g2_win(const mf_site *s)
 {
     mf_site w = *s;
+    g2_need(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
@@ -352,7 +371,7 @@ static int define_ok(vsite *u, const char *name, const mf_site *s)
     snprintf(u->name, sizeof u->name, "%s", want);
     tb bd = { 0 };
     mf_sink sd = sink_of(&bd, 1);
-    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies);
+    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies, NULL, NULL);
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = u;
@@ -376,7 +395,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
                   char *forms)
 {
     mf_sink sd = sink_of(def, brackets), sc = sink_of(call, 0);
-    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies);
+    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = v;
@@ -388,7 +407,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
     }
     char cap[256] = "";
     mf_sink st = { .u = cap, .stamp = stamp_cap, .stamp_int = sk_stamp_int };
-    if (mf_stamps(art, &st) || mf_art_end(art)) return -1;
+    if (mf_stamps(art, &st) || mf_art_end(art, NULL)) return -1;
     if (forms) snprintf(forms, 256, "%s", cap);
     return 0;
 }

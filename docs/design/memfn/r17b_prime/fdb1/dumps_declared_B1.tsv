@@ -1,0 +1,9 @@
+# R17-b' B1's DECLARED registry-dump delta (lane fdb1; r17b_prime.md rev 3
+# §3.4, B1 row: "stream 5's DECLARED delta"). One line per (surface, row
+# name) B1 ADDS; nothing is removed or changed. Read by dumps_delta.py.
+#surface	section	row
+--list-axes	memfn	fd-r0
+--list-axes	memfn	fd-r5
+--list-axes	memfn	fd-r8
+--list-axes	memfn	fd-ndisp
+--list-axes	memfn	fd-d1

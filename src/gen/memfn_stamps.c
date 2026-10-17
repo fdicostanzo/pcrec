@@ -275,5 +275,14 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     if (!ok)
         pcrec_ctx_fail(cx, 0, "internal error: the artifact holds no single "
                        "memfn stamp mark (pcrec_emit_memfn_mark)");
+    /* R17-b' B2 (R-MS6): under the harness lever, the arm-entry counter's
+       definitions at the artifact's end, after every use (nothing without it) */
+    if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach) {
+        PcrecMfSink ps;
+        pcrec_memfn_sink(&ps, &job->csb);
+        if (mf_reach_table(art, &ps.s))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
+                           "counter's table: %s", mf_art_error(art));
+    }
     pcrec_memfn_art_end(cx, art);
 }

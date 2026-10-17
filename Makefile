@@ -293,10 +293,12 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 # [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
-# once more with -DPCREC_HARNESS, which adds one option,
-# `--harness=no-compound`, the compound family's force-decline lever. Only
-# the test harness and bisects run it; the shipped build/pcrec has no such
-# option.
+# once more with -DPCREC_HARNESS, which adds two options:
+# `--harness=no-compound`, the compound family's force-decline lever, and
+# (R17-b' B1, lane fdb1) `--harness=measures=FILE`, the kit's measurement-set
+# lever (a section-TSV set handed to mf_art_begin; read by no routed finder
+# row before B4). Only the test harness and bisects run it; the shipped
+# build/pcrec has no such option.
 $(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -DPCREC_HARNESS -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
@@ -344,7 +346,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
-      test-memfn-rank \
+      test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-compound test-endmark test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
@@ -1407,6 +1409,18 @@ test-memfn-rows: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rows.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rows.sh
 
+# [MEMFN] R17-b' B1 (lane fdb1; docs/design/memfn/r17b_prime.md rev 3): the
+# kit's FINDER TABLE and its B1 entries: the table's self-check and listing
+# (R-MS4), form hashes (R-MS3), the method cards and sets (R-MS5), the set's
+# channel (R-MS1, R-MS2), the finder shadow's decisions under no set, the
+# full synthetic set and each read key removed in turn, the define-time
+# query family (every fixture asked, the class against its define and an
+# independent reading), and the pay rule's arithmetic grid. Seconds; builds
+# a plain and a traced fixture driver in TMPDIR (tests/memfn/run_finder.sh).
+test-memfn-finder: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-finder.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_finder.sh
+
 # [MEMFN] R4a: G2, the kit's own tests (memfn/tests/, D27-blinded lane
 # memfng2): the kit's rendered text against G2's own byte loop over a
 # generated site space, with its planted-defect witnesses. The section runs
@@ -2011,7 +2025,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-compound test-shard test-ci-shards \
