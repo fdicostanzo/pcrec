@@ -419,6 +419,7 @@ static const struct { const char *tok; uint8_t fid; } prov_fidelity_rows[] = {
     { "synthesized", MF_FID_SYNTHESIZED },
 };
 
+#ifdef PCREC_KS_TRACE
 /* The trace's reverse lookup: the token for an mf_prov_fidelity, `-` for
  * the unstated zero. */
 static const char *prov_fidelity_token(uint8_t fid)
@@ -427,6 +428,7 @@ static const char *prov_fidelity_token(uint8_t fid)
         if (prov_fidelity_rows[i].fid == fid) return prov_fidelity_rows[i].tok;
     return "-";
 }
+#endif
 
 int pcrec_memfn_prov_stanza(mf_prov *p, unsigned long long bytes,
                             const char *fidelity)
