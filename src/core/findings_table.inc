@@ -272,11 +272,11 @@ static const PcrecFindCp pcrec_find_tbl_cps_4[] = {
     { 0x7eu, 9ull },
 };
 static const PcrecFindTblBlock pcrec_find_tbl[] = {
-    { "default", "freq", 54, pcrec_find_tbl_serves_0, 1, pcrec_find_tbl_counts_0, NULL, 0 },
-    { "log", "freq", 14, pcrec_find_tbl_serves_1, 1, pcrec_find_tbl_counts_1, NULL, 0 },
-    { "log", "cpfreq", 91, pcrec_find_tbl_serves_2, 1, NULL, pcrec_find_tbl_cps_2, 63 },
-    { "weblog", "freq", 12, pcrec_find_tbl_serves_3, 1, pcrec_find_tbl_counts_3, NULL, 0 },
-    { "weblog", "cpfreq", 112, pcrec_find_tbl_serves_4, 1, NULL, pcrec_find_tbl_cps_4, 86 },
+    { "default", "freq", 54, pcrec_find_tbl_serves_0, 1, pcrec_find_tbl_counts_0, NULL, 0, "authored", 0ull, NULL },
+    { "log", "freq", 14, pcrec_find_tbl_serves_1, 1, pcrec_find_tbl_counts_1, NULL, 0, "synth-log-lines-v1", 999960ull, "synthesized" },
+    { "log", "cpfreq", 91, pcrec_find_tbl_serves_2, 1, NULL, pcrec_find_tbl_cps_2, 63, "synth-log-lines-v1", 999960ull, "synthesized" },
+    { "weblog", "freq", 12, pcrec_find_tbl_serves_3, 1, pcrec_find_tbl_counts_3, NULL, 0, "elastic-examples-apache-logs-bc53b584", 1000000ull, NULL },
+    { "weblog", "cpfreq", 112, pcrec_find_tbl_serves_4, 1, NULL, pcrec_find_tbl_cps_4, 86, "elastic-examples-apache-logs-bc53b584", 1000000ull, NULL },
 };
 static const PcrecFindTblBundle pcrec_find_tbl_bundles[] = {
     { "default", NULL, 52 },

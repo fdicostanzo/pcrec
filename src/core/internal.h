@@ -3105,6 +3105,11 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [WINDOW-E1] this attempt's analysis object (memfn.h's `mf_analysis`,
+     * window_contract.md §3.1), built ONCE, eagerly, by `compile_driver`
+     * right after the chain resolves (`pcrec_memfn_analysis_build`), and
+     * handed to `mf_art_begin`; NULL for a Job no attempt built. */
+    const struct mf_analysis *analysis;
     /* [MEMFN] R17-a the VM hat's FIND, defined above `<searchfn>_run`
      * (`pcrec_emit_vm_start_define`) for its entry and retry seeks
      * (src/gen/emit_dfa.c's `struct MemfnFind`); NULL where none. */
@@ -6203,6 +6208,11 @@ typedef struct {
     /* [FINDINGS] B2: the block's declarations as written (NULL where
      * absent), for `--list-analysis`; read by no compile. */
     const char         *encoding, *question, *reader, *analyzer;
+    /* [WINDOW-E1] its `provenance` stanza's `source`, `bytes` and
+     * `fidelity` as written (NULL where absent), copied onto the block when
+     * the stanza closes: what a query's provenance is read from
+     * (`PcrecFindTblBlock.prov_*`, D162 add. 4). */
+    const char         *prov_source, *prov_bytes, *prov_fidelity;
 } RxtFindBlock;
 
 typedef struct RxtSource RxtSource;
@@ -6553,6 +6563,12 @@ uint32_t pcrec_memfn_policy(uint64_t flags);
 /* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the
  * kit's `mf_opts_check` and refuses the compile with the kit's own text. */
 void pcrec_memfn_opts_check(Ctx *cx);
+/* [WINDOW-E1] Builds this attempt's analysis object into `Job.analysis`
+ * (src/gen/memfn_sites.c): every findings query's offer mapped onto the
+ * kit's `mf_analysis`, its invariant checked. Called by `compile_driver`
+ * once per attempt, right after `pcrec_find_resolve`; records no ask and
+ * refuses nothing a reader's ask would not. */
+void pcrec_memfn_analysis_build(Ctx *cx);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`

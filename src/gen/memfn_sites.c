@@ -10,6 +10,7 @@
  * always were, beside the facts they read (src/gen/emit_dfa.c's builders);
  * this file only turns a description into kit calls and checks the
  * description against DELEG_SITES (C10). */
+#include <stdio.h>
 #include <string.h>
 
 #include "gen/memfn_sites.h"
@@ -73,13 +74,15 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         ma->u = &cx->arena;
         ma->alloc = pcrec_memfn_arena_alloc;
         /* R17-b' B1: the set is the harness lever's (a test build's), else
-           none; the analysis object is DECLARED and handed nothing until
-           E-1 (window_contract S1) fills it, with no kit edit */
+           none; the analysis object is the attempt's, built eagerly by
+           compile_driver (pcrec_memfn_analysis_build): passed, never built,
+           here (NULL only for a Job no compile_driver attempt made) */
         const mf_measures *ms = cx->emit_in && cx->emit_in->harness
                               ? cx->emit_in->harness->measures : NULL;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags), ms, NULL);
+                               pcrec_memfn_denies(cx->opt->flags), ms,
+                               job->analysis);
         if (!job->mf) pcrec_ctx_nomem(cx);
         /* R17-b' B2 (R-MS6): the harness lever's arm-entry counter, under the
            reserved prefix and the artifact's own (placeholder, rendered with
@@ -91,6 +94,109 @@ mf_art *pcrec_memfn_art(Ctx *cx)
                            "counter: %s", mf_art_error(job->mf));
     }
     return job->mf;
+}
+
+/* ---- the analysis object ([WINDOW-E1], window_contract.md §3.1, §3.7.1) ---
+ *
+ * ONE `mf_analysis` per compile attempt, stated once, on `mf_art_begin`: every
+ * query of the vocabulary (`pcrec_find_query`) listed by its tag, present or
+ * absent, as `pcrec_find_offer` states it. This file holds the MAPPING from
+ * pcrec's offer vocabulary onto the kit's, because it is the one file that
+ * includes `memfn.h` for art state; the object's facts are findings.c's. */
+
+/* pcrec's kind state and provenance source onto the kit's: one cell each,
+ * every enumerator stated (0 is UNSTATED on both sides). */
+static const uint8_t akind_state_map[] = {
+    [PCREC_FIND_KIND_UNSTATED] = MF_KIND_UNSTATED,
+    [PCREC_FIND_KIND_PRESENT]  = MF_KIND_PRESENT,
+    [PCREC_FIND_KIND_ABSENT]   = MF_KIND_ABSENT,
+};
+static const uint8_t akind_source_map[] = {
+    [PCREC_FIND_SRC_UNSTATED]       = MF_PROV_UNSTATED,
+    [PCREC_FIND_SRC_PRIOR_AUTHORED] = MF_PROV_PRIOR_AUTHORED,
+    [PCREC_FIND_SRC_PRIOR_NONE]     = MF_PROV_PRIOR_NONE,
+    [PCREC_FIND_SRC_MEASURED]       = MF_PROV_MEASURED,
+};
+
+/* The object's invariant (window_contract.md §3.1), checked as it is built:
+ * a payload travels iff the kind is PRESENT with a table-bearing source;
+ * PRIOR_NONE states no bundle, digest or bytes; an ABSENT kind states no
+ * source. A violation is pcrec's own defect, so an internal-error refusal. */
+static void analysis_invariant(Ctx *cx, const char *tag, const PcrecFindOffer *o)
+{
+    bool table = o->present == PCREC_FIND_KIND_PRESENT &&
+                 (o->source == PCREC_FIND_SRC_PRIOR_AUTHORED ||
+                  o->source == PCREC_FIND_SRC_MEASURED);
+    const char *why =
+        (o->present == PCREC_FIND_KIND_UNSTATED) ? "its state is unstated" :
+        (table != (o->payload != NULL)) ? "a payload without a table-bearing "
+                                          "source, or the reverse" :
+        (o->source == PCREC_FIND_SRC_PRIOR_NONE &&
+         (o->bundle || o->digest || o->bytes)) ? "prior-none states a bundle, "
+                                                 "digest or bytes" :
+        (o->present == PCREC_FIND_KIND_ABSENT &&
+         o->source != PCREC_FIND_SRC_UNSTATED) ? "an absent kind states a source" :
+        NULL;
+    if (why)
+        pcrec_ctx_fail(cx, 0, "internal error: the analysis object's '%s' kind "
+                       "(T-KIND row '%s') breaks its invariant: %s",
+                       tag, o->row, why);
+}
+
+#ifdef PCREC_KS_TRACE
+/* The object's trace record (findings.h's lookup trace, its own line kind,
+ * so `scripts/emit_sweep.py --data` never reads it as an ask): one per kind
+ * per attempt, written where the object is built, right after the attempt's
+ * `KSTRACE ... resolve` record. `payload` is the payload's ppm sum for the
+ * one shaped kind today (byte-rate's uint32_t[256]), `-` without one. */
+static const char *const akind_state_name[] = { "UNSTATED", "PRESENT", "ABSENT" };
+static const char *const akind_source_name[] = { "UNSTATED", "PRIOR_AUTHORED",
+                                                 "PRIOR_NONE", "MEASURED" };
+static const char *const akind_unmeasured_name[] = { "UNSTATED", "ARRIVES", "ABSENT" };
+
+static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o)
+{
+    char sum[24] = "-";
+    if (o->payload && q->version == 1 && !strcmp(q->tag, "byte-rate")) {
+        unsigned long long t = 0;
+        for (int b = 0; b < 256; b++) t += ((const uint32_t *)o->payload)[b];
+        snprintf(sum, sizeof sum, "%llu", t);
+    }
+    fprintf(stderr, "KSRCTRACE\tobject\t%s\t%s\t%s\t%s\t%s\t%016llx\t%llu"
+            "\t%s\t%s\t%s\n", q->tag, o->row, akind_state_name[o->present],
+            akind_source_name[o->source],
+            o->bundle ? o->bundle : "-", (unsigned long long)o->digest,
+            o->bytes, o->fidelity ? o->fidelity : "-", sum,
+            akind_unmeasured_name[q->unmeasured]);
+}
+#endif
+
+void pcrec_memfn_analysis_build(Ctx *cx)
+{
+    const PcrecFindQuery *q;
+    size_t n = 0;
+    while (pcrec_find_query(n)) n++;
+    mf_akind *k = pcrec_arena_alloc(&cx->arena, n * sizeof *k);
+    mf_analysis *an = pcrec_arena_alloc(&cx->arena, sizeof *an);
+    for (size_t i = 0; (q = pcrec_find_query(i)); i++) {
+        PcrecFindOffer o;
+        pcrec_find_offer(cx, i, &o);
+        analysis_invariant(cx, q->tag, &o);
+#ifdef PCREC_KS_TRACE
+        analysis_trace(q, &o);
+#endif
+        k[i].tag = q->tag;
+        k[i].version = q->version;
+        k[i].present = akind_state_map[o.present];
+        k[i].prov.source = akind_source_map[o.source];
+        k[i].prov.bundle = o.bundle;
+        k[i].prov.digest = o.digest;
+        k[i].payload = o.payload;
+    }
+    an->list_v = MF_ANALYSIS_LIST_V;
+    an->nkinds = (uint16_t)n;
+    an->kinds = k;
+    cx->job->analysis = an;
 }
 
 /* ---- the sink over a StrBuf ----------------------------------------------- */
