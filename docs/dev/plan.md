@@ -181,12 +181,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     next: hand to [REGIME-EVAL] as its J1 judge population (the kit); fix or drop the mislabelled nonenglish files
     refs: [UTF-RW] (pattern harvest sibling); [REGIME-EVAL]; docs/design/regime_tables.md
     Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
-  - [WINDOW-E1] STATE:started — E-1: pcrec builds the analysis object per compile attempt (with RP and the stamp-union event)
-    filed: 2026-10-16 manager (D167 add. 2-3, D162 add. 4)
-    status (2026-10-17): E-1 LANDED (int5 merge, with kit R-24 wired; make test green, 0 movers, mech 11 DETECTED + S1029 UNREACHED); RP and the union-over-attempts abi event next (Frank's go, 2026-10-17)
-    next: merge E-1 after its owed make test + mech rows; then the render-point commit RP, then the union-over-attempts abi event
-    refs: docs/design/memfn/window_contract.md (rev 3.1 §3.7, §3.7.3a); decisions D162 add. 4 D167 add. 2-3
-    Filed under [REGIME], not [MEMFN]: it is pcrec-side work (main builds the object from Job.find through one find_queries[] table, byte-rate always present) that feeds the kit's R17-b' and is a REGIME prerequisite; [MEMFN] rows are the kit's. E-1 and RP are zero-mover (stamp = CONSULTED, offer never refuses); the union over attempts (D167 add. 3) is its own small abi event beside RP.
 
 ## Candidates ([OPTLOOP])
 - [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model
