@@ -2368,3 +2368,13 @@ pointer when a kit change merges to main.
   - **Owed after resume:** test-memfn-finder + the memfnfinder mech rows solo (S1079-S1084, S922).
   - **Owed in B2's heavy slot:** make test, G2 full, N2 census, test-axes --memfn=no-fd-d1, the bench-pattern sweep.
   - worktrees/fdb2drop: prune after B2 merges (wtprune KEEPs it as unmerged).
+- **20:13 B1 chain started**, after clearing the stale empty chain.lock from the 19:39 kill; grid2 itself ended `COMPLETE 20:06:22 required=ok`. arm.sh truncates arm.status on each arm, so the history line was re-appended.
+- **grid2 read** (grid2read, lane/grid2read @ a9edffd59, NOT yet merged into lane/memfn-fd):
+  - contamination: 1 group visit (45/5,163 rows), re-timed by the harness's requeue;
+  - eps slope 0.113% (find-all 1.316%: the regime split is real, the C4 fix is confirmed);
+  - **M9 contradicted** (V1 beats the walk at every N>=8, no N*) and **M15 contradicted** (g* is landing predictability, not gap): both reshape rev 3's B4 table;
+  - pay rule: no dispatch at B4; R0 silent; R2's WALK fallback should be terminal or dropped;
+  - D1/LIBC stands, NONE effectively dead;
+  - M23: Q-WR-9's trigger fires on the letter.
+  - OWED: a ~2 min quiet re-time (f3-word-eq, f3-quad); the cells the slot never had; checking the slot's walk against main's.
+  - Main is told. A design revision of rev 3 (M9/M15 into B4's table) comes before B4.
