@@ -169,10 +169,47 @@ Run these from this worktree with `export TMPDIR=$PWD/build/tmp`:
 | mech derived rows | `scripts/sabotage_anchors.py --step` over the B2 edit set (the fdb0/fdb1 method), then each row solo |
 | G2 full | `make test-memfn-g2-full` |
 | N2 census | the command in `row_floors.tsv`'s header. It also fills D1/D1c/D1w's `pcrec_floor` |
-| test-axes, deny arm | `make test-axes AXES="--memfn=no-fd-d1"` |
+| test-axes, memfn arm | `make test-axes AXES=--memfn` (corrected by §9: the filtered `AXES=--memfn=no-fd-d1` cannot go green by construction) |
 | bench-pattern sweep | `scripts/emit_sweep.py --patterns-file <bench list> --no-corpus ...`, once main names the list |
 | routed floors | commit `routed_floors_measured.tsv` as `docs/design/memfn/r17b_prime/fdb2/routed_floors.tsv` (fdb2_report §10.6). Re-run the routed census on this tip first if the merge is suspected of moving it |
 
 Main still has to rule on two things: the lever fence entry for
 `run_arm_reach.sh` (ruling 4) and whether to accept or drop R-MS6
 (`drop_rms6.diff`, ruling 5).
+
+## 9. Heavy-slot triage fixes (lane n2fix)
+
+Source: `worktrees/memfn-slot/b2heavy/triage/triage_report.md` (the chain's
+`n2` step read rc=5, would_decline=1439, 3 placeholder floors, 1 stale reason).
+
+| fix | commit |
+|---|---|
+| N2-a: P0 carries `SF_REQUIRED` (set by the PRES shadow for a non-OPTIONAL span), so the gate stops declining P0 to P9 for N_OPTIONAL spans. Control: `finder_check.py` fails when a shadow END record declines on `need`, with a K35 check that `pre-opt` has an OPTIONAL PRES decision. It fails on the old table (`pre-opt ... need:R2:N_OPTIONAL moved_from=P0`) and is green on the new one. It is limited to `need` declines because the fixtures leave `site_kind` UNSTATED and their FIND decisions legitimately decline on that. Logged in `memfn/docs/finder_history.md` | 4f9adcdcc |
+| N2-b: `pcrec_floor` D1 129159 = floor(0.9 x 143510), D1c 4287 = floor(0.9 x 4764), D1w 211402 = floor(0.9 x 234892); `pf_walk` re-pinned 430563 -> 480206 = floor(0.9 x 533563) (closes fdb0's owed re-read). Derivations are in the file's comments | 11dcfc628 |
+| N2-c: fd R7w reach `pcrec`, witness `[a-z]+@[a-z]+\.com` under `-fno-offset-skip`, signature ` row=R7w pick=WALK`, control `x+y`; `pcrec_floor` 300852 = floor(0.9 x 334280); rows.tsv header paragraph amended | e0eff90ee |
+
+### Re-runs (tip e0eff90ee; logs in `build/n2fix/`, `build/land/` is fdb2land's earlier set)
+
+| re-run | verdict |
+|---|---|
+| `make`, `make strict` | clean |
+| `make test-memfn-rows` | 232/0 |
+| `make test-memfn-finder` | 914/0 (was 902 before the control, 913 on the old table + 1 FAIL) |
+| `make test-codegen` | 35/0, 16/16 scripts, including [SABANCHOR] |
+| mech solo S1079 S1080 S1081 S1082 S1083 S1084 S1085 S922 | all DETECTED: each `== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0)` |
+| emit_sweep plain vs `--ref-bin` = c0e465e99 build (`build/ref/pcrec`), fdb2's chain flags (`--no-self-check`, the seven streams + `dumps`) | rc 0, 0 movers, 38 s |
+| `tests/memfn/run_n2_sample.sh` | 1/0 (rc 0, would_decline 0, 12 witness patterns x 3 arms) |
+| ONE full N2 census (`n2_census.sh`, JOBS=12, `taskset -c 0-11`) | `== N2 DONE rc=0 would_decline=0 noend=0 floors=floor_fail=0,floor_placeholder=0,reason_stale=0,reach_dropped=0 ==` (24 min); `n2_report.py --floors --propose` also floor_fail=0 floor_placeholder=0 reason_stale=0 |
+
+### test-axes evidence, accepted by reference
+
+Not re-run. The b2triage measurements at c0e465e99 stand: the full memfn reach
+arm (`triage/reach_full.log`: 257 passed / 0 failed, 22 cells), the fd-d1 jobs
+(62360/62360 agree, both layers) and the form census
+(`triage/form_census.log`: 1/0). The only change since is a shadow-only
+`finder.c` fact (no emitted byte; the plain sweep above is 0 movers).
+
+`AXES=--memfn=no-fd-d1` cannot go green by construction: `memfn_arm.py` demands a
+job cell for every (row, layer), and the filter makes cells for one row only
+(20 `no job cell` FAILs, none an answer difference). §8's prescribed command is
+corrected to `AXES=--memfn`.
