@@ -48,6 +48,8 @@ design's text, sharing no code with the kit):
      computed here; at least PAY_TIE_FLOOR ties.
   I. THE CALL MODE GATE (S919): a site with `body` UNSTATED declines R1 on
      `body` (the trace names it); one with ONESHOT does not.
+     Also (lane n2fix): no PRES shadow decision is declined on `need` (the
+     OPTIONAL span on `pre-opt` is on the record, so the control is not blind).
   J. A DENY reaches its row: `--memfn=no-fd-r0` skips R0 on its witness.
   K. B2's ROUTING (§1.6, R17-b' B2): the rows the design routes at B2 (D1,
      D1c, D1w) are routed and LOCKED, every other row is neither; each routed
@@ -355,7 +357,7 @@ def check_sites(root, fx, fxt, tmp, rows):
     tpls = {r["id"]: keys_of(r) for r in rows}
     nsite = nkey = 0
     for site in FD_SITES:
-        rc0, dec0, _, cons0, ref0, _ = fd_run(fxt, site)
+        rc0, dec0, _, cons0, ref0, err0 = fd_run(fxt, site)
         rc1, dec1, keys1, cons1, ref1, err1 = fd_run(fxt, site, full)
         if rc0 or rc1 or ref0 or ref1:
             bad("%s: the kit refused (no set rc %d %s; full set rc %d %s)" % (site, rc0, ref0, rc1, ref1))
@@ -364,6 +366,19 @@ def check_sites(root, fx, fxt, tmp, rows):
             bad("%s: the shadow wrote no decision (NULL %d, full %d records)" % (site, len(dec0), len(dec1)))
             continue
         nsite += 1
+        # no shadow decision is declined on `need` (a row's contract refusing the
+        # span it was the first to hold on: P0 held an OPTIONAL span its
+        # REQUIRED-only contract refused, 1439 would-declines in B1/B2's N2
+        # census, lane n2fix). Not on every field: these fixtures leave
+        # site_kind UNSTATED, so a FIND decision may decline on that, as its own
+        # (stated-kind) compiles do not.
+        wd = [ln for ln in err0.splitlines()
+              if ln.startswith("MFTRACE END table=fd ") and " phase=shadow " in ln
+              and " would_decline=1 " in ln and "need:" in ln]
+        (ok() if not wd else bad("%s: the shadow's gate declined on need (%s)" % (site, wd[0])))
+        if site == "pre-opt":                   # K35: the OPTIONAL presence span is on the record
+            opt = [d for d in dec0 if d.get("slot") == "PRES" and d.get("need") == "OPTIONAL"]
+            (ok() if opt else bad("pre-opt: no OPTIONAL PRES decision, the would-decline control is blind"))
         for c, what in ((cons0, "no set"), (cons1, "the full set")):
             (ok() if c == 0 else bad("%s: consulted %s under %s (no routed row reads a key at B1)"
                                        % (site, c, what)))

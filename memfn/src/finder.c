@@ -120,6 +120,7 @@ enum {
                                    window (PR-5's unpicked spans, B3a)        */
     SF_SET_RARER    = 1u << 10, /* the set's pick strictly rarer than the run's
                                    scan member (B3a)                          */
+    SF_REQUIRED     = 1u << 11, /* the span's need is REQUIRED (slot PRES)     */
 };
 
 /* ONE comparator (§1.2 [rev3 D2]): lhs OP key, every threshold a set key. */
@@ -314,7 +315,7 @@ static const fd_row fd_rows[] = {
       "the default: main's walk (zero-mover)",
       "any measured shape whose LINER form saves more than the floor (then R7 holds)", &ct_r7w, 0, 0 },
     /* slot PRES (§1.4) */
-    { "P0", FD_PRES, KN_P, 0, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
+    { "P0", FD_PRES, KN_P, SF_REQUIRED, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 0, NULL, FB_DERIVED, "B3b",
       "a REQUIRED span: every member and the whole run verified before the first element "
       "(K65, K66; G-1, G-2); undeniable (D158)",
@@ -900,6 +901,7 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
                     find_facts(&q);
                 } else {
                     q.span = &s->preds[pi];
+                    if (q.span->need != MF_OPTIONAL) q.facts |= SF_REQUIRED;
                     if (q.span->nterm == 1 && q.span->term[0].kind == MF_T_SET)
                         q.members = popcount256(q.span->term[0].set);
                 }
