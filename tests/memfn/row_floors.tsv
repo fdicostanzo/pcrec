@@ -59,7 +59,10 @@
 # The routed finder rows' pcrec floors (lane n2fix, the same census, chosen
 # counts from n2_results.md; floor(0.9 x chosen)): D1 129159 = floor(0.9 x
 # 143510) (pf_memchr 112482 + pf_memchr_bounded 31028), D1c 4287 = floor(0.9 x
-# 4764) (pf_memchr_back), D1w 211402 = floor(0.9 x 234892). The g2 floors of D1/D1c/D1w stay PLACEHOLDER (G2 chooses them 0 times).
+# 4764) (pf_memchr_back), D1w 211402 = floor(0.9 x 234892). R7w 300852 =
+# floor(0.9 x 334280): the unrouted default terminal, chosen at every FIND site
+# no D1 row claims (pf_walk 533563 + pf_walk_bounded 35609 - D1w 234892). The
+# g2 floors of D1/D1c/D1w stay PLACEHOLDER (G2 chooses them 0 times).
 #
 # The finder table's rows (table `fd`, R17-b' B1, lane fdb1): reach
 # `pending-site:<step>` (rows.tsv), so pcrec_floor `-`, and the census reads
@@ -102,7 +105,7 @@ fd	D1c	4287	PLACEHOLDER
 fd	D1w	211402	PLACEHOLDER
 fd	D2	-	PLACEHOLDER
 fd	R7	-	PLACEHOLDER
-fd	R7w	-	PLACEHOLDER
+fd	R7w	300852	PLACEHOLDER
 fd	P0	-	PLACEHOLDER
 fd	P2	-	PLACEHOLDER
 fd	P3	-	PLACEHOLDER
