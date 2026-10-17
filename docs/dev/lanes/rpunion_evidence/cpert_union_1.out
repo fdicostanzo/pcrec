@@ -1,0 +1,29 @@
+C-PERT population: 5275 patterns x 8 arms (every 1)
+  default/byte	consulted-moved	1009
+  default/byte	consulted-same	3825
+  default/byte	refused-both	441
+  default/utf8	consulted-moved	617
+  default/utf8	consulted-same	4238
+  default/utf8	refused-both	420
+  noreq-pf/byte	consulted-moved	219
+  noreq-pf/byte	consulted-same	1582
+  noreq-pf/byte	quiet	3033
+  noreq-pf/byte	refused-both	441
+  noreq-pf/utf8	consulted-moved	237
+  noreq-pf/utf8	consulted-same	1594
+  noreq-pf/utf8	quiet	3024
+  noreq-pf/utf8	refused-both	420
+  noreq-vm/byte	quiet	4835
+  noreq-vm/byte	refused-both	440
+  noreq-vm/utf8	quiet	4857
+  noreq-vm/utf8	refused-both	418
+  noreqbyte/byte	consulted-moved	494
+  noreqbyte/byte	consulted-same	2544
+  noreqbyte/byte	quiet	1796
+  noreqbyte/byte	refused-both	441
+  noreqbyte/utf8	consulted-moved	486
+  noreqbyte/utf8	consulted-same	2618
+  noreqbyte/utf8	quiet	1751
+  noreqbyte/utf8	refused-both	420
+PASS: C-PERT no artifact's bytes, refusal or stamp moves with data its stamp omits (42200 artifacts x 3 compiles; power floors held in all 8 arms)
+PASS: C-PERT F-5's 2 former witnesses ship from a retry and read CONSULTED: the stamp is the union over attempts (D167 add. 3)

@@ -1,0 +1,21 @@
+census: 5275 patterns x 9 arms (every 1), mask-abi=False
+  default/byte	refused-both	441
+  default/byte	same	4834
+  default/utf8	refused-both	420
+  default/utf8	same	4855
+  noreq-pf/byte	refused-both	441
+  noreq-pf/byte	same	4834
+  noreq-pf/utf8	refused-both	420
+  noreq-pf/utf8	same	4855
+  noreq-vm/byte	refused-both	440
+  noreq-vm/byte	same	4835
+  noreq-vm/utf8	refused-both	418
+  noreq-vm/utf8	same	4857
+  noreqbyte/byte	refused-both	441
+  noreqbyte/byte	same	4834
+  noreqbyte/utf8	refused-both	420
+  noreqbyte/utf8	same	4855
+  vm/byte	refused-both	440
+  vm/byte	same	4835
+movers+asymmetric: 0
+== census COMPLETE

@@ -1,0 +1,31 @@
+FAIL: C-PERT noreqbyte/utf8 moved: tests/uprops/size_ladder_prefilter_drop.rxt: (\p{Xwd})x
+FAIL: C-PERT noreqbyte/utf8 moved: tests/utf8/wclass_illformed.rxt: x(\p{Xwd})y
+C-PERT population: 332 patterns x 8 arms (every 16)
+  default/byte	consulted-moved	57
+  default/byte	consulted-same	249
+  default/byte	refused-both	26
+  default/utf8	consulted-moved	33
+  default/utf8	consulted-same	273
+  default/utf8	refused-both	26
+  noreq-pf/byte	consulted-moved	9
+  noreq-pf/byte	consulted-same	102
+  noreq-pf/byte	quiet	195
+  noreq-pf/byte	refused-both	26
+  noreq-pf/utf8	consulted-moved	11
+  noreq-pf/utf8	consulted-same	101
+  noreq-pf/utf8	quiet	194
+  noreq-pf/utf8	refused-both	26
+  noreq-vm/byte	quiet	306
+  noreq-vm/byte	refused-both	26
+  noreq-vm/utf8	quiet	306
+  noreq-vm/utf8	refused-both	26
+  noreqbyte/byte	consulted-moved	27
+  noreqbyte/byte	consulted-same	161
+  noreqbyte/byte	quiet	118
+  noreqbyte/byte	refused-both	26
+  noreqbyte/utf8	FAIL-moved	2
+  noreqbyte/utf8	consulted-moved	26
+  noreqbyte/utf8	consulted-same	164
+  noreqbyte/utf8	quiet	114
+  noreqbyte/utf8	refused-both	26
+FAIL: C-PERT F-5's former witnesses read [(('tests/uprops/size_ladder_prefilter_drop.rxt', '(\\p{Xwd})x', 'noreqbyte/utf8'), ('FAIL-moved', b'size-cap-retry')), (('tests/utf8/wclass_illformed.rxt', 'x(\\p{Xwd})y', 'noreqbyte/utf8'), ('FAIL-moved', b'size-cap-retry'))], each expected consulted-* with ENGINE_SEL size-cap-retry (a missing one: the population lost it)

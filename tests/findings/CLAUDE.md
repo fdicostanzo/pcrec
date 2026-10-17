@@ -160,8 +160,10 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   population compiled bare, under a verbatim copy of the store's default and
   under a PERTURBED copy (same name and stop); an artifact whose stamp omits
   a kind must not move with that kind's data. Reads emitted bytes and the
-  stamp text only; power floors per arm; F-5's two witnesses are a pinned
-  bucket selected by the artifact's own `ENGINE_SEL`. `--every 16` in
+  stamp text only; power floors per arm; F-5's two former witnesses (a
+  discarded attempt asked) are always in the population and must read
+  CONSULTED since the union-over-attempts fix (abi 79, lane rpunion; they
+  were a pinned exception bucket before it). `--every 16` in
   `make test`, `--every 1` at a census.
 - `fixtures/` — [B3] small committed inputs for the analyzer: `basic.txt`,
   `ascii_only.txt` / `utf8_mixed.txt` (the two collision-free observed rows of

@@ -185,7 +185,9 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   emitters are one `pf_emit_skip` (comment, entry test, FIND, close); every
   PF row is DEFINED above the body (`pf_define_find[_bounded]`), so its table
   is emitted iff the kit's form reads it. G1 (`dfa_cand_scan`), R4
-  (`dfa_cand_ppm_of`) and L4 (`start_landing_applies`) read the kit's
+  (`dfa_cand_ppm_of`), the handoff's K admission (`req_landmark_admits`: the
+  start set's prior mass, h and K; the set through `cand_row_scan`, the one
+  derivation `dfa_cand_scan` shares) and L4 (`start_landing_applies`) read the kit's
   define-time QUERY (`cand_ask`, `cand_pf_site`): `proven0` for a PF site,
   `proven_prev` for ENG_ATTEMPT's context stop (F-B1-3). The site a reader
   asks about and the site the define writes come from ONE constructor each
@@ -1312,6 +1314,19 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   renders before the size measurement, so its length must not vary with the
   count. Under the test-only `-DPCREC_SIMD_WITNESS` build the mark is
   preceded by a synthetic guarded block (`pcrec_memfn_simd_witness`).
+  **[WINDOW-E1] RP + the union (lane rpunion, 2026-10-17; window_contract.md
+  rev 3.1 §3.7.3a, D167 addendum 3, abi 79):** the file is also THE ONE
+  RENDER POINT of pcrec's KNOWLEDGE stamps. `emit_info_def` (emit_dfa.c)
+  writes a second mark kind (`pcrec_emit_ks_mark`: `\x01K` for the
+  `#define <PREFIX>_FINDINGS` line, `\x01k` for the `.findings =`
+  initializer) where those lines were, and `ks_stamps_render` replaces them
+  after `pcrec_memfn_art_end` (the kit is the last reader once it consults),
+  each line's text `pcrec_emit_findings_line`'s (emit_dfa.c). The value is
+  `pcrec_find_stamp` over `ks_consulted`: this attempt's asks, every earlier
+  attempt's (`Ctx.find_union`, harvested by compile.c's `job_cleanup`) and,
+  on a compound shell, every part's (`PcrecPartFacts.find_consulted`). An
+  artifact without `rx_info` holds neither mark; any other count is an
+  internal error. `_MEASURES` (M0) renders at the same call.
 
 - **memfn_sites.c / memfn_sites.h / memfn_sites.def** — [MEMFN] R4c (lane
   r4ccore, 2026-10-06; `docs/design/memfn/integration.md` §14, §15, §22

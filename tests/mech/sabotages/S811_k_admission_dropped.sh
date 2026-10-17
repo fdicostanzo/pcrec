@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # S811 ([REQ-HANDOFF-L1], lane rlhbuild) -- THE K ADMISSION ALWAYS ADMITS:
 # the re-entry replaces the start-byte scan however close the landmark's
-# expected hits sit against K (or the displaced row's own skip), so `[a-y]\d{0,150}:` (K 151 against the
+# expected hits sit against K (or the start set's prior mass), so `[a-y]\d{0,150}:` (K 151 against the
 # colon's prior gap) re-enters. Answer-invisible (the scan only moves
 # forward, so it stays linear and exact); the admission's witnesses in
 # run_prechecks.sh §5.12m are the detector.
@@ -14,6 +14,6 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''[a-y]
 SAB_REACH_EXPECT='REACH-ADMISSION-DECLINES'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if ((unsigned long long)k * h >= 1000000u) return false;
-    return (1000000u - (unsigned long long)k * h) * m > 1000000u * h;'
+SAB_BEFORE='    if ((unsigned long long)k * landmark_ppm >= 1000000u) return false;
+    return (1000000u - (unsigned long long)k * landmark_ppm) * start_ppm > 1000000u * landmark_ppm;'
 SAB_AFTER='    return true;   /* SABOTAGE S811 */'

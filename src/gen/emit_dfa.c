@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 78
+#define PCREC_ARTIFACT_ABI 79
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -3044,17 +3044,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     }
 
     /* [FINDINGS] B1 `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS ARTIFACT WAS
-     * BUILT FROM: one `query=bundle:digest` item per query the compile asked,
-     * `query=none` where the analysis declared nothing for this encoding, ""
-     * where nothing asked (findings design §7). It is written HERE, beside
-     * its `rx_info` mirror and after every emitter has run, and not in the
-     * prologue with `<PREFIX>_REQ_BYTE`'s family, because the stamp must read
-     * the record after the LAST reader (§6.4 rule 2): the offset-k selection
-     * asks while the DFA body is being written, which is after the prologue
-     * on a build where the necessary-byte analysis was denied. The value is
-     * the final attempt's record, since `Job` is per attempt. */
-    const char *findings = pcrec_find_stamp(cx);
-    pcrec_sb_stamp_str(c, upper, "FINDINGS", findings);
+     * BUILT FROM (findings design §7). Its PLACE is here, beside its
+     * `rx_info` mirror and not in the prologue with `<PREFIX>_REQ_BYTE`'s
+     * family; its VALUE is not written here. [WINDOW-E1] RP: the stamp must
+     * read the record after the LAST reader (§6.4 rule 2), and the memfn
+     * kit, whose consultations end at `mf_art_end`, reads after every
+     * emitter. So this writes a MARK, and the finishing pass renders the
+     * line over it after `mf_art_end` (src/gen/memfn_stamps.c,
+     * window_contract.md §3.7.3a); the text is `pcrec_emit_findings_line`'s,
+     * below. The initializer's mark further down is the same event. */
+    pcrec_emit_ks_mark(c, PCREC_KS_MARK_DEFINE);
     pcrec_sb_printf(c, "const struct rx_info %s = {\n", infoname);
     /* THE `abi` NUMBER, and where its change log lives.
      *
@@ -3353,10 +3352,27 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                         cx->opt->prefix, cx->n_vars);
     else
         pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
-    pcrec_sb_puts(c, "    .findings = ");
-    emit_c_string_literal(c, findings, strlen(findings));
-    pcrec_sb_puts(c, ",\n");
+    pcrec_emit_ks_mark(c, PCREC_KS_MARK_INIT);
     pcrec_sb_puts(c,   "};\n");
+}
+
+/* [WINDOW-E1] RP: writes the `<PREFIX>_FINDINGS` line (`m` DEFINE) or the
+ * `.findings = …` initializer line (`m` INIT) for the stamp text `value`, the
+ * two lines `emit_info_def` marks. Called by the finishing pass, once per
+ * mark, at the placeholder prefix. */
+void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value)
+{
+    switch (m) {
+    case PCREC_KS_MARK_DEFINE:
+        pcrec_sb_stamp_str(c, pcrec_sb_upper(&cx->arena, cx->opt->prefix),
+                           "FINDINGS", value);
+        return;
+    case PCREC_KS_MARK_INIT:
+        pcrec_sb_puts(c, "    .findings = ");
+        emit_c_string_literal(c, value, strlen(value));
+        pcrec_sb_puts(c, ",\n");
+        return;
+    }
 }
 
 /* [M5-SEAM] (D58, DD-12 (7)) THE RESIDUAL EMBED. The artifact's ONE encoding
@@ -7892,6 +7908,44 @@ static PcrecFind mline_find_of(Ctx *cx, const CandSet *cand)
                         .kind = MF_SK_DFA_ATTEMPT };
 }
 
+/* What axis B's row `pf` proves of the candidates of `us`'s forward machine,
+ * as the reader `reader` asks it: the one derivation both of its readers (the
+ * artifact's selected row, `dfa_cand_scan`; the row beneath the handoff's
+ * re-entry, `req_landmark_admits`) take the scanned set from. */
+static void cand_row_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
+                          const CandRow *pf, CandScan *cs)
+{
+    OfsTest t;
+    /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset
+     * rows sit between the two, so an artifact whose `kind` is
+     * DFA_PF_ONE_BYTE may still have had another form selected over it. */
+    if (ofs_test_of(cx, us, pf, &t)) {
+        /* the offset-set and run-pinned FUNCs are R-18's, outside this
+         * delivery (r17b_prime.md §1.1): their own row is read */
+        cs->byte = t.scan_byte;
+        cs->run_verified = ofs_test_verifies_run(cx, &t, us);
+    } else if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
+        PcrecFind fd = cand_pf_site(cx, us, pf);
+        cand_ask(cx, reader, cand_route_of(cx), &fd, cs);
+        CAND_ASK_FIELD(reader, CAND_ASKF_EXISTS);
+        CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN0);
+        if (cs->cls.exists) cs->byte = cand_proven_byte(cs->cls.proven0);
+        cs->one_byte = cs->byte >= 0;
+#ifdef PCREC_CAND_TRACE
+        /* `one_byte` is the memchr form's guard (G1's density, S288), and
+         * it is read off the class, not off the row: a one-member set
+         * ranks onto a PF_SCAN_BYTE row (`memchr[-bounded]`,
+         * `first-memchr-bounded`), so the class proves one byte only
+         * there. Held, since a SET row proving one byte would hand that
+         * guard to a table walk. */
+        if (cs->one_byte && pf->u.pf.scan != PF_SCAN_BYTE)
+            pcrec_fit_invariant_fail("one-byte-off-memchr-row", pf->tok,
+                                     "a one-byte proof only on a PF_SCAN_BYTE row",
+                                     "dfa_cand_scan");
+#endif
+    }
+}
+
 static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
 {
     memset(cs, 0, sizeof *cs);
@@ -7916,38 +7970,8 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
     }
     {
         UnanchStart us;
-        const CandRow *pf;
-        OfsTest t;
         unanch_start(cx, &us);
-        pf = dfa_pf_read(cx, reader, &us);
-        /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset
-         * rows sit between the two, so an artifact whose `kind` is
-         * DFA_PF_ONE_BYTE may still have had another form selected over it. */
-        if (ofs_test_of(cx, &us, pf, &t)) {
-            /* the offset-set and run-pinned FUNCs are R-18's, outside this
-             * delivery (r17b_prime.md §1.1): their own row is read */
-            cs->byte = t.scan_byte;
-            cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
-        } else if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
-            PcrecFind fd = cand_pf_site(cx, &us, pf);
-            cand_ask(cx, reader, cand_route_of(cx), &fd, cs);
-            CAND_ASK_FIELD(reader, CAND_ASKF_EXISTS);
-            CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN0);
-            if (cs->cls.exists) cs->byte = cand_proven_byte(cs->cls.proven0);
-            cs->one_byte = cs->byte >= 0;
-#ifdef PCREC_CAND_TRACE
-            /* `one_byte` is the memchr form's guard (G1's density, S288), and
-             * it is read off the class, not off the row: a one-member set
-             * ranks onto a PF_SCAN_BYTE row (`memchr[-bounded]`,
-             * `first-memchr-bounded`), so the class proves one byte only
-             * there. Held, since a SET row proving one byte would hand that
-             * guard to a table walk. */
-            if (cs->one_byte && pf->u.pf.scan != PF_SCAN_BYTE)
-                pcrec_fit_invariant_fail("one-byte-off-memchr-row", pf->tok,
-                                         "a one-byte proof only on a PF_SCAN_BYTE row",
-                                         "dfa_cand_scan");
-#endif
-        }
+        cand_row_scan(cx, reader, &us, dfa_pf_read(cx, reader, &us), cs);
     }
 }
 
@@ -8302,36 +8326,46 @@ static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
     return hit;
 }
 
-/* [REQ-HANDOFF-L1] THE K ADMISSION: does the re-entered handoff's expected
- * jump beat the expected skip of the start-byte row it displaces, under the
- * compile's byte-rate prior (`pcrec_find_byte_rate`; cardinality where there
- * is none, inside `pcrec_find_set_mass`)? At a restart the re-entry moves the
- * scan to the landmark's next hit less K: about `1/h - K` bytes, `h` the
- * hit rate (`req_landmark_hit_ppm`). The row below it, `below` (the slot's
- * own walk without this row: a start-byte scan, or `none`), moves to the
- * next byte of the set it scans: about `1/m` bytes, `m` that set's mass, and
- * one byte (`m` everything) where it scans nothing. Admitted iff
- * `1/h - K > 1/m`; with no start-byte row that is `K * h < 1`, the mean gap
+/* [REQ-HANDOFF-L1] THE K ADMISSION, from three facts: `h`, the prior's mass
+ * on the landmark's hit (`req_landmark_hit_ppm`), `m`, the prior's mass on the
+ * START SET (the bytes a candidate start begins with, as the row without the
+ * handoff proves them: `start_row`, the slot's own walk under its deny, a
+ * start-byte row or `none`), and `K`. The prior is the compile's byte-rate one
+ * (`pcrec_find_byte_rate`; cardinality where there is none, inside
+ * `pcrec_find_set_mass`). A candidate start falls about every `1/m` bytes
+ * (one byte where the start set is everything, `m` = 1) and a landmark hit
+ * about every `1/h`, `K` bytes of which are not skipped. Admitted iff
+ * `1/h - K > 1/m`; with no start set that is `K * h < 1`, the mean gap
  * clearing K (`a.{1,50000}z` over z-dense text never does). Derived from the
  * prior the other rows read, with no constant of its own; that the mean-gap
  * comparison is also where the jump stops PAYING in time is UNMEASURED (the
- * bench's per-cell timings are its test). A member of the prior-cost family
- * G1 (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4
- * (`cand_rs_dense_applies`) already belong to. */
+ * bench's per-cell timings are its test). `m` is read from the SAME fact R4
+ * (`cand_rs_dense_applies`, through `dfa_cand_ppm_of`) reads, the start set
+ * the scan proves (`cand_row_scan`). A member of the prior-cost family G1
+ * (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4 already
+ * belong to. */
 static bool req_landmark_admits(const CandSel *s, long long k)
 {
     Ctx *cx = s->cx;
     const uint32_t *rate = pcrec_find_byte_rate(cx);
-    unsigned long long h = req_landmark_hit_ppm(cx, rate), m = 1000000u;
-    const CandRow *below = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
-    if (below->u.pf.scan == PF_SCAN_BYTE || below->u.pf.scan == PF_SCAN_SET) {
-        CandSet cs;
-        pf_scan_set_of(cx, s->d, s->us, below, &cs);
-        m = pcrec_find_set_mass(rate, cs.set);
+    unsigned long long landmark_ppm = req_landmark_hit_ppm(cx, rate), start_ppm = 1000000u;
+    const CandRow *start_row = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
+    if (start_row->u.pf.scan == PF_SCAN_BYTE || start_row->u.pf.scan == PF_SCAN_SET) {
+        CandScan cs = { .byte = -1 };
+        uint8_t start_set[256];
+        cand_row_scan(cx, CAND_SLOT_NEXT, s->us, start_row, &cs);
+        if (cs.byte >= 0) {
+            memset(start_set, 0, sizeof start_set);
+            start_set[cs.byte] = 1;
+            start_ppm = pcrec_find_set_mass(rate, start_set);
+        } else if (cs.asked && cs.cls.exists) {
+            for (int b = 0; b < 256; b++) start_set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
+            start_ppm = pcrec_find_set_mass(rate, start_set);
+        }
     }
-    if (h == 0) return true;                        /* the prior never sees it */
-    if ((unsigned long long)k * h >= 1000000u) return false;
-    return (1000000u - (unsigned long long)k * h) * m > 1000000u * h;
+    if (landmark_ppm == 0) return true;             /* the prior never sees it */
+    if ((unsigned long long)k * landmark_ppm >= 1000000u) return false;
+    return (1000000u - (unsigned long long)k * landmark_ppm) * start_ppm > 1000000u * landmark_ppm;
 }
 
 /* [REQ-HANDOFF-L1] NEXT's `handoff` row: the forward search machine of the
@@ -9265,7 +9299,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                                         [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
                              .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
                              .by = { [CAND_SLOT_FIRST] = PCREC_NO_REQ_HANDOFF,
-                                     [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
+                                     [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
+                             /* [MEMFN] R17-b' the K admission reads the start
+                              * set from the same class fact R4 reads */
+                             .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
     [CAND_SLOT_RETRY]    = { "RETRY",    CT_CAND, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),

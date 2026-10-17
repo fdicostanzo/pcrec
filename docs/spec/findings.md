@@ -123,9 +123,9 @@
 #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
 ```
 
-- <a id="s5-p2"></a>[5¶2] One `query=bundle:digest` item per query the compile ASKED, in the fixed query order (`byte-rate`, then `run-rarity`), `;`-joined.
+- <a id="s5-p2"></a>[5¶2] One `query=bundle:digest` item per query the compile ASKED, in the fixed query order (`byte-rate`, then `run-rarity`), `;`-joined. A query counts if ANY attempt of the compile asked it, a retry's discarded attempt included, because the shipped artifact's bytes can depend on what that attempt read (a size-cap retry's quoted figures, the decision to retry); on a compound (`match_api.md` §6.3.12) the shell's stamp counts P's compile and every part's.
 - <a id="s5-p3"></a>[5¶3] `query=none` when asked and nothing answered (`-e utf8` under the default).
-- <a id="s5-p4"></a>[5¶4] The empty string when nothing was asked (a pattern no reader looked at).
+- <a id="s5-p4"></a>[5¶4] The empty string when nothing was asked on any attempt (a pattern no reader looked at).
 - <a id="s5-p5"></a>[5¶5] `bundle` is the analysis whose block ANSWERED.
 - <a id="s5-p6"></a>[5¶6] The digest is FNV-1a-64, 16 lowercase hex digits, over the bytes `pcrec-find-1\0byte-rate\0` followed by the 256 derived ppm values as `uint32` little-endian in byte order: exactly what the readers consumed. It carries no kind, no `via` and no provenance, so the same rates from any block give the same digest.
 - <a id="s5-p7"></a>[5¶7] `rx_info.findings` equals the macro byte for byte.

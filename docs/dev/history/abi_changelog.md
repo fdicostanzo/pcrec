@@ -23,7 +23,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `78` on every artifact today (lane b3build bumped it
+- **`rx_info.abi` is `79` on every artifact today (lane rpunion bumped it
+  from 78, 2026-10-17: [WINDOW-E1] the knowledge-stamp UNION, D167 addendum
+  3, window_contract.md rev 3.1 §3.7.3a and F-5).** `<PREFIX>_FINDINGS` and
+  `rx_info.findings` list a query ANY attempt of the compile asked, a
+  discarded retry attempt included, and on a compound P's compile or any
+  part's; they were the FINAL attempt's asks alone. The lines are rendered
+  once, by the finishing pass after `mf_art_end` (RP, the commit before,
+  moved no byte), at their old byte positions. Beyond the abi digits, only
+  the stamps of compiles whose consulting attempt was discarded move: the
+  two F-5 witnesses `(\p{Xwd})x` and `x(\p{Xwd})y` under `-e utf8
+  -fno-req-byte` read `"byte-rate=none"` where they read `""` (the mover
+  census is in docs/dev/lanes/rpunion_report.md). No struct offset moves
+  and no answer moves.
+- **`rx_info.abi` was `78` (lane b3build bumped it
   from 77, 2026-10-13, after B4 took 77: D164 B3, the match-end mark on `rev-end`,
   docs/design/endmark.md §R; B3.1 and B3.2 land as one event).** Only the
   `rev-end` walk of a `$`/`\Z` artifact moves beyond the abi digits, by its

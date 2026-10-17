@@ -406,10 +406,19 @@ uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n)
     return pcrec_ks_digest(&pcrec_find_rows_role, &d, NULL);
 }
 
-const char *pcrec_find_stamp(Ctx *cx)
+unsigned pcrec_find_asked(const Ctx *cx)
 {
-    const PcrecFindRec *fr = &cx->job->find;
-    if (!fr->byte_rate_asked) return "";
+    return cx->job->find.byte_rate_asked ? PCREC_FQ_BIT(PCREC_FQ_BYTE_RATE) : 0u;
+}
+
+const char *pcrec_find_stamp(Ctx *cx, unsigned consulted)
+{
+    PcrecFindRec *fr = &cx->job->find;
+    if (!(consulted & PCREC_FQ_BIT(PCREC_FQ_BYTE_RATE))) return "";
+    /* Another attempt or a part may be the one that asked, so this
+     * attempt's memo is derived here if nothing on it has; a consulted
+     * answer that cannot be derived refuses, as the ask did (§3.3 rule 9). */
+    find_raise_byte_rate(cx, fr, find_derive_byte_rate_status(cx, fr));
     if (!fr->byte_rate_have) return "byte-rate=none";
     return pcrec_sb_fragf(&cx->arena, "byte-rate=%s:%016llx",
                           fr->byte_rate_bundle,
