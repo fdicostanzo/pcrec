@@ -2705,3 +2705,12 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **After 062417c75:** docs-only commits (the D155 add. 5 notice, the R-24 ack, this entry).
 
 - notice: 2026-10-17 — **R17-b′ B3a starts** (rev 3 §3.1 row B3a, under D167's build GO for B0-B3b). Kit branch **lane/memfn-b3**, cut from main @ 184fc9110 (E-1 + R-23 + R-24 landed), served by lane b3a (opus). Zero movers against main-after-E-1 (`[rev3 A15]`). The main-side items at this step (DELEG_SITES' PRE row merged into the FIND rows as their ENTRY use, the site manifest's use points, C10 fixtures, Q-R17P-18) come as proposed diffs for main to apply. Kit sabotage ids: please allocate ~8 (SN-6 plants per ported pick + PR-11's planted collapse).
+
+- done: 2026-10-17 — **R-24 (`mf_prov` gains `bytes` and `fidelity`; MF_SITE_ABI 14→15): LANDED on main by main's int5 (a997a97ce, with E-1 and the wiring line). Kit branch lane/r24 @ 4b768c4a3; report docs/dev/lanes/r24_report.md.**
+  - Light validation: 0 movers on six sweep arms, finder 948/0, G2 quick green, S1092 DETECTED.
+  - main's int5 make test: 71/71.
+  - The owed heavy runs, on main @ 184fc9110 (worktrees/memfn-slot/r24heavy/chain.status, `CHAIN COMPLETE 14:32:55`):
+    - 13 solo mech rows OK (derived S460 S526 S919, plus kit S1092 S1089 S1079-S1085 S922);
+    - G2 full 199,850,938/0;
+    - N2 `rc=0 would_decline=0`, all floors clean;
+    - memfn reach arm green.
