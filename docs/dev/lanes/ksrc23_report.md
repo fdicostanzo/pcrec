@@ -2,8 +2,12 @@
 
 Branch `lane/ksrc23`, cut from main `343605a57` (K0/K1 merged with int3, E-1
 and RP/union merged). Design: `docs/design/measure_sets.md` rev 3 §9.2, §9.5,
-§9.6, §9.7. Two commits: K2 `f227cca55`, K3 `66c51d710`, then this report
-(tip in the handback). No abi event: no emitted byte moved (§3). §9.9's
+§9.6, §9.7. Commits: K2 `f227cca55`; K3 `66c51d710`; `f90a6a036` (report
+draft, K3 map, measured sabotage figures); `00cdb5f41` (the view refusal
+names the kind when it has no listing flag, which no CLI path reaches: a
+guard, zero movers by construction); then this report (tip in the
+handback). The zero-mover runs in §3 used the frozen K3 binary
+`66c51d710`. No abi event: no emitted byte moved (§3). §9.9's
 format question is untouched.
 
 ## 1. What changed, per step
@@ -109,8 +113,8 @@ Departure D1 below.
 | `tests/findings/ksrc_zero_mover.sh` (the resolution surfaces: stops, refusals, notes, both listings, fill-only, `lib`) | branch point `343605a57` build vs K2 head | 655 cases, 0 differ |
 | same | branch point vs K3 head (frozen `build/new/pcrec`) | 655 cases, 0 differ |
 | `findings.o` across the generated-comment change | old vs new `.inc` | byte-identical |
-| emit_sweep data census, canonical view vs original, for `default`, `log`, `weblog` (`--data analysis OLD NEW`, a `-DPCREC_KS_TRACE` build of the K3 head, an EMPTY expected-movers list) | OWED_CENSUS | OWED_CENSUS |
-| emit_sweep, E-1's G1-E1 product (`e1build_evidence/g1e1_sweep.sh`: arms default / `-fno-req-byte` / `-fno-req-byte -fno-req-run -fno-prefilter` / `--engine=vm -fno-req-byte -fno-req-run`, each at byte and utf8, × analysis cells none / `--analysis weblog` / an `-I` user bundle `mine` / `l1none` (utf8)), REF = the branch point's build, NEW = the K3 head | 28 runs | OWED_G1E1 |
+| emit_sweep data census, canonical view vs original, for `log`, `weblog` and `default` (`--data analysis OLD NEW`, a `-DPCREC_KS_TRACE` build of the K3 head, an EMPTY expected-movers list; `default` renamed `kdefault` in both copies, because the data mode refuses `-I` for the name the terminal finds by identity) | each bundle vs its own canonical view, byte and utf8 bases, streams 1/2 + stderr + 4 | **0 movers** for each of the three, 18,882 artifacts compiled per side, 0 problems (`ksrc23_evidence/census.txt`) |
+| emit_sweep, E-1's G1-E1 product (`e1build_evidence/g1e1_sweep.sh`: arms default / `-fno-req-byte` / `-fno-req-byte -fno-req-run -fno-prefilter` / `--engine=vm -fno-req-byte -fno-req-run`, each at byte and utf8, × analysis cells none / `--analysis weblog` / an `-I` user bundle `mine` / `l1none` (utf8)), REF = the branch point's build, NEW = the K3 head; every stream (c-default, c-vm, emit-ir-vm, facts, emit-ir-auto ×4, stderr, composition, dumps) | 28 runs, 11-12 streams each | **0 movers, 0 asymmetric on every stream of every run** (`ksrc23_evidence/g1e1_summary.tsv`). The 20 rc-1 runs are the instrument floors E-1 recorded, identical on both sides and grepped in every log: `emit-ir-vm` reach 0 in 20 runs (`--emit-ir` refuses `--analysis` on both sides), and two `l1none` runs at stream-1 reach 1,905 / 3,246 (E-1's own figures: those compiles refuse "counts nothing via encode-latin1" on both sides) |
 | emit_sweep `--data` census tool itself | `make test-findings` §13 (the K0 fixture's hand list reproduced; its control fails by name) | green |
 
 ## 4. R1-R3 / R5 results
@@ -247,4 +251,4 @@ No reader outside `tests/mech` moved: `tests/registry/limits_check.sh`'s
   in `TEST_SECTIONS` and its CI shard weight is ESTIMATED (5 s);
 - `make mech` (new arm `knowledge`; rows S961/S962/S984 measured solo);
 - `make test-axes` was not run (no axis changed);
-- OWED_HEAVY_EXTRA
+- the zero-mover runs above are COMPLETE (§3); none is owed.

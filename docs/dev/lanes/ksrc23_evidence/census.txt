@@ -1,0 +1,9 @@
+[data analysis] 18882 artifacts compiled per side, 0 movers -> /home/pcrec/projects/pcrec/worktrees/ksrc23/build/es/cz/weblog/out/movers_analysis.tsv
+[data analysis] hand list build/es/empty.tsv: 0 rows
+[data analysis] OK (0 problem(s))
+[data analysis] 18882 artifacts compiled per side, 0 movers -> /home/pcrec/projects/pcrec/worktrees/ksrc23/build/es/cz/kdefault/out/movers_analysis.tsv
+[data analysis] hand list build/es/empty.tsv: 0 rows
+[data analysis] OK (0 problem(s))
+[data analysis] 18882 artifacts compiled per side, 0 movers -> /home/pcrec/projects/pcrec/worktrees/ksrc23/build/es/cz/log/out/movers_analysis.tsv
+[data analysis] hand list build/es/empty.tsv: 0 rows
+[data analysis] OK (0 problem(s))
