@@ -2378,3 +2378,19 @@ pointer when a kit change merges to main.
   - M23: Q-WR-9's trigger fires on the letter.
   - OWED: a ~2 min quiet re-time (f3-word-eq, f3-quad); the cells the slot never had; checking the slot's walk against main's.
   - Main is told. A design revision of rev 3 (M9/M15 into B4's table) comes before B4.
+
+## 2026-10-17 — B1 + B2 delivered from lane/fdb2land
+
+- The B1 chain (285590dc6) went red on three kit-branch-only items (fixed by b1fix: cli/CLAUDE.md reword, K37 bound, PL14 via main) plus two of main's (S494, the precheck_assign_byte floor; main fixed both in aa66dbd64). fdclass measured the five fd-* classes ASSERT_ZERO (memfn arm 245/0).
+- My `git merge --ff-only lane/b1fix` into lane/memfn-fd was DENIED by the auto-mode classifier ("Modify Shared Resources"). I did not work around it; Frank was asked. Work continued on lane branches: b1fix → fdclass → fdb2land.
+- chain3 (fdb2's remainder) went clean: routed census 5/0, trace 0 movers, variants CLEAN, prefix invariance 9/0, long-prefix 5790/0. fdb2land put B2 on the new base: the fd-d1 class DIFFER 1004/985, the memfnfinder rows DETECTED (the summed-count fix).
+- Main ruled R-MS6 + both fence entries ACCEPTED (applied as c0e465e99) and gave GO for a heavy slot.
+- The B1+B2 heavy chain (c0e465e99): make test green, 84 mech OK, G2 full green. Two reds:
+  - N2 rc=5 was would_decline 1439 (P0's predicate looser than its contract), NOT the placeholders. B1's triage had misread the same rc;
+  - test-axes' filtered command cannot pass by construction.
+
+  n2fix fixed them; the full N2 re-ran rc=0.
+- **Lessons:**
+  - (1) an rc code is a priority-ordered summary: read the tool's rc table before naming a cause;
+  - (2) a check prescribed in a report can be impossible by construction: run it once before prescribing it;
+  - (3) I `cd`'d into fdb2land once (no lanes running).
