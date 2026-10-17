@@ -9771,6 +9771,12 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **Ruling (Frank: "agree"):** each layout row is checked by setting its control on corpus artifacts with a subject of its class. A synthetic witness, with a hand-written expected `nm` set, is used only where no corpus artifact has the subject. Preset populations are reported per position with a K35 floor, and adjacent presets are NOT required to differ on the corpus. Explicit controls go live at E1, independent of the pinned preset cells.
 
+### D163 addendum 12 — parts are the units; every exported entry stays an independent thin controller, ready for selective emission (Frank, 2026-10-17, session 115, approving E1)
+
+- **Direction (Frank):** each part function is a unit and the exported entries are built from those blocks. Under space saving, entries do not call each other; the layout choice is only whether a part edge is a shared call or inlined. Frank: "I'm ok with that."
+- **What the design already holds:** compound_entries.md I3 (no exported-to-exported call, ever; static twins) and the W1/W2 wrapper table (`_search` and `_search_in` forward to one static body). E1 must keep both, and must not add an edge from one exported entry to another under any control or preset.
+- **For [EMIT-ENTRIES] (design consideration, not built at E1):** Frank wants finer emit control, where not every export is emitted (e.g. no separate `_search` and `_search_in`). E1's design states the emission-unit view: the unit graph IS the part graph plus the entry rows, so an unnamed entry is simply not emitted and a part with no remaining caller is dropped, with no re-layout. The formal `--emit` language (entries, `main`, comments, `rx_info`, value-add units) stays [EMIT-ENTRIES]' implementation.
+
 ### D165 addendum 4 — the iterator meters per LOGICAL SEARCH (manager, 2026-10-16, session 113; findall_iter.md rev 3 Q-I1)
 
 - **Ruling (manager; Frank: "this was your call", then concurred: "each logical search should have its own"):** the give-up budget is one meter per LOGICAL search: what one `_search` call or one `pcre2_match` call would be. Inside the iterator, the NOTEMPTY retry, the following search and each search of a batch fill each get their own meter. D163 add. 6 Q1 ("one meter per exported call") stays true WITHIN a logical search: a compound's parts (split's F and Q) serve one `_search` and share one meter. The combinator row carries the difference as its `meter` column: `shared` (split) or `per-search` (iterate).
