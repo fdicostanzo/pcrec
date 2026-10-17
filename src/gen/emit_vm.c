@@ -10003,154 +10003,6 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
     }
 }
 
-/* Emits one of the three un-suffixed public entries (`<prefix>_search`/`_match`/`_match_caps`) from one shared template.
- *
- * [OPT-1] THE THREE UN-SUFFIXED ENTRIES, from ONE emitter
- * (docs/design/two_tier_entry.md §2).
- *
- * WHY THIS IS A FUNCTION AND NOT THREE MORE FORMAT STRINGS. `<prefix>_search`,
- * `<prefix>_match` and `<prefix>_match_caps` differ in exactly four things --
- * return type, parameter list, the arguments they thread through to their
- * `_run`, and how the FRAMES give-up is spelled at their layer -- and are
- * otherwise the same six lines. They were already three near-copies before
- * [OPT-1]; adding the tier to each in place would have made them three
- * near-copies of TWELVE lines, with the escalation test pasted three times.
- * That is the parallel-mechanism shape Frank's standing direction rules out,
- * and it is the shape sabotage row S-FB2 exists for: a per-entry typo in one
- * of three copies is what nobody's eye catches.
- *
- * The `_in` entries are NOT emitted here. They take no storage decision --
- * that is the whole of what distinguishes them -- so they have nothing this
- * function decides, and [DD-14.FB]'s delegation direction keeps them thin.
- *
- * THE TWO SHAPES:
- *
- *   tiered == false   exactly what shipped before [OPT-1]: one entry owning a
- *                     `<prefix>_run_buffers` at the stamped default. Emitted
- *                     byte for byte, so a single-tier artifact's entries do
- *                     not move (§3.1's three degenerate cases and
- *                     `-fno-tiered-entry` all land here).
- *   tiered == true    a `noinline` `<name>_deep` static owning that same
- *                     storage, plus an entry that runs on the page-budgeted
- *                     `<prefix>_fast_buffers` and calls it on a FRAMES give-up
- *                     and on nothing else.
- *
- * `frames_code` is the give-up's spelling AT THIS ENTRY'S LAYER, and the two
- * spellings are not interchangeable prose: `<prefix>_search` sits above the
- * search loop, which has already collapsed the private sentinel to the public
- * `PCREC_ERR_FRAMES`, while the two anchored entries sit directly on
- * `<prefix>_match_anchored` and still see `<PREFIX>_R_FRAMES` (§4.4's three
- * layers). Numerically equal today; the layer seam is the reason each is
- * spelled where it belongs. */
-static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
-                                  const char *storage, const char *in_storage,
-                                  const char *ret, const char *name,
-                                  const char *params, const char *storage_tail,
-                                  const char *runargs, const char *deepargs,
-                                  const char *frames_code, const char *fwdargs)
-{
-    if (fwd) {
-        /* [CC-DIFF] STEP 2, the FORWARD rungs (`vm_entry_shape` SHARED and
-         * FORWARD), and this is Frank's own question answered in the emitter:
-         * "why can't rx_match call rx_match_in with the stack buffer?"
-         *
-         * On an artifact that provably never WRITES the working storage there
-         * is no stack buffer to pass, so this entry has nothing to decide.
-         * The `_in` sibling already accepts a descriptor and binds whatever it
-         * names, so the un-suffixed entry becomes a pure forward through a
-         * static empty one — and every property that made STEP 1(a)'s
-         * attribute worth having survives: NO LOCAL AT ALL here, so no
-         * `<prefix>_run_buffers`, no `<prefix>_run_state`, no array whose
-         * presence trips `-fstack-protector-strong`, and no address escaping
-         * into a callee. gcc emits a `jmp`.
-         *
-         * WHAT IT RE-PAYS is one call per entry, against a matcher body the
-         * size term has already found large. What it BUYS is the copy count:
-         * six inlined bodies become three (FORWARD) or one (SHARED).
-         *
-         * THE DESCRIPTOR IS STATIC AND `const`, so it is one shared read-only
-         * object rather than a per-call store, and it is EMPTY rather than
-         * NULL for one reason: `<prefix>_*_in` reads a NULL descriptor as
-         * "use the un-suffixed sibling's own storage" and would call straight
-         * back here. `{ NULL, 0, NULL, 0 }` takes the binding path instead,
-         * which is correct precisely because `emitted_set` and `has_push` are
-         * both false — nothing in this artifact reads or writes either
-         * region, so a capacity of zero is never consulted. */
-        /* The `_in` sibling is DEFINED below this entry, so the forward needs
-         * its prototype. It is composed from THIS entry's own `params` plus
-         * the descriptor parameter, which is exactly what the definition's
-         * own format string spells — one derivation, two spellings, so a
-         * parameter list that changed at the definition and not here would be
-         * a conflicting declaration rather than a silent mismatch. */
-        pcrec_sb_printf(c,
-            "%s%s %s_in(%s, const %s_buffers *buffers);\n"
-            "%s%s %s(%s)\n"
-            "{\n"
-            "    return %s_in(%s, &%s_no_buffers);\n"
-            "}\n\n",
-            in_storage, ret, name, params, v->p,
-            storage, ret, name, params, name, fwdargs, v->p);
-    } else if (tiered) {
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_puts(c,
-            "/* [OPT-1] THE DEEP TIER: the stamped default storage, on a frame\n"
-            " * only a FRAMES give-up reaches. `noinline` is load-bearing --\n"
-            " * inlined, these arrays would be back on the entry's own frame and\n"
-            " * gcc would probe every one of their pages on every call, which is\n"
-            " * the whole of what this shape exists to avoid. */\n");
-        pcrec_sb_cmt_close(c);
-        pcrec_sb_printf(c,
-            "static __attribute__((noinline)) %s %s_deep(%s)\n"
-            "{\n"
-            "    %s_run_state run;\n"
-            "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
-            "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-            "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s_run(%s);\n"
-            "}\n\n",
-            ret, name, params, v->p, v->p, v->p, v->up, v->up, name, runargs);
-        pcrec_sb_printf(c,
-            "%s%s %s(%s)\n"
-            "{\n"
-            "    %s_run_state run;\n"
-            "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
-            "    %s result;\n"
-            "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
-            "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    result = %s_run(%s);\n",
-            storage, ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
-            name, runargs);
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_puts(c,
-            "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
-            "     * means \"a capacity ran out\" and nothing more, so the deep\n"
-            "     * tier re-runs the SAME match from scratch at the stamped\n"
-            "     * default: same capacities, budgets refilled, one\n"
-            "     * deterministic VM. Its answer is therefore the answer this\n"
-            "     * entry gave before the tier existed -- match, no-match or any\n"
-            "     * give-up, FRAMES included. Every other outcome is already\n"
-            "     * that answer and returns here. */\n");
-        pcrec_sb_cmt_close(c);
-        pcrec_sb_printf(c,
-            "    if (result != %s) return result;\n"
-            "    %s_TIER_NOTE();\n"
-            "    return %s_deep(%s);\n"
-            "}\n\n",
-            frames_code, v->up, name, deepargs);
-    } else {
-        pcrec_sb_printf(c,
-            "%s%s %s(%s)\n"
-            "{\n"
-            "    %s_run_state run;\n"
-            "    %s_run_buffers storage;%s\n"
-            "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-            "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s_run(%s);\n"
-            "}\n\n",
-            storage, ret, name, params, v->p, v->p, storage_tail, v->p, v->up,
-            v->up, name, runargs);
-    }
-}
 
 /* WHAT THE PLAN PHASE HANDS THE EMISSION PHASES: every number the artifact's
  * text is sized, bound and stamped from, decided once, before a byte of that
@@ -10744,7 +10596,7 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
     /* The FRAMES give-up as the two ANCHORED entries see it -- the private
      * sentinel, one layer below the public code `<prefix>_search` compares
      * against (§4.4). Built once here rather than at each of the two call
-     * sites for the reason vm_emit_default_entry's header gives. */
+     * sites for the reason `fwd_own`'s header gives (src/gen/emit_comb.c). */
     /* K38 (2026-08-26): a 64-byte buffer truncated this sentinel NAME for a
      * max-length prefix (gcc -Wformat-truncation caught it in the identity
      * scripts' -O2 reference builds). Fixed same-day with a one-off
@@ -12770,8 +12622,12 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             " * not a tuning knob: a pattern whose prefilter can answer must\n"
             " * never reach the step budget. */\n");
         pcrec_sb_cmt_close(c);
-        pcrec_emit_dfa_engine(cx, prefn,
-                              pcrec_entry_storage(cx, PCREC_ENTRY_PREFILTER));
+        {
+            /* [COMPOUND] E0c: the embedded search through its row's
+             * `locate-then-finish` emitter (src/gen/emit_comb.c). */
+            const PcrecEntryText t = { .body = prefn };
+            pcrec_emit_entry(cx, g, PCREC_ENTRY_PREFILTER, &t);
+        }
         pcrec_sb_puts(c, "\n");
     }
     /* The one fact about the prefilter that outlives this section: the
@@ -13591,27 +13447,6 @@ static void vm_emit_match_guard(Vm *v, StrBuf *c)
                               "ctx->len", true);
 }
 
-/* `<prefix>_search_in`: the search with the caller's storage, or exactly
- * `<prefix>_search` on a NULL descriptor. */
-static void vm_emit_search_in(Vm *v, const GenNames *g)
-{
-    Ctx *cx = v->cx;
-    StrBuf *c = &cx->job->csb;
-    pcrec_sb_puts(c, pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN));
-    pcrec_sb_printf(c,
-        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "          ptrdiff_t (*capture_spans)[2]%s, const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
-        "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
-        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));
-}
-
 /* `<prefix>_match`'s one implementation, `<prefix>_match_run`: the guard,
  * the offset-0 rule, the variables, one anchored attempt at `ctx->pos`. */
 static void vm_emit_match_run(Vm *v, const GenNames *g, const VmEntry *en)
@@ -13725,49 +13560,16 @@ static void vm_emit_match_caps_run(Vm *v, const GenNames *g, const VmEntry *en)
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
 }
 
-/* `<prefix>_match_in`: `<prefix>_match` with the caller's storage. */
-static void vm_emit_match_in(Vm *v, const GenNames *g)
-{
-    StrBuf *c = &v->cx->job->csb;
-    pcrec_sb_puts(c, pcrec_entry_storage(v->cx, PCREC_ENTRY_MATCH_IN));
-    pcrec_sb_printf(c,
-        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(ctx);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(ctx, &run);\n"
-        "}\n\n",
-        g->matchfn, v->p, v->p, g->matchfn, v->p, g->matchfn);
-}
-
-/* `<prefix>_match_caps_in`: `<prefix>_match_caps` with the caller's storage. */
-static void vm_emit_match_caps_in(Vm *v, const GenNames *g)
-{
-    StrBuf *c = &v->cx->job->csb;
-    pcrec_sb_puts(c, pcrec_entry_storage(v->cx, PCREC_ENTRY_MATCH_CAPS_IN));
-    pcrec_sb_printf(c,
-        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
-        "                const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(ctx, capture_spans_out);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(ctx, capture_spans_out, &run);\n"
-        "}\n\n",
-        g->matchcapsfn, v->p, v->p, g->matchcapsfn, v->p, g->matchcapsfn);
-}
-
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
  * `<prefix>_match` / `<prefix>_match_caps` and the `_in` sibling of each,
  * the caller-buffer variant that binds the caller's own storage.
  *
  * Each pair is one shape with two bindings, and the DELEGATION RUNS `_in` ->
- * UN-SUFFIXED and never the reverse (spec §5.2); `vm_emit_default_entry`
- * writes the un-suffixed half so the tiered escalation is spelled once for
- * all three.
+ * UN-SUFFIXED and never the reverse (spec §5.2). [COMPOUND] E0c: every
+ * entry is written through its row's `forward` emitter (src/gen/emit_comb.c,
+ * `fwd_own` for the un-suffixed half, so the tiered escalation is spelled
+ * once for all three; `fwd_in` for the `_in` half); this function says which
+ * binding the entry rung selects and in which order the six go.
  *
  * READS the entry rung: `en->fwd_entries` says whether the un-suffixed
  * entries forward through a NULL descriptor instead of binding a local,
@@ -13830,23 +13632,18 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
             v->p, v->p);
     }
 
-    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
-        pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH),
-        pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN), "int", g->searchfn,
-        pcrec_sb_fragf(&cx->arena,
-            "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-            "       ptrdiff_t (*capture_spans)[2]%s", pcrec_vars_param_text(cx)),
-        "   /* this artifact's stamped default */",
-        pcrec_sb_fragf(&cx->arena,
-            "subject, subject_length, search_from, capture_spans, &run%s",
-            pcrec_vars_arg_text(cx)),
-        pcrec_sb_fragf(&cx->arena,
-            "subject, subject_length, search_from, capture_spans%s",
-            pcrec_vars_arg_text(cx)),
-        "PCREC_ERR_FRAMES",
-        pcrec_sb_fragf(&cx->arena,
-            "subject, subject_length, search_from, capture_spans%s",
-            pcrec_vars_arg_text(cx)));
+    /* [COMPOUND] E0c: the six entries are written through their rows'
+     * `forward` emitter (src/gen/emit_comb.c): the un-suffixed three on this
+     * artifact's entry rung, the `_in` three on the caller's descriptor. */
+    const PcrecFwdBind own = en->fwd_entries ? PCREC_FWD_EMPTY
+                           : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN;
+    const PcrecFwd own_search = { own, "PCREC_ERR_FRAMES" };
+    const PcrecFwd own_match = { own, pl->frames_sentinel };
+    const PcrecFwd caller = { PCREC_FWD_CALLER, NULL };
+    const PcrecEntryText t_search = { .fwd = &own_search };
+    const PcrecEntryText t_match = { .fwd = &own_match };
+    const PcrecEntryText t_in = { .fwd = &caller };
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_SEARCH, &t_search);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -13856,8 +13653,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         " * than bytes. A give-up still reports PCREC_ERR_FRAMES and does not\n"
         " * say whose buffer ran out; retrying with a larger one is defined. */\n");
     pcrec_sb_cmt_close(c);
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_SEARCH_IN))
-        vm_emit_search_in(v, g);
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_SEARCH_IN, &t_in);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -13921,29 +13717,14 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
      * [OPT-1] "three declare a `<prefix>_run_buffers`" was the wording, and it
      * is now true of the DEEP statics rather than of the entries on a tiered
      * artifact -- which is why the storage decision is made in one place
-     * (`vm_emit_default_entry`) and not restated at each of the three. */
+     * (`fwd_own`, src/gen/emit_comb.c) and not restated at each of the three. */
     /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
      * directly on `<prefix>_match_anchored` and still see the private
      * sentinel (§4.4's three layers). */
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH))
-        vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
-            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH),
-            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_IN), "ptrdiff_t", g->matchfn,
-            "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl->frames_sentinel, "ctx");
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_IN))
-        vm_emit_match_in(v, g);
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS))
-        vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
-            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
-            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS_IN), "ptrdiff_t", g->matchcapsfn,
-            "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
-            "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
-            pl->frames_sentinel, "ctx, capture_spans_out");
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS_IN))
-        vm_emit_match_caps_in(v, g);
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH, &t_match);
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_IN, &t_in);
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_CAPS, &t_match);
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_CAPS_IN, &t_in);
 }
 
 /* Closes the artifact: the residual encoding helpers, `rx_info`, an optional

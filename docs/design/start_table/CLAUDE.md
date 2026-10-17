@@ -30,7 +30,9 @@ None of them is read by a check.
   locfin2, the labels `L0`/`L2` of `../locate_finish.md` rev 2, whose edit set is
   `studies/locate_finish/l0_edit_set.tsv`, extended for rev 2.1 by lane locfin21; and,
   since lane landrev, `SL1`-`SL3` of `../start_landing.md` rev 2, whose edit set is
-  `studies/start_landing/edit_set.tsv`, byte-neutral for every earlier label); `--final LABEL`
+  `studies/start_landing/edit_set.tsv`, byte-neutral for every earlier label; and, since
+  lane ksrc, `K1`/`K2` of `../measure_sets.md` rev 3 §9.7, whose edit set is
+  `../measure_sets/k1_edit_set.tsv`); `--final LABEL`
   (the single re-run of an untouched owner, default `after-C5b`) and
   `--edit-names` (also re-run at a commit whose edit-set text names the
   owner, or that rewrites a `def` the owner's body names) serve the B

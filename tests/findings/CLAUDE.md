@@ -115,6 +115,22 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   (slow, by hand, output committed); `reach` (§7) and `witness` (§8) are the
   fast make-test checks.
 - `adversarial/`, `witness/` — [B2] see their own CLAUDE.md.
+- `ksrc_zero_mover.sh OLD NEW` — [KNOW-SRC] K1/K2's RESOLUTION zero-mover
+  witness, NOT run by `make`: every resolution surface the knowledge module
+  took over (the analysis stops on `res_fixtures.py`'s tree under four `-I`
+  orders/spellings, both listings in both classifications, the fill-only
+  note, and `lib` resolution over every `.rxt`/`.rxtin` under
+  `tests/rxtsource/` and `tests/definitions/`) run under two binaries and
+  compared byte for byte (exit code, stdout, stderr, artifacts), with a
+  population floor. At K1: 655 cases, 0 differ against the branch point.
+- `data_census/` — [KNOW-SRC] K0: `scripts/emit_sweep.py --data`'s fixtures
+  and their HAND-MADE movers lists (the findings change §13 runs, and the
+  limits change run once at K0). See its own CLAUDE.md.
+- §13 of `run_findings_tests.sh` — [KNOW-SRC] K0: builds a
+  `-DPCREC_KS_TRACE` binary of the tree into scratch and requires the data
+  census to reproduce `data_census/analysis_movers.tsv`, every mover
+  attributed and every artifact's stamp equal to its final attempt's trace,
+  plus a control (a list missing one mover must FAIL by name). Sabotage S963.
 - `fixtures/` — [B3] small committed inputs for the analyzer: `basic.txt`,
   `ascii_only.txt` / `utf8_mixed.txt` (the two collision-free observed rows of
   design §10.2), `invalid_utf8.bin` (R26), `shard1_first_byte.bin` ([r2 A-1]),

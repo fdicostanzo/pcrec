@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "core/ksrc.h"
+
 typedef struct Ctx Ctx;
 
 /* One `serves` line of a pre-parsed store block (the same three fields the
@@ -100,6 +102,9 @@ typedef struct {
     const char *byte_rate_bundle; /* the bundle whose block answered */
     uint64_t    byte_rate_digest; /* what it consumed (design §7) */
     uint32_t    byte_rate[256];   /* the answer: ppm, sum 1,000,000 */
+#ifdef PCREC_KS_TRACE
+    const char *trace_last;       /* the last traced reader: a repeat is one record */
+#endif
 } PcrecFindRec;
 
 /* The embedded store's `.rxt` text for bundle `name` and its length, or NULL
@@ -204,6 +209,19 @@ uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256]);
  * compile consumed. */
 uint64_t pcrec_find_rows_digest(const PcrecFindTblBlock *blocks, size_t n);
 
+/* [KNOW-SRC] the analysis kind's two digest ROLES (measure_sets.md §9.2
+ * part 5), the two functions above as `pcrec_ks_digest` data: the STAMP role
+ * (domain `pcrec-find-1\0`, the QUERY as its sub-key, a fold over the 256
+ * ppm values; its document is a `const uint32_t[256]`) and the ITEM role
+ * (domain `pcrec-find-rows-1\0`, no sub-key, a fold over the blocks; its
+ * document is a `PcrecFindRowsDoc`). The analysis kind's row names both. */
+typedef struct {
+    const PcrecFindTblBlock *blocks;
+    size_t                   n;
+} PcrecFindRowsDoc;
+extern const KsDigest pcrec_find_rate_role;
+extern const KsDigest pcrec_find_rows_role;
+
 /* ---- THE ACCESSOR AND THE PRIMITIVES (design §6.1) -----------------------
  *
  * THE NONE ANSWER IS SPELLED ONCE PER QUESTION KIND, inside the primitive
@@ -291,5 +309,26 @@ int pcrec_find_run_window_start(const uint32_t *rate,
 /* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
  * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
 unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256]);
+
+/* ---- [KNOW-SRC] THE LOOKUP TRACE (measure_sets.md rev 3 §9.3) -------------
+ *
+ * In a `-DPCREC_KS_TRACE` build every rate read writes one stderr record,
+ * `KSTRACE\tanalysis\t<query>\t<reader>\t<bundle|none>`, the READER being the
+ * calling function (`__func__`, so no call site is edited; a reader's
+ * consecutive repeats are one record), and each attempt's
+ * resolution writes `KSTRACE\tanalysis\t-\tresolve\t-` first. It is the data-
+ * mover census's ATTRIBUTION (`scripts/emit_sweep.py --data`): a moved
+ * artifact names the readers that asked, and the FINAL attempt's queries and
+ * bundles must equal the `<PREFIX>_FINDINGS` stamp's items (the cross-
+ * check). The default build is unchanged: no record, no byte, no symbol. */
+#ifdef PCREC_KS_TRACE
+const uint32_t *pcrec_find_byte_rate_at(Ctx *cx, const char *reader);
+unsigned pcrec_find_set_ppm_at(Ctx *cx, const uint8_t set[256],
+                               const char *reader);
+#ifndef PCREC_FIND_DEFINING
+#define pcrec_find_byte_rate(cx) pcrec_find_byte_rate_at((cx), __func__)
+#define pcrec_find_set_ppm(cx, set) pcrec_find_set_ppm_at((cx), (set), __func__)
+#endif
+#endif
 
 #endif /* PCREC_FINDINGS_H */

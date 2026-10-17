@@ -26,7 +26,7 @@
 # tail line (`return %s_run(subject, subject_length, ...)`) names arguments no
 # other of the six `_in`/deep/fast bind sites shares.
 SAB_ID="S179-searchin-stamped-capacity"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/emit_comb.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <prefix>_search_in binds <PREFIX>_RESUME_FRAMES as its resume capacity instead of the caller's buffers->nframes. The pointer is still the caller's, so nothing faults and nothing is emitted differently -- the caller simply cannot raise the ceiling, which is the whole of what D71 item 2 asked for"
@@ -40,16 +40,23 @@ SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25, sabotaged emitter vs tests/recursion/
 # `SAB_AFTER`, so this row's population does not widen to var-bearing
 # artifacts (its witness, tests/recursion/framebuffer.rxt, has no variable in
 # it and the inserts are empty there).
+# [COMPOUND] E0c 2026-10-16 (lane e0c): RE-ANCHORED. The VM's three `_in`
+# writers moved to src/gen/emit_comb.c as ONE text for the `forward`
+# combinator's CALLER binding (`fwd_in`), the per-entry differences in
+# `fwd_sigs[]`; the emitted bytes are unchanged (E0c is zero-mover).
+# The plant stays `<prefix>_search_in`-only: the stamped capacity is passed
+# where the entry is the search and `buffers->nframes` elsewhere, so the
+# match pair's `_in` entries emit as before and the population is unchanged.
 SAB_COUNT=1
 SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
+        "    return %s_run(%s, &run%s);\n"
         "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
-        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));'
-SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, %s_RESUME_FRAMES,\n"
+        p, name, s->args, va, p, name, s->args, va);'
+SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, %s,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
+        "    return %s_run(%s, &run%s);\n"
         "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
-        pcrec_vars_arg_text(cx), v->p, v->up, g->searchfn, pcrec_vars_arg_text(cx));   /* SABOTAGE S179 */'
+        p, name, s->args, va, p,
+        s->entry == PCREC_ENTRY_SEARCH ? pcrec_sb_fragf(&cx->arena, "%s_RESUME_FRAMES", g->upper) : "buffers->nframes",
+        name, s->args, va);   /* SABOTAGE S179 */'

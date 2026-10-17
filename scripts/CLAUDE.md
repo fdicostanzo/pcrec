@@ -482,6 +482,22 @@ pcrec (the Makefile owns that).
   re-pinned at b72291d84 with each fall attributed to a compiler event in the
   pin comment. The self-test plants each declared floor +1 (`EMIT_SWEEP_VARIANT_
   PLANTS=1` adds the variant cell); mech rows S1047/S1048.
+  **[KNOW-SRC] K0 (lane ksrc, 2026-10-16): `--data KIND OLD NEW`, THE
+  DATA-MOVER CENSUS** (`docs/design/measure_sets.md` rev 3 §9.3) — a MODE of
+  this tool, not a second census script. The two sides differ ONLY by a data
+  argument: `analysis` (two bundle files, `DIR/NAME.rxt` or `REV:PATH`, under
+  ONE `-DPCREC_KS_TRACE` `--bin`) and `limits` (`NAME=VALUE`, two `-D` builds
+  of `--ref`, default HEAD); `measures` joins at [MEASURE-SET] M1. Streams 1/2
+  (+ their stderr, KSTRACE records removed) at `--bases`, and 4; the
+  `_FINDINGS` stamp lines are stripped before the byte compare. Each mover is
+  ATTRIBUTED — analysis by the LOOKUP TRACE (`src/core/findings.h`: the
+  readers that asked), limits by the limit and its token change — and every
+  analysis artifact's FINAL-attempt trace must equal its stamp's
+  (query, bundle) items (the cross-check). Writes one movers TSV
+  (`--movers`); `--expect-movers FILE` holds a hand-made list the census must
+  reproduce. Its standing check is `tests/findings/run_findings_tests.sh`
+  §13 (the `data_census/` fixture, with a must-fail control); sabotage S963
+  plants an empty attribution.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between

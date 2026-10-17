@@ -27,7 +27,7 @@
 # match/match_caps `_in` siblings delegate with different argument lists) --
 # SAB_COUNT stays 1.
 SAB_ID="S183-null-delegation-dropped"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/emit_comb.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <prefix>_search_in drops its NULL-descriptor delegation line, so a NULL descriptor binds a null resume stack at capacity 0 instead of meaning 'use the stamped default'. Spec 10.3 defines the NULL case to BE the un-suffixed call"
@@ -41,17 +41,23 @@ SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 12pass/4fail -- every fram
 # `SAB_AFTER`, so this row's population does not widen to var-bearing
 # artifacts (its witness, tests/recursion/framebuffer.rxt, has no variable in
 # it and the inserts are empty there).
+# [COMPOUND] E0c 2026-10-16 (lane e0c): RE-ANCHORED. The VM's three `_in`
+# writers moved to src/gen/emit_comb.c as ONE text for the `forward`
+# combinator's CALLER binding (`fwd_in`), the per-entry differences in
+# `fwd_sigs[]`; the emitted bytes are unchanged (E0c is zero-mover).
+# The plant stays `<prefix>_search_in`-only: the NULL-descriptor line is
+# dropped where the entry is the search and kept for the match pair.
 SAB_COUNT=1
-SAB_BEFORE='        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
+SAB_BEFORE='        "    if (!buffers) return %s(%s%s);\n"
         "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
+        "    return %s_run(%s, &run%s);\n"
         "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
-        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));'
-SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        p, name, s->args, va, p, name, s->args, va);'
+SAB_AFTER='        "%s"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
+        "    return %s_run(%s, &run%s);\n"
         "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p,
-        v->p, g->searchfn, pcrec_vars_arg_text(cx));   /* SABOTAGE S183 */'
+        p, s->entry == PCREC_ENTRY_SEARCH ? "" : pcrec_sb_fragf(&cx->arena, "    if (!buffers) return %s(%s%s);\n", name, s->args, va),
+        p, name, s->args, va);   /* SABOTAGE S183 */'
