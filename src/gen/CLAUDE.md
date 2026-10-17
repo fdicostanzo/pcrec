@@ -173,7 +173,9 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   emitters are one `pf_emit_skip` (comment, entry test, FIND, close); every
   PF row is DEFINED above the body (`pf_define_find[_bounded]`), so its table
   is emitted iff the kit's form reads it. G1 (`dfa_cand_scan`), R4
-  (`dfa_cand_ppm_of`) and L4 (`start_landing_applies`) read the kit's
+  (`dfa_cand_ppm_of`), the handoff's K admission (`req_landmark_admits`: the
+  start set's prior mass, h and K; the set through `cand_row_scan`, the one
+  derivation `dfa_cand_scan` shares) and L4 (`start_landing_applies`) read the kit's
   define-time QUERY (`cand_ask`, `cand_pf_site`): `proven0` for a PF site,
   `proven_prev` for ENG_ATTEMPT's context stop (F-B1-3). The site a reader
   asks about and the site the define writes come from ONE constructor each
