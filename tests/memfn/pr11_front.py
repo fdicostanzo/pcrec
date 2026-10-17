@@ -57,8 +57,8 @@ HARVEST = r'''
 #include <stdlib.h>
 int main(int argc, char **argv)
 {
-    int want = atoi(argv[2]);
-    for (int a = 3; a < argc && want > 0; a++) {
+    int want = atoi(argv[1]);
+    for (int a = 2; a < argc && want > 0; a++) {
         FILE *f = fopen(argv[a], "rb");
         if (!f) continue;
         size_t cap = 4u << 20;
@@ -98,7 +98,7 @@ def harvest(c, texts, work, cc="gcc", want=8, ctx=64, timeout=300):
     out = []
     for ln in r.stdout.decode().splitlines():
         a, st, en = (int(x) for x in ln.split())
-        with open(texts[a - 3], "rb") as fh:
+        with open(texts[a - 2], "rb") as fh:
             fh.seek(max(0, st - ctx))
             out.append(fh.read(en + ctx - max(0, st - ctx)))
     return out

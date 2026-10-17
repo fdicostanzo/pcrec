@@ -1,0 +1,19 @@
+# PR-11 census: counted-repeat patterns compiled per population x arm; rows are the COUNT-COLLAPSED hybrids
+pop	arm	state	count
+bench	-	derived	48
+bench	-	ok	5
+bench	-	unchecked-no-subject	1
+bench	-e utf8	derived	48
+bench	-e utf8	ok	5
+bench	-e utf8	unchecked-no-subject	1
+corpus	-	derived	208
+corpus	-	no-claims	1
+corpus	-	ok	2
+corpus	-e utf8	derived	0
+corpus	-e utf8	no-claims	2
+rwquest	-	derived	112
+rwquest	-	ok	1
+rwquest	-e utf8	derived	40
+rwquest	-e utf8	ok	1
+rwquest	-e utf8	unchecked-no-subject	1
+PR11_CENSUS_DONE collapsed=20 fails=0
