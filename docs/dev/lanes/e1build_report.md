@@ -49,7 +49,7 @@ test-findings/test-memfn, and the kit's re-declaration of `bytes`/`fidelity`
   checked there (C-E1-1). OWED: a kit request for the re-declaration
   (one `MF_SITE_ABI` event), after which `memfn_sites.c` maps the two fields
   (two lines). Reported to main at read time.
-- **D2 — `fidelity synthesized` is a PRIOR, per D162 add. 4** ("`measured`
+- **D2 — ACCEPTED by the manager 2026-10-17** (reasoning as given: D162 add. 4 makes a synthesized block not evidence, and the kit has no fidelity field, so pcrec states the conclusion as a fact). Original note: `fidelity synthesized` is a PRIOR, per D162 add. 4** ("`measured`
   requires `source measured` and a non-synthesized `fidelity`"), which
   post-dates rev 3.1. The note's T-KIND makes any non-authored block
   MEASURED (and its "today's cells" call `log` measured). Built: T-KIND's

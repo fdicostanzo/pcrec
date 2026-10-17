@@ -763,6 +763,18 @@ else
     bad "§14 needs §13's -DPCREC_KS_TRACE binary, which did not build"
 fi
 
+# §14b data_trace DROPS ONLY `KSRCTRACE\t` ([WINDOW-E1], e1val): the --data
+# census's mover test compares the clean stderr, so a drop wider than the
+# analysis object's record would hide movers. data_trace_check.py holds it to
+# hand-written blobs (a differing KSRCTRACE line is no mover; a differing
+# plain or near-miss line is).
+if "$TIMEOUT_BIN" 60 python3 "$SCRIPT_DIR/data_trace_check.py" "$ROOT_DIR/scripts/emit_sweep.py" \
+    > "$WORKDIR/dtc.out" 2>&1; then
+    ok "§14b data_trace drops only KSRCTRACE lines ($(grep -c '^PASS:' "$WORKDIR/dtc.out") checks)"
+else
+    bad "§14b data_trace drop is not exactly KSRCTRACE: $(grep '^FAIL:' "$WORKDIR/dtc.out" | tr '\n' ' ')"
+fi
+
 # =========================================================================
 # §15 C-PERT, THE STAMP'S HONESTY FROM OUTSIDE ([WINDOW-E1];
 # window_contract.md rev 3.1 §3.7.7): c_pert.py compiles a fixed 1-in-16

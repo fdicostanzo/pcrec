@@ -152,6 +152,10 @@ Two halves, both run by `make test-findings`, which is part of `make test`
 - `e1_object_check.py` — [WINDOW-E1] §14's checker over the trace build's
   `KSRCTRACE object` records (see its header for each check's independent
   source).
+- `data_trace_check.py` — [WINDOW-E1] §14b: `emit_sweep.py --data`'s `data_trace`
+  drops ONLY `KSRCTRACE\t` lines (the mover test compares the clean stderr, so a
+  wider drop hides movers). Hand-written blobs; widening the drop to
+  `startswith(b"KS")` fails two of its five checks (shown once, e1val).
 - `c_pert.py` — [WINDOW-E1] C-PERT, the stamp's honesty from outside: the
   population compiled bare, under a verbatim copy of the store's default and
   under a PERTURBED copy (same name and stop); an artifact whose stamp omits
