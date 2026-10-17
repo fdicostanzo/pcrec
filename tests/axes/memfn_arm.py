@@ -74,11 +74,20 @@ MEMFN_CLASS = {
     # --measure`, 10 cells (5 rows x 2 layers), differ=0 refused=0 of 4624 in every
     # (encoding, stream) -- build/fdclass_measure.log, docs/dev/lanes/fdclass_report.md.
     # No fd_rows[] row is routed at B1 (fdb1_report.md), so each deny is
-    # artifact-identical. THESE CLASSES ARE B1's, NOT STANDING FACTS: fd-d1 -> DIFFER
-    # when lane/fdb2 routes D1 (its OFF arm is D1w's walk; ~1,004 sites), fd-r0/fd-r5/
+    # artifact-identical. THESE CLASSES ARE B1's, NOT STANDING FACTS: fd-d1 became DIFFER
+    # when lane/fdb2 routed D1 (its OFF arm is D1w's walk; re-measured below), fd-r0/fd-r5/
     # fd-ndisp at B4, fd-r8 at B6 (options.def's comment). Each landing re-measures.
-    ("fd-d1", "default"): ("ASSERT_ZERO", {}, []),
-    ("fd-d1", "simd"): ("ASSERT_ZERO", {}, []),
+    # fd-d1 RE-MEASURED at B2's landing (lane fdb2land, 2026-10-17, lane/fdb2land =
+    # fdclass + main aa66dbd64 + lane/fdb2 01ffd2f2d): B2 routes D1, so the deny moves
+    # the one-byte sites to D1w's walk on the default engine; the VM stream has none.
+    # Same method, `taskset -c 0-11`, build/fd_d1_measure.log, fdb2land_report.md;
+    # floors = the measured counts (identical at both layers, = fdb2's 1,004 / 985).
+    ("fd-d1", "default"): ("DIFFER",
+        {("byte", "c-default"): 1004, ("byte", "c-vm"): 0, ("utf8", "c-default"): 985, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b" \\w?\\b"), ("utf8", "c-default", b" \\w?\\b")]),
+    ("fd-d1", "simd"): ("DIFFER",
+        {("byte", "c-default"): 1004, ("byte", "c-vm"): 0, ("utf8", "c-default"): 985, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b" \\w?\\b"), ("utf8", "c-default", b" \\w?\\b")]),
     ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
     ("fd-r0", "default"): ("ASSERT_ZERO", {}, []),
