@@ -433,7 +433,7 @@ is EXPECTED to time out"*, and neither would a separate arm.
   outside the manifest or a stale row moves no answer and no byte, so every
   other arm is green on it by construction. Rows S510 (rule 1, a `memchr(`
   planted in an unlisted function), S511 (rule 4, a stale pending row),
-  S512 (the K35 row floor).
+  S512 (the K35 row floor), S1091 (rule 5, a kind listed and never observed).
 - `memfnarch` → `tests/memfn/run_arch_blind.sh` ([MEMFN] R4c, lane
   r4cchecks, 2026-10-06): C4, the arch-blindness detector. Static plus
   compiler probes for the plants; reads the sabotaged tree's own files. An

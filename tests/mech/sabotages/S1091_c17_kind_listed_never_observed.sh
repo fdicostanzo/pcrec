@@ -15,7 +15,7 @@
 SAB_ID="S1091-c17-kind-listed-never-observed"
 SAB_FILE='tests/memfn/site_manifest.tsv'
 SAB_SUITES="memfnmanifest"
-SAB_DOC_FIGURE='Validated by plant at lane c1017 (2026-10-17): memfnmanifest 1 failed / 18 passed (rule 5 on PF/DFA_ATTEMPT). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1091.'
+SAB_DOC_FIGURE='Validated by plant at lane c1017 (2026-10-17): memfnmanifest 1 failed / 13 passed (rule 5 on PF/DFA_ATTEMPT). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1091.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^PF[[:space:]]+[^[:space:]]+[[:space:]]+FIND/ASSIGN[[:space:]]+DFA_SCAN,DFA_HAT,HYB_PF,VM_ATTEMPT[[:space:]]+scan[[:space:]]|1'
