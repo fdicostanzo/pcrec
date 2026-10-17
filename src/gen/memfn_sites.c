@@ -154,7 +154,13 @@ static const char *const akind_source_name[] = { "UNSTATED", "PRIOR_AUTHORED",
                                                  "PRIOR_NONE", "MEASURED" };
 static const char *const akind_unmeasured_name[] = { "UNSTATED", "ARRIVES", "ABSENT" };
 
-static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o)
+static const char *prov_fidelity_token(uint8_t fid);
+
+/* The record is written from the BUILT kit object's provenance (bytes,
+ * fidelity), not from the offer, so tests/findings/e1_object_check.py holds
+ * the wiring itself to its hand-written table. */
+static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o,
+                           const mf_akind *k)
 {
     char sum[24] = "-";
     if (o->payload && q->version == 1 && !strcmp(q->tag, "byte-rate")) {
@@ -166,7 +172,8 @@ static void analysis_trace(const PcrecFindQuery *q, const PcrecFindOffer *o)
             "\t%s\t%s\t%s\n", q->tag, o->row, akind_state_name[o->present],
             akind_source_name[o->source],
             o->bundle ? o->bundle : "-", (unsigned long long)o->digest,
-            o->bytes, o->fidelity ? o->fidelity : "-", sum,
+            (unsigned long long)k->prov.bytes,
+            prov_fidelity_token(k->prov.fidelity), sum,
             akind_unmeasured_name[q->unmeasured]);
 }
 #endif
@@ -182,15 +189,19 @@ void pcrec_memfn_analysis_build(Ctx *cx)
         PcrecFindOffer o;
         pcrec_find_offer(cx, i, &o);
         analysis_invariant(cx, q->tag, &o);
-#ifdef PCREC_KS_TRACE
-        analysis_trace(q, &o);
-#endif
         k[i].tag = q->tag;
         k[i].version = q->version;
         k[i].present = akind_state_map[o.present];
         k[i].prov.source = akind_source_map[o.source];
         k[i].prov.bundle = o.bundle;
         k[i].prov.digest = o.digest;
+        if (pcrec_memfn_prov_stanza(&k[i].prov, o.bytes, o.fidelity))
+            pcrec_ctx_fail(cx, 0, "internal error: the analysis object's '%s' "
+                           "kind carries a provenance fidelity '%s' outside the "
+                           "findings vocabulary", q->tag, o.fidelity);
+#ifdef PCREC_KS_TRACE
+        analysis_trace(q, &o, &k[i]);
+#endif
         k[i].payload = o.payload;
     }
     an->list_v = MF_ANALYSIS_LIST_V;
@@ -407,6 +418,15 @@ static const struct { const char *tok; uint8_t fid; } prov_fidelity_rows[] = {
     { "adapted",     MF_FID_ADAPTED },
     { "synthesized", MF_FID_SYNTHESIZED },
 };
+
+/* The trace's reverse lookup: the token for an mf_prov_fidelity, `-` for
+ * the unstated zero. */
+static const char *prov_fidelity_token(uint8_t fid)
+{
+    for (size_t i = 0; i < sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows; i++)
+        if (prov_fidelity_rows[i].fid == fid) return prov_fidelity_rows[i].tok;
+    return "-";
+}
 
 int pcrec_memfn_prov_stanza(mf_prov *p, unsigned long long bytes,
                             const char *fidelity)
