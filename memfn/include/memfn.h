@@ -1224,7 +1224,10 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
  * provenance, its NONE answers where it carries no table). EVIDENCE ONLY at
  * B3a: the host's trace build asks, compares each answer with its own pick
  * and prints the agreement; nothing renders from an answer, and the ports
- * become the PRES rows' picks at B3b. PURE: like mf_ask, it writes no text,
+ * become the PRES rows' picks at B3b. Until then the default libpcrec.a
+ * carries memfn/src/presence.c with NO CALLER: only pcrec's trace build
+ * (-DPCREC_CAND_TRACE) calls it, so in a shipped build it is dead code.
+ * PURE: like mf_ask, it writes no text,
  * defines no handle and changes no art state. The site need not be defined
  * (pcrec asks with the site it would define, and with one it does not
  * define where its own admission declines). It reads the site's
