@@ -191,6 +191,18 @@ done <<< "$allowed"
 if [ "$nwit" -ge "$nrows" ]; then ok "[cand-oracle-population] $nwit witness lines for $nrows rows"
 else bad "[cand-oracle-population] $nwit witness lines for $nrows rows"; fi
 
+# [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8, SN-6): the same trace
+# build's `MFPICK` records over tests/memfn/pres_pick_witnesses.tsv
+# (tests/memfn/run_pres_picks.sh). Its counts join this script's.
+PRES_PICKS_BIN="$BIN" bash "$TREE/tests/memfn/run_pres_picks.sh" "$TREE" > "$WORK/picks.log" 2>&1
+grep -E '^(PASS|FAIL):' "$WORK/picks.log"
+pp=$(sed -n 's/^checks passed: //p' "$WORK/picks.log"); pf=$(sed -n 's/^checks failed: //p' "$WORK/picks.log")
+if [ -z "$pp" ] || [ -z "$pf" ]; then
+    bad "[pres-picks] run_pres_picks.sh printed no counts (last lines below)"; tail -5 "$WORK/picks.log"
+else
+    pass=$((pass + pp)); fail=$((fail + pf))
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

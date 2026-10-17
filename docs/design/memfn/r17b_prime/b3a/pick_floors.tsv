@@ -1,0 +1,20 @@
+# docs/design/memfn/r17b_prime/b3a/pick_floors.tsv -- KW-8 per-pick floors on NON-TRIVIAL agreeing records ([rev3 D10]), measured by pick_census.py at lane b3a (2026-10-17, base 184fc9110 + b3a, three arms: -, -e utf8, --engine=vm; bench = /home/pcrec/projects/pcrec-bench at its checkout of that day). Read by pick_census.py --floors.
+# pop	pick	floor (floor(0.9 x measured non-trivial agreeing records))
+corpus	set	2218
+corpus	scan	1254
+corpus	window	60
+corpus	leads	1207
+corpus	dominated	2934
+corpus	landmark	457
+bench	set	339
+bench	scan	284
+bench	window	16
+bench	leads	273
+bench	dominated	243
+bench	landmark	106
+rwquest	set	278
+rwquest	scan	253
+rwquest	window	32
+rwquest	leads	243
+rwquest	dominated	198
+rwquest	landmark	80

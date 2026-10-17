@@ -1,0 +1,28 @@
+# pick census: populations {'corpus': 4624, 'bench': 367, 'rwquest': 177}, arms ['-', '-e utf8', '--engine=vm'], every 1
+pop	pick	records	agree	nontrivial	nt_agree	differs
+corpus	set	6477	6477	2465	2465	676
+corpus	scan	1394	1394	1394	1394	516
+corpus	window	1394	1394	67	67	42
+corpus	leads	1342	1342	1342	1342	43
+corpus	dominated	6477	6477	3260	3260	2427
+corpus	landmark	508	508	508	508	454
+bench	set	539	539	377	377	127
+bench	scan	316	316	316	316	131
+bench	window	316	316	18	18	12
+bench	leads	304	304	304	304	15
+bench	dominated	539	539	271	271	128
+bench	landmark	118	118	118	118	114
+rwquest	set	408	408	309	309	102
+rwquest	scan	282	282	282	282	122
+rwquest	window	282	282	36	36	14
+rwquest	leads	270	270	270	270	42
+rwquest	dominated	408	408	220	220	62
+rwquest	landmark	89	89	89	89	87
+pop	site-state	shadows
+bench	stated	539
+bench	withheld-one-attempt	45
+corpus	stated	6477
+corpus	withheld-one-attempt	783
+corpus	withheld-whole	132
+rwquest	stated	408
+PICK_CENSUS_DONE fails=0
