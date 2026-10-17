@@ -1284,8 +1284,9 @@ static void gate_cases(void)
  *   arm_fixtures OUTDIR --only fd-<name>   one shadow witness (rows.tsv's
  *       table `fd`): a site rendered under a fixture set; its .def/.use are
  *       the pre-table form's text, its FD records the shadow's decision
- *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR]   one site under
- *       a set FILE and a `--memfn=` string
+ *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an FID]
+ *       one site under a set FILE and a `--memfn=` string, and (R-24) with an
+ *       analysis object whose kinds all state `mf_prov.fidelity` FID
  *       (measure_sets §1.2's section TSV, its `rows` section read here, with
  *       no pcrec code), printing `CONSULTED<TAB>0|1` (R-MS2): the R-MS1/R-MS4
  *       loops of tests/memfn/finder_check.py
@@ -1334,10 +1335,10 @@ static mf_site fd_pf_site(const char *members, int table, int body)
 /* One site's define, storage point (where it offers one) and use, in an art
  * begun with `ms`; `CONSULTED` from its end. */
 static int fd_render(const char *dir, const char *name, const mf_site *s,
-                     const mf_measures *ms)
+                     const mf_measures *ms, const mf_analysis *an)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, ms, NULL);
+    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, ms, an);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fx = { s, "rx_pf", "    " };
@@ -1469,7 +1470,7 @@ static int fd_fixture(const char *dir, const char *name)
         mf_pred p[2];
         only_seen++;
         if (fd_site_of(fx[i].site, &s, p)) return 2;
-        return fd_render(dir, name, &s, fx[i].ms) ? 1 : 0;
+        return fd_render(dir, name, &s, fx[i].ms, NULL) ? 1 : 0;
     }
     return 2;
 }
@@ -1517,7 +1518,39 @@ static int fd_load_set(const char *path, mf_measures *ms)
     return 0;
 }
 
-static int fd_site_mode(const char *site, const char *setpath, const char *opts)
+/* R-24 (MF_SITE_ABI 15): an analysis object every one of whose kinds states
+ * the provenance fidelity `fid` and a byte count, handed to mf_art_begin so a
+ * kit that READ either field before B3a would show it (finder_check.py L:
+ * the same site renders identically with and without it). `fid` is stated as
+ * given, an out-of-enum value included: nothing reads it, so nothing refuses
+ * it. Each kind is PRESENT, MEASURED, with the payload the invariant asks. */
+static const uint32_t an_rates[256] = { 1000000 };
+static mf_akind an_kinds[2];
+static mf_analysis an_obj;
+
+static const mf_analysis *fd_an_make(int fid)
+{
+    static const char *const tags[2] = { "byte-rate", "run-rarity" };
+    for (int i = 0; i < 2; i++) {
+        memset(&an_kinds[i], 0, sizeof an_kinds[i]);
+        an_kinds[i].tag = tags[i];
+        an_kinds[i].version = 1;
+        an_kinds[i].present = MF_KIND_PRESENT;
+        an_kinds[i].prov.source = MF_PROV_MEASURED;
+        an_kinds[i].prov.bundle = "weblog";
+        an_kinds[i].prov.digest = 0x1234;
+        an_kinds[i].prov.bytes = 999960;
+        an_kinds[i].prov.fidelity = (uint8_t)fid;
+        an_kinds[i].payload = an_rates;
+    }
+    an_obj.list_v = MF_ANALYSIS_LIST_V;
+    an_obj.nkinds = 2;
+    an_obj.kinds = an_kinds;
+    return &an_obj;
+}
+
+static int fd_site_mode(const char *site, const char *setpath, const char *opts,
+                        int fid)
 {
     mf_site s;
     mf_pred p[2];
@@ -1525,7 +1558,8 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts)
     if (fd_site_of(site, &s, p)) { fprintf(stderr, "no fd site %s\n", site); return 2; }
     s.opts = opts;
     if (setpath && fd_load_set(setpath, &ms)) return 2;
-    return fd_render(NULL, site, &s, setpath ? &ms : NULL) ? 1 : 0;
+    return fd_render(NULL, site, &s, setpath ? &ms : NULL,
+                     fid >= 0 ? fd_an_make(fid) : NULL) ? 1 : 0;
 }
 
 static int finder_rows_mode(void)
@@ -1613,14 +1647,16 @@ static int pay_mode(void)
 int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
-                          "--fd-site SITE [--fd-set FILE] | --finder-rows | --hash | --pay-grid\n", stderr); return 2; }
+                          "--fd-site SITE [--fd-set FILE] [--fd-an FID] | --finder-rows | --hash | --pay-grid\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL;
+        int fid = -1;
         for (int i = 3; i + 1 < argc; i += 2) {
             if (!strcmp(argv[i], "--fd-set")) set = argv[i + 1];
             else if (!strcmp(argv[i], "--opts")) opts = argv[i + 1];
+            else if (!strcmp(argv[i], "--fd-an")) fid = atoi(argv[i + 1]);
         }
-        return fd_site_mode(argv[2], set, opts);
+        return fd_site_mode(argv[2], set, opts, fid);
     }
     if (!strcmp(argv[1], "--finder-rows")) return finder_rows_mode();
     if (!strcmp(argv[1], "--hash")) return hash_mode();

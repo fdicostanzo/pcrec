@@ -287,6 +287,39 @@ void pcrec_memfn_window_is_candidate(mf_pred *p)
     p->overshoot = 0;
 }
 
+/* ---- the answering block's provenance stanza (R-24, MF_SITE_ABI 15) -------
+ *
+ * The findings vocabulary's closed `fidelity` tokens
+ * (src/parse/rxt_schema.def, PROVENANCE `fidelity`: `closed fidelity verbatim
+ * adapted synthesized`) onto the kit's mf_prov_fidelity, one row per token.
+ * A token outside the set is pcrec's own defect (the schema closes it at
+ * parse), so the caller refuses; NULL is "the block declares none". The
+ * check tests/memfn/prov_check.c reads the closed set off --list-schema and
+ * holds this table to it in both directions. */
+static const struct { const char *tok; uint8_t fid; } prov_fidelity_rows[] = {
+    { "verbatim",    MF_FID_VERBATIM },
+    { "adapted",     MF_FID_ADAPTED },
+    { "synthesized", MF_FID_SYNTHESIZED },
+};
+
+int pcrec_memfn_prov_stanza(mf_prov *p, unsigned long long bytes,
+                            const char *fidelity)
+{
+    uint8_t fid = MF_FID_UNSTATED;
+    if (fidelity) {
+        size_t i = 0;
+        while (i < sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows &&
+               strcmp(prov_fidelity_rows[i].tok, fidelity))
+            i++;
+        if (i == sizeof prov_fidelity_rows / sizeof *prov_fidelity_rows)
+            return -1;
+        fid = prov_fidelity_rows[i].fid;
+    }
+    p->bytes = bytes;
+    p->fidelity = fid;
+    return 0;
+}
+
 /* ---- C10: a site against its DELEG_SITES row ------------------------------ */
 
 /* The MF_TK_* kinds a predicate's terms use. */
