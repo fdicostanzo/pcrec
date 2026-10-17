@@ -152,16 +152,15 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
 
 /* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
  * the one statement that moves a scan position to the next candidate of a
- * one-term byte set — a `memchr` for a one-byte set, a membership-table loop
- * otherwise. Its callers are the DFA prefilter forms (`pf_emit_memchr*`,
- * `pf_emit_bcls*`, `pf_emit_first_*_bounded`, src/gen/emit_dfa.c), the VM
- * attempt loop's seek (`pf_vm_emit_first_class`) and, since [MEMFN] M4, the
- * attempt engine's `(?m)^` skip (`emit_attempt`), so none spells its own
+ * one-term byte set (one member or several; the text the kit writes for each
+ * is the kit's, not stated here). Its callers are the DFA prefilter forms
+ * (`pf_emit_memchr*`, `pf_emit_bcls*`, `pf_emit_first_*_bounded`,
+ * src/gen/emit_dfa.c), the VM attempt loop's seek (`pf_vm_emit_first_class`)
+ * and, since [MEMFN] M4, the attempt engine's `(?m)^` skip (`emit_attempt`), so none spells its own
  * search. It DESCRIBES the statement as one kit site (integration.md §15.7)
  * under the DELEG_SITES row its caller names (`site`: PF, or MLINE) and the
- * kit writes it; it decides nothing. The memchr form's statement is the
- * search, its NULL test and the position store (the hit is a pointer inside
- * the kit's text); the guards around it, and what a miss does, are the
+ * kit writes it; it decides nothing. The statement is the search and the
+ * position store; the guards around it, and what a miss does, are the
  * caller's (`on_miss`, the bounded clamp, the guard after a walk). */
 /* [MEMFN] R17-b' B1 THE ACTIVATION'S ORIGIN (R-19's START hook; r17b_prime.md
  * §2.1 [rev3 A1]): the text every function holding a delegated start-search
