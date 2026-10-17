@@ -53,7 +53,13 @@
 # as B0, lane fdb0) defines the VM hat's one-byte table once per site and uses it
 # at both seeks, so 3204 hat sites count 1 define + 2 uses where they counted two
 # defines (no byte moved; the identity sweeps are 0-mover). Re-read at main's
-# next full N2 census (OWED, fdb0_report.md).
+# next full N2 census (OWED, fdb0_report.md). RE-READ (lane n2fix, the B1+B2
+# census at c0e465e99, b2heavy n2): pf_walk 533563 -> floor(0.9 x 533563) = 480206.
+#
+# The routed finder rows' pcrec floors (lane n2fix, the same census, chosen
+# counts from n2_results.md; floor(0.9 x chosen)): D1 129159 = floor(0.9 x
+# 143510) (pf_memchr 112482 + pf_memchr_bounded 31028), D1c 4287 = floor(0.9 x
+# 4764) (pf_memchr_back), D1w 211402 = floor(0.9 x 234892). The g2 floors of D1/D1c/D1w stay PLACEHOLDER (G2 chooses them 0 times).
 #
 # The finder table's rows (table `fd`, R17-b' B1, lane fdb1): reach
 # `pending-site:<step>` (rows.tsv), so pcrec_floor `-`, and the census reads
@@ -70,7 +76,7 @@ arms	precheck_assign_byte	20790	721
 arms	runcmp	56617	17829
 arms	pf_memchr	80268	3306
 arms	pf_memchr_bounded	25484	2842
-arms	pf_walk	430563	3679
+arms	pf_walk	480206	3679
 arms	pf_walk_bounded	27462	3366
 arms	pf_memchr_back	3271	4109
 arms	mismatch_inplace	2116	2403
@@ -91,9 +97,9 @@ fd	R3b	-	PLACEHOLDER
 fd	R4	-	PLACEHOLDER
 fd	R1	-	PLACEHOLDER
 fd	R2	-	PLACEHOLDER
-fd	D1	PLACEHOLDER	PLACEHOLDER
-fd	D1c	PLACEHOLDER	PLACEHOLDER
-fd	D1w	PLACEHOLDER	PLACEHOLDER
+fd	D1	129159	PLACEHOLDER
+fd	D1c	4287	PLACEHOLDER
+fd	D1w	211402	PLACEHOLDER
 fd	D2	-	PLACEHOLDER
 fd	R7	-	PLACEHOLDER
 fd	R7w	-	PLACEHOLDER
