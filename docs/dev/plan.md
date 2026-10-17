@@ -181,7 +181,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
     next: hand to [REGIME-EVAL] as its J1 judge population (the kit); fix or drop the mislabelled nonenglish files
     refs: [UTF-RW] (pattern harvest sibling); [REGIME-EVAL]; docs/design/regime_tables.md
     Frank: "get some online data. have a 'user' agent read it and come up with some potential questions one might ask." Classes: logs, source code, prose, structured data (CSV/JSON), markup, mixed/binary-ish, non-English. Licensing: no unlicensed text lands in the tree; the committed part is a fetch script + sha256 manifest + PROVENANCE (source, license, date); the bytes live in worktrees/.corpus/ (gitignored). The user agent is BLINDED to pcrec internals (no src/, tests/, bench patterns) so its questions carry no authoring bias (D27's lesson). Held-out population for [REGIME-EVAL].
-  - [WINDOW-E1] STATE:not-started — E-1: pcrec builds the analysis object per compile attempt (with RP and the stamp-union event)
+  - [WINDOW-E1] STATE:started — E-1: pcrec builds the analysis object per compile attempt (with RP and the stamp-union event)
     filed: 2026-10-16 manager (D167 add. 2-3, D162 add. 4)
     status (2026-10-16): designed, window_contract.md rev 3.1 §3.7; not built; sits between the kit's B2 and B3a (R17-b' build GO, D167)
     next: after the kit's B2 merges: E-1, then the render-point commit RP, then the union-over-attempts abi event
