@@ -6403,10 +6403,12 @@ static mf_site *find_site(const PcrecFind *f)
         pcrec_ctx_fail(cx, 0, "internal error: a %s FIND at its candidate offers no "
                        "table (R17-b' B2, PR-1: the candidate set at every count) "
                        "(src/gen/emit_dfa.c, find_site)", pcrec_deleg_sites[f->site].id);
-    if (!f->kind || !f->holdback != (f->on_miss != NULL) || (f->moved && !f->holdback))
+    if (!f->kind || !f->start || !f->holdback != (f->on_miss != NULL) ||
+        (f->moved && !f->holdback))
         pcrec_ctx_fail(cx, 0, "internal error: a %s FIND (consumer kind %u) states no "
-                       "consumer kind, an on_miss that is not its unbounded miss, or a "
-                       "moved hook off a bounded site (src/gen/emit_dfa.c, find_site)",
+                       "consumer kind, no activation origin, an on_miss that is not "
+                       "its unbounded miss, or a moved hook off a bounded site "
+                       "(src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id, (unsigned)f->kind);
     mf_site *s = pcrec_memfn_site(cx, f->site);
     s->form = MF_FORM_STMT;

@@ -218,7 +218,7 @@ typedef struct {
                            * in one call (the byte forms, MLINE)            */
     const char *start;    /* [MEMFN] R17-b' B1 the activation's origin text
                            * (R-19's START hook, PCREC_MF_ORIGIN), stated by
-                           * every builder                                   */
+                           * every builder: NULL is refused (find_site)      */
     uint8_t     kind;     /* [MEMFN] R17-b' B2 the consumer kind (PR-3,
                            * mf_site_kind), stated by every builder: 0 is
                            * refused (find_site)                             */
