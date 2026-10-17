@@ -314,7 +314,7 @@ index 7c0a77464..000000000
 -[ "$fail" -eq 0 ]
 diff --git a/tests/mech/sabotages/S1080_reach-counter-lever-off.sh b/tests/mech/sabotages/S1080_reach-counter-lever-off.sh
 deleted file mode 100755
-index 2d1812cee..000000000
+index 520dec399..000000000
 --- a/tests/mech/sabotages/S1080_reach-counter-lever-off.sh
 +++ /dev/null
 @@ -1,17 +0,0 @@
@@ -330,14 +330,14 @@ index 2d1812cee..000000000
 -SAB_FILE="src/gen/memfn_sites.c"
 -SAB_SUITES="memfnfinder"
 -SAB_DESC="pcrec arms the arm-entry counter on every harness compile, the lever off included"
--SAB_DOC_FIGURE="PENDING: lane fdb2fix's solo mech run of this row is owed (docs/dev/lanes/fdb2_report.md §10); no figure is measured yet."
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1080) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 6fail/886pass (docs/dev/lanes/fdb2land_report.md)."
 -SAB_EXPECT=DETECTED
 -SAB_COUNT=1
 -SAB_BEFORE='        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->arm_reach &&'
 -SAB_AFTER='        if (cx->emit_in && cx->emit_in->harness &&   /* SABOTAGE S1080 */'
 diff --git a/tests/mech/sabotages/S1081_reach-counter-never-counts.sh b/tests/mech/sabotages/S1081_reach-counter-never-counts.sh
 deleted file mode 100755
-index 041bc98c2..000000000
+index c522573e8..000000000
 --- a/tests/mech/sabotages/S1081_reach-counter-never-counts.sh
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -349,14 +349,14 @@ index 041bc98c2..000000000
 -SAB_FILE="memfn/src/compose.c"
 -SAB_SUITES="memfnfinder"
 -SAB_DESC="the arm-entry counter's statement adds 0: an entered arm reads 0"
--SAB_DOC_FIGURE="PENDING: lane fdb2fix's solo mech run of this row is owed (docs/dev/lanes/fdb2_report.md §10); no figure is measured yet."
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1081) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 6fail/891pass (docs/dev/lanes/fdb2land_report.md)."
 -SAB_EXPECT=DETECTED
 -SAB_COUNT=1
 -SAB_BEFORE='        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d]++; }\n",'
 -SAB_AFTER='        kit_out(body, "%s{ extern unsigned long %s[]; %s[%d] += 0; }\n",   /* SABOTAGE S1081 */'
 diff --git a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh b/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
 deleted file mode 100755
-index 9aad134af..000000000
+index 95b000209..000000000
 --- a/tests/mech/sabotages/S1084_reach-counter-kit-unasked.sh
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -372,7 +372,7 @@ index 9aad134af..000000000
 -SAB_FILE="memfn/src/compose.c"
 -SAB_SUITES="memfnfinder"
 -SAB_DESC="mf_use writes the arm-entry counter on every routed site, the lever off included"
--SAB_DOC_FIGURE="MEASURED 2026-10-16 by lane fdb2fix, solo (run_sabotage_matrix.sh S1084): DETECTED, memfnfinder 5fail/880pass (docs/dev/lanes/fdb2_report.md §10.3). The memfnfinder arm's counts changed with run_finder.sh's summed totals after this run; re-read from a run."
+-SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1084) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 11fail/881pass (docs/dev/lanes/fdb2land_report.md)."
 -SAB_EXPECT=DETECTED
 -SAB_COUNT=1
 -SAB_BEFORE='    if (r->reach_k >= 0)

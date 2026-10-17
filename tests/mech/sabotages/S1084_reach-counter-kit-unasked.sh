@@ -10,7 +10,7 @@ SAB_ID="S1084-reach-counter-kit-unasked"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="memfnfinder"
 SAB_DESC="mf_use writes the arm-entry counter on every routed site, the lever off included"
-SAB_DOC_FIGURE="MEASURED 2026-10-16 by lane fdb2fix, solo (run_sabotage_matrix.sh S1084): DETECTED, memfnfinder 5fail/880pass (docs/dev/lanes/fdb2_report.md §10.3). The memfnfinder arm's counts changed with run_finder.sh's summed totals after this run; re-read from a run."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1084) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 11fail/881pass (docs/dev/lanes/fdb2land_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (r->reach_k >= 0)

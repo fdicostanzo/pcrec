@@ -10,7 +10,7 @@ SAB_ID="S1082-walk-post-test-dropped"
 SAB_FILE="memfn/src/pffind.c"
 SAB_SUITES="memfnfinder"
 SAB_DESC="pf_walk no longer writes the post-test an empty-MISS site needs (KW-3)"
-SAB_DOC_FIGURE="MEASURED 2026-10-16 by lane fdb2fix, solo (run_sabotage_matrix.sh S1082): DETECTED, memfnfinder 2fail/883pass (docs/dev/lanes/fdb2_report.md §10.3). The memfnfinder arm's counts changed with run_finder.sh's summed totals after this run; re-read from a run."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1082) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 2fail/900pass (docs/dev/lanes/fdb2land_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (r->site.empty == MF_EMPTY_MISS)
