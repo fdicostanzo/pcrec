@@ -415,6 +415,11 @@ static const char *req_handoff_stamp(Ctx *cx);
 /* [REQ-HANDOFF-L1] does the forward scan RE-ENTER the handoff (NEXT's
  * `handoff` row)? Defined beside that row; the entry's text reads it. */
 static bool req_reentered(Ctx *cx);
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8), defined beside the picks it
+ * compares (after `req_reentered`); `req_site_define` calls it. */
+static void req_pick_shadow(Ctx *cx, const mf_site *site);
+#endif
 
 /* This file's arena-owned fragment formatter, defined below with its reason;
  * declared here because the run pre-check's emitter precedes it. */
@@ -1575,6 +1580,54 @@ static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
     return MF_SK_UNSTATED;
 }
 
+/* [MEMFN] R17-b' B3a THE PRESENCE SPANS, STATED (r17b_prime.md §3.1 row B3a,
+ * §4.1; PR-5, PR-6, PR-7): every member of the necessary set its own one-byte
+ * span and the whole run, when one shipped, one span with its mask (members
+ * in descending byte order, the run last), each with its NEED: REQUIRED
+ * where no DFA scan fronts the route (the pre-check is then the call's only
+ * linear no-match proof: K65's every member and K66's whole run, §4.6),
+ * OPTIONAL elsewhere (a DFA scan proves absence itself); `omin` 0, PR-6's
+ * sound under-estimate (presence is measured from the match start, and every
+ * occurrence lies at or after it); `member_order` the one pattern position
+ * the set carries, its walk's threaded rightmost (the last necessary byte),
+ * every other member MF_ORDER_UNKNOWN. A fact a deny removed is empty, so
+ * its span is not stated (`-fno-req-byte`, `-fno-req-run`). Read through the
+ * facts' NON-pass reads (`pcrec_fact_req_set_stated`, Q-WR-12): nothing in
+ * this compile consumes the statement before B3b, so `used` stays today's.
+ * The ONE constructor: the define states it, and the trace build's five-pick
+ * shadow describes a declined pre-check with it. NULL with *n 0 where
+ * nothing is necessary. */
+static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
+{
+    const ReqSet *set = pcrec_fact_req_set_stated(cx);
+    const ReqRun *run = pcrec_fact_req_whole_run_stated(cx);
+    mf_need need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
+    int nm = 0, k = 0;
+    for (int b = 0; b < 256; b++) nm += (set->bits[b >> 3] >> (b & 7)) & 1;
+    int np = nm + (run->whole_len >= 2);
+    *n = (uint16_t)np;
+    if (!np) return NULL;
+    mf_pred *p = pcrec_memfn_preds(cx, np);
+    for (int b = 255; b >= 0; b--) {
+        if (!((set->bits[b >> 3] >> (b & 7)) & 1)) continue;
+        pcrec_memfn_term_byte(&p[k].term[0], 0, b, need);
+        p[k].member_order = b == set->rightmost ? (uint16_t)nm : (uint16_t)MF_ORDER_UNKNOWN;
+        k++;
+    }
+    if (run->whole_len >= 2)
+        pcrec_memfn_term_run(&p[k++].term[0], 0, run->whole,
+                             run_mask_or_null(run->whole_mask, run->whole_len),
+                             run->whole_len, need);
+    for (int i = 0; i < np; i++) {
+        p[i].nterm = 1;
+        p[i].need = need;
+        p[i].plan_hint = MF_NO_PRED;
+        p[i].span_class = MF_SPAN_PRESENCE;
+        p[i].omin = 0;
+    }
+    return p;
+}
+
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
  * NULL, and nothing defined, where no pre-check is emitted. Each predicate
  * is read from the call the text writers above read: the admission, the
@@ -1598,6 +1651,9 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     }
     if (!req_admit_emits(req_admit(cx))) {
         PCREC_CAND_TRACE_REC("PRESENCE", "-", "declined", "req-site");
+#ifdef PCREC_CAND_TRACE
+        req_pick_shadow(cx, NULL);
+#endif
         return NULL;
     }
     if (pcrec_fact_req_run(cx)->len >= 2) {
@@ -1654,6 +1710,14 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->npred = (uint16_t)np;
     s->preds = p;
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
+    /* [MEMFN] R17-b' B3a the presence spans, STATED and unrouted (no
+       renderer reads them: `preds` above stays the rendered pre-check), and
+       K as `head_max` where the site hands its landmark on (PR-6) */
+    s->pspans = req_pres_spans(cx, &s->npspan);
+    s->head_max = handoff ? (uint64_t)pcrec_fact_req_landmark_maxoff(cx) : 0;
+#ifdef PCREC_CAND_TRACE
+    req_pick_shadow(cx, s);
+#endif
 
     PcrecMfU u = { cx, s, pre, NULL };
     mf_hooks h = {
@@ -10027,6 +10091,178 @@ static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
     pcrec_cand_trace_quiet--;
     return r;
 }
+
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8; r17b_prime.md §3.1 row B3a,
+ * §8.1): the kit's PORTS of the five priced presence picks (memfn.h
+ * `mf_pres_ports`) asked over the presence spans this compile STATES, beside
+ * this file's own picks, one `MFPICK` record per pick:
+ *
+ *   MFPICK <pick> <agree> <nontrivial> <differs> <pcrec> <kit> <kind>
+ *
+ * `pick` is set (the necessary set's pick, `req_set_pick`), scan (the run's
+ * scan position in the whole run, the `req_run` fact's `at + idx`), window
+ * (its `at`), leads (`req_set_leads_applies`), dominated (G1,
+ * `req_byte_dominated_by` over `dfa_cand_scan`) and landmark (the K admission,
+ * `req_landmark_admits`, evaluated where NEXT's `handoff-reentry` row prices
+ * it). `agree` 1 iff the two answers are equal. `nontrivial` [rev3 D10]: the
+ * choice has two or more live alternatives (two or more members; a run, whose
+ * positions are its alternatives; two or more candidate windows; set-leads,
+ * G1 and the K admission wherever they are asked); `differs` the pick is not
+ * its family default (not the rightmost member, not the rightmost position,
+ * not the leftmost window, leads, dominated, admitted). One `MFPICKSITE
+ * <state> <kind>` record per shadow: `stated`, or the WITHHOLDING reason
+ * (Q-WR-4: `withheld-one-attempt`, `withheld-whole`), where no span is
+ * stated and no pick is compared.
+ *
+ * THE EXPECTATION IS THIS FILE'S CODE, the subject the kit's port (§10 Q2:
+ * the shadow shares no source with the port). It runs QUIET (no CANDTRACE
+ * record, no CANDROW hit; a check walk, not a read), so the trace record
+ * stream stays the compile's own, and it writes nothing to the artifact.
+ *
+ * SN-6's LEVER: `PCREC_PICK_PLANT=<pick>` perturbs the KIT's answer for that
+ * pick before the compare (another member, the next position or window, the
+ * negated verdict), so a comparator that always agrees is caught by the
+ * planted disagreement it fails to report (tests/memfn/run_pres_picks.sh). */
+static int pick_plant(const char *pick)
+{
+    const char *e = getenv("PCREC_PICK_PLANT");
+    return e && !strcmp(e, pick);
+}
+
+static void pick_rec(const char *pick, int pc, int kit, int nontrivial, int differs,
+                     const char *kind)
+{
+    fprintf(stderr, "MFPICK\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", pick, pc == kit, nontrivial,
+            differs, pc, kit, kind);
+}
+
+static const char *const pick_kind_name[] = {
+    "UNSTATED", "DFA_SCAN", "DFA_HAT", "HYB_PF", "VM_ATTEMPT", "DFA_ATTEMPT",
+};
+
+static void req_pick_shadow(Ctx *cx, const mf_site *site)
+{
+    ReqAdmit adm = req_admit(cx);
+    const char *kind = pick_kind_name[site_kind_of(cx, SKS_PRE)];
+    int base = cand_eval_base;
+    pcrec_cand_trace_quiet++;
+    cand_eval_base = cand_eval_depth;
+    if (adm == REQ_ADMIT_ONE_ATTEMPT) {
+        fprintf(stderr, "MFPICKSITE\twithheld-one-attempt\t%s\n", kind);
+        goto out;
+    }
+    if (adm == REQ_ADMIT_DOMINATED && pcrec_artifact_has_dfa_scan(cx)) {
+        CandSel ls = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                       .route = cand_route_of(cx) };
+        if (CAND_READ(CAND_SLOT_PRESENCE, CAND_SLOT_LOCATE, &ls, "req-whole")->u.locate.whole) {
+            fprintf(stderr, "MFPICKSITE\twithheld-whole\t%s\n", kind);
+            goto out;
+        }
+    }
+    {
+        mf_site *d = NULL;
+        if (!site) {        /* the pre-check pcrec declines (G1): described, never defined */
+            d = pcrec_memfn_site(cx, DELEG_PRE);
+            d->body = MF_BODY_ONESHOT;
+            d->form = MF_FORM_STMT;
+            d->op = MF_OP_ALL_PRESENT;
+            d->handoff = MF_H_ON_MISS;
+            d->empty = MF_EMPTY_MISS;
+            d->use = MF_USE_DISCARD;
+            d->site_kind = site_kind_of(cx, SKS_PRE);
+            d->pspans = req_pres_spans(cx, &d->npspan);
+            site = d;
+        }
+        _Static_assert(MF_PRES_WINDOW == PCREC_MAX_REQ_RUN_EMIT,
+                       "the kit's verbatim window port is pcrec's pre-check window");
+        const ReqSet *set = pcrec_fact_req_set_stated(cx);
+        const ReqRun *run = pcrec_fact_req_whole_run_stated(cx);
+        int nm = 0;
+        for (int b = 0; b < 256; b++) nm += (set->bits[b >> 3] >> (b & 7)) & 1;
+        CandScan cs;
+        dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
+        mf_pres_proof proof = { (int16_t)cs.byte, (uint8_t)cs.one_byte,
+                                (uint8_t)cs.run_verified };
+        /* the K admission's displaced row, where NEXT prices it */
+        UnanchStart us;
+        CandSel ns = { 0 };
+        bool priced = false;
+        uint8_t disp[32], *dp = NULL;
+        if (site->handoff == MF_H_ASSIGN && cand_route_of(cx) == CAND_ROUTE_DFA &&
+            pcrec_artifact_has_dfa_scan(cx) && cand_finish_of(cx) != CAND_ROUTE_VM) {
+            unanch_start(cx, &us);
+            if (!us.empty) {
+                ns = (CandSel){ .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true,
+                                .st = -1, .route = CAND_ROUTE_DFA,
+                                .ss = pcrec_fact_start_set(cx) };
+                priced = true;
+                const CandRow *below = cand_select(CAND_SLOT_NEXT, &ns,
+                                                   cx->opt->flags | PCREC_NO_REQ_HANDOFF);
+                if (below->u.pf.scan == PF_SCAN_BYTE || below->u.pf.scan == PF_SCAN_SET) {
+                    CandSet bs;
+                    pf_scan_set_of(cx, ns.d, ns.us, below, &bs);
+                    memset(disp, 0, sizeof disp);
+                    for (int b = 0; b < 256; b++)
+                        if (bs.set[b]) disp[b >> 3] |= (uint8_t)(1u << (b & 7));
+                    dp = disp;
+                }
+            }
+        }
+        mf_pres_picks k;
+        if (mf_pres_ports(pcrec_memfn_art(cx), site, &proof, dp, &k)) {
+            fprintf(stderr, "MFPICKSITE\tport-refused\t%s\n", kind);
+            goto out;
+        }
+        fprintf(stderr, "MFPICKSITE\tstated\t%s\n", kind);
+        /* set */
+        int pc = req_set_pick(cx);
+        int kb = k.set_pick >= 0 ? mf_term_byte(&site->pspans[k.set_pick].term[0]) : -1;
+        if (pick_plant("set") && nm >= 2)
+            kb = mf_term_byte(&site->pspans[(k.set_pick + 1) % nm].term[0]);
+        pick_rec("set", pc, kb, nm >= 2, pc >= 0 && pc != set->rightmost, kind);
+        /* the run: scan position and window */
+        if (run->whole_len >= 2) {
+            const ReqRun *w = pcrec_fact_req_run(cx);
+            int n = run->whole_len, ps = w->at + w->idx, ks = k.run_scan;
+            if (pick_plant("scan")) ks = (ks + 1) % n;
+            pick_rec("scan", ps, ks, 1, ps != n - 1, kind);
+            int lo_s = ps - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = ps;
+            if (lo_s < 0) lo_s = 0;
+            if (hi_s > n - PCREC_MAX_REQ_RUN_EMIT) hi_s = n - PCREC_MAX_REQ_RUN_EMIT;
+            int kw = k.run_window;
+            if (pick_plant("window")) kw = kw + 1;
+            pick_rec("window", w->at, kw, n > PCREC_MAX_REQ_RUN_EMIT && hi_s > lo_s,
+                     n > PCREC_MAX_REQ_RUN_EMIT && w->at != lo_s, kind);
+        }
+        /* set-leads */
+        {
+            CandSel ls = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                           .route = CAND_ROUTE_DFA };
+            int pl = req_set_leads_applies(&ls), kl = k.set_leads < 0 ? 0 : k.set_leads;
+            if (pick_plant("leads")) kl = !kl;
+            if (k.set_leads >= 0 || pl) pick_rec("leads", pl, kl, 1, pl, kind);
+        }
+        /* G1 */
+        {
+            int pd = req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte(cx));
+            int kd = k.dominated < 0 ? 0 : k.dominated;
+            if (pick_plant("dominated")) kd = !kd;
+            pick_rec("dominated", pd, kd, cs.byte >= 0, pd, kind);
+        }
+        /* the fifth, where NEXT prices it */
+        if (priced) {
+            int pl = req_landmark_admits(&ns, pcrec_fact_req_landmark_maxoff(cx));
+            int kl = k.landmark < 0 ? 0 : k.landmark;
+            if (pick_plant("landmark")) kl = !kl;
+            pick_rec("landmark", pl, kl, 1, pl, kind);
+        }
+    }
+out:
+    cand_eval_base = base;
+    pcrec_cand_trace_quiet--;
+}
+#endif
 
 /* A hand's listing alias (locate_finish.md §1.2) for the trace and the
  * self-check; `AT` and `WINDOW` share a mask and differ by slot (a FINISH

@@ -475,6 +475,77 @@ static const char *window_check(const mf_site *s)
     return NULL;
 }
 
+/* THE PRESENCE CLASS's rules (MF_SITE_ABI 16, R17-b' B3a; r17b_prime.md
+ * §4.1, window_contract C-1/C-2), NULL iff they hold. Every predicate the
+ * site renders from (`pred`, `preds[]`) states no class, no `omin` and no
+ * member order: those are a presence span's facts. A presence span (an entry
+ * of `pspans`, an ALL_PRESENT site's only) is one term, PRESENCE, states no
+ * window (C-1: no `omax`), an `omin` >= 0, a need, and a member order exactly
+ * when it is one byte of a necessary set. `head_max` is an ALL_PRESENT
+ * site's. */
+static const char *pres_pred_clear(const mf_pred *p)
+{
+    if (p->span_class || p->omin || p->member_order)
+        return "a rendered predicate states a presence class (`span_class`, `omin` "
+               "or `member_order`): only an `pspans` entry is a presence span";
+    return NULL;
+}
+
+const char *kit_presence_check(const mf_site *s)
+{
+    const char *why = pres_pred_clear(&s->pred);
+    for (unsigned i = 0; !why && s->preds && i < s->npred; i++)
+        why = pres_pred_clear(&s->preds[i]);
+    if (why) return why;
+    if (s->op != MF_OP_ALL_PRESENT) {
+        if (s->npspan || s->pspans)
+            return "`pspans` is for an ALL_PRESENT site only (the pre-check composite)";
+        if (s->head_max) return "`head_max` is for an ALL_PRESENT site only";
+        return NULL;
+    }
+    if (s->npspan > MF_MAX_PRES) return "npspan > MF_MAX_PRES";
+    if (s->npspan && !s->pspans) return "`npspan` without `pspans`";
+    if (!s->npspan && s->pspans) return "`pspans` without `npspan`";
+    if (s->head_max && s->handoff != MF_H_ASSIGN)
+        return "`head_max` is stated only where the site ASSIGNs its landmark";
+    unsigned nrun = 0;
+    for (unsigned i = 0; i < s->npspan; i++) {
+        const mf_pred *p = &s->pspans[i];
+        uint32_t kinds = 0;
+        if (p->span_class != MF_SPAN_PRESENCE)
+            return p->span_class == MF_SPAN_UNSTATED
+                 ? "a `pspans` entry leaves `span_class` UNSTATED (0 is no class)"
+                 : "a `pspans` entry states a class other than PRESENCE (`span_class`; "
+                   "BOUNDED and CONTEXT are reserved)";
+        if (!pred_kinds(p, &kinds, &why)) return why;
+        if (p->nterm != 1) return "a presence span is ONE term (`pspans`, PR-5)";
+        if (p->window_stated || p->move_back || p->overshoot)
+            return "a presence span states no window (`window_stated` 0: C-1, no omax)";
+        if (p->omin < 0) return "a presence span's `omin` is below the match start";
+        if (p->plan_hint != MF_NO_PRED || p->plan_pos || p->fn_ref || p->rank_n)
+            return "a presence span carries no plan (`plan_hint`, `plan_pos`, `fn_ref`, "
+                   "`rank_n`): the ports decide it";
+        const mf_term *t = &p->term[0];
+        if (t->offset != 0) return "a presence span's term sits at offset 0";
+        if (t->kind == MF_T_RUN) {
+            if (p->member_order) return "a RUN presence span states no `member_order`";
+            if (t->run_len < 2) return "a RUN presence span is at least two positions";
+            if (++nrun > 1) return "at most one RUN presence span (the whole run)";
+        } else if (t->kind == MF_T_SET) {
+            unsigned m = 0;
+            for (unsigned b = 0; b < 32; b++) m += (unsigned)__builtin_popcount(t->set[b]);
+            if (m != 1) return "a SET presence span is ONE member (PR-5: unpicked)";
+            if (p->member_order == 0)
+                return "a member presence span leaves `member_order` UNSTATED (0)";
+            if (p->member_order != MF_ORDER_UNKNOWN && p->member_order > 256)
+                return "`member_order` beyond 256 members";
+        } else {
+            return "a presence span is a SET or a RUN term";
+        }
+    }
+    return NULL;
+}
+
 static const char *site_check(const mf_site *s)
 {
     const char *why = NULL;
@@ -556,6 +627,7 @@ static const char *site_check(const mf_site *s)
             if (s->pred.term[t].offset < 0)
                 return "guard_by_caller needs every term offset >= 0";
     }
+    if ((why = kit_presence_check(s))) return why;
     return window_check(s);
 }
 

@@ -264,6 +264,12 @@ struct mf_art {
     char        err[256];
 };
 
+#define kit_presence_check MF_NS(kit_presence_check)
+/* The presence class's rules (compose.c), NULL iff the site holds them: a
+ * part of site_check (mf_define, mf_ask), and the whole of what
+ * mf_pres_ports checks (it reads the presence spans and nothing else). */
+const char *kit_presence_check(const mf_site *s);
+
 #define kit_fail MF_NS(kit_fail)
 /* Records the first internal error on the artifact; always returns -1. */
 int kit_fail(mf_art *art, const char *fmt, ...) __attribute__((format(printf, 2, 3)));

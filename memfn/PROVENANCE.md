@@ -45,6 +45,7 @@ the change that adds the file.
 | `src/fields.def` | original | 0BSD | the row contracts' field and class table ([MEMFN-ROWCON] N1); no artifact text |
 | `src/gate.c` | original | 0BSD | the row-contract gate and the MF_TRACE records ([MEMFN-ROWCON] N1); no artifact text |
 | `src/finder.c` | original | 0BSD | THE FINDER TABLE (R17-b' B1): `fd_rows[]`, its walk, lookups and pay rule, the shadow's `MFTRACE FD` records and the `mf_finder_rows()` listing; no artifact text (no finder row is routed at B1) |
+| `src/presence.c` | original | 0BSD | THE FIVE-PICK PORTS (R17-b' B3a, KW-8): `mf_pres_ports`, the kit's ports of the host's priced presence picks over the stated presence spans and the analysis object's frequency kind; a pure query, no artifact text (the PRES rows route over it at B3b) |
 | `src/terms.c` | pcrec 608dc8b44: R17-b's cover search (`mf_set_terms`, lane memfn-fd), carried at B1; original kit text | 0BSD | the set-membership cover a finder row reads as `shape`; no artifact text at B1 (its renderers land at B4) |
 | `src/formhash.c` | original | 0BSD | `mf_form_hash()` / `mf_form_hash_text()` (R-MS3): a form's normalized-text identity; no artifact text |
 
