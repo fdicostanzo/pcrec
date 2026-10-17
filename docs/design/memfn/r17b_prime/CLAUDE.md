@@ -41,3 +41,9 @@ Revision 2 of the note (lane r17bp3, 2026-10-14) adds no instrument and
 re-runs none. It cites these transcripts as revision 1's evidence, which was
 taken on the KIT branch (R17-b built); its step plan re-counts every
 population against MAIN at each build step (`../r17b_prime.md` §3.5).
+
+- `grid2read/` — the reading of the zen4-grid2 timing slot (lane grid2read,
+  2026-10-16, analysis only): `grid2read.py`/`grload2.py`, the full output
+  `analysis.txt`, the proposed `kit-grid@2` rows `keys.tsv`, and `SHA256SUMS`
+  of the 18 slot files read. Own CLAUDE.md; the report is
+  `docs/dev/lanes/grid2read_report.md`.
