@@ -1709,21 +1709,21 @@ are the whole set:
 | value | mechanism |
 |---|---|
 | `"none"` | no candidate-start filter: the start state accepts (`start_acc` — no skip is sound; the largest cause, e.g. `a*`, `.*`, `\bx*`), every position is a candidate, or the artifact provably matches nothing |
-| `"memchr"` | one candidate byte value at offset 0; a `memchr()` replaces the steps |
+| `"memchr"` | one candidate byte value at offset 0; a search for that one byte replaces the steps. The value names pcrec's row, not the search's form: the kit renders the search (`registry.md` §6¶8a, `fd-d1`) |
 | `"byte-class"` | several at offset 0; a 256-entry `<prefix>_can_begin_match` bitmap walk |
-| `"memchr-bounded"` | the `memchr` form under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and without the early `return 0` |
+| `"memchr-bounded"` | the `memchr` row's one-byte search under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and without the early `return 0` |
 | `"byte-class-bounded"` | the bitmap form under the same, bounded at `n - 1` |
 | `"offset-set"` | a SET of (offset, byte-set) tests, one scanned for and the rest verified on each candidate (`<PREFIX>_DFA_PREFILTER_OFFSETS`) |
 | `"offset-set-bounded"` | the offset-set form under a view or word context, bounded at `n - 1` |
 | `"run-pinned"` | the necessary run (`<PREFIX>_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on its scan member there, so the candidate test verifies the whole run as one compare — the offset-set block with the run as one term; the run pre-check is then not emitted (`<PREFIX>_REQ_WHY "dominated"`). Removed by `-fno-run-prefilter` or `-fno-offset-skip` |
 | `"run-pinned-bounded"` | the run-pinned form under a view or word context, bounded at `n - 1` |
-| `"first-memchr-bounded"` | on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's start set `T` (the `start_set` fact) where `T` is a proper subset of `E` — here one byte, a `memchr()`; bounded at `n - 1`; a skip that moved re-seeds the scan state from the byte before its landing (`tuning.md` §2.42). Removed by `-fno-start-set` |
+| `"first-memchr-bounded"` | on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's start set `T` (the `start_set` fact) where `T` is a proper subset of `E` — here one byte, searched for as one candidate byte; bounded at `n - 1`; a skip that moved re-seeds the scan state from the byte before its landing (`tuning.md` §2.42). Removed by `-fno-start-set` |
 | `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. There is no unbounded start-set form: a seeded machine always carries the D11 bound |
 | `"handoff"` | the pre-check's handoff RE-ENTERED (`tuning.md` §2.41): where `<PREFIX>_REQ_HANDOFF` is a number `K`, at each point the forward scan is back at its start state with nothing accepted, the pre-check's landmark (the run window, or the one byte `<PREFIX>_REQ_BYTE`) is found again from the scan position by the same gate (the hit the entry kept, while it is still ahead), no hit returns 0, and the scan moves to `hit - K` where that is ahead, rounded up to a character start and re-seeded where the machine seeds. Applies only where, under the byte-rate prior (`<PREFIX>_FINDINGS`), the landmark's mean gap less `K` exceeds the mean gap of the start-byte set the row would otherwise scan (`tuning.md` §2.41¶8a). Removed by `-fno-req-handoff`, with the handoff itself |
 
 <a id="s6-3-4-p4"></a>[6.3.4¶4] The `-bounded` forms are a real difference in what the mechanism buys: under
 a view, a skip may not pass a position whose accept has not been evaluated,
-so every skip stops one byte short and the `memchr` arm loses its early-out.
+so every skip stops one byte short and the one-byte row loses its early-out.
 
 <a id="s6-3-4-p5"></a>[6.3.4¶5] **`<PREFIX>_DFA_PREFILTER_OFFSETS`** — which offsets the filter tests, as a
 comma-separated ascending list of byte offsets from the candidate's start,
