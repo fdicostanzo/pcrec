@@ -533,3 +533,17 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Facts only (D157):** pcrec states which body each site has; how the kit acts on it is the kit's.
 
 **Sabotage ids:** kit-side on request (next free main ledger id S1089).
+
+## R-24 (2026-10-17, pcrec manager) — `mf_prov` carries the answering block's `bytes` and `fidelity`
+
+**Customer:** E-1 ([WINDOW-E1], lane/e1build, departure D1; window_contract.md rev 3.1 §3.1 and §3.7.1 "provenance in the block"; D162 addendum 4). The kit's B1 declaration of `mf_prov` (memfn/include/memfn.h) has `source`/`bundle`/`digest`/`payload` but not the two fields §3.1 says B1 owes. E-1 therefore carries them on pcrec's side only (`PcrecFindTblBlock.prov_bytes`/`prov_fidelity`, `PcrecFindOffer`, the `KSRCTRACE object` record).
+
+| item | what pcrec needs (facts) | landing bar | needed by |
+|---|---|---|---|
+| R-24 | `mf_prov` gains `bytes` (the exemplar byte count the answering block declares; 0 when it declares none) and `fidelity` (the block's closed fidelity token, with an UNSTATED zero and the values pcrec's findings vocabulary defines). pcrec's mapping in src/gen/memfn_sites.c fills both in the same change (two lines) | one MF_SITE_ABI event with its readers found by grep; zero artifact movers on every emit_sweep arm; a G2/finder fixture stating each fidelity value; no kit row READS the two fields before B3a | before B3a (its ported picks read the object) |
+
+**Note:** pcrec already applies D162 add. 4 itself: a block declaring `fidelity synthesized` is stated as `MF_PROV_PRIOR_AUTHORED`, never `measured` (E-1's D2, accepted by the manager 2026-10-17), so the kit never has to re-derive it from `fidelity`.
+
+**Facts only (D157):** pcrec states where its knowledge came from; how the kit weighs it is the kit's.
+
+**Sabotage ids:** kit-side on request (next free main ledger id S1092).
