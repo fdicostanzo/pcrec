@@ -8,7 +8,7 @@ tests/memfn/{site_manifest,search_vocab}.tsv). ROW_FLOOR is the K35 floor
 on the manifest's row count; the caller (run_site_manifest.sh) passes its
 own literal, which shares no source with the manifest.
 
-The four failure rules (§R4.3.4):
+The five failure rules (§R4.3.4):
   1. static half: a function under src/gen/ or src/enc/ spells a vocabulary
      form and no `pending` row names it;
   2. dynamic half: a pcrec function calls mf_define/mf_emit (directly, or
@@ -21,6 +21,9 @@ The four failure rules (§R4.3.4):
   3. a `delegated` row's emitter still spells a form (two spellings of one
      search, D122) -- vacuous while there are no delegated rows, and said so;
   4. a `pending` row's emitter spells nothing: the row is stale.
+  5. the `kinds` column against the corpus pass: a kind a site stated over
+     the pass that its row does not list, or a listed kind no site stated
+     (K35: the column is the population); UNSTATED is no kind;
 Plus the manifest's own shape: two-state status, unique ids, every named
 function and companion defined, and the row count at or above the floor.
 
@@ -74,7 +77,25 @@ def read_tsv(path, ncol):
     return rows
 
 
-def rule2(root, cc, deleg_rows):
+def rule5(per_kinds, row_kinds):
+    """Rule 5: the kinds column against the corpus pass. per_kinds maps a
+    site id to the set of kinds its instances stated over the pass
+    (site_census.door_kinds: the kind each door call's mf_site stated, keyed
+    by its DELEG_SITES row, UNSTATED dropped as no kind). Both directions: an
+    observed kind the column does not list, and a listed kind never observed
+    (the column is the population)."""
+    for site, ks in sorted(row_kinds.items()):
+        seen = per_kinds.get(site, set())
+        for k in sorted(seen - ks):
+            bad('rule 5: %s: a site stated kind %s, which its kinds column does not list' % (site, k))
+        for k in sorted(ks - seen):
+            bad('rule 5: %s: its kinds column lists %s and no corpus-pass site stated it '
+                '(a stale column, or a witness missing from the corpus)' % (site, k))
+    if row_kinds:
+        ok('rule 5: every kinds column matches the kinds the corpus pass observed')
+
+
+def rule2(root, cc, deleg_rows, row_kinds):
     """Rule 2, the dynamic half, re-keyed to the kit's API (R4c, Q3): a call to
     mf_define/mf_emit from a pcrec function no `delegated` row names, counted
     over a corpus compile pass. tests/memfn/site_census.py has the mechanism."""
@@ -137,6 +158,7 @@ def rule2(root, cc, deleg_rows):
                  ', '.join('%s %d' % kv for kv in sorted(st['seen'].items()))))
         for p in probs:
             bad(p)
+        rule5(site_census.door_kinds(per), row_kinds)
         if not probs:
             ok('rule 2 (dynamic half): every function that reached the kit over the corpus pass '
                'is named by a delegated row, and every delegated row was rendered')
@@ -197,13 +219,21 @@ def main():
           'tests/memfn/run_form_checks.sh)' % memchr)
 
     # -- the manifest's shape ----------------------------------------------
-    rows = read_tsv(mpath, 8)
+    rows = read_tsv(mpath, 9)
+    sk_vocab = site_census.mf_site_kinds(root)        # memfn.h's mf_site_kind, read independently
+    row_kinds = {}       # site id -> the kinds its column declares
     seen = {}
     pend_fns, deleg_fns = {}, {}
     deleg_rows = {}      # delegated row id -> its emitters and companions
     counts = {s: 0 for s in STATUSES}
-    for n, (site, emitters, _op, budget, _step, status, comps, _ref) in rows:
+    for n, (site, emitters, _op, kinds, budget, _step, status, comps, _ref) in rows:
         where = '%s:%d (%s)' % (os.path.relpath(mpath, root), n, site)
+        ks = set() if kinds == '-' else set(kinds.split(','))
+        for k in sorted(ks - sk_vocab):
+            bad('%s: kind %r is not an mf_site_kind member (MF_SK_*) in memfn.h' % (where, k))
+        if 'UNSTATED' in ks:
+            bad('%s: UNSTATED is not a kind a site may state' % where)
+        row_kinds[site] = ks
         if site in seen:
             bad('%s: duplicate site id (first at line %d)' % (where, seen[site]))
         seen.setdefault(site, n)
@@ -250,7 +280,7 @@ def main():
            'form is named by a pending row' % len(spells))
 
     # -- rule 2: an unlisted site, dynamic half ----------------------------
-    rule2(root, cc, deleg_rows)
+    rule2(root, cc, deleg_rows, row_kinds)
 
     # -- rule 3: a delegated row whose emitter still spells a form ----------
     if counts['delegated'] == 0:

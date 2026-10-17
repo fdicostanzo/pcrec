@@ -14,7 +14,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   emits (13 at R4a: PF, PRE, OFS, SETREST, VERIFY, VMRUN, STAY, EDGE,
   VMSPAN, MLINE, N6, VMSTRIDE, N7; N6 RETIRED since, D147 add. 12). Each row has its emitters (the functions
   that SPELL the form), op/handoff, D91 budget, migration step and status,
-  plus companions (moved with the site, spell nothing). Status is exactly
+  plus companions (moved with the site, spell nothing), and the `kinds`
+  column (R17-b' B2: the mf_site_kind names the row's sites state, `-` for
+  none; rule 5 holds it to the corpus pass both ways). Status is exactly
   `pending` or `delegated`. At R4a every row is `pending`, and each
   migration step's REPLACE commit flips its rows. The header documents the
   columns. R4h (M3) flipped STAY, EDGE and VMSPAN (9 delegated / 4 pending);
@@ -108,7 +110,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   forwarding to the kit, relinks over a copy of `build/libpcrec.a`; pcrec
   grows no tracing hook), `corpus_patterns`/`run_corpus` (a deterministic
   sample of the `.rxt` `pattern` lines, K35 floor 100 compiles), `verdict`
-  and `selftest`. Proven end to end on a scratch tree with a planted caller
+  and `selftest`. Every trace record is (kind, file, function, site,
+  site_kind): a door call's `site` is its DELEG_SITES row id and `site_kind`
+  the mf_site_kind name its `mf_site` states (the door shim reads both; no
+  src/ line), `door_kinds` folds them per row for rule 5. Proven end to end on a scratch tree with a planted caller
   (report §2); live on pcrec's own callers since R4c (r4cfix: the door
   shim, `door_shim`/`DOORS`, traces the builders behind `pcrec_memfn_define`;
   M1b added the door `pcrec_memfn_emit`).
@@ -390,7 +395,16 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `mf_vocab_has` (a probe linked against `build/libpcrec.a`), `MF_P_INLOOP`
   in code only in `src/gen/memfn_sites.c`, and no by-value `mf_site`/
   `mf_pred`/`mf_result` under `src/`, with two planted controls (VMSTRIDE
-  joined `D91_LOOP` at M6: the strided span loop runs per VM step). Its
+  joined `D91_LOOP` at M6: the strided span loop runs per VM step); and
+  check 5 (R17-b' B2, lane c1017), the one-byte consumer-kind fixtures of
+  **c10_onebyte.tsv** (flags, pattern, site, kind; one per kind, NO kit row
+  column, D157) read from the MFROUTED records of a `-DPCREC_CAND_TRACE`
+  build under `PCREC_MF_ROUTE_TRACE=1`: the fixture's site holds a routed
+  record of its kind, no other STATED kind appears, UNSTATED records are
+  skipped by name, and the file's distinct kinds must cover the five in the
+  script's `C10_KINDS` literal. PRE's four kinds have no witness while PRE is
+  unrouted. Two planted fixture files (a kind swapped, a kind dropped; awk,
+  portable to the Mac) must be flagged. Its
   per-instance half is pcrec's own, at compile time
   (`pcrec_memfn_check_use`, `deleg_check` in `src/gen/memfn_sites.c`).
 
@@ -595,8 +609,11 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   now delegated, to MLINE's `emit_attempt`; at M4 from MLINE, delegated, to
   VMSTRIDE's `vm_stride_loop`).
 - S512: deleting a row trips the floor.
+- S1091: the PF row also lists DFA_ATTEMPT, a kind no PF site states over
+  the corpus pass: rule 5 (the `kinds` column is the population) flags the
+  listed-never-observed kind. Detected, 1 failed / 13 passed.
 
-All three are on arm `memfnmanifest`. See
+All four are on arm `memfnmanifest`. See
 `docs/dev/lanes/memfnmanifest_report.md` §4 for the transcripts.
 
 R4c (lane r4cchecks) adds S518-S529: S518/S519/S520/S521 (C4 classes 1, 3,

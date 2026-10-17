@@ -1,0 +1,25 @@
+# tests/memfn/c10_onebyte.tsv -- C10's one-byte fixtures (R17-b' B2, r17b_prime.md
+# rev 3 §3.1 row B2 [rev3 A8]). One row per one-byte CONSUMER KIND: a pattern whose
+# compile holds a one-byte FIND site stating exactly that kind. Read by
+# run_deleg_sites.sh check 5 from the MFROUTED records of a -DPCREC_CAND_TRACE
+# build (PCREC_MF_ROUTE_TRACE=1). The rule, per fixture:
+#   - the site (PF or MLINE) holds a record of the fixture's kind with a finder
+#     row (a non-`-` row field: the kit routed it). WHICH row is the kit's
+#     choice and is not pinned here (D157);
+#   - no record of ANOTHER stated kind appears (K35: one witness per kind);
+#   - an UNSTATED record (EDGE, VMSPAN, N7 ... state no kind) is no kind: the
+#     rule skips it, by name, and it can neither satisfy nor spoil a fixture.
+# The check also holds the file to a floor of DISTINCT kind values: all five of
+# the kinds named below (a literal in the script, not a count of this file).
+# PRE's composite states DFA_SCAN, HYB_PF, VM_ATTEMPT and DFA_ATTEMPT too but is
+# unrouted (its records read `-`), so those four kinds have NO witness here
+# until PRE routes (B3b); the PF/MLINE fixtures witness the same kind values at
+# the FIND sites.
+# The expectations come from the design (§1.6/§4.3), not from a recorded run.
+#
+# flags (`-` none)	pattern	site	kind
+-	x+y	PF	DFA_SCAN
+assertions,lookaround	\B(?<!a)d	PF	DFA_HAT
+-	(x+)y	PF	HYB_PF
+backrefs	(x[a-z]+)y\1	PF	VM_ATTEMPT
+assertions,modifiers	(?m)^ab	MLINE	DFA_ATTEMPT

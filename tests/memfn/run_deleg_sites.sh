@@ -13,9 +13,22 @@
 #      file that derives it from a row's budget column;
 #   4. no `mf_site`, `mf_pred` or `mf_result` is declared by VALUE under src/
 #      (r2 K3: a site can carry 255 predicates, about 170 KB; they live in
-#      the arena).
+#      the arena);
+#   5. the one-byte fixtures (tests/memfn/c10_onebyte.tsv, R17-b' B2 [rev3
+#      A8]): one per consumer KIND. A -DPCREC_CAND_TRACE build compiles each
+#      with PCREC_MF_ROUTE_TRACE=1; its MFROUTED records must hold the
+#      fixture's site with the fixture's kind and a finder row (routed; WHICH
+#      row is the kit's choice, not matched: D157), and no other STATED
+#      kind. UNSTATED records (EDGE, VMSPAN, N7 state no kind) are skipped by
+#      name. The file's DISTINCT kind values must cover the five named in
+#      C10_KINDS below. PRE's four kinds have no witness while PRE is
+#      unrouted (its records carry no finder row); the PF/MLINE fixtures
+#      witness the same kind values at the FIND sites. The expectations are
+#      the fixture file, written from the design (r17b_prime.md §1.6/§4.3),
+#      not from a recorded run.
 # CONTROLS: checks 1 and 4 run again over a planted copy (a row moved to the
-# other budget; one by-value `mf_pred`) and must flag exactly those.
+# other budget; one by-value `mf_pred`) and must flag exactly those; check 5
+# runs over two planted fixture files (a kind swapped; a kind dropped).
 # WHAT IT DOES NOT SEE: a by-value declaration through a typedef of its own
 # or a macro, and a row whose op is right but whose site emits through a
 # different op (pcrec's `deleg_check` refuses that at compile time).
@@ -30,6 +43,9 @@ D91_SCAN="PF PRE OFS SETREST VERIFY MLINE"
 # VMSTRIDE ([MEMFN] M6): the VM cursor rung's strided span loop runs at every
 # VM step that enters a cursor-rung repeat, as VMSPAN does: budget 2.
 D91_LOOP="STAY EDGE VMSPAN VMSTRIDE VMRUN N7"
+# C10's floor: the one-byte consumer kinds (R17-b' B2 [rev3 A8]) the fixture
+# file must name, as distinct values. This file's literal, not a count of it.
+C10_KINDS="DFA_SCAN DFA_HAT HYB_PF VM_ATTEMPT DFA_ATTEMPT"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }
@@ -111,6 +127,47 @@ for dp, _, fs in os.walk(sys.argv[1]):
 EOF
 )"
 if [ -z "$others" ]; then ok; else bad "MF_P_INLOOP spelled outside memfn_sites.c: $others"; fi
+
+# 5: the one-byte fixtures, through a trace build of this tree
+FIX="$ROOT_DIR/tests/memfn/c10_onebyte.tsv"
+TRB="$T/trace"
+c10_fix() {   # $1 = fixture file; prints one problem per line
+    while IFS=$'\t' read -r fl pat site kind; do
+        case "$fl" in '#'*|'') continue ;; esac
+        set --
+        [ "$fl" = - ] || set -- --features "$fl"
+        PCREC_MF_ROUTE_TRACE=1 "$TRB/pcrec" "$@" -p rx -o "$T/f.c" --pattern "$pat" \
+            > /dev/null 2> "$T/f.err" || { echo "$pat: does not compile"; continue; }
+        grep '^MFROUTED' "$T/f.err" | awk -F'\t' -v pat="$pat" -v site="$site" -v kind="$kind" '
+            $3 == "UNSTATED" { next }            # states no kind: neither witness nor spoiler
+            $3 != kind { printf "%s: a record of another kind: %s/%s\n", pat, $2, $3; next }
+            $2 == site && $4 != "-" { hit = 1 }
+            END { if (!hit) printf "%s: no routed %s record of kind %s\n", pat, site, kind }'
+    done < "$1"
+}
+c10_floor() { # $1 = fixture file; prints the named kinds it does not cover
+    for k in $C10_KINDS; do
+        awk -F'\t' -v k="$k" '$0 !~ /^#/ && $4 == k { n++ } END { exit !n }' "$1" || echo "$k"
+    done
+}
+if "${TIMEOUT_BIN:-gnutimeout}" 900 make -s -C "$ROOT_DIR" -j4 BUILD_DIR="$TRB" \
+        CFLAGS="-O2 -g -DPCREC_CAND_TRACE" all > "$T/trace.log" 2>&1; then
+    c10_fix "$FIX" > "$T/c10"
+    if [ -s "$T/c10" ]; then while read -r l; do bad "C10 one-byte: $l"; done < "$T/c10"; else ok; fi
+    miss="$(c10_floor "$FIX" | tr '\n' ' ')"
+    if [ -z "$miss" ]; then ok; else bad "c10_onebyte.tsv names no fixture for kind(s): $miss"; fi
+    # controls: a kind swapped (the fixture claims a kind the compile does not state) and a
+    # kind dropped (the floor must name it); awk, not GNU sed, so the plant works on the Mac
+    awk -F'\t' -v OFS='\t' '!d && $4 == "DFA_HAT" { $4 = "HYB_PF"; d = 1 } { print }' "$FIX" > "$T/swap.tsv"
+    awk -F'\t' '$4 != "VM_ATTEMPT"' "$FIX" > "$T/drop.tsv"
+    c10_fix "$T/swap.tsv" > "$T/c10swap"
+    if ! cmp -s "$FIX" "$T/swap.tsv" && [ "$(wc -l < "$T/c10swap" | tr -d ' ')" -ge 1 ]; then ok
+    else bad "C10 one-byte: the planted kind swap was not flagged"; fi
+    if [ "$(c10_floor "$T/drop.tsv" | tr -d ' \n')" = VM_ATTEMPT ]; then ok
+    else bad "C10 one-byte: the planted dropped kind was not flagged by the floor"; fi
+else
+    tail -5 "$T/trace.log"; bad "C10 one-byte: the trace build failed"
+fi
 
 # controls: one planted defect each, flagged exactly
 mkdir -p "$T/src/gen"
