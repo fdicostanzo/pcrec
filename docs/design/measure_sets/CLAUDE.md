@@ -31,6 +31,11 @@ built or run by `make`.
   S309), each re-run solo DETECTED at f227cca55. The tool's UNRESOLVED list
   (now 8: K1's five plus S995, S1028, S1029 in findings.c) is unresolved in
   the PRE tree, so none is K2's.
+- `k3_edit_set.tsv`, `k3_anchors.tsv` / `k3_anchors.summary` — K3's edit set
+  (the three definitions K3 edits; it deletes none) and its derived map,
+  `--step K3=f227cca55..66c51d710` over the same PRE tree: 0 RE-AIM; 3
+  RE-RUN (S1049 by hunk, S310 and S315 by reach), each re-run solo
+  DETECTED at 66c51d710. K3's three new rows (S961, S962, S984) are its own.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

@@ -15,7 +15,7 @@ SAB_ID="S962-ksrc-loader-accepts-derived-section"
 SAB_FILE="src/core/ksrc.c"
 SAB_SUITES="knowledge"
 SAB_DESC="the resolver's derived-section refusal is planted out: an -I file carrying '#section chain' or '#section decoded' reaches the .rxt reader instead of being refused as a listing fed back"
-SAB_DOC_FIGURE="knowledge red on both derived-section checks (refused, but not by the derived-section rule). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S962."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 at 66c51d710: knowledge:2fail/210pass, the two derived-section checks (refused, but not by the derived-section rule). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S962."
 SAB_REACH='d="$REACH_TMP/d"; mkdir -p "$d" && "$PCREC" --list-analysis log > "$d/log.rxt" && ! "$PCREC" -I "$d" --list-analysis log 2>"$REACH_TMP/e" >/dev/null && grep -q "carries .#section chain." "$REACH_TMP/e" && echo REACH-KSRC-DERIVED-REFUSED'
 SAB_REACH_EXPECT="REACH-KSRC-DERIVED-REFUSED"
 SAB_EXPECT=DETECTED

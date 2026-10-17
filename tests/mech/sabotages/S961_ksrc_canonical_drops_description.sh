@@ -14,7 +14,7 @@ SAB_ID="S961-ksrc-canonical-drops-description"
 SAB_FILE="src/parse/ks_analysis.c"
 SAB_SUITES="knowledge"
 SAB_DESC="the analysis kind's canonical writer omits the bundle's description: R1 and R2 stay green (rows_digest does not cover it, and the re-listing omits it again), R3 alone must catch it"
-SAB_DOC_FIGURE="knowledge red on R3 for shipped/default, kfixtures/kfull and kfixtures/kline. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S961."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 at 66c51d710: knowledge:14fail/198pass, every failure R3 (shipped default, kfixtures kfull/kline, the 11 adversarial bundles; R1 and R2 green on all). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S961."
 SAB_REACH='"$PCREC" --list-analysis default --view=canonical | grep -q "^    description " && echo REACH-KSRC-CANON-DESCRIPTION'
 SAB_REACH_EXPECT="REACH-KSRC-CANON-DESCRIPTION"
 SAB_EXPECT=DETECTED

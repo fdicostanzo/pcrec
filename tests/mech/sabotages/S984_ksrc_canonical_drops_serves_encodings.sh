@@ -16,7 +16,7 @@ SAB_ID="S984-ksrc-canonical-drops-serves-encodings"
 SAB_FILE="src/parse/ks_analysis.c"
 SAB_SUITES="knowledge"
 SAB_DESC="the analysis kind's canonical writer keeps only the first encoding of each serves line's when-list (byte,utf8 -> byte): R1 and R2 stay green, R3 alone must catch it"
-SAB_DOC_FIGURE="knowledge red on R3 for every item with a two-encoding serves list. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S984."
+SAB_DOC_FIGURE="MEASURED 2026-10-17 at 66c51d710: knowledge:32fail/180pass, every failure R3 on an item with a two-encoding serves list (R1 and R2 green on all). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S984."
 SAB_REACH='"$PCREC" -I "$TREE/tests/findings/adversarial" --list-analysis uniform --view=canonical | grep -q "serves byte-rate when byte,utf8 via" && echo REACH-KSRC-CANON-SERVES-LIST'
 SAB_REACH_EXPECT="REACH-KSRC-CANON-SERVES-LIST"
 SAB_EXPECT=DETECTED
