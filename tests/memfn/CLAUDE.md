@@ -9,7 +9,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 ## Files
 
-- **site_manifest.tsv** — THE CHECKED SITE MANIFEST (integration.md
+- **site_manifest.tsv** — (int4: gained a `kinds` column, c17_tsv.diff; `site_manifest_check.py` validates it against memfn.h's MF_SK_* and carries `rule5`, but rule 5 is NOT called yet: the per-site observed-kinds feed, a field on site_census's trace record, is not in the proposal.) THE CHECKED SITE MANIFEST (integration.md
   §R4.3.4, D147 addendum 5): one row per search or span-compare site pcrec
   emits (13 at R4a: PF, PRE, OFS, SETREST, VERIFY, VMRUN, STAY, EDGE,
   VMSPAN, MLINE, N6, VMSTRIDE, N7; N6 RETIRED since, D147 add. 12). Each row has its emitters (the functions
