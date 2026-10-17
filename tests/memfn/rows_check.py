@@ -187,9 +187,19 @@ def build(root, cc, tmp):
     return fx, tp
 
 
+def fd_records(err):
+    """The finder table's trace records (R17-b' B1/B2): the shadow's `MFTRACE FD`
+    decisions and, since B2, the ROUTED decisions' `MFTRACE FDROUTE` (row and the
+    arm that rendered it). A `fd` row's signature is read from these: a routed
+    row's pick renders the text its pre-table arm would (zero movers, §1.6), so
+    the artifact cannot tell it apart, and the record is its observation."""
+    return "\n".join(ln for ln in err.decode("utf-8", "replace").splitlines()
+                     if ln.startswith(("MFTRACE FD ", "MFTRACE FDROUTE ")))
+
+
 class Art:
-    def __init__(self, label, text, chosen):
-        self.label, self.text, self.chosen = label, text, chosen
+    def __init__(self, label, text, chosen, fdtext=""):
+        self.label, self.text, self.chosen, self.fdtext = label, text, chosen, fdtext
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -203,7 +213,8 @@ def compile_pattern(root, tp, flags, pat, label):
     if rt.stdout != rp.stdout:
         bad("%s: the MF_TRACE pcrec's artifact differs from build/pcrec's" % label)
         return None
-    return Art(label, rp.stdout.decode("utf-8", "replace"), trace_chosen(rt.stderr))
+    return Art(label, rp.stdout.decode("utf-8", "replace"), trace_chosen(rt.stderr),
+               fd_records(rt.stderr))
 
 
 def render_fixture(fx, tmp, name, label, shadow=False):
@@ -215,15 +226,14 @@ def render_fixture(fx, tmp, name, label, shadow=False):
         return None
     if shadow:
         # a finder row's rendering is its SHADOW record (R17-b' B1)
-        text = "\n".join(ln for ln in r.stderr.decode("utf-8", "replace").splitlines()
-                         if ln.startswith("MFTRACE FD "))
-        return Art(label, text, trace_chosen(r.stderr))
+        text = fd_records(r.stderr)
+        return Art(label, text, trace_chosen(r.stderr), text)
     text = ""
     for part in ("def", "use"):
         p = os.path.join(d, "%s.%s" % (name, part))
         if os.path.exists(p):
             text += open(p, encoding="utf-8", errors="replace").read()
-    return Art(label, text, trace_chosen(r.stderr))
+    return Art(label, text, trace_chosen(r.stderr), fd_records(r.stderr))
 
 
 def spec_runcmp_rows(root):
@@ -466,7 +476,7 @@ def main():
             if art is None:
                 continue
             arts.append(art)
-            has, chose = sig in art.text, key in art.chosen
+            has, chose = sig in (art.fdtext if t == "fd" else art.text), key in art.chosen
             if has == want and chose == want:
                 ok()
             else:
@@ -492,7 +502,7 @@ def main():
         if c[0] == "fd" and c[3] == "-":
             continue
         for art in arts:
-            if sig in art.text and key not in art.chosen:
+            if sig in (art.fdtext if c[0] == "fd" else art.text) and key not in art.chosen:
                 bad("signature of %s/%s appears in %s, where the trace did not choose it"
                     % (key[0], key[1], art.label))
             else:

@@ -343,6 +343,9 @@ static bool revend_tie_asked(Ctx *cx);
 /* [OPT-REVEND] L0 the path's finisher route, a field read without a
  * selection (defined beside `cand_route_of`). */
 static CandRoute cand_finish_of(Ctx *cx);
+/* the route of the artifact's DFA-shaped body (defined with it; read by the
+ * pre-check's consumer kind, R17-b' B2) */
+static CandRoute cand_route_of(Ctx *cx);
 /* [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's question (locate_finish.md
  * §5.1): NULL where the selected path asks `slot` on route `rt` (an entry
  * slot on any route), so the stamp reads the slot's selection, else the
@@ -1519,6 +1522,18 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
  * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
 #define REQ_ON_MISS "return 0;"
 
+/* [MEMFN] R17-b' B2 THE PRE-CHECK's CONSUMER KIND (PR-3, r17b_prime.md §4.3):
+ * the search entry it fronts, the route's. A VM finisher's entry is a
+ * hybrid's `_search_run` (a DFA scan in front: HYB_PF) or a no-DFA VM route's
+ * (VM_ATTEMPT); a DFA entry is ENG_ATTEMPT's `attempt_entry` (DFA_ATTEMPT)
+ * or a DFA body's (DFA_SCAN, the rev-end relocate path's included). */
+static uint8_t req_site_kind(Ctx *cx)
+{
+    if (cand_finish_of(cx) == CAND_ROUTE_VM)
+        return pcrec_artifact_has_dfa_scan(cx) ? MF_SK_HYB_PF : MF_SK_VM_ATTEMPT;
+    return cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? MF_SK_DFA_ATTEMPT : MF_SK_DFA_SCAN;
+}
+
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
  * NULL, and nothing defined, where no pre-check is emitted. Each predicate
  * is read from the call the text writers above read: the admission, the
@@ -1593,6 +1608,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->empty = MF_EMPTY_MISS;
     s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
     s->consumer = MF_C_ENGINE;
+    s->site_kind = req_site_kind(cx);
     s->npred = (uint16_t)np;
     s->preds = p;
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
@@ -4163,13 +4179,13 @@ typedef struct CandSet {
     int     count;      /* how many */
     int     byte;       /* the single value when count == 1 */
     bool    usable;     /* a PROPER subset: worth filtering on at all */
-    bool    use_memchr; /* usable and a single value */
+    bool    one_member; /* usable and a single value */
     int     offset;     /* candidate position = found offset + offset */
 } CandSet;
 
 /* Fills a `CandSet` from a 256-entry membership array: the count, the single
  * value where there is one, and the two verdicts every caller then reads —
- * `usable` (a PROPER subset, so filtering can pay) and `use_memchr` (a
+ * `usable` (a PROPER subset, so filtering can pay) and `one_member` (a
  * singleton). `offset` records how far a found byte sits from the candidate
  * position the caller will take. Both extremes are unfilterable, for the two
  * different reasons the body states. */
@@ -4186,7 +4202,7 @@ static void cand_derive(CandSet *cs, const uint8_t set[256], int offset)
      * prefilter (its own early-out), and a full one means every position is a
      * candidate, so the filter is pure cost. */
     cs->usable = cs->count > 0 && cs->count < 256;
-    cs->use_memchr = cs->usable && cs->count == 1;
+    cs->one_member = cs->usable && cs->count == 1;
 }
 
 /* ENG_UNANCH's caller: the bytes on which the start state does not stay put —
@@ -4265,7 +4281,7 @@ static bool attempt_cand(const CandSel *s, CandSet *cs)
      * derivation. D8's `^`-on-some-branches shape is that instance: its
      * candidate set is a first-byte set at offset 0, which is both multi-byte
      * and a different bound, and D63 gates it on its own measurement. */
-    bool pred = cs->usable && cs->use_memchr;
+    bool pred = cs->usable && cs->one_member;
     PCREC_CAND_TRACE_REC("NEXT", "attempt", pred ? "pred-memchr" : "none", "attempt-cand");
     return pred;
 }
@@ -4319,8 +4335,10 @@ static const CandRow *attempt_next_read(Ctx *cx, CandSlot reader, CandSet *cs)
  * (where no engine body is being written) as often as it likes. */
 typedef enum {
     DFA_PF_NONE = 0,     /* no candidate-start filter at all */
-    DFA_PF_MEMCHR,       /* ONE candidate byte value: a memchr() replaces the steps */
-    DFA_PF_BYTE_CLASS    /* several: the 256-entry can_begin_match bitmap walk */
+    DFA_PF_ONE_BYTE,     /* ONE candidate byte value (PR-9: the count it is, not
+                          * the memchr pcrec once named it for; the form is the
+                          * memfn kit's, R17-b' B2) */
+    DFA_PF_BYTE_CLASS    /* several candidate byte values */
 } DfaPfKind;
 
 typedef struct {
@@ -4470,7 +4488,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * premise. Presenting a redundant condition and a load-bearing one as the
      * same claim is how someone eventually "simplifies away" the wrong half. */
     if (!start_acc && o->cand.usable)
-        o->kind = o->cand.use_memchr ? DFA_PF_MEMCHR : DFA_PF_BYTE_CLASS;
+        o->kind = o->cand.one_member ? DFA_PF_ONE_BYTE : DFA_PF_BYTE_CLASS;
 
     /* [OPT-K] THE OFFSET-k SELECTION RIDES THE OFFSET-0 VERDICT and is never
      * asked independently of it. Everything the skip inherits is proved
@@ -6252,10 +6270,10 @@ static const DfaAcc dfa_accs[] = {
 /* AXIS B: the forward scan wants a `memchr` skip AND the D11 bound applies,
  * which is a different emitted loop and so a different form. */
 static bool pf_memchr_bounded_applies(const CandSel *s)
-{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR && u->views; }
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_ONE_BYTE && u->views; }
 /* The same single-candidate-byte skip with nothing to bound it. */
 static bool pf_memchr_applies(const CandSel *s)
-{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR; }
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_ONE_BYTE; }
 /* A membership-table skip under the D11 bound. */
 static bool pf_bcls_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS && u->views; }
@@ -6326,15 +6344,17 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
  * one kit site of the DELEG_SITES row its caller names (PF or MLINE), FIND /
  * STMT / ASSIGN over one SET term at the caller's offset (integration.md
  * §15.7). The description reads only what the caller decided: the row, the
- * form (a table or memchr: the row's `u.pf.scan`, or the VM hat's table), the
- * D11 bound (`holdback` -> `end_back`), the set, the term's offset, the floor,
- * and the caller's text around it. The guards stay the caller's: a memchr at
- * offset 0 is always preceded by one (`pos >= len`, or the bounded block's
- * `pos + 1 < len`), so its empty range is EXCLUDED; MLINE's at -1 by the
- * attempt loop's (`start > X` proves `subject` non-NULL, BOUND `start <=
- * len`), so its range is empty only as `pos == len` over a valid pointer
- * (the kit's AT_N, Q-R7-2); a walk tests its own range (NOP) and the caller
- * tests the landing after it. */
+ * candidate set with the table it OFFERS (R17-b' B2, PR-1: at every count,
+ * one member included; whether the form reads it is the kit's), the D11
+ * bound (`holdback` -> `end_back`), the term's offset, the floor, the
+ * consumer kind (PR-3) and the caller's text around it. The guards are the
+ * KIT's since B2 (PR-2, KW-3), from what the consumer needs: an UNBOUNDED
+ * site's empty range runs the miss (`empty` MISS: `on_miss` leaves the
+ * site), a BOUNDED one's does nothing (NOP; its miss is `len - 1`), and a
+ * `moved` statement (the DFA hat's re-seed) runs where the candidate moved.
+ * MLINE's at -1 keeps the attempt loop's guard (`start > X` proves
+ * `subject` non-NULL, BOUND `start <= len`), so its range is empty only as
+ * `pos == len` over a valid pointer (the kit's AT_N, Q-R7-2). */
 static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_CAN_BEGIN]   = "can_begin_match",
     [PCREC_FIND_START_BYTES] = "start_bytes",
@@ -6369,25 +6389,35 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
 static mf_site *find_site(const PcrecFind *f)
 {
     Ctx *cx = f->cx;
-    bool table = f->table != PCREC_FIND_MEMCHR;
+    bool table = f->table != PCREC_FIND_NO_TABLE;
     bool back = f->offset < 0;      /* the term reads the candidate's predecessor */
     if (f->site != DELEG_PF && f->site != DELEG_MLINE)
         pcrec_ctx_fail(cx, 0, "internal error: a FIND described under DELEG_SITES "
                        "row %s (src/gen/emit_dfa.c, find_site)",
                        pcrec_deleg_sites[f->site].id);
     if (back && (table || f->holdback || f->offset != -1 || !f->floor))
-        pcrec_ctx_fail(cx, 0, "internal error: a FIND below its candidate is the "
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND below its candidate is the "
                        "unbounded memchr form at -1 with a floor (src/gen/emit_dfa.c, "
-                       "find_site)");
+                       "find_site)", pcrec_deleg_sites[f->site].id);
+    if (!back && !table)
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND at its candidate offers no "
+                       "table (R17-b' B2, PR-1: the candidate set at every count) "
+                       "(src/gen/emit_dfa.c, find_site)", pcrec_deleg_sites[f->site].id);
+    if (!f->kind || !f->holdback != (f->on_miss != NULL) || (f->moved && !f->holdback))
+        pcrec_ctx_fail(cx, 0, "internal error: a %s FIND (consumer kind %u) states no "
+                       "consumer kind, an on_miss that is not its unbounded miss, or a "
+                       "moved hook off a bounded site (src/gen/emit_dfa.c, find_site)",
+                       pcrec_deleg_sites[f->site].id, (unsigned)f->kind);
     mf_site *s = pcrec_memfn_site(cx, f->site);
     s->form = MF_FORM_STMT;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_ASSIGN;
-    s->empty = table ? MF_EMPTY_NOP : back ? MF_EMPTY_AT_N : MF_EMPTY_EXCLUDED;
+    s->empty = back ? MF_EMPTY_AT_N : f->holdback ? MF_EMPTY_NOP : MF_EMPTY_MISS;
     s->end_back = (uint8_t)(f->holdback ? 1 : 0);
-    s->on_miss_leaves = !table && !f->holdback;
+    s->on_miss_leaves = !f->holdback;
     s->use = MF_USE_POSITION;
     s->consumer = MF_C_ENGINE;
+    s->site_kind = f->kind;
     s->pred.nterm = 1;
     s->pred.need = MF_REQUIRED;
     if (table)
@@ -6408,7 +6438,7 @@ static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
                        mf_hooks *h, PcrecMfU *u)
 {
     Ctx *cx = f->cx;
-    bool table = f->table != PCREC_FIND_MEMCHR;
+    bool table = f->table != PCREC_FIND_NO_TABLE;
     bool back = f->offset < 0;
     *u = (PcrecMfU){ .cx = cx, .site = s, .own = f, .indent = ind };
     /* `miss`: the range's end at offset 0 (MF_MISS_N, or `len - 1` held
@@ -6419,11 +6449,11 @@ static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
                      .floor = f->floor, .result = f->pos,
                      .miss = f->holdback ? dfa_fragf(cx, "%s - 1", f->len)
                            : back ? NULL : MF_MISS_N,
-                     .on_miss = !table && !f->holdback ? f->on_miss : NULL,
+                     .on_miss = f->on_miss,
                      .table_name = table ? find_table_name : NULL,
                      .fn_name = f->stem ? find_fn_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
-                     .u = u, .start = f->start };
+                     .u = u, .start = f->start, .moved = f->moved };
 }
 
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
@@ -6504,21 +6534,125 @@ static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
 }
 #endif
 
-/* The description of the FIND over axis B's candidate set, its form the ROW's
- * (`u.pf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
- * and the subject are the DFA scan's own, `holdback` the D11 bound. `on_miss`
- * is the unbounded memchr's statement on a NULL hit (NULL elsewhere). */
-static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B2 (review item 2) THE ASKED CLASS, HELD TO THE DEFINE (trace
+ * build only): the class the readers' query (`cand_ask`: G1, R4, L4)
+ * consumed for this attempt's start-search site, one per DELEG_SITES row it
+ * asks (PF, MLINE), and the class that site's define reports (`mf_defined`;
+ * for MLINE's one-call emit, the kit's own query of its site), held equal in
+ * whichever order the two arrive. `pf_site_of` and `mline_find_of` make the
+ * two one site by construction; this is the control that shares none of
+ * their source, since it compares the kit's ANSWERS: a reader fed another
+ * fact (a set, a row, a bound) is caught where the artifact is written. Two
+ * asks of one site must agree too. Compared over the fields a reader may
+ * declare (CAND_ASKF_*). Per attempt: `Job.cand_asked`. */
+struct CandAsked { bool held[2][2]; mf_class cls[2][2]; };   /* [site][asked, defined] */
+
+/* Whether two classes agree on every field a reader may declare. */
+static bool cand_class_eq(const mf_class *a, const mf_class *b)
 {
-    return (PcrecFind){ .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
-                        .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
-                               : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
-                               : PCREC_FIND_CAN_BEGIN,
-                        .set = f->cand.set,
-                        .byte = f->cand.byte, .pos = "scan_position",
-                        .subject = "subject", .len = "subject_length",
-                        .holdback = holdback, .on_miss = on_miss,
-                        .start = PCREC_MF_ORIGIN };
+    return a->exists == b->exists && a->libc_free == b->libc_free &&
+           a->includes == b->includes &&
+           !memcmp(a->proven0, b->proven0, sizeof a->proven0) &&
+           !memcmp(a->proven_prev, b->proven_prev, sizeof a->proven_prev);
+}
+
+/* Records `cls` for `site` (PF or MLINE) as a reader's ask (`defined` 0) or
+ * its define's report (1), and fails where it differs from either class
+ * already held for that site. */
+static void cand_asked_hold(Ctx *cx, DelegSite site, int defined, const mf_class *cls)
+{
+    Job *job = cx->job;
+    unsigned i = site == DELEG_MLINE;
+    if (!job->cand_asked) job->cand_asked = pcrec_arena_alloc(&cx->arena, sizeof *job->cand_asked);
+    struct CandAsked *a = job->cand_asked;
+    for (int k = 0; k < 2; k++)
+        if (a->held[i][k] && !cand_class_eq(&a->cls[i][k], cls))
+            pcrec_fit_invariant_fail(k == defined ? "asked-class-twice" : "asked-class-differs",
+                                     defined ? "the define's class" : "a reader's asked class",
+                                     k ? "the class the site's define reports"
+                                       : "the class a reader already consumed",
+                                     pcrec_deleg_sites[site].id);
+    a->held[i][defined] = true;
+    a->cls[i][defined] = *cls;
+}
+
+/* MLINE's define is one call (`pcrec_emit_find`): the kit's own query of the
+ * site it is about to write stands for its define (the kit holds the two to
+ * one class, §4.5 rule 2). */
+static void cand_asked_verify_emit(Ctx *cx, const PcrecFind *fd)
+{
+    mf_class cls;
+    mf_hooks h;
+    PcrecMfU u;
+    mf_site *site = find_site(fd);
+    find_hooks(fd, site, NULL, &h, &u);
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls))
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the %s site "
+                       "it is about to write", pcrec_deleg_sites[fd->site].id);
+    cand_asked_hold(cx, fd->site, 1, &cls);
+}
+#define CAND_ASKED_VERIFY_EMIT(cx, fd) cand_asked_verify_emit((cx), (fd))
+#else
+#define CAND_ASKED_VERIFY_EMIT(cx, fd) ((void)(cx), (void)(fd))
+#endif
+
+static const DfaDir dfa_dir_forward;
+
+/* The DFA hat's CONDITIONAL re-seed, as the moved-candidate statement the
+ * kit runs where the skip moved past its entry position (PR-2): the landing
+ * state is the seed of the byte before it. Every DFA hat row is seeded (F),
+ * so the seed table exists. */
+static const char *pf_moved_reseed_of(Ctx *cx, const char *p, const DfaDir *dir)
+{
+    return dfa_fragf(cx, "%s = %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]];",
+                     dir->statev, p, dir->c.name, p, dir->c.name, dir->posv);
+}
+
+/* THE PF SITE: the FIND axis B's row `pf` describes on the forward search
+ * machine over its scanned set `set` (`pf_scan_set_of`'s), with the D11 bound
+ * `views`. The ONE constructor of that site, read by its define (`pf_find_of`,
+ * from the built form) and by the readers' query (`cand_pf_site`, G1/R4/L4,
+ * from `unanch_start`), so the site a reader asks the kit about is the site
+ * the define writes rather than a second derivation of it (R17-b' B2 review
+ * item 2). Everything else is a fact of the row: the table it OFFERS at every
+ * count (PR-1; the DFA hat's `start_bytes`, else `can_begin_match`); the
+ * consumer kind (PR-3, §4.3: the DFA hat, whose re-seed is its distinguishing
+ * fact even inside a hybrid, a VM hybrid's inner prefilter, or a DFA body's
+ * forward scan); unbounded, a miss leaves the whole search (`return 0;`),
+ * bounded it clamps to n-1, and the DFA hat re-seeds where the skip moved
+ * (PR-2). The form (one memchr, a walk) is the kit's, from the facts. */
+static PcrecFind pf_site_of(Ctx *cx, const CandRow *pf, const uint8_t *set, bool views)
+{
+    bool hat = pf->u.pf.scan_set != NULL;
+    return (PcrecFind){ .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
+                        .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
+                        .set = set, .pos = "scan_position", .subject = "subject",
+                        .len = "subject_length", .holdback = views ? 1 : 0,
+                        .on_miss = views ? NULL : "return 0;",
+                        .start = PCREC_MF_ORIGIN,
+                        .kind = hat ? MF_SK_DFA_HAT
+                              : cand_finish_of(cx) == CAND_ROUTE_VM ? MF_SK_HYB_PF
+                              : MF_SK_DFA_SCAN,
+                        .moved = hat ? pf_moved_reseed_of(cx, cx->opt->prefix,
+                                                          &dfa_dir_forward) : NULL };
+}
+
+/* The PF site of built form `f`, whose row asked for the D11 bound
+ * `holdback`. Only the forward search machine selects a PF row
+ * (`dfa_form_derive`), and a row is bounded exactly where the form's `views`
+ * holds (the `-bounded` rows' predicates; the DFA hat asserts it), so `f`'s
+ * prefix, direction and bound are the ones `pf_site_of` states: checked here
+ * rather than assumed, since a disagreement would move the define off the
+ * site the readers asked about. */
+static PcrecFind pf_find_of(const DfaForm *f, int holdback)
+{
+    if (f->dir != &dfa_dir_forward || f->p != f->cx->opt->prefix ||
+        holdback != (f->views ? 1 : 0))
+        pcrec_ctx_fail(f->cx, 0, "internal error: a prefilter FIND off the forward "
+                       "search machine, or with a D11 bound its form's `views` does "
+                       "not hold (src/gen/emit_dfa.c, pf_find_of)");
+    return pf_site_of(f->cx, f->pf, f->cand.set, f->views);
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -6528,25 +6662,47 @@ static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
  * function is written here and the use point below has its record. */
 static void pf_define_find_at(StrBuf *c, DfaForm *f, int holdback)
 {
-    PcrecFind fd = pf_find_of(f, holdback, NULL);
+    PcrecFind fd = pf_find_of(f, holdback);
     if (!f->pf_stem)
         pcrec_ctx_fail(f->cx, 0, "internal error: a set prefilter's FIND is "
                        "defined with no stem (src/gen/emit_dfa.c, pf_define_find)");
     fd.stem = f->pf_stem;
     f->pf_find = find_define(c, &fd);
+#ifdef PCREC_CAND_TRACE
+    {
+        mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
+        pcrec_memfn_defined(f->cx, f->pf_find.handle, r);
+        cand_asked_hold(f->cx, DELEG_PF, 1, &r->cls);
+    }
+#endif
 }
 static void pf_define_find(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 0); }
 static void pf_define_find_bounded(StrBuf *c, DfaForm *f) { pf_define_find_at(c, f, 1); }
 
-/* The FIND over axis B's candidate set at indent `ind`: the defined site's
- * use where the row defined one (the set rows), else the one-call FIND (the
- * memchr rows). */
-static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback,
-                         const char *on_miss)
+/* The FIND over axis B's candidate set at indent `ind`: the site every PF
+ * row defined above the body (R17-a; every row since R17-b' B2, so the kit's
+ * define reports whether the form reads the offered table). */
+static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback)
 {
-    PcrecFind fd = pf_find_of(f, holdback, on_miss);
-    if (f->pf_find.handle) find_use(c, ind, &fd, &f->pf_find);
-    else pcrec_emit_find(c, ind, &fd);
+    PcrecFind fd = pf_find_of(f, holdback);
+    if (!f->pf_find.handle)
+        pcrec_ctx_fail(f->cx, 0, "internal error: a prefilter FIND used with no define "
+                       "(src/gen/emit_dfa.c, pf_emit_find)");
+    find_use(c, ind, &fd, &f->pf_find);
+}
+
+/* THE ONE PREFILTER SKIP every axis-B start-byte row emits (R17-b' B2): its
+ * comment (pcrec's, by row: PR-10 rides B4), the entry test, the FIND at the
+ * test's indent and the close. Everything between the entry test and the
+ * close is the kit's (KW-3): the guard before a memchr, the test after a
+ * walk, the bounded block, the moved test. */
+static void pf_emit_skip(StrBuf *c, const DfaForm *f,
+                         void (*comment)(StrBuf *, const DfaForm *), int holdback)
+{
+    comment(c, f);
+    pf_open(c, f);
+    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", f->dir->bind), holdback);
+    pf_close(c, f, false);
 }
 
 /* AXIS B, `memchr`: while nothing has matched and the machine is still parked
@@ -6557,21 +6713,13 @@ static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdb
  * code under a user's own sanitizer. */
 static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    pf_comment_memchr(c, f);
-    pf_open(c, f);
-    /* [K27] The `pos >= n` guard is the FIX, and it is not defensive padding:
+    /* [K27] The kit's `pos >= n` guard (R17-b' B2: an unbounded site's empty
+     * range runs the miss) is the FIX, and it is not defensive padding:
      * docs/spec/match_api.md §3.1 makes (s == NULL, n == 0) a LEGAL subject,
-     * and on it this line used to call memchr(NULL, c, 0) — technical UB in
-     * EMITTED code, which a user compiling a generated matcher under their
-     * own -fsanitize=undefined sees pcrec's name on. It changes no answer:
-     * memchr over a zero-length range returns NULL, so the guarded early
-     * `return 0` is exactly the branch the unguarded form reached one line
-     * later. The BOUNDED form below needs no such guard — its own
+     * and on it this skip used to call memchr(NULL, c, 0) — technical UB in
+     * EMITTED code. The BOUNDED form below needs no such guard — its own
      * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
-    pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, "return 0;");
-    pf_close(c, f, false);
+    pf_emit_skip(c, f, pf_comment_memchr, 0);
 }
 
 /* AXIS B, `memchr-bounded`: the same skip stopped at n-1 and with NO early
@@ -6581,17 +6729,12 @@ static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
  * consumer, and why this is its own form rather than a flag inside one. */
 static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    pf_comment_memchr(c, f);
-    pf_open(c, f);
     /* No early `return 0`: under a view the machine may still accept at n-1
      * or n, so this falls through to the stepped loop instead. That lost
      * early-out is exactly what `<PREFIX>_DFA_PREFILTER`'s `-bounded` half
      * tells a consumer, and it is why this is its own form rather than a
      * flag inside one. */
-    pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s        ", ind), 1, NULL);
-    pf_close(c, f, true);
+    pf_emit_skip(c, f, pf_comment_memchr, 1);
 }
 
 /* AXIS B, `byte-class`: the candidate set is a proper subset but not a
@@ -6599,12 +6742,7 @@ static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
  * table, and running off the end ends the whole search. */
 static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    pf_comment_bcls(c, f);
-    pf_open(c, f);
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, NULL);
-    pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
-    pf_close(c, f, false);
+    pf_emit_skip(c, f, pf_comment_bcls, 0);
 }
 
 /* AXIS B, `byte-class-bounded`: the same loop stopped at n-1, so a state that
@@ -6613,14 +6751,10 @@ static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
  * (D11). */
 static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    pf_comment_bcls(c, f);
-    pf_open(c, f);
     /* Every skip stops at n-1 so a state that accepts only under a view is
      * never skipped past; below n-1 the view is unreachable, which is also
      * why the view state cannot be stale after a skip (D11). */
-    pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 1, NULL);
-    pf_close(c, f, false);
+    pf_emit_skip(c, f, pf_comment_bcls, 1);
 }
 
 /* ---- [OPT-K] THE OFFSET-k FORMS ----------------------------------------
@@ -6700,7 +6834,7 @@ static bool pf_run_applies_common(const CandSel *s)
     int sp = pin.o + pin.idx;
     if (o->nsel > 0) {
         if (o->walk->k[o->sel[o->scan]].k != sp) return false;
-    } else if (!(sp == 0 && u->kind == DFA_PF_MEMCHR &&
+    } else if (!(sp == 0 && u->kind == DFA_PF_ONE_BYTE &&
                  u->cand.byte == r->bytes[pin.at + pin.idx])) {
         return false;
     }
@@ -7223,17 +7357,7 @@ static bool pf_dfa_start_set(const CandSel *s, CandSet *t)
 static bool pf_first_class_bounded_applies(const CandSel *s)
 { CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views; }
 static bool pf_first_memchr_bounded_applies(const CandSel *s)
-{ CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.use_memchr; }
-
-/* The DFA hat's CONDITIONAL re-seed at indent `ind`: where the skip moved past
- * `skip_from`, the landing state is the seed of the byte before it. Every DFA
- * hat row is seeded (F), so the seed table exists. */
-static void pf_emit_moved_reseed(StrBuf *c, const DfaForm *f, const char *ind)
-{
-    pcrec_sb_printf(c, "%sif (%s > skip_from) %s = %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]];\n",
-              ind, f->dir->posv, f->dir->statev,
-              f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv);
-}
+{ CandSet t; const UnanchStart *u = s->us; return pf_dfa_start_set(s, &t) && u->views && t.one_member; }
 
 /* The DFA hat's emitted explanation: the skip tests the bytes a match can
  * begin with, and re-seeds because the bytes it passes may move the context. */
@@ -7267,29 +7391,14 @@ static void pf_tables_first(StrBuf *c, const DfaForm *f)
  * one line serving both landings (a hit, and the n-1 clamp). */
 static void pf_emit_first_memchr_bounded(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    const char *in8 = dfa_fragf(f->cx, "%s        ", ind);
-    pf_comment_first(c, f);
-    pf_open(c, f);
-    pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
-    pcrec_sb_printf(c, "%s        size_t skip_from = scan_position;\n", ind);
-    pf_emit_find(c, f, in8, 1, NULL);
-    pf_emit_moved_reseed(c, f, in8);
-    pf_close(c, f, true);
+    pf_emit_skip(c, f, pf_comment_first, 1);
 }
 
 /* AXIS B, `first-class-bounded`: `byte-class-bounded`'s skip over the
  * `start_bytes` table, then the conditional re-seed. */
 static void pf_emit_first_class_bounded(StrBuf *c, const DfaForm *f)
 {
-    const char *ind = f->dir->bind;
-    const char *in4 = dfa_fragf(f->cx, "%s    ", ind);
-    pf_comment_first(c, f);
-    pf_open(c, f);
-    pcrec_sb_printf(c, "%s    size_t skip_from = scan_position;\n", ind);
-    pf_emit_find(c, f, in4, 1, NULL);
-    pf_emit_moved_reseed(c, f, in4);
-    pf_close(c, f, false);
+    pf_emit_skip(c, f, pf_comment_first, 1);
 }
 
 /* ---- [START-SET] STAGE 2: THE VM HAT (D148; docs/design/startset.md §2, §4.2) ----
@@ -7379,7 +7488,8 @@ static PcrecFind vm_hat_find_of(const CandSel *s, const char *p, uint8_t v[256])
                         .table = PCREC_FIND_START_SET, .set = v,
                         .pos = "attempt_position", .subject = "subject",
                         .len = "subject_length", .holdback = 0,
-                        .start = PCREC_MF_ORIGIN };
+                        .on_miss = "return 0;", .start = PCREC_MF_ORIGIN,
+                        .kind = MF_SK_VM_ATTEMPT };
 }
 
 /* [MEMFN] R17-a THE VM HAT's ONE SITE (setfind.md §7.5, §11.1): defined
@@ -7407,8 +7517,9 @@ static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
             emit_u8_table(c, p, "start_set", v, 256);
         }
     }
+    /* the kit writes the `attempt_position >= subject_length` test after its
+     * walk: no attempt at `subject_length` can succeed (R17-b' B2, KW-3) */
     find_use(c, ind, &fd, d);
-    pcrec_sb_printf(c, "%sif (attempt_position >= subject_length) return 0;\n", ind);
 }
 
 
@@ -7579,46 +7690,121 @@ void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
  * G1, RETRY for R4): NEXT's selection is READ through `cand_read` on that
  * slot's declared edge, never re-derived here. */
 typedef struct {
-    int  byte;          /* the scanned byte, or -1: no single-byte scan */
-    bool memchr_form;   /* a memchr row (or ENG_ATTEMPT's memchr) */
+    int  byte;          /* the one byte every candidate is proven to begin
+                         * with, or -1: none (no single-byte proof) */
+    bool one_byte;      /* the scan proves a single byte at its candidate
+                         * (a one-member start search, or ENG_ATTEMPT's
+                         * context stop); the method-free name of PR-9's
+                         * rename (it was `memchr_form`) */
     bool run_verified;  /* its test refuses every window lacking the run */
+    bool asked;         /* `cls` is the kit's answer for the site (below) */
+    mf_class cls;       /* the form CLASS of the start-search site */
 } CandScan;
 
-/* [MEMFN] R17-b' B1 THE FIELDS OF THE KIT'S FORM CLASS a reader may read
+/* [MEMFN] R17-b' THE FIELDS OF THE KIT'S FORM CLASS a reader may read
  * (`CandNode.kfields`; memfn.h mf_class): r17b_prime.md §4.5's table maps G1
- * and R4 to `exists`/`proven0`, `landing` L4 to `exists`. */
+ * and R4 to `exists`/`proven0`, `landing` L4 to `exists`; on the ATTEMPT
+ * route G1 and R4 read the context stop's `proven_prev` (B2, F-B1-3). */
 enum { CAND_ASKF_EXISTS = 1u, CAND_ASKF_PROVEN0 = 2u, CAND_ASKF_LIBC_FREE = 4u,
-       CAND_ASKF_INCLUDES = 8u };
+       CAND_ASKF_INCLUDES = 8u, CAND_ASKF_PROVEN_PREV = 16u };
 
 #ifdef PCREC_CAND_TRACE
-/* THE READER SHADOW's entry points (defined in the trace block below the slot
- * graph, which they check against). */
-static void cand_shadow_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
-                             const CandRow *pf, const CandScan *cs, const char *arm);
-static void cand_shadow_ppm(Ctx *cx, unsigned ppm);
-static void cand_shadow_landing(Ctx *cx, const UnanchStart *us, const CandRow *pf);
+/* THE ASK TRAPS (defined in the trace block below the slot graph, which they
+ * check against; r17b_prime.md §4.5 rules 4-5 [rev3 D4], sabotage S1019). */
+static void cand_ask_check(CandSlot reader, CandSlot site_slot, CandRoute route,
+                           uint64_t flags);
+static void cand_ask_field(CandSlot reader, unsigned f);
+#define CAND_ASK_FIELD(reader, f) cand_ask_field((reader), (f))
+#else
+#define CAND_ASK_FIELD(reader, f) ((void)(reader), (void)(f))
 #endif
+
+/* [MEMFN] R17-b' B2 THE READERS' QUERY (r17b_prime.md §4.5, PR-9): the CLASS
+ * the memfn kit answers for the start-search site `fd` (mf_ask: pure, asked of
+ * the compile's own art, before the selection that reads it; the site is
+ * defined later, where it is today, and the kit holds its define to the same
+ * class). `reader` asks on `route`: a declared edge of the slot graph, with
+ * NEXT's selection closed (the trace build's traps). A refusal here is the
+ * one the define would raise, so it fails as that would. */
+static void cand_ask(Ctx *cx, CandSlot reader, CandRoute route, const PcrecFind *fd,
+                     CandScan *cs)
+{
+#ifdef PCREC_CAND_TRACE
+    cand_ask_check(reader, CAND_SLOT_NEXT, route, cx->opt->flags);
+#else
+    (void)reader; (void)route;
+#endif
+    mf_site *site = find_site(fd);
+    mf_hooks h;
+    PcrecMfU u;
+    find_hooks(fd, site, NULL, &h, &u);
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls))
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the start-search "
+                       "site a selection reads (its define would refuse it too)");
+#ifdef PCREC_CAND_TRACE
+    cand_asked_hold(cx, fd->site, 0, &cs->cls);
+#endif
+    cs->asked = true;
+}
+
+/* The one byte a 256-bit proof holds, or -1 where it holds none or several. */
+static int cand_proven_byte(const uint8_t set[32])
+{
+    int b = -1, n = 0;
+    for (int i = 0; i < 256; i++)
+        if (set[i >> 3] >> (i & 7) & 1) { b = i; n++; }
+    return n == 1 ? b : -1;
+}
+
+/* THE PF SITE axis B's row `pf` defines for the forward machine of `us`, as
+ * the reader asks it: `pf_site_of` over the row's scanned set and `us`'s D11
+ * bound, the same constructor and the same facts the define reads off its
+ * form (`dfa_form_derive` takes `f->cand` from `pf_scan_set_of` and
+ * `f->views` from `us`). The set outlives the call (the kit's site keeps it). */
+static PcrecFind cand_pf_site(Ctx *cx, const UnanchStart *us, const CandRow *pf)
+{
+    CandSet *sc = pcrec_arena_alloc(&cx->arena, sizeof *sc);
+    pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
+    return pf_site_of(cx, pf, sc->set, us->views);
+}
+
+/* THE MLINE SITE: ENG_ATTEMPT's predecessor-byte FIND (DELEG_SITES row MLINE,
+ * integration.md §15.7) over candidate set `cand`: the term is the
+ * candidate's PREDECESSOR (`-cand->offset`, -1), the floor is `start` (no read
+ * below it: the attempt loop's guard has already tested `subject[start - 1]`),
+ * and a miss leaves the attempt loop. The ONE constructor of that site, read
+ * by its define (`emit_attempt`) and by the readers' query (`dfa_cand_scan`'s
+ * ATTEMPT route), as `pf_site_of` is for PF. */
+static PcrecFind mline_find_of(Ctx *cx, const CandSet *cand)
+{
+    return (PcrecFind){ .cx = cx, .site = DELEG_MLINE, .p = cx->opt->prefix,
+                        .table = PCREC_FIND_NO_TABLE, .byte = cand->byte,
+                        .offset = -cand->offset, .floor = "start", .pos = "start",
+                        .subject = "subject", .len = "subject_length", .holdback = 0,
+                        .on_miss = "break;", .start = PCREC_MF_ORIGIN,
+                        .kind = MF_SK_DFA_ATTEMPT };
+}
 
 static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
 {
     memset(cs, 0, sizeof *cs);
     cs->byte = -1;
-    if (!pcrec_artifact_has_dfa_scan(cx)) {
-#ifdef PCREC_CAND_TRACE
-        cand_shadow_scan(cx, reader, NULL, NULL, cs, "no-scan");
-#endif
-        return;
-    }
+    if (!pcrec_artifact_has_dfa_scan(cx)) return;
     if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) {
         CandSet acand;
-        /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
-         * a true answer already means a single-byte scan. */
-        cs->memchr_form = true;
-        cs->byte = attempt_next_read(cx, reader, &acand)->u.pf.scan == PF_SCAN_BYTE
-                   ? acand.byte : -1;
-#ifdef PCREC_CAND_TRACE
-        cand_shadow_scan(cx, reader, NULL, NULL, cs, "attempt");
-#endif
+        /* [R17-b' B2, F-B1-3] ENG_ATTEMPT's skip is MLINE's CONTEXT stop (row
+         * D1c): its candidate follows the byte it seeks, so the class proves
+         * that byte one below the candidate (`proven_prev`), never at offset
+         * 0. That predecessor IS the byte this scan tests, and a candidate
+         * found at or after `start` puts it in the window, which is what G1's
+         * identity and R4's density read here; `attempt_cand` is memchr-or-
+         * nothing by charter (its own header), so a scan is one byte. */
+        cs->one_byte = true;
+        if (attempt_next_read(cx, reader, &acand)->u.pf.scan != PF_SCAN_BYTE) return;
+        PcrecFind fd = mline_find_of(cx, &acand);
+        cand_ask(cx, reader, CAND_ROUTE_ATTEMPT, &fd, cs);
+        CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN_PREV);
+        cs->byte = cand_proven_byte(cs->cls.proven_prev);
         return;
     }
     {
@@ -7629,39 +7815,45 @@ static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
         pf = dfa_pf_read(cx, reader, &us);
         /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset
          * rows sit between the two, so an artifact whose `kind` is
-         * DFA_PF_MEMCHR may still have had another form selected over it. */
+         * DFA_PF_ONE_BYTE may still have had another form selected over it. */
         if (ofs_test_of(cx, &us, pf, &t)) {
+            /* the offset-set and run-pinned FUNCs are R-18's, outside this
+             * delivery (r17b_prime.md §1.1): their own row is read */
             cs->byte = t.scan_byte;
             cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
+        } else if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
+            PcrecFind fd = cand_pf_site(cx, &us, pf);
+            cand_ask(cx, reader, cand_route_of(cx), &fd, cs);
+            CAND_ASK_FIELD(reader, CAND_ASKF_EXISTS);
+            CAND_ASK_FIELD(reader, CAND_ASKF_PROVEN0);
+            if (cs->cls.exists) cs->byte = cand_proven_byte(cs->cls.proven0);
+            cs->one_byte = cs->byte >= 0;
 #ifdef PCREC_CAND_TRACE
-            cand_shadow_scan(cx, reader, &us, pf, cs, "ofs");
-#endif
-        } else if (pf->u.pf.scan == PF_SCAN_BYTE) {
-            CandSet sc;
-            pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
-            cs->memchr_form = true;
-            cs->byte = sc.byte;
-#ifdef PCREC_CAND_TRACE
-            cand_shadow_scan(cx, reader, &us, pf, cs, "pf");
-#endif
-        } else {
-#ifdef PCREC_CAND_TRACE
-            cand_shadow_scan(cx, reader, &us, pf, cs, "pf");
+            /* `one_byte` is the memchr form's guard (G1's density, S288), and
+             * it is read off the class, not off the row: a one-member set
+             * ranks onto a PF_SCAN_BYTE row (`memchr[-bounded]`,
+             * `first-memchr-bounded`), so the class proves one byte only
+             * there. Held, since a SET row proving one byte would hand that
+             * guard to a table walk. */
+            if (cs->one_byte && pf->u.pf.scan != PF_SCAN_BYTE)
+                pcrec_fit_invariant_fail("one-byte-off-memchr-row", pf->tok,
+                                         "a one-byte proof only on a PF_SCAN_BYTE row",
+                                         "dfa_cand_scan");
 #endif
         }
     }
 }
 
 /* How often the artifact's candidate-start scan stops, in ppm of subject
- * bytes: the prior's MASS over the byte set the emitted scan tests, or
- * 1,000,000 when it tests none (every position is then a candidate).
+ * bytes: the prior's MASS over the byte set the scan PROVES its candidates
+ * begin with (the kit's class, `proven0`; one byte where the scan proves one,
+ * an offset/run row's scan byte, or the context stop's byte), or 1,000,000
+ * when it proves none (every position is then a candidate).
  *
- * [OPT-HYB-RESEED] Read off `dfa_cand_scan` and axis B's selection — the
- * derivations the scan is emitted from — so it cannot price a scan the
- * artifact does not carry: a single-byte scan (memchr, or an offset/run row's
- * scan byte) is that byte, a byte-class row is its candidate set. The prior's
- * NONE is answered inside the MASS primitive (cardinality), never here
- * (D126 Q4). Its one reader is RETRY's `adaptive-dense` row (R4), so its
+ * [OPT-HYB-RESEED] Read off `dfa_cand_scan`, the derivation the scan is
+ * described from, so it cannot price a scan the artifact does not carry. The
+ * prior's NONE is answered inside the MASS primitive (cardinality), never
+ * here (D126 Q4). Its one reader is RETRY's `adaptive-dense` row (R4), so its
  * selection reads are RETRY's ([START-TABLE] C6, `cand_nodes`). */
 static unsigned dfa_cand_ppm_of(Ctx *cx)
 {
@@ -7672,30 +7864,18 @@ static unsigned dfa_cand_ppm_of(Ctx *cx)
     if (cs.byte >= 0) {
         set[cs.byte] = 1;
     } else {
-        UnanchStart us;
-        const CandRow *pf;
-        if (!pcrec_artifact_has_dfa_scan(cx) || cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
+        if (!cs.asked || !cs.cls.exists || cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
             return 1000000u;
-        unanch_start(cx, &us);
-        pf = dfa_pf_read(cx, CAND_SLOT_RETRY, &us);
-        if (pf->u.pf.scan != PF_SCAN_SET)
-            return 1000000u;
-        {
-            CandSet sc;
-            pf_scan_set_of(cx, &cx->job->dfa, &us, pf, &sc);
-            memcpy(set, sc.set, sizeof set);
-        }
+        int n = 0;
+        for (int b = 0; b < 256; b++) n += set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
+        if (n == 256) return 1000000u;
     }
     return pcrec_find_set_ppm(cx, set);
 }
 
 unsigned pcrec_dfa_cand_ppm(Ctx *cx)
 {
-    unsigned ppm = dfa_cand_ppm_of(cx);
-#ifdef PCREC_CAND_TRACE
-    cand_shadow_ppm(cx, ppm);
-#endif
-    return ppm;
+    return dfa_cand_ppm_of(cx);
 }
 
 /* Does the artifact's search route try exactly ONE start position?
@@ -7782,7 +7962,7 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
     if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
     if (p == q) return true;
     if (pcrec_fact_req_run(cx)->len >= 2) return false;
-    if (!cs->memchr_form) return false;
+    if (!cs->one_byte) return false;
     return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);
 }
 
@@ -8664,9 +8844,18 @@ static bool start_landing_applies(const CandSel *s)
     if (!pcrec_fact_land_char(cx)->holds) return false;
     unanch_start(cx, &us);
     const CandRow *pf = dfa_pf_read(cx, CAND_SLOT_RECOVER, &us);
-#ifdef PCREC_CAND_TRACE
-    cand_shadow_landing(cx, &us, pf);
-#endif
+    /* [MEMFN] R17-b' B2 L4 reads the kit's class of the start-search site:
+     * `exists`, whether a search text precedes the machine at its use (a
+     * landing to store); the offset-set, run-pinned and landmark rows are
+     * outside this delivery (r17b_prime.md §1.1) and read their own row */
+    if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
+        CandScan cs;
+        memset(&cs, 0, sizeof cs);
+        PcrecFind fd = cand_pf_site(cx, &us, pf);
+        cand_ask(cx, CAND_SLOT_RECOVER, CAND_ROUTE_DFA, &fd, &cs);
+        CAND_ASK_FIELD(CAND_SLOT_RECOVER, CAND_ASKF_EXISTS);
+        return cs.cls.exists != 0;
+    }
     return pf->u.pf.emit != NULL;
 }
 
@@ -8946,7 +9135,8 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                               * start-search site NEXT's row describes */
                              .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) |
                                                           CAND_ON(CAND_ROUTE_ATTEMPT) },
-                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 |
+                                        CAND_ASKF_PROVEN_PREV },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
     /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members) */
@@ -8981,7 +9171,8 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              /* [MEMFN] R17-b' B1 R4 asks about the same site */
                              .kask = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) |
                                                           CAND_ON(CAND_ROUTE_ATTEMPT) },
-                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 },
+                             .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 |
+                                        CAND_ASKF_PROVEN_PREV },
     [CAND_SLOT_BOUND]    = { "BOUND",    0,
                              CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_LOOP) },
@@ -9310,7 +9501,8 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 6, "first-memchr-bounded" } },
       .desc = "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, scanned as T = S, a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved",
-      .u.pf = { .emit = pf_emit_first_memchr_bounded, .reseeds = true,
+      .u.pf = { .emit_tables = pf_tables_first, .emit_define = pf_define_find_bounded,
+                .emit = pf_emit_first_memchr_bounded, .reseeds = true,
                 .scan = PF_SCAN_BYTE, .scan_set = pf_dfa_start_set } },
     { .c = { "first-class-bounded", PCREC_NO_START_SET, pf_first_class_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-class-bounded",
@@ -9332,12 +9524,14 @@ static const CandRow cand_rows[] = {
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr-bounded", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 9, "memchr-bounded" } },
       .desc = "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept",
-      .u.pf = { .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_define = pf_define_find_bounded,
+                .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE } },
     { .c = { "memchr", 0, pf_memchr_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 10, "memchr" } },
       .desc = "forward scan, one candidate byte",
-      .u.pf = { .emit = pf_emit_memchr, .scan = PF_SCAN_BYTE } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_define = pf_define_find,
+                .emit = pf_emit_memchr, .scan = PF_SCAN_BYTE } },
     { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
@@ -10188,45 +10382,16 @@ static void cand_read_hit(CandSlot reader, CandSlot slot, const CandSel *s,
 #define CAND_READ_HIT(reader, slot, sel, row, site)                           \
     cand_read_hit((reader), (slot), (sel), (row), (site))
 
-/* ---- [MEMFN] R17-b' B1 THE READER SHADOW (r17b_prime.md §4.5 rules 4-6) ----
+/* ---- [MEMFN] R17-b' THE ASK TRAPS (r17b_prime.md §4.5 rules 4-5 [rev3 D4]) --
  *
  * pcrec's readers of the scan FORM (G1's single-byte dominance, R4's re-seed
- * density, `landing`'s L4) are computed TWICE in this trace build: from
- * their own NEXT row, as they are emitted from, and from the memfn kit's
- * define-time QUERY (`mf_ask`, the form CLASS of the start-search site the
- * row describes: `exists`, `proven0`), and asserted equal. B2 switches the
- * readers to the class and retires this shadow; until then it proves the
- * switch is zero-mover, over every population the trace build compiles.
- *
- * THE SITE ASKED is the one the row's emitter defines (`find_site` over the
- * row's scan: `pf_find_of`'s table/byte/set, R17-a's stem on a set row, the
- * activation's origin), in a SCRATCH art (the query is pure; the compile's
- * own art is never created by a read). Its SCOPE is R17-b''s (§1.1): the
- * one-byte and set prefilter FINDs (PF_SCAN_BYTE, PF_SCAN_SET) are asked and
- * ASSERTED; the offset-set and run-pinned FUNCs (PF_SCAN_OFS, R-18's) and the
- * handoff landmark are out of the delivery and RECORDED as such; ENG_ATTEMPT's
- * predecessor seek (MLINE, a context stop with no span 0) is asked and its
- * disagreement RECORDED, not asserted: the class proves no byte at offset
- * 0 there while G1/R4 read the predecessor byte (fdb1_report.md F-B1-3).
- *
- * THE TRAPS (§4.5 rules 4-5, [rev3 D4]; sabotage S1019): an ask must be a
- * declared edge of the slot graph (`CandNode.kask`), the selection that fixes
- * the site's description (NEXT) must be CLOSED (off the predicate stack), and
- * a reader reads only the class fields it declares (`kfields`).
- *
- * THE RECORD. With PCREC_MF_ASK_TRACE set in the environment each reader
- * prints `MFASK<TAB>reader<TAB>arm<TAB>verdict` (agree, disagree,
- * out-of-scope): the reach census of tests/memfn/run_finder.sh. Unset, it
- * prints nothing, so the CANDTRACE stream (emit_sweep --trace) is unchanged. */
-
-/* The last class the scan shadow asked, for R4's density shadow, which runs
- * right after its own dfa_cand_scan(RETRY) (pcrec_dfa_cand_ppm). */
-static _Thread_local struct {
-    const Ctx *cx;
-    int        asked;           /* 1: `cls` holds the asked class          */
-    const char *arm;
-    mf_class   cls;
-} cand_shadow_last;
+ * density, `landing`'s L4) read the memfn kit's define-time QUERY (`mf_ask`,
+ * the form CLASS of the start-search site the NEXT row describes) since B2;
+ * the B1 reader shadow that proved the switch zero-mover is retired. In this
+ * trace build an ask must be a declared edge of the slot graph
+ * (`CandNode.kask`), the selection that fixes the site's description (NEXT)
+ * must be CLOSED (off the predicate stack), and a reader reads only the class
+ * fields it declares (`kfields`); sabotage S1019. */
 
 /* The ask of reader `reader` about the site slot `site_slot`'s selection
  * describes, on `route`, under the compile's deny bits `flags`: a declared
@@ -10252,169 +10417,9 @@ static void cand_ask_field(CandSlot reader, unsigned f)
     if (!(cand_nodes[reader].kfields & f))
         cand_oracle_fail("undeclared-ask-field", cand_nodes[reader].name,
                          f == CAND_ASKF_EXISTS ? "exists" : f == CAND_ASKF_PROVEN0
-                         ? "proven0" : "class", "reader-shadow");
+                         ? "proven0" : f == CAND_ASKF_PROVEN_PREV ? "proven_prev" : "class", "reader-shadow");
 }
 
-static void cand_shadow_note(const char *reader, const char *arm, const char *verdict)
-{
-    /* a trace build only; read per record, so the library keeps no
-     * function-local state (coding_guide.md §1.5) */
-    if (getenv("PCREC_MF_ASK_TRACE")) fprintf(stderr, "MFASK\t%s\t%s\t%s\n", reader, arm, verdict);
-}
-
-/* Asks the kit for the class of the PF site row `pf` describes (DFA route):
- * 1 and *cls, or 0 for a scan outside the delivery's scope. */
-static int cand_ask_pf(Ctx *cx, CandSlot reader, const UnanchStart *us,
-                       const CandRow *pf, mf_class *cls)
-{
-    if (pf->u.pf.scan != PF_SCAN_BYTE && pf->u.pf.scan != PF_SCAN_SET) return 0;
-    cand_ask_check(reader, CAND_SLOT_NEXT, cand_route_of(cx), cx->opt->flags);
-    CandSet sc;
-    {   /* the scanned set, derived quietly: a shadow is not a read */
-        int base = cand_eval_base;
-        pcrec_cand_trace_quiet++;
-        cand_eval_base = cand_eval_depth;
-        pf_scan_set_of(cx, &cx->job->dfa, us, pf, &sc);
-        cand_eval_base = base;
-        pcrec_cand_trace_quiet--;
-    }
-    bool byte = pf->u.pf.scan == PF_SCAN_BYTE;
-    uint8_t *set = pcrec_arena_alloc(&cx->arena, 256);
-    memcpy(set, sc.set, 256);
-    PcrecFind fd = { .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
-                     .table = byte ? PCREC_FIND_MEMCHR
-                            : pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
-                            : PCREC_FIND_CAN_BEGIN,
-                     .set = set, .byte = sc.byte, .pos = "scan_position",
-                     .subject = "subject", .len = "subject_length", .holdback = 0,
-                     .on_miss = byte ? "return 0;" : NULL,
-                     .stem = byte ? NULL : "pcrec_shadow_pf", .start = PCREC_MF_ORIGIN };
-    mf_site *site = find_site(&fd);
-    mf_hooks h;
-    PcrecMfU u;
-    find_hooks(&fd, site, NULL, &h, &u);
-    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
-    ma->u = &cx->arena;
-    ma->alloc = pcrec_memfn_arena_alloc;
-    const mf_measures *ms = cx->emit_in && cx->emit_in->harness
-                          ? cx->emit_in->harness->measures : NULL;
-    mf_art *art = mf_art_begin(ma, cx->opt->prefix, pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags), ms, NULL);
-    if (!art || mf_ask(art, site, &h, cls))
-        cand_oracle_fail("reader-shadow-ask-refused", cand_nodes[reader].name, pf->tok,
-                         "reader-shadow");
-    return 1;
-}
-
-static unsigned popcount256_u8(const uint8_t *b)
-{
-    unsigned n = 0;
-    for (int i = 0; i < 32; i++) n += (unsigned)__builtin_popcount(b[i]);
-    return n;
-}
-
-/* G1's and R4's scan reading, from the class: the one byte every candidate
- * is proven to begin with, else -1. */
-static int cand_class_byte(CandSlot reader, const mf_class *cls)
-{
-    cand_ask_field(reader, CAND_ASKF_EXISTS);
-    cand_ask_field(reader, CAND_ASKF_PROVEN0);
-    if (!cls->exists || popcount256_u8(cls->proven0) != 1) return -1;
-    for (int b = 0; b < 256; b++)
-        if (cls->proven0[b >> 3] >> (b & 7) & 1) return b;
-    return -1;
-}
-
-static void cand_shadow_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
-                             const CandRow *pf, const CandScan *cs, const char *arm)
-{
-    const char *rn = cand_nodes[reader].name;
-    mf_class cls;
-    cand_shadow_last.cx = cx;
-    cand_shadow_last.asked = 0;
-    cand_shadow_last.arm = arm;
-    if (!strcmp(arm, "no-scan")) {
-        /* no site: nothing searched, nothing proven */
-        cand_shadow_note(rn, arm, cs->byte < 0 && !cs->memchr_form ? "agree" : "disagree");
-        if (cs->byte >= 0)
-            cand_oracle_fail("reader-shadow-differs", rn, arm, "reader-shadow");
-        return;
-    }
-    if (!strcmp(arm, "ofs")) {
-        cand_shadow_note(rn, arm, "out-of-scope");
-        return;
-    }
-    if (!strcmp(arm, "attempt")) {
-        /* MLINE's context stop: asked, recorded, not asserted (F-B1-3) */
-        cand_ask_check(reader, CAND_SLOT_NEXT, CAND_ROUTE_ATTEMPT, cx->opt->flags);
-        cand_shadow_note(rn, arm, cs->byte < 0 ? "agree" : "disagree");
-        return;
-    }
-    if (!cand_ask_pf(cx, reader, us, pf, &cls)) {
-        cand_shadow_note(rn, pf->u.pf.scan == PF_SCAN_LANDMARK ? "landmark" : "none",
-                         cs->byte < 0 ? "agree" : "out-of-scope");
-        return;
-    }
-    cand_shadow_last.asked = 1;
-    cand_shadow_last.cls = cls;
-    int b = cand_class_byte(reader, &cls);
-    bool memchr_form = b >= 0;
-    bool agree = b == cs->byte && memchr_form == cs->memchr_form && !cs->run_verified;
-    cand_shadow_note(rn, pf->u.pf.scan == PF_SCAN_BYTE ? "pf-byte" : "pf-set",
-                     agree ? "agree" : "disagree");
-    if (!agree)
-        cand_oracle_fail("reader-shadow-differs", rn, pf->tok, "reader-shadow");
-}
-
-static void cand_shadow_ppm(Ctx *cx, unsigned ppm)
-{
-    if (cand_shadow_last.cx != cx) return;
-    if (!cand_shadow_last.asked) {
-        /* the arms with no site: `no-scan` prices every position */
-        if (!strcmp(cand_shadow_last.arm, "no-scan")) {
-            cand_shadow_note("RETRY-ppm", "no-scan", ppm == 1000000u ? "agree" : "disagree");
-            if (ppm != 1000000u)
-                cand_oracle_fail("reader-shadow-differs", "RETRY", "no-scan", "reader-shadow");
-        } else {
-            cand_shadow_note("RETRY-ppm", cand_shadow_last.arm, "out-of-scope");
-        }
-        return;
-    }
-    const mf_class *cls = &cand_shadow_last.cls;
-    cand_ask_field(CAND_SLOT_RETRY, CAND_ASKF_EXISTS);
-    cand_ask_field(CAND_SLOT_RETRY, CAND_ASKF_PROVEN0);
-    unsigned want = 1000000u;
-    if (cls->exists && popcount256_u8(cls->proven0) < 256) {
-        uint8_t set[256];
-        for (int b = 0; b < 256; b++) set[b] = cls->proven0[b >> 3] >> (b & 7) & 1;
-        want = pcrec_find_set_ppm(cx, set);
-    }
-    cand_shadow_note("RETRY-ppm", cand_shadow_last.arm, want == ppm ? "agree" : "disagree");
-    if (want != ppm)
-        cand_oracle_fail("reader-shadow-differs", "RETRY", "ppm", "reader-shadow");
-}
-
-static void cand_shadow_landing(Ctx *cx, const UnanchStart *us, const CandRow *pf)
-{
-    mf_class cls;
-    bool has = pf->u.pf.emit != NULL;
-    if (pf->u.pf.scan == PF_SCAN_NONE) {
-        /* no site: no search text precedes the machine */
-        cand_shadow_note("RECOVER", "none", !has ? "agree" : "disagree");
-        if (has) cand_oracle_fail("reader-shadow-differs", "RECOVER", pf->tok, "reader-shadow");
-        return;
-    }
-    if (!cand_ask_pf(cx, CAND_SLOT_RECOVER, us, pf, &cls)) {
-        cand_shadow_note("RECOVER", pf->u.pf.scan == PF_SCAN_OFS ? "ofs" : "landmark",
-                         "out-of-scope");
-        return;
-    }
-    cand_ask_field(CAND_SLOT_RECOVER, CAND_ASKF_EXISTS);
-    bool agree = (cls.exists != 0) == has;
-    cand_shadow_note("RECOVER", pf->u.pf.scan == PF_SCAN_BYTE ? "pf-byte" : "pf-set",
-                     agree ? "agree" : "disagree");
-    if (!agree) cand_oracle_fail("reader-shadow-differs", "RECOVER", pf->tok, "reader-shadow");
-}
 #else
 #define CAND_READ_HIT(reader, slot, sel, row, site) ((void)(reader), (void)(site))
 #endif /* PCREC_CAND_TRACE */
@@ -11940,7 +11945,7 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
      * sabotage S07's anchor keeps its text), before the scan loop and its
      * `seedhead` jump, dominating every use in this body. */
     if (fwd->pf_find.handle) {
-        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back, NULL);
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back);
         find_locals(c, "    ", &fd, &fwd->pf_find);
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -13302,18 +13307,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   gseed ? "search_from" : "0",
                   cand.offset, cand.byte);
         /* [MEMFN] M4: the skip itself is THE FIND, DELEG_SITES row MLINE
-         * (integration.md §15.7): the term is the candidate's PREDECESSOR
-         * (`-cand.offset`, -1), the floor is `start` (no read below it: the
-         * guard above has already tested `subject[start - 1]`), and a miss
-         * leaves the attempt loop. The guard, its lower bound X and every
-         * start decision above stay this function's; the kit writes the
-         * search, the NULL test and the store. */
-        PcrecFind fd = { .cx = cx, .site = DELEG_MLINE, .p = p,
-                         .table = PCREC_FIND_MEMCHR, .byte = cand.byte,
-                         .offset = -cand.offset, .floor = "start",
-                         .pos = "start", .subject = "subject",
-                         .len = "subject_length", .holdback = 0,
-                         .on_miss = "break;", .start = PCREC_MF_ORIGIN };
+         * (`mline_find_of`, the site G1/R4 asked about). The guard, its lower
+         * bound X and every start decision above stay this function's; the
+         * kit writes the search, the NULL test and the store. */
+        PcrecFind fd = mline_find_of(cx, &cand);
+        CAND_ASKED_VERIFY_EMIT(cx, &fd);
         pcrec_emit_find(c, "            ", &fd);
         pcrec_sb_puts(c, "        }\n");
     }
@@ -13595,7 +13593,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * that agreed today would be a second source of truth about the emitted
      * code -- the shape this project has been bitten by before. This block
      * names the STEP; the prefilter's own emission site describes the form it
-     * took, where `use_memchr` is already in hand. */
+     * took, where `one_member` is already in hand. */
 
     /* [EMIT-VERB] (D112) ONE REGION FOR THE WHOLE BLOCK. Every byte this
      * function writes is comment text, so the class is stated once at the
@@ -13830,7 +13828,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         dfa_body && (cand_route_of(cx) == CAND_ROUTE_DFA ||
                      (cand_route_of(cx) == CAND_ROUTE_ATTEMPT &&
                       attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE &&
-                      acand.use_memchr));
+                      acand.one_member));
     /* [OPT-REQBYTE] A SECOND `memchr` CUSTOMER, and it reaches artifacts the
      * test above cannot: the pre-check is emitted into BOTH engines' search
      * entries, including a VM artifact with no DFA scan in it at all — which

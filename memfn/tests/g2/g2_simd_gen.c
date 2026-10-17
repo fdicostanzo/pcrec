@@ -68,9 +68,28 @@
  * at the kit call, after every perturbation, so a refusal case keeps the
  * refusal it was written for. A site with no terms, or that states a window
  * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+/* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
+ * zero, and every term and read predicate STATES its need. G2's sites were
+ * written when 0 meant REQUIRED (their memset/zero-filled terms say
+ * REQUIRED that way), so at the kit call a zero need is stated REQUIRED, the
+ * meaning those sites were written with; a value G2 sets itself (OPTIONAL,
+ * an out-of-enum 5) is passed unchanged, and the one refusal case that
+ * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
+ * of the blinded text: lane fdb2.) */
+static int g2_need_fill = 1;
+static void g2_need(mf_site *w)
+{
+    if (!g2_need_fill) return;
+    if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
+        w->pred.need = MF_REQUIRED;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++)
+        if (w->pred.term[i].need == MF_NEED_UNSTATED) w->pred.term[i].need = MF_REQUIRED;
+}
+
 static mf_site g2_win(const mf_site *s)
 {
     mf_site w = *s;
+    g2_need(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)

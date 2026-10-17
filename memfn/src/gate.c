@@ -653,6 +653,7 @@ HOOK_STATED(note)
 HOOK_STATED(note_tag)
 HOOK_STATED(indent)
 HOOK_STATED(start)
+HOOK_STATED(moved)
 #undef HOOK_STATED
 
 static int cl_run(const gate_in *in)

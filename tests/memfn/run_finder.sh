@@ -35,5 +35,50 @@ done
 "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" "$ROOT/tests/memfn/arm_fixtures.c" "$WORK"/kit/*.o \
     -o "$WORK/fxt" || { echo "FAIL: the traced fixture driver does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"
+# ONE count for the whole section. Each part's own `checks passed/failed`
+# lines are re-labelled and summed into the totals printed LAST, which are the
+# only unlabelled ones: a reader that takes the first count (the mech arm
+# `memfnfinder` does, `grep -m1`) would otherwise score finder_check alone and
+# never see the parts below it (S1080, S1081 and S1083 read UNDETECTED that
+# way; lane fdb2fix).
+tp=0 tf=0
+part() {   # part LABEL LOG: relabel LOG's counts, add them to the totals
+    local p f
+    p=$(grep -m1 '^checks passed:' "$2" | grep -oE '[0-9]+')
+    f=$(grep -m1 '^checks failed:' "$2" | grep -oE '[0-9]+')
+    sed -e "s/^checks \(passed\|failed\):/$1 checks \1:/" "$2"
+    if [ -z "$p" ] || [ -z "$f" ]; then
+        echo "FAIL: $1 printed no checks passed/failed counts"; tf=$((tf + 1))
+    else
+        tp=$((tp + p)); tf=$((tf + f))
+    fi
+}
 python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
-    --fxt "$WORK/fxt" --tmp "$WORK"
+    --fxt "$WORK/fxt" --tmp "$WORK" > "$WORK/check.log" 2>&1
+rc=$?
+part finder_check "$WORK/check.log"
+[ "$rc" -eq 0 ] || [ "$tf" -gt 0 ] || { echo "FAIL: finder_check exited $rc with no failed check"; tf=$((tf + 1)); }
+# R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
+# (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
+# R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's
+# class of MLINE's context stop (`proven_prev`, row D1c), whose byte is the
+# necessary one: `(?m)^\n`'s one-byte pre-check stays DOMINATED (pcrec's
+# reading before B2). A class that proves nothing below the candidate makes it
+# "emitted" (the artifact moves).
+P="$ROOT/build/pcrec"
+mkdir -p "$WORK/f3"
+if "$P" -p rx --features all -o "$WORK/f3/o.c" --pattern '(?m)^\n' >/dev/null 2>&1 &&
+   grep -q '^#define RX_REQ_WHY "dominated"' "$WORK/f3/o.c"; then
+    echo "ok   F-B1-3: (?m)^\\n's pre-check is dominated through D1c's proven_prev"; tp=$((tp + 1))
+else
+    echo "FAIL: F-B1-3: (?m)^\\n's pre-check is not dominated (G1 lost the context stop's byte)"
+    tf=$((tf + 1))
+fi
+echo "run_finder: the arm-entry counter (R-MS6)"
+TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&1
+rc=$?
+part arm_reach "$WORK/reach.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/reach.log")" -gt 0 ] || { echo "FAIL: run_arm_reach exited $rc with no failed check"; tf=$((tf + 1)); }
+echo "checks passed: $tp"
+echo "checks failed: $tf"
+[ "$tf" -eq 0 ]

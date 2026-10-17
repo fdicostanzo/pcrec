@@ -41,3 +41,7 @@ Revision 2 of the note (lane r17bp3, 2026-10-14) adds no instrument and
 re-runs none. It cites these transcripts as revision 1's evidence, which was
 taken on the KIT branch (R17-b built); its step plan re-counts every
 population against MAIN at each build step (`../r17b_prime.md` §3.5).
+- `fdb2/` — step B2's instruments (lanes fdb2/fdb2fix, 2026-10-16): the
+  routed-record census, the REGENERATED predicted-mover manifest B4 is held
+  to (superseding fdb1's, which stays unedited), and `proposed/`, the diffs
+  drafted for main. Own CLAUDE.md.

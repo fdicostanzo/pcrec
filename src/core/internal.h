@@ -149,9 +149,16 @@ typedef struct PcrecPartFacts PcrecPartFacts;
  * build's SHADOW reads it before B4 (no routed row reads a set key through
  * B3b), so an artifact under any set is byte-identical to one without: the
  * B2/B3b gates' synthetic-set arms check exactly that. NULL: no set. */
+/* [MEMFN] R17-b' B2 (R-MS6, R-22): the third, `--harness=arm-reach`: the
+ * memfn kit counts how often each arm of a routed finder decision is ENTERED
+ * (mf_reach), in a file-scope array of the artifact under the reserved
+ * prefix, `pcrec_harness_reach_<prefix>` (with its row ids and count; the
+ * definitions are appended to the artifact's end, mf_reach_table). Off on
+ * every shipped compile, so a default artifact is untouched by it. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
+    unsigned arm_reach : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3102,6 +3109,12 @@ typedef struct {
      * (`pcrec_emit_vm_start_define`) for its entry and retry seeks
      * (src/gen/emit_dfa.c's `struct MemfnFind`); NULL where none. */
     const struct MemfnFind *mf_vmhat;
+#ifdef PCREC_CAND_TRACE
+    /* [MEMFN] R17-b' B2 the class the start-search readers consumed per
+     * site, which the site's define is held to (src/gen/emit_dfa.c's
+     * `struct CandAsked`, trace build only); NULL until the first ask. */
+    struct CandAsked *cand_asked;
+#endif
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;

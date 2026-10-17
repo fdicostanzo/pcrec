@@ -468,6 +468,18 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
 
+(R17-b′ B2, lane fdb2: `finder_check.py` K checks the B2 routing (D1, D1c,
+D1w routed and locked; each decides its fixture, `mf_result.row` and
+`MFTRACE FDROUTE`, with its pick's text read by this file's own signature;
+set sites decided by no routed row; `--memfn=no-fd-d1` moves the byte site to
+D1w's walk); `arm_fixtures.c`'s `--fd-site` gains `byte1t`, `byte1vm`,
+`hat1` and `mline` (the B2 shape) and prints ROUTED/TEXT; rows.tsv reads a
+routed `fd` row's signature from the traced compile's FDROUTE record.
+**run_arm_reach.sh** is R-MS6's check (the harness-only arm-entry counter:
+lever off byte-identical, lever on >= 1 / 0 per fired row), run by
+run_finder.sh, which sums its parts' counts into ONE final `checks
+passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
+
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
   TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
   fixture drivers (`arm_fixtures.c` against `build/libpcrec.a`, and against

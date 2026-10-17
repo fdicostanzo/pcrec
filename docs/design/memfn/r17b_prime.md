@@ -1103,8 +1103,20 @@ RANGE population is 219 / 243 (mostly `\w`, shape (3,0,1)), and the one-member c
   509 sit on grid1's shapes; the share of the other 485 on item 3a's shapes is re-counted
   at B4. Each is an UPPER bound: a measured shape whose saving does not clear its floor
   stays WALK. B4's census reports movers split by shape measured / not measured;
+- `[rev3 C4]` RESTATED at B2 (lane fdb2fix, the kit manager's ruling 2026-10-16): the
+  R0/R7 floor is the regime the saving keys' operands were measured in, the `beta`
+  slopes' streamed single-call regime, `kit.eps.streamed.slope` (0.173%), and not
+  streamed find-all's `kit.eps.findall.l64k` (3.365%), which B1 had spelled. Under it
+  the (2,0,0) cover's measured saving (1.385%) clears the floor, so R0 does not hold
+  there and R7 picks V1: grid1's measured shapes predict **285 + 15 + 20** byte-arm
+  site movers ((1,0,0), (0,1,1), (2,0,0)) and 495 + 25 + 23 on byte-vm; 860 (arm,
+  pattern) movers in all (fdb1's B1 manifest read 817). The committed manifest B4 is
+  held to is `r17b_prime/fdb2/predicted_movers_B4.tsv`; fdb1's is kept unedited as
+  B1's record. The (2,0,0) sites are R0's population (≥ 2 RANGE terms), so they come
+  out of the next bullet, not out of the 620;
 - R0's sites stay byte-identical to main except the abi digit and the new stamp (bare
-  walk), or take the walk-only scaffold if T3 passes (§2.5);
+  walk), or take the walk-only scaffold if T3 passes (§2.5); `[rev3 C4]` except the
+  (2,0,0) cover's 20 / 23 sites, which move to V1 (above);
 - `[rev3 A7]` the VM hat at \|S\| = 1 (112 / 8 / 1) does NOT move at B4: D1w keeps
   main's table walk; F2 moves it at B5 on measurement;
 - one-byte sites (D1, D1c), the one-member covers and presence (P-rows) do not move;

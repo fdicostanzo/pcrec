@@ -49,6 +49,17 @@ design's text, sharing no code with the kit):
   I. THE CALL MODE GATE (S919): a site with `body` UNSTATED declines R1 on
      `body` (the trace names it); one with ONESHOT does not.
   J. A DENY reaches its row: `--memfn=no-fd-r0` skips R0 on its witness.
+  K. B2's ROUTING (§1.6, R17-b' B2): the rows the design routes at B2 (D1,
+     D1c, D1w) are routed and LOCKED, every other row is neither; each routed
+     row DECIDES the one-byte site it is written for (the kit's report
+     `mf_result.row` and the traced `MFTRACE FDROUTE` record, two
+     observations) and the text is that row's pick, read here from the text
+     by this file's own signature (LIBC: one memchr with the kit's guard;
+     LIBC_BACK: the memchr from the floor and the `+ 1` store; WALK: the
+     table walk and its post-test; the DFA hat's bounded block and moved
+     test); a set site is decided by NO routed row (S922's reverse: routing
+     early); `--memfn=no-fd-d1` moves the DFA_SCAN byte site to D1w's walk
+     (`fd-d1`'s OFF arm, [rev3 A17]).
 """
 import argparse
 import os
@@ -67,7 +78,17 @@ DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
 B1_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1"]
 PENDING_DENIES = {"fd-pres-g1": "B3b", "fd-pres-pick": "B3b", "pres-set-lead": "B3b"}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
-FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt", "set10-nobody"]
+FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt", "set10-nobody",
+            "byte1t", "byte1vm", "hat1", "mline"]
+# the rows the design routes at B2 (r17b_prime.md §1.6, §3.1 row B2)
+ROUTED_B2 = {"D1", "D1c", "D1w"}
+# K: site -> (the deciding row, a text signature regex the row's pick writes)
+B2_ROUTES = {
+    "byte1t":  ("D1",  r"^    if \(scan_position >= subject_length\) return 0;\|    const void \*q = memchr\(subject \+ scan_position, 120, subject_length - scan_position\);\|    if \(!q\) return 0;\|"),
+    "byte1vm": ("D1w", r"^    while \(scan_position < subject_length && !\w+\[subject\[scan_position\]\]\) scan_position\+\+;\|    if \(scan_position >= subject_length\) return 0;\|$"),
+    "hat1":    ("D1",  r"^    if \(scan_position \+ 1 < subject_length\) \{\|        size_t skip_from = scan_position;\|        const void \*q = memchr\(subject \+ scan_position, 120, subject_length - 1 - scan_position\);.*\|        if \(scan_position > skip_from\) state = 1;\|    \}\|$"),
+    "mline":   ("D1c", r"^    const void \*q = memchr\(subject \+ scan_position, 10, subject_length - scan_position\);\|    if \(!q\) break;\|    scan_position = .*\+ 1;\|$"),
+}
 PAY_TIE_FLOOR = 6
 QUERY_FLOOR = 39
 
@@ -134,9 +155,10 @@ def check_table(fx):
             bad("%s: reads the derived %s but its basis is %s" % (r["id"], sorted(quant & DERIVED_Q), r["basis"]))
         if any(not k.startswith("kit.") for k in ks):
             bad("%s: reads a key that is not the kit's: %s" % (r["id"], ks))
-        if r["routed"] != "0" or r["locked"] != "0":
-            bad("%s: routed %s / locked %s at B1 (no row routes before its step)"
-                % (r["id"], r["routed"], r["locked"]))
+        want = "1" if r["id"] in ROUTED_B2 else "0"
+        if r["routed"] != want or r["locked"] != want:
+            bad("%s: routed %s / locked %s at B2 (the routed rows are %s; no row routes "
+                "before its step)" % (r["id"], r["routed"], r["locked"], sorted(ROUTED_B2)))
         d = r["deny"]
         if d != "-" and d not in opts and PENDING_DENIES.get(d) != r["step"]:
             bad("%s: deny %s is not in options.def" % (r["id"], d))
@@ -374,7 +396,7 @@ def check_sites(root, fx, fxt, tmp, rows):
     (ok() if nkey >= 3 else bad("only %d read keys were removed in turn (K35 floor 3)" % nkey))
     # refusals: a pcrec. row; a value past the bound
     for name, body in (("pcrec-row", "pcrec.beta.WALK.DFA_SCAN.r1e0c0\tratio\t1000000\t-\t-\t-\tmeasured"),
-                       ("too-big", "kit.eps.findall.l64k\tratio\t2000000000000000000\t-\t-\t-\tmeasured")):
+                       ("too-big", "kit.eps.streamed.slope\tratio\t2000000000000000000\t-\t-\t-\tmeasured")):
         path = os.path.join(tmp, name + ".tsv")
         with open(path, "w") as fh:
             fh.write("#section header\n#key\tvalue\nid\t%s\n#section rows\n"
@@ -400,16 +422,54 @@ def check_sites(root, fx, fxt, tmp, rows):
     with open(r0set, "w") as fh:
         fh.write("#section header\n#key\tvalue\nid\tr0\n#section rows\n#key\tunit\tvalue_e6\n"
                  "kit.saving.V1.WALK.r2\tratio\t0\nkit.saving.V1.WALK.r2e0c0\tratio\t0\n"
-                 "kit.eps.findall.l64k\tratio\t10000\n")
+                 "kit.eps.streamed.slope\tratio\t10000\n")
     _, d_on, _, _, _, _ = fd_run(fxt, "set2r", r0set)
     _, d_off, _, _, _, _ = fd_run(fxt, "set2r", r0set, "no-fd-r0")
     on = [d.get("row") for d in d_on if d.get("slot") == "FIND"]
     off = [d.get("row") for d in d_off if d.get("slot") == "FIND"]
     (ok() if on == ["R0"] and off and "R0" not in off else
      bad("--memfn=no-fd-r0 does not skip R0 on its witness (%s -> %s)" % (on, off)))
-    for d in ("fd-r5", "fd-r8", "fd-ndisp", "fd-d1"):
-        unreached.append("deny %s: its row cannot hold on a B1 site (E, H, the kind, or W64 "
+    for d in ("fd-r5", "fd-r8", "fd-ndisp"):
+        unreached.append("deny %s: its row cannot hold on a B2 fixture (E, H, or W64 "
                          "unbuilt); its reach is its routing step's" % d)
+
+
+# ---- K ----------------------------------------------------------------------
+
+def fd_routed(fx, site, opts=None):
+    argv = [fx, "--fd-site", site] + (["--opts", opts] if opts else [])
+    r = run(argv)
+    out, err = r.stdout.decode(), r.stderr.decode()
+    rt = re.search(r"^ROUTED\t(.*)$", out, re.M)
+    tx = re.search(r"^TEXT\t(.*)$", out, re.M)
+    fr = [dict(t.split("=", 1) for t in ln.split()[2:] if "=" in t)
+          for ln in err.splitlines() if ln.startswith("MFTRACE FDROUTE ")]
+    return r.returncode, (rt.group(1) if rt else None), (tx.group(1) if tx else ""), fr
+
+
+def check_routing(fx, fxt):
+    n = 0
+    for site, (row, sig) in B2_ROUTES.items():
+        rc, rt, text, _ = fd_routed(fx, site)
+        _, rtt, _, fr = fd_routed(fxt, site)
+        if rc or rt != row or rtt != row or [d.get("row") for d in fr] != [row]:
+            bad("%s: decided by %s (traced %s, FDROUTE %s), the design's routed row is %s"
+                % (site, rt, rtt, [d.get("row") for d in fr], row))
+            continue
+        (ok() if re.search(sig, text) else
+         bad("%s: row %s's text is not its pick's: %s" % (site, row, text)))
+        n += 1
+    (ok() if n == len(B2_ROUTES) else bad("%d of %d routed sites checked" % (n, len(B2_ROUTES))))
+    for site in ("set10", "set2r", "byte1"):
+        _, rt, _, _ = fd_routed(fx, site)
+        _, _, _, fr = fd_routed(fxt, site)
+        (ok() if rt == "-" and not fr else
+         bad("%s: decided by a routed row %s (FDROUTE %s): no row routes it at B2"
+             % (site, rt, [d.get("row") for d in fr])))
+    _, rt, text, _ = fd_routed(fx, "byte1t", "no-fd-d1")
+    (ok() if rt == "D1w" and re.search(B2_ROUTES["byte1vm"][1], text) else
+     bad("--memfn=no-fd-d1: byte1t decided by %s with %r, not D1w's walk ([rev3 A17])"
+         % (rt, text)))
 
 
 # ---- G ----------------------------------------------------------------------
@@ -491,6 +551,7 @@ def main():
     check_sites(a.root, a.fx, a.fxt, a.tmp, rows)
     check_query(a.fx, a.fxt, a.tmp)
     check_pay(a.fx)
+    check_routing(a.fx, a.fxt)
     for u in unreached:
         print("UNREACHED: " + u)
     print("checks passed: %d" % passed)

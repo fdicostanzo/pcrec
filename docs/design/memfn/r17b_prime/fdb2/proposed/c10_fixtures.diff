@@ -1,0 +1,18 @@
+--- /dev/null	2026-10-16 10:27:15.871082241 -0400
++++ b/tests/memfn/c10_onebyte.tsv	2026-10-16 18:03:49.084933031 -0400
+@@ -0,0 +1,15 @@
++# tests/memfn/c10_onebyte.tsv -- C10's one-byte fixtures (R17-b′ B2, r17b_prime.md
++# rev 3 §3.1 row B2 [rev3 A8]). One row per one-byte consumer kind: a pattern
++# whose compile holds exactly that one-byte FIND site, the kind pcrec's builder
++# states, and the finder row the kit's routed decision names. Read by
++# run_deleg_sites.sh check 5 from the MFROUTED records of a -DPCREC_CAND_TRACE
++# build (PCREC_MF_ROUTE_TRACE=1): each row's (site, kind, row) must appear, and
++# the pattern must yield no record for another kind (K35: one witness per kind).
++# PRE's composite states its kind too but is not a routed site (no record).
++#
++# flags	pattern	site	kind	row
++-	x+y	PF	DFA_SCAN	D1
++-	\B(?<!a)d	PF	DFA_HAT	D1
++-	(x+)y	PF	HYB_PF	D1
++-	(x[a-z]+)y\1	PF	VM_ATTEMPT	D1w
++-	(?m)^ab	MLINE	DFA_ATTEMPT	D1c

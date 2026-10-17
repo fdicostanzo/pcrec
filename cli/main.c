@@ -1108,6 +1108,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* [MEMFN] R17-b' B1: the set handed to the kit (a test build's) */
         else if (!strncmp(a, "--harness=measures=", 19))
             st->harness.measures = harness_measures_load(a + 19);
+        /* [MEMFN] R17-b' B2 (R-MS6): the kit's arm-entry counter */
+        else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;

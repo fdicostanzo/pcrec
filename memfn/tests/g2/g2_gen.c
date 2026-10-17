@@ -37,9 +37,28 @@
  * at the kit call, after every perturbation, so a refusal case keeps the
  * refusal it was written for. A site with no terms, or that states a window
  * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
+/* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
+ * zero, and every term and read predicate STATES its need. G2's sites were
+ * written when 0 meant REQUIRED (their memset/zero-filled terms say
+ * REQUIRED that way), so at the kit call a zero need is stated REQUIRED, the
+ * meaning those sites were written with; a value G2 sets itself (OPTIONAL,
+ * an out-of-enum 5) is passed unchanged, and the one refusal case that
+ * tests an UNSTATED need clears `g2_need_fill` for its own call. (Not part
+ * of the blinded text: lane fdb2.) */
+static int g2_need_fill = 1;
+static void g2_need(mf_site *w)
+{
+    if (!g2_need_fill) return;
+    if (w->op != MF_OP_ALL_PRESENT && w->pred.need == MF_NEED_UNSTATED)
+        w->pred.need = MF_REQUIRED;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++)
+        if (w->pred.term[i].need == MF_NEED_UNSTATED) w->pred.term[i].need = MF_REQUIRED;
+}
+
 static mf_site g2_win(const mf_site *s)
 {
     mf_site w = *s;
+    g2_need(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
@@ -2142,6 +2161,7 @@ static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char 
     mf_result res;
     memset(&res, 0, sizeof res);
     int rc = mf_emit(art, G2W(s), h, &sb, &sf, &res);
+    g2_need_fill = 1;
     const char *err = rc ? mf_art_error(art) : NULL;
     if (pend == G2_PEND_LOOPX && !rc) {
         /* Q-R7-3: only the GENERIC row is known (by the contract) to serve no LOOP_EXIT;
@@ -2259,6 +2279,11 @@ static void refusal_table(void)
     CASE("empty-out-of-enum",       s.empty = (mf_empty)9);
     CASE("term-kind-out-of-enum",   s.pred.term[0].kind = (mf_term_kind)5);
     CASE("need-out-of-enum",        s.pred.term[0].need = (mf_need)5);
+    CASE("site-kind-out-of-enum",   s.site_kind = 9);   /* MF_SITE_ABI 13, PR-3 (lane fdb2) */
+    CASE("need-unstated",           (g2_need_fill = 0, s.pred.need = MF_REQUIRED,
+                                     s.pred.term[0].need = MF_NEED_UNSTATED));
+    CASE("pred-need-unstated",      (g2_need_fill = 0, s.pred.term[0].need = MF_REQUIRED,
+                                     s.pred.need = MF_NEED_UNSTATED));
     CASE("nterm-over-max",          s.pred.nterm = MF_MAX_TERM + 1);
     CASE("offset-below-max-back",   s.pred.term[0].offset = -MF_MAX_BACK - 1);
     CASE("end-back-2",              s.end_back = 2);

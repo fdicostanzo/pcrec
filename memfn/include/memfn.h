@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 12  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 13  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -81,7 +81,20 @@
                            define-time QUERY mf_ask with mf_class, and
                            mf_result.cls (appended LAST); mf_form_hash
                            (R-MS3); mf_finder_rows (R-MS4). No MF_VOCAB
-                           move; no pcrec byte moved. */
+                           move; no pcrec byte moved. 13 (R17-b' B2, lane
+                           fdb2; r17b_prime.md rev 3 §3.1, §4.2, §4.9): mf_need
+                           RE-NUMBERED with an UNSTATED zero (every term and
+                           every read predicate states its need; 0 is
+                           refused); mf_site.site_kind (PR-3, Q-WR-8),
+                           mf_hooks.moved (PR-2's moved-candidate hook) and
+                           mf_result.row (the finder row that decided a
+                           ROUTED site), each appended LAST;
+                           mf_class.proven_prev (MF_CLASS_V 2, appended
+                           LAST); the finder rows D1, D1c and D1w ROUTED;
+                           the PF rows write the guard, post-test, bounded
+                           wrapper and moved hook (KW-3); the arm-entry
+                           counter mf_reach / mf_reach_table (R-MS6). No
+                           MF_VOCAB move; no pcrec byte moved. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -242,8 +255,13 @@ typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
                                Refused on ADVANCE (no miss), as MISS is    */
 } mf_empty;
 
-typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;      /* §14.5; any other
-                                                           value refused (F3) */
+/* §14.5. RE-NUMBERED at MF_SITE_ABI 13 (R17-b' B2, PR-4): 0 is UNSTATED,
+ * never a need. Every term a site carries and every predicate the kit reads
+ * (a FIND/SKIP/VERIFY/MISMATCH's `pred`, every `preds[]` entry) STATES
+ * REQUIRED or OPTIONAL; an unstated one is refused, naming it, as is any
+ * value outside the enum (F3). On ALL_PRESENT/DENSE `pred` is not read
+ * (its `fn_ref` only), so its need may stay unstated there. */
+typedef enum { MF_NEED_UNSTATED, MF_REQUIRED, MF_OPTIONAL } mf_need;
 
 /* MF_T_REF (MF_VOCAB 3, M7): a RUN-TIME operand span, the reference of a
  * MISMATCH. It carries no data (set/run/mask/run_len are not read): its
@@ -278,6 +296,24 @@ typedef enum { MF_C_RESULT, MF_C_ENGINE } mf_consumer;  /* §8.2 `consumer` */
  * RESERVED for R17-b'' with its mode-expression hook, so a site stating it
  * is refused, naming `body`. */
 typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
+
+/* THE CONSUMER KIND of a site (PR-3, Q-WR-8, MF_SITE_ABI 13; r17b_prime.md
+ * §4.3): a CATEGORICAL fact, what consumes the candidates the site yields,
+ * never a form. 0 is UNSTATED (a finder row that reads the kind declines).
+ *   DFA_SCAN     a DFA body's forward scan, restarting at the candidate
+ *   DFA_HAT      a seeded DFA scan that re-seeds where the skip moved (the
+ *                site states its `moved` hook)
+ *   HYB_PF       a VM hybrid's inner DFA prefilter (the VM behind it is
+ *                budgeted; the prefilter is not)
+ *   VM_ATTEMPT   the VM attempt loop: the hat's seek (BUDGETED: steps,
+ *                frames, work per call) and a no-DFA VM route's entry
+ *   DFA_ATTEMPT  ENG_ATTEMPT's attempt loop: MLINE's predecessor seek and
+ *                the attempt entry's presence pre-check
+ * Stated by every PF/MLINE/PRE builder; any value outside the enum is
+ * refused. `consumer` (MF_C_ENGINE everywhere) stays beside it until
+ * window_contract's S3 retires it (C-11). */
+typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
+               MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT } mf_site_kind;
 typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
 
 /* policy bits (§8.5): every bit arch-neutral. pcrec's ONE bit of SIMD
@@ -460,6 +496,10 @@ typedef struct {
        reserved (refused) until R17-b''. Read by the finder table's gate
        (finder.c) only; no rendering reads it */
     uint8_t         body;
+    /* THE CONSUMER KIND (PR-3, MF_SITE_ABI 13; appended LAST): mf_site_kind.
+       0 is UNSTATED. Read by the finder table's gate (finder.c) only: no
+       rendering reads it, so a row born before B2 serves every kind */
+    uint8_t         site_kind;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -653,6 +693,15 @@ typedef struct {
        that reads N skips. No rendering reads it before a dispatch row
        routes (B4/B8) */
     const char *start;
+    /* THE MOVED-CANDIDATE HOOK (PR-2, MF_SITE_ABI 13; appended LAST): a FIND
+       consumer's STATEMENT, run when the position the site writes differs
+       from `lo`'s value at the site's entry (the DFA hat's re-seed from the
+       byte before the landing): ONE C statement with no brace (the kit pastes
+       it as an `if`'s one statement), run only after the site's store and
+       never on an empty range (nothing moved). NULL: nothing runs. A form
+       that cannot tell a moved candidate from an unmoved one does not serve
+       it (R2), so the generic row declines a site stating it */
+    const char *moved;
 } mf_hooks;
 
 /* The `miss` token: pass MF_MISS_N as mf_hooks.miss to STATE "the miss value
@@ -678,7 +727,7 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 1
+#define MF_CLASS_V 2   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST */
 /* Presence spans one class answers (npres). A SHAPE BOUND, not a tuning
  * constant: CHOSEN as MF_MAX_TERM until B3a states the presence spans
  * (PR-5), where the bound is re-read against pcrec's largest unpicked
@@ -704,6 +753,13 @@ typedef struct {
     uint32_t includes;     /* MF_INC_* bits the text needs                     */
     uint8_t  npres;        /* presence spans answered (0 before B3b)           */
     mf_link  pres[MF_MAX_PRES];
+    /* (MF_CLASS_V 2) bitset: every candidate's PREDECESSOR byte (offset -1)
+       lies in it; all ones = nothing proven. What a CONTEXT stop proves
+       (MLINE's `{\n}` one byte before the origin, row D1c): its candidate
+       follows a member, so a member occurs at or after the site's `lo`. A
+       FIND whose term reads one byte below the candidate proves it; every
+       other site proves nothing here */
+    uint8_t  proven_prev[32];
 } mf_class;
 
 /* ---- the result and the per-artifact state (§14.0, §14.8) ---------------- */
@@ -727,6 +783,12 @@ typedef struct {
        (§4.5 rule 2; a trace build re-asks at define and fails on a
        difference). Filled by mf_defined; mf_use leaves it zero. */
     mf_class cls;
+    /* The id of the finder row whose ROUTED decision chose the text
+       (MF_SITE_ABI 13, r17b_prime.md §1.6 [rev3 B5]; appended LAST): "D1",
+       "D1c", "D1w", ...; "" where the site rendered its pre-table form (no
+       routed row decided it). A REPORT for the host's routed-record count,
+       never a selection input. Filled by mf_defined and mf_use */
+    char     row[8];
 } mf_result;
 
 typedef struct mf_art mf_art;   /* one per Job ATTEMPT (the size ladder re-emits) */
@@ -820,6 +882,8 @@ typedef struct mf_analysis {
 #define mf_form_hash      MF_NS(form_hash)
 #define mf_form_hash_text MF_NS(form_hash_text)
 #define mf_finder_rows    MF_NS(finder_rows)
+#define mf_reach          MF_NS(reach)
+#define mf_reach_table    MF_NS(reach_table)
 
 /* Begin an artifact's kit state. `prefix` is pcrec's D143 placeholder, the
  * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
@@ -911,6 +975,26 @@ uint32_t mf_includes(const mf_art *);          /* MF_INC_* bits             */
  *                listed whether or not the compiler later inlines the call.
  * Neither carries a kit version or MF_VOCAB (§18.1). */
 int      mf_stamps(const mf_art *, mf_sink *);
+/* THE ARM-ENTRY COUNTER (R-MS6, R-22; MF_SITE_ABI 13): a TEST-HARNESS
+ * facility, never called by a shipped compile, so a default artifact is
+ * untouched by it. After mf_reach(art, stem), every site rendered on the art
+ * by a ROUTED finder decision (mf_result.row non-empty) counts the times its
+ * text is ENTERED, one counter per dispatch ARM of the site (one arm while no
+ * dispatch is emitted), in a file-scope array the host names: `stem` is
+ * pcrec's reserved internal name for it (an identifier once the host
+ * renders its own prefix in it, written through `vprintf` only and never
+ * inspected, as a STMT site's stem is). Each arm's first statement increments
+ * `<stem>[k]` through a block-scope `extern` declaration. mf_reach_table
+ * then writes, at file scope after every use, the definitions:
+ *   unsigned long <stem>[N];                       the counts, zero at load
+ *   const char *const <stem>_row[N];               arm k's finder row id
+ *   const unsigned <stem>_n = N;                   N (0: no arm, and then
+ *                                                  `<stem>[1]` so C allows it)
+ * mf_reach is called at most once, before the first define (refused after,
+ * or twice, or with no stem); mf_reach_table writes nothing on an art
+ * mf_reach was never called on. */
+int      mf_reach(mf_art *, const char *stem);
+int      mf_reach_table(const mf_art *, mf_sink *file_scope);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte
