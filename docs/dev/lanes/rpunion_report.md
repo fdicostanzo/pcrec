@@ -261,6 +261,7 @@ from each suite's own failed count.
   `ks_consulted` (memfn_stamps.c, two lines) and the
   `PcrecPartFacts.find_consulted` line in compile.c. The census then drops
   to the 2 witnesses, and the spec rows return to "pattern".
+  RULED by the manager 2026-10-17: keep the union over P and every part (the stamp means CONSULTED; the parts' readers asked).
 - **D6. `stamp_kinds.c` keeps `FINDINGS` as `SK_PATTERN`.** The compound
   filter passes through the value `ks_consulted` computed, so I added no
   second union kind beside `SK_PARTS_UNION` (whose value is a sorted list
