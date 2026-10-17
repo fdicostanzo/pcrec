@@ -2682,3 +2682,5 @@ the compiler, and is never adopted silently. Proposed for main to file
     - main's integration make test on merge;
     - grid2's reading is on lane/grid2read @ a9edffd59 (docs only, not in this branch).
   - **Branch note:** lane/memfn-fd lags this branch because my fast-forward of it was denied by the permission classifier (Frank asked). Deliver from lane/fdb2land.
+
+- ack: 2026-10-17 — **R-23 taken** (`mf_site.body` becomes a STATED fact: an UNSTATED zero, refused where read; MF_SITE_ABI 13→14). Where it went: the new kit branch **lane/memfn-r23**, cut from main @ 08ac08a03 (B1+B2 are on main, so the stale lane/memfn-fd is retired from the path), served by lane r23 (sonnet). The kit edits memfn.h, the readers, the fixture and the sabotage row, plus pcrec's builder lines in the same commit. Kit-side sabotage ids: please allocate 2 (S1089-S1090 if free).
