@@ -518,3 +518,18 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Facts only (D157):** pcrec states that it needs arm REACH counts; how the kit counts is the kit's.
 
 **Sabotage ids:** pcrec-side S983-S990 (allocated 2026-10-16, measure_sets.md §8.5); kit-side ids on request.
+
+
+## R-23 (2026-10-17, pcrec manager) — `mf_site.body` is a STATED fact: an UNSTATED zero, refused where read
+
+**Customer:** the no-silent-defaults rule (memory pcrec-no-silent-defaults; Frank 2026-10-07) and main's B1+B2 review (b12rev finding 4, lane/int4). Today the common site constructor writes `body = MF_BODY_ONESHOT`, so every builder USES a default, and a future iterator site that forgets `body` would silently inherit one-shot. `need` and `kind` were already turned into UNSTATED zeros in B1+B2; `body` is the last one.
+
+| item | what pcrec needs (facts) | landing bar | needed by |
+|---|---|---|---|
+| R-23 | `mf_site.body`'s zero value is UNSTATED, and no reader treats it as any body. Every kit reader of `body` REFUSES an UNSTATED site. pcrec's builders state `body` on every site in the same change, so pcrec never sends an unstated one | MF_SITE_ABI 13→14, with its readers found by grep; zero artifact movers on every emit_sweep arm (default and the --memfn arms); a G2/finder fixture that states every body value, and one sabotage row in which an UNSTATED body reaches a reader and must be refused | before the first iterator-state site (the kit's contract order: window, then span-verify, then iterator state) |
+
+**Who edits what:** memfn.h, the kit readers and the fixture are the kit's. pcrec's builder lines (src/gen/memfn_sites.c, emit_dfa.c) may be written by the kit's lane in the same commit, so the field never goes unstated in between; main reviews them at delivery.
+
+**Facts only (D157):** pcrec states which body each site has; how the kit acts on it is the kit's.
+
+**Sabotage ids:** kit-side on request (next free main ledger id S1089).
