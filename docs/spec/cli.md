@@ -354,6 +354,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s2-9-p1"></a>[2.9¶1] `--list-analyses` has one row per analysis built into the library (`-I` directories are never enumerated) and takes no `-I`. `--list-analysis NAME` prints the chain this invocation resolves (honouring `-I`), what each (query, encoding) answers from with the digest a stamp would carry, and the named bundle's rows, declarations and provenance. `--list-analysis FILE` (any value that is not an analysis name) prints the per-target view of a `.rxt` file. Sections and columns: `findings.md` §8.
 
+<a id="s2-9-p2"></a>[2.9¶2] `--view=V` (or `--view V`) applies to `--list-analysis NAME` only and replaces that listing with one view of the named bundle itself: `canonical`, a normalized `.rxt` text that is a loadable analysis (`findings.md` §8.4), or `decoded`, the loaded bundle field by field (§8.5). Any other value, a FILE value, or another mode is refused.
+
 <a id="s2-10"></a>
 ### 2.10 `--emit-ir`: the VM program listing
 

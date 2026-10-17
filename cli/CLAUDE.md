@@ -518,7 +518,10 @@ registry-query relation (`CLI_MODES_REGISTRY_QUERY`), dispatched in their own
 block just above that relation's because they are the two that must free the
 `-I` list. `X` is a bundle NAME when it matches the name grammar and a `.rxt`
 FILE otherwise (a path always has a `.` or `/`), which selects the per-target
-view. Rendering is `src/dump/findings_dump.c`.
+view. Rendering is `src/dump/findings_dump.c`. **[KNOW-SRC] K3 `--view=V`**
+(`CliState.list_view`) is a MODIFIER of `--list-analysis NAME`, not a mode:
+it is refused with a FILE value or any other mode, and selects the analysis
+kind's `canonical` or `decoded` view (`pcrec_find_list_view`).
 
 ## [UTF-VALID] (D133)
 

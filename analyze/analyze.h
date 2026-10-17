@@ -66,6 +66,15 @@ typedef struct {
 
     char encoding[8];           /* "" | "ascii" | "utf8" | "bytes" */
 
+    /* [KNOW-SRC] K3: the declarations the reader keeps for --dump-doc (the
+     * writer re-derives them, never reads them; NULL unless set). Each
+     * `serves` line's three parts, in file order. */
+    char *question;
+    char *reader;
+    char *analyzer;
+    struct { char *query, *when, *via; } *serves;
+    size_t nserves;
+
     /* provenance (each NULL/absent unless set) */
     char *source;
     char *retrieved;
@@ -74,6 +83,8 @@ typedef struct {
     char *license;
     char *fidelity;
     char *adaptation;
+    char *license_note;         /* [KNOW-SRC] K3 */
+    char *attribution;          /* [KNOW-SRC] K3 */
     int have_bytes;
     long long bytes_val;
     int have_sha256;
@@ -90,6 +101,13 @@ int kind_block_rows_equal(const KindBlock *a, const KindBlock *b); /* recount vs
 typedef struct {
     char *name; /* "analysis NAME" */
     KindBlock blocks[KIND__COUNT];
+    /* [KNOW-SRC] K3: the bundle's own lines, and its blocks' FILE order (the
+     * order `pcrec`'s item digest folds them in, so a document compare must
+     * keep it). */
+    char *include;              /* `include <x>`'s x, or NULL */
+    char *description;          /* NULL unless set */
+    Kind order[KIND__COUNT];
+    int norder;
 } Bundle;
 
 void bundle_init(Bundle *bd);
@@ -130,11 +148,22 @@ void derive_serves(Kind kind, const char *encoding, int has_freq, int has_cpfreq
  * what scripts/pcrec_analyze.py emits. */
 void render_bundle(FILE *out, const char *name, const Bundle *bd);
 
-/* Parses bundle TEXT (this tool's own emitted subset of .rxt, design.md
- * §2.7 -- not the full format) into `bd`. `text` need not be NUL-terminated
- * beyond `len`. Returns 0 on success; on failure returns -1 and (if err_out
- * non-NULL) a heap message the caller frees. */
+/* Parses bundle TEXT into `bd`: this tool's own emitted subset of .rxt
+ * (design.md §2.7) and, since [KNOW-SRC] K3, ONE whole `analysis` bundle as
+ * an author writes it -- column-1 comments, blank and whitespace-only lines
+ * around it, the bundle's `include`/`description`, every data-block line and
+ * all eleven provenance fields, prose in its block-scalar form -- read from
+ * `docs/spec/rxt_format.md` §1.4, §1.9 and §1.10, never from pcrec's reader.
+ * `text` need not be NUL-terminated beyond `len`. Returns 0 on success; on
+ * failure returns -1 and (if err_out non-NULL) a heap message the caller
+ * frees. */
 int parse_bundle(const char *text, size_t len, Bundle *bd, char **err_out);
+
+/* [KNOW-SRC] K3: prints `bd` as the DOCUMENT, one `scope\tfield\tvalue` row
+ * per field in document order, in the `#section decoded` shape `pcrec
+ * --list-analysis NAME --view=decoded` prints (docs/spec/findings.md §8.5):
+ * the R3/R5 comparison shape (docs/design/measure_sets.md §9.6). */
+void dump_doc(FILE *out, const Bundle *bd);
 
 /* Reads a whole file (or stdin when path is NULL or "-") into a malloc'd
  * buffer; *len is set. Returns 0 on success, -1 on error (errno set for a

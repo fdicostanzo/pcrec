@@ -247,7 +247,9 @@ one.
   live in that script, with sabotage rows S298-S300.
 
 - `findings_dump.c` — [FINDINGS] B2 (2026-09-27; `docs/spec/findings.md`
-  §8): `--list-analyses` (one row per bundle BUILT INTO the library; `-I` is
+  §8; [KNOW-SRC] K3 adds `pcrec_find_list_view`, `--list-analysis NAME
+  --view=canonical|decoded`, §8.4/§8.5: link 0's parse handed to the analysis
+  kind's writer columns through `pcrec_ks_view_write`): `--list-analyses` (one row per bundle BUILT INTO the library; `-I` is
   never enumerated) and `--list-analysis NAME | FILE` (the chain this
   invocation resolves, each (query, encoding)'s answer with the digest a
   stamp would carry, and the named bundle's rows, declarations and

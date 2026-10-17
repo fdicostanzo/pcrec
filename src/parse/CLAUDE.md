@@ -1654,13 +1654,13 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   MODULE'S.** `find_bundle` is `pcrec_ks_resolve` under `pcrec_ks_analysis`
   (`find_has` answers S1 and the store, `find_note` prints the note) and
   builds the link from where it landed; the chain, `#include_next`, the cycle
-  and depth refusals and the terminal stay here. Under
-  `-DPCREC_KSRC_BOTHWAYS` the pre-K1 loop (`old_find_bundle`, `old_probe_dir`,
-  `old_dir_has_exact`, `old_stops_text`, verbatim) runs beside it on every
-  lookup and any disagreement aborts (`find_bothways`); K2 deletes it.
+  and depth refusals and the terminal stay here. K1's
+  `-DPCREC_KSRC_BOTHWAYS` debug copy of the pre-K1 loop was DELETED at K2
+  (lane ksrc23, 2026-10-17), with the wrapper `pcrec_find_name_ok`: the
+  name rule is `pcrec_ks_name_ok` at every caller.
   `rxt_source.c`'s `lib` search is the same move: `lib_find` (the existence
-  loop and `lib_resolve`) is `pcrec_ks_resolve` under `pcrec_ks_lib`, with its
-  own both-ways copy (`old_lib_find`); `lib_chain_text` stays, because the
+  loop and `lib_resolve`) is `pcrec_ks_resolve` under `pcrec_ks_lib` (its
+  both-ways copy `old_lib_find` deleted at K2); `lib_chain_text` stays, because the
   `lib` refusal words its stops differently from the analysis one (a third
   kind divergence, listed in the K1 report, not unified).
   **[WINDOW-E1] (lane e1build, 2026-10-17):** `chain_serves_enc` reads the
@@ -1683,7 +1683,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   which is why it is a parse-layer TU. `pcrec_ks_lib` is the RESOLVE-ONLY
   `lib "path"` row — the naming file's directory then each `--lib-path`,
   `entry_match = probe-exists` (F12, kept for zero movers) and the `CLEAN`
-  join — with no probe, item, stamp or listing.
+  join — with no probe, item, stamp or listing. **K3 (lane ksrc23,
+  2026-10-17)**: the analysis row's two VIEWS of one bundle
+  (`PcrecKsAnalysisItem`, the parse plus the bundle name):
+  `analysis_write_canonical`, a normalized `.rxt` bundle that IS a loadable
+  analysis (blocks in FILE order, because `rows_digest` folds that order;
+  prose values untrimmed and block-scalar when multi-line), and
+  `analysis_write_decoded`, the loaded document as one `#section decoded`
+  row per field plus the `item` digest — the shape `pcrec-analyze
+  --dump-doc` prints from analyze/'s independent reader (R3/R5). Its
+  `derived_sections` column names the listing sections the loader refuses.
+  `rxt_source.c` keeps a bundle's `description` on its `analysis` row
+  (`close_section_frame`) for these views; `--list-source` reads a row's
+  `description` for pattern rows only, so no dump moves.
 
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every

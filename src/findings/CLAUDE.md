@@ -39,7 +39,7 @@ there. Neither is consulted unless a compile names it: the chain of a
 compile naming nothing is `default` alone.
 
 The TEXT embed is `scripts/embed_text.sh` (`findings_store.inc`) and the
-PRE-PARSE `scripts/findgen.c` (`findings_table.inc`; it lives outside `src/`
+PRE-PARSE `scripts/ksgen.c` (`findings_table.inc`; it lives outside `src/`
 because fifteen test scripts compile every `src/**/*.c` into a reference
 compiler, and a second `main` there would break them all).
 

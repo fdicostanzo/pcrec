@@ -17,6 +17,8 @@
   - [§8.1](#s8-1) `--list-analyses`
   - [§8.2](#s8-2) `--list-analysis NAME [-I DIR…]`
   - [§8.3](#s8-3) `--list-analysis FILE [-I DIR…] [--analysis X]`
+  - [§8.4](#s8-4) `--list-analysis NAME --view=canonical`
+  - [§8.5](#s8-5) `--list-analysis NAME --view=decoded`
 - [§9](#s9) The library: `pcrec_options`
 <!-- spec-toc:end -->
 
@@ -177,6 +179,7 @@
 | an `-I` file defining two or more bundles | refused, naming the file |
 | an `-I` file that fails to parse, or is over `PCREC_MAX_FIND_BUNDLE_BYTES` (1 MiB) | refused, with the parse's own diagnostic / by the limit's name |
 | an `-I` file that defines no bundle, or one of another name | a note, and the search continues |
+| an `-I` file carrying a `#section` line named for a DERIVED listing section (`chain`, `resolution`, `declarations`, `targets`, `decoded`, `item`): a listing fed back as an input | refused, naming the file and the section and pointing at `--view=canonical` (§8.4) |
 | the selected chain declares no query at all under this compile's `-e` | a note (every reader takes its NONE answer) |
 | the same name at two stops | not an error: the earlier stop shadows the later |
 
@@ -213,6 +216,27 @@
 | `targets` | one per target | `target`, `configs` (its `with` list as written), `analysis`, `named_by` (`config` / `cli-fill` / `none`), `config_line` (the config that named it) |
 | `chain` | one per target × link | `target` plus the name view's `chain` columns |
 | `resolution` | one per target × query × compile encoding | `target` plus the name view's `resolution` columns |
+
+<a id="s8-4"></a>
+### 8.4 `--list-analysis NAME --view=canonical`
+
+<a id="s8-4-p1"></a>[8.4¶1] The named bundle itself (link 0 of the chain `NAME` resolves to), as a normalized `.rxt` text that IS a loadable analysis: written to `DIR/NAME.rxt` and resolved through `-I DIR`, it loads as the same bundle. Its `rows_digest` (§8.1) is the original's, and listing it again gives the same bytes.
+
+<a id="s8-4-p2"></a>[8.4¶2] The text is one fixed comment line, then `analysis NAME`, its `include <x>` and `description` (when written), then its data blocks in the order the file wrote them (the order `rows_digest` folds them in). Each block's lines are written in `rxt_format.md` §1.10's table order (`question`, `reader`, `analyzer`, `encoding`, each `serves` line as written, the rows ascending, `provenance`), and the provenance fields in `rxt_format.md` §1.9's table order. Values are written as loaded: a prose value (`description`, `license-note`, `adaptation`, `attribution`) keeps its trailing whitespace and is written in the block-scalar form when it holds a newline or is the single byte `|`; every other value is trimmed. Comments, blank lines and every other bundle or pattern in the source file are not carried.
+
+<a id="s8-4-p3"></a>[8.4¶3] `--view` applies to `--list-analysis NAME` only; with a FILE value, or with any other mode, it is refused. An unknown view name is refused, naming the two views.
+
+<a id="s8-5"></a>
+### 8.5 `--list-analysis NAME --view=decoded`
+
+<a id="s8-5-p1"></a>[8.5¶1] The LOADED bundle, field by field: a derived view, never an input.
+
+| section | rows | columns |
+|---|---|---|
+| `decoded` | one per field of the loaded bundle, in document order: the bundle's `name`, `include` (the bare name) and `description`; then per data block in file order its `question`, `reader`, `analyzer`, `encoding`, each `serves` line (`<query> when <encs> via <via>`), each `row` (`<key> <count>`, keys spelled as in §8.4), and each provenance field written (`provenance.<field>`, `rxt_format.md` §1.9's order) | `scope` (`bundle`, or the block's kind), `field`, `value` |
+| `item` | one: the bundle's ITEM digest | `role` (`rows`), `digest` (the bundle's `rows_digest`, §8.1) |
+
+<a id="s8-5-p2"></a>[8.5¶2] A file carrying any of this view's or §8.2/§8.3's section names is refused as an analysis input (§7's failure table).
 
 <a id="s9"></a>
 ## 9. The library: `pcrec_options`

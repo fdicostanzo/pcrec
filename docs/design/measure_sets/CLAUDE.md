@@ -20,5 +20,22 @@ built or run by `make`.
 - `k1_anchors.summary` — the same run's stderr summary (counts, the step's
   hunk/reach totals, the UNRESOLVED list).
 
+- `k2_edit_set.tsv` — K2's EDIT SET (lane ksrc23, 2026-10-17), against the
+  branch point `343605a57` (K1 merged): the pre-K1 copies under
+  `-DPCREC_KSRC_BOTHWAYS`, the both-ways checks and the `pcrec_find_name_ok`
+  wrapper K2 deletes. `scripts/findgen.c` -> `scripts/ksgen.c` carries no
+  entry (no sabotage row names the file; `main` would match every file).
+- `k2_anchors.tsv` / `k2_anchors.summary` — the derived map and its summary,
+  the same tool and shape as K1's: `--step K2=343605a57..f227cca55`, PRE_TREE
+  a `git archive 343605a57`. 0 RE-AIM; 3 RE-RUN by reach (S1050, S255,
+  S309), each re-run solo DETECTED at f227cca55. The tool's UNRESOLVED list
+  (now 8: K1's five plus S995, S1028, S1029 in findings.c) is unresolved in
+  the PRE tree, so none is K2's.
+- `k3_edit_set.tsv`, `k3_anchors.tsv` / `k3_anchors.summary` — K3's edit set
+  (the three definitions K3 edits; it deletes none) and its derived map,
+  `--step K3=f227cca55..66c51d710` over the same PRE tree: 0 RE-AIM; 3
+  RE-RUN (S1049 by hunk, S310 and S315 by reach), each re-run solo
+  DETECTED at 66c51d710. K3's three new rows (S961, S962, S984) are its own.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

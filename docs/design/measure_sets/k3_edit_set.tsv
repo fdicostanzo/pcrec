@@ -1,0 +1,9 @@
+# measure_sets.md rev 3 §9.7: [KNOW-SRC] K3's EDIT SET, against K2's head f227cca55. K3 adds
+# code (the views, the derived-section refusal) and edits these definitions; it deletes none.
+# cli/main.c's --view arm is in `main` (cli_parse) and carries no def entry: `main` would
+# match every file's main; the step's own diff (--step) still reaches it by hunk.
+# docs/design/start_table/sabotage_anchors.py derives the re-aim/re-run map (k3_anchors.tsv).
+# kind	value	commit	why
+def	ks_probe_dir	K3	ksrc.c: the derived-section refusal ahead of the kind's probe
+def	close_section_frame	K3	rxt_source.c: a BUNDLE frame keeps its description on the analysis row
+def	gen_analysis	K3	ksgen.c: refuses a store text carrying a derived section

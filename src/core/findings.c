@@ -14,7 +14,7 @@
  * identity: S3, the embedded store, is every `src/findings/<name>.rxt`
  * compiled in as its TEXT by scripts/embed_text.sh and as that text
  * PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
- * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3). The default
+ * no-filesystem mode, scripts/ksgen.c — §8, §13 B1 (3). The default
  * declares `byte` only, so with no analysis named the answer under
  * `-e utf8` is NONE.
  *
@@ -63,7 +63,7 @@ typedef struct {
 #include "findings_store.inc"
 
 /* `pcrec_find_tbl[]`: the same text PRE-PARSED (`make gen-findings`) by the one
- * reader (scripts/findgen.c). The generator itself links a stage-0
+ * reader (scripts/ksgen.c). The generator itself links a stage-0
  * library built with PCREC_FIND_STAGE0, whose table is empty: it parses and
  * never compiles, so it never reads one. */
 #ifdef PCREC_FIND_STAGE0
@@ -109,7 +109,7 @@ const PcrecFindTblBundle *pcrec_find_store_bundles(size_t *n)
     return pcrec_find_tbl_bundles;
 }
 
-/* The store's bundles are contiguous in the table in store order (findgen
+/* The store's bundles are contiguous in the table in store order (ksgen
  * writes each file's blocks together), so a link is a slice of it. */
 bool pcrec_find_store_link(const char *name, PcrecFindStop stop,
                            PcrecFindLink *out)
@@ -134,12 +134,6 @@ bool pcrec_find_store_link(const char *name, PcrecFindStop stop,
         return true;
     }
     return false;
-}
-
-/* The knowledge module's one name rule ([KNOW-SRC] K1). */
-bool pcrec_find_name_ok(const char *s, size_t n)
-{
-    return pcrec_ks_name_ok(s, n);
 }
 
 /* ---- NORMALIZATION: counts -> byte-rate ppm (design §2.5, ONE function) ---- */

@@ -2934,6 +2934,28 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/findings.log" | grep -oE '[0-9]+')"
                 score_arm "$work/findings.log" "$f" "findings:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            knowledge)
+                # [KNOW-SRC] K3 tests/knowledge/run_knowledge_tests.sh — the
+                # analysis kind's ROUND-TRIP IDENTITY (measure_sets.md §9.6):
+                # R1 the item digest across load->list->load, R2 the canonical
+                # view a fixed point, R3 the canonical view and the original
+                # one document to analyze/'s independent reader, R5 pcrec's
+                # decoded view = that reader's decode, and the loader's refusal
+                # of a derived view fed back. ITS OWN ARM: a canonical writer
+                # that drops data the item digest does not cover, consistently,
+                # moves no artifact and no other suite (S961, S984 — R3 is the
+                # only detector, by design).
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE rather than "not detected".
+                PCREC="$pcrec" ANALYZE="$(dirname "$pcrec")/pcrec-analyze" \
+                    bash "$tree/tests/knowledge/run_knowledge_tests.sh" \
+                    > "$work/knowledge.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/knowledge.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/knowledge.log" | grep -oE '[0-9]+')"
+                score_arm "$work/knowledge.log" "$f" "knowledge:${f:-ERR}fail/${p:-?}pass"
+                ;;
             ctxnode)
                 # [UCP] U2 tests/ucp/run_ctxnode_tests.sh — the context-node
                 # corpus default AND under `-fno-ctx-node` (the GEN-4-shaped
