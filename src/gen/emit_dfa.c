@@ -1583,10 +1583,11 @@ static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
 /* [MEMFN] R17-b' B3a THE PRESENCE SPANS, STATED (r17b_prime.md §3.1 row B3a,
  * §4.1; PR-5, PR-6, PR-7): every member of the necessary set its own one-byte
  * span and the whole run, when one shipped, one span with its mask (members
- * in descending byte order, the run last), each with its NEED: REQUIRED
- * where no DFA scan fronts the route (the pre-check is then the call's only
- * linear no-match proof: K65's every member and K66's whole run, §4.6),
- * OPTIONAL elsewhere (a DFA scan proves absence itself); `omin` 0, PR-6's
+ * in descending byte order, the run last), each with its NEED, read off the
+ * site's consumer kind (`site_kinds[]`): REQUIRED on VM_ATTEMPT, the route no
+ * DFA scan fronts (the pre-check is then the call's only linear no-match
+ * proof: K65's every member and K66's whole run, §4.6), OPTIONAL elsewhere
+ * (a DFA scan proves absence itself); `omin` 0, PR-6's
  * sound under-estimate (presence is measured from the match start, and every
  * occurrence lies at or after it); `member_order` the one pattern position
  * the set carries, its walk's threaded rightmost (the last necessary byte),
@@ -1601,7 +1602,7 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
 {
     const ReqSet *set = pcrec_fact_req_set_stated(cx);
     const ReqRun *run = pcrec_fact_req_whole_run_stated(cx);
-    mf_need need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
+    mf_need need = site_kind_of(cx, SKS_PRE) == MF_SK_VM_ATTEMPT ? MF_REQUIRED : MF_OPTIONAL;
     int nm = 0, k = 0;
     for (int b = 0; b < 256; b++) nm += (set->bits[b >> 3] >> (b & 7)) & 1;
     int np = nm + (run->whole_len >= 2);
