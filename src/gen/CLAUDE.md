@@ -152,8 +152,9 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   at EVERY count with its table OFFERED (`PcrecFind.table`; PR-1:
   `PCREC_FIND_NO_TABLE` is MLINE's context stop only), its consumer kind
   (`PcrecFind.kind`, PR-3: DFA_SCAN, DFA_HAT, HYB_PF, in `pf_site_of`;
-  VM_ATTEMPT on the VM hat; DFA_ATTEMPT on MLINE; the PRE composite's by
-  `req_site_kind`) and its miss/move behaviour (PR-2: an unbounded site's
+  VM_ATTEMPT on the VM hat; DFA_ATTEMPT on MLINE; the PF and PRE sites' both
+  from ONE first-match table, `site_kind_of`/`site_kinds[]`, the one reader
+  of the hybrid fact for the kind) and its miss/move behaviour (PR-2: an unbounded site's
   leaving `on_miss`, a bounded one's `len - 1`, the DFA hat's re-seed as the
   `moved` statement, `pf_moved_reseed_of`). The kit writes the guard, the
   post-test, the bounded block and the moved test (KW-3), so the six axis-B

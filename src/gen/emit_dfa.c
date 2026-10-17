@@ -1522,16 +1522,57 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
  * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
 #define REQ_ON_MISS "return 0;"
 
-/* [MEMFN] R17-b' B2 THE PRE-CHECK's CONSUMER KIND (PR-3, r17b_prime.md §4.3):
- * the search entry it fronts, the route's. A VM finisher's entry is a
- * hybrid's `_search_run` (a DFA scan in front: HYB_PF) or a no-DFA VM route's
- * (VM_ATTEMPT); a DFA entry is ENG_ATTEMPT's `attempt_entry` (DFA_ATTEMPT)
- * or a DFA body's (DFA_SCAN, the rev-end relocate path's included). */
-static uint8_t req_site_kind(Ctx *cx)
+/* [MEMFN] R17-b' B2 THE CONSUMER KIND's sites (PR-3, r17b_prime.md §4.3):
+ * the pre-check, the PF site, and the PF site of the DFA hat. */
+typedef enum { SKS_PRE, SKS_PF, SKS_HAT, SKS_ANY } SiteKindSite;
+/* a row's test of one fact: it must be false, true, or either */
+typedef enum { SKF_NO, SKF_YES, SKF_ANY } SiteKindFact;
+typedef struct {
+    SiteKindSite site;
+    SiteKindFact hybrid;     /* a VM finisher with a DFA scan in front */
+    SiteKindFact finish_vm;  /* the finisher is the VM (`cand_finish_of`) */
+    SiteKindFact attempt;    /* the DFA-shaped body is ENG_ATTEMPT's (`cand_route_of`) */
+    uint8_t      kind;       /* mf_site_kind */
+} SiteKindRow;
+
+/* THE TABLE, first match: the search entry each site fronts. */
+static const SiteKindRow site_kinds[] = {
+    /* the DFA hat, whose re-seed is its distinguishing fact even inside a hybrid */
+    { SKS_HAT, SKF_ANY, SKF_ANY, SKF_ANY, MF_SK_DFA_HAT },
+    /* a hybrid's `_search_run`: its pre-check and its inner prefilter */
+    { SKS_ANY, SKF_YES, SKF_ANY, SKF_ANY, MF_SK_HYB_PF },
+    /* a no-DFA VM route's attempt loop (no PF site exists there) */
+    { SKS_PRE, SKF_NO,  SKF_YES, SKF_ANY, MF_SK_VM_ATTEMPT },
+    /* ENG_ATTEMPT's `attempt_entry` */
+    { SKS_PRE, SKF_NO,  SKF_NO,  SKF_YES, MF_SK_DFA_ATTEMPT },
+    /* a DFA body's forward scan, the rev-end relocate path's included */
+    { SKS_ANY, SKF_NO,  SKF_NO,  SKF_ANY, MF_SK_DFA_SCAN },
+};
+
+/* Does fact test `t` admit the value `v`? */
+static bool site_kind_fact(SiteKindFact t, bool v)
 {
-    if (cand_finish_of(cx) == CAND_ROUTE_VM)
-        return pcrec_artifact_has_dfa_scan(cx) ? MF_SK_HYB_PF : MF_SK_VM_ATTEMPT;
-    return cand_route_of(cx) == CAND_ROUTE_ATTEMPT ? MF_SK_DFA_ATTEMPT : MF_SK_DFA_SCAN;
+    return t == SKF_ANY || (t == SKF_YES) == v;
+}
+
+/* The consumer kind (mf_site_kind) of `site` in this compile: the first row
+ * of `site_kinds[]` that admits it. The one reader of the hybrid fact for
+ * the kind, so the pre-check and the PF site cannot disagree on it. */
+static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
+{
+    bool finish_vm = cand_finish_of(cx) == CAND_ROUTE_VM;
+    bool hybrid = finish_vm && pcrec_artifact_has_dfa_scan(cx);
+    bool attempt = cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
+    for (size_t k = 0; k < sizeof site_kinds / sizeof site_kinds[0]; k++) {
+        const SiteKindRow *r = &site_kinds[k];
+        if ((r->site == SKS_ANY || r->site == site) && site_kind_fact(r->hybrid, hybrid) &&
+            site_kind_fact(r->finish_vm, finish_vm) && site_kind_fact(r->attempt, attempt))
+            return r->kind;
+    }
+    pcrec_ctx_fail(cx, 0, "internal error: no consumer kind for a search site "
+                   "(a PF site on a VM finisher with no DFA scan) "
+                   "(src/gen/emit_dfa.c, site_kind_of)");
+    return MF_SK_UNSTATED;
 }
 
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
@@ -1608,7 +1649,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->empty = MF_EMPTY_MISS;
     s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
     s->consumer = MF_C_ENGINE;
-    s->site_kind = req_site_kind(cx);
+    s->site_kind = site_kind_of(cx, SKS_PRE);
     s->npred = (uint16_t)np;
     s->preds = p;
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
@@ -6633,9 +6674,7 @@ static PcrecFind pf_site_of(Ctx *cx, const CandRow *pf, const uint8_t *set, bool
                         .len = "subject_length", .holdback = views ? 1 : 0,
                         .on_miss = views ? NULL : "return 0;",
                         .start = PCREC_MF_ORIGIN,
-                        .kind = hat ? MF_SK_DFA_HAT
-                              : cand_finish_of(cx) == CAND_ROUTE_VM ? MF_SK_HYB_PF
-                              : MF_SK_DFA_SCAN,
+                        .kind = site_kind_of(cx, hat ? SKS_HAT : SKS_PF),
                         .moved = hat ? pf_moved_reseed_of(cx, cx->opt->prefix,
                                                           &dfa_dir_forward) : NULL };
 }
