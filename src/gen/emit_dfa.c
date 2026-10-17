@@ -8326,10 +8326,35 @@ static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
     return hit;
 }
 
+/* THE START SET the handoff displaces, one byte per entry: the row NEXT
+ * selects under `-fno-req-handoff`, as that row proves its candidates
+ * (`cand_row_scan`): the one proven byte where the scan proves one, else the
+ * class's `proven0`. False where the row proves no byte set (every byte then
+ * begins a candidate). Read by `req_landmark_admits` and by the trace build's
+ * pick shadow, which hands the same set to the kit's port. */
+static bool req_start_set(const CandSel *s, uint8_t start_set[256])
+{
+    Ctx *cx = s->cx;
+    const CandRow *start_row = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
+    if (start_row->u.pf.scan != PF_SCAN_BYTE && start_row->u.pf.scan != PF_SCAN_SET) return false;
+    CandScan cs = { .byte = -1 };
+    cand_row_scan(cx, CAND_SLOT_NEXT, s->us, start_row, &cs);
+    if (cs.byte >= 0) {
+        memset(start_set, 0, 256);
+        start_set[cs.byte] = 1;
+        return true;
+    }
+    if (cs.asked && cs.cls.exists) {
+        for (int b = 0; b < 256; b++) start_set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
+        return true;
+    }
+    return false;
+}
+
 /* [REQ-HANDOFF-L1] THE K ADMISSION, from three facts: `h`, the prior's mass
  * on the landmark's hit (`req_landmark_hit_ppm`), `m`, the prior's mass on the
  * START SET (the bytes a candidate start begins with, as the row without the
- * handoff proves them: `start_row`, the slot's own walk under its deny, a
+ * handoff proves them, `req_start_set`: the slot's own walk under its deny, a
  * start-byte row or `none`), and `K`. The prior is the compile's byte-rate one
  * (`pcrec_find_byte_rate`; cardinality where there is none, inside
  * `pcrec_find_set_mass`). A candidate start falls about every `1/m` bytes
@@ -8349,20 +8374,8 @@ static bool req_landmark_admits(const CandSel *s, long long k)
     Ctx *cx = s->cx;
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     unsigned long long landmark_ppm = req_landmark_hit_ppm(cx, rate), start_ppm = 1000000u;
-    const CandRow *start_row = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
-    if (start_row->u.pf.scan == PF_SCAN_BYTE || start_row->u.pf.scan == PF_SCAN_SET) {
-        CandScan cs = { .byte = -1 };
-        uint8_t start_set[256];
-        cand_row_scan(cx, CAND_SLOT_NEXT, s->us, start_row, &cs);
-        if (cs.byte >= 0) {
-            memset(start_set, 0, sizeof start_set);
-            start_set[cs.byte] = 1;
-            start_ppm = pcrec_find_set_mass(rate, start_set);
-        } else if (cs.asked && cs.cls.exists) {
-            for (int b = 0; b < 256; b++) start_set[b] = cs.cls.proven0[b >> 3] >> (b & 7) & 1;
-            start_ppm = pcrec_find_set_mass(rate, start_set);
-        }
-    }
+    uint8_t start_set[256];
+    if (req_start_set(s, start_set)) start_ppm = pcrec_find_set_mass(rate, start_set);
     if (landmark_ppm == 0) return true;             /* the prior never sees it */
     if ((unsigned long long)k * landmark_ppm >= 1000000u) return false;
     return (1000000u - (unsigned long long)k * landmark_ppm) * start_ppm > 1000000u * landmark_ppm;
@@ -10222,7 +10235,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
         mf_pres_proof proof = { (int16_t)cs.byte, (uint8_t)cs.one_byte,
                                 (uint8_t)cs.run_verified };
-        /* the K admission's displaced row, where NEXT prices it */
+        /* the K admission's start set, where NEXT prices it */
         UnanchStart us;
         CandSel ns = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
                        .route = CAND_ROUTE_DFA };
@@ -10236,14 +10249,11 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
                 ns.us = &us;
                 ns.ss = pcrec_fact_start_set(cx);
                 priced = true;
-                const CandRow *below = cand_select(CAND_SLOT_NEXT, &ns,
-                                                   cx->opt->flags | PCREC_NO_REQ_HANDOFF);
-                if (below->u.pf.scan == PF_SCAN_BYTE || below->u.pf.scan == PF_SCAN_SET) {
-                    CandSet bs;
-                    pf_scan_set_of(cx, ns.d, ns.us, below, &bs);
+                uint8_t ss[256];
+                if (req_start_set(&ns, ss)) {   /* the admission's own start set */
                     memset(disp, 0, sizeof disp);
                     for (int b = 0; b < 256; b++)
-                        if (bs.set[b]) disp[b >> 3] |= (uint8_t)(1u << (b & 7));
+                        if (ss[b]) disp[b >> 3] |= (uint8_t)(1u << (b & 7));
                     dp = disp;
                 }
             }

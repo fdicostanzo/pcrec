@@ -123,7 +123,7 @@ static int tie_over(const mf_pred *a, const mf_pred *b)
 /* ---- the ports ---------------------------------------------------------------- */
 
 int mf_pres_ports(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
-                  const uint8_t *displaced, mf_pres_picks *out)
+                  const uint8_t *start_set, mf_pres_picks *out)
 {
     out->set_pick = out->run_scan = out->run_window = -1;
     out->set_leads = out->dominated = out->landmark = -1;
@@ -217,7 +217,7 @@ int mf_pres_ports(const mf_art *art, const mf_site *s, const mf_pres_proof *proo
                 h = (h * set_mass(rate, set) + 999999u) / 1000000u;
             }
         }
-        if (displaced) m = set_mass(rate, displaced);
+        if (start_set) m = set_mass(rate, start_set);
         if (h == 0) out->landmark = 1;
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);

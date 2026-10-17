@@ -1243,9 +1243,11 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
  *              VERIFIED inside a longer predicate, and `run` 1 iff the search
  *              proves the whole necessary run in the window. NULL: no search
  *              fronts the consumer (nothing proven).
- *   displaced  the byte set of the start search the site's landmark handoff
- *              DISPLACES at its restart (32 bytes, mf_term.set's layout), or
- *              NULL where the displaced row scans nothing; read only where
+ *   start_set  the START SET (D167 addendum 1): the bytes a candidate start
+ *              begins with, as the start search the site's landmark handoff
+ *              displaces at its restart proves them (32 bytes, mf_term.set's
+ *              layout: the one byte it proves, else its class's proven set),
+ *              or NULL where that search proves no byte set; read only where
  *              the site ASSIGNs its landmark (head_max is then K).
  *
  * The answers (-1 where a port is not asked):
@@ -1270,7 +1272,7 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
  *               verify; 0 iff not; -1 with no presence span.
  *   landmark    the FIFTH (shadow only, not a kit row: framing (a) leaves the
  *               ORIGIN pcrec's; D167 Q-R17P-11): 1 iff the landmark's mean
- *               gap less K beats the displaced search's mean gap under the
+ *               gap less K beats the start set's mean gap under the
  *               frequency kind, 0 iff not; -1 where the site does not ASSIGN
  *               its landmark. */
 #define MF_PRES_WINDOW 8    /* the ports' window, in run positions: the host's
@@ -1291,7 +1293,7 @@ typedef struct {
     int8_t  landmark;
 } mf_pres_picks;
 int mf_pres_ports(const mf_art *, const mf_site *site, const mf_pres_proof *proof,
-                  const uint8_t *displaced, mf_pres_picks *out);
+                  const uint8_t *start_set, mf_pres_picks *out);
 
 /* ---- the kit's option registry (§R4.4.1; memfn/src/options.def) --------- */
 
