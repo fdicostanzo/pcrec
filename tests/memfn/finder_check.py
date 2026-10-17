@@ -54,6 +54,16 @@ design's text, sharing no code with the kit):
      is retired, declared UNREACHED.)
      Also (lane n2fix): no PRES shadow decision is declined on `need` (the
      OPTIONAL span on `pre-opt` is on the record, so the control is not blind).
+  L. PROVENANCE `bytes` AND `fidelity` (R-24, MF_SITE_ABI 15; S1092): pcrec's
+     stanza mapping states each token of the findings vocabulary (read off
+     `pcrec --list-schema`) as its own enumerator (verbatim 1, adapted 2,
+     synthesized 3, from window_contract.md §3.1), a block declaring none as
+     the UNSTATED zero, refuses a word outside the set without a write, and
+     passes `bytes` through exactly; no kit source names mf_prov or
+     fidelity, and a site renders byte-identically (plain and traced) with
+     no analysis object and with one stating each fidelity value (UNSTATED
+     and an out-of-enum 9 included). The layout is prov_check.c's static
+     assertions (appended, never reordered).
   J. A DENY reaches its row: `--memfn=no-fd-r0` skips R0 on its witness.
   K. B2's ROUTING (§1.6, R17-b' B2): the rows the design routes at B2 (D1,
      D1c, D1w) are routed and LOCKED, every other row is neither; each routed
@@ -561,12 +571,103 @@ def check_pay(fx):
     (ok() if ties >= PAY_TIE_FLOOR else bad("the grid holds %d ties, under %d" % (ties, PAY_TIE_FLOOR)))
 
 
+# ---- L ----------------------------------------------------------------------
+
+# window_contract.md rev 3.1 §3.1's enumerators, written HERE (the kit's header
+# and pcrec's mapping are what they are held against).
+FID_EXPECT = {"verbatim": 1, "adapted": 2, "synthesized": 3}
+FID_OUTSIDE = ["Verbatim", "VERBATIM", "", "synth", "verbatim ", "none", "measured"]
+KIT_READERS_RE = re.compile(r"mf_prov|mf_akind|MF_FID_|fidelity|->prov\b|\.prov\b")
+
+
+def schema_fidelity_tokens(root):
+    """The closed set of `fidelity` tokens, read off the schema dump the
+    parser's own constraint check reads (`pcrec --list-schema`), never off the
+    mapping under test."""
+    r = run([os.path.join(root, "build", "pcrec"), "--list-schema"])
+    for ln in r.stdout.decode().splitlines():
+        c = ln.split("\t")
+        if c[0] == "provenance" and c[1] == "fidelity":
+            m = re.search(r"closed fidelity ((?:[a-z]+ ?)+)", "\t".join(c))
+            if m:
+                return m.group(1).split()
+    return None
+
+
+def prov_run(provchk, bytes_, tok):
+    r = run([provchk, str(bytes_), tok])
+    f = r.stdout.decode().rstrip("\n").split("\t")
+    return (int(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5])) if f[0] == "RC" else None
+
+
+def check_prov(root, fx, fxt, provchk):
+    """R-24 (MF_SITE_ABI 15): mf_prov carries the answering block's `bytes`
+    and `fidelity`. (1) pcrec's mapping states every token of the findings
+    vocabulary as its own nonzero enumerator, NULL as the UNSTATED zero, and
+    refuses a word outside the set without writing (the layout half is
+    prov_check.c's static assertions, a build failure). (2) the closed set is
+    read off --list-schema and equals the mapping's, both directions. (3) `bytes` passes through exactly. (4) no
+    kit row READS either field: the kit's sources name neither, and a site
+    renders byte-identically (stdout and the traced shadow's stderr) with no
+    analysis object and with one stating each fidelity value, UNSTATED and an
+    out-of-enum value included."""
+    toks = schema_fidelity_tokens(root)
+    if toks is None:
+        bad("L: --list-schema carries no `closed fidelity ...` constraint (the vocabulary's source moved)")
+        return
+    (ok() if sorted(toks) == sorted(FID_EXPECT) else
+     bad("L: the schema's fidelity set %s is not the contract's %s" % (toks, sorted(FID_EXPECT))))
+    seen = set()
+    for t in toks:
+        g = prov_run(provchk, 1234, t)
+        e = FID_EXPECT.get(t)
+        if g is None or e is None or g[0] != 0 or g[1] != e or g[2] != 1234:
+            bad("L: token %r maps to %s, expected rc 0 fidelity %s bytes 1234" % (t, g, e))
+        else:
+            ok()
+            seen.add(g[1])
+    (ok() if seen == {1, 2, 3} else bad("L: the vocabulary reaches enumerators %s, not exactly 1,2,3" % sorted(seen)))
+    g = prov_run(provchk, 0, "@none")
+    (ok() if g and g[0] == 0 and g[1] == 0 and g[2] == 0 else
+     bad("L: a block declaring no fidelity (NULL, bytes 0) maps to %s, expected rc 0 fidelity 0 (UNSTATED) bytes 0" % (g,)))
+    for t in FID_OUTSIDE:
+        g = prov_run(provchk, 55, t)
+        # refused (-1) and the sentinels (fidelity 0xEE = 238, bytes 0xDEADBEEF) untouched
+        (ok() if g and g[0] == -1 and g[1] == 238 and g[2] == 0xDEADBEEF else
+         bad("L: the word %r is outside the vocabulary and must be refused without a write, got %s" % (t, g)))
+    for n in (0, 1, 999960, 1000000, (1 << 40) + 7, (1 << 63) + 5):
+        g = prov_run(provchk, n, "verbatim")
+        (ok() if g and g[2] == n else bad("L: bytes %d did not pass through exactly (got %s)" % (n, g)))
+    # (4) no kit reader
+    hits = []
+    for d in ("memfn/src",):
+        for f in sorted(os.listdir(os.path.join(root, d))):
+            if f.endswith((".c", ".h", ".def")):
+                for i, ln in enumerate(open(os.path.join(root, d, f), errors="replace"), 1):
+                    if KIT_READERS_RE.search(ln):
+                        hits.append("%s/%s:%d" % (d, f, i))
+    (ok() if not hits else bad("L: the kit's sources name mf_prov/fidelity (a reader before B3a): %s" % hits[:5]))
+    base = None
+    for prog, name in ((fx, "plain"), (fxt, "traced")):
+        for site in ("set10", "byte1t"):
+            ref = run([prog, "--fd-site", site])
+            for fid in (0, 1, 2, 3, 9):
+                got = run([prog, "--fd-site", site, "--fd-an", str(fid)])
+                if (got.returncode, got.stdout, got.stderr) != (ref.returncode, ref.stdout, ref.stderr) or \
+                        b"TEXT" not in ref.stdout:
+                    bad("L: %s kit: site %s renders differently with an analysis stating fidelity %d "
+                        "(or the control rendered nothing)" % (name, site, fid))
+                else:
+                    ok()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True)
     ap.add_argument("--fx", required=True)
     ap.add_argument("--fxt", required=True)
     ap.add_argument("--tmp", required=True)
+    ap.add_argument("--provchk", required=True)
     a = ap.parse_args()
     rows = check_table(a.fx)
     form = check_hash(a.fx)
@@ -575,6 +676,7 @@ def main():
     check_query(a.fx, a.fxt, a.tmp)
     check_pay(a.fx)
     check_routing(a.fx, a.fxt)
+    check_prov(a.root, a.fx, a.fxt, a.provchk)
     for u in unreached:
         print("UNREACHED: " + u)
     print("checks passed: %d" % passed)

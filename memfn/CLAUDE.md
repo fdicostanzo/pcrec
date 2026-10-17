@@ -102,6 +102,16 @@ is UNSTATED and `site_check` (read by `mf_define` and `mf_ask`) REFUSES a site
 that leaves it; pcrec's common constructor no longer writes ONESHOT and every
 builder states it. Check: finder_check family I; mech S1089 (S919 retired
 UNREACHED). Report: `docs/dev/lanes/r23_report.md`.
+R-24 (lane r24, 2026-10-17) made MF_SITE_ABI 15 with NO `MF_VOCAB` move and NO
+pcrec byte moved: `mf_prov` (the DECLARED analysis object's provenance) gains,
+appended last, `bytes` (the answering block's exemplar byte count, 0 when it
+declares none) and `fidelity` (`mf_prov_fidelity`: UNSTATED 0, VERBATIM,
+ADAPTED, SYNTHESIZED, the findings vocabulary's three tokens). NO kit row
+reads either field before B3a (finder_check family L greps the kit's sources
+for it and renders a site with and without an analysis stating each value).
+pcrec's side is `pcrec_memfn_prov_stanza` (src/gen/memfn_sites.c); E-1's merge
+calls it. Check: finder_check family L (tests/memfn/prov_check.c); mech S1092.
+Report: `docs/dev/lanes/r24_report.md`.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

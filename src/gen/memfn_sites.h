@@ -123,6 +123,15 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
  * MLINE's predecessor term), overshoot 0. */
 void pcrec_memfn_window_is_candidate(mf_pred *p);
 
+/* The answering block's provenance stanza onto `p` (R-24, MF_SITE_ABI 15):
+ * `p->bytes` is the block's `provenance bytes` row (0 when it declares none)
+ * and `p->fidelity` its `fidelity` token (NULL: the block declares none,
+ * MF_FID_UNSTATED). Returns -1, writing nothing, for a token outside the
+ * findings vocabulary; the caller refuses (pcrec's own defect). The other
+ * mf_prov fields (source, bundle, digest) are the object builder's. */
+int pcrec_memfn_prov_stanza(mf_prov *p, unsigned long long bytes,
+                            const char *fidelity);
+
 /* The kit's define, use and call for DELEG_SITES row `id`; each fails the
  * compile with the kit's refusal text (pcrec_ctx_fail's internal-error
  * tier). Define checks the site against its row first (C10). */
