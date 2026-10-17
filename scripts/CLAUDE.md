@@ -431,11 +431,13 @@ pcrec (the Makefile owns that).
   Planted by mech S981 / S982 (`opt_argv` drops that one flag; detector
   `tests/emit_sweep.py.test`). See `docs/dev/lanes/sweeparm_report.md`.
 
-  **THE FINDER DENIES (R17-b′ B1, lane fdb1, 2026-10-16).** The five kit
-  rows `--memfn=no-fd-r0|fd-r5|fd-r8|fd-ndisp|fd-d1` have DIFFER_PINS cells
-  (byte and utf8, c-default and c-vm) with ASSERT_ZERO: no finder row is
-  routed at B1, so each deny must read zero movers (their first moving step,
-  B2-B8, replaces the zero with a measured floor and witness).
+  **THE FINDER DENIES (R17-b′ B1, lane fdb1, 2026-10-16; B2, lane fdb2).**
+  The five kit rows `--memfn=no-fd-r0|fd-r5|fd-r8|fd-ndisp|fd-d1` have
+  DIFFER_PINS cells (byte and utf8, c-default and c-vm). A row not yet
+  routed is ASSERT_ZERO on all four: its deny must read zero movers, and its
+  first moving step (B4-B8) replaces the zero with a measured floor and
+  witness. `fd-d1` moved at B2: its c-default cells are floors (1,004 byte,
+  985 utf8, witness ` \w?+\b`); its c-vm cells stay ASSERT_ZERO.
 
   **ONE POOL ACROSS THE STREAMS ([admin1008b], 2026-10-07).** The argv
   streams (1, 2, 3, 6) and the composition stream used to run as a pool each,
