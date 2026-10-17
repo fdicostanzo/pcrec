@@ -41,7 +41,7 @@ Re-run: `make -j8 test-codegen` rc 0, `run_group: 16/16 scripts passed`, no
 
 No edit needed. main's int3 lane already fixed it (6b5b47938, "fix two
 doc-citation reds from the merged branches (PL14 plan line cite ...)"), so the
-`plan.md:859` cite in winreq_report.md is gone after step 1 (the line now
+plan.md line-number cite (line 859) in winreq_report.md is gone after step 1 (the line now
 reads `[REGIME-LANDINGS] (not started)`). `make test-plan-lint` green:
 180 rows, 0 violations, selftest 32 plants / 17 of 17 rules.
 
