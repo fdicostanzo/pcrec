@@ -1,0 +1,98 @@
+## A. whole-cover search sites (origin start), by consumer kind and groups
+sites bench native DFA_SCAN OFS groups 4
+sites bench native DFA_SCAN OFS no-groups 43
+sites bench native DFA_SCAN PF no-groups 24
+sites bench native HYB_PF PF groups 4
+sites bench native HYB_PF PF no-groups 2
+sites bench utf8 DFA_SCAN OFS groups 4
+sites bench utf8 DFA_SCAN OFS no-groups 30
+sites bench utf8 DFA_SCAN PF no-groups 15
+sites bench utf8 HYB_PF PF groups 4
+sites corpus native DFA_HAT PF no-groups 6
+sites corpus native DFA_SCAN OFS groups 88
+sites corpus native DFA_SCAN OFS no-groups 228
+sites corpus native DFA_SCAN PF groups 5
+sites corpus native DFA_SCAN PF no-groups 359
+sites corpus native HYB_PF PF groups 101
+sites corpus native HYB_PF PF no-groups 124
+sites corpus native VM_ATTEMPT PF groups 39
+sites corpus utf8 DFA_SCAN OFS groups 84
+sites corpus utf8 DFA_SCAN OFS no-groups 190
+sites corpus utf8 DFA_SCAN PF groups 4
+sites corpus utf8 DFA_SCAN PF no-groups 216
+sites corpus utf8 HYB_PF PF groups 57
+patterns bench native DFA_SCAN groups 4
+patterns bench native DFA_SCAN no-groups 67
+patterns bench native HYB_PF groups 4
+patterns bench native HYB_PF no-groups 2
+patterns bench utf8 DFA_SCAN groups 4
+patterns bench utf8 DFA_SCAN no-groups 45
+patterns bench utf8 HYB_PF groups 4
+patterns corpus native DFA_HAT no-groups 6
+patterns corpus native DFA_SCAN groups 93
+patterns corpus native DFA_SCAN no-groups 587
+patterns corpus native HYB_PF groups 101
+patterns corpus native HYB_PF no-groups 124
+patterns corpus native VM_ATTEMPT groups 39
+patterns corpus utf8 DFA_SCAN groups 88
+patterns corpus utf8 DFA_SCAN no-groups 406
+patterns corpus utf8 HYB_PF groups 57
+## B. what is sent today on those sites (native)
+PF 0R 664
+OFS 0O,1O 189
+OFS 0+2R 52
+OFS 0O,2O 30
+OFS 0O,3O 15
+OFS 0+3R 14
+OFS 0+4R 10
+OFS 0O,1+1R 9
+OFS 0+1R 8
+OFS 0+7R 7
+OFS 0+6R 6
+OFS 0O,1+7R 3
+## C. whole-cover only with an end anchor: artifact shape
+bench native dfa kit-site 2
+bench native dfa no-kit-site 8
+bench utf8 dfa kit-site 1
+bench utf8 dfa no-kit-site 6
+corpus native dfa kit-site 9
+corpus native dfa no-kit-site 76
+corpus native vm kit-site 1
+corpus native vm no-kit-site 86
+corpus utf8 dfa kit-site 8
+corpus utf8 dfa no-kit-site 66
+corpus utf8 vm kit-site 1
+corpus utf8 vm no-kit-site 86
+## D. whole-cover once context joins, by engine (all items expressible)
+bench native dfa 6
+bench native vm 4
+bench utf8 dfa 3
+bench utf8 vm 3
+corpus native dfa 84
+corpus native vm 23
+corpus utf8 dfa 69
+corpus utf8 vm 19
+## E. whole-cover patterns by engine, language source and kit site
+bench native dfa N kit-site 71
+bench native dfa anchor kit-site 2
+bench native dfa anchor no-kit-site 3
+bench native vm D kit-site 7
+bench native vm pcre2 kit-site 4
+bench utf8 dfa N kit-site 47
+bench utf8 dfa anchor kit-site 1
+bench utf8 dfa anchor no-kit-site 3
+bench utf8 vm D kit-site 7
+corpus native dfa N kit-site 585
+corpus native dfa anchor kit-site 6
+corpus native dfa anchor no-kit-site 21
+corpus native dfa pcre2 kit-site 15
+corpus native dfa pcre2 no-kit-site 15
+corpus native vm D kit-site 140
+corpus native vm anchor no-kit-site 2
+corpus native vm pcre2 kit-site 262
+corpus native vm pcre2 no-kit-site 14
+corpus utf8 dfa N kit-site 420
+corpus utf8 dfa anchor kit-site 5
+corpus utf8 dfa anchor no-kit-site 17
+corpus utf8 vm D kit-site 138
+corpus utf8 vm anchor no-kit-site 2
