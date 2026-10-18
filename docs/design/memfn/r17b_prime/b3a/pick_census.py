@@ -150,7 +150,8 @@ def main():
             raise SystemExit("unknown population %r" % p)
         if a.nonascii:
             pops[p] = [(args, pat) for args, pat in pops[p]
-                       if any(b >= 0x80 for b in pat.encode("utf-8", "surrogateescape"))]
+                       if any(b >= 0x80 for b in (pat if isinstance(pat, bytes)
+                                                  else pat.encode("utf-8", "surrogateescape")))]
         pops[p] = pops[p][::a.every]
     cnt = collections.Counter()
     sites = collections.Counter()

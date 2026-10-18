@@ -148,8 +148,12 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   beside pcrec's own answer (`PCREC_PICK_PLANT` plants a disagreement), and
   `memfn_sites.c` `pres_record` prints MFPRES (the stated spans) under
   `PCREC_MF_ROUTE_TRACE`. The fact reads are non-pass
-  (`pcrec_fact_req_set_stated`/`_whole_run_stated`, Q-WR-12). Report:
-  `docs/dev/lanes/b3a_report.md`.
+  (`pcrec_fact_req_set_stated`/`_whole_run_stated`, Q-WR-12). Lane b3afix:
+  a span's `need` reads the site's consumer kind (`site_kinds[]`, REQUIRED
+  on VM_ATTEMPT); the shadow hands the port the K admission's own START SET
+  (`req_start_set`, shared with `req_landmark_admits`), reads its facts
+  without a pass and restores `pf.used` on exit. Report:
+  `docs/dev/lanes/b3a_report.md` §9.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's

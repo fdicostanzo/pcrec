@@ -598,8 +598,13 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   each line (pick, nontrivial, pcrec's value, flags, pattern); its MFPICK
   record must agree with the kit's port, carry the stated nontrivial bit
   and pcrec value, and a `PCREC_PICK_PLANT` run per nontrivial line must
-  report a disagreement (SN-6). Run by `tests/codegen/run_cand_oracle.sh`.
-  The full census is `docs/design/memfn/r17b_prime/b3a/pick_census.py`.
+  report a disagreement (SN-6). Since lane b3afix it also holds the trace
+  build's `--emit-facts` `used` column to the default build's (the shadow is
+  not a pass; floored on the witnesses whose default build never asks
+  `req_set`), and `PRES_PICKS_EXTRA=FLAGS` runs the witnesses under FLAGS,
+  agreement only, for the census's extra arms. Run by
+  `tests/codegen/run_cand_oracle.sh`. The full census is
+  `docs/design/memfn/r17b_prime/b3a/pick_census.py`.
 - **run_pr11.sh**, **pr11_front.py**, **pr11_witnesses.tsv** — the PR-11
   control (R17-b′ B3a): over count-collapsed VM hybrids
   (`RX_VM_PREFILTER_LANG "count-collapsed"`), every subject derived from a
