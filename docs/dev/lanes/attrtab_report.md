@@ -77,8 +77,10 @@ backreference program, `--part-residual=shared` and
 tiered artifact with `_deep` (`([a-z]+)+@`, `--engine=vm`).
 
 The full sweep arms are **OWED** to the slot, run by the detached chain
-`build/land/chain.sh` (waiter armed, waiting for `GO attrtab` in
-`worktrees/attrtab/attrtab_rulings.md`; it re-reads that file before every
+`build/land/chain2.sh` (armed detached; it found main's `GO attrtab` line
+in `worktrees/attrtab/attrtab_rulings.md` at 10:02 and is running; the
+first waiter, `chain.sh`, matched only a line-initial `GO` and was stopped
+with `scripts/safekill`). It re-reads that file before every
 heavy step, stops on a `HOLD attrtab` line, and starts no step after
 00:30). Each arm is
 `scripts/emit_sweep.py --ref-bin ref/pcrec-65dd423ee --bin build/pcrec --jobs 8`
@@ -94,6 +96,13 @@ plus:
 | SIMD | `--extra="-fmemfn-simd"` | `build/land/sweep-simd.log` |
 | part layout, all auto | `--extra="--part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto --part-residual=auto" --no-differ-floor` | `build/land/sweep-part-auto.log` |
 | part layout, controlled | `--extra="--part-residual=shared" --no-differ-floor` | `build/land/sweep-part-shared.log` |
+
+**Plain arm, MEASURED** (chain started 10:02 on main's `GO attrtab`; rc 0,
+73 s, self-check passed): 0 movers and 0 asymmetric on all eleven streams
+(c-default, c-vm, emit-ir-vm, facts, emit-ir-auto and its three arms,
+stderr, composition, dumps); argv population 5,790 at full reach,
+composition 37 producing files / 106 artifacts, every tag floor held. The
+other seven arms are OWED to the running chain.
 
 The two part-layout arms and the VM arm have no DIFFER_PINS floor (their
 DIFFER count against the base is expected nonzero and is not the claim);
