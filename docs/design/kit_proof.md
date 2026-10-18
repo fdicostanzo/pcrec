@@ -1207,7 +1207,7 @@ becomes THE context fact and the machine reading its control (fam-Q3). A true lo
 the neighbour-set assertion fold, is filed BOONIES-style (UL-6). *Leaning:* as the panel
 answers.
 
-**Q4, one deny for the proof family.** *Panel's answer, PENDING FRANK'S RULING:* one FACT
+**Q4, one deny for the proof family.** **RULED (Frank, 2026-10-18): as the panel answers** (lands at B1). Panel's answer: one FACT
 deny, `-fno-kit-proof`, that empties the proof (fam-M6). Every consumer of `MkKnown`
 declines naturally, so one bit serves `cover` and every later T-PROOF member with no
 per-row field, and X5 becomes a byte-identity gate. Denying `cover` alone once U2 lands
