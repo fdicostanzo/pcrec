@@ -10,3 +10,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    mf_need need = site_kind_of(cx, SKS_PRE) == MF_SK_VM_ATTEMPT ? MF_REQUIRED : MF_OPTIONAL;'
 SAB_AFTER='    mf_need need = site_kind_of(cx, SKS_PRE) == MF_SK_VM_ATTEMPT ? MF_OPTIONAL : MF_REQUIRED;   /* SABOTAGE S1102 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, reach:ok(1/1),memfndeleg:5fail/13pass DETECTED at ebfb5a88a)."

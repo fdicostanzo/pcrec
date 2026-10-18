@@ -8,3 +8,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            rmin = rmin ? 1 : 0;'
 SAB_AFTER='            rmin = 0;   /* SABOTAGE S1100 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, memfnfinder:3fail/950pass DETECTED at ebfb5a88a)."

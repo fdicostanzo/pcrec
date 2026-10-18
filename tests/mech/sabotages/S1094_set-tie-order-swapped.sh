@@ -8,3 +8,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (oa != ob) return oa > ob;'
 SAB_AFTER='    if (oa != ob) return oa < ob;   /* SABOTAGE S1094 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, candoracle:5fail/131pass DETECTED at ebfb5a88a)."

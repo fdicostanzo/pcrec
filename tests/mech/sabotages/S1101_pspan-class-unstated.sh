@@ -8,3 +8,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        p[i].span_class = MF_SPAN_PRESENCE;'
 SAB_AFTER='        (void)0;   /* SABOTAGE S1101 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, candoracle:59fail/79pass DETECTED at ebfb5a88a)."

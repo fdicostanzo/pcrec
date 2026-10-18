@@ -8,3 +8,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        else if (proof->byte == lead) dom = 1;'
 SAB_AFTER='        else if (0) dom = 1;   /* SABOTAGE S1098 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, candoracle:3fail/135pass DETECTED at ebfb5a88a)."

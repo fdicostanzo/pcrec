@@ -8,3 +8,4 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    fprintf(stderr, "MFPICK\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", pick, pc == kit, nontrivial,'
 SAB_AFTER='    fprintf(stderr, "MFPICK\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", pick, 1, nontrivial, /* SABOTAGE S1093 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane b3afix: see docs/dev/lanes/b3a_report.md §9 (the solo mech run of this row, candoracle:16fail/125pass DETECTED at ebfb5a88a)."
