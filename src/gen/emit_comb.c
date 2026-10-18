@@ -211,7 +211,7 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             " * the whole of what this shape exists to avoid. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_sb_printf(c,
-            "static __attribute__((noinline)) %s %s_deep(%s)\n"
+            "static %s%s %s_deep(%s)\n"
             "{\n"
             "    %s_run_state run;\n"
             "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
@@ -219,7 +219,8 @@ static void fwd_own(StrBuf *c, const char *p, const char *up, bool tiered, bool 
             "                            storage.trail,  %s_TRAIL_FRAMES);\n"
             "    return %s_run(%s);\n"
             "}\n\n",
-            ret, name, params, p, p, p, up, up, name, runargs);
+            pcrec_attr_text(PCREC_ATTR_NOINLINE), ret, name, params, p, p, p,
+            up, up, name, runargs);
         pcrec_sb_printf(c,
             "%s%s %s(%s)\n"
             "{\n"

@@ -1920,7 +1920,8 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * toolchain support this attribute" (the same idiom used to detect any
      * attribute across compilers) rather than a clang-specific `#ifdef`, and
      * it degrades safely on a pre-`__has_attribute` compiler via the
-     * `#ifndef` fallback definition. */
+     * `#ifndef` fallback definition. The guarded text is [ATTR-TABLE]'s
+     * `noclone` row (src/gen/attr_text.c), where the guard is stated once. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
                "   .part clone of this function -- the split costs a\n"
@@ -1929,12 +1930,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                "   see pcrec docs/dev/known_issues.md K24. Guarded by\n"
                "   __has_attribute: gcc has this attribute, clang does not. */\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "#ifndef __has_attribute\n"
-               "# define __has_attribute(x) 0\n"
-               "#endif\n"
-               "#if __has_attribute(noclone)\n"
-               "__attribute__((noclone))\n"
-               "#endif\n");
+    pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_puts(c, pcrec_entry_storage(cx, ent));
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "

@@ -7409,6 +7409,28 @@ PcrecEntryComb pcrec_entry_comb(const Ctx *cx, PcrecEntry e);
 unsigned pcrec_entry_enc_omit(const Ctx *cx);
 unsigned pcrec_entry_enc_static(const Ctx *cx);
 
+/* ---- [ATTR-TABLE] THE ONE VALUE-TO-GUARDED-TEXT TABLE (src/gen/attr_text.c)
+ *
+ * Every writer of a function-linkage attribute (the VM entry chain, [OPT-1]'s
+ * deep tier, K24's noclone, the part-layout table) keeps its own decision and
+ * asks this table for the text. A value is the text's meaning; two writers
+ * that write the same bytes read one value. */
+typedef enum {
+    PCREC_ATTR_AS_EMITTED,   /* the part layout's `as-emitted`: nothing */
+    PCREC_ATTR_AUTO,         /* the part layout's `auto`: nothing */
+    PCREC_ATTR_SHARED,       /* noipa, guarded, noinline under #else */
+    PCREC_ATTR_INLINE,       /* inline always_inline */
+    PCREC_ATTR_NONE,         /* no attribute (the VM entry's `plain` rung) */
+    PCREC_ATTR_NOINLINE,     /* noinline */
+    PCREC_ATTR_NOCLONE,      /* noclone, guarded, nothing under #else */
+    PCREC_ATTR_N
+} PcrecAttr;
+/* `a`'s text, as its writer puts it on (or above) a definition head. */
+const char *pcrec_attr_text(PcrecAttr a);
+/* `a`'s token and description, as the part layout's listings print them. */
+const char *pcrec_attr_tok(PcrecAttr a);
+const char *pcrec_attr_writes(PcrecAttr a);
+
 /* ---- [ENTRY-TABLE] E1 THE PART-LAYOUT TABLES (src/gen/part_layout.c;
  * docs/design/compound_entries.md §3.4, §3.6; docs/spec/tuning.md §2.51)
  *

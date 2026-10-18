@@ -503,12 +503,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
-- [ATTR-TABLE] STATE:not-started — ONE VALUE-TO-GUARDED-TEXT TABLE FOR EVERY LINKAGE-ATTRIBUTE WRITER
-  filed: 2026-10-18 manager (review r1 of E1, family lens L7)
-  status (2026-10-18): filed; E1's `layout_texts[]` (src/gen/part_layout.c) is built so the other writers can read it, none migrated
-  trigger: the first clang-axis run under a control, or E1′'s first VM-shape preset
-  refs: docs/dev/reviews/2026-10-18-r1-e1.md (F1, F2, L7); docs/dev/lanes/e1_report.md §10; docs/design/compound_entries.md §3.1
-  Four writers spell function-linkage attributes, each its own way: K24's guarded `noclone` (emit_dfa.c `emit_search_head`), the VM entry rung's `en.ai`/`en.ai_body` (emit_vm.c `vm_plan_entry`), [OPT-1]'s `noinline` on `_deep` (emit_comb.c), and the part table's `layout_texts[]`. F1/F2 were drift between them (an unguarded gcc-only `noipa`). Charter: ONE value-to-guarded-text table that all four read, ZERO MOVERS (emit_sweep default + every axis byte-identical); a guard shape stated once.
 - [UTF-PAT] STATE:not-started — UTF-8 AS THE PATTERN-TEXT ENCODING
   filed: 2026-09-05 Frank
   status (2026-10-12): M5.0 closed 2026-09-12 (all stages landed), so the "stage 2/3-4" wording below names M5.0's stages and is history; the row is unblocked and unscheduled. CHARTERED by Frank 2026-09-05, fifty-fifth session, UNSCHEDULED: "using utf as the Regex encoding.…

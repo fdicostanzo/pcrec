@@ -6169,3 +6169,12 @@ Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on 
   next: merge E-1 after its owed make test + mech rows; then the render-point commit RP, then the union-over-attempts abi event
   refs: docs/design/memfn/window_contract.md (rev 3.1 §3.7, §3.7.3a); decisions D162 add. 4 D167 add. 2-3
   Filed under [REGIME], not [MEMFN]: it is pcrec-side work (main builds the object from Job.find through one find_queries[] table, byte-rate always present) that feeds the kit's R17-b' and is a REGIME prerequisite; [MEMFN] rows are the kit's. E-1 and RP are zero-mover (stamp = CONSULTED, offer never refuses); the union over attempts (D167 add. 3) is its own small abi event beside RP.
+
+## Completed 2026-10-18 (lane attrtab: [ATTR-TABLE] built)
+
+- [ATTR-TABLE] STATE:completed — ONE VALUE-TO-GUARDED-TEXT TABLE FOR EVERY LINKAGE-ATTRIBUTE WRITER
+  filed: 2026-10-18 manager (review r1 of E1, family lens L7)
+  status (2026-10-18): BUILT on lane/attrtab (docs/dev/lanes/attrtab_report.md): src/gen/attr_text.c is the one table; A1-A3 and the part-layout table read it; zero movers, no abi event
+  refs: docs/dev/reviews/2026-10-18-r1-e1.md (F1, F2, L7); docs/dev/lanes/e1_report.md §10; docs/design/compound_entries.md §3.1
+  Four writers spell function-linkage attributes, each its own way: K24's guarded `noclone` (emit_dfa.c `emit_search_head`), the VM entry rung's `en.ai`/`en.ai_body` (emit_vm.c `vm_plan_entry`), [OPT-1]'s `noinline` on `_deep` (emit_comb.c), and the part table's `layout_texts[]`. F1/F2 were drift between them (an unguarded gcc-only `noipa`). Charter: ONE value-to-guarded-text table that all four read, ZERO MOVERS (emit_sweep default + every axis byte-identical); a guard shape stated once.
+  Closure note (2026-10-18, lane attrtab): built as an opportunity item on Frank's GO of 2026-10-18 (the trigger was waived). The table is `attr_texts[]` in src/gen/attr_text.c, the guard shape stated once (`ATTR_GUARDED`); the plain `static inline` writers A4-A7 stay out of scope. Sabotage S1113/S1119/S1124 re-aimed onto the table, S1123 new.

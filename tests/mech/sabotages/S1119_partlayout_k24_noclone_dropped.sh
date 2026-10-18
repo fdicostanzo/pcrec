@@ -10,8 +10,11 @@
 # cloned there), so the count reads 0 both ways. K24's own check lives in
 # tests/codegen (its de-sugared control); this row records that the
 # part-layout suite does not stand in for it.
+# RE-AIMED by lane attrtab (2026-10-18, [ATTR-TABLE]): the guarded noclone text moved verbatim
+# into src/gen/attr_text.c's table, so the anchor is the noclone row (read only by emit_search_head, A3); intent
+# unchanged.
 SAB_ID="S1119-partlayout-k24-noclone-dropped"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="src/gen/attr_text.c"
 SAB_SUITES="partlayout"
 SAB_DESC='K24'"'"'s guarded noclone is dropped from every DFA search head, so a part laid out shared or kept by P2 may be cloned by gcc'"'"'s IPA passes'
 SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:0fail/48pass, UNDETECTED as expected (what would close it: a part gcc clones without noclone; none exists in the witness set, so K24 stays held by tests/codegen alone), against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1119."
@@ -21,5 +24,5 @@ SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "^(a)b" && grep -h -A1 "^#if __has_attribute(noclone)" "$REACH_TMP/x.c" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
 SAB_REACH_EXPECT='__attribute__((noclone))
 #define RX_PART_LAYOUT "prefilter=inline/held"'
-SAB_BEFORE='               "__attribute__((noclone))\n"'
-SAB_AFTER='               "\n"'
+SAB_BEFORE='    [PCREC_ATTR_NOCLONE] = { "noclone", ATTR_GUARDED(noclone, ""),'
+SAB_AFTER='    [PCREC_ATTR_NOCLONE] = { "noclone", "",   /* SABOTAGE S1119 */'

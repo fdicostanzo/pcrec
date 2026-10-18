@@ -400,6 +400,22 @@ def load_writers():
     return out
 
 
+def writer_texts():
+    """[(writer, kind, text)] whose text names an [ATTR-TABLE] row absent from
+    src/gen/attr_text.c's table, plus the count of rows naming one."""
+    table = open(os.path.join(ROOT, "src", "gen", "attr_text.c")).read()
+    rows_ = set(re.findall(r"^\s*\[(PCREC_ATTR_\w+)\]\s*=", table, re.M))
+    bad, named = [], 0
+    for w in rows(os.path.join(HERE, "writers.tsv")):
+        t = w[4] if len(w) > 4 else ""
+        if t == "own":
+            continue
+        named += 1
+        if t not in rows_:
+            bad.append((w[0], w[1], t))
+    return bad, named
+
+
 def attributes(text):
     """[(kind, name)] for every attribute occurrence in the artifact."""
     lines = text.split("\n")
@@ -488,6 +504,10 @@ def sec_census(pop):
     check(not unlisted, "census: every attribute in %d artifacts belongs to a writer in "
           "writers.tsv%s" % (len(res), "" if not unlisted else ": unlisted " + "; ".join(
               "%s on %s (%r)" % (k, n, p) for (k, n), p in list(unlisted.items())[:5])))
+    tbad, tnamed = writer_texts()
+    check(not tbad and tnamed > 0, "census: the %d writers.tsv rows whose text is [ATTR-TABLE]'s "
+          "name a row of src/gen/attr_text.c's table%s" % (tnamed, "" if not tbad else
+          ": " + "; ".join("%s %s -> %s" % b for b in tbad)))
     check(not unguarded, "census: every emitted noipa sits under `#if __has_attribute(noipa)` "
           "with a noinline `#else` (K24's guard shape)%s"
           % ("" if not unguarded else ": " + "; ".join(map(repr, unguarded[:3]))))
