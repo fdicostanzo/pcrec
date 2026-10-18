@@ -85,9 +85,10 @@ design's text, sharing no code with the kit):
      P4: the leading member verified at the head; P2: every span proven, so
      the site is only ASKED; P9 under the pick's deny), each deny moves its
      fixture's decision, and the define REFUSES parts that are not the links'
-     layout (a lead dropped) and a presence statement with no proof (the
-     start search's `pres_proof` UNSTATED). D2 routes the RUN fixture through
-     the composer's walk.
+     layout (a lead dropped), a presence statement with no proof (the
+     start search's `pres_proof` UNSTATED) and a span beginning below the
+     match start (`omin` < 0). D2 routes the RUN fixture through the
+     composer's walk.
 """
 import argparse
 import os
@@ -572,6 +573,11 @@ def check_pres_routing(fx, fxt, tmp):
     _, _, _, _, ref, _ = fd_run(fx, "pre-noproof")
     (ok() if ref and "pres_proof" in ref else
      bad("a presence statement with no proof was not refused naming `pres_proof`: %s" % ref))
+    # a presence span may not begin below the match start (C-1: omin >= 0,
+    # KW-10's re-asked ranges): refused, never read as a wider window
+    _, _, _, _, ref, _ = fd_run(fx, "pre-omin")
+    (ok() if ref and "omin" in ref else
+     bad("a presence span with omin < 0 was not refused naming `omin`: %s" % ref))
     # D2 routes the RUN fixture through the composer's walk
     _, rt, _, fr = fd_routed(fx, "run3")
     _, rtt, _, frt = fd_routed(fxt, "run3")

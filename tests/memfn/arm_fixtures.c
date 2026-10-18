@@ -1469,7 +1469,8 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         static mf_pred sp[2];
         static const uint8_t cube[3] = { 0xDF, 0xDF, 0xDF };
         int noproof = !strcmp(name, "pre-noproof");   /* pre-opt, its proof UNSTATED */
-        if (noproof) name = "pre-opt";
+        int omin = !strcmp(name, "pre-omin");          /* pre-opt, omin below the start */
+        if (noproof || omin) name = "pre-opt";
         int req = !strcmp(name, "pre-req");
         int norun_part = !strcmp(name, "pre-lead-run");   /* P4 denied: no lead part */
         int lead = !strcmp(name, "pre-lead") || norun_part;
@@ -1491,6 +1492,7 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
             sp[i].plan_hint = MF_NO_PRED;
             sp[i].span_class = MF_SPAN_PRESENCE;
         }
+        if (omin) sp[0].omin = -1;
         int nparts = 0;
         if (!strcmp(name, "pre-dom")) {
             *s = pre_site(p, 0, -1);
