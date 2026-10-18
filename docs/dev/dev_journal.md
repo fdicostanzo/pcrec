@@ -27083,3 +27083,34 @@ Continues the checkpoint entry above (seambuild, a5inv, mssurvey). After it:
   - I cd'd into a worktree once (read-only).
 - **Lessons:** waiter end markers must be anchored to the writer's real end line; lanes do not reliably wake on their own waiters (three stalls), so the manager keeps a backstop watcher on the log; the site-manifest suite trusts whatever build/ holds (a stale libpcrec.a looked like a link failure).
 - **In flight at close:** the kit's B3a heavy chain on lane/b3afix (after merging main e368410e7), overnight; main's review of its main-side diffs is ACCEPTED, merge on its done:.
+
+## 2026-10-18 — session 116 (Linux dev box): kit B3a and E1 landed; [ATTR-TABLE] landed; the bench moved onto this box
+
+- **Kit B3a landed:** its heavy chain was cancelled on 10-17 and finished green as chain2 (42 mech rows, G2 full 199,850,938/0, N2 clean). It merged as one unit through lane landb3a (82e48e806 + kit docs 550d91f9a, main c88537116, MF_SITE_ABI 16), and CI is green.
+- **E1 landed** ([ENTRY-TABLE], the part-layout controls, abi 79 -> 80; merge 7c0a90479, FILEPIN ccf63eedd; CI 39132816757 green).
+  - The lane e1 build had zero default movers, make test 73/73 and 22 mech rows.
+  - **One critic (review r1-e1) found three majors**, all from my approval of `noipa` (I had checked only whether the warning was a false positive):
+    - P2 wrote `noipa` on parts nobody controlled;
+    - it was unguarded, so clang's `-Werror` fails on it;
+    - three docs disagreed.
+  - Lane e1fix fixed every finding: P2 writes nothing; `noipa` is guarded and only on P4/P8; the tables are real first-match rows with one text table; one reach probe per row; a clang `-Werror` leg.
+  - It also filed [ATTR-TABLE].
+- **[ATTR-TABLE] built and landed the same day** (Frank: "schedule it sooner as an opportunity item").
+  - One guarded attribute-text table `attr_texts[]` (src/gen/attr_text.c) is read by the four GNU-attribute writers: the VM entry chain, `_deep`, K24's noclone, and the part layout.
+  - Zero movers on 8 sweep arms, 11 mech rows, make test 73/73.
+  - Merged at 7d3587441, pushed at 400738c42. CI 39138922597 was running at close.
+- **The bench moved onto this box** (pcrecdev2, from ubuntubudu, which stays as a mirror).
+  - make check-harness: 821 passed / 2 failed. The two are rustc and one load-refused cell.
+  - Frank ruled to the bench directly: machine id `ryzen7700x` (no personal names), rustup 1.98.1 installed by him, and the first re-baseline window 2026-10-19 01:00 TO COMPLETION at pin 6b2dbd3e, both tiers, ~15 h.
+  - I ruled (a), to re-baseline at the old pin so the run isolates the box factor.
+  - Inbox I-153 was sent, and the bench answered in O-103 (relayed to the kit).
+- **Frank's standing rule:** every timing run on this box is cleared through main, which clears it with him. Ping him if his process loads a timing run; never kill it. Saved as memory pcrec-box-shared-with-frank.
+- **Kit B3b:** built, reviewed (b3brev, 11 findings fixed), main's entry_use.diff ACCEPTED (it lands in the same merge). Its heavy chain was armed at 11:04 (worktrees/memfn-slot/b3bheavy/chain.status) and is due to end before 00:30. Its done: waits in responses.md.
+- **Frank to the kit:** wtprune gains `--force` (named targets only, friendly first, never rm -rf). The kit's design is ACCEPTED with an unmerged-commit log. It is FILED as next session's first light lane.
+- **Mistakes:**
+  - My r1-e1 condition on `noipa` was too narrow: it asked whether the warning was false, not where the spelling would land.
+  - I wrote line-number citations in my own review file, which turned test-spec-history red.
+  - I cd'd into a worktree once (read-only).
+  - My first quiet-watcher read a quiet chain log as done during make test.
+  - On rustc I was wrong and the bench was right: a same-pin re-baseline needs the same toolchain.
+- **Lessons:** a ratification condition must cover WHERE a change lands, not only WHETHER its premise holds. A log-quiet heuristic is wrong for a step that logs only at its end.
