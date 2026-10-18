@@ -30,11 +30,17 @@
 #      merge, Q-R17P-18), from a probe over the table: every row STATES its
 #      DelegEntry (UNSTATED refused), DELEG_ENTRY_PRE only on a FIND row and
 #      on at least one (K35), DELEG_ENTRY_SELF exactly on the ALL_PRESENT
-#      row.
+#      row;
+#   7. the PRESENCE fixtures (tests/memfn/c10_presence.tsv, Q-R17P-18):
+#      through check 5's trace build, each fixture's MFPRES record holds
+#      exactly the presence spans the file states (members, run length,
+#      need, head_max) for its kind, and the file covers the four PRE kinds
+#      (C10_PRES_KINDS below).
 # CONTROLS: checks 1 and 4 run again over a planted copy (a row moved to the
 # other budget; one by-value `mf_pred`) and must flag exactly those; check 5
 # runs over two planted fixture files (a kind swapped; a kind dropped);
-# check 6 over a planted table (a FIND row's entry SELF).
+# check 6 over a planted table (a FIND row's entry SELF) and check 7 over a
+# planted fixture file (a need swapped).
 # WHAT IT DOES NOT SEE: a by-value declaration through a typedef of its own
 # or a macro, and a row whose op is right but whose site emits through a
 # different op (pcrec's `deleg_check` refuses that at compile time).
@@ -52,6 +58,8 @@ D91_LOOP="STAY EDGE VMSPAN VMSTRIDE VMRUN N7"
 # C10's floor: the one-byte consumer kinds (R17-b' B2 [rev3 A8]) the fixture
 # file must name, as distinct values. This file's literal, not a count of it.
 C10_KINDS="DFA_SCAN DFA_HAT HYB_PF VM_ATTEMPT DFA_ATTEMPT"
+# Check 7's floor: the PRE composite's four kinds (R17-b' B3a), a literal.
+C10_PRES_KINDS="DFA_SCAN HYB_PF VM_ATTEMPT DFA_ATTEMPT"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }
@@ -171,6 +179,31 @@ if "${TIMEOUT_BIN:-gnutimeout}" 900 make -s -C "$ROOT_DIR" -j4 BUILD_DIR="$TRB" 
     else bad "C10 one-byte: the planted kind swap was not flagged"; fi
     if [ "$(c10_floor "$T/drop.tsv" | tr -d ' \n')" = VM_ATTEMPT ]; then ok
     else bad "C10 one-byte: the planted dropped kind was not flagged by the floor"; fi
+    # 7: the presence fixtures (R17-b' B3a, Q-R17P-18)
+    PFIX="$ROOT_DIR/tests/memfn/c10_presence.tsv"
+    c10_pres() {   # $1 = fixture file; prints one problem per line
+        while IFS=$'\t' read -r fl pat kind mem run need hm; do
+            case "$fl" in '#'*|'') continue ;; esac
+            set --
+            [ "$fl" = - ] || set -- $fl
+            PCREC_MF_ROUTE_TRACE=1 "$TRB/pcrec" --features all "$@" -p rx -o "$T/p.c" \
+                --pattern "$pat" > /dev/null 2> "$T/p.err" || { echo "$pat: does not compile"; continue; }
+            got="$(awk -F'\t' '$1 == "MFPRES" && $2 == "PRE" { print $3, $4, $5, $6, $7 }' "$T/p.err")"
+            [ "$got" = "$kind $mem $run $need $hm" ] ||
+                echo "$pat: stated presence [${got:-none}], the fixture states [$kind $mem $run $need $hm]"
+        done < "$1"
+    }
+    c10_pres "$PFIX" > "$T/c10p"
+    if [ -s "$T/c10p" ]; then while read -r l; do bad "C10 presence: $l"; done < "$T/c10p"; else ok; fi
+    miss=""
+    for k in $C10_PRES_KINDS; do
+        awk -F'\t' -v k="$k" '$0 !~ /^#/ && $3 == k { n++ } END { exit !n }' "$PFIX" || miss="$miss $k"
+    done
+    if [ -z "$miss" ]; then ok; else bad "c10_presence.tsv names no fixture for kind(s):$miss"; fi
+    awk -F'\t' -v OFS='\t' '!d && $6 == "REQUIRED" { $6 = "OPTIONAL"; d = 1 } { print }' "$PFIX" > "$T/pswap.tsv"
+    c10_pres "$T/pswap.tsv" > "$T/c10pswap"
+    if ! cmp -s "$PFIX" "$T/pswap.tsv" && [ "$(wc -l < "$T/c10pswap" | tr -d ' ')" -ge 1 ]; then ok
+    else bad "C10 presence: the planted need swap was not flagged"; fi
 else
     tail -5 "$T/trace.log"; bad "C10 one-byte: the trace build failed"
 fi
