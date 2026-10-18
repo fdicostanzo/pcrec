@@ -29,6 +29,26 @@
 # Removal itself is `git worktree remove` WITHOUT --force, so git re-checks
 # cleanliness at the moment of removal.
 #
+# --force (Frank, 2026-10-18: dirty or nested worktrees are removed through
+# this switch, friendly removal first, NEVER rm -rf). Only with --apply and
+# only for NAMEs given on the command line (`--apply --force NAME..`); never
+# bulk, so with no NAME it is a usage error. It relaxes exactly three things
+# for a named target:
+#   * gate 1: NAME may be nested (`memfn-slot/b3b/wt_entry`) provided it is a
+#     registered git worktree somewhere under <repo>/worktrees/ (main is
+#     never under it);
+#   * gate 3 (merged): unmerged commits are printed (`git log main..HEAD
+#     --oneline`) and saved before the removal is attempted;
+#   * gate 4 (clean): plain `git worktree remove` is tried FIRST; only if git
+#     refuses for modified/untracked files does it print `git status -s`,
+#     save `git status -s`, `git diff HEAD` and the untracked list to
+#     worktrees/.wtprune.force/<NAME>-<timestamp>.diff, audit-log the
+#     escalation and run `git worktree remove --force`.
+# Gates 2, 5, 6, 7 and 8 (lock, quiet, cwd, mac-suite lock, keep-list /
+# contains-another-worktree) still apply in full. If `--force` removal fails
+# the target is reported FAILED and its directory left on disk (git may have
+# unregistered it already): there is no rm -rf fallback.
+#
 # Non-git directories under worktrees/ (NAME-scratch, NAME-cell, logs) are
 # only LISTED as "unmanaged": they can hold a D27 author's undelivered work
 # or evidence a report cites, which no artifact check can rule out. Remove
@@ -38,22 +58,27 @@
 #   scripts/wtprune                 dry run: one KEEP/REMOVE line per worktree
 #   scripts/wtprune --apply         remove every REMOVE candidate
 #   scripts/wtprune --apply NAME..  only these worktrees (still gated)
+#   scripts/wtprune --apply --force NAME..
+#                                   named dirty/unmerged/nested worktrees
+#                                   (see --force above; NAME required)
 #   --delete-branches               also `git branch -d` (refuses unmerged)
 #   --dir NAME                      remove the non-git dir worktrees/NAME
 #                                   (with --apply; repeatable)
 #   --quiet-min N                   gate 5 window in minutes (default 120)
 #   -C REPO                         operate on REPO (default: the main
 #                                   checkout of the current repository)
-# Every action is appended to worktrees/.wtprune.log (gitignored).
+# Every action is appended to worktrees/.wtprune.log (gitignored); --force
+# also writes worktrees/.wtprune.force/ (diff + unmerged-commit logs).
 # Exit: 0 ok, 1 an attempted removal failed, 2 usage/environment error.
 
 set -u
 
-apply=0 delbr=0 quiet=120 repo= names=() dirs=()
+apply=0 delbr=0 force=0 quiet=120 repo= names=() dirs=()
 while [ $# -gt 0 ]; do
     case $1 in
         --apply) apply=1 ;;
         --delete-branches) delbr=1 ;;
+        --force) force=1 ;;
         --quiet-min) shift; quiet=${1:?}; [[ $quiet =~ ^[0-9]+$ ]] || { echo "wtprune: --quiet-min wants minutes" >&2; exit 2; } ;;
         --dir) shift; dirs+=("${1:?}") ;;
         -C) shift; repo=${1:?} ;;
@@ -63,6 +88,12 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+
+if [ $force = 1 ]; then
+    [ $apply = 1 ] || { echo "wtprune: --force needs --apply" >&2; exit 2; }
+    [ ${#names[@]} -gt 0 ] || { echo "wtprune: --force needs explicit NAMEs (--apply --force NAME..), never bulk" >&2; exit 2; }
+    [ ${#dirs[@]} -eq 0 ] || { echo "wtprune: --force applies to worktree NAMEs, not --dir" >&2; exit 2; }
+fi
 
 if [ -z "$repo" ]; then
     common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
@@ -76,7 +107,14 @@ log=$wtdir/.wtprune.log
 g() { git -C "$repo" "$@"; }
 g rev-parse -q --verify refs/heads/main >/dev/null || { echo "wtprune: no main branch" >&2; exit 2; }
 
-valid_name() { [[ $1 =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; }
+# A bare directory name; under --force a NAME may also be a nested path of
+# such segments (no empty, `.` or `..` segment: each starts alphanumeric).
+re_seg='[A-Za-z0-9][A-Za-z0-9._-]*'
+re_bare="^$re_seg\$"
+re_nested="^$re_seg(/$re_seg)*\$"
+valid_name() {
+    if [ $force = 1 ]; then [[ $1 =~ $re_nested ]]; else [[ $1 =~ $re_bare ]]; fi
+}
 for n in ${names[@]+"${names[@]}"} ${dirs[@]+"${dirs[@]}"}; do
     valid_name "$n" || { echo "wtprune: bad name '$n' (a bare directory name under worktrees/)" >&2; exit 2; }
 done
@@ -110,6 +148,21 @@ busy() {
 
 audit() { printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$log"; }
 
+# --force evidence file for NAME: worktrees/.wtprune.force/<NAME with / as _>-<ts>.diff
+force_log_path() {
+    mkdir -p "$wtdir/.wtprune.force" || exit 2
+    printf '%s/.wtprune.force/%s-%s.diff' "$wtdir" "$(printf '%s' "$1" | tr / _)" "$(date '+%Y%m%dT%H%M%S')"
+}
+
+# Report one successful removal (NAME BRANCH SUFFIX), then the optional branch delete.
+removed_ok() {
+    printf 'REMOVED %-28s %s%s\n' "$1" "${2:-detached}" "$3"; nrm=$((nrm+1))
+    if [ $delbr = 1 ] && [ -n "$2" ]; then
+        if bout=$(g branch -d "$2" 2>&1); then audit "delete branch $2"; echo "        branch $2 deleted"
+        else echo "        branch $2 kept: $bout"; fi
+    fi
+}
+
 # Worktrees: parse the porcelain list.
 declare -a wt_path wt_head wt_branch wt_locked
 i=-1
@@ -133,16 +186,23 @@ for j in $(seq 0 "$i"); do
     known="$known$name
 "
     if [ ${#names[@]} -gt 0 ] && ! printf '%s\n' "${names[@]}" | grep -qxF -- "$name"; then continue; fi
-    why=
-    if [[ $name == */* ]]; then why="not a direct child of worktrees/"
+    why= unm=0 dirt=0
+    if [[ $name == */* ]] && [ $force = 0 ]; then why="not a direct child of worktrees/"
     elif [ "${wt_locked[j]}" = 1 ]; then why="git worktree locked"
     elif printf '%s\n' "$pinned" | grep -qxF -- "$name"; then why="pinned in .wtprune.keep"
     elif printf '%s\n' "${wt_path[@]}" | grep -qF -- "$p/"; then why="another worktree lives inside it"
     elif [ ! -d "$p" ]; then why="missing on disk (run: git worktree prune)"
-    elif ! g merge-base --is-ancestor "${wt_head[j]}" main 2>/dev/null; then why="HEAD ${wt_head[j]:0:8} not merged into main"
-    elif [ -n "$(git -C "$p" status --porcelain 2>/dev/null | head -1)" ]; then why="uncommitted changes"
-    elif why=$(busy "$p" "$name"); then :
-    else why=; fi
+    else
+        if ! g merge-base --is-ancestor "${wt_head[j]}" main 2>/dev/null; then
+            if [ $force = 1 ]; then unm=1; else why="HEAD ${wt_head[j]:0:8} not merged into main"; fi
+        fi
+        if [ -z "$why" ] && [ -n "$(git -C "$p" status --porcelain 2>/dev/null | head -1)" ]; then
+            if [ $force = 1 ]; then dirt=1; else why="uncommitted changes"; fi
+        fi
+        if [ -z "$why" ]; then
+            if why=$(busy "$p" "$name"); then :; else why=; fi
+        fi
+    fi
     if [ -n "$why" ]; then
         printf 'KEEP    %-28s %s\n' "$name" "$why"; nkeep=$((nkeep+1)); continue
     fi
@@ -150,16 +210,45 @@ for j in $(seq 0 "$i"); do
         printf 'REMOVE  %-28s (dry run) %s\n' "$name" "${wt_branch[j]:-detached}"; nrm=$((nrm+1)); continue
     fi
     audit "remove worktree $name head=${wt_head[j]} branch=${wt_branch[j]:-detached}"
+    fl=
+    if [ $unm = 1 ]; then
+        fl=$(force_log_path "$name")
+        { echo "# wtprune --force $name head=${wt_head[j]} $(date '+%Y-%m-%dT%H:%M:%S%z')"
+          echo "## unmerged commits (git log main..HEAD --oneline)"
+          git -C "$p" log main..HEAD --oneline; } >> "$fl"
+        echo "        UNMERGED commits in $name (saved to ${fl#$repo/}):"
+        git -C "$p" log main..HEAD --oneline | sed 's/^/          /'
+        audit "FORCE $name unmerged-commits=$(git -C "$p" rev-list --count main..HEAD) log=${fl#$repo/}"
+    fi
     if out=$(g worktree remove "$p" 2>&1); then
-        printf 'REMOVED %-28s %s\n' "$name" "${wt_branch[j]:-detached}"; nrm=$((nrm+1))
-        if [ $delbr = 1 ] && [ -n "${wt_branch[j]}" ]; then
-            if bout=$(g branch -d "${wt_branch[j]}" 2>&1); then audit "delete branch ${wt_branch[j]}"; echo "        branch ${wt_branch[j]} deleted"
-            else echo "        branch ${wt_branch[j]} kept: $bout"; fi
+        removed_ok "$name" "${wt_branch[j]}" ""
+    elif [ $force = 1 ] && printf '%s\n' "$out" | grep -q 'modified or untracked'; then
+        [ -n "$fl" ] || { fl=$(force_log_path "$name"); echo "# wtprune --force $name head=${wt_head[j]} $(date '+%Y-%m-%dT%H:%M:%S%z')" >> "$fl"; }
+        echo "        git refuses $name for modified/untracked files; escalating. git status -s:"
+        git -C "$p" status -s | sed 's/^/          /'
+        { echo "## git status -s"; git -C "$p" status -s
+          echo "## git diff HEAD"; git -C "$p" diff HEAD
+          echo "## untracked (git ls-files --others --exclude-standard)"
+          git -C "$p" ls-files --others --exclude-standard; } >> "$fl"
+        echo "        saved to ${fl#$repo/}"
+        audit "FORCE $name escalating to worktree remove --force dirty=$dirt unmerged=$unm log=${fl#$repo/}"
+        if out=$(g worktree remove --force "$p" 2>&1); then
+            removed_ok "$name" "${wt_branch[j]}" " (forced)"
+        else
+            printf 'FAILED  %-28s %s\n' "$name" "$out"; echo "        directory left on disk: no rm -rf fallback (git may already have unregistered it); report it to the manager — never rm -rf"
+            audit "FAILED $name (force): $out"; rc=1
         fi
     else
         printf 'FAILED  %-28s %s\n' "$name" "$out"; audit "FAILED $name: $out"; rc=1
     fi
 done
+
+# --force: a NAME that is no registered worktree under worktrees/ is said so.
+if [ $force = 1 ]; then
+    for n in "${names[@]}"; do
+        printf '%s' "$known" | grep -qxF -- "$n" || { echo "SKIP    $n is not a registered git worktree under worktrees/"; rc=1; }
+    done
+fi
 
 # Non-git entries: list, or remove the explicitly named ones.
 for e in "$wtdir"/*; do

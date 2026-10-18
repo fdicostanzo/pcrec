@@ -8,7 +8,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 WT=$here/wtprune
 T=$(mktemp -d "${TMPDIR:-/tmp}/wtprune.test.XXXXXX")
 sleeper=
-cleanup() { [ -n "$sleeper" ] && kill "$sleeper" 2>/dev/null; rm -rf "$T"; }
+cleanup() { [ -n "$sleeper" ] && kill "$sleeper" 2>/dev/null; chmod -R u+w "$T" 2>/dev/null; rm -rf "$T"; }
 trap cleanup EXIT
 pass=0 fail=0
 ok()  { echo "PASS: $*"; pass=$((pass+1)); }
@@ -79,6 +79,72 @@ out=$(run --apply --dir ../repo 2>&1); rc=$?
 [ $rc = 2 ] && [ -d "$R" ] && ok "path-like --dir refused (rc 2)" || bad "--dir ../repo rc=$rc"
 out=$(run --apply --dir outer); printf '%s\n' "$out" | grep -q '^SKIP *outer is a git worktree' && ok "--dir refuses a git worktree" || bad "--dir outer: $out"
 grep -q 'remove worktree done1' worktrees/.wtprune.log && ok "audit log line written" || bad "no audit line"
+
+# --force: named, apply-only, friendly path first, evidence saved, gates kept.
+fl() { ls "$R"/worktrees/.wtprune.force/ 2>/dev/null | grep -F -- "$1" | head -1; }
+nolog() { [ ! -e "$R/worktrees/.wtprune.force" ] || [ -z "$(ls "$R/worktrees/.wtprune.force")" ]; }
+mk fclean; age_all fclean
+mkdir -p worktrees/holder
+mk fdirty; echo "dirty-body" > worktrees/fdirty/untracked_f; age_all fdirty
+mk funm; echo q > worktrees/funm/q; git -C worktrees/funm add . && git -C worktrees/funm commit -qm "funm commit one"; age_all funm
+git -C "$R" worktree add -q -b lane/nest worktrees/holder/nest main; echo n > worktrees/holder/nest/untr; age_all holder
+mk fquiet; echo u > worktrees/fquiet/untr
+mk flock; echo u > worktrees/flock/untr; age_all flock; git -C "$R" worktree lock worktrees/flock
+mk fbad; mkdir worktrees/fbad/sub; echo keep > worktrees/fbad/sub/f; age_all fbad; chmod 555 worktrees/fbad/sub
+
+out=$(run --force fdirty); rc=$?
+[ $rc = 2 ] && printf '%s\n' "$out" | grep -q -- '--force needs --apply' && ok "--force without --apply refused (rc 2)" || bad "force w/o apply rc=$rc: $out"
+out=$(run --apply --force); rc=$?
+[ $rc = 2 ] && printf '%s\n' "$out" | grep -q 'explicit NAMEs' && [ -d worktrees/fdirty ] && ok "--apply --force with no NAME refused (rc 2), nothing removed" || bad "force no names rc=$rc: $out"
+out=$(run --apply --force --dir x fdirty); rc=$?
+[ $rc = 2 ] && ok "--force with --dir refused" || bad "force+dir rc=$rc"
+out=$(run --apply fdirty); expect fdirty KEEP "$out"
+printf '%s\n' "$out" | grep -q 'fdirty .*uncommitted' && [ -d worktrees/fdirty ] && ok "dirty kept without --force (gate 4 intact)" || bad "dirty w/o force: $out"
+out=$(run --apply fclean)
+[ ! -d worktrees/fclean ] && ok "clean target removed without --force" || bad "fclean: $out"
+
+out=$(run --apply --force funm)
+printf '%s\n' "$out" | grep -q '^REMOVED funm' && ! printf '%s\n' "$out" | grep -q escalating && [ ! -d worktrees/funm ] && ok "unmerged clean target: friendly path, no escalation" || bad "funm: $out"
+printf '%s\n' "$out" | grep -q 'funm commit one' && ok "unmerged commits printed" || bad "funm commits not printed: $out"
+f=$(fl funm); [ -n "$f" ] && grep -q 'funm commit one' "$R/worktrees/.wtprune.force/$f" && ok "unmerged commits saved to the force log" || bad "funm log: $f"
+git -C "$R" rev-parse -q --verify lane/funm >/dev/null && ok "unmerged commits survive on the kept branch" || bad "lane/funm gone"
+
+out=$(run --apply --force fdirty)
+printf '%s\n' "$out" | grep -q '^REMOVED fdirty.*(forced)' && [ ! -d worktrees/fdirty ] && ok "dirty target escalated and removed" || bad "fdirty: $out"
+printf '%s\n' "$out" | grep -q '?? untracked_f' && ok "git status -s printed before escalation" || bad "status not printed: $out"
+f=$(fl fdirty); [ -n "$f" ] && grep -q 'untracked_f' "$R/worktrees/.wtprune.force/$f" && grep -q '## git diff HEAD' "$R/worktrees/.wtprune.force/$f" && ok "dirty log saved (status, diff, untracked list)" || bad "fdirty log: $f"
+grep -q 'FORCE fdirty escalating' worktrees/.wtprune.log && ok "escalation audit line written" || bad "no escalation audit line"
+
+out=$(run --apply --force holder/nest)
+printf '%s\n' "$out" | grep -q '^REMOVED holder/nest' && [ ! -d worktrees/holder/nest ] && ok "nested dirty target removed under --force" || bad "nest: $out"
+f=$(fl holder_nest); [ -n "$f" ] && ok "nested log named with / as _" || bad "nest log missing"
+out=$(run --apply holder/nest 2>&1); rc=$?
+[ $rc = 2 ] && ok "nested NAME refused without --force (rc 2)" || bad "nested w/o force rc=$rc"
+out=$(run --apply --force ../repo 2>&1); rc=$?
+[ $rc = 2 ] && [ -d "$R" ] && ok "--force path traversal NAME refused" || bad "force ../repo rc=$rc"
+out=$(run --apply --force nosuch); printf '%s\n' "$out" | grep -q '^SKIP *nosuch is not a registered' && ok "--force unknown NAME reported" || bad "nosuch: $out"
+
+before=$(ls "$R/worktrees/.wtprune.force" | wc -l)
+out=$(run --apply --force fquiet)
+printf '%s\n' "$out" | grep -q '^KEEP *fquiet .*modified <' && [ -d worktrees/fquiet ] && ok "--force still keeps a non-quiet target (gate 5)" || bad "fquiet: $out"
+out=$(run --apply --force flock)
+printf '%s\n' "$out" | grep -q '^KEEP *flock .*locked' && [ -d worktrees/flock ] && ok "--force still keeps a locked target (gate 2)" || bad "flock: $out"
+[ "$(ls "$R/worktrees/.wtprune.force" | wc -l)" = "$before" ] && ok "gated refusals write no force log" || bad "gated refusal wrote a log"
+out=$(run --apply --force --quiet-min 0 fquiet)
+printf '%s\n' "$out" | grep -q '^REMOVED fquiet' && ok "fquiet passes once quiet gate lifted (paired control)" || bad "fquiet lifted: $out"
+git -C "$R" worktree unlock worktrees/flock
+out=$(run --apply --force flock); printf '%s\n' "$out" | grep -q '^REMOVED flock' && ok "flock passes once unlocked (paired control)" || bad "flock unlocked: $out"
+
+if [ "$(id -u)" != 0 ]; then
+    out=$(run --apply --force fbad); rc=$?
+    if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q '^FAILED *fbad' && printf '%s\n' "$out" | grep -q 'no rm -rf fallback' \
+        && [ -f worktrees/fbad/sub/f ] && [ -d worktrees/fbad ]; then
+        ok "failed forced removal reports FAILED and leaves the directory (no rm -rf)"
+    else bad "fbad rc=$rc: $out"; fi
+    grep -q 'FAILED fbad (force)' worktrees/.wtprune.log && ok "failure audit line written" || bad "no failure audit line"
+else
+    echo "SKIP: failure-path case needs a non-root user"
+fi
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"
