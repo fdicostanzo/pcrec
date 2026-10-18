@@ -43,16 +43,14 @@ why corpus native ctx end-at-k 4
 why corpus native ctx finisher-dfa 23
 why corpus native ctx no-start-site 12
 why corpus native whole anchored-A 4
-why corpus native whole cover 550
-why corpus native whole exact 8
+why corpus native whole cover 558
 why corpus native whole finisher-dfa 471
 why corpus native whole no-start-site 27
 why corpus utf8 ctx cover 56
 why corpus utf8 ctx end-at-k 4
 why corpus utf8 ctx finisher-dfa 19
 why corpus utf8 ctx no-start-site 9
-why corpus utf8 whole cover 406
-why corpus utf8 whole exact 7
+why corpus utf8 whole cover 413
 why corpus utf8 whole finisher-dfa 162
 why corpus utf8 whole no-start-site 7
 cover bench native ctx 6
@@ -60,9 +58,9 @@ cover bench native whole 66
 cover bench utf8 ctx 3
 cover bench utf8 whole 46
 cover corpus native ctx 68
-cover corpus native whole 550
+cover corpus native whole 558
 cover corpus utf8 ctx 56
-cover corpus utf8 whole 406
+cover corpus utf8 whole 413
 ## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:
 ##    exact_len is stated over the SENT sets, min(k, sent))
 sent bench native OFS sent<k 21

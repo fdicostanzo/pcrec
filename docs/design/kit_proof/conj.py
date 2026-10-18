@@ -28,11 +28,12 @@ def compile_c(pat, fl):
     if "i" in fl: a.append("-i")
     if "u" in fl: a += ["-e", "utf8"]
     if "R" in fl: a.append("-fno-rev-end")
-    a += ["-o", "-", "--pattern", pat]
-    try:
-        p = subprocess.run(["nice", "-n", "19", "gnutimeout", "30"] + a, capture_output=True)
-    except FileNotFoundError:
-        p = subprocess.run(["nice", "-n", "19", "timeout", "30"] + a, capture_output=True)
+    a += ["-o", "-", "--pattern"]
+    # the pattern goes to argv as its own BYTES (latin-1 round trip): a str
+    # argument would be re-encoded as UTF-8 and the compile would read a
+    # different pattern (this instrument's own first-run defect, 2026-10-18)
+    argv = [os.fsencode(x) for x in ["nice", "-n", "19", "gnutimeout", "30"] + a] + [pat.encode("latin-1")]
+    p = subprocess.run(argv, capture_output=True)
     return p.stdout.decode("latin-1") if p.returncode == 0 else None
 
 
