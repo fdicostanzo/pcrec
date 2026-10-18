@@ -209,13 +209,14 @@ size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphase
 }
 
 int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
-            uint64_t denies, const void *x, const gate_tctx *tc)
+            uint64_t denies, const void *x, const gate_tctx *tc, gate_verdict *why)
 {
     const gate_contract *mc = NULL;
-    gate_verdict mv = { 0, 0 }, why = { 0, 0 };
+    gate_verdict mv = { 0, 0 }, own = { 0, 0 };
+    if (!why) why = &own;
     gate_trace_sel(tc);
-    if (walk_row(t, i, in, gphases, denies, x, tc, &why, &mc, &mv)) return 1;
-    gate_trace_end(tc, NULL, &why, mc, &mv);
+    if (walk_row(t, i, in, gphases, denies, x, tc, why, &mc, &mv)) return 1;
+    gate_trace_end(tc, NULL, why, mc, &mv);
     return 0;
 }
 
@@ -249,8 +250,9 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
 
 /* The first row the gate passes AND whose predicate holds (kit_walk). NULL
  * when no row serves; `*why` is then the last declined row's verdict (the
- * generic row's, the table's total fallback), whose fields the refusal
- * names. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
+ * generic row's, the table's total fallback; on a ROUTED pick, its arm's
+ * own), whose fields the refusal names; `*row` the routed finder row, or
+ * NULL where the site walks. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
  * mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit), which
  * holds the use hooks at selection time, so a row whose use-time fields the
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
@@ -258,8 +260,7 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
-                             gate_verdict *why, int quiet, const char **row,
-                             int *walked)
+                             gate_verdict *why, int quiet, const char **row)
 {
     gate_in in = { s, def, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
@@ -271,11 +272,11 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     const char *rid = NULL;
     const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
     *row = rid;
-    *walked = !rid || ra == &fd_nested_walk;
-    if (!*walked) {
+    if (rid && ra != &fd_nested_walk) {
         for (size_t i = 0; ra && i < NARMS; i++)
             if (arms[i] == ra)
-                return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc) ? ra : NULL;
+                return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc, why)
+                       ? ra : NULL;
         return NULL;
     }
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
@@ -851,8 +852,7 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
-    int walked;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid, &walked);
+    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
     if (!row) return -1;
     kit_class(row, s, out);
     if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
@@ -897,21 +897,21 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
     const char *rid;
-    int walked;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid, &walked);
-    /* a routed row that WALKS (D2, the nested walk) declines as the walk does,
-       so its refusal names the declined field like any walk's */
-    if (!row && !walked)
-        return kit_fail(art, "mf_define: the finder row %s's routed pick does not serve "
-                        "this site (its arm declines it)", rid);
+    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
     if (!row) {
-        /* the generic row applies to every site, so only the gate can leave
-           a site with no row: name what it declined (ruling (d)) */
+        /* ONE refusal (ruling (d)), walked or routed: it names the routed
+           finder row where one decided the site, and what the gate declined
+           (the walk's last row, or the routed pick's own arm). The generic
+           row applies to every site, so on a walk only the gate can leave a
+           site with no row; a routed arm can also be DENIED or not apply,
+           which declines nothing and so names no field */
         gate_in in = { s, def, NULL, NULL };
-        char f[200];
+        char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
-        return kit_fail(art, "mf_define: no row serves this site: %s",
-                        f[0] ? f : "(no row applies; the generic row must)");
+        if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
+        return kit_fail(art, "mf_define: no row serves this site%s: %s", r,
+                        f[0] ? f : rid ? "(its arm is denied or does not apply)"
+                                       : "(no row applies; the generic row must)");
     }
 
     if (art->nsites == art->cap) {

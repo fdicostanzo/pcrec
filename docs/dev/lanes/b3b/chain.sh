@@ -28,6 +28,13 @@ fin() { st "$1" "rc=$2"; [ "$2" -ne 0 ] && FAILED="$FAILED $1"; }
 cd $W || { echo "CHAIN FAILED at cd-worktree $(now)" >> $CS; exit 9; }
 if [ "$(git rev-parse --short=9 HEAD)" != "$PIN" ]; then echo "CHAIN FAILED at pin-check (HEAD $(git rev-parse --short=9 HEAD) != $PIN) $(now)" >> $CS; exit 9; fi
 echo "CHAIN START $(now) tip $(git rev-parse --short HEAD)" >> $CS
+# ARM-TIME ROW CHECK (b3brev finding 1): every non-comment line of mech_rows.txt is ONE mech id with no
+# suffix (^S[0-9]+$; BOILERPLATE "MECH IDS ARE PASSED WITHOUT A SUFFIX"). A bare `S` or a suffixed id would
+# run the wrong row set (a bare `S` matches every row's prefix in run_sabotage_matrix.sh) and still score.
+badrow=$(grep -v '^#' $B/mech_rows.txt | grep -vE '^S[0-9]+$' | head -3 | tr '\n' ' ')
+if [ -n "$badrow" ] || [ "$(grep -vc '^#' $B/mech_rows.txt)" -eq 0 ]; then
+  echo "CHAIN FAILED at row-list (lines not ^S[0-9]+\$: '$badrow') $(now)" >> $CS; exit 9
+fi
 ROWS=$(grep -v '^#' $B/mech_rows.txt | tr '\n' ' ')
 echo "MECH ($(echo $ROWS | wc -w)): $ROWS" >> $CS
 WD="scripts/watchdog -L $L/watchdog.log"
@@ -70,19 +77,31 @@ grep -qE '\*\*\* \[(Makefile:[0-9]+: )?test-' $L/g2full.log && [ $rc -eq 0 ] && 
 echo "g2full: $(grep -E 'checks (passed|failed)' $L/g2full.log | tail -2 | tr '\n' ' ')" >> $L/notes.txt
 fin g2full $rc
 
-# 5. N2 census with floors, then the propose read: it pins the routed PRES rows' pcrec floors
-#    (tests/memfn/row_floors.tsv P0 P2 P3 P4 P9, PLACEHOLDER at the lane) as floor(0.9 x chosen)
+# 5. N2 census with floors, then the propose read. --propose PRINTS each row's floor(0.9 x chosen); it pins
+#    nothing. Pinning the routed PRES rows' PLACEHOLDER floors (tests/memfn/row_floors.tsv P0 P2 P3 P4 P9) is
+#    a FOLLOW-UP COMMIT after this chain, copied from $L/n2_propose.log's `propose` lines (OWED, owner the kit
+#    manager). The step's rc folds N2's own rc AND the floor verdict (b3brev finding 4): the propose log must
+#    carry `floor_fail=0 ` (a full census; PLACEHOLDER rows count apart, as floor_placeholder=).
 st n2 START
 N2_LOCK=$B/n2.lock CC=gcc JOBS=16 OUT=$B/n2 gnutimeout 7200 bash docs/design/memfn/probes/rowcon/n2_census.sh > $L/n2.log 2>&1; rc=$?
 echo "n2: $(grep -E '== N2 DONE' $L/n2.log | tail -1)" >> $L/notes.txt
-python3 -I docs/design/memfn/probes/rowcon/n2_report.py $B/n2 -o $B/n2/n2_results.md --floors tests/memfn/row_floors.tsv --propose > $L/n2_propose.log 2>&1
+python3 -I docs/design/memfn/probes/rowcon/n2_report.py $B/n2 -o $B/n2/n2_results.md --floors tests/memfn/row_floors.tsv --propose > $L/n2_propose.log 2>&1; r2=$?
+echo "n2 floors: $(grep -E '^(floor_fail|floors)=' $L/n2_propose.log | tail -1)" >> $L/notes.txt
+[ $r2 -ne 0 ] && [ $rc -eq 0 ] && rc=$r2
+grep -qE '^floor_fail=0 ' $L/n2_propose.log || { [ $rc -eq 0 ] && rc=6; }
 fin n2 $rc
 
-# 6. the memfn arm's reach (the unfiltered form: every kit row incl. B3b's three PRES denies), then the
-#    form census
+# 6. the memfn arm's reach (the unfiltered form: every kit row incl. B3b's three PRES denies); then the
+#    three PRES denies' ANSWER IDENTITY over the whole corpus (b3brev finding 2a: the non-reach pass, no
+#    MEMFN_REACH_ONLY; B3b removed req_site_define's guard against a part after a handoff's landmark and
+#    `--memfn=no-fd-pres-pick` now lays such parts out); then the form census
 st axes-reach START
 MEMFN_REACH_ONLY=1 AXES=--memfn gnutimeout 9000 bash tests/axes/run_axes.sh > $L/axes_reach.log 2>&1; rc=$?
 fin axes-reach $rc
+st axes-pres START
+AXES="--memfn=no-fd-pres-pick --memfn=no-fd-pres-g1 --memfn=no-pres-set-lead" gnutimeout 9000 bash tests/axes/run_axes.sh > $L/axes_pres.log 2>&1; rc=$?
+grep -q '^AXIS FAIL' $L/axes_pres.log && [ $rc -eq 0 ] && rc=1
+fin axes-pres $rc
 st form-census START
 PROCS=$(bash tests/lib/procs_default.sh) gnutimeout 9000 bash tests/codegen/run_form_census.sh > $L/form_census.log 2>&1; rc=$?
 fin form-census $rc

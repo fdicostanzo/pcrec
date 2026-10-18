@@ -19,6 +19,7 @@ routed_floors_B3b.tsv, floor(0.9 x measured) per (site, kind, row).
 import importlib.util
 import os
 import sys
+import threading
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("routed_census", os.path.join(HERE, "..", "fdb2", "routed_census.py"))
@@ -30,6 +31,11 @@ rc.ROUTED = set(rc.ROUTED) | {"D2", "P0", "P2", "P3", "P4", "P9"}
 # `MFPRESDROP<TAB>PRE<TAB>kind<TAB>P2` (not MFROUTED, which C10's fixtures read
 # as the defined sites'); counted here as the routed cells they are
 _one = rc.one
+# b3brev U10: a compile that times out has no records, so its cells read LOW
+# (or a row routes 0 and reads as one that stopped routing); every timeout is
+# counted, printed, and fails the run
+_timeouts = [0]
+_tlock = threading.Lock()
 
 
 def one(binp, tmp, pat, arm, k):
@@ -42,10 +48,24 @@ def one(binp, tmp, pat, arm, k):
     try:
         r = subprocess.run(argv, capture_output=True, timeout=60, env=env)
     except subprocess.TimeoutExpired:
+        with _tlock:
+            _timeouts[0] += 1
         return []
     return [tuple(ln.split("\t")[1:4]) for ln in r.stderr.decode("utf-8", "replace").splitlines()
             if ln.startswith(("MFROUTED\t", "MFPRESDROP\t"))]
 
 
 rc.one = one
-sys.exit(rc.main())
+
+
+def main():
+    r = rc.main()
+    print("timeouts %d" % _timeouts[0])
+    if _timeouts[0]:
+        print("FAIL: %d compile(s) timed out (60 s each): their routed records are missing"
+              % _timeouts[0])
+        return 1
+    return r
+
+
+sys.exit(main())

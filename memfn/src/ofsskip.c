@@ -427,7 +427,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
-        if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc))
+        if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc, NULL))
             rung[nr++] = &fn_rows[i];
     }
     return nr;

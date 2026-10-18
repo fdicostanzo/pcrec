@@ -715,9 +715,11 @@ size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphase
 /* Asks row `i` of table `t` the walk's questions (deny, gate, predicate) on
  * its own: 1 iff it would be CHOSEN. Traced as a one-row selection under
  * `tc`. A PREFIX row's NAMED rungs are re-asked this way (§R4.9.2.3, "the
- * ladder": data, never a walk-on). */
+ * ladder": data, never a walk-on). Where the gate DECLINES the row, `*why`
+ * is its verdict (left as given otherwise: a denied row or a false predicate
+ * declines no field), as `kit_walk`'s; `why` may be NULL. */
 int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
-            uint64_t denies, const void *x, const gate_tctx *tc);
+            uint64_t denies, const void *x, const gate_tctx *tc, gate_verdict *why);
 
 /* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */

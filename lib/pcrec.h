@@ -1084,9 +1084,8 @@ enum {
  * the analysis found. A `#define` for bit 32's reason. */
 #define PCREC_NO_REQ_RUN_FOLD PCREC_BIT(44)
 /* [K82] bit 45, RETIRED as an axis ([MEMFN] R17-b' B3b; docs/spec/tuning.md
- * §2.40): RESERVED, and kept as an ALIAS of the memfn kit's deny
- * `--memfn=no-pres-set-lead` (Q-R17P-19) until [IFACE-PUSH] batches its
- * removal. The pre-check's `set-leads` shape is the kit's PRES row P4: where
+ * §2.40): RESERVED, and an ALIAS of the memfn kit's deny
+ * `--memfn=no-pres-set-lead` (Q-R17P-19). The pre-check's `set-leads` shape is the kit's PRES row P4: where
  * a necessary run's pre-check is emitted and a byte of the necessary SET is
  * rarer than the run's scan member under the active byte-rate (under none, a
  * byte against a two-member pair), the artifact tests that byte's `memchr`

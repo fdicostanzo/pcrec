@@ -25,9 +25,11 @@ deny of a PRES row the routed decision moves by design where the deny acts,
 so the deny arms hold the PORTS (B3a's five picks, which no deny reaches) at
 100%, and the routed records are held on the default and bundle arms.
 """
+import collections
 import importlib.util
 import os
 import sys
+import threading
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("pick_census", os.path.join(HERE, "..", "b3a", "pick_census.py"))
@@ -58,4 +60,41 @@ def one(binp, tmp, args, pat, arm, k):
 
 
 pc.one = one
-sys.exit(pc.main())
+
+# b3brev U11: the shadow SKIPS `rwin` where the routed run renders no window
+# (`MFPICKSKIP rwin <why> <kind>`) rather than compare against a window the
+# layout never used; B3a's reader keeps only MFPICK/MFPICKSITE lines, so the
+# skips are counted here off the same compiles (its `subprocess.run`) and
+# printed. A skip is not a failure.
+_skips = collections.Counter()
+_slock = threading.Lock()
+_sp = pc.subprocess
+
+
+class _Counting:
+    def __getattr__(self, name):
+        return getattr(_sp, name)
+
+    @staticmethod
+    def run(*a, **kw):
+        r = _sp.run(*a, **kw)
+        err = r.stderr if isinstance(r.stderr, str) else (r.stderr or b"").decode("utf-8", "replace")
+        for ln in err.splitlines():
+            if ln.startswith("MFPICKSKIP\t"):
+                with _slock:
+                    _skips[tuple(ln.split("\t")[1:4])] += 1
+        return r
+
+
+pc.subprocess = _Counting()
+
+
+def main():
+    r = pc.main()
+    for (pick, why, kind), n in sorted(_skips.items()):
+        print("SKIP\t%s\t%s\t%s\t%d" % (pick, why, kind, n))
+    print("skips %d" % sum(_skips.values()))
+    return r
+
+
+sys.exit(main())

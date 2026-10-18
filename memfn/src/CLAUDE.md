@@ -335,7 +335,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (OFF variant, the site's stated kind): a routed pick renders through its
   arm (LIBC `pf_memchr[_bounded]`, LIBC_BACK `pf_memchr_back`, WALK
   `pf_walk[_bounded]`), asked on its own and REFUSED if it declines; else the
-  arms walk. `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
+  arms walk. A refusal is ONE path (`define_sel`, b3brev U4): `kit_ask` hands
+  back the declined row's verdict as `kit_walk` does, so the refusal names
+  the routed row (if any) and the declined field (`gate_describe`). `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
   trace record. R0/R7's null floor is `kit.eps.streamed.slope` (rev 3 [C4]).
   `compose.c` also carries R-MS6's arm-entry counter (`mf_reach`,
   `mf_reach_table`; a counter statement at each routed site's use, only on

@@ -713,7 +713,7 @@ static void fd_decide(fd_x *q, int slot, const gate_tctx *tc, fd_decision *d)
     for (size_t i = 0; i < d->terminal; i++) {
         const fd_row *r = &fd_rows[i];
         if (r->slot != slot || !(r->needs & KN_N)) continue;
-        if (!kit_ask(&fd_table, i, &in, MF_PH_DEFINE, 0, q, tc)) continue;
+        if (!kit_ask(&fd_table, i, &in, MF_PH_DEFINE, 0, q, tc, NULL)) continue;
         unsigned long long a, b;
         if (!n_interval(q, r, &a, &b)) continue;
         /* first match: an earlier row's piece stands; carve [a, b) out of the
@@ -1090,10 +1090,14 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         /* P4, the order row, asked on its own (deny, gate, predicate) */
         led[i] = 0;
         if (member && !k.proven_by && p4 < FD_NROWS &&
-            kit_ask(&fd_table, p4, &in, MF_PH_DEFINE, 0, &q, &tc)) {
+            kit_ask(&fd_table, p4, &in, MF_PH_DEFINE, 0, &q, &tc, NULL)) {
             k.verify = 1;
             led[i] = 1;
         }
+        /* the deciding rows, carried (b3brev U5): the host records these,
+           never a row inferred from the link's shape */
+        cls->pres_row[i] = (uint8_t)(d.terminal + 1);
+        cls->pres_led[i] = led[i] ? (uint8_t)(p4 + 1) : 0;
         cls->pres[i] = k;
         rows[i] = t;
     }
@@ -1160,6 +1164,7 @@ static const char *const pay_keys[] = {
 };
 
 _Static_assert(FD_NROWS <= MF_FINDER_MAX, "the finder table outgrew MF_FINDER_MAX");
+_Static_assert(FD_NROWS < 255, "mf_class.pres_row/pres_led carry 1 + a finder row index in a uint8_t");
 _Static_assert(6 + sizeof pay_keys / sizeof pay_keys[0] <= MF_FINDER_KEYS,
                "a row's keys outgrew MF_FINDER_KEYS");
 

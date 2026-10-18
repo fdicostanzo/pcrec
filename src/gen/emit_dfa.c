@@ -1648,7 +1648,13 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
  * whole run or a rest, which only `--memfn=no-fd-pres-pick` puts on a
  * handoff route) is sound there: each is a fact every match holds in
  * [posvar, n), so its miss answers NOMATCH at the entry and at the handoff's
- * re-entry alike, after the landmark's position is kept. pcrec's own facts
+ * re-entry alike, after the landmark's position is kept. At the re-entry the
+ * scan is in its start state, whose future is a fresh search's from
+ * `scan_position`: any match it can still complete (an in-flight thread's
+ * included) implies one wholly in [scan_position, n), so every part holds
+ * there; the presence facts hold no lookbehind byte (one may lie below a
+ * match's start). Witnesses: tests/litscan/presence_deny.rxt, run under each
+ * PRES deny by tests/memfn/run_presence.sh (b3brev finding 2). pcrec's own facts
  * read the same choices (`req_byte` is the one-byte landmark, whose K the
  * handoff subtracts), so the head must BE `req_byte` where no run ships: a
  * difference is an internal error, never a silent pick. */
@@ -1667,14 +1673,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     if (!req_admit_emits(req_admit(cx))) {
         PCREC_CAND_TRACE_REC("PRESENCE", "-", "declined", "req-site");
 #ifdef PCREC_CAND_TRACE
-        req_pick_shadow(cx, NULL);
-        /* [MEMFN] R17-b' B3b the routed-record of a pre-check the kit's P2
-           drops (no site is defined, so the admission's links are the record) */
-        if (req_admit(cx) == REQ_ADMIT_DOMINATED) {
-            mf_class *dc = pcrec_arena_alloc(&cx->arena, sizeof *dc);
-            const mf_site *ds = req_pres_ask(cx, NULL, dc);
-            if (dc->npres && dc->pres[0].proven_by) pcrec_memfn_pres_routed(ds, dc);
-        }
+        req_pick_shadow(cx, NULL);   /* also the routed record of a pre-check P2 drops */
 #endif
         return NULL;
     }
@@ -10406,6 +10405,16 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             goto out;
         }
     }
+    /* [MEMFN] R17-b' B3b the routed record of a pre-check the kit's P2
+       drops (no site is defined, so the admission's links are the record),
+       behind the SAME withholding as the picks (b3brev U6): where LOCATE's
+       `whole` or G2's one attempt decides, no span reached the kit, so no P2
+       record is written for it */
+    if (!site && adm == REQ_ADMIT_DOMINATED) {
+        mf_class *dc = pcrec_arena_alloc(&cx->arena, sizeof *dc);
+        const mf_site *ds = req_pres_ask(cx, NULL, dc);
+        if (dc->npres && dc->pres[0].proven_by) pcrec_memfn_pres_routed(ds, dc);
+    }
     {
         CandScan cs;
         dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
@@ -10539,10 +10548,28 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
                 } else {
                     const ReqRun *w = pcrec_fact_req_run_stated(cx);
                     const mf_link *rl = &rc->pres[runi];
-                    int kw = rl->member ? rl->member - 1 : k.run_window;
-                    if (pick_plant("rwin")) kw = kw + 1;
-                    pick_rec("rwin", w->at, kw, run->whole_len > PCREC_MAX_REQ_RUN_EMIT,
-                             w->at != 0, kind);
+                    /* the window the LAYOUT used (compose.c pres_layout_check's
+                       `at`, b3brev U11): the link's own where P3 chose one, else
+                       the ports' pick over the routed site's stated proof; a run
+                       the links do not verify renders no window, so its compare is
+                       SKIPPED and counted (MFPICKSKIP), never made against a
+                       window nothing used */
+                    mf_pres_picks lk;
+                    int lw = -1;
+                    if (!rl->verify)
+                        fprintf(stderr, "MFPICKSKIP\trwin\tunverified\t%s\n", kind);
+                    else if (rl->member)
+                        lw = rl->member - 1;
+                    else if (mf_pres_ports(pcrec_memfn_art(cx), ps, &ps->pres_proof, NULL, &lk))
+                        fprintf(stderr, "MFPICKSKIP\trwin\tport-refused\t%s\n", kind);
+                    else
+                        lw = lk.run_window;
+                    if (lw >= 0) {
+                        int kw = lw;
+                        if (pick_plant("rwin")) kw = kw + 1;
+                        pick_rec("rwin", w->at, kw, run->whole_len > PCREC_MAX_REQ_RUN_EMIT,
+                                 w->at != 0, kind);
+                    }
                     int pw = !pcrec_artifact_has_dfa_scan(cx) && run->whole_len > w->len;
                     int kwh = rl->verify && rl->member == 0 && run->whole_len > w->len;
                     if (pick_plant("rwhole")) kwh = !kwh;

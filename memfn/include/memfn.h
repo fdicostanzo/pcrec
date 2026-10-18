@@ -129,8 +129,10 @@
                            P0 P2 P3 P4 P9) by mf_ask and mf_defined, and
                            mf_define REFUSES an ALL_PRESENT site whose
                            rendered parts are not its links' layout; the
-                           use kind MF_USE_ENTRY (MF_VOCAB 4). No pcrec
-                           byte moved. */
+                           use kind MF_USE_ENTRY (MF_VOCAB 4); the class
+                           carries each link's deciding rows (mf_class.
+                           pres_row/pres_led, MF_CLASS_V 4, appended LAST,
+                           the review fix round). No pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -882,9 +884,11 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 3   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
+#define MF_CLASS_V 4   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
                           3 (MF_SITE_ABI 16, B3a): npres uint16_t over
-                          MF_MAX_PRES 257 */
+                          MF_MAX_PRES 257. 4 (inside MF_SITE_ABI 17, B3b,
+                          unreleased; b3brev U5): pres_row and pres_led,
+                          the deciding PRES rows, appended LAST */
 /* Presence spans one site states (npspan) and one class answers (npres). A
  * SHAPE BOUND, not a tuning constant, DERIVED at B3a (PR-5's unpicked
  * spans): a necessary set has at most 256 members, each its own span, and a
@@ -934,6 +938,14 @@ typedef struct {
        FIND whose term reads one byte below the candidate proves it; every
        other site proves nothing here */
     uint8_t  proven_prev[32];
+    /* (MF_CLASS_V 4) THE DECIDING ROWS of pres[i], read by the host's
+       records (b3brev U5: never inferred from a link's shape): pres_row[i]
+       is 1 + the index, in mf_finder_rows' listing (the finder table's
+       order), of the PRES row whose first-match decision is pres[i];
+       pres_led[i] 1 + that index of the ORDER row (P4) that put the member
+       at the head. 0: no row (no link; no order row) */
+    uint8_t  pres_row[MF_MAX_PRES];
+    uint8_t  pres_led[MF_MAX_PRES];
 } mf_class;
 
 /* ---- the result and the per-artifact state (§14.0, §14.8) ---------------- */
