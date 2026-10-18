@@ -13,7 +13,8 @@ SAB_DESC='pcrec_sb_size_decide stops subtracting the part-layout marks, so a con
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:1fail/45pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1115."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" -p rx --warn-emit-bytes=1 --part-residual=shared -o "$REACH_TMP/x.c" --pattern "(a)b" 2>&1 && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
+SAB_REACH_EXPECT='large artifact:
+#define RX_PART_LAYOUT "residual=shared"'
 SAB_BEFORE='    z.total  -= sb->layout_bytes;    /* [ENTRY-TABLE] E1: the marks'"'"' code bytes */'
 SAB_AFTER='    /* SABOTAGE S1115: the marks'"'"' bytes reach the decision */'

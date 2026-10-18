@@ -14,7 +14,8 @@ SAB_DESC='callers(part) skips folding owned always_inline callers, so the inline
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:25fail/21pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1114."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" --features all --vm-entry-shape=4 --part-residual=shared --emit-facts --pattern "(a)b" | tr "\t" " "'
+SAB_REACH_EXPECT='byte prefilter prefilter 2 R2 yes P8 residual-shared shared 0
+byte search_run owned'
 SAB_BEFORE='            if (!(set & pl->owned_inline & PCREC_ENTRY_BIT(f)) ||'
 SAB_AFTER='            if (1 || !(set & pl->owned_inline & PCREC_ENTRY_BIT(f)) ||   /* SABOTAGE S1114 */'

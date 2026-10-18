@@ -12,7 +12,7 @@ SAB_DESC='row P2 never holds, so an inline control writes always_inline on a lab
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:6fail/40pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1112."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" --features all --part-layout=prefilter:inline --emit-facts --pattern "^(a)b" | tr "\t" " "'
+SAB_REACH_EXPECT='byte prefilter prefilter 2 R2 no P2 not-copyable as-emitted 0'
 SAB_BEFORE='{ (void)pl; return !p->copyable; }'
 SAB_AFTER='{ (void)pl; (void)p; return false; }   /* SABOTAGE S1112 */'

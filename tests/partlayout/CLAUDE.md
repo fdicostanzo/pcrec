@@ -17,22 +17,31 @@ witness is needed today.
   witness x 25 control settings, the five `--tune` positions included;
   (2) the hand fixtures and the per-class file-wins rule through a `.rxt`
   config block; (3) A1 disjointness at every entry rung, and every layout
-  write on a `static` definition; (4) gcc's own H1/H2 refusals; (5) the
+  write on a `static` definition, and (3b) P2's neutrality: every artifact
+  whose subjects are all not copyable is the default byte for byte (but the
+  stamp) under controls on other classes and its own; (4) gcc's own H1/H2
+  refusals; (5) the
   attribute census, totality and per-row populations with floors, the
-  seam's copyability; (6) I5 neutrality (refusal, stamps, the decision
+  seam's copyability, and every emitted `noipa` inside K24's guard shape;
+  (6) I5 neutrality (refusal, stamps, the decision
   sizes `--warn-emit-bytes` reports) over the population and the near-cap
   list, and the all-`auto` set byte-identical to no control, plus the
-  -Werror leg: the population, the near-cap list and `werror.txt` compiled
-  at the harness's `-O1 -Wall -Wextra -Werror` under both residual ends;
-  (7) T2/TM stated UNREACHED (no measurement set exists). ~45 s at
-  `JOBS=8`.
+  -Werror leg: the population, the near-cap list and `werror.txt` under
+  seven control settings (both residual ends, each class value of
+  `prefilter` and `compound`, a rank), deduplicated to the distinct texts
+  (658 at the review fixes), each at gcc `-O1 -std=gnu11 -Wall -Wextra
+  -Werror`, every fourth at `-O2`/`-O3`/`-Os`, and every fourth residual-end
+  text under clang `-O1`/`-O2` where clang is installed (`CLANG`; the line
+  says when it is not); (7) T2/TM stated UNREACHED (no measurement set
+  exists). ~45 s at `JOBS=8`.
 - **evaluator.py** — THE INDEPENDENT EVALUATOR. Links nothing from `src/` and
   reads no pcrec listing: the call graph of an attribute-stripped copy of the
   default artifact (`-O0 -fno-inline`, `objdump -dr`: call targets and
   relocations), the owners' `always_inline` read from the default text,
   copyability asked of gcc (its "can never be copied/inlined" refusal), the
   hand class and rank maps, and tuning.md §5.4's preset rows read from the
-  SPEC. Judges the real object's `nm` and the stamps.
+  SPEC. Judges the real object's `nm` and the stamps, and a P2 part's head
+  text against the default's (P2 adds no attribute).
 - **witnesses.tsv** — the witness artifacts with their HAND class and rank
   maps, written from the emitted C. Records why the empty-language hybrid is
   not a witness (gcc's IPA deletes a `return 0;` part whatever its attribute).
@@ -63,9 +72,15 @@ witness is needed today.
   are the detectors instead.
 - **`shared` is `noipa`, not the design's `noinline noclone`**: with
   `noinline` gcc still analyses the body across the call, which both
-  produced the -Werror failure above and deleted a `return 0;` part.
-- Sabotage rows S1111-S1118 name the arm; each was hand-validated against a
-  rebuilt copy (`docs/dev/lanes/e1_report.md`).
+  produced the -Werror failure above and deleted a `return 0;` part. It is
+  written under `#if __has_attribute(noipa)` with `noinline` under `#else`
+  (K24's guard shape), so clang's `-Werror` builds it; only P4/P8 write it.
+  P2 writes nothing (review r1 F1).
+- Sabotage rows S1111-S1121 and S1124-S1127 name the arm; each was
+  hand-validated against a rebuilt copy (`docs/dev/lanes/e1_report.md` §4,
+  §10). S1119 (K24's noclone dropped) is UNDETECTED by measurement: gcc
+  clones no part of the witness set either way. S1126 (the decision length
+  counting the marks) is UNREACHED, argued in its header.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

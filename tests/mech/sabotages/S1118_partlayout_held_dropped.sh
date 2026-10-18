@@ -12,7 +12,7 @@ SAB_DESC='the stamp drops /held, so a request a constraint row held reads as hon
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:9fail/37pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1118."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "^(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
+SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline/held"'
 SAB_BEFORE='                        !any ? "/none" : held ? "/held" : "");'
 SAB_AFTER='                        !any ? "/none" : held ? "" : "");   /* SABOTAGE S1118 */'

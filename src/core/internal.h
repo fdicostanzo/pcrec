@@ -2975,10 +2975,12 @@ typedef struct {
     unsigned char callers;   /* distinct calling functions, owned
                                 always_inline callers folded in */
     unsigned char rank;      /* PcrecEdgeRank: its hottest in-edge */
-    bool copyable;           /* no label table, no computed goto */
+    bool copyable;           /* gcc can copy its body: today the job-wide
+                                `!uncopyable` below (a compound part: its
+                                own compile's), never a per-entry fact */
     unsigned char row;       /* the part table's row that fired (index) */
     unsigned char layout;    /* PCREC_PART_AUTO/_SHARED/_INLINE written,
-                                or 0 for an owner's attribute */
+                                or 0: the head as emitted (P1, P2) */
 } PcrecPlPart;
 
 /* [ENTRY-TABLE] E1 THE PART-LAYOUT STATE of one attempt (src/gen/
@@ -2999,8 +3001,13 @@ typedef struct {
     PcrecPlPart part[PCREC_ENTRY_N];   /* at most one record per entry row */
     unsigned owned_inline;   /* PcrecEntry bits an OWNER makes always_inline
                                 (folded into their callers for `callers`) */
-    bool uncopyable;         /* the DFA body this compile emitted keeps label
-                                addresses (the attempt route's jump tables) */
+    bool uncopyable;         /* SOME DFA body this attempt emitted keeps
+                                label addresses (the attempt route's jump
+                                tables): a JOB-WIDE fact, not per entry, and
+                                no computed goto sets it. Exact while every
+                                subject is the attempt's one DFA body
+                                ([ENTRY-TABLE] F5: per entry at the first
+                                VM-bodied or `find` subject) */
     unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N]; /* the shape's derived
                                 edges, PcrecEdgeRank + 1, 0 = no edge */
 } PcrecPartLayout;
@@ -7717,8 +7724,8 @@ struct PcrecPartFacts {
                                (a bit per `PCREC_FQ_*` row), for the shell's
                                knowledge stamp (window_contract.md §3.7.3a) */
     bool copyable;          /* [ENTRY-TABLE] E1 its search body can be copied
-                               into a caller (no label table, no computed
-                               goto: `Job.pl_uncopyable`) */
+                               into a caller: the part compile's job-wide
+                               `!Job.pl.uncopyable` (no label table) */
     size_t layout_bytes;    /* its text's part-layout mark bytes, carried
                                into the shell (StrBuf.layout_bytes) */
 };

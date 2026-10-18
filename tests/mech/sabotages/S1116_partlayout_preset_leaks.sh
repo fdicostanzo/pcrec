@@ -13,7 +13,7 @@ SAB_DESC='the max-speed row of TUNE_TABLE presets residual inline though tuning.
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:10fail/36pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1116."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" --features all --tune=max-speed --emit-facts --pattern "(a)b" | tr "\t" " "'
+SAB_REACH_EXPECT='byte unset unset unset unset unset unset K,T0'
 SAB_BEFORE='    { PCREC_TUNE_MAX_SPEED, "max-speed",  0,      0, 8192, 0, 0, 0, 0 }'
 SAB_AFTER='    { PCREC_TUNE_MAX_SPEED, "max-speed",  0,      0, 8192, 0, PCREC_PART_INLINE, 0, 0 }   /* SABOTAGE S1116 */'

@@ -12,8 +12,8 @@ SAB_DESC='row P7 (the rank threshold) is walked before the class-value rows P4-P
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:6fail/40pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1117."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" --features all --part-layout=prefilter:shared --part-inline-rank=R2 --emit-facts --pattern "(a)b" | tr "\t" " "'
+SAB_REACH_EXPECT='P4 class-shared shared'
 SAB_BEFORE='    { "P4",  "class-shared",    "the part'"'"'s class value is shared",
       PCREC_PART_SHARED, false, pr_cls_shared },
     { "P5",  "class-inline",    "the part'"'"'s class value is inline",

@@ -1250,7 +1250,18 @@ with no record, a record with no mark, and a mark not after `static ` (LK-9).
 At T0 no mark exists: a default artifact is byte-identical by construction.
 The listings: `pcrec_part_layout_facts` (`--emit-facts`' two sections) and
 `pcrec_part_layout_table_row` (`--list-axes`' `part-layout-table`). Checks:
-`tests/partlayout/`; sabotage S1111-S1118.
+`tests/partlayout/`; sabotage S1111-S1121, S1124-S1127.
+**Review r1 fixes (lane e1fix, 2026-10-18; zero default movers, abi 80):**
+P2 writes nothing (a body gcc cannot copy keeps its head as emitted, so a
+control on any class leaves an attempt-route prefilter the default's);
+`shared` (P4/P8 only) is `noipa` under `#if __has_attribute(noipa)`,
+`noinline` under `#else`, K24's guard shape. `layout_texts[]` is the one
+value-to-guarded-text table the render and both listings read, shaped so
+the other attribute writers (K24's `noclone`, `en.ai`/`ai_body`, `_deep`)
+can move onto it ([ATTR-TABLE], not migrated). The wrapper rows and the
+head-mark choice (`head_rows[]`, M1-M4) are first-match rows with `holds`;
+a record's class reads `subject_class` alone; `owned_inline` reads
+`en.shape`.
 
 ## Files
 

@@ -13,7 +13,7 @@ SAB_DESC='row T1 never holds, so `measured` with no measurement set is laid out 
 SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:11fail/35pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1111."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
-SAB_REACH_EXPECT='#define RX_PART_LAYOUT "prefilter=inline"'
+SAB_REACH='"$PCREC" -p rx --part-inline-rank=measured -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
+SAB_REACH_EXPECT='#define RX_PART_LAYOUT_WHY "threshold-unmeasured"'
 SAB_BEFORE='    return pl->rank == PCREC_PART_RANK_MEASURED && theta_hot(cx, &r) == THETA_ABSENT;'
 SAB_AFTER='    (void)cx; (void)r; return false;   /* SABOTAGE S1111 */'
