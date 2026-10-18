@@ -2403,3 +2403,23 @@ pointer when a kit change merges to main.
   - the iterator saves it in its state ("where intercall data is saved").
 - Posted as a responses.md notice with proposed D-entry text for main. Unscheduled; `[MEMFN-RTDISPATCH]`'s trigger is unchanged.
 - **Lesson:** state the compiler's granularity (function, not file) before a dispatch design discussion; it changed Frank's direction.
+
+## 2026-10-17 (evening/close) — R-23, R-24 delivered and on main; B3a built, fixed, half-validated; paused on Frank's request
+
+- **R-23** (body stated, MF_SITE_ABI 14) and **R-24** (`mf_prov` bytes/fidelity, MF_SITE_ABI 15) are ON MAIN, both heavy-validated green. R-24 landed through main's int5 with E-1 and the wiring line.
+- Frank ruled runtime ISA dispatch: a compound decision; one-shot search pays the per-call check; the iterator holds the decision in its state. Filed by main as D155 addendum 5.
+- Merges: Frank asked to have them "go through main" until he adds the kit's merge permissions. Main merges kit lane branches at its discretion; the kit sends branch + sha + target + validation.
+- **B3a** (presence spans stated, the kit's ports of the five picks in the trace build, PR-11, MF_SITE_ABI 16):
+  - built by b3a;
+  - review b3arev: MERGE-WITH-FIXES, 2 majors + 5 minors, all fixed by b3afix;
+  - rebased onto main 343605a57, then onto e368410e7 (b3aheavy, tip **4ecc07d5b** on lane/b3afix);
+  - main applied and ACCEPTED all its main-side pieces (req_start_set as one source, DELEG `entry`, c17, c10 + S1102);
+  - 0 movers on 7 sweeps vs e368410e7.
+- **B3a's heavy chain** (worktrees/memfn-slot/b3aheavy/chain.status, pinned at worktrees/b3a-mt @ 4ecc07d5b):
+  - build, strict and FULL make test GREEN at 22:14 (the integration test);
+  - 28 of 42 solo mech rows done, all OK. S1029 is listed BAD only because the copied scorer special-cases S919 alone: S1029 is declared SAB_EXPECT=UNREACHED and read unreached 1, as expected;
+  - **CANCELLED** by Frank's request after S571 (safekill; worktree clean, no processes left).
+- **Lessons:**
+  - a chain scorer copied from a template must read each row's SAB_EXPECT, not a hard-coded id;
+  - lanes went idle after CHAIN_DONE without reporting, three times: check artifacts and nudge;
+  - `git apply --check` inside a scratch dir in the repo is a false pass (b3aheavy).
