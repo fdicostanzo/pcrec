@@ -23,7 +23,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `79` on every artifact today (lane rpunion bumped it
+- **`rx_info.abi` is `80` on every artifact today (lane e1 bumped it from
+  79, 2026-10-18: [ENTRY-TABLE] E1, the part-layout controls,
+  docs/design/compound_entries.md rev 4 §5.1, D163 addenda 8-12).** The
+  stamp vocabulary gains `<PREFIX>_PART_LAYOUT` and
+  `<PREFIX>_PART_LAYOUT_WHY` (tuning.md §2.51-§2.53, §5.3; match_api.md
+  §6.3.11), written only where a caller sets a part-layout control
+  (`--part-layout=`, `--part-inline-rank=`, `--part-residual=`, or the
+  `pcrec_options` fields); every `--tune` preset cell is empty, so no
+  default artifact moves beyond the abi digits (scripts/emit_sweep.py
+  against c88537116, every artifact stream, with no control and with the
+  all-`auto` control set: docs/dev/lanes/e1_report.md). Under a control the
+  part's definition head gains its attribute and the prologue the stamp
+  lines; no struct offset moves and no answer moves. The bump is the
+  manager's reading of D94: readers gain words though no default byte
+  moves.
+
+- **`rx_info.abi` was `79` (lane rpunion bumped it
   from 78, 2026-10-17: [WINDOW-E1] the knowledge-stamp UNION, D167 addendum
   3, window_contract.md rev 3.1 §3.7.3a and F-5).** `<PREFIX>_FINDINGS` and
   `rx_info.findings` list a query ANY attempt of the compile asked, a

@@ -44,6 +44,9 @@
 #
 # RE-AIMED 2026-10-17 (lane rpunion, [WINDOW-E1] the knowledge-stamp union,
 # abi 78 -> 79): AFTER is 78, the parent's number; same detector, same arm.
+#
+# RE-AIMED 2026-10-18 (lane e1, [ENTRY-TABLE] E1 the part-layout controls,
+# abi 79 -> 80): AFTER is 79, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
@@ -51,5 +54,5 @@ SAB_DESC="PCREC_ARTIFACT_ABI stays 71 (the parent's) while the VMLAZY normalizat
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='#define PCREC_ARTIFACT_ABI 79'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 78   /* SABOTAGE S693 */'
+SAB_BEFORE='#define PCREC_ARTIFACT_ABI 80'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 79   /* SABOTAGE S693 */'
