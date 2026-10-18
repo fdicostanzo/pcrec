@@ -3,7 +3,7 @@
 (b3brev finding 2, ruling (b); docs/dev/lanes/b3b_report.md §8). Re-run after
 editing the case list:
 
-    PCREC_PCRE2_PATH=/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 \\
+    PCREC_PCRE2_PATH=libpcre2-8.so.0 \\
         python3 tests/litscan/gen_presence_deny.py [--check-pcrec BUILD/pcrec]
 
 WHAT IT GUARDS. B3b removed `req_site_define`'s internal-error guard
@@ -31,7 +31,7 @@ sit at every character-boundary start position.
 import importlib.util, os, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-os.environ.setdefault("PCREC_PCRE2_PATH", "/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0")
+os.environ.setdefault("PCREC_PCRE2_PATH", "libpcre2-8.so.0")
 _spec = importlib.util.spec_from_file_location("gen_handoff", os.path.join(HERE, "gen_handoff.py"))
 gh = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gh)
