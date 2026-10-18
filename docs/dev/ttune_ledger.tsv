@@ -65,3 +65,4 @@ run_id	date	tree	label	J	P	wall_s	cpu_s	rc	sect_err	k44_1807	k44_cpucap	load1_st
 20261018T053347_e1_j2p8	2026-10-18	4ea932a4	e1	2	8	2058	10903	2	2	ok	ok	6.64	YES	RED-REAL	52	16
 20261018T070804_e1b_j2p8	2026-10-18	b57d4310	e1b	2	8	1993	10595	0	0	ok	ok	10.37	YES	green	46	16
 20261018T083017_e1fix_j2p8	2026-10-18	c572e957+dirty	e1fix	2	8	1999	10795	2	1	ok	ok	11.66	YES	RED-REAL	51	16
+20261018T103102_attrtab_j2p8	2026-10-18	0813783d	attrtab	2	8	1960	10710	0	0	ok	ok	8.63	no	green	46	16
