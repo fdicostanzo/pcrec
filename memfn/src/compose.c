@@ -258,7 +258,8 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
-                             gate_verdict *why, int quiet, const char **row)
+                             gate_verdict *why, int quiet, const char **row,
+                             int *walked)
 {
     gate_in in = { s, def, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
@@ -270,7 +271,8 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     const char *rid = NULL;
     const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
     *row = rid;
-    if (rid && ra != &fd_nested_walk) {
+    *walked = !rid || ra == &fd_nested_walk;
+    if (!*walked) {
         for (size_t i = 0; ra && i < NARMS; i++)
             if (arms[i] == ra)
                 return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc) ? ra : NULL;
@@ -849,7 +851,8 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
+    int walked;
+    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid, &walked);
     if (!row) return -1;
     kit_class(row, s, out);
     if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
@@ -894,8 +897,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
     const char *rid;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
-    if (!row && rid)
+    int walked;
+    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid, &walked);
+    /* a routed row that WALKS (D2, the nested walk) declines as the walk does,
+       so its refusal names the declined field like any walk's */
+    if (!row && !walked)
         return kit_fail(art, "mf_define: the finder row %s's routed pick does not serve "
                         "this site (its arm declines it)", rid);
     if (!row) {

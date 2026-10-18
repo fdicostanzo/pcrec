@@ -40,7 +40,8 @@ declared delta, checked both ways. The heavy runs are OWED in
 | b4a700fd6 | a pre-check P2 drops records as `MFPRESDROP` (C10's `MFROUTED` stays the defined sites'); the shadow takes no `mf_site` by value |
 | 3b5abf3ae | CLAUDE.md updates; memfn.h link semantics; tuning.md tables for the retired bit |
 | d15ba93e5 | `docs/dev/lanes/b3b/`: proposed ENTRY diff, heavy `chain.sh`, mech rows, scorer |
-| (this) | this report |
+| 1c489eb1f | tuning §2.40¶2 drops a walkback phrase (test-spec-history) |
+| (next) | D2's refusal names the declined field (G2 enforced classes); this report |
 
 ## 2. What the routing is
 
@@ -157,7 +158,23 @@ Scratch: `S = worktrees/memfn-slot/b3b`. The reference is c88537116, built at
 
 ### 4.1 Byte identity (emit_sweep, reference c88537116)
 
-VALIDATION_SWEEPS_TABLE
+All sweeps used a FROZEN copy of the tip binary (`$S/frozen/`, taken at
+38ee2a848; `cmp` confirmed it unchanged through the run). Logs are in
+`$S/logs/sw2/`.
+
+| arm | result |
+|---|---|
+| plain, every stream (5,790 argv rows, 386 composition files) | 0 movers on every artifact stream; dumps 1 mover (`--list-axes`), exactly the declared delta: `dumps_delta.py` 3 added + 2 changed rows, 0 failures |
+| `--arms start` (every DIFFER_PINS arm, byte and utf8) | every pre-existing arm holds its pins; the three new kit denies are ASYMMETRIC because the c88537116 reference REFUSES `--memfn=no-fd-pres-g1` / `-pick` / `no-pres-set-lead` (unknown options there). Their floors were measured with the branch as both sides (`$S/logs/arm_*.log`, all rc 0). Against a reference that has B3b they become ordinary DIFFER arms |
+| alias: `--extra=-fno-req-set-lead`, byte and utf8 (the ref spells bit 45 natively, the tip through the alias) | 0 movers (c-default, c-vm, facts) |
+| `-fmemfn-simd`, `-fcomments` | 0 movers (incl. composition) |
+| base `-e utf8`, `--engine=vm` | 0 movers (c-default, c-vm, emit-ir, facts, stderr) |
+| rwquest (176 questions), bench (337 distinct `bench/*/patterns/*.rx`, read-only from pcrec-bench), `--no-corpus` | 0 movers, rc 0 |
+| synthetic sets through the B1 lever (`pcrec-harness --harness=measures=`: all-walk, all-v1, all-wide, every-key) | 0 movers each |
+| `run_longprefix_sweep.sh`, `run_prefix_invariance.sh` | rc 0 each |
+| frozen tip vs the post-G2-fix binary (c-default, c-vm, facts, stderr) | 0 movers (the fix changes refusal text only) |
+
+The trace sweep, run earlier in the lane, has a clean SET gate (§3 item 7).
 
 ### 4.2 KW-8 on the kit-sourced proof (B3a's binding note)
 
@@ -190,7 +207,37 @@ The transcript is `out/routed_census.txt`.
 
 ### 4.3 Suites
 
-LIGHT_SUITES_TABLE
+Runner `$S/light.sh`, one suite at a time; logs `$S/logs/light/`.
+
+| suite | result |
+|---|---|
+| make, make strict | rc 0; strict clean (also after the G2 fix) |
+| test-codegen | rc 0 (236 s) |
+| test-rxtsource | rc 0 |
+| test-memfn-g2 (quick) | RED at first (5 enforced-class cases); a B3b defect, FIXED, then 71,217,801 / 0 (see below) |
+| test-spec-history | RED at first: `[walkback]`, the phrase "until [IFACE-PUSH] batches its removal" in tuning §2.40¶2 (mine); dropped in 1c489eb1f, then 145/0 |
+| test-memfn-arms / -stamps / -manifest / -link / -forms / -reach / -guarded / -simdfloor / -arch / -rank / -rows / -deleg | rc 0 each |
+| test-memfn-finder | 981/0 (finder 949, arm_reach 16, pr11 5, presence 10) |
+| test-startset | rc 0, no re-pin needed |
+| test-registry | rc 0 |
+| test-cand-oracle | rc 0 |
+| test-findings, test-compound, test-plan-lint | rc 0 |
+
+**The G2 red was B3b's own defect, not pre-existing.** Five strict cases, all
+FIND/ASSIGN sites with a RUN span 0, were refused with "the finder row D2's
+routed pick does not serve this site" instead of a refusal naming the declined
+field (`on_miss` LOOP_EXIT, `miss` unstated). Routing D2 sent these sites
+through `select_arm`'s routed-row branch. D2's row is the nested walk, though,
+so its decline IS the walk's decline. At c88537116 D2 was unrouted, the same
+sites reached the generic walk, and `gate_describe` named the field. I did not
+re-run c88537116's G2 to confirm this; the cause is read directly off the
+refusal text.
+
+The fix is in memfn/src/compose.c. `select_arm` reports whether it walked, and
+`define_sel` keeps the routed-pick refusal only for a routed row that does NOT
+walk. The confirming runs: G2 quick 71,217,801 / 0, finder 981/0, arms 383/0,
+strict clean, sabotage anchors 806/806 resolving, and 0 movers vs the frozen
+tip. The fix commit is listed in §1.
 
 ### 4.4 Sabotage (solo, `tests/mech/run_sabotage_matrix.sh ID`)
 
