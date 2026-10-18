@@ -21,6 +21,8 @@
 # flag is accepted, read by no row, and changes the emitted program nothing
 # (intent unchanged: the flag is accepted and does nothing). Detector
 # unchanged: run_prechecks.sh's `-fno-req-set-lead` rows.
+# [MEMFN] b3bctri (2026-10-18) RE-ANCHORED: d14d2480e (bit-45 alias accessor
+# fix) respelled the test as pcrec_flags_has(); intent unchanged.
 SAB_ID="S462-set-lead-deny-ignored"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="prechecks"
@@ -30,5 +32,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:user|
 SAB_REACH_EXPECT="REACH-SET-LEADS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (defo.flags & PCREC_NO_REQ_SET_LEAD) {'
-SAB_AFTER='    if (0 /* SABOTAGE S462 */ && (defo.flags & PCREC_NO_REQ_SET_LEAD)) {'
+SAB_BEFORE='    if (pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)) {'
+SAB_AFTER='    if (0 /* SABOTAGE S462 */ && pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)) {'
