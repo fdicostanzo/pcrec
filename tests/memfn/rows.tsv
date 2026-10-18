@@ -72,6 +72,13 @@
 # site, and R7w is what every site no D1 row claims reads (it returns NULL and
 # renders the pre-table arm until B4), so the census chooses it; its signature
 # is the `MFTRACE FD` record's, and its control is a one-byte site D1 claims.
+# A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling) says so in
+# its SIGNATURE: the `MFTRACE FD` record's ` phase=ask` is part of it (P2 today,
+# whose pre-check is asked and never defined). n2_report.py --floors holds such
+# a row to its floor on the REACH line's `asked=N` (selections decided at the
+# ask), every other row on `chosen`; rows_check.py requires its witness to be
+# ASKED (asked >= 1) and its control not, and every traced compile's `asked`
+# to equal its own `phase=ask` FD records (P4 counted from `P3+P4`).
 #
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
@@ -114,7 +121,7 @@ fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
 fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
 fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
-fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0	--memfn=no-fd-pres-g1	=
+fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT routed=1 phase=ask	--memfn=no-fd-pres-g1	=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=

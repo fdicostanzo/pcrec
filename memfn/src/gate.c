@@ -787,6 +787,7 @@ void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in
 enum { REACH_ROWS = 64 };   /* rows of every table (39 at R17-b' B1), with room */
 static const gate_contract *reach_row[REACH_ROWS];
 static unsigned long reach_chosen[REACH_ROWS];
+static unsigned long reach_asked[REACH_ROWS];   /* ENDs of a selection decided at the ASK */
 static unsigned long reach_cell[REACH_ROWS][FLD_N][CL_N + 1];   /* CL_N: unstated */
 static unsigned long reach_dropped;  /* ENDs whose row found no slot (N4: K35) */
 static unsigned trace_arts;
@@ -829,7 +830,9 @@ static void reach_print(void)
             unsigned slot = 0;
             while (slot < REACH_ROWS && reach_row[slot] != c) slot++;
             unsigned long n = slot < REACH_ROWS ? reach_chosen[slot] : 0;
-            fprintf(stderr, "MFTRACE REACH table=%s row=%s chosen=%lu\n", c->table, c->row, n);
+            unsigned long a = slot < REACH_ROWS ? reach_asked[slot] : 0;
+            fprintf(stderr, "MFTRACE REACH table=%s row=%s chosen=%lu asked=%lu\n",
+                    c->table, c->row, n, a);
             if (slot == REACH_ROWS) continue;
             for (unsigned f = 0; f < FLD_N; f++)
                 for (unsigned k = 0; k <= CL_N; k++)
@@ -941,8 +944,12 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
         return;
     }
     /* a use re-checks and the finder's shadow decides nothing it renders:
-       neither selects */
-    if (t->phase != MF_PH_USE && t->phase != MF_PH_SHADOW) reach_chosen[slot]++;
+       neither selects; a selection decided at the ASK (a presence span's
+       link, fd_pres FD_PRES_ASK) is counted as `asked`, its own column: the
+       shadow's other ENDs repeat per slot and layer, so `asked` is not
+       "every shadow END" (b3breach) */
+    if (t->ask) reach_asked[slot]++;
+    else if (t->phase != MF_PH_USE && t->phase != MF_PH_SHADOW) reach_chosen[slot]++;
     uint64_t uses = uses_at(c, t->phase, t->in);
     for (unsigned f = 0; f < FLD_N; f++) {
         if (!(uses >> f & 1) || !(fields[f].phase & t->phase)) continue;

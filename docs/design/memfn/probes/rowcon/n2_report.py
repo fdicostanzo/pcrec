@@ -14,10 +14,22 @@ CLI:  n2_report.py RESULTS_DIR [-o n2_results.md] [--floors ROW_FLOORS.tsv [--pr
       --floors (N4) also holds every row's CHOSEN count to its pcrec_floor
       (tests/memfn/row_floors.tsv) and every non-`pcrec` row of rows.tsv (read
       beside it) to 0, and prints `floor_fail=F floor_placeholder=P
-      reason_stale=R reach_dropped=D` before the last line. Floors apply only
-      to a FULL census (no --limit, no --pattern, every arm run); anything
-      less prints `floors=NOT-APPLIED`. --propose prints, per row, the
-      floor(0.9 x chosen) a human copies into the floor file.
+      reason_stale=R reach_dropped=D ask_mismatch=M` before the last line.
+      Floors apply only to a FULL census (no --limit, no --pattern, every arm
+      run); anything less prints `floors=NOT-APPLIED`. --propose prints, per
+      row, the floor(0.9 x count) a human copies into the floor file.
+
+THE ASK (lane b3breach, the kit manager's ruling): a row DECIDED AT THE ASK
+(a presence span's link that a public `mf_ask` decides; P2's pre-check is
+asked and never defined) is reached when ASKED. The kit counts those ENDs in
+the REACH line's own `asked=N` column, never in `chosen`. A row whose rows.tsv
+SIGNATURE carries ` phase=ask` (the `MFTRACE FD` record's mark of an ask) is
+held to its floor on `asked`; every other row on `chosen`. The row set comes
+from that column, never from a list of names here. Every row's `asked` must
+EQUAL the count of `MFTRACE FD ... phase=ask` records naming it (`row=` split
+on `+`: P4, the order row, rides as `P3+P4`): the records are printed at the
+ask's own decision point (finder.c `fd_pres`), the counter in gate.c, so a
+count no ask stands behind is an `ask_mismatch` and a floor failure.
 
 A would-decline is an END record with would_decline=1: since N3 the gate
 DECLINED a row whose predicate held and the walk MOVED the selection to the
@@ -33,6 +45,7 @@ import os
 import sys
 
 WITNESS_N = 3
+ASK_MARK = " phase=ask"     # a rows.tsv signature carrying it: the row is decided at the ask
 SEP = "\t"
 
 
@@ -45,6 +58,8 @@ class Trace:
         self.reach_cell = collections.Counter()
         self.chosen_rows = []      # (table, row) chosen at define/run, first-seen order
         self.reach_dropped = 0     # REACH_DROPPED: selections the counters could not hold
+        self.reach_asked = collections.Counter()   # (table, row): REACH `asked=` (b3breach)
+        self.ask_records = collections.Counter()   # ("fd", row): `MFTRACE FD ... phase=ask` records
 
 
 def _kv(tokens):
@@ -95,6 +110,10 @@ def parse_trace(err):
                 "chosen": d.get("chosen", "-"), "wd": d.get("would_decline", "-"),
                 "moved_from": d.get("moved_from", "-"),
                 "shape": shape, "fields": parse_fields(d.get("fields", "-"))})
+        elif kind == "FD":
+            if d.get("phase") == "ask":
+                for r in d.get("row", "?").split("+"):
+                    tr.ask_records[("fd", r)] += 1
         elif kind == "REACH_DROPPED":
             tr.reach_dropped += int(d.get("n", "0"))
         elif kind == "REACH":
@@ -102,6 +121,8 @@ def parse_trace(err):
                 tr.reach_cell[(d["table"], d["row"], d["field"], d["class"])] += int(d["n"])
             else:
                 tr.reach_chosen[(d["table"], d["row"])] += int(d["chosen"])
+                # absent = a kit older than the column: a KeyError, never a 0
+                tr.reach_asked[(d["table"], d["row"])] += int(d["asked"])
     return tr
 
 
@@ -121,6 +142,8 @@ class Agg:
         self.reach_cell = collections.Counter()    # (table, row, field, class)
         self.reach_wit = collections.defaultdict(list)  # (table, row) -> [witness] (N4)
         self.reach_dropped = 0                     # REACH_DROPPED totals (N4: must be 0)
+        self.reach_asked = collections.Counter()   # (table, row): selections decided at the ask
+        self.ask_records = collections.Counter()   # ("fd", row): FD records marked phase=ask
 
     def add(self, arm, stream, src, pattern, tr):
         for e in tr.ends:
@@ -142,6 +165,8 @@ class Agg:
         self.reach_chosen.update(tr.reach_chosen)
         self.reach_cell.update(tr.reach_cell)
         self.reach_dropped += tr.reach_dropped
+        self.reach_asked.update(tr.reach_asked)
+        self.ask_records.update(tr.ask_records)
         for k in tr.chosen_rows:
             lst = self.reach_wit[k]
             if len(lst) < WITNESS_N:
@@ -169,6 +194,8 @@ class Agg:
         self.reach_chosen.update(o.reach_chosen)
         self.reach_cell.update(o.reach_cell)
         self.reach_dropped += o.reach_dropped
+        self.reach_asked.update(o.reach_asked)
+        self.ask_records.update(o.ask_records)
         for k, ws in o.reach_wit.items():
             lst = self.reach_wit[k]
             for w in ws:
@@ -188,7 +215,9 @@ class Agg:
              "reach_chosen": [[SEP.join(k), v] for k, v in self.reach_chosen.items()],
              "reach_cell": [[SEP.join(k), v] for k, v in self.reach_cell.items()],
              "reach_wit": [[SEP.join(k), v] for k, v in self.reach_wit.items()],
-             "reach_dropped": self.reach_dropped}
+             "reach_dropped": self.reach_dropped,
+             "reach_asked": [[SEP.join(k), v] for k, v in self.reach_asked.items()],
+             "ask_records": [[SEP.join(k), v] for k, v in self.ask_records.items()]}
         tmp = path + ".tmp"
         with open(tmp, "w") as f:
             json.dump(j, f)
@@ -218,6 +247,12 @@ class Agg:
         for k, v in j.get("reach_wit", []):        # absent in pre-N4 arm files
             a.reach_wit[tuple(k.split(SEP))] = v
         a.reach_dropped = j.get("reach_dropped", 0)
+        # absent in pre-b3breach arm files: an ask-decided row then reads
+        # UNREACHED (red), never a silent pass
+        for k, v in j.get("reach_asked", []):
+            a.reach_asked[tuple(k.split(SEP))] = v
+        for k, v in j.get("ask_records", []):
+            a.ask_records[tuple(k.split(SEP))] = v
         return a
 
 
@@ -291,10 +326,11 @@ def render(agg, meta=None):
     L += _md(rows, ["table", "declined row", "site shape", "field", "rule", "observed class",
                     "phases", "count", "R-6 obligation"])
 
-    L += ["", "## 4. Reach: selections per chosen row (define + run phases), with witnesses", ""]
-    L += _md([[t, r, n, "; ".join("[%s] %s %s: `%s`" % tuple(w) for w in sorted(agg.reach_wit.get((t, r), [])))]
-              for (t, r), n in sorted(agg.reach_chosen.items())],
-             ["table", "row", "chosen", "witnesses [arm] stream src: pattern"])
+    L += ["", "## 4. Reach: selections per chosen row (define + run phases; `asked`: decided at the ask), with witnesses", ""]
+    L += _md([[t, r, agg.reach_chosen.get((t, r), 0), agg.reach_asked.get((t, r), 0),
+               "; ".join("[%s] %s %s: `%s`" % tuple(w) for w in sorted(agg.reach_wit.get((t, r), [])))]
+              for (t, r) in sorted(set(agg.reach_chosen) | set(agg.reach_asked))],
+             ["table", "row", "chosen", "asked", "witnesses [arm] stream src: pattern"])
     L += ["", "## 5. Reach: per row x field x class (nonzero cells)", ""]
     L += _md([[t, r, f, c, n] for (t, r, f, c), n in sorted(agg.reach_cell.items())],
              ["table", "row", "field", "class", "n"])
@@ -328,6 +364,8 @@ def floors_verdict(agg, meta, floors_path, propose):
     rows' zero. Returns the markdown lines and the summary line."""
     rows = read_tsv(os.path.join(os.path.dirname(floors_path), "rows.tsv"), 9)
     reach = {(r[0], r[1]): r[2] for r in rows}
+    # the rows decided at the ask: their signature says so (module doc)
+    at_ask = {(r[0], r[1]) for r in rows if ASK_MARK in r[6]}
     fl = {(r[0], r[1]): r[2] for r in read_tsv(floors_path, 4)}
     full = (meta.get("limit", 0) == 0 and meta.get("explicit patterns", 0) == 0
             and meta.get("arms run") == meta.get("arms in table"))
@@ -336,19 +374,26 @@ def floors_verdict(agg, meta, floors_path, propose):
         L += ["NOT APPLIED: a partial census (limit %s, explicit patterns %s, arms run %s of %s)."
               % (meta.get("limit"), meta.get("explicit patterns"), meta.get("arms run"),
                  meta.get("arms in table")), ""]
-    fail = ph = stale = 0
+    fail = ph = stale = mism = 0
     out = []
-    for k in sorted(set(fl) | set(reach) | set(agg.reach_chosen)):
-        n = agg.reach_chosen.get(k, 0)
+    for k in sorted(set(fl) | set(reach) | set(agg.reach_chosen) | set(agg.reach_asked)
+                    | set(agg.ask_records)):
+        on = "asked" if k in at_ask else "chosen"
+        n = (agg.reach_asked if k in at_ask else agg.reach_chosen).get(k, 0)
+        nask, nrec = agg.reach_asked.get(k, 0), agg.ask_records.get(k, 0)
         f, why = fl.get(k), reach.get(k)
-        if why is None or f is None:
+        if nask != nrec:
+            v = "ASK MISMATCH: asked %d, %d ask records" % (nask, nrec)
+            mism += 1
+            fail += 1
+        elif why is None or f is None:
             v = "NOT IN %s" % ("rows.tsv" if why is None else "row_floors.tsv")
             fail += 1
         elif why != "pcrec":
             v = "ok (0, %s)" % why if n == 0 else "STALE REASON: %s, chosen %d" % (why, n)
             stale += n != 0
         elif n == 0:
-            v = "UNREACHED: reach is pcrec, chosen 0"
+            v = "UNREACHED: reach is pcrec, %s 0" % on
             fail += 1
         elif f == "PLACEHOLDER":
             v = "PLACEHOLDER"
@@ -360,14 +405,16 @@ def floors_verdict(agg, meta, floors_path, propose):
             v = "ok" if n >= int(f) else "BELOW FLOOR"
             fail += n < int(f)
         prop = max(1, n * 9 // 10) if why == "pcrec" and n else "-"
-        out.append([k[0], k[1], why or "-", n, f or "-", prop, v])
+        out.append([k[0], k[1], why or "-", on, n, f or "-", prop, v])
         if propose:
             print("propose\t%s\t%s\t%s" % (k[0], k[1], prop))
-    L += _md(out, ["table", "row", "reach", "chosen", "floor", "floor(0.9 x chosen)", "verdict"])
+    L += _md(out, ["table", "row", "reach", "held on", "count", "floor", "floor(0.9 x count)",
+                   "verdict"])
     if not full:
-        return L, "floors=NOT-APPLIED reason_stale=%d reach_dropped=%d" % (stale, agg.reach_dropped)
-    return L, ("floor_fail=%d floor_placeholder=%d reason_stale=%d reach_dropped=%d"
-               % (fail, ph, stale, agg.reach_dropped))
+        return L, ("floors=NOT-APPLIED reason_stale=%d reach_dropped=%d ask_mismatch=%d"
+                   % (stale, agg.reach_dropped, mism))
+    return L, ("floor_fail=%d floor_placeholder=%d reason_stale=%d reach_dropped=%d ask_mismatch=%d"
+               % (fail, ph, stale, agg.reach_dropped, mism))
 
 
 def main(argv):

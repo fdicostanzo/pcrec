@@ -950,7 +950,7 @@ fi
 grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
-# Sources: the `MFTRACE REACH table=T row=R chosen=N` lines of every G2
+# Sources: the `MFTRACE REACH table=T row=R chosen=N asked=A` lines of every G2
 # process that SELECTS rows (the generator, once per W2 mutation; K1 calls
 # only mf_ref_*, selects nothing and prints no REACH line, so it is not one),
 # linked against libpcrec_mftrace.a. Nothing here reads G2's generator or
@@ -961,7 +961,7 @@ FLOOR_ROWS=20   # distinct (table,row) pairs in the registry (lane g2m4: 14, wit
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process
-reach_lines() { grep -E '^MFTRACE REACH table=[^ ]+ row=[^ ]+ chosen=[0-9]+$' "$1"; }
+reach_lines() { grep -E '^MFTRACE REACH table=[^ ]+ row=[^ ]+ chosen=[0-9]+ asked=[0-9]+$' "$1"; }
 # (d) as a function: reach_has_lines FILE -> 0 when the process printed any
 reach_has_lines() { [ -n "$(reach_lines "$1" | head -1)" ]; }
 # rows_zero FILE: the rows of a row-chosen file with n == 0
@@ -995,13 +995,13 @@ if [ "$rows" = 1 ]; then
         reach_fail "(d) control program did not build or run ($ctl)"
     fi
     for f in "$work"/reach/*.err; do reach_lines "$f"; done \
-      | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+      | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\) asked=[0-9]*$/\1 \2 \3/' \
       | awk '{ k = $1 " " $2; s[k] += $3 } END { for (k in s) print "row-chosen " k " " s[k] }' \
       | LC_ALL=C sort > "$work/row-chosen.txt"
     cat "$work/row-chosen.txt"
     # lane g2m7: the rows the MISMATCH-only generator process chose (its own REACH lines), apart from the tier sum
     echo "== rows chosen by the MISMATCH-only generator process (MISMATCH sites alone)"
-    reach_lines "$work/reach/gen-mmonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+    reach_lines "$work/reach/gen-mmonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\) asked=[0-9]*$/\1 \2 \3/' \
         | awk '$3 > 0 {print "row-chosen-mismatch-only " $1 " " $2 " " $3}' | LC_ALL=C sort | tee "$work/row-chosen-mm.txt"
     for fl_ in $MM_ROW_FLOORS; do
         t_=${fl_%%:*}; r_=${fl_#*:}; r_=${r_%%:*}; v_=${fl_##*:}
@@ -1012,7 +1012,7 @@ if [ "$rows" = 1 ]; then
     # lane g2m6: the rows the STRIDE-only generator process chose. The kit has one row for a strided
     # ADVANCE today (the generic row); no row is added, FLOOR_ROWS does not move
     echo "== rows chosen by the STRIDE-only generator process (strided sites alone)"
-    reach_lines "$work/reach/gen-stonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+    reach_lines "$work/reach/gen-stonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\) asked=[0-9]*$/\1 \2 \3/' \
         | awk '$3 > 0 {print "row-chosen-stride-only " $1 " " $2 " " $3}' | LC_ALL=C sort | tee "$work/row-chosen-st.txt"
     for fl_ in $ST_ROW_FLOORS; do
         t_=${fl_%%:*}; r_=${fl_#*:}; r_=${r_%%:*}; v_=${fl_##*:}

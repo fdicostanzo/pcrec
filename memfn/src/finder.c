@@ -1070,7 +1070,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         }
         gate_in in = { s, NULL, NULL, &q.ff };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
-                         &in, 1, quiet };
+                         &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;
         fd_decide(&q, FD_PRES, &tc, &d);
         if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) {

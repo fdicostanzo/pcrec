@@ -671,6 +671,9 @@ typedef struct {
     int            quiet;       /* the walk records nothing and counts no
                                    reach (mf_ask, R17-b' B1: a pure query
                                    writes one ASK line instead)             */
+    int            ask;         /* the selection decides at the ASK: the
+                                   reach counts its END as `asked`, never
+                                   `chosen` (fd_pres FD_PRES_ASK, b3breach) */
 } gate_tctx;
 
 /* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------
