@@ -26,9 +26,15 @@
 #      witness the same kind values at the FIND sites. The expectations are
 #      the fixture file, written from the design (r17b_prime.md §1.6/§4.3),
 #      not from a recorded run.
+#   6. [MEMFN] R17-b' B3a the `entry` column (r17b_prime.md rev 3 §3.4's
+#      merge, Q-R17P-18), from a probe over the table: every row STATES its
+#      DelegEntry (UNSTATED refused), DELEG_ENTRY_PRE only on a FIND row and
+#      on at least one (K35), DELEG_ENTRY_SELF exactly on the ALL_PRESENT
+#      row.
 # CONTROLS: checks 1 and 4 run again over a planted copy (a row moved to the
 # other budget; one by-value `mf_pred`) and must flag exactly those; check 5
-# runs over two planted fixture files (a kind swapped; a kind dropped).
+# runs over two planted fixture files (a kind swapped; a kind dropped);
+# check 6 over a planted table (a FIND row's entry SELF).
 # WHAT IT DOES NOT SEE: a by-value declaration through a typedef of its own
 # or a macro, and a row whose op is right but whose site emits through a
 # different op (pcrec's `deleg_check` refuses that at compile time).
@@ -97,7 +103,7 @@ cat > "$T/probe.c" <<EOF
 #define DELEG_LOOP 1
 int main(void) {
     int bad = 0;
-#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil) \\
+#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \\
     for (unsigned h = 0; h < 32; h++) \\
         if (((handoffs) >> h) & 1u) { \\
             int has = mf_vocab_has(op, (mf_handoff)h, kinds); \\
@@ -171,12 +177,46 @@ fi
 
 # controls: one planted defect each, flagged exactly
 mkdir -p "$T/src/gen"
-sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)/' "$DEF" > "$T/plant.def"
+sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
 printf 'static void f(void)\n{\n    mf_pred p;\n    (void)p;\n}\n' > "$T/src/gen/plant.c"
 static_checks "$T/plant.def" "$T/src" > "$T/plant" 2>/dev/null
 if grep -q '^row PRE has budget DELEG_LOOP' "$T/plant" && grep -q '^gen/plant.c:3 declares mf_pred by value' "$T/plant" \
    && [ "$(wc -l < "$T/plant" | tr -d ' ')" -eq 2 ]; then ok
 else bad "the planted controls were not flagged exactly: $(tr '\n' ';' < "$T/plant")"; fi
+
+# 6: the entry column (R17-b' B3a), over the table and a planted copy
+cat > "$T/entry.c" <<'EOF'
+#include <stdio.h>
+#include "memfn.h"
+#define DELEG_H(h) (1u << (h))
+#define DELEG_SCAN 0
+#define DELEG_LOOP 1
+enum { DELEG_ENTRY_UNSTATED = 0, DELEG_ENTRY_NONE, DELEG_ENTRY_SELF, DELEG_ENTRY_PRE };
+int main(void) {
+    int npre = 0;
+#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \
+    { int e = (entry); \
+      if (e == DELEG_ENTRY_UNSTATED) printf("row %s states no entry\n", #id); \
+      if (e == DELEG_ENTRY_PRE && (op) != MF_OP_FIND) printf("row %s: entry PRE on a non-FIND row\n", #id); \
+      if (e == DELEG_ENTRY_PRE) npre++; \
+      if ((e == DELEG_ENTRY_SELF) != ((op) == MF_OP_ALL_PRESENT)) \
+          printf("row %s: entry SELF iff the ALL_PRESENT row\n", #id); }
+#include DEFFILE
+    if (!npre) printf("no FIND row takes the PRE verdict as its entry (K35)\n");
+    return 0;
+}
+EOF
+entry_check() {   # $1 = def file
+    "$CC" -std=gnu11 -I"$ROOT_DIR/memfn/include" -DDEFFILE="\"$1\"" "$T/entry.c" -o "$T/entry" 2>"$T/entry.err" \
+        || { echo "the entry probe does not build: $(head -2 "$T/entry.err" | tr '\n' ' ')"; return; }
+    "$T/entry"
+}
+entry_check "$DEF" > "$T/e"
+if [ -s "$T/e" ]; then while read -r l; do bad "C10 entry: $l"; done < "$T/e"; else ok; fi
+sed '/^DELEG_SITE(PF,/,/)$/s/DELEG_ENTRY_PRE)/DELEG_ENTRY_SELF)/' "$DEF" > "$T/eplant.def"
+entry_check "$T/eplant.def" > "$T/ep"
+if grep -q '^row PF: entry SELF iff the ALL_PRESENT row' "$T/ep"; then ok
+else bad "C10 entry: the planted entry was not flagged: $(tr '\n' ';' < "$T/ep")"; fi
 
 echo "DELEG_SITES: ${nrows:-0} rows; vocabulary pairs probed: $(wc -l < "$T/vocab" 2>/dev/null | tr -d ' ')"
 echo "checks passed: $pass"

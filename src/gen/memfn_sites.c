@@ -18,8 +18,8 @@
 /* ---- DELEG_SITES (gen/memfn_sites.def) ------------------------------------ */
 
 const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {
-#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) \
-    { #id, op, handoffs, kinds, budget, use_ceiling },
+#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) \
+    { #id, op, handoffs, kinds, budget, use_ceiling, entry },
 #include "gen/memfn_sites.def"
 #undef DELEG_SITE
 };

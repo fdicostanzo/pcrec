@@ -413,7 +413,7 @@ def selftest(cc):
         with open(os.path.join(tmp, 'door_stub.c'), 'w') as fh:
             fh.write('#include "gen/memfn_sites.h"\n'
                      'const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {\n'
-                     '#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) '
+                     '#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) '
                      '[DELEG_##id] = { #id },\n'
                      '#include "gen/memfn_sites.def"\n'
                      '#undef DELEG_SITE\n};\n'
