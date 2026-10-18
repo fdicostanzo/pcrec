@@ -1734,7 +1734,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         p[np++].nterm = 1;
     }
     s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
-    s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
+    s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
     s->npred = (uint16_t)np;
     s->preds = p;
     /* [MEMFN] R17-b' B3a K as `head_max` where the site hands its landmark
@@ -8278,7 +8278,7 @@ static mf_site *req_pres_site(Ctx *cx, const mf_pres_proof *proof)
     s->op = MF_OP_ALL_PRESENT;
     s->handoff = MF_H_ON_MISS;
     s->empty = MF_EMPTY_MISS;
-    s->use = MF_USE_DISCARD;
+    s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
     s->consumer = MF_C_ENGINE;
     s->site_kind = site_kind_of(cx, SKS_PRE);
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */

@@ -480,6 +480,8 @@ static void deleg_check(Ctx *cx, DelegSite id, const mf_site *s)
       : !(s->policy & MF_P_INLOOP) != (row->budget != DELEG_LOOP)
                                                      ? "MF_P_INLOOP disagrees with the row's budget"
       : s->use > row->use_ceiling                    ? "its use is past the row's ceiling"
+      : s->op == MF_OP_ALL_PRESENT && s->npspan && s->use != MF_USE_ENTRY
+                                                     ? "a presence site's use is not ENTRY (MF_VOCAB 4)"
       :                                                NULL;
     if (why)
         pcrec_ctx_fail(cx, 0, "internal error: a memfn %s site outside its "
@@ -488,10 +490,15 @@ static void deleg_check(Ctx *cx, DelegSite id, const mf_site *s)
 
 void pcrec_memfn_check_use(Ctx *cx, const mf_site *s, bool read)
 {
-    if ((s->use == MF_USE_POSITION) != read)
+    /* [MEMFN] R17-b' B3b MF_USE_ENTRY (MF_VOCAB 4): the presence verdict's
+       use, a position exactly where the site ASSIGNs its landmark */
+    bool pos = s->use == MF_USE_POSITION ||
+               (s->use == MF_USE_ENTRY && s->handoff == MF_H_ASSIGN);
+    if (pos != read)
         pcrec_ctx_fail(cx, 0, "internal error: a memfn site's use is %s where "
                        "pcrec's text %s its result as a position",
-                       s->use == MF_USE_POSITION ? "POSITION" : "DISCARD",
+                       s->use == MF_USE_POSITION ? "POSITION"
+                       : s->use == MF_USE_ENTRY ? "ENTRY" : "DISCARD",
                        read ? "reads" : "never reads");
 }
 

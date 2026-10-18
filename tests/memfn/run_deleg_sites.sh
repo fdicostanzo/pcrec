@@ -211,7 +211,7 @@ fi
 
 # controls: one planted defect each, flagged exactly
 mkdir -p "$T/src/gen"
-sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
+sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_ENTRY, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_ENTRY, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
 printf 'static void f(void)\n{\n    mf_pred p;\n    (void)p;\n}\n' > "$T/src/gen/plant.c"
 static_checks "$T/plant.def" "$T/src" > "$T/plant" 2>/dev/null
 if grep -q '^row PRE has budget DELEG_LOOP' "$T/plant" && grep -q '^gen/plant.c:3 declares mf_pred by value' "$T/plant" \
