@@ -1255,10 +1255,11 @@ The listings: `pcrec_part_layout_facts` (`--emit-facts`' two sections) and
 P2 writes nothing (a body gcc cannot copy keeps its head as emitted, so a
 control on any class leaves an attempt-route prefilter the default's);
 `shared` (P4/P8 only) is `noipa` under `#if __has_attribute(noipa)`,
-`noinline` under `#else`, K24's guard shape. `layout_texts[]` is the one
+`noinline` under `#else`, K24's guard shape. `layout_texts[]` was the one
 value-to-guarded-text table the render and both listings read, shaped so
 the other attribute writers (K24's `noclone`, `en.ai`/`ai_body`, `_deep`)
-can move onto it ([ATTR-TABLE], not migrated). The wrapper rows and the
+could move onto it; [ATTR-TABLE] moved it to `attr_text.c` (below) and
+migrated them. The wrapper rows and the
 head-mark choice (`head_rows[]`, M1-M4) are first-match rows with `holds`;
 a record's class reads `subject_class` alone; `owned_inline` reads
 `en.shape`.
@@ -1266,7 +1267,25 @@ a record's class reads `subject_class` alone; `owned_inline` reads
 ## Files
 
 - **part_layout.c** — [ENTRY-TABLE] E1's three part-layout tables, the marks,
-  the render and the two listings' rows (section above).
+  the render and the two listings' rows (section above). A part row's layout
+  reaches its text through `layout_attr`, a map onto `attr_text.c`'s values.
+
+- **attr_text.c** — [ATTR-TABLE] (lane attrtab, 2026-10-18; zero movers, no
+  abi event): THE ONE VALUE-TO-GUARDED-TEXT TABLE (`attr_texts[]`, values
+  `PcrecAttr` in core/internal.h) every writer of a function-linkage
+  attribute reads: the VM entry chain's `en.ai`/`en.ai_body`
+  (`vm_plan_entry`, A1), [OPT-1]'s `noinline` on `_deep` (emit_comb.c, A2),
+  K24's guarded `noclone` (`emit_search_head`, A3) and the part-layout
+  table. Each writer keeps its own DECISION and asks `pcrec_attr_text` for
+  the TEXT; `pcrec_attr_tok`/`pcrec_attr_writes` are the part layout's
+  listing cells. A row is a VALUE: writers writing the same bytes share one
+  (A1's `always_inline` and the layout's `inline`; A1's and A2's
+  `noinline`), and the three empty texts are three rows because their tokens
+  differ. The `__has_attribute` guard is stated once (`ATTR_GUARDED`); a
+  new attribute only some compilers have is a row through it. No spelling
+  was harmonized in the move. The plain `static inline` writers (A4-A7 in
+  tests/partlayout/writers.tsv) spell their own text. Sabotage S1113, S1119,
+  S1123, S1124.
 
 - **entries.c** — [EMIT-ENTRIES] internal, [COMPOUND] build step B0 (lane
   cpb02, 2026-10-12; `docs/design/compound.md` §A.4): THE ENTRY TABLE AND ITS

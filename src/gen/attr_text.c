@@ -1,5 +1,5 @@
 /* src/gen/attr_text.c — [ATTR-TABLE] THE ONE VALUE-TO-GUARDED-TEXT TABLE
- * (docs/dev/plan.md [ATTR-TABLE]; review r1 of E1, F1/F2 and the family
+ * (docs/dev/plan_completed.md [ATTR-TABLE]; review r1 of E1, F1/F2 and the family
  * lens L7).
  *
  * Every emitter that writes a function-linkage attribute into an artifact

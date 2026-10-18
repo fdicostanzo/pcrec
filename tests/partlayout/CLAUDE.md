@@ -49,6 +49,10 @@ witness is needed today.
   (the row each subject stops at, the stamp, the WHY).
 - **writers.tsv** — the hand class map of every attribute writer (A1-A7, the
   layout table); an attribute on a function no row lists fails the census.
+  Its `text` column ([ATTR-TABLE], lane attrtab, 2026-10-18) names where a
+  writer's attribute text comes from: a `PCREC_ATTR_*` row of
+  `src/gen/attr_text.c`'s one table (A1-A3 and the layout rows) or `own`
+  (A4-A7); the census checks every named row exists in that table.
 - **population.txt** — the subject population (every 4th corpus VM hybrid
   under 200,000 bytes, every compound; 387 patterns at the lane's branch
   point), held to still carry a subject and to a floor.
