@@ -11,7 +11,7 @@ SAB_ID="S1114-partlayout-callers-unfolded"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='callers(part) skips folding owned always_inline callers, so the inline-rung hybrid'"'"'s prefilter reads one caller and P3 holds every control on it'
-SAB_DOC_FIGURE="OWED: the solo mech run (docs/dev/lanes/e1_report.md)."
+SAB_DOC_FIGURE="HAND-VALIDATED by lane e1 (2026-10-18, a git-archive copy of the e1 tree with the plant applied by tests/mech/lib/replace.py, rebuilt, and tests/partlayout/run_partlayout_tests.sh run against it): partlayout:21fail/20pass against a clean 0fail/41pass. The solo mech run is OWED (docs/dev/lanes/e1_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

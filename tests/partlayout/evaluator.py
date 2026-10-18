@@ -168,7 +168,8 @@ def gcc_copies(text, fn, workdir):
     fact): the default text with `fn`'s definition forced always_inline
     compiles, or gcc refuses it as a body that "can never be copied" (a label
     table) or "can never be inlined" (a computed goto)."""
-    head = re.compile(r"^static (int %s\()" % re.escape(fn), re.M)
+    head = re.compile(r"^static (?:inline )?(?:__attribute__\(\(\w+\)\) )*(int %s\()"
+                      % re.escape(fn), re.M)
     lines = [l for l in text.split("\n")]
     out, done = [], False
     for l in lines:

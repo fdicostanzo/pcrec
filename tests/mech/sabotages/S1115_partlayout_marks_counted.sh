@@ -10,7 +10,7 @@ SAB_ID="S1115-partlayout-marks-counted"
 SAB_FILE="src/core/sb.c"
 SAB_SUITES="partlayout"
 SAB_DESC='pcrec_sb_size_decide stops subtracting the part-layout marks, so a control moves the size figures every cap, the size term and the size notes read'
-SAB_DOC_FIGURE="OWED: the solo mech run (docs/dev/lanes/e1_report.md)."
+SAB_DOC_FIGURE="HAND-VALIDATED by lane e1 (2026-10-18, a git-archive copy of the e1 tree with the plant applied by tests/mech/lib/replace.py, rebuilt, and tests/partlayout/run_partlayout_tests.sh run against it): partlayout:1fail/40pass against a clean 0fail/41pass. The solo mech run is OWED (docs/dev/lanes/e1_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

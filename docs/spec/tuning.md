@@ -1087,7 +1087,7 @@ P1-P3 are constraint rows ahead of every control row: no control overrides them,
 
 WRAPPER table, for a caller that only forwards to a part a `shared` row wrote: W1 `forward` (the wrapper's arguments pass unchanged: `return part(args);`, a tail jump with no frame), W2 `adapt` (otherwise: the wrapper's own adaptation and a call). No such caller exists today.
 
-<a id="s2-51-p6"></a>[2.51¶6] **The stamps** are `<PREFIX>_PART_LAYOUT` and `<PREFIX>_PART_LAYOUT_WHY` (§5.3¶3; `match_api.md` §6.3.11). `make test-axes` sweeps every compile under `--part-residual=shared` and `--part-residual=inline`, and each class value (`--part-layout=CLASS:V`) and each rank value only under `AXES_FULL=1`.
+<a id="s2-51-p6"></a>[2.51¶6] **The stamps** are `<PREFIX>_PART_LAYOUT` and `<PREFIX>_PART_LAYOUT_WHY` (§5.3¶3; `match_api.md` §6.3.11). `make test-axes` sweeps every compile under `--part-residual=shared` and `--part-residual=inline`; under `AXES_FULL=1` it also sweeps each class value once over all four classes (`--part-layout=prefilter:V,compound:V,find:V,wrap:V`: their parts are disjoint) and each rank value, reading the values from `--list-axes`' `part-layout` section. Its summary names the tier it ran.
 
 <a id="s2-51-p7"></a>[2.51¶7] **Dial:** the `part-layout prefilter`, `compound`, `find` and `wrap` rows carry no cell (§5.4).
 
