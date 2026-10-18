@@ -14,7 +14,7 @@
 # own two witnesses, whose `REQ_WHY` must stay "emitted" and reads
 # "dominated" instead under the plant.
 SAB_ID="S286-g1-verifies-conjunct-dropped"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
 SAB_DESC="req_byte_dominated_by drops the run_verified conjunct, so a run pre-check is admitted dominated whenever the candidate-start scan's byte matches the pick even though that scan never verifies the run itself -- q[a-z]*qu (class D, memchr on q with the run floating) and \\Bfoo\\B (class C2, the model scans o at 1 not the pick f) both flip from REQ_WHY \"emitted\" to \"dominated\""
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S286."
@@ -23,7 +23,13 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S28
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "q[a-z]*qu" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-RUN-PRECHECK-NOT-DOMINATED'
 SAB_REACH_EXPECT="REACH-RUN-PRECHECK-NOT-DOMINATED"
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
-    if (p == q) return true;'
-SAB_AFTER='    /* SABOTAGE S286: run_verified conjunct dropped */
-    if (p == q) return true;'
+# RE-AIMED 2026-10-18 (lane b3bmtri, [MEMFN] R17-b' B3b): G1 IS THE KIT'S PRES
+# row P2 now (memfn/src/presence.c `kit_pres_picks`, the P2 block, read by
+# finder.c `fd_pres` as SF_PROVEN); pcrec's `req_byte_dominated_by` survives
+# only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
+# so the old plant landed on code no default artifact reads. The plant moves
+# to the same conjunct of the port; intent and detector unchanged.
+SAB_BEFORE='        else if (run && !proof->run) dom = 0;
+        else if (proof->byte == lead) dom = 1;'
+SAB_AFTER='        /* SABOTAGE S286: run_verified conjunct dropped */
+        else if (proof->byte == lead) dom = 1;'
