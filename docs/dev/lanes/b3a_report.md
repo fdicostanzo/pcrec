@@ -302,3 +302,76 @@ The rebase onto main's moved base (RP + the union stamp, abi 79) is a follow-up 
 | do not touch `pcrec_memfn_stamps_render` / `consulted` path | confirmed untouched |
 
 Code tip: 37936a462. The report commit follows it, and its sha is in the lane's handback message.
+
+## 9. Review fixes and rebase (lane b3afix, 2026-10-17)
+
+Lane `b3afix` works from `lane/b3a` @ b876c4c02. It merges main 343605a57 and fixes the read-only review's findings, and it applies the three main-side diffs on the branch (the manager's scope change). The lane ran light runs only, pinned to `taskset -c 12-15` at `-j4`. Logs: `build/land/verdict.txt` (chain 1, at 663ce53cd) and `build/land/c2/verdict.txt` (chain 2, at ebfb5a88a, the three diffs applied).
+
+### 9.1 Finding → commit → verdict
+
+| finding | commit(s) | verdict |
+|---|---|---|
+| Step 1, merge main 343605a57 | b0e8a3a88 | The only conflict was the tail of `docs/dev/lanes/CLAUDE.md`; both lines were kept. make and strict rc 0. `memfn_stamps.c` and the `consulted` path were not touched. |
+| MAJOR-1 (semantic rebase) | df266bc9b | The start set is ONE SOURCE. Main's code in `req_landmark_admits`, which calls `cand_row_scan`, became the helper `req_start_set`. The admission and `req_pick_shadow` both call that helper, so the shadow re-derives nothing (the manager's point 3). `pf_scan_set_of(below)` is gone. The port's parameter is renamed `start_set` in memfn.h and presence.c. The shadow's new kit ask is NEXT→NEXT on the DFA route, declared in `cand_nodes[NEXT].kask`, and its PRESENCE ask was already declared. The full pick census ran in the trace build: 0 disagreements, and no `undeclared-ask` or `ask-while-open` trap fired. |
+| MAJOR-2 (a), regenerate the proposed diffs | d3b61282e | Each diff was applied in order to a git-archive copy of the tip and re-diffed. The content is unchanged apart from index lines, plus a new hunk in c10_presence that flips S1102 to DETECTED. `git apply --check` passes in sequence. The S528 reach string still matches: test-memfn-manifest 13/0 with the diffs applied. |
+| MAJOR-2 (b), S1102 | 7c0fc5ff6 | The anchor is `req_pres_spans`' need line, swapped REQUIRED/OPTIONAL. The detector is memfndeleg (C10 check 7). |
+| MAJOR-2 (c), S1102 detected | scratch, then the branch | DETECTED on a scratch copy with the three diffs applied: `reach:ok(1/1),memfndeleg:5fail/13pass`. It is DETECTED again on the branch at ebfb5a88a with the same figure. At 663ce53cd, before the diffs, it read UNREACHED as declared. **Its detector lands with main's apply of c10_presence.diff**, which also flips the row's expectation. |
+| Manager scope change: the diffs applied as their own commits | 6990c7ea3 (deleg_entry), 40d3e8df6 (c17_use_points), ebfb5a88a (c10_presence), plus the S683 fix below | Each commit message starts "main-side (proposed, main reviews):", and `proposed/*.diff` stays the record. Applying `proposed/*.diff` in order to the pre-apply tree reproduces the branch's `src/`, `tests/memfn` and `tests/mech/sabotages` exactly. |
+| (found) S683's stale anchor | d8b58b6ec | deleg_entry.diff adds an entry column to every DELEG_SITES row, so S683's VMSTRIDE anchor went stale. That turned SABANCHOR red in chain 2's test-codegen. The fix re-aims the anchor with `DELEG_ENTRY_NONE` (intent unchanged) and DETECTED it solo (`memfndeleg:2fail/12pass`). The hunk is appended to `proposed/deleg_entry.diff`, which had missed this reader. |
+| MINOR-3 (PR-11) | 663ce53cd | `pr11_floors.tsv` floors the `ok` count per population at floor(0.9×measured): corpus 1 (2), bench 10 (12), rwquest 2 (3). The 3 unchecked artifacts now have `HAND_SUBJECTS`: the bench CRIT/timeout pattern under both arms and the rwquest PK/BILLS pattern under `-e utf8`. Each subject is checked to match by python `re` and passed the front's positive control. An artifact still unchecked now fails the census. Tip: collapsed 20, ok 17, no-claims 3, fails 0. A planted floor set one above the measured counts gave 3 floor FAILs. |
+| MINOR-4 (KW-8 floors) | 5b29590f1 | `pick_floors.tsv` gains 24 rows covering both values of `differs` for scan/leads/dominated/landmark. For example, leads differs is 38/13/37 (corpus/bench/rwquest) and same is 1169/260/205. The base census passes them all. A planted pair (99999 floors) gave fails=2. |
+| MINOR-5 (population arms) | 38d6a05d5, plus the bytes fix in the CLAUDE.md commit | `pick_census.py --nonascii` and `PRES_PICKS_EXTRA`. The table is in §9.2. |
+| MINOR-6a (trace-only) | 244dcc7b9 | The shadow uses stated reads (`req_set_pick_of` over the stated set, plus the new `pcrec_fact_req_run_stated` and `pcrec_fact_req_byte_stated`). It also restores `pf.used` on exit, because pcrec's own set-leads pick asks `req_set` as a pass. The `used` column was compared trace vs default over a 1-in-15 corpus sample × 3 arms (1,158 compiles): 257 differed before the fix, 0 after. `run_pres_picks.sh` now checks this on every witness, with a K35 floor of 5 witnesses where the default never asks `req_set`. That check is red on the pre-fix trace build. |
+| MINOR-6b | 7f9ceeb34 | `memfn/src/presence.c` ships in the default libpcrec.a with no caller until B3b: it is dead code there, and only the trace build calls `mf_pres_ports`. The memfn.h comment now says so. |
+| MINOR-7a (need from site_kind) | 37cf13116 | `need` is REQUIRED iff `site_kind_of(cx, SKS_PRE) == MF_SK_VM_ATTEMPT`. This is zero-mover: MFPRES and MFPICK are identical before and after over every distinct corpus pattern × {-, `-e utf8`, `--engine=vm`} (13,872 compiles, 4,050 MFPRES records, 0 differ). |
+| MINOR-7b | 60f4d7e4d | A trace-build `CANDORACLE set-pick-rightmost` check in `pcrec_find_set_pick`: `rightmost` must be a member, and may be -1 only for an empty set. A plant passing `rightmost ^ 1` fires it. |
+| MINOR-7c | 548fabf61 | Figures from the chain-2 solo runs (§9.3). |
+
+### 9.2 MINOR-5: KW-8 census and witnesses per arm (chain 2, at ebfb5a88a)
+
+The census uses the trace build over corpus (4,624), bench (367) and rwquest (177). An extra arm runs alone, replacing the default three. The counts are agreeing/records (non-trivial agreeing).
+
+| arm | corpus | bench | rwquest | disagreements | witnesses (`PRES_PICKS_EXTRA`) |
+|---|---|---|---|---|---|
+| base (`-`, `-e utf8`, `--engine=vm`; floors) | 17592/17592 (9036) | 2132/2132 (1404) | 1739/1739 (1206) | 0 | — |
+| `-fno-req-run` | 4255/4255 (2552) | 369/369 (286) | 283/283 (233) | 0 | 17 compiled, 38 records, 8 plants caught, 0 fail |
+| `-fno-req-set-lead` | 5630/5630 (3488) | 710/710 (524) | 588/588 (452) | 0 | 85 records, 16 plants, 0 fail |
+| `-fno-req-handoff` | 5428/5428 (3286) | 662/662 (476) | 550/550 (414) | 0 | 79 records, 14 plants, 0 fail |
+| `-fno-start-set` | 5658/5658 (3478) | 710/710 (522) | 589/589 (452) | 0 | 85 records, 16 plants, 0 fail |
+| `--memfn=no-fd-r0,no-fd-r5,no-fd-r8,no-fd-ndisp,no-fd-d1` | 5630/5630 (3488) | 710/710 (524) | 588/588 (452) | 0 | 85 records, 16 plants, 0 fail |
+| `--analysis=weblog` (shipped, measured) | 5656/5656 (3515) | 718/718 (532) | 588/588 (451) | 0 | 85 records, 16 plants, 0 fail |
+| `-e utf8 -i` over the non-ASCII subset (70/43/11 patterns) | 149/149 (113) | 141/141 (95) | 20/20 (15) | 0 | 57 records, 3 plants, 0 fail |
+
+Agreement is 100% on every arm. Two arms exit 1 for a K35 reason, not a disagreement, and the reason is the arm itself:
+- `-fno-req-run` has no run, so scan, window and leads are "reached nowhere".
+- `-fno-req-handoff` has no handoff, so landmark is not reached.
+
+### 9.3 Re-validation at the rebased tip
+
+Chain 2 ran at ebfb5a88a, with the three diffs applied.
+- make and strict: rc 0.
+- Sections: test-registry 79/0, test-memfn-finder 953/0, rows 232/0, arms 383/0, deleg 14/0 (9/0 before the diffs; check 7 now runs), stamps 25/0, manifest 13/0, link 8/0, forms 5/0, reach 4/0, test-cand-oracle 141/0, test-spec-history 145/0, test-compound 7/0, test-ci-shards 9/0, test-memfn-g2 (quick) 52,987,697/0. None of them prints a `*** [test-` verdict line.
+- test-codegen at ebfb5a88a was red on SABANCHOR only (S683, fixed above). The re-run at 548fabf61 gives rc 0, 0 verdict lines, and all 795 anchors resolve.
+- `MEMFN_REACH_ONLY=1 AXES=--memfn bash tests/axes/run_axes.sh`: 257/0.
+- emit_sweep against a git-archive build of 343605a57, with the fdb2 chain's flags: **0 movers and 0 asymmetric on every stream** of plain (+dumps), `--arms start`, `-fmemfn-simd`, `-fcomments`, `-e utf8`, `--engine=vm` and `--trace` (SET gate). Both chains agree.
+- The solo mech runs, all DETECTED: S1093 candoracle 16/125, S1094 5/131, S1095 6/129, S1096 1/139, S1097 11/121, S1098 3/135, S1099 1/139, S1100 memfnfinder 3/950, S1101 candoracle 59/79, S1102 memfndeleg 5/13 (reach ok), S683 memfndeleg 2/12.
+- PR-11 at the tip: collapsed 20, fails 0, floors pass.
+
+### 9.4 OWED (the manager's slot)
+
+- The full `make test` through `scripts/perfrun`.
+- `make test-memfn-g2-full`.
+- The derived mech rows. `docs/design/start_table/sabotage_anchors.py build/par343 <its call graph> docs/design/start_table/refactor_edit_set.tsv --step b3afix=343605a57..HEAD` lists 14 re-runs (S1031 S1080 S270 S286 S288 S301 S317 S457 S458 S460 S494 S739 S811 S812). It exits 2, which is pre-existing: 9 unresolved sites, S995 among them, none in this lane's edits. The diffs' readers add S683, which was run.
+- The N2 census.
+
+### 9.5 Charter checklist, again
+
+| item | state |
+|---|---|
+| merge main, CLAUDE.md conflicts only, `memfn_stamps.c`/`consulted` untouched | done |
+| MAJOR-1 one-source start set, parameter renamed, SN-3 asks declared | done |
+| MAJOR-2 diffs regenerated, S1102, DETECTED with the diffs (scratch and branch) | done |
+| main-side diffs applied as own commits, records kept | done (plus the S683 reader) |
+| MINOR-3..7 | done |
+| light re-validation list | done; test-codegen re-run after the S683 fix at 548fabf61: rc 0, 0 verdict lines, SABANCHOR 795 rows resolve |
+| tip sha | the commit of this section (handback message) |
