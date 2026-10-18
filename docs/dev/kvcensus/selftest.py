@@ -179,6 +179,8 @@ ck("pcre-lang (?<=x)abc over contexts: S_0 = {a}, span 3", (sorted(Lp["S"][0]), 
 Lp = kvpcre.lang(kvpcre.Pat(b"ab(?=c)"))
 ck("PLANT trailing lookahead ab(?=c): NOT whole-cover", Lp["whole"], 0)
 
+ck("PLANT trailing negative lookahead ab(?!c): NOT whole-cover", kvpcre.lang(kvpcre.Pat(b"ab(?!c)"))["whole"], 0)
+
 # ---- 7. the site probe ---------------------------------------------------------
 out = os.path.abspath("build/kv/selftest_sites.tsv")
 if os.path.exists(out):

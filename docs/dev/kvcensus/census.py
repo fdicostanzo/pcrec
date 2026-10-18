@@ -243,6 +243,8 @@ def analyse(r, cfg, rnd):
                 src, lpat = "anchor-stripped:" + an[0], body
     if A and A.ok:
         L = kvdfa.lang(A, A.starts())
+    else:
+        A = None
     PP = kvpcre.Pat(r["pat"], r["icase"], r["enc"] == "utf8")
     if L is None and PP.ok() and r["enc"] == "byte":
         # (byte only: under UTF a byte-level enumeration must complete every

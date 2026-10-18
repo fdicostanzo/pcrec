@@ -166,7 +166,11 @@ def _lang(P, ctxs, cap, maxprod, budget):
         exact = span
     whole = 0
     if not capped and exact == span and 0 < span < cap and Pj and len(Pj[0]) == span:
-        if all(P.match_len(w + b"\x00") == span for w in Pj) and \
+        # every tail (the end of the subject and each single byte) leaves the
+        # match exactly w: a trailing context item (`(?!c)`, `\b`, `$`) fails it
+        tails = [b""] + [bytes([t]) for t in range(256)]
+        if all(P.match_len(w + b"\x00") == span and P.match_len(w) == span for w in Pj) and \
+           all(P.match_len(w + t) == span for w in Pj[:4] for t in tails) and \
            not any(P.is_prefix(w + bytes([b])) for w in Pj[:8] for b in range(256)):
             whole = span
     return dict(S=S, span=span, exact=exact, cex=cex, capped=capped, whole=whole)

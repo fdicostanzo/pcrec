@@ -1,4 +1,4 @@
-# kvcensus selftest transcript, 2026-10-18, tree d73442ab1 + lane edits, libpcre2-8 10.46
+# kvcensus selftest transcript, 2026-10-18, libpcre2-8 10.46
 PASS  exact abc\d{3,7} = span = 6                                got=(6, 6)
 PASS  exact ab|cd = 1 (a product would admit ad)                 got=1
 PASS  ab|cd counterexample pair                                  got=True
@@ -52,6 +52,7 @@ PASS  pcre-lang ab|cd: exact 1 (the product would admit ad)      got=1
 PASS  pcre-lang (?<=x)abc without contexts: empty (span 0)       got=0
 PASS  pcre-lang (?<=x)abc over contexts: S_0 = {a}, span 3       got=([97], 3)
 PASS  PLANT trailing lookahead ab(?=c): NOT whole-cover          got=0
+PASS  PLANT trailing negative lookahead ab(?!c): NOT whole-cover got=0
 PASS  probe x[a-z]+@y: one PF site, DFA_SCAN                     got=[('PF', 'DFA_SCAN')]
 PASS  probe x[a-z]+@y: proven0 = {x}                             got=[120]
 PASS  probe x[a-z]+@y: PRE site present, proven nothing          got=[256]
