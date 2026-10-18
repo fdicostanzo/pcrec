@@ -41,7 +41,7 @@ declared delta, checked both ways. The heavy runs are OWED in
 | 3b5abf3ae | CLAUDE.md updates; memfn.h link semantics; tuning.md tables for the retired bit |
 | d15ba93e5 | `docs/dev/lanes/b3b/`: proposed ENTRY diff, heavy `chain.sh`, mech rows, scorer |
 | 1c489eb1f | tuning §2.40¶2 drops a walkback phrase (test-spec-history) |
-| (next) | D2's refusal names the declined field (G2 enforced classes); this report |
+| ec6139af0 | D2's refusal names the declined field (G2 enforced classes); this report |
 
 ## 2. What the routing is
 
