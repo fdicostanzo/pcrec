@@ -1675,6 +1675,58 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
 fi
 
 # ============================================================================
+# [ENTRY-TABLE] E1 THE PART-LAYOUT CONTROLS (docs/spec/tuning.md §2.51-§2.53;
+# docs/design/compound_entries.md §3.6 "answer identity"): VALUED parameters
+# like `--vm-entry-shape=`, TIERED the same way. Every control value answers
+# identically (it decides how a part is linked, never what it computes), and
+# none may move the refusal set, so `lost_ok` is 0.
+#
+#   DEFAULT: `--part-residual=shared` and `--part-residual=inline`, the two
+#     ends, which reach every subject part a constraint row does not hold.
+#   `AXES_FULL=1`: each class VALUE once, over all four classes in one run
+#     (`--part-layout=prefilter:V,compound:V,find:V,wrap:V`: the classes'
+#     subjects are disjoint artifacts, so one run sweeps the value on every
+#     class's parts), and each rank-threshold value.
+#
+# The values are read from `--list-axes`' `part-layout` section (the
+# vocabulary's one table, src/core/part_layout.def), never typed here, so a
+# value added there joins the full tier without an edit.
+# ============================================================================
+_part_tier="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--part-'; then
+    _pl_dump="$WORKDIR/part_layout_axes.tsv"
+    "$TIMEOUT_BIN" 60 "$PCREC" --list-axes > "$_pl_dump"
+    _pl_rows="$(bash "$ROOT_DIR/tests/lib/table.sh" table-section-rows "$_pl_dump" part-layout)"
+    _pl_res="$(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 == "part-residual" && ($2 == "shared" || $2 == "inline") { print $3 }')"
+    if [ "$(printf '%s\n' "$_pl_res" | grep -c .)" -ne 2 ]; then
+        echo "AXIS FAIL: --list-axes' part-layout section does not list --part-residual=shared and =inline" >&2
+        fail=1
+    fi
+    _pl_flags="$_pl_res"
+    _part_tier="default (--part-residual=shared,inline; AXES_FULL=1 adds each class value and each rank)"
+    if [ "${AXES_FULL:-0}" = "1" ]; then
+        _pl_vals="$(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 ~ /^part-layout:/ { print $2 }' | sort -u)"
+        _pl_classes="$(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 ~ /^part-layout:/ { sub(/^part-layout:/, "", $1); print $1 }' | sort -u)"
+        for _v in $_pl_vals; do
+            _spec=""
+            for _c in $_pl_classes; do _spec="${_spec:+$_spec,}$_c:$_v"; done
+            _pl_flags="$_pl_flags
+--part-layout=$_spec"
+        done
+        _pl_flags="$_pl_flags
+$(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 == "part-inline-rank" { print $3 }')"
+        _part_tier="FULL (residual ends, each class value, each rank; AXES_FULL=1)"
+    fi
+    echo "axes: part-layout tier = $_part_tier"
+    while IFS= read -r _f; do
+        [ -n "$_f" ] || continue
+        job_label+=("$_f (part layout, tuning.md §2.51)")
+        job_flags+=("$_f")
+        job_lost_ok+=("0")
+    done <<< "$_pl_flags"
+fi
+
+# ============================================================================
 # [FINDINGS] B2 THE FINDINGS AXIS (docs/design/findings/design.md §11.1,
 # [r2 S-F1]): the corpus under EACH adversarial analysis in
 # tests/findings/adversarial/ — shapes built to be wrong (uniform, inverted,
@@ -2203,6 +2255,7 @@ for r in "${axis_results[@]}"; do
 done
 echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
+echo "part-layout tier: $_part_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
 echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
 echo "[START-LANDING] product arm reach: $landing_verdict"
@@ -2223,5 +2276,5 @@ fi
 # verdict is named too, for the identical reason — "all axes answer-identical"
 # says nothing about the refusal SET, which is a different property this
 # script checks separately.
-echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict; -futf-check arm $utfcheck_verdict"
+echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; part-layout tier: $_part_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict; -futf-check arm $utfcheck_verdict"
 exit 0

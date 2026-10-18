@@ -1,5 +1,7 @@
 # S251 ([OPT-DIAL] design §6.1a, candidate SAB-D3) — `−2` SETS THE
 # [ART-SIZE] LADDER'S BAR AND LEAVES THE THRESHOLD AT ITS DEFAULT.
+# RE-AIMED 2026-10-18 (lane e1, [ENTRY-TABLE] E1): every TUNE_TABLE row gained the three
+# part-layout preset cells (`, 0, 0, 0`, all em-dash); the anchors carry them, same plant.
 #
 # `src/core/tune.c`'s `min-size` row's `size_term_threshold` cell drops from
 # `40000` to `0` — the em-dash sentinel, resolved by the ladder's own caller
@@ -45,6 +47,6 @@ SAB_REACH_EXPECT="#define RX_UNROLL_K_WHY \"size-model\"
 SAB_REACH_POP="tests/base/d27_nested_min_boundary.rxt|^pattern \(a\{10,20\}\)\{10,50\}$|1"
 SAB_COUNT=1
 SAB_BEFORE='    { PCREC_TUNE_MIN_SIZE,  "min-size",  95,  40000, 0,
-      PCREC_NO_PREMUL_TABLE },'
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },'
 SAB_AFTER='    { PCREC_TUNE_MIN_SIZE,  "min-size",  95,      0, 0,
-      PCREC_NO_PREMUL_TABLE },   /* SABOTAGE S251: threshold dropped to the sentinel */'
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },   /* SABOTAGE S251: threshold dropped to the sentinel */'

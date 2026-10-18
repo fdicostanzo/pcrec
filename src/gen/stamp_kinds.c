@@ -50,6 +50,8 @@ static const StampRow stamp_rows[] = {
     { "REQ_HANDOFF",        false, SK_MACHINE_STR },
     { "VM_START_SCAN",      false, SK_MACHINE_STR },
     { "TUNE",               false, SK_PATTERN },
+    { "PART_LAYOUT",        false, SK_PATTERN },      /* the caller's controls, */
+    { "PART_LAYOUT_WHY",    false, SK_PATTERN },      /* over the whole artifact */
     { "COMPOUND",           false, SK_PATTERN },
     { "NCAPS",              false, SK_PATTERN },
     { "NVARS",              false, SK_PATTERN },

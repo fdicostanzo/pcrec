@@ -327,6 +327,17 @@ static void usage(FILE *f)
           "                 identically; the artifact stamps <PREFIX>_TUNE.\n"
           "                 The per-position switch table is docs/spec/\n"
           "                 tuning.md section 5\n"
+          "  --part-layout=CLASS:V[,CLASS:V...]  how a PART class is linked\n"
+          "                 into its callers: CLASS prefilter | compound |\n"
+          "                 find | wrap, V auto | shared | inline\n"
+          "  --part-inline-rank=R  inline every copyable part whose hottest\n"
+          "                 call site ranks R or above: none | R3 | R2 | R1 |\n"
+          "                 R0 | measured\n"
+          "  --part-residual=V  the layout of every part neither decided:\n"
+          "                 auto | shared | inline. All three answer\n"
+          "                 identically; a part a layout cannot apply to keeps\n"
+          "                 its own, stamped <PREFIX>_PART_LAYOUT (docs/spec/\n"
+          "                 tuning.md sections 2.51-2.53)\n"
           "  --step-budget=N  backtrack resumptions the emitted VM may spend\n"
           "                 before returning PCREC_ERR_STEPS (default:\n"
           "                 500,000,000, D51; docs/spec/limits.md)\n"
@@ -899,6 +910,58 @@ static int cli_axis_apply(const char *a, uint64_t *flags)
     return 0;
 }
 
+/* [ENTRY-TABLE] E1 the part-layout controls' words, off
+ * `src/core/part_layout.def` (the table every reader derives from). Each
+ * looks `w[0..n)` up and returns its `lib/pcrec.h` value, or -1. */
+static int cli_part_class(const char *w, size_t n)
+{
+#define PL_CLASS(v, tok, subj) if (strlen(tok) == n && !strncmp(w, tok, n)) return (v);
+#include "core/part_layout.def"
+    return -1;
+}
+static int cli_part_value(const char *w, size_t n)
+{
+#define PL_VALUE(v, tok, m) if (strlen(tok) == n && !strncmp(w, tok, n)) return (v);
+#include "core/part_layout.def"
+    return -1;
+}
+static int cli_part_rank(const char *w)
+{
+#define PL_RANK(v, tok, m) if (!strcmp(w, tok)) return (v);
+#include "core/part_layout.def"
+    return -1;
+}
+
+/* `--part-layout=CLASS:V[,CLASS:V...]` into `*word`, slot by slot, so a
+ * later item for one class wins and a class not named is left as it was
+ * (a config's raw `pcrec` line therefore sets only the classes it names).
+ * Returns 0, or 1 after a diagnostic naming the bad item. */
+static int cli_part_layout(const char *spec, uint32_t *word)
+{
+    const char *p = spec;
+    if (!*p) {
+        cli_err("--part-layout wants CLASS:V[,CLASS:V...] (got '')");
+        return 1;
+    }
+    while (*p) {
+        const char *end = strchr(p, ',');
+        size_t n = end ? (size_t)(end - p) : strlen(p);
+        const char *colon = memchr(p, ':', n);
+        int cls = colon ? cli_part_class(p, (size_t)(colon - p)) : -1;
+        int v = colon ? cli_part_value(colon + 1, n - (size_t)(colon - p) - 1) : -1;
+        if (cls < 0 || v < 0) {
+            cli_err("--part-layout: '%.*s' is not CLASS:V (CLASS prefilter, "
+                    "compound, find or wrap; V auto, shared or inline)",
+                    (int)n, p);
+            return 1;
+        }
+        PCREC_PART_LAYOUT_SET(*word, cls, v);
+        p += n;
+        if (*p == ',') p++;
+    }
+    return 0;
+}
+
 /* A FILE OPERAND (D118): pushed onto `st->files`, growing it exactly as
  * `libdir_push` above grows `st->libdirs`. Its own function because
  * `cli_parse` reaches it from TWO places — after `--`, and as the option
@@ -1099,6 +1162,32 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             cli_err("--tune takes its value with '=' "
                     "(--tune=-2, --tune=min-size)");
             return 1;
+        }
+        /* [ENTRY-TABLE] E1 the three part-layout controls, valued `--X=y`
+         * parameters like `--vm-entry-shape=` (they consume no flag bit).
+         * Every word comes off `src/core/part_layout.def`. A later value for
+         * the same control (or class) wins; an unknown word is refused by
+         * name. docs/spec/tuning.md §2.51-§2.53. */
+        else if (!strncmp(a, "--part-layout=", 14)) {
+            if (cli_part_layout(a + 14, &opt.part_layout) != 0) return 1;
+        }
+        else if (!strncmp(a, "--part-inline-rank=", 19)) {
+            int v = cli_part_rank(a + 19);
+            if (v < 0) {
+                cli_err("--part-inline-rank wants none, R3, R2, R1, R0 or "
+                        "measured (got '%s')", a + 19);
+                return 1;
+            }
+            opt.part_inline_rank = v;
+        }
+        else if (!strncmp(a, "--part-residual=", 16)) {
+            int v = cli_part_value(a + 16, strlen(a + 16));
+            if (v < 0) {
+                cli_err("--part-residual wants auto, shared or inline "
+                        "(got '%s')", a + 16);
+                return 1;
+            }
+            opt.part_residual = v;
         }
         /* [M5-SEAM] (D58) `--encoding=` is the long spelling of `-e`, in the
          * `=value` MODE form `--engine=` already uses (the separate-argument

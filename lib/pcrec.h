@@ -1234,6 +1234,53 @@ enum {
     PCREC_TUNE_MAX_SPEED =  2    /* "max-speed" */
 };
 
+/* [ENTRY-TABLE] E1 — the spellings of the three PART-LAYOUT controls
+ * (`pcrec_options.part_layout`, `.part_inline_rank`, `.part_residual`; the
+ * fields' own comments below say what they decide; docs/spec/tuning.md
+ * §2.51-§2.53 is the contract). A PART is a static function an artifact's
+ * entries call (the VM hybrid's embedded search, a compound's parts); its
+ * layout is whether each caller gets a copy (`inline`) or calls one
+ * out-of-line body (`shared`). Every value answers identically.
+ *
+ * The four part CLASSES, each a 2-bit slot of `part_layout`. `find` and `wrap`
+ * have no subject yet (the iterator and the wrappers' static twins are not
+ * built): a value for either is accepted and lays out nothing. */
+enum {
+    PCREC_PART_PREFILTER = 0,   /* "prefilter": the VM hybrid's embedded DFA search */
+    PCREC_PART_COMPOUND  = 1,   /* "compound": a compound artifact's parts */
+    PCREC_PART_FIND      = 2,   /* "find": the iterator's parts */
+    PCREC_PART_WRAP      = 3,   /* "wrap": static twins of wrappers and residuals */
+    PCREC_PART_NCLASS    = 4
+};
+/* A class value, and the residual's: 0 is UNSET (the dial's preset decides,
+ * and with no preset value the control is inert), never a layout. */
+enum {
+    PCREC_PART_UNSET  = 0,
+    PCREC_PART_AUTO   = 1,      /* "auto": the owner's default layout */
+    PCREC_PART_SHARED = 2,      /* "shared": one out-of-line body, noipa
+                                   (noinline where the compiler has none) */
+    PCREC_PART_INLINE = 3       /* "inline": always_inline into each caller */
+};
+/* The rank threshold: a part whose hottest call site ranks at or above it is
+ * inlined. The ranks are properties of the call site (docs/spec/tuning.md
+ * §2.52): R3 inside a per-attempt loop, R2 once per call, R1 on a subset of
+ * calls, R0 on an error or fallback path. */
+enum {
+    PCREC_PART_RANK_UNSET    = 0,
+    PCREC_PART_RANK_NONE     = 1,   /* "none": inline nothing by rank */
+    PCREC_PART_RANK_R3       = 2,
+    PCREC_PART_RANK_R2       = 3,
+    PCREC_PART_RANK_R1       = 4,
+    PCREC_PART_RANK_R0       = 5,
+    PCREC_PART_RANK_MEASURED = 6    /* "measured": the measurement set's threshold */
+};
+/* Read and write one class's slot of `pcrec_options.part_layout`. */
+#define PCREC_PART_LAYOUT_GET(word, cls) \
+    ((int)(((word) >> (2u * (unsigned)(cls))) & 3u))
+#define PCREC_PART_LAYOUT_SET(word, cls, v)                                   \
+    ((word) = (uint32_t)(((word) & ~(3u << (2u * (unsigned)(cls)))) |        \
+                         (((uint32_t)(v) & 3u) << (2u * (unsigned)(cls)))))
+
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
  * AUTO is APPROACH §2's "automatic per pattern"; the other two are diagnostic
  * (reproduce a bug, measure the hybrid against VM-only) and REFUSE cleanly
@@ -1599,6 +1646,28 @@ typedef struct {
      * `-fno-memfn-simd` (the default). It is not a flag bit and does not
      * move `rx_info.flags`. */
     const char        *memfn;
+
+    /* [ENTRY-TABLE] E1 THE PART-LAYOUT CONTROLS (docs/spec/tuning.md
+     * §2.51-§2.53; the spellings are the enums above). Each decides how the
+     * artifact's PARTS are linked into their callers, never what they
+     * compute, so every value answers identically. Each resolves on its own:
+     * the value set here, else the `--tune` position's preset (every preset
+     * cell is empty today), else unset; with all three unset, or every set
+     * one `auto`/`none`, the artifact is byte-identical to one built without
+     * them.
+     *
+     * `part_layout`: one 2-bit slot per class (`PCREC_PART_LAYOUT_GET`/
+     * `_SET`), each `PCREC_PART_UNSET`/`_AUTO`/`_SHARED`/`_INLINE`.
+     * `part_inline_rank`: `PCREC_PART_RANK_*`, the threshold for parts whose
+     * class value is unset. `part_residual`: `PCREC_PART_UNSET`/`_AUTO`/
+     * `_SHARED`/`_INLINE`, the layout of every part neither decided. A part
+     * a layout cannot apply to (it cannot be copied, or it has one caller)
+     * keeps its default layout, with no attribute added, and is reported
+     * in `<PREFIX>_PART_LAYOUT` (`/held`), never refused. A value outside
+     * its enum refuses the compile. */
+    uint32_t           part_layout;
+    int                part_inline_rank;
+    int                part_residual;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

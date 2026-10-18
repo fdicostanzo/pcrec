@@ -1,0 +1,14 @@
+# tests/partlayout/werror.txt -- NAMED WITNESSES for section 6's -Werror leg:
+# the distinct patterns behind the 135 corpus cases the test-axes part-layout
+# arm lost at lane e1's first run (2026-10-18), when `shared` was `noinline`
+# alone: gcc -O1 read the prefilter's body across the call and reported the
+# caller's `window` maybe-uninitialized, so the artifact failed the harness's
+# -Werror compile. Each line is one pattern in --list-source's escapes.
+(a)\\b(b)
+(?=a)\\Kb
+(?>a\\b)c
+(a+)\\b(?1)
+(?>(?=[ab])z)
+(?>(?*a)z)
+a\\K\\bb
+(?>(?=a)z)

@@ -1,5 +1,7 @@
 # S250 ([OPT-DIAL] design §6.1a, candidate SAB-D2) — `−2` DENIES THE WRONG
 # BIT: `-fno-tiered-entry` WHERE THE TABLE SAYS `-fno-premul-table`.
+# RE-AIMED 2026-10-18 (lane e1, [ENTRY-TABLE] E1): every TUNE_TABLE row gained the three
+# part-layout preset cells (`, 0, 0, 0`, all em-dash); the anchors carry them, same plant.
 #
 # `src/core/tune.c`'s `min-size` row's deny mask changes from
 # `PCREC_NO_PREMUL_TABLE` to `PCREC_NO_TIERED_ENTRY`. TWO CELLS ARE WRONG AT
@@ -46,6 +48,6 @@ SAB_REACH_EXPECT="#define RX_DFA_TABLE \"indexed\"
 #define RX_FAST_FRAMES 2048"
 SAB_COUNT=1
 SAB_BEFORE='    { PCREC_TUNE_MIN_SIZE,  "min-size",  95,  40000, 0,
-      PCREC_NO_PREMUL_TABLE },'
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },'
 SAB_AFTER='    { PCREC_TUNE_MIN_SIZE,  "min-size",  95,  40000, 0,
-      PCREC_NO_TIERED_ENTRY },   /* SABOTAGE S250: wrong bit denied */'
+      PCREC_NO_TIERED_ENTRY, 0, 0, 0 },   /* SABOTAGE S250: wrong bit denied */'

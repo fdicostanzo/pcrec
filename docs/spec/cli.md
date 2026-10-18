@@ -114,6 +114,8 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --engine=dfa and this file's
 `engine vm` disagree; using the CLI's explicit choice
 ```
 
+<a id="s1-1-4-p5a"></a>[1.1.4¶5a] `--part-layout` is file-wins PER CLASS: a config's raw `pcrec --part-layout=...` line sets only the classes it names, and a command-line item for a class the file does not name still applies (`tuning.md` §2.51¶4). `--part-inline-rank` and `--part-residual` take the general rule.
+
 <a id="s1-1-4-p6"></a>[1.1.4¶6] An explicitly typed `--engine=auto` is indistinguishable from no flag, so it takes the general rule. The exception does not depend on the spelling: a config's raw `pcrec --engine=vm` line is the same axis as the typed row, and within a target the typed row overrides the raw line.
 
 <a id="s1-1-4-p7"></a>[1.1.4¶7] `flags` letters and raw `-f` bits union across sources; they are not file-wins. Bits that contradict each other (`-fprefilter` on one side, `-fno-prefilter` on the other) are refused, never resolved by precedence. Between a config and the pattern block's own `flags`, the block replaces.
@@ -251,6 +253,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-14-p2"></a>[1.14¶2] A negative value needs the `=` form: `--tune -2` is refused by name (`--tune takes its value with '=' (--tune=-2, --tune=min-size)`), and the aliases, which have no leading dash, are the preferred spelling. An out-of-range value is refused, never clamped (`--tune wants -2..2 or one of min-size, size, balanced, speed, max-speed (got '3')`). A `tune` line in a `.rxt` `config` or `target` block takes the same vocabulary; its precedence is §1.1.4.
 
+<a id="s1-14-p3"></a>[1.14¶3] **The part-layout controls** (`tuning.md` §2.51-§2.53) are three valued options beside `--tune`, none a bit of `flags`: `--part-layout=CLASS:V[,CLASS:V...]` (CLASS `prefilter`, `compound`, `find` or `wrap`; V `auto`, `shared` or `inline`; a later item for a class wins, a class not named keeps its value), `--part-inline-rank=R` (`none`, `R3`, `R2`, `R1`, `R0` or `measured`) and `--part-residual=V` (`auto`, `shared` or `inline`). They decide how an artifact's static parts are linked into their callers and answer identically. An unknown word is refused by name, naming the accepted set. A part a layout cannot apply to (it cannot be copied, or it has one caller) keeps its default layout, with no attribute added, and is reported in `<PREFIX>_PART_LAYOUT` (`/held`, `match_api.md` §6.3.11¶4), never refused. The `.rxt` spelling is a config's raw `pcrec` line (§1.1.4¶5a).
+
 <a id="s1-15"></a>
 ### 1.15 Budgets, capacities and size options
 
@@ -327,7 +331,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2-4"></a>
 ### 2.4 `--list-axes`
 
-<a id="s2-4-p1"></a>[2.4¶1] The optimization-axis registry: one row per (axis, candidate) in the emitter's preference order, with the candidate's stamp macro and value, its deny/force bit and CLI spelling, and a description (`registry.md` §6). The stream has two tables: pcrec's axis table, the leading anonymous table, and after it `#section memfn`, the option registry of the search-code kit, one row per option reachable as `--memfn=no-NAME`. A consumer selects the table it reads (`table_contract.md` §4¶6).
+<a id="s2-4-p1"></a>[2.4¶1] The optimization-axis registry: one row per (axis, candidate) in the emitter's preference order, with the candidate's stamp macro and value, its deny/force bit and CLI spelling, and a description (`registry.md` §6). The stream has two tables: pcrec's axis table, the leading anonymous table, and after it `#section memfn`, the option registry of the search-code kit, one row per option reachable as `--memfn=no-NAME`, then `#section part-layout` (the part-layout controls' vocabulary) and `#section part-layout-table` (their declared tables), `registry.md` §6¶10-¶11. A consumer selects the table it reads (`table_contract.md` §4¶6).
 
 <a id="s2-5"></a>
 ### 2.5 `--list-definitions`
@@ -364,7 +368,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2-11"></a>
 ### 2.11 `--emit-facts[=ENC,...]`: the pattern-facts listing
 
-<a id="s2-11-p1"></a>[2.11¶1] A query like `--emit-ir`: it takes a pattern, takes no `-o` and emits no C. It runs the ordinary compile to completion and prints every fact pcrec concluded about the pattern, its status, whether a pass asked for it and why, followed by the artifact's decision stamps. Every compile option applies unchanged. The bare flag lists the compile under the `-e` in effect; `=ENC,...` runs one compile per listed encoding and concatenates the rows, each naming its encoding, and an unknown encoding name is refused as `-e` refuses it. It works on every engine, composes with no other query mode, refuses `--flavour`, and a pattern pcrec refuses is refused with the compile's own diagnostic. The output is `table_contract.md` TSV in two sections, `facts` and `decisions`, specified by `facts_listing.md` §4. It is a debug listing: no `abi` number, and it never refuses a compile that succeeded.
+<a id="s2-11-p1"></a>[2.11¶1] A query like `--emit-ir`: it takes a pattern, takes no `-o` and emits no C. It runs the ordinary compile to completion and prints every fact pcrec concluded about the pattern, its status, whether a pass asked for it and why, followed by the artifact's decision stamps. Every compile option applies unchanged. The bare flag lists the compile under the `-e` in effect; `=ENC,...` runs one compile per listed encoding and concatenates the rows, each naming its encoding, and an unknown encoding name is refused as `-e` refuses it. It works on every engine, composes with no other query mode, refuses `--flavour`, and a pattern pcrec refuses is refused with the compile's own diagnostic. The output is `table_contract.md` TSV in four sections, `facts`, `decisions`, `part-layout-controls` and `part-layout`, specified by `facts_listing.md` §4. It is a debug listing: no `abi` number, and it never refuses a compile that succeeded.
 
 <a id="s2-12"></a>
 ### 2.12 `--explain SYNTAX`

@@ -534,3 +534,13 @@ kind's `canonical` or `decoded` view (`pcrec_find_list_view`).
 reserved second contract value (utf_valid_design.md §2.2) — has its own arm
 that refuses it BY NAME ("reserved and not built") rather than as an unknown
 option; it has no bit and so no row. docs/spec/cli.md carries both.
+
+## [ENTRY-TABLE] E1 the part-layout controls (2026-10-18, lane e1)
+
+`--part-layout=CLASS:V[,CLASS:V...]`, `--part-inline-rank=R` and
+`--part-residual=V` set `pcrec_options.part_layout`/`part_inline_rank`/
+`part_residual`; every word comes off `src/core/part_layout.def`
+(`cli_part_class`/`cli_part_value`/`cli_part_rank`), an unknown one is
+refused by name, and a later value wins. `--part-layout` writes only the
+slots it names, so a `.rxt` config's raw `pcrec --part-layout=` line is
+file-wins PER CLASS with no code of its own (docs/spec/cli.md §1.1.4¶5a).

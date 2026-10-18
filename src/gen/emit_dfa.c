@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 79
+#define PCREC_ARTIFACT_ABI 80
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -1930,10 +1930,12 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
  * Reads `cx->job->fit.chosen`, which is not a parameter and is load-bearing:
  * this emitter has TWO customers, the artifact's own exported entry and the
  * VM hybrid's internal `static` prefilter, and the guard belongs to the first
- * alone. `storage` is "" for the entry and "static " for the prefilter; a
- * caller must not swap them. */
+ * alone. `ent` is the entry row the body defines: its linkage gives the
+ * storage class ("" for the exported entry, "static " for the prefilter or a
+ * part), and [ENTRY-TABLE] E1's part-layout mark, written after the storage
+ * class where `ent` is a part a control lays out (src/gen/part_layout.c). */
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
-                             const char *storage)
+                             PcrecEntry ent)
 {
     /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
      * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
@@ -1957,9 +1959,11 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                "#if __has_attribute(noclone)\n"
                "__attribute__((noclone))\n"
                "#endif\n");
-    pcrec_sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
+    pcrec_sb_puts(c, pcrec_entry_storage(cx, ent));
+    pcrec_part_head_mark(cx, c, ent);
+    pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s)\n{\n",
-                 storage, fn,
+                 fn,
                  /* The DFA engine never emits a var-bearing artifact — an
                   * `A_VAR` forces the VM and forces the prefilter off — so
                   * this reads "" today at BOTH of this emitter's customers.
@@ -1987,9 +1991,9 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
 /* [COMPOUND] The search head for a caller outside this file: a compound's
  * controller (src/gen/emit_compound.c) opens `<prefix>_search` exactly as
  * the plain artifact's body does, P's caller-position prologue included. */
-void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, const char *storage)
+void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, PcrecEntry ent)
 {
-    emit_search_head(cx, c, fn, storage);
+    emit_search_head(cx, c, fn, ent);
 }
 
 /* The `<prefix>_match` declaration: the anchored match-here entry, taking a
@@ -5383,7 +5387,7 @@ typedef struct CandPf {
  * (`empty`; the meet `caller ⊓ body` reads it, §1.1). A NULL emitter is a
  * route whose walk another emitter writes (the VM's composite). */
 typedef struct CandLocate {
-    void       (*emit[3])(Ctx *cx, const char *fn, const char *storage);
+    void       (*emit[3])(Ctx *cx, const char *fn, PcrecEntry ent);
     const char  *scan[3];
     bool         nomatch;
     /* [OPT-REVEND] L2 the walk answers PRESENCE itself (`whole`): a body
@@ -9563,11 +9567,11 @@ static bool cand_bound_gstart_vm_applies(const CandSel *s)
 
 /* [OPT-REVEND] L0 the LOCATE rows' walks, one per (row, route), defined with
  * the two engines below. */
-static void emit_empty_unanchored(Ctx *cx, const char *fn, const char *storage);
-static void emit_empty_attempt(Ctx *cx, const char *fn, const char *storage);
-static void emit_rev_end(Ctx *cx, const char *fn, const char *storage);
-static void emit_unanchored(Ctx *cx, const char *fn, const char *storage);
-static void emit_attempt(Ctx *cx, const char *fn, const char *storage);
+static void emit_empty_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 
 /* The entry slots a body runs where it is the caller-facing entry (a LOCATE
  * row's `needs[route].front`): the clamp, the pre-check and its handoff. */
@@ -12495,7 +12499,7 @@ static void req_handoff_assert_body(Ctx *cx, const Dfa *fd, unsigned act)
  * stamps read that same call, and a second copy of the analysis is how the
  * prefilter and skip loops once went missing from the `$` path for a whole
  * milestone. */
-static void emit_unanchored(Ctx *cx, const char *fn, const char *storage);
+static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 
 /* [OPT-REVEND] L2 the empty walk's one hand, NOMATCH, asked of FINISH where
  * its body is the caller-facing entry (E-LF): `nomatch`, whose action is the
@@ -12513,11 +12517,11 @@ static void empty_finish_ask(Ctx *cx)
  * [DD-13] it was `emit_unanchored`'s one empty-engine exit, taken BEFORE any
  * token block is emitted so an artifact that matches nothing grows nothing;
  * the row is selected before any emitter runs, which keeps that property. */
-static void emit_empty_unanchored(Ctx *cx, const char *fn, const char *storage)
+static void emit_empty_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     StrBuf *c = &cx->job->csb;
     empty_finish_ask(cx);
-    emit_search_head(cx, c, fn, storage);
+    emit_search_head(cx, c, fn, ent);
     pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                "    return 0;\n}\n");
 }
@@ -12674,7 +12678,7 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
 }
 
 
-static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
+static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     Job *job = cx->job;
     StrBuf *c = &job->csb;
@@ -12736,7 +12740,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", cand_finish_of(cx) != CAND_ROUTE_VM ? "entry" : "inlined",
                          "entry-gate");
 
-    emit_search_head(cx, c, fn, storage);
+    emit_search_head(cx, c, fn, ent);
     /* [K73] The offset-0 start rule, for BOTH customers: the VM hybrid calls
      * its internal prefilter at the caller's own `search_from`, so a
      * prefilter that offered offset 0 would hand the VM a first attempt on a
@@ -13205,7 +13209,7 @@ static void emit_rev_end_tagged(Ctx *cx, DfaForm *rev, DfaForm *fwd, bool entry,
  * fact and FINISH's and RECOVER's selections.
  * (c) RECOVER is asked with the speculative WINDOW hand, which `pinned` does
  * not take, so the walk is always the reverse pass; the assertion holds it. */
-static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
+static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     Job *job = cx->job;
     StrBuf *c = &job->csb;
@@ -13261,7 +13265,7 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     if (relocate && fwd.pf->u.pf.emit_define) fwd.pf->u.pf.emit_define(c, &fwd);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", entry ? "entry" : "inlined", "entry-gate");
 
-    emit_search_head(cx, c, fn, storage);
+    emit_search_head(cx, c, fn, ent);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_SEEK);
     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
@@ -13522,7 +13526,7 @@ static void emit_target(StrBuf *c, const char *p, int tgt)
  * shared by the LOCATE rows' two walks on CAND_ROUTE_ATTEMPT, `composite`'s
  * (`emit_attempt`) and `empty`'s (`emit_empty_attempt`), so the empty body
  * keeps the text the old early exit wrote after it. */
-static const char *attempt_entry(Ctx *cx, const char *fn, const char *storage)
+static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     StrBuf *c = &cx->job->csb;
 
@@ -13531,7 +13535,7 @@ static const char *attempt_entry(Ctx *cx, const char *fn, const char *storage)
     if (cand_finish_of(cx) != CAND_ROUTE_VM) pcrec_emit_req_run_blocks(cx, c);
     PCREC_CAND_TRACE_REC("ROUTE", "attempt",
                          cand_finish_of(cx) != CAND_ROUTE_VM ? "entry" : "inlined", "entry-gate");
-    emit_search_head(cx, c, fn, storage);
+    emit_search_head(cx, c, fn, ent);
     /* [OPT-ENDWIN] the clamp, on the caller-facing entry only — the sibling
      * site in `emit_unanchored` carries the reason. It composes with
      * `start_max` below rather than competing with it: both bounds are sound
@@ -13557,10 +13561,10 @@ static const char *attempt_entry(Ctx *cx, const char *fn, const char *storage)
  * `emit_attempt`; it is the `empty` row's predicate now, the same derivation
  * `<PREFIX>_DFA_SCAN "empty"` reads. Its front is the attempt entry's, so the
  * text is byte-for-byte what the old early exit wrote. */
-static void emit_empty_attempt(Ctx *cx, const char *fn, const char *storage)
+static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     empty_finish_ask(cx);
-    (void)attempt_entry(cx, fn, storage);
+    (void)attempt_entry(cx, fn, ent);
     pcrec_sb_puts(&cx->job->csb,
                "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                "    return 0;\n}\n");
@@ -13568,13 +13572,13 @@ static void emit_empty_attempt(Ctx *cx, const char *fn, const char *storage)
 
 /* Emits the ENG_ATTEMPT engine's whole search function `fn` (the doc block
  * above `attempt_entry`): its front, then the per-start attempt loop. */
-static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
+static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     Job *job = cx->job;
     Dfa *d = &job->dfa;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
-    const char *first = attempt_entry(cx, fn, storage);
+    const char *first = attempt_entry(cx, fn, ent);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
@@ -13679,6 +13683,10 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     emit_state_legend(cx, c, d, false);
     pcrec_sb_puts(c, "     */\n");
     pcrec_sb_cmt_close(c);
+    /* [ENTRY-TABLE] E1: a body that keeps label addresses in a static table
+     * can never be copied into a caller (gcc's own refusal, H1), so the part
+     * layout's P2 reads this as the body's `copyable` fact. */
+    if (d->n > 0) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
@@ -14665,6 +14673,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * hybrid always reads `"none"`; a hybrid's start test is its prefilter. */
     pcrec_sb_stamp_str(c, g->upper, "VM_START_SCAN", pcrec_vm_start_scan_name(cx));
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
+    /* [ENTRY-TABLE] E1 `<PREFIX>_PART_LAYOUT` / `_PART_LAYOUT_WHY`
+     * (docs/spec/tuning.md §5.3): a mark, rendered after every length
+     * decision; nothing at all where no control resolved to a layout and no
+     * decline was stamped, so a default artifact is untouched. */
+    pcrec_part_stamp_mark(cx, c);
     /* [COMPOUND] `<PREFIX>_COMPOUND` (compound.md §A.7, match_api.md §6.3):
      * which compound row this artifact IS, on every artifact of both engines
      * -- "none" (no row admitted, the plain artifact), the row's name, or
@@ -14740,14 +14753,14 @@ void pcrec_emit_residual(Ctx *cx)
  * `job->engine` selected. The VM hybrid calls this too, with a private name
  * and `static` storage, which is what makes its prefilter the same text a DFA
  * artifact's own scan is. */
-void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
+void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     PCREC_CAND_TRACE_REC("ROUTE", "-", CAND_ROUTE_NAME(cand_route_of(cx)), "dfa-engine");
     /* [OPT-REVEND] L0 THE BODY's LOCATE ROW, and its walk is the body: the
      * row's emitter on the body's route (`composite`: the two-pass scan or
      * the attempt loop; `empty`: one `return 0`). */
     const CandRow *r = cand_locate_emit(cx);
-    r->u.locate.emit[cand_route_of(cx)](cx, fn, storage);
+    r->u.locate.emit[cand_route_of(cx)](cx, fn, ent);
 }
 
 /* The standalone main(), shared verbatim: it drives `<prefix>_search` through

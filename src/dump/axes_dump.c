@@ -1032,6 +1032,93 @@ static void emit_memfn_section(StrBuf *sb)
     }
 }
 
+/* [ENTRY-TABLE] E1 the part-layout controls (docs/spec/registry.md §6,
+ * docs/spec/tuning.md §2.51-§2.53): one row per (control, value), every word
+ * off `src/core/part_layout.def`; then the tables' rows with their listed
+ * conjuncts (D163 addendum 4), read off src/gen/part_layout.c's own arrays. */
+typedef struct { const char *tok, *macro, *meaning; } PlWord;
+static const PlWord pl_classes[] = {
+#define PL_CLASS(v, tok, subj) { tok, #v, subj },
+#include "core/part_layout.def"
+};
+static const PlWord pl_values[] = {
+#define PL_VALUE(v, tok, m) { tok, #v, m },
+#include "core/part_layout.def"
+};
+static const PlWord pl_ranks[] = {
+#define PL_RANK(v, tok, m) { tok, #v, m },
+#include "core/part_layout.def"
+};
+#define PL_N(a) (sizeof a / sizeof a[0])
+
+/* One `part-layout` row; every cell but `value` is formatted, so each is
+ * built into its own buffer and freed after the row is written. */
+static void pl_row(StrBuf *sb, const char *value, const char *control_fmt,
+                   const char *control_arg, const char *spelling_fmt,
+                   const char *field, const char *meaning, const char *for_what)
+{
+    StrBuf b[4] = {{0}};
+    pcrec_sb_printf(&b[0], control_fmt, control_arg);
+    pcrec_sb_printf(&b[1], spelling_fmt, control_arg, value);
+    pcrec_sb_puts(&b[2], field);
+    pcrec_sb_puts(&b[3], meaning);
+    if (for_what) pcrec_sb_printf(&b[3], ", for %s", for_what);
+    char *t[4];
+    for (int i = 0; i < 4; i++) t[i] = pcrec_sb_take(&b[i]);
+    const char *cells[] = { t[0], value, t[1], t[2], t[3] };
+    pcrec_sb_row(sb, cells, 5);
+    for (int i = 0; i < 4; i++) free(t[i]);
+}
+
+static void emit_part_layout_sections(StrBuf *sb)
+{
+    pcrec_sb_puts(sb,
+        "#section part-layout\n"
+        "# The part-layout controls (docs/spec/tuning.md sections 2.51-2.53):\n"
+        "# valued parameters, not flag bits. `field` names the pcrec_options\n"
+        "# member and the lib/pcrec.h constant the spelling sets.\n"
+        "#control\tvalue\tspelling\tfield\tmeaning\n");
+    for (size_t c = 0; c < PL_N(pl_classes); c++)
+        for (size_t v = 0; v < PL_N(pl_values); v++) {
+            StrBuf fd = {0};
+            pcrec_sb_printf(&fd, "part_layout slot %s = %s",
+                            pl_classes[c].macro, pl_values[v].macro);
+            char *f = pcrec_sb_take(&fd);
+            pl_row(sb, pl_values[v].tok, "part-layout:%s", pl_classes[c].tok,
+                   "--part-layout=%s:%s", f, pl_values[v].meaning,
+                   pl_classes[c].meaning);
+            free(f);
+        }
+    for (size_t v = 0; v < PL_N(pl_ranks); v++) {
+        StrBuf fd = {0};
+        pcrec_sb_printf(&fd, "part_inline_rank = %s", pl_ranks[v].macro);
+        char *f = pcrec_sb_take(&fd);
+        pl_row(sb, pl_ranks[v].tok, "part-inline-rank%s", "",
+               "--part-inline-rank=%s%s", f, pl_ranks[v].meaning, NULL);
+        free(f);
+    }
+    for (size_t v = 0; v < PL_N(pl_values); v++) {
+        StrBuf fd = {0};
+        pcrec_sb_printf(&fd, "part_residual = %s", pl_values[v].macro);
+        char *f = pcrec_sb_take(&fd);
+        pl_row(sb, pl_values[v].tok, "part-residual%s", "",
+               "--part-residual=%s%s", f, pl_values[v].meaning, NULL);
+        free(f);
+    }
+    pcrec_sb_puts(sb,
+        "#section part-layout-table\n"
+        "# The part-layout tables, in table order (docs/spec/tuning.md section\n"
+        "# 2.51): the ARTIFACT table once per compile (K always, then the first\n"
+        "# holding row of T1/TM/T2, then of T0/T3), the PART table first match\n"
+        "# per part, the WRAPPER table per forwarding caller of a shared part.\n"
+        "#table\tid\tname\tconjuncts\twrites\n");
+    const char *tb, *id, *nm, *cj, *wr;
+    for (int i = 0; pcrec_part_layout_table_row(i, &tb, &id, &nm, &cj, &wr); i++) {
+        const char *cells[] = { tb, id, nm, cj, wr };
+        pcrec_sb_row(sb, cells, 5);
+    }
+}
+
 /* ---- the whole dump ------------------------------------------------------ */
 
 /* The `--list-axes` TSV, the fourth registry surface (docs/spec/registry.md,
@@ -1110,6 +1197,7 @@ char *pcrec_axes_tsv(void)
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);
+    emit_part_layout_sections(&sb);
 
     return pcrec_sb_take(&sb);
 }

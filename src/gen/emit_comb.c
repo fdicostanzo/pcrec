@@ -527,7 +527,7 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
         if (!t->body) break;
         /* `locate-then-finish`'s ONE emitter: the DFA search body under the
          * entry's name and linkage. */
-        pcrec_emit_dfa_engine(cx, t->body, pcrec_entry_storage(cx, e));
+        pcrec_emit_dfa_engine(cx, t->body, e);
         return true;
     case PCREC_COMB_FIRST_NONZERO:
         if (!t->shell || e != PCREC_ENTRY_SEARCH) break;

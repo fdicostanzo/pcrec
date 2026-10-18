@@ -1,0 +1,74 @@
+/* src/core/part_layout.def — [ENTRY-TABLE] E1 THE PART-LAYOUT CONTROLS'
+ * VOCABULARY, one X-macro row per word (docs/design/compound_entries.md
+ * §3.2.2, §3.9; the contract is docs/spec/tuning.md §2.51-§2.53).
+ *
+ * `axes.def`'s shape (D111): every reader is derived from these rows — the
+ * CLI's three parsers (cli/main.c), the `--list-axes` `part-layout` section
+ * (src/dump/axes_dump.c), the stamp writer and the `--emit-facts` listing
+ * (src/gen/part_layout.c) — so a token is spelled once. A row names its
+ * `lib/pcrec.h` value as a TOKEN and holds no copy of the number.
+ *
+ * A reader defines the families it reads before including this file; a
+ * family it leaves undefined expands to nothing.
+ *
+ *   PL_CLASS(value, token, subject)   a part CLASS: its `part_layout` slot,
+ *                                     its token, and which functions are its
+ *                                     subjects (prose: the listing's column)
+ *   PL_VALUE(value, token, meaning)   a class value or residual value
+ *   PL_RANK(value, token, meaning)    a rank-threshold value
+ *   PL_WHY(id, token, meaning)        a `<PREFIX>_PART_LAYOUT_WHY` token
+ *
+ * A new class is one PL_CLASS row plus its spec hunk; its subjects are
+ * stated where they are emitted (src/gen/part_layout.c `pl_subjects[]`). */
+
+#ifndef PL_CLASS
+#define PL_CLASS(value, token, subject)
+#endif
+#ifndef PL_VALUE
+#define PL_VALUE(value, token, meaning)
+#endif
+#ifndef PL_RANK
+#define PL_RANK(value, token, meaning)
+#endif
+#ifndef PL_WHY
+#define PL_WHY(id, token, meaning)
+#endif
+
+PL_CLASS(PCREC_PART_PREFILTER, "prefilter",
+         "the VM hybrid's embedded DFA search, <prefix>_prefilter")
+PL_CLASS(PCREC_PART_COMPOUND,  "compound",
+         "a compound artifact's parts, <prefix>__<role>_search")
+PL_CLASS(PCREC_PART_FIND,      "find",
+         "the iterator's parts (none: the iterator is not built)")
+PL_CLASS(PCREC_PART_WRAP,      "wrap",
+         "static twins of wrapper bodies and residual leaves (none: not built)")
+
+PL_VALUE(PCREC_PART_AUTO,   "auto",
+         "the owner's default layout: the attribute its emitter writes, often none, gcc deciding")
+PL_VALUE(PCREC_PART_SHARED, "shared",
+         "one out-of-line static body each caller calls (noipa)")
+PL_VALUE(PCREC_PART_INLINE, "inline",
+         "a copy in each caller (always_inline)")
+
+PL_RANK(PCREC_PART_RANK_NONE,     "none",
+        "inline no part by rank")
+PL_RANK(PCREC_PART_RANK_R3,       "R3",
+        "inline a copyable part whose hottest call site is inside a per-attempt loop")
+PL_RANK(PCREC_PART_RANK_R2,       "R2",
+        "R3, and parts called once per call")
+PL_RANK(PCREC_PART_RANK_R1,       "R1",
+        "R2, and parts called on a data-dependent subset of calls")
+PL_RANK(PCREC_PART_RANK_R0,       "R0",
+        "every copyable part, rare-path call sites included")
+PL_RANK(PCREC_PART_RANK_MEASURED, "measured",
+        "the active measurement set's threshold; with none in the set, none (stamped)")
+
+PL_WHY(PL_WHY_UNMEASURED, "threshold-unmeasured",
+       "measured was asked and the active measurement set carries no threshold")
+PL_WHY(PL_WHY_NO_MATERIAL, "no-material-rank",
+       "measured was asked and the set found no rank material")
+
+#undef PL_CLASS
+#undef PL_VALUE
+#undef PL_RANK
+#undef PL_WHY
