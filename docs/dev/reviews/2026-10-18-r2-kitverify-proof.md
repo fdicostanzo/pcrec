@@ -136,3 +136,77 @@ truncation at ~4.5k chars).
   handback quantity in a D166 set so the kit can choose verification by price (a cell where tool-cost-only
   loses to always-verify); U4 offset-pinned union spans raise `exact_len` through a narrow multi-byte
   class (add. 10's first losing utf8 cell inside a VM/report consumer's prefix).
+
+## 6. kvp-cost (opus): search cost and duplication (SUPERSET addendum folded in)
+
+Derivations plus three `build/pcrec -o -` emits and two `gcc -O2 -S` probes; no timing. Five parts.
+
+- **B1.** P1 makes NONE illegal on every EXACT-span-0 site (obligations 4/6; F0's gate,
+  r17b_prime.md:458), against D161 add. 14 and §4.3(1). The dense regime NONE exists for is measured
+  (opt3 `t-b`: skip loop entered 190,651 times, zero bytes skipped; K88 +4.6 ns/match for an
+  always-passing test; K90; k82b §1.1; D161 add. 2 up to 24% at 300k ppm). Frank's C1 at its sharpest.
+- **M1.** P1's continue-vs-handback mechanism is a measured null on DFA consumers: both sides pay the
+  same memchr re-entry (`rx_ofsskip__body` loops `pos = cand + 1`), so the kit saves only the false
+  start's DFA steps; offset_k §7.4 measured that verify-without-scan-move at 0.96-1.02x. The 4.6 ns K88
+  figure I cited is an ADDED test on a PASSING candidate: evidence for C1. P1 holds on VM_ATTEMPT,
+  already REQUIRED (C-13).
+- **M2.** "No more in the kit" is false against a DFA that does not consume: its step is paid anyway, so
+  the kit's test is added work (branchy: C_MISPRED × min(p,1−p); branch-free: ~192 instructions per
+  candidate for 32 positions). `\b[0-9a-f]{32}\b` cannot consume (`\b` is a context view).
+- **M3.** Payoff on a minority, cost on all: `ac\d|bc` has span 0 `[ab]c` fully verified but δ(0,a)=5,
+  δ(0,b)=10 (not consumable); pf_know: leading choice-free segment empty on 32 of 47 bench hybrids, twins
+  x1.000-1.13.
+- **M4.** Under P1 the span cut becomes the effort level (rewards under-sending, inverts add. 9/D157):
+  `abc\d{3,7}` offset-skip 38 → 49 instructions (+29%); `proven_len` = |span 0| always.
+- **M5.** Match-dense find-all pays P1 on every match where unconsumed: ~a fifth of DFA C_match at
+  m=8192 (armread Zen 4, derived).
+- **M6.** P1 moves bytes ahead of [KIT-VERIFY]'s D77 trigger; C3 with default "test what today's form
+  tests" moves nothing.
+- **m1 (C2 counted).** New executed tests: `abc\d{3,7}` +3 range tests, `ac\d|bc` 0, `[a-z]+@x` 0,
+  `\b[0-9a-f]{32}\b` up to +29 probes. No UTF-8 decoding (non-product classes are SUPERSET); no duplicated
+  data (ofsskip probes pcrec's table by name), though a class pcrec has not tabled may need a new
+  membership table (pf_know bounds sharing at 3.4 KB). pcrec's copy is KEPT even when consumed (DFA
+  tables, reverse pass, VM instructions). **m2** a REQUIRED class position declines the SIMD rows (no
+  vector class verify); **m3** wide classes reject ~nothing; **m4** back-search through overshoot makes
+  REQUIRED cost overshoot+1 probes per hit, a wash with OPTIONAL on DFA_SCAN; **m5** per-span byte_form
+  makes `abc[α-ω]` prove nothing.
+- **SUPERSET.** A SUPERSET position proves nothing; testing it pays only if added rejection × saved DFA
+  steps > one probe per candidate. UTF-8 continuation positions reject zero candidates on well-formed text.
+  P1 handles a pure-SUPERSET span 0 only because its wording excludes it, and a mixed span badly.
+- **Verdict.** Restated C3 weakly dominates P1 (P1 = need all-ones), strictly on B1, M2-M5 and mixed
+  spans, ties on VM_ATTEMPT. As true facts: per-position `need` (REQUIRED only where D158/K64-K66 demand),
+  per-position `consumable` (pcrec will not re-test if proven; known before asking), per-position `exact`;
+  the kit chooses the rest from its measured data and reports proven ⊇ need. kvp-unlock's `mf_ask`
+  two-pass needs the consumable fact or the kit under-tests the positions whose proof pays.
+- **Unlocks.** U-a per-position need/consumable/exact masks, proven ⊇ need, proven ⊆ exact (trigger: P3
+  finds consumable proven positions beyond offset 0 at bench sites, or mixed utf8 spans); U-a′ byte_form
+  per position; U-b `delta_uniform[j]` (every byte of span-0 class j drives the forward start path to one
+  state), computed from built tables, T-PROOF's DFA precondition and P3's consumable column (false at j=0
+  for `ac\d|bc`, true at all six for `abc\d{3,7}`).
+
+## 7. Synthesis and proposed dispositions (manager, pending Frank)
+
+All three critics converge; nothing in the panel defends P1 or P2 as worded.
+
+| item | disposition |
+|---|---|
+| P1 (EXACT span 0 always REQUIRED) | WITHDRAWN (kvp-cost B1 = kvp-contract B1; M1-M6) |
+| P2 (`proven_len` as the transported fact) | WITHDRAWN as transported; KEPT as a pcrec-derived projection |
+| C3 (effort level) | ADOPTED IN SUBSTANCE, restated as facts (below) |
+| C4 (span cut artificial) | CONFIRMED; the proof is defined over origin offsets, the cut drops out |
+| SUPERSET (Frank) | CONFIRMED; exactness per position/prefix replaces per-span `byte_form` |
+| kit `proven0` ignores `need` (kvp-contract M4) | FINDING to the kit (latent; must be fixed before any OPTIONAL term reaches a FIND site) |
+| C-PROOF every-deny clause (kvp-contract M3) | ACCEPT: layer-invariant, deny-variant |
+| home | [MATCH-KNOWN] (kvp-unlock B1): this fact is its first built member |
+| P3 census | FIRST and alone, compile-only, with the critics' columns |
+
+The restated design: pcrec states per origin offset d (from −1) the `exact` bit (from its lowering),
+`need` (REQUIRED only where give-up safety K64-K66/D158 or a non-skipping consumer demands it), and
+possibly `consumable` (open question Q1); the kit commits, layer-invariantly, to per-offset proven byte
+sets (`proven[d]`, generalising `proven0`/`proven_prev`) with proven ⊇ need and proven ⊆ exact, choosing
+what else to test from its own measured data; pcrec derives prefix length / whole-cover / suffix in one
+helper read by T-PROOF.
+
+Open for Frank: **Q1** does pcrec send `consumable` (a binary fact about its consumer, not a price), or
+does it discover it by the `mf_ask` two-pass (ask OPTIONAL, re-ask with need on positions whose proof a
+T-PROOF row would consume)?
