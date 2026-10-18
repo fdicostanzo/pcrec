@@ -72,9 +72,10 @@
 # both columns for the rows it routes.
 #
 # R17-b' B3b (lane b3b) routed P0, P2, P3, P4 and P9 (reach `pcrec`): their
-# pcrec floors are PLACEHOLDER until the B3b heavy chain's N2 census pins them
-# (floor(0.9 x chosen), as n2fix pinned B2's; OWED, docs/dev/lanes/
-# b3b_report.md). D2 stays `pending-site:R-18` (no pcrec site states a RUN
+# pcrec floors were PINNED 2026-10-18 from the N2 census at a35ca8f90 (lane
+# b3breach's chain, `--propose`: floor(0.9 x chosen), and for P2, decided at the
+# PRESENCE ASK, floor(0.9 x asked)); their g2 floors stay PLACEHOLDER (G2's log
+# carries no per-row reach count; OWED, docs/dev/lanes/b3b_report.md §14). D2 stays `pending-site:R-18` (no pcrec site states a RUN
 # span 0), so its pcrec floor stays `-`.
 #
 # table	row	pcrec_floor	g2_floor
@@ -112,8 +113,8 @@ fd	D1w	211402	PLACEHOLDER
 fd	D2	-	PLACEHOLDER
 fd	R7	-	PLACEHOLDER
 fd	R7w	300852	PLACEHOLDER
-fd	P0	PLACEHOLDER	PLACEHOLDER
-fd	P2	PLACEHOLDER	PLACEHOLDER
-fd	P3	PLACEHOLDER	PLACEHOLDER
-fd	P4	PLACEHOLDER	PLACEHOLDER
-fd	P9	PLACEHOLDER	PLACEHOLDER
+fd	P0	618251	PLACEHOLDER
+fd	P2	1359454	PLACEHOLDER
+fd	P3	218956	PLACEHOLDER
+fd	P4	3994	PLACEHOLDER
+fd	P9	2982	PLACEHOLDER
