@@ -32,7 +32,7 @@ SAB_ID="S689-empty-slot-walked"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="n2sample"
 SAB_DESC="fn_select stops marking the PREFIX walk optional, so a PREFIX walk that chooses no row writes a no-row END (a refusal, in the trace) for every FUNC part"
-SAB_DOC_FIGURE="PENDING: re-aimed by lane rowfix 2026-10-18; the solo figure is recorded below once measured."
+SAB_DOC_FIGURE="MEASURED 2026-10-18 by lane rowfix, solo (run_sabotage_matrix.sh S689 at 1099d14d9): DETECTED, n2sample 1fail/0pass; the census reads rc 5 with noend=33 (docs/dev/lanes/rowfix_report.md)."
 SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "abc[0-9]+xyz"'
 SAB_REACH_EXPECT='static inline size_t rx_ofsskip(const unsigned char *subject, size_t n, size_t pos)'
 SAB_REACH_POP="tests/memfn/n2_sample_patterns.txt|^abc\\[0-9\\]\\+xyz\$|1"
