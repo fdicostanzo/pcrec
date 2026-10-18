@@ -83,13 +83,23 @@ for pop in ("bench", "corpus"):
         ok = [p for p in g if p.get("status") == "ok"]
         ref = [p for p in g if p.get("status", "").startswith("refused")]
         err = [p for p in g if p.get("status", "").startswith("error")]
-        lang = C(p.get("lang_src", "")[:4] for p in ok)
+        lang = C(p.get("lang_src", "").split(":")[0] for p in ok)
         rows.append((pop, cfg, len(g), len(ok), len(ref), len(err), lang.get("N", 0), lang.get("D", 0),
-                     sum(v for k, v in lang.items() if k.startswith("none")),
-                     sum(1 for p in ok if p.get("engine") == "vm"), sum(p.get("sites", 0) for p in ok)))
+                     lang.get("anchor-stripped", 0), lang.get("nullable", 0), lang.get("pcre2", 0),
+                     lang.get("none", 0), sum(1 for p in ok if p.get("engine") == "vm"),
+                     sum(p.get("sites", 0) for p in ok)))
         J["pop_%s_%s" % (pop, cfg)] = rows[-1][2:]
-tab(["pop", "cfg", "rows", "compiled", "refused", "error", "lang: own", "lang: --engine=dfa", "lang: none",
-     "VM artifacts", "search sites"], rows)
+tab(["pop", "cfg", "rows", "compiled", "refused", "error", "lang: own machine", "lang: --engine=dfa",
+     "lang: anchor-stripped body", "lang: nullable", "lang: PCRE2 only", "lang: none", "VM artifacts",
+     "search sites"], rows)
+xc = [p for p in P if p.get("xc")]
+print("Cross-check (sampled 15%% of byte rows read off their own machine, re-read by PCRE2 alone, uncapped): "
+      "%d rows; span agrees %d, exact agrees %d, whole-cover agrees %d.\n" % (
+      len(xc), sum(p["xc_span"] for p in xc), sum(p["xc_exact"] for p in xc), sum(p["xc_whole"] for p in xc)))
+J["xc"] = [len(xc), sum(p["xc_span"] for p in xc), sum(p["xc_exact"] for p in xc), sum(p["xc_whole"] for p in xc)]
+for p in [p for p in xc if not (p["xc_span"] and p["xc_exact"] and p["xc_whole"])][:12]:
+    print("- xc disagreement %s %s `%s`" % (p["id"], p["cfg"], bytes.fromhex(p["pat"])[:50].decode("utf8", "replace").replace("|", "\\|")))
+print()
 
 print("Refusal reasons (first words of pcrec's diagnostic):\n")
 rc = C()
@@ -116,7 +126,7 @@ tab(["site", "instances"], sorted(oc.items(), key=lambda x: -x[1]))
 
 # ---- §2 sites: origin, sent, need, proven today -----------------------------------
 print("### 2. The search sites: origin, what is sent, what the kit proves today\n")
-k = C((s["cfg"], s["site"], s["kind"], s["origin"]) for s in S)
+k = C((s["cfg"], s["site"], s["kind"], s["origin"] + ("/ctx" if s.get("restart_ctx") else "")) for s in S)
 tab(["cfg", "site", "consumer kind", "origin", "sites"], [(a, b, c, d, n) for (a, b, c, d), n in sorted(k.items())])
 print("Offsets sent (span 0 / `preds` of a presence site; `R`/`O` = REQUIRED/OPTIONAL, `+k` a run):\n")
 sh = C()

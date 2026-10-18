@@ -10,7 +10,7 @@ strings.
 
 Env PCRE2_LIB overrides the library path.
 """
-import ctypes, os
+import ctypes, os, time
 
 LIB = os.environ.get("PCRE2_LIB", "/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0")
 CASELESS, UTF = 0x00000008, 0x00080000
@@ -29,6 +29,22 @@ _l.pcre2_match_8.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t, 
                              ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p]
 _l.pcre2_get_ovector_pointer_8.restype = ctypes.POINTER(ctypes.c_size_t)
 _l.pcre2_get_ovector_pointer_8.argtypes = [ctypes.c_void_p]
+_l.pcre2_match_context_create_8.restype = ctypes.c_void_p
+_l.pcre2_match_context_create_8.argtypes = [ctypes.c_void_p]
+_l.pcre2_set_match_limit_8.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+_l.pcre2_set_depth_limit_8.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+# bounded matching: a backtracking blow-up on a hostile pattern is a LIMIT
+# error (counted by the caller), never a stall of the single-process census
+_MCTX = _l.pcre2_match_context_create_8(None)
+_l.pcre2_set_match_limit_8(_MCTX, 200000)
+_l.pcre2_set_depth_limit_8(_MCTX, 20000)
+ERROR_MATCHLIMIT, ERROR_DEPTHLIMIT = -47, -52
+
+
+class Limit(Exception):
+    pass
+
+
 _l.pcre2_code_free_8.argtypes = [ctypes.c_void_p]
 _l.pcre2_match_data_free_8.argtypes = [ctypes.c_void_p]
 
@@ -57,7 +73,9 @@ class Pat:
         return bool(self.code)
 
     def _m(self, subj, start, opts):
-        rc = _l.pcre2_match_8(self.code, subj, len(subj), start, opts, self.md, None)
+        rc = _l.pcre2_match_8(self.code, subj, len(subj), start, opts, self.md, _MCTX)
+        if rc in (ERROR_MATCHLIMIT, ERROR_DEPTHLIMIT):
+            raise Limit(rc)
         if rc >= 0 or rc == ERROR_PARTIAL:
             ov = _l.pcre2_get_ovector_pointer_8(self.md)
             return rc, ov[0], ov[1]
@@ -95,6 +113,14 @@ def lang(P, ctxs=(b"",), cap=32, maxprod=256, budget=300000):
     complete match. Enumeration stops at `maxprod` prefixes or `budget` match
     calls: the result is then a LOWER BOUND (`capped` names where).
     -> dict(S, span, exact, cex, capped, whole)"""
+    try:
+        return _lang(P, ctxs, cap, maxprod, budget)
+    except Limit as e:
+        return dict(S=[], span=0, exact=0, cex=None, capped="matchlimit", whole=0)
+
+
+def _lang(P, ctxs, cap, maxprod, budget):
+    t0 = time.time()
     calls = 0
     Pj = [b""]
     S, exact, cex, capped = [], None, None, ""
@@ -112,9 +138,9 @@ def lang(P, ctxs=(b"",), cap=32, maxprod=256, budget=300000):
                     bs.append(b)
             per[w] = frozenset(bs)
             nxt += [w + bytes([b]) for b in bs]
-            if calls > budget:
+            if calls > budget or time.time() - t0 > 5.0:
                 break
-        if calls > budget:
+        if calls > budget or time.time() - t0 > 5.0:
             capped = "budget@%d" % j
             span = j
             break
@@ -147,12 +173,17 @@ def lang(P, ctxs=(b"",), cap=32, maxprod=256, budget=300000):
 
 
 def contexts(P):
-    """the predecessor contexts the language reading ranges over: the absent
-    one, plus ONE representative byte per distinct first-byte signature among
-    the 256 single-byte predecessors that admit any start (a width-1 view of
-    context: lookbehinds wider than one byte are under-read, a lower bound)."""
-    sig = {}
+    try:
+        return _contexts(P)
+    except Limit:
+        return [b""]
+
+
+def _contexts(P):
+    t0, sig = time.time(), {}
     for c in range(256):
+        if time.time() - t0 > 2.0:   # a slow pattern: the contexts read so far
+            break
         s = frozenset(b for b in range(256) if P.is_prefix(bytes([b]), bytes([c])))
         if s:
             sig.setdefault(s, bytes([c]))

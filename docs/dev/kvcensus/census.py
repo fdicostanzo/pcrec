@@ -135,7 +135,15 @@ def sample(S, n, rnd):
 
 
 def controls(r, A, L, wk, rnd):
-    """PCRE2 re-asks of the machine's claims; returns dict of counts."""
+    """PCRE2 re-asks of the machine's claims; returns dict of counts (a PCRE2
+    match-limit hit is counted as `climit`, never a failure)."""
+    try:
+        return _controls(r, A, L, wk, rnd)
+    except kvpcre.Limit:
+        return dict(climit=1)
+
+
+def _controls(r, A, L, wk, rnd):
     res = dict(c1=0, c1f=0, c2=0, c2f=0, c3=0, c3f=0)
     P = kvpcre.Pat(r["pat"], r["icase"], r["enc"] == "utf8")
     if not P.ok():
@@ -174,7 +182,14 @@ def controls(r, A, L, wk, rnd):
     return res
 
 
-def ctx_check(r, item_far_word, absent_ok, lead_tok, body_S, rnd):
+def ctx_check(*a):
+    try:
+        return _ctx_check(*a)
+    except kvpcre.Limit:
+        return None
+
+
+def _ctx_check(r, item_far_word, absent_ok, lead_tok, body_S, rnd):
     """PCRE2: the leading \\b/\\B equals its positional rewrite on samples."""
     pat = r["pat"]
     i = pat.find(b"\\" + lead_tok.encode())
