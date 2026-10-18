@@ -2453,3 +2453,12 @@ pointer when a kit change merges to main.
   - a filtered `AXES=` run must be checked once before it is relied on;
   - I used `cd` twice in compound commands.
 - Frank: wtprune gained `--force` (friendly removal first, never rm -rf); memory saved.
+
+## 2026-10-18 (evening/close) — B3b ON MAIN (d18cee085); rowfix delivered; closing on Frank's /close
+
+- Main landed B3b with entry_use.diff (d18cee085 / b741f61ed), pushed, CI 39175266931 in progress.
+- rowfix (opus) restored S689 (re-aimed at fn_select's optional PREFIX walk; an equivalent mutant since 55d5ece2c) and S1085 (a candoracle witness under -fno-req-handoff; broken by lmfacts fe7ece905). It also FOUND that n2_census.sh misreads the floors summary since b3breach's ask_mismatch, so every N2 rc was 4 and S668/S689 were false DETECTED. My "rc 4 = placeholders" reading was wrong; the n2_report verdicts stand. Fix 725abc9e5. Posted done: + notices.
+- Frank: force-removed the two dirty scratch worktrees through `wtprune --apply --force` (their diff was saved under worktrees/.wtprune.force/).
+- **Lessons:**
+  - when a tool's summary line gains a field, grep for its readers. n2_census.sh's fixed-string match is the same class as the SECOND-READER lesson;
+  - do not explain an rc from memory: read the tool's rc table (the 10-17 lesson, repeated).
