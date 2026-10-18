@@ -84,3 +84,77 @@ class Pat:
     def free(self):
         if self.md: _l.pcre2_match_data_free_8(self.md)
         if self.code: _l.pcre2_code_free_8(self.code)
+
+
+def lang(P, ctxs=(b"",), cap=32, maxprod=256, budget=300000):
+    """The language reading of kvdfa.lang(), derived from PCRE2 ALONE, for a
+    pattern pcrec has no DFA for (backreferences, lookarounds, atomics): the
+    length-j prefixes P_j are ENUMERATED (a prefix under some context in
+    `ctxs`), S_j is their next-byte union, and position j is exact while
+    |P_j+1| = |P_j| x |S_j|. Position j exists while no w in P_j is itself a
+    complete match. Enumeration stops at `maxprod` prefixes or `budget` match
+    calls: the result is then a LOWER BOUND (`capped` names where).
+    -> dict(S, span, exact, cex, capped, whole)"""
+    calls = 0
+    Pj = [b""]
+    S, exact, cex, capped = [], None, None, ""
+    span = cap
+    for j in range(cap):
+        if any(P.match_len(w, c) is not None and P.match_len(w, c) <= len(w) for w in Pj for c in ctxs):
+            span = j
+            break
+        nxt, per = [], {}
+        for w in Pj:
+            bs = []
+            for b in range(256):
+                calls += len(ctxs)
+                if any(P.is_prefix(w + bytes([b]), c) for c in ctxs):
+                    bs.append(b)
+            per[w] = frozenset(bs)
+            nxt += [w + bytes([b]) for b in bs]
+            if calls > budget:
+                break
+        if calls > budget:
+            capped = "budget@%d" % j
+            span = j
+            break
+        u = frozenset().union(*per.values()) if per else frozenset()
+        if not u:
+            span = j
+            break
+        if exact is None and len(set(per.values())) > 1:
+            exact = j
+            ws = list(per)
+            for w1 in ws:
+                for w2 in ws:
+                    d = per[w1] - per[w2]
+                    if d and cex is None:
+                        cex = (w1 + bytes([min(d)]), w2 + bytes([min(d)]))
+        S.append(u)
+        if len(nxt) > maxprod:
+            capped = "maxprod@%d" % (j + 1)
+            span = j + 1
+            break
+        Pj = nxt
+    if exact is None:
+        exact = span
+    whole = 0
+    if not capped and exact == span and 0 < span < cap and Pj and len(Pj[0]) == span:
+        if all(P.match_len(w + b"\x00") == span for w in Pj) and \
+           not any(P.is_prefix(w + bytes([b])) for w in Pj[:8] for b in range(256)):
+            whole = span
+    return dict(S=S, span=span, exact=exact, cex=cex, capped=capped, whole=whole)
+
+
+def contexts(P):
+    """the predecessor contexts the language reading ranges over: the absent
+    one, plus ONE representative byte per distinct first-byte signature among
+    the 256 single-byte predecessors that admit any start (a width-1 view of
+    context: lookbehinds wider than one byte are under-read, a lower bound)."""
+    sig = {}
+    for c in range(256):
+        s = frozenset(b for b in range(256) if P.is_prefix(bytes([b]), bytes([c])))
+        if s:
+            sig.setdefault(s, bytes([c]))
+    out = [b""] + [v for k, v in sig.items()]
+    return out

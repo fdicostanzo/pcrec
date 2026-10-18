@@ -226,9 +226,30 @@ def analyse(r, cfg, rnd):
             A = kvdfa.Machine(c3, "anchored") if c3 else None
             if A and A.ok:
                 src, lpat = "anchor-stripped:" + an[0], body
-    rec["lang_src"] = src
     if A and A.ok:
         L = kvdfa.lang(A, A.starts())
+    PP = kvpcre.Pat(r["pat"], r["icase"], r["enc"] == "utf8")
+    if L is None and PP.ok() and r["enc"] == "byte":
+        # (byte only: under UTF a byte-level enumeration must complete every
+        # truncated character, up to 64^3 match calls per string -- measured
+        # too slow for the lane's window; utf8 rows without a machine stay
+        # counted as no-language)
+        # no machine at all (a VM-only construct): the language from PCRE2 alone
+        Lp = kvpcre.lang(PP, kvpcre.contexts(PP))
+        L = dict(S=Lp["S"], span=Lp["span"], exact=Lp["exact"], cex=Lp["cex"], Qk={})
+        src = "pcre2" + (":" + Lp["capped"] if Lp["capped"] else "")
+        rec["pcre_whole"] = Lp["whole"]
+    elif L is not None and A is not None and PP.ok() and rnd.random() < 0.15 and src == "N" \
+            and r["enc"] == "byte":
+        # CROSS-CHECK the machine reading against the PCRE2 reading (sampled)
+        Lp = kvpcre.lang(PP, kvpcre.contexts(PP))
+        if not Lp["capped"]:
+            rec["xc"] = 1
+            rec["xc_span"] = int(Lp["span"] == L["span"])
+            rec["xc_exact"] = int(Lp["exact"] == L["exact"])
+            rec["xc_whole"] = int(bool(Lp["whole"]) == bool(kvdfa.whole(A, L, A.starts())))
+    PP.free()
+    rec["lang_src"] = src
     if c1:
         st1 = stamps(c1)
         rec["nse_moved"] = int(st1.get("ENGINE") != st.get("ENGINE"))
@@ -236,7 +257,7 @@ def analyse(r, cfg, rnd):
     if st.get("ENGINE") == "vm":
         ir, e3 = G.run([PCREC, "--emit-ir"] + opts(r) + ["--pattern", r["pat"]])
         vm = kvvm.vm_prefix(ir) if ir else None
-    wk = kvdfa.whole(A, L, A.starts()) if L and A is not None else 0
+    wk = kvdfa.whole(A, L, A.starts()) if L and A is not None else rec.get("pcre_whole", 0)
     if L:
         rec.update(span=L["span"], exact=L["exact"], whole=wk, seeded=int(A.seeded) if A else 0,
                    views=int(A.has_views) if A else 0, S0=kvdfa.setstr(L["S"][0]) if L["S"] else "")
@@ -326,11 +347,16 @@ def analyse(r, cfg, rnd):
             # the forward scan's own escape set (bytes that move row 0): the
             # kit's proven0 must contain it, or the stream drops a restart
             esc = frozenset(b for b in range(256) if F.step(0, b) != 0)
-            row["esc_rel"] = ("eq" if P0 == esc else "wider" if esc < P0 else "UNDER-esc"
-                              if P0 < esc else "differ")
+            rel = ("eq" if P0 == esc else "wider" if esc < P0 else "UNDER-esc"
+                   if P0 < esc else "differ")
+            row["esc_rel"] = rel + ("-view" if rel != "eq" and F.has_views else "")
         if L and origin == "start" and L["S"] and sid in ("PF", "OFS") and len(P0) < 256 \
-                and P0 < L["S"][0]:
+                and not (L["S"][0] <= P0):
+            # span 0 is the forward scan's RESTART set, not the match's S_0: a
+            # context byte before the start, or a later byte the reverse pass
+            # walks back from
             origin = row["origin"] = "scan-restart"
+            row["restart_ctx"] = int(bool(cx and not cx.get("why") and cx.get("lead")))
         if L and origin in ("start", "after-nl") and L["S"]:
             S0 = L["S"][0]
             row["p0rel"] = ("none" if len(P0) == 256 else "exact" if P0 == S0 else

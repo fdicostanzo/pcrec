@@ -167,6 +167,18 @@ P, Q = kvpcre.Pat(b"\\b-x"), kvpcre.Pat(b"(?<!\\w)-x")
 ck("PLANT the wrong rewrite of \\b-x differs somewhere",
    any(P.match_len(b"-x", c) != Q.match_len(b"-x", c) for c in (b"", b"a", b" ")), True)
 
+# ---- 6b. the PCRE2-only language reading (VM-only patterns) -----------------
+Lp = kvpcre.lang(kvpcre.Pat(b"(a)bc\\1"))
+ck("pcre-lang (a)bc\\1: fixed width 4, whole-cover", (Lp["exact"], Lp["span"], Lp["whole"]), (4, 4, 4))
+Lp = kvpcre.lang(kvpcre.Pat(b"ab|cd"))
+ck("pcre-lang ab|cd: exact 1 (the product would admit ad)", Lp["exact"], 1)
+P = kvpcre.Pat(b"(?<=x)abc")
+ck("pcre-lang (?<=x)abc without contexts: empty (span 0)", kvpcre.lang(P)["span"], 0)
+Lp = kvpcre.lang(P, kvpcre.contexts(P))
+ck("pcre-lang (?<=x)abc over contexts: S_0 = {a}, span 3", (sorted(Lp["S"][0]), Lp["span"]), ([ord("a")], 3))
+Lp = kvpcre.lang(kvpcre.Pat(b"ab(?=c)"))
+ck("PLANT trailing lookahead ab(?=c): NOT whole-cover", Lp["whole"], 0)
+
 # ---- 7. the site probe ---------------------------------------------------------
 out = os.path.abspath("build/kv/selftest_sites.tsv")
 if os.path.exists(out):
