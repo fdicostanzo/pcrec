@@ -1849,7 +1849,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * reads one string. A string too long to carry the alias is refused,
      * never truncated. */
     char memfn_alias[1024];
-    if (defo.flags & PCREC_NO_REQ_SET_LEAD) {
+    if (pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)) {
         const char *u = defo.memfn && defo.memfn[0] ? defo.memfn : NULL;
         int w = snprintf(memfn_alias, sizeof memfn_alias, "%s%sno-pres-set-lead",
                          u ? u : "", u ? "," : "");
@@ -1860,7 +1860,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                          "PCREC_NO_REQ_SET_LEAD's alias (no-pres-set-lead)");
             return -1;
         }
-        defo.flags &= ~(uint64_t)PCREC_NO_REQ_SET_LEAD;
+        defo.flags = pcrec_flags_without(defo.flags, PCREC_NO_REQ_SET_LEAD);
         defo.memfn = memfn_alias;
     }
 
