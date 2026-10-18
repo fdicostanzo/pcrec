@@ -200,14 +200,32 @@ on the 46-check suite (S1113's anchor moved with the `noipa` text) is owed
 
 ## 7. Open questions, each with a recommendation
 
-1. **Ratify `shared` = `noipa`.** Built that way because `noinline` broke
-   `-Werror` at -O1 (§5). `noipa` also blocks pure/const inference and
-   return-value propagation on a shared part; nothing measures that cost
-   yet (no timing in E1). **Recommend ratifying `noipa`**, with E1′'s
-   timing of the `+1` residual cell as the measurement that would show a
-   cost; the alternative (keep `noinline`, initialize `window` under T3
-   only) needs a second render mark in the VM emitter's three `window`
-   declarations.
+1. **`shared` = `noipa`: CONDITIONALLY RATIFIED by main (06:40), the
+   condition DISCHARGED — the warning is a FALSE positive.** Main's
+   condition: show `window` is written before every read, else the fix is
+   the initialization. The path: the VM's call site reads `window[0][0]`
+   only after `if (rx_prefilter(...) != 1) return 0;`. (a) Every
+   `return 1;` in every prefilter of the population, the near-cap list and
+   `werror.txt` (342 sites) is immediately preceded by
+   `if (capture_spans) { capture_spans[0][0] = ...; capture_spans[0][1] =
+   ...; }`, and the caller passes its non-NULL `window`. (b) All eight
+   warning patterns are EMPTY-LANGUAGE (`(a)\b(b)`: `a`, `b` are both word
+   bytes, so `\b` between them never holds); their prefilter is
+   `return 0;` alone, so the read is unreachable. At -O1 gcc's IPA
+   mod/ref learns that the `noinline` body writes nothing through
+   `capture_spans` while the constant return is not propagated (ipa-cp is
+   -O2), hence "maybe used uninitialized" on a dead read; -O2/-O3/-Os do
+   not warn. (c) Run, both the `noinline` (commit A) and the `noipa`
+   artifacts and the default, for four witnesses plus `(a+)bcd`/`(a)b`,
+   every subject over `abcdz _` to length 5 at every start (114,381 calls):
+   ASan+UBSan with `-ftrivial-auto-var-init=pattern` and valgrind memcheck
+   report nothing and every answer hash equals the default's
+   (`e1_evidence/fp_runs.txt`, driver `fp_driver.c`). So `noipa` stays:
+   it removes the false positive without an emitted initialization, keeps
+   the default artifact untouched, and also keeps an empty-language part's
+   body. Its cost (no pure/const inference or return propagation on a
+   shared part) is unmeasured; E1′'s timing of the `+1` residual cell is
+   the measurement that would show it.
 2. **D163 addendum 10 vs `auto`/unset under an explicit control.** Add. 10
    says that under any explicit control every part is pinned with explicit
    attributes; the design's P3/P6/P10 leave a part at its default layout
