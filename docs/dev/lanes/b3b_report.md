@@ -455,3 +455,59 @@ Behaviour is not at issue: the alias works (rewrites the bit into `--memfn=no-pr
 Suggested fix (for whoever owns src/, NOT applied here): at `src/core/compile.c:1852` use `pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)`; at `:1863` (`defo.flags &= ~(uint64_t)PCREC_NO_REQ_SET_LEAD;`, a raw write the detector does not flag today) use `defo.flags = pcrec_flags_without(defo.flags, PCREC_NO_REQ_SET_LEAD);`. Then run `python3 -I tests/core/flag_access_check.py .` and `bash tests/core/run_core_tests.sh`. Both accessors are in `src/core/internal.h` (FLAG-ACCESS block, ~:399-411). This changes bytes in src/ only as a no-op refactor; a zero-mover sweep is not needed but a `make test-core` re-run is.
 
 Final tip: unchanged by this triage except this report section (commit follows 337986317). No fix touched `src/` or `memfn/src`. The chain.sh PIN (034f694cf) is now stale relative to any tip carrying the fix; re-pin when the fix lands.
+
+## 10. Heavy-chain mech triage (b3bmtri)
+
+Lane b3bmtri, 2026-10-18. The heavy chain at pin 034f694cf
+(`worktrees/memfn-slot/b3bheavy/mech/`) read five rows UNDETECTED, each
+declared DETECTED. Every row was re-run SOLO (`taskset -c 12-15`, PROCS=4,
+`gnutimeout 1800 bash tests/mech/run_sabotage_matrix.sh SNNN`) on main
+65dd423ee (a `git worktree add --detach` scratch, since removed) and on this
+branch. Logs: `worktrees/memfn-slot/b3b/mtri/logs/{main,b3b}_SNNN.log`.
+
+| row | cause | main 65dd423ee | B3b 034f694cf (chain) | class | fix | solo after |
+|---|---|---|---|---|---|---|
+| S270 (G1 dominance removed) | B3b: G1 is the kit's PRES row P2 (`kit_pres_picks`' P2 block, read by `fd_pres` as SF_PROVEN). pcrec's `req_byte_dominated_by` now exists only under `PCREC_CAND_TRACE`, as the five-pick shadow's expectation, so the plant landed on code no default build compiles | DETECTED, prechecks 8/392 | UNDETECTED, prechecks 0/395 | (i) | 7f7fef935: the plant moves to `out->dominated = (int8_t)dom;` in memfn/src/presence.c (the rule always says no) | DETECTED at 5504cd722: prechecks 8 fail / 392 pass, corpus 0/71070 (harness stays green, as declared) |
+| S286 (`run_verified` conjunct dropped) | the same move | DETECTED, prechecks 21/374 | UNDETECTED | (i) | a3336ce76: the plant drops the port's `else if (run && !proof->run) dom = 0;` | DETECTED: prechecks 21 / 374 |
+| S288 (density's one-byte guard dropped) | the same move | DETECTED, prechecks 1/394 | UNDETECTED | (i) | 786155180: the plant drops the port's `else if (!proof->stop) dom = 0;` (`stop` is `cs->one_byte`, `req_pres_proof_of`) | DETECTED: prechecks 1 / 394 |
+| S317 (no-scan guard replaced by a rate) | the same move, PLUS the detector stopped reaching it (see below) | DETECTED, findings 29/102 | UNDETECTED, findings 0/104 | (i) + (ii) | 5504cd722: the plant moves to the port's `if (!proof \|\| proof->byte < 0)` clause. d1f2b9621: `prechecks` joins `findings` in SAB_SUITES | DETECTED at d1f2b9621: findings 0/104, prechecks 25 fail / 369 pass |
+| S689 (empty kit_walk slot walked) | NOT B3b: main is also UNDETECTED | UNDETECTED, n2sample 0/1 | UNDETECTED, n2sample 0/1 | pre-existing | none (reported, not fixed, per the brief) | n/a |
+
+The re-aimed S270/S286/S288 figures equal main's exactly (8, 21, 1), so the
+port reproduces the old site conjunct by conjunct.
+
+**S317, the detector move (class ii, measured).** On the VM route with no
+DFA in front, pcrec states every presence span REQUIRED (`req_pres_spans`:
+`MF_SK_VM_ATTEMPT` → `MF_REQUIRED`). The kit's row P0 decides a REQUIRED span
+before P2 is asked, so the K65 give-up that findings §9 holds now needs P0 to
+fail as well. P0 has its own plants (S1105, S1122). Measured on the planted
+tree against the clean tip:
+
+- the K65 witness `(x?)([a-z]+)+Z.@\1` is byte-identical, byte and utf8;
+- `scripts/emit_sweep.py --streams c-default,c-vm,composition,facts` reads
+  c-vm 0 movers, composition 0, and c-default 238 (facts 238). An example is
+  `\Zx`, whose `RX_REQ_WHY` goes from "emitted" to "dominated";
+- `tests/codegen/run_prechecks.sh` reads 25 failed / 369 passed (§3.4, §5.1,
+  §5.1c, §5.6, §5.11, §5.12a).
+
+So the plant is not an equivalent mutant. It still drops every DFA-route
+pre-check whose start search proves no byte, and prechecks sees that.
+`findings` stays in the row as the answer-level arm, in case P0 ever stops
+shadowing P2 on that route. This is not a lost check: findings §9 is unchanged
+and green, and B3b added P0 as a second guard in front of the one the row
+plants.
+
+**S689 (pre-existing, for main / the kit).** Main 65dd423ee reads the same
+UNDETECTED. A likely cause, not verified: since R4e' batch 1 `fn_rows[]`'s
+PREFIX slot holds the SIMD rows (`vrun_w32`, `vrun_w16`, memfn/src/ofsskip.c
+~:353). The slot the row calls "born empty" is no longer empty, so
+`if (!any) return t->n;` never fires on that walk. The row needs a re-aim at a
+table/slot that is still empty, or a declared re-measure. That is outside B3b.
+
+**New BAD rows.** `b3bheavy/mech/summary.txt` was re-read at the end: still
+these five, 87 rows scored, and the chain is still running.
+
+**Tip and scope.** The final tip is the commit that adds this section (the
+parent is d1f2b9621). Every fix is under `tests/mech/sabotages/`. No fix
+touched `src/` or `memfn/src`; the plants only NAME memfn/src/presence.c as
+their target.
