@@ -593,6 +593,26 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   a line past CANDIDATE to a bench tier and an existing transcript; C19's
   digest half is UNREACHED (printed) until a timing run writes the first
   transcript.
+- **run_pres_picks.sh**, **pres_pick_witnesses.tsv** — KW-8's named
+  witnesses (R17-b′ B3a, lane b3a): a `-DPCREC_CAND_TRACE` pcrec compiles
+  each line (pick, nontrivial, pcrec's value, flags, pattern); its MFPICK
+  record must agree with the kit's port, carry the stated nontrivial bit
+  and pcrec value, and a `PCREC_PICK_PLANT` run per nontrivial line must
+  report a disagreement (SN-6). Since lane b3afix it also holds the trace
+  build's `--emit-facts` `used` column to the default build's (the shadow is
+  not a pass; floored on the witnesses whose default build never asks
+  `req_set`), and `PRES_PICKS_EXTRA=FLAGS` runs the witnesses under FLAGS,
+  agreement only, for the census's extra arms. Run by
+  `tests/codegen/run_cand_oracle.sh`. The full census is
+  `docs/design/memfn/r17b_prime/b3a/pick_census.py`.
+- **run_pr11.sh**, **pr11_front.py**, **pr11_witnesses.tsv** — the PR-11
+  control (R17-b′ B3a): over count-collapsed VM hybrids
+  (`RX_VM_PREFILTER_LANG "count-collapsed"`), every subject derived from a
+  matching one by deleting a stated necessary byte or breaking the stated
+  run must be refused by the static prefilter, and a control witness's
+  subject must pass it. Hooked into `run_finder.sh` (`part pr11`); planted
+  collapse dropping rmin is S1100. The corpus/bench/rwquest census is
+  `docs/design/memfn/r17b_prime/b3a/pr11_census.py`.
 - **rows.tsv**/**row_floors.tsv**: the `fn` rows `vrun-w16`/`vrun-w32`
   (witness `(?i)cat` under `-fmemfn-simd`, control the row's own deny);
   their floors PLACEHOLDER until the slot census and a G2 count pin them.

@@ -45,3 +45,15 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
   routed-record census, the REGENERATED predicted-mover manifest B4 is held
   to (superseding fdb1's, which stays unedited), and `proposed/`, the diffs
   drafted for main. Own CLAUDE.md.
+- `b3a/` — lane b3a's instruments (R17-b′ B3a, 2026-10-17): `pick_census.py`
+  (KW-8 over corpus, bench and rwquest, three arms, `--floors
+  pick_floors.tsv`, whose boolean picks are floored on both values of
+  `differs` since lane b3afix; `--nonascii` for the caseless UTF-8 arm),
+  `pr11_census.py` (the PR-11 control over every count-collapsed hybrid,
+  `ok` floored per population by `pr11_floors.tsv`, hand subjects for the
+  artifacts no corpus text reaches), `sabotage/` (S1093..S1102 +
+  `run_skb3a.sh`, each
+  plant solo in a `git archive` copy), `proposed/` (main-side diffs, never
+  applied in place: `deleg_entry.diff`, `c17_use_points.diff`,
+  `c10_presence.diff`, applied in that order) and `out/` (the census
+  transcripts). Report: `docs/dev/lanes/b3a_report.md`.

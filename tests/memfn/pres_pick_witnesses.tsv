@@ -1,0 +1,36 @@
+# tests/memfn/pres_pick_witnesses.tsv -- the FIVE-PICK SHADOW's witnesses
+# (R17-b' B3a, lane b3a; r17b_prime.md rev 3 §3.1 row B3a, §8.3 SN-6/S980).
+# Read by tests/memfn/run_pres_picks.sh over a -DPCREC_CAND_TRACE pcrec. Each
+# line compiles one pattern and names one pick whose `MFPICK` record must be
+# PRESENT, AGREE (the kit's port answers pcrec's own pick), and carry the
+# stated non-trivial bit; with `pcrec` not `-`, pcrec's own answer must be
+# that value, which is written HERE from the pick's documented rule (a tie
+# under the uniform NONE rate goes to the rightmost member / position, the
+# leftmost window), never read from a record. Every pick of the shadow has a
+# non-trivial witness (K35), and each non-trivial witness is also run under
+# PCREC_PICK_PLANT=<pick>, where the comparator must report the planted
+# disagreement (SN-6).
+#
+# A TIE witness is how a port that dropped its tie rule is caught: `-e utf8`
+# compiles under the frequency kind's NONE answer, where every candidate
+# ties. `ba`'s set {a, b} ties and goes to `a`, the member LAST in pattern
+# order, not to the larger byte (PR-7, S980).
+#
+# pick	nontrivial	pcrec	flags	pattern
+set	1	97	-e utf8	ba
+set	1	-	-	zq.*the
+scan	1	3	-e utf8	abcd
+scan	1	-	-	(?i)hello world
+window	1	2	-e utf8	abcdefghij(?i:mnopqr)
+window	1	-	-	abcdefghijklmnop
+window	1	0	-e utf8	(?i:x)abcdefg(?i:y)
+leads	1	1	-	zq.*the
+leads	1	0	-e utf8	x.*abc
+dominated	1	1	-	x+y
+dominated	1	1	-	abc
+dominated	1	0	-	foo.*bar
+set	1	-	--engine=vm	(a+)+zq
+dominated	0	0	--engine=vm	(a+)+zq
+landmark	1	1	-	(?i)hello world
+landmark	1	0	-	.{0,100}e
+set	1	-	-	a.{0,300}eeee

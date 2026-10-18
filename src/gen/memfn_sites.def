@@ -5,7 +5,7 @@
  * then rendered by the kit; tests/memfn/site_manifest.tsv carries the same
  * site as `delegated` (C17).
  *
- *   DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)
+ *   DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry)
  *
  *   id           the site's name, the manifest's (PRE carries the manifest's
  *                SETREST row too: the set rest is one more predicate of the
@@ -33,26 +33,41 @@
  *                MF_USE_POSITION where every instance reads it as a position.
  *                A CEILING, never the value: an instance's `use` is its own
  *                (req_use(cx) for PRE), checked per instance (§14.5 [rev4.6])
+ *   entry        [MEMFN] R17-b' B3a (r17b_prime.md rev 3 §3.4's merge,
+ *                Q-R17P-18): the presence verdict each instance takes as
+ *                its ENTRY use, a closed DelegEntry. DELEG_ENTRY_PRE on the
+ *                FIND rows a pre-check fronts (PF: the DFA body's forward
+ *                scan, the DFA hat, the hybrid's inner prefilter and the VM
+ *                hat; MLINE: ENG_ATTEMPT's seek), whose sites the PRE
+ *                composite's verdict is merged into; DELEG_ENTRY_SELF on PRE
+ *                itself, which stays the row of a PRESENCE-ONLY site (the
+ *                no-DFA VM entry, the hybrid's `_search_run`, `attempt_entry`
+ *                without MLINE), a FIND with no span 0; DELEG_ENTRY_NONE on
+ *                every other row. DELEG_ENTRY_UNSTATED (0) is no statement
+ *                and C10 refuses it. The ENTRY use's own vocabulary (the
+ *                proposed MF_USE_ENTRY) is an MF_VOCAB event left to B3b
+ *                (Q-R17P-18); until then the column is a table fact read by
+ *                C10 only, and every instance renders as today
  *
  * Checked by C10 (tests/memfn/run_deleg_sites.sh): the budget column against
  * D91's classification, every (op, handoff, kinds) against mf_vocab_has. */
 DELEG_SITE(PRE, MF_OP_ALL_PRESENT, DELEG_H(MF_H_ON_MISS) | DELEG_H(MF_H_ASSIGN),
-           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)
+           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)
 DELEG_SITE(OFS, MF_OP_FIND, DELEG_H(MF_H_RETURN),
-           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION)
+           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)
 DELEG_SITE(VMRUN, MF_OP_VERIFY, DELEG_H(MF_H_BOOL),
-           MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)
+           MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_NONE)
 DELEG_SITE(PF, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
-           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
+           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_PRE)
 DELEG_SITE(STAY, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
 DELEG_SITE(EDGE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
 DELEG_SITE(VMSPAN, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
 DELEG_SITE(VMSTRIDE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
 DELEG_SITE(MLINE, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
-           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
+           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_PRE)
 DELEG_SITE(N7, MF_OP_MISMATCH, DELEG_H(MF_H_ON_DIFF),
-           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION)
+           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)

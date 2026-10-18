@@ -1,0 +1,216 @@
+diff --git a/src/gen/memfn_sites.c b/src/gen/memfn_sites.c
+index 842781f..927861e 100644
+--- a/src/gen/memfn_sites.c
++++ b/src/gen/memfn_sites.c
+@@ -18,8 +18,8 @@
+ /* ---- DELEG_SITES (gen/memfn_sites.def) ------------------------------------ */
+ 
+ const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {
+-#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) \
+-    { #id, op, handoffs, kinds, budget, use_ceiling },
++#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) \
++    { #id, op, handoffs, kinds, budget, use_ceiling, entry },
+ #include "gen/memfn_sites.def"
+ #undef DELEG_SITE
+ };
+diff --git a/src/gen/memfn_sites.def b/src/gen/memfn_sites.def
+index 92a3647..eb06442 100644
+--- a/src/gen/memfn_sites.def
++++ b/src/gen/memfn_sites.def
+@@ -5,7 +5,7 @@
+  * then rendered by the kit; tests/memfn/site_manifest.tsv carries the same
+  * site as `delegated` (C17).
+  *
+- *   DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)
++ *   DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry)
+  *
+  *   id           the site's name, the manifest's (PRE carries the manifest's
+  *                SETREST row too: the set rest is one more predicate of the
+@@ -33,26 +33,41 @@
+  *                MF_USE_POSITION where every instance reads it as a position.
+  *                A CEILING, never the value: an instance's `use` is its own
+  *                (req_use(cx) for PRE), checked per instance (§14.5 [rev4.6])
++ *   entry        [MEMFN] R17-b' B3a (r17b_prime.md rev 3 §3.4's merge,
++ *                Q-R17P-18): the presence verdict each instance takes as
++ *                its ENTRY use, a closed DelegEntry. DELEG_ENTRY_PRE on the
++ *                FIND rows a pre-check fronts (PF: the DFA body's forward
++ *                scan, the DFA hat, the hybrid's inner prefilter and the VM
++ *                hat; MLINE: ENG_ATTEMPT's seek), whose sites the PRE
++ *                composite's verdict is merged into; DELEG_ENTRY_SELF on PRE
++ *                itself, which stays the row of a PRESENCE-ONLY site (the
++ *                no-DFA VM entry, the hybrid's `_search_run`, `attempt_entry`
++ *                without MLINE), a FIND with no span 0; DELEG_ENTRY_NONE on
++ *                every other row. DELEG_ENTRY_UNSTATED (0) is no statement
++ *                and C10 refuses it. The ENTRY use's own vocabulary (the
++ *                proposed MF_USE_ENTRY) is an MF_VOCAB event left to B3b
++ *                (Q-R17P-18); until then the column is a table fact read by
++ *                C10 only, and every instance renders as today
+  *
+  * Checked by C10 (tests/memfn/run_deleg_sites.sh): the budget column against
+  * D91's classification, every (op, handoff, kinds) against mf_vocab_has. */
+ DELEG_SITE(PRE, MF_OP_ALL_PRESENT, DELEG_H(MF_H_ON_MISS) | DELEG_H(MF_H_ASSIGN),
+-           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)
++           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)
+ DELEG_SITE(OFS, MF_OP_FIND, DELEG_H(MF_H_RETURN),
+-           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION)
++           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(VMRUN, MF_OP_VERIFY, DELEG_H(MF_H_BOOL),
+-           MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)
++           MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_NONE)
+ DELEG_SITE(PF, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
+-           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
++           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_PRE)
+ DELEG_SITE(STAY, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
++           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(EDGE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
++           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(VMSPAN, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
++           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(VMSTRIDE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
++           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(MLINE, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
+-           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
++           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_PRE)
+ DELEG_SITE(N7, MF_OP_MISMATCH, DELEG_H(MF_H_ON_DIFF),
+-           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION)
++           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+diff --git a/src/gen/memfn_sites.h b/src/gen/memfn_sites.h
+index de589f8..a0ae407 100644
+--- a/src/gen/memfn_sites.h
++++ b/src/gen/memfn_sites.h
+@@ -22,12 +22,17 @@ typedef enum { DELEG_SCAN, DELEG_LOOP } DelegBudget;    /* D91 budgets 1 and 2 *
+ #define DELEG_H(h) (1u << (h))
+ 
+ typedef enum {
+-#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) DELEG_##id,
++#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) DELEG_##id,
+ #include "gen/memfn_sites.def"
+ #undef DELEG_SITE
+     DELEG_NSITES
+ } DelegSite;
+ 
++/* [MEMFN] R17-b' B3a the presence verdict a row's instances take as their
++ * ENTRY use (memfn_sites.def's `entry` column); 0 is no statement. */
++typedef enum { DELEG_ENTRY_UNSTATED = 0, DELEG_ENTRY_NONE, DELEG_ENTRY_SELF,
++               DELEG_ENTRY_PRE } DelegEntry;
++
+ typedef struct {
+     const char *id;
+     mf_op       op;
+@@ -35,6 +40,7 @@ typedef struct {
+     uint32_t    kinds;      /* MF_TK_* */
+     DelegBudget budget;
+     uint8_t     use_ceiling;
++    DelegEntry  entry;
+ } DelegRow;
+ 
+ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
+diff --git a/tests/memfn/run_deleg_sites.sh b/tests/memfn/run_deleg_sites.sh
+index 45b9afb..cee02b9 100755
+--- a/tests/memfn/run_deleg_sites.sh
++++ b/tests/memfn/run_deleg_sites.sh
+@@ -26,9 +26,15 @@
+ #      witness the same kind values at the FIND sites. The expectations are
+ #      the fixture file, written from the design (r17b_prime.md §1.6/§4.3),
+ #      not from a recorded run.
++#   6. [MEMFN] R17-b' B3a the `entry` column (r17b_prime.md rev 3 §3.4's
++#      merge, Q-R17P-18), from a probe over the table: every row STATES its
++#      DelegEntry (UNSTATED refused), DELEG_ENTRY_PRE only on a FIND row and
++#      on at least one (K35), DELEG_ENTRY_SELF exactly on the ALL_PRESENT
++#      row.
+ # CONTROLS: checks 1 and 4 run again over a planted copy (a row moved to the
+ # other budget; one by-value `mf_pred`) and must flag exactly those; check 5
+-# runs over two planted fixture files (a kind swapped; a kind dropped).
++# runs over two planted fixture files (a kind swapped; a kind dropped);
++# check 6 over a planted table (a FIND row's entry SELF).
+ # WHAT IT DOES NOT SEE: a by-value declaration through a typedef of its own
+ # or a macro, and a row whose op is right but whose site emits through a
+ # different op (pcrec's `deleg_check` refuses that at compile time).
+@@ -97,7 +103,7 @@ cat > "$T/probe.c" <<EOF
+ #define DELEG_LOOP 1
+ int main(void) {
+     int bad = 0;
+-#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil) \\
++#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \\
+     for (unsigned h = 0; h < 32; h++) \\
+         if (((handoffs) >> h) & 1u) { \\
+             int has = mf_vocab_has(op, (mf_handoff)h, kinds); \\
+@@ -171,13 +177,47 @@ fi
+ 
+ # controls: one planted defect each, flagged exactly
+ mkdir -p "$T/src/gen"
+-sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)/' "$DEF" > "$T/plant.def"
++sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
+ printf 'static void f(void)\n{\n    mf_pred p;\n    (void)p;\n}\n' > "$T/src/gen/plant.c"
+ static_checks "$T/plant.def" "$T/src" > "$T/plant" 2>/dev/null
+ if grep -q '^row PRE has budget DELEG_LOOP' "$T/plant" && grep -q '^gen/plant.c:3 declares mf_pred by value' "$T/plant" \
+    && [ "$(wc -l < "$T/plant" | tr -d ' ')" -eq 2 ]; then ok
+ else bad "the planted controls were not flagged exactly: $(tr '\n' ';' < "$T/plant")"; fi
+ 
++# 6: the entry column (R17-b' B3a), over the table and a planted copy
++cat > "$T/entry.c" <<'EOF'
++#include <stdio.h>
++#include "memfn.h"
++#define DELEG_H(h) (1u << (h))
++#define DELEG_SCAN 0
++#define DELEG_LOOP 1
++enum { DELEG_ENTRY_UNSTATED = 0, DELEG_ENTRY_NONE, DELEG_ENTRY_SELF, DELEG_ENTRY_PRE };
++int main(void) {
++    int npre = 0;
++#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \
++    { int e = (entry); \
++      if (e == DELEG_ENTRY_UNSTATED) printf("row %s states no entry\n", #id); \
++      if (e == DELEG_ENTRY_PRE && (op) != MF_OP_FIND) printf("row %s: entry PRE on a non-FIND row\n", #id); \
++      if (e == DELEG_ENTRY_PRE) npre++; \
++      if ((e == DELEG_ENTRY_SELF) != ((op) == MF_OP_ALL_PRESENT)) \
++          printf("row %s: entry SELF iff the ALL_PRESENT row\n", #id); }
++#include DEFFILE
++    if (!npre) printf("no FIND row takes the PRE verdict as its entry (K35)\n");
++    return 0;
++}
++EOF
++entry_check() {   # $1 = def file
++    "$CC" -std=gnu11 -I"$ROOT_DIR/memfn/include" -DDEFFILE="\"$1\"" "$T/entry.c" -o "$T/entry" 2>"$T/entry.err" \
++        || { echo "the entry probe does not build: $(head -2 "$T/entry.err" | tr '\n' ' ')"; return; }
++    "$T/entry"
++}
++entry_check "$DEF" > "$T/e"
++if [ -s "$T/e" ]; then while read -r l; do bad "C10 entry: $l"; done < "$T/e"; else ok; fi
++sed '/^DELEG_SITE(PF,/,/)$/s/DELEG_ENTRY_PRE)/DELEG_ENTRY_SELF)/' "$DEF" > "$T/eplant.def"
++entry_check "$T/eplant.def" > "$T/ep"
++if grep -q '^row PF: entry SELF iff the ALL_PRESENT row' "$T/ep"; then ok
++else bad "C10 entry: the planted entry was not flagged: $(tr '\n' ';' < "$T/ep")"; fi
++
+ echo "DELEG_SITES: ${nrows:-0} rows; vocabulary pairs probed: $(wc -l < "$T/vocab" 2>/dev/null | tr -d ' ')"
+ echo "checks passed: $pass"
+ echo "checks failed: $fail"
+diff --git a/tests/memfn/site_census.py b/tests/memfn/site_census.py
+index 978029e..8515ffe 100644
+--- a/tests/memfn/site_census.py
++++ b/tests/memfn/site_census.py
+@@ -413,7 +413,7 @@ def selftest(cc):
+         with open(os.path.join(tmp, 'door_stub.c'), 'w') as fh:
+             fh.write('#include "gen/memfn_sites.h"\n'
+                      'const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {\n'
+-                     '#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) '
++                     '#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) '
+                      '[DELEG_##id] = { #id },\n'
+                      '#include "gen/memfn_sites.def"\n'
+                      '#undef DELEG_SITE\n};\n'
+diff --git a/tests/mech/sabotages/S683_m6_vmstride_budget_scan.sh b/tests/mech/sabotages/S683_m6_vmstride_budget_scan.sh
+index 9f4c19ff3..834ebab35 100644
+--- a/tests/mech/sabotages/S683_m6_vmstride_budget_scan.sh
++++ b/tests/mech/sabotages/S683_m6_vmstride_budget_scan.sh
+@@ -13,6 +13,6 @@ SAB_REACH_POP='src/gen/memfn_sites.def|^DELEG_SITE\(VMSTRIDE, MF_OP_SKIP|1'
+ SAB_EXPECT=DETECTED
+ SAB_COUNT=1
+ SAB_BEFORE='DELEG_SITE(VMSTRIDE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)'
++           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)'
+ SAB_AFTER='DELEG_SITE(VMSTRIDE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+-           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)  /* SABOTAGE S683 */'
++           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)  /* SABOTAGE S683 */'

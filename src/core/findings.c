@@ -688,6 +688,19 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
 {
     unsigned char cand[256];
     int n = 0;
+#ifdef PCREC_CAND_TRACE
+    /* the trace build holds the tie rule's premise: `rightmost` is a member
+     * of the set, and -1 only for an empty set */
+    bool empty = true;
+    for (int b = 0; b < 256; b++)
+        if (bits[b >> 3] & (unsigned char)(1u << (b & 7))) empty = false;
+    if (rightmost < 0 ? !empty
+                      : rightmost > 255 ||
+                        !(bits[rightmost >> 3] & (unsigned char)(1u << (rightmost & 7))))
+        pcrec_fit_invariant_fail("set-pick-rightmost", rightmost < 0 ? "-1" : "a non-member",
+                                 "a member of the set (-1 only when it is empty)",
+                                 "pcrec_find_set_pick");
+#endif
     if (rightmost < 0) return -1;
     cand[n++] = (unsigned char)rightmost;
     for (int b = 255; b >= 0; b--)

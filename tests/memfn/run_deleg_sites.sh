@@ -26,9 +26,21 @@
 #      witness the same kind values at the FIND sites. The expectations are
 #      the fixture file, written from the design (r17b_prime.md §1.6/§4.3),
 #      not from a recorded run.
+#   6. [MEMFN] R17-b' B3a the `entry` column (r17b_prime.md rev 3 §3.4's
+#      merge, Q-R17P-18), from a probe over the table: every row STATES its
+#      DelegEntry (UNSTATED refused), DELEG_ENTRY_PRE only on a FIND row and
+#      on at least one (K35), DELEG_ENTRY_SELF exactly on the ALL_PRESENT
+#      row;
+#   7. the PRESENCE fixtures (tests/memfn/c10_presence.tsv, Q-R17P-18):
+#      through check 5's trace build, each fixture's MFPRES record holds
+#      exactly the presence spans the file states (members, run length,
+#      need, head_max) for its kind, and the file covers the four PRE kinds
+#      (C10_PRES_KINDS below).
 # CONTROLS: checks 1 and 4 run again over a planted copy (a row moved to the
 # other budget; one by-value `mf_pred`) and must flag exactly those; check 5
-# runs over two planted fixture files (a kind swapped; a kind dropped).
+# runs over two planted fixture files (a kind swapped; a kind dropped);
+# check 6 over a planted table (a FIND row's entry SELF) and check 7 over a
+# planted fixture file (a need swapped).
 # WHAT IT DOES NOT SEE: a by-value declaration through a typedef of its own
 # or a macro, and a row whose op is right but whose site emits through a
 # different op (pcrec's `deleg_check` refuses that at compile time).
@@ -47,6 +59,8 @@ D91_LOOP="STAY EDGE VMSPAN VMSTRIDE VMRUN N7"
 # C10's floor: the one-byte consumer kinds (R17-b' B2 [rev3 A8]) the fixture
 # file must name, as distinct values. This file's literal, not a count of it.
 C10_KINDS="DFA_SCAN DFA_HAT HYB_PF VM_ATTEMPT DFA_ATTEMPT"
+# Check 7's floor: the PRE composite's four kinds (R17-b' B3a), a literal.
+C10_PRES_KINDS="DFA_SCAN HYB_PF VM_ATTEMPT DFA_ATTEMPT"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }
@@ -98,7 +112,7 @@ cat > "$T/probe.c" <<EOF
 #define DELEG_LOOP 1
 int main(void) {
     int bad = 0;
-#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil) \\
+#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \\
     for (unsigned h = 0; h < 32; h++) \\
         if (((handoffs) >> h) & 1u) { \\
             int has = mf_vocab_has(op, (mf_handoff)h, kinds); \\
@@ -166,18 +180,77 @@ if "$TIMEOUT_BIN" 900 make -s -C "$ROOT_DIR" -j4 BUILD_DIR="$TRB" \
     else bad "C10 one-byte: the planted kind swap was not flagged"; fi
     if [ "$(c10_floor "$T/drop.tsv" | tr -d ' \n')" = VM_ATTEMPT ]; then ok
     else bad "C10 one-byte: the planted dropped kind was not flagged by the floor"; fi
+    # 7: the presence fixtures (R17-b' B3a, Q-R17P-18)
+    PFIX="$ROOT_DIR/tests/memfn/c10_presence.tsv"
+    c10_pres() {   # $1 = fixture file; prints one problem per line
+        while IFS=$'\t' read -r fl pat kind mem run need hm; do
+            case "$fl" in '#'*|'') continue ;; esac
+            set --
+            [ "$fl" = - ] || set -- $fl
+            PCREC_MF_ROUTE_TRACE=1 "$TRB/pcrec" --features all "$@" -p rx -o "$T/p.c" \
+                --pattern "$pat" > /dev/null 2> "$T/p.err" || { echo "$pat: does not compile"; continue; }
+            got="$(awk -F'\t' '$1 == "MFPRES" && $2 == "PRE" { print $3, $4, $5, $6, $7 }' "$T/p.err")"
+            [ "$got" = "$kind $mem $run $need $hm" ] ||
+                echo "$pat: stated presence [${got:-none}], the fixture states [$kind $mem $run $need $hm]"
+        done < "$1"
+    }
+    c10_pres "$PFIX" > "$T/c10p"
+    if [ -s "$T/c10p" ]; then while read -r l; do bad "C10 presence: $l"; done < "$T/c10p"; else ok; fi
+    miss=""
+    for k in $C10_PRES_KINDS; do
+        awk -F'\t' -v k="$k" '$0 !~ /^#/ && $3 == k { n++ } END { exit !n }' "$PFIX" || miss="$miss $k"
+    done
+    if [ -z "$miss" ]; then ok; else bad "c10_presence.tsv names no fixture for kind(s):$miss"; fi
+    awk -F'\t' -v OFS='\t' '!d && $6 == "REQUIRED" { $6 = "OPTIONAL"; d = 1 } { print }' "$PFIX" > "$T/pswap.tsv"
+    c10_pres "$T/pswap.tsv" > "$T/c10pswap"
+    if ! cmp -s "$PFIX" "$T/pswap.tsv" && [ "$(wc -l < "$T/c10pswap" | tr -d ' ')" -ge 1 ]; then ok
+    else bad "C10 presence: the planted need swap was not flagged"; fi
 else
     tail -5 "$T/trace.log"; bad "C10 one-byte: the trace build failed"
 fi
 
 # controls: one planted defect each, flagged exactly
 mkdir -p "$T/src/gen"
-sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD)/' "$DEF" > "$T/plant.def"
+sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
 printf 'static void f(void)\n{\n    mf_pred p;\n    (void)p;\n}\n' > "$T/src/gen/plant.c"
 static_checks "$T/plant.def" "$T/src" > "$T/plant" 2>/dev/null
 if grep -q '^row PRE has budget DELEG_LOOP' "$T/plant" && grep -q '^gen/plant.c:3 declares mf_pred by value' "$T/plant" \
    && [ "$(wc -l < "$T/plant" | tr -d ' ')" -eq 2 ]; then ok
 else bad "the planted controls were not flagged exactly: $(tr '\n' ';' < "$T/plant")"; fi
+
+# 6: the entry column (R17-b' B3a), over the table and a planted copy
+cat > "$T/entry.c" <<'EOF'
+#include <stdio.h>
+#include "memfn.h"
+#define DELEG_H(h) (1u << (h))
+#define DELEG_SCAN 0
+#define DELEG_LOOP 1
+enum { DELEG_ENTRY_UNSTATED = 0, DELEG_ENTRY_NONE, DELEG_ENTRY_SELF, DELEG_ENTRY_PRE };
+int main(void) {
+    int npre = 0;
+#define DELEG_SITE(id, op, handoffs, kinds, budget, ceil, entry) \
+    { int e = (entry); \
+      if (e == DELEG_ENTRY_UNSTATED) printf("row %s states no entry\n", #id); \
+      if (e == DELEG_ENTRY_PRE && (op) != MF_OP_FIND) printf("row %s: entry PRE on a non-FIND row\n", #id); \
+      if (e == DELEG_ENTRY_PRE) npre++; \
+      if ((e == DELEG_ENTRY_SELF) != ((op) == MF_OP_ALL_PRESENT)) \
+          printf("row %s: entry SELF iff the ALL_PRESENT row\n", #id); }
+#include DEFFILE
+    if (!npre) printf("no FIND row takes the PRE verdict as its entry (K35)\n");
+    return 0;
+}
+EOF
+entry_check() {   # $1 = def file
+    "$CC" -std=gnu11 -I"$ROOT_DIR/memfn/include" -DDEFFILE="\"$1\"" "$T/entry.c" -o "$T/entry" 2>"$T/entry.err" \
+        || { echo "the entry probe does not build: $(head -2 "$T/entry.err" | tr '\n' ' ')"; return; }
+    "$T/entry"
+}
+entry_check "$DEF" > "$T/e"
+if [ -s "$T/e" ]; then while read -r l; do bad "C10 entry: $l"; done < "$T/e"; else ok; fi
+sed '/^DELEG_SITE(PF,/,/)$/s/DELEG_ENTRY_PRE)/DELEG_ENTRY_SELF)/' "$DEF" > "$T/eplant.def"
+entry_check "$T/eplant.def" > "$T/ep"
+if grep -q '^row PF: entry SELF iff the ALL_PRESENT row' "$T/ep"; then ok
+else bad "C10 entry: the planted entry was not flagged: $(tr '\n' ';' < "$T/ep")"; fi
 
 echo "DELEG_SITES: ${nrows:-0} rows; vocabulary pairs probed: $(wc -l < "$T/vocab" 2>/dev/null | tr -d ' ')"
 echo "checks passed: $pass"

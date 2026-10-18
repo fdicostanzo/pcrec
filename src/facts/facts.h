@@ -448,6 +448,20 @@ const ReqSet  *pcrec_fact_req_set(Ctx *cx);
  * window its derived half, and each accessor answers for its own. */
 const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
+/* [MEMFN] R17-b' B3a THE PRESENCE STATEMENT's two reads (r17b_prime.md §4.1,
+ * PR-5): the same facts and derivation as `pcrec_fact_req_set` and
+ * `pcrec_fact_req_whole_run`, NOT a pass's ask, so `--emit-facts`' `used`
+ * column stays today's (Q-WR-12, ruled: `req_set` is asked only where today
+ * asks; the column flips with B3b's row move). Their one reader is
+ * `req_pres_spans` (src/gen/emit_dfa.c), which STATES the unpicked spans to
+ * the kit; no selection and no rendering reads what it states before B3b. */
+const ReqSet  *pcrec_fact_req_set_stated(Ctx *cx);
+const ReqRun  *pcrec_fact_req_whole_run_stated(Ctx *cx);
+/* The same non-pass reads of the window and of `req_byte`, for the trace
+ * build's pick shadow (`req_pick_shadow`): a check, not a pass, so the
+ * trace build's `used` column is the default build's. */
+const ReqRun  *pcrec_fact_req_run_stated(Ctx *cx);
+int            pcrec_fact_req_byte_stated(Ctx *cx);
 /* E2 derived: the window's `maxoff` where a run shipped, -1 where none
  * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
 long long      pcrec_fact_req_run_maxoff(Ctx *cx);

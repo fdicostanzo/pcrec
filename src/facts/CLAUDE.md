@@ -45,7 +45,11 @@ defect traced to that edge (design §4.2.1, §10).
 - `facts.c` — the RECORD: every accessor's four steps (epoch guard, memo,
   deny, derive — `pf_enter` is the first three, so no accessor can skip
   one), the seals, and the `used` bit (set by a PASS asking, never by a
-  derived fact's own derivation). A derivation reads other facts only
+  derived fact's own derivation; R17-b′ B3a's `pcrec_fact_req_set_stated`/
+  `pcrec_fact_req_whole_run_stated` are NON-PASS reads for the presence
+  statement, so stating spans never sets `used`, Q-WR-12; lane b3afix adds
+  `pcrec_fact_req_run_stated`/`pcrec_fact_req_byte_stated` for the trace
+  build's pick shadow, which also restores `used` on exit). A derivation reads other facts only
   through `pf_ask`, along `facts.def`'s DEPENDS-ON edges. Also: each fact's
   ONE RENDERER (`pcrec_fact_render`, a no-default switch) which the
   fact-valued stamps call through `pcrec_fact_stamp` and `--emit-facts`

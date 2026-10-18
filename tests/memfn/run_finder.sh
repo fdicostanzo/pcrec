@@ -84,6 +84,12 @@ TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&
 rc=$?
 part arm_reach "$WORK/reach.log"
 [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/reach.log")" -gt 0 ] || { echo "FAIL: run_arm_reach exited $rc with no failed check"; tf=$((tf + 1)); }
+# [MEMFN] R17-b' B3a PR-11's control: every count-collapsed hybrid front
+# still enforces the necessary set and run (tests/memfn/run_pr11.sh)
+TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_pr11.sh" "$ROOT" > "$WORK/pr11.log" 2>&1
+rc=$?
+part pr11 "$WORK/pr11.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/pr11.log")" -gt 0 ] || { echo "FAIL: run_pr11 exited $rc with no failed check"; tf=$((tf + 1)); }
 echo "checks passed: $tp"
 echo "checks failed: $tf"
 [ "$tf" -eq 0 ]

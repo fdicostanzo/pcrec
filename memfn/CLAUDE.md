@@ -116,6 +116,19 @@ Report: `docs/dev/lanes/r24_report.md`.
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.
 
+R17-b′ B3a (lane b3a, 2026-10-17) made MF_SITE_ABI 16 with NO `MF_VOCAB` move
+and NO pcrec byte moved: PRESENCE STATED on the merged site, PRES UNROUTED.
+pcrec's `req_site_define` states `mf_site.pspans` (each necessary-set member
+its own one-byte span in member order, the run one span with its mask;
+`span_class` PRESENCE, `omin` 0, `member_order`) and `head_max` (the
+handoff's K), and `compose.c` `kit_presence_check` (inside `site_check`)
+refuses a malformed statement. `src/presence.c` holds KW-8's PORTS of
+pcrec's five priced picks (`mf_pres_ports`: set pick, run scan + window,
+set-leads, G1, landmark admission), compared by pcrec's TRACE build beside
+its own picks (MFPICK records); 100% agreement over corpus, bench and
+rwquest with per-pick floors on non-trivial sites. No finder row reads
+`pspans` yet. Report: `docs/dev/lanes/b3a_report.md`.
+
 **Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
 `include/memfn.h`, the composer, the generic scalar row, K1's reference
 functions and an empty `src/options.def` are built into `libpcrec.a` by

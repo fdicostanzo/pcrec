@@ -22,11 +22,16 @@ typedef enum { DELEG_SCAN, DELEG_LOOP } DelegBudget;    /* D91 budgets 1 and 2 *
 #define DELEG_H(h) (1u << (h))
 
 typedef enum {
-#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) DELEG_##id,
+#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) DELEG_##id,
 #include "gen/memfn_sites.def"
 #undef DELEG_SITE
     DELEG_NSITES
 } DelegSite;
+
+/* [MEMFN] R17-b' B3a the presence verdict a row's instances take as their
+ * ENTRY use (memfn_sites.def's `entry` column); 0 is no statement. */
+typedef enum { DELEG_ENTRY_UNSTATED = 0, DELEG_ENTRY_NONE, DELEG_ENTRY_SELF,
+               DELEG_ENTRY_PRE } DelegEntry;
 
 typedef struct {
     const char *id;
@@ -35,6 +40,7 @@ typedef struct {
     uint32_t    kinds;      /* MF_TK_* */
     DelegBudget budget;
     uint8_t     use_ceiling;
+    DelegEntry  entry;
 } DelegRow;
 
 extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];

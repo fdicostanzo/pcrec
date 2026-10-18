@@ -138,6 +138,22 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   no analysis object; `mf_art_end`'s `consulted` is read by nobody before
   B4. The kit's arena op, `pcrec_memfn_arena_alloc`, is `memfn_sites.c`'s
   own (static: the attempt's art is its only user).
+- **R17-b′ B3a (lane b3a, 2026-10-17; MF_SITE_ABI 16, zero movers).**
+  `emit_dfa.c` `req_pres_spans` states the PRE composite's presence spans on
+  the site (`mf_site.pspans`: the necessary-set members in descending byte
+  order, then the whole run; REQUIRED only with no DFA scan in front) and
+  `head_max` (the handoff's K); PRES stays unrouted. Under
+  `PCREC_CAND_TRACE`, `req_pick_shadow` (after `cand_select_quiet`) asks
+  the kit's ports (`mf_pres_ports`) and prints one MFPICK record per pick
+  beside pcrec's own answer (`PCREC_PICK_PLANT` plants a disagreement), and
+  `memfn_sites.c` `pres_record` prints MFPRES (the stated spans) under
+  `PCREC_MF_ROUTE_TRACE`. The fact reads are non-pass
+  (`pcrec_fact_req_set_stated`/`_whole_run_stated`, Q-WR-12). Lane b3afix:
+  a span's `need` reads the site's consumer kind (`site_kinds[]`, REQUIRED
+  on VM_ATTEMPT); the shadow hands the port the K admission's own START SET
+  (`req_start_set`, shared with `req_landmark_admits`), reads its facts
+  without a pass and restores `pf.used` on exit. Report:
+  `docs/dev/lanes/b3a_report.md` §9.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's

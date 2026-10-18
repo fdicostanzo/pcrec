@@ -19,7 +19,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   contracts' types (`gate_contract`: `uses` per site kind and phase,
   `serves` per field; `CL_*`/`FLD_*` from fields.def) and the MF_TRACE
   record calls. Never included outside this directory.
-- **compose.c** — K2, the composer: THE KIT'S ONE SELECTION WALK,
+- **compose.c** — K2, the composer (R17-b′ B3a adds `kit_presence_check`, the PRESENCE-statement rules, inside `site_check`): THE KIT'S ONE SELECTION WALK,
   `kit_walk` (R4e'.0, integration.md §R4.9.2.3: per row of the asked slot,
   in table order, the deny, the gate, the row's predicate; first match; a
   slot holding no row is no selection and records nothing), which the arms
@@ -341,6 +341,13 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
 - **terms.c** — R17-b's cover search (`mf_set_terms`, lane memfn-r17),
   ported search only: the finder reads a set site's cover SHAPE
   (`r<R>e<E>c<C>`). Its renderers land at B4.
+- **presence.c** — KW-8's PORTS (R17-b′ B3a, lane b3a): `mf_pres_ports`
+  re-derives pcrec's five priced picks over a site's STATED presence spans
+  (`pspans`, `head_max`) and the analysis object's `byte-rate` payload
+  (cardinality masses under PRIOR_NONE): the set pick, the run's scan index
+  and window start, set-leads, G1 (byte dominated) and the landmark
+  admission. Read by pcrec's `-DPCREC_CAND_TRACE` build only (the MFPICK
+  comparator in `src/gen/emit_dfa.c`); no row reads it. Plants S1094..7.
 - **formhash.c** — `mf_form_hash`/`mf_form_hash_text` (R-MS3): a form's
   normalized-text identity (comments dropped, whitespace collapsed,
   non-kept identifiers renamed, FNV-1a-64) over canonical instances

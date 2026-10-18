@@ -1,0 +1,45 @@
+# docs/design/memfn/r17b_prime/b3a/pick_floors.tsv -- KW-8 per-pick floors on NON-TRIVIAL agreeing records ([rev3 D10]), measured by pick_census.py at lane b3a (2026-10-17, base 184fc9110 + b3a, three arms: -, -e utf8, --engine=vm; bench = /home/pcrec/projects/pcrec-bench at its checkout of that day). Read by pick_census.py --floors.
+# pop	pick	floor (floor(0.9 x measured non-trivial agreeing records))
+corpus	set	2218
+corpus	scan	1254
+corpus	window	60
+corpus	leads	1207
+corpus	dominated	2934
+corpus	landmark	457
+bench	set	339
+bench	scan	284
+bench	window	16
+bench	leads	273
+bench	dominated	243
+bench	landmark	106
+rwquest	set	278
+rwquest	scan	253
+rwquest	window	32
+rwquest	leads	243
+rwquest	dominated	198
+rwquest	landmark	80
+# BOTH VALUES of `differs` for the boolean picks (lane b3afix, review MINOR-4; measured by pick_census.py --write at the rebased tip on main 343605a57, three arms): the fourth column names the counter, `differs` (the pick is not its family default) or `same` (records - differs), floor(0.9 x measured), so a port answering a constant cannot agree and a pcrec side that stopped varying is red.
+corpus	scan	464	differs
+corpus	scan	790	same
+corpus	leads	38	differs
+corpus	leads	1169	same
+corpus	dominated	2184	differs
+corpus	dominated	3645	same
+corpus	landmark	408	differs
+corpus	landmark	48	same
+bench	scan	117	differs
+bench	scan	166	same
+bench	leads	13	differs
+bench	leads	260	same
+bench	dominated	115	differs
+bench	dominated	369	same
+bench	landmark	102	differs
+bench	landmark	3	same
+rwquest	scan	109	differs
+rwquest	scan	144	same
+rwquest	leads	37	differs
+rwquest	leads	205	same
+rwquest	dominated	55	differs
+rwquest	dominated	311	same
+rwquest	landmark	78	differs
+rwquest	landmark	1	same

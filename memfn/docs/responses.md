@@ -2703,3 +2703,5 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the memfn reach arm and the form census green.
   - **Light validation:** emit_sweep 0 movers on six arms.
   - **After 062417c75:** docs-only commits (the D155 add. 5 notice, the R-24 ack, this entry).
+
+- notice: 2026-10-17 — **R17-b′ B3a starts** (rev 3 §3.1 row B3a, under D167's build GO for B0-B3b). Kit branch **lane/memfn-b3**, cut from main @ 184fc9110 (E-1 + R-23 + R-24 landed), served by lane b3a (opus). Zero movers against main-after-E-1 (`[rev3 A15]`). The main-side items at this step (DELEG_SITES' PRE row merged into the FIND rows as their ENTRY use, the site manifest's use points, C10 fixtures, Q-R17P-18) come as proposed diffs for main to apply. Kit sabotage ids: please allocate ~8 (SN-6 plants per ported pick + PR-11's planted collapse).

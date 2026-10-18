@@ -18,8 +18,8 @@
 /* ---- DELEG_SITES (gen/memfn_sites.def) ------------------------------------ */
 
 const DelegRow pcrec_deleg_sites[DELEG_NSITES] = {
-#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling) \
-    { #id, op, handoffs, kinds, budget, use_ceiling },
+#define DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling, entry) \
+    { #id, op, handoffs, kinds, budget, use_ceiling, entry },
 #include "gen/memfn_sites.def"
 #undef DELEG_SITE
 };
@@ -560,6 +560,28 @@ static void routed_record(DelegSite id, const mf_site *s, const char *row)
             s->site_kind < sizeof routed_kind_name / sizeof kn[0] ? kn[s->site_kind] : "?",
             row && row[0] ? row : "-");
 }
+
+/* [MEMFN] R17-b' B3a THE PRESENCE RECORD (r17b_prime.md §3.4's C10 row,
+ * Q-R17P-18): the presence spans a site STATES, read off the site pcrec
+ * defines (`mf_site.pspans`), under the same switch:
+ * `MFPRES<TAB>site<TAB>kind<TAB>members<TAB>runlen<TAB>need<TAB>head_max`,
+ * one per defined site that states any (`members` the one-byte spans,
+ * `runlen` the run span's length or 0, `need` REQUIRED/OPTIONAL, every span's
+ * one need). C10's presence fixtures read it. */
+static void pres_record(DelegSite id, const mf_site *s)
+{
+    const char *const *kn = routed_kind_name;
+    unsigned members = 0, runlen = 0;
+    if (!getenv("PCREC_MF_ROUTE_TRACE") || !s->npspan) return;
+    for (unsigned i = 0; i < s->npspan; i++) {
+        if (s->pspans[i].term[0].kind == MF_T_RUN) runlen = s->pspans[i].term[0].run_len;
+        else members++;
+    }
+    fprintf(stderr, "MFPRES\t%s\t%s\t%u\t%u\t%s\t%llu\n", pcrec_deleg_sites[id].id,
+            s->site_kind < sizeof routed_kind_name / sizeof kn[0] ? kn[s->site_kind] : "?",
+            members, runlen, s->pspans[0].need == MF_REQUIRED ? "REQUIRED" : "OPTIONAL",
+            (unsigned long long)s->head_max);
+}
 #endif
 
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
@@ -579,6 +601,7 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
         mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
         kit_check(cx, art, mf_defined(art, handle, r));
         routed_record(id, s, r->row);
+        pres_record(id, s);
     }
 #endif
     return handle;
