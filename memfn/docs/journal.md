@@ -2403,3 +2403,33 @@ pointer when a kit change merges to main.
   - the iterator saves it in its state ("where intercall data is saved").
 - Posted as a responses.md notice with proposed D-entry text for main. Unscheduled; `[MEMFN-RTDISPATCH]`'s trigger is unchanged.
 - **Lesson:** state the compiler's granularity (function, not file) before a dispatch design discussion; it changed Frank's direction.
+
+## 2026-10-17 (evening/close) — R-23, R-24 delivered and on main; B3a built, fixed, half-validated; paused on Frank's request
+
+- **R-23** (body stated, MF_SITE_ABI 14) and **R-24** (`mf_prov` bytes/fidelity, MF_SITE_ABI 15) are ON MAIN, both heavy-validated green. R-24 landed through main's int5 with E-1 and the wiring line.
+- Frank ruled runtime ISA dispatch: a compound decision; one-shot search pays the per-call check; the iterator holds the decision in its state. Filed by main as D155 addendum 5.
+- Merges: Frank asked to have them "go through main" until he adds the kit's merge permissions. Main merges kit lane branches at its discretion; the kit sends branch + sha + target + validation.
+- **B3a** (presence spans stated, the kit's ports of the five picks in the trace build, PR-11, MF_SITE_ABI 16):
+  - built by b3a;
+  - review b3arev: MERGE-WITH-FIXES, 2 majors + 5 minors, all fixed by b3afix;
+  - rebased onto main 343605a57, then onto e368410e7 (b3aheavy, tip **4ecc07d5b** on lane/b3afix);
+  - main applied and ACCEPTED all its main-side pieces (req_start_set as one source, DELEG `entry`, c17, c10 + S1102);
+  - 0 movers on 7 sweeps vs e368410e7.
+- **B3a's heavy chain** (worktrees/memfn-slot/b3aheavy/chain.status, pinned at worktrees/b3a-mt @ 4ecc07d5b):
+  - build, strict and FULL make test GREEN at 22:14 (the integration test);
+  - 28 of 42 solo mech rows done, all OK. S1029 is listed BAD only because the copied scorer special-cases S919 alone: S1029 is declared SAB_EXPECT=UNREACHED and read unreached 1, as expected;
+  - **CANCELLED** by Frank's request after S571 (safekill; worktree clean, no processes left).
+- **Lessons:**
+  - a chain scorer copied from a template must read each row's SAB_EXPECT, not a hard-coded id;
+  - lanes went idle after CHAIN_DONE without reporting, three times: check artifacts and nudge;
+  - `git apply --check` inside a scratch dir in the repo is a false pass (b3aheavy).
+
+## 2026-10-18 (night) — B3a's heavy chain finished green; done: posted
+
+- Main granted the heavy slot (nothing else queued; bench still on ubuntubudu that night). Lane b3achain2 (sonnet) wrote chain2.sh (the steps not yet run) plus a scorer that reads each row's declared SAB_EXPECT. It armed the run on `.go`; I triggered it at 03:20.
+- `CHAIN COMPLETE 04:16:38`: the 14 remaining mech rows OK, G2 full 199,850,938/0, N2 clean, the memfn reach arm 257/0, the form census green. The 28 earlier rows re-score 28 OK, 0 BAD (S1029 is OK as declared UNREACHED). `done:` posted; main merges lane/b3afix + lane/memfn-b3 as one unit.
+- **Relayed by main (bench O-103): Q-REVAL-15 = YES.** The import-with-kit-seeds route for J2a is allowed (regime_eval.md §2.10/§9.2); the choice falls due at E6.
+  - Traps: only email and loglines have `--out`. Loglines' 1 MiB subjects need the whole `build()`. utf8text's pool_*.tsv has no recorded provenance.
+  - The bench counts 14 subjects of 1 MiB or more at db629a54, not 11: name the 11 if they are a subset. The bench adds `--out` to the other generators on request via main.
+- **Standing box rule (Frank via main):** every TIMING run (grid slots, re-times, REGIME-EVAL judges) is cleared through main, and main clears it with Frank. The bench now lives on this box too. If a timing run sees load from a non-pcrec process, send main its name and PID; never kill or renice it. Correctness suites still need only main's heavy slot.
+- **Lesson:** I `cd`'d into the scratch dir once (read-only, no lanes running yet).
