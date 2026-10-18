@@ -9,8 +9,14 @@
 # K65's rest memchrs it anyway), so the detector is STRUCTURAL:
 # run_prechecks.sh §5.11 (lead 61 / 99 / 61 read "-") and §5.8/§5.9 (the
 # rest regains the byte the lead tested).
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-AIMED: the pre-check's presence
+# decisions are the memfn kit's routed PRES rows (memfn/src/finder.c `fd_pres`,
+# the ports in memfn/src/presence.c) and pcrec lays its parts out from their
+# links, so the plant moves to the kit's line that makes the same choice.
+# Here: the PRES row P4's fact (the set's pick strictly rarer than the run's
+# scan member) is never stated, so P4 never holds (intent unchanged).
 SAB_ID="S457-set-leads-never-applies"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="prechecks"
 SAB_DESC="the pre-check admission's set-leads row never applies, so a necessary-set byte rarer than the run's scan member is no longer tested before the run search (the abi-59 program, K82 cause A)"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/k82fix_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S457."
@@ -18,5 +24,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:user|
 SAB_REACH_EXPECT="REACH-SET-LEADS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if ((q = req_set_pick(s->cx)) < 0) return false;'
-SAB_AFTER='    if ((q = req_set_pick(s->cx)) < 0 || 1) return false;   /* SABOTAGE S457 */'
+SAB_BEFORE='            if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;'
+SAB_AFTER='            if (0 && pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;   /* SABOTAGE S457 */'

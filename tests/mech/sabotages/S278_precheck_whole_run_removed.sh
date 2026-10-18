@@ -12,8 +12,15 @@
 # covers for it. The `harness` arm is aimed at
 # tests/base/k66_precheck_whole_run.rxt and must go RED; `prechecks` §5.9 is
 # the structural second detector.
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-AIMED: the pre-check's presence
+# decisions are the memfn kit's routed PRES rows (memfn/src/finder.c `fd_pres`,
+# the ports in memfn/src/presence.c) and pcrec lays its parts out from their
+# links, so the plant moves to the kit's line that makes the same choice.
+# Here: P0's run link narrowed to its window (`member` 1 + the window start,
+# never 0 = WHOLE), so pcrec lays out the window alone (intent unchanged: the
+# whole-run compare never emitted; SW-2's K66-window).
 SAB_ID="S278-precheck-whole-run-removed"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="prechecks harness"
 SAB_HARNESS_TARGET="tests/base/k66_precheck_whole_run.rxt"
 SAB_DESC="the [K66] whole-run compare of the necessary-run pre-check is never emitted, so a VM artifact with no DFA scan compares only the 8-byte window the prior cut from a longer run and a subject holding that window but not the whole run gives up on the step budget where the answer is NOMATCH — the window-dependent give-up K66 recorded"
@@ -33,5 +40,5 @@ SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # after the window's test) removes the block and the call together. Intent
 # unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;'
-SAB_AFTER='    return 1;   /* SABOTAGE S278: the K66 whole-run compare never emitted */'
+SAB_BEFORE='        mf_link k = t->link;'
+SAB_AFTER='        mf_link k = t->link; if (!member && !k.member) k.member = (uint8_t)(pk.run_window + 1);   /* SABOTAGE S278 */'
