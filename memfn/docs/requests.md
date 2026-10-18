@@ -547,3 +547,17 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Facts only (D157):** pcrec states where its knowledge came from; how the kit weighs it is the kit's.
 
 **Sabotage ids:** kit-side on request (next free main ledger id S1092).
+
+## R-25 (2026-10-18, pcrec manager) — `proven0` honours `need`: a latent over-claim in `kit_class`
+
+**Customer:** review r2 kitverify-proof (`docs/dev/reviews/2026-10-18-r2-kitverify-proof.md` §5 M4) and D161 addendum 16 (the proof is per-offset proven SETS with proven ⊇ need and proven ⊆ what the kit actually tests). `kit_class` intersects EVERY offset-0 term into `proven0` regardless of the term's `need` (`memfn/src/compose.c:310-323`). That is correct today only because every FIND site states one REQUIRED offset-0 term (`src/gen/emit_dfa.c:6548-6553`) and the generic arm tests every term, OPTIONAL ones included (`memfn/src/generic.c:25`). The first site that sends an OPTIONAL offset-0 term to a row that does not test it would over-claim `proven0`, and G2 catches that only if its population reaches such a row.
+
+| item | what pcrec needs (facts) | landing bar | needed by |
+|---|---|---|---|
+| R-25 | `proven0` (and `proven_prev`) state only bytes the committed form TESTS at every candidate: a term the selected row may skip (OPTIONAL and not tested) contributes nothing | a kit fixture with an OPTIONAL offset-0 term the selected row skips, reading `proven0` all-ones there; the same with the row testing it, reading the term's set; zero artifact movers on every emit_sweep arm (no shipped site has such a term) | before the first site that sends an OPTIONAL offset-0 term to the kit (none today), and before [KIT-VERIFY]'s build (D161 add. 16) |
+
+**Facts only (D157):** pcrec states each term's `need`; which terms the kit tests is the kit's, and the proof must say exactly that.
+
+**Note (for the kit's planning, not a request):** D161 addendum 16 sets [KIT-VERIFY]'s direction: per-origin-offset proven sets generalising `proven0`/`proven_prev`, a pcrec `consumable_len` statement, pcrec-stated prefix exactness replacing add. 10's `byte_form`, and context (fixed lookbehinds, position-rewritten `\b`) as spans before the origin with an absent-byte bit. Nothing is built until main's census (lane kvcensus) reports; the kit's comments on the addendum are welcome in responses.md.
+
+**Sabotage ids:** kit-side on request (next free main ledger id S1130).

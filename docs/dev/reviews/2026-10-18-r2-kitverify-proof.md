@@ -210,3 +210,15 @@ helper read by T-PROOF.
 Open for Frank: **Q1** does pcrec send `consumable` (a binary fact about its consumer, not a price), or
 does it discover it by the `mf_ask` two-pass (ask OPTIONAL, re-ask with need on positions whose proof a
 T-PROOF row would consume)?
+
+## 8. Rulings (Frank, 2026-10-18) and dispositions applied
+
+Frank agreed the synthesis (§7) and answered Q1 by asking why per-position need beats "please prove up to
+N": every consumer consumes a PREFIX, so the request collapses to one number, `consumable_len` (a
+statement, not an order; capped by the exact prefix). Per-term `need` stays for give-up safety only. He
+then extended the design: spans may precede the origin, so any fixed lookbehind, and `\b` rewritten by
+position (`\b` before a word character ≡ `(?<!\w)`), joins the sent sub-problem, and the kit's candidate is
+the actual match start. Recorded as **D161 addendum 16**. Applied: plan rows [KIT-VERIFY] and
+[MATCH-KNOWN] (status lines); kit finding M4 filed as **R-25**; census launched as lane **kvcensus**
+(compile-only, P3 with the critics' columns plus context-span and whole-cover columns). Open follow-up:
+does pcrec already rewrite `\b` by position? (the census answers it).
