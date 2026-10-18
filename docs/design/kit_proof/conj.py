@@ -1,10 +1,24 @@
-"""kit_proof.md rev 2 §1.1: the `cover_conj[]` table, PROTOTYPED, and the population recount.
+"""kit_proof.md rev 2.1 §1.1: the `cover_conj[]` table, PROTOTYPED, and the population recount.
 
 Each conjunct is a named row read in order; the first that fails is the `why`
 (first-match, the split_conj[] shape). The machine conjuncts read the EMITTED
 anchored machine through kvdfa (docs/dev/kvcensus/kvdfa.py), the same reader
 the census and the k3-sound critic used: this is a RECOUNT, not an
 independent control (the control is X1, libpcre2, §6.4).
+
+Rows here, in order, against the note's ids [r3rc M-A, m8]: C1 finisher-dfa,
+then `earlier-row` (the LOCATE order, not a conjunct; counted so the
+population is complete), C3, C4, C6, C7, C8, C9, C10, C11, C12. C2
+`origin-start` is RETIRED (rev 2.1, UL-n1): the census applies nothing after
+the table, so the `why` histogram is first-match in this order. C5
+`unmarked-A` is NOT here: it is an assertion with no population (§1.1), and
+an unmarked A is what every compile this script reads emits today. C8 here is
+the MACHINE half only (`exact` = machine-inexact); the producers-disagree half
+needs `span_facts`, which is unbuilt (family M2 PARTIAL, owed at Z2). C13/C14
+are the kit's and are not here.
+
+CONJ_PLANT=c9-depth-k in the environment restores revision 2's C9 (eol views
+tested at depth k only), the K1 plant witnesses.txt's `ab|a$\n` rows turn red.
 
 usage:
   python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
@@ -21,6 +35,7 @@ import kvdfa  # noqa: E402
 
 PCREC = os.environ.get("PCREC", "build/pcrec")
 CAP = kvdfa.CAP
+PLANT = os.environ.get("CONJ_PLANT", "")
 
 
 def compile_c(pat, fl):
@@ -103,6 +118,8 @@ def k_width(st):
 
 
 def k_exact(st):
+    # C8's MACHINE half (why `exact` = machine-inexact, [r3rc m2]); the
+    # producers-disagree half compares span_facts' S_d, unbuilt here
     return st["L"]["exact"] == st["k"]
 
 
@@ -111,15 +128,29 @@ def walk_rows(st):
     return rows
 
 
+def rows_by_depth(st):
+    """the live rows at each depth 0..k from r0 (depth k = walk_rows)"""
+    A = st["A"]
+    Q, out = {st["r0"]}, []
+    for _ in range(st["k"] + 1):
+        out.append(Q)
+        Q = {t for q in Q for b in range(256) for t in [A.step(q, b)]
+             if t is not None and t in A.live}
+    return out
+
+
 def k_eol(st):
-    # no eol_view on the walk at depth k (below k nothing accepts in any form,
-    # which lang() already required): an eol-view accept is NOT an end
-    # (sound B1), so the row declines rather than choosing a reading
+    # [r3rc K1] no row at depth 0..k carries a non-identity eol view. At k an
+    # eol-view accept is NOT an end (sound B1); BELOW k a mid-pattern
+    # non-multiline `$`/`\Z` followed by a consumed `\n` is a transition
+    # only under the eol view, invisible to the plain walk (`ab|a$\n`), so
+    # the row declines rather than choosing a reading
     A = st["A"]
     v = A.views.get("eol_view")
     if not v:
         return True
-    return all(v[q] is None or v[q] == q for q in walk_rows(st))
+    depths = [walk_rows(st)] if PLANT == "c9-depth-k" else rows_by_depth(st)
+    return all(v[q] is None or v[q] == q for Q in depths for q in Q)
 
 
 def k_end(st):
@@ -171,7 +202,7 @@ COVER_CONJ = [
     ("entry-const",   "one live seeded entry; e(⊥) the emitted constant", k_entry),
     ("fixed-width",   "1 <= k < 32, nothing accepts below k", k_width),
     ("exact",         "the language is S_0 x .. x S_{k-1}", k_exact),
-    ("no-eol-view",   "no eol view on the walk at k", k_eol),
+    ("no-eol-view",   "no eol view on the walk at depth 0..k", k_eol),
     ("end-at-k",      "every row at k accepts, no live successor", k_end),
     ("after-agree",   "the rows at k agree on C_k and the absent rule", k_after),
     ("utf8-start",    "S_0 holds no continuation byte (utf8)", k_utf8),
@@ -221,11 +252,11 @@ def census(sites_path, pats_path):
         has_site = (p["pop"], p["id"], p["cfg"]) in start
         fl = ("i" if p.get("icase") else "") + ("u" if p.get("enc") == "utf8" else "")
         why, st = verdict(bytes.fromhex(p["pat"]).decode("latin-1"), fl or "-")
-        if why == "cover" and not has_site:
-            why = "no-start-site"
         hist[(p["pop"], p["cfg"], src, why)] += 1
         if why == "cover":
-            cover[(p["pop"], p["cfg"], src)] += 1
+            # C2 `origin-start` is retired [r3rc M-A]; the admitted patterns
+            # with no start-origin census site are U-ctxorigin's, now in U1
+            cover[(p["pop"], p["cfg"], src, "start-site" if has_site else "no-start-site")] += 1
     for k, v in sorted(hist.items(), key=str):
         print("why", *k, v)
     for k, v in sorted(cover.items(), key=str):

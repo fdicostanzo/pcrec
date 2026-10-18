@@ -22,3 +22,8 @@ R	\bcat$
 -	\d{4}
 u	\x{e9}t
 u	\bcat\b
+# [r3rc K1] a mid-pattern $/\Z before a consumed \n below k: each DECLINES at
+# no-eol-view; under the plant "C9 tested at depth k only" (CONJ_PLANT=c9-depth-k) each reads cover
+-	ab|a$\n
+-	ab|a\Z\n
+-	ab|a$\n\z
