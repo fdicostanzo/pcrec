@@ -10835,16 +10835,16 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
     /* The thin helpers (bind / init / reset / report_captures / the three
      * `_run`s): inlined on every rung but PLAIN. They are a handful of
      * statements each, so their copies are not what the size term prices. */
-    en->ai = shape == PCREC_VM_ENTRY_PLAIN
-               ? "" : "inline __attribute__((always_inline)) ";
+    en->ai = pcrec_attr_text(shape == PCREC_VM_ENTRY_PLAIN
+                               ? PCREC_ATTR_NONE : PCREC_ATTR_INLINE);
     /* The MATCHER BODY, which is the whole of what the size term prices.
      * `noinline` on the SHARED rung is load-bearing, not a hint: without it
      * gcc is free to inline a small body into the three `_in` entries and the
      * rung would silently become FORWARD. */
-    en->ai_body = shape >= PCREC_VM_ENTRY_FORWARD
-                    ? "inline __attribute__((always_inline)) "
-                    : (shape == PCREC_VM_ENTRY_SHARED
-                         ? "__attribute__((noinline)) " : "");
+    en->ai_body = pcrec_attr_text(shape >= PCREC_VM_ENTRY_FORWARD
+                                    ? PCREC_ATTR_INLINE
+                                    : (shape == PCREC_VM_ENTRY_SHARED
+                                         ? PCREC_ATTR_NOINLINE : PCREC_ATTR_NONE));
     en->fwd_entries = (shape == PCREC_VM_ENTRY_SHARED
                         || shape == PCREC_VM_ENTRY_FORWARD);
     en->shape = shape;

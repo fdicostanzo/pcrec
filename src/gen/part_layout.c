@@ -14,8 +14,8 @@
  * moves only where a caller sets a control.
  *
  * FOUR DECLARED FIRST-MATCH TABLES, every conjunct listed (D163 addendum
- * 4), no decision outside them, and one value-to-text map (`layout_texts[]`)
- * that the render and both listings read:
+ * 4), no decision outside them; the render and both listings read each
+ * layout's text off [ATTR-TABLE]'s one table (src/gen/attr_text.c):
  *
  *   `art_rows[]`  the ARTIFACT table, once per attempt, every row applied in
  *                 order within its group: K resolves the controls; one of
@@ -521,45 +521,21 @@ void pcrec_part_stamp_mark(Ctx *cx, StrBuf *c)
 
 /* ---- the render ---------------------------------------------------------- */
 
-/* THE ONE VALUE-TO-GUARDED-TEXT TABLE: for each layout a part row writes,
- * its `--emit-facts` token, the text the render puts on the definition head
- * after its `static `, and the `--list-axes` writes cell. The render
+/* Each layout a part row writes as a value of [ATTR-TABLE]'s one
+ * value-to-guarded-text table (src/gen/attr_text.c): its text, its
+ * `--emit-facts` token and its `--list-axes` writes cell. The render
  * (`render_buf`), the facts listing and the table listing all read it, so
- * the text and its description cannot drift apart.
- *
- * `shared` is `noipa` (noinline + noclone + no interprocedural analysis)
- * where the compiler has it, asked by `__has_attribute` in K24's guard shape
- * (emit_dfa.c `emit_search_head`), and `noinline` where it does not: clang
- * has no `noipa`, and an unguarded one fails its `-Werror`. With `noinline`
- * alone gcc -O1 still reads the body across the call and reports the
- * caller's `window` maybe-uninitialized (a false positive, e1_report.md §7
- * Q1: 135 corpus cases under --part-residual=shared failed `-Werror`), and
- * it deletes a part whose body is `return 0;`. The guard opens a line, so
- * `static ` ends its line, the guard follows, then the signature.
- *
- * The other writers of linkage attributes (K24's guarded `noclone`, the VM
- * entry rung's `ai`/`ai_body`, [OPT-1]'s `noinline` on `_deep`) spell their
- * own text today; [ATTR-TABLE] (plan.md) moves them onto rows of this table
- * with zero movers. */
-static const struct {
-    const char *tok, *text, *writes;
-} layout_texts[] = {
-    [0] = { "as-emitted", "",
-            "the head as its emitter wrote it, unchanged (no attribute added)" },
-    [PCREC_PART_AUTO] = { "auto", "", "its default layout (no attribute added)" },
-    [PCREC_PART_SHARED] = { "shared",
-            "\n#ifndef __has_attribute\n"
-            "# define __has_attribute(x) 0\n"
-            "#endif\n"
-            "#if __has_attribute(noipa)\n"
-            "__attribute__((noipa))\n"
-            "#else\n"
-            "__attribute__((noinline))\n"
-            "#endif\n",
-            "one out-of-line body: noipa where __has_attribute(noipa), else noinline" },
-    [PCREC_PART_INLINE] = { "inline", "inline __attribute__((always_inline)) ",
-            "always_inline into each caller" },
-};
+ * the text and its description cannot drift apart. `shared`'s text opens a
+ * line, so `static ` ends its line, the guard follows, then the signature. */
+static PcrecAttr layout_attr(int layout)
+{
+    switch (layout) {
+    case PCREC_PART_AUTO:   return PCREC_ATTR_AUTO;
+    case PCREC_PART_SHARED: return PCREC_ATTR_SHARED;
+    case PCREC_PART_INLINE: return PCREC_ATTR_INLINE;
+    }
+    return PCREC_ATTR_AS_EMITTED;
+}
 
 /* `<PREFIX>_PART_LAYOUT`'s value: the resolved non-trivial controls in a
  * fixed order (`residual=V`, `rank=R` or `rank=R@set`, each set class as
@@ -659,7 +635,7 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
             if (at < 7 || memcmp(sb->p + at - 7, "static ", 7) != 0)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark on a "
                                "definition that is not static (entry %u)", id);
-            pcrec_sb_puts(&o, layout_texts[p->layout].text);
+            pcrec_sb_puts(&o, pcrec_attr_text(layout_attr(p->layout)));
             seen[id]++;
         }
         i = at + 4;
@@ -732,7 +708,7 @@ void pcrec_part_layout_facts(Ctx *cx, StrBuf *ctl, StrBuf *parts, const char *en
         } else {
             pc[6] = pcrec_sb_fragf(&cx->arena, "%s %s", part_rows[p->row].id,
                                    part_rows[p->row].name);
-            pc[7] = layout_texts[p->layout].tok;
+            pc[7] = pcrec_attr_tok(layout_attr(p->layout));
         }
         int w = p->cls >= 0 && pl->t3 && p->layout == PCREC_PART_SHARED
               ? wrapper_count(cx, p->e) : 0;
@@ -753,7 +729,7 @@ bool pcrec_part_layout_table_row(int i, const char **table, const char **id,
     i -= NART;
     if (i < NPART) {
         *table = "part"; *id = part_rows[i].id; *name = part_rows[i].name;
-        *conj = part_rows[i].conj; *writes = layout_texts[part_rows[i].layout].writes;
+        *conj = part_rows[i].conj; *writes = pcrec_attr_writes(layout_attr(part_rows[i].layout));
         return true;
     }
     i -= NPART;
