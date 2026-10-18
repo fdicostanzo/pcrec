@@ -589,10 +589,13 @@ static void pres_record(DelegSite id, const mf_site *s)
  * kit's routed PRES rows decided, read from the links pcrec CONSUMED (the
  * class the define reports, or the admission's ask where P2 drops the whole
  * pre-check and nothing is defined), never from a kit counter or trace:
- * `MFROUTED<TAB>PRE<TAB>kind<TAB>row`, one per span, the row read off its
- * link (proven: P2; REQUIRED: P0; a chosen member or window: P3; else P9),
- * and one more `P4` where a member leads the stated run. Under the same
- * switch as `routed_record`. */
+ * `MFROUTED<TAB>PRE<TAB>kind<TAB>row` for a defined pre-check, one per span,
+ * the row read off its link (REQUIRED: P0; a chosen member or window: P3;
+ * else P9), and one more `P4` where a member leads the stated run; a
+ * pre-check P2 drops is never defined, so its spans print
+ * `MFPRESDROP<TAB>PRE<TAB>kind<TAB>P2` instead (a site with no define is no
+ * `MFROUTED` site: C10's fixtures read those as the defined sites' own).
+ * Under the same switch as `routed_record`. */
 #ifdef PCREC_CAND_TRACE
 void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls)
 {
@@ -606,7 +609,7 @@ void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls)
                         : k->member ? "P3" : "P9";
         const char *kind = s->site_kind < sizeof routed_kind_name / sizeof kn[0]
                          ? kn[s->site_kind] : "?";
-        fprintf(stderr, "MFROUTED\tPRE\t%s\t%s\n", kind, row);
+        fprintf(stderr, "%s\tPRE\t%s\t%s\n", k->proven_by ? "MFPRESDROP" : "MFROUTED", kind, row);
         if (run && s->pspans[i].term[0].kind == MF_T_SET && k->verify && k->order == 0)
             fprintf(stderr, "MFROUTED\tPRE\t%s\tP4\n", kind);
     }

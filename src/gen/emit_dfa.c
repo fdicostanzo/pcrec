@@ -10502,16 +10502,17 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
          *           tested.
          * Where either side drops the pre-check (rdom), only rdom compares. */
         {
-            mf_site ps = *site;
-            ps.npred = 0;
-            ps.preds = NULL;
-            ps.ret_pred = MF_NO_PRED;
-            ps.handoff = MF_H_ON_MISS;
-            ps.use = MF_USE_DISCARD;
-            ps.head_max = 0;
+            mf_site *pp = pcrec_arena_alloc(&cx->arena, sizeof *pp);
+            *pp = *site;
+            pp->npred = 0;
+            pp->preds = NULL;
+            pp->ret_pred = MF_NO_PRED;
+            pp->handoff = MF_H_ON_MISS;
+            pp->head_max = 0;
+            const mf_site *ps = pp;
             mf_class *rc = pcrec_arena_alloc(&cx->arena, sizeof *rc);
             mf_hooks rh = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
-            int asked = ps.npspan && !mf_ask(pcrec_memfn_art(cx), &ps, &rh, rc);
+            int asked = ps->npspan && !mf_ask(pcrec_memfn_art(cx), ps, &rh, rc);
             if (!asked) {
                 fprintf(stderr, "MFPICKSITE\troute-refused\t%s\n", kind);
                 goto out;
@@ -10523,17 +10524,17 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             pick_rec("rdom", pd, kd, cs.byte >= 0, pd, kind);
             if (!pd && !kd) {
                 int runi = -1;
-                for (unsigned i = 0; i < ps.npspan; i++)
-                    if (ps.pspans[i].term[0].kind == MF_T_RUN) runi = (int)i;
+                for (unsigned i = 0; i < ps->npspan; i++)
+                    if (ps->pspans[i].term[0].kind == MF_T_RUN) runi = (int)i;
                 int pl = req_set_leads_own(cx);
-                int kl = req_pres_head(&ps, rc, true) >= 0;
+                int kl = req_pres_head(ps, rc, true) >= 0;
                 if (pick_plant("rlead")) kl = !kl;
                 if (runi >= 0) pick_rec("rlead", pl, kl, 1, pl, kind);
-                int hd = req_pres_head(&ps, rc, false);
+                int hd = req_pres_head(ps, rc, false);
                 if (runi < 0) {
-                    int kh = hd >= 0 ? mf_term_byte(&ps.pspans[hd].term[0]) : -1;
+                    int kh = hd >= 0 ? mf_term_byte(&ps->pspans[hd].term[0]) : -1;
                     if (pick_plant("rhead") && nm >= 2)
-                        kh = mf_term_byte(&ps.pspans[(hd + 1) % nm].term[0]);
+                        kh = mf_term_byte(&ps->pspans[(hd + 1) % nm].term[0]);
                     pick_rec("rhead", pc, kh, nm >= 2, pc >= 0 && pc != set->rightmost, kind);
                 } else {
                     const ReqRun *w = pcrec_fact_req_run_stated(cx);
@@ -10549,7 +10550,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
                 }
                 int np = 0, nk = 0;
                 int pr = req_rest_own_sig(cx, pl && runi >= 0 ? pc : -1, &np);
-                int kr = req_rest_routed_sig(&ps, rc, &nk);
+                int kr = req_rest_routed_sig(ps, rc, &nk);
                 if (pick_plant("rrest")) kr = kr + 1;
                 pick_rec("rrest", pr, kr, nm >= 2, np > 0, kind);
             }
