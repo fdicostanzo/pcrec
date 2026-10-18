@@ -1259,7 +1259,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # under a part-layout control, so every default artifact moves by the abi
 # digits alone. `fc67299b5` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fc67299b5}"   # [ENTRY-TABLE] E1 SELF-PIN (lane e1, 2026-10-18), abi 80 (was c10643bbb, rpunion's abi-79 self-pin)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7c0a90479}"   # [ENTRY-TABLE] E1 merge (2026-10-18), abi 80 (was fc67299b5, lane e1's self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
