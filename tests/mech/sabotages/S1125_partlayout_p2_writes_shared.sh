@@ -10,7 +10,7 @@ SAB_ID="S1125-partlayout-p2-writes-shared"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='row P2 writes the shared layout instead of nothing, so a control on any class rewrites every attempt-route prefilter'"'"'s head'
-SAB_DOC_FIGURE="OWED: lane e1fix (solo mech run pending). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1125."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:3fail/45pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1125."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --part-layout=find:inline --emit-facts --pattern "^(a)b" | tr "\t" " "'

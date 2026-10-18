@@ -116,7 +116,7 @@ below are the second run's, `fail/pass` against a clean 0/46.
 | the seam is copyable | §5: seam bodies under byte and utf8 carry no label table or computed goto | none | — |
 | stamp neutrality | §6: every `#define <PREFIX>_*` but `_TUNE`/`_PART_LAYOUT*` unmoved under four controls over 397 artifacts | (S1115 covers the size half) | — |
 | answer identity | `tests/axes/run_axes.sh` part-layout arm: default tier `--part-residual=shared`/`=inline`; `AXES_FULL=1` each class value (one run over all four classes) and each rank; values read from `--list-axes` | — | default tier: RED on the first run (shared, 135 lost), FIXED; re-run GREEN, both ends 62,360/62,360 agree (§5) |
-| every layout compiles under `-Werror` (not a §3.6 row; the defect §5 found) | §6's -Werror leg: population, near-cap list and `werror.txt` at `-O1 -std=gnu11 -Wall -Wextra -Werror`, both residual ends (810 compiles); against commit A's `noinline` binary it fails on population and witnesses | none | — |
+| the layouts compile under `-Werror` on a stated sample (not a §3.6 row; the defect §5 found) | §6's -Werror leg: population, near-cap list and `werror.txt` at `-O1 -std=gnu11 -Wall -Wextra -Werror`, both residual ends (810 compiles); against commit A's `noinline` binary it fails on population and witnesses. WIDENED at review r1 (§10.1 F11): seven settings, gcc -O1/-O2/-O3/-Os and clang | S1124 (§10) | — |
 | length neutrality on near-cap witnesses | §6 over `nearcap.txt` (the 10 largest corpus hybrids, 45-647 KB) and the population: refusal, stamps and the decision sizes `--warn-emit-bytes` reports are the no-control compile's | S1115 (the marks reach the decision) | 1/45 |
 | the decline is visible | §1 + fixtures `measured-alone`, `measured-with-class` | S1111 (T1 never fires) | 11/35 |
 | the attribute census | §5 over population x 9 settings against `writers.tsv` (A1-A7 + the layout table) | none | — |
@@ -271,3 +271,91 @@ Commits on lane/e1: `d37f4ab58` mechanism, `ba636a0a8` spec hunks + re-aims,
 (COMMIT A, the zero-mover proof's binary), `fc67299b5` abi 80, the (B)
 self-pin, then docs. The suite is `make test-partlayout`; a hand sabotage
 driver is `build/e1s/handsab.sh ROW` (scratch, not committed).
+
+## 10. Review fixes (lane e1fix, 2026-10-18)
+
+Review: `docs/dev/reviews/2026-10-18-r1-e1.md` (its outcome column is
+filled). Commits on lane/e1 after `b1212d3a9`: `6fbba114b` (the code and
+test fixes), the `subject_class` commit, `c572e9570` (sabotage rows, probes,
+comments, plan rows), then this report. abi stays 80: every change moves
+controlled-path text only (zero-mover proof below).
+
+### 10.1 What changed, per finding
+
+| id | change |
+|---|---|
+| F1 | P2's layout is 0 (`as-emitted`): it writes nothing, so a body gcc cannot copy keeps its head exactly as the default artifact has it under any control. `noipa` is written by P4/P8 only. The evaluator expects P2 parts `kept` (one local symbol, no clone, head text equal to the default's). New check `p2` in `run_partlayout.py`: every population artifact whose subjects are all P2 (67), under `--part-layout=find:inline`, `--part-inline-rank=R3`, `--part-layout=compound:shared`, `--part-residual=shared` and `--part-layout=prefilter:inline`, is byte-identical to the default but the `_PART_LAYOUT` stamp. |
+| F2 | `shared`'s text is K24's guard shape on lines of its own: `#ifndef __has_attribute` fallback, `#if __has_attribute(noipa)` noipa, `#else` noinline, `#endif`. clang 21 is installed on this box, so the -Werror leg gained clang -O1/-O2 legs; the census also checks every emitted `noipa` sits in that guard. clang -Werror on the residual ends is clean. |
+| F3 | One statement in all three readers: a part a layout cannot apply to (not copyable, or one caller) keeps its default layout with no attribute added and is reported `/held`: `lib/pcrec.h` (the controls' comment and `PCREC_PART_SHARED`), `cli.md` §1.14¶3, `tuning.md` §2.51¶2/¶2a/¶5b (P2 "nothing"); `facts_listing.md` §4.4¶3 gains `as-emitted`. |
+| F4 | `tuning.md` §2.51¶1a: `compound` changes no part at E1 (split's parts stop at P2 and P3). UNREACHED at E1, beside TM/T2 and the wrapper rows: P4, P5 and P6 for the `compound` class (every compound part is held; the census's P4-P6 populations are all prefilters). |
+| F5 | Filed under [ENTRY-TABLE] (trigger: the first VM-bodied or `find` subject); the three struct comments say `copyable` is job-wide. |
+| F6 | `owned_inline` reads `en.shape != PCREC_VM_ENTRY_PLAIN`; the comment states the premise (the prefilter's one call site is `_search_run`; `ai_body` is the matcher's and is not folded). |
+| F7 | `wrap_rows[]` rows carry `holds` and `forwards`; `wrapper_count` walks them first-match per caller. |
+| F8 | `head_rows[]` (M1 a part's shell row, M2 other part heads, M3 a subject, M4 none) replaces the chain in `pcrec_part_head_mark`; `layout_texts[]` is the ONE value-to-guarded-text table: the render, `--emit-facts`' `layout` cell and `--list-axes`' writes cell read it. It is a table of attribute spellings the other three writers could read; none migrated ([ATTR-TABLE] filed). A record's class now reads `subject_class` alone (one source). |
+| F9 | UNREACHED, argued (row S1126): `pcrec_sb_len_decide`'s readers are the size term's early abort (3 x code cap, ladder attempts) and `VM_PROGRAM_BYTES` (`vmsb`, which never holds a mark: measured unmoved with the subtraction removed). An attempt within the marks' 9 bytes of 3 x cap fits the cap only at more than two thirds prose; the most comment-heavy artifact measured is ~52 % (`((a)|ab){0,500}c` under `-fcomments`: 87,311 bytes, 41,814 of code). |
+| F10 | S1111-S1118 each probe their own site (table in 10.3). |
+| F11 | The -Werror leg: 7 control settings (both residual ends, `prefilter:` and `compound:` shared/inline, `--part-inline-rank=R2`) over the population, near-cap list and `werror.txt` (405 patterns), deduplicated to 658 distinct texts (a stamp-only difference compiles once); gcc `-O1` on all, `-O2`/`-O3`/`-Os` on every fourth, clang `-O1`/`-O2` on every fourth residual-end text: 1,419 compiles. The claim in §4 is narrowed to that sample. |
+| F13 | `memfn_stamps.c` `ident_byte`: one comment (the libc scan runs on marked text; a mark is never inside a call name). |
+| Q4 | S1119-S1121 written (10.3). |
+
+`make test-partlayout`: **48 checks, 0 failed, ~42 s** at `c572e9570` (two
+new checks: `p2`, the census guard shape). `make strict`: green.
+`make test-plan-lint`: green ([ATTR-TABLE] row added to the Backlog).
+
+### 10.2 Zero default movers (abi stays 80)
+
+`scripts/emit_sweep.py` against main `c88537116`, both arms, `--jobs 8`,
+taskset 0-7, the slot GO'd in `e1_rulings.md` (`GO e1fix sweep`), run
+08:16:48-08:18:48, released 08:18:48 (`build/e1s/c4/chain4.log`). The
+subject is HEAD `c572e9570` exported by `git archive` into the lane's
+scratchpad, `PCREC_ARTIFACT_ABI` set back to 79 there, built there, and its
+binary COPIED to `scratch_e1fix/sw/bin/pcrec-head79` (never `build/`); so a
+byte-identical result says no default byte moved besides the abi digit.
+
+| arm | command | result |
+|---|---|---|
+| no control | `--ref c88537116 --bin .../pcrec-head79` (self-check on: PASSED, all-identical at full reach) | **rc 0, 0 movers / 0 asymmetric on every stream**: c-default 5,336, c-vm 5,337, emit-ir 5,337, emit-ir-auto (base and three arms) 5,790 each, stderr 5,790, composition 37 producing / 106 artifacts. `build/e1s/c4/sweep-default.log` |
+| all-`auto` set | `--ref-bin .../pcrec-main` (a scratch copy of a `git archive c88537116` build) `--bin .../pcrec-head79-allauto` (the subject with `--part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto --part-residual=auto --part-inline-rank=none` prepended), `--no-self-check` | **rc 0, 0 movers / 0 asymmetric on every stream**, same reach. `build/e1s/c4/sweep-allauto.log` |
+
+### 10.3 Sabotage rows, solo verdicts
+
+Every row run SOLO by `bash tests/mech/run_sabotage_matrix.sh ROW` at
+`c572e9570` (`GO e1fix mech`, 08:18:48-08:31, `build/e1s/c4/mech_<id>.log`),
+against a clean `make test-partlayout` of 0 fail / 48 pass. Each new row was
+hand-validated first against a rebuilt copy (scratch driver, the same
+figures). Every probe now reaches its own row's site (F10); each row's
+`SAB_DOC_FIGURE` carries its figure.
+
+| row | plant | probe (clean tree) | solo verdict |
+|---|---|---|---|
+| S1111 | T1 never holds | `--part-inline-rank=measured` stamps `_PART_LAYOUT_WHY "threshold-unmeasured"` | reach ok, 11/37, DETECTED |
+| S1112 | P2 never holds | the attempt-route prefilter's facts row `P2 not-copyable as-emitted` under `prefilter:inline` | reach ok, 7/41, DETECTED |
+| S1113 | `shared` writes the inline text (re-anchored on `layout_texts[]`) | `--part-residual=shared` writes the guarded noipa | reach ok, 4/44, DETECTED |
+| S1114 | callers unfolded | the inline rung's prefilter row reads 2 callers (P8) beside an owned `search_run` | reach ok, 26/22, DETECTED |
+| S1115 | size decision counts the marks | the size note printed under a control, with its stamp | reach ok, 1/47, DETECTED |
+| S1116 | the max-speed preset leaks | `--tune=max-speed`'s controls row reads unset everywhere, rows `K,T0` | reach ok, 10/38, DETECTED |
+| S1117 | P7 above P4-P6 | `prefilter:shared` + `R2` stops at `P4 class-shared` | reach ok, 6/42, DETECTED |
+| S1118 | `/held` dropped | `^(a)b` under `prefilter:inline` stamps `prefilter=inline/held` | reach ok, 9/39, DETECTED |
+| S1119 (Q4) | K24's noclone dropped from every search head | a P2 head under a control carries the guarded noclone | reach ok, 0/48, **UNDETECTED (expected)**: gcc 15.2 -O2 clones no part either way (shared is noipa; P2 bodies are not cloned), so the clone count has nothing to count; K24 stays held by tests/codegen |
+| S1120 (Q4) | `subject_class` names `_search_run` | `search_run` is listed `owned` | reach ok, 36/12, DETECTED (the render's "subject with no head mark" internal error on every controlled VM compile; section 3's text check cannot see it, because the head is never marked) |
+| S1121 (Q4) | an unlisted writer: `always_inline` on `_is_dead` | the pre-multiplied accessor's text | reach ok, 1/47, DETECTED (census) |
+| S1124 (F2) | bare unguarded noipa | the guarded text, and clang on the box | reach ok, 2/46, DETECTED (census guard shape, clang -Werror) |
+| S1125 (F1) | P2 writes shared | `P2 not-copyable as-emitted` under `find:inline` | reach ok, 3/45, DETECTED (`p2`, evaluator head check) |
+| S1126 (F9) | `pcrec_sb_len_decide` stops subtracting the marks | asks for a witness over two-thirds prose | reach MISSING, **UNREACHED (expected)**, argued in §10.1 F9 |
+| S1127 (F8) | head-mark row M3 holds for every head | a compound's exported `rx_search` under a control | reach ok, 4/44, DETECTED |
+
+Unreached at E1 (stated, no row can see them): TM/T2 (no measurement set),
+the wrapper rows W1/W2 (no forwarding caller before I3), P4-P6 for
+`compound` (F4), and the decision-length subtraction (S1126).
+
+### 10.4 make test and the axes arm
+
+Both run detached by `build/e1s/c4/chain4.sh` after the mech rows
+(`GO e1fix test`, `GO e1fix axes`):
+
+| run | log | completion line in `build/e1s/c4/chain4.log` |
+|---|---|---|
+| `scripts/perfrun --label e1fix` (full make test) at `c572e9570` + the doc-only commit | `build/e1s/c4/test.log`; verdict `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` | `make test rc=` |
+| `AXES="--part-" bash tests/axes/run_axes.sh` | `build/e1s/c4/axes.log` | `axes rc=`, then `== chain4 COMPLETE` |
+
+RESULTS: see 10.5 (written when the chain completes).

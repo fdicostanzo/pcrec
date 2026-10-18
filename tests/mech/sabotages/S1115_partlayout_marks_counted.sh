@@ -10,7 +10,7 @@ SAB_ID="S1115-partlayout-marks-counted"
 SAB_FILE="src/core/sb.c"
 SAB_SUITES="partlayout"
 SAB_DESC='pcrec_sb_size_decide stops subtracting the part-layout marks, so a control moves the size figures every cap, the size term and the size notes read'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:1fail/45pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1115."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:1fail/47pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1115."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --warn-emit-bytes=1 --part-residual=shared -o "$REACH_TMP/x.c" --pattern "(a)b" 2>&1 && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

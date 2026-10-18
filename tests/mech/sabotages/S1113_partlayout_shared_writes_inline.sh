@@ -9,7 +9,7 @@ SAB_ID="S1113-partlayout-shared-writes-inline"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='the shared layout'"'"'s attribute text is always_inline, so a part the tables lay out shared is copied into its callers (and a label-table body no longer builds) while every stamp and listing still says shared'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:8fail/38pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1113."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:4fail/44pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1113."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-residual=shared -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h -A1 "^#if __has_attribute(noipa)" "$REACH_TMP/x.c"'

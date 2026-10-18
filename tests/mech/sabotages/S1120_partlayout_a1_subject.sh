@@ -11,7 +11,7 @@ SAB_ID="S1120-partlayout-a1-subject"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='subject_class names A1'"'"'s _search_run a prefilter subject, so a control lays out a function the VM entry rung owns'
-SAB_DOC_FIGURE="OWED: lane e1fix (solo mech run pending). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1120."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:36fail/12pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1120."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --vm-entry-shape=4 --part-residual=shared --emit-facts --pattern "(a)b" | tr "\t" " "'

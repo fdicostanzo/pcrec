@@ -10,7 +10,7 @@ SAB_ID="S1111-partlayout-t1-never-fires"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='row T1 never holds, so `measured` with no measurement set is laid out as a threshold nobody resolved: no WHY stamp, a `rank=measured` stamp, T3 instead of the default object'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:11fail/35pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1111."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:11fail/37pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1111."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-inline-rank=measured -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

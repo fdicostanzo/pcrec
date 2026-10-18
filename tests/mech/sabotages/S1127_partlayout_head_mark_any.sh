@@ -9,7 +9,7 @@ SAB_ID="S1127-partlayout-head-mark-any"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='head-mark row M3 holds for every head, so a non-subject search head writes a mark no record renders'
-SAB_DOC_FIGURE="OWED: lane e1fix (solo mech run pending). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1127."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:4fail/44pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1127."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-residual=shared -o "$REACH_TMP/x.c" --pattern "^\s+|\s+$" && grep -h "RX_PART_LAYOUT\|^int rx_search(" "$REACH_TMP/x.c"'

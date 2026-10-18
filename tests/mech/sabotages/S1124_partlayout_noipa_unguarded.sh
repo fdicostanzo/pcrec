@@ -8,7 +8,7 @@ SAB_ID="S1124-partlayout-noipa-unguarded"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='the shared layout writes a bare __attribute__((noipa)) with no __has_attribute guard, so clang'"'"'s -Werror fails and ignores it'
-SAB_DOC_FIGURE="OWED: lane e1fix (solo mech run pending). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1124."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:2fail/46pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1124."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-residual=shared -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h -A1 "^#if __has_attribute(noipa)" "$REACH_TMP/x.c" && command -v clang'

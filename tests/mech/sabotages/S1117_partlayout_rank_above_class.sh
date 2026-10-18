@@ -9,7 +9,7 @@ SAB_ID="S1117-partlayout-rank-above-class"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='row P7 (the rank threshold) is walked before the class-value rows P4-P6, so a part whose class value is shared or auto is inlined by a threshold that should not reach it'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:6fail/40pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1117."
+SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev box, at c572e9570): partlayout:6fail/42pass, DETECTED, against a clean 0fail/48pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1117."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --part-layout=prefilter:shared --part-inline-rank=R2 --emit-facts --pattern "(a)b" | tr "\t" " "'
