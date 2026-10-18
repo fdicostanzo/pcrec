@@ -13849,6 +13849,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_init(&v, cx, root, &g);
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);
+    /* [ENTRY-TABLE] E1 the entry rung's attribute on the three `_run`
+     * bodies is OWNED (A1): where it inlines them, a part they call is called
+     * from their callers instead (`callers`, src/gen/part_layout.c). */
+    if (en.ai[0])
+        cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_SEARCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_CAPS_RUN);
     /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
      * read a table, and re-spell the program if that is the atom table —
      * AFTER the entry rung is chosen on the program's length, so the table

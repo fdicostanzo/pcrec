@@ -1822,6 +1822,21 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         return -1;
     }
     defo.flags |= pcrec_tune_deny_flags(defo.tune);
+    /* [ENTRY-TABLE] E1 the part-layout controls are three closed value sets
+     * (lib/pcrec.h); a value outside one is a malformed option, refused like
+     * an out-of-range `tune`, never read as some layout. */
+    if (defo.part_inline_rank < PCREC_PART_RANK_UNSET ||
+        defo.part_inline_rank > PCREC_PART_RANK_MEASURED ||
+        defo.part_residual < PCREC_PART_UNSET || defo.part_residual > PCREC_PART_INLINE ||
+        (defo.part_layout >> (2u * PCREC_PART_NCLASS)) != 0) {
+        if (err)
+            snprintf(err->msg, sizeof(err->msg),
+                     "invalid part-layout control (part_inline_rank %d, "
+                     "part_residual %d, part_layout 0x%x)",
+                     defo.part_inline_rank, defo.part_residual,
+                     (unsigned)defo.part_layout);
+        return -1;
+    }
 
     /* [K79] THE EMITTERS SEE THE PLACEHOLDER, NEVER THE CALLER'S PREFIX
      * (core/internal.h, PCREC_PREFIX_PLACEHOLDER): every length measured
@@ -3239,6 +3254,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * the record and the finished artifact. Only this, the FINAL
          * attempt's record, is ever listed. The recovery point's first arm
          * resumes at this label when a forced ask fails. */
+        /* [ENTRY-TABLE] E1 THE PART-LAYOUT RENDER (compound_entries.md §3.0
+         * I5): every length decision above read the text with the marks'
+         * bytes subtracted; the marks become attributes and stamp lines HERE,
+         * before the prefix render. A spliced part leaves its marks to its
+         * shell, as it leaves its prefix placeholder. */
+        if (!(emit_in && emit_in->unrendered)) pcrec_part_layout_render(&cx);
 facts_force:
         if (facts_hook) pcrec_facts_force_all(&cx);
         /* [K79] THE PREFIX RENDER: the one step that writes the caller's
@@ -3278,6 +3299,8 @@ facts_force:
             pf->utf_check = pcrec_utf_check_on(&cx);
             pf->simd_guarded = cx.job->csb.simd_guarded;
             pf->simd_size = cx.job->csb.simd_size;
+            pf->copyable = !cx.job->pl.uncopyable;
+            pf->layout_bytes = cx.job->csb.layout_bytes;
             if (!pf->into || !cx.job->memfn_forms)
                 pcrec_ctx_fail(&cx, 0, "internal error: a part's facts have no "
                                "arena or its forms were never stamped");

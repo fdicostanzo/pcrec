@@ -314,6 +314,9 @@ void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape)
                        "internal entry or keeps info/main static");
     unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N];
     entry_derive(shape, er);
+    /* [ENTRY-TABLE] E1: the part-layout render reads the derived edges for
+     * each part's callers and rank (src/gen/part_layout.c). */
+    memcpy(cx->job->pl.er, er, sizeof er);
     if (cx->emit_in && cx->emit_in->edge_rank)
         memcpy(cx->emit_in->edge_rank, er, sizeof er);
     unsigned live = entry_closure(er, r->exported | r->kept);

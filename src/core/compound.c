@@ -53,7 +53,7 @@ static unsigned part_kept(unsigned need)
  * into its own (which renders it). The part is already checked. */
 static int part_compile(const char *pattern, const pcrec_options *parent,
                         const CompPart *part, PcrecDeriveReport *report,
-                        PcrecPartFacts *facts, bool unrendered,
+                        PcrecPartFacts *facts, bool unrendered, PcrecEntry pe,
                         pcrec_output *out, pcrec_error *err)
 {
     pcrec_options o;
@@ -64,6 +64,7 @@ static int part_compile(const char *pattern, const pcrec_options *parent,
     o.header_name = NULL;
     const PcrecEntryReq req = { 0, part_kept(part->need) };
     const PcrecEmitIn in = { .req = &req, .part_role = part->role,
+                             .part_entry = pe,
                              .bound = part->bound, .derive = part->derive->fn,
                              .derive_report = report, .unrendered = unrendered,
                              .facts = facts, .harness = NULL };
@@ -106,7 +107,8 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
         }
         return -1;
     }
-    return part_compile(pattern, parent, part, report, NULL, false, out, err);
+    return part_compile(pattern, parent, part, report, NULL, false,
+                        PCREC_ENTRY_COMP_A, out, err);
 }
 
 /* ---- [COMPOUND] B4: THE ROW TABLE, THE PLACEMENT TABLE AND THE WALK -------
@@ -165,7 +167,12 @@ static int walk_part(CompWalk *w, int i)
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
-                                &w->rep[i], &w->facts[i], true, &w->out[i],
+                                &w->rep[i], &w->facts[i], true,
+                                /* [ENTRY-TABLE] E1 the shell row the part's
+                                 * part-layout mark names: its operand's */
+                                i == w->row->arg[0] ? PCREC_ENTRY_COMP_A
+                                                    : PCREC_ENTRY_COMP_B,
+                                &w->out[i],
                                 &w->err[i]);
     }
     return w->rc[i];

@@ -105,7 +105,8 @@ static void callsite_emit(StrBuf *c, const char *ind, const PcrecPartFacts *f,
 static void part_splice(StrBuf *c, const char *text, const PcrecPartFacts *f)
 {
     StrBuf t = { .p = (char *)text, .len = strlen(text), .cx = c->cx,
-                 .simd_guarded = f->simd_guarded, .simd_size = f->simd_size };
+                 .simd_guarded = f->simd_guarded, .simd_size = f->simd_size,
+                 .layout_bytes = f->layout_bytes };
     pcrec_sb_splice(c, &t);
 }
 
@@ -126,7 +127,7 @@ void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
     const char *a = pcrec_sb_fragf(&cx->arena, "%s__%s_search", p, sh->role[0]);
     const char *b = sh->text[1]
                   ? pcrec_sb_fragf(&cx->arena, "%s__%s_search", p, sh->role[1]) : NULL;
-    pcrec_emit_search_head(cx, c, searchfn, pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH));
+    pcrec_emit_search_head(cx, c, searchfn, PCREC_ENTRY_SEARCH);
     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
     if (b) pcrec_sb_puts(c, "    size_t lower = search_from;\n");
     pcrec_sb_puts(c, sh->floor_any ? "    {\n" : "    if (search_from == 0) {\n");

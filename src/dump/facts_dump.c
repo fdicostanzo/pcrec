@@ -38,6 +38,8 @@
 typedef struct {
     StrBuf facts;
     StrBuf dec;
+    StrBuf plctl;     /* [ENTRY-TABLE] E1 the part-layout sections */
+    StrBuf plparts;
 } FactsRows;
 
 /* `facts.def`'s own name, epoch, kind and owner columns, by row. */
@@ -170,6 +172,9 @@ static void fd_hook(Ctx *cx, const char *artifact, size_t len, void *ud)
         pcrec_sb_row(&r->facts, cells, 9);
     }
     fd_decisions(cx, r, enc, artifact, len);
+    /* [ENTRY-TABLE] E1: the part-layout tables' record of this attempt,
+     * read off `Job.pl` as the render left it (src/gen/part_layout.c). */
+    pcrec_part_layout_facts(cx, &r->plctl, &r->plparts, enc);
 }
 
 char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
@@ -197,6 +202,8 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
                                  fd_hook, &r, NULL) != 0) {
             pcrec_sb_free(&r.facts);
             pcrec_sb_free(&r.dec);
+            pcrec_sb_free(&r.plctl);
+            pcrec_sb_free(&r.plparts);
             return NULL;
         }
         pcrec_output_free(&out);
@@ -219,7 +226,24 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
         "# the route and emission DECISIONS the record does not hold (D124).\n"
         "#encoding\tstamp\tvalue\n");
     if (r.dec.p) pcrec_sb_puts(&s, r.dec.p);
+    pcrec_sb_puts(&s,
+        "#section part-layout-controls\n"
+        "# The part-layout controls as the artifact table resolved them\n"
+        "# (docs/spec/tuning.md sections 2.51-2.53): the caller's value, else the\n"
+        "# --tune preset, else unset; then the artifact rows that fired.\n"
+        "#encoding\tresidual\trank\tprefilter\tcompound\tfind\twrap\trows\twhy\n");
+    if (r.plctl.p) pcrec_sb_puts(&s, r.plctl.p);
+    pcrec_sb_puts(&s,
+        "#section part-layout\n"
+        "# One row per part the artifact defines: a subject (its control class)\n"
+        "# or an owned function (its owner writes its attribute). `row` is the\n"
+        "# part table's row that fired, or T0 where no control asked for a\n"
+        "# layout; `wrappers` counts callers that only forward to a shared part.\n"
+        "#encoding\tfunction\tclass\tcallers\trank\tcopyable\trow\tlayout\twrappers\n");
+    if (r.plparts.p) pcrec_sb_puts(&s, r.plparts.p);
     pcrec_sb_free(&r.facts);
     pcrec_sb_free(&r.dec);
+    pcrec_sb_free(&r.plctl);
+    pcrec_sb_free(&r.plparts);
     return pcrec_sb_take(&s);
 }
