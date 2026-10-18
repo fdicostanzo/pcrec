@@ -3938,3 +3938,16 @@ states its presence spans with an UNSTATED class (`kit_presence_check` refuses).
 All suite `candoracle` except S1100; each hand-measured DETECTED solo by
 `docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh` (figures in
 `docs/dev/lanes/b3a_report.md` §6). No artifact moves.
+
+**S961, S962, S984 (lane ksrc23, 2026-10-17, [KNOW-SRC] K3; the new arm
+`knowledge`, `tests/knowledge/run_knowledge_tests.sh`):** measure_sets.md
+§8.5 wrote these for the measures kind; K3 maps them onto the analysis kind.
+S961 (the canonical writer omits the bundle's `description`, a part of the
+document `rows_digest` does not cover) and S984 (the canonical writer keeps
+only the first encoding of each `serves` `when` list — §8.5's "drops every
+`serves`" would make the view refuse to load, since `serves` is required)
+leave R1 and R2 green by construction; only R3 (analyze/'s `--dump-doc`)
+detects them. S962 plants the resolver's derived-section refusal out
+(`ks_probe_dir`, src/core/ksrc.c), so a listing fed back reaches the `.rxt`
+reader and is refused for an unrelated reason; the detector holds the
+refusal's CLASS. Solo verdicts in `docs/dev/lanes/ksrc23_report.md`.

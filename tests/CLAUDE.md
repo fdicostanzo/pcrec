@@ -789,6 +789,14 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   implement-then-replaced it).
   `manifests/` holds B1's named mover manifests. See its own CLAUDE.md.
 
+- **knowledge/** — `[KNOW-SRC]` K3 (lane ksrc23, 2026-10-17): ROUND-TRIP
+  IDENTITY for the analysis kind (`make test-knowledge`, in
+  `TEST_SECTIONS`; mech arm `knowledge`): R1/R2/R3/R5 of
+  `docs/design/measure_sets.md` §9.6 over the shipped bundles and the
+  fixtures, with analyze/'s `--dump-doc` as R3's and R5's independent side,
+  and the loader's refusal of a derived view fed back. See its own
+  CLAUDE.md.
+
 ## Conventions
 
 .rxt format: comments (#), pattern blocks (pattern <regex>), and match/nomatch assertions (m/n with subject and expected span). See docs/testing.md for the full format spec. Run tests via `make test` or `bash tests/harness/run.sh [files...]`. Env vars: PCREC, CC, GENCFLAGS, KEEP=1 (preserve temp dir), VERBOSE=1 (per-test output), LINTGEN=1 (SAN-1: rides the GENCFLAGS compile pass with `gcc -fanalyzer` on every generated matcher — `make test LINTGEN=1`; opt-in, see docs/testing.md "Sanitizer + lint battery"), CLANGGEN=1 ([CC-CLANG]: the same shape one compiler over — defaults CC to clang for the generated-matcher compile pass, unless CC is already set explicitly; opt-in, `make test CLANGGEN=1`, writes nothing to build/, see docs/testing.md "Sanitizer + lint battery"), CCACHE=1 ([TT-3]: routes generated-code and tree-build compiles through ccache — opt-in, MEASURED a clear NO for `make test`'s own workload, see docs/testing.md "Compile caching").

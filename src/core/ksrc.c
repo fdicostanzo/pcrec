@@ -4,12 +4,16 @@
  * the digest builder. Each exists once; a kind differs from another only
  * through its `KsKind` row's columns.
  *
+ * K3 adds part 6, the views: the view-name dispatch and the loader's refusal
+ * of a derived view fed back as an input.
+ *
  * INCLUDES libc, POSIX and `core/ksrc.h` ONLY, by rule (§9.2, S989): see the
  * header. No `Arena`, no `pcrec_error`, no stderr — a caller supplies the
  * allocator and receives refusals and notes as text. */
 
 #include <dirent.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -123,6 +127,16 @@ static KsRes ks_probe_dir(const KsWalk *w, const char *dir, const char *entry,
     case KS_ENTRY_PROBE_EXISTS:
         if (!ks_path_is_file(path)) return KS_RES_ABSENT;
         break;
+    }
+    {
+        const char *sec = pcrec_ks_derived_section(k, path);
+        if (sec) {
+            ks_fail(w->err, "%s carries '#section %s', a derived view of %s "
+                    "and never an input: %s %s --view=canonical writes the "
+                    "loadable form", path, sec, k->list_flag, k->list_flag,
+                    name);
+            return KS_RES_ERROR;
+        }
     }
     if (k->probe) {
         switch (k->probe(path, name, &doc, &nitems, w->err)) {
@@ -244,6 +258,87 @@ KsPick pcrec_ks_pick(const char *flag_value, const char *file_value)
         p.source = KS_SRC_FLAG;
     }
     return p;
+}
+
+/* ---- part 6: the views ----------------------------------------------- */
+
+int pcrec_ks_out(const KsOut *o, const char *s)
+{
+    return o->write(o->ctx, s, strlen(s));
+}
+
+/* The views a name selects, first match: each is one writer COLUMN of the
+ * row, named by its offset. The index, derived and per-target views (§9.2
+ * part 6) are the listing's own and are not written through a column. */
+typedef int (*KsWriter)(const KsOut *, const void *, KsErr *);
+static const struct {
+    const char *view;
+    size_t      col;
+} ks_views[] = {
+    { "canonical", offsetof(KsKind, write_canonical) },
+    { "decoded",   offsetof(KsKind, write_decoded) },
+};
+
+int pcrec_ks_view_write(const KsKind *k, const char *view, const KsOut *o,
+                        const void *doc, KsErr *err)
+{
+    const char *who = k->list_flag ? k->list_flag : k->kind;  /* `lib` has none */
+    for (size_t i = 0; i < sizeof ks_views / sizeof *ks_views; i++) {
+        KsWriter w;
+        if (strcmp(ks_views[i].view, view) != 0) continue;
+        memcpy(&w, (const char *)k + ks_views[i].col, sizeof w);
+        if (!w) {
+            ks_fail(err, "%s has no %s view", who, view);
+            return -1;
+        }
+        return w(o, doc, err);
+    }
+    ks_fail(err, "%s: unknown view '%s' (canonical, decoded)", who, view);
+    return -1;
+}
+
+const char *pcrec_ks_derived_section(const KsKind *k, const char *path)
+{
+    static const char tag[] = "#section ";
+    FILE *f;
+    const char *hit = NULL;
+    char name[64];
+    size_t at = 0, n = 0;
+    bool line_start = true, in_name = false;
+    int c;
+    if (!k->derived_sections || !(f = fopen(path, "rb"))) return NULL;
+    while (!hit && (c = getc(f)) != EOF) {
+        if (in_name) {
+            if (c == '\n' || c == '\r' || c == '\t' || c == ' ') {
+                name[n] = 0;
+                for (size_t i = 0; k->derived_sections[i]; i++)
+                    if (!strcmp(k->derived_sections[i], name))
+                        hit = k->derived_sections[i];
+                in_name = false;
+                line_start = c == '\n';
+                at = 0;
+            } else if (n + 1 < sizeof name) {
+                name[n++] = (char)c;
+            } else {
+                in_name = false;            /* too long to be a section name */
+            }
+            continue;
+        }
+        if (c == '\n') { line_start = true; at = 0; continue; }
+        if (line_start && (unsigned char)c == (unsigned char)tag[at]) {
+            if (++at == sizeof tag - 1) { in_name = true; n = 0; line_start = false; }
+            continue;
+        }
+        line_start = false;
+        at = 0;
+    }
+    if (in_name && !hit) {                  /* the name ran to end of file */
+        name[n] = 0;
+        for (size_t i = 0; k->derived_sections[i]; i++)
+            if (!strcmp(k->derived_sections[i], name)) hit = k->derived_sections[i];
+    }
+    fclose(f);
+    return hit;
 }
 
 /* ---- part 5: the digests --------------------------------------------- */

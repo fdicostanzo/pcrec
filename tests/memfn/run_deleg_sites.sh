@@ -46,6 +46,7 @@
 # different op (pcrec's `deleg_check` refuses that at compile time).
 set -u
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"   # TIMEOUT_BIN: a bare gnutimeout is this box's name only
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 CC="${CC:-cc}"
 DEF="$ROOT_DIR/src/gen/memfn_sites.def"
@@ -164,7 +165,7 @@ c10_floor() { # $1 = fixture file; prints the named kinds it does not cover
         awk -F'\t' -v k="$k" '$0 !~ /^#/ && $4 == k { n++ } END { exit !n }' "$1" || echo "$k"
     done
 }
-if "${TIMEOUT_BIN:-gnutimeout}" 900 make -s -C "$ROOT_DIR" -j4 BUILD_DIR="$TRB" \
+if "$TIMEOUT_BIN" 900 make -s -C "$ROOT_DIR" -j4 BUILD_DIR="$TRB" \
         CFLAGS="-O2 -g -DPCREC_CAND_TRACE" all > "$T/trace.log" 2>&1; then
     c10_fix "$FIX" > "$T/c10"
     if [ -s "$T/c10" ]; then while read -r l; do bad "C10 one-byte: $l"; done < "$T/c10"; else ok; fi

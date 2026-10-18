@@ -47,6 +47,17 @@ against.
   than streaming: every caller here already holds its whole input in
   memory for the counting pass, so there is no separate state to carry
   across calls.
+- **[KNOW-SRC] K3 (lane ksrc23, 2026-10-17)**: `parse_bundle` also reads ONE
+  whole `analysis` bundle as an author writes it (column-1 comments, blank
+  and whitespace-only lines around it, the bundle's `include`/`description`,
+  every data-block line, all eleven provenance fields, prose in block-scalar
+  form; from `docs/spec/rxt_format.md`, never from pcrec's reader), keeping
+  the blocks' FILE order; on this tool's own emitted subset it reads what it
+  always did. `dump_doc` prints the DOCUMENT in `pcrec --list-analysis NAME
+  --view=decoded`'s `#section decoded` shape, and `--dump-doc FILE` is its
+  command: R3's and R5's independent side for pcrec's analysis kind
+  (`tests/knowledge/`). It is the deliberate TWIN of pcrec's reader
+  (measure_sets.md §9.1), which is why it may not share code with it.
 - `main.c` — argv parsing (mirrors `scripts/pcrec_analyze.py`'s argparse
   wiring closely enough to be indistinguishable at the CLI) and the four
   command implementations (`cmd_scan`/`cmd_merge`/`cmd_digest_only`/
@@ -59,7 +70,7 @@ after a clone has it). `ANALYZEFLAGS` in the top-level Makefile is its own
 small flag set (`$(CFLAGS) $(WARN) -std=gnu11`) — deliberately NOT
 `$(ALLFLAGS)`, whose `-Ilib -Isrc` would misstate a dependency this binary
 does not have. `make strict` covers `analyze/`'s three `.c` files
-alongside `scripts/findgen.c` (another standalone build tool) and
+alongside `scripts/ksgen.c` (another standalone build tool) and
 `cli/main.c`.
 
 ## Tests

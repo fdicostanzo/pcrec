@@ -1,0 +1,19 @@
+# measure_sets.md rev 3 §9.7: [KNOW-SRC] K2's EDIT SET, written once as data against the
+# branch point 343605a57 (K1 merged, the both-ways copies present). docs/design/start_table/
+# sabotage_anchors.py derives the re-aim/re-run map from it (k2_anchors.tsv), exactly as
+# k1_edit_set.tsv does for K1. K2 = lane ksrc23. scripts/findgen.c -> scripts/ksgen.c is a
+# rename plus a split of main() into the analysis arm; no sabotage row names that file (grep),
+# so it carries no def entry here (`main` would match every file's main).
+# kind	value	commit	why
+def	stop_store	K2	rxt_find.c: the pre-K1 stop index helper, inside the PCREC_KSRC_BOTHWAYS block, deleted
+def	old_dir_has_exact	K2	rxt_find.c: the pre-K1 copy (BOTHWAYS), deleted; pcrec_ks_dir_has_exact is the one home
+def	old_probe_dir	K2	rxt_find.c: the pre-K1 copy (BOTHWAYS), deleted
+def	old_stops_text	K2	rxt_find.c: the pre-K1 copy (BOTHWAYS), deleted
+def	old_find_bundle	K2	rxt_find.c: the pre-K1 copy (BOTHWAYS), deleted
+def	find_bothways	K2	rxt_find.c: the both-ways comparison, deleted
+def	old_lib_find	K2	rxt_source.c: the pre-K1 lib search (BOTHWAYS), deleted
+def	pcrec_find_name_ok	K2	findings.c: the wrapper over pcrec_ks_name_ok, deleted; rxt_find.c and rxt_source.c call the part
+line	find_bothways(w, name, from, rc, out, rc ? 0 : *at);	K2	rxt_find.c find_bundle: the both-ways call, deleted
+line	const char *old = old_lib_find(a, own, dirs, ndirs, ref);	K2	rxt_source.c lib_find: the both-ways check, deleted
+line	if (!pcrec_find_name_ok(name, strlen(name)))	K2	rxt_find.c pcrec_find_chain_build: -> pcrec_ks_name_ok
+line	if (pcrec_find_name_ok(v, n)) return 0;	K2	rxt_source.c analysis_name_check: -> pcrec_ks_name_ok

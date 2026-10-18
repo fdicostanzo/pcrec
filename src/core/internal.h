@@ -6721,6 +6721,13 @@ void pcrec_find_resolve(Ctx *cx, bool notes);
  * is the table's lookup by kind name, NULL for no such kind. */
 extern const KsKind pcrec_ks_analysis;
 extern const KsKind pcrec_ks_lib;
+/* [KNOW-SRC] K3: the analysis kind's ITEM handle, what its two views
+ * (`write_canonical`/`write_decoded`, §9.6) read: the parse a bundle was
+ * read from and the bundle's name (a compiling file may define several). */
+typedef struct {
+    const RxtSource *src;
+    const char      *bundle;
+} PcrecKsAnalysisItem;
 extern const KsKind *const pcrec_ks_kinds[];
 const KsKind *pcrec_ks_kind(const char *name);
 
@@ -7900,6 +7907,12 @@ char *pcrec_find_list_name(const char *name, const char *const *dirs,
                            pcrec_error *err);
 char *pcrec_find_list_file(const char *path, const char *const *dirs,
                            const char *fill, pcrec_error *err);
+/* [KNOW-SRC] K3 `--list-analysis NAME --view=V`: the analysis kind's view `V`
+ * (`canonical` or `decoded`, docs/spec/findings.md §8.4/§8.5) of the bundle
+ * `NAME` resolves to (link 0 of the chain `dirs` gives). NULL with `err`
+ * filled on a refusal; caller frees. */
+char *pcrec_find_list_view(const char *name, const char *const *dirs,
+                           const char *view, pcrec_error *err);
 
 /* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
