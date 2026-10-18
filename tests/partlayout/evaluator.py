@@ -165,6 +165,20 @@ def definitions(text):
     return defs
 
 
+def head_of(text, fn):
+    """`fn`'s definition head: its signature line and the directive, lone
+    `static ` and lone attribute lines directly above it."""
+    lines = text.split("\n")
+    for i, l in enumerate(lines):
+        if re.match(r"^[\w\s\*]*\b%s\(" % re.escape(fn), l) and not l.rstrip().endswith(";"):
+            j = i
+            while j > 0 and re.match(r"^(#|static\s*$|__attribute__\(\(\w+\)\)\s*$)",
+                                     lines[j - 1]):
+                j -= 1
+            return "\n".join(lines[j:i + 1])
+    return None
+
+
 def gcc_copies(text, fn, workdir):
     """copyable(fn), asked of gcc itself (§2.1 H1/H2: its own refusal is the
     fact): the default text with `fn`'s definition forced always_inline
@@ -244,7 +258,9 @@ def main():
         cv = resolved[cls]
         thr = {"R3": 3, "R2": 2, "R1": 1, "R0": 0}.get(resolved["rank"] or "", -1)
         if not copyable:
-            e, h = "shared", True                          # P2
+            # P2 adds no attribute: gcc keeps a body it cannot copy as one
+            # out-of-line body by itself, and its head stays the default's.
+            e, h = "kept", True                            # P2
         elif len(callers) == 1:
             e, h = None, True                              # P3
         elif cv in ("shared", "inline", "auto"):
@@ -291,11 +307,13 @@ def main():
         local = set(re.findall(r" t (\S+)$", syms, re.M))
         allsyms = set(re.findall(r" \w (\S+)$", syms, re.M))
         for fn, e in expect.items():
-            if e == "shared" and fn not in local:
+            if e == "kept" and head_of(atext, fn) != head_of(btext, fn):
+                bad.append("%s: P2 wrote on the head: %r" % (fn, head_of(atext, fn)))
+            if e in ("shared", "kept") and fn not in local:
                 bad.append("%s: expected shared (one local symbol), absent" % fn)
             if e == "inline" and fn in allsyms:
                 bad.append("%s: expected inline (no symbol), present" % fn)
-            if e == "shared":
+            if e in ("shared", "kept"):
                 clones = [s for s in allsyms
                           if re.match(re.escape(fn) + r"\.(constprop|isra|part)\b", s)]
                 if clones:

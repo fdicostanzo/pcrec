@@ -1253,7 +1253,8 @@ enum {
 enum {
     PCREC_PART_UNSET  = 0,
     PCREC_PART_AUTO   = 1,      /* "auto": the owner's default layout */
-    PCREC_PART_SHARED = 2,      /* "shared": one out-of-line body, noinline noclone */
+    PCREC_PART_SHARED = 2,      /* "shared": one out-of-line body, noipa
+                                   (noinline where the compiler has none) */
     PCREC_PART_INLINE = 3       /* "inline": always_inline into each caller */
 };
 /* The rank threshold: a part whose hottest call site ranks at or above it is
@@ -1657,8 +1658,9 @@ typedef struct {
      * class value is unset. `part_residual`: `PCREC_PART_UNSET`/`_AUTO`/
      * `_SHARED`/`_INLINE`, the layout of every part neither decided. A part
      * a layout cannot apply to (it cannot be copied, or it has one caller)
-     * keeps its default layout and is reported in `<PREFIX>_PART_LAYOUT`,
-     * never refused. A value outside its enum refuses the compile. */
+     * keeps its default layout, with no attribute added, and is reported
+     * in `<PREFIX>_PART_LAYOUT` (`/held`), never refused. A value outside
+     * its enum refuses the compile. */
     uint32_t           part_layout;
     int                part_inline_rank;
     int                part_residual;

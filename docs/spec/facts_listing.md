@@ -127,7 +127,7 @@
 
 - <a id="s4-4-p1"></a>[4.4¶1] One row per part the artifact defines, owned functions included (`tuning.md` §2.51¶5).
 - <a id="s4-4-p2"></a>[4.4¶2] `function` is the entry-table name without the prefix (`prefilter`, `comp_a`, `comp_b`, `search_run`); `class` a class token or `owned`; `callers` the count row P3 reads; `rank` `R0`..`R3` (`tuning.md` §2.52¶2); `copyable` `yes` or `no`, or `-` for an owned function.
-- <a id="s4-4-p3"></a>[4.4¶3] `row` is the part table row that fired, id and name (`P9 residual-inline`, `P1 owned`), or `T0 as-emitted` where no control asked for a layout. `layout` is `auto`, `shared`, `inline` or `owner` (the owner's attribute); `wrappers` counts callers that only forward to a shared part.
+- <a id="s4-4-p3"></a>[4.4¶3] `row` is the part table row that fired, id and name (`P9 residual-inline`, `P1 owned`), or `T0 as-emitted` where no control asked for a layout. `layout` is `auto`, `shared`, `inline`, `as-emitted` (row P2: the head as the default artifact has it) or `owner` (the owner's attribute); `wrappers` counts callers that only forward to a shared part.
 
 <a id="s5"></a>
 ## 5. Guarantees

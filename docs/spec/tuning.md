@@ -1038,7 +1038,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | `PCREC_PART_FIND` (2) | `find` | the iterator's parts: none exist, the iterator is not built |
 | `PCREC_PART_WRAP` (3) | `wrap` | static twins of wrapper bodies and residual leaves: none exist |
 
-<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing.
+<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing. A value for `compound` is accepted and today changes no part: the one compound row built (split) has a part whose body holds a label table (P2) and a part with one caller (P3), so every compound part stops at a constraint row and the stamp reads `compound=V/held`.
 
 <a id="s2-51-p2"></a>[2.51¶2] The values, shared with §2.53:
 
@@ -1046,10 +1046,10 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 |---|---|---|
 | (unset) | `PCREC_PART_UNSET` (0) | the control decides nothing; §2.51¶5 resolves it |
 | `auto` | `PCREC_PART_AUTO` (1) | the owner's default layout: the attribute its emitter writes, often none |
-| `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noipa` (no inlining, no cloning, no interprocedural analysis) |
+| `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noipa` (no inlining, no cloning, no interprocedural analysis) where the compiler has it, else `noinline` |
 | `inline` | `PCREC_PART_INLINE` (3) | `always_inline` in each caller |
 
-<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is `__attribute__((noipa)) `, `inline` is `inline __attribute__((always_inline)) `, `auto` nothing.
+<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is a guarded block on lines of its own, `__attribute__((noipa))` under `#if __has_attribute(noipa)` and `__attribute__((noinline))` under its `#else` (with `__has_attribute` defined to 0 where the compiler lacks it), `inline` is `inline __attribute__((always_inline)) `, `auto` nothing. A row that writes no layout (P1, P2, and every `auto`) leaves the head exactly as the default artifact has it.
 
 <a id="s2-51-p3"></a>[2.51¶3] ANSWER-IDENTICAL across every value. Not a flags bit, so it has no `rx_info.flags` question and no `rx_info` mirror. The layout is rendered after every length decision: no size cap, size term (§2.16), entry-shape term (§2.21) or stamp reads the layout's bytes, so no control moves the refusal set or any other stamp. The size limits (`limits.md` §8) bound the default-layout text.
 
@@ -1073,13 +1073,13 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | id | name | conjuncts | writes |
 |---|---|---|---|
 | P1 | `owned` | an owner writes the function's attribute: the VM entry chain's `_run` bodies and helpers, `_deep`, the encoding seam | the owner's attribute, unchanged |
-| P2 | `not-copyable` | the body holds a label table or a computed goto: the DFA attempt route's body | `noipa` |
+| P2 | `not-copyable` | the body holds a label table or a computed goto: the DFA attempt route's body | nothing: the head as the default artifact has it (gcc keeps such a body out of line) |
 | P3 | `single-caller` | `callers(part)` = 1 | its default layout |
-| P4 | `class-shared` | the part's class value is `shared` | `noipa` |
+| P4 | `class-shared` | the part's class value is `shared` | `shared` (§2.51¶2a) |
 | P5 | `class-inline` | the part's class value is `inline` | `always_inline` |
 | P6 | `class-auto` | the part's class value is `auto` | its default layout |
 | P7 | `rank-hot` | the threshold is a rank; the part's rank is at or above it (§2.52) | `always_inline` |
-| P8 | `residual-shared` | the residual is `shared` (§2.53) | `noipa` |
+| P8 | `residual-shared` | the residual is `shared` (§2.53) | `shared` (§2.51¶2a) |
 | P9 | `residual-inline` | the residual is `inline` | `always_inline` |
 | P10 | `residual-auto` | (otherwise) | its default layout |
 

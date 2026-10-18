@@ -28,11 +28,17 @@ names its independent control:
                fails); every subject reaches exactly one row; each row's
                population per control is counted against a floor (K35); the
                encoding seam is never non-copyable.
+  3b P2       every artifact whose subjects are all not copyable is the
+               default's byte for byte (but the stamp) under controls on
+               other classes and its own: P2 writes no attribute.
   6  NEUTRAL   the same population and nearcap.txt: under every control the
                refusal, every `#define <PREFIX>_*` but `_TUNE`/`_PART_LAYOUT*`
                and the size figures a decision read (`--warn-emit-bytes`'s
                note) equal the no-control compile's (I5), and the all-auto
-               control set is byte-identical to no control (T0).
+               control set is byte-identical to no control (T0). The -Werror
+               leg: every distinct text under seven control settings at gcc
+               -O1, a quarter of them at -O2/-O3/-Os, and the two residual
+               ends' quarter under clang -O1/-O2 where clang is installed.
   7  T2        UNREACHED, stated: no compile carries a measurement set, so
                `theta_hot` is never `none` and row T2 (and TM) has no witness.
 
@@ -179,9 +185,10 @@ def sec_object():
         check(not bad, "object: witness %s, %d control settings judged on the real object%s"
               % (wid, len(outs), "" if not bad else ": " + " | ".join(b[2] for b in bad[:4])))
     # The reach: the matrix must lay a part out (shared or inline) on a good
-    # share of its runs, or it judged nothing: 85 of 225 measured at landing
-    # (the rest are T0 settings, held parts and the tune positions).
-    check(laid >= 60, "object: %d of %d runs expected a part shared or inlined (floor 60)"
+    # share of its runs, or it judged nothing: 67 of 225 measured at the
+    # review fixes (85 at landing, when P2 still wrote `shared`; the rest are
+    # T0 settings, held parts and the tune positions).
+    check(laid >= 35, "object: %d of %d runs expected a part shared or inlined (floor 35)"
           % (laid, len(res)))
 
 
@@ -236,17 +243,32 @@ def sec_config():
 SUBJ = re.compile(r"^rx(_prefilter|__[a-z0-9]+_search)$")
 
 
+HEAD_LINE = re.compile(r"^(?:static\s*|__attribute__\(\(\w+\)\)\s*)$")
+
+
 def heads(text):
-    """{function: head line} for every top-level definition head."""
+    """{function: head block} for every top-level definition: its signature
+    line and the lines above it that are directives, a lone `static ` or a
+    lone attribute (K24's guarded `noclone`, the guarded `shared` layout)."""
     out = {}
-    for l in text.split("\n"):
+    lines = text.split("\n")
+    for i, l in enumerate(lines):
         if l.startswith((" ", "\t", "#")) or l.rstrip().endswith(";"):
             continue
         m = re.match(r"^(?:static\s+)?(?:inline\s+)?(?:__attribute__\(\(\w+\)\)\s+)*"
                      r"[\w\s\*]*?\b(rx\w*)\(", l)
         if m:
-            out[m.group(1)] = l
+            j = i
+            while j > 0 and (lines[j - 1].startswith("#") or HEAD_LINE.match(lines[j - 1])):
+                j -= 1
+            out[m.group(1)] = "\n".join(lines[j:i + 1])
     return out
+
+
+def head_static(head):
+    """`static` is the head's storage class (outside its directives)."""
+    words = " ".join(l for l in head.split("\n") if not l.startswith("#"))
+    return re.match(r"^(?:__attribute__\(\(\w+\)\)\s*)*static\b", words) is not None
 
 
 def sec_disjoint():
@@ -274,12 +296,56 @@ def sec_disjoint():
                     if h0.get(fn) == h1.get(fn):
                         continue
                     seen += 1
-                    if not SUBJ.match(fn) or not (h1.get(fn) or "").startswith("static "):
+                    if not SUBJ.match(fn) or not head_static(h1.get(fn) or ""):
                         bad += 1
                         msgs.append("%s %s %s: %s" % (w[0], " ".join(shape), c, fn))
     check(bad == 0 and seen > 0,
           "disjoint: %d changed definition heads under a control, every one a static subject "
           "(never an A1 entry-chain function)%s" % (seen, "" if not bad else ": " + "; ".join(msgs[:5])))
+
+
+# P2 writes nothing (design §3.8 F3): a part gcc cannot copy keeps its head
+# exactly as the default artifact has it, whatever class a control names.
+P2_CTLS = [["--part-layout=find:inline"], ["--part-inline-rank=R3"],
+           ["--part-layout=compound:shared"], ["--part-residual=shared"],
+           ["--part-layout=prefilter:inline"]]
+
+
+def p2_one(job):
+    pattern, idx = job
+    got = facts(pattern, P2_CTLS[0])
+    if got is None:
+        return idx, False, []
+    subj = [p for p in got[0] if p[2] != "owned"]
+    if not subj or any(p[6].split()[0] != "P2" for p in subj):
+        return idx, False, []
+    wd = os.path.join(TMP, "p2", str(idx))
+    r = compile_c(pattern, [], os.path.join(wd, "b", "x.c"))
+    if r.returncode:
+        return idx, False, ["default refused"]
+    strip = lambda t: [l for l in t.split("\n") if not l.startswith("#define RX_PART_LAYOUT")]
+    base = strip(open(os.path.join(wd, "b", "x.c")).read())
+    bad = []
+    for c in P2_CTLS:
+        r = compile_c(pattern, c, os.path.join(wd, "a", "x.c"))
+        if r.returncode or strip(open(os.path.join(wd, "a", "x.c")).read()) != base:
+            bad.append(" ".join(c))
+    return idx, True, bad
+
+
+def sec_p2(pop):
+    with cf.ThreadPoolExecutor(JOBS) as ex:
+        res = list(ex.map(p2_one, [(p, i) for i, p in enumerate(pop)]))
+    seen = sum(1 for _, ok, _ in res if ok)
+    bad = [(pop[i], b) for i, ok, b in res if b]
+    # 67 population artifacts whose every subject is P2, MEASURED at the
+    # review fixes (lane e1fix); the floor is about half.
+    check(not bad and seen >= 35,
+          "p2: %d artifacts whose every subject is not copyable (P2), under %d controls on "
+          "other classes and on its own: byte-identical to the default but the "
+          "_PART_LAYOUT stamp (floor 35)%s"
+          % (seen, len(P2_CTLS), "" if not bad else ": " + "; ".join(
+              "%r %s" % (p, ",".join(b)) for p, b in bad[:4])))
 
 
 # ---- 4 GCC ------------------------------------------------------------------
@@ -341,12 +407,15 @@ def attributes(text):
     for i, l in enumerate(lines):
         if l.startswith("#"):
             continue
-        if l.strip() == "__attribute__((noclone))":
+        lone = re.match(r"^__attribute__\(\((\w+)\)\)\s*$", l)
+        if lone:
+            # K24's guarded noclone and the guarded `shared` layout: the
+            # attribute is on a line of its own above the definition.
             j = i + 1
-            while j < len(lines) and lines[j].startswith("#"):
+            while j < len(lines) and (lines[j].startswith("#") or HEAD_LINE.match(lines[j])):
                 j += 1
-            m = re.search(r"\b(rx\w*)\(", lines[j])
-            out.append(("noclone", m.group(1) if m else "?"))
+            m = re.search(r"\b(rx\w*)\(", lines[j]) if j < len(lines) else None
+            out.append((lone.group(1), m.group(1) if m else "?"))
             continue
         if l.startswith((" ", "\t")):
             continue
@@ -371,12 +440,30 @@ def census_one(job):
     return (idx, ci, attributes(text), f, "")
 
 
+def guarded_noipa(text):
+    """Every `__attribute__((noipa))` line is the guarded block's: directly
+    under `#if __has_attribute(noipa)`, followed by `#else`, noinline,
+    `#endif`."""
+    lines = text.split("\n")
+    for i, l in enumerate(lines):
+        if "noipa" not in l or l.startswith("#"):
+            continue
+        if not (l.strip() == "__attribute__((noipa))" and i > 0 and i + 3 < len(lines) and
+                lines[i - 1] == "#if __has_attribute(noipa)" and lines[i + 1] == "#else" and
+                lines[i + 2] == "__attribute__((noinline))" and lines[i + 3] == "#endif"):
+            return False
+    return True
+
+
 def sec_census(pop):
     writers = load_writers()
     jobs = [(p, c, i, ci) for i, p in enumerate(pop) for ci, c in enumerate(CENSUS_CTLS)]
     with cf.ThreadPoolExecutor(JOBS) as ex:
         res = list(ex.map(census_one, jobs))
     unlisted, rowcount, multi, nosubj = {}, {}, [], set()
+    unguarded = [pop[idx] for idx, ci, attrs, f, err in res if attrs is not None and
+                 any(k == "noipa" for k, _ in attrs) and not guarded_noipa(
+                     open(os.path.join(TMP, "cs", str(idx), str(ci), "x.c")).read())]
     reached = set()
     seam_bad = []
     for idx, ci, attrs, f, err in res:
@@ -401,6 +488,9 @@ def sec_census(pop):
     check(not unlisted, "census: every attribute in %d artifacts belongs to a writer in "
           "writers.tsv%s" % (len(res), "" if not unlisted else ": unlisted " + "; ".join(
               "%s on %s (%r)" % (k, n, p) for (k, n), p in list(unlisted.items())[:5])))
+    check(not unguarded, "census: every emitted noipa sits under `#if __has_attribute(noipa)` "
+          "with a noinline `#else` (K24's guard shape)%s"
+          % ("" if not unguarded else ": " + "; ".join(map(repr, unguarded[:3]))))
     check(not multi, "census: every subject reaches exactly one row (one record each)%s"
           % ("" if not multi else ": " + "; ".join(map(repr, multi[:3]))))
     lost = [pop[i] for i in range(len(pop)) if i not in reached]
@@ -491,34 +581,72 @@ def sec_neutral(pop, near):
 
 # The harness's own compile of generated code (tests/harness/run.sh's
 # GENCFLAGS). The warning that once failed here (a shared prefilter's caller
-# reporting `window` maybe-uninitialized) shows at -O1 only.
-WERROR_FLAGS = ["-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror"]
-WERROR_CTLS = [["--part-residual=shared"], ["--part-residual=inline"]]
+# reporting `window` maybe-uninitialized) shows at -O1 only, so -O1 runs on
+# every distinct controlled text; -O2/-O3/-Os run on every fourth, and clang
+# (where installed) on every fourth of the two residual ends: an unguarded
+# gcc-only attribute fails clang's `-Werror` (-Wunknown-attributes).
+WERROR_BASE = ["-std=gnu11", "-Wall", "-Wextra", "-Werror"]
+WERROR_CTLS = [["--part-residual=shared"], ["--part-residual=inline"],
+               ["--part-layout=prefilter:shared"], ["--part-layout=prefilter:inline"],
+               ["--part-layout=compound:shared"], ["--part-layout=compound:inline"],
+               ["--part-inline-rank=R2"]]
+WERROR_LEGS = [("gcc", "-O1", 1), ("gcc", "-O2", 4), ("gcc", "-O3", 4), ("gcc", "-Os", 4),
+               ("clang", "-O1", 4), ("clang", "-O2", 4)]
+CLANG = os.environ.get("CLANG", "clang")
 
 
-def werror_one(job):
+def werror_gen(job):
+    """One controlled text, or None where the compile refused."""
     pattern, i, ci = job
     d = os.path.join(TMP, "werror", "%d_%d" % (i, ci))
     r = compile_c(pattern, WERROR_CTLS[ci], os.path.join(d, "x.c"))
     if r.returncode:
-        return (False, None)
-    g = run([CC] + WERROR_FLAGS + ["-c", os.path.join(d, "x.c"), "-o", os.path.join(d, "x.o")])
-    return (True, None if g.returncode == 0 else (g.stderr.strip().split("\n") or ["?"])[-1][:120])
+        return None
+    return open(os.path.join(d, "x.c")).read(), os.path.join(d, "x.c")
+
+
+def werror_cc(job):
+    cc, opt, path = job
+    g = run([cc, opt] + WERROR_BASE + ["-c", path, "-o", path + cc + opt + ".o"])
+    return None if g.returncode == 0 else (g.stderr.strip().split("\n") or ["?"])[-1][:120]
 
 
 def sec_werror(pop, near):
     """Every layout compiles under the harness's -Werror flags, as the default
-    does: a layout that makes gcc warn fails a caller's -Werror build."""
+    does: a layout that makes a compiler warn fails a caller's -Werror build."""
     allp = pop + near + pats(os.path.join(HERE, "werror.txt"))
     jobs = [(p, i, ci) for i, p in enumerate(allp) for ci in range(len(WERROR_CTLS))]
     with cf.ThreadPoolExecutor(JOBS) as ex:
-        res = list(ex.map(werror_one, jobs))
-    bad = [(jobs[k][0], WERROR_CTLS[jobs[k][2]][0], e) for k, (ok, e) in enumerate(res) if ok and e]
-    compiled = sum(1 for ok, _ in res if ok)
-    check(not bad and compiled >= 2 * 380,
-          "werror: %d artifacts compile clean under %s at both residual ends%s"
-          % (compiled, " ".join(WERROR_FLAGS),
-             "" if not bad else ": " + "; ".join("%r %s: %s" % b for b in bad[:4])))
+        texts = list(ex.map(werror_gen, jobs))
+    # One compile per distinct text: a class value with no part of its class
+    # renders the default plus a stamp, and a prefilter value the residual's.
+    distinct, ends = {}, set()
+    for k, t in enumerate(texts):
+        if t is None:
+            continue
+        key = re.sub(r'#include "[^"]*"|#define RX_PART_LAYOUT[^\n]*', "", t[0])
+        if key not in distinct:
+            distinct[key] = (t[1], jobs[k])
+        if jobs[k][2] < 2:
+            ends.add(t[1])
+    have_clang = run(["sh", "-c", "command -v " + CLANG]).returncode == 0
+    cjobs, legs = [], []
+    for cc, opt, stride in WERROR_LEGS:
+        if cc == "clang" and not have_clang:
+            continue
+        legs.append("%s %s 1/%d" % (cc, opt, stride))
+        pool = [v for v in distinct.values() if cc == "gcc" or v[0] in ends]
+        cjobs += [(cc if cc == "gcc" else CLANG, opt, v[0]) for v in pool[::stride]]
+    with cf.ThreadPoolExecutor(JOBS) as ex:
+        res = list(ex.map(werror_cc, cjobs))
+    pat_of = {v[0]: "%r %s" % (v[1][0], WERROR_CTLS[v[1][2]][0]) for v in distinct.values()}
+    bad = [(pat_of[j[2]], j[0] + " " + j[1], e) for j, e in zip(cjobs, res) if e]
+    check(not bad and len(distinct) >= 300,
+          "werror: %d distinct controlled texts (%d control settings over %d patterns) compile "
+          "clean under %s, %d compiles: %s%s%s"
+          % (len(distinct), len(WERROR_CTLS), len(allp), " ".join(WERROR_BASE), len(cjobs),
+             ", ".join(legs), "" if have_clang else "; NO clang on this box, its legs skipped",
+             "" if not bad else ": " + "; ".join("%s %s: %s" % b for b in bad[:4])))
 
 
 def main():
@@ -533,6 +661,7 @@ def main():
     sec_config()
     print("== 3 disjoint (A1 and the layout rows)")
     sec_disjoint()
+    sec_p2(pop)
     print("== 4 gcc (H1/H2 by construction)")
     sec_gcc()
     print("== 5 census (writers, totality, row populations, the seam)")

@@ -6,15 +6,16 @@
  * A PART is a static function an artifact's entries call: the VM hybrid's
  * embedded search, a compound's parts. Its LAYOUT is how it is linked into
  * its callers -- a copy in each (`always_inline`) or one out-of-line body
- * they call (`noipa`) -- never what
+ * they call (`noipa`, guarded) -- never what
  * it computes, so every layout answers identically (I1). Three caller-set
  * controls decide it (`pcrec_options.part_layout`/`part_inline_rank`/
  * `part_residual`); the `--tune` position supplies a preset for each, and
  * every preset cell is empty today (src/core/tune.c), so an artifact's layout
  * moves only where a caller sets a control.
  *
- * THREE DECLARED TABLES, every conjunct listed (D163 addendum 4), no
- * decision outside them:
+ * FOUR DECLARED FIRST-MATCH TABLES, every conjunct listed (D163 addendum
+ * 4), no decision outside them, and one value-to-text map (`layout_texts[]`)
+ * that the render and both listings read:
  *
  *   `art_rows[]`  the ARTIFACT table, once per attempt, every row applied in
  *                 order within its group: K resolves the controls; one of
@@ -26,6 +27,8 @@
  *                 part a shared row wrote. No such caller exists before the
  *                 iterator and the wrappers' static twins are built (I3), so
  *                 its population is zero today and the listing says so.
+ *   `head_rows[]` the HEAD-MARK table: which entry's mark a search head
+ *                 writes (a part's shell row, its own subject, or none).
  *
  * I5, THE LAYOUT IS RENDERED AFTER EVERY LENGTH DECISION. Under T3 the
  * search head of every subject writes a MARK (`pcrec_part_head_mark`) and
@@ -257,7 +260,7 @@ bool pcrec_part_layout_active(Ctx *cx)
 
 typedef struct {
     const char *id, *name, *conj;
-    int layout;      /* PCREC_PART_AUTO/_SHARED/_INLINE, or 0: the owner's */
+    int layout;      /* PCREC_PART_AUTO/_SHARED/_INLINE, or 0: as emitted */
     bool held;       /* a constraint row: it can hold a request */
     bool (*holds)(const PcrecPlPart *p, const PcrecPartLayout *pl);
 } PartRow;
@@ -303,12 +306,15 @@ static bool pr_always(const PcrecPlPart *p, const PcrecPartLayout *pl)
 /* P1 and P2 are HARD (an owner's load-bearing attribute; gcc's refusal to
  * copy a label table or inline a computed goto); P3 is a MEASURED policy
  * (sharing a single-caller part costs bytes for nothing, H3). All three come
- * before every control row, so no control overrides them. */
+ * before every control row, so no control overrides them. P2 writes exactly
+ * what the body's head carries today and adds no attribute (design §3.8,
+ * F3): gcc keeps such a body out of line by itself, so under a control on
+ * any class its head is the default's byte for byte. */
 static const PartRow part_rows[] = {
     { "P1",  "owned",           "the function is OWNED (an owner writes its attribute)",
       0,                 true,  pr_owned },
     { "P2",  "not-copyable",    "copyable(part) is false (a label table or a computed goto)",
-      PCREC_PART_SHARED, true,  pr_not_copyable },
+      0,                 true,  pr_not_copyable },
     { "P3",  "single-caller",   "callers(part) = 1",
       PCREC_PART_AUTO,   true,  pr_single },
     { "P4",  "class-shared",    "the part's class value is shared",
@@ -339,23 +345,37 @@ static const PartRow part_rows[] = {
  * static twin), so the walk reaches no wrapper. */
 typedef struct {
     const char *id, *name, *conj, *writes;
+    bool forwards;   /* the caller is counted as a wrapper */
+    bool (*holds)(const Ctx *cx, PcrecEntry caller);
 } WrapRow;
+
+static bool wr_forwardable(const Ctx *cx, PcrecEntry caller)
+{ return cx->job->entry_comb[caller] == PCREC_COMB_FORWARD + 1; }
+static bool wr_always(const Ctx *cx, PcrecEntry caller)
+{ (void)cx; (void)caller; return true; }
 
 static const WrapRow wrap_rows[] = {
     { "W1", "forward", "forwardable(w): the wrapper's row is `forward` (its arguments pass unchanged)",
-      "return part(args); -- gcc's tail jump, no frame" },
+      "return part(args); -- gcc's tail jump, no frame", true, wr_forwardable },
     { "W2", "adapt",   "(otherwise)",
-      "the wrapper's own adaptation and a call (a frame; a canary under -fstack-protector-strong)" },
+      "the wrapper's own adaptation and a call (a frame; a canary under -fstack-protector-strong)",
+      false, wr_always },
 };
+#define NWRAP ((int)(sizeof wrap_rows / sizeof wrap_rows[0]))
 
-/* The number of `part`'s callers that are wrappers (their row forwards). */
+/* The number of `part`'s callers whose first holding wrapper row forwards. */
 static int wrapper_count(const Ctx *cx, PcrecEntry part)
 {
     int n = 0;
-    for (int f = 0; f < PCREC_ENTRY_N; f++)
-        if (cx->job->pl.er[f][part] && pcrec_entry_emitted(cx, (PcrecEntry)f) &&
-            cx->job->entry_comb[f] == PCREC_COMB_FORWARD + 1)
-            n++;
+    for (int f = 0; f < PCREC_ENTRY_N; f++) {
+        if (!cx->job->pl.er[f][part] || !pcrec_entry_emitted(cx, (PcrecEntry)f))
+            continue;
+        for (int r = 0; r < NWRAP; r++)
+            if (wrap_rows[r].holds(cx, (PcrecEntry)f)) {
+                n += wrap_rows[r].forwards;
+                break;
+            }
+    }
     return n;
 }
 
@@ -443,19 +463,49 @@ static void build_records(Ctx *cx)
 
 /* ---- the marks ----------------------------------------------------------- */
 
+/* THE HEAD-MARK TABLE: which entry's mark a search head writes, first
+ * match, read by `pcrec_part_head_mark` alone. A part is laid out by its
+ * shell, whose row names it (M1; a standalone part compile, the unit drive,
+ * renders itself and has no shell, M2); any other head writes its own
+ * entry's mark where that entry is a subject (M3, `subjects[]`). */
+typedef enum { HM_NONE, HM_SHELL_ROW, HM_OWN } HeadMark;
+
+static bool hm_part_shell(const Ctx *cx, PcrecEntry e)
+{ return pcrec_is_part(cx) && e == PCREC_ENTRY_SEARCH && cx->emit_in->unrendered; }
+static bool hm_part(const Ctx *cx, PcrecEntry e)
+{ (void)e; return pcrec_is_part(cx); }
+static bool hm_subject(const Ctx *cx, PcrecEntry e)
+{ (void)cx; return subject_class(e) >= 0; }
+static bool hm_always(const Ctx *cx, PcrecEntry e)
+{ (void)cx; (void)e; return true; }
+
+static const struct {
+    const char *id, *conj;
+    HeadMark mark;
+    bool (*holds)(const Ctx *cx, PcrecEntry e);
+} head_rows[] = {
+    { "M1", "a part's search head, its shell still to render", HM_SHELL_ROW, hm_part_shell },
+    { "M2", "any other head of a part",                        HM_NONE,      hm_part },
+    { "M3", "the head's entry is a subject",                   HM_OWN,       hm_subject },
+    { "M4", "(otherwise)",                                     HM_NONE,      hm_always },
+};
+
 void pcrec_part_head_mark(Ctx *cx, StrBuf *c, PcrecEntry e)
 {
     if (!pcrec_part_layout_active(cx)) return;
+    int r = 0;
+    while (!head_rows[r].holds(cx, e)) r++;   /* M4 always holds */
     unsigned id = e;
-    if (pcrec_is_part(cx)) {
-        /* A part is laid out by its shell, whose row names it; a standalone
-         * part compile (the unit drive) renders itself and has no shell. */
-        if (e != PCREC_ENTRY_SEARCH || !cx->emit_in->unrendered) return;
+    switch (head_rows[r].mark) {
+    case HM_NONE:
+        return;
+    case HM_SHELL_ROW:
         id = cx->emit_in->part_entry;
         if (subject_class((PcrecEntry)id) != PCREC_PART_COMPOUND)
             pcrec_ctx_fail(cx, 0, "internal error: part layout: a part with no shell row");
-    } else if (subject_class(e) < 0) {
-        return;
+        break;
+    case HM_OWN:
+        break;
     }
     pcrec_sb_layout_mark(c, id, false);
 }
@@ -471,20 +521,45 @@ void pcrec_part_stamp_mark(Ctx *cx, StrBuf *c)
 
 /* ---- the render ---------------------------------------------------------- */
 
-/* The attribute text a layout writes on a definition head, after its
- * `static `. `shared` is `noipa` (noinline + noclone + no interprocedural
- * analysis): with `noinline` alone gcc -O1 still reads the body across the
- * call and reports the caller's `window` maybe-uninitialized, so the
- * artifact failed `-Werror` (135 corpus cases under --part-residual=shared),
- * and it deletes a part whose body is `return 0;`. */
-static const char *layout_text(int layout)
-{
-    switch (layout) {
-    case PCREC_PART_SHARED: return "__attribute__((noipa)) ";
-    case PCREC_PART_INLINE: return "inline __attribute__((always_inline)) ";
-    default:                return "";
-    }
-}
+/* THE ONE VALUE-TO-GUARDED-TEXT TABLE: for each layout a part row writes,
+ * its `--emit-facts` token, the text the render puts on the definition head
+ * after its `static `, and the `--list-axes` writes cell. The render
+ * (`render_buf`), the facts listing and the table listing all read it, so
+ * the text and its description cannot drift apart.
+ *
+ * `shared` is `noipa` (noinline + noclone + no interprocedural analysis)
+ * where the compiler has it, asked by `__has_attribute` in K24's guard shape
+ * (emit_dfa.c `emit_search_head`), and `noinline` where it does not: clang
+ * has no `noipa`, and an unguarded one fails its `-Werror`. With `noinline`
+ * alone gcc -O1 still reads the body across the call and reports the
+ * caller's `window` maybe-uninitialized (a false positive, e1_report.md §7
+ * Q1: 135 corpus cases under --part-residual=shared failed `-Werror`), and
+ * it deletes a part whose body is `return 0;`. The guard opens a line, so
+ * `static ` ends its line, the guard follows, then the signature.
+ *
+ * The other writers of linkage attributes (K24's guarded `noclone`, the VM
+ * entry rung's `ai`/`ai_body`, [OPT-1]'s `noinline` on `_deep`) spell their
+ * own text today; [ATTR-TABLE] (plan.md) moves them onto rows of this table
+ * with zero movers. */
+static const struct {
+    const char *tok, *text, *writes;
+} layout_texts[] = {
+    [0] = { "as-emitted", "",
+            "the head as its emitter wrote it, unchanged (no attribute added)" },
+    [PCREC_PART_AUTO] = { "auto", "", "its default layout (no attribute added)" },
+    [PCREC_PART_SHARED] = { "shared",
+            "\n#ifndef __has_attribute\n"
+            "# define __has_attribute(x) 0\n"
+            "#endif\n"
+            "#if __has_attribute(noipa)\n"
+            "__attribute__((noipa))\n"
+            "#else\n"
+            "__attribute__((noinline))\n"
+            "#endif\n",
+            "one out-of-line body: noipa where __has_attribute(noipa), else noinline" },
+    [PCREC_PART_INLINE] = { "inline", "inline __attribute__((always_inline)) ",
+            "always_inline into each caller" },
+};
 
 /* `<PREFIX>_PART_LAYOUT`'s value: the resolved non-trivial controls in a
  * fixed order (`residual=V`, `rank=R` or `rank=R@set`, each set class as
@@ -584,7 +659,7 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
             if (at < 7 || memcmp(sb->p + at - 7, "static ", 7) != 0)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark on a "
                                "definition that is not static (entry %u)", id);
-            pcrec_sb_puts(&o, layout_text(p->layout));
+            pcrec_sb_puts(&o, layout_texts[p->layout].text);
             seen[id]++;
         }
         i = at + 4;
@@ -657,7 +732,7 @@ void pcrec_part_layout_facts(Ctx *cx, StrBuf *ctl, StrBuf *parts, const char *en
         } else {
             pc[6] = pcrec_sb_fragf(&cx->arena, "%s %s", part_rows[p->row].id,
                                    part_rows[p->row].name);
-            pc[7] = value_tok[p->layout];
+            pc[7] = layout_texts[p->layout].tok;
         }
         int w = p->cls >= 0 && pl->t3 && p->layout == PCREC_PART_SHARED
               ? wrapper_count(cx, p->e) : 0;
@@ -670,12 +745,6 @@ bool pcrec_part_layout_table_row(int i, const char **table, const char **id,
                                  const char **name, const char **conj,
                                  const char **writes)
 {
-    static const char *const part_writes[] = {
-        [0] = "the owner's attribute, unchanged",
-        [PCREC_PART_AUTO] = "its default layout (no attribute added)",
-        [PCREC_PART_SHARED] = "static noipa: one out-of-line body",
-        [PCREC_PART_INLINE] = "always_inline into each caller",
-    };
     if (i < NART) {
         *table = "artifact"; *id = art_rows[i].id; *name = art_rows[i].name;
         *conj = art_rows[i].conj; *writes = art_rows[i].writes;
@@ -684,11 +753,11 @@ bool pcrec_part_layout_table_row(int i, const char **table, const char **id,
     i -= NART;
     if (i < NPART) {
         *table = "part"; *id = part_rows[i].id; *name = part_rows[i].name;
-        *conj = part_rows[i].conj; *writes = part_writes[part_rows[i].layout];
+        *conj = part_rows[i].conj; *writes = layout_texts[part_rows[i].layout].writes;
         return true;
     }
     i -= NPART;
-    if (i < (int)(sizeof wrap_rows / sizeof wrap_rows[0])) {
+    if (i < NWRAP) {
         *table = "wrapper"; *id = wrap_rows[i].id; *name = wrap_rows[i].name;
         *conj = wrap_rows[i].conj; *writes = wrap_rows[i].writes;
         return true;
