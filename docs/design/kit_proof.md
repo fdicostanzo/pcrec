@@ -1034,7 +1034,13 @@ the FACT and the FINISHER, not in the ROW (fam-M1). A row is a walk. A second so
 "fully known" is a different walk (an exact hybrid's prefilter, a group map), so it gets
 its own row in its own slot, reading the same `MkKnown` and finishing through the same
 `FIN2 report`. Naming the row after its walk (`cover`, the kit's stream) is then not a
-special case. *Leaning:* as the panel answers.
+special case. **RULED (Frank, 2026-10-18), stronger than the panel:** every mechanism is a
+FACT PRODUCER stating what it adds at a point into one keyed record, and ONE static evaluator
+walks the engine program over it ("walking a VM and seeing what's left"); rows stay distinct by
+their runtime walk. ORDER MATTERS: for `\d{10}$` the forward digit facts applied before
+rev-end's end fact lose the end fact, so the evaluator sees every producer's facts before the
+runtime order is chosen (position-pinning facts first). U1 is the first instance (one producer,
+the DFA evaluator); [MATCH-KNOWN]'s charter carries the architecture.
 
 **Q3, the `\b` "rewrite" as a reading.** *Panel's answer, PENDING FRANK'S RULING:* the
 reading is right for stage 1, labelled DFA-only. At U1b the facts-layer derivation
