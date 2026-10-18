@@ -838,13 +838,21 @@ Bypass with `git push --no-verify` when you deliberately need to push past
 a failing local gate.
 
 `make hooks` takes `HOOKS=` (default `pre-push`): `make hooks HOOKS=pre-commit`
-installs only the [PLAN-LINT] commit gate, `make hooks HOOKS="pre-push
+installs only the commit gate, `make hooks HOOKS="pre-push
 pre-commit"` installs both. `scripts/hooks/pre-commit` runs
 `scripts/plan_lint.sh --staged` only when docs/dev/plan.md,
 docs/dev/plan_completed.md or docs/design/plan_row_bodies/ is staged, lints
 the staged content (what the commit would record, not the working file),
 never runs `make test`, and costs about 60 ms (measured on the Linux dev
-box: 0.06 s on a clean staged plan, 0.08 s on a rejected one). It is
+box: 0.06 s on a clean staged plan, 0.08 s on a rejected one). The same
+hook carries the [SPEC-HOOK] conditional spec checks: when any staged file is
+text that can cite a spec (md txt tsv py sh c h, Makefile) it runs
+`tests/spec_history/spec_history.py ROOT --staged` (no `<doc>.md:<line>` and no
+dangling `<doc>.md §N` citation among the staged files; ~50 ms), and when a
+docs/spec/*.md is staged also that spec's history markers, numbering,
+contents block and every citation of it in the index (~450 ms); a commit
+staging neither runs nothing. `test-spec-history` runs its planted-case
+self-test (`tests/spec_history/run_hook_selftest.sh`). It is
 installed by hand, never automatically, for the same D2 reason. Bypass with
 `git commit --no-verify`.
 

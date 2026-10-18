@@ -2027,8 +2027,9 @@ fuzz: all
 # hooks directory — `git rev-parse --git-path hooks`, NOT a hardcoded
 # .git/hooks, because in a worktree .git is a file pointing at the shared
 # gitdir (see `git worktree`'s docs and docs/testing.md). `make hooks
-# HOOKS=pre-commit` installs only the [PLAN-LINT] commit gate (it lints
-# docs/dev/plan.md and friends, and only when they are staged; it never runs
+# HOOKS=pre-commit` installs only the commit gate (it lints docs/dev/plan.md
+# and friends when they are staged, and runs the [SPEC-HOOK] citation/spec
+# checks when text files or a docs/spec file are staged; it never runs
 # `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both. Never
 # run automatically by any other target and never by CI (D2, TT-1 principle
 # 4): a stranger's plain `make`/`make test` must not install anything into
