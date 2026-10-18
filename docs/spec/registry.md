@@ -185,7 +185,7 @@
 | `field` | the `pcrec_options` member and the `lib/pcrec.h` constant the spelling sets |
 | `meaning` | one line |
 
-Rows: `part-layout:CLASS` x {`auto`, `shared`, `inline`} (12), `part-inline-rank` x 6, `part-residual` x 3. These are valued parameters, not axes: none carries a `lib/pcrec.h` flag bit and `src/core/axes.def` has no row for one; the answer-identity sweep reads the values from this section.
+<a id="s6-p10a"></a>[6¶10a] Rows: `part-layout:CLASS` x {`auto`, `shared`, `inline`} (12), `part-inline-rank` x 6, `part-residual` x 3. These are valued parameters, not axes: none carries a `lib/pcrec.h` flag bit and `src/core/axes.def` has no row for one; the answer-identity sweep reads the values from this section.
 
 <a id="s6-p11"></a>[6¶11] **The `part-layout-table` section.** Then `#section part-layout-table` lists the three declared tables of `tuning.md` §2.51¶5, one row per table row in table order. The section has 5 columns:
 

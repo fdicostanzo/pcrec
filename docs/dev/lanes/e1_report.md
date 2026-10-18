@@ -43,11 +43,11 @@ review prose that records past events):
 | reader | change |
 |---|---|
 | `src/gen/emit_dfa.c:54` `PCREC_ARTIFACT_ABI` | 79 -> 80 |
-| `docs/spec/match_api.md:168` K80 `#if ... != 79` | 80 |
-| `docs/spec/match_api.md:169` K80 `#error "... (abi 79) ..."` | 80 |
-| `docs/spec/match_api.md:172` `#define PCREC_RX_ABI_H 79` | 80 |
-| `docs/spec/match_api.md:1260` rx_info row 1 (`79`) | 80 |
-| `docs/spec/match_api.md:1401` §6¶17 ("It is `79`...") | 80 |
+| match_api.md §1¶7's K80 block: the `#if ... != 79` guard | 80 |
+| the same block's `#error "... (abi 79) ..."` | 80 |
+| the same block's `#define PCREC_RX_ABI_H 79` | 80 |
+| match_api.md §6¶1's `rx_info` table, row 1 (`79`) | 80 |
+| match_api.md §6¶17 ("It is `79`...") | 80 |
 | `tests/codegen/run_codegen_tests.sh:3149` `ABI_EXPECT` and its transition message | 80, message gains the 79->80 clause |
 | `tests/mech/sabotages/S693_abi_not_bumped.sh` | re-aimed: BEFORE 80, AFTER 79 |
 | `docs/dev/history/abi_changelog.md` | new current-value paragraph |
@@ -68,8 +68,15 @@ composition, emit-ir-auto, stderr; `--jobs 8`, taskset 0-7):
 
 | run | command | result |
 |---|---|---|
-| no control | `emit_sweep.py --ref c88537116 --bin <commit A pcrec>` (self-check on) | OWED-AT-WRITING: `build/e1s/sweep-default.log` |
-| all-`auto` control set | `--ref-bin <c88537116 pcrec> --bin <wrapper prepending --part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto --part-residual=auto --part-inline-rank=none>` | OWED-AT-WRITING: `build/e1s/sweep-allauto.log` |
+| no control | `emit_sweep.py --ref c88537116 --bin <commit A pcrec>` (self-check on: PASSED, all-identical at full reach) | **rc 0, 0 movers / 0 asymmetric on every stream**; argv 5,790 rows (`--every 1`), composition 37 producing / 106 artifacts; 102 s. `build/e1s/sweep-default.log` |
+| all-`auto` control set | `--ref-bin <c88537116 pcrec> --bin <wrapper prepending --part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto --part-residual=auto --part-inline-rank=none>` | **rc 0, 0 movers / 0 asymmetric on every stream**, same reach; 46 s. `build/e1s/sweep-allauto.log` |
+
+Slot GO main 05:25:32, released 05:32:47 (`build/e1s/sweepchain.log`).
+**The swept binary was a copy, as the slot's condition asks**:
+`build/e1s/binA/pcrec`, copied at 05:25:17 from commit A's build (it prints
+`abi 79`); `build/pcrec` was rebuilt at abi 80 only afterwards and was never
+the `--bin`. Streams: c-default, c-vm, emit-ir(-vm), the four emit-ir-auto
+arms, stderr, composition.
 
 The `dumps` and `facts` streams are excluded because E1 APPENDS to both by
 design; each was checked as a pure append instead: the seven `--list-*`
@@ -192,7 +199,7 @@ baseline 41/0 at the time); the solo mech runs are OWED (§8).
 | make test | (slot requested) | — |
 | mech solo S1111-S1118, S1077, S249, S250, S251, S700, S693 | (slot requested) | — |
 | test-axes part-layout arm | (slot requested) | — |
-| `.o` size delta on the near-cap list (recorded, not gated) | `build/e1s/osize.py` | — |
+| `.o` size delta on the near-cap list (recorded, not gated) | NOT RUN: the script is written (`build/e1s/osize.py`, scratch) but its -O2 compiles of 45-647 KB artifacts would have shared the box with the slot's runs; left for E1′, whose cells need size measurements anyway | — |
 
 ## 9. For a fresh agent resuming
 

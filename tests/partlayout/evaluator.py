@@ -129,7 +129,9 @@ def functions_and_calls(cfile, workdir):
         # A call to a function in another section is a relocation; one in
         # the same section is resolved by the assembler and only the call
         # instruction's target names it.
-        m = (re.search(r"R_X86_64_(?:PLT32|PC32)\s+([\w.]+)-0x4", line) or
+        # Any relocation type: the name is the relocated symbol, whatever
+        # the target's spelling of the type.
+        m = (re.search(r"\bR_\w+\s+([A-Za-z_][\w.]*)(?:[-+]0x[0-9a-f]+)?\s*$", line) or
              re.search(r"\bcall\s+[0-9a-f]+ <([\w.]+)>", line))
         if m and cur:
             graph[cur].add(m.group(1))

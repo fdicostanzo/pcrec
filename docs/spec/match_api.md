@@ -2449,14 +2449,14 @@ on every artifact, a DFA-only one included.
 controls' stamps (`tuning.md` §2.51-§2.53), in the shared prologue right after
 `<PREFIX>_TUNE`. Neither has an `rx_info` mirror.
 
-- `<PREFIX>_PART_LAYOUT` is present only when the artifact table's row T3
+- <a id="s6-3-11-p4a"></a>[6.3.11¶4a] `<PREFIX>_PART_LAYOUT` is present only when the artifact table's row T3
   fires (`tuning.md` §2.51¶5). Its value is a string of the resolved
   non-trivial controls in fixed order, separated by `;`: `residual=V` (if
   set), `rank=R` or `rank=R@set` (if set; `@set` where the threshold came from
   the measurement set), then each class with a set value as `CLASS=V`. A class
   item is suffixed `/held` when a P1-P3 row held at least one part of that
   class, and `/none` when the artifact has no part of that class.
-- `<PREFIX>_PART_LAYOUT_WHY` is present only when row T1 or T2 fires:
+- <a id="s6-3-11-p4b"></a>[6.3.11¶4b] `<PREFIX>_PART_LAYOUT_WHY` is present only when row T1 or T2 fires:
   `"threshold-unmeasured"` or `"no-material-rank"`.
 
 ```c

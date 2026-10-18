@@ -1038,7 +1038,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | `PCREC_PART_FIND` (2) | `find` | the iterator's parts: none exist, the iterator is not built |
 | `PCREC_PART_WRAP` (3) | `wrap` | static twins of wrapper bodies and residual leaves: none exist |
 
-A value for `find` or `wrap` is accepted and lays out nothing.
+<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing.
 
 <a id="s2-51-p2"></a>[2.51¶2] The values, shared with §2.53:
 
@@ -1049,7 +1049,7 @@ A value for `find` or `wrap` is accepted and lays out nothing.
 | `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noinline`, under the search head's existing `noclone` |
 | `inline` | `PCREC_PART_INLINE` (3) | `always_inline` in each caller |
 
-The layout is written on the part's definition head after `static `: `shared` is `__attribute__((noinline)) `, `inline` is `inline __attribute__((always_inline)) `, `auto` nothing.
+<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is `__attribute__((noinline)) `, `inline` is `inline __attribute__((always_inline)) `, `auto` nothing.
 
 <a id="s2-51-p3"></a>[2.51¶3] ANSWER-IDENTICAL across every value. Not a flags bit, so it has no `rx_info.flags` question and no `rx_info` mirror. The layout is rendered after every length decision: no size cap, size term (§2.16), entry-shape term (§2.21) or stamp reads the layout's bytes, so no control moves the refusal set or any other stamp. The size limits (`limits.md` §8) bound the default-layout text.
 
@@ -1057,7 +1057,7 @@ The layout is written on the part's definition head after `static `: `shared` is
 
 <a id="s2-51-p5"></a>[2.51¶5] **The decision** is three declared tables, listed by `--list-axes`' `part-layout-table` section (`registry.md` §6¶11). Each control resolves on its own (row K): the caller's value if set, else the `--tune` position's preset cell (§5.4), else unset. Every preset cell is `†` today, so the layout moves only where a caller sets a control.
 
-ARTIFACT table, once per compile. K `resolve` always runs; then the first holding of T1/TM/T2, then the first holding of T0/T3.
+<a id="s2-51-p5a"></a>[2.51¶5a] ARTIFACT table, once per compile. K `resolve` always runs; then the first holding of T1/TM/T2, then the first holding of T0/T3.
 
 | id | name | conjuncts | writes |
 |---|---|---|---|
@@ -1068,7 +1068,7 @@ ARTIFACT table, once per compile. K `resolve` always runs; then the first holdin
 | T0 | `as-emitted` | every class value unset or `auto`; the threshold unset or `none`; the residual unset or `auto` | nothing is laid out; the artifact is byte-identical to one built without the controls, and carries no stamp except a WHY |
 | T3 | `per-part` | (otherwise) | consult the part table for each part; `<PREFIX>_PART_LAYOUT` |
 
-PART table, first match per part, under T3:
+<a id="s2-51-p5b"></a>[2.51¶5b] PART table, first match per part, under T3:
 
 | id | name | conjuncts | writes |
 |---|---|---|---|
@@ -1083,9 +1083,9 @@ PART table, first match per part, under T3:
 | P9 | `residual-inline` | the residual is `inline` | `always_inline` |
 | P10 | `residual-auto` | (otherwise) | its default layout |
 
-P1-P3 are constraint rows ahead of every control row: no control overrides them, and a request they hold is a selection outcome. `callers(part)` counts distinct calling functions after every function its owner makes `always_inline` is folded into its own callers: the VM hybrid's prefilter has 2 callers at `--vm-entry-shape` rung `inline` and 1 at `forward`, `shared` and `plain`.
+<a id="s2-51-p5c"></a>[2.51¶5c] P1-P3 are constraint rows ahead of every control row: no control overrides them, and a request they hold is a selection outcome. `callers(part)` counts distinct calling functions after every function its owner makes `always_inline` is folded into its own callers: the VM hybrid's prefilter has 2 callers at `--vm-entry-shape` rung `inline` and 1 at `forward`, `shared` and `plain`.
 
-WRAPPER table, for a caller that only forwards to a part a `shared` row wrote: W1 `forward` (the wrapper's arguments pass unchanged: `return part(args);`, a tail jump with no frame), W2 `adapt` (otherwise: the wrapper's own adaptation and a call). No such caller exists today.
+<a id="s2-51-p5d"></a>[2.51¶5d] WRAPPER table, for a caller that only forwards to a part a `shared` row wrote: W1 `forward` (the wrapper's arguments pass unchanged: `return part(args);`, a tail jump with no frame), W2 `adapt` (otherwise: the wrapper's own adaptation and a call). No such caller exists today.
 
 <a id="s2-51-p6"></a>[2.51¶6] **The stamps** are `<PREFIX>_PART_LAYOUT` and `<PREFIX>_PART_LAYOUT_WHY` (§5.3¶3; `match_api.md` §6.3.11). `make test-axes` sweeps every compile under `--part-residual=shared` and `--part-residual=inline`; under `AXES_FULL=1` it also sweeps each class value once over all four classes (`--part-layout=prefilter:V,compound:V,find:V,wrap:V`: their parts are disjoint) and each rank value, reading the values from `--list-axes`' `part-layout` section. Its summary names the tier it ran.
 
@@ -1105,7 +1105,7 @@ WRAPPER table, for a caller that only forwards to a part a `shared` row wrote: W
 | `R1` | on a data-dependent subset of calls |
 | `R0` | on an error, tie or fallback path |
 
-`R3` inlines the `R3` parts, `R2` those and `R2` parts, and so on down to `R0`, every copyable part; `none` inlines none.
+<a id="s2-52-p2a"></a>[2.52¶2a] `R3` inlines the `R3` parts, `R2` those and `R2` parts, and so on down to `R0`, every copyable part; `none` inlines none.
 
 <a id="s2-52-p3"></a>[2.52¶3] **`measured`** reads the active measurement set's threshold `θ_hot`. No compile carries a measurement set today, so `measured` always declines: the threshold resolves to `none` (row T1) and the artifact stamps `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`; with no other control the object is the default object exactly. A set whose `θ_hot` is `none` would stamp `"no-material-rank"` (row T2); unreachable today.
 
