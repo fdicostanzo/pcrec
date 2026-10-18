@@ -27,9 +27,16 @@ if [ ! -f "$SCR/ref/Makefile" ]; then
     git archive "$BASE" | tar -x -C "$SCR/ref"
 fi
 [ -s "$SCR/cg_ref.tsv" ] || python3 -I docs/design/start_table/call_graph.py "$SCR/ref" > "$SCR/cg_ref.tsv" 2> "$SCR/cg_ref.err"
+# rc 2 is the tool's UNRESOLVED-src report (8 rows on the base's archive, pre-existing: S571 S640
+# S897 S906 S995 ...); the step's rows are still written. Any other failure stops here.
+rc=0
 python3 -I docs/design/start_table/sabotage_anchors.py "$SCR/ref" "$SCR/cg_ref.tsv" \
     docs/design/start_table/refactor_edit_set.tsv --repo "$TREE" --step "b3b=$BASE..HEAD" \
-    > "$SCR/sa_step.tsv" 2> "$SCR/sa_step.err"
+    > "$SCR/sa_step.tsv" 2> "$SCR/sa_step.err" || rc=$?
+if [ "$rc" -ne 0 ] && { [ "$rc" -ne 2 ] || [ ! -s "$SCR/sa_step.tsv" ]; }; then
+    echo "derive_rows.sh: sabotage_anchors.py failed (rc $rc), see $SCR/sa_step.err" >&2; exit 1
+fi
+grep -c '^UNRESOLVED' "$SCR/sa_step.err" | sed 's/^/derive_rows.sh: UNRESOLVED src anchors (listed, not derived): /' >&2
 awk -F'\t' '$NF ~ /b3b:/{print $2}' "$SCR/sa_step.tsv" | sort -u > "$SCR/rows_a.txt"
 git diff --name-only "$BASE" HEAD | grep -E '^(memfn|tests)/' > "$SCR/edited.txt" || true
 python3 -I - "$SCR/edited.txt" > "$SCR/rows_b.txt" <<'PY'

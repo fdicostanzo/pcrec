@@ -1,15 +1,15 @@
 # R17-b' B3b's heavy-chain mech rows, each run SOLO by chain.sh and scored by its declared SAB_EXPECT.
-# Union of: (a) the rows docs/design/start_table/sabotage_anchors.py derives for the step
-#   (--step b3b=c88537116..<tip>, ROOT the base's archive: 60 rows, hunk 47 + reach 14);
-# (b) the rows anchored in the kit and test files B3b edits, or detected by the suites whose
-#   checks it changed (memfnfinder, candoracle, memfndeleg, memfnrows, axesmemfn): 104;
-# (c) B3b's own rows S1103-S1110 and the ten it re-aims (all DETECTED solo in the lane).
-# One id per line (no suffix).
-S
+# DERIVED by docs/dev/lanes/b3b/derive_rows.sh at 41341a08c (base c88537116): the union of
+# (a) sabotage_anchors.py --step b3b=c88537116..HEAD, 60 rows; (b) rows anchored in an
+# edited memfn/ or tests/ file or detected by a changed suite, 94; (c) the judged
+# rows, mech_rows_judged.txt, 103; (d) the rows the branch adds or re-aims,
+# 19. 159 distinct ids. One id per line (no suffix).
 S166
 S169
 S178
+S185
 S193
+S246
 S253
 S255
 S257
@@ -19,6 +19,7 @@ S266
 S270
 S277
 S278
+S279
 S283
 S284
 S286
@@ -30,8 +31,12 @@ S316
 S317
 S437
 S440
+S447
 S449
+S450
 S452
+S454
+S455
 S457
 S458
 S459
@@ -70,10 +75,21 @@ S681
 S682
 S683
 S685
+S686
+S687
 S688
 S689
+S690
+S691
+S692
+S694
+S695
 S696
 S712
+S724
+S728
+S729
+S730
 S738
 S740
 S741
