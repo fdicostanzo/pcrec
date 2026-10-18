@@ -1539,6 +1539,7 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_ENGINE_WHY` | vm | prose | `engine_why` | [§6.3.3¶2](#s6-3-3-p2) |
 | `<PREFIX>_TUNE` | all | token | — | [§6.3.11¶2](#s6-3-11-p2) |
 | `<PREFIX>_COMPOUND` | all | token | — | [§6.3.12¶1](#s6-3-12-p1) |
+| `<PREFIX>_PART_LAYOUT`, `_PART_LAYOUT_WHY` | all (present only when a control asks) | string | — | [§6.3.11¶4](#s6-3-11-p4) |
 | `<PREFIX>_ALTCLS_MERGES`, `_ALTCLS_FACTORED` | all | count | — | [§6.3.11¶3](#s6-3-11-p3) |
 | `<PREFIX>_STARTPOS_GUARD` | all | token | — | [§6.3.6¶2](#s6-3-6-p2) |
 | `<PREFIX>_UTF_CHECK` | all | token | — | [§6.3.6¶3](#s6-3-6-p3) |
@@ -2444,6 +2445,26 @@ on every artifact, a DFA-only one included.
 #define RX_ALTCLS_FACTORED 0   /* alternation runs prefix-factored */
 ```
 
+<a id="s6-3-11-p4"></a>[6.3.11¶4] **`<PREFIX>_PART_LAYOUT`** and **`<PREFIX>_PART_LAYOUT_WHY`** — the part-layout
+controls' stamps (`tuning.md` §2.51-§2.53), in the shared prologue right after
+`<PREFIX>_TUNE`. Neither has an `rx_info` mirror.
+
+- `<PREFIX>_PART_LAYOUT` is present only when the artifact table's row T3
+  fires (`tuning.md` §2.51¶5). Its value is a string of the resolved
+  non-trivial controls in fixed order, separated by `;`: `residual=V` (if
+  set), `rank=R` or `rank=R@set` (if set; `@set` where the threshold came from
+  the measurement set), then each class with a set value as `CLASS=V`. A class
+  item is suffixed `/held` when a P1-P3 row held at least one part of that
+  class, and `/none` when the artifact has no part of that class.
+- `<PREFIX>_PART_LAYOUT_WHY` is present only when row T1 or T2 fires:
+  `"threshold-unmeasured"` or `"no-material-rank"`.
+
+```c
+#define RX_PART_LAYOUT "prefilter=inline"      /* (a)b  --part-layout=prefilter:inline */
+#define RX_PART_LAYOUT "compound=inline/held"  /* ^\s+|\s+$  --part-layout=compound:inline */
+#define RX_PART_LAYOUT "compound=inline/none"  /* (a)b  --part-layout=compound:inline */
+```
+
 <a id="s6-3-12"></a>
 #### 6.3.12 Compounds
 
@@ -2468,7 +2489,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, the VM's string stamps | `"compound"` |
@@ -2644,7 +2665,7 @@ larger.
 <a id="s8-2"></a>
 ### 8.2 The option and error structures
 
-<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all twenty-five members in declaration order; the comment
+<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all twenty-eight members in declaration order; the comment
 beside each is a one-line gloss, and the full text is `lib/pcrec.h`'s own
 comment and, for a tuning axis, `docs/spec/tuning.md` §2:
 
@@ -2695,6 +2716,16 @@ typedef struct {
     const char        *memfn;               /* the search-code kit's opaque
                                                option string (--memfn=);
                                                NULL or "" = none */
+    uint32_t           part_layout;         /* one 2-bit slot per part class
+                                               (PCREC_PART_LAYOUT_GET/_SET):
+                                               PCREC_PART_UNSET / _AUTO /
+                                               _SHARED / _INLINE; tuning.md
+                                               §2.51 */
+    int                part_inline_rank;    /* PCREC_PART_RANK_*; 0 = unset;
+                                               tuning.md §2.52 */
+    int                part_residual;       /* PCREC_PART_UNSET / _AUTO /
+                                               _SHARED / _INLINE; tuning.md
+                                               §2.53 */
 } pcrec_options;
 ```
 
@@ -2723,6 +2754,16 @@ typedef struct {
   text pcrec shows unchanged. An option belonging to the SIMD layer is accepted
   and inert under `-fno-memfn-simd` (the default). It is not a flag bit and
   does not move `rx_info.flags`.
+
+<a id="s8-2-p7a"></a>[8.2¶7a] **`part_layout`, `part_inline_rank` and `part_residual`** are the part-layout
+controls: valued parameters, not flag bits, so they consume no bit of `flags`
+and appear nowhere in `rx_info.flags`. They decide how an artifact's static
+parts are linked into their callers and never what they compute. Each resolves
+on its own: the value set here, else the `--tune` position's preset (every
+preset cell is empty), else unset; unset or `auto`/`none` throughout, the
+artifact is byte-identical to one built without them. A value outside its set
+refuses the compile through `pcrec_error`. `tuning.md` §2.51-§2.53 is their
+contract.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`

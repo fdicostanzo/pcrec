@@ -1,5 +1,7 @@
 # S249 ([OPT-DIAL] design §6.1a, candidate SAB-D1) — THE POLICY TABLE'S TWO
 # SIZE-LEANING COLUMNS ARE SWAPPED, AND EVERY ANSWER CHECK IN THE TREE STAYS
+# RE-AIMED 2026-10-18 (lane e1, [ENTRY-TABLE] E1): every TUNE_TABLE row gained the three
+# part-layout preset cells (`, 0, 0, 0`, all em-dash); the anchors carry them, same plant.
 # GREEN.
 #
 # `src/core/tune.c`'s `TUNE_TABLE` is DATA: one row per `--tune=N` position,
@@ -66,10 +68,10 @@ SAB_REACH_EXPECT="#define RX_DFA_TABLE \"indexed\"
 #define RX_UNROLL_K_WHY \"default\""
 SAB_COUNT=1
 SAB_BEFORE='    { PCREC_TUNE_MIN_SIZE,  "min-size",  95,  40000, 0,
-      PCREC_NO_PREMUL_TABLE },'
-SAB_AFTER='    { PCREC_TUNE_MIN_SIZE,  "min-size",  85,  80000, 0, 0 },   /* SABOTAGE S249 hunk 1: swapped in the size row tuple */'
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },'
+SAB_AFTER='    { PCREC_TUNE_MIN_SIZE,  "min-size",  85,  80000, 0, 0, 0, 0, 0 },   /* SABOTAGE S249 hunk 1: swapped in the size row tuple */'
 SAB_FILE2="src/core/tune.c"
 SAB_COUNT2=1
-SAB_BEFORE2='    { PCREC_TUNE_SIZE,      "size",      85,  80000, 0, 0 },'
+SAB_BEFORE2='    { PCREC_TUNE_SIZE,      "size",      85,  80000, 0, 0, 0, 0, 0 },'
 SAB_AFTER2='    { PCREC_TUNE_SIZE,      "size",      95,  40000, 0,
-      PCREC_NO_PREMUL_TABLE },   /* SABOTAGE S249 hunk 2: swapped in the min-size row tuple */'
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },   /* SABOTAGE S249 hunk 2: swapped in the min-size row tuple */'

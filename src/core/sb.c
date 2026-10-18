@@ -264,7 +264,8 @@ size_t pcrec_sb_len_decide(const StrBuf *sb)
 PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb)
 {
     PcrecEmitSize z = pcrec_emit_size_measure(sb->p ? sb->p : "", sb->len, NULL);
-    z.total  -= sb->simd_size.total + sb->layout_bytes;
+    z.total  -= sb->simd_size.total;
+    z.total  -= sb->layout_bytes;    /* [ENTRY-TABLE] E1: the marks' code bytes */
     z.prose  -= sb->simd_size.prose;
     z.tables -= sb->simd_size.tables;
     return z;

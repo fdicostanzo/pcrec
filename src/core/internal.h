@@ -2981,7 +2981,6 @@ typedef struct {
                                 or 0 for an owner's attribute */
 } PcrecPlPart;
 
-#define PCREC_PL_MAXPARTS 8
 /* [ENTRY-TABLE] E1 THE PART-LAYOUT STATE of one attempt (src/gen/
  * part_layout.c). The artifact table resolves on the first ask; the marks
  * the emitters write are rendered after every length decision (I5). */
@@ -2997,7 +2996,7 @@ typedef struct {
     int narow;
     bool stamp_marked;       /* the stamp mark was written */
     int nparts;
-    PcrecPlPart part[PCREC_PL_MAXPARTS];
+    PcrecPlPart part[PCREC_ENTRY_N];   /* at most one record per entry row */
     unsigned owned_inline;   /* PcrecEntry bits an OWNER makes always_inline
                                 (folded into their callers for `callers`) */
     bool uncopyable;         /* the DFA body this compile emitted keeps label

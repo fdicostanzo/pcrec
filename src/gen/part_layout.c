@@ -423,7 +423,7 @@ static void build_records(Ctx *cx)
     for (int i = 0; i < NSUBJ + NOWNED; i++) {
         PcrecEntry e = i < NSUBJ ? subjects[i].e : owned[i - NSUBJ];
         if (!entry_present(cx, e)) continue;
-        if (pl->nparts >= PCREC_PL_MAXPARTS)
+        if (pl->nparts >= PCREC_ENTRY_N)
             pcrec_ctx_fail(cx, 0, "internal error: part layout: more parts than records");
         PcrecPlPart *p = &pl->part[pl->nparts++];
         memset(p, 0, sizeof *p);
