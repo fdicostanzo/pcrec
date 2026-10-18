@@ -2423,3 +2423,13 @@ pointer when a kit change merges to main.
   - a chain scorer copied from a template must read each row's SAB_EXPECT, not a hard-coded id;
   - lanes went idle after CHAIN_DONE without reporting, three times: check artifacts and nudge;
   - `git apply --check` inside a scratch dir in the repo is a false pass (b3aheavy).
+
+## 2026-10-18 (night) — B3a's heavy chain finished green; done: posted
+
+- Main granted the heavy slot (nothing else queued; bench still on ubuntubudu that night). Lane b3achain2 (sonnet) wrote chain2.sh (the steps not yet run) plus a scorer that reads each row's declared SAB_EXPECT. It armed the run on `.go`; I triggered it at 03:20.
+- `CHAIN COMPLETE 04:16:38`: the 14 remaining mech rows OK, G2 full 199,850,938/0, N2 clean, the memfn reach arm 257/0, the form census green. The 28 earlier rows re-score 28 OK, 0 BAD (S1029 is OK as declared UNREACHED). `done:` posted; main merges lane/b3afix + lane/memfn-b3 as one unit.
+- **Relayed by main (bench O-103): Q-REVAL-15 = YES.** The import-with-kit-seeds route for J2a is allowed (regime_eval.md §2.10/§9.2); the choice falls due at E6.
+  - Traps: only email and loglines have `--out`. Loglines' 1 MiB subjects need the whole `build()`. utf8text's pool_*.tsv has no recorded provenance.
+  - The bench counts 14 subjects of 1 MiB or more at db629a54, not 11: name the 11 if they are a subset. The bench adds `--out` to the other generators on request via main.
+- **Standing box rule (Frank via main):** every TIMING run (grid slots, re-times, REGIME-EVAL judges) is cleared through main, and main clears it with Frank. The bench now lives on this box too. If a timing run sees load from a non-pcrec process, send main its name and PID; never kill or renice it. Correctness suites still need only main's heavy slot.
+- **Lesson:** I `cd`'d into the scratch dir once (read-only, no lanes running yet).
