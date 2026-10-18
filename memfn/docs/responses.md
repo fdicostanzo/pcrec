@@ -2714,3 +2714,10 @@ the compiler, and is never adopted silently. Proposed for main to file
     - G2 full 199,850,938/0;
     - N2 `rc=0 would_decline=0`, all floors clean;
     - memfn reach arm green.
+
+- done: 2026-10-18 — **R17-b′ B3a (presence spans stated, the kit's ports of the five picks in the trace build, PR-11; MF_SITE_ABI 15→16, no pcrec abi event): READY TO MERGE. Branch lane/b3afix @ 4ecc07d5b (B3a + review fixes + main e368410e7 + main's three accepted diffs as their own commits); report docs/dev/lanes/b3a_report.md (§9 review fixes and rebase). Merge as ONE unit, together with this ledger branch lane/memfn-b3.**
+  - Heavy validation, all on the pinned worktree b3a-mt @ 4ecc07d5b (scratch worktrees/memfn-slot/b3aheavy/):
+    - chain.status (2026-10-17): build, strict and the FULL make test green (perfrun label b3a, 22:14; it is also main's integration test). Then 28 solo mech rows, then CANCELLED on Frank's request;
+    - chain2.status (2026-10-18, `CHAIN COMPLETE 04:16:38`): the 14 remaining solo mech rows OK (S739 S811 S812 S995 S1093-S1102); G2 full 199,850,938/0; N2 `rc=0 would_decline=0`, all floors clean (`--propose` read written); MEMFN_REACH_ONLY=1 AXES=--memfn reach arm OK, 257/0; form census 1/0.
+  - All 42 mech rows OK. The old scorer hard-coded S919 as the only expected UNREACHED row. Re-scored by each row's declared SAB_EXPECT (mech_score.sh), the 28 earlier rows read 28 OK, 0 BAD, and S1029 is OK as declared UNREACHED.
+  - Light validation (earlier): 0 movers on 7 sweeps vs e368410e7.
