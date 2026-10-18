@@ -245,6 +245,9 @@
 #   utfcheck — added 2026-09-30 ([UTF-VALID], D133); runs
 #     tests/utfcheck/run_utfcheck.sh. Registered with the arm and before
 #     S409-S413, which name it.
+#   partlayout — added 2026-10-18 ([ENTRY-TABLE] E1); runs
+#     tests/partlayout/run_partlayout_tests.sh. Registered with the arm and
+#     before S1111-S1118, which name it.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -2779,6 +2782,18 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/spechistory.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/spechistory.log" | grep -oE '[0-9]+')"
                 score_arm "$work/spechistory.log" "$f" "spechistory:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            partlayout)
+                # [ENTRY-TABLE] E1 tests/partlayout/run_partlayout_tests.sh --
+                # the part-layout controls' checks (the independent evaluator
+                # on the real object, the hand fixtures, the census, I5). ITS
+                # OWN ARM: no corpus compile sets a part-layout control, so a
+                # defect in the tables leaves `harness` green by construction.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/partlayout/run_partlayout_tests.sh" \
+                    > "$work/partlayout.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/partlayout.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/partlayout.log" | grep -oE '[0-9]+')"
+                score_arm "$work/partlayout.log" "$f" "partlayout:${f:-ERR}fail/${p:-?}pass"
                 ;;
             utfcheck)
                 # [UTF-VALID] tests/utfcheck/run_utfcheck.sh — `-futf-check`

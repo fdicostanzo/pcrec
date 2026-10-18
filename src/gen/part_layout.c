@@ -574,6 +574,13 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
             if (!p || !pl->t3)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark for "
                                "entry %u with no subject record", id);
+            /* Every row writes only on a STATIC definition (§3.4 [r3 LK-9]):
+             * on an exported one, gcc 15.2 takes `inline always_inline` as a
+             * C99 inline definition without a word under -fPIC, so this is
+             * the check, not the compiler. */
+            if (at < 7 || memcmp(sb->p + at - 7, "static ", 7) != 0)
+                pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark on a "
+                               "definition that is not static (entry %u)", id);
             pcrec_sb_puts(&o, layout_text(p->layout));
             seen[id]++;
         }
