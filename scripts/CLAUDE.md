@@ -312,9 +312,19 @@ pcrec (the Makefile owns that).
   runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
   docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/
   is staged, and lints the staged content, not the working file. Never runs
-  `make test`. Installed only by `make hooks HOOKS=pre-commit` (`HOOKS`
-  defaults to `pre-push`; `HOOKS="pre-push pre-commit"` installs both),
-  never automatically. Bypass once with `git commit --no-verify`.
+  `make test`. [SPEC-HOOK]: ALSO, when a staged file is text that can cite a
+  spec (md txt tsv py sh c h, Makefile), runs `tests/spec_history/
+  spec_history.py ROOT --staged` — no `<doc>.md:<line>` and no dangling
+  `<doc>.md §N` citation of a numbered spec may be staged — and, when a
+  docs/spec/*.md is staged, its history markers, numbering, contents block
+  and every citation of it in the index. Judged on `git show :path`; a
+  commit staging neither runs nothing (~50 ms with a text file staged,
+  ~450 ms with a spec staged). `PCREC_HOOK_TRACE=FILE` logs each checker run
+  (the self-test's witness; planted cases in tests/spec_history/
+  run_hook_selftest.sh, run by `make test-spec-history`). Installed only by
+  `make hooks HOOKS=pre-commit` (`HOOKS` defaults to `pre-push`;
+  `HOOKS="pre-push pre-commit"` installs both), never automatically. Bypass
+  once with `git commit --no-verify`.
 
 - **battery.sh** — [TT-12] STEP 1 item 5: `battery_v5`, the manager's
   merge/close validation chain (test -> strict -> axes -> san -> alloc ->

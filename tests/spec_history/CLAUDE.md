@@ -29,7 +29,10 @@ holds the numbering, the generated contents and every citation of the doc.
   `cli.md`, `facts_listing.md`, `ir_listing.md`, `findings.md`, `rxt_format.md` and `tuning.md` have none).
 - `run_spec_history.sh` — the section runner (`ROOT_DIR` overridable, which
   the mech arm uses). It runs `spec_history.py`, which also calls
-  `spec_cites.py`, and prints ONE `checks passed:`/`checks failed:` total.
+  `spec_cites.py`, and prints a `checks passed:`/`checks failed:` total; then
+  it runs `run_hook_selftest.sh` (below), which prints its own pair.
+- `run_hook_selftest.sh` — the planted-case self-test of the pre-commit
+  gate (see "Staged mode").
 - `spec_cites.py`, `specdoc.py` — the numbered-spec checks over every
   `docs/spec/*.md` that carries the `<!-- spec-toc:begin -->` block (today
   `match_api.md`, `registry.md`, `table_contract.md`, `limits.md`, `cli.md`,
@@ -62,6 +65,26 @@ holds the numbering, the generated contents and every citation of the doc.
   word `spechistory` is registered in `tests/mech/run_sabotage_matrix.sh`.
   A lane report must not quote a planted citation literally: the tree-wide
   citation scan reads it as a dangling number (spectri, 2026-10-09).
+
+## Staged mode: the pre-commit gate ([SPEC-HOOK])
+
+`spec_history.py ROOT --staged` runs the SAME functions over the INDEX
+(`git show :path`, via `spec_cites.Index`), not a second implementation:
+the line-number and dangling-citation checks over the staged files, and for
+each staged numbered `docs/spec/*.md` also its history markers (allowlist and
+baseline read from the index), numbering, contents block (`scripts/
+spec_toc.py`'s own `build`) and every citation of it anywhere in the index
+(`git grep --cached`). It prints FAIL lines only; there is no floor check
+(a subset has no census). `scripts/hooks/pre-commit` calls it only when a
+text file or a spec is staged. `run_hook_selftest.sh` (run by
+`run_spec_history.sh`) builds a scratch repo under `build/`, copies the real
+hook and checkers plus `tuning.md`, and plants eleven cases: a staged line
+cite blocks, the same file unstaged does not, valid and dangling section
+cites, a stale contents block (and the index, not the working file, is
+judged), a repeated number, build history, a spec edit stranding an
+unstaged file's citation, and an unrelated commit that must not start the
+checker (`PCREC_HOOK_TRACE` witness). The tree-wide scan stays in the default
+mode.
 
 ## What it does not catch
 

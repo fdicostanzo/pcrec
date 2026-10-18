@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# scripts/hooks/pre-commit — OPT-IN local gate: lints docs/dev/plan.md when a
-# commit touches the plan. [PLAN-LINT] step 3.
+# scripts/hooks/pre-commit — OPT-IN local gate with two CONDITIONAL checks:
+# (1) lints docs/dev/plan.md when a commit touches the plan ([PLAN-LINT]
+# step 3); (2) the spec-citation checks when a commit stages text files or a
+# docs/spec/*.md ([SPEC-HOOK], below).
 #
 # NOT auto-installed. Installed only by `make hooks HOOKS=pre-commit` (a plain
 # copy into the resolved hooks directory), exactly like scripts/hooks/pre-push
@@ -15,6 +17,18 @@
 # tree-wide plan.md:<line> citation scan (PL14), which stays in `make test`'s
 # test-plan-lint, so the gate costs a few tens of milliseconds, not a repo grep.
 # Bypass once with `git commit --no-verify`.
+#
+# [SPEC-HOOK] Spec checks, judged on the STAGED content like the plan lint
+# (tests/spec_history/spec_history.py ROOT --staged; the same functions the
+# tree-wide test-spec-history runs, over the index): when any staged file is
+# text of a kind that can cite a spec (md txt tsv py sh c h, Makefile), no
+# `<doc>.md:<line>` citation and no dangling `<doc>.md §N` citation of a
+# numbered docs/spec doc may be staged (CI went red on exactly this twice,
+# 2026-10-17/18); when a docs/spec/*.md is staged, its history markers vs the
+# allowlist/baseline, numbering, generated contents, and every citation of it
+# anywhere in the index are checked too. A commit staging neither runs
+# nothing. The tree-wide scan stays in `make test`. PCREC_HOOK_TRACE=FILE
+# appends a line per spec-check run (the self-test's witness).
 set -u
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
@@ -24,19 +38,32 @@ if [ -z "$repo_root" ]; then
 fi
 cd "$repo_root" || exit 1
 
-if ! git diff --cached --name-only | grep -qE '^(docs/dev/plan\.md|docs/dev/plan_completed\.md|docs/design/plan_row_bodies/)'; then
-    exit 0
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+rc=0
+
+if printf '%s\n' "$staged" | grep -qE '^(docs/dev/plan\.md|docs/dev/plan_completed\.md|docs/design/plan_row_bodies/)'; then
+    if [ ! -x scripts/plan_lint.sh ]; then
+        echo "pre-commit: scripts/plan_lint.sh is missing in this tree; plan lint skipped" >&2
+    elif ! scripts/plan_lint.sh --staged; then
+        echo "pre-commit: the staged plan files violate the plan.md row format — commit blocked." >&2
+        echo "pre-commit: fix the lines above (the format is defined in docs/dev/plan.md's Policy)," >&2
+        echo "pre-commit:   or bypass once with 'git commit --no-verify' (a deliberate choice)." >&2
+        rc=1
+    fi
 fi
 
-if [ ! -x scripts/plan_lint.sh ]; then
-    echo "pre-commit: scripts/plan_lint.sh is missing in this tree; plan lint skipped" >&2
-    exit 0
+if printf '%s\n' "$staged" | grep -qE '\.(md|txt|tsv|py|sh|c|h)$|(^|/)Makefile$'; then
+    if [ ! -f tests/spec_history/spec_history.py ]; then
+        echo "pre-commit: tests/spec_history/spec_history.py is missing in this tree; spec checks skipped" >&2
+    else
+        [ -n "${PCREC_HOOK_TRACE:-}" ] && echo "spec-staged" >> "$PCREC_HOOK_TRACE"
+        if ! python3 tests/spec_history/spec_history.py "$repo_root" --staged; then
+            echo "pre-commit: the staged files break the spec rules — commit blocked." >&2
+            echo "pre-commit: cite a spec by section number ('match_api.md §6.3.4¶11'), never by line;" >&2
+            echo "pre-commit:   a staged docs/spec file keeps its numbering, contents and no build history" >&2
+            echo "pre-commit:   (docs/spec/CLAUDE.md); or bypass once with 'git commit --no-verify'." >&2
+            rc=1
+        fi
+    fi
 fi
-
-if ! scripts/plan_lint.sh --staged; then
-    echo "pre-commit: the staged plan files violate the plan.md row format — commit blocked." >&2
-    echo "pre-commit: fix the lines above (the format is defined in docs/dev/plan.md's Policy)," >&2
-    echo "pre-commit:   or bypass once with 'git commit --no-verify' (a deliberate choice)." >&2
-    exit 1
-fi
-exit 0
+exit $rc

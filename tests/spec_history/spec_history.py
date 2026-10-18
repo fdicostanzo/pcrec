@@ -16,6 +16,13 @@ unallowed hits.
   spec_history.py ROOT            check; prints PASS:/FAIL: lines and the
                                   `checks passed:`/`checks failed:` totals
   spec_history.py ROOT --survey   the per-file density table (no verdict)
+  spec_history.py ROOT --staged   the pre-commit hook's mode: judge the
+                                  INDEX (`git show :path`), never the working
+                                  file. Line-number and dangling citations
+                                  over the staged files; for each staged
+                                  docs/spec/*.md also history markers,
+                                  numbering, contents, and every citation of
+                                  it in the index. FAIL lines only.
   spec_history.py ROOT --lines F  every unallowed hit in file F, by marker
 
 The same run also performs the numbered-spec checks of spec_cites.py (a
@@ -63,22 +70,26 @@ def addendum_hits(line):
     return False
 
 
-def scan(path):
+def scan_lines(lines):
     """-> list of (lineno, marker, line) for every marker hit, code fences skipped."""
     hits = []
     fence = False
-    with open(path, encoding="utf-8") as fh:
-        for n, line in enumerate(fh, 1):
-            if line.lstrip().startswith("```"):
-                fence = not fence
-                continue
-            if fence:
-                continue
-            for mid, _, rx in MARKERS:
-                hit = addendum_hits(line) if mid == "addendum" else bool(rx.search(line))
-                if hit:
-                    hits.append((n, mid, line.rstrip("\n")))
+    for n, line in enumerate(lines, 1):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        for mid, _, rx in MARKERS:
+            hit = addendum_hits(line) if mid == "addendum" else bool(rx.search(line))
+            if hit:
+                hits.append((n, mid, line.rstrip("\n")))
     return hits
+
+
+def scan(path):
+    with open(path, encoding="utf-8") as fh:
+        return scan_lines(fh)
 
 
 def load_tsv(path, ncols):
@@ -96,9 +107,49 @@ def load_tsv(path, ncols):
     return rows
 
 
+def main_staged(root):
+    """--staged: the pre-commit hook's mode. Judges the INDEX; prints FAIL
+    lines only and a one-line total. The tree-wide scan stays in the default
+    mode (make test-spec-history)."""
+    idx = spec_cites.Index(root)
+    staged = idx.staged()
+    allow = idx.tsv("tests/spec_history/allowlist.tsv", 4)
+    base = {(f, m): int(c) for f, m, c in idx.tsv("tests/spec_history/baseline.tsv", 3)}
+    specs = [f for f in staged if f.startswith("docs/spec/") and f.count("/") == 2
+             and f.endswith(".md") and not f.endswith("/CLAUDE.md")]
+    results = []
+    for path, text in idx.texts(specs).items():
+        fname = os.path.basename(path)
+        hits = [(n, mid, line) for n, mid, line in scan_lines((text or "").split("\n"))
+                if not any(a[0] == fname and a[1] == mid and a[2] in line for a in allow)]
+        for mid in MARKER_IDS:
+            got = sum(1 for h in hits if h[1] == mid)
+            want = base.get((fname, mid), 0)
+            if got > want:
+                results.append((False, "%s [%s] %d history marker(s), baseline %d -- docs/spec "
+                                "carries no build history (docs/spec/CLAUDE.md); move it to "
+                                "docs/dev/history/ or allowlist a non-history use in "
+                                "tests/spec_history/allowlist.tsv (spec_history.py ROOT --lines %s "
+                                "on the working file lists them)" % (fname, mid, got, want, fname)))
+            elif got < want:
+                results.append((False, "%s [%s] %d, baseline %d -- debt was paid: lower "
+                                "tests/spec_history/baseline.tsv to %d in this commit"
+                                % (fname, mid, got, want, got)))
+            else:
+                results.append((True, "%s [%s] %d" % (fname, mid, got)))
+    results += spec_cites.run_staged(root, staged, idx)
+    bad = [m for ok, m in results if not ok]
+    for m in bad:
+        print("FAIL: " + m)
+    print("staged checks passed: %d, failed: %d" % (len(results) - len(bad), len(bad)))
+    return 1 if bad else 0
+
+
 def main(argv):
     if len(argv) < 2:
         sys.exit(__doc__)
+    if "--staged" in argv:
+        return main_staged(argv[1])
     root = argv[1]
     here = os.path.join(root, "tests", "spec_history")
     specdir = os.path.join(root, "docs", "spec")

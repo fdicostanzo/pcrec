@@ -53,10 +53,12 @@ def _cut(items, n=8):
     return shown + ("; ... (%d more)" % (len(items) - n) if len(items) > n else "")
 
 
-def check_numbering(name, path):
-    """-> [(ok, message)]"""
-    with open(path, encoding="utf-8") as fh:
-        lines = fh.read().split("\n")
+def check_numbering(name, path, text=None):
+    """-> [(ok, message)]; text overrides reading path (the staged mode)"""
+    if text is None:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    lines = text.split("\n")
     d = specdoc.parse(lines)
     res = []
     bad = []
@@ -118,7 +120,21 @@ def check_numbering(name, path):
     return res
 
 
-def check_toc(root, name, path):
+def check_toc(root, name, path, text=None):
+    if text is not None:
+        # staged mode: the generator's own build() over the index content
+        sys.path.insert(0, os.path.join(root, "scripts"))
+        try:
+            import spec_toc
+            new, errors = spec_toc.build(path, text)
+        finally:
+            sys.path.pop(0)
+        if errors:
+            return [(False, "[toc] %s: %s" % (name, " | ".join(errors[:6])))]
+        if new != text:
+            return [(False, "[toc] %s: the table of contents is stale "
+                            "(run scripts/spec_toc.py %s)" % (name, path))]
+        return [(True, "[toc] %s: the table of contents is current" % name)]
     r = subprocess.run([sys.executable, "-I", os.path.join(root, "scripts", "spec_toc.py"),
                         "--check", path], capture_output=True, text=True)
     if r.returncode == 0:
@@ -169,17 +185,22 @@ def line_cites_in(stem, text):
     return [n for n, line in enumerate(text.split("\n"), 1) if rx.search(line)]
 
 
-def load_tsv(path, ncols):
+def parse_tsv(text, ncols, label):
     rows = []
-    if os.path.exists(path):
-        with open(path, encoding="utf-8") as fh:
-            for raw in fh:
-                if raw.strip() and not raw.startswith("#"):
-                    cols = raw.rstrip("\n").split("\t")
-                    if len(cols) < ncols:
-                        sys.exit("spec_cites: FATAL: malformed row in %s: %r" % (path, raw))
-                    rows.append(cols)
+    for raw in text.splitlines(True):
+        if raw.strip() and not raw.startswith("#"):
+            cols = raw.rstrip("\n").split("\t")
+            if len(cols) < ncols:
+                sys.exit("spec_cites: FATAL: malformed row in %s: %r" % (label, raw))
+            rows.append(cols)
     return rows
+
+
+def load_tsv(path, ncols):
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as fh:
+        return parse_tsv(fh.read(), ncols, path)
 
 
 def tree_files(root):
@@ -213,12 +234,22 @@ def read_text(path):
     return data.decode("utf-8", "replace")
 
 
-def check_cites(root, name, path, files):
+def check_cites(root, name, path, files, doc_text=None, reader=None, excl=None,
+                staged_mode=False):
+    """Tree mode: reader/doc_text/excl default to the working tree and the
+    floor check runs. Staged mode passes the index readers and no floor (a
+    subset of the tree has no census to floor)."""
     here = os.path.join(root, "tests", "spec_history")
-    excl = load_tsv(os.path.join(here, "cite_exclude.tsv"), 3)
+    if excl is None:
+        excl = load_tsv(os.path.join(here, "cite_exclude.tsv"), 3)
     floors = {r[0]: int(r[1]) for r in load_tsv(os.path.join(here, "cite_floors.tsv"), 2)}
-    with open(path, encoding="utf-8") as fh:
-        d = specdoc.parse(fh.read().split("\n"))
+    if doc_text is None:
+        with open(path, encoding="utf-8") as fh:
+            doc_text = fh.read()
+    if reader is None:
+        def reader(f):
+            return read_text(os.path.join(root, f))
+    d = specdoc.parse(doc_text.split("\n"))
     res = []
 
     # controls: the patterns must see what they exist to see, and must not
@@ -241,7 +272,7 @@ def check_cites(root, name, path, files):
     for f in files:
         skip_all = any(f.startswith(r[0]) and r[1] in ("all", "cites") for r in excl)
         skip_line = any(f.startswith(r[0]) and r[1] in ("all", "line") for r in excl)
-        text = read_text(os.path.join(root, f))
+        text = reader(f)
         if text is None or name not in text:
             continue
         if not skip_all:
@@ -264,7 +295,9 @@ def check_cites(root, name, path, files):
                 "[cites] %s: line-number citation(s) -- cite the section number (%s §N¶K), "
                 "never a line: %s" % (name, name + ".md", _cut(linecites))))
     floor = floors.get(name)
-    if floor is None:
+    if staged_mode:
+        pass
+    elif floor is None:
         res.append((False, "[cites] %s: no row in cite_floors.tsv -- add one (half the measured "
                            "count of %d), so a scan that reads nothing cannot pass" % (name, total)))
     else:
@@ -273,6 +306,102 @@ def check_cites(root, name, path, files):
                     "[cites] %s: only %d citations scanned, floor %d -- the scan stopped "
                     "reaching the tree" % (name, total, floor)))
     return res
+
+
+# ---- staged mode (the pre-commit hook) -----------------------------------
+# Same checks, same functions, judged on the INDEX: what the commit would
+# record, never the working file. The tree-wide scan stays in `make test`.
+
+class Index:
+    """Reads files as staged (`git show :path`), several per git process."""
+
+    def __init__(self, root):
+        self.root = root
+
+    def git(self, *args):
+        return subprocess.run(["git", "-C", self.root] + list(args),
+                              capture_output=True).stdout.decode("utf-8", "replace")
+
+    def staged(self):
+        """Added/copied/modified/renamed paths in the index."""
+        out = self.git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z")
+        return [f for f in out.split("\0") if f]
+
+    def ls(self, prefix):
+        return [f for f in self.git("ls-files", "-z", "--", prefix).split("\0") if f]
+
+    def grep_cached(self, literal):
+        """Tracked (index) text files mentioning the literal."""
+        out = self.git("grep", "--cached", "-l", "-I", "-z", "-F", "-e", literal)
+        return [f for f in out.split("\0") if f]
+
+    def texts(self, paths):
+        """-> {path: text or None (binary / not in the index)}"""
+        paths = list(paths)
+        if not paths:
+            return {}
+        r = subprocess.run(["git", "-C", self.root, "cat-file", "--batch"],
+                           input="".join(":%s\n" % p for p in paths).encode("utf-8"),
+                           capture_output=True)
+        data, pos, out = r.stdout, 0, {}
+        for p in paths:
+            nl = data.index(b"\n", pos)
+            head = data[pos:nl].split()
+            pos = nl + 1
+            if len(head) != 3:      # "<spec> missing"
+                out[p] = None
+                continue
+            size = int(head[2])
+            blob = data[pos:pos + size]
+            pos += size + 1
+            out[p] = None if b"\0" in blob[:8192] else blob.decode("utf-8", "replace")
+        return out
+
+    def tsv(self, relpath, ncols):
+        t = self.texts([relpath])[relpath]
+        if t is None:
+            p = os.path.join(self.root, relpath)
+            return load_tsv(p, ncols)
+        return parse_tsv(t, ncols, relpath)
+
+
+def staged_specs(idx):
+    """-> {stem: index text} of the numbered docs in the index."""
+    names = [f for f in idx.ls("docs/spec") if f.endswith(".md")
+             and f.count("/") == 2 and not f.endswith("/CLAUDE.md")]
+    return {os.path.basename(f)[:-3]: t for f, t in idx.texts(names).items()
+            if t and BEGIN in t}
+
+
+def run_staged(root, staged, idx=None):
+    """-> [(ok, message)]: the line-number-citation and dangling-citation
+    checks over the staged files; plus, for each staged numbered spec, its
+    numbering, contents and every citation of it in the index tree."""
+    idx = idx or Index(root)
+    ad = staged_specs(idx)
+    excl = idx.tsv("tests/spec_history/cite_exclude.tsv", 3)
+    texts = {}
+
+    def reader(f):
+        if f not in texts:
+            texts.update(idx.texts([f]))
+        return texts[f]
+
+    texts.update(idx.texts(staged))
+    results = []
+    for name, doc in ad.items():
+        path = "docs/spec/%s.md" % name
+        is_staged = path in staged
+        files = staged
+        if is_staged:
+            files = sorted(set(staged) | set(idx.grep_cached(name)))
+            idx_missing = [f for f in files if f not in texts]
+            texts.update(idx.texts(idx_missing))
+            results += check_numbering(name, path, doc)
+            results += check_toc(root, name, path, doc)
+        results += check_cites(root, name, path, files, doc_text=doc, reader=reader,
+                               excl=excl, staged_mode=True)
+    return results
 
 
 def run(root):
