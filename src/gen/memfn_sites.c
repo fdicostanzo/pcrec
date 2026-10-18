@@ -584,6 +584,35 @@ static void pres_record(DelegSite id, const mf_site *s)
 }
 #endif
 
+/* [MEMFN] R17-b' B3b THE PRESENCE ROUTED-RECORD (r17b_prime.md §1.6 [rev3
+ * B5] item 1, for slot PRES): pcrec's own record of each presence span the
+ * kit's routed PRES rows decided, read from the links pcrec CONSUMED (the
+ * class the define reports, or the admission's ask where P2 drops the whole
+ * pre-check and nothing is defined), never from a kit counter or trace:
+ * `MFROUTED<TAB>PRE<TAB>kind<TAB>row`, one per span, the row read off its
+ * link (proven: P2; REQUIRED: P0; a chosen member or window: P3; else P9),
+ * and one more `P4` where a member leads the stated run. Under the same
+ * switch as `routed_record`. */
+#ifdef PCREC_CAND_TRACE
+void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls)
+{
+    const char *const *kn = routed_kind_name;
+    int run = 0;
+    if (!getenv("PCREC_MF_ROUTE_TRACE")) return;
+    for (unsigned i = 0; i < s->npspan; i++) run |= s->pspans[i].term[0].kind == MF_T_RUN;
+    for (unsigned i = 0; i < s->npspan && i < cls->npres; i++) {
+        const mf_link *k = &cls->pres[i];
+        const char *row = k->proven_by ? "P2" : s->pspans[i].need == MF_REQUIRED ? "P0"
+                        : k->member ? "P3" : "P9";
+        const char *kind = s->site_kind < sizeof routed_kind_name / sizeof kn[0]
+                         ? kn[s->site_kind] : "?";
+        fprintf(stderr, "MFROUTED\tPRE\t%s\t%s\n", kind, row);
+        if (run && s->pspans[i].term[0].kind == MF_T_SET && k->verify && k->order == 0)
+            fprintf(stderr, "MFROUTED\tPRE\t%s\tP4\n", kind);
+    }
+}
+#endif
+
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file)
 {
@@ -602,6 +631,7 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
         kit_check(cx, art, mf_defined(art, handle, r));
         routed_record(id, s, r->row);
         pres_record(id, s);
+        if (s->npspan) pcrec_memfn_pres_routed(s, &r->cls);
     }
 #endif
     return handle;

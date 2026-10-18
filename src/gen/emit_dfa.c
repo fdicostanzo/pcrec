@@ -1668,6 +1668,13 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         PCREC_CAND_TRACE_REC("PRESENCE", "-", "declined", "req-site");
 #ifdef PCREC_CAND_TRACE
         req_pick_shadow(cx, NULL);
+        /* [MEMFN] R17-b' B3b the routed-record of a pre-check the kit's P2
+           drops (no site is defined, so the admission's links are the record) */
+        if (req_admit(cx) == REQ_ADMIT_DOMINATED) {
+            mf_class *dc = pcrec_arena_alloc(&cx->arena, sizeof *dc);
+            const mf_site *ds = req_pres_ask(cx, NULL, dc);
+            if (dc->npres && dc->pres[0].proven_by) pcrec_memfn_pres_routed(ds, dc);
+        }
 #endif
         return NULL;
     }

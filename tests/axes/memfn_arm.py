@@ -88,6 +88,23 @@ MEMFN_CLASS = {
     ("fd-d1", "simd"): ("DIFFER",
         {("byte", "c-default"): 1004, ("byte", "c-vm"): 0, ("utf8", "c-default"): 985, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b" \\w?\\b"), ("utf8", "c-default", b" \\w?\\b")]),
+    # R17-b' B3b's three PRES denies (lane b3b, 2026-10-18), MEASURED at lane/memfn-b3b
+    # 8444f0ed5 (`taskset -c 12-15 python3 -I tests/axes/memfn_arm.py --measure`, 6 cells,
+    # refused=0 of 4624 everywhere; docs/dev/lanes/b3b_report.md). All DIFFER: slot PRES
+    # is routed, so each deny moves the pre-checks its row decides, identically at both
+    # layers (no SIMD form reads a presence link). `pres-set-lead` is the retired
+    # `-fno-req-set-lead` (bit 45), its population that flag's; `fd-pres-g1` and
+    # `fd-pres-pick` act on the DFA-scanned routes only (c-vm 0: no pre-check there is
+    # dominated, and every span is REQUIRED).
+    **{("fd-pres-g1", ly): ("DIFFER",
+        {("byte", "c-default"): 1271, ("byte", "c-vm"): 0, ("utf8", "c-default"): 1105, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"ab"), ("utf8", "c-default", b"ab")]) for ly in ("default", "simd")},
+    **{("fd-pres-pick", ly): ("DIFFER",
+        {("byte", "c-default"): 187, ("byte", "c-vm"): 0, ("utf8", "c-default"): 262, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
+    **{("pres-set-lead", ly): ("DIFFER",
+        {("byte", "c-default"): 16, ("byte", "c-vm"): 18, ("utf8", "c-default"): 8, ("utf8", "c-vm"): 8},
+        [("byte", "c-default", "é{2}cat".encode()), ("utf8", "c-default", b"a{3}(?i:cat)")]) for ly in ("default", "simd")},
     ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
     ("fd-r0", "default"): ("ASSERT_ZERO", {}, []),
