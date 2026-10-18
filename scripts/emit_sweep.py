@@ -456,8 +456,6 @@ DIFFER_PINS = {
     ("byte", "-fno-start-set", "c-vm"): (2327, 2327, b"."),
     ("byte", "-fno-start-pinned", "c-default"): (183, 183, b".*"),
     ("byte", "-fno-start-pinned", "c-vm"): (0, 0, None),
-    ("byte", "-fno-req-set-lead", "c-default"): (14, 0, "é{2}cat".encode()),
-    ("byte", "-fno-req-set-lead", "c-vm"): (16, 0, "é{2}cat".encode()),
     ("byte", "-fno-req-handoff", "c-default"): (339, 339, b"SS"),    # was 163: L1 re-pin, header
     ("byte", "-fno-req-handoff", "c-vm"): (0, 0, None),
     ("byte", "-fno-hyb-reseed", "c-default"): (403, 403, b"a*+a"),
@@ -498,8 +496,6 @@ DIFFER_PINS = {
     ("utf8", "-fno-start-set", "c-vm"): (2352, 2352, b"."),
     ("utf8", "-fno-start-pinned", "c-default"): (183, 183, b".*"),
     ("utf8", "-fno-start-pinned", "c-vm"): (0, 0, None),
-    ("utf8", "-fno-req-set-lead", "c-default"): (8, 0, b"a{3}(?i:cat)"),
-    ("utf8", "-fno-req-set-lead", "c-vm"): (8, 0, b"a{3}(?i:cat)"),
     ("utf8", "-fno-req-handoff", "c-default"): (519, 517, b"123"),    # was 275: L1 re-pin (280 before REVEND), header
     ("utf8", "-fno-req-handoff", "c-vm"): (0, 0, None),
     ("utf8", "-fno-hyb-reseed", "c-default"): (420, 420, b"a*+a"),
@@ -543,6 +539,33 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-d1", "c-default"): (985, 0, b" \\w?+\\b"),
     ("byte", "--memfn=no-fd-d1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-d1", "c-vm"): (0, 0, None),
+    # [MEMFN] R17-b' B3b (lane b3b; r17b_prime.md §3.4 [rev3 B13]): bit 45
+    # (`-fno-req-set-lead`) is RETIRED to the kit's `--memfn=no-pres-set-lead`
+    # (KW-11), so its four rows leave and the kit deny takes them; the PRES
+    # slot's other two denies are born DIFFER (their rows are routed). MEASURED
+    # at lane/memfn-b3b fd305b4b1 (one binary, --no-differ-floor), 4,624
+    # distinct patterns:
+    #   pres-set-lead  16 / 18 (byte), 8 / 8 (utf8): the retired flag's
+    #     population (14 / 16 / 8 / 8 when last pinned; the corpus grew), and
+    #     byte for byte the old flag's artifacts (the alias check, b3b report);
+    #   fd-pres-g1     1271 (byte) / 1105 (utf8) on c-default, every one a
+    #     start-stamp mover (`<PREFIX>_REQ_WHY` dominated -> emitted); c-vm an
+    #     exact 0: no pre-check under --engine=vm is dominated (no DFA scan);
+    #   fd-pres-pick   187 (byte) / 262 (utf8) on c-default, no stamp moves
+    #     (the parts the pre-check tests, not its admission); c-vm an exact 0:
+    #     every span there is REQUIRED (P0), which the pick's deny cannot reach.
+    ("byte", "--memfn=no-pres-set-lead", "c-default"): (16, 0, "é{2}cat".encode()),
+    ("byte", "--memfn=no-pres-set-lead", "c-vm"): (18, 0, "é{2}cat".encode()),
+    ("utf8", "--memfn=no-pres-set-lead", "c-default"): (8, 0, b"a{3}(?i:cat)"),
+    ("utf8", "--memfn=no-pres-set-lead", "c-vm"): (8, 0, b"a{3}(?i:cat)"),
+    ("byte", "--memfn=no-fd-pres-g1", "c-default"): (1271, 1271, b"ab"),
+    ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (1105, 1105, b"ab"),
+    ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (187, 0, b"a.{1,5}z"),
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (262, 0, b"a.{1,5}z"),
+    ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -557,7 +580,11 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp")} | {
     # R17-b' B2: fd-d1 acts on the DFA body's and the hybrid's one-byte sites
     # only; under --engine=vm it has none
-    ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")}
+    ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")} | {
+    # R17-b' B3b: G1 and the pick act on the DFA-scanned routes only; under
+    # --engine=vm no pre-check is dominated and every span is REQUIRED
+    (base, "--memfn=no-" + row, "c-vm")
+    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the

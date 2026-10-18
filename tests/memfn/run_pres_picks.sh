@@ -58,7 +58,7 @@ else
     fi
 fi
 
-PICKS="set scan window leads dominated landmark"
+PICKS="set scan window leads dominated landmark rdom rlead rhead rwin rwhole rrest"   # r*: R17-b' B3b's routed decision
 
 # AN EXTRA ARM (lane b3afix, review MINOR-5): PRES_PICKS_EXTRA="FLAGS" appends
 # FLAGS to every witness compile and checks AGREEMENT only. The table's

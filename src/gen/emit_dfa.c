@@ -10289,6 +10289,44 @@ static bool req_set_leads_own(Ctx *cx)
     return pcrec_find_pick(pcrec_find_byte_rate(cx), cand, care, 2, 0) == 1;
 }
 
+/* [MEMFN] R17-b' B3b the [K65] set rest pcrec's builder tested before B3b
+ * (its own `req_set_rest_members`, verbatim over the STATED facts): on the
+ * route with no DFA scan, every necessary-set member but the run's EXACT
+ * positions (or the one-byte form's byte) and the lead. The routed
+ * comparator's expectation, as an FNV-1a signature over the members
+ * ascending (0 where the rest is empty), the count into *n. */
+static int req_rest_own_sig(Ctx *cx, int lead, int *n)
+{
+    const ReqRun *r = pcrec_fact_req_whole_run_stated(cx);
+    const ReqSet *set = pcrec_fact_req_set_stated(cx);
+    bool done[256] = { false };
+    uint32_t h = 2166136261u;
+    *n = 0;
+    if (pcrec_artifact_has_dfa_scan(cx)) return 0;
+    if (r->len >= 2) {
+        for (int k = 0; k < r->whole_len; k++)
+            if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
+    } else if (pcrec_fact_req_byte_stated(cx) >= 0) done[pcrec_fact_req_byte_stated(cx)] = true;
+    if (lead >= 0) done[lead] = true;
+    for (int b = 0; b < 256; b++)
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) {
+            h = (h ^ (uint32_t)b) * 16777619u;
+            (*n)++;
+        }
+    return *n ? (int)(h & 0x7fffffff) : 0;
+}
+
+/* The routed REST's signature, the same FNV-1a over the members the kit's
+ * links verify after the run (order 2), ascending. */
+static int req_rest_routed_sig(const mf_site *s, const mf_class *cls, int *n)
+{
+    unsigned char rest[256];
+    uint32_t h = 2166136261u;
+    req_set_rest_members(s, cls, rest, n);
+    for (int i = 0; i < *n; i++) h = (h ^ (uint32_t)rest[i]) * 16777619u;
+    return *n ? (int)(h & 0x7fffffff) : 0;
+}
+
 /* [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8; r17b_prime.md §3.1 row B3a,
  * §8.1): the kit's PORTS of the five priced presence picks (memfn.h
  * `mf_pres_ports`) asked over the presence spans this compile STATES, beside
@@ -10442,6 +10480,72 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             int kl = k.landmark < 0 ? 0 : k.landmark;
             if (pick_plant("landmark")) kl = !kl;
             pick_rec("landmark", pl, kl, 1, pl, kind);
+        }
+        /* [MEMFN] R17-b' B3b THE ROUTED DECISION against pcrec's own (KW-8 at
+         * B3b, on the kit-sourced proof): the links the kit's routed PRES rows
+         * answer for this site (asked parts-free, the admission's own ask),
+         * against what pcrec's builder and admission decided before B3b, one
+         * `r*` record per decision the parts are laid out from:
+         *   rdom    G1: every span proven (P2) / req_byte_dominated_by;
+         *   rlead   P4's head in front of the run / set-leads, pcrec's;
+         *   rhead   the head byte where no run is stated / req_set_pick;
+         *   rwin    the run's window start / the req_run fact's `at`;
+         *   rwhole  the run kept whole (P0, P9) / today's no-DFA rule;
+         *   rrest   the REST's signature (K65) / the rest pcrec's builder
+         *           tested.
+         * Where either side drops the pre-check (rdom), only rdom compares. */
+        {
+            mf_site ps = *site;
+            ps.npred = 0;
+            ps.preds = NULL;
+            ps.ret_pred = MF_NO_PRED;
+            ps.handoff = MF_H_ON_MISS;
+            ps.use = MF_USE_DISCARD;
+            ps.head_max = 0;
+            mf_class *rc = pcrec_arena_alloc(&cx->arena, sizeof *rc);
+            mf_hooks rh = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
+            int asked = ps.npspan && !mf_ask(pcrec_memfn_art(cx), &ps, &rh, rc);
+            if (!asked) {
+                fprintf(stderr, "MFPICKSITE\troute-refused\t%s\n", kind);
+                goto out;
+            }
+            int pd = req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte_stated(cx));
+            int kd = rc->npres > 0;
+            for (unsigned i = 0; i < rc->npres; i++) kd &= rc->pres[i].proven_by;
+            if (pick_plant("rdom")) kd = !kd;
+            pick_rec("rdom", pd, kd, cs.byte >= 0, pd, kind);
+            if (!pd && !kd) {
+                int runi = -1;
+                for (unsigned i = 0; i < ps.npspan; i++)
+                    if (ps.pspans[i].term[0].kind == MF_T_RUN) runi = (int)i;
+                int pl = req_set_leads_own(cx);
+                int kl = req_pres_head(&ps, rc, true) >= 0;
+                if (pick_plant("rlead")) kl = !kl;
+                if (runi >= 0) pick_rec("rlead", pl, kl, 1, pl, kind);
+                int hd = req_pres_head(&ps, rc, false);
+                if (runi < 0) {
+                    int kh = hd >= 0 ? mf_term_byte(&ps.pspans[hd].term[0]) : -1;
+                    if (pick_plant("rhead") && nm >= 2)
+                        kh = mf_term_byte(&ps.pspans[(hd + 1) % nm].term[0]);
+                    pick_rec("rhead", pc, kh, nm >= 2, pc >= 0 && pc != set->rightmost, kind);
+                } else {
+                    const ReqRun *w = pcrec_fact_req_run_stated(cx);
+                    const mf_link *rl = &rc->pres[runi];
+                    int kw = rl->member ? rl->member - 1 : k.run_window;
+                    if (pick_plant("rwin")) kw = kw + 1;
+                    pick_rec("rwin", w->at, kw, run->whole_len > PCREC_MAX_REQ_RUN_EMIT,
+                             w->at != 0, kind);
+                    int pw = !pcrec_artifact_has_dfa_scan(cx) && run->whole_len > w->len;
+                    int kwh = rl->verify && rl->member == 0 && run->whole_len > w->len;
+                    if (pick_plant("rwhole")) kwh = !kwh;
+                    pick_rec("rwhole", pw, kwh, run->whole_len > w->len, pw, kind);
+                }
+                int np = 0, nk = 0;
+                int pr = req_rest_own_sig(cx, pl && runi >= 0 ? pc : -1, &np);
+                int kr = req_rest_routed_sig(&ps, rc, &nk);
+                if (pick_plant("rrest")) kr = kr + 1;
+                pick_rec("rrest", pr, kr, nm >= 2, np > 0, kind);
+            }
         }
     }
 out:
