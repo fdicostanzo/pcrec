@@ -551,3 +551,35 @@ unchanged (the plant still drops the alias rewrite), comment note added.
 
 **Scope.** Only a mech row under `tests/mech/sabotages/` and this report
 changed; no `src/` or `memfn/src`.
+
+## §12 S1085 triage (s1085tri)
+
+Lane s1085tri, 2026-10-18. The heavy chain's PROCS=4 mech run at 850dad795
+(`worktrees/memfn-slot/b3bheavy3/mech/all.log`) read S1085
+(`S1085_reader-asks-unscanned-set.sh`, plant in `cand_pf_site`,
+src/gen/emit_dfa.c; detector candoracle's ASKED-CLASS hold
+`cand_asked_hold`) as `candoracle:0fail/165pass` UNDETECTED, against its
+declared DETECTED (fdb2fix, 2026-10-16: 1 fail / 99 pass).
+
+Both re-runs were SOLO: `taskset -c 12-15`, PROCS=4,
+`gnutimeout 1800 bash tests/mech/run_sabotage_matrix.sh S1085`.
+Logs: `worktrees/memfn-slot/b3b/s1085/{tip,main}.log`.
+
+| run | tree | candoracle | verdict |
+|---|---|---|---|
+| main, solo (`git worktree add --detach` scratch, since removed) | 65dd423ee | 0 fail / 141 pass | UNDETECTED (unexpected) |
+| B3b, solo | e5a5cf653 | 0 fail / 165 pass | UNDETECTED (unexpected) |
+| B3b, heavy chain PROCS=4 | 850dad795 | 0 fail / 165 pass | UNDETECTED (unexpected) |
+
+**Class: pre-existing.** Main reads the same UNDETECTED, so B3b did not cause
+it and it is not a PROCS=4 interaction. Per the brief, I report it and do not
+fix it. Main has the row's plant and detector at the 2026-10-16 measurement,
+but nothing reaches them. Not verified: some change between fdb2fix's
+measurement and 65dd423ee left the DFA-hat witnesses with no reader that asks
+the PF site's class where T is a proper subset of E, or made the two sets'
+classes compare equal over `cand_class_eq`'s fields. That is the question for
+main or the kit. Re-aim the row at a witness that reaches it, or re-measure
+and flip `SAB_EXPECT`.
+
+**Fix: none. Verdict after: unchanged (UNDETECTED on both trees).** This
+section is the lane's only commit.
