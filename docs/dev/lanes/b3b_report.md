@@ -428,3 +428,14 @@ All under `taskset -c 12-15`, -j4, one run at a time. Logs `$S/logs2/`
 | light validation re-run | DONE (§8.2) |
 | chain.sh PIN | set to this report's commit (the tip's parent: the tip only writes the PIN) |
 | HEAVY (chain.sh) and the PRES floors' pinning commit | OWED, owner the kit manager |
+
+### 8.5 Main's acceptance notes on entry_use.diff (2026-10-18, recorded by the kit manager)
+
+- **ENTRY's position-iff-ASSIGN meaning is derived in ONE place,** `pcrec_memfn_check_use`.
+  Any future reader of that fact asks that derivation and never re-derives it.
+- **The ceiling check (`s->use > row->use_ceiling`, memfn_sites.c deleg_check) depends on enum order.**
+  - CONFIRMED: `mf_use_kind` is `{ MF_USE_POSITION = 0, MF_USE_DISCARD = 1, MF_USE_ENTRY = 2 }` (memfn.h:370).
+  - The diff raises PRE's ceiling to `MF_USE_ENTRY`.
+  - OFS's ceiling stays `MF_USE_POSITION` (0), so an OFS instance stating ENTRY (2) is refused. So is every other row whose ceiling is POSITION or DISCARD.
+  - The new ALL_PRESENT line refuses a presence site whose use is not ENTRY.
+  - Caveat: the order POSITION < DISCARD reads as "ignored more". ENTRY sorting above both is an ENUM-ORDER fact, not a meaning, so a future use kind must be placed with the ceiling check in mind. Appending last keeps this property only if the new kind should be refused under every ceiling below it.
