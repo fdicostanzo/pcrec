@@ -1697,9 +1697,11 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
                          nrun == 0 ? "none" : nrun == 1 ? "window" : "whole-run", "run-tests");
     PCREC_CAND_TRACE_REC("FIRST", "-", handoff ? "assign" : "on-miss", "req-handoff");
     req_set_rest_members(s, cls, rest, &nrest);
-    /* the set's own `used` record ([MEMFN] R17-b' B3b, Q-WR-12): the kit's
-     * rows consume the stated set; the facts record it where today's builder
-     * asked it, the route with no DFA scan in front */
+    /* the facts' `used` record ([MEMFN] R17-b' B3b, Q-WR-12): the kit's
+     * rows consume the stated whole run and set; the facts record them where
+     * this builder asked them before B3b: the whole run on every emitted
+     * pre-check, the set on the route with no DFA scan in front */
+    (void)pcrec_fact_req_whole_run(cx);
     if (!pcrec_artifact_has_dfa_scan(cx)) (void)pcrec_fact_req_set(cx);
     PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
                          nrest ? "set-rest" : "none", "set-rest");
