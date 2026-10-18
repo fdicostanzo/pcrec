@@ -346,8 +346,9 @@ own value. The extension is therefore: each side is three-valued, `{out, in, abs
 the function is a 9-cell table, bit `3p + q`.
 
 **What `(?m)$` needs: nothing.** `(?m)$` ≡ `(?![^\n])` (547/547), which the recognizer
-already turns into `A_CTX(¬{\n}, NOT_NEXT)`, and pcrec answers it identically on both
-engines (probe in §0's method). `$` itself is not: `$` ≢ `(?![^\n])` (102 of 547 differ).
+already turns into `A_CTX(¬{\n}, NOT_NEXT)`; pcrec's two spellings (`x(?m)$`,
+`x(?![^\n])`) also agree with each other on both engines over the five subjects probed with
+generated matchers. `$` itself is not: `$` ≢ `(?![^\n])` (102 of 547 differ).
 
 **Why both take the absent-aware form over `{\n}`.** Spelling `(?m)$` as
 `A_CTX(¬{\n}, NOT_NEXT)` changes the class axis: its set is the complement, so the newline
