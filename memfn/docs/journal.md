@@ -2433,3 +2433,23 @@ pointer when a kit change merges to main.
   - The bench counts 14 subjects of 1 MiB or more at db629a54, not 11: name the 11 if they are a subset. The bench adds `--out` to the other generators on request via main.
 - **Standing box rule (Frank via main):** every TIMING run (grid slots, re-times, REGIME-EVAL judges) is cleared through main, and main clears it with Frank. The bench now lives on this box too. If a timing run sees load from a non-pcrec process, send main its name and PID; never kill or renice it. Correctness suites still need only main's heavy slot.
 - **Lesson:** I `cd`'d into the scratch dir once (read-only, no lanes running yet).
+
+## 2026-10-18 (day) — B3a landed; B3b built, reviewed, fixed and validated through four heavy chains; delivered
+
+- B3a's remaining chain went green overnight; main merged B3a (82e48e806).
+- B3b was built by lane b3b (opus). Lane b3brev reviewed it MERGE-WITH-FIXES (1 blocker, 4 majors, 6 minors), and b3bfix fixed all eleven. The fixes include `kit_ask`'s one refusal path (general, not D2-only), the deny-answer witnesses with the removed handoff guard argued sound, the deciding PRES rows carried in `mf_class`, the PR-8 negative control, and S1122. Main's E1 (abi 80) was merged in.
+- Heavy chains: chain1 serial was cancelled at row 91 on Frank's point that [TT-MECHPAR] already measured PROCS=4 at 3.3x. chain3 ran at 850dad795, the reach chain at a35ca8f90, and chain4 ended `CHAIN COMPLETE` at c83a0a6d8. Reds found and fixed:
+  - test-core's FLAG-ACCESS raw read in B3b's alias;
+  - S462's anchor, moved by that fix;
+  - four rows that B3b's G1 move left on dead code;
+  - run_axes's spelling selection being red by construction;
+  - P2 UNREACHED because ASK decisions were never counted (ruling: reached when asked, a separate `asked=N` column, main's two controls).
+  S689 and S1085 are pre-existing on main.
+- R-25 acked. D161 add. 16 and the U1 design were noted.
+- **Lessons:**
+  - a src edit moves sabotage anchors, so run test-codegen's SABANCHOR after ANY src edit, however small;
+  - a light-check list for a delivery must include test-core (FLAG-ACCESS) when C changes;
+  - a heavy-chain template must use [TT-MECHPAR]'s one PROCS=4 invocation, never serial solo rows;
+  - a filtered `AXES=` run must be checked once before it is relied on;
+  - I used `cd` twice in compound commands.
+- Frank: wtprune gained `--force` (friendly removal first, never rm -rf); memory saved.
