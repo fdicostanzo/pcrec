@@ -3959,6 +3959,8 @@ detector), S459 (the lead re-tested: pcrec's rest reads the head, the kit's
 layout check refuses), S462 (bit 45's rewrite dropped: a silent no-op), S596
 (the kit row P4 loses its deny), S1018 (re-anchored in the query's path).
 
+**S1122 (lane b3bfix, 2026-10-18, [MEMFN] R17-b′ B3b; b3brev finding 5):** P0's predicate never holds, so P9 decides every REQUIRED presence span with P0's own link shape: artifacts byte-identical, no answer moves, only the DECIDING ROW tells (now recorded from the kit's `mf_class.pres_row`, not inferred from the link). Detectors: `memfnfinder` (fd-P0 decides P9) and, in the heavy chain, the routed census. Figures in `docs/dev/lanes/b3b_report.md` §8.
+
 **S961, S962, S984 (lane ksrc23, 2026-10-17, [KNOW-SRC] K3; the new arm
 `knowledge`, `tests/knowledge/run_knowledge_tests.sh`):** measure_sets.md
 §8.5 wrote these for the measures kind; K3 maps them onto the analysis kind.

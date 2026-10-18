@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# PENDING ID (lane b3bfix, 2026-10-18; ids S1111-S1112 REQUESTED from main, not
-# yet allocated: the manager renames this file to tests/mech/sabotages/S<id>_
-# pres-p0-pred-false.sh and replaces SXXXX below). [MEMFN] R17-b' B3b, b3brev
+# S1122 (lane b3bfix, 2026-10-18; id allocated by main). [MEMFN] R17-b' B3b, b3brev
 # finding 5 -- THE P0-PREDICATE-FALSE SUBSTITUTION. P0's predicate never holds
 # (its required facts gain one no presence span carries), so a REQUIRED span
 # falls through P3 (whose gate declines REQUIRED) to P9, whose link is P0's
@@ -14,12 +12,12 @@
 # passed), the row manifest (make test-memfn-rows: fd/P0's witness row NOT
 # chosen, 1 failed / 237 passed; no mech arm runs it) and, in the heavy chain,
 # the routed census (P0's VM_ATTEMPT cells under their floor).
-SAB_ID="SXXXX-pres-p0-pred-false"
+SAB_ID="S1122-pres-p0-pred-false"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="memfnfinder"
 SAB_DESC="the PRES row P0's predicate never holds, so P9 decides every REQUIRED presence span with P0's own link shape: byte-identical artifacts, only the deciding row moves (b3brev U5)"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    { "P0", FD_PRES, KN_P, SF_REQUIRED, 0, { { FL_NONE, NULL, 0, NULL, NULL } },'
-SAB_AFTER='    { "P0", FD_PRES, KN_P, SF_REQUIRED | SF_SPAN0, 0, { { FL_NONE, NULL, 0, NULL, NULL } },   /* SABOTAGE SXXXX */'
+SAB_AFTER='    { "P0", FD_PRES, KN_P, SF_REQUIRED | SF_SPAN0, 0, { { FL_NONE, NULL, 0, NULL, NULL } },   /* SABOTAGE S1122 */'
 SAB_DOC_FIGURE="HAND-MEASURED by lane b3bfix on the planted tree: make test-memfn-finder finder_check 3 failed / 946 passed (fd-P0 decided P9); see docs/dev/lanes/b3b_report.md section 8."
