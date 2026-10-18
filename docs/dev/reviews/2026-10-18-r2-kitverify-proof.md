@@ -79,3 +79,60 @@ narrowly). Summary of record:
   `--emit-facts` (P3 itself).
 - **Facts-only:** P1 yes (rationale out of the text); P2 yes but consumer-shaped; C3 no as phrased
   ("superset tests allowed" is method), yes restated as OPTIONAL + query.
+
+## 5. kvp-contract (opus): contract semantics, span construction (SUPERSET addendum folded in)
+
+Evidence at main b39a69c2e; greps and single-pattern compiles only. Delivered in four parts (inbox
+truncation at ~4.5k chars).
+
+- **Span today (C4 confirmed).** No `span_facts` producer exists; each site builds its own `mf_pred`.
+  One-byte FIND sites: one REQUIRED term at offset 0 (`emit_dfa.c:6548-6553`). Offset-set / run-pinned:
+  only `prefix_k`'s chosen offsets, need mixed per term (`emit_dfa.c:1212-1237`). `abc\d{3,7}`: req_run 3
+  (`abc`), kset_walk 6 fixed positions, the planned producer 3 or 6 by construction choice. `abc\d\d\dx`
+  sends `0,6*`; `a\d{2}bc` sends `0,3*,4`; utf8 `[α-ω]xyz` sends `0,2*`.
+- **B1.** P1 contradicts D161 add. 14: obligation 6 allows the unconstrained (NONE) reply only if span 0
+  is OPTIONAL; nearly every one-byte site's span 0 is trivially EXACT, so F0 NONE (B5) becomes illegal.
+  The only coherent repair, "REQUIRED when the kit scans", reduces P1 to the point C3 contests.
+- **M1.** P1/P2 tie obligation and proof to the CUT; define the proof over origin offsets d instead;
+  `proven_len` = largest L with every d < L covered and exact; an uncovered position ends the prefix.
+- **M2.** P1 would force 7 tests where `prefix_k` chose 2 (`abc\d\d\dx`) once spans become exact;
+  today's gap-filled span is SUPERSET so nothing changes yet. Run-pinned already double-reads (prefilter
+  verifies the run, the DFA re-reads; `\bfoobar` cannot skip). New duplication only for CLASS positions.
+- **M3.** C-PROOF's every-deny clause is stronger than its SIMD-neutrality reason and, under C3 (NONE
+  reachable by a deny), forces every proof to nothing. Fix: layer-invariant, deny-VARIANT.
+- **M4 (latent over-claim, built code).** `kit_class` intersects EVERY offset-0 term into `proven0`
+  regardless of `need` (`memfn/src/compose.c:310-323`); correct today only because every FIND site has
+  one REQUIRED term and the generic arm tests every term (`generic.c:25`). Any C3 adoption must make
+  `kit_class` honour `need` / the committed set.
+- **M5.** P2 as a REPLACEMENT is lossy for built readers (R4 prices the proven0 SET's mass; G1 reads
+  the set). Keep per-offset SETS; derive `proven_len` pcrec-side.
+- **M6.** REQUIRED on VM_ATTEMPT and presence spans is give-up safety (K64/K65, C-13, D158), not effort;
+  an effort level is advisory (refused by add. 4) or REQUIRED on a prefix = per-term `need` (built,
+  `mf_term.need`, memfn.h:386), matching C-14 ("need is the EFFORT fact"). A kit-chosen effort needs the
+  handback price add. 6 dropped.
+- **S1 (SUPERSET addendum).** `byte_form` is design-only (no field or setter), yet most multi-position
+  sites send supersets in practice (gaps, k-set unions, utf8 continuation bytes). Exactness is a property
+  of a PREFIX: d is exact iff the cross product of sets 0..d equals the language's length-(d+1) prefixes
+  (`[α-ω]` exact at length 1, SUPERSET from 2). No kit effort proves the language past that point (the
+  kit is encoding-blind). usable = min(contiguous proven-as-sent prefix, `exact_len`), `exact_len` ONE
+  pcrec-stated fact replacing `byte_form` (needs an UNSTATED encoding: 0 is legal). Membership proofs
+  past it stay useful to R4/G1.
+- **S2.** Span-level P1 on a partly exact span loses REQUIRED on the exact prefix; REQUIRED-as-filter is
+  meaningful on superset positions (K64); only REQUIRED-as-verify needs exactness. Rule: verify/proof as
+  language only below `exact_len`.
+- **S3.** Effort beyond `exact_len` cannot raise what consumers use; past it tests only filter.
+  Layer invariance holds under the floor rule provided SIMD forms only add guarded text.
+- **m1-m6.** REQUIRED has two meanings (filter vs verify); contract states need per span, code per term;
+  the DFA row covers literal positions only (class positions help VM/report only); MLINE has no span 0
+  (`proven_prev` is its proof); a hybrid's two sites re-test span 0; T-NEED's middle row already
+  approximates P1 and its only discriminator on a DFA consumer is "wants".
+- **Verdict.** P1+P2 coherent but nearly empty (= `exists` × len(span 0), what proven0 already says),
+  couples cost to the cut, breaks add. 14. C3 is right that the information is what the kit proves beyond
+  its obligation, but an effort level adds nothing over per-term need. Recommendation: need per position;
+  REQUIRED only where K64/K65 demand it or a consumer cannot skip; the kit commits layer-invariantly to
+  per-origin-offset proven SETS; pcrec states `exact_len` and derives `proven_len`; the cut drops out.
+- **Unlocks.** U1 one proven-at-offset array `proven[d]`, d in [-MF_MAX_BACK, MF_MAX_SPAN_POS) (trigger:
+  [KIT-VERIFY]'s build); U2 class-uniform DFA skip (a timed class-led cell); U3 a pcrec-owned measured
+  handback quantity in a D166 set so the kit can choose verification by price (a cell where tool-cost-only
+  loses to always-verify); U4 offset-pinned union spans raise `exact_len` through a narrow multi-byte
+  class (add. 10's first losing utf8 cell inside a VM/report consumer's prefix).
