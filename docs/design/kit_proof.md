@@ -1,7 +1,10 @@
 # kit_proof — [KIT-VERIFY] U1: REPORT WITHOUT AN ENGINE, with D161 addendum 16's context spans
 
-Status: DESIGN NOTE, **revision 2** (lane `u1rev`, 2026-10-18, main `542b0cecb`, abi 80,
-`MF_SITE_ABI` 16, `MF_CLASS_V` 3). Revision 1 was lane `u1design` (main `a016b3bfa`).
+Status: DESIGN NOTE, **revision 2.1** (lane `u1rev21`, 2026-10-18, main `fa322a7f6`,
+abi 80, `MF_SITE_ABI` 16, `MF_CLASS_V` 3). Revision 2.1 applies the re-check of revision
+2 (same review file, section "Re-check of revision 2", all ACCEPTED); its changed text is
+marked `[r3rc <id>]`. Read §R2.1 first. Revision 2 was lane `u1rev` (main `542b0cecb`);
+revision 1 was lane `u1design` (main `a016b3bfa`).
 Revision 2 applies every disposition of the D6 panel
 `docs/dev/reviews/2026-10-18-r3-kit-proof-u1.md` (k3-family, k3-contract, k3-sound; all
 findings ACCEPTED by the manager). Nothing under `src/` or `memfn/` changes. Text that
@@ -22,6 +25,46 @@ Inputs: D161 addenda 4-16 (16 is the ruling), D157, D158; reviews r2
 `memfn/r17b_prime.md` §1, §4.3-§4.6; `locate_finish.md` §1-§2, §5.1; `compound.md` §A.1
 (`split_conj[]`); plan rows [KIT-VERIFY], [MATCH-KNOWN], [CAPS-KNOWN]; memfn R-25 (as
 corrected in `memfn/docs/requests.md`).
+
+---
+
+## §R2.1. What revision 2.1 changed (re-check finding → section)
+
+The re-check of revision 2 (k3-recheck, opus) cleared it with fixes: 1 BLOCKER, 3 MAJOR,
+8 MINOR, three PARTIAL discharges and three new unlocks. All are ACCEPTED. Changed text
+carries `[r3rc <id>]`.
+
+| id | disposition | section |
+|---|---|---|
+| K1 (BLOCKER) | C9 becomes "no row at depth 0..k carries a non-identity eol view". `conj.py` implements it (`rows_by_depth`). `ab\|a$\n`, `ab\|a\Z\n` and `ab\|a$\n\z` join `witnesses.txt`, and all three DECLINE at `no-eol-view`. Under the plant "C9 tested at depth k only" (`CONJ_PLANT=c9-depth-k`, revision 2's C9) all three read `cover` and are wrong: `"a\n"` from 0 gives NOMATCH where PCRE2 gives (0,2). The admitted set is unchanged, 1,197 → 1,197 with no row newly declined: the census population is 0, as the critic said. §5.2 states that `span_facts` passes a mid-pattern `$`/`\Z` to the hull. S1136 is re-aimed to this plant. X0 gains a subject family because the critic's random subjects missed the `ab\|a$\n` cell | §1.1 C9, §5.2, §6.3 S1136, §6.4 X0, `kit_proof/conj.py`, `witnesses.txt` |
+| M-A | C2 `origin-start` is RETIRED (UL-n1). It carried no weight, because the REPORT description is read off the machine. Its admitted patterns join U1. `conj.py` applies nothing after the table, so its `why` histogram is first-match in table order. U-ctxorigin's context joins are recounted: 12 / 9 corpus. Whole-cover patterns with no start-origin census site add 5 bench / 27 corpus native and 1 / 7 utf8. S1136 could not go red, and is RE-AIMED to K1's plant | §0, §1.1 C2, §1.2, §6.3 S1136, §8.3 |
+| M-B | the harness lever's KIT-SIDE channel is named: `mf_preview(mf_art *, const char *step)`, a harness-only call on the `mf_reach` precedent. Its fence: only `pcrec_harness_compile` reaches it, which is the compound lever's one-global reserved-prefix entry, and it is not an `options.def` row, so no `--memfn=` spelling reaches it. Its wording is D157-neutral: pcrec names its own routing event, never a row or a form. §7's re-run condition becomes "if pcrec's row OR the kit text differs at B1 from Z2, B4 included" | §7 (Z2, "The harness lever's kit channel"), §4.3 R-26.6 |
+| M-C | S1143 ships declared UNREACHED, with the argument (a nullable body fails C10, or has no span 0 for C13). S1139 is TWO edits: C9 dropped AND the eol view read as the end | §6.3 |
+| m1 | C14 is EQUALITY on REPORT: `proven[d] = S_d` and every context set equals its stated set. `⊆` alone admitted an over-filter, which would miss a match. `kit-none` is "differs in either direction", with both directions named | §1.1 C14, §6.4 K35 |
+| m2 | C8's `why` splits into `exact/machine-inexact` and `exact/producers-disagree`. The trace build asserts 0 of the latter | §1.1 C8, §6.4 K35 |
+| m3 | a REPORT site states `mf_site.consumer = MF_C_RESULT` | §2.5, §4.1, §4.3 R-26.3 |
+| m4 | lift item 2 names MLINE's stop predicate too. The carrier is spelled `const mf_pred *ctx; uint8_t nctx;` | §4.1 |
+| m5 | the verdict for a CONTEXT term below `read_floor` but inside the subject is defined: no verdict exists, so a site that can produce such a term is REFUSED at define. A REPORT site states SUBJECT. S1137's detector moves accordingly | §3.5, §6.3 S1137 |
+| m6 | X5 is byte identity "modulo the abi readers" | §6.4 X5 |
+| m7 | the getwidth superset is stated PER ENCODING. getwidth counts characters, and `é\|ab` is fixed at 2 bytes under utf8 but (1, 2) in characters | §6.4 K35 |
+| m8 | §8.4 Q2's stale PENDING label is deleted and the RULED text kept. fam-M7's claim is corrected: neither A1's verdict nor A5's moves in stage 1, and the field reads are [cand-no-name-strcmp] hygiene. The note now records that `conj.py` has no C5 | §8.4 Q2, §2.6, §1.1 C5, `conj.py` docstring |
+| PARTIAL family M2 | `span_facts`' half of C8 is absent from `conj.py`, so `conj.py`'s C8 is the machine half only. OWED at Z2: the slice built and C8 run as two-producer equality on every admitted artifact | §1.5, §6.4, §7 Z2 |
+| PARTIAL contract M5 | X0 and X1 (the independent per-position, per-byte libpcre2 oracle) and the getwidth K35 floor have NOT been run. The critic's re-check differential (1,197 patterns, 1,638,884 cells) is a precursor on the critic's instrument, not X0. OWED at step X0, before Z2 | §6.4, §7 X0 |
+| PARTIAL contract B2, sabotage, sound B1 | discharged by M-B, M-C and K1 above | — |
+| UL-n1 | drop C2: done here (trigger met) | §8.3 |
+| UL-n2 | the default-build define/ask class check as a SHIPPED invariant for every REQUIRED kit site. Trigger: the next trace-only mismatch, or U2 | §8.3 |
+| UL-n3 | `MkEnd` is exact for every view-free fixed-width DFA body once C9 covers the walk, which is UL-2's input. Trigger: UL-2's own | §8.3 |
+| C1-C14 order | the order is total. `fact-denied` is a C13 failure detail, not a row | §1.1 |
+
+**Admitted-set delta** (`conj.py` revision 2 vs 2.1 on one build at main `fa322a7f6`,
+the critic's `admitted.py` shape over the census patterns): 1,197 → 1,197, nothing newly
+declined. In `conj.txt` B every pattern that read `no-start-site` now reads `cover`
+(`cover … no-start-site` lines). C and D move only by the three new witnesses.
+
+**What revision 2.1 could NOT discharge** (also in the lane report): X0/X1 themselves (a
+heavy differential, not run under the box rule); the getwidth floor's number; the
+`span_facts` half of C8 (it needs the Z2 build); the K96 per-field `serves`/`uses` cells
+(the kit's, at Z1).
 
 ---
 

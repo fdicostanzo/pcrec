@@ -1,4 +1,4 @@
-# kit_proof/conj.py at main 542b0cecb (census pin 2523cfe4b), build/pcrec of the lane tree; compile-only
+# kit_proof/conj.py rev 2.1 at main fa322a7f6 (census pin 2523cfe4b), build/pcrec of the lane tree; compile-only
 ## A. stage-1 SITES (census, origin start, whole > 0) by FINISHER route
 sites bench native CR_DFA DFA_SCAN OFS 42
 sites bench native CR_DFA DFA_SCAN PF 24
@@ -30,37 +30,37 @@ total corpus utf8 CR_VM (hybrid/VM) 138
 ##    (machine read by kvdfa; first failing conjunct = why)
 why bench native ctx cover 6
 why bench native ctx finisher-dfa 4
-why bench native whole cover 66
+why bench native whole cover 71
 why bench native whole finisher-dfa 16
-why bench native whole no-start-site 5
 why bench utf8 ctx cover 3
 why bench utf8 ctx finisher-dfa 3
-why bench utf8 whole cover 46
+why bench utf8 whole cover 47
 why bench utf8 whole finisher-dfa 11
-why bench utf8 whole no-start-site 1
-why corpus native ctx cover 68
+why corpus native ctx cover 80
 why corpus native ctx end-at-k 4
 why corpus native ctx finisher-dfa 23
-why corpus native ctx no-start-site 12
 why corpus native whole anchored-A 4
-why corpus native whole cover 558
+why corpus native whole cover 585
 why corpus native whole finisher-dfa 471
-why corpus native whole no-start-site 27
-why corpus utf8 ctx cover 56
+why corpus utf8 ctx cover 65
 why corpus utf8 ctx end-at-k 4
 why corpus utf8 ctx finisher-dfa 19
-why corpus utf8 ctx no-start-site 9
-why corpus utf8 whole cover 413
+why corpus utf8 whole cover 420
 why corpus utf8 whole finisher-dfa 162
-why corpus utf8 whole no-start-site 7
-cover bench native ctx 6
-cover bench native whole 66
-cover bench utf8 ctx 3
-cover bench utf8 whole 46
-cover corpus native ctx 68
-cover corpus native whole 558
-cover corpus utf8 ctx 56
-cover corpus utf8 whole 413
+cover bench native ctx start-site 6
+cover bench native whole no-start-site 5
+cover bench native whole start-site 66
+cover bench utf8 ctx start-site 3
+cover bench utf8 whole no-start-site 1
+cover bench utf8 whole start-site 46
+cover corpus native ctx no-start-site 12
+cover corpus native ctx start-site 68
+cover corpus native whole no-start-site 27
+cover corpus native whole start-site 558
+cover corpus utf8 ctx no-start-site 9
+cover corpus utf8 ctx start-site 56
+cover corpus utf8 whole no-start-site 7
+cover corpus utf8 whole start-site 413
 ## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:
 ##    exact_len is stated over the SENT sets, min(k, sent))
 sent bench native OFS sent<k 21
@@ -114,7 +114,7 @@ e.g. earlier-row entry-const '(?:\\Bx\\n|x)$' '(?:\\Bx\\n|x)$' '[ab]{0,}?(?:(?=\
 e.g. earlier-row exact '.*\\.txt$' '[a-z]+\\.txt$' '[a-z]+\\.txt$' '(?:foo|barbaz)$'
 e.g. earlier-row fixed-width '(?:[a-z]{0,1024})\\z' '(?:[a-z]{0,1024})\\z' 'a*\\z' 'a*\\z'
 e.g. earlier-row no-eol-view '\\d+$' '\\d+$' '.*\\.txt$' '\\s+$'
-## D. witnesses (kit_proof/witnesses.txt; the origin conjunct is a SITE fact, not applied here)
+## D. witnesses (kit_proof/witnesses.txt; C2 retired, nothing applied after the table)
 -   foobar                   cover          k=6 absB=True absA=True
 -   foo|foobar               cover          k=3 absB=True absA=True
 -   in|instanceof            cover          k=2 absB=True absA=True
@@ -139,3 +139,6 @@ R   \bcat$                   no-eol-view
 -   \d{4}                    cover          k=4 absB=True absA=True
 u   \x{e9}t                  cover          k=3 absB=True absA=True
 u   \bcat\b                  cover          k=3 absB=True absA=True
+-   ab|a$\n                  no-eol-view    
+-   ab|a\Z\n                 no-eol-view    
+-   ab|a$\n\z                no-eol-view    
