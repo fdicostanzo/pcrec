@@ -9,7 +9,13 @@ The pieces `../b3b_report.md` cites; the lane's voice, historical once merged.
   G2 full, N2 census + floor propose, memfn reach arm, form census, B3b's own censuses). The kit
   manager arms it in a slot at a pinned tip; verdict = the last line of `chain.status`,
   `^CHAIN (COMPLETE|FAILED)`.
-- `mech_rows.txt` — the mech rows `chain.sh` runs solo (sabotage_anchors.py `--step` over
-  c88537116..tip, plus the kit/test-edit/suite-derived rows and B3b's new and re-aimed rows).
+- `mech_rows.txt` — the mech rows `chain.sh` runs solo, DERIVED by `derive_rows.sh` (its header
+  names the tip and the four parts' counts); `chain.sh` refuses at arm time any line that is not
+  `^S[0-9]+$` (b3brev finding 1: the first list carried a bare `S`).
+- `derive_rows.sh` — writes `mech_rows.txt`: sabotage_anchors.py `--step` over c88537116..HEAD,
+  rows anchored in an edited memfn/ or tests/ file or detected by a changed suite, the judged
+  rows, and the rows the branch adds or re-aims.
+- `mech_rows_judged.txt` — the first list's judged kit/test/suite rows (103 ids, its bare `S`
+  removed), `derive_rows.sh`'s part (c).
 - `mech_score.sh` — the scorer (copied from the b3a heavy slot): verdict from a row's own
   COMPLETE trailer against its declared SAB_EXPECT.

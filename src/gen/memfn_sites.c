@@ -594,7 +594,11 @@ static void pres_record(DelegSite id, const mf_site *s)
  * index in `mf_finder_rows`' listing; b3brev U5: never inferred from the
  * link's shape), and one more for the ORDER row (`pres_led`, P4) where it
  * put a member at the head; a pre-check P2 drops is never defined, so its spans
- * print `MFPRESDROP<TAB>PRE<TAB>kind<TAB>row` instead (a site with no define
+ * print `MFPRESDROP<TAB>PRE<TAB>kind<TAB>row` instead. Two more columns on a
+ * deciding row's record (`-` on the order row's): the link it decided
+ * (`v%dp%dm%do%d`) and the row's own template from the listing (its `pick`), so
+ * a census can hold a decided link to its row's kind (a row that decides
+ * another row's link shape, S1103's narrowing, is a census failure) (a site with no define
  * is no `MFROUTED` site: C10's fixtures read those as the defined sites'
  * own). A link with no row (0, or past the listing) prints `?`. Under the
  * same switch as `routed_record`. */
@@ -611,9 +615,11 @@ void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls)
         const char *row = ri && ri <= fl.n ? fl.rows[ri - 1].id : "?";
         const char *kind = s->site_kind < sizeof routed_kind_name / sizeof kn[0]
                          ? kn[s->site_kind] : "?";
-        fprintf(stderr, "%s\tPRE\t%s\t%s\n", k->proven_by ? "MFPRESDROP" : "MFROUTED", kind, row);
+        fprintf(stderr, "%s\tPRE\t%s\t%s\tv%dp%dm%do%d\t%s\n",
+                k->proven_by ? "MFPRESDROP" : "MFROUTED", kind, row, k->verify, k->proven_by,
+                k->member, k->order, ri && ri <= fl.n ? fl.rows[ri - 1].pick : "-");
         if (li)
-            fprintf(stderr, "MFROUTED\tPRE\t%s\t%s\n", kind,
+            fprintf(stderr, "MFROUTED\tPRE\t%s\t%s\t-\t-\n", kind,
                     li <= fl.n ? fl.rows[li - 1].id : "?");
     }
 }
