@@ -200,3 +200,5 @@ either: the 10.46 oracle is local.
 
 ## Design lanes
 A design note answers the three STANDING QUESTIONS in docs/design/CLAUDE.md (measurement regime; independent control; what moves when data is regenerated). For each one, first state whether it is relevant to this design.
+
+Cite a docs/spec/ file by its section number (`match_api.md §6.3.4¶11`), never by line (`match_api.md:1823`), in every file you write: notes, reports, review text. `make test-spec-history` scans the whole tree and goes red on a line cite (it turned CI red twice, 2026-10-17 and 10-18).
