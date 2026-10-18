@@ -350,7 +350,7 @@ def attributes(text):
             continue
         if l.startswith((" ", "\t")):
             continue
-        kinds = re.findall(r"\b(always_inline|noinline)\b", l)
+        kinds = re.findall(r"\b(always_inline|noinline|noipa)\b", l)
         if not kinds and not l.startswith("static inline "):
             continue
         m = re.search(r"\b(rx\w*)\(", re.sub(r"__attribute__\(\(\w+\)\)", "", l))
@@ -489,6 +489,38 @@ def sec_neutral(pop, near):
              "" if not bad else ": " + "; ".join("%r %s" % (p, b[0]) for p, b in bad[:4])))
 
 
+# The harness's own compile of generated code (tests/harness/run.sh's
+# GENCFLAGS). The warning that once failed here (a shared prefilter's caller
+# reporting `window` maybe-uninitialized) shows at -O1 only.
+WERROR_FLAGS = ["-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror"]
+WERROR_CTLS = [["--part-residual=shared"], ["--part-residual=inline"]]
+
+
+def werror_one(job):
+    pattern, i, ci = job
+    d = os.path.join(TMP, "werror", "%d_%d" % (i, ci))
+    r = compile_c(pattern, WERROR_CTLS[ci], os.path.join(d, "x.c"))
+    if r.returncode:
+        return (False, None)
+    g = run([CC] + WERROR_FLAGS + ["-c", os.path.join(d, "x.c"), "-o", os.path.join(d, "x.o")])
+    return (True, None if g.returncode == 0 else (g.stderr.strip().split("\n") or ["?"])[-1][:120])
+
+
+def sec_werror(pop, near):
+    """Every layout compiles under the harness's -Werror flags, as the default
+    does: a layout that makes gcc warn fails a caller's -Werror build."""
+    allp = pop + near + pats(os.path.join(HERE, "werror.txt"))
+    jobs = [(p, i, ci) for i, p in enumerate(allp) for ci in range(len(WERROR_CTLS))]
+    with cf.ThreadPoolExecutor(JOBS) as ex:
+        res = list(ex.map(werror_one, jobs))
+    bad = [(jobs[k][0], WERROR_CTLS[jobs[k][2]][0], e) for k, (ok, e) in enumerate(res) if ok and e]
+    compiled = sum(1 for ok, _ in res if ok)
+    check(not bad and compiled >= 2 * 380,
+          "werror: %d artifacts compile clean under %s at both residual ends%s"
+          % (compiled, " ".join(WERROR_FLAGS),
+             "" if not bad else ": " + "; ".join("%r %s: %s" % b for b in bad[:4])))
+
+
 def main():
     if not os.path.exists(PCREC):
         sys.exit("run_partlayout: no pcrec at %s" % PCREC)
@@ -508,6 +540,7 @@ def main():
     sec_seam()
     print("== 6 neutral (I5 and T0)")
     sec_neutral(pop, near)
+    sec_werror(pop, near)
     print("== 7 T2")
     print("UNREACHED: rows TM and T2 -- no compile carries a measurement set ([MEASURE-SET] M0 "
           "is not built), so theta_hot is never a rank or `none`; `measured` always takes T1, "

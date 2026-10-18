@@ -7,7 +7,7 @@ It links nothing from src/ and reads no pcrec listing. For one witness and
 one control setting it computes, from four inputs only:
 
   1. the CALL GRAPH of a copy of the DEFAULT artifact (compiled with no
-     control) with every always_inline / noinline / noclone deleted by text,
+     control) with every always_inline / noinline / noclone / noipa deleted by text,
      built `-O0 -fno-inline` and read from `objdump -dr` relocations -- the
      stripping happens here, so neither the emitter nor its bytes move;
   2. the OWNERS' attributes, read from the default artifact's own text: a
@@ -107,7 +107,7 @@ def resolve(controls, spec_path):
 
 
 def strip_attrs(text):
-    text = re.sub(r"__attribute__\(\((always_inline|noinline|noclone)\)\)\s*", "", text)
+    text = re.sub(r"__attribute__\(\((always_inline|noinline|noclone|noipa)\)\)\s*", "", text)
     return re.sub(r"\binline\s+", "", text)
 
 

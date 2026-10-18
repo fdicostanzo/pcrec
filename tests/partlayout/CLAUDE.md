@@ -21,8 +21,11 @@ witness is needed today.
   attribute census, totality and per-row populations with floors, the
   seam's copyability; (6) I5 neutrality (refusal, stamps, the decision
   sizes `--warn-emit-bytes` reports) over the population and the near-cap
-  list, and the all-`auto` set byte-identical to no control; (7) T2/TM
-  stated UNREACHED (no measurement set exists). ~25 s at `JOBS=8`.
+  list, and the all-`auto` set byte-identical to no control, plus the
+  -Werror leg: the population, the near-cap list and `werror.txt` compiled
+  at the harness's `-O1 -Wall -Wextra -Werror` under both residual ends;
+  (7) T2/TM stated UNREACHED (no measurement set exists). ~45 s at
+  `JOBS=8`.
 - **evaluator.py** — THE INDEPENDENT EVALUATOR. Links nothing from `src/` and
   reads no pcrec listing: the call graph of an attribute-stripped copy of the
   default artifact (`-O0 -fno-inline`, `objdump -dr`: call targets and
@@ -41,6 +44,10 @@ witness is needed today.
   under 200,000 bytes, every compound; 387 patterns at the lane's branch
   point), held to still carry a subject and to a floor.
 - **nearcap.txt** — the ten largest corpus VM hybrids, I5's witnesses.
+- **werror.txt** — the -Werror leg's NAMED witnesses: the eight distinct
+  patterns behind the 135 cases the test-axes arm lost when `shared` was
+  `noinline` alone (gcc -O1 reported the caller's `window`
+  maybe-uninitialized). All eight fail on that build, all pass on `noipa`.
 
 ## Notes
 
@@ -54,6 +61,9 @@ witness is needed today.
   negative test (gcc refuses it) has no gcc detector; the render's own
   "a mark only after `static `" internal error and section 3's text check
   are the detectors instead.
+- **`shared` is `noipa`, not the design's `noinline noclone`**: with
+  `noinline` gcc still analyses the body across the call, which both
+  produced the -Werror failure above and deleted a `return 0;` part.
 - Sabotage rows S1111-S1118 name the arm; each was hand-validated against a
   rebuilt copy (`docs/dev/lanes/e1_report.md`).
 

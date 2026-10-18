@@ -10,9 +10,10 @@
 #          site in `rx_search_run`), R2 once per call, R1 a subset of calls
 #
 # NOT A WITNESS: an empty-language hybrid (`((?=a)z)`), whose prefilter body is
-# `return 0;` -- gcc's interprocedural constant propagation deletes the part
-# and its calls whatever its attribute (`noinline` does not stop it; only
-# `noipa` would), so a `shared` request has no symbol to show.
+# `return 0;`. Its `auto`/`inline` layouts leave no symbol (gcc's
+# interprocedural constant propagation deletes the part and its calls), so
+# the hand class map would need a per-layout presence rule; `shared`
+# (`noipa`) keeps it.
 #
 # Every witness is a corpus pattern (tests/**/*.rxt), so a row is reached by
 # setting a control on an artifact the suite already compiles (D163 add. 11).

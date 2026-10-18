@@ -46,7 +46,7 @@ PL_CLASS(PCREC_PART_WRAP,      "wrap",
 PL_VALUE(PCREC_PART_AUTO,   "auto",
          "the owner's default layout: the attribute its emitter writes, often none, gcc deciding")
 PL_VALUE(PCREC_PART_SHARED, "shared",
-         "one out-of-line static body each caller calls (noinline, noclone)")
+         "one out-of-line static body each caller calls (noipa)")
 PL_VALUE(PCREC_PART_INLINE, "inline",
          "a copy in each caller (always_inline)")
 

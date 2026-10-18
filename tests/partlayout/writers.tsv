@@ -21,4 +21,4 @@ A5	static-inline	^P_(wcls[0-9]+|class_kit[0-9]+|class_atom[0-9]*|scankit[0-9]*)$
 A6	static-inline	^P(__[a-z0-9]+)?_(forward|reverse|anchored)_(step|is_dead|is_stop|accepts|accepts_class|row|view_live|view_take)$	the DFA machine's state helpers, not a part
 A7	static-inline	^P(__[a-z0-9]+)?_(ofsskip|ofsskip__body|reqrun|reqrun__body|reqrun_whole|reqrun_whole__body|w[0-9]+|[a-z0-9_]*_pf[a-z0-9_]*|[a-z0-9_]*__body)$	the search-code kit's helpers (memfn/), not a part
 layout	always_inline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P5/P7/P9
-layout	noinline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P2/P4/P8
+layout	noipa	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P2/P4/P8

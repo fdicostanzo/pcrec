@@ -1046,10 +1046,10 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 |---|---|---|
 | (unset) | `PCREC_PART_UNSET` (0) | the control decides nothing; §2.51¶5 resolves it |
 | `auto` | `PCREC_PART_AUTO` (1) | the owner's default layout: the attribute its emitter writes, often none |
-| `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noinline`, under the search head's existing `noclone` |
+| `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noipa` (no inlining, no cloning, no interprocedural analysis) |
 | `inline` | `PCREC_PART_INLINE` (3) | `always_inline` in each caller |
 
-<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is `__attribute__((noinline)) `, `inline` is `inline __attribute__((always_inline)) `, `auto` nothing.
+<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is `__attribute__((noipa)) `, `inline` is `inline __attribute__((always_inline)) `, `auto` nothing.
 
 <a id="s2-51-p3"></a>[2.51¶3] ANSWER-IDENTICAL across every value. Not a flags bit, so it has no `rx_info.flags` question and no `rx_info` mirror. The layout is rendered after every length decision: no size cap, size term (§2.16), entry-shape term (§2.21) or stamp reads the layout's bytes, so no control moves the refusal set or any other stamp. The size limits (`limits.md` §8) bound the default-layout text.
 
@@ -1073,13 +1073,13 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | id | name | conjuncts | writes |
 |---|---|---|---|
 | P1 | `owned` | an owner writes the function's attribute: the VM entry chain's `_run` bodies and helpers, `_deep`, the encoding seam | the owner's attribute, unchanged |
-| P2 | `not-copyable` | the body holds a label table or a computed goto: the DFA attempt route's body | `noinline` |
+| P2 | `not-copyable` | the body holds a label table or a computed goto: the DFA attempt route's body | `noipa` |
 | P3 | `single-caller` | `callers(part)` = 1 | its default layout |
-| P4 | `class-shared` | the part's class value is `shared` | `noinline` |
+| P4 | `class-shared` | the part's class value is `shared` | `noipa` |
 | P5 | `class-inline` | the part's class value is `inline` | `always_inline` |
 | P6 | `class-auto` | the part's class value is `auto` | its default layout |
 | P7 | `rank-hot` | the threshold is a rank; the part's rank is at or above it (§2.52) | `always_inline` |
-| P8 | `residual-shared` | the residual is `shared` (§2.53) | `noinline` |
+| P8 | `residual-shared` | the residual is `shared` (§2.53) | `noipa` |
 | P9 | `residual-inline` | the residual is `inline` | `always_inline` |
 | P10 | `residual-auto` | (otherwise) | its default layout |
 

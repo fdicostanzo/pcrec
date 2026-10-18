@@ -6,7 +6,7 @@
  * A PART is a static function an artifact's entries call: the VM hybrid's
  * embedded search, a compound's parts. Its LAYOUT is how it is linked into
  * its callers -- a copy in each (`always_inline`) or one out-of-line body
- * they call (`noinline`, under the search head's own `noclone`) -- never what
+ * they call (`noipa`) -- never what
  * it computes, so every layout answers identically (I1). Three caller-set
  * controls decide it (`pcrec_options.part_layout`/`part_inline_rank`/
  * `part_residual`); the `--tune` position supplies a preset for each, and
@@ -472,12 +472,15 @@ void pcrec_part_stamp_mark(Ctx *cx, StrBuf *c)
 /* ---- the render ---------------------------------------------------------- */
 
 /* The attribute text a layout writes on a definition head, after its
- * `static `: the search head's `noclone` is already above it (K24, A3), so
- * `shared` adds `noinline` alone. */
+ * `static `. `shared` is `noipa` (noinline + noclone + no interprocedural
+ * analysis): with `noinline` alone gcc -O1 still reads the body across the
+ * call and reports the caller's `window` maybe-uninitialized, so the
+ * artifact failed `-Werror` (135 corpus cases under --part-residual=shared),
+ * and it deletes a part whose body is `return 0;`. */
 static const char *layout_text(int layout)
 {
     switch (layout) {
-    case PCREC_PART_SHARED: return "__attribute__((noinline)) ";
+    case PCREC_PART_SHARED: return "__attribute__((noipa)) ";
     case PCREC_PART_INLINE: return "inline __attribute__((always_inline)) ";
     default:                return "";
     }
@@ -670,7 +673,7 @@ bool pcrec_part_layout_table_row(int i, const char **table, const char **id,
     static const char *const part_writes[] = {
         [0] = "the owner's attribute, unchanged",
         [PCREC_PART_AUTO] = "its default layout (no attribute added)",
-        [PCREC_PART_SHARED] = "static noinline noclone: one out-of-line body",
+        [PCREC_PART_SHARED] = "static noipa: one out-of-line body",
         [PCREC_PART_INLINE] = "always_inline into each caller",
     };
     if (i < NART) {
