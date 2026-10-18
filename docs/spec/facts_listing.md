@@ -65,6 +65,8 @@
 | `why` | CLOSED token grammar plus detail (§4.1.3) | the grammar yes; reason NAMES no |
 | `note` | prose (the fact's kind and owning source file) | no wording promise (D26) |
 
+<a id="s4-1-p2"></a>[4.1¶2] **`used` where the memfn kit consumes a fact** (R17-b′ B3b, `docs/design/memfn/r17b_prime.md` §1.4, Q-WR-12). Since B3b the pre-check's presence decisions (which necessary-set member or run window is tested, whether set-leads leads, G1) are the kit's routed PRES rows, which read the facts pcrec STATES to the kit (`req_set`, `req_whole_run`) and not pcrec's passes. `used` stays a statement about pcrec's passes and is RE-SOURCED, not changed: it reads `yes` exactly where the pre-check's builder and the admission's `set-leads` row asked the fact before B3b (`req_whole_run` on every emitted pre-check, `req_set` where a run is necessary and, on a VM route with no DFA scan, on every emitted pre-check), so its values on every artifact are the ones before B3b. Stating a span to the kit never sets `used`. `why` is unchanged.
+
 <a id="s4-1-1"></a>
 #### 4.1.1 `status`
 
