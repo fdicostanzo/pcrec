@@ -1,0 +1,416 @@
+{
+ "pop_bench_native": [
+  367,
+  342,
+  25,
+  0,
+  227,
+  16,
+  32,
+  3,
+  59,
+  5,
+  75,
+  354
+ ],
+ "pop_bench_utf8": [
+  291,
+  269,
+  22,
+  0,
+  161,
+  15,
+  28,
+  3,
+  0,
+  62,
+  72,
+  306
+ ],
+ "pop_corpus_native": [
+  4816,
+  4442,
+  374,
+  0,
+  1952,
+  607,
+  249,
+  9,
+  1515,
+  110,
+  2088,
+  3627
+ ],
+ "pop_corpus_utf8": [
+  4298,
+  3951,
+  347,
+  0,
+  1569,
+  583,
+  234,
+  8,
+  0,
+  1557,
+  2023,
+  3333
+ ],
+ "xc": [
+  262,
+  257,
+  257,
+  256
+ ],
+ "esc_under": 0,
+ "exact_hist": [
+  [
+   "native",
+   "exact",
+   2617,
+   0,
+   1445,
+   591,
+   370,
+   108,
+   49,
+   9,
+   45
+  ],
+  [
+   "native",
+   "span",
+   2617,
+   0,
+   1278,
+   579,
+   467,
+   152,
+   71,
+   21,
+   49
+  ],
+  [
+   "utf8",
+   "exact",
+   1481,
+   0,
+   727,
+   329,
+   268,
+   97,
+   33,
+   7,
+   20
+  ],
+  [
+   "utf8",
+   "span",
+   1481,
+   0,
+   634,
+   295,
+   334,
+   119,
+   55,
+   20,
+   24
+  ]
+ ],
+ "utf8_mixed": 65,
+ "a_hist": [
+  [
+   "native",
+   "DFA_SCAN",
+   "start",
+   1746,
+   1677,
+   342,
+   676,
+   259,
+   251,
+   84,
+   31,
+   9,
+   25,
+   "no-forward 2, no-language 7, seeded 60"
+  ],
+  [
+   "native",
+   "DFA_SCAN",
+   "scan-restart",
+   149,
+   94,
+   3,
+   91,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "control-excluded 2, no-language 53"
+  ],
+  [
+   "native",
+   "HYB_PF",
+   "start",
+   680,
+   641,
+   123,
+   435,
+   57,
+   16,
+   1,
+   4,
+   0,
+   5,
+   "no-language 32, seeded 7"
+  ],
+  [
+   "native",
+   "HYB_PF",
+   "scan-restart",
+   138,
+   119,
+   1,
+   118,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "no-language 19"
+  ],
+  [
+   "utf8",
+   "DFA_SCAN",
+   "start",
+   1381,
+   1160,
+   191,
+   452,
+   189,
+   201,
+   77,
+   27,
+   7,
+   16,
+   "no-language 169, seeded 52"
+  ],
+  [
+   "utf8",
+   "DFA_SCAN",
+   "scan-restart",
+   140,
+   92,
+   7,
+   85,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "control-excluded 2, no-language 46"
+  ],
+  [
+   "utf8",
+   "HYB_PF",
+   "start",
+   695,
+   195,
+   29,
+   128,
+   24,
+   9,
+   1,
+   4,
+   0,
+   0,
+   "no-language 495, seeded 5"
+  ],
+  [
+   "utf8",
+   "HYB_PF",
+   "scan-restart",
+   84,
+   74,
+   0,
+   74,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "no-language 10"
+  ]
+ ],
+ "a_ge2": [
+  742,
+  555
+ ],
+ "b_over": 12,
+ "whole": [
+  [
+   "bench",
+   "native",
+   337,
+   87,
+   8,
+   "[12, 11, 44, 8, 11, 1, 0]"
+  ],
+  [
+   "bench",
+   "utf8",
+   207,
+   58,
+   8,
+   "[10, 4, 29, 7, 7, 1, 0]"
+  ],
+  [
+   "corpus",
+   "native",
+   4323,
+   1060,
+   256,
+   "[584, 184, 196, 64, 25, 7, 0]"
+  ],
+  [
+   "corpus",
+   "utf8",
+   2385,
+   582,
+   147,
+   "[251, 104, 138, 62, 22, 5, 0]"
+  ]
+ ],
+ "whole_sites": 1631,
+ "whole_end": {
+  "bench/native": 10,
+  "bench/utf8": 7,
+  "corpus/native": 172,
+  "corpus/utf8": 161
+ },
+ "ctx": [
+  [
+   "bench",
+   "native",
+   40,
+   27,
+   14,
+   12,
+   8,
+   10,
+   14,
+   14,
+   588,
+   0
+  ],
+  [
+   "bench",
+   "utf8",
+   34,
+   21,
+   9,
+   8,
+   7,
+   6,
+   11,
+   11,
+   462,
+   0
+  ],
+  [
+   "corpus",
+   "native",
+   471,
+   353,
+   151,
+   122,
+   36,
+   107,
+   50,
+   50,
+   2814,
+   0
+  ],
+  [
+   "corpus",
+   "utf8",
+   431,
+   313,
+   128,
+   101,
+   35,
+   88,
+   47,
+   47,
+   2646,
+   0
+  ]
+ ],
+ "savings": [
+  [
+   "native",
+   2318,
+   4692,
+   1,
+   4,
+   "0.38",
+   "0.75",
+   "6.35",
+   2839
+  ],
+  [
+   "utf8",
+   1355,
+   3193,
+   1,
+   4,
+   "0.44",
+   "0.75",
+   "6.35",
+   2058
+  ]
+ ],
+ "controls": [
+  [
+   "exact-prefix samples are prefixes",
+   38880,
+   144,
+   18
+  ],
+  [
+   "inexact counterexample pairs",
+   608,
+   0,
+   0
+  ],
+  [
+   "whole-cover samples match at width k / mutants do not",
+   17721,
+   0,
+   0
+  ],
+  [
+   "leading \\b == its positional rewrite",
+   6510,
+   0,
+   0
+  ],
+  [
+   "proven0 narrower than the forward escape set (kit vs emitted table)",
+   4719,
+   0,
+   ""
+  ],
+  [
+   "VM prefix longer than the exact prefix",
+   1867,
+   12,
+   ""
+  ]
+ ]
+}

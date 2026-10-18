@@ -29,6 +29,17 @@ S = load("sites.tsv.gz")
 # a pattern whose machine reading FAILED an independent PCRE2 control is
 # excluded from every language-derived table below and listed in section 7
 BAD = {(p["id"], p["cfg"]) for p in P if p.get("c1f") or p.get("c2f") or p.get("c3f")}
+# a PCRE2-only reading stopped by the match limit read NOTHING: no language
+for p_ in P:
+    if p_.get("lang_src") == "pcre2:matchlimit":
+        p_["lang_src"] = "none:pcre2-matchlimit"
+        for k_ in ("exact", "span", "whole", "S0"):
+            p_.pop(k_, None)
+ML = {(p["id"], p["cfg"]) for p in P if p.get("lang_src") == "none:pcre2-matchlimit"}
+for s_ in S:
+    if (s_["id"], s_["cfg"]) in ML:
+        for k_ in ("exact", "span", "mixed", "whole", "a_best", "a_contig", "a_flags", "p0rel"):
+            s_.pop(k_, None)
 for s_ in S:
     if (s_["id"], s_["cfg"]) in BAD:
         for k_ in ("exact", "span", "mixed", "whole", "a_best", "a_contig", "a_flags", "p0rel"):

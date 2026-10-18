@@ -39,5 +39,8 @@ only; no clock is read, gcc is never run on an artifact.
 - `selftest.py` / `selftest.txt` — every instrument on known witnesses and in
   the FAILING direction against plants (an edited machine, a superset claimed
   exact, a straddling `\b`, a wrong rewrite); the committed transcript.
-- `tables.md`, `summary.json` — the committed output of the 2026-10-18 run
-  (`summarize.py` on it); the raw `*.tsv.gz` are committed beside them.
+- `patterns.tsv.gz`, `sites.tsv.gz`, `census.log` — the 2026-10-18 run (JSON
+  lines; one record per row x configuration, one per search site), pcrec at
+  main `2523cfe4b`, pcrec-bench `34174712`, libpcre2-8 10.46.
+- `tables.md`, `summary.json` — `summarize.py` on that run: every table the
+  memo cites.
