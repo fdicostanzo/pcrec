@@ -86,7 +86,7 @@ C2.
 **`make test-spec-history`** (`build/` light check, 2026-10-18): revision 2's three
 `match_api.md:<line>` citations in `kit_proof.md` (lines 106, 491, 880 at main
 `fa322a7f6`) made it red on main too. They now cite §6.3.4¶11 and §5.5¶12 instead. One red
-remains, `docs/dev/reviews/2026-10-18-r3-kit-proof-u1.md:84` (`match_api.md:1823`). That is
+remains, `docs/dev/reviews/2026-10-18-r3-kit-proof-u1.md:84` (a line-number cite of the `attempt-start` row, now §6.3.4¶11). That is
 a review record, so this lane left it unedited; the fix is one token, for the manager.
 Result: 144 passed, 1 failed.
 
