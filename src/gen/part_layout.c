@@ -448,7 +448,7 @@ static void build_records(Ctx *cx)
         PcrecPlPart *p = &pl->part[pl->nparts++];
         memset(p, 0, sizeof *p);
         p->e = e;
-        p->cls = (signed char)(i < NSUBJ ? subjects[i].cls : -1);
+        p->cls = (signed char)subject_class(e);
         part_callers_rank(cx, e, &p->callers, &p->rank);
         p->copyable = p->cls >= 0 && part_copyable(cx, e);
         if (!pl->t3) continue;
