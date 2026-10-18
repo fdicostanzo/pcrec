@@ -277,5 +277,13 @@ one.
   caller and the layer model in `tools/review/include_graph.py` places
   them accordingly.
 
+**[ENTRY-TABLE] E1 (2026-10-18, lane e1):** `axes_dump.c` appends two
+sections after `memfn`: `part-layout` (one row per control value, off
+`src/core/part_layout.def`) and `part-layout-table` (the three tables' rows,
+off `pcrec_part_layout_table_row`); `facts_dump.c` appends
+`part-layout-controls` and `part-layout` (off `pcrec_part_layout_facts`,
+the render's record). docs/spec/registry.md §6¶10-11, facts_listing.md
+§4.3-4.4.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

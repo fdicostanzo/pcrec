@@ -1224,7 +1224,38 @@ is not an aspiration: `tests/codegen/run_vm_identity.sh` is the permanent gate
 and the landing evidence included a whole-corpus diff against a compiler built
 from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
+## [ENTRY-TABLE] E1 — the PART-LAYOUT tables (lane e1, 2026-10-18, abi 79 -> 80)
+
+`part_layout.c` (`docs/design/compound_entries.md` rev 4 §3.2.2-§3.4;
+`docs/spec/tuning.md` §2.51-§2.53) holds three DECLARED first-match tables
+and nothing outside them decides a layout: the ARTIFACT table (`art_rows[]`:
+K resolves each control, caller else the `--tune` preset else unset; one of
+T1/TM/T2 resolves `measured`; T0 or T3), the PART table (`part_rows[]`, P1-P10,
+constraint rows P1-P3 first) and the WRAPPER table (`wrap_rows[]`, W1/W2, no
+population before I3). Under T3 the search head of every SUBJECT
+(`emit_search_head`, which now takes the entry row instead of a storage
+string) writes a MARK after `static ` (`pcrec_part_head_mark`), and the
+prologue writes the stamp mark after `<PREFIX>_TUNE`
+(`pcrec_part_stamp_mark`). The marks' bytes are subtracted by both decision
+views (`StrBuf.layout_bytes`), and `pcrec_part_layout_render` (compile.c,
+after the size caps and their notes, before the prefix render) builds each
+part's record from the entry table's derived edges (`Job.pl.er`, copied by
+`pcrec_entry_shape`), the owners' always_inline bits (`Job.pl.owned_inline`,
+emit_vm.c after `vm_plan_entry`) and the body's label-table fact
+(`Job.pl.uncopyable`, emit_dfa.c's jump-table emission; a compound part's own
+via `PcrecPartFacts.copyable`), walks the part table and replaces every mark.
+A compound part's compile writes its SHELL row's mark (`PcrecEmitIn.part_entry`)
+and leaves it, as it leaves its prefix placeholder. The render refuses a mark
+with no record, a record with no mark, and a mark not after `static ` (LK-9).
+At T0 no mark exists: a default artifact is byte-identical by construction.
+The listings: `pcrec_part_layout_facts` (`--emit-facts`' two sections) and
+`pcrec_part_layout_table_row` (`--list-axes`' `part-layout-table`). Checks:
+`tests/partlayout/`; sabotage S1111-S1118.
+
 ## Files
+
+- **part_layout.c** — [ENTRY-TABLE] E1's three part-layout tables, the marks,
+  the render and the two listings' rows (section above).
 
 - **entries.c** — [EMIT-ENTRIES] internal, [COMPOUND] build step B0 (lane
   cpb02, 2026-10-12; `docs/design/compound.md` §A.4): THE ENTRY TABLE AND ITS

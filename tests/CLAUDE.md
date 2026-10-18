@@ -797,6 +797,15 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   and the loader's refusal of a derived view fed back. See its own
   CLAUDE.md.
 
+- **partlayout/** — [ENTRY-TABLE] E1 (`docs/design/compound_entries.md` rev 4
+  §3.6): `make test-partlayout`, the part-layout controls' checks — the
+  INDEPENDENT EVALUATOR (an attribute-stripped call graph, the owners'
+  attributes, gcc's own copyability refusal, hand class/rank maps and
+  tuning.md §5.4's preset rows, judged on the real object's `nm`), hand
+  precedence/held fixtures, A1 disjointness, the attribute census with
+  per-row population floors, and I5's neutrality over the population and
+  the near-cap list. See its own CLAUDE.md.
+
 ## Conventions
 
 .rxt format: comments (#), pattern blocks (pattern <regex>), and match/nomatch assertions (m/n with subject and expected span). See docs/testing.md for the full format spec. Run tests via `make test` or `bash tests/harness/run.sh [files...]`. Env vars: PCREC, CC, GENCFLAGS, KEEP=1 (preserve temp dir), VERBOSE=1 (per-test output), LINTGEN=1 (SAN-1: rides the GENCFLAGS compile pass with `gcc -fanalyzer` on every generated matcher — `make test LINTGEN=1`; opt-in, see docs/testing.md "Sanitizer + lint battery"), CLANGGEN=1 ([CC-CLANG]: the same shape one compiler over — defaults CC to clang for the generated-matcher compile pass, unless CC is already set explicitly; opt-in, `make test CLANGGEN=1`, writes nothing to build/, see docs/testing.md "Sanitizer + lint battery"), CCACHE=1 ([TT-3]: routes generated-code and tree-build compiles through ccache — opt-in, MEASURED a clear NO for `make test`'s own workload, see docs/testing.md "Compile caching").

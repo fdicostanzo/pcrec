@@ -15,7 +15,8 @@ names its independent control:
                Every --tune position runs here too: with every preset cell a
                dagger, each must resolve to T0 and carry no stamp.
   2  FIXTURES  precedence and held-request rows written BY HAND (fixtures.tsv):
-               the row each subject stopped at (`--emit-facts`) and the stamps.
+               the row each subject stopped at (`--emit-facts`) and the stamps;
+               and the per-class file-wins rule through a `.rxt` config block.
   3  DISJOINT  on VM witnesses at every entry rung: the functions a control
                changes are subjects only (never A1's), each on a `static`
                definition (LK-9; gcc 15.2 accepts `inline always_inline` on
@@ -206,6 +207,28 @@ def sec_fixtures():
         check(ok, "fixture %s: rows %s, stamp %r, why %r%s" % (
             fid, want_rows, want_stamp, want_why,
             "" if ok else " -- got rows %s, stamp %r, why %r" % (have, lay, why)))
+
+
+def sec_config():
+    """`--part-layout` is file-wins PER CLASS (cli.md §1.1.4): a config's raw
+    `pcrec --part-layout=...` line sets only the classes it names, so a CLI
+    item for a class the file names loses and one for another class stays."""
+    d = os.path.join(TMP, "cfg")
+    os.makedirs(d, exist_ok=True)
+    src = os.path.join(d, "t.rxt")
+    with open(src, "w") as f:
+        f.write("config dev\n  pcrec --part-layout=prefilter:inline\n"
+                "target rx = cap with dev\n\npattern (a)b\nname cap\nm \"ab\" 0 2\n")
+    cases = [([], "prefilter=inline"),
+             (["--part-layout=prefilter:shared"], "prefilter=inline"),
+             (["--part-layout=compound:shared"], "prefilter=inline;compound=shared/none"),
+             (["--part-residual=shared"], "residual=shared;prefilter=inline")]
+    for cli, want in cases:
+        r = run([PCREC] + cli + ["-o", "-", src])
+        lay, _ = stamps(r.stdout)
+        check(r.returncode == 0 and lay == want,
+              "config: file %s under CLI %s stamps %r%s" % ("prefilter:inline", cli or "-", want,
+              "" if lay == want else " -- got %r" % lay))
 
 
 # ---- 3 DISJOINT -------------------------------------------------------------
@@ -475,6 +498,7 @@ def main():
     sec_object()
     print("== 2 fixtures (hand-written precedence and held rows)")
     sec_fixtures()
+    sec_config()
     print("== 3 disjoint (A1 and the layout rows)")
     sec_disjoint()
     print("== 4 gcc (H1/H2 by construction)")
