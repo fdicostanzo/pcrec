@@ -265,7 +265,16 @@ pcrec (the Makefile owns that).
   (named in the gitignored, per-box `worktrees/.wtprune.keep` — `memfn`,
   the kit's branch home, is there — or containing another registered
   worktree). Removal is `git worktree remove` WITHOUT `--force`, so git
-  re-checks cleanliness itself. Dry run by default; `--apply [NAME..]`;
+  re-checks cleanliness itself. `--apply --force NAME..` (Frank, 2026-10-18;
+  named targets only, never bulk, no NAME is a usage error) is the route for
+  DIRTY, UNMERGED or NESTED (`memfn-slot/b3b/wt_entry`) worktrees: it relaxes
+  only gate 1 (a registered worktree anywhere under `worktrees/`), gate 3
+  (unmerged commits printed and saved) and gate 4 (plain remove first; only
+  if git refuses for dirt, `git status -s` is printed and status, `git diff
+  HEAD` and the untracked list are saved to `worktrees/.wtprune.force/
+  <NAME>-<ts>.diff` before `git worktree remove --force`); lock, quiet, cwd,
+  mac-suite lock and keep-list gates still apply, and a failed forced
+  removal is FAILED and left on disk, never `rm -rf`. Dry run by default; `--apply [NAME..]`;
   `--delete-branches` uses `git branch -d` (refuses unmerged). Non-git
   entries (`NAME-scratch`, cells, logs) are only listed UNMANAGED — they can
   hold a D27 author's undelivered work or cited evidence no artifact check

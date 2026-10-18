@@ -39,7 +39,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   verified to go red against a deliberately sabotaged copy of the script
   before landing — a test that cannot fail is not a test.
 
-- **wtprune.test** — scripts/wtprune's 26-check self-test against a
+- **wtprune.test** — scripts/wtprune's 52-check self-test against a
   SACRIFICIAL repo it builds under mktemp (never the real worktrees). One
   worktree per gate (unmerged, dirty, fresh mtimes, a live `sleep` with its
   cwd inside, the lock owner, pinned, a nested-worktree home with the inner
@@ -48,7 +48,14 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   cannot pass; plus dry-run-touches-nothing, named-subset apply,
   `--delete-branches`, `--dir` (and its refusals) and the audit line. Each
   of the seven gates was disabled in a scratch copy and the test went red
-  (2026-10-05).
+  (2026-10-05). The `--force` block (2026-10-18) adds one case per behaviour:
+  refused without `--apply` or without NAMEs, clean target removed by the
+  friendly path, unmerged target logging its commits, dirty target
+  escalating with a saved status/diff/untracked log and audit line, a nested
+  target (and its refusal without `--force`), gates 2 and 5 still keeping
+  under `--force` (each paired with the lifted control), and a failed forced
+  removal (read-only subdirectory; skipped as root) reporting FAILED without
+  an rm -rf fallback.
 
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.
