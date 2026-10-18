@@ -1,0 +1,80 @@
+# docs/design/memfn/r17b_prime/b3b/pick_floors_B3b.tsv -- KW-8 at B3b on the kit-sourced proof: per-pick floors, B3a's five picks and the six ROUTED records (r*), floor(0.9 x measured) by pick_census_b3b.py --write at lane b3b (2026-10-18, lane/memfn-b3b 5cb5ce658's trace build; three arms -, -e utf8, --engine=vm; bench = the sibling pcrec-bench checkout of that day, read only). Read by pick_census_b3b.py --floors.
+# pop	pick	floor (floor(0.9 x measured))	counter (nt_agree when empty)
+corpus	set	2218
+corpus	scan	1254
+corpus	window	60
+corpus	leads	1207
+corpus	dominated	2934
+corpus	landmark	457
+corpus	rdom	2934
+corpus	rlead	958
+corpus	rhead	814
+corpus	rwin	107
+corpus	rwhole	107
+corpus	rrest	1662
+corpus	scan	464	differs
+corpus	scan	790	same
+corpus	leads	38	differs
+corpus	leads	1169	same
+corpus	dominated	2184	differs
+corpus	dominated	3645	same
+corpus	landmark	408	differs
+corpus	landmark	48	same
+corpus	rdom	2184	differs
+corpus	rdom	3645	same
+corpus	rlead	37	differs
+corpus	rlead	920	same
+corpus	rwhole	44	differs
+corpus	rwhole	914	same
+bench	set	339
+bench	scan	284
+bench	window	16
+bench	leads	273
+bench	dominated	243
+bench	landmark	106
+bench	rdom	243
+bench	rlead	241
+bench	rhead	55
+bench	rwin	43
+bench	rwhole	43
+bench	rrest	283
+bench	scan	117	differs
+bench	scan	166	same
+bench	leads	13	differs
+bench	leads	260	same
+bench	dominated	115	differs
+bench	dominated	369	same
+bench	landmark	102	differs
+bench	landmark	3	same
+bench	rdom	115	differs
+bench	rdom	369	same
+bench	rlead	13	differs
+bench	rlead	227	same
+bench	rwhole	17	differs
+bench	rwhole	224	same
+rwquest	set	278
+rwquest	scan	253
+rwquest	window	32
+rwquest	leads	243
+rwquest	dominated	198
+rwquest	landmark	80
+rwquest	rdom	198
+rwquest	rlead	231
+rwquest	rhead	38
+rwquest	rwin	56
+rwquest	rwhole	56
+rwquest	rrest	248
+rwquest	scan	109	differs
+rwquest	scan	144	same
+rwquest	leads	37	differs
+rwquest	leads	205	same
+rwquest	dominated	55	differs
+rwquest	dominated	311	same
+rwquest	landmark	78	differs
+rwquest	landmark	1	same
+rwquest	rdom	55	differs
+rwquest	rdom	311	same
+rwquest	rlead	35	differs
+rwquest	rlead	196	same
+rwquest	rwhole	20	differs
+rwquest	rwhole	210	same

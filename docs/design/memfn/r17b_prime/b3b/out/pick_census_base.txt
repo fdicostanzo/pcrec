@@ -1,0 +1,88 @@
+# pick census: populations {'corpus': 4624, 'bench': 367, 'rwquest': 177}, arms ['-', '-e utf8', '--engine=vm'], every 1
+pop	pick	records	agree	nontrivial	nt_agree	differs
+corpus	set	6477	6477	2465	2465	676
+corpus	scan	1394	1394	1394	1394	516
+corpus	window	1394	1394	67	67	42
+corpus	leads	1342	1342	1342	1342	43
+corpus	dominated	6477	6477	3260	3260	2427
+corpus	landmark	508	508	508	508	454
+corpus	rdom	6477	6477	3260	3260	2427
+corpus	rlead	1065	1065	1065	1065	42
+corpus	rhead	2985	2985	905	905	132
+corpus	rwin	1065	1065	119	119	113
+corpus	rwhole	1065	1065	119	119	49
+corpus	rrest	4050	4050	1847	1847	603
+bench	set	539	539	377	377	127
+bench	scan	316	316	316	316	131
+bench	window	316	316	18	18	12
+bench	leads	304	304	304	304	15
+bench	dominated	539	539	271	271	128
+bench	landmark	118	118	118	118	114
+bench	rdom	539	539	271	271	128
+bench	rlead	268	268	268	268	15
+bench	rhead	143	143	62	62	15
+bench	rwin	268	268	48	48	45
+bench	rwhole	268	268	48	48	19
+bench	rrest	411	411	315	315	55
+rwquest	set	408	408	309	309	102
+rwquest	scan	282	282	282	282	122
+rwquest	window	282	282	36	36	14
+rwquest	leads	270	270	270	270	42
+rwquest	dominated	408	408	220	220	62
+rwquest	landmark	89	89	89	89	87
+rwquest	rdom	408	408	220	220	62
+rwquest	rlead	257	257	257	257	39
+rwquest	rhead	89	89	43	43	11
+rwquest	rwin	257	257	63	63	39
+rwquest	rwhole	257	257	63	63	23
+rwquest	rrest	346	346	276	276	57
+pop	site-state	shadows
+bench	stated	539
+bench	withheld-one-attempt	45
+corpus	stated	6477
+corpus	withheld-one-attempt	783
+corpus	withheld-whole	132
+rwquest	stated	408
+PASS: floor corpus set nt_agree 2465 >= 2218
+PASS: floor corpus scan nt_agree 1394 >= 1254
+PASS: floor corpus window nt_agree 67 >= 60
+PASS: floor corpus leads nt_agree 1342 >= 1207
+PASS: floor corpus dominated nt_agree 3260 >= 2934
+PASS: floor corpus landmark nt_agree 508 >= 457
+PASS: floor bench set nt_agree 377 >= 339
+PASS: floor bench scan nt_agree 316 >= 284
+PASS: floor bench window nt_agree 18 >= 16
+PASS: floor bench leads nt_agree 304 >= 273
+PASS: floor bench dominated nt_agree 271 >= 243
+PASS: floor bench landmark nt_agree 118 >= 106
+PASS: floor rwquest set nt_agree 309 >= 278
+PASS: floor rwquest scan nt_agree 282 >= 253
+PASS: floor rwquest window nt_agree 36 >= 32
+PASS: floor rwquest leads nt_agree 270 >= 243
+PASS: floor rwquest dominated nt_agree 220 >= 198
+PASS: floor rwquest landmark nt_agree 89 >= 80
+PASS: floor corpus scan differs 516 >= 464
+PASS: floor corpus scan same 878 >= 790
+PASS: floor corpus leads differs 43 >= 38
+PASS: floor corpus leads same 1299 >= 1169
+PASS: floor corpus dominated differs 2427 >= 2184
+PASS: floor corpus dominated same 4050 >= 3645
+PASS: floor corpus landmark differs 454 >= 408
+PASS: floor corpus landmark same 54 >= 48
+PASS: floor bench scan differs 131 >= 117
+PASS: floor bench scan same 185 >= 166
+PASS: floor bench leads differs 15 >= 13
+PASS: floor bench leads same 289 >= 260
+PASS: floor bench dominated differs 128 >= 115
+PASS: floor bench dominated same 411 >= 369
+PASS: floor bench landmark differs 114 >= 102
+PASS: floor bench landmark same 4 >= 3
+PASS: floor rwquest scan differs 122 >= 109
+PASS: floor rwquest scan same 160 >= 144
+PASS: floor rwquest leads differs 42 >= 37
+PASS: floor rwquest leads same 228 >= 205
+PASS: floor rwquest dominated differs 62 >= 55
+PASS: floor rwquest dominated same 346 >= 311
+PASS: floor rwquest landmark differs 87 >= 78
+PASS: floor rwquest landmark same 2 >= 1
+PICK_CENSUS_DONE fails=0

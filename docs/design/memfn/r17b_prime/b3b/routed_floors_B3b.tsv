@@ -1,0 +1,18 @@
+# docs/design/memfn/r17b_prime/b3b/routed_floors_B3b.tsv -- the routed-record floors per (site, kind, row) at B3b (lane b3b, 2026-10-18; routed_census_b3b.py --write over the corpus, three arms -, -e utf8, --engine=vm; floor(0.9 x measured)). Read by routed_census_b3b.py --floors.
+# site	kind	row	floor (floor(0.9 x measured), routed_census.py)
+MLINE	DFA_ATTEMPT	D1c	61
+PF	DFA_HAT	D1	55
+PF	DFA_SCAN	D1	743
+PF	HYB_PF	D1	1017
+PF	VM_ATTEMPT	D1w	1606
+PRE	DFA_ATTEMPT	P2	7
+PRE	DFA_ATTEMPT	P3	122
+PRE	DFA_ATTEMPT	P4	1
+PRE	DFA_SCAN	P2	1519
+PRE	DFA_SCAN	P3	2522
+PRE	DFA_SCAN	P4	8
+PRE	HYB_PF	P2	1798
+PRE	HYB_PF	P3	993
+PRE	HYB_PF	P4	6
+PRE	VM_ATTEMPT	P0	4774
+PRE	VM_ATTEMPT	P4	21
