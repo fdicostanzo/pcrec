@@ -9,7 +9,7 @@ SAB_ID="S1112-partlayout-p2-dropped"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='row P2 never holds, so an inline control writes always_inline on a label-table body (split'"'"'s F part, the attempt-route prefilter) and the artifact does not compile'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box): partlayout:5fail/40pass, DETECTED, against a clean 0fail/45pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1112."
+SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:6fail/40pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1112."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

@@ -11,7 +11,7 @@ SAB_ID="S1114-partlayout-callers-unfolded"
 SAB_FILE="src/gen/part_layout.c"
 SAB_SUITES="partlayout"
 SAB_DESC='callers(part) skips folding owned always_inline callers, so the inline-rung hybrid'"'"'s prefilter reads one caller and P3 holds every control on it'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box): partlayout:25fail/20pass, DETECTED, against a clean 0fail/45pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1114."
+SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:25fail/21pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1114."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'

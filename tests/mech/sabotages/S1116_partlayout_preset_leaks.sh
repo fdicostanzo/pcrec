@@ -10,7 +10,7 @@ SAB_ID="S1116-partlayout-preset-leaks"
 SAB_FILE="src/core/tune.c"
 SAB_SUITES="partlayout"
 SAB_DESC='the max-speed row of TUNE_TABLE presets residual inline though tuning.md §5.4 keeps the cell a dagger, so --tune=max-speed lays parts out with no control set'
-SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box): partlayout:10fail/35pass, DETECTED, against a clean 0fail/45pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1116."
+SAB_DOC_FIGURE="MEASURED by lane e1 2026-10-18 (one mech row, solo, Linux dev box, at b57d43101^): partlayout:10fail/36pass, DETECTED, against a clean 0fail/46pass. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1116."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --part-layout=prefilter:inline -o "$REACH_TMP/x.c" --pattern "(a)b" && grep -h "RX_PART_LAYOUT" "$REACH_TMP/x.c"'
