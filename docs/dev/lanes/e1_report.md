@@ -215,9 +215,9 @@ on the 46-check suite (S1113's anchor moved with the `noipa` text) is owed
    mod/ref learns that the `noinline` body writes nothing through
    `capture_spans` while the constant return is not propagated (ipa-cp is
    -O2), hence "maybe used uninitialized" on a dead read; -O2/-O3/-Os do
-   not warn. (c) Run, both the `noinline` (commit A) and the `noipa`
-   artifacts and the default, for four witnesses plus `(a+)bcd`/`(a)b`,
-   every subject over `abcdz _` to length 5 at every start (114,381 calls):
+   not warn. (c) Run: the default and `noipa` artifacts of all eight
+   witnesses plus `(a+)bcd`, `(a)b`, `(?>a*)a`, and commit A's `noinline`
+   artifacts of four of them plus `(a+)bcd`, every subject over `abcdz _` to length 5 at every start (114,381 calls):
    ASan+UBSan with `-ftrivial-auto-var-init=pattern` and valgrind memcheck
    report nothing and every answer hash equals the default's
    (`e1_evidence/fp_runs.txt`, driver `fp_driver.c`). So `noipa` stays:
