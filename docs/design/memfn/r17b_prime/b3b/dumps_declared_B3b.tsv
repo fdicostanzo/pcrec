@@ -1,0 +1,13 @@
+# R17-b' B3b's DECLARED registry-dump delta (lane b3b; r17b_prime.md rev 3
+# §3.1 row B3b: "NOT zero for stream 5: bit 45 and two --list-axes axes
+# move, plus three kit rows; a DECLARED registry delta"). Read by
+# dumps_delta.py, both ways: every declared line moves, nothing else does.
+#   add     a row ADDED inside `section` (its first cell is `key`)
+#   change  an axis-table row (key `axis/candidate`) whose listed columns
+#           (comma-separated) change and no other cell does
+#surface	section	kind	key	columns
+--list-axes	memfn	add	fd-pres-g1	-
+--list-axes	memfn	add	fd-pres-pick	-
+--list-axes	memfn	add	pres-set-lead	-
+--list-axes	-	change	req-admit/dominated	applies
+--list-axes	-	change	req-admit/set-leads	deny_macro,deny_bit,cli_flag,applies

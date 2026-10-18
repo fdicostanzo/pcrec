@@ -1083,14 +1083,18 @@ enum {
  * out of `rx_info.flags`; `<PREFIX>_REQ_RUN`'s `/mask` suffix records what
  * the analysis found. A `#define` for bit 32's reason. */
 #define PCREC_NO_REQ_RUN_FOLD PCREC_BIT(44)
-/* [K82] `-fno-req-set-lead` — deny the pre-check admission's `set-leads` row
- * (docs/spec/tuning.md §2.40). Where a necessary run's pre-check is emitted
- * and a byte of the necessary SET is rarer than the run's scan member under
- * the active byte-rate (under none, a byte against a two-member pair), the
- * artifact tests that byte's `memchr` first and the run after it. Denied, the
- * run pre-check alone, the abi-59 program. It changes no answer either way,
- * so it is masked out of `rx_info.flags`; `<PREFIX>_REQ_WHY` reads `emitted`
- * under both. A `#define` for bit 32's reason. */
+/* [K82] bit 45, RETIRED as an axis ([MEMFN] R17-b' B3b; docs/spec/tuning.md
+ * §2.40): RESERVED, and an ALIAS of the memfn kit's deny
+ * `--memfn=no-pres-set-lead` (Q-R17P-19). The pre-check's `set-leads` shape is the kit's PRES row P4: where
+ * a necessary run's pre-check is emitted and a byte of the necessary SET is
+ * rarer than the run's scan member under the active byte-rate (under none, a
+ * byte against a two-member pair), the artifact tests that byte's `memchr`
+ * first and the run after it. Setting this bit is EXACTLY that deny: the
+ * compile rewrites it into `pcrec_options.memfn` (`no-pres-set-lead`
+ * appended) and clears it, so the artifact is the deny's byte for byte and
+ * `rx_info.flags` carries neither. Denied, the run pre-check alone, the
+ * abi-59 program; `<PREFIX>_REQ_WHY` reads `emitted` either way. A `#define`
+ * for bit 32's reason. */
 #define PCREC_NO_REQ_SET_LEAD PCREC_BIT(45)
 
 /* [K82] (B) the run pre-check's HANDOFF (docs/spec/tuning.md §2.41). Where a

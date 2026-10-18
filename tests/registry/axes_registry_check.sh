@@ -266,6 +266,16 @@ fi
 # column. tuning.md's heading no longer carries a count at all.
 doc_bits_raw="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
     | grep -oE '\(bit [0-9]+\)' | grep -oE '[0-9]+')"
+# [MEMFN] R17-b' B3b A RETIRED BIT (tuning.md §2's heading says `bit N
+# retired`, no `(bit N)`): an axis whose row left pcrec (bit 45, the
+# `set-leads` row, to the memfn kit's `--memfn=no-pres-set-lead`) and whose
+# lib/pcrec.h macro stays as a RESERVED alias (Q-R17P-19). It must still be
+# defined in the header, and must NOT be dumped: a retired bit back on a
+# row is an un-retired axis with no heading. Read off tuning.md's own text,
+# never a list kept here.
+retired_bits_raw="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
+    | grep -oE '^### 2\.[0-9]+ .*bit [0-9]+ retired' | grep -oE 'bit [0-9]+ retired' \
+    | grep -oE '[0-9]+')"
 
 # ============================================================================
 # DIRECTION 1: DUMP -> SOURCES. Every dumped row with a deny/force macro
@@ -455,11 +465,26 @@ hdr_bits_sorted="$(printf '%s\n' $hdr_bits_family | sort -n -u)"
 hdr_bits_lo="$(printf '%s' "$hdr_bits_sorted" | head -1)"
 hdr_bits_hi="$(printf '%s' "$hdr_bits_sorted" | tail -1)"
 missing_from_dump2=""
+retired_sorted="$(printf '%s\n' $retired_bits_raw | sort -n -u)"
 for b in $hdr_bits_sorted; do
+    if grep -qxF "$b" <<< "$retired_sorted"; then continue; fi
     if ! grep -qxF "$b" <<< "$dumped_bits_sorted"; then
         missing_from_dump2="$missing_from_dump2 $b"
     fi
 done
+retired_bad=""
+for b in $retired_sorted; do
+    if grep -qxF "$b" <<< "$dumped_bits_sorted" || ! grep -qxF "$b" <<< "$hdr_bits_sorted"; then
+        retired_bad="$retired_bad $b"
+    fi
+done
+if [ -z "$retired_sorted" ]; then
+    echo "UNREACHED: [retired bits] tuning.md §2 retires no bit (no '### 2.N ... bit N retired' heading); nothing to check (K35)"
+elif [ -n "$retired_bad" ]; then
+    bad "tuning.md retires bit(s)$retired_bad, but each must stay defined in lib/pcrec.h (the alias) and be named on NO --list-axes row (a retired axis back in the dump)"
+else
+    ok "every bit tuning.md §2 retires ($( printf '%s' "$retired_sorted" | tr '\n' ' ' )) is a header alias named on no --list-axes row"
+fi
 if [ -n "$missing_from_dump2" ]; then
     bad "lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s)$missing_from_dump2 (of bits $hdr_bits_lo-$hdr_bits_hi found in the header) that --list-axes names on no row (an axis landed in the header with no dump coverage — e.g. a new axis's list not yet reached by src/dump/axes_dump.c's predicate table)"
 else

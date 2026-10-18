@@ -84,5 +84,19 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   `--check-pcrec BIN` runs the result through the harness with BIN.
 - **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
   list there.
+- **presence_deny.rxt** — [MEMFN] R17-b' B3b (lane b3bfix, 2026-10-18;
+  b3brev finding 2): the presence pre-check's parts AFTER the landmark on
+  handoff routes, which the kit's `--memfn=no-fd-pres-pick` (P9) lays out
+  where B3b removed `req_site_define`'s guard. Witnesses of the soundness
+  argument in that function's header: a set member below the re-entry's scan
+  position (`a.?b` with decoy landmarks), below the REPORTED start (`\K`),
+  lookbehind bytes below the attempt, whole-run and rest members after a run
+  window, utf8. Runs at the default route in the corpus;
+  `tests/memfn/run_presence.sh` [deny-answers] runs it under each of the
+  three new denies.
+- **gen_presence_deny.py** — writes `presence_deny.rxt` with
+  `gen_handoff.py`'s own oracle helpers (python3 `re` AND libpcre2 for a byte
+  block, libpcre2 alone for utf8 or `\K`); `--check-pcrec BIN` runs the
+  result under the default and each deny.
 
 Maintenance: update this file when files are added/removed or change roles.

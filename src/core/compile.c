@@ -1838,6 +1838,32 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         return -1;
     }
 
+    /* [MEMFN] R17-b' B3b PCREC_NO_REQ_SET_LEAD IS AN ALIAS (Q-R17P-19; the
+     * kit manager's binding Q-19: a working alias, never a silent no-op).
+     * Bit 45's row, `set-leads`, became the memfn kit's PRES row P4, whose
+     * deny is the kit's `--memfn=no-pres-set-lead` (KW-11, Q-WR-12), and
+     * `src/core/axes.def` no longer lists the bit. A caller's bit is
+     * rewritten HERE, once, before any attempt: cleared from the flags and
+     * appended to the kit's option string, so the artifact is the deny's
+     * byte for byte (`rx_info.flags` carries neither) and every attempt
+     * reads one string. A string too long to carry the alias is refused,
+     * never truncated. */
+    char memfn_alias[1024];
+    if (pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)) {
+        const char *u = defo.memfn && defo.memfn[0] ? defo.memfn : NULL;
+        int w = snprintf(memfn_alias, sizeof memfn_alias, "%s%sno-pres-set-lead",
+                         u ? u : "", u ? "," : "");
+        if (w < 0 || (size_t)w >= sizeof memfn_alias) {
+            if (err)
+                snprintf(err->msg, sizeof(err->msg),
+                         "the --memfn string is too long to carry "
+                         "PCREC_NO_REQ_SET_LEAD's alias (no-pres-set-lead)");
+            return -1;
+        }
+        defo.flags = pcrec_flags_without(defo.flags, PCREC_NO_REQ_SET_LEAD);
+        defo.memfn = memfn_alias;
+    }
+
     /* [K79] THE EMITTERS SEE THE PLACEHOLDER, NEVER THE CALLER'S PREFIX
      * (core/internal.h, PCREC_PREFIX_PLACEHOLDER): every length measured
      * below — the entry-shape knee, the size term's trigger, ladder and

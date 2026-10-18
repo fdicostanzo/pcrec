@@ -7,5 +7,5 @@ SAB_DESC='a PREFIX row'\''s named rung is rendered without being re-asked, so --
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S729. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc))'
-SAB_AFTER='        if (i < NFN && (kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc), 1))   /* SABOTAGE S729 */'
+SAB_BEFORE='        if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc, NULL))'
+SAB_AFTER='        if (i < NFN && (kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc, NULL), 1))   /* SABOTAGE S729 */'

@@ -101,12 +101,21 @@ At process exit, one line per row of each table, in table order, one
 per (row, used field, class) cell that was reached, and one REACH_DROPPED
 line:
 
-    MFTRACE REACH table=T row=R chosen=N
+    MFTRACE REACH table=T row=R chosen=N asked=A
     MFTRACE REACH table=T row=R field=F class=C n=N
     MFTRACE REACH_DROPPED n=N
 
 - `chosen`: how many selections chose the row (`define` and `run` phases;
   a `use` re-check is not a selection). Every row is listed, 0 included.
+- `asked` (R17-b' B3b, lane b3breach): how many selections chose the row
+  AT THE ASK, never counted in `chosen`: the presence span links a public
+  `mf_ask` decides (`fd_pres` FD_PRES_ASK; their END records say
+  `phase=shadow`, their `MFTRACE FD` records `phase=ask`). A pre-check whose
+  every span P2 drops is asked and never defined, so `asked` is the only
+  count of P2. It is NOT every shadow END: the finder's define-time shadow
+  (`fd_shadow`) repeats per slot and layer and stays uncounted. A row whose
+  `tests/memfn/rows.tsv` signature carries ` phase=ask` is held to its floor
+  on `asked` by `n2_report.py --floors`; every other row on `chosen`.
 - A cell counts, for each `END` with a chosen row, each field the row USES
   at that phase on that site, by the value's class (`UNSTATED` where the
   field was unstated). Only nonzero cells are printed.

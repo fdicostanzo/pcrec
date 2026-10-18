@@ -1566,6 +1566,14 @@ tests/litscan/reqcube.rxt:67		283f3a283f693a616229537c283f693a6162732929
 tests/litscan/reqcube.rxt:76	--engine=vm	283f3a283f693a616229537c283f693a6162732929
 tests/litscan/reqcube.rxt:86		283f3a283f693a616273297c283f693a6162295329
 tests/litscan/reqcube.rxt:95	--engine=vm	283f3a283f693a616273297c283f693a6162295329
+tests/litscan/presence_deny.rxt:261	--features all --encoding=byte	283f3c3d717a29783f613a
+tests/litscan/presence_deny.rxt:315	--features all --encoding=byte	283f3c3d7129613a
+tests/litscan/presence_deny.rxt:347	--features all --encoding=byte	617b322c347d5c4b62
+tests/litscan/presence_deny.rxt:385	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
+tests/litscan/presence_deny.rxt:426	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
+tests/litscan/presence_deny.rxt:501	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
+tests/litscan/presence_deny.rxt:577	--features all --encoding=utf8	782e79
+tests/litscan/presence_deny.rxt:609	--features all --encoding=byte	61623f63
 tests/lookaround/alpha_spellings.rxt:115	--features lookaround	282a706f7369746976655f6c6f6f6b626568696e643a612962
 tests/lookaround/alpha_spellings.rxt:129	--features lookaround	282a6e6c623a612962
 tests/lookaround/alpha_spellings.rxt:144	--features lookaround	282a6e656761746976655f6c6f6f6b626568696e643a612962
@@ -3601,7 +3609,6 @@ tests/utf8/wclass_illformed.rxt:377	--features all --encoding=utf8	78285b5e615d2
 tests/utf8/wclass_illformed.rxt:399	--features all --encoding=utf8 --engine=vm	785b5e615d79
 tests/utf8/wclass_illformed.rxt:41	--features all --encoding=utf8	78285c707b4c7d2979
 tests/utf8/wclass_illformed.rxt:422	--features all --encoding=utf8 --engine=vm	78285b5e615d2979
-tests/utf8/wclass_illformed.rxt:445	--features all --encoding=utf8	782e79
 tests/utf8/wclass_illformed.rxt:466	--features all --encoding=utf8	78282e2979
 tests/utf8/wclass_illformed.rxt:487	--features all --encoding=utf8 --engine=vm	782e79
 tests/utf8/wclass_illformed.rxt:509	--features all --encoding=utf8 --engine=vm	78282e2979
@@ -3630,6 +3637,7 @@ tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	7
 tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6b5c787b65397d5d79
 # b3build (D164 B3, 2026-10-12): +15 rows, every one a tests/endmark/b3_rows.rxt block (the end-mark answer net joined the corpus;
 # these blocks' VM-forced artifacts are VM-hat movers, which the hat's own vmhat_checks.py measured); no existing row moved.
+# b3bfix (2026-10-18, b3brev finding 2): +8/-1: the eight tests/litscan/presence_deny.rxt blocks the forced VM hats (the new corpus file); tests/utf8/wclass_illformed.rxt:445 `x.y` under utf8 leaves because presence_deny.rxt:577 holds the same (text, options) and now sorts first and takes its id (ssbuild3's ctxnode precedent); census_s1.py on lane/memfn-b3b 54d582e8b (-fno-start-set / -fno-req-handoff arms), corpus rows only, bench rows NOT refreshed; no other row moved.
 tests/endmark/b3_rows.rxt:123		615c6e7b302c327d24
 tests/endmark/b3_rows.rxt:178		615c6e7b302c327d3f24
 tests/endmark/b3_rows.rxt:186	--features classes	283f3a5c732b7c785c732a3f2924

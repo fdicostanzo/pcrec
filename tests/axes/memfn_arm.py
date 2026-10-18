@@ -37,7 +37,10 @@ says where and how).
                (the base flags alone) must read exactly 0 differ.
 
 Usage: memfn_arm.py --pcrec BIN --root DIR [--jobs N] [--every K]
-                    [--measure] --cell 'NAME|LAYER|FLAGS' ...
+                    [--measure] [--subset] --cell 'NAME|LAYER|FLAGS' ...
+  --subset    the cells are a selection (run_axes.sh's AXES= named rows by
+              spelling): every row WITH a cell must have both layers; rows
+              without one are not owed a cell (the population check stands)
   --every K   a sample of the corpus (floors not applied; witnesses, classes,
               the null arm and the unknown-name control still are)
   --measure   print the per-cell counts and first differing patterns instead
@@ -88,6 +91,23 @@ MEMFN_CLASS = {
     ("fd-d1", "simd"): ("DIFFER",
         {("byte", "c-default"): 1004, ("byte", "c-vm"): 0, ("utf8", "c-default"): 985, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b" \\w?\\b"), ("utf8", "c-default", b" \\w?\\b")]),
+    # R17-b' B3b's three PRES denies (lane b3b, 2026-10-18), MEASURED at lane/memfn-b3b
+    # 8444f0ed5 (`taskset -c 12-15 python3 -I tests/axes/memfn_arm.py --measure`, 6 cells,
+    # refused=0 of 4624 everywhere; docs/dev/lanes/b3b_report.md). All DIFFER: slot PRES
+    # is routed, so each deny moves the pre-checks its row decides, identically at both
+    # layers (no SIMD form reads a presence link). `pres-set-lead` is the retired
+    # `-fno-req-set-lead` (bit 45), its population that flag's; `fd-pres-g1` and
+    # `fd-pres-pick` act on the DFA-scanned routes only (c-vm 0: no pre-check there is
+    # dominated, and every span is REQUIRED).
+    **{("fd-pres-g1", ly): ("DIFFER",
+        {("byte", "c-default"): 1271, ("byte", "c-vm"): 0, ("utf8", "c-default"): 1105, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"ab"), ("utf8", "c-default", b"ab")]) for ly in ("default", "simd")},
+    **{("fd-pres-pick", ly): ("DIFFER",
+        {("byte", "c-default"): 187, ("byte", "c-vm"): 0, ("utf8", "c-default"): 262, ("utf8", "c-vm"): 0},
+        [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
+    **{("pres-set-lead", ly): ("DIFFER",
+        {("byte", "c-default"): 16, ("byte", "c-vm"): 18, ("utf8", "c-default"): 8, ("utf8", "c-vm"): 8},
+        [("byte", "c-default", "é{2}cat".encode()), ("utf8", "c-default", b"a{3}(?i:cat)")]) for ly in ("default", "simd")},
     ("fd-ndisp", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
     ("fd-r0", "default"): ("ASSERT_ZERO", {}, []),
@@ -183,6 +203,7 @@ def main():
     ap.add_argument("--every", type=int, default=1)
     ap.add_argument("--measure", action="store_true")
     ap.add_argument("--cell", action="append", default=[])
+    ap.add_argument("--subset", action="store_true")
     a = ap.parse_args()
     passed, failed = 0, 0
     lines = []
@@ -215,7 +236,13 @@ def main():
               "list-axes memfn rows %s != MEMFN_CLASS rows %s -- a kit row was added or "
               "removed with no classification (or the reverse)" %
               (sorted(spelling), sorted({k[0] for k in MEMFN_CLASS})))
+        # --subset (AXES= named rows by spelling): only the rows that HAVE a
+        # cell are owed both layers; a subset run that selected none is RED
+        picked = {k[0] for k in cells}
+        check(not a.subset or picked, "--subset with ZERO cells (K35: never measure nothing)")
         for (name, layer) in sorted(MEMFN_CLASS):
+            if a.subset and name not in picked:
+                continue
             fl = cells.get((name, layer))
             if not check(fl is not None, f"no job cell for ({name}, {layer})"):
                 continue

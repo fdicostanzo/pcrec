@@ -1,0 +1,46 @@
+# pick census: populations {'corpus': 4624, 'bench': 367, 'rwquest': 177}, arms ['--analysis=weblog'], every 1
+pop	pick	records	agree	nontrivial	nt_agree	differs
+corpus	set	2069	2069	779	779	303
+corpus	scan	436	436	436	436	241
+corpus	window	436	436	34	34	8
+corpus	leads	418	418	418	418	18
+corpus	dominated	2069	2069	1620	1620	1247
+corpus	landmark	228	228	228	228	224
+corpus	rdom	2069	2069	1620	1620	1247
+corpus	rlead	258	258	258	258	15
+corpus	rhead	564	564	240	240	45
+corpus	rwin	258	258	39	39	38
+corpus	rwhole	258	258	39	39	4
+corpus	rrest	822	822	458	458	68
+bench	set	177	177	125	125	54
+bench	scan	104	104	104	104	59
+bench	window	104	104	9	9	4
+bench	leads	100	100	100	100	6
+bench	dominated	177	177	138	138	70
+bench	landmark	56	56	56	56	56
+bench	rdom	177	177	138	138	70
+bench	rlead	73	73	73	73	6
+bench	rhead	34	34	19	19	6
+bench	rwin	73	73	13	13	12
+bench	rwhole	73	73	13	13	0
+bench	rrest	107	107	87	87	8
+rwquest	set	136	136	103	103	59
+rwquest	scan	94	94	94	94	63
+rwquest	window	94	94	15	15	8
+rwquest	leads	90	90	90	90	19
+rwquest	dominated	136	136	111	111	46
+rwquest	landmark	38	38	38	38	37
+rwquest	rdom	136	136	111	111	46
+rwquest	rlead	70	70	70	70	19
+rwquest	rhead	20	20	9	9	4
+rwquest	rwin	70	70	15	15	8
+rwquest	rwhole	70	70	15	15	0
+rwquest	rrest	90	90	71	71	1
+pop	site-state	shadows
+bench	stated	177
+bench	withheld-one-attempt	18
+corpus	stated	2069
+corpus	withheld-one-attempt	299
+corpus	withheld-whole	66
+rwquest	stated	136
+PICK_CENSUS_DONE fails=0

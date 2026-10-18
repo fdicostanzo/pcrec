@@ -220,10 +220,13 @@ PCREC_AXIS(PCREC_NO_REQ_RUN, "-fno-req-run", 0, "", PCREC_AXIS_DEFAULT_ON)
  * caseless run, src/facts/req.c). A fact-level deny: the walk takes single
  * bytes only, as before the row. */
 PCREC_AXIS(PCREC_NO_REQ_RUN_FOLD, "-fno-req-run-fold", 0, "", PCREC_AXIS_DEFAULT_ON)
-/* [K82] the pre-check admission's `set-leads` row (src/gen/emit_dfa.c,
- * `cand_rows[]`'s PRESENCE slot; `req_admits[]` until [START-TABLE] C4): a
- * rarer necessary-set byte tested before the run. */
-PCREC_AXIS(PCREC_NO_REQ_SET_LEAD, "-fno-req-set-lead", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [K82] bit 45, `-fno-req-set-lead`, the admission's `set-leads` row, is
+ * RETIRED here ([MEMFN] R17-b' B3b, KW-11): the row is the memfn kit's PRES
+ * row P4 and its deny the kit's `--memfn=no-pres-set-lead`. The bit stays
+ * RESERVED in lib/pcrec.h as an ALIAS of that deny (src/core/compile.c
+ * rewrites it, Q-R17P-19), and cli/main.c keeps the old spelling as the
+ * same alias; neither is an axis, so `--list-axes` lists the kit's row in
+ * its `memfn` section instead. */
 /* [K82] (B) the pre-check use table's `handoff` row (src/gen/emit_dfa.c,
  * `cand_rows[]`'s FIRST slot; `req_uses[]` until [START-TABLE] C4): the
  * gate's first window hit, less K, as the scan start. */

@@ -65,6 +65,24 @@ subject):
      or B3a's presence facts) has witness kind `-` and prints UNREACHED with
      its step, never a pass.
 
+  THE ASK (lane b3breach, the kit manager's ruling): a row DECIDED AT THE
+     ASK is reached when asked, and its rows.tsv signature carries ` phase=ask`
+     (the `MFTRACE FD` record's mark; P2 today). The kit counts those
+     selections in the REACH line's `asked=N`, never in `chosen`. Two
+     controls, each sharing no source with the counter it controls:
+     (1) such a row's witness is ASKED (asked >= 1) and its control is not;
+     (2) in EVERY traced process this run makes, each `fd` row's `asked`
+     EQUALS the number of `MFTRACE FD ... phase=ask` records naming it
+     (`row=` split on `+`, so P4 counts from `P3+P4`): the records are
+     printed at the ask's own decision point (finder.c `fd_pres`), the
+     counter in gate.c, so a count no ask stands behind is red. A floor:
+     at least one process with a nonzero `asked`.
+     And the census JUDGE (n2_report.py's floors_verdict) is planted here
+     against the real rows.tsv/row_floors.tsv: an ask-decided row with
+     asked 0 must read UNREACHED (even with `chosen` > 0), a row whose
+     `asked` no ask record stands behind must read ASK MISMATCH, and the
+     consistent aggregate must read neither.
+
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
 rows); a row whose witness stops being chosen in the corpus but stays chosen
@@ -78,6 +96,7 @@ import subprocess
 import sys
 
 REASONS = ("pcrec", "total-fallback", "pending-site:", "contract-reach:")
+ASK_MARK = " phase=ask"     # a signature carrying it: the row is decided at the ask
 passed = failed = 0
 unreached = []
 
@@ -141,6 +160,31 @@ def reach_rows(err):
     return rows, dropped
 
 
+def reach_asked(err):
+    """{(table, row): asked} from the REACH lines; a REACH line without the
+    column is None (a kit older than b3breach), never a 0."""
+    out = {}
+    for ln in err.decode("utf-8", "replace").splitlines():
+        if ln.startswith("MFTRACE REACH ") and " field=" not in ln:
+            d = dict(t.partition("=")[::2] for t in ln.split()[2:])
+            a = d.get("asked")
+            out[(d.get("table"), d.get("row"))] = int(a) if a is not None and a.isdigit() else None
+    return out
+
+
+def ask_records(err):
+    """{("fd", row): n}: the `MFTRACE FD ... phase=ask` records, `row=` split on
+    `+` (the order row rides its terminal: `P3+P4`)."""
+    out = {}
+    for ln in err.decode("utf-8", "replace").splitlines():
+        if not ln.startswith("MFTRACE FD ") or " phase=ask" not in ln:
+            continue
+        d = dict(t.partition("=")[::2] for t in ln.split()[2:])
+        for r in d.get("row", "?").split("+"):
+            out[("fd", r)] = out.get(("fd", r), 0) + 1
+    return out
+
+
 def build(root, cc, tmp):
     """The traced kit objects, the traced fixture driver and a traced pcrec
     (build/libpcrec.a with its kit members swapped for traced ones). Returns
@@ -198,8 +242,9 @@ def fd_records(err):
 
 
 class Art:
-    def __init__(self, label, text, chosen, fdtext=""):
+    def __init__(self, label, text, chosen, fdtext="", err=b""):
         self.label, self.text, self.chosen, self.fdtext = label, text, chosen, fdtext
+        self.asked, self.askrec = reach_asked(err), ask_records(err)
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -214,7 +259,7 @@ def compile_pattern(root, tp, flags, pat, label):
         bad("%s: the MF_TRACE pcrec's artifact differs from build/pcrec's" % label)
         return None
     return Art(label, rp.stdout.decode("utf-8", "replace"), trace_chosen(rt.stderr),
-               fd_records(rt.stderr))
+               fd_records(rt.stderr), rt.stderr)
 
 
 def render_fixture(fx, tmp, name, label, shadow=False):
@@ -227,13 +272,13 @@ def render_fixture(fx, tmp, name, label, shadow=False):
     if shadow:
         # a finder row's rendering is its SHADOW record (R17-b' B1)
         text = fd_records(r.stderr)
-        return Art(label, text, trace_chosen(r.stderr), text)
+        return Art(label, text, trace_chosen(r.stderr), text, r.stderr)
     text = ""
     for part in ("def", "use"):
         p = os.path.join(d, "%s.%s" % (name, part))
         if os.path.exists(p):
             text += open(p, encoding="utf-8", errors="replace").read()
-    return Art(label, text, trace_chosen(r.stderr), fd_records(r.stderr))
+    return Art(label, text, trace_chosen(r.stderr), fd_records(r.stderr), r.stderr)
 
 
 def spec_runcmp_rows(root):
@@ -315,6 +360,71 @@ def g2_families(root):
     txt = open(os.path.join(root, "memfn/tests/run_g2.sh"), encoding="utf-8").read()
     m = re.search(r'^FAM_FLOORS="([^"]*)"', txt, re.M)
     return [f.split(":")[0] for f in m.group(1).split()] if m else None
+
+
+def judge_plants(root):
+    """The census judge (n2_report.py floors_verdict) over a synthetic FULL
+    aggregate against the real rows.tsv/row_floors.tsv: consistent, then
+    planted (an ask-decided row asked 0; an `asked` with no record)."""
+    sys.dont_write_bytecode = True
+    sys.path.insert(0, os.path.join(root, "docs/design/memfn/probes/rowcon"))
+    try:
+        import n2_report
+    finally:
+        sys.path.pop(0)
+    fpath = os.path.join(root, "tests/memfn/row_floors.tsv")
+    mrows = read_tsv(os.path.join(root, "tests/memfn/rows.tsv"), 9)
+    at_ask = [(c[0], c[1]) for c in mrows if ASK_MARK in unesc(c[6])]
+    if not at_ask:
+        bad("rows.tsv names no row decided at the ask (no ` phase=ask` signature): "
+            "the ask judge has no population")
+        return
+    pc = [(c[0], c[1]) for c in mrows if c[2] == "pcrec"]
+    meta = {"limit": 0, "explicit patterns": 0, "arms run": 1, "arms in table": 1}
+
+    def agg(asked_of, rec_of, chosen_ask=0):
+        g = n2_report.Agg()
+        for k in pc:
+            if k in at_ask:
+                g.reach_chosen[k] = chosen_ask
+                g.reach_asked[k] = asked_of(k)
+                g.ask_records[k] = rec_of(k)
+            else:
+                g.reach_chosen[k] = 10 ** 6
+        return g
+
+    def verdicts(g):
+        lines, summ = n2_report.floors_verdict(g, meta, fpath, False)
+        v = {}
+        for ln in lines:
+            c = [x.strip() for x in ln.strip("|").split("|")]
+            if len(c) == 8 and c[0] in ("arms", "runcmp", "fn", "fd"):
+                v[(c[0], c[1])] = c[7]
+        return v, summ
+
+    v, summ = verdicts(agg(lambda k: 10 ** 6, lambda k: 10 ** 6))
+    for k in at_ask:
+        if v.get(k, "").startswith(("UNREACHED", "ASK MISMATCH")) or k not in v:
+            bad("judge, consistent aggregate: %s/%s reads %r" % (k + (v.get(k),)))
+        else:
+            ok()
+    if " ask_mismatch=0" not in summ:
+        bad("judge, consistent aggregate: %r" % summ)
+    for k in at_ask:
+        # plant 1: never asked (chosen > 0 must not stand in for it)
+        v, summ = verdicts(agg(lambda j: 0 if j == k else 10 ** 6,
+                               lambda j: 0 if j == k else 10 ** 6, chosen_ask=10 ** 6))
+        if v.get(k, "").startswith("UNREACHED") and "asked 0" in v[k]:
+            ok()
+        else:
+            bad("judge plant asked=0: %s/%s reads %r, not UNREACHED" % (k + (v.get(k),)))
+        # plant 2: an `asked` count with no ask record behind it
+        v, summ = verdicts(agg(lambda j: 10 ** 6, lambda j: 0 if j == k else 10 ** 6))
+        if v.get(k, "").startswith("ASK MISMATCH") and " ask_mismatch=0" not in summ:
+            ok()
+        else:
+            bad("judge plant asked-without-record: %s/%s reads %r (%s)" % (k + (v.get(k), summ)))
+    print("ask judge: %d row(s) decided at the ask: %s" % (len(at_ask), " ".join("%s/%s" % k for k in at_ask)))
 
 
 def main():
@@ -485,6 +595,20 @@ def main():
                        "present/chosen" if want else "absent/not chosen"))
         if w and k and w.text == k.text:
             bad("%s/%s: the control's artifact is the witness's (the control changed nothing)" % key)
+        if ASK_MARK in sig:
+            # control (1): an ask-decided row's witness is ASKED, its control is not
+            for art, want in ((w, True), (k, False)):
+                if art is None:
+                    continue
+                n = art.asked.get(key)
+                if n is None:
+                    bad("%s: no `asked=` on %s/%s's REACH line (the kit's column is absent)"
+                        % ((art.label,) + key))
+                elif (n > 0) == want:
+                    ok()
+                else:
+                    bad("%s: %s/%s asked %d (want %s): a row decided at the ask must be "
+                        "reached when asked" % ((art.label,) + key + (n, ">= 1" if want else "0")))
     # every fixture, rendered alone, joins the exclusion population
     os.makedirs(os.path.join(a.tmp, "ids"))
     ids = run([fx, os.path.join(a.tmp, "ids")])
@@ -510,6 +634,29 @@ def main():
     if excl:
         ok()
     print("sibling exclusion: %d (signature, artifact) pairs over %d artifacts" % (excl, len(arts)))
+
+    # ---- C'. the ask count against the ask's own records (control 2) -------
+    nask = ncmp = 0
+    for art in arts:
+        fdkeys = {k for k in art.asked if k[0] == "fd"} | set(art.askrec)
+        if not art.asked:
+            continue                    # a process with no REACH lines (bad elsewhere if wrong)
+        for k in sorted(fdkeys):
+            n, m = art.asked.get(k), art.askrec.get(k, 0)
+            ncmp += 1
+            if n is None:
+                bad("%s: %s/%s has %d ask records and no `asked=` count" % ((art.label,) + k + (m,)))
+            elif n != m:
+                bad("%s: %s/%s asked=%d but %d `phase=ask` FD records: an ask count no ask "
+                    "stands behind (or an ask not counted)" % ((art.label,) + k + (n, m)))
+            else:
+                nask += n > 0
+    if nask == 0:
+        bad("no traced process this run counted an `asked` selection (the ask control is vacuous)")
+    else:
+        ok()
+    print("ask count vs ask records: %d (row, process) comparisons, %d nonzero" % (ncmp, nask))
+    judge_plants(root)
 
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}

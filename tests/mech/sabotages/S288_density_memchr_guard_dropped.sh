@@ -13,7 +13,7 @@
 # scanning 0x80 of equal ppm -- whose `REQ_WHY` must stay "emitted" and
 # reads "dominated" under the plant.
 SAB_ID="S288-density-memchr-guard-dropped"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
 SAB_DESC="req_byte_dominated_by drops the density conjunct's !cs->memchr_form guard, so the byte-frequency (ppm) comparison runs for an offset-set (table) candidate scan too -- [ab]\\x80[0-9]{3}\\x81 flips its one-byte pre-check on 0x81 from REQ_WHY \"emitted\" to \"dominated\" by an offset-set scan of 0x80 that is not a memchr form at all"
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S288."
@@ -28,9 +28,15 @@ SAB_COUNT=1
 # RE-AIMED 2026-10-16 (lane fdb2, R17-b' B2, PR-9): `memchr_form` is the
 # method-free `one_byte` (the scan proves one byte, read from the kit's
 # class); the guard and its intent are unchanged.
-SAB_BEFORE='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
-    if (!cs->one_byte) return false;
-    return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);'
-SAB_AFTER='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
-    /* SABOTAGE S288: memchr-form guard dropped */
-    return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);'
+# RE-AIMED 2026-10-18 (lane b3bmtri, [MEMFN] R17-b' B3b): G1 IS THE KIT'S PRES
+# row P2 now (memfn/src/presence.c `kit_pres_picks`, the P2 block, read by
+# finder.c `fd_pres` as SF_PROVEN); pcrec's `req_byte_dominated_by` survives
+# only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
+# so the old plant landed on code no default artifact reads. The plant moves
+# to the same conjunct of the port; intent and detector unchanged.
+SAB_BEFORE='        else if (run) dom = 0;
+        else if (!proof->stop) dom = 0;
+        else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'
+SAB_AFTER='        else if (run) dom = 0;
+        /* SABOTAGE S288: memchr-form guard dropped */
+        else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'

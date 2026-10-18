@@ -1,0 +1,105 @@
+diff --git a/src/gen/emit_dfa.c b/src/gen/emit_dfa.c
+index 9653c379c..040b58875 100644
+--- a/src/gen/emit_dfa.c
++++ b/src/gen/emit_dfa.c
+@@ -1735,7 +1735,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
+         p[np++].nterm = 1;
+     }
+     s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
+-    s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
++    s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
+     s->npred = (uint16_t)np;
+     s->preds = p;
+     /* [MEMFN] R17-b' B3a K as `head_max` where the site hands its landmark
+@@ -8279,7 +8279,7 @@ static mf_site *req_pres_site(Ctx *cx, const mf_pres_proof *proof)
+     s->op = MF_OP_ALL_PRESENT;
+     s->handoff = MF_H_ON_MISS;
+     s->empty = MF_EMPTY_MISS;
+-    s->use = MF_USE_DISCARD;
++    s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
+     s->consumer = MF_C_ENGINE;
+     s->site_kind = site_kind_of(cx, SKS_PRE);
+     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
+diff --git a/src/gen/memfn_sites.c b/src/gen/memfn_sites.c
+index 31a3eaf8f..c60d31384 100644
+--- a/src/gen/memfn_sites.c
++++ b/src/gen/memfn_sites.c
+@@ -480,6 +480,8 @@ static void deleg_check(Ctx *cx, DelegSite id, const mf_site *s)
+       : !(s->policy & MF_P_INLOOP) != (row->budget != DELEG_LOOP)
+                                                      ? "MF_P_INLOOP disagrees with the row's budget"
+       : s->use > row->use_ceiling                    ? "its use is past the row's ceiling"
++      : s->op == MF_OP_ALL_PRESENT && s->npspan && s->use != MF_USE_ENTRY
++                                                     ? "a presence site's use is not ENTRY (MF_VOCAB 4)"
+       :                                                NULL;
+     if (why)
+         pcrec_ctx_fail(cx, 0, "internal error: a memfn %s site outside its "
+@@ -488,10 +490,15 @@ static void deleg_check(Ctx *cx, DelegSite id, const mf_site *s)
+ 
+ void pcrec_memfn_check_use(Ctx *cx, const mf_site *s, bool read)
+ {
+-    if ((s->use == MF_USE_POSITION) != read)
++    /* [MEMFN] R17-b' B3b MF_USE_ENTRY (MF_VOCAB 4): the presence verdict's
++       use, a position exactly where the site ASSIGNs its landmark */
++    bool pos = s->use == MF_USE_POSITION ||
++               (s->use == MF_USE_ENTRY && s->handoff == MF_H_ASSIGN);
++    if (pos != read)
+         pcrec_ctx_fail(cx, 0, "internal error: a memfn site's use is %s where "
+                        "pcrec's text %s its result as a position",
+-                       s->use == MF_USE_POSITION ? "POSITION" : "DISCARD",
++                       s->use == MF_USE_POSITION ? "POSITION"
++                       : s->use == MF_USE_ENTRY ? "ENTRY" : "DISCARD",
+                        read ? "reads" : "never reads");
+ }
+ 
+diff --git a/src/gen/memfn_sites.def b/src/gen/memfn_sites.def
+index eb0644223..61592c6cc 100644
+--- a/src/gen/memfn_sites.def
++++ b/src/gen/memfn_sites.def
+@@ -32,7 +32,9 @@
+  *                where an instance may only compare it with its miss value,
+  *                MF_USE_POSITION where every instance reads it as a position.
+  *                A CEILING, never the value: an instance's `use` is its own
+- *                (req_use(cx) for PRE), checked per instance (§14.5 [rev4.6])
++ *                (req_use(cx) for PRE), checked per instance (§14.5 [rev4.6]).
++ *                MF_USE_ENTRY (R17-b' B3b) is PRE's: the presence verdict's
++ *                use, read as a position exactly where the site ASSIGNs
+  *   entry        [MEMFN] R17-b' B3a (r17b_prime.md rev 3 §3.4's merge,
+  *                Q-R17P-18): the presence verdict each instance takes as
+  *                its ENTRY use, a closed DelegEntry. DELEG_ENTRY_PRE on the
+@@ -44,15 +46,18 @@
+  *                no-DFA VM entry, the hybrid's `_search_run`, `attempt_entry`
+  *                without MLINE), a FIND with no span 0; DELEG_ENTRY_NONE on
+  *                every other row. DELEG_ENTRY_UNSTATED (0) is no statement
+- *                and C10 refuses it. The ENTRY use's own vocabulary (the
+- *                proposed MF_USE_ENTRY) is an MF_VOCAB event left to B3b
+- *                (Q-R17P-18); until then the column is a table fact read by
+- *                C10 only, and every instance renders as today
++ *                and C10 refuses it. The ENTRY use's own vocabulary is the
++ *                kit's MF_USE_ENTRY (MF_VOCAB 4, R17-b' B3b, Q-R17P-18):
++ *                every PRE instance states it (its result the landmark's
++ *                position under ASSIGN, else discarded), and the ALL_PRESENT
++ *                renderers (precheck, precheck_assign, precheck_assign_byte)
++ *                are that use's renderings (KW-7); every instance renders as
++ *                before
+  *
+  * Checked by C10 (tests/memfn/run_deleg_sites.sh): the budget column against
+  * D91's classification, every (op, handoff, kinds) against mf_vocab_has. */
+ DELEG_SITE(PRE, MF_OP_ALL_PRESENT, DELEG_H(MF_H_ON_MISS) | DELEG_H(MF_H_ASSIGN),
+-           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)
++           MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_ENTRY, DELEG_ENTRY_SELF)
+ DELEG_SITE(OFS, MF_OP_FIND, DELEG_H(MF_H_RETURN),
+            MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)
+ DELEG_SITE(VMRUN, MF_OP_VERIFY, DELEG_H(MF_H_BOOL),
+diff --git a/tests/memfn/run_deleg_sites.sh b/tests/memfn/run_deleg_sites.sh
+index 7c67c8787..51cd9bf02 100755
+--- a/tests/memfn/run_deleg_sites.sh
++++ b/tests/memfn/run_deleg_sites.sh
+@@ -211,7 +211,7 @@ fi
+ 
+ # controls: one planted defect each, flagged exactly
+ mkdir -p "$T/src/gen"
+-sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_DISCARD, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_DISCARD, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
++sed 's/MF_TK_SET | MF_TK_RUN, DELEG_SCAN, MF_USE_ENTRY, DELEG_ENTRY_SELF)/MF_TK_SET | MF_TK_RUN, DELEG_LOOP, MF_USE_ENTRY, DELEG_ENTRY_SELF)/' "$DEF" > "$T/plant.def"
+ printf 'static void f(void)\n{\n    mf_pred p;\n    (void)p;\n}\n' > "$T/src/gen/plant.c"
+ static_checks "$T/plant.def" "$T/src" > "$T/plant" 2>/dev/null
+ if grep -q '^row PRE has budget DELEG_LOOP' "$T/plant" && grep -q '^gen/plant.c:3 declares mf_pred by value' "$T/plant" \

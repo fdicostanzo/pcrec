@@ -584,6 +584,47 @@ static void pres_record(DelegSite id, const mf_site *s)
 }
 #endif
 
+/* [MEMFN] R17-b' B3b THE PRESENCE ROUTED-RECORD (r17b_prime.md §1.6 [rev3
+ * B5] item 1, for slot PRES): pcrec's own record of each presence span the
+ * kit's routed PRES rows decided, read from the links pcrec CONSUMED (the
+ * class the define reports, or the admission's ask where P2 drops the whole
+ * pre-check and nothing is defined), never from a kit counter or trace:
+ * `MFROUTED<TAB>PRE<TAB>kind<TAB>row` for a defined pre-check, one per span,
+ * the row the kit's decision CARRIES for the link (`mf_class.pres_row`, an
+ * index in `mf_finder_rows`' listing; b3brev U5: never inferred from the
+ * link's shape), and one more for the ORDER row (`pres_led`, P4) where it
+ * put a member at the head; a pre-check P2 drops is never defined, so its spans
+ * print `MFPRESDROP<TAB>PRE<TAB>kind<TAB>row` instead. Two more columns on a
+ * deciding row's record (`-` on the order row's): the link it decided
+ * (`v%dp%dm%do%d`) and the row's own template from the listing (its `pick`), so
+ * a census can hold a decided link to its row's kind (a row that decides
+ * another row's link shape, S1103's narrowing, is a census failure) (a site with no define
+ * is no `MFROUTED` site: C10's fixtures read those as the defined sites'
+ * own). A link with no row (0, or past the listing) prints `?`. Under the
+ * same switch as `routed_record`. */
+#ifdef PCREC_CAND_TRACE
+void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls)
+{
+    const char *const *kn = routed_kind_name;
+    mf_finder_listing fl;
+    if (!getenv("PCREC_MF_ROUTE_TRACE")) return;
+    mf_finder_rows(&fl);
+    for (unsigned i = 0; i < s->npspan && i < cls->npres; i++) {
+        const mf_link *k = &cls->pres[i];
+        unsigned ri = cls->pres_row[i], li = cls->pres_led[i];
+        const char *row = ri && ri <= fl.n ? fl.rows[ri - 1].id : "?";
+        const char *kind = s->site_kind < sizeof routed_kind_name / sizeof kn[0]
+                         ? kn[s->site_kind] : "?";
+        fprintf(stderr, "%s\tPRE\t%s\t%s\tv%dp%dm%do%d\t%s\n",
+                k->proven_by ? "MFPRESDROP" : "MFROUTED", kind, row, k->verify, k->proven_by,
+                k->member, k->order, ri && ri <= fl.n ? fl.rows[ri - 1].pick : "-");
+        if (li)
+            fprintf(stderr, "MFROUTED\tPRE\t%s\t%s\t-\t-\n", kind,
+                    li <= fl.n ? fl.rows[li - 1].id : "?");
+    }
+}
+#endif
+
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file)
 {
@@ -602,6 +643,7 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
         kit_check(cx, art, mf_defined(art, handle, r));
         routed_record(id, s, r->row);
         pres_record(id, s);
+        if (s->npspan) pcrec_memfn_pres_routed(s, &r->cls);
     }
 #endif
     return handle;

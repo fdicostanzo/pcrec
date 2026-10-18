@@ -278,6 +278,20 @@ done < <(grep -oE '(PCREC_(NO|FORCE)_[A-Z_]+ *= *PCREC_BIT\([0-9]+\))|(#define P
           | sed -E 's/^#define +//; s/ *= */ /' \
           | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) +PCREC_BIT\(([0-9]+)\)$/\1\t\3/')
 
+# [MEMFN] R17-b' B3b A RETIRED BIT is no axis: tuning.md §2 retires it with a
+# heading `bit N retired` (no `(bit N)`), and its lib/pcrec.h macro stays as a
+# RESERVED alias of what replaced it (bit 45, `-fno-req-set-lead`, is the memfn
+# kit's `--memfn=no-pres-set-lead`, which the `--memfn=` arm below sweeps).
+# Read off tuning.md's own text (the registry check holds the same reading:
+# defined in the header, named on no --list-axes row), and dropped from the
+# derived set here, so the sweep neither runs a dead flag nor calls the alias
+# a header bit with no spelling.
+for rbit in $(sed -n '/^## 2\./,/^## 3\./p' "$ROOT_DIR/docs/spec/tuning.md" \
+                  | grep -oE '^### 2\.[0-9]+ .*bit [0-9]+ retired' | grep -oE 'bit [0-9]+ retired' \
+                  | grep -oE '[0-9]+'); do
+    unset "bit_macro[$rbit]"
+done
+
 n_bits=${#bit_macro[@]}
 if [ "$n_bits" -eq 0 ]; then
     echo "run_axes.sh: FATAL: derived ZERO deny/force bit constants from lib/pcrec.h — extraction is broken (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
@@ -989,7 +1003,11 @@ declare -A GIVEUP1_ALLOWANCE=(
 # corpus's hostile cells (the S2b witness's `S` is exactly such a member).
 # The full-corpus axes run at landing confirms or populates this group.
 # GROUP F3 — bit 45, `-fno-req-set-lead` (PCREC_NO_REQ_SET_LEAD, [K82] (A),
-# tuning.md §2.40): EMPTY by structure, not yet by measurement. The denied
+# tuning.md §2.40): RETIRED at [MEMFN] R17-b' B3b to the memfn kit's
+# `--memfn=no-pres-set-lead` (the `--memfn=` arm sweeps it; the bit is an
+# alias, dropped from the derived set above). The record below stands for the
+# kit deny, whose artifacts are the retired flag's byte for byte: EMPTY by
+# structure, not yet by measurement. The denied
 # row removes a leading one-byte memchr of a NECESSARY-SET member; on a
 # DFA-scan route the scan bounds the call either way, and on the no-DFA-scan
 # VM route K65's whole-set half memchrs that same member when the lead is
@@ -1179,6 +1197,8 @@ fi
 # the reach: ONE call, the cells' own flags on its command line
 run_memfn_reach() {
     local -a cargs=() _i
+    # AXES= named rows by spelling (not empty, not the token): a selection
+    case " $AXES " in ("  "|*" --memfn "*) ;; (*) cargs+=(--subset) ;; esac
     for _i in "${!memfn_cell_name[@]}"; do
         cargs+=(--cell "${memfn_cell_name[$_i]}|${memfn_cell_layer[$_i]}|${memfn_cell_flags[$_i]}")
     done

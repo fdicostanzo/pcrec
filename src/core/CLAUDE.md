@@ -138,8 +138,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   2, not the lead-byte pair {E4, E6} at 3). The old `if (!rate) return
   rightmost;` line is gone, so S294 re-anchored to the tie and S461 plants
   the size-blind NONE answer. A second PICK reader in `src/gen/emit_dfa.c`
-  (`req_set_leads_applies`, the admission's `set-leads` row) asks it over
-  `[the run's scan cube, the set's pick]`.
+  (`req_set_leads_own`, the trace build's expectation of the admission's
+  `set-leads` row, which since R17-b′ B3b reads the memfn kit's PRES row P4,
+  its port) asks it over `[the run's scan cube, the set's pick]`.
 
   **[MEMFN] RQ-2 (lane rq2, 2026-10-09, D157): `pcrec_find_run_rank`, a
   fourth rate reader, not a mechanism.** It orders every position of a run
@@ -314,6 +315,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   it from ON to OFF between this lane's two events was ONE TOKEN in this
   file and nothing else in the compiler — which is what the single source
   is for.
+  [MEMFN] R17-b′ B3b: bit 45's row (`-fno-req-set-lead`) is RETIRED (its
+  row is the memfn kit's PRES row P4); the header keeps the macro as an
+  alias the driver rewrites, and `cli/main.c` keeps the spelling.
+
 - **compile_defs.c** — [REVW.3] `pcrec_compile_defs`, the `--source`
   composition entry, and NOTHING ELSE (lens 6's R1). It exists so that it,
   and not `compile.c`, is the object that names `pcrec_rxt_compose`: the
@@ -327,7 +332,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   structure.
 - **compile.c** — pcrec_compile() pipeline driver (parse → SELECT ENGINE →
   NFA → DFA → emit), through the `static compile_driver` all three entries
-  share; `pcrec_compile_driver` is its one EXPORTED FACE, a pure forward
+  share ([MEMFN] R17-b′ B3b: the driver rewrites the RETIRED bit 45,
+  `PCREC_NO_REQ_SET_LEAD`, into the memfn kit's `no-pres-set-lead` option
+  once, before any attempt, clearing the bit, so the alias is the kit deny
+  byte for byte; a `--memfn` string too long to carry it is refused); `pcrec_compile_driver` is its one EXPORTED FACE, a pure forward
   that exists only so `compile_defs.c` can reach it without putting a bare
   unprefixed `compile_driver` in the library's symbol table ([REVW.3]);
   pcrec_ctx_fail error handler; pcrec_default_options defaults; and

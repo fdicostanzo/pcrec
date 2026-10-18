@@ -14,8 +14,14 @@
 # admission's `set-leads` row ([K82], 'S' rarer than the scan pair), so this
 # plant no longer reached a cell there; S2c is the same shape with 'S'
 # commoner than the run's exact scan byte.
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-AIMED: the pre-check's presence
+# decisions are the memfn kit's routed PRES rows (memfn/src/finder.c `fd_pres`,
+# the ports in memfn/src/presence.c) and pcrec lays its parts out from their
+# links, so the plant moves to the kit's line that makes the same choice.
+# Here: the chain's coverage rule marks every whole-run position as proved,
+# a pair position included (intent unchanged).
 SAB_ID="S452-set-rest-marks-masked"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
 SAB_DESC="K65's whole-set half marks every whole-run position's T as already proved, including pair positions, so a set member equal to such a T loses its memchr and a NOMATCH turns into a step give-up"
@@ -24,5 +30,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-
 SAB_REACH_EXPECT="REACH-K65-REST"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;'
-SAB_AFTER='            done[r->whole[k]] = true;   /* SABOTAGE S452: a pair position marked proved */'
+SAB_BEFORE='            if (!t->mask || t->mask[j] == 0xFFu)'
+SAB_AFTER='            if (1)   /* SABOTAGE S452: a pair position marked proved */'

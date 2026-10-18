@@ -148,6 +148,11 @@ void pcrec_memfn_use(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
  * indent, binding `h`'s `s`/`n`) and mf_defined (what its define chose). */
 void pcrec_memfn_locals(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
 void pcrec_memfn_defined(Ctx *cx, uint32_t handle, mf_result *out);
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B3b the presence routed-record, one `MFROUTED PRE` line
+ * per span the kit's routed PRES rows decided (memfn_sites.c). */
+void pcrec_memfn_pres_routed(const mf_site *s, const mf_class *cls);
+#endif
 void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body);
 /* The kit's mf_emit for a site whose one part is an EXPR in a body (the
  * VMRUN door, M1b): checked against row `id` first (C10), no file-scope part

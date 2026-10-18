@@ -12,8 +12,13 @@
 # run_findings_tests.sh §9 compiles K65's repro under a bundle picking `Z` and
 # one picking `@` and requires NOMATCH (exit 1) on every subject lacking
 # either member; the sabotaged tree gives up (exit 3) under one of them.
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-AIMED: the pre-check's presence
+# decisions are the memfn kit's routed PRES rows (memfn/src/finder.c `fd_pres`,
+# the ports in memfn/src/presence.c) and pcrec lays its parts out from their
+# links, so the plant moves to the kit's line that makes the same choice.
+# Here: the same plant as S277's re-aim (a REST member never verified).
 SAB_ID="S316-findings-k65-pick-decides-giveup"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="findings"
 SAB_DESC="the [K65] whole-set pre-check is never emitted, so on a VM route with no DFA front only the picked member is tested and a bundle that moves the pick turns a NOMATCH into a step-budget give-up — a rate switching a give-up, the transition design §6.2a forbids"
 SAB_DOC_FIGURE="findings red on §9 (K65 witness cells exit 3 under the bundle whose pick misses the absent member, and under the default's). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S316."
@@ -21,7 +26,5 @@ SAB_REACH='python3 "$TREE/tests/findings/res_fixtures.py" "$REACH_TMP/r" && "$PC
 SAB_REACH_EXPECT="REACH-FINDINGS-K65-WHOLE-SET-UNDER-BUNDLE"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx)) return;
-    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'
-SAB_AFTER='    return;   /* SABOTAGE S316: the K65 whole-set half never emitted */
-    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'
+SAB_BEFORE='        k->order = FD_ORDER_REST;'
+SAB_AFTER='        k->verify = 0;   /* SABOTAGE S316: the K65 whole-set half never emitted */'

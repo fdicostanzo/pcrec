@@ -12,6 +12,8 @@
 # memfnfinder): every fixture asked then defined compares the two classes and
 # an independent reading of the site (ASK!=DEFINE / PROVEN0); the traced
 # driver's define-time re-ask refuses (§4.5 rule 2's trace-build half).
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-ANCHORED: the query's path now
+# also answers the presence links after the class (intent unchanged).
 SAB_ID="S1018-sn2-query-class-lies"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="memfnfinder"
@@ -20,7 +22,7 @@ SAB_DOC_FIGURE="HAND-MEASURED by lane fdb1: see docs/dev/lanes/fdb1_report.md (t
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    kit_class(row, s, out);
-    return 0;'
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;'
 SAB_AFTER='    kit_class(row, s, out);
     out->proven0[0] ^= 1u;   /* SABOTAGE S1018 */
-    return 0;'
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;'

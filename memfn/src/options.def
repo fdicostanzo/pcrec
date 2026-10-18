@@ -75,3 +75,20 @@ MF_OPT("fd-d1", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the finder table's row D1: a one-member stop outside a VM attempt seek is searched by "
        "the C library; denied, the site takes D1w's table walk (ASSERT_ZERO until it routes "
        "at B2)")
+/* R17-b' B3b (lane b3b; r17b_prime.md rev 3 §1.4, §3.4 [rev3 B7]): the PRES
+ * slot's three denies, one per deniable row of the routed slot (P0 is
+ * undeniable, D158; P9 is the total default). Each MOVES bytes (DIFFER): the
+ * PRES rows are routed, so the deny reaches every pre-check its row decides.
+ * `pres-set-lead` is pcrec's retired `-fno-req-set-lead` (bit 45, KW-11,
+ * Q-WR-12), which lib/pcrec.h's PCREC_NO_REQ_SET_LEAD stays an alias of
+ * (Q-R17P-19). */
+MF_OPT("fd-pres-g1", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's PRES row P2 (G1, ported): a pre-check whose leading check the start "
+       "search already proves is dropped; denied, the pre-check is kept (the pick decides it)")
+MF_OPT("fd-pres-pick", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's PRES row P3 (the pick, ported): one necessary-set member, or the "
+       "run's window, verified; denied, every member and the whole run are verified")
+MF_OPT("pres-set-lead", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the finder table's PRES row P4 (set-leads, ported; pcrec's -fno-req-set-lead until "
+       "B3b): a set member strictly rarer than the run's scan member is tested first; denied, "
+       "the run pre-check alone")

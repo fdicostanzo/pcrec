@@ -214,7 +214,7 @@ static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_ro
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
     gate_in in = { NULL, NULL, t, NULL };
-    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0, 0 };
+    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&rc_table, 0, &in, MF_PH_RUN, art->denies, r, &tc, &why);
     if (i < NROWS) return &rows[i];

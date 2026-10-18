@@ -270,6 +270,13 @@ struct mf_art {
  * mf_pres_ports checks (it reads the presence spans and nothing else). */
 const char *kit_presence_check(const mf_site *s);
 
+#define kit_pres_picks MF_NS(kit_pres_picks)
+/* THE FIVE PICKS' ARITHMETIC (presence.c), over a site whose presence
+ * statement holds (the caller has checked it): mf_pres_ports' answers, read
+ * by the public port and by the routed PRES slot (finder.c fd_pres). */
+void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
+                    const uint8_t *start_set, mf_pres_picks *out);
+
 #define kit_fail MF_NS(kit_fail)
 /* Records the first internal error on the artifact; always returns -1. */
 int kit_fail(mf_art *art, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -428,6 +435,28 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
 #define fd_route MF_NS(fd_route)
 const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
                            const mf_hooks *def, int quiet, const char **row);
+/* fd_route's answer for a routed pick that IS the composer's own walk (D2's
+ * RUN: the nested fn_rows[] walk, its BODY/PREFIX rows and their denies
+ * unchanged, R17-b' B3b): a marker, never rendered or read; the caller walks
+ * the arms and reports the routed row. */
+#define fd_nested_walk MF_NS(fd_nested_walk)
+extern const struct arm fd_nested_walk;
+/* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
+ * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
+ * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
+ * its own), into cls->pres[0..npspan) and cls->npres. 0, or -1 with *why
+ * where no routed row decides a span (a kit build error the caller refuses).
+ * `mode`: FD_PRES_DEFINE, a define's selection (traced phase define, counted
+ * as chosen, one `MFTRACE FD ... slot=PRES` record per span); FD_PRES_QUIET,
+ * the query's own walk (no record); FD_PRES_ASK, the MF_TRACE build's record
+ * of a public query (traced phase SHADOW, never counted as chosen, and the
+ * FD records marked `phase=ask`): the only observation of a site whose every
+ * span P2 drops, which is asked and never defined. A site stating no
+ * presence span answers npres 0. */
+enum { FD_PRES_DEFINE = 0, FD_PRES_QUIET = 1, FD_PRES_ASK = 2 };
+#define fd_pres MF_NS(fd_pres)
+int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
+            mf_class *cls, const char **why);
 
 /* ---- writing to a sink --------------------------------------------------- */
 
@@ -642,6 +671,9 @@ typedef struct {
     int            quiet;       /* the walk records nothing and counts no
                                    reach (mf_ask, R17-b' B1: a pure query
                                    writes one ASK line instead)             */
+    int            ask;         /* the selection decides at the ASK: the
+                                   reach counts its END as `asked`, never
+                                   `chosen` (fd_pres FD_PRES_ASK, b3breach) */
 } gate_tctx;
 
 /* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------
@@ -686,9 +718,11 @@ size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphase
 /* Asks row `i` of table `t` the walk's questions (deny, gate, predicate) on
  * its own: 1 iff it would be CHOSEN. Traced as a one-row selection under
  * `tc`. A PREFIX row's NAMED rungs are re-asked this way (§R4.9.2.3, "the
- * ladder": data, never a walk-on). */
+ * ladder": data, never a walk-on). Where the gate DECLINES the row, `*why`
+ * is its verdict (left as given otherwise: a denied row or a false predicate
+ * declines no field), as `kit_walk`'s; `why` may be NULL. */
 int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
-            uint64_t denies, const void *x, const gate_tctx *tc);
+            uint64_t denies, const void *x, const gate_tctx *tc, gate_verdict *why);
 
 /* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */

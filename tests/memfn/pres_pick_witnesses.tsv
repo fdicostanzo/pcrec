@@ -34,3 +34,20 @@ dominated	0	0	--engine=vm	(a+)+zq
 landmark	1	1	-	(?i)hello world
 landmark	1	0	-	.{0,100}e
 set	1	-	-	a.{0,300}eeee
+# R17-b' B3b (lane b3b): the ROUTED decision against pcrec's own (`r*`
+# records, src/gen/emit_dfa.c `req_pick_shadow`): the links the kit's routed
+# PRES rows answer, which the pre-check's parts are laid out from, against
+# what pcrec's admission and builder decided before B3b. `pcrec` written from
+# the rule: G1 identity on `x+y` (dominated), none on `foo.*bar`; set-leads on
+# `zq.*the`, not under NONE on `x.*abc`; the whole run compared on the route
+# with no DFA scan (a backreference) and not on a DFA route; the window tie
+# to the leftmost.
+rdom	1	1	-	x+y
+rdom	1	0	-	foo.*bar
+rlead	1	1	-	zq.*the
+rlead	1	0	-e utf8	x.*abc
+rhead	1	-	-	a.{1,5}z
+rwin	1	0	-e utf8	(?i:x)abcdefg(?i:y)
+rwhole	1	1	-	(x?)([a-z]+)+eeeeeeee~#~#~#~#\1
+rwhole	1	0	-	x.*abcdefghijk
+rrest	1	-	-	(x?)([a-z]+)+Z.@\1

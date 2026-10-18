@@ -19,7 +19,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   contracts' types (`gate_contract`: `uses` per site kind and phase,
   `serves` per field; `CL_*`/`FLD_*` from fields.def) and the MF_TRACE
   record calls. Never included outside this directory.
-- **compose.c** — K2, the composer (R17-b′ B3a adds `kit_presence_check`, the PRESENCE-statement rules, inside `site_check`): THE KIT'S ONE SELECTION WALK,
+- **compose.c** — K2, the composer (R17-b′ B3a adds `kit_presence_check`, the PRESENCE-statement rules, inside `site_check`; B3b adds the `pres_proof` and MF_USE_ENTRY rules there, the PRESENCE ASK (`ask_sel`: a site stating spans and no part answers its links only), the links into every class (`fd_pres` after `kit_class`, in the query and the define) and `pres_layout_check`, the define's refusal of parts that are not the links' layout): THE KIT'S ONE SELECTION WALK,
   `kit_walk` (R4e'.0, integration.md §R4.9.2.3: per row of the asked slot,
   in table order, the deny, the gate, the row's predicate; first match; a
   slot holding no row is no selection and records nothing), which the arms
@@ -261,7 +261,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `MFTRACE` stderr records and reach counters (format:
   `../docs/trace_format.md`; since N4 the exit lines end with
   `REACH_DROPPED n=N`, the selections a full counter registry could not
-  hold (32 rows since R4e'.0, over the three tables), so an undercount is visible rather than silent; a trace build also asks a declined row's
+  hold (32 rows since R4e'.0, over the three tables), so an undercount is visible rather than silent; since lane b3breach each row's line is `chosen=N asked=A`, `asked` counting the selections decided at the ASK (`gate_tctx.ask`, fd_pres FD_PRES_ASK), apart from `chosen` and from the shadow's other ENDs; a trace build also asks a declined row's
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
@@ -281,7 +281,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   r14b: their trimmed verify, the same kind of option) and `vrun-pad`
   (lane r14p: their padded main-path verify, likewise); the first SCALAR
   row is `precheck-assign-byte` (lane r15b, R-15: the precheck renderer's
-  kept-landmark row, `MF_B_ANY`, live at both SIMD settings), denied
+  kept-landmark row, `MF_B_ANY`, live at both SIMD settings); the finder
+  table's denies follow (B1's five `fd-*`, and B3b's `fd-pres-g1`,
+  `fd-pres-pick` and `pres-set-lead`, the last pcrec's retired bit 45), denied
   through the arm's `opt` and `arm_table`'s accessor (compose.c `arm_opt`).
   Each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
   the same commit and raises the floor in `docs/spec/registry.md` §6. See
@@ -333,11 +335,28 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (OFF variant, the site's stated kind): a routed pick renders through its
   arm (LIBC `pf_memchr[_bounded]`, LIBC_BACK `pf_memchr_back`, WALK
   `pf_walk[_bounded]`), asked on its own and REFUSED if it declines; else the
-  arms walk. `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
+  arms walk. A refusal is ONE path (`define_sel`, b3brev U4): `kit_ask` hands
+  back the declined row's verdict as `kit_walk` does, so the refusal names
+  the routed row (if any) and the declined field (`gate_describe`). `mf_result.row` reports the deciding row, `MFTRACE FDROUTE` its
   trace record. R0/R7's null floor is `kit.eps.streamed.slope` (rev 3 [C4]).
   `compose.c` also carries R-MS6's arm-entry counter (`mf_reach`,
   `mf_reach_table`; a counter statement at each routed site's use, only on
   an art the host asked).
+  **R17-b′ B3b (lane b3b):** D2 and slot PRES's P0, P2, P3, P4, P9 are
+  ROUTED (and locked). `fd_pres` is slot PRES's routed decision, one chain
+  LINK per stated presence span (`pspans`) into `mf_class.pres[]`: P0/P2/
+  P3/P9 first match, P4 (set-leads) an ORDER row asked on its own after the
+  terminal, the links filled from the ports (`kit_pres_picks`) and then the
+  chain order (head 0, run 1, rest 2) and K65's coverage rule; three modes
+  (`FD_PRES_DEFINE` traced and counted, `FD_PRES_QUIET` the query's own,
+  `FD_PRES_ASK` the MF_TRACE record of a public `mf_ask`, phase SHADOW: a
+  pre-check P2 drops is asked and never defined; since lane b3breach its
+  selections carry `gate_tctx.ask`, which gate.c's reach counts in the REACH
+  line's own `asked=N` column, never in `chosen`). `fd_shadow` walks slot
+  FIND only. D2's RUN pick routes to the composer's own walk (the marker
+  `fd_nested_walk`); no pcrec site states a RUN span 0, so it waits for the
+  merged landmark site (R-18). `memfn/docs/finder_history.md` logs the
+  routing and P4's reading.
 - **terms.c** — R17-b's cover search (`mf_set_terms`, lane memfn-r17),
   ported search only: the finder reads a set site's cover SHAPE
   (`r<R>e<E>c<C>`). Its renderers land at B4.
@@ -348,6 +367,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   and window start, set-leads, G1 (byte dominated) and the landmark
   admission. Read by pcrec's `-DPCREC_CAND_TRACE` build only (the MFPICK
   comparator in `src/gen/emit_dfa.c`); no row reads it. Plants S1094..7.
+  Since B3b (lane b3b) its arithmetic is `kit_pres_picks` (kit.h), which the
+  ROUTED PRES slot reads (finder.c `fd_pres`): the ports are what renders.
+  `mf_pres_ports` stays the pure query (S458's re-aimed plant sits here).
 - **formhash.c** — `mf_form_hash`/`mf_form_hash_text` (R-MS3): a form's
   normalized-text identity (comments dropped, whitespace collapsed,
   non-kept identifiers renamed, FNV-1a-64) over canonical instances

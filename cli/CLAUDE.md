@@ -69,6 +69,10 @@ change. **The same wave made `--tune=`'s refusal render its alias MENU from
 `src/core/tune.c`** (`pcrec_tune_names`) rather than hand-typing the same
 five words D103 already made that file's own (`pcrec_enc_names`' shape,
 one surface over).
+[MEMFN] R17-b′ B3b: after the table, `cli_axis_apply` keeps the RETIRED
+spelling `-fno-req-set-lead` (bit 45, no longer an `axes.def` row) as the
+alias it is: it sets `PCREC_NO_REQ_SET_LEAD`, which the library rewrites to
+the memfn kit's `--memfn=no-pres-set-lead`.
 
 **[REVW.4] wave 4 (L11-F4):** `main`'s MODE MUTUAL-EXCLUSION relation is
 written once. `CLI_MODE_TABLE` (beside `CliState`) names the fourteen modes

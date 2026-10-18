@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 16  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 17  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -118,9 +118,25 @@
                            query the host's trace build compares with its own
                            picks). No renderer reads a presence span, so no
                            row is routed by them; no MF_VOCAB move; no pcrec
-                           byte moved. */
-#define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
-                           3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
+                           byte moved. 17 (R17-b' B3b, lane b3b;
+                           r17b_prime.md rev 3 §3.1 row B3b, §1.4, §4.4):
+                           THE PRES ROWS ROUTED: mf_pres_proof gains
+                           `stated` (appended LAST) and moves above
+                           mf_site, which gains `pres_proof` (the start
+                           search's proof, the fact P2 reads; appended
+                           LAST); mf_class.pres[] is ANSWERED (the chain
+                           links of every presence span, by the PRES rows
+                           P0 P2 P3 P4 P9) by mf_ask and mf_defined, and
+                           mf_define REFUSES an ALL_PRESENT site whose
+                           rendered parts are not its links' layout; the
+                           use kind MF_USE_ENTRY (MF_VOCAB 4); the class
+                           carries each link's deciding rows (mf_class.
+                           pres_row/pres_led, MF_CLASS_V 4, appended LAST,
+                           the review fix round). No pcrec byte moved. */
+#define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
+                           and the use kinds. 3 (M7 prep, R-8): MISMATCH /
+                           ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
+                           MF_USE_ENTRY                                     */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
 
@@ -339,7 +355,19 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  * window_contract's S3 retires it (C-11). */
 typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT } mf_site_kind;
-typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
+/* §14.5: how the site's result is consumed. POSITION: read as a position;
+ * DISCARD: compared with its miss value only. ENTRY (MF_VOCAB 4, R17-b' B3b,
+ * Q-R17P-18; r17b_prime.md §3.4, §4.4): the ACTIVATION'S PRESENCE VERDICT,
+ * the ENTRY use of the site the route merges presence into (the DELEG
+ * table's `entry` column says which FIND site that is, or that the route's
+ * site is presence-only). Decided before the first element any later use of
+ * the activation yields (G-2, the verdict precedes the edge attempt: PR-8);
+ * its result is the landmark's first position where the site ASSIGNs it
+ * (MF_H_ASSIGN, the handoff, framing (a): the origin stays pcrec's), else it
+ * is compared with its miss value only. An ALL_PRESENT site's only (refused
+ * elsewhere), and every ALL_PRESENT site that states presence spans states
+ * it. */
+typedef enum { MF_USE_POSITION, MF_USE_DISCARD, MF_USE_ENTRY } mf_use_kind;
 
 /* policy bits (§8.5): every bit arch-neutral. pcrec's ONE bit of SIMD
  * policy is MF_P_PORTABLE_ONLY, set when -fmemfn-simd is not forced. */
@@ -359,6 +387,29 @@ typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
 #define MF_CMT_NONESSENTIAL 1
 
 /* ---- the site description (§8.2 + §14.0) --------------------------------- */
+
+/* THE START SEARCH'S PROOF (R17-b' B3a's port input; a site fact since
+ * MF_SITE_ABI 17, `mf_site.pres_proof`): what the START SEARCH in front of a
+ * presence site's consumer proves of every candidate it yields, as FACTS
+ * about that sibling search (D157: never its form):
+ *   byte    the one byte it proves present in the candidate's window, -1
+ *           for none (no search fronts the consumer, or it proves no single
+ *           byte)
+ *   stop    1 iff that byte is the search's own STOP (a one-byte FIND: the
+ *           candidate's byte, or a context stop's), 0 iff it is a byte
+ *           VERIFIED inside a longer predicate
+ *   run     1 iff the search proves the whole necessary run in the window
+ *   stated  1: the fact is stated (MF_SITE_ABI 17, appended LAST). A site
+ *           carrying presence spans states it; its 0 is UNSTATED and is
+ *           REFUSED there, never read as "byte 0 proven". The ports'
+ *           parameter (mf_pres_ports) does not read it: a NULL proof is
+ *           their "nothing proven". */
+typedef struct {
+    int16_t byte;
+    uint8_t stop;
+    uint8_t run;
+    uint8_t stated;
+} mf_pres_proof;
 
 /* THE SPAN CLASS of a predicate (MF_SITE_ABI 16, R17-b' B3a; r17b_prime.md
  * §4.1, window_contract C-1/C-2): a FACT about what the predicate is.
@@ -590,13 +641,22 @@ typedef struct {
                   h_max"): the handoff's K where the site ASSIGNs the
                   landmark, else 0. An ALL_PRESENT site only (0 elsewhere,
                   refused otherwise).
-       NO RENDERER READS ANY OF THEM at B3a: the pre-check's rendered
-       predicates stay `preds[]`, pcrec's picks; the kit's five-pick ports
-       (mf_pres_ports) read them in the host's trace build only, and the PRES
-       rows route over them at B3b */
+       THE PRES ROWS DECIDE OVER THEM (B3b, finder.c's slot PRES, routed):
+       each span's chain link (mf_class.pres[], answered by mf_ask and
+       mf_defined), from which the rendered parts `preds[]` are LAID OUT,
+       and mf_define refuses a site whose `preds[]` is not its links'
+       layout (compose.c `kit_pres_layout_check`). pcrec lays the parts out
+       from the links it asked, with its own text (the run blocks' names,
+       notes and rankings are its facts) */
     uint64_t        head_max;
     uint16_t        npspan;
     const mf_pred  *pspans;
+    /* THE START SEARCH'S PROOF (MF_SITE_ABI 17, R17-b' B3b; appended LAST):
+       mf_pres_proof above, the fact the PRES row P2 (G1) reads. Stated
+       (`stated` 1) on every ALL_PRESENT site that carries presence spans,
+       refused UNSTATED there; zero (unstated) on every other site, refused
+       otherwise */
+    mf_pres_proof   pres_proof;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -824,20 +884,39 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 3   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
+#define MF_CLASS_V 4   /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
                           3 (MF_SITE_ABI 16, B3a): npres uint16_t over
-                          MF_MAX_PRES 257 */
+                          MF_MAX_PRES 257. 4 (inside MF_SITE_ABI 17, B3b,
+                          unreleased; b3brev U5): pres_row and pres_led,
+                          the deciding PRES rows, appended LAST */
 /* Presence spans one site states (npspan) and one class answers (npres). A
  * SHAPE BOUND, not a tuning constant, DERIVED at B3a (PR-5's unpicked
  * spans): a necessary set has at most 256 members, each its own span, and a
  * pattern has at most one necessary run, so 256 + 1. */
 #define MF_MAX_PRES 257
 /* One presence span's CHAIN-LINK attributes (r17b_prime.md §1.4, R-18's
- * vocabulary, winreq C-8). Answered from B3b; zero before. */
+ * vocabulary, winreq C-8). ANSWERED since B3b (MF_SITE_ABI 17): mf_class.pres[i]
+ * is pspans[i]'s link, decided by the routed PRES rows (finder.c fd_pres):
+ *   verify     1: the span is TESTED over [start + omin, n)
+ *   proven_by  1: the start search's proof stands for the site's leading
+ *              check (P2: every span of the site, or none)
+ *   member     on a SET member span: 0, or (P3) 1 + the index in pspans of
+ *              the set's chosen member, the same on every member span (a
+ *              member is tested iff it is chosen and no run is stated, or
+ *              it leads, P4); on the RUN span: 0, the WHOLE run tested (its
+ *              window first, P0/P9), or 1 + the start of the one window of
+ *              MF_PRES_WINDOW positions tested (P3)
+ *   order      the chain-order key over the TESTED spans, lower first: 0 the
+ *              head (P4's lead in front of a run; the chosen member where no
+ *              run is stated), 1 the run, 2 the rest (ascending byte among
+ *              themselves); 0 on an untested span, read by no one
+ * A member a WHOLE run test already proves (one of its exact positions) is
+ * not tested again. The host lays the pre-check's parts out in that order and
+ * the define holds them to it. Zero (npres 0) on a site stating no span. */
 typedef struct {
     uint8_t verify;     /* 1: the link is verified over [start + omin, n)     */
     uint8_t proven_by;  /* 1: span 0's proof stands for it, no test           */
-    uint8_t member;     /* 0: every member; else 1 + the chosen member        */
+    uint8_t member;     /* 0: every member / the whole run; else 1 + chosen   */
     uint8_t order;      /* the chain-order key: lower is tested first         */
 } mf_link;
 typedef struct {
@@ -850,7 +929,7 @@ typedef struct {
                               byte at offset 0 lies in it; all ones = nothing
                               proven                                          */
     uint32_t includes;     /* MF_INC_* bits the text needs                     */
-    uint16_t npres;        /* presence spans answered (0 before B3b)           */
+    uint16_t npres;        /* presence spans answered (= npspan since B3b)     */
     mf_link  pres[MF_MAX_PRES];
     /* (MF_CLASS_V 2) bitset: every candidate's PREDECESSOR byte (offset -1)
        lies in it; all ones = nothing proven. What a CONTEXT stop proves
@@ -859,6 +938,14 @@ typedef struct {
        FIND whose term reads one byte below the candidate proves it; every
        other site proves nothing here */
     uint8_t  proven_prev[32];
+    /* (MF_CLASS_V 4) THE DECIDING ROWS of pres[i], read by the host's
+       records (b3brev U5: never inferred from a link's shape): pres_row[i]
+       is 1 + the index, in mf_finder_rows' listing (the finder table's
+       order), of the PRES row whose first-match decision is pres[i];
+       pres_led[i] 1 + that index of the ORDER row (P4) that put the member
+       at the head. 0: no row (no link; no order row) */
+    uint8_t  pres_row[MF_MAX_PRES];
+    uint8_t  pres_led[MF_MAX_PRES];
 } mf_class;
 
 /* ---- the result and the per-artifact state (§14.0, §14.8) ---------------- */
@@ -1221,12 +1308,11 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
  * The kit's PORTS of the host's five priced presence picks, run over the
  * presence spans a site STATES (mf_site.pspans) and the compile's analysis
  * object (mf_art_begin's `an`: the frequency kind `byte-rate` at any
- * provenance, its NONE answers where it carries no table). EVIDENCE ONLY at
- * B3a: the host's trace build asks, compares each answer with its own pick
- * and prints the agreement; nothing renders from an answer, and the ports
- * become the PRES rows' picks at B3b. Until then the default libpcrec.a
- * carries memfn/src/presence.c with NO CALLER: only pcrec's trace build
- * (-DPCREC_CAND_TRACE) calls it, so in a shipped build it is dead code.
+ * provenance, its NONE answers where it carries no table). Since B3b the
+ * routed PRES slot reads the same arithmetic (finder.c fd_pres, over the
+ * site's own `pres_proof`), so the ports are what renders; this entry stays
+ * the pure query the host's trace build compares with its own picks (the
+ * KW-8 census on the kit-sourced proof).
  * PURE: like mf_ask, it writes no text,
  * defines no handle and changes no art state. The site need not be defined
  * (pcrec asks with the site it would define, and with one it does not
@@ -1282,11 +1368,6 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
                                pre-check window while the ports are verbatim
                                (pcrec asserts its own equal) */
 #define mf_pres_ports MF_NS(pres_ports)
-typedef struct {
-    int16_t byte;
-    uint8_t stop;
-    uint8_t run;
-} mf_pres_proof;
 typedef struct {
     int16_t set_pick;
     int16_t run_scan;

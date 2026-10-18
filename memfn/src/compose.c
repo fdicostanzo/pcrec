@@ -209,13 +209,14 @@ size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphase
 }
 
 int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
-            uint64_t denies, const void *x, const gate_tctx *tc)
+            uint64_t denies, const void *x, const gate_tctx *tc, gate_verdict *why)
 {
     const gate_contract *mc = NULL;
-    gate_verdict mv = { 0, 0 }, why = { 0, 0 };
+    gate_verdict mv = { 0, 0 }, own = { 0, 0 };
+    if (!why) why = &own;
     gate_trace_sel(tc);
-    if (walk_row(t, i, in, gphases, denies, x, tc, &why, &mc, &mv)) return 1;
-    gate_trace_end(tc, NULL, &why, mc, &mv);
+    if (walk_row(t, i, in, gphases, denies, x, tc, why, &mc, &mv)) return 1;
+    gate_trace_end(tc, NULL, why, mc, &mv);
     return 0;
 }
 
@@ -249,8 +250,9 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
 
 /* The first row the gate passes AND whose predicate holds (kit_walk). NULL
  * when no row serves; `*why` is then the last declined row's verdict (the
- * generic row's, the table's total fallback), whose fields the refusal
- * names. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
+ * generic row's, the table's total fallback; on a ROUTED pick, its arm's
+ * own), whose fields the refusal names; `*row` the routed finder row, or
+ * NULL where the site walks. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
  * mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit), which
  * holds the use hooks at selection time, so a row whose use-time fields the
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
@@ -261,7 +263,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              gate_verdict *why, int quiet, const char **row)
 {
     gate_in in = { s, def, NULL, NULL };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
        ROUTED row renders the table's pick, through the arm that renders it,
        asked on its own (deny, gate, predicate); a pick its arm does not
@@ -270,10 +272,11 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     const char *rid = NULL;
     const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
     *row = rid;
-    if (rid) {
+    if (rid && ra != &fd_nested_walk) {
         for (size_t i = 0; ra && i < NARMS; i++)
             if (arms[i] == ra)
-                return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc) ? ra : NULL;
+                return kit_ask(&arm_table, i, &in, gphases, art->denies, &in, &tc, why)
+                       ? ra : NULL;
         return NULL;
     }
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
@@ -497,15 +500,31 @@ const char *kit_presence_check(const mf_site *s)
     for (unsigned i = 0; !why && s->preds && i < s->npred; i++)
         why = pres_pred_clear(&s->preds[i]);
     if (why) return why;
+    const mf_pres_proof *pf = &s->pres_proof;
+    int proof_zero = !pf->byte && !pf->stop && !pf->run && !pf->stated;
     if (s->op != MF_OP_ALL_PRESENT) {
         if (s->npspan || s->pspans)
             return "`pspans` is for an ALL_PRESENT site only (the pre-check composite)";
         if (s->head_max) return "`head_max` is for an ALL_PRESENT site only";
+        if (!proof_zero) return "`pres_proof` is for an ALL_PRESENT site only";
         return NULL;
     }
     if (s->npspan > MF_MAX_PRES) return "npspan > MF_MAX_PRES";
     if (s->npspan && !s->pspans) return "`npspan` without `pspans`";
     if (!s->npspan && s->pspans) return "`pspans` without `npspan`";
+    /* THE START SEARCH'S PROOF (MF_SITE_ABI 17, R17-b' B3b): a fact P2
+       reads, stated wherever presence spans are, and nowhere else; its
+       UNSTATED zero is refused, never read as "byte 0 proven" */
+    if (s->npspan && pf->stated != 1)
+        return pf->stated ? "`pres_proof.stated` is not 0 or 1"
+                          : "a site stating presence spans leaves `pres_proof` UNSTATED "
+                            "(`stated` 0: P2 reads it, MF_SITE_ABI 17)";
+    if (!s->npspan && !proof_zero)
+        return "`pres_proof` is stated only where presence spans are (`pspans`)";
+    if (s->npspan && (pf->byte < -1 || pf->byte > 255 || pf->stop > 1 || pf->run > 1 ||
+                      (pf->byte < 0 && (pf->stop || pf->run))))
+        return "`pres_proof` outside its facts (`byte` -1..255; `stop`, `run` 0 or 1, "
+               "and 0 where no byte is proven)";
     if (s->head_max && s->handoff != MF_H_ASSIGN)
         return "`head_max` is stated only where the site ASSIGNs its landmark";
     unsigned nrun = 0;
@@ -546,13 +565,113 @@ const char *kit_presence_check(const mf_site *s)
     return NULL;
 }
 
+/* THE PRESENCE LAYOUT (R17-b' B3b; r17b_prime.md §1.4, §1.6): the rendered
+ * parts an ALL_PRESENT site's routed PRES links lay out, in chain order:
+ *   the HEAD member, one SET term of its byte (REQUIRED, except a LEAD in
+ *   front of a stated run, which carries its span's need: speed only on a
+ *   DFA-scanned route, §14.5);
+ *   the RUN, where verified: its WINDOW (P3's, at the ports' window start;
+ *   FUNC part 1, its scan at the ports' scan position), then the WHOLE run
+ *   where the link keeps it whole and it is longer than the window (FUNC
+ *   part 2), each one RUN term, REQUIRED;
+ *   the REST, every other verified member, ascending byte, REQUIRED.
+ * NULL iff `s->preds` is exactly that, else why not. A ROUTED row's pick is
+ * what renders (§1.6): the host lays the parts out from the links it asked,
+ * with its own text (the run blocks' names, notes and rankings), and this
+ * holds its parts to the kit's decision. */
+static int part_is_byte(const mf_pred *p, int b, mf_need need)
+{
+    if (p->nterm != 1 || p->term[0].kind != MF_T_SET || p->term[0].offset || p->fn_ref ||
+        p->need != need)
+        return 0;
+    for (unsigned x = 0; x < 256; x++)
+        if ((p->term[0].set[x >> 3] >> (x & 7) & 1) != ((int)x == b)) return 0;
+    return 1;
+}
+
+static int part_is_run(const mf_pred *p, const mf_term *whole, unsigned from, unsigned len,
+                       unsigned scan, uint32_t fn_ref)
+{
+    const mf_term *t = &p->term[0];
+    if (p->nterm != 1 || t->kind != MF_T_RUN || t->offset || p->fn_ref != fn_ref ||
+        p->need != MF_REQUIRED || p->plan_hint != 0 || p->plan_pos != scan - from ||
+        t->run_len != len)
+        return 0;
+    for (unsigned j = 0; j < len; j++) {
+        unsigned m = t->mask ? t->mask[j] : 0xFFu;
+        unsigned wm = whole->mask ? whole->mask[from + j] : 0xFFu;
+        if (t->run[j] != whole->run[from + j] || m != wm) return 0;
+    }
+    return 1;
+}
+
+static int span_byte(const mf_pred *p)
+{
+    for (unsigned x = 0; x < 256; x++)
+        if (p->term[0].set[x >> 3] >> (x & 7) & 1) return (int)x;
+    return -1;
+}
+
+static const char *pres_layout_check(const mf_art *art, const mf_site *s, const mf_class *c)
+{
+    mf_pres_picks pk;
+    kit_pres_picks(art, s, &s->pres_proof, NULL, &pk);
+    int run = -1, head = -1;
+    for (unsigned i = 0; i < s->npspan; i++) {
+        if (s->pspans[i].term[0].kind == MF_T_RUN) run = (int)i;
+        else if (c->pres[i].verify && c->pres[i].order == 0) head = (int)i;
+    }
+    unsigned k = 0;
+    if (head >= 0) {
+        mf_need need = run >= 0 ? (mf_need)s->pspans[head].need : MF_REQUIRED;
+        if (k >= s->npred || !part_is_byte(&s->preds[k], span_byte(&s->pspans[head]), need))
+            return "its first part is not the HEAD member its presence links lead with";
+        k++;
+    }
+    if (run >= 0 && c->pres[run].verify) {
+        const mf_term *w = &s->pspans[run].term[0];
+        unsigned at = c->pres[run].member ? c->pres[run].member - 1u : (unsigned)pk.run_window;
+        unsigned len = w->run_len - at < MF_PRES_WINDOW ? w->run_len - at : MF_PRES_WINDOW;
+        if (pk.run_scan < (int)at || pk.run_scan >= (int)(at + len))
+            return "the run's scan position lies outside its window";
+        if (k >= s->npred || !part_is_run(&s->preds[k], w, at, len, (unsigned)pk.run_scan, 1))
+            return "its run part is not the WINDOW its presence link verifies (bytes, mask, "
+                   "the scan position or the FUNC part)";
+        k++;
+        if (c->pres[run].member == 0 && w->run_len > len) {
+            if (k >= s->npred ||
+                !part_is_run(&s->preds[k], w, 0, w->run_len, (unsigned)pk.run_scan, 2))
+                return "its whole-run part is not the WHOLE run its presence link verifies";
+            k++;
+        }
+    }
+    for (unsigned x = 0; x < 256; x++)
+        for (unsigned i = 0; i < s->npspan; i++) {
+            if ((int)i == run || !c->pres[i].verify || c->pres[i].order != 2 ||
+                span_byte(&s->pspans[i]) != (int)x)
+                continue;
+            if (k >= s->npred || !part_is_byte(&s->preds[k], (int)x, MF_REQUIRED))
+                return "its rest parts are not the REST members its presence links verify, "
+                       "in ascending byte order";
+            k++;
+        }
+    if (k != s->npred)
+        return k ? "it renders a part no presence link verifies"
+                 : "no presence link verifies a span (every span proven or dropped): the "
+                   "host defines no pre-check there";
+    return NULL;
+}
+
 static const char *site_check(const mf_site *s)
 {
     const char *why = NULL;
     uint32_t kinds = 0;
     if (!in_enum(s->form, MF_FORM_FUNC)) return "form outside mf_form";
     if (!in_enum(s->empty, MF_EMPTY_AT_N)) return "empty outside mf_empty";
-    if (!in_enum(s->use, MF_USE_DISCARD)) return "use outside mf_use_kind";
+    if (!in_enum(s->use, MF_USE_ENTRY)) return "use outside mf_use_kind";
+    if (s->use == MF_USE_ENTRY && s->op != MF_OP_ALL_PRESENT)
+        return "`use` ENTRY is the presence verdict's: an ALL_PRESENT site only "
+               "(MF_VOCAB 4)";
     if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
     if (s->end_back > 1) return "end_back is not 0 or 1";
     if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
@@ -716,14 +835,28 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
 static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
                    unsigned gphases, mf_class *out)
 {
+    const char *why;
     memset(out, 0, sizeof *out);
     if (art->err[0] || s->abi != MF_SITE_ABI || site_check(s) || s->denies != art->denies)
         return -1;
+    /* THE PRESENCE ASK (R17-b' B3b, §1.4): the host lays a pre-check's parts
+       out from its presence links, so it asks before any part exists (an
+       ALL_PRESENT site stating spans and no `preds`). No row renders such a
+       site: the class answers the links, and nothing else (exists 0, every
+       proof all ones: a search text is not yet decided) */
+    if (s->op == MF_OP_ALL_PRESENT && s->npspan && !s->npred) {
+        out->v = MF_CLASS_V;
+        memset(out->proven0, 0xFF, sizeof out->proven0);
+        memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
+        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ? -1 : 0;
+    }
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
     if (!row) return -1;
     kit_class(row, s, out);
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
+    if (s->npspan && pres_layout_check(art, s, out)) return -1;
     return 0;
 }
 
@@ -733,6 +866,14 @@ int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class
 #ifdef MF_TRACE
     fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u\n",
             art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes);
+    /* R17-b' B3b: a presence site's links, recorded (phase SHADOW: never
+       counted as chosen); a site whose every span P2 drops is asked and never
+       defined, so this is its only observation */
+    if (!rc && out->npres) {
+        mf_class rec;
+        const char *why;
+        fd_pres(art, art->nsites + 1, site, FD_PRES_ASK, &rec, &why);
+    }
 #endif
     return rc;
 }
@@ -757,17 +898,20 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
-    if (!row && rid)
-        return kit_fail(art, "mf_define: the finder row %s's routed pick does not serve "
-                        "this site (its arm declines it)", rid);
     if (!row) {
-        /* the generic row applies to every site, so only the gate can leave
-           a site with no row: name what it declined (ruling (d)) */
+        /* ONE refusal (ruling (d)), walked or routed: it names the routed
+           finder row where one decided the site, and what the gate declined
+           (the walk's last row, or the routed pick's own arm). The generic
+           row applies to every site, so on a walk only the gate can leave a
+           site with no row; a routed arm can also be DENIED or not apply,
+           which declines nothing and so names no field */
         gate_in in = { s, def, NULL, NULL };
-        char f[200];
+        char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
-        return kit_fail(art, "mf_define: no row serves this site: %s",
-                        f[0] ? f : "(no row applies; the generic row must)");
+        if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
+        return kit_fail(art, "mf_define: no row serves this site%s: %s", r,
+                        f[0] ? f : rid ? "(its arm is denied or does not apply)"
+                                       : "(no row applies; the generic row must)");
     }
 
     if (art->nsites == art->cap) {
@@ -805,6 +949,17 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
                 art->trace_id, h, rid, row->ct->row);
 #endif
+    /* R17-b' B3b: the presence links, by the routed PRES rows, and the
+       rendered parts held to their layout (§1.6: a routed row's pick is what
+       renders) */
+    {
+        const char *pw = NULL;
+        if (fd_pres(art, h, s, FD_PRES_DEFINE, &r->cls, &pw))
+            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);
+        if (s->npspan && (pw = pres_layout_check(art, s, &r->cls)))
+            return kit_fail(art, "mf_define: the pre-check's parts are not its presence "
+                            "links' layout (r17b_prime.md §1.4): %s", pw);
+    }
     if (s->decl_point) {
         int oom = 0;
         r->def_s = art_copy(art, def ? def->s : NULL, &oom);
@@ -856,7 +1011,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
     gate_in in = { &r->site, use, NULL, NULL };
-    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0 };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);

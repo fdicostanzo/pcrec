@@ -9,8 +9,15 @@
 # moves NOMATCH -> PCREC_ERR_STEPS. The `harness` arm is aimed at
 # tests/base/k65_precheck_whole_set.rxt and must go RED; `prechecks` §5.8 is
 # the structural second detector.
+# [MEMFN] R17-b' B3b (lane b3b, 2026-10-18) RE-AIMED: the pre-check's presence
+# decisions are the memfn kit's routed PRES rows (memfn/src/finder.c `fd_pres`,
+# the ports in memfn/src/presence.c) and pcrec lays its parts out from their
+# links, so the plant moves to the kit's line that makes the same choice.
+# Here: a REST member (K65's whole set: P0 on the no-DFA route verifies every
+# member, the coverage rule keeps the ones the run does not prove) is never
+# verified (intent unchanged: the whole-set half never emitted).
 SAB_ID="S277-precheck-whole-set-removed"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="prechecks harness"
 SAB_HARNESS_TARGET="tests/base/k65_precheck_whole_set.rxt"
 SAB_DESC="the [K65] whole-set half of the necessary-byte pre-check is never emitted, so a VM artifact with no DFA scan tests only the picked member and a subject lacking another member gives up on the step budget where the answer is NOMATCH — the pick-dependent give-up K65 recorded"
@@ -20,7 +27,5 @@ SAB_DOC_FIGURE="tests/base/k65_precheck_whole_set.rxt is the answer-level detect
 SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+Z.@\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "static const unsigned char rq_set\[\] = { 64 };" "$REACH_TMP/o.c" && echo REACH-K65-WHOLE-SET-EMITTED'
 SAB_REACH_EXPECT="REACH-K65-WHOLE-SET-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx)) return;
-    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'
-SAB_AFTER='    return;   /* SABOTAGE S277: the K65 whole-set half never emitted */
-    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte'
+SAB_BEFORE='        k->order = FD_ORDER_REST;'
+SAB_AFTER='        k->verify = 0;   /* SABOTAGE S277: the K65 whole-set half never emitted */'
