@@ -91,7 +91,8 @@ rc=$?
 part pr11 "$WORK/pr11.log"
 [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/pr11.log")" -gt 0 ] || { echo "FAIL: run_pr11 exited $rc with no failed check"; tf=$((tf + 1)); }
 # R17-b' B3b: the routed presence at the pcrec level (the bit-45 alias, Q-19;
-# PR-8's order on the no-DFA route; tests/memfn/run_presence.sh)
+# PR-8's order with its negative control; the three denies' answers;
+# tests/memfn/run_presence.sh)
 TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_presence.sh" "$ROOT" > "$WORK/presence.log" 2>&1
 rc=$?
 part presence "$WORK/presence.log"

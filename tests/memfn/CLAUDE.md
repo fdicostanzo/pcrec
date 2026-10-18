@@ -509,8 +509,13 @@ slot=PRES` record; P2's from the presence ask, phase SHADOW) with PLACEHOLDER
 floors until the heavy N2 census; D2 stays `pending-site:R-18`.
 **run_presence.sh** (part `presence` of run_finder.sh) holds the bit-45
 ALIAS (`-fno-req-set-lead` == `--memfn=no-pres-set-lead` != default, and
-composing with another kit option; Q-19) and PR-8's order on the no-DFA
-route (the verdict before the first attempt).)
+composing with another kit option; Q-19), PR-8's order on the no-DFA
+route and the DFA's attempt route (every line of the verdict before the first
+attempt, with a planted-reorder NEGATIVE CONTROL per witness), and (b3brev
+finding 2) the three new denies' ANSWERS: the harness over
+tests/litscan/presence_deny.rxt and K65/K66's files under each deny, and
+handoff.rxt under `--memfn=no-fd-pres-pick`, with a reach floor of 8 patterns
+P9 moves.)
 
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
   TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
