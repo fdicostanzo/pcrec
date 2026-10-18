@@ -17,5 +17,9 @@ The pieces `../b3b_report.md` cites; the lane's voice, historical once merged.
   rows, and the rows the branch adds or re-aims.
 - `mech_rows_judged.txt` — the first list's judged kit/test/suite rows (103 ids, its bare `S`
   removed), `derive_rows.sh`'s part (c).
+- `reach_chain.sh` — lane b3breach's OWED heavy pair (2026-10-18): the full N2 census + `n2_report.py
+  --floors --propose` and the FULL axes-pres pass, in its own `git worktree add --detach` scratch at a
+  pinned tip, every step bounded by gnutimeout and a 00:25 deadline; verdict = the last line of its
+  `chain.status`, `^CHAIN (COMPLETE|FAILED)`.
 - `mech_score.sh` — the scorer (copied from the b3a heavy slot): verdict from a row's own
   COMPLETE trailer against its declared SAB_EXPECT.

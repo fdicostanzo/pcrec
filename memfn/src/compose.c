@@ -263,7 +263,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              gate_verdict *why, int quiet, const char **row)
 {
     gate_in in = { s, def, NULL, NULL };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
        ROUTED row renders the table's pick, through the arm that renders it,
        asked on its own (deny, gate, predicate); a pick its arm does not
@@ -1011,7 +1011,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
     gate_in in = { &r->site, use, NULL, NULL };
-    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0 };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);

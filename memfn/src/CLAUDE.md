@@ -261,7 +261,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `MFTRACE` stderr records and reach counters (format:
   `../docs/trace_format.md`; since N4 the exit lines end with
   `REACH_DROPPED n=N`, the selections a full counter registry could not
-  hold (32 rows since R4e'.0, over the three tables), so an undercount is visible rather than silent; a trace build also asks a declined row's
+  hold (32 rows since R4e'.0, over the three tables), so an undercount is visible rather than silent; since lane b3breach each row's line is `chosen=N asked=A`, `asked` counting the selections decided at the ASK (`gate_tctx.ask`, fd_pres FD_PRES_ASK), apart from `chosen` and from the shadow's other ENDs; a trace build also asks a declined row's
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
@@ -350,7 +350,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   chain order (head 0, run 1, rest 2) and K65's coverage rule; three modes
   (`FD_PRES_DEFINE` traced and counted, `FD_PRES_QUIET` the query's own,
   `FD_PRES_ASK` the MF_TRACE record of a public `mf_ask`, phase SHADOW: a
-  pre-check P2 drops is asked and never defined). `fd_shadow` walks slot
+  pre-check P2 drops is asked and never defined; since lane b3breach its
+  selections carry `gate_tctx.ask`, which gate.c's reach counts in the REACH
+  line's own `asked=N` column, never in `chosen`). `fd_shadow` walks slot
   FIND only. D2's RUN pick routes to the composer's own walk (the marker
   `fd_nested_walk`); no pcrec site states a RUN span 0, so it waits for the
   merged landmark site (R-18). `memfn/docs/finder_history.md` logs the

@@ -909,7 +909,7 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
                 q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL
                                                                  : CL_N_REQUIRED;
                 gate_in in = { s, NULL, NULL, &q.ff };
-                gate_tctx tc = { art, "fd", handle, MF_PH_SHADOW, &in, 1, 0 };
+                gate_tctx tc = { art, "fd", handle, MF_PH_SHADOW, &in, 1, 0, 0 };
                 fd_decision d;
                 fd_decide(&q, slot, &tc, &d);
                 put_decision(&q, slot, &d);
@@ -963,7 +963,7 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     }
     q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     gate_in in = { s, def, NULL, &q.ff };
-    gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet };
+    gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &tc, &d);
     if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) return NULL;

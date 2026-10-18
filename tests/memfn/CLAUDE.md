@@ -455,6 +455,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
      made by the traced pcrec and build/pcrec, byte-identical;
   D. row_floors.tsv's shape (rows, values); PLACEHOLDER cells print as
      UNREACHED, never as a pass;
+  C'. (lane b3breach) THE ASK: a row whose signature carries ` phase=ask`
+     (P2) is held to `asked >= 1` on its witness and `asked == 0` on its
+     control; in every traced process each `fd` row's REACH `asked` equals
+     its `phase=ask` FD records (`P3+P4` counts both), with a nonzero floor;
+     and n2_report.py's floors_verdict is planted against the real TSVs (an
+     ask-decided row asked 0 reads UNREACHED even with `chosen` > 0; an
+     `asked` with no record reads ASK MISMATCH). Plants red-then-green:
+     `docs/dev/lanes/b3b_report.md` §14.
   E. (R4h prep) the ADVANCE hooks' shape classes: each `adv-cls-*` gate
      case (and the two counter cases) runs alone under the traced kit and
      its `MFTRACE REACH ... field=F class=C` lines must equal
