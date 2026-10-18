@@ -12,7 +12,7 @@
 # front) under the default (`byte`) and under fire-c3: the sabotaged tree
 # gives up (exit 3) where NOMATCH is the answer.
 SAB_ID="S317-findings-g1-elides-without-scan"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="findings"
 SAB_DESC="G1's no-scan guard (p < 0 -> keep the pre-check) is replaced by a rate comparison, so on a VM route with no DFA in front the whole-window pre-check is dropped wherever a byte-rate exists and the backtracker gives up on subjects the pre-check alone proved NOMATCH — a rate deciding a give-up"
 SAB_DOC_FIGURE="findings red on §9 (K65 witness cells exit 3 under the default's byte-rate and under fire-c3, both encodings for the bundles). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S317."
@@ -20,5 +20,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-
 SAB_REACH_EXPECT="REACH-FINDINGS-G1-NO-SCAN-KEEPS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (p < 0) return false;'
-SAB_AFTER='    if (p < 0) return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), q, q);   /* SABOTAGE S317 */'
+# RE-AIMED 2026-10-18 (lane b3bmtri, [MEMFN] R17-b' B3b): G1 IS THE KIT'S PRES
+# row P2 now (memfn/src/presence.c `kit_pres_picks`, the P2 block, read by
+# finder.c `fd_pres` as SF_PROVEN); pcrec's `req_byte_dominated_by` survives
+# only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
+# so the old plant landed on code no default artifact reads. The plant moves
+# to the same conjunct of the port; intent and detector unchanged.
+SAB_BEFORE='        if (!proof || proof->byte < 0) dom = 0;'
+SAB_AFTER='        if (!proof || proof->byte < 0) dom = rate && lead >= 0 && rate[lead] <= rate[lead];   /* SABOTAGE S317 */'
