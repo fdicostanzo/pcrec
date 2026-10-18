@@ -75,7 +75,7 @@ def probe(r):
     if os.path.exists(KVOUT):
         for ln in open(KVOUT, encoding="latin-1"):
             f = ln.rstrip("\n").split("\t")
-            if len(f) >= 25 and f[0] == "SITE":
+            if len(f) >= 24 and f[0] == "SITE":
                 sites.append(f)
     if sites:   # the size ladder re-emits: keep the LAST attempt's sites
         last = max(int(f[2]) for f in sites)
@@ -158,7 +158,7 @@ def controls(r, A, L, wk, rnd):
     if wk:
         for w in sample(L["S"][:wk], 6, rnd):
             res["c3"] += 1
-            tail = bytes([rnd.randrange(256)])
+            tail = bytes([rnd.randrange(0x80) if r["enc"] == "utf8" else rnd.randrange(256)])
             if P.match_len(w + tail) != wk:
                 res["c3f"] += 1
                 res.setdefault("c3w", (w + tail).hex())
@@ -281,8 +281,8 @@ def analyse(r, cfg, rnd):
             other[sid] = other.get(sid, 0) + 1
             continue
         kind = f[7]
-        pt, ps, sp = terms(f[15]), preds(f[17]), preds(f[19])
-        head = int(f[20])
+        pt, ps, sp = terms(f[14]), preds(f[16]), preds(f[18])
+        head = int(f[19])
         handoff = int(f[6])
         if sid == "PRE":
             origin = "landmark" if handoff == H_ASSIGN and head > 0 else "presence"
@@ -290,13 +290,13 @@ def analyse(r, cfg, rnd):
             origin = "after-nl"
         else:
             origin = "start"
-        P0 = kvdfa.hexset(f[23])
-        Pp = kvdfa.hexset(f[24])
+        P0 = kvdfa.hexset(f[22])
+        Pp = kvdfa.hexset(f[23])
         row = dict(pop=r["pop"], id=r["id"], cfg=cfg, enc=r["enc"], engine=rec["engine"], door=f[1],
                    site=sid, op=f[4], kind=kind if kind != "UNSTATED" or sid != "OFS" else "DFA_SCAN",
                    origin=origin, sent=sent(pt) if pt else "|".join(sent(t) for _, t in ps),
-                   pred_need=f[11], npres=f[18], head_max=head, proven0=len(P0), proven_prev=len(Pp),
-                   ask_rc=f[21])
+                   pred_need=f[10], npres=f[17], head_max=head, proven0=len(P0), proven_prev=len(Pp),
+                   ask_rc=f[20])
         if L and origin in ("start", "after-nl") and L["S"]:
             S0 = L["S"][0]
             row["p0rel"] = ("none" if len(P0) == 256 else "exact" if P0 == S0 else
@@ -347,7 +347,11 @@ def main():
         if r["enc"] == "byte":
             cfgs.append(("utf8", dict(r, enc="utf8")))
         for cfg, rr in cfgs:
-            rec, sites = analyse(rr, cfg, rnd)
+            try:
+                rec, sites = analyse(rr, cfg, rnd)
+            except Exception as ex:   # counted, never silent (K35)
+                rec, sites = dict(pop=rr["pop"], id=rr["id"], cfg=cfg, enc=rr["enc"],
+                                  icase=int(rr["icase"]), status="error: %r" % (ex,)), []
             rec["pat"] = rr["pat"].hex()
             pf.write(json.dumps(rec) + "\n")
             for s in sites:
