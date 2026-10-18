@@ -655,3 +655,53 @@ repetition for P3: 3.29M shadow vs 243k define); counting pcrec's
 does not set); re-declaring P2's reach as non-`pcrec` (it IS reached, and the
 floor would stop guarding it). Owner: the kit (gate.c/compose.c +
 n2_report.py), then N2 re-run for the PRES floors.
+
+## §14 ask-reach + final N2/axes-pres (b3breach)
+
+Lane b3breach (2026-10-18, opus). It implements the kit manager's ruling on §13's RED B (P2 UNREACHED by construction) and main's condition on it: two failing-direction controls, each shown red and then green. The lane tip before was 67564d298 and the code tip is a35ca8f90. No pcrec artifact byte moved; REACH is trace output only.
+
+**The change.** A row decided at the ASK is reached when ASKED.
+- `gate_tctx` gains `ask` (memfn/src/kit.h). Only `fd_pres` in FD_PRES_ASK mode sets it (finder.c). That covers its terminal walk and P4's own `kit_ask`, which share the tctx.
+- gate.c's reach counts such an END in `reach_asked[]`, never in `chosen`. The other SHADOW ENDs (`fd_shadow`'s per-slot/layer repeats) stay uncounted.
+- Every REACH row line now reads `MFTRACE REACH table=T row=R chosen=N asked=A` (memfn/docs/trace_format.md).
+- `memfn/tests/run_g2.sh`'s three REACH regexes accept the column.
+- n2_report.py parses `asked=` (absent means KeyError, never 0) and the `MFTRACE FD ... phase=ask` records. Its §4 table gains an `asked` column.
+- `floors_verdict` holds a row whose rows.tsv SIGNATURE carries ` phase=ask` on `asked`, and every other row on `chosen`. That puts a `held on` column in the §7 table and `asked 0` in the UNREACHED text. The row set comes from the signature column, never a name list.
+- Each row's `asked` must equal its ask records, with `row=` split on `+` so `P3+P4` counts both. The summary gains `ask_mismatch=M`, and each mismatch is a floor failure.
+- P2's rows.tsv signature is extended through ` phase=ask` (`row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT routed=1 phase=ask`). P2's reach is NOT re-declared (still `pcrec`).
+- Witness (traced pcrec, `x+y`): `REACH table=fd row=P2 chosen=0 asked=18` with 18 `phase=ask` P2 records. `a.{1,5}z`: P3 chosen=2 asked=24, 24 records. `(?:user|USER)[ \t]*=`: P3 asked=46, P4 asked=23, against 23 `P3+P4` records.
+
+**The controls** live in tests/memfn/rows_check.py, run by `make test-memfn-rows`:
+- C' (1): an ask-decided row's witness is asked >= 1 and its control asked 0.
+- C' (2): in every traced process the run makes (2,280 (row, process) comparisons, 61 nonzero), each `fd` row's `asked` equals its `phase=ask` FD records. The records are printed at the ask's decision point (`fd_pres`), the counter in gate.c. There is a nonzero floor.
+- The judge plants: n2_report's `floors_verdict` over a synthetic FULL aggregate against the real TSVs. It must read not-UNREACHED when consistent, UNREACHED (`asked 0`) when the ask row is never asked even with `chosen` 10^6, and ASK MISMATCH when `asked` has no record behind it.
+
+**Red, then green.** Each plant was applied to the tree, `bash tests/memfn/run_rows.sh` run (the file the suite runs), then restored. Logs are under worktrees/memfn-slot/b3b/reach/plants/.
+
+| plant | what it breaks | verdict |
+|---|---|---|
+| p1_never_asked: finder.c's ask flag forced 0 | (1) a row selectable at the ask but never asked | rc 1, 63 FAIL; first `fd/P2 witness: fd/P2 asked 0 (want >= 1)`, plus P3/P4 ask mismatches |
+| p2_shadow_as_asked: gate.c counts every SHADOW END as asked | (2) an `asked` count with no FD_PRES_ASK behind it | rc 1, 42 FAIL, e.g. `fd/D1 asked=1 but 0 phase=ask FD records` (fd_shadow's FIND ENDs) |
+| p3_judge_on_chosen: n2_report's ask set emptied (held on chosen) | the judge's half of (1) | rc 1, 2 FAIL: `judge plant asked=0: fd/P2 reads 'PLACEHOLDER', not UNREACHED` |
+| p4_judge_no_mismatch: n2_report's mismatch test removed | the judge's half of (2) | rc 1, 1 FAIL: `judge plant asked-without-record ... ask_mismatch=0` |
+
+Green on the restored tree: rows 244/0.
+
+**Light verdicts.** All were pinned `taskset -c 12-15` at -j4, at a35ca8f90 unless noted. Logs are in worktrees/memfn-slot/b3b/reach/light/.
+- make strict: the first run (f0e41cee0) failed with `-Wmissing-field-initializers` on the eight positional `gate_tctx` initializers. Fixed by an explicit `0` (a35ca8f90); then rc 0.
+- test-memfn-rows: 244 passed, 0 failed.
+- test-memfn-finder: 995 passed, 0 failed.
+- G2 quick (`make test-memfn-g2`): 71,217,801 passed, 0 failed, with rows (d) on the new REACH format.
+- `python3 -I scripts/m6read_check_sab_anchors.py`: all 822 rows / 849 sites resolve, so no anchor moved.
+- `bash tests/codegen/run_codegen_tests.sh`: 331 passed, 0 failed.
+- emit_sweep against 67564d298, `--every 20` (light sample): 22 of 22 streams, movers 0, asymmetric 0. The self-check passed.
+
+**The chain** is armed detached at a35ca8f90, launched 2026-10-18T17:21:18-04:00.
+- Script: docs/dev/lanes/b3b/reach_chain.sh, copied to worktrees/memfn-slot/b3b/reach/reach_chain.sh.
+- Scratch worktree: worktrees/memfn-slot/b3b/reach/wt, created by `git worktree add --detach`.
+- (a) The full N2 census as heavy3 step 5 runs it (OUT `reach/n2`, JOBS=16), then `n2_report.py ... --floors tests/memfn/row_floors.tsv --propose`. Log: `reach/logs/n2_propose.log`.
+- (b) The FULL axes-pres pass (the three PRES denies, every row, no MEMFN_EVERY; rc and `^AXIS FAIL` both honoured).
+- Every step is bounded by gnutimeout and by a 00:25 deadline.
+- Status file: worktrees/memfn-slot/b3b/reach/chain.status. The verdict is its LAST line, `^CHAIN (COMPLETE|FAILED)`.
+- Expected N2 line: `floor_fail=0 floor_placeholder=5 ... ask_mismatch=0`, with P0 P2 P3 P4 P9 PLACEHOLDER. P2's `propose` line is now floor(0.9 x asked).
+- The verdict is OWED; a fresh agent reads it.
