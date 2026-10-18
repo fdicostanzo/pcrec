@@ -1398,6 +1398,26 @@ static int fd_render(const char *dir, const char *name, const mf_site *s,
     return 0;
 }
 
+/* R17-b' B3b: a presence site with no part yet (every span P2 drops is
+ * never defined) is ASKED: its links, `LINK<TAB>i<TAB>v p m o`, one per span
+ * (the traced kit records them too, `MFTRACE FD ... phase=ask`). */
+static int fd_ask_links(const char *name, const mf_site *s)
+{
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, NULL, NULL);
+    mf_hooks h = { .start = "search_from" };
+    mf_class c;
+    if (mf_ask(art, FXW(s), &h, &c)) {
+        fprintf(stderr, "%s: the kit refused the ask\n", name);
+        printf("REFUSED\t-\n");
+        return 1;
+    }
+    for (unsigned i = 0; i < c.npres; i++)
+        printf("LINK\t%u\tv%dp%dm%do%d\n", i, c.pres[i].verify, c.pres[i].proven_by,
+               c.pres[i].member, c.pres[i].order);
+    return 0;
+}
+
 /* The named site (fd fixtures and --fd-site). */
 static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
 {
@@ -1435,16 +1455,66 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         s->empty = MF_EMPTY_MISS;
         s->on_miss_leaves = 1;
         s->body = MF_BODY_ONESHOT;
-    } else if (!strcmp(name, "pre-req")) {
-        p_byte(&p[0], 'q');
-        p[0].need = p[0].term[0].need = MF_REQUIRED;
-        *s = pre_site(p, 1, -1);
+    } else if (!strncmp(name, "pre-", 4)) {
+        /* R17-b' B3b: the presence sites as pcrec states them since
+           MF_SITE_ABI 17 (B3a's spans, the start search's proof), each with
+           the parts its routed PRES links lay out (compose.c
+           pres_layout_check): `pre-req` one REQUIRED member (P0: verified,
+           at the head); `pre-opt` one OPTIONAL member (P3: the pick,
+           verified); `pre-lead` an OPTIONAL member `q` and a caseless run
+           "ABC" whose every position is a two-member cube, so under no rate
+           the member is strictly rarer and LEADS (P4, then P3's window);
+           `pre-dom` the OPTIONAL member the start search proves (identity:
+           P2 drops every span, so it has no part and is only ASKED) */
+        static mf_pred sp[2];
+        static const uint8_t cube[3] = { 0xDF, 0xDF, 0xDF };
+        int noproof = !strcmp(name, "pre-noproof");   /* pre-opt, its proof UNSTATED */
+        if (noproof) name = "pre-opt";
+        int req = !strcmp(name, "pre-req");
+        int norun_part = !strcmp(name, "pre-lead-run");   /* P4 denied: no lead part */
+        int lead = !strcmp(name, "pre-lead") || norun_part;
+        mf_need need = req ? MF_REQUIRED : MF_OPTIONAL;
+        if (strcmp(name, "pre-req") && strcmp(name, "pre-opt") && !lead &&
+            strcmp(name, "pre-dom"))
+            return -1;
+        memset(sp, 0, sizeof sp);
+        t_byte(&sp[0].term[0], 0, 'q');
+        sp[0].term[0].need = need;
+        sp[0].member_order = 1;
+        if (lead) {
+            t_run(&sp[1].term[0], 0, "ABC", cube);
+            sp[1].term[0].need = need;
+        }
+        for (int i = 0; i < 1 + lead; i++) {
+            sp[i].nterm = 1;
+            sp[i].need = need;
+            sp[i].plan_hint = MF_NO_PRED;
+            sp[i].span_class = MF_SPAN_PRESENCE;
+        }
+        int nparts = 0;
+        if (!strcmp(name, "pre-dom")) {
+            *s = pre_site(p, 0, -1);
+            s->preds = NULL;
+        } else {
+            if (!norun_part) {
+                p_byte(&p[nparts], 'q');
+                p[nparts].need = lead ? MF_OPTIONAL : MF_REQUIRED;
+                p[nparts++].term[0].need = lead ? MF_OPTIONAL : MF_REQUIRED;
+            }
+            if (lead) {
+                p_run(&p[nparts], "ABC", cube, 2, 1);
+                p[nparts++].plan_hint = 0;
+            }
+            *s = pre_site(p, nparts, -1);
+        }
         s->body = MF_BODY_ONESHOT;
-    } else if (!strcmp(name, "pre-opt")) {
-        p_byte(&p[0], 'q');
-        p[0].need = p[0].term[0].need = MF_OPTIONAL;
-        *s = pre_site(p, 1, -1);
-        s->body = MF_BODY_ONESHOT;
+        s->site_kind = req ? MF_SK_VM_ATTEMPT : MF_SK_DFA_SCAN;
+        s->pspans = sp;
+        s->npspan = (uint16_t)(1 + lead);
+        s->pres_proof = (mf_pres_proof){ .byte = -1, .stated = 1 };
+        if (noproof) s->pres_proof = (mf_pres_proof){ 0 };
+        if (!strcmp(name, "pre-dom"))
+            s->pres_proof = (mf_pres_proof){ .byte = 'q', .stop = 1, .stated = 1 };
     } else {
         return -1;
     }
@@ -1454,15 +1524,20 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
 /* --only fd-<row>: the shadow witnesses and their controls. */
 static int fd_fixture(const char *dir, const char *name)
 {
-    static const struct { const char *name, *site; const mf_measures *ms; } fx[] = {
-        { "fd-R0",      "set2r",  &FDS_R0 },    /* r2 cover, saving inside eps: R0 */
-        { "fd-R7-r2",   "set2r",  &FDS_R7 },    /* the same cover, saving > eps: R7 */
-        { "fd-R7",      "set10",  &FDS_R7 },    /* r1 cover, saving > eps: R7     */
-        { "fd-R7w",     "set10",  NULL },       /* no set: R7w                    */
-        { "fd-D2",      "run3",   NULL },       /* a RUN landmark: D2             */
-        { "fd-P0",      "pre-req", NULL },      /* a REQUIRED presence span: P0   */
-        { "fd-P9",      "pre-opt", NULL },      /* an OPTIONAL one: P9            */
-        { "fd-nobody",  "set10-nobody", &FDS_R7 }, /* body UNSTATED: refused (R-23, S1089's witness) */
+    static const struct { const char *name, *site; const mf_measures *ms; const char *opts; } fx[] = {
+        { "fd-R0",      "set2r",  &FDS_R0, NULL },    /* r2 cover, saving inside eps: R0 */
+        { "fd-R7-r2",   "set2r",  &FDS_R7, NULL },    /* the same cover, saving > eps: R7 */
+        { "fd-R7",      "set10",  &FDS_R7, NULL },    /* r1 cover, saving > eps: R7     */
+        { "fd-R7w",     "set10",  NULL, NULL },       /* no set: R7w                    */
+        { "fd-D2",      "run3",   NULL, NULL },       /* a RUN landmark: D2 (routed: the walk) */
+        { "fd-P0",      "pre-req", NULL, NULL },      /* a REQUIRED presence span: P0   */
+        { "fd-P3",      "pre-opt", NULL, NULL },      /* an OPTIONAL one: P3, the pick  */
+        { "fd-P9",      "pre-opt", NULL, "no-fd-pres-pick" }, /* the pick denied: P9 */
+        { "fd-P4",      "pre-lead", NULL, NULL },     /* a member rarer than the run: P4 */
+        { "fd-P4-den",  "pre-lead-run", NULL, "no-pres-set-lead" }, /* P4 denied: the run alone */
+        { "fd-P2",      "pre-dom", NULL, NULL },      /* the proof stands: P2 (asked) */
+        { "fd-P2-den",  "pre-dom", NULL, "no-fd-pres-g1" }, /* P2 denied: P3 (asked) */
+        { "fd-nobody",  "set10-nobody", &FDS_R7, NULL }, /* body UNSTATED: refused (R-23, S1089's witness) */
     };
     for (size_t i = 0; i < sizeof fx / sizeof fx[0]; i++) {
         if (strcmp(name, fx[i].name)) continue;
@@ -1470,6 +1545,9 @@ static int fd_fixture(const char *dir, const char *name)
         mf_pred p[2];
         only_seen++;
         if (fd_site_of(fx[i].site, &s, p)) return 2;
+        s.opts = fx[i].opts;
+        if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
+            return fd_ask_links(name, &s) ? 1 : 0;
         return fd_render(dir, name, &s, fx[i].ms, NULL) ? 1 : 0;
     }
     return 2;
@@ -1558,6 +1636,8 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts,
     if (fd_site_of(site, &s, p)) { fprintf(stderr, "no fd site %s\n", site); return 2; }
     s.opts = opts;
     if (setpath && fd_load_set(setpath, &ms)) return 2;
+    if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
+        return fd_ask_links(site, &s) ? 1 : 0;
     return fd_render(NULL, site, &s, setpath ? &ms : NULL,
                      fid >= 0 ? fd_an_make(fid) : NULL) ? 1 : 0;
 }

@@ -57,7 +57,16 @@
 # and their signature is read from the traced compile's `MFTRACE FDROUTE`
 # record (row and arm), not the artifact, because a routed row's pick renders
 # exactly the text its pre-table arm did (zero movers): the text cannot tell
-# the routed decision apart (r17b_prime.md §1.6 [rev3 B5]).
+# the routed decision apart (r17b_prime.md §1.6 [rev3 B5]). R17-b' B3b (lane
+# b3b) routed slot PRES (P0, P2, P3, P4, P9) and D2: the PRES rows' reach is
+# `pcrec`, their witness a pattern, their signature the `MFTRACE FD ...
+# slot=PRES` record of the deciding row and the span's final link (the define's
+# records, phase define; P2's, whose pre-check is never defined, the presence
+# ask's, phase ask, chosen at phase SHADOW); P9 is reached under P3's deny
+# (`--memfn=no-fd-pres-pick`), P4's signature is the HEAD member's `+P4`. D2
+# routes a FIND site over a RUN span 0, which no pcrec builder states (the
+# handoff landmark is the ALL_PRESENT site's window, not a FIND's span 0), so
+# it keeps its fixture and waits for the merged landmark site (R-18).
 # R7w is `pcrec` too, as the walk's UNROUTED default terminal (lane n2fix):
 # from B2 the finder's decision is a live DEFINE-phase selection at every FIND
 # site, and R7w is what every site no D1 row claims reads (it returns NULL and
@@ -101,11 +110,11 @@ fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
-fd	D2	pending-site:B3b	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
+fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
 fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
 fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
-fd	P0	pending-site:B3b	fixture	-	fd-P0	 row=P0 link=v1p0m0o0	-	fd-P9
-fd	P2	pending-site:B3b	-	-	-	-	-	-
-fd	P3	pending-site:B3b	-	-	-	-	-	-
-fd	P4	pending-site:B3b	-	-	-	-	-	-
-fd	P9	pending-site:B3b	fixture	-	fd-P9	 row=P9 link=v1p0m0o0	-	fd-P0
+fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
+fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0	--memfn=no-fd-pres-g1	=
+fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
+fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
+fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=

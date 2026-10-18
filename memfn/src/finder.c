@@ -1021,9 +1021,10 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
  * `quiet`: the query's (mf_ask) records nothing; a define's prints one
  * `MFTRACE FD ... slot=PRES` record per span, the deciding rows and the
  * final link. */
-int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
+int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             mf_class *cls, const char **why)
 {
+    int quiet = mode == FD_PRES_QUIET;
     *why = NULL;
     cls->npres = 0;
     if (!(fd_scope(s) & (1 << FD_PRES))) return 0;
@@ -1068,7 +1069,8 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
             if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
         }
         gate_in in = { s, NULL, NULL, &q.ff };
-        gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet };
+        gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
+                         &in, 1, quiet };
         fd_decision d;
         fd_decide(&q, FD_PRES, &tc, &d);
         if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) {
@@ -1128,13 +1130,14 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
             const mf_link *k = &cls->pres[i];
             const mf_pred *sp = &s->pspans[i];
             fprintf(stderr, "MFTRACE FD art=%u site=%u slot=PRES pred=%u layer=OFF kind=%s "
-                    "need=%s members=%u shape=- row=%s%s link=v%dp%dm%do%d basis=%s routed=1\n",
+                    "need=%s members=%u shape=- row=%s%s link=v%dp%dm%do%d basis=%s routed=1"
+                    " phase=%s\n",
                     art->trace_id, handle, i,
                     kind_name(kind_cl(s->site_kind)) ? kind_name(kind_cl(s->site_kind)) : "UNSTATED",
                     sp->need == MF_OPTIONAL ? "OPTIONAL" : "REQUIRED",
                     sp->term[0].kind == MF_T_SET ? popcount256(sp->term[0].set) : 0u,
                     rows[i]->id, led[i] ? "+P4" : "", k->verify, k->proven_by, k->member,
-                    k->order, fb_name[rows[i]->basis]);
+                    k->order, fb_name[rows[i]->basis], mode == FD_PRES_ASK ? "ask" : "define");
         }
 #else
     (void)rows;

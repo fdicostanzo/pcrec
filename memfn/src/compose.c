@@ -845,14 +845,14 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
         out->v = MF_CLASS_V;
         memset(out->proven0, 0xFF, sizeof out->proven0);
         memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
-        return fd_pres(art, art->nsites + 1, s, 1, out, &why) ? -1 : 0;
+        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ? -1 : 0;
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
     if (!row) return -1;
     kit_class(row, s, out);
-    if (fd_pres(art, art->nsites + 1, s, 1, out, &why)) return -1;
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
     if (s->npspan && pres_layout_check(art, s, out)) return -1;
     return 0;
 }
@@ -863,6 +863,14 @@ int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class
 #ifdef MF_TRACE
     fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u\n",
             art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes);
+    /* R17-b' B3b: a presence site's links, recorded (phase SHADOW: never
+       counted as chosen); a site whose every span P2 drops is asked and never
+       defined, so this is its only observation */
+    if (!rc && out->npres) {
+        mf_class rec;
+        const char *why;
+        fd_pres(art, art->nsites + 1, site, FD_PRES_ASK, &rec, &why);
+    }
 #endif
     return rc;
 }
@@ -940,7 +948,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
        renders) */
     {
         const char *pw = NULL;
-        if (fd_pres(art, h, s, 0, &r->cls, &pw))
+        if (fd_pres(art, h, s, FD_PRES_DEFINE, &r->cls, &pw))
             return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);
         if (s->npspan && (pw = pres_layout_check(art, s, &r->cls)))
             return kit_fail(art, "mf_define: the pre-check's parts are not its presence "

@@ -446,10 +446,16 @@ extern const struct arm fd_nested_walk;
  * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
  * its own), into cls->pres[0..npspan) and cls->npres. 0, or -1 with *why
  * where no routed row decides a span (a kit build error the caller refuses).
- * `quiet` 1 for the query (no record, no reach). A site stating no presence
- * span answers npres 0. */
+ * `mode`: FD_PRES_DEFINE, a define's selection (traced phase define, counted
+ * as chosen, one `MFTRACE FD ... slot=PRES` record per span); FD_PRES_QUIET,
+ * the query's own walk (no record); FD_PRES_ASK, the MF_TRACE build's record
+ * of a public query (traced phase SHADOW, never counted as chosen, and the
+ * FD records marked `phase=ask`): the only observation of a site whose every
+ * span P2 drops, which is asked and never defined. A site stating no
+ * presence span answers npres 0. */
+enum { FD_PRES_DEFINE = 0, FD_PRES_QUIET = 1, FD_PRES_ASK = 2 };
 #define fd_pres MF_NS(fd_pres)
-int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
+int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             mf_class *cls, const char **why);
 
 /* ---- writing to a sink --------------------------------------------------- */

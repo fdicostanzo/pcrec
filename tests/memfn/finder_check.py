@@ -76,6 +76,18 @@ design's text, sharing no code with the kit):
      test); a set site is decided by NO routed row (S922's reverse: routing
      early); `--memfn=no-fd-d1` moves the DFA_SCAN byte site to D1w's walk
      (`fd-d1`'s OFF arm, [rev3 A17]).
+  M. B3b's ROUTING (§1.4, §1.6, R17-b' B3b): the rows the design routes at B3b
+     (D2 and slot PRES's P0, P2, P3, P4, P9) are routed and LOCKED with B2's;
+     their three denies are registered (`fd-pres-g1`, `fd-pres-pick`,
+     `pres-set-lead`). Each PRES fixture's span is decided by the row and
+     carries the link written HERE from §1.4's table (P0 REQUIRED: verified
+     whole; P3: the pick verified, a member of a set with a run not verified;
+     P4: the leading member verified at the head; P2: every span proven, so
+     the site is only ASKED; P9 under the pick's deny), each deny moves its
+     fixture's decision, and the define REFUSES parts that are not the links'
+     layout (a lead dropped) and a presence statement with no proof (the
+     start search's `pres_proof` UNSTATED). D2 routes the RUN fixture through
+     the composer's walk.
 """
 import argparse
 import os
@@ -92,12 +104,28 @@ FIND_ROWS = ["R0", "R5", "R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w
 PRES_ROWS = ["P0", "P2", "P3", "P4", "P9"]
 DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
 B1_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1"]
-PENDING_DENIES = {"fd-pres-g1": "B3b", "fd-pres-pick": "B3b", "pres-set-lead": "B3b"}
+B3B_DENIES = ["fd-pres-g1", "fd-pres-pick", "pres-set-lead"]
+PENDING_DENIES = {}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
 FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
-# the rows the design routes at B2 (r17b_prime.md §1.6, §3.1 row B2)
+# the rows the design routes at B2 and B3b (r17b_prime.md §1.6, §3.1 rows
+# B2 and B3b); every other row routes at B4 or later
 ROUTED_B2 = {"D1", "D1c", "D1w"}
+ROUTED_B3B = {"D2", "P0", "P2", "P3", "P4", "P9"}
+ROUTED = ROUTED_B2 | ROUTED_B3B
+# M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
+# table (link = v<verify>p<proven_by>m<member>o<order>; member 1 + the
+# chosen index, order 0 the head, 1 the run, 2 the rest)
+B3B_PRES = {
+    "fd-P0":     [("0", "P0", "v1p0m0o0")],
+    "fd-P3":     [("0", "P3", "v1p0m1o0")],
+    "fd-P9":     [("0", "P9", "v1p0m0o0")],
+    "fd-P4":     [("0", "P3+P4", "v1p0m1o0"), ("1", "P3", "v1p0m1o1")],
+    "fd-P4-den": [("0", "P3", "v0p0m1o0"), ("1", "P3", "v1p0m1o1")],
+    "fd-P2":     [("0", "P2", "v0p1m0o0")],
+    "fd-P2-den": [("0", "P3", "v1p0m1o0")],
+}
 # K: site -> (the deciding row, a text signature regex the row's pick writes)
 B2_ROUTES = {
     "byte1t":  ("D1",  r"^    if \(scan_position >= subject_length\) return 0;\|    const void \*q = memchr\(subject \+ scan_position, 120, subject_length - scan_position\);\|    if \(!q\) return 0;\|"),
@@ -171,10 +199,10 @@ def check_table(fx):
             bad("%s: reads the derived %s but its basis is %s" % (r["id"], sorted(quant & DERIVED_Q), r["basis"]))
         if any(not k.startswith("kit.") for k in ks):
             bad("%s: reads a key that is not the kit's: %s" % (r["id"], ks))
-        want = "1" if r["id"] in ROUTED_B2 else "0"
+        want = "1" if r["id"] in ROUTED else "0"
         if r["routed"] != want or r["locked"] != want:
-            bad("%s: routed %s / locked %s at B2 (the routed rows are %s; no row routes "
-                "before its step)" % (r["id"], r["routed"], r["locked"], sorted(ROUTED_B2)))
+            bad("%s: routed %s / locked %s at B3b (the routed rows are %s; no row routes "
+                "before its step)" % (r["id"], r["routed"], r["locked"], sorted(ROUTED)))
         d = r["deny"]
         if d != "-" and d not in opts and PENDING_DENIES.get(d) != r["step"]:
             bad("%s: deny %s is not in options.def" % (r["id"], d))
@@ -187,6 +215,8 @@ def check_table(fx):
             ok()
     for d in B1_DENIES:
         (ok() if d in opts else bad("options.def lacks B1's deny %s" % d))
+    for d in B3B_DENIES:
+        (ok() if d in opts else bad("options.def lacks B3b's deny %s" % d))
     for d, step in PENDING_DENIES.items():
         if d in opts:
             bad("%s is registered before its step %s" % (d, step))
@@ -387,7 +417,8 @@ def check_sites(root, fx, fxt, tmp, rows):
         # site_kind UNSTATED, so a FIND decision may decline on that, as its own
         # (stated-kind) compiles do not.
         wd = [ln for ln in err0.splitlines()
-              if ln.startswith("MFTRACE END table=fd ") and " phase=shadow " in ln
+              if ln.startswith("MFTRACE END table=fd ") and
+              (" phase=shadow " in ln or " phase=define " in ln)
               and " would_decline=1 " in ln and "need:" in ln]
         (ok() if not wd else bad("%s: the shadow's gate declined on need (%s)" % (site, wd[0])))
         if site == "pre-opt":                   # K35: the OPTIONAL presence span is on the record
@@ -497,12 +528,56 @@ def check_routing(fx, fxt):
         _, rt, _, _ = fd_routed(fx, site)
         _, _, _, fr = fd_routed(fxt, site)
         (ok() if rt == "-" and not fr else
-         bad("%s: decided by a routed row %s (FDROUTE %s): no row routes it at B2"
+         bad("%s: decided by a routed row %s (FDROUTE %s): no row routes it before B4"
              % (site, rt, [d.get("row") for d in fr])))
     _, rt, text, _ = fd_routed(fx, "byte1t", "no-fd-d1")
     (ok() if rt == "D1w" and re.search(B2_ROUTES["byte1vm"][1], text) else
      bad("--memfn=no-fd-d1: byte1t decided by %s with %r, not D1w's walk ([rev3 A17])"
          % (rt, text)))
+
+
+# ---- M ----------------------------------------------------------------------
+
+def pres_records(err):
+    return [dict(t.split("=", 1) for t in ln.split()[2:] if "=" in t)
+            for ln in err.splitlines() if ln.startswith("MFTRACE FD ") and " slot=PRES " in ln]
+
+
+def check_pres_routing(fx, fxt, tmp):
+    n = 0
+    for name, want in sorted(B3B_PRES.items()):
+        d = os.path.join(tmp, "m_" + name)
+        os.makedirs(d, exist_ok=True)
+        r = run([fxt, d, "--only", name])
+        recs = pres_records(r.stderr.decode())
+        got = [(x.get("pred"), x.get("row"), x.get("link")) for x in recs]
+        if r.returncode or got != want:
+            bad("%s: PRES decided %s (rc %d), the design's %s" % (name, got, r.returncode, want))
+            continue
+        n += 1
+        ok()
+        # the plain kit agrees (an asked site prints its links)
+        rp = run([fx, d, "--only", name])
+        links = re.findall(r"^LINK\t(\d+)\t(\S+)$", rp.stdout.decode(), re.M)
+        if links:
+            (ok() if [(p, l) for p, l in links] == [(p, l) for p, _, l in want] else
+             bad("%s: the plain kit's asked links %s, the traced %s" % (name, links, want)))
+    (ok() if n == len(B3B_PRES) else bad("%d of %d PRES fixtures decided as designed" % (n, len(B3B_PRES))))
+    # the define holds the parts to the links' layout: a lead dropped is refused
+    _, _, _, _, ref, _ = fd_run(fx, "pre-lead-run")
+    (ok() if ref and "layout" in ref else
+     bad("pre-lead-run (P4 leads, its part dropped) was not refused naming the layout: %s" % ref))
+    _, _, _, _, ref, _ = fd_run(fx, "pre-lead-run", None, "no-pres-set-lead")
+    (ok() if not ref else bad("pre-lead-run under no-pres-set-lead was refused: %s" % ref))
+    _, _, _, _, ref, _ = fd_run(fx, "pre-noproof")
+    (ok() if ref and "pres_proof" in ref else
+     bad("a presence statement with no proof was not refused naming `pres_proof`: %s" % ref))
+    # D2 routes the RUN fixture through the composer's walk
+    _, rt, _, fr = fd_routed(fx, "run3")
+    _, rtt, _, frt = fd_routed(fxt, "run3")
+    (ok() if rt == "D2" and rtt == "D2" and [x.get("row") for x in frt] == ["D2"] else
+     bad("run3: decided by %s (traced %s, FDROUTE %s), the design's routed row is D2"
+         % (rt, rtt, [x.get("row") for x in frt])))
 
 
 # ---- G ----------------------------------------------------------------------
@@ -676,6 +751,7 @@ def main():
     check_query(a.fx, a.fxt, a.tmp)
     check_pay(a.fx)
     check_routing(a.fx, a.fxt)
+    check_pres_routing(a.fx, a.fxt, a.tmp)
     check_prov(a.root, a.fx, a.fxt, a.provchk)
     for u in unreached:
         print("UNREACHED: " + u)

@@ -71,6 +71,12 @@
 # g2_floor PLACEHOLDER: G2 counts no shadow decision. Each routing step pins
 # both columns for the rows it routes.
 #
+# R17-b' B3b (lane b3b) routed P0, P2, P3, P4 and P9 (reach `pcrec`): their
+# pcrec floors are PLACEHOLDER until the B3b heavy chain's N2 census pins them
+# (floor(0.9 x chosen), as n2fix pinned B2's; OWED, docs/dev/lanes/
+# b3b_report.md). D2 stays `pending-site:R-18` (no pcrec site states a RUN
+# span 0), so its pcrec floor stays `-`.
+#
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
 arms	precheck	253352	2061
@@ -106,8 +112,8 @@ fd	D1w	211402	PLACEHOLDER
 fd	D2	-	PLACEHOLDER
 fd	R7	-	PLACEHOLDER
 fd	R7w	300852	PLACEHOLDER
-fd	P0	-	PLACEHOLDER
-fd	P2	-	PLACEHOLDER
-fd	P3	-	PLACEHOLDER
-fd	P4	-	PLACEHOLDER
-fd	P9	-	PLACEHOLDER
+fd	P0	PLACEHOLDER	PLACEHOLDER
+fd	P2	PLACEHOLDER	PLACEHOLDER
+fd	P3	PLACEHOLDER	PLACEHOLDER
+fd	P4	PLACEHOLDER	PLACEHOLDER
+fd	P9	PLACEHOLDER	PLACEHOLDER
