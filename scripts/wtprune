@@ -235,7 +235,7 @@ for j in $(seq 0 "$i"); do
         if out=$(g worktree remove --force "$p" 2>&1); then
             removed_ok "$name" "${wt_branch[j]}" " (forced)"
         else
-            printf 'FAILED  %-28s %s\n' "$name" "$out"; echo "        directory left on disk: no rm -rf fallback (git may already have unregistered it; inspect, then remove by hand)"
+            printf 'FAILED  %-28s %s\n' "$name" "$out"; echo "        directory left on disk: no rm -rf fallback (git may already have unregistered it); report it to the manager — never rm -rf"
             audit "FAILED $name (force): $out"; rc=1
         fi
     else
