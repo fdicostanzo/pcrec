@@ -439,3 +439,19 @@ All under `taskset -c 12-15`, -j4, one run at a time. Logs `$S/logs2/`
   - OFS's ceiling stays `MF_USE_POSITION` (0), so an OFS instance stating ENTRY (2) is refused. So is every other row whose ceiling is POSITION or DISCARD.
   - The new ALL_PRESENT line refuses a presence site whose use is not ENTRY.
   - Caveat: the order POSITION < DISCARD reads as "ignored more". ENTRY sorting above both is an ENUM-ORDER fact, not a meaning, so a future use kind must be placed with the ceiling check in mind. Appending last keeps this property only if the new kind should be refused under every ceiling below it.
+
+## 9. Heavy-chain make test triage (b3btri)
+
+Lane b3btri, 2026-10-18, read-only on the heavy chain's artifacts. Log: `worktrees/memfn-slot/b3bheavy/logs/test.log` (pinned tip 034f694cf, perfrun `class=RED-REAL`, `section-errors=1`, not K44/load).
+
+Verdict lines (`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`): ONE, `test-core` (`Makefile:1505`, log line 5662). Every other section is green.
+
+| section | FAIL lines | class | evidence | fix commit |
+|---|---|---|---|---|
+| test-core | `FAIL: raw option-word read outside the accessors: src/core/compile.c:1852: if (defo.flags & PCREC_NO_REQ_SET_LEAD) {` and `FAIL: flag_access_check: 1 finding(s)`; `checks passed: 6 / failed: 1` | (a) B3b-introduced, STOP (not fixed) | The line is B3b's own bit-45 alias block (450e17878, `blame` 2026-10-18 04:52), a raw `flags & PCREC_X` read that `tests/core/flag_access_check.py` ([FLAG-ACCESS]) forbids outside the four accessors. Main 65dd423ee is green on the same check (`56 option keys, 69 accessor uses, 0 raw reads`, run on a detached scratch worktree, removed); the lane tip fails it with exactly this one finding. Not a pin or count (no number moved), not an E1 interaction, not box/load. `test-core` is not among the 25 suites of `logs3/light.status`, which is why the light validation missed it. | none: STOP per brief |
+
+Behaviour is not at issue: the alias works (rewrites the bit into `--memfn=no-pres-set-lead`). Only the gate's accessor discipline is violated.
+
+Suggested fix (for whoever owns src/, NOT applied here): at `src/core/compile.c:1852` use `pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)`; at `:1863` (`defo.flags &= ~(uint64_t)PCREC_NO_REQ_SET_LEAD;`, a raw write the detector does not flag today) use `defo.flags = pcrec_flags_without(defo.flags, PCREC_NO_REQ_SET_LEAD);`. Then run `python3 -I tests/core/flag_access_check.py .` and `bash tests/core/run_core_tests.sh`. Both accessors are in `src/core/internal.h` (FLAG-ACCESS block, ~:399-411). This changes bytes in src/ only as a no-op refactor; a zero-mover sweep is not needed but a `make test-core` re-run is.
+
+Final tip: unchanged by this triage except this report section (commit follows 337986317). No fix touched `src/` or `memfn/src`. The chain.sh PIN (034f694cf) is now stale relative to any tip carrying the fix; re-pin when the fix lands.
