@@ -92,11 +92,29 @@ cat "$OUT/report.log"
 wd=$(sed -n 's/^would_decline=//p' "$OUT/report.log" | tail -1); wd=${wd:-unread}
 ne=$(sed -n 's/^noend=//p' "$OUT/report.log" | tail -1); ne=${ne:-unread}
 fl=$(grep -E '^(floor_fail|floors)=' "$OUT/report.log" | tail -1 | tr ' ' ','); fl=${fl#floors=}; fl=${fl:-unread}
-case "$fl" in
-    floor_fail=0,*reason_stale=0,reach_dropped=0) ;;
-    NOT-APPLIED,reason_stale=0,reach_dropped=0) ;;
-    *) [ "$rc" -eq 0 ] && rc=4 ;;
-esac
+# The floors summary is read by FIELD, not matched as one spelling (lane
+# rowfix, 2026-10-18: b3breach appended `ask_mismatch=M`, which a fixed
+# pattern did not admit, so every run, full or partial, read rc 4 with every
+# count 0; the n2sample mech rows S668/S689 then read DETECTED on a clean
+# tree). The head is `NOT-APPLIED` (a partial run) or `floor_fail=K`; each of
+# the counts below must be PRESENT, and every count but `floor_placeholder`
+# must be 0, including one the report adds later.
+floors_ok() {
+    local f=$1 kv k v seen=" "
+    case "$f" in NOT-APPLIED,*) f=${f#NOT-APPLIED,} ;; floor_fail=*) ;; *) return 1 ;; esac
+    local IFS=,
+    for kv in $f; do
+        k=${kv%%=*}; v=${kv#*=}
+        [ "$k" = "$kv" ] && return 1
+        seen="$seen$k "
+        [ "$k" = floor_placeholder ] && continue
+        [ "$v" = 0 ] || return 1
+    done
+    for k in reason_stale reach_dropped ask_mismatch; do
+        case "$seen" in *" $k "*) ;; *) return 1 ;; esac
+    done
+}
+floors_ok "$fl" || { [ "$rc" -eq 0 ] && rc=4; }
 # The zero rules: an unread count fails too (a report that stopped printing
 # them must not read green).
 if [ "$wd" != 0 ] || [ "$ne" != 0 ]; then

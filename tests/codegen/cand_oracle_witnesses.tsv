@@ -46,6 +46,14 @@ handoff-reentry	-	(?:\d{1,3}\.){3}\d{1,3}
 handoff-reentry	-	[a-z]{2,6}ing
 byte-class	-fno-req-handoff	(?:\d{1,3}\.){3}\d{1,3}
 first-memchr-bounded	-	\B(?<!a)d
+# [MEMFN] R17-b' B2 THE ASKED-CLASS HOLD'S WITNESS (S1085; lane rowfix,
+# 2026-10-18): the same DFA hat (T = {d}, a proper subset of the start state's
+# escape set E) with the handoff denied, so the PF site is DEFINED and G1 asks
+# it. By default the start-byte row wins the handoff's landmark admission,
+# which since lmfacts (fe7ece905) is priced off the readers' class: a readers'
+# site carrying E flips that admission to `handoff`, no PF site is defined,
+# and the hold has no define side to compare (S1085 read UNDETECTED).
+first-memchr-bounded	-fno-req-handoff	\B(?<!a)d
 first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*

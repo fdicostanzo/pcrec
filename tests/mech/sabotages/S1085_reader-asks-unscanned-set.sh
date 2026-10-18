@@ -8,11 +8,17 @@
 # Detector (candoracle): the trace build's ASKED-CLASS hold
 # (`cand_asked_hold`, the define side at `pf_define_find_at`): CANDORACLE asked-class-differs
 # on the DFA-hat witnesses of cand_oracle_witnesses.tsv.
+# RE-POINTED (lane rowfix, 2026-10-18): since lmfacts (fe7ece905) the
+# handoff's landmark admission is priced off the readers' class, so on the
+# default witness `\B(?<!a)d` the plant flips the start search to `handoff`
+# and no PF site is defined: the hold had one side and read UNDETECTED (main
+# 65dd423ee 0/141, B3b 0/165). The witness line with `-fno-req-handoff`
+# keeps the PF row emitted and defined, so the hold compares again.
 SAB_ID="S1085-reader-asks-unscanned-set"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="candoracle"
 SAB_DESC="the readers' PF site carries the escape set E, not the row's scanned set (a DFA hat's T)"
-SAB_DOC_FIGURE="MEASURED 2026-10-16 by lane fdb2fix, solo (run_sabotage_matrix.sh S1085): DETECTED, candoracle 1fail/99pass (docs/dev/lanes/fdb2_report.md §10.3)."
+SAB_DOC_FIGURE="MEASURED 2026-10-18 by lane rowfix, solo (run_sabotage_matrix.sh S1085 at 3999c287e): DETECTED, candoracle 1fail/165pass, the -fno-req-handoff hat witness (docs/dev/lanes/rowfix_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
