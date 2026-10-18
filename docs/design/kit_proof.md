@@ -1201,7 +1201,7 @@ rev-end's end fact lose the end fact, so the evaluator sees every producer's fac
 runtime order is chosen (position-pinning facts first). U1 is the first instance (one producer,
 the DFA evaluator); [MATCH-KNOWN]'s charter carries the architecture.
 
-**Q3, the `\b` "rewrite" as a reading.** *Panel's answer, PENDING FRANK'S RULING:* the
+**Q3, the `\b` "rewrite" as a reading.** **RULED (Frank, 2026-10-18): the reading for stage 1; [DD-11.5] planned soon, design review first (docs/dev/dd11_family_2026-10-18.md); the general form is a previous-set × next-set fold over `A_CTX`.** Panel's answer: the
 reading is right for stage 1, labelled DFA-only. At U1b the facts-layer derivation
 becomes THE context fact and the machine reading its control (fam-Q3). A true lowering,
 the neighbour-set assertion fold, is filed BOONIES-style (UL-6). *Leaning:* as the panel
