@@ -172,6 +172,11 @@ typedef struct {
      * `<prefix>__<role>` of a compound -- no shared blocks (the ABI block,
      * its includes, the feature macros). NULL: an ordinary artifact. */
     const char *part_role;
+    /* [ENTRY-TABLE] E1 the part's row in the SHELL's entry table
+     * (`PCREC_ENTRY_COMP_A`/`_B`), which names its part-layout mark: the
+     * shell lays the part out (src/gen/part_layout.c). Read only in part
+     * mode, and only when `unrendered` (a spliced part). */
+    PcrecEntry part_entry;
     /* THE BOUND (PCREC_PB_*), read by the BOUND slot on ANY artifact, part
      * or not (`pcrec_emit_one_attempt`); UNSTATED and NONE leave the
      * pattern's own BOUND. */
@@ -298,6 +303,13 @@ typedef struct {
     size_t        simd_at, simd_at_uncut;
     size_t        simd_guarded;
     PcrecEmitSize simd_size;
+    /* [ENTRY-TABLE] E1 (compound_entries.md §3.0 I5) THE PART-LAYOUT MARKS'
+     * BYTES: every byte a part-layout mark wrote (`pcrec_sb_layout_mark`),
+     * which the layout render replaces after every length decision. The
+     * decision views subtract it, so no rung, ladder step, cap or stamp can
+     * read layout text. Marks are code bytes, never inside a comment, a
+     * table or a SIMD bracket, so the subtraction is exact. */
+    size_t        layout_bytes;
 } StrBuf;
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
@@ -348,6 +360,13 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src);
  * SIMD switch can move a decision. */
 size_t        pcrec_sb_len_decide(const StrBuf *sb);
 PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb);
+/* [ENTRY-TABLE] E1 (compound_entries.md §3.0 I5): appends a PART-LAYOUT
+ * MARK -- the placeholder lead byte, `L`, and two hex digits of `id` (a
+ * PcrecEntry; `PCREC_ENTRY_N` is the stamp lines' mark), plus a newline when
+ * `line` -- and counts its bytes in `layout_bytes`, which both decision views
+ * subtract: no length decision reads layout text. Refused inside a SIMD
+ * bracket. */
+void          pcrec_sb_layout_mark(StrBuf *sb, unsigned id, bool line);
 
 /* [ART-SIZE] the caps' text measure (moved from compile.c for RQ-3, so the
  * bracket can measure its own text in the base tier). `open_out`, when
@@ -2945,6 +2964,54 @@ typedef enum {
     MP_STATE        /* more than one (or the probe's cap overflowed) */
 } MarkPrio;
 
+/* [ENTRY-TABLE] E1 ONE PART's record in the part-layout tables (src/gen/
+ * part_layout.c; docs/design/compound_entries.md §3.4): a SUBJECT (a static
+ * part a control can lay out) or an OWNED function (an owner writes its
+ * attribute; listed, never laid out). Built at the render, from facts the
+ * emission recorded. */
+typedef struct {
+    PcrecEntry e;            /* its row in the entry table */
+    signed char cls;         /* PCREC_PART_* class, or -1: owned */
+    unsigned char callers;   /* distinct calling functions, owned
+                                always_inline callers folded in */
+    unsigned char rank;      /* PcrecEdgeRank: its hottest in-edge */
+    bool copyable;           /* gcc can copy its body: today the job-wide
+                                `!uncopyable` below (a compound part: its
+                                own compile's), never a per-entry fact */
+    unsigned char row;       /* the part table's row that fired (index) */
+    unsigned char layout;    /* PCREC_PART_AUTO/_SHARED/_INLINE written,
+                                or 0: the head as emitted (P1, P2) */
+} PcrecPlPart;
+
+/* [ENTRY-TABLE] E1 THE PART-LAYOUT STATE of one attempt (src/gen/
+ * part_layout.c). The artifact table resolves on the first ask; the marks
+ * the emitters write are rendered after every length decision (I5). */
+typedef struct {
+    bool resolved;           /* the artifact table ran this attempt */
+    bool t3;                 /* row T3 fired: subjects carry marks and the
+                                part table lays them out */
+    signed char why;         /* PL_WHY_* stamped, or -1 */
+    bool rank_set;           /* the threshold came from `measured` */
+    int residual, rank;      /* the resolved controls (pcrec_options' */
+    uint32_t classes;        /* own encoding), after rows K..T2 */
+    unsigned char arow[3];   /* the artifact rows that fired, in order */
+    int narow;
+    bool stamp_marked;       /* the stamp mark was written */
+    int nparts;
+    PcrecPlPart part[PCREC_ENTRY_N];   /* at most one record per entry row */
+    unsigned owned_inline;   /* PcrecEntry bits an OWNER makes always_inline
+                                (folded into their callers for `callers`) */
+    bool uncopyable;         /* SOME DFA body this attempt emitted keeps
+                                label addresses (the attempt route's jump
+                                tables): a JOB-WIDE fact, not per entry, and
+                                no computed goto sets it. Exact while every
+                                subject is the attempt's one DFA body
+                                ([ENTRY-TABLE] F5: per entry at the first
+                                VM-bodied or `find` subject) */
+    unsigned char er[PCREC_ENTRY_N][PCREC_ENTRY_N]; /* the shape's derived
+                                edges, PcrecEdgeRank + 1, 0 = no edge */
+} PcrecPartLayout;
+
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
     Nfa    nfa;      /* forward NFA (unanchored-wrapped for ENG_UNANCH) */
@@ -3141,6 +3208,8 @@ typedef struct {
      * (arena; NULL before the stamps render): a part's, for its compound's
      * union (src/gen/stamp_kinds.c's parts-union kind). */
     const char *memfn_forms;
+    /* [ENTRY-TABLE] E1 the part-layout state (src/gen/part_layout.c). */
+    PcrecPartLayout pl;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -6633,6 +6702,12 @@ typedef struct {
     long long   size_term_threshold;  /* [ART-SIZE] ladder trigger, emitted CODE bytes */
     long long   vm_inline_chain_max;  /* [CC-DIFF] VM entry-chain size term, bytes */
     uint64_t    deny_flags;           /* PCREC_NO_* bits the position DENIES */
+    /* [ENTRY-TABLE] E1 the part-layout PRESETS (docs/spec/tuning.md §5.4):
+     * the control values this position supplies where the caller set none,
+     * in `pcrec_options`' own encoding (0 = the em-dash: no preset). */
+    int         part_residual;        /* PCREC_PART_UNSET/_AUTO/_SHARED/_INLINE */
+    int         part_inline_rank;     /* PCREC_PART_RANK_* */
+    uint32_t    part_layout;          /* one PCREC_PART_* slot per class */
 } PcrecTuneRow;
 
 bool                pcrec_tune_valid(int tune);
@@ -6660,6 +6735,12 @@ long long           pcrec_tune_size_term_threshold(int tune);
 long long           pcrec_tune_vm_inline_chain_max(int tune);
 
 uint64_t            pcrec_tune_deny_flags(int tune);
+
+/* [ENTRY-TABLE] E1 the position's part-layout PRESET cells, in
+ * `pcrec_options`' own encoding; 0 is the em-dash (no preset value). */
+int                 pcrec_tune_part_residual(int tune);
+int                 pcrec_tune_part_inline_rank(int tune);
+uint32_t            pcrec_tune_part_layout(int tune);
 
 
 /* ---- enc -- defined under src/enc/ -----------------------------------
@@ -7328,6 +7409,38 @@ PcrecEntryComb pcrec_entry_comb(const Ctx *cx, PcrecEntry e);
 unsigned pcrec_entry_enc_omit(const Ctx *cx);
 unsigned pcrec_entry_enc_static(const Ctx *cx);
 
+/* ---- [ENTRY-TABLE] E1 THE PART-LAYOUT TABLES (src/gen/part_layout.c;
+ * docs/design/compound_entries.md §3.4, §3.6; docs/spec/tuning.md §2.51)
+ *
+ * The artifact table (K, T1, TM, T2, then T0 or T3) resolves the three
+ * controls once per attempt; under T3 every SUBJECT part's definition head
+ * carries a MARK (`pcrec_part_head_mark`), and so does the stamp's place
+ * (`pcrec_part_stamp_mark`). After every length decision the render builds
+ * each part's record from the entry table's derived edges and the emitters'
+ * facts, walks the part table (P1-P10) and replaces every mark. At T0 no
+ * mark is written, so the artifact is byte-identical by construction. */
+/* True iff row T3 fired: this attempt lays parts out (resolves on first
+ * ask). */
+bool pcrec_part_layout_active(Ctx *cx);
+/* Writes `e`'s definition-head mark into `c` when `e` is a subject under
+ * T3 (a part's own compile writes its shell row's mark); nothing otherwise. */
+void pcrec_part_head_mark(Ctx *cx, StrBuf *c, PcrecEntry e);
+/* Writes the stamp lines' mark (a line of its own) when T3 fired or a
+ * decline was stamped; nothing on a part, nothing otherwise. */
+void pcrec_part_stamp_mark(Ctx *cx, StrBuf *c);
+/* THE RENDER: builds the records, walks the part table, replaces every
+ * mark in `csb`/`hsb`. An unmatched mark or record is an internal error. */
+void pcrec_part_layout_render(Ctx *cx);
+/* The `--emit-facts` sections' rows for this attempt (encoding `enc`):
+ * the resolved controls into `ctl`, one row per part into `parts`. */
+void pcrec_part_layout_facts(Ctx *cx, StrBuf *ctl, StrBuf *parts,
+                             const char *enc);
+/* The tables' rows for `--list-axes`' `part-layout-table` section: row `i`
+ * (false past the last) as table, id, name, conjuncts and what it writes. */
+bool pcrec_part_layout_table_row(int i, const char **table, const char **id,
+                                 const char **name, const char **conj,
+                                 const char **writes);
+
 /* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
@@ -7473,7 +7586,7 @@ typedef struct {
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          const BufSurface *bs, bool body_memcmp);
 
-void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
+void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, PcrecEntry ent);
 
 /* [M5-SEAM] the per-encoding residual DEFINITIONS (src/enc/); the
  * matching declarations ride pcrec_emit_prologue. */
@@ -7610,6 +7723,11 @@ struct PcrecPartFacts {
     unsigned find_consulted;/* the queries any of its attempts consulted
                                (a bit per `PCREC_FQ_*` row), for the shell's
                                knowledge stamp (window_contract.md §3.7.3a) */
+    bool copyable;          /* [ENTRY-TABLE] E1 its search body can be copied
+                               into a caller: the part compile's job-wide
+                               `!Job.pl.uncopyable` (no label table) */
+    size_t layout_bytes;    /* its text's part-layout mark bytes, carried
+                               into the shell (StrBuf.layout_bytes) */
 };
 
 /* ---- [COMPOUND] THE ROW TABLE (src/core/compound.c; compound.md §A.1-§A.3)
@@ -7776,7 +7894,7 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g);
 
 /* src/gen/emit_dfa.c -- the DFA search entry's head (K24's `noclone`, the
  * signature, P's caller-position prologue), shared with the controller. */
-void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, const char *storage);
+void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, PcrecEntry ent);
 
 /* src/gen/stamp_kinds.c -- THE STAMP CATALOGUE (compound.md §A.7): every
  * stamp an emitter writes, PATTERN-level (true of the pattern and the caller

@@ -7,5 +7,8 @@ SAB_DESC='the hybrid'"'"'s <prefix>_prefilter is defined without `static` (the s
 SAB_DOC_FIGURE='OWED: the single-row mech figure at the slot (lane e0c chain, build/v/mech-S1077.log); hand validation in docs/dev/lanes/e0c_report.md.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_emit_dfa_engine(cx, t->body, pcrec_entry_storage(cx, e));'
-SAB_AFTER='        pcrec_emit_dfa_engine(cx, t->body, pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH));   /* SABOTAGE S1077 */'
+# RE-AIMED 2026-10-18 (lane e1, [ENTRY-TABLE] E1): the DFA engine body takes its ENTRY
+# row (the search head reads its linkage and its part-layout mark from it), so the
+# plant names the search entry's row where the body's own belongs; same defect.
+SAB_BEFORE='        pcrec_emit_dfa_engine(cx, t->body, e);'
+SAB_AFTER='        pcrec_emit_dfa_engine(cx, t->body, PCREC_ENTRY_SEARCH);   /* SABOTAGE S1077 */'

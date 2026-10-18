@@ -1254,7 +1254,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # only compiles whose asking attempt was discarded move (F-5). `c10643bbb` is
 # the lane's last src commit; the manager re-pins to the merge (the self-pin
 # convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c10643bbb}"   # [WINDOW-E1] union SELF-PIN (lane rpunion, 2026-10-17), abi 79 (was cb4174451, b3build's abi-78 self-pin)
+# [ENTRY-TABLE] E1 SELF-PIN (lane e1, 2026-10-18), abi 79 -> 80: the stamp
+# vocabulary gains `<PREFIX>_PART_LAYOUT`/`_PART_LAYOUT_WHY`, written only
+# under a part-layout control, so every default artifact moves by the abi
+# digits alone. `fc67299b5` is the lane's last src commit; the manager
+# re-pins to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fc67299b5}"   # [ENTRY-TABLE] E1 SELF-PIN (lane e1, 2026-10-18), abi 80 (was c10643bbb, rpunion's abi-79 self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

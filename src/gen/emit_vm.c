@@ -13849,6 +13849,17 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_init(&v, cx, root, &g);
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);
+    /* [ENTRY-TABLE] E1 the entry rung's attribute on the three `_run`
+     * bodies is OWNED (A1): every rung but PLAIN writes them always_inline
+     * (`en.ai`, `vm_plan_entry`), and then a part they call is called from
+     * their callers instead (`callers`, src/gen/part_layout.c). The matcher
+     * body's own attribute (`en.ai_body`) is not folded: the one part a VM
+     * artifact has, the hybrid's prefilter, is called from `_search_run`
+     * alone, never from `_match_anchored`. */
+    if (en.shape != PCREC_VM_ENTRY_PLAIN)
+        cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_SEARCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_CAPS_RUN);
     /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
      * read a table, and re-spell the program if that is the atom table —
      * AFTER the entry rung is chosen on the program's length, so the table

@@ -1,0 +1,39 @@
+# tests/partlayout/fixtures.tsv -- [ENTRY-TABLE] E1's PRECEDENCE and HELD-
+# REQUEST fixtures (docs/design/compound_entries.md §3.6, §3.4.2). Every
+# expectation is HAND-WRITTEN from docs/spec/tuning.md §2.51's row order and
+# §5.3's stamp grammar, never captured from a run: the row each subject's
+# part-table walk must stop at (read from `--emit-facts`' `part-layout`
+# section), the artifact's `<PREFIX>_PART_LAYOUT` value and its `_WHY`.
+#
+#   precedence: an explicit value beats the preset's; a class value (P4-P6)
+#   beats the threshold (P7); the threshold beats the residual (P8-P10); a
+#   constraint row (P1-P3) beats every control; `measured` declines only
+#   through T1.
+#
+# Columns: id, flags (or -), pattern, controls (space-separated), rows
+# (FUNCTION=ROW, comma list; ROW `T0` where no control asked), stamp (or -),
+# why (or -).
+#
+#id	flags	pattern	controls	rows	stamp	why
+class-beats-rank	-	(a)b	--part-layout=prefilter:shared --part-inline-rank=R2	prefilter=P4	rank=R2;prefilter=shared	-
+rank-beats-residual	-	(a)b	--part-inline-rank=R2 --part-residual=shared	prefilter=P7	residual=shared;rank=R2	-
+class-beats-residual	-	(a)b	--part-layout=prefilter:inline --part-residual=shared	prefilter=P5	residual=shared;prefilter=inline	-
+class-auto	-	(a)b	--part-layout=prefilter:auto --part-residual=inline	prefilter=P6	residual=inline;prefilter=auto	-
+rank-below	-	(a)b	--part-inline-rank=R3 --part-residual=inline	prefilter=P9	residual=inline;rank=R3	-
+rank-r3-hot	-	(a+)bcd	--part-inline-rank=R3	prefilter=P7	rank=R3	-
+residual-shared	-	(a)b	--part-residual=shared	prefilter=P8	residual=shared	-
+residual-auto	-	(a)b	--part-residual=auto --part-layout=find:inline	prefilter=P10	residual=auto;find=inline/none	-
+explicit-beats-preset	-	(a)b	--tune=speed --part-residual=inline	prefilter=P9	residual=inline	-
+preset-empty	-	(a)b	--tune=max-speed	prefilter=T0	-	-
+constraint-copy	-	^(a)b	--part-layout=prefilter:inline	prefilter=P2	prefilter=inline/held	-
+constraint-single	-	(a|ab)(c|bcd)(d*)	--part-layout=prefilter:inline	prefilter=P3	prefilter=inline/held	-
+constraint-rung	--vm-entry-shape=1	(a)b	--part-residual=inline --part-layout=prefilter:shared	prefilter=P3	residual=inline;prefilter=shared/held	-
+fold-rung	--vm-entry-shape=4	(?>a*)a	--part-layout=prefilter:shared	prefilter=P4	prefilter=shared	-
+held-compound	-	^\s+|\s+$	--part-layout=compound:inline	comp_a=P2,comp_b=P3	compound=inline/held	-
+held-wrap	-	(a)b	--part-layout=wrap:shared	prefilter=P10	wrap=shared/none	-
+held-other-class	-	(a)b	--part-layout=compound:inline	prefilter=P10	compound=inline/none	-
+stamp-order	-	(a)b	--part-layout=wrap:inline,prefilter:shared --part-inline-rank=R0 --part-residual=shared	prefilter=P4	residual=shared;rank=R0;prefilter=shared;wrap=inline/none	-
+later-wins	-	(a)b	--part-layout=prefilter:inline,prefilter:shared	prefilter=P4	prefilter=shared	-
+measured-alone	-	(a)b	--part-inline-rank=measured	prefilter=T0	-	threshold-unmeasured
+measured-with-class	-	(a)b	--part-inline-rank=measured --part-layout=prefilter:inline	prefilter=P5	rank=none;prefilter=inline	threshold-unmeasured
+all-auto	-	(a)b	--part-layout=prefilter:auto,compound:auto,find:auto,wrap:auto --part-residual=auto --part-inline-rank=none	prefilter=T0	-	-

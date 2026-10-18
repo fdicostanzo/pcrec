@@ -110,7 +110,10 @@ static bool is_libc_name(const char *s, size_t n)
 }
 
 /* The prefix placeholder's lead counts as an identifier byte, so `\x01q_x`
- * is one token and never a libc name. */
+ * is one token and never a libc name. The scan runs on MARKED text (the
+ * part-layout marks, `\x01L..`, are rendered later): a mark's lead and hex
+ * digits read as identifier bytes too, which is harmless because a mark sits
+ * after `static ` or on a line of its own, never inside a call name. */
 static bool ident_byte(unsigned char b)
 {
     return b == '_' || b == PCREC_PREFIX_LEAD || (b >= '0' && b <= '9') ||

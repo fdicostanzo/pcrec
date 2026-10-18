@@ -12,6 +12,8 @@
     - [§4.1.2](#s4-1-2) `value`
     - [§4.1.3](#s4-1-3) `why`
   - [§4.2](#s4-2) `decisions` — `encoding | stamp | value`
+  - [§4.3](#s4-3) `part-layout-controls` — `encoding | residual | rank | prefilter | compound | find | wrap | rows | why`
+  - [§4.4](#s4-4) `part-layout` — `encoding | function | class | callers | rank | copyable | row | layout | wrappers`
 - [§5](#s5) Guarantees
 - [§6](#s6) What is not promised
 <!-- spec-toc:end -->
@@ -40,7 +42,7 @@
 
 1. <a id="s3-p1"></a>[3¶1] `docs/spec/table_contract.md` applies in full: TAB-separated values, `#` comment lines, the last `#` line before a section's first data row is that section's header, columns are append-only, an empty field means "none", a field never contains a TAB.
 2. <a id="s3-p2"></a>[3¶2] Every table is a NAMED `#section`. The preamble before the first `#section` is free prose and belongs to no section.
-3. <a id="s3-p3"></a>[3¶3] The section NAME set is the API and is append-only. `facts` and `decisions` exist; no other section is printed.
+3. <a id="s3-p3"></a>[3¶3] The section NAME set is the API and is append-only. `facts`, `decisions`, `part-layout-controls` and `part-layout` exist; no other section is printed.
 4. <a id="s3-p4"></a>[3¶4] Cell escaping is `pcrec_sb_text`'s vocabulary, the one every registry dump uses: a byte below 0x20, and 0x7f, goes out as `\xNN`; every other byte passes through as itself.
 5. <a id="s3-p5"></a>[3¶5] Column WIDTH is not a contract. Fields are unpadded.
 6. <a id="s3-p6"></a>[3¶6] A `#` line never follows a section's data (table contract rule 3 would make it the next section's header).
@@ -112,6 +114,20 @@
 - <a id="s4-2-p2"></a>[4.2¶2] `stamp` is the macro name exactly as emitted; `value` is its replacement text exactly as emitted (a quoted string stays quoted).
 - <a id="s4-2-p3"></a>[4.2¶3] The function-like machinery macros a VM artifact defines (`<PREFIX>_PUSH(...)` and its family) are code, not stamps, and are not listed.
 - <a id="s4-2-p4"></a>[4.2¶4] What each stamp means is its own spec's (`match_api.md` §6.3, `tuning.md`); this section promises only that it is the artifact's stamp block, byte for byte.
+
+<a id="s4-3"></a>
+### 4.3 `part-layout-controls` — `encoding | residual | rank | prefilter | compound | find | wrap | rows | why`
+
+- <a id="s4-3-p1"></a>[4.3¶1] One row per encoding: the part-layout controls as the artifact table resolved them (`tuning.md` §2.51¶5): the caller's value, else the `--tune` preset, else unset.
+- <a id="s4-3-p2"></a>[4.3¶2] `residual`, `rank` and the four class columns hold a value token (`auto`, `shared`, `inline`; for `rank` `none`, `R3`..`R0`, `measured`) or `unset`. `rank` reads `R2@set` where the threshold came from the measurement set.
+- <a id="s4-3-p3"></a>[4.3¶3] `rows` is the artifact rows that fired, comma-joined (`K,T3`; `K,T1,T0`); `why` is the `<PREFIX>_PART_LAYOUT_WHY` token, or empty.
+
+<a id="s4-4"></a>
+### 4.4 `part-layout` — `encoding | function | class | callers | rank | copyable | row | layout | wrappers`
+
+- <a id="s4-4-p1"></a>[4.4¶1] One row per part the artifact defines, owned functions included (`tuning.md` §2.51¶5).
+- <a id="s4-4-p2"></a>[4.4¶2] `function` is the entry-table name without the prefix (`prefilter`, `comp_a`, `comp_b`, `search_run`); `class` a class token or `owned`; `callers` the count row P3 reads; `rank` `R0`..`R3` (`tuning.md` §2.52¶2); `copyable` `yes` or `no`, or `-` for an owned function.
+- <a id="s4-4-p3"></a>[4.4¶3] `row` is the part table row that fired, id and name (`P9 residual-inline`, `P1 owned`), or `T0 as-emitted` where no control asked for a layout. `layout` is `auto`, `shared`, `inline`, `as-emitted` (row P2: the head as the default artifact has it) or `owner` (the owner's attribute); `wrappers` counts callers that only forward to a shared part.
 
 <a id="s5"></a>
 ## 5. Guarantees

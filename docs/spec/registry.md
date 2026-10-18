@@ -115,7 +115,7 @@
     #axis  order  candidate  kind  stamp_macro  stamp_value  deny_macro
     deny_bit  force_macro  force_bit  cli_flag  applies
 
-<a id="s6-p2"></a>[6¶2] The table is the leading anonymous table of a stream that continues with the named section `memfn` (§6¶6). Its rows are selected with `build/pcrec --list-axes | bash tests/lib/table.sh table-main -`. Row and axis counts move with every axis that lands; a consumer reads them live and never from this document. The distinct values of the `axis` column are the axis roster; `docs/spec/tuning.md` §2 documents each axis, and `tests/registry/axes_registry_check.sh` requires every documented `(bit N)` heading to have a dumped row at that bit and every dumped bit to have a heading.
+<a id="s6-p2"></a>[6¶2] The table is the leading anonymous table of a stream that continues with the named sections `memfn` (§6¶6), `part-layout` and `part-layout-table` (§6¶10, §6¶11). Its rows are selected with `build/pcrec --list-axes | bash tests/lib/table.sh table-main -`. Row and axis counts move with every axis that lands; a consumer reads them live and never from this document. The distinct values of the `axis` column are the axis roster; `docs/spec/tuning.md` §2 documents each axis, and `tests/registry/axes_registry_check.sh` requires every documented `(bit N)` heading to have a dumped row at that bit and every dumped bit to have a heading.
 
 | column | value set | stable? |
 |---|---|---|
@@ -173,6 +173,32 @@
 
 <a id="s6-p9"></a>[6¶9] **Reachability of the multi-row values.** On a stock build, `default` (`a(b|c)+d`), `option` (`a(b|c)+d --unroll=4`), `denied` (`a(b|c)+d -fno-size-term`) and `size-model` (the nested-repeat pattern `tests/codegen/run_size_term.sh` calls `NEST8`, with `--features all`) are reached directly, and `table`'s `none` (`\B\b` with `--features all`, a proven-empty engine, `RX_DFA_SCAN "empty"`) and `mixed` (`[01]*1[01]{13}`) likewise. `cap-rescue` and `capacity-declined` are reached by no pattern-and-flags combination on a stock build; `tests/codegen/run_size_term.sh` reaches them through a reference compiler built with a lowered `PCREC_SIZE_TERM_THRESHOLD`/`PCREC_MAX_VM_EMIT_CODE_BYTES`, because the CLI can only raise those limits. `size-model-declined` has no cited natural witness.
 
+<a id="s6-p10"></a>[6¶10] **The `part-layout` section.** After `memfn`, `#section part-layout` lists the part-layout controls' vocabulary (`tuning.md` §2.51-§2.53), one row per (control, value), read from `src/core/part_layout.def`. The section has 5 columns:
+
+    #control  value  spelling  field  meaning
+
+| column | value set |
+|---|---|
+| `control` | `part-layout:CLASS` (CLASS `prefilter`, `compound`, `find`, `wrap`), `part-inline-rank` or `part-residual` |
+| `value` | for a class or `part-residual`: `auto`, `shared`, `inline`; for `part-inline-rank`: `none`, `R3`, `R2`, `R1`, `R0`, `measured` |
+| `spelling` | the CLI spelling that sets it (`--part-layout=CLASS:V`, `--part-inline-rank=R`, `--part-residual=V`) |
+| `field` | the `pcrec_options` member and the `lib/pcrec.h` constant the spelling sets |
+| `meaning` | one line |
+
+<a id="s6-p10a"></a>[6¶10a] Rows: `part-layout:CLASS` x {`auto`, `shared`, `inline`} (12), `part-inline-rank` x 6, `part-residual` x 3. These are valued parameters, not axes: none carries a `lib/pcrec.h` flag bit and `src/core/axes.def` has no row for one; the answer-identity sweep reads the values from this section.
+
+<a id="s6-p11"></a>[6¶11] **The `part-layout-table` section.** Then `#section part-layout-table` lists the three declared tables of `tuning.md` §2.51¶5, one row per table row in table order. The section has 5 columns:
+
+    #table  id  name  conjuncts  writes
+
+| column | value set |
+|---|---|
+| `table` | `artifact` (K, T1, TM, T2, T0, T3), `part` (P1-P10) or `wrapper` (W1, W2) |
+| `id` | the row's id |
+| `name` | the row's name (`resolve`, `rank-unmeasured`, `rank-measured`, `rank-none`, `as-emitted`, `per-part`, `owned`, `not-copyable`, `single-caller`, `class-shared`, `class-inline`, `class-auto`, `rank-hot`, `residual-shared`, `residual-inline`, `residual-auto`, `forward`, `adapt`) |
+| `conjuncts` | the row's conditions, `(always)` or `(otherwise)` where it has none |
+| `writes` | what the row writes: a layout attribute, a control value or a stamp |
+
 <a id="s7"></a>
 ## 7. What the tests pin, and what they do not
 
@@ -218,7 +244,7 @@
 | 1 | `--list-syntax` | §2 |
 | 2 | `--list-verbs` | §4 |
 | 3 | `--list-families` | §5 |
-| 4 | `--list-axes` | §6 |
+| 4 | `--list-axes` | §6 (its `memfn`, `part-layout` and `part-layout-table` sections included) |
 | 5 | `--list-definitions` | §9 |
 | 6 | `--list-limits` | `docs/spec/limits.md` §3 and `cli.md` §2 |
 | 7 | `--list-schema` | `rxt_format.md` §1.13, and `cli.md` §2 |

@@ -449,3 +449,15 @@ an end-pinned DFA body, or an exact VM hybrid's inlined prefilter, searches
 backwards from the subject's end. MASKED from `rx_info.flags` (the walk is
 answer-identical, so the deny moves no answer). Bit 52 is this lane's pick,
 the next free one at its branch point; the manager confirms it at merge.
+
+## [ENTRY-TABLE] E1 the part-layout controls (2026-10-18, lane e1)
+
+Three APPENDED `pcrec_options` fields, valued parameters and not flag bits:
+`part_layout` (`uint32_t`, one 2-bit slot per class, `PCREC_PART_LAYOUT_GET`/
+`_SET`), `part_inline_rank` (`PCREC_PART_RANK_*`) and `part_residual`
+(`PCREC_PART_UNSET`/`_AUTO`/`_SHARED`/`_INLINE`), with the class enum
+`PCREC_PART_PREFILTER`/`_COMPOUND`/`_FIND`/`_WRAP`. Zero is unset in all
+three, so a caller that memsets the struct gets today's artifacts byte for
+byte. A library-API change, not an artifact one; the abi event that rode it
+(79 -> 80) is the stamp vocabulary. Contract: `docs/spec/tuning.md`
+§2.51-§2.53, `docs/spec/match_api.md` §8.2.

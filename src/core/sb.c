@@ -242,6 +242,7 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
     if (dst->simd_open || src->simd_open)
         sb_simd_fail(dst, "a splice with a bracket open");
     pcrec_sb_puts(dst, src->p ? src->p : "");
+    dst->layout_bytes     += src->layout_bytes;
     dst->simd_guarded     += src->simd_guarded;
     dst->simd_size.total  += src->simd_size.total;
     dst->simd_size.prose  += src->simd_size.prose;
@@ -252,7 +253,7 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
  * bracket's included (see StrBuf.simd_guarded). */
 size_t pcrec_sb_len_decide(const StrBuf *sb)
 {
-    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded;
+    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded - sb->layout_bytes;
     if (sb->simd_open) n -= pcrec_sb_len_uncut(sb) - sb->simd_at_uncut;
     return n;
 }
@@ -264,9 +265,27 @@ PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb)
 {
     PcrecEmitSize z = pcrec_emit_size_measure(sb->p ? sb->p : "", sb->len, NULL);
     z.total  -= sb->simd_size.total;
+    z.total  -= sb->layout_bytes;    /* [ENTRY-TABLE] E1: the marks' code bytes */
     z.prose  -= sb->simd_size.prose;
     z.tables -= sb->simd_size.tables;
     return z;
+}
+
+/* [ENTRY-TABLE] E1 a part-layout mark: the lead byte, `L`, `id` in two hex
+ * digits, and with `line` a newline (a mark on a line of its own). Its bytes
+ * are code bytes on a code line (a definition head, or its own line), so `pcrec_sb_size_decide`'s subtraction from `total`
+ * alone is exact; inside a SIMD bracket it would be subtracted twice. */
+void pcrec_sb_layout_mark(StrBuf *sb, unsigned id, bool line)
+{
+    static const char hex[] = "0123456789abcdef";
+    if (sb->simd_open) sb_simd_fail(sb, "a part-layout mark inside a bracket");
+    size_t before = sb->len;
+    pcrec_sb_putc(sb, PCREC_PREFIX_LEAD);
+    pcrec_sb_putc(sb, 'L');
+    pcrec_sb_putc(sb, hex[(id >> 4) & 15u]);
+    pcrec_sb_putc(sb, hex[id & 15u]);
+    if (line) pcrec_sb_putc(sb, '\n');
+    sb->layout_bytes += sb->len - before;
 }
 
 /* Enters one nested comment region, latching cmt_mute_depth the first time a

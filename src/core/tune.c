@@ -58,6 +58,19 @@
  * the design's §3.3, in the cell itself — a cell with no citation is an
  * em-dash, which is the allowlist made mechanical rather than a rule a
  * reader has to apply afterwards. */
+/* [ENTRY-TABLE] E1 THE PART-LAYOUT PRESET COLUMNS (`part_residual`,
+ * `part_inline_rank`, `part_layout`; docs/design/compound_entries.md
+ * §3.2.4, D163 addenda 8 and 10). Every cell is `†` today: an em-dash
+ * pending its own ruled diff with a size AND a time measurement (D103 item
+ * 3), so every position resolves every layout control to unset and an
+ * artifact's layout moves only where a caller sets a control. The policies
+ * the cells will spell, for the record and nothing else: `−2` residual
+ * `shared`; `−1` residual `shared` + rank `R3`; `0` nothing; `+1` rank
+ * `measured` + residual `shared` (D163 addendum 10's answer to Q8); `+2`
+ * residual `inline`. A cell here changes only by that diff, and the spec's
+ * §5.4 copy is what `tests/partlayout/` reads. They are each row's last
+ * three cells, `0, 0, 0`. */
+
 static const PcrecTuneRow TUNE_TABLE[5] = {
     /* −2 `min-size`: the [ART-SIZE] ladder's two parameters, plus
      * `-fno-premul-table` denied UNCONDITIONALLY — premultiplication's
@@ -65,24 +78,24 @@ static const PcrecTuneRow TUNE_TABLE[5] = {
      * doubling for EVERY share of scan time, so this cell needs no
      * measurement it does not have. */
     { PCREC_TUNE_MIN_SIZE,  "min-size",  95,  40000, 0,
-      PCREC_NO_PREMUL_TABLE },
+      PCREC_NO_PREMUL_TABLE, 0, 0, 0 },
 
     /* −1 `size`: the ladder's two parameters alone. The three
      * phi-conditional cells (premul, tiered-entry, lambda) stay em-dashed
      * until their own on-demand measurement — a condition is not a cell. */
-    { PCREC_TUNE_SIZE,      "size",      85,  80000, 0, 0 },
+    { PCREC_TUNE_SIZE,      "size",      85,  80000, 0, 0, 0, 0, 0 },
 
     /* 0 `balanced`: TODAY'S DEFAULTS, BYTE FOR BYTE (Frank's
      * keep-the-defaults ruling, 2026-09-04). Every cell is the sentinel;
      * this row must stay all-sentinel or the no-op acceptance cell is a
      * lie. */
-    { PCREC_TUNE_BALANCED,  "balanced",   0,      0, 0, 0 },
+    { PCREC_TUNE_BALANCED,  "balanced",   0,      0, 0, 0, 0, 0, 0 },
 
     /* +1 `speed`: the VM entry chain's size term raised to 8,192, which
      * admits the three measured cells just above today's 4,096 (program
      * 5,183 / 5,985 / 6,954 bytes, five times better bytes-per-ns than the
      * next cell up) and admits nothing beyond them. */
-    { PCREC_TUNE_SPEED,     "speed",      0,      0, 8192, 0 },
+    { PCREC_TUNE_SPEED,     "speed",      0,      0, 8192, 0, 0, 0, 0 },
 
     /* +2 `max-speed`: IDENTICAL TO +1 ON EVERY CELL OF THIS TABLE.
      *
@@ -98,7 +111,7 @@ static const PcrecTuneRow TUNE_TABLE[5] = {
      * carried — an entry-chain term of 13,312 — was WITHDRAWN because its
      * number came from a recommendation phrase and not from a measurement,
      * and there is no measured cell above program 6,954 bytes to cite. */
-    { PCREC_TUNE_MAX_SPEED, "max-speed",  0,      0, 8192, 0 }
+    { PCREC_TUNE_MAX_SPEED, "max-speed",  0,      0, 8192, 0, 0, 0, 0 }
 };
 
 /* The alias table is the SAME data read the other way. It is derived from
@@ -253,4 +266,25 @@ long long pcrec_tune_vm_inline_chain_max(int tune)
 uint64_t pcrec_tune_deny_flags(int tune)
 {
     return pcrec_tune_row(tune)->deny_flags;
+}
+
+/* [ENTRY-TABLE] E1 the three part-layout preset cells (0 = em-dash; the
+ * caller's own value, where set, beats them in src/gen/part_layout.c's
+ * row K). */
+int pcrec_tune_part_residual(int tune)
+{
+    return pcrec_tune_row(tune)->part_residual;
+}
+
+/* The position's rank-threshold preset cell (0 = em-dash). */
+int pcrec_tune_part_inline_rank(int tune)
+{
+    return pcrec_tune_row(tune)->part_inline_rank;
+}
+
+/* The position's class-value preset cells, one `PCREC_PART_*` slot per
+ * class (0 = em-dash in every slot). */
+uint32_t pcrec_tune_part_layout(int tune)
+{
+    return pcrec_tune_row(tune)->part_layout;
 }

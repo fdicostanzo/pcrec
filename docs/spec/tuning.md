@@ -54,6 +54,9 @@
   - [§2.47](#s2-47) `-fno-start-width` — `PCREC_NO_START_WIDTH` (bit 53)
   - [§2.48](#s2-48) `-fno-start-landing` — `PCREC_NO_START_LANDING` (bit 54)
   - [§2.50](#s2-50) `-fno-rev-end-onewalk` — `PCREC_NO_REV_END_ONEWALK` (bit 56)
+  - [§2.51](#s2-51) `--part-layout=CLASS:V` — the parts' layout, per class
+  - [§2.52](#s2-52) `--part-inline-rank=R` — the parts' inline threshold
+  - [§2.53](#s2-53) `--part-residual=V` — the layout of every other part
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -153,6 +156,9 @@
 | 2.46 | `-fno-rev-end` | 52 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
 | 2.47 | `-fno-start-width` | 53 | on | answer-identical | masked | `<PREFIX>_DFA_START` |
 | 2.48 | `-fno-start-landing` | 54 | on | answer-identical | masked | `<PREFIX>_DFA_START` |
+| 2.51 | `--part-layout=CLASS:V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
+| 2.52 | `--part-inline-rank=R` | — | unset (`none`) | answer-identical | — | `<PREFIX>_PART_LAYOUT`, `<PREFIX>_PART_LAYOUT_WHY` |
+| 2.53 | `--part-residual=V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -1020,6 +1026,98 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-50-p4"></a>[2.50¶4] Denied, every `$`/`\Z` artifact keeps the two-seed walk of §2.46 with its tie code where a match can end by consuming the final newline. The form is internal bookkeeping with no stamp of its own: `--emit-ir`'s `rev-end-form`/`mark-prio` rows (`ir_listing.md` §3.1) and `--emit-facts`' `end_mark` fact (`facts_listing.md` §4.1.2) show it. Design: `docs/design/endmark.md` §R.
 
+<a id="s2-51"></a>
+### 2.51 `--part-layout=CLASS:V` — the parts' layout, per class
+
+<a id="s2-51-p1"></a>[2.51¶1] Not a bit of `pcrec_options.flags`: the separate field `part_layout`, a `uint32_t` holding one 2-bit slot per class, read and written with `PCREC_PART_LAYOUT_GET(word, cls)` / `PCREC_PART_LAYOUT_SET(word, cls, v)` (`lib/pcrec.h`). The CLI takes `CLASS:V[,CLASS:V...]`; a later item for the same class wins, and a class not named keeps its value. A PART is a static function an artifact's entries call. The classes, by slot:
+
+| slot | token | the class's parts |
+|---|---|---|
+| `PCREC_PART_PREFILTER` (0) | `prefilter` | the VM hybrid's embedded DFA search, `<prefix>_prefilter` |
+| `PCREC_PART_COMPOUND` (1) | `compound` | a compound's parts, `<prefix>__<role>_search` |
+| `PCREC_PART_FIND` (2) | `find` | the iterator's parts: none exist, the iterator is not built |
+| `PCREC_PART_WRAP` (3) | `wrap` | static twins of wrapper bodies and residual leaves: none exist |
+
+<a id="s2-51-p1a"></a>[2.51¶1a] A value for `find` or `wrap` is accepted and lays out nothing. A value for `compound` is accepted and today changes no part: the one compound row built (split) has a part whose body holds a label table (P2) and a part with one caller (P3), so every compound part stops at a constraint row and the stamp reads `compound=V/held`.
+
+<a id="s2-51-p2"></a>[2.51¶2] The values, shared with §2.53:
+
+| value | constant | the part's layout |
+|---|---|---|
+| (unset) | `PCREC_PART_UNSET` (0) | the control decides nothing; §2.51¶5 resolves it |
+| `auto` | `PCREC_PART_AUTO` (1) | the owner's default layout: the attribute its emitter writes, often none |
+| `shared` | `PCREC_PART_SHARED` (2) | one out-of-line static body each caller calls: `noipa` (no inlining, no cloning, no interprocedural analysis) where the compiler has it, else `noinline` |
+| `inline` | `PCREC_PART_INLINE` (3) | `always_inline` in each caller |
+
+<a id="s2-51-p2a"></a>[2.51¶2a] The layout is written on the part's definition head after `static `: `shared` is a guarded block on lines of its own, `__attribute__((noipa))` under `#if __has_attribute(noipa)` and `__attribute__((noinline))` under its `#else` (with `__has_attribute` defined to 0 where the compiler lacks it), `inline` is `inline __attribute__((always_inline)) `, `auto` nothing. A row that writes no layout (P1, P2, and every `auto`) leaves the head exactly as the default artifact has it.
+
+<a id="s2-51-p3"></a>[2.51¶3] ANSWER-IDENTICAL across every value. Not a flags bit, so it has no `rx_info.flags` question and no `rx_info` mirror. The layout is rendered after every length decision: no size cap, size term (§2.16), entry-shape term (§2.21) or stamp reads the layout's bytes, so no control moves the refusal set or any other stamp. The size limits (`limits.md` §8) bound the default-layout text.
+
+<a id="s2-51-p4"></a>[2.51¶4] **A request the artifact cannot honour is a selection outcome, never a refusal.** The only refusal is a field value outside its set (`invalid part-layout control (...)`, through `pcrec_error`); the CLI refuses an unknown word by name. A `.rxt` config's raw `pcrec --part-layout=...` line sets only the classes it names: `cli.md` §1.1.4's file-wins rule, applied per class.
+
+<a id="s2-51-p5"></a>[2.51¶5] **The decision** is three declared tables, listed by `--list-axes`' `part-layout-table` section (`registry.md` §6¶11). Each control resolves on its own (row K): the caller's value if set, else the `--tune` position's preset cell (§5.4), else unset. Every preset cell is `†` today, so the layout moves only where a caller sets a control.
+
+<a id="s2-51-p5a"></a>[2.51¶5a] ARTIFACT table, once per compile. K `resolve` always runs; then the first holding of T1/TM/T2, then the first holding of T0/T3.
+
+| id | name | conjuncts | writes |
+|---|---|---|---|
+| K | `resolve` | (always) | each control := the caller's value, else the position's preset cell, else unset |
+| T1 | `rank-unmeasured` | the threshold is `measured`; the active measurement set has no `θ_hot` | threshold := `none`; `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"` |
+| TM | `rank-measured` | the threshold is `measured`; `θ_hot` is a rank | threshold := `θ_hot`, stamped `rank=R@set` |
+| T2 | `rank-none` | the threshold is `measured`; `θ_hot` is `none` | threshold := `none`; `_PART_LAYOUT_WHY "no-material-rank"` |
+| T0 | `as-emitted` | every class value unset or `auto`; the threshold unset or `none`; the residual unset or `auto` | nothing is laid out; the artifact is byte-identical to one built without the controls, and carries no stamp except a WHY |
+| T3 | `per-part` | (otherwise) | consult the part table for each part; `<PREFIX>_PART_LAYOUT` |
+
+<a id="s2-51-p5b"></a>[2.51¶5b] PART table, first match per part, under T3:
+
+| id | name | conjuncts | writes |
+|---|---|---|---|
+| P1 | `owned` | an owner writes the function's attribute: the VM entry chain's `_run` bodies and helpers, `_deep`, the encoding seam | the owner's attribute, unchanged |
+| P2 | `not-copyable` | the body holds a label table or a computed goto: the DFA attempt route's body | nothing: the head as the default artifact has it (gcc keeps such a body out of line) |
+| P3 | `single-caller` | `callers(part)` = 1 | its default layout |
+| P4 | `class-shared` | the part's class value is `shared` | `shared` (§2.51¶2a) |
+| P5 | `class-inline` | the part's class value is `inline` | `always_inline` |
+| P6 | `class-auto` | the part's class value is `auto` | its default layout |
+| P7 | `rank-hot` | the threshold is a rank; the part's rank is at or above it (§2.52) | `always_inline` |
+| P8 | `residual-shared` | the residual is `shared` (§2.53) | `shared` (§2.51¶2a) |
+| P9 | `residual-inline` | the residual is `inline` | `always_inline` |
+| P10 | `residual-auto` | (otherwise) | its default layout |
+
+<a id="s2-51-p5c"></a>[2.51¶5c] P1-P3 are constraint rows ahead of every control row: no control overrides them, and a request they hold is a selection outcome. `callers(part)` counts distinct calling functions after every function its owner makes `always_inline` is folded into its own callers: the VM hybrid's prefilter has 2 callers at `--vm-entry-shape` rung `inline` and 1 at `forward`, `shared` and `plain`.
+
+<a id="s2-51-p5d"></a>[2.51¶5d] WRAPPER table, for a caller that only forwards to a part a `shared` row wrote: W1 `forward` (the wrapper's arguments pass unchanged: `return part(args);`, a tail jump with no frame), W2 `adapt` (otherwise: the wrapper's own adaptation and a call). No such caller exists today.
+
+<a id="s2-51-p6"></a>[2.51¶6] **The stamps** are `<PREFIX>_PART_LAYOUT` and `<PREFIX>_PART_LAYOUT_WHY` (§5.3¶3; `match_api.md` §6.3.11). `make test-axes` sweeps every compile under `--part-residual=shared` and `--part-residual=inline`; under `AXES_FULL=1` it also sweeps each class value once over all four classes (`--part-layout=prefilter:V,compound:V,find:V,wrap:V`: their parts are disjoint) and each rank value, reading the values from `--list-axes`' `part-layout` section. Its summary names the tier it ran.
+
+<a id="s2-51-p7"></a>[2.51¶7] **Dial:** the `part-layout prefilter`, `compound`, `find` and `wrap` rows carry no cell (§5.4).
+
+<a id="s2-52"></a>
+### 2.52 `--part-inline-rank=R` — the parts' inline threshold
+
+<a id="s2-52-p1"></a>[2.52¶1] Not a flags bit: the separate field `part_inline_rank` (`int`). The CLI and `lib/pcrec.h` spell it: `none` (`PCREC_PART_RANK_NONE` = 1), `R3` (2), `R2` (3), `R1` (4), `R0` (5), `measured` (`PCREC_PART_RANK_MEASURED` = 6); 0 is unset. A copyable part whose hottest in-edge rank is at or above `R` is inlined (row P7), where no class value (§2.51) decided it.
+
+<a id="s2-52-p2"></a>[2.52¶2] **A part's rank** is static, a property of its hottest call site:
+
+| rank | the call site |
+|---|---|
+| `R3` | inside a per-candidate or per-attempt loop |
+| `R2` | once per call |
+| `R1` | on a data-dependent subset of calls |
+| `R0` | on an error, tie or fallback path |
+
+<a id="s2-52-p2a"></a>[2.52¶2a] `R3` inlines the `R3` parts, `R2` those and `R2` parts, and so on down to `R0`, every copyable part; `none` inlines none.
+
+<a id="s2-52-p3"></a>[2.52¶3] **`measured`** reads the active measurement set's threshold `θ_hot`. No compile carries a measurement set today, so `measured` always declines: the threshold resolves to `none` (row T1) and the artifact stamps `<PREFIX>_PART_LAYOUT_WHY "threshold-unmeasured"`; with no other control the object is the default object exactly. A set whose `θ_hot` is `none` would stamp `"no-material-rank"` (row T2); unreachable today.
+
+<a id="s2-52-p4"></a>[2.52¶4] ANSWER-IDENTICAL, a selection outcome never a refusal, no flags bit; the tables, the stamps and the sweep are §2.51's. **Dial:** the `part-inline-rank` row (§5.4).
+
+<a id="s2-53"></a>
+### 2.53 `--part-residual=V` — the layout of every other part
+
+<a id="s2-53-p1"></a>[2.53¶1] Not a flags bit: the separate field `part_residual` (`int`), valued `auto`, `shared` or `inline` (§2.51¶2's constants); 0 is unset. It is the layout of every part no class value (rows P4-P6) and no threshold (row P7) decided: rows P8-P10. P1-P3 hold ahead of it (§2.51¶5).
+
+<a id="s2-53-p2"></a>[2.53¶2] ANSWER-IDENTICAL, a selection outcome never a refusal; the tables, the stamps and the sweep are §2.51's. **Dial:** the `part-residual` row (§5.4).
+
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
 
@@ -1123,6 +1221,9 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO` / `_DFA` / `_VM`) | `--engine=E` | §2.11 |
+| `part_layout` (`PCREC_PART_*` slots, one 2-bit slot per class; `PCREC_PART_LAYOUT_GET`/`_SET`) | `--part-layout=CLASS:V` | §2.51 |
+| `part_inline_rank` (`PCREC_PART_RANK_*`) | `--part-inline-rank=R` | §2.52 |
+| `part_residual` (`PCREC_PART_UNSET` / `_AUTO` / `_SHARED` / `_INLINE`) | `--part-residual=V` | §2.53 |
 | `tune` (`PCREC_TUNE_MIN_SIZE` … `PCREC_TUNE_MAX_SPEED`, `-2..+2`) | `--tune=N` | §5 |
 
 <a id="s4-p2"></a>[4¶2] **The `flags` bits that are not tuning axes:** `PCREC_CASELESS`, `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` are semantic and output options (`match_api.md` §8.2, `cli.md`); `PCREC_UCP` (`--ucp`) is a semantic axis — it changes what `\d`, `\s`, `\w` and the POSIX classes match, so it is reflected in `rx_info.flags` unmasked, no `--tune` position sets it, and `make test-axes` does not sweep it (`cli.md` §1.9); `PCREC_TRACE` (`--trace`) selects an instrumented matcher that writes an event stream to stderr, which changes what the artifact does at run time (`table_contract.md` §1¶3); and `PCREC_SIZE_CAP_REFUSE` (`--size-cap=refuse`) decides only whether a slower artifact that fits ships or the compile refuses (`limits.md` §8.4), and is masked out of `rx_info.flags`.
@@ -1182,6 +1283,8 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 
 <a id="s5-3-p2"></a>[5.3¶2] A consumer buckets on the token; a number would invite arithmetic on an ordinal. There is no `rx_info` mirror: nothing at run time behaves differently because of the dial. `tune` is not in `rx_info.flags`, which reflects option bits only.
 
+<a id="s5-3-p3"></a>[5.3¶3] The part-layout controls (§2.51-§2.53) add two stamps beside `<PREFIX>_TUNE`, `<PREFIX>_PART_LAYOUT` (present only when row T3 fires) and `<PREFIX>_PART_LAYOUT_WHY` (present only when row T1 or T2 fires): `match_api.md` §6.3.11¶4 states them. Neither has an `rx_info` mirror.
+
 <a id="s5-4"></a>
 ### 5.4 The policy table
 
@@ -1225,6 +1328,12 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 | `-fno-req-handoff` | — | — | — | — | — | §2.41; NOT A RUNG: removes a rescan, not a size/speed trade |
 | `-fno-start-set` | — | — | — | — | — | §2.42; NOT A RUNG: removes attempts and scan steps that cannot begin a match |
 | `-fno-req-run-fold` | — | — | — | — | — | §2.39; NOT A RUNG: a narrower or wider necessary fact, not a size/speed trade |
+| `part-residual` | — `†` | — `†` | — | — `†` | — `†` | §2.53; the intended cells are `−2` `shared`, `−1` `shared`, `+1` `shared`, `+2` `inline`, each pending its own ruled diff with a size and a time measurement (D103 item 3) |
+| `part-inline-rank` | — | — `†` | — | — `†` | — | §2.52; the intended cells are `−1` `R3` and `+1` `measured`, each pending its own ruled diff with a size and a time measurement (D103 item 3) |
+| `part-layout prefilter` | — | — | — | — | — | §2.51; no cell: a class value is a caller's choice |
+| `part-layout compound` | — | — | — | — | — | §2.51; no cell, as `prefilter` |
+| `part-layout find` | — | — | — | — | — | §2.51; no cell, as `prefilter`; the class has no subject |
+| `part-layout wrap` | — | — | — | — | — | §2.51; no cell, as `prefilter`; the class has no subject |
 | emitted-size caps | — | — | — | — | — | `limits.md` §8; NOT A RUNG: raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
 
 <a id="s5-4-p3"></a>[5.4¶3] The reason codes:

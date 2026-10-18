@@ -4,6 +4,26 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **part_layout.def** — [ENTRY-TABLE] E1 (lane e1, 2026-10-18;
+  `docs/design/compound_entries.md` §3.9): THE PART-LAYOUT VOCABULARY, four
+  X-macro families (`PL_CLASS`, `PL_VALUE`, `PL_RANK`, `PL_WHY`), each row a
+  `lib/pcrec.h` constant as a token plus its spelling. `axes.def`'s shape: the
+  CLI's three parsers, the `--list-axes` `part-layout` section and the stamp
+  and listing writers (`src/gen/part_layout.c`) all derive from it.
+- **tune.c ([ENTRY-TABLE] E1)** — `TUNE_TABLE` gains three preset columns
+  (`part_residual`, `part_inline_rank`, `part_layout`), every cell 0 (a `†`
+  em-dash), read by `pcrec_tune_part_*` in part_layout.c's row K.
+- **sb.c ([ENTRY-TABLE] E1)** — `pcrec_sb_layout_mark` writes a part-layout
+  mark and counts its bytes in `StrBuf.layout_bytes`, which
+  `pcrec_sb_len_decide` and `pcrec_sb_size_decide` subtract and
+  `pcrec_sb_splice` carries (I5: no decision reads layout text).
+- **compile.c / compound.c ([ENTRY-TABLE] E1)** — the three control fields
+  are validated with `tune` (a value outside its set refuses);
+  `pcrec_part_layout_render` runs after the size decisions and notes, before
+  the prefix render, except in a spliced part's compile; a part's facts carry
+  `copyable` and `layout_bytes`, and a part compile names its shell row
+  (`part_compile`'s `pe`).
+
 - **ksrc.c** / **ksrc.h** / **ksrc_kinds.c** — [KNOW-SRC] K0/K1 (lane ksrc,
   2026-10-16; `docs/design/measure_sets.md` rev 3 §9.2-§9.7): THE KNOWLEDGE-
   SOURCE MODULE's kind-independent PARTS. A KIND (the analysis object, `lib`

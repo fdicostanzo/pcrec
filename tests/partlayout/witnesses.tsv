@@ -1,0 +1,31 @@
+# tests/partlayout/witnesses.tsv -- [ENTRY-TABLE] E1's WITNESS ARTIFACTS, with
+# the HAND class map and HAND rank fixture the independent evaluator reads
+# (docs/design/compound_entries.md §3.6). Written from the EMITTED C of each
+# pattern's default artifact, never from src/gen/part_layout.c:
+#
+#   class  the subject functions (a class token) and nothing else; the owned
+#          and not-a-part functions are the evaluator's default (no layout)
+#   rank   each subject's hottest call site, read off the default text:
+#          R3 inside the search loop's retry (a second `rx_prefilter(` call
+#          site in `rx_search_run`), R2 once per call, R1 a subset of calls
+#
+# NOT A WITNESS: an empty-language hybrid (`((?=a)z)`), whose prefilter body is
+# `return 0;`. Its `auto`/`inline` layouts leave no symbol (gcc's
+# interprocedural constant propagation deletes the part and its calls), so
+# the hand class map would need a per-layout presence rule; `shared`
+# (`noipa`) keeps it.
+#
+# Every witness is a corpus pattern (tests/**/*.rxt), so a row is reached by
+# setting a control on an artifact the suite already compiles (D163 add. 11).
+# Columns: id, flags (or -), pattern, class map, rank map.
+#
+#id	flags	pattern	classes	ranks
+ab	-	(a)b	rx_prefilter=prefilter	rx_prefilter=R2
+ab-utf8	-e utf8	(a)b	rx_prefilter=prefilter	rx_prefilter=R2
+attempt	-	^(a)b	rx_prefilter=prefilter	rx_prefilter=R2
+framed	-	(a|ab)(c|bcd)(d*)	rx_prefilter=prefilter	rx_prefilter=R2
+forward	-	(?>a*)a	rx_prefilter=prefilter	rx_prefilter=R3
+fwd-inline	--vm-entry-shape=4	(?>a*)a	rx_prefilter=prefilter	rx_prefilter=R3
+plain-ab	--vm-entry-shape=1	(a)b	rx_prefilter=prefilter	rx_prefilter=R2
+clamp	-	(a+)bcd	rx_prefilter=prefilter	rx_prefilter=R3
+split	-	^\s+|\s+$	rx__f_search=compound,rx__q_search=compound	rx__f_search=R2,rx__q_search=R2
