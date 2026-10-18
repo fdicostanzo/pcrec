@@ -207,13 +207,28 @@ def analyse(r, cfg, rnd):
     c1, e1 = compile_c(r, ["-fno-scan-edge"])
     F = kvdfa.Machine(c1, "forward") if c1 else None
     A = kvdfa.Machine(c1, "anchored") if c1 else None
-    src = "N"
+    src, lpat, L = "N", r["pat"], None
+    an = kvctx.strip_anchors(r["pat"])
     if not (A and A.ok):
         c2, e2 = compile_c(r, LANGF)
         A = kvdfa.Machine(c2, "anchored") if c2 else None
         src = "D" if A and A.ok else ("none:" + (e2 or "no-anchored")[:60])
+        if not (A and A.ok) and c2:
+            Fz = kvdfa.Machine(c2, "forward")
+            if Fz.ok and not Fz.seeded and Fz.acc_any[0]:
+                src, A = "nullable", None   # the empty match: no position is in every match
+                L = dict(S=[], span=0, exact=0, cex=None, Qk={})
+        if L is None and not (A and A.ok) and an and an[0]:
+            # an attempt-engine pattern (`^`/`\A`/`\G` at the origin, no table):
+            # the language from the origin is the body's, the anchor pcrec's edge
+            body = an[2] + {"$": b"$", "z": b"\\z", "Z": b"\\Z", "": b""}[an[1]]
+            c3, e3 = compile_c(r, LANGF, pat=body)
+            A = kvdfa.Machine(c3, "anchored") if c3 else None
+            if A and A.ok:
+                src, lpat = "anchor-stripped:" + an[0], body
     rec["lang_src"] = src
-    L = kvdfa.lang(A, A.starts()) if A and A.ok else None
+    if A and A.ok:
+        L = kvdfa.lang(A, A.starts())
     if c1:
         st1 = stamps(c1)
         rec["nse_moved"] = int(st1.get("ENGINE") != st.get("ENGINE"))
@@ -221,11 +236,21 @@ def analyse(r, cfg, rnd):
     if st.get("ENGINE") == "vm":
         ir, e3 = G.run([PCREC, "--emit-ir"] + opts(r) + ["--pattern", r["pat"]])
         vm = kvvm.vm_prefix(ir) if ir else None
-    wk = kvdfa.whole(A, L, A.starts()) if L else 0
+    wk = kvdfa.whole(A, L, A.starts()) if L and A is not None else 0
     if L:
-        rec.update(span=L["span"], exact=L["exact"], whole=wk, seeded=int(A.seeded),
-                   views=int(A.has_views), S0=kvdfa.setstr(L["S"][0]) if L["S"] else "")
-        rec.update(controls(r, A, L, wk, rnd))
+        rec.update(span=L["span"], exact=L["exact"], whole=wk, seeded=int(A.seeded) if A else 0,
+                   views=int(A.has_views) if A else 0, S0=kvdfa.setstr(L["S"][0]) if L["S"] else "")
+        if A is not None:
+            rec.update(controls(dict(r, pat=lpat), A, L, wk, rnd))
+    if an and an[1]:
+        # an END anchor: is the body without it whole-cover? (then a match is
+        # the product AND a length compare, pcrec's)
+        ce, ee = compile_c(r, LANGF, pat=an[2])
+        Ae = kvdfa.Machine(ce, "anchored") if ce else None
+        if Ae and Ae.ok:
+            Le = kvdfa.lang(Ae, Ae.starts())
+            rec["whole_end"] = kvdfa.whole(Ae, Le, Ae.starts())
+            rec["anchors"] = an[0] + "/" + an[1]
     # context
     cx = kvctx.parse(r["pat"])
     if cx is not None:
@@ -302,9 +327,11 @@ def analyse(r, cfg, rnd):
             row["p0rel"] = ("none" if len(P0) == 256 else "exact" if P0 == S0 else
                             "superset" if S0 <= P0 else "UNDER")
             row.update(span=L["span"], exact=L["exact"], mixed=int(L["exact"] < L["span"]),
-                       whole=wk, seeded=int(A.seeded))
+                       whole=wk, seeded=int(A.seeded) if A else 0)
         k = row["kind"]
-        if k in ("DFA_SCAN", "HYB_PF") and L and origin == "start":
+        if k in ("DFA_SCAN", "HYB_PF") and L and origin == "start" and L["exact"] == 0:
+            row.update(a_contig=0, a_best=0, a_flags="")
+        elif k in ("DFA_SCAN", "HYB_PF") and L and origin == "start":
             if F and F.ok and not F.seeded:
                 c, b, fl = kvdfa.uniform(F, L["S"], L["exact"])
                 row.update(a_contig=c, a_best=b, a_flags="".join("1" if x else "0" for x in fl))

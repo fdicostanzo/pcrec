@@ -1,0 +1,45 @@
+# kvcensus selftest transcript, 2026-10-18, tree 57c63e399, libpcre2-8 10.46
+PASS  exact abc\d{3,7} = span = 6                                got=(6, 6)
+PASS  exact ab|cd = 1 (a product would admit ad)                 got=1
+PASS  ab|cd counterexample pair                                  got=True
+PASS  exact [ac][bd] = 2                                         got=2
+PASS  PLANT [ac][bd] minus c->d: exact drops to 1                got=1
+PASS  utf8 abc[alpha-omega]x: exact 4 of span 6 (mixed)          got=(4, 6)
+PASS  uniform abc\d{3,7}: true at all six                        got=(6, 6, [True, True, True, True, True, True])
+PASS  PLANT a non-uniform digit at offset 3: contig 3, flag[3] 0 got=(3, False)
+PASS  uniform ac\d|bc: false at 0                                got=False
+PASS  \bfoobar\b forward machine is seeded                       got=True
+PASS  \bfoobar\b under (?<!\w)+absent: one entry row             got=1
+PASS  \bfoobar\b under every context: two entry rows             got=2
+PASS  whole(abc) = 3                                             got=3
+PASS  whole((?i)abc) = 3                                         got=3
+PASS  whole(foo|foobar) = 3                                      got=3
+PASS  whole(abcd?) = 0                                           got=0
+PASS  whole(\babc) = 0                                           got=0
+PASS  whole(a[0-9]{2}) = 3                                       got=3
+PASS  PLANT abc with a live edge after the end: whole 0          got=0
+PASS  vm ab(?=c)(x)\1: strict lit 2 (stops at the assert)        got=(2, 2)
+PASS  vm (a)bc\1: strict 0, relaxed 3                            got=(0, 3)
+PASS  vm (?:ab|cd)(x)\1: 0 (dispatch)                            got=0
+PASS  vm (?i)(foo)\1: relaxed cls 3, lit 0                       got=(0, 3)
+PASS  ctx \bfoo: leading \b, body foo                            got=b'foo'
+PASS  ctx \bfoo|bar: top-level alternation declines              got='toplevel-alt'
+PASS  expressible \b before a word set: (?<!\w), absent ok       got=(True, True)
+PASS  expressible \b before a non-word set: (?<=\w), absent fails got=(True, False)
+PASS  PLANT \b before a straddling set [a ]: not expressible     got=False
+PASS  expressible (?<=ab): positive width 2                      got=True
+PASS  expressible (?<!ab): a disjunction, not expressible        got=False
+PASS  expressible (?<!x): width 1, absent satisfies              got=(True, True)
+PASS  expressible (?<=a|b): not a product                        got=False
+PASS  pcre abc123 is a prefix                                    got=True
+PASS  pcre abd is not a prefix                                   got=False
+PASS  pcre confirms the ab|cd counterexample pair                got=(True, False)
+PASS  PLANT a superset position claimed exact: PCRE2 rejects some got=True
+PASS  pcre utf8 truncated abc\xce is a prefix                    got=True
+PASS  pcre utf8 abc\xcf\xb1 is not                               got=False
+PASS  pcre \bfoo == (?<!\w)foo on 5 contexts                     got=[True, True, True, True, True]
+PASS  PLANT the wrong rewrite of \b-x differs somewhere          got=True
+PASS  probe x[a-z]+@y: one PF site, DFA_SCAN                     got=[('PF', 'DFA_SCAN')]
+PASS  probe x[a-z]+@y: proven0 = {x}                             got=[120]
+PASS  probe x[a-z]+@y: PRE site present, proven nothing          got=[256]
+== selftest PASS: 0 failed

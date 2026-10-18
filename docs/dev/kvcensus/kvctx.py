@@ -192,3 +192,35 @@ def expressible(item, adj, utf8, wset):
     if kind in ("lb+", "la+"):
         return (w is not None and w > 0), False, w or 0
     return (w == 1), True, 1
+
+
+def strip_anchors(p):
+    """START/END anchors around a pattern with no top-level `|`: the
+    attempt-engine patterns (`^`, `\\A`, `\\G`, `(?m)^`) have no table, so the
+    census reads the language from the origin off the BODY. -> (lead, trail,
+    body) with lead in {'^', 'A', 'G', ''} and trail in {'$', 'z', 'Z', ''},
+    or None when there is nothing to strip or the shape declines."""
+    pm = _parens(p)
+    if pm is None:
+        return None
+    i, pre = 0, b""
+    while True:
+        m = re.match(rb"\(\?[a-zA-Z^-]*\)", p[i:])
+        if not m: break
+        if b"x" in m.group(0): return None
+        pre += m.group(0); i += m.end()
+    lead = ""
+    if p[i:i + 1] == b"^":
+        lead, i = "^", i + 1
+    elif p[i:i + 2] in (b"\\A", b"\\G"):
+        lead, i = p[i + 1:i + 2].decode(), i + 2
+    j, trail = len(p), ""
+    if j > i and p[j - 1:j] == b"$" and (j < 2 or p[j - 2] != 0x5c):
+        trail, j = "$", j - 1
+    elif j - i >= 2 and p[j - 2:j] in (b"\\z", b"\\Z") and (j < 3 or p[j - 3] != 0x5c):
+        trail, j = p[j - 1:j].decode(), j - 2
+    if not lead and not trail:
+        return None
+    if _toplevel_alt(p[len(pre):], pm):
+        return None
+    return lead, trail, pre + p[i:j]
