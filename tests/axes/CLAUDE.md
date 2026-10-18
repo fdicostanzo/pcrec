@@ -649,7 +649,10 @@ substitute for each other.
   kit's `pres-set-lead`, which this arm sweeps) from the derived bit set, so
   the alias is neither a dead flag swept nor a header bit with no spelling.
 - **Selecting it.** The empty `AXES=`, the token `AXES=--memfn`, or one row's
-  spelling (`AXES=--memfn=no-vrun-w32`). `MEMFN_REACH_ONLY=1` runs the reach
+  spelling (`AXES=--memfn=no-vrun-w32`; run_axes.sh then passes `--subset`,
+  so only the selected rows are owed their two cells — before b3bxtri every
+  spelling selection read `no job cell` for each unselected row and was RED
+  by construction). `MEMFN_REACH_ONLY=1` runs the reach
   alone (no baseline, no harness; seconds on a sample) and exits;
   `MEMFN_EVERY=K` takes every K-th distinct pattern (floors are then not
   applied — witnesses, classes, the null arm and the controls still are).

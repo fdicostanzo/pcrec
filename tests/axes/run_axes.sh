@@ -1197,6 +1197,8 @@ fi
 # the reach: ONE call, the cells' own flags on its command line
 run_memfn_reach() {
     local -a cargs=() _i
+    # AXES= named rows by spelling (not empty, not the token): a selection
+    case " $AXES " in ("  "|*" --memfn "*) ;; (*) cargs+=(--subset) ;; esac
     for _i in "${!memfn_cell_name[@]}"; do
         cargs+=(--cell "${memfn_cell_name[$_i]}|${memfn_cell_layer[$_i]}|${memfn_cell_flags[$_i]}")
     done
