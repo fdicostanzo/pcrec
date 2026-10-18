@@ -12,15 +12,22 @@
 # search head's guarded `__attribute__((noclone))` line above a definition),
 # `static-inline` (a `static inline` definition with no other attribute).
 #
-#writer	kind	names	owner
-A1	always_inline	^P_(run_state_bind|run_state_init|reset_for_next_attempt|match_anchored|report_captures|search_run|match_run|match_caps_run)$	the VM entry chain (emit_vm.c vm_plan_entry), owned: P1
-A1	noinline	^P_match_anchored$	the VM entry chain's `shared` rung, owned: P1
-A2	noinline	^P_(search|match|match_caps)_deep$	[OPT-1]'s deep tier, owned: P1
-A3	noclone	^P(_search|_prefilter|__[a-z0-9]+_search)$	K24's noclone on every DFA search head
-A4	static-inline	^P_(span_match|span_match_caseless|span_ci_fold|span_ci_decode|back_step|decode|var_valid|bref_match|bref_match_caseless)$	the encoding seam (src/enc/), owned: P1
-A5	static-inline	^P_(wcls[0-9]+|class_kit[0-9]+|class_atom[0-9]*|scankit[0-9]*)$	the class kit (clskit.c), not a part
-A6	static-inline	^P(__[a-z0-9]+)?_(forward|reverse|anchored)_(step|is_dead|is_stop|accepts|accepts_class|row|view_live|view_take)$	the DFA machine's state helpers, not a part
-A7	static-inline	^P(__[a-z0-9]+)?_(ofsskip|ofsskip__body|reqrun|reqrun__body|reqrun_whole|reqrun_whole__body|w[0-9]+|[a-z0-9_]*_pf[a-z0-9_]*|[a-z0-9_]*__body)$	the search-code kit's helpers (memfn/), not a part
-layout	always_inline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P5/P7/P9
-layout	noipa	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P4/P8 (the guarded `shared` block)
-layout	noinline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, the guarded `shared` block's `#else` (no noipa)
+# text: where the writer's attribute TEXT comes from. `PCREC_ATTR_X` is a row
+# of [ATTR-TABLE]'s one value-to-guarded-text table (src/gen/attr_text.c);
+# the writer keeps its decision and asks the table for the text. `own` is a
+# writer that spells its text itself (the plain `static inline` writers
+# A4-A7, out of [ATTR-TABLE]'s scope). The census checks every `PCREC_ATTR_X`
+# named here is a row of the table.
+#
+#writer	kind	names	owner	text
+A1	always_inline	^P_(run_state_bind|run_state_init|reset_for_next_attempt|match_anchored|report_captures|search_run|match_run|match_caps_run)$	the VM entry chain (emit_vm.c vm_plan_entry), owned: P1	PCREC_ATTR_INLINE
+A1	noinline	^P_match_anchored$	the VM entry chain's `shared` rung, owned: P1	PCREC_ATTR_NOINLINE
+A2	noinline	^P_(search|match|match_caps)_deep$	[OPT-1]'s deep tier, owned: P1	PCREC_ATTR_NOINLINE
+A3	noclone	^P(_search|_prefilter|__[a-z0-9]+_search)$	K24's noclone on every DFA search head	PCREC_ATTR_NOCLONE
+A4	static-inline	^P_(span_match|span_match_caseless|span_ci_fold|span_ci_decode|back_step|decode|var_valid|bref_match|bref_match_caseless)$	the encoding seam (src/enc/), owned: P1	own
+A5	static-inline	^P_(wcls[0-9]+|class_kit[0-9]+|class_atom[0-9]*|scankit[0-9]*)$	the class kit (clskit.c), not a part	own
+A6	static-inline	^P(__[a-z0-9]+)?_(forward|reverse|anchored)_(step|is_dead|is_stop|accepts|accepts_class|row|view_live|view_take)$	the DFA machine's state helpers, not a part	own
+A7	static-inline	^P(__[a-z0-9]+)?_(ofsskip|ofsskip__body|reqrun|reqrun__body|reqrun_whole|reqrun_whole__body|w[0-9]+|[a-z0-9_]*_pf[a-z0-9_]*|[a-z0-9_]*__body)$	the search-code kit's helpers (memfn/), not a part	own
+layout	always_inline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P5/P7/P9	PCREC_ATTR_INLINE
+layout	noipa	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, a SUBJECT under P4/P8 (the guarded `shared` block)	PCREC_ATTR_SHARED
+layout	noinline	^P(_prefilter|__[a-z0-9]+_search)$	the part-layout table, the guarded `shared` block's `#else` (no noipa)	PCREC_ATTR_SHARED
