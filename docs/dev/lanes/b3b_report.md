@@ -511,3 +511,43 @@ these five, 87 rows scored, and the chain is still running.
 parent is d1f2b9621). Every fix is under `tests/mech/sabotages/`. No fix
 touched `src/` or `memfn/src`; the plants only NAME memfn/src/presence.c as
 their target.
+
+## §11 test-codegen triage (b3bctri)
+
+**Symptom.** The heavy chain's full `make test` at 850dad795 (log
+`worktrees/memfn-slot/b3bheavy3/logs/test.log`) ended rc=2; the only red
+section was test-codegen (`run_group: 15/16 scripts passed`,
+`*** [Makefile:613: test-codegen] Error 1`, perfrun RED-REAL).
+
+**FAIL line (the only one in the section).**
+`FAIL: [SABANCHOR] scripts/m6read_check_sab_anchors.py reports a stale or
+unreadable anchor among its 822 sabotage row(s)` with
+`STALE ANCHORS: 1 / S462_set_lead_deny_ignored.sh src/core/compile.c ANCHOR NOT FOUND`.
+The script is `tests/codegen/run_codegen_tests.sh`.
+
+**Cause.** d14d2480e (the bit-45 alias accessor fix, in 034f694cf..850dad795)
+respelled `if (defo.flags & PCREC_NO_REQ_SET_LEAD) {` in
+`src/core/compile.c` as `if (pcrec_flags_has(defo.flags, PCREC_NO_REQ_SET_LEAD)) {`
+(and the clear as `pcrec_flags_without(...)`). S462's `SAB_BEFORE`, re-aimed
+earlier in B3b at the old spelling, no longer matched. A check-side staleness;
+`src/` behaviour is unchanged (no regression). The four b3bmtri rows and
+S1122 resolve.
+
+**Fix.** 9db0fc476, one commit, `tests/mech/sabotages/S462_set_lead_deny_ignored.sh`:
+`SAB_BEFORE`/`SAB_AFTER` re-anchored on the `pcrec_flags_has` spelling, intent
+unchanged (the plant still drops the alias rewrite), comment note added.
+
+**Verdicts (all pinned `taskset -c 12-15`, PROCS=4, gnutimeout).**
+- `python3 -I scripts/m6read_check_sab_anchors.py`: 822 sabotages, 849 anchor
+  sites, all resolve.
+- `bash tests/codegen/run_codegen_tests.sh` (the file the suite runs, at
+  9db0fc476): 331 passed / 0 failed, rc=0, `[SABANCHOR]` PASS (log
+  `worktrees/memfn-slot/b3b/ctri/codegen.log`).
+- `bash tests/mech/run_sabotage_matrix.sh S462`: DETECTED
+  (reach ok 1/1, prechecks 3fail/392pass), 0 unexpected / 0 undetected / 0
+  unreached / 0 anomalies (log `.../ctri/s462.log`).
+- The other 15 test-codegen scripts were green in the heavy run and nothing
+  they read changed in this fix. The full test-codegen section was not re-run.
+
+**Scope.** Only a mech row under `tests/mech/sabotages/` and this report
+changed; no `src/` or `memfn/src`.
