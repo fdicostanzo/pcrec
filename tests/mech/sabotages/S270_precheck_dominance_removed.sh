@@ -18,7 +18,7 @@
 # encoding question — the plant makes the same-byte case fail to decline too,
 # which is the one direction of this rule that holds under every encoding.
 SAB_ID="S270-precheck-dominance-removed"
-SAB_FILE="src/gen/emit_dfa.c"
+SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks harness"
 SAB_DESC="the [OPT-PRECHECK-ADMIT] G1 DOMINANCE rule is removed, so an artifact that already scans a candidate-start byte at least as rare as its necessary byte emits the whole-window memchr pre-check on top of it — two passes on the same byte value where the ledger measured one, which is the json-array-begin regression class"
 SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the detector: section 5.1 reports the two dominance witnesses stamping RX_REQ_WHY 'emitted' where 'dominated' is expected, 5.1b reports the redundant pre-check back in each file, 5.3 reports the byte-encoding row's decline gone (and leaves its two 'emitted' rows green, which is what makes the failure a direction rather than a blanket), and 5.5's G1 population floor drops to 0. Measured on the clean tree at 278 passed / 0 failed (267 before K66 added §5.9, 258 before K65 added §5.8, 250 before K64 added §5.6). The harness arm is expected to stay GREEN. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S270."
@@ -34,12 +34,11 @@ SAB_REACH_EXPECT="REACH-DOMINANCE-DECLINES-DUPLICATE-PASS"
 # `"dominated"` witness (the one-byte `\[` and S1's run-row/offset-set ones)
 # goes back to `"emitted"`.
 SAB_COUNT=1
-SAB_BEFORE='static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
-{
-    int p = cs->byte;
-    if (p < 0) return false;'
-SAB_AFTER='static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
-{
-    int p = cs->byte;
-    (void)cx; (void)q;
-    if (p < 0 || p >= 0) return false;   /* SABOTAGE S270: the G1 dominance rule removed */'
+# RE-AIMED 2026-10-18 (lane b3bmtri, [MEMFN] R17-b' B3b): G1 IS THE KIT'S PRES
+# row P2 now (memfn/src/presence.c `kit_pres_picks`, the P2 block, read by
+# finder.c `fd_pres` as SF_PROVEN); pcrec's `req_byte_dominated_by` survives
+# only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
+# so the old plant landed on code no default artifact reads. The plant moves
+# to the same conjunct of the port; intent and detector unchanged.
+SAB_BEFORE='        out->dominated = (int8_t)dom;'
+SAB_AFTER='        out->dominated = 0; (void)dom;   /* SABOTAGE S270: the G1 dominance rule removed */'
