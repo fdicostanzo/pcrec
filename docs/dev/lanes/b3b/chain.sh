@@ -13,7 +13,7 @@
 # match: one status file carries several STEP lines). Per-step rc lines are `STEP <name> rc=<n>`.
 B=${B:-/home/pcrec/projects/pcrec/worktrees/memfn-slot/b3bheavy}
 W=${W:-/home/pcrec/projects/pcrec/worktrees/b3b-mt}
-PIN=${PIN:-SET-ME}
+PIN=${PIN:-c6029d596}
 BASE=c88537116
 L=$B/logs
 CS=$B/chain.status
