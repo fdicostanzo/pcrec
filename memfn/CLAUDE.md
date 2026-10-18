@@ -129,6 +129,21 @@ its own picks (MFPICK records); 100% agreement over corpus, bench and
 rwquest with per-pick floors on non-trivial sites. No finder row reads
 `pspans` yet. Report: `docs/dev/lanes/b3a_report.md`.
 
+R17-b′ B3b (lane b3b, 2026-10-18) made MF_SITE_ABI 17 and MF_VOCAB 4 with NO
+pcrec byte moved: THE PRES ROWS ROUTED. Slot PRES (P0, P2, P3, P4, P9) and D2
+are routed and locked; `finder.c` `fd_pres` decides every stated presence
+span's chain link (`mf_class.pres[]`, answered by `mf_ask` and `mf_defined`),
+reading the ports (`kit_pres_picks`) over the spans and the new stated fact
+`mf_site.pres_proof` (the start search's proof, P2's input; `mf_pres_proof`
+gains `stated`); pcrec asks before any part exists (the PRESENCE ASK) and
+lays the pre-check's parts out from the links, and `mf_define` refuses parts
+that are not that layout. The use kind `MF_USE_ENTRY` (MF_VOCAB 4,
+Q-R17P-18) names the presence verdict's use; pcrec's adoption is a proposed
+main-side diff (`docs/dev/lanes/b3b/proposed/entry_use.diff`). Three denies
+(`fd-pres-g1`, `fd-pres-pick`, `pres-set-lead`; floor 11 -> 14); pcrec's
+`-fno-req-set-lead` (bit 45) is retired to `pres-set-lead`, kept as its alias.
+Report: `docs/dev/lanes/b3b_report.md`.
+
 **Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
 `include/memfn.h`, the composer, the generic scalar row, K1's reference
 functions and an empty `src/options.def` are built into `libpcrec.a` by

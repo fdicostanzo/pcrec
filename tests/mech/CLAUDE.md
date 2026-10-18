@@ -3939,6 +3939,26 @@ All suite `candoracle` except S1100; each hand-measured DETECTED solo by
 `docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh` (figures in
 `docs/dev/lanes/b3a_report.md` §6). No artifact moves.
 
+**S1103-S1110 (lane b3b, 2026-10-18, [MEMFN] R17-b′ B3b; MF_SITE_ABI 17):** the
+routed PRES slot, KW-10's presence family on the route with NO DFA scan in
+front (a DFA-route-only green is vacuous there). S1103 P0's REQUIRED spans take
+P3's narrowing (SW-1: K65/K66 give-ups; `memfnfinder` + `harness` on
+`k65_precheck_whole_set.rxt`); S1104 the set rest's loop stops one member short
+(absent-at-end never discovered; `harness`); S1105 P0's `routed` bit left 0
+(SN-1 for slot PRES: the kit refuses every no-DFA pre-check); S1106 `omin` < 0
+accepted (KW-10's re-asked ranges; contract check); S1107 the define stops
+holding the parts to the links' layout; S1108 P4's lead loses the head of the
+chain (`prechecks`' lead cells); S1109 an UNSTATED `pres_proof` accepted;
+S1110 the bit-45 alias names the wrong kit row (`run_presence.sh` [alias]).
+Each hand-measured DETECTED solo by `tests/mech/run_sabotage_matrix.sh`
+(figures in `docs/dev/lanes/b3b_report.md`). RE-AIMED at B3b onto the kit's new
+home for the same choice, intent unchanged: S277/S316 (K65's whole set), S278
+(K66's whole run), S452 (a pair position marked proved), S457/S458 (set-leads
+never / a tie leads; S458 is S1097's edit with the pre-check suite as its
+detector), S459 (the lead re-tested: pcrec's rest reads the head, the kit's
+layout check refuses), S462 (bit 45's rewrite dropped: a silent no-op), S596
+(the kit row P4 loses its deny), S1018 (re-anchored in the query's path).
+
 **S961, S962, S984 (lane ksrc23, 2026-10-17, [KNOW-SRC] K3; the new arm
 `knowledge`, `tests/knowledge/run_knowledge_tests.sh`):** measure_sets.md
 §8.5 wrote these for the measures kind; K3 maps them onto the analysis kind.

@@ -154,6 +154,30 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   (`req_start_set`, shared with `req_landmark_admits`), reads its facts
   without a pass and restores `pf.used` on exit. Report:
   `docs/dev/lanes/b3a_report.md` §9.
+- **R17-b′ B3b (lane b3b, 2026-10-18; MF_SITE_ABI 17, zero movers).** The
+  pre-check's PRESENCE decisions are the memfn kit's routed PRES rows. In
+  `emit_dfa.c`: `req_pres_site` is the ONE constructor of the presence site
+  as the kit decides it (spans, kind, the start search's proof
+  `pres_proof` from `dfa_cand_scan`'s kit-sourced class, `req_pres_proof_of`),
+  `req_pres_ask` asks the kit's links (the presence ask, no part yet) and
+  `req_pres_head` reads the head; the admission's `dominated` row (after its
+  LOCATE withholding) reads P2 (every span proven), its `set-leads` row reads
+  P4 (a head in front of the run) and has NO pcrec deny bit (the kit's
+  `pres-set-lead`; bit 45 retired); `req_site_define` LAYS OUT the parts
+  from the links (head byte, window, whole run where the run link is whole,
+  `req_set_rest_members` over the REST links) and fails loudly if the head
+  is not `req_byte` where no run ships (K reads it); a part after the
+  handoff's landmark (only under `--memfn=no-fd-pres-pick`) is allowed. The
+  facts' `used` record is kept by explicit pass-asks where the builder and
+  `set-leads` asked before (Q-WR-12). `req_byte_dominated_by`,
+  `req_set_pick_of`, `req_set_leads_own` and `req_rest_own_sig` are now
+  trace-only: the five-pick shadow's expectations, which also compare the
+  ROUTED decision (`rdom`/`rlead`/`rhead`/`rwin`/`rwhole`/`rrest`).
+  `memfn_sites.c` `pcrec_memfn_pres_routed` prints the PRES routed-records
+  (`MFROUTED PRE kind P*`; `MFPRESDROP` for a pre-check P2 drops). The use
+  kind MF_USE_ENTRY is a PROPOSED main-side diff
+  (`docs/dev/lanes/b3b/proposed/entry_use.diff`). Report:
+  `docs/dev/lanes/b3b_report.md`.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's

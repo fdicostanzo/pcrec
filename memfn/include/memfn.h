@@ -891,11 +891,28 @@ extern const char mf_miss_n[];
  * pattern has at most one necessary run, so 256 + 1. */
 #define MF_MAX_PRES 257
 /* One presence span's CHAIN-LINK attributes (r17b_prime.md §1.4, R-18's
- * vocabulary, winreq C-8). Answered from B3b; zero before. */
+ * vocabulary, winreq C-8). ANSWERED since B3b (MF_SITE_ABI 17): mf_class.pres[i]
+ * is pspans[i]'s link, decided by the routed PRES rows (finder.c fd_pres):
+ *   verify     1: the span is TESTED over [start + omin, n)
+ *   proven_by  1: the start search's proof stands for the site's leading
+ *              check (P2: every span of the site, or none)
+ *   member     on a SET member span: 0, or (P3) 1 + the index in pspans of
+ *              the set's chosen member, the same on every member span (a
+ *              member is tested iff it is chosen and no run is stated, or
+ *              it leads, P4); on the RUN span: 0, the WHOLE run tested (its
+ *              window first, P0/P9), or 1 + the start of the one window of
+ *              MF_PRES_WINDOW positions tested (P3)
+ *   order      the chain-order key over the TESTED spans, lower first: 0 the
+ *              head (P4's lead in front of a run; the chosen member where no
+ *              run is stated), 1 the run, 2 the rest (ascending byte among
+ *              themselves); 0 on an untested span, read by no one
+ * A member a WHOLE run test already proves (one of its exact positions) is
+ * not tested again. The host lays the pre-check's parts out in that order and
+ * the define holds them to it. Zero (npres 0) on a site stating no span. */
 typedef struct {
     uint8_t verify;     /* 1: the link is verified over [start + omin, n)     */
     uint8_t proven_by;  /* 1: span 0's proof stands for it, no test           */
-    uint8_t member;     /* 0: every member; else 1 + the chosen member        */
+    uint8_t member;     /* 0: every member / the whole run; else 1 + chosen   */
     uint8_t order;      /* the chain-order key: lower is tested first         */
 } mf_link;
 typedef struct {
@@ -908,7 +925,7 @@ typedef struct {
                               byte at offset 0 lies in it; all ones = nothing
                               proven                                          */
     uint32_t includes;     /* MF_INC_* bits the text needs                     */
-    uint16_t npres;        /* presence spans answered (0 before B3b)           */
+    uint16_t npres;        /* presence spans answered (= npspan since B3b)     */
     mf_link  pres[MF_MAX_PRES];
     /* (MF_CLASS_V 2) bitset: every candidate's PREDECESSOR byte (offset -1)
        lies in it; all ones = nothing proven. What a CONTEXT stop proves
@@ -1279,12 +1296,11 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
  * The kit's PORTS of the host's five priced presence picks, run over the
  * presence spans a site STATES (mf_site.pspans) and the compile's analysis
  * object (mf_art_begin's `an`: the frequency kind `byte-rate` at any
- * provenance, its NONE answers where it carries no table). EVIDENCE ONLY at
- * B3a: the host's trace build asks, compares each answer with its own pick
- * and prints the agreement; nothing renders from an answer, and the ports
- * become the PRES rows' picks at B3b. Until then the default libpcrec.a
- * carries memfn/src/presence.c with NO CALLER: only pcrec's trace build
- * (-DPCREC_CAND_TRACE) calls it, so in a shipped build it is dead code.
+ * provenance, its NONE answers where it carries no table). Since B3b the
+ * routed PRES slot reads the same arithmetic (finder.c fd_pres, over the
+ * site's own `pres_proof`), so the ports are what renders; this entry stays
+ * the pure query the host's trace build compares with its own picks (the
+ * KW-8 census on the kit-sourced proof).
  * PURE: like mf_ask, it writes no text,
  * defines no handle and changes no art state. The site need not be defined
  * (pcrec asks with the site it would define, and with one it does not

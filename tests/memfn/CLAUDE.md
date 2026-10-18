@@ -494,6 +494,24 @@ lever off byte-identical, lever on >= 1 / 0 per fired row), run by
 run_finder.sh, which sums its parts' counts into ONE final `checks
 passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
 
+(R17-b′ B3b, lane b3b: `finder_check.py` M checks the B3b routing (D2 and
+slot PRES's P0, P2, P3, P4, P9 routed and locked; B3b's three denies
+registered; each PRES fixture `fd-P0`/`fd-P3`/`fd-P9`/`fd-P4`/`fd-P4-den`/
+`fd-P2`/`fd-P2-den` decided by its row with the link written there from
+§1.4; the define refuses parts that are not the links' layout
+(`pre-lead-run`), a presence statement with no proof (`pre-noproof`) and a
+span with `omin` < 0 (`pre-omin`); D2 routes `run3` through the walk).
+`arm_fixtures.c`'s presence sites state B3a's spans and the proof, with
+their parts laid out; a site whose every span P2 drops (`pre-dom`) is ASKED
+(`fd_ask_links`, LINK lines) since it is never defined. rows.tsv flips P0,
+P2, P3, P4, P9 to `pcrec` (pattern witnesses, signature the `MFTRACE FD ...
+slot=PRES` record; P2's from the presence ask, phase SHADOW) with PLACEHOLDER
+floors until the heavy N2 census; D2 stays `pending-site:R-18`.
+**run_presence.sh** (part `presence` of run_finder.sh) holds the bit-45
+ALIAS (`-fno-req-set-lead` == `--memfn=no-pres-set-lead` != default, and
+composing with another kit option; Q-19) and PR-8's order on the no-DFA
+route (the verdict before the first attempt).)
+
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in
   TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Builds two
   fixture drivers (`arm_fixtures.c` against `build/libpcrec.a`, and against
@@ -604,7 +622,11 @@ passed/failed` pair (the mech arm reads the first count; lane fdb2fix).)
   `req_set`), and `PRES_PICKS_EXTRA=FLAGS` runs the witnesses under FLAGS,
   agreement only, for the census's extra arms. Run by
   `tests/codegen/run_cand_oracle.sh`. The full census is
-  `docs/design/memfn/r17b_prime/b3a/pick_census.py`.
+  `docs/design/memfn/r17b_prime/b3a/pick_census.py`. Since R17-b′ B3b
+  (lane b3b) the shadow also compares the kit's ROUTED decision with
+  pcrec's own (records `rdom`, `rlead`, `rhead`, `rwin`, `rwhole`, `rrest`,
+  each with a witness, its `pcrec` value from the rule, and its plant); the
+  census over them is `docs/design/memfn/r17b_prime/b3b/pick_census_b3b.py`.
 - **run_pr11.sh**, **pr11_front.py**, **pr11_witnesses.tsv** — the PR-11
   control (R17-b′ B3a): over count-collapsed VM hybrids
   (`RX_VM_PREFILTER_LANG "count-collapsed"`), every subject derived from a

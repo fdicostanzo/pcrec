@@ -44,7 +44,7 @@
   - [§2.37](#s2-37) `-fno-view-edge` — `PCREC_NO_VIEW_EDGE` (bit 42)
   - [§2.38](#s2-38) `-fno-run-overlap` — `PCREC_NO_RUN_OVERLAP` (bit 43)
   - [§2.39](#s2-39) `-fno-req-run-fold` — `PCREC_NO_REQ_RUN_FOLD` (bit 44)
-  - [§2.40](#s2-40) `-fno-req-set-lead` — `PCREC_NO_REQ_SET_LEAD` (bit 45)
+  - [§2.40](#s2-40) `-fno-req-set-lead` — `PCREC_NO_REQ_SET_LEAD`, bit 45 retired (an alias of `--memfn=no-pres-set-lead`)
   - [§2.41](#s2-41) `-fno-req-handoff` — `PCREC_NO_REQ_HANDOFF` (bit 46)
   - [§2.42](#s2-42) `-fno-start-set` — `PCREC_NO_START_SET` (bit 47)
   - [§2.43](#s2-43) `-fno-memfn-simd` / `-fmemfn-simd` — `PCREC_NO_MEMFN_SIMD` (bit 48), `PCREC_FORCE_MEMFN_SIMD` (bit 49)
@@ -144,7 +144,7 @@
 | 2.37 | `-fno-view-edge` | 42 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN_EDGE` |
 | 2.38 | `-fno-run-overlap` | 43 | on | answer-identical | masked | `<PREFIX>_RUN_WORDS` |
 | 2.39 | `-fno-req-run-fold` | 44 | on | answer-identical | masked | `<PREFIX>_REQ_RUN` |
-| 2.40 | `-fno-req-set-lead` | 45 | on | answer-identical | masked | none (the emitted text) |
+| 2.40 | `-fno-req-set-lead` (RETIRED: an alias of the kit deny `--memfn=no-pres-set-lead`) | 45, reserved | on | answer-identical | cleared by the compile (the alias) | none (the emitted text) |
 | 2.41 | `-fno-req-handoff` | 46 | on | answer-identical | masked | `<PREFIX>_REQ_HANDOFF`, `<PREFIX>_DFA_PREFILTER` |
 | 2.42 | `-fno-start-set` | 47 | on | answer-identical | masked | `<PREFIX>_VM_START_SCAN`, `<PREFIX>_DFA_PREFILTER` |
 | 2.43 | `-fno-memfn-simd` / `-fmemfn-simd` | 48 / 49 | off | answer-identical | masked | `<PREFIX>_MEMFN_FORMS` |
@@ -1115,7 +1115,7 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
 | `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
 | `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
-| `flags` bit `PCREC_NO_REQ_SET_LEAD` | `-fno-req-set-lead` | §2.40 |
+| `flags` bit `PCREC_NO_REQ_SET_LEAD` (RETIRED, an alias of `--memfn=no-pres-set-lead`) | `-fno-req-set-lead` | §2.40 |
 | `flags` bit `PCREC_NO_REQ_HANDOFF` | `-fno-req-handoff` | §2.41 |
 | `flags` bit `PCREC_NO_START_SET` | `-fno-start-set` | §2.42 |
 | `flags` bits `PCREC_NO_MEMFN_SIMD` / `PCREC_FORCE_MEMFN_SIMD` | `-fno-memfn-simd` / `-fmemfn-simd` | §2.43 |

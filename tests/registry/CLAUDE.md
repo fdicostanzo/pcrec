@@ -315,7 +315,13 @@ directory asserts that the description and the shipped parser actually agree.
   and checks that section in one arm of its own: present, header-truthful,
   columns by name; its member-count floor (pinned in `registry.md` §6, born
   with the kit's first row at R4d) prints UNREACHED while the registry is
-  empty and FAILS if a row appears with no floor pinned (190 PASS).** Reads `pcrec --list-axes`'s TSV (`src/dump/axes_dump.c`) against
+  empty and FAILS if a row appears with no floor pinned (190 PASS).**
+  **[MEMFN] R17-b′ B3b: a RETIRED bit** (tuning.md §2's heading says `bit N
+  retired`, never `(bit N)`; bit 45, `-fno-req-set-lead`, now the kit's
+  `--memfn=no-pres-set-lead`) is read off tuning.md's own text, dropped from
+  the header-to-dump direction, and held by one arm of its own: defined in
+  lib/pcrec.h (the alias) and named on NO `--list-axes` row (236 PASS at
+  B3b, `run_registry_tests.sh`'s pin).** Reads `pcrec --list-axes`'s TSV (`src/dump/axes_dump.c`) against
   `docs/spec/tuning.md` (every documented `(bit N)` heading),
   the SHIPPED PARSER (each advertised `cli_flag` is RUN and must be
   accepted) and `docs/spec/match_api.md` §6.3 (the D46 stamp family's own

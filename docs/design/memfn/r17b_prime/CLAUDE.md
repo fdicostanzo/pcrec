@@ -57,3 +57,9 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
   applied in place: `deleg_entry.diff`, `c17_use_points.diff`,
   `c10_presence.diff`, applied in that order) and `out/` (the census
   transcripts). Report: `docs/dev/lanes/b3a_report.md`.
+- `b3b/` — lane b3b's instruments (R17-b′ B3b, 2026-10-18): the declared
+  registry-dump delta and its two-way check, the KW-8 census on the
+  kit-sourced proof with the ROUTED records (`pick_census_b3b.py`), the
+  routed-record census (`routed_census_b3b.py`), their floors and `out/`.
+  Own CLAUDE.md. The main-side proposed diff and the heavy chain live under
+  `docs/dev/lanes/b3b/`. Report: `docs/dev/lanes/b3b_report.md`.
