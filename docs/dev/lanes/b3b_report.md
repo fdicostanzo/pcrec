@@ -583,3 +583,75 @@ and flip `SAB_EXPECT`.
 
 **Fix: none. Verdict after: unchanged (UNDETECTED on both trees).** This
 section is the lane's only commit.
+
+## §13 axes-pres + N2 triage (b3bxtri)
+
+Heavy chain at 850dad795 (`worktrees/memfn-slot/b3bheavy3/`, logs/axes_pres.log,
+logs/n2.log, n2/n2_results.md, logs/n2_propose.log). Lane tip before: 8fc738d34.
+
+**RED A, axes-pres (rc=1): NOT a miscompile.** All six answer-identity jobs
+(`--memfn=no-fd-pres-pick`, `no-fd-pres-g1`, `no-pres-set-lead`, each at
+layer default and `-fmemfn-simd`) read `keys_base=62934 keys_axis=62934
+agree=62934 ... mismatches=0 lost=0 gained=0 refused=0 giveup1=0`, and the PC-4
+oracle cross-check is 0-failure against live libpcre2 10.46. No answer
+differs, so there was no answer to oracle and no witness to write. The one
+`AXIS FAIL` is the `--memfn=` arm's REACH (`tests/axes/memfn_arm.py`): 22
+`FAIL: no job cell for (ROW, LAYER)`, i.e. the 11 kit rows the AXES= filter
+did not select (fd-d1, fd-ndisp, fd-r0, fd-r5, fd-r8, precheck-assign-byte,
+vrun-kb, vrun-pad, vrun-trim, vrun-w16, vrun-w32) x 2 layers. The selected
+rows' reach lines all met their classes and floors (fd-pres-g1 1271/1106,
+fd-pres-pick 188/263, pres-set-lead 16/18/8/8 differ, each >= its floor,
+0 refused).
+
+Mechanism: run_axes.sh's documented one-row spelling selection
+(`AXES=--memfn=no-NAME`) composes cells only for the selected rows, but
+memfn_arm.py demanded a cell for EVERY `MEMFN_CLASS` row, so any spelling
+selection was RED by construction. Pre-existing: both sides date from
+7fccac2c4 (lane runaxes), identical on main 65dd423ee; the chain was the first
+run to select by spelling (axes-reach used the `--memfn` token and was green).
+
+Fix (check-side, commit ebfe99bcd): run_axes.sh passes `--subset` when AXES=
+is non-empty and lacks the `--memfn` token; memfn_arm.py then owes both
+layers only for rows that HAVE a cell, and a zero-cell subset is RED (K35).
+The population check (list-axes rows == MEMFN_CLASS rows), the per-cell
+spelling/layer checks and the full/token modes are unchanged.
+tests/axes/CLAUDE.md "Selecting it" records it. Validated, pinned to cores
+12-15, PROCS=4, `MEMFN_REACH_ONLY=1 MEMFN_EVERY=40` through
+`tests/axes/run_axes.sh` (the file the suite runs):
+- the chain's AXES (three spellings): rc=0, `checks passed: 81 checks failed: 0`
+- `AXES=--memfn` (full mode, control): rc=0, `checks passed: 285 checks failed: 0`
+- negative control, `memfn_arm.py --subset` with only `fd-pres-g1|default`:
+  rc=1, `FAIL: no job cell for (fd-pres-g1, simd)` (a half-selected row is
+  still RED).
+Not re-run: the full-corpus (every=1) axes-pres; its answer jobs were
+already green and the floors were met at every=1 in the chain log, and the
+fix touches only the cell-presence loop.
+
+**RED B, n2 (rc=4): the row is `fd P2`, verdict `UNREACHED: reach is pcrec,
+chosen 0`** (floor PLACEHOLDER; the 4 PLACEHOLDERs are P0, P3, P4, P9). It is
+NOT a routing failure: P2 decides in production (routed census 8 + 1,691 +
+1,903 PRE records on DFA_ATTEMPT / DFA_SCAN / HYB_PF; n2_results §1 shows
+`fd shadow P2 1510505` ENDs, `fd define P2` none; a probe of the chain's
+traced binary on `x[a-z]+y`, `[ab]c+d`, `(foo|bar)baz` reads `END ...
+phase=shadow chosen=P2` only). Mechanism: P2's dominated pre-check is DROPPED,
+so its site is asked (`mf_ask`) and never defined; B3b records that ask as
+`fd_pres(..., FD_PRES_ASK)` at gate phase SHADOW (compose.c `mf_ask`, kit.h's
+FD_PRES_ASK comment), and gate.c's REACH counter excludes SHADOW (`t->phase
+!= MF_PH_USE && t->phase != MF_PH_SHADOW`), which n2_report's floor reads. So
+`rows.tsv`'s P2 row (reach `pcrec`, signature "chosen at phase SHADOW")
+declares a reach N4 can never count: UNREACHED by construction.
+B3b-caused: on main 65dd423ee P2 is `pending-site:B3b`, verdict `ok (0, ...)`
+(read from main's rows.tsv/row_floors.tsv, no main N2 run needed).
+
+Proposed fix (kit-side, NOT applied, not a floor re-pin): give the ask record
+its own counted reach. The kit counts `FD_PRES_ASK` ENDs in a separate REACH
+column (e.g. `MFTRACE REACH table=fd row=P2 asked=N`, or a distinct gate phase
+`ask` counted apart from define/run); n2_report holds a row whose rows.tsv
+signature is phase ask (today only P2) to a floor on that count, pinned at
+floor(0.9 x asked) with the other PRES floors. SHADOW stays uncounted for
+the five-pick shadow. Rejected: counting all SHADOW ENDs (13.5x
+repetition for P3: 3.29M shadow vs 243k define); counting pcrec's
+`MFPRESDROP` (only under `PCREC_CAND_TRACE`, which N2's `-DMF_TRACE` build
+does not set); re-declaring P2's reach as non-`pcrec` (it IS reached, and the
+floor would stop guarding it). Owner: the kit (gate.c/compose.c +
+n2_report.py), then N2 re-run for the PRES floors.
