@@ -55,6 +55,12 @@ class Machine:
         self.ok = False
         g = lambda n: _arr(c, "%s_%s_%s" % (pfx, m, n))
         bc, ns, acc = g("byte_class"), g("next_state"), g("is_accepting")
+        if acc is None and ns:
+            # a uniform accept folded into the helper: `{ (void)s; return 1; }`
+            u = re.search(r"%s_%s_accepts\(%s_%s_state s\)\s*\{\s*\(void\)s;\s*return ([01]);"
+                          % (pfx, m, pfx, m), c)
+            if u:
+                acc = [int(u.group(1))] * len(ns)
         if not bc or not ns or not acc or len(bc) != 256:
             return
         step = _helper(c, pfx, m, "step")

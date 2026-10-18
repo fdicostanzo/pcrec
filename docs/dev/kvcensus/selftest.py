@@ -122,6 +122,13 @@ ck("expressible (?<!ab): a disjunction, not expressible", kvctx.expressible(("lb
 ck("expressible (?<!x): width 1, absent satisfies", kvctx.expressible(("lb-", b"x"), None, False, W)[:2], (True, True))
 ck("expressible (?<=a|b): not a product", kvctx.expressible(("lb+", b"a|b"), None, False, W)[0], False)
 
+ck("anchors ^\\d{5}(-\\d{4})?$ -> ^, $, body", kvctx.strip_anchors(b"^\\d{5}(-\\d{4})?$"), ("^", "$", b"\\d{5}(-\\d{4})?"))
+ck("anchors ^a|b: top-level alternation declines", kvctx.strip_anchors(b"^a|b"), None)
+Fz = kvdfa.Machine(C("[a-z]{0,16}", "--engine=dfa", "--no-captures"), "forward")
+ck("nullable [a-z]{0,16}: the forward start row accepts", bool(Fz.ok and Fz.acc_any[0]), True)
+Fz = kvdfa.Machine(C("[a-z]{1,16}", "--engine=dfa", "--no-captures"), "forward")
+ck("PLANT non-nullable [a-z]{1,16}: the start row does not", bool(Fz.ok and Fz.acc_any[0]), False)
+
 # ---- 6. the PCRE2 control, both directions -----------------------------------
 P = kvpcre.Pat(b"abc\\d{3,7}")
 ck("pcre abc123 is a prefix", P.is_prefix(b"abc123"), True)
