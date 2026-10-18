@@ -28,9 +28,13 @@
  * design §6.1): MASS is cardinality (the uniform rate's mass), PICK ties go
  * where a uniform cost sends them, COMPARE answers "no".
  *
- * WHAT IT DOES AT B3a: NOTHING RENDERS FROM IT. mf_pres_ports is a pure
- * query, like mf_ask; the host calls it in its trace build only. At B3b the
- * PRES rows (finder.c P2, P3, P4) read these ports and route.
+ * WHAT IT DOES SINCE B3b: THE PRES ROWS READ IT. `kit_pres_picks` is the
+ * ports' arithmetic; the routed PRES slot (finder.c `fd_pres`: P2, P3, P4)
+ * reads it over the site's own statement (its spans and `pres_proof`), so
+ * the links mf_ask and mf_defined answer, and the parts the host lays out
+ * from them, are these picks. mf_pres_ports stays the pure query of B3a:
+ * the host's trace build compares each answer with its own pick (the KW-8
+ * census, re-run at B3b on the kit-sourced proof).
  */
 #include <string.h>
 
@@ -129,7 +133,16 @@ int mf_pres_ports(const mf_art *art, const mf_site *s, const mf_pres_proof *proo
     out->set_leads = out->dominated = out->landmark = -1;
     if (s->abi != MF_SITE_ABI || s->op != MF_OP_ALL_PRESENT || kit_presence_check(s))
         return -1;
-    if (!s->npspan) return 0;
+    kit_pres_picks(art, s, proof, start_set, out);
+    return 0;
+}
+
+void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
+                    const uint8_t *start_set, mf_pres_picks *out)
+{
+    out->set_pick = out->run_scan = out->run_window = -1;
+    out->set_leads = out->dominated = out->landmark = -1;
+    if (!s->npspan) return;
     const uint32_t *rate = byte_rate(art);
     const mf_pred *run = NULL;
     int best = -1;
@@ -222,5 +235,4 @@ int mf_pres_ports(const mf_art *art, const mf_site *s, const mf_pres_proof *proo
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);
     }
-    return 0;
 }

@@ -892,6 +892,10 @@ static int cli_axis_apply(const char *a, uint64_t *flags)
     if ((dm) && (df)[0] && !strcmp(a, (df))) { *flags |= (dm); return 1; } \
     if ((fm) && (ff)[0] && !strcmp(a, (ff))) { *flags |= (fm); return 1; }
 #include "core/axes.def"
+    /* [MEMFN] R17-b' B3b the RETIRED spelling of bit 45 (src/core/axes.def's
+     * note): accepted as the alias it is, the library rewriting the bit to
+     * the kit's `--memfn=no-pres-set-lead` (Q-R17P-19); no longer an axis. */
+    if (!strcmp(a, "-fno-req-set-lead")) { *flags |= PCREC_NO_REQ_SET_LEAD; return 1; }
     return 0;
 }
 

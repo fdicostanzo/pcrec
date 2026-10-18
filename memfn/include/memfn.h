@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 16  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 17  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -118,9 +118,23 @@
                            query the host's trace build compares with its own
                            picks). No renderer reads a presence span, so no
                            row is routed by them; no MF_VOCAB move; no pcrec
+                           byte moved. 17 (R17-b' B3b, lane b3b;
+                           r17b_prime.md rev 3 §3.1 row B3b, §1.4, §4.4):
+                           THE PRES ROWS ROUTED: mf_pres_proof gains
+                           `stated` (appended LAST) and moves above
+                           mf_site, which gains `pres_proof` (the start
+                           search's proof, the fact P2 reads; appended
+                           LAST); mf_class.pres[] is ANSWERED (the chain
+                           links of every presence span, by the PRES rows
+                           P0 P2 P3 P4 P9) by mf_ask and mf_defined, and
+                           mf_define REFUSES an ALL_PRESENT site whose
+                           rendered parts are not its links' layout; the
+                           use kind MF_USE_ENTRY (MF_VOCAB 4). No pcrec
                            byte moved. */
-#define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
-                           3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
+#define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
+                           and the use kinds. 3 (M7 prep, R-8): MISMATCH /
+                           ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
+                           MF_USE_ENTRY                                     */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
 
@@ -339,7 +353,19 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  * window_contract's S3 retires it (C-11). */
 typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT } mf_site_kind;
-typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
+/* §14.5: how the site's result is consumed. POSITION: read as a position;
+ * DISCARD: compared with its miss value only. ENTRY (MF_VOCAB 4, R17-b' B3b,
+ * Q-R17P-18; r17b_prime.md §3.4, §4.4): the ACTIVATION'S PRESENCE VERDICT,
+ * the ENTRY use of the site the route merges presence into (the DELEG
+ * table's `entry` column says which FIND site that is, or that the route's
+ * site is presence-only). Decided before the first element any later use of
+ * the activation yields (G-2, the verdict precedes the edge attempt: PR-8);
+ * its result is the landmark's first position where the site ASSIGNs it
+ * (MF_H_ASSIGN, the handoff, framing (a): the origin stays pcrec's), else it
+ * is compared with its miss value only. An ALL_PRESENT site's only (refused
+ * elsewhere), and every ALL_PRESENT site that states presence spans states
+ * it. */
+typedef enum { MF_USE_POSITION, MF_USE_DISCARD, MF_USE_ENTRY } mf_use_kind;
 
 /* policy bits (§8.5): every bit arch-neutral. pcrec's ONE bit of SIMD
  * policy is MF_P_PORTABLE_ONLY, set when -fmemfn-simd is not forced. */
@@ -359,6 +385,29 @@ typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
 #define MF_CMT_NONESSENTIAL 1
 
 /* ---- the site description (§8.2 + §14.0) --------------------------------- */
+
+/* THE START SEARCH'S PROOF (R17-b' B3a's port input; a site fact since
+ * MF_SITE_ABI 17, `mf_site.pres_proof`): what the START SEARCH in front of a
+ * presence site's consumer proves of every candidate it yields, as FACTS
+ * about that sibling search (D157: never its form):
+ *   byte    the one byte it proves present in the candidate's window, -1
+ *           for none (no search fronts the consumer, or it proves no single
+ *           byte)
+ *   stop    1 iff that byte is the search's own STOP (a one-byte FIND: the
+ *           candidate's byte, or a context stop's), 0 iff it is a byte
+ *           VERIFIED inside a longer predicate
+ *   run     1 iff the search proves the whole necessary run in the window
+ *   stated  1: the fact is stated (MF_SITE_ABI 17, appended LAST). A site
+ *           carrying presence spans states it; its 0 is UNSTATED and is
+ *           REFUSED there, never read as "byte 0 proven". The ports'
+ *           parameter (mf_pres_ports) does not read it: a NULL proof is
+ *           their "nothing proven". */
+typedef struct {
+    int16_t byte;
+    uint8_t stop;
+    uint8_t run;
+    uint8_t stated;
+} mf_pres_proof;
 
 /* THE SPAN CLASS of a predicate (MF_SITE_ABI 16, R17-b' B3a; r17b_prime.md
  * §4.1, window_contract C-1/C-2): a FACT about what the predicate is.
@@ -590,13 +639,22 @@ typedef struct {
                   h_max"): the handoff's K where the site ASSIGNs the
                   landmark, else 0. An ALL_PRESENT site only (0 elsewhere,
                   refused otherwise).
-       NO RENDERER READS ANY OF THEM at B3a: the pre-check's rendered
-       predicates stay `preds[]`, pcrec's picks; the kit's five-pick ports
-       (mf_pres_ports) read them in the host's trace build only, and the PRES
-       rows route over them at B3b */
+       THE PRES ROWS DECIDE OVER THEM (B3b, finder.c's slot PRES, routed):
+       each span's chain link (mf_class.pres[], answered by mf_ask and
+       mf_defined), from which the rendered parts `preds[]` are LAID OUT,
+       and mf_define refuses a site whose `preds[]` is not its links'
+       layout (compose.c `kit_pres_layout_check`). pcrec lays the parts out
+       from the links it asked, with its own text (the run blocks' names,
+       notes and rankings are its facts) */
     uint64_t        head_max;
     uint16_t        npspan;
     const mf_pred  *pspans;
+    /* THE START SEARCH'S PROOF (MF_SITE_ABI 17, R17-b' B3b; appended LAST):
+       mf_pres_proof above, the fact the PRES row P2 (G1) reads. Stated
+       (`stated` 1) on every ALL_PRESENT site that carries presence spans,
+       refused UNSTATED there; zero (unstated) on every other site, refused
+       otherwise */
+    mf_pres_proof   pres_proof;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -1282,11 +1340,6 @@ unsigned mf_finder_pay(const mf_pay_operands *in);
                                pre-check window while the ports are verbatim
                                (pcrec asserts its own equal) */
 #define mf_pres_ports MF_NS(pres_ports)
-typedef struct {
-    int16_t byte;
-    uint8_t stop;
-    uint8_t run;
-} mf_pres_proof;
 typedef struct {
     int16_t set_pick;
     int16_t run_scan;

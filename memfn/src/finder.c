@@ -299,7 +299,7 @@ static const fd_row fd_rows[] = {
       "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0, 0 },
     { "D2", FD_FIND, KN_P, SF_SPAN0 | SF_RUN_TERM, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_RUN, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_UNMEASURED_DEFAULT, "B3b",
+      FF_RUN, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B3b",
       "span 0 a RUN term (a handoff landmark longer than one byte): the run search (the "
       "nested fn_rows[] walk), today's rule",
       "a measured run form beating the nested walk", &ct_d2, 0, 0 },
@@ -316,32 +316,39 @@ static const fd_row fd_rows[] = {
       "any measured shape whose LINER form saves more than the floor (then R7 holds)", &ct_r7w, 0, 0 },
     /* slot PRES (§1.4) */
     { "P0", FD_PRES, KN_P, SF_REQUIRED, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 0, NULL, FB_DERIVED, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL, FB_DERIVED, "B3b",
       "a REQUIRED span: every member and the whole run verified before the first element "
       "(K65, K66; G-1, G-2); undeniable (D158)",
       "none: derived from the answer contract", &ct_p0, 0, 0 },
     { "P2", FD_PRES, KN_P | KN_E, SF_PROVEN, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 0, 1, 0, 0 }, 0, "fd-pres-g1", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 0, 1, 0, 0 }, 1, "fd-pres-g1", FB_UNMEASURED_DEFAULT, "B3b",
       "G1, ported: span 0's proof covers the span (identity, run_verified, or the density "
       "conjunct on the prior): dropped",
       "a measured cell where the dominated pre-check pays for itself", &ct_p2, 0, 0 },
     { "P3", FD_PRES, KN_P | KN_E, SF_PRES_SPLIT, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 1, 0 }, 0, "fd-pres-pick", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 1, 0 }, 1, "fd-pres-pick", FB_UNMEASURED_DEFAULT, "B3b",
       "the pick, ported: the rarest member by the frequency kind (ties to the higher pattern "
       "order), or the run's scan window",
       "a measured cell where another member or window verifies cheaper", &ct_p3, 0, 0 },
     { "P4", FD_PRES, KN_P | KN_E, SF_SET_RARER, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 0, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",
       "set-leads, ported: the set's pick strictly rarer than the run's scan member leads",
       "a measured cell where the run leading is cheaper", &ct_p4, 0, 0 },
     { "P9", FD_PRES, KN_P, 0, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 0, NULL, FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B3b",
       "the total default: verify (Q-WR-9)",
       "a TUG cell measured losing for want of the priced pre-scan (P1, B5)", &ct_p9, 0, 0 },
 };
 #define FD_NROWS (sizeof fd_rows / sizeof fd_rows[0])
 
-/* P4's order: before the run's (its own `order` 0 is lower than a run's 1). */
+/* THE CHAIN ORDER of a link (mf_link.order; r17b_prime.md §1.4's LEAD), set
+ * by fd_pres after the rows decide, over the spans it VERIFIES: the HEAD
+ * member first (P4's leading pick where a run is stated; the set's pick
+ * where none is), then the RUN (its window, then the whole run where the
+ * link keeps it whole), then the REST of the verified members, among
+ * themselves in ascending byte order. An unverified link's order is HEAD's
+ * value and is read by no one. P4's link template states HEAD. */
+enum { FD_ORDER_HEAD = 0, FD_ORDER_RUN = 1, FD_ORDER_REST = 2 };
 
 const gate_contract *fd_row_contract(size_t i)
 {
@@ -819,14 +826,14 @@ static void find_facts(fd_x *q)
 
 /* 1 iff the site is one the finder table decides (§1.1): a forward FIND /
  * STMT over one term (the PF and MLINE sites, the VM hat) for slot FIND; an
- * ALL_PRESENT site (the pre-check composite) for slot PRES, one decision per
- * predicate. Every other site (OFS, ADVANCE, VERIFY, MISMATCH) is outside
- * this delivery. */
+ * ALL_PRESENT site stating presence spans (the pre-check composite, B3a) for
+ * slot PRES, one decision per span. Every other site (OFS, ADVANCE, VERIFY,
+ * MISMATCH) is outside this delivery. */
 static int fd_scope(const mf_site *s)
 {
     if (s->op == MF_OP_FIND && s->form == MF_FORM_STMT && !s->reverse && s->pred.nterm == 1)
         return 1 << FD_FIND;
-    if (s->op == MF_OP_ALL_PRESENT && s->npred && s->preds) return 1 << FD_PRES;
+    if (s->op == MF_OP_ALL_PRESENT && s->npspan && s->pspans) return 1 << FD_PRES;
     return 0;
 }
 
@@ -877,7 +884,9 @@ static void put_decision(const fd_x *q, int slot, const fd_decision *d)
 void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def)
 {
     (void)def;
-    int scope = fd_scope(s);
+    /* slot PRES is ROUTED since B3b: its decision is the define's own
+       (fd_pres, recorded there), so the shadow walks slot FIND only */
+    int scope = fd_scope(s) & (1 << FD_FIND);
     if (!scope) return;
     /* the layer variants: SIMD-off always; W16 and W32 where the site may
        carry SIMD text (its policy has no PORTABLE_ONLY) */
@@ -885,26 +894,18 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
     static const int lyc[3] = { CL_L_OFF, CL_L_W16, CL_L_W32 };
     for (int slot = FD_FIND; slot <= FD_PRES; slot++) {
         if (!(scope >> slot & 1)) continue;
-        int np = slot == FD_FIND ? 1 : s->npred;
-        for (int pi = 0; pi < np; pi++) {
+        for (int pi = 0; pi < 1; pi++) {
             for (int l = 0; l < nly; l++) {
                 fd_x q;
                 memset(&q, 0, sizeof q);
                 q.art = art;
                 q.handle = handle;
                 q.site = s;
-                q.pred_ix = slot == FD_FIND ? -1 : pi;
+                q.pred_ix = -1;
                 q.trace = 1;
                 q.ff.kind = kind_cl(s->site_kind);  /* PR-3, stated from B2 */
                 q.ff.layer = lyc[l];
-                if (slot == FD_FIND) {
-                    find_facts(&q);
-                } else {
-                    q.span = &s->preds[pi];
-                    if (q.span->need != MF_OPTIONAL) q.facts |= SF_REQUIRED;
-                    if (q.span->nterm == 1 && q.span->term[0].kind == MF_T_SET)
-                        q.members = popcount256(q.span->term[0].set);
-                }
+                find_facts(&q);
                 q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL
                                                                  : CL_N_REQUIRED;
                 gate_in in = { s, NULL, NULL, &q.ff };
@@ -917,6 +918,8 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
     }
 }
 
+const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0 };
+
 /* ---- THE ROUTED DECISION (§1.6 [rev3 D6]; R17-b' B2) ------------------------- *
  *
  * A site in slot FIND's scope renders the TABLE's pick iff the decision's
@@ -926,8 +929,10 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
  * a proven fact is decided once, and every layer inherits it), over the
  * consumer kind pcrec STATES. The pick names the arm that renders it: LIBC
  * the memchr rows (bounded by end_back), LIBC_BACK the memchr below the
- * candidate, WALK the walks. A routed row whose pick has no arm here is a
- * kit build error, refused loudly by the caller (no B2 row has one).
+ * candidate, WALK the walks, and RUN (D2, routed at B3b) the composer's own
+ * walk (`fd_nested_walk`: the nested fn_rows[] decide, their denies
+ * unchanged). A routed row whose pick has no arm here is a kit build error,
+ * refused loudly by the caller (no B2 or B3b row has one).
  *
  * `quiet`: the query's walk (mf_ask) records nothing and counts no reach; a
  * define's is a SELECTION (phase define), traced and counted. The routed
@@ -973,11 +978,168 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     case FF_LIBC:      a = s->end_back ? &pf_memchr_bounded_arm : &pf_memchr_arm; break;
     case FF_LIBC_BACK: a = &pf_memchr_back_arm; break;
     case FF_WALK:      a = s->end_back ? &pf_walk_bounded_arm : &pf_walk_arm; break;
-    case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_RUN: case FF_A3:
+    case FF_RUN:       a = &fd_nested_walk; break;     /* D2: the composer's walk */
+    case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_A3:
         break;
     }
     *row = fd_rows[d.terminal].id;
     return a;
+}
+
+/* ---- THE ROUTED PRES DECISION (§1.4; R17-b' B3b) ------------------------------ *
+ *
+ * Per presence span of the site (`pspans`, PR-5's unpicked spans: the
+ * members in descending byte order, the whole run last), slot PRES's rows in
+ * first-match order decide the span's chain LINK (§1.2 [rev3 D3]):
+ *   P0  a REQUIRED span (the route with no DFA scan in front, K65/K66):
+ *       verified, every member and the WHOLE run (`member` 0);
+ *   P2  G1, ported: the start search's proof (`pres_proof`, the kit's own
+ *       proven0 restated by the host) stands for the site's leading check,
+ *       so EVERY span is `proven_by` and none is verified (the verdict is a
+ *       site's, its port answers once);
+ *   P3  the pick, ported: of the set, its pick (`member` 1 + its index in
+ *       `pspans`) is the one member verified, and only where no run is
+ *       stated (a run's window is then the site's one check); of the run,
+ *       the window (`member` 1 + its first position) is verified;
+ *   P9  the total default: verified whole (`member` 0), every member.
+ * P4, set-leads ported, is an ORDER row: asked on its own after the
+ * terminal (as the FIND slot asks its N-rows), on a member span it puts the
+ * set's pick, verified, at the HEAD of the chain, ahead of the run. Its
+ * deny (`pres-set-lead`, bit 45's successor) leaves the run alone.
+ * Then the CHAIN ORDER (FD_ORDER_*) over the verified spans, and the one
+ * coverage rule: a REST member a run test verified WHOLE already proves
+ * (one of the whole run's EXACT positions) is not verified again (K65's
+ * "already tested": a cube position proves only that one of its two members
+ * is there, so a member equal to it keeps its own test).
+ *
+ * Every pick is the ports' (presence.c `kit_pres_picks`), over the spans,
+ * the frequency kind and `pres_proof`: the host's five picks ported verbatim
+ * (KW-8), so the links are today's choices and the parts laid out from them
+ * are today's text. Every PRES row is ROUTED: the decision has no pre-table
+ * form left, so a span no routed row decides is refused. The decision is
+ * the OFF variant's (§1.5 rule 1): a presence link is a PROVEN fact.
+ * `quiet`: the query's (mf_ask) records nothing; a define's prints one
+ * `MFTRACE FD ... slot=PRES` record per span, the deciding rows and the
+ * final link. */
+int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
+            mf_class *cls, const char **why)
+{
+    *why = NULL;
+    cls->npres = 0;
+    if (!(fd_scope(s) & (1 << FD_PRES))) return 0;
+    if (s->npspan > MF_MAX_PRES) { *why = "npspan > MF_MAX_PRES"; return -1; }
+    mf_pres_picks pk;
+    kit_pres_picks(art, s, &s->pres_proof, NULL, &pk);
+    int run = -1;
+    for (unsigned i = 0; i < s->npspan; i++)
+        if (s->pspans[i].term[0].kind == MF_T_RUN) run = (int)i;
+    size_t p4 = FD_NROWS;
+    for (size_t i = 0; i < FD_NROWS; i++)
+        if (!strcmp(fd_rows[i].id, "P4")) p4 = i;
+    const fd_row *rows[MF_MAX_PRES];
+    int led[MF_MAX_PRES];
+    /* `member` is 1 + an index (uint8_t): a set pick or a window start past
+       254 has no spelling, and is refused rather than wrapped */
+    if (pk.set_pick > 254 || pk.run_window > 254) {
+        *why = "a presence pick past mf_link.member's range (a set member or a run "
+               "window beyond index 254)";
+        return -1;
+    }
+    for (unsigned i = 0; i < s->npspan; i++) {
+        const mf_pred *sp = &s->pspans[i];
+        int member = sp->term[0].kind == MF_T_SET;
+        fd_x q;
+        memset(&q, 0, sizeof q);
+        q.art = art;
+        q.handle = handle;
+        q.site = s;
+        q.span = sp;
+        q.pred_ix = (int)i;
+        q.trace = !quiet;
+        q.ff.kind = kind_cl(s->site_kind);
+        q.ff.layer = CL_L_OFF;
+        if (sp->need == MF_NEED_UNSTATED) { *why = "a presence span's `need` UNSTATED"; return -1; }
+        q.ff.need = sp->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
+        if (sp->need != MF_OPTIONAL) q.facts |= SF_REQUIRED;
+        if (pk.dominated == 1) q.facts |= SF_PROVEN;
+        q.facts |= SF_PRES_SPLIT;       /* every span: a set member, or the run */
+        if (member) {
+            q.members = popcount256(sp->term[0].set);
+            if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
+        }
+        gate_in in = { s, NULL, NULL, &q.ff };
+        gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet };
+        fd_decision d;
+        fd_decide(&q, FD_PRES, &tc, &d);
+        if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) {
+            *why = "a presence span no routed PRES row decides";
+            return -1;
+        }
+        const fd_row *t = &fd_rows[d.terminal];
+        mf_link k = t->link;
+        if (!strcmp(t->id, "P3")) {
+            if (member) {
+                k.member = (uint8_t)(pk.set_pick + 1);
+                k.verify = run < 0 && (int)i == pk.set_pick;
+            } else {
+                k.member = (uint8_t)(pk.run_window + 1);
+            }
+        }
+        /* P4, the order row, asked on its own (deny, gate, predicate) */
+        led[i] = 0;
+        if (member && !k.proven_by && p4 < FD_NROWS &&
+            kit_ask(&fd_table, p4, &in, MF_PH_DEFINE, 0, &q, &tc)) {
+            k.verify = 1;
+            led[i] = 1;
+        }
+        cls->pres[i] = k;
+        rows[i] = t;
+    }
+    cls->npres = s->npspan;
+    /* the chain order, and the one coverage rule */
+    int head = -1;
+    for (unsigned i = 0; i < s->npspan; i++)
+        if (led[i] && run >= 0) head = (int)i;
+    if (head < 0 && run < 0 && pk.set_pick >= 0 && cls->pres[pk.set_pick].verify)
+        head = pk.set_pick;
+    uint8_t covered[32];
+    memset(covered, 0, sizeof covered);
+    if (run >= 0 && cls->pres[run].verify && cls->pres[run].member == 0) {
+        const mf_term *t = &s->pspans[run].term[0];
+        for (unsigned j = 0; j < t->run_len; j++)
+            if (!t->mask || t->mask[j] == 0xFFu)
+                covered[t->run[j] >> 3] |= (uint8_t)(1u << (t->run[j] & 7));
+    }
+    for (unsigned i = 0; i < s->npspan; i++) {
+        mf_link *k = &cls->pres[i];
+        k->order = FD_ORDER_HEAD;
+        if (!k->verify) continue;
+        if ((int)i == run) { k->order = FD_ORDER_RUN; continue; }
+        if ((int)i == head) continue;
+        int b = -1;
+        for (unsigned x = 0; x < 256 && b < 0; x++)
+            if (s->pspans[i].term[0].set[x >> 3] >> (x & 7) & 1) b = (int)x;
+        if (b >= 0 && (covered[b >> 3] >> (b & 7) & 1)) { k->verify = 0; continue; }
+        k->order = FD_ORDER_REST;
+    }
+#ifdef MF_TRACE
+    if (!quiet)
+        for (unsigned i = 0; i < s->npspan; i++) {
+            const mf_link *k = &cls->pres[i];
+            const mf_pred *sp = &s->pspans[i];
+            fprintf(stderr, "MFTRACE FD art=%u site=%u slot=PRES pred=%u layer=OFF kind=%s "
+                    "need=%s members=%u shape=- row=%s%s link=v%dp%dm%do%d basis=%s routed=1\n",
+                    art->trace_id, handle, i,
+                    kind_name(kind_cl(s->site_kind)) ? kind_name(kind_cl(s->site_kind)) : "UNSTATED",
+                    sp->need == MF_OPTIONAL ? "OPTIONAL" : "REQUIRED",
+                    sp->term[0].kind == MF_T_SET ? popcount256(sp->term[0].set) : 0u,
+                    rows[i]->id, led[i] ? "+P4" : "", k->verify, k->proven_by, k->member,
+                    k->order, fb_name[rows[i]->basis]);
+        }
+#else
+    (void)rows;
+#endif
+    return 0;
 }
 
 /* ---- the listing (R-MS4) -------------------------------------------------------- */

@@ -397,9 +397,18 @@ static bool req_admit_emits(ReqAdmit a)
 {
     return a == REQ_ADMIT_EMITTED || a == REQ_ADMIT_SET_LEADS;
 }
-/* The necessary-set byte [K82]'s `set-leads` row tests in front of the run,
- * or -1 where the admission chose another row. Defined beside it. */
-static int req_lead_byte(Ctx *cx);
+/* [MEMFN] R17-b' B3b THE PRESENCE LINKS, the kit's routed decision
+ * (r17b_prime.md §1.4; memfn.h mf_link): the pre-check's site as the kit
+ * decides it, described by its ONE constructor and asked (`mf_ask`, the
+ * presence ask: spans stated, no part yet), its links into `cls`. `proof`
+ * is the start search's (NULL: read here, quietly). Defined beside the
+ * admission, whose `dominated` and `set-leads` rows read it; the pre-check's
+ * builder lays its parts out from the same answer. */
+static mf_site *req_pres_ask(Ctx *cx, const mf_pres_proof *proof, mf_class *cls);
+/* The span the links put at the HEAD of the chain (verified, order 0: the
+ * set's leading member), or -1; `lead` 1 asks for it only in front of a
+ * stated run (`set-leads`'s shape). */
+static int req_pres_head(const mf_site *s, const mf_class *cls, bool lead);
 /* [K82] (B) WHAT THE BODY DOES WITH AN EMITTED RUN PRE-CHECK'S ANSWER — the
  * `req-use` table, defined beside the admission it reads: keep its candidate
  * as the scan start (the HANDOFF), or start at the startpos. Read by the gate
@@ -1111,13 +1120,16 @@ static void ofs_test_run(OfsTest *t, const unsigned char *run,
  * (`req_site_define`) reads for its run predicates, each defined as a block
  * and called from one site, so a block cannot be written without its call
  * or called unwritten:
- * `t[0]` the window the `req_run` fact's `bytes` on every route that emits the run
- * pre-check, and `t[1]` [K66]'s whole run the `req_run` fact's `whole` where the route
- * has no DFA scan in front and the run is longer than its window. Returns how
- * many, 0 where no run pre-check is emitted. Both read the one the `req_run` fact
- * field S1's pin reads (R3-2): `bytes == whole + at`, so the whole run's scan
- * member is the window's, at `at + idx`. */
-static int req_run_tests(Ctx *cx, OfsTest t[2])
+ * `t[0]` the window the `req_run` fact's `bytes` wherever the kit's presence
+ * link verifies the run, and `t[1]` [K66]'s whole run the `req_run` fact's
+ * `whole` where the link keeps the run WHOLE (`whole`: the routed PRES row P0
+ * on the route with no DFA scan in front, or P9 under the pick's deny) and the
+ * run is longer than its window. Returns how many. Both read the one the
+ * `req_run` fact field S1's pin reads (R3-2): `bytes == whole + at`, so the
+ * whole run's scan member is the window's, at `at + idx`; the kit holds the
+ * window and the scan position to its own port's (compose.c
+ * `pres_layout_check`), so the two cannot differ silently. */
+static int req_run_tests(Ctx *cx, OfsTest t[2], bool whole)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
     /* [OPT-LITSCAN] S4 C3: no `req_byte` gate here — a masked run over an
@@ -1127,11 +1139,10 @@ static int req_run_tests(Ctx *cx, OfsTest t[2])
      * exact window), and a whole run built without its mask would be an
      * exact compare of T, deleting every match not in upper case on the one
      * route where this is the only proof (litscan_s4.md §2.3.4, S4). */
-    if (r->len < 2 || !req_admit_emits(req_admit(cx)))
-        return 0;
+    if (r->len < 2) return 0;
     ofs_test_run(&t[0], r->bytes, r->mask, r->len, r->idx);
     r = pcrec_fact_req_whole_run(cx);   /* the same struct's core half */
-    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;
+    if (!whole || r->whole_len <= r->len) return 1;
     ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx);
     return 2;
 }
@@ -1387,61 +1398,51 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
     pcrec_sb_cmt_close(c);
 }
 
-/* [K65] Finds the pre-check's second half on a VM route with no DFA scan in
- * front: every member of the necessary set the first half did not already
- * test, ascending, into `rest[0..*np)` (none on any other route). Each is
- * tested by its own `memchr`, any absent one answering NOMATCH.
+/* [K65] THE PRE-CHECK'S SECOND HALF, the set REST: every member of the
+ * necessary set the kit's presence links verify after the run (`order` 2,
+ * REST), ascending, into `rest[0..*np)`. Each is tested by its own `memchr`,
+ * any absent one answering NOMATCH. Since R17-b' B3b the choice is the kit's
+ * routed PRES rows' (finder.c `fd_pres`): P0 verifies every member on a
+ * REQUIRED route, and the chain's coverage rule drops what the first half
+ * already tests. The reasons it exists are unchanged and are this route's:
  *
- * WHY THIS ROUTE AND ONLY THIS ONE. The pre-check is sound on any member, so
- * elsewhere which one it tests is a SPEED choice. Here it is also the call's
- * only linear NO-MATCH PROOF — a backreference or a linked call declines the
- * hybrid, so nothing else scans the window — and a program that gets no
- * proof can exhaust a budget and give up: a framed one by backtracking inside
- * an attempt, a frameless one by being retried at every start position
- * (`[a-z]+Z.@` under `--engine=vm` gave up on work over 200 KB). With one member
- * tested, the same subject answered NOMATCH or `PCREC_ERR_STEPS` according to
- * the pick (`(x?)([a-z]+)+Z.@\1` on 31 `a`s + "Zb": `@` absent, `Z` present;
- * the byte encoding's prior picks `Z`, every other encoding `@`). Testing
- * every member makes the proof a fact about the SET, which is the pattern's.
- * A DFA-scanning artifact needs none of this: its scan is already linear in
- * the window whatever the pre-check tests.
+ * WHY THE ROUTE WITH NO DFA SCAN (a REQUIRED span, P0). The pre-check is
+ * sound on any member, so elsewhere which one it tests is a SPEED choice.
+ * Here it is also the call's only linear NO-MATCH PROOF — a backreference or
+ * a linked call declines the hybrid, so nothing else scans the window — and
+ * a program that gets no proof can exhaust a budget and give up: a framed
+ * one by backtracking inside an attempt, a frameless one by being retried at
+ * every start position (`[a-z]+Z.@` under `--engine=vm` gave up on work over
+ * 200 KB). With one member tested, the same subject answered NOMATCH or
+ * `PCREC_ERR_STEPS` according to the pick (`(x?)([a-z]+)+Z.@\1` on 31 `a`s +
+ * "Zb": `@` absent, `Z` present; the byte encoding's prior picks `Z`, every
+ * other encoding `@`). Testing every member makes the proof a fact about the
+ * SET, which is the pattern's. A DFA-scanning artifact needs none of this:
+ * its scan is already linear in the window whatever the pre-check tests.
  *
- * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: the `req_byte` fact
- * for the one-byte form, every EXACT position of the WHOLE run for the run
- * form (on this route the whole run's predicate has compared all of it, and a
- * window holding the run holds each of its exact bytes; a masked position
- * proves only that one of its members is there). Members go out in ascending byte
- * order; the order moves no answer, and the rarest member has already been
- * scanned first by the half above.
+ * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: the head (the
+ * one-byte form's byte, or [K82]'s leading pick), and every EXACT position of
+ * the run where the run is verified WHOLE (a window holding the run holds
+ * each of its exact bytes; a masked position proves only that one of its
+ * members is there, so a member equal to it keeps its own `memchr` — else
+ * NOMATCH would turn into a give-up, S2b). Members go out in ascending byte
+ * order; the order moves no answer.
  *
  * Nothing is emitted where no member is left, so an artifact whose set is
  * its pick alone is byte-identical to the shape before this. The test runs
  * only after the first half, which has already returned on an empty window,
  * so no `memchr` here can see a NULL subject. */
-static void req_set_rest_members(Ctx *cx, unsigned char rest[256], int *np)
+static void req_set_rest_members(const mf_site *s, const mf_class *cls,
+                                 unsigned char rest[256], int *np)
 {
-    const ReqSet *set;
-    const ReqRun *r = pcrec_fact_req_whole_run(cx);
-    bool done[256] = { false };
-    int b, k, n = 0;
-    *np = 0;
-    if (pcrec_artifact_has_dfa_scan(cx)) return;
-    /* [OPT-LITSCAN] S4 C3: only an EXACT position of the whole run is a byte
-     * the run check proved present; at a cube position T is one member and
-     * the subject may hold the other, so a set member equal to it keeps its
-     * own `memchr` — else NOMATCH would turn into a give-up (S2b). */
-    if (r->len >= 2) {
-        for (k = 0; k < r->whole_len; k++)
-            if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
-    } else done[pcrec_fact_req_byte(cx)] = true;
-    /* [K82] a leading set pick was tested by the first half too. */
-    if (req_lead_byte(cx) >= 0) done[req_lead_byte(cx)] = true;
-    /* Asked only on the one route that reads it, so `--emit-facts` can say
-     * which artifacts consumed the whole set. */
-    set = pcrec_fact_req_set(cx);
-    for (b = 0; b < 256; b++)
-        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
-            rest[n++] = (unsigned char)b;
+    int n = 0;
+    for (int b = 0; b < 256; b++)
+        for (unsigned i = 0; i < s->npspan; i++) {
+            const mf_term *t = &s->pspans[i].term[0];
+            if (t->kind == MF_T_SET && cls->pres[i].verify && cls->pres[i].order == 2 &&
+                (t->set[b >> 3] >> (b & 7) & 1))
+                rest[n++] = (unsigned char)b;
+        }
     *np = n;
 }
 
@@ -1630,22 +1631,35 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
 }
 
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
- * NULL, and nothing defined, where no pre-check is emitted. Each predicate
- * is read from the call the text writers above read: the admission, the
- * run's tests (`req_run_tests`), the leading pick and the set rest
- * (`req_set_rest_members`). The gate's byte is REQUIRED except as [K82]'s
- * leading pick on a DFA-scan route, where it is speed only (§14.5); every
- * other predicate is REQUIRED. Where the body reads the gate's candidate
- * (`req_use`, the handoff), the window's position is ASSIGNED: its index is
- * `ret_pred`, and it is the last predicate, so pcrec's own text after the
- * site (`emit_req_handoff_rest`) follows it as before. */
+ * NULL, and nothing defined, where no pre-check is emitted. Since R17-b' B3b
+ * the PARTS are laid out from the kit's presence links (`req_pres_ask`: the
+ * routed PRES rows P0 P2 P3 P4 P9 over the stated spans), in their chain
+ * order: the HEAD member (the one-byte form's byte, or [K82]'s leading
+ * pick), the run's window and, where the link keeps the run whole, [K66]'s
+ * whole run (`req_run_tests`), then [K65]'s set rest
+ * (`req_set_rest_members`); the kit refuses a define whose parts are not that
+ * layout (memfn/src/compose.c `pres_layout_check`). The head's byte is
+ * REQUIRED except as [K82]'s leading pick, which carries its span's need
+ * (speed only on a DFA-scan route, §14.5); every other part is REQUIRED.
+ * Where the body reads the gate's candidate (`req_use`, the handoff), the
+ * landmark's position is ASSIGNED: its index is `ret_pred` (the run's window
+ * where a run shipped, else the head byte), and pcrec's own text after the
+ * site (`emit_req_handoff_rest`) follows it. A part AFTER the landmark (a
+ * whole run or a rest, which only `--memfn=no-fd-pres-pick` puts on a
+ * handoff route) is sound there: each is a fact every match holds in
+ * [posvar, n), so its miss answers NOMATCH at the entry and at the handoff's
+ * re-entry alike, after the landmark's position is kept. pcrec's own facts
+ * read the same choices (`req_byte` is the one-byte landmark, whose K the
+ * handoff subtracts), so the head must BE `req_byte` where no run ships: a
+ * difference is an internal error, never a silent pick. */
 static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
 {
-    int b = pcrec_fact_req_byte(cx), gate = -1, nrun = 0, nrest = 0, np = 0;
+    int b = pcrec_fact_req_byte(cx), gate = -1, nrun = 0, nrest = 0, np = 0, run = -1, head;
     mf_need gate_need = MF_REQUIRED;
     unsigned char rest[256];
     OfsTest t[2];
     bool handoff = false;
+    mf_class *cls;
     if (b < 0 && pcrec_fact_req_run(cx)->len < 2) {
         PCREC_CAND_TRACE_REC("PRESENCE", "-", "nothing", "req-site");
         return NULL;
@@ -1657,13 +1671,21 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
 #endif
         return NULL;
     }
-    if (pcrec_fact_req_run(cx)->len >= 2) {
-        if (req_lead_byte(cx) >= 0) {
-            gate = req_lead_byte(cx);
-            gate_need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
-        }
-        nrun = req_run_tests(cx, t);
-    } else gate = b;
+    cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+    mf_site *s = req_pres_ask(cx, NULL, cls);
+    for (unsigned i = 0; i < s->npspan; i++)
+        if (s->pspans[i].term[0].kind == MF_T_RUN) run = (int)i;
+    head = req_pres_head(s, cls, false);
+    if (head >= 0) {
+        gate = mf_term_byte(&s->pspans[head].term[0]);
+        if (run >= 0) gate_need = (mf_need)s->pspans[head].need;
+        else if (gate != b)
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's presence links lead "
+                           "with byte %d where the req_byte fact (the landmark the "
+                           "handoff's K is read from) is %d", gate, b);
+    }
+    if (run >= 0 && cls->pres[run].verify)
+        nrun = req_run_tests(cx, t, cls->pres[run].member == 0);
     /* [REQ-HANDOFF-L1] the landmark is the run window where a run shipped,
      * else the one byte: either is kept where the body reads it. */
     handoff = req_use(cx) == REQ_USE_HANDOFF;
@@ -1674,17 +1696,19 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
                          nrun == 0 ? "none" : nrun == 1 ? "window" : "whole-run", "run-tests");
     PCREC_CAND_TRACE_REC("FIRST", "-", handoff ? "assign" : "on-miss", "req-handoff");
-    req_set_rest_members(cx, rest, &nrest);
+    req_set_rest_members(s, cls, rest, &nrest);
+    /* the set's own `used` record ([MEMFN] R17-b' B3b, Q-WR-12): the kit's
+     * rows consume the stated set; the facts record it where today's builder
+     * asked it, the route with no DFA scan in front */
+    if (!pcrec_artifact_has_dfa_scan(cx)) (void)pcrec_fact_req_set(cx);
     PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
                          nrest ? "set-rest" : "none", "set-rest");
-    if (handoff && (nrun > 1 || nrest != 0))
-        pcrec_ctx_fail(cx, 0, "internal error: a handoff pre-check with a part "
-                       "after its landmark (the handoff is a DFA-scan route's, "
-                       "the whole run and the set rest a no-DFA route's)");
+    if (gate < 0 && !nrun)
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's presence links verify "
+                       "nothing on an admitted pre-check (the admission's `dominated` row "
+                       "reads the same links)");
 
     struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
-    mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
-    s->body = MF_BODY_ONESHOT;          /* R-23 */
     mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
     if (gate >= 0) {
         if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
@@ -1701,20 +1725,12 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         pcrec_memfn_term_byte(&p[np].term[0], 0, rest[i], MF_REQUIRED);
         p[np++].nterm = 1;
     }
-    s->form = MF_FORM_STMT;
-    s->op = MF_OP_ALL_PRESENT;
     s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
-    s->empty = MF_EMPTY_MISS;
     s->use = handoff ? MF_USE_POSITION : MF_USE_DISCARD;
-    s->consumer = MF_C_ENGINE;
-    s->site_kind = site_kind_of(cx, SKS_PRE);
     s->npred = (uint16_t)np;
     s->preds = p;
-    s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
-    /* [MEMFN] R17-b' B3a the presence spans, STATED and unrouted (no
-       renderer reads them: `preds` above stays the rendered pre-check), and
-       K as `head_max` where the site hands its landmark on (PR-6) */
-    s->pspans = req_pres_spans(cx, &s->npspan);
+    /* [MEMFN] R17-b' B3a K as `head_max` where the site hands its landmark
+       on (PR-6) */
     s->head_max = handoff ? (uint64_t)pcrec_fact_req_landmark_maxoff(cx) : 0;
 #ifdef PCREC_CAND_TRACE
     req_pick_shadow(cx, s);
@@ -7825,6 +7841,14 @@ typedef struct {
     mf_class cls;       /* the form CLASS of the start-search site */
 } CandScan;
 
+/* [MEMFN] R17-b' B3b the start search's proof as the presence site states
+ * it, and the same read made QUIETLY (a check walk, as the five-pick shadow's:
+ * no record, the facts' `used` restored) for a reader that is not the
+ * admission's `dominated` row; both defined beside the presence site's
+ * constructor (`req_pres_site`) and the quiet walk respectively. */
+static mf_pres_proof req_pres_proof_of(const CandScan *cs);
+static mf_pres_proof req_pres_proof_quiet(Ctx *cx);
+
 /* [MEMFN] R17-b' THE FIELDS OF THE KIT'S FORM CLASS a reader may read
  * (`CandNode.kfields`; memfn.h mf_class): r17b_prime.md §4.5's table maps G1
  * and R4 to `exists`/`proven0`, `landing` L4 to `exists`; on the ATTEMPT
@@ -8087,6 +8111,11 @@ static bool req_route_one_attempt(Ctx *cx)
  *
  * `<=` AND NOT `<`: the rule admits the pre-check only where its byte is
  * STRICTLY rarer, so an equally rare byte is a second pass buying nothing. */
+#ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B3b: G1 IS THE KIT'S ROW P2 (finder.c, `fd-pres-g1`), which
+ * reads the same proof restated as a site fact (`pres_proof`); this pcrec
+ * spelling stays as the trace build's EXPECTATION, the five-pick shadow's
+ * (KW-8 census at B3b, `req_pick_shadow`). */
 static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
     int p = cs->byte;
@@ -8106,10 +8135,7 @@ static int req_set_pick_of(Ctx *cx, const ReqSet *set)
     return pcrec_find_set_pick(pcrec_find_byte_rate(cx), set->bits, set->rightmost);
 }
 
-static int req_set_pick(Ctx *cx)
-{
-    return req_set_pick_of(cx, pcrec_fact_req_set(cx));
-}
+#endif
 
 /* The admission's rows, each a predicate over the compile alone (`s->cx`;
  * the machine fields of the `CandSel` are unused). */
@@ -8137,26 +8163,40 @@ static bool req_dominated_applies(const CandSel *s)
         if (CAND_READ(CAND_SLOT_PRESENCE, CAND_SLOT_LOCATE, &ls, "req-whole")->u.locate.whole)
             return true;
     }
+    /* [MEMFN] R17-b' B3b G1 IS THE KIT'S PRES ROW P2 (r17b_prime.md §1.4,
+     * §4.5's table: "at B3b G1 IS the kit's row P2 and pcrec's reader
+     * retires"): the start search's proof, read here as it was (the PF
+     * site's class through `dfa_cand_scan`, the kit's own proven0), is stated
+     * on the pre-check's site, and the kit's links say whether it stands for
+     * the leading check: every span `proven_by`. `--memfn=no-fd-pres-g1`
+     * keeps the pre-check (the pick decides it). */
     dfa_cand_scan(s->cx, CAND_SLOT_PRESENCE, &cs);
-    return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
+    {
+        mf_pres_proof pf = req_pres_proof_of(&cs);
+        mf_class *cls = pcrec_arena_alloc(&s->cx->arena, sizeof *cls);
+        req_pres_ask(s->cx, &pf, cls);
+        if (!cls->npres) return false;
+        for (unsigned i = 0; i < cls->npres; i++)
+            if (!cls->pres[i].proven_by) return false;
+        return true;
+    }
 }
-/* [K82] (A) Is the necessary set's pick RARER than the run's scan member?
- * One PICK over the two guards, the run's scan cube first, so a tie (and an
- * exact scan member under NONE, a byte against a byte) keeps the run alone:
- * the set pick leads only where it is strictly rarer under the active rate,
- * or, under NONE, a byte against the run's two-member pair. */
+/* [K82] (A) Does the necessary set's pick LEAD the run? Since R17-b' B3b
+ * the kit's PRES row P4 decides (set-leads, ported: the pick strictly rarer
+ * than the run's scan member, one PICK over the two guards, the run's scan
+ * cube first, so a tie keeps the run alone), read off the presence links:
+ * a member at the HEAD of the chain in front of a stated run. Its deny is the
+ * kit's `--memfn=no-pres-set-lead` (pcrec's `-fno-req-set-lead`, bit 45, until
+ * B3b; PCREC_NO_REQ_SET_LEAD stays its alias, compile.c). The set is asked
+ * as a PASS here as before (the facts' `used` record: the kit's row consumes
+ * it where this row always asked it, Q-WR-12). */
 static bool req_set_leads_applies(const CandSel *s)
 {
-    const ReqRun *r = pcrec_fact_req_run(s->cx);
-    unsigned char cand[2], care[2];
-    int q;
-    if (r->len < 2) return false;
-    if ((q = req_set_pick(s->cx)) < 0) return false;
-    cand[0] = r->bytes[r->idx];
-    care[0] = r->mask[r->idx];
-    cand[1] = (unsigned char)q;
-    care[1] = 0xFF;
-    return pcrec_find_pick(pcrec_find_byte_rate(s->cx), cand, care, 2, 0) == 1;
+    if (pcrec_fact_req_run(s->cx)->len < 2) return false;
+    (void)pcrec_fact_req_set(s->cx);
+    mf_class *cls = pcrec_arena_alloc(&s->cx->arena, sizeof *cls);
+    const mf_site *ps = req_pres_ask(s->cx, NULL, cls);
+    return req_pres_head(ps, cls, true) >= 0;
 }
 
 /* [OPT-PRECHECK-ADMIT] THE ADMISSION: whether this artifact emits a
@@ -8204,9 +8244,64 @@ static ReqAdmit req_admit_read(Ctx *cx, CandSlot reader)
     return r->u.admit.verdict;
 }
 
-static int req_lead_byte(Ctx *cx)
+/* The start search's proof as the presence site states it (`pres_proof`,
+ * MF_SITE_ABI 17): its one byte, whether that byte is its STOP (a one-member
+ * search, ENG_ATTEMPT's context stop), whether it verifies the whole run;
+ * nothing where it proves no byte. */
+static mf_pres_proof req_pres_proof_of(const CandScan *cs)
 {
-    return req_admit(cx) == REQ_ADMIT_SET_LEADS ? req_set_pick(cx) : -1;
+    return (mf_pres_proof){ .byte = (int16_t)(cs->byte >= 0 ? cs->byte : -1),
+                            .stop = cs->byte >= 0 && cs->one_byte,
+                            .run = cs->byte >= 0 && cs->run_verified, .stated = 1 };
+}
+
+/* [MEMFN] R17-b' B3b THE PRESENCE SITE, DESCRIBED (r17b_prime.md §1.4,
+ * §4.1): the ONE constructor of the pre-check's kit site as the kit decides
+ * it, read by the admission's two rows (the presence ask) and by the
+ * builder (`req_site_define`, which lays the parts out and defines it): the
+ * spans (`req_pres_spans`, B3a's statement), the consumer kind, the start
+ * search's proof and the composite's fixed facts; the handoff is the
+ * builder's to state (ON_MISS here: no link reads it). */
+static mf_site *req_pres_site(Ctx *cx, const mf_pres_proof *proof)
+{
+    mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
+    s->body = MF_BODY_ONESHOT;          /* R-23 */
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_ALL_PRESENT;
+    s->handoff = MF_H_ON_MISS;
+    s->empty = MF_EMPTY_MISS;
+    s->use = MF_USE_DISCARD;
+    s->consumer = MF_C_ENGINE;
+    s->site_kind = site_kind_of(cx, SKS_PRE);
+    s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
+    s->pspans = req_pres_spans(cx, &s->npspan);
+    if (s->npspan) s->pres_proof = proof ? *proof : req_pres_proof_quiet(cx);
+    return s;
+}
+
+static mf_site *req_pres_ask(Ctx *cx, const mf_pres_proof *proof, mf_class *cls)
+{
+    mf_site *s = req_pres_site(cx, proof);
+    memset(cls, 0, sizeof *cls);
+    if (!s->npspan) return s;
+    mf_hooks h = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
+    if (mf_ask(pcrec_memfn_art(cx), s, &h, cls))
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the pre-check's "
+                       "presence spans (its define would refuse them too)");
+    return s;
+}
+
+static int req_pres_head(const mf_site *s, const mf_class *cls, bool lead)
+{
+    int run = 0;
+    for (unsigned i = 0; i < s->npspan; i++)
+        run |= s->pspans[i].term[0].kind == MF_T_RUN;
+    if (lead && !run) return -1;
+    for (unsigned i = 0; i < s->npspan && i < cls->npres; i++)
+        if (s->pspans[i].term[0].kind == MF_T_SET && cls->pres[i].verify &&
+            cls->pres[i].order == 0)
+            return (int)i;
+    return -1;
 }
 
 /* Renders an admission verdict as the token `<PREFIX>_REQ_WHY` carries: a
@@ -9565,13 +9660,13 @@ static const CandRow cand_rows[] = {
     { .c = { "dominated", 0, req_dominated_applies }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "dominated", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
-      .desc = "G1: the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
+      .desc = "the body's LOCATE row answers presence itself (rev-end, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
       .u.admit = { REQ_ADMIT_DOMINATED } },
-    { .c = { "set-leads", PCREC_NO_REQ_SET_LEAD, req_set_leads_applies },
+    { .c = { "set-leads", 0, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
       .map = CM_PRESENCE, .hands = CT_VERDICT | CT_HIT,
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "set-leads" } },
-      .desc = "a run pre-check is admitted and the necessary set's pick is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search",
+      .desc = "a run pre-check is admitted and the memfn kit's PRES row P4 (`--memfn=no-pres-set-lead`, the retired -fno-req-set-lead) leads with the necessary set's pick: it is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search",
       .u.admit = { REQ_ADMIT_SET_LEADS } },
     { .c = { "emitted", 0, cand_always }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "emitted", .map = CM_PRESENCE,
@@ -10114,6 +10209,30 @@ static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->tok; }
 static bool dfa_match_is_unwrapped(Ctx *cx)
 { return dfa_match_of(cx)->u.finish.act == CAND_FIN_VERIFY; }
 
+/* [MEMFN] R17-b' B3b the start search's proof, read QUIETLY: the admission's
+ * `dominated` row reads it as a READ of NEXT (its declared edge); every other
+ * reader of the presence links (`set-leads`, the builder) re-reads the same
+ * proof as a check walk (the trace build's quiet walk: no record, the read
+ * stack set aside), and the facts' `used` record is restored, so the trace
+ * stream and `--emit-facts` stay the admission's own. */
+static mf_pres_proof req_pres_proof_quiet(Ctx *cx)
+{
+    uint32_t used = cx->job->pf.used;
+    CandScan cs;
+#ifdef PCREC_CAND_TRACE
+    int base = cand_eval_base;
+    pcrec_cand_trace_quiet++;
+    cand_eval_base = cand_eval_depth;
+#endif
+    dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
+#ifdef PCREC_CAND_TRACE
+    cand_eval_base = base;
+    pcrec_cand_trace_quiet--;
+#endif
+    cx->job->pf.used = used;
+    return req_pres_proof_of(&cs);
+}
+
 #ifdef PCREC_CAND_TRACE
 /* ---- [START-TABLE] THE HIT COUNTER (trace build only) ------------------
  *
@@ -10149,6 +10268,25 @@ static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
 }
 
 #ifdef PCREC_CAND_TRACE
+/* [MEMFN] R17-b' B3b pcrec's OWN set-leads, the shadow's expectation since
+ * the admission's row reads the kit's P4 (`req_set_leads_applies`): the
+ * necessary set's pick against the run's scan member, one PICK over the two
+ * guards, the run first, so a tie keeps the run alone. Before B3b this was
+ * the row's predicate, verbatim. */
+static bool req_set_leads_own(Ctx *cx)
+{
+    const ReqRun *r = pcrec_fact_req_run(cx);
+    unsigned char cand[2], care[2];
+    int q;
+    if (r->len < 2) return false;
+    if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
+    cand[0] = r->bytes[r->idx];
+    care[0] = r->mask[r->idx];
+    cand[1] = (unsigned char)q;
+    care[1] = 0xFF;
+    return pcrec_find_pick(pcrec_find_byte_rate(cx), cand, care, 2, 0) == 1;
+}
+
 /* [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8; r17b_prime.md §3.1 row B3a,
  * §8.1): the kit's PORTS of the five priced presence picks (memfn.h
  * `mf_pres_ports`) asked over the presence spans this compile STATES, beside
@@ -10205,7 +10343,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
     const char *kind = pick_kind_name[site_kind_of(cx, SKS_PRE)];
     int base = cand_eval_base;
     /* the facts' `used` record stays the compile's own too: pcrec's own
-     * picks below (set-leads reads `req_set_pick`) ask as passes */
+     * picks below ask facts as passes */
     uint32_t used = cx->job->pf.used;
     pcrec_cand_trace_quiet++;
     cand_eval_base = cand_eval_depth;
@@ -10222,29 +10360,18 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
     }
     {
-        mf_site *d = NULL;
-        if (!site) {        /* the pre-check pcrec declines (G1): described, never defined */
-            d = pcrec_memfn_site(cx, DELEG_PRE);
-            d->body = MF_BODY_ONESHOT;
-            d->form = MF_FORM_STMT;
-            d->op = MF_OP_ALL_PRESENT;
-            d->handoff = MF_H_ON_MISS;
-            d->empty = MF_EMPTY_MISS;
-            d->use = MF_USE_DISCARD;
-            d->site_kind = site_kind_of(cx, SKS_PRE);
-            d->pspans = req_pres_spans(cx, &d->npspan);
-            site = d;
-        }
+        CandScan cs;
+        dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
+        mf_pres_proof proof = req_pres_proof_of(&cs);
+        /* the pre-check pcrec declines (G1): described by the one
+           constructor, never defined */
+        if (!site) site = req_pres_site(cx, &proof);
         _Static_assert(MF_PRES_WINDOW == PCREC_MAX_REQ_RUN_EMIT,
                        "the kit's verbatim window port is pcrec's pre-check window");
         const ReqSet *set = pcrec_fact_req_set_stated(cx);
         const ReqRun *run = pcrec_fact_req_whole_run_stated(cx);
         int nm = 0;
         for (int b = 0; b < 256; b++) nm += (set->bits[b >> 3] >> (b & 7)) & 1;
-        CandScan cs;
-        dfa_cand_scan(cx, CAND_SLOT_PRESENCE, &cs);
-        mf_pres_proof proof = { (int16_t)cs.byte, (uint8_t)cs.one_byte,
-                                (uint8_t)cs.run_verified };
         /* the K admission's start set, where NEXT prices it */
         UnanchStart us;
         CandSel ns = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
@@ -10296,9 +10423,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
         /* set-leads */
         {
-            CandSel ls = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
-                           .route = CAND_ROUTE_DFA };
-            int pl = req_set_leads_applies(&ls), kl = k.set_leads < 0 ? 0 : k.set_leads;
+            int pl = req_set_leads_own(cx), kl = k.set_leads < 0 ? 0 : k.set_leads;
             if (pick_plant("leads")) kl = !kl;
             if (k.set_leads >= 0 || pl) pick_rec("leads", pl, kl, 1, pl, kind);
         }

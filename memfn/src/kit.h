@@ -270,6 +270,13 @@ struct mf_art {
  * mf_pres_ports checks (it reads the presence spans and nothing else). */
 const char *kit_presence_check(const mf_site *s);
 
+#define kit_pres_picks MF_NS(kit_pres_picks)
+/* THE FIVE PICKS' ARITHMETIC (presence.c), over a site whose presence
+ * statement holds (the caller has checked it): mf_pres_ports' answers, read
+ * by the public port and by the routed PRES slot (finder.c fd_pres). */
+void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
+                    const uint8_t *start_set, mf_pres_picks *out);
+
 #define kit_fail MF_NS(kit_fail)
 /* Records the first internal error on the artifact; always returns -1. */
 int kit_fail(mf_art *art, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -428,6 +435,22 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
 #define fd_route MF_NS(fd_route)
 const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
                            const mf_hooks *def, int quiet, const char **row);
+/* fd_route's answer for a routed pick that IS the composer's own walk (D2's
+ * RUN: the nested fn_rows[] walk, its BODY/PREFIX rows and their denies
+ * unchanged, R17-b' B3b): a marker, never rendered or read; the caller walks
+ * the arms and reports the routed row. */
+#define fd_nested_walk MF_NS(fd_nested_walk)
+extern const struct arm fd_nested_walk;
+/* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
+ * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
+ * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
+ * its own), into cls->pres[0..npspan) and cls->npres. 0, or -1 with *why
+ * where no routed row decides a span (a kit build error the caller refuses).
+ * `quiet` 1 for the query (no record, no reach). A site stating no presence
+ * span answers npres 0. */
+#define fd_pres MF_NS(fd_pres)
+int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int quiet,
+            mf_class *cls, const char **why);
 
 /* ---- writing to a sink --------------------------------------------------- */
 
