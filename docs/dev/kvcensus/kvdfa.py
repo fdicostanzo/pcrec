@@ -236,3 +236,33 @@ def setstr(s):
 def hexset(h):
     bs = bytes.fromhex(h)
     return frozenset(b for b in range(256) if (bs[b >> 3] >> (b & 7)) & 1)
+
+
+def forward_path(F, S0, cap=CAP):
+    """A SCAN-RESTART site (span 0's set narrower than the language's S_0: the
+    forward scan restarts where its start row stops self-looping, and the
+    reverse pass recovers the start): the per-position ENGAGED sets of the
+    forward machine from row 0 (S_0 = the site's set; then every byte that
+    keeps some reached row live and off the start row), with the same entry
+    rule as uniform(). -> (best, contig, sets)."""
+    Q, S, best, contig, run = {0}, [frozenset(S0)], 0, 0, True
+    for j in range(cap):
+        Qn = {F.step(q, b) for q in Q for b in S[j]}
+        Qn.discard(None)
+        if not Qn:
+            break
+        if len(Qn) == 1:
+            best = j + 1
+            if run:
+                contig = j + 1
+        else:
+            run = False
+        if any(F.acc_any[t] for t in Qn):
+            break
+        Q = Qn
+        nxt = frozenset(b for b in range(256) for q in Q
+                        if F.step(q, b) is not None and F.step(q, b) != 0 and F.step(q, b) in F.live)
+        if not nxt:
+            break
+        S.append(nxt)
+    return best, contig, S

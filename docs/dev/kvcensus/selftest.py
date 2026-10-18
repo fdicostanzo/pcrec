@@ -87,6 +87,20 @@ nonw = frozenset(range(256)) - kvdfa.W
 ck("\\bfoobar\\b under (?<!\\w)+absent: one entry row", len(F.starts(nonw, True)), 1)
 ck("\\bfoobar\\b under every context: two entry rows", len(F.starts()), 2)
 
+F = kvdfa.Machine(C("xx"), "forward")
+ck("forward_path xx from {x}: one row through both", kvdfa.forward_path(F, {ord("x")})[:2], (2, 2))
+F2 = copy.deepcopy(F)        # PLANT: after x, 'q' engages a different live row
+r1 = F2.step(0, ord("x"))
+kq = split(F2, ord("q"))
+F2.next[r1][kq] = r1         # a live row other than x's target
+ck("PLANT xx with q engaging elsewhere: forward_path best 1", kvdfa.forward_path(F2, {ord("x")})[0], 1)
+F = kvdfa.Machine(C("x[ab]c"), "forward")
+ck("forward_path x[ab]c: the restart byte x forks offset 1 (best 1)", kvdfa.forward_path(F, {ord("x")})[0], 1)
+F = kvdfa.Machine(C("(?:a||b)c"), "forward")
+A, L = LF("(?:a||b)c")
+ck("(?:a||b)c: S_0 is {a,b,c} but the scan restarts on {c} only", (kvdfa.setstr(L["S"][0]), sorted(
+   b for b in range(256) if F.step(0, b) not in (0, None))), ("61-63", [ord("c")]))
+
 # ---- 3. whole-cover ---------------------------------------------------------
 for p, k in (("abc", 3), ("(?i)abc", 3), ("foo|foobar", 3), ("abcd?", 0), ("\\babc", 0), ("a[0-9]{2}", 3)):
     A, L = LF(p)

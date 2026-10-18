@@ -26,6 +26,17 @@ def load(name):
 
 P = load("patterns.tsv.gz")
 S = load("sites.tsv.gz")
+# a pattern whose machine reading FAILED an independent PCRE2 control is
+# excluded from every language-derived table below and listed in section 7
+BAD = {(p["id"], p["cfg"]) for p in P if p.get("c1f") or p.get("c2f") or p.get("c3f")}
+for s_ in S:
+    if (s_["id"], s_["cfg"]) in BAD:
+        for k_ in ("exact", "span", "mixed", "whole", "a_best", "a_contig", "a_flags", "p0rel"):
+            s_.pop(k_, None)
+        s_["ctl_excluded"] = 1
+for p_ in P:
+    if (p_["id"], p_["cfg"]) in BAD:
+        p_["excluded_lang"] = {k_: p_.pop(k_) for k_ in ("exact", "span", "whole", "whole_end") if k_ in p_}
 C = collections.Counter
 J = {}
 
@@ -121,12 +132,18 @@ for s in S:
             need[(s["site"], t[-1:])] += 1
 tab(["site", "term need", "terms"], [(a, b, n) for (a, b), n in sorted(need.items())])
 pr = C((s["cfg"], s["site"], s.get("p0rel", "n/a")) for s in S)
-print("`proven0` against the language's first-byte set S_0 (`exact` = equal; `superset` = proves less than S_0 allows to "
-      "skip; `UNDER` = narrower than S_0, which would drop a match: must be 0 at a start origin):\n")
+print("`proven0` against the language's first-byte set S_0 at a START origin (`exact` = equal; `superset` = proves less "
+      "than S_0 allows; a site whose span-0 set is strictly NARROWER than S_0 is reclassified `scan-restart`: the forward "
+      "scan restarts where its start row stops self-looping and the reverse pass recovers the start):\n")
 tab(["cfg", "site", "proven0 vs S_0", "sites"], [(a, b, c, n) for (a, b, c), n in sorted(pr.items())])
+er = C((s["cfg"], s["kind"], s.get("esc_rel", "n/a")) for s in S if s["site"] in ("PF", "OFS"))
+print("`proven0` against the forward machine's ESCAPE set E (the bytes that move its start row; read off the "
+      "emitted table): `eq`; `wider` = proves less than E; `UNDER-esc` = narrower than E (a dropped restart):\n")
+tab(["cfg", "kind", "proven0 vs E", "sites"], [(a, b, c, n) for (a, b, c), n in sorted(er.items())])
+J["esc_under"] = sum(1 for s in S if s.get("esc_rel") in ("UNDER-esc", "differ"))
 pp = C((s["site"], s["proven_prev"] < 256) for s in S)
 tab(["site", "proven_prev states something", "sites"], [(a, b, n) for (a, b), n in sorted(pp.items())])
-J["p0_under"] = sum(1 for s in S if s.get("p0rel") == "UNDER")
+
 
 # ---- §3 exact prefix -----------------------------------------------------------------
 print("### 3. The exact prefix from the origin\n")
@@ -160,13 +177,16 @@ print("(a) plain unseeded DFA (DFA_SCAN incl. offset-skip FUNC, and the hybrid's
 rows = []
 for cfg in ("native", "utf8"):
     for kind in ("DFA_SCAN", "HYB_PF"):
-        g = [s for s in S if s["cfg"] == cfg and s["kind"] == kind and s["origin"] == "start"]
-        a = [s["a_best"] for s in g if "a_best" in s]
-        why = C(s.get("a_why", "measured" if "a_best" in s else "no-language") for s in g)
-        rows.append([cfg, kind, len(g), len(a)] + hist(a) + [", ".join("%s %d" % kv for kv in sorted(why.items()) if kv[0] != "measured")])
-tab(["cfg", "kind", "sites", "measured"] + BK + ["not measured"], rows)
+        for org in ("start", "scan-restart"):
+            g = [s for s in S if s["cfg"] == cfg and s["kind"] == kind and s["origin"] == org]
+            a = [s["a_best"] for s in g if "a_best" in s]
+            why = C(s.get("a_why", "measured" if "a_best" in s else
+                          "control-excluded" if s.get("ctl_excluded") else "no-language") for s in g)
+            rows.append([cfg, kind, org, len(g), len(a)] + hist(a) +
+                        [", ".join("%s %d" % kv for kv in sorted(why.items()) if kv[0] != "measured")])
+tab(["cfg", "kind", "origin", "sites", "measured"] + BK + ["not measured"], rows)
 J["a_hist"] = rows
-cg = [s for s in S if "a_best" in s]
+cg = [s for s in S if "a_best" in s and s["origin"] == "start"]
 print("Contiguous `delta_uniform` vs best entry: %d sites differ (a uniform position after a non-uniform one); "
       "position 0 uniform on %d of %d measured sites.\n" % (sum(s["a_best"] != s["a_contig"] for s in cg),
       sum(s.get("a_flags", "")[:1] == "1" for s in cg), len(cg)))
@@ -195,6 +215,16 @@ for pop in ("bench", "corpus"):
         rows.append([pop, cfg, len(g), len(w), len(caps), hist([p["whole"] for p in w])[1:].__str__()])
 tab(["pop", "cfg", "with language", "whole-cover", "of which carry captures", "width histogram 1..cap"], rows)
 J["whole"] = rows
+ws = C((s["cfg"], s["site"], s["kind"]) for s in S if s.get("whole") and s["origin"] == "start")
+print("Whole-cover per SEARCH SITE (origin = the match start; the stream's first full-span candidate is the leftmost "
+      "match):\n")
+tab(["cfg", "site", "kind", "sites"], [(a, b, c, n) for (a, b, c), n in sorted(ws.items())])
+J["whole_sites"] = sum(ws.values())
+nos = C((p["pop"], p["cfg"]) for p in P if p.get("whole") and not p.get("sites"))
+print("Whole-cover patterns with NO kit search site (anchored attempt / match-here only): %s\n" % dict(nos))
+we = C((p["pop"], p["cfg"]) for p in P if p.get("whole_end"))
+print("Whole-cover once a trailing END anchor (`$`/`\\z`/`\\Z`) is taken as pcrec's length compare: %s\n" % dict(we))
+J["whole_end"] = dict((("%s/%s" % k), v) for k, v in we.items())
 
 # ---- §5 context ------------------------------------------------------------------------
 print("### 5. Context spans before / after the origin\n")
@@ -222,7 +252,7 @@ J["ctx"] = rows
 print("### 6. Savings bound (no timing; armread Zen 4 constants)\n")
 rows = []
 for cfg in ("native", "utf8"):
-    a = [s["a_best"] for s in S if s["cfg"] == cfg and "a_best" in s]
+    a = [s["a_best"] for s in S if s["cfg"] == cfg and "a_best" in s and s["origin"] == "start"]
     past0 = [max(0, x - 1) for x in a]
     rows.append([cfg, len(a), sum(a), q(a, 0.5), q(a, 0.9), "%.2f" % (sum(a) / max(1, len(a)) * NS_PER_B),
                  "%.2f" % (q(a, 0.9) * NS_PER_B if a else 0), "%.2f" % (q(a, 0.9) * (NS_PER_B + NS_STEP) if a else 0),
@@ -252,7 +282,7 @@ for k, nm in (("c1", "exact-prefix samples are prefixes"), ("c2", "inexact count
                  sum(1 for p in P if p.get(k + "f"))])
 rows.append(["leading \\b == its positional rewrite", sum(p.get("ctx_ck", 0) for p in P),
              sum(p.get("ctx_ckf", 0) for p in P), sum(1 for p in P if p.get("ctx_ckf"))])
-rows.append(["proven0 UNDER S_0 at a start origin (kit vs language)", len([s for s in S if "p0rel" in s]), J["p0_under"], ""])
+rows.append(["proven0 narrower than the forward escape set (kit vs emitted table)", len([s for s in S if "esc_rel" in s]), J["esc_under"], ""])
 rows.append(["VM prefix longer than the exact prefix", sum(1 for s in S if "b_lit" in s), J["b_over"], ""])
 tab(["control", "checks", "failures", "patterns failing"], rows)
 fl = [p for p in P if p.get("c1f") or p.get("c2f") or p.get("c3f") or p.get("ctx_ckf")]

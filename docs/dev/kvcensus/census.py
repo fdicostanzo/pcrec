@@ -322,6 +322,15 @@ def analyse(r, cfg, rnd):
                    origin=origin, sent=sent(pt) if pt else "|".join(sent(t) for _, t in ps),
                    pred_need=f[10], npres=f[17], head_max=head, proven0=len(P0), proven_prev=len(Pp),
                    ask_rc=f[20])
+        if F and F.ok and not F.seeded and sid in ("PF", "OFS") and kind != "VM_ATTEMPT":
+            # the forward scan's own escape set (bytes that move row 0): the
+            # kit's proven0 must contain it, or the stream drops a restart
+            esc = frozenset(b for b in range(256) if F.step(0, b) != 0)
+            row["esc_rel"] = ("eq" if P0 == esc else "wider" if esc < P0 else "UNDER-esc"
+                              if P0 < esc else "differ")
+        if L and origin == "start" and L["S"] and sid in ("PF", "OFS") and len(P0) < 256 \
+                and P0 < L["S"][0]:
+            origin = row["origin"] = "scan-restart"
         if L and origin in ("start", "after-nl") and L["S"]:
             S0 = L["S"][0]
             row["p0rel"] = ("none" if len(P0) == 256 else "exact" if P0 == S0 else
@@ -331,6 +340,9 @@ def analyse(r, cfg, rnd):
         k = row["kind"]
         if k in ("DFA_SCAN", "HYB_PF") and L and origin == "start" and L["exact"] == 0:
             row.update(a_contig=0, a_best=0, a_flags="")
+        elif k in ("DFA_SCAN", "HYB_PF") and origin == "scan-restart" and F and F.ok and not F.seeded:
+            fb, fc, fs = kvdfa.forward_path(F, P0)
+            row.update(a_best=fb, a_contig=fc, a_path=1)
         elif k in ("DFA_SCAN", "HYB_PF") and L and origin == "start":
             if F and F.ok and not F.seeded:
                 c, b, fl = kvdfa.uniform(F, L["S"], L["exact"])
@@ -341,9 +353,9 @@ def analyse(r, cfg, rnd):
             row["a_why"] = "seeded"
         elif k == "DFA_ATTEMPT":
             row["a_why"] = "attempt"
-        if k in ("VM_ATTEMPT", "HYB_PF") and vm:
+        if k in ("VM_ATTEMPT", "HYB_PF") and vm and origin == "start":
             row.update(b_lit=vm[0], b_cls=vm[1], b_rlit=vm[2], b_rcls=vm[3])
-            if L and vm[1] > L["exact"]:
+            if L and vm[1] > L["exact"] and L["exact"] < kvdfa.CAP:
                 row["b_over"] = 1
         out.append(row)
     rec["sites"] = len(out)
