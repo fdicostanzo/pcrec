@@ -1,0 +1,143 @@
+# kit_proof/conj.py at main 542b0cecb (census pin 2523cfe4b), build/pcrec of the lane tree; compile-only
+## A. stage-1 SITES (census, origin start, whole > 0) by FINISHER route
+sites bench native CR_DFA DFA_SCAN OFS 42
+sites bench native CR_DFA DFA_SCAN PF 24
+sites bench native CR_VM (hybrid/VM) DFA_SCAN OFS 5
+sites bench native CR_VM (hybrid/VM) HYB_PF PF 6
+sites bench utf8 CR_DFA DFA_SCAN OFS 31
+sites bench utf8 CR_DFA DFA_SCAN PF 15
+sites bench utf8 CR_VM (hybrid/VM) DFA_SCAN OFS 3
+sites bench utf8 CR_VM (hybrid/VM) HYB_PF PF 4
+sites corpus native CR_DFA DFA_SCAN OFS 196
+sites corpus native CR_DFA DFA_SCAN PF 364
+sites corpus native CR_VM (hybrid/VM) DFA_HAT PF 6
+sites corpus native CR_VM (hybrid/VM) DFA_SCAN OFS 120
+sites corpus native CR_VM (hybrid/VM) HYB_PF PF 225
+sites corpus native CR_VM (hybrid/VM) VM_ATTEMPT PF 39
+sites corpus utf8 CR_DFA DFA_SCAN OFS 193
+sites corpus utf8 CR_DFA DFA_SCAN PF 220
+sites corpus utf8 CR_VM (hybrid/VM) DFA_SCAN OFS 81
+sites corpus utf8 CR_VM (hybrid/VM) HYB_PF PF 57
+total bench native CR_DFA 66
+total bench native CR_VM (hybrid/VM) 11
+total bench utf8 CR_DFA 46
+total bench utf8 CR_VM (hybrid/VM) 7
+total corpus native CR_DFA 560
+total corpus native CR_VM (hybrid/VM) 390
+total corpus utf8 CR_DFA 413
+total corpus utf8 CR_VM (hybrid/VM) 138
+## B. cover_conj[] over every census whole-cover / context-join PATTERN
+##    (machine read by kvdfa; first failing conjunct = why)
+why bench native ctx cover 6
+why bench native ctx finisher-dfa 4
+why bench native whole cover 66
+why bench native whole finisher-dfa 16
+why bench native whole no-start-site 5
+why bench utf8 ctx cover 3
+why bench utf8 ctx finisher-dfa 3
+why bench utf8 whole cover 46
+why bench utf8 whole finisher-dfa 11
+why bench utf8 whole no-start-site 1
+why corpus native ctx cover 68
+why corpus native ctx end-at-k 4
+why corpus native ctx finisher-dfa 23
+why corpus native ctx no-start-site 12
+why corpus native whole anchored-A 4
+why corpus native whole cover 550
+why corpus native whole exact 8
+why corpus native whole finisher-dfa 471
+why corpus native whole no-start-site 27
+why corpus utf8 ctx cover 56
+why corpus utf8 ctx end-at-k 4
+why corpus utf8 ctx finisher-dfa 19
+why corpus utf8 ctx no-start-site 9
+why corpus utf8 whole cover 406
+why corpus utf8 whole exact 7
+why corpus utf8 whole finisher-dfa 162
+why corpus utf8 whole no-start-site 7
+cover bench native ctx 6
+cover bench native whole 66
+cover bench utf8 ctx 3
+cover bench utf8 whole 46
+cover corpus native ctx 68
+cover corpus native whole 550
+cover corpus utf8 ctx 56
+cover corpus utf8 whole 406
+## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:
+##    exact_len is stated over the SENT sets, min(k, sent))
+sent bench native OFS sent<k 21
+sent bench native OFS sent>=k 21
+sent bench native PF sent<k 12
+sent bench native PF sent>=k 12
+sent bench utf8 OFS sent<k 28
+sent bench utf8 OFS sent>=k 3
+sent bench utf8 PF sent<k 5
+sent bench utf8 PF sent>=k 10
+sent corpus native OFS sent<k 103
+sent corpus native OFS sent>=k 93
+sent corpus native PF sent<k 26
+sent corpus native PF sent>=k 338
+sent corpus utf8 OFS sent<k 146
+sent corpus utf8 OFS sent>=k 47
+sent corpus utf8 PF sent<k 14
+sent corpus utf8 PF sent>=k 206
+## C. verdict moves under -fno-rev-end (default -> denied)
+rarm bench native earlier-row cover 1
+rarm bench native earlier-row end-at-k 1
+rarm bench native earlier-row exact 1
+rarm bench native earlier-row fixed-width 1
+rarm bench native earlier-row no-eol-view 8
+rarm bench utf8 earlier-row cover 1
+rarm bench utf8 earlier-row end-at-k 1
+rarm bench utf8 earlier-row exact 2
+rarm bench utf8 earlier-row fixed-width 1
+rarm bench utf8 earlier-row no-eol-view 7
+rarm corpus native anchored-A finisher-dfa 33
+rarm corpus native earlier-row anchored-A 8
+rarm corpus native earlier-row cover 10
+rarm corpus native earlier-row end-at-k 11
+rarm corpus native earlier-row entry-const 6
+rarm corpus native earlier-row exact 5
+rarm corpus native earlier-row fixed-width 45
+rarm corpus native earlier-row no-eol-view 75
+rarm corpus utf8 anchored-A finisher-dfa 25
+rarm corpus utf8 earlier-row anchored-A 7
+rarm corpus utf8 earlier-row cover 10
+rarm corpus utf8 earlier-row end-at-k 11
+rarm corpus utf8 earlier-row entry-const 6
+rarm corpus utf8 earlier-row exact 7
+rarm corpus utf8 earlier-row fixed-width 45
+rarm corpus utf8 earlier-row no-eol-view 69
+e.g. anchored-A finisher-dfa '\\Ga$|b$' '\\Ga$|b$' '^a|b$' '^a|b$'
+e.g. earlier-row anchored-A '\\z' '\\z' '\\Z' '\\Z'
+e.g. earlier-row cover 'done\\z' 'done\\z' 'b\\z' 'b\\z'
+e.g. earlier-row end-at-k '\\w+\\z' '\\w+\\z' '[^c]{1,3}\\z' '[^c]{1,3}\\z'
+e.g. earlier-row entry-const '(?:\\Bx\\n|x)$' '(?:\\Bx\\n|x)$' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$'
+e.g. earlier-row exact '.*\\.txt$' '[a-z]+\\.txt$' '[a-z]+\\.txt$' '(?:foo|barbaz)$'
+e.g. earlier-row fixed-width '(?:[a-z]{0,1024})\\z' '(?:[a-z]{0,1024})\\z' 'a*\\z' 'a*\\z'
+e.g. earlier-row no-eol-view '\\d+$' '\\d+$' '.*\\.txt$' '\\s+$'
+## D. witnesses (kit_proof/witnesses.txt; the origin conjunct is a SITE fact, not applied here)
+-   foobar                   cover          k=6 absB=True absA=True
+-   foo|foobar               cover          k=3 absB=True absA=True
+-   in|instanceof            cover          k=2 absB=True absA=True
+-   abc|ab                   end-at-k       
+-   ac|bd                    exact          
+-   \bcat\b                  cover          k=3 absB=True absA=True
+-   \Bcat\B                  cover          k=3 absB=False absA=False
+-   (?<=x)cat                cover          k=3 absB=False absA=True
+-   (?<![a-z])cat            cover          k=3 absB=True absA=True
+-   (?<=\$)\d                cover          k=1 absB=False absA=True
+-   (?m)done$                cover          k=4 absB=True absA=True
+-   (?m)^item                finisher-dfa   
+-   cat$                     earlier-row    
+R   cat$                     no-eol-view    
+R   cat\Z                    no-eol-view    
+R   \bcat$                   no-eol-view    
+-   a$\n                     fixed-width    
+-   \Gfoo                    finisher-dfa   
+-   foo|\Gbar                finisher-dfa   
+-   \w+?(?:)\b               end-at-k       
+-   z(?=a)                   cover          k=1 absB=True absA=False
+-   \d{4}                    cover          k=4 absB=True absA=True
+u   \x{e9}t                  cover          k=3 absB=True absA=True
+u   \bcat\b                  cover          k=3 absB=True absA=True
