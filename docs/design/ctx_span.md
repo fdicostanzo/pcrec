@@ -306,8 +306,17 @@ measured at P1a (CK-7, U-B2) `[r4 B7]`.
   cross-set facts (a CR/LF pair, or several newline bytes and sequences). Those conventions
   are UL-e's multi-offset object, not this row. The selection lives where the convention
   does, at `definitions_table.md`'s convention-selector customer ([DD-11]'s newline axis).
-  When a convention row is added, the parser's `(?m)` choice reads it, and a multi-byte
-  convention keeps `(?m)` off `A_CTX`.
+  When a convention row is added, the parser's `(?m)` choice reads it.
+
+  **A multi-byte convention is REFUSED BY NAME until UL-e** `[r4rc R3]`. Revision 2 said such
+  a convention "keeps `(?m)` off `A_CTX`", but after P2c there is nothing to keep it on:
+  `N_BOT_M`/`N_EOL_M`, their closure arms and the VM's two hand arms are deleted, and no
+  fallback kind exists. So a pattern with `(?m)` under a newline convention whose newline is
+  not one byte is refused at the parser's `(?m)` choice, with a diagnostic naming the
+  convention and UL-e. No convention row exists today (pcrec is `NEWLINE_LF`, the `PCRE2_NEWLINE_*` row of
+  `docs/pcre2_options.md` rides [DD-11]), so the refusal has no population until one is added. It is a row of the
+  convention selector at `definitions_table.md`'s customer, keyed on "newline is one byte".
+  It lifts when UL-e lands the multi-offset object.
 - **`pos-start`/`pos-end`** produce a record no stage-1 consumer reads. An anchored pattern
   takes T-CUT's `anchored` row and has no window site (window_contract §5.4), and `\z` is
   U-z's (kit_proof §8.3). They are rows because the fact is the same fact. If P2d is taken
@@ -1041,6 +1050,17 @@ The dispositions below (retire / re-aim / re-run) come from reading each selecte
 intent. The script derives the population and nothing else. The build lane re-runs all three
 scripts on its own base before the first edit.
 
+**The edit set is checked against the real diff** `[r4rc R4]`. `edit_set.tsv` is this
+design's own list of what P2a-P2d change, so it is a hand list one step removed. At build,
+after each of P2a, P2b and P2c is written, the lane REGENERATES the edit set from that
+commit's actual diff: every changed or deleted definition, token and code line in `src/`,
+with the same `def` / `token` / `line` columns. It then compares the regenerated set with
+`edit_set.tsv` for that commit. Every entry in one and not the other is a finding to
+dispose of before the derived population is used: either the design missed an edit (the
+regenerated row joins and `derive_rows.py` re-runs) or the build made an edit the design did
+not plan (it is justified or removed). The sabotage list the build acts on is the one derived
+from the REGENERATED set. The comparison and its dispositions go in the lane report.
+
 **The derived list for P2c at `3b0f87b55`** (`ctx_span/derived_rows.tsv`; P2d's rows are in
 §4.6):
 
@@ -1051,7 +1071,7 @@ scripts on its own base before the first edit.
 | S762 (end pin reads `(?m)$`) | anchor `ew_walk_marked` | **RETIRES** `[r4 B6]`, witness kept as a corpus cell (`tests/endwin/` or the rev-end corpus) |
 | S900 (derive kills a multiline `^`) | anchor `q_rewrite` | **RETIRES** `[r4 B6]`, witness kept as a corpus cell (`tests/compound/`) |
 | S343 (a shared set records only the first row) | anchor `ctx_collect` (`rows \|=`) | **RETIRES** `[r4 B5]`: the sharing logic it guards is deleted (table B), because no byte-expressible set equals utf8's non-start set |
-| S341 (absent reads in the set) | owner `pcrec_build_dfa` | **RE-AIMS** `[r4 B5]` to the absent read: the plant is A1's bug, `sides_of` setting `left_abs` from `bot_ok` in BOTH directions. Witness: `[a-z]+\b` on `"ab"` at the reverse `s0` (`reverse-pass`; the plant loses the start). Its old forward witness `(?<![a-c])\d` stays as a corpus cell. It replaces revision 1's SP-5 |
+| S341 (absent reads in the set) | owner `pcrec_build_dfa` | **RE-AIMS** `[r4 B5]` to the absent read. Revision 2 aimed it at A1's bug (`sides_of` setting `left_abs` from `bot_ok` in both directions, witness `[a-z]+\b` at the reverse `s0`). Under R1's row gate that plant reaches nothing, because no reverse machine reads `left_abs` (§4.2.3). **Revision 2.1 re-aims it to R1's plant** `[r4rc R1]`: the row gate dropped, so every row takes index 2 when `right_abs` holds. Witness `\bfoo\b` under `-e utf8`: `endvar` interns, caught by CK-5 and `run_endvar_identity.sh` (reach OWED, §4.2.3). A1's plant becomes SP-11, declared UNREACHED (§6 CK-5). The old forward witness `(?<![a-c])\d` and `[a-z]+\b` at `n` stay as corpus cells. It replaces revision 1's SP-5 |
 | S71 (wordctx alphabet unconditional) | owner `ctx_collect` | RE-RUN at P2c. Its gate's population changes (A2, below) |
 | S1100, S14, S746 | owner `compile_ast` (the NFA lowering) | RE-RUN at P2c |
 | S157, S49, S84 | owner `first_of` | RE-RUN at P2c |
@@ -1276,15 +1296,20 @@ which shares nothing with P2c's code, so a moved verdict is a finding about P2c.
 
 | step | what | movers |
 |---|---|---|
-| P2a | `ctxfn.def` with the six rows re-encoded (absent copied from out); widen `fn`/`ctxfn`; the closure indexes `3p + q` | 0 (CK-4 asserts zero; CK-5 on `[a-z]+\b`) |
+| P2a | `ctxfn.def` with the six rows re-encoded (absent copied from out); widen `fn`/`ctxfn`; the closure indexes `3p + q` with the absent index gated on the row `[r4rc R1]` | 0 (CK-4 asserts zero; CK-5 on `[a-z]+\b` and on `\bfoo\b` under `-e utf8`) |
 | P2b | the two new rows and their `vm_ctx_forms` rows; three-valued `Sides` with A1's per-direction absent read; the three derived predicates; possessify's absent-reading decline. Nothing builds the new rows yet | 0 |
 | P2c | the parser builds `A_CTX` for `(?m)^`/`(?m)$`; tables A-B delete (with the dead `rows` logic); retire `run_mlinectx_identity.sh`; re-define `run_wordctx_identity.sh`'s population; the derived sabotage list (§4.5.4); the D62 addendum; abi 81 with §4.5.1's readers | the measured DFA list-order movers (CK-4), answer-identical, table-confined; `conj.py` identical (U-B3) |
 | P2d (if Q7 takes it) | `A_BOL`/`A_END` lower to `N_CTX` rows; `N_BOT`/`N_END` and their engine arms delete; `cr_ctx_reads` reads `ctxfn_reads_membership` | 0 predicted (CK-4); its own derived rows |
-| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes; listing only |
+| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), the per-thread frontier (U2) with the narrowed sets in `MkLang` only `[r4rc R2]`, listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes (`KsetWalk` unchanged, §3.8); listing only |
 | P1b (= UL-8's trigger) | the producer's EXACT items become the context source for the first VM-side consumer; the machine reading becomes the control; `MF_MAX_CTX` rises (kit_proof §4.1) | per that consumer's own event |
 
 P2a-P2b touch the closure and move nothing, so they can land early. If part 1 lands first
 (Q2), P1a carries the two `(?m)` rows and P2c deletes them.
+
+**Each of P2a-P2d regenerates its edit set from its real diff** `[r4rc R4]` and compares
+it with `ctx_span/edit_set.tsv` before its sabotage rows are run (§4.5.4). The derived
+population the step re-runs is the one from the regenerated set, and the comparison is in
+the step's lane report.
 
 ## 8. The three standing questions (`docs/design/CLAUDE.md`)
 
@@ -1354,12 +1379,15 @@ P2a-P2b touch the closure and move nothing, so they can land early. If part 1 la
 | UL-b | wider lookbehind context (`(?<=ab)z`) sent as a FILTER on seeded DFA sites (kit_proof §3.3's "NO" row); R-26.7's first customer | kit_proof U4's trigger: a measured seeded `\b…` or lookbehind cell |
 | UL-c | possessify arm A VALUES absent-reading rows (`First` gains "admits absent"; each `nullable` reader re-proved; its own mover prediction and route census) `[r4 B3]` | its own: a measured `(?m)` quantifier cell, measurable on existing corpus cells (C6) |
 | UL-d | MLINE's `absent` SATISFIES and pcrec's edge attempt retires (kit_proof U-mline), read off the producer's `ctx-fold` record | U-mline's own: a `(?m)^` cell whose edge attempt is measured |
-| UL-e | `$`/`\Z` and multi-byte newline conventions (A3) as instances of [ENG-LOOK]'s bounded lookahead (a multi-offset context) | [ENG-LOOK]'s design gate, or the first non-LF convention row |
+| UL-e | `$`/`\Z` and multi-byte newline conventions (A3) as instances of [ENG-LOOK]'s bounded lookahead (a multi-offset context). Until it lands, `(?m)` under a multi-byte convention is REFUSED BY NAME (§3.3) `[r4rc R3]` | [ENG-LOOK]'s design gate, or the first non-LF convention row |
 | UL-f | the 23 shifted-origin sites restated from the producer's records (kit_proof U-ctxorigin) | its own: one such site in a losing bench cell |
 | UL-g | the producer as the prefilter's context oracle: a SUPERSET item is a necessary condition any search filter may test; R-26.7's second customer | a filter consumer asking for it (none today) |
 | UL-h | `-fno-ctx-node` producer-record identity as a standing check (CK-10) `[r4 A6]` | lands with P1a; no separate trigger |
 | UL-i | co-finite sets in `pcrec_enc_set_bytes` under utf8 (§4.7), un-forcing the VM for `(?![^\n])`, `(?<![a-z])` | the ill-formed-utf8 soundness question answered (a design note), and a VM-forced utf8 cell in a losing bench row |
 | UL-j | the unified per-offset walk (k-set, run pin, widths, the slice) (§9) | the next per-offset fact asked of any of the three walks |
+| UL-k | the k-set consumers (offset-k selection, OFS rows, the run pin) read the slice's per-thread NARROWED sets instead of the pass-through hull: narrower prefilter sets, a mover event with its own census `[r4rc R2]` | a losing bench cell whose offset-k pick or OFS set an in-span context item would narrow |
+| U1 | ABSENT AS ITS OWN CONTEXT ATOM `[r4rc]`: the ⊥ pseudo-character. "No byte on this side" becomes an atom of the class axis, not a flag beside it. `bot_ok`/`end_ok` and both absent flags (`left_abs`/`right_abs`) delete, and R1's row gate becomes the ordinary index (the absent atom selects the row's absent cell). It merges with [UCP]'s ⊥ rule (`ucp_design.md`: an ill-formed byte as the pseudo-character) and with UL-e's multi-offset object | P2d, or [UCP] U3 |
+| U2 | PER-THREAD CLASS RESTRICTION in the shared frontier iterator `wclose` (`src/facts/kset.c`) `[r4rc R2]`: R2's fix written once. A frontier entry is (state, pending restriction), merged by union at a shared state (§3.8). It serves the slice, Λ (`land_char`, which already shares `wclose`) and the width walk, so none of them grows its own restriction | Z2 (kit_proof UL-0) |
 | U-B1 | K50 joins the ctx row: `N_CSTART` is the `NOT_NEXT` row over `¬start_cls` with absent copied from `out` (today's semantics); `CTXROW_NOSTART` joins `ctx`, "one contributor for every assertion set" with no exception. Cost: utf8 list-order movers, an abi event | the next [K50] change or the next contributor row; eligible as a simplification alone (Frank 2026-10-18) |
 | U-B2 | the input table as a listable first-match table with per-row floors (K35 per row) | P1a (lands with it: CK-1, CK-7) |
 | U-B3 | `conj.py` re-run as P2c's independent control | P2c (§7, lands with it) |
