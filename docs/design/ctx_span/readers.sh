@@ -25,7 +25,8 @@ for l in sys.stdin:
 echo "## 1. readers of the abi NUMBER (B2): the number 80 beside abi/ABI, or as \`80\`"
 echo "##    (journal/lanes/reviews are history and excluded; classify each hit reader|record)"
 command grep -rnIE '(abi|ABI_EXPECT|PCREC_ARTIFACT_ABI|PCREC_RX_ABI_H)[^0-9]{0,40}\b80\b|`80`|\b80\b[^0-9]{0,25}\babi\b' "${X[@]}" . \
-  | command grep -vE '^\./docs/dev/(dev_journal|lanes|reviews)/|^\./docs/dev/dev_journal|^\./studies/specclean/' | spec_ids | cut -c1-200
+  | command grep -vE '^\./docs/dev/(dev_journal|lanes|reviews)/|^\./docs/dev/dev_journal|^\./studies/specclean/' | spec_ids \
+  | sed -E 's#(plan\.md):([0-9]+):#\1 (line \2):#' | cut -c1-200   # PL14: no plan.md:<line> text in a tracked file
 echo
 echo "## 2. the multiline field and the two kinds, CODE lines in src/ (tables A, B)"
 command grep -rnE 'anch\.multiline|N_BOT_M|N_EOL_M|nl_bit|CTXROW_NEWLINE|cr_nl_(reads|set)|PCREC_NO_MLINECTX' src --include=*.c --include=*.h | code | cut -c1-170
