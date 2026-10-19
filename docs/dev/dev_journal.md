@@ -27134,3 +27134,9 @@ Continues the checkpoint entry above (seambuild, a5inv, mssurvey). After it:
 - **Security (Frank):** the bench asked him to run `curl … | sh` (rustup); refused. Now a user-level rule (`~/.claude/CLAUDE.md`), a PreToolUse hook `~/.claude/hooks/block-remote-exec.sh` (tested both ways, live), and an auto-mode hard_deny. The bench now runs ON this box as user pcrec (/home/pcrec/projects/pcrec-bench), so it shares them.
 - **Mistakes:** I flipped sides mid-answer on Q1 (9-cell table vs composition) — the table was right; my own lane's evidence file broke PL14 and I merged it without the lint tree scan; "the 38 A_EOL refs" was a label count.
 - **Lessons:** conclude before writing; a derived evidence file can carry banned citations (lint every committed grep output); plain words with Frank, not ids.
+
+## 2026-10-18 — session 119 (Linux dev box, short evening): bench quiet-gate hold traced to ghostty's io_uring threads
+
+- **Housekeeping:** pruned 5 merged worktrees (ctxspan, spechook, comppin, runaxes, sweeparm); CI GREEN on 34359651f (run 39191562321).
+- **Bench window:** Frank cleared the box and let the bench start early, but its quiet gate held the launch at 23:44 (busiest core 100% busy, load1 2.26). Steam and Firefox were quit and were not the cause. With no D-state thread and zero disk IO, `procs_blocked` read 8. Root wchan named them: ghostty's 4 `io` + 4 `renderer` threads in `io_cqring_wait` (io_uring, one pair per tab), which the kernel books as iowait/load. Ghostty hosted both the manager and the bench sessions; Frank is moving both to the default terminal and quitting ghostty. The bench did not change its gate (comparability with Zen 1 records). Memory `pcrec-ghostty-iowait`.
+- **Mistakes:** my D-state scans split `/proc/*/stat` on spaces and broke on thread names like "Bun Pool 0" (read `status` instead), and I gave Frank a command with a literal "or" in it.
