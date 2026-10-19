@@ -20,6 +20,14 @@ sabotage S1149); B1 (one `ctx[]` entry per context ITEM, stage 1 sends EXACT ite
 the exactness fact filed as R-26.7 with its trigger); Q-r4-3 (UL-0's producer is the
 extended `pcrec_kset_walk`, not a new `src/facts/spans.c`). Nothing else in this note moved.
 
+**r4rc edits** (lane `ctxspan21`, 2026-10-19, main `fd1d1fc98`): the re-check of
+`ctx_span.md` revision 2 (same review file, "Re-check of revision 2", R2 a BLOCKER if
+built) corrects the `[r4 B9]` in-span rule below, each edit marked `[r4rc R2]`: the
+narrowing is PER THREAD, never of the per-offset union (§5.2); the narrowed sets live in
+`MkLang`, and `KsetWalk` stays the hull its consumers read (§5.2); two alternation
+witnesses join X0's list (§6.4), `witnesses.txt` and `conj.txt` D as TEXT, verdicts OWED;
+sabotage S1150, the union-narrowing plant, is PROPOSED (§6.3).
+
 Evidence: single-pattern `build/pcrec` compiles at main `542b0cecb`, the committed
 kvcensus run (`docs/dev/kvcensus.md`, pin `2523cfe4b`), revision 1's SIZE-ONLY twin
 (`kit_proof/cover_twin.py`), and revision 2's own instrument `kit_proof/conj.py`. That
@@ -784,7 +792,7 @@ uint8_t proven[MF_MAX_FWD - MF_PROOF_LO][32];
 > pcrec's Z2 → B1, which routes the REPORT row together with pcrec's abi event (a kit byte
 > move is a pcrec abi event in the same commit).
 >
-> **Sabotage ids:** pcrec-side S1130-S1149 PROPOSED (kit_proof.md §6.3; S1149 `[r4 B9]`). Kit-side ids
+> **Sabotage ids:** pcrec-side S1130-S1150 PROPOSED (kit_proof.md §6.3; S1149 `[r4 B9]`, S1150 `[r4rc R2]`). Kit-side ids
 > on request: a form claiming an untested offset; an absent-SATISFIES candidate dropped;
 > an absent-FAILS candidate yielded; a proof bit set only by a SIMD row (C-PROOF); an
 > over-filter on an OPTIONAL position; an UNSTATED field accepted.
@@ -903,12 +911,35 @@ and an `A_LOOK` constrain WHICH byte stands next to them. Passing them through o
 `exact_len` 2, while the language is `{ab}`; on `[a-z0-9_ ]\b[a-z ]` it states
 `exact_len` 2 where only 1 holds (the length-2 prefixes are not a product: `a ` and ` a`
 match, `ab` does not). The in-span half of `ctx_span.md` §3.3 is the rule, and it is
-UL-0's own at Z2, not a later step: a one-sided item INTERSECTS the set on its side
+UL-0's own at Z2, not a later step: a one-sided item narrows the set on its side
 (`S_1 = {b}`; `\w(?=\d)\w` gives `S_1 = \d`), and a two-sided item that straddles both
 neighbouring sets ENDS `exact_len` at the item's offset `d` (positions `[0, d)` stay
 exact). The HULL stays sound either way (every match's bytes lie in the sets); only the
 exactness claim moves. Witnesses in `conj.txt` D and X0's family (§6.4); plant S1149
 (§6.3).
+
+**The narrowing is PER THREAD, never of the union** `[r4rc R2]`. The `[r4 B9]` text above
+said a one-sided item "INTERSECTS the set on its side". Read as an intersection with the
+whole per-offset union, that is unsound under alternation, and these sets are SENT: on
+`a(?=b)[a-z]|ac` it drops `c` from `S_1`, and on `[ab](?<=a)c|bc` it drops `b` from `S_0`,
+so a prefilter reading them could skip a real match. The rule is `ctx_span.md` §3.4 and
+§3.8:
+- **next side**: restrict only the classes of the frontier states reached THROUGH the item
+  (a frontier entry carries its pending restriction; arrivals at one state merge it by
+  union). `S_1 = ([a-z] ∩ {b}) ∪ {c} = {b, c}`, `exact_len` 2;
+- **previous side**: narrow `S_{d−1}` only when EVERY thread at `d − 1` passes the item;
+  otherwise leave it and end `exact_len` at `d − 1`. On `[ab](?<=a)c|bc`: `S_0 = {a, b}`,
+  `exact_len` 0.
+
+**Where the narrowed sets live** `[r4rc R2]`: in `MkLang` (`set[]`, `exact_len`) only. The
+extended walk projects its one frontier twice: `KsetWalk.k[]` with every restriction
+ignored (today's pass-through hull), and `MkLang` with them applied. So the k-set's
+consumers (`prefix_k.c`'s offset-k selection and OFS rows, the run pin, the `--emit-facts`
+k-set rows) read an unchanged `KsetWalk`, and Z2 moves no byte through them. The sent sets
+of §5.2's next paragraph are `MkLang`'s on a `cover` site (the REPORT description sends from
+`MkLang`); on any other start-origin FIND site the `exact_len` statement is checked against
+`MkLang.set[d]` with the narrowed sets, so an over-stated claim still ends it. `conj.py` does
+not model the in-span rule: OWED at Z2 (`ctx_span.md` §3.8).
 
 **Z2's statement on every start-origin FIND site** `[r3 fam-B1]`. `exact_len` is stated
 over the SENT sets, not over the language. It is the largest `L` such that span-0
@@ -1020,6 +1051,7 @@ not read the row's predicate.
 | S1147 | an over-filter: the kit tests a narrower set at an OPTIONAL position | a G2 site with a proven OPTIONAL position | R-26.4's completeness oracle (kit-side) `[r3 snd-m5]` |
 | S1148 | a REPORT site states a position OPTIONAL | `\d{4}` (a one-term PF site today) | R-26.3's refusal, and the DEFAULT build's class check |
 | S1149 `[r4 B9]` | the slice passes EVERY zero-width node through (§5.2's revision-2.1 sentence as written): an in-span `A_CTX`/`A_LOOK` neither narrows `S_d` nor ends `exact_len` | `a(?=b)[a-z]`: the slice's `S_1 = [a-z]` against A's `{b}` (C8 `exact/producers-disagree`, so `cover` declines where the clean tree admits it, `conj.txt` D); `[a-z0-9_ ]\b[a-z ]`: `exact_len` 2 stated where 1 holds, on the site whatever `cover` decides; `\w(?=\d)\w`: `S_1 = \w` against `\d` | X0's set equality on every site stating `exact_len > 0`, run on the Z2 slice (§6.4, §7), then C8 |
+| S1150 `[r4rc R2]` (PROPOSED, the next after S1149; not allocated) | the union-narrowing plant: the slice intersects an in-span item's set with the WHOLE per-offset union, on both sides, instead of per thread | `a(?=b)[a-z]\|ac`: the plant's `S_1 = {b}`, while `"ac"` matches in PCRE2 (X0's per-byte set at offset 1 holds `c`); `[ab](?<=a)c\|bc`: the plant's `S_0 = {a}`, while `"bc"` matches. An under-stated SENT set lets a filter skip the match | X0's per-byte set equality on the Z2 slice (§6.4); reach OWED with the built walk |
 
 The plants for "deny unplumbed" (S1145), "`k ± 1`" (S1144), "`\G` decline dropped"
 (S1142), "nullable decline dropped" (S1143), "unstated `absent` read as 0" (S1146) and
@@ -1059,6 +1091,12 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
     ` a`, `ab`), so the length-`(d+1)` prefixes on each side of the item are probed and
     an over-stated `exact_len` is reached by construction. The set equality reads them
     whatever `cover` decides on the pattern.
+  - **The per-thread witnesses** `[r4rc R2]`: `a(?=b)[a-z]|ac` and `[ab](?<=a)c|bc`
+    (`witnesses.txt`, `conj.txt` D as text, verdicts OWED), with subjects drawn from the
+    OTHER branch as well as both sides of the item's edge (`ab`, `ac`, `ad`; `ac`, `bc`,
+    `cc`). libpcre2's per-byte set at the item's offset holds the other branch's byte (`c`
+    at offset 1; `b` at offset 0), so an UNDER-stated set from union narrowing fails the
+    set equality. This is the check S1150 must turn red.
 
   At Z2 the producer is diffed record by record against X0's reading and against
   libpcre2. The k3-sound run (1,057 configs / 4,029,044 cells and 501,250 context cells,

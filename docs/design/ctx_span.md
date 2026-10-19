@@ -1,5 +1,13 @@
 # ctx_span — [DD-11.5] re-scoped: the span-context producer (D168) and `A_BOL`/`A_EOL` into `A_CTX` (D168 addendum 1); DESIGN NOTE, PROPOSED, nothing built
 
+**Revision 2.1** (lane `ctxspan21`, opus, design only, 2026-10-19, main `fd1d1fc98`, abi 80).
+It applies the re-check of revision 2 (the section "Re-check of revision 2 (critR ...)" at
+the end of `docs/dev/reviews/2026-10-18-r4-ctx-span.md`): R1-R4 ACCEPTED, unlocks U1/U2
+filed. Changed text is marked `[r4rc <id>]`. Read §R2.1 first; §13 maps every re-check id to
+its discharge. Nothing was built, run or measured for 2.1: the box was in a bench timing
+window, so every new claim is read off the source or the note, and what needs a run is
+marked OWED with its command.
+
 **Revision 2** (lane `ctxspan2`, opus, design only, 2026-10-18, main `3b0f87b55`, abi 80).
 It applies review r4 (`docs/dev/reviews/2026-10-18-r4-ctx-span.md`): every finding is
 ACCEPTED except C3, which ruling Q-r4-1 REJECTED; the rulings Q-r4-1..Q-r4-3 are applied.
@@ -25,6 +33,37 @@ lane made, each marked `[r4 <id>]` there), `memfn/window_contract.md`, `ucp_desi
 the [ENG-LOOK] row.
 
 ---
+
+## §R2.1. What revision 2.1 changed (finding → section)
+
+- **R1 (MAJOR): the absent index is gated on the ROW** (§4.2.3). Revision 2 applied
+  `right_abs = end_ok` (and the mirror) to every row. When `has_end` holds, the `V_END` view
+  is closed under every context atom, so a copied row (`\b`, `(?=C)`) would read the next
+  byte as absent where today it reads the atom's bit. On `\bfoo\b` (where `has_end` holds,
+  e.g. under `-e utf8`) that interns an `endvar`
+  where today there is none. The index is now `q = (right_abs && ctxfn_reads_absent_next(fn))
+  ? 2 : bit(right)`, and the mirror for `p`. That is today's six functions and today's
+  `N_BOT_M`/`N_EOL_M` arms exactly, so P2a's zero-mover argument is restored on that basis.
+  P2d's zero movers rest on the same gate. A consequence: no reverse machine ever meets an
+  absent-prev-reading row, so A1's per-direction read cannot be reached by any witness, and
+  S341's re-aim moves to R1's plant (§4.5.4, §6 CK-5).
+- **R2 (BLOCKER if built): in-span narrowing is PER THREAD** (§3.4, §3.6, §3.8, kit_proof
+  §5.2). Narrowing the whole per-offset UNION is unsound under alternation: `a(?=b)[a-z]|ac`
+  would drop `c` from `S_1`, and `[ab](?<=a)c|bc` would drop `b` from `S_0`. On the next side
+  the walk restricts only the classes of frontier states reached THROUGH the item. On the
+  previous side it narrows only when every thread at `d − 1` passes the item, and otherwise
+  ends `exact_len` at `d − 1`. The narrowed sets live in the SLICE'S OWN RECORD (`MkLang`).
+  `KsetWalk.k[]` stays the pass-through hull, so the k-set consumers (offset-k selection, the
+  run pin, the OFS rows, the listing) are unmoved by construction (§3.8). Both witnesses join
+  CK-6, `conj.txt` D and X0's list as text. The union-narrowing plant is PROPOSED (SP-6 here,
+  S1150 in kit_proof §6.3). `conj.py` does not model the in-span rule; that is OWED (§3.8).
+- **R3 (MINOR): a multi-byte newline convention is REFUSED BY NAME until UL-e** (§3.3). After
+  P2c no fallback kind exists, since `N_BOT_M`/`N_EOL_M` are deleted.
+- **R4 (MINOR): the edit set is checked against the real diff** (§4.5.4, §7). At build the
+  lane regenerates the edit set from the actual P2a-P2c diff and compares it with
+  `ctx_span/edit_set.tsv`. The derived sabotage list is taken from the regenerated set.
+- **Unlocks U1 and U2 are filed** (§10). U1 makes absent its own context atom (the ⊥
+  pseudo-character). U2 is R2's fix written once, in the shared frontier iterator `wclose`.
 
 ## §R2. What revision 2 changed
 
@@ -206,7 +245,9 @@ typedef struct {
 typedef struct {
     uint8_t  stated;                       /* MK_LANG_UNSTATED 0, MK_LANG_STATED    */
     uint8_t  exact_len;                    /* 0..PCREC_PREFIX_K_MAX (the walk's)     */
-    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len                    */
+    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len: the PER-THREAD
+                                              narrowed sets [r4rc R2]; KsetWalk
+                                              keeps the pass-through hull       */
     uint8_t  nctx;                         /* 0 = no context fact (not "none holds") */
     MkCtx    ctx[PCREC_CTX_ITEMS];         /* one per item, in walk order           */
 } MkLang;
@@ -267,8 +308,17 @@ measured at P1a (CK-7, U-B2) `[r4 B7]`.
   cross-set facts (a CR/LF pair, or several newline bytes and sequences). Those conventions
   are UL-e's multi-offset object, not this row. The selection lives where the convention
   does, at `definitions_table.md`'s convention-selector customer ([DD-11]'s newline axis).
-  When a convention row is added, the parser's `(?m)` choice reads it, and a multi-byte
-  convention keeps `(?m)` off `A_CTX`.
+  When a convention row is added, the parser's `(?m)` choice reads it.
+
+  **A multi-byte convention is REFUSED BY NAME until UL-e** `[r4rc R3]`. Revision 2 said such
+  a convention "keeps `(?m)` off `A_CTX`", but after P2c there is nothing to keep it on:
+  `N_BOT_M`/`N_EOL_M`, their closure arms and the VM's two hand arms are deleted, and no
+  fallback kind exists. So a pattern with `(?m)` under a newline convention whose newline is
+  not one byte is refused at the parser's `(?m)` choice, with a diagnostic naming the
+  convention and UL-e. No convention row exists today (pcrec is `NEWLINE_LF`, the `PCRE2_NEWLINE_*` row of
+  `docs/pcre2_options.md` rides [DD-11]), so the refusal has no population until one is added. It is a row of the
+  convention selector at `definitions_table.md`'s customer, keyed on "newline is one byte".
+  It lifts when UL-e lands the multi-offset object.
 - **`pos-start`/`pos-end`** produce a record no stage-1 consumer reads. An anchored pattern
   takes T-CUT's `anchored` row and has no window site (window_contract §5.4), and `\z` is
   U-z's (kit_proof §8.3). They are rows because the fact is the same fact. If P2d is taken
@@ -308,13 +358,40 @@ stop condition (a)). That answers revision 1's §12 (c).
 
 **One fold, three placements.**
 - **Before span 0**, the result is a context record at −1.
-- **Inside span 0**, for an item between offsets `d − 1` and `d`, a one-sided result
-  intersects `S_{d−1}` or `S_d`. A two-sided item folds against whichever of `S_{d−1}` and
-  `S_d` lies wholly inside or wholly outside `C`, and intersects the other. A straddle on
-  both ends `exact_len` AT `d`: positions `[0, d)` stay exact, and the length-`(d+1)`
-  prefixes are no longer the product `[r4 A9]`. Revision 1 said `d − 1`, which is one short.
-  Witness: `[a-z0-9_ ]\b[a-z ]`, where `d` = 1 and `exact_len` = 1. It admits `a ` and ` a`
-  and not `ab`.
+- **Inside span 0**, for an item between offsets `d − 1` and `d`, the result narrows the
+  slice PER THREAD, never the per-offset union `[r4rc R2]`:
+  - **Next side** (`S_d`): the walk restricts only the classes of the frontier states
+    reached THROUGH the item. A thread that did not pass the item keeps its class. The
+    contribution to `S_d` is the union over the frontier of `cls ∩ R`, where `R` is the
+    thread's pending restriction (all bytes for a thread that passed no item).
+  - **Previous side** (`S_{d−1}`): when the walk meets the item, `S_{d−1}` is already
+    recorded as the union of every thread at `d − 1`, and the item's thread cannot be
+    separated from it after the fact. So the walk narrows `S_{d−1}` only when EVERY thread
+    at `d − 1` passes the item. Otherwise it leaves `S_{d−1}` as it is and ENDS `exact_len`
+    AT `d − 1`: positions `[0, d − 1)` stay exact, and the length-`d` prefixes may include
+    bytes the item's thread forbids.
+  - **A two-sided item** folds against whichever of `S_{d−1}` and `S_d` lies wholly inside
+    or wholly outside `C`. If the union lies wholly on one side, so does every thread's set,
+    so reading the union for that test is sound. The resulting one-sided test then narrows
+    under the rule for ITS side: per thread if it falls on the next side, all threads or
+    end `exact_len` if it falls on the previous side. A straddle on both ends `exact_len` AT
+    `d`: positions `[0, d)` stay exact, and the length-`(d+1)` prefixes are no longer the
+    product `[r4 A9]`. Revision 1 said `d − 1`, which is one short. Witness:
+    `[a-z0-9_ ]\b[a-z ]`, where `d` = 1 and `exact_len` = 1. It admits `a ` and ` a` and not
+    `ab`.
+
+  **Why the union is wrong** `[r4rc R2]`. Revision 2 intersected the item's set with the
+  whole `S_d`. Under alternation that drops bytes a thread that never met the item needs:
+  - `a(?=b)[a-z]|ac`: the union narrowing gives `S_1 = [a-z] ∪ {c}` ∩ `{b}` = `{b}`, and
+    drops `c`, though `ac` matches. Per thread, `S_1 = ([a-z] ∩ {b}) ∪ {c} = {b, c}`, and
+    `exact_len` 2 is right (the language is `{ab, ac}`, a product).
+  - `[ab](?<=a)c|bc`: the union narrowing gives `S_0 = {a, b}` ∩ `{a}` = `{a}`, and drops
+    `b`, though `bc` matches. The `bc` thread does not pass the item, so revision 2.1 leaves
+    `S_0 = {a, b}` and ends `exact_len` at 0. That is conservative here (the language
+    `{ac, bc}` happens to be the product), and sound everywhere.
+
+  The hull was sound either way. What breaks is that these sets would be SENT: an
+  under-stated `S_d` lets a filter skip a real match (§3.8).
 - **After the end**, the result is a record at `W`.
 
 kvcensus's context reading (method, "Context") used exactly the first and third placements
@@ -344,8 +421,10 @@ and measured them as an equivalence (C4, 0 of 6,510 disagreements).
 - **Several items at one offset** (`(?<=[a-z])\b\w`) are SEVERAL records `[r4 U-B4]`. The
   context is their conjunction, and the kit binds several `ctx[]` predicates as one. So
   revision 1's stacking rule (intersect, absent-AND, form-AND) is RETIRED, not moved to the
-  kit. Inside span 0 each item still narrows `S_d` in turn, which is a set intersection on
-  the walk's own sets and not a record.
+  kit. Inside span 0 each item still narrows the slice's `S_d` in turn, PER THREAD (§3.4):
+  a thread carries the intersection of the restrictions of every item it passed, and the
+  slice's set is the union over threads. It is never an intersection of the per-offset union
+  `[r4rc R2]`. None of this is a record.
 - **Top-level alternation** (`\bfoo|\bbar`): an item contributes a record only if every
   branch states the same item at the same position. Then the language is that context times
   the alternation of bodies, and the record is EXACT. Otherwise the branches' records
@@ -378,8 +457,45 @@ and measured them as an equivalence (C4, 0 of 6,510 disagreements).
 The context half and the slice are ONE walk, the extended k-set walk `[r4 C4, Q-r4-3]`.
 The walk computes the frontier offset by offset. When the frontier holds a zero-width
 state, it consults §3.3 instead of passing the state. A contribution at an offset inside
-the span intersects `S_d`. One outside the span becomes a record. A decline inside the span
-ends `exact_len`.
+the span narrows the slice PER THREAD under §3.4's rule `[r4rc R2]`. One outside the span
+becomes a record. A decline inside the span ends `exact_len`.
+
+**The per-thread frontier** `[r4rc R2]`. A frontier entry is a pair (state, `R`), where
+`R` is the pending restriction on the next byte (all bytes when the thread passed no item;
+the intersection of the item sets when it passed several). Two arrivals at the same consuming
+state with restrictions `R1` and `R2` merge into one entry with `R1 ∪ R2`. The merge is
+exact for the per-offset set (`cls ∩ (R1 ∪ R2)` is the union of the two threads'
+contributions) and for the next frontier (a consuming state's successor on byte `b` is the
+same whichever thread brought it, and `b` advances it iff `b ∈ cls ∩ (R1 ∪ R2)`). The
+restriction is consumed by the advance. A `look-fixed` item ahead wider than one byte
+carries one restriction per offset ahead, up to its width. An item whose terms the entry
+cannot carry ends `exact_len` at its offset. Written once in the shared iterator `wclose`,
+this is U2 (§10).
+
+**Where the narrowed sets live** `[r4rc R2]`: in the SLICE'S OWN RECORD (`MkLang.set[]`,
+`MkLang.exact_len`, §3.2), never in `KsetWalk.k[]`. The walk projects one frontier twice:
+- `KsetWalk.k[j]` is the frontier's class union with every restriction IGNORED, which is
+  today's pass-through hull, the output `wdrain`'s "every assertion is passed" produces now;
+- `MkLang.set[d]` is the union of `cls ∩ R` over the frontier, with `exact_len` as §3.4
+  states it.
+
+So the k-set consumers are unmoved by construction. They are `prefix_k.c`'s offset-k
+selection and its OFS rows (through `pcrec_fact_kset_walk`), the run pin
+(`pcrec_run_pin`, `facts.c`), and the `--emit-facts` k-set rows (`facts.c`). They read
+`KsetWalk`, whose content does not change. P1a's "0 bytes; listing only" (§7) rests on this
+choice. The check is CK-4's emit_sweep byte identity at P1a, plus the `--emit-facts` k-set
+rows unchanged on every arm. Letting those consumers read the narrowed sets would make the
+offset-k picks and the OFS sets narrower: a mover event with its own census, not part of P1a
+(UL-k, §10).
+
+**What is not yet modelled: OWED** `[r4rc R2]`. `kit_proof/conj.py` reads the anchored
+machine (C8's machine half). It does not model the in-span rule, so it cannot check the
+slice's per-thread sets. The two R2 witnesses are added to `witnesses.txt` and `conj.txt` D
+as TEXT (no verdict), because the box was in a timing window. Owed, at P1a before the slice
+is diffed:
+`PCREC=build/pcrec python3 -I docs/design/kit_proof/conj.py witnesses < docs/design/kit_proof/witnesses.txt`
+for the machine half's verdicts on the two new lines, and the slice's own `S_d` on both
+witnesses from the built walk, compared with X0's per-byte sets.
 
 revision 2.1's kit_proof §5.2 said that "a zero-width assertion constrains WHERE a byte may
 stand, and not WHICH byte", so every zero-width node passes through to the hull. That is
@@ -566,16 +682,73 @@ typedef struct { uint32_t left, right; bool left_abs, right_abs; } Sides;
    emitter's boundary accept, assertions_design §3.8.3.1, never by a closure) */
 ```
 
-The `N_CTX` arm indexes `3p + q`, with `p = left_abs ? 2 : bit(left)` and the mirror for `q`.
-This is the same predicate today's arms compute over the same bits:
+**The absent index is gated on the ROW** `[r4rc R1]`. Revision 2 wrote `p = left_abs ? 2 :
+bit(left)` and the mirror for `q`, for every row. That is wrong for the copied rows. When
+`has_end` holds, the end view (`V_END`, `end_ok` true) is closed under EVERY context atom
+(`sides_of`'s `up_atom` ranges over the atoms, and the view is chosen at `pos == n`
+afterwards). Today a row there reads the atom's bit on the right. Under revision 2's rule a
+copied row would read absent instead, which is `out` by the copy. Take `\bfoo\b` on a
+machine where `has_end` holds (under `-e utf8` the K50 gate `N_CSTART` makes it live; or
+beside a `\z` or a `(?m)$`), after its `o`, under `V_END × WORD`. Today the trailing `\b` reads left `in` and right `in` (the WORD
+atom), so it FAILS. Under revision 2's rule it reads right absent, which is `out`, so it
+PASSES. The end view's closure then differs from the eol view's, and `endvar` interns where
+today it is −1. That flips `dfa_has_endvar`, the views flag, the `-bounded` forms and the
+stamps. It hits utf8 unanchored forward machines with a copied next-reading row, and `\b` with
+`\z` or `(?m)`. The answers do not change, since the end view is read only at `pos == n`, but
+P2a's zero-mover claim is false under it. There is no third direction case.
+
+The `N_CTX` arm indexes `3p + q` with the absent value taken ONLY where the row reads it:
+
+```c
+p = (left_abs  && ctxfn_reads_absent_prev(fn)) ? 2 : bit(left);
+q = (right_abs && ctxfn_reads_absent_next(fn)) ? 2 : bit(right);
+```
+
+**This equals today's code exactly**, function by function:
+- the six copied rows have both predicates false by construction (§4.2.1), so the index never
+  takes 2. The arm computes `f(bit(left), bit(right))` over the same bits as today's `N_CTX`
+  arm (`dfa.c`'s `(ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k)`). "No byte on this
+  side" still arrives as atom 0, the empty vector, as `sides_of`'s comment says;
+- `MLINE_BOL` reads both. Its grid with `p = bot_ok ? 2 : bit(left)` and `q = end_ok ? 2 :
+  bit(right)` passes iff `bot_ok || (left ∈ \n && !end_ok)`, which is today's `N_BOT_M` arm;
+- `MLINE_EOL` reads the next side only. It passes iff `end_ok || right ∈ \n`, today's
+  `N_EOL_M` arm;
+- after P2d (§4.6), `SUBJECT_START` reads `bot_ok` (today's `N_BOT`) and `SUBJECT_END` reads
+  `end_ok` (today's `N_END`).
+
+**P2a's zero-mover argument, restored on that basis.** P2a re-encodes the six functions and
+changes the index. Because the copied rows never take index 2, every closure of every view
+under every atom computes today's bit, so no state's closure changes, `endvar`/`eolvar` intern
+exactly as today, and the emitted bytes are today's. The witness the old rule would have moved
+is `\bfoo\b` under `-e utf8` (an `endvar` interned at `V_END × WORD`). The claim that this
+artifact moves under the old rule is read off the closure code, not measured: OWED at P2a as
+the plant's reach check (`build/pcrec -e utf8 --pattern '\bfoo\b'` with and without the
+plant, `endvar` interned in one and not the other). It joins CK-5's population and is the
+plant's witness (S341 re-aimed, §4.5.4). **P2d's zero-mover claim rests on the same gate**: a
+`\A`/`\z` row reads absent and takes index 2, and every copied row on the same machine keeps
+its bit read, so folding `N_BOT`/`N_END` into rows moves no other row's closure.
+
+**Per direction** `[r4 A1]`. `left_abs`/`right_abs` come from `sides_of`, the one place that
+knows direction: forward `left_abs = bot_ok`, `right_abs = end_ok`; reverse `right_abs =
+end_ok`, `left_abs = false`. This is the same predicate today's arms compute over the same
+bits:
 - `N_BOT_M` reads `bot_ok` forward. No reverse machine carries it, because `has_bot` routes
-  it to `ENG_ATTEMPT`.
-- `N_EOL_M` reads `end_ok` in both directions.
+  it to `ENG_ATTEMPT`, which has no reverse pass (`nfa.c`'s `\G` comment states the same
+  routing fact);
+- `N_EOL_M` reads `end_ok` in both directions;
 - `N_END` reads `end_ok` in both directions.
 
-The same mapping is the hook UL-e and [ENG-LOOK] extend. Witness: `[a-z]+\b` on `"ab"`, whose
-reverse `s0` has a letter on the left and nothing on the right (CK-5, S341 re-aimed, §6).
-The forward absent read keeps `(?<![a-c])\d` at 0 as its corpus cell.
+**A consequence of R1** `[r4rc R1]`: with the row gate, only absent-PREV-reading rows read
+`left_abs`, and every such row (`MLINE_BOL`, and `SUBJECT_START` after P2d) sets `has_bot`.
+So no reverse machine ever reads `left_abs`, and A1's bug (`left_abs` from `bot_ok` in
+reverse) can no longer be reached by any witness. Revision 2's witness `[a-z]+\b` reads no
+absent under the gate. A1's fix stays as the defensive form, backed by an assertion in the
+closure: a reverse machine that meets an absent-prev-reading row is an internal error naming
+the routing dependency. `[a-z]+\b` at `n` stays a CK-5 corpus cell. S341's re-aim moves to
+R1's plant (§4.5.4).
+
+The same mapping is the hook UL-e and [ENG-LOOK] extend, and U1 (§10) replaces it. The
+forward absent read keeps `(?<![a-c])\d` at 0 as its corpus cell.
 
 #### 4.2.4 Why both new rows are stated over `{\n}`, and A5 `[r4 A5]`
 
@@ -879,6 +1052,17 @@ The dispositions below (retire / re-aim / re-run) come from reading each selecte
 intent. The script derives the population and nothing else. The build lane re-runs all three
 scripts on its own base before the first edit.
 
+**The edit set is checked against the real diff** `[r4rc R4]`. `edit_set.tsv` is this
+design's own list of what P2a-P2d change, so it is a hand list one step removed. At build,
+after each of P2a, P2b and P2c is written, the lane REGENERATES the edit set from that
+commit's actual diff: every changed or deleted definition, token and code line in `src/`,
+with the same `def` / `token` / `line` columns. It then compares the regenerated set with
+`edit_set.tsv` for that commit. Every entry in one and not the other is a finding to
+dispose of before the derived population is used: either the design missed an edit (the
+regenerated row joins and `derive_rows.py` re-runs) or the build made an edit the design did
+not plan (it is justified or removed). The sabotage list the build acts on is the one derived
+from the REGENERATED set. The comparison and its dispositions go in the lane report.
+
 **The derived list for P2c at `3b0f87b55`** (`ctx_span/derived_rows.tsv`; P2d's rows are in
 §4.6):
 
@@ -889,7 +1073,7 @@ scripts on its own base before the first edit.
 | S762 (end pin reads `(?m)$`) | anchor `ew_walk_marked` | **RETIRES** `[r4 B6]`, witness kept as a corpus cell (`tests/endwin/` or the rev-end corpus) |
 | S900 (derive kills a multiline `^`) | anchor `q_rewrite` | **RETIRES** `[r4 B6]`, witness kept as a corpus cell (`tests/compound/`) |
 | S343 (a shared set records only the first row) | anchor `ctx_collect` (`rows \|=`) | **RETIRES** `[r4 B5]`: the sharing logic it guards is deleted (table B), because no byte-expressible set equals utf8's non-start set |
-| S341 (absent reads in the set) | owner `pcrec_build_dfa` | **RE-AIMS** `[r4 B5]` to the absent read: the plant is A1's bug, `sides_of` setting `left_abs` from `bot_ok` in BOTH directions. Witness: `[a-z]+\b` on `"ab"` at the reverse `s0` (`reverse-pass`; the plant loses the start). Its old forward witness `(?<![a-c])\d` stays as a corpus cell. It replaces revision 1's SP-5 |
+| S341 (absent reads in the set) | owner `pcrec_build_dfa` | **RE-AIMS** `[r4 B5]` to the absent read. Revision 2 aimed it at A1's bug (`sides_of` setting `left_abs` from `bot_ok` in both directions, witness `[a-z]+\b` at the reverse `s0`). Under R1's row gate that plant reaches nothing, because no reverse machine reads `left_abs` (§4.2.3). **Revision 2.1 re-aims it to R1's plant** `[r4rc R1]`: the row gate dropped, so every row takes index 2 when `right_abs` holds. Witness `\bfoo\b` under `-e utf8`: `endvar` interns, caught by CK-5 and `run_endvar_identity.sh` (reach OWED, §4.2.3). A1's plant becomes SP-11, declared UNREACHED (§6 CK-5). The old forward witness `(?<![a-c])\d` and `[a-z]+\b` at `n` stay as corpus cells. It replaces revision 1's SP-5 |
 | S71 (wordctx alphabet unconditional) | owner `ctx_collect` | RE-RUN at P2c. Its gate's population changes (A2, below) |
 | S1100, S14, S746 | owner `compile_ast` (the NFA lowering) | RE-RUN at P2c |
 | S157, S49, S84 | owner `first_of` | RE-RUN at P2c |
@@ -1083,8 +1267,8 @@ Ids `SP-1`.. are this note's placeholders. The manager allocates real S-ids from
 | CK-2 | soundness and exactness against libpcre2 10.46. For every corpus `m` cell, every match's context bytes lie in each item (absent per its bit). For EXACT items, a full-alphabet subject family at the context offsets finds no subject that satisfies the items and the body and that libpcre2 rejects. **The family GENERATES absent-edge subjects**: `c = 0`; `c + k = n`; a match after a final newline; the empty subject; and each item's offset at the subject edge. A random draw does not reach them (kit_proof §6.4's K1 lesson) | libpcre2 | SP-2: `look-fixed` marks an alternation EXACT (`(?<=ab\|cd)`); must fail CK-2's exactness half |
 | CK-3 | the listing invariant: each item carries one `form`; `nctx` is 0 when no item contributed; no UNSTATED enum appears in a listed record; no SUPERSET item appears on a site's sent list | the listing, read by a python reader that shares no code with `kset.c` | SP-3: a record with `absent` left UNSTATED; refused at the reader |
 | CK-4 | part 2's movers, over emit_sweep's every arm, answer-identical by the three-way self-oracle. (a) The byte movers are EXACTLY the DFA artifacts with a `(?m)` node before another `A_CTX` set in NFA order. That set is predicted from pattern text by `mlscan.py` plus a python NFA-order read. (b) **Each mover's diff is CONFINED** to the per-atom table initializers and the atom vectors: any other differing line (a stamp, `VALID_LB`, a program line) fails. (c) VM movers, route movers and possessify movers are each ZERO, asserted rather than "zero or explained" `[r4 B3]` | libpcre2 (answers), the text-side prediction (population), and the diff's line classes (confinement) | SP-4: the parser builds `A_BOL` for `(?m)^` (the D62 failure in its new form). Witness `(?m)^b` on `"a\nb"`: PCRE2 (2,3), the plant nomatch `[r4 B6]`. Revision 1's `(?m)^$` on `"a\n"` does not reach (nomatch both ways). SP-4b: `MLINE_BOL`'s `in`/`absent` cell copied from `out` (the 4-cell habit); witness `(?m)^` on `"a\n"` from 2, PCRE2 nomatch, the plant (2,2). SP-4c, the `$` twin: the parser builds `A_EOL` for `(?m)$`; witness `a(?m)$` on `"a\nb"`, PCRE2 (0,1), the plant nomatch. SP-4d: the `(?m)` builder copies `\b`'s lookbehind raise (A8); caught by CK-4(b) |
-| CK-5 | reverse-machine identity for every `(?m)$` artifact on `ENG_UNANCH` and every `\b`-ending `reverse-pass` artifact (`[a-z]+\b` at `n`) `[r4 A1]`. A predicted list-order mover is compared under the predicted atom PERMUTATION (tables equal after renumbering), since byte identity fails for it by construction `[r4 B7]` | the pre-change build's reverse tables | S341 RE-AIMED (§4.5.4): `sides_of` sets `left_abs` from `bot_ok` in both directions; must break CK-5 and the `[a-z]+\b` corpus cell at `n` |
-| CK-6 | F-1's in-span rule: `exact_len` stops at a straddling two-sided item AT its offset and narrows `S_d` at a one-sided one, on `a(?=b)[a-z]`, `[a-z0-9_ ]\b[a-z ]`, `\w(?=\d)\w` and on every site stating `exact_len > 0` | libpcre2 prefix languages (X0's set equality, kit_proof §6.4) | kit_proof S1149: the walk passes every zero-width node; must fail CK-6 |
+| CK-5 | machine identity (forward and reverse tables, the `eolvar`/`endvar` interning and the views flag) for every `(?m)$` artifact on `ENG_UNANCH`, every `\b`-ending `reverse-pass` artifact (`[a-z]+\b` at `n`) `[r4 A1]`, and every artifact with `has_end` and a copied next-reading row (`\bfoo\b` with `\z` or `(?m)`; utf8 unanchored forward machines) `[r4rc R1]`. A predicted list-order mover is compared under the predicted atom PERMUTATION (tables equal after renumbering), since byte identity fails for it by construction `[r4 B7]` | the pre-change build's tables, and `run_endvar_identity.sh` | S341 RE-AIMED to R1's plant `[r4rc R1]` (§4.5.4): the row gate dropped, every row reads `right_abs`; witness `\bfoo\b` under `-e utf8`, whose `endvar` interns under the plant (reach OWED, §4.2.3); must break CK-5 and `run_endvar_identity.sh`. SP-11 (PROPOSED): A1's plant, `left_abs` from `bot_ok` in reverse; ships declared UNREACHED (§4.2.3: no reverse machine reads `left_abs` under the gate), caught by the closure's routing assertion if a reverse machine ever meets an absent-prev-reading row |
+| CK-6 | F-1's in-span rule: `exact_len` stops at a straddling two-sided item AT its offset and narrows `S_d` at a one-sided one, on `a(?=b)[a-z]`, `[a-z0-9_ ]\b[a-z ]`, `\w(?=\d)\w` and on every site stating `exact_len > 0`. **The narrowing is per thread** `[r4rc R2]`: on `a(?=b)[a-z]\|ac` the slice states `S_1 = {b, c}` (exact_len 2), and on `[ab](?<=a)c\|bc` it states `S_0 = {a, b}` with `exact_len` 0 (the previous side, not every thread passes the item). Subjects at the item's offset from both sides of its set's edge and from the OTHER branch (`ab`, `ac`, `ad`; `ac`, `bc`, `cc`) | libpcre2 prefix languages (X0's set equality, kit_proof §6.4) | kit_proof S1149: the walk passes every zero-width node; must fail CK-6. **SP-6 (= kit_proof S1150, PROPOSED)** `[r4rc R2]`: the union-narrowing plant, the item's set intersected with the whole per-offset union on both sides. Witnesses `a(?=b)[a-z]\|ac` (the plant's `S_1 = {b}`; `"ac"` matches in PCRE2, so X0's per-byte set at offset 1 holds `c` and the plant's does not) and `[ab](?<=a)c\|bc` (the plant's `S_0 = {a}`; `"bc"` matches). Must fail CK-6 through X0's set equality |
 | CK-7 | K35: the population of artifacts with ≥ 1 context item, PER INPUT-TABLE ROW, counted by a stamp-free text census (kvctx.py's shape), with floors as measured literals | python over pattern text | — (a count, not a plant) |
 | CK-8 | the truth table against libpcre2: each `ctxfn.def` row's canonical lookaround spelling, compiled through libpcre2 over the 547-cell family plus the absent-edge cells, must reproduce the row's nine cells | libpcre2 | SP-8: one cell of one row flipped (`MLINE_EOL`'s `out`/`absent` cell); must fail CK-8 and a corpus cell |
 | CK-9 | the C2 tie: `bol_def`/`eol_def`'s `DEF_MULTILINE` text, parsed by the ordinary parser, is answer-identical to the parser's `(?m)^`/`(?m)$` nodes over CK-8's family | libpcre2 plus the registry text (not the parser's node) | SP-9: the registry row edited (`(?!\z)` dropped); must fail CK-9 |
@@ -1114,15 +1298,20 @@ which shares nothing with P2c's code, so a moved verdict is a finding about P2c.
 
 | step | what | movers |
 |---|---|---|
-| P2a | `ctxfn.def` with the six rows re-encoded (absent copied from out); widen `fn`/`ctxfn`; the closure indexes `3p + q` | 0 (CK-4 asserts zero; CK-5 on `[a-z]+\b`) |
+| P2a | `ctxfn.def` with the six rows re-encoded (absent copied from out); widen `fn`/`ctxfn`; the closure indexes `3p + q` with the absent index gated on the row `[r4rc R1]` | 0 (CK-4 asserts zero; CK-5 on `[a-z]+\b` and on `\bfoo\b` under `-e utf8`) |
 | P2b | the two new rows and their `vm_ctx_forms` rows; three-valued `Sides` with A1's per-direction absent read; the three derived predicates; possessify's absent-reading decline. Nothing builds the new rows yet | 0 |
 | P2c | the parser builds `A_CTX` for `(?m)^`/`(?m)$`; tables A-B delete (with the dead `rows` logic); retire `run_mlinectx_identity.sh`; re-define `run_wordctx_identity.sh`'s population; the derived sabotage list (§4.5.4); the D62 addendum; abi 81 with §4.5.1's readers | the measured DFA list-order movers (CK-4), answer-identical, table-confined; `conj.py` identical (U-B3) |
 | P2d (if Q7 takes it) | `A_BOL`/`A_END` lower to `N_CTX` rows; `N_BOT`/`N_END` and their engine arms delete; `cr_ctx_reads` reads `ctxfn_reads_membership` | 0 predicted (CK-4); its own derived rows |
-| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes; listing only |
+| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), the per-thread frontier (U2) with the narrowed sets in `MkLang` only `[r4rc R2]`, listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes (`KsetWalk` unchanged, §3.8); listing only |
 | P1b (= UL-8's trigger) | the producer's EXACT items become the context source for the first VM-side consumer; the machine reading becomes the control; `MF_MAX_CTX` rises (kit_proof §4.1) | per that consumer's own event |
 
 P2a-P2b touch the closure and move nothing, so they can land early. If part 1 lands first
 (Q2), P1a carries the two `(?m)` rows and P2c deletes them.
+
+**Each of P2a-P2d regenerates its edit set from its real diff** `[r4rc R4]` and compares
+it with `ctx_span/edit_set.tsv` before its sabotage rows are run (§4.5.4). The derived
+population the step re-runs is the one from the regenerated set, and the comparison is in
+the step's lane report.
 
 ## 8. The three standing questions (`docs/design/CLAUDE.md`)
 
@@ -1192,12 +1381,15 @@ P2a-P2b touch the closure and move nothing, so they can land early. If part 1 la
 | UL-b | wider lookbehind context (`(?<=ab)z`) sent as a FILTER on seeded DFA sites (kit_proof §3.3's "NO" row); R-26.7's first customer | kit_proof U4's trigger: a measured seeded `\b…` or lookbehind cell |
 | UL-c | possessify arm A VALUES absent-reading rows (`First` gains "admits absent"; each `nullable` reader re-proved; its own mover prediction and route census) `[r4 B3]` | its own: a measured `(?m)` quantifier cell, measurable on existing corpus cells (C6) |
 | UL-d | MLINE's `absent` SATISFIES and pcrec's edge attempt retires (kit_proof U-mline), read off the producer's `ctx-fold` record | U-mline's own: a `(?m)^` cell whose edge attempt is measured |
-| UL-e | `$`/`\Z` and multi-byte newline conventions (A3) as instances of [ENG-LOOK]'s bounded lookahead (a multi-offset context) | [ENG-LOOK]'s design gate, or the first non-LF convention row |
+| UL-e | `$`/`\Z` and multi-byte newline conventions (A3) as instances of [ENG-LOOK]'s bounded lookahead (a multi-offset context). Until it lands, `(?m)` under a multi-byte convention is REFUSED BY NAME (§3.3) `[r4rc R3]` | [ENG-LOOK]'s design gate, or the first non-LF convention row |
 | UL-f | the 23 shifted-origin sites restated from the producer's records (kit_proof U-ctxorigin) | its own: one such site in a losing bench cell |
 | UL-g | the producer as the prefilter's context oracle: a SUPERSET item is a necessary condition any search filter may test; R-26.7's second customer | a filter consumer asking for it (none today) |
 | UL-h | `-fno-ctx-node` producer-record identity as a standing check (CK-10) `[r4 A6]` | lands with P1a; no separate trigger |
 | UL-i | co-finite sets in `pcrec_enc_set_bytes` under utf8 (§4.7), un-forcing the VM for `(?![^\n])`, `(?<![a-z])` | the ill-formed-utf8 soundness question answered (a design note), and a VM-forced utf8 cell in a losing bench row |
 | UL-j | the unified per-offset walk (k-set, run pin, widths, the slice) (§9) | the next per-offset fact asked of any of the three walks |
+| UL-k | the k-set consumers (offset-k selection, OFS rows, the run pin) read the slice's per-thread NARROWED sets instead of the pass-through hull: narrower prefilter sets, a mover event with its own census `[r4rc R2]` | a losing bench cell whose offset-k pick or OFS set an in-span context item would narrow |
+| U1 | ABSENT AS ITS OWN CONTEXT ATOM `[r4rc]`: the ⊥ pseudo-character. "No byte on this side" becomes an atom of the class axis, not a flag beside it. `bot_ok`/`end_ok` and both absent flags (`left_abs`/`right_abs`) delete, and R1's row gate becomes the ordinary index (the absent atom selects the row's absent cell). It merges with [UCP]'s ⊥ rule (`ucp_design.md`: an ill-formed byte as the pseudo-character) and with UL-e's multi-offset object | P2d, or [UCP] U3 |
+| U2 | PER-THREAD CLASS RESTRICTION in the shared frontier iterator `wclose` (`src/facts/kset.c`) `[r4rc R2]`: R2's fix written once. A frontier entry is (state, pending restriction), merged by union at a shared state (§3.8). It serves the slice, Λ (`land_char`, which already shares `wclose`) and the width walk, so none of them grows its own restriction | Z2 (kit_proof UL-0) |
 | U-B1 | K50 joins the ctx row: `N_CSTART` is the `NOT_NEXT` row over `¬start_cls` with absent copied from `out` (today's semantics); `CTXROW_NOSTART` joins `ctx`, "one contributor for every assertion set" with no exception. Cost: utf8 list-order movers, an abi event | the next [K50] change or the next contributor row; eligible as a simplification alone (Frank 2026-10-18) |
 | U-B2 | the input table as a listable first-match table with per-row floors (K35 per row) | P1a (lands with it: CK-1, CK-7) |
 | U-B3 | `conj.py` re-run as P2c's independent control | P2c (§7, lands with it) |
@@ -1245,6 +1437,11 @@ site really a different arm, and is the NFA-level fold's "0 analysis movers" tru
 `kset_walk` (an E3 fact that reads NFA kinds)? (e) §3.6's per-item grain against kit_proof's
 stage 1. Can the machine reading ever need two items on one side? (f) §4.7's ill-formed
 cases beyond the two named.
+(g) §3.8's per-thread frontier `[r4rc R2]`. Is the merge of two arrivals at one state by
+the union of their restrictions exact for every later offset, and is "every thread at
+`d − 1` passes the item" decidable from the walk's frontier alone (a thread is a frontier
+entry, not an NFA path)? (h) §4.2.3's row gate `[r4rc R1]`. Does any reader other than the
+closure index read `left_abs`/`right_abs` and expect them set on every row?
 
 ## 13. Disposition and discharge (every r4 id)
 
@@ -1287,3 +1484,21 @@ cases beyond the two named.
 
 C6 has no finding row in r4's table. It sits in the unlocks list and is discharged above.
 Every other r4 id is listed. Nothing in the review is left undischarged.
+
+**The re-check of revision 2 (critR), discharged by revision 2.1** `[r4rc]`:
+
+| id | sev | disposition | discharged in |
+|---|---|---|---|
+| R1 | MAJOR | ACCEPT: the absent index is gated on the row, `q = (right_abs && ctxfn_reads_absent_next(fn)) ? 2 : bit(right)` and the mirror for `p`; equals today's six functions and the `N_BOT_M`/`N_EOL_M` arms; P2a's zero-mover argument restored on it with `\bfoo\b` (under `-e utf8`) as the witness the old rule moves; P2d's zero movers rest on it. Consequence: no reverse machine reads `left_abs`, so A1's plant is UNREACHED (SP-11) and S341 re-aims to R1's plant | §4.2.3; §4.5.4 (S341); §6 CK-5; §7 P2a; §R2.1 |
+| R2 | BLOCKER (if built) | ACCEPT: next side narrows per thread (frontier states reached through the item; a frontier entry carries its restriction, merged by union); previous side narrows only when every thread at `d − 1` passes, else `exact_len` ends at `d − 1`; the narrowed sets live in `MkLang` only, `KsetWalk` stays the hull, so offset-k selection, the run pin, the OFS rows and the listing are unmoved by construction; both witnesses in CK-6, `conj.txt` D, `witnesses.txt` and X0 as text; the union-narrowing plant SP-6 = S1150 PROPOSED; `conj.py` does not model the in-span rule (OWED) | §3.4; §3.6; §3.8; §3.2 (`MkLang` comment); §6 CK-6; §7 P1a; §10 UL-k, U2; kit_proof §5.2, §6.3, §6.4 `[r4rc R2]`; `kit_proof/witnesses.txt`, `conj.txt` D |
+| R3 | MINOR | ACCEPT: a multi-byte newline convention is REFUSED BY NAME until UL-e (no fallback kind after P2c) | §3.3; §10 UL-e |
+| R4 | MINOR | ACCEPT: at build each step regenerates the edit set from its real diff and compares it with `edit_set.tsv`; the derived list comes from the regenerated set | §4.5.4; §7 |
+| R5/R6 | holds | nothing to discharge | — |
+| U1 | unlock | FILED: absent as its own context atom (⊥), deleting `bot_ok`/`end_ok` and both absent flags, merging with [UCP]'s ⊥ rule and UL-e; trigger P2d or [UCP] U3 | §10 |
+| U2 | unlock | FILED: per-thread class restriction in `wclose`, serving the slice, Λ and the width walk; trigger Z2 | §3.8; §10 |
+
+**Not discharged by revision 2.1, OWED** (the box was in a bench timing window; nothing
+was run): the `conj.py` verdicts on the two new witness lines (§3.8's command); the R1
+plant's reach on `\bfoo\b` under `-e utf8` (§4.2.3); the slice's own sets on both R2
+witnesses and S1150's reach, both needing the built walk (Z2); and `make
+test-spec-history` over this revision's text.
