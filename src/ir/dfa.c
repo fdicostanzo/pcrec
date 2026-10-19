@@ -828,6 +828,13 @@ typedef struct {
      * below reading like the assertion's own definition. */
     uint32_t  left;
     uint32_t  right;
+    /* [DD-11.5] THE ABSENT SIDES: there is no character at all on that side
+     * of the position (ctx_span.md §4.2.3). Set per direction by `sides_of`,
+     * and read ONLY by a truth-table row that reads absent on that side
+     * (`ctxfn_reads_absent_*`): every other row reads `left`/`right`, whose
+     * empty vector already says "not in any set". */
+    bool      left_abs;
+    bool      right_abs;
     const int8_t *cbit;   /* per NFA state: its A_CTX set's list index, or -1 */
     int       nl_bit;     /* list index of the newline set, or -1 */
     int       ns_bit;     /* list index of the non-start set, or -1 */
@@ -1081,9 +1088,17 @@ static void clo_walk(Clo *cl, int s)
              * membership bit on each side. No per-spelling arm, which is the
              * point: the function is data. */
             case N_CTX: {
+                /* [DD-11.5] each side is three-valued (ctxfn.def): absent
+                 * (2) ONLY where the row reads absent on that side, which no
+                 * four-cell row does, so those compute today's bit exactly
+                 * ([r4rc R1]: an ungated absent would read `out` for `\b` at
+                 * the `pos == n` view under every atom and intern an endvar). */
                 int k = cl->cbit[s];
-                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);
-                if (!((st->ctxfn >> in) & 1)) break;
+                unsigned p = (cl->left_abs && ctxfn_reads_absent_prev(st->ctxfn))
+                             ? 2u : (unsigned)ctx_bit(cl->left, k);
+                unsigned q = (cl->right_abs && ctxfn_reads_absent_next(st->ctxfn))
+                             ? 2u : (unsigned)ctx_bit(cl->right, k);
+                if (!ctxfn_cell(st->ctxfn, p, q)) break;
                 s = st->t1;
                 continue;
             }
@@ -1109,10 +1124,12 @@ static void clo_walk(Clo *cl, int s)
     }
 }
 
-/* The two neighbouring bytes' context ATOM VECTORS, in subject order,
- * travelling as one value (see Clo.left/right). */
+/* The two neighbouring bytes' context ATOM VECTORS, in subject order, and
+ * whether each side has no character at all, travelling as one value (see
+ * Clo.left/right/left_abs/right_abs). */
 typedef struct {
     uint32_t left, right;
+    bool     left_abs, right_abs;
 } Sides;
 
 /* Computes the epsilon closure of pre[0..npre) under class-view flags
@@ -1144,7 +1161,8 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
     Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, 0, -1, eol_ok, end_ok, bot_ok, gst_ok,
-               sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune,
+               sd.left, sd.right, sd.left_abs, sd.right_abs,
+               sc->cbit, sc->nl_bit, sc->ns_bit, prune,
                sc->lcyc };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
@@ -1424,14 +1442,26 @@ typedef struct {
  *
  * "No byte on this side" — start of subject forward, end of subject reverse —
  * arrives here as atom 0, the EMPTY vector: in no context set, which is
- * exactly the out-of-subject rule every reader wants (Clo.left/right). */
-static Sides sides_of(const Mach *m, int cons_atom, int up_atom)
+ * exactly the out-of-subject rule every reader wants (Clo.left/right).
+ *
+ * [DD-11.5] THE ABSENT SIDES are direction too ([r4 A1]): forward, the left
+ * is absent at the start (`bot_ok`) and the right at the end (`end_ok`);
+ * reverse, the right is absent at the end, and the left never is — the
+ * reverse walk's left edge is its TERMINATION boundary, decided by the
+ * emitter's boundary accept (assertions_design.md §3.8.3.1), never by a
+ * closure. Only a row that reads absent prev can see the difference, and
+ * every such row routes the pattern to ENG_ATTEMPT, which has no reverse
+ * machine (`pcrec_nfa_has_bot`). */
+static Sides sides_of(const Mach *m, int cons_atom, int up_atom,
+                      bool bot_ok, bool end_ok)
 {
     int lft = m->reverse ? up_atom   : cons_atom;
     int rgt = m->reverse ? cons_atom : up_atom;
     Sides sd;
     sd.left  = m->atomvec[lft];
     sd.right = m->atomvec[rgt];
+    sd.left_abs  = m->reverse ? false : bot_ok;
+    sd.right_abs = end_ok;
     return sd;
 }
 
@@ -1499,7 +1529,8 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
              * `\G` and `\z` can both hold at once (an empty subject searched
              * from 0), so it is a caller's parameter and not a fourth view. */
             closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
-                    sides_of(m, cons_atom, u), m->prune, sc, buf, &nout, &acc, &first);
+                    sides_of(m, cons_atom, u, bot_ok, v >= V_END), m->prune, sc,
+                    buf, &nout, &acc, &first);
             vw[v][u].list   = buf;
             vw[v][u].nlist  = nout;
             vw[v][u].accept = acc;

@@ -8341,10 +8341,13 @@ static void vm_region(Vm *v, int i)
  * one side is negated. A table rather than a branch per spelling, and the
  * function is the only key — no row knows whether `\b` or a lookaround
  * produced its node. The two two-sided rows are [M6.2] wave B's `\b`/`\B`
- * text, character for character, so every shipped `\b` artifact is unmoved. */
+ * text, character for character, so every shipped `\b` artifact is unmoved.
+ *
+ * [DD-11.5] THE ROWS ARE src/core/ctxfn.def's, the one truth table's VM
+ * columns, so a function cannot gain a row without gaining its form. */
 enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT };
 typedef struct {
-    uint8_t     fn;      /* CTXFN_* */
+    uint16_t    fn;      /* CTXFN_* */
     int         side;    /* VMCTX_*: which neighbour(s) the test reads */
     const char *join;    /* VMCTX_BOTH: the comparison between the two sides */
     bool        neg;     /* one side: the assertion holds when it is NOT in */
@@ -8352,12 +8355,10 @@ typedef struct {
 } VmCtxForm;
 
 static const VmCtxForm vm_ctx_forms[] = {
-    { CTXFN_BOUNDARY,    VMCTX_BOTH, "!=", false, "\\b word boundary" },
-    { CTXFN_NONBOUNDARY, VMCTX_BOTH, "==", false, "\\B not a word boundary" },
-    { CTXFN_PREV,        VMCTX_PREV, NULL, false, "previous character in the set" },
-    { CTXFN_NOT_PREV,    VMCTX_PREV, NULL, true,  "previous character not in the set" },
-    { CTXFN_NEXT,        VMCTX_NEXT, NULL, false, "next character in the set" },
-    { CTXFN_NOT_NEXT,    VMCTX_NEXT, NULL, true,  "next character not in the set" },
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+    { CTXFN_##name, side, join, neg, role },
+#include "core/ctxfn.def"
+#undef CTXFN_ROW
 };
 
 /* One side's guarded membership test, `(bound && (set test))`. */

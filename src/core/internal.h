@@ -1152,16 +1152,55 @@ typedef enum {
  * never a byte and never a width. */
 typedef struct { unsigned lo, hi; } PcrecCpRange;
 
-/* [UCP] U2 A_CTX's truth functions: bit `(p << 1) | q` is the answer when
- * the previous character's membership is `p` and the next one's is `q`. */
+/* [UCP] U2, [DD-11.5] part 2: A_CTX's truth functions are the rows of ONE
+ * declared 9-cell table, src/core/ctxfn.def (docs/design/ctx_span.md §4.2).
+ * Bit `3p + q` is the answer when the previous character is `p` and the next
+ * is `q`, each 0 (out of the set), 1 (in it) or 2 (absent: no character).
+ * The value is derived from the grid; the row's stated HEX must agree. */
+#define CTXFN_GRID(a, b, c, d, e, f, g, h, i)                                 \
+    ((a) << 0 | (b) << 1 | (c) << 2 | (d) << 3 | (e) << 4 | (f) << 5 |        \
+     (g) << 6 | (h) << 7 | (i) << 8)
 enum {
-    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */
-    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */
-    CTXFN_PREV        = 0xC,   /* (?<=C) */
-    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */
-    CTXFN_NEXT        = 0xA,   /* (?=C)  */
-    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+    CTXFN_##name = CTXFN_GRID(a, b, c, d, e, f, g, h, i),
+#include "core/ctxfn.def"
+#undef CTXFN_ROW
 };
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+    _Static_assert(CTXFN_##name == (hex), "ctxfn.def row " #name ": the grid "  \
+                   "and its stated value disagree");
+#include "core/ctxfn.def"
+#undef CTXFN_ROW
+
+/* The three per-row predicates, COMPUTED from the bits and never written as
+ * columns (ctxfn.def's header says why). Each compares two lines of the grid:
+ * `cell(p, q)` is bit `3p + q`. */
+static inline unsigned ctxfn_cell(uint16_t fn, unsigned p, unsigned q)
+{ return (fn >> (3u * p + q)) & 1u; }
+/* The absent row differs from the out row: some next value passes or fails
+ * differently when there is no previous character than when it is not in C. */
+static inline bool ctxfn_reads_absent_prev(uint16_t fn)
+{
+    for (unsigned q = 0; q < 3; q++)
+        if (ctxfn_cell(fn, 2, q) != ctxfn_cell(fn, 0, q)) return true;
+    return false;
+}
+/* The absent column differs from the out column. */
+static inline bool ctxfn_reads_absent_next(uint16_t fn)
+{
+    for (unsigned p = 0; p < 3; p++)
+        if (ctxfn_cell(fn, p, 2) != ctxfn_cell(fn, p, 0)) return true;
+    return false;
+}
+/* The in row differs from the out row, or the in column from the out column:
+ * the function asks a membership question of some side. */
+static inline bool ctxfn_reads_membership(uint16_t fn)
+{
+    for (unsigned k = 0; k < 3; k++)
+        if (ctxfn_cell(fn, 1, k) != ctxfn_cell(fn, 0, k) ||
+            ctxfn_cell(fn, k, 1) != ctxfn_cell(fn, k, 0)) return true;
+    return false;
+}
 
 typedef struct Ast Ast;
 struct Ast {
@@ -1365,11 +1404,11 @@ struct Ast {
 
         /* [UCP] U2 A_CTX: the context set (code points, sorted disjoint
          * intervals — A_CLASS's own representation) and the truth function,
-         * a 4-bit table indexed by (prev ∈ C) << 1 | (next ∈ C). */
+         * a row of src/core/ctxfn.def's 9-cell table (bit `3p + q`). */
         struct {
             const PcrecCpRange *iv;
             int                 n;
-            uint8_t             fn;
+            uint16_t            fn;
             /* SPELLED AS AN ESCAPE ANCHOR (`\b`/`\B`), so PCRE2's grammar
              * makes it not directly quantifiable (`\b*` is error 109) while
              * a lookaround-born node is (`(?=a)*` compiles) —
@@ -2061,7 +2100,7 @@ typedef struct {
     int     t1, t2;
     uint8_t loop;        /* star/plus loop-entry split */
     uint8_t exit_is_t2;  /* which edge leaves the loop (greedy: t2) */
-    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */
+    uint16_t ctxfn;      /* N_CTX only: its CTXFN_* truth function */
     /* D164 B3 the match-end mark (docs/design/endmark.md §R.1.2, §R.2): `tail`
      * on an N_CLASS consumed by a LOWERED `$`/`\Z` tail, where each byte adds
      * one to the thread's mark distance; `dist` on an N_ACCEPT, the distance
@@ -4504,7 +4543,7 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
 /* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
-Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn);
+Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn);
 
 /* [UCP] U2 T3, a lookaround's lowering (src/parse/ctxnode.c): the ordered
  * first-match rows as DATA — name, deny flag, one-line predicate, its test,
@@ -7015,7 +7054,7 @@ enum {
  * gate set `iv` some left polarity in `pmask` lets truth table `fn` pass,
  * into `out`; false = no narrowing (widen). possessify.c's arm A primitive,
  * exported for its exhaustive model check only. */
-bool  pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,
+bool  pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
                             unsigned pmask, uint8_t out[32]);
 
 /* ---- [M6.4.2] module `atomic-groups`: the free discharge (design §5.3) --- */

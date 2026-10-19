@@ -232,14 +232,14 @@ static First first_of(Fq *q, const Ast *a);
  * came out empty. A true return with `out` empty is exact: the gate never
  * passes (`\w+(?<!\w)`). Exported for its exhaustive model check
  * (tests/possessify/ctx_admits_check.c); this file is its only reader. */
-bool pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,
+bool pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
                            unsigned pmask, uint8_t out[32])
 {
     bool qok[2] = { false, false };
     for (unsigned p = 0; p < 2; p++) {
         if (!(pmask & (1u << p))) continue;
         for (unsigned qv = 0; qv < 2; qv++)
-            if (fn & (1u << ((p << 1) | qv))) qok[qv] = true;
+            if (ctxfn_cell(fn, p, qv)) qok[qv] = true;
     }
     if (qok[0] && qok[1]) return false;
     bs_clear(out);

@@ -62,7 +62,7 @@ Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 /* [UCP] U2 A new A_CTX node over the published code-point set `iv[0..n)`
  * with truth function `fn` (CTXFN_*). The set is shared, never copied: a
  * published payload is read-only (cpset.c's rule). */
-Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)
+Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn)
 {
     Ast *a = node(cx, A_CTX);
     a->u.ctx.iv = iv;

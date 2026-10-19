@@ -67,12 +67,12 @@ static int cnt_nonarrow, cnt_empty, cnt_narrow, cnt_widen;
 static int failures, cells;
 
 /* Evaluate the model for (fn, c, pmask) and compare with the function. */
-static void check(uint8_t fn, const CSet *c, unsigned pmask, const char *tag)
+static void check(uint16_t fn, const CSet *c, unsigned pmask, const char *tag)
 {
     int qadm[2] = { 0, 0 };
     for (unsigned p = 0; p < 2; p++)
         for (unsigned q = 0; q < 2; q++)
-            if (((pmask >> p) & 1u) && ((fn >> ((p << 1) | q)) & 1u))
+            if (((pmask >> p) & 1u) && ((fn >> (3u * p + q)) & 1u))
                 qadm[q] = 1;
 
     uint8_t out[32];
@@ -98,7 +98,7 @@ static void check(uint8_t fn, const CSet *c, unsigned pmask, const char *tag)
     if (got != want_ret || (compare_out && memcmp(out, want, 32) != 0)) {
         failures++;
         if (failures <= 20)
-            fprintf(stderr, "FAIL %s: fn=0x%02x C=%s pmask=%u: got %s, want %s%s\n",
+            fprintf(stderr, "FAIL %s: fn=0x%03x C=%s pmask=%u: got %s, want %s%s\n",
                     tag, fn, c->name, pmask, got ? "true" : "false",
                     want_ret ? "true" : "false",
                     (got == want_ret && compare_out) ? " (out set differs)" : "");
@@ -152,24 +152,33 @@ int main(void)
         ns++;
     }
 
-    for (int t = 0; t < 16; t++)
+    /* Each four-cell table `t` (bit `p << 1 | q`) as its 9-cell row with
+     * the absent cells copied from `out` (ctx_span.md §4.2.2), bit `3p + q`
+     * written out here rather than read from src/core/ctxfn.def. */
+    for (int t = 0; t < 16; t++) {
+        uint16_t fn = 0;
+        for (unsigned p = 0; p < 3; p++)
+            for (unsigned q = 0; q < 3; q++)
+                if ((t >> (((p == 2 ? 0 : p) << 1) | (q == 2 ? 0 : q))) & 1)
+                    fn |= (uint16_t)(1u << (3u * p + q));
         for (unsigned pm = 1; pm <= 3; pm++)
             for (int i = 0; i < ns; i++)
-                check((uint8_t)t, &sets[i], pm, "sweep");
+                check(fn, &sets[i], pm, "sweep");
+    }
 
-    /* A-F3's unit cell, NAMED: C = {U+0100}; (?=C) has fn = 0xA (the answer
-     * is q regardless of p, bit (p<<1|1) set). Q(P) = {1}, S(P) = {} (nothing
+    /* A-F3's unit cell, NAMED: C = {U+0100}; (?=C) is CTXFN_NEXT (the
+     * answer is q regardless of p). Q(P) = {1}, S(P) = {} (nothing
      * of C in the byte tier), so the function MUST WIDEN, never claim "empty
-     * narrowing". Its negative sibling (?!C), fn = 0x5, admits q = 0: S is all
+     * narrowing". Its negative sibling (?!C), CTXFN_NOT_NEXT, admits q = 0: S is all
      * 256 bytes and narrows. */
     {
         CSet af3 = { "U+0100 (A-F3)", { { 0x100, 0x100 } }, 1 };
         uint8_t out[32];
         for (unsigned pm = 1; pm <= 3; pm++) {
-            bool r = pcrec_poss_ctx_admits(0xA, af3.iv, af3.n, pm, out);
+            bool r = pcrec_poss_ctx_admits(CTXFN_NEXT, af3.iv, af3.n, pm, out);
             cells++;
             if (r) { failures++; fprintf(stderr, "FAIL A-F3: (?=U+0100) pmask=%u narrowed (returned true), must widen\n", pm); }
-            r = pcrec_poss_ctx_admits(0x5, af3.iv, af3.n, pm, out);
+            r = pcrec_poss_ctx_admits(CTXFN_NOT_NEXT, af3.iv, af3.n, pm, out);
             cells++;
             int full = 1;
             for (int i = 0; i < 32; i++) if (out[i] != 0xFF) full = 0;
