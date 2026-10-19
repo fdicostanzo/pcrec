@@ -551,7 +551,7 @@ DIFFER_PINS = {
     #   fd-pres-g1     1271 (byte) / 1105 (utf8) on c-default, every one a
     #     start-stamp mover (`<PREFIX>_REQ_WHY` dominated -> emitted); c-vm an
     #     exact 0: no pre-check under --engine=vm is dominated (no DFA scan);
-    #   fd-pres-pick   187 (byte) / 262 (utf8) on c-default, no stamp moves
+    #   fd-pres-pick   187 (byte) / 262 (utf8) on c-default (188 / 263 once the manifest `a.{1,5}z` joined the corpus, pinfix), no stamp moves
     #     (the parts the pre-check tests, not its admission); c-vm an exact 0:
     #     every span there is REQUIRED (P0), which the pick's deny cannot reach.
     ("byte", "--memfn=no-pres-set-lead", "c-default"): (16, 0, "é{2}cat".encode()),
@@ -562,8 +562,8 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (1105, 1105, b"ab"),
     ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
-    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (187, 0, b"a.{1,5}z"),
-    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (262, 0, b"a.{1,5}z"),
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (188, 0, b"a.{1,5}z"),    # was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (263, 0, b"a.{1,5}z"),    # was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }

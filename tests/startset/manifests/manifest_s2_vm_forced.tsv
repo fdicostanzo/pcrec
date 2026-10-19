@@ -1574,6 +1574,7 @@ tests/litscan/presence_deny.rxt:426	--features all --encoding=byte	666f6f283f3a7
 tests/litscan/presence_deny.rxt:501	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
 tests/litscan/presence_deny.rxt:577	--features all --encoding=utf8	782e79
 tests/litscan/presence_deny.rxt:609	--features all --encoding=byte	61623f63
+tests/litscan/presence_deny.rxt:643	--features all --encoding=byte	612e7b312c357d7a
 tests/lookaround/alpha_spellings.rxt:115	--features lookaround	282a706f7369746976655f6c6f6f6b626568696e643a612962
 tests/lookaround/alpha_spellings.rxt:129	--features lookaround	282a6e6c623a612962
 tests/lookaround/alpha_spellings.rxt:144	--features lookaround	282a6e656761746976655f6c6f6f6b626568696e643a612962
@@ -3638,6 +3639,7 @@ tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6
 # b3build (D164 B3, 2026-10-12): +15 rows, every one a tests/endmark/b3_rows.rxt block (the end-mark answer net joined the corpus;
 # these blocks' VM-forced artifacts are VM-hat movers, which the hat's own vmhat_checks.py measured); no existing row moved.
 # b3bfix (2026-10-18, b3brev finding 2): +8/-1: the eight tests/litscan/presence_deny.rxt blocks the forced VM hats (the new corpus file); tests/utf8/wclass_illformed.rxt:445 `x.y` under utf8 leaves because presence_deny.rxt:577 holds the same (text, options) and now sorts first and takes its id (ssbuild3's ctxnode precedent); census_s1.py on lane/memfn-b3b 54d582e8b (-fno-start-set / -fno-req-handoff arms), corpus rows only, bench rows NOT refreshed; no other row moved.
+# pinfix (2026-10-18): +1: tests/litscan/presence_deny.rxt:643 `a.{1,5}z` (the emit_sweep no-fd-pres-pick manifest pattern joined the corpus); census_s1.py not re-run, the row is the vmhat_checks mover list's own report (corpus row only, bench rows NOT refreshed); no other row moved.
 tests/endmark/b3_rows.rxt:123		615c6e7b302c327d24
 tests/endmark/b3_rows.rxt:178		615c6e7b302c327d3f24
 tests/endmark/b3_rows.rxt:186	--features classes	283f3a5c732b7c785c732a3f2924

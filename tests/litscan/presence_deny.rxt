@@ -638,3 +638,67 @@ ns 3 "abbc"
 ns 4 "abbc"
 ns 0 "c"
 ns 1 "c"
+
+# the emit_sweep DIFFER_PINS manifest of the `--memfn=no-fd-pres-pick` arms: the pick deny moves this pattern's bytes, so the pin needs it in the corpus (pinfix_report.md)
+pattern a.{1,5}z
+features all
+encoding byte
+ms 0 "abz" 0 3
+ns 1 "abz"
+ns 2 "abz"
+ns 3 "abz"
+ms 0 "a1234z" 0 6
+ns 1 "a1234z"
+ns 2 "a1234z"
+ns 3 "a1234z"
+ns 4 "a1234z"
+ns 5 "a1234z"
+ns 6 "a1234z"
+ns 0 "a123456z"
+ns 1 "a123456z"
+ns 2 "a123456z"
+ns 3 "a123456z"
+ns 4 "a123456z"
+ns 5 "a123456z"
+ns 6 "a123456z"
+ns 7 "a123456z"
+ns 8 "a123456z"
+ns 0 "xaz"
+ns 1 "xaz"
+ns 2 "xaz"
+ns 3 "xaz"
+ms 0 "azz" 0 3
+ns 1 "azz"
+ns 2 "azz"
+ns 3 "azz"
+ms 0 "abbbbbz az" 0 7
+ns 1 "abbbbbz az"
+ns 2 "abbbbbz az"
+ns 3 "abbbbbz az"
+ns 4 "abbbbbz az"
+ns 5 "abbbbbz az"
+ns 6 "abbbbbz az"
+ns 7 "abbbbbz az"
+ns 8 "abbbbbz az"
+ns 9 "abbbbbz az"
+ns 10 "abbbbbz az"
+ms 0 "z a.z zz" 2 8
+ms 1 "z a.z zz" 2 8
+ms 2 "z a.z zz" 2 8
+ns 3 "z a.z zz"
+ns 4 "z a.z zz"
+ns 5 "z a.z zz"
+ns 6 "z a.z zz"
+ns 7 "z a.z zz"
+ns 8 "z a.z zz"
+ms 0 "aaaaaz" 0 6
+ms 1 "aaaaaz" 1 6
+ms 2 "aaaaaz" 2 6
+ms 3 "aaaaaz" 3 6
+ns 4 "aaaaaz"
+ns 5 "aaaaaz"
+ns 6 "aaaaaz"
+ns 0 "a\x0az"
+ns 1 "a\x0az"
+ns 2 "a\x0az"
+ns 3 "a\x0az"

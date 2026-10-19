@@ -91,7 +91,10 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   argument in that function's header: a set member below the re-entry's scan
   position (`a.?b` with decoy landmarks), below the REPORTED start (`\K`),
   lookbehind bytes below the attempt, whole-run and rest members after a run
-  window, utf8. Runs at the default route in the corpus;
+  window, utf8; and `a.{1,5}z`, the population of emit_sweep's
+  DIFFER_PINS manifest for the `--memfn=no-fd-pres-pick` arms (pinfix: the
+  pattern occurred in no .rxt, so the pin found no population). Runs at the
+  default route in the corpus;
   `tests/memfn/run_presence.sh` [deny-answers] runs it under each of the
   three new denies.
 - **gen_presence_deny.py** — writes `presence_deny.rxt` with
