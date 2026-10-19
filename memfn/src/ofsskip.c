@@ -804,6 +804,8 @@ const arm ofsskip_arm = {
     1,                  /* a multi-byte offset reads pcrec's table (table_of) */
     MF_INC_STRING_H,    /* fn-memchr's memchr, the run compare's memcmp */
     1,                  /* fn-memchr's memchr, the run compare's memcmp */
+    ARM_TESTS_EVERY,    /* the scan proves plan_hint's term, verify_chain
+                           tests every other, whatever its need */
 };
 
 /* ---- fn_rows[]' contracts ------------------------------------------------

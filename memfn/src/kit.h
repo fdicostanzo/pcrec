@@ -327,7 +327,30 @@ typedef struct arm {
        `includes` is: a constant 1-8 byte memcpy is a register load, not a
        call (§R4.3.3's exclusion) */
     uint8_t     libc;
+    /* Which terms of a FIND predicate the row's text TESTS at every
+       candidate (R-25; appended last, so a row that leaves it out states
+       ARM_TESTS_UNSTATED). kit_class reads it: only a tested offset-0 term
+       contributes to proven0, a tested offset -1 term to proven_prev, and a
+       FIND row that states nothing is refused, never given a reading. A row
+       that renders no FIND (its contract's op column) need not state it */
+    uint8_t     tests;
 } arm;
+
+/* arm.tests's values. */
+enum {
+    ARM_TESTS_UNSTATED,     /* 0: the row has not said (refused on a FIND)   */
+    ARM_TESTS_EVERY,        /* every term, OPTIONAL ones included            */
+    ARM_TESTS_REQUIRED,     /* a term only where it AND its predicate are
+                               REQUIRED: an OPTIONAL term may go untested    */
+};
+
+#define kit_class MF_NS(kit_class)
+/* The form CLASS of row `a`'s text for site `s` into *out (compose.c): what
+ * the text proves, as facts (D157). NULL, or why the row cannot say (a FIND
+ * row whose `tests` is UNSTATED; *out then proves nothing). One function
+ * serves mf_define and mf_ask; external so tests/memfn/proven_check.c can ask
+ * it of a test-only row. */
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out);
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
