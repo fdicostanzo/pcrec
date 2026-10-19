@@ -1,5 +1,13 @@
 # ctx_span — [DD-11.5] re-scoped: the span-context producer (D168) and `A_BOL`/`A_EOL` into `A_CTX` (D168 addendum 1); DESIGN NOTE, PROPOSED, nothing built
 
+**Revision 2.1** (lane `ctxspan21`, opus, design only, 2026-10-19, main `fd1d1fc98`, abi 80).
+It applies the re-check of revision 2 (the section "Re-check of revision 2 (critR ...)" at
+the end of `docs/dev/reviews/2026-10-18-r4-ctx-span.md`): R1-R4 ACCEPTED, unlocks U1/U2
+filed. Changed text is marked `[r4rc <id>]`. Read §R2.1 first; §13 maps every re-check id to
+its discharge. Nothing was built, run or measured for 2.1: the box was in a bench timing
+window, so every new claim is read off the source or the note, and what needs a run is
+marked OWED with its command.
+
 **Revision 2** (lane `ctxspan2`, opus, design only, 2026-10-18, main `3b0f87b55`, abi 80).
 It applies review r4 (`docs/dev/reviews/2026-10-18-r4-ctx-span.md`): every finding is
 ACCEPTED except C3, which ruling Q-r4-1 REJECTED; the rulings Q-r4-1..Q-r4-3 are applied.
@@ -25,6 +33,36 @@ lane made, each marked `[r4 <id>]` there), `memfn/window_contract.md`, `ucp_desi
 the [ENG-LOOK] row.
 
 ---
+
+## §R2.1. What revision 2.1 changed (finding → section)
+
+- **R1 (MAJOR): the absent index is gated on the ROW** (§4.2.3). Revision 2 applied
+  `right_abs = end_ok` (and the mirror) to every row. When `has_end` holds, the `V_END` view
+  is closed under every context atom, so a copied row (`\b`, `(?=C)`) would read the next
+  byte as absent where today it reads the atom's bit. On `\bfoo\b` that interns an `endvar`
+  where today there is none. The index is now `q = (right_abs && ctxfn_reads_absent_next(fn))
+  ? 2 : bit(right)`, and the mirror for `p`. That is today's six functions and today's
+  `N_BOT_M`/`N_EOL_M` arms exactly, so P2a's zero-mover argument is restored on that basis.
+  P2d's zero movers rest on the same gate. A consequence: no reverse machine ever meets an
+  absent-prev-reading row, so A1's per-direction read cannot be reached by any witness, and
+  S341's re-aim moves to R1's plant (§4.5.4, §6 CK-5).
+- **R2 (BLOCKER if built): in-span narrowing is PER THREAD** (§3.4, §3.6, §3.8, kit_proof
+  §5.2). Narrowing the whole per-offset UNION is unsound under alternation: `a(?=b)[a-z]|ac`
+  would drop `c` from `S_1`, and `[ab](?<=a)c|bc` would drop `b` from `S_0`. On the next side
+  the walk restricts only the classes of frontier states reached THROUGH the item. On the
+  previous side it narrows only when every thread at `d − 1` passes the item, and otherwise
+  ends `exact_len` at `d − 1`. The narrowed sets live in the SLICE'S OWN RECORD (`MkLang`).
+  `KsetWalk.k[]` stays the pass-through hull, so the k-set consumers (offset-k selection, the
+  run pin, the OFS rows, the listing) are unmoved by construction (§3.8). Both witnesses join
+  CK-6, `conj.txt` D and X0's list as text. The union-narrowing plant is PROPOSED (SP-6 here,
+  S1150 in kit_proof §6.3). `conj.py` does not model the in-span rule; that is OWED (§3.8).
+- **R3 (MINOR): a multi-byte newline convention is REFUSED BY NAME until UL-e** (§3.3). After
+  P2c no fallback kind exists, since `N_BOT_M`/`N_EOL_M` are deleted.
+- **R4 (MINOR): the edit set is checked against the real diff** (§4.5.4, §7). At build the
+  lane regenerates the edit set from the actual P2a-P2c diff and compares it with
+  `ctx_span/edit_set.tsv`. The derived sabotage list is taken from the regenerated set.
+- **Unlocks U1 and U2 are filed** (§10). U1 makes absent its own context atom (the ⊥
+  pseudo-character). U2 is R2's fix written once, in the shared frontier iterator `wclose`.
 
 ## §R2. What revision 2 changed
 
@@ -566,16 +604,69 @@ typedef struct { uint32_t left, right; bool left_abs, right_abs; } Sides;
    emitter's boundary accept, assertions_design §3.8.3.1, never by a closure) */
 ```
 
-The `N_CTX` arm indexes `3p + q`, with `p = left_abs ? 2 : bit(left)` and the mirror for `q`.
-This is the same predicate today's arms compute over the same bits:
+**The absent index is gated on the ROW** `[r4rc R1]`. Revision 2 wrote `p = left_abs ? 2 :
+bit(left)` and the mirror for `q`, for every row. That is wrong for the copied rows. When
+`has_end` holds, the end view (`V_END`, `end_ok` true) is closed under EVERY context atom
+(`sides_of`'s `up_atom` ranges over the atoms, and the view is chosen at `pos == n`
+afterwards). Today a row there reads the atom's bit on the right. Under revision 2's rule a
+copied row would read absent instead, which is `out` by the copy. Take `\bfoo\b` after its
+`o`, under `V_END × WORD`. Today the trailing `\b` reads left `in` and right `in` (the WORD
+atom), so it FAILS. Under revision 2's rule it reads right absent, which is `out`, so it
+PASSES. The end view's closure then differs from the eol view's, and `endvar` interns where
+today it is −1. That flips `dfa_has_endvar`, the views flag, the `-bounded` forms and the
+stamps. It hits utf8 unanchored forward machines with a copied next-reading row, and `\b` with
+`\z` or `(?m)`. The answers do not change, since the end view is read only at `pos == n`, but
+P2a's zero-mover claim is false under it. There is no third direction case.
+
+The `N_CTX` arm indexes `3p + q` with the absent value taken ONLY where the row reads it:
+
+```c
+p = (left_abs  && ctxfn_reads_absent_prev(fn)) ? 2 : bit(left);
+q = (right_abs && ctxfn_reads_absent_next(fn)) ? 2 : bit(right);
+```
+
+**This equals today's code exactly**, function by function:
+- the six copied rows have both predicates false by construction (§4.2.1), so the index never
+  takes 2. The arm computes `f(bit(left), bit(right))` over the same bits as today's `N_CTX`
+  arm (`dfa.c`'s `(ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k)`). "No byte on this
+  side" still arrives as atom 0, the empty vector, as `sides_of`'s comment says;
+- `MLINE_BOL` reads both. Its grid with `p = bot_ok ? 2 : bit(left)` and `q = end_ok ? 2 :
+  bit(right)` passes iff `bot_ok || (left ∈ \n && !end_ok)`, which is today's `N_BOT_M` arm;
+- `MLINE_EOL` reads the next side only. It passes iff `end_ok || right ∈ \n`, today's
+  `N_EOL_M` arm;
+- after P2d (§4.6), `SUBJECT_START` reads `bot_ok` (today's `N_BOT`) and `SUBJECT_END` reads
+  `end_ok` (today's `N_END`).
+
+**P2a's zero-mover argument, restored on that basis.** P2a re-encodes the six functions and
+changes the index. Because the copied rows never take index 2, every closure of every view
+under every atom computes today's bit, so no state's closure changes, `endvar`/`eolvar` intern
+exactly as today, and the emitted bytes are today's. The witness the old rule would have moved
+is `\bfoo\b` (an `endvar` interned at `V_END × WORD`). It joins CK-5's population and is the
+plant's witness (S341 re-aimed, §4.5.4). **P2d's zero-mover claim rests on the same gate**: a
+`\A`/`\z` row reads absent and takes index 2, and every copied row on the same machine keeps
+its bit read, so folding `N_BOT`/`N_END` into rows moves no other row's closure.
+
+**Per direction** `[r4 A1]`. `left_abs`/`right_abs` come from `sides_of`, the one place that
+knows direction: forward `left_abs = bot_ok`, `right_abs = end_ok`; reverse `right_abs =
+end_ok`, `left_abs = false`. This is the same predicate today's arms compute over the same
+bits:
 - `N_BOT_M` reads `bot_ok` forward. No reverse machine carries it, because `has_bot` routes
-  it to `ENG_ATTEMPT`.
-- `N_EOL_M` reads `end_ok` in both directions.
+  it to `ENG_ATTEMPT`, which has no reverse pass (`nfa.c`'s `\G` comment states the same
+  routing fact);
+- `N_EOL_M` reads `end_ok` in both directions;
 - `N_END` reads `end_ok` in both directions.
 
-The same mapping is the hook UL-e and [ENG-LOOK] extend. Witness: `[a-z]+\b` on `"ab"`, whose
-reverse `s0` has a letter on the left and nothing on the right (CK-5, S341 re-aimed, §6).
-The forward absent read keeps `(?<![a-c])\d` at 0 as its corpus cell.
+**A consequence of R1** `[r4rc R1]`: with the row gate, only absent-PREV-reading rows read
+`left_abs`, and every such row (`MLINE_BOL`, and `SUBJECT_START` after P2d) sets `has_bot`.
+So no reverse machine ever reads `left_abs`, and A1's bug (`left_abs` from `bot_ok` in
+reverse) can no longer be reached by any witness. Revision 2's witness `[a-z]+\b` reads no
+absent under the gate. A1's fix stays as the defensive form, backed by an assertion in the
+closure: a reverse machine that meets an absent-prev-reading row is an internal error naming
+the routing dependency. `[a-z]+\b` at `n` stays a CK-5 corpus cell. S341's re-aim moves to
+R1's plant (§4.5.4).
+
+The same mapping is the hook UL-e and [ENG-LOOK] extend, and U1 (§10) replaces it. The
+forward absent read keeps `(?<![a-c])\d` at 0 as its corpus cell.
 
 #### 4.2.4 Why both new rows are stated over `{\n}`, and A5 `[r4 A5]`
 
