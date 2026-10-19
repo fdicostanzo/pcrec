@@ -221,10 +221,12 @@ typedef struct {
 - **The bounds are the producer's own** `[r4 B10]`. Revision 1 sized the record by the
   kit's carrier constants (`MF_MAX_BACK`, `MF_MAX_AHEAD`, `MF_MAX_CTX`). That contradicted
   its own rule that "the producer states what the item gives and the carrier truncates".
-  The walk's bound is `PCREC_PREFIX_K_MAX`. `PCREC_CTX_ITEM_TERMS` (the widest item: a
-  fixed-width lookbehind's width) and `PCREC_CTX_ITEMS` are compile budgets in `limits.def`,
-  labelled with D90's discipline. A walk that would exceed one states the item SUPERSET, or
-  drops it and records the drop in the listing, never silently. The carrier's bounds are
+  The walk's bound is `PCREC_PREFIX_K_MAX`. `PCREC_CTX_ITEM_TERMS`, the widest item, is
+  DERIVED from it: an item's offsets lie within `PCREC_PREFIX_K_MAX` of the span edge on its
+  side. `PCREC_CTX_ITEMS` is a compile budget in `limits.def` (D90), labelled UNMEASURED
+  until P1a counts items per artifact (memory `pcrec-suspect-tuning-constants`). A walk
+  that would exceed one states the item SUPERSET, or drops it and records the drop in the
+  listing, never silently. The carrier's bounds are
   applied at SEND (§3.9). A consumer that needs the context COMPLETE (`cover`) declines when
   an item is dropped at send; a filter consumer may send fewer.
 - **`nctx` 0 is "no context fact"**, which every reader treats as "the context is
@@ -953,15 +955,18 @@ classified by hand, by comparing the two arms:
 | | `\A` (`A_BOL` after P2c, `N_BOT`) | `\z` (`A_END`, `N_END`) |
 |---|---|---|
 | DELETED | `internal.h:739` (`A_BOL`), `:1993` (`N_BOT`); `nfa.c:620` (the lowering arm); `dfa.c:693` (eps label), `:1019-1021` (closure arm); `kset.c:136`; `emit_vm.c:8892` (the `^`/`\A` arm, its position half after P2c); `possessify.c:621-629` (widen-and-decline = the `A_CTX` arm's non-arm-A answer) | `internal.h:752`, `:1995`; `nfa.c:642`; `dfa.c:695`, `:1027-1029`; `kset.c:138`; `emit_vm.c:8952` (the `\z` arm) |
-| LABEL | 45 label tokens: `atomic.c` ×10, `revdet.c` ×5, `emit_vm.c` ×9, `possessify.c` (`:317`, `:386`, `:975`, `:1342`, `:1519`, `:1760`), `lower_enc.c` ×3, `mrl.c` (`:158`, `:327`, `:541`, `:682`), `derive.c:65`, `altcls.c:402`, `select_engine.c:254`, `req.c:608`, `startset.c:123`, `endwin.c:149`, `:302`, `parse.c:141`, `definitions.c:218`, `:431`, `ctxnode.c:92`, `mod_backrefs.c:611`, `mod_lookaround.c:192`, `mod_vars.c:226`, `rxt_compose.c` ×2, `internal.h:5108` | the same lists' `A_END` tokens (45), plus `derive.c:231`, `:292`, `startanch.c:129`, `endwin.c:299`, `definitions.c:220` |
+| LABEL | 54 label tokens: `atomic.c` ×10, `revdet.c` ×5, `emit_vm.c` ×9, `possessify.c` (`:317`, `:386`, `:975`, `:1342`, `:1519`, `:1760`), `lower_enc.c` ×3, `mrl.c` (`:158`, `:327`, `:541`, `:682`), `derive.c:65`, `altcls.c:402`, `select_engine.c:254`, `req.c:608`, `startset.c:123`, `endwin.c:149`, `:302`, `parse.c:141`, `definitions.c:218`, `:431`, `ctxnode.c:92`, `mod_backrefs.c:611`, `mod_lookaround.c:192`, `mod_vars.c:226`, `rxt_compose.c` ×2, `internal.h:5108` | 55 label tokens: the same lists' `A_END` tokens, with `altcls.c:404`, `mrl.c:160`/`:543`/`:684`, `possessify.c:318`/`:977`/`:1343`/`:1520`, `derive.c:231`, `:292`, `startanch.c:129`, `endwin.c:299`, `req.c:610`, `startset.c:125`, `definitions.c:220` in place of the `A_BOL` positions |
 | GENERIC | `mod_assertions.c:86` (`\A` builds the row and keeps its `pcrec_lb_raise(cx, 1)`); `parse.c:1681` (`^` outside `(?m)` builds the same row); `nfa.c:1316` (`has_bot`: the `N_BOT` clause folds into P2c's predicate); `cr_ctx_reads` gains `ctxfn_reads_membership` (NEW, shared): an absent-only row contributes no set to the class axis, or every artifact gains an atom | `mod_assertions.c:88` (node choice); `dfa.c:1591` (`has_end`: `case N_END` folds into P2c's predicate); the shared `cr_ctx_reads` predicate |
 | STILL SPECIAL | `startanch.c:114-117` (`SA_BOT`, which every anchoring reader keys on); `derive.c:225-227` (the killed-`^` route optimization); `derive.c:291` (`bol_out`); `widths.c:128-129` (`EM_S`) | `endwin.c:134` (`EW_Z`, the end pin `rev-end` and `end_window` read); `possessify.c:657` (`\z`'s UNCONDITIONAL upward-closure transparency, where `A_CTX`'s arm widens); `widths.c:132` (`EM_E`); `definitions.c:429` (`eol_tail_plain` admits `\z` inside `\Z`'s row `(?=\n?\z)` for D164's `tagged` form, and answers false for `A_CTX`) |
 
-**The headline.** The ENGINE layer deletes completely: two NFA kinds, their closure arms, eps
-labels, kset labels, the `has_bot`/`has_end` cases and the two VM arms, 15 sites. They need
-one new generic predicate. The ANALYSIS layer does not delete: 8 sites read `\A`/`\z` as
+**The headline.** 15 sites DELETE. 12 of them are in the ENGINE layer: the two NFA kinds,
+the two lowering arms, two eps labels, two closure arms, two kset labels and the two VM arms.
+They need one new generic predicate (`ctxfn_reads_membership`), plus the `has_bot`/`has_end`
+clauses that fold into P2c's predicates. 3 are in the AST: the two enum members and
+possessify's `^` arm. The ANALYSIS layer does not delete: 8 sites read `\A`/`\z` as
 STRUCTURE (anchoring, the end pin, possessify's exemption, the widths marks, D164's tail).
-Each would become a recognizer of a row on data. The 90 label tokens are not lines.
+Each would become a recognizer of a row on data. The 109 label tokens (54 + 55) are tokens,
+not lines.
 
 A recognizer that a future analysis forgets errs in a known direction:
 - for `startanch`, `derive`, `endwin` and possessify it is a lost optimization (sound): no
@@ -978,15 +983,17 @@ context state over one table.
 - The VM emits both from the same rows.
 - The NFA kinds `N_BOT`/`N_END` and every engine arm above delete.
 
-The deletion count is the 15 ENGINE sites, at the cost of one generic predicate, with zero
-new special cases. A full AST fold would delete the same 15 plus 4 enum/arm lines, add 8
-recognizers, and re-open D62's hazard. That trade fails the ruling's own test, because
+The NFA-level fold deletes the 12 engine sites (the two lowering arms become one row
+lookup, and the two VM arms become rows) at the cost of one generic predicate, with zero new
+special cases. A full AST fold would also delete the 3 AST sites and the 109 label tokens,
+add 8 recognizers, and re-open D62's hazard. That trade fails the ruling's own test, because
 simplification is counted in kinds a reader must know, and 8 data recognizers are more than
 2 kinds.
 
 P2d's movers are predicted as ZERO. The absent-only rows read no membership (no atom), and
-`has_bot`/`has_end` are preserved. It lands as its own step after P2c (zero bytes, so no abi
-event, but its own CK-4 run). Its derived sabotage rows (`ctx_span/derived_rows.tsv`,
+`has_bot`/`has_end` are preserved. It lands as its own step after P2c with its own CK-4 run.
+If that run finds a moved byte (an emitted legend or listing that names an NFA kind), it is
+an abi event like P2c, with §4.5.1's recipe. Its derived sabotage rows (`ctx_span/derived_rows.tsv`,
 `owner:P2d`) number 31: the NFA lowering (`compile_ast`), `first_of`, `vm_emit_node`, the
 kset and req walks (`rb_walk`, `ss_walk`), `pcrec_minw`, `pcrec_nullable`, `rd_shape`,
 `dis_walk`, `pcrec_bref_mark` and others. Under the NFA-only form most of them do not move,
@@ -1053,8 +1060,9 @@ keep the rows, which makes no exception for two kinds, and SEND them nowhere unt
 T-CUT change asks. If P2d is taken they become `ctx-onesided`.
 
 **Q7. P2d (§4.6): the NFA-level fold, the full fold, or none?** The forces:
-- the NFA-level fold deletes the 15 engine sites with zero new special cases;
-- the full fold deletes 4 more lines and adds 8 recognizers that `-Wswitch` cannot see;
+- the NFA-level fold deletes the 12 engine sites with zero new special cases;
+- the full fold also deletes 3 AST sites and 109 label tokens, and adds 8 recognizers that
+  `-Wswitch` cannot see;
 - no fold keeps two NFA kinds and their arms beside a table that already expresses them.
 
 *Leaning:* the NFA-level fold, landed after P2c as its own step, with its re-derived
