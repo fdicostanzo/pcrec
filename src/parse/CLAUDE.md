@@ -2180,3 +2180,15 @@ are refused by `ext.c` today; their producer raises LB when it lands.
 ## Convention: module handlers (from the retired plan row [SR-6], 2026-10-12)
 
 A module's handlers live in their own translation unit in this directory, as-built FLAT (`mod_modifiers.c`, `mod_verbs.c`, `mod_classes.c`, ... — not a `src/parse/ext/` subdirectory), added when the module lands. The handler families the registry names are esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc, grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier, grp_callout, verbs and cls_posix. This is a rule to follow when a module is implemented, not a step to schedule.
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+
+`parse.c`'s `^`/`$` cases resolve `(?m)` into the CHOICE OF NODE: under
+`(?m)` they build an A_CTX over the newline set with `CTXFN_MLINE_BOL`/
+`_EOL` (`mline_ctx`, `u.ctx.anchor` set, no lookbehind raise, A8), else
+A_BOL/A_EOL with no payload. `nl_convs[]` is the newline-convention table the
+choice reads (one row, LF): a convention whose newline is not one byte
+REFUSES BY NAME (re-check R3; population 0 today). `mod_assertions.c`'s
+multiline pin is deleted. `registry.c`'s `^`/`$` descriptions now name the
+context node. `ctxnode.c`'s `look_fn` and `pcrec_ast_ctx` take `uint16_t`.
+The `Ast.u.anch.multiline` mentions above are history.

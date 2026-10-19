@@ -11,8 +11,8 @@
  *
  *  1. KILL. Every `\G` becomes the never node (an empty `A_CLASS`):
  *     REQUIRED, since a `\G` left in Q would assert at the position the
- *     controller searches Q from. Every `^`/`\A` with no `(?m)`
- *     (`A_BOL`, `!u.anch.multiline`) becomes never: a route optimization,
+ *     controller searches Q from. Every `^`/`\A` (`A_BOL`; a `(?m)^` is
+ *     an A_CTX row, [DD-11.5]) becomes never: a route optimization,
  *     false past the floor anyway. NOT killed: a node inside a lookbehind or
  *     inside a group called (transitively) from one, which can be read at a
  *     position below the attempt start; `(?m)^`. A `\G` there DECLINES.
@@ -223,7 +223,7 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
         q->killed_g++;
         return (QRes){ never_node(cx), true, false };
     case A_BOL:
-        if (lb || a->u.anch.multiline) return (QRes){ a, false, false };
+        if (lb) return (QRes){ a, false, false };
         q->killed_bol++;
         return (QRes){ never_node(cx), true, false };
     case A_CLASS:
@@ -288,7 +288,7 @@ static void qp_walk(QProps *p, const Ast *a, bool lb)
     for (;;) {
         switch (a->k) {
         case A_GSTART: p->g++; return;
-        case A_BOL: if (!lb && !a->u.anch.multiline) p->bol_out++; return;
+        case A_BOL: if (!lb) p->bol_out++; return;
         case A_CLASS: case A_EMPTY: case A_EOL: case A_END: case A_CTX:
         case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
             return;

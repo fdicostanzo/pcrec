@@ -3973,3 +3973,26 @@ detects them. S962 plants the resolver's derived-section refusal out
 (`ks_probe_dir`, src/core/ksrc.c), so a listing fed back reaches the `.rxt`
 reader and is refused for an unrelated reason; the detector holds the
 refusal's CLASS. Solo verdicts in `docs/dev/lanes/ksrc23_report.md`.
+
+**[DD-11.5] part 2, the (?m) fold — S1151-S1161, S341 re-aimed; S76, S77,
+S343, S762, S900 retired (lane ctxbuild, 2026-10-19, abi 81;
+`docs/design/ctx_span.md` §4.5.4, the population derived from the edit set):**
+the `multiline` field, the NFA kinds `N_BOT_M`/`N_EOL_M`, the newline
+contributor row and its knob are deleted, so five rows lost their sites and
+RETIRE (files deleted, numbering unchanged): S76 (its gate
+`run_mlinectx_identity.sh` and arm `mlinectxidentity` retired; its re-aimed
+plant would be S71's), S77 (possessify's multiline read; witness kept:
+`tests/assertions/multiline.rxt` §4b), S343 (the shared-set `rows` mask,
+dead logic; witnesses kept in `tests/ucp/ctxnode.rxt`), S762 (endwin's
+multiline decline; the A_CTX arm answers it), S900 (derive's multiline clause;
+witnesses kept in `tests/compound/`). **S341 RE-AIMS** to re-check R1's plant
+(the absent index taken for every row), detector the R1 cell in
+`tests/assertions/run_assertions_tests.sh` §1c; its former plant (s0 under the
+last atom) moved to **S1151** unchanged. New rows: S1152/S1154 (the parser
+builds A_BOL/A_EOL for `(?m)^`/`(?m)$`), S1153/S1158 (one grid cell flipped,
+hex updated; CK-8 names it), S1155 (A8, the lookbehind raise; §1c's VALID_LB
+cell), S1156 (possessify narrows an absent-reading row; ctx_admits_check),
+S1157 (has_bot ignores the row: the routing assertion refuses), S1159
+(has_end ignores it), S1160 (A1's reverse left_abs plant, DECLARED UNREACHED),
+S1161 (the VM's (?m)^ form loses `pos < n`). Every figure is OWED: no mech ran
+(bench timing window); `docs/dev/lanes/ctxbuild_report.md` lists the runs.

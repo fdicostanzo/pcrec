@@ -325,3 +325,9 @@ Arm A (`-fno-poss-ctx-follow`, stamp bits 0x1 A0 / 0x2 A1, ENGINE-SELECTING,
 - `ctx_admits_check.c` -- exhaustive model check of `pcrec_poss_ctx_admits`
   (16 truth tables x 3 non-empty P masks x 53 C sets, plus the named A-F3
   cell); built through `tests/lib/unit_cc.sh`'s `unit_build`.
+
+## [DD-11.5] (lane ctxbuild, 2026-10-19)
+
+`ctx_admits_check.c` sweeps all 512 rows of the 9-cell context table
+(`src/core/ctxfn.def`) x 7 left-polarity masks over three values; a row that
+reads an absent side must answer no-narrowing (S1156).

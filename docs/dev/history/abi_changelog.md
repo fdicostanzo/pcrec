@@ -23,7 +23,25 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `80` on every artifact today (lane e1 bumped it from
+- **`rx_info.abi` is `81` on every artifact today (lane ctxbuild bumped it
+  from 80, 2026-10-19: [DD-11.5] part 2's P2c, docs/design/ctx_span.md rev
+  2.1 §4.4-§4.5, D168 addendum 1).** `(?m)^` and `(?m)$` are no longer
+  `A_BOL`/`A_EOL` with a parse-resolved `multiline` field lowered to two
+  NFA kinds: the parser builds them as `A_CTX` rows (`MLINE_BOL`,
+  `MLINE_EOL`) of the one 9-cell context truth table, `src/core/ctxfn.def`.
+  Their newline set therefore enters the DFA's context-set list in NFA
+  order with every other context set instead of after them, so a DFA
+  machine with a `(?m)` anchor BEFORE a different context set (`(?m)^a|\B`)
+  lists its sets in another order: its atoms renumber, its per-atom tables
+  permute and, on the computed-goto engine, its state bodies are numbered
+  differently — answer-identically. Every other artifact moves only the abi
+  digits: the VM's two forms emit the old text verbatim, no stamp, no
+  `--emit-ir` row, no route and no struct offset moves (a light corpus
+  probe over 2,451 assertion-bearing patterns at default/`--engine=vm`/
+  `-e utf8`/both/`--emit-ir`: one mover, `(?m)^a|\B`, at default and utf8,
+  answer-checked over 1,365 subjects; docs/dev/lanes/ctxbuild_report.md).
+  The full mover census is owed to the post-window validation lane.
+- **`rx_info.abi` was `80` (lane e1 bumped it from
   79, 2026-10-18: [ENTRY-TABLE] E1, the part-layout controls,
   docs/design/compound_entries.md rev 4 §5.1, D163 addenda 8-12).** The
   stamp vocabulary gains `<PREFIX>_PART_LAYOUT` and

@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 80
+#define PCREC_ARTIFACT_ABI 81
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -4230,8 +4230,8 @@ static bool dfa_interior_dead(const Dfa *d, const int *fam)
  * assertion that is not reachable at an accepting position leaves every
  * state's accept bits equal across the views, and such a pattern keeps the
  * pre-wave scalar accept and the pre-wave loop text. False for every state of
- * every machine with no class axis by construction (with no N_WORDB and no
- * N_EOL_M the closures coincide, src/ir/dfa.c), which is what makes the
+ * every machine with no class axis by construction (with no context node the
+ * closures coincide, src/ir/dfa.c), which is what makes the
  * corpus's artifacts unmoved. */
 static bool dfa_has_clsacc(const Dfa *d)
 {
@@ -8915,7 +8915,7 @@ static bool finish_prio_const(const CandSel *s)
  * P0 — THE ROUTING DEPENDENCY, INHERITED AND THEREFORE STATED. The predicate
  * reads `fs = fd->s0`. That is the right state at `search_from == 0` only
  * because `ENG_UNANCH` implies `!pcrec_nfa_has_bot` (`src/core/compile.c`), i.e. no
- * `N_BOT`/`N_BOT_M`/`N_GSTART`: `s0` is closed with `bot_ok = true,
+ * `N_BOT`/`N_GSTART`/absent-prev context row: `s0` is closed with `bot_ok = true,
  * gst_ok = true` and `s1u[UPC_PLAIN]` with `false, false`, so with none of
  * those nodes present the two closures coincide and intern to the same id.
  * NOTHING IN P1-P5 CHECKS THIS — `dfa_needs_seed` compares only `s1u[u]`

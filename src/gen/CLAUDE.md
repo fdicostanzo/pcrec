@@ -4472,3 +4472,11 @@ which moves every artifact (the cpset manifest's re-record).
 - **The one-attempt bound is an EMISSION REQUEST** (`PcrecEmitIn.bound`,
   `pcrec_emit_one_attempt`), read on any artifact; part mode is its first
   reader, not its owner (check: tests/compound/check_parts.py step 6).
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19, abi 80 -> 81)
+
+`emit_vm.c`: `vm_ctx_forms` is generated from `src/core/ctxfn.def`'s VM
+columns; two forms `VMCTX_MLBOL`/`VMCTX_MLEOL` emit the old `(?m)^`/`(?m)$`
+text and role strings verbatim, and the two hand arms in `vm_emit`'s
+A_BOL/A_EOL cases are DELETED. `emit_dfa.c`: `PCREC_ARTIFACT_ABI` 81 (the DFA
+list-order movers, `docs/dev/history/abi_changelog.md`).

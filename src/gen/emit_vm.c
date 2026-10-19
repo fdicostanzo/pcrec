@@ -1898,9 +1898,9 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
          * assertions, which would make "scan ahead by stride" wrong).
          *
          * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected for
-         * `Ast.u.anch.multiline` awareness and needing none: this DECLINES on the
-         * kind, and a `$` is zero-width under either spelling. The full
-         * inspection is recorded at the field (src/core/internal.h).
+         * multiline awareness and needing none: this DECLINES on the kind, and
+         * a `$` is zero-width under either spelling (a `(?m)$` is an A_CTX
+         * node since [DD-11.5]).
          *
          * [M6.6.2] RE-INSPECTED FOR `A_LOOK` and SOUND UNCHANGED, for the
          * sentence directly above: a lookaround is ZERO-WIDTH, so "scan ahead
@@ -8907,35 +8907,8 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, next);
         return;
     case A_BOL:
-        if (a->u.anch.multiline) {
-            /* [M6.2 wave C] `(?m)^` (assertions_design.md §9.3). THE GUARD IS
-             * IN THE EXPRESSION, K27's discipline and `\b`'s precedent four
-             * arms down: `pos == 0` short-circuits before `s[pos-1]` is ever
-             * formed, so the arm never computes an out-of-range pointer even
-             * on the legal `(s == NULL, n == 0)` subject of match_api.md
-             * §3.1. Writing the position case in prose and the byte case in
-             * code is exactly how that read gets left unguarded.
-             *
-             * THE NEWLINE COMES FROM THE CLASS POOL (D64): the same
-             * `pcrec_cls_newline` src/ir/dfa.c refines its alphabet by and
-             * `\N` compiles from — one definition, three readers, no `'\n'`
-             * respelled here. */
-            /* `pos < n` IS NOT A BOUNDS GUARD — it is the semantics.
-             * PCRE2's multiline `^` "does not match after a newline that ends
-             * the string", so `(?m)^` on "a\n" holds at 0 and NOT at 2 while
-             * `(?m)$` holds at 1 AND 2. assertions_design.md §9.3's table row
-             * omits it and python3 `re` disagrees with PCRE2 about it (U11);
-             * this arm follows PCRE2, which D26 makes the source of truth. */
-            int ni = vm_cls(v, pcrec_cls_newline);
-            vm_lbl(v, entry, NULL);
-            vm_ev(v, VE_ASSERT, next, 0,
-                  "(?m)^ attempt_position of subject or after a non-final newline");
-            pcrec_sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
-            vm_cls_test(v, b, ni, "subject[scan_position-1]");
-            pcrec_sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
-            vm_fail(v);
-            return;
-        }
+        /* A `(?m)^` is an A_CTX row since [DD-11.5]: `vm_ctx`'s MLINE_BOL
+         * form emits it. */
         /* `^` is start of SUBJECT, absolute — it anchors to offset 0 whatever
          * startpos was, matching the emitted contract in lib/pcrec.h and the
          * DFA's own N_BOT. */
@@ -8945,20 +8918,7 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         vm_fail(v);
         return;
     case A_EOL:
-        if (a->u.anch.multiline) {
-            /* [M6.2 wave C] `(?m)$` — end of subject or BEFORE ANY newline,
-             * which is a strictly wider set than plain `$`'s "before a FINAL
-             * newline". `pos == n` short-circuits before `s[pos]`. */
-            int ni = vm_cls(v, pcrec_cls_newline);
-            vm_lbl(v, entry, NULL);
-            vm_ev(v, VE_ASSERT, next, 0,
-                  "(?m)$ end of subject or before a newline");
-            pcrec_sb_puts(b, "    if (scan_position == subject_length || (");
-            vm_cls_test(v, b, ni, "subject[scan_position]");
-            pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
-            vm_fail(v);
-            return;
-        }
+        /* A `(?m)$` is an A_CTX row (`vm_ctx`'s MLINE_EOL form). */
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0,
               "$ end of subject, or before a final newline");

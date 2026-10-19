@@ -1272,7 +1272,6 @@ test-assertions: all
 	    'bash tests/assertions/run_assertions_tests.sh' \
 	    'bash tests/codegen/run_endvar_identity.sh' \
 	    'bash tests/codegen/run_wordctx_identity.sh' \
-	    'bash tests/codegen/run_mlinectx_identity.sh' \
 	    'bash tests/codegen/run_gstart_identity.sh' \
 	    'bash tests/assertions/run_mline_diff.sh' \
 	    'bash tests/assertions/run_gstart_diff.sh' \

@@ -365,3 +365,19 @@ reports H1/H2/H3 all zero over 280 cells beside a control column that violates
 22 times on the same cells.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [DD-11.5] part 2: the (?m) fold (lane ctxbuild, 2026-10-19)
+
+`docs/design/ctx_span.md` rev 2.1 §4. **dfa.c**: the closure's N_CTX arm reads
+each side THREE-valued (`Sides.left_abs`/`right_abs`, set per direction in
+`sides_of`: forward left = `bot_ok`, right = `end_ok`; reverse right = `end_ok`,
+left never), taking "absent" ONLY where the node's row of `src/core/ctxfn.def`
+reads absent on that side (re-check R1), so every four-cell row computes
+exactly today's bit. The two `(?m)` closure arms, the `CTXROW_NEWLINE`
+contributor row, `nl_bit`, the `-DPCREC_NO_MLINECTX` knob and the shared-entry
+`rows` mask are DELETED: `(?m)^`/`(?m)$` are N_CTX rows whose newline set
+enters the context list in NFA order (the measured list-order movers). The
+`has_end` hoist reads `ctxfn_reads_absent_next`; a reverse machine meeting an
+absent-prev row is an internal error. **nfa.c**: A_BOL/A_EOL lower to
+N_BOT/N_EOL only; `pcrec_nfa_has_bot` reads `ctxfn_reads_absent_prev` on
+N_CTX. The entries above that name the multiline kinds or the knob are history.

@@ -50,20 +50,16 @@
  *
  * `-DPCREC_NO_WORDCTX` compiles that axis out (no refinement, no second
  * closure, one interior start state, and the emitter reproduces the pre-wave
- * text). Same shape and same single consumer as the two knobs below:
+ * text). Same shape and same single consumer as the knob below:
  * tests/codegen/run_wordctx_identity.sh. Never defined in a shipped build;
  * under it a `\b` pattern compiles to something WRONG, which is exactly why
- * that script's control population must differ.
+ * that script's control population must differ. Since [DD-11.5] it cuts
+ * EVERY A_CTX set, `(?m)^`/`(?m)$`'s newline set included, so the script's
+ * population is "no context-node spelling" (ctx_span.md §4.5.4, A2). A
+ * second knob cut the newline set alone while it had its own contributor
+ * row; it retired with that row.
  *
- * `-DPCREC_NO_MLINECTX` compiles the NEWLINE half of the class axis out (no
- * refinement by the newline set, no third class view, and the emitter
- * reproduces the pre-wave text). Same shape and same single consumer as the
- * knobs around it: tests/codegen/run_mlinectx_identity.sh. Never defined in a
- * shipped build; under it a `(?m)$` pattern compiles to something WRONG — the
- * assertion can then only pass through `end_ok`, i.e. as `\z` — which is
- * exactly why that script's positive control cannot be silent.
- *
- * **[M6.2 REPAIR SLICE, 2026-08-19] BOTH OF THOSE KNOBS MOVED, and where a
+ * **[M6.2 REPAIR SLICE, 2026-08-19] THE KNOBS MOVED, and where a
  * knob SITS is the whole of what it is worth.** They used to PIN THE FLAG —
  * `#ifndef` around `case N_WORDB: has_word = true;` in `pcrec_build_dfa`'s
  * NFA scan — which is inside the code sabotages S71 and S76 edit. Those two
@@ -84,13 +80,13 @@
  *
  * **[UCP] U2 MOVED THEM ONCE MORE, TO THE SAME KIND OF PLACE.** The flags are
  * gone — the class axis is the context-set LIST (see "the context-set list
- * and its atoms" below) — and the knobs now sit in `ctx_entry_live`, which
+ * and its atoms" below) — and the knob now sits in `ctx_entry_live`, which
  * the list's two CONSUMERS (the refinement and the atom vectors) ask. The
- * list's FILLING is where S71/S76 now plant (they put the word / newline set
- * on every machine's list), and a knob there would cancel them exactly as
- * before. Because the atoms themselves now exclude a knobbed-out set, the
- * EMITTER needs no half for `\b`/`(?m)` any more: `upc_of_class` can no
- * longer answer a context the analysis did not build.
+ * list's FILLING is where S71 now plants (it puts the word set on every
+ * machine's list), and a knob there would cancel it exactly as before.
+ * Because the atoms themselves now exclude a knobbed-out set, the EMITTER
+ * needs no half for `\b`/`(?m)` any more: `upc_of_class` can no longer
+ * answer a context the analysis did not build.
  *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
@@ -142,18 +138,24 @@ static int refine_by(Dfa *d, int ncls, const uint8_t *bits)
  * THE CONTRIBUTOR TABLE. Which NFA states put which set on the machine's
  * context list, as DATA, walked in row order — so the list's ORDER is a
  * property of the table and not of a code path: every A_CTX set (NFA order,
- * deduplicated by set equality), then the newline set, then the encoding's
- * non-start set. That order is what makes the atoms of a machine whose list
- * is {word, newline, non-start} the old UPC_PLAIN/WORD/NL/NOSTART in the old
- * order (internal.h's comment), and so what keeps every pre-U2 class-axis
- * artifact byte-identical.
+ * deduplicated by set equality), then the encoding's non-start set.
+ *
+ * [DD-11.5] THE NEWLINE ROW IS GONE. `(?m)^`/`(?m)$` are A_CTX rows of the
+ * one truth table, so their newline set enters through the `ctx` row in NFA
+ * order like every other context set (ctx_span.md §4.4 table B). That moves
+ * the list ORDER of a machine with a `(?m)` node before another A_CTX set —
+ * its atoms renumber and its per-atom tables permute, answer-identically
+ * (§4.5.3, the measured list-order movers) — and nothing else. With two
+ * rows left no set can be read by both (no byte-expressible A_CTX set equals
+ * utf8's non-start set), so an entry records the ONE row that put it there
+ * and the old shared-entry mask is gone.
  *
  * Not a selection (nothing is chosen among alternatives; every applicable row
  * contributes), but a table for the same reason a selection is one: the rows
  * are listable, and a new context-reading node kind is one row rather than a
  * new flag threaded through three consumers the way `has_word`/`has_nl`/
  * `startcls` were. */
-enum { CTXROW_CTX = 0, CTXROW_NEWLINE = 1, CTXROW_NOSTART = 2 };
+enum { CTXROW_CTX = 0, CTXROW_NOSTART = 1 };
 
 typedef struct {
     const char *name;
@@ -168,10 +170,6 @@ typedef struct {
 static bool cr_ctx_reads(const NState *st) { return st->k == N_CTX; }
 static bool cr_ctx_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
 { (void)e; memcpy(out, st->cls, 32); return true; }
-static bool cr_nl_reads(const NState *st)
-{ return st->k == N_BOT_M || st->k == N_EOL_M; }
-static bool cr_nl_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
-{ (void)st; (void)e; memcpy(out, pcrec_cls_newline, 32); return true; }
 static bool cr_ns_reads(const NState *st) { return st->k == N_CSTART; }
 /* The NON-start set, i.e. `start_cls`'s complement, so that "absent" (the
  * empty vector) reads as a character boundary — the right answer for the gate
@@ -185,10 +183,8 @@ static bool cr_ns_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
 }
 
 static const CtxContrib ctx_rows[] = {
-    [CTXROW_CTX]     = { "ctx", "an A_CTX set (\\b/\\B's word set, a one-character lookaround's set)",
+    [CTXROW_CTX]     = { "ctx", "an A_CTX set (\\b/\\B's word set, a one-character lookaround's set, (?m)^/(?m)$'s newline set)",
                          cr_ctx_reads, cr_ctx_set },
-    [CTXROW_NEWLINE] = { "newline", "the newline set (?m)^ and (?m)$ read (D64)",
-                         cr_nl_reads, cr_nl_set },
     [CTXROW_NOSTART] = { "nostart", "bytes this encoding may not begin a character at (K50's gate)",
                          cr_ns_reads, cr_ns_set },
 };
@@ -233,45 +229,41 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
                 PcrecCtxSet *cs = &d->ctx[d->nctx++];
                 cs->name = ctx_rows[r].name;
                 cs->desc = ctx_rows[r].desc;
-                cs->rows = 0;
+                cs->row  = r;
                 memcpy(cs->bits, bits, 32);
             }
-            /* A SHARED set records every row that reads it: `(?=\n)` and
-             * `(?m)^` read one entry, and the newline arms must find it by
-             * their own row, not by which row happened to add it first. */
-            d->ctx[k].rows |= 1u << r;
+            /* Two rows never share an entry (the table's header says why);
+             * if they did, the knob and the gate's index would each read
+             * only one of them. */
+            if (d->ctx[k].row != r)
+                pcrec_ctx_fail(cx, 0, "internal error: two context-list rows "
+                               "contributed the same set");
             if (r == CTXROW_CTX) cbit[i] = (int8_t)k;
         }
     }
     return true;
 }
 
-/* Does list entry `k` take part in the class axis? True in every shipped
- * build. THE REFERENCE KNOBS LIVE HERE, AT THE ACTION ([M6.2] repair slice's
- * rule, carried over): `-DPCREC_NO_WORDCTX` removes every A_CTX set and
- * `-DPCREC_NO_MLINECTX` the newline set from the refinement AND from the atom
- * vectors — the two consumers — so an edit to how the LIST is filled (where
- * sabotages S71/S76 now plant) cannot cancel in the knob-built reference.
- * tests/codegen/run_wordctx_identity.sh / run_mlinectx_identity.sh. */
+/* The contributor rows a reference knob removes. Empty in every shipped
+ * build. THE REFERENCE KNOB LIVES HERE, AT THE ACTION ([M6.2] repair slice's
+ * rule, carried over): `-DPCREC_NO_WORDCTX` removes every A_CTX set from the
+ * refinement AND from the atom vectors — the two consumers — so an edit to
+ * how the LIST is filled (where sabotage S71 plants) cannot cancel in the
+ * knob-built reference. tests/codegen/run_wordctx_identity.sh. */
 static unsigned ctx_rows_knobbed(void)
 {
     unsigned knobbed = 0;
 #ifdef PCREC_NO_WORDCTX
     knobbed |= 1u << CTXROW_CTX;
 #endif
-#ifdef PCREC_NO_MLINECTX
-    knobbed |= 1u << CTXROW_NEWLINE;
-#endif
     return knobbed;
 }
 
+/* Does list entry `k` take part in the class axis? True unless a reference
+ * knob removed the row that contributed it. */
 static bool ctx_entry_live(const Dfa *d, int k)
 {
-    /* Live while ANY row that reads it is not knobbed out. A SHARED entry
-     * therefore stays on the axis for its other reader, and the knobbed
-     * row's own READERS are cut instead (`pcrec_build_dfa`: `cbit`,
-     * `nl_bit`), so the knob still removes exactly what it names. */
-    return (d->ctx[k].rows & ~ctx_rows_knobbed()) != 0;
+    return !(ctx_rows_knobbed() & (1u << d->ctx[k].row));
 }
 
 /* The byte-equivalence partition, refined by every N_CLASS set and then by
@@ -338,11 +330,10 @@ static bool ctx_atoms(Ctx *cx, Dfa *d)
         while (d->atomvec[a] != v) a++;
         d->catom[c] = (uint8_t)a;
     }
-    /* clsctx: some live entry is an A_CTX or newline set (not the gate's). */
+    /* clsctx: some live entry is an A_CTX set (not the gate's). */
     d->clsctx = false;
     for (int k = 0; k < d->nctx; k++)
-        if (ctx_entry_live(d, k) &&
-            (d->ctx[k].rows & (1u << CTXROW_CTX | 1u << CTXROW_NEWLINE)))
+        if (ctx_entry_live(d, k) && d->ctx[k].row == CTXROW_CTX)
             d->clsctx = true;
     return true;
 }
@@ -693,8 +684,6 @@ static int eps_edge(const NState *st, int i)
     case N_BOT:
     case N_EOL:
     case N_END:
-    case N_BOT_M:
-    case N_EOL_M:
     case N_CTX:
     case N_GSTART:
     case N_CSTART:  return i == 0 ? st->t1 : -2;
@@ -766,7 +755,7 @@ typedef struct {
     ContStack ks;
     /* [UCP] U2 the machine's context-list facts the closure's arms read. */
     const int8_t *cbit;
-    int       nl_bit, ns_bit;
+    int       ns_bit;
     const uint8_t *lcyc;   /* [OPT-CLOSURE-CTX] per state: on an eps cycle */
 } CloScratch;
 
@@ -836,7 +825,6 @@ typedef struct {
     bool      left_abs;
     bool      right_abs;
     const int8_t *cbit;   /* per NFA state: its A_CTX set's list index, or -1 */
-    int       nl_bit;     /* list index of the newline set, or -1 */
     int       ns_bit;     /* list index of the non-start set, or -1 */
     bool      prune;
     /* [OPT-CLOSURE-CTX] per NFA state, eps_cyclic's flag: only a loop entry
@@ -1045,48 +1033,17 @@ static void clo_walk(Clo *cl, int s)
                 if (!cl->gst_ok) break;
                 s = st->t1;
                 continue;
-            /* [M6.2 wave C] `(?m)^` / `(?m)$`. `bot_ok`/`end_ok` carry the
-             * position half — there is no byte out there to ask about — and
-             * the byte half is the class axis. Neither arm reads `eol_ok`:
-             * `(?m)$` has nothing to do with "before a FINAL newline", which
-             * is plain `$`'s rule and is what `\Z` keeps under `(?m)`.
-             *
-             * `(?m)^` IS NOT THE MIRROR OF `(?m)$`, AND THAT IS MEASURED, not
-             * inferred. assertions_design.md §3.7 and §9.3 both state the
-             * rule as "`pos == 0` or `s[pos-1] == '\n'`" and BOTH ARE WRONG:
-             * PCRE2's multiline `^` "does not match after a newline that ends
-             * the string". So the newline half is guarded by `!end_ok` —
-             * `pos < n` — and the asymmetry is real rather than an accident
-             * of one implementation:
-             *
-             *     (?m)^   on "a\n"   matches at 0 only, NOT at 2
-             *     (?m)$   on "a\n"   matches at 1 AND at 2
-             *
-             * python3 `re` DISAGREES with PCRE2 here and reports (2,2) for
-             * the first, which is docs/dev/upstream_issues.md U11b and the
-             * reason the `(?m)^` corpus blocks are pcre2-only. Found by
-             * tests/assertions/run_mline_diff.sh at `startpos > 0`, where an
-             * earlier match no longer masks it.
-             *
-             * CORROBORATED BY PCRE2's OWN OPTION SURFACE, which this tree
-             * already surveyed: `docs/pcre2_options.md`'s
-             * `PCRE2_ALT_CIRCUMFLEX` row reads "under `MULTILINE`, `^` ALSO
-             * matches immediately after a final trailing newline". An option
-             * whose whole content is turning this on is only meaningful if
-             * the default is off — which is the rule below, and the rule the
-             * design's two sections do not have. */
-            case N_BOT_M:
-                if (!cl->bot_ok && !(ctx_bit(cl->left, cl->nl_bit) && !cl->end_ok)) break;
-                s = st->t1;
-                continue;
-            case N_EOL_M:
-                if (!cl->end_ok && !ctx_bit(cl->right, cl->nl_bit)) break;
-                s = st->t1;
-                continue;
-            /* [UCP] U2 A_CTX — `\b`, `\B` and every recognized one-character
-             * lookaround: the node's truth function applied to its set's
-             * membership bit on each side. No per-spelling arm, which is the
-             * point: the function is data. */
+            /* [UCP] U2 A_CTX — `\b`, `\B`, every recognized one-character
+             * lookaround and, since [DD-11.5], `(?m)^`/`(?m)$`: the node's
+             * row of the one truth table (src/core/ctxfn.def) applied to each
+             * side's value. No per-spelling arm, which is the point: the
+             * function is data. The two `(?m)` rows read the ABSENT sides
+             * (`bot_ok`/`end_ok`, through `sides_of`) where the retired
+             * multiline NFA kinds' arms read them by name; the asymmetry those
+             * arms carried — PCRE2's `(?m)^` does NOT hold after a newline
+             * that ends the string (`(?m)^` on "a\n" matches at 0 only,
+             * `(?m)$` at 1 and 2; U11b; PCRE2_ALT_CIRCUMFLEX is the option
+             * that turns it on) — is MLINE_BOL's `in`/`absent` cell. */
             case N_CTX: {
                 /* [DD-11.5] each side is three-valued (ctxfn.def): absent
                  * (2) ONLY where the row reads absent on that side, which no
@@ -1103,7 +1060,7 @@ static void clo_walk(Clo *cl, int s)
                 continue;
             }
             /* [K50] "this position is a character boundary of the artifact's
-             * encoding" — `N_EOL_M`'s shape three arms up, with the encoding's
+             * encoding" — `(?m)$`'s shape (MLINE_EOL), with the encoding's
              * start set in place of the newline set. `end_ok` is the "or the
              * end of the subject" half: there is no byte at `n` to ask about,
              * and `n` is a boundary. */
@@ -1162,7 +1119,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, 0, -1, eol_ok, end_ok, bot_ok, gst_ok,
                sd.left, sd.right, sd.left_abs, sd.right_abs,
-               sc->cbit, sc->nl_bit, sc->ns_bit, prune,
+               sc->cbit, sc->ns_bit, prune,
                sc->lcyc };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
@@ -1497,7 +1454,7 @@ static Sides sides_of(const Mach *m, int cons_atom, int up_atom,
  * worst case is nine closures and the pre-wave corpus is still two. The
  * guards are what make that true and each is PROVABLE rather than prudent:
  *
- *  - `has_end` off: `end_ok` gates nothing (no N_END, no N_EOL_M), so the
+ *  - `has_end` off: `end_ok` gates nothing (no N_END, no absent-next row), so the
  *    third position view equals the second at every pre-set, element for
  *    element. Running it anyway costs a third of the subset construction's
  *    closure work on every pattern in the corpus, which is what
@@ -1608,20 +1565,17 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     bool has_end = false, has_gst = false;
     for (int i = 0; i < nfa->n; i++) {
         switch (nfa->st[i].k) {
-        /* [K50] The gate makes the `pos == n` view live for `N_EOL_M`'s own
+        /* [K50] The gate makes the `pos == n` view live for `(?m)$`'s own
          * reason: "or the end of the subject" is wave A's `end_ok`, and a
          * machine that could not see `pos == n` would refuse the empty match
          * at the end of every subject. */
         case N_CSTART:
-        /* [M6.2 wave C] BOTH `(?m)` kinds make the `pos == n` view live.
-         * `(?m)^` needs it for nothing, but asking costs one closure on a
-         * construct that has already been routed to ENG_ATTEMPT; `(?m)$`
-         * needs it: `end_ok` IS its "or end of subject" half. */
-        case N_BOT_M:
-        case N_EOL_M:
         case N_END:   has_end = true; break;
-        /* [DD-11.5] a context row that reads "no next character" needs the
-         * `pos == n` view for N_EOL_M's reason; a four-cell row reads none. */
+        /* [DD-11.5] a context row that reads "no next character" makes the
+         * `pos == n` view live: `(?m)$` needs it (`end_ok` IS its "or end of
+         * subject" half), and `(?m)^` asks for it at the cost of one closure
+         * on a construct already routed to ENG_ATTEMPT, as the retired
+         * multiline `^` kind did. A four-cell row reads none. */
         case N_CTX:
             if (ctxfn_reads_absent_next(nfa->st[i].ctxfn)) has_end = true;
             /* No reverse machine may meet a row that reads "no previous
@@ -1684,14 +1638,11 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
 
     Mach m = { prune, reverse, has_end, has_gst, d->natoms, d->atomvec };
     sc.cbit = cbit;
-    sc.nl_bit = sc.ns_bit = -1;
+    sc.ns_bit = -1;
     const unsigned readable = d->nctx ? ~ctx_rows_knobbed() : 0u;
-    for (int k = 0; k < d->nctx; k++) {
-        if (!ctx_entry_live(d, k)) continue;
-        unsigned r = d->ctx[k].rows & readable;
-        if (r & (1u << CTXROW_NEWLINE)) sc.nl_bit = k;
-        if (r & (1u << CTXROW_NOSTART)) sc.ns_bit = k;
-    }
+    for (int k = 0; k < d->nctx; k++)
+        if (ctx_entry_live(d, k) && d->ctx[k].row == CTXROW_NOSTART)
+            sc.ns_bit = k;
     if (!(readable & (1u << CTXROW_CTX)))   /* a knob cuts the A_CTX readers */
         for (int i = 0; i < nfa->n; i++) cbit[i] = -1;
 

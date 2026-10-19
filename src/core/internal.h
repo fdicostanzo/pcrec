@@ -791,8 +791,8 @@ typedef enum {
      * rule of its own. `[\G]` is error 107, so the row keeps
      * RF_CLASS_INVALID.
      *
-     * `Ast.u.anch.multiline` is meaningless here and is never read: `\G` is an
-     * absolute position test like `\A`/`\z`, unaffected by every option. */
+     * No option reaches this node: `\G` is an absolute position test like
+     * `\A`/`\z`, unaffected by every option. */
     A_GSTART,
     /* [M6.2 wave E] `\K` — RESET THE REPORTED START of the match to here
      * (assertions_design.md §6). The module's last construct, and the only
@@ -823,7 +823,7 @@ typedef enum {
      * joins `pcrec_is_bare_anchor` rather than earning a rule of its own.
      * `[\K]` is error 107, so the registry row keeps RF_CLASS_INVALID.
      *
-     * `Ast.u.anch.multiline` is meaningless here and is never read. */
+     * No option reaches this node. */
     A_KRESET,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
@@ -1417,81 +1417,11 @@ struct Ast {
             bool                anchor;
         } ctx;
 
-        /* A_BOL and A_EOL — a CLOSED FAMILY sharing one meaning, so they share
-         * one payload rather than getting a member each (D70's family rule).
-         * src/parse/mod_assertions.c also pins this member false on A_END,
-         * A_WORDB, A_NWORDB, A_GSTART and A_KRESET; those kinds have no payload
-         * of their own, so that write aliases nothing and is read back
-         * nowhere — see the survey in src/core/CLAUDE.md. */
-        struct {
-            /* [M6.2 wave A] MULTILINE, resolved AT PARSE TIME (A_BOL / A_EOL only).
-             * D62: node fields encode parse-resolved modifier state, exactly as
-             * `greedy` above encodes `(?U)`'s — set from the scoped `(?m)` state in
-             * force AT THE `^`/`$` ITSELF, never re-derived downstream.
-             *
-             * ANY ANALYSIS THAT EXEMPTS OR SPECIAL-CASES `$` (or `^`) MUST CONSULT
-             * THIS FIELD. That sentence is D62's control 3 and it is load-bearing,
-             * not decoration: src/opt/possessify.c exempts `$` from the follow-set
-             * widening on an upward-closure argument that COLLAPSES PER LINE under
-             * `(?m)`, and before this field existed that analysis read the parser's
-             * END-OF-PATTERN option state — so `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)`
-             * would each have exempted a multiline `$` and lost a match
-             * (assertions_design.md §8.1.1, two measured miscompile cells). A new
-             * analysis that pattern-matches `case A_EOL:` and does not read
-             * `.multiline` reproduces exactly that bug, and no compiler diagnostic
-             * will tell you: that residual is D62's accepted cost, and this comment
-             * is the thing that covers it.
-             *
-             * [M6.2 wave C] THE FIELD IS LIVE, and D62 control 3's obligation was
-             * DISCHARGED BY INSPECTION over every AST-walking analysis, with the
-             * verdict recorded here rather than in five places nobody re-reads. §8.3
-             * names four sites as the residual the flag spelling cannot cover — the
-             * `Ast.k` switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
-             * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
-             * the flag, for one reason with three shapes:
-             *
-             * THE COUNT IS FIVE, NOT FOUR, and the correction is K63
-             * (docs/dev/known_issues.md, filed by `[VAR]`'s D6 panel and closed
-             * here by `[VAR]` M5): `vm_isl_words` (`emit_vm.c`'s island-trie
-             * word scan) landed with `[ENG-ISL]` STEP 1 on 2026-09-03, after
-             * this census was taken, and carries a `default:` of its own. Its
-             * verdict is the same as the two UNREACHABLE sites below and for a
-             * stronger reason — it runs only over an island's own literal
-             * branches, which are `A_CLASS` chains by construction, so no
-             * anchor of either spelling can reach it. The general lesson is
-             * the one the count itself demonstrates: A CENSUS WRITTEN INTO A
-             * COMMENT IS A NUMBER WITH NO READER, and nothing failed when a
-             * fifth site appeared. It is left as prose rather than promoted to
-             * a check because the population it counts is the population that
-             * raises NO compiler alarm — a check over it would share a source
-             * with the thing it is about (learnings.md §3).
-             *
-             *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
-             *     spelling is zero-width, so "scan ahead by stride" is wrong for
-             *     both, and its `default: return 0` is right without reading a field.
-             *   - `vm_cap_offsets` and `vm_rev_emit` (emit_vm.c) are UNREACHABLE for
-             *     either spelling: both run only on bodies `vm_det_seq` and
-             *     `src/opt/revdet.c`'s `rd_shape` already approved, and `rd_shape`
-             *     declines every `A_BOL`/`A_EOL`.
-             *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
-             *     direction, which makes the disjointness test fail and the
-             *     quantifier keep its machinery.
-             *
-             * [CLS-TREE] S3 (2026-09-29, D-6): ALL FIVE ARE FULL ENUMERATIONS NOW,
-             * each answering what its `default:` answered, so there is no
-             * `default:` on an `AKind` switch left in the tree and `-Wswitch`
-             * names every one of them. The verdicts above stand.
-             *
-             * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
-             * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
-             * concluding it may be skipped over. Every one of these four treats it as
-             * OPAQUE (decline, widen, or unreachable), and opacity is multiline-blind
-             * by construction. `src/opt/possessify.c` was the one transparent
-             * consumer in the tree and is the one this field exists for.
-             *
-             * The arena zeroes, so a node nothing set is non-multiline. */
-            bool multiline;
-        } anch;
+        /* A_BOL and A_EOL carry NO payload. Until [DD-11.5] they shared a
+         * multiline field (D62); the parser now resolves `(?m)` into
+         * the choice of NODE — `(?m)^`/`(?m)$` are A_CTX rows of
+         * src/core/ctxfn.def — so no analysis can match `case A_EOL:` and
+         * forget a field (ctx_span.md §4.4, D62 addendum). */
 
         /* A_BREF: the backreference payload. */
         struct {
@@ -1522,7 +1452,7 @@ struct Ast {
              * in force at the REFERENCE, not at the group. `^(a)(?i:\1)$` matches
              * "aA"; `^(?i:(a))\1$` does not; `^((?i)a)\1$` does not.
              *
-             * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.u.anch.multiline`'s sibling
+             * IT CANNOT FOLD AWAY AT PARSE TIME the way `(?m)`'s sibling
              * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
              * because the operand is subject text not known until the match runs. So
              * this field selects WHICH residual seam entry the emitter calls
@@ -2034,31 +1964,16 @@ typedef enum {
     N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —
                 * strictly stronger than N_EOL, which is why it is its own
                 * state kind and its own closure bit rather than a variant */
-    /* [M6.2 wave C] `(?m)^` and `(?m)$`, goto t1. SEPARATE KINDS from N_BOT
-     * and N_EOL, and that is not the same question D62 answered: D62 rules
-     * that the AST spells multiline as a FIELD, because `Ast.k` encodes
-     * STRUCTURE and a modifier is parse-resolved state. By the time lowering
-     * has run the modifier is no longer state — it has been resolved into a
-     * DIFFERENT ASSERTION, whose truth condition is a different expression
-     * over different inputs (N_EOL is a position test; N_EOL_M reads a BYTE).
-     * That is exactly the structural difference NKind exists to carry, and
-     * it is the same argument N_END already won one line up.
-     *
-     * Their operands, in the vocabulary src/ir/dfa.c's Clo uses:
-     *   N_BOT_M  — start of subject, or the byte to the LEFT is a newline;
-     *   N_EOL_M  — end of subject, or the byte to the RIGHT is a newline.
-     * `\A`/`\Z` never lower to these: their nodes pin multiline false at the
-     * parser (src/parse/mod_assertions.c), which is what makes them aliases
-     * of the NON-multiline `^`/`$` under `(?m)` too, as PCRE2 has them. */
-    N_BOT_M,
-    N_EOL_M,
     /* [UCP] U2 A_CTX, goto t1: `cls` is the context set's BYTE image (exact
      * by `pcrec_ctx_set_bytes`' precondition) and `ctxfn` its truth function
      * (CTXFN_*). src/ir/dfa.c's closure evaluates it from TWO bits of the
      * context ATOMS — the set's membership bit in the atom of the byte on the
      * LEFT and in the atom of the byte on the RIGHT, in subject order, which
-     * make_state's one direction mapping supplies. `\b`/`\B` are two of its
-     * six functions ([M6.2] wave B's N_WORDB/N_NWORDB, retired into it). */
+     * make_state's one direction mapping supplies, each side three-valued
+     * (out, in, absent) where the row reads absent. `\b`/`\B` are two of its
+     * rows ([M6.2] wave B's N_WORDB/N_NWORDB, retired into it) and since
+     * [DD-11.5] so are `(?m)^`/`(?m)$` (wave C's multiline kinds, retired
+     * into it: src/core/ctxfn.def's MLINE_BOL/MLINE_EOL). */
     N_CTX,
     /* [M6.2 wave D] `\G`, goto t1. An ABSOLUTE POSITION TEST like N_BOT — it
      * reads no byte and needs no class axis — but against a value that is not
@@ -2078,7 +1993,7 @@ typedef enum {
      * pattern on the self-loop's own re-entry, so that the positions the
      * ENGINE generates are exactly the encoding's boundaries.
      *
-     * IT IS `N_EOL_M`'s SHAPE, not a new mechanism. `N_EOL_M` is "end of
+     * IT IS `(?m)$`'s SHAPE, not a new mechanism. `(?m)$` is "end of
      * subject, or the byte to the RIGHT is a newline"; this is "end of
      * subject, or the byte to the RIGHT is one this encoding may start a
      * character at". One `end_ok` read, one class-axis read, no direction and
@@ -2245,7 +2160,7 @@ typedef struct {
      * over is the ACCEPT bit — which is why §3.6's class-indexed accept table
      * exists and nothing else does. Every view's accept equals
      * `up[UPC_PLAIN].accept` on every state of a machine with no `\b` and no
-     * `(?m)$` (there is no N_WORDB/N_EOL_M to gate, so the closures
+     * `(?m)$` (there is no context node to gate, so the closures
      * coincide), so that table is not emitted and the artifact does not move.
      *
      * The OTHER half of the context — the class of the byte already CONSUMED
@@ -2330,15 +2245,15 @@ typedef struct {
  * array one short of what the pass chose would silently drop an edge whose
  * states the pass had already deleted. */
 
-/* [UCP] U2 one entry of a machine's context-set list (`Dfa.ctx[]`). `rows` is
- * the set of contributor-table rows (src/ir/dfa.c) that READ this set — more
- * than one when two constructs read the same set, `(?=\n)` beside `(?m)^` —
- * which is what the newline/non-start readers find their entry by and what
- * the reference-build knobs filter on. */
+/* [UCP] U2 one entry of a machine's context-set list (`Dfa.ctx[]`). `row` is
+ * the contributor-table row (src/ir/dfa.c) that put the set there — ONE row:
+ * since [DD-11.5] retired the newline row, no set is read by two rows — which
+ * is what the non-start reader finds its entry by and what the
+ * reference-build knob filters on. */
 typedef struct {
-    const char *name;     /* the first contributor row's name ("ctx", "newline", "nostart") */
+    const char *name;     /* the contributor row's name ("ctx", "nostart") */
     const char *desc;     /* one line: what this set is */
-    unsigned    rows;     /* bit r: contributor row r reads this set */
+    int         row;      /* the contributor row that put this set here */
     uint8_t     bits[32]; /* the set's byte image */
 } PcrecCtxSet;
 

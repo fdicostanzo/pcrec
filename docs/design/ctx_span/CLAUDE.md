@@ -28,3 +28,11 @@ before its first edit, because main moves under a design note.
 - `arm_pairs.py` — the `\A`/`\z` census's reading aid (§4.6): every code line naming
   `A_BOL`/`A_END`/`N_BOT`/`N_END`, beside the `A_CTX`/`N_CTX` label of the same switch, so
   the two arms can be compared. Not a classifier; the classification is the note's.
+- `regen_edit_set.py` → `edit_set_build.tsv`, `edit_set_compare.txt` — re-check R4
+  (§4.5.4), added by the BUILD lane (ctxbuild, 2026-10-19): the edit set REGENERATED
+  from the real diff of the P2a/P2b/P2c commits (every removed or replaced code line
+  under `src/`), and its comparison with `edit_set.tsv` both ways (planned-not-made,
+  made-not-planned). `derived_rows_build.tsv` / `sabotage_anchors_build.tsv` are
+  `derive_rows.py` / `../start_table/sabotage_anchors.py` re-run over the regenerated
+  set on the build's base (main `5fd84491d`, `call_graph_build_base.txt`); the sabotage
+  list the build acted on is that one (docs/dev/lanes/ctxbuild_report.md).

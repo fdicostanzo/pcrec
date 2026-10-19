@@ -126,9 +126,9 @@ static unsigned em_set(const Ast *a)
         case A_CALL:
             return a->u.call.nonnullable ? 0 : acc;
         case A_BOL:
-            return em_cat(acc, a->u.anch.multiline ? EM_ANY : 1u << EM_S);
+            return em_cat(acc, 1u << EM_S);
         case A_EOL:
-            return em_cat(acc, a->u.anch.multiline ? EM_ANY : 1u << EM_E);
+            return em_cat(acc, 1u << EM_E);
         case A_END:
             return em_cat(acc, 1u << EM_E);
         case A_CAP: case A_ATOMIC:

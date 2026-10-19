@@ -6,10 +6,13 @@ M2.12 rule ("M2.7 forked a second copy, and the fork is exactly how the
 prefilter and skip loops went missing from the `$` path for a whole
 milestone") applied to a fork that has not happened yet:
 
-  - tests/codegen/run_mlinectx_identity.sh splits its corpus on
-    `multiline_anchor` — does the pattern carry a `^` or `$` that a set `m`
-    reaches? That is exactly the condition for the machine to build an
-    N_BOT_M/N_EOL_M, i.e. for `-DPCREC_NO_MLINECTX` to change anything.
+  - tests/codegen/run_wordctx_identity.sh splits its corpus on
+    `multiline_anchor` (since [DD-11.5]) — does the pattern carry a `^` or `$`
+    that a set `m` reaches? That is exactly the condition for the parser to
+    build a `(?m)` context node, which `-DPCREC_NO_WORDCTX` cuts with every
+    other context set, so such a pattern belongs to that gate's MUST-DIFFER
+    control. (Wave C's own gate, run_mlinectx_identity.sh, split on it until
+    the multiline NFA kinds and their knob retired with it.)
   - tests/assertions/run_mline_diff.sh excludes `multiline_caret` patterns
     from its python arm (upstream_issues.md U11b).
   - tests/codegen/run_endvar_identity.sh splits on `\z` OR `multiline_anchor`:

@@ -329,3 +329,10 @@ Maintenance: update this file when a file is added, moved in or removed.
   Λ.2 ASSERTED (K50-NULLGATE). Its two readers are the RECOVER rows
   `end-minus-width` and `landing` (src/gen/emit_dfa.c). The generation stamp
   now resets on wrap (the width walk can step more than 255 times).
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+
+`startanch.c`, `endwin.c`, `widths.c`: the `Ast.u.anch.multiline` branches are
+DELETED; a `(?m)` anchor is an A_CTX node, whose arm in each walk already
+answered what the multiline branch did (ctx_span.md §4.4 table A). `kset.c`:
+the two multiline NFA labels are gone.

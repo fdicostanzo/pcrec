@@ -166,7 +166,8 @@
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #   endvaridentity  assertions         — added 2026-08-19 ([M6.2] wave A)
 #   wordctxidentity                    — added 2026-08-19 ([M6.2] wave B)
-#   mlinectxidentity  mlinediff       — added 2026-08-19 ([M6.2] wave C)
+#   mlinediff                          — added 2026-08-19 ([M6.2] wave C;
+#                     its `mlinectxidentity` sibling retired at [DD-11.5] P2c)
 #   gstartidentity  gstartdiff        — added 2026-08-19 ([M6.2] wave D)
 #   kresetdiff                         — added 2026-08-19 ([M6.2] wave E)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
@@ -1923,20 +1924,6 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
                 score_arm "$work/wordctxidentity.log" "$f" "wordctxid:${f:-ERR}fail/${p:-?}pass"
-                ;;
-            mlinectxidentity)
-                # [M6.2 wave C] the `(?m)`-free byte-identity gate. Its own arm
-                # rather than `wordctxidentity`, on the same rule those two
-                # apply to each other: they guard DIFFERENT constructions
-                # against DIFFERENT reference knobs, and wave C's is the one
-                # that has to survive a mechanical refactor of every site that
-                # read wave B's `waccept`/`wlist`/`s1w`. A sabotage of one must
-                # not be reported as coverage by the other.
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_mlinectx_identity.sh" \
-                    > "$work/mlinectxidentity.log" 2>&1
-                p="$(grep -m1 '^checks passed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
-                f="$(grep -m1 '^checks failed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
-                score_arm "$work/mlinectxidentity.log" "$f" "mlinectxid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             mlinediff)
                 # [M6.2 wave C] the `(?m)$`-family differential against

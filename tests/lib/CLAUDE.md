@@ -484,3 +484,9 @@ change.
   compound and COUNTS the skip: a compound's machine stamps read
   `"compound"` (match_api.md §6.3.12) and are held in one place,
   `tests/codegen/run_dfa_stamps.sh`'s compound bucket.
+
+## [DD-11.5] (lane ctxbuild, 2026-10-19)
+
+`run_mlinectx_identity.sh` left `san_scripts.txt` with its retirement;
+`mlscan.py`'s readers are now `run_wordctx_identity.sh` (its population split),
+`run_endvar_identity.sh` and `run_mline_diff.sh`.
