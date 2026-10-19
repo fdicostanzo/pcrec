@@ -555,6 +555,21 @@ P9 moves.)
   site renders byte-identically (plain and traced drivers) with no analysis
   object and with `arm_fixtures --fd-site SITE --fd-an FID` stating each
   fidelity (UNSTATED and an out-of-enum 9 included).
+- **proven_check.c** — R-25 (lane memfn-r25): the form class's proven sets
+  honour the row's declared `tests`. A WHITE-BOX driver (the one file outside
+  memfn/src that includes the kit's internal `kit.h`; C4 exempts this
+  directory): no shipped row skips an OPTIONAL term, so the skip path is
+  reached through TEST-ONLY rows (`ARM_TESTS_REQUIRED`, `ARM_TESTS_EVERY`,
+  `ARM_TESTS_UNSTATED`) handed to `kit_class`, the function mf_define and
+  mf_ask call. Families: A the skip path (an OPTIONAL offset-0 term skipped
+  reads proven0 all ones, tested reads its set; beside a REQUIRED term, RUN
+  terms, a whole OPTIONAL predicate, and proven_prev on a context stop); B an
+  UNSTATED FIND row refused; C the seven shipped FIND rows each state a value
+  and read an OPTIONAL term's set, and one mf_ask through the real selection.
+  Expected sets are member strings checked byte by byte (`strchr`), never a
+  bitset built the way the input's is. Built and run by run_finder.sh (part
+  `proven`, `PROVEN_FLOOR` 31, a literal); plants red-then-green in
+  `docs/dev/lanes/r25_report.md`.
 - `arm_fixtures.c` gains `--query` (QUERY lines on stderr), the `fd-*`
   fixtures, `--fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an FID]` (R-24:
   an analysis object stating fidelity FID), `--finder-rows`,

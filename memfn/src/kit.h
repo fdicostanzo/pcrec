@@ -4,8 +4,9 @@
  *
  * memfn/src/kit.h — the kit's INTERNAL header: the text buffer, the
  * per-artifact state and the arm interface the composer selects over.
- * Never included outside memfn/src/. Every name it declares with external
- * linkage goes through MF_NS (C15).
+ * Never included outside memfn/src/, save by one white-box check,
+ * tests/memfn/proven_check.c (R-25: it declares test-only rows). Every name
+ * it declares with external linkage goes through MF_NS (C15).
  */
 #ifndef MEMFN_KIT_H
 #define MEMFN_KIT_H
