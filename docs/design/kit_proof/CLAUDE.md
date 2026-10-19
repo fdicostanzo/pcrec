@@ -32,10 +32,13 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   `no-start-site` row now reads `cover`) and by the three K1 witnesses (D); the admitted
   set is unchanged (1,197 distinct patterns). Section D gains three lines appended by lane
   ctxspan2 (main `3b0f87b55`, `[r4 B9]`): `ctx_span.md`'s in-span witnesses, machine half only.
+  Lane ctxspan21 (main `fd1d1fc98`, `[r4rc R2]`) appended two more lines AS TEXT, not run
+  (bench timing window): the per-thread witnesses, verdicts OWED.
 - `witnesses.txt` — the witness list `conj.txt` D reads, with rev 2.1's K1 rows
   (`ab|a$\n`, `ab|a\Z\n`, `ab|a$\n\z`: DECLINE at `no-eol-view`; `cover` and wrong
   under the plant), and r4's three in-span witnesses (`a(?=b)[a-z]`, `\w(?=\d)\w`,
-  `[a-z0-9_ ]\b[a-z ]`; plant S1149's).
+  `[a-z0-9_ ]\b[a-z ]`; plant S1149's). And revision 2.1's two per-thread witnesses
+  (`a(?=b)[a-z]|ac`, `[ab](?<=a)c|bc`; plant S1150's, `[r4rc R2]`), whose verdicts are OWED.
 - `cover_twin.py` — the SIZE-ONLY hand twin of §2.4: rewrites an artifact's
   `rx_search` into the `cover` entry. Measured once on `foobar` (main `a016b3bfa`,
   gcc 15.2 `-O2 -c`, dev box): `.text` 2,047 → 1,425 bytes, `rx_search` 100 → 61

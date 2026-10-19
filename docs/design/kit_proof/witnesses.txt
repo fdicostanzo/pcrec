@@ -35,3 +35,12 @@ u	\bcat\b
 -	a(?=b)[a-z]
 -	\w(?=\d)\w
 -	[a-z0-9_ ]\b[a-z ]
+# [r4rc R2] ctx_span.md revision 2.1: the PER-THREAD in-span rule under alternation. The
+# slice narrows the classes of frontier states reached THROUGH the item (next side), and
+# narrows the previous side only when every thread at d-1 passes the item, else ends
+# exact_len at d-1. Correct slice: S_1 = {b,c}, exact_len 2 on the first; S_0 = {a,b},
+# exact_len 0 on the second. The union-narrowing plant (S1150) states S_1 = {b} / S_0 = {a}.
+# conj.py does not model the in-span rule; these lines' verdicts are OWED (added as text in
+# a bench timing window, not run).
+-	a(?=b)[a-z]|ac
+-	[ab](?<=a)c|bc
