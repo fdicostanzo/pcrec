@@ -1,0 +1,73 @@
+S-U4	S-U4_width_rule_byte_units	owner:P2d:pcrec_cwmax(case A_BOL|case A_END)
+S104	S104_mark_one_run_member	owner:P2d:pcrec_bref_mark(case A_BOL|case A_END)
+S107	S107_bref_not_nullable	owner:P2d:pcrec_nullable(case A_BOL|case A_END)
+S1083	S1083_context-stop-proves-nothing	comment
+S108	S108_rdshape_accepts_bref	owner:P2d:gk_build(case A_BOL|case A_END);owner:P2d:rd_shape(case A_BOL|case A_END)
+S1100	S1100_collapse-drops-rmin	owner:P2c,P2d:compile_ast(N_BOT_M|N_EOL_M|anch.multiline|case A_BOL|case A_END)
+S124	S124_look_negative_no_cut	comment
+S125	S125_look_push_after_body	comment
+S127	S127_look_not_nullable	owner:P2d:pcrec_nullable(case A_BOL|case A_END)
+S129	S129_look_ignores_neg	comment
+S130	S130_look_ignores_behind	comment
+S14	S14_nbr_threshold	owner:P2c,P2d:compile_ast(N_BOT_M|N_EOL_M|anch.multiline|case A_BOL|case A_END)
+S156	S156_call_not_nullable	owner:P2d:pcrec_nullable(case A_BOL|case A_END)
+S157	S157_possessify_across_call	owner:P2c,P2d:first_of(anch.multiline|case A_BOL|case A_END);owner:P2d:gk_build(case A_BOL|case A_END)
+S158	S158_call_target_unmarked	owner:P2d:pcrec_bref_mark(case A_BOL|case A_END)
+S159	S159_mark_follows_body	owner:P2d:pcrec_bref_mark(case A_BOL|case A_END)
+S160	S160_revdet_reverses_call	owner:P2d:rd_shape(case A_BOL|case A_END)
+S174	S174_elision_marks_live_group_dead	owner:P2d:pcrec_has_live_capture(case A_BOL|case A_END)
+S177	S177_splice_slots_uncounted	owner:P2d:vm_count_slots(case A_BOL|case A_END)
+S218	S218_pinned_predicate_widened	witness:P2c
+S219	S219_pinned_seed_conjunct_dropped	comment
+S220	S220_pinned_view_clause_dropped	comment
+S222	S222_start_stamp_forked_from_selection	witness:P2c
+S235	S235_attempt_loop_ungated	witness:P2c
+S302	S302_e1_kind_mask_moves_under_lowering	owner:P2d:lower_walk(case A_BOL|case A_END)
+S305	S305_lit_run_slot_walk_overskips	owner:P2d:vm_count_slots(case A_BOL|case A_END)
+S338	S338_t3_two_character_body	owner:P2d:lang_charset(case A_BOL|case A_END)
+S339	S339_t3_capture_bearing_body	owner:P2d:lang_charset(case A_BOL|case A_END)
+S341	S341_ctx_absent_reads_in_set	owner:P2c,P2d:pcrec_build_dfa(CTXROW_NEWLINE|N_BOT_M|N_EOL_M|case N_END|nl_bit)
+S343	S343_ctx_shared_set_first_row_only	anchor:P2c:ctx_collect;witness:P2c
+S365	S365_wclass_walks_the_set	owner:P2c,P2d:vm_emit_node(anch.multiline|case A_BOL|case A_END)
+S366	S366_wclass_island_default	owner:P2d:vm_isl_words(case A_BOL|case A_END)
+S446	S446_req_cube_crosses_repeat	owner:P2d:rb_walk(case A_BOL|case A_END)
+S463	S463_handoff_k_minus_one	witness:P2c
+S465	S465_width_counts_characters	owner:P2d:rb_walk(case A_BOL|case A_END)
+S470	S470_no_clamp	witness:P2c
+S480	S480_dfahat_t_from_s0_escapes	comment
+S490	S490_dfahat_scan_kind_conjunct	witness:P2c
+S498	S498_walk_call_drops_bytes	owner:P2d:ss_walk(case A_BOL|case A_END)
+S499	S499_walk_bref_drops_bytes	owner:P2d:ss_walk(case A_BOL|case A_END)
+S49	S49_poss_eol_follow_ignored	owner:P2c,P2d:first_of(anch.multiline|case A_BOL|case A_END)
+S500	S500_walk_var_drops_bytes	owner:P2d:ss_walk(case A_BOL|case A_END)
+S501	S501_walk_look_consumes	owner:P2d:ss_walk(case A_BOL|case A_END)
+S513	S513_c11_libc_name_dropped	comment
+S52	S52_revdet_first_iteration_captures	owner:P2d:vm_rev_emit(case A_BOL|case A_END)
+S588	S588_poss_call_in_lookaround_ignored	owner:P2d:pss_walk(case A_BOL|case A_END)
+S58	S58_mrl_minw_underreports	owner:P2d:pcrec_minw(case A_BOL|case A_END)
+S59	S59_mrl_minw_overreports	owner:P2d:pcrec_minw(case A_BOL|case A_END)
+S608	S608_cand_read_g1_attempt_edge_undeclared	witness:P2c
+S613	S613_nullable_call_no_empty_path	owner:P2c,P2d:em_set(anch.multiline|case A_BOL|case A_END)
+S617	S617_m4_mline_plus_k_dropped	witness:P2c
+S618	S618_m4_find_back_range_short	comment
+S69	S69_endvar_against_base	comment
+S70	S70_unbuilt_refusal_removed	comment
+S71	S71_wordctx_alphabet_unconditional	owner:P2c:ctx_collect(cs->rows = 0;|d->ctx[k].rows |= 1u << )
+S746	S746_look_erasure_unrecorded	owner:P2c,P2d:compile_ast(N_BOT_M|N_EOL_M|anch.multiline|case A_BOL|case A_END)
+S761	S761_end_pin_optional_repeat	owner:P2c,P2d:ew_walk_marked(anch.multiline|case A_BOL|case A_END)
+S762	S762_end_pin_multiline_dollar	anchor:P2c:ew_walk_marked;witness:P2c
+S76	S76_mlinectx_alphabet_unconditional	owner:P2c:ctx_collect(cs->rows = 0;|d->ctx[k].rows |= 1u << );witness:P2c
+S77	S77_first_of_ignores_multiline	anchor:P2c:first_of;witness:P2c
+S78	S78_skip_decline_removed	witness:P2c
+S807	S807_min0_repeat_no_set_shift	owner:P2d:rb_walk(case A_BOL|case A_END)
+S81	S81_cand_set_hardcoded_newline	witness:P2c
+S82	S82_prefilter_bound_at_zero	witness:P2c
+S83	S83_gstart_family_unconditional	comment
+S84	S84_gstart_takes_end_exemption	owner:P2c,P2d:first_of(anch.multiline|case A_BOL|case A_END)
+S86	S86_kreset_write_untrailed	owner:P2c,P2d:vm_emit_node(anch.multiline|case A_BOL|case A_END)
+S893	S893_cmp3-kill-skips-gstart	owner:P2c,P2d:q_rewrite(anch.multiline|case A_BOL|case A_END)
+S900	S900_cmp10-kill-multiline-bol	anchor:P2c:q_rewrite;witness:P2c
+S904	S904_cmp14-prune-called-group	owner:P2c,P2d:q_rewrite(anch.multiline|case A_BOL|case A_END)
+S91	S91_discharge_unconditional	owner:P2d:dis_walk(case A_BOL|case A_END)
+S94	S94_rdshape_accepts_atomic	owner:P2d:rd_shape(case A_BOL|case A_END)
+S97	S97_discharge_inherits_stamp	owner:P2d:dis_walk(case A_BOL|case A_END)

@@ -27,3 +27,11 @@ u	\bcat\b
 -	ab|a$\n
 -	ab|a\Z\n
 -	ab|a$\n\z
+# [r4 B9] ctx_span.md's F-1 witnesses: a context item INSIDE span 0. conj.py's C8 is the
+# machine half only (A's S_d), so the first two read cover (A's S_1 = {b} / \d) and the third
+# DECLINES at exact (A's language from the origin is not a product). The span_facts half
+# (the extended k-set walk, Z2) must state S_1 = {b} / \d and exact_len 1 on the third; the
+# pass-through plant (S1149) states S_1 = [a-z] / \w and reads exact/producers-disagree
+-	a(?=b)[a-z]
+-	\w(?=\d)\w
+-	[a-z0-9_ ]\b[a-z ]

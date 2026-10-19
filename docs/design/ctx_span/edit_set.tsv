@@ -1,0 +1,49 @@
+# docs/design/ctx_span.md rev 2 §4.5.4: the text P2a-P2d CHANGE, as data, at main
+# 3b0f87b55 (src identical to 2ce4a1124). Read by ../start_table/sabotage_anchors.py
+# (RE-AIM iff an anchor sits in a `def` below or OVERLAPS a `token`/`line`
+# occurrence; tokens match as raw substrings in EVERY file, so each is distinctive).
+# GRAIN: `def` = a definition rewritten throughout; else the token or line that
+# changes. Inserted lines (vm_ctx_forms rows, the two fn predicates) are not listed.
+# kind	value	commit	why
+line	    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    CTXFN_PREV        = 0xC,   /* (?<=C) */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    CTXFN_NEXT        = 0xA,   /* (?=C)  */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */	P2a	the six functions re-encoded as rows of the 9-cell table (absent copied from out)
+line	    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */	P2a	NState.ctxfn widens to uint16_t
+line	            uint8_t             fn;	P2a	Ast u.ctx.fn widens to uint16_t
+line	    uint8_t     fn;      /* CTXFN_* */	P2a	vm_ctx_forms' key widens
+line	Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)	P2a	the builder's fn parameter widens
+line	bool  pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,	P2a	prototype widens
+def	pcrec_poss_ctx_admits	P2a	the model reads bit 3p+q; P2b adds the absent-reading decline (B3)
+line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2a	the closure index becomes 3p+q
+line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2b	p/q read absent from Sides (A1)
+def	sides_of	P2b	A1: left_abs/right_abs set per direction
+def	Sides	P2b	A1: the struct carries left_abs/right_abs
+token	anch.multiline	P2c	the field is deleted; every reader goes (table A)
+token	N_BOT_M	P2c	the kind is deleted (table B)
+token	N_EOL_M	P2c	the kind is deleted (table B)
+token	nl_bit	P2c	the newline row's list index is deleted
+token	CTXROW_NEWLINE	P2c	the contributor row is deleted
+token	PCREC_NO_MLINECTX	P2c	the knob is deleted with its gate
+token	cr_nl_reads	P2c	the row's reads predicate is deleted
+token	cr_nl_set	P2c	the row's set function is deleted
+token	field+fold lowering	P2c	the registry's ^/$ description strings are rewritten
+line	            bool multiline;	P2c	the anch payload's only member is deleted
+line	    if (k == A_BOL || k == A_EOL)	P2c	mod_assertions.c's pin of the field is deleted
+line	            d->ctx[k].rows |= 1u << r;	P2c	B5: with the newline row gone no two rows can share a set (no byte-expressible set equals utf8's non-start set), so the rows sharing logic is dead
+line	                cs->rows = 0;	P2c	B5: the rows field goes with its sharing logic
+def	ctx_rows_knobbed	P2c	the MLINECTX knob goes; WORDCTX stays
+def	ctx_entry_live	P2c	B5: liveness no longer reads a rows mask
+token	case A_BOL	P2d	every A_BOL label goes (the kind folds)
+token	k = A_BOL	P2d	\A builds the A_CTX row
+token	A_BOL,	P2d	the enum member goes
+token	case A_END	P2d	every A_END label goes (the kind folds)
+token	k = A_END	P2d	\z builds the A_CTX row
+token	A_END,	P2d	the enum member goes
+token	case N_BOT:	P2d	the NFA kind goes
+token	k == N_BOT ||	P2d	pcrec_nfa_has_bot reads the fn predicate only
+token	case N_END	P2d	the NFA kind goes
+token	N_BOT,	P2d	the enum member goes
+token	N_END,	P2d	the enum member goes
