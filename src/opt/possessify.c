@@ -235,8 +235,18 @@ static First first_of(Fq *q, const Ast *a);
 bool pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
                            unsigned pmask, uint8_t out[32])
 {
+    /* [DD-11.5] A ROW THAT READS AN ABSENT SIDE IS NOT NARROWED (ctx_span.md
+     * §4.2.5, [r4 B3, A4]): `First` cannot say "passes with no next byte", so
+     * narrowing `(?m)^`/`(?m)$` would hand every `nullable` reader a false
+     * non-nullable. Widening is the value those gates had as A_BOL/A_EOL
+     * multiline; VALUING them is UL-c, its own event. */
+    if (ctxfn_reads_absent_prev(fn) || ctxfn_reads_absent_next(fn))
+        return false;
     bool qok[2] = { false, false };
-    for (unsigned p = 0; p < 2; p++) {
+    /* Bit 2 of `pmask` is "no previous character": on a row that reads no
+     * absent side its cells are the `out` row's, so it admits what bit 0
+     * does. */
+    for (unsigned p = 0; p < 3; p++) {
         if (!(pmask & (1u << p))) continue;
         for (unsigned qv = 0; qv < 2; qv++)
             if (ctxfn_cell(fn, p, qv)) qok[qv] = true;
@@ -258,6 +268,15 @@ bool pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
         if (out[i]) any = true;
     }
     return any;
+}
+
+/* Can arm A value the gate `g` at all? Not when its row reads an absent
+ * side ([DD-11.5]): `pcrec_poss_ctx_admits` never narrows one, so it is
+ * summarized as `first_of`'s widened bytes, not as a gate group. */
+static bool ctx_valued(const Ast *g)
+{
+    return !ctxfn_reads_absent_prev(g->u.ctx.fn) &&
+           !ctxfn_reads_absent_next(g->u.ctx.fn);
 }
 
 /* A gate's S(P) for the node `g`. */
@@ -1287,7 +1306,7 @@ static PSum ps_node(Pss *P, const Ast *a)
     memset(&r, 0, sizeof r);
     switch (a->k) {
     case A_CTX:
-        if (P->fq.arm_a) {
+        if (P->fq.arm_a && ctx_valued(a)) {
             PGate x;
             memset(&x, 0, sizeof x);
             x.iv = a->u.ctx.iv;

@@ -8345,7 +8345,7 @@ static void vm_region(Vm *v, int i)
  *
  * [DD-11.5] THE ROWS ARE src/core/ctxfn.def's, the one truth table's VM
  * columns, so a function cannot gain a row without gaining its form. */
-enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT };
+enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT, VMCTX_MLBOL, VMCTX_MLEOL };
 typedef struct {
     uint16_t    fn;      /* CTXFN_* */
     int         side;    /* VMCTX_*: which neighbour(s) the test reads */
@@ -8411,6 +8411,22 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
         vm_ctx_side(v, b, si, VMCTX_PREV);
         pcrec_sb_printf(b, " %s ", f->join);
         vm_ctx_side(v, b, si, VMCTX_NEXT);
+        pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+    } else if (f->side == VMCTX_MLBOL) {
+        /* [DD-11.5] `(?m)^`, the two rows that read an ABSENT side: the
+         * position half is the expression's first disjunct, so `pos == 0`
+         * short-circuits before `s[pos-1]` is formed (K27's discipline on the
+         * legal `(s == NULL, n == 0)` subject). `pos < n` is NOT a bounds
+         * guard — it is the row's `in`/`absent` cell: PCRE2's `(?m)^` does
+         * not hold after a newline that ends the string (U11). */
+        pcrec_sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
+        vm_cls_test(v, b, si, "subject[scan_position-1]");
+        pcrec_sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
+    } else if (f->side == VMCTX_MLEOL) {
+        /* `(?m)$`: end of subject, or before ANY newline. `pos == n`
+         * short-circuits before `s[pos]`. */
+        pcrec_sb_puts(b, "    if (scan_position == subject_length || (");
+        vm_cls_test(v, b, si, "subject[scan_position]");
         pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
     } else {
         pcrec_sb_puts(b, f->neg ? "    if (!" : "    if (");

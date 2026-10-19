@@ -3,9 +3,10 @@
  * EXHAUSTIVE MODEL CHECK of `pcrec_poss_ctx_admits`, arm A's table-shaped
  * primitive, exported for exactly this file.
  *
- * THE UNIVERSE. All 16 truth tables `fn` x the 3 NON-EMPTY left-polarity
- * masks `pmask` (bit 0: the left character is not in C, bit 1: it is) x a
- * set of gate sets C. The C set deliberately includes the shapes each clause
+ * THE UNIVERSE. All 512 truth tables `fn` of the 9-cell context table
+ * (src/core/ctxfn.def, bit `3p + q`; [DD-11.5]) x the 7 NON-EMPTY
+ * left-polarity masks `pmask` over three values (bit 0: the left character
+ * is not in C, bit 1: it is, bit 2: there is none) x a set of gate sets C. The C set deliberately includes the shapes each clause
  * of the rule exists for: the empty set; all 256 bytes; every code point; the
  * ASCII word set; single bytes at the ends of the byte tier; a set with
  * members ONLY above 0xFF ({U+0100}), which is the A-F3 case; a set
@@ -16,8 +17,12 @@
  * a bitset by walking intervals the way the function does: it asks, byte by
  * byte, "is this byte in C" with a plain linear scan over the interval list
  * (the list is never assumed sorted by the model), and derives the admitted
- * next-memberships Q(P) by a direct existential over P and the table's bit
- * (p << 1 | q). Then, per the rule:
+ * next-memberships Q(P) by a direct existential over P and the table's
+ * cell (p, q) for q a BYTE's membership (0 or 1). Then, per the rule:
+ *   - the row reads an ABSENT side (its absent row differs from its out row,
+ *     or its absent column from its out column, compared cell by cell here):
+ *     NO narrowing ([DD-11.5], ctx_span.md §4.2.5 — `First` cannot say
+ *     "passes with no next byte");
  *   - Q(P) = {0,1}: NO narrowing (the function returns false);
  *   - Q(P) = {}   : the gate never passes: narrowed to the EMPTY set (true,
  *                   out all zero);
@@ -63,16 +68,27 @@ static unsigned rnd(void)
     return (unsigned)(rng_state >> 16);
 }
 
-static int cnt_nonarrow, cnt_empty, cnt_narrow, cnt_widen;
+static int cnt_nonarrow, cnt_empty, cnt_narrow, cnt_widen, cnt_absent;
+
+static unsigned cell(uint16_t fn, unsigned p, unsigned q) { return (fn >> (3u * p + q)) & 1u; }
+
+/* The absent-reading test, written out cell by cell. */
+static int reads_absent(uint16_t fn)
+{
+    for (unsigned k = 0; k < 3; k++)
+        if (cell(fn, 2, k) != cell(fn, 0, k) || cell(fn, k, 2) != cell(fn, k, 0))
+            return 1;
+    return 0;
+}
 static int failures, cells;
 
 /* Evaluate the model for (fn, c, pmask) and compare with the function. */
 static void check(uint16_t fn, const CSet *c, unsigned pmask, const char *tag)
 {
     int qadm[2] = { 0, 0 };
-    for (unsigned p = 0; p < 2; p++)
+    for (unsigned p = 0; p < 3; p++)
         for (unsigned q = 0; q < 2; q++)
-            if (((pmask >> p) & 1u) && ((fn >> (3u * p + q)) & 1u))
+            if (((pmask >> p) & 1u) && cell(fn, p, q))
                 qadm[q] = 1;
 
     uint8_t out[32];
@@ -83,7 +99,9 @@ static void check(uint16_t fn, const CSet *c, unsigned pmask, const char *tag)
     bool want_ret; uint8_t want[32];
     memset(want, 0, sizeof want);
     int compare_out = 1;
-    if (qadm[0] && qadm[1]) {
+    if (reads_absent(fn)) {
+        want_ret = false; compare_out = 0; cnt_absent++;
+    } else if (qadm[0] && qadm[1]) {
         want_ret = false; compare_out = 0; cnt_nonarrow++;
     } else if (!qadm[0] && !qadm[1]) {
         want_ret = true; cnt_empty++;
@@ -152,19 +170,10 @@ int main(void)
         ns++;
     }
 
-    /* Each four-cell table `t` (bit `p << 1 | q`) as its 9-cell row with
-     * the absent cells copied from `out` (ctx_span.md §4.2.2), bit `3p + q`
-     * written out here rather than read from src/core/ctxfn.def. */
-    for (int t = 0; t < 16; t++) {
-        uint16_t fn = 0;
-        for (unsigned p = 0; p < 3; p++)
-            for (unsigned q = 0; q < 3; q++)
-                if ((t >> (((p == 2 ? 0 : p) << 1) | (q == 2 ? 0 : q))) & 1)
-                    fn |= (uint16_t)(1u << (3u * p + q));
-        for (unsigned pm = 1; pm <= 3; pm++)
+    for (unsigned fn = 0; fn < 512; fn++)
+        for (unsigned pm = 1; pm <= 7; pm++)
             for (int i = 0; i < ns; i++)
-                check(fn, &sets[i], pm, "sweep");
-    }
+                check((uint16_t)fn, &sets[i], pm, "sweep");
 
     /* A-F3's unit cell, NAMED: C = {U+0100}; (?=C) is CTXFN_NEXT (the
      * answer is q regardless of p). Q(P) = {1}, S(P) = {} (nothing
@@ -187,10 +196,11 @@ int main(void)
     }
     free(names);
 
-    printf("ctx_admits: %d cells (16 fn x 3 pmask x %d C + A-F3 unit cells): "
-           "no-narrow %d, narrowed-empty %d, narrowed %d, widen-on-empty-S %d\n",
-           cells, ns, cnt_nonarrow, cnt_empty, cnt_narrow, cnt_widen);
-    if (!cnt_nonarrow || !cnt_empty || !cnt_narrow || !cnt_widen) {
+    printf("ctx_admits: %d cells (512 fn x 7 pmask x %d C + A-F3 unit cells): "
+           "absent-reading %d, no-narrow %d, narrowed-empty %d, narrowed %d, "
+           "widen-on-empty-S %d\n",
+           cells, ns, cnt_absent, cnt_nonarrow, cnt_empty, cnt_narrow, cnt_widen);
+    if (!cnt_absent || !cnt_nonarrow || !cnt_empty || !cnt_narrow || !cnt_widen) {
         fprintf(stderr, "FAIL: a rule branch was never exercised (K35)\n");
         failures++;
     }

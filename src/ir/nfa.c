@@ -1314,7 +1314,12 @@ bool pcrec_nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
-            nfa->st[i].k == N_GSTART) return true;
+            nfa->st[i].k == N_GSTART ||
+            /* [DD-11.5] a context row that reads "no previous character"
+             * (`(?m)^`'s) is a BOT-family node for this file's reason: the
+             * reverse machine would need it at its termination boundary. */
+            (nfa->st[i].k == N_CTX && ctxfn_reads_absent_prev(nfa->st[i].ctxfn)))
+            return true;
     return false;
 }
 

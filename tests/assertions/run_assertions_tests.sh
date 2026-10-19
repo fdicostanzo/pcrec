@@ -72,6 +72,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 1b. [DD-11.5] CK-8: THE A_CTX TRUTH TABLE AGAINST LIBPCRE2
+#     (ctxfn_table_check.py; docs/design/ctx_span.md §6). Every row of
+#     src/core/ctxfn.def, its nine cells derived from libpcre2 through the
+#     row's canonical lookaround spelling (and its native one where it has
+#     one: \b, \B, (?m)^, (?m)$) over the {a,-,\n} family; every row must
+#     reach all nine cells. FAILING DIRECTION: one flipped cell (SP-8,
+#     sabotage S1158) is reported by row and cell.
+# ---------------------------------------------------------------------------
+echo
+echo "== [DD-11.5] CK-8 the context truth table against libpcre2 =="
+if ck8_out="$(python3 "$SCRIPT_DIR/ctxfn_table_check.py" 2>&1)"; then
+    case "$ck8_out" in
+        SKIP*) echo "$ck8_out"; ok "CK-8: skipped loudly (libpcre2-8 absent), not silently" ;;
+        *)     ok "CK-8: ${ck8_out##*$'\n'}" ;;
+    esac
+else
+    echo "$ck8_out" >&2
+    bad "CK-8: src/core/ctxfn.def disagrees with libpcre2"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. THE CONTROL UNDER tests/reject's TWO-ANSWER PINS
 # ---------------------------------------------------------------------------
 echo

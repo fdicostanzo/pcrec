@@ -49,3 +49,16 @@ CTXFN_ROW(NEXT,        0x092,  0,1,0,  0,1,0,  0,1,0,
 /* (?!C) */
 CTXFN_ROW(NOT_NEXT,    0x16D,  1,0,1,  1,0,1,  1,0,1,
           VMCTX_NEXT, NULL, true,  "next character not in the set")
+/* (?m)^ (the parser, P2c): start of subject, or after a newline that is not
+ * the subject's last byte — libpcre2's `\A|(?<=\n)(?=[\s\S])`, 547/547. The
+ * `in`/`absent` cell is 0 because PCRE2's default `(?m)^` does not hold after
+ * a FINAL newline (`PCRE2_ALT_CIRCUMFLEX` is the option that turns it on). */
+CTXFN_ROW(MLINE_BOL,   0x1D8,  0,0,0,  1,1,0,  1,1,1,
+          VMCTX_MLBOL, NULL, false,
+          "(?m)^ attempt_position of subject or after a non-final newline")
+/* (?m)$: end of subject, or before a newline — libpcre2's `(?![^\n])`,
+ * 547/547, stated over {\n} with the absent column set (ctx_span.md §4.2.4:
+ * the only A_CTX spelling of it under utf8, and today's atoms under byte). */
+CTXFN_ROW(MLINE_EOL,   0x1B6,  0,1,1,  0,1,1,  0,1,1,
+          VMCTX_MLEOL, NULL, false,
+          "(?m)$ end of subject or before a newline")

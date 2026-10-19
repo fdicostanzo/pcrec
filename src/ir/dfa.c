@@ -1620,6 +1620,19 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
         case N_BOT_M:
         case N_EOL_M:
         case N_END:   has_end = true; break;
+        /* [DD-11.5] a context row that reads "no next character" needs the
+         * `pos == n` view for N_EOL_M's reason; a four-cell row reads none. */
+        case N_CTX:
+            if (ctxfn_reads_absent_next(nfa->st[i].ctxfn)) has_end = true;
+            /* No reverse machine may meet a row that reads "no previous
+             * character": `pcrec_nfa_has_bot` routes every such pattern to
+             * ENG_ATTEMPT, which builds none, and `sides_of` never sets a
+             * reverse `left_abs` (ctx_span.md §4.2.3, R1's consequence). */
+            DFA_INVARIANT(cx, !reverse || !ctxfn_reads_absent_prev(nfa->st[i].ctxfn),
+                          "a reverse DFA met a context row that reads an absent "
+                          "previous character (the ENG_ATTEMPT routing of "
+                          "pcrec_nfa_has_bot was bypassed)");
+            break;
         /* [M6.2 wave D] `\G` refines NO alphabet and asks for NO position
          * view — it reads no byte and its truth at `pos` has nothing to do
          * with where `pos` sits in the subject. All it wants is the second
