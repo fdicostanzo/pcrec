@@ -1,0 +1,213 @@
+## 1. readers of the abi NUMBER (B2): the number 80 beside abi/ABI, or as `80`
+##    (journal/lanes/reviews are history and excluded; classify each hit reader|record)
+./memfn/docs/journal.md:2440:- B3b was built by lane b3b (opus). Lane b3brev reviewed it MERGE-WITH-FIXES (1 blocker, 4 majors, 6 minors), and b3bfix fixed all eleven. The fixes include `kit_ask`'s on
+./memfn/docs/wake.md:45:**On main (d18cee085):** B0-B3b, R-23, R-24, E-1, E1 (part layout, abi 80).
+./memfn/docs/wake.md:46:- pcrec abi is **80**.
+./src/gen/emit_dfa.c:54:#define PCREC_ARTIFACT_ABI 80
+./src/gen/CLAUDE.md:1278:**Review r1 fixes (lane e1fix, 2026-10-18; zero default movers, abi 80):**
+./tests/mech/sabotages/S693_abi_not_bumped.sh:57:SAB_BEFORE='#define PCREC_ARTIFACT_ABI 80'
+./tests/codegen/run_recursion_identity.sh:1262:FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7c0a90479}"   # [ENTRY-TABLE] E1 merge (2026-10-18), abi 80 (was fc67299b5, lane e1's self-pin)
+./tests/codegen/run_codegen_tests.sh:3149:    ABI_EXPECT=80
+./docs/design/memfn/setfind_bench_request.md:47:   | `capability/high-byte-run` | `hbr`, `hbrc` | 80..FF | DFA prefilter |
+./docs/design/ctx_span/readers.sh:25:echo "## 1. readers of the abi NUMBER (B2): the number 80 beside abi/ABI, or as \`80\`"
+./docs/design/ctx_span/readers.sh:27:command grep -rnIE '(abi|ABI_EXPECT|PCREC_ARTIFACT_ABI|PCREC_RX_ABI_H)[^0-9]{0,40}\b80\b|`80`|\b80\b[^0-9]{0,25}\babi\b' "${X[@]}" . \
+./docs/design/ctx_span/readers.txt:1:## 1. readers of the abi NUMBER (B2): the number 80 beside abi/ABI, or as `80`
+./docs/design/ctx_span.md:3:Lane `ctxspan` (opus, design only), 2026-10-18, main `2ce4a1124`, abi 80. The charter is
+./docs/design/ctx_span.md:32:| cost | an abi event (80 → 81). Six readers of the number by grep (§4.5.1). Byte identity is reachable for every artifact except DFA machines whose context-set list ORDER
+./docs/design/ctx_span.md:524:Any moved byte makes it an abi event: 80 → 81. Readers of the number at `2ce4a1124`:
+./docs/design/ctx_span.md:528:| the define | `src/gen/emit_dfa.c:54` `#define PCREC_ARTIFACT_ABI 80` |
+./docs/design/ctx_span.md:529:| the codegen pin | `tests/codegen/run_codegen_tests.sh:3149` `ABI_EXPECT=80` |
+./docs/design/ctx_span.md:532:| the spec's number sentence | `docs/spec/match_api.md` §6¶17 ("It is `80` on every artifact") |
+./docs/design/kit_proof.md:4:abi 80, `MF_SITE_ABI` 16, `MF_CLASS_V` 3). Revision 2.1 applies the re-check of revision
+./docs/design/kit_proof.md:400:Today `foobar` (abi 80) declares three forward tables, runs the forward scan loop with
+./docs/design/kit_proof.md:879:| pcrec abi 80 → +1 (B1: the `cover` entry, the kit's REPORT text, the stamp value) | B1 | `src/gen/emit_dfa.c:54` `PCREC_ARTIFACT_ABI` (emitted at `:138`); `docs/spec/m
+./docs/design/CLAUDE.md:3229:- `kit_proof.md` — **[KIT-VERIFY] U1, REPORT WITHOUT AN ENGINE, with D161 addendum 16's context spans; DESIGN NOTE, PROPOSED, nothing built** (rev 1 lane `u1design`, 2026-
+./docs/design/CLAUDE.md:3241:- `ctx_span.md` — **[DD-11.5] RE-SCOPED: THE SPAN-CONTEXT PRODUCER (D168) AND `A_BOL`/`A_EOL` INTO `A_CTX` (D168 addendum 1); DESIGN NOTE, PROPOSED, nothing built** (lane 
+./docs/dev/k75_measurement.md:20:- **B**: a STRAY, claimed by no lead: `80` alone; after ASCII (`61 80`,
+./docs/dev/k75_measurement.md:33:| B, 13 cells | -36 (12), -22 (1: offset 0 of `80`, the byte is illegal as a first byte) | advanced exactly as for A: `x*` 13/13 answer at the moved start; `.` 9 moved
+./docs/dev/plan.md:70:      status (2026-10-18): E0, E0c and E1 MERGED (E1 = the part-layout controls, merge 7c0a90479, abi 80, review r1-e1 fixed; [ATTR-TABLE] landed 7d3587441); every preset cell a 
+./docs/dev/history/abi_changelog.md:26:- **`rx_info.abi` is `80` on every artifact today (lane e1 bumped it from
+docs/spec/match_api.md §1¶7:#error "pcrec: this artifact (abi 80) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+docs/spec/match_api.md §1¶7:#define PCREC_RX_ABI_H 80
+docs/spec/match_api.md §6¶1:| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `80` | — |
+docs/spec/match_api.md §6¶17:`struct rx_info`'s layout. It is `80` on every artifact pcrec emits today; it
+
+## 2. the multiline field and the two kinds, CODE lines in src/ (tables A, B)
+src/opt/possessify.c:649:        if (a->u.anch.multiline) {
+src/opt/derive.c:226:        if (lb || a->u.anch.multiline) return (QRes){ a, false, false };
+src/opt/derive.c:291:        case A_BOL: if (!lb && !a->u.anch.multiline) p->bol_out++; return;
+src/ir/nfa.c:620:    case A_BOL:   return frag_single(b, a->u.anch.multiline ? N_BOT_M : N_BOT);
+src/ir/nfa.c:627:        if (b->lower && !a->u.anch.multiline) {
+src/ir/nfa.c:636:        return frag_single(b, a->u.anch.multiline ? N_EOL_M : N_EOL);
+src/ir/nfa.c:1316:        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
+src/ir/dfa.c:156:enum { CTXROW_CTX = 0, CTXROW_NEWLINE = 1, CTXROW_NOSTART = 2 };
+src/ir/dfa.c:171:static bool cr_nl_reads(const NState *st)
+src/ir/dfa.c:172:{ return st->k == N_BOT_M || st->k == N_EOL_M; }
+src/ir/dfa.c:173:static bool cr_nl_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
+src/ir/dfa.c:190:    [CTXROW_NEWLINE] = { "newline", "the newline set (?m)^ and (?m)$ read (D64)",
+src/ir/dfa.c:191:                         cr_nl_reads, cr_nl_set },
+src/ir/dfa.c:262:#ifdef PCREC_NO_MLINECTX
+src/ir/dfa.c:263:    knobbed |= 1u << CTXROW_NEWLINE;
+src/ir/dfa.c:345:            (d->ctx[k].rows & (1u << CTXROW_CTX | 1u << CTXROW_NEWLINE)))
+src/ir/dfa.c:696:    case N_BOT_M:
+src/ir/dfa.c:697:    case N_EOL_M:
+src/ir/dfa.c:769:    int       nl_bit, ns_bit;
+src/ir/dfa.c:832:    int       nl_bit;     /* list index of the newline set, or -1 */
+src/ir/dfa.c:1071:            case N_BOT_M:
+src/ir/dfa.c:1072:                if (!cl->bot_ok && !(ctx_bit(cl->left, cl->nl_bit) && !cl->end_ok)) break;
+src/ir/dfa.c:1075:            case N_EOL_M:
+src/ir/dfa.c:1076:                if (!cl->end_ok && !ctx_bit(cl->right, cl->nl_bit)) break;
+src/ir/dfa.c:1147:               sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune,
+src/ir/dfa.c:1589:        case N_BOT_M:
+src/ir/dfa.c:1590:        case N_EOL_M:
+src/ir/dfa.c:1643:    sc.nl_bit = sc.ns_bit = -1;
+src/ir/dfa.c:1648:        if (r & (1u << CTXROW_NEWLINE)) sc.nl_bit = k;
+src/parse/mod_assertions.c:225:        res.node->u.anch.multiline = false;
+src/parse/parse.c:1681:    case '^': { Ast *a = node(cx, A_BOL); a->u.anch.multiline = cx->mods->multiline;
+src/parse/parse.c:1696:        Ast *a = node(cx, A_EOL); a->u.anch.multiline = cx->mods->multiline;
+src/core/internal.h:2014:    N_BOT_M,
+src/core/internal.h:2015:    N_EOL_M,
+src/facts/startanch.c:117:            return acc | (a->u.anch.multiline ? 0u : SA_BOT);
+src/facts/endwin.c:138:            if (a->u.anch.multiline) return EW_NONE;
+src/facts/endwin.c:296:            if (!a->u.anch.multiline) em_push(w, a);
+src/facts/widths.c:129:            return em_cat(acc, a->u.anch.multiline ? EM_ANY : 1u << EM_S);
+src/facts/widths.c:131:            return em_cat(acc, a->u.anch.multiline ? EM_ANY : 1u << EM_E);
+src/facts/kset.c:139:        case N_BOT_M:
+src/facts/kset.c:140:        case N_EOL_M:
+src/gen/emit_vm.c:8893:        if (a->u.anch.multiline) {
+src/gen/emit_vm.c:8931:        if (a->u.anch.multiline) {
+
+## 3. the same names in COMMENT lines in src/ (reworded at P2c; C1)
+src/opt/revdet.c:557:             * for `Ast.u.anch.multiline` awareness and needing none: widening is
+src/opt/possessify.c:108: * onto the node (`Ast.u.anch.multiline`), this analysis reads the node it is
+src/opt/possessify.c:637:         * `a->u.anch.multiline` and NOT `cx->mods`. This arm used to consult a bool
+src/opt/derive.c:15: *     (`A_BOL`, `!u.anch.multiline`) becomes never: a route optimization,
+src/ir/nfa.c:1295: * reason the reverse machine never has to evaluate N_BOT_M.
+src/ir/dfa.c:58: * `-DPCREC_NO_MLINECTX` compiles the NEWLINE half of the class axis out (no
+src/ir/dfa.c:61: * knobs around it: tests/codegen/run_mlinectx_identity.sh. Never defined in a
+src/ir/dfa.c:252: * `-DPCREC_NO_MLINECTX` the newline set from the refinement AND from the atom
+src/ir/dfa.c:255: * tests/codegen/run_wordctx_identity.sh / run_mlinectx_identity.sh. */
+src/ir/dfa.c:273:     * `nl_bit`), so the knob still removes exactly what it names. */
+src/ir/dfa.c:1091:             * encoding" — `N_EOL_M`'s shape three arms up, with the encoding's
+src/ir/dfa.c:1470: *  - `has_end` off: `end_ok` gates nothing (no N_END, no N_EOL_M), so the
+src/ir/dfa.c:1580:        /* [K50] The gate makes the `pos == n` view live for `N_EOL_M`'s own
+src/parse/parse_mods.h:19: * (`Ast.u.anch.multiline`); THIS FILE is what stops the next analysis re-deriving it
+src/parse/parse_mods.h:33: * and `Ast.u.anch.multiline` (from `(?m)`) already have. */
+src/parse/parse_mods.h:50:     * onto the node as `Ast.u.anch.multiline`, at the position of the assertion
+src/parse/mod_assertions.c:42: * than only here: `Ast.u.anch.multiline` is PINNED FALSE (never copied from the
+src/parse/mod_assertions.c:75: * check06's rule, this port never does. `\A`/`\Z` pin `Ast.u.anch.multiline`
+src/parse/mod_modifiers.c:320:             * `Ast.u.anch.multiline` (D62; src/parse/parse.c). Nothing downstream
+src/core/internal.h:794:     * `Ast.u.anch.multiline` is meaningless here and is never read: `\G` is an
+src/core/internal.h:826:     * `Ast.u.anch.multiline` is meaningless here and is never read. */
+src/core/internal.h:1486:             * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.u.anch.multiline`'s sibling
+src/core/internal.h:2004:     * over different inputs (N_EOL is a position test; N_EOL_M reads a BYTE).
+src/core/internal.h:2009:     *   N_BOT_M  — start of subject, or the byte to the LEFT is a newline;
+src/core/internal.h:2010:     *   N_EOL_M  — end of subject, or the byte to the RIGHT is a newline.
+src/core/internal.h:2042:     * IT IS `N_EOL_M`'s SHAPE, not a new mechanism. `N_EOL_M` is "end of
+src/core/internal.h:2209:     * `(?m)$` (there is no N_WORDB/N_EOL_M to gate, so the closures
+src/facts/startanch.c:43: * `Ast.u.anch.multiline` IS READ, and D62 control 3 is why it has to be: under
+src/gen/emit_dfa.c:4234: * N_EOL_M the closures coincide, src/ir/dfa.c), which is what makes the
+src/gen/emit_dfa.c:8918: * `N_BOT`/`N_BOT_M`/`N_GSTART`: `s0` is closed with `bot_ok = true,
+src/gen/emit_vm.c:1901:         * `Ast.u.anch.multiline` awareness and needing none: this DECLINES on the
+
+## 4. readers of the knob and its gate OUTSIDE src/ (C1: tests, scripts, Makefile, CLAUDE.md)
+tests/lib/mlscan.py:9:  - tests/codegen/run_mlinectx_identity.sh splits its corpus on
+tests/lib/mlscan.py:12:    N_BOT_M/N_EOL_M, i.e. for `-DPCREC_NO_MLINECTX` to change anything.
+tests/lib/san_scripts.txt:37:tests/codegen/run_mlinectx_identity.sh
+tests/lib/CLAUDE.md:397:  here once — `tests/codegen/run_mlinectx_identity.sh` (which patterns the
+tests/lib/CLAUDE.md:398:  `-DPCREC_NO_MLINECTX` knob can change, i.e. its corpus split),
+tests/mech/run_sabotage_matrix.sh:169:#   mlinectxidentity  mlinediff       — added 2026-08-19 ([M6.2] wave C)
+tests/mech/run_sabotage_matrix.sh:1927:            mlinectxidentity)
+tests/mech/run_sabotage_matrix.sh:1935:                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_mlinectx_identity.sh" \
+tests/mech/run_sabotage_matrix.sh:1936:                    > "$work/mlinectxidentity.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:1937:                p="$(grep -m1 '^checks passed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
+tests/mech/run_sabotage_matrix.sh:1938:                f="$(grep -m1 '^checks failed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
+tests/mech/run_sabotage_matrix.sh:1939:                score_arm "$work/mlinectxidentity.log" "$f" "mlinectxid:${f:-ERR}fail/${p:-?}pass"
+tests/mech/CLAUDE.md:1727:FOUR rows for `(?m)`, running two new arms — `mlinectxidentity`
+tests/mech/CLAUDE.md:1728:(tests/codegen/run_mlinectx_identity.sh) and `mlinediff`
+tests/mech/CLAUDE.md:1900:| S76 | `mlinectxid:1fail/3pass, corpus:0fail/20533pass` | 1117 of 1201 differing |
+tests/assertions/CLAUDE.md:455:`run_mlinectx_identity.sh` (S76). Wave A's `run_endvar_identity.sh` was
+tests/codegen/run_gstart_identity.sh:41:# run_wordctx_identity.sh and run_mlinectx_identity.sh all state. The
+tests/codegen/run_gstart_identity.sh:83:# were two levels down at src/gen/enc/ (run_mlinectx_identity.sh's own note;
+tests/codegen/run_gstart_identity.sh:135:# run_mlinectx_identity.sh could not either, because `(?m)` is scoped and has
+tests/codegen/run_gstart_identity.sh:178:# the requirement is stated differently here than in run_mlinectx_identity.sh
+tests/codegen/run_mlinectx_identity.sh:2:# tests/codegen/run_mlinectx_identity.sh — [M6.2] WAVE C's BYTE-IDENTITY GATE.
+tests/codegen/run_mlinectx_identity.sh:43:# COMPILER from THIS tree's own sources with `-DPCREC_NO_MLINECTX`, which pins
+tests/codegen/run_mlinectx_identity.sh:47:# THE POSITIVE CONTROL is not decoration. If `-DPCREC_NO_MLINECTX` disabled
+tests/codegen/run_mlinectx_identity.sh:56:# Usage: bash tests/codegen/run_mlinectx_identity.sh
+tests/codegen/run_mlinectx_identity.sh:72:    if [ "$KEEP" = "1" ]; then echo "mlinectx-identity: KEEP=1, temp dir: $WORKDIR" >&2
+tests/codegen/run_mlinectx_identity.sh:101:REF="$WORKDIR/pcrec_nomlinectx"
+tests/codegen/run_mlinectx_identity.sh:109:        -DPCREC_NO_MLINECTX $SANFLAGS \
+tests/codegen/run_mlinectx_identity.sh:112:    echo "FAIL: could not build the -DPCREC_NO_MLINECTX reference compiler:" >&2
+tests/codegen/run_mlinectx_identity.sh:117:    echo "FAIL: the -DPCREC_NO_MLINECTX reference build produced warnings:" >&2
+tests/codegen/run_mlinectx_identity.sh:175:print("mlinectx-identity: corpus %d patterns; contain both `(?` and an `m`: "
+tests/codegen/run_mlinectx_identity.sh:224:    ok "positive control: $ctl_diff DFA-compiled multiline patterns differ between the two builds and 0 agree unexplained ($ctl
+tests/codegen/run_mlinectx_identity.sh:251:    ok "mlinectx identity: $same (?m)-free patterns emit BYTE-IDENTICAL C with and without the newline context"
+tests/codegen/run_mlinectx_identity.sh:253:    bad "mlinectx identity: $diff of $((same + diff)) (?m)-free patterns changed emitted bytes. Some site is paying for the new
+tests/codegen/CLAUDE.md:359:- **run_mlinectx_identity.sh** — [M6.2] wave C's BYTE-IDENTITY GATE, the third
+tests/codegen/CLAUDE.md:365:  tree's sources with `-DPCREC_NO_MLINECTX`; sabotage S76 is the measured
+Makefile:1273:	    'bash tests/codegen/run_mlinectx_identity.sh' \
+docs/testing.md:369:| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` + `run_wordctx_identity.sh` + `run_mlin
+
+## 5. the text-side (?m) classifier's users (tests/lib/mlscan.py; kept, comment reworded)
+tests/lib/san_scripts.txt:22:# shape as [SR-11]'s table_contract.md manifest and mlscan.py's self-
+tests/lib/CLAUDE.md:395:- **mlscan.py** — [M6.2] wave C: WHERE IS `(?m)` IN FORCE, decided from the
+tests/lib/CLAUDE.md:417:  `python3 tests/lib/mlscan.py` — 27 cases including every trap above and
+tests/assertions/run_mline_diff.sh:263:from mlscan import multiline_caret      # ONE implementation, three readers
+tests/assertions/run_mline_diff.sh:274:        if multiline_caret(pat):
+tests/codegen/run_endvar_identity.sh:153:# The classifier is tests/lib/mlscan.py (shared with the wave C gate and the
+tests/codegen/run_endvar_identity.sh:161:from mlscan import multiline_anchor
+tests/codegen/run_endvar_identity.sh:182:    return "\\z" in p or multiline_anchor(p)
+tests/codegen/run_endvar_identity.sh:190:         sum(1 for p in raw if multiline_anchor(p) and "\\z" not in p),
+tests/codegen/run_mlinectx_identity.sh:82:# tests/lib/mlscan.py decides this script's corpus SPLIT, so a drifted scanner
+tests/codegen/run_mlinectx_identity.sh:87:if python3 "$ROOT_DIR/tests/lib/mlscan.py" > "$WORKDIR/mlscan.log" 2>&1; then
+tests/codegen/run_mlinectx_identity.sh:88:    ok "tests/lib/mlscan.py self-check: $(tail -1 "$WORKDIR/mlscan.log")"
+tests/codegen/run_mlinectx_identity.sh:90:    bad "tests/lib/mlscan.py self-check FAILED — the corpus split below is derived from it, so this gate's population cannot be 
+tests/codegen/run_mlinectx_identity.sh:91:    cat "$WORKDIR/mlscan.log" >&2
+tests/codegen/run_mlinectx_identity.sh:162:from mlscan import multiline_anchor      # ONE implementation, three readers
+tests/codegen/run_mlinectx_identity.sh:171:real = [p for p in raw if multiline_anchor(p)]
+tests/codegen/run_mlinectx_identity.sh:172:rest = [p for p in raw if not multiline_anchor(p)]
+tests/codegen/CLAUDE.md:285:  `tests/lib/mlscan.py`'s `multiline_anchor`, and those patterns join the
+
+## 6. truth-function readers (table C) and raw fn literals in tests (A4)
+src/opt/dfamemo.c:67:           a->ctxfn == b->ctxfn && a->tail == b->tail && a->dist == b->dist &&
+src/opt/possessify.c:266:    return pcrec_poss_ctx_admits(g->u.ctx.fn, g->u.ctx.iv, g->u.ctx.n,
+src/ir/nfa.c:664:        st->ctxfn = a->u.ctx.fn;
+src/ir/nfa.c:1110:        q->ctxfn = o->ctxfn;
+src/ir/dfa.c:1086:                if (!((st->ctxfn >> in) & 1)) break;
+src/parse/ctxnode.c:109:    if (behind) return neg ? CTXFN_NOT_PREV : CTXFN_PREV;
+src/parse/ctxnode.c:110:    return neg ? CTXFN_NOT_NEXT : CTXFN_NEXT;
+src/parse/mod_assertions.c:134:                                 ? CTXFN_BOUNDARY : CTXFN_NONBOUNDARY);
+src/parse/parse.c:70:    a->u.ctx.fn = fn;
+src/core/internal.h:1158:    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */
+src/core/internal.h:1159:    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */
+src/core/internal.h:1160:    CTXFN_PREV        = 0xC,   /* (?<=C) */
+src/core/internal.h:1161:    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */
+src/core/internal.h:1162:    CTXFN_NEXT        = 0xA,   /* (?=C)  */
+src/core/internal.h:1163:    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */
+src/core/internal.h:2064:    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */
+src/gen/emit_vm.c:8347:    uint8_t     fn;      /* CTXFN_* */
+src/gen/emit_vm.c:8355:    { CTXFN_BOUNDARY,    VMCTX_BOTH, "!=", false, "\\b word boundary" },
+src/gen/emit_vm.c:8356:    { CTXFN_NONBOUNDARY, VMCTX_BOTH, "==", false, "\\B not a word boundary" },
+src/gen/emit_vm.c:8357:    { CTXFN_PREV,        VMCTX_PREV, NULL, false, "previous character in the set" },
+src/gen/emit_vm.c:8358:    { CTXFN_NOT_PREV,    VMCTX_PREV, NULL, true,  "previous character not in the set" },
+src/gen/emit_vm.c:8359:    { CTXFN_NEXT,        VMCTX_NEXT, NULL, false, "next character in the set" },
+src/gen/emit_vm.c:8360:    { CTXFN_NOT_NEXT,    VMCTX_NEXT, NULL, true,  "next character not in the set" },
+src/gen/emit_vm.c:8400:        if (vm_ctx_forms[k].fn == a->u.ctx.fn) { f = &vm_ctx_forms[k]; break; }
+src/gen/emit_vm.c:8404:                       (unsigned)a->u.ctx.fn);
+tests/possessify/ctx_admits_check.c:155:    for (int t = 0; t < 16; t++)
+tests/possessify/ctx_admits_check.c:169:            bool r = pcrec_poss_ctx_admits(0xA, af3.iv, af3.n, pm, out);
+tests/possessify/ctx_admits_check.c:172:            r = pcrec_poss_ctx_admits(0x5, af3.iv, af3.n, pm, out);
+
+## 7. possessify's First.nullable readers (A4: each sees today's value at P2c)
+198:    if (x.nullable) {
+1020:            if (x.nullable) bs_or(r.first, acc.first);
+1021:            if (acc.nullable) {
+1073:    if (p.nullable) { *why = "nullable-body";  return false; }
+1311:            if (x.nullable) {
+1407:        if (!c->sum->nullable) break;
+1413:        if (!P->stk[i]->capend && !r->nullable) { r->ends = false; continue; }
+1555:    return memcmp(x->f, y->f, 32) == 0 && x->nullable == y->nullable;
+1623:    if (memcmp(u1, u2, 32) != 0 || c0.nullable != may_end)
+1653:    bool base_ok  = uniq && !body.nullable;
+1984:            if (x.nullable) bs_or(nf, cur);

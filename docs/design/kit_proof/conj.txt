@@ -142,3 +142,8 @@ u   \bcat\b                  cover          k=3 absB=True absA=True
 -   ab|a$\n                  no-eol-view    
 -   ab|a\Z\n                 no-eol-view    
 -   ab|a$\n\z                no-eol-view    
+## D, appended (lane ctxspan2, main 3b0f87b55, [r4 B9]): the three F-1 witnesses, same
+##    command over witnesses.txt's last three lines; machine half of C8 only
+-   a(?=b)[a-z]              cover          k=2 absB=True absA=True
+-   \w(?=\d)\w               cover          k=2 absB=True absA=True
+-   [a-z0-9_ ]\b[a-z ]       exact          

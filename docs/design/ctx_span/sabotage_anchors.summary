@@ -1,0 +1,16 @@
+SITES 850 ROW_FILES 823 DISTINCT_IDS 823 DUP_IDS 0 () FAMILY_ROWS 229 RE_AIM_ROWS 4 RE_RUN_ROWS 225 COUNT_MISMATCH 0 UNRESOLVED_SRC 12 UNRESOLVED_OTHER 0 OTHER_ROWS_NAMING_FAMILY 6
+RESOLUTION datarow 12 def 646 factrow 1 filescope 3 lead 3 outside 173 unresolved 12
+RE_AIM_BY_COMMIT 
+RE_RUN_SITES_BY_COMMIT after-P2c 233 P2c 5 P2d 5
+UNRESOLVED S1028_underivable_rows_deleted 1 src/core/findings.c 538
+UNRESOLVED S1029_authored_loses_arrives 1 src/core/findings.c 518
+UNRESOLVED S1113_partlayout_shared_writes_inline 1 src/gen/attr_text.c 61
+UNRESOLVED S1119_partlayout_k24_noclone_dropped 1 src/gen/attr_text.c 71
+UNRESOLVED S1123_attrtab_noclone_guard_altered 1 src/gen/attr_text.c 71
+UNRESOLVED S1124_partlayout_noipa_unguarded 1 src/gen/attr_text.c 61
+UNRESOLVED S176_prefilter_for_a_linked_call 1 src/opt/select_engine.c 564
+UNRESOLVED S571_deny_map_drops_run_overlap 1 src/gen/memfn_sites.c 36
+UNRESOLVED S640_t2_forced_off_var_swapped 1 src/opt/select_engine.c 565
+UNRESOLVED S897_cmp7-drop-compound-deleted 2 src/core/compile.c 1070
+UNRESOLVED S906_cmp16-ns-parts-removed 1 src/core/compile.c 165
+UNRESOLVED S995_byte_rate_unmeasured_absent 1 src/core/findings.c 480
