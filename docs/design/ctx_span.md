@@ -245,7 +245,9 @@ typedef struct {
 typedef struct {
     uint8_t  stated;                       /* MK_LANG_UNSTATED 0, MK_LANG_STATED    */
     uint8_t  exact_len;                    /* 0..PCREC_PREFIX_K_MAX (the walk's)     */
-    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len                    */
+    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len: the PER-THREAD
+                                              narrowed sets [r4rc R2]; KsetWalk
+                                              keeps the pass-through hull       */
     uint8_t  nctx;                         /* 0 = no context fact (not "none holds") */
     MkCtx    ctx[PCREC_CTX_ITEMS];         /* one per item, in walk order           */
 } MkLang;
@@ -1435,6 +1437,11 @@ site really a different arm, and is the NFA-level fold's "0 analysis movers" tru
 `kset_walk` (an E3 fact that reads NFA kinds)? (e) §3.6's per-item grain against kit_proof's
 stage 1. Can the machine reading ever need two items on one side? (f) §4.7's ill-formed
 cases beyond the two named.
+(g) §3.8's per-thread frontier `[r4rc R2]`. Is the merge of two arrivals at one state by
+the union of their restrictions exact for every later offset, and is "every thread at
+`d − 1` passes the item" decidable from the walk's frontier alone (a thread is a frontier
+entry, not an NFA path)? (h) §4.2.3's row gate `[r4rc R1]`. Does any reader other than the
+closure index read `left_abs`/`right_abs` and expect them set on every row?
 
 ## 13. Disposition and discharge (every r4 id)
 
@@ -1477,3 +1484,21 @@ cases beyond the two named.
 
 C6 has no finding row in r4's table. It sits in the unlocks list and is discharged above.
 Every other r4 id is listed. Nothing in the review is left undischarged.
+
+**The re-check of revision 2 (critR), discharged by revision 2.1** `[r4rc]`:
+
+| id | sev | disposition | discharged in |
+|---|---|---|---|
+| R1 | MAJOR | ACCEPT: the absent index is gated on the row, `q = (right_abs && ctxfn_reads_absent_next(fn)) ? 2 : bit(right)` and the mirror for `p`; equals today's six functions and the `N_BOT_M`/`N_EOL_M` arms; P2a's zero-mover argument restored on it with `\bfoo\b` (under `-e utf8`) as the witness the old rule moves; P2d's zero movers rest on it. Consequence: no reverse machine reads `left_abs`, so A1's plant is UNREACHED (SP-11) and S341 re-aims to R1's plant | §4.2.3; §4.5.4 (S341); §6 CK-5; §7 P2a; §R2.1 |
+| R2 | BLOCKER (if built) | ACCEPT: next side narrows per thread (frontier states reached through the item; a frontier entry carries its restriction, merged by union); previous side narrows only when every thread at `d − 1` passes, else `exact_len` ends at `d − 1`; the narrowed sets live in `MkLang` only, `KsetWalk` stays the hull, so offset-k selection, the run pin, the OFS rows and the listing are unmoved by construction; both witnesses in CK-6, `conj.txt` D, `witnesses.txt` and X0 as text; the union-narrowing plant SP-6 = S1150 PROPOSED; `conj.py` does not model the in-span rule (OWED) | §3.4; §3.6; §3.8; §3.2 (`MkLang` comment); §6 CK-6; §7 P1a; §10 UL-k, U2; kit_proof §5.2, §6.3, §6.4 `[r4rc R2]`; `kit_proof/witnesses.txt`, `conj.txt` D |
+| R3 | MINOR | ACCEPT: a multi-byte newline convention is REFUSED BY NAME until UL-e (no fallback kind after P2c) | §3.3; §10 UL-e |
+| R4 | MINOR | ACCEPT: at build each step regenerates the edit set from its real diff and compares it with `edit_set.tsv`; the derived list comes from the regenerated set | §4.5.4; §7 |
+| R5/R6 | holds | nothing to discharge | — |
+| U1 | unlock | FILED: absent as its own context atom (⊥), deleting `bot_ok`/`end_ok` and both absent flags, merging with [UCP]'s ⊥ rule and UL-e; trigger P2d or [UCP] U3 | §10 |
+| U2 | unlock | FILED: per-thread class restriction in `wclose`, serving the slice, Λ and the width walk; trigger Z2 | §3.8; §10 |
+
+**Not discharged by revision 2.1, OWED** (the box was in a bench timing window; nothing
+was run): the `conj.py` verdicts on the two new witness lines (§3.8's command); the R1
+plant's reach on `\bfoo\b` under `-e utf8` (§4.2.3); the slice's own sets on both R2
+witnesses and S1150's reach, both needing the built walk (Z2); and `make
+test-spec-history` over this revision's text.
