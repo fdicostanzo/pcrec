@@ -1253,6 +1253,8 @@ T-CUT change asks. If P2d is taken they become `ctx-onesided`.
 population. This is the one item in the revision that is a real choice for Frank. The census
 supports the leaning and does not force it.
 
+**RULED (Frank, 2026-10-19, D168 addendum 3): BOTH, staged.** P2d is the NFA-level fold as above (zero movers, the 12 engine sites deleted). Then **P2e** lifts the fold into the AST: `\A`/`\z` become `A_CTX` rows, and the table gains a CLASS column (`CTX_CONTEXT` / `CTX_PIN_START` / `CTX_PIN_END`) DERIVED from each row's grid like the three predicates, with a check that the class agrees with the grid. The 8 analysis sites switch on `pcrec_ctx_class(n)` with no `default:`, so `-Wswitch` keeps the alarm a kind test gives today (mrl.c's rule). P2e is its own abi event with its own mover census (N-3: the end-mark lowering's tagged form reads `A_END`).
+
 ---
 
 ## 6. Checks (each against a source the subject does not share; sabotage ids PROPOSED, not allocated) `[r4 B7]`
