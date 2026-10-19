@@ -2462,3 +2462,9 @@ pointer when a kit change merges to main.
 - **Lessons:**
   - when a tool's summary line gains a field, grep for its readers. n2_census.sh's fixed-string match is the same class as the SECOND-READER lesson;
   - do not explain an rc from memory: read the tool's rc table (the 10-17 lesson, repeated).
+
+## 2026-10-18 (late evening) — new session; R-25 built (light-validated), heavy validation owed after the bench
+
+- Woke on /pcrec-memfn-manager. Rowfix was on main (fe7...). Pruned 22 merged kit worktrees through `wtprune --apply NAME..` and left main's merged trees alone.
+- R-25: an opus lane (r25) built `arm.tests` plus the kit_class fix and the proven_check.c fixture, with 0 emit_sweep movers on six arms and green light checks. Reviewed and accepted (ofsskip's EVERY claim checked against verify_chain). **Kit ruling:** no MF_SITE_ABI bump, since layout and shipped values are unchanged. Owed: make test plus mech S1018/S1083 at the same tip, in a slot after the bench re-baseline (01:00 to about 16:00 on 10-19).
+- Finding: emit_sweep `--arms start` rc 1 from an orphan DIFFER_PINS pattern (`a.{1,5}z`, from B3b). Posted as a notice; the kit fixes it.
