@@ -598,6 +598,7 @@ const arm runcmp_arm = {
     0,                  /* one RUN term: no table */
     MF_INC_STRING_H,    /* the memcmp row; the words row's memcpy loads */
     1,                  /* the memcmp row (a constant memcpy is a load, §R4.3.3) */
+    ARM_TESTS_UNSTATED, /* renders no FIND (its contract's op) */
 };
 
 /* Every row reads the term's bytes, mask and length (rc_of, :123-127). */

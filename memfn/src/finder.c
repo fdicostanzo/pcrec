@@ -918,7 +918,8 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
     }
 }
 
-const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0 };
+const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0,
+                              ARM_TESTS_UNSTATED };
 
 /* ---- THE ROUTED DECISION (§1.6 [rev3 D6]; R17-b' B2) ------------------------- *
  *

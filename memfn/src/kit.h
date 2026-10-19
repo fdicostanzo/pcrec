@@ -328,11 +328,12 @@ typedef struct arm {
        call (§R4.3.3's exclusion) */
     uint8_t     libc;
     /* Which terms of a FIND predicate the row's text TESTS at every
-       candidate (R-25; appended last, so a row that leaves it out states
-       ARM_TESTS_UNSTATED). kit_class reads it: only a tested offset-0 term
-       contributes to proven0, a tested offset -1 term to proven_prev, and a
-       FIND row that states nothing is refused, never given a reading. A row
-       that renders no FIND (its contract's op column) need not state it */
+       candidate (R-25). Every row writes it (`make strict`'s
+       -Wmissing-field-initializers holds that). kit_class reads it: only a
+       tested offset-0 term contributes to proven0, a tested offset -1 term
+       to proven_prev, and a FIND row stating ARM_TESTS_UNSTATED is refused,
+       never given a reading. A row that renders no FIND (its contract's op
+       column) states ARM_TESTS_UNSTATED */
     uint8_t     tests;
 } arm;
 
