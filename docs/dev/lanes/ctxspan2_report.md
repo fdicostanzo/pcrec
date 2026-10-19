@@ -45,7 +45,7 @@ tree, and `make test-spec-history` (11/0). All of it ran before the 00:45 box cu
   step P2d after P2c, keeping the AST kinds: 12 deletions, one generic predicate, zero
   recognizers. This is Q7 for Frank.
 - **The derived sabotage population for P2c**: 5 retire (S76, S77, S762, S900, S343), 1
-  re-aims (S341, onto A1's bug), and 25 re-run. The derivation reproduces every row the panel
+  re-aims (S341, onto A1's bug), and 24 re-run. The derivation reproduces every row the panel
   named, and adds 16 more (S78, S81, S82 and 13 owner rows).
 - **The abi readers come from one recipe.** It finds the five readers revision 1 missed:
   match_api §1¶7, §6¶1 row 1, the abi_changelog sentence, kit_proof §6.1's B1 row, and

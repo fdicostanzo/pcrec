@@ -82,7 +82,7 @@ the [ENG-LOOK] row.
 | the surprising fact | `(?m)$` ≡ `(?![^\n])` (libpcre2, 547/547), but that spelling is an `A_CTX` only under `byte`. Under utf8 `[^\n]` is not byte-expressible and forces the VM, so the `{\n}`-plus-absent row is REQUIRED for utf8, not merely chosen for byte identity `[r4 A5]`. `(?m)^` needs "the next character exists" (40 of 547 cells differ from `(?<![^\n])`, all after a final newline) |
 | what does not fold | `$`/`\Z` (two offsets) and `\G` (a runtime value) stay kinds, as RULED. `\A` (prev absent) and `\z` (next absent) are rows of the table on paper. A second census (§4.6) finds that their ENGINE readers delete and eight ANALYSIS readers do not. *Leaning:* fold them at the NFA layer only, as step P2d after the multiline fold `[r4 Q-r4-1]` |
 | census headline | 16 `multiline` code reads: **14 deleted, 2 become the generic node choice**. `N_BOT_M`/`N_EOL_M` and the newline row: **27 further code lines by grep, 24 deleted, 3 generic**, `dfa.c:345` included `[r4 C1]`; plus the `rows` sharing logic P2c leaves dead (two lines and the reads in two functions) `[r4 B5]`. 31 comment lines in `src/` name them and are reworded `[r4 C1]`. **84 code lines naming `A_BOL`/`A_EOL` stay** (§4.4) |
-| cost | an abi event (80 → 81) with its readers found by a grep recipe `[r4 B2]` (§4.5.1). The byte movers are ONLY DFA machines whose context-set list ORDER changes. There are zero VM movers, zero route flips and zero possessify movers at P2c `[r4 B3, C6]`. Each mover's diff is confined to tables (CK-4). Five sabotage rows retire, one re-aims, 25 re-run, all derived (§4.5.4). One identity gate retires and one changes population `[r4 A2]` |
+| cost | an abi event (80 → 81) with its readers found by a grep recipe `[r4 B2]` (§4.5.1). The byte movers are ONLY DFA machines whose context-set list ORDER changes. There are zero VM movers, zero route flips and zero possessify movers at P2c `[r4 B3, C6]`. Each mover's diff is confined to tables (CK-4). Five sabotage rows retire, one re-aims, 24 re-run, all derived (§4.5.4). One identity gate retires and one changes population `[r4 A2]` |
 | contradicts D168? | No. Two precisions (§3.5, §11). D168's "width-1 negative lookbehind" means one BYTE on the lowered tree, and a TYPED `(?<!é)` is two bytes under `byte` too `[r4 A6]`. Part 2's census shows the deletion is smaller than add. 1's survey figure suggested |
 
 ---
@@ -909,7 +909,7 @@ closure's `N_CTX` index line. Their gate is CK-4's zero movers plus CK-5.
 - the eight witness rows B5 names: S490, S218, S222, S235, S463, S470, S608 and S617;
 - S77, S762 and S900 (B6), and S76 (A2).
 
-It adds 16 that no list named: S78, S81 and S82 (witness), and the 13 owner rows.
+It adds 16 that no list named outright: S78, S81 and S82 (witness), and the 13 owner rows (S71 among them, which A2 names only as S76's re-aim target).
 
 **Gates and other checks** (from `readers.txt` §4-§7):
 
