@@ -581,13 +581,30 @@ cnt() { awk -F'\t' -v k="$1" '$1 == k {print $2}' "$PLAN/counts.tsv"; }
 #            p1_identity  72 -> 76      p2_identity 100 -> 106
 #            p1_lookaround 214 -> 253   p2_lookaround 264 -> 308
 #            q7 0/0 -> 3/11
-exp_pop="tot_blocks=545 tot_beh=13120 tot_g=92 \
-qual_blocks=337 qual_beh=11249 qual_g=38 \
+# DELTA 5 (ctxbuild validation, [DD-11.5] P2c, commit 2619ced1b, found by
+# main's CI run 39484223605): `tests/assertions/multiline.rxt` adds 3 blocks
+# (the S1161 detector cells: `(?m)(\n^)`, `(?m)(a\n^)`, `(?m)(^)$`) with 24
+# behavioural cells (8 + 8 + 8) and 12 capture-slot cells (5 + 3 + 4). All 3
+# qualify (none declares an encoding, none uses `\Z`/`\G`/`\K`), so P1 gains
+# one pattern per block (+3) and P2 one per substitutable occurrence (`^` x1,
+# `^` x1, `^` and `$` = +4); every added row carries a real lookaround (`^`
+# and `$` under `(?m)` expand to one), none is identity. Q1-Q7 and both
+# identity counts re-verified UNCHANGED. Re-measured on HEAD, and the PARENT
+# corpus (2619ced1b^) re-run through the generator reproduces DELTA 4's
+# numbers exactly, so the whole delta is these three blocks:
+#
+#            tot_blocks 545 -> 548      tot_beh 13120 -> 13144
+#            tot_g 92 -> 104            qual_g 38 -> 50
+#            qual_blocks 337 -> 340     qual_beh 11249 -> 11273
+#            p1_patterns 337 -> 340     p2_patterns 444 -> 448
+#            p1_lookaround 253 -> 256   p2_lookaround 308 -> 312
+exp_pop="tot_blocks=548 tot_beh=13144 tot_g=104 \
+qual_blocks=340 qual_beh=11273 qual_g=50 \
 q1_blocks=87 q1_cells=0 q2_blocks=87 q2_cells=754 \
 q3_blocks=0 q3_cells=0 q4_blocks=31 q4_cells=1106 \
 q5_blocks=0 q5_cells=0 q6_blocks=0 q6_cells=0 q7_blocks=3 q7_cells=11 \
-p1_patterns=337 p2_patterns=444 \
-p1_identity=76 p2_identity=106 p1_lookaround=253 p2_lookaround=308"
+p1_patterns=340 p2_patterns=448 \
+p1_identity=76 p2_identity=106 p1_lookaround=256 p2_lookaround=312"
 pop_bad=0
 for kv in $exp_pop; do
     k="${kv%%=*}"; want="${kv#*=}"; got="$(cnt "$k")"
@@ -597,7 +614,7 @@ for kv in $exp_pop; do
     fi
 done
 if [ "$pop_bad" -eq 0 ]; then
-    ok "§1 the population: 545 blocks / 13,120 behavioural cells re-counted on HEAD, 337 blocks / 11,249 cells QUALIFYING, and the seven per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0, Q7 3/11) EXACT against design §6.3. No delta"
+    ok "§1 the population: 548 blocks / 13,144 behavioural cells re-counted on HEAD, 340 blocks / 11,273 cells QUALIFYING, and the seven per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0, Q7 3/11) EXACT against design §6.3. No delta"
 fi
 # THE IDENTITY ROWS, asserted rather than tolerated. `\A` and `\z` are
 # PRIMITIVES in §6.1, so an occurrence-level substitution of one of them is
@@ -765,12 +782,12 @@ report_policy() {
     esac
 }
 case "$POLICY" in
-    all)  report_policy P1 337 76 253
-          report_policy P2 444 106 308
-          report_policy NONE 337 337 0 ;;
-    P1)   report_policy P1 337 76 253 ;;
-    P2)   report_policy P2 444 106 308 ;;
-    none) report_policy NONE 337 337 0 ;;
+    all)  report_policy P1 340 76 256
+          report_policy P2 448 106 312
+          report_policy NONE 340 340 0 ;;
+    P1)   report_policy P1 340 76 256 ;;
+    P2)   report_policy P2 448 106 312 ;;
+    none) report_policy NONE 340 340 0 ;;
 esac
 
 # ---- the headline, stated once ------------------------------------------
