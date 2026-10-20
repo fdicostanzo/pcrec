@@ -59,14 +59,13 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 - D2 stays `pending-site:R-18`.
 - candoracle's reach gap is on main's check-design list.
 
-**In flight (2026-10-20 ~12:00, idle wait):** nothing of the kit's is running. No lanes, watchers or crons.
-- **Waiting for:** main (pcrecdev1, addressed by socket; the bench session is ALSO named pcrecdev3 for now) to message that ctxbuild (abi 81) is merged to main and the box is free. Main estimated 1-2 h from 11:50.
-- **Next action on that message:**
-  1. `git -C worktrees/memfn-r25 merge main`, alone in its own command; read the result and resolve.
-  2. make strict, SABANCHOR (`python3 -I scripts/m6read_check_sab_anchors.py`), `bash tests/codegen/run_codegen_tests.sh`, test-core.
-  3. ONE heavy slot at that tip: make test, mech S1018/S1083 in one PROCS=4 `run_sabotage_matrix.sh` call, and the emit_sweep variant/trace/rwquest arms.
-  4. Post `done: R-25` in responses.md, then SendMessage main.
-- **Frank 2026-10-20:** heartbeat crons only while actively monitoring something. When just waiting, delete the cron and go idle.
+**In flight (2026-10-20 ~16:45, idle wait):** nothing is running. No lanes, chains, watchers or crons.
+- **R-25 is DONE** and posted in responses.md: lane/memfn-r25 @ 7a0a776ee, validated code d49ff5515 at abi 81. The slot is ended and the box is handed back to main.
+- **Waiting for:** main (pcrecdev1, addressed by socket) to merge lane/memfn-r25, or to send review notes. No deadlock ping is needed: main is not waiting on the kit.
+- **Next actions:**
+  1. After the merge, prune `r25-mt`, `memfn-r25` and `r25tri-main` through wtprune (r25tri-main was too fresh at 16:40).
+  2. B4 still needs Frank's rev 4 direction (unknown predictability: V1 or the walk?), plus D163 add. 8 controls, E8 PASS and M0.
+  3. Comment on U1 (`docs/design/kit_proof.md`) when it lands.
 
 **Worktrees:** KEEP `memfn-r25`, `memfn-pinfix` (until merged), `rowfix` (merged; prunable once quiet), `memfn-slot` (scratch). 22 merged kit trees were pruned on 2026-10-18.
 
