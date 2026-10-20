@@ -25,7 +25,7 @@
 ./docs/design/CLAUDE.md:3241:- `ctx_span.md` — **[DD-11.5] RE-SCOPED: THE SPAN-CONTEXT PRODUCER (D168) AND `A_BOL`/`A_EOL` INTO `A_CTX` (D168 addendum 1); DESIGN NOTE, PROPOSED, nothing built** (lane 
 ./docs/dev/k75_measurement.md:20:- **B**: a STRAY, claimed by no lead: `80` alone; after ASCII (`61 80`,
 ./docs/dev/k75_measurement.md:33:| B, 13 cells | -36 (12), -22 (1: offset 0 of `80`, the byte is illegal as a first byte) | advanced exactly as for A: `x*` 13/13 answer at the moved start; `.` 9 moved
-./docs/dev/plan.md:70:      status (2026-10-18): E0, E0c and E1 MERGED (E1 = the part-layout controls, merge 7c0a90479, abi 80, review r1-e1 fixed; [ATTR-TABLE] landed 7d3587441); every preset cell a 
+./docs/dev/plan.md (line 70):      status (2026-10-18): E0, E0c and E1 MERGED (E1 = the part-layout controls, merge 7c0a90479, abi 80, review r1-e1 fixed; [ATTR-TABLE] landed 7d3587441); every preset cell a 
 ./docs/dev/history/abi_changelog.md:26:- **`rx_info.abi` is `80` on every artifact today (lane e1 bumped it from
 docs/spec/match_api.md §1¶7:#error "pcrec: this artifact (abi 80) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 docs/spec/match_api.md §1¶7:#define PCREC_RX_ABI_H 80
