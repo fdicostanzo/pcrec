@@ -1,0 +1,17 @@
+# tests/possessify/arms_mline.txt -- the `(?m)` anchors as possessify sees them
+# ([DD-11.5] P2c, docs/design/ctx_span.md 4.2.5, A4). `(?m)^`/`(?m)$` are A_CTX
+# rows (MLINE_BOL/MLINE_EOL) that read an ABSENT neighbour, and possessify must
+# never narrow such a row: arm A's `First` record has no "passes with no next
+# byte" component, so a narrowing would hand every `nullable` reader a false
+# non-nullable. Each pattern is swept against its own `-fno-possessify` build
+# over the exhaustive subjects, whose alphabet carries a newline because a
+# `(?m)` anchor is in force (subjects_exh.py). arms_manifest.tsv's hold/A4/*
+# rows pin the arm stamp at 0 on the same three. Answers against libpcre2 10.46
+# and python3 `re`: possessify.rxt's `(?m)` blocks.
+# features: all
+a{0,3}(?m)$
+(?m)^a+b
+[a\n]+(?m)$\n
+(a{0,3}(?m)$)
+((?m)^a+b)
+([a\n]+(?m)$\n)

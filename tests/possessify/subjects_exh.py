@@ -9,7 +9,9 @@ letters, back-reference and call spellings and quantifier counts EXCLUDED --
 they are syntax, not subject text), every letter's case flip, plus one WORD
 and one NON-WORD representative (the space, and `a` when the pattern has no
 word literal), `7` when it mentions a digit class, and under `-e utf8` the
-code points U+00E9 and U+212A.  Under `-e utf8` the strings are built over
+code points U+00E9 and U+212A, and a newline when a `^`/`$` falls under a
+set `m` (tests/lib/mlscan.py's `multiline_anchor`: a `(?m)` anchor reads the
+newline, so a sweep without one measures nothing about it).  Under `-e utf8` the strings are built over
 CODE POINTS and then encoded, so a two-byte character is never split.
 
 Output: one subject per line in possdiff_driver.c's escape form (every byte
@@ -21,6 +23,8 @@ outside printable ASCII, and `\\`, as \\xHH).
                                                 is in the sweep  (REACH)
 Env: ML (max length)."""
 import sys, re, itertools, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
+from mlscan import multiline_anchor     # ONE implementation of "(?m) in force"
 
 SKIP_GROUP = re.compile(r"""\(\?(?:\#[^)]*\)|<[A-Za-z_]\w*>|P<\w+>|'\w+'|&\w+\)|P>\w+\)|P=\w+\)|R\)|[+-]?\d+\)
     |\(DEFINE\)|\([^)]*\)|<=|<!|[:=!>|]|[A-Za-z^-]*\)|[A-Za-z^-]*:)""", re.X)
@@ -72,6 +76,7 @@ def alphabet(p, flags):
     if "w" in sh and sum(c.isalnum() or c == "_" for c in a) < 2:
         a.add("b" if "a" in a else "a")
     if "d" in sh or "D" in sh: a.add("7")
+    if multiline_anchor(p): a.add("\n")
     utf = "utf8" in flags
     if utf: a.update(["\u00e9", "\u212a"])
     else: a = {c for c in a if ord(c) < 256}

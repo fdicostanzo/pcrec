@@ -5,8 +5,9 @@ the analysis; `src/gen/emit_vm.c` is what acts on it. This directory is the
 evidence that it changes no answer.
 
 **Not a module directory.** Possessification is an OPTIMISATION over the base
-tier, not a regex feature, so no block here carries a `features` directive and
-there is no module gate to open. It gets its own directory for the reason
+tier, not a regex feature, so it has no module gate of its own (the only
+`features` directives are possessify.rxt's `(?m)` blocks, which need module
+`assertions` to spell `(?m)` at all). It gets its own directory for the reason
 `tests/vm/` has one: what it needs to assert is not expressible as `.rxt`
 expectations.
 
@@ -102,7 +103,9 @@ in a specific way.
     file named `arms_*` is swept with **`subjects_exh.py`**, the EXHAUSTIVE
     generator (every string of length <= 4 over the pattern's case-flip-closed
     literal alphabet + a word and a non-word representative + `7`, by code
-    point under `-e utf8`; `--alpha`, `--reach S P [flags]`, env `ML`),
+    point under `-e utf8`, plus a newline when tests/lib/mlscan.py's
+    `multiline_anchor` says a `(?m)` anchor is in force; `--alpha`,
+    `--reach S P [flags]`, env `ML`),
     instead of `subjects_for`'s bespoke families. A `# flags:` header line
     (`-e utf8`, `--ucp`, `-i`) applies to BOTH sides beside `# features:`;
     there is no TAB column because a pattern may begin with a space.
@@ -110,6 +113,13 @@ in a specific way.
     DEFAULT route, where an arm-discharged atomic group/possessive suffix
     goes to the DFA; the run FAILS if a row does not land on the DFA, and the
     answers are compared against the denied VM build.
+  - **`arms_mline.txt`** ([DD-11.5] P2c, ctx_span.md 4.2.5 A4): the three
+    `(?m)` cells `a{0,3}(?m)$`, `(?m)^a+b`, `[a\n]+(?m)$\n`, bare and
+    capture-wrapped. `(?m)^`/`(?m)$` are A_CTX rows that read an absent
+    neighbour, which possessify must never narrow; the manifest's
+    `hold/A4/*` rows pin their arm stamp at 0, and possessify.rxt's `(?m)`
+    blocks carry their answers (libpcre2 10.46; python3 `re` agreed under
+    the leading-`(?m)` spelling).
   - **`arms_reach.tsv`** (`pattern TAB subject [TAB flags]`, `--reach FILE`):
     checked BEFORE anything compiles; a witness the sweep cannot generate
     fails the run.
@@ -117,7 +127,7 @@ in a specific way.
     pins the exact `<PREFIX>_VM_POSS_ARMS` stamp of its armed artifact
     (`mover/*` = poss_arms.md 5.2's six default-route movers, `fire/*` = a
     shape per arm, `hold/*` = the 8.2 sabotage witnesses, which must stay
-    silent) and the `--emit-ir` marked count armed vs `-fno-poss-ctx-follow`
+    silent, `hold/A4/*` the `(?m)` cells above, S1156's witnesses) and the `--emit-ir` marked count armed vs `-fno-poss-ctx-follow`
     (moves iff stamp&3) and `-fno-poss-bref-first` (iff stamp&4). A row that
     stops firing fails by name. Add a row by measuring it, then pinning.
   Tally lines: `reach k/k`, `manifest k/k`, route-flip count. Wall time of the

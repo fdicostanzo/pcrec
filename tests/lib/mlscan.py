@@ -137,7 +137,8 @@ def _scan(p, want):
 
 def multiline_anchor(p):
     """Does a `^` or `$` at atom position fall in the scope of a set `m`?
-    Equivalently: will this pattern build an N_BOT_M or an N_EOL_M?"""
+    Equivalently: will the parser build a `(?m)` A_CTX row (MLINE_BOL or
+    MLINE_EOL) for it?"""
     return _scan(p, '^$')
 
 
@@ -150,8 +151,8 @@ def multiline_caret(p):
 
 def multiline_dollar(p):
     """Does a `$` at atom position fall in the scope of a set `m`?
-    Equivalently: will this pattern build an N_EOL_M, and therefore need wave
-    A's `pos == n` closure view (`-DPCREC_NO_ENDVAR`'s subject)?"""
+    Equivalently: will this pattern build an MLINE_EOL row, and therefore need
+    wave A's `pos == n` closure view (`-DPCREC_NO_ENDVAR`'s subject)?"""
     return _scan(p, '$')
 
 
