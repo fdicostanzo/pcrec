@@ -254,6 +254,11 @@ Append-only where noted; the restart/status-recovery record for the project.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.
+- `owner.md` — untracked (gitignored) OWNER'S VIEW (Frank, 2026-10-20): the
+  one file the owner reads at a glance — open questions with one-line
+  summaries, what is running now, what is next, blockers/issues, done
+  today. The manager refreshes it at every state change; committed docs
+  win on any disagreement.
 
 - `bare_pcrec_survey.txt` — K37's evidence (2026-08-25, lane srMech): the
   line-numbered list of every bare (unbudgeted) `pcrec` invocation in

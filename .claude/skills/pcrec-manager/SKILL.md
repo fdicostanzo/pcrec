@@ -63,6 +63,13 @@ Do not start a new milestone unprompted — milestones start with Frank
 
 ## 2. Manage status in plan.md and the journal
 
+- **Keep `docs/dev/owner.md` current** (Frank, 2026-10-20): the owner's
+  at-a-glance view (questions for him with one-line summaries, now, next,
+  blockers/issues, done today; gitignored). Refresh it at EVERY state
+  change — lane start or delivery, merge, ruling, box hand-off — so you
+  never need a "still waiting on you" line in chat. Read it at wake
+  after wake.md.
+
 - `docs/dev/plan.md` is the project status. Update the `STATE:` tag in place
   when a step starts/finishes/blocks; expand a milestone into substeps only
   when work on it begins.
