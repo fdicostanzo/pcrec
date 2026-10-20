@@ -38,4 +38,9 @@ tests/%.testreport: tests/%.test %
 clean:
 	rm -f tests/*.testreport
 
+# hooks.test covers scripts/hooks/ (no_cd_worktree.sh, pre-push-light) and the
+# project .claude/settings.json that registers the no-cd hook; the pattern rule
+# only sees the directory, so the files are named here.
+tests/hooks.testreport: hooks/no_cd_worktree.sh hooks/pre-push-light ../.claude/settings.json
+
 .DELETE_ON_ERROR:

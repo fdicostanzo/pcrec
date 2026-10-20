@@ -2032,7 +2032,10 @@ fuzz: all
 # HOOKS=pre-commit` installs only the commit gate (it lints docs/dev/plan.md
 # and friends when they are staged, and runs the [SPEC-HOOK] citation/spec
 # checks when text files or a docs/spec file are staged; it never runs
-# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both. Never
+# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both.
+# `HOOKS=pre-push-light` installs the LIGHT gate (plan lint + spec scan +
+# `make strict`, ~1 min) under the name `pre-push` (the `-light` suffix is
+# dropped on install; it replaces the full gate). Never
 # run automatically by any other target and never by CI (D2, TT-1 principle
 # 4): a stranger's plain `make`/`make test` must not install anything into
 # their git config.
@@ -2041,8 +2044,9 @@ hooks:
 	@hookdir="$$(git rev-parse --git-path hooks)"; \
 	for h in $(HOOKS); do \
 	  if [ ! -f scripts/hooks/$$h ]; then echo "hooks: no such hook scripts/hooks/$$h" >&2; exit 1; fi; \
-	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$h"; \
-	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$h"; \
+	  dest="$${h%-light}"; \
+	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$dest"; \
+	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$dest"; \
 	done
 
 clean:
