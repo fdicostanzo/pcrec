@@ -106,7 +106,7 @@ fi
 echo
 echo "== [DD-11.5] R1 the absent index is gated on the row =="
 r1_views() {   # r1_views PATTERN -> count of forward end-view tables
-    if "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/r1.c" --pattern "$1" \
+    if pcrec_run "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/r1.c" --pattern "$1" \
             >/dev/null 2>"$WORKDIR/r1.err"; then
         grep -c '_forward_end_view\[' "$WORKDIR/r1.c"
     else echo "ERR"; fi
@@ -124,7 +124,7 @@ fi
 # previous character). Read off `<PREFIX>_VALID_LB` under -e utf8 (sabotage
 # S1155: the builder copies `\b`'s raise).
 a8_lb() {
-    if "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/a8.c" --pattern "$1" \
+    if pcrec_run "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/a8.c" --pattern "$1" \
             >/dev/null 2>"$WORKDIR/a8.err"; then
         sed -n 's/^#define rx_VALID_LB \([0-9]*\)$/\1/p' "$WORKDIR/a8.c"
     else echo "ERR"; fi
