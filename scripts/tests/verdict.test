@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# verdict self-test: synthetic logs, one per recogniser and per historical
+# misread, each paired with its clean twin; the make-line reader is PLANTED
+# back to the 2026-10-06 form (`\*\*\* \[test-`, no `Makefile:N: ` prefix)
+# and the Linux red must go undetected by the plant (the case catches it).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/verdict.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+V=$here/verdict
+# expect WORD CODE DESC [verdict args...]
+expect() {
+    local word=$1 code=$2 desc=$3; shift 3
+    local out rc; out=$("$TO" 20 bash "${VX:-$V}" "$@" 2>&1); rc=$?
+    if [ "$rc" = "$code" ] && printf '%s\n' "$out" | head -1 | grep -q "^VERDICT $word:"; then ok "$desc -> $word"
+    else bad "$desc: want $word/$code, got rc=$rc: $(printf '%s' "$out" | head -1)"; fi
+}
+L() { printf '%s\n' "$@" > "$T/$1.log.tmp"; sed 1d "$T/$1.log.tmp" > "$T/$1.log"; rm -f "$T/$1.log.tmp"; echo "$T/$1.log"; }
+
+# make error lines, both forms; a killed log; the caller's rc
+expect RED 1 "Linux make red line (Makefile:N: prefix)" "$(L lin 'section ok' 'make: *** [Makefile:646: test-corpus] Error 1')"
+expect RED 1 "Mac/no-prefix make red line"              "$(L mac 'make[1]: *** [test-x] Error 2')"
+expect RED 1 "make: *** No rule"                        "$(L norule "make: *** No rule to make target 'tset'.  Stop.")"
+expect INCOMPLETE 2 "clean-looking log, no completion"  "$(L quiet 'running section a' 'running section b')"
+expect GREEN 0 "same log with --rc 0"                   --rc 0 "$T/quiet.log"
+expect RED 1 "same log with --rc 2"                     --rc 2 "$T/quiet.log"
+expect RED 1 "rc lost through a pipe: red line, --rc 0" --rc 0 "$T/lin.log"
+expect INCOMPLETE 2 "'sections ran' is not a pass"      "$(L ran 'sections ran: 59/59')"
+out=$("$TO" 20 bash "$V" "$T/lin.log"); printf '%s' "$out" | head -1 | grep -q 'make targets: test-corpus' && ok "names the red target" || bad "target not named: $out"
+
+# PLANT: the pre-2026-10-06 reader that missed the Linux prefix
+mkdir -p "$T/p"; python3 -c 'import sys; s=open(sys.argv[1]).read(); a=sys.argv[2]; assert s.count(a)==1; open(sys.argv[3],"w").write(s.replace(a, sys.argv[4]))' \
+    "$V" 'line ~ /\*\*\* \[.*\] (Error [0-9]+|Interrupt|Killed|Terminated)/ || line ~ /make(\[[0-9]+\])?: \*\*\* /' "$T/p/verdict" 'line ~ /\*\*\* \[test-/' \
+    && { VX=$T/p/verdict "$TO" 20 bash "$T/p/verdict" "$T/lin.log" | head -1 | grep -q '^VERDICT RED' \
+         && bad "PLANT old-grep: still read the Linux red (plant ineffective)" \
+         || ok "PLANT old-grep: the Linux-red case goes undetected by the plant, so the case catches it"; } \
+    || bad "PLANT old-grep did not land"
+
+# perfrun (sibling LOG.perfrun read automatically)
+L pr 'make output only' > /dev/null; printf 'perfrun: DONE rc=2 wall 700s cpu 1s mean-busy 50%% section-errors=1  class=K44-ONLY  contaminated=no\n' > "$T/pr.log.perfrun"
+out=$("$TO" 20 bash "$V" "$T/pr.log"); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'perfrun class K44-ONLY' && ok "perfrun DONE rc=2 via LOG.perfrun -> RED with its class" || bad "perfrun red: rc=$rc $out"
+L pg 'x' > /dev/null; printf 'perfrun: DONE rc=0 wall 700s class=green\n' > "$T/pg.log.perfrun"
+expect GREEN 0 "perfrun DONE rc=0" "$T/pg.log"
+
+# mech
+expect GREEN 0 "mech COMPLETE unexpected 0 (and a FAIL: line is not read)" "$(L m0 'FAIL: some check text' '== mech run COMPLETE: 4 rows (unexpected: 0, undetected: 1, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc ==')"
+expect RED 1 "mech COMPLETE unexpected 2" "$(L m2 '== mech run COMPLETE: 4 rows (unexpected: 2, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc ==')"
+expect RED 1 "mech FATAL" "$(L mf "FATAL: requested id 'S9999' matches no sabotage definition")"
+expect GREEN 0 "mech field validation" "$(L mv '== mech FIELD VALIDATION COMPLETE: 3 definition(s) valid, 0 rows measured ==')"
+
+# battery, chainrun, run_group
+expect RED 1 "battery stage rc=1" "$(L b1 '== stage test rc=0 END x' '== stage mech rc=1 END x' '== BATTERY DONE rc=1 x')"
+expect GREEN 0 "battery all rc=0" "$(L b0 '== stage test rc=0 END x' '== BATTERY DONE rc=0 x')"
+expect RED 1 "chain FAILED" "$(L c1 '== stage a END rc=0 verdict=GREEN wall=1s' '== CHAIN FAILED stage=b rc=2 ran=2/3')"
+expect GREEN 0 "chain DONE" "$(L c0 '== stage a END rc=0 verdict=GREEN wall=1s' '== CHAIN DONE stages=1/1')"
+expect RED 1 "run_group 3/4" "$(L g1 'run_group: 3/4 scripts passed')"
+expect RED 1 "run_group lost" "$(L g2 'run_group: 4/4 scripts passed, 1 lost')"
+expect GREEN 0 "run_group 4/4" "$(L g0 'run_group: 4/4 scripts passed')"
+
+# hand-written chain rc lines; a quoted test-output line is not one
+expect RED 1 "rc line 'make test rc=2'" "$(L r1 '15:01:02 build rc=0' '15:40:00 make test rc=2')"
+expect GREEN 0 "rc lines all 0" "$(L r0 '15:01:02 build rc=0' '15:40:00 make test rc=0')"
+expect GREEN 0 "quoted test output with rc=1 is not a status line" "$(L rq "FAIL x.rxt:12 pattern 'a+' rc=1 want 0" '== CHAIN DONE stages=1/1')"
+expect INCOMPLETE 2 "--no-rc-lines ignores rc lines" --no-rc-lines "$T/r1.log"
+"$TO" 20 bash "$V" 2>/dev/null; [ $? = 64 ] && ok "usage error exits 64" || bad "usage exit"
+
+echo "verdict.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

@@ -118,9 +118,10 @@ run() {
     mkdir -p "$(dirname "$f")"
     held && exec "$@"     # nested inside the holder's own tree
     exec 9>>"$f"
-    if ! flock -w 1 9; then   # -w 1, not -n: a `status` probe holds the lock for a moment
-        local t0 next now line chunk
-        t0=$(date +%s); next=$t0
+    local t0 first=1 next now line chunk
+    t0=$(date +%s); next=$t0
+    [ "$wait" = 0 ] && first=0     # --no-wait: one immediate try
+    if ! flock -w "$first" 9; then  # -w 1, not -n: a `status` probe holds the lock for a moment
         while :; do
             now=$(date +%s); line=$(owner_line "$f")
             if [ -n "$wait" ] && [ $((now - t0)) -ge "$wait" ]; then
