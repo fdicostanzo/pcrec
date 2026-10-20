@@ -17,6 +17,9 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   never runs `make` in the real repository), run the suites the sabotage's own
   table says are relevant, and print one row of the matrix. Supports running a
   single sabotage by id prefix: `bash tests/mech/run_sabotage_matrix.sh S13`.
+  Any run but `VALIDATE_ONLY=1` first takes the box lock (`scripts/boxlock`,
+  lane runkit): it waits for another heavy run, naming it, nests inside a
+  battery or a chainrun heavy stage, and `PCREC_BOXLOCK=0` opts out.
 
   **THE RUNNER ARCHIVES HEAD PER ROW — A SWEEP OVER N COMMITS MEASURES N
   TREES.** `git archive HEAD` is re-read for EVERY sabotage, not once at the

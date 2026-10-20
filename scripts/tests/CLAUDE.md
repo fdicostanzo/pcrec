@@ -57,6 +57,22 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   removal (read-only subdirectory; skipped as root) reporting FAILED without
   an rm -rf fallback.
 
+- **boxlock.test / chainrun.test / watchrun.test / verdict.test** — the
+  run-control family's self-tests (lane runkit, 2026-10-20; 17/26/16/28
+  checks). Every lock is a SACRIFICIAL `PCREC_BOXLOCK_FILE` and every chain
+  runs in a mktemp tree, never the box's real lock or a real worktree; spawned
+  processes are tracked and killed by pid (safekill) on exit. Each guard that
+  carries a historical bug class is PLANTED back in a scratch copy of its
+  script (anchor must match exactly once, or the plant itself FAILs) and the
+  case must go red against it: a record-file lock blocked by a dead pid's
+  record; `rc` read after a `$(...)`; DONE written by a skipped check and by
+  an EXIT trap; two chains in one tree; a watcher firing on an already-ended
+  chain, counting quiet from a 2-hour-old commit, or calling a stall on one miss;
+  the pre-2026-10-06 `\*\*\* \[test-` reader missing a Linux red. Plus the
+  paired clean cases (the CPU-busy silent stage is not quiet, quoted test
+  output with `rc=1` is not a status line, a stale token does not nest).
+  ~2 min together, mostly watcher polls at `--every 1`.
+
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.
 
