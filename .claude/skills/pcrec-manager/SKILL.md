@@ -85,8 +85,10 @@ Keep for yourself: architectural judgement, briefs, review-and-merge,
 rulings to escalate to Frank, and design of key pieces (or design via
 subagents and judge the results).
 
-**EVERY LANE BRIEF STARTS: "Read docs/dev/lanes/BOILERPLATE.md FIRST and
-follow it"** (Frank, 2026-09-06) — the standing rules (scope, worktree
+**EVERY LANE BRIEF STARTS with a one-line title ("LANE <name> (<tier>):
+<task>", matching the Agent call's name/description; Frank 2026-10-20),
+THEN "Read docs/dev/lanes/BOILERPLATE.md FIRST and follow it"** (Frank,
+2026-09-06) — the standing rules (scope, worktree
 ritual, box facts, process, lifecycle) live THERE; the brief carries only
 the task, tier, charter pointers and deliverable. Do not restate boilerplate
 content in briefs. Fill in the fields of docs/dev/lanes/BRIEF_TEMPLATE.md

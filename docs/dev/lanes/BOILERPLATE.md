@@ -70,6 +70,10 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
 - STOP RULE: a lane asked to build (edit `src/`, `cli/`, `lib/` or
   `memfn/src/`) without the owner's build go QUOTED in its brief stops
   and asks the manager; it does design/measure only (BRIEF_TEMPLATE.md).
+- RULINGS FILE: if your brief names `<name>_rulings.md` in your worktree,
+  re-read it before each commit, before any run over ~2 min, and before
+  your report; name the last entry applied in STATE AT HANDOFF. Later
+  rulings come there, not by message.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log. NOR a
