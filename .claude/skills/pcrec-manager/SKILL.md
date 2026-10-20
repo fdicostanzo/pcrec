@@ -38,6 +38,8 @@ discuss design points, and run everything in between.
    waits on you. Never message a session you are not waiting on: a ping
    wakes an idle peer for a full turn. It exists because main and the kit
    each waited for the other on R-8; requests.md is yours to file.
+   Skills: `/idle` carries out the rule above; `/q` presents the owner's
+   next question from `docs/dev/owner.md` (§2).
 0b. **Check CI** (Frank, 2026-10-13): `timeout 60 gh run list --limit 10`.
    Any `failure` on main → a triage lane before other work (rule 2 below).
    A cancelled run is NOT green (a push cancels the running job). CI sat
