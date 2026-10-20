@@ -308,6 +308,28 @@ pcrec (the Makefile owns that).
   `make test`; `--rules` lists the rules. `make test-plan-lint` runs the
   first and the third (tests/plan_lint/run_plan_lint.sh).
 
+- **hooks/pre-push-light** — the LIGHT push gate (apply_here.md proposal 3,
+  lane hooks, 2026-10-20): tree-wide plan lint (`tests/plan_lint/
+  run_plan_lint.sh`, PL14's tree scan included), the tree-wide spec scan
+  (`tests/spec_history/spec_history.py ROOT`) and `make strict`; runs all
+  three and names which failed; ~25 s measured. `make hooks
+  HOOKS=pre-push-light` installs it AS `pre-push` (the Makefile drops the
+  `-light` suffix), replacing the full-`make test` gate, which stays
+  available as `hooks/pre-push` (`make hooks HOOKS=pre-push`). INSTALLED on
+  the dev box (shared gitdir hooks/, so every worktree pushes through it).
+  Bypass `git push --no-verify`. Self-checked by `tests/hooks.test`.
+- **hooks/no_cd_worktree.sh** — PreToolUse(Bash) hook registered in the
+  project's `.claude/settings.json` (apply_here.md proposal 4, owner-approved
+  2026-10-20): exit 2 + a one-line reason when a command `cd`s into a path
+  under `worktrees/` or chains a `cd` (`cd X && ..`, `cd X; ..`, `cd X || ..`,
+  newline). Allowed: a lone `cd`/`cd /repo/root`, `git -C`, absolute paths, a
+  `cd` inside quotes (ssh/`bash -c` run elsewhere; a deliberate gap) and a
+  `cd` in a `( )` or `$( )` subshell (its cwd dies with it). Bash + one awk,
+  no jq, ~2 ms; fails open on input it cannot parse. Self-test
+  `tests/hooks.test` (planted blocked and allowed shapes both ways, the
+  settings registration, the light gate's three checks), wired in scripts/
+  Makefile by a dependency line since the script is not at scripts/ top level.
+
 - **hooks/pre-commit** — [PLAN-LINT] step 3, opt-in like hooks/pre-push:
   runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
   docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/
