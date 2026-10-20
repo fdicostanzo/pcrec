@@ -88,7 +88,13 @@ done
 # variant run only, so the planted checks run one real cell (plain, utf8): clean
 # at the pins, then red with a tag floor and a reach floor each raised by one.
 if [ "${EMIT_SWEEP_VARIANT_PLANTS:-0}" = 1 ]; then
-    vsweep() { PYTHONPATH="$here" "$TIMEOUT_BIN" 900 python3 "$1" --ref HEAD --tree-rev HEAD --variant plain --bases utf8 \
+    # The 900 s bound must not count a wait for the box lock (a --variant run
+    # is a heavy corpus sweep that emit_sweep.py would otherwise lock for
+    # itself INSIDE the timeout, so a busy box read as a timeout FINDING).
+    # boxlock run takes the lock first and the timeout starts after it; the
+    # child sees the lock held and does not re-take it. Same rule as chainrun's
+    # heavy stages (wait not counted in the cap).
+    vsweep() { PYTHONPATH="$here" bash "$here/boxlock" run --label emit_sweep-plants -- "$TIMEOUT_BIN" 900 python3 "$1" --ref HEAD --tree-rev HEAD --variant plain --bases utf8 \
         --no-self-check --tree "$here/.." --out "$T/vout" --jobs 4 > "$T/vlog" 2>&1; }
     vsweep "$ES"; rc=$?
     [ "$rc" = 0 ] && ok "variant cell plain/utf8 clean at its pins" || bad "variant cell rc=$rc: $(grep 'FLOOR' "$T/vlog" | head -3)"

@@ -515,7 +515,10 @@ distilled forms:
   including 17 mutually-deadlocked watchers); completion trailers in
   logs, commit age, and mtimes are the trust chain — but a fresh mtime
   is not an append (check the tail timestamp) and `find -newermt` needs
-  ISO timestamps on this box.
+  ISO timestamps on this box. Do not hand-write the watcher: `scripts/watchrun`
+  (watch), `scripts/chainrun` (the chain), `scripts/verdict` (read a log)
+  and `scripts/boxlock` (the one heavy-run lock) carry these fixes, each
+  planted back in its self-test (scripts/CLAUDE.md).
 - **Shell discipline, paid for repeatedly:** a pipe eats the exit code
   you were gating on; a script ending in `grep -c` exits 1 when the
   count is zero (bit the manager twice, most recently reading a green
@@ -554,7 +557,7 @@ distilled forms:
   follow-up agent, concise watcher agent, manager). A message to a BUSY
   lane is unread until it idles, so holds, lifts and mid-run rulings travel
   as files the lane polls in its OWN worktree (2026-08-30, 2026-09-04), not
-  as messages. Delivered agents are closed by the manager (TaskStop)
+  as messages (`scripts/chainrun --lift FILE` is the lane's waiter). Delivered agents are closed by the manager (TaskStop)
   rather than left idle and billable (2026-09-06).
 
 ## 7. Durable technical facts (cheap to forget, expensive to re-learn)

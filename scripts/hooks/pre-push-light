@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# scripts/hooks/pre-push-light — OPT-IN LIGHT push gate (apply_here proposal 3):
+# the cheap whole-tree checks that otherwise only run in `make test` or CI,
+# about a minute together. Red commits reached main four times in eight days
+# (2026-10-07..12) and CI reds went unnoticed.
+#
+#   1. tests/plan_lint/run_plan_lint.sh   (plan lint incl. PL14's tree scan)
+#   2. tests/spec_history/spec_history.py ROOT   (the tree-wide spec scan the
+#      pre-commit hook runs over the index)
+#   3. make strict                         (-Werror -Wshadow, writes nothing)
+#
+# Runs all three and prints which failed, so one push attempt shows every red.
+# NOT auto-installed (D2). `make hooks HOOKS=pre-push-light` installs this
+# file AS `pre-push` (git only runs that name), replacing the full gate; the
+# full-`make test` variant stays available as scripts/hooks/pre-push
+# (`make hooks HOOKS=pre-push`). Bypass once with `git push --no-verify`.
+set -u
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$repo_root" ]; then
+    echo "pre-push-light: could not resolve repo root via 'git rev-parse --show-toplevel'" >&2
+    exit 1
+fi
+cd "$repo_root" || exit 1
+
+failed=""
+mkdir -p build
+log="build/pre-push-light.$$"
+run() {
+    name="$1"; shift
+    if "$@" >"$log" 2>&1; then
+        echo "pre-push-light: $name ok"
+    else
+        echo "pre-push-light: $name FAILED:" >&2
+        tail -n 40 "$log" >&2
+        failed="$failed $name"
+    fi
+    rm -f "$log"
+}
+
+[ -f tests/plan_lint/run_plan_lint.sh ] && run plan-lint bash tests/plan_lint/run_plan_lint.sh
+[ -f tests/spec_history/spec_history.py ] && run spec-scan python3 tests/spec_history/spec_history.py "$repo_root"
+run strict make strict
+
+if [ -n "$failed" ]; then
+    echo "pre-push-light: push blocked, failed:$failed" >&2
+    echo "pre-push-light: fix them, or bypass once with 'git push --no-verify' (a deliberate choice)." >&2
+    exit 1
+fi
+echo "pre-push-light: all checks passed."
+exit 0

@@ -856,6 +856,26 @@ self-test (`tests/spec_history/run_hook_selftest.sh`). It is
 installed by hand, never automatically, for the same D2 reason. Bypass with
 `git commit --no-verify`.
 
+**Light pre-push gate and the no-cd hook (lane hooks, 2026-10-20).** The
+full-`make test` pre-push above is available but heavy (~11 min) and is not
+what is installed. `make hooks HOOKS=pre-push-light` installs
+`scripts/hooks/pre-push-light` AS `pre-push` (the `-light` suffix is dropped);
+it runs the tree-wide plan lint (`tests/plan_lint/run_plan_lint.sh`, PL14
+included), the tree-wide spec scan (`tests/spec_history/spec_history.py ROOT`)
+and `make strict` (~25 s measured on the dev box), prints which failed, and
+blocks the push; it is installed in the main repo's shared gitdir on the dev
+box. To get the full gate back: `make hooks HOOKS=pre-push`. After each push
+read `gh run list --commit <sha>` on the next wake (manager skill step 0b).
+Separately, `.claude/settings.json` registers
+`scripts/hooks/no_cd_worktree.sh` as a PreToolUse(Bash) hook that blocks a `cd`
+into `worktrees/` and `cd X && ..` chaining (exact scope in scripts/CLAUDE.md);
+both are self-checked by `scripts/tests/hooks.test` (`make testscripts`).
+The sanitizer and lint targets (`make san`/`ubsan`/`asan`/`lint`/`alloc`) and
+`make test-recursion-identity` take the box lock like `test-axes` (the target
+re-invokes itself as `<target>-locked` under `scripts/boxlock run`); CI never
+runs them (it is the per-PR tier only) and the Mac, with no `flock`, runs them
+unlocked; `PCREC_BOXLOCK=0` opts out.
+
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 
 ### Plan lint (`make test-plan-lint`)

@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# scripts/tests/hooks.test -- planted-case self-test of
+# scripts/hooks/no_cd_worktree.sh (the PreToolUse(Bash) no-cd hook). Each
+# case is a command; the hook is fed the real hook-input JSON and must exit
+# as named: BLOCK = 2 with the reason line on stderr, ALLOW = 0 and silent.
+# A hook that reads green because it parses nothing fails the BLOCK rows.
+set -u
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+H="$ROOT_DIR/scripts/hooks/no_cd_worktree.sh"
+pass=0; fail=0
+
+json() { python3 -I -c 'import sys,json;print(json.dumps({"session_id":"s","cwd":"/x","tool_name":"Bash","tool_input":{"command":sys.argv[1],"description":"d"}}))' "$1"; }
+
+# case WANT(block|allow) CMD
+case_() {
+    local want="$1" cmd="$2" out rc ok=1
+    out="$(json "$cmd" | bash "$H" 2>&1)"; rc=$?
+    if [ "$want" = block ]; then
+        [ "$rc" -eq 2 ] || ok=0
+        printf '%s' "$out" | grep -qF 'git -C' || ok=0
+    else
+        [ "$rc" -eq 0 ] && [ -z "$out" ] || ok=0
+    fi
+    if [ "$ok" = 1 ]; then pass=$((pass+1)); else fail=$((fail+1)); echo "FAIL: want $want rc=$rc :: $cmd :: $out"; fi
+}
+
+# --- blocked shapes
+case_ block 'cd worktrees/lane'
+case_ block 'cd /home/pcrec/projects/pcrec/worktrees/lane'
+case_ block 'cd "/home/pcrec/projects/pcrec/worktrees/lane"'
+case_ block 'cd worktrees/lane && make'
+case_ block 'cd /some/dir && git status'
+case_ block 'cd /some/dir; git status'
+case_ block 'cd /some/dir || exit 1'
+case_ block 'echo hi
+cd /some/dir
+git status'
+case_ block 'git status && cd /some/dir && make'
+case_ block 'for d in a b; do cd "$d" && make; done'
+case_ block 'if true; then cd /x && ls; fi'
+case_ block 'builtin cd worktrees/x'
+case_ block 'cd -P worktrees/x'
+# --- allowed shapes
+case_ allow 'cd'
+case_ allow 'cd /home/pcrec/projects/pcrec'
+case_ allow 'cd /home/pcrec/projects/pcrec;'
+case_ allow 'git -C worktrees/lane status'
+case_ allow 'git -C /home/pcrec/projects/pcrec/worktrees/lane log -1'
+case_ allow 'make -C worktrees/lane test'
+case_ allow 'ls worktrees/lane && echo cd worktrees/x'
+case_ allow "echo 'cd worktrees/x && make'"
+case_ allow 'echo "cd /a && b"'
+case_ allow "ssh host 'cd /x && make test'"
+case_ allow 'bash -c "cd /x && make"'
+case_ allow 'for d in a b; do (cd "$d" && make); done'
+case_ allow '(cd /some/dir && make)'
+case_ allow 'x=$(cd /some/dir && pwd)'
+case_ allow 'ls | grep cd'
+case_ allow 'echo hi # cd worktrees/x && ls'
+case_ allow 'git commit -m "docs: stop cd worktrees/x slips"'
+case_ allow ''
+# --- the project settings.json registers the hook for Bash
+grep -q '"matcher": "Bash"' "$ROOT_DIR/.claude/settings.json" && grep -q 'scripts/hooks/no_cd_worktree.sh' "$ROOT_DIR/.claude/settings.json" \
+    && pass=$((pass+1)) || { fail=$((fail+1)); echo "FAIL: .claude/settings.json does not register no_cd_worktree.sh for Bash"; }
+# --- the light pre-push gate installs as pre-push (Makefile drops -light) and names its three checks
+for w in run_plan_lint.sh spec_history.py 'make strict'; do
+    grep -qF "$w" "$ROOT_DIR/scripts/hooks/pre-push-light" && pass=$((pass+1)) || { fail=$((fail+1)); echo "FAIL: pre-push-light lacks $w"; }
+done
+# --- fail open on input it cannot parse
+out="$(printf 'not json' | bash "$H" 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ]; then pass=$((pass+1)); else fail=$((fail+1)); echo "FAIL: garbage input rc=$rc"; fi
+# --- speed: per-call cost of the hook (bash + one awk; the budget is generous)
+start=$(date +%s%N); for _ in $(seq 20); do json 'ls' >/dev/null; done; base=$(( $(date +%s%N) - start ))
+J="$(json 'cd /a && ls')"
+start=$(date +%s%N); for _ in $(seq 20); do printf '%s' "$J" | bash "$H" >/dev/null 2>&1; done; el=$(( $(date +%s%N) - start ))
+per=$(( el / 20 / 1000000 ))
+if [ "$per" -le 60 ]; then pass=$((pass+1)); else fail=$((fail+1)); echo "FAIL: ${per} ms per call (budget 60 ms; target ~5)"; fi
+echo "no_cd_worktree selftest: $pass passed, $fail failed (hook ${per} ms/call)"
+[ "$fail" -eq 0 ]

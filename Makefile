@@ -1147,6 +1147,9 @@ test-recursion: all
 #     make test-recursion-identity                        # the gate, on demand
 #     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # moved base
 test-recursion-identity: all
+	bash scripts/boxlock run --label test-recursion-identity -- $(MAKE) --no-print-directory test-recursion-identity-locked
+
+test-recursion-identity-locked: all
 	bash tests/codegen/run_recursion_identity.sh
 
 # [OPT-REVEND] L2 the WINDOW-IDENTITY TWIN (tests/revend/run_window_twin.sh,
@@ -1799,6 +1802,9 @@ UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
 # `make test-atomic-identity` still honours SANFLAGS for anyone who wants
 # that particular measurement on purpose.
 ubsan:
+	bash scripts/boxlock run --label ubsan -- $(MAKE) --no-print-directory ubsan-locked
+
+ubsan-locked:
 	@echo "== ubsan: building the compiler axis at $(UBSAN_DIR)/ =="
 	$(MAKE) BUILD_DIR=$(UBSAN_DIR) CFLAGS="$(UBSAN_CFLAGS)" all
 	@echo "== ubsan: running the suite, both axes instrumented =="
@@ -1846,6 +1852,9 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
 # valgrind-memcheck note recorded anyway, in case a K7 repro is ever added to
 # the standing suite and hits the same rlimit-vs-ASan-shadow-memory conflict.
 asan:
+	bash scripts/boxlock run --label asan -- $(MAKE) --no-print-directory asan-locked
+
+asan-locked:
 	@echo "== asan: building the compiler axis at $(ASAN_DIR)/ =="
 	$(MAKE) BUILD_DIR=$(ASAN_DIR) CFLAGS="$(ASAN_CFLAGS)" all
 	@echo "== asan: running the suite, both axes instrumented =="
@@ -1918,6 +1927,9 @@ SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
 # the same K44-shaped
 # oversubscription this project is retiring elsewhere.
 san:
+	bash scripts/boxlock run --label san -- $(MAKE) --no-print-directory san-locked
+
+san-locked:
 	@echo "== san: building the compiler axis at $(SAN_DIR)/ =="
 	$(MAKE) BUILD_DIR=$(SAN_DIR) CFLAGS="$(SAN_CFLAGS)" all
 	@echo "== san: running the suite, both axes instrumented, SAN_PROCS=$${SAN_PROCS:-4} =="
@@ -1929,6 +1941,9 @@ san:
 # loudly-but-gracefully per tool, the PC-3 libpcre2-absent SKIP pattern:
 # a stranger's box differs and the target must stay green either way.
 lint:
+	bash scripts/boxlock run --label lint -- $(MAKE) --no-print-directory lint-locked
+
+lint-locked:
 	@echo "== lint: gcc -fanalyzer =="
 	@if $(CC) -fanalyzer -fsyntax-only -x c -std=gnu11 - < /dev/null >/dev/null 2>&1; then \
 	    set -e; for f in $(LIBSRCS) scripts/ksgen.c cli/main.c; do \
@@ -1971,6 +1986,9 @@ lint:
 # tests/core/alloc_inject.h's own header for the full mechanism.
 ALLOC_DIR := build-alloc
 alloc:
+	bash scripts/boxlock run --label alloc -- $(MAKE) --no-print-directory alloc-locked
+
+alloc-locked:
 	@echo "== alloc: building the allocation-failure-injected axis at $(ALLOC_DIR)/ =="
 	@# LIBRARY ONLY, not `all`: build-alloc/pcrec (the CLI) would need the
 	@# same $(ALLOC_DIR)/pcrec_inject_* symbols the library does, and
@@ -2032,7 +2050,10 @@ fuzz: all
 # HOOKS=pre-commit` installs only the commit gate (it lints docs/dev/plan.md
 # and friends when they are staged, and runs the [SPEC-HOOK] citation/spec
 # checks when text files or a docs/spec file are staged; it never runs
-# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both. Never
+# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both.
+# `HOOKS=pre-push-light` installs the LIGHT gate (plan lint + spec scan +
+# `make strict`, ~1 min) under the name `pre-push` (the `-light` suffix is
+# dropped on install; it replaces the full gate). Never
 # run automatically by any other target and never by CI (D2, TT-1 principle
 # 4): a stranger's plain `make`/`make test` must not install anything into
 # their git config.
@@ -2041,8 +2062,9 @@ hooks:
 	@hookdir="$$(git rev-parse --git-path hooks)"; \
 	for h in $(HOOKS); do \
 	  if [ ! -f scripts/hooks/$$h ]; then echo "hooks: no such hook scripts/hooks/$$h" >&2; exit 1; fi; \
-	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$h"; \
-	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$h"; \
+	  dest="$${h%-light}"; \
+	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$dest"; \
+	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$dest"; \
 	done
 
 clean:
@@ -2068,4 +2090,5 @@ clean:
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-compound test-partlayout test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
+        ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean
