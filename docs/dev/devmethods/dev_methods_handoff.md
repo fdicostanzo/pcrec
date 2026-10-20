@@ -46,8 +46,8 @@ Appendix B. Glossary
 pcrec is an ahead-of-time regex compiler: it takes a PCRE2 pattern and
 emits a self-contained C matcher. It has a lot of correctness surface and
 a demanding performance target. By the end of the period it had 8,445
-commits, 168 recorded decisions, 627 lane delivery reports, 137 compiled
-review files, 824 mutation (sabotage) test rows, and a 73-section test
+commits, 168 recorded decisions, 627 lane delivery reports, 136 compiled
+review files, 823 mutation (sabotage) test rows, and a 73-section test
 suite. The process below grew to carry that load. Each piece was added
 after something went wrong.
 

@@ -731,6 +731,7 @@ change.
   128 (pattern, regime) cells of pcrec-bench's `capability@0.1` at pin
   `25b1984f`, buckets them by cause off the D81 stamps, and proposes six
   plan rows. See `optloop/CLAUDE.md`.
+- `devmethods/` — the DEVELOPMENT-METHODS HAND-OFF (2026-10-20, lane devmethods, docs only): `dev_methods_handoff.md` (portable practices with rule / why / how, anti-patterns, start-up checklist), `apply_here.md` (ranked proposals for this project, unruled) and the four journal reader notes they were built from. See `devmethods/CLAUDE.md`.
 - `meta/` — the SIDECAR: learnings about developing WITH models that
   transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
   that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is
