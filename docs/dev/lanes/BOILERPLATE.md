@@ -25,8 +25,10 @@ index at spawn; treat them as context, not tasking.
 
 ## Worktree setup (writers)
 1. `git -C "$(git rev-parse --show-toplevel)" worktree add worktrees/<lane> -b lane/<lane>` (run from the main tree)
-2. cd there; FIRST command: `git rev-parse --show-toplevel` — no edit until
-   it prints your worktree path.
+2. NO `cd` into the worktree (the PreToolUse hook scripts/hooks/no_cd_worktree.sh
+   blocks it; it moves the session cwd): every command uses absolute paths or
+   `git -C <worktree>`. FIRST command: `git -C <worktree> rev-parse
+   --show-toplevel` — no edit until it prints your worktree path.
 3. Build: `make -j16` on the Linux dev box (plain `gcc` is GNU gcc 15.2;
    the Mac needs `CC=gcc-16`, see Box facts).
 Read-only critics work in the main tree and never run make.
