@@ -5006,6 +5006,20 @@ available as general code health, not load-bearing for Q8).
 awareness against control 3), or a genuinely STRUCTURAL `$` variant
 appears that no field can express.
 
+**D62 addendum — the modifier resolves into the CHOICE OF NODE ([DD-11.5] P2c, D168 add. 1; lane ctxbuild, 2026-10-19)**
+- **Ruling superseded:** "multiline-`$` is a parse-resolved FLAG on the node" no longer
+  holds. The parser resolves `(?m)` at the `^`/`$` itself into WHICH node it builds:
+  `(?m)^`/`(?m)$` are `A_CTX` rows (`MLINE_BOL`/`MLINE_EOL`) of the one 9-cell truth
+  table `src/core/ctxfn.def`; a plain `^`/`$` is `A_BOL`/`A_EOL` with no payload.
+  `Ast.u.anch.multiline`, `N_BOT_M`/`N_EOL_M` and their arms are deleted.
+- **Principle kept:** kinds encode structure, and a kind is still never doubled per
+  modifier (no `A_EOL_M`); the modifier maps onto an existing GENERAL kind with data.
+  `$`/`\Z`/`^`/`\A` keep their AST kinds as structure (P2d/P2e, D168 add. 3, decide
+  `\A`/`\z`).
+- **Control 3 retired:** its residual (an analysis matching `case A_EOL:` and forgetting
+  the field) has no field to forget; `(?m)` anchors reach every exhaustive switch as
+  `A_CTX`, which `-Wswitch` already forces each analysis to classify.
+
 ## D63 — Q3 ruled: the ENG_ATTEMPT CANDIDATE-START PREFILTER, chartered as a general tool (option 1); DD-7's reverse BOT variant UNPARKED as the sequenced follow-on (option 3 after 1) (Frank, 2026-08-18, thirty-third session)
 
 **Decision, three parts.**
