@@ -12,9 +12,11 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   value is DERIVED from the grid (`CTXFN_GRID`, internal.h) and a
   `_Static_assert` per row ties it to the hex; the three per-row predicates
   (`ctxfn_reads_absent_prev/_next`, `ctxfn_reads_membership`) are COMPUTED
-  from the bits in internal.h, never written as columns. Eight rows: the six
+  from the bits in internal.h, never written as columns. Ten rows: the six
   four-cell functions (`\b`, `\B`, the four one-character lookarounds,
-  absent cells copied from out) and `MLINE_BOL`/`MLINE_EOL`, `(?m)^`/`(?m)$`.
+  absent cells copied from out), `MLINE_BOL`/`MLINE_EOL`, `(?m)^`/`(?m)$`,
+  and (P2d) `SUBJECT_START`/`SUBJECT_END`, `^`/`\A` and `\z`, which read no
+  membership, only an absent side.
   CK-8 (`tests/assertions/ctxfn_table_check.py`) checks every row against
   libpcre2. A Makefile prerequisite of every object (FACTS_HDRS).
 - **internal.h ([DD-11.5])** — `Ast.u.ctx.fn`/`NState.ctxfn` are
@@ -22,7 +24,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   control-3 comment) is DELETED, A_BOL/A_EOL carry no payload; the NKinds
   `N_BOT_M`/`N_EOL_M` are deleted; `PcrecCtxSet.rows` (a mask) is `row`, the
   one contributor row (no set is read by two rows since the newline row
-  retired).
+  retired). P2d: the NKinds `N_BOT`/`N_END` are deleted; `pcrec_anchor_ctxfn`
+  is the one map from A_BOL/A_END to their rows, read by the NFA lowering and
+  the VM.
 
 - **part_layout.def** — [ENTRY-TABLE] E1 (lane e1, 2026-10-18;
   `docs/design/compound_entries.md` §3.9): THE PART-LAYOUT VOCABULARY, four

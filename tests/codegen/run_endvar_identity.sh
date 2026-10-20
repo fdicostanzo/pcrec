@@ -10,7 +10,7 @@
 #     eolvar = interned iff eolv != base     ; -1 means "same as base"
 #     endvar = interned iff endv != EOLV     ; -1 means "same as the EOL view"
 #
-# With no `\z` in the pattern there is no N_END state, so `end_ok` gates
+# With no `\z` in the pattern there is no SUBJECT_END row, so `end_ok` gates
 # nothing, so `endv == eolv` everywhere, so `endvar` is -1 everywhere, so
 # `dfa_has_endvar` is false and the emitter takes the pre-wave branch at every
 # site.

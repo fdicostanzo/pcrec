@@ -8398,7 +8398,8 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion's set "
                        "is not byte-expressible under this encoding "
                        "(ucp_design.md §2.3); it needs [UCP] U4");
-    vm_ctx_row(v, entry, a->u.ctx.fn, vm_cls(v, bits), next);
+    int si = vm_cls(v, bits);
+    vm_ctx_row(v, entry, a->u.ctx.fn, si, next);
 }
 
 /* One context row's test at the cursor, in the form `vm_ctx_forms` names for

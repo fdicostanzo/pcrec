@@ -3386,7 +3386,8 @@ worth knowing before editing it:
   nothing" — that read is already latent UB, `dfa_premul`'s own note.
 - **P0 IS ASSERTED, NOT CHECKED.** The predicate reads `fs = fd->s0`, which is
   the right state at `search_from == 0` only because `ENG_UNANCH` implies no
-  `N_BOT`/`N_GSTART`. `dfa_needs_seed` compares only `s1u[u]` ACROSS `u` and
+  BOT-family node (`N_GSTART`, or a context row reading absent prev: `^`'s
+  SUBJECT_START, `(?m)^`'s MLINE_BOL). `dfa_needs_seed` compares only `s1u[u]` ACROSS `u` and
   would not notice an `s0 != s1u[PLAIN]` split, so an engine-selection change
   that routed a BOT-bearing machine here would break the elision SILENTLY.
   `start_pinned_assert_routing` is a loud `pcrec_ctx_fail` instead.

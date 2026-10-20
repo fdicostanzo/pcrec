@@ -3996,3 +3996,16 @@ S1157 (has_bot ignores the row: the routing assertion refuses), S1159
 (has_end ignores it), S1160 (A1's reverse left_abs plant, DECLARED UNREACHED),
 S1161 (the VM's (?m)^ form loses `pos < n`). Every figure is OWED: no mech ran
 (bench timing window); `docs/dev/lanes/ctxbuild_report.md` lists the runs.
+
+**[DD-11.5] P2d, the `\A`/`\z` fold at the NFA layer — S1171-S1176 (lane
+ctxp2d, 2026-10-20; abi unchanged at 81, zero emitted bytes moved):** the NFA
+kinds `N_BOT`/`N_END` are deleted; `^`/`\A`/`\z` lower to the ctxfn.def rows
+SUBJECT_START/SUBJECT_END. No existing row loses its site (the
+[SABANCHOR] tripwire resolves all 835). New rows: S1171 (`cr_ctx_reads` lets an
+absent-only row add its empty set; answer-identical, detector assertions §1d's
+twin-stamp check), S1172/S1173 (one subject-row cell flipped, hex updated;
+CK-8 names it), S1174 (`pcrec_anchor_ctxfn` swaps the two rows), S1175 (the
+VM's `\z` form passes one byte early), S1176 (`frag_ctx_row` drops its
+`ctxfn`). Re-run (derived, `docs/design/ctx_span/derived_rows_p2d.tsv`):
+S1100, S14, S746, S1151, S1157, S1159, S1161, S341, S365, S86, S69, S882,
+S75. Every figure is OWED; `docs/dev/lanes/ctxp2d_report.md` lists the runs.

@@ -1,0 +1,75 @@
+(16 removed code lines not distinctive in their base file: left out of the set)
+== design-not-real (planned, not made) ==
+  line	    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */	P2a
+  line	    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */	P2a
+  line	    CTXFN_PREV        = 0xC,   /* (?<=C) */	P2a
+  line	    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */	P2a
+  line	    CTXFN_NEXT        = 0xA,   /* (?=C)  */	P2a
+  line	    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */	P2a
+  line	    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */	P2a
+  line	            uint8_t             fn;	P2a
+  line	    uint8_t     fn;      /* CTXFN_* */	P2a
+  line	Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)	P2a
+  line	bool  pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,	P2a
+  def	pcrec_poss_ctx_admits	P2a
+  line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2a
+  line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2b
+  def	sides_of	P2b
+  def	Sides	P2b
+  token	anch.multiline	P2c
+  token	N_BOT_M	P2c
+  token	N_EOL_M	P2c
+  token	nl_bit	P2c
+  token	CTXROW_NEWLINE	P2c
+  token	PCREC_NO_MLINECTX	P2c
+  token	cr_nl_reads	P2c
+  token	cr_nl_set	P2c
+  token	field+fold lowering	P2c
+  line	            bool multiline;	P2c
+  line	    if (k == A_BOL || k == A_EOL)	P2c
+  line	            d->ctx[k].rows |= 1u << r;	P2c
+  line	                cs->rows = 0;	P2c
+  def	ctx_rows_knobbed	P2c
+  def	ctx_entry_live	P2c
+  (31 of 31 design entries)
+== real-not-design (made, not planned) ==
+  P2d	src/core/internal.h:1962	N_BOT,     /* assert start of subject, goto t1 */	[NKind]
+  P2d	src/core/internal.h:1964	N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —	[NKind]
+  P2d	src/facts/kset.c:136	case N_BOT:	[wdrain]
+  P2d	src/facts/kset.c:138	case N_END:	[wdrain]
+  P2d	src/gen/emit_vm.c:8348	enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT, VMCTX_MLBOL, VMCTX_MLEOL };	[enum@src/gen/emit_vm.c:8348]
+  P2d	src/gen/emit_vm.c:8392	StrBuf *b = v->b;	[vm_ctx]
+  P2d	src/gen/emit_vm.c:8401	if (vm_ctx_forms[k].fn == a->u.ctx.fn) { f = &vm_ctx_forms[k]; break; }	[vm_ctx]
+  P2d	src/gen/emit_vm.c:8405	(unsigned)a->u.ctx.fn);	[vm_ctx]
+  P2d	src/gen/emit_vm.c:8406	int si = vm_cls(v, bits);	[vm_ctx]
+  P2d	src/gen/emit_vm.c:8915	vm_lbl(v, entry, NULL);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8916	vm_ev(v, VE_ASSERT, next, 0, "^ attempt_position of subject (absolute offset 0)");	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8917	pcrec_sb_printf(b, "    if (scan_position == 0) goto %s_L%d;\n", v->p, next);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8918	vm_fail(v);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8929	case A_END:	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8936	vm_lbl(v, entry, NULL);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8937	vm_ev(v, VE_ASSERT, next, 0, "\\z end of subject (absolute)");	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8938	pcrec_sb_printf(b, "    if (scan_position == subject_length) goto %s_L%d;\n", v->p, next);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8939	vm_fail(v);	[vm_emit_node]
+  P2d	src/gen/emit_vm.c:8940	return;	[vm_emit_node]
+  P2d	src/ir/dfa.c:170	static bool cr_ctx_reads(const NState *st) { return st->k == N_CTX; }	[?]
+  P2d	src/ir/dfa.c:684	case N_BOT:	[eps_edge]
+  P2d	src/ir/dfa.c:686	case N_END:	[eps_edge]
+  P2d	src/ir/dfa.c:786	bool      bot_ok;	[Clo]
+  P2d	src/ir/dfa.c:1014	case N_BOT:	[clo_walk]
+  P2d	src/ir/dfa.c:1015	if (!cl->bot_ok) break;	[clo_walk]
+  P2d	src/ir/dfa.c:1016	s = st->t1;	[clo_walk]
+  P2d	src/ir/dfa.c:1017	continue;	[clo_walk]
+  P2d	src/ir/dfa.c:1022	case N_END:	[clo_walk]
+  P2d	src/ir/dfa.c:1023	if (!cl->end_ok) break;	[clo_walk]
+  P2d	src/ir/dfa.c:1024	s = st->t1;	[clo_walk]
+  P2d	src/ir/dfa.c:1025	continue;	[clo_walk]
+  P2d	src/ir/dfa.c:1099	static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,	[closure]
+  P2d	src/ir/dfa.c:1120	out, 0, 0, -1, eol_ok, end_ok, bot_ok, gst_ok,	[closure]
+  P2d	src/ir/dfa.c:1488	closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,	[make_state]
+  P2d	src/ir/dfa.c:1572	case N_CSTART:	[pcrec_build_dfa]
+  P2d	src/ir/dfa.c:1573	case N_END:   has_end = true; break;	[pcrec_build_dfa]
+  P2d	src/ir/nfa.c:615	case A_BOL:   return frag_single(b, N_BOT);	[compile_ast]
+  P2d	src/ir/nfa.c:637	case A_END:   return frag_single(b, N_END);	[compile_ast]
+  P2d	src/ir/nfa.c:1313	if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_GSTART ||	[pcrec_nfa_has_bot]
+  (39 of 39 removed code lines)
