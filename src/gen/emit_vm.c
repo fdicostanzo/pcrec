@@ -8345,7 +8345,8 @@ static void vm_region(Vm *v, int i)
  *
  * [DD-11.5] THE ROWS ARE src/core/ctxfn.def's, the one truth table's VM
  * columns, so a function cannot gain a row without gaining its form. */
-enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT, VMCTX_MLBOL, VMCTX_MLEOL };
+enum { VMCTX_BOTH, VMCTX_PREV, VMCTX_NEXT, VMCTX_MLBOL, VMCTX_MLEOL,
+       VMCTX_START, VMCTX_END };
 typedef struct {
     uint16_t    fn;      /* CTXFN_* */
     int         side;    /* VMCTX_*: which neighbour(s) the test reads */
@@ -8387,23 +8388,33 @@ static void vm_ctx_side(Vm *v, StrBuf *b, int ci, int side)
  * the two constructs cannot disagree about what a word character is. It is
  * the byte image under §2.3's precondition (`pcrec_enc_set_bytes`), which
  * every producer asked first; failing it here is an internal error. */
+static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next);
+
 static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
 {
-    StrBuf *b = v->b;
     uint8_t bits[32];
     if (!pcrec_enc_set_bytes(pcrec_enc_by_id(v->cx->opt->encoding),
                              a->u.ctx.iv, a->u.ctx.n, bits))
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion's set "
                        "is not byte-expressible under this encoding "
                        "(ucp_design.md §2.3); it needs [UCP] U4");
+    vm_ctx_row(v, entry, a->u.ctx.fn, vm_cls(v, bits), next);
+}
+
+/* One context row's test at the cursor, in the form `vm_ctx_forms` names for
+ * truth function `fn`, reading class-pool set `si` (-1 for a row that reads
+ * no membership: `^`/`\A`/`\z`'s, which test the position alone and intern
+ * no set). */
+static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next)
+{
+    StrBuf *b = v->b;
     const VmCtxForm *f = NULL;
     for (size_t k = 0; k < sizeof vm_ctx_forms / sizeof vm_ctx_forms[0]; k++)
-        if (vm_ctx_forms[k].fn == a->u.ctx.fn) { f = &vm_ctx_forms[k]; break; }
+        if (vm_ctx_forms[k].fn == fn) { f = &vm_ctx_forms[k]; break; }
     if (!f)
         pcrec_ctx_fail(v->cx, 0, "internal error: a context assertion carries "
                        "truth function 0x%x, which has no emitted form",
-                       (unsigned)a->u.ctx.fn);
-    int si = vm_cls(v, bits);
+                       (unsigned)fn);
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_ASSERT, next, 0, f->role);
     if (f->side == VMCTX_BOTH) {
@@ -8428,6 +8439,14 @@ static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
         pcrec_sb_puts(b, "    if (scan_position == subject_length || (");
         vm_cls_test(v, b, si, "subject[scan_position]");
         pcrec_sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+    } else if (f->side == VMCTX_START) {
+        /* `^`/`\A` — start of SUBJECT, absolute: it anchors to offset 0
+         * whatever startpos was (the emitted contract in lib/pcrec.h). */
+        pcrec_sb_printf(b, "    if (scan_position == 0) goto %s_L%d;\n", v->p, next);
+    } else if (f->side == VMCTX_END) {
+        /* `\z` — end of subject, and NOT before a final newline. A position
+         * test reading no byte, so it needs none of the guards above. */
+        pcrec_sb_printf(b, "    if (scan_position == subject_length) goto %s_L%d;\n", v->p, next);
     } else {
         pcrec_sb_puts(b, f->neg ? "    if (!" : "    if (");
         vm_ctx_side(v, b, si, f->side);
@@ -8907,15 +8926,14 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, next);
         return;
     case A_BOL:
-        /* A `(?m)^` is an A_CTX row since [DD-11.5]: `vm_ctx`'s MLINE_BOL
-         * form emits it. */
-        /* `^` is start of SUBJECT, absolute — it anchors to offset 0 whatever
-         * startpos was, matching the emitted contract in lib/pcrec.h and the
-         * DFA's own N_BOT. */
-        vm_lbl(v, entry, NULL);
-        vm_ev(v, VE_ASSERT, next, 0, "^ attempt_position of subject (absolute offset 0)");
-        pcrec_sb_printf(b, "    if (scan_position == 0) goto %s_L%d;\n", v->p, next);
-        vm_fail(v);
+    case A_END:
+        /* `^`/`\A` and `\z` ([DD-11.5] P2d): the context rows SUBJECT_START
+         * and SUBJECT_END, the same rows the NFA lowers them to, emitted by
+         * their `vm_ctx_forms` forms. A `(?m)^` is an A_CTX node (MLINE_BOL).
+         * assertions_design.md §9.3: both engines carry every construct,
+         * because `--engine=vm` is what makes the DFA's answers trustworthy
+         * rather than an echo of themselves. */
+        vm_ctx_row(v, entry, pcrec_anchor_ctxfn(a->k), -1, next);
         return;
     case A_EOL:
         /* A `(?m)$` is an A_CTX row (`vm_ctx`'s MLINE_EOL form). */
@@ -8924,18 +8942,6 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
               "$ end of subject, or before a final newline");
         pcrec_sb_printf(b, "    if (scan_position == subject_length || (scan_position + 1 == subject_length && subject[scan_position] == '\\n')) "
                      "goto %s_L%d;\n", v->p, next);
-        vm_fail(v);
-        return;
-    case A_END:
-        /* [M6.2 wave A] `\z` — end of subject, and NOT before a final
-         * newline. assertions_design.md §9.3: both engines carry every
-         * construct, because `--engine=vm` is what makes the DFA's answers
-         * trustworthy rather than an echo of themselves. Note this arm reads
-         * no byte at all, so it needs none of the guards `\b`'s spelling will
-         * (K27's class): `pos == n` is a position test. */
-        vm_lbl(v, entry, NULL);
-        vm_ev(v, VE_ASSERT, next, 0, "\\z end of subject (absolute)");
-        pcrec_sb_printf(b, "    if (scan_position == subject_length) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
     case A_GSTART:

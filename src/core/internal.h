@@ -1201,6 +1201,16 @@ static inline bool ctxfn_reads_membership(uint16_t fn)
             ctxfn_cell(fn, k, 1) != ctxfn_cell(fn, k, 0)) return true;
     return false;
 }
+/* [DD-11.5] P2d: the context row an absolute-position anchor KIND lowers to —
+ * `^`/`\A` (A_BOL) is SUBJECT_START, `\z` (A_END) is SUBJECT_END. The AST
+ * keeps the two kinds as structure for the analyses that read them; this is
+ * the one place both engines (the NFA lowering, the VM's emitted form) learn
+ * which row each is. Called only from an `A_BOL`/`A_END` label; any other
+ * kind gets 0, the function no position passes, never a plausible row. */
+static inline uint16_t pcrec_anchor_ctxfn(AKind k)
+{
+    return k == A_BOL ? CTXFN_SUBJECT_START : k == A_END ? CTXFN_SUBJECT_END : 0;
+}
 
 typedef struct Ast Ast;
 struct Ast {
@@ -1959,11 +1969,7 @@ typedef enum {
     N_CLASS,   /* consume one byte in cls, goto t1 */
     N_SPLIT,   /* epsilon: try t1 first (higher priority), then t2 */
     N_EPS,     /* epsilon: goto t1 */
-    N_BOT,     /* assert start of subject, goto t1 */
     N_EOL,     /* assert end-of-subject or before-final-\n, goto t1 */
-    N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —
-                * strictly stronger than N_EOL, which is why it is its own
-                * state kind and its own closure bit rather than a variant */
     /* [UCP] U2 A_CTX, goto t1: `cls` is the context set's BYTE image (exact
      * by `pcrec_ctx_set_bytes`' precondition) and `ctxfn` its truth function
      * (CTXFN_*). src/ir/dfa.c's closure evaluates it from TWO bits of the
@@ -1973,11 +1979,14 @@ typedef enum {
      * (out, in, absent) where the row reads absent. `\b`/`\B` are two of its
      * rows ([M6.2] wave B's N_WORDB/N_NWORDB, retired into it) and since
      * [DD-11.5] so are `(?m)^`/`(?m)$` (wave C's multiline kinds, retired
-     * into it: src/core/ctxfn.def's MLINE_BOL/MLINE_EOL). */
+     * into it: src/core/ctxfn.def's MLINE_BOL/MLINE_EOL) and `^`/`\A`/`\z`
+     * (the start/end-of-subject kinds N_BOT/N_END, retired into it at P2d:
+     * SUBJECT_START/SUBJECT_END, rows that read no set, only an absent
+     * side). */
     N_CTX,
-    /* [M6.2 wave D] `\G`, goto t1. An ABSOLUTE POSITION TEST like N_BOT — it
+    /* [M6.2 wave D] `\G`, goto t1. An ABSOLUTE POSITION TEST like `\A` — it
      * reads no byte and needs no class axis — but against a value that is not
-     * known until the match call: `pos == startpos` where N_BOT is `pos == 0`.
+     * known until the match call: `pos == startpos` where `\A` is `pos == 0`.
      *
      * In src/ir/dfa.c that makes it a THIRD closure bit beside `bot_ok` and
      * `eol_ok`/`end_ok`, and a SECOND family of interior start states
