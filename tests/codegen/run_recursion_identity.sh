@@ -1264,7 +1264,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # context set moves beyond the abi digits (its context list order). `9f7cb74e3`
 # is the lane's last src commit; the manager re-pins to the merge (the
 # self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9f7cb74e3}"   # [DD-11.5] P2c self-pin (2026-10-19), abi 81 (was 7c0a90479, the E1 merge)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-95b42a3a2}"   # [DD-11.5] ctxbuild validation tip (2026-10-20), abi 81, src identical to the P2c self-pin 9f7cb74e3 plus main 6ce289976 (was 7c0a90479, the E1 merge)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
