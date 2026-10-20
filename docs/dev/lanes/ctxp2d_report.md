@@ -265,3 +265,30 @@ None is required. D168 add. 3 rules this step. Two things could be recorded:
 - Rulings file `docs/dev/lanes/ctxp2d_rulings.md` was re-read before each
   commit and before this report. It is empty, so no ruling was applied.
 - Light checks are complete. Heavy validation is OWED (§7).
+
+## 10. STATE AT HANDOFF (p2dval)
+
+(The brief called this section 8; §8 and §9 were taken, so it is §10.)
+
+- Merge of main (20e0fe126) into lane/ctxp2d: `2059ba434`. One conflict, docs/dev/lanes/CLAUDE.md (this lane's report row and runkit's row, both kept). `make strict` green. No src/ edit.
+- Rulings file re-read: last entry applied is "2026-10-20 manager rulings on the handback (805356b70)", rulings 1-4. Ruling 1 still binds: any emit_sweep mover turns P2d into an abi event (82).
+- Chain armed detached, `--keep-going`, pid 2221081, logdir `/home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/chain`. Stages file `/home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/stages.txt` (not committed), helper scripts in `build/p2dval/s/` (mkref.sh, witness.sh, conj.sh; not committed). 10 stages, total cap 32,340 s (axes 15,600 = 10,381 x 1.5; test is ttune 2,940).
+- Differences from §7: the REF compiler is built in-chain by `mkref.sh` (git archive 39457a796); §7 item 4's four witnesses and item 5's conj.py (census, witnesses, rarm; REF vs tip cmp) are scripted stages; the per-pattern dump of ctxbuild (`build/v/conj_pp.py`) is not reproduced; `run_mline_diff.sh` is not owed here; item 7 is covered by the `test` stage. emit_sweep `--arms start` carries `--extra -e --extra utf8` as written in §7.
+
+```
+# p2dval: ctxp2d heavy validation, ctxp2d_report.md section 7 order. REF = 39457a796.
+build    light 300   make -j16
+refbuild light 900   build/p2dval/s/mkref.sh
+test     light ttune scripts/perfrun --label p2dval -- "$STAGE_LOG.make"
+sweepdef heavy 1500  python3 -I scripts/emit_sweep.py --ref 39457a796 --out build/p2dval/sweep_default
+sweepstart heavy 3000 python3 -I scripts/emit_sweep.py --ref 39457a796 --arms start --extra -e --extra utf8 --out build/p2dval/sweep_start
+mechnew  heavy 2400  make mech S1171 S1172 S1173 S1174 S1175 S1176
+mechold  heavy 3600  make mech S1100 S14 S746 S1151 S1157 S1159 S1161 S341 S365 S86 S69 S882 S75
+witness  heavy 900   build/p2dval/s/witness.sh
+conj     heavy 1200  build/p2dval/s/conj.sh
+axes     heavy 15600 env AXES_FULL=1 HARNESS_BATCH=64 make test-axes
+```
+
+- watch:   scripts/watchrun /home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/chain
+- verdict: scripts/verdict /home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/chain/chain.log
+- stop:    scripts/safekill 2221081
