@@ -55,8 +55,8 @@ chainrun stage.
 
 `make testscripts` in this worktree (TMPDIR = worktree build/scratch):
 boxlock.test 17/17, chainrun.test 26/26, watchrun.test 16/16,
-verdict.test 28/28. Untouched tests re-ran because of their dependencies;
-the results are in the STATE AT HANDOFF section below.
+verdict.test 28/28 (`make testscripts` rc 0, 9m50s, all 10 reports green);
+details in STATE AT HANDOFF.
 
 Each historical bug class was planted back into a scratch copy of the script,
 and the matching case catches it:
@@ -137,7 +137,7 @@ Validation COMPLETE:
 - `make strict`: rc=0;
 - `bash tests/plan_lint/run_plan_lint.sh`: 2 passed;
 - the integration refusal checks above;
-- `make testscripts`: see the handback message for its final line.
+- `make testscripts` (TMPDIR = worktree build/scratch): rc 0 in 9m50s, all 10 reports green (boxlock 17, chainrun 26, verdict 28, watchrun 16, emit_sweep.py checks failed 0, safekill 13/13, watchdog 16/16, wtprune/spec_toc/trace_diff failed 0).
 
 OWED: nothing heavy. No `make test` section changed. Mech's driver gained
 only the lock re-exec ahead of its scratch setup, and no sabotage anchors
