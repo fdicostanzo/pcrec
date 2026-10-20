@@ -36,3 +36,12 @@ before its first edit, because main moves under a design note.
   `derive_rows.py` / `../start_table/sabotage_anchors.py` re-run over the regenerated
   set on the build's base (main `5fd84491d`, `call_graph_build_base.txt`); the sabotage
   list the build acted on is that one (docs/dev/lanes/ctxbuild_report.md).
+- `call_graph_p2d_base.txt`, `edit_set_p2d.tsv`, `edit_set_compare_p2d.txt`,
+  `sabotage_anchors_p2d.tsv`, `derived_rows_p2d.tsv` — the same re-check R4 for
+  P2d (lane ctxp2d, 2026-10-20): the call graph at P2d's base (main `39457a796`),
+  the edit set regenerated from P2d's real diff (commit `f3e5ac219`), its
+  comparison (the script's planned-not-made half reads P2a-P2c only, so the P2d
+  comparison by hand is in `docs/dev/lanes/ctxp2d_report.md`), the anchor map
+  with `--step P2d=39457a796..f3e5ac219` and the derived population. P2d was
+  built at the NFA layer only (D168 add. 3), so the design set's AST-fold
+  entries (`case A_BOL`, `A_END,`, ...) are planned-not-made by ruling.
