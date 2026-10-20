@@ -57,6 +57,11 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   removal (read-only subdirectory; skipped as root) reporting FAILED without
   an rm -rf fallback.
 
+- **hooks.test** — self-test of scripts/hooks/no_cd_worktree.sh (planted blocked
+  and allowed command shapes fed as the real hook JSON, fail-open on garbage,
+  per-call cost), the project `.claude/settings.json` registration and the
+  light pre-push gate's three checks. Its dependencies are named in
+  scripts/Makefile (the script lives in hooks/).
 - **boxlock.test / chainrun.test / watchrun.test / verdict.test** — the
   run-control family's self-tests (lane runkit, 2026-10-20; 17/26/16/28
   checks). Every lock is a SACRIFICIAL `PCREC_BOXLOCK_FILE` and every chain
