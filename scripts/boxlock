@@ -116,7 +116,7 @@ run() {
         exec "$@"     # nested inside the holder's own tree
     fi
     exec 9>>"$f"
-    if ! flock -n 9; then
+    if ! flock -w 1 9; then   # -w 1, not -n: a `status` probe holds the lock for a moment
         local t0 next now line chunk
         t0=$(date +%s); next=$t0
         while :; do
