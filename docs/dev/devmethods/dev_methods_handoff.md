@@ -1081,7 +1081,7 @@ Allow one waiter per worktree.
 
 **How.** Keep **one** committed, tested watcher and one committed chain
 runner, and stop writing new ones in scratch. pcrec has partial
-equivalents (section 13 lists what is still missing). Never rewrite a
+equivalents (section 12 names the gap). Never rewrite a
 chain script a live waiter may run, because bash reads scripts lazily.
 
 ### 7.4 Read a run's verdict from its own lines
@@ -1985,3 +1985,313 @@ worktree.
 - Despite all this, the manager slipped 25+ more times (section 12).
 
 ---
+## 11. Working with the owner
+
+### 11.1 Ask rulings in plain words, one at a time, as a discussion
+
+**Rule.**
+
+- Put each open question to the owner in plain text, in plain words
+  rather than internal item ids, with the problem, the forces and your
+  leaning or recommendation.
+- Work through a batch of questions one at a time.
+- Do not send lettered option menus, and do not use a multiple-choice
+  question widget.
+- Record each ruling as a numbered decision with its reasoning.
+
+**Why.**
+
+- A live decision pass, where each question arrives with measured
+  context and a recommendation, produced about 25 rulings in one sitting.
+  That beat asynchronous ruling documents.
+- The owner prefers discussion. A question framed as (a)/(b)/(c) was
+  ruled (b), then revised to (c) once they had actually worked through
+  the shape, because a menu frames the decision before the decider has
+  thought it through.
+- The owner asked not to use the question widget.
+- "I can't track all your item numbers but if we end up in the right
+  place I'm good."
+
+### 11.2 Questions and remarks are not directives
+
+**Rule.** When the owner asks a question or makes an observation, answer
+with a judgement first: is the work warranted, by what evidence, and what
+is the problem scenario? Start work only if the judgement says so, and
+say which way it went. Discuss a direction before launching design lanes
+on it. A **build** lane needs an explicit build go from the owner;
+agreeing on an order is not a go.
+
+**Why.**
+
+- "I can never tell if you're doing work because it's valuable or
+  because I asked about it." One remark ("there may be value to other
+  decision tables") became a reference-customer requirement within
+  minutes. The item then grew into a general engine, an ABI event and two
+  panels.
+- Design lanes launched on an undiscussed frame were thrown away when the
+  owner rejected the frame: "this is why I prefer to discuss things
+  before taking action. The launches were premature."
+- A build lane was launched on an agreed ordering ("E0 before I1:
+  agree"). The owner: "don't start build yet".
+
+**How.** Fact-gathering that informs a discussion (a count, a report, a
+"game it out") is fine to launch. Design and build lanes wait for the
+word.
+
+### 11.3 Decide what is yours to decide
+
+**Rule.** Some choices are the manager's to make, and the manager records
+them with their reasoning:
+
+- choices with identical answers and equal measured cost;
+- the order of intermediate steps when the end state is fixed;
+- how an earlier ruling applies to a new case, when its reasoning
+  settles it;
+- spelling and syntax details inside a ruled design.
+
+Triage a panel's question list before relaying it, and bring only the
+questions where the owner's judgement changes the outcome.
+
+**Why.** The owner answered one such question (two row orders, 7.89M
+cells, zero differences, equal timing) with the "they're the same picture"
+meme. Later: "i think this was your call. these choices become brittle
+points of contention that have no weight. the reasoning behind the
+choices should be used to weigh future contentions."
+
+### 11.4 Push back with measurements; weigh cost at go/no-go
+
+**Rule.**
+
+- Push back when you disagree, with a measured counter-argument and a
+  recommendation, not a survey of options. "Soft pushback", agreeing with
+  a direction and proposing to sequence it at the tail, is welcome.
+- During a brainstorm, raise cost as a challenge in a line and keep going;
+  value often arrives as a corollary of the original idea.
+- At the go/no-go point, weigh cost against benefit hard. Costlier ideas
+  (development, lines of code, robustness, predictability) must prove
+  more, and the simple case should be built when that is where the value
+  is.
+
+**Why.**
+
+- The manager split one proposal (a mutable registry) into "static table,
+  dynamic selection" and was right.
+- The owner's one-line questions found what panels inherited. "Do we
+  really need this?" and "is this really constant?" each killed a
+  mechanism three panels had accepted. "Give me an example of a genuine
+  ambiguity" unlocked a deadlocked design whose premise every panel had
+  inherited.
+- The manager elaborated one idea of the owner's into five extensions;
+  the owner narrowed it to the initial case and asked for pushback at the
+  decision point, not during the exploration.
+
+**How.**
+
+- Ask yourself the two one-line questions of every new mechanism and
+  column before the panel does.
+- When the owner reframes, record their reasoning verbatim.
+- When the owner rules against your recommendation, record the
+  disagreement and build their way.
+
+### 11.5 Conclude before writing
+
+**Rule.** Finish the analysis, including any code check, before drafting
+the answer. Present one conclusion with its reasons. Put side findings in
+a separate "what I would still file" note. When weighing simplicity, a
+declared table with a visible column beats a structure that encodes the
+same fact implicitly, even if the table has more lines.
+
+**Why.** The manager favoured a 9-cell truth table and then changed sides
+halfway through the explanation. The owner: "I was liking the 9 point
+table (I like tables) then you changed sides half way through." The
+manager had measured "simpler" by counting lines, and most of those lines
+were the table itself, which is data.
+
+### 11.6 Autonomous runs and away-time rules
+
+**Rule.** When the owner authorizes an autonomous run:
+
+- journal and commit at every stage boundary;
+- defer questions, or stop if blocked;
+- make lower-tier judgement calls under the stated tiers and flag them to
+  the owner as reversible one-line edits rather than asking;
+- carry an explicit statement of what is owed or unruled in the wake
+  file.
+
+**Why.** The owner was often away for whole runs. Flagged reversible
+rulings let work continue without the owner losing control. A ruling made
+under a stated assumption ("owner to confirm or revert; it is one ABI
+line") was later confirmed after one question.
+
+### 11.7 Capture the owner's ideas as rows, in their words
+
+**Rule.** When the owner floats an idea, file it as a plan row the same day,
+with provenance and its trigger, and do not fold it into running work.
+
+**Why.** The ideas were often the best design in the record. Capturing
+them at the moment kept them from being lost or quietly reshaped.
+
+---
+
+## 12. What did not work: anti-patterns
+
+Each of these cost real time, and most recurred after being "learned".
+The count is how often the journal recorded the failure.
+
+| anti-pattern | what happened | what replaced it |
+|---|---|---|
+| lessons written in prose and nothing else | each recurred, often inside the document that cited it | a mechanism per recurring lesson (section 2) |
+| liveness by process grep (`pgrep -f`, `pkill -f`) | self-matches, mutual watcher deadlock, five or more collateral kills | artifacts plus PID files, `safekill` |
+| a prompt-firing watchdog cron | the largest token waste in the ledger (~73M tokens in two sessions) | a zero-model watcher script and the monitoring ladder |
+| lane keepalive crons | pure cost under a 5-minute cache lifetime | do-then-finish; close agents aggressively |
+| lanes waiting on their own long runs or for a slot | ~20 idle stalls, every early lane death | detached chains, fresh agent for the verdict |
+| mid-run messages to busy lanes | ~12 missed rulings; one revision built without two rulings | rulings files, fresh follow-up lanes, ack-or-not-delivered |
+| critics reporting only at the end | whole panels lost, a live segfault arrived late | append as you go, prompt, re-read before compiling |
+| five-part critic briefs | 2 of 4 critics delivered | one primary question per critic |
+| hand-listed input spaces | eight-plus recurrences of an untested cell | generated sweeps with a product arm |
+| exact counts as tripwires | disarmed by following their own failure message | manifests by name; floors for populations |
+| hand-enumerated reader lists ("four sites") | missed readers at almost every ABI bump | grep for readers, then run the suites that count |
+| hand-rolled sabotage scripts | reported success without running, in five ways | one committed mutation runner with reach checks |
+| a full mutation matrix that is never run to completion | seven of ten flagged rows stale for five weeks | a scheduled matrix whose verdicts are read |
+| "accepted" standing reds | a probe that never produced a verdict on one platform, for weeks | an owner row and an expiry per standing red |
+| comparing outputs written to different basenames | 100% false movers, at least six times | one committed sweep tool |
+| reading a suite's verdict from summaries, pipes or `$?` after `$(...)` | reds read as green; a red merged to main | the build tool's own error lines, one verdict helper |
+| building ahead of a measured need | maintenance surface for nothing; reworks | triggers on rows; prototypes measured, then not merged |
+| turning the owner's remarks into work | throwaway design lanes, scope explosions | a judgement first; discuss, then wait for a go |
+| the manager `cd`-ing into worktrees | 25+ recorded slips after the rule existed | **still recurring**: needs enforcement, not a reminder |
+| bespoke watcher and chain scripts written in scratch | rc capture, DONE-on-failure, interleaved waiters, self-matching greps | **partly fixed**: needs one committed watcher and one chain runner |
+| line-number citations | stale links, CI red at least seven times | numbered sections plus a commit gate |
+| pushing with `;` | four red pushes in eight days | `&&` gating; a light pre-push gate is still to be installed |
+
+The two rows marked as still recurring are the clearest lesson of the
+project. A rule the manager *knows* and still breaks needs to be
+enforced by the harness (a hook or a wrapper), not restated.
+
+---
+
+## 13. Start-up checklist for a new project
+
+Day one, before the first lane:
+
+1. **Scope mandate** in the root instructions file: the exact directories
+   that may be touched, on each box. Restate it in every brief.
+2. **Restart record**: `plan.md` with grep-able `STATE:` tags and a
+   linter; an append-only journal; a numbered decision log with
+   reasoning; known-issues and upstream-issues files; a gitignored
+   `wake.md`; a `CLAUDE.md` in every directory.
+3. **Situation index** in the root instructions file, seeded with these
+   rows: kill a process (by PID only, through one script); bound a
+   command's run time (which `timeout` binary); poll liveness (artifacts,
+   never process greps); start anything heavy (one at a time); merge a
+   branch (merge alone, read the result); read a suite's verdict (the
+   exact grep); end a session (rewrite the wake file).
+4. **Boilerplate file** for lanes: scope, worktree ritual (first command
+   `git rev-parse --show-toplevel`; absolute paths; no `git add -A`),
+   box facts, do-then-finish, detached owed runs, handback as a message,
+   delivery bar (re-pin what you move; run the full suite if you touch
+   the corpus).
+5. **Model tiers**: mid tier by default, strong tier for hard lanes,
+   never the manager's model.
+6. **Three safety scripts**, each with a self-test: kill-by-PID, a
+   resource-bounding supervisor (wall, RSS, CPU), gated worktree removal.
+7. **One watcher script and one chain runner**, both committed and
+   tested: completion trailer, rc captured immediately, DONE only after
+   the last stage succeeds, one waiter per worktree.
+8. **Oracle strategy** decided: the reference implementation at a pinned
+   version, a cheap first tier, a three-way 2-1 rule, and an answer store
+   if some boxes lack the reference.
+9. **Check discipline**: every check validated in the failing direction;
+   populations counted at the comparison site; LC_ALL=C on every sort;
+   extraction helpers that hard-fail on empty. Build the mutation runner
+   the first time you hand-roll a sabotage.
+10. **Identity gates**: a committed byte-identity sweep with a positive
+    control and fixed output basenames, plus observable and forceable
+    strategy selection (a stamp and a deny flag per strategy).
+11. **Budgets**: every compile and execution of generated or untrusted
+    code under a timeout; a firing timeout is a finding.
+12. **Validation tiers**: per lane, per merge, per batch, CI, and the rule
+    that nothing merges while a batch run is in flight.
+13. **Hooks**: a cheap pre-commit hook (lint, citation checks), a cheap
+    pre-push hook, and a pre-tool-use hook that blocks remote-exec shapes.
+    Add enforcement hooks for any rule the manager breaks twice.
+14. **Panels**: design note, then panel, then revision, then build;
+    critics append findings to a file; one question each; a generality
+    lens; frozen targets.
+15. **Blinded authors**: a cell script (allowlist, no git, empty-repo
+    boundary) ready before the first public surface ships.
+16. **Owner protocol**: rulings in plain words with a recommendation, one
+    at a time; questions are not directives; build lanes wait for an
+    explicit go; the manager decides answer-free choices and records why.
+17. **Cache economics**: a heartbeat only while monitoring; no lane
+    keepalives; reset the manager at about 35% context; measure your own
+    token logs once, early.
+18. **Peer channels**, if there are peer sessions: single-writer durable
+    files, a fetch-commit-push ritual, deadlock checks only while
+    waiting, no laundering of permissions.
+
+---
+
+## Appendix A. Templates
+
+**A lane brief** (everything else is in the boilerplate):
+
+    Read docs/dev/lanes/BOILERPLATE.md FIRST and follow it.
+    Scope: <restated mandate>. Worktree: <path> (branch lane/<name>).
+    TASK: <one paragraph>. Tier: <model>.
+    INPUTS: <pointers>. RULINGS ALREADY MADE: <list, with decision ids>.
+    IDS YOU MAY USE: <abi / bit / mutation-row ranges>.
+    STOP RULE: if the design of record or a measurement contradicts this
+    brief, stop and report.
+    DELIVERABLE: <files>. Report: docs/dev/lanes/<name>_report.md with a
+    STATE AT HANDOFF section. Validation you run: <list>; anything over
+    ~4 minutes is launched detached as your last act and marked OWED.
+    REPLY: a SendMessage to the manager, complete on its own, then END.
+
+**A STATE AT HANDOFF section** in a lane report:
+
+    Branch tip: <sha>. Validation COMPLETE: <command → result>, ...
+    OWED: <stage>, log <path>, completion line "<exact text>",
+    launched detached at <time> (PID file <path>).
+    What a fresh agent does next: <steps>.
+
+**A plan row** (one format, linted):
+
+    - [ID] STATE:<not-started|started|blocked|deferred> — <title>
+      filed: <date, who, why>
+      status (<ISO date>): <one line, rewritten in place>
+      next: <step> | trigger: <the measurement that would start it>
+      refs: <decision ids, design notes>
+      <charter, at most 6 lines>
+
+**A decision entry**:
+
+    ## D<n> — <date> — <the decision in one line> (<who ruled>)
+    Context. Decision. Why (the reasoning, the measurement).
+    Consequences. Revisit when: <condition>.
+
+**A merge commit's risk block**:
+
+    RISK: blast radius <...>; only the batch run can catch <...>;
+    if this is wrong, expect <check> to fire.
+
+## Appendix B. Glossary
+
+- **lane**: a subagent doing one bounded piece of work, usually in its own
+  worktree.
+- **cell**: an allowlist-filtered, non-git copy of the tree a blinded test
+  author works in.
+- **battery**: the long validation run over one pinned commit.
+- **sabotage row**: a committed mutation of the product with an expected
+  verdict and a declared reach.
+- **reach**: proof that a test's witness still exercises the site it was
+  written for.
+- **identity gate / byte-identity sweep**: a comparison of the compiler's
+  output against a pinned reference build.
+- **zero-mover**: a change proven to move no output byte.
+- **positive control**: a case that must make a check fire, so that the
+  check's silence elsewhere means something.
+- **floor / manifest**: a lower bound on a population / a list of
+  irreplaceable rows by name.
+- **trigger**: the measurement or event that would justify building a
+  filed row.
+- **wake file**: the uncommitted hand-off brief for the next session.
