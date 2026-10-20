@@ -252,6 +252,9 @@ import tempfile
 import time
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# `python3 -I` drops the script's own directory from sys.path; the sibling
+# import of trace_diff below needs it (same house pattern as cls_identity.py).
+sys.path.insert(0, SCRIPT_DIR)
 DEFAULT_TREE = os.path.dirname(SCRIPT_DIR)
 
 # ---------------------------------------------------------------------------
@@ -2920,6 +2923,11 @@ def main():
     ap.add_argument("--movers")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    if args.trace:
+        # Resolve the late `import trace_diff` NOW: an import failure after the
+        # sweep's tables had printed once left movers=0 tables standing as the
+        # run's apparent verdict (exit code of the traceback aside).
+        import trace_diff  # noqa: F401
     take_box_lock(args)
 
     if args.data:
