@@ -75,8 +75,8 @@ fi
 # 1b. [DD-11.5] CK-8: THE A_CTX TRUTH TABLE AGAINST LIBPCRE2
 #     (ctxfn_table_check.py; docs/design/ctx_span.md §6). Every row of
 #     src/core/ctxfn.def, its nine cells derived from libpcre2 through the
-#     row's canonical lookaround spelling (and its native one where it has
-#     one: \b, \B, (?m)^, (?m)$) over the {a,-,\n} family; every row must
+#     row's canonical lookaround spelling (and its native ones where it has
+#     them: \b, \B, (?m)^, (?m)$, \A, ^, \z) over the {a,-,\n} family; every row must
 #     reach all nine cells. FAILING DIRECTION: one flipped cell (SP-8,
 #     sabotage S1158) is reported by row and cell.
 # ---------------------------------------------------------------------------
@@ -135,6 +135,38 @@ if [ "$a8m" = "0" ] && [ "$a8b" = "1" ]; then
 else
     bad "A8: (?m)^a stamps VALID_LB '$a8m', \\ba stamps '$a8b' -- want 0 and 1 (the (?m) builder raised a lookbehind length, or the stamp moved)"
 fi
+
+# ---------------------------------------------------------------------------
+# 1d. [DD-11.5] P2d: A ROW THAT READS NO SET ADDS NO SET. `\z` lowers to the
+#     context row SUBJECT_END, which reads only an absent side; the class
+#     axis must not collect its (empty) set (src/ir/dfa.c's `cr_ctx_reads`),
+#     or the machine counts as carrying a word context, the D11 views flag
+#     turns on and the candidate scan changes form. Witnesses `a(?:\z|)` and
+#     `(?:\z)?a` (no other context set; DFA-routed) must stamp the same
+#     RX_DFA_PREFILTER as their `\z`-free twin `a`, at byte and -e utf8.
+#     FAILING DIRECTION: sabotage S1171 (the membership clause dropped) makes
+#     both witnesses `memchr-bounded`. No corpus pattern reaches this: the
+#     2026-10-20 probe moved 0 of 4,636 under the same plant.
+# ---------------------------------------------------------------------------
+echo
+echo "== [DD-11.5] P2d a context row that reads no set adds none =="
+p2d_pf() {   # p2d_pf ENC PATTERN -> its RX_DFA_PREFILTER stamp value
+    if pcrec_run "$PCREC" --features all -e "$1" -p rx -o "$WORKDIR/p2d.c" --pattern "$2" \
+            >/dev/null 2>"$WORKDIR/p2d.err"; then
+        sed -n 's/^#define RX_DFA_PREFILTER "\(.*\)"$/\1/p' "$WORKDIR/p2d.c"
+    else echo "ERR"; fi
+}
+for enc in byte utf8; do
+    twin="$(p2d_pf "$enc" 'a')"
+    for w in 'a(?:\z|)' '(?:\z)?a'; do
+        got="$(p2d_pf "$enc" "$w")"
+        if [ -n "$twin" ] && [ "$twin" != "ERR" ] && [ "$got" = "$twin" ]; then
+            ok "P2d [$enc]: $w stamps RX_DFA_PREFILTER '$got', as its \\z-free twin a does"
+        else
+            bad "P2d [$enc]: $w stamps RX_DFA_PREFILTER '$got', its twin a '$twin' -- want equal and non-empty (an absent-only row put a set on the class axis, or the end view now changes the scan form: read the two artifacts)"
+        fi
+    done
+done
 
 # ---------------------------------------------------------------------------
 # 2. THE CONTROL UNDER tests/reject's TWO-ANSWER PINS
