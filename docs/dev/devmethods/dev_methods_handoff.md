@@ -18,8 +18,8 @@ pcrec's own file names appear as examples. Every one of them is a pattern
 you can reproduce; none is required.
 
 Read sections 1 and 2 first. After that the sections stand alone, so you
-can adopt them one at a time. Section 11 lists what did not work. Section
-12 is a start-up checklist.
+can adopt them one at a time. Section 12 lists what did not work. Section
+13 is a start-up checklist.
 
 ## Contents
 
