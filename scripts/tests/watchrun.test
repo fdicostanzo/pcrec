@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# watchrun self-test: real scripts/chainrun chains in mktemp trees (the box
+# lock on a sacrificial PCREC_BOXLOCK_FILE), polled at --every 1. Each event
+# kind is shown firing once, and the historical watcher bugs are PLANTED back
+# into a scratch copy and caught: firing on the startup state (an already-
+# ended chain; quiet counted from an old commit) and a single-miss stall test.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/watchrun.test.XXXXXX")
+kids=()
+cleanup() {
+    local f p
+    for f in "$T"/*/l*/chain.pid; do [ -f "$f" ] && read -r p _ < "$f" && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    for p in ${kids[@]+"${kids[@]}"}; do kill "$p" 2>/dev/null; done
+    rm -rf "$T"
+}
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_BOXLOCK_FILE=$T/box.lock
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT
+WR=$here/watchrun
+n=0
+# arm STAGES-TEXT: a detached chain in a fresh git tree whose only commit and files are 2 h old; sets D, LD
+arm() {
+    n=$((n + 1)); D=$T/t$n; LD=$D/l1; mkdir -p "$D"
+    git init -q "$D"; printf 'build/\n' > "$D/.gitignore"; printf '%s\n' "$1" > "$D/stages"
+    old="@$(( $(date +%s) - 7200 )) +0000"
+    GIT_AUTHOR_DATE=$old GIT_COMMITTER_DATE=$old git -C "$D" -c user.email=t@t -c user.name=t commit -qm old --allow-empty
+    touch -d '2 hours ago' "$D/stages" "$D/.gitignore"
+    "$TO" 30 bash "$here/chainrun" --tree "$D" --logdir "$LD" "$D/stages" > "$D/arm.out" 2>&1 || bad "arm failed: $(cat "$D/arm.out")"
+}
+# watch ARGS...: run the watcher (bounded); sets out, wrc, el (seconds)
+watch() { local t0; t0=$(date +%s); out=$("$TO" 60 bash "${WX:-$WR}" --every 1 "$@" 2>"$T/werr"); wrc=$?; el=$(( $(date +%s) - t0 )); }
+plant() { # plant NAME FROM TO [FROM TO]...: a copy of watchrun with each FROM (found once) replaced
+    local d=$T/plant_$1; shift; mkdir -p "$d"; cp "$here/verdict" "$here/boxlock" "$d/"
+    python3 -c '
+import sys
+s = open(sys.argv[1]).read()
+for a, b in zip(sys.argv[3::2], sys.argv[4::2]):
+    assert s.count(a) == 1, "anchor"
+    s = s.replace(a, b)
+open(sys.argv[2], "w").write(s)' "$WR" "$d/watchrun" "$@" 2>/dev/null || { bad "plant ${d##*plant_} did not land (anchor moved?)"; return 1; }
+    echo "$d/watchrun"
+}
+lines() { printf '%s' "$out" | grep -c .; }
+
+# 1. chain end: one line, exit 0, with the verdict
+arm 'a light 30 sleep 2'
+watch "$LD"
+[ "$wrc" = 0 ] && [ "$(lines)" = 1 ] && printf '%s' "$out" | grep -q '^watchrun: CHAIN-END .*CHAIN DONE.*VERDICT GREEN' && ok "chain end: one line, exit 0, verdict GREEN" || bad "chain end: rc=$wrc $out"
+# 2. startup state: an already-ended chain is NOT ARMED (exit 2, nothing on stdout)
+watch "$LD"
+[ "$wrc" = 2 ] && [ -z "$out" ] && grep -q 'already ended before the watch began' "$T/werr" && ok "an already-ended chain: NOT ARMED, exit 2, no notification" || bad "ended at startup: rc=$wrc out=$out"
+if P=$(plant fire-on-startup '[ -n "$t" ] && notarmed' '[ -n "$t" ] && : notarmed' '! alive "$pid" "$pstart" && notarmed' '! alive "$pid" "$pstart" && : notarmed'); then
+    WX=$P watch "$LD"
+    [ "$wrc" = 0 ] && [ -n "$out" ] && ok "PLANT fire-on-startup: the case goes red against it (it fired: ${out%% ::*})" || bad "PLANT fire-on-startup not caught: rc=$wrc"
+fi
+watch "$D"
+[ "$wrc" = 2 ] && grep -q 'no live chain in' "$T/werr" && ok "a TREE with only a leftover chain log: NOT ARMED (never reads the leftover)" || bad "leftover tree: rc=$wrc $(cat "$T/werr")"
+
+# 3. quiet: counted from the WATCH START (the tree's commit and files are 2 h old), after 3 misses
+arm 'q light none sleep 40'
+watch --quiet-sec 5 "$D"
+[ "$wrc" = 3 ] && [ "$el" -ge 5 ] && printf '%s' "$out" | grep -q '^watchrun: QUIET .*stage q START' && ok "QUIET fires at the quiet bound from the watch start (${el}s), not from the 2 h old commit" || bad "quiet: rc=$wrc el=$el $out"
+if P=$(plant quiet-from-commit 't0=$(date +%s) last_change=$t0' 't0=$(date +%s) last_change=$(git -C "${tree:-.}" log -1 --format=%ct 2>/dev/null || echo $t0)'); then
+    WX=$P watch --quiet-sec 5 "$D"
+    [ "$wrc" = 3 ] && [ "$el" -lt 5 ] && ok "PLANT quiet-from-commit: fired after ${el}s < 5s, so the case catches it" || bad "PLANT quiet-from-commit not caught: rc=$wrc el=$el"
+fi
+watch --quiet-sec 0 "$D"
+[ "$wrc" = 3 ] && printf '%s' "$out" | grep -q '(3 polls)' && ok "QUIET needs three consecutive misses even at --quiet-sec 0" || bad "3 misses: $out"
+if P=$(plant single-miss '[ $misses -ge 3 ]' '[ $misses -ge 1 ]'); then
+    WX=$P watch --quiet-sec 0 "$D"
+    printf '%s' "$out" | grep -q '(3 polls)' && bad "PLANT single-miss not caught" || ok "PLANT single-miss: fired on ${out##*(} so the case catches it"
+fi
+read -r qp _ < "$LD/chain.pid"; bash "$here/safekill" "$qp" > /dev/null 2>&1
+
+# 4. a stage computing with no output is not quiet
+arm 'busy light 30 timeout 6 sh -c "while :; do :; done"; true'
+watch --quiet-sec 2 "$LD"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q CHAIN-END && ok "a CPU-busy, silent stage is not QUIET (tree CPU by exact pid)" || bad "busy stage: rc=$wrc $out"
+
+# 5. --on stage reports the NEXT stage end, never one that ended before the watch
+arm 'a light 30 true
+b light 30 sleep 3
+c light 30 sleep 3'
+sleep 1.5
+watch --on stage "$LD"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: STAGE-END .*== stage b END rc=0' && ok "--on stage: the first NEW end (b), not a's from before the watch" || bad "on stage: $out"
+for _ in $(seq 40); do grep -q '^== CHAIN' "$LD/chain.log" && break; sleep 0.25; done
+
+# 6. DIED: a chain SIGKILLed (no trailer can be written)
+arm 'k light 60 sleep 30'
+read -r kp _ < "$LD/chain.pid"
+( sleep 2; bash "$here/safekill" -K "$kp" > /dev/null 2>&1 ) &
+watch "$LD"
+[ "$wrc" = 4 ] && printf '%s' "$out" | grep -q "^watchrun: DIED .*pid $kp gone without a trailer" && ok "a SIGKILLed chain: DIED, exit 4" || bad "died: rc=$wrc $out"
+
+# 7. LOCK-ORPHAN on a transition; an orphan already there at startup is only warned
+arm 'w light 60 sleep 6'
+( sleep 2; "$TO" 10 bash "$here/boxlock" run --label orphaner -- bash -c 'sleep 20 & echo $! > "'"$T"'/orph.pid"' ) &
+watch "$LD"
+[ -s "$T/orph.pid" ] && kids+=("$(cat "$T/orph.pid")")
+[ "$wrc" = 5 ] && printf '%s' "$out" | grep -q '^watchrun: LOCK-ORPHAN .*label=orphaner' && ok "the box lock turning orphaned fires LOCK-ORPHAN, exit 5" || bad "lock orphan: rc=$wrc $out"
+read -r wp _ < "$LD/chain.pid"; bash "$here/safekill" "$wp" > /dev/null 2>&1
+arm 'w light 60 sleep 3'
+watch "$LD"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q CHAIN-END && grep -q 'WARNING at startup: HELD-ORPHAN' "$T/werr" && ok "an orphan present at startup is warned on stderr, not reported" || bad "startup orphan: rc=$wrc $out $(cat "$T/werr")"
+[ -s "$T/orph.pid" ] && kill "$(cat "$T/orph.pid")" 2>/dev/null
+
+# 8. generic --log (mech's trailer), and CAP
+n=$((n + 1)); D=$T/t$n; mkdir -p "$D"; : > "$D/mech.log"
+( sleep 2; echo '== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc ==' >> "$D/mech.log" ) &
+watch --log "$D/mech.log"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: DONE .*mech run COMPLETE.*VERDICT GREEN' && ok "--log: a mech trailer appearing fires DONE with the verdict" || bad "--log: rc=$wrc $out"
+watch --log "$D/mech.log"
+[ "$wrc" = 2 ] && ok "--log on an already-complete log: NOT ARMED" || bad "--log complete at startup: rc=$wrc"
+: > "$D/slow.log"; ( for i in 1 2 3 4 5 6; do echo tick >> "$D/slow.log"; sleep 1; done ) & kids+=($!)
+watch --max-sec 3 --log "$D/slow.log"
+[ "$wrc" = 6 ] && printf '%s' "$out" | grep -q '^watchrun: CAP .*watched 3s' && ok "--max-sec: CAP, exit 6 (relaunch)" || bad "cap: rc=$wrc $out"
+
+echo "watchrun.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]
