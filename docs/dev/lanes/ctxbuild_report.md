@@ -163,3 +163,66 @@ Code: `src/core/ctxfn.def` (new), `internal.h`, `src/ir/{dfa,nfa}.c`, `src/gen/{
 `run_mlinectx_identity.sh` (deleted), `run_recursion_identity.sh` (pin),
 `tests/mech/sabotages/S341,S693,S1151-S1161` (+5 deleted). Evidence:
 `docs/design/ctx_span/{regen_edit_set.py,edit_set_build.tsv,edit_set_compare.txt,sabotage_anchors_build.tsv,derived_rows_build.tsv,call_graph_build_base.txt}`.
+
+## 9. Heavy validation (lane ctxbuild-val, opus, 2026-10-20; IN PROGRESS)
+
+Run on the Linux dev box after the bench window closed, one heavy run at a time. Step 0
+merged main `6ce289976` (no conflicts). Logs are under `worktrees/ctxbuild/build/val/`
+(gitignored). The REFERENCE for items 2/4/5 is main `5fd84491d` (the lane's base) built
+from `git archive` TWICE: as-is (`build/base/`) and with `PCREC_ARTIFACT_ABI` relabelled
+80 → 81 (`build/base81/`). Every abi-carrying emitted line derives from that one define
+(checked on `ab+c`: the relabelled base and P2c emit identical C), so `base81` vs P2c
+isolates the real movers from the abi digits without a normalizer.
+
+### Item 7 — A4's three possessify cells (commit `d34ef5681`)
+- `possessify.rxt`: `a{0,3}(?m)$`, `(?m)^a+b`, `[a\n]+(?m)$\n`, bare and capture-wrapped,
+  in the `$`-follow family (D47.5's `(?m)` obligation, whose two stale "pcrec refuses
+  `(?m)` today" comments now point at them). +6 blocks / +116 cells. Both oracles: libpcre2
+  10.46 (`tests/fuzz/pcre2_oracle.c`) and python3 `re` agreed on every cell, python under the
+  leading-`(?m)` spelling (a mid-pattern `(?m)` is a python error), so five blocks carry
+  `# pcre2-only` and `(?m)^a+b` is C3-verified. Harness: 3,653 passed, 0 failed (was 3,537).
+- possdiff: `arms_mline.txt` (the six patterns, `# features: all`) joins `ARMS_ENV_FILES`;
+  `subjects_exh.py` adds a newline to the exhaustive alphabet when `mlscan.multiline_anchor`
+  holds (no existing `arms_*` pattern has a `(?m)` anchor, so no other sweep moves). The
+  manifest gains `hold/A4/*` (stamp 0) on the three: S1156's witnesses. File-only run: 6
+  agreed, 21,302 cells, manifest 38/38.
+- `mlscan.py`'s two docstrings still named `N_BOT_M`/`N_EOL_M`: reworded.
+
+### Item 1 — `make test` (perfrun, `build/val/test.log`)
+`scripts/perfrun --label ctxbuild` (shape j16p1): rc 2, wall 1,048 s, `class=RED-REAL`,
+three red sections, all dispositioned:
+- `test-rxtsource`: STALE PIN, item 7's own corpus move (+6 blocks / +116 lines; PASS +13,
+  pcre2-only +103). Re-pinned (commit `197ea7eb2`); re-run 298/0.
+- `test-codegen`: REAL CHECK DEFECT in the lane's own P2b work: assertions §1c's two
+  compiles (`r1_views`, `a8_lb`) called `"$PCREC"` with no bound, so [K37] went red. Routed
+  through `pcrec_run` (same commit); re-run green (35/0, run_group 16/16).
+- `test-startset`: STALE PIN, item 7 again: the inserted blocks shifted possessify.rxt's rows
+  in the VM-hat manifests and added 4 forced-VM movers (the `(?m)^a+b` and
+  `[a\n]+(?m)$\n` blocks, bare and wrapped). `census_s1.py` regenerated on the lane build;
+  compared as (options, pattern) multisets, `s2_vm_auto` moved by line only (93 rows) and
+  `s2_vm_forced` by line plus exactly those 4; no other corpus row moved. Corpus rows taken,
+  bench rows untouched (m7fix's precedent). Commit `c9cf822bc`; `make test-startset` green.
+- `docs/dev/artifact_size_log.tsv` was rewritten by the run and NOT committed (kept as
+  `build/val/artifact_size_log_ctxbuild.tsv`); the manager's post-merge run owns it.
+
+### Item 2 — emit_sweep vs `5fd84491d` (`build/val/sweep/{default,start}.log`)
+- Default streams (`--ref-bin build/base81/build/pcrec`, 56.9 s): self-check clean; c-default
+  3 movers, all ONE pattern `(?m)^a|\B` (three corpus rows: utf8/axis11 ×2, utf8/k73); c-vm,
+  emit-ir-vm, facts, every emit-ir-auto arm, stderr, composition: 0 movers, every tag floor
+  held. dumps: 1 mover, `--list-syntax`'s `^`/`$` descriptions, the lane's DECLARED registry
+  rewrite (§1 P2c). rc 1 = those two declared movers.
+- `--arms start` (390.6 s): all 52 arms × {c-default, c-vm}. c-vm 0 movers on every arm.
+  c-default: exactly 1 mover on every arm (`(?m)^a|\B`, byte and utf8 bases), DIFFER counts
+  equal on both sides on every arm and every pinned floor held; the arm FAILs are that one
+  identity-required mover.
+- CK-4(a): the movers are the light probe's exactly. A text-order prediction (a `(?m)` anchor
+  by `mlscan`, a `\b`/`\B` after it) gives 4 distinct corpus patterns (`(?m)^\bfoo\b$`,
+  `(?m)^\bx*`, `(?m)^\w+\b$`, `(?m)^a|\B`); only the last moves, the other three are
+  byte-identical. So the TEXT rule over-predicts by 3 (the corpus is not short of identity
+  evidence); "exactly the DFA artifacts with a `(?m)` node before another A_CTX set" is not
+  reproduced by a text rule. Finding for the manager, not a defect.
+- CK-4(b): the mover's diff (byte and utf8) is the ENG_ATTEMPT machine's tables
+  (`is_accepting_by_class`, `targets_2/3`, `seed_state`) plus one `last_accept_position`
+  line moving between state bodies: F-2's state permutation. Nothing else moves (no stamp, no
+  `VALID_LB`, no program line). CK-4(c): c-vm/emit-ir-vm 0 movers (VM, possessify listing),
+  the mover keeps its engine (route 0).
