@@ -136,8 +136,6 @@ static void wdrain(Walk *w, bool pass, int *ndefer)
         case N_BOT:
         case N_EOL:
         case N_END:
-        case N_BOT_M:
-        case N_EOL_M:
         case N_CTX:
         case N_GSTART:
         /* [K50] The character-boundary gate is an assertion like the rest, and

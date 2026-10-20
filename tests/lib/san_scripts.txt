@@ -34,7 +34,6 @@ tests/codegen/run_cpset_structure.sh
 tests/codegen/run_trie_identity.sh
 tests/codegen/run_endvar_identity.sh
 tests/codegen/run_wordctx_identity.sh
-tests/codegen/run_mlinectx_identity.sh
 tests/codegen/run_gstart_identity.sh
 tests/codegen/run_vm_identity.sh
 tests/codegen/run_ir_listing.sh

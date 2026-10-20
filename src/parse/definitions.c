@@ -17,7 +17,7 @@
  * `pcrec_def_resolve` exists so a test (the self-oracle, [DD-11.3]) and the
  * structural check below can ask "what would this row's definition be under
  * this ParseMods state", but no `p_atom`/module producer calls it yet — the
- * shipped code arms (the D62 field+fold for `$`/`^`, the possessive-suffix
+ * shipped code arms (the `(?m)` context node for `$`/`^`, the possessive-suffix
  * desugar in parse.c, …) are UNCHANGED. Wiring is [DD-11.5], gated on M6.6's
  * exact one-byte-fixed-lookbehind lowering existing (definitions_table.md
  * §4's DFA-erasure hazard) — see that note before adding a call site here.

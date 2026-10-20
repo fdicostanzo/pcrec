@@ -1773,3 +1773,12 @@ unchanged.
 decision over facts this directory already produced, so no pass, no field and
 no walk moved — which is why the change's own byte census shows every moving
 artifact only LOSING text.
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+
+`possessify.c`: `pcrec_poss_ctx_admits` reads the 9-cell row (`ctxfn_cell`) and
+NEVER narrows a row that reads an absent side (B3/A4: value identity with the
+retired multiline arms); `ps_node` records no gate group for one; the A_EOL
+arm's multiline branch is deleted (a `(?m)$` is an A_CTX node). `derive.c`:
+the two `multiline` clauses are deleted (a `(?m)^` reaches the A_CTX arm).
+The `u.anch.multiline` mentions above are history.

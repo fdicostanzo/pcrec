@@ -38,7 +38,7 @@
 #
 # HOW IT COMPARES, and why not against a pinned historical commit: the same
 # argument run_trie_identity.sh, run_endvar_identity.sh,
-# run_wordctx_identity.sh and run_mlinectx_identity.sh all state. The
+# run_wordctx_identity.sh and run_mlinectx_identity.sh (retired at [DD-11.5]) all state. The
 # permanent form builds a REFERENCE COMPILER from THIS tree's own sources with
 # `-DPCREC_NO_GSTART`, which pins `has_gst` false and nothing else, and
 # requires byte-identical output over the whole corpus.

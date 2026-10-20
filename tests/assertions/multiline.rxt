@@ -3802,3 +3802,60 @@ n "\n\nc"
 n "a\nb\nc"
 n "a\nb\nc\nd"
 n "\nb\nc"
+
+# ======================================================================
+# VM-ROUTED `(?m)^` AFTER A NEWLINE THAT ENDS THE SUBJECT ([DD-11.5] P2c,
+# lane ctxbuild validation, sabotage S1161). The group forces the VM, whose
+# `(?m)^` test carries MLINE_BOL's (prev in, next absent) cell as `pos < n`;
+# every block above is DFA-routed, so no cell read that test there. libpcre2
+# 10.46 generated; python3 `re` disagrees on 9 cells, all U11b (its `(?m)^`
+# holds after a final newline), hence `# pcre2-only`.
+# ======================================================================
+
+# pcre2-only
+pattern (?m)(\n^)
+features assertions,modifiers
+n "a\n"
+n "\n"
+m "\n\n" 0 1
+g 1 0 1
+m "a\nb" 1 2
+g 1 1 2
+m "a\n\n" 1 2
+g 1 1 2
+n "aa\n"
+m "ba\n\n" 2 3
+g 1 2 3
+m "b\na\n" 1 2
+g 1 1 2
+
+# pcre2-only
+pattern (?m)(a\n^)
+features assertions,modifiers
+n "a\n"
+n "\n"
+n "\n\n"
+m "a\nb" 0 2
+g 1 0 2
+m "a\n\n" 0 2
+g 1 0 2
+n "aa\n"
+m "ba\n\n" 1 3
+g 1 1 3
+n "b\na\n"
+
+# pcre2-only
+pattern (?m)(^)$
+features assertions,modifiers
+n "a\n"
+m "\n" 0 0
+g 1 0 0
+m "\n\n" 0 0
+g 1 0 0
+n "a\nb"
+m "a\n\n" 2 2
+g 1 2 2
+n "aa\n"
+m "ba\n\n" 3 3
+g 1 3 3
+n "b\na\n"

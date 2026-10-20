@@ -39,8 +39,8 @@
  * `\z` "only ever match at the very start and end of the subject string,
  * whatever options are set" (pcre2pattern), which has two consequences this
  * port is responsible for and which are written out at the code below rather
- * than only here: `Ast.u.anch.multiline` is PINNED FALSE (never copied from the
- * scoped state, which is what `^`/`$` do), and the alias is exact AT
+ * than only here: no multiline state reaches these nodes (`(?m)` changes
+ * which node `^`/`$` build, never `\A`/`\Z`), and the alias is exact AT
  * options = 0 while `PCRE2_NOTBOL`/`PCRE2_NOTEOL` — API-PARAM, RATIFIED D38 —
  * are a committed future surface that will need to tell a `\A` node from a
  * `^` one, which the alias erases.
@@ -72,9 +72,8 @@
  * to it (`\A`/`\Z`/`\z` position aliases; `\b`/`\B` word-boundary; `\G` -- see
  * the per-case comments for why each is a DIFFERENT kind of question). Sets
  * `res.end` just past the escape's bytes; the CALLER advances from there per
- * check06's rule, this port never does. `\A`/`\Z` pin `Ast.u.anch.multiline`
- * false regardless of scoped state -- see the file header for the alias's
- * options=0 exactness. */
+ * check06's rule, this port never does. `\A`/`\Z` read no scoped state --
+ * see the file header for the alias's options=0 exactness. */
 ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {
@@ -192,37 +191,10 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * survives a rewrite keeps its own offset ([K110]). */
     pcrec_ast_stamp(res.node, rw, at);
 
-    /* MULTILINE IS PINNED FALSE HERE, DELIBERATELY AND EXPLICITLY — never
-     * copied from `cx->mods` the way parse.c's `^`/`$` cases copy it.
-     *
-     * PCRE2's own words (pcre2pattern, "Simple assertions"): `\A`, `\Z` and
-     * `\z` "only ever match at the very start and end of the subject string,
-     * whatever options are set. Thus, they are independent of multiline
-     * mode." `(?m)\Z` is still the subject end (or before a final newline);
-     * `(?m)$` is before EVERY newline. The two spellings produce the SAME
-     * node kind and must carry DIFFERENT values in this field.
-     *
-     * The arena already zeroes it, so this assignment changes no bit today —
-     * it is written out because the failure it forecloses is a wave-C one and
-     * is invisible until then. `(?m)` is refused now, so a version of this
-     * port that copied `cx->mods` would be indistinguishable from this one by
-     * every test in the tree; the day wave C accepts the `m` letter, that
-     * version would leak multiline-`$` machinery into `\Z` silently. This
-     * line and this comment exist so the next author cannot "harmonize" the
-     * two sites, which is exactly the harmonization that would break it.
-     *
-     * [D70] GUARDED ON THE KIND. This port produces SIX kinds and only two
-     * of them own `u.anch` — the pin ran for A_END, A_GSTART and A_KRESET
-     * too (and for `\b`/`\B`'s kinds before [UCP] U2, which now return their
-     * A_CTX node above, before this line, because it OWNS a payload). Today that aliases nothing, because those
-     * three kinds have no payload of their own; the day any of them gains one
-     * it becomes a silent clobber of it, and nobody will re-read this line
-     * then. The guard costs nothing, changes no bit today, and is what the
-     * union's discipline (see the union in src/core/internal.h) requires of
-     * every writer: touch `u.<payload>` only under a kind check that owns
-     * it. */
-    if (k == A_BOL || k == A_EOL)
-        res.node->u.anch.multiline = false;
+    /* `\A`/`\Z`/`\z` are independent of multiline mode (pcre2pattern:
+     * "whatever options are set"), and `(?m)` reaches a node only through
+     * the parser's choice of node for `^`/`$` ([DD-11.5], parse.c), so these
+     * kinds carry no modifier state to pin. */
 
     /* THE ALIAS IS EXACT AT options = 0, AND THE FUTURE HAS ONE KNOWN
      * CONSUMER OF WHAT IT ERASES. `PCRE2_NOTBOL`/`PCRE2_NOTEOL` affect `^`
@@ -246,7 +218,7 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * which from `^` — information a pure alias throws away. The fix, when it
      * has a customer, is a PARSE-RESOLVED PROVENANCE FIELD in D62's shape
      * (kinds encode structure, fields encode parse-resolved state), written
-     * exactly here beside `multiline`.
+     * exactly here.
      *
      * IT IS NOT BUILT NOW, and that is the house rule rather than laziness: a
      * field with no consumer has no test that can go red, and unpopulated

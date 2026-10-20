@@ -1066,9 +1066,9 @@ n "aq"
 # gate a LIVE check on the compile's own multiline state rather than a
 # comment about what pcrec does not support yet.
 # 
-# pcrec refuses `(?m)` today (module `assertions`), and that module's plan
-# row inherits D47.5's test obligation: a `(?m)` pattern whose `$`-follow
-# quantifier must NOT possessify. The newline subjects below are here
+# `(?m)` needs module `assertions`, and D47.5's test obligation for it (a
+# `(?m)` pattern whose `$`-follow quantifier must NOT possessify) is the
+# `(?m)` blocks at the end of this family. The newline subjects below are here
 # because `$` in pcrec means end-of-subject OR before a final newline, so
 # the exemption's argument has to hold for both.
 pattern a{0,4}$
@@ -1206,6 +1206,66 @@ n "aq"
 m "aac\n" 0 3
 m "ac\n" 0 2
 m "c\n" 0 1
+
+# THE `(?m)` HALF OF D47.5 ([DD-11.5] P2c, ctx_span.md 4.2.5 A4). `(?m)^` and
+# `(?m)$` are A_CTX rows now (MLINE_BOL/MLINE_EOL), rows that read an ABSENT
+# neighbour, and possessify never narrows such a row: the `(?m)$` follow
+# declines exactly as the retired multiline flag did, and a `(?m)^` before
+# the loop changes nothing the rule sees. Expectations from libpcre2 10.46;
+# python3 `re` agreed on every cell under the leading-`(?m)` spelling it can
+# compile (a mid-pattern `(?m)` is a python error, hence `# pcre2-only`).
+# pcre2-only
+pattern a{0,3}(?m)$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 1 4
+m "\n" 0 0
+m "a\n" 0 1
+m "aa\nb" 0 2
+m "aaaa\na" 1 4
+m "b\naaa" 1 1
+m "a\na\n" 0 1
+m "aaa\nb" 0 3
+m "ba\n" 1 2
+m "ab" 2 2
+m "\na" 0 0
+m "aaaaa\n\n" 2 5
+
+
+pattern (?m)^a+b
+features assertions,modifiers
+m "ab" 0 2
+m "aab" 0 3
+n "b"
+n "a"
+m "\nab" 1 3
+m "x\naab" 2 5
+n "xab"
+n "a\nb"
+m "aa\nab" 3 5
+m "\n\nab" 2 4
+m "ba\nab" 3 5
+m "aaab\n" 0 4
+m "a\nab" 2 4
+
+# pcre2-only
+pattern [a\n]+(?m)$\n
+features assertions,modifiers
+m "a\n" 0 2
+m "aa\n" 0 3
+n "\n"
+m "\n\n" 0 2
+m "a\n\n" 0 3
+m "a\na\n" 0 4
+n "a"
+n "aa"
+m "a\nb" 0 2
+m "b\na\n" 1 4
+m "aaa\n\na" 0 5
+m "\na\n" 0 3
 
 
 # ======================================================================
@@ -2666,9 +2726,9 @@ n "aq"
 # gate a LIVE check on the compile's own multiline state rather than a
 # comment about what pcrec does not support yet.
 # 
-# pcrec refuses `(?m)` today (module `assertions`), and that module's plan
-# row inherits D47.5's test obligation: a `(?m)` pattern whose `$`-follow
-# quantifier must NOT possessify. The newline subjects below are here
+# `(?m)` needs module `assertions`, and D47.5's test obligation for it (a
+# `(?m)` pattern whose `$`-follow quantifier must NOT possessify) is the
+# `(?m)` blocks at the end of this family. The newline subjects below are here
 # because `$` in pcrec means end-of-subject OR before a final newline, so
 # the exemption's argument has to hold for both.
 pattern (a{0,4}$)
@@ -2896,6 +2956,96 @@ m "ac\n" 0 2
 g 1 0 2
 m "c\n" 0 1
 g 1 0 1
+
+# (capture-wrapped) THE `(?m)` HALF OF D47.5 ([DD-11.5] P2c, ctx_span.md
+# 4.2.5 A4): the same three cells forced onto the VM, group 1 the whole
+# match. python3 `re` agreed on every cell as `(?m)(...)`.
+# pcre2-only
+pattern (a{0,3}(?m)$)
+features assertions,modifiers
+m "" 0 0
+g 1 0 0
+m "a" 0 1
+g 1 0 1
+m "aa" 0 2
+g 1 0 2
+m "aaa" 0 3
+g 1 0 3
+m "aaaa" 1 4
+g 1 1 4
+m "\n" 0 0
+g 1 0 0
+m "a\n" 0 1
+g 1 0 1
+m "aa\nb" 0 2
+g 1 0 2
+m "aaaa\na" 1 4
+g 1 1 4
+m "b\naaa" 1 1
+g 1 1 1
+m "a\na\n" 0 1
+g 1 0 1
+m "aaa\nb" 0 3
+g 1 0 3
+m "ba\n" 1 2
+g 1 1 2
+m "ab" 2 2
+g 1 2 2
+m "\na" 0 0
+g 1 0 0
+m "aaaaa\n\n" 2 5
+g 1 2 5
+
+# pcre2-only
+pattern ((?m)^a+b)
+features assertions,modifiers
+m "ab" 0 2
+g 1 0 2
+m "aab" 0 3
+g 1 0 3
+n "b"
+n "a"
+m "\nab" 1 3
+g 1 1 3
+m "x\naab" 2 5
+g 1 2 5
+n "xab"
+n "a\nb"
+m "aa\nab" 3 5
+g 1 3 5
+m "\n\nab" 2 4
+g 1 2 4
+m "ba\nab" 3 5
+g 1 3 5
+m "aaab\n" 0 4
+g 1 0 4
+m "a\nab" 2 4
+g 1 2 4
+
+# pcre2-only
+pattern ([a\n]+(?m)$\n)
+features assertions,modifiers
+m "a\n" 0 2
+g 1 0 2
+m "aa\n" 0 3
+g 1 0 3
+n "\n"
+m "\n\n" 0 2
+g 1 0 2
+m "a\n\n" 0 3
+g 1 0 3
+m "a\na\n" 0 4
+g 1 0 4
+n "a"
+n "aa"
+m "a\nb" 0 2
+g 1 0 2
+m "b\na\n" 1 4
+g 1 1 4
+m "aaa\n\na" 0 5
+g 1 0 5
+m "\na\n" 0 3
+g 1 0 3
 
 # (capture-wrapped) THE TRANSITIVE-FOLLOW LINE (§2.2), which §8 nominated as "the single
 # most likely place for a soundness bug to be hiding" and which survived a

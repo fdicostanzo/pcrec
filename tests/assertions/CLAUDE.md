@@ -335,6 +335,15 @@ every oracle exclusion has an entry there.
   Its own first run reported 366 "divergences" that were entirely
   `startpos > n` cells on the empty subject, where libpcre2 returns
   BADOFFSET; the skip is now explicit and the skipped count is printed.
+- **ctxfn_table_check.py** — [DD-11.5] CK-8 (`docs/design/ctx_span.md` §6):
+  every row of `src/core/ctxfn.def`, the one 9-cell A_CTX truth table, against
+  LIBPCRE2. A row is named in the script beside its set and its canonical
+  lookaround spelling (and its native one, `\b`/`\B`/`(?m)^`/`(?m)$`); its
+  nine (prev, next) cells are derived by asking `\G(?:SPELLING)` at every
+  position of every subject over `{a, -, \n}` up to length 4, and compared
+  with the grid READ AS TEXT from the .def. Every row must reach all nine
+  cells (K35) and answer each consistently. Run by `run_assertions_tests.sh`
+  §1b; a flipped cell is reported by row and cell (sabotage S1158).
 - **verify_pcre2.py** — the libpcre2 oracle for this directory's corpus.
   IMPORTS `tests/harness/verify_rxt.py`'s `.rxt` parser rather than copying it
   (one implementation of the file format) and builds

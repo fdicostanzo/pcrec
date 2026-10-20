@@ -65,6 +65,15 @@ scripts, any failing fails the section.
   re-entered handoff ranks above the hat rows and displaces them where its
   admission passes; the hat suites measure the hat against today's plain row,
   the interplay is run_prechecks.sh §5.12l-q's). Bench rows untouched.
+  **Re-pinned at ctxbuild's validation** (2026-10-20, [DD-11.5] P2c): the
+  A4 `(?m)` cells added to possessify.rxt shifted its rows below line 1209 and
+  2899; `census_s1.py` (lane build, abi 81): `s2_vm_auto` 93 possessify rows
+  moved by line only, `s2_vm_forced` the same plus 4 new movers (`(?m)^a+b`,
+  `[a\n]+(?m)$\n`, each bare and capture-wrapped), compared as (options,
+  pattern) multisets; no other corpus row moved. Bench rows untouched (the
+  same run adds 6 forced / 1 `s3_dfa` bench rows, counted, never checked).
+  Then +2 `s2_vm_forced` rows for S1161's detector blocks appended to
+  tests/assertions/multiline.rxt (`(?m)(\n^)`, `(?m)(a\n^)`; `(?m)(^)$` is not a mover).
 
 ## Stage 2 — the VM hat (lane ssbuild2, abi 62)
 

@@ -134,8 +134,8 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
         case A_END:
             return EW_Z;
         case A_EOL:
-            /* D62 control 3 — decline (4) in the header. */
-            if (a->u.anch.multiline) return EW_NONE;
+            /* A `(?m)$` (decline (4) in the header) is an A_CTX row since
+             * [DD-11.5] and takes that arm's EW_NONE. */
             return em_is_tail(em, a) ? EW_Z : EW_EOL;
         /* Consumes a byte, so the match does not end where it began. */
         case A_CLASS:
@@ -293,7 +293,7 @@ static void em_tails(const Ast *a, EmWalk *w)
             a = a->l;
             continue;
         case A_EOL:
-            if (!a->u.anch.multiline) em_push(w, a);
+            em_push(w, a);
             return;
         /* Consumes, asserts something else, or is not lowered by B3. */
         case A_END:

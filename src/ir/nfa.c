@@ -610,21 +610,16 @@ static Frag compile_ast(NB *b, const Ast *a)
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
-    /* [M6.2 wave C] THE MODIFIER STOPS BEING STATE HERE. The parser resolved
-     * the scoped `(?m)` onto the node (D62; src/parse/parse.c), and lowering
-     * consumes that field ONCE, choosing between two assertions whose truth
-     * conditions are different expressions over different inputs. Downstream
-     * of this line there is no multiline flag to forget to read — which is
-     * the compile-time alarm D62's control 3 accepts the loss of on the AST,
-     * bought back on the IR where node kinds are the vocabulary. */
-    case A_BOL:   return frag_single(b, a->u.anch.multiline ? N_BOT_M : N_BOT);
+    /* `^`/`\A`. A `(?m)^` never arrives here: the parser builds it as an
+     * A_CTX row ([DD-11.5]), lowered by the N_CTX arm below. */
+    case A_BOL:   return frag_single(b, N_BOT);
     case A_EOL:
         /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
          * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with
          * every byte it consumes marked: `(?=T)` in tail position IS the mark
          * followed by `T` consumed (endmark.md §1.2), and the mark is implicit
          * at the tail's first state, where the distance starts counting. */
-        if (b->lower && !a->u.anch.multiline) {
+        if (b->lower) {
             for (int i = 0; i < b->lower->ntails; i++) {
                 if (b->lower->tails[i] != a) continue;
                 b->in_tail++;
@@ -633,7 +628,7 @@ static Frag compile_ast(NB *b, const Ast *a)
                 return t;
             }
         }
-        return frag_single(b, a->u.anch.multiline ? N_EOL_M : N_EOL);
+        return frag_single(b, N_EOL);
     /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
      * an assertion about an absolute subject position is the same assertion
      * whichever direction the machine walks — the reverse machine simply
@@ -1292,7 +1287,9 @@ void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
  * problem is the missing position-dependent variant, and `(?m)^` needs that
  * variant AND a byte-selected view on top of it. So this predicate becomes
  * "contains any BOT-family node" — the extension §3.7 asks for, and the
- * reason the reverse machine never has to evaluate N_BOT_M.
+ * reason the reverse machine never has to evaluate a `(?m)^`. Since
+ * [DD-11.5] that node is an N_CTX row reading "no previous character", and
+ * the predicate says so from the row's bits.
  *
  * `(?m)$` does NOT join: its truth at `pp` is a fact about `s[pp]`, the byte
  * the reverse walk has already consumed, which the state identity carries
@@ -1313,8 +1310,12 @@ void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 bool pcrec_nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
-            nfa->st[i].k == N_GSTART) return true;
+        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_GSTART ||
+            /* [DD-11.5] a context row that reads "no previous character"
+             * (`(?m)^`'s) is a BOT-family node for this file's reason: the
+             * reverse machine would need it at its termination boundary. */
+            (nfa->st[i].k == N_CTX && ctxfn_reads_absent_prev(nfa->st[i].ctxfn)))
+            return true;
     return false;
 }
 

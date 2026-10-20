@@ -146,9 +146,18 @@ find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
 # because a split derived from `Dfa.wordctx` would be the check reading its
 # own subject's verdict. The scanner prints both counts every run so the
 # exclusion is visible rather than latent (§3.4's committed-tooling lesson).
-python3 - "$PATFILE" "$WORKDIR/bpat" "$WORKDIR/nobpat" <<'PY'
-import sys
-src, bout, nout = sys.argv[1], sys.argv[2], sys.argv[3]
+#
+# [DD-11.5] THE POPULATION IS "NO CONTEXT-NODE SPELLING AT AN ATOM POSITION"
+# (ctx_span.md §4.5.4, A2/B4): the knob cuts EVERY A_CTX set off the class
+# axis, and since part 2 `(?m)^`/`(?m)$` are A_CTX rows over the newline set,
+# so a `(?m)`-anchor pattern in the identity population would DIFFER and go
+# red. They join the MUST-DIFFER control, classified by `tests/lib/mlscan.py`'s
+# `multiline_anchor` (the one implementation of "where is `(?m)` in force").
+python3 - "$ROOT_DIR" "$PATFILE" "$WORKDIR/bpat" "$WORKDIR/nobpat" <<'PY'
+import os, sys
+root, src, bout, nout = sys.argv[1:5]
+sys.path.insert(0, os.path.join(root, "tests", "lib"))
+from mlscan import multiline_anchor
 
 def has_word_assertion(p):
     """True iff `\\b` or `\\B` occurs at an ATOM position, i.e. outside a
@@ -200,14 +209,19 @@ def has_word_assertion(p):
 # never decodes it as a string, so round-tripping the byte costs nothing.
 raw = [l.rstrip("\n") for l in open(src, encoding="utf-8", errors="surrogateescape") if l.strip()]
 mentions = [p for p in raw if '\\b' in p or '\\B' in p]
-real = [p for p in raw if has_word_assertion(p)]
-rest = [p for p in raw if not has_word_assertion(p)]
+def has_ctx_spelling(p):
+    return has_word_assertion(p) or multiline_anchor(p)
+real = [p for p in raw if has_ctx_spelling(p)]
+rest = [p for p in raw if not has_ctx_spelling(p)]
+mline = [p for p in raw if multiline_anchor(p) and not has_word_assertion(p)]
 open(bout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in real))
 open(nout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in rest))
 print("wordctx-identity: corpus %d patterns; MENTION \\b or \\B: %d; "
       "carry one as an ASSERTION (outside a class): %d; "
-      "class-position-only (backspace, no word context): %d"
-      % (len(raw), len(mentions), len(real), len(mentions) - len(real)))
+      "class-position-only (backspace, no word context): %d; "
+      "a (?m) anchor and no word assertion (joins the control): %d"
+      % (len(raw), len(mentions), len(real) - len(mline),
+         len(mentions) - (len(real) - len(mline)), len(mline)))
 PY
 
 nb=$(wc -l < "$WORKDIR/bpat")

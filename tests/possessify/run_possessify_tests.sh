@@ -752,8 +752,10 @@ fi
 
 # ---------------------------------------------------------------------------
 # 10. [ART-POSS-ARMS] pcrec_poss_ctx_admits, the EXHAUSTIVE MODEL CHECK
-#     (tests/possessify/ctx_admits_check.c): 16 truth tables x 3 polarity
-#     masks x a set of C, against a direct evaluation written independently;
+#     (tests/possessify/ctx_admits_check.c): all 512 rows of the 9-cell
+#     context table x 7 polarity masks x a set of C ([DD-11.5]; an
+#     absent-reading row never narrows), against a direct evaluation written
+#     independently;
 #     the A-F3 unit cell (C = {U+0100}, (?=C) -> widen) is named there.
 #     FAILING DIRECTION: the program's header lists the plants; a wrong
 #     sense, a dropped widen or a mis-cut byte tier each flips cells, and its

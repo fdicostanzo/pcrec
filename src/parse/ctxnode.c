@@ -104,7 +104,7 @@ static bool lang_charset(const Ast *a, PcrecCpSet *acc)
 
 /* The truth function a lookaround of this direction and polarity asks of
  * its set: `(?<=C)` prev, `(?<!C)` not prev, `(?=C)` next, `(?!C)` not next. */
-static uint8_t look_fn(bool behind, bool neg)
+static uint16_t look_fn(bool behind, bool neg)
 {
     if (behind) return neg ? CTXFN_NOT_PREV : CTXFN_PREV;
     return neg ? CTXFN_NOT_NEXT : CTXFN_NEXT;
