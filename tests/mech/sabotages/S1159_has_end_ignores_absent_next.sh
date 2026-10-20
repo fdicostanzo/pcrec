@@ -7,7 +7,7 @@ SAB_ID="S1159-has-end-ignores-absent-next"
 SAB_FILE="src/ir/dfa.c"
 SAB_SUITES="harness assertions"
 SAB_DESC='the has_end hoist ignores context rows that read an absent next character, so (?m)$ loses the pos == n view'
-SAB_DOC_FIGURE='OWED: written by lane ctxbuild 2026-10-19 during a bench timing window (no mech run allowed); the post-window validation lane runs it. Read the figure from a run: bash tests/mech/run_sabotage_matrix.sh S1159.'
+SAB_DOC_FIGURE='MEASURED 2026-10-20 (lane ctxbuild validation, solo mech row on the Linux dev box): corpus:623fail/70622pass,asrt:0fail/57pass -- DETECTED'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='            if (ctxfn_reads_absent_next(nfa->st[i].ctxfn)) has_end = true;'

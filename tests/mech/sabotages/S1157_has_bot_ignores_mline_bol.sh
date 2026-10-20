@@ -8,7 +8,7 @@ SAB_ID="S1157-has-bot-ignores-mline-bol"
 SAB_FILE="src/ir/nfa.c"
 SAB_SUITES="harness assertions"
 SAB_DESC='the BOT-family routing predicate ignores context rows that read an absent previous character, so (?m)^ leaves ENG_ATTEMPT'
-SAB_DOC_FIGURE='OWED: written by lane ctxbuild 2026-10-19 during a bench timing window (no mech run allowed); the post-window validation lane runs it. Read the figure from a run: bash tests/mech/run_sabotage_matrix.sh S1157.'
+SAB_DOC_FIGURE='MEASURED 2026-10-20 (lane ctxbuild validation, solo mech row on the Linux dev box): corpus:1117fail/70128pass,asrt:2fail/55pass -- DETECTED'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='            (nfa->st[i].k == N_CTX && ctxfn_reads_absent_prev(nfa->st[i].ctxfn)))'
