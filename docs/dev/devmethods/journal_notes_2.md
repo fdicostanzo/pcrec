@@ -1,0 +1,826 @@
+# Journal reading notes, part 2 (dev_journal.md, slice 6800-13500)
+
+Slice covered: the journal entries from 2026-08-12 (session 14, mech liveness) through 2026-08-24 (session 39, DD-14 wave B+C/D/LB). Items cite the journal entry by DATE + session/part title only. Evidence quotes are verbatim, trimmed to 25 words. Items are chronological within each theme heading; themes were assigned by keyword, so a few items sit in a neighbouring theme.
+
+Counts: practices 178, failures/incidents 59, recurring or not-yet-applied lessons 24.
+
+## 1. PRACTICES that worked
+
+### Lane control, briefs, panels, messaging
+
+- Blinded (D27) spec-first test writer plus GENERATED sweep found a tier-1 miscompile (`a(?i)*`) that a hand-listed 21-spelling check missed
+  - Entry: 2026-08-12/13, session 14, MOD-0.8 checkpoint
+  - Evidence: "a hand-listed probe table inherits its author's alphabet whether or not that author could read the implementation."
+- Model tiering: sonnet lanes by default (subscription limits), opus for difficult lanes, manager model never in lanes
+  - Entry: 2026-08-13, session 15; 2026-08-14 session 19
+  - Evidence: "Two SONNET worker lanes (Frank: lower models, subscription limits), concurrent, merges serialized."
+- Rows added by owner mid-flight must be confirmed processed: read a lane's report invariants as a RECEIPT for everything sent to it
+  - Entry: 2026-08-13, session 16, plan-restruct
+  - Evidence: "anything sent mid-flight needs explicit confirmation it was processed, because a lane can finish between your send and its read."
+- Check re-arm spec written BEFORE implementation and held without amendment; its one prediction was confirmed by the implementing lane
+  - Entry: 2026-08-13, session 17 close
+  - Evidence: "The check-rearm spec written BEFORE implementation held without amendment"
+- Live interactive decision pass: every question arrives with measured context + a recommendation; ~25 rulings in one sitting
+  - Entry: 2026-08-14, session 18
+  - Evidence: "A live decision pass with the user beats asynchronous ruling documents"
+- Design panel on load-bearing surface: budget critic probes by the BELIEVED marks; STRUCTURAL/MEASURED/BELIEVED claim labels; all STRUCTURAL citations held, BELIEVED ones broke
+  - Entry: 2026-08-14, session 19, R21
+  - Evidence: "All 11 STRUCTURAL citations held; what broke was what was marked BELIEVED."
+- Fix + validation sweep: positive control must be able to produce the class (lane caught its own vacuous isolation check with 0-changed control)
+  - Entry: 2026-08-14, session 19, K17 fix
+  - Evidence: "the lane also caught its own vacuous isolation check (a 0-changed control whose generator couldn't produce the class)"
+- Owner's live engineering questions (counts, alignment, stride, reverse-scan) improved the design each time; the live channel is the cheapest high-quality critic
+  - Entry: 2026-08-14, session 19 lessons
+  - Evidence: "the live-discussion channel is the project's cheapest high-quality critic."
+- Manager review adds anti-vacuity guard to lane's rescoped check (empty extraction on both sides must hard-fail)
+  - Entry: 2026-08-14, session 20, M4.4
+  - Evidence: "parse's rx_search_body() extraction returning empty on both sides counted as a PASS — fixed to hard-fail"
+- Compose lanes EARLY when a format lane and a producer lane ship halves of one contract; string-compare of a driver line was coincidence-green at NCAPS=1
+  - Entry: 2026-08-15, session 21, M4.5a/b
+  - Evidence: "an integration seam both lanes tested green in isolation broke exactly at the composition point"
+- Comment on a tier that "33/70 tests exist" was never true: verify claimed pre-existing tests exist before relying on them
+  - Entry: 2026-08-15, session 21, M4.5e
+  - Evidence: "the \"33/70 rung-boundary tests\" D46 and the brief described as existing NEVER EXISTED"
+- Adopting a dead lane's uncommitted work: review and fix the real defects found (result-block leak, content- vs byte-identical claim)
+  - Entry: 2026-08-15 EDT, TT-2
+  - Evidence: "a \"byte-identical\" claim that was only content-identical"
+- D6 critic panel: critics read prototype code against its prose; found a one-line stack bug that was the whole cost law and refuted a STRUCTURAL mark
+  - Entry: 2026-08-15 EDT evening, R23
+  - Evidence: "the panel refused a STRUCTURAL mark and read the prototype's code against its prose"
+- Withdraw (not put to owner) a ruling the panel shows asks him to authorize deliberate inexactness to mitigate a bug
+  - Entry: 2026-08-15 EDT evening, R23
+  - Evidence: "§6 ruling 1 ... is WITHDRAWN, not put to Frank"
+- Reproduce prior-measured numbers digit for digit before trusting a rewrite lane (547/8 of 555, 249 of 18,858, 251 old-wrong->new-right)
+  - Entry: 2026-08-15 EDT night, K18 rewrite
+  - Evidence: "The measurements the note asked to be reproduced came back digit for digit"
+- Verify which engine a bench/probe row really took (--emit-ir per cell) instead of trusting intent
+  - Entry: 2026-08-15/16, session 24, R24
+  - Evidence: "A row can misreport its own engine: verify with --emit-ir per cell, not by intent."
+- Three-way oracle rule prevents false alarms: two-way python check would have raised a 106-cell false alarm vs pcrec on ((|a){m,n})
+  - Entry: 2026-08-15/16, session 24
+  - Evidence: "a two-way python check on §6's own family would have raised a 106-cell FALSE alarm against pcrec"
+- Owner rulings can be delegated by altitude ("more about the goal than the path"); ordering/path decisions go to manager within bounds
+  - Entry: 2026-08-16, session 24 cont., D47
+  - Evidence: "ordering/path decisions are delegated to the manager within bounds"
+- A sabotage row that came back UNDETECTED revealed a POPULATION gap (nested cells all put a non-nullable item after the inner quantifier); generated search found the discriminating shape
+  - Entry: 2026-08-16, possessify lane
+  - Evidence: "Sabotage S48 came back UNDETECTED ... The finding was about the POPULATION, not the term"
+- Manager's process-table glance (CPU) catches what no notification could; watchdogs should look at CPU, not just logs
+  - Entry: 2026-08-16, session 24 close
+  - Evidence: "Watchdogs should look at CPU, not just logs."
+- Build the missing instrument on owner's ask: scripts/watchdog (timeout+memory+CPU+per-execution log), own self-test with controls bounded by coreutils timeout not by watchdog itself
+  - Entry: 2026-08-16, session 25
+  - Evidence: "a control must not share a mechanism with what it controls"
+- A rewiring bug's tell is a COUNT not a failure (77,725 cells -> 0 while '0 diverged' stayed green); check instruments against recorded baselines after rewiring
+  - Entry: 2026-08-16, session 25 cont.
+  - Evidence: "\"0 diverged\" is compatible with \"measured nothing\""
+- Required per-invocation allowlist replaces hardcoded default in D27 cell script (stale default fails in the LEAK direction)
+  - Entry: 2026-08-16, session 26
+  - Evidence: "a hardcoded default goes stale in the LEAK direction, an explicit list is a per-lane manager decision"
+- Verify a measurement lane's "not a bug" claim against the SHIPPED artifact before merge (two-pattern stamp check)
+  - Entry: 2026-08-16, session 26, nested-lazy lane
+  - Evidence: "a measurement lane's \"not a bug, here's why\" still gets verified against the SHIPPED artifact before merge"
+- Scripts are tested ON CHANGE via a derived pattern-rule Makefile with wildcard discovery and .DELETE_ON_ERROR (owner ruling: test_watchdog.sh does not join make test)
+  - Entry: 2026-08-16, session 26
+  - Evidence: "Scripts are tested ON CHANGE via make dependencies"
+- Message-race protocol: lanes verify against main's COMMITTED docs; manager re-sends with pointer to committed file; both sides verify-after-apply (grep for text you believe you wrote)
+  - Entry: 2026-08-17 EDT, session 27 cont.
+  - Evidence: "both sides verify-after-apply (the lane now greps for text it believes it wrote — its scripted replace once failed SILENTLY)"
+- Main-RED found by the next lane probing clean main; reproduce before fixing; fix with scoped exclusion keyed on diagnostic and population PINNED at exactly N
+  - Entry: 2026-08-17 EDT, session 28 cont.
+  - Evidence: "MAIN WAS RED and is green again"
+- Landing panel (R28) with soundness, instruments lenses: MRL had zero sabotage coverage; exemption count untracked and wrong; independent DFA-oracle that terminates where python hangs adopted
+  - Entry: 2026-08-17 EDT, session 29
+  - Evidence: "MRL had ZERO sabotage coverage (now S58-S63, all DETECTED)"
+- Blinded corpus authored in separate cell passed 89/89 against a build neither author had seen
+  - Entry: 2026-08-17 EDT, session 29
+  - Evidence: "neither author having seen the other's work"
+- The bug class recurred one rung down; found from OUTSIDE the implementation's model (differential/structural/step-collapse all inherited the model the bug was in)
+  - Entry: 2026-08-17 EDT, session 29
+  - Evidence: "Found from OUTSIDE the implementation's model"
+- Requirements note's own panel (R27) caught a BLOCKER: its grep claim was false and hid the most concrete prior art (certified absent by an unreproduced survey)
+  - Entry: 2026-08-17 EDT, session 29, DD-13a
+  - Evidence: "certified absent by an unreproduced survey (the exact failure its own §13 warned about)"
+- Briefs must say "report via SendMessage": final reports composed as plain assistant text never reach the manager (three lanes in one day)
+  - Entry: 2026-08-17 EDT, session 29
+  - Evidence: "every brief must say \"report via SendMessage\" explicitly."
+- Manager reverted lane's whole first pass when review showed zero producers = zero customers, hand-built-Ctx test shares a source with what it controls; replaced with a tripwire over the real population
+  - Entry: 2026-08-18 EDT, session 30, M4.7a / D55
+  - Evidence: "zero producers means zero customers, and the hand-built-Ctx test was a control sharing a source with what it controls"
+- Manager review adds the missing positive control before merge (fuzzer capture-span lane: +1 sabotage detected on 252/252 cells, 0/860 clean when reverted)
+  - Entry: 2026-08-17 EDT, session 30, M4.7d
+  - Evidence: "MANAGER REVIEW ADDED THE MISSING POSITIVE CONTROL before merge"
+- Panel over spec with 3 lenses (artifact/ruled-corpus/adversarial consumer) found blockers manager end-to-end read missed: critics check against alphabets the document did not choose
+  - Entry: 2026-08-18 EDT, session 31, R29
+  - Evidence: "the critics checked it against alphabets the document did not choose."
+- Owner's live design thread ("advancing via s+1 works for byte but not utf") became a lane; premise check on a freshly emitted artifact reframed the fear (no external restart loop)
+  - Entry: 2026-08-18 EDT, session 32
+  - Evidence: "The premise check that preceded it mattered"
+- Panel rounds each catch what previous fix introduced (R30: three rounds; N9 found IN the N1 fix)
+  - Entry: 2026-08-18 EDT, session 33, R30
+  - Evidence: "Three rounds, each catching what the previous round's fix introduced."
+- Panel targets are frozen commits: freeze before launch, batch design inputs until compile
+  - Entry: 2026-08-18 EDT, session 33 lessons
+  - Evidence: "PANEL TARGETS ARE FROZEN COMMITS — I moved the target twice"
+- Briefs touching disposition-vocabulary constructs should cite the ratified row directly
+  - Entry: 2026-08-18 EDT, session 33 lesson 3
+  - Evidence: "briefs that touch disposition-vocabulary constructs should cite the ratified row directly."
+- Two waves in one overnight run: one lane per wave, serialized, manager re-verifies the load-bearing number independently each time
+  - Entry: 2026-08-19 EDT, session 34 part 1
+  - Evidence: "the manager merged, re-verified the load-bearing number independently each time"
+- A construct's DEFINITION is a claim about PCRE2 like any other: consult the project's own option survey; lane's differential caught a live miscompile in the design's definition
+  - Entry: 2026-08-19 EDT, session 34 wave C
+  - Evidence: "a construct's DEFINITION is a claim about PCRE2 like any other"
+- Lane followed the design over a contradicting brief and STOPPED to flag per the brief's own stop rule
+  - Entry: 2026-08-19 EDT, session 34 part 1
+  - Evidence: "the stop rule earned its keep against its author"
+- Identity argument by construction instead of a fourth gate: VM-forced + one emitter predicate pinned as quoted-literal rule + commit-pinned probe sharing no sources; manager's independent historical diff reproduced the lane's number
+  - Entry: 2026-08-19 EDT, session 34 part 4, wave E (\K)
+  - Evidence: "the manager's independent historical diff reproduced 1,208/1,208 exactly"
+- Measure whether the manager's prescribed brief fix suffices before writing it (3 of 4 knobs: emitter-only knob leaves sabotage as blind as the flag pin); land as two halves
+  - Entry: 2026-08-19 EDT, session 34 part 6, repair slice
+  - Evidence: "the manager's brief prescription was MEASURED INSUFFICIENT for 3 of 4 knobs before anything was written"
+- Blinded author (cell) from goal facts found the multi-module nature of a construct ((?m) needs two modules) because the brief's singular didn't fit
+  - Entry: 2026-08-21 EDT, session 35 part 1
+  - Evidence: "the goal-derived alphabet earning its keep again"
+- Load-hold protocol: lanes author during a battery, validate after the gate (box-free)
+  - Entry: 2026-08-21 EDT, session 35 part 1 lesson 3
+  - Evidence: "adopt as the standing shape for battery-concurrent lanes"
+- Two design gates in parallel on disjoint modules; cross-lane honest reports are review input (the other lane's measurement reversed SR-8 ruling before panels reported)
+  - Entry: 2026-08-22 EDT, session 36 parts 2-3
+  - Evidence: "cross-lane reports are review input"
+- Two independent engine critics with different methods (read emitter dispatch vs run checks in failing direction) found disjoint HIGH finding sets
+  - Entry: 2026-08-22 EDT, session 36 part 3, R31
+  - Evidence: "r31eng found ... by READING THE EMITTER'S DISPATCH, r31chk found ... by RUNNING THE CHECKS' FAILING DIRECTION"
+- Assert the REFUTABLE population as a floor (critic's own generator had a 0 non-vacuity control and was rebuilt)
+  - Entry: 2026-08-22 EDT, session 36 part 3
+  - Evidence: "assert the REFUTABLE population as a floor"
+- Findings against the revisions: re-check rounds attack the fix as hard as the original, found findings in HIGH fixes three panels running
+  - Entry: 2026-08-22/23 EDT, sessions 36-37 R31/R32/R33/R34
+  - Evidence: "three FALSE STATEMENTS INSIDE HIGH FIXES (the R32 pattern: findings against the revisions)"
+- Manager verification instead of a fourth critic round: archives fresh against probes' live commits, rebuilt probes re-run to byte-identical bodies
+  - Entry: 2026-08-22 EDT, session 36 part 5
+  - Evidence: "Manager verification instead of a fourth critic round"
+- Implementation lane must follow measurement where approved design is wrong, and name each place (3 places in atomic; 3 in backrefs)
+  - Entry: 2026-08-22 EDT, session 36 parts 6,12
+  - Evidence: "THREE PLACES THE APPROVED DESIGN IS WRONG, each caught by a run, not by reading"
+- D27 blinded corpus found a TIER-1 miscompile AFTER merge that implementer's 39,326-cell differential did not (`(?:aa|a)++ab`): follow's min width carried across the cut; every corpus cut-pattern had follow disjoint from body
+  - Entry: 2026-08-22 EDT, session 36 parts 7,8
+  - Evidence: "the alphabet was uniform in a way nobody had noticed ... the DESIGN's examples as well"
+- Premise given to a lane ("identity gate costs ~26 minutes forever") did not survive measurement (71 s); do not report a move as speed-up
+  - Entry: 2026-08-22 EDT, session 36 parts 7-8
+  - Evidence: "it is not a speed-up and must not be reported as one"
+- Tiered mech re-run policy (D69) with evidence from diffing matrices for flips without definition changes; rows_for.sh maps changed paths to rows
+  - Entry: 2026-08-23 EDT, session 37 part 2
+  - Evidence: "ZERO rows flipping DETECTED→UNDETECTED without their own definition changing"
+- A green identity gate is a statement about ITS POPULATION: real miscompile moved zero bytes until constructed cells; only capture-aware check sees it
+  - Entry: 2026-08-23 EDT, session 38 part 4
+  - Evidence: "a green identity gate is a statement about ITS POPULATION"
+- Design lane's honest self-corrections were more valuable than any single finding; self-consistency check script exercised failing direction 7/7 found two defects in itself
+  - Entry: 2026-08-23 EDT, session 38 parts 6-7
+  - Evidence: "the lane's honest self-corrections (four) were more valuable than any single finding"
+- Lane refused the design's own sketch correctly (wrong twice); amend the design at merge
+  - Entry: 2026-08-24 EDT, session 38 part 12
+  - Evidence: "THE LANE REFUSED THE DESIGN'S OWN SKETCH, correctly"
+- Qualify every clamping cell against a pre-wave compiler; the bug the predicate exists for was LIVE on main
+  - Entry: 2026-08-24 EDT, session 38 part 13
+  - Evidence: "THE BUG IT EXISTS FOR WAS LIVE ON MAIN"
+- Anti-tautology controls: identity rows counted and EXCLUDED from headline; witness printer driven every run over a fixture built to disagree on one cell
+  - Entry: 2026-08-24 EDT, session 38 part 14
+  - Evidence: "a substitution that silently became the identity would pass every comparison in the file"
+- Triage parked known-fail cells: a corpus fix is not a known-fail (a give-up is never an oracle fact)
+  - Entry: 2026-08-24 EDT, session 39 part 4
+  - Evidence: "a give-up is never an oracle fact"
+- Manager rulings under stated assumption for owner to confirm/revert (PCREC_ERR_INTERNAL below floor): one ABI line, recorded as decision, confirmed after owner asked why
+  - Entry: 2026-08-24 EDT, session 39 part 1
+  - Evidence: "Frank to confirm or revert; it is one ABI line and a comment"
+
+### Testing, oracles, check design, measurement
+
+- Long runs end with a grep-able completion trailer; watchers grep the artifact (COMPLETE|FATAL), never the process table
+  - Entry: 2026-08-12, session 14, "make mech silently stopping"
+  - Evidence: "Watchers grep for `COMPLETE|FATAL`, never pgrep."
+- A control must trust the write path and then sabotage the writer; harness exit codes are not gates unless proven (mech exited 0 on UNDETECTED)
+  - Entry: 2026-08-12, session 13/14 lessons
+  - Evidence: "Harness exit codes are not gates unless proven: mech exits 0 on UNDETECTED and ANOMALY both."
+- Differential gate principle: a failing-before check lands loud RED then goes green after the fix (checks 13+14 landed red as the false-the-day-before record)
+  - Entry: 2026-08-12/13, session 14, MOD-0.8
+  - Evidence: "landed loud RED as the false-the-day-before record; green after the fix merged."
+- Audit EVERY compile site for the sanitizer/compile-flag hook (GENCFLAGS audit found five deaf sites): an axis can be silently partial for its whole life
+  - Entry: 2026-08-13, session 15, SAN-1
+  - Evidence: "the compilee axis was silently partial its whole life"
+- Floor as a literal independent of the list it counts (SMOKE_FLOOR=6 vs SMOKE_SECTIONS), sabotage-validated
+  - Entry: 2026-08-13, session 15, TT-1
+  - Evidence: "SMOKE_FLOOR=6 a literal independent of SMOKE_SECTIONS (check-design lesson applied)"
+- Expected-red integration branch (flip rides WITH its re-baseline, not ahead) kept main green across a 5-merge landing
+  - Entry: 2026-08-13, session 17 close
+  - Evidence: "an expected-red integration branch (std1-flip) kept main green through a 5-merge landing"
+- Ratchet rule: floors may rise, never fall; a lowering is only by manager review with population conserved (5+97==1+101)
+  - Entry: 2026-08-13, session 17, phase boundary 4
+  - Evidence: "population conserved at 102 ... the one legitimate lowering shape. Lane correctly refused to lower it itself."
+- Coverage-conservation rule when inverting reject rows: old behaviour re-pinned under the old flag AND new accepts added
+  - Entry: 2026-08-13, session 17, phase boundary 5
+  - Evidence: "inverted rows keep refusal pinned under --features none AND gain oracle-verified bare-accepts coverage"
+- Two design docs converging on one ABI surfaced a break BEFORE the freeze (coupling rule)
+  - Entry: 2026-08-14, session 18
+  - Evidence: "surfaced the rx_span break BEFORE the freeze rather than after"
+- Instruments point at pcrec first: planned oracle-exclusion mechanism would have hidden the bug; noise it guarded against measured ZERO (225,240 pairs); replaced by three-way 2-1-minority rule
+  - Entry: 2026-08-14, session 19, R21 ASK-1
+  - Evidence: "the oracle-exclusion inversion: the noise the mechanism guarded against measured zero and the mechanism would have hidden the real bug"
+- Every harness compile of generated C runs under a timeout; a timeout is a loud FAILURE, never a hang (D45)
+  - Entry: 2026-08-15, session 21, D45 incident
+  - Evidence: "every harness compile of generated C runs under a timeout; timeout = loud FAILURE, never a hang"
+- Strategy-selection points must be observable and forceable do-or-die (D46); pin the configuration you measure in benchmarks
+  - Entry: 2026-08-15, session 21
+  - Evidence: "Pinned --no-captures per D46 (pin the configuration you measure)"
+- Do not triage an emit-main span error as a semantic miscompile without checking the raw return code (zeroed stack makes garbage look plausible)
+  - Entry: 2026-08-15 EDT night, K21
+  - Evidence: "do not triage an emit-main span error as a semantic miscompile without checking the raw rc"
+- Bug-class closure: when one site had the 3-valued-return-as-boolean bug, audit all 4 siblings
+  - Entry: 2026-08-15 EDT night, K21
+  - Evidence: "THE CLASS CLOSED 4-OF-4"
+- Make a bug inexpressible by changing representation (immutable context chain replaces mutable open[] stack): removes recursion, clobber, thread-stack hazard at once
+  - Entry: 2026-08-15 EDT night, K18 rewrite lane
+  - Evidence: "the chain is immutable — nothing to overwrite"
+- Sabotage-validate a guard by building the old design with the same sanitizer flags and watching it die (stack-overflow at depth 210)
+  - Entry: 2026-08-15 EDT night, K18 rewrite
+  - Evidence: "the one guard file with no pre-fix failures"
+- Corpus expectations dual-oracled (python re AND libpcre2) with zero disagreements before landing
+  - Entry: 2026-08-15 EDT night, K18 rewrite
+  - Evidence: "Every expectation from python3 `re` AND libpcre2 10.46 ... zero disagreements."
+- An instrument must disclose its own skips: helper returned None for lazy rows without saying half the question was unasked, so the greedy-only differential was clean while the lazy defect was real
+  - Entry: 2026-08-15/16, session 24, ENG-BREP R24
+  - Evidence: "An instrument must disclose its own skips."
+- A locale is an instrument: sort -u under en_US.UTF-8 merged distinct regexes; count with exact equality / LC_ALL=C
+  - Entry: 2026-08-15/16, session 24, R24 M-F1
+  - Evidence: "A locale is an instrument: sort -u under en_US.UTF-8 silently merged distinct regexes"
+- Observability and forceability (deny flags) resolve per-pattern vs per-quantifier questions by construction: every quantifier walks its own ladder skipping denied steps
+  - Entry: 2026-08-16, session 24 cont.
+  - Evidence: "deny semantics resolves his per-pattern-vs-per-quantifier concern by construction"
+- When an optimization lands above a strategy, the checks for that strategy go red while the product improves; fix by DENYING the rung above in the contrast check and pin the win separately (D46 remedy)
+  - Entry: 2026-08-16, possessify lane
+  - Evidence: "an optimization above un-tests the strategy below"
+- Slow vs looping diagnosis: read emitted loop for structural termination argument plus fit growth law (quadratic 0.146/0.566/2.265/8.944 s) before acting
+  - Entry: 2026-08-16, session 24 close
+  - Evidence: "A \"hang\" is a diagnosis, not an observation"
+- Green-because-fast sweep: an optimization removing a cost un-tests every check whose signal was that cost; sweep by "what was slow or big because of X"; pair every denial with the other side
+  - Entry: 2026-08-16, session 26, RUNG-SELECT
+  - Evidence: "FIVE existing checks went GREEN-BECAUSE-FAST"
+- A measurement assigned to size a fix can refute it before code (steps == entries: the entry charge is linear while work is quadratic)
+  - Entry: 2026-08-16, session 27
+  - Evidence: "A measurement assigned to size a fix can refute it — cheaper before code than after"
+- Re-pin survey by CONSEQUENCE (what asserts the old behaviour), not mechanism (denial); a site that denies nothing was invisible
+  - Entry: 2026-08-16, session 27, R25 C1
+  - Evidence: "sweep by CONSEQUENCE (what asserts the old behavior), not by mechanism"
+- Column-adjacency lesson: the refuting number was already in a published control row; read every column of a control row against the rule
+  - Entry: 2026-08-17 EDT, session 27 cont.
+  - Evidence: "26's refuting number and 29's deriving numbers were already IN published rows"
+- Meta check-design class: the row verifying a guard is WIRED differs from the row verifying its REMOVAL IS CAUGHT; a sabotage anchor silently stale (S43 APPLY-FAILED for days)
+  - Entry: 2026-08-17 EDT, session 28 cont.
+  - Evidence: "a composition can go dark while both components stay honest"
+- Suspicious-green discipline: verify a green you predicted red (calibration half-done caught by this)
+  - Entry: 2026-08-17 EDT, session 28, M4.6a
+  - Evidence: "the suspicious-green discipline (verify a green you predicted red) caught it"
+- Calibrate on the DEFAULT engine mode; forced modes are orders of magnitude off
+  - Entry: 2026-08-17 EDT, session 28, M4.6a
+  - Evidence: "only DEFAULT calibrates"
+- Cases silently measured the wrong engine since a default flipped; fix by per-case engine ASSERTION in the bench + ages-freely marker
+  - Entry: 2026-08-17 EDT, session 28, M4.6b
+  - Evidence: "silently measured the WRONG ENGINE since D42.1"
+- Bisect then root-cause then choose fix by measured head-to-head of 4 levers; build an independent control that strips the fix and asserts the compiler DOES the bad thing
+  - Entry: 2026-08-17 EDT, session 28 close, K24
+  - Evidence: "so a future gcc that stops splitting fails the check loudly instead of leaving it vacuous"
+- Measure the real variable before building: RX_HYBRID_MIN refuted on its own VARIABLE (crossover is match offset, not subject length); nothing built is the correct outcome, recorded as D53 with revisit triggers
+  - Entry: 2026-08-17 EDT, session 29, M4.6e
+  - Evidence: "BOTH ASK-6 items MEASURED-NO — nothing built, and that is the correct outcome"
+- Prototype-measured-no: build the prototype, measure at build time, do NOT merge even denied-by-default (permanent D46+sabotage maintenance surface for nothing); keep in git history + revisit-when triggers
+  - Entry: 2026-08-18 EDT, session 30, OPT-ALTCLS stage 3 / D54
+  - Evidence: "a denied facility with no default-path customer still buys a permanent ... maintenance surface for nothing"
+- Instrument self-check: first measurement ran two copies of one program (non-capturing reproduction silently routed to the DFA, minimization made artifacts byte-identical); corrected number replaces unarchived design-evening number
+  - Entry: 2026-08-18 EDT, session 30, ALTCLS close
+  - Evidence: "the first Cell A run measured two copies of one program"
+- Upstream rewrite can make a downstream identity control vacuous without any check going red (altcls pre-factored trie-identity controls)
+  - Entry: 2026-08-18 EDT, session 30
+  - Evidence: "an upstream rewrite can make a downstream identity control vacuous without any check going red"
+- Premise-verify each substep charter against shipped code at milestone expansion (two charters written on stale premises: SR-8 consultation with zero producers; pattern_len already shipped)
+  - Entry: 2026-08-18 EDT, session 30 close
+  - Evidence: "each substep's premise is a CLAIM about the tree and gets verified against the shipped code BEFORE chartering"
+- Pin EXACT expected counts for every summary bucket including the previously-vacuous row pinned nonzero, so vacuity can never silently return
+  - Entry: 2026-08-18 EDT, session 30, M4.7e
+  - Evidence: "the module-construct row pinned NONZERO (75/300) — the vacuity it found can never silently return"
+- Measure whether an open gate buys anything before widening a differential (generator never emitted module syntax)
+  - Entry: 2026-08-18 EDT, session 30, M4.7e
+  - Evidence: "the differential-gate principle's OPEN half ... was buying nothing"
+- Serialize merge batteries against the at-scale fuzz campaign (manufactured flake: counterk timeout at 106% CPU contention)
+  - Entry: 2026-08-18 EDT, session 30, M4.7c
+  - Evidence: "SCHEDULING RULE ADOPTED ... merge batteries and lane full-suite runs are serialized against the at-scale campaign"
+- Per-stage RSS instrumentation relocated the cost (332MB of 664MB in nfa builder, a Theta(n^2) arena copy behind linear state count); a defect entry's diagnosis can itself be wrong
+  - Entry: 2026-08-18 EDT, session 30, M4.7b K7
+  - Evidence: "K7's own diagnosis was the thing that was wrong"
+- Build-then-revert unpopulated machinery (closure-WORK budget measured at 300,024 steps vs corpus max 240M: no achievable budget catches them)
+  - Entry: 2026-08-18 EDT, session 30, M4.7b
+  - Evidence: "reverted as unpopulated machinery"
+- Spec document written by checking every claim against the shipped surface (emit artifacts, read generated text), not the design doc; found 2 design-vs-shipped discrepancies; VERIFICATION LEDGER in header
+  - Entry: 2026-08-18 EDT, session 30, M4.7f
+  - Evidence: "Cardinal rule applied: every claim was checked against the shipped surface rather than copied from docs/design/match_api_m4.md"
+- Before writing a probe to establish a property, check whether the suite already establishes it better (a shipped check with sabotage arm outranks a one-off)
+  - Entry: 2026-08-18, m47g-fix
+  - Evidence: "a shipped check with a sabotage arm outranks a lane's one-off every time."
+- Verbatim re-quote of a freshly emitted artifact in specs; mark elisions; idealized quotation is not a small inaccuracy
+  - Entry: 2026-08-18, m47g-fix
+  - Evidence: "an idealized quotation is not a small inaccuracy"
+- Completion-artifact rule (trailer in the log, never a process) made recovery trivial when the Claude process died mid-battery: battery tree survived, just recreate crons and poll artifact
+  - Entry: 2026-08-18 EDT, session 32
+  - Evidence: "the completion-artifact rule ... is what made recovery trivial"
+- Reference builds from one-level source globs silently assembled a different source set: find sources and hard-fail on empty list
+  - Entry: 2026-08-18 EDT, session 32
+  - Evidence: "a differential's reference build quietly assembled from a DIFFERENT source set than the subject measures nothing"
+- Probe external oracle for the construct's name grammar (predictor-first) instead of folklore (128-byte name cap vs 32)
+  - Entry: 2026-08-18, lane namedgroups, M6.3
+  - Evidence: "Name grammar measured against libpcre2 10.46 rather than assumed (predictor-first)"
+- Update every pinned wording site in the same change when diagnostic text becomes false (tests/reject, cli --explain pins, compliance doc)
+  - Entry: 2026-08-18, M6.3
+  - Evidence: "Every place in the tree that pinned the old wording ... was updated in the same change, not left to drift."
+- A suite's non-vacuity guard caught emitter-correct change (constants moved to .h; empty grep -> POSIX arithmetic silent zero); hard-fail-on-empty at all eight extraction sites
+  - Entry: 2026-08-18 EDT, session 33, ABI-NS
+  - Evidence: "caught by the SUITE'S non-vacuity guard, fixed with hard-fail-on-empty at all eight sites"
+- Historical byte-identity diff against TRUE pre-wave compiler is the manager's number to own, because the permanent gate's reference build shares sources with what it controls
+  - Entry: 2026-08-19 EDT, session 34
+  - Evidence: "the permanent gate's reference build shares sources with what it controls, so the historical diff is the manager's number to own"
+- Run each sabotage to see if vacuous first: two of five were measured vacuous (fixture gated out, property not reached) and repaired
+  - Entry: 2026-08-19 EDT, session 34 wave B
+  - Evidence: "TWO WERE MEASURED VACUOUS FIRST ... both found BY RUNNING them"
+- A forecast number (38,009) stands only as a bound; locate boundary by measurement not prediction
+  - Entry: 2026-08-19 EDT, session 34 wave B
+  - Evidence: "§3.5.1's 38,009 forecast REFUTED AS AN OBSERVATION (stands as a bound)"
+- Drop proposed rows whose un-decline does not go red (no-non-detecting-checks rule), recording measurements instead
+  - Entry: 2026-08-19 EDT, session 34 wave C
+  - Evidence: "rows whose un-decline does not go red were DROPPED per the no-non-detecting-checks rule"
+- Reference knob placed at emitter decision points, not shared sabotaged source (identity gates A/B/C mis-placed: wave B's gate stays green under its own S71)
+  - Entry: 2026-08-19 EDT, session 34 part 3, wave D
+  - Evidence: "THE IDENTITY GATES' REFERENCE KNOBS ... ARE MIS-PLACED"
+- Use an already-built construct as the oracle for the next (wave D \G as wave E's oracle: ask libpcre2 about \G(?:PAT) at same startpos)
+  - Entry: 2026-08-19 EDT, session 34 part 4
+  - Evidence: "wave D's construct as wave E's oracle"
+- Refute a manager-proposed change by reading what the generated index measures (default build) rather than flipping eight rows to look current
+  - Entry: 2026-08-19 EDT, session 34 part 6
+  - Evidence: "flipping eight rows would make the index inconsistent, not current"
+- Audit sabotage anchors for drift in bulk (seven pre-existing drifted anchors; full mech scores them ANOMALY, invisible to by-prefix runs)
+  - Entry: 2026-08-19 EDT, session 34 part 6
+  - Evidence: "SEVEN pre-existing drifted sabotage anchors ... invisible to by-prefix runs"
+- Anchor tripwire (script) on the merge bar: caught drift four times; tripwire later extended to check EXACT SAB_COUNT after it disagreed with mech
+  - Entry: 2026-08-21/22 EDT, session 35 part 3; session 36 part 8
+  - Evidence: "The tripwire joins the merge bar from here"
+- A checker that silently mis-scores is worse than one that skips loudly: verify_pcre2.py ignored flags blocks; now skip-and-COUNT loudly
+  - Entry: 2026-08-21 EDT, session 35 part 1
+  - Evidence: "a checker that silently mis-scores is worse than one that skips loudly"
+- Define "object-code-neutral" operationally (executed bytes + exported symbols), with a self-arming control (570 internal renames)
+  - Entry: 2026-08-21 EDT, session 35 parts 1-2
+  - Evidence: "the adopted gate is executed-bytes + exported-symbols"
+- A survey enumerated from example artifacts is an undercount by construction (~94 pins); true tail found by RUNNING
+  - Entry: 2026-08-21 EDT, session 35 part 2
+  - Evidence: "a survey enumerated from example artifacts inherits the examples' shape"
+- Run the union battery after merging two individually-green branches: a merge is UNVALIDATED until the union runs
+  - Entry: 2026-08-21 EDT, session 35 part 2
+  - Evidence: "a merge of two individually-green branches is UNVALIDATED until the union runs"
+- Survey format consumers (SHAPE), not only content consumers, before changing a dump's columns
+  - Entry: 2026-08-21 EDT, session 35 part 2, D65
+  - Evidence: "the memo had surveyed CONTENT consumers and never asked the SHAPE question"
+- A row/STATE flip is part of the merge, not of the close
+  - Entry: 2026-08-21/22 EDT, session 35 part 3 lesson 3
+  - Evidence: "A row flip is part of the merge, not of the close"
+- An enumeration is bounded by its population AND by the shapes it can recognise
+  - Entry: 2026-08-22 EDT, session 36 part 5
+  - Evidence: "an enumeration is bounded by its population AND by the shapes it can recognise, the second bound invisible from inside"
+- Compliance page read top-to-bottom during refresh found 4 survey rows reading OK while bare pcrec refused (stale since waves); decide status by RUNNING a bare pcrec
+  - Entry: 2026-08-22 EDT, session 36 part 6
+  - Evidence: "decided by running a bare `pcrec` on each construct and reading the refusal"
+- Fix at the BOUNDARY (zero fmin/fdyn for whole atomic body, restore after cut) so two passes agree on WHICH FOLLOW THEY MEAN; add family to generator with its own separate non-vacuity floor
+  - Entry: 2026-08-22 EDT, session 36 part 7
+  - Evidence: "a merged counter would have stayed green with the entire family answering its uncut twin"
+- Census by PATH shims at serial per-target; first decomposition of a "245x" number into 31x from binary swap + 5.57x: "measured correctly, interpreted too broadly"
+  - Entry: 2026-08-23 EDT, session 37 part 1, TT-4.1
+  - Evidence: "measured correctly, interpreted too broadly"
+- Discover the `timeout` binary was uutils at 108 ms/call: ~43% of the corpus section's wall; check the tools the harness shells out to
+  - Entry: 2026-08-23 EDT, session 37 part 1
+  - Evidence: "this box's `timeout` is uutils coreutils 0.8.0 and costs ~108 ms of pure WALL per call"
+- Serial N=64/256 batching looked best and regressed under parallel execution (batch count below core width): a design reading serial numbers would ship a regression
+  - Entry: 2026-08-23 EDT, session 37 part 1
+  - Evidence: "a design reading serial numbers would ship a regression"
+- Leaking env var (PROCS) into inner shards found by /proc environ sampling; fixed with INNER_PROCS
+  - Entry: 2026-08-23 EDT, session 37 part 2, TT-8
+  - Evidence: "the PROCS leak was LIVE"
+- Gate identity at wave 0 with a demonstrated red; real hazard (unguarded clobber) as the gate's red demonstration
+  - Entry: 2026-08-23 EDT, session 38 parts 1-3
+  - Evidence: "use the UNGUARDED clobber as the identity gate's red demonstration"
+- Mech arm assigned by MEASUREMENT: one arm-only mech run per candidate row; 8 detected, 7 structurally blind with explanation
+  - Entry: 2026-08-24 EDT, session 38 part 14
+  - Evidence: "8 detected, 7 structurally blind with each blindness explained"
+- Acceptance run of blinded corpus: first pass 310 failures all compile failures, all corpus-side; not one answer mismatch
+  - Entry: 2026-08-24 EDT, session 38 part 17
+  - Evidence: "EVERY failure was a COMPILE failure; not one answer mismatch"
+- Retire an identity gate that can no longer have a valid pin rather than filter lines (filtered gate is a check-design failure); gate refuses loudly naming successor
+  - Entry: 2026-08-24 EDT, session 39 part 3
+  - Evidence: "Filtering the lines out was rejected on the gates' own \"a filtered gate is a check-design failure\" precedent"
+- Expected-UNDETECTED sabotage rows become a checked SAB_EXPECT contract (headline "unexpected: 0")
+  - Entry: 2026-08-24 EDT, session 39 part 7
+  - Evidence: "an expectation a human maintains in prose is a claim; an expectation the runner checks is a contract"
+- Real-world specimen (RFC5322 email) measured both ways: factoring strictly worse today -> sets wave G's checkable bar (byte-identity with hand-inlined)
+  - Entry: 2026-08-24 EDT, session 39 part 5
+  - Evidence: "wave G's checkable bar is byte-identity between the factored and the hand-inlined artifacts"
+
+### Session management, journals, crash resilience
+
+- Doubled journaling (entry at every phase boundary, with a "State if interrupted here" paragraph) when near subscription limits
+  - Entry: 2026-08-13, session 17, STD1
+  - Evidence: "DOUBLED JOURNALING (an entry at every phase boundary, not just session close) so an interruption loses nothing."
+- Lane judgment calls ruled by manager in the journal (unconditional stamp beat the brief's literal byte-identity invariant)
+  - Entry: 2026-08-13, session 17, STD1a rulings
+  - Evidence: "lane's D37 reading beat the brief's literal byte-identity invariant"
+- Close battery shape: tree committed first (mech archives HEAD); judge mech by trailer zeros not old row counts
+  - Entry: 2026-08-13, session 17, boundary 7
+  - Evidence: "judge against the trailer's own undetected/anomalies zeros, not the old 35"
+- Watchdog rules: 10-minute stall cron whenever lanes/async work in flight, liveness from WIP-commit age + mtimes NEVER ListAgents; timeout on every uncertain command, briefs included
+  - Entry: 2026-08-15 EDT, session 21/22 TT-2
+  - Evidence: "a lane dead for eleven hours while the manager \"waited\""
+- Record timezone changes in the journal: pre-change entries were UTC, later local
+  - Entry: 2026-08-15 EDT, timezone note
+  - Evidence: "EVERY date and time in this journal ... UP TO THIS POINT was UTC"
+- Owner rulings can be prepared as a package with mechanism options + recommendation; owner works material question-by-question; wake.md keeps the thread so shutdown mid-conversation resumes
+  - Entry: 2026-08-17 EDT, session 27 close / 28
+  - Evidence: "Frank's machine shut down mid-conversation. F-2 remains UNRULED."
+- Declare long probes with a one-line WIP commit so the watchdog can tell work from death
+  - Entry: 2026-08-19 EDT, session 34 part 1 lesson 2
+  - Evidence: "Long probes should be DECLARED (a one-line WIP commit \"starting N-minute probe\")"
+- State-securing entry written under token-exhaustion risk; wake.md rewritten crash-ready; successor must READ lane's refutation of an item before re-attempting
+  - Entry: 2026-08-19 EDT, session 34 part 5
+  - Evidence: "if not, wake.md IS the handoff"
+- Write the journal entry BEFORE launching the final baseline, amend after
+  - Entry: 2026-08-21/22 EDT, session 35 part 3 lesson 2
+  - Evidence: "write the journal entry BEFORE launching the final baseline, then amend with the result"
+- Autonomous run grant: "proceed through 6.4 and 6.5 autonomously, journal defensively": entry + commit at every stage boundary
+  - Entry: 2026-08-22 EDT, session 36 part 1
+  - Evidence: "never the narrative held in context until the end"
+
+### Safety, process hygiene, box sharing
+
+- Commit as you go is crash insurance: box rebooted mid-session, both lane agents died, zero work lost
+  - Entry: 2026-08-13, session 15
+  - Evidence: "\"commit as you go\" is crash insurance, measured."
+- After a session crash, reconstruct the journal from commits, scratchpad and gate logs and say so; everything of value was already committed
+  - Entry: 2026-08-15 EDT, session 22 crash reconstruction
+  - Evidence: "Panels are cheap to lose; uncommitted lanes are not."
+- Positive control for a kill/timeout needs its OWN artifact with bounded natural runtime; in-situ one silently didn't control (hardcoded CLIFF_N)
+  - Entry: 2026-08-16, session 25 cont.
+  - Evidence: "a fire control needs its OWN artifact with a bounded natural runtime."
+- CPU-primary budgets with wall backstop; CPU is load-RESILIENT (inflation ~2x) not load-independent; every clock needs its own headroom measurement; soft RLIMIT_CPU so diagnosis stays distinguishable from OOM-kill
+  - Entry: 2026-08-16, session 25 cont. 2, D45 3rd addendum
+  - Evidence: "'CPU is load-independent' was TOO STRONG"
+- D27 blinded corpus: author expectations from python, re-verified by independent from-scratch checker (678/678); disclosure of incidental ps-aux exposure recorded
+  - Entry: 2026-08-16, session 27
+  - Evidence: "Author disclosure handled: an incidental ps-aux exposure ... recorded; independence intact"
+- Sabotage validation run itself can be invalid (scratch copies couldn't find corpus; no-population guard read as sabotage firing)
+  - Entry: 2026-08-17 EDT, session 28 cont.
+  - Evidence: "the first validation run was itself invalid"
+- Poisoned pinned core: check per-core occupancy before pinned measurement; load average lies
+  - Entry: 2026-08-17 EDT, session 28 close, K24
+  - Evidence: "check per-core occupancy before pinned measurement"
+- A FLOOR gate that PASSES on a loaded box is a-fortiori valid; only failures need a quiet re-run; discard a contaminated run and archive both with triage
+  - Entry: 2026-08-19 EDT, session 34 wave C
+  - Evidence: "a FLOOR gate that PASSES on a loaded box is a-fortiori valid"
+- scripts/safekill built in ~40 minutes by one sonnet lane: pure /proc discovery with zero subprocess spawns, unconditional self/ancestor exclusion, refuse-by-default on ambiguity, audit line before signal; both guards verified red against sabotaged copies
+  - Entry: 2026-08-19 EDT, session 34 part 2
+  - Evidence: "the pgrep-f self-match hole closed structurally"
+- WIP-commit discipline survived an API outage (500/529) that killed both lanes mid-wave
+  - Entry: 2026-08-24 EDT, session 38 part 11
+  - Evidence: "The WIP-commit discipline did its job — the stranded work is minutes, not hours"
+- One heavy suite on the box at a time; lanes run targeted rows; manager runs battery on merged tree (after load 31/85 incidents)
+  - Entry: 2026-08-24 EDT, session 39 parts 2,3
+  - Evidence: "RULE ADOPTED: one heavy suite on the box at a time"
+
+### Owner collaboration and rulings
+
+- Refute a plan row's own prescribed cure by measurement before building it (declared-vs-live agreement clause was swap-blind: sabotage swapped modules, census stayed 93 SAME)
+  - Entry: 2026-08-12, session 14, MOD-0.7
+  - Evidence: "93 SAME / 6 SILENT / 1 NOROUTE, bit identical to the correct table"
+- Hand-written pins own the truth a self-referential check cannot see; keep the live check only for what it can deliver (election, promise consistency)
+  - Entry: 2026-08-12, session 14, MOD-0.7
+  - Evidence: "a control fed from the thing it controls reports agreement, and agreement is not correctness."
+- Development order ratified by owner after challenge; rationale = rebuild-risk (don't bind an API to one engine before the VM/lookbehind exist)
+  - Entry: 2026-08-13, session 16
+  - Evidence: "a `*_stream_*` API built now binds to the DFA engine only and gets forked or rebuilt"
+- Executing the design's own predicted probe (P-1) found a live shipped miscompile (K17) that 1284 tests and a 1.24M-pattern fuzzer missed
+  - Entry: 2026-08-14, session 19, R21
+  - Evidence: "found a shipped miscompile that 1284 tests and a span-comparing 1.24M-pattern fuzzer missed"
+- Owner pressing for examples ("pattern examples of the 20 false declines") refuted the claim: subject alphabet omitted the pattern's prefix char, so the sweep measured the pattern minus that character
+  - Entry: 2026-08-16, session 24 cont., D47 ruling 6
+  - Evidence: "a subject generator whose alphabet excludes a pattern character measures the pattern minus that character."
+- Magic numbers go in a named constants file (owner directive: K=8 lands as named constant)
+  - Entry: 2026-08-16, session 24 cont., D47
+  - Evidence: "this is a magic number. put it in a file of constants"
+- Report deviations from the design not silently taken (driven from tail of select_engine, flag masked from rx_info.flags) and get them ruled at landing
+  - Entry: 2026-08-16, possessify lane
+  - Evidence: "Reported deviations, not silently taken."
+- Backreference: refer to PCRE2 option survey for NOTBOL/NOTEOL provenance before erasing ^-vs-\A (owner caught it quoting pcre2pattern)
+  - Entry: 2026-08-19 EDT, session 34 part 1
+  - Evidence: "the alias ERASES the ^-vs-\A distinction the RULED NOTBOL/NOTEOL API-PARAM (D38) will need"
+- Owner states intent: guidelines serve reader understanding, blind compliance is the failure mode ("not comp-sci 101")
+  - Entry: 2026-08-21 EDT, session 35 part 1, M6-READ
+  - Evidence: "the five requirements are GUIDELINES serving reader understanding — blind compliance is the failure mode"
+- A structural check asserting direction (follow barrier present/absent) for a defect that was a number carried INTO the body
+  - Entry: 2026-08-22 EDT, session 36 part 8
+  - Evidence: "rules 1-5 read what a cut-bearing artifact CONTAINS, while the defect was a number carried INTO the body"
+- Owner ruling when oracle disagrees with derivation: keep derived semantics, document the deviation, classify upstream suspected-bug; new `# pcre2-deviates <U-ref>` marker skipped LOUDLY and counted
+  - Entry: 2026-08-22 EDT, session 36 part 11, D68
+  - Evidence: "I think you found an error in PCRE2"
+- A corpus can hold a property's SHAPE and none of its live POPULATION (ask which input axis the property varies over); defence in depth blinds single-edit mutation testing
+  - Entry: 2026-08-23 EDT, session 36 part 13
+  - Evidence: "an UNDETECTED row is a question — diagnose by measurement, never by reading"
+- Measure the sabotage's observability instead of retiring/declaring: two-site sabotage mechanism built after manager's first-preference ruling
+  - Entry: 2026-08-23 EDT, session 36 part 13 addendum
+  - Evidence: "the manager repeating the lane's earlier report instead of waiting for the measurement the ruling had asked for"
+- Owner prioritization rule for test-time: "spend the effort where it has the greatest impact"; measured NO for batching (17% of CPU for most design surface)
+  - Entry: 2026-08-23 EDT, session 37 part 2
+  - Evidence: "[TT-4] CLOSED (measured NO for gcc batching ...)"
+- Owner design principle "general mechanisms, not special cases": implement-then-replace fine, parallel paths not; no one-char fold, general form chartered as ENG-LOOK
+  - Entry: 2026-08-23 EDT, session 37 part 3
+  - Evidence: "implement-then-replace is fine; parallel paths are not"
+- Before recommending a surface change, read the layer under it (registry header had already ruled the question with measurements); owner pushes past 1-depth answers
+  - Entry: 2026-08-23 EDT, session 38 part 9
+  - Evidence: "before recommending a surface change, read the layer under it"
+- Owner design session before build ("let's go over these issues and design this session so we're ready"); five ASKs ruled with measured claims (\K in lookaround measured err 199)
+  - Entry: 2026-08-23 EDT, session 37 part 4
+  - Evidence: "MEASURED on 10.46 — default err 199"
+- A control with deliberately hard-coded expectations independent of the source caught an un-ruled edit (gentimeout 10/200)
+  - Entry: 2026-08-24 EDT, session 39 part 7
+  - Evidence: "The check-design lesson in its GOOD direction"
+
+## 2. FAILURES and INCIDENTS, with the rule each produced
+
+### Lane control, briefs, panels, messaging
+
+- An axis the census never varied (the gate) hid two tier-2 clause defects
+  - Entry: 2026-08-12/13, session 14
+  - Evidence: "An axis your census never varied is an axis your clauses are wrong about"
+- Mid-flight SendMessage rows applied after lane had already committed and reported; caught only because its invariant summary (43 rows) contradicted expectation
+  - Entry: 2026-08-13, session 16
+  - Evidence: "its invariant summary ... contradicted the expected additions, which is exactly how the gap was caught"
+- Cell hygiene slip: leftover probe.h in a D27 cell (glob missed paired header); stale default cell allowlist would have leaked fuzz alphabet
+  - Entry: 2026-08-15, session 21, M4.5d
+  - Evidence: "manager cell-hygiene slip (leftover probe.h, glob missed the paired header)"
+- Second TT-2 lane died; uncommitted sharding adopted with two real defects fixed
+  - Entry: 2026-08-15 EDT, TT-2
+  - Evidence: "the first dying ... its uncommitted sharding was adopted with two real defects fixed"
+- Manager believed a commit message (89ccd89 fixed caps sizing, not the 3-valued class) without grepping; lane corrected the brief
+  - Entry: 2026-08-15 EDT night, K21
+  - Evidence: "a commit message believed, not grepped, by the manager this time"
+- watchdog swallowed stdin: backgrounded job got /dev/null so possdiff fed ZERO subjects (77,725 -> 0 while green)
+  - Entry: 2026-08-16, session 25 cont.
+  - Evidence: "77,725 cells → 0 while \"0 diverged\" stayed green"
+- Lane's first replacement design (iterations>>SHIFT) BLOCKED by engine critic; refuted fix-of-record stood in 3 docs until F-2 ruled
+  - Entry: 2026-08-16/17, session 27
+  - Evidence: "BOOKKEEPING OWED ... the refuted entry-charge fix-of-record wording stands in the plan row, known_issues.md ..."
+- A 'zero pins move' claim by lane had two gaps (known_fail; stamped-ceiling suites)
+  - Entry: 2026-08-17 EDT, session 28, M4.6a
+  - Evidence: "The lane's \"zero pins move\" claim had two gaps"
+- Two stale design drafts spliced by the manager into docs before the lane's correction arrived; scripted INSERTION into prose mangled adjacent entries (3 of 6 edits)
+  - Entry: 2026-08-18 EDT, session 30 M4.7b
+  - Evidence: "prose that describes code has no test, so it has to be re-read every time the code moves"
+- Lane released its suite on wrong trigger (pid watched was not last battery stage)
+  - Entry: 2026-08-18 EDT, session 31 lesson 3
+  - Evidence: "background-work handoffs should name the COMPLETION ARTIFACT (the log trailer), never a process"
+- Lane FABRICATED a commit id in a message summary and self-corrected; numbers-re-run habit made it harmless
+  - Entry: 2026-08-18 EDT, session 33
+  - Evidence: "FABRICATED a commit id in a message summary and self-corrected within minutes"
+- Idle agent has no tool rounds: 3 missed completions of background runs, recovered by reading the artifact and pinging
+  - Entry: 2026-08-18 EDT, session 33 lesson 2
+  - Evidence: "An idle agent has no tool rounds — \"poll at each round\" does not wake a lane whose background run finished"
+- Lane edited the live runner script while an instance ran (bash reads incrementally)
+  - Entry: 2026-08-19 EDT, session 34 part 2
+  - Evidence: "the wave C lane then edited the live runner script WHILE an instance ran"
+- Near-miss takeover of a live lane: 50 minutes of silence was legitimate compute
+  - Entry: 2026-08-19 EDT, session 34 part 1
+  - Evidence: "NEAR-MISS TAKEOVER of a live lane"
+- Manager brief item contradicted design of record (restated milestone obligation over per-construct ruling)
+  - Entry: 2026-08-19 EDT, session 34 part 1 lesson 1
+  - Evidence: "MY BRIEF CONTRADICTED THE DESIGN OF RECORD"
+- (?J) took three wordings in one day because brief said "out of scope" ambiguously
+  - Entry: 2026-08-18 EDT, session 33
+  - Evidence: "(?J) took THREE wordings in one day"
+- Manager repeated the lane's earlier "inexpressible today" report in a close record instead of waiting for the measurement
+  - Entry: 2026-08-23 EDT, session 36 part 13 addendum
+  - Evidence: "MANAGER ERROR, recorded flatly"
+- Manager's brief propagated an unverified premise (compliance index flip; items 3): stop rule's second/third catch against manager brief
+  - Entry: 2026-08-19 EDT, session 34 parts 5-6
+  - Evidence: "The stop rule's THIRD catch against a manager brief this session"
+- rows_for.sh targeted tier never worked (printed SAB_IDs; 66/67 FATAL) so every "targeted" run so far had been a full matrix
+  - Entry: 2026-08-23 EDT, session 38 part 8
+  - Evidence: "D69's targeted tier has never actually run since it was written this morning"
+- Lane told twice to fix its instrument and did not (driver printing rc=0 under make errors three times)
+  - Entry: 2026-08-21 EDT, session 35 part 2
+  - Evidence: "a lane told twice to fix its instrument and not doing it is a compliance fact for the merge record"
+- Manager brief named only some extra modules: root cause of corpus failures
+  - Entry: 2026-08-24 EDT, session 38 part 17
+  - Evidence: "root cause MY brief"
+- Lane's report of "countermeasures in the tree" was false (ad-hoc shell); self-corrected
+  - Entry: 2026-08-23 EDT, session 38 part 6
+  - Evidence: "the \"countermeasures are in the tree\" sentence was false (ad-hoc shell, never written)"
+
+### Testing, oracles, check design, measurement
+
+- awk -v interprets escapes ("\v") and column-matched sweeps break when a key gets one space wider: pass via environment, match on key and trim
+  - Entry: 2026-08-12, session 14, MOD-0.7
+  - Evidence: "match on the KEY and trim, never on padding."
+- Unbounded compiles read as "still running", never "failed"
+  - Entry: 2026-08-15, session 21 lesson 3
+  - Evidence: "Unbounded compiles read as \"still running\", never as \"failed\""
+- Positive control that inherits the environment it simulates went vacuous on exactly the axes it guards (gen-timeout units)
+  - Entry: 2026-08-15, session 21 lesson 5
+  - Evidence: "state the COMPLETE environment per scenario"
+- harness had NO per-run timeout on generated matchers (D45 bounded compiles only); battery leg hung nine minutes
+  - Entry: 2026-08-16, possessify lane / session 24 close
+  - Evidence: "D45 bounds every compile of emitted C and nothing bounds its execution"
+- First battery for CPU-primary change failed the same artifact: 2.53s quiet -> 3.52 -> >5s under -j12
+  - Entry: 2026-08-16, session 25 cont. 2
+  - Evidence: "THE BATTERY CAUGHT THE MANAGER'S OWN ERROR."
+- Naive two-arm timing read showed +28% on a row where VM never runs; three-arm placebo methodology is why the number is trusted
+  - Entry: 2026-08-17 EDT, session 29
+  - Evidence: "three-arm placebo methodology is why the number is trusted, the naive two-arm read showed +28%"
+- Byte-identity check reported 572/572 differing because artifact embeds its -o filename (compared old.c vs new.c)
+  - Entry: 2026-08-18 EDT, session 30, M4.7b
+  - Evidence: "A control that varies something other than the thing under test reports a difference every time"
+- Mech matrix builds from git archive HEAD but reads row definitions from the working tree: a row detector must be COMMITTED before single-row run
+  - Entry: 2026-08-24 EDT, session 38 part 12
+  - Evidence: "S134's first run scored UNDETECTED on exactly this"
+- env CC="ccache gcc" with unquoted CC=$(CC) made the shell run gcc as a command
+  - Entry: 2026-08-21 EDT, session 35 part 2
+  - Evidence: "never put a space-containing CC through make"
+- Blinded author's generator and own checker SHARED a misreading of the directive-ordering rule; passed internally, failed against harness
+  - Entry: 2026-08-24 EDT, session 38 part 17
+  - Evidence: "0-failures-at-authoring proved internal consistency, not format correctness"
+- Mech anomaly S48 APPLY-FAILED while anchor tripwire said "all anchors resolve": two instruments asked different questions
+  - Entry: 2026-08-22 EDT, session 36 part 8
+  - Evidence: "An instrument gap between the two checks, found the first time they disagreed"
+
+### Session management, journals, crash resilience
+
+- Tier-1 crash sat exactly where an extracted function's own comment said the first producing port must revisit it, two milestones overdue
+  - Entry: 2026-08-12/13, session 14, MOD-0.8
+  - Evidence: "A carried-forward comment is a carried-forward OBLIGATION"
+- Lanes idle mid-async-run without completion wake (twice more in session 18; tt1 Monitor missed wake twice); artifact-watcher + nudge protocol recovered
+  - Entry: 2026-08-13/14, sessions 15,18
+  - Evidence: "Lanes idling mid-async-run happened twice more"
+- Session 22 crash left no journal entry and stale wake.md; critic panel in flight lost
+  - Entry: 2026-08-15 EDT late afternoon
+  - Evidence: "The twenty-second session crashed ... leaving no journal entry and a stale wake.md"
+- Fix lane died to an API-529 storm mid-landing; checkpoint-commit habit preserved everything
+  - Entry: 2026-08-17 EDT, session 28 close
+  - Evidence: "The fix lane died to an API-529 storm mid-landing; the checkpoint-commit habit preserved everything"
+
+### Safety, process hygiene, box sharing
+
+- Liveness poll `pgrep -f "make mech"` matched its own harness wrapper and answered RUNNING 51+ minutes after completion; belief error, not a crash
+  - Entry: 2026-08-12, session 14
+  - Evidence: "the poll matches ITSELF" -- the manager's outside-in liveness poll answered MECH_RUNNING 51+ minutes after completion"
+- Mirror twin: manager judged a LIVE lane dead (ListAgents empty while it was blocked in a foreground make test) and meddled in its worktree
+  - Entry: 2026-08-12/13, session 14
+  - Evidence: "judged a live lane dead (ListAgents empty while it was blocked in a foreground make test) and briefly meddled in its worktree"
+- Box rebooted (external cause) mid-session killing both lane agents; clean systemd shutdown found via journalctl
+  - Entry: 2026-08-13, session 15
+  - Evidence: "THE BOX REBOOTED 02:50 ... both lane agents died, ZERO work lost"
+- D45 incident: cc1 at 100+ min on one generated 3.5 MB file, concurrent batteries (lane started a second without killing the first), and `make test | tail` then `$?` meant two EXIT=0 reports were meaningless
+  - Entry: 2026-08-15, session 21
+  - Evidence: "my own `| tail` pipe bug that made two EXIT=0 reports meaningless"
+- Lane went idle without final report (known pattern); work found complete via worktree-state check
+  - Entry: 2026-08-14, session 20
+  - Evidence: "the lane went idle without its final report arriving (a known pattern)"
+- Merge misfired into a lane's worktree because the persistent shell cwd had drifted there; caught and redone with absolute paths
+  - Entry: 2026-08-15 EDT night
+  - Evidence: "one merge misfired into a lane's worktree because the persistent shell's cwd had drifted there"
+- Manager's cwd is state: two mid-session commands ran against the wrong tree
+  - Entry: 2026-08-16, session 25 cont. lesson 4
+  - Evidence: "The manager's cwd is state: two mid-session commands ran against the wrong tree"
+- `pkill -f "make test"` matched the manager's own tool shell TWICE
+  - Entry: 2026-08-16, session 25 cont. 2
+  - Evidence: "`pkill -f \"make test\"` matched the manager's own tool shell TWICE"
+- Timeout-killed bench harness leaves pinned children, later grid halves on shared core
+  - Entry: 2026-08-17 EDT, session 28 close
+  - Evidence: "a timeout-killed bench harness leaves pinned children"
+- LeakSanitizer is a no-op on the dev box (ptrace_scope 1): the leak half of asan coverage never ran; a lane's "no leaks" claim was reasoned not verified
+  - Entry: 2026-08-18 EDT, session 30, M4.7b
+  - Evidence: "LeakSanitizer is a no-op on this box"
+- `pgrep -f "make -j12 -Otarget test"` waiter matched its own command line and waited on itself for over an hour
+  - Entry: 2026-08-18 EDT, session 30, M4.7b
+  - Evidence: "waited on itself for over an hour after the suite had finished"
+- Manager launched duplicate of delegated mech run then pkill -f killed lane's canonical S76 child mid-row; the victim's log just stops with no trailer
+  - Entry: 2026-08-19 EDT, session 34 part 2
+  - Evidence: "killing the lane's canonical S76 child mid-row, HOURS after journaling wave B's identical lesson"
+- Manager removed safekill worktree while lane was still VERIFYING in it
+  - Entry: 2026-08-19 EDT, session 34 part 2
+  - Evidence: "done working ≠ done verifying"
+- Manager removed worktree while lane's background make test was still running in it (twice: brfix 2026-08-23, waveE2 2026-08-24)
+  - Entry: 2026-08-23 EDT, session 36 part 13; 2026-08-24 EDT, session 38 part 14
+  - Evidence: "I removed worktrees/waveE2 while the lane's background make test was still running in it"
+- Sub-lane wrote build scratch to /tmp/sr_pf: scope deviation; scratchpad path must be a REQUIREMENT in briefs and echoed
+  - Entry: 2026-08-23 EDT, session 38 part 2
+  - Evidence: "the scratchpad path is a REQUIREMENT and the agent echoes where it wrote"
+- pkill -f run_sabotage_matrix.sh by a lane killed six D69 rows; manager's pgrep -f self-matched again
+  - Entry: 2026-08-24 EDT, session 39 parts 2,3
+  - Evidence: "srA2's `pkill -f run_sabotage_matrix.sh` ... killed them"
+- Three lanes' suites + two mech sweeps at load 31/85: resource CPU cap and compile timeout failures, clean solo
+  - Entry: 2026-08-24 EDT, session 39 parts 2,3
+  - Evidence: "load hit 85 on 12 cores — three heavy suites again"
+- Two unreproducible under-load one-offs (K31 watch item); san failed once under concurrent load, green on rerun
+  - Entry: 2026-08-24 EDT, session 38 part 14
+  - Evidence: "the pair is now K31, a watch item with a third-instance investigation protocol"
+- Dev UI crashed after work, before close bookkeeping; close entry reconstructed by next session; [SAFEKILL] row sat STATE:started for 3 days after merge
+  - Entry: 2026-08-21/22 EDT, session 35 part 3
+  - Evidence: "the single thing lost"
+- Branch with hand-cell binary stale: D27 re-run from worktree used pre-module binary because cd moved the shell (22/134)
+  - Entry: 2026-08-22 EDT, session 36 part 7
+  - Evidence: "PCREC must be set explicitly when the harness runs from a different tree"
+- Scratch pcrec worktree of different base: lane edit script asserted out before writing and was committed as FIXED (V-5 failure class repeated one commit after being told)
+  - Entry: 2026-08-23 EDT, session 38 part 6
+  - Evidence: "an edit script that asserted out before writing, committed as FIXED"
+
+### Owner collaboration and rulings
+
+- A documented expected-UNDETECTED (S19) had expired in both directions with nothing checking it
+  - Entry: 2026-08-12/13, session 14
+  - Evidence: "A documented expected-UNDETECTED is a claim with an EXPIRY DATE"
+
+## 3. LESSONS stated but recurring or not yet applied (candidates to apply now)
+
+- Liveness-poll self-match (pgrep -f) recurred and became a hard rule only after two collateral kills on 2026-08-19 (safekill); memory says "grep matches its own shell"
+  - Entry: 2026-08-12 session 14 vs root CLAUDE.md
+  - Evidence: "pgrep -f"
+- Manager cwd drift into a worktree recurred (session 22 merge; later "committed into the wrong repo once"; 2026-09-25 memory)
+  - Entry: 2026-08-15 EDT night
+  - Evidence: "persistent shell's cwd had drifted there"
+- A control that shares a source with the subject recurred in the same milestone that found it (MOD-0.7: twice) and in S34 re-fold, K14 re-scope, S4 retarget
+  - Entry: 2026-08-12 session 14; 2026-08-14 session 18
+  - Evidence: "Twice in one milestone: a control fed from the thing it controls reports agreement"
+- Lanes idling on foreground long runs / dying with outstanding validation recurred (tt1, TT-2, m45a, 11-hour dead lane) -> DO-THEN-FINISH rule only came 2026-09-08
+  - Entry: 2026-08-12 .. 2026-08-15
+  - Evidence: "a lane dead for eleven hours while the manager \"waited\""
+- Sweep-template lesson (tail template cannot generate the zero-tail cell) hit a FIFTH time at (?P truncation
+  - Entry: 2026-08-12/13, session 14, R20
+  - Evidence: "the sweep-template lesson's FIFTH recurrence"
+- Message races lane<->manager recur every session; protocol (verify-after-apply, resend-request, committed-doc pointer) kept but root fix (files not messages to busy lanes) only came 2026-08-30
+  - Entry: 2026-08-14 .. 2026-08-17, sessions 19,21,24,26,27,28
+  - Evidence: "the resend-request habit caught three more raced reports"
+- "Vacuous green / measured nothing" self-caught in nearly every lane (empty-vs-empty, DFA-routed witness, never-ran builds, own-filename byte-identity, stdin-swallowed 77,725->0) -> a standing pre-landing checklist item not just per-lane luck
+  - Entry: 2026-08-15 .. 2026-08-17
+  - Evidence: "Vacuous-green inventory this arc ... four-and-a-half in one lane"
+- Citation/number drift: stale figure carried forward 5 times by a lane (-fno-possessify control) ; "line numbers" / plan-row text staleness in three docs
+  - Entry: 2026-08-17 EDT, session 28 cont.
+  - Evidence: "Fifth instance of the error class, first one self-caught."
+- pkill -f self-match recurred TWICE in one session (2026-08-16) after journaled 2026-08-12; only became scripts/safekill rule after 2026-08-19 collateral kills
+  - Entry: 2026-08-16, session 25 cont. 2
+  - Evidence: "(compound commands quoting their own kill pattern)"
+- Sort -u locale undercount hit 3+ times (R24 M-F1, possessify lane, R30 M6) despite being recorded each time; should be a shared helper/lint not a lesson
+  - Entry: 2026-08-16 .. 2026-08-18
+  - Evidence: "knowing that is not the same as remembering it."
+- Manager pgrep/pkill self-match hit 5+ times across 2026-08-12, 08-16, 08-18, 08-19 until scripts/safekill (08-19)
+  - Entry: 2026-08-12 .. 08-19
+  - Evidence: "pattern-match against /proc, never against your own invocation"
+- Messages to busy lanes missed 3+ times per session (08-14..08-19): only artifact-based rulings file (2026-08-30) really fixed it
+  - Entry: 2026-08-14 .. 08-19
+  - Evidence: "a lane mid-long-task does not see messages until its next tool round"
+- Lane final report as plain text / idle without SendMessage hit repeatedly (08-14, 08-17 x3, 08-18 x2) -> BOILERPLATE rule (2026-09-12/13)
+  - Entry: 2026-08-14 .. 08-18
+  - Evidence: "reply via SendMessage"
+- Lanes that die to API errors (529) recovered by checkpoint commits each time; the incremental-commit rule keeps paying
+  - Entry: 2026-08-17, 08-19
+  - Evidence: "the checkpoint-commit habit preserved everything"
+- Prose-describing-code goes stale (5 instances across two actors in session 30; again in later sessions' citation provenance) -> eventual spec_history/line-cite checks
+  - Entry: 2026-08-18 EDT, session 30
+  - Evidence: "inserting into it is not."
+- Stale-premise charters at expansion recurred twice in one session (M4.7a, M4.7c)
+  - Entry: 2026-08-18 EDT, session 30
+  - Evidence: "THE SECOND STALE-PREMISE CHARTER OF THE SESSION"
+- Control sharing source with subject appears INSIDE the directory built to prevent it (identity gate reference knob in dfa.c)
+  - Entry: 2026-08-19 EDT, session 34 part 3
+  - Evidence: "The control-shares-a-source class INSIDE the directory built to prevent it."
+- Worktree removed while lane's background validation still running recurred (brfix 08-23, waveE2 08-24, safekill 08-19): rule only became scripts/wtprune gating in later sessions
+  - Entry: 2026-08-19, 08-23, 08-24
+  - Evidence: "done working ≠ done verifying"
+- pkill/pgrep -f hit again 2026-08-24 (lane's pkill; manager's self-match) AFTER safekill was built 2026-08-19
+  - Entry: 2026-08-24 EDT, session 39 parts 2-3
+  - Evidence: "never from a pattern that the killing shell can match"
+- Blinded corpus authored with directive-order/`features` slips in 3 of 4 modules (atomic, backrefs, lookaround): a standing blind-author checklist item "features lines come AFTER pattern; REPLACE std1" never baked into brief template
+  - Entry: 2026-08-22..24 EDT, sessions 36,38
+  - Evidence: "the `features` directive REPLACES std1"
+- Briefs missing modules for D27 corpora recurred (lookaround brief named only assertions/backrefs)
+  - Entry: 2026-08-24 EDT, session 38 part 17
+  - Evidence: "Missing module names ... root cause MY brief"
+- Heavy-suite contention producing resource-cap failures hit 3+ times in sessions 37-39 (load 17/31/85); resolved only by the "one heavy suite" rule
+  - Entry: 2026-08-24 EDT, session 39
+  - Evidence: "same two patterns, always clean solo"
+- Sabotage-row staleness (S43, seven anchors, three anchors, S48 count) recurred every few merges; solution was machine tripwire on merge bar (done)
+  - Entry: 2026-08-17..22
+  - Evidence: "The tripwire is now three-for-three on live catches."
+- A prose claim that ought to be true ("sentence that ought to be true") recurred in R32/R33/R34 panels: only grep or second instrument catches it; check_selfconsistency.py is the first mechanical form
+  - Entry: 2026-08-23 EDT, session 38 part 7
+  - Evidence: "the sentence that ought to be true"
+
