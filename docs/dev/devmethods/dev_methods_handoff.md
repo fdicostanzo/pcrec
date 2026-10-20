@@ -832,3 +832,285 @@ or report status now". The owner's ruling: a close should wait for an
 opportunity, not interrupt current work.
 
 ---
+## 6. Communication between sessions and agents
+
+### 6.1 Durable things travel by single-writer files; live coordination by message
+
+**Rule.** Between long-running peer sessions, anything that must survive a
+session boundary goes into a **file with exactly one writer**:
+
+- rulings, priorities, version pins, requests and their answers;
+- for the bench: an inbox the manager writes and an outbox the bench
+  writes, both kept in the bench repository;
+- for the kit: a requests ledger the manager writes and a responses
+  ledger the kit writes.
+
+Items are numbered and never deleted. The reader acknowledges each item
+in place. Each write is a single-file commit with a fixed prefix (for
+example `[inbox]`). Live messages carry coordination when both sessions
+are up, and nothing else. The inbox is the **only** file the manager
+writes in the peer's repository.
+
+**Why.**
+
+- Priorities sent by message to a peer that was down or mid-task were
+  lost.
+- The plan once cited a live peer message before the durable record
+  existed.
+- A single-writer ledger makes ownership of the next move unambiguous,
+  but only if both sides remember who owns it. In the R-8 deadlock, the
+  manager waited for the kit to "send" a request while the kit waited
+  for the manager to file it. The ledger was the manager's, so the next
+  move was always the manager's. Neither side moved until the owner
+  asked.
+
+**How.**
+
+- Make "fetch, commit and push together" one ritual. An unpushed inbox
+  item once sat stranded for hours, and non-fast-forward pushes took
+  three tries.
+- Write inbox text through stdin, not quoted shell arguments. The first
+  copy of one note lost its code spans to double-quoted ssh.
+- After a peer delivers, file the next request in the same sitting.
+- When a change adds values a peer parses (for example new stamp values),
+  send the relay at merge time. One went out a pin late and broke the
+  bench's self-check gate.
+
+### 6.2 Deadlock checks only while waiting on someone
+
+**Rule.** The heartbeat carries a conditional check. Only if you are
+waiting on a specific peer for a specific thing, send that peer one short
+message that names what you wait for and asks whether it waits on you.
+When a peer's check says it waits on you, answer with a one-line
+acknowledgement plus status, never silence. Never message a peer you are
+not waiting on.
+
+**Why.** An hourly check-in that pinged peers the manager was not waiting
+on woke idle sessions for a full turn each. Silence read as "not waiting"
+left the kit unsure whether its question had landed.
+
+### 6.3 Mid-run instructions to a lane are files it polls
+
+**Rule.** A HOLD, a LIFT, a revoke or a mid-run ruling to a running lane
+is a file in the lane's **own** worktree that its brief tells it to check
+before every execution step:
+
+- `.hold` and `.lift` for slots;
+- `.hold` re-appearing means revoke;
+- `<lane>_rulings.md` (gitignored) for rulings.
+
+Send the file **and** a message. Demand an acknowledgement for the
+message.
+
+**Why.**
+
+- A busy lane does not read messages (section 3.9).
+- `.lift` works in one direction only. Once a lane has been lifted,
+  nothing revokes its slot except a message it cannot read. One lane ran
+  30 minutes of suites beside the manager's chain after a "hold" message.
+- The manager repeatedly wrote rulings files into the *main* tree, where
+  the worktree lane never looked. Every lane report said "polled
+  repeatedly, never present". It was harmless only because the message
+  carried the same content.
+- The message channel alone also failed: two rulings sent to a busy lane
+  were "delivered" and never read.
+
+### 6.4 A HOLD lists forbidden shapes and demands an ack
+
+**Rule.** When a lane must not use the box (for example during a peer's
+timing window), the hold message:
+
+- lists what is forbidden **by shape**: any make target, any compiler
+  run, any test script, any sweep, loop or background job;
+- names the one thing allowed: edit, commit, read, one compile of one
+  input;
+- demands a one-line acknowledgement naming what was stopped.
+
+**Why.** A lane told "no full test suite" ran a single harness section
+during the bench's measurement window. That section starts one worker
+per core, so it is a heavy run. Load went from 1.6 to 9.4 and the bench
+lost an attempt. A second breach followed within five minutes, before
+the lane had drained the re-sent message. "No full battery" reads to a
+lane as permission for everything smaller. Give a **numeric** cap for any
+sweep ("at most 50 compiles"): a brief that said "a handful" got a
+35,980-compile sweep.
+
+### 6.5 An executor protocol for runs on another box
+
+**Rule.** When a peer runs your jobs on hardware you cannot reach, send
+exact commands, expected counts and completion lines. The executor
+reports and quotes. It does not diagnose.
+
+**Why.** A flagged discrepancy (47 against an expected 26) was resolved by
+the manager in one line because the output was quoted verbatim. Peer prose
+that paraphrased numbers produced a "three findings" report. All three
+turned out to be one +2-row offset in the prose, found only by
+reconciling against the raw transcript.
+
+### 6.6 State facts across a boundary, not methods
+
+**Rule.** An interface between two owners carries facts about the
+problem, not the method the other side should use. That means positions,
+rates, sets, bounds and an ordered ranking. It does not mean "a second
+pick at this distance". Comments, briefs and messages do not describe how
+the other side "could" use a fact either.
+
+**Why.** A field shaped like a method (`plan_pos2`, a pcrec-chosen second
+position) would have frozen one method into the contract. The general
+fact is an ordered array of positions with their rates. It lets the kit
+choose and later change its method without a contract event.
+
+### 6.7 No laundering, no back doors
+
+**Rule.** Permission boundaries are per session. Never ask a peer to do
+something your own session was denied, and never relay a peer's request
+for something it was denied. When a peer relays "the owner ruled X",
+confirm with the owner before recording it. Never start a peer
+non-interactively in a way that bypasses its normal tools or billing.
+After bootstrap, never type into a peer's terminal. Use the inter-session
+message tool only.
+
+**Why.**
+
+- A peer whose permission check blocked a launch correctly stopped and
+  escalated to the owner, who unblocked it himself.
+- A peer asked the owner to run `curl … | sh` to install a toolchain.
+  The request was refused, and a rule and a hook followed (section 10.8).
+- Two relayed rulings were confirmed with the owner before recording.
+  Both were real, and both gained detail in the confirmation.
+- A misrelay once attached the owner's answer to the wrong question. The
+  decision entry had to be rewritten.
+
+### 6.8 Sub-agents of lanes hand back to the manager
+
+**Fact to design around.** In the harness pcrec used, a lane's own
+sub-agents hand back to the *manager*, not to the lane that spawned them.
+So brief helper-spawning lanes to give their helpers output-file paths,
+and to read those files.
+
+---
+
+## 7. Liveness and monitoring
+
+### 7.1 Liveness is a fact about artifacts, never a process grep
+
+**Rule.** Judge whether a run is alive or finished from artifacts, in this
+order of trust:
+
+1. the lane's WIP-commit age;
+2. modification times of its uncommitted files;
+3. the run log's tail and completion trailer;
+4. a PID file read by exact PID.
+
+Never use `pgrep -f`, `pkill -f`, or a grep of the process table for a
+command name. The agent list is not proof of death.
+
+**Why.**
+
+- A liveness poll `pgrep -f "make mech"` answered RUNNING for 51 minutes
+  after the run had finished. The harness wraps each polling command in
+  `bash -c` with the pattern in its own command line, so the poll matched
+  itself.
+- Seventeen stale watcher shells from earlier sessions deadlocked on each
+  other's command lines.
+- A waiter `pgrep -f "make -j12 test"` waited on itself for over an hour.
+- `pkill -f "make test"` matched the manager's own shell twice. A lane's
+  `pkill -f run_sabotage_matrix.sh` killed six rows of another lane's
+  sweep.
+- An empty agent list was read as "lane dead" while the lane was blocked
+  in a foreground run, and the manager meddled in its worktree.
+
+**How.**
+
+- Every long run writes a grep-able completion trailer, for example
+  `== run COMPLETE` or `sections ran: N/M` plus an rc line.
+- Watchers grep the trailer.
+- If you must match a command line, build the literal from two shell
+  variables so it never appears in any argv (`P="mgr/batt";
+  pgrep -f "${P}ery.sh"`). Better, read a PID file.
+- A fresh mtime is not an append. Check the tail's timestamp.
+
+### 7.2 Watch with scripts, not with model turns: the monitoring ladder
+
+**Rule.** Use the cheapest watcher that can make the call:
+
+1. **pure liveness or completion**: a plain background watcher script
+   with zero model calls. It loops on the artifacts and exits, producing
+   one notification, only on actionable state: run finished, lane quiet
+   for 20-25 minutes, worktree gone. Cap it at about 4 hours and relaunch
+   on the cap;
+2. **mechanical follow-up** (read the log, fill in owed numbers,
+   re-pin): a fresh small-context agent;
+3. **mid-run judgement** (staged runs, abort-on-first-failure): a
+   dedicated watcher agent with a tiny brief, blocking in a bounded
+   script that exits on state change;
+4. **merge or ruling**: the manager.
+
+**Why.** The first watchdog was a prompt-firing cron every ten minutes. It
+existed partly to stop tasks idling and wasting tokens, and it became the
+largest waste in the ledger (section 3.12). The fix was to keep the
+*monitoring* context small, not to keep the big context warm.
+
+### 7.3 Watcher scripts fail too: test them
+
+**Rule.** A watcher script must:
+
+- pass a syntax check;
+- produce correct output once on a known-done case before you trust it;
+- require at least three consecutive misses before declaring a stall;
+- key on the run's real end line, not on "the log went quiet";
+- key on the owning worktree's artifacts, never on a process name.
+
+Write DONE only after the last stage succeeds; otherwise write FAILED.
+Allow one waiter per worktree.
+
+**Why.** Watchers failed in many ways:
+
+- an mtime test compared against the last commit and stayed silent;
+- `declare -A` broke on bash 3.2;
+- BSD `find -newermt` silently matched nothing;
+- a single-miss test false-alarmed;
+- a check fired on the first report commit instead of the final one;
+- a grep matched its own launcher, causing a 2-hour stall;
+- a quiet-log heuristic read a step that logs only at its end as done;
+- a slot script's exit trap wrote DONE when a stage had died, and the
+  next chain was released early;
+- two waiters on one worktree both fired on one `.lift` and ran
+  interleaved chains over the same logs, which contaminated every
+  verdict.
+
+**How.** Keep **one** committed, tested watcher and one committed chain
+runner, and stop writing new ones in scratch. pcrec has partial
+equivalents (section 13 lists what is still missing). Never rewrite a
+chain script a live waiter may run, because bash reads scripts lazily.
+
+### 7.4 Read a run's verdict from its own lines
+
+**Rule.** Take a suite's verdict from the build tool's own failure lines:
+for GNU make, `*** [Makefile:NNN: test-X] Error 1`. Do not take it from a
+"sections ran" count, a grep for `FAIL`, a pipe's exit status or a
+summary line. Capture `$?` immediately, before any command substitution.
+
+**Why.**
+
+- "sections ran: N/M" counts what `make -k` launched, not what passed. A
+  red registry section was read as green twice in one day.
+- A coverage guard's message never contained "FAIL:", so a grep for FAIL
+  read a red run as clean.
+- The first Linux form of the verdict grep missed a red. Linux make
+  prefixes `Makefile:<line>:`.
+- `make test | tail -30` reports tail's exit status. That was the first
+  command of the very panel convened to find vacuous gates.
+- `echo "$(date) … rc=$?"` always prints rc=0, because `$(date)` resets
+  `$?`. A merge went to main on false rc lines.
+- `| tee` masks the exit code. Use `${PIPESTATUS[0]}`.
+
+**How.** Put the exact verdict command in the situation index. Use one
+shared "read verdict" helper in every driver. A run that writes no
+trailer was killed; it did not fail and it did not pass. Before calling a
+run slow or stuck, check the box's own clock and CPU. A maintenance sleep
+of 879 s once read as a code defect under a wall-clock timeout; the
+signature was wall time roughly equal to the sleep with CPU near zero. A
+UTC-versus-local misread once manufactured a four-hour phantom stall.
+
+---
