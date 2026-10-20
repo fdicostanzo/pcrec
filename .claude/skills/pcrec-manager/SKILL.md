@@ -23,6 +23,13 @@ discuss design points, and run everything in between.
    idle gaps — measured at one-line cost per tick over ~24h. MAIN
    SESSION ONLY (lanes are 5-min TTL and never self-keepalive). Crons
    are session-only: create at every session start, delete at close.
+   **ONLY WHILE MONITORING** (Frank, 2026-10-20: the CLI autocompacts
+   during prolonged idle): keep the heartbeat while lanes, watcher
+   scripts or a peer mid-handoff are in flight. With nothing in flight,
+   a fixed-time wait (one-shot alarm), or a wait on another session's
+   message, DELETE it and let the session go idle — after writing a
+   short durable in-flight note (what you wait for, who messages you,
+   peer addresses, next action per trigger) so compaction loses nothing.
    **The heartbeat also carries the DEADLOCK CHECK** (Frank, 2026-10-08;
    revised 2026-10-09: no separate check-in cron). Add to its prompt: ONLY
    if you are currently waiting on a specific peer session (pcrecdev3 kit,
