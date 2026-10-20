@@ -254,6 +254,11 @@ Append-only where noted; the restart/status-recovery record for the project.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.
+- `owner.md` — untracked (gitignored) OWNER'S VIEW (Frank, 2026-10-20): the
+  one file the owner reads at a glance — open questions with one-line
+  summaries, what is running now, what is next, blockers/issues, done
+  today. The manager refreshes it at every state change; committed docs
+  win on any disagreement.
 
 - `bare_pcrec_survey.txt` — K37's evidence (2026-08-25, lane srMech): the
   line-numbered list of every bare (unbudgeted) `pcrec` invocation in
@@ -731,6 +736,7 @@ change.
   128 (pattern, regime) cells of pcrec-bench's `capability@0.1` at pin
   `25b1984f`, buckets them by cause off the D81 stamps, and proposes six
   plan rows. See `optloop/CLAUDE.md`.
+- `devmethods/` — the DEVELOPMENT-METHODS HAND-OFF (2026-10-20, lane devmethods, docs only): `dev_methods_handoff.md` (portable practices with rule / why / how, anti-patterns, start-up checklist), `apply_here.md` (ranked proposals for this project, unruled) and the four journal reader notes they were built from. See `devmethods/CLAUDE.md`.
 - `meta/` — the SIDECAR: learnings about developing WITH models that
   transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
   that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is

@@ -72,6 +72,71 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 1b. [DD-11.5] CK-8: THE A_CTX TRUTH TABLE AGAINST LIBPCRE2
+#     (ctxfn_table_check.py; docs/design/ctx_span.md §6). Every row of
+#     src/core/ctxfn.def, its nine cells derived from libpcre2 through the
+#     row's canonical lookaround spelling (and its native one where it has
+#     one: \b, \B, (?m)^, (?m)$) over the {a,-,\n} family; every row must
+#     reach all nine cells. FAILING DIRECTION: one flipped cell (SP-8,
+#     sabotage S1158) is reported by row and cell.
+# ---------------------------------------------------------------------------
+echo
+echo "== [DD-11.5] CK-8 the context truth table against libpcre2 =="
+if ck8_out="$(python3 "$SCRIPT_DIR/ctxfn_table_check.py" 2>&1)"; then
+    case "$ck8_out" in
+        SKIP*) echo "$ck8_out"; ok "CK-8: skipped loudly (libpcre2-8 absent), not silently" ;;
+        *)     ok "CK-8: ${ck8_out##*$'\n'}" ;;
+    esac
+else
+    echo "$ck8_out" >&2
+    bad "CK-8: src/core/ctxfn.def disagrees with libpcre2"
+fi
+
+# ---------------------------------------------------------------------------
+# 1c. [DD-11.5] R1: THE ABSENT INDEX IS GATED ON THE ROW (ctx_span.md §4.2.3,
+#     CK-5's witness). A four-cell row (`\b`) must read the next byte's bit
+#     under EVERY atom of the `pos == n` view, never "absent": then the end
+#     view's closure equals the eol view's and no `_forward_end_view` table is
+#     emitted. Witness `(?:\w*?)*\b` under -e utf8 (the K50 gate makes the
+#     view live); an ungated absent read interns an end view there (sabotage
+#     S341, re-aimed). CONTROL: `(?:\w*?)*(?m)$`, whose MLINE_EOL row DOES
+#     read absent next, must emit one, or the witness proves nothing. Then
+#     A8: a `(?m)` anchor raises no lookbehind length (VALID_LB).
+# ---------------------------------------------------------------------------
+echo
+echo "== [DD-11.5] R1 the absent index is gated on the row =="
+r1_views() {   # r1_views PATTERN -> count of forward end-view tables
+    if pcrec_run "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/r1.c" --pattern "$1" \
+            >/dev/null 2>"$WORKDIR/r1.err"; then
+        grep -c '_forward_end_view\[' "$WORKDIR/r1.c"
+    else echo "ERR"; fi
+}
+r1w="$(r1_views '(?:\w*?)*\b')"
+r1c="$(r1_views '(?:\w*?)*(?m)$')"
+if [ "$r1w" = "0" ] && [ "$r1c" != "0" ] && [ "$r1c" != "ERR" ]; then
+    ok "R1: a four-cell row interns no end view under utf8 ($r1w); the absent-reading control does ($r1c)"
+else
+    bad "R1: witness (?:\\w*?)*\\b emits $r1w forward end view(s), control (?:\\w*?)*(?m)\$ emits $r1c -- want 0 and >0 (a copied row read an absent side, or the control stopped reaching the view)"
+fi
+
+# A8 (ctx_span.md §4.2.5): a `(?m)` anchor raises NO lookbehind length --
+# libpcre2 reports 0 for `(?m)^a` -- where `\b` raises 1 (it reads the
+# previous character). Read off `<PREFIX>_VALID_LB` under -e utf8 (sabotage
+# S1155: the builder copies `\b`'s raise).
+a8_lb() {
+    if pcrec_run "$PCREC" --features all -e utf8 -p rx -o "$WORKDIR/a8.c" --pattern "$1" \
+            >/dev/null 2>"$WORKDIR/a8.err"; then
+        sed -n 's/^#define rx_VALID_LB \([0-9]*\)$/\1/p' "$WORKDIR/a8.c"
+    else echo "ERR"; fi
+}
+a8m="$(a8_lb '(?m)^a')"; a8b="$(a8_lb '\ba')"
+if [ "$a8m" = "0" ] && [ "$a8b" = "1" ]; then
+    ok "A8: (?m)^a stamps VALID_LB 0 (libpcre2's maximum lookbehind); the \\b control stamps 1"
+else
+    bad "A8: (?m)^a stamps VALID_LB '$a8m', \\ba stamps '$a8b' -- want 0 and 1 (the (?m) builder raised a lookbehind length, or the stamp moved)"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. THE CONTROL UNDER tests/reject's TWO-ANSWER PINS
 # ---------------------------------------------------------------------------
 echo

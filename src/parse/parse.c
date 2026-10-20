@@ -62,12 +62,56 @@ Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 /* [UCP] U2 A new A_CTX node over the published code-point set `iv[0..n)`
  * with truth function `fn` (CTXFN_*). The set is shared, never copied: a
  * published payload is read-only (cpset.c's rule). */
-Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)
+Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn)
 {
     Ast *a = node(cx, A_CTX);
     a->u.ctx.iv = iv;
     a->u.ctx.n  = n;
     a->u.ctx.fn = fn;
+    return a;
+}
+
+/* [DD-11.5] THE NEWLINE CONVENTIONS a `(?m)` anchor can be built under, as
+ * a first-match table (ctx_span.md §3.3 [r4rc R3]). A `(?m)` anchor is the
+ * context node only where the convention's newline is ONE byte: CRLF is a
+ * two-offset fact and ANY/ANYCRLF cross sets, which is [ENG-LOOK]'s
+ * multi-offset object (UL-e). Since the multiline NFA kinds are gone there is
+ * no fallback kind, so a multi-byte convention REFUSES BY NAME here until UL-e.
+ * pcrec has one convention today (NEWLINE_LF, DD-11), so the refusal has no
+ * population; a convention row added to pcrec's options is read here. */
+typedef struct {
+    const char          *name;      /* PCRE2_NEWLINE_* spelling, without the prefix */
+    unsigned             nl_bytes;  /* the newline's length in bytes */
+    const unsigned char *set;       /* the one-byte newline set, when nl_bytes == 1 */
+} NlConv;
+static const NlConv nl_convs[] = {
+    { "LF", 1, pcrec_cls_newline },
+};
+
+/* The convention in force for this compile: `LF`, the only one pcrec has. */
+static const NlConv *nl_conv_active(const Ctx *cx)
+{
+    (void)cx;
+    return &nl_convs[0];
+}
+
+/* A `(?m)^`/`(?m)$` anchor as the context node (`fn` is `CTXFN_MLINE_BOL`
+ * or `_EOL`) over the active convention's newline. Spelled as an anchor
+ * (`(?m)^*` keeps `^*`'s grammar). It raises NO lookbehind length: libpcre2
+ * reports 0 for `(?m)^a` ([r4 A8]), unlike `\b`'s 1. */
+static Ast *mline_ctx(Ctx *cx, uint16_t fn, size_t at)
+{
+    const NlConv *nc = nl_conv_active(cx);
+    if (nc->nl_bytes != 1)
+        pcrec_ctx_fail(cx, at, "(?m)%c under newline convention %s is not built "
+                       "yet: its newline is %u bytes, which needs a multi-offset "
+                       "context (docs/design/ctx_span.md UL-e)",
+                       fn == CTXFN_MLINE_BOL ? '^' : '$', nc->name, nc->nl_bytes);
+    PcrecCpSet s;
+    pcrec_cpset_init(&s, &cx->arena);
+    pcrec_cpset_add_bits(&s, nc->set);
+    Ast *a = pcrec_ast_ctx(cx, s.iv, s.n, fn);
+    a->u.ctx.anchor = true;
     return a;
 }
 
@@ -1669,17 +1713,15 @@ static Ast *p_atom(Ctx *cx)
         pcrec_cpset_publish(&s, a);
         return a;
     }
-    /* [M6.2 wave A] MULTILINE IS RESOLVED HERE, at the assertion itself, and
-     * nowhere else (D62; assertions_design.md §8.2). `r->u.rep.greedy =
-     * !cx->mods->ungreedy` one function down is the same shape from the same
-     * scoped-option machinery; this is that pattern applied to the modifier
-     * that had been leaking a POST-PARSE read into src/opt/possessify.c.
-     * `cx->mods->multiline` is false for every compile today — `(?m)` is
-     * still refused — which is exactly what makes the refactor provably
-     * behaviour-preserving at the moment it lands, and impossible to prove
-     * later. */
-    case '^': { Ast *a = node(cx, A_BOL); a->u.anch.multiline = cx->mods->multiline;
-                return a; }
+    /* MULTILINE IS RESOLVED HERE, at the assertion itself, and nowhere else
+     * (D62; assertions_design.md §8.2) — into the CHOICE OF NODE ([DD-11.5],
+     * D168 addendum 1; ctx_span.md §4.4 table A): `(?m)^` is the context
+     * node over the newline set with the `MLINE_BOL` row, a plain `^` is
+     * A_BOL. No field carries the modifier past this line, so no analysis
+     * can match `case A_BOL:` and forget it. */
+    case '^':
+        if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_BOL, apos);
+        return node(cx, A_BOL);
     case '$': {
         /* [VAR] THE `${` DOORWAY, and it is an `if` here rather than a
          * registry lookup because `$` is base grammar with no doorway to hang
@@ -1693,8 +1735,8 @@ static Ast *p_atom(Ctx *cx)
          * only on a `$`. A lone `$` still falls through to `A_EOL` below,
          * byte for byte. */
         if (pcrec_vars_is_doorway(cx)) return pcrec_vars_atom(cx, apos);
-        Ast *a = node(cx, A_EOL); a->u.anch.multiline = cx->mods->multiline;
-        return a; }
+        if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_EOL, apos);
+        return node(cx, A_EOL); }
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
         pcrec_ctx_fail(cx, apos, "quantifier does not follow a repeatable item");

@@ -4137,3 +4137,13 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
   the cpset stamp manifest's `(?i)HeLLo` row; `run_facts_checks.sh`'s widened-
   domain witness `\zabc` under `-fno-req-handoff`; `run_offset_skip.sh`'s uuid
   guard adds `-fno-req-handoff`.
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+
+`run_mlinectx_identity.sh` is RETIRED with its knob (`-DPCREC_NO_MLINECTX`)
+and its contributor row: `(?m)^`/`(?m)$` are A_CTX rows, cut by the wordctx
+knob. `run_wordctx_identity.sh`'s population is now "no context-node spelling
+at an atom position" (`\b`, `\B`, a `(?m)` anchor via `tests/lib/mlscan.py`'s
+`multiline_anchor`); the `(?m)` patterns joined its MUST-DIFFER control
+(measured: identity 3,570/3,570, control 485 differ, 0 unexplained). The
+`run_mlinectx_identity.sh` entry above is history.

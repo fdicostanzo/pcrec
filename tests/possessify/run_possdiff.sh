@@ -316,7 +316,7 @@ fi
 # ---- the [ART-POSS-ARMS] section's three instruments ---------------------
 ARMS_ENV_FILES="$SCRIPT_DIR/arms_core.txt $SCRIPT_DIR/arms_utf8.txt \
 $SCRIPT_DIR/arms_utf8i.txt $SCRIPT_DIR/arms_ucp.txt $SCRIPT_DIR/arms_i.txt \
-$SCRIPT_DIR/arms_routeflip.txt"
+$SCRIPT_DIR/arms_routeflip.txt $SCRIPT_DIR/arms_mline.txt"
 
 reach_file=""; manifest_file=""
 while [ $# -gt 0 ]; do

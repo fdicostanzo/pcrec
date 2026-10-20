@@ -366,7 +366,7 @@ project journal entry.
 | `make test-counterk` | `tests/counterk/run_counterkdiff.sh` + `run_counterk_tests.sh` | yes |
 | `make test-mrl` | `tests/mrl/run_mrldiff.sh` + `run_mrl_tests.sh` | yes |
 | `make test-prefilter` | `tests/prefilter/run_prefilter_tests.sh` | yes |
-| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` + `run_wordctx_identity.sh` + `run_mlinectx_identity.sh` + `run_gstart_identity.sh` + `tests/assertions/run_mline_diff.sh` + `run_gstart_diff.sh` | yes |
+| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` + `run_wordctx_identity.sh` + `run_gstart_identity.sh` + `tests/assertions/run_mline_diff.sh` + `run_gstart_diff.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
@@ -5188,6 +5188,15 @@ pcrec's abi-37 tree (lane/s1step6 fe233552; ASan on the trial merge
 - **batched full `make test-axes` (`AXES_FULL=1 HARNESS_BATCH=64`):
   6,012 s** (1 h 40 m), EXIT 0, 0 AXIS FAIL — vs 7,958 s on the Mac
   (1.32× faster).
+  **On the Linux dev box (7700X, 2026-10-20, lane ctxbuild's validation,
+  abi-81 tree 95b42a3a2): 10,381 s** (2 h 53 m), rc 0, 111 axis jobs OK, 0
+  AXIS FAIL — SLOWER than ubuntubudu's figure, because the sweep has grown
+  since abi 37 (49 bit axes plus product, entry-shape, part-layout, analysis,
+  tune and memfn arms, then the form census); load average ~6 at the end. Size
+  a bound for this shape from THIS number (a 10,800 s bound left 4%). The
+  UNBATCHED default shape (`make test-axes` with neither variable) did not
+  finish in 7,200 s on the same box: the 49 bit axes, `--harness=no-compound`
+  and `--engine=vm` completed (all answer-identical), then the bound fired.
 - **`make asan`: 6,672 s** (1 h 51 m), EXIT 0, "suite green under
   ASan+LSan, both axes" — the first complete ASan run since the Mac's
   3-hour-cap kill. The Linux run is also the only one that exercises the

@@ -4,6 +4,26 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **ctxfn.def** — [DD-11.5] part 2 (lane ctxbuild, 2026-10-19;
+  `docs/design/ctx_span.md` rev 2.1 §4.2): THE ONE A_CTX TRUTH TABLE, an
+  X-macro row per context function — name, the stated hex, the 9-cell GRID
+  (prev out/in/absent × next out/in/absent, bit `3p + q`) and the VM form
+  columns (`src/gen/emit_vm.c`'s `vm_ctx_forms` is generated from it). The
+  value is DERIVED from the grid (`CTXFN_GRID`, internal.h) and a
+  `_Static_assert` per row ties it to the hex; the three per-row predicates
+  (`ctxfn_reads_absent_prev/_next`, `ctxfn_reads_membership`) are COMPUTED
+  from the bits in internal.h, never written as columns. Eight rows: the six
+  four-cell functions (`\b`, `\B`, the four one-character lookarounds,
+  absent cells copied from out) and `MLINE_BOL`/`MLINE_EOL`, `(?m)^`/`(?m)$`.
+  CK-8 (`tests/assertions/ctxfn_table_check.py`) checks every row against
+  libpcre2. A Makefile prerequisite of every object (FACTS_HDRS).
+- **internal.h ([DD-11.5])** — `Ast.u.ctx.fn`/`NState.ctxfn` are
+  `uint16_t`; the `u.anch` payload (the `multiline` field and its D62
+  control-3 comment) is DELETED, A_BOL/A_EOL carry no payload; the NKinds
+  `N_BOT_M`/`N_EOL_M` are deleted; `PcrecCtxSet.rows` (a mask) is `row`, the
+  one contributor row (no set is read by two rows since the newline row
+  retired).
+
 - **part_layout.def** — [ENTRY-TABLE] E1 (lane e1, 2026-10-18;
   `docs/design/compound_entries.md` §3.9): THE PART-LAYOUT VOCABULARY, four
   X-macro families (`PL_CLASS`, `PL_VALUE`, `PL_RANK`, `PL_WHY`), each row a

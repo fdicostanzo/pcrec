@@ -27,3 +27,20 @@ u	\bcat\b
 -	ab|a$\n
 -	ab|a\Z\n
 -	ab|a$\n\z
+# [r4 B9] ctx_span.md's F-1 witnesses: a context item INSIDE span 0. conj.py's C8 is the
+# machine half only (A's S_d), so the first two read cover (A's S_1 = {b} / \d) and the third
+# DECLINES at exact (A's language from the origin is not a product). The span_facts half
+# (the extended k-set walk, Z2) must state S_1 = {b} / \d and exact_len 1 on the third; the
+# pass-through plant (S1149) states S_1 = [a-z] / \w and reads exact/producers-disagree
+-	a(?=b)[a-z]
+-	\w(?=\d)\w
+-	[a-z0-9_ ]\b[a-z ]
+# [r4rc R2] ctx_span.md revision 2.1: the PER-THREAD in-span rule under alternation. The
+# slice narrows the classes of frontier states reached THROUGH the item (next side), and
+# narrows the previous side only when every thread at d-1 passes the item, else ends
+# exact_len at d-1. Correct slice: S_1 = {b,c}, exact_len 2 on the first; S_0 = {a,b},
+# exact_len 0 on the second. The union-narrowing plant (S1150) states S_1 = {b} / S_0 = {a}.
+# conj.py does not model the in-span rule; these lines' verdicts are OWED (added as text in
+# a bench timing window, not run).
+-	a(?=b)[a-z]|ac
+-	[ab](?<=a)c|bc

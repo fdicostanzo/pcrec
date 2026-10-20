@@ -5006,6 +5006,20 @@ available as general code health, not load-bearing for Q8).
 awareness against control 3), or a genuinely STRUCTURAL `$` variant
 appears that no field can express.
 
+**D62 addendum — the modifier resolves into the CHOICE OF NODE ([DD-11.5] P2c, D168 add. 1; lane ctxbuild, 2026-10-19)**
+- **Ruling superseded:** "multiline-`$` is a parse-resolved FLAG on the node" no longer
+  holds. The parser resolves `(?m)` at the `^`/`$` itself into WHICH node it builds:
+  `(?m)^`/`(?m)$` are `A_CTX` rows (`MLINE_BOL`/`MLINE_EOL`) of the one 9-cell truth
+  table `src/core/ctxfn.def`; a plain `^`/`$` is `A_BOL`/`A_EOL` with no payload.
+  `Ast.u.anch.multiline`, `N_BOT_M`/`N_EOL_M` and their arms are deleted.
+- **Principle kept:** kinds encode structure, and a kind is still never doubled per
+  modifier (no `A_EOL_M`); the modifier maps onto an existing GENERAL kind with data.
+  `$`/`\Z`/`^`/`\A` keep their AST kinds as structure (P2d/P2e, D168 add. 3, decide
+  `\A`/`\z`).
+- **Control 3 retired:** its residual (an analysis matching `case A_EOL:` and forgetting
+  the field) has no field to forget; `(?m)` anchors reach every exhaustive switch as
+  `A_CTX`, which `-Wswitch` already forces each analysis to classify.
+
 ## D63 — Q3 ruled: the ENG_ATTEMPT CANDIDATE-START PREFILTER, chartered as a general tool (option 1); DD-7's reverse BOT variant UNPARKED as the sequenced follow-on (option 3 after 1) (Frank, 2026-08-18, thirty-third session)
 
 **Decision, three parts.**
@@ -9816,3 +9830,9 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **[DD-11.6] RETIRED.** Its customers no longer wait on the definitions-table reduction (which add. 1 withdrew): the reverse start-of-line item closed 2026-09-22 and its remainder is [ENG-ABS-CARET], covered by the shipped end-anchored search (Frank: "we have an end anchored search already; the rest is retired"); D63's second prefilter instance has no live row. **D66's stated dependency ("tranche C waits on the reduction") is stale and void.**
 - **"Normalize `\d`-style classes into their class definitions" is MET.** The ruling's intent (Frank: no special nodes for `\d`/`\w` etc., so every class is handled one way) holds in the tree: the escape doorway's set port (`src/parse/ext.c`, PORT_SET) resolves the row's definition for the active options and builds a plain `A_CLASS` (`pcrec_ast_class_from_bits`, or `pcrec_setdef_class` under UCP); `AKind` has no per-escape class kind. How the bitmaps are stored (generated from libpcre2, tied to the definition strings by the self-oracle) is an implementation detail outside the ruling; the dd11_family survey's `cls_bits.inc` item is CLOSED.
 - The survey's small closers (the `\N{U+}` UTF-mode oracle probe if the options pin allows, status lines on [ENG-LOOK] and [UCP]) are filed by the manager, not ruled.
+
+### D168 addendum 3 — `\A`/`\z` fold at both layers, staged; the AST fold carries a derived CLASS column (Frank, 2026-10-19, session 118; ctx_span.md Q7)
+
+- **Ruling:** P2d folds `\A`/`\z` at the NFA layer (`N_BOT`/`N_END` and their 12 engine sites delete; zero movers predicted). P2e then lifts the fold into the AST: `\A`/`\z` become `A_CTX` rows of the 9-cell table, and the table gains a CLASS column (`CTX_CONTEXT`, `CTX_PIN_START`, `CTX_PIN_END`) DERIVED from each row's grid, checked against it. Every analysis that needs "anchored at start / pinned at end" switches on the class with no `default:`, so a new class or a forgotten case is a compile error exactly as a node kind is today.
+- **Why:** Frank asked whether the full fold could state the type clearly with specific predicates or flags; a derived, exhaustively switched class does, and removes the one cost the full fold had (data recognizers the compiler cannot see). The pin facts get one definition. `$`/`\Z` and `\G` stay kinds.
+- **Cost:** P2e is a second abi event with its own mover census (the end-mark lowering's tagged form reads `A_END`, ctx_span N-3). No build without Frank's go.

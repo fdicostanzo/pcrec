@@ -142,3 +142,14 @@ u   \bcat\b                  cover          k=3 absB=True absA=True
 -   ab|a$\n                  no-eol-view    
 -   ab|a\Z\n                 no-eol-view    
 -   ab|a$\n\z                no-eol-view    
+## D, appended (lane ctxspan2, main 3b0f87b55, [r4 B9]): the three F-1 witnesses, same
+##    command over witnesses.txt's last three lines; machine half of C8 only
+-   a(?=b)[a-z]              cover          k=2 absB=True absA=True
+-   \w(?=\d)\w               cover          k=2 absB=True absA=True
+-   [a-z0-9_ ]\b[a-z ]       exact          
+## D, appended as TEXT (lane ctxspan21, main fd1d1fc98, [r4rc R2]): the two per-thread
+##    witnesses, witnesses.txt's last two lines. NOT RUN (bench timing window): verdicts OWED,
+##    `PCREC=build/pcrec python3 -I docs/design/kit_proof/conj.py witnesses < docs/design/kit_proof/witnesses.txt`.
+##    Machine half of C8 only; conj.py does not model the slice's in-span rule (OWED at Z2).
+?   a(?=b)[a-z]|ac           (owed)         slice: S_1 = {b,c}, exact_len 2; plant S1150: S_1 = {b}
+?   [ab](?<=a)c|bc           (owed)         slice: S_0 = {a,b}, exact_len 0; plant S1150: S_0 = {a}

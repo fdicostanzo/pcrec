@@ -1,0 +1,64 @@
+/* src/core/ctxfn.def — THE ONE TRUTH TABLE of the context assertion A_CTX
+ * ([DD-11.5] part 2, docs/design/ctx_span.md §4.2; D168 addendum 1).
+ *
+ * A context function answers, for one set `C`, whether a position passes
+ * given the PREVIOUS character `p` and the NEXT character `q`, each of which
+ * is `out` (0: not in C), `in` (1: in C) or `absent` (2: no character, the
+ * subject's start or end). Nine cells; bit `3p + q` holds the answer, so a
+ * function is a 9-bit value (`uint16_t`). Every context function pcrec has is
+ * a row here.
+ *
+ * ROW SHAPE:
+ *
+ *   CTXFN_ROW(NAME, HEX,
+ *             po_qo, po_qi, po_qa,     p = out:    q = out, in, absent
+ *             pi_qo, pi_qi, pi_qa,     p = in
+ *             pa_qo, pa_qi, pa_qa,     p = absent
+ *             VMSIDE, JOIN, NEG, ROLE)
+ *
+ * The VALUE is DERIVED from the grid (`CTXFN_GRID`, internal.h); HEX is the
+ * number the design table states, and internal.h asserts the two agree, so a
+ * reader sees the grid and a typo in either fails the build. The three
+ * per-row predicates (reads absent prev / next, reads membership) are
+ * COMPUTED from the bits (internal.h's `ctxfn_reads_*`), never written as
+ * columns: a written column would share a source with the check that reads
+ * it (learnings.md §3). The table's independent control is CK-8: each row's
+ * canonical lookaround spelling against libpcre2 (ctx_span.md §6).
+ *
+ * The four VM columns are `src/gen/emit_vm.c`'s `vm_ctx_forms` (the emitted
+ * test's shape and the listing's role text); every other includer ignores
+ * them. A row whose absent cells copy its `out` cells is a pre-[DD-11.5]
+ * four-cell function ("absent reads as NOT in C"), so it reads no absent
+ * side and every engine computes it from membership bits alone. */
+
+/* \b (mod_assertions): p != q, absent as out. */
+CTXFN_ROW(BOUNDARY,    0x0AA,  0,1,0,  1,0,1,  0,1,0,
+          VMCTX_BOTH, "!=", false, "\\b word boundary")
+/* \B: p == q. */
+CTXFN_ROW(NONBOUNDARY, 0x155,  1,0,1,  0,1,0,  1,0,1,
+          VMCTX_BOTH, "==", false, "\\B not a word boundary")
+/* (?<=C) (src/parse/ctxnode.c's recognizer). */
+CTXFN_ROW(PREV,        0x038,  0,0,0,  1,1,1,  0,0,0,
+          VMCTX_PREV, NULL, false, "previous character in the set")
+/* (?<!C) */
+CTXFN_ROW(NOT_PREV,    0x1C7,  1,1,1,  0,0,0,  1,1,1,
+          VMCTX_PREV, NULL, true,  "previous character not in the set")
+/* (?=C) */
+CTXFN_ROW(NEXT,        0x092,  0,1,0,  0,1,0,  0,1,0,
+          VMCTX_NEXT, NULL, false, "next character in the set")
+/* (?!C) */
+CTXFN_ROW(NOT_NEXT,    0x16D,  1,0,1,  1,0,1,  1,0,1,
+          VMCTX_NEXT, NULL, true,  "next character not in the set")
+/* (?m)^ (the parser, P2c): start of subject, or after a newline that is not
+ * the subject's last byte — libpcre2's `\A|(?<=\n)(?=[\s\S])`, 547/547. The
+ * `in`/`absent` cell is 0 because PCRE2's default `(?m)^` does not hold after
+ * a FINAL newline (`PCRE2_ALT_CIRCUMFLEX` is the option that turns it on). */
+CTXFN_ROW(MLINE_BOL,   0x1D8,  0,0,0,  1,1,0,  1,1,1,
+          VMCTX_MLBOL, NULL, false,
+          "(?m)^ attempt_position of subject or after a non-final newline")
+/* (?m)$: end of subject, or before a newline — libpcre2's `(?![^\n])`,
+ * 547/547, stated over {\n} with the absent column set (ctx_span.md §4.2.4:
+ * the only A_CTX spelling of it under utf8, and today's atoms under byte). */
+CTXFN_ROW(MLINE_EOL,   0x1B6,  0,1,1,  0,1,1,  0,1,1,
+          VMCTX_MLEOL, NULL, false,
+          "(?m)$ end of subject or before a newline")

@@ -554,10 +554,10 @@ void pcrec_revdet_first(Ctx *cx, const Ast *a, uint8_t *out)
              * below fail and the quantifier keep its machinery.
              *
              * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected
-             * for `Ast.u.anch.multiline` awareness and needing none: widening is
-             * opaque to what an assertion means, so it cannot be wrong about
-             * WHERE a `$` is true. The full inspection is recorded at the
-             * field itself (src/core/internal.h).
+             * for multiline awareness and needing none: widening is opaque to
+             * what an assertion means, so it cannot be wrong about WHERE a `$`
+             * is true. (Since [DD-11.5] a `(?m)` anchor is an A_CTX node and
+             * there is no multiline field to be aware of.)
              *
              * [M6.6.2] RE-INSPECTED FOR `A_LOOK`, one of the same four sites
              * (design §11's second table), and SOUND for the same reason

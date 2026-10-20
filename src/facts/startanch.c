@@ -40,11 +40,11 @@
  * under `-Wswitch` (`make strict`), because an anchor analysis that silently
  * inherits a default arm's answer is a lost match with no diagnostic.
  *
- * `Ast.u.anch.multiline` IS READ, and D62 control 3 is why it has to be: under
- * `(?m)` a `^` holds after every newline, so a multiline `^` constrains
- * nothing about the subject's start and this walk must answer NONE for it.
- * An analysis that pattern-matches `case A_BOL:` and does not read that field
- * reproduces `src/opt/possessify.c`'s own recorded miscompile one file over.
+ * A `(?m)^` holds after every newline, so it constrains nothing about the
+ * subject's start and this walk must answer NONE for it. Since [DD-11.5] it
+ * is not an A_BOL at all but an A_CTX row (the parser's choice of node), and
+ * the A_CTX arm below answers NONE for every context node — so no `case
+ * A_BOL:` here can forget the modifier, which was D62 control 3's hazard.
  *
  * WHERE IT IS CALLED: by the pattern-facts record (`src/facts/facts.c`), on
  * the `start_anchor` fact's first ask, over the LOWERED tree the E2 seal
@@ -112,9 +112,7 @@ static unsigned sa_walk(const Ast *a)
             if (a->u.rep.rmin >= 1) { a = a->l; continue; }
             return acc;
         case A_BOL:
-            /* D62 control 3: a MULTILINE `^` holds after every newline and
-             * therefore constrains nothing here. */
-            return acc | (a->u.anch.multiline ? 0u : SA_BOT);
+            return acc | SA_BOT;
         case A_GSTART:
             return acc | SA_GSTART;
         /* Consumes a byte, so it says nothing about the position it begins at. */

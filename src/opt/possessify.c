@@ -105,8 +105,9 @@
  * match the day the `m` letter is accepted (§8.1.1 measures them as cells:
  * correct answer (0,1), possessified answer NO MATCH). The cure is
  * structural rather than a bigger read: multiline is resolved AT PARSE TIME
- * onto the node (`Ast.u.anch.multiline`), this analysis reads the node it is
- * already holding, and `ParseMods` is now an incomplete type outside
+ * onto the node — since [DD-11.5] into the node's KIND, a `(?m)$` being an
+ * A_CTX row — this analysis reads the node it is already holding, and
+ * `ParseMods` is now an incomplete type outside
  * src/parse/ so no later pass can repeat the mistake (§8.6). `\z` needs no
  * gate at all — see the A_END arm.
  *
@@ -232,14 +233,24 @@ static First first_of(Fq *q, const Ast *a);
  * came out empty. A true return with `out` empty is exact: the gate never
  * passes (`\w+(?<!\w)`). Exported for its exhaustive model check
  * (tests/possessify/ctx_admits_check.c); this file is its only reader. */
-bool pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,
+bool pcrec_poss_ctx_admits(uint16_t fn, const PcrecCpRange *iv, int n,
                            unsigned pmask, uint8_t out[32])
 {
+    /* [DD-11.5] A ROW THAT READS AN ABSENT SIDE IS NOT NARROWED (ctx_span.md
+     * §4.2.5, [r4 B3, A4]): `First` cannot say "passes with no next byte", so
+     * narrowing `(?m)^`/`(?m)$` would hand every `nullable` reader a false
+     * non-nullable. Widening is the value those gates had as A_BOL/A_EOL
+     * multiline; VALUING them is UL-c, its own event. */
+    if (ctxfn_reads_absent_prev(fn) || ctxfn_reads_absent_next(fn))
+        return false;
     bool qok[2] = { false, false };
-    for (unsigned p = 0; p < 2; p++) {
+    /* Bit 2 of `pmask` is "no previous character": on a row that reads no
+     * absent side its cells are the `out` row's, so it admits what bit 0
+     * does. */
+    for (unsigned p = 0; p < 3; p++) {
         if (!(pmask & (1u << p))) continue;
         for (unsigned qv = 0; qv < 2; qv++)
-            if (fn & (1u << ((p << 1) | qv))) qok[qv] = true;
+            if (ctxfn_cell(fn, p, qv)) qok[qv] = true;
     }
     if (qok[0] && qok[1]) return false;
     bs_clear(out);
@@ -258,6 +269,15 @@ bool pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,
         if (out[i]) any = true;
     }
     return any;
+}
+
+/* Can arm A value the gate `g` at all? Not when its row reads an absent
+ * side ([DD-11.5]): `pcrec_poss_ctx_admits` never narrows one, so it is
+ * summarized as `first_of`'s widened bytes, not as a gate group. */
+static bool ctx_valued(const Ast *g)
+{
+    return !ctxfn_reads_absent_prev(g->u.ctx.fn) &&
+           !ctxfn_reads_absent_next(g->u.ctx.fn);
 }
 
 /* A gate's S(P) for the node `g`. */
@@ -628,30 +648,15 @@ static First first_of(Fq *q, const Ast *a)
         return r;
     }
     case A_EOL:
-        /* D47.5's LIVE GATE, AND IT READS THE NODE ([M6.2] wave A, D62,
-         * assertions_design.md §8). Transparent while `$` means "the subject
-         * end (or before a final newline)" — a set no retreat can reach from
-         * further left; all bytes once `(?m)` makes it true before every
-         * newline.
-         *
-         * `a->u.anch.multiline` and NOT `cx->mods`. This arm used to consult a bool
-         * captured once for the whole pass, from the parser's END-OF-PATTERN
-         * option state, and `(?m)` is SCOPED: `(?m:a{0,4}$)` and
-         * `(?m)a{0,4}$(?-m)` each read false there while their `$` is
-         * genuinely multiline, so each would have taken the transparent arm
-         * and possessified a quantifier whose retreat is the only route to
-         * the match. Two measured lost-match cells (§8.1.1); D47.5's own
-         * recorded obligation names only the leading-`(?m)` shape, the one
-         * the old code got right. The fact now lives on the node, resolved
-         * at the `$` itself, and this analysis reads the node it is already
-         * holding — which is also why no threading of scoped state through
-         * `pss_walk` was needed (§8.5). */
-        if (a->u.anch.multiline) {
-            First r;
-            bs_all(r.f);
-            r.nullable = false;
-            return r;
-        }
+        /* D47.5's LIVE GATE: transparent, because `$` means "the subject end
+         * (or before a final newline)" — a set no retreat can reach from
+         * further left. A `(?m)$`, true before every newline, is not an A_EOL
+         * since [DD-11.5]: it is an A_CTX row, which the A_CTX arm below
+         * WIDENS (its row reads an absent side, `pcrec_poss_ctx_admits`).
+         * This used to read a `multiline` field resolved onto the node at
+         * the `$` itself (D62; two measured lost-match cells, §8.1.1, when
+         * an end-of-pattern option state was read instead); the node KIND
+         * now carries that fact, so there is no field left to misread. */
         return fst_empty(true);
 
     case A_END:
@@ -1287,7 +1292,7 @@ static PSum ps_node(Pss *P, const Ast *a)
     memset(&r, 0, sizeof r);
     switch (a->k) {
     case A_CTX:
-        if (P->fq.arm_a) {
+        if (P->fq.arm_a && ctx_valued(a)) {
             PGate x;
             memset(&x, 0, sizeof x);
             x.iv = a->u.ctx.iv;

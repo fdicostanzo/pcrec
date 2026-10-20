@@ -413,6 +413,13 @@ distilled forms:
   beside it; (c) a detector must be shown to FIRE on the platform that
   gates (S297's `[facts-link]` was only ever measured on darwin).
 
+- A rule the manager already knows and still breaks needs ENFORCEMENT, not
+  a further memory line: put it where the step happens (a template field,
+  a hook, a lint) — brief failures (idle-inviting wording, rulings sent
+  after the brief, uncoordinated ids, build lanes without a go) recurred
+  from 2026-09-12 to 2026-10-18 while every rule sat in memory
+  (apply_here.md sections 1 and 7, 2026-10-20).
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
@@ -538,9 +545,17 @@ distilled forms:
   harmless).
 - **An idle agent has no tool rounds** (thirty-third): "poll at each tool
   round" cannot wake a lane whose background run finished while it idles —
-  three missed completions in one session. The manager reads the
-  completion artifact and pings; the lane-side fix is to hold an active
-  poll loop only when a run is expected to finish within the round.
+  three missed completions in one session. Superseded fix (the original
+  "hold an active poll loop when a run finishes within the round"): since
+  DO-THEN-FINISH (Frank, 2026-09-08) a run over ~4 minutes is the lane's
+  LAST act, armed detached and recorded OWED, and the lane ENDS; lanes get
+  no keepalive and no completion monitor (2026-09-06). The manager reads
+  the completion artifact through the monitoring ladder (script, fresh
+  follow-up agent, concise watcher agent, manager). A message to a BUSY
+  lane is unread until it idles, so holds, lifts and mid-run rulings travel
+  as files the lane polls in its OWN worktree (2026-08-30, 2026-09-04), not
+  as messages. Delivered agents are closed by the manager (TaskStop)
+  rather than left idle and billable (2026-09-06).
 
 ## 7. Durable technical facts (cheap to forget, expensive to re-learn)
 

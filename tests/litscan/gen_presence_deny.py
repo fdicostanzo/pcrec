@@ -77,6 +77,10 @@ CASES = [
  ("ab?c", "byte",
   ["cccac", "c c abc", "acbc ac", "abbc", "c"],
   "the shortest: `a` before the byte landmark `c`, K = 2, decoys first"),
+ ("a.{1,5}z", "byte",
+  ["abz", "a1234z", "a123456z", "xaz", "azz", "abbbbbz az", "z a.z zz", "aaaaaz", "a\nz"],
+  "the emit_sweep DIFFER_PINS manifest of the `--memfn=no-fd-pres-pick` arms: the pick "
+  "deny moves this pattern's bytes, so the pin needs it in the corpus (pinfix_report.md)"),
 ]
 
 
