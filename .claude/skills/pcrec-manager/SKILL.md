@@ -89,7 +89,8 @@ subagents and judge the results).
 follow it"** (Frank, 2026-09-06) — the standing rules (scope, worktree
 ritual, box facts, process, lifecycle) live THERE; the brief carries only
 the task, tier, charter pointers and deliverable. Do not restate boilerplate
-content in briefs. LIFECYCLE (same ruling): lanes get NO self-keepalive
+content in briefs. Fill in the fields of docs/dev/lanes/BRIEF_TEMPLATE.md
+for every brief. LIFECYCLE (same ruling): lanes get NO self-keepalive
 crons (subagent caches are 5-min TTL — ticks are pure cost); close agents
 AGGRESSIVELY — an agent not needed within a few minutes summarizes (iff a
 follow-up is expected) and ENDS; follow-ups go to FRESH agents resuming
@@ -164,19 +165,26 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   before battery runs that archive HEAD. A worker going idle uncommitted is
   recoverable — the landing bar travels with the brief, so you can finish
   the landing yourself.
-- **Briefs tell workers to run long validation ASYNCHRONOUSLY** (Frank,
-  2026-08-12 fourteenth session): `make test`, mech, and battery-length
-  runs go in a background task with output to a log, polled via the
-  artifact (log tail; mech's `== mech run COMPLETE` trailer) — never as a
-  blocking foreground call. A lane blocked in a foreground run is
-  unreachable and indistinguishable from dead (the manager has now made
-  BOTH wrong calls: waited on a finished run believed alive, and started
-  finishing a live lane's landing believed dead), and mid-wait is where
-  every lane death to date has happened. Async keeps the lane responsive
-  to messages while the run executes. Before finishing an "idle" lane's
-  landing, check the worktree for fresh mtimes AND send a status message
-  first; only take over on silence or an explicit handback.
-- **A lane's background-run completion notice is NOT a reliable wake-up** (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after their run had ended, "waiting for the notification"). Brief every lane: the run's LOG is the trigger — at each keepalive tick, check the log's tail for the completion line (`checks failed:`, `== mech run COMPLETE`, `run_group:`) and proceed the moment it is there; never arm a Monitor on a progress log (opt5i's per-minute flood). The manager's watchdog reads the same logs and pings on "run ended, lane silent".
+- **A long validation run is the lane's LAST act (DO-THEN-FINISH, Frank
+  2026-09-08)**: anything over ~4 minutes (`make test`, mech, battery-length
+  runs) is armed DETACHED (`nohup ... > log 2>&1 & disown`) with output to a
+  log, recorded OWED in the report (log path, exact completion line, PID
+  file), and the lane commits, hands back and ENDS. It does not idle
+  waiting, and it does not hold a foreground call (a lane blocked in one is
+  unreachable and indistinguishable from dead, the 2026-08-12 finding that
+  still stands). The manager, or a fresh follow-up agent, reads the log.
+  Before finishing an "idle" lane's landing, check the worktree for fresh
+  mtimes AND send a status message first; only take over on silence or an
+  explicit handback.
+- **A lane's background-run completion notice is NOT a reliable wake-up**
+  (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after
+  their run had ended). Lanes have NO keepalive tick (Frank, 2026-09-06),
+  so the lane never polls: the run's LOG is read by the MANAGER'S watcher
+  script (below) or by a fresh follow-up agent — the monitoring ladder
+  (script, fresh follow-up agent, concise watcher agent, manager; Frank
+  2026-09-06/08) — looking for the completion line (`checks failed:`,
+  `== mech run COMPLETE`, `run_group:`). Never arm a Monitor on a progress
+  log (opt5i's per-minute flood).
 - **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN** (Frank, 2026-09-06,
   superseding the twenty-first session's 10-minute CronCreate watchdog —
   which was built partly to stop tasks idling and wasting tokens and
@@ -237,6 +245,10 @@ are read-only and never run `make`.
 
 Before ending the session or any significant pause:
 
+0. When a ruling this session reversed earlier doctrine, grep this skill,
+   docs/dev/lanes/BOILERPLATE.md and docs/dev/learnings.md for the old
+   doctrine and fix it in the same change (the stale-keepalive and ASYNC
+   bullets survived five weeks; apply_here.md section 7, 2026-10-20).
 1. Append the dev_journal.md entry (if not already done).
 2. Update plan.md STATE tags to reality.
 3. **Rewrite `docs/dev/wake.md` from scratch** as the next session's wake-up

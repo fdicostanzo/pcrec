@@ -8,6 +8,11 @@ hand back complete, END — never idle). Briefs name only the task, tier and
 deliverable, and point here. Update it when a rule changes rather than
 growing briefs back.
 
+**`BRIEF_TEMPLATE.md` (2026-10-20)** is the manager's field list for every
+lane brief (rulings quoted, id ranges, the owner's BUILD GO or "NO BUILD
+GO", stop rule and premise test, owed-run wording, deliverable and reply
+size); skill §3 points at it and BOILERPLATE carries the matching STOP rule.
+
 One `<lane>_log.md` (the lane's own running log: what it did, in order,
 for its restart) and one `<lane>_report.md` (the delivery: commits, the
 brief's acceptance table filled with MEASURED values, findings) per lane

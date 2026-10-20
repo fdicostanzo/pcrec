@@ -67,6 +67,9 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   light probes only, heavy runs by slot request through the manager.
 
 ## Process rules (each has cost a lane before)
+- STOP RULE: a lane asked to build (edit `src/`, `cli/`, `lib/` or
+  `memfn/src/`) without the owner's build go QUOTED in its brief stops
+  and asks the manager; it does design/measure only (BRIEF_TEMPLATE.md).
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log. NOR a
