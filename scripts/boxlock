@@ -13,6 +13,10 @@
 #       Not acquired => exit 75 with a `boxlock: REFUSED ...` line naming the
 #       holder.
 #   scripts/boxlock status   one line, exit 0 free / 1 HELD / 3 HELD-ORPHAN
+#   scripts/boxlock held     exit 0 when the caller need not take the lock:
+#       it runs inside the holder's own tree (a valid PCREC_BOXLOCK_HELD), or
+#       locking is off (PCREC_BOXLOCK=0, no flock, no lock path); else 1. An
+#       entry point re-execs itself under `run` when this says 1.
 #   scripts/boxlock path     the lock file's path
 #
 # THE LOCK is flock(1) on <main tree>/worktrees/.box.lock (found from this
@@ -112,9 +116,7 @@ run() {
     command -v flock >/dev/null || { echo "boxlock: no flock(1) on this box, running '$label' unlocked" >&2; exec "$@"; }
     local f; f=$(lock_path) || { echo "boxlock: no git tree and no PCREC_BOXLOCK_FILE, running '$label' unlocked" >&2; exec "$@"; }
     mkdir -p "$(dirname "$f")"
-    if [ -n "${PCREC_BOXLOCK_HELD:-}" ] && [ "$(field token "$(owner_line "$f")")" = "$PCREC_BOXLOCK_HELD" ] && is_held "$f"; then
-        exec "$@"     # nested inside the holder's own tree
-    fi
+    held && exec "$@"     # nested inside the holder's own tree
     exec 9>>"$f"
     if ! flock -w 1 9; then   # -w 1, not -n: a `status` probe holds the lock for a moment
         local t0 next now line chunk
@@ -140,9 +142,17 @@ run() {
     exec "$@"
 }
 
+held() {
+    [ "${PCREC_BOXLOCK:-1}" = 0 ] && return 0
+    command -v flock >/dev/null || return 0
+    local f; f=$(lock_path) || return 0
+    [ -n "${PCREC_BOXLOCK_HELD:-}" ] && [ "$(field token "$(owner_line "$f")")" = "$PCREC_BOXLOCK_HELD" ] && is_held "$f"
+}
+
 case "${1:-}" in
     run) shift; run "$@" ;;
+    held) held ;;
     status) status ;;
     path) lock_path || exit 1 ;;
-    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock path" >&2; exit 64 ;;
+    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock held | boxlock path" >&2; exit 64 ;;
 esac

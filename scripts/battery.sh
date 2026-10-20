@@ -204,8 +204,13 @@ run_battery() {
 
 echo "battery.sh: logging to $LOGDIR (trailer: $TRAILER)"
 echo "battery.sh: poll the trailer for stage START/END/rc lines and the final '== BATTERY DONE rc=' line"
+echo "battery.sh: takes the box lock (scripts/boxlock status); a wait for another holder is logged in setsid.log"
 
-_battery_setsid bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); CC=$(printf '%q' "$CC"); run_battery" \
+# THE BOX LOCK ([runkit], scripts/boxlock): the battery holds it for its whole
+# run (every stage is heavy; the stages that take it themselves — mech,
+# test-axes — nest under it). It waits for a holder, naming it in setsid.log;
+# PCREC_BOXLOCK=0 opts out.
+_battery_setsid "$ROOT_DIR/scripts/boxlock" run --label battery -- bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); CC=$(printf '%q' "$CC"); run_battery" \
     < /dev/null > "$LOGDIR/setsid.log" 2>&1 &
 echo $! > "$PIDFILE"
 disown

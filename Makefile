@@ -1995,10 +1995,11 @@ alloc:
 # default, writes nothing outside its own temp dir. ~13 full corpus passes —
 # see docs/testing.md "Answer-identity sweep" for the measured runtime and
 # how to read a failure. `AXES=` (run_axes.sh) restricts to a subset for a
-# quick local check.
+# quick local check. Both sweeps run under ONE hold of the box lock
+# ([runkit], scripts/boxlock: waits for a holder, nests inside a battery or a
+# chainrun heavy stage; PCREC_BOXLOCK=0 opts out).
 test-axes: all
-	bash tests/axes/run_axes.sh
-	PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh
+	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh'
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
 # `PCREC_(NO|FORCE)_*` bit, so `run_axes.sh` — which derives its list from
@@ -2007,7 +2008,7 @@ test-axes: all
 # run per rung. [CHK-2] item (c) folds value axes into the generic sweep; this
 # row is its named trigger and this target is the gate meanwhile.
 test-ksweep: all
-	bash tests/axes/run_ksweep.sh
+	bash scripts/boxlock run --label test-ksweep -- bash tests/axes/run_ksweep.sh
 
 # The sabotage detection matrix (MECH-1): applies every encoded sabotage to a
 # pristine `git archive HEAD` copy, builds it there, runs the relevant suites

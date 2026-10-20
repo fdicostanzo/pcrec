@@ -14,6 +14,7 @@
 #
 # Options (before the `--`):  --label L (required)  --shape J,P  --timeout S
 #   (default 2700)  --target T (default test; one word)
+# Takes the box lock (scripts/boxlock) for the run; PCREC_BOXLOCK=0 opts out.
 # Other modes:  scripts/perfrun --fold    (in the MAIN tree: move new per-run
 #   files from build/perf/ttune/ into docs/dev/ttune_ledger.tsv + ttune_ledger.d/)
 #   scripts/perfrun --next    (print the shape the rotation would pick, run nothing)
@@ -69,6 +70,7 @@ if [ "${1:-}" = "--fold" ]; then
     exit 0
 fi
 
+perf_argv=("$@")
 label="" shape="" tmo=2700 target=test
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -82,6 +84,11 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$label" ] && [ $# -ge 1 ] || { echo "usage: perfrun --label L [--shape J,P] [--timeout S] -- LOG [make vars]" >&2; exit 125; }
 log=$1; shift
+# THE BOX LOCK ([runkit], scripts/boxlock): a full suite is the box's heavy run,
+# so the run mode re-execs itself under the lock (waiting, naming the holder)
+# unless it already runs inside the holder's tree (a chainrun heavy stage, a
+# battery) or PCREC_BOXLOCK=0. --next/--fold above take nothing.
+if ! "$here/boxlock" held; then exec "$here/boxlock" run --label "perfrun:$label" -- bash "$here/perfrun" "${perf_argv[@]}"; fi
 how=override
 if [ -z "$shape" ]; then shape=$(pick_shape); how="rotation (least-sampled uncontaminated)"; fi
 J=${shape%,*} P=${shape#*,}
