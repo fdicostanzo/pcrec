@@ -59,7 +59,14 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 - D2 stays `pending-site:R-18`.
 - candoracle's reach gap is on main's check-design list.
 
-**In flight:** nothing. No lanes, no chains, no watchers, no crons.
+**In flight (2026-10-20 ~12:00, idle wait):** nothing of the kit's is running. No lanes, watchers or crons.
+- **Waiting for:** main (pcrecdev1, addressed by socket; the bench session is ALSO named pcrecdev3 for now) to message that ctxbuild (abi 81) is merged to main and the box is free. Main estimated 1-2 h from 11:50.
+- **Next action on that message:**
+  1. `git -C worktrees/memfn-r25 merge main`, alone in its own command; read the result and resolve.
+  2. make strict, SABANCHOR (`python3 -I scripts/m6read_check_sab_anchors.py`), `bash tests/codegen/run_codegen_tests.sh`, test-core.
+  3. ONE heavy slot at that tip: make test, mech S1018/S1083 in one PROCS=4 `run_sabotage_matrix.sh` call, and the emit_sweep variant/trace/rwquest arms.
+  4. Post `done: R-25` in responses.md, then SendMessage main.
+- **Frank 2026-10-20:** heartbeat crons only while actively monitoring something. When just waiting, delete the cron and go idle.
 
 **Worktrees:** KEEP `memfn-r25`, `memfn-pinfix` (until merged), `rowfix` (merged; prunable once quiet), `memfn-slot` (scratch). 22 merged kit trees were pruned on 2026-10-18.
 
