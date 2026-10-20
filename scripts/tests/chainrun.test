@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# chainrun self-test: sacrificial chains in a mktemp tree, the box lock on a
+# sacrificial file (PCREC_BOXLOCK_FILE). Each historical chain bug is PLANTED
+# back into a scratch copy of the script and its case must go red against the
+# plant: rc taken after a `$(...)`, DONE written when a stage failed (by a
+# skipped check and by an EXIT trap), two chains in one tree.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/chainrun.test.XXXXXX")
+kids=()
+cleanup() {
+    local f p
+    for f in "$T"/*/l*/chain.pid; do [ -f "$f" ] && read -r p _ < "$f" && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    for p in ${kids[@]+"${kids[@]}"}; do kill "$p" 2>/dev/null; done
+    rm -rf "$T"
+}
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_BOXLOCK_FILE=$T/box.lock
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT
+CR=$here/chainrun
+n=0
+# chain STAGES-TEXT [chainrun args...]: run a --fg chain in a fresh tree; sets D (tree), LD (logdir), crc
+chain() {
+    n=$((n + 1)); D=$T/t$n; LD=$D/l1; mkdir -p "$D"; printf '%s\n' "$1" > "$D/stages"; shift
+    "$TO" 120 bash "${CRX:-$CR}" --fg --tree "$D" --logdir "$LD" "$@" "$D/stages" > "$D/out" 2>&1; crc=$?
+}
+cl() { cat "$LD/chain.log" 2>/dev/null; }
+has() { cl | grep -Eq "$1"; }
+# plant NAME FROM TO: copy scripts/ (+ tests/lib) with one change in chainrun; echo the copy's chainrun
+plant() {
+    local d=$T/plant_$1; mkdir -p "$d/scripts" "$d/tests/lib"
+    cp "$here/verdict" "$here/boxlock" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
+    python3 -c 'import sys; s=open(sys.argv[1]).read(); assert s.count(sys.argv[2])==1, "anchor"; open(sys.argv[3],"w").write(s.replace(sys.argv[2], sys.argv[4]))' \
+        "$CR" "$2" "$d/scripts/chainrun" "$3" 2>/dev/null || { bad "plant $1 did not land (anchor moved?)"; return 1; }
+    echo "$d/scripts/chainrun"
+}
+
+# 1. rc capture
+chain 'a light 10 exit 3'
+[ "$crc" = 1 ] && has '^== stage a END rc=3 ' && has '^== CHAIN FAILED stage=a rc=3' && ok "a stage's rc=3 is recorded and fails the chain" || bad "rc capture: crc=$crc $(cl)"
+if P=$(plant rc-after-subst 'wait "$spid"; rc=$?' 'wait "$spid"; stamp=$(date +%s); rc=$?'); then
+    CRX=$P chain 'a light 10 exit 3'
+    has '^== stage a END rc=3 ' && bad "PLANT rc-after-subst: still rc=3 (plant ineffective)" || ok "PLANT rc-after-subst (rc read after a \$(...)): the case goes red against it"
+fi
+
+# 2. DONE only after the last stage passed
+chain 'one light 10 true
+two light 10 false
+three light 10 touch "$CHAIN_TREE/three-ran"'
+[ "$crc" = 1 ] && has '^== CHAIN FAILED stage=two' && ! has 'CHAIN DONE' && ! has 'stage three START' && [ ! -e "$D/three-ran" ] \
+    && ok "a failed middle stage: CHAIN FAILED, no DONE, later stages not run" || bad "DONE-after-fail: crc=$crc $(cl)"
+if P=$(plant check-skipped 'if [ "$rc" -ne 0 ] || [ "$v" = RED ]; then' 'if false; then'); then
+    CRX=$P chain 'one light 10 true
+two light 10 false'
+    has 'CHAIN DONE' && ok "PLANT check-skipped (DONE regardless): the case goes red against it" || bad "PLANT check-skipped not caught: $(cl)"
+fi
+if P=$(plant exit-trap-done "trap 'on_signal TERM 15' TERM" "trap 'on_signal TERM 15' TERM; trap 'echo \"== CHAIN DONE (exit trap)\" >> \"\$cl\"' EXIT"); then
+    CRX=$P chain 'one light 10 false'
+    has 'CHAIN DONE' && ok "PLANT exit-trap-done (the 2026-10-09 slot bug): the case goes red against it" || bad "PLANT exit-trap-done not caught"
+fi
+chain 'one light 10 false
+two light 10 true' --keep-going
+has '^== stage two END rc=0' && has '^== CHAIN FAILED stage=one' && ! has 'CHAIN DONE' && ok "--keep-going runs the rest and still FAILS naming the first" || bad "keep-going: $(cl)"
+
+# 3. the stage verdict reads the log: a red make line with the rc lost in a pipe
+chain "t light 10 { echo 'make: *** [Makefile:646: test-corpus] Error 1'; false; } | cat"
+has '^== stage t END rc=0 verdict=RED' && has '^== CHAIN FAILED stage=t' && ok "rc lost through a pipe: the red make line still fails the stage" || bad "pipe rc: $(cl)"
+chain 'ok light 10 echo "probe rc=1 is expected here"'
+has '^== CHAIN DONE' && ok "a stage printing 'rc=1' text is judged by its own rc (--no-rc-lines)" || bad "rc text misread: $(cl)"
+
+# 4. caps
+chain 'slow light 1 sleep 20'
+has 'END rc=124 .*CAP-FIRED\(1s\)' && has 'CHAIN FAILED stage=slow' && ok "a fired cap is rc=124 CAP-FIRED and fails the chain" || bad "cap: $(cl)"
+
+# 5. one chain or waiter per tree; a TERM'd chain writes FAILED, never DONE
+n=$((n + 1)); D=$T/t$n; mkdir -p "$D"; printf 'a light 60 sleep 30\n' > "$D/stages"
+"$TO" 30 bash "$CR" --tree "$D" --logdir "$D/l1" --lift "$D/.lift" "$D/stages" > "$D/out1" 2>&1; r1=$?
+read -r cpid _ csid < "$D/l1/chain.pid" 2>/dev/null
+[ "$r1" = 0 ] && [ "${cpid:-x}" = "${csid:-y}" ] && ok "detached: armed, chain.pid has pid == sid ($cpid)" || bad "detach: r1=$r1 $(cat "$D/out1")"
+sleep 0.5; grep -q '^== chain WAITING lift=' "$D/l1/chain.log" && ok "--lift: the chain waits for the lift file" || bad "lift wait line missing"
+"$TO" 30 bash "$CR" --tree "$D" --logdir "$D/l2" "$D/stages" > "$D/out2" 2>&1; r2=$?
+[ "$r2" = 75 ] && grep -q "REFUSED: .*live chain or waiter: pid=$cpid " "$D/out2" && ok "a second chain in the same tree (waiter live) is REFUSED naming the holder" || bad "second chain: r2=$r2 $(cat "$D/out2")"
+"$TO" 30 bash "$CR" --fg --tree "$D" --logdir "$D/l3" "$D/stages" > "$D/out3" 2>&1; r3=$?
+[ "$r3" = 75 ] && ok "... and in --fg mode too" || bad "second --fg chain: r3=$r3"
+if P=$(plant no-tree-lock '    if ! flock -w 2 8; then' '    if false; then'); then
+    "$TO" 30 bash "$P" --tree "$D" --logdir "$D/l4" "$D/stages" > "$D/out4" 2>&1; r4=$?
+    [ "$r4" = 0 ] && ok "PLANT no-tree-lock (two waiters, 2026-10-09): the case goes red against it" || bad "PLANT no-tree-lock not caught: r4=$r4"
+    [ -s "$D/l4/chain.pid" ] && { read -r p4 _ < "$D/l4/chain.pid"; bash "$here/safekill" "$p4" >/dev/null 2>&1; }
+fi
+touch "$D/.lift"; for _ in $(seq 40); do grep -q 'stage a START' "$D/l1/chain.log" && break; sleep 0.25; done
+grep -q '^== chain LIFTED' "$D/l1/chain.log" && ok "the lift file releases the chain" || bad "lift not seen"
+bash "$here/safekill" "$cpid" > /dev/null 2>&1; sleep 0.5
+grep -q '^== CHAIN FAILED stage=a killed=SIGTERM' "$D/l1/chain.log" && ! grep -q 'CHAIN DONE' "$D/l1/chain.log" \
+    && ok "a TERM'd chain writes CHAIN FAILED (killed), never DONE" || bad "TERM: $(cat "$D/l1/chain.log")"
+"$TO" 30 bash "$CR" --tree "$D" --logdir "$D/l1" "$D/stages" > "$D/out5" 2>&1; r5=$?
+[ "$r5" = 64 ] && grep -q 'leftover' "$D/out5" && ok "a leftover logdir (chain.log present) is refused" || bad "leftover logdir: r5=$r5"
+
+# 6. the stages file is read once
+n=$((n + 1)); D=$T/t$n; mkdir -p "$D"
+printf 'a light 30 sleep 2\nb light 30 echo original-b\n' > "$D/stages"
+"$TO" 30 bash "$CR" --tree "$D" --logdir "$D/l1" "$D/stages" > /dev/null 2>&1
+sleep 0.5; printf 'a light 30 sleep 2\nb light 30 echo EDITED\nc light 30 echo added\n' > "$D/stages"
+for _ in $(seq 60); do grep -q '^== CHAIN' "$D/l1/chain.log" 2>/dev/null && break; sleep 0.25; done
+grep -q original-b "$D/l1/b.log" && ! grep -q 'stage c' "$D/l1/chain.log" && ok "editing the stages file under a live chain changes nothing (snapshot)" || bad "stages re-read"
+
+# 7. heavy stages take the box lock (wait, name the holder); a nested take does not deadlock
+"$TO" 60 bash "$here/boxlock" run --label other-suite -- sleep 3 & kids+=($!)
+sleep 0.5
+chain 'h heavy 30 echo heavy-ran'
+grep -q "WAITING.*label=other-suite" "$LD/h.log" && has '^== CHAIN DONE' && ok "a heavy stage waits for the holder (named in its log), then runs" || bad "heavy wait: $(cat "$LD/h.log" 2>/dev/null)"
+chain 'h heavy 30 bash '"$here/boxlock"' run --label inner -- echo nested-ok'
+grep -q nested-ok "$LD/h.log" && has '^== CHAIN DONE' && ok "a heavy stage that takes the lock again nests (no deadlock)" || bad "nested heavy: $(cl)"
+chain 'h heavy 30 head -1 "$PCREC_BOXLOCK_FILE"'
+grep -q 'label=chain:stages/h' "$LD/h.log" && ok "the holder record names the chain and stage" || bad "holder label: $(cat "$LD/h.log")"
+
+# 8. parsing
+chain 'a medium 10 true'; [ "$crc" = 64 ] && ok "bad CLASS is a parse error (64)" || bad "bad class crc=$crc"
+chain 'a light soon true'; [ "$crc" = 64 ] && ok "bad CAP is a parse error (64)" || bad "bad cap crc=$crc"
+E=$T/emptyrepo; git init -q "$E"; printf 'a light ttune true\n' > "$E/stages"   # a git tree with no ledger (not wherever TMPDIR sits)
+"$TO" 20 bash "$CR" --check "$E/stages" > "$E/out" 2>&1; crc=$?
+[ "$crc" = 64 ] && grep -q 'ttune' "$E/out" && ok "cap=ttune with no ledger history refuses (state the cap)" || bad "ttune no-ledger crc=$crc"
+chain 'a light 10 true
+a light 10 true'; [ "$crc" = 64 ] && ok "duplicate stage name is a parse error" || bad "dup crc=$crc"
+R=$T/repo; git init -q "$R"; mkdir -p "$R/docs/dev"
+np=$(nproc)
+printf 'run_id\tdate\ttree\tlabel\tJ\tP\twall_s\tcpu_s\trc\tsect_err\tk1\tk2\tload\tcontam\tcls\tbusy\tnproc\n' > "$R/docs/dev/ttune_ledger.tsv"
+printf 'a\td\tt\tl\t4\t3\t600\t1\t0\t0\tok\tok\t1\tno\tgreen\t50\t%s\n' "$np" >> "$R/docs/dev/ttune_ledger.tsv"
+printf 'b\td\tt\tl\t4\t3\t900\t1\t2\t1\tok\tok\t1\tno\tRED\t50\t%s\n' "$np" >> "$R/docs/dev/ttune_ledger.tsv"
+printf 'c\td\tt\tl\t4\t3\t5000\t1\t0\t0\tok\tok\t1\tYES\tgreen\t50\t%s\n' "$np" >> "$R/docs/dev/ttune_ledger.tsv"
+printf 'd\td\tt\tl\t4\t3\t7000\t1\t0\t0\tok\tok\t1\tno\tgreen\t50\t%s\n' "$((np + 1))" >> "$R/docs/dev/ttune_ledger.tsv"
+printf 'test light ttune true\n' > "$R/stages"
+out=$("$TO" 20 bash "$CR" --check "$R/stages" 2>&1)
+printf '%s' "$out" | grep -q 'cap=900 ' && ok "cap=ttune = longest CLEAN same-nproc wall (600) x 1.5 = 900" || bad "ttune cap: $out"
+
+echo "chainrun.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]
