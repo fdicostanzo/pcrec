@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# watchrun — the ONE committed watcher (apply_here.md proposal 2, lane runkit;
+# dev_methods_handoff.md §7.1-§7.3). A zero-model-call background watcher: it
+# loops on a run's ARTIFACTS and exits ONCE, with ONE line on stdout, when the
+# state is actionable. Hand-written watchers failed eight-plus ways: an mtime
+# test against the last commit (fired at once, or never); a single-miss test
+# that false-alarmed; a quiet-log heuristic that read a step logging only at
+# its end as done; a grep that matched its own launcher (2 h stall). So:
+#   - it never exits on its STARTUP state: stage ENDs and trailers already in
+#     the log are the baseline, quiet time is counted from the WATCH START
+#     (never from a commit or mtime that predates it), and a target that had
+#     already ended is refused (exit 2, not a notification);
+#   - QUIET needs THREE consecutive polls with no activity AND the quiet bound
+#     passed; activity is any log in the target growing, the tree's HEAD
+#     moving, or the run's process tree using CPU (read by exact PID from
+#     /proc, never a process-name grep) — so a stage that logs only at its end
+#     but is computing is not quiet, and quiet is reported as QUIET, never as
+#     done;
+#   - it keeps no temp files, and a TREE target resolves only the tree's LIVE
+#     chain (its build/.chainrun.lock), so a leftover build/chainrun/* log
+#     from an earlier chain is never mistaken for this one.
+#
+#   scripts/watchrun [opts] LOGDIR       a scripts/chainrun log directory
+#   scripts/watchrun [opts] TREE         the live chain of a worktree
+#   scripts/watchrun [opts] --log FILE [--pid PID] [--done ERE]
+#                                        any log with a completion line
+# opts: --on chain|stage (default chain; `stage` also fires on each new stage
+#       END)  --quiet-min N (default 25)  --quiet-sec S  --every S (poll,
+#       default 60)  --max-hours H | --max-sec S (default 4 h: relaunch on CAP)
+# --done ERE defaults to the known trailers: chainrun's CHAIN DONE/FAILED,
+# battery's BATTERY DONE, mech's COMPLETE/FATAL, perfrun's DONE line.
+#
+# THE ONE LINE, and the exit code:
+#   0  watchrun: CHAIN-END|STAGE-END|DONE <target> :: <the line> :: <verdict>
+#   3  watchrun: QUIET <target> no activity for Ns (K polls) :: last: <line>
+#   4  watchrun: DIED <target> pid N gone without a trailer :: last: <line>
+#   5  watchrun: LOCK-ORPHAN box lock held, owner dead :: <boxlock status>
+#   6  watchrun: CAP <target> watched Hh, still running — relaunch
+#   2  not armed (target missing, already ended, no live chain) — stderr
+#  64  usage
+# A box lock that is ALREADY orphaned at startup is warned on stderr, not
+# reported (startup state); only a transition fires.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DONE_ERE='^== (CHAIN DONE|CHAIN FAILED|BATTERY DONE|mech run COMPLETE)|^perfrun: DONE rc=|^FATAL:'
+
+on=chain quiet=1500 every=60 maxh=4h maxs=14400 log="" pid="" done_ere=$DONE_ERE target=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --on) on=$2; shift 2 ;;
+        --quiet-min) quiet=$(( $2 * 60 )); shift 2 ;;
+        --quiet-sec) quiet=$2; shift 2 ;;
+        --every) every=$2; shift 2 ;;
+        --max-hours) maxs=$(( $2 * 3600 )); maxh=${2}h; shift 2 ;;
+        --max-sec) maxs=$2; maxh=${2}s; shift 2 ;;
+        --log) log=$2; shift 2 ;;
+        --pid) pid=$2; shift 2 ;;
+        --done) done_ere=$2; shift 2 ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        -*) echo "watchrun: unknown option $1" >&2; exit 64 ;;
+        *) target=$1; shift ;;
+    esac
+done
+case "$on" in chain|stage) ;; *) echo "watchrun: --on chain|stage" >&2; exit 64 ;; esac
+notarmed() { echo "watchrun: NOT ARMED: $*" >&2; exit 2; }
+
+pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
+alive() { # alive PID [START]
+    [ -n "$1" ] || return 1
+    if [ -d /proc ] && [ -r /proc/self/stat ]; then
+        [ -n "${2:-}" ] && { [ "$(pid_start "$1")" = "$2" ]; return; }
+        [ -d "/proc/$1" ]
+    else kill -0 "$1" 2>/dev/null; fi
+}
+tree_cpu() { # total utime+stime ticks of PID and its descendants (Linux /proc; else empty).
+    # awk's $1 is the pid and $n is /proc stat field n+1 (ppid $3, utime $13, stime $14).
+    [ -n "$1" ] && [ -r /proc/self/stat ] || return 0
+    local f s
+    for f in /proc/[0-9]*/stat; do s=$(<"$f") 2>/dev/null || continue; printf '%s %s\n' "${f//[!0-9]/}" "${s##*) }"; done 2>/dev/null |
+        awk -v root="$1" '{pp[$1] = $3; cpu[$1] = $13 + $14} END {
+            for (p in pp) { q = p; for (i = 0; i < 64 && q != "" && q != 0; i++) { if (q == root) { t += cpu[p]; break } q = pp[q] } }
+            print t + 0 }'
+}
+
+# ---- resolve the target ----
+logdir="" tree="" pstart=""
+if [ -n "$log" ]; then
+    [ -f "$log" ] || notarmed "no log $log"
+    tname=$log
+else
+    [ -n "$target" ] || { echo "usage: watchrun [opts] LOGDIR|TREE | --log FILE [--pid PID] [--done ERE]" >&2; exit 64; }
+    [ -d "$target" ] || notarmed "no directory $target"
+    target=$(cd "$target" && pwd)
+    if [ -f "$target/chain.log" ] || [ -f "$target/chain.pid" ]; then
+        logdir=$target
+    elif [ -f "$target/build/.chainrun.lock" ]; then
+        if ( exec 7>>"$target/build/.chainrun.lock" && flock -n 7 ) 2>/dev/null; then
+            notarmed "no live chain in $target (last: $(head -1 "$target/build/.chainrun.lock"))"
+        fi
+        rec=$(head -1 "$target/build/.chainrun.lock")
+        for w in $rec; do case "$w" in logdir=*) logdir=${w#logdir=} ;; esac; done
+        [ -n "$logdir" ] || notarmed "cannot read the live chain's logdir from $target/build/.chainrun.lock"
+    else
+        notarmed "$target is neither a chainrun LOGDIR nor a tree with a chain"
+    fi
+    for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$logdir/chain.pid" ] && break; sleep 0.5; done
+    [ -s "$logdir/chain.pid" ] || notarmed "$logdir has no chain.pid"
+    read -r pid pstart _ < "$logdir/chain.pid"
+    log=$logdir/chain.log
+    tname=$logdir
+    tree=$(awk '/^== chainrun START/ {for (i = 1; i <= NF; i++) if ($i ~ /^tree=/) {sub(/^tree=/, "", $i); print $i; exit}}' "$log" 2>/dev/null)
+fi
+
+trailer() { grep -E "$done_ere" "$log" 2>/dev/null | tail -1; }
+nends() { grep -c '^== stage [^ ]* END' "$log" 2>/dev/null; }
+lastline() { tail -1 "$log" 2>/dev/null | cut -c1-200; }
+signature() {
+    local f
+    if [ -n "$logdir" ]; then for f in "$logdir"/*; do [ -f "$f" ] && wc -c < "$f"; done | tr '\n' ' '
+    else wc -c < "$log"; fi
+    [ -n "$tree" ] && git -C "$tree" rev-parse HEAD 2>/dev/null
+    tree_cpu "$pid"
+}
+lockstate() { "$here/boxlock" status >/dev/null 2>&1; echo $?; }
+vsum() { local v; v=$("$here/verdict" "$log" 2>/dev/null | head -1); printf '%s' "${v:-VERDICT ?}"; }
+
+# ---- baseline: the startup state is never an event ----
+t=$(trailer)
+[ -n "$t" ] && notarmed "$tname had already ended before the watch began: $t"
+[ -n "$pid" ] && ! alive "$pid" "$pstart" && notarmed "$tname's pid $pid is already gone and no trailer was written (it died before the watch began; read: scripts/verdict $log)"
+base_ends=$(nends); base_lock=$(lockstate)
+[ "$base_lock" = 3 ] && echo "watchrun: WARNING at startup: $("$here/boxlock" status)" >&2
+t0=$(date +%s) last_change=$t0 misses=0 sig=$(signature)
+
+while :; do
+    sleep "$every"
+    now=$(date +%s)
+    t=$(trailer)
+    if [ -n "$t" ]; then
+        kind=DONE; [ -n "$logdir" ] && kind=CHAIN-END
+        echo "watchrun: $kind $tname :: $t :: $(vsum)"; exit 0
+    fi
+    if [ "$on" = stage ] && [ "$(nends)" -gt "$base_ends" ]; then
+        e=$(grep '^== stage [^ ]* END' "$log" | sed -n "$((base_ends + 1))p")
+        echo "watchrun: STAGE-END $tname :: $e"; exit 0
+    fi
+    if [ -n "$pid" ] && ! alive "$pid" "$pstart"; then
+        t=$(trailer)     # it may have written the trailer and exited between the reads
+        if [ -n "$t" ]; then kind=DONE; [ -n "$logdir" ] && kind=CHAIN-END; echo "watchrun: $kind $tname :: $t :: $(vsum)"; exit 0; fi
+        echo "watchrun: DIED $tname pid $pid gone without a trailer :: last: $(lastline)"; exit 4
+    fi
+    ls_=$(lockstate)
+    if [ "$ls_" = 3 ] && [ "$base_lock" != 3 ]; then
+        echo "watchrun: LOCK-ORPHAN box lock held, owner dead :: $("$here/boxlock" status)"; exit 5
+    fi
+    base_lock=$ls_
+    s=$(signature)
+    if [ "$s" != "$sig" ]; then sig=$s; last_change=$now; misses=0
+    else misses=$((misses + 1)); fi
+    waiting=0; [ -n "$logdir" ] && lastline | grep -q '^== chain WAITING lift=' && waiting=1
+    if [ $waiting = 0 ] && [ $misses -ge 3 ] && [ $((now - last_change)) -ge "$quiet" ]; then
+        echo "watchrun: QUIET $tname no activity for $(( now - last_change ))s ($misses polls) :: last: $(lastline)"; exit 3
+    fi
+    if [ $((now - t0)) -ge "$maxs" ]; then
+        echo "watchrun: CAP $tname watched $maxh, still running — relaunch"; exit 6
+    fi
+done

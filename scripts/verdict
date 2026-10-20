@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# verdict — read a run's pass/fail from the run's OWN lines (apply_here.md
+# proposal 2, lane runkit; dev_methods_handoff.md §7.4). The one reader every
+# driver (scripts/chainrun after each stage), watcher (scripts/watchrun) and
+# human uses, so the recurring misreads are fixed once:
+#   - "sections ran: N/M" read as a pass (it counts what make -k LAUNCHED);
+#   - a grep for FAIL (a coverage guard's message had no "FAIL:");
+#   - `\*\*\* \[test-` missing GNU make's Linux `Makefile:646: ` prefix, which
+#     read a red Linux run as clean (2026-10-06);
+#   - `| tail`/`| tee` handing back the pipe's rc, and `echo "$(date) rc=$?"`
+#     always printing rc=0 — a reader of LINES is immune to a lost rc as long
+#     as make's own error lines are in the log.
+#
+#   scripts/verdict [--rc N] [--no-rc-lines] LOG [LOG...]
+#
+# Prints `VERDICT GREEN|RED|INCOMPLETE: summary`, then the evidence lines
+# (`  FILE:LINE: text`). Exit 0 GREEN, 1 RED, 2 INCOMPLETE, 64 usage.
+# GREEN needs a COMPLETION signal and no red one; a log with neither was
+# KILLED — it did not pass and it did not fail (INCOMPLETE). A red line is
+# red even in an incomplete log. LOG.perfrun beside a LOG is read too.
+#
+# WHAT IT RECOGNISES (red = R, completion = C):
+#   make      `*** [<target>] Error N` in either form (`Makefile:N: ` prefix
+#             or none; Interrupt/Killed/Terminated too), and `make: *** ...`
+#             (No rule to make target, ...)                               R
+#   perfrun   `perfrun: DONE rc=N ... class=C`                C; R if N != 0
+#   mech      `== mech run COMPLETE: ... (unexpected: U, ...)`  C; R if U > 0
+#             (the matrix's own exit rule); `== mech FIELD VALIDATION
+#             COMPLETE` C; a line starting `FATAL:`                     C+R
+#   battery   `== stage X rc=N END` (R if N != 0); `== BATTERY DONE rc=N` C
+#   chainrun  `== stage X END rc=N verdict=V` (R unless rc=0 and V is not
+#             RED); `== CHAIN DONE` C; `== CHAIN FAILED` C+R
+#   run_group `run_group: K/N scripts passed[, L lost]` C; R if K<N or L>0;
+#             `run_group: HARD FAILURE` R
+#   rc lines  a hand-written chain's `[stamp] [word..] rc=N` status line (at
+#             most four words before rc=, no quote characters — a test
+#             case's output line quoting a pattern is not a status line):
+#             C; R if N != 0. --no-rc-lines turns this one off.
+#   --rc N    the caller's captured rc (chainrun passes it): C; R if N != 0.
+# Anything else is not read — and nothing here greps for FAIL.
+set -u
+rc_arg="" rclines=1 files=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --rc) rc_arg=$2; shift 2 ;;
+        --no-rc-lines) rclines=0; shift ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        --) shift; files+=("$@"); break ;;
+        -*) echo "verdict: unknown option $1" >&2; exit 64 ;;
+        *) files+=("$1"); shift ;;
+    esac
+done
+[ ${#files[@]} -ge 1 ] || { echo "usage: verdict [--rc N] [--no-rc-lines] LOG [LOG...]" >&2; exit 64; }
+case "$rc_arg" in ''|[0-9]|[0-9][0-9]|[0-9][0-9][0-9]) ;; *) echo "verdict: --rc wants a number, got '$rc_arg'" >&2; exit 64 ;; esac
+
+all=()
+for f in "${files[@]}"; do
+    all+=("$f")
+    [ -f "$f.perfrun" ] && case " ${files[*]} " in *" $f.perfrun "*) ;; *) all+=("$f.perfrun") ;; esac
+done
+
+missing=0
+for f in "${all[@]}"; do [ -r "$f" ] || { echo "  $f: (missing or unreadable)"; missing=1; }; done
+
+# One record per finding: KIND<TAB>text. KIND is R (red), C (completion) or N (note).
+recs=$(for f in "${all[@]}"; do [ -r "$f" ] && awk -v F="$f" -v RCL="$rclines" '
+    function rec(k, t) { printf "%s\t%s:%d: %s\n", k, F, FNR, t }
+    { line = $0; sub(/\r$/, "", line) }
+    line ~ /\*\*\* \[.*\] (Error [0-9]+|Interrupt|Killed|Terminated)/ || line ~ /make(\[[0-9]+\])?: \*\*\* / { rec("R", line); next }
+    line ~ /^perfrun: DONE rc=[0-9]+/ {
+        n = line; sub(/^perfrun: DONE rc=/, "", n); n = n + 0
+        rec("C", line); if (n != 0) rec("R", line)
+        if (match(line, /class=[A-Za-z0-9-]+/)) rec("N", "perfrun " substr(line, RSTART, RLENGTH) " (BOILERPLATE triage rule: K44-ONLY / LOAD-SUSPECT reds are the shape'"'"'s, re-run the sections solo)")
+        next }
+    line ~ /^== mech run COMPLETE:/ {
+        u = line; if (match(u, /unexpected: [0-9]+/)) { u = substr(u, RSTART + 12, RLENGTH - 12) + 0 } else u = 0
+        rec("C", line); if (u > 0) rec("R", line); next }
+    line ~ /^== mech FIELD VALIDATION COMPLETE/ { rec("C", line); next }
+    line ~ /^FATAL:/ { rec("C", line); rec("R", line); next }
+    line ~ /^== stage [^ ]+ rc=[0-9]+ END/ { n = line; sub(/^== stage [^ ]+ rc=/, "", n); if (n + 0 != 0) rec("R", line); next }
+    line ~ /^== BATTERY DONE rc=[0-9]+/ { n = line; sub(/^== BATTERY DONE rc=/, "", n); rec("C", line); if (n + 0 != 0) rec("R", line); next }
+    line ~ /^== stage [^ ]+ END rc=[0-9]+/ {
+        n = line; sub(/^== stage [^ ]+ END rc=/, "", n)
+        if (n + 0 != 0 || line ~ /verdict=RED/) rec("R", line); next }
+    line ~ /^== CHAIN DONE/ { rec("C", line); next }
+    line ~ /^== CHAIN FAILED/ { rec("C", line); rec("R", line); next }
+    line ~ /^run_group: HARD FAILURE/ { rec("R", line); next }
+    line ~ /^run_group: [0-9]+\/[0-9]+ scripts passed/ {
+        s = line; sub(/^run_group: /, "", s); split(s, a, /[\/ ]/); lost = 0
+        if (match(line, /, [0-9]+ lost/)) lost = substr(line, RSTART + 2, RLENGTH - 7) + 0
+        rec("C", line); if (a[1] + 0 < a[2] + 0 || lost > 0) rec("R", line); next }
+    RCL == 1 && line !~ /["\047]/ && match(line, /(^| )rc=[0-9]+/) {
+        pre = substr(line, 1, RSTART); n = substr(line, RSTART, RLENGTH); sub(/.*rc=/, "", n)
+        if (split(pre, w, " ") <= 4) { rec("C", line); if (n + 0 != 0) rec("R", line) }
+        next }
+' "$f"; done)
+
+nred=$(printf '%s\n' "$recs" | grep -c $'^R\t')
+ncomp=$(printf '%s\n' "$recs" | grep -c $'^C\t')
+[ -n "$rc_arg" ] && ncomp=$((ncomp + 1))
+rcred=0; [ -n "$rc_arg" ] && [ "$rc_arg" -ne 0 ] && rcred=1
+classes=$(printf '%s\n' "$recs" | awk -F'\t' '$1=="N" && match($2, /class=[A-Za-z0-9-]+/) {print substr($2, RSTART+6, RLENGTH-6)}' | sort -u | tr '\n' ' ')
+targets=$(printf '%s\n' "$recs" | awk -F'\t' '$1=="R" && match($2, /\*\*\* \[[^ ]*( [^ ]*)?\]/) {t=substr($2, RSTART+5, RLENGTH-6); sub(/^Makefile:[0-9]+: /, "", t); print t}' | sort -u | tr '\n' ' ')
+
+if [ "$nred" -gt 0 ] || [ "$rcred" = 1 ]; then
+    v=RED; code=1
+    sum="$nred red line(s)${targets:+; make targets: ${targets% }}${rc_arg:+; rc=$rc_arg}${classes:+; perfrun class ${classes% }}"
+    [ "$ncomp" -eq 0 ] && sum="$sum; INCOMPLETE too (no completion line: the run was killed or is still running)"
+elif [ "$ncomp" -gt 0 ] && [ "$missing" = 0 ]; then
+    v=GREEN; code=0
+    sum="$ncomp completion signal(s), no red line${rc_arg:+; rc=$rc_arg}"
+else
+    v=INCOMPLETE; code=2
+    sum="no completion line and no red line: killed, or still running (neither a pass nor a fail)"
+    [ "$missing" = 1 ] && sum="a log is missing; $sum"
+fi
+echo "VERDICT $v: $sum"
+printf '%s\n' "$recs" | awk -F'\t' 'NF >= 2 && ($1 == "R" || $1 == "N") && !seen[$2]++ {print "  " $2} NF >= 2 && $1 == "C" {last = $2} END {if (last != "" && !seen[last]) print "  " last}'
+exit "$code"
