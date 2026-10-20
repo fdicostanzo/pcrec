@@ -144,6 +144,15 @@ main-side diff (`docs/dev/lanes/b3b/proposed/entry_use.diff`). Three denies
 `-fno-req-set-lead` (bit 45) is retired to `pres-set-lead`, kept as its alias.
 Report: `docs/dev/lanes/b3b_report.md`.
 
+R-25 (lane memfn-r25, 2026-10-18) moved NO pcrec byte and NO `MF_SITE_ABI`:
+`proven0`/`proven_prev` name only bytes the selected row TESTS. Every arm
+declares `arm.tests` (kit.h: `ARM_TESTS_EVERY`, `ARM_TESTS_REQUIRED`, or
+`ARM_TESTS_UNSTATED` on a row that renders no FIND); `kit_class` intersects
+only the tested offset-0 terms and refuses a FIND row stating UNSTATED. Every
+shipped FIND row tests every term today, so no class moved (measured: zero
+emit_sweep movers on six arms). Check: `tests/memfn/proven_check.c` (part
+`proven` of `make test-memfn-finder`). Report: `docs/dev/lanes/r25_report.md`.
+
 **Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
 `include/memfn.h`, the composer, the generic scalar row, K1's reference
 functions and an empty `src/options.def` are built into `libpcrec.a` by

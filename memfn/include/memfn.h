@@ -927,7 +927,10 @@ typedef struct {
     uint8_t  libc_free;    /* 1 iff the text calls no C-library function      */
     uint8_t  proven0[32];  /* bitset (mf_term.set's layout): every candidate's
                               byte at offset 0 lies in it; all ones = nothing
-                              proven                                          */
+                              proven. Only the offset-0 terms the text TESTS
+                              at every candidate contribute (R-25): a term
+                              the form may skip (OPTIONAL, untested) proves
+                              nothing, whatever its need                     */
     uint32_t includes;     /* MF_INC_* bits the text needs                     */
     uint16_t npres;        /* presence spans answered (= npspan since B3b)     */
     mf_link  pres[MF_MAX_PRES];
@@ -935,8 +938,9 @@ typedef struct {
        lies in it; all ones = nothing proven. What a CONTEXT stop proves
        (MLINE's `{\n}` one byte before the origin, row D1c): its candidate
        follows a member, so a member occurs at or after the site's `lo`. A
-       FIND whose term reads one byte below the candidate proves it; every
-       other site proves nothing here */
+       FIND whose term reads one byte below the candidate proves it, when
+       the text tests that term (R-25); every other site proves nothing
+       here */
     uint8_t  proven_prev[32];
     /* (MF_CLASS_V 4) THE DECIDING ROWS of pres[i], read by the host's
        records (b3brev U5: never inferred from a link's shape): pres_row[i]

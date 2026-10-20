@@ -39,6 +39,11 @@ done
 # fixture drivers; -Werror so its static assertions and prototypes are exact.
 "$CC" -std=gnu11 -O1 -Werror -I"$ROOT/lib" -I"$ROOT/src" "$ROOT/tests/memfn/prov_check.c" "$LIB" \
     -o "$WORK/provchk" || { echo "FAIL: the provenance check does not build (mf_prov's layout moved?)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
+# R-25: the form class's proven sets honour the row's declared `tests`
+# (tests/memfn/proven_check.c: a white-box driver over kit_class with test-only
+# rows, the shipped FIND rows, and one mf_ask). -Werror as provchk.
+"$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/proven_check.c" "$LIB" \
+    -o "$WORK/provenchk" || { echo "FAIL: the proven-set check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"
 # ONE count for the whole section. Each part's own `checks passed/failed`
 # lines are re-labelled and summed into the totals printed LAST, which are the
@@ -63,6 +68,20 @@ python3 -I "$ROOT/tests/memfn/finder_check.py" --root "$ROOT" --fx "$WORK/fx" \
 rc=$?
 part finder_check "$WORK/check.log"
 [ "$rc" -eq 0 ] || [ "$tf" -gt 0 ] || { echo "FAIL: finder_check exited $rc with no failed check"; tf=$((tf + 1)); }
+# R-25 (lane memfn-r25): proven0/proven_prev name only bytes the row TESTS.
+# PROVEN_FLOOR is the driver's case count at landing (31), a literal: a driver
+# that silently ran fewer cases reads red here, not green.
+PROVEN_FLOOR=31
+"$WORK/provenchk" > "$WORK/proven.log" 2>&1
+rc=$?
+part proven "$WORK/proven.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/proven.log")" -gt 0 ] || { echo "FAIL: provenchk exited $rc with no failed check"; tf=$((tf + 1)); }
+pp=$(grep -m1 '^checks passed:' "$WORK/proven.log" | grep -oE '[0-9]+')
+if [ "${pp:-0}" -ge "$PROVEN_FLOOR" ]; then
+    echo "ok   proven: ${pp} cases passed >= floor $PROVEN_FLOOR"; tp=$((tp + 1))
+else
+    echo "FAIL: proven: ${pp:-0} cases passed < floor $PROVEN_FLOOR"; tf=$((tf + 1))
+fi
 # R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
 # (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
 # R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's

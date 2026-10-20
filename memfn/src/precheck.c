@@ -458,6 +458,7 @@ const arm precheck_arm = {
     1,                  /* the run blocks' offset tables, the set rest's */
     MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
     1,                  /* the one-byte gate's and the landmark's memchr */
+    ARM_TESTS_UNSTATED, /* renders no FIND (its contract's op) */
 };
 
 /* The same renderer as precheck_arm, and the same form id: only the
@@ -473,6 +474,7 @@ const arm precheck_assign_arm = {
     1,                  /* the run blocks' offset tables, the set rest's */
     MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
     1,                  /* the one-byte gate's and the landmark's memchr */
+    ARM_TESTS_UNSTATED, /* renders no FIND (its contract's op) */
 };
 
 /* The same renderer again (R-15): the ASSIGN site whose kept position is its
@@ -489,4 +491,5 @@ const arm precheck_assign_byte_arm = {
     1,                  /* the run blocks' offset tables, the set rest's */
     MF_INC_STRING_H,    /* the one-byte gate's and the landmark's memchr */
     1,                  /* the one-byte gate's and the landmark's memchr */
+    ARM_TESTS_UNSTATED, /* renders no FIND (its contract's op) */
 };
