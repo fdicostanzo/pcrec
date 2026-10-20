@@ -3737,3 +3737,5 @@ tests/compound/split.rxt:9078	--features all	5e474554207c504f5354
 tests/compound/split.rxt:9247	--features all	283f3a5e61292a62
 tests/compound/split.rxt:9374	--features all	283f3a5e293f6162
 tests/compound/split.rxt:9898	--features all	285e617c622963
+tests/assertions/multiline.rxt:3816	--features assertions,modifiers	283f6d29285c6e5e29
+tests/assertions/multiline.rxt:3833	--features assertions,modifiers	283f6d2928615c6e5e29

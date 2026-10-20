@@ -72,6 +72,8 @@ scripts, any failing fails the section.
   `[a\n]+(?m)$\n`, each bare and capture-wrapped), compared as (options,
   pattern) multisets; no other corpus row moved. Bench rows untouched (the
   same run adds 6 forced / 1 `s3_dfa` bench rows, counted, never checked).
+  Then +2 `s2_vm_forced` rows for S1161's detector blocks appended to
+  tests/assertions/multiline.rxt (`(?m)(\n^)`, `(?m)(a\n^)`; `(?m)(^)$` is not a mover).
 
 ## Stage 2 — the VM hat (lane ssbuild2, abi 62)
 
