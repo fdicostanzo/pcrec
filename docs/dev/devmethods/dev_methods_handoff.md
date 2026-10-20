@@ -973,7 +973,7 @@ message tool only.
 **Why.**
 
 - A peer whose permission check blocked a launch correctly stopped and
-  escalated to the owner, who unblocked it himself.
+  escalated to the owner, who unblocked it themselves.
 - A peer asked the owner to run `curl … | sh` to install a toolchain.
   The request was refused, and a rule and a hook followed (section 10.8).
 - Two relayed rulings were confirmed with the owner before recording.
@@ -1112,5 +1112,439 @@ run slow or stuck, check the box's own clock and CPU. A maintenance sleep
 of 879 s once read as a code defect under a wall-clock timeout; the
 signature was wall time roughly equal to the sleep with CPU near zero. A
 UTC-versus-local misread once manufactured a four-hour phantom stall.
+
+---
+## 8. Testing practices
+
+pcrec's testing record is long because, for weeks, every review checkpoint
+found the same defect in whatever check had just been built. The
+practices below are what finally held.
+
+### 8.1 Oracles: the reference library is the truth; cheap oracles are tiers
+
+**Rule.**
+
+- Every test expectation is verified against an oracle, never taken from
+  your own code.
+- The real reference implementation (here libpcre2, at a pinned version)
+  is the source of truth.
+- A cheaper oracle (here python `re`) is a first tier and a transcription
+  tripwire. Where the two disagree on what a construct *means*, a corpus
+  verified only by the cheap oracle *certifies* the divergence instead of
+  catching it.
+- Use a three-way comparison with a 2-1 minority rule (product, reference,
+  cheap oracle) rather than an oracle-exclusion mechanism.
+- Facts about the reference are measured against a named version, never
+  read from its documentation.
+
+**Why.**
+
+- Four separate constructs were miscompiled, and certified correct, by a
+  python-verified corpus that shared the bug.
+- A planned python-versus-reference exclusion mechanism would have *hidden*
+  a shipped miscompile. The disagreement it guarded against measured zero
+  over 225,240 pairs, while every real disagreement was the product
+  against both oracles. Point instruments at your own product first.
+- Nine registry rows "written from memory" asserted a reference behaviour
+  that does not exist.
+- Reading the reference's documentation against the parser found three
+  real errors in the same weeks that about 54M oracle comparisons found
+  none.
+
+**How.**
+
+- Link the reference directly, check the header version against the
+  runtime version, use one resolution point, and skip loudly if it is
+  absent. A dynamic-loading oracle silently resolved the operating
+  system's older library (and once a conda copy), so every expectation's
+  provenance was stamped with the wrong version, and nothing reported an
+  error.
+- Commit an **oracle answer store**: reference answers keyed by oracle
+  id, version, options and question hash, as self-checking TSVs. A box
+  without the reference can then still consult it.
+- Only the oracle side is cached. The product always computes fresh, and
+  that asymmetry is the safety property.
+
+### 8.2 Generate the input space; never hand-list it
+
+**Rule.** A sweep's input set is generated combinatorially from the
+construct's grammar and from the claim's **failure directions**, not
+listed from known examples. Cross the axes. Two large sweeps, one varying
+axis A with B fixed and one varying B with A fixed, both miss the defect
+in the cell neither generates. Each sweep's header states which axes its
+generator cannot produce.
+
+**Why.** Hand-listing or under-generating recurred at least eight times,
+even after the lesson had been restated four ways:
+
+- 555 generated class-bracket patterns found 126 divergences where the
+  plan listed five.
+- A 5,041-pair generated differential found 71 disagreements a curated
+  33-cell table could not.
+- A hand-listed escape alphabet omitted exactly the 11 letters that would
+  expose a hole.
+- A census of strings of length 1-3 "proved" that an option flips 0 of
+  120,099 verdicts. The construct it flips is ten characters long. A
+  generated space can be as blind as a listed one.
+- A tail-byte sweep template could never generate the empty or EOF cell,
+  five recurrences.
+
+**How.**
+
+- Generate from the failure directions: both-sides-construct pairs; digit
+  runs starting with 8 or 9; a quote at non-atom positions.
+- Add a product (cross-axis) arm by construction.
+- Ask "which input axis does this property vary over?" One corpus had the
+  right *pattern* and only subjects that made the referenced group
+  non-empty, while the guard under test only acts when it captures empty.
+  The property lived in the subject axis, which nobody varied.
+
+### 8.3 Count every population, at the comparison site
+
+**Rule.** Every check counts the population it actually compared, at the
+point of comparison, and asserts that count against an independently
+derived expectation. A zero population is its own failure. A number a
+check *derives* about its own coverage is not evidence; only a number it
+*counts* is. Extraction helpers hard-fail on empty input; they never
+return a default.
+
+**Why.** This is the "populations nobody counted" class. Some instances:
+
+- A bare `sort -u` under a UTF-8 locale collated punctuation away and
+  merged 634 of 2,002 patterns. Five identity checks had been checking
+  1,660 of 2,610 patterns, and the dropped half was the structured half.
+- A watchdog swallowed stdin. A differential fed zero subjects, going
+  from 77,725 cells to 0, while "0 diverged" stayed green.
+- A constant moved from a `.c` file to a `.h` file. Eight test greps came
+  back empty, and POSIX arithmetic on the empty string read 0, so every
+  "optimized?" answer flipped to no across four suites.
+- A reference build assembled from a one-level source glob compiled a
+  different source set from the subject.
+- An identity sweep reading output at the default engine reached only
+  1,754 of 3,938 rows and read perfectly green. Its REACH figure caught
+  it, not its pass count.
+
+**How.**
+
+- Set `LC_ALL=C` at every sort over test data, exported at the harness
+  level, plus a structural check that names any unguarded sort.
+- Find sources with `find` and hard-fail on a short list.
+- Print REACH beside every pass count.
+- When a feature has two modes that can coexist in one artifact, put a
+  population floor on the cell where they coexist. Across 3,025 patterns
+  no artifact had both linkages, and a sizing bug lived exactly there.
+
+### 8.4 Mutation (sabotage) testing with declared reach
+
+**Rule.** Every check is validated in the failing direction. Keep a
+matrix of **sabotage rows**. Each row is a small committed edit to the
+product (anchor text before and after, a target suite, an expected
+verdict). A runner applies each row to a fresh archive of HEAD, builds,
+runs the named suite and scores the row DETECTED, UNDETECTED, UNREACHED
+or ANOMALY. Each row declares its **reach**: a probe proving its witness
+still reaches the sabotaged site, checked in both directions. Expected-
+UNDETECTED rows are a checked contract with a named derivation, not
+prose. A stale-anchor tripwire is a failing in-tree check on the merge
+bar.
+
+**Why.**
+
+- The second checkpoint showed that half the optimizations could be
+  disabled silently.
+- The fifth checkpoint ran 38 sabotages across 7 suites: 20 were
+  invisible.
+- Hand-rolled sabotage machinery reported success without running in at
+  least five ways: a multi-line `grep -F`; an empty replacement string; a
+  `$(printf)` stripping byte 0x0A; an include-only patch passing a
+  "file changed?" check; a `git checkout` inside a non-git tarball
+  swallowed by `|| true`, which stacked two sabotages into one reported
+  number. The plan row to build real machinery sat open for four
+  sessions while this happened.
+- Witnesses expire silently. One row certified nothing for two
+  milestones, because a later module implemented the construct its
+  witness relied on.
+- Later optimizations moved nine rows' witnesses off their sites in one
+  stretch.
+- Anchors drifted constantly. One row sat APPLY-FAILED for days while the
+  coverage assertion that "the guard is wired" truthfully passed. A row
+  verifying that a guard is *wired* differs from a row verifying that
+  its *removal is caught*.
+
+**How.**
+
+- Build the mutation runner the first time you hand-roll a sabotage.
+  Each row runs in a fresh archive. Assert the edit landed before
+  building. Prove the edit reached the binary before reading a zero: one
+  sabotage "found nothing" because the Makefile did not list an included
+  table as a prerequisite.
+- A sabotage's predicted figure in its own header is a prediction. Run it.
+- An UNDETECTED row is a *question*, diagnosed by measurement. It may
+  mean the corpus is thin (fixable), or that nothing observable changed
+  because two independent gates guard the same input.
+- **Run the full matrix on a schedule and read the verdicts.** A check
+  that is never run to completion is a record of the last time someone
+  ran it. pcrec found seven of ten flagged rows already stale for five
+  weeks, because no full matrix had completed since the last battery.
+  Size the driver's wall cap to fit the whole matrix. A run cut off at a
+  cap prints nothing useful if verdicts come only at the end.
+- When an optimization lands, have the lane list the rows and witnesses
+  it moves off their sites and re-aim them with the new deny flag
+  (section 8.6).
+- Allocate row ids from ranges (section 3.10). Pass ids exactly. Read
+  each row's verdict from its own trailer. A one-second rc=2 is an
+  invocation error, not a verdict. A missing suite log scored as
+  "detected" once, because a default made a missing count read as 1.
+
+### 8.5 Byte-identity and answer-identity gates, with positive controls
+
+**Rule.** Behaviour-preserving change is the perennial blind spot. Cover
+it two ways:
+
+- a **byte-identity sweep**: the changed compiler's output is diffed
+  against a pinned reference build over the whole corpus, on several
+  streams (the artifacts, the debug listing, the dumps, the composition
+  outputs);
+- an **answer-identity sweep** over every optimization axis: each deny or
+  force flag against the default build, compared by exact per-case
+  answer keyed by file and line, never by pass counts.
+
+Every identity gate also needs a **positive control**: an arm that must
+move, so its zeros are evidence and not blindness. Refusal identity is
+part of an axis's acceptance, not only answer identity.
+
+**Why.**
+
+- Three consecutive early checkpoints found every regression to be
+  behaviour-preserving and invisible to corpus, oracle and fuzzer.
+- One check had a single positive control at 256 branches. A sabotage
+  changing the threshold to 100 left the whole suite green. Controls must
+  fire *inside* the corpus's own range.
+- An axis refused a 109-character pattern the default accepted. The sweep
+  read `refused=0` because its population never held the shape.
+- A green identity gate is a statement about its population: a real
+  miscompile moved zero bytes until cells were constructed for it.
+- An identity proof cannot see a bug both sides share. "Did I change
+  anything" and "was it right to begin with" need different instruments.
+
+**How.**
+
+- **Compare outputs written to the same output basename.** Generated C
+  embeds `#include "<basename>.h"`, so two builds written to `a.c` and
+  `b.c` differ on every artifact. This "-o basename trap" was recorded
+  six or more times, once reading 572/572 movers and once making a size
+  pin off by two. The durable fix is one committed sweep tool that does
+  it right (pcrec's `scripts/emit_sweep.py`), not another warning.
+- Commit the sweep tool itself. Three lanes hand-rebuilt one mandatory
+  sweep from prose and got three different populations.
+- Pin the reference commit explicitly and re-pin it at each ABI merge.
+- Keep the "program" comparison against a frozen pre-module build
+  separate from the "whole file" comparison against the last ABI commit.
+  They have different owners, and filtering lines until two things match
+  is a failed gate, not a passed one.
+- Make every strategy-selection point **observable** (the artifact stamps
+  which strategy fired) and **forceable** (a deny or force flag at
+  generation time). Tests that depend on a strategy then assert the
+  stamp. An optimization added above a strategy silently un-tests the
+  strategy below it unless the harness can pin the selection. When an
+  optimization lands, sweep for checks that went green because the thing
+  they measured got fast, and pin those with the deny flag. Five checks
+  went green that way at one landing.
+
+### 8.6 Ratchets, floors and manifests
+
+**Rule.**
+
+- Keep a **known-fail ratchet**: a directory of failing regressions that
+  inverts the verdict. Still failing is expected; newly passing is
+  flagged for promotion. Deferred bugs then have regressions without
+  keeping the suite red.
+- Use floors for population sizes. Floors may rise and are lowered only
+  by review, with the population accounted for.
+- Use **manifests by name** for irreplaceable rows. Exact counts disarm
+  themselves for anyone who follows the failure message.
+
+**Why.**
+
+- Exact counts added as a cure for slack floors were defeated in one
+  move: delete six rows, bump the count as the message says, all green.
+- A manifest naming the irreplaceable rows offers no number to edit.
+  (Its first version was itself vacuous through a substring match.)
+- Population pins that were exact went brittle under byte-neutral
+  refactors (158 became 162). The owner ruled: population pins become
+  floors at half the measured value; absorbed counts stay exact.
+- When the product could not be held to a bug in the ratchet directory,
+  a labelled KNOWN-WRONG block in the suite kept "fixed" and "not fixed"
+  distinguishable.
+
+### 8.7 Check-design lessons: how checks failed
+
+These recurred so often that pcrec keeps a catalogue. Use it as a
+pre-landing checklist for any new check.
+
+- **A control must not share a source with what it controls**, nor a
+  failure mode (empty compared with empty is "equal"). This was the most
+  recurrent finding in the project, including inside the directory built
+  to prevent it:
+  - an identity gate's reference knob was placed in the very file
+    sabotaged;
+  - a check's population was taken from the field it validated;
+  - a mutation runner's denominator counted arrived rows, so a row whose
+    definition failed produced nothing and 19/19 read clean;
+  - a cost-model check forced the knob it existed to test.
+
+  The test question is: **"what would have to be true for this to fail,
+  and who chose that input?"**
+- **Guards written to answer a finding are reliably wrong in the way the
+  finding was wrong.** Five such guards in one review failed that way.
+  Only positive controls caught them, and an earlier control must be
+  re-run after a later fix: two guards were found disarmed only that way.
+- **A check's failure message is a second, undeclared claim about the
+  space of causes.** A field-count check blamed a TAB when a new section
+  kind was the cause. Two arms blamed the witness while the table was
+  wrong. An rc check folded a CPU-time kill into a sentence naming a spec
+  section. Split failures by cause and say what was invalidated.
+- **A filter self-check that `continue`s invalidates every count below
+  it.** The script then asserted a false staleness claim in its own
+  voice. A "known red" label on that script hid every other red in it.
+- **"Accepted" or "pre-existing" reds hide findings nobody owns.** A
+  standing red on one platform hid for weeks. The probe had never
+  produced a verdict there at all, because of an unstripped symbol
+  underscore. Give every standing red an owner row and an expiry.
+- **A coverage guard can live in a different file from what it counts.**
+  A lane validated a script standalone (27/0). The file that pinned that
+  script's pass count at 24 stayed red. The fourth instance of this was
+  recorded beside its three predecessors.
+- **Discriminate by value, never by presence.** Four checks read a stamp's
+  absence as a signal and broke when the stamp became unconditional.
+- **Assertions projecting onto a subset of the output fields.** The
+  verdict was right and the set wrong; the message was right and the
+  offset wrong. This recurred six times. Have each check state the fields
+  it compares.
+- **Prose that describes code has no test.** Append to prose
+  mechanically; never script insertions into it. Re-read described-code
+  prose whenever the code moves. A citation with a line number goes
+  stale silently (section 9.2).
+- **A capped human-readable sample is a lower bound.** A triage read 20
+  sample lines and missed 25 of 45 bucket members.
+
+### 8.8 Bound every run of generated code
+
+**Rule.** Every compile **and** every execution of generated code in the
+test infrastructure runs under a timeout. Exceeding it is a loud test
+failure naming the case, never a hang and never a skip. Budgets are
+CPU-primary with a wall-clock backstop. Wrap anything that can hang or
+allocate without limit in a supervisor (pcrec's `scripts/watchdog`) that
+enforces wall time, whole-tree RSS and CPU. Use soft CPU limits, so a
+limit kill stays distinguishable from an out-of-memory kill.
+
+**Why.**
+
+- One generated 3.5 MB file pegged the C compiler for over 100 minutes
+  under a sanitizer during a battery. Nothing bounded it, and an
+  unbounded compile reads as "still running", never as "failed". The
+  owner's calibration: anything over 60 s is a failure; normal compiles
+  take under a second.
+- A later battery stage hung for nine minutes: compiles were bounded but
+  executions were not.
+- CPU time is load-resilient (about 2x inflation in the worst case),
+  while wall time stretches without limit under load.
+- A hang is a diagnosis, not an observation. Read the emitted loop and
+  fit the growth law (0.146 / 0.566 / 2.265 / 8.944 s is quadratic,
+  slow-and-correct) before acting.
+
+**How.** Size every budget from a measurement plus its spread, and record
+the calibration. A budget calibrated on a fast box failed on a box
+measured 1.93x slower; the fix scaled the witness, not the budget. A
+firing timeout is a finding.
+
+### 8.9 Tiered validation, and who pays for which tier
+
+**Rule.** Use four tiers:
+
+1. **per lane**: targeted suites plus a strict (warnings-as-errors) build;
+2. **per merge**: the full test suite on the merged tree;
+3. **per batch** (about daily): the long battery on one pinned commit,
+   covering all axes, sanitizers, the mutation matrix, lint and wide
+   benchmarks;
+4. **CI** on every push.
+
+Consumers (peers, releases) only take batteried pins. Every merge commit
+carries a short `RISK:` block written at merge time: blast radius, what
+only the battery could catch, which checks should fire if the
+speculation is wrong. A red battery goes to a triage lane that replays
+the single failing check across the batch's merges.
+
+**Why.**
+
+- The full battery took 7.5 hours on Linux and about 13 on the laptop.
+  Per-merge batteries throttled everything, and their yield was mostly
+  check-infrastructure staleness.
+- Two individually green branches are unvalidated until their union runs.
+- Merging to main *while a battery is running* made its tail measure a
+  half-converted tree. The mutation runner re-archives HEAD per row, and
+  one mid-battery merge produced seven bogus flags. Late deliveries wait
+  on their branch until the battery's trailer.
+- Light-tier green after a merge is not "the suite passes": a later full
+  battery found five readers of a changed surface that no grep had
+  enumerated.
+
+**How.**
+
+- Measure CI fit before relying on it. pcrec took four runs to get green,
+  then sharded three ways from a declared table with a set-equality
+  control against the suite list, with per-section timestamps for killed
+  runs.
+- Check CI at every wake and after every push. CI sat red on every push
+  for over 24 hours once, unnoticed until the owner saw it.
+- A push cancels the running CI job, and a cancelled run is not green.
+- Namespace variables your build tool exports. A make-exported `SHARD`
+  silently thinned a Python script's own job subsetting in every CI
+  shard.
+
+### 8.10 Measurement discipline
+
+**Rule.** A performance number in a commit, decision or journal comes from
+an interleaved, repeated, pinned measurement of the exact build described,
+or it does not appear. In detail:
+
+- Write predictions before measuring and score them after, misses
+  included.
+- Give a timing comparison a **null control**: program-identical
+  artifacts across the pin pair give the noise band.
+- Nanosecond per-call timings are never percentages. Report the absolute
+  difference against a measured floor.
+- Scratch numbers are labelled scratch. Official verdicts come from the
+  real benchmark on the targeted hardware.
+- Before building a mechanism, build a **hand-twin**: transform the
+  compiler's own emitted text by script, gate it on answers, then time
+  it.
+
+**Why.**
+
+- A "40% improvement" was one un-interleaved sample at load 1.69. It was
+  really a 27% regression, and a separate change shipped a 43%
+  regression. Both were caught within an hour by a new gate.
+- A false "byte-identical across 8 probes" was written from memory.
+- A naive two-arm read showed +28% on a row where the changed engine
+  never ran. A three-arm placebo design fixed it.
+- One benchmark row read 32 GB/s because its subject early-exited. A
+  benchmark must hard-error when its subject stops exercising its target.
+- A null control turned 64 "regressing" cells into 14 and put both misses
+  inside the noise band.
+- A charter assumed a skip loop mattered. Instrumented, it skipped zero
+  bytes, and a 7x faster skip made every subject slower. The real lever
+  was found by that measurement.
+- Check per-core occupancy, not load average. A killed benchmark's
+  orphaned children sat on the pinned core and halved throughput while
+  the load guard read "quiet".
+
+**How.** Archive decision-critical measurements as committed probe plus
+output, with a header that makes the report a pure function of its
+inputs (probe hash, ABI, oracle version). A decision measurement kept in
+a scratchpad has expired before anyone asks for it. Record negative
+results with numbers and protect them with a check, so they cannot be
+re-landed on plausibility. A mechanism withdrawn on its own measurement
+is the process working. The owner's words on one: "we theorized and
+tested and made the best choice".
 
 ---
