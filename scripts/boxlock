@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# boxlock — the box's ONE heavy-run lock (apply_here.md proposal 6, lane
+# runkit). "One heavy suite at a time on this box" was a convention without a
+# lock; it was broken six-plus times, mostly by sweeps that did not feel heavy
+# (load 31 then 85 on 12 cores, 2026-08-24; a 35,980-compile sweep beside a
+# locked make test, 2026-10-07), and every break produced false CPU-cap or
+# timeout reds.
+#
+#   scripts/boxlock run [--label L] [--wait S | --no-wait] -- CMD [ARG...]
+#       take the lock, then EXEC CMD (its pid, its rc). Waits by default,
+#       naming the holder on stderr at once and every 5 min; --wait S bounds
+#       the wait (PCREC_BOXLOCK_WAIT=S is the same), --no-wait refuses at once.
+#       Not acquired => exit 75 with a `boxlock: REFUSED ...` line naming the
+#       holder.
+#   scripts/boxlock status   one line, exit 0 free / 1 HELD / 3 HELD-ORPHAN
+#   scripts/boxlock path     the lock file's path
+#
+# THE LOCK is flock(1) on <main tree>/worktrees/.box.lock (found from this
+# script's own location via git's common dir, so any worktree and any cwd
+# reach the same file; PCREC_BOXLOCK_FILE overrides, which is how the
+# self-test never touches the real one). The file is never deleted (a delete
+# would race a new inode against a waiter); after acquiring, the holder
+# overwrites it with ONE owner line: pid, start (/proc starttime, so a reused
+# pid is not mistaken for the holder), label, since, cwd, token.
+#
+# THE HOLDER IS CMD'S WHOLE TREE. `run` execs CMD with the lock fd open, so
+# every descendant inherits it and the kernel releases the lock when the last
+# of them exits — no unlock step that a SIGKILL could skip, so a dead holder
+# can never leave a stale LOCK. What a dead holder CAN leave:
+#   - a stale OWNER LINE (owner pid dead, lock free): `status` says
+#     `free (stale owner record ...)` and the next `run` simply takes it;
+#   - HELD-ORPHAN (owner pid dead, lock still held): a descendant outlived
+#     the owner and still holds the fd. `status` lists the live holders
+#     (read from /proc/*/fd by exact path, never a process-name grep) and
+#     exits 3; scripts/watchrun reports the transition. Kill the holders with
+#     scripts/safekill PID.
+#
+# NESTING. `run` exports PCREC_BOXLOCK_HELD (a token) and PCREC_BOXLOCK_FILE;
+# a `run` inside a holder's tree whose token matches the owner line and finds
+# the lock held execs CMD directly — so a chainrun stage that calls perfrun,
+# or a battery whose mech stage takes the lock again, never deadlocks on
+# itself. A stale token (no match) is ignored and the lock taken normally.
+#
+# OPT-OUT. PCREC_BOXLOCK=0 runs CMD unlocked (one stderr note). A box with no
+# flock(1) (the Mac: util-linux is absent) also runs unlocked with a note —
+# the Mac keeps its worktrees/.mac-suite.lock convention. A tree with no git
+# (a `git archive` copy) and no inherited PCREC_BOXLOCK_FILE runs unlocked.
+# Nothing here is required of a caller: a run that never calls boxlock still
+# works (the kit and the bench run their own scripts).
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+lock_path() {
+    if [ -n "${PCREC_BOXLOCK_FILE:-}" ]; then printf '%s\n' "$PCREC_BOXLOCK_FILE"; return 0; fi
+    local common
+    common=$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+    printf '%s\n' "$(dirname "$common")/worktrees/.box.lock"
+}
+# pid_start PID -> /proc starttime (field 22), empty when PID is gone
+pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
+field() { # field KEY LINE
+    local w; for w in $2; do case "$w" in "$1="*) printf '%s\n' "${w#*=}"; return 0 ;; esac; done; return 1; }
+owner_line() { [ -s "$1" ] && head -1 "$1"; }
+# owner_alive LINE: the recorded pid exists with the recorded starttime
+owner_alive() { local p s; p=$(field pid "$1") || return 1; s=$(field start "$1") || return 1; [ "$(pid_start "$p")" = "$s" ]; }
+# is_held FILE: some process holds the flock (probe on a fresh fd)
+is_held() { ( exec 7>>"$1" && ! flock -n 7 ) 2>/dev/null; }
+holders() { # live pids with the lock file open
+    local f p out=""
+    for f in /proc/[0-9]*/fd/*; do
+        [ "$(readlink "$f" 2>/dev/null)" = "$1" ] || continue
+        p=${f#/proc/}; p=${p%%/*}; case " $out " in *" $p "*) ;; *) out="$out $p" ;; esac
+    done
+    printf '%s\n' "${out# }"
+}
+age() { local s; s=$(field epoch "$1") || { echo "?"; return; }; echo "$(( ($(date +%s) - s) / 60 ))m"; }
+describe() { # describe LINE -> human holder text
+    printf 'pid=%s label=%s since=%s (%s) cwd=%s' "$(field pid "$1")" "$(field label "$1")" \
+        "$(field since "$1")" "$(age "$1")" "$(field cwd "$1")"
+}
+
+status() {
+    local f line
+    f=$(lock_path) || { echo "boxlock: no lock (not in a git tree, no PCREC_BOXLOCK_FILE)"; return 0; }
+    command -v flock >/dev/null || { echo "boxlock: no flock(1) on this box; nothing is locked"; return 0; }
+    line=$(owner_line "$f")
+    if [ ! -e "$f" ] || ! is_held "$f"; then
+        if [ -n "$line" ] && ! owner_alive "$line"; then echo "free (last holder: $(describe "$line"), exited)"
+        else echo "free"; fi
+        return 0
+    fi
+    if [ -n "$line" ] && owner_alive "$line"; then echo "HELD $(describe "$line")"; return 1; fi
+    echo "HELD-ORPHAN owner ${line:+$(describe "$line") }is dead but the lock is still held; holders: $(holders "$f") (scripts/safekill PID)"
+    return 3
+}
+
+run() {
+    local label="" wait="${PCREC_BOXLOCK_WAIT:-}"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --label) label=$2; shift 2 ;;
+            --wait) wait=$2; shift 2 ;;
+            --no-wait) wait=0; shift ;;
+            --) shift; break ;;
+            *) echo "boxlock: unknown option $1 (usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD...)" >&2; exit 64 ;;
+        esac
+    done
+    [ $# -ge 1 ] || { echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD..." >&2; exit 64; }
+    case "$wait" in ''|*[!0-9]*) [ -z "$wait" ] || { echo "boxlock: --wait wants seconds, got '$wait'" >&2; exit 64; } ;; esac
+    label=${label:-$(basename "$1")}; label=${label// /_}
+    if [ "${PCREC_BOXLOCK:-1}" = 0 ]; then echo "boxlock: PCREC_BOXLOCK=0, running '$label' UNLOCKED" >&2; exec "$@"; fi
+    command -v flock >/dev/null || { echo "boxlock: no flock(1) on this box, running '$label' unlocked" >&2; exec "$@"; }
+    local f; f=$(lock_path) || { echo "boxlock: no git tree and no PCREC_BOXLOCK_FILE, running '$label' unlocked" >&2; exec "$@"; }
+    mkdir -p "$(dirname "$f")"
+    if [ -n "${PCREC_BOXLOCK_HELD:-}" ] && [ "$(field token "$(owner_line "$f")")" = "$PCREC_BOXLOCK_HELD" ] && is_held "$f"; then
+        exec "$@"     # nested inside the holder's own tree
+    fi
+    exec 9>>"$f"
+    if ! flock -n 9; then
+        local t0 next now line chunk
+        t0=$(date +%s); next=$t0
+        while :; do
+            now=$(date +%s); line=$(owner_line "$f")
+            if [ -n "$wait" ] && [ $((now - t0)) -ge "$wait" ]; then
+                echo "boxlock: REFUSED '$label': box busy, held by $(describe "$line") (waited $((now - t0))s; PCREC_BOXLOCK=0 to override knowingly)" >&2
+                exit 75
+            fi
+            if [ "$now" -ge "$next" ]; then
+                echo "boxlock: '$label' WAITING $(date -Iseconds): box busy, held by $(describe "$line")" >&2
+                next=$((now + 300))
+            fi
+            chunk=10; [ -n "$wait" ] && [ $((wait - (now - t0))) -lt $chunk ] && chunk=$((wait - (now - t0)))
+            flock -w "$chunk" 9 && break
+        done
+    fi
+    local tok="$$.$(date +%s%N)"
+    printf 'pid=%s start=%s label=%s since=%s epoch=%s cwd=%s token=%s\n' "$$" "$(pid_start $$)" "$label" \
+        "$(date -Iseconds)" "$(date +%s)" "$(pwd | tr ' ' '_')" "$tok" > "$f"
+    export PCREC_BOXLOCK_HELD=$tok PCREC_BOXLOCK_FILE=$f
+    exec "$@"
+}
+
+case "${1:-}" in
+    run) shift; run "$@" ;;
+    status) status ;;
+    path) lock_path || exit 1 ;;
+    *) echo "usage: boxlock run [--label L] [--wait S|--no-wait] -- CMD... | boxlock status | boxlock path" >&2; exit 64 ;;
+esac
