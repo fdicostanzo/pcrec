@@ -38,10 +38,15 @@ discuss design points, and run everything in between.
    waits on you. Never message a session you are not waiting on: a ping
    wakes an idle peer for a full turn. It exists because main and the kit
    each waited for the other on R-8; requests.md is yours to file.
+   Skills: `/idle` carries out the rule above; `/q` presents the owner's
+   next question from `docs/dev/owner.md` (§2).
 0b. **Check CI** (Frank, 2026-10-13): `timeout 60 gh run list --limit 10`.
    Any `failure` on main → a triage lane before other work (rule 2 below).
    A cancelled run is NOT green (a push cancels the running job). CI sat
    red on every push for 24+ h unnoticed until Frank saw it (2026-10-13).
+   After each push, note its sha and on the NEXT wake/heartbeat read
+   `timeout 60 gh run list --commit <sha>` (the local pre-push-light gate
+   catches plan/spec/strict reds; CI is the rest).
 1. **Read `docs/dev/wake.md`** — the hand-off brief from the previous session.
    It is deliberately gitignored; on any disagreement, the committed docs win.
 2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom) —
@@ -189,30 +194,26 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   (2026-09-02/03: opt5i, landing and r51fix each sat idle 10-20 min after
   their run had ended). Lanes have NO keepalive tick (Frank, 2026-09-06),
   so the lane never polls: the run's LOG is read by the MANAGER'S watcher
-  script (below) or by a fresh follow-up agent — the monitoring ladder
+  script (`scripts/watchrun`, below) or by a fresh follow-up agent — the monitoring ladder
   (script, fresh follow-up agent, concise watcher agent, manager; Frank
   2026-09-06/08) — looking for the completion line (`checks failed:`,
   `== mech run COMPLETE`, `run_group:`). Never arm a Monitor on a progress
   log (opt5i's per-minute flood).
-- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN** (Frank, 2026-09-06,
-  superseding the twenty-first session's 10-minute CronCreate watchdog —
-  which was built partly to stop tasks idling and wasting tokens and
-  became the waste itself: each prompt tick re-read the manager's whole
-  context to say "no change"). Whenever lanes or background runs are in
-  flight, launch a plain BACKGROUND WATCHER SCRIPT (Bash run_in_background,
-  zero model calls) that loops on the liveness artifacts and EXITS —
-  producing one notification — only on actionable state. LIVENESS SIGNALS
-  in order of trust, unchanged: the lane's WIP-commit age (`git log -1
-  --format=%ct` in its worktree) + uncommitted-delta mtimes
-  (`find -newermt` with ISO timestamps — relative strings silently fail
-  on this box), background-log completion lines, process table. ListAgents
-  does NOT show spawned lanes — never declare death from it. The ladder,
-  unchanged: quiet >20-25 min → SendMessage ping; quiet AND silent after
-  the ping → dead, take over the landing (RE-RUNNING the lane's own full
-  stated validation list — the K50 premature-merge lesson). Cap the
-  watcher (~4h) and relaunch on cap. Kill it when nothing is in flight.
-  Brief every lane to COMMIT INCREMENTALLY — still the watcher's best
-  signal, and a death then strands minutes, not hours.
+- **STALL WATCHING IS A SCRIPT, NEVER A MODEL TURN** (Frank, 2026-09-06; a
+  10-minute CronCreate watchdog re-read the manager's whole context per tick
+  to say "no change"). Do not hand-write a watcher or a chain.sh: arm
+  `scripts/watchrun TREE|LOGDIR` as a plain background command (zero model
+  calls; it prints ONE line on an actionable state -- CHAIN-END, QUIET, DIED,
+  LOCK-ORPHAN, CAP -- and exits; cap ~4h, relaunch on cap, kill when nothing
+  is in flight). Lane chains run under `scripts/chainrun` (heavy stages take
+  `scripts/boxlock`); read any log with `scripts/verdict LOG`. Ladder:
+  quiet >20-25 min -> SendMessage ping; quiet AND silent after it -> dead,
+  take over the landing (RE-RUNNING the lane's own full stated validation
+  list -- the K50 premature-merge lesson). ListAgents does NOT show spawned
+  lanes -- never declare death from it. Trust order: completion trailers,
+  WIP-commit age (`git -C WT log -1 --format=%ct`), uncommitted-delta
+  mtimes (ISO timestamps with `find -newermt`), never a process grep. Brief
+  every lane to COMMIT INCREMENTALLY.
 - **`timeout` on every command of uncertain run length** — yours AND
   your subagents' (put it in every brief). Anything you cannot bound
   from experience gets a timeout sized generously from what the work

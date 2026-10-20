@@ -4,8 +4,9 @@
  *
  * memfn/src/kit.h — the kit's INTERNAL header: the text buffer, the
  * per-artifact state and the arm interface the composer selects over.
- * Never included outside memfn/src/. Every name it declares with external
- * linkage goes through MF_NS (C15).
+ * Never included outside memfn/src/, save by one white-box check,
+ * tests/memfn/proven_check.c (R-25: it declares test-only rows). Every name
+ * it declares with external linkage goes through MF_NS (C15).
  */
 #ifndef MEMFN_KIT_H
 #define MEMFN_KIT_H
@@ -327,7 +328,31 @@ typedef struct arm {
        `includes` is: a constant 1-8 byte memcpy is a register load, not a
        call (§R4.3.3's exclusion) */
     uint8_t     libc;
+    /* Which terms of a FIND predicate the row's text TESTS at every
+       candidate (R-25). Every row writes it (`make strict`'s
+       -Wmissing-field-initializers holds that). kit_class reads it: only a
+       tested offset-0 term contributes to proven0, a tested offset -1 term
+       to proven_prev, and a FIND row stating ARM_TESTS_UNSTATED is refused,
+       never given a reading. A row that renders no FIND (its contract's op
+       column) states ARM_TESTS_UNSTATED */
+    uint8_t     tests;
 } arm;
+
+/* arm.tests's values. */
+enum {
+    ARM_TESTS_UNSTATED,     /* 0: the row has not said (refused on a FIND)   */
+    ARM_TESTS_EVERY,        /* every term, OPTIONAL ones included            */
+    ARM_TESTS_REQUIRED,     /* a term only where it AND its predicate are
+                               REQUIRED: an OPTIONAL term may go untested    */
+};
+
+#define kit_class MF_NS(kit_class)
+/* The form CLASS of row `a`'s text for site `s` into *out (compose.c): what
+ * the text proves, as facts (D157). NULL, or why the row cannot say (a FIND
+ * row whose `tests` is UNSTATED; *out then proves nothing). One function
+ * serves mf_define and mf_ask; external so tests/memfn/proven_check.c can ask
+ * it of a test-only row. */
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out);
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)

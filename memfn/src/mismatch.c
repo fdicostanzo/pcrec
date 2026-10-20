@@ -290,4 +290,5 @@ const arm mismatch_inplace_arm = {
     0,          /* a REF term carries no table */
     0,          /* its loop is plain C: no header */
     0,          /* no C-library call */
+    ARM_TESTS_UNSTATED, /* renders no FIND (its contract's op) */
 };

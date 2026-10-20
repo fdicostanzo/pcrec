@@ -252,6 +252,9 @@ import tempfile
 import time
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# `python3 -I` drops the script's own directory from sys.path; the sibling
+# import of trace_diff below needs it (same house pattern as cls_identity.py).
+sys.path.insert(0, SCRIPT_DIR)
 DEFAULT_TREE = os.path.dirname(SCRIPT_DIR)
 
 # ---------------------------------------------------------------------------
@@ -2832,6 +2835,31 @@ STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
                "emit-ir-auto", "stderr")
 
 
+BOX_LOCK_CAP = 50   # BOILERPLATE's sweep cap: a loop above this many compiles takes the box lock
+
+
+def take_box_lock(args):
+    """[runkit] THE BOX LOCK (scripts/boxlock). A corpus sweep is thousands of
+    compiles: the heavy run the box's one-at-a-time rule is about, broken most
+    often by sweeps that did not feel heavy (apply_here.md proposal 6). A run
+    over the corpus argv streams, a --variant or a --data census re-execs
+    itself under the lock (waiting, naming the holder) unless it already runs
+    inside the holder's tree (a mech row, a battery, a chainrun heavy stage)
+    or PCREC_BOXLOCK=0; --no-corpus and --limit <= BOX_LOCK_CAP runs, and the
+    composition/dumps-only runs the self-test makes, take nothing."""
+    streams = [s for s in args.streams.split(",") if s]
+    corpus = not args.no_corpus and not (0 < args.limit <= BOX_LOCK_CAP)
+    heavy = corpus and (args.data or args.variant
+                        or any(s not in ("composition", "dumps") for s in streams))
+    boxlock = os.path.join(os.path.dirname(os.path.abspath(__file__)), "boxlock")
+    if not heavy or not os.path.exists(boxlock):
+        return
+    if subprocess.run(["bash", boxlock, "held"]).returncode == 0:
+        return
+    os.execvp("bash", ["bash", boxlock, "run", "--label", "emit_sweep", "--",
+                       sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -2895,6 +2923,12 @@ def main():
     ap.add_argument("--movers")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    if args.trace:
+        # Resolve the late `import trace_diff` NOW: an import failure after the
+        # sweep's tables had printed once left movers=0 tables standing as the
+        # run's apparent verdict (exit code of the traceback aside).
+        import trace_diff  # noqa: F401
+    take_box_lock(args)
 
     if args.data:
         sys.exit(run_data_census(args))

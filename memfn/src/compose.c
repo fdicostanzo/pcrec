@@ -288,13 +288,44 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
  * What row `a`'s text for site `s` proves, as facts (D157): every row today
  * writes a search text (exists 1: NONE is not built, F0 lands at B5); its
  * libc column; and, on a FIND, the bytes every candidate's offset-0 byte
- * lies in: the intersection over the predicate's terms at offset 0 (a SET
- * term's set, a RUN term's first position under its mask), all ones where
- * no term sits there or the op yields no candidate. One function serves the
- * define (site_rec.cls, mf_defined) and the query (mf_ask), so the two agree
- * by construction on one selection; the checks that do not share it are
- * G2's query family and the fixtures' independent oracle. */
-static void kit_class(const arm *a, const mf_site *s, mf_class *out)
+ * lies in: the intersection over the predicate's offset-0 terms THE ROW
+ * TESTS (a SET term's set, a RUN term's first position under its mask), all
+ * ones where no tested term sits there or the op yields no candidate. Which
+ * terms it tests is the row's declared `tests` (R-25): a term the row may
+ * skip proves nothing, whatever pcrec states it needs. One function serves
+ * the define (site_rec.cls, mf_defined) and the query (mf_ask), so the two
+ * agree by construction on one selection; the checks that do not share it
+ * are G2's query family, the fixtures' independent oracle and
+ * tests/memfn/proven_check.c. */
+
+/* 1 iff row `a`'s text tests term `t` of predicate `p` at every candidate,
+ * read off the row's declared `tests`: the one place that value is read. */
+static int row_tests(const arm *a, const mf_pred *p, const mf_term *t)
+{
+    return a->tests == ARM_TESTS_EVERY ||
+           (a->tests == ARM_TESTS_REQUIRED && t->need == MF_REQUIRED &&
+            p->need == MF_REQUIRED);
+}
+
+/* The bytes term `t` admits at its own first position into b (all zeros
+ * where it states none: a REF term carries no data). 1 iff it states any. */
+static int term_first_set(const mf_term *t, uint8_t b[32])
+{
+    memset(b, 0, 32);
+    if (t->kind == MF_T_SET) {
+        memcpy(b, t->set, 32);
+        return 1;
+    }
+    if (t->kind == MF_T_RUN && t->run && t->run_len) {
+        unsigned m = t->mask ? t->mask[0] : 0xFFu;
+        for (unsigned x = 0; x < 256; x++)
+            if ((x & m) == t->run[0]) b[x >> 3] |= (uint8_t)(1u << (x & 7));
+        return 1;
+    }
+    return 0;
+}
+
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
 {
     memset(out, 0, sizeof *out);
     out->v = MF_CLASS_V;
@@ -303,28 +334,23 @@ static void kit_class(const arm *a, const mf_site *s, mf_class *out)
     out->includes = a->includes;
     memset(out->proven0, 0xFF, sizeof out->proven0);
     memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
-    if (s->op != MF_OP_FIND) return;
+    if (s->op != MF_OP_FIND) return NULL;
+    if (a->tests == ARM_TESTS_UNSTATED)
+        return "the row states no `tests` (which terms its text tests), so its "
+               "class cannot say what a candidate's bytes are (R-25)";
+    const mf_pred *p = &s->pred;
     /* a FIND over ONE SET term one byte below the candidate (a context stop,
        MLINE's): its candidate follows a member (MF_CLASS_V 2) */
-    if (s->pred.nterm == 1 && s->pred.term[0].kind == MF_T_SET &&
-        s->pred.term[0].offset == -1)
-        memcpy(out->proven_prev, s->pred.term[0].set, sizeof out->proven_prev);
-    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++) {
-        const mf_term *tm = &s->pred.term[t];
-        if (tm->offset != 0) continue;
+    if (p->nterm == 1 && p->term[0].kind == MF_T_SET && p->term[0].offset == -1 &&
+        row_tests(a, p, &p->term[0]))
+        memcpy(out->proven_prev, p->term[0].set, sizeof out->proven_prev);
+    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++) {
+        const mf_term *tm = &p->term[t];
         uint8_t b[32];
-        memset(b, 0, sizeof b);
-        if (tm->kind == MF_T_SET) {
-            memcpy(b, tm->set, sizeof b);
-        } else if (tm->kind == MF_T_RUN && tm->run && tm->run_len) {
-            unsigned m = tm->mask ? tm->mask[0] : 0xFFu;
-            for (unsigned x = 0; x < 256; x++)
-                if ((x & m) == tm->run[0]) b[x >> 3] |= (uint8_t)(1u << (x & 7));
-        } else {
-            continue;
-        }
+        if (tm->offset != 0 || !row_tests(a, p, tm) || !term_first_set(tm, b)) continue;
         for (unsigned i = 0; i < 32; i++) out->proven0[i] &= b[i];
     }
+    return NULL;
 }
 
 const gate_contract *kit_arm_contract(size_t i)
@@ -853,8 +879,7 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
-    if (!row) return -1;
-    kit_class(row, s, out);
+    if (!row || kit_class(row, s, out)) return -1;
     if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
     if (s->npspan && pres_layout_check(art, s, out)) return -1;
     return 0;
@@ -913,6 +938,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         f[0] ? f : rid ? "(its arm is denied or does not apply)"
                                        : "(no row applies; the generic row must)");
     }
+    mf_class cls;
+    const char *cw = kit_class(row, s, &cls);
+    if (cw) return kit_fail(art, "mf_define: %s", cw);
 
     if (art->nsites == art->cap) {
         uint32_t cap = art->cap ? art->cap * 2 : 8;
@@ -943,7 +971,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         r->reach_k = (int)art->nreach;
         art->reach_row[art->nreach++] = rid;
     }
-    kit_class(row, s, &r->cls);
+    r->cls = cls;
 #ifdef MF_TRACE
     if (rid)
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",

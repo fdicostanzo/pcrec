@@ -25,8 +25,10 @@ index at spawn; treat them as context, not tasking.
 
 ## Worktree setup (writers)
 1. `git -C "$(git rev-parse --show-toplevel)" worktree add worktrees/<lane> -b lane/<lane>` (run from the main tree)
-2. cd there; FIRST command: `git rev-parse --show-toplevel` — no edit until
-   it prints your worktree path.
+2. NO `cd` into the worktree (the PreToolUse hook scripts/hooks/no_cd_worktree.sh
+   blocks it; it moves the session cwd): every command uses absolute paths or
+   `git -C <worktree>`. FIRST command: `git -C <worktree> rev-parse
+   --show-toplevel` — no edit until it prints your worktree path.
 3. Build: `make -j16` on the Linux dev box (plain `gcc` is GNU gcc 15.2;
    the Mac needs `CC=gcc-16`, see Box facts).
 Read-only critics work in the main tree and never run make.
@@ -84,7 +86,8 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
 - ARM OWED RUNS DETACHED: a run you launch as a plain background task DIES
   WITH YOUR SHELL the moment the manager closes your session (b1triage's
   did, 2026-09-22) — a chain you are owing past your own end must be
-  `nohup … > log 2>&1 & disown`, not a bare `&`. On the Mac, ALSO keep the
+  `nohup … > log 2>&1 & disown`, not a bare `&` (`scripts/chainrun` detaches
+  this way by default: setsid, stdin closed, output to its logdir). On the Mac, ALSO keep the
   box awake for the chain's life (`nohup caffeinate -s -w <chain PID> &`, or
   prefix the chain with `caffeinate -s`): a maintenance sleep counts toward
   GNU timeout's wall clock and fails a check as if the code did (pf35's
@@ -96,22 +99,31 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   sequence the work so all heavy-context phases (design, code, review)
   end at a commit + report FIRST; the report marks its validation numbers
   OWED and names the log path + exact completion line; launch the run in
-  background and END. The manager's watcher catches completion; a fresh
-  agent (or the manager) reads the log and completes the delivery. If a
+  background and END. The manager's watcher (`scripts/watchrun`) catches
+  completion; a fresh agent (or the manager) reads the log and completes
+  the delivery. If a
   long run's results feed your own later work, fill the wait with
   independent items — never idle-wait — or deliver in stages and let a
   fresh agent resume from your report.
 - NEVER IDLE-WAIT FOR A BOX SLOT OR A LONG RUN (Frank, 2026-10-07). A lane
-  commits, ARMS the chain detached (`nohup setsid` waiter polling
-  `worktrees/NAME/.lift`, then the chain script; `& disown`), hands back and
-  ENDS. The manager lifts; a FRESH agent reads the verdicts.
-  ONE WAITER PER WORKTREE. Before arming in a worktree that has been armed
-  before, find any live waiter or chain (`ps -eo pid,args | grep
-  worktrees/NAME/build/land`) and stop it with `scripts/safekill`. NEVER
-  rewrite a chain.sh that a live waiter may run: bash reads scripts
-  incrementally. On 2026-10-09 decattr's original waiter and decland's new
-  one both fired on one `.lift` and ran interleaved chains over the same
-  logs and scratch, which contaminated every verdict.
+  commits, ARMS its chain with `scripts/chainrun --lift worktrees/NAME/.lift
+  build/STAGES` (detached by default; the lift wait and every stage run in
+  it), hands back and ENDS. The manager lifts; a FRESH agent reads the
+  verdicts. DO NOT hand-write a waiter, a chain.sh or a watcher: chainrun,
+  `scripts/watchrun` and `scripts/verdict` (scripts/CLAUDE.md) carry the
+  fixes for every chain/watcher bug we have had, each planted back in their
+  self-tests — rc read after a `$(...)`, DONE written when a stage died, two
+  waiters on one `.lift` (decattr/decland, 2026-10-09, interleaved chains that
+  contaminated every verdict), a chain.sh edited under a live waiter, a
+  watcher that fired on its startup state or read quiet as done.
+  ONE CHAIN OR WAITER PER TREE is enforced: a second chainrun in the tree is
+  REFUSED naming the live one (`scripts/safekill PID` it first if it is
+  yours and stale). The stages file is read once, so editing it later
+  changes nothing. Stage verdicts and a chain's trailer (`== CHAIN DONE` only
+  after the last stage passed, else `== CHAIN FAILED stage=...`) are in
+  `build/chainrun/<ts>-<name>/chain.log`; read any log's verdict with
+  `scripts/verdict LOG`. The manager watches with `scripts/watchrun TREE`
+  (one line on an actionable state, then exits).
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
@@ -119,7 +131,16 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   firing timeout is a FINDING.
 - Kill only by `scripts/safekill PID`; wrap hang/allocation risks in
   `scripts/watchdog -s WALL -m RSS_KB -c CPU -S label -- cmd`.
-- ONE heavy suite at a time on this box; coordinate via the manager.
+- ONE heavy suite at a time on this box; coordinate via the manager. THE BOX
+  LOCK enforces it: `scripts/boxlock` (flock on `worktrees/.box.lock`) is
+  taken by perfrun, battery.sh, the mech matrix (a single row too),
+  emit_sweep.py corpus runs, `make test-axes` and `make test-ksweep`, and by
+  every `heavy` chainrun stage; a second heavy run WAITS, naming the holder
+  (`PCREC_BOXLOCK_WAIT=0` refuses instead, exit 75). `scripts/boxlock status`
+  before starting anything heavy by hand. SWEEP CAP: a loop above 50
+  compiles (a census, a sweep, a probe battery) is heavy — run it as
+  `scripts/boxlock run --label NAME -- CMD` or as a `heavy` chainrun stage.
+  `PCREC_BOXLOCK=0` opts out, only with the manager's say-so.
 - If your task WRITES CODE (anything under `src/`, `cli/`, `lib/`): read
   docs/dev/coding_guide.md before your first edit — house disciplines, the
   taught primitives in their current state, emitted-text and anchor-column
@@ -145,16 +166,23 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   intent re-verified.
 
 ## Heavy-chain template: `make test` goes through `scripts/perfrun` ([TT-JTUNE])
-A chain's (or slot's) full-suite line is NOT a raw `make -k -jN -Otarget test`:
+A chain's (or slot's) full-suite line is NOT a raw `make -k -jN -Otarget test`.
+In a chainrun stages file (`NAME CLASS CAP COMMAND`, scripts/chainrun's header):
 
-    scripts/perfrun --label NAME -- "$L/test.log" [MAKEVAR=val ...]
-    log "make test rc=$?"        # perfrun returns make's rc unchanged
+    build   light 300   make -j16
+    strict  light 600   make strict
+    test    light ttune scripts/perfrun --label NAME -- "$STAGE_LOG.make"
+    mech    heavy 5400  make mech S222 S223
+
+(perfrun and mech take the box lock themselves, so `light` is enough for
+them; `heavy` is for a command that does not. `ttune` sizes the cap from the
+ledger's longest clean run times 1.5.) perfrun returns make's rc unchanged.
 
 It picks a rotated parallelism shape, writes make's output to the log
 byte-identically (the verdict is still `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`),
 samples CPU, and records a ledger row (docs/dev/ttune_measurement.md).
 `--shape J,P` pins a shape when a run must be comparable to an earlier one.
-The chain's log line may append `$(cat "$L/test.log.perfrun")`'s last lines.
+`scripts/verdict LOG` reads that log plus its `LOG.perfrun` note in one go.
 TRIAGE RULE: a red section list is read WITH the perfrun note. `class=K44-ONLY`
 (red only in test-corpus/counterk/resource/cli on the counterk.rxt:1807 or
 resource CPU-cap cells) and `class=LOAD-SUSPECT` are the SHAPE's finding, not

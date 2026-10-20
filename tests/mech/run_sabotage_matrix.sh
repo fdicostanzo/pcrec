@@ -749,6 +749,30 @@ USAGE
     ;;
 esac
 
+# THE BOX LOCK ([runkit], scripts/boxlock). A matrix, and a single row too,
+# builds trees and runs suites at the box's width: the heavy run the one-at-a-
+# time rule is about. Re-exec under the lock (waiting, naming the holder)
+# unless already inside the holder's tree (a battery, a chainrun heavy stage)
+# or PCREC_BOXLOCK=0. VALIDATE_ONLY builds nothing and takes nothing.
+# The requested ids are validated BEFORE the lock is taken, so a typo FATALs
+# at once instead of after a long wait for the box (same rule as the later
+# selection loop, which stays: it builds the run list).
+for id in ${IDS[@]+"${IDS[@]}"}; do
+    idhit=""
+    for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
+        [ -e "$f" ] || continue
+        base="$(basename "$f")"
+        if [[ "$base" == "$id"_* || "$base" == "$id" ]]; then idhit=1; break; fi
+    done
+    if [ -z "$idhit" ]; then
+        echo "FATAL: requested id '$id' matches no sabotage definition under $SCRIPT_DIR/sabotages/ (every requested id must run; nothing was measured)" >&2
+        exit 2
+    fi
+done
+if [ "$VALIDATE_ONLY" != "1" ] && ! bash "$ROOT_DIR/scripts/boxlock" held; then
+    exec bash "$ROOT_DIR/scripts/boxlock" run --label "mech${ONLY:+:$ONLY}" -- bash "$SCRIPT_DIR/run_sabotage_matrix.sh" ${IDS[@]+"${IDS[@]}"}
+fi
+
 MADE_SCRATCH=0
 if [ -z "${MECH_SCRATCH:-}" ]; then
     MECH_SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-mech-sabotage.XXXXXX")"

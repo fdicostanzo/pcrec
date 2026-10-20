@@ -308,6 +308,28 @@ pcrec (the Makefile owns that).
   `make test`; `--rules` lists the rules. `make test-plan-lint` runs the
   first and the third (tests/plan_lint/run_plan_lint.sh).
 
+- **hooks/pre-push-light** — the LIGHT push gate (apply_here.md proposal 3,
+  lane hooks, 2026-10-20): tree-wide plan lint (`tests/plan_lint/
+  run_plan_lint.sh`, PL14's tree scan included), the tree-wide spec scan
+  (`tests/spec_history/spec_history.py ROOT`) and `make strict`; runs all
+  three and names which failed; ~25 s measured. `make hooks
+  HOOKS=pre-push-light` installs it AS `pre-push` (the Makefile drops the
+  `-light` suffix), replacing the full-`make test` gate, which stays
+  available as `hooks/pre-push` (`make hooks HOOKS=pre-push`). INSTALLED on
+  the dev box (shared gitdir hooks/, so every worktree pushes through it).
+  Bypass `git push --no-verify`. Self-checked by `tests/hooks.test`.
+- **hooks/no_cd_worktree.sh** — PreToolUse(Bash) hook registered in the
+  project's `.claude/settings.json` (apply_here.md proposal 4, owner-approved
+  2026-10-20): exit 2 + a one-line reason when a command `cd`s into a path
+  under `worktrees/` or chains a `cd` (`cd X && ..`, `cd X; ..`, `cd X || ..`,
+  newline). Allowed: a lone `cd`/`cd /repo/root`, `git -C`, absolute paths, a
+  `cd` inside quotes (ssh/`bash -c` run elsewhere; a deliberate gap) and a
+  `cd` in a `( )` or `$( )` subshell (its cwd dies with it). Bash + one awk,
+  no jq, ~2 ms; fails open on input it cannot parse. Self-test
+  `tests/hooks.test` (planted blocked and allowed shapes both ways, the
+  settings registration, the light gate's three checks), wired in scripts/
+  Makefile by a dependency line since the script is not at scripts/ top level.
+
 - **hooks/pre-commit** — [PLAN-LINT] step 3, opt-in like hooks/pre-push:
   runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
   docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/
@@ -643,5 +665,65 @@ pcrec (the Makefile owns that).
   and exits 1 on a stale block, a missing `<a id="sN">` anchor or a repeated
   number). The numbering rule is docs/spec/CLAUDE.md's "Numbering and
   citation"; `make test-spec-history` runs `--check`. Standard library only.
+
+- **boxlock / chainrun / watchrun / verdict** — the RUN-CONTROL family
+  (apply_here.md proposals 2 and 6, lane runkit, 2026-10-20): one lock, one
+  chain runner, one watcher and one verdict reader, so lanes and the manager
+  stop hand-writing chain.sh/waiter/watcher scripts that re-introduce the
+  same bugs (dev_methods_handoff.md §7). Each self-test plants the historical
+  bug back into a scratch copy and shows it caught. Plain bash + coreutils +
+  util-linux `flock`; any cwd; GNU timeout via tests/lib/timeout_bin.sh.
+  - **boxlock** — the box's ONE heavy-run lock: `flock` on the MAIN tree's
+    `worktrees/.box.lock` (found from the script's own location; override
+    `PCREC_BOXLOCK_FILE`). `boxlock run [--label L] [--wait S|--no-wait] --
+    CMD` takes it and EXECs CMD (CMD's rc; the lock lives as long as CMD's
+    tree holds the fd, so a SIGKILL cannot leave a stale lock); a busy box
+    WAITS, naming the holder on stderr at once and every 5 min, or refuses
+    with exit 75 under `--no-wait`/`--wait S`/`PCREC_BOXLOCK_WAIT`. `status`
+    (0 free — a dead owner's record reads `free (last holder ... exited)`;
+    1 HELD with pid/label/since/cwd; 3 HELD-ORPHAN, owner dead but a
+    descendant still holds the fd, live holders listed from /proc for
+    safekill). `held` (0 = the caller is inside the holder's tree via
+    `PCREC_BOXLOCK_HELD`'s token, or locking is off): the entry points'
+    re-exec gate, which is also what makes nesting (a battery's mech stage,
+    a heavy chainrun stage calling perfrun) deadlock-free. `PCREC_BOXLOCK=0`
+    runs unlocked; a box with no `flock` (the Mac) or a tree with no git
+    runs unlocked with a note. TAKEN BY (default ON): perfrun's run mode,
+    battery.sh (whole run), tests/mech/run_sabotage_matrix.sh (any row;
+    not VALIDATE_ONLY), emit_sweep.py when it sweeps the corpus argv streams
+    or runs `--variant`/`--data` (not `--no-corpus`, `--limit <= 50`, or a
+    composition/dumps-only run), and `make test-axes`/`make test-ksweep`.
+    A run that never calls it still works. Self-test `tests/boxlock.test`.
+  - **chainrun** — `chainrun [--fg] [--lift FILE] [--keep-going] [--logdir
+    D] [--tree D] [--name N] STAGES` / `--check STAGES`. Stages file: `NAME
+    heavy|light CAP COMMAND...`, CAP seconds/`none`/`ttune` (the ledger's
+    longest clean same-nproc `make test` wall x `CHAINRUN_GROWTH`=1.5; no
+    history = parse error). Reads the file once (snapshot); runs each stage
+    under `bash -c` in the tree, own session, stdin closed, output to
+    `LOGDIR/NAME.log`, `heavy` stages under boxlock (wait not counted in the
+    cap); rc taken by `wait` on the same line; stage verdict = `verdict
+    --no-rc-lines --rc RC` over its log; `== CHAIN DONE` only after the last
+    stage passed, else `== CHAIN FAILED stage=...` (a TERM/INT/HUP writes it
+    too and kills the stage). One chain or `--lift` waiter per tree: flock on
+    `TREE/build/.chainrun.lock`, a second is REFUSED (75) naming the holder.
+    Detached by default (setsid; `chain.pid` has pid == sid). Self-test
+    `tests/chainrun.test`.
+  - **watchrun** — `watchrun [--on chain|stage] [--quiet-min N] [--every S]
+    [--max-hours H] LOGDIR|TREE` or `--log FILE [--pid P] [--done ERE]`.
+    Exits ONCE with one stdout line: 0 CHAIN-END/STAGE-END/DONE (with the
+    verdict), 3 QUIET, 4 DIED (pid gone, no trailer), 5 LOCK-ORPHAN, 6 CAP;
+    2 NOT ARMED (already ended at startup, no live chain, no target). Never
+    fires on startup state; QUIET = three consecutive polls with no log
+    growth, no HEAD move and no CPU in the run's process tree (by exact pid)
+    and the bound passed, counted from the watch start. No temp files; a
+    TREE resolves only its LIVE chain. Self-test `tests/watchrun.test`.
+  - **verdict** — `verdict [--rc N] [--no-rc-lines] LOG...`: `VERDICT
+    GREEN|RED|INCOMPLETE: ...` + evidence, exit 0/1/2. Reads make's error
+    lines (both the Linux `Makefile:N:` and the bare form), perfrun's DONE
+    line (LOG.perfrun read automatically; its class shown), mech's COMPLETE
+    (red iff unexpected > 0) / FATAL, battery and chainrun trailers,
+    run_group summaries and hand-chain `rc=` status lines; never a FAIL grep
+    or "sections ran". No completion line and no red line = INCOMPLETE
+    (killed), never green. Self-test `tests/verdict.test`.
 
 Maintenance: update this file when scripts are added/removed or change role.

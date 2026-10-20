@@ -2462,3 +2462,26 @@ pointer when a kit change merges to main.
 - **Lessons:**
   - when a tool's summary line gains a field, grep for its readers. n2_census.sh's fixed-string match is the same class as the SECOND-READER lesson;
   - do not explain an rc from memory: read the tool's rc table (the 10-17 lesson, repeated).
+
+## 2026-10-18 (late evening) — new session; R-25 built (light-validated), heavy validation owed after the bench
+
+- Woke on /pcrec-memfn-manager. Rowfix was on main (fe7...). Pruned 22 merged kit worktrees through `wtprune --apply NAME..` and left main's merged trees alone.
+- R-25: an opus lane (r25) built `arm.tests` plus the kit_class fix and the proven_check.c fixture, with 0 emit_sweep movers on six arms and green light checks. Reviewed and accepted (ofsskip's EVERY claim checked against verify_chain). **Kit ruling:** no MF_SITE_ABI bump, since layout and shipped values are unchanged. Owed: make test plus mech S1018/S1083 at the same tip, in a slot after the bench re-baseline (01:00 to about 16:00 on 10-19).
+- Finding: emit_sweep `--arms start` rc 1 from an orphan DIFFER_PINS pattern (`a.{1,5}z`, from B3b). Posted as a notice; the kit fixes it.
+- 22:15 pause (Frank: shut down for the night). pinfix (sonnet) fixed emit_sweep's start-arm orphan pin (1d797ab3a) and was delivered to main, which will merge it. Main queued R-25's heavy slot first after the bench sentinel. Nothing in flight. wake.md rewritten.
+
+## 2026-10-20 (morning) — woke; R-25's heavy slot agreed for the merged abi-81 tip
+
+- Woke on /pcrec-memfn-manager. pinfix (5e1333b40) and rowfix are on main, and both trees were pruned with wtprune. The bench sentinel landed at 07:02. The box is busy with main's ctxval, the heavy validation of lane/ctxbuild (abi 80 → 81).
+- Agreed with main: once ctxbuild is merged and the box is free (main will message), merge main into lane/memfn-r25, then strict and the light checks, then ONE heavy slot at that tip. The slot is make test, mech S1018/S1083 in one PROCS=4 call, and the emit_sweep variant/trace/rwquest arms (main: yes). Then post done: R-25.
+- Main addresses the kit by socket, because the bench session currently also carries the name pcrecdev3.
+
+## 2026-10-20 (afternoon) — R-25 validated and delivered
+
+- Main merged ctxbuild (abi 81) at 39457a796 and gave the slot. The merge into lane/memfn-r25 had one conflict, in the lanes index, where both sides append entries (kept both). Strict green at d49ff5515.
+- Lane r25heavy (sonnet) wrote and armed the chain at a pinned detached worktree, r25-mt. CHAIN FAILED on three steps; lane r25tri (sonnet) triaged them:
+  - test-lookaround is PRE-EXISTING at main (stale population pins, 13 identical FAILs at both tips); a notice to main;
+  - variant and trace failed on the chain's own `python3 -I` (emit_sweep imports its sibling trace_diff); re-run CLEAN.
+  Mech 2/2 and every sweep arm show 0 movers. Posted `done: R-25`.
+- The make test was load-contaminated by main's lanes, which main owned and explained. Its passes stand.
+- **Lesson:** `python3 -I` is not universal for repo scripts: emit_sweep's variant/trace paths import a sibling module. A chain template must run emit_sweep without `-I`, or the script must fix its own path (notice filed).

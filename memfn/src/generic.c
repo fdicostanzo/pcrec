@@ -866,4 +866,5 @@ const arm generic_arm = {
     0,          /* a set is `member` or its own test: no table is named */
     0,          /* its compares are its own: no header */
     0,          /* plain loops: no C-library call */
+    ARM_TESTS_EVERY,    /* "It tests EVERY term, OPTIONAL ones included" */
 };

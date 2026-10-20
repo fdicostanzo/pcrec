@@ -18,7 +18,12 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   descriptor `kit_table` and `kit_walk` (R4e'.0), and the row
   contracts' types (`gate_contract`: `uses` per site kind and phase,
   `serves` per field; `CL_*`/`FLD_*` from fields.def) and the MF_TRACE
-  record calls. Never included outside this directory.
+  record calls. Since R-25 (lane memfn-r25) every arm also DECLARES which
+  terms of a FIND predicate its text tests, `arm.tests` (`ARM_TESTS_EVERY`,
+  `ARM_TESTS_REQUIRED`, or `ARM_TESTS_UNSTATED` on a row that renders no
+  FIND), and `kit_class` is external so a white-box check can ask it.
+  Never included outside this directory, save by that check
+  (tests/memfn/proven_check.c).
 - **compose.c** — K2, the composer (R17-b′ B3a adds `kit_presence_check`, the PRESENCE-statement rules, inside `site_check`; B3b adds the `pres_proof` and MF_USE_ENTRY rules there, the PRESENCE ASK (`ask_sel`: a site stating spans and no part answers its links only), the links into every class (`fd_pres` after `kit_class`, in the query and the define) and `pres_layout_check`, the define's refusal of parts that are not the links' layout): THE KIT'S ONE SELECTION WALK,
   `kit_walk` (R4e'.0, integration.md §R4.9.2.3: per row of the asked slot,
   in table order, the deny, the gate, the row's predicate; first match; a
@@ -382,7 +387,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   from `gate_in.fd`) and `start` (hook); `gate.c` their classifiers and the
   `shadow` trace phase; `compose.c` the QUERY (`mf_ask`/`ask_sel`: the walk
   `mf_define` would take, no state written; `kit_class` the class of an
-  arm on a site), the set's checks (`measures_check`: `kit.` keys only,
+  arm on a site; since R-25 only the terms the row's `tests` says it tests
+  contribute to `proven0`/`proven_prev`, and a FIND row stating
+  `ARM_TESTS_UNSTATED` is refused by `mf_define`/`mf_ask`), the set's checks (`measures_check`: `kit.` keys only,
   values in bound, no duplicate) and `consulted`, `site_check`'s `body`
   rule (PARAM refused until B8; an UNSTATED body refused since R-23, MF_SITE_ABI 14), and under MF_TRACE the define's re-ask
   (class must equal; `exists=0` must prove all bytes); `arms` gain a `libc`

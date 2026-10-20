@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# chainrun — the ONE committed chain runner (apply_here.md proposal 2, lane
+# runkit). Lanes used to hand-write build/land/chain.sh and every copy
+# re-introduced a bug the last one fixed (dev_methods_handoff.md §7.3/§7.4):
+# rc captured after a `$(...)` (`echo "$(date) rc=$?"` always printed rc=0 and
+# B4 merged on false rc lines, 2026-10-13); DONE written when a stage died (a
+# slot's EXIT trap, 2026-10-09, released the next chain early); two waiters on
+# one worktree firing on one `.lift` and running interleaved chains over the
+# same logs (2026-10-09; again 2026-10-16); a chain.sh edited under a live
+# waiter (bash reads scripts lazily); caps sized from stale baselines (five
+# false fires). Each is fixed here once, and scripts/tests/chainrun.test plants
+# each one back and shows it caught.
+#
+#   scripts/chainrun [--fg] [--lift FILE] [--keep-going] [--logdir DIR]
+#                    [--tree DIR] [--name N] STAGES_FILE
+#   scripts/chainrun --check STAGES_FILE      parse + resolve caps, run nothing
+#
+# STAGES_FILE: one stage per line, `NAME CLASS CAP COMMAND...` (# comments and
+# blank lines ignored). NAME [A-Za-z0-9_.-]+, unique. CLASS `heavy` (the stage
+# takes scripts/boxlock for its whole run — waiting, naming the holder, never
+# overlapping another heavy run) or `light`. CAP is the stage's wall cap in
+# seconds (GNU timeout, resolved by tests/lib/timeout_bin.sh; the lock wait is
+# NOT counted), `none`, or `ttune`: the longest clean `make test` wall in the
+# ttune ledger on a box with this nproc, times CHAINRUN_GROWTH (default 1.5 —
+# a policy margin, not a measurement; a stage with no history must state its
+# cap). COMMAND runs under `bash -c` with cwd = the tree, stdin /dev/null,
+# stdout+stderr to LOGDIR/NAME.log, in its own session, with STAGE_NAME,
+# STAGE_LOG, CHAIN_DIR and CHAIN_TREE in its environment. A make test stage is
+# `scripts/perfrun --label L -- "$STAGE_LOG.make"` (it takes the box lock
+# itself, so its class may be light; nesting under a heavy stage is fine).
+#
+# WHAT IT GUARANTEES:
+#   - the stages file is read ONCE (copied to LOGDIR/stages.snapshot); editing
+#     it under a live chain changes nothing;
+#   - each stage's rc is taken by `wait` and assigned on the same line, before
+#     anything else runs (the RC-CAPTURE line below);
+#   - each stage's verdict is scripts/verdict over its log with that rc
+#     (`--no-rc-lines`: the stage's own rc is the authority over any `rc=`
+#     text its output prints) — a red make line or a trailer's red fails the
+#     stage even when the command's rc was lost in a pipe;
+#   - `== CHAIN DONE` is written ONLY after the LAST stage passed; every other
+#     ending (a failed stage, a cap, a refused lock, a signal) writes
+#     `== CHAIN FAILED stage=NAME ...`; a SIGKILL writes nothing, which the
+#     watcher reads as DIED (a run with no trailer was killed);
+#   - ONE CHAIN OR WAITER PER TREE: the chain holds flock on
+#     TREE/build/.chainrun.lock for its whole life, the --lift wait included;
+#     a second chainrun in the same tree is REFUSED (exit 75) naming the
+#     holder. The lock record names the chain's LOGDIR (scripts/watchrun TREE
+#     reads it).
+#   - default is DETACHED (setsid, stdin /dev/null, output to
+#     LOGDIR/chainrun.out; it outlives the caller's shell and session):
+#     prints the pid and paths and returns. --fg runs in the foreground.
+#
+# LOGDIR (default TREE/build/chainrun/<timestamp>-<name>/; an existing chain.log
+# there is refused, so a leftover log is never appended to):
+#   chain.log   `== chainrun START ...`, `== chain WAITING lift=F`, `== chain
+#               LIFTED`, `== stage N START ...`, `== stage N END rc=R
+#               verdict=V wall=Ws ... :: summary`, then the trailer
+#   chain.pid   `PID STARTTIME SID` (pid == sid when detached)
+#   NAME.log    each stage's output;  stages.snapshot;  chainrun.out
+# Exit (--fg): 0 CHAIN DONE, 1 CHAIN FAILED, 64 usage/parse, 75 tree owned.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+
+die() { echo "chainrun: $*" >&2; exit 64; }
+pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
+pid_sid()   { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${4}"; }
+now() { date -Iseconds; }
+
+fg=0 lift="" keep=0 logdir="" tree="" name="" check=0 child=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --fg) fg=1; shift ;;
+        --lift) lift=$2; shift 2 ;;
+        --keep-going) keep=1; shift ;;
+        --logdir) logdir=$2; shift 2 ;;
+        --tree) tree=$2; shift 2 ;;
+        --name) name=$2; shift 2 ;;
+        --check) check=1; shift ;;
+        --detached-child) child=1; fg=1; shift ;;
+        -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        --) shift; break ;;
+        -*) die "unknown option $1" ;;
+        *) break ;;
+    esac
+done
+[ $# -eq 1 ] || die "usage: chainrun [--fg] [--lift FILE] [--keep-going] [--logdir DIR] [--tree DIR] [--name N] STAGES_FILE"
+stages_file=$(cd "$(dirname "$1")" 2>/dev/null && pwd)/$(basename "$1")
+[ -r "$stages_file" ] || die "cannot read stages file $1"
+if [ -z "$tree" ]; then
+    tree=$(git -C "$(dirname "$stages_file")" rev-parse --show-toplevel 2>/dev/null) || die "--tree not given and $stages_file is not in a git tree"
+fi
+tree=$(cd "$tree" 2>/dev/null && pwd) || die "no tree $tree"
+name=${name:-$(basename "$stages_file" | sed 's/\.[^.]*$//')}
+case "$lift" in ''|/*) ;; *) lift=$(pwd)/$lift ;; esac
+
+# ---- parse (once) ----
+ttune_cap() {
+    local main ledger store g
+    main=$(cd "$(git -C "$tree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)/.." 2>/dev/null && pwd) || return 1
+    ledger=$main/docs/dev/ttune_ledger.tsv store=$main/build/perf/ttune
+    g=${CHAINRUN_GROWTH:-1.5}
+    { [ -f "$ledger" ] && cat "$ledger"; cat "$store"/*.row.tsv 2>/dev/null; } |
+        awk -F'\t' -v np="$(nproc)" -v g="$g" '$1 != "run_id" && $9 == "0" && $14 == "no" && $17 == np && $7 + 0 > m {m = $7 + 0}
+            END {if (m > 0) {c = m * g; printf "%d\n", (c == int(c)) ? c : int(c) + 1} else exit 1}'
+}
+S_NAME=() S_CLASS=() S_CAP=() S_CMD=()
+lineno=0
+while IFS= read -r line || [ -n "$line" ]; do
+    lineno=$((lineno + 1))
+    t=${line#"${line%%[![:space:]]*}"}
+    case "$t" in ''|'#'*) continue ;; esac
+    read -r n c k rest <<<"$t"
+    [ -n "${rest:-}" ] || die "$stages_file:$lineno: want 'NAME CLASS CAP COMMAND...', got: $t"
+    case "$n" in *[!A-Za-z0-9_.-]*) die "$stages_file:$lineno: bad stage name '$n'" ;; esac
+    for e in ${S_NAME[@]+"${S_NAME[@]}"}; do [ "$e" = "$n" ] && die "$stages_file:$lineno: duplicate stage name '$n'"; done
+    case "$c" in heavy|light) ;; *) die "$stages_file:$lineno: CLASS must be heavy or light, got '$c'" ;; esac
+    case "$k" in
+        none) ;;
+        ttune) k=$(ttune_cap) || die "$stages_file:$lineno: cap=ttune but the ttune ledger has no clean row for nproc $(nproc); state the cap in seconds" ;;
+        *[!0-9]*|'') die "$stages_file:$lineno: CAP must be seconds, none or ttune, got '$k'" ;;
+    esac
+    S_NAME+=("$n") S_CLASS+=("$c") S_CAP+=("$k") S_CMD+=("$rest")
+done < "$stages_file"
+[ ${#S_NAME[@]} -ge 1 ] || die "$stages_file: no stages"
+
+if [ $check = 1 ]; then
+    for i in "${!S_NAME[@]}"; do printf '%-16s %-5s cap=%-6s %s\n' "${S_NAME[$i]}" "${S_CLASS[$i]}" "${S_CAP[$i]}" "${S_CMD[$i]}"; done
+    exit 0
+fi
+
+tlock=$tree/build/.chainrun.lock
+mkdir -p "$tree/build"
+refuse_if_owned() {
+    exec 8>>"$tlock"
+    if ! flock -w 2 8; then   # -w, not -n: a watcher's probe holds it for a moment
+        echo "chainrun: REFUSED: $tree already has a live chain or waiter: $(head -1 "$tlock" 2>/dev/null) — one per tree; stop it with scripts/safekill PID first" >&2
+        exit 75
+    fi
+}
+[ -n "$logdir" ] || logdir=$tree/build/chainrun/$(date +%Y%m%d-%H%M%S)-$name
+case "$logdir" in /*) ;; *) logdir=$(pwd)/$logdir ;; esac
+if [ $child = 0 ] && [ -e "$logdir/chain.log" ]; then die "$logdir/chain.log exists (a leftover chain's log); give a fresh --logdir"; fi
+
+if [ $fg = 0 ]; then
+    ( refuse_if_owned ) || exit 75      # fast, clear refusal before detaching; the child re-takes it
+    mkdir -p "$logdir"
+    args=(--detached-child --logdir "$logdir" --tree "$tree" --name "$name")
+    [ -n "$lift" ] && args+=(--lift "$lift")
+    [ $keep = 1 ] && args+=(--keep-going)
+    setsid bash "$0" "${args[@]}" "$stages_file" < /dev/null > "$logdir/chainrun.out" 2>&1 &
+    cpid=$!
+    disown
+    for _ in $(seq 50); do [ -s "$logdir/chain.pid" ] && break; [ -d "/proc/$cpid" ] || break; sleep 0.2; done
+    if [ ! -s "$logdir/chain.pid" ]; then
+        echo "chainrun: the detached chain did not start:" >&2; cat "$logdir/chainrun.out" >&2; exit 75
+    fi
+    echo "chainrun: armed pid=$cpid (detached) logdir=$logdir"
+    echo "chainrun: watch: scripts/watchrun $logdir   verdict: scripts/verdict $logdir/chain.log   stop: scripts/safekill $cpid"
+    exit 0
+fi
+
+# ---- the chain itself ----
+refuse_if_owned
+mkdir -p "$logdir"
+[ -e "$logdir/chain.log" ] && { echo "chainrun: $logdir/chain.log exists (a leftover chain's log); give a fresh --logdir" >&2; exit 64; }
+cl=$logdir/chain.log
+cp "$stages_file" "$logdir/stages.snapshot"
+printf '%s %s %s\n' "$$" "$(pid_start $$)" "$(pid_sid $$)" > "$logdir/chain.pid"
+printf 'pid=%s start=%s logdir=%s stages=%s since=%s\n' "$$" "$(pid_start $$)" "$logdir" "$stages_file" "$(now)" > "$tlock"
+nst=${#S_NAME[@]} cur="" spid=""
+echo "== chainrun START name=$name tree=$tree head=$(git -C "$tree" rev-parse --short HEAD 2>/dev/null || echo -) stages=$nst pid=$$ sid=$(pid_sid $$) $(now)" >> "$cl"
+
+on_signal() {
+    trap - TERM INT HUP
+    echo "== CHAIN FAILED stage=${cur:-none} killed=SIG$1 $(now)" >> "$cl"
+    [ -n "$spid" ] && kill -TERM -- "-$spid" "$spid" 2>/dev/null
+    exit $((128 + $2))
+}
+trap 'on_signal TERM 15' TERM
+trap 'on_signal INT 2' INT
+trap 'on_signal HUP 1' HUP
+
+if [ -n "$lift" ]; then
+    cur=lift-wait
+    echo "== chain WAITING lift=$lift $(now)" >> "$cl"
+    while [ ! -e "$lift" ]; do sleep "${CHAINRUN_LIFT_POLL:-15}" & wait $!; done
+    echo "== chain LIFTED $(now)" >> "$cl"
+fi
+
+failed="" frc="" ran=0
+for i in "${!S_NAME[@]}"; do
+    cur=${S_NAME[$i]} class=${S_CLASS[$i]} cap=${S_CAP[$i]}
+    slog=$logdir/$cur.log
+    cmdv=(bash -c "${S_CMD[$i]}")
+    [ "$cap" != none ] && cmdv=("${TIMEOUT_BIN:-timeout}" --kill-after=60 "$cap" "${cmdv[@]}")
+    [ "$class" = heavy ] && cmdv=("$here/boxlock" run --label "chain:$name/$cur" -- "${cmdv[@]}")
+    echo "== stage $cur START class=$class cap=$cap $(now)" >> "$cl"
+    t0=$(date +%s)
+    ( cd "$tree" && STAGE_NAME=$cur STAGE_LOG=$slog CHAIN_DIR=$logdir CHAIN_TREE=$tree exec setsid "${cmdv[@]}" ) < /dev/null > "$slog" 2>&1 &
+    spid=$!
+    wait "$spid"; rc=$?   # RC-CAPTURE: the stage's rc, before anything else runs
+    spid=""
+    w=$(( $(date +%s) - t0 ))
+    ran=$((ran + 1))
+    vout=$("$here/verdict" --no-rc-lines --rc "$rc" "$slog"); vline=${vout%%$'\n'*}
+    v=${vline#VERDICT }; v=${v%%:*}
+    note=""
+    [ "$cap" != none ] && [ "$rc" = 124 ] && note=" CAP-FIRED(${cap}s)"
+    [ "$rc" = 75 ] && grep -q '^boxlock: REFUSED' "$slog" && note=" BOXLOCK-REFUSED"
+    echo "== stage $cur END rc=$rc verdict=$v wall=${w}s$note $(now) :: ${vline#VERDICT *: }" >> "$cl"
+    if [ "$rc" -ne 0 ] || [ "$v" = RED ]; then
+        [ -z "$failed" ] && { failed=$cur; frc=$rc; }
+        [ $keep = 1 ] || break
+    fi
+done
+cur=""
+if [ -z "$failed" ] && [ "$ran" -eq "$nst" ]; then
+    echo "== CHAIN DONE stages=$ran/$nst $(now)" >> "$cl"
+    exit 0
+fi
+echo "== CHAIN FAILED stage=${failed:-?} rc=${frc:-?} ran=$ran/$nst $(now)" >> "$cl"
+exit 1

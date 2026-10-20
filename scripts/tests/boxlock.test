@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# boxlock self-test: every case on a SACRIFICIAL lock file under mktemp
+# (PCREC_BOXLOCK_FILE), never the box's real worktrees/.box.lock. The guards
+# that carry a historical bug class are also PLANTED back in a scratch copy of
+# the script and the case must go red against the plant (a test that cannot
+# fail is not a test).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/boxlock.test.XXXXXX")
+kids=()
+cleanup() { for p in ${kids[@]+"${kids[@]}"}; do kill "$p" 2>/dev/null; done; rm -rf "$T"; }
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_BOXLOCK_FILE=$T/box.lock
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT
+BL=$here/boxlock
+# plant NAME FROM TO: a copy of boxlock with one line changed; refuse a plant that did not land
+plant() {
+    local d=$T/plant_$1; mkdir -p "$d"
+    python3 -c 'import sys; s=open(sys.argv[1]).read(); assert s.count(sys.argv[2])==1, "anchor"; open(sys.argv[3],"w").write(s.replace(sys.argv[2], sys.argv[4]))' \
+        "$BL" "$2" "$d/boxlock" "$3" || { bad "plant $1 did not land (anchor moved?)"; return 1; }
+    echo "$d/boxlock"
+}
+holder() { # holder SECONDS LABEL: hold the lock in the background, wait until it is held
+    "$TO" 60 bash "$BL" run --label "$2" -- sleep "$1" & kids+=($!)
+    for _ in $(seq 50); do bash "$BL" status >/dev/null; [ $? = 1 ] && return 0; sleep 0.1; done; return 1
+}
+
+# 1. free
+out=$("$TO" 10 bash "$BL" status); rc=$?
+[ "$rc" = 0 ] && [ "$out" = free ] && ok "fresh lock: free, exit 0" || bad "fresh: rc=$rc out=$out"
+
+# 2. held, refused, bounded wait, default wait
+holder 6 big-suite || bad "holder never took the lock"
+out=$("$TO" 10 bash "$BL" status); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'HELD pid=[0-9]* label=big-suite' && ok "status names the holder (exit 1)" || bad "status: rc=$rc $out"
+err=$("$TO" 10 bash "$BL" run --no-wait --label second -- echo RAN 2>&1); rc=$?
+[ "$rc" = 75 ] && printf '%s' "$err" | grep -q "REFUSED 'second'.*label=big-suite" && ! printf '%s' "$err" | grep -q RAN \
+    && ok "--no-wait refuses with 75 naming the holder; the command did not run" || bad "--no-wait: rc=$rc $err"
+t0=$(date +%s); err=$("$TO" 10 bash "$BL" run --wait 1 --label second -- true 2>&1); rc=$?; t1=$(date +%s)
+[ "$rc" = 75 ] && [ $((t1 - t0)) -ge 1 ] && ok "--wait 1 refuses after ~1s" || bad "--wait 1: rc=$rc $((t1-t0))s $err"
+err=$("$TO" 30 bash "$BL" run --label third -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$err" | grep -q "'third' WAITING.*label=big-suite" && printf '%s' "$err" | grep -q RAN \
+    && ok "default: waits (naming the holder at once) and runs after the holder ends" || bad "default wait: rc=$rc $err"
+
+# 3. rc passthrough, exec'd pid is the owner, nesting, held
+"$TO" 10 bash "$BL" run -- sh -c 'exit 7'; rc=$?
+[ "$rc" = 7 ] && ok "the command's rc passes through" || bad "rc passthrough: $rc"
+out=$("$TO" 10 bash "$BL" run --label me -- bash -c 'echo $$; head -1 "$PCREC_BOXLOCK_FILE"')
+p=$(printf '%s\n' "$out" | head -1)
+printf '%s\n' "$out" | sed -n 2p | grep -q "^pid=$p .*label=me" && ok "the owner record's pid is the command itself (exec)" || bad "owner pid: $out"
+out=$("$TO" 10 bash "$BL" run --label outer -- bash "$BL" run --label inner -- echo NESTED); rc=$?
+[ "$rc" = 0 ] && [ "$out" = NESTED ] && ok "nested run inside the holder's tree does not deadlock" || bad "nested: rc=$rc $out"
+"$TO" 10 bash "$BL" held; a=$?; "$TO" 10 bash "$BL" run -- bash "$BL" held; b=$?
+[ "$a" = 1 ] && [ "$b" = 0 ] && ok "held: 1 outside, 0 inside the holder's tree" || bad "held: outside=$a inside=$b"
+
+# 4. stale owner record from a DEAD pid: lock free, next taker proceeds at once
+sleep 0 & dead=$!; wait "$dead"
+printf 'pid=%s start=1 label=ghost since=2020-01-01T00:00:00 epoch=1577836800 cwd=/x token=t\n' "$dead" > "$PCREC_BOXLOCK_FILE"
+out=$("$TO" 10 bash "$BL" status); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q '^free (last holder: pid='"$dead"' label=ghost' && ok "a dead pid's record reads free (last holder ... exited)" || bad "stale status: rc=$rc $out"
+"$TO" 10 bash "$BL" run --no-wait -- true; rc=$?
+[ "$rc" = 0 ] && ok "a dead pid's record never blocks the next taker" || bad "stale record blocked: rc=$rc"
+# PLANT: a record-file lock (the pidfile pattern flock replaces) -> the stale record blocks
+if P=$(plant record-lock 'if ! flock -w "$first" 9; then' 'if [ -s "$f" ] || ! flock -w "$first" 9; then'); then
+    printf 'pid=%s start=1 label=ghost since=x epoch=1 cwd=/x token=t\n' "$dead" > "$PCREC_BOXLOCK_FILE"
+    "$TO" 10 bash "$P" run --no-wait -- true 2>/dev/null; rc=$?
+    [ "$rc" != 0 ] && ok "PLANT record-lock: the stale-record case goes red against it (rc=$rc)" || bad "PLANT record-lock not caught"
+fi
+
+# 5. HELD-ORPHAN: the owner died, a descendant still holds the fd
+"$TO" 10 bash "$BL" run --label orphaner -- bash -c 'sleep 30 & echo $!' > "$T/orphan.pid"
+orph=$(cat "$T/orphan.pid"); kids+=("$orph")
+sleep 0.3
+out=$("$TO" 10 bash "$BL" status); rc=$?
+[ "$rc" = 3 ] && printf '%s' "$out" | grep -q "^HELD-ORPHAN .*label=orphaner.*holders:.*\b$orph\b" && ok "orphaned lock: exit 3, lists the live holder $orph" || bad "orphan: rc=$rc $out"
+kill "$orph" 2>/dev/null; wait "$orph" 2>/dev/null; sleep 0.2
+"$TO" 10 bash "$BL" status >/dev/null; rc=$?
+[ "$rc" = 0 ] && ok "lock frees when the last holder exits (no unlock step to skip)" || bad "after orphan exit: rc=$rc"
+
+# 6. a stale PCREC_BOXLOCK_HELD token is not a pass; PCREC_BOXLOCK=0 opts out
+holder 3 big-suite || bad "holder 2 never took the lock"
+PCREC_BOXLOCK_HELD=bogus "$TO" 10 bash "$BL" run --no-wait -- true 2>/dev/null; rc=$?
+[ "$rc" = 75 ] && ok "a stale/foreign token does not nest (refused)" || bad "stale token nested: rc=$rc"
+out=$(PCREC_BOXLOCK=0 "$TO" 10 bash "$BL" run --no-wait -- echo RAN 2>&1); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q 'UNLOCKED' && printf '%s' "$out" | grep -q RAN && ok "PCREC_BOXLOCK=0 runs unlocked, and says so" || bad "opt-out: rc=$rc $out"
+"$TO" 10 bash "$BL" bogus 2>/dev/null; [ $? = 64 ] && ok "usage error exits 64" || bad "usage exit"
+
+echo "boxlock.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]
