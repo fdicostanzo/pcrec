@@ -20,7 +20,7 @@ SAB_BEFORE='        pcrec_memfn_analysis_build(&cx);
 SAB_AFTER='        /* SABOTAGE S1031: the eager build removed (built lazily in pcrec_memfn_art) */
 '
 SAB_FILE2="src/gen/memfn_sites.c"
-SAB_BEFORE2='        const mf_measures *ms = cx->emit_in && cx->emit_in->harness'
+SAB_BEFORE2='        job->mf = mf_art_begin(ma, cx->opt->prefix,'
 SAB_AFTER2='        pcrec_memfn_analysis_build(cx);   /* SABOTAGE S1031: lazily */
-        const mf_measures *ms = cx->emit_in && cx->emit_in->harness'
+        job->mf = mf_art_begin(ma, cx->opt->prefix,'
 SAB_COUNT2=1

@@ -218,6 +218,13 @@ void pcrec_meas_resolve(Ctx *cx)
     PcrecMeasHit h;
     pcrec_error e = { 0 };
     KsAlloc al = { meas_alloc, &cx->arena };
+    /* a compound part reads its walk's set, never a second resolution of
+       the same options (§5¶8): a file or an -I stop could change between */
+    if (cx->emit_in && cx->emit_in->meas) {
+        cx->job->meas = cx->emit_in->meas->set;
+        cx->job->meas_stamp = cx->emit_in->meas->stamp;
+        return;
+    }
     if (pcrec_meas_find(&cx->arena, cx->opt->measures, cx->opt->measures_dirs, &h, &e))
         pcrec_ctx_fail(cx, 0, "%s", e.msg);
     cx->job->meas = h.set;
