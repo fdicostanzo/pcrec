@@ -27,8 +27,21 @@ lookaround spelling, so the table is
 tied to the construct the parser builds it for (CK-9's half on the libpcre2
 side; pcrec's own answers are the corpus's).
 
+THE CLASS COLUMN ([DD-11.5] P2e, D168 addendum 3). Each row also states its
+CLASS (CONTEXT / PIN_START / PIN_END), which the analyses switch on. The
+build checks it against the C derivation from the grid (internal.h's
+`CTXFN_CLASS_OF`); this checks it against LIBPCRE2's observed cells, which
+share nothing with that derivation: a row is PIN_START iff libpcre2's nine
+cells are exactly "passes iff there is no previous character" (0,0,0 0,0,0
+1,1,1), PIN_END iff exactly "passes iff there is no next character" (0,0,1
+0,0,1 0,0,1), and CONTEXT otherwise. Each class must have at least one row
+(K35: a table with no pin would make every analysis's pin arm dead code
+nothing here would notice).
+
 FAILING DIRECTION: flip one cell of one row in the .def (SP-8,
-`MLINE_EOL`'s out/absent cell) and this reports the row and the cell.
+`MLINE_EOL`'s out/absent cell) and this reports the row and the cell; write
+a pin row's class as CONTEXT (the .def given as the argument) and this
+reports the row's class.
 SKIPS LOUDLY (exit 0, a SKIP line) when libpcre2 cannot be loaded.
 """
 import itertools
@@ -68,14 +81,26 @@ ROWS = {
 ROW_RE = re.compile(r"^CTXFN_ROW\(\s*(\w+)\s*,\s*(0x[0-9A-Fa-f]+)\s*,"
                     r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
                     r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
-                    r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,", re.M)
+                    r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
+                    r"\s*(CONTEXT|PIN_START|PIN_END)\s*,", re.M)
+
+PIN_GRIDS = {"PIN_START": [0, 0, 0, 0, 0, 0, 1, 1, 1],
+             "PIN_END":   [0, 0, 1, 0, 0, 1, 0, 0, 1]}
 
 
 def read_def(path):
     rows = {}
     for m in ROW_RE.finditer(open(path).read()):
-        rows[m.group(1)] = [int(m.group(k)) for k in range(3, 12)]
+        rows[m.group(1)] = ([int(m.group(k)) for k in range(3, 12)], m.group(12))
     return rows
+
+
+def class_of(cells):
+    """The class libpcre2's observed cells imply (no reference to the .def)."""
+    for name, grid in PIN_GRIDS.items():
+        if cells == grid:
+            return name
+    return "CONTEXT"
 
 
 def cls(c, s):
@@ -111,7 +136,8 @@ def main():
         print("FAIL: ctxfn.def rows %s, this check knows %s -- a row needs its "
               "canonical spelling here" % (sorted(table), sorted(ROWS)))
         return 1
-    for name, grid in table.items():
+    seen_class = {"CONTEXT": 0, "PIN_START": 0, "PIN_END": 0}
+    for name, (grid, wcls) in table.items():
         cset, canon, native = ROWS[name]
         for label, sp in [("canonical", canon)] + [("native", n) for n in native]:
             seen = observe(sp, cset)
@@ -128,8 +154,22 @@ def main():
                           "%d in ctxfn.def" % (name, label, sp, names[cell // 3],
                                                names[cell % 3], seen[cell], grid[cell]))
                     fails += 1
-    print("ctxfn_table_check: %d rows x 9 cells against libpcre2 %s: %d failures" % (
-        len(table), "(canonical + native spellings)", fails))
+            ocls = class_of([seen[c] for c in range(9)])
+            if ocls != wcls:
+                print("FAIL %s (%s %r): libpcre2's cells make the class %s, "
+                      "ctxfn.def writes %s" % (name, label, sp, ocls, wcls))
+                fails += 1
+            elif label == "canonical":
+                seen_class[ocls] += 1
+    for c, n in sorted(seen_class.items()):
+        if n == 0:
+            print("FAIL: no row of class %s (K35: its analysis arms would be "
+                  "unreached)" % c)
+            fails += 1
+    print("ctxfn_table_check: %d rows x 9 cells against libpcre2 %s, classes %s: "
+          "%d failures" % (len(table), "(canonical + native spellings)",
+                           " ".join("%s=%d" % kv for kv in sorted(seen_class.items())),
+                           fails))
     return 1 if fails else 0
 
 

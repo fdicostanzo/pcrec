@@ -45,3 +45,12 @@ before its first edit, because main moves under a design note.
   with `--step P2d=39457a796..f3e5ac219` and the derived population. P2d was
   built at the NFA layer only (D168 add. 3), so the design set's AST-fold
   entries (`case A_BOL`, `A_END,`, ...) are planned-not-made by ruling.
+- `call_graph_p2e_base.txt`, `edit_set_p2e.tsv`, `edit_set_compare_p2e.txt`,
+  `sabotage_anchors_p2e.tsv`, `derived_rows_p2e.tsv` — re-check R4 for P2e
+  (lane ctxp2e, 2026-10-20): the call graph at P2e's base (main `73c2bb655`),
+  the edit set regenerated from P2e's code commit (`fe37f93be`), the
+  script's comparison (its planned-not-made half reads P2a-P2c only; the P2e
+  comparison against §4.6's census is by hand in
+  `docs/dev/lanes/ctxp2e_report.md`), the anchor map with `--step
+  P2e=73c2bb655..fe37f93be --final after-P2e` and the derived population
+  (44 owner/anchor rows).

@@ -1,0 +1,166 @@
+(39 removed code lines not distinctive in their base file: left out of the set)
+== design-not-real (planned, not made) ==
+  line	    CTXFN_BOUNDARY    = 0x6,   /* \b: p != q */	P2a
+  line	    CTXFN_NONBOUNDARY = 0x9,   /* \B: p == q */	P2a
+  line	    CTXFN_PREV        = 0xC,   /* (?<=C) */	P2a
+  line	    CTXFN_NOT_PREV    = 0x3,   /* (?<!C) */	P2a
+  line	    CTXFN_NEXT        = 0xA,   /* (?=C)  */	P2a
+  line	    CTXFN_NOT_NEXT    = 0x5    /* (?!C)  */	P2a
+  line	    uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */	P2a
+  line	            uint8_t             fn;	P2a
+  line	    uint8_t     fn;      /* CTXFN_* */	P2a
+  line	Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)	P2a
+  line	bool  pcrec_poss_ctx_admits(uint8_t fn, const PcrecCpRange *iv, int n,	P2a
+  def	pcrec_poss_ctx_admits	P2a
+  line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2a
+  line	                int in = (ctx_bit(cl->left, k) << 1) | ctx_bit(cl->right, k);	P2b
+  def	sides_of	P2b
+  def	Sides	P2b
+  token	anch.multiline	P2c
+  token	N_BOT_M	P2c
+  token	N_EOL_M	P2c
+  token	nl_bit	P2c
+  token	CTXROW_NEWLINE	P2c
+  token	PCREC_NO_MLINECTX	P2c
+  token	cr_nl_reads	P2c
+  token	cr_nl_set	P2c
+  token	field+fold lowering	P2c
+  line	            bool multiline;	P2c
+  line	    if (k == A_BOL || k == A_EOL)	P2c
+  line	            d->ctx[k].rows |= 1u << r;	P2c
+  line	                cs->rows = 0;	P2c
+  def	ctx_rows_knobbed	P2c
+  def	ctx_entry_live	P2c
+  (31 of 31 design entries)
+== real-not-design (made, not planned) ==
+  P2e	src/core/ctxfn.def:36	VMCTX_BOTH, "!=", false, "\\b word boundary")	[?]
+  P2e	src/core/ctxfn.def:39	VMCTX_BOTH, "==", false, "\\B not a word boundary")	[?]
+  P2e	src/core/ctxfn.def:42	VMCTX_PREV, NULL, false, "previous character in the set")	[?]
+  P2e	src/core/ctxfn.def:45	VMCTX_PREV, NULL, true,  "previous character not in the set")	[?]
+  P2e	src/core/ctxfn.def:48	VMCTX_NEXT, NULL, false, "next character in the set")	[?]
+  P2e	src/core/ctxfn.def:51	VMCTX_NEXT, NULL, true,  "next character not in the set")	[?]
+  P2e	src/core/ctxfn.def:57	VMCTX_MLBOL, NULL, false,	[?]
+  P2e	src/core/ctxfn.def:63	VMCTX_MLEOL, NULL, false,	[?]
+  P2e	src/core/ctxfn.def:71	VMCTX_START, NULL, false,	[?]
+  P2e	src/core/ctxfn.def:77	VMCTX_END, NULL, false,	[?]
+  P2e	src/core/internal.h:739	A_BOL,     /* ^ and \A : start of subject */	[AKind]
+  P2e	src/core/internal.h:752	A_END,	[AKind]
+  P2e	src/core/internal.h:1164	#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \	[enum@src/core/internal.h:1163]
+  P2e	src/core/internal.h:1169	#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \	[CTXFN_ROW]
+  P2e	src/core/internal.h:1210	static inline uint16_t pcrec_anchor_ctxfn(AKind k)	[pcrec_anchor_ctxfn]
+  P2e	src/core/internal.h:1211	{	[pcrec_anchor_ctxfn]
+  P2e	src/core/internal.h:1212	return k == A_BOL ? CTXFN_SUBJECT_START : k == A_END ? CTXFN_SUBJECT_END : 0;	[pcrec_anchor_ctxfn]
+  P2e	src/core/internal.h:1213	}	[pcrec_anchor_ctxfn]
+  P2e	src/core/internal.h:5071	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_ast_visit]
+  P2e	src/facts/endwin.c:134	case A_END:	[ew_walk_marked]
+  P2e	src/facts/endwin.c:135	return EW_Z;	[ew_walk_marked]
+  P2e	src/facts/endwin.c:149	case A_BOL:	[ew_walk_marked]
+  P2e	src/facts/endwin.c:150	case A_CTX:	[ew_walk_marked]
+  P2e	src/facts/endwin.c:299	case A_END:	[em_tails]
+  P2e	src/facts/endwin.c:302	case A_BOL:	[em_tails]
+  P2e	src/facts/req.c:608	case A_BOL:	[rb_walk]
+  P2e	src/facts/req.c:610	case A_END:	[rb_walk]
+  P2e	src/facts/startanch.c:114	case A_BOL:	[sa_walk]
+  P2e	src/facts/startanch.c:115	return acc | SA_BOT;	[sa_walk]
+  P2e	src/facts/startanch.c:127	case A_END:	[sa_walk]
+  P2e	src/facts/startanch.c:128	case A_CTX:	[sa_walk]
+  P2e	src/facts/startset.c:123	case A_BOL:	[ss_walk]
+  P2e	src/facts/startset.c:125	case A_END:	[ss_walk]
+  P2e	src/facts/widths.c:123	case A_EMPTY: case A_CTX: case A_GSTART: case A_KRESET: case A_LOOK:	[em_set]
+  P2e	src/facts/widths.c:128	case A_BOL:	[em_set]
+  P2e	src/facts/widths.c:129	return em_cat(acc, 1u << EM_S);	[em_set]
+  P2e	src/facts/widths.c:132	case A_END:	[em_set]
+  P2e	src/facts/widths.c:133	return em_cat(acc, 1u << EM_E);	[em_set]
+  P2e	src/gen/emit_vm.c:1894	case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_det_seq]
+  P2e	src/gen/emit_vm.c:1973	case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_cap_offsets]
+  P2e	src/gen/emit_vm.c:2088	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_rev_caps]
+  P2e	src/gen/emit_vm.c:2928	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_cost]
+  P2e	src/gen/emit_vm.c:3191	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_count_slots]
+  P2e	src/gen/emit_vm.c:4052	case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:	[vm_isl_words]
+  P2e	src/gen/emit_vm.c:5542	case A_EMPTY: case A_BOL: case A_EOL: case A_END: case A_CTX:	[vm_rev_emit]
+  P2e	src/gen/emit_vm.c:7416	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_walk_caps]
+  P2e	src/gen/emit_vm.c:7501	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vm_walk_calls]
+  P2e	src/gen/emit_vm.c:8359	#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \	[vm_ctx_forms]
+  P2e	src/gen/emit_vm.c:8929	case A_BOL:	[vm_emit_node]
+  P2e	src/gen/emit_vm.c:8930	case A_END:	[vm_emit_node]
+  P2e	src/gen/emit_vm.c:8937	vm_ctx_row(v, entry, pcrec_anchor_ctxfn(a->k), -1, next);	[vm_emit_node]
+  P2e	src/gen/emit_vm.c:8938	return;	[vm_emit_node]
+  P2e	src/ir/nfa.c:204	static Frag frag_ctx_row(NB *b, uint16_t fn)	[frag_ctx_row]
+  P2e	src/ir/nfa.c:205	{	[frag_ctx_row]
+  P2e	src/ir/nfa.c:206	Frag f = frag_single(b, N_CTX);	[frag_ctx_row]
+  P2e	src/ir/nfa.c:207	b->nfa->st[f.start].ctxfn = fn;	[frag_ctx_row]
+  P2e	src/ir/nfa.c:208	return f;	[frag_ctx_row]
+  P2e	src/ir/nfa.c:209	}	[frag_ctx_row]
+  P2e	src/ir/nfa.c:627	case A_BOL:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));	[compile_ast]
+  P2e	src/ir/nfa.c:651	case A_END:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));	[compile_ast]
+  P2e	src/opt/altcls.c:402	case A_BOL:	[altcls_walk]
+  P2e	src/opt/altcls.c:404	case A_END:	[altcls_walk]
+  P2e	src/opt/atomic.c:65	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_atomic]
+  P2e	src/opt/atomic.c:156	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_lookaround]
+  P2e	src/opt/atomic.c:231	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_collapsible_rep]
+  P2e	src/opt/atomic.c:298	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_ast_stamped_by]
+  P2e	src/opt/atomic.c:437	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[dis_walk]
+  P2e	src/opt/atomic.c:592	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_bref]
+  P2e	src/opt/atomic.c:662	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_bref_mark]
+  P2e	src/opt/atomic.c:822	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_live_capture]
+  P2e	src/opt/atomic.c:935	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_linked_call]
+  P2e	src/opt/atomic.c:971	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_has_call]
+  P2e	src/opt/derive.c:65	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[qf_walk]
+  P2e	src/opt/derive.c:225	case A_BOL:	[q_rewrite]
+  P2e	src/opt/derive.c:226	if (lb) return (QRes){ a, false, false };	[q_rewrite]
+  P2e	src/opt/derive.c:227	q->killed_bol++;	[q_rewrite]
+  P2e	src/opt/derive.c:228	return (QRes){ never_node(cx), true, false };	[q_rewrite]
+  P2e	src/opt/derive.c:231	case A_EMPTY: case A_EOL: case A_END: case A_CTX: case A_KRESET:	[q_rewrite]
+  P2e	src/opt/derive.c:291	case A_BOL: if (!lb) p->bol_out++; return;	[qp_walk]
+  P2e	src/opt/derive.c:292	case A_CLASS: case A_EMPTY: case A_EOL: case A_END: case A_CTX:	[qp_walk]
+  P2e	src/opt/lower_enc.c:488	case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[subtree_is_identity]
+  P2e	src/opt/lower_enc.c:543	case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[lower_walk]
+  P2e	src/opt/lower_enc.c:607	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[cap_sig]
+  P2e	src/opt/mrl.c:158	case A_BOL:	[pcrec_minw]
+  P2e	src/opt/mrl.c:160	case A_END:	[pcrec_minw]
+  P2e	src/opt/mrl.c:327	case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;	[pcrec_nullable]
+  P2e	src/opt/mrl.c:541	case A_BOL:	[pcrec_cwmax]
+  P2e	src/opt/mrl.c:543	case A_END:	[pcrec_cwmax]
+  P2e	src/opt/mrl.c:682	case A_BOL:	[pcrec_cwmin]
+  P2e	src/opt/mrl.c:684	case A_END:	[pcrec_cwmin]
+  P2e	src/opt/possessify.c:337	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:	[cap_index]
+  P2e	src/opt/possessify.c:338	case A_END: case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:	[cap_index]
+  P2e	src/opt/possessify.c:406	case A_EMPTY: case A_BOL: case A_EOL: case A_END: case A_CTX:	[text_first]
+  P2e	src/opt/possessify.c:641	case A_BOL: {	[first_of]
+  P2e	src/opt/possessify.c:645	First r;	[first_of]
+  P2e	src/opt/possessify.c:646	bs_all(r.f);	[first_of]
+  P2e	src/opt/possessify.c:647	r.nullable = false;	[first_of]
+  P2e	src/opt/possessify.c:648	return r;	[first_of]
+  P2e	src/opt/possessify.c:649	}	[first_of]
+  P2e	src/opt/possessify.c:662	case A_END:	[first_of]
+  P2e	src/opt/possessify.c:672	return fst_empty(true);	[first_of]
+  P2e	src/opt/possessify.c:980	case A_BOL:	[gk_build]
+  P2e	src/opt/possessify.c:982	case A_END:	[gk_build]
+  P2e	src/opt/possessify.c:1307	return r;                       /* non-nullable, as `first_of` */	[ps_node]
+  P2e	src/opt/possessify.c:1347	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:	[ps_node]
+  P2e	src/opt/possessify.c:1348	case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:	[ps_node]
+  P2e	src/opt/possessify.c:1524	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:	[item_first]
+  P2e	src/opt/possessify.c:1525	case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:	[item_first]
+  P2e	src/opt/possessify.c:1765	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pss_walk]
+  P2e	src/opt/revdet.c:107	case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rd_shape]
+  P2e	src/opt/revdet.c:306	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rd_reverse]
+  P2e	src/opt/revdet.c:549	case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[pcrec_revdet_first]
+  P2e	src/opt/revdet.c:604	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rd_alt_disjoint]
+  P2e	src/opt/revdet.c:734	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rd_walk]
+  P2e	src/opt/select_engine.c:254	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[earliest_dfa_excluding]
+  P2e	src/parse/ctxnode.c:92	case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:	[lang_charset]
+  P2e	src/parse/definitions.c:218	case A_BOL:      /* \A only, in the fully-reduced target — see the note	[pcrec_ast_is_core]
+  P2e	src/parse/definitions.c:220	case A_END:      /* \z */	[pcrec_ast_is_core]
+  P2e	src/parse/definitions.c:429	case A_EMPTY: case A_END:	[eol_tail_plain]
+  P2e	src/parse/definitions.c:431	case A_EOL: case A_LOOK: case A_BOL: case A_CTX: case A_GSTART:	[eol_tail_plain]
+  P2e	src/parse/mod_assertions.c:86	case 'A': k = A_BOL; pcrec_lb_raise(cx, 1); break;   /* \A — the alias, §3.2 */	[pcrec_asrtport_atom]
+  P2e	src/parse/mod_assertions.c:88	case 'z': k = A_END; break;   /* \z — the one that needs a machine */	[pcrec_asrtport_atom]
+  P2e	src/parse/mod_assertions.c:180	res.node = pcrec_ast_node(cx, k);	[pcrec_asrtport_atom]
+  P2e	src/parse/mod_backrefs.c:611	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[br_strip_caps]
+  P2e	src/parse/mod_lookaround.c:192	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[la_has_kreset]
+  P2e	src/parse/mod_vars.c:226	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[vars_assign]
+  P2e	src/parse/parse.c:185	case A_BOL: case A_EOL: case A_END:	[pcrec_is_bare_anchor]
+  P2e	src/parse/parse.c:1724	return node(cx, A_BOL);	[p_atom]
+  P2e	src/parse/rxt_compose.c:289	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rc_remap_caps]
+  P2e	src/parse/rxt_compose.c:447	case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:	[rc_find_root_call]
+  (130 of 130 removed code lines)

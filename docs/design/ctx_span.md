@@ -1265,6 +1265,11 @@ supports the leaning and does not force it.
 
 **RULED (Frank, 2026-10-19, D168 addendum 3): BOTH, staged.** P2d is the NFA-level fold as above (zero movers, the 12 engine sites deleted). Then **P2e** lifts the fold into the AST: `\A`/`\z` become `A_CTX` rows, and the table gains a CLASS column (`CTX_CONTEXT` / `CTX_PIN_START` / `CTX_PIN_END`) DERIVED from each row's grid like the three predicates, with a check that the class agrees with the grid. The 8 analysis sites switch on `pcrec_ctx_class(n)` with no `default:`, so `-Wswitch` keeps the alarm a kind test gives today (mrl.c's rule). P2e is its own abi event with its own mover census (N-3: the end-mark lowering's tagged form reads `A_END`).
 
+**Built (P2e, lane ctxp2e, 2026-10-20; ctxp2e_report.md).** As ruled: `A_BOL`/`A_END` are deleted, `^`/`\A`/`\z` are A_CTX rows over no set, and ctxfn.def's CLASS column is checked against `CTXFN_CLASS_OF`, the grid-derived class, by a per-row static assert. The 8 STILL-SPECIAL sites above are the 8 that switch on `pcrec_ctx_class(n)`; their file:line on the build's base is in the report. Three facts from the build:
+- **The derivation is grid EQUALITY, not a predicate composition.** "Reads absent prev, no membership" also holds for `(?<=[\s\S])` (0x03F, "there is a previous character"), the start pin's complement.
+- **One site the census filed as a LABEL is not one:** possessify's `ps_node`. Its non-gate A_CTX branch assumed every A_CTX is non-nullable, and `\z` is the one nullable A_CTX. The fix is GENERIC (copy `first_of`'s nullability) and adds no recognizer.
+- **The mover census reads ZERO** on every arm the light probe covers, N-3 included: `eol_tail_plain`'s class switch admits the end pin exactly as `case A_END` did. So by D76 P2e is not an abi event unless the owed heavy runs find a byte. The manager rules the bump.
+
 ---
 
 ## 6. Checks (each against a source the subject does not share; sabotage ids PROPOSED, not allocated) `[r4 B7]`

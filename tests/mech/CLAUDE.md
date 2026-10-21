@@ -4012,3 +4012,16 @@ VM's `\z` form passes one byte early), S1176 (`frag_ctx_row` drops its
 `ctxfn`). Re-run (derived, `docs/design/ctx_span/derived_rows_p2d.tsv`):
 S1100, S14, S746, S1151, S1157, S1159, S1161, S341, S365, S86, S69, S882,
 S75. Every figure is OWED; `docs/dev/lanes/ctxp2d_report.md` lists the runs.
+
+**[DD-11.5] P2e, the `\A`/`\z` fold at the AST — S1186-S1197 (lane ctxp2e,
+2026-10-20; zero emitted bytes moved):** `A_BOL`/`A_END` are deleted and the
+analyses switch on the context row's derived CLASS. Re-aimed: S1174 (the
+row swap moves to mod_assertions.c's two pin builders), S1176 (the dropped
+row moves to the NFA's A_CTX arm, pins only), S49 (possessify's `^` case is
+now the A_CTX arm's CTX_PIN_START). New: S1186/S1187 (`SAB_EXPECT=BUILD-REFUSED`:
+the class column / the derivation disagree, the per-row static assert),
+S1188 (startanch), S1189/S1190 (derive's kill and G5 count), S1191/S1192
+(widths' EM_S/EM_E), S1193 (endwin), S1194 (possessify's `\z`
+transparency), S1195 (eol_tail_plain, N-3), S1196 (`ps_node`'s nullability),
+S1197 (`pcrec_ast_pin`'s anchor spelling). Reach by hand and the owed solo
+runs: `docs/dev/lanes/ctxp2e_report.md`.
