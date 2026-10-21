@@ -198,8 +198,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
-  status (2026-10-21): started; P2e landed (abi 81, zero movers; heavy chain green, ctxp2e_report.md 7a); part 2 done; next = part 1 (kit_proof Z2/UL-0)
-  next: part 1, the span-context producer (kit_proof Z2/UL-0)
+  status (2026-10-21): part 2 done (P2e, abi 81); part 1 BUILD GO 2026-10-21; R-26 filed (d970abbbc); kit Z1 building; main X0 running (lane x0oracle)
+  next: kit Z1+Zk, then main Z2 (kit_proof.md §7)
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
