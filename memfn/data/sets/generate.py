@@ -31,10 +31,12 @@ the beta slope's own regime), and it is the floor R0/R7 compare against: the
 fdb2_report.md). `kit.eps.findall.l64k` (F1, streamed find-all) is kept as a
 measured row no B2 row reads.
 
-values_digest: measure_sets §1.6's FNV-1a-64 over `pcrec-meas-1\\0` then, per
-row in canonical (bytewise key) order, key, \\0, the unit's first byte, the
-status's first byte, value_e6 as int64 LE. The byte ENCODING of unit and status
-is docs/spec/measures.md's (M0); until then the first letter stands, labelled.
+values_digest: docs/spec/measures.md §3.3's FNV-1a-64 over `pcrec-meas-1\\0` then,
+per row in canonical (bytewise key) order, key, \\0, the unit byte and status
+byte of §3.1's code table, value_e6 as int64 LE. A synthetic set's rows are
+status `measured` (§3.1 has no `synthetic` status; the header's tier `synthetic`
+and each row's source column carry the label). tests/memfn/finder_check.py
+(check C) recomputes the digest by an independent route.
 """
 import os
 import struct
@@ -61,8 +63,14 @@ def e6(x):
     return int(round(x * 1e6))
 
 
+# docs/spec/measures.md §3.1's code table (a KeyError here is an unspecified unit
+# or status: the file would be refused by the loader)
+UNIT = {"ratio": 1, "walkbytes": 2, "bytes": 3, "count": 4}
+STATUS = {"measured": 1, "fitted": 2, "derived": 3, "null": 4}
+
+
 def fnv_digest(rows):
-    h = 1469598103934665603
+    h = 14695981039346656037     # the FNV-1a-64 offset basis (0xcbf29ce484222325)
     def feed(b):
         nonlocal h
         for c in b:
@@ -71,8 +79,7 @@ def fnv_digest(rows):
     feed(b"pcrec-meas-1\0")
     for r in sorted(rows, key=lambda r: r["key"].encode()):
         feed(r["key"].encode() + b"\0")
-        feed(r["unit"][:1].encode())
-        feed(r["status"][:1].encode())
+        feed(bytes([UNIT[r["unit"]], STATUS[r["status"]]]))
         feed(struct.pack("<q", r["value_e6"]))
     return "%016x" % h
 
@@ -151,46 +158,48 @@ LAYERS = ("OFF", "W16", "W32")
 
 def synthetic_rows(saving, xover, block, every=False):
     rows = []
+    # the unit row (measures.md §3.1¶2: a ratio of 1, named by unit_key): no finder row reads it
+    rows.append(row("kit.beta.WALK.DFA_SCAN.r1e0c0", "ratio", 1, "measured", "synthetic"))
     for f in FORMS:
         for sh in ALL_SHAPES + ("r2",):
-            rows.append(row("kit.saving.%s.WALK.%s" % (f, sh), "ratio", saving, "synthetic", "synthetic"))
-    rows.append(row("kit.eps.streamed.slope", "ratio", 0.01, "synthetic", "synthetic"))
+            rows.append(row("kit.saving.%s.WALK.%s" % (f, sh), "ratio", saving, "measured", "synthetic"))
+    rows.append(row("kit.eps.streamed.slope", "ratio", 0.01, "measured", "synthetic"))
     for f in FORMS:
         for k in KINDS:
-            rows.append(row("kit.xover.%s.WALK.%s" % (f, k), "bytes", xover, "synthetic", "synthetic"))
-    rows.append(row("kit.block.W64", "bytes", block, "synthetic", "synthetic"))
+            rows.append(row("kit.xover.%s.WALK.%s" % (f, k), "bytes", xover, "measured", "synthetic"))
+    rows.append(row("kit.block.W64", "bytes", block, "measured", "synthetic"))
     if every:
         for f in ("V1", "W64"):
             for k in KINDS:
-                rows.append(row("kit.gstar.%s.%s" % (f, k), "bytes", 8, "synthetic", "synthetic"))
+                rows.append(row("kit.gstar.%s.%s" % (f, k), "bytes", 8, "measured", "synthetic"))
         for k in KINDS:
-            rows.append(row("kit.lstar.W64.%s" % k, "bytes", 128, "synthetic", "synthetic"))
-            rows.append(row("kit.g8.W64.%s" % k, "bytes", 8, "synthetic", "synthetic"))
-        rows.append(row("kit.h3a", "bytes", 16, "synthetic", "synthetic"))
-        rows.append(row("kit.h3b", "bytes", 64, "synthetic", "synthetic"))
+            rows.append(row("kit.lstar.W64.%s" % k, "bytes", 128, "measured", "synthetic"))
+            rows.append(row("kit.g8.W64.%s" % k, "bytes", 8, "measured", "synthetic"))
+        rows.append(row("kit.h3a", "bytes", 16, "measured", "synthetic"))
+        rows.append(row("kit.h3b", "bytes", 64, "measured", "synthetic"))
         # the pay rule's operands (PROVISIONAL keys), a dispatch that pays
         for k in KINDS:
             for alt, p in (("V1", "WALK"), ("W64", "WALK"), ("W64", "V1")):
                 for n in (8, 32):
                     rows.append(row("kit.delta.%s.%s.%s.n%d" % (alt, p, k, n), "walkbytes", 20,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
                     rows.append(row("kit.dfloor.%s.%s.%s.n%d" % (alt, p, k, n), "walkbytes", 1,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
             for ly in LAYERS:
                 for nf in (2, 3):
                     rows.append(row("kit.cdisp_call.%s.%s.%d" % (k, ly, nf), "walkbytes", 2,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
                     rows.append(row("kit.cfloor.%s.%s.%d" % (k, ly, nf), "walkbytes", 1,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
                     rows.append(row("kit.cdisp_use.%s.%s.%d" % (k, ly, nf), "walkbytes", 0,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
                     rows.append(row("kit.ufloor.%s.%s.%d" % (k, ly, nf), "walkbytes", 0,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
             for f in ("WALK", "V1", "W64"):
-                rows.append(row("kit.wfloor.%s.%s" % (f, k), "walkbytes", 5, "synthetic", "synthetic"))
+                rows.append(row("kit.wfloor.%s.%s" % (f, k), "walkbytes", 5, "measured", "synthetic"))
                 for n in (36, 64, 128, xover if isinstance(xover, int) else 0):
                     rows.append(row("kit.ffloor.%s.%s.n%d" % (f, k, n), "walkbytes", 5,
-                                    "synthetic", "synthetic"))
+                                    "measured", "synthetic"))
     return rows
 
 
@@ -202,8 +211,7 @@ def render(set_id, tier, method, cards_file, rows, label):
             seen.add(r["key"])
             uniq.append(r)
     rows = sorted(uniq, key=lambda r: r["key"].encode())
-    out = ["# memfn measurement set (spec: docs/design/measure_sets.md §1.2; "
-           "docs/spec/measures.md lands at M0)",
+    out = ["# memfn measurement set (spec: docs/spec/measures.md)",
            "# " + label,
            "# GENERATED by memfn/data/sets/generate.py; do not edit.",
            "#section header", "#key\tvalue"]

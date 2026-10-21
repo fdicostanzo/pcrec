@@ -8,6 +8,7 @@
 # kit-grid@2's cards fix them.
 #
 #owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
+kit	beta	1	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	eps	1	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
 kit	xover	1	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-

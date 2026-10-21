@@ -286,8 +286,15 @@ def read_cards(path):
     return out
 
 
+# docs/spec/measures.md §3.1's code table and §3.3's digest, written here from
+# the spec (not from memfn/data/sets/generate.py, whose digest was once a
+# first-letter FNV with a mistyped offset basis and passed its own twin).
+UNIT_CODE = {"ratio": 1, "walkbytes": 2, "bytes": 3, "count": 4}
+STATUS_CODE = {"measured": 1, "fitted": 2, "derived": 3, "null": 4}
+
+
 def digest(rows):
-    h = 1469598103934665603
+    h = 0xcbf29ce484222325
     def feed(b):
         nonlocal h
         for c in b:
@@ -296,8 +303,7 @@ def digest(rows):
     feed(b"pcrec-meas-1\0")
     for r in sorted(rows, key=lambda r: r["key"].encode()):
         feed(r["key"].encode() + b"\0")
-        feed(r["unit"][:1].encode())
-        feed(r["status"][:1].encode())
+        feed(bytes([UNIT_CODE[r["unit"]], STATUS_CODE[r["status"]]]))
         feed(struct.pack("<q", int(r["value_e6"])))
     return "%016x" % h
 
@@ -329,10 +335,25 @@ def check_sets(root, form):
         secc = ["\t".join(r[h] for h in s["cards"]["head"]) for r in s["cards"]["rows"]]
         (ok() if secc == cards[table] else bad("%s: its cards section is not %s.tsv" % (fn, table)))
         rows = s["rows"]["rows"]
+        bogus = sorted({r["unit"] for r in rows if r["unit"] not in UNIT_CODE} |
+                       {r["status"] for r in rows if r["status"] not in STATUS_CODE})
+        if bogus:
+            bad("%s: unit/status outside measures.md §3.1's code table: %s" % (fn, ",".join(bogus)))
+            continue
         (ok() if hdr.get("rows") == str(len(rows)) else
          bad("%s: header rows %s, section %d" % (fn, hdr.get("rows"), len(rows))))
         (ok() if hdr.get("values_digest") == digest(rows) else
          bad("%s: values_digest %s, recomputed %s" % (fn, hdr.get("values_digest"), digest(rows))))
+        # two more routes: the knowledge suite's spec-only reader, and pcrec's own loader
+        # (which refuses a digest, a unit row, a unit or a status the spec does not hold)
+        kr = run([sys.executable, "-I", os.path.join(root, "tests/knowledge/ks_ref.py"), "digest",
+                  os.path.join(sdir, fn)])
+        (ok() if kr.returncode == 0 and kr.stdout.decode().strip() == hdr.get("values_digest") else
+         bad("%s: ks_ref.py digest %r, header %s" % (fn, kr.stdout.decode().strip(),
+                                                    hdr.get("values_digest"))))
+        ld = run([os.path.join(root, "build", "pcrec"), "--list-measurements=" + os.path.join(sdir, fn)])
+        (ok() if ld.returncode == 0 else
+         bad("%s: pcrec --list-measurements refuses it: %s" % (fn, ld.stdout.decode().strip()[:200])))
         for r in rows:
             parts = r["key"].split(".")
             q = parts[1] if len(parts) > 1 else ""

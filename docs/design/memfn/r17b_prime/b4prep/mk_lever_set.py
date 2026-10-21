@@ -37,7 +37,8 @@ with open(os.path.join(root, "docs/design/memfn/r17b_prime/grid2read/keys.tsv"))
         f = ln.rstrip("\n").split("\t")
         keys[f[0]] = int(f[2])                       # value_e6
 
-rows = []
+rows = [gen.row("kit.beta.WALK.DFA_SCAN.r1e0c0", "ratio", 1, "measured",
+                "the unit row (measures.md §3.1¶2); no finder row reads a beta key")]
 placeholders = []
 for sh in gen.ALL_SHAPES:
     r, e, c = (int(sh[1]), int(sh[3]), int(sh[5]))
@@ -50,7 +51,7 @@ for sh in gen.ALL_SHAPES:
                      "source": "grid2read keys.tsv"})
     else:
         placeholders.append(sh)
-        rows.append(gen.row(k, "ratio", 0.5, "synthetic",
+        rows.append(gen.row(k, "ratio", 0.5, "measured",
                             "b4prep PLACEHOLDER: untimed <=2-term shape, only the sign vs eps is read"))
 rows.append({"key": "kit.eps.streamed.slope", "unit": "ratio",
              "value_e6": keys["kit.eps.streamed.slope"], "status": "measured",
