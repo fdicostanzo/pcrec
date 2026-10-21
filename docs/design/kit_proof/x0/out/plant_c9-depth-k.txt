@@ -1,7 +1,7 @@
-## X0 build/x0/res_plant_c9-depth-k.jsonl  pcre2=10.46 2025-08-27 plant='c9-depth-k' self=None items=36
-agg witness native items=33 p1:C_k=9 p1:S_d=3 p1:context-x-prefix=12 p1_cells=3829300 p1_nodes=728 p1_red=3 p1_unknown=0 p2_cells=180838 p2_diff=2570 p2_red=3 p2_subjects=31364 red_other=3 why:cover=21 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=3
-agg witness utf8 items=3 p1_cells=555960 p1_nodes=45 p1_unknown=0 p2_cells=20733 p2_diff=0 p2_subjects=3840 why:cover=3
-red witness native - b'ab|a$\\n' cover p1=521 p2=860  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red witness native - b'ab|a\\Z\\n' cover p1=521 p2=856  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red witness native - b'ab|a$\\n\\z' cover p1=521 p2=854  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-== X0 run COMPLETE: items=36 sec=3.7
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_plant_c9-depth-k.jsonl  pcre2=10.46 2025-08-27 plant='c9-depth-k' self=None items=32
+agg witness native items=30 p1:C_k=12 p1:context-x-prefix=12 p1_cells=3629097 p1_nodes=708 p1_red=3 p1_unknown=0 p2_cells=283326 p2_diff=6878 p2_red=3 p2_subjects=47360 red_other=3 why:after-agree=1 why:cover=18 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:no-eol-view=3
+agg witness utf8 items=2 p1_cells=370640 p1_nodes=44 p1_unknown=0 p2_cells=24441 p2_diff=0 p2_subjects=4346 why:cover=2
+red witness native - b'ab|a$\\n' cover p1=514 p2=2339  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+red witness native - b'ab|a$\\n\\z' cover p1=514 p2=2270  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+red witness native - b'ab|a\\Z\\n' cover p1=514 p2=2269  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+== X0 run COMPLETE: items=32 sec=1.2

@@ -28,10 +28,12 @@ unchanged by them:
   absb-flip      S1133  absent-before flipped
   absa-flip      S1134  absent-after flipped
   c9-eol-as-end  S1139  C9 dropped AND an eol view at k read as the end
-  e0-row0        S1140  e(⊥) := row 0, not the emitted constant
+  e0-row0        S1140  e(⊥) := row 0, not the emitted constant (both arms)
+  plain-walk     (none) the eol view's gated final '\n' dropped (X0's R2; no
+                        S-id, the range is full)
 
 usage:
-  python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
+  python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2; F = K35's table-side count)
   python3 -I conj.py witnesses < FLAGS<TAB>PATTERN lines       # one verdict per line
   python3 -I conj.py rarm PATTERNS.tsv.gz                       # default vs -fno-rev-end
 FLAGS: '-' or any of i (caseless), u (-e utf8), R (-fno-rev-end).
@@ -88,22 +90,39 @@ def k_gstart(st):
 
 
 def k_machine(st):
-    st["A"] = A = kvdfa.Machine(st["c"], "anchored")
+    st["A"] = A = machine(st["c"])
     return A.ok
 
 
+def machine(c):
+    """the anchored machine; under CONJ_PLANT=plain-walk the eol view's gated
+    final '\n' edge is dropped (rev 2.1's plain walk, X0's R2: no S-id, the
+    S1130-S1150 range is full; X0's site role must read it red)"""
+    A = kvdfa.Machine(c, "anchored")
+    if A.ok and PLANT == "plain-walk":
+        A.vnl = [False] * A.nrow
+        A.live = A.liveness()
+    return A
+
+
 def k_entry(st):
-    # e(⊥) is the EMITTED entry constant X of `search_from ? seed[..] : X`
-    # (sound M1), never row 0; the seeded entries must be ONE live row r0
-    A, c = st["A"], st["c"]
+    # e(⊥) is the EMITTED entry constant X (sound M1), never row 0, on BOTH
+    # arms: unseeded `anchored_state = X;`, seeded `search_from ? seed[..] : X`
+    # (rev 2.2, X0's R1: `\Zx` writes X = 2, and row 0 is the eol view's
+    # target). kvdfa reads X (Machine.entry); the seeded entries must be ONE
+    # live row r0
+    A = st["A"]
+    if not A.entry_read:
+        return False
+    x = A.entry
+    if PLANT == "e0-row0":
+        x = 0   # S1140: row 0 read as e(⊥), not the emitted constant X (both arms)
     if not A.seeded:
-        st.update(r0=0, Cm1=frozenset(range(256)), absB=True)
+        if x is None or x not in A.live:
+            return False
+        st.update(r0=x, Cm1=frozenset(range(256)), absB=True)
         plant_before(st)
         return True
-    m = re.search(r"anchored_state = search_from \? rx_anchored_seed_state\[.*?\] : (-?\d+);", c)
-    if not m:
-        return False
-    x = A.norm(int(m.group(1)))
     ent = collections.defaultdict(set)
     for b in range(256):
         e = A.seed[A.bc[b]]
@@ -112,8 +131,6 @@ def k_entry(st):
     if len(ent) != 1:
         return False
     r0 = next(iter(ent))
-    if PLANT == "e0-row0":
-        x = 0   # S1140: row 0 read as e(⊥), not the emitted constant X
     if x == r0:
         absB = True
     elif x is None or x not in A.live:
@@ -293,6 +310,31 @@ def census(sites_path, pats_path):
         print("why", *k, v)
     for k, v in sorted(cover.items(), key=str):
         print("cover", *k, v)
+    print("## F. [x0fix K35] cover_conj[] over EVERY census pattern at its own flags: the")
+    print("##    population counted FROM THE TABLE, not from the census's whole/ctx text classes")
+    fh, fc, fx = collections.Counter(), collections.Counter(), collections.defaultdict(list)
+    seen = {}
+    for p in pats:
+        fl = ("i" if p.get("icase") else "") + ("u" if p.get("enc") == "utf8" else "")
+        key = (fl or "-", p["pat"])
+        if key not in seen:
+            seen[key] = verdict(bytes.fromhex(p["pat"]).decode("latin-1"), fl or "-")[0]
+        why = seen[key]
+        inB = bool(p.get("whole") or (p.get("ctx_whole") and p.get("ctx_expr") == 1))
+        fh[(p["pop"], p["cfg"], why)] += 1
+        if why == "cover":
+            fc[(p["pop"], p["cfg"], "in-B" if inB else "outside-B")] += 1
+            if not inB and len(fx[(p["pop"], p["cfg"])]) < 4:
+                fx[(p["pop"], p["cfg"])].append(bytes.fromhex(p["pat"]).decode("latin-1")[:40])
+    for k, v in sorted(fh.items(), key=str):
+        print("all-why", *k, v)
+    for k, v in sorted(fc.items(), key=str):
+        print("all-cover", *k, v)
+    for k, v in sorted(fx.items(), key=str):
+        print("e.g. outside-B", *k, " ".join(repr(x) for x in v))
+    dc = collections.Counter(("utf8" if "u" in k[0] else "native") for k, w in seen.items() if w == "cover")
+    print("all-cover distinct (flags, pattern):", " ".join("%s=%d" % kv for kv in sorted(dc.items())),
+          "total=%d" % sum(dc.values()))
     print("## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:")
     print("##    exact_len is stated over the SENT sets, min(k, sent))")
     e = collections.Counter()

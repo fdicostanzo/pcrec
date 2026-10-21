@@ -1,65 +1,65 @@
-## X0 build/x0/res_plant_c9-eol-as-end.jsonl  pcre2=10.46 2025-08-27 plant='c9-eol-as-end' self=None items=91
-agg mover native items=28 p1:C_k=216 p1_cells=3647601 p1_nodes=405 p1_red=27 p1_unknown=0 p2_cells=165884 p2_diff=260 p2_red=27 p2_subjects=31075 red_other=27 why:cover=28
-agg mover utf8 items=27 p1:C_k=208 p1_cells=7939240 p1_nodes=398 p1_red=26 p1_unknown=0 p2_cells=152644 p2_diff=171 p2_red=26 p2_subjects=29797 red_other=26 why:cover=27
-agg witness native items=33 p1:C_k=33 p1:S_d=3 p1:context-x-prefix=12 p1_cells=4030274 p1_nodes=764 p1_red=6 p1_unknown=0 p2_cells=198021 p2_diff=2586 p2_red=6 p2_subjects=34019 red_other=6 why:cover=24 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1
-agg witness utf8 items=3 p1_cells=555960 p1_nodes=45 p1_unknown=0 p2_cells=20727 p2_diff=0 p2_subjects=3831 why:cover=3
-red mover native R b'done\\Z' cover p1=257 p2=13  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
-red mover native R b'b\\Z' cover p1=257 p2=20  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_plant_c9-eol-as-end.jsonl  pcre2=10.46 2025-08-27 plant='c9-eol-as-end' self=None items=87
+agg mover native items=28 p1:C_k=216 p1_cells=3647601 p1_nodes=458 p1_red=27 p1_unknown=0 p2_cells=166034 p2_diff=208 p2_red=27 p2_subjects=31106 red_other=27 why:cover=28
+agg mover utf8 items=27 p1:C_k=208 p1_cells=7939240 p1_nodes=441 p1_red=26 p1_unknown=0 p2_cells=152802 p2_diff=167 p2_red=26 p2_subjects=29822 red_other=26 why:cover=27
+agg witness native items=30 p1:C_k=36 p1:context-x-prefix=12 p1_cells=3829814 p1_nodes=770 p1_red=6 p1_unknown=0 p2_cells=301026 p2_diff=6924 p2_red=6 p2_subjects=50053 red_other=6 why:after-agree=1 why:cover=21 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3
+agg witness utf8 items=2 p1_cells=370640 p1_nodes=44 p1_unknown=0 p2_cells=24301 p2_diff=0 p2_subjects=4348 why:cover=2
+red mover native R b'\\bfoo\\Z' cover p1=194 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native R b'done\\Z' cover p1=257 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover native R b'b\\Z' cover p1=257 p2=14  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
 red mover native R b'(?-m)a$' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'\\bfoo\\Z' cover p1=194 p2=7  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover native R b'b$' cover p1=257 p2=14  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'\\bfoo$' cover p1=194 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native R b'b$' cover p1=257 p2=19  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\bfoo$' cover p1=194 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
 red mover native R b'\\Bo\\Z' cover p1=63 p2=3  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "426f0a", "sf": 0, "cover": null, "pcre": [1, 2]} 
-red mover native R b'a$\\b' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'abc$' cover p1=257 p2=20  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover native R b'a\\Z' cover p1=257 p2=19  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'(?-m:a$)' cover p1=257 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'a\\n$' cover p1=257 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a0a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red mover native R b'a$(?m)' cover p1=257 p2=8  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'\\Bb$' cover p1=63 p2=17  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "42620a", "sf": 0, "cover": null, "pcre": [1, 2]} 
+red mover native R b'a$\\b' cover p1=257 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'abc$' cover p1=257 p2=6  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native R b'a\\Z' cover p1=257 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'(?-m:a$)' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'a\\n$' cover p1=257 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a0a", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b'a$(?m)' cover p1=257 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\Bb$' cover p1=63 p2=3  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "42620a", "sf": 0, "cover": null, "pcre": [1, 2]} 
 red mover native R b'a$.*' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'x\\Z' cover p1=257 p2=11  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'/user$' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "2f757365720a", "sf": 0, "cover": null, "pcre": [0, 5]} 
-red mover native R b'(?m)a\\Z' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'x\\Z' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'/user$' cover p1=257 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "2f757365720a", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover native R b'(?m)a\\Z' cover p1=257 p2=8  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
 red mover native R b'a$' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native iR b'log$' cover p1=257 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4c4f470a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover native R b'done$' cover p1=257 p2=14  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover native iR b'log$' cover p1=257 p2=17  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4c4f470a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native R b'done$' cover p1=257 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
 red mover native R b'ERROR$' cover p1=257 p2=7  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4552524f520a", "sf": 0, "cover": null, "pcre": [0, 5]} 
-red mover native R b'(?m:a\\Z)' cover p1=257 p2=8  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'x$.*' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover native R b'\\bab$' cover p1=194 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "61620a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red mover native R b'abc\\Z' cover p1=257 p2=16  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover native R b'.$' cover p1=257 p2=27  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "000a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'(?m)a\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'(?-m)a$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'(?m:a\\Z)' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'x$.*' cover p1=257 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\bab$' cover p1=194 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "61620a", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b'abc\\Z' cover p1=257 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native R b'.$' cover p1=257 p2=35  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "000a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'(?-m)a$' cover p1=449 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'(?m)a\\Z' cover p1=449 p2=25  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
 red mover utf8 uR b'a$(?m)' cover p1=449 p2=7  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'x$.*' cover p1=449 p2=17  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'a\\Z' cover p1=449 p2=15  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'abc$' cover p1=449 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover utf8 uR b'a$.*' cover p1=449 p2=6  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'done$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
-red mover utf8 uR b'a\\n$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a0a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red mover utf8 uR b'done\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
-red mover utf8 uR b'\\Bo\\Z' cover p1=63 p2=3  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "426f0a", "sf": 0, "cover": null, "pcre": [1, 2]} 
+red mover utf8 uR b'x$.*' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'abc$' cover p1=449 p2=7  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 uR b'a\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'done$' cover p1=449 p2=14  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover utf8 uR b'a$.*' cover p1=449 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'done\\Z' cover p1=449 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "646f6e650a", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover utf8 uR b'a\\n$' cover p1=449 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a0a", "sf": 0, "cover": null, "pcre": [0, 2]} 
 red mover utf8 uR b'\\Bb$' cover p1=63 p2=3  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "42620a", "sf": 0, "cover": null, "pcre": [1, 2]} 
-red mover utf8 uR b'/user$' cover p1=449 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "2f757365720a", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover utf8 uR b'\\Bo\\Z' cover p1=63 p2=3  {"kind": "C_k", "ctx": "30", "pcre": [10], "reading": []} {"s": "426f0a", "sf": 0, "cover": null, "pcre": [1, 2]} 
+red mover utf8 uR b'/user$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "2f757365720a", "sf": 0, "cover": null, "pcre": [0, 5]} 
 red mover utf8 uR b'(?-m:a$)' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'abc\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover utf8 uR b'x\\Z' cover p1=449 p2=7  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'a$\\b' cover p1=449 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'b$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'(?m:a\\Z)' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'b\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'x\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "780a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'a$\\b' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'abc\\Z' cover p1=449 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6162630a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 uR b'b$' cover p1=449 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
 red mover utf8 uR b'\\bfoo$' cover p1=386 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover utf8 uR b'a$' cover p1=449 p2=15  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
-red mover utf8 uR b'\\bab$' cover p1=386 p2=12  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "61620a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red mover utf8 uR b'\\bfoo\\Z' cover p1=386 p2=11  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red mover utf8 uR b'ERROR$' cover p1=449 p2=11  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4552524f520a", "sf": 0, "cover": null, "pcre": [0, 5]} 
-red mover utf8 iuR b'log$' cover p1=449 p2=13  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4c4f470a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red witness native R b'cat\\Z' cover p1=257 p2=10  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red witness native R b'cat$' cover p1=257 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red witness native R b'\\bcat$' cover p1=194 p2=5  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
-red witness native - b'ab|a$\\n' cover p1=521 p2=832  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red witness native - b'ab|a\\Z\\n' cover p1=521 p2=848  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-red witness native - b'ab|a$\\n\\z' cover p1=521 p2=886  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 2]} 
-== X0 run COMPLETE: items=91 sec=7.0
+red mover utf8 uR b'b\\Z' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "620a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'(?m:a\\Z)' cover p1=449 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'\\bfoo\\Z' cover p1=386 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "666f6f0a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 uR b'a$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "610a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'\\bab$' cover p1=386 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "61620a", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'ERROR$' cover p1=449 p2=2  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4552524f520a", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover utf8 iuR b'log$' cover p1=449 p2=16  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "4c4f470a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native R b'cat$' cover p1=257 p2=18  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native R b'cat\\Z' cover p1=257 p2=16  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native R b'\\bcat$' cover p1=194 p2=9  {"kind": "C_k", "ctx": null, "pcre": [10], "reading": []} {"s": "6361740a", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'ab|a$\\n' cover p1=514 p2=2294  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+red witness native - b'ab|a\\Z\\n' cover p1=514 p2=2281  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+red witness native - b'ab|a$\\n\\z' cover p1=514 p2=2306  {"kind": "context-x-prefix", "ctx": null, "node": "6162"} {"s": "610a00", "sf": 0, "cover": [0, 2], "pcre": null} 
+== X0 run COMPLETE: items=87 sec=5.3

@@ -1,72 +1,68 @@
-## X0 build/x0/res_plant_e0-row0.jsonl  pcre2=10.46 2025-08-27 plant='e0-row0' self=None items=103
-agg mover native items=34 p1:absent-before=34 p1_cells=2386502 p1_nodes=91 p1_red=34 p1_unknown=0 p2_cells=193759 p2_diff=18138 p2_red=34 p2_subjects=36463 red_other=34 why:cover=34
-agg mover utf8 items=33 p1:absent-before=33 p1_cells=6457500 p1_nodes=97 p1_red=33 p1_unknown=0 p2_cells=187409 p2_diff=18350 p2_red=33 p2_subjects=37573 red_other=33 why:cover=33
-agg witness native items=33 p1:S_d=15 p1:absent-before=2 p1_cells=3431721 p1_nodes=723 p1_red=5 p1_unknown=0 p2_cells=152628 p2_diff=2156 p2_red=2 p2_subjects=25619 red_other=5 why:cover=18 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=6
-agg witness utf8 items=3 p1:absent-before=1 p1_cells=555960 p1_nodes=45 p1_red=1 p1_unknown=0 p2_cells=20509 p2_diff=556 p2_red=1 p2_subjects=3823 red_other=1 why:cover=3
-red mover native - b'(?<=[^a])b' cover p1=1 p2=548  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*UCP)(?<=\\w)x' cover p1=1 p2=544  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=a)c' cover p1=1 p2=540  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=a)b' cover p1=1 p2=542  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=[ab])z' cover p1=1 p2=540  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=[^a])b' cover p1=1 p2=540  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*non_atomic_positive_lookbehind:a)b' cover p1=1 p2=538  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=58  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*positive_lookbehind:a)c' cover p1=1 p2=544  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?i)(?<=a)b' cover p1=1 p2=1058  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*naplb:a)b' cover p1=1 p2=536  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=(?:a))b' cover p1=1 p2=534  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=56  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=a)+b' cover p1=1 p2=554  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?i)(?<=a)b' cover p1=1 p2=1064  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=a)z' cover p1=1 p2=530  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<*[ab])z' cover p1=1 p2=532  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<*a)b' cover p1=1 p2=544  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=a)z' cover p1=1 p2=528  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=[aeiou])x\\b' cover p1=1 p2=394  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*plb:a)c' cover p1=1 p2=530  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=a)c' cover p1=1 p2=544  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*positive_lookbehind:a)b' cover p1=1 p2=544  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=\\n)x' cover p1=1 p2=540  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=\\w)x' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=\\w)x' cover p1=1 p2=536  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=[ab])x' cover p1=1 p2=536  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(*plb:a)b' cover p1=1 p2=542  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native R b'(?<=a|b)x' cover p1=1 p2=548  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover native - b'(?<=[ab])z' cover p1=1 p2=542  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=\\n)x' cover p1=1 p2=556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=\\w)x' cover p1=1 p2=556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=\\w)x' cover p1=1 p2=566  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=a)z' cover p1=1 p2=584  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*positive_lookbehind:a)b' cover p1=1 p2=552  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=[aeiou])x\\b' cover p1=1 p2=434  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=[a-z])\\x{e9}' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "c3a9", "sf": 0, "cover": [0, 2], "pcre": null} 
-red mover utf8 uR b'(?<=a|b)x' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=a)z' cover p1=1 p2=560  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=66  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*non_atomic_positive_lookbehind:a)b' cover p1=1 p2=562  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?i)(?<=a)b' cover p1=1 p2=1090  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*plb:a)b' cover p1=1 p2=568  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*positive_lookbehind:a)c' cover p1=1 p2=564  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*plb:a)c' cover p1=1 p2=564  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=(?:a))b' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?i)(?<=a)b' cover p1=1 p2=1104  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=[aeiou])x\\b' cover p1=1 p2=428  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=[ab])z' cover p1=1 p2=556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=[ab])x' cover p1=1 p2=568  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(*naplb:a)b' cover p1=1 p2=556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=a)b' cover p1=1 p2=568  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=[ab])x' cover p1=1 p2=562  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<*a)b' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=[a-z])\\x{e9}' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "c3a9", "sf": 0, "cover": [0, 2], "pcre": null} 
-red mover utf8 uR b'(?<=a)+b' cover p1=1 p2=558  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=68  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<=a)b' cover p1=1 p2=542  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 u b'(?<=[ab])z' cover p1=1 p2=570  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red mover utf8 uR b'(?<*a)z' cover p1=1 p2=562  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
-red witness native - b'(?<=x)cat' cover p1=1 p2=542  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "636174", "sf": 0, "cover": [0, 3], "pcre": null} 
-red witness native - b'(?<=\\$)\\d' cover p1=1 p2=1614  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "30", "sf": 0, "cover": [0, 1], "pcre": null} 
-red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
-red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
-red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
-red witness utf8 u b'(?<=x)cat' cover p1=1 p2=556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "636174", "sf": 0, "cover": [0, 3], "pcre": null} 
-== X0 run COMPLETE: items=103 sec=16.2
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_plant_e0-row0.jsonl  pcre2=10.46 2025-08-27 plant='e0-row0' self=None items=108
+agg mover native items=39 p1:absent-before=34 p1:no-match-anywhere=5 p1_cells=2386502 p1_nodes=123 p1_red=39 p1_unknown=0 p2_cells=352168 p2_diff=79684 p2_red=39 p2_subjects=67948 red_other=39 why:cover=39
+agg mover utf8 items=37 p1:absent-before=33 p1:no-match-anywhere=4 p1_cells=6457500 p1_nodes=131 p1_red=37 p1_unknown=0 p2_cells=329786 p2_diff=75539 p2_red=37 p2_subjects=67335 red_other=37 why:cover=37
+agg witness native items=30 p1:absent-before=2 p1_cells=3231004 p1_nodes=710 p1_red=2 p1_unknown=0 p2_cells=227469 p2_diff=6764 p2_red=2 p2_subjects=37033 red_other=2 why:cover=15 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:no-eol-view=7
+agg witness utf8 items=2 p1_cells=370640 p1_nodes=44 p1_unknown=0 p2_cells=24398 p2_diff=0 p2_subjects=4347 why:cover=2
+red mover native R b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=220  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=a)+b' cover p1=1 p2=2072  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=[ab])z' cover p1=1 p2=2074  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=222  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(*positive_lookbehind:a)c' cover p1=1 p2=2074  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=[ab])x' cover p1=1 p2=2086  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(*UCP)(?<=\\w)x' cover p1=1 p2=2084  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(*plb:a)b' cover p1=1 p2=2080  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'(?<=[^a])b' cover p1=1 p2=2078  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?i)(?<=a)b' cover p1=1 p2=4142  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=a)b' cover p1=1 p2=2074  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=[^a])b' cover p1=1 p2=2074  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<*[ab])z' cover p1=1 p2=2082  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=a|b)x' cover p1=1 p2=2088  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=a)z' cover p1=1 p2=2070  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=(?:a))b' cover p1=1 p2=2078  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'\\zx' cover p1=1 p2=1916  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=a)c' cover p1=1 p2=2070  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'-{0,}?\\Z-' cover p1=1 p2=1941  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<*a)b' cover p1=1 p2=2084  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'(?<=a)z' cover p1=1 p2=2084  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'(?<=[ab])x' cover p1=1 p2=2078  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(?<=[aeiou])x\\b' cover p1=1 p2=1556  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'\\zabc' cover p1=1 p2=1799  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red mover native R b'(*plb:a)c' cover p1=1 p2=2082  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'\\Zx' cover p1=1 p2=1971  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red mover native - b'(?<=[ab])z' cover p1=1 p2=2080  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'[ab]*\\z\\W' cover p1=1 p2=2041  {"kind": "no-match-anywhere"} {"s": "0057", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'(?<=\\w)x' cover p1=1 p2=2088  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native R b'(*positive_lookbehind:a)b' cover p1=1 p2=2066  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=222  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=\\w)x' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=a)z' cover p1=1 p2=2096  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=a)b' cover p1=1 p2=2090  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=(?:a))b' cover p1=1 p2=2090  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=[ab])z' cover p1=1 p2=2094  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=a|b)x' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=[a-z])\\x{e9}' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "c3a9", "sf": 0, "cover": [0, 2], "pcre": null} 
+red mover utf8 uR b'(?<=[0-9a-f])x(?=[a-z_])' cover p1=1 p2=220  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "785f", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(*naplb:a)b' cover p1=1 p2=2090  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<*a)b' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=[aeiou])x\\b' cover p1=1 p2=1586  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=[aeiou])x\\b' cover p1=1 p2=1582  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(*positive_lookbehind:a)c' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?i)(?<=a)b' cover p1=1 p2=4178  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=[ab])x' cover p1=1 p2=2104  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<*a)z' cover p1=1 p2=2096  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?i)(?<=a)b' cover p1=1 p2=4188  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "42", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(*plb:a)b' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=a)z' cover p1=1 p2=2092  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(*positive_lookbehind:a)b' cover p1=1 p2=2100  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<*[ab])z' cover p1=1 p2=2098  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 u b'(?<=[a-z])\\x{e9}' cover p1=1 p2=2088  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "c3a9", "sf": 0, "cover": [0, 2], "pcre": null} 
+red mover utf8 uR b'(?<=a)b' cover p1=1 p2=2104  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=\\w)x' cover p1=1 p2=2102  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(*plb:a)c' cover p1=1 p2=2100  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "63", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=\\n)x' cover p1=1 p2=2094  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=[ab])z' cover p1=1 p2=2100  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'(?<=a)+b' cover p1=1 p2=2098  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "62", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover utf8 uR b'\\zx' cover p1=1 p2=1751  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red witness native - b'(?<=x)cat' cover p1=1 p2=2086  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "636174", "sf": 0, "cover": [0, 3], "pcre": null} 
+red witness native - b'(?<=\\$)\\d' cover p1=1 p2=4678  {"kind": "absent-before", "ctx": null, "pcre": false, "reading": true} {"s": "30", "sf": 0, "cover": [0, 1], "pcre": null} 
+== X0 run COMPLETE: items=108 sec=24.0

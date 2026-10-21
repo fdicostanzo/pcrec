@@ -1,64 +1,64 @@
-## X0 build/x0/res_self_over-S.jsonl  pcre2=10.46 2025-08-27 plant='' self='over-S' items=150
-agg admitted native items=80 p1:S_d=552 p1_cells=23749884 p1_nodes=3592 p1_red=80 p1_unknown=0 p2_cells=1295187 p2_diff=6095 p2_red=71 p2_subjects=222088 red_other=78 red_u1shape=2 why:cover=80
-agg admitted utf8 items=70 p1:S_d=480 p1_cells=36934850 p1_nodes=1936 p1_red=70 p1_unknown=0 p2_cells=1072362 p2_diff=3242 p2_red=64 p2_subjects=178956 red_other=68 red_u1shape=2 why:cover=70
-red admitted native - b'a{2,2}' cover p1=7 p2=32  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806161", "sf": 0, "cover": [0, 2], "pcre": [1, 3]} 
-red admitted native - b'a{ 1x}' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "807b2031787d", "sf": 0, "cover": [0, 6], "pcre": null} 
-red admitted native - b'ABCDEFGHIJKLMNOP' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8042434445464748494a4b4c4d4e4f50", "sf": 0, "cover": [0, 16], "pcre": null} 
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_self_over-S.jsonl  pcre2=10.46 2025-08-27 plant='' self='over-S' items=150
+agg admitted native items=80 p1:S_d=550 p1_cells=23749370 p1_nodes=3605 p1_red=80 p1_unknown=0 p2_cells=1295359 p2_diff=6005 p2_red=71 p2_subjects=222062 red_other=78 red_u1shape=2 why:cover=80
+agg admitted utf8 items=70 p1:S_d=480 p1_cells=36936080 p1_nodes=1916 p1_red=70 p1_unknown=0 p2_cells=1070977 p2_diff=3305 p2_red=66 p2_subjects=178887 red_other=68 red_u1shape=2 why:cover=70
+red admitted native - b'a{2,2}' cover p1=7 p2=39  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806161", "sf": 0, "cover": [0, 2], "pcre": [1, 3]} 
 red admitted native - b'(?:ab){3,}?' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806261626162", "sf": 0, "cover": [0, 6], "pcre": null} 
-red admitted native - b'(?i)c[aeiou]t' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} null 
-red admitted native - b'(?s)(?^).' cover p1=7 p2=74  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [10]} {"s": "000a", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'\\x41\\x42' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8042", "sf": 0, "cover": [0, 2], "pcre": null} 
+red admitted native - b'a{ 1x}' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "807b2031787d", "sf": 0, "cover": [0, 6], "pcre": null} 
+red admitted native - b'ABCDEFGHIJKLMNOP' cover p1=6 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8042434445464748494a4b4c4d4e4f50", "sf": 0, "cover": [0, 16], "pcre": null} 
+red admitted native - b'(?i)c[aeiou]t' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "75052d296f816f7420", "sf": 0, "cover": [5, 8], "pcre": null} 
+red admitted native - b'(?s)(?^).' cover p1=7 p2=78  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [10]} {"s": "000a", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'\\x41\\x42' cover p1=7 p2=10  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8042", "sf": 0, "cover": [0, 2], "pcre": null} 
 red admitted native - b'(?i)group_concat' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} null 
-red admitted native - b'[^\xf0\x9f\x98\x80]' cover p1=7 p2=93  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [159]} {"s": "009f", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'(()|^){0}[b]' cover p1=7 p2=994 u1shape {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted native - b'[^\xf0\x9f\x98\x80]' cover p1=7 p2=71  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [159]} {"s": "009f", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(()|^){0}[b]' cover p1=7 p2=1070 u1shape {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
 red admitted native - b'foo\\B' cover p1=7 p2=2  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806f6f78", "sf": 0, "cover": [0, 3], "pcre": null} 
-red admitted native - b'(?:a)' cover p1=7 p2=131  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?:a)' cover p1=7 p2=162  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted native - b'[.a].]' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} null 
 red admitted native - b'a(?=b)bc' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806263", "sf": 0, "cover": [0, 3], "pcre": null} 
-red admitted native - b'(*UCP)(?i)[[:upper:]]' cover p1=7 p2=70  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [126]} {"s": "417e", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'[\xce\xb1]' cover p1=7 p2=142  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [127]} {"s": "b17f", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(*UCP)(?i)[[:upper:]]' cover p1=7 p2=80  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [126]} {"s": "417e", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'[\xce\xb1]' cover p1=7 p2=141  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [127]} {"s": "b17f", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted native - b'foo|foobar' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806f6f", "sf": 0, "cover": [0, 3], "pcre": null} 
-red admitted native - b'(?<!a)b' cover p1=7 p2=108  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'\\[' cover p1=7 p2=115  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "5b80", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?<!a)b' cover p1=7 p2=98  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'\\[' cover p1=7 p2=144  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "5b80", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted native - b'[[.a\\\\]x.]' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [130]} null 
-red admitted native - b'(?i-i)a' cover p1=7 p2=142  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'(?U)a+' cover p1=7 p2=149  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'(?<=a)c' cover p1=1 p2=7  {"kind": "S_d", "d": 0, "ctx": "61", "node": "", "under": [], "over": [128]} {"s": "618063a129", "sf": 0, "cover": [1, 2], "pcre": null} 
-red admitted native - b'[a.b.]' cover p1=7 p2=113  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "2e81", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'a|b' cover p1=7 p2=142  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "6181", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'[\x7f-\xc2\x80]' cover p1=7 p2=28  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [94]} {"s": "7f5e", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'(?!a)b' cover p1=7 p2=97  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": 1, "cover": [1, 2], "pcre": null} 
-red admitted native - b'\\w\\B\\w' cover p1=7 p2=16  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [159]} {"s": "9f3030", "sf": 0, "cover": [0, 2], "pcre": [1, 3]} 
-red admitted native - b'\\e' cover p1=7 p2=156  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "1b80", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?i-i)a' cover p1=7 p2=163  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?U)a+' cover p1=7 p2=110  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?<=a)c' cover p1=1 p2=0  {"kind": "S_d", "d": 0, "ctx": "61", "node": "", "under": [], "over": [128]} null 
+red admitted native - b'[a.b.]' cover p1=7 p2=121  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "2e81", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'a|b' cover p1=7 p2=119  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "6181", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'[\x7f-\xc2\x80]' cover p1=7 p2=36  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [94]} {"s": "7f5e", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?!a)b' cover p1=7 p2=132  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted native - b'\\w\\B\\w' cover p1=7 p2=14  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [159]} {"s": "9f3030", "sf": 0, "cover": [0, 2], "pcre": [1, 3]} 
+red admitted native - b'\\e' cover p1=7 p2=139  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "1b80", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted native - b'(?:(x)){0}a\\g<1>b' cover p1=7 p2=7 u1shape {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "807862", "sf": 0, "cover": [0, 3], "pcre": null} 
-red admitted utf8 u b'#' cover p1=7 p2=124  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "2380", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'[]]' cover p1=7 p2=110  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "5d80", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'[]]' cover p1=7 p2=104  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "5d80", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'#' cover p1=7 p2=145  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "2380", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'(?-r)k' cover p1=7 p2=116  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6b80", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'a*?a' cover p1=7 p2=135  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'(?<!a)b' cover p1=6 p2=114  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'(?:(?*a)z|w)' cover p1=7 p2=97  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "7780", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'(?i)ab' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} null 
-red admitted utf8 u b'(*UCP)(?aD)\\d' cover p1=7 p2=42  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [133]} {"s": "3085", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'[\\k-z]' cover p1=7 p2=75  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [136]} {"s": "6b88", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'wxyz' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8078797a", "sf": "findall", "cover": [[0, 4]], "pcre": []} 
+red admitted utf8 u b'a*?a' cover p1=7 p2=141  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6180", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'(?<!a)b' cover p1=7 p2=124  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'(?:(?*a)z|w)' cover p1=7 p2=116  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "7780", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'(?i)ab' cover p1=7 p2=8  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "2e81423b42a0a0", "sf": 0, "cover": [1, 3], "pcre": null} 
+red admitted utf8 u b'(*UCP)(?aD)\\d' cover p1=7 p2=57  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [133]} {"s": "3085", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'[\\k-z]' cover p1=7 p2=61  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [136]} {"s": "6b88", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'a\\x00b' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "800062", "sf": "findall", "cover": [[0, 3]], "pcre": []} 
-red admitted utf8 u b'[a-z]' cover p1=7 p2=40  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [141]} {"s": "618d", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'(?=(?>a|b))\\w' cover p1=7 p2=82  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "6181", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'wxyz' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8078797a", "sf": "findall", "cover": [[0, 4]], "pcre": []} 
+red admitted utf8 u b'(?=(?>a|b))\\w' cover p1=7 p2=90  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "6181", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'[a-z]' cover p1=7 p2=47  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [141]} {"s": "618d", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'ab(?=c)' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} null 
-red admitted utf8 iu b'a' cover p1=7 p2=80  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "4181", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 iu b'a' cover p1=7 p2=102  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "4181", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'x[\\8]y' cover p1=7 p2=16  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "803879", "sf": "findall", "cover": [[0, 3]], "pcre": []} 
+red admitted utf8 u b'(*UCP)(?aP)[[:space:]]' cover p1=7 p2=51  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [131]} {"s": "0983", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'(?x)a\\Q b \\Ec' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8020622063", "sf": "findall", "cover": [[0, 5]], "pcre": []} 
-red admitted utf8 u b'(*UCP)(?aP)[[:space:]]' cover p1=7 p2=68  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [131]} {"s": "0983", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'(?x) c a t # comment' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806174", "sf": "findall", "cover": [[0, 3]], "pcre": []} 
-red admitted utf8 u b'\xf0\x9f\x98\x80' cover p1=7 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [127]} {"s": "7f9f9880", "sf": 0, "cover": [0, 4], "pcre": null} 
-red admitted utf8 u b'[a-]{2}(?!\\w)' cover p1=7 p2=9  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "812d2d", "sf": "findall", "cover": [[0, 2]], "pcre": [[1, 3]]} 
-red admitted utf8 u b'[\\0777]' cover p1=7 p2=71  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "3781", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'\xf0\x9f\x98\x80' cover p1=6 p2=7  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [127]} {"s": "7f9f9880", "sf": 0, "cover": [0, 4], "pcre": null} 
 red admitted utf8 u b'abcdefgh' cover p1=6 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "8062636465666768", "sf": "findall", "cover": [[0, 8]], "pcre": []} 
+red admitted utf8 u b'[\\0777]' cover p1=7 p2=63  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "3781", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'foo' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806f6f", "sf": "findall", "cover": [[0, 3]], "pcre": []} 
-red admitted utf8 u b'a{2}(?:\\b)??\\B' cover p1=7 p2=28  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806161", "sf": "findall", "cover": [[0, 2]], "pcre": []} 
-red admitted utf8 u b'(?:(?*[ab])z|w)' cover p1=7 p2=95  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "7780", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'[:]' cover p1=7 p2=129  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "3a80", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-red admitted utf8 u b'(*negative_lookahead:a)(?:a|b)' cover p1=7 p2=80  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'[a-]{2}(?!\\w)' cover p1=7 p2=20  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} {"s": "812d2d", "sf": "findall", "cover": [[0, 2]], "pcre": [[1, 3]]} 
+red admitted utf8 u b'a{2}(?:\\b)??\\B' cover p1=7 p2=19  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "806161", "sf": "findall", "cover": [[0, 2]], "pcre": []} 
+red admitted utf8 u b'[:]' cover p1=7 p2=120  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "3a80", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'(?:(?*[ab])z|w)' cover p1=7 p2=113  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "7780", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
+red admitted utf8 u b'(*negative_lookahead:a)(?:a|b)' cover p1=6 p2=114  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6280", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
 red admitted utf8 u b'(?x)\\Qa#b\\E#trailing comment eaten' cover p1=7 p2=18  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "802362", "sf": "findall", "cover": [[0, 3]], "pcre": []} 
-red admitted utf8 u b'f|frank' cover p1=7 p2=118  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [128]} {"s": "6680", "sf": "findall", "cover": [[0, 1], [1, 2]], "pcre": [[0, 1]]} 
-== X0 run COMPLETE: items=150 sec=27.1
+red admitted utf8 u b'(?i)cat' cover p1=7 p2=0  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [129]} null 
+== X0 run COMPLETE: items=150 sec=21.6

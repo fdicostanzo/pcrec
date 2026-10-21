@@ -916,3 +916,44 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   LANGUAGE-EQUAL patterns `^[a-z]*$` / `^\s*$` and by python run once offline;
   both are in `docs/dev/optloop/nullanch/pcre2_transcript.txt`, produced by
   `pcre2_cells.py` beside it.
+
+## U20 — libpcre2 10.46: under `PCRE2_MATCH_INVALID_UTF` an `ANCHORED` match may start PAST the startoffset (kit_proof X0, lanes x0oracle/x0fix, 2026-10-21)
+
+- **Status**: divergence-by-design (documented behaviour; constrains our
+  oracles). Not a report candidate as it stands; see the last point.
+- **Repro** (`docs/design/kit_proof/x0/u20_probe.c`, transcript
+  `docs/design/kit_proof/x0/out/u20_probe.txt`, libpcre2-8 10.46 2025-08-27,
+  Linux dev box): pattern `a` compiled `PCRE2_UTF | PCRE2_MATCH_INVALID_UTF`,
+  subject `"\x80a"`, startoffset 0, `PCRE2_ANCHORED` (at match time or at
+  compile time) → match (1,2), a match that does not start at the startoffset.
+  `abc` on `"\xFF\xFEabc"` gives (2,5) and a truncated lead byte (`"\xC3a"`)
+  gives (1,2). In hard-partial mode `(?(DEFINE)(?<g>a))(?&g)` on `"\x80"`
+  answers PARTIAL (1,1).
+- **Controls** (same transcript): `"ba"` anchored gives no match (a valid byte
+  is not skipped); startoffset 1 gives (1,2); `PCRE2_UTF` without
+  `MATCH_INVALID_UTF` gives -22 (the UTF check); a byte-mode compile gives no
+  match; `^a` does not match (the skipped-to position is not the subject
+  start); `\Ga` does not match.
+- **Explained by documented behaviour.** `pcre2unicode(3)` (10.46, "MATCHING IN
+  INVALID UTF STRINGS"): "If pcre2_match() is called with an offset that points
+  to an invalid UTF-sequence, that sequence is skipped, and the match starts at
+  the next valid UTF character, or the end of the subject." The probe shows that
+  the skip runs BEFORE the anchor applies: `PCRE2_ANCHORED` anchors at the
+  skipped-to position. The documentation does not say how the skip and
+  `ANCHORED` compose. It is consistent with `pcre2api(3)`'s wording ("matching
+  at the first matching position"), but it is not what an "anchored at the
+  startoffset" reading expects.
+- **Impact on pcrec**: none on correctness. pcrec never asks PCRE2 at run time,
+  and pcrec's own invalid-tolerant contract has no such skip. The cost falls on
+  ORACLES: any probe that asks libpcre2 "does a match begin HERE" under
+  `MATCH_INVALID_UTF` must check that the returned start equals the
+  startoffset. `kit_proof/x0/x0pcre.c` does, and counts the refused answers
+  (`K`). kvcensus's `kvpcre` uses hard partial matching, and its utf8 rows
+  meet the same answers; that is noted for that instrument.
+- **If reported upstream**: the one point worth raising is the inconsistency
+  between `\G` and `ANCHORED` after the skip. `\G` still asserts the ORIGINAL
+  startoffset (`\Ga` on `"\x80a"` does not match), while `ANCHORED` moves with
+  the skip. The documentation words the two the same way: `pcre2pattern(3)`
+  says `\G` "matches at the first matching position in the subject", and
+  `pcre2api(3)` says `ANCHORED` limits matching "to matching at the first
+  matching position".

@@ -203,7 +203,7 @@ def site_reading(pat, fl):
         p = subprocess.run(argv, capture_output=True)
         if p.returncode != 0:
             continue
-        A = kvdfa.Machine(p.stdout.decode("latin-1"), "anchored")
+        A = conj.machine(p.stdout.decode("latin-1"))
         if A.ok:
             L = kvdfa.lang(A, A.starts())
             return dict(S=[sorted(x) for x in L["S"]], exact=L["exact"], span=L["span"],
@@ -684,6 +684,8 @@ def _verdict(a):
 
 
 PLANTS = ("cm1-all", "c8-skip", "c9-depth-k", "c9-eol-as-end", "e0-row0", "c10-drop", "absb-flip", "absa-flip")
+# conj.py's `plain-walk` (X0's R2) moves no verdict, only a site's sets: it is
+# run on the site role directly, not through plantpop
 
 
 def _plant_verdicts(a):

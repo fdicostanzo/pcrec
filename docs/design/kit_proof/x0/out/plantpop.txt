@@ -1,0 +1,8 @@
+plantpop cm1-all movers 239 witnesses 32
+plantpop c8-skip movers 54 witnesses 32
+plantpop c9-depth-k movers 0 witnesses 32
+plantpop c9-eol-as-end movers 55 witnesses 32
+plantpop e0-row0 movers 76 witnesses 32
+plantpop c10-drop movers 466 witnesses 32
+plantpop absb-flip movers 2507 witnesses 32
+plantpop absa-flip movers 2483 witnesses 32

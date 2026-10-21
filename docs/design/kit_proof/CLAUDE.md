@@ -27,10 +27,18 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   to argv as a Python `str`, which is re-encoded as UTF-8, so non-ASCII patterns
   compiled as different bytes (8 utf8-born corpus patterns read `exact`); the pattern
   now goes to argv as its own bytes.
+  REVISED FOR REVISION 2.2 (lane x0fix, 2026-10-21): C6 reads the EMITTED entry on both
+  arms (kvdfa's `Machine.entry`; X0's R1), the anchored machine comes from `machine()`,
+  and `CONJ_PLANT=plain-walk` (no S-id) drops the eol view's gated `\n` (X0's R2). The
+  `e0-row0` plant (S1140) now applies on both arms.
 - `conj.txt` — `conj.py`'s output (all four sections) at main `fa322a7f6` (rev 2.1).
   Against revision 2's run at `542b0cecb` it moves only by C2's retirement (B: every
   `no-start-site` row now reads `cover`) and by the three K1 witnesses (D); the admitted
-  set is unchanged (1,197 distinct patterns). Section D gains three lines appended by lane
+  set is unchanged (1,197 distinct patterns). REGENERATED at revision 2.2 (lane x0fix
+  setup, x0read reading, main `63a7c3315`): A and B are unchanged, section F is new (the
+  population counted from the table: 79 / 712 native and 51 / 526 utf8 patterns, 1,288
+  distinct), C moves only in the `entry-const`/`fixed-width` rows, and D moves only in
+  `a$\n` (`fixed-width` -> `no-eol-view`). Section D gains three lines appended by lane
   ctxspan2 (main `3b0f87b55`, `[r4 B9]`): `ctx_span.md`'s in-span witnesses, machine half only.
   Lane ctxspan21 (main `fd1d1fc98`, `[r4rc R2]`) appended two more lines AS TEXT, not run
   (bench timing window): the per-thread witnesses; lane x0oracle (2026-10-21) ran them

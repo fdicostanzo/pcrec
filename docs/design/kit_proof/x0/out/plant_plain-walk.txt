@@ -1,0 +1,10 @@
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_plant_plain-walk.jsonl  pcre2=10.46 2025-08-27 plant='plain-walk' self=None items=87
+agg site native items=38 p1:S_d=5 p1_cells=0 p1_nodes=187 p1_red=1 p1_unknown=841 red_other=1 why:site=38
+agg site utf8 items=39 p1:S_d=5 p1_cells=0 p1_nodes=192 p1_red=1 p1_unknown=846 red_other=1 why:site=39
+agg witness native items=10 p1:S_d=15 p1_cells=727824 p1_nodes=103 p1_red=3 p1_unknown=0 p2_cells=26792 p2_diff=0 p2_subjects=5193 red_other=3 why:cover=2 why:earlier-row=1 why:entry-const=1 why:no-eol-view=6
+red site native - b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red site utf8 u b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+== X0 run COMPLETE: items=87 sec=4.3

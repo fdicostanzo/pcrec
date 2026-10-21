@@ -1,5 +1,116 @@
 # X0 results: conj.py's reading against libpcre2 (kit_proof.md §6.4, §7 step X0)
 
+## Revision 2.2 re-run (lane `x0fix` setup, lane `x0read` reading, 2026-10-21)
+
+Reading of the queued job `530-x0fix-x0run` (rc 0, 1,063 s, 13:55-14:13; log ends
+`== X0FIX RUN COMPLETE`; the earlier `110004` job was cancelled by hand), on lane `x0fix` at main `63a7c3315` + the revision 2.2 reading (kvdfa
+reads the EMITTED entry constant; the eol view's gated final newline is in the hull;
+C6 on both arms), `build/pcrec` of that tree, libpcre2-8 **10.46** (`10.46 2025-08-27`).
+Instruments unchanged from x0oracle's (`x0pcre.c`, `x0.py`) plus the `plain-walk` plant.
+Transcripts in `out/` (rev 2.2 names replace revision 2.1's; the 2.1 run is the section
+below and git history). Population counted by `conj.py census` F (`conj.txt`).
+
+### Verdict
+
+**X0 PASSES on revision 2.2's reading.** Every check the brief names reads as follows:
+
+- **Part 1** (per-position, per-byte set equality + the context x prefix x tail grid):
+  **0 differences on every role**, including admitted (1,197 patterns: 43,800 prefix
+  nodes x 256 bytes, 443,947,845 grid cells, 0 inconclusive).
+- **Part 2** (the differential): **0 differences beyond U1.** The only red cell is
+  `(()|^){0}[b]`, native and utf8 (975 + 614 differing cells, e.g. `"0b"` from 0: cover
+  (1,2), PCRE2 none); no other item in any role differs.
+- **R1** is closed: the six R1 patterns (ten items at default flags) now DECLINE at
+  `entry-const` / `no-eol-view` and are no longer in any admitted role. **R2** is closed:
+  the sites run reads 0 red (`(a$\n)|ab`, both encodings, was the red cell).
+- **Witnesses** (32): 0 differences (28 admitted ones run, 4 declined ones are the
+  decline controls).
+- **Plants**: every conj.py plant and `plain-walk` is red on every mover that reaches
+  it; every X0 self-plant is red (tables below).
+
+One caveat, not a difference: **175 inconclusive part-1 cells per run on ONE pattern,
+`(?:[a-z]{0,3}\z|x)[0-9]{3}`** (both encodings; roles admitted-R and admitted-out, so
+four items). It reads `cover k=4` and both parts report 0 differences on it (its first
+alternative can never match, so the language is `x[0-9]{3}`); the cells are bytes `[a-z]`
+at depth 0 where hard partial matching reports a prefix but the witness search finds no
+complete match (the over-approximation x0oracle's defect 1 describes), so they are
+counted and compared on neither side. The admitted role proper has **0** inconclusive.
+This pattern is new in the population: the revision 2.1 reading declined it at
+`end-at-k` (the row-0 entry misread); revision 2.2's liveness and entry admit it.
+
+### Population (`out/population.txt`)
+
+| role | native flags | utf8 | revision 2.1 (x0oracle) | what |
+|---|---:|---:|---|---|
+| admitted | 613 | 584 | 613 / 584 | the 1,197 census whole-cover / context-join patterns (unchanged) |
+| admitted-R | 57 | 56 | 62 / 59 | the `-fno-rev-end` arm; the 8 fewer are R1 items now declining |
+| admitted-out | 46 | 45 | 51 / 48 | every other census DFA pattern the table admits at its own flags (K35) |
+| site | 814 | 1,127 | 814 / 1,127 | every start-origin FIND site of a non-admitted artifact with a machine-stated exact prefix; 1,939 of 1,941 completed, the two utf8 stragglers (`\b[0-9a-f]{32}\b`, the `\b` UUID) are NOT RUN again |
+| witness | 30 | 2 | 30 / 2 | `witnesses.txt` plus the plants' own witnesses |
+
+admitted-out is 91 = 99 - 10 (R1 items now declined) + 2 (the new
+`(?:[a-z]{0,3}\z|x)[0-9]{3}` items above).
+
+### Counts
+
+| role | items | part-1 nodes | part-1 grid cells | part-1 inconclusive | part-2 subjects | part-2 cells | differences |
+|---|---:|---:|---:|---:|---:|---:|---|
+| admitted | 1,197 | 43,800 | 443,947,845 | 0 | 3,145,314 | 18,948,760 | 1,589, all `(()|^){0}[b]` (U1) |
+| admitted-R | 113 | 1,833 | 36,171,108 | 350 (one pattern) | 236,346 | 1,234,758 | 0 |
+| admitted-out | 91 | 1,257 | 29,375,004 | 350 (one pattern) | 206,334 | 1,078,321 | 0 |
+| site | 1,939 | 43,738 | n/a | 8,896 byte cells (4,697 native, 4,199 utf8; deep counted repeats and long alternation words, as at revision 2.1) | n/a | n/a | 0 |
+| witness | 32 | 753 | 3,601,644 | 0 | 41,366 | 251,814 | 0 |
+
+### The plants (X2 for X0), revision 2.2
+
+Each plant's population is every census pattern (default and `-fno-rev-end` arms) whose
+verdict or plan MOVES under the plant (`out/plantpop.txt`; capped at a seeded 300), plus
+every witness. "red" = at least one part-1 or part-2 difference.
+
+| plant | id | movers (red / run) | its witness |
+|---|---|---|---|
+| `cm1-all` | S1130 | 239 / 239 | `\bcat\b` red |
+| `c8-skip` | S1131 | 54 / 54 | `ac|bd` red |
+| `c9-depth-k` | S1136 | 0 census movers (as kit_proof says) | `ab|a$\n`, `ab|a\Z\n`, `ab|a$\n\z`: all red |
+| `c9-eol-as-end` | S1139 | 53 / 55 | `cat$`, `cat\Z`, `\bcat$` under R red; the 2 green are `\d$(?!\n)` under R (both encodings), where the plant changes no answer (unchanged from 2.1) |
+| `e0-row0` | S1140 | 76 / 76 (was 67 / 67: it now reaches the unseeded R1 shapes) | `(?<=x)cat` red |
+| `c10-drop` | S1132 | 300 / 300 | `abc|ab` red |
+| `absb-flip` | S1133 | 300 / 300 | `\bcat` red |
+| `absa-flip` | S1134 | 300 / 300 | `(?m)done$` red |
+| `plain-walk` | none (the S1130-S1150 range is full) | sites: red on `(a$\n)|ab` (both encodings), 2 of 77 movers; witnesses: red on the three K1 witnesses | R2's control |
+| S1143 | | UNREACHED by design (kit_proof §6.3) | not run |
+| S1150 | | `out/stated.txt`: the union-narrowing statements RED (3 lines), the per-thread slice green (2) | |
+| S1149 | | the pass-through statements RED (3), the in-span slice green (3) | |
+
+`plain-walk`'s 75 green movers are sites whose stated set moves under the plant but
+still equal libpcre2's witnessed set; of the five R2 exposure shapes (`exposure.txt`:
+`(a$\n)|ab`, `[ab]{2,}$\W`, `[ab]{2,}\Z\W`, `\w{0,2}?$\W`, `a$\n`) only `(a$\n)|ab` turns
+red among the sites. I did not trace why the other four stay green (they are census
+DFA patterns; whichever of them is a site is among the 75 green movers or inconclusive,
+and `a$\n` now reads `no-eol-view` in `conj.txt` D).
+
+**X0's own plants** (a seeded 150-pattern sample of the admitted set; native / utf8):
+`drop-Ck` 80 / 70 red of 80 / 70, `flip-absA` 80 / 70, `over-S` 80 / 70, `under-S`
+80 / 70, `k-plus-1` 80 / 70, `add-Cm1` 5 / 6 reached and 5 / 6 red (the other 75 / 64
+are unseeded, whose `C_{-1}` is already all 256 bytes).
+
+### Exposure (`out/exposure.txt`, `x0.py`'s sibling `exposure.py`)
+
+Over every census pattern at its own flags (4,527 native / 4,938 utf8 patterns at default
+flags, 2,099 / 2,392 DFA ones again under `-fno-rev-end`), the machines whose EMITTED
+entry is not row 0: anchored machines 7 seeded + 74 unseeded (native, same utf8), forward
+machines 1 + 33 at default and 9 + 80 under R, anchored-LANGUAGE machines 32 unseeded; all
+of them view-carrying. R2's reach: 5 patterns at default flags (4 under R) whose language
+gains a byte through an eol view. kvcensus's committed `sites.tsv.gz`/`patterns.tsv.gz`
+were produced with the old reading, so their entry-derived columns (`starts()`, `whole()`,
+`forward_path()`) and the hull of those view-carrying machines can move; regeneration is
+filed as a follow-up, not run here.
+
+---
+
+# Revision 2.1 run (lane `x0oracle`) -- kept as the record the section above replaces
+
+
 Lane `x0oracle`, 2026-10-21, worktree at main `d970abbbc` (abi 81), `build/pcrec` of
 that tree, libpcre2-8 **10.46** (`10.46 2025-08-27`, the system `libpcre2-8.so.0.14.0`,
 the only 8-bit library on the dev box, and the reference oracle kit_proof names).

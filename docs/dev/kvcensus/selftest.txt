@@ -1,10 +1,16 @@
-# kvcensus selftest transcript, 2026-10-18, libpcre2-8 10.46
+# kvcensus selftest transcript, 2026-10-21, libpcre2-8 10.46 (lane x0fix: + the emitted-entry and view-gated-byte checks)
 PASS  exact abc\d{3,7} = span = 6                                got=(6, 6)
 PASS  exact ab|cd = 1 (a product would admit ad)                 got=1
 PASS  ab|cd counterexample pair                                  got=True
 PASS  exact [ac][bd] = 2                                         got=2
 PASS  PLANT [ac][bd] minus c->d: exact drops to 1                got=1
 PASS  utf8 abc[alpha-omega]x: exact 4 of span 6 (mixed)          got=(4, 6)
+PASS  entry \Zx: the emitted entry is row 1, not 0               got=1
+PASS  entry \Zx: empty language from the entry (span 0)          got=(0, [])
+PASS  PLANT \Zx walked from row 0: reads S_0 = {x}               got=[frozenset({120})]
+PASS  view (a$\n)|ab: S_1 = {b, \n}, exact 2, span 2             got=([10, 98], 2, 2)
+PASS  PLANT (a$\n)|ab with the view edge dropped: S_1 = {b}      got=[98]
+PASS  view a$\n: S = [{a}, {\n}], span 2 (live only through the view) got=([frozenset({97}), frozenset({10})], 2)
 PASS  uniform abc\d{3,7}: true at all six                        got=(6, 6, [True, True, True, True, True, True])
 PASS  PLANT a non-uniform digit at offset 3: contig 3, flag[3] 0 got=(3, False)
 PASS  uniform ac\d|bc: false at 0                                got=False

@@ -1,9 +1,11 @@
 # docs/design/kit_proof/x0/ — step X0 of `../../kit_proof.md` §7 (spec §6.4)
 
-X0 checks `../conj.py`'s reading (revision 2.1, the prototype of `MkEnd` + `MkLang`)
-against an INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run by
-`make`, nothing reads a clock, nothing under `src/` is touched. Lane `x0oracle`,
-2026-10-21. Results: `results.md`.
+X0 checks `../conj.py`'s reading (the prototype of `MkEnd` + `MkLang`) against an
+INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run by `make`, nothing
+reads a clock, nothing under `src/` is touched. Lane `x0oracle`, 2026-10-21, on revision
+2.1 (NOT passed: R1, R2); lane `x0fix`, 2026-10-21, re-run on revision 2.2's fixed
+reading, read by lane `x0read`: **PASSES** (0 differences beyond U1, every plant red).
+Results: `results.md` (revision 2.2 section on top, the x0oracle record below it).
 
 - `x0pcre.c` — the libpcre2-8 side: a line-protocol server (`V`, `K`, `P`, `N`, `Q`,
   `T`, `F`; protocol in its header) that knows no reading. `Q` is the per-byte next
@@ -17,6 +19,13 @@ against an INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run 
   sets one of conj.py's `CONJ_PLANT`s, `--self` one of X0's own plants on the plan);
   `plantpop` writes each plant's mover population; `stated` checks STATED sets
   (S1150, S1149) against libpcre2; `summary` folds a result file. Docstring = usage.
+- `exposure.py` — lane x0fix (rev 2.2): over every census pattern (and every DFA one
+  under `-fno-rev-end`), the machines whose EMITTED entry is not row 0 or is dead (R1's
+  reach) and the anchored machines whose language gains a byte through the eol view
+  (R2's reach). Compiles only; run under `scripts/boxlock`.
+- `u20_probe.c` — lane x0fix: `docs/dev/upstream_issues.md` U20's probe (libpcre2-8,
+  `MATCH_INVALID_UTF`, a startoffset at an invalid sequence, with and without
+  `ANCHORED`, plus controls); its transcript is `out/u20_probe.txt`.
 - `stated.tsv` — the stated-set rows `stated` reads: S1150's union-narrowing plant and
   S1149's pass-through plant (must read RED), and the correct per-thread / in-span
   slice statements of `ctx_span.md` §3.8 and kit_proof §5.2 (must read green).
@@ -34,7 +43,9 @@ cells; each is fixed in `x0pcre.c` and recorded in `results.md`):
   FRAGMENT (`@é`: `"@\xC3@"` reads as a prefix);
 - libpcre2 10.46 under `MATCH_INVALID_UTF` answers an `ANCHORED` match that starts
   PAST a leading invalid sequence (`a` on `"\x80a"` from 0 gives (1,2)); every
-  anchored probe now requires the match to start at the origin (`K` counts them).
+  anchored probe now requires the match to start at the origin (`K` counts them). It is
+  the DOCUMENTED invalid-sequence skip applied before the anchor:
+  `docs/dev/upstream_issues.md` U20.
 
 Reproduce from the worktree / repo root with `build/pcrec` and `build/x0/x0pcre` built
 (the population and runs compile thousands of patterns: run them under
