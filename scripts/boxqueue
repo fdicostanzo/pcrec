@@ -19,8 +19,9 @@
 #   scripts/boxqueue state KEY      the latest state of a job (exit 0 = green)
 #   scripts/boxqueue after KEY      a readiness helper: 0 when KEY is green,
 #                        75 while it is pending/running/failed, 77 cancelled
-#   scripts/boxqueue retry KEY | cancel KEY
-#   scripts/boxqueue start [--every S]   arm the detached runner (idempotent)
+#   scripts/boxqueue retry [--no-start] KEY | cancel KEY
+#   scripts/boxqueue start [--every S]   arm the detached runner (idempotent;
+#                        a pass every S s, BOXQUEUE_EVERY, 60 — a policy pace)
 #   scripts/boxqueue run [--every S] [--once]   the runner, foreground
 #   scripts/boxqueue path
 #
@@ -249,8 +250,8 @@ start_job() { # start_job NAME SNAP: dry-run again, take the box lock, run insid
         rm -rf "$rd"; return 1
     fi
     if [ -e "$rd/changed" ]; then
-        qlog "  job $n CHANGED in pending/ since its snapshot: not run; the edit is asked next pass"
-        rm -rf "$rd"; return 1
+        qlog "  job $n CHANGED in pending/ since its snapshot: not run; the edit is asked at once (a new pass)"
+        rm -rf "$rd"; return 0
     fi
     finish_job "$n"
     return 0
@@ -357,7 +358,7 @@ pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a 
 
 # ---------- commands ----------
 cmd_run() {
-    local every=60 once=0
+    local every=${BOXQUEUE_EVERY:-60} once=0
     while [ $# -gt 0 ]; do case "$1" in --every) every=$2; shift 2 ;; --once) once=1; shift ;; *) die "run: unknown option $1" ;; esac; done
     mkq
     unset PCREC_BOXLOCK_HELD    # the runner is box-wide: never nested in a caller's lock
@@ -454,7 +455,7 @@ cmd_batch() {
     [ -z "$tree" ] && { tree=$(git -C "$(dirname "$sf")" rev-parse --show-toplevel 2>/dev/null) || die "batch: --tree not given and $sf is not in a git tree"; }
     tree=$(cd "$tree" 2>/dev/null && pwd) || die "batch: no tree $tree"
     case "$lift" in ''|/*) ;; *) lift=$(pwd)/$lift ;; esac
-    local parsed; parsed=$(bash "$here/chainrun" --check "$sf") || exit 64   # chainrun's parser and cap rules, reused
+    local parsed; parsed=$(bash "$here/chainrun" --check --tree "$tree" "$sf") || exit 64   # chainrun's parser and cap rules, reused
     mkq
     local bid i=0 prev="" sn class cap cmd name jf w=${#prio} nst
     bid=b$(date +%Y%m%d%H%M%S)$$; nst=$(printf '%s\n' "$parsed" | grep -c .)
@@ -509,11 +510,13 @@ cmd_after() {
     esac
 }
 cmd_retry() {
+    local ns=""; [ "${1:-}" = --no-start ] && { ns=--no-start; shift; }
+    [ $# = 1 ] || die "usage: boxqueue retry [--no-start] KEY"
     local k=$1 d n
     find_pending "$k" > /dev/null || find_running "$k" > /dev/null && { echo "boxqueue: $k is already pending/running" >&2; exit 65; }
     d=$(latest_end "$k") || { echo "boxqueue: no ended run of $k" >&2; exit 65; }
     n=${d##*/}; n=${n#*-}
-    bash "$self" add --name "$n" "$d/job"
+    bash "$self" add --name "$n" $ns "$d/job"
 }
 cmd_cancel() {
     local k=$1 n
@@ -595,7 +598,7 @@ case "${1:-}" in
     status) cmd_status ;;
     state) [ $# = 2 ] || die "usage: boxqueue state KEY"; cmd_state "$2" ;;
     after) [ $# = 2 ] || die "usage: boxqueue after KEY"; cmd_after "$2" ;;
-    retry) [ $# = 2 ] || die "usage: boxqueue retry KEY"; cmd_retry "$2" ;;
+    retry) shift; cmd_retry "$@" ;;
     cancel) [ $# = 2 ] || die "usage: boxqueue cancel KEY"; cmd_cancel "$2" ;;
     start) shift; cmd_start "$@" ;;
     run) shift; cmd_run "$@" ;;
