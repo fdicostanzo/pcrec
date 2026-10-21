@@ -26,6 +26,8 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   with the loop) is counted, the documented boundary difference.
 - **run_findall_tests.sh** — the section: `run_iter_diff.sh cells.tsv`, then
   the ASan cells (a subset rebuilt with `-fsanitize=address,undefined`).
+  `run_iter_diff.sh` is also in `tests/lib/san_scripts.txt` ([TT-9]), so the
+  sanitizer axes run it through `$GENCFLAGS`.
 - **cells.tsv** — the cells: lane iterdes's targeted byte set
   (docs/design/findall_iter/sem/targeted.tsv), the retry shapes the design
   names (`\K`, lookaround, anchors, compound splits) over 18 subjects, and

@@ -65,8 +65,14 @@ body() { # body <file> <entry-name> <out-file>
     # patterns compiling to the same engine) began reporting a difference that
     # is not in the engine at all. The extractor was always wrong; nothing
     # pattern-dependent had ever landed between the two lines before.
+    # [FINDALL-NEXT] I1 moved every engine body out of `<prefix>_search`
+    # into `<prefix>__find` (`static inline __attribute__((always_inline))`,
+    # or `static __attribute__((noinline))` on the DFA attempt route), which
+    # `_search` and `_next` both call; the head therefore admits the
+    # storage/attribute words before `int`, and the engine callers below ask
+    # for `rx__find`.
     awk -v fn="$2" '
-        $0 ~ "^(static )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }
+        $0 ~ "^(static )?(inline )?(__attribute__\\(\\([a-z_]+\\)\\) )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }
         inside                { print }
         inside && /^\}/       { exit }
     ' "$1" > "$3"
@@ -78,8 +84,8 @@ gen() { # gen <name> <pattern> [extra pcrec args...] -> <name>.c plus <name>.bod
     shift 2
     pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name.c" --pattern "$pat" >/dev/null 2>&1 \
         || { bad "$name: pcrec failed to compile pattern '$pat'"; return 1; }
-    body "$WORKDIR/$name.c" rx_search "$WORKDIR/$name.body" \
-        || { bad "$name: could not extract the rx_search engine body from the generated C"; return 1; }
+    body "$WORKDIR/$name.c" rx__find "$WORKDIR/$name.body" \
+        || { bad "$name: could not extract the rx__find engine body from the generated C"; return 1; }
 }
 
 # ---- skip states (src/gen/emit_dfa.c pick_skip_states) -------------------
@@ -320,8 +326,8 @@ gensc() { # gensc <name> <pattern> [extra pcrec args...] -> <name>.body
     pcrec_run "$PCREC" -p rx "$@" -o - --pattern "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
     [ -s "$WORKDIR/$name.sc" ] \
         || { bad "$name: pcrec produced no self-contained output for '$pat'"; return 1; }
-    body "$WORKDIR/$name.sc" rx_search "$WORKDIR/$name.body" \
-        || { bad "$name: could not extract the rx_search engine body"; return 1; }
+    body "$WORKDIR/$name.sc" rx__find "$WORKDIR/$name.body" \
+        || { bad "$name: could not extract the rx__find engine body"; return 1; }
 }
 
 if gensc foldi 'aBc' -i && gensc foldx '[aA][bB][cC]'; then
@@ -418,7 +424,7 @@ if ! command -v "$CC" >/dev/null 2>&1; then
     bad "multi-engine: no C compiler ($CC) — this block cannot be skipped silently"
 elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
   && pcrec_run "$PCREC" -p rx -o - --pattern '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
-  && body "$WORKDIR/engb.c" rx_search "$WORKDIR/engb.body"; then
+  && body "$WORKDIR/engb.c" rx__find "$WORKDIR/engb.body"; then
     # rename engine B's entry point; every other symbol in the body is
     # function-local and deliberately left untouched
     {
@@ -434,7 +440,10 @@ elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev
         # here: no emitted identifier ENDS in `rx_search`, and `rx_search_in`
         # / `rx_search_run` are excluded by the `_`. VERIFIED byte-identical
         # to GNU `\b` semantics on this exact body before landing.
-        sed 's/rx_search\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
+        # [FINDALL-NEXT] I1: the body is `rx__find`'s, renamed and made an
+        # extern definition so it is the declared `rx_search_b`.
+        sed -e 's/^static inline __attribute__((always_inline)) int /int /' \
+            -e 's/rx__find\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
     } >> "$WORKDIR/multi.c"
 
     if [ "$(grep -c '^#define PCREC_RX_ABI_H [0-9][0-9]*$' "$WORKDIR/multi.c")" -eq 1 ]; then
@@ -485,7 +494,7 @@ elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev
 
     # the control for every engine-scoped grep above
     if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.c"; then
-        if body "$WORKDIR/multi.c" rx_search "$WORKDIR/multi.a.body" \
+        if body "$WORKDIR/multi.c" rx__find "$WORKDIR/multi.a.body" \
         && body "$WORKDIR/multi.c" rx_search_b "$WORKDIR/multi.b.body"; then
             if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.a.body"; then
                 ok "OS-0b: scoped grep finds the skip table in the engine that has one"
@@ -940,7 +949,7 @@ elif pcrec_run "$PCREC" -p rx --no-captures -o - --pattern '(alpha|beta|gamma|de
     # itself: only a failed `body` extraction sets 999, and the grep's own
     # exit status is discarded (`|| true`) so k24_left is always exactly
     # one integer.
-    if body "$WORKDIR/k24_stripped.c" rx_search "$WORKDIR/k24_ctl.body" >/dev/null 2>&1; then
+    if body "$WORKDIR/k24_stripped.c" rx__find "$WORKDIR/k24_ctl.body" >/dev/null 2>&1; then
         k24_left=$(grep -cE 'rx_(forward|reverse)_(step|is_dead|accepts|accepts_class|row|view_live|view_take)\(' \
                         "$WORKDIR/k24_ctl.body" || true)
     else
@@ -1212,8 +1221,13 @@ residual_names() {
         # unused static fails the harness -Werror build). Everything the
         # artifact defines for its own use is `static`, the inline residual
         # entries included; `main` and the attribute line are named.
+        # [FINDALL-NEXT] I1: a residual TWIN (`<prefix>__<name>`) is emitted
+        # with `static` on a line of its own, so that line marks the next
+        # head as static too.
+        /^static[ \t]*$/ { skip = 1; next }
         /^typedef/ || /^static/ || /^__attribute__/ || /^int main/ { next }
         /^[A-Za-z_][A-Za-z0-9_ *]*[ *][a-z_][A-Za-z0-9_]*\(/ {
+            if (skip) { skip = 0; next }
             line = $0
             sub(/\(.*/, "", line)
             sub(/^.*[^A-Za-z0-9_]/, "", line)
@@ -1226,7 +1240,8 @@ residual_names() {
             # so the exclusion is spelled the same way.
             if (line == "rx_search" || line == "rx_match" || line == "rx_match_caps" ||
                 line == "rx_search_in" || line == "rx_match_in" ||
-                line == "rx_match_caps_in" || line == "rx_info") next
+                line == "rx_match_caps_in" || line == "rx_info" ||
+                line == "rx_next") next
             print line
         }
     ' "$1" | LC_ALL=C sort -u
@@ -1269,8 +1284,19 @@ inline_entries() {
 # `<prefix>_back_step`'s own `return k > pos ? ... : pos - k;`. Passing the
 # defining function keeps ONE exclusion rule rather than adding a second, and
 # keeps the declared count equal to the call count instead of `count + 1`.
+# [FINDALL-NEXT] I1: an exported residual is a forwarder to its static TWIN
+# `<prefix>__<name>` (findall_iter.md §2.4), and the engine bodies call the
+# twin. A twin call IS a residual call, so the count is of both tokens, and
+# both definitions (the forwarder's and the twin's) are skipped. The
+# iterator's STEP (`rx__step`) is allowlisted with `main`, for `main`'s
+# reason: its `next_pos` advance is the documented find-all protocol run
+# inside the artifact, a caller and not an engine.
 calls_in_bodies() {
     awk -v want="$2" -v skipfn="${3:-$2}" '
+        BEGIN { twin = want; sub(/_/, "__", twin); tskip = skipfn; sub(/_/, "__", tskip) }
+        # the CALLERS (allowlisted below): main, and the iterator`s step,
+        # whose advance is the find-all caller protocol main also runs
+        function caller(f) { return f == "main" || f == "rx__step" }
         # ---- token-level comment/literal stripping, state carried across
         # records (a /* ... */ region spans lines) ----
         function strip(s,   out, i, n, c2, c1, d) {
@@ -1322,13 +1348,25 @@ calls_in_bodies() {
             if (line ~ /^[A-Za-z_].*\(/ && line !~ /;[[:space:]]*$/) { head = line; next }
             if (line ~ /^\{/ && head != "") {
                 fname = head
+                gsub(/__attribute__\(\([^)]*\)\)/, "", fname)   # an attribute head (I1)
                 sub(/\(.*/, "", fname)
                 sub(/^.*[^A-Za-z0-9_]/, "", fname)
-                inbody = 1; head = ""; next
+                head = ""
+                # [FINDALL-NEXT] I1: a ONE-LINE body (`{ ... }`, the
+                # shared block`s rx_iter_init) opens and closes here; read it and
+                # stay outside, or every later file-scope line reads as body.
+                if (line ~ /\}[[:space:]]*$/) {
+                    if (fname != skipfn && fname != tskip && !caller(fname)) {
+                        k = ntok(line, want) + ntok(line, twin)
+                        if (k > 0) { total += k; hits = hits FILENAME ":" FNR ": " line "\n" }
+                    }
+                    fname = ""; next
+                }
+                inbody = 1; next
             }
             if (line ~ /^\}/) { inbody = 0; fname = ""; next }
-            if (inbody && fname != skipfn && fname != "main") {
-                k = ntok(line, want)
+            if (inbody && fname != skipfn && fname != tskip && !caller(fname)) {
+                k = ntok(line, want) + ntok(line, twin)
                 if (k > 0) { total += k; hits = hits FILENAME ":" FNR ": " line "\n" }
             }
         }
@@ -1473,6 +1511,9 @@ while IFS=$'\t' read -r nm pat extra decl; do
     # (the DFA's search head and unwrapped match = 2; the VM's three `_run`
     # bodies = 3), and a utf8 var-bearing artifact's `var_valid` is
     # re-spelled on it (1). Hand-written integers, the table's own rule.
+    # [FINDALL-NEXT] I1: the iterator's bind (`<prefix>__bind_checks`) is
+    # one more caller-position site, so the two `-futf-check` rows read 3
+    # and 4.
 done <<EOF
 residmemchr	a(b|c)+d	--no-captures	next_pos:0,valid_upto:0
 residbitmap	[ab]c[de]	--no-captures	next_pos:0,valid_upto:0
@@ -1494,8 +1535,8 @@ residlbbref	(a)(?<=aa)\1	--features backrefs,lookaround	next_pos:0,span_match:1,
 residvar	^\${v}$	--features vars	next_pos:0,span_match:1,valid_upto:0
 residvarci	^(?i)\${v}$	--features vars,modifiers	next_pos:0,span_match_caseless:1,valid_upto:0
 residvarbref	(a)\1\${v}	--features vars,backrefs	next_pos:0,span_match:2,valid_upto:0
-residutfdfa	a(b|c)+d	--no-captures -e utf8 -futf-check	next_pos:0,valid_upto:2
-residutfvm	(x)(a|bc)+d	--engine=vm -e utf8 -futf-check	next_pos:0,valid_upto:3
+residutfdfa	a(b|c)+d	--no-captures -e utf8 -futf-check	next_pos:0,valid_upto:3
+residutfvm	(x)(a|bc)+d	--engine=vm -e utf8 -futf-check	next_pos:0,valid_upto:4
 residutfvar	^\${v}$	--features vars -e utf8	next_pos:0,span_match:1,var_valid:1,valid_upto:1
 EOF
 # THE SCOPED NON-VACUITY GUARD, EXACT AND NOT A FLOOR (R32 C2(b), and the
@@ -3653,8 +3694,11 @@ fi
 # while the stamp still reads "adaptive"), S372 (the two calibration rows
 # swapped) and S441 (row `anchored` deleted) are this block's sabotage rows.
 rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
-rs_body() {   # <prefix>_search_run's body, and nothing past its closing brace
-    awk '/^static .*int rx_search_run\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+rs_body() {   # the search loop's body, and nothing past its closing brace
+    # [FINDALL-NEXT] I1: the loop `<prefix>_search_run` carried is
+    # `<prefix>__find`, which `_search_run` (range test + guard) and the
+    # iterator's step both call.
+    awk '/^static .*int rx__find\(/{f=1} f{print} f&&/^}/{exit}' "$1"
 }
 rs_calls() { rs_body "$1" | grep -c 'rx_prefilter(subject'; }
 rs_ok=1

@@ -64,7 +64,7 @@ while IFS=$'\t' read -r pat flags; do
     if [ -n "$m" ]; then bad "[twins] '$pat' $flags calls its exported residual(s) through the PLT: $(echo $m)"
     else ok "[twins] '$pat' $flags: every residual call is a direct call to its twin"; fi
     # the population: twins this artifact's text calls
-    for tw in $(grep -o 'rx__[a-z_]*(' "$d/rx.c" | sort -u | tr -d '('); do
+    for tw in $(grep -o 'rx__[a-z_]*(' "$d/rx.c" | LC_ALL=C sort -u | tr -d '('); do
         nm "$d/rx.o" | grep -q " T ${tw/rx__/rx_}\$" && npairs=$((npairs + 1))
     done
 done <<< "$CASES"

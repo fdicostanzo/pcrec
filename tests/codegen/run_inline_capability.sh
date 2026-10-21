@@ -153,7 +153,10 @@ fi
 # the attribute deleted.
 norm() { sed -e 's/arm_b_textual/ARM/g; s/arm_b_emitter/ARM/g; s/arm_a/ARM/g' \
              -e '/^#define RX_VM_ENTRY_SHAPE /d' "$1"; }
-sed 's/inline __attribute__((always_inline)) //' "$A" > "$Bsed"
+# [FINDALL-NEXT] I1: the iterator's STEP (`<prefix>__step`, `__step_own`) is
+# always_inline at every rung -- the entry shape dials the search entry
+# chain, not `<prefix>_next` -- so its heads keep the attribute here.
+sed '/^static inline __attribute__((always_inline)) int rx__step/!s/inline __attribute__((always_inline)) //' "$A" > "$Bsed"
 [ -f "${A%.c}.h" ] && cp "${A%.c}.h" "${Bsed%.c}.h"
 if ! diff -q <(norm "$Bsed") <(norm "$Bemit") >/dev/null; then
     bad "arm B's two spellings disagree beyond the header include and the entry-shape stamp — the emitter's PLAIN rung is no longer 'arm A with the attribute removed', so neither is a control for the other. Diff them before trusting any verdict."
