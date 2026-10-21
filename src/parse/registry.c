@@ -1593,15 +1593,15 @@ static const RegRow bare_rows[] = {
 {RK_BARE, '^', NULL, "^", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
  NULL, NULL, 0,
  "start of subject, or after an internal newline under (?m) — under (?m) "
- "an A_CTX context node (the MLINE_BOL row); already core (A_BOL, the "
- "same node \\A builds) outside (?m)",
+ "an A_CTX context node (the MLINE_BOL row); already core (an A_CTX pin "
+ "row, the same row \\A builds) outside (?m)",
  ROADMAP_NONE, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, bol_def},
 {RK_BARE, '$', NULL, "$", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
  NULL, NULL, 0,
  "end of subject (or before a final newline), or before an internal "
  "newline under (?m) — under (?m) an A_CTX context node (the MLINE_EOL "
  "row); outside (?m) it aliases "
- "\\Z (A_EOL), which is NOT core under full reduction (unlike ^/A_BOL) — "
+ "\\Z (A_EOL), which is NOT core under full reduction (unlike ^, an A_CTX pin row) — "
  "\\Z itself reduces to (?=\\n?\\z), so this row's DEF_ALWAYS entry is a "
  "real substitution, not an identity",
  ROADMAP_NONE, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, eol_def},

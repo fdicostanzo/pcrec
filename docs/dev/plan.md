@@ -524,6 +524,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MECH-REACHONLY] STATE:not-started — A REACH-ONLY SWEEP FOR THE SABOTAGE MATRIX + A STRATEGY-WIDENING DELIVERY BAR
+  filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
+  status (2026-10-21): filed from docs/dev/devmethods/apply_here.md §5; nothing built.
+  trigger: the next strategy-widening change (a new row, a widened admission, a new rung), or the next full matrix that finds UNREACHED rows an optimization moved.
+  refs: docs/dev/devmethods/apply_here.md §5; tests/mech/CLAUDE.md; docs/dev/lanes/BOILERPLATE.md; [SABANCHOR]
+  Problem: when an optimization starts firing in new places it moves sabotage witnesses and size-rung witnesses off their sites, and nothing notices until a full matrix runs (five instances 2026-09-22..2026-10-13). Charter, one careful lane (cost: medium): (1) `REACH_ONLY=1` for tests/mech/run_sabotage_matrix.sh evaluates every row's reach probes against the tree without building any sabotage (minutes, not hours); (2) a BOILERPLATE delivery-bar line: a change that makes a strategy fire in new places runs the reach-only sweep and the size-rung witness set, and re-aims each moved witness with the new deny flag in the same delivery.
+- [RECUR-AUDIT] STATE:not-started — A RECURRENCE AUDIT OVER THE JOURNAL'S MISTAKES/LESSONS LINES
+  filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
+  status (2026-10-21): filed from docs/dev/devmethods/apply_here.md §8; nothing built.
+  trigger: the next weekly slot or tenth session since filing, whichever first; the first run sets the baseline.
+  refs: docs/dev/devmethods/apply_here.md §8; docs/dev/learnings.md; docs/dev/dev_journal.md
+  Problem: nothing counts recurrences of EXISTING lesson classes, and recurrence is the signal that a mechanism is owed (22 recurring classes in six weeks; `pkill -f`, the `-o` basename trap, `sort -u` locale, worktree removal mid-run each recurred five or more times before getting one). Charter: once a week or every tenth session, a sonnet read-only lane extracts every Mistakes/Lessons line since the last audit, classifies each against learnings.md and the memory catalogue, and reports classes with three or more instances plus a proposed mechanism. Cost: one cheap lane, no box time.
 - [WATCH-IDLE] STATE:not-started — THE IDLE-BOX ALARM: a box that should be busy and is not
   filed: 2026-10-21 Frank
   status (2026-10-21): filed; standing directive to grow watchrun (or a sibling) from each new miss shape.
