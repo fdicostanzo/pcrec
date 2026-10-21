@@ -1,0 +1,101 @@
+== NEW (predicted_movers_B4_rev41.tsv): 2374 set sites, 1766 (arm, pattern) movers
+   shape -        row R7w  pick WALK  sites 86
+   shape r0e0c1   row R7   pick V1    sites 259
+   shape r0e0c1   row R7w  pick WALK  sites 1
+   shape r0e0c2   row R7   pick V1    sites 15
+   shape r0e0c3   row R7w  pick WALK  sites 5
+   shape r0e1c0   row R7   pick V1    sites 159
+   shape r0e1c1   row R7   pick V1    sites 40
+   shape r0e1c2   row R7w  pick WALK  sites 10
+   shape r0e2c0   row R7   pick V1    sites 330
+   shape r0e2c0   row R7w  pick WALK  sites 1
+   shape r0e2c1   row R7w  pick WALK  sites 6
+   shape r0e3c0   row R7w  pick WALK  sites 31
+   shape r0e3c1   row R7w  pick WALK  sites 4
+   shape r0e4c0   row R7w  pick WALK  sites 12
+   shape r1e0c0   row R7   pick V1    sites 780
+   shape r1e0c1   row R7   pick V1    sites 19
+   shape r1e0c3   row R7w  pick WALK  sites 2
+   shape r1e1c0   row R7   pick V1    sites 124
+   shape r1e1c1   row R7w  pick WALK  sites 10
+   shape r1e2c0   row R7w  pick WALK  sites 14
+   shape r1e2c1   row R7w  pick WALK  sites 1
+   shape r1e3c0   row R7w  pick WALK  sites 2
+   shape r2e0c0   row R7   pick V1    sites 43
+   shape r2e0c1   row R7w  pick WALK  sites 4
+   shape r2e0c2   row R7w  pick WALK  sites 6
+   shape r2e1c1   row R7w  pick WALK  sites 2
+   shape r3e0c0   row R7w  pick WALK  sites 26
+   shape r3e0c1   row R7w  pick WALK  sites 380
+   shape r4e0c0   row R7w  pick WALK  sites 2
+   movers by arm: {'byte-vm': 1108, 'byte': 658}
+== OLD (predicted_movers_B4.tsv): 2369 set sites, 860 (arm, pattern) movers
+   shape -        row R7w  pick WALK  sites 86
+   shape r0e0c1   row R7w  pick WALK  sites 260
+   shape r0e0c2   row R7w  pick WALK  sites 15
+   shape r0e0c3   row R7w  pick WALK  sites 5
+   shape r0e1c0   row R7w  pick WALK  sites 159
+   shape r0e1c1   row R7   pick V1    sites 40
+   shape r0e1c2   row R7w  pick WALK  sites 10
+   shape r0e2c0   row R7w  pick WALK  sites 326
+   shape r0e2c1   row R7w  pick WALK  sites 6
+   shape r0e3c0   row R7w  pick WALK  sites 31
+   shape r0e3c1   row R7w  pick WALK  sites 4
+   shape r0e4c0   row R7w  pick WALK  sites 12
+   shape r1e0c0   row R7   pick V1    sites 780
+   shape r1e0c1   row R7w  pick WALK  sites 19
+   shape r1e0c3   row R7w  pick WALK  sites 2
+   shape r1e1c0   row R7w  pick WALK  sites 124
+   shape r1e1c1   row R7w  pick WALK  sites 10
+   shape r1e2c0   row R7w  pick WALK  sites 14
+   shape r1e2c1   row R7w  pick WALK  sites 1
+   shape r1e3c0   row R7w  pick WALK  sites 2
+   shape r2e0c0   row R7   pick V1    sites 43
+   shape r2e0c1   row R7w  pick WALK  sites 4
+   shape r2e0c2   row R7w  pick WALK  sites 6
+   shape r2e1c1   row R7w  pick WALK  sites 2
+   shape r3e0c0   row R7w  pick WALK  sites 26
+   shape r3e0c1   row R7w  pick WALK  sites 380
+   shape r4e0c0   row R7w  pick WALK  sites 2
+   movers by arm: {'byte-vm': 540, 'byte': 320}
+== keyed shapes in keys.tsv: r0e0c1,r0e1c1,r0e2c0,r1e0c0,r1e1c0,r2e0c0,r2e0c1,r3e0c1,r3e1c0
+== NEW sites on shapes with NO saving key (the 'no-key sites'), by arm, term count, pick
+   arm byte    terms None pick WALK  sites 41
+   arm byte    terms 1    pick V1    sites 57
+   arm byte    terms 2    pick V1    sites 14
+   arm byte    terms 3    pick WALK  sites 45
+   arm byte    terms 4    pick WALK  sites 15
+   arm byte-vm terms None pick WALK  sites 45
+   arm byte-vm terms 1    pick V1    sites 102
+   arm byte-vm terms 2    pick V1    sites 20
+   arm byte-vm terms 3    pick WALK  sites 57
+   arm byte-vm terms 4    pick WALK  sites 16
+   TOTAL arm byte    pick V1    sites 71
+   TOTAL arm byte    pick WALK  sites 101
+   TOTAL arm byte-vm pick V1    sites 122
+   TOTAL arm byte-vm pick WALK  sites 118
+== rule check: sites whose pick disagrees with 'V1 iff terms <= 2' (NOMS rows apart): 0
+== NOMS rows (key lookups answered ABSENT for keys the set holds; the site's art held no measures): 2
+    byte (?:\\Gx|\\b)(?:ab|cd)\\b site 1 2 members shape r0e0c1 pick WALK
+    byte (?i)(?:^|;|\\|)\\s*(?:cat|ls|id|whoami)\\b site 1 2 members shape r0e2c0 pick WALK
+== POSCOST: walk-routed set-FIND sites (pick WALK, >= 3 terms or no cover within K): 603
+   ALL      sites 603 ((arm,pattern) 603); no walk handed (poscov '-') 391; walk0 differs 28
+            <=2-term position within span: sites 21 ((arm,pattern) 21)
+            of those: a <=2-term position at offset >= 1: sites 6 ((arm,pattern) 6); only the walk's offset 0 (which differs from the scanned set): sites 15
+            <=2-term superset hull, extras <=8: sites 408 (408); <=16: sites 441 (441)
+            both (position and hull): <=8 sites 15 (15); <=16 sites 16 (16)
+   byte     sites 282 ((arm,pattern) 282); no walk handed (poscov '-') 70; walk0 differs 28
+            <=2-term position within span: sites 21 ((arm,pattern) 21)
+            of those: a <=2-term position at offset >= 1: sites 6 ((arm,pattern) 6); only the walk's offset 0 (which differs from the scanned set): sites 15
+            <=2-term superset hull, extras <=8: sites 192 (192); <=16: sites 209 (209)
+            both (position and hull): <=8 sites 15 (15); <=16 sites 16 (16)
+   byte-vm  sites 321 ((arm,pattern) 321); no walk handed (poscov '-') 321; walk0 differs 0
+            <=2-term position within span: sites 0 ((arm,pattern) 0)
+            of those: a <=2-term position at offset >= 1: sites 0 ((arm,pattern) 0); only the walk's offset 0 (which differs from the scanned set): sites 0
+            <=2-term superset hull, extras <=8: sites 216 (216); <=16: sites 232 (232)
+            both (position and hull): <=8 sites 0 (0); <=16 sites 0 (0)
+   hull extras histogram (ALL): {'1': 13, '2': 27, '3': 18, '4': 14, '5': 288, '6': 29, '7': 7, '8': 12, '9': 6, '11': 2, '12': 8, '13': 10, '14': 4, '16': 3, 'none<=16': 162}
+   offset of the first <=2-term position (ALL): {0: 15, 1: 4, 10: 2}
+== movers by ID: NEW 1766, OLD 860, in both 860, only NEW 906, only OLD 0
+   only NEW by arm: {'byte': 338, 'byte-vm': 568}
+   only OLD by arm: {}

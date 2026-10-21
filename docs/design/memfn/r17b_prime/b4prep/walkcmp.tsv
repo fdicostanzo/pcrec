@@ -1,0 +1,11 @@
+cell	raw	abi_masked_difflines	walk_arm_is_deny	differences
+dig	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+bounded	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+dfa-hat	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+hex-run	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+word-eq	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+quad	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+wcls	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+c020	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+c001	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|
+c110	differs	3	yes	<     .abi = N,|< #define RX_COMPOUND "none"|>     .abi = N,|

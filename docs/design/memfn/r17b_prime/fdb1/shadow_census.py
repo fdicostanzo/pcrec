@@ -28,6 +28,23 @@ ID are held to it (r17b_prime.md §1.6 [rev3 B6]).
 
 The population is emit_sweep's (enumerate_corpus + distinct_patterns, the
 --list-source escapes), so a sample here and a sample there are one set.
+
+[b4close2] (lane b4close2) three additions to MANIFEST mode, all survey/record:
+  * K35: a COMPILE THAT FAILS IS NEVER DROPPED SILENTLY. Every non-zero return
+    code (and every timeout) is checked against the same argv run through the
+    plain compiler (`--ls-bin`, no lever): a pattern the plain compiler refuses
+    too (same code) is an expected refusal, counted and printed; anything else
+    is a LOST compile, listed, and the run exits 3 without writing a
+    manifest. The totals line states rc0 / refused-in-both / lost.
+  * `lookup` column: `ok`, or `NOMS` where the site's key lookup answered ABSENT
+    for a key the set DOES hold (the site's art carries no measures: a compound
+    walk's part compile, src/core/compound.c part_compile, `.harness = NULL`;
+    such an attempt is DISCARDED when the compound is not admitted). A NOMS
+    row's pick is "no set" (R7w) by construction, not the rule's; the summary
+    reports it apart.
+  * `poscov`, `hull`, `walk0` columns: the POSCOST survey fields of
+    memfn/src/finder.c (needs a harness built with POSCOV=1,
+    mk_trace_harness.sh; `-` columns otherwise).
 """
 import argparse
 import os
@@ -101,14 +118,37 @@ def reader(a):
     return 1 if aborts else 0
 
 
+def set_keys(path):
+    """The keys the lever set holds (its `rows` section's first column)."""
+    keys, sec = set(), None
+    with open(path) as fh:
+        for ln in fh:
+            if ln.startswith("#section"):
+                sec = ln.split()[1]
+            elif sec == "rows" and not ln.startswith("#") and ln.strip():
+                keys.add(ln.split("\t")[0])
+    return keys
+
+
 def manifest(a):
     pats = population(a.ls_bin or a.bin, a.every)
     extra0 = ["--harness=measures=" + a.set]
+    keys = set_keys(a.set)
     items = [(p, arm, extra) for p in pats for arm, extra in MANIFEST_ARMS]
 
     def task(item):
         p, arm, extra = item
         rc, err = compile_one(a.bin, p, extra0 + extra, dict(os.environ))
+        # K35: a failing compile is checked against the plain compiler, never dropped
+        plain = None
+        if rc != 0:
+            plain, _ = compile_one(a.ls_bin or a.bin, p, extra, dict(os.environ))
+        nom = set()                     # (art, site) with a held key answered absent
+        for ln in err.split(b"\n"):
+            if ln.startswith(b"MFTRACE FDKEY ") and b" found=0" in ln:
+                d = dict(t.split(b"=", 1) for t in ln.split()[2:] if b"=" in t)
+                if d.get(b"key", b"").decode() in keys:
+                    nom.add((d[b"art"], d[b"site"]))
         out = []
         for ln in err.split(b"\n"):
             if not ln.startswith(b"MFTRACE FD ") or b" slot=FIND " not in ln:
@@ -120,18 +160,38 @@ def manifest(a):
             if m < 2:
                 continue
             out.append((d[b"site"].decode(), m, d[b"shape"].decode(), d[b"row"].decode(),
-                        d[b"pick"].decode()))
-        return p, arm, rc, out
+                        d[b"pick"].decode(),
+                        "NOMS" if (d[b"art"], d[b"site"]) in nom else "ok",
+                        d.get(b"poscov", b"-").decode(), d.get(b"hull", b"-").decode(),
+                        d.get(b"walk0", b"-").decode()))
+        return p, arm, rc, plain, out
 
     rows, movers, nsite = [], set(), 0
+    tally, lost = Counter(), []
     with ThreadPoolExecutor(a.jobs) as ex:
-        for p, arm, rc, out in ex.map(task, items):
-            for site, m, shape, row, pick in out:
+        for p, arm, rc, plain, out in ex.map(task, items):
+            if rc == 0:
+                tally["rc0"] += 1
+            elif rc is not None and plain == rc:       # a timeout is never a refusal
+                tally["refused-in-both"] += 1
+            else:
+                tally["lost"] += 1
+                lost.append((arm, es.encode_escape(p), rc, plain))
+            for site, m, shape, row, pick, lk, pc, hull, w0 in out:
                 nsite += 1
                 mv = int(pick == "V1")
                 if mv:
                     movers.add((arm, p))
-                rows.append((arm, es.encode_escape(p), site, m, shape, row, pick, mv))
+                rows.append((arm, es.encode_escape(p), site, m, shape, row, pick, mv, lk,
+                             pc, hull, w0))
+    total = sum(tally.values())
+    line = ("compiles=%d rc0=%d refused-in-both=%d lost=%d"
+            % (total, tally["rc0"], tally["refused-in-both"], tally["lost"]))
+    if lost or total != len(items):
+        print("LOST COMPILES (K35): " + line + " of %d expected" % len(items), file=sys.stderr)
+        for l in lost[:20]:
+            print("   lost\t%s\t%s\trc=%s\tplain rc=%s" % l, file=sys.stderr)
+        return 3
     rows.sort()
     with open(a.out, "w") as fh:
         fh.write("# R17-b' B4's PREDICTED-MOVER MANIFEST (lane fdb1, B1; r17b_prime.md "
@@ -142,12 +202,14 @@ def manifest(a):
                  "sites; %d (arm, pattern) movers\n"
                  % (len(pats), ",".join(x for x, _ in MANIFEST_ARMS), a.every, nsite,
                     len(movers)))
+        fh.write("# compiles: %s\n" % line)
         fh.write("# generated by docs/design/memfn/r17b_prime/fdb1/shadow_census.py manifest\n")
-        fh.write("#arm\tpattern\tsite\tmembers\tshape\trow\tpick\tmover\n")
+        fh.write("#arm\tpattern\tsite\tmembers\tshape\trow\tpick\tmover\tlookup\tposcov\thull\twalk0\n")
         for r in rows:
-            fh.write("%s\t%s\t%s\t%d\t%s\t%s\t%s\t%d\n" % r)
+            fh.write("%s\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\n" % r)
     by_shape = Counter((r[0], r[4], r[6]) for r in rows)
     print("manifest: %d set sites, %d (arm, pattern) movers -> %s" % (nsite, len(movers), a.out))
+    print("compiles: " + line)
     for k in sorted(by_shape):
         print("  %s %s %s: %d" % (k[0], k[1], k[2], by_shape[k]))
     return 0

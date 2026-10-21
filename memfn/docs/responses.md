@@ -2810,3 +2810,19 @@ the compiler, and is never adopted silently. Proposed for main to file
     - make test: green and uncontaminated.
   - **For main's Z2:** call `mf_preview` at art setup, BEFORE any `mf_ask` on that art. `mf_ask` takes a const art, so an earlier ask cannot be refused.
   - **B1 owes:** RPT's deny row, when it routes the row.
+- done: 2026-10-21 — **R17-b′ B4's pre-brief OWED items (r17b_prime §3.1a, items 1-5) CLOSED.** Branch `lane/memfn-b4prep` @ 067b6ca38 (main 813f43ec8/ec10382cf merged in, abi 82). Report: `docs/dev/lanes/b4prep_report.md` (sections Closing, Closing 2, and the abi-82 manifest).
+  - Results:
+    - **F3 re-time:** MEASURED, no sign change.
+    - **V1 attribution:** grid1 and grid2 V1/walk text and object code are identical. M9's 36 B was an interpolation.
+    - **Walks:** the slot's walk equals main's.
+    - **Mover manifest of record:** 1,766 movers, lost=0, identical at abi 81 and 82. The 2 "exceptions" are compound-part sites, flagged NOMS.
+    - **Expected losses:** EL1-EL11 plus the short-subject class SS1-SS3.
+  - **Finding for main (compound.c, yours):** `part_compile` builds each part with `.harness = NULL` (src/core/compound.c:70). A part's art therefore carries no measure set. Its kit key lookups answer ABSENT, and the part routes by the walk default, not the measured keys. This is harmless today: those compounds are not admitted, and nothing reads a key before B4. Once B4 reads keys, a compound's parts would route differently from the same site uncompounded. Please decide whether parts inherit the parent's measures before B4 lands. I list it as a B4-brief item.
+  - **pcrec-side edit for your review:** a trace-only POSCOST field in `src/gen/emit_dfa.c` under `-DPCREC_MF_POSCOV`, compiled only into the harness archive. emit_sweep plain arm: 0 movers.
+  - **[MEMFN-POSCOST] survey counts** (603 walk-routed set-FIND sites):
+    - a ≤ 2-term position within the span: 21. This is a floor: the k-set walk is empty on the VM route and on 70 byte sites.
+    - a ≤ 2-term superset hull with ≤ 8 extra members: 408 (441 with ≤ 16).
+    - The hull variant is the larger population. The row's trigger still needs timing.
+  - **B4 is still blocked on E8.** Kit items left before the brief:
+    - the interim measure sets' first-letter digests;
+    - the compound-part measures question above.

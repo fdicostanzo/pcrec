@@ -12,6 +12,14 @@ R17-b′ step B1 (lane fdb1, 2026-10-16; `../../r17b_prime.md` rev 3 §1.6
   decision of a set site of two or more members.
 - `mk_trace_harness.sh TREE OUT` — builds that traced harness
   (`cli/main.c -DPCREC_HARNESS` linked against `build/libpcrec_mftrace.a`).
+  `POSCOV=1` (lane b4close2) also swaps in `emit_dfa.o` compiled
+  `-DPCREC_MF_POSCOV`, so the record carries the survey fields `poscov=`
+  `hull=` `walk0=` (memfn/src/finder.c; trace build only, never the default).
+- `plant_fail.sh` — lane b4close2's PLANT for `shadow_census.py manifest`'s
+  K35 check: a stand-in harness that fails one chosen pattern's compile; the
+  census must exit 3 naming the lost compile (every non-zero rc is checked
+  against the plain compiler, `--ls-bin`; only a refusal BOTH compilers make
+  is expected).
 - `predicted_movers_B4.tsv` — the COMMITTED PREDICTED-MOVER MANIFEST: the
   manifest run under `memfn/data/sets/kit-interim-grid1.tsv`. B4's movers
   by ID were held to it. Regenerate with `shadow_census.py manifest` (the

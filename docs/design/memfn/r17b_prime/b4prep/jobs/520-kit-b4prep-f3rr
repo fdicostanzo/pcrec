@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# 520-kit-b4prep-f3rr: quiet F3 re-time of word-eq and quad (grid2read §8 item 1)
+set -u
+S=/home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2
+G=/home/pcrec/projects/pcrec/worktrees/grid2r3
+export OUT=$S PHASE=F3 CELLS_RE='^f3-(word-eq|quad)$' RAW_TAG=F3rr PASS_STATUS=$S/time_F3rr.status CPU=14 LAUNCHES=3
+case "${1:-}" in
+    --dry-run)
+        [ -d "$S/bin" ] || { echo "no slot bin" >&2; exit 1; }
+        [ -f "$G/docs/dev/lanes/grid2/time.sh" ] || { echo "no time.sh" >&2; exit 1; }
+        gnutimeout 60 bash "$G/docs/dev/lanes/grid2/time.sh" --estimate > /dev/null 2>&1 || { echo "estimate failed" >&2; exit 1; }
+        echo "would run in $S: bash $G/docs/dev/lanes/grid2/time.sh (PHASE=F3 RAW_TAG=F3rr)"
+        echo "boxqueue: cap 900"; echo "boxqueue: patience none"
+        echo "boxqueue: expect groups=4 last=^time.sh: COMPLETE rows=[0-9]+ groups="
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+cd "$S" || exit 1
+exec bash "$G/docs/dev/lanes/grid2/time.sh"
