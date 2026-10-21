@@ -818,5 +818,21 @@ pcrec (the Makefile owns that).
     (HOLDER-IDLE-SUSPECT, never kills). Not covered: a lock holder with no
     queue job waiting, and a chain waiting on a `.lift`, are watchrun's
     (LOCK-ORPHAN/QUIET) territory. Report: docs/dev/lanes/watchidle_report.md.
+    [runnerfix] (lane runnerfix, 2026-10-21) closed a real miss: a runner started
+    before the idle-ok grammar merged kept its OLD parse_decl in memory, rejected
+    a job declaring `idle-ok` on every pass, and passed over it with nothing
+    logged ("not asked yet", the box free for 37 minutes). NO SILENT SKIP: every
+    way a pass can pass over a pending job now logs one line naming the job and
+    the reason (the recorded declarations unreadable by this runner; the job
+    gone from pending/ before its snapshot) and writes it where `status` prints
+    it instead of "not asked yet"; the job stays pending. SELF-CHANGE: the runner
+    hashes its own script at start; at the top of a pass, if the content changed
+    and no job is running (never mid-job), it `exec`s the new script with the
+    same arguments (same pid, so the same runner lock, fd 8 inherited, and the
+    same log; one `== runner RE-EXEC` line, the new process logs `RESUMED after
+    RE-EXEC`; a new script that fails `bash -n` is refused once and logged).
+    Pending state is all on disk keyed by content sha, so nothing is dropped or
+    duplicated. Planted in boxqueue.test case 24. Report:
+    docs/dev/lanes/runnerfix_report.md.
 
 Maintenance: update this file when scripts are added/removed or change role.

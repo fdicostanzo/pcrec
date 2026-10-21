@@ -135,6 +135,13 @@
 # dry.log and `result` (outcome rc reason wall verdict population). A runner
 # that died leaves running/NAME: the next runner finishes it from its rc if
 # the job ended, waits while it is alive, else fails it RUNNER-DIED.
+# NO SILENT SKIP: every way a pass can pass over a pending job logs one line naming it and the reason, and
+# `status` prints that reason in place of "not asked yet" (a job whose recorded declarations this runner cannot
+# read stays pending and says so every pass). SELF-CHANGE: the runner hashes its own script at start; at the top
+# of a pass, if the content changed and no job is running, it `exec`s the new script with the same arguments
+# (same pid, so the same runner lock and log; one `== runner RE-EXEC` line; a new script that does not parse is
+# refused, logged). Never mid-job. [runnerfix], after a runner that predated the idle-ok grammar rejected a job
+# for 37 minutes with nothing logged.
 # Exit: 0 ok, 1 a reported failure (state/plan), 64 usage, 65 refused at
 # enqueue, 69 no flock(1)//proc (Linux only), 75 a runner is already live.
 set -u
@@ -507,16 +514,46 @@ recover() { # a dead runner's leftovers in running/; rc 1 = one is still alive (
     return $busy
 }
 
+# reexec_if_changed PASS: a runner keeps running the functions it parsed at start, so a script edited under it
+# (the grammar grew, a job declared `idle-ok`) is rejected for hours with the job still pending ([runnerfix],
+# 2026-10-21: 37 idle minutes). At the top of a pass, when the script's content differs from what this runner
+# started with and NO job is running (never mid-job), exec the new script with the same arguments: the same
+# process, so the same runner lock (fd 8 is inherited) and the same log. Pending state is all on disk (QUEUE/
+# .state, keyed by content sha), so nothing is dropped or duplicated. A new script that does not parse is
+# refused once (logged) and the running copy carries on.
+reexec_if_changed() {
+    local cur; cur=$(sha_of "$self" 2>/dev/null)
+    [ -n "$cur" ] && [ "$cur" != "$SELF_SHA" ] || return 0
+    [ -z "$(ls -A "$Q/running" 2>/dev/null)" ] || return 0
+    [ "$cur" != "${SELF_BAD:-}" ] || return 0
+    if ! bash -n "$self" 2>/dev/null; then
+        SELF_BAD=$cur; qlog "  pass $1 RE-EXEC REFUSED: $self changed (sha ${SELF_SHA:0:8} -> ${cur:0:8}) but does not parse; the running copy carries on"; return 0
+    fi
+    qlog "== runner RE-EXEC at pass $1: $self changed under the running copy (sha ${SELF_SHA:0:8} -> ${cur:0:8}); exec'ing it with the same arguments, same lock and log $(now)"
+    BQ_REEXEC=$1 exec bash "$self" run ${RUN_ARGS[@]+"${RUN_ARGS[@]}"}
+}
+
 pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a job ran
     local n k s o rc ans dt t0 chosen="" csnap="" pn=$1 since age
+    reexec_if_changed "$pn"
     local jobs; jobs=$(pending_jobs)
     qlog "== pass $pn START $(now) pending=$(printf '%s' "$jobs" | grep -c .) box=$(bash "$BL" status 2>&1 | head -1)"
     for n in $(pending_strays); do qlog "  pass $pn IGNORED pending/$n: not a PRIO-OWNER-REST name"; done
     : > "$Q/.work/status.$$"
     for n in $jobs; do
         k=$(key_of "$n"); s=$Q/.work/$n.snap.$$
-        cp "$Q/pending/$n" "$s" 2>/dev/null || continue; chmod +x "$s"
-        if ! ensure_decl "$n" "$s"; then rm -f "$s"; continue; fi
+        # NO SILENT SKIP ([runnerfix]): every way this loop passes over a pending job logs ONE line naming the job
+        # and the reason and leaves it in .state/KEY.answer, which `status` prints in place of "not asked yet"
+        cp "$Q/pending/$n" "$s" 2>/dev/null || { qlog "  pass $pn $n SKIPPED: gone from pending/ before its snapshot (started, cancelled or renamed meanwhile)"; continue; }
+        chmod +x "$s"
+        if ! ensure_decl "$n" "$s"; then
+            rm -f "$s"
+            if [ -f "$Q/pending/$n" ]; then   # first-sight failures moved the job to failed/ and logged it; this one STAYS pending
+                ans="SKIPPED: cannot become runnable under this runner (pid $$): ${D_ERR:-its recorded declarations are unreadable}"; ans=${ans%%$'\n'*}
+                qlog "  pass $pn $n $ans"; printf '%s\n' "$ans" > "$Q/.state/$k.answer"; printf '%s %s\n' "$n" "$ans" >> "$Q/.work/status.$$"
+            fi
+            continue
+        fi
         o=$Q/.work/ready.$$; t0=$(date +%s%N)
         callj ready "$s" "$READY_BOUND" "$o" "$n"; rc=$?
         dt=$(( ($(date +%s%N) - t0) / 1000000 ))
@@ -555,16 +592,21 @@ pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a 
 # ---------- commands ----------
 cmd_run() {
     local every=${BOXQUEUE_EVERY:-60} once=0
+    RUN_ARGS=("$@")    # kept for reexec_if_changed
     while [ $# -gt 0 ]; do case "$1" in --every) every=$2; shift 2 ;; --once) once=1; shift ;; *) die "run: unknown option $1" ;; esac; done
     mkq
     unset PCREC_BOXLOCK_HELD    # the runner is box-wide: never nested in a caller's lock
-    exec 8>>"$Q/.runner.lock"
-    if ! flock -w 2 8; then echo "boxqueue: REFUSED: a runner is live: $(cat "$Q/runner.pid" 2>/dev/null)" >&2; exit 75; fi
+    SELF_SHA=$(sha_of "$self")
+    local pn=${BQ_REEXEC:-0} again=${BQ_REEXEC:-}; unset BQ_REEXEC
+    if [ -n "$again" ] && flock -n 8 2>/dev/null; then :    # re-exec'd by reexec_if_changed: the inherited fd 8 IS the runner lock
+    else
+        exec 8>>"$Q/.runner.lock"
+        if ! flock -w 2 8; then echo "boxqueue: REFUSED: a runner is live: $(cat "$Q/runner.pid" 2>/dev/null)" >&2; exit 75; fi
+    fi
     printf 'pid=%s start=%s since=%s\n' "$$" "$(pid_start $$)" "$(now)" > "$Q/runner.pid"
-    qlog "== runner START pid=$$ every=${every}s queue=$Q $(now)"
+    qlog "== runner $([ -n "$again" ] && echo "RESUMED after RE-EXEC (pass $again)" || echo START) pid=$$ every=${every}s queue=$Q $(now)"
     trap 'qlog "== runner STOPPED by SIGTERM $(now)"; exit 143' TERM
     trap 'qlog "== runner STOPPED by SIGINT $(now)"; exit 130' INT
-    local pn=0
     while :; do
         if recover; then pn=$((pn + 1)); pass $pn && continue; fi
         [ $once = 1 ] && break
