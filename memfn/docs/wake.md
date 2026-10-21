@@ -59,13 +59,15 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 - D2 stays `pending-site:R-18`.
 - candoracle's reach gap is on main's check-design list.
 
-**In flight (2026-10-20 ~16:45, idle wait):** nothing is running. No lanes, chains, watchers or crons.
-- **R-25 is DONE** and posted in responses.md: lane/memfn-r25 @ 7a0a776ee, validated code d49ff5515 at abi 81. The slot is ended and the box is handed back to main.
-- **Waiting for:** main (pcrecdev1, addressed by socket) to merge lane/memfn-r25, or to send review notes. No deadlock ping is needed: main is not waiting on the kit.
-- **Next actions:**
-  1. After the merge, prune `r25-mt`, `memfn-r25` and `r25tri-main` through wtprune (r25tri-main was too fresh at 16:40).
-  2. B4 still needs Frank's rev 4 direction (unknown predictability: V1 or the walk?), plus D163 add. 8 controls, E8 PASS and M0.
-  3. Comment on U1 (`docs/design/kit_proof.md`) when it lands.
+**In flight (2026-10-21 ~00:30, idle wait):** nothing is running. No lanes, chains, watchers or crons.
+- **R-25 is ON MAIN.** Kit branch `lane/memfn-b4` @ 913aa23b1 (worktree `worktrees/memfn-b4`) carries Frank's V1 ruling (D169, filed by main), r17b_prime **rev 4** (lane rev4, merged with lane/grid2read) and its notices. Main's wake lists merging it.
+- **Waiting for Frank** (asked 2026-10-20 night, plain words):
+  1. the default for an UNMEASURED cover shape (leaning: the walk until it is measured);
+  2. F2, the VM hat's one-byte set: V1 on default compiles at B5 with its 2 B cells as expected losses (leaning: yes).
+  Record his answers in journal.md plus a responses.md notice with proposed D text.
+- **B4 gates:** D163 add. 8 MET; E8 and M0 NOT MET. OWED before the B4 brief: grid2read §8's quiet re-time (about 2 min, heavy slot), the V1-text attribution, the slot walk vs main's walk byte compare, the mover manifest regenerated, the expected-loss list filled.
+- **Heavy runs:** `scripts/boxlock run --label kit -- CMD`, or opt into main's `scripts/boxqueue` (kit band 500-699; docs/dev/lanes/boxqueue_report.md "Opt-in: the kit"). Run emit_sweep WITHOUT `python3 -I` until main's fix is confirmed.
+- **Prune when quiet:** `memfn-r25`, `r25-mt`, `r25tri-main`, `rev4` (lane/memfn-rev4 is merged into b4).
 
 **Worktrees:** KEEP `memfn-r25`, `memfn-pinfix` (until merged), `rowfix` (merged; prunable once quiet), `memfn-slot` (scratch). 22 merged kit trees were pruned on 2026-10-18.
 
