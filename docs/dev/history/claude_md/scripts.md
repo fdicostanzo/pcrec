@@ -1,0 +1,839 @@
+# History of scripts/CLAUDE.md - moved verbatim from scripts/CLAUDE.md at commit d3d4c5834 (replaced there by a short index)
+# scripts — project process tooling
+
+Shell tooling for the development process itself, not for building or testing
+pcrec (the Makefile owns that).
+
+## Files
+
+- **mk_d27_cell.sh** — creates a D27 test writer's environment (Frank's
+  ruling, 2026-08-11, amending the worktree convention): a git worktree as
+  the DELIVERY target plus a parallel, non-git, allowlist-filtered CELL the
+  author actually works in. The cell closes the two blindness leaks by
+  construction — harness CLAUDE.md auto-injection (files that do not exist
+  cannot be injected; five recorded instances) and git history (`git show`
+  needs a .git the cell does not have). Allowlist, never denylist: a
+  denylist miss leaks silently, an allowlist miss fails loudly. The
+  allowlist is REQUIRED per invocation — no hardcoded default (R22 item 5,
+  discharged 2026-08-16: the old default went stale and would have leaked
+  the K17/K18 fuzz alphabet; cell contents are a per-lane manager
+  decision). build/ is
+  prebuilt inside the worktree so the author never runs make. The script
+  self-verifies cell hygiene and prints the exact diff-back / review /
+  teardown commands. Residual spawn-time leak (session-root CLAUDE.md and
+  memory index, injected before any tool call) is unavoidable and stays
+  covered by the briefs' disclosure requirement.
+  **Git boundary (2026-10-06, lane artprep's finding):** a cell under
+  `worktrees/` sits inside the repo, so git's upward discovery reached the
+  parent repository — `git -C <cell> show HEAD:src/...` printed emitter
+  source; every earlier cell was git-readable that way (briefs forbade git,
+  nothing enforced it). The cell now gets an EMPTY repository (`git init`)
+  as a discovery boundary, and the hygiene check proves `git -C <cell>`
+  resolves to the cell and can read no history (verified both directions:
+  boundary removed, the source prints; boundary present, `invalid object
+  name 'HEAD'`).
+
+- **measure.sh** — builds and runs one `tests/probes/` probe and archives
+  its full output as `docs/measurements/<probe>.txt` (D35, 2026-08-12):
+  stable filename per probe so a re-measurement is a `git diff`; header
+  stamps the report's full dependency set (probe source blob hash, ABI shim
+  blob hash, oracle package version) plus date/repo/gcc context.
+  `measure.sh --stale` checks every report's stamps against the current
+  tree and oracle WITHOUT re-running — a report is a pure function of its
+  dependencies (Frank's refinement). Reports are review evidence, never an
+  oracle — no check reads them.
+
+- **watchdog** — `timeout`-like supervisor for wrapping dev-process commands
+  (compiler invocations, generated-matcher runs, subagent batteries) that
+  can hang or runaway-allocate: wall-clock timeout, peak-tree-RSS memory
+  limit, and one greppable log line per execution, GNU-timeout-compatible
+  exit codes (124 timeout, 122 memkill) passed through to the caller. Polls
+  `/proc` for tree RSS instead of using `RLIMIT_AS`, deliberately: `RLIMIT_AS`
+  caps virtual address space, not resident memory, and an ASan build's ~20 TB
+  VA reservation would trip it on startup every time; VA also overcounts
+  ordinary mmap, and no single-process rlimit can express a limit — or record
+  a peak for the log — over a whole process tree. Known tradeoff: sampling
+  (default `-i 0.2`) can miss a spike that both happens and is freed inside
+  one poll interval — acceptable, since this is runaway detection for
+  development, not a hard cap (that would need cgroups). The child's own
+  stdin/stdout/stderr pass through completely untouched — watchdog writes
+  nothing to stdout ever, and exactly one line to stderr on a breach; getting
+  that clean required routing the parent's own fd 2 through a saved
+  duplicate (fd 3) after forking the child, because bash's own asynchronous
+  "Terminated"/"User defined signal N" job-notify message for a
+  signal-killed background job is not reliably suppressed by redirecting
+  any single `wait` call — it can print on whatever command bash next
+  happens to run. CLI flags (`-l -S -s -c -m -k -i -L`; `-c` is a sampled
+  tree-CPU limit — load-independent "too much work", exit 123
+  `verdict=cpukill`, vs `-s`'s "stuck" wall clock, and the self-test's
+  spinner/sleeper pair discriminates the two) and an
+  `WATCHDOG_TIMEOUT`/`WATCHDOG_MEM`/etc. env-var channel (Makefile-friendly;
+  CLI wins) cover the same knobs. Metrics-only mode (neither `-s` nor `-m`
+  given) supervises and logs without ever killing. `-S SECTION` /
+  `WATCHDOG_SECTION` adds a `section=` field to the log line — a runner
+  exports it once and every invocation underneath inherits it, so a label
+  like `case7` stays findable among thousands of lines from other suites.
+  The test tree consumes watchdog through `tests/lib/gen_timeout.sh`'s
+  `gen_run` (the D45-second-addendum execution budget); keep the two in
+  sync when changing flags or the log format. A log line with
+  `peak_rss_kb=0`/`cpu=0.00` means the child finished inside one poll
+  interval — a fast-run marker, not a measurement.
+
+  **[MACPORT] darwin port (2026-09-04), 16/16 self-test green.** macOS has
+  no util-linux `setsid` (perl's `POSIX::setsid()`, then `exec`-in-place
+  into the target, reproduces the identical pid==sid==pgid signature —
+  verified live) and no `/proc` (a `ps`-based `collect_stats`/
+  `proc_running` twin, ONE whole-box `ps` call per poll rather than one per
+  process). **The `exec` in the setsid wrapper is load-bearing, not
+  cosmetic**: without it, backgrounding the wrapper FUNCTION forks a
+  subshell that then forks the actual detached target as ITS OWN child —
+  two processes, not one — so `child_pid=$!` (the subshell) is never the
+  process-group leader `kill -TERM "-$pgid"` targets, and every wall/CPU/
+  memory kill silently hits an empty group. This was a real bug the
+  function-wrapping refactor would have introduced on LINUX too, not a
+  darwin-only gap; `exec` restores the original single-process design on
+  both platforms. Also: `${unit,,}` (bash 4+, a parse error on this box's
+  bash 3.2) replaced with a portable `tr`; `date -Is` → `-Iseconds`
+  (identical output on GNU date, the only spelling BSD/macOS date
+  accepts); the log-append `flock` (util-linux, absent on darwin) falls
+  back to an `mkdir`-based atomic lock when `flock` is not on PATH.
+
+- **size_diff** — [ART-SIZE.1b]'s post-test examination tool: reports every
+  pattern whose `docs/dev/artifact_size_log.tsv`-shaped row moved between
+  two log files (`scripts/size_diff OLD.tsv NEW.tsv`), by name, with
+  old/new/ratio, sorted by how far the ratio sits from 1.0; then patterns
+  present in only one file (NEW/VANISHED); then totals. SIZE gets no noise
+  tolerance (deterministic given an unchanged emitter and pattern — any
+  byte difference is real); gcc CPU TIME gets both a ratio threshold
+  (`SIZE_DIFF_CPU_RATIO`, default 1.25) AND an absolute floor
+  (`SIZE_DIFF_CPU_ABS`, default 0.05s) before it is reported, because two
+  re-runs of an unchanged tree produce byte-identical sizes but never
+  identical CPU times (scheduler jitter, cache state) — without a
+  tolerance an "empty report" could never happen even for a true no-op.
+  This is the tool docs/dev/plan.md [ART-SIZE.1b]'s ruling names for
+  "post-test examination": the log is the deliverable, per-pattern
+  movement is read here rather than gated.
+
+- **tests/** — self-tests for this directory's scripts, run ON CHANGE via
+  `make testscripts` / `make -C scripts test`, never in `make test` (Frank's
+  ruling, 2026-08-16, D48 — settling the deferred wiring question). The
+  Makefile here is one derived pattern rule with wildcard auto-discovery;
+  see tests/CLAUDE.md. `tests/watchdog.test` is the watchdog's 16-case
+  self-test (moved from scripts/test_watchdog.sh at D48).
+  Every case is bounded by coreutils `timeout`, never by watchdog itself —
+  a control must not share a mechanism with the thing it controls, so a
+  test that relied on watchdog to bound its own run could hang forever
+  right alongside a broken watchdog, or pass for the wrong reason. Covers
+  exit/signal pass-through, timeout and memory kills (including whole-tree
+  kill for a process that backgrounds a grandchild), RSS-accuracy
+  calibration, log-line shape, env-vs-CLI precedence, missing command, and
+  metrics-only mode. Run with `make testscripts` (no-op when nothing
+  changed) or directly: `timeout 300 bash scripts/tests/watchdog.test`.
+  `tests/safekill.test` covers safekill: sacrificial process trees it
+  spawns itself (never anything found by scanning the box) verify the
+  PID/PGID paved road kills the whole tree and nothing else, the pattern
+  path refuses on two live sibling invocations of an identical command
+  line and proceeds under `--all`, self/ancestor exclusion (a wrapper
+  whose own argv carries the pattern is never included), `--list`/
+  `--under`/`--cwd` narrowing, the audit-line fields, and every exit code.
+  A `trap` cleans up its sacrificial trees even on failure. Run with
+  `make testscripts` or directly:
+  `timeout 300 bash scripts/tests/safekill.test`.
+
+- **alt_census.py** — [ENG-ISL] STEP 1's CORPUS CENSUS of alternation
+  shapes: over `tests/**/*.rxt` and pcrec-bench's `bench/altwide/patterns/*.rx`
+  (read-only), how many flat alternations exist, how many are all-literal,
+  the branch-width distribution, the trie each builds (nodes, depth, fan-out)
+  and the MASK DEPTH — the largest number of alternatives that can be pending
+  on one root-to-leaf path, which is what sizes (or, as it turned out,
+  eliminates) the island's deferred machinery. It carries its OWN conservative
+  PCRE scanner rather than using python's `re._parser`, which factors common
+  prefixes as it parses (`abc|a|abd` comes back as `a` followed by a
+  three-way branch) — that is precisely the structure the census exists to
+  measure, so the standard parser would report the post-factoring shape and
+  call it the input. Anything the scanner is not certain about makes the
+  alternation unqualified, so every number is a LOWER BOUND on what the
+  emitter's own analysis takes, which is the safe direction for a sizing
+  census. It reports the pattern AS WRITTEN; `src/opt/altcls.c` rewrites the
+  tree before `src/gen/emit_vm.c` sees it, so the emitter's own qualification
+  is BROADER (it asks whether the subtree's language is a finite literal set),
+  and `docs/dev/lanes/isl1_report.md` records what that difference cost to
+  discover. Not a gate: nothing reads its output, and it decides nothing about
+  what a pattern MATCHES.
+
+- **safekill** — kills a process by PID/PGID or by cmdline pattern without
+  the collateral-kill failure mode `pkill -f` produced twice on
+  2026-08-19: a name pattern cannot distinguish two legitimate concurrent
+  invocations of the same tool, and it can match the caller's OWN wrapper
+  shell (the root of the project's standing no-`pgrep -f`-polling rule).
+  Paved road: `safekill PID` kills that PID's process group AND its
+  ppid-descendant tree (union of both mechanisms — catches a descendant
+  reparented to init via the group, and one that self-`setsid`'d into a
+  new group via the tree), no flags needed. `--pgid PGID` kills exactly
+  that group. The dangerous road, `-f`/`--pattern PAT` (POSIX-ERE search
+  against full `/proc/PID/cmdline`), is deliberately narrow: candidates
+  that are safekill's own pid or an ANCESTOR of the caller are dropped
+  unconditionally (no bypass flag — this is the one guard the incidents
+  show a human cannot reliably apply by hand), and more than one
+  remaining candidate REFUSES (exit 2) unless `--all` is given. `--list`
+  previews any target form's candidates without signalling anything.
+  `--under PID`/`--cwd DIR` narrow the pattern path further (descendant
+  tree / cwd prefix, both read straight off `/proc`; a `--cwd` candidate
+  whose cwd this UID cannot read is excluded but COUNTED, and that count
+  is surfaced in the no-match/refused messages so "nothing running" reads
+  differently from "matches existed but were unreadable"). Never
+  interactive — no confirmation prompts, since an agent has nothing that
+  will ever see one; safety is refuse-by-default plus explicit flags
+  only. Every process actually signalled gets an audit line (pid, pgid,
+  start time, command), printed BEFORE the signal is sent (not after —
+  incident B's failure was a SIGTERM landing with zero accounting).
+  kill(2) targets each process's GROUP, not the individually snapshotted
+  pid, so a target that already exited between the `/proc` scan and the
+  signal (TOCTOU) is simply not there to receive it, and an ESRCH'd kill
+  call's exit status is deliberately unchecked — already-dead is success,
+  not an error. TERM by default, escalates to KILL after
+  `--grace` (default 3s) unless `--term-only`/`--kill-now` (`-K`). Exit
+  codes are distinguishable on purpose: 0 killed something, 1 nothing
+  matched (not an error), 2 refused-ambiguous, 125 usage error. Candidate
+  discovery is pure `/proc` reads — no `ps`/`pgrep`/subprocess of any
+  kind — so nothing spawned here can transiently self-match a pattern the
+  way a `pgrep -f` polling wrapper does. Self-test:
+  `tests/safekill.test` (see below).
+
+  **[MACPORT] darwin port (2026-09-04), 13/13 self-test green (verified
+  under genuine bash 3.2 — see below).** No `/proc` on macOS, so candidate
+  discovery reads ONE whole-box `ps -axwwo pid=,ppid=,pgid=,command=` call
+  (never one per candidate) instead of the `/proc` scan (`lstart` is
+  fetched lazily, per printed audit line, from a separate `ps -o lstart=`
+  call — it feeds only the audit line, never a safety decision), and
+  `--cwd` resolution uses `lsof -a -p N -d cwd -Fn` per already-pattern-
+  narrowed candidate (never a box-wide scan) in place of
+  `readlink /proc/N/cwd`. Neither introduces a subprocess whose own argv
+  could self-match a caller's `-f` pattern — both are fixed literal
+  commands, which is the property the header's `/proc` design exists to
+  protect. `declare -A` (bash 3.2 has none) is fixed with a literal-flag
+  `if/else` at every array-declaration site, NOT a variable holding
+  `-A`/`-a` (`declare "$flag" NAME=()`) — verified live to be a genuine
+  bash parser gotcha: bash parses the `NAME=()` operand as an
+  INDEXED-array literal whenever the preceding flag isn't the literal
+  token `-A` at parse time, then refuses to convert it
+
+  **A Homebrew bash (5.3.15) appeared on this box mid-lane, unexplained
+  and NOT installed by this lane — see docs/dev/lanes/macport_report.md's
+  headline finding — and shadowed `/bin/bash` (3.2.57) on `PATH`, which
+  masked two more real bugs for a while** since this script's own
+  `#!/usr/bin/env bash` shebang re-resolves via `PATH` regardless of the
+  caller: (1) `mapfile` (bash 4.0+, "command not found" on 3.2, verified
+  live) at both of this file's call sites, replaced with a portable
+  `while read` loop; (2) a TOCTOU race sharpened by three separate `ps`
+  snapshots (pid/ppid/pgid, `lstart`, `command`) instead of one atomic
+  `/proc` walk — merged to the single call above, closing the specific gap
+  where a process born between the first and third scan crashed
+  `pgset[...]=1` under `set -u`. **The sharpest of the three**: even after
+  the merge, self/ancestor exclusion could still be defeated, reproduced
+  deterministically — `ps` (invoked via process substitution) is itself
+  spawned by bash FORKING a child, and in the window between that `fork()`
+  and its own `execve()` into the real `ps` binary, the forked child is a
+  byte-for-byte copy of safekill's OWN process image (identical argv),
+  which `ps`'s own snapshot can catch mid-transition. That pid is neither
+  `$$` nor an ancestor of it, so ancestor-chain exclusion could not see
+  it, and safekill went on to `SIGTERM` its own process group — including
+  its own still-running `ps` helper. Fixed by extending self-protection to
+  cover every DESCENDANT of `$$` too (reusing `descendants_of()`),
+  symmetric with the ancestor exclusion already there: nothing this
+  process forked for its own bookkeeping is ever a legitimate kill target.
+  All three fixes verified with `PATH` forced so this script's own shebang
+  resolves to the real `/bin/bash` 3.2.57, not the shadowing 5.3 — 13/13,
+  four repeated runs (the descendant-exclusion race is narrow enough that
+  repetition matters).
+
+  ("cannot convert indexed to associative array"), independent of this
+  file. `iso_of()`'s darwin branch reads `ps`'s own `lstart` string
+  directly rather than the `/proc/uptime`-derived boot-epoch/tick
+  arithmetic.
+
+- **wtprune** — removes delivered lane worktrees under `worktrees/`
+  (2026-10-05; ~50 had piled up because a hand-typed `git worktree remove`
+  is blocked by the session classifier, which cannot judge per call whether
+  a tree is still someone's). Judges from ARTIFACTS only, and a worktree is
+  removed only if EVERY gate passes, otherwise KEPT with the first failing
+  reason: direct child of `worktrees/`; not `git worktree lock`ed; HEAD an
+  ancestor of `main`; clean (`git status --porcelain` empty — ignored build
+  output is disposable); quiet (nothing modified in `--quiet-min`, default
+  120); no process cwd inside (`/proc` on Linux, `lsof` on darwin — no
+  evidence readable means exit 2, never "nothing running"); not the
+  `.mac-suite.lock` owner (file or dir/owner form); not a long-lived home
+  (named in the gitignored, per-box `worktrees/.wtprune.keep` — `memfn`,
+  the kit's branch home, is there — or containing another registered
+  worktree). Removal is `git worktree remove` WITHOUT `--force`, so git
+  re-checks cleanliness itself. `--apply --force NAME..` (Frank, 2026-10-18;
+  named targets only, never bulk, no NAME is a usage error) is the route for
+  DIRTY, UNMERGED or NESTED (`memfn-slot/b3b/wt_entry`) worktrees: it relaxes
+  only gate 1 (a registered worktree anywhere under `worktrees/`), gate 3
+  (unmerged commits printed and saved) and gate 4 (plain remove first; only
+  if git refuses for dirt, `git status -s` is printed and status, `git diff
+  HEAD` and the untracked list are saved to `worktrees/.wtprune.force/
+  <NAME>-<ts>.diff` before `git worktree remove --force`); lock, quiet, cwd,
+  mac-suite lock and keep-list gates still apply, and a failed forced
+  removal is FAILED and left on disk, never `rm -rf`. Dry run by default; `--apply [NAME..]`;
+  `--delete-branches` uses `git branch -d` (refuses unmerged). Non-git
+  entries (`NAME-scratch`, cells, logs) are only listed UNMANAGED — they can
+  hold a D27 author's undelivered work or cited evidence no artifact check
+  can rule out — and go only by explicit `--dir NAME` (quiet/cwd/lock gates
+  still apply; NAME must be a bare name). Every action appends to
+  `worktrees/.wtprune.log`. Allowed in `.claude/settings.local.json`
+  (the manager runs it without a prompt; raw `git worktree remove`/`rm -rf`
+  stay un-allowed). Bash 3.2-clean. Self-test: `tests/wtprune.test`.
+
+- **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
+  full suite, not a tier) and blocks the push on failure. Installed ONLY by
+  `make hooks`, which copies it to `git rev-parse --git-path hooks` (not a
+  hardcoded `.git/hooks` — a worktree's `.git` is a file pointing at the
+  shared gitdir, so the install must resolve the path rather than assume
+  it). Never auto-installed, no CI (D2). See docs/testing.md "Tiered
+  testing" for the opt-in rationale and `git push --no-verify` as the
+  documented bypass.
+
+- **plan_lint.sh** / **plan_lint.py** — [PLAN-LINT] step 3: the linter for
+  docs/dev/plan.md (the wrapper execs `python3 -I plan_lint.py`; standard
+  library only). Seventeen rules (PL01-PL17, table in tests/plan_lint/
+  CLAUDE.md), every one of which FAILS: there is no warning severity and no
+  baseline file. Modes: no flag lints the working tree (plus the tree-wide
+  `plan.md:<line>` citation scan, a `git grep`); `--staged` lints the INDEX
+  content (`git show :path`) and skips that scan (the commit hook's mode,
+  ~60 ms); `--selftest` plants one violation per rule and the citation
+  scanner's own planted file and requires every one reported; `--stale` is
+  the informational report (started rows with a `status` older than 30 days,
+  open rows whose status says MERGED/BUILT/LANDED/DONE, unresolved `[ID]`
+  references) and always exits 0 -- run it by hand at wake, it is not in
+  `make test`; `--rules` lists the rules. `make test-plan-lint` runs the
+  first and the third (tests/plan_lint/run_plan_lint.sh).
+
+- **hooks/pre-push-light** — the LIGHT push gate (apply_here.md proposal 3,
+  lane hooks, 2026-10-20): tree-wide plan lint (`tests/plan_lint/
+  run_plan_lint.sh`, PL14's tree scan included), the tree-wide spec scan
+  (`tests/spec_history/spec_history.py ROOT`) and `make strict`; runs all
+  three and names which failed; ~25 s measured. `make hooks
+  HOOKS=pre-push-light` installs it AS `pre-push` (the Makefile drops the
+  `-light` suffix), replacing the full-`make test` gate, which stays
+  available as `hooks/pre-push` (`make hooks HOOKS=pre-push`). INSTALLED on
+  the dev box (shared gitdir hooks/, so every worktree pushes through it).
+  Bypass `git push --no-verify`. Self-checked by `tests/hooks.test`.
+- **hooks/no_cd_worktree.sh** — PreToolUse(Bash) hook registered in the
+  project's `.claude/settings.json` (apply_here.md proposal 4, owner-approved
+  2026-10-20): exit 2 + a one-line reason when a command `cd`s into a path
+  under `worktrees/` or chains a `cd` (`cd X && ..`, `cd X; ..`, `cd X || ..`,
+  newline). Allowed: a lone `cd`/`cd /repo/root`, `git -C`, absolute paths, a
+  `cd` inside quotes (ssh/`bash -c` run elsewhere; a deliberate gap) and a
+  `cd` in a `( )` or `$( )` subshell (its cwd dies with it). Bash + one awk,
+  no jq, ~2 ms; fails open on input it cannot parse. Self-test
+  `tests/hooks.test` (planted blocked and allowed shapes both ways, the
+  settings registration, the light gate's three checks), wired in scripts/
+  Makefile by a dependency line since the script is not at scripts/ top level.
+
+- **hooks/post_compact.sh** — SessionStart(compact) hook registered in the
+  project's `.claude/settings.json` (Frank, 2026-10-21): after any compaction
+  (idle, threshold or `/compact`; the input cannot tell them apart) prints a
+  re-entry instruction, `docs/dev/owner.md` whole and `docs/dev/wake.md` up to
+  its WORK QUEUE section (~6.6k chars, under the 10k inline limit), so the
+  fresh context starts from the written record. Read-only, always exits 0.
+  It works only if those files are current: the `/idle` skill's mandatory
+  update is its other half.
+
+- **hooks/pre-commit** — [PLAN-LINT] step 3, opt-in like hooks/pre-push:
+  runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
+  docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/
+  is staged, and lints the staged content, not the working file. Never runs
+  `make test`. [SPEC-HOOK]: ALSO, when a staged file is text that can cite a
+  spec (md txt tsv py sh c h, Makefile), runs `tests/spec_history/
+  spec_history.py ROOT --staged` — no `<doc>.md:<line>` and no dangling
+  `<doc>.md §N` citation of a numbered spec may be staged — and, when a
+  docs/spec/*.md is staged, its history markers, numbering, contents block
+  and every citation of it in the index. Judged on `git show :path`; a
+  commit staging neither runs nothing (~50 ms with a text file staged,
+  ~450 ms with a spec staged). `PCREC_HOOK_TRACE=FILE` logs each checker run
+  (the self-test's witness; planted cases in tests/spec_history/
+  run_hook_selftest.sh, run by `make test-spec-history`). Installed only by
+  `make hooks HOOKS=pre-commit` (`HOOKS` defaults to `pre-push`;
+  `HOOKS="pre-push pre-commit"` installs both), never automatically. Bypass
+  once with `git commit --no-verify`.
+
+- **battery.sh** — [TT-12] STEP 1 item 5: `battery_v5`, the manager's
+  merge/close validation chain (test -> strict -> axes -> san -> alloc ->
+  lint -> mech -> recidentity) as one detached, self-logging run — `axes` is new (STEP 2, Frank's
+  ruling 2026-09-03), every other stage's shape is this row's own STEP 1
+  measurement rather than the manager's earlier ad-hoc `battery_v4.sh`
+  unchanged (`TEST_MAKE_J`/`TEST_PROCS` from item 4's K44 measurement,
+  `MECH_PROCS=6` from [TT-8], `SAN_PROCS` from item 3, `AXES_PROCS` feeding
+  `run_axes.sh`'s own item-1 pairing). Runs `setsid`-detached with a PID
+  file under a timestamped `build/battery_<ts>/` directory, one log per
+  stage plus a `trailer.log` with stage START/END/rc lines and a final
+  `== BATTERY DONE rc=` line — waits for nothing; the caller (a lane or the
+  manager) polls the trailer at its own cron tick (docs/dev/learnings.md
+  §6: artifacts, never process greps). Does not run the whole battery
+  itself when invoked by a lane — see `docs/dev/lanes/tt12b_report.md`.
+
+  **D136 (2026-09-30): `recidentity` is the LAST stage** — `make
+  test-recursion-identity`, the recursion landing gate (builds a second,
+  pinned pre-producer compiler; ~35 min on the Mac; needs full git history,
+  SKIPs loudly without). It was opt-in and sat red on main unnoticed. Same
+  shape as `mech`/`alloc` (plain `make`, log `recidentity.log`, verdict =
+  make's rc). `BATTERY_STAGES` names it like any other stage.
+
+  **[CC-DIFF] STEP 2 (2026-09-04): THE `axes` STAGE EXPORTS `AXES_FULL=1`,
+  and that one word is where a TIERED axis's full product lives.**
+  `tests/axes/run_axes.sh` runs the `--vm-entry-shape` ordinal's two
+  reachable-by-default rungs on every `make test-axes` and all four only
+  under that env — four permanent full-corpus runs was judged too much for
+  the DAY's suite, and the battery is where the whole product belongs. So
+  the battery's axes stage is no longer the same sweep the day runs, and
+  the sweep says which tier it ran (its own summary line) rather than
+  leaving the two results quotable as one. If a future axis is tiered the
+  same way, this is the line it rides.
+
+  **[MACPORT] darwin port (2026-09-04), mechanisms validated but NOT run
+  end-to-end** (a full battery is hours long — out of this lane's
+  validation bar): the `setsid` detach uses the same perl
+  `POSIX::setsid()`+`exec`-in-place wrapper watchdog/safekill.test use;
+  `AXES_PROCS`/the trailer's load line use `tests/lib/ncpu.sh`/
+  `loadavg.sh`; `date -Is` → `-Iseconds`.
+
+  **[SANTRIAGE] darwin's FIRST end-to-end run of this script (the stage-4
+  merge battery, `build/battery_20260908_stage4/`, 2026-09-08/09) found the
+  `san`/`lint` stages had never actually been exercised on the Mac: both
+  compile the COMPILER AXIS directly through top-level `make san`/`make
+  lint`, which use the Makefile's own `CC ?= gcc` default rather than any
+  test script's own CC resolution — unlike `tests/harness/run.sh` (fixed at
+  c480414c for the COMPILEE axis only). On this box bare `gcc`/`cc` is Apple
+  clang, which rejects `-fsanitize=leak` outright (a hard compile error, not
+  a silent no-op — `san` died on its FIRST object file, rc=2 in under a
+  second) and has no `-fanalyzer` (its own guard SKIPS cleanly, so `lint`
+  read rc=0 in under a second having run zero analysis on every prior Mac
+  battery — a legitimate documented skip shape hiding a real vacuity).
+  Fixed by sourcing `tests/lib/cc_resolve.sh` here too and passing the
+  resolved `CC` explicitly to those two stages' `make` invocations (verified
+  gcc-16 accepts both flags; `test`/`strict`/`axes`/`mech` are untouched —
+  they build fine under plain ISO C regardless of which compiler `$(CC)`
+  is). See `docs/dev/lanes/santriage_report.md`.
+
+- **emit_sweep.py** — [BSWEEP]'s COMMITTED emitter byte-neutrality sweep
+  (2026-09-19): the instrument five wave-2 lanes (w2a/w2b/w2x/w2y/w2census)
+  each rebuilt from prose in their own scratchpads for the same proof — an
+  emitter refactor moves no emitted byte — landing on THREE DIFFERENT
+  composition-arm populations (30/72, 29/84, 32/96) for what every one of
+  them called a mandatory arm, because reaching `vm_splice`'s DELIVER block
+  and the corpus's module-gated majority both depend on `--features all`, a
+  flag none of the ad-hoc rebuilds had written down anywhere durable (w2y's
+  own finding, `docs/dev/lanes/w2y_report.md` §3.1/§3.2). Compares a
+  REFERENCE `pcrec` (`git archive REF`, or a second historical revision via
+  `--tree-rev`, or a pre-built `--ref-bin`) against a WORKING `pcrec` (the
+  caller's own `build/pcrec` by default) across four streams — corpus argv
+  at the default engine, at `--engine=vm`, at `--emit-ir --engine=vm`
+  (always forced VM: w2x_report.md §5's own reach trap), and composition
+  (`--source` over every `.rxt`/`.rxtin` under `tests/`) — all under
+  `--features all` unconditionally. Self-checks itself first (two
+  independent builds of the SAME reference revision, byte-identical at full
+  reach, before trusting anything) unless `--no-self-check`. Reach and
+  composition-population expectations are FLOORS pinned in the script's own
+  `PINS` dict (D110's shape, a much smaller margin than that ruling's "half
+  the measured value" — see the dict's own comment for why), plus an
+  independent DELIVER-block witness (both known DELIVER fixtures produce,
+  and at least one composition artifact carries the block's own emitted
+  cross-group SET-pair code shape — corroborating, since the mechanism's
+  role text never reaches `.c` output at all, only the `--emit-ir` listing
+  a composed target can't produce). Scratch output (archived sources,
+  per-run composition trees, reports) lives under `build-emitsweep/`
+  (gitignored), never `build/`. See `docs/testing.md`'s "Emitter
+  byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
+  the validation transcript and the five-lane reconciliation.
+  **[START-TABLE] C0 (lane stc0, 2026-10-06) extended it** for the
+  start-table fold's no-mover proof (`docs/design/start_table.md` §3.2-§3.3):
+  a SIXTH stream (`--emit-facts=byte,utf8`, the only one that sees an ask
+  moving no byte); `--extra`/`--extra-base` (option arms threaded through ONE
+  splice, `opt_argv`, into streams 1-4 on both sides); `--arms start` (the
+  start-family deny arms plus plain `-e utf8` and `-i`, at byte and utf8
+  bases, each held to a pinned DIFFER floor per side — `DIFFER_PINS`, from
+  `docs/design/start_table/deny_census.tsv` — plus a manifest pattern, the
+  asserted zeros and a null arm); `--patterns-file`/`--no-corpus`/`--every`
+  (witness populations; floors are not applied off the full corpus, and the
+  report says so); `--streams`; a `cflags` pass-through in `build_from_rev`
+  (`--build-cflags`); and the TRACE family (`--trace`: both sides built
+  `-DPCREC_CAND_TRACE`, stderr records tagged with pattern index and arm by
+  the sweep, compared by `trace_diff.py` — the SET compare gates and the
+  ordered one is a diagnostic since [START-TABLE] C1, `--trace-ordered`
+  swaps them — and the trace build's stdout held equal to the default
+  build's; the hook itself is `PCREC_CAND_TRACE_REC` in
+  `src/core/internal.h`, `docs/dev/lanes/stc1_report.md`). Two sides that are one binary compile once
+  and mirror (a measurement run, said so). The start-family stamp parser
+  (`stamps_of`, `start_keys_moved`) moved here from
+  `docs/design/start_table/row_census.py`, which imports it. Self-test:
+  `tests/emit_sweep.py.test` (the arms over their own manifests, ~5 s); the
+  mech `emitsweep` arm runs it. See `docs/dev/lanes/stc0_report.md`.
+  Every ending (a pass, a red, an argparse refusal, a traceback) prints ONE
+  last line `emit_sweep: DONE rc=N` ([BOXQUEUE], 2026-10-21), the
+  completion convention `verdict`/`watchrun` read: before it a finished
+  sweep read INCOMPLETE and lane p2dland read arms.tsv by hand.
+
+  **THE `-fmemfn-simd` AND `-fcomments` ARMS ([SWEEPARM], 2026-10-16).** Both
+  flags have DIFFER_PINS cells (byte and utf8, c-default and c-vm, stamp floor
+  0: neither moves a start stamp), so `--extra=-fmemfn-simd` /
+  `--extra=-fcomments` (and `--arms start`, which runs every DIFFER_PINS arm)
+  can prove ZERO MOVERS with the flag on. Floors are MEASURED at lane/memfn-fd
+  39f13e397 (byte simd 20/19, comments 4243/4244; utf8 simd 15/15, comments
+  4255/4257); witnesses `(?i)cat` (renders the guarded `rx_reqrun__w16`
+  helper) and `a` (the comment blocks). The `-fcomments` floor is "nearly
+  every pattern" by nature; the manifest is what proves the flag arrived.
+  Planted by mech S981 / S982 (`opt_argv` drops that one flag; detector
+  `tests/emit_sweep.py.test`). See `docs/dev/lanes/sweeparm_report.md`.
+
+  **THE FINDER DENIES (R17-b′ B1, lane fdb1, 2026-10-16; B2, lane fdb2).**
+  The five kit rows `--memfn=no-fd-r0|fd-r5|fd-r8|fd-ndisp|fd-d1` have
+  DIFFER_PINS cells (byte and utf8, c-default and c-vm). A row not yet
+  routed is ASSERT_ZERO on all four: its deny must read zero movers, and its
+  first moving step (B4-B8) replaces the zero with a measured floor and
+  witness. `fd-d1` moved at B2: its c-default cells are floors (1,004 byte,
+  985 utf8, witness ` \w?+\b`); its c-vm cells stay ASSERT_ZERO.
+
+  **ONE POOL ACROSS THE STREAMS ([admin1008b], 2026-10-07).** The argv
+  streams (1, 2, 3, 6) and the composition stream used to run as a pool each,
+  waited out before the next began, so every stream's slowest compile (the
+  composition stream's most of all) left the box at a fraction of its threads.
+  `run_full_sweep` now submits every stream's tasks to ONE pool
+  (`run_pooled`; composition tasks first and capped at `--comp-jobs`
+  concurrent, so the contention cap of bsweep S1.4 is unchanged), each worker
+  compares its own pair and returns a small tuple, and the streams merge in
+  the old order from the task-ordered results -- stdout is byte-identical to
+  the per-stream form (proved on `--limit 300`, evidence in
+  `docs/dev/lanes/admin1008b_report.md`). There is no resumability to keep:
+  the script never had a checkpoint.
+  `--census-ref-re FILE` ([MEMFN] R4h, lane advnorm): a file of regexes read
+  off the REFERENCE artifact's text; the real run then holds MOVERS == the
+  REF artifacts that match any of them, 0 off-diagonal in both directions,
+  per stream (1-4). The text-census instrument for a declared TEXT mover.
+  `--census-facts-keys KIND:KEY,...` (lane advtri) gives stream 6 its census:
+  a facts mover is explained iff every moved line has a listed head AND, for
+  an encoding whose REF listing has `RX_VM_PROGRAM_BYTES`, the REF
+  `--engine=vm [-e utf8]` artifact is a census hit.
+  **[DEC-FALLBACK] B0 (lane decfbB0, 2026-10-08)** added refactor B's
+  instruments (`docs/design/dec_fallback.md` §4.2 items 1-4): two TALLY
+  streams, `emit-ir-auto` (`--emit-ir` at the DEFAULT engine, stdout + rc +
+  stderr, refusals included, at the base and at `-fno-prefilter`/
+  `-fprefilter`/`-fno-prefilter-collapse`; the B4 hard gate) and `stderr` (the
+  full stderr and rc of the stream 1-2 compiles), whose per-side tag counts
+  (the listing's `prefilter` token; refusals per engine) are held to per-tag
+  floors with a manifest pattern for every thin tag; and `--variant` (the
+  five limit variants `VARIANTS`, both sides built from `git archive` with
+  the variant's `-D` set, each run at `--bases` byte and utf8 and held to
+  `VARIANT_PINS`, measured at B0's base). A variant's plumbing is checked by
+  `VARIANT_WITNESSES` (`--list-limits` cannot serve: it prints limits.def's
+  literal, not the compiled-in value). `--trace` composes with `--variant`
+  (a trace pair per variant, `--trace-order SLOT=ordered|set` passed to
+  `trace_diff.compare`). `--emit-pins FILE` writes a measurement as the
+  pins' python source. See `docs/dev/lanes/decfbB0_report.md`.
+  **FLOORS ARE PER ARM ([SWFIX], 2026-10-16).** The plain composition floors
+  (`PINS`) apply to the plain arm only; an `--extra` arm is held to its own
+  `COMPOSITION_EXTRA_PINS` entry (`-e utf8`, `--engine=vm`, and [COMPPIN]
+  `-fmemfn-simd` / `-fcomments`, 37 / 106 each, planted +1 in the self-test), and an arm with no
+  entry prints `COMPOSITION FLOORS: NOT APPLIED` rather than borrowing the plain
+  numbers (the `--engine=vm` arm read 86 < 100 ref-vs-ref). `VARIANT_PINS` was
+  re-pinned at b72291d84 with each fall attributed to a compiler event in the
+  pin comment. The self-test plants each declared floor +1 (`EMIT_SWEEP_VARIANT_
+  PLANTS=1` adds the variant cell); mech rows S1047/S1048.
+  **[KNOW-SRC] K0 (lane ksrc, 2026-10-16): `--data KIND OLD NEW`, THE
+  DATA-MOVER CENSUS** (`docs/design/measure_sets.md` rev 3 §9.3) — a MODE of
+  this tool, not a second census script. The two sides differ ONLY by a data
+  argument: `analysis` (two bundle files, `DIR/NAME.rxt` or `REV:PATH`, under
+  ONE `-DPCREC_KS_TRACE` `--bin`) and `limits` (`NAME=VALUE`, two `-D` builds
+  of `--ref`, default HEAD); `measures` joins at [MEASURE-SET] M1. Streams 1/2
+  (+ their stderr, KSTRACE records removed) at `--bases`, and 4; the
+  `_FINDINGS` stamp lines are stripped before the byte compare. Each mover is
+  ATTRIBUTED — analysis by the LOOKUP TRACE (`src/core/findings.h`: the
+  readers that asked), limits by the limit and its token change — and every
+  analysis artifact's FINAL-attempt trace must equal its stamp's
+  (query, bundle) items (the cross-check). Writes one movers TSV
+  (`--movers`); `--expect-movers FILE` holds a hand-made list the census must
+  reproduce. Its standing check is `tests/findings/run_findings_tests.sh`
+  §13 (the `data_census/` fixture, with a must-fail control); sabotage S963
+  plants an empty attribution.
+  [WINDOW-E1] (lane e1build, 2026-10-17) the same trace build also writes
+  the analysis object's `KSRCTRACE object` records; `data_trace` drops them
+  (an offer is not a read, and they carry the data's digest), so neither the
+  attribution nor the stderr compare sees them.
+- **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
+  trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
+  per (pattern, arm) as ORDERED sequences (so neither a swap between
+  patterns nor a reorder inside one cancels), filters only the sites a
+  commit DECLARES (`--declared`; a declaration that filters nothing fails),
+  and holds a records-per-arm floor (an empty trace passes no diff).
+  `--keys` selects the compared fields. Exit 0 clean / 1 differ / 2 bad
+  input. `--order SLOT=ordered|set` (repeatable; [DEC-FALLBACK] B0 item 7,
+  S-I2's detector) sets ONE slot's compare mode (the slot = the record's
+  first field): `ordered` compares that slot's records as a sequence per
+  (pattern, arm), other slots' records interleaved between them ignored;
+  every unnamed slot follows the default (`--unordered` or ordered) and is
+  compared together as one subsequence. API: `compare(..., order={slot:
+  mode})`. Self-test: `tests/trace_diff.py.test` (30 cases: 17 planted
+  cases + 13 `--order` ones, each paired with its clean twin).
+
+- **cls_identity.py** — [CLS-TREE] S3's BYTE-IDENTITY INSTRUMENT
+  (2026-09-29, lane `clsid`, `cls_s3_reader_inventory.md` §7/D-8), the
+  committed form of utf8k53_report.md §3.2's never-committed "3,348 of
+  3,348" sweep. Compiles every distinct (pattern, encoding, features, flags,
+  engine) TRIPLE with a BASELINE and a CANDIDATE `pcrec` (same `-o -` on both
+  sides — the `-o`-basename trap) and compares the emitted C byte for byte;
+  the encoding-axis sibling of `emit_sweep.py`, which has none and is
+  therefore vacuous for the wide-class lowering (it imports that script's
+  build/decode helpers). Populations are derived, not listed: corpus blocks
+  as written and widened over {byte, utf8} × {written features, `all`},
+  pcrec-bench's patterns (read-only, skipped loudly if absent), `\p{X}`
+  names found in the corpus in five shapes, and the inventory's witnesses.
+  **REACH** (K35): triples where `lower_class_utf8` fired, read from the
+  compiler's own output (the `--engine=vm --emit-ir` listing under utf8
+  differs from byte's; a lower bound; no compiler hook was added). **Two
+  positive controls**: an in-memory one-byte corruption pushed through the
+  same comparison, and (`--control`) a scratch build of the candidate with
+  one band boundary of `lower_class_utf8` moved by one, which must move
+  utf8 triples and no byte triple. A script, NOT a `make` target and not in
+  `make test`: it needs a reference revision (the branch point) that `make`
+  has no default for, main-vs-main is vacuous, and it runs minutes.
+  Scratch under `build-clsid/` (gitignored). See
+  docs/testing.md "S3 triple-sweep identity instrument" for the recorded
+  baseline and runtimes.
+
+- **compile_time_census.py** — [OPT-CLOSURE-CTX]/[OPT-RETRY-REUSE]'s
+  compile-TIME census (lane k67, 2026-09-29): the child's own rusage CPU
+  (never wall) for every triple of `cls_identity.py`'s population (it imports
+  that script's `build_population`/`argv_for`), one or more binaries run
+  interleaved per row (`--ref REV` builds the first), plus the two stamps
+  that say a retry ladder ran (`_ENGINE_SEL "size-cap-retry"`, a non-default
+  `_UNROLL_K_WHY`). Prints totals per binary and per population, the ladder
+  population's share and the worst-N; `--summarise TSV` re-reads a run. A
+  population under the floor fails (K35). Measurement, not a gate: nothing
+  runs it; `docs/dev/lanes/k67_report.md` has its first before/after.
+
+- **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
+  a BUILD-facing script, run by the Makefile to
+  embed every `src/findings/<name>.rxt` as a C array plus a name index in
+  `src/core/findings_store.inc` (committed; `make gen-findings`). POSIX sh and `od` only, so
+  a clone without python still builds; the `LC_ALL=C od -An -v -tx1`
+  invocation is PINNED [r2 A-8] (the same hex pairs under BSD and GNU `od`)
+  and only the hex pairs are consumed. `tests/findings/` reads each bundle
+  back through the library and compares it with its file. [MEASURE-SET] M0:
+  `EMBED_KIND=measures` writes `src/core/measures_store.inc` from
+  `measure_store/<id>/<rev>/set.tsv` (`make gen-measures`); the default,
+  `findings`, writes byte-identical output to before.
+
+- **ksgen.c** — [KNOW-SRC] K2 (lane ksrc23, 2026-10-17): the knowledge
+  module's EMBED GENERATOR, `ksgen KIND OUT FILE...` (measure_sets.md rev 3
+  §9.2 part 4), one arm per kind with a store, chosen from `gen_arms[]` by
+  the kind's row in the kinds table (`pcrec_ks_kind`, which also supplies
+  the file suffix). Run by the Makefile's static-pattern rule `gen-<store>`
+  (`gen-findings` for the `analysis` kind) beside `embed_text.sh`. Its
+  `analysis` arm is what `findgen.c` was until K2, writing the same tables
+  (only the generated file's first comment line names the new program).
+  As `findgen.c`, [FINDINGS] B1: the findings store's PRE-PARSE generator
+  (`make gen-findings`): runs the one `.rxt` reader over each
+  `src/findings/<name>.rxt` in its no-filesystem buffer mode and writes every
+  data block as a C table, `src/core/findings_table.inc` (committed), so a
+  compile reads a table instead of parsing (per-compile parsing measured at
+  ~20% of a minimal compile). Links a STAGE-0 `libpcrec` whose `findings.o`
+  is built with `PCREC_FIND_STAGE0`. C, and outside `src/`, because every
+  `src/**/*.c` is compiled into the test suites' reference compilers and a
+  second `main` would break them. `tests/findings/` §3 is its drift check.
+  [B5] a `cpfreq` block is written as its sparse code-point rows
+  (`PcrecFindCp`), a `freq` block as its 256 counts.
+  [MEASURE-SET] M0 (lane m0build, 2026-10-21): the `measures` arm runs the
+  kind's own validator over each `measure_store/<id>/<rev>/set.tsv` (the
+  `<id>`/`<rev>` read off the path and held to the header) and writes the
+  parsed set, plus `measure_store/DEFAULTS`' class rows, as
+  `src/core/measures_table.inc` (`make gen-measures`; stage 0 builds
+  `measures.o` with `PCREC_MEAS_STAGE0`). `tests/knowledge/
+  meas_store_check.c` is its drift check.
+  [WINDOW-E1] (lane e1build, 2026-10-17) each block row also carries its
+  provenance stanza (`source`, `bytes`, `fidelity`), and the generator
+  REFUSES a block with no provenance source and a store `default` block
+  whose source is not `authored` (the terminal is a prior by construction,
+  window_contract.md §3.2's cross-check).
+
+- **pcrec_analyze.py — DELETED at [FINDINGS] B6** (lane `findb6`,
+  implement-then-replace, design.md §10.1/§12): this was the `[FINDINGS]`
+  exemplar analyzer's PROTOTYPE (step B3), grown from `docs/dev/
+  findings_measure/scripts/ngram_count.py`'s one-pass counting shape. B6
+  ported it 1:1 to `analyze/` -> `build/pcrec-analyze` (own CLAUDE.md), a
+  separate zero-dependency C binary every generator (`third_party/*/
+  generate.py`) and check (`tests/findings/run_analyzer_tests.py`) now
+  invokes instead, proven byte-identical on the in-tree samples, the two
+  real shipped corpora and 800+ seeded-random invocations (invalid UTF-8
+  included) before this file was deleted — see
+  `docs/dev/lanes/findb6_report.md` and `docs/dev/lanes/findb3_report.md`
+  (what B3 built) for the history.
+- **perfrun** (+ **perfrun.shapes**, **cpusample.sh**, **sectiontimes**) —
+  [TT-JTUNE]: the drop-in wrapper a heavy chain calls in place of its raw
+  `make -k -jN -Otarget test` (`scripts/perfrun --label L [--shape J,P] --
+  LOG [vars]`). Picks a (make -j, PROCS) shape from `perfrun.shapes`
+  (least-sampled uncontaminated), runs it under `gnutimeout 2700`, log
+  byte-identical, make's rc returned unchanged; `cpusample.sh` samples
+  load/busy/scripts/other-trees every 15 s (and `--probe` for the pre-start
+  contamination read); `sectiontimes` (`stamp SIDE` / `report [--open]`) turns
+  `make --debug=j` lines into per-section start/end times without touching the
+  log (`--open` also lists sections that started and never finished, state
+  `open`, for a killed run; [CI-SHARD]'s CI step is its second caller, with
+  no perfrun around it). Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
+  `perfrun --fold` (in main) appends them to docs/dev/ttune_ledger.tsv. Triage
+  rule and columns: docs/dev/ttune_measurement.md; BOILERPLATE.md.
+
+- **spec_toc.py** — rebuilds the generated table of contents of a numbered
+  `docs/spec/*.md` (lane specnum, 2026-10-09): number plus link for every
+  numbered heading, between `<!-- spec-toc:begin -->` and `<!-- spec-toc:end -->`
+  (`--init` puts the markers under the `# ` title; `--check` writes nothing
+  and exits 1 on a stale block, a missing `<a id="sN">` anchor or a repeated
+  number). The numbering rule is docs/spec/CLAUDE.md's "Numbering and
+  citation"; `make test-spec-history` runs `--check`. Standard library only.
+
+- **boxlock / chainrun / watchrun / verdict / boxqueue** — the RUN-CONTROL
+  family (apply_here.md proposals 2 and 6, lane runkit, 2026-10-20; boxqueue
+  [BOXQUEUE], lane boxqueue, 2026-10-21): one lock, one chain runner, one
+  watcher, one verdict reader and one box-wide job queue, so lanes and the manager
+  stop hand-writing chain.sh/waiter/watcher scripts that re-introduce the
+  same bugs (dev_methods_handoff.md §7). Each self-test plants the historical
+  bug back into a scratch copy and shows it caught. Plain bash + coreutils +
+  util-linux `flock`; any cwd; GNU timeout via tests/lib/timeout_bin.sh.
+  - **boxlock** — the box's ONE heavy-run lock: `flock` on the MAIN tree's
+    `worktrees/.box.lock` (found from the script's own location; override
+    `PCREC_BOXLOCK_FILE`). `boxlock run [--label L] [--wait S|--no-wait] --
+    CMD` takes it and EXECs CMD (CMD's rc; the lock lives as long as CMD's
+    tree holds the fd, so a SIGKILL cannot leave a stale lock); a busy box
+    WAITS, naming the holder on stderr at once and every 5 min, or refuses
+    with exit 75 under `--no-wait`/`--wait S`/`PCREC_BOXLOCK_WAIT`. `status`
+    (0 free — a dead owner's record reads `free (last holder ... exited)`;
+    1 HELD with pid/label/since/cwd; 3 HELD-ORPHAN, owner dead but a
+    descendant still holds the fd, live holders listed from /proc for
+    safekill). `held` (0 = the caller is inside the holder's tree via
+    `PCREC_BOXLOCK_HELD`'s token, or locking is off): the entry points'
+    re-exec gate, which is also what makes nesting (a battery's mech stage,
+    a heavy chainrun stage calling perfrun) deadlock-free. `PCREC_BOXLOCK=0`
+    runs unlocked; a box with no `flock` (the Mac) or a tree with no git
+    runs unlocked with a note. TAKEN BY (default ON): perfrun's run mode,
+    battery.sh (whole run), tests/mech/run_sabotage_matrix.sh (any row;
+    not VALIDATE_ONLY), emit_sweep.py when it sweeps the corpus argv streams
+    or runs `--variant`/`--data` (not `--no-corpus`, `--limit <= 50`, or a
+    composition/dumps-only run), and `make test-axes`/`make test-ksweep`.
+    A run that never calls it still works. Self-test `tests/boxlock.test`.
+  - **chainrun** — `chainrun [--fg] [--lift FILE] [--keep-going] [--logdir
+    D] [--tree D] [--name N] STAGES` / `--check STAGES`. Stages file: `NAME
+    heavy|light CAP COMMAND...`, CAP seconds/`none`/`ttune` (the ledger's
+    longest clean same-nproc `make test` wall x `CHAINRUN_GROWTH`=1.5; no
+    history = parse error). Reads the file once (snapshot); runs each stage
+    under `bash -c` in the tree, own session, stdin closed, output to
+    `LOGDIR/NAME.log`, `heavy` stages under boxlock (wait not counted in the
+    cap); rc taken by `wait` on the same line; stage verdict = `verdict
+    --no-rc-lines --rc RC` over its log; `== CHAIN DONE` only after the last
+    stage passed, else `== CHAIN FAILED stage=...` (a TERM/INT/HUP writes it
+    too and kills the stage). One chain or `--lift` waiter per tree: flock on
+    `TREE/build/.chainrun.lock`, a second is REFUSED (75) naming the holder.
+    Detached by default (setsid; `chain.pid` has pid == sid). Self-test
+    `tests/chainrun.test`.
+  - **watchrun** — `watchrun [--on chain|stage] [--quiet-min N] [--every S]
+    [--max-hours H] LOGDIR|TREE` or `--log FILE [--pid P] [--done ERE]`.
+    Exits ONCE with one stdout line: 0 CHAIN-END/STAGE-END/DONE (with the
+    verdict), 3 QUIET, 4 DIED (pid gone, no trailer), 5 LOCK-ORPHAN, 6 CAP;
+    2 NOT ARMED (already ended at startup, no live chain, no target). Never
+    fires on startup state; QUIET = three consecutive polls with no log
+    growth, no HEAD move and no CPU in the run's process tree (by exact pid)
+    and the bound passed, counted from the watch start. No temp files; a
+    TREE resolves only its LIVE chain. Self-test `tests/watchrun.test`.
+  - **verdict** — `verdict [--rc N] [--no-rc-lines] LOG...`: `VERDICT
+    GREEN|RED|INCOMPLETE: ...` + evidence, exit 0/1/2. Reads make's error
+    lines (both the Linux `Makefile:N:` and the bare form), any tool's
+    `TOOL: DONE rc=N` trailer (perfrun's — LOG.perfrun read automatically,
+    its class shown — and emit_sweep.py's since [BOXQUEUE]; read under
+    `--no-rc-lines` too), mech's COMPLETE
+    (red iff unexpected > 0) / FATAL, battery and chainrun trailers,
+    run_group summaries and hand-chain `rc=` status lines; never a FAIL grep
+    or "sections ran". No completion line and no red line = INCOMPLETE
+    (killed), never green. Self-test `tests/verdict.test`.
+    THE COMPLETION CONVENTION: a tool that ends a run prints ONE
+    `TOOL: DONE rc=N` line on every ending; verdict and watchrun (default
+    `--done`) read it with no per-tool rule. Chosen over a per-job declared
+    completion ERE (lane boxqueue): a declared ERE is a control written by
+    the author of what it controls, and it fixes only queue jobs, not a hand
+    `scripts/verdict LOG` or a `watchrun --log` on a bare sweep log.
+  - **boxqueue** — THE BOX'S ONE JOB QUEUE ([BOXQUEUE], docs/design/
+    plan_row_bodies/BOXQUEUE.md; the script header is the contract). A
+    directory, `<main>/worktrees/.boxqueue/` (`PCREC_BOXQUEUE_DIR`
+    overrides): `pending/ running/ done/ failed/`, `queue.log` (every pass,
+    every job's answer, `waiting on <holder>`, START/END), `status`. A job is
+    an executable script named `PRIO-OWNER-REST` (KEY = OWNER-REST), called
+    three ways: `--dry-run` (would I run correctly: prints the commands and
+    the REQUIRED `boxqueue: cap|patience|expect` declarations; called at
+    enqueue — a failure REFUSES it, exit 65 — and again at START), `--ready`
+    (can I run now: 0 / 75 not yet + reason / 76 requeue to the end / 77
+    never; bounded 20 s, a hang = READY-HUNG; not-ready past `patience` is
+    REPORTED once), and the work (under scripts/boxlock, which the runner
+    takes per job: 0 is green only if `verdict` is not RED and every `expect
+    NAME=N lines=ERE|last=ERE` population is met — SHORT fails, an OVER
+    `lines=` count kills the job mid-run; 76 requeue; 77 cancelled; 75 is a
+    BUG, failed NOT-READY-AFTER-START; else failed, FAILED-FAST under 10 s).
+    Commands: `add [--name N | --prio P --owner O] SCRIPT`, `batch --owner O
+    --prio P [--lift F] [--tree D] STAGES` (a chainrun stages file, parsed by
+    `chainrun --check`, becomes one job per stage whose `--ready` is
+    `boxqueue after <previous KEY>`; a failed stage re-queues alone with
+    `retry`), `--dry-run`/`plan` (the whole queue's plan and total cap),
+    `status`, `state KEY`, `after KEY`, `retry KEY`, `cancel KEY`, `start`
+    (detached runner; `add` arms one), `run [--once]`. One runner per queue
+    (flock on `.runner.lock`, a second REFUSED 75); it exits when pending/ is
+    empty; the detached runner closes every inherited fd (an `add` from
+    inside a lock holder must not keep the box lock); a dead runner's
+    `running/` is judged from its rc, waited on while alive, else
+    RUNNER-DIED. Job state (declarations, the not-ready clock) is keyed by
+    KEY and content sha and cleared on add/leave, so a re-added job never
+    inherits an earlier one's. OPT-IN for the kit and the bench: a slot
+    script becomes a job (its own `boxlock run --label kit` stays valid:
+    inside a queue job it nests by token). Self-test `tests/boxqueue.test`.
+    [WATCH-IDLE] (lane watchidle, 2026-10-21) grew it three honesty gates and
+    an alarm, each planted back in the self-test. GATES, enforced by `add`/
+    `retry`/`batch` ONLY (a job already pending or hand-dropped is read with
+    the older lenient grammar, so queued work never changes; `--dry-run`
+    prints such a job as LEGACY): a bare `expect none` is REFUSED, say
+    `expect none reason=WHY` (shape 1: a job that swallowed its tool's rc and
+    said `none` scored GREEN on a crash); `expect NAME=N [log=PATH] ...` reads
+    the population and last line from the named file, default job.log,
+    relative = under the run dir (shape 2: perfrun's own `-- LOG` read short on
+    job.log; a RED line in a named log fails the job too); a `last=` expect
+    needs `boxqueue: witness NAME=LINE` and the dry run reads N back from it
+    with the same matcher, an ERE ending in `$` or not compiling is refused
+    (shape 3: `last=^== X COMPLETE` with no integer after it); the refusal
+    prints the valid forms. A last= that read nothing now says why (never
+    matched / matched with no integer). THE IDLE-BOX ALARM: beside each job
+    the runner samples box CPU (/proc/stat, iowait = idle), the job's own
+    process-tree CPU (exact pid walk of /proc, session + descendants) and its
+    logs' size every `BOXQUEUE_IDLE_SAMPLE` s (15); idle for
+    `BOXQUEUE_IDLE_WINDOW` s (600) with box busy < `BOXQUEUE_IDLE_BOX_PCT` (5)
+    AND tree < `BOXQUEUE_IDLE_TREE_PCT` (5, of one core) AND no log growth
+    writes one IDLE-SUSPECT line to queue.log and `status` and marks the
+    result `idle=SUSPECT`; it never kills; activity resumes = IDLE-CLEARED.
+    All numbers are UNMEASURED defaults. One core at 100% is busy however
+    small a share of the box. `boxqueue: idle-ok [SECONDS]` (optional) turns
+    it off or lengthens the window. The same thresholds watch a NON-queue
+    box-lock holder blocking a pending job, one sample per runner pass
+    (HOLDER-IDLE-SUSPECT, never kills). Not covered: a lock holder with no
+    queue job waiting, and a chain waiting on a `.lift`, are watchrun's
+    (LOCK-ORPHAN/QUIET) territory. Report: docs/dev/lanes/watchidle_report.md.
+    [runnerfix] (lane runnerfix, 2026-10-21) closed a real miss: a runner started
+    before the idle-ok grammar merged kept its OLD parse_decl in memory, rejected
+    a job declaring `idle-ok` on every pass, and passed over it with nothing
+    logged ("not asked yet", the box free for 37 minutes). NO SILENT SKIP: every
+    way a pass can pass over a pending job now logs one line naming the job and
+    the reason (the recorded declarations unreadable by this runner; the job
+    gone from pending/ before its snapshot) and writes it where `status` prints
+    it instead of "not asked yet"; the job stays pending. SELF-CHANGE: the runner
+    hashes its own script at start; at the top of a pass, if the content changed
+    and no job is running (never mid-job), it `exec`s the new script with the
+    same arguments (same pid, so the same runner lock, fd 8 inherited, and the
+    same log; one `== runner RE-EXEC` line, the new process logs `RESUMED after
+    RE-EXEC`; a new script that fails `bash -n` is refused once and logged).
+    Pending state is all on disk keyed by content sha, so nothing is dropped or
+    duplicated. Planted in boxqueue.test case 24. Report:
+    docs/dev/lanes/runnerfix_report.md.
+
+Maintenance: update this file when scripts are added/removed or change role.

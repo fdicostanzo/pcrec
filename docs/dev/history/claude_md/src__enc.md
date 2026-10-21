@@ -1,0 +1,645 @@
+# History of src/enc/CLAUDE.md - moved verbatim from src/enc/CLAUDE.md at commit d3d4c5834 (replaced there by a short index)
+# src/enc — the ENCODING BACKENDS
+
+The DD-12 residual seam, built at [M5-SEAM] (D58, 2026-08-18) as a prelude
+to M6 so M6's encoding-sensitive residue is born on the seam rather than
+retrofitted onto it. Everything an artifact carries that depends on which
+ENCODING it was compiled for lives in this directory, in exactly one file
+per encoding.
+
+**IT IS A LAYER BETWEEN `core` AND `parse`, and it used to be `src/gen/enc/`.**
+[REVW.3] wave 3 moved it (lens 6's L1, `docs/dev/reviews/lens_reports/
+lens6_dependency_rxt_cut.md` §2.1). The seam was CHARTERED emission-only,
+which is what put it under `gen` — and four later seam events gave `PcrecEnc`
+DATA fields that layers outside `gen` read: `max_cp` (parse), `fold` (parse),
+`advance` (gen), `start_cls`/`start_guard` (ir). Each was a small, correct,
+reviewed addition and nobody summed the drift, so by 2026-09-17 every one of
+the include back-edges in the tree — `core/compile.c`, `ir/dfa.c`, `ir/nfa.c`,
+`opt/lower_enc.c`, `parse/parse.c`, `parse/rxt_compose.c` — was a lower layer
+reaching UP into this directory, and every one of them read only the data
+half. At `src/enc/` those six are forward edges and the seam's SEMANTICS are
+untouched: D58 and DD-12 (7) say exactly what they said, and the recipe below
+is one directory shallower and otherwise word for word the same. The layer
+order the tree now states is `lib -> core -> enc -> parse -> ir -> opt ->
+gen -> driver/dump -> cli` (`src/CLAUDE.md`, `tools/review/include_graph.py`).
+
+**EACH TEXT BLOB IS A PAIR SINCE [EMIT-VERB]** (D112, 2026-09-19).
+`PcrecEncEntry` gained `decls_doc` and `defs_doc` beside `decls` and `defs`,
+and each backend's `decls_<entry>` / `defs_<entry>` constant was split into a
+`_doc` half (the entry's leading doc-comment) and the C it documents.
+The reason is structural rather than cosmetic: the `-fno-comments` gate is a
+RENDER-time decision over comment EVENTS (D108), and a residual entry's text
+is emitted VERBATIM by `pcrec_enc_emit_text` — so there is no event to gate
+unless the split is in the DATA. Doing it here rather than by recognising
+`/` `*` in a finished blob keeps the classification at the SITE: a backend
+states which half is prose, and no renderer has to parse C to find out.
+`enc.h`'s own "road not taken" note about growing FIELDS still stands for
+per-CONSTRUCT growth — a fourth entry gets a ROW, not a fifth field. This
+pair is a different axis (prose vs. code, one split per blob) and does not
+grow with the entry count; either `_doc` may be NULL, meaning "this half is
+all code", which `advance` already ships.
+
+**[MEMFN] M7 (D58 ADDENDUM 2, 2026-10-08): THE RESIDUAL TEXT GAINED ONE KIT
+SITE TOKEN, AND STILL NO CALLBACK.** The byte-wise span compares
+(`defs_bref`, `defs_bref_ci`, `defs_bref_ci_ucp` here in `enc_byte.c`;
+`u8_defs_bref` in `enc_utf8.c`) no longer spell their compare LOOP: each
+writes `PCREC_ENC_SITE` (a whole line, `@site@`) where the loop sat, and the
+backend states, beside its text, a KEYED SIDE TABLE of SITE DATA
+(`PcrecEncSite` in enc.h, `PcrecEnc.sites`; `sites_byte`/`sites_utf8`): the
+fold KIND (none / ASCII / UCP), the fold TEXT (`@` the byte, `$` the prefix:
+the in-place ASCII fold, or `$_span_ci_fold(@)`) and the FAILURE statement
+(`return -(ptrdiff_t)i - 1;`). `src/gen/emit_dfa.c`'s `emit_residual_defs`
+reads the rows, describes each site to the memfn kit (DELEG_SITES row N7,
+`pcrec_memfn_span_site`), and passes the kit's rendered loops back into
+`pcrec_enc_emit_defs` as STRINGS, which substitutes them for the tokens as it
+substitutes `$` (`pcrec_enc_emit_text`, which also CHECKS the token's rules:
+no other `@`, no token without a rendered loop, no rendered loop without a
+token). Data flows enc -> gen -> kit -> gen -> enc; this directory includes
+no gen or kit header and calls nothing above `core`. The backend keeps every
+other byte: signatures, braces, the final `return (ptrdiff_t)reflen;`, the
+UCP fold function and its table, every comment and declaration. A keyed
+side table rather than a `PcrecEncEntry` column (D58 addendum 2 item 2: a
+column would touch every positional row of both backends). utf8's CASELESS
+compare is a per-character decode walk, not a byte mismatch, and keeps its
+own body and has no row (not a kit site, D147 add. 14: a walk whose unit is
+the encoding's character belongs to the encoding; its byte-domain sub-loops
+are kit sites). The operand spellings the kit pastes are the entry's own
+parameter names, one spelling in enc.h (`PCREC_ENC_SPAN_*`), since DD12a(ii)
+proves the signature identical across backends. Zero movers: the kit
+renders the loops byte for byte (docs/dev/lanes/m7_report.md).
+
+## The rule this directory exists to make structural
+
+DD-12 (7), ruled in as a requirement by Frank: **no encoding conditionals
+anywhere** — not in the compiler, not in the emitter, not in the emitted
+artifact. Encodings are SEALED BACKENDS, and the only "switch" is WHICH
+backend's text an artifact embedded. So there is no `if (enc == UTF8)` in
+this tree, and adding one is the design-stop signal, not a patch.
+
+The complementary half is that the per-encoding header is the RIGHT seam
+for the enumerable runtime-identity RESIDUE and the WRONG seam for the HOT
+PATH (gcc cannot invert decode+compare back into a byte automaton;
+malformed-input handling would degrade from automaton structure to runtime
+branches). Enforced, not asserted: `tests/codegen/run_codegen_tests.sh`'s
+`[M5-SEAM/DD-12(7)]` check reads every emitted engine body for a residual
+reference, sabotage-validated by
+`tests/mech/sabotages/S68_residual_in_hot_loop.sh`. That sabotage changes
+no ANSWER — under the byte backend the residual is the identity — which is
+exactly why a structural check is the only instrument that can see it.
+
+## Files
+
+**[M5.0] `PcrecEnc` GAINED ONE SCALAR, AND THAT IS A D58 SEAM EVENT.**
+`max_cp` — the greatest code point the encoding has, `0xFF` for `byte` and
+`0x10FFFF` for `utf8` — and the ONE question that reads it is "what does
+`[^x]` mean here" (`docs/design/utf8_design.md` §2.7.1, §2.7.2). It is not a
+code-unit width and not a validity predicate.
+
+**IT IS RECORDED RATHER THAN QUIETLY ADDED, because the design's §5 opened by
+claiming the opposite.** r54 E2 retracted "the seam needs no interface change":
+what survives is the claim the third-encoding recipe below actually makes — the
+ENTRIES TABLE is untouched by the second backend (four residual bodies under
+their existing signatures, no `PcrecEncEntry` field, `pcrec_enc_ready`
+untouched, both emit functions untouched, this directory's recipe unchanged) —
+and `PcrecEnc` itself gains this one scalar. D58's revisit clause asks for
+exactly that distinction to be written down.
+
+**THE PENDING `utf8` ROW CARRIES `0x10FFFF` THOUGH IT HAS NO BACKEND.** The
+field answers a question about the ENCODING, not about whether pcrec can
+compile it, and a `0` there would mean "complement within `{0}`" the day the
+backend lands — a wrong value waiting for a reader, which is D67 contract note
+2's unsound direction. `pcrec_enc_ready` still refuses the encoding by name, so
+nothing reads it today.
+
+**A CODEPAGE BACKEND WILL NOT FIT IT** (§5.7.3, R-ASKS-3(b)): a codepage's
+repertoire is 256 code points SCATTERED across Unicode, so no maximum
+describes it and this field is the contiguous-repertoire special case of "what
+set does a complement complement within". Recorded with its trigger under D77,
+not built for.
+
+**[M5.0] STAGE 2: `enc_utf8.c` LANDED — THE SEAM'S SECOND BACKEND, AND THE
+THIRD-ENCODING RECIPE'S FIRST EXECUTION.** One new file in this directory, one
+`extern` in `enc.h`, one row swap in `enc.c` (the pending `entries == NULL`
+row became `&pcrec_enc_backend_utf8`); NOTHING in `src/core`, anything above
+this directory in the layer order, `cli/` or `lib/` was touched to make
+`-e utf8` compile — which is the recipe below working as ruled. The entries table's INTERFACE is
+unchanged (D58's revisit clause honoured by having nothing to record there):
+the four residual entries carry UTF-8 bodies under their existing signatures,
+no `PcrecEncEntry` field was added, `pcrec_enc_ready` is untouched, both emit
+functions are untouched. `back_step` carries §5.2.1's declared-length repair
+(the line that makes a malformed run answer `BACK_STEP_NONE` rather than a
+position the forward parse disagrees with); the two `bref` compares were the
+byte backend's bodies verbatim (`utf8-exact`, UTF-8 being a prefix code) plus
+an ASCII-only fold — **the caseless one was replaced at stage 4, below**. `tests/codegen/
+run_encoding_checks.sh`'s DD12a(ii) is the second-backend validation that the
+signatures match across both backends.
+
+**[M5.0 STAGE 4] `PcrecEnc` GAINED A SECOND SCALAR — `fold` — AND IT IS A D58
+SEAM EVENT FOR `max_cp`'s REASON, recorded here for D58's revisit clause.** The
+entries table is again untouched (no `PcrecEncEntry` field, no signature
+change, `pcrec_enc_ready` untouched, both emit functions untouched); the
+third-encoding recipe below grows by one line — a backend now also names its
+CASE FOLD, and NULL is not an option (a backend with no case writes a relation
+that is empty, so `cls_casefold` has no branch and no encoding can silently opt
+out of a question every class asks).
+
+**IT IS PER-ENCODING BECAUSE THE TWO FOLDS DISAGREE, not because the encodings
+do**, and that is the thing to understand before reaching for a clamp: `byte`
+folds exactly the 52 ASCII letters and MUST NOT fold 0xE9 to 0xC9 (MEASURED
+against libpcre2's 8-bit non-UTF build, `utf8_design.md` §4.5), while `utf8`
+folds U+00E9 to U+00C9 and `[a-z]` to U+212A (§4.2c). The ASCII fold is
+therefore NOT the Unicode one restricted to `[0, max_cp]` — at `max_cp ==
+0xFF` that restriction would fold Latin-1 — and no function of `max_cp`
+produces both.
+
+**AND STAGE 4 REPLACED `enc_utf8.c`'s CASELESS BACKREFERENCE BODY, WHICH IS
+THE ONE PLACE THE FOLD REACHES AN ARTIFACT.** A caseless class folds at parse
+time and never survives into emitted C; a caseless BACKREFERENCE folds subject
+bytes read at match time, so its fold has to be TEXT (§4.6(b)). The body now
+decodes one character from each side, folds each through a sorted `{from, to}`
+map of the 1,484 non-identity simple folds (`utf8_fold_pairs.inc`, GENERATED
+beside the compiler-side relation in the same run, `#include`d in the middle of
+the residual's string-literal initialiser) and compares — about 26 KB of table
+text, in an artifact that has such a backreference and in no other. **The
+LENGTH-RETURN PROTOCOL is what let that land with the shared emitter unchanged**,
+exactly as `enc_byte.c`'s own comment predicted it would: `^(k)\1$` on "k" +
+U+212A is a match of length 4, one byte captured and three consumed. The two
+spellings of the Unicode fold are tied by
+`tests/backrefs/fold_agreement_utf8_check.c` (`run_backref_diff.sh` §9b) over
+all 2,938 members of the relation in both directions — the arrangement §9's
+byte check has always had, one encoding over.
+
+**[K49] `PcrecEnc` GAINED A SECOND SCALAR — `advance` — AND IT IS A THIRD KIND
+OF CONTRIBUTION, not a fifth entry.** D58's revisit clause asks for exactly
+this to be written down, so: the entries table above is a table of FUNCTIONS an
+artifact exports; `advance` is INLINE TEXT spliced into an engine body, the
+statements that move a failed unanchored attempt's START to the next position
+the search may try. `pos++` under `byte`, `pos++` then skip continuation bytes
+under `utf8`. The entries table's interface is again untouched — no
+`PcrecEncEntry` field, no signature change, `pcrec_enc_ready` untouched, both
+emit functions untouched — and the third-encoding recipe below grows by one
+line: a backend now also writes its `advance`.
+
+**WHY IT COULD NOT BE A CALL TO `next_pos`, which computes exactly this
+position.** Two independent reasons that happen to agree. `next_pos` carries
+`engine_callable = false`, and DD-12 (7), `tests/codegen`'s [M5-SEAM] check and
+sabotage row S68 all forbid an engine body calling it. And a call would have
+MOVED THE BYTE ARTIFACT, turning D76's identity gate from a proof into a
+re-pin.
+
+**WHAT K49 REFUTED, because the rationale one paragraph down was the thing
+that was wrong.** `next_pos`' `engine_callable = false` is justified below by
+*"unanchoredness is the automaton's own self-loop, so there is no external
+advance for an engine to route through."* **There is.** The emitted VM's
+`<prefix>_search_run` has always carried `attempt_position++`, a genuine
+external advance in shared emitter code, and while it stepped one byte a
+`utf8` search could retry inside a character and — on a leading negative
+assertion, which succeeds exactly where its body has no path — report a match
+there. The CONCLUSION (`engine_callable = false`) survives and the REASON is
+replaced: the engine does not call the entry because the advance is emitted
+inline from this field instead. `docs/design/utf8_design.md` §5.5 carries the
+same refutation for its own version of the claim, and the DFA half of it is
+still open as K50.
+
+**THE RULE IS NOW SPELLED TWICE PER BACKEND** (`advance` and `next_pos`), and
+that is a drift hazard this directory already has a precedent for: the caseless
+compare and `cls_casefold` are two spellings of one fold, tied by
+`tests/backrefs/fold_agreement_check.c`. The tie here is
+`tests/codegen/run_encoding_checks.sh`'s K49 advance-agreement section, which
+EXTRACTS the advance from an emitted artifact, compiles it, and compares it
+against that same artifact's linked `next_pos` over an exhaustive sweep of a
+role-complete byte alphabet — with non-vacuity asserted in both directions
+(`byte` must answer `pos + 1` everywhere, `utf8` must not, somewhere).
+
+**[K50] `PcrecEnc` GAINED A THIRD AND FOURTH CONTRIBUTION — `start_cls` AND
+`start_guard` — AND THEY ARE ONE RULE ASKED AS A PREDICATE RATHER THAN AS A
+STEP.** D58's revisit clause again, so: `advance` says how to MOVE a failed
+attempt's start; these say WHERE a match may BEGIN. Two consumers need the
+predicate and neither can use a step. `src/ir/nfa.c`'s `pcrec_nfa_wrap_unanchored`
+is not a loop the emitter can see at all — it is an AUTOMATON, and gating its
+split needs the rule as a BYTE SET evaluated inside the subset construction.
+`src/gen/emit_dfa.c`'s `ENG_ATTEMPT` start loop cannot take the `advance` text
+without moving every byte artifact: its step is a `for` header's increment, and
+replacing that with a trailing statement is exactly the emitted-scaffolding
+move D76 makes an abi event, so it takes a `continue` guard instead — which is
+ADDITIVE, and a backend with no restriction contributes nothing.
+
+**BOTH ARE NULL UNDER `byte`, AND THAT IS THE ANSWER RATHER THAN A DEFAULT.**
+Every position is a character boundary there, so the IR builds no gate node,
+neither emitter emits a guard, and `PCREC_NO_STARTPOS_GUARD` is masked out of
+`rx_info.flags` because it could not have acted — which is what makes "the
+encoding with no defect pays nothing for K50's fix" a construction rather than
+a comparison. A backend that wrote out the tautology instead would be honest
+and would move every artifact in the tree for nothing.
+
+**THE RULE IS NOW SPELLED FOUR TIMES PER BACKEND** (`next_pos`, `advance`,
+`start_cls`, `start_guard`), which is the drift hazard this directory already
+had at two and has a precedent for at both. The tie is the same one:
+`tests/codegen/run_encoding_checks.sh`'s advance-agreement section, plus
+`tests/utf8/run_startbnd_diff.sh`, which reads the emitted guard out of a real
+artifact and sweeps it against an INDEPENDENTLY WRITTEN boundary predicate in
+its driver — never against the backend's own text.
+
+**AND `start_cls` OWES A DISJOINTNESS THE DFA CHECKS RATHER THAN ASSUMES.** The
+subset construction carries the boundary property on its CLASS AXIS
+(`UPC_NOSTART`), which is a PARTITION, so a byte that is not a character start
+must be neither a word byte nor a newline. UTF-8 satisfies it (continuation
+bytes are 0x80..0xBF; both other sets are ASCII). A backend that does not is
+refused at `pcrec_enc_start_cls_ok()` with an internal error, because the
+failure mode is SILENT: a non-start byte classified `UPC_WORD` would read as a
+character start to the gate and re-open K50.
+
+**ONE CLAUSE OF THE utf8 GUARD IS A RULING AND NOT ARITHMETIC.** It opens
+`@P == 0 ||`, because offset 0 is always a valid start even on a subject that
+begins with a continuation byte. The byte test is LOCAL, which is what libpcre2
+asks under `PCRE2_UTF` — but libpcre2 asks it only after a whole-subject
+validation pass has already rejected such a subject, and `utf8_design.md`
+§2.6/ASK 1 rules that pcrec has NO such pass ("no validation pass, no error
+return"). Without the clause the guard turns "an ill-formed sequence matches
+nothing" into "ill-formed input is an error". MEASURED as a defect before it
+was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
+
+- **enc.h** — the seam's whole interface: the `PcrecEnc` row (id, the ONE
+  spelling of the encoding's name, the complement universe `max_cp`, a
+  NULL-terminated table of `PcrecEncEntry` rows, [K49]'s `advance` text, and
+  [K50]'s `start_cls`/`start_guard` pair),
+  the entry ids that are also the bits of a
+  per-artifact MASK, the registry accessors, `pcrec_enc_emit_text` and
+  `pcrec_enc_advance`. Read
+  its header comment before adding a backend; it carries the third-encoding
+  recipe and the reason a backend is TEXT rather than emitter code.
+
+  **THE ENTRIES BECAME A TABLE AT [M6.5.2], and that is D58's own revisit
+  clause being honoured** — *"the second consumer is the seam's validation
+  event; ANY INTERFACE CHANGE IT FORCES GETS RECORDED AGAINST THIS ENTRY."*
+  The second consumer arrived early (a caseless backreference compare) and it
+  forced one: with three entries, two unconditional text blobs would put two
+  exported functions of DEAD CODE into every artifact pcrec has ever emitted,
+  including one with no backreference in it. They cannot be `static` (an
+  unused `static` fails the harness's `-Werror` generated-code build, which is
+  why `next_pos` is exported), so they would be LINKED dead weight. A
+  per-entry mask keeps the cost where the construct is. The road not taken was
+  two more string fields — simpler, and it does not generalise: lookbehind's
+  back-step ([M6.6]) is the next residual entry D58 already names.
+
+  **THAT PREDICTION WAS TESTED AT [M6.6.2] WAVE D AND IT HELD, WHICH IS THE
+  FINDING** (lookaround_design.md §4.3, prediction P-1). The back-step landed
+  as ONE enumerator (`PCREC_ENCE_BACK_STEP`), ONE `entries_byte[]` row, and
+  one `|=` in the emitter's `A_LOOK` arm. **No field was added to
+  `PcrecEncEntry`, no signature changed, `pcrec_enc_ready` was untouched, both
+  emit functions were untouched, and the third-encoding recipe below is
+  unchanged.** D58's revisit clause — *"any interface change it forces gets
+  recorded against this entry"* — is honoured here by having nothing to
+  record, and this paragraph is that record.
+
+  `pcrec_enc_ready` moved with it (from `decls != NULL` to "has a non-empty
+  entries array"), which R32 E11 found: the readiness predicate is a THIRD
+  site the change touches, not the two emit functions alone, and the
+  `-e utf8` refusal path reads it.
+
+  **`engine_callable` is the other half**, and it is a fact about the ENTRY
+  rather than about any artifact. **It has a consumer on the compile path, not
+  only in a test**: `src/gen/emit_vm.c`'s `A_BREF` arm asks
+  `pcrec_enc_entry_engine_callable` before it emits the call, so an emitter may
+  route a construct through a residual entry only if the BACKEND says that
+  entry may be called from an engine body. That is the same rule
+  `tests/codegen`'s [M5-SEAM] check enforces from OUTSIDE, enforced from
+  INSIDE at the one site that could break it — a backend whose compare
+  declared `false` would otherwise emit an artifact the codegen check rejects
+  two steps and one test run away from the cause. Failing direction
+  demonstrated by flipping the byte backend's `PCREC_ENCE_BREF` row to
+  `false`: `(a)\1` refuses by name instead of compiling. `next_pos` carries `false`: unanchoredness
+  is the automaton's own self-loop, so there is no external advance for an
+  engine to route through, and an engine that DID route through it would match
+  identically under this backend while changing the hot path's shape under any
+  other. The two backreference entries carry `true`, because a backreference
+  compare has NO automaton representation whatsoever — forbidding the call
+  forbids the construct.
+- **enc.c** — the registry TABLE (the encoding namespace's one definition),
+  the by-id/by-name lookups, the rendered name menu for diagnostics
+  (**[REVW.1] wave 1, L10-2: `pcrec_enc_names`' over-long policy is an
+  ordered PREFIX now, the same one `src/parse/enabled.c`'s `render_modules`
+  states** — it had TWO ways to lie, a name skipped while later ones were
+  appended AND a separator written under a different bound from the name, so
+  a tight cap produced `"byte, "` with a dangling separator. Both unreachable
+  today at 10 bytes into every caller's 128; read that function's comment for
+  why neither bounded join reaches the kit's `pcrec_sb_join`), and the
+  `$`-to-prefix substitution every backend's text goes through. The table
+  carries a row for `utf8` with NO backend on purpose: a name pcrec knows
+  but cannot compile must be refused BY ITS OWN NAME (`src/core/compile.c`
+  reads the row's `name`), never fall out of a lookup as "unknown". That is
+  [SR-10]'s single-namespace rule applied to the half this table owns — its
+  motivating instance was compile.c's diagnostic and cli/main.c's name
+  mapping drifting apart, and neither of those sites maps an encoding name
+  of its own any more.
+- **enc_utf8.c** — the `PCREC_ENC_UTF8` backend ([M5.0] stage 2). Four
+  residual bodies where a character is one to four bytes: `next_pos` skips
+  forward over continuation bytes; `back_step` walks back one
+  DECLARED-LENGTH-validated run per step (§5.2.1's repair — a malformed run
+  answers `BACK_STEP_NONE`); the case-sensitive `span_match` is `enc_byte.c`'s
+  body verbatim (UTF-8 is a prefix code, so an exact compare is a byte
+  compare); the caseless one ([M5.0] stage 4) decodes a character from each side and folds
+  each through the generated `utf8_fold_pairs.inc` map — the LENGTH-return
+  protocol delivering exactly what it was designed for, with no emitter change. [K49] added its
+  `advance`: `next_pos`' boundary rule written as an inline step, because an
+  engine may not call the entry — the two are tied by the advance-agreement
+  check named above rather than left to drift. Text, not
+  emitter code, ASCII-only, `$` the one substituted character — `enc_byte.c`'s
+  rules.
+- **enc_byte.c** — the `PCREC_ENC_BYTE` backend. One byte is one character, so
+  every residual entry is the identity shape or
+  close to it, and [K49]'s `advance` is the bare `@P++;` the emitter used to
+  hard-code — reproduced character for character, which is the whole of this
+  backend's stake in that fix: the byte artifact does not move. It carries no
+  comment into the artifact on purpose; a comment there would be new emitted
+  scaffolding on exactly the path D76's identity gate pins. FOUR entries today, each with its contract comment emitted
+  into the artifact alongside its declaration — the contract lives with the
+  backend so a future backend cannot land a residual declaration nobody wrote
+  a contract for:
+
+  - `<prefix>_next_pos` — the next character boundary strictly after `pos`,
+    every position >= n counting as a boundary.
+  - `<prefix>_span_match` / `<prefix>_span_match_caseless` ([M6.5.2]) — the
+    backreference compare, case-sensitive and case-folding. **TWO ENTRIES, NOT
+    ONE WITH A FLAG**: D18/D23's rule is that an option compiles away, and D23
+    MEASURED the alternative (a runtime fold indirection) costing 26% on a
+    pattern containing no letters at all.
+  - `<prefix>_span_match_caseless` UNDER UCP ([K94], byte only): a SECOND
+    caseless row, `PCREC_ENCE_SPAN_CASELESS_UCP`, defining the same symbol and
+    in the mask INSTEAD of the plain one. `vm_caseless_entry` (emit_vm.c)
+    picks it when `Ast.u.bref.ucp`/`u.var.ucp` is set and the table CARRIES the
+    row (utf8 does not: its fold is already Unicode's). Its Latin-1 fold table
+    is generated at emit time by `enc_emit_latin1_fold_table` (enc.c) from
+    `pcrec_fold_latin1_rep` (core/fold.c), over the links the `--ucp` classes
+    fold by, so the byte backend's match-time fold has ONE definition;
+    `tests/backrefs/fold_agreement_ucp_check.c` is its two-source control.
+  - `<prefix>_back_step` ([M6.6.2] wave D) — the position exactly `k`
+    CHARACTERS before `pos`, or `<prefix>_BACK_STEP_NONE` when fewer than `k`
+    characters precede it. **A SENTINEL RATHER THAN A SIGNED LENGTH**, and the
+    divergence from the compare's protocol one bullet up is deliberate: a
+    back-step's failure carries no second fact, and the WORK it did is `k`,
+    which the caller already knows AT COMPILE TIME and charges with a literal
+    (lookaround_design.md §3.7). `(size_t)-1` cannot collide with a legal
+    position, because a legal position is <= n and a SIZE_MAX-byte subject is
+    not representable. `s` and `n` are parameters this backend ignores because
+    a UTF-8 backend walking back over continuation bytes must reject a
+    MALFORMED sequence — a failure mode the byte backend cannot have — and
+    adding a parameter later is the ABI break the seam exists to avoid.
+    ENGINE-CALLABLE, for the compares' reason: a back-step has no automaton
+    representation, so forbidding the call would forbid the construct.
+
+  **THE RETURN IS A LENGTH, AND THE SIGN CARRIES A SECOND FACT**, and both
+  halves are designed for the backend that does not exist yet. Under this
+  backend the compare cannot change length — but `(?i)^(ss)\1$` on "ss\xdf"
+  is the cell a UTF-8 build has to answer differently, with one captured
+  character folding to two and the consumed length no longer equalling the
+  captured one. Returning a LENGTH is what lets that backend give a different
+  answer WITHOUT THE SHARED EMITTER CHANGING A CHARACTER: it never computes a
+  length, it only adds the one it is given. On failure the value is negative
+  and `-(r) - 1` is the prefix that DID compare equal — the work a
+  `(a*)\1`-shaped compare does before failing, which the fail label never sees
+  and the work budget must therefore be told about. A bare `-1` sentinel could
+  not carry it (R32 E4: the first design recommended charging that prefix and
+  its own signature could not express it).
+
+  **THE FOLD IS SPELLED ARITHMETICALLY AND IS TIED TO pcrec's OWN.** A
+  `tolower()` here would be a DEFECT rather than a shortcut — it is
+  locale-dependent at the CALLER's run time, in a locale pcrec does not
+  control, and an artifact whose answers change with `setlocale` is not the
+  self-contained matcher APPROACH promises. What keeps this spelling in step
+  with `cls_casefold`'s is `tests/backrefs/fold_agreement_check.c`, which
+  walks all 65,536 ordered byte pairs against `pcrec_ascii_fold`
+  (src/core/fold.c) with the residual side read out of an artifact pcrec
+  actually emitted.
+
+## Adding a backend (the DD-12 third-encoding recipe)
+
+One new `enc_<name>.c` here, plus its `extern` in `enc.h` and its row in
+`enc.c`'s table. The row carries the backend's residual ENTRIES, its `max_cp`,
+(since [K49]) its `advance` text, and (since [K50]) its `start_cls` byte set
+and `start_guard` expression — all five in this directory. A backend that
+restricts no position writes NULL for the last two and is complete. Since
+[MEMFN] M7 (D58 addendum 2), a backend whose span compare is BYTE-WISE writes
+`PCREC_ENC_SITE` where the compare loop sits and a site-data row
+(`PcrecEncSite`: fold kind, fold text, failure statement) in its `sites`
+table, also in this directory; a backend whose compare is not byte-wise
+spells its own body and has no row.
+
+Both of those files are in THIS directory; the Makefile
+already globs `src/enc/*.c`. **Nothing in `src/core`, `src/parse`, `src/ir`,
+`src/opt`, `src/gen`, `cli/` or `lib/` is touched** — the four middle layers
+are named one by one because, as `src/gen/enc/`, this sentence could say
+`src/gen` and mean "everything above me", and at `src/enc/` it cannot. If a backend ever requires touching a shared file
+outside this directory, that is the derailment DD-12 names — stop and take
+it to a design decision rather than patching the shared file.
+
+Two constraints on the residual text itself:
+
+- **`$` is the prefix placeholder and `@` begins the one site token
+  (`PCREC_ENC_SITE`, M7); those are the only two characters substituted**, so
+  residual text must contain no other `$` and no other `@`
+  (`pcrec_enc_emit_text` refuses a stray `@`). A site-data row's fold text
+  is the one place `@` means something else, the kit's operand
+  (`pcrec_enc_emit_site_text` renders its `$` and leaves its `@`).
+- **Emitted text is ASCII-only**, including inside comments — the artifact
+  is source someone else's toolchain compiles (src/gen/CLAUDE.md's standing
+  rule).
+
+## Where the seam is consumed
+
+`src/gen/emit_dfa.c`'s `emit_residual_decls`/`emit_residual_defs` (the
+declarations ride `pcrec_emit_prologue`, so they land in the `.h` of a split
+artifact and the `.c` of a self-contained one; the definitions ride the
+exported `pcrec_emit_residual`, called by BOTH emitters). Those two
+functions are the entire extent of the emitter's knowledge about encodings:
+look up the backend, copy the text of every entry the artifact's MASK names,
+substitute the prefix, and (since M7) describe each site-data row's loop to
+the kit and substitute its rendered text for the entry's token.
+
+**THE MASK IS DISCOVERED BY EMITTING, not predicted.** `Job.enc_mask` starts
+at `PCREC_ENCE_NEXT_POS` (promised unconditionally by
+docs/spec/match_api.md §3.1) and the VM emitter ORs in whichever compare
+entries its `A_BREF` arm actually emits calls to — which is why the prologue
+is written AFTER the program body, the same discipline the class pool and the
+cursor local already follow. So "the artifact declares exactly the entries it
+calls" is true by construction, and a backref-free artifact carries exactly
+the residual text it always did.
+
+`src/core/compile.c` gates on the registry (a member with no backend is
+refused, a non-member is refused with the rendered menu) and `cli/main.c`
+resolves `-e NAME` / `--encoding=NAME` through `pcrec_enc_by_name`.
+
+## [VAR] — ONE COMPARE PAIR SERVING TWO CONSTRUCTS, AND A VALIDITY ENTRY
+
+**Frank's ruling, 2026-09-23.** The backreference compare pair is
+GENERALISED and RENAMED rather than duplicated: `$_span_match` /
+`$_span_match_caseless` take the reference side as a **pointer and a length**
+(`const unsigned char *ref, size_t reflen`) in place of the offset pair, so a
+BACKREFERENCE passes `subject + start, end - start` and a `${name}` VARIABLE
+passes the caller's own resolved `(p, len)`.
+
+**The first design proposed a SIBLING pair and refuted itself in the same
+paragraph.** `variables_pattern.md` §1.3 said the variable body is this one's
+"with `s[ref_start + i]` replaced by `v[i]`" — two bodies differing only in
+how they index the reference side are ONE function with the wrong operand
+shape (memory `pcrec-general-mechanisms-not-special-cases`).
+
+**RENAMED because `bref` was span-source-specific.** With a pointer-and-length
+operand nothing in the contract says "backreference". The utf8 entry's private
+helpers follow: `$_span_ci_fold` / `$_span_ci_decode` /
+`$_span_ci_fold_pairs`.
+
+**THE RETURNED LENGTH IS REDUNDANT UNDER `byte` AND ESSENTIAL UNDER `utf8`
+CASELESS.** A `byte` success always returns `reflen`, so the return there
+carries only match-or-not plus the failure work count; under a
+non-length-preserving fold it carries the real answer (`k` against U+212A is
+one reference byte and three subject bytes). ONE protocol across encodings
+because DD-12 forbids an encoding-shaped call site in the engine — stated so
+nobody later "optimizes" the byte case into a second protocol.
+
+**`$_var_valid` IS PRESENT IN ONE TABLE AND ABSENT FROM THE OTHER, AND THAT
+ABSENCE IS THE MECHANISM.** `variables_common.md` §2.1 promises a value that
+is not well-formed is a REFUSED CALL under a multi-byte encoding; the
+compare's return space is two-valued by sign and has no room for "refuse"
+(the D6 panel's MECH-M4), so the check runs once per call in the entry
+wrapper. The emitter asks `pcrec_enc_has_entry` — does this backend CARRY the
+row — and emits the calls or does not. `entries_byte[]` has none, because
+every byte string is a valid `byte` string. **No encoding test anywhere in the
+emitter**, which is the third-encoding recipe's own standing rule. It is
+deliberately NOT `engine_callable`: the entry wrapper calls it, never an
+engine body, so [M5-SEAM]'s rule applies to it exactly as to `next_pos`. And
+it is its OWN decoder rather than the caseless entry's, because validity is
+asked of every variable whatever its caselessness and depending on that one
+would make an exact-compare artifact drag in a 1,484-pair fold table to answer
+a question about byte shapes. The two agree on what well-formed means — same
+lead-byte families, same overlong floors, same surrogate and U+10FFFF
+exclusions, the automaton's own — and that agreement is the thing to preserve
+if either moves.
+
+**A COLUMN THAT WAS BUILT AND THEN DELETED.** The withdrawn sibling pair
+needed `PcrecEncEntry.requires` (and `pcrec_enc_mask_close`) so its utf8
+caseless body could share the backreference entry's fold map. With ONE
+caseless entry there is no cross-entry dependency and no customer, so both are
+gone (D77). `pcrec_enc_has_entry` survives, because the validity entry still
+asks a question about the table.
+
+## [UCP] U2 `PcrecEnc` GAINED `onebyte_max` — THE ONE-BYTE REPERTOIRE — AND `pcrec_enc_set_bytes`
+
+Every code point `<= onebyte_max` is written as exactly one byte equal to it
+(`byte` 0xFF, `utf8` 0x7F). It is what makes a context set BYTE-EXPRESSIBLE
+(ucp_design.md §2.3): `pcrec_enc_set_bytes` (enc.c) returns a set's byte image
+only when every member is at or below it, and every site that turns an A_CTX
+set into bytes asks it — `\b`'s port, the T3 recognizer (src/parse/ctxnode.c),
+the NFA lowering and the VM's `vm_ctx`. Recorded as a D58 seam event the way
+`max_cp`, `fold` and `restrict_ok` were: the entries table is unchanged.
+
+## [K70] `PcrecEnc` GAINED A FIFTH SCALAR — `restrict_ok` — AND IT IS A D58 SEAM EVENT
+
+Found by lane `ucpthink` (`docs/dev/ucp_study.md` §G.1): `(?r)` (PCRE2's
+caseless-restrict — an ASCII character and a non-ASCII character must never
+match each other caselessly) was accepted everywhere and treated as a
+"measured no-op at options=0" — TRUE only while `byte` was the only
+encoding. Under `-e utf8` it is a silent MISCOMPILE: `(?i)(?r)k` matches
+U+212A on pcrec where libpcre2 10.46 answers nomatch, and three more cells
+diverge the same way.
+
+**THE FIX ASKS THE ENCODING, NOT THE CONSTRUCT'S FOLD OBJECT.** The natural
+first instinct — read `fold == &pcrec_fold_ascii` — is testing the SAME
+backend identity DD-12 (7) forbids testing by name, one indirection later.
+`restrict_ok` states the fact directly, on `fold`'s own precedent: `byte`
+answers `true` because `pcrec_fold_ascii` never crosses the ASCII boundary
+to begin with (MEASURED against libpcre2 10.46 across the whole ASCII
+alphabet and the Latin-1 range, `studies/k70_probe/probe_k70.py`) — `(?r)`
+genuinely has nothing to restrict there. `utf8` answers `false` because
+`pcrec_fold_ucd_simple` DOES cross it (`k`/`K`/U+212A is one fold class) and
+pcrec's fold machinery (`cls_casefold`, `$_span_match_caseless`) folds PER
+CONTRIBUTION with no boundary test anywhere — a real capability gap, not a
+decoration. `mod_modifiers.c`'s `(?r)` port reads the field and REFUSES by
+name under `utf8` rather than silently mismatching the oracle, per the
+house rule that an unsupported construct fails clean rather than
+miscompiles.
+
+**THE ENTRIES TABLE IS AGAIN UNTOUCHED** — no `PcrecEncEntry` field, no
+signature change, `pcrec_enc_ready` untouched, both emit functions
+untouched — and the third-encoding recipe below grows by one line: a
+backend now also states whether `(?r)` is safe to leave alone. A future
+backend whose fold crosses the ASCII boundary (a hypothetical `latin1`
+would not, by the same argument as `byte`; a hypothetical multi-script
+codepage might) states `false` and inherits the refusal with no edit to
+`mod_modifiers.c` — the third-encoding recipe's own promise, one boolean
+over. The `(?aD)`/`(?aP)`/`(?aS)`/`(?aT)`/`(?aW)` sub-letters were checked
+by the SAME lane and stay true no-ops under `-e utf8` WITHOUT UCP (pcrec
+implements no UCP at all, so `\d`/`\w`/`\s` are already ASCII-only
+regardless of encoding) — no field needed there, since there is nothing an
+encoding could disagree about.
+
+
+Maintenance: update this file when files are added/removed or their roles
+change.
+
+## [CLS-TREE] S4 — THE `DECODE` ENTRY, AND TWO ENTRY COLUMNS (D58 EVENTS)
+
+`PCREC_ENCE_DECODE` (`$_decode`): one character at a position, its length or
+0 on the automaton's exact ill-formed set. It is the VM's wide-class test's
+decoder (`docs/design/cls_tree_design.md` §2.2, §6.1). Its body is stage 4's
+caseless-compare decoder, MOVED rather than copied: utf8's
+`$_span_match_caseless` now calls `$_decode`, so there is one decoder.
+`entries_byte[]` has no row, and the VM then keeps a class's byte child. The
+emitter asks the table (`pcrec_enc_has_entry`), never the encoding.
+
+Two new `PcrecEncEntry` columns, each recorded against D58:
+- `requires`: the entries an entry's BODY calls. Both emit functions close the
+  artifact's mask over it (`pcrec_enc_mask_close`), so the emitter never
+  learns that one backend's caseless compare decodes. [VAR] built and deleted
+  this column with no customer; `SPAN_CASELESS → DECODE` is the customer.
+- `inline_def`: the definition is `static inline`, has an EMPTY `decls` (so
+  nothing reaches a split artifact's `.h`), and is emitted by
+  `pcrec_enc_emit_inline_defs` ahead of the engine bodies.
+  `pcrec_enc_emit_defs` skips such entries. The reason is inlining: an
+  exported entry is interposable under `-fPIC`, and a per-character decoder
+  that does not inline is the cost.
+  **[LOSS-REVIEW] candidate 1 (abi 76, 2026-10-11):** the span compares
+  (`SPAN`, `SPAN_CASELESS`, `SPAN_CASELESS_UCP`) and `BACK_STEP` are
+  `inline_def` too, in both backends. Such a row's `decls_doc`, if any, is
+  the entry's contract doc and is emitted beside the definition (the inline
+  half), never into the `.h`; `$_BACK_STEP_NONE` is defined in the `defs`
+  text above `$_back_step`. Inline entries are emitted in table order, so
+  utf8's `DECODE` row now precedes the caseless compare that requires it.
+  The inline half carries the N7 site too (`pcrec_enc_emit_inline_defs`
+  takes the rendered sites, from `emit_dfa.c`'s `residual_sites`).
+
+`$_var_valid` WAS RE-SPELLED ON `$_valid_upto` at [UTF-VALID] (below), which
+is the one-validator ruling (D133 Q7): the abi event was paying for the move
+anyway, so the D77 reason for leaving it on its own loop lapsed.
+
+## [UTF-VALID] (D133) the SUBJECT VALIDATOR, entry `PCREC_ENCE_VALID_UPTO`
+
+`$_valid_upto(s, n, startpos)`: the first byte of the first ill-formed
+sequence at or after `startpos` stepped back LB characters, or `n`
+(`docs/spec/match_api.md` §3.1.2). ALWAYS IN THE MASK, `next_pos`'s status:
+it is the find-all escape a caller runs on the DEFAULT artifact, so both
+emitters set it unconditionally and EVERY backend has a row — `byte`'s body is
+`return n;` (the contract has an answer, the trivial one). Not
+`engine_callable`: the `-futf-check` precheck calls it once per call beside
+the K50 guard. Three callers, one validator: that precheck, the caller asking
+for the offset, and utf8's `$_var_valid` (`requires` carries the call).
+
+- **The step-back is PCRE2's raw walk** (utf_valid_design.md §1.3): per
+  character one byte back, then back over EVERY continuation byte, clamped at
+  0, unvalidated. `$_back_step` is deliberately NOT reused — it validates and
+  stops after three continuations, which reports the wrong offset on exactly
+  the inputs this entry exists for.
+- **LB is a PATTERN fact the body reads as `$_VALID_LB`**, a macro the
+  emitter (`src/gen/emit_dfa.c`'s `emit_residual_defs`) defines from
+  `Ctx.lb_max` in the `.c` beside the definitions, on every artifact whatever
+  the encoding — `byte`'s body leaves it unread, so no encoding test decides
+  it (DD-12 (7)).
+- **The ASCII fast path** (ruled Q8): after an ASCII byte, eight bytes at a
+  time through `__builtin_memcpy` into a `uint64_t` while no high bit is set
+  — `__builtin_` so no `<string.h>` is needed (an artifact includes it only
+  when something else calls memchr).
+- **"Validity is a question under this backend"** is asked of the TABLE as
+  `pcrec_enc_has_entry(e, PCREC_ENCE_VAR_VALID)` — the row a backend under
+  which every byte string is valid does not carry. `pcrec_utf_check_on`
+  (src/gen/emit_dfa.c) is that predicate plus the flag, read by the emitted
+  check, the `<PREFIX>_UTF_CHECK` stamp and the `rx_info.flags` mask alike.
