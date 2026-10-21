@@ -396,6 +396,47 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   rule (PARAM refused until B8; an UNSTATED body refused since R-23, MF_SITE_ABI 14), and under MF_TRACE the define's re-ask
   (class must equal; `exists=0` must prove all bytes); `arms` gain a `libc`
   column (the class's `libc_free`).
+- **R-26 Z1 across the files (lane r26z1, MF_SITE_ABI 18, MF_CLASS_V 5; no
+  pcrec byte moved)** — `compose.c`: `kit_proof_check` (inside `site_check`)
+  holds span 0's class on a forward FIND's `pred` (BOUNDED, or CONTEXT on a
+  context stop; UNSTATED refused), its prefix facts (`prefix_stated`
+  UNSTATED refused, `exact_len` over SENT positions only, `consumable_len`
+  <= `exact_len`, all three 0 elsewhere), a CONTEXT predicate's `absent`/
+  `consumable` (UNSTATED refused, 0 elsewhere), `ctx`/`nctx` (shape, ranges,
+  MF_MAX_CTX, refused with no BOUNDED span 0), `read_floor` (UNSTATED refused
+  under a CONTEXT term below the origin; LO refused with any term below it)
+  and REPORT's refusals (`consumer` RESULT, BOUNDED span 0, every term and
+  item REQUIRED); `select_arm` refuses an unrouted REPORT site (no row serves
+  it before R-26.6); `kit_class` computes `proven[]` (`term_prove` per tested
+  term and position, `pred_proves`: a wider absent-SATISFIES item proves only
+  its outermost position) and COPIES `proven0`/`proven_prev` from it; the
+  MF_TRACE re-ask checks every offset and the copies. `fields.def`/`gate.c`:
+  seven fields (`prefix_stated`, `exact_len`, `consumable_len`, `ctx`,
+  `absent`, `consumable`, `read_floor`; the FIELD space is now full, 64), each
+  over classes the space already has (it is full too; `ctx`, `absent`,
+  `consumable` are bit sets as `policy` is). `kit.h`: `MF_SERVES_WINDOW_TODAY`
+  carries `MF_SERVES_PROOF_TODAY` (every row born before R-26 serves `ctx`
+  NONE and `absent` NO only). `generic.c`: the only row that tests `ctx`
+  entries and renders `absent` SATISFIES (`ctx_pred_test`, `site_test`); a
+  site with neither renders as before. `finder.c`: `kind_cl` maps REPORT to
+  OTHER (no row's kinds), and every finder row serves `ctx` NONE and `absent`
+  NO. `formhash.c`: the canonical site states span 0. Checks:
+  `tests/memfn/run_proof.sh` (part `proof` of `make test-memfn-finder`).
+- **R-26 Zk across the files (lane r26zk, R-26.6; no MF_SITE_ABI move, no
+  pcrec byte moved)** — `kit.h`: the class and field sets are one 128-bit
+  `kit_set` (CM/FM/MF_ANY, `gate_use`, `gate_contract.serves`,
+  `gate_verdict`; `kit_set_low`), the art's `preview` step, and the
+  declarations of `fd_preview_step`/`kit_report_exact`; `gate.c` its types.
+  `fields.def`: the class REPORT (`site_kind`'s set). `finder.c`: the REPORT
+  row RPT (after slot PRES, so no index moves; routed 0, step R-26.6, pick
+  PROOF = the composer's walk through `fd_nested_walk`, facts SPAN0 and
+  PROOF_EXACT, contract REPORT-only), `fd_scope` admits a REPORT site of any
+  form, `fd_row_routed` (routed, or the art previews the row's step) for
+  `fd_route` and `fd_pres`, the previewable-step table `fd_previews[]` and
+  `fd_preview_step`. `compose.c`: `kit_report_exact` (the REPORT row's
+  applicability: the arms' walk's class EQUAL to the REQUIRED sets at every
+  offset), `select_arm` walks a REPORT site only under a deciding REPORT row,
+  and `mf_preview`.
 
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,

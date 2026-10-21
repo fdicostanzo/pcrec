@@ -248,6 +248,8 @@ class Art:
 
 
 def compile_pattern(root, tp, flags, pat, label):
+    # `@ROOT@` in a flag is the checked tree (R7w's `--measures` fixture, lane m0tri)
+    flags = [f.replace("@ROOT@", root) for f in flags]
     argv_tail = ["-p", "rx", "--features", "all"] + flags + ["-o", "-", "--pattern", pat]
     rt = run([tp] + argv_tail)
     rp = run([os.path.join(root, "build/pcrec")] + argv_tail)

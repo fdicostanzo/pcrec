@@ -285,7 +285,15 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # [OPT-REVEND] L2 (lane revbuild): was '(\bcat\b){2,}', whose hybrid body is `empty` and lost its
 # whole-window pre-check to the walk deference (REQ_WHY "dominated", -705 B), landing under
 # the lowsize cap; `\w\w` restores the overshoot that collapse cannot fix and the drop can.
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}\w\w' -e utf8
+# [MEASURE-SET] M0 (lane m0tri, 2026-10-21, abi 82): `\w\w` read 30,024 emitted
+# code bytes after the drop against the 30,000 cap (was 29,945, 55 under): the
+# RX_MEASURES and `.measures` lines moved every artifact's code count by 79.
+# The witness's window is inherently narrow (the drop saves 146 bytes, so it fits
+# only when the pre-drop size lies in 30,000..30,146); `[a-z]\d` (drop record
+# 30,089, so about 29,943 after it: 57 under, the old witness's margin) is
+# measured with the `trlowsize` reference compiler below on this tree. The next
+# stamp that adds bytes to every artifact will move it again.
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}[a-z]\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8 -fno-start-landing
 fstate seq-anch 1 'sdr=1'

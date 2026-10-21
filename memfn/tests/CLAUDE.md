@@ -25,6 +25,19 @@ so each refusal case keeps the refusal it was written for and no generated
 site's description changes. The window's own rules are C5's gate cases
 (tests/memfn/arm_fixtures.c `seq_cases`), not a G2 family.
 
+## Span 0's class, stated at the kit call (lane r26z1, R-26; MF_SITE_ABI 18)
+
+NOT blinded text: from MF_SITE_ABI 18 a forward FIND's predicate STATES its
+class, and an UNSTATED one is refused. `g2_gen.c` and `g2_simd_gen.c` state
+it in `g2_win` (`g2_span0`), with the window and after every perturbation, as
+pcrec's builders do: a context stop (every term below the candidate) is
+CONTEXT with `absent` FAILS, `consumable` NO and the site's `read_floor`
+SUBJECT (G2's reference already reads a read outside the subject as a failing
+term, which is FAILS); every other forward FIND is span 0, BOUNDED with
+`prefix_stated` STATED and `exact_len` 0. No generated site's description
+changes otherwise. The R-26 checks themselves (the context spans, the absent
+rule, the per-offset proof, C-PROOF) are `tests/memfn/run_proof.sh`.
+
 ## The landmark gate sites (lane r15b, R-15)
 
 NOT written blinded (the row's author wrote them; a D27-blinded pass over

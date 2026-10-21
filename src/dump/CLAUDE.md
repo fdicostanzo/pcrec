@@ -264,6 +264,15 @@ one.
   [WINDOW-E1] (lane e1build, 2026-10-17): the `resolution` rows walk the
   query vocabulary through `pcrec_find_query` (its local `FIND_QUERIES[]`
   copy is gone); the listing is byte-identical.
+- `measures_dump.c` — [MEASURE-SET] M0 (lane m0build, 2026-10-21;
+  `docs/spec/measures.md` §6, `docs/spec/cli.md` §2.9a):
+  `--list-measurements` (one `sets` row per set built into pcrec: id, rev,
+  class, box, tier, composite, method, the class it is the default for, row
+  and null-row counts, values digest, source) and `--list-measurements=REF`
+  (a NAME, NAME@REV or FILE, resolved by the compile's own
+  `pcrec_meas_find`, with `-I` honoured), `--view=canonical|decoded` handed
+  to the measures kind's writer columns through `pcrec_ks_view_write`. A
+  `table_contract.md` producer at birth.
 
 ## Conventions
 

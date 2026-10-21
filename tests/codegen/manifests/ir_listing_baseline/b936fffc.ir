@@ -64,7 +64,7 @@ L0	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
 	goto		L2	
 L2	label			
-	assert	^ attempt_position of subject (absolute offset 0)	L4	
+	assert	^ start of subject (absolute offset 0)	L4	
 	fail			backtrack
 L4	label			
 	consume	'a'	L5	

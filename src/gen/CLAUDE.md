@@ -178,6 +178,15 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   kind MF_USE_ENTRY is a PROPOSED main-side diff
   (`docs/dev/lanes/b3b/proposed/entry_use.diff`). Report:
   `docs/dev/lanes/b3b_report.md`.
+- **R-26 Z1 (lane r26z1, 2026-10-21; MF_SITE_ABI 18, zero movers).** Every
+  forward FIND pcrec builds states span 0's class (`memfn_sites.c`):
+  `pcrec_memfn_span0_today` (BOUNDED, `prefix_stated` STATED, `exact_len` 0,
+  `consumable_len` 0: today's truth, a sound under-statement; it carries the
+  `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS)`) on PF and OFS,
+  and `pcrec_memfn_context_stop` (CONTEXT, `absent` FAILS, `consumable` NO,
+  the site's `read_floor` SUBJECT) on MLINE's stop, both called from
+  `emit_dfa.c`'s `find_site` and `ofs_site_define`. No context span (`ctx`) is
+  sent and no site states REPORT before Z2/B1.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's
@@ -4491,3 +4500,19 @@ the byte-image check. `vm_ctx_forms` reads ctxfn.def's new CLASS column
 position (ignored). Every other label list lost its two tokens. Emitted text,
 `--emit-ir` and `--emit-facts` are byte-identical to P2d's (4,636 corpus
 patterns, 6 arms + 8 axes).
+
+## [MEASURE-SET] M0 (lane m0build, 2026-10-21; abi 81 -> 82)
+
+`emit_dfa.c`: `PCREC_ARTIFACT_ABI` 82. The shared ABI block's `rx_info`
+gains `const char *measures` (its comment ABOVE the member: a trailing
+comment's continuation lines count as code in the size classifier), and
+`emit_ks_line` is the one writer of a knowledge-source stamp line, wrapped
+by `pcrec_emit_findings_line` and the new `pcrec_emit_measures_line`
+(`<PREFIX>_MEASURES` and `.measures =`). `memfn_sites.c`: `memfn_measures`
+builds the kit's `mf_measures` from the compile's set (`Job.meas`; the
+harness set overrides it) and records `mf_art_end`'s `consulted` in
+`Job.meas_consulted`. `memfn_stamps.c`: `meas_stamp` renders `id@rev:digest`
+only when the kit consulted a set key, else `""`, at the ks-mark render
+point after `mf_art_end`. No kit row reads a set key before B4, so the
+stamp is `""` on every artifact today. The VM's `^`/`(?m)^` role text is
+K112's corrected wording (`src/core/ctxfn.def`).

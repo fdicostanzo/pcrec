@@ -2538,3 +2538,28 @@ Frank, to the kit directly, after I laid out the plan in three sections: "Ok to 
 - (2) R17-b′ B4: the five pre-brief OWED items of r17b_prime §3.1a, starting now in a second lane. The 2-minute F3 re-time is queued through boxqueue. Then B4 itself, briefed once its gates hold (main's M0, started today, and E8 PASS or PROVISIONAL PASS).
 - (3) B5 (F2: the VM hat to V1, the reverse plant), B6 (shadow runs against the predictions), B7 (the deny classes) and B9 (LOCKDOWN, then R17-b″ / entry_rows), each as designed in r17b_prime §3.1.
 This is a build go, so it does NOT lift any gate. B4 still waits for M0 and E8. Every byte move still lands as a pcrec abi event in the same commit, with main merging. The B4 timing windows go through boxqueue/boxlock and are cleared with Frank as usual.
+
+## 2026-10-21 — b4prep delivered (items 2, 3, 5 closed; 1 and 4 queued); the expected-loss rule widened
+
+b4prep @ 0f3c115fa (lane/memfn-b4prep, report docs/dev/lanes/b4prep_report.md).
+- Item 2 (the V1 attribution): REFUTES grid2read §9's guess. The V1 text, the walk text, their object code and the driver are byte-identical in grid1 and grid2 on all six shared cells. M9's 36 B crossover was an interpolation: grid1 had no n=8/32 dig first-mode cell.
+- Item 3: the slot's walk equals main's default walk in executable text. The only differences are the `.abi` digits and one unread `RX_COMPOUND` stamp.
+- Item 5: the expected-loss list is pre-registered as EL1-EL11. The bench relay text is drafted in §4 for main to send.
+- Items 1 (the F3 re-time) and 4 (the regenerated mover manifest) are queued as boxqueue jobs 520/521.
+- Item 4's lever set was checked by me against mk_lever_set.py. V1 at ≤ 2 terms is correct; the "3 or fewer" in the lane's message was a slip.
+
+**Ruling (mine, under D169's own reasoning): §9.2a's expected-loss rule is widened to a second class, SHORT SUBJECTS.** b4prep found that the rule (regular landings, gap ≤ 8 B) misses losses grid2 already shows: dfa-hat at L=32 loses +8.5..+13.3% at g ≥ 16 with unpredictable landings, and dig at L=32 g=16 loses +2.6%. D169's premise is that short subjects carry small absolute losses and that throughput matters on large ones. So a V1 loss on a dinghy-length subject (L ≤ 64 B, gridread's DINGHY boundary) is an EXPECTED loss when its absolute size is under the walk's fixed per-call term, not a refutation under §9.4. Losses on large subjects with irregular landings still refute. The closer lane applies this to §9.2a and expected_losses.md, and main gets a notice.
+
+- 2026-10-21 (main): M0 is built (lane/m0build c37c2ef05, abi 81 -> 82), and its heavy validation is queued ahead of our 521. Added to the B4-brief OWED list:
+  - (a) the kit's interim measure sets use first-letter digests, which docs/spec/measures.md does not allow; fix them before B4 reads any set;
+  - (b) re-check the B4 mover manifest at abi 82 once M0 merges.
+
+## 2026-10-21 — Z1 merged on main (5cc3d7179); Zk built, heavy queued
+
+Zk (R-26.6) is on lane/memfn-r26zk @ 6f03281cb. The kit's class/field sets are now one 128-bit `kit_set` (F-2 of Z1, no MF_SITE_ABI move). REPORT has its own class. The REPORT row RPT lands UNROUTED; it applies only where the composer's form proves exactly the REQUIRED sets, and refuses otherwise. `mf_preview` is refused when misused and has no options.def row. S1251-S1256 are written. My rulings on the lane's questions:
+- Q1 ACCEPTED: `unsigned __int128` is kit-compiler-internal and never emitted; gcc and clang are the build compilers.
+- Q2 ACCEPTED: "the REQUIRED term's set" at d is the intersection of the REQUIRED terms at d (a conjunction).
+- Q3 ACCEPTED: `mf_preview` is a new call and moves no struct layout or meaning, so there is no MF_SITE_ABI event.
+- Q4 ACCEPTED, with a carry: RPT moves no byte while unrouted, so it has no deny row yet. B1, which routes it, owes its deny row.
+- F-2 noted for main's Z2: `mf_ask` takes a const art, so `mf_preview` must be called at art setup, before any ask (kit_proof §7's protocol already places it there).
+Heavy validation: boxqueue `500-kit-r26zk-heavy`.

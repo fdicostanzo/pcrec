@@ -141,9 +141,9 @@ MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by no
 /* the finder table's gate fields (R17-b' B1, MF_SITE_ABI 12; r17b_prime.md
    §1.2 [rev3 D1, A22]): the call mode (R-19), the site's consumer kind
    (§4.3; STATED by pcrec from B2, PR-3), the layer variant the finder walk
-   evaluates and the decided span's need. These twelve classes fill the
-   class space to its 64-bit mask (kit.h's _Static_assert): the next class
-   needs the mask widened first */
+   evaluates and the decided span's need. These twelve classes filled the
+   class space's first 64-bit mask; since R-26 Zk a class set is a 128-bit
+   kit_set (kit.h), so a class is added here with no other edit */
 MF_CLASS(ONESHOT,     "mf_site.body MF_BODY_ONESHOT: one call answers one search")
 MF_CLASS(PARAM,       "mf_site.body MF_BODY_PARAM: a shared body, M a run-time parameter (reserved)")
 MF_CLASS(DFA_SCAN,    "site kind: a DFA body's forward scan")
@@ -156,6 +156,9 @@ MF_CLASS(L_W16,       "the finder walk's layer variant: the 16-byte SIMD layer")
 MF_CLASS(L_W32,       "the finder walk's layer variant: the 32-byte SIMD layer")
 MF_CLASS(N_REQUIRED,  "the decided span's need: MF_REQUIRED")
 MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
+/* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
+   first 64 (kit.h's kit_set) */
+MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -261,15 +264,66 @@ MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
          "M USES it and declines an unstated one (R1). Every row born before B1 renders the "
          "same text for any mode and serves MF_ANY")
 
+/* ---- the fields: R-26 (MF_SITE_ABI 18; kit_proof.md §4.1) ----------------
+ *
+ * Span 0's prefix facts, the context spans and their facts, and the read
+ * floor. They were written when the class space was full (64), so they read
+ * through classes it already had, each named in its doc; with these seven
+ * the FIELD space reached 64 too. R-26 Zk widened both sets to 128 bits
+ * (kit.h's kit_set) before its REPORT row took a class of its own. No form
+ * reads the prefix facts, `consumable` or `read_floor` (they
+ * are facts for a choice; every row serves every value); a form HONOURS
+ * `ctx` (it tests the entries) and `absent` (it renders the rule), so every
+ * row but the generic one declines a site stating a context span, or an
+ * `absent` SATISFIES. */
+MF_FIELD(prefix_stated, MF_PH_DEFINE, HOOK, cl_prefix_stated,
+         CM(YES) | CM(OTHER),
+         "span 0's prefix facts stated (R-26.1): YES on a forward FIND's BOUNDED `pred` that "
+         "states them; 0 is UNSTATED there and refused by site_check (so HOOK), and no field "
+         "elsewhere. Every row serves MF_ANY: no form reads it")
+MF_FIELD(exact_len, MF_PH_DEFINE, VALUE, cl_exact_len,
+         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
+         "span 0's exact prefix length (R-26.1), read where prefix_stated is STATED (unstated "
+         "elsewhere): ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
+MF_FIELD(consumable_len, MF_PH_DEFINE, VALUE, cl_consumable_len,
+         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
+         "span 0's consumable prefix length (R-26.1), read where prefix_stated is STATED: "
+         "ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
+MF_FIELD(ctx, MF_PH_DEFINE, VALUE, cl_ctx,
+         CM(NONE) | CM(BACK) | CM(NONNEG) | CM(OTHER),
+         "the context spans (R-26.2), a BIT SET as `policy` is: NONE (nctx 0), else BACK for an "
+         "entry before span 0 and NONNEG for one after it, each a class the row must serve. "
+         "Only the generic row tests entries: every other row serves NONE")
+MF_FIELD(absent, MF_PH_DEFINE, HOOK, cl_absent,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the absent rule of the site's CONTEXT predicates (a context stop's `pred`, every `ctx` "
+         "entry; R-26.2), a BIT SET: YES for SATISFIES (the item holds where its byte is "
+         "absent), NO for FAILS. No context predicate: unstated (0 on a CONTEXT predicate is "
+         "refused by site_check). Every row renders FAILS (a read outside the subject fails "
+         "its term) and serves NO; the generic row renders both")
+MF_FIELD(consumable, MF_PH_DEFINE, HOOK, cl_consumable,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the consumable fact of the site's CONTEXT predicates (R-26.2), a BIT SET of YES/NO; "
+         "unstated where none is. Every row serves MF_ANY: no form reads it")
+MF_FIELD(read_floor, MF_PH_DEFINE, HOOK, cl_read_floor,
+         CM(ZERO) | CM(OTHER),
+         "site.read_floor (R-26.2, kit_proof.md §3.5): ZERO for SUBJECT (reads down to offset "
+         "0), OTHER for LO (no class of its own: the space is full); 0 is UNSTATED (refused by "
+         "site_check under a CONTEXT term below the origin, a wildcard elsewhere). Every row "
+         "serves MF_ANY: under LO no term reads below its candidate (site_check), so every "
+         "row's reads stay >= lo")
+
 /* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
 
 MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
-         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) | CM(OTHER),
+         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) |
+         CM(REPORT) | CM(OTHER),
          "the site's consumer kind (r17b_prime.md §4.3), read in the finder walk only (fd_facts; "
          "elsewhere unstated): pcrec STATES it from B2 (PR-3), so at B1 every site reads "
          "UNSTATED and a row that reads the kind (D1, D1c, D1w) declines (R1). There is no ANY "
          "kind ([rev3 A22]): a row serving every kind serves every kind class and does not USE "
-         "the field")
+         "the field. REPORT (R-26.3) is served by the REPORT row alone (R-26.6): every other "
+         "row's kinds leave it out, so the gate declines them on a REPORT site")
 MF_FIELD(layer, MF_PH_DEFINE, VALUE, cl_layer,
          CM(L_OFF) | CM(L_W16) | CM(L_W32) | CM(OTHER),
          "the layer variant the finder walk evaluates (a fact of the walk's input, not of the "

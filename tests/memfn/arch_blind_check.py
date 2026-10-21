@@ -156,6 +156,20 @@ KIT_HEADER_OK = 'memfn/include/memfn.h'
 CODE_DIRS = ('src', 'cli', 'lib')
 SKIP_SUFFIX = ('.o', '.a', '.png', '.gz', '.bin', '.pyc')
 
+# FILE-LEVEL EXEMPTIONS, a CLASS of file rather than per-label allowlist rows:
+# path -> (generator, reason). The embedded measurement-store tables are DATA
+# ([MEASURE-SET] M0): a set's id and class labels are written by the store's
+# own generator from measure_store/, so every new set would otherwise extend
+# the allowlist. The exemption is by exact path and names what writes the file;
+# a box name in any other file (a comment, a check, a hand-written source) is
+# still a hit. The scratch control plants one beside an exempt path.
+DATA_EXEMPT = {
+    'src/core/measures_store.inc': ('scripts/embed_text.sh (make gen-measures), from measure_store/<id>/<rev>/set.tsv',
+                                    'generated data: the embedded store text, a set id and class labels as strings'),
+    'src/core/measures_table.inc': ('scripts/ksgen.c measures (make gen-measures), from measure_store/',
+                                    'generated data: the pre-parsed store tables, a set id and class labels as strings'),
+}
+
 
 def read_text(path):
     try:
@@ -216,6 +230,8 @@ def scan_tree(root):
     hits = []
     code_files = files_of(root, CODE_DIRS)
     for rel in code_files:
+        if rel in DATA_EXEMPT:
+            continue
         scope = 'doc' if rel.endswith('.md') else 'code'
         text = read_text(os.path.join(root, rel))
         if text is None:
@@ -431,7 +447,26 @@ def scratch_controls(cc, tmpbase):
             fh.write('ms 0 "\\x86\\xc5\\x86" 0 3\n')
         with open(os.path.join(root, 'src/gen/neg.c'), 'w') as fh:
             fh.write('static const char *s = "\\x86\\xAV";\n')
+        # file-scope control for DATA_EXEMPT: the same box name planted in an
+        # exempt path (must NOT hit) and in a neighbouring hand-written source
+        # (must hit), so the exemption cannot widen past its exact paths
+        os.makedirs(os.path.join(root, 'src/core'))
+        for rel in list(DATA_EXEMPT) + ['src/core/not_generated.c']:
+            with open(os.path.join(root, rel), 'w') as fh:
+                fh.write('/* zen4-grid1 */\n')
         hits = scan_tree(root)
+        exempt_hit = [h for h in hits if h[1] in DATA_EXEMPT]
+        if exempt_hit:
+            bad('file-scope control: a box name inside an exempt generated-data file was a hit: %r'
+                % (exempt_hit[:2],))
+        else:
+            ok('file-scope control: a box name inside the %d exempt generated-data files is not a hit'
+               % len(DATA_EXEMPT))
+        if any(h[1] == 'src/core/not_generated.c' and h[3] == 6 for h in hits):
+            ok('file-scope control: the same box name in a non-generated source file IS a hit')
+        else:
+            bad('file-scope control: a box name in a non-generated source file was NOT a hit: '
+                'the exemption is wider than its exact paths')
         for cls, rel, ps, synthetic in expect:
             got = {n for (_s, r, n, c, _e) in hits if r == rel and c == cls}
             lines_of = []

@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 81
+#define PCREC_ARTIFACT_ABI 82
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2545,6 +2545,16 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                           findings each query this\n"
         "                                           compile asked was answered\n"
         "                                           from; \"\" when none asked */\n"
+        /* [MEASURE-SET] M0 THE MEASUREMENT SET'S MIRROR, appended after
+         * `findings` on its own model (measure_sets.md §3.5-§3.6): one abi
+         * event carries the macro and this member together. Its comment
+         * sits ABOVE it, the [ENG-ABS]/[DD-13b.W1.2] shape: the size
+         * classifier counts a trailing comment's continuation lines as code
+         * (measured: +314 counted bytes per artifact that way, against the
+         * two lines' own bytes this way). */
+        "    /* <PREFIX>_MEASURES: the measurement set a reader consulted,\n"
+        "       id@rev:digest; \"\" when none consulted */\n"
+        "    const char           *measures;\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -3383,21 +3393,33 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
 
 /* [WINDOW-E1] RP: writes the `<PREFIX>_FINDINGS` line (`m` DEFINE) or the
  * `.findings = …` initializer line (`m` INIT) for the stamp text `value`, the
- * two lines `emit_info_def` marks. Called by the finishing pass, once per
- * mark, at the placeholder prefix. */
-void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value)
+ * two lines `emit_info_def` marks; [MEASURE-SET] M0 the same pair for the
+ * measurement set's stamp, `name` "MEASURES"/`member` "measures". Called by
+ * the finishing pass, once per mark and stamp, at the placeholder prefix. */
+static void emit_ks_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *name,
+                         const char *member, const char *value)
 {
     switch (m) {
     case PCREC_KS_MARK_DEFINE:
         pcrec_sb_stamp_str(c, pcrec_sb_upper(&cx->arena, cx->opt->prefix),
-                           "FINDINGS", value);
+                           name, value);
         return;
     case PCREC_KS_MARK_INIT:
-        pcrec_sb_puts(c, "    .findings = ");
+        pcrec_sb_printf(c, "    .%s = ", member);
         emit_c_string_literal(c, value, strlen(value));
         pcrec_sb_puts(c, ",\n");
         return;
     }
+}
+
+void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value)
+{
+    emit_ks_line(cx, c, m, "FINDINGS", "findings", value);
+}
+
+void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value)
+{
+    emit_ks_line(cx, c, m, "MEASURES", "measures", value);
 }
 
 /* [M5-SEAM] (D58, DD-12 (7)) THE RESIDUAL EMBED. The artifact's ONE encoding
@@ -6576,6 +6598,8 @@ static mf_site *find_site(const PcrecFind *f)
     else
         pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
     pcrec_memfn_window_is_candidate(&s->pred);
+    if (back) pcrec_memfn_context_stop(s);      /* R-26.2: MLINE's stop */
+    else      pcrec_memfn_span0_today(&s->pred);
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
@@ -7240,6 +7264,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->consumer = MF_C_ENGINE;
     ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
     pcrec_memfn_window_is_candidate(&s->pred);
+    pcrec_memfn_span0_today(&s->pred);          /* R-26.1 */
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,

@@ -65,7 +65,7 @@ L15	clamped	frames rung, bounded {0,1}, greedy
 #section program
 #label	op	args	target	note
 L0	label			
-	assert	^ attempt_position of subject (absolute offset 0)	L4	
+	assert	^ start of subject (absolute offset 0)	L4	
 	fail			backtrack
 L4	label			X{0}: matches empty, no code
 	goto		L5	

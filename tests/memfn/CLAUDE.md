@@ -136,7 +136,17 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   positive plants per class derived from the compiler's own installation
   (`cc -dM -E` ISA-flag diffs, resource headers, `-dumpmachine`; classes 7-9
   are structural and take synthetic plants, said so), a zero-plant class is
-  RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (27) is a literal in
+  RED, a hex-escape negative control. FILE-LEVEL EXEMPTION (lane m0c4,
+  2026-10-21): the generated measure-store tables `src/core/measures_store.inc`
+  and `measures_table.inc` are DATA written by `make gen-measures` from
+  `measure_store/` (a set id and class labels as strings), so
+  `arch_blind_check.py`'s `DATA_EXEMPT` skips them by exact path, naming
+  each one's generator; a new set adds no row. A scratch control plants the
+  same box name in an exempt path (must not hit) and in a neighbouring
+  hand-written source (must hit). The 12 hits of the old per-label code rows
+  left the allowlist with it (58 -> 46 hits); the nine `tests/` rows naming
+  the shipped set id stay (fixtures and anchors that read the store text).
+  `C4_ALLOW_FLOOR` (27) is a literal in
   the script. The plants are box-dependent: a Linux run may widen a class.
   Classes 1-2 plant the WHOLE derived population (not a sample) since lane
   r4clx (2026-10-06: ubuntubudu's sample missed `ABM`/`__LAHF_SAHF__`); the
@@ -580,6 +590,58 @@ P9 moves.)
   thirteen no B1 site reaches with witness kind `-` (UNREACHED with their
   step). `ROWS_FLOOR` 39, `KIT_SRC_FLOOR` 15. A finder row's deny (`fd-r8`)
   is not a SIMD form and needs no `simd_accept.tsv` line.
+
+### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
+
+- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** —
+  R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make
+  test-memfn-finder` (run_finder.sh; about 40 s). `proof_check.c` reads the
+  kit through memfn.h only: family A, a refusal per rule with ACCEPT controls
+  of every shape (each UNSTATED field among them: `prefix_stated`,
+  `span_class`, `absent` -- "UNSTATED absent read as 0" --, `consumable`,
+  `read_floor`; `exact_len`/`consumable_len`; the `ctx` shape; MF_FLOOR_LO with
+  a term below the origin; REPORT's `consumer`, an OPTIONAL term or item, no
+  BOUNDED span 0, and a well-formed REPORT site, which no row serves before
+  R-26.6), each held to the field its refusal names; family B, `proven[]` at
+  negative offsets, inside span 0 and after it, with the copies; family C,
+  a seeded GENERATED space (span 0 with 0..2 context items under either
+  `absent`, OPTIONAL terms and items, context stops, FUNC sites of the generic
+  and offset-skip shapes), each site's class asked under every layer and held
+  EQUAL (C-PROOF), its text and GENERATED facts written for `proof_run.c`.
+  `proof_run.c` is the byte-loop ORACLE (no kit header; `proof_meta.h` is
+  data only): every candidate the kit yields, from every lo, over every
+  subject of length 0..4 on the site's alphabet and sampled ones to 7, is
+  checked for BIND (REQUIRED items hold), PROOF (every proven offset holds:
+  its byte in the set, or outside the subject under a SATISFIES item), EXACT
+  (the first position where what the text asks and the proof hold) and COMPL
+  (obligation 1: no position where every item holds is skipped), and per
+  site the binding subset and the position-wise superset (both stated for
+  width-1 SATISFIES items only: a wider one proves its outermost position,
+  r26z1_report.md F-3). Floors (K35) on the absent cells R-26.2 names: a
+  SATISFIES candidate yielded before span 0 (c = 0) and after it (c + k = n),
+  a FAILS candidate refused at each. Run twice, against the kit and against it
+  compiled -DMF_TRACE (the define's re-ask: every offset, and the copies).
+  `run_proof.sh --plant ID` / `--plants` runs the same over a COPY of
+  memfn/src with one of the six kit-side plants (S1221 a form claiming an
+  untested offset, S1222 a SATISFIES candidate dropped, S1223 a FAILS one
+  yielded, S1224 a proof bit only under SIMD, S1225 an over-filter on an
+  OPTIONAL position, S1226 an UNSTATED field accepted); each must go red.
+  R-26.6 (lane r26zk) extends both files: family C adds 150 REPORT sites
+  (span 0 of 1..3 REQUIRED terms, width-1 context items under either
+  `absent`, the offset-skip FUNC shape) rendered on an art previewing
+  "R-26.6": each must be decided by the REPORT row RPT with `proven[d]`
+  EQUAL at every d to the REQUIRED sets read from the generated MEMBER
+  STRINGS, and refused on a plain art, and goes to the same byte-loop oracle;
+  every other family site must render byte-identically on a preview art.
+  Family D holds `mf_preview`'s refusals (twice, after the first define, an
+  unnamed step, no step; an accepted control), every `--memfn=` spelling of
+  it refused by `mf_opts_check` with no options.def row naming it, and the
+  row's applicability: a REPORT site with a two-offset SATISFIES item is
+  refused on a preview art (its FAILS twin is served). Plants S1251-S1256
+  (mech rows, arm `memfnfinder`) and the unnumbered ZK6/ZK7 join the
+  `--plants` table.
+  `arm_fixtures.c` gains the site `report2` and the fixture `fd-RPT` (on a
+  preview art: RPT's rows.tsv witness, control `fd-R7w`).
 
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 

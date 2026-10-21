@@ -96,6 +96,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   trust the result unless the AFTER text is actually present afterward. One
   mechanism for every sabotage, whether it is a substitution, an insertion
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
+- **reach_only_selftest.sh** ([MECH-REACHONLY], 2026-10-21) — self-test of `REACH_ONLY=1` (see
+  its section below): a live probe, a failing probe, a declared-UNREACHED one.
 - **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose
   `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given
   paths, at a path-component boundary. What D69's tiered re-run policy
@@ -1074,6 +1076,25 @@ never built** — the verdict is already known and the minutes buy nothing. A ro
 may declare `SAB_EXPECT=UNREACHED` with a mandatory `SAB_EXPECT_REASON`, and
 the reverse direction is checked as `NOW REACHED`, on exactly the argument
 `NOW DETECTED` rests on.
+
+**`REACH_ONLY=1` EVALUATES EVERY ROW'S REACH PROBES, NO PLANTS** ([MECH-REACHONLY],
+2026-10-21; apply_here.md §5). It builds the ONE clean tree (`git archive HEAD`,
+JOBS-wide), then runs each selected row's `SAB_REACH`/`SAB_REACH_POP` through
+the SAME block a full run executes (an early exit after it, not a second copy of
+the rules): no per-row archive, plant, build or suite. One line per row, verdict
+column `REACHED` | `UNREACHED<why>` | `declared-UNREACHED (reason)` |
+`NOW-REACHED` (row declares UNREACHED but the probe is live; reported, not a
+failure) | `NO-PROBE`; then `mech-reach-only: DONE rc=N rows=.. reached=..
+unreached=.. declared-unreached=.. now-reached=.. no-probe=.. at SHA` (the
+`TOOL: DONE rc=N` convention, so `scripts/verdict`/`watchrun` read it). rc 1 iff a row NOT declared
+UNREACHED reads unreached; rc 2 on a lost row. It takes the box lock like any
+mech run (the probes compile), skips the encoding baseline and the asan
+instrument probe, and, like a full run, measures committed HEAD only. Run it
+before delivering a strategy-widening change (BOILERPLATE "Delivery bar").
+Self-test: `bash tests/mech/reach_only_selftest.sh` (three fake rows in a temp
+`MECH_SAB_DIR`: a live probe, a failing probe that must read UNREACHED and fail
+the run, a failing probe declared UNREACHED that must not). Wall time and the
+population on main: docs/dev/lanes/reachonly_report.md.
 
 **`VALIDATE_ONLY=1` CHECKS EVERY DEFINITION IN SECONDS.** The field checks are
 FATALs raised inside `run_one`, i.e. when a row actually RUNS — a malformed
@@ -2984,8 +3005,8 @@ agreement, not the sense).
 
 **THE SWEEP THIS RE-POINT PROMPTED FOUND TWO MORE ROWS AFFECTED, PLUS ONE
 UNRELATED REACH DRIFT** (same lane, an ad hoc reach-only probe over all 112
-reach-bearing rows — no cheap reach-only mode exists in the driver itself,
-`VALIDATE_ONLY=1` stops before the reach block runs). **S267**
+reach-bearing rows — the driver's own `REACH_ONLY=1` mode, [MECH-REACHONLY],
+now does that sweep; `VALIDATE_ONLY=1` stops before the reach block runs). **S267**
 (`S267_req_run_memcmp_inverted.sh`, [OPT-REQPOS]) shares S265's root cause
 and its exact witness (`a=b`): its `SAB_REACH` still asserts `RX_REQ_RUN
 "613d62@1"` and the run-check's `memcmp` text, but `a=b` now stamps
@@ -3886,6 +3907,28 @@ set (a DFA hat's T), arm `candoracle`: the trace build's asked-class hold
 (`cand_asked_hold`) aborts where the define's class differs. S1086-S1088 are
 allocated to fdb2 and unused. Figures: `docs/dev/lanes/fdb2_report.md` §10.
 
+**S1221-S1226 (lane r26z1fix, 2026-10-21, [MEMFN] R-26 Z1; kit_proof.md
+§3-§4):** the kit-side rows, one per `tests/memfn/run_proof.sh` plant (the
+same FROM/TO text): S1221 the class proves one position past each RUN term;
+S1222 a SATISFIES context item rendered as FAILS (candidate dropped); S1223
+every context item rendered SATISFIES (candidate yielded); S1224 a proof bit
+set only when the policy allows SIMD (C-PROOF); S1225 an OPTIONAL SET term
+tests one member fewer; S1226 an UNSTATED `absent` accepted. All arm
+`memfnfinder` (part `proof`). Mech figures OWED to the job
+500-kit-r26z1-heavy; `docs/dev/lanes/r26z1_report.md` §9.
+
+**S1251-S1256 (lane r26zk, 2026-10-21, [MEMFN] R-26.6; kit_proof.md §2.5,
+§7 Zk; ids reserved by main):** the kit-side rows of the REPORT row and the
+preview, one per `tests/memfn/run_proof.sh` plant (the same FROM/TO text):
+S1251 `mf_preview` accepted after the first define; S1252 accepted twice;
+S1253 accepted for a step the kit does not name (fd_preview_step's table
+match dropped); S1254 a `--memfn=preview` spelling accepted (an options.def
+row); S1255 a REPORT site whose `proven[d]` is not the REQUIRED set accepted
+(kit_report_exact compares d >= 0 only); S1256 NONE accepted on a REPORT site
+(the row drops its PROOF_EXACT fact and replies where it cannot prove). All
+arm `memfnfinder` (part `proof`, family D). Mech figures OWED to the job
+500-kit-r26zk-heavy; `docs/dev/lanes/r26zk_report.md` §4.
+
 **S917, S919, S921, S1018-S1020, S1025 (lane fdb1, 2026-10-16, [MEMFN] R17-b′
 B1; r17b_prime.md rev 3 §8.3):** the B1 rows of S911-S922 and SN-1..SN-9
 (SN-k = S(1016+k)). S917 an absent set key read as 0 (`fd_lookup`), S919 an
@@ -4025,3 +4068,28 @@ S1188 (startanch), S1189/S1190 (derive's kill and G5 count), S1191/S1192
 transparency), S1195 (eol_tail_plain, N-3), S1196 (`ps_node`'s nullability),
 S1197 (`pcrec_ast_pin`'s anchor spelling). Reach by hand and the owed solo
 runs: `docs/dev/lanes/ctxp2e_report.md`.
+
+**[MEASURE-SET] M0 — S1227-S1246 (lane m0build, 2026-10-21, abi 82;
+`docs/design/measure_sets.md` rev 3 §8.5's proposed rows renumbered, the
+old->new table in `docs/dev/lanes/m0build_report.md`):** the measures kind
+row, the store, loading and the stamp. Eighteen rows score on the
+`knowledge` arm (`tests/knowledge/run_knowledge_tests.sh`, which runs
+`run_measures_tests.sh`): the digest (S1227 skips row 0, S1244 drops the
+domain's NUL), the validator and readers (S1230 the probe ignores the id,
+S1231 the S2 mismatch falls through, S1233 a derived view loads, S1235 two
+unit codes collide, S1236 the section-TSV field count goes unchecked,
+S1239 rows stay unsorted), the writers (S1232 canonical drops `cells`,
+S1234 a symmetric column swap in BOTH writers, `SAB_FILE2`, so only R5
+sees it), the store (S1229 the default table names the wrong class, S1237
+the shadow rule keyed on id alone, S1238 a shadowing set with other values
+loads, S1241 the embedded text short by one byte), loading (the config
+line wins over the flag in S1228, the flag reaches a registry query in
+S1245, a `pcrec` raw line carries the flag in S1246) and the mirror
+(S1240 `rx_info.measures` differs from the stamp). S1242 is the
+dependency rule (suite `core`, `tests/core/ksrc_deps_check.sh` (a')/(b')),
+S1243 puts K112's stale role string back (suite `irlisting`). S693
+(`codegen`) re-pinned BEFORE 82 / AFTER 81. Not built, each with its
+reason in the report: the stamp's consulted-OR (no kit row consults a set
+key before B4, so the stamp is "" everywhere) and the rows that need
+`make test-measures`' recompute, the answers/staleness/envelope views or
+`pcrec-measure`. Solo verdicts are OWED (queued as boxqueue jobs).

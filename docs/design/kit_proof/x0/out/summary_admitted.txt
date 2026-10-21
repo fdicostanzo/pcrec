@@ -1,0 +1,35 @@
+## X0 /home/pcrec/projects/pcrec/worktrees/x0oracle/build/x0/res_final.jsonl  pcre2=10.46 2025-08-27 plant='' self=None items=1449
+agg admitted native items=613 p1_cells=153452901 p1_nodes=25791 p1_unknown=0 p2_cells=10150236 p2_diff=1006 p2_red=1 p2_subjects=1652425 red_u1shape=1 why:cover=613
+agg admitted utf8 items=584 p1_cells=290490330 p1_nodes=17973 p1_unknown=0 p2_cells=8803324 p2_diff=503 p2_red=1 p2_subjects=1494010 red_u1shape=1 why:cover=584
+agg admitted-R native items=62 p1:S_d=1 p1:longer-than-k=7 p1:no-match-anywhere=5 p1_cells=10689144 p1_nodes=851 p1_red=6 p1_unknown=0 p2_cells=643894 p2_diff=22145 p2_red=6 p2_subjects=122821 red_other=6 why:cover=62
+agg admitted-R utf8 items=59 p1:no-match-anywhere=4 p1_cells=23244130 p1_nodes=727 p1_red=4 p1_unknown=0 p2_cells=576623 p2_diff=7013 p2_red=4 p2_subjects=114468 red_other=4 why:cover=59
+agg admitted-out native items=51 p1:S_d=1 p1:longer-than-k=7 p1:no-match-anywhere=5 p1_cells=8881406 p1_nodes=542 p1_red=6 p1_unknown=0 p2_cells=566629 p2_diff=22066 p2_red=6 p2_subjects=108397 red_other=6 why:cover=51
+agg admitted-out utf8 items=48 p1:no-match-anywhere=4 p1_cells=18254020 p1_nodes=460 p1_red=4 p1_unknown=0 p2_cells=500113 p2_diff=7057 p2_red=4 p2_subjects=99230 red_other=4 why:cover=48
+agg witness native items=30 p1:S_d=15 p1_cells=3231261 p1_nodes=696 p1_red=3 p1_unknown=0 p2_cells=227569 p2_diff=0 p2_subjects=37028 red_other=3 why:cover=15 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=6
+agg witness utf8 items=2 p1_cells=370640 p1_nodes=44 p1_unknown=0 p2_cells=24368 p2_diff=0 p2_subjects=4353 why:cover=2
+red admitted native - b'(()|^){0}[b]' cover p1=0 p2=1006 u1shape null {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted utf8 u b'(()|^){0}[b]' cover p1=0 p2=503 u1shape null {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R native R b'-{0,}?\\Z-' cover p1=1 p2=1903  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'[ab]*\\z\\W' cover p1=1 p2=2103  {"kind": "no-match-anywhere"} {"s": "0057", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'\\Zx' cover p1=1 p2=1931  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R native R b'\\zabc' cover p1=1 p2=1799  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-R native R b'\\zx' cover p1=1 p2=2015  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'\\w{0,2}?$\\W' cover p1=5929 p2=12394  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 1 {"s": "0a00", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R utf8 uR b'\\Zx' cover p1=1 p2=1789  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R utf8 uR b'\\zabc' cover p1=1 p2=1671  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-R utf8 uR b'\\zx' cover p1=1 p2=1794  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R utf8 uR b'-{0,}?\\Z-' cover p1=1 p2=1759  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'-{0,}?\\Z-' cover p1=1 p2=1982  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'[ab]*\\z\\W' cover p1=1 p2=2043  {"kind": "no-match-anywhere"} {"s": "0057", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'\\Zx' cover p1=1 p2=1958  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-out native - b'\\zabc' cover p1=1 p2=1799  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-out native - b'\\zx' cover p1=1 p2=1973  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'\\w{0,2}?$\\W' cover p1=5929 p2=12311  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 1 {"s": "0a00", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out utf8 u b'\\Zx' cover p1=1 p2=1820  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-out utf8 u b'\\zabc' cover p1=1 p2=1671  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-out utf8 u b'\\zx' cover p1=1 p2=1771  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out utf8 u b'-{0,}?\\Z-' cover p1=1 p2=1795  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+== X0 run COMPLETE: items=1449 sec=229.5

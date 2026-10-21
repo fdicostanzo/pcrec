@@ -27,9 +27,11 @@
  * its reads never set `consulted` (§4.7). Its rows are listed through
  * `mf_finder_rows` (R-MS4: needs, keys, basis, refutation, routing).
  *
- * THE 19 ROWS (§1.3, §1.4). Slot FIND: R0 R5 R8 R3a R3b R4 R1 R2 D1 D1c D1w
+ * THE 20 ROWS (§1.3, §1.4). Slot FIND: R0 R5 R8 R3a R3b R4 R1 R2 D1 D1c D1w
  * D2 R7 R7w (F0, F1, F2 are designed and BUILT at B5, after lockdown, as
- * formal row additions). Slot PRES: P0 P2 P3 P4 P9 (P1 at B5). Each row's
+ * formal row additions), then RPT, the REPORT row (R-26.6, kit_proof.md
+ * §2.5: unrouted until its step; listed after slot PRES so no earlier row's
+ * index moves). Slot PRES: P0 P2 P3 P4 P9 (P1 at B5). Each row's
  * `basis` is mandatory; the self-check (`mf_finder_rows`' readers, tests/
  * memfn/run_finder.sh) holds the rules of §1.2.
  *
@@ -87,12 +89,14 @@ enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
 /* Slot FIND: a form, the kit's names (D157). 0 is UNSTATED (refused by the
  * self-check). */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
-               FF_W64, FF_RUN, FF_A3 } fd_form;
+               FF_W64, FF_RUN, FF_A3, FF_PROOF } fd_form;
 static const char *const ff_name[] = {
-    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "RUN", "A3",
+    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "RUN", "A3", "PROOF",
 };
 /* The forms this kit renders a site with, by layer: at B1 LIBC (pf_memchr),
- * LIBC_BACK (pf_memchr_back), WALK (pf_walk) and RUN (the fn rows). V1
+ * LIBC_BACK (pf_memchr_back), WALK (pf_walk) and RUN (the fn rows); since
+ * R-26.6 PROOF, the composer's own first-match form held to prove every
+ * REQUIRED term's set EXACTLY (the REPORT row's pick, SF_PROOF_EXACT). V1
  * (R17-b's `pf_terms_mask`) lands at B4, W64 at B6, NONE at B5, A3 at B9.
  * A row whose pick is unbuilt still DECIDES in the shadow (that is B4's
  * prediction), except where the design makes building the applicability
@@ -121,6 +125,10 @@ enum {
     SF_SET_RARER    = 1u << 10, /* the set's pick strictly rarer than the run's
                                    scan member (B3a)                          */
     SF_REQUIRED     = 1u << 11, /* the span's need is REQUIRED (slot PRES)     */
+    SF_PROOF_EXACT  = 1u << 12, /* a REPORT site whose composer form's class
+                                   proves, at every offset, exactly the
+                                   REQUIRED terms' set (R-26.3; computed on a
+                                   REPORT site only: kit_report_exact)       */
 };
 
 /* ONE comparator (§1.2 [rev3 D2]): lhs OP key, every threshold a set key. */
@@ -172,7 +180,7 @@ typedef struct {
  * fd_shadow), so it serves MF_ANY; the four constrained fields are each
  * row's own. A field missing here would DECLINE every finder row wherever it
  * is stated, visible at once in the shadow's records and the fixtures. */
-#define FD_SERVES_REST \
+#define FD_SERVES_COMMON \
     [FLD_form] = MF_ANY, [FLD_op] = MF_ANY, [FLD_handoff] = MF_ANY, \
     [FLD_reverse] = MF_ANY, [FLD_empty] = MF_ANY, [FLD_end_back] = MF_ANY, \
     [FLD_pred] = MF_ANY, [FLD_preds] = MF_ANY, [FLD_ret_pred] = MF_ANY, \
@@ -185,7 +193,15 @@ typedef struct {
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
     [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
-    [FLD_moved] = MF_ANY,
+    [FLD_moved] = MF_ANY, \
+    MF_SERVES_PROOF_ANY
+/* Every row but the REPORT row picks a form that tests no `ctx` entry and
+   renders `absent` FAILS; the REPORT row's pick is the composer's walk, whose
+   rows serve those fields themselves (the generic row tests both), and its
+   class is held to the REQUIRED sets (SF_PROOF_EXACT), so it serves both. */
+#define FD_SERVES_REST \
+    FD_SERVES_COMMON \
+    [FLD_ctx] = CM(NONE), [FLD_absent] = CM(NO),
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -225,6 +241,15 @@ FD_CT(ct_p2,  "P2",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,   
 FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
 FD_CT(ct_p4,  "P4",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
+/* R-26.6: the REPORT row serves the REPORT kind alone (no other row's kinds
+   hold it), span 0 REQUIRED (R-26.3 refuses anything else) and every context
+   span and absent rule its pick serves */
+static const gate_contract ct_rpt = { "fd", "RPT", NU(use_kind), {
+    FD_SERVES_COMMON
+    [FLD_ctx] = MF_ANY, [FLD_absent] = MF_ANY,
+    [FLD_site_kind] = CM(REPORT), [FLD_need] = CM(N_REQUIRED),
+    [FLD_body] = MF_ANY, [FLD_layer] = LY_ALL,
+} };
 
 /* ---- THE TABLE (r17b_prime.md rev 3 §1.3, §1.4) ---------------------------
  *
@@ -338,6 +363,19 @@ static const fd_row fd_rows[] = {
       FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B3b",
       "the total default: verify (Q-WR-9)",
       "a TUG cell measured losing for want of the priced pre-scan (P1, B5)", &ct_p9, 0, 0 },
+    /* slot FIND, appended after slot PRES so every earlier row keeps its index
+       (mf_class.pres_row carries 1 + an index): the REPORT row (R-26.6,
+       kit_proof.md §2.5, §7 Zk), the last FIND row, UNROUTED until its step;
+       a preview art (mf_preview) routes it. It serves the REPORT kind alone,
+       so its place among the FIND rows decides nothing */
+    { "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,
+      { { FL_NONE, NULL, 0, NULL, NULL } },
+      FF_PROOF, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_DERIVED, "R-26.6",
+      "a REPORT site (R-26.3): the candidate is the answer, so the form proves every "
+      "REQUIRED term exactly; the composer's own form where its class proves each REQUIRED "
+      "set at every offset, and no row (never NONE) where it does not",
+      "none: derived from the answer contract (R-26.3); a form that cannot prove every "
+      "REQUIRED set exactly does not apply (K96)", &ct_rpt, 0, 0 },
 };
 #define FD_NROWS (sizeof fd_rows / sizeof fd_rows[0])
 
@@ -349,6 +387,31 @@ static const fd_row fd_rows[] = {
  * themselves in ascending byte order. An unverified link's order is HEAD's
  * value and is read by no one. P4's link template states HEAD. */
 enum { FD_ORDER_HEAD = 0, FD_ORDER_RUN = 1, FD_ORDER_REST = 2 };
+
+/* THE ROUTING PREVIEWS (R-26.6, kit_proof.md §7 "The harness lever's kit
+ * channel"): the routing steps a host may preview on a harness art
+ * (mf_preview). On such an art every row whose `step` is the previewed one
+ * decides as it will once that step routes; no other row moves. A step is
+ * named here only where the step's rows' picks are built (D77: one entry,
+ * the step that asked for it). */
+static const char *const fd_previews[] = { "R-26.6" };
+
+const char *fd_preview_step(const char *step)
+{
+    for (size_t i = 0; step && i < sizeof fd_previews / sizeof fd_previews[0]; i++) {
+        if (strcmp(step, fd_previews[i])) continue;
+        for (size_t r = 0; r < FD_NROWS; r++)
+            if (!strcmp(fd_rows[r].step, step)) return fd_previews[i];
+    }
+    return NULL;
+}
+
+/* 1 iff row `r` decides on `art`: its routing step has landed (`routed`), or
+ * the art previews that step. */
+static int fd_row_routed(const mf_art *art, const fd_row *r)
+{
+    return r->routed || (art->preview && !strcmp(art->preview, r->step));
+}
 
 const gate_contract *fd_row_contract(size_t i)
 {
@@ -397,6 +460,9 @@ static int kind_cl(uint8_t k)
     case MF_SK_HYB_PF:      return CL_HYB_PF;
     case MF_SK_VM_ATTEMPT:  return CL_VM_ATTEMPT;
     case MF_SK_DFA_ATTEMPT: return CL_DFA_ATTEMPT;
+    /* R-26.3/R-26.6: REPORT is in no row's kinds but the REPORT row's
+       (KD_ALL leaves it out), so the gate declines every other row there */
+    case MF_SK_REPORT:      return CL_REPORT;
     }
     return CL_OTHER;
 }
@@ -406,7 +472,7 @@ static const char *kind_name(int k)
 {
     return k == CL_DFA_SCAN ? "DFA_SCAN" : k == CL_DFA_HAT ? "DFA_HAT"
          : k == CL_HYB_PF ? "HYB_PF" : k == CL_VM_ATTEMPT ? "VM_ATTEMPT"
-         : k == CL_DFA_ATTEMPT ? "DFA_ATTEMPT" : NULL;
+         : k == CL_DFA_ATTEMPT ? "DFA_ATTEMPT" : k == CL_REPORT ? "REPORT" : NULL;
 }
 
 /* ---- keys and the set ------------------------------------------------------- */
@@ -824,6 +890,15 @@ static void find_facts(fd_x *q)
     if (q->ff.kind == CL_VM_ATTEMPT && (q->facts & SF_SPAN0)) q->facts |= SF_SEEK_ROLE;
 }
 
+/* A REPORT site's own fact (R-26.3, R-26.6): SF_PROOF_EXACT where the form
+ * the composer would choose under the gate's phases `gphases` proves exactly
+ * the REQUIRED sets (kit_report_exact). Asked on a REPORT site only. */
+static void report_facts(fd_x *q, const mf_hooks *def, unsigned gphases)
+{
+    if (q->ff.kind == CL_REPORT && kit_report_exact(q->art, q->site, def, gphases))
+        q->facts |= SF_PROOF_EXACT;
+}
+
 /* 1 iff the site is one the finder table decides (§1.1): a forward FIND /
  * STMT over one term (the PF and MLINE sites, the VM hat) for slot FIND; an
  * ALL_PRESENT site stating presence spans (the pre-check composite, B3a) for
@@ -832,6 +907,9 @@ static void find_facts(fd_x *q)
 static int fd_scope(const mf_site *s)
 {
     if (s->op == MF_OP_FIND && s->form == MF_FORM_STMT && !s->reverse && s->pred.nterm == 1)
+        return 1 << FD_FIND;
+    /* R-26.6: a REPORT site, any form and any span 0, is the REPORT row's */
+    if (s->op == MF_OP_FIND && !s->reverse && s->site_kind == MF_SK_REPORT)
         return 1 << FD_FIND;
     if (s->op == MF_OP_ALL_PRESENT && s->npspan && s->pspans) return 1 << FD_PRES;
     return 0;
@@ -1060,7 +1138,6 @@ static void put_decision(const fd_x *q, int slot, const fd_decision *d)
 
 void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def)
 {
-    (void)def;
     /* slot PRES is ROUTED since B3b: its decision is the define's own
        (fd_pres, recorded there), so the shadow walks slot FIND only */
     int scope = fd_scope(s) & (1 << FD_FIND);
@@ -1086,6 +1163,7 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
                 q.ff.kind = kind_cl(s->site_kind);  /* PR-3, stated from B2 */
                 q.ff.layer = lyc[l];
                 find_facts(&q);
+                report_facts(&q, def, MF_PH_DEFINE);
                 q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL
                                                                  : CL_N_REQUIRED;
                 gate_in in = { s, NULL, NULL, &q.ff };
@@ -1120,7 +1198,7 @@ const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 
  * rows read no set key (§3.2), so a routed decision never sets
  * `consulted` here; the first one that does is B4's. */
 const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
-                    const mf_hooks *def, int quiet, const char **row)
+                    const mf_hooks *def, unsigned gphases, int quiet, const char **row)
 {
     *row = NULL;
     if (!(fd_scope(s) & (1 << FD_FIND))) return NULL;
@@ -1133,6 +1211,7 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     q.ff.kind = kind_cl(s->site_kind);
     q.ff.layer = CL_L_OFF;
     find_facts(&q);
+    report_facts(&q, def, gphases);
     /* An UNSTATED span need never reaches a routed decision: pred_kinds
        refuses the site before any selection (PR-4). Were one to arrive, the
        mapping below would decide REQUIRED for a fact nobody stated (a silent
@@ -1147,11 +1226,11 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &tc, &d);
-    if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) return NULL;
+    if (d.terminal >= FD_NROWS || !fd_row_routed(art, &fd_rows[d.terminal])) return NULL;
     for (unsigned j = 0; j < d.npiece; j++) {
         size_t ri = 0;
         while (ri < FD_NROWS && strcmp(fd_rows[ri].id, d.row[j])) ri++;
-        if (ri >= FD_NROWS || !fd_rows[ri].routed) return NULL;
+        if (ri >= FD_NROWS || !fd_row_routed(art, &fd_rows[ri])) return NULL;
     }
     if (d.npiece != 1) return NULL;     /* a routed DISPATCH: none before B4/B8 */
     const arm *a = NULL;
@@ -1160,6 +1239,8 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     case FF_LIBC_BACK: a = &pf_memchr_back_arm; break;
     case FF_WALK:      a = s->end_back ? &pf_walk_bounded_arm : &pf_walk_arm; break;
     case FF_RUN:       a = &fd_nested_walk; break;     /* D2: the composer's walk */
+    case FF_PROOF:     a = &fd_nested_walk; break;     /* RPT: the same walk, its
+                                                          class held EXACT */
     case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_A3:
         break;
     }
@@ -1254,7 +1335,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;
         fd_decide(&q, FD_PRES, &tc, &d);
-        if (d.terminal >= FD_NROWS || !fd_rows[d.terminal].routed) {
+        if (d.terminal >= FD_NROWS || !fd_row_routed(art, &fd_rows[d.terminal])) {
             *why = "a presence span no routed PRES row decides";
             return -1;
         }

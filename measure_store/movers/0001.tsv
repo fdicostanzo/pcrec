@@ -1,0 +1,12 @@
+# measure_store movers: DEFAULTS transition 1, class idk (docs/design/measure_sets.md §2.1; written by docs/dev/lanes/m0build/census.py)
+#section header
+#key	value
+seq	1
+class	idk
+old	
+new	zen4-grid1@1:13a6536315af1520
+code_commit	f0bc75510b10b01dd4625db2a548c9665339785c
+population	corpus rows 5811, distinct patterns 4636, arms c-default;c-utf8;c-vm;ir;facts
+movers	0
+#section movers
+#artifact	moved	first_difference

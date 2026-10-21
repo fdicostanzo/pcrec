@@ -196,10 +196,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
   ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
   KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
+- [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
+  filed: 2026-10-13 Frank
+  status (2026-10-21): M0 BUILT on lane/m0build, abi 81 -> 82 + K112 (m0build_report.md): measures row, measure_store/ (zen4-grid1@1), --measures + config line, the stamp ("" until a kit row consults, B4), --list-measurements, S1227-S1246; runs queued
+  next: merge M0 after its queued runs read green; then M1 (test-measures recompute, answers/staleness views); the envelope default is M2
+  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
+  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
-  status (2026-10-21): started; P2e landed (abi 81, zero movers; heavy chain green, ctxp2e_report.md 7a); part 2 done; next = part 1 (kit_proof Z2/UL-0)
-  next: part 1, the span-context producer (kit_proof Z2/UL-0)
+  status (2026-10-21): part 2 done (P2e, abi 81); part 1 BUILD GO 2026-10-21; R-26 filed (d970abbbc); kit Z1 building; main X0 running (lane x0oracle)
+  next: kit Z1+Zk, then main Z2 (kit_proof.md §7)
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
@@ -524,12 +530,26 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MEMFN-POSCOST] STATE:not-started — PRICE A SET-FIND'S SCAN POSITION BY ITS SET'S FORM, PLUS SUPERSET COVERS
+  filed: 2026-10-21 kit session (Frank to the kit: "file as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit"); filed in plan.md by the manager
+  status (2026-10-21): filed; neither part built; B4 goes ahead as agreed.
+  trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a <= 2-term position inside their span (the B4-prep closing lane counts it), and grid/bench timing shows the gain.
+  refs: memfn/docs/ideas.md 2026-10-21; docs/design/memfn/r17b_prime.md §1.3a R7/R7w; memfn/docs/responses.md (kit notice 2026-10-21)
+  Charter: (1) a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate; the scan position is priced by rate AND by the form its set takes (V1 at <= 2 terms, `kit.terms.V1max`), not by rate alone. (2) a >= 3-term set may be searched through a <= 2-term SUPERSET filter, then verified exactly (e.g. `\w` through `[0-9]|[A-z]`, 5 extra members); a FIND filter only, never a proof for a REPORT site. (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not pattern order (today ofsskip's `verify_chain` tests ascending by offset; K82/R-1 showed lead order is part of a form's cost); each position takes its cheapest exact test (a word compare over literal runs, a set test, possibly a superset test first); proven offsets skipped as R-14's trim does. Part 3's trigger adds a verify-cost reading on dense-candidate cells.
+- [RECUR-AUDIT] STATE:not-started — A RECURRENCE AUDIT OVER THE JOURNAL'S MISTAKES/LESSONS LINES
+  filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
+  status (2026-10-21): filed from docs/dev/devmethods/apply_here.md §8; nothing built.
+  trigger: the next weekly slot or tenth session since filing, whichever first; the first run sets the baseline.
+  refs: docs/dev/devmethods/apply_here.md §8; docs/dev/learnings.md; docs/dev/dev_journal.md
+  Problem: nothing counts recurrences of EXISTING lesson classes, and recurrence is the signal that a mechanism is owed (22 recurring classes in six weeks; `pkill -f`, the `-o` basename trap, `sort -u` locale, worktree removal mid-run each recurred five or more times before getting one). Charter: once a week or every tenth session, a sonnet read-only lane extracts every Mistakes/Lessons line since the last audit, classifies each against learnings.md and the memory catalogue, and reports classes with three or more instances plus a proposed mechanism. Cost: one cheap lane, no box time.
 - [WATCH-IDLE] STATE:not-started — THE IDLE-BOX ALARM: a box that should be busy and is not
   filed: 2026-10-21 Frank
   status (2026-10-21): filed; standing directive to grow watchrun (or a sibling) from each new miss shape.
   trigger: build at the next observed miss, or bundled with the next watchrun change; collect shapes here meanwhile.
   refs: scripts/watchrun; scripts/boxqueue; scripts/chainrun; scripts/boxlock
   Frank (2026-10-21): "more than once ... the computer cpus go idle while there was supposed to be a test suite running and no one noticed." One box-level check that fires when the box is idle (load and the run trees' CPU near zero for N min) while the record says work is owed: a chain WAITING on a .lift nobody touched; a stage or queue job waiting on a boxlock whose holder is idle or orphaned; a queue with pending jobs and no runner; a lane's OWED chain never armed; a live run tree using no CPU while its log still grows (heartbeat-only output). Shapes seen so far: P2e/P2d chains waiting on .lift; mech stage cap fired at 1800 s on 12 rows (cap too tight, not idle, but the same "nobody looked" class).
+  Miss shape 1 (2026-10-21, reachonly): a boxqueue job script ran its work as `cmd > log; rc=$?; echo ...` and declared `expect none`, so the queue scored GREEN while the tool crashed before its DONE trailer. Detector: require a declared completion line (expect last=) or the work's rc on every job; boxqueue refuses a job with neither.
+  Miss shape 2 (2026-10-21, m0build 303): the opposite error. The job exec'd perfrun with its own log file, so the declared `expect sections=73 last=^sections ran: ` was looked for in job.log and read none; the queue scored a 73/73-green make test as POPULATION-SHORT. Fix: a job declares WHICH log its expect reads (an expect `log=PATH` field), or the queue refuses a job whose work redirects away from job.log without naming it.
 - [UTF-PAT] STATE:not-started — UTF-8 AS THE PATTERN-TEXT ENCODING
   filed: 2026-09-05 Frank
   status (2026-10-12): M5.0 closed 2026-09-12 (all stages landed), so the "stage 2/3-4" wording below names M5.0's stages and is history; the row is unblocked and unscheduled. CHARTERED by Frank 2026-09-05, fifty-fifth session, UNSCHEDULED: "using utf as the Regex encoding.…
@@ -911,12 +931,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a second first-match table with a measured threshold needing a verdict (reseed rows, [PRIOR-COST-UNIFY], [SEL-COST])
   refs: docs/design/memfn/regime_eval.md; docs/dev/reviews/2026-10-14-r1-memfn-regime-eval.md (lane/memfn-r17 ab77bebaa); [LIST-TABLES] [MEASURE-SET]
   The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
-- [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
-  filed: 2026-10-13 Frank
-  status (2026-10-16): measure_sets.md rev 3 merged (r2 re-check discharged; OQ-1 ruled D166 add. 3); D166 ruled the shape (sets, relative units, compile-time load, rollback, mover census). Next: [KNOW-SRC] K0-K3 build
-  trigger: the kit's E3 commit (zero-mover table + row denies, regime_eval.md rev 2): schedule [MEASURE-SET]'s build then; until it lands C1/C5/C6 run through the kit's regime_pick
-  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
-  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
 - [DEC-RUNG] STATE:not-started — THE VM RUNG LADDER AS ONE SELECTOR
   filed: 2026-10-06 filer not recorded
   status (2026-10-06): not started; FILED 2026-10-06, decsurvey §3.5; UNSCHEDULED

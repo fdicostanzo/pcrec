@@ -23,7 +23,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `81` on every artifact today (lane ctxbuild bumped it
+- **`rx_info.abi` is `82` on every artifact today (lane m0build bumped it
+  from 81, 2026-10-21: [MEASURE-SET] M0, docs/design/measure_sets.md rev 3
+  §3.5-§3.6, D166 and addenda; and the K112 rider).** Every artifact gains
+  `<PREFIX>_MEASURES` (written right after `<PREFIX>_FINDINGS`) and
+  `rx_info.measures`, appended after `findings` with its member comment in
+  the shared ABI block: the measurement set a reader consulted, as
+  `id@rev:digest16`, or `""` (measures.md §4; match_api.md §6.3.10¶12-¶13,
+  §6¶14a). A compile now LOADS a set (the named one, else the build's
+  default, the latest committed set, `zen4-grid1@1`) and hands its `kit.`
+  rows to the memfn kit, but no kit row reads a set key before the kit's B4
+  and pcrec has no reader of its own, so the stamp is `""` everywhere and no
+  selection moves. The K112 rider moves the `--emit-ir` listing's two VM role
+  strings for `^`/`\A` and `(?m)^` from "attempt_position of subject" to
+  "start of subject". No answer moves. The mover census (every artifact
+  differing from a reference that carries exactly this scaffolding) is in
+  docs/dev/lanes/m0build_report.md.
+- **`rx_info.abi` was `81` (lane ctxbuild bumped it
   from 80, 2026-10-19: [DD-11.5] part 2's P2c, docs/design/ctx_span.md rev
   2.1 §4.4-§4.5, D168 addendum 1).** `(?m)^` and `(?m)$` are no longer
   `A_BOL`/`A_EOL` with a parse-resolved `multiline` field lowered to two

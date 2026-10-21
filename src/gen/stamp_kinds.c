@@ -69,6 +69,7 @@ static const StampRow stamp_rows[] = {
     { "STEP_BUDGET",        false, SK_PATTERN },      /* per call: the contract */
     { "WORK_BUDGET",        false, SK_PATTERN },
     { "FINDINGS",           false, SK_PATTERN },
+    { "MEASURES",           false, SK_PATTERN },      /* over P and the parts (match_api §6.3.10¶13) */
     /* the DFA scan family (`pcrec_emit_dfa_scan_stamps`, `emit_dfa_stamps`) */
     { "DFA_SCAN",           false, SK_MACHINE_STR },
     { "DFA_PREFILTER",      false, SK_MACHINE_STR },

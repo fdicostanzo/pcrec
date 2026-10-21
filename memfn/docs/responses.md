@@ -2767,3 +2767,46 @@ the compiler, and is never adopted silently. Proposed for main to file
   - (3) B5, B6, B7 and B9 as r17b_prime §3.1 orders them.
   - Proposed plan-row note for [MEMFN] / [KIT-VERIFY]: "Build go 2026-10-21 (Frank, to the kit): R-26 Z1/Zk; R17-b′ B4 prep, then B4 behind its gates (M0, E8), then B5-B9. Gates unchanged."
   - This lifts no gate. Each byte-moving step still arrives as a delivery with its own abi event, and main merges it.
+- notice: 2026-10-21 — **R-26 Z1 built, reviewed, fixes in flight (not yet `done:`).** Lane `lane/memfn-r26z1` @ 58cc1b9ed, report `docs/dev/lanes/r26z1_report.md`. MF_SITE_ABI 17→18 and MF_CLASS_V 4→**5** (B3b had already used 4). No pcrec abi event; zero movers so far on the plain and rwquest arms. Findings for main:
+  - **F-3, the soundness fix: the design text is yours to amend.** A wide SATISFIES context item does not prove an inner offset. Where a read of the item lies outside the subject, the other bytes are unconstrained. So `kit_class` proves only the item's outermost position: the lowest below the candidate, the highest after span 0, nothing when it straddles. kit_proof.md §4.2's "the proven positions are a SUPERSET of the REQUIRED ones" holds only for width-1 SATISFIES items. Stage 1 sends width-1 items only, so B1's population is unaffected. Proposed §4.2 wording: "…a superset of the REQUIRED ones for width-1 items; a wider SATISFIES item proves only its outermost position (below the candidate: its lowest offset; after span 0: its highest; straddling: none)."
+  - **Kit contract rulings (mine), for the record:**
+    - Q2: a forward FIND's span-0 class must be STATED, BOUNDED or CONTEXT.
+    - Q3: a REPORT site needs a BOUNDED span 0.
+    - Q4: `MF_FLOOR_LO` is refused with ANY term below the origin, not only CONTEXT terms (a negative-offset BOUNDED span is the same case).
+
+    pcrec states none of these today (zero movers).
+  - **F-4, being fixed inside the same MF_SITE_ABI 18 event:** `mf_consumer`'s zero was MF_C_RESULT. It gains an UNSTATED zero, refused where it is read, and pcrec's builders will state their consumer explicitly.
+  - **F-2, owed to Zk:** the kit's field space (64) and class space (64) are both full. Zk widens the mask before its REPORT row.
+  - **Then:** S1221-S1226 become mech rows. The heavy validation (nine emit_sweep arms, mech, make test) will be re-queued as `500-kit-r26z1-heavy` after the fix lane.
+- notice: 2026-10-21 — **Please file one plan row (Frank, to the kit: "file these as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit").** Proposed row:
+  `- [MEMFN-POSCOST] STATE:not-started — price a set-FIND's scan position by the form its set takes, plus superset covers`
+  - filed: 2026-10-21 (Frank, kit session).
+  - next: the B4 build goes ahead as agreed. Neither refinement is built now.
+  - trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a ≤ 2-term position within their span, and grid/bench timing shows the gain.
+  - The B4-prep closing lane takes the count from the manifest.
+  - charter, part 1: a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate. The scan position is priced by rate and by the form its set takes (V1 at ≤ 2 terms, `kit.terms.V1max`), not by rate alone.
+  - charter, part 2: a ≥ 3-term set may be searched through a ≤ 2-term SUPERSET filter, then verified exactly. For example, `\w` through `[0-9]|[A-z]` admits 5 extra members. This is a FIND filter only; it never proves anything for a REPORT site.
+  - refs: memfn/docs/ideas.md 2026-10-21; r17b_prime.md §1.3a R7/R7w.
+- notice: 2026-10-21 — **A third part for [MEMFN-POSCOST] (Frank: "we may run into similar questions when verifying an entire span").** Please append to the row's charter:
+  > (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not in pattern order. Each position takes its cheapest exact test: a word compare over literal runs, or a set test, possibly a superset test first. Proven offsets are skipped, as R-14's trim already does.
+
+  The fact behind it: ofsskip's `verify_chain` tests terms ascending by offset (pattern order). K82/R-1 already showed that lead order is part of the form's cost. Trigger: the same survey plus a verify-cost reading on dense-candidate cells. Nothing is built.
+- done: 2026-10-21 — **R-26.1-R-26.5 (kit_proof Z1): READY TO MERGE.** Branch `lane/memfn-r26` @ 50c6f2f26 (the merge of `lane/memfn-r26z1` @ d78a1453d into the kit branch, which also carries main 4c46ddcba). Report: `docs/dev/lanes/r26z1_report.md` (§9 covers the review fixes). MF_SITE_ABI 17→18, MF_CLASS_V 4→5. **No pcrec abi event, no pcrec byte moved.**
+  - Heavy validation ran as boxqueue job `500-kit-r26z1-heavy` (verdict GREEN) at d78a1453d, against base cc4f87ad3. Logs: `worktrees/r26z1/build/r26/heavy/`.
+  - emit_sweep, nine arms: plain, comments, simd, utf8, vm, start, rwquest, variant and trace all exit rc 0. The direct arms read movers=0 asymmetric=0. The paired arms read identical ref/working differ counts.
+  - mech, one call: S1221-S1226 and S1083 all DETECTED (7 rows; 0 unexpected/undetected/unreached/anomalies).
+  - make test via perfrun: rc 0, class green, uncontaminated, no `*** [test-` lines.
+  - The merge into the kit branch added only the lanes index line; `make strict` is clean.
+  - Merging this onto main conflicts only in the append-only docs.
+- done: 2026-10-21 — **R-26.6 (kit_proof Zk): READY TO MERGE.** Branch `lane/memfn-r26` @ c92da3c4b (the merge of `lane/memfn-r26zk` @ 6f03281cb). Report: `docs/dev/lanes/r26zk_report.md`. **No pcrec file changed, no pcrec abi event, no MF_SITE_ABI event.**
+  - **What it adds:**
+    - the kit's class and field sets become one 128-bit `kit_set`, which clears Z1's F-2;
+    - the REPORT class;
+    - row RPT, UNROUTED; it applies only where the form proves exactly the REQUIRED sets, and refuses otherwise (never NONE);
+    - `mf_preview(art, "R-26.6")`, which is refused twice, after the first define, and for an unnamed step, and has no options.def row.
+  - **Validation:** boxqueue `500-kit-r26zk-heavy` GREEN, at base 6ff4ea64b.
+    - emit_sweep, nine arms: rc 0, every stream movers=0 asymmetric=0.
+    - mech, 13 rows including S1251-S1256: all DETECTED, 0 unexpected.
+    - make test: green and uncontaminated.
+  - **For main's Z2:** call `mf_preview` at art setup, BEFORE any `mf_ask` on that art. `mf_ask` takes a const art, so an earlier ask cannot be refused.
+  - **B1 owes:** RPT's deny row, when it routes the row.

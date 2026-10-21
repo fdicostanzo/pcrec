@@ -1,0 +1,5 @@
+## X0 /home/pcrec/projects/pcrec/worktrees/x0oracle/build/x0/res_v3_sites.jsonl  pcre2=10.46 2025-08-27 plant='' self=None items=1941  (NO TRAILER: incomplete)
+agg site native items=814 p1:S_d=5 p1_cells=0 p1_nodes=25439 p1_red=1 p1_unknown=4697 red_other=1 why:site=814
+agg site utf8 items=1125 p1:S_d=5 p1_cells=0 p1_nodes=18157 p1_red=1 p1_unknown=4199 red_other=1 why:site=1125
+red site native - b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red site utf8 u b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 

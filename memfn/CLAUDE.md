@@ -153,6 +153,34 @@ shipped FIND row tests every term today, so no class moved (measured: zero
 emit_sweep movers on six arms). Check: `tests/memfn/proven_check.c` (part
 `proven` of `make test-memfn-finder`). Report: `docs/dev/lanes/r25_report.md`.
 
+R-26 Z1 (lane r26z1, 2026-10-21; R-26.1-R-26.5, `docs/design/kit_proof.md`
+rev 2.1 §7's Z1) made MF_SITE_ABI 18 and MF_CLASS_V 5 with NO `MF_VOCAB` move
+and NO pcrec byte moved: span 0's class is STATED (BOUNDED on every forward
+FIND's predicate, CONTEXT on a context stop), with its prefix facts
+`prefix_stated`/`exact_len`/`consumable_len` (pcrec states STATED / 0 / 0 on
+PF and OFS), a CONTEXT predicate's `absent`/`consumable` (MLINE: FAILS / NO,
+`read_floor` SUBJECT), the context spans `mf_site.ctx`/`nctx` (pcrec sends
+none), `read_floor`, `MF_SK_REPORT` (accepted with its refusals; no row serves
+it, so a well-formed REPORT site is refused at selection until R-26.6), and
+`mf_class.proven[]`, the per-offset proof, with `proven0`/`proven_prev` copied
+from it. Only the generic row tests a context span or renders `absent`
+SATISFIES; every other row declines them. Check: `tests/memfn/run_proof.sh`
+(part `proof` of `make test-memfn-finder`: refusal fixtures, the class, C-PROOF,
+a generated family against its own byte-loop oracle; plants S1221-S1226).
+Report: `docs/dev/lanes/r26z1_report.md`.
+
+R-26 Zk (lane r26zk, 2026-10-21; R-26.6, kit_proof.md §7's Zk) moved NO
+`MF_SITE_ABI` and NO pcrec byte: first the kit's class and field sets were
+widened from 64 to 128 bits (`kit_set`, kit.h: both spaces were full, r26z1
+F-2), then the REPORT kind took a class of its own and the finder table its
+REPORT row `RPT`, UNROUTED (step `R-26.6`): it serves REPORT alone, picks the
+composer's own walk and applies only where that form's class proves, at every
+offset, exactly the REQUIRED terms' sets (`kit_report_exact`; otherwise the
+site is refused, never NONE). The harness-only `mf_preview(art, "R-26.6")`
+routes it on one art (pcrec calls it from Z2's harness lever, not yet). Check:
+`tests/memfn/run_proof.sh` (families C and D; plants S1251-S1256, ZK6, ZK7). Report:
+`docs/dev/lanes/r26zk_report.md`.
+
 **Status: R4a, the code skeleton** (lane memfnskel; integration.md §22).
 `include/memfn.h`, the composer, the generic scalar row, K1's reference
 functions and an empty `src/options.def` are built into `libpcrec.a` by
