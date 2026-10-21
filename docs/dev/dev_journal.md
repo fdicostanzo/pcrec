@@ -27161,3 +27161,13 @@ Continues the checkpoint entry above (seambuild, a5inv, mssurvey). After it:
 - **[WATCH-IDLE] filed** (Frank: idle CPUs while a suite should run, unnoticed, more than once): one box-level alarm for "should be busy and is not"; shapes collected in the row (Backlog); memory pcrec-watch-idle-box.
 - **Mistakes:** mechnew's 1800 s cap was sized without arithmetic from P2d's 840 s for 6 rows; my first job-script write tripped the no-cd hook (a heredoc holding `cd "$TREE" ||` reads as a chained cd; write job files with the editor).
 - **Lessons:** size a mech stage cap from measured seconds per row; this box's `tail` is uutils (`tail -n N`, not `tail -N`).
+
+## 2026-10-21 — E5 pre-registration for R17-b′ B4's minimal E8 (main's record; D170)
+
+Recorded before the timing window runs, so the judged artifacts are fixed in advance. The pre-registration is `docs/design/memfn/r17b_prime/e8min/prereg.md` at kit commit **bf70e5dff** (lane/memfn-e8min), file sha256 `0af8d46ea1eb50d3fee2a520a1648d93a087443bbe16661578a7d2865c6c5d25`. Its table pins:
+- verdict script `e8min/verdict.py` sha256 `4bbd2156a31f165a9896f7ac2a9e3980316644d5fb2c9af3e0c02a7f3f7fe0eb`;
+- expected-loss list `b4prep/expected_losses.md` sha256 `cdfeba6f46540bef716edfc128730116c6a5a905d64e0e3c4cb2b840ce68b9bb`;
+- window job `e8min/jobs/560-kit-e8-window`, git blob `5e621eeb362ce0d0f88c2580e1780b1b8403f104`;
+- the census, the job's inputs and the plan, by the hashes in the file.
+
+J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about 40. D170 is applied to r17b_prime §9.2/§3.1a at kit commit 7d6b4ee05. The window runs as one queue job, `560-kit-e8-window`: quiet-gated, idle-ok, 112 groups, ~20 min, under Frank's standing timing clearance for 2026-10-21. Bench cells (I-156) join later as FINDING-only lines and do not gate.
