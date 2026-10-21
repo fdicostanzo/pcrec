@@ -1,5 +1,22 @@
 # R17-b′ — the kit's first candidate-finder delivery: one table over (stop, form), one window request, zero movers first
 
+**Revision 4.1 (2026-10-21), lane rev41, design only.** It applies Frank's three settled
+answers to revision 4's three questions (§7.3), and nothing else:
+1. **Q-R17P-26 (Frank):** a set site's form is chosen by its cover's TERM COUNT, a
+   compile-time fact: V1 for at most 2 terms, the walk for 3 or more. There is no
+   "unmeasured shape" case. R7, R7w, §1.9, §1.3a, §3.5 and §9.2a change (§R4.1).
+2. **Q-R17P-27 (Frank): YES.** F2, the VM hat's one-byte set, defaults to V1 at B5 (not
+   B4), with its g = 2 cells (V1 +38.3% slower) named EXPECTED losses up front.
+3. **Q-R17P-28 (the kit manager's call):** P1 is recorded as fired on the letter and NOT
+   built (it never fires on a default compile; D77).
+
+Text marked `[rev4.1]` is new or changed in this revision. Superseded revision 4 text is
+struck through (`~~...~~`) or carries a `[rev4.1]` note; nothing is silently deleted. The
+rulings' text is in `memfn/docs/journal.md` (2026-10-21) and the two 2026-10-21 notices at
+the end of `memfn/docs/responses.md`. Read §R4.1 first. Nothing under `src/`,
+`memfn/src/`, `tests/` or `lib/` changes, no timing was run, and no measured constant
+enters any source.
+
 **Revision 4 (2026-10-20), lane rev4, design only.** It does three things, all for B4,
 the routing commit:
 1. It folds in the measured contradictions from the zen4-grid2 slot's reading
@@ -40,7 +57,8 @@ measured value or from the form's text), **INTERPRETATION** (my inference),
 
 `[rev4]` For B4, read §R4, then §1.9 (the D169 default), §1.3a (the table B4 builds),
 §3.1a (B4's gates and the owed items) and §9.2a (the expected losses B4 names before
-it times anything).
+it times anything). `[rev4.1]` Read §R4.1 before all of them: it says which rev 4 sentences
+the three rulings replaced.
 
 How to read it: §0 first, then §R3 (what revision 3 moved, by finding id) and §R2, then
 §1 (the table) and §3 (the step plan). §4 is the contract (§4.5 is revision 3's
@@ -92,8 +110,11 @@ grid2 slot.
    - `[rev3 A5]` D1c (no span 0, one context byte, i.e. MLINE → the libc back row);
    - `[rev3 A7, A17]` D1w (one member anywhere else → WALK: today's VM-hat rule, and
      `fd-d1`'s OFF arm);
-   - `[rev3 C3]` R7 (LINER V1) only where the cover's shape has a measured
-     `kit.beta.V1` key, else R7w (WALK, today's form).
+   - ~~`[rev3 C3]` R7 (LINER V1) only where the cover's shape has a measured
+     `kit.beta.V1` key, else R7w (WALK, today's form).~~ `[rev4.1]` R7 (LINER V1) where
+     the cover has at most 2 TERMS; R7w (WALK, today's form) at 3 or more (Q-R17P-26,
+     answered). The cover's term count is a compile-time fact, so no shape needs its own
+     key first.
 
    Every default row is labelled UNMEASURED-DEFAULT in its `basis` column. PRES's
    default is KEEP (Q-WR-9). NONE is a row that never applies where span 0 is REQUIRED
@@ -102,11 +123,15 @@ grid2 slot.
    `[rev4]` **After grid2: 21 rows designed, 15 FIND and 6 PRES; 17 built by B4.**
    - R1 is DELETED: there is no crossover interval, because V1 beats the walk at every
      N ≥ 8 (M9 contradicted).
-   - R0 is RETIRED: under the slope token its class key never holds, and R7's
-     per-shape keys already send the losing r2 shapes to R7w.
+   - R0 is RETIRED: under the slope token its class key never holds, and ~~R7's
+     per-shape keys already send the losing r2 shapes to R7w~~ `[rev4.1]` R7's term-count
+     rule sends every cover of 3 or more terms (the losing r2 shapes among them) to R7w.
    - F0 and F1 are NOT BUILT (D77): F0 has no customer and F1 has nothing to displace.
      Each stays designed with its trigger.
-   - F2 gains a density condition (Q-R17P-27). P1 waits on Q-R17P-28.
+   - ~~F2 gains a density condition (Q-R17P-27). P1 waits on Q-R17P-28.~~ `[rev4.1]` F2
+     (the VM hat at \|S\| = 1) moves to V1 at B5 with NO density condition; its g = 2 cells
+     are named expected losses (Q-R17P-27, answered YES). P1 is recorded as fired on the
+     letter and NOT built (Q-R17P-28, the kit manager's call).
    - The default when landing predictability is unknown is V1, not the walk (D169, §1.9).
 
    The rows B4 builds are §1.3a.
@@ -124,8 +149,8 @@ grid2 slot.
    | (main) | E-1 = window_contract S1, main's own step and abi event (`[rev3 B10, A15]`) | — | main's |
    | B3a/B3b | ST3: presence + handoff merged (B3a shadow, B3b routed), against main-after-E-1 | yes (five priced picks ported verbatim under a shadow); B3b a DECLARED registry delta | none |
    | — | **first delivery COMPLETE**; then grid2 → E4b → E5-E8 judge → LOCKDOWN | | |
-   | B4 | R17-b′'s set-site ROUTING (V1 on measured shapes, ~~R0 WALK~~ `[rev4]` R7w WALK on the measured losing shapes, NO dispatch), M0's stamp, the kit size rung | NO: the one censused mover | ONE event, ~~78~~ `[rev4]` 81 (main today) → next |
-   | B5 | ST4: measured rows (~~libc, NONE,~~ the VM hat's \|S\| = 1, priced pre-scan), one census each `[rev4]` (F0/F1 not built, §1.3a; P1 per Q-R17P-28) | NO | one per default-moving row |
+   | B4 | R17-b′'s set-site ROUTING (V1 on measured shapes, ~~R0 WALK~~ `[rev4]` R7w WALK on the measured losing shapes, NO dispatch; `[rev4.1]` by TERM COUNT: V1 at ≤ 2 terms, WALK at ≥ 3), M0's stamp, the kit size rung | NO: the one censused mover | ONE event, ~~78~~ `[rev4]` 81 (main today) → next |
+   | B5 | ST4: measured rows (~~libc, NONE,~~ the VM hat's \|S\| = 1, ~~priced pre-scan~~), one census each `[rev4]` (F0/F1 not built, §1.3a; ~~P1 per Q-R17P-28~~) `[rev4.1]` F2 is built here with no density condition (Q-R17P-27, YES); P1 is NOT built (Q-R17P-28: fired on the letter, never fires on a default compile, D77) | NO | one per default-moving row |
    | B6 | the W64 SIMD rows (CANDIDATE) | SIMD-off yes | none |
    | B7 | ST5: the libc class deny + three libc-free rows | yes at default | none |
    | B8 | ST6: the N-dispatch rows, if not already paid at B4 `[rev4]` (B4 pays none: T2/T3 fail on every twin, §2.5; B8 waits for [REGIME-TWIN]) | NO | one |
@@ -190,7 +215,36 @@ grid2 slot.
    rulings (D167). `[rev3]` Eleven new ones, Q-R17P-15..25, each with a recommendation;
    Q-R17P-15 (the define-time query's contract) is the one B2 waits on.
    `[rev4]` Three more, Q-R17P-26..28 (§7.3), each in plain words with a leaning. None of
-   them re-asks what D169 answers.
+   them re-asks what D169 answers. `[rev4.1]` All three are ANSWERED (Frank on 26 and 27,
+   the kit manager on 28); each is marked in §7.3 with its answer and source.
+
+---
+
+## R4.1. What revision 4.1 changed, by section `[rev4.1]`
+
+Sources: Q-R17P-26 and Q-R17P-27 are Frank's answers of 2026-10-21 (the journal entry of
+that date and the two notices at the end of `memfn/docs/responses.md`); Q-R17P-28 is the
+kit manager's call, recorded in the same entry. grid2read = `docs/dev/lanes/
+grid2read_report.md`. Every number is rev 4's, unchanged; no new measurement.
+
+| change | rev 4 | rev 4.1 | where |
+|---|---|---|---|
+| **R7 keys on TERM COUNT** (Q-R17P-26) | fires where the cover's shape has a measured saving key > eps; an unmeasured shape does not hold | fires where the cover has **at most 2 terms** (range + eq + cube terms, a compile-time fact the kit builds). The nine per-shape saving keys stay as the EVIDENCE the rule is drawn from; no row reads them | §1.3a row 12, §1.3 row 16 note, §5.2a M1-M5, §8.3 |
+| **R7w loses its "no key" reason** | reached for two reasons: measured-loss and unmeasured | reached for ONE: the cover has **3 or more terms** (the three measured losers are 3, 4 and 4 terms; an untimed combination routes by its count) | §1.3a row 13 and notes, §1.3 row 17 note |
+| §1.9 default table | a shape with NO measured key → WALK until Q-R17P-26 is ruled | the row is replaced: such a shape routes by its term count, like every other | §1.9 table |
+| the 54 no-key sites | stay on R7w, pending Q-R17P-26 | route by term count. Their split between V1 and the walk is OWED to the REGENERATED mover manifest (§3.1a item 4); this revision does not compute it | §3.5, §9.2a, §3.1a item 4 |
+| B4's acceptance | confirms the six winning shapes | also **confirms the rule on the shapes it moves**: a shape whose measured sign contradicts its term count is a FINDING, not a default | §9.2 item 2, §9.4 |
+| **F2 defaults to V1 at B5** (Q-R17P-27: YES) | a density condition, still open | NO density condition. F2 fires on a default compile at **B5** (not B4, so B4 stays one change). Its g = 2 cells (V1 +38.3% slower) are named EXPECTED losses up front | §1.3a row 1, §1.9 table, §3.1 B5 row, §3.1a item 6, §3.4 floors, §9.2a |
+| **P1 recorded, not built** (Q-R17P-28) | build OPEN | the trigger FIRED on the letter; P1 is NOT built (it never fires on a default compile; D77) | §1.4, §3.1 B5 item (d), §3.4 floors, §3.1 B5 row |
+| §7.3 | three open questions | each marked ANSWERED with its answer and source; question text left in place | §7.3 |
+| the row-edit log | rev 4 entries | rev 4.1 entries appended | `memfn/docs/finder_history.md`, §1.8 |
+
+Unchanged by revision 4.1: every other row of §1.3a and §1.4, the contract (§4), the step
+plan's order, the gates of §3.1a (D163 add. 8 MET; E8 and M0 owed) and the D169 text
+itself. The rule is the OFF-layer one: the term count is the V1 form's own cost structure
+(grid2 timed V1 against the walk). Whether the W64 form (B6) has the same break is B6's
+measurement (§3.4).
+
 ---
 
 ## R4. What revision 4 changed, by row and source `[rev4]`
@@ -203,9 +257,9 @@ in §1.9). Every number is Zen 4 7700X, gcc 15.2, streamed subjects, KIT tier
 
 | row / item | rev 3 | rev 4 | source | where |
 |---|---|---|---|---|
-| **default under unknown predictability** | not stated; rev 3's routed set rows fell to the walk wherever a key was missing or a gap row fired | **V1** wherever no MEASURED row keeps the walk. The one case the ruling does not settle is a cover SHAPE with no measured cost; it is Q-R17P-26, and until it is ruled that shape stays on R7w | D169; grid2read §3.5 and summary items 5-6 | §1.9 |
-| R0 (≥ 2 RANGE terms → WALK) | routed at B4 on `kit.saving.V1.WALK.r2` ≤ eps | **RETIRED**. The class key is a MAX (+0.0121, set by (2,0,0)) and never ≤ `kit.eps.streamed.slope` (0.113%). The three losing r2 shapes ((2,0,1) −13.3%, (3,1,0) −41.3%, (3,0,1) −46.4%) reach WALK through R7's own per-shape keys and R7w. Its deny `fd-r0` retires with it | grid2read §3.2, §6 (R0 row), §7 item 2 | §1.3a, §3.4 |
-| R7 (LINER) | fires where the shape's saving key is measured and > eps | the same rule, with grid2's nine shape keys. It fires on (1,0,0) +42.0%, (2,0,0) +1.2%, (0,1,1) +26.8%, (0,2,0) +39.0%, (0,0,1) +54.8% and (1,1,0) +21.1%. It does not fire on the three losing shapes. The (2,0,1) and (3,1,0) values are PROVISIONAL (from load-suspect cells), but their signs are not in doubt | grid2read §3.2 (an. 4, 4b, 4c), §6 | §1.3a |
+| **default under unknown predictability** | not stated; rev 3's routed set rows fell to the walk wherever a key was missing or a gap row fired | **V1** wherever no MEASURED row keeps the walk. ~~The one case the ruling does not settle is a cover SHAPE with no measured cost; it is Q-R17P-26, and until it is ruled that shape stays on R7w~~ `[rev4.1]` A cover shape with no timing routes by its TERM COUNT (Q-R17P-26, answered): V1 at ≤ 2 terms, the walk at ≥ 3 | D169; grid2read §3.5 and summary items 5-6; `[rev4.1]` Frank 2026-10-21 | §1.9 |
+| R0 (≥ 2 RANGE terms → WALK) | routed at B4 on `kit.saving.V1.WALK.r2` ≤ eps | **RETIRED**. The class key is a MAX (+0.0121, set by (2,0,0)) and never ≤ `kit.eps.streamed.slope` (0.113%). The three losing r2 shapes ((2,0,1) −13.3%, (3,1,0) −41.3%, (3,0,1) −46.4%) reach WALK through ~~R7's own per-shape keys and~~ R7w `[rev4.1]` (their covers have 3, 4 and 4 terms, so R7's term-count rule sends them there). Its deny `fd-r0` retires with it | grid2read §3.2, §6 (R0 row), §7 item 2 | §1.3a, §3.4 |
+| R7 (LINER) | fires where the shape's saving key is measured and > eps | ~~the same rule, with grid2's nine shape keys.~~ `[rev4.1]` Now keyed on the cover's TERM COUNT (≤ 2 → V1; §R4.1). The nine keys are the evidence: the rule fires, and the keys agree, on (1,0,0) +42.0%, (2,0,0) +1.2%, (0,1,1) +26.8%, (0,2,0) +39.0%, (0,0,1) +54.8% and (1,1,0) +21.1% (1-2 terms each). It does not fire on the three losing shapes (3, 4 and 4 terms). The (2,0,1) and (3,1,0) values are PROVISIONAL (from load-suspect cells), but their signs are not in doubt | grid2read §3.2 (an. 4, 4b, 4c), §6 | §1.3a |
 | R7 at W16/W32 (B6) | W64 where built | W64 from N = 64 (the block). Below 64 B, V1 is the best form at both layers | grid2read §3.3, §6 (R7 at W16/W32) | §1.3a |
 | R1 (short N → WALK) | an N-interval below `kit.xover.V1.WALK` (36 B, INTERPOLATED) | **DELETED**: V1 beats the walk at every measured N, from 8 B (−0.18 ns at 4.5× floor) to 1 MiB. N\* = 8 is the lowest measured point and NOT LOCATED. `kit.xover.V1.WALK.DFA_SCAN` = 8 B is recorded as an UPPER bound, and no row reads it | grid2read §3.3, §4 A2, §6 (R1 row) | §1.3a, §2.6 |
 | R2 (W16/W32, N < block → V1) | `unpaid` = WALK | `unpaid` = UNSTATED (the row is dropped and its interval falls to the W64 terminal). WALK is the WORST form below the block: walk − V1 = +4.98 / +6.60 ns at N = 48 / 63. T1 fails at N = 8 and T2/T3 fail, so no B6 dispatch either until [REGIME-TWIN] | grid2read §3.3, §4 A9, §5, §6 (R2 row) | §1.3a, §2.5 |
@@ -215,8 +269,8 @@ in §1.9). Every number is Zen 4 7700X, gcc 15.2, streamed subjects, KIT tier
 | D1w (VM hat \|S\| = 1 → WALK) | until F2 | stands until F2 (D169 names it) | grid2read §6 (D1w row); D169 | §1.3a, §1.9 |
 | F0 (NONE) | built at B5 | **NOT BUILT** (D77). NONE never beats the walk beyond the floor except `o-bnd` at g = 2 (−7.0%), and it loses +185..+497% at g ≥ 32. `kit.gnone` = −1 (never) on three kinds, 2 B on DFA_SCAN.bounded. Trigger: a measured cell where NONE beats the pick at a gap a real workload has | grid2read §3.7, §4 A12, §6 (F0 row) | §1.3a |
 | F1 (a measured libc-free row displacing D1) | built at B5 | **NOT BUILT** (D77). `kit.dom.<f>.LIBC.<kind>` = 0 for every libc-free form and kind: nothing displaces D1. Trigger: a kit form whose `dom` key becomes 1 | grid2read §3.7, §6 (F1 row) | §1.3a |
-| F2 (VM hat \|S\| = 1 → V1) | saving > eps | the saving is +0.515, but V1 loses +38.3% at g = 2 (crossing ~4 B, INTERPOLATED(2, 8)). The row needs a density condition: Q-R17P-27 | grid2read §3.7 (an. 8b), §6 (F2 row), §7 item 3 | §1.3a, §7.3 |
-| P1 (priced pre-scan) | waits for Q-WR-9's trigger | the trigger FIRES ON THE LETTER: KEEP loses 1.47 / 1.54 ns (3.4-3.8%) on two TUG g8 early cells, and the same pre-check wins ×49..×112 on absent cells. Whether to build it is Q-R17P-28 | grid2read §3.8, §4 A13, §6 (P1 row) | §1.4, §7.3 |
+| F2 (VM hat \|S\| = 1 → V1) | saving > eps | the saving is +0.515, but V1 loses +38.3% at g = 2 (crossing ~4 B, INTERPOLATED(2, 8)). ~~The row needs a density condition: Q-R17P-27~~ `[rev4.1]` NO density condition: F2 defaults to V1 at B5, with the g = 2 cells named expected losses (Q-R17P-27, YES) | grid2read §3.7 (an. 8b), §6 (F2 row), §7 item 3; `[rev4.1]` Frank 2026-10-21 | §1.3a, §7.3 |
+| P1 (priced pre-scan) | waits for Q-WR-9's trigger | the trigger FIRES ON THE LETTER: KEEP loses 1.47 / 1.54 ns (3.4-3.8%) on two TUG g8 early cells, and the same pre-check wins ×49..×112 on absent cells. ~~Whether to build it is Q-R17P-28~~ `[rev4.1]` Recorded as fired on the letter and NOT built (Q-R17P-28, the kit manager's call) | grid2read §3.8, §4 A13, §6 (P1 row) | §1.4, §7.3 |
 | pay rule (§2.5) | T1-T3 "may pass at B4" | **measured: T2 and T3 FAIL on every twin; T1 holds for R2 only above N = 8.** B4 ships NO dispatch, and B8 waits for [REGIME-TWIN] | grid2read §3.6, §5 | §2.5 |
 | eps token | 0.173% (grid1) | `kit.eps.streamed.slope` = 0.113%; the slope's own noise is 0.247% p90 | grid2read §3.1 | §5.2a |
 | B4's gates | D163 add. 8, E8, M0 | D163 add. 8 MET (E1 on main); E8 and M0 still owed; the OWED re-time and attribution items added | decisions D163 add. 8, D169; plan [ENTRY-TABLE], [MEASURE-SET], [REGIME-EVAL] | §3.1a |
@@ -544,7 +598,7 @@ source from B1 unless marked.
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | ~~F0 `none`~~ `[rev4]` not built | P,E,A | all | DFA_SCAN, DFA_HAT, HYB_PF (DFA_ATTEMPT only once its M22 key exists, Q-WR-2) | span 0 `need` OPTIONAL (gate) ∧ E measured ∧ E.g < `kit.gnone.<kind>.<shape>` (M22) | NONE | — | `fd-none` (PAIR) | MEASURED | B5 (built at B5) |
 | 2 | ~~F1 `libc-m`~~ `[rev4]` not built | P,A | all | all | one member ∧ not the seek role ∧ `kit.dom.<f>.LIBC.<kind>` ≥ 1 (derived from M19-M21) | that form | — | `fd-libc-m` | DERIVED | B5 (built at B5) |
-| 3 | `[rev3 A7]` F2 `vm-hat-1b` | P,A | off | VM_ATTEMPT | one member ∧ the seek role ∧ `kit.saving.V1.WALK.VM_ATTEMPT.(0,1,0)` > `kit.eps.<regime>` (derived from grid2 item 3's VM_ATTEMPT cells) | V1 | — | `fd-vm-hat-1b` | DERIVED | B5 (built at B5) |
+| 3 | `[rev3 A7]` F2 `vm-hat-1b` `[rev4.1]` no density condition, §1.3a row 1 | P,A | off | VM_ATTEMPT | one member ∧ the seek role ∧ `kit.saving.V1.WALK.VM_ATTEMPT.(0,1,0)` > `kit.eps.<regime>` (derived from grid2 item 3's VM_ATTEMPT cells) | V1 | — | `fd-vm-hat-1b` | DERIVED | B5 (built at B5) |
 | 4 | ~~R0~~ `[rev4]` retired | P,A | off | all | cover's shape class r2 (≥ 2 RANGE terms) ∧ `kit.saving.V1.WALK.r2` ≤ `kit.eps.<regime>` (derived from M2, M3, M6) | WALK | — | `fd-r0` | DERIVED | B4 |
 | 5 | R5 `[rev3 D8: R5 ∪ R6]` | P,E,A | all | all | ~~E measured ∧ E.g < `kit.gstar.<LINER(layer)>.<kind>` (M15); FRAGILE at OFF~~ `[rev4]` a stated REGULAR landing regime (§1.3a) | WALK | — | `fd-r5` | MEASURED | B4 (reachable with a measured bundle) |
 | 6 | R8 | P,N,M,E,A | w16,w32 | all | body ONESHOT (gate) ∧ E measured ∧ N ≥ `kit.lstar.W64.<kind>` ~~∧ E.g ≥ `kit.g8.W64.<kind>`~~ `[rev4]` (E.g dropped) (gridread §6.3 D2; regime_tables rev 0.5) | W64 | V1 | `fd-r8` | MEASURED | B6 |
@@ -557,8 +611,8 @@ source from B1 unless marked.
 | 13 | `[rev3 A5]` D1c `context-1b` | P | all | DFA_ATTEMPT | no span 0 ∧ one context predicate of one byte (MLINE's `{\n}` at −1) | LIBC back (`pf_memchr_back`, LOOP_EXIT) | — | none (B7's `libc` class deny reaches it) | UNMEASURED-DEFAULT | B2 |
 | 14 | `[rev3 A7, A17]` D1w `walk-1b` | P | all | every kind but DFA_ATTEMPT | one member | WALK (the table walk over the one-member table) | — | none | UNMEASURED-DEFAULT | B2 |
 | 15 | D2 `run` | P | all | all | span 0 is a RUN term (a handoff landmark longer than one byte) | RUN (the nested `fn_rows[]` walk; its BODY/PREFIX rows and their denies unchanged) | — | none (the nested table's denies) | UNMEASURED-DEFAULT (today's rule) | B3b |
-| 16 | R7 `liner` `[rev3 C3, D8]` | P,A (+I at w16/w32) | all | all | `kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.<regime>` (M3/M4/M5 → derived; an ABSENT key, i.e. an unmeasured shape, does not hold) | the layer's LINER form: V1 at OFF; W64 at W16/W32 where it is BUILT and I offers it | — | none (the FORM denies `pf-terms-mask` at B4, `pf-terms-w32`/`-w16` at B6) | DERIVED | B4 (W64: B6) |
-| 17 | `[rev3 C3]` R7w `walk-default` | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT | B4 |
+| 16 | R7 `liner` `[rev3 C3, D8]` `[rev4.1]` superseded: keyed on the cover's TERM COUNT, §1.3a row 12 | P,A (+I at w16/w32) | all | all | `kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.<regime>` (M3/M4/M5 → derived; an ABSENT key, i.e. an unmeasured shape, does not hold) | the layer's LINER form: V1 at OFF; W64 at W16/W32 where it is BUILT and I offers it | — | none (the FORM denies `pf-terms-mask` at B4, `pf-terms-w32`/`-w16` at B6) | DERIVED | B4 (W64: B6) |
+| 17 | `[rev3 C3]` R7w `walk-default` `[rev4.1]` reached only at ≥ 3 terms, §1.3a row 13 | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT | B4 |
 
 Notes:
 - **Built when** `[rev2]` `[rev3]` (`[rev4]`: F0 and F1 are NOT built, §1.3a): rows 4-17 are source from B1 (the evaluator judges
@@ -605,7 +659,10 @@ Notes:
   stands with no amendment. It has no NONE row (Q-WR-2: F0's DFA_ATTEMPT key is never
   written until a measurement is ruled in) and no libc-free row (the generic row never
   serves LOOP_EXIT, Q-R7-3).
-- **R7 is gated on a measured key** `[rev3 C3]`. `[rev4]` grid2 measured item 3a's three shapes
+- **R7 is gated on a measured key** `[rev3 C3]`. `[rev4.1]` Superseded: R7 is gated on the
+  cover's TERM COUNT (≤ 2 terms), a compile-time fact; the measured keys are the evidence
+  for that rule, not a gate each shape must pass first (§1.3a, §R4.1). The text below is
+  revision 3's reasoning, kept. `[rev4]` grid2 measured item 3a's three shapes
   (all three win), so they route at B4. The losing r2 shapes take R7w (§1.3a). 52% of R17-b's byte V1 movers (320 of
   620; byte-vm 485 of 994) have a cover shape no grid1 group timed, and β(V1)/β(walk)
   depends on the shape (0.572 .. 1.410). So R7 fires only where its shape's saving key
@@ -639,7 +696,7 @@ key.
 
 | # | id | needs | layers | kinds | facts ∧ comparators | pick | unpaid | deny | basis | routed at | evidence |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | F2 `vm-hat-1b` | P,E,A | off | VM_ATTEMPT | one member ∧ the seek role ∧ `kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0` > `kit.eps.streamed.slope` ∧ a density condition, still open (Q-R17P-27) | V1 | — | `fd-vm-hat-1b` | MEASURED | B5 (built at B5) | §3.7 (an. 8b): saving +0.515; V1 at g = 2 is +38.3% |
+| 1 | F2 `vm-hat-1b` | ~~P,E,A~~ `[rev4.1]` P,A | off | VM_ATTEMPT | one member ∧ the seek role ∧ `kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0` > `kit.eps.streamed.slope` ∧ ~~a density condition, still open (Q-R17P-27)~~ `[rev4.1]` NO density condition (Q-R17P-27, YES): it fires on a default compile. E drops out of `needs` with the condition | V1 | — | `fd-vm-hat-1b` | MEASURED | B5 (built at B5, not B4) | §3.7 (an. 8b): saving +0.515; V1 at g = 2 is +38.3% slower, an EXPECTED loss named up front (§9.2a); V1 +33..+54% faster at g ≥ 8 (D169's landing trade) |
 | 2 | R5 `regular` | P,E | **off** | all | `SF_E_REGULAR` (below): the analysis object states, at MEASURED provenance, that this site's landings are REGULAR; or the caller states it | WALK | — | `fd-r5` | MEASURED (the walk's win on regular landings) | B4 (no default compile reaches it: no analysis kind states a regime today) | §3.5: V1 +14.9% at g = 2 reg, +34.9% at g = 8 reg; S1/A1 NULL to −4.3% there, hence OFF only |
 | 3 | R8 | P,N,M,A | w16, w32 | all | body ONESHOT (gate) ∧ N ≥ `kit.lstar.W64.<kind>` (64 B) | W64 | V1 | `fd-r8` | DERIVED | B6 | §3.5 (an. 6c2): W64 beats V1 at every tested g; §3.3: the block at 64 B |
 | 4-6 | R3a, R3b, R4 | H(,P) | (as rev 3) | all | unchanged (§1.3 rows 7-9) | (as rev 3) | — | (B9) | MEASURED, PROVISIONAL | B9 | not timed by grid2 |
@@ -648,8 +705,8 @@ key.
 | 9 | D1c `context-1b` | P | all | DFA_ATTEMPT | no span 0 ∧ one context predicate of one byte | LIBC back | — | none | UNMEASURED-DEFAULT | B2 (locked) | §3.7 (o-back: LIBC regret +208% at g = 2, best elsewhere) |
 | 10 | D1w `walk-1b` | P | all | every kind but DFA_ATTEMPT | one member | WALK | — | none | UNMEASURED-DEFAULT | B2 (locked) | D169 keeps it until F2 |
 | 11 | D2 `run` | P | all | all | span 0 is a RUN term | RUN | — | the nested table's | UNMEASURED-DEFAULT | B3b (locked) | not timed |
-| 12 | R7 `liner` | P,A (+I at w16/w32) | all | all | `kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.streamed.slope` (an ABSENT key does not hold) | the layer's LINER form: V1 at OFF; W64 at W16/W32 where built (B6) | — | the FORM denies (`pf-terms-mask` at B4) | DERIVED | B4 | §3.2: holds for (1,0,0) +0.420, (2,0,0) +0.012, (0,1,1) +0.268, (0,2,0) +0.390, (0,0,1) +0.548, (1,1,0) +0.211; fails for (2,0,1) −0.133, (3,1,0) −0.413, (3,0,1) −0.464 |
-| 13 | R7w `walk-default` | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT (it reads nothing; it is reached for two reasons, below) | B4 | the three losing shapes (measured); shapes with no key (Q-R17P-26) |
+| 12 | R7 `liner` | P,A (+I at w16/w32) | all | all | ~~`kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.streamed.slope` (an ABSENT key does not hold)~~ `[rev4.1]` the cover's TERM COUNT ≤ 2 (range + eq + cube terms of the cover `pf_terms_mask` builds; a compile-time fact, so an untimed combination needs no key first). The constant 2 is the sign change across grid2's nine timed shapes (evidence column); it is written in the row, not read from a key | the layer's LINER form: V1 at OFF; W64 at W16/W32 where built (B6) | — | the FORM denies (`pf-terms-mask` at B4) | ~~DERIVED~~ `[rev4.1]` UNMEASURED-DEFAULT by the self-check's rule (R7 now reads no key, as D1 reads none); the constant 2 is labelled in place (D149) as a trend over nine timed shapes, Q-R17P-26 | B4 | §3.2 (the evidence the rule is drawn from; V1 vs the walk): saves for 1-2 terms: (1,0,0) +0.420, (0,0,1) +0.548, (2,0,0) +0.012, (0,1,1) +0.268, (0,2,0) +0.390, (1,1,0) +0.211; loses for 3 or more: (2,0,1) −0.133 (3 terms), (3,1,0) −0.413 (4), (3,0,1) −0.464 (4). `[rev4.1]` The rule is V1's (grid2 timed V1 against the walk); B6 decides the W64 form's own condition |
+| 13 | R7w `walk-default` | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT (it reads nothing; `[rev4.1]` it is reached for ONE reason, below) | B4 | `[rev4.1]` covers of 3 or more terms: the three measured losers, and any untimed combination by its count. ~~the three losing shapes (measured); shapes with no key (Q-R17P-26)~~ |
 
 Notes on the rev 4 table:
 - **Gone from the table.** R0 (retired), R1 (deleted), F0 and F1 (not built). §R4
@@ -657,20 +714,34 @@ Notes on the rev 4 table:
 - **Why R0 can go.** R0 was a CLASS guess made before the r2 shapes had their own
   keys: "≥ 2 RANGE terms → WALK, because a 3-term V1 is slower" (gridread L3). grid2
   measured the shapes one by one, and the class key turns out to be a MAX. One
-  winning shape ((2,0,0), +1.2%) suppresses R0 for the three that lose. R7's per-shape
-  comparator already sends each losing shape to R7w and each winning one to V1, so R0
+  winning shape ((2,0,0), +1.2%) suppresses R0 for the three that lose. ~~R7's per-shape
+  comparator already sends each losing shape to R7w and each winning one to V1~~
+  `[rev4.1]` R7's term-count rule already sends each losing shape (3-4 terms) to R7w
+  and each winning one (1-2 terms) to V1, so R0
   could only ever have done harm: holding on a class whose MAX is ≤ eps would force
   the walk onto a shape whose own key says V1 wins. The row, its deny `fd-r0` and its
   sabotage row S916 retire together at B4 (§3.4, §8.3). This removes a special case.
   It is not a new mechanism.
-- **R7w is reached for two reasons**, and the listing and the facts section give each
-  site's reason:
-  - **measured-loss**: the shape's key exists and is ≤ eps. This is D169's "a
-    measured row keeps the walk";
-  - **unmeasured**: no key exists for the shape. Q-R17P-26 asks whether D169's V1
-    default also covers this case.
+- ~~**R7w is reached for two reasons**, and the listing and the facts section give each
+  site's reason:~~ `[rev4.1]` **R7w is reached for ONE reason** (Q-R17P-26, answered):
+  the cover has **3 or more terms**. The listing and the facts section print the count
+  beside the pick. The two rev 4 reasons, struck:
+  - ~~**measured-loss**: the shape's key exists and is ≤ eps. This is D169's "a
+    measured row keeps the walk";~~ now simply "3 or more terms": the three measured
+    losers (3, 4 and 4 terms) are the evidence, and a measured row still keeps the walk
+    by the same count;
+  - ~~**unmeasured**: no key exists for the shape. Q-R17P-26 asks whether D169's V1
+    default also covers this case.~~ gone: an untimed combination routes by its term
+    count like any other, and needs no per-shape key first. If the cover search finds
+    no cover at all (R17-b's K = 4), there is no V1 form to route to and the site keeps
+    the walk it has today.
+  - **How the rule is held honest.** B4's acceptance measurement confirms the rule on
+    every shape it moves; a shape whose measured sign contradicts its term count (a
+    3-term shape that wins, or a 2-term shape that loses) is a FINDING, reported with
+    its cells, not a default to shrug off (§9.2 item 2, §9.4).
   The self-check needs no change: R7w reads nothing, so its `basis` stays
-  UNMEASURED-DEFAULT.
+  UNMEASURED-DEFAULT. `[rev4.1]` R7 now reads no key either, so its `basis` is
+  UNMEASURED-DEFAULT too, with the constant labelled in place (row 12).
 - **`SF_E_REGULAR` is a PROPOSED site fact, not built.** It says the landings are
   regular. Its home is the analysis object, as a new [FINDINGS] query kind (proposed
   `landing-regime`, values `regular` / `irregular`, UNSTATED zero) in `find_queries[]`,
@@ -713,7 +784,7 @@ R-18's chain links consume the slot's output unchanged:
 | # | id | needs | kinds | condition | link | unpaid | deny | basis | routed at |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | P0 `required` | P | all | the span's `need` is REQUIRED (gate) | `verify` = 1, `member` = 0 (every member) and the WHOLE run (K65, K66), before the first element (G-1, G-2) | — | none: undeniable (a deny would let a budgeted engine give up where today answers, D158) | DERIVED (from the answer contract) | B3b |
-| 2 | P1 `priced` | P,E,A,N,M | all | `need` OPTIONAL ∧ E measured ∧ the set has the gate's quantities (M23) | argmin {`verify` = 1, `verify` = 0} by expected cost | `verify` = 1 | `fd-pres-priced` (with the row) | MEASURED | B5, and only once Q-WR-9's trigger fires (a TUG cell measured losing for want of it); built at B5 |
+| 2 | P1 `priced` | P,E,A,N,M | all | `need` OPTIONAL ∧ E measured ∧ the set has the gate's quantities (M23) | argmin {`verify` = 1, `verify` = 0} by expected cost | `verify` = 1 | `fd-pres-priced` (with the row) | MEASURED | B5, and only once Q-WR-9's trigger fires (a TUG cell measured losing for want of it); ~~built at B5~~ `[rev4.1]` NOT BUILT: the trigger fired on the letter and P1 is recorded, not built (Q-R17P-28) |
 | 3 | P2 `dominated` (G1, ported) | P,E | all | `need` OPTIONAL ∧ span 0's `proven0` covers this span (identity; `run_verified`; or the density conjunct read from the frequency kind, prior included) | `proven_by` = 1 | — | `fd-pres-g1` | UNMEASURED-DEFAULT (the density conjunct's prior and its constant, `[rev3 C11]`) | B3b |
 | 4 | P3 `pick` (ported) | P,E | all | `need` OPTIONAL ∧ the span is one member of a necessary set, or the window of a run | `member` = the rarest by the frequency kind, ties to the higher PATTERN ORDER (PR-7); the run's scan index / window start | — | `fd-pres-pick` (deny = keep every member) | UNMEASURED-DEFAULT (the prior's "rarest") | B3b |
 | 5 | P4 `set-leads` (ported) | P,E | all | the set's pick is strictly rarer than the run's scan member | `order` before the run | — | `pres-set-lead` (replaces pcrec's `-fno-req-set-lead`, bit 45, in the SAME commit: KW-11, Q-WR-12) | UNMEASURED-DEFAULT ("strictly rarer" on the prior) | B3b |
@@ -743,7 +814,13 @@ Notes:
   early. The same pre-check wins ×49..×112 when the byte is absent, and late cells are
   NULL. The operands are measured (`kit.gate.byte1.DFA_SCAN.early/late/absent` =
   +8.1 / 0 / −247,000 u·B). P1 reads E only at MEASURED provenance, so even if built it
-  would never fire on a default compile. Whether to build it at B5 is Q-R17P-28.
+  would never fire on a default compile. ~~Whether to build it at B5 is Q-R17P-28.~~
+  `[rev4.1]` **Ruled (Q-R17P-28, the kit manager's call, 2026-10-21): the trigger is
+  recorded as FIRED ON THE LETTER and P1 is NOT BUILT.** It never fires on a default
+  compile (it reads E only at MEASURED provenance), so building it now would be work
+  for a row only a measured bundle reaches (D77). P1 stays designed; rev 4's leaning
+  names when to look again: a measured-bundle workload exists. The locked PRES slot is
+  unchanged (P0, P2, P3, P4, P9), and B5 has no P1 item.
 - **P0 before P2/P3.** A REQUIRED span is never dropped or narrowed (the applicability
   rule, KW-6/C-9): on a no-DFA route every member and the whole run are verified, which
   is K65 fix (a) and K66 as row data.
@@ -798,7 +875,8 @@ population). Revision 3 replaces it with ONE bit per row, `fd_row.routed`:
   trace-only shadow, r4ccore's I1 pattern).
 - **The commit that routes a group sets its rows' bits** (the "routed at" column of §1.3
   and §1.4): D1, D1c, D1w at B2; D2 and the PRES rows at B3b; ~~R0, R1,~~ R5, R7, R7w at B4
-  (R2, R8 at B6; ~~F0-F2~~ `[rev4]` F2, P1 at B5 (F0, F1 not built); R3a, R3b, R4 at B9).
+  (R2, R8 at B6; ~~F0-F2~~ `[rev4]` ~~F2, P1 at B5 (F0, F1 not built)~~ `[rev4.1]` F2 at B5
+  (F0, F1 not built; P1 recorded, not built); R3a, R3b, R4 at B9).
 - At B4 every row is routed; the field is DELETED in B4's commit. It is
   implement-then-replace's switch written as data on the rows themselves.
 
@@ -856,7 +934,10 @@ not later: revision 2's row edits (F0, F1, D1, D2, the PRES slot, R1's terminal-
 key) and revision 3's (D1c, D1w, F2, R7w, R5 ∪ R6, R7 ∪ R7s, the comparator, the link
 attributes, `basis`, `refuted_by`, R1/R2's fast-terminal condition) are logged in this
 revision's commit. `[rev4]` So are revision 4's (R0 retired, R1 deleted, R2's `unpaid`, R5's
-condition and layer, R8's E.g, F0/F1 not built, F2's open density condition). regime_tables.md mirrors the FIND slot (main's mirror, updated by main
+condition and layer, R8's E.g, F0/F1 not built, F2's open density condition). `[rev4.1]` So
+are revision 4.1's (R7 re-keyed to the cover's term count, R7w's single reason, F2's
+density condition dropped, P1 recorded and not built), logged in `memfn/docs/
+finder_history.md` in the commit that makes them. regime_tables.md mirrors the FIND slot (main's mirror, updated by main
 from the log); the PRES slot is not a regime row (it is not judged by [REGIME-EVAL]'s
 grid) and needs no mirror there.
 
@@ -907,16 +988,17 @@ Landing predictability is a property of the SUBJECT, unknown at compile time.
 
 | case | rev 3 | rev 4 under D169 |
 |---|---|---|
-| a set site whose cover shape has a measured V1 saving > eps | R7 → V1, unless R1's short-N interval or R5's gap row took the walk | **V1**, with no length or gap row in front of it. R1 is deleted (no interval) and R5 no longer reads a gap |
-| a set site whose shape has a measured V1 LOSS ((2,0,1), (3,1,0), (3,0,1)) | R0 → WALK (class rule) | **WALK** through R7w: a measured row keeps it (the shape's own key) |
-| a set site whose shape has NO measured key | R7w → WALK | **WALK** (R7w) until Q-R17P-26 is ruled. The ruling speaks of unknown PREDICTABILITY, and here the per-byte COST is unknown. The leaning is to keep the walk (§7.3) |
-| the VM hat at \|S\| = 1 | D1w → WALK | **WALK** (D1w) until F2, as the ruling names |
+| a set site whose cover has at most 2 terms (`[rev4.1]` was: whose shape has a measured V1 saving > eps) | R7 → V1, unless R1's short-N interval or R5's gap row took the walk | **V1**, with no length or gap row in front of it. R1 is deleted (no interval) and R5 no longer reads a gap |
+| a set site whose cover has 3 or more terms (`[rev4.1]` was: whose shape has a measured V1 LOSS ((2,0,1), (3,1,0), (3,0,1))) | R0 → WALK (class rule) | **WALK** through R7w: the term count keeps it, and the three measured losers (3, 4 and 4 terms) are the evidence |
+| ~~a set site whose shape has NO measured key~~ `[rev4.1]` a set site whose combination of terms nobody has timed | R7w → WALK | ~~**WALK** (R7w) until Q-R17P-26 is ruled. The ruling speaks of unknown PREDICTABILITY, and here the per-byte COST is unknown. The leaning is to keep the walk (§7.3)~~ **routes by its TERM COUNT** (Q-R17P-26, answered): V1 at ≤ 2, WALK at ≥ 3. The deciding fact is static, so "not timed" is not "unknown". A shape that contradicts the rule is a B4 finding (§9.2) |
+| the VM hat at \|S\| = 1 | D1w → WALK | **WALK** (D1w) at B4, as the ruling names. `[rev4.1]` F2 moves it to **V1 at B5**, by default, with no density condition (Q-R17P-27, YES); its g = 2 cells are expected losses (§9.2a) |
 | a one-byte site | D1 / D1c → LIBC | **LIBC**, as the ruling names |
 | a site whose landings are known REGULAR | R5 on a gap threshold | **WALK** through R5 on a stated regime (`SF_E_REGULAR`). No default compile reaches it until such a kind exists |
 | a W16/W32 variant (B6) | R7 → W64, R8 and R2 dispatch rows | W64 from the block. R2 is dropped (no dispatch pays) and R5 does not apply. The wide forms are NULL or better on regular landings, so the ruling's trade does not arise there |
 
-**What the default costs, stated up front.** On a default compile, every set site on a
-winning shape renders V1 whatever its subject's landings are. So a REGULAR-landing
+**What the default costs, stated up front.** On a default compile, every set site whose
+cover has at most 2 terms (`[rev4.1]`; rev 4 said "on a winning shape") renders V1 whatever
+its subject's landings are. So a REGULAR-landing
 subject loses against main's walk by the amounts above. Those cells are EXPECTED losses:
 B4's acceptance names them before it times anything (§9.2a), and no B4 verdict counts
 them against the routing.
@@ -1217,8 +1299,8 @@ one bump from whatever main holds then, and E-1 is main's own bump between B2 an
 | (kit) | zen4-grid2: ONE slot (§5.4), GO by D167 (Q-R17P-9 (B)) | KW-12 | — | — | — | its prep lane (the harness extension) |
 | (kit) | E4 evaluator build → E4b in-sample streamed replay on grid2 → E5 pre-registration → E6 site census → E7 judge (LEAN: two windows) → E8 results | — | — | — | — | B1, E3b; grid2 |
 | (main) | [KNOW-SRC] K0-K3, then [MEASURE-SET] M0 (store, `ksgen`, the embed, the `measures` kind) | (R-MS1..5 consumed) | K0-K3 yes | M0's stamp rides B4 (measure_sets §3.6) | — | — |
-| **B4** | THE ROUTING COMMIT and LOCKDOWN: ~~R0, R1,~~ R5, R7, R7w `routed` = 1 and the bit deleted (`[rev4]` R0 retired and R1 deleted, with `fd-r0` retired; R5 on its new condition, §1.3a); R7 (V1 = `pf_terms_mask` over `mask8_swar`, R17-b's form, ported: `terms.c`, the W8 shared sub-block, `needs_const_subject`, N6's reserved prefix) on set covers whose SHAPE is measured `[rev4]` with a saving > eps (six shapes, §1.3a), R7w (main's walk) on the rest; ~~R0 → WALK on the r2 class; R1/R2 iff grid2's twins pay T1-T3;~~ `[rev4]` no dispatch (the twins fail T2/T3, §2.5); the D169 default (§1.9); the `drop-kit-bytes` size rung with its pcrec bit 55 (`-fno-kit-size-drop`, r17c); PR-10's method-neutral PF comment; M0's `<PREFIX>_MEASURES` + `rx_info.measures`; the `--emit-facts` section `memfn` (R-20, `[rev3 A9]`) | (R-17's move), ST6 if paid, PR-10 | **NO**: the one censused mover (R17-b's movers on measured shapes, less R0's population; `[rev3 A7]` the VM hat at \|S\| = 1 is NOT in it; §3.5; `[rev4]` the six winning shapes' sites, re-counted in §3.5) | **ONE event**, ~~78~~ `[rev4]` 81 (main today) → the next number at landing | next (R17-b's `needs_const_subject`, the W8 sub-block) | B3b; E8 PASS or PROVISIONAL PASS (Q-REVAL-11, D167); M0 (else the stamp is a second event); the default set committed; `[rev4]` D163 add. 8's controls (MET, §3.1a) and the OWED items of §3.1a |
-| **B5** | ST4: measured rows, each its own censused commit and a FORMAL row addition (post-lockdown: a ruled diff with its replay delta): ~~(a) F1 (a measured libc row may displace D1, Q-WR-1); (b) F0 NONE where E is measured;~~ `[rev4]` (a), (b) NOT BUILT: grid2 found nothing for F1 to displace D1 with and no gap where NONE pays (D77, §1.3a); `[rev3 A7]` (c) F2, the VM hat at \|S\| = 1 → V1 where grid2's VM_ATTEMPT one-byte cells show the saving `[rev4]` (+0.515), with a density condition (Q-R17P-27); (d) P1, only once Q-WR-9's trigger fires `[rev4]` (fired on the letter; Q-R17P-28); (e) PR-6's true `omin`; (f) Q-WR-3's posture relaxed per measured cell (D158: give-up → answer allowed, direction-checked by GIVEUP1) | PR-4 (NONE), PR-6, KW-12, KW-13 | NO where a default compile moves; a row that fires only under a measured `--analysis` bundle moves no default byte | one per default-moving commit | per row | B4; the quantities in the default set |
+| **B4** | THE ROUTING COMMIT and LOCKDOWN: ~~R0, R1,~~ R5, R7, R7w `routed` = 1 and the bit deleted (`[rev4]` R0 retired and R1 deleted, with `fd-r0` retired; R5 on its new condition, §1.3a); R7 (V1 = `pf_terms_mask` over `mask8_swar`, R17-b's form, ported: `terms.c`, the W8 shared sub-block, `needs_const_subject`, N6's reserved prefix) on set covers whose SHAPE is measured `[rev4]` with a saving > eps (six shapes, §1.3a), R7w (main's walk) on the rest; `[rev4.1]` ~~whose SHAPE is measured with a saving > eps (six shapes) / R7w on the rest~~ R7 on covers of at most 2 terms (the six measured winners are 1-2 terms, and an untimed 1-2 term combination routes with them), R7w on covers of 3 or more; ~~R0 → WALK on the r2 class; R1/R2 iff grid2's twins pay T1-T3;~~ `[rev4]` no dispatch (the twins fail T2/T3, §2.5); the D169 default (§1.9); the `drop-kit-bytes` size rung with its pcrec bit 55 (`-fno-kit-size-drop`, r17c); PR-10's method-neutral PF comment; M0's `<PREFIX>_MEASURES` + `rx_info.measures`; the `--emit-facts` section `memfn` (R-20, `[rev3 A9]`) | (R-17's move), ST6 if paid, PR-10 | **NO**: the one censused mover (R17-b's movers on measured shapes, less R0's population; `[rev3 A7]` the VM hat at \|S\| = 1 is NOT in it; §3.5; `[rev4]` the six winning shapes' sites, re-counted in §3.5; `[rev4.1]` plus the untimed 1-2 term covers, whose count is OWED to the regenerated manifest, §3.5) | **ONE event**, ~~78~~ `[rev4]` 81 (main today) → the next number at landing | next (R17-b's `needs_const_subject`, the W8 sub-block) | B3b; E8 PASS or PROVISIONAL PASS (Q-REVAL-11, D167); M0 (else the stamp is a second event); the default set committed; `[rev4]` D163 add. 8's controls (MET, §3.1a) and the OWED items of §3.1a |
+| **B5** | ST4: measured rows, each its own censused commit and a FORMAL row addition (post-lockdown: a ruled diff with its replay delta): ~~(a) F1 (a measured libc row may displace D1, Q-WR-1); (b) F0 NONE where E is measured;~~ `[rev4]` (a), (b) NOT BUILT: grid2 found nothing for F1 to displace D1 with and no gap where NONE pays (D77, §1.3a); `[rev3 A7]` (c) F2, the VM hat at \|S\| = 1 → V1 where grid2's VM_ATTEMPT one-byte cells show the saving `[rev4]` (+0.515), ~~with a density condition (Q-R17P-27)~~ `[rev4.1]` with NO density condition: it fires on a default compile, and its g = 2 cells (V1 +38.3% slower) are named EXPECTED losses up front (Q-R17P-27, YES; §9.2a); ~~(d) P1, only once Q-WR-9's trigger fires `[rev4]` (fired on the letter; Q-R17P-28)~~ `[rev4.1]` (d) P1 is NOT built: the trigger fired on the letter and P1 is recorded, not built (Q-R17P-28; it never fires on a default compile, D77); (e) PR-6's true `omin`; (f) Q-WR-3's posture relaxed per measured cell (D158: give-up → answer allowed, direction-checked by GIVEUP1) | PR-4 (NONE), PR-6, KW-12, KW-13 | NO where a default compile moves; a row that fires only under a measured `--analysis` bundle moves no default byte | one per default-moving commit | per row | B4; the quantities in the default set |
 | **B6** | the W64 rows (A1/S1, `pf-terms-w32`/`-w16`) as guarded selector arms over `__next`; R2 and R8 routed; CANDIDATE until a bench verdict (D144 add. 4) | (SIMD thread) | SIMD-off yes; SIMD-on moves (`MEMFN_FORMS` gains the PF site's token) | none (vrun's precedent) | — | B4 (F5: the scaffold exists) |
 | **B7** | ST5: the libc class deny and the three libc-free rows (the OFS BODY, MLINE's back FIND, the exact compare outside `overlap`'s lengths), KW-9 | Q-WR-7 | yes at default (reachable only under the deny) | none | — | future work (Q-WR-7, ruled) |
 | **B8** | ST6: the N-dispatch rows, if B4 did not ship them | ST6 | NO | one | — | B4; [REGIME-TWIN] E10 |
@@ -1263,7 +1345,9 @@ gate stands.
 4. **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
    (860 movers) predicts R7 on grid1's shapes only, under the interim set.
    - **Why it is stale.** Under rev 4, item 3a's three shapes route too, and R0's rows
-     are gone.
+     are gone. `[rev4.1]` Under the term-count rule the untimed 1-2 term covers route too,
+     and every cover of 3 or more terms stays on the walk; the regenerated manifest is
+     where the split of the 54 no-key sites between V1 and the walk is OWED.
    - **The fix.** The B1 shadow re-run under grid2's keys (the converter's output, or a
      test-build lever set built from `keys.tsv`) writes the new manifest, and B4's
      movers-by-ID are held to it (§1.6 [rev3 B6]).
@@ -1274,8 +1358,9 @@ gate stands.
    - the V1/WALK path through a 3-form chain;
    - a member-free dfa-hat cell, since (0,1,1) is DERIVED;
    - dispatch charges at DFA_HAT/HYB_PF/VM_ATTEMPT;
-   - a gap grid between 2 and 8 B. This one is also F2's density condition (Q-R17P-27)
-     and libc's crossover;
+   - a gap grid between 2 and 8 B. `[rev4.1]` ~~This one is also F2's density condition
+     (Q-R17P-27)~~ F2 has no density condition now (Q-R17P-27, YES), so the grid no longer
+     gates it; it still locates libc's crossover and would sharpen F2's expected loss;
    - hex-run/word-eq find-all timing.
 
 ### 3.2 Why the first delivery needs no measurement set `[rev2]` `[rev3: C11, B6]`
@@ -1357,7 +1442,7 @@ request to main, Q-R17P-22): DIFFER (moves bytes on a floor population), ASSERT_
 | B2 | — (`fd-d1` flips) | `fd-d1`: DIFFER, floor = the one-byte DFA/hybrid population (its OFF arm is D1w, WALK, `[rev3 A17]`) | 11 |
 | B3b | `fd-pres-g1`, `fd-pres-pick`, `pres-set-lead` | DIFFER (floors per pick, §3.1 B3a) | 11 → 14 |
 | B4 | `pf-terms-mask` (the V1 FORM deny, R17-b's); ~~`fd-r0`/`fd-ndisp` flip~~ `[rev4]` `fd-r0` RETIRED with its row (§1.3a); `fd-ndisp` stays ASSERT_ZERO (no dispatch pays; R1 deleted, R2 is B6's); `fd-r5` stays ASSERT_ZERO (no default compile states a regime) | DIFFER (`pf-terms-mask`) | 14 → ~~15~~ `[rev4]` 14 (+1 −1) |
-| B5 | ~~`fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE),~~ `[rev3 A7]` `fd-vm-hat-1b`, `fd-pres-priced` (`[rev4]` only if Q-R17P-28 builds P1), each with its row | per row | +1 each |
+| B5 | ~~`fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE),~~ `[rev3 A7]` `fd-vm-hat-1b`, ~~`fd-pres-priced` (`[rev4]` only if Q-R17P-28 builds P1)~~ `[rev4.1]` (`fd-pres-priced` is NOT added: P1 is not built, Q-R17P-28), each with its row | per row | +1 each, `[rev4.1]` so +1 at B5 (`fd-vm-hat-1b`) |
 | B6 | `pf-terms-w32`, `pf-terms-w16` | DIFFER at SIMD-on | +2 |
 | B7 | `libc` (the class deny) | REFUSES on DFA_ATTEMPT until its back row exists, else DIFFER | +1 |
 | B9 | `fd-r3a`, `fd-r3b`, `fd-r4` | per row | +3 |
@@ -1403,7 +1488,9 @@ Rev 1's census (`r17b_prime/out/census_shapes.out`) counted R17-b's movers on th
 branch: 996 byte / 2,910 byte-vm artifacts, one stateful site each, of which R0's ≥ 2
 RANGE population is 219 / 243 (mostly `\w`, shape (3,0,1)), and the one-member covers
 (0,1,0) 157 / 1,673. `[rev4]` The bullets below are revision 3's prediction. Where they
-name R0 or a dispatch, the `[rev4]` restatement at the end of this section supersedes them.
+name R0 or a dispatch, the `[rev4]` restatement at the end of this section supersedes them;
+`[rev4.1]` so does it where they say the 54 sites "stay on R7w" or call a count an upper
+bound set by a shape's saving key.
 Against MAIN at B4 `[rev3]`:
 - `[rev3 C3]` the set sites outside R0 move to V1 behind `__next` (plus the dispatch if
   paid) ONLY where their cover shape's saving key is in the default set and exceeds the
@@ -1443,16 +1530,24 @@ needs its saving key below the floor). The utf8 arms' split (964 / 2,907 R17-b m
 was not re-run for R0.
 
 `[rev4]` **The prediction restated under §1.3a.** No dispatch ships, so a mover is a set
-site whose shape's V1 saving key is > eps, and it moves from main's walk to V1 behind
-`__next` with no form byte.
-- **Byte arm.** The six winning shapes give (1,0,0) 285, (0,1,1) 15, (2,0,0) 20,
-  (0,2,0) 132, (0,0,1) 84 and (1,1,0) 50: **586 site movers, an upper bound.** Rev 3
+site ~~whose shape's V1 saving key is > eps~~ `[rev4.1]` whose cover has at most 2 terms
+(Q-R17P-26), and it moves from main's walk to V1 behind `__next` with no form byte.
+- **Byte arm.** The six winning shapes (1-2 terms each) give (1,0,0) 285, (0,1,1) 15,
+  (2,0,0) 20, (0,2,0) 132, (0,0,1) 84 and (1,1,0) 50: **586 site movers**, ~~an upper
+  bound~~ `[rev4.1]` and now a FLOOR, since the rule has no saving-above-eps test left
+  to fail them and adds the 1-2 term share of the untimed sites below. Rev 3
   counted 320 on grid1's shapes and held item 3a's 266 conditional on grid2. They stay
   on R7w (main's walk, zero-mover):
-  - the r2 population's losing shapes, which is R0's 219 less (2,0,0)'s 20;
-  - the 54 sites on shapes with no key (pending Q-R17P-26).
+  - the r2 population's losing shapes, which is R0's 219 less (2,0,0)'s 20 (every
+    cover with two or more RANGE terms other than (2,0,0) has at least 3 terms, so the
+    term-count rule sends all of them to the walk without a per-shape key);
+  - ~~the 54 sites on shapes with no key (pending Q-R17P-26).~~ `[rev4.1]` the 3-or-more
+    term share of the **54 sites on untimed shapes**. The other share (1-2 terms) moves
+    to V1 with the 586. The split of the 54 is OWED to the REGENERATED mover manifest
+    (§3.1a item 4); this revision does not compute it, and no number here assumes it.
 - **Byte-vm arm.** 495 + 25 + 23 on grid1's shapes. Item 3a's share of the other 485 is
-  re-counted at B4 as before.
+  re-counted at B4 as before; `[rev4.1]` the rest of the 485 route by term count too, and
+  their split is likewise OWED to the regenerated manifest.
 - **Not movers.** The VM hat at |S| = 1, every one-byte site, every presence site, D2.
 - **The manifest.** B4's census is held to the REGENERATED manifest (§3.1a item 4),
   never to fdb2's 860.
@@ -1884,7 +1979,7 @@ row of §1.3a needs.
 
 | id | grid2 value (key) | vs rev 3 | read by | grid2read |
 |---|---|---|---|---|
-| M1-M5 | β by shape at OFF/W16/W32. V1 saves +0.420 (1,0,0), +0.012 (2,0,0), −0.133 (2,0,1) p, −0.413 (3,1,0) p, −0.464 (3,0,1), +0.390 (0,2,0), +0.548 (0,0,1), +0.211 (1,1,0), +0.268 (0,1,1) derived. S1/A1 save 69-89% / 84-94% (`kit.saving.<f>.WALK.<shape>`) | CONFIRMED to 0.1-3.3% on 11 comparable cells; three new shapes measured (item 3a) | R7, R7w | §3.2 |
+| M1-M5 | β by shape at OFF/W16/W32. V1 saves +0.420 (1,0,0), +0.012 (2,0,0), −0.133 (2,0,1) p, −0.413 (3,1,0) p, −0.464 (3,0,1), +0.390 (0,2,0), +0.548 (0,0,1), +0.211 (1,1,0), +0.268 (0,1,1) derived. S1/A1 save 69-89% / 84-94% (`kit.saving.<f>.WALK.<shape>`) | CONFIRMED to 0.1-3.3% on 11 comparable cells; three new shapes measured (item 3a) | R7, R7w `[rev4.1]` (as the EVIDENCE for the term-count rule; no row reads these keys) | §3.2 |
 | M6 | `kit.eps.streamed.slope` 0.113% (the slope's own noise 0.247% p90); `kit.eps.findall.l64k` 1.316%; `kit.eps.streamed.short` 0.675% | regime split CONFIRMED; the slope token is smaller than grid1's 0.173% | R7, F2 | §3.1 |
 | M7-M8 | F: walk 5.86, V1 4.38, S1 4.62, A1 5.35 ns (n ≥ 64); F at n = 48: S1 21.71, A1 12.87 ns | CONFIRMED (the walk +1.1 ns on streamed buffers) | (no row at B4) | §3.3 |
 | M9 | no crossover: V1 − walk < 0 at every N ≥ 8; `kit.xover.V1.WALK.DFA_SCAN` = 8 B (UPPER bound) | **CONTRADICTED** | none (R1 deleted) | §3.3, §4 A2 |
@@ -1895,9 +1990,9 @@ row of §1.3a needs.
 | M16-M18 | charge per call: OFF.2 +2.44 ns (WALK path), +0.74 (V1 path); W32.3 +0.32; per use ≤ +0.59 / +0.35 ns; scaffold ≤ 5.8 ns on 64 KiB calls, short-call unmeasured | measured (were ABSENT); T2/T3 fail | the pay rule (§2.5) | §3.6, §5 |
 | M19-M21 | LIBC F 4.27-5.82 ns, β 0.0073-0.0075 ns/B (the host's SIMD memchr); `kit.dom.<f>.LIBC.<kind>` = 0 everywhere; `kit.xover.LIBC.WALK` 4.1-6.1 B (LOW) | measured (were ABSENT) | D1/D1c stand; F1 not built | §3.7 |
 | M22 | `kit.gnone` = −1 (never) on DFA_SCAN fwd, DFA_HAT, HYB_PF; 2 B on DFA_SCAN.bounded | measured (was ABSENT) | F0 not built | §3.7 |
-| M23 | `kit.gate.byte1.DFA_SCAN.early/late/absent` = +8.1 / 0 / −247,000 u·B | measured (was ABSENT); Q-WR-9's trigger fires on the letter | P1 (Q-R17P-28) | §3.8 |
+| M23 | `kit.gate.byte1.DFA_SCAN.early/late/absent` = +8.1 / 0 / −247,000 u·B | measured (was ABSENT); Q-WR-9's trigger fires on the letter | P1 (Q-R17P-28, `[rev4.1]` recorded, not built) | §3.8 |
 | M24 | — | still ABSENT (no PARAM body exists) | — | — |
-| F2's cells | `kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0` = +0.515; find-all at g = 2 +38.3% R, g ≥ 8 −33..−54% | measured | F2 (Q-R17P-27) | §3.7 |
+| F2's cells | `kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0` = +0.515; find-all at g = 2 +38.3% R, g ≥ 8 −33..−54% | measured | F2 (Q-R17P-27, `[rev4.1]` answered YES: no density condition) | §3.7 |
 
 `p` = PROVISIONAL (a load-suspect source; the re-time is OWED, §3.1a item 1). Two
 caveats from grid2read §6 carry into every row that reads these keys:
@@ -2182,9 +2277,23 @@ fewer bits.
 ### 7.3 Revision 4's questions, each with a leaning `[rev4]`
 
 D169 answers the main question: when predictability is unknown, the form is V1. It also
-covers D1, D1w and R5's path. These three are what it leaves open.
+covers D1, D1w and R5's path. These three are what it left open. `[rev4.1]` **All three
+are now ANSWERED** (below, each with its answer and source). The question text is left in
+place as asked; the "Leaning" lines are rev 4's and are superseded by the answers.
 
 **Q-R17P-26 (Frank). A cover shape nobody has measured: V1 or the walk?**
+
+> `[rev4.1]` **ANSWERED (Frank, 2026-10-21; source: `memfn/docs/journal.md` 2026-10-21 and
+> the first 2026-10-21 notice at the end of `memfn/docs/responses.md`).** "A set site's
+> form is chosen by its cover's TERM COUNT, a compile-time fact: V1 for at most 2 terms,
+> the walk for 3 or more. That is grid2's measured trend over all nine timed shapes (V1
+> +1..+55% at 1-2 terms, -13/-41/-46% at 3). An untimed combination routes by its term
+> count and needs no per-shape key first. B4's acceptance measurement confirms the rule on
+> the shapes it moves; a contradicting shape is a finding, not a default."
+> Applied in: §1.3a rows 12-13, §1.9, §3.5, §9.2, §9.2a, §9.4. The question below framed
+> the case as an unknown per-byte cost; the shape is a compile-time fact, so it is not
+> unknown. (The three losers have 3, 4 and 4 terms; "3 or more" is the ruling's.)
+
 - **The case.** D169 is about unknown landing PREDICTABILITY, where V1's
   worst case is a bounded loss on regular data (+15..+35%). A cover shape with no
   measured key is a different unknown: V1's per-byte COST is unknown on it.
@@ -2197,6 +2306,13 @@ covers D1, D1w and R5's path. These three are what it leaves open.
   unmeasured loss that does not depend on the subject.
 
 **Q-R17P-27 (Frank). The VM hat at |S| = 1 (F2): does it need measured data to move?**
+
+> `[rev4.1]` **ANSWERED: YES, F2 defaults to V1 (Frank, 2026-10-21; source: the journal
+> entry and the second 2026-10-21 notice in `memfn/docs/responses.md`).** "The VM hat's
+> one-byte attempt search (F2) defaults to V1 at B5, not B4, with its dense g = 2 cells
+> (V1 -38%) named as expected losses up front. It is D169's landing trade (V1 +33..+54%
+> at g >= 8)." So F2 has no density condition and does not wait on the gap grid or on a
+> density kind. Applied in: §1.3a row 1, §1.9, §3.1 (B5), §3.1a item 6, §3.4, §9.2a.
 - **What grid2 found.** V1 saves +0.515 on the slope there, and wins 33-54% on
   find-all at g ≥ 8. It loses +38% at g = 2, with the crossing near 4 B (interpolated).
 - **Two readings of D169.** It keeps the walk at the VM hat "until F2" without saying
@@ -2212,6 +2328,12 @@ covers D1, D1w and R5's path. These three are what it leaves open.
   a density kind in the analysis object.
 
 **Q-R17P-28 (Frank). The pre-scan trigger fired only on the letter: build P1?**
+
+> `[rev4.1]` **ANSWERED: record P1 as fired on the letter, do NOT build it (the kit
+> manager's call, 2026-10-21; source: the second 2026-10-21 notice in
+> `memfn/docs/responses.md`: "P1 recorded as fired on the letter, not built (it never
+> fires on a default compile; D77)").** Rev 4's leaning stands as the answer. Applied in:
+> §1.4, §3.1 (B5 item (d)), §3.4, §8.3 (S978 UNREACHED).
 - **The ruled trigger.** Q-WR-9 builds the priced pre-scan row P1 "when a TUG cell is
   measured losing for want of it".
 - **What grid2 found.** It found two such cells, losing 1.5 ns per call (3.4-3.8%). On
@@ -2316,7 +2438,7 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S914 | the bounded walk arm ignores `end_back` | answers (G2, corpus bounded cells); ASan over-read | B4 | `[rev3 B11]` needs `__walk` emitted (a paid dispatch or a T3-passing walk-only scaffold): UNREACHED (declared) until either exists |
 | S915 | the walk arm passed the wrong table (`start_bytes` vs `can_begin_match`) | answers on dfa-hat cells | B4 | `[rev3 B11]` as S914: UNREACHED until `__walk` is emitted |
 | ~~S916~~ `[rev4]` RETIRED with R0 at B4 (its plant has no row to act on; declared retired in the sabotage index, the S919 precedent) | R0 counts EQ terms as RANGE | movers by ID against `[rev3 B16]` `r17b_movers.py`'s independent cover search | B4 | `[rev3 B11]` a (1,1,0)-shaped cover (one RANGE plus an EQ: the plant puts it in r2, the truth does not), under a synthetic set holding the saving keys of BOTH (1,1,0) and the r2 class, so the row's skip cannot hide the plant |
-| S917 | an ABSENT set key read as 0 | the totality test (the key removed ⇒ the next row/R7) | B1 (regime_pick, shadow), B4 | ~~R0's key~~ `[rev4]` R7's key on a winning shape (removed ⇒ R7w) |
+| S917 | an ABSENT set key read as 0 | the totality test (the key removed ⇒ the next row/R7) | B1 (regime_pick, shadow), B4 | ~~R0's key~~ `[rev4]` ~~R7's key on a winning shape (removed ⇒ R7w)~~ `[rev4.1]` a key-reading row (R5's regime fact; R8 at B6): R7 reads no key now, so its plant is SN-8 |
 | S918 | the pay rule ignores C_disp | the per-set expected-emission manifest | B4/B8 | a set with a failing C_disp |
 | S919 | `body` UNSTATED read as ONESHOT | G2: N/M rows must skip (an oracle case; the trace) | B1 | a builder with `body` 0 (a G2 site) |
 | S920 | the START hook's text replaced by `0` | `[rev3 B11]` an INDEPENDENT reader of the activation origin in the emitted C (the variable the entry's guard reads, located by pcrec's own emitted-text census), compared with `__form(`'s argument; not the builder's stated start (a shared source) | B4 (read; `__form(` emitted only with a paid dispatch, UNREACHED until then) | a relocate-path site (start ≠ 0) |
@@ -2336,7 +2458,7 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S975 | SW-12 `MEMFN_LIBC` omits a libc symbol the text still calls | C11 `nm -u` | B2 | any LIBC site |
 | S976 | SW-13 the libc row used under a stale `libc:` key | the `libc-mismatch` listing flag (§5.3) | B5 | F1's keys |
 | S977 | SW-14 MLINE's stream opens at the edge, reading `s[start − 1]` at offset 0 | ASan | B2 | a `(?m)^` site at `search_from` 0 |
-| S978 | SW-15 the pre-scan row prices from a `prior-*` kind as if measured | the listing / per-set manifest | B5 (at Q-WR-9's trigger) | P1 |
+| S978 | SW-15 the pre-scan row prices from a `prior-*` kind as if measured | the listing / per-set manifest | B5 (at Q-WR-9's trigger) `[rev4.1]` UNREACHED, declared: P1 is not built (Q-R17P-28) | P1 |
 | S979 | SW-16 a carried presence verdict not invalidated when `start > valid_until` | answers | B9 (R17-b″) | an iterator over a late occurrence |
 | S980 | SW-17 member order swapped in a tie (PR-7) | the B3a shadow comparator, not answers | B3a | a tie between two set members |
 | `[rev3]` SN-1 (B5) | a row's `routed` bit left 0 after its routing step (the REVERSE of S922) | the pcrec-side routed-record count per (kind, row) falls below its floor (§1.6); byte identity cannot see it | B2, B3b, B4 | each routed group's disagreement witness (§1.6) |
@@ -2346,7 +2468,7 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | `[rev3]` SN-5 (B14, C1) | ~~R1's~~ `[rev4]` R2's fast-terminal condition dropped | B4's every-derivable-key synthetic set: one-byte movers appear `[rev4]` (at a W16/W32 variant from B6; R1 is deleted) | ~~B4~~ `[rev4]` B6 | a one-byte DFA_SCAN site (`a+b` shape) under that set |
 | `[rev3]` SN-6 (B6, D10) | the five-pick comparator returns "agree" always (or one pick's port drops its tie rule) | the planted disagreement per pick (a site where port and pcrec must differ under the plant); the per-pick floor on non-trivial sites | B3a | per pick: a set with two equally rare members (P3), a G1-kept span (P2), a strictly-rarer set (P4) |
 | `[rev3]` SN-7 (B9) | a row edit after a routing step with no `finder_history.md` entry | the lockdown digest check | B2 onward | any routed row |
-| `[rev3]` SN-8 (C3) | R7 fires without its shape's saving key (the comparator's absent-key rule inverted) | B4's census by shape measured / not measured: a mover on an unmeasured shape | B4 | a (0,3,0)-shaped cover (not in grid2's three shapes) |
+| `[rev3]` SN-8 (C3) `[rev4.1]` re-aimed | ~~R7 fires without its shape's saving key (the comparator's absent-key rule inverted)~~ R7's term-count comparator inverted or off by one (fires at 3 terms, or declines at 2) | B4's census by TERM COUNT: a mover on a cover of 3 or more terms, or a 1-2 term site left on the walk; and the shape-sign check (a measured shape whose sign contradicts its count is a finding) | B4 | a (0,3,0)-shaped cover (3 terms, not among grid2's nine shapes) |
 | `[rev3]` SN-9 (D9) | the pay rule's tie direction flipped (a T1 tie pays) | the arithmetic grid with planted off-by-ones | B1 (regime_pick, shadow), B4 | a synthetic set whose saving equals the charge exactly |
 
 `[rev4]` No new sabotage id is needed by revision 4. R5's new condition is unreachable on
@@ -2385,6 +2507,13 @@ cell's own A/A floor (§2.5's `floor(cell)`).
    key was measured in `[rev4]` (the member-free slope regime), the EXPECTED-LOSS cells of
    §9.2a excepted; every dispatch interval holds against its neighbour (if paid);
    the dispatch charge NULL on LINER and TUG cells.
+   `[rev4.1]` **B4's measurement also CONFIRMS THE TERM-COUNT RULE on every shape B4
+   moves.** R7 now routes by count (≤ 2 terms), so "measured shapes only" widens to every
+   shape the rule sends to V1, including combinations grid2 never timed. For each such
+   shape the G1 cells are read for a V1 saving beyond the floor against the walk. A moved
+   shape that CONTRADICTS the rule (a 1-2 term cover whose V1 does not save, or loses)
+   is a FINDING, not a default: it is reported with its cells and its term count. A loss
+   beyond the floor on an unlisted cell is already §9.4's refutation of B4.
 3. The named residual (bounded dense find-all, dfa-hat on prose (F7), dig on digits,
    vm-hat prose1m) is a STATED LOSS against the walk, shipped under Q-REVAL-1's ruling
    (the regime bars replace D162 add. 1's no-loss gate, Q-R17P-4) and bounded by the
@@ -2400,7 +2529,9 @@ front. The rule below is pre-registered: it is committed with E5's pre-registrat
 (§3.1a) and before any B4 timing, and no timing result may edit the list afterwards.
 
 **The rule.** A cell is an EXPECTED LOSS iff both hold:
-1. its site is a B4 mover at OFF (§1.3a: R7 → V1 on one of the six winning shapes);
+1. its site is a B4 mover at OFF (§1.3a: R7 → V1 on a cover of at most 2 terms;
+   `[rev4.1]` rev 4 said "on one of the six winning shapes", and the 54 sites on untimed
+   shapes now join by term count, their list OWED to the regenerated manifest);
 2. its subject's landings for that site's candidate set are REGULAR with a mean gap
    ≤ 8 B.
 
@@ -2416,8 +2547,13 @@ The 8 B bound comes from grid2's measured losing region: V1 is +14.9% at g = 2 a
   covering most landings. The cell is then marked `selected-without-counters`.
 - **Regular cells with a mean gap above 8 B** were not measured by grid2. They are
   WATCH cells: reported, not expected, not scored.
-- **If Q-R17P-27 builds F2 without a density condition**, the VM hat's g = 2 cells
-  join the list at B5 by the same rule (grid2: +38.3%).
+- ~~**If Q-R17P-27 builds F2 without a density condition**, the VM hat's g = 2 cells
+  join the list at B5 by the same rule (grid2: +38.3%).~~ `[rev4.1]` **Q-R17P-27 is
+  answered YES: F2 is built at B5 without a density condition, so the VM hat's g = 2
+  cells (grid2: V1 +38.3% slower; the ruling writes it "V1 -38%") are EXPECTED LOSSES,
+  named here up front.** They join this list by the same rule. B4 does not move the VM
+  hat, so they are scored at B5, not against B4. D169's landing trade pays for them: V1
+  is 33-54% faster at g ≥ 8.
 
 **Known cells, pcrec side** (the list starts from these; the B4 acceptance lane adds
 the bench's):
@@ -2467,6 +2603,10 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
 
   Because no length row exists, the "crossover" is every L ≥ 8 for single calls.
   Regular-landing cells are excluded by §9.2a, not predicted.
+  `[rev4.1]` The prediction now covers EVERY cover of at most 2 terms (the rule's
+  population), with numbers only for the six timed shapes; an untimed 1-2 term shape has
+  the rule's sign as its prediction and B4's confirmation (§9.2 item 2) as its test.
+  Covers of 3 or more terms are zero-mover (R7w), so they carry no timing prediction.
 - ~~**R1, if paid**: for bounded short find-all at OFF, pick − walk ≤ −floor below the
   dispatch literal, and |pick − V1| ≤ floor above it.~~ `[rev4]` Withdrawn: R1 is deleted.
 - **Regret on the grid** (`[rev4]` R0 and R1 are gone: R7 alone changes find-all grid
@@ -2494,6 +2634,9 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
   non-NULL dispatch charge on a cell the dispatch does not help. `[rev3 C6]` Every
   comparison has its floor (D144 add. 1); rev 2's "any cell worse than R17-b" had none.
 - At SIMD-on, a W64 interval losing to V1 beyond the floor (D147's check).
+- `[rev4.1]` **A shape that contradicts the term-count rule** is a FINDING (§9.2 item 2),
+  reported rather than defaulted. It refutes B4 only through the bullet above: a moved
+  cell losing beyond the floor and not on §9.2a's list.
 - `[rev3 C6]` **A bench regression on Zen 1 at SIMD-off beyond the floor.** The SIMD-off
   rows are portable C that ship to Zen 1 and arm64 with Zen 4's literals until those boxes
   have their own sets (§5.5), and the bench box (ubuntubudu, Zen 1) gives the official
@@ -2528,7 +2671,10 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
    - `[rev3 A6]` A shared find body charges a mode branch per call (M24), unmeasured: an
      M-reading row on a shared PARAM body does not pay until it is measured.
    - `[rev3 C3]` R7 is measured per cover SHAPE (β(V1)/β(walk) spans 0.57-1.41 across
-     five shapes); an unmeasured shape takes the walk.
+     five shapes); ~~an unmeasured shape takes the walk.~~ `[rev4.1]` the shape sets V1's
+     cost, but the deciding fact is its TERM COUNT, known at compile time, and the
+     measured trend over nine shapes is monotone in it; an untimed combination routes
+     by its count (Q-R17P-26).
    - `[rev4]` **Landing PREDICTABILITY is the regime axis that flips V1 against the
      walk** (grid2read §3.5). Length does not flip it, and gap alone does not. The
      default presumes irregular landings on large subjects (D169), so a regular-landing
@@ -2574,14 +2720,17 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
    - **Through B3b, nothing:** no ROUTED row reads a measurement; the PRES picks read
      the frequency kind, so a FINDINGS bundle change moves them exactly as it moves
      today's pcrec picks, censused by [KNOW-SRC]'s one tool.
-   - `[rev4]` **From B4, under §1.3a:** a new default set can flip a shape's R7 verdict
+   - `[rev4]` **From B4, under §1.3a:** ~~a new default set can flip a shape's R7 verdict
      either way (the six winning and three losing keys), and a newly measured shape
-     moves its sites from R7w to V1. A landing-regime kind, when built, moves R5's
+     moves its sites from R7w to V1.~~ `[rev4.1]` R7 reads no key now, so a regenerated
+     default set does NOT move R7's verdicts; the nine saving keys are evidence for the
+     rule's constant (2), and re-measuring them can only reopen that constant, which is a
+     row edit (a ruled diff with its census, §1.8), not a data regeneration. A landing-regime kind, when built, moves R5's
      sites to the walk: a default-moving event with its census. There are no dispatch
      literals and no R0 verdicts any more.
    - **From B4:** a new DEFAULT set moves the dispatch literals, R0's verdict per shape,
      `[rev3 C3]` which shapes R7 routes (a newly measured shape moves its sites from the
-     walk to V1), and `<PREFIX>_MEASURES` on every consulting artifact: an abi event with its
+     walk to V1; `[rev4.1]` no longer: R7 routes by term count), and `<PREFIX>_MEASURES` on every consulting artifact: an abi event with its
      `MOVERS.tsv` in the same commit (D162 ruling 1, measure_sets §3.6). A new non-default
      set moves nothing. A kit form-body change stales its rows, carried and flagged
      (D166 add. 2). A libc version change is a set-level flag (§5.3).
@@ -2672,7 +2821,9 @@ Rev 1's, as they stand now:
   plant.
 - **F25. A default selected by data absence is a latent mover** (C1, C3): R1 on one-byte
   sites and R7 on unmeasured shapes; both became row data (a fast-terminal condition, a
-  measured-key comparator with a WALK fallback).
+  measured-key comparator with a WALK fallback). `[rev4.1]` R7's half is re-ruled: the
+  comparator is the cover's term count, which exists for every shape, so there is no
+  absent datum left to be a default (F32).
 - **F26. `fd_rows[]` was the kit's fourth table with a fourth walk** (D1): it now adopts
   `kit_walk`, the first table to do so after the kit's own three, and its applicability
   moves into the gate.
@@ -2690,9 +2841,17 @@ Rev 1's, as they stand now:
   interval fall to the terminal.
 - **F30. A row keyed on a slope ignores density** (§7 item 3). F2's saving is a
   member-free slope, while the VM hat's g = 2 find-all loses 38%. A slope key can say a
-  form is faster per byte, and never that it is faster per landing.
+  form is faster per byte, and never that it is faster per landing. `[rev4.1]` Ruled
+  (Q-R17P-27): F2 ships without a density condition and the g = 2 loss is named an
+  expected one (§9.2a).
 - **F31. A one-byte "SIMD-off" row is the host libc's SIMD** (§7 item 5). LIBC's β is the
   ifunc-selected `memchr`, so LIBC rows are the ones where `libc-mismatch` matters most.
+- `[rev4.1]` **F32. "Not timed" is not "unknown" when the deciding fact is static and the
+  measured trend is monotone in it** (Q-R17P-26). Rev 4 treated an untimed cover shape as
+  an open cost and kept it on the walk; the shape is a compile-time fact the kit builds,
+  and nine timed shapes order by its term count, so the shape routes by count. The check
+  before relaying a lane's "unmeasured" question is whether the deciding fact is known at
+  compile time.
 
 `[rev3]` **Unlocks recorded from critic D** (none scheduled; U1 and U3 proposed to main as
 plan rows with their triggers):
@@ -2751,10 +2910,32 @@ plan rows with their triggers):
 | (1) fold grid2's contradictions into B4's table, each row change citing its measurement: R0, R7 incl. W16/W32, R5, R1, R2, R8, D1/D1c, D1w, F0, F1, F2, P1, the pay rule | §R4, §1.3a, §1.4, §2.5, §2.6, §5.2a | done |
 | M9 contradicted: R1 dropped, the crossover recorded as an upper bound | §1.3a, §2.6 | done |
 | M15 contradicted: predictability, not gap | §1.3a (R5), §1.9, §5.2a | done |
-| no dispatch at B4; R2's unpaid not WALK; F0/F1 not built (D77); F2 needs a density condition | §2.5, §1.3a, Q-R17P-27 | done |
+| no dispatch at B4; R2's unpaid not WALK; F0/F1 not built (D77); ~~F2 needs a density condition~~ `[rev4.1]` F2 has no density condition (Q-R17P-27 answered) | §2.5, §1.3a, Q-R17P-27 | done |
 | (2) D169 as B4's default, with its exceptions; B4's measurement names its regular-landing cells as EXPECTED losses up front | §1.9, §9.2a | done |
 | (3) B4's gates now: D163 add. 8 (met or what remains), E8 PASS, M0; OWED: the re-time and the V1-text attribution | §3.1a | done |
 | house shape: rev 4 header, §R4 by row and source, superseded text struck or noted, a first-match row table, plain words, no line-number citations | header, §R4, §1.3 strikes, §1.3a | done |
 | CLAUDE.md entries (memfn/CLAUDE.md's r17b_prime line, r17b_prime/CLAUDE.md, the lanes index); finder_history.md logged | those files | done |
 | report `docs/dev/lanes/rev4_report.md` with row-by-row changes, open questions with leanings, checklist | that file | done |
 | DESIGN ONLY: no build, no make test, no timing | nothing under `src/`, `memfn/src`, `tests/`, `lib/` changed | done |
+
+`[rev4.1]` **Revision 4.1's brief (lane rev41, 2026-10-21):**
+
+| brief item | where | status |
+|---|---|---|
+| Read BOILERPLATE and memfn/CLAUDE.md; worktree `worktrees/rev41` from `lane/memfn-b4`; docs only (no make, no compile, no timing) | — | done |
+| Read the rulings first: `memfn/docs/journal.md` 2026-10-21 and the two 2026-10-21 notices in `memfn/docs/responses.md` | §7.3 (each answer quotes its source) | done |
+| (1) Q-R17P-26: a set site's form by its cover's TERM COUNT (V1 at ≤ 2, WALK at ≥ 3); apply everywhere it lands | §R4.1, §0, §1.3 notes, §1.3a rows 12-13 and notes, §1.9, §3.1 (B4 row), §3.1a item 4, §3.5, §8.3 (SN-8, S917), §9.2, §9.2a, §9.3, §9.4, §10, §11 (F25, F32) | done |
+| R7 keys on term count; per-shape keys kept as the evidence | §1.3a row 12, §5.2a | done |
+| R7w keeps only the 3+ term case ("no key" reason gone) | §1.3a row 13 and notes | done |
+| the 54 no-key sites route by term count; their split OWED to the regenerated manifest, not computed | §3.5, §3.1a item 4, §9.2a | done (not computed, as instructed) |
+| B4's acceptance confirms the rule on the shapes it moves; a contradicting shape is a finding | §9.2 item 2, §9.4 | done |
+| The row table stays a declared first-match table | §1.3a | done |
+| (2) Q-R17P-27 YES: F2 defaults to V1 at B5 (not B4), g = 2 cells named expected losses; replace "density condition, still open" wherever it appears | §0 item 2, §1.3a row 1, §1.3 row 3 note, §1.8, §3.1 (B5 row), §3.1a item 6, §7.3, §9.2a, §11 (F30), the §5.2a "F2's cells" row | done |
+| (3) Q-R17P-28: P1 recorded as fired on the letter and NOT built; update the P1 rows and B5 item (d) | §0 item 2 and table, §R4 (P1 row), §1.4, §3.1 (B5 item (d)), §3.4 (floors), §5.2a (M23), §8.3 (S978) | done |
+| each §7.3 question marked ANSWERED with the answer and its source; question text left in place | §7.3 | done |
+| a rev 4.1 header line and a §R4.1 change list near the top (change → section); changed rows marked `[rev4.1]` | the header, §R4.1 | done |
+| superseded rev 4 text struck through or replaced with a note, never silently deleted | throughout (`~~...~~` + `[rev4.1]`) | done |
+| no line-number citations (cite by section) | whole file | done |
+| CLAUDE.md entries: `docs/design/memfn/CLAUDE.md`, `docs/design/memfn/r17b_prime/CLAUDE.md`; the lanes index; `memfn/docs/finder_history.md` | those files | done |
+| report `docs/dev/lanes/rev41_report.md` (each edit → section, charter-vs-delivered checklist) | that file | done |
+| DESIGN ONLY: nothing under `src/`, `memfn/src/`, `tests/`, `lib/` changed | — | done |
