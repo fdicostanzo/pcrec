@@ -41,7 +41,7 @@ st() { bash "$BQ" state "$1" 2>/dev/null; }
 res() { local d; d=$(ls -d "$Q"/done/*/ "$Q"/failed/*/ 2>/dev/null | awk -F/ '{print $(NF-1) "\t" $0}' | LC_ALL=C sort | cut -f2 | grep -- "-$1/\$" | tail -1); [ -n "$d" ] && cat "$d/result"; }
 # D CAP PATIENCE EXPECT... -> a --dry-run body
 D() { local c=$1 p=$2 e out; shift 2; out="echo 'boxqueue: cap $c'; echo 'boxqueue: patience $p';"
-      for e in "$@"; do out="$out echo 'boxqueue: expect $e';"; done; printf '%s exit 0' "$out"; }
+      for e in "$@"; do case "$e" in "witness "*) out="$out echo 'boxqueue: $e';"; continue ;; esac; [ "$e" = none ] && e='none reason=selftest job: its rc is the work rc'; out="$out echo 'boxqueue: expect $e';"; done; printf '%s exit 0' "$out"; }
 # mkjob FILE DRY READY WORK
 mkjob() { printf '#!/usr/bin/env bash\nset -u\ncase "${1:-}" in\n  --dry-run) %s ;;\n  --ready) %s ;;\nesac\n%s\n' "$2" "$3" "$4" > "$1"; chmod +x "$1"; }
 # plant NAME FROM TO [FROM TO ...]: a scratch scripts/ copy with the changes in boxqueue; echo its path
@@ -115,7 +115,7 @@ cat > "$T/j/ver" <<'EOF'
 #!/usr/bin/env bash
 VERSION=v1
 case "${1:-}" in
-    --dry-run) echo 'boxqueue: cap 30'; echo 'boxqueue: patience none'; echo 'boxqueue: expect none'; exit 0 ;;
+    --dry-run) echo 'boxqueue: cap 30'; echo 'boxqueue: patience none'; echo 'boxqueue: expect none reason=selftest'; exit 0 ;;
     --ready) [ -e "$BQ_QUEUE.edited" ] || { touch "$BQ_QUEUE.edited"; sed -i 's/^VERSION=v1/VERSION=v2/' "$BQ_QUEUE/pending/$BQ_JOB"; }; exit 0 ;;
 esac
 echo "ran $VERSION" >> "$BQ_QUEUE.ver"
@@ -132,9 +132,9 @@ else bad "plant no-cmp did not land"; fi
 # 6. population short-fall (lines= and last=)
 newq
 mkjob "$T/j/short" "$(D 30 none 'rows=6 lines=^row ')" 'exit 0' 'for i in 1 2 3; do echo "row $i"; done'
-mkjob "$T/j/sweep" "$(D 30 none 'argv=3938 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
-mkjob "$T/j/sweepok" "$(D 30 none 'argv=1500 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
-mkjob "$T/j/mechlike" "$(D 30 none 'rows=2 last=^== mech run COMPLETE: ')" 'exit 0' "echo '== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc =='"
+mkjob "$T/j/sweep" "$(D 30 none 'argv=3938 last=^population: argv=' 'witness argv=population: argv=3938')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
+mkjob "$T/j/sweepok" "$(D 30 none 'argv=1500 last=^population: argv=' 'witness argv=population: argv=1500')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
+mkjob "$T/j/mechlike" "$(D 30 none 'rows=2 last=^== mech run COMPLETE: ' 'witness rows=== mech run COMPLETE: 2 rows (x)')" 'exit 0' "echo '== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc =='"
 for j in short sweep sweepok mechlike; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null; done; run1
 [ "$(st main-short)" = failed ] && res main-short | grep -q 'POPULATION-SHORT' && res main-short | grep -q 'rows ran=3 declared=6 SHORT' \
     && ok "6 rows declared, 3 ran, rc 0: failed POPULATION-SHORT" || bad "short: $(res main-short)"
@@ -327,6 +327,116 @@ out=$(bq --dry-run); rc=$?
 cp "$T/j/argerr" "$Q/pending/200-main-bad"; out=$(bq --dry-run); rc=$?
 [ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'SOME WOULD NOT RUN CORRECTLY' && [ -f "$Q/pending/200-main-bad" ] \
     && ok "--dry-run with a broken job: exit 1, the job named, nothing moved" || bad "plan bad: rc=$rc $out"
+
+# 20. [WATCH-IDLE] shape 1: a bare `expect none` is refused (the reachonly crash scored GREEN on it); a reason is required
+newq
+mkjob "$T/j/swallow" "$(D 30 none none)" 'exit 0' 'false > "$BQ_LOG.tool"; rc=$?; echo "wrapper done"'   # swallows the tool's rc
+sed -i "s/expect none reason=selftest job: its rc is the work rc/expect none/" "$T/j/swallow"
+out=$(bq add --name 100-main-swallow --no-start "$T/j/swallow" 2>&1); rc=$?
+[ "$rc" = 65 ] && printf '%s' "$out" | grep -q "a bare 'expect none' is refused" && printf '%s' "$out" | grep -q 'expect NAME=N \[log=PATH\] lines=ERE' \
+    && printf '%s' "$out" | grep -q 'expect none reason=WHY' && [ -z "$(ls "$Q/pending")" ] \
+    && ok "SHAPE 1: a bare 'expect none' is REFUSED at enqueue (65) and the refusal prints the valid forms" || bad "shape1 refuse: rc=$rc $out"
+sed -i "s/expect none'/expect none reason=the wrapper reads the tool rc and exits with it'/" "$T/j/swallow"
+bq add --name 100-main-swallow --no-start "$T/j/swallow" > /dev/null 2>&1 && ok "SHAPE 1: 'expect none reason=...' is accepted" || bad "shape1 reason refused"
+if P=$(plant bare-none '[ $none = 1 ] && [ -z "$nreason" ] && D_STRICT="a bare' 'false && D_STRICT="a bare'); then
+    newq; sed -i "s/expect none reason=the wrapper reads the tool rc and exits with it'/expect none'/" "$T/j/swallow"
+    BQX=$P bq add --name 100-main-swallow --no-start "$T/j/swallow" > /dev/null 2>&1; BQX=$P run1
+    [ "$(st main-swallow)" = green ] && ok "PLANT bare-none (gate off): the rc-swallowing job with 'expect none' scores GREEN though its tool crashed, the case goes red" || bad "PLANT bare-none not caught: $(res main-swallow)"
+else bad "plant bare-none did not land"; fi
+
+# 21. shape 2: log=PATH names the file the population and last-line checks read
+newq
+mkjob "$T/j/ownlog" "$(D 30 none 'sections=73 log=job.log.make last=^sections ran:' 'witness sections=sections ran: 73')" 'exit 0' \
+    'echo "sections ran: 73" > "$BQ_LOG.make"; echo "perfrun: DONE rc=0"'
+mkjob "$T/j/nolog" "$(D 30 none 'sections=73 last=^sections ran:' 'witness sections=sections ran: 73')" 'exit 0' \
+    'echo "sections ran: 73" > "$BQ_LOG.make"; echo "perfrun: DONE rc=0"'
+mkjob "$T/j/redlog" "$(D 30 none 'rows=1 log=job.log.make lines=^row ')" 'exit 0' 'echo "row 1" > "$BQ_LOG.make"; echo "make: *** [Makefile:646: test-corpus] Error 1" >> "$BQ_LOG.make"'
+for j in ownlog nolog redlog; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null 2>&1 || bad "shape2: $j refused at add"; done; run1
+[ "$(st main-ownlog)" = green ] && res main-ownlog | grep -q 'sections ran=73 declared=73 OK' \
+    && ok "SHAPE 2: log=job.log.make: the tool's own log is read, 73 of 73, green" || bad "shape2 own log: $(res main-ownlog)"
+[ "$(st main-nolog)" = failed ] && res main-nolog | grep -q 'POPULATION-SHORT' && res main-nolog | grep -q 'matcher never matched' \
+    && ok "SHAPE 2 control: the same expect with no log= reads job.log and says why it read short (matcher never matched)" || bad "shape2 control: $(res main-nolog)"
+[ "$(st main-redlog)" = failed ] && res main-redlog | grep -q 'VERDICT-RED' && ok "a red line in the declared log= file fails the job (verdict reads it too)" || bad "shape2 red: $(res main-redlog)"
+if P=$(plant log-ignored '/*) printf '"'"'%s\n'"'"' "$2" ;; *) printf '"'"'%s\n'"'"' "$1/$2" ;; esac; }' '*) job_log "$(basename "$1")" ;; esac; }'); then
+    newq; BQX=$P bq add --name 100-main-ownlog --no-start "$T/j/ownlog" > /dev/null 2>&1; BQX=$P run1
+    [ "$(st main-ownlog)" = failed ] && ok "PLANT log-ignored (every population read from job.log): the green 73/73 run reads POPULATION-SHORT, the case goes red" || bad "PLANT log-ignored not caught: $(st main-ownlog)"
+else bad "plant log-ignored did not land"; fi
+
+# 22. shape 3: an expect whose count cannot come from its own matcher is refused at the dry run
+newq
+mkj3() { mkjob "$T/j/$1" "$(D 30 none "$2" ${3:+"$3"})" 'exit 0' 'echo ran'; }
+mkj3 s3nowit 'done=1 last=^== postmerge COMPLETE'
+mkj3 s3wit 'done=1 last=^== postmerge COMPLETE' "witness done=== postmerge COMPLETE"
+mkj3 s3end 'done=1 last=^== postmerge COMPLETE: 1$' "witness done=== postmerge COMPLETE: 1"
+mkj3 s3ere 'done=1 lines=^('
+mkj3 s3good 'done=1 last=^== postmerge COMPLETE:' "witness done=== postmerge COMPLETE: 1"
+for j in s3nowit s3wit s3end s3ere s3good; do out=$(bq add --name 100-main-$j --no-start "$T/j/$j" 2>&1); r=$?; eval "r_$j=$r; o_$j=\$out"; done
+[ "$r_s3nowit" = 65 ] && printf '%s' "$o_s3nowit" | grep -q 'needs .boxqueue: witness done=LINE' && printf '%s' "$o_s3nowit" | grep -q 'expect none reason=WHY' \
+    && ok "SHAPE 3: a last= expect with no witness line is REFUSED, the refusal prints the valid forms" || bad "shape3 nowit: $r_s3nowit $o_s3nowit"
+[ "$r_s3wit" = 65 ] && printf '%s' "$o_s3wit" | grep -q "reads 'none' from the witness line" \
+    && ok "SHAPE 3: the manager's 120 (done=1 last=^== postmerge COMPLETE, nothing after it): REFUSED, 'none' read from its own witness" || bad "shape3 120: $r_s3wit $o_s3wit"
+[ "$r_s3end" = 65 ] && printf '%s' "$o_s3end" | grep -q 'ends in \$' && ok "SHAPE 3: an ERE ending in \$ (no integer can follow) is REFUSED" || bad "shape3 end: $r_s3end $o_s3end"
+[ "$r_s3ere" = 65 ] && printf '%s' "$o_s3ere" | grep -q 'not a valid ERE' && ok "SHAPE 3: an invalid ERE is REFUSED" || bad "shape3 ere: $r_s3ere $o_s3ere"
+[ "$r_s3good" = 0 ] && ok "SHAPE 3: last=^== postmerge COMPLETE: with a witness line carrying the count is accepted" || bad "shape3 good: $r_s3good $o_s3good"
+if P=$(plant no-witness-read 'if [ "$c" != "$n" ]; then D_STRICT=' 'if false; then D_STRICT='); then
+    newq; BQX=$P bq add --name 100-main-s3wit --no-start "$T/j/s3wit" > /dev/null 2>&1; BQX=$P run1
+    [ "$(st main-s3wit)" = failed ] && res main-s3wit | grep -q 'POPULATION-SHORT' && ok "PLANT no-witness-read (witness not checked): the 120 shape is accepted and reads POPULATION-SHORT on a green run, the case goes red" || bad "PLANT no-witness-read not caught: $(res main-s3wit)"
+else bad "plant no-witness-read did not land"; fi
+# the stop rule: a bare-none job already PENDING (or dropped in by hand) still runs under the older lenient grammar
+newq; mkdir -p "$Q/pending"; cp "$T/j/swallow" "$Q/pending/100-main-legacy"; sed -i "s/expect none reason=[^']*'/expect none'/" "$Q/pending/100-main-legacy"; run1
+[ "$(st main-legacy)" = green ] && ok "STOP RULE: a bare-'expect none' job already in pending/ is not refused or changed: it runs (strict applies to add/retry/batch only)" || bad "legacy: $(res main-legacy)"
+
+# 23. [WATCH-IDLE] the idle-box alarm: tiny windows, box% threshold pushed past 100 so only the job's own tree and logs decide
+export BOXQUEUE_IDLE_WINDOW=3 BOXQUEUE_IDLE_SAMPLE=0.5 BOXQUEUE_IDLE_BOX_PCT=101
+IDLE_DRY() { printf '%s' "$(D 60 none none | sed 's/ exit 0$//') $1 exit 0"; }
+newq
+mkjob "$T/j/quiet" "$(IDLE_DRY '')" 'exit 0' 'sleep 7'
+mkjob "$T/j/quiet_ok" "$(IDLE_DRY "echo 'boxqueue: idle-ok';")" 'exit 0' 'sleep 7'
+mkjob "$T/j/quiet_long" "$(IDLE_DRY "echo 'boxqueue: idle-ok 60';")" 'exit 0' 'sleep 7'
+mkjob "$T/j/onecore" "$(IDLE_DRY '')" 'exit 0' 'end=$((SECONDS + 7)); while [ $SECONDS -lt $end ]; do :; done'
+mkjob "$T/j/chatty" "$(IDLE_DRY '')" 'exit 0' 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do echo "tick $i"; sleep 0.5; done'
+mkjob "$T/j/childbusy" "$(IDLE_DRY '')" 'exit 0' 'bash -c '"'"'end=$((SECONDS + 7)); while [ $SECONDS -lt $end ]; do :; done'"'"' & wait'
+bq add --name 100-main-quiet --no-start "$T/j/quiet" > /dev/null
+( run1 ) & rp=$!; sleep 5.5
+out=$(bash "$BQ" status); wait $rp
+printf '%s' "$out" | grep -q 'IDLE-SUSPECT: box busy' && ok "IDLE ALARM: a quiet job (no CPU, no log growth) is flagged IDLE-SUSPECT in 'boxqueue status' while it runs" || bad "idle status: $out"
+has '  job 100-main-quiet IDLE-SUSPECT: box busy [0-9]+% .*tree 0% of one core.*UNMEASURED' && res main-quiet | head -1 | grep -q 'outcome=green .*idle=SUSPECT' \
+    && ok "IDLE ALARM: one actionable line in queue.log (labelled UNMEASURED), the job NOT killed (green), result marked idle=SUSPECT" || bad "idle log: $(ql | grep IDLE) / $(res main-quiet | head -1)"
+for j in quiet_ok quiet_long onecore chatty childbusy; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null; done; run1; run1; run1; run1; run1
+for j in quiet_ok quiet_long; do ql | grep -q "job 100-main-$j IDLE-SUSPECT" && bad "idle-ok: $j was flagged" || ok "NEGATIVE: 'boxqueue: idle-ok'${j#quiet_ok}${j#quiet} ($j) is not flagged by a quiet stage"; done
+ql | grep -q 'job 100-main-onecore IDLE-SUSPECT' && bad "single-core busy loop was flagged" || ok "NEGATIVE: one core at 100% (a few % of a big box) is NOT idle: its own tree uses CPU"
+ql | grep -q 'job 100-main-childbusy IDLE-SUSPECT' && bad "a busy CHILD was flagged" || ok "NEGATIVE: the job's CHILD process burning CPU keeps the tree busy"
+ql | grep -q 'job 100-main-chatty IDLE-SUSPECT' && bad "a chatty (log growing) job was flagged" || ok "NEGATIVE: an idle-CPU job whose log keeps growing is not flagged"
+for j in quiet_ok quiet_long onecore chatty childbusy; do [ "$(st main-$j)" = green ] || bad "idle neg $j: $(res main-$j)"; done
+if P=$(plant no-tree-cpu '[ "$tpct" -lt "$IDLE_TREE_PCT" ] && [ "$ls" = "$pls" ]; then idle_ms' '[ "$ls" = "$pls" ]; then idle_ms'); then
+    newq; bq add --name 100-main-onecore --no-start "$T/j/onecore" > /dev/null; BQX=$P run1
+    ql | grep -q 'job 100-main-onecore IDLE-SUSPECT' && ok "PLANT no-tree-cpu (only the logs decide): the one-core busy job is falsely flagged, the case goes red" || bad "PLANT no-tree-cpu not caught"
+else bad "plant no-tree-cpu did not land"; fi
+if P=$(plant no-log-growth '&& [ "$ls" = "$pls" ]; then idle_ms' '; then idle_ms'); then
+    newq; bq add --name 100-main-chatty --no-start "$T/j/chatty" > /dev/null; BQX=$P run1
+    ql | grep -q 'job 100-main-chatty IDLE-SUSPECT' && ok "PLANT no-log-growth (log growth ignored): the chatty job is falsely flagged, the case goes red" || bad "PLANT no-log-growth not caught"
+else bad "plant no-log-growth did not land"; fi
+if P=$(plant alarm-silent 'if [ $flagged = 0 ] && [ $((idle_ms / 1000)) -ge "$win" ]; then' 'if false; then'); then
+    newq; bq add --name 100-main-quiet --no-start "$T/j/quiet" > /dev/null; BQX=$P run1
+    ql | grep -q 'IDLE-SUSPECT' && bad "PLANT alarm-silent not caught" || ok "PLANT alarm-silent (never raised): the quiet job goes unnoticed, the case goes red"
+else bad "plant alarm-silent did not land"; fi
+# a NON-queue box-lock holder that blocks a pending job: one sample per pass
+newq
+mkjob "$T/j/waiter" "$(D 30 none none)" 'exit 0' 'exit 0'
+bq add --name 100-main-waiter --no-start "$T/j/waiter" > /dev/null
+setsid bash "$BL" run --label idle-holder -- sleep 9 > /dev/null 2>&1 & kids+=($!); sleep 0.5
+hs=""
+for _ in 1 2 3 4 5 6 7; do run1; has 'HOLDER-IDLE-SUSPECT' && { hs=$(bash "$BQ" status); break; }; sleep 0.7; done
+has 'HOLDER-IDLE-SUSPECT box-lock holder pid=[0-9]+ label=idle-holder' && printf '%s' "$hs" | grep -q HOLDER-IDLE-SUSPECT \
+    && ok "IDLE ALARM: a quiet non-queue box-lock holder blocking a job: HOLDER-IDLE-SUSPECT in queue.log and status" || bad "holder idle: $(ql | grep -i holder)"
+wait "${kids[-1]}" 2>/dev/null
+newq
+bq add --name 100-main-waiter --no-start "$T/j/waiter" > /dev/null
+setsid bash "$BL" run --label busy-holder -- bash -c 'end=$((SECONDS + 9)); while [ $SECONDS -lt $end ]; do :; done' > /dev/null 2>&1 & kids+=($!); sleep 0.5
+for _ in 1 2 3 4 5 6 7; do run1; sleep 0.7; done
+has 'HOLDER-IDLE-SUSPECT' && bad "a busy holder was flagged" || ok "NEGATIVE: a box-lock holder whose process tree is burning a core is not flagged"
+wait "${kids[-1]}" 2>/dev/null
+unset BOXQUEUE_IDLE_WINDOW BOXQUEUE_IDLE_SAMPLE BOXQUEUE_IDLE_BOX_PCT
 
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

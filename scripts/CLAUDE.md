@@ -789,5 +789,34 @@ pcrec (the Makefile owns that).
     inherits an earlier one's. OPT-IN for the kit and the bench: a slot
     script becomes a job (its own `boxlock run --label kit` stays valid:
     inside a queue job it nests by token). Self-test `tests/boxqueue.test`.
+    [WATCH-IDLE] (lane watchidle, 2026-10-21) grew it three honesty gates and
+    an alarm, each planted back in the self-test. GATES, enforced by `add`/
+    `retry`/`batch` ONLY (a job already pending or hand-dropped is read with
+    the older lenient grammar, so queued work never changes; `--dry-run`
+    prints such a job as LEGACY): a bare `expect none` is REFUSED, say
+    `expect none reason=WHY` (shape 1: a job that swallowed its tool's rc and
+    said `none` scored GREEN on a crash); `expect NAME=N [log=PATH] ...` reads
+    the population and last line from the named file, default job.log,
+    relative = under the run dir (shape 2: perfrun's own `-- LOG` read short on
+    job.log; a RED line in a named log fails the job too); a `last=` expect
+    needs `boxqueue: witness NAME=LINE` and the dry run reads N back from it
+    with the same matcher, an ERE ending in `$` or not compiling is refused
+    (shape 3: `last=^== X COMPLETE` with no integer after it); the refusal
+    prints the valid forms. A last= that read nothing now says why (never
+    matched / matched with no integer). THE IDLE-BOX ALARM: beside each job
+    the runner samples box CPU (/proc/stat, iowait = idle), the job's own
+    process-tree CPU (exact pid walk of /proc, session + descendants) and its
+    logs' size every `BOXQUEUE_IDLE_SAMPLE` s (15); idle for
+    `BOXQUEUE_IDLE_WINDOW` s (600) with box busy < `BOXQUEUE_IDLE_BOX_PCT` (5)
+    AND tree < `BOXQUEUE_IDLE_TREE_PCT` (5, of one core) AND no log growth
+    writes one IDLE-SUSPECT line to queue.log and `status` and marks the
+    result `idle=SUSPECT`; it never kills; activity resumes = IDLE-CLEARED.
+    All numbers are UNMEASURED defaults. One core at 100% is busy however
+    small a share of the box. `boxqueue: idle-ok [SECONDS]` (optional) turns
+    it off or lengthens the window. The same thresholds watch a NON-queue
+    box-lock holder blocking a pending job, one sample per runner pass
+    (HOLDER-IDLE-SUSPECT, never kills). Not covered: a lock holder with no
+    queue job waiting, and a chain waiting on a `.lift`, are watchrun's
+    (LOCK-ORPHAN/QUIET) territory. Report: docs/dev/lanes/watchidle_report.md.
 
 Maintenance: update this file when scripts are added/removed or change role.
