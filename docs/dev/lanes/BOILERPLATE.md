@@ -269,6 +269,7 @@ the rxtsource census: the start-set mover manifests (tests/startset/manifests/),
 the axes allowances, size tripwires. Run `make test` (async), not only the
 section you think counts (2026-10-10: rev2corp re-pinned rxtsource only;
 main's post-merge make test went red on test-startset, lane sstri).
+A change that makes a strategy fire in new places (new row, widened admission, new rung) runs `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` before delivery and re-aims each moved witness in the same delivery.
 Never merge to main yourself.
 
 ## Other boxes

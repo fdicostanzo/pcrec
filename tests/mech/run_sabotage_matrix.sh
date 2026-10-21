@@ -34,6 +34,9 @@
 #   KEEP=1 bash tests/mech/run_sabotage_matrix.sh        # keep scratch trees
 #   VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh  # fields only,
 #                                                         # seconds, no build
+#   REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh  # every row's reach
+#                                                         # probes on the clean
+#                                                         # tree; no plants
 #
 # [MECH-REACH, 2026-08-25] A ROW WHOSE WITNESS IS A CONSTRUCT DECLARES ITS
 # REACH. Three optional fields, and the verdict they can produce.
@@ -598,6 +601,8 @@ set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/timeout_bin.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# [MECH-REACHONLY] MECH_SAB_DIR: the definitions directory; only reach_only_selftest.sh sets it.
+SAB_DIR="${MECH_SAB_DIR:-$SCRIPT_DIR/sabotages}"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"   # [ORACLE-LINK] D98: the pc3/pc4 arms build pcre2_check.c/pc4_check.c, which direct-link libpcre2 now
@@ -611,6 +616,14 @@ KEEP="${KEEP:-0}"
 # it is an early exit inside run_one, not a second copy of the rules, which
 # would be a control with its own source. It builds nothing and runs nothing.
 VALIDATE_ONLY="${VALIDATE_ONLY:-0}"
+# [MECH-REACHONLY] REACH_ONLY=1 -- run every selected row's SAB_REACH /
+# SAB_REACH_POP probes on the clean tree and stop: no archive, no plant, no
+# per-row scratch tree, no suite. The probes are the SAME block run_one's
+# full run executes (an early exit after it, not a second copy of the
+# rules). One line per row; ends with the `mech-reach-only: DONE rc=N`
+# trailer; exits 1 when a row NOT declared UNREACHED reads unreached.
+REACH_ONLY="${REACH_ONLY:-0}"
+[ "$REACH_ONLY" = "1" ] && [ "$VALIDATE_ONLY" = "1" ] && { echo "FATAL: REACH_ONLY and VALIDATE_ONLY are exclusive" >&2; exit 2; }
 PROCS="${PROCS:-1}"
 case "$PROCS" in (''|*[!0-9]*) echo "FATAL: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
 [ "$PROCS" -ge 1 ] || { echo "FATAL: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
@@ -699,6 +712,13 @@ usage: bash tests/mech/run_sabotage_matrix.sh [S<id> ...]
                 unknown id is never silently dropped.
 
 env: CC, KEEP=1 (keep scratch trees + logs), MECH_SCRATCH, JOBS, PROCS
+     REACH_ONLY=1     evaluate every selected row's SAB_REACH/SAB_REACH_POP
+                      on the clean tree, apply no plant, run no suite; one
+                      REACHED / UNREACHED / declared-UNREACHED / NO-PROBE /
+                      NOW-REACHED line per row, then a
+                      'mech-reach-only: DONE rc=N' trailer. rc 1 iff a row
+                      not declared UNREACHED reads unreached. JOBS caps the
+                      one clean-tree build.
      VALIDATE_ONLY=1  source every selected definition, run the FIELD
                       validations, print one 'FIELDS OK' line each and
                       stop. Builds nothing, runs nothing, measures
@@ -759,7 +779,7 @@ esac
 # selection loop, which stays: it builds the run list).
 for id in ${IDS[@]+"${IDS[@]}"}; do
     idhit=""
-    for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
+    for f in "$SAB_DIR"/S*.sh; do
         [ -e "$f" ] || continue
         base="$(basename "$f")"
         if [[ "$base" == "$id"_* || "$base" == "$id" ]]; then idhit=1; break; fi
@@ -817,7 +837,7 @@ echo
 # is not an id. A prefix selecting a RANGE was never a supported thing to want.
 sab_files=()
 matched_ids=" "
-for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
+for f in "$SAB_DIR"/S*.sh; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
     if [ "${#IDS[@]}" -gt 0 ]; then
@@ -890,7 +910,7 @@ for f in "${sab_files[@]}"; do
          [ -n "${SAB_REACH}${SAB_REACH_POP//[[:space:]]/}" ] ); then
         needs_clean=1
     fi
-    if ( SAB_SUITES=""
+    if [ "$REACH_ONLY" != "1" ] && ( SAB_SUITES=""
          # shellcheck disable=SC1090
          source "$f" >/dev/null 2>&1
          case " $SAB_SUITES " in (*" encoding "*) exit 0 ;; (*) exit 1 ;; esac ); then
@@ -928,7 +948,8 @@ if [ "$needs_clean" -eq 1 ] && [ "$CLEAN_REUSED" -eq 0 ]; then
     # A CLEAN TREE THAT DOES NOT BUILD IS A FATAL FOR THE WHOLE RUN, not a
     # per-row anomaly: every verdict below is stated relative to it, and if
     # HEAD does not build there is nothing for any row to mean.
-    if ! make -C "$CLEAN_TREE" -j"$ncpu" all CC="$CC" \
+    clean_j="$ncpu"; [ "$REACH_ONLY" = "1" ] && clean_j="$JOBS"
+    if ! make -C "$CLEAN_TREE" -j"$clean_j" all CC="$CC" \
             > "$MECH_SCRATCH/_clean/build.log" 2>&1; then
         echo "FATAL: the CLEAN reference tree does not build at $SHA (see $MECH_SCRATCH/_clean/build.log)" >&2
         exit 2
@@ -1312,6 +1333,14 @@ run_one() {
             exit 0
         fi
 
+        # [MECH-REACHONLY] a row with no probe has nothing to evaluate.
+        if [ "$REACH_ONLY" = "1" ] && [ -z "$SAB_REACH" ] \
+           && [ -z "${SAB_REACH_POP//[[:space:]]/}" ]; then
+            printf '%s\t%s\t%s\tREACH-ONLY\tno-probe\tNO-PROBE (row declares no SAB_REACH/SAB_REACH_POP)\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC"
+            exit 0
+        fi
+
         work="$MECH_SCRATCH/$SAB_ID"
         rm -rf "$work"
         mkdir -p "$work"
@@ -1375,6 +1404,7 @@ run_one() {
         for req in $SAB_REQUIRE; do
             case "$req" in
             asan)
+                [ "$REACH_ONLY" = "1" ] && continue   # reach is independent of the instrument
                 printf 'int main(void){return 0;}\n' > "$work/asan_probe.c"
                 if "$CC" -O0 -fsanitize=address,undefined \
                         -o "$work/asan_probe" "$work/asan_probe.c" \
@@ -1475,6 +1505,26 @@ run_one() {
         # witness dead and is then found to reach is `NOW REACHED` -- the
         # expiry doctrine pointing the other way.
         reach_joined="$(IFS=,; echo "${reach_bits[*]}")"
+        # [MECH-REACHONLY] the probes above are all REACH_ONLY wants. Verdict
+        # words are chosen so no vcount ERE (UNREACHED|NOW REACHED, UNEXPECTED)
+        # reads them: this mode has its own counters at the trailer.
+        if [ "$REACH_ONLY" = "1" ]; then
+            if [ "$reach_ok" -eq 0 ]; then
+                if [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
+                    rv="declared-UNREACHED (${SAB_EXPECT_REASON})"
+                else
+                    rv="UNREACHED${reach_why}"
+                fi
+            elif [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
+                rv="NOW-REACHED (row declares UNREACHED but the probe is live; flip SAB_EXPECT)"
+            else
+                rv="REACHED"
+            fi
+            printf '%s\t%s\t%s\tREACH-ONLY\t%s\t%s\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$reach_joined" "$rv"
+            [ "$KEEP" = "1" ] || rm -rf "$work"
+            exit 0
+        fi
         if [ "$reach_ok" -eq 0 ]; then
             if [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
                 rverdict="UNREACHED (EXPECTED -- $SAB_EXPECT_REASON)"
@@ -3457,6 +3507,41 @@ echo "== detection matrix =="
     printf 'id\tfile\tedit\tsuites run\tresults\tverdict\n'
     cat "$results_file.rows"
 } | column -t -s "$(printf '\t')"
+
+if [ "$REACH_ONLY" = "1" ]; then
+    # [MECH-REACHONLY] own summary + the TOOL: DONE rc=N trailer
+    # (scripts/CLAUDE.md "THE COMPLETION CONVENTION"). Counters read the
+    # verdict column's first word only (a description may say anything).
+    ro_count() { awk -F'\t' -v re="$1" '$NF ~ re {n++} END {print n + 0}' "$results_file.rows"; }
+    ro_reached="$(ro_count '^REACHED')"
+    ro_unreached="$(ro_count '^UNREACHED')"
+    ro_declared="$(ro_count '^declared-UNREACHED')"
+    ro_now="$(ro_count '^NOW-REACHED')"
+    ro_noprobe="$(ro_count '^NO-PROBE')"
+    echo
+    if [ "$total" -ne "${#sab_files[@]}" ]; then
+        echo "*** FATAL: ${#sab_files[@]} row(s) requested but only $total arrived. ***"
+        echo "mech-reach-only: DONE rc=2 rows=$total (incomplete) at $SHA"
+        exit 2
+    fi
+    if [ "$ro_unreached" -gt 0 ]; then
+        echo "*** $ro_unreached row(s) NOT declared UNREACHED read unreached: ***"
+        awk -F'\t' '$NF ~ /^UNREACHED/ {print "    - " $1 "\t" $5}' "$results_file.rows"
+    fi
+    if [ "$ro_now" -gt 0 ]; then
+        echo "*** $ro_now row(s) declare UNREACHED but now reach (not a failure; flip SAB_EXPECT): ***"
+        awk -F'\t' '$NF ~ /^NOW-REACHED/ {print "    - " $1}' "$results_file.rows"
+    fi
+    ro_rc=0; [ "$ro_unreached" -gt 0 ] && ro_rc=1
+    rm -f "$results_file" "$results_file.rows"
+    if [ "$KEEP" != "1" ]; then
+        [ -n "${rowdir:-}" ] && rm -rf "$rowdir"
+        [ -n "$CLEAN_TREE" ] && [ "$MADE_SCRATCH" = "1" ] && rm -rf "$MECH_SCRATCH/_clean"
+        [ "$MADE_SCRATCH" = "1" ] && rmdir "$MECH_SCRATCH" 2>/dev/null
+    fi
+    echo "mech-reach-only: DONE rc=$ro_rc rows=$total reached=$ro_reached unreached=$ro_unreached declared-unreached=$ro_declared now-reached=$ro_now no-probe=$ro_noprobe at $SHA"
+    exit "$ro_rc"
+fi
 
 echo
 # [admin1007] EVERY counter below reads the VERDICT COLUMN (the last tab
