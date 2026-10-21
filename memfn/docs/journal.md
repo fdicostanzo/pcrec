@@ -2553,3 +2553,13 @@ b4prep @ 0f3c115fa (lane/memfn-b4prep, report docs/dev/lanes/b4prep_report.md).
 - 2026-10-21 (main): M0 is built (lane/m0build c37c2ef05, abi 81 -> 82), and its heavy validation is queued ahead of our 521. Added to the B4-brief OWED list:
   - (a) the kit's interim measure sets use first-letter digests, which docs/spec/measures.md does not allow; fix them before B4 reads any set;
   - (b) re-check the B4 mover manifest at abi 82 once M0 merges.
+
+## 2026-10-21 — Z1 merged on main (5cc3d7179); Zk built, heavy queued
+
+Zk (R-26.6) is on lane/memfn-r26zk @ 6f03281cb. The kit's class/field sets are now one 128-bit `kit_set` (F-2 of Z1, no MF_SITE_ABI move). REPORT has its own class. The REPORT row RPT lands UNROUTED; it applies only where the composer's form proves exactly the REQUIRED sets, and refuses otherwise. `mf_preview` is refused when misused and has no options.def row. S1251-S1256 are written. My rulings on the lane's questions:
+- Q1 ACCEPTED: `unsigned __int128` is kit-compiler-internal and never emitted; gcc and clang are the build compilers.
+- Q2 ACCEPTED: "the REQUIRED term's set" at d is the intersection of the REQUIRED terms at d (a conjunction).
+- Q3 ACCEPTED: `mf_preview` is a new call and moves no struct layout or meaning, so there is no MF_SITE_ABI event.
+- Q4 ACCEPTED, with a carry: RPT moves no byte while unrouted, so it has no deny row yet. B1, which routes it, owes its deny row.
+- F-2 noted for main's Z2: `mf_ask` takes a const art, so `mf_preview` must be called at art setup, before any ask (kit_proof §7's protocol already places it there).
+Heavy validation: boxqueue `500-kit-r26zk-heavy`.

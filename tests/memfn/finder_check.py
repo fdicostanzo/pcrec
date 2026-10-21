@@ -100,8 +100,10 @@ import sys
 passed = failed = 0
 unreached = []
 
+# R-26.6 (lane r26zk): RPT, the REPORT row, the last FIND row (listed after
+# slot PRES in the table), UNROUTED: no row routes before its step
 FIND_ROWS = ["R0", "R5", "R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w", "D2",
-             "R7", "R7w"]
+             "R7", "R7w", "RPT"]
 PRES_ROWS = ["P0", "P2", "P3", "P4", "P9"]
 DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
 B1_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1"]

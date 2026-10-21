@@ -141,9 +141,9 @@ MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by no
 /* the finder table's gate fields (R17-b' B1, MF_SITE_ABI 12; r17b_prime.md
    §1.2 [rev3 D1, A22]): the call mode (R-19), the site's consumer kind
    (§4.3; STATED by pcrec from B2, PR-3), the layer variant the finder walk
-   evaluates and the decided span's need. These twelve classes fill the
-   class space to its 64-bit mask (kit.h's _Static_assert): the next class
-   needs the mask widened first */
+   evaluates and the decided span's need. These twelve classes filled the
+   class space's first 64-bit mask; since R-26 Zk a class set is a 128-bit
+   kit_set (kit.h), so a class is added here with no other edit */
 MF_CLASS(ONESHOT,     "mf_site.body MF_BODY_ONESHOT: one call answers one search")
 MF_CLASS(PARAM,       "mf_site.body MF_BODY_PARAM: a shared body, M a run-time parameter (reserved)")
 MF_CLASS(DFA_SCAN,    "site kind: a DFA body's forward scan")
@@ -156,6 +156,9 @@ MF_CLASS(L_W16,       "the finder walk's layer variant: the 16-byte SIMD layer")
 MF_CLASS(L_W32,       "the finder walk's layer variant: the 32-byte SIMD layer")
 MF_CLASS(N_REQUIRED,  "the decided span's need: MF_REQUIRED")
 MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
+/* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
+   first 64 (kit.h's kit_set) */
+MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -264,11 +267,11 @@ MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
 /* ---- the fields: R-26 (MF_SITE_ABI 18; kit_proof.md §4.1) ----------------
  *
  * Span 0's prefix facts, the context spans and their facts, and the read
- * floor. THE CLASS SPACE IS FULL (64, kit.h's _Static_assert), so these read
- * through classes the space already has, each named in its doc; with these
- * seven the FIELD space is full too (64). The first row that needs a class
- * of its own (R-26.6's REPORT row needs one for `site_kind`) widens the mask
- * first. No form reads the prefix facts, `consumable` or `read_floor` (they
+ * floor. They were written when the class space was full (64), so they read
+ * through classes it already had, each named in its doc; with these seven
+ * the FIELD space reached 64 too. R-26 Zk widened both sets to 128 bits
+ * (kit.h's kit_set) before its REPORT row took a class of its own. No form
+ * reads the prefix facts, `consumable` or `read_floor` (they
  * are facts for a choice; every row serves every value); a form HONOURS
  * `ctx` (it tests the entries) and `absent` (it renders the rule), so every
  * row but the generic one declines a site stating a context span, or an
@@ -313,12 +316,14 @@ MF_FIELD(read_floor, MF_PH_DEFINE, HOOK, cl_read_floor,
 /* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
 
 MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
-         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) | CM(OTHER),
+         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) |
+         CM(REPORT) | CM(OTHER),
          "the site's consumer kind (r17b_prime.md §4.3), read in the finder walk only (fd_facts; "
          "elsewhere unstated): pcrec STATES it from B2 (PR-3), so at B1 every site reads "
          "UNSTATED and a row that reads the kind (D1, D1c, D1w) declines (R1). There is no ANY "
          "kind ([rev3 A22]): a row serving every kind serves every kind class and does not USE "
-         "the field")
+         "the field. REPORT (R-26.3) is served by the REPORT row alone (R-26.6): every other "
+         "row's kinds leave it out, so the gate declines them on a REPORT site")
 MF_FIELD(layer, MF_PH_DEFINE, VALUE, cl_layer,
          CM(L_OFF) | CM(L_W16) | CM(L_W32) | CM(OTHER),
          "the layer variant the finder walk evaluates (a fact of the walk's input, not of the "

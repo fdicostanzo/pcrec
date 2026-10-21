@@ -420,6 +420,21 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   OTHER (no row's kinds), and every finder row serves `ctx` NONE and `absent`
   NO. `formhash.c`: the canonical site states span 0. Checks:
   `tests/memfn/run_proof.sh` (part `proof` of `make test-memfn-finder`).
+- **R-26 Zk across the files (lane r26zk, R-26.6; no MF_SITE_ABI move, no
+  pcrec byte moved)** — `kit.h`: the class and field sets are one 128-bit
+  `kit_set` (CM/FM/MF_ANY, `gate_use`, `gate_contract.serves`,
+  `gate_verdict`; `kit_set_low`), the art's `preview` step, and the
+  declarations of `fd_preview_step`/`kit_report_exact`; `gate.c` its types.
+  `fields.def`: the class REPORT (`site_kind`'s set). `finder.c`: the REPORT
+  row RPT (after slot PRES, so no index moves; routed 0, step R-26.6, pick
+  PROOF = the composer's walk through `fd_nested_walk`, facts SPAN0 and
+  PROOF_EXACT, contract REPORT-only), `fd_scope` admits a REPORT site of any
+  form, `fd_row_routed` (routed, or the art previews the row's step) for
+  `fd_route` and `fd_pres`, the previewable-step table `fd_previews[]` and
+  `fd_preview_step`. `compose.c`: `kit_report_exact` (the REPORT row's
+  applicability: the arms' walk's class EQUAL to the REQUIRED sets at every
+  offset), `select_arm` walks a REPORT site only under a deciding REPORT row,
+  and `mf_preview`.
 
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,

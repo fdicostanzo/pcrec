@@ -15,9 +15,10 @@
 #      kit rendered.
 #
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
-#                  defect (the six kit-side rows of R-26, S1221-S1226; the
-#                  table below): the run must go red. Writes only the work
-#                  directory. --plants runs all six and reports each.
+#                  defect (the six kit-side rows of R-26, S1221-S1226, and
+#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; the table
+#                  below): the run must go red. Writes only the work
+#                  directory. --plants runs them all and reports each.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
 set -u
@@ -44,10 +45,28 @@ plant_spec() {
         echo 'generic.c@@            if (tm->kind == MF_T_SET) {\n                if (member_test(rc, b, tm, id, bx)) {@@            if (tm->kind == MF_T_SET) {\n                mf_term nt = *tm;\n                for (int q = 0; tm->need == MF_OPTIONAL \&\& q < 256; q++)\n                    if (nt.set[q >> 3] >> (q \& 7) \& 1) { nt.set[q >> 3] \&= (uint8_t)~(1u << (q \& 7)); break; }\n                if (member_test(rc, b, \&nt, id, bx)) {' ;;
     S1226) # an UNSTATED field accepted (`absent` UNSTATED read as FAILS)
         echo 'compose.c@@    if (p->absent == MF_ABSENT_UNSTATED)\n        return@@    if (0)\n        return' ;;
+    # R-26.6 (lane r26zk): the REPORT row and the preview. S1251-S1256 are
+    # mech rows (ids reserved by main); ZK6/ZK7 are plants with no id yet.
+    S1256) # the REPORT row applies without its exactness fact
+        echo 'finder.c@@{ "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,@@{ "RPT", FD_FIND, KN_P, SF_SPAN0, 0,' ;;
+    S1255) # the exactness test compares span 0's offsets only (d >= 0)
+        echo 'compose.c@@    return !memcmp(req, c.proven, sizeof req);@@    return !memcmp(req[-MF_PROOF_LO], c.proven[-MF_PROOF_LO], sizeof req - (size_t)(-MF_PROOF_LO) * 32);' ;;
+    S1252) # mf_preview accepted twice
+        echo 'compose.c@@    if (art->preview)\n        return kit_fail(art, "mf_preview: called twice@@    if (0)\n        return kit_fail(art, "mf_preview: called twice' ;;
+    S1251) # mf_preview accepted after the first define
+        echo 'compose.c@@    if (art->nsites)\n        return kit_fail(art, "mf_preview: called after@@    if (0)\n        return kit_fail(art, "mf_preview: called after' ;;
+    S1253) # mf_preview accepts any step a row names (B4, B1, ...)
+        echo 'finder.c@@        if (strcmp(step, fd_previews[i])) continue;@@        if (0) continue;' ;;
+    ZK6) # the preview leaks: the REPORT row decides on every art
+        echo 'finder.c@@    return r->routed || (art->preview \&\& !strcmp(art->preview, r->step));@@    return r->routed || !strcmp(r->step, "R-26.6");' ;;
+    ZK7) # a preview art routes nothing (the REPORT row never decides)
+        echo 'finder.c@@    return r->routed || (art->preview \&\& !strcmp(art->preview, r->step));@@    return r->routed;' ;;
+    S1254) # a `--memfn=` spelling reaches the preview (an options.def row)
+        echo 'options.def@@MF_OPT("vrun-w32", MF_OPT_DENY,@@MF_OPT("preview", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR, "plant")\nMF_OPT("vrun-w32", MF_OPT_DENY,' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1221 S1222 S1223 S1224 S1225 S1226"
+PLANTS="S1221 S1222 S1223 S1224 S1225 S1226 S1251 S1252 S1253 S1254 S1255 S1256 ZK6 ZK7"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
