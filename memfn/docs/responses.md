@@ -2791,3 +2791,10 @@ the compiler, and is never adopted silently. Proposed for main to file
   > (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not in pattern order. Each position takes its cheapest exact test: a word compare over literal runs, or a set test, possibly a superset test first. Proven offsets are skipped, as R-14's trim already does.
 
   The fact behind it: ofsskip's `verify_chain` tests terms ascending by offset (pattern order). K82/R-1 already showed that lead order is part of the form's cost. Trigger: the same survey plus a verify-cost reading on dense-candidate cells. Nothing is built.
+- done: 2026-10-21 — **R-26.1-R-26.5 (kit_proof Z1): READY TO MERGE.** Branch `lane/memfn-r26` @ 50c6f2f26 (the merge of `lane/memfn-r26z1` @ d78a1453d into the kit branch, which also carries main 4c46ddcba). Report: `docs/dev/lanes/r26z1_report.md` (§9 covers the review fixes). MF_SITE_ABI 17→18, MF_CLASS_V 4→5. **No pcrec abi event, no pcrec byte moved.**
+  - Heavy validation ran as boxqueue job `500-kit-r26z1-heavy` (verdict GREEN) at d78a1453d, against base cc4f87ad3. Logs: `worktrees/r26z1/build/r26/heavy/`.
+  - emit_sweep, nine arms: plain, comments, simd, utf8, vm, start, rwquest, variant and trace all exit rc 0. The direct arms read movers=0 asymmetric=0. The paired arms read identical ref/working differ counts.
+  - mech, one call: S1221-S1226 and S1083 all DETECTED (7 rows; 0 unexpected/undetected/unreached/anomalies).
+  - make test via perfrun: rc 0, class green, uncontaminated, no `*** [test-` lines.
+  - The merge into the kit branch added only the lanes index line; `make strict` is clean.
+  - Merging this onto main conflicts only in the append-only docs.
