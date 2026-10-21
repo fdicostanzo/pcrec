@@ -1152,6 +1152,16 @@ STRUCTURE (anchoring, the end pin, possessify's exemption, the widths marks, D16
 Each would become a recognizer of a row on data. The 109 label tokens (54 + 55) are tokens,
 not lines.
 
+**Correction from the build (P2d, lane ctxp2d, 2026-10-20; ctxp2d_report.md F-1).** The reason
+given above for `ctxfn_reads_membership` ("or every artifact gains an atom") is wrong. Without the
+clause an absent-only row contributes an EMPTY set, which refines no class, so no atom appears and
+every byte's atom vector keeps bit k clear. The clause is still load-bearing, by another route: the
+entry is a live A_CTX-row entry, so `ctx_atoms` sets `Dfa.clsctx`, which turns on `wctx` and the D11
+`views` flag (`emit_dfa.c`, `anch_start`) and changes the candidate scan's form (witnesses
+`a(?:\z|)` and `(?:\z)?a`, byte and utf8, stamp `memchr-bounded` instead of `memchr`). No corpus
+pattern reaches it (0 of 4,636), so the corpus alone cannot catch the clause going missing; the
+assertions check does (S1171).
+
 A recognizer that a future analysis forgets errs in a known direction:
 - for `startanch`, `derive`, `endwin` and possessify it is a lost optimization (sound): no
   anchor, no kill, no end pin, a widen where a transparency was;

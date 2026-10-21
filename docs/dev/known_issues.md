@@ -79,6 +79,8 @@ D158 (Frank): an optimization never reduces any pattern's ability to complete. P
 
 ---
 
+## K112 — OPEN (filed 2026-10-20, manager, from lane ctxp2d's finding F-6, ctxp2d_report.md §6) — STALE VM ROLE TEXT: the VM's `^`/`\A` role string reads "^ attempt_position of subject (absolute offset 0)" and the `(?m)^` row reads "(?m)^ attempt_position of subject or ...", apparently a `start`->`attempt_position` rename that reached a string. Kept verbatim because changing them moves `--emit-ir` bytes (an abi event). Fix with the next abi event or in [IFACE-PUSH]-style doc work.
+
 ## K111 — OPEN (filed 2026-10-16, manager, from lane msrev3's finding F12 — docs/design/measure_sets.md §9.5, §11) — CASE-EXACTNESS DRIFT: the `lib` reference resolver probes with `path_is_file`, the analysis resolver with `dir_has_exact`
 
 `rxt_source.c`'s `lib` search (`src/parse/rxt_source.c:4283-4340`) probes the source's directory and each `-I` directory with `path_is_file(join_path(...))`. The analysis resolver (`rxt_find.c:9-12`, [r2 M-S6]) deliberately replaced that probe with `dir_has_exact`, an exact directory-entry match, so a case-insensitive filesystem cannot answer `log` with `Log.rxt`. On a case-insensitive filesystem (the Mac) `lib "Foo.rxt"` can therefore resolve `foo.rxt`, where a bundle name cannot. Linux is unaffected. Answers of the resolved file are unaffected; the defect is WHICH file a name finds.
