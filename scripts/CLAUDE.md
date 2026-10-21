@@ -330,6 +330,15 @@ pcrec (the Makefile owns that).
   settings registration, the light gate's three checks), wired in scripts/
   Makefile by a dependency line since the script is not at scripts/ top level.
 
+- **hooks/post_compact.sh** — SessionStart(compact) hook registered in the
+  project's `.claude/settings.json` (Frank, 2026-10-21): after any compaction
+  (idle, threshold or `/compact`; the input cannot tell them apart) prints a
+  re-entry instruction, `docs/dev/owner.md` whole and `docs/dev/wake.md` up to
+  its WORK QUEUE section (~6.6k chars, under the 10k inline limit), so the
+  fresh context starts from the written record. Read-only, always exits 0.
+  It works only if those files are current: the `/idle` skill's mandatory
+  update is its other half.
+
 - **hooks/pre-commit** — [PLAN-LINT] step 3, opt-in like hooks/pre-push:
   runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
   docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/

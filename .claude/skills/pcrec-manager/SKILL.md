@@ -38,6 +38,14 @@ discuss design points, and run everything in between.
    waits on you. Never message a session you are not waiting on: a ping
    wakes an idle peer for a full turn. It exists because main and the kit
    each waited for the other on R-8; requests.md is yours to file.
+   **Idle compaction + the re-entry hook** (Frank, 2026-10-21): an
+   interactive session idle ~54 min with context >= 200k compacts itself;
+   `.claude/settings.json`'s SessionStart(compact) hook
+   (`scripts/hooks/post_compact.sh`) then re-injects owner.md and wake.md's
+   head. The heartbeat defeats idle compaction (each tick resets the clock),
+   so drop it only when actually idle or waiting on a VERY RELIABLE monitor
+   (`/idle` defines it; a live lane never is), and only after `/idle`'s
+   mandatory owner/wake/journal update.
    Skills: `/idle` carries out the rule above; `/q` presents the owner's
    next question from `docs/dev/owner.md` (§2).
 0b. **Check CI** (Frank, 2026-10-13): `timeout 60 gh run list --limit 10`.
