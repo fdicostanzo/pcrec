@@ -2498,3 +2498,18 @@ pointer when a kit change merges to main.
   - R2's `unpaid` fallback is not WALK (grid2read §6).
 - **Owed and unchanged:** the rev 4 text of r17b_prime (M9/M15 into B4's table, this default stated as the ruling); the quiet re-time of f3-word-eq/f3-quad; D163 add. 8 layout controls, E8 PASS and M0 before B4 builds. **B4's measurement must name its regular-landing bench cells as EXPECTED losses up front.**
 - Posted to responses.md as a notice with proposed D-entry text for main.
+
+## 2026-10-20 (night) — r17b_prime rev 4 delivered (lane rev4, opus, docs only)
+
+- Main filed D169 and said no hold. Lane rev4 merged lane/grid2read (a57c63b17, both index sides kept) and wrote rev 4 (52078ec0f). What rev 4 does:
+  - deletes R1 (M9);
+  - re-keys R5 on a stated REGULAR landing regime, as a proposed fact SF_E_REGULAR (not built, D77);
+  - retires R0 (its deny and S916 go at B4);
+  - makes R2's unpaid fallback no longer WALK;
+  - adds no dispatch at B4;
+  - does not build F0/F1;
+  - states D169 as the default (§1.9);
+  - pre-registers the EXPECTED-LOSS rule (§9.2a).
+- B4's table is §1.3a. Gates: D163 add. 8 MET; E8 and M0 NOT MET.
+- Reviewed: docs only (6 files past the grid2read merge), D169 real on main. Fast-forwarded lane/memfn-b4. Lane stopped.
+- Lane questions: (1) the default for an unmeasured cover shape and (2) F2, the VM hat's one-byte set at default, go to Frank. (3), the pre-scan pricing trigger, is my call: record it as fired on the letter, do not build (it never fires on a default compile; D77).
