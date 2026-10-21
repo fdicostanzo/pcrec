@@ -199,7 +199,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
   status (2026-10-21): started; P2a-P2d landed (abi 81, zero movers at P2d); P2e (the AST fold + derived CLASS column) BUILT on lane/ctxp2e, zero movers by the light probe, abi stays 81 (ruling 1), heavy chain owed (ctxp2e_report.md); part 1 not started
-  next: P2e merge after its owed chain (and the abi ruling); tell the kit the abi number then
+  next: P2e merge after its owed chain (abi stays 81 by ruling 1 unless a sweep moves a byte)
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.

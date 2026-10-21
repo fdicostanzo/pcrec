@@ -121,18 +121,21 @@ distinct corpus pattern (4,636 from 5,811 `--list-source` rows over
 Prediction and measurement agree by ID: the empty set equals the empty set.
 The heavy sweeps are owed (§7).
 
-## 4. The abi readers: NOT bumped, held for the manager
+## 4. The abi: NOT bumped (manager ruling 1)
 
-The brief says "P2e is ITS OWN abi event: 81 -> 82". D76/D94 key the abi on
-emitted bytes, and nothing moved (§3). P2d stood on the same ground (D168
-add. 3 note), so I did not bump. Bumping now would re-pin the identity gate
-over identical bytes. The interim message asked the manager to rule. If the
-ruling is "bump anyway", the recipe is §4.5.1's: grep the tree for `81`'s
-readers (the `.abi` stamp in `emit_dfa.c`, `ABI_EXPECT`, the spec sentences in
-`match_api.md` §6, the FILEPIN/(B) pin, `abi_changelog.md`), then run
-`make test-codegen` and the registry, codegen and rxtsource suites. If a heavy
-run in §7 finds a moved byte, P2e IS an abi event, and that run's movers are
-its census.
+The brief said "P2e is ITS OWN abi event: 81 -> 82". D76/D94 key the abi on
+emitted text, and the light census moved nothing (§3). The interim message
+asked the manager to rule.
+
+**Ruling 1 (manager, 2026-10-20):** no bump; abi stays 81. D168 add. 3's "own
+abi event" was conditional on movers, and N-3's mover census measured zero.
+
+**The condition:** the heavy chain's emit_sweep against `73c2bb655` must also
+read 0 movers, on the plain sweep, `--arms start` and every variant. Any
+mover there turns P2e back into the 81 -> 82 event, with the full reader
+ritual (§4.5.1: grep `81`'s readers, run `make test-codegen`, registry,
+codegen and rxtsource). In that case the lane stops and reports before
+landing. Abi 82 is not taken.
 
 **No spec hunk is owed by D80.** Bytes, listings, facts, routes and
 diagnostics are all unchanged. One spec sentence named the deleted kind:
@@ -156,11 +159,31 @@ diagnostics are all unchanged. One spec sentence named the deleted kind:
 
 **New rows,** with reach measured by hand. `build/p2e/plant.sh` applies a row
 to a scratch copy of the tree, builds it and runs one detector; the log is
-`build/p2e/measure.log`.
+`build/p2e/measure.log` (scratch, not committed).
 
-REACH_TABLE
+| row | plant | detector (by hand, 2026-10-20) |
+|---|---|---|
+| S1172 (re-aimed) | SUBJECT_START's (absent, absent) cell 0, hex and class updated | CK-8 7 failures (cell + class); `absolute.rxt` 5 failed |
+| S1173 (re-aimed) | SUBJECT_END's (in, in) cell 1, hex and class updated | CK-8 5 failures; `absolute.rxt` 22 failed (`(\z)*`'s generated C fails `-Werror`) |
+| S1174 (re-aimed) | `\A` builds SUBJECT_END, `\z` SUBJECT_START | `absolute.rxt` 201 failed / 668 passed |
+| S1176 (re-aimed) | the NFA writes `ctxfn = 0` for every no-membership row | `absolute.rxt` 193 failed / 676 passed |
+| S49 (re-aimed) | possessify's start-pin case made transparent | possdiff 1 pattern diverged (`a{0,4}^`) |
+| S1186 | SUBJECT_END's class written CONTEXT | BUILD REFUSED (static assert), `SAB_EXPECT=BUILD-REFUSED` |
+| S1187 | `CTXFN_CLASS_OF` never answers PIN_END | BUILD REFUSED (static assert) |
+| S1188 | startanch: end pin -> SA_BOT | harness over tests/assertions 3 failed |
+| S1189 | derive: start pin kept in Q | test-compound red (split-f/-np/-q no longer admitted) |
+| S1190 | derive's G5 count blind to the start pin | test-compound red (same fixtures) |
+| S1191 | widths: start pin marks EM_E | `nullable_anch.rxt` 2 failed; prefilter-collapse 6 failed |
+| S1192 | widths: end pin unmarked | prefilter-collapse 1 failed (`nullable_anch.rxt` 0: answer-identical) |
+| S1193 | endwin: start pin -> EW_Z | harness over tests/assertions 120 failed |
+| S1194 | possessify: end pin widens | run_assertions_tests.sh 1 failed (the STRATS exemption stamp) |
+| S1195 | `eol_tail_plain` refuses the end pin | run_b3_checks.sh: six one-seed witnesses read `overflow` |
+| S1196 | `ps_node` drops `first_of`'s nullability | harness over tests/assertions + tests/possessify 5 failed |
+| S1197 | `pcrec_ast_pin` leaves `anchor` false | `tests/assertions/d27/syntax_errors.rxt` 10 failed (the reject table reads 0, so the row names the corpus file) |
 
-`[SABANCHOR]`: 847 rows, 875 anchor sites, all resolve.
+The solo mech verdicts are owed (§7).
+
+`[SABANCHOR]`: 847 rows, 877 anchor sites, all resolve (`scripts/m6read_check_sab_anchors.py`).
 
 **Derived population** (R4). I ran `regen_edit_set.py` over `fe37f93be` →
 `edit_set_p2e.tsv`. Then `sabotage_anchors.py --step
@@ -223,11 +246,31 @@ The `witness:P2c` rows the script also prints belong to P2c.
 REF = `73c2bb655`. The chain is `build/p2e/stages.txt` (not committed), log
 directory `build/p2e/chain/`:
 
-STAGES
+```
+# ctxp2e owed heavy validation (ctxp2e_report.md §7). REF = 73c2bb655.
+build      light 300   make -j16
+strict     light 900   make strict
+test       light ttune scripts/perfrun --label ctxp2e -- "$STAGE_LOG.make"
+sweepdef   heavy 1800  python3 -I scripts/emit_sweep.py --ref 73c2bb655 --out build/p2e/sweep_default
+sweepstart heavy 3600  python3 -I scripts/emit_sweep.py --ref 73c2bb655 --arms start --out build/p2e/sweep_start
+sweepvar   heavy 10800 python3 -I scripts/emit_sweep.py --ref 73c2bb655 --tree-rev "$(git rev-parse HEAD)" --variant all --out build/p2e/sweep_var
+mechnew    heavy 1800  bash tests/mech/run_sabotage_matrix.sh S1172 S1173 S1174 S1176 S49 S1186 S1187 S1188 S1189 S1190 S1191 S1192 S1193 S1194 S1195 S1196 S1197
+mechold    heavy 3600  bash tests/mech/run_sabotage_matrix.sh S-U4 S14 S52 S58 S59 S84 S86 S91 S94 S97 S104 S107 S108 S127 S156 S157 S158 S159 S160 S174 S177 S302 S305 S338 S339 S365 S366 S446 S465 S498 S499 S500 S501 S588 S613 S746 S761 S807 S893 S904 S1100
+recid      light 3600  make test-recursion-identity
+```
+
+- **Dry runs** (2026-10-20, `--limit 3`): `emit_sweep.py --ref 73c2bb655 --arms
+  start` rc 0; `--tree-rev HEAD --variant all` rc 0, `VARIANTS: CLEAN`.
+  `chainrun --check` parses all nine stages. Every mech id matches exactly
+  one row file.
+- **The mech rows:** `mechnew` holds the 12 new rows plus the 5 re-aimed ones
+  (S49, S1172-S1174, S1176). `mechold` holds the other 41 derived re-run
+  rows.
 
 - **Expected:**
   - every stage green;
-  - both sweeps report zero movers (any mover makes P2e an abi event, §4);
+  - all three sweeps (plain, `--arms start`, `--variant all`) report zero
+    movers; any mover makes P2e an abi event (§4, ruling 1);
   - every mech row DETECTED (S1186/S1187 as BUILD-REFUSED);
   - recursion identity green with no re-pin.
 - **test-axes is not in the chain:** no axis moved in the probe's eight-axis
