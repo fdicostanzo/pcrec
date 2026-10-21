@@ -129,6 +129,13 @@ mf_art *pcrec_memfn_art(Ctx *cx)
                                              PCREC_HARNESS_PREFIX, cx->opt->prefix)))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
                            "counter: %s", mf_art_error(job->mf));
+        /* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, R-26.6): the harness lever's
+           kit channel, stated at art setup, before any mf_ask on this art
+           (an ask made first would answer the plain art's refusal, r26zk
+           F-2); never on a shipped compile */
+        if (pcrec_kit_proof_routed(cx) && mf_preview(job->mf, "R-26.6"))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
+                           "R-26.6 routing preview: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }

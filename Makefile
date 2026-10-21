@@ -327,12 +327,14 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 # [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
-# once more with -DPCREC_HARNESS, which adds three options:
+# once more with -DPCREC_HARNESS, which adds four options:
 # `--harness=no-compound`, the compound family's force-decline lever,
 # (R17-b' B1, lane fdb1) `--harness=measures=FILE`, the kit's measurement-set
 # lever (a section-TSV set handed to mf_art_begin; read by no routed finder
 # row before B4), and (R17-b' B2) `--harness=arm-reach`, the kit's per-arm
-# entry counts for a routed finder decision, appended to the artifact
+# entry counts for a routed finder decision, appended to the artifact, and
+# ([KIT-VERIFY] U1 Z2) `--harness=kit-proof`, which routes the `cover` LOCATE
+# row and previews the kit's REPORT routing step (kit_proof.md §7)
 # (PcrecHarnessOptions, src/core/internal.h). Only the test harness and
 # bisects run it; the shipped build/pcrec has no such option.
 $(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)

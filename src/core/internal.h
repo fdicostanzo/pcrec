@@ -155,10 +155,17 @@ typedef struct PcrecPartFacts PcrecPartFacts;
  * prefix, `pcrec_harness_reach_<prefix>` (with its row ids and count; the
  * definitions are appended to the artifact's end, mf_reach_table). Off on
  * every shipped compile, so a default artifact is untouched by it. */
+/* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, "The harness lever's kit channel"):
+ * the fourth, `--harness=kit-proof`: the compile ROUTES the `cover` LOCATE
+ * row (pcrec's half, `locate_cover_applies`) and states to the memfn kit,
+ * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
+ * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
+ * X1/X3) and never shipped; the default and trace builds decline `cover`. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
+    unsigned kit_proof : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3800,6 +3807,14 @@ struct Ctx {
     bool                 comp_assembled;
     Job                 *job;
 };
+
+/* [KIT-VERIFY] U1 Z2 is this compile the harness lever's `--harness=kit-proof`
+ * (PcrecHarnessOptions.kit_proof): the one place a compile may route `cover`
+ * and preview the kit's R-26.6. False on every shipped compile. */
+static inline bool pcrec_kit_proof_routed(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
+}
 
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
  * characters: the one spelling of the running max its writers share. */
