@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-# docs/design/findall_iter/twin/mktwin.py — lane iterdes, [FINDALL-NEXT] HAND TWIN.
+# docs/design/findall_iter/twin/mktwin.py — [FINDALL-NEXT] HAND TWIN, REVISION 3
+# (lane parity, 2026-10-21; revision 1 was lane iterdes's, recoverable from git).
 #
 # Mechanical transform of a pcrec-emitted artifact (.c, split form with its .h)
-# into the iterator shape findall_iter.md §2 proposes, so the design's codegen and
-# answer claims can be checked on REAL artifacts before any emitter change:
+# into the iterator shape findall_iter.md revision 3 proposes (§1.1, §1.2, §2.1,
+# §2.3), so the design's codegen, answer and timing claims can be checked on REAL
+# artifacts before any emitter change:
 #
 #   1. the exported `<p>_search` definition is renamed `<p>__find` and made
 #      `static inline __attribute__((always_inline))` (the one search body);
@@ -11,23 +13,42 @@
 #      the emitter puts on the DFA entry, K24), calling the body;
 #   3. `<p>__adv`, a static inline copy of the artifact's own `<p>_next_pos` body
 #      (the encoding residual; byte or utf8 read off the artifact);
-#   4. `<p>__step` (one find-all step: the RETRY arm, the search from lo, the
-#      K75/empty advance), `<p>_next` and `<p>_next_n` sharing it;
-#   5. with --retry, the VM artifact's accept label gains the NOTEMPTY_ATSTART
+#   4. `<p>__step` (STEP: the RETRY arm, SEARCH at lo, the K75/empty advance),
+#      `<p>__enter` (bind at the first call, §1.2: normalize every optional field,
+#      K into nbatch, rc/rc_next/flags/cursor, store BOUND; ENDED returns 0; any
+#      other header refuses with PCREC_ERR_ITER and moves to ENDED), `<p>__end`
+#      (rc + ENDED, sticky), and the exported `int <p>_next(rx_iter *, caps)` whose
+#      fast path is the one header compare (no owner, D165 add. 3);
+#   5. the `iterate` row's `batch` cell (§2.3):
+#        off (default): `_next` is STEP once with K forced to 1, no `__deliver`,
+#                       no cursor test; `size_t <p>_next_n(it, out, k)` (spans
+#                       only, the optional extra) is emitted beside it;
+#        --fill:        `__deliver` + `__fill` (the IT2 test first, then up to K
+#                       STEPs into the bound batch region), `_next` tests the
+#                       cursor; no `_next_n` (it would have to drain the batch,
+#                       which no design text specifies);
+#   6. with --retry, the VM artifact's accept label gains the NOTEMPTY_ATSTART
 #      guard and `<p>__retry` runs the anchored caps entry with it armed (the
 #      twin carries the flag in ctx->user, which no twin pattern uses; the design
 #      carries it in the run state, §3.3).
 #
+# Fidelity, stated: `__find` is the WHOLE `_search` body, prologue included, so the
+# twin runs the artifact's per-call entry checks (startpos guard, -futf-check) on every
+# STEP; the design moves them to bind (§3.5, §3.6). That costs the twin, never the
+# loop, so a parity verdict reached on the twin is conservative on that term. The
+# bind's once-per-iterator checks are therefore not separately spelled here.
+#
 # The transform asserts every anchor it rewrites is found exactly once; a miss is
 # a hard error, never a silent no-op.
 #
-# usage: python3 -I mktwin.py PREFIX IN.c OUT.c [--retry] [--shared]
+# usage: python3 -I mktwin.py PREFIX IN.c OUT.c [--retry] [--shared] [--fill]
 import re
 import sys
 
 pfx, src, dst = sys.argv[1], sys.argv[2], sys.argv[3]
 retry = "--retry" in sys.argv[4:]
-shared = "--shared" in sys.argv[4:]   # the size alternative: ONE noinline body for every entry
+shared = "--shared" in sys.argv[4:]   # the size alternative / I_shared: ONE noinline body
+fill = "--fill" in sys.argv[4:]       # the `batch` cell = fill (default: off)
 P = pfx.upper()
 text = open(src, encoding="utf-8", errors="surrogateescape").read()
 
@@ -61,7 +82,7 @@ nxt = once(r"size_t " + re.escape(pfx) + r"_next_pos\(const unsigned char \*s, s
            text, re.S)
 adv_body = nxt.group(1)
 
-# 5. the NOTEMPTY_ATSTART guard at the VM accept label
+# 6. the NOTEMPTY_ATSTART guard at the VM accept label
 has_k = re.search(r"#define " + P + r"_SLOT_WHOLE_START\b", text) is not None
 if retry:
     acc = once(r"\n" + re.escape(pfx) + r"_accept: __attribute__\(\(unused\)\);\n", text)
@@ -79,8 +100,10 @@ if retry:
 inc = once(r"\n#include \"[^\"]+\.h\"\n", text)
 text = text[:inc.end()] + '#include "iter_abi.h"\n' + text[inc.end():]
 
+body_link = ('static noinline (static label table)' if static_labels
+             else ('static noinline (--shared)' if shared else 'always_inline'))
 tail = f"""
-/* ---- the iterator twin (findall_iter.md §2); body linkage: {'static noinline (static label table)' if static_labels else ('static noinline (--shared)' if shared else 'always_inline')} ---- */
+/* ---- the iterator twin, revision 3 (findall_iter.md §1.2, §2.1, §2.3); body linkage: {body_link}; batch cell: {'fill' if fill else 'off'} ---- */
 #if __has_attribute(noclone)
 __attribute__((noclone))
 #endif
@@ -107,10 +130,11 @@ static inline __attribute__((always_inline)) int {pfx}__retry(const unsigned cha
 }}
 """
 tail += f"""
-/* One find-all step: 1 (a match in c), 0 (done) or a code. */
-static inline __attribute__((always_inline)) int {pfx}__step(rx_iter *it, const unsigned char *s, size_t n,
-                                                            ptrdiff_t (*c)[2])
+/* STEP: 1 (a match in c, NCAPS pairs), 0 (done) or a code. Reads s, n, lo, flags. */
+static inline __attribute__((always_inline)) int {pfx}__step(rx_iter *it, ptrdiff_t (*c)[2])
 {{
+    const unsigned char *s = it->s;
+    size_t n = it->n;
     size_t lo = it->lo;
 """
 if retry:
@@ -120,12 +144,13 @@ if retry:
         if (r < 0) return r;
         if (r == 1) goto matched;
         lo = {pfx}__adv(s, n, lo);
+        it->lo = lo;
     }}
 """
 tail += f"""    if (lo > n) return 0;
     {{
         int r = {pfx}__find(s, n, lo, c);
-        if (r != 1) return r;
+        if (r != 1) return r;                              /* it->lo stays the failing search's start */
     }}
 """
 if retry:
@@ -147,48 +172,112 @@ else:
 tail += f"""    return 1;
 }}
 
-/* The per-call prologue: bind on the first call, refuse a foreign or misbound one. */
-static inline __attribute__((always_inline)) int {pfx}__enter(rx_iter *it, const unsigned char *s, size_t n)
+/* End the iterator: rc and the sticky ENDED header (§1.2). */
+static inline __attribute__((always_inline)) int {pfx}__end(rx_iter *it, int r)
 {{
-    if (__builtin_expect(it->hdr == PCREC_ITER_BOUND, 1)) {{
-        if (__builtin_expect((((uintptr_t)it->s ^ (uintptr_t)s) | (it->n ^ n)
-                              | ((uintptr_t)it->owner ^ (uintptr_t)&{pfx}_info)) != 0, 0)) {{
-            it->rc = PCREC_ERR_ITER;
-            return 0;
-        }}
-        return it->rc == 1;
-    }}
-    if (it->hdr == PCREC_ITER_FRESH) it->lo = 0;
-    else if (it->hdr != PCREC_ITER_FRESH_AT) {{ it->rc = PCREC_ERR_ITER; return 0; }}
-    it->hdr = PCREC_ITER_BOUND; it->rc = 1; it->flags = 0;
-    it->s = s; it->n = n; it->owner = &{pfx}_info; it->vars = NULL; it->nvars = 0;
-    return 1;
-}}
-
-#if __has_attribute(noclone)
-__attribute__((noclone))
-#endif
-int {pfx}_next(rx_iter *it, const unsigned char *s, size_t n, ptrdiff_t (*caps)[2])
-{{
-    if (!{pfx}__enter(it, s, n)) return 0;
-    ptrdiff_t local[{P}_NCAPS][2];
-    int r = {pfx}__step(it, s, n, caps ? caps : local);
-    if (r == 1) return 1;
     it->rc = r;
+    it->hdr = PCREC_ITER_ENDED;
     return 0;
 }}
 
+/* The slow path (§1.2): bind a FRESH iterator, or return 0 on ENDED, or refuse. */
+static int {pfx}__enter(rx_iter *it)
+{{
+    uint32_t h = it->hdr;
+    if (h == PCREC_ITER_ENDED) return 0;
+    if ((h & ~0xF0u) != PCREC_ITER_FRESH) {{ it->rc = PCREC_ERR_ITER; it->hdr = PCREC_ITER_ENDED; return 0; }}
+    /* 1. normalize every optional field (IT1); then K into nbatch */
+    if (!(h & PCREC_ITER_OPT_AT)) it->lo = 0;
+    if (!(h & PCREC_ITER_OPT_VARS)) {{ it->vars = NULL; it->nvars = 0; }}
+    if (!(h & PCREC_ITER_OPT_IN)) it->bufs = NULL;
+    if (!(h & PCREC_ITER_OPT_BATCH)) it->batch = NULL;
+"""
+if fill:
+    tail += f"""    it->nbatch = (it->batch != NULL && it->nbatch / {P}_NCAPS >= 2) ? it->nbatch / {P}_NCAPS : 1;
+"""
+else:
+    tail += """    it->nbatch = 1;                                    /* batch cell off: K forced to 1 */
+"""
+tail += f"""    /* 2. the run state */
+    it->rc = 1; it->rc_next = 1; it->flags = 0; it->bhead = 0; it->bcount = 0;
+    /* 3. the once-per-iterator checks: in the twin, __find's own prologue (header comment) */
+    /* 4. BOUND, the option bits cleared */
+    it->hdr = PCREC_ITER_BOUND;
+    return 1;
+}}
+"""
+if fill:
+    tail += f"""
+static inline __attribute__((always_inline)) int {pfx}__deliver(rx_iter *it, ptrdiff_t (*caps)[2])
+{{
+    ptrdiff_t (*e)[2] = it->batch + it->bhead * {P}_NCAPS;
+    if (caps)
+        for (size_t i = 0; i < {P}_NCAPS; i++) {{ caps[i][0] = e[i][0]; caps[i][1] = e[i][1]; }}
+    it->bhead++;
+    return 1;
+}}
+
+static inline __attribute__((always_inline)) int {pfx}__fill(rx_iter *it, ptrdiff_t (*caps)[2])
+{{
+    if (it->rc_next != 1)                                  /* IT2: a code is pending, the batch is drained */
+        return {pfx}__end(it, it->rc_next);
+    size_t K = it->nbatch;
+    if (K == 1) {{
+        ptrdiff_t local[{P}_NCAPS][2];
+        int r = {pfx}__step(it, caps ? caps : local);
+        return r == 1 ? 1 : {pfx}__end(it, r);
+    }}
+    ptrdiff_t (*b)[2] = it->batch;
+    size_t i = 0;
+    while (i < K) {{
+        int r = {pfx}__step(it, b + i * {P}_NCAPS);
+        if (r == 1) {{ i++; continue; }}
+        it->rc_next = r;                                   /* 0 (done) or a code */
+        break;
+    }}
+    it->bhead = 0; it->bcount = i;
+    if (i > 0) return {pfx}__deliver(it, caps);
+    return {pfx}__end(it, it->rc_next);
+}}
+
 #if __has_attribute(noclone)
 __attribute__((noclone))
 #endif
-size_t {pfx}_next_n(rx_iter *it, const unsigned char *s, size_t n, ptrdiff_t (*out)[2], size_t k)
+int {pfx}_next(rx_iter *it, ptrdiff_t (*caps)[2])
 {{
-    if (!{pfx}__enter(it, s, n)) return 0;
+    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))
+        if (!{pfx}__enter(it)) return 0;                  /* bind; or refuse; or ENDED */
+    if (it->bhead < it->bcount)                            /* deliver a buffered match */
+        return {pfx}__deliver(it, caps);
+    return {pfx}__fill(it, caps);                          /* STEP once (K = 1) or up to K */
+}}
+"""
+else:
+    tail += f"""
+#if __has_attribute(noclone)
+__attribute__((noclone))
+#endif
+int {pfx}_next(rx_iter *it, ptrdiff_t (*caps)[2])
+{{
+    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))
+        if (!{pfx}__enter(it)) return 0;                  /* bind; or refuse; or ENDED */
+    ptrdiff_t local[{P}_NCAPS][2];                         /* IT10: STEP always writes NCAPS pairs */
+    int r = {pfx}__step(it, caps ? caps : local);
+    return r == 1 ? 1 : {pfx}__end(it, r);
+}}
+
+#if __has_attribute(noclone)
+__attribute__((noclone))
+#endif
+size_t {pfx}_next_n(rx_iter *it, ptrdiff_t (*out)[2], size_t k)
+{{
+    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))
+        if (!{pfx}__enter(it)) return 0;
     ptrdiff_t c[{P}_NCAPS][2];
     size_t got = 0;
     while (got < k) {{
-        int r = {pfx}__step(it, s, n, c);
-        if (r != 1) {{ it->rc = r; break; }}
+        int r = {pfx}__step(it, c);
+        if (r != 1) {{ {pfx}__end(it, r); break; }}
         out[got][0] = c[0][0];
         out[got][1] = c[0][1];
         got++;
