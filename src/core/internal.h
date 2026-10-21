@@ -3175,6 +3175,11 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
+     * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
+     * kit's class for the REPORT description), memoized on first ask, NULL
+     * before it. */
+    struct PcrecCover *cover;
     /* [WINDOW-E1] this attempt's analysis object (memfn.h's `mf_analysis`,
      * window_contract.md §3.1), built ONCE, eagerly, by `compile_driver`
      * right after the chain resolves (`pcrec_memfn_analysis_build`), and
@@ -8009,6 +8014,10 @@ const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route);
 /* The same compile's body route (`CandRoute`: the engine of the machine it
  * runs) and its `<P>_NCAPS`; the LOCATE row's name on the body's route. */
 int pcrec_cand_body_route(Ctx *cx);
+/* [KIT-VERIFY] U1 Z2 is this compile's FINISHER route CR_DFA (`cover_conj[]`
+ * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
+ * emitter writes, so no group above 0 is live. */
+bool pcrec_cand_finisher_dfa(Ctx *cx);
 int pcrec_dfa_ncaps(Ctx *cx);
 const char *pcrec_cand_locate_name(Ctx *cx);
 #ifdef PCREC_CAND_TRACE

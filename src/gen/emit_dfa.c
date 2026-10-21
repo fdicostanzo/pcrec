@@ -42,6 +42,7 @@
 #include "enc/enc.h"
 #include "gen/clskit.h"
 #include "gen/memfn_sites.h"
+#include "gen/known.h"
 
 /* [EMIT-VERB rider, D112 item 2 / D76 / D94] THE ABI NUMBER IS ONE VALUE.
  * Two sites in this file spell it into the emitted artifact -- the
@@ -4732,6 +4733,22 @@ static bool locate_empty_applies(const CandSel *s)
 static bool locate_rev_end_applies(const CandSel *s)
 {
     return pcrec_fact_end_pin(s->cx) != PCREC_EPIN_NONE;               /* R1 */
+}
+
+/* [KIT-VERIFY] U1 `cover`'s predicate (kit_proof.md §1.1, §2.2, §7's Z2 row):
+ * `cover_conj[]` walked in order (src/gen/known.c, one decision per attempt),
+ * true where every row holds AND the harness lever routes the row. Z2's
+ * routing: the default build declines without reading anything; the trace
+ * build reads the whole table (its `KITPROOF` record, K35's input, and C8's
+ * producers-disagree assertion) and then declines as the default does; only
+ * `--harness=kit-proof` admits. */
+static bool locate_cover_applies(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+#ifndef PCREC_CAND_TRACE
+    if (!pcrec_kit_proof_routed(cx)) return false;
+#endif
+    return pcrec_cover(cx)->why == NULL && pcrec_kit_proof_routed(cx);
 }
 
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
@@ -9591,6 +9608,7 @@ static bool cand_bound_gstart_vm_applies(const CandSel *s)
 static void emit_empty_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent);
+static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 
@@ -9652,6 +9670,24 @@ static const CandRow cand_rows[] = {
                     .scan = { [CAND_ROUTE_DFA] = "rev-end" },
                     .whole = true, .recover = CAND_HAND_WINDOW,
                     .fin = CT_START | CT_VERDICT | CT_ENDSET } },
+    /* [KIT-VERIFY] U1 `cover` (kit_proof.md §2): the kit's site PROVES the
+     * whole fixed-width sub-problem, context included, at every candidate it
+     * yields (every position REQUIRED, a REPORT site), so the first candidate
+     * IS the leftmost match: SPAN [c, c + k]; an exhausted stream is NOMATCH.
+     * No machine runs. Admitted by cover_conj[] (§1.1), read in order. After
+     * `rev-end`, before `composite`; CAND_ROUTE_DFA only (C1 asks the
+     * finisher's). Its walk answers presence itself (`whole`) and asks
+     * RECOVER nothing. At Z2 it carries no `.list` and no deny: the listing
+     * and the FACT deny `PCREC_NO_KIT_PROOF` land at B1 (§7). The kit ask
+     * C13 makes is of the REPORT description alone, which no slot's
+     * selection describes (§2.2), so it is no edge of the read graph. */
+    { .c = { "cover", 0, locate_cover_applies }, .slot = CAND_SLOT_LOCATE,
+      .routes = CR_DFA, .tok = "cover", .map = CM_NONE,
+      .hands = CT_START | CT_VERDICT,
+      .needs = { [CAND_ROUTE_DFA] = { 0, 0, CN(CAND_SLOT_PRESENCE) } },
+      .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_cover },
+                    .scan = { [CAND_ROUTE_DFA] = "cover" },
+                    .whole = true, .fin = CT_START | CT_VERDICT } },
     { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
       .routes = CAND_ALL_ROUTES, .tok = "composite", .map = CM_NONE, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "locate", 2, "unanchored" } },
@@ -11173,6 +11209,11 @@ const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route)
 int pcrec_cand_body_route(Ctx *cx)
 {
     return (int)cand_route_of(cx);
+}
+
+bool pcrec_cand_finisher_dfa(Ctx *cx)
+{
+    return cand_finish_of(cx) == CAND_ROUTE_DFA;
 }
 
 int pcrec_dfa_ncaps(Ctx *cx)
@@ -13230,6 +13271,56 @@ static void emit_rev_end_tagged(Ctx *cx, DfaForm *rev, DfaForm *fwd, bool entry,
  * fact and FINISH's and RECOVER's selections.
  * (c) RECOVER is asked with the speculative WINDOW hand, which `pinned` does
  * not take, so the walk is always the reverse pass; the assertion holds it. */
+/* [KIT-VERIFY] U1 Z2 THE `cover` WALK on CAND_ROUTE_DFA (kit_proof.md §2.4,
+ * §2.5): the search body `fn` is the kit's REPORT site and the one success
+ * site. The description (`pcrec_cover_site`, the one constructor C13 also
+ * asks) is DEFINED at file scope above the body under the stem `<fn>_cover`,
+ * and the DEFAULT build holds the class the define reports to the stated sets
+ * (§2.5 step 2: any difference, in either direction, is an internal error,
+ * never a fallback). The body is the search head, the range guard, the kit's
+ * storage point and its use (a candidate into `scan_position`, or the
+ * site's `return 0;`), and the report `[c, c + k)`. Its two hands to FINISH
+ * are SPAN (`report`) and NOMATCH (`nomatch`); no machine runs here. */
+static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent)
+{
+    StrBuf *c = &cx->job->csb;
+    const PcrecCover *cv = pcrec_cover(cx);
+    mf_hooks h;
+    PcrecMfU u;
+    mf_result r;
+    if (cv->why)
+        pcrec_ctx_fail(cx, 0, "internal error: the cover walk was emitted on an "
+                       "artifact cover_conj[] declines (%s)", cv->why);
+    if (cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT ||
+        cand_finish_ask(cx, CAND_HAND_NOMATCH)->u.finish.act != CAND_FIN_NOMATCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the cover walk's SPAN or NOMATCH is "
+                       "finished by a row that is not `report`/`nomatch`");
+    if (req_admit_emits(req_admit(cx)))
+        pcrec_ctx_fail(cx, 0, "internal error: a whole-window pre-check was admitted "
+                       "ahead of the cover walk, which answers presence itself");
+    const char *stem = dfa_fragf(cx, "%s_cover", fn);
+    mf_site *s = pcrec_cover_site(cx, cv, stem, NULL, &h, &u);
+    uint32_t handle = pcrec_memfn_define(cx, DELEG_COVER, s, &h, c);
+    pcrec_memfn_defined(cx, handle, &r);
+    const char *diff = pcrec_cover_proof_diff(cx, cv, &r.cls);
+    if (*diff)
+        pcrec_ctx_fail(cx, 0, "internal error: [KIT-VERIFY] the memfn kit's class for "
+                       "the cover site is not the stated sets (%s; kit_proof.md §2.5)",
+                       diff);
+    PCREC_CAND_TRACE_REC("ROUTE", "dfa", "entry", "entry-gate");
+    emit_search_head(cx, c, fn, ent);
+    pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                          "subject_length", PCREC_START0_SEEK);
+    pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n"
+                     "    size_t scan_position = search_from;\n");
+    (void)pcrec_cover_site(cx, cv, stem, "    ", &h, &u);
+    pcrec_memfn_locals(cx, handle, &h, c);
+    pcrec_memfn_use(cx, handle, &h, c);
+    emit_search_success(cx, c, "scan_position",
+                        dfa_fragf(cx, "scan_position + %d", cv->end.k), "    ");
+    pcrec_sb_puts(c, "}\n");
+}
+
 static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     Job *job = cx->job;
