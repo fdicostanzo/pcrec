@@ -1269,7 +1269,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<PREFIX>_MEASURES ""` stamp and `.measures = ""`; the VM's `^` role text
 # changes (K112). `9e4b87e90` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7bd781b74}"   # the [FINDALL-NEXT] I1 lane self-pin, i1tri fixes (2026-10-21), abi 83 (was 38a439e25, the I1 commit; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8d5536143}"   # the [FINDALL-NEXT] I1 lane self-pin, i1tri fixes (2026-10-21), abi 83 (was 38a439e25, the I1 commit; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
