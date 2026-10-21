@@ -2590,3 +2590,14 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
   - grid2's anchors fit the same axis.
   - D169's premise ("unknown predictability → presume irregular") fails for structured English text, where stops are predictable.
 - Taken to Frank as a decision. B4 stays held.
+
+## 2026-10-21 (night) — Frank's flattening idea measured (lane flat): it does not fix the losses; a 64-byte mask with ctz is best
+
+- Run 570-kit-flat-twin: green, 0 answer mismatches. ns-weighted sum vs the walk: V1 −4.1%, F8 +0.1%, F64 +13.1%, M64 −7.3%.
+- Flattening into a position list COSTS at both widths, for example L10 +33.7% (F8) against V1's +14.9%. The lane's reading: on dense text the DFA's run after a stop consumes later candidates, so the list fills with stale entries. Draining them brings the unpredictable branch back, once per discarded position.
+- M64 (a 64-byte mask with ctz/blsr) is the best arm. Sparse wins grow (non-English −60%, P05 −42%). Dense losers barely move (L10 +19%, P14 +20%). It costs on 32-byte calls.
+- The per-stretch counts separate the classes:
+  - e64 high: wide wins;
+  - e64≈0 with transitions 10-23: the losers;
+  - e64≈0 with transitions ~31: random-dense, wins.
+  So Frank's per-stretch adaptive loop (walk ↔ M64) has its inputs. Next: a count-only simulation before any timing or build.
