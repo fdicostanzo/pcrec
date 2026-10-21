@@ -138,3 +138,35 @@ by min(terms over positions) <= 2, and for the superset filter state the hull me
 ## State at handoff (lane b4close)
 Items 1 and 4 CLOSED; POSCOST OWED (needs a harness build go); short-subject class registered; §3.1a items 1 and 4 marked `[b4prep-close]`.
 Rulings: last entry applied is the POSCOST entry (2026-10-21, Frank via kit manager).
+
+## Closing 2 (lane b4close2)
+
+2026-10-21. Rulings file `b4prep_rulings.md`: last entry applied is the kit manager's "after b4close" (a)-(c). Instrumentation and record only; the kit's routing was not touched.
+
+**(a) The two exceptions: explained, not rule disagreements.** Cause (evidence: gdb backtrace `pcrec_memfn_art <- ... <- compile_driver <- part_compile (src/core/compound.c:71)`, and `.harness = NULL` in that `PcrecEmitIn`): both sites belong to a COMPOUND PART compile (`split` walk). A part's art is built without the harness lever's measures, so its key lookups answer ABSENT (`MFTRACE FDKEY ... key=kit.saving.V1.WALK.r0e0c1 found=0` although the set holds that row) and the shadow falls to R7w. Both compounds are then not admitted (`RX_COMPOUND "none"`; `--harness=no-compound` changes nothing), so the part sites are discarded and no shipped artifact has them. Not a missing lever-set row, not the kit's rule. The manifest now carries a `lookup` column: `NOMS` where a key the set holds was looked up and answered absent; the rule check skips NOMS rows and lists them (2 of 2,374). Rule check after: 0 disagreements. Consequence for B4: a compound that DID ship would decide its part sites under the real set; the manifest shows no such site (any shipped part site of <= 2 terms would have appeared as a further NOMS row), so the movers-by-ID list is complete. Open item for main: `part_compile` passing no harness is a test-build gap only.
+
+**(b) shadow_census K35.** `manifest` now checks every non-zero rc (and every timeout) against the same argv through the plain compiler (`--ls-bin`): refused-in-both is expected and counted, anything else is LOST, listed, exit 3, no manifest written. Planted failure (`fdb1/plant_fail.sh`, one pattern fails rc 2) on a 48-compile sample: `LOST COMPILES (K35): ... lost=2`, rc=3; the control through the real harness: rc=0. Full run: `compiles=9272 rc0=8511 refused-in-both=761 lost=0` (so 761 compiles are legitimate refusals the old tool also ignored; none lost).
+
+**(c) POSCOV field and the zero-mover proof.** `poscov=` (exact-cover term count at each k-set walk offset 0..nwalk-1, `x` = no cover within K=4, `-` = no walk), `hull=E/T` (the scanned set's best 1-2-term SUPERSET: E extra members, T terms; `exact` when the cover already has <= 2 terms; `>16`), `walk0=same|diff`. Hull construction: exact search over the cover vocabulary's cubes (3^8) and arcs (L, W<=128); candidate terms are those meeting S with <= 16 members outside S; the minimum of |(A or A+B) minus S| over all single terms and pairs covering S (complete for the 16-extras budget; documented in finder.c). Trace-only: finder.c under `MF_TRACE`; pcrec side in `emit_dfa.c find_site` under `-DPCREC_MF_POSCOV`, compiled only into the harness's private archive (`POSCOV=1 mk_trace_harness.sh`). PROOF: one emit_sweep arm, plain, `--ref-bin` = build of HEAD f1cf4e668 vs build/pcrec after the edit, streams c-default,c-vm,emit-ir,composition,facts,emit-ir-auto,stderr,dumps, no `python3 -I`, `--jobs 4`, under `boxlock run --label kit-b4close2`: `emit_sweep: DONE rc=0`, movers=0 asymmetric=0 on every stream (population 5811 argv, 37 composition-producing files / 106 artifacts), log `build/b4c2/sw_plain.log`. Second control: the POSCOV harness's manifest columns 1-8 are byte-identical to b4close's (instrumentation moved no pick). `make strict` clean.
+
+**(d) Re-run manifest.** 2,374 set sites, 1,766 (arm, pattern) movers (byte 658, byte-vm 1,108) = the same as b4close (1,766), all 860 of fdb2's kept, 906 new, 0 only-old; exceptions after (a): 0 (2 NOMS rows apart). Group table unchanged: `manifest_summary.txt`.
+
+**POSCOST counts (counts only; nothing built).** Population: walk-routed set-FIND sites = pick WALK with >= 3 terms at the scanned position (shape `-`, no cover within K, counted): 603 (byte 282, byte-vm 321; b4close's 517 counted only shapes with a name; this adds the 86 shape-`-` sites).
+- A <= 2-term position within the span (k-set walk): **21** (all byte arm). Of these 15 are only the walk's offset 0 where it differs from the scanned set (walk0=diff: the scan set is wider than the first-byte set), 6 have one at offset >= 1.
+- A <= 2-term superset hull with <= 8 extra members: **408** (byte 192, byte-vm 216); with <= 16: **441** (209, 232). Histogram of minimum extras: 1:13, 2:27, 3:18, 4:14, 5:288, 6:29, 7:7, 8:12, 9:6, 11:2, 12:8, 13:10, 14:4, 16:3, none within 16: 162 (the 288 at 5 is `[A-Za-z0-9_]`-class sites, i.e. `\w` plus 5 neighbours).
+- Both (a position AND a hull): 15 (<= 8), 16 (<= 16).
+- CAVEAT (K35): the walk is EMPTY for all 321 byte-vm sites and 70 of the 282 byte sites (391 of 603 have no walk, `poscov=-`): "no position" there is UNKNOWN, not zero. So the position count (21) is a floor over 212 byte sites with a walk; it says nothing about the VM hat route. The hull counts do not depend on the walk.
+
+**Rerun for the abi-82 manifest of record** (needs the box lock; OWED, not run): after `make -j4` on the abi-82 tree T,
+`bash T/docs/design/memfn/r17b_prime/fdb1/mk_trace_harness.sh T T/build/pcrec-mftrace-harness` (prefix `POSCOV=1` only if the POSCOST fields are wanted), then
+`scripts/boxlock run --label kit-b4close2 -- python3 -I T/docs/design/memfn/r17b_prime/fdb1/shadow_census.py manifest --bin T/build/pcrec-mftrace-harness --ls-bin T/build/pcrec --set T/docs/design/memfn/r17b_prime/b4prep/b4prep-v1max2.tsv --jobs 4 --out T/docs/design/memfn/r17b_prime/b4prep/predicted_movers_B4_rev41.tsv`
+(~10 s, exit 0 only with `lost=0`), then `python3 -I .../summarize_manifest.py NEW OLD keys.tsv`. The chain that ran this lane is `b4prep/jobs/chain_b4close2.sh`.
+
+## Charter vs committed (b4close2)
+| item | artifact | state |
+|---|---|---|
+| (a) exceptions | this section; `lookup` column; summarize rule check | explained, 0 rule disagreements, 2 NOMS |
+| (b) rc check | `fdb1/shadow_census.py`, `fdb1/plant_fail.sh` | done, planted red / control green, full run lost=0 |
+| (c) poscov | `memfn/src/finder.c`, `src/gen/emit_dfa.c` (ifdef), `fdb1/mk_trace_harness.sh` | done; emit_sweep plain arm 0 movers |
+| (d) re-run + counts | `b4prep/predicted_movers_B4_rev41.tsv`, `manifest_summary.txt` | done |
+| r17b_prime.md item 4 | tag `[b4prep-close2]` | done |

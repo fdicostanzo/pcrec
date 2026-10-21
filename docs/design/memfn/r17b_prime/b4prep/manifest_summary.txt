@@ -74,9 +74,28 @@
    TOTAL arm byte    pick WALK  sites 101
    TOTAL arm byte-vm pick V1    sites 122
    TOTAL arm byte-vm pick WALK  sites 118
-== rule check: sites whose pick disagrees with 'V1 iff terms <= 2': 2
-    ('byte', '(?:\\\\Gx|\\\\b)(?:ab|cd)\\\\b', '1', 2, 'r0e0c1', 'R7w', 'WALK')
-    ('byte', '(?i)(?:^|;|\\\\|)\\\\s*(?:cat|ls|id|whoami)\\\\b', '1', 2, 'r0e2c0', 'R7w', 'WALK')
+== rule check: sites whose pick disagrees with 'V1 iff terms <= 2' (NOMS rows apart): 0
+== NOMS rows (key lookups answered ABSENT for keys the set holds; the site's art held no measures): 2
+    byte (?:\\Gx|\\b)(?:ab|cd)\\b site 1 2 members shape r0e0c1 pick WALK
+    byte (?i)(?:^|;|\\|)\\s*(?:cat|ls|id|whoami)\\b site 1 2 members shape r0e2c0 pick WALK
+== POSCOST: walk-routed set-FIND sites (pick WALK, >= 3 terms or no cover within K): 603
+   ALL      sites 603 ((arm,pattern) 603); no walk handed (poscov '-') 391; walk0 differs 28
+            <=2-term position within span: sites 21 ((arm,pattern) 21)
+            of those: a <=2-term position at offset >= 1: sites 6 ((arm,pattern) 6); only the walk's offset 0 (which differs from the scanned set): sites 15
+            <=2-term superset hull, extras <=8: sites 408 (408); <=16: sites 441 (441)
+            both (position and hull): <=8 sites 15 (15); <=16 sites 16 (16)
+   byte     sites 282 ((arm,pattern) 282); no walk handed (poscov '-') 70; walk0 differs 28
+            <=2-term position within span: sites 21 ((arm,pattern) 21)
+            of those: a <=2-term position at offset >= 1: sites 6 ((arm,pattern) 6); only the walk's offset 0 (which differs from the scanned set): sites 15
+            <=2-term superset hull, extras <=8: sites 192 (192); <=16: sites 209 (209)
+            both (position and hull): <=8 sites 15 (15); <=16 sites 16 (16)
+   byte-vm  sites 321 ((arm,pattern) 321); no walk handed (poscov '-') 321; walk0 differs 0
+            <=2-term position within span: sites 0 ((arm,pattern) 0)
+            of those: a <=2-term position at offset >= 1: sites 0 ((arm,pattern) 0); only the walk's offset 0 (which differs from the scanned set): sites 0
+            <=2-term superset hull, extras <=8: sites 216 (216); <=16: sites 232 (232)
+            both (position and hull): <=8 sites 0 (0); <=16 sites 0 (0)
+   hull extras histogram (ALL): {'1': 13, '2': 27, '3': 18, '4': 14, '5': 288, '6': 29, '7': 7, '8': 12, '9': 6, '11': 2, '12': 8, '13': 10, '14': 4, '16': 3, 'none<=16': 162}
+   offset of the first <=2-term position (ALL): {0: 15, 1: 4, 10: 2}
 == movers by ID: NEW 1766, OLD 860, in both 860, only NEW 906, only OLD 0
    only NEW by arm: {'byte': 338, 'byte-vm': 568}
    only OLD by arm: {}

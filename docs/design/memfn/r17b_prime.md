@@ -1342,7 +1342,7 @@ gate stands.
    the kit compiler under `--memfn=no-pf-terms-mask`, while B4's baseline is MAIN's walk
    (§9.2 [rev3 C6]). Owed: a byte compare of the two walks' emitted text on grid2's
    cells, before B4's G1 reads the slot's walk as main's.
-4. `[b4prep-close]` **CLOSED** (job `521-kit-b4prep-manifest` green; `r17b_prime/b4prep/predicted_movers_B4_rev41.tsv`, summary `manifest_summary.txt`: 1766 movers (byte 658, byte-vm 1108) against fdb2's 860, the 860 all kept, 906 new; the no-key split is in the report's Closing section; two DFA-kind sites disagree with the term rule, see the report). **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
+4. `[b4prep-close2]` **CLOSED, manifest re-run with the rc check and the POSCOV fields** (`r17b_prime/b4prep/predicted_movers_B4_rev41.tsv` now has columns `lookup poscov hull walk0`; columns 1-8 byte-identical to b4close's; the two term-rule exceptions are NOMS rows, discarded compound-part compiles, not the rule's picks; report "Closing 2"). `[b4prep-close]` (job `521-kit-b4prep-manifest` green; `r17b_prime/b4prep/predicted_movers_B4_rev41.tsv`, summary `manifest_summary.txt`: 1766 movers (byte 658, byte-vm 1108) against fdb2's 860, the 860 all kept, 906 new; the no-key split is in the report's Closing section; two DFA-kind sites disagree with the term rule, see the report). **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
    (860 movers) predicts R7 on grid1's shapes only, under the interim set.
    - **Why it is stale.** Under rev 4, item 3a's three shapes route too, and R0's rows
      are gone. `[rev4.1]` Under the term-count rule the untimed 1-2 term covers route too,

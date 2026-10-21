@@ -320,7 +320,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   storage yet: `mf_locals` writes nothing (R17-b's stateful row is the
   first).
 
-- **finder.c** — THE FINDER TABLE (R17-b′ B1, lane fdb1;
+- **finder.c** — THE FINDER TABLE (R17-b′ B1, lane fdb1; since lane b4close2 it also carries, under
+  `MF_TRACE` only, the POSCOV survey fields `poscov=`/`hull=`/`walk0=` on a FIND record, fed by
+  `trace_poscov` from a harness library built with `-DPCREC_MF_POSCOV` (no row reads them);
   `docs/design/memfn/r17b_prime.md` rev 3 §1, §2.5): `fd_rows[]`, 19 rows
   (FIND: R0, R5, R8, R3a, R3b, R4, R1, R2, D1, D1c, D1w, D2, R7, R7w; PRES:
   P0, P2, P3, P4, P9) as a `kit_table` over `kit_walk`, each with its
