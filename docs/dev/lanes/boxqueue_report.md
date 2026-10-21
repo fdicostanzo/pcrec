@@ -213,7 +213,7 @@ bench's, and its window handshake and calendar are unchanged.
   - emit_sweep.py.test 24/24 (needs the worktree's `build/pcrec`, built
     with `make -j16`).
 - `make -C scripts -k test` (the whole scripts self-test set, the D48 path):
-  see STATE AT HANDOFF.
+  make rc=0, every report green (see STATE AT HANDOFF).
 - Hooks and lint: `plan_lint` 0 violations; the pre-commit staged checks
   passed on every commit.
 - No make test, no corpus sweep, no mech run (none is owed: scripts and
@@ -224,9 +224,11 @@ bench's, and its window handshake and calendar are unchanged.
 - Branch `lane/boxqueue`, committed.
 - Rulings file `docs/dev/lanes/boxqueue_rulings.md`: empty at every
   checkpoint, so no entry was applied.
-- `make -C scripts -k test`: result recorded in the handback message
-  (log `worktrees/boxqueue/build/tmp/testscripts.log`, completion line
-  `make rc=N`).
+- `make -C scripts -k test` (all 12 self-tests, fresh after `make clean`):
+  **make rc=0**. Results: boxlock 17/17, boxqueue 53/53, chainrun 26/26,
+  emit_sweep.py 0 failed, hooks 37/37, safekill 13/13, spec_toc 0 failed,
+  trace_diff 0 failed, verdict 31/31, watchdog 16/16, watchrun 17/17,
+  wtprune 0 failed. Log: `worktrees/boxqueue/build/tmp/testscripts.log`.
 - To resume: the merge is the manager's. After the merge, the first real use
   is main's next validation chain as `boxqueue batch` (or as job scripts).
   Then the kit's and the bench's opt-in, using the draft inbox text above.
