@@ -1,0 +1,90 @@
+## X0 build/x0/res_plant_absa-flip.jsonl  pcre2=10.46 2025-08-27 plant='absa-flip' self=None items=336
+agg mover native items=149 p1:absent-after=1177 p1:no-match-anywhere=1 p1_cells=40128751 p1_nodes=6259 p1_red=149 p1_unknown=0 p2_cells=1471890 p2_diff=298907 p2_red=149 p2_subjects=242882 red_other=148 red_u1shape=1 why:cover=149
+agg mover utf8 items=151 p1:absent-after=1178 p1:no-match-anywhere=2 p1_cells=79502690 p1_nodes=4020 p1_red=151 p1_unknown=0 p2_cells=1281086 p2_diff=235998 p2_red=151 p2_subjects=232008 red_other=151 why:cover=151
+agg witness native items=33 p1:S_d=15 p1:absent-after=130 p1_cells=3432492 p1_nodes=720 p1_red=21 p1_unknown=0 p2_cells=152247 p2_diff=22177 p2_red=18 p2_subjects=25602 red_other=21 why:cover=18 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=6
+agg witness utf8 items=3 p1:absent-after=17 p1_cells=555960 p1_nodes=45 p1_red=3 p1_unknown=0 p2_cells=20732 p2_diff=1567 p2_red=3 p2_subjects=3837 red_other=3 why:cover=3
+red mover native R b'z(?=[ab])' cover p1=257 p2=881  {"kind": "absent-after", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red mover native - b'a{2}b{3}' cover p1=257 p2=962  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "6161626262", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover native - b'ABCDEFGHIJKLMNOPQR' cover p1=257 p2=964  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "4142434445464748494a4b4c4d4e4f505152", "sf": 0, "cover": null, "pcre": [0, 18]} 
+red mover native - b'(?<*[ab])*z' cover p1=257 p2=891  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "7a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\Q\\d\\E' cover p1=257 p2=931  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "5c64", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native - b'\\Qa\\b\\E' cover p1=257 p2=966  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "615c62", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native - b'(?<!\\w)x' cover p1=194 p2=662  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "78", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'(?:(?=a)z|w)' cover p1=257 p2=989  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "77", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\p{Greek}' cover p1=257 p2=865  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "b7", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'(?<=[ab])*z' cover p1=257 p2=946  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "7a", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'(*UCP)[[:upper:]]' cover p1=257 p2=4551  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "41", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'\\b-[0-9]{4}-' cover p1=63 p2=1086  {"kind": "absent-after", "ctx": "30", "pcre": true, "reading": false} {"s": "302d303030302d", "sf": 0, "cover": null, "pcre": [1, 7]} 
+red mover native - b'\\Bcat' cover p1=63 p2=1264  {"kind": "absent-after", "ctx": "30", "pcre": true, "reading": false} {"s": "30636174", "sf": 0, "cover": null, "pcre": [1, 4]} 
+red mover native R b'[\x7f-\xc2\x80]' cover p1=257 p2=4097  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "7f", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'(?i)/1234' cover p1=257 p2=926  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "2f31323334", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover native R b'ABCD' cover p1=257 p2=886  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "41424344", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover native - b'[\\0]' cover p1=257 p2=905  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "00", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'\\[' cover p1=257 p2=957  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "5b", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native - b'(?:(?*[ab])z|w)' cover p1=257 p2=880  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "77", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'a\\x00b' cover p1=257 p2=881  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "610062", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native - b'{}' cover p1=257 p2=899  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "7b7d", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b'a{3}+' cover p1=257 p2=902  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "616161", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native - b'(?m)\\Bfoo' cover p1=63 p2=1297  {"kind": "absent-after", "ctx": "30", "pcre": true, "reading": false} {"s": "30666f6f", "sf": 0, "cover": null, "pcre": [1, 4]} 
+red mover native R b'\\t' cover p1=257 p2=920  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "09", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'a*?a' cover p1=257 p2=923  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "61", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native R b'\\w' cover p1=257 p2=4822  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "30", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover native iR b'abc' cover p1=257 p2=4303  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "414243", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native - b'\\Qa*b\\E' cover p1=257 p2=879  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "612a62", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover native - b'a{ , }' cover p1=257 p2=938  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "617b202c207d", "sf": 0, "cover": null, "pcre": [0, 6]} 
+red mover native - b'item\\ndone' cover p1=257 p2=933  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "6974656d0a646f6e65", "sf": 0, "cover": null, "pcre": [0, 9]} 
+red mover utf8 uR b'#' cover p1=449 p2=908  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "23", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'\\f' cover p1=449 p2=894  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "0c", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'[\\81]' cover p1=449 p2=2117  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "31", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'(?<=\\n)x' cover p1=1 p2=23  {"kind": "absent-after", "ctx": "0a", "pcre": true, "reading": false} {"s": "0a78", "sf": 0, "cover": null, "pcre": [1, 2]} 
+red mover utf8 uR b'(?<!\\w)x' cover p1=386 p2=609  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "78", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'[\\g]' cover p1=449 p2=829  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "67", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'foo\\b' cover p1=449 p2=842  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "666f6f", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 u b'a(?!a)' cover p1=449 p2=911  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "61", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'\xce\xb1' cover p1=449 p2=847  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "ceb1", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 u b'[\\0777]' cover p1=449 p2=2118  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "37", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'(?!a)?b' cover p1=449 p2=839  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "62", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'\\Bd\\B' cover p1=63 p2=1302  {"kind": "absent-after", "ctx": "30", "pcre": false, "reading": true} {"s": "3064", "sf": 0, "cover": [1, 2], "pcre": null} 
+red mover utf8 u b'caf\\x{e9}' cover p1=449 p2=904  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "636166c3a9", "sf": 0, "cover": null, "pcre": [0, 5]} 
+red mover utf8 uR b'a{3}+a' cover p1=449 p2=947  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "61616161", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover utf8 uR b'a|b' cover p1=449 p2=1631  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "61", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 uR b'\\d{0,}?\\B-' cover p1=386 p2=625  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "2d", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'[\\g1]' cover p1=449 p2=2116  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "31", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'\\.tar|\\.tar\\.gz' cover p1=449 p2=858  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "2e746172", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover utf8 u b'(*UCP)(?i)\xc3\xa9' cover p1=449 p2=1626  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "c389", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'[\\7]' cover p1=449 p2=918  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "07", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'(*nla:a)\\w' cover p1=449 p2=3949  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "30", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'\xf0\x9f\x98\x80' cover p1=449 p2=820  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "f09f9880", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red mover utf8 u b'(?!x)abc' cover p1=449 p2=831  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "616263", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 uR b'a{ , }' cover p1=449 p2=869  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "617b202c207d", "sf": 0, "cover": null, "pcre": [0, 6]} 
+red mover utf8 u b'\\Qa|b\\E' cover p1=449 p2=861  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "617c62", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 u b'(?i)a(?-i)b' cover p1=449 p2=1606  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "4162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'(?*a)*a' cover p1=449 p2=869  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "61", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'(*UCP)(?a)(?-aD)\\s' cover p1=449 p2=3224  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "09", "sf": 0, "cover": null, "pcre": [0, 1]} 
+red mover utf8 u b'(?:a(?:b(?:c)))' cover p1=449 p2=873  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "616263", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red mover utf8 u b'\xe2\x82\xac' cover p1=449 p2=837  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "e282ac", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'foobar' cover p1=257 p2=902  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "666f6f626172", "sf": 0, "cover": null, "pcre": [0, 6]} 
+red witness native - b'foo|foobar' cover p1=257 p2=935  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "666f6f", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'in|instanceof' cover p1=257 p2=930  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "696e", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red witness native - b'\\bcat\\b' cover p1=194 p2=697  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "636174", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'\\Bcat\\B' cover p1=63 p2=1300  {"kind": "absent-after", "ctx": "30", "pcre": false, "reading": true} {"s": "30636174", "sf": 0, "cover": [1, 4], "pcre": null} 
+red witness native - b'(?<=x)cat' cover p1=1 p2=11  {"kind": "absent-after", "ctx": "78", "pcre": true, "reading": false} {"s": "78636174", "sf": 0, "cover": null, "pcre": [1, 4]} 
+red witness native - b'(?<![a-z])cat' cover p1=231 p2=825  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "636174", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'(?m)done$' cover p1=257 p2=907  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "646f6e65", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red witness native - b'z(?=a)' cover p1=257 p2=983  {"kind": "absent-after", "ctx": null, "pcre": false, "reading": true} {"s": "7a", "sf": 0, "cover": [0, 1], "pcre": null} 
+red witness native - b'(?<=\\$)\\d' cover p1=1 p2=20  {"kind": "absent-after", "ctx": "24", "pcre": true, "reading": false} {"s": "2430", "sf": 0, "cover": null, "pcre": [1, 2]} 
+red witness native - b'\\d{4}' cover p1=257 p2=3908  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "30303030", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'a(?=b)[a-z]' cover p1=257 p2=917  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "6162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red witness native - b'a(?=b)[a-z]|ac' cover p1=257 p2=1736  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "6162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red witness native - b'\\bcat' cover p1=194 p2=654  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "636174", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness native - b'[ab](?<=a)c|bc' cover p1=257 p2=1668  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "6163", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red witness native R b'(?m)done$' cover p1=257 p2=923  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "646f6e65", "sf": 0, "cover": null, "pcre": [0, 4]} 
+red witness native - b'\\Bcat' cover p1=63 p2=1264  {"kind": "absent-after", "ctx": "30", "pcre": true, "reading": false} {"s": "30636174", "sf": 0, "cover": null, "pcre": [1, 4]} 
+red witness native - b'\\w(?=\\d)\\w' cover p1=257 p2=3597  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "3030", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red witness utf8 u b'\\x{e9}t' cover p1=449 p2=923  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "c3a974", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness utf8 u b'\\bcat\\b' cover p1=386 p2=641  {"kind": "absent-after", "ctx": null, "pcre": true, "reading": false} {"s": "636174", "sf": 0, "cover": null, "pcre": [0, 3]} 
+red witness utf8 u b'(?<=x)cat' cover p1=1 p2=3  {"kind": "absent-after", "ctx": "78", "pcre": true, "reading": false} {"s": "78636174", "sf": 0, "cover": null, "pcre": [1, 4]} 
+== X0 run COMPLETE: items=336 sec=68.4

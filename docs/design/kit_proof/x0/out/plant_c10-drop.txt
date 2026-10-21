@@ -1,0 +1,71 @@
+## X0 build/x0/res_plant_c10-drop.jsonl  pcre2=10.46 2025-08-27 plant='c10-drop' self=None items=336
+agg mover native items=160 p1:C_-1=4 p1:C_k=110 p1:absent-before=2 p1:context-x-prefix=4 p1:end-not-k=265 p1:longer-than-k=831 p1_cells=77903639 p1_nodes=6080 p1_red=160 p1_unknown=0 p2_cells=2699547 p2_diff=332807 p2_red=160 p2_subjects=532270 red_other=160 why:cover=160
+agg mover utf8 items=140 p1:C_-1=4 p1:C_k=103 p1:C_k-not-byte=7 p1:absent-before=2 p1:context-x-prefix=9 p1:end-not-k=249 p1:longer-than-k=586 p1_cells=149438440 p1_nodes=4204 p1_red=139 p1_unknown=0 p2_cells=2131365 p2_diff=123031 p2_red=139 p2_subjects=432074 red_other=140 why:cover=140
+agg witness native items=33 p1:C_k=3 p1:S_d=15 p1:end-not-k=4 p1:longer-than-k=9 p1_cells=4291643 p1_nodes=782 p1_red=5 p1_unknown=0 p2_cells=290027 p2_diff=3399 p2_red=2 p2_subjects=47873 red_other=5 why:cover=20 why:earlier-row=1 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=6
+agg witness utf8 items=3 p1_cells=555960 p1_nodes=48 p1_unknown=0 p2_cells=35539 p2_diff=0 p2_subjects=6131 why:cover=3
+red mover native R b'(?:a(?=c)|ab)c?' cover p1=515 p2=800  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [98, 99]} {"s": "6162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b'[a\\x80-\\x9f]+' cover p1=3353 p2=1362  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 128, 129, 130, 131, 132, 133, 134]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'\\d{2,3}' cover p1=3353 p2=569  {"kind": "longer-than-k", "ctx": null, "node": "3030", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "303030", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover native R b'a{ 2,}' cover p1=515 p2=42  {"kind": "longer-than-k", "ctx": null, "node": "6161", "bytes": [97]} {"s": "616161", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover native R b'[\xf0\x9f\x98\x80]{1,2}' cover p1=1289 p2=196  {"kind": "longer-than-k", "ctx": null, "node": "80", "bytes": [128, 152, 159, 240]} {"s": "8080", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'(?:\\w{1,2}?\\b)+' cover p1=3096 p2=2560  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover native - b'\\w+?(?:)\\b' cover p1=3096 p2=2591  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover native R b'[^c]{1,3}\\z' cover p1=3096 p2=6298  {"kind": "longer-than-k", "ctx": null, "node": "00", "bytes": [0, 1, 2, 3, 4, 5, 6, 7]} {"s": "0000", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover native R b'(?:\\d{1,4}){1,4}' cover p1=2837 p2=499  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[\xce\x91-\xce\xb1]+' cover p1=3353 p2=2371  {"kind": "longer-than-k", "ctx": null, "node": "91", "bytes": [145, 146, 147, 148, 149, 150, 151, 152]} {"s": "9191", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[[:digit:]-]+' cover p1=3095 p2=568  {"kind": "longer-than-k", "ctx": null, "node": "2d", "bytes": [45, 48, 49, 50, 51, 52, 53, 54]} {"s": "2d2d", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'a(?!b)|ab' cover p1=258 p2=777  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [98]} {"s": "6162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b'\\d{1,8}' cover p1=2837 p2=585  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[\x7f-\xc2\x80]+' cover p1=3353 p2=2426  {"kind": "longer-than-k", "ctx": null, "node": "7f", "bytes": [127, 128, 129, 130, 131, 132, 133, 134]} {"s": "7f7f", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[^[:alpha:]]+' cover p1=3353 p2=7976  {"kind": "longer-than-k", "ctx": null, "node": "00", "bytes": [0, 1, 2, 3, 4, 5, 6, 7]} {"s": "0000", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'a{2,4}+' cover p1=515 p2=59  {"kind": "longer-than-k", "ctx": null, "node": "6161", "bytes": [97]} {"s": "616161", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover native R b'\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d{1,6 cover p1=3353 p2=49  {"kind": "longer-than-k", "ctx": null, "node": "303030302d30302d30302030303a30303a3030", "bytes": [43, 44, 45, 46, 90]} {"s": "303030302d30302d30302030303a30303a30305a", "sf": 0, "cover": [0, 19], "pcre": [0, 20]} 
+red mover native R b'[a-\xce\xb1]+' cover p1=3353 p2=3903  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 98, 99, 100, 101, 102, 103, 104]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[a-]{2,}(?!\\w)a*' cover p1=1289 p2=93  {"kind": "longer-than-k", "ctx": null, "node": "2d2d", "bytes": [45, 97]} {"s": "2d2d2d", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover native R b'\xce\xb1{1,2}' cover p1=515 p2=43  {"kind": "longer-than-k", "ctx": null, "node": "ceb1", "bytes": [177]} {"s": "ceb1b1", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover native R b'(?:[a-z]{1,6}){1,6}' cover p1=3353 p2=1030  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 98, 99, 100, 101, 102, 103, 104]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[a-z]{1,4}(?:\\z|-)' cover p1=3096 p2=1327  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [45, 97, 98, 99, 100, 101, 102, 103]} {"s": "612d", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover native R b' \\w?\\b' cover p1=515 p2=252  {"kind": "longer-than-k", "ctx": null, "node": "20", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "2030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'a+|b' cover p1=772 p2=24  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native iR b'A*(?=a)\\w' cover p1=773 p2=99  {"kind": "longer-than-k", "ctx": null, "node": "41", "bytes": [65, 97]} {"s": "4141", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'(?:a|b)+' cover p1=773 p2=74  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 98]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'\\x{61}+' cover p1=515 p2=66  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[^\xe2\x82\xac]{1,2}' cover p1=3353 p2=10359  {"kind": "longer-than-k", "ctx": null, "node": "00", "bytes": [0, 1, 2, 3, 4, 5, 6, 7]} {"s": "0000", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'[x[:digit:]y]+' cover p1=3353 p2=668  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover native R b'\\S+' cover p1=3353 p2=10259  {"kind": "longer-than-k", "ctx": null, "node": "00", "bytes": [0, 1, 2, 3, 4, 5, 6, 7]} {"s": "0000", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'\xc3\xa9+' cover p1=1 p2=5  {"kind": "longer-than-k", "ctx": null, "node": "c3a9", "bytes": [195]} {"s": "c3a9c3a9", "sf": 0, "cover": [0, 2], "pcre": [0, 4]} 
+red mover utf8 uR b'a{1,2000}' cover p1=899 p2=35  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'a|b+|ab' cover p1=899 p2=26  {"kind": "longer-than-k", "ctx": null, "node": "62", "bytes": [98]} {"s": "6262", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'a.*|b' cover p1=1797 p2=1923  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [0, 1, 2, 3, 4, 5, 6, 7]} {"s": "6100", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'[a-c]++(?:(?=x)|)' cover p1=1799 p2=110  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 98, 99]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'[a]{1,2}' cover p1=899 p2=41  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'[\xe2\x82\xac]{1,2}' cover p1=1 p2=5  {"kind": "longer-than-k", "ctx": null, "node": "e282ac", "bytes": [226]} {"s": "e282ace282ac", "sf": 0, "cover": [0, 3], "pcre": [0, 6]} 
+red mover utf8 uR b'\\b\\w+\\z' cover p1=4644 p2=1640  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'[a-z]+\\z' cover p1=5400 p2=633  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97, 98, 99, 100, 101, 102, 103, 104]} {"s": "6161", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover utf8 uR b'[[:punct:]]+' cover p1=5849 p2=1324  {"kind": "longer-than-k", "ctx": null, "node": "21", "bytes": [33, 34, 35, 36, 37, 38, 39, 40]} {"s": "2121", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'[a-z]{1,4}(?:\\z|-)' cover p1=5400 p2=1369  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [45, 97, 98, 99, 100, 101, 102, 103]} {"s": "612d", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'za{0,4}\\z' cover p1=450 p2=711  {"kind": "longer-than-k", "ctx": null, "node": "7a", "bytes": [97]} {"s": "7a61", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'[[:upper:]]+' cover p1=5849 p2=967  {"kind": "longer-than-k", "ctx": null, "node": "41", "bytes": [65, 66, 67, 68, 69, 70, 71, 72]} {"s": "4141", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'a(?!b)|ab' cover p1=450 p2=736  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [98]} {"s": "6162", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 iuR b'[\\da-c]+' cover p1=5849 p2=790  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'\\d+(?![\\d.])' cover p1=4500 p2=463  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover utf8 uR b'(?:\\w{1,2}?\\b)+' cover p1=5400 p2=2519  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover utf8 uR b'a{2,4}+' cover p1=899 p2=37  {"kind": "longer-than-k", "ctx": null, "node": "6161", "bytes": [97]} {"s": "616161", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red mover utf8 uR b'\\d+\\b' cover p1=4500 p2=487  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover utf8 uR b'\\x{3b1}+' cover p1=1 p2=2  {"kind": "longer-than-k", "ctx": null, "node": "ceb1", "bytes": [206]} {"s": "ceb1ceb1", "sf": 0, "cover": [0, 2], "pcre": [0, 4]} 
+red mover utf8 uR b'abc|a|abd' cover p1=1 p2=707  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [98]} {"s": "616263", "sf": 0, "cover": [0, 1], "pcre": [0, 3]} 
+red mover utf8 uR b'za{3,}?c?' cover p1=899 p2=17  {"kind": "longer-than-k", "ctx": null, "node": "7a616161", "bytes": [99]} {"s": "7a61616163", "sf": 0, "cover": [0, 4], "pcre": [0, 5]} 
+red mover utf8 uR b'x[a-z]{0,5}\\z' cover p1=450 p2=85  {"kind": "longer-than-k", "ctx": null, "node": "78", "bytes": [97, 98, 99, 100, 101, 102, 103, 104]} {"s": "7861", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'\\b\\w+\\b\\z' cover p1=4644 p2=1648  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": null, "pcre": [0, 2]} 
+red mover utf8 uR b'[[:xdigit:]]+' cover p1=5849 p2=930  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'\\w+\\z' cover p1=5400 p2=1551  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red mover utf8 uR b'[\\d-]+' cover p1=5399 p2=563  {"kind": "longer-than-k", "ctx": null, "node": "2d", "bytes": [45, 48, 49, 50, 51, 52, 53, 54]} {"s": "2d2d", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'ab|a|ac' cover p1=899 p2=722  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [98]} {"s": "6162", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'a{1,2}' cover p1=899 p2=53  {"kind": "longer-than-k", "ctx": null, "node": "61", "bytes": [97]} {"s": "6161", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red mover utf8 uR b'\\w{1,3}+(?:\\b|)' cover p1=5849 p2=2527  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [0, 1], "pcre": [0, 2]} 
+red witness native - b'abc|ab' cover p1=515 p2=808  {"kind": "longer-than-k", "ctx": null, "node": "6162", "bytes": [99]} {"s": "616263", "sf": 0, "cover": [0, 2], "pcre": [0, 3]} 
+red witness native - b'\\w+?(?:)\\b' cover p1=3096 p2=2591  {"kind": "longer-than-k", "ctx": null, "node": "30", "bytes": [48, 49, 50, 51, 52, 53, 54, 55]} {"s": "3030", "sf": 0, "cover": [1, 2], "pcre": [0, 2]} 
+red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+== X0 run COMPLETE: items=336 sec=84.1

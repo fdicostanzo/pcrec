@@ -19,6 +19,16 @@ are the kit's and are not here.
 
 CONJ_PLANT=c9-depth-k in the environment restores revision 2's C9 (eol views
 tested at depth k only), the K1 plant witnesses.txt's `ab|a$\n` rows turn red.
+The other CONJ_PLANT values are kit_proof.md §6.3's plants on the reading, for
+X0 (`x0/`) to turn red; each is off unless named, and the default reading is
+unchanged by them:
+  cm1-all        S1130  C_{-1} stated as every byte
+  c8-skip        S1131  C8 skipped (exact_len := k)
+  c10-drop       S1132  C10's no-live-successor test dropped
+  absb-flip      S1133  absent-before flipped
+  absa-flip      S1134  absent-after flipped
+  c9-eol-as-end  S1139  C9 dropped AND an eol view at k read as the end
+  e0-row0        S1140  e(⊥) := row 0, not the emitted constant
 
 usage:
   python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
@@ -88,6 +98,7 @@ def k_entry(st):
     A, c = st["A"], st["c"]
     if not A.seeded:
         st.update(r0=0, Cm1=frozenset(range(256)), absB=True)
+        plant_before(st)
         return True
     m = re.search(r"anchored_state = search_from \? rx_anchored_seed_state\[.*?\] : (-?\d+);", c)
     if not m:
@@ -101,6 +112,8 @@ def k_entry(st):
     if len(ent) != 1:
         return False
     r0 = next(iter(ent))
+    if PLANT == "e0-row0":
+        x = 0   # S1140: row 0 read as e(⊥), not the emitted constant X
     if x == r0:
         absB = True
     elif x is None or x not in A.live:
@@ -108,7 +121,15 @@ def k_entry(st):
     else:
         return False
     st.update(r0=r0, Cm1=frozenset(ent[r0]), absB=absB)
+    plant_before(st)
     return True
+
+
+def plant_before(st):
+    if PLANT == "cm1-all":
+        st["Cm1"] = frozenset(range(256))   # S1130
+    if PLANT == "absb-flip":
+        st["absB"] = not st["absB"]         # S1133
 
 
 def k_width(st):
@@ -120,6 +141,8 @@ def k_width(st):
 def k_exact(st):
     # C8's MACHINE half (why `exact` = machine-inexact, [r3rc m2]); the
     # producers-disagree half compares span_facts' S_d, unbuilt here
+    if PLANT == "c8-skip":
+        return True   # S1131: exact_len := k
     return st["L"]["exact"] == st["k"]
 
 
@@ -147,7 +170,7 @@ def k_eol(st):
     # the row declines rather than choosing a reading
     A = st["A"]
     v = A.views.get("eol_view")
-    if not v:
+    if not v or PLANT == "c9-eol-as-end":
         return True
     depths = [walk_rows(st)] if PLANT == "c9-depth-k" else rows_by_depth(st)
     return all(v[q] is None or v[q] == q for Q in depths for q in Q)
@@ -159,6 +182,8 @@ def k_end(st):
     for q in walk_rows(st):
         if not A.acc_any[q]:
             return False
+        if PLANT == "c10-drop":
+            continue   # S1132: the no-live-successor test dropped
         if any(t is not None and t in A.live for t in A.next[q]):
             return False
     return True
@@ -171,6 +196,11 @@ def acc_classes(A, q):
 
 
 def acc_at_end(A, q):
+    if PLANT == "c9-eol-as-end":
+        # S1139's second edit: an eol view at k read as the end
+        e = A.views.get("eol_view")
+        if e and e[q] is not None and A.acc[e[q]]:
+            return True
     v = A.views.get("end_view")
     if v and v[q] is not None and A.acc[v[q]]:
         return True
@@ -187,6 +217,8 @@ def k_after(st):
         return False
     cls = next(iter(sets))
     st.update(Ck=frozenset(b for b in range(256) if A.bc[b] in cls), absA=ends.pop())
+    if PLANT == "absa-flip":
+        st["absA"] = not st["absA"]   # S1134
     return bool(st["Ck"]) or st["absA"]
 
 

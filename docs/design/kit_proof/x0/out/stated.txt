@@ -1,0 +1,12 @@
+## stated sets against 10.46 2025-08-27
+S1150      -   a(?=b)[a-z]|ac         exact_len=2  RED  nodes=2  {"kind": "hull-under", "d": 1, "node": "61", "pcre": [98, 99], "stated": [98]}
+S1150-hull -   a(?=b)[a-z]|ac         exact_len=0  RED  nodes=2  {"kind": "hull-under", "d": 1, "node": "61", "pcre": [98, 99], "stated": [98]}
+S1150      -   [ab](?<=a)c|bc         exact_len=0  RED  nodes=3  {"kind": "hull-under", "d": 0, "node": "", "pcre": [97, 98], "stated": [97]}
+slice      -   a(?=b)[a-z]|ac         exact_len=2  green  nodes=2  
+slice      -   [ab](?<=a)c|bc         exact_len=0  green  nodes=3  
+S1149      -   a(?=b)[a-z]            exact_len=2  RED  nodes=2  {"kind": "exact", "d": 1, "node": "61", "pcre": [98], "stated": [97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]}
+S1149      -   \w(?=\d)\w             exact_len=2  RED  nodes=64  {"kind": "exact", "d": 1, "node": "30", "pcre": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57], "stated": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]}
+S1149      -   [a-z0-9_ ]\b[a-z ]     exact_len=2  RED  nodes=39  {"kind": "exact", "d": 1, "node": "20", "pcre": [97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122], "stated": [32, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]}
+slice      -   a(?=b)[a-z]            exact_len=2  green  nodes=2  
+slice      -   \w(?=\d)\w             exact_len=2  green  nodes=64  
+slice      -   [a-z0-9_ ]\b[a-z ]     exact_len=1  green  nodes=39  
