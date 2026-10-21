@@ -41,7 +41,8 @@ the bump's own commit.**
   retry: a notempty-rooted anchored machine (`<prefix>__retry`, DFA) or a
   guard at the VM accept label. The iterator's text is scaffold (excluded
   from every length decision, `StrBuf.scaf_*`); the retry machine is a
-  machine and counts. No answer of an existing entry moves. Batch filling
+  machine and counts (`<PREFIX>_DFA_UNIFORM_FOLDS` includes its folded
+  tables, match_api.md §6.3.4¶9). No answer of an existing entry moves. Batch filling
   and `<prefix>_next_n` are I2's (match_api.md §3.8).
 - **`rx_info.abi` was `82` (lane m0build bumped it
   from 81, 2026-10-21: [MEASURE-SET] M0, docs/design/measure_sets.md rev 3

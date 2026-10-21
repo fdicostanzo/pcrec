@@ -90,12 +90,17 @@ void pcrec_emit_iter_abi_types(StrBuf *sb)
 void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix)
 {
     pcrec_sb_scaffold_open(sb);
+    /* Outside the shared block, so its prose is NON-ESSENTIAL (D112 item 2). */
+    pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(sb,
         "/* [FINDALL-NEXT] Bind this storage for every search of a FRESH iterator\n"
-        " * (the iterator's own storage otherwise), as %s_search_in binds it. */\n"
+        " * (the iterator's own storage otherwise), as %s_search_in binds it. */\n",
+        prefix);
+    pcrec_sb_cmt_close(sb);
+    pcrec_sb_printf(sb,
         "static inline void %s_iter_buffers(rx_iter *it, const %s_buffers *b)\n"
         "{ PCREC_ITER_SET_(it, it->bufs = b, PCREC_ITER_OPT_IN); }\n",
-        prefix, prefix, prefix);
+        prefix, prefix);
     pcrec_sb_scaffold_close(sb);
 }
 

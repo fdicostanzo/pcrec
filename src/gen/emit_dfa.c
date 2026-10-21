@@ -4979,7 +4979,8 @@ static const char *dfa_scan_edge_name(Ctx *cx)
  * three masks in §6.3 are masks because a rung or a strategy is chosen PER
  * QUANTIFIER and a scalar would LIE on a mixed artifact, where this is a
  * whole-artifact total with no axis to mix. Two tables per machine are
- * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6.
+ * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6,
+ * or 0..8 with the find-all iterator's retry machine.
  *
  * WHY IT IS OWED RATHER THAN SYMMETRY. The fold makes a table ABSENT, and
  * this project has gone back and REMOVED a check that read a fact off a
@@ -5020,6 +5021,11 @@ static int dfa_uniform_folds(Ctx *cx)
     const Dfa *mach[3];
     int n = 0, nm = dfa_member_machines(cx, mach);
     for (int k = 0; k < nm; k++) n += uniform_folds_of(cx, mach[k]);
+    /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
+     * path, but its tables are the artifact's and fold like any machine's
+     * (`pcrec_emit_dfa_retry`), so they count where it is emitted. */
+    if (cx->job->retry_ok && pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        n += uniform_folds_of(cx, &cx->job->nedfa);
     return n;
 }
 

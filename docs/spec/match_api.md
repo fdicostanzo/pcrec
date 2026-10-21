@@ -1951,8 +1951,9 @@ accessor returning the constant (keeping its state and class parameters, so a
 call site's `subject[pos++]` is still evaluated). Two tables per machine are
 foldable, `<m>_next_state` and `<m>_is_accepting`, over the same machines
 `_DFA_TABLE` and `_DFA_SCAN_EDGE` compose (so none of the three can name a
-machine the artifact does not contain), and the value runs `0..6`; `0` on `"attempt"` and
-`"empty"`. It is family (b) in nature — what the emitted machine turned out to
+machine the artifact does not contain), plus the find-all iterator's retry machine where the
+artifact carries it (`<PREFIX>_ITER_RETRY` `"dfa-root"`, §6.3.13), so the value runs `0..8`;
+`0` on `"attempt"` and `"empty"` apart from that retry machine. It is family (b) in nature — what the emitted machine turned out to
 contain — and is owed because a fold is visible only as a table's ABSENCE.
 `tests/codegen/run_dfa_uniform_fold.sh` reads it. The artifact is smaller and
 its scan cheaper by that many indexed loads; the answers are identical.
