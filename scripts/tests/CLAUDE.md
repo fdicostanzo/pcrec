@@ -79,7 +79,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   ~2 min together, mostly watcher polls at `--every 1`. [BOXQUEUE] added the
   generic `TOOL: DONE rc=N` trailer cases (verdict 31 checks, watchrun 17).
 - **boxqueue.test** — scripts/boxqueue's self-test ([BOXQUEUE], 2026-10-21;
-  52 checks, ~65 s, one trivial job at a time). Every case gets a FRESH
+  53 checks, ~65 s, one trivial job at a time). Every case gets a FRESH
   scratch queue (`PCREC_BOXQUEUE_DIR`) and the sacrificial box lock; runners
   and lock holders are killed by pid (safekill) on exit. The protocol both
   ways (work exits 0/76/77/3, `--ready` 0/75/76/77/1, a hanging `--ready`,
@@ -88,7 +88,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   failed on first sight) and at START, populations (`lines=` SHORT, `last=`
   from an emit_sweep-shaped log, an OVER killed mid-run), VERDICT-RED,
   CAP-FIRED, `waiting on <holder>`, one runner per queue, a dead runner's
-  leftovers, an `add` from inside a lock holder, `batch` (a failed stage
+  leftovers, an `add` from inside a lock holder, a job taking the lock itself (the kit slot form nests), `batch` (a failed stage
   re-queued alone, `--lift`, chainrun's parser reused) and `--dry-run`'s
   plan. TEN PLANTS, each going red: a work-75 re-queued (side effect
   repeats), the pending original kept (runs twice), no snapshot compare

@@ -236,6 +236,13 @@ grep -q 'waiting on' <(bash "$BQ" status) && ok "status shows the waiting answer
 wait "${kids[-1]}" 2>/dev/null; run1
 [ "$(st main-w)" = green ] && ok "the holder ends: the job runs next pass" || bad "after holder: $(st main-w)"
 
+# 12b. a job that takes the box lock itself (the kit's `boxlock run --label kit`) nests, never deadlocks
+newq
+mkjob "$T/j/kit" "$(D 30 none none)" 'exit 0' "bash '$BL' run --label kit --no-wait -- echo nested-ok"
+bq add --name 100-kit-slot --no-start "$T/j/kit" > /dev/null; run1
+[ "$(st kit-slot)" = green ] && grep -q nested-ok "$(ls -d "$Q"/done/*-100-kit-slot)/job.log" \
+    && ok "a job calling boxlock run itself (the kit's slot form) nests inside the runner's lock" || bad "nest: $(res kit-slot)"
+
 # 13. one runner per queue
 newq
 bq add --name 500-main-never --no-start "$T/j/never" > /dev/null

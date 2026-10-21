@@ -94,7 +94,7 @@
 # that died leaves running/NAME: the next runner finishes it from its rc if
 # the job ended, waits while it is alive, else fails it RUNNER-DIED.
 # Exit: 0 ok, 1 a reported failure (state/plan), 64 usage, 65 refused at
-# enqueue, 75 a runner is already live.
+# enqueue, 69 no flock(1)//proc (Linux only), 75 a runner is already live.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 self=$here/$(basename "${BASH_SOURCE[0]}")
@@ -120,6 +120,9 @@ queue_dir() {
     printf '%s\n' "$(dirname "$common")/worktrees/.boxqueue"
 }
 Q=$(queue_dir) || die "no queue: not in a git tree and no PCREC_BOXQUEUE_DIR"
+# Linux only: flock(1) for the runner lock and /proc for pid identity (the Mac keeps its
+# worktrees/.mac-suite.lock convention, as boxlock's header says).
+command -v flock > /dev/null && [ -d /proc/self ] || { echo "boxqueue: needs flock(1) and /proc (Linux); not on this box" >&2; exit 69; }
 mkq() { mkdir -p "$Q/pending" "$Q/running" "$Q/done" "$Q/failed" "$Q/.state" "$Q/.work" "$Q/.incoming"; }
 qlog() { printf '%s\n' "$*" >> "$Q/queue.log"; }
 
