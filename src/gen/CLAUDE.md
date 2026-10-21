@@ -4491,3 +4491,19 @@ the byte-image check. `vm_ctx_forms` reads ctxfn.def's new CLASS column
 position (ignored). Every other label list lost its two tokens. Emitted text,
 `--emit-ir` and `--emit-facts` are byte-identical to P2d's (4,636 corpus
 patterns, 6 arms + 8 axes).
+
+## [MEASURE-SET] M0 (lane m0build, 2026-10-21; abi 81 -> 82)
+
+`emit_dfa.c`: `PCREC_ARTIFACT_ABI` 82. The shared ABI block's `rx_info`
+gains `const char *measures` (its comment ABOVE the member: a trailing
+comment's continuation lines count as code in the size classifier), and
+`emit_ks_line` is the one writer of a knowledge-source stamp line, wrapped
+by `pcrec_emit_findings_line` and the new `pcrec_emit_measures_line`
+(`<PREFIX>_MEASURES` and `.measures =`). `memfn_sites.c`: `memfn_measures`
+builds the kit's `mf_measures` from the compile's set (`Job.meas`; the
+harness set overrides it) and records `mf_art_end`'s `consulted` in
+`Job.meas_consulted`. `memfn_stamps.c`: `meas_stamp` renders `id@rev:digest`
+only when the kit consulted a set key, else `""`, at the ks-mark render
+point after `mf_art_end`. No kit row reads a set key before B4, so the
+stamp is `""` on every artifact today. The VM's `^`/`(?m)^` role text is
+K112's corrected wording (`src/core/ctxfn.def`).
