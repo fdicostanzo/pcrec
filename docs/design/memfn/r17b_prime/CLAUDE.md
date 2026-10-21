@@ -81,3 +81,7 @@ none. It applies three rulings (Q-R17P-26..28). Under the term-count rule
 `fdb2/predicted_movers_B4.tsv` stays stale for a further reason: the 54 sites on untimed
 shapes now route by term count, so the regenerated manifest (the note's §3.1a item 4)
 is where their split between V1 and the walk is OWED.
+
+- `b4prep/` — lane b4prep's closure of B4's pre-brief OWED items (2026-10-21): the V1-text attribution, the
+  main-vs-slot walk compare, the term-count lever set and regenerated mover manifest (`fdb2/`'s is left as is), the
+  pre-registered expected-loss list, the F3 re-time. Own CLAUDE.md.

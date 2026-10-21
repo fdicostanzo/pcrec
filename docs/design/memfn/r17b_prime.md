@@ -1319,7 +1319,7 @@ gate stands.
 | **M0** ([MEASURE-SET]'s first step) | **NOT MET** | Plan row [MEASURE-SET] is not started. [KNOW-SRC] K0-K3, its prerequisite, are done (plan, 2026-10-17) | M0 builds the store, `ksgen`'s measures kind, the embed, `<PREFIX>_MEASURES` and `rx_info.measures`, and `--list-measurements`. If M0 lands after B4, its stamp is a second abi event (§3.1 B4 row) |
 
 **OWED before B4 is briefed** (from grid2read §8-§9, plus rev 4's own consequences):
-1. **The quiet re-time of the two load-suspect F3 cells** (grid2read §8 item 1): `f3-word-eq`
+1. `[b4prep]` **OWED, QUEUED** (job `520-kit-b4prep-f3rr`; artifact `r17b_prime/b4prep/f3rr.md` once it has run). **The quiet re-time of the two load-suspect F3 cells** (grid2read §8 item 1): `f3-word-eq`
    n1m and `f3-quad` n64k with their partners, about 2 minutes.
    - **Command.** It is quoted verbatim in grid2read §8. Run it in the slot directory
      `worktrees/memfn-slot/grid2`, with `RAW_TAG=F3rr` and its own `PASS_STATUS`, so
@@ -1330,7 +1330,7 @@ gate stands.
      as MEASURED, so the re-time precedes E14.
    - **Who runs it.** A heavy run, so it goes through the box lock in a slot main
      grants.
-2. **The V1 attribution** (grid2read §9). The compiler's V1 text (what grid2 timed) may
+2. `[b4prep]` **CLOSED** (`r17b_prime/b4prep/v1attr.md`: the V1 and walk texts and object code are byte-identical in grid1 and grid2 on all six shared cells, so the text does not explain M9). **The V1 attribution** (grid2read §9). The compiler's V1 text (what grid2 timed) may
    differ from grid1's hand-built V1 arm, which would explain why M9's 36 B crossover
    did not reproduce.
    - **The check.** A light text compare of the two V1 arms on grid2's member-free
@@ -1338,11 +1338,11 @@ gate stands.
    - **Why it is owed.** B4 ships the compiler's text, so its decision rests on what
      grid2 measured either way. The attribution closes the record before §2.6's
      upper-bound reading is cited as evidence.
-3. **Main's walk against the slot's walk** (grid2read §9 item 2). grid2's `walk` arm was
+3. `[b4prep]` **CLOSED** (`r17b_prime/b4prep/walkcmp.md`: identical on ten cells but for the abi number and one unread stamp macro). **Main's walk against the slot's walk** (grid2read §9 item 2). grid2's `walk` arm was
    the kit compiler under `--memfn=no-pf-terms-mask`, while B4's baseline is MAIN's walk
    (§9.2 [rev3 C6]). Owed: a byte compare of the two walks' emitted text on grid2's
    cells, before B4's G1 reads the slot's walk as main's.
-4. **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
+4. `[b4prep]` **OWED, QUEUED** (job `521-kit-b4prep-manifest`; artifacts `r17b_prime/b4prep/predicted_movers_B4_rev41.tsv` and its summary once it has run; the lever set and tooling are committed). **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
    (860 movers) predicts R7 on grid1's shapes only, under the interim set.
    - **Why it is stale.** Under rev 4, item 3a's three shapes route too, and R0's rows
      are gone. `[rev4.1]` Under the term-count rule the untimed 1-2 term covers route too,
@@ -1351,7 +1351,7 @@ gate stands.
    - **The fix.** The B1 shadow re-run under grid2's keys (the converter's output, or a
      test-build lever set built from `keys.tsv`) writes the new manifest, and B4's
      movers-by-ID are held to it (§1.6 [rev3 B6]).
-5. **§9.2a's expected-loss list, filled.** The relay question to pcrec-bench and the
+5. `[b4prep]` **CLOSED as far as the kit can** (`r17b_prime/b4prep/expected_losses.md`: eleven cells listed, the relay question drafted for main, the bench's cells and one rule gap owed to main). **§9.2a's expected-loss list, filled.** The relay question to pcrec-bench and the
    pcrec-side selection rule both run before any B4 timing.
 6. **Not owed by B4** (grid2read §8 item 2; owed to B6, B8 and [REGIME-TWIN]):
    - a W16 dispatch twin;

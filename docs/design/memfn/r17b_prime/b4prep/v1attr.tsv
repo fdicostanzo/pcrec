@@ -1,0 +1,8 @@
+cell	V1_art.c	walk_art.c	art/new	art/deny	V1_art.o	V1_gdrv.o	walk_art.o	walk_gdrv.o
+dig	same	same	same	same	same	same	same	same
+bounded	same	same	same	same	same	same	same	same
+dfa-hat	same	same	same	same	same	same	same	same
+hex-run	same	same	same	same	same	same	same	same
+word-eq	same	same	same	same	same	same	same	same
+quad	same	same	same	same	same	same	same	same
+gdrv.c	same
