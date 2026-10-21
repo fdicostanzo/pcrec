@@ -513,6 +513,42 @@ Maintenance: update this file when files are added/removed or change roles.
     - **M is a parameter** (`MF_BODY_PARAM`, M24); K5 retires only on a proven
       single-pass form, S derived; grid2 ≈ 91-129 min required (3.4-5
       launches); predictions against main's walk; Q-R17P-15..25 new.
+  - **REVISION 4 (lane rev4, 2026-10-20, design only), for B4, the routing commit; read
+    its §R4 (every changed row with its source) first; changed text is marked `[rev4]`.**
+    - **grid2's contradictions are folded in** (`../../dev/lanes/grid2read_report.md`):
+      - M9: V1 beats the walk at every N ≥ 8, so R1 is deleted and its crossover
+        recorded as an upper bound.
+      - M15: g\* is landing PREDICTABILITY, not a gap. R5 now reads a stated regular
+        regime, a PROPOSED `SF_E_REGULAR` that is not built (D77), and is OFF only.
+      - R0 is RETIRED: its class key is a MAX, and R7's per-shape keys do its work.
+      - R2's `unpaid` is no longer WALK; R8 loses its gap comparator.
+      - The pay rule's twins fail T2/T3, so B4 ships no dispatch.
+      - F0 and F1 are not built (D77); F2 needs a density condition (rev 4.1: it does
+        not, below).
+    - **The table B4 builds** is §1.3a, a declared first-match table with the evidence
+      per row.
+    - **D169** (Frank, 2026-10-20) is B4's default (§1.9): V1 when landing
+      predictability is unknown. The walk stays where a measured row keeps it, D1 keeps
+      LIBC, and R5 is the regular-regime path.
+    - **Gates.** §3.1a: D163 add. 8 MET (E1 on main), E8 and M0 owed, plus the owed
+      re-time, the V1-text attribution, the walk compare and the regenerated mover
+      manifest.
+    - **Expected losses.** §9.2a is the pre-registered list of regular-landing cells B4
+      names before timing.
+    - **Questions.** Q-R17P-26..28 (§7.3).
+  - **REVISION 4.1 (lane rev41, 2026-10-21, design only) applies Frank's and the kit
+    manager's answers to those three questions; read its §R4.1 (change → section)
+    first; changed text is marked `[rev4.1]`.** Report `../../dev/lanes/rev41_report.md`.
+    - **Q-R17P-26 (Frank):** a set site's form is chosen by its cover's TERM COUNT, a
+      compile-time fact: V1 at ≤ 2 terms, the walk at ≥ 3. R7 keys on the count (the
+      nine per-shape saving keys stay as evidence); R7w keeps only the 3+ term case.
+      The 54 no-key sites route by count, their split OWED to the regenerated mover
+      manifest (not computed).
+    - **Q-R17P-27 (Frank): YES.** F2 (the VM hat at \|S\| = 1) defaults to V1 at B5,
+      not B4, with no density condition; its g = 2 cells are named expected losses.
+    - **Q-R17P-28 (the kit manager):** P1 recorded as fired on the letter, NOT built.
+    - §7.3 marks each question ANSWERED with its source; B4's acceptance confirms the
+      term-count rule on the shapes it moves.
 - `r17b_prime/` — that note's compile-only instruments and transcripts
   (cover-shape census of R17-b's movers, multi-form size twins, the
   walk-in-helper assembly check; own CLAUDE.md).

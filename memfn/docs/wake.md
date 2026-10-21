@@ -59,13 +59,14 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 - D2 stays `pending-site:R-18`.
 - candoracle's reach gap is on main's check-design list.
 
-**In flight (2026-10-20 ~16:45, idle wait):** nothing is running. No lanes, chains, watchers or crons.
-- **R-25 is DONE** and posted in responses.md: lane/memfn-r25 @ 7a0a776ee, validated code d49ff5515 at abi 81. The slot is ended and the box is handed back to main.
-- **Waiting for:** main (pcrecdev1, addressed by socket) to merge lane/memfn-r25, or to send review notes. No deadlock ping is needed: main is not waiting on the kit.
-- **Next actions:**
-  1. After the merge, prune `r25-mt`, `memfn-r25` and `r25tri-main` through wtprune (r25tri-main was too fresh at 16:40).
-  2. B4 still needs Frank's rev 4 direction (unknown predictability: V1 or the walk?), plus D163 add. 8 controls, E8 PASS and M0.
-  3. Comment on U1 (`docs/design/kit_proof.md`) when it lands.
+**In flight (2026-10-21 ~02:00, idle wait):** nothing is running. No lanes, chains, watchers or crons.
+- **Kit branch `lane/memfn-b4` @ f5f1e3c05** (worktree `worktrees/memfn-b4`) is for main to merge, as listed in main's wake. It carries:
+  - D169's notice (V1 default; main has FILED D169);
+  - Frank's 2026-10-21 answers (set sites route by term count, `kit.terms.V1max` = 2; F2 to V1 at B5) as notices with proposed D text for main to file;
+  - r17b_prime **rev 4 + 4.1** (B4's table §1.3a, default §1.9, gates §3.1a; every §7.3 question ANSWERED).
+- **B4 gates:** D163 add. 8 MET; E8 and M0 NOT MET. OWED before the B4 brief: grid2read §8's quiet re-time (about 2 min, heavy slot), the V1-text attribution against grid1's arm, a byte compare of the slot's walk against main's walk, the mover manifest regenerated (including the 54 no-key sites' term-count split), and the expected-loss list filled.
+- **Heavy runs:** `scripts/boxlock run --label kit -- CMD`, or main's `scripts/boxqueue` (kit band 500-699). Run emit_sweep WITHOUT `python3 -I` until main's fix is confirmed.
+- **Prune when quiet:** `rev4`, `rev41` (both merged into b4).
 
 **Worktrees:** KEEP `memfn-r25`, `memfn-pinfix` (until merged), `rowfix` (merged; prunable once quiet), `memfn-slot` (scratch). 22 merged kit trees were pruned on 2026-10-18.
 

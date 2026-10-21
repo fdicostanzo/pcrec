@@ -1,0 +1,275 @@
+# kit-grid@2 PROPOSED rows read from the zen4-grid2 slot (lane grid2read); NOT a measurement set: no digest, no deps; a converter (set_to_measures.py, E14) writes the set.
+# columns: key unit value_e6 abs_ns_e6 status regime layer floor_e6 confidence source.  value_e6 is in the card's unit (ratio: relative to u = beta_walk(dig) = 0.1891 ns/B; walkbytes: ns / u; bytes; bool 0/1000000).  floor_e6 is in the same unit.
+# value -1 for a bytes key = no threshold exists on the measured grid (see source/regime).  Layer is the SIMD layer of the arm (off = walk/V1; w16 = S1; w32 = A1/W64; iter = A3).  Kind suffix .bounded = the bounded-prefilter variant; .back = DFA_ATTEMPT.
+# confidence: HIGH (>= 5x the floor or a direct slope), MED, LOW (interpolated on a coarse grid or a shape-confounded crossover), PROVISIONAL (a load-suspect source).
+key	unit	value_e6	abs_ns_e6	status	regime	layer	floor_e6	confidence	source
+kit.beta.A1.DFA_HAT.r0e1c1	ratio	60275	11397	derived	as above	w32	230	HIGH	grid2read an. 4c
+kit.beta.A1.DFA_SCAN.r1e0c0	ratio	56595	10701	measured	streamed member-free single calls, slope 64Ki-1Mi	w32	2165	HIGH	grid2read an. 4
+kit.beta.A1.DFA_SCAN.r2e0c0	ratio	80747	15268	measured	streamed member-free single calls, slope 64Ki-1Mi	w32	1064	HIGH	grid2read an. 4
+kit.beta.A1.DFA_SCAN.r3e0c1	ratio	158166	29907	measured	streamed member-free single calls, slope 64Ki-1Mi	w32	75	HIGH	grid2read an. 4
+kit.beta.A1.DFA_SCAN.r3e1c0	ratio	142975	27035	measured	streamed member-free single calls, slope 64Ki-1Mi [quad n64k: LOAD-SUSPECT visit, launches 3-5 only (A/A 0.08%)]	w32	379	PROVISIONAL	grid2read an. 4
+kit.beta.LIBC.DFA_ATTEMPT.back.r0e1c0	ratio	39754	7517	measured	one-byte stop, slope n64->n1m (cell o-back)	off	2959	HIGH	grid2read an. 8b.4
+kit.beta.LIBC.DFA_HAT.r0e1c0	ratio	39042	7382	measured	one-byte stop, slope n64->n1m (cell o-hat)	off	1204	HIGH	grid2read an. 8b.4
+kit.beta.LIBC.DFA_SCAN.bounded.r0e1c0	ratio	38714	7320	measured	one-byte stop, slope n64->n1m (cell o-bnd)	off	1273	HIGH	grid2read an. 8b.4
+kit.beta.LIBC.DFA_SCAN.r0e1c0	ratio	39378	7446	measured	one-byte stop, slope n64->n1m (cell o-fwd)	off	1240	HIGH	grid2read an. 8b.4
+kit.beta.LIBC.HYB_PF.r0e1c0	ratio	39296	7430	measured	one-byte stop, slope n64->n1m (cell o-hyb)	off	198	HIGH	grid2read an. 8b.4
+kit.beta.LIBC.VM_ATTEMPT.r0e1c0	ratio	39316	7434	measured	one-byte stop, slope n64->n1m (cell o-vm)	off	1541	HIGH	grid2read an. 8b.4
+kit.beta.LOOP.DFA_HAT.r0e1c0	ratio	971825	183760	measured	one-byte stop, slope n64->n1m (cell o-hat)	off	1204	HIGH	grid2read an. 8b.4
+kit.beta.LOOP.DFA_SCAN.bounded.r0e1c0	ratio	1934379	365767	measured	one-byte stop, slope n64->n1m (cell o-bnd)	off	1273	HIGH	grid2read an. 8b.4
+kit.beta.LOOP.DFA_SCAN.r0e1c0	ratio	971618	183721	measured	one-byte stop, slope n64->n1m (cell o-fwd)	off	1240	HIGH	grid2read an. 8b.4
+kit.beta.LOOP.HYB_PF.r0e1c0	ratio	972342	183858	measured	one-byte stop, slope n64->n1m (cell o-hyb)	off	198	HIGH	grid2read an. 8b.4
+kit.beta.S1.DFA_HAT.r0e1c1	ratio	116642	22056	derived	as above	w16	230	HIGH	grid2read an. 4c
+kit.beta.S1.DFA_SCAN.r1e0c0	ratio	112042	21186	measured	streamed member-free single calls, slope 64Ki-1Mi	w16	2165	HIGH	grid2read an. 4
+kit.beta.S1.DFA_SCAN.r2e0c0	ratio	177572	33577	measured	streamed member-free single calls, slope 64Ki-1Mi	w16	1064	HIGH	grid2read an. 4
+kit.beta.S1.DFA_SCAN.r2e0c1	ratio	220968	41782	measured	streamed member-free single calls, slope 64Ki-1Mi [word-eq n1m: LOAD-SUSPECT visit, launch 1 only; arms timed after the onset (A1, tw*, sc0) dropped]	w16	3193	PROVISIONAL	grid2read an. 4
+kit.beta.S1.DFA_SCAN.r3e0c1	ratio	311200	58844	measured	streamed member-free single calls, slope 64Ki-1Mi	w16	75	HIGH	grid2read an. 4
+kit.beta.S1.DFA_SCAN.r3e1c0	ratio	286374	54150	measured	streamed member-free single calls, slope 64Ki-1Mi [quad n64k: LOAD-SUSPECT visit, launches 3-5 only (A/A 0.08%)]	w16	379	PROVISIONAL	grid2read an. 4
+kit.beta.V1.DFA_HAT.r0e1c0	ratio	471059	89071	measured	one-byte stop, slope n64->n1m (cell o-hat)	off	1204	HIGH	grid2read an. 8b.4
+kit.beta.V1.DFA_HAT.r0e1c1	ratio	735568	139087	derived	as above	off	230	HIGH	grid2read an. 4c
+kit.beta.V1.DFA_SCAN.bounded.r0e1c0	ratio	471181	89095	measured	one-byte stop, slope n64->n1m (cell o-bnd)	off	1273	HIGH	grid2read an. 8b.4
+kit.beta.V1.DFA_SCAN.r0e0c1	ratio	452579	85577	measured	streamed member-free single calls, slope 64Ki-1Mi	off	312	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r0e1c0	ratio	471125	89084	measured	one-byte stop, slope n64->n1m (cell o-fwd)	off	1240	HIGH	grid2read an. 8b.4
+kit.beta.V1.DFA_SCAN.r0e2c0	ratio	610493	115437	measured	streamed member-free single calls, slope 64Ki-1Mi	off	132	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r1e0c0	ratio	580004	109672	measured	streamed member-free single calls, slope 64Ki-1Mi	off	2165	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r1e1c0	ratio	789393	149265	measured	streamed member-free single calls, slope 64Ki-1Mi	off	307	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r2e0c0	ratio	982032	185690	measured	streamed member-free single calls, slope 64Ki-1Mi	off	1064	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r2e0c1	ratio	1136652	214927	measured	streamed member-free single calls, slope 64Ki-1Mi [word-eq n1m: LOAD-SUSPECT visit, launch 1 only; arms timed after the onset (A1, tw*, sc0) dropped]	off	3193	PROVISIONAL	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r3e0c1	ratio	1464026	276829	measured	streamed member-free single calls, slope 64Ki-1Mi	off	75	HIGH	grid2read an. 4
+kit.beta.V1.DFA_SCAN.r3e1c0	ratio	1412251	267039	measured	streamed member-free single calls, slope 64Ki-1Mi [quad n64k: LOAD-SUSPECT visit, launches 3-5 only (A/A 0.08%)]	off	379	PROVISIONAL	grid2read an. 4
+kit.beta.V1.HYB_PF.r0e1c0	ratio	471505	89156	measured	one-byte stop, slope n64->n1m (cell o-hyb)	off	198	HIGH	grid2read an. 8b.4
+kit.beta.V1.VM_ATTEMPT.r0e1c0	ratio	481471	91040	measured	one-byte stop, slope n64->n1m (cell o-vm)	off	1541	HIGH	grid2read an. 8b.4
+kit.beta.WALK.DFA_ATTEMPT.back.r0e1c0	ratio	991064	187398	measured	one-byte stop, slope n64->n1m (cell o-back)	off	2959	HIGH	grid2read an. 8b.4
+kit.beta.WALK.DFA_HAT.r0e1c0	ratio	984696	186194	measured	one-byte stop, slope n64->n1m (cell o-hat)	off	1204	HIGH	grid2read an. 8b.4
+kit.beta.WALK.DFA_SCAN.bounded.r0e1c0	ratio	988565	186925	measured	one-byte stop, slope n64->n1m (cell o-bnd)	off	1273	HIGH	grid2read an. 8b.4
+kit.beta.WALK.DFA_SCAN.r0e0c1	ratio	1000282	189141	measured	streamed member-free single calls, slope 64Ki-1Mi	off	312	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r0e1c0	ratio	988192	186855	measured	one-byte stop, slope n64->n1m (cell o-fwd)	off	1240	HIGH	grid2read an. 8b.4
+kit.beta.WALK.DFA_SCAN.r0e2c0	ratio	1000377	189159	measured	streamed member-free single calls, slope 64Ki-1Mi	off	132	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r1e0c0	ratio	1000000	189088	measured	streamed member-free single calls, slope 64Ki-1Mi	off	2165	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r1e1c0	ratio	1000056	189098	measured	streamed member-free single calls, slope 64Ki-1Mi	off	307	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r2e0c0	ratio	994078	187968	measured	streamed member-free single calls, slope 64Ki-1Mi	off	1064	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r2e0c1	ratio	1003456	189741	measured	streamed member-free single calls, slope 64Ki-1Mi [word-eq n1m: LOAD-SUSPECT visit, launch 1 only; arms timed after the onset (A1, tw*, sc0) dropped]	off	3193	PROVISIONAL	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r3e0c1	ratio	1000117	189110	measured	streamed member-free single calls, slope 64Ki-1Mi	off	75	HIGH	grid2read an. 4
+kit.beta.WALK.DFA_SCAN.r3e1c0	ratio	999771	189044	measured	streamed member-free single calls, slope 64Ki-1Mi [quad n64k: LOAD-SUSPECT visit, launches 3-5 only (A/A 0.08%)]	off	379	PROVISIONAL	grid2read an. 4
+kit.beta.WALK.HYB_PF.r0e1c0	ratio	989630	187127	measured	one-byte stop, slope n64->n1m (cell o-hyb)	off	198	HIGH	grid2read an. 8b.4
+kit.beta.WALK.VM_ATTEMPT.r0e1c0	ratio	993623	187882	measured	one-byte stop, slope n64->n1m (cell o-vm)	off	1541	HIGH	grid2read an. 8b.4
+kit.block.W64	bytes	64000000	-	derived	step MEASURED at n 63->64 (S1 -25.3 ns, A1 -14.4 ns)	w16/w32	0	HIGH	grid2read an. 5.3
+kit.ccold.A3.DFA_HAT	walkbytes	19455940	3678877	fitted	streamed find-all, FITTED F_arm - F_walk (cell dfa-hat; fit residual 5.6%)	iter	56307	MED	grid2read an. 6
+kit.ccold.A3.DFA_SCAN	walkbytes	11803298	2231857	fitted	streamed find-all, FITTED F_arm - F_walk (cell dig; fit residual 7.1%)	iter	71493	MED	grid2read an. 6
+kit.ccold.A3.DFA_SCAN.bounded	walkbytes	6595271	1247084	fitted	streamed find-all, FITTED F_arm - F_walk (cell bounded; fit residual 7.1%)	iter	71428	MED	grid2read an. 6
+kit.ccold.V1.DFA_HAT	walkbytes	22543800	4262753	fitted	streamed find-all, FITTED F_arm - F_walk (cell dfa-hat; fit residual 7.1%)	off	71123	MED	grid2read an. 6
+kit.ccold.V1.DFA_SCAN	walkbytes	12956538	2449921	fitted	streamed find-all, FITTED F_arm - F_walk (cell dig; fit residual 6.6%)	off	66265	MED	grid2read an. 6
+kit.ccold.V1.DFA_SCAN.bounded	walkbytes	12629064	2388000	fitted	streamed find-all, FITTED F_arm - F_walk (cell bounded; fit residual 5.3%)	off	53498	MED	grid2read an. 6
+kit.ccold.W64.DFA_HAT	walkbytes	22776435	4306742	fitted	streamed find-all, FITTED F_arm - F_walk (cell dfa-hat; fit residual 4.0%)	w32	40472	MED	grid2read an. 6
+kit.ccold.W64.DFA_SCAN	walkbytes	18042227	3411562	fitted	streamed find-all, FITTED F_arm - F_walk (cell dig; fit residual 5.7%)	w32	57105	MED	grid2read an. 6
+kit.ccold.W64.DFA_SCAN.bounded	walkbytes	17371183	3284676	fitted	streamed find-all, FITTED F_arm - F_walk (cell bounded; fit residual 5.1%)	w32	51190	MED	grid2read an. 6
+kit.cdisp_call.DFA_SCAN.OFF.2	walkbytes	12904071	2440000	measured	UPPER bound over N<=128 and over the dispatched paths WALK+V1 (the finder key names no path)	off	211542	MED	grid2read an. 7.1
+kit.cdisp_call.DFA_SCAN.OFF.2.V1PATH	walkbytes	3913530	740000	measured	UPPER bound over N<=128 of (tw1 - V1) on dig member-free single calls, fresh buffers (path-specific; NOT a finder key)	off	211542	MED	grid2read an. 7.1 (tw1)
+kit.cdisp_call.DFA_SCAN.OFF.2.WALKPATH	walkbytes	12904071	2440000	measured	UPPER bound over N<=128 of (tw0 - walk) on dig member-free single calls, fresh buffers (path-specific; NOT a finder key)	off	211542	MED	grid2read an. 7.1 (tw0)
+kit.cdisp_call.DFA_SCAN.W32.3	walkbytes	1692337	320000	measured	UPPER bound over N<=128 and over the dispatched paths W64 (the finder key names no path)	w32	211542	MED	grid2read an. 7.1
+kit.cdisp_call.DFA_SCAN.W32.3.W64PATH	walkbytes	1692337	320000	measured	UPPER bound over N<=128 of (tw2 - A1) on dig member-free single calls, fresh buffers (path-specific; NOT a finder key)	w32	211542	MED	grid2read an. 7.1 (tw2)
+kit.cdisp_use.DFA_SCAN.OFF.2	walkbytes	3103142	586766	measured	UPPER bound over the dense dig groups and the dispatched paths WALK+V1; NOT proportional to uses (an. 7.2)	off	2274871	MED	grid2read an. 7.2
+kit.cdisp_use.DFA_SCAN.OFF.2.V1PATH	walkbytes	2540611	480398	measured	UPPER bound: max over the dense dig groups (n=64Ki, streamed) of (tw1 - V1)/uses; NOT proportional to uses (an. 7.2); path-specific, NOT a finder key	off	2274871	MED	grid2read an. 7.2 (tw1)
+kit.cdisp_use.DFA_SCAN.OFF.2.WALKPATH	walkbytes	3103142	586766	measured	UPPER bound: max over the dense dig groups (n=64Ki, streamed) of (tw0 - walk)/uses; NOT proportional to uses (an. 7.2); path-specific, NOT a finder key	off	2274871	MED	grid2read an. 7.2 (tw0)
+kit.cdisp_use.DFA_SCAN.W32.3	walkbytes	1847912	349417	measured	UPPER bound over the dense dig groups and the dispatched paths W64; NOT proportional to uses (an. 7.2)	w32	2274871	MED	grid2read an. 7.2
+kit.cdisp_use.DFA_SCAN.W32.3.W64PATH	walkbytes	1847912	349417	measured	UPPER bound: max over the dense dig groups (n=64Ki, streamed) of (tw2 - A1)/uses; NOT proportional to uses (an. 7.2); path-specific, NOT a finder key	w32	2274871	MED	grid2read an. 7.2 (tw2)
+kit.cfloor.DFA_SCAN.OFF.2	walkbytes	211542	40000	measured	worst A/A floor of the groups the charge was read from	off	0	MED	grid2read an. 7.1
+kit.cfloor.DFA_SCAN.W32.3	walkbytes	211542	40000	measured	worst A/A floor of the groups the charge was read from	w32	0	MED	grid2read an. 7.1
+kit.cscaffold.WALK.DFA_SCAN	walkbytes	30462069	5760000	null	sc0 - walk, member-free single call n64k (hex-run, word-eq, wcls): max |charge|, <= 0.05% of the call; LONG calls only, the short-call/per-use helper cost is NOT measured	off	120684794	MED	grid2read an. 7.3
+kit.delta.V1.W64.DFA_SCAN.n128	walkbytes	62193391	11760000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n32	walkbytes	-2855819	-540000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n48	walkbytes	-24486003	-4630000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n63	walkbytes	-49659519	-9390000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n64	walkbytes	25067744	4740000	measured	streamed fresh member-free single call; layer W32	w32	52886	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n65	walkbytes	26707196	5050000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.V1.W64.DFA_SCAN.n8	walkbytes	-2221193	-420000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n128	walkbytes	-71607016	-13540000	measured	streamed fresh member-free single call; layer OFF	off	105771	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n32	walkbytes	-15178149	-2870000	measured	streamed fresh member-free single call; layer OFF	off	105771	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n48	walkbytes	-26336997	-4980000	measured	streamed fresh member-free single call; layer OFF	off	211542	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n63	walkbytes	-34904454	-6600000	measured	streamed fresh member-free single call; layer OFF	off	158657	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n64	walkbytes	-38342014	-7250000	measured	streamed fresh member-free single call; layer OFF	off	52886	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n65	walkbytes	-31519780	-5960000	measured	streamed fresh member-free single call; layer OFF	off	158657	HIGH	grid2read an. 5.4
+kit.delta.V1.WALK.DFA_SCAN.n8	walkbytes	-951940	-180000	measured	streamed fresh member-free single call; layer OFF	off	211542	MED	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n128	walkbytes	-62193391	-11760000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n32	walkbytes	2855819	540000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n48	walkbytes	24486003	4630000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n63	walkbytes	49659519	9390000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n64	walkbytes	-25067744	-4740000	measured	streamed fresh member-free single call; layer W32	w32	52886	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n65	walkbytes	-26707196	-5050000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.W64.V1.DFA_SCAN.n8	walkbytes	2221193	420000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n128	walkbytes	71607016	13540000	measured	streamed fresh member-free single call; layer OFF	off	105771	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n32	walkbytes	15178149	2870000	measured	streamed fresh member-free single call; layer OFF	off	105771	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n48	walkbytes	26336997	4980000	measured	streamed fresh member-free single call; layer OFF	off	211542	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n63	walkbytes	34904454	6600000	measured	streamed fresh member-free single call; layer OFF	off	158657	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n64	walkbytes	38342014	7250000	measured	streamed fresh member-free single call; layer OFF	off	52886	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n65	walkbytes	31519780	5960000	measured	streamed fresh member-free single call; layer OFF	off	158657	HIGH	grid2read an. 5.4
+kit.delta.WALK.V1.DFA_SCAN.n8	walkbytes	951940	180000	measured	streamed fresh member-free single call; layer OFF	off	211542	MED	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n128	walkbytes	133800407	25300000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n32	walkbytes	12322330	2330000	measured	streamed fresh member-free single call; layer W32	w32	105771	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n48	walkbytes	1850994	350000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n63	walkbytes	-14755065	-2790000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n64	walkbytes	63409758	11990000	measured	streamed fresh member-free single call; layer W32	w32	52886	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n65	walkbytes	58226976	11010000	measured	streamed fresh member-free single call; layer W32	w32	158657	HIGH	grid2read an. 5.4
+kit.delta.WALK.W64.DFA_SCAN.n8	walkbytes	-1269253	-240000	measured	streamed fresh member-free single call; layer W32	w32	211542	HIGH	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.W64.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.V1.WALK.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.W64.V1.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.V1.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dfloor.WALK.W64.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group (max of #b, #c)	all	0	MED	grid2read an. 5.4
+kit.dom.LOOP.LIBC.DFA_HAT	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.LOOP.LIBC.DFA_SCAN	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.LOOP.LIBC.DFA_SCAN.bounded	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.LOOP.LIBC.HYB_PF	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.V1.LIBC.DFA_HAT	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 10 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.V1.LIBC.DFA_SCAN	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.V1.LIBC.DFA_SCAN.bounded	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 10 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.V1.LIBC.HYB_PF	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.V1.LIBC.VM_ATTEMPT	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 8 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.DFA_ATTEMPT.back	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.DFA_HAT	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.DFA_SCAN	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.DFA_SCAN.bounded	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.HYB_PF	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.dom.WALK.LIBC.VM_ATTEMPT	bool	0	-	derived	one-byte dominance over LIBC: slower than LIBC beyond the NULL rule on 9 of 10 measured cells	off	0	MED	grid2read an. 8b.2
+kit.eps.beta.slope	ratio	2474	-	measured	streamed beta slope (copies b/c vs base, p90 over F3 cells)	all	0	MED	grid2read an. 4 (a candidate token; the design spells only kit.eps.streamed.slope)
+kit.eps.findall.l64k	ratio	13160	-	measured	streamed find-all (F1 all-mode, the grid1 definition: all L)	all	0	MED	grid2read an. 3 (F1 A/A #b p90, n=83)
+kit.eps.streamed.short	ratio	6753	-	measured	streamed first-mode short calls n<=128 (F1)	all	0	MED	grid2read an. 3 (n=39)
+kit.eps.streamed.slope	ratio	1134	-	measured	streamed member-free single calls (F3, n64k/1m)	all	0	MED	grid2read an. 3 (F3 A/A #b p90, n=14)
+kit.f.LIBC.DFA_ATTEMPT.back.n8	walkbytes	27764184	5249863	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-back)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.LIBC.DFA_HAT.n8	walkbytes	28933367	5470941	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hat)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.LIBC.DFA_SCAN.bounded.n8	walkbytes	28777336	5441438	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-bnd)	off	0	HIGH	grid2read an. 8b.4
+kit.f.LIBC.DFA_SCAN.n8	walkbytes	25651772	4850432	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-fwd)	off	740398	HIGH	grid2read an. 8b.4
+kit.f.LIBC.HYB_PF.n8	walkbytes	30782326	5820557	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hyb)	off	317313	HIGH	grid2read an. 8b.4
+kit.f.LIBC.VM_ATTEMPT.n8	walkbytes	22584909	4270527	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-vm)	off	105771	HIGH	grid2read an. 8b.4
+kit.f.LOOP.DFA_HAT.n8	walkbytes	27870250	5269919	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hat)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.LOOP.DFA_SCAN.bounded.n8	walkbytes	18636135	3523862	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-bnd)	off	0	HIGH	grid2read an. 8b.4
+kit.f.LOOP.DFA_SCAN.n8	walkbytes	19621767	3710233	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-fwd)	off	740398	HIGH	grid2read an. 8b.4
+kit.f.LOOP.HYB_PF.n8	walkbytes	28553629	5399138	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hyb)	off	317313	HIGH	grid2read an. 8b.4
+kit.f.V1.DFA_HAT.n8	walkbytes	34044685	6437428	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hat)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.V1.DFA_SCAN.bounded.n8	walkbytes	32880226	6217243	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-bnd)	off	0	HIGH	grid2read an. 8b.4
+kit.f.V1.DFA_SCAN.n48	walkbytes	18434635	3485761	measured	sub-block tail (n=48)	off	211542	HIGH	grid2read an. 5
+kit.f.V1.DFA_SCAN.n64	walkbytes	19520131	3691015	measured	streamed member-free single call, fresh buffers (layer OFF)	off	52886	HIGH	grid2read an. 5
+kit.f.V1.DFA_SCAN.n8	walkbytes	17332325	3277328	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-fwd)	off	740398	HIGH	grid2read an. 8b.4
+kit.f.V1.HYB_PF.n8	walkbytes	24363062	4606753	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hyb)	off	317313	HIGH	grid2read an. 8b.4
+kit.f.V1.VM_ATTEMPT.n8	walkbytes	15345680	2901678	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-vm)	off	105771	HIGH	grid2read an. 8b.4
+kit.f.W64.DFA_SCAN.n48	walkbytes	68044305	12866335	measured	sub-block tail (n=48)	w32	211542	HIGH	grid2read an. 5
+kit.f.W64.DFA_SCAN.n64	walkbytes	27950609	5285114	measured	streamed member-free single call, fresh buffers (layer W32)	w32	52886	HIGH	grid2read an. 5
+kit.f.WALK.DFA_ATTEMPT.back.n8	walkbytes	24913404	4710816	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-back)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.WALK.DFA_HAT.n8	walkbytes	27079773	5120450	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hat)	off	52886	HIGH	grid2read an. 8b.4
+kit.f.WALK.DFA_SCAN.bounded.n8	walkbytes	25885340	4894597	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-bnd)	off	0	HIGH	grid2read an. 8b.4
+kit.f.WALK.DFA_SCAN.n48	walkbytes	24611841	4653794	measured	sub-block tail (n=48)	off	211542	HIGH	grid2read an. 5
+kit.f.WALK.DFA_SCAN.n64	walkbytes	30982423	5858393	measured	streamed member-free single call, fresh buffers (layer OFF)	off	52886	HIGH	grid2read an. 5
+kit.f.WALK.DFA_SCAN.n8	walkbytes	20758428	3925162	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-fwd)	off	740398	HIGH	grid2read an. 8b.4
+kit.f.WALK.HYB_PF.n8	walkbytes	29843231	5642985	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-hyb)	off	317313	HIGH	grid2read an. 8b.4
+kit.f.WALK.VM_ATTEMPT.n8	walkbytes	19657269	3716946	measured	one-byte stop, streamed single call, T(8)-8*beta (cell o-vm)	off	105771	HIGH	grid2read an. 8b.4
+kit.ffloor.V1.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.V1.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.W64.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n128	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n32	walkbytes	105771	20000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n48	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n63	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n64	walkbytes	52886	10000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n65	walkbytes	158657	30000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.ffloor.WALK.DFA_SCAN.n8	walkbytes	211542	40000	measured	A/A floor of the group	all	0	MED	grid2read an. 5.4
+kit.gate.byte1.DFA_SCAN.absent	walkbytes	-247135751123	-46730310000	measured	KEEP - DROP per call, median over trig-dig/trig-word x g8/g32 (range -53424.27..-23317.97 ns); positive = the pre-check costs, negative = it saves	off	60606825	MED	grid2read an. 9 (M23: P1 operand, not a row)
+kit.gate.byte1.DFA_SCAN.early	walkbytes	8144373	1540000	measured	KEEP - DROP per call, median over trig-dig/trig-word x g8/g32 (range +1.47..+1.82 ns); positive = the pre-check costs, negative = it saves	off	1216367	MED	grid2read an. 9 (M23: P1 operand, not a row)
+kit.gate.byte1.DFA_SCAN.late	walkbytes	-227672234	-43050000	null	KEEP - DROP per call, median over trig-dig/trig-word x g8/g32 (range -358.79..+296.57 ns); positive = the pre-check costs, negative = it saves	off	85251485	MED	grid2read an. 9 (M23: P1 operand, not a row)
+kit.gnone.DFA_HAT	bytes	-1	-	derived	NONE vs WALK, find-all L=64Ki: NONE is never faster than the walk beyond the NULL rule on the six measured gaps; tie-inclusive None	off	0	LOW	grid2read an. 8b.5 (INTERPOLATED on the gap grid {2,8,32,256,4096,inf}; lowest measured gap is 2)
+kit.gnone.DFA_SCAN	bytes	-1	-	derived	NONE vs WALK, find-all L=64Ki: NONE is never faster than the walk beyond the NULL rule on the six measured gaps; tie-inclusive 2	off	0	LOW	grid2read an. 8b.5 (INTERPOLATED on the gap grid {2,8,32,256,4096,inf}; lowest measured gap is 2)
+kit.gnone.DFA_SCAN.bounded	bytes	2000000	-	derived	NONE vs WALK, find-all L=64Ki: largest measured gap where NONE is faster beyond the NULL rule; tie-inclusive 8	off	0	LOW	grid2read an. 8b.5 (INTERPOLATED on the gap grid {2,8,32,256,4096,inf}; lowest measured gap is 2)
+kit.gnone.HYB_PF	bytes	-1	-	derived	NONE vs WALK, find-all L=64Ki: NONE is never faster than the walk beyond the NULL rule on the six measured gaps; tie-inclusive 2	off	0	LOW	grid2read an. 8b.5 (INTERPOLATED on the gap grid {2,8,32,256,4096,inf}; lowest measured gap is 2)
+kit.gstar.A3.DFA_HAT	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A3)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.A3.DFA_SCAN	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A3)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.A3.DFA_SCAN.bounded	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A3)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.V1.DFA_HAT	bytes	32888378	-	derived	streamed find-all L=64k, u-shaped g=4..256, log2-interpolated (V1)	off	0	LOW	grid2read an. 6b
+kit.gstar.V1.DFA_SCAN	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (V1)	off	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.V1.DFA_SCAN.bounded	bytes	64000000	-	derived	streamed find-all L=64k, u-shaped g=4..256, log2-interpolated (V1)	off	0	LOW	grid2read an. 6b
+kit.gstar.W64.DFA_HAT	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A1)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.W64.DFA_SCAN	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A1)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.gstar.W64.DFA_SCAN.bounded	bytes	-1	-	derived	streamed find-all L=64k: all-win over g=4..256 (A1)	w16/w32/iter	0	LOW	grid2read an. 6b (no crossover value)
+kit.saving.A1.WALK.r0e1c1	ratio	939983	-	derived	dfa-hat ginf-L64k, (T-F)/n; no member-free dfa-hat cell in grid2 (F-corrected one-call group)	w32	230	HIGH	grid2read an. 4c
+kit.saving.A1.WALK.r1e0c0	ratio	943405	-	derived	derived: 1 - beta_f/beta_walk	w32	2165	HIGH	grid2read an. 4
+kit.saving.A1.WALK.r2e0c0	ratio	918772	-	derived	derived: 1 - beta_f/beta_walk	w32	1064	HIGH	grid2read an. 4
+kit.saving.A1.WALK.r3e0c1	ratio	841852	-	derived	derived: 1 - beta_f/beta_walk	w32	75	HIGH	grid2read an. 4
+kit.saving.A1.WALK.r3e1c0	ratio	856992	-	derived	derived: 1 - beta_f/beta_walk	w32	379	HIGH	grid2read an. 4
+kit.saving.S1.WALK.r0e1c1	ratio	883857	-	derived	dfa-hat ginf-L64k, (T-F)/n; no member-free dfa-hat cell in grid2 (F-corrected one-call group)	w16	230	HIGH	grid2read an. 4c
+kit.saving.S1.WALK.r1e0c0	ratio	887958	-	derived	derived: 1 - beta_f/beta_walk	w16	2165	HIGH	grid2read an. 4
+kit.saving.S1.WALK.r2e0c0	ratio	821370	-	derived	derived: 1 - beta_f/beta_walk	w16	1064	HIGH	grid2read an. 4
+kit.saving.S1.WALK.r2e0c1	ratio	779793	-	derived	derived: 1 - beta_f/beta_walk	w16	3193	HIGH	grid2read an. 4
+kit.saving.S1.WALK.r3e0c1	ratio	688836	-	derived	derived: 1 - beta_f/beta_walk	w16	75	HIGH	grid2read an. 4
+kit.saving.S1.WALK.r3e1c0	ratio	713560	-	derived	derived: 1 - beta_f/beta_walk	w16	379	HIGH	grid2read an. 4
+kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0	ratio	515438	-	derived	derived: 1 - beta_v1/beta_walk, VM hat |S|=1, single-call slope; NOTE g = 2 find-all loses +38%	off	1541	HIGH	grid2read an. 8b.6
+kit.saving.V1.WALK.r0e0c1	ratio	547549	-	derived	derived: 1 - beta_f/beta_walk	off	312	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r0e1c1	ratio	267576	-	derived	dfa-hat ginf-L64k, (T-F)/n; no member-free dfa-hat cell in grid2 (F-corrected one-call group)	off	230	HIGH	grid2read an. 4c
+kit.saving.V1.WALK.r0e2c0	ratio	389738	-	derived	derived: 1 - beta_f/beta_walk	off	132	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r1e0c0	ratio	419996	-	derived	derived: 1 - beta_f/beta_walk	off	2165	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r1e1c0	ratio	210651	-	derived	derived: 1 - beta_f/beta_walk	off	307	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r2	ratio	12117	-	derived	max over r2e0c0, r2e0c1, r3e1c0	off	2474	HIGH	grid2read an. 4b
+kit.saving.V1.WALK.r2e0c0	ratio	12117	-	derived	derived: 1 - beta_f/beta_walk	off	1064	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r2e0c1	ratio	-132737	-	derived	derived: 1 - beta_f/beta_walk	off	3193	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r3e0c1	ratio	-463855	-	derived	derived: 1 - beta_f/beta_walk	off	75	HIGH	grid2read an. 4
+kit.saving.V1.WALK.r3e1c0	ratio	-412576	-	derived	derived: 1 - beta_f/beta_walk	off	379	HIGH	grid2read an. 4
+kit.ufloor.DFA_SCAN.OFF.2	walkbytes	2274871	430150	measured	worst per-use A/A floor of the dense groups	off	0	MED	grid2read an. 7.2
+kit.ufloor.DFA_SCAN.W32.3	walkbytes	2274871	430150	measured	worst per-use A/A floor of the dense groups	w32	0	MED	grid2read an. 7.2
+kit.wfloor.WALK.DFA_SCAN	walkbytes	339657	64225	measured	median over the dig n=64Ki find-all groups of (A/A floor / uses)	off	0	MED	grid2read an. 7b
+kit.wuse.A3.DFA_HAT	walkbytes	12936667	2446164	fitted	streamed find-all, FITTED warm-use cost w (cell dfa-hat)	iter	56307	MED	grid2read an. 6
+kit.wuse.A3.DFA_SCAN	walkbytes	12064934	2281330	fitted	streamed find-all, FITTED warm-use cost w (cell dig)	iter	71493	MED	grid2read an. 6
+kit.wuse.A3.DFA_SCAN.bounded	walkbytes	12080064	2284190	fitted	streamed find-all, FITTED warm-use cost w (cell bounded)	iter	71428	MED	grid2read an. 6
+kit.wuse.V1.DFA_HAT	walkbytes	12525411	2368400	fitted	streamed find-all, FITTED warm-use cost w (cell dfa-hat)	off	71123	MED	grid2read an. 6
+kit.wuse.V1.DFA_SCAN	walkbytes	11854338	2241508	fitted	streamed find-all, FITTED warm-use cost w (cell dig)	off	66265	MED	grid2read an. 6
+kit.wuse.V1.DFA_SCAN.bounded	walkbytes	12970586	2452577	fitted	streamed find-all, FITTED warm-use cost w (cell bounded)	off	53498	MED	grid2read an. 6
+kit.wuse.W64.DFA_HAT	walkbytes	9801624	1853366	fitted	streamed find-all, FITTED warm-use cost w (cell dfa-hat)	w32	40472	MED	grid2read an. 6
+kit.wuse.W64.DFA_SCAN	walkbytes	11523163	2178887	fitted	streamed find-all, FITTED warm-use cost w (cell dig)	w32	57105	MED	grid2read an. 6
+kit.wuse.W64.DFA_SCAN.bounded	walkbytes	12066199	2281569	fitted	streamed find-all, FITTED warm-use cost w (cell bounded)	w32	51190	MED	grid2read an. 6
+kit.wuse.WALK.DFA_HAT	walkbytes	7568922	1431189	fitted	streamed find-all, FITTED warm-use cost w (cell dfa-hat)	off	42944	MED	grid2read an. 6
+kit.wuse.WALK.DFA_SCAN	walkbytes	8447738	1597363	fitted	streamed find-all, FITTED warm-use cost w (cell dig)	off	59382	MED	grid2read an. 6
+kit.wuse.WALK.DFA_SCAN.bounded	walkbytes	9794498	1852018	fitted	streamed find-all, FITTED warm-use cost w (cell bounded)	off	35153	MED	grid2read an. 6
+kit.xover.LIBC.WALK.DFA_ATTEMPT.back	bytes	6112764	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.LIBC.WALK.DFA_HAT	bytes	5643476	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.LIBC.WALK.DFA_SCAN	bytes	4475134	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.LIBC.WALK.DFA_SCAN.bounded	bytes	4142258	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.LIBC.WALK.HYB_PF	bytes	4483876	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.LIBC.WALK.VM_ATTEMPT	bytes	4980818	-	derived	gap at which LIBC overtakes the walk (find-all, 2 straddling cells: INTERPOLATED(2, 8))	off	0	LOW	grid2read an. 8b.4
+kit.xover.V1.WALK.DFA_SCAN	bytes	8000000	-	derived	NOT LOCATED: N* is the lowest measured point (staircase rule)	off	0	LOW	grid2read an. 5.1 (grid1: 36 B INTERPOLATED(32,48))
+kit.xover.W64.WALK.DFA_SCAN	bytes	64000000	-	derived	single call, win at every measured N >= N*	w32	0	LOW	grid2read an. 5.2 (A1)
