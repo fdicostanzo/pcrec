@@ -616,6 +616,22 @@ P9 moves.)
   untested offset, S1222 a SATISFIES candidate dropped, S1223 a FAILS one
   yielded, S1224 a proof bit only under SIMD, S1225 an over-filter on an
   OPTIONAL position, S1226 an UNSTATED field accepted); each must go red.
+  R-26.6 (lane r26zk) extends both files: family C adds 150 REPORT sites
+  (span 0 of 1..3 REQUIRED terms, width-1 context items under either
+  `absent`, the offset-skip FUNC shape) rendered on an art previewing
+  "R-26.6": each must be decided by the REPORT row RPT with `proven[d]`
+  EQUAL at every d to the REQUIRED sets read from the generated MEMBER
+  STRINGS, and refused on a plain art, and goes to the same byte-loop oracle;
+  every other family site must render byte-identically on a preview art.
+  Family D holds `mf_preview`'s refusals (twice, after the first define, an
+  unnamed step, no step; an accepted control), every `--memfn=` spelling of
+  it refused by `mf_opts_check` with no options.def row naming it, and the
+  row's applicability: a REPORT site with a two-offset SATISFIES item is
+  refused on a preview art (its FAILS twin is served). Plants S1251-S1256
+  (mech rows, arm `memfnfinder`) and the unnumbered ZK6/ZK7 join the
+  `--plants` table.
+  `arm_fixtures.c` gains the site `report2` and the fixture `fd-RPT` (on a
+  preview art: RPT's rows.tsv witness, control `fd-R7w`).
 
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 

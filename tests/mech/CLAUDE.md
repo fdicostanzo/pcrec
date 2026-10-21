@@ -3896,6 +3896,18 @@ tests one member fewer; S1226 an UNSTATED `absent` accepted. All arm
 `memfnfinder` (part `proof`). Mech figures OWED to the job
 500-kit-r26z1-heavy; `docs/dev/lanes/r26z1_report.md` §9.
 
+**S1251-S1256 (lane r26zk, 2026-10-21, [MEMFN] R-26.6; kit_proof.md §2.5,
+§7 Zk; ids reserved by main):** the kit-side rows of the REPORT row and the
+preview, one per `tests/memfn/run_proof.sh` plant (the same FROM/TO text):
+S1251 `mf_preview` accepted after the first define; S1252 accepted twice;
+S1253 accepted for a step the kit does not name (fd_preview_step's table
+match dropped); S1254 a `--memfn=preview` spelling accepted (an options.def
+row); S1255 a REPORT site whose `proven[d]` is not the REQUIRED set accepted
+(kit_report_exact compares d >= 0 only); S1256 NONE accepted on a REPORT site
+(the row drops its PROOF_EXACT fact and replies where it cannot prove). All
+arm `memfnfinder` (part `proof`, family D). Mech figures OWED to the job
+500-kit-r26zk-heavy; `docs/dev/lanes/r26zk_report.md` §4.
+
 **S917, S919, S921, S1018-S1020, S1025 (lane fdb1, 2026-10-16, [MEMFN] R17-b′
 B1; r17b_prime.md rev 3 §8.3):** the B1 rows of S911-S922 and SN-1..SN-9
 (SN-k = S(1016+k)). S917 an absent set key read as 0 (`fd_lookup`), S919 an

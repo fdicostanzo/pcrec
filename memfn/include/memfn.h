@@ -403,9 +403,14 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  *                and context term and predicate REQUIRED (each refused
  *                otherwise). NONE is not a legal reply: a row that cannot
  *                serve every REQUIRED term does not apply (K96). The finder
- *                gate admits it wherever a REPORT row exists; none does
- *                before R-26.6, so a REPORT site that passes those checks is
- *                still REFUSED at selection (no row serves it) */
+ *                gate admits it wherever a REPORT row exists. The REPORT row
+ *                (R-26.6) is UNROUTED until its routing step: a REPORT site
+ *                that passes those checks is REFUSED at selection on every
+ *                art except one previewing that step (mf_preview), where the
+ *                row decides as it will once routed. On a site it serves, its
+ *                class's proven[d] EQUALS the intersection of the REQUIRED
+ *                terms' sets at d, at every d (the host checks equality, C14);
+ *                where its form could not make it so, it does not apply */
 typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT, MF_SK_REPORT } mf_site_kind;
 /* §14.5: how the site's result is consumed. POSITION: read as a position;
@@ -1256,6 +1261,7 @@ typedef struct mf_analysis {
 #define mf_finder_rows    MF_NS(finder_rows)
 #define mf_reach          MF_NS(reach)
 #define mf_reach_table    MF_NS(reach_table)
+#define mf_preview        MF_NS(preview)
 
 /* Begin an artifact's kit state. `prefix` is pcrec's D143 placeholder, the
  * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
@@ -1367,6 +1373,14 @@ int      mf_stamps(const mf_art *, mf_sink *);
  * mf_reach was never called on. */
 int      mf_reach(mf_art *, const char *stem);
 int      mf_reach_table(const mf_art *, mf_sink *file_scope);
+/* (R-26.6) THE ROUTING PREVIEW: a TEST-HARNESS facility, never called by a
+ * shipped compile. The host states that this art is a harness preview of
+ * the kit's routing step `step` (R-26's "R-26.6"); its artifacts are
+ * evidence and are never shipped. What the kit decides on such an art is the
+ * kit's. Called at most once, before the first define; refused after, twice,
+ * or for a step the kit does not name. It is no `--memfn=` option (no
+ * options.def row), so mf_opts_check refuses every spelling of it. */
+int      mf_preview(mf_art *, const char *step);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte
