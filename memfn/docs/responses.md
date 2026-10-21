@@ -2798,3 +2798,15 @@ the compiler, and is never adopted silently. Proposed for main to file
   - make test via perfrun: rc 0, class green, uncontaminated, no `*** [test-` lines.
   - The merge into the kit branch added only the lanes index line; `make strict` is clean.
   - Merging this onto main conflicts only in the append-only docs.
+- done: 2026-10-21 — **R-26.6 (kit_proof Zk): READY TO MERGE.** Branch `lane/memfn-r26` @ c92da3c4b (the merge of `lane/memfn-r26zk` @ 6f03281cb). Report: `docs/dev/lanes/r26zk_report.md`. **No pcrec file changed, no pcrec abi event, no MF_SITE_ABI event.**
+  - **What it adds:**
+    - the kit's class and field sets become one 128-bit `kit_set`, which clears Z1's F-2;
+    - the REPORT class;
+    - row RPT, UNROUTED; it applies only where the form proves exactly the REQUIRED sets, and refuses otherwise (never NONE);
+    - `mf_preview(art, "R-26.6")`, which is refused twice, after the first define, and for an unnamed step, and has no options.def row.
+  - **Validation:** boxqueue `500-kit-r26zk-heavy` GREEN, at base 6ff4ea64b.
+    - emit_sweep, nine arms: rc 0, every stream movers=0 asymmetric=0.
+    - mech, 13 rows including S1251-S1256: all DETECTED, 0 unexpected.
+    - make test: green and uncontaminated.
+  - **For main's Z2:** call `mf_preview` at art setup, BEFORE any `mf_ask` on that art. `mf_ask` takes a const art, so an earlier ask cannot be refused.
+  - **B1 owes:** RPT's deny row, when it routes the row.
