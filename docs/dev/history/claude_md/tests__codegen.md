@@ -1,0 +1,4151 @@
+# History of tests/codegen/CLAUDE.md: the full original text, moved verbatim from commit d3d4c5834 when the file was reduced to an index.
+
+# tests/codegen — structural assertions on generated code
+
+Asserts that behavior-preserving optimizations are actually PRESENT in the
+emitted C. These are not correctness tests (the .rxt corpus owns correctness);
+they exist because checkpoint review R2 (finding R2-PR3) showed that three M2
+optimizations — self-loop skip states, the anchored fast path, and DFA
+minimization — could each be COMPLETELY disabled with zero signal from
+`make test` or `make bench`. Behavior-preserving work needs structural tests
+or it has no regression net at all.
+
+## Files
+
+- **run_cand_oracle.sh** + **cand_oracle_witnesses.tsv** — ([KIT-VERIFY] Z2: a row only the test harness's lever routes, `cover`, is reached by witnesses whose FLAGS carry the harness option, compiled by the trace build's own `pcrec-harness`, and each such line is compiled again WITHOUT it and must not reach the row, `[cand-oracle-shipped]`: a default build declines it) (R17-b′ B3a also runs `tests/memfn/run_pres_picks.sh`, KW-8's witnesses, and folds its counts) [START-TABLE] C2
+  (lane stc2, 2026-10-07; `docs/design/start_table.md` §3.3 item 6): the
+  BOTH-WALKS ORACLE over named witnesses. `cand_rows[]` (the one start
+  table) has no reader in a default build until C3, so the script builds the
+  tree twice with `-DPCREC_CAND_TRACE` (old decision first, and
+  `-DPCREC_CAND_NEW_FIRST`), whose every old start decision also asks
+  `cand_select` and aborts on a different row or a failed table self-check,
+  and compiles every witness line with both builds. A line passes when both
+  compile with no `CANDORACLE` abort and both print a `CANDROW` hit for its
+  row ([MECH-REACH]); every row identity read off the table's own source
+  must have a line (K35). Its own section, `make test-cand-oracle` (two
+  builds, ~50 s; not in `test-codegen`, for `make smoke`'s budget); mech arm
+  `candoracle`, sabotage S594-S600 (all DETECTED at landing). It tests the
+  FILTER; the corpus-wide both-orders run is the lane's gate, not this file.
+  **Since [START-TABLE] C3** NEXT and RECOVER have no old walk left, so their
+  readers print the `CANDROW` hit (and run the self-check) without a
+  comparison (`cand_hit`); S594/S595's plants now move artifacts and are
+  caught by the witness no longer reaching its row. **Since C4** the same
+  holds for PRESENCE and FIRST (S596's plant moves artifacts too); their
+  readers ask on CAND_ROUTE_DFA and the hit also walks every other route the
+  slot is asked on, aborting on a different row (`cand_hit_every`, S600).
+  **Since C5** every slot is decided by the table (RETRY, BOUND, WINDOW and
+  WIDTH too; S597's plant moves the VM's bound), no old decision is left to
+  compare, and the script builds the trace compiler ONCE (the new-first
+  build had nothing to go second against; `CAND_ORACLE_BINS` takes one
+  binary, a second word is ignored). WINDOW's reader runs `cand_hit_every`.
+  **Since C5b/C6** every SELECTION READ (`cand_read`) is a checked edge:
+  S606 (NEXT's VM-route BOUND read, C5b) and, since C6, S607 (F1's read of
+  PRESENCE), S608 (G1's ATTEMPT-route read of NEXT) and S609 (R4's read of
+  NEXT), each dropped from `cand_nodes[].reads` and caught as
+  `CANDORACLE undeclared-read`; S610 (a listed row without its `desc`, C6)
+  is caught by the self-check's `table-desc-unlisted`.
+  **Since [CAND-PATH-READS]** (lane pathreads) EVERY selection a predicate
+  makes is a checked edge, `cand_read` or not: the trace build keeps a stack
+  of the slots whose predicates are running (`cand_applies`) and aborts
+  `undeclared-read` on a nested selection the graph does not declare
+  (`cand_nested_read`). The PATH reads are declared (`CAND_PATH_READS` on
+  FIRST; RECOVER reads LOCATE; NEXT's K admission reads its own slot under
+  its deny), so `table-read-cycle` walks them: S844 drops RECOVER's handoff
+  deny and every witness aborts `table-read-cycle` (on main the same plant
+  read green and SIGSEGVed only on `-e utf8 -fno-offset-skip '€+'`, now a
+  `landing` witness line).
+  **Since [OPT-REVEND] L0** (lane lfl0, `docs/design/locate_finish.md` §5
+  L0): witnesses for LOCATE's `empty`/`composite` and FINISH's
+  `verify-at`/`search-from`; every FINISH TAKE CELL the table declares
+  (`.take`, read off the source) must be reached by a witness's
+  `CANDROW FINISH` hit (row, route, hand) or be listed in
+  **cand_oracle_unreached.tsv**, the declared-unreached allowance (one cell
+  per line with its argument and producing commit; EMPTY at L0; a listed
+  cell that is reached, or that the table does not declare, fails); and
+  `[cand-oracle-boundary]` holds the boundary projection both ways (`(a+)b`
+  records `BOUNDARY vm SPAN`, two superset hybrids `LOWER`).
+- **run_cand_rows.sh** + **cand_rows_check.py** — ([OPT-REVEND] L0 adds
+  **[cand-no-row-pointer]**, F-2's revert as a grep row: no comparison
+  against `&cand_rows[...]` and no `dfa_matches` under src/ cli/ lib/.)
+  [START-SET] (D148;
+  `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
+  [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
+  `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
+  (`strcmp`/`strncmp`/`strcasecmp`/`strncasecmp`/`memcmp`) under `src/`
+  `cli/` `lib/` takes a NEXT/RECOVER row's (since [START-TABLE] C4 also a
+  PRESENCE/FIRST row's) identity or spelling (`c.name`,
+  `tok`) as a literal (read off `cand_rows[]`'s own text, `"none"` excepted as
+  every axis's fallback word) or reads `c.name`/`tok` through a `pf` receiver
+  or a selection function (`dfa_pf_of(...)`, `cand_select(...)`, ...). Comments are blanked
+  first, calls are matched with their full argument text, and an empty
+  row-name population fails (K35). What it cannot see is stated in the
+  script's header. Red on the branch point (`35c8ed45`, the four K84
+  `strcmp` sites); sabotage S495. **[cand-route-init]** (stage 1,
+  checks-F6): every `DfaSel`/`CandSel NAME = {...}` initializer names
+  `.route` (population counted; a designated initializer that omits it would
+  zero-fill silently). **[cand-route-walk]**: `cand_select` tests the row's
+  route mask (`CAND_ON(s->route)`) before `cand_applies(` (the call of `.applies(`; until C3 `dfa_select`
+  and `cand_routed(`). Both validated red by a plant on a scratch copy at
+  landing (docs/dev/lanes/ssbuild01_report.md), and the three re-aimed checks
+  again at C3 (docs/dev/lanes/stc3_report.md). **Since [START-TABLE] C5**
+  [cand-no-name-strcmp] covers EVERY slot: the WINDOW/WIDTH/RETRY/BOUND rows'
+  names (ordinary words like `all`, `exact`, `anchored`) fire only where the
+  same call also reads a row-name expression (`->c.name`/`->tok`,
+  `pcrec_cand_tok(`/`pcrec_cand_listed(`/`cand_listed_name(`, a `*_name(`
+  call), start_table.md §3.5's rule, and the receiver half adds the C5
+  selection functions; validated red by plants on a scratch copy and green
+  on a literal-only `strcmp(..., "exact")` (docs/dev/lanes/stc5_report.md);
+  sabotage S605. **Since C5b** the receiver half also covers the selection
+  read (`cand_read`/`CAND_READ`), red on a scratch copy comparing
+  `CAND_READ(...)->tok` with no literal (docs/dev/lanes/stc5b_report.md).
+- **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
+  56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
+  `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
+  `[OPT-LITSCAN S4]` block (PASS/FAIL lines forwarded; ~99 checks). Every
+  `rx_w<W>(base + o) == rx_w<W>("...")` chain in each witness artifact is
+  decoded back to (offset, bytes) words and held to the run the witness
+  names from its PATTERN text (never from the compiler): every word inside
+  the run, the first at 0, the last at exactly L - W, no byte uncovered, the
+  words spelling the run byte for byte, no integer-literal constant; per
+  artifact, helpers declared for exactly the widths used and ahead of use,
+  `RX_RUN_WORDS` equal to the word compares in the text, the artifact
+  compiling under `-Wall -Wextra -Werror`, and under `-fno-run-overlap` no
+  word compare or helper left, `RX_RUN_WORDS 0`, each word compare restored
+  to exactly one `memcmp`; and the pay-for-what-you-use lengths (L 4, 8, 16
+  stay one `memcmp`). Witnesses cover the DFA run term (`/user|/users`,
+  `foo\b`, `[ab]/user`), the run pre-check with escape-bearing runs (`a"b`,
+  `*/x`), the island's chains and the VM literal run at every overlap length.
+  Failing direction measured at landing: S443 and S444 each 17 red, S445 72.
+- **reqcube_check.py** — [OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi
+  59): THE CASELESS NECESSARY RUN's structural checks
+  (`docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
+  `[OPT-LITSCAN S4 C3]` block (PASS/FAIL forwarded; 86 checks at landing).
+  Every expectation is read from the witness's `--emit-facts` listing (the
+  facts' one renderer, which the stamps share) and from the PATTERN TEXT,
+  never from the emitted C it checks: the masked verify's words spell the
+  fact's T and K (inside the run, last at L - W, string-literal constants);
+  a pair scan position is two memchr streams on A and A | ~K, each
+  re-searched iff `< pos + k*`, an exact one a single memchr; no memchr
+  above the block's `while (pos + ` guard; `REQ_RUN` equals the fact,
+  `REQ_BYTE` is a `req_set` member and `bytes[idx]` only at an exact scan
+  member, `REQ_WHY "none"` iff byte AND run are none; K65's `rq_set` on the
+  no-DFA-scan route (since [K82] read together with the `set-leads` lead:
+  `s2b`'s 'S' is in the lead, `s2c`'s in `rq_set`); the kept exact-stretch pins (`a[bc]de` 2:2+2,
+  `(?i)x/1234` 1:1+5) with a prefilter block byte-identical to
+  `-fno-req-run-fold`'s; the deny leaving no masked compare; exact-only
+  controls byte-identical with and without the flag; the CANONICAL FORM
+  (`T & ~K == 0`, popcount 7 or 8) over every corpus pattern's masked rows,
+  floored at 46 (half the 92 measured). Plus, in `run_codegen_tests.sh`
+  itself, the `[K27 pair arm]` NULL-subject driver on `(?i)select` and the
+  K66 witness. Failing direction: sabotage rows S447-S450, S452-S455.
+- **run_prefix_invariance.sh** — K79 (lane k7980, 2026-09-30, abi 54): no
+  SELECTION reads the prefix. In `make test-codegen` (~20 s) and on the mech
+  arm `prefixinv` (S437). PART 1 compiles the K79 witnesses plus every 40th
+  distinct corpus pattern (default route and `--engine=vm`, 176 pairs) at
+  `-p rx` and at 3-, 23- and 60-character prefixes spelled `kpz…`, maps the
+  prefix back to `rx`/`RX` and requires the `.c` and `.h` (or the
+  diagnostic, on a refusal) to be BYTE-IDENTICAL — so everything is
+  "selection" and no stamp is exempt. PART 2 does the same for `-p q` (one
+  character, not back-mappable) on the value-stamp list. PART 3 is the reach:
+  a population floor, and six witnesses that each FLIPPED entry shape on the
+  pre-fix compiler, asserted to take one shape at every prefix length. Red
+  9/9 against the branch-point compiler; `docs/dev/lanes/k7980_report.md`.
+  **K80's mixed-abi cells live in `run_codegen_tests.sh`** (after D44/A-2's
+  two-prefix TU): K80-a an abi-N-1 header (a real one with its three digits
+  rewritten) after the real one, K80-b a pre-54 empty-guard header first,
+  both must fail on the `#error`'s text; K80-c each rewritten header
+  compiles alone. Sabotage S438.
+- **run_nomatch_caps.sh** + **nomatch_caps_driver.c** — K78 (lane k78,
+  2026-09-30, abi 55): match_api.md §3.1/§3.3's caps contract on every entry
+  that takes a caps array (`_search`, `_search_in`, `_match_caps`,
+  `_match_caps_in`; the `_in` spellings with NULL and, on a VM artifact, a
+  one-frame descriptor so FRAMES give-ups are scored). The driver fills a
+  sentinel one pair past RX_NCAPS and calls each entry at every startpos
+  0..n+1 of twenty subjects: a non-success must leave every pair, a success
+  must write pairs 0..NCAPS-1 and leave the guard pair. Population: eight
+  DEAD-GROUP witnesses (DFA, NCAPS >= 2; each asserted to reach its search
+  form: reverse-pass, pinned, attempt, empty) on four routes (auto, vm,
+  `-fno-anchored-dfa`, `-e utf8`), plus every 12th capture-bearing corpus
+  pattern on auto and vm. 406 artifacts, ~240k non-success calls, ~90 s at
+  8 procs; floors on artifacts, calls, dead-group artifacts and VM; a
+  refused or unbuildable artifact is counted, never scored. In
+  `make test-codegen`; mech arm `nomatchcaps`, sabotage S439. Red 4/7 on the
+  pre-fix compiler; `docs/dev/lanes/k78_report.md`.
+- **run_trie_identity.sh** — DIFFERENTIAL codegen check for the M2.8
+  alternation trie (R3.3). Builds a reference compiler from the same sources
+  with `-DPCREC_NO_TRIE` (which forces `elig[j] = false` in nfa.c's A_ALT path)
+  and diffs the emitted C over 500 generated alternation patterns. The trie is
+  required to be OUTPUT-PRESERVING — subset construction plus minimization must
+  erase it — so any difference is a rule-1/rule-2 soundness bug. No subjects, no
+  gcc, ~4 s. Env: PCREC, CC, TRIE_N, TRIE_SEED, KEEP=1, SANFLAGS (SAN-1:
+  extra flags appended to the from-source `$REF` reference build only —
+  `$PCREC` is already overridable and carries the PRIMARY compiler-axis
+  sanitizer coverage for free; see docs/testing.md "Sanitizer + lint
+  battery" for a real finding (F1) this SANFLAGS wiring surfaced).
+- **run_vm_identity.sh** — [M4.5b] THE ZERO-REGRESSION GATE (engine_m4.md
+  §5.4, §13 P-7: "this one should be a GATE, not a prediction"). Its claim is
+  that a capture-free pattern does not touch any new code — same AST, same
+  NFA, same DFA, same emitter, same bytes — now that a second emitter and a
+  capture AST node exist.
+
+  It does NOT pin a historical commit, which is what §5.4's literal wording
+  ("byte-identical to the pre-M4 emitter's output") would require: a check
+  written that way fails the first time anyone legitimately changes the DFA
+  emitter, which is a built-in expiry date and worse than no check because it
+  teaches people to edit the pin. The permanent formulation compares the
+  DEFAULT compile against `--no-captures` over every `pattern` line in every
+  .rxt under tests/ (so the population grows with the corpus, not with the
+  script), plus: `--no-captures` yields a DFA artifact for EVERY pattern, and
+  `RX_NCAPS > 1 ⇒ VM` now holds NON-VACUOUSLY — that check had no population
+  at all before [M4.5b] and this file's own [M4.4] note said so.
+
+  ONE normalization, and it is ARITHMETIC rather than a filter: `rx_info.flags`
+  legitimately differs by exactly the `PCREC_NO_CAPTURES` bit, so that bit is
+  subtracted from the `--no-captures` side and every other byte must still
+  match. Deliberately not a `grep -v` of "the stamp lines" — this project's
+  recorded check-design failure is controls sharing a source with what they
+  control, and its close cousin is a comparison loosened until it stops
+  discriminating. Both compiles also use the SAME BASENAME in different
+  directories, or the `#include "<name>.h"` line alone would differ (the exact
+  trap run_trie_identity.sh documents at its own gen_a/gen_b — the first
+  version of this script reported all 260 capture-free patterns divergent for
+  precisely that reason).
+
+  Also asserts the §5.6 override's refusals: `--engine=dfa` on a
+  captures-default group-bearing pattern refuses AND names `--no-captures`,
+  that named escape actually works, `--engine=vm` emits NO prefilter (D44/R21
+  E-6 — without which tests/vm's differential is near-tautological), and the
+  default hybrid DOES emit one (§4.7's cliff guard). 9 checks; sabotage S40.
+
+  **The refusal-agreement arm carries ONE scoped, PINNED exception**
+  (2026-08-17): a refusal from the VM's replication cap
+  (`PCREC_MAX_VM_REPEAT_COPIES`) is a VM-only resource limit the
+  `--no-captures` DFA path structurally lacks, so at exactly the cap the two
+  sides legitimately diverge on acceptance — exposed when the D27 blinded
+  corpus (df63549) landed `(a{1,3}){65}` precisely on the 64-copy boundary,
+  which is D27 doing its job. The exception is keyed on the cap's own
+  diagnostic text ("would replicate its body"), nothing wider, and the
+  divergent population is PINNED at exactly 1 as its own check line:
+  movement in either direction fails loudly (a new boundary pattern →
+  re-pin upward deliberately; counter-K un-refusing the shape → re-pin to
+  0 and consider retiring the arm — the counter rung makes emitted size
+  count-independent, so this population is EXPECTED to go to 0 when it
+  lands). Validated sabotages: pin expectation changed 1→2 fails the pin
+  line alone; exclusion key changed to never-match fails TWICE (the
+  original REFUSAL MISMATCH resurfaces AND the pin reads 0) — so the
+  exclusion cannot silently swallow non-cap mismatches and its own removal
+  is loud. Validation note recorded because the first attempt measured
+  nothing: the sabotaged copies were first run from the scratchpad, where
+  the script's own-path corpus discovery finds no population and the
+  no-population guard's failure READ AS the sabotage firing — a control
+  failing for an unrelated reason is this project's oldest check-design
+  trap, and the fix was re-running from the script's real location.
+
+- **run_endvar_identity.sh** — [M6.2] wave A's BYTE-IDENTITY GATE, the
+  `run_trie_identity.sh` shape one closure view over. `\z` adds a THIRD view
+  to the subset construction, and assertions_design.md §3.3 claims that costs a
+  `\z`-free pattern NOTHING — same states, same tables, same bytes, BY
+  CONSTRUCTION rather than by a `has_z` flag. The reference build is this
+  tree's own sources with `-DPCREC_NO_ENDVAR` (the third view's INTERNING
+  compiled out), not a pinned historical commit, for the reason
+  `run_vm_identity.sh` states about its own formulation.
+
+  **It exists BECAUSE the prose said the opposite thing first.** The design's
+  first draft canonicalized `endvar` against the BASE view and argued zero
+  regression from it; R30 finding E3 showed that makes every eol-differing
+  state of every `$`-bearing pattern intern a live redundant `endvar`, so the
+  artifact is NOT byte-identical — the exact opposite of the claim. "X is
+  impossible by construction" is precisely the claim a construction check is
+  for, and sabotage S69 restores the refuted form as the measured failing
+  direction.
+
+  **The positive control is SCOPED TO THE DFA, and the scoping is a finding.**
+  The first draft required every compilable `\z` pattern to differ between the
+  two builds and failed on `(\z)*` — a capture-bearing pattern, so a VM
+  artifact, and the VM spells `\z` as a literal `if (pos == n)` and consults no
+  view table at all. A `\z` pattern that AGREES must therefore be one the DFA
+  never compiled, which the artifact's own `RX_ENGINE` stamp says (VM artifacts
+  only). That is a different fact from the one being measured, which is why
+  reading it to explain a non-difference is legitimate and reading
+  `dfa_has_endvar` would not be. Landing figures at wave A: 1011 of 1011
+  `\z`-free corpus patterns byte-identical, 18 DFA-compiled `\z` patterns
+  differing, 0 DFA-compiled ones agreeing — read the current numbers from a
+  run.
+
+  **[M6.2 wave C] ITS SPLIT IS NO LONGER `grep -F '\z'`, AND THIS GATE IS WHAT
+  SAID SO.** Wave A wrote the third closure view for `\z` and split on `\z`,
+  which was exact at the time. BOTH `(?m)` anchors read that same view, for
+  OPPOSITE purposes: `(?m)$` is "end of subject OR the next byte is a
+  newline", so it reads `end_ok` to be TRUE there; `(?m)^` does NOT match
+  after a newline that ENDS the string, so it reads `end_ok` to be FALSE
+  there. So the day the `m` letter was accepted this gate went RED on 51
+  patterns, every one a `(?m)` anchor sitting in the identity population where
+  it does not belong. That is the check working: it caught a wave-C construct
+  silently joining a wave-A mechanism, which no behaviour test could see
+  (`-DPCREC_NO_ENDVAR` is never defined in a shipped build). The split now
+  asks "does this pattern create a `pos == n` view" through
+  `tests/lib/mlscan.py`'s `multiline_anchor`, and those patterns join the
+  POSITIVE CONTROL, where they belong and where they strengthen it.
+
+  Their arrival also gave that control a SECOND legitimate non-difference
+  class, with its own anti-vacuity argument. `a(?m)^b` and `a(?m)^b|c` carry a
+  `(?m)^` that can never hold (a `^` after a MANDATORY consumed byte), so no
+  state's END view differs, nothing is interned, and the knob has nothing to
+  disable. That is detected by reading the **UNSABOTAGED** artifact for an
+  end-view table — and reading it there rather than in the reference build is
+  the whole of what makes it admissible: `-DPCREC_NO_ENDVAR` is a
+  reference-build-only flag, so a DEAD knob cannot make the subject build stop
+  emitting those tables, and a broken knob therefore cannot grow this class.
+  In the reference build the same read WOULD be `dfa_has_endvar`, which this
+  script's own rule forbids.
+
+**[M6.2 REPAIR SLICE, 2026-08-19] ALL FOUR GATES' REFERENCE KNOBS ARE NOW AT
+THE ACTION, AND THIS PARAGRAPH IS THE ONE TO READ BEFORE ADDING A FIFTH.**
+Wave D found that a knob-based reference is blind to any sabotage OUTSIDE the
+region the knob suppresses, because both builds are compiled from the same
+sabotaged sources — so the knob's PLACEMENT decides what the gate can see.
+Waves A/B/C pinned a FLAG (`has_word`/`has_nl` in `src/ir/dfa.c`'s NFA scan);
+S71 and S76 delete that flag's CONSUMER, so the refinement ran in both builds
+and cancelled, and S71 was scored DETECTED only through an incidental
+`-Wunused-parameter` in the reference build. Two things were then MEASURED by
+the repair slice, and the second is the non-obvious one:
+
+  - moving each knob to the EMITTER, wave D's own model, is NOT sufficient
+    for waves A/B/C. `\G` refines no alphabet and interns no state the
+    emitter cannot neutralize; `\b`/`(?m)` refine the ALPHABET and `\z`
+    interns a STATE, and no emitter branch can undo either. With an
+    emitter-only knob S71 leaves **1186/1186 `\b`-free artifacts
+    byte-identical** — as blind as before.
+  - what works is a `#ifndef` around the ANALYSIS'S ACTION (the refinement in
+    `eqclasses`, the interning in `make_state`), which an edit to that
+    action's own gate cannot cancel, PLUS an emitter half for the sites where
+    the emitted text is what the construct decides. After both, all three red
+    on their own gates through BYTES: **S71 1178 of 1186 differing, S76 1117
+    of 1201**, and S69 failing `endvaridentity` — each with its corpus arm
+    green, which is the semantics-preserving signature.
+
+`-DPCREC_NO_ENDVAR` was ALREADY at its action (its `#ifndef` wraps the
+interning block S69 edits) and did not move. The rule for a fifth gate: put
+the knob around the ACTION the construct performs, never around the flag that
+decides whether to perform it — and then run the row through
+`tests/mech/run_sabotage_matrix.sh` rather than trusting the shape.
+
+- **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
+  shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]
+  makes to the engine — the class map is refined by the word set, every state
+  gains a second closure, the accept becomes class-indexed where it varies,
+  and the machine gains a third start state — and the claim is that a pattern
+  WITHOUT them pays for none of it. Reference build is this tree's sources
+  with `-DPCREC_NO_WORDCTX`; sabotage S71 is the measured failing direction. Landing figures: 1039 of 1039 `\b`-free corpus
+  patterns byte-identical, 47 controls differing, 0 unexplained agreements.
+
+  **Its SPLIT is subtler than wave A's, and the difference is the file's own
+  lesson.** `run_endvar_identity.sh` can split the corpus on `grep -F '\z'`
+  because `\z` means one thing everywhere. `\b` does not: inside a character
+  class it is BASE syntax for backspace (0x08), and `[\b]` is in this corpus
+  today. A text split ignoring that would put `[\b]` in the CONTROL
+  population, where it would correctly fail to differ and report a false
+  alarm about a working knob. So the split scans for `\b`/`\B` OUTSIDE a
+  bracket expression — on the pattern TEXT, deliberately not on anything pcrec
+  computes — and prints both counts every run so the exclusion is visible
+  rather than latent.
+
+  **It also has a SECOND legitimate non-difference, found by running it.**
+  `\b\B` and `\B\b` are contradictions (a position is a word boundary or it
+  is not), so the emitter's "matches nothing" early-out produces an artifact
+  with no automaton in it and the two builds agree for a reason unrelated to
+  the knob. Classified rather than excluded, and read off the ARTIFACT (the
+  `(void)s; ... return 0;` body) rather than off a maintained list of pattern
+  texts — the same rule the VM arm follows.
+
+- **run_mlinectx_identity.sh** — [M6.2] wave C's BYTE-IDENTITY GATE, the third
+  in the family. `(?m)` adds a NEWLINE half to the class axis wave B built —
+  the alphabet is refined by `pcrec_cls_newline` (D64's one definition), every
+  state gains a third closure, the `pos == n` view goes live, and ENG_ATTEMPT
+  gains D63's candidate-start prefilter — and the claim is that a pattern
+  WITHOUT a multiline `^`/`$` pays for none of it. Reference build is this
+  tree's sources with `-DPCREC_NO_MLINECTX`; sabotage S76 is the measured
+  failing direction.
+
+  **THIS ONE HAS A REASON THE OTHER TWO DID NOT.** Waves A and B each ADDED a
+  view beside existing ones. Wave C turned a BOOL into a three-valued enum,
+  rewriting every site that read `waccept`, `wlist` or `s1w`. A mechanical
+  refactor of that size is exactly where a `UPC_PLAIN` becomes a `UPC_WORD` in
+  one arm and nothing notices, and the corpus cannot see it unless the arm is
+  reachable. This gate can, on every pattern in the tree.
+
+  **Its SPLIT is subtler again, and for a third reason.** `\z` means one thing
+  everywhere (a substring split); `\b` means two things (a bracket-depth
+  split); `(?m)` means one thing but is SCOPED and spelled several ways —
+  `(?m)`, `(?im)`, `(?m:...)` and `(?^m)` all set it while `(?-m)`, `(?im-m)`
+  and a bare `(?i)` do not. So the scanner walks the option-run grammar
+  `src/parse/mod_modifiers.c` walks (optional leading `^`, then letters, with
+  everything after a `-` on the unset side) rather than looking for a
+  substring. Deliberately not decided by anything pcrec computes: a split from
+  `Dfa.clsctx` would be the check reading its own subject's verdict.
+
+- **run_gstart_identity.sh** — [M6.2] wave D's BYTE-IDENTITY GATE, the fourth
+  in the family and **the one whose REFERENCE KNOB IS PLACED DIFFERENTLY, for
+  a measured reason the other three should be re-read against.** `\G` adds a
+  third position bit to the closure and a SECOND FAMILY of interior start
+  states (`Dfa.s1g[]`), which the ENG_ATTEMPT emitter turns into a three-way
+  start dispatch, a `gseed[]` label table and a third `start_max` string; the
+  claim is that a pattern without a `\G` pays for none of it. Its SPLIT is the
+  simplest in the family — `\G` has one spelling and no in-class meaning
+  (`[\G]` is PCRE2 error 107 permanently), so "contains the two bytes `\G`" is
+  the whole classification, `run_endvar_identity.sh`'s shape.
+
+  **THE KNOB IS AT THE EMITTER (`src/gen/emit_dfa.c`'s three decision points),
+  NOT IN THE ANALYSIS.** The other three pin a `has_*` flag in
+  `src/ir/dfa.c` — inside the code their own sabotages edit — and the
+  reference compiler is built from THE SAME (sabotaged) SOURCES, so such a
+  sabotage runs in BOTH builds and CANCELS. Measured by the wave-D lane:
+  `run_wordctx_identity.sh`'s identity sweep stays **1135/1135 identical**
+  under its own S71, and that script fails only because the deleted gate
+  orphans a parameter and the reference build then warns. Forcing
+  `gseed`/`gtbl` false and `a_gst = a_bot` at the emitter makes the reference
+  build structurally the PRE-WAVE EMITTER, which no edit to the analysis can
+  undo — after which sabotage S83 goes red in the sweep (93 of 1,175 patterns)
+  as a byte-identity sabotage should.
+
+  **It also earned its keep on the first run**: moving the knob immediately
+  exposed a live defect in the wave's own emitter that the mis-placed knob had
+  hidden — a `gseed[]` table emitted on every `\b` and `(?m)` artifact that no
+  dispatch ever read. Nothing else in the tree could have seen it.
+
+  **Its positive control is stated differently from wave C's, and the
+  difference is deliberate rather than a weakening.** Wave C can demand that
+  EVERY DFA-compiled `(?m)` pattern differ between the builds, because a
+  multiline anchor always changes the alphabet. The reference build reads `\G`
+  as `\A`, so a pattern for which those two really ARE the same machine —
+  `\A\Gx`, or a `\G` on a branch that is dead either way — cannot be moved by
+  the knob, and demanding it differ would be a check that is RED ON CORRECT
+  BEHAVIOUR. Those land in an INERT bucket, read off the artifact (no
+  `(start == startpos)` arm emitted) and printed one per line. That bucket is
+  the weakest of the four and says so: it accepts the compiler's own verdict
+  that a pattern needs no `\G` machinery, and what CHECKS that verdict is
+  `tests/assertions/gpos.rxt`, where every pattern landing there has
+  libpcre2-produced cells across the whole startpos sweep.
+
+- **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
+  to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
+  derive from the same structure the emitter walks; the emitter satisfies that
+  structurally (one event stream, appended by the primitives that write the C),
+  and this checks it anyway, because the structural argument holds only while
+  there is genuinely one call. Each listing SECTION is pinned to a fact
+  derivable from the `.c`: the label SET both directions and duplicate-free,
+  every `RX_PUSH` with its resume target, the set of `slot_values` slots actually
+  written, the header's RX_NCAPS/frames/trail against the artifact's own
+  macros, and the island/callout counts against the artifact rather than
+  against the listing's own claim (so those sections begin working the day a
+  producer exists rather than needing a rewrite). Also pins `--emit-ir`'s
+  refusal on a pure-DFA artifact — an as-built decision, §10 and DD-8's row
+  are silent — and holds `--trace` to the property its own source comment
+  claims: the instrumented artifact must agree with the plain one on every
+  answer, trace on stderr, and the plain one must trace nothing.
+
+  **[DD-8], 2026-09-19 — EVERY EXTRACTION IS DECLARATION-BASED NOW, and the
+  file gained a CONTRACT arm.** `--emit-ir` renders as
+  `docs/spec/table_contract.md` TSV (`docs/spec/ir_listing.md` is its
+  format), so each comparison above resolves its SECTION and its COLUMN by
+  NAME through `tests/lib/table.sh` instead of by a fixed-position `grep`:
+  labels and slot writes out of the `program` section, resume targets out of
+  `choicepoints`, and the header numbers, resume-point count and
+  island/callout counts out of `summary`'s `fact`/`value` rows. D106 names
+  this file's old extractors as the reason the adoption was chartered —
+  they went stale once already — and a renamed section or column is now a
+  LOUD table.sh failure rather than an empty string that reads like a
+  population with no rows. The NEW arm asserts all NINE declared sections
+  are present and HEADER-TRUTHFUL (every row's field count equals its own
+  section's declared count), with the section list spelled out here rather
+  than discovered from the producer: discovering it would make the check
+  agree with whatever the producer emitted. The 16 `irsb` byte-neutrality
+  baselines were DELIBERATELY recaptured in the same change
+  (`CAPTURE_IR_BASELINE=1`); 128 checks became 144.
+
+  It found a real drift on its FIRST run: the accept label was emitted by a
+  direct `pcrec_sb_printf`, so the artifact carried a label the listing did not.
+  That is the entire failure mode §10 names, and it existed for the length of
+  one commit.
+
+  **[EMIT-VERB]/D112, 2026-09-19 — THE FILE COMPILES A THIRD ARTIFACT PER
+  FIXTURE, AND IT HAS EXACTLY ONE CUSTOMER.** Emitted comments went off by
+  default, and two arms here were reading them. (a) The ISLANDS term's third
+  surface, `grep island` over the emitted C, is D112's class (2): the island's
+  only per-site marker is `vm_rolef` ROLE TEXT, the code it emits is an
+  ordinary first-byte `switch` with no token an island does not share with
+  every other dispatch, and `RX_VM_ALT_ISLANDS` — the only island-specific
+  thing in the artifact — is already the block's SECOND term, so there is
+  nothing to convert to. `$d/gen_cmt.c` is generated with `-fcomments` for
+  that term and for nothing else; every other arm still reads the default
+  `$d/gen.c`, so no assertion silently starts reading a non-default build,
+  and CALLOUTS is untouched because its needle is code. It fails SAFE: if
+  `-fcomments` stopped working the island-bearing fixture goes RED, not
+  green. It also gained the control a converted BICONDITIONAL needs, which
+  here is a POPULATION FLOOR — 15 of the 16 fixtures exercise only the empty
+  direction and ONE, `(a|ab)(c|bcd)`, carries the other half, so an arm
+  asserts at least one fixture produces an island (measured 1) and prints the
+  number. Editing that one pattern would otherwise leave every per-pattern
+  arm green while the only term reading the emitted C stopped being reached.
+  (b) The `[M4.5c] TRACED ARTIFACT` check bound a code-level fact to a
+  comment with one `&&` — `#define RX_TRACE 1` AND the `TRACED ARTIFACT`
+  prose — and failed on the prose alone while naming the stamp. SPLIT: the
+  stamp is asked of the DEFAULT artifact (D37's claim, strengthened —
+  `--trace` is unambiguous with no comment emitted at all), the prose under
+  `-fcomments` (D112 item 2's NON-ESSENTIAL class), and a THIRD arm asserts
+  the default build does NOT carry the prose, without which a compiler
+  ignoring the axis entirely would read green on both. 144 checks became 147.
+
+  The trace check's plain/traced binary runs (a handful per pattern, not an
+  inner loop) go through `gen_run` (`tests/lib/gen_timeout.sh`,
+  `WATCHDOG_SECTION=codegen`), the shared run budget plus a 512m RSS
+  ceiling and a `build/watchdog.log` line per run.
+
+  It carries a NON-DEFAULT `--prefix` case for a second reason found the same
+  way: every other check here uses the default `rx`, which cannot see a
+  hardcoded `RX_` in the listing's own text — and there was one, so a
+  `-p myrx` listing named a `RX_NCAPS` macro the artifact does not contain.
+  When a check's fixture is the default of the thing it checks, it is blind to
+  exactly the class of bug that only shows up off the default. 78 checks
+  ([M4.5e]'s figure — read the current count from a run rather than this
+  line, per this file's own standing note below on hand-copied counts);
+  sabotages S41 and S42.
+
+  Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
+  see the note below.
+
+  **[REVW.1] wave 1 stage 0 (2026-09-18) ADDS A BYTE-NEUTRALITY BLOCK**,
+  riding this same loop and this same `PATTERNS` population. Every other
+  section here pins a DERIVED fact; `vm_render_listing` writes a stream
+  (`irsb`) none of the four standing `.c`-artifact identity gates ever
+  compare (`emitvm_second_pass.md` §1/§5, EP2), so the new block diffs each
+  pattern's listing byte-for-byte against a committed baseline
+  (`tests/codegen/manifests/ir_listing_baseline/`, one file per pattern,
+  captured via the new opt-in `CAPTURE_IR_BASELINE=1` mode — never run
+  casually, and a missing baseline is a hard FAIL rather than a silent
+  skip). Pins the OUTPUT bytes, not the render mechanism (D108), so it
+  survives a future walk->event->render refactor of the kit that only
+  changes HOW the listing is produced. Sabotage **S258** (a one-word reword
+  of `vm_alt`'s role text — moves `irsb`, moves no `.c` byte any other gate
+  would catch) is DETECTED. See `docs/dev/w1stage0.md` §2 and
+  `docs/dev/w1stage0_evidence/CLAUDE.md`.
+
+  **[REVW.2] wave 2 stage 3 (2026-09-18, lane w2b) WIDENS THE POPULATION
+  FROM 11 PATTERNS TO 16, AND THAT IS A REACH REPAIR, not a preference.**
+  w1stage0's own census measured this sweep reaching 27 of the 41 `vm_rolef`
+  call sites whose role TEXT is the listing the block above pins, with
+  lookbehind, subroutine-call, counter-rung and possessive-chain emission
+  reached by nothing at all; `w2census_report.md`'s TASK 2 then found the
+  cause to be THE INSTRUMENT rather than the corpus — neither of this
+  script's two `pcrec` invocations passed `--features`, so every module-gated
+  family refused to compile and read as an absent population. The five added
+  rows are all EXISTING CORPUS PATTERNS (each one's home file named in the
+  array's own comment) and a new `PATTERN_FEATURES` array, positionally
+  parallel and length-asserted, carries the `--features` each needs.
+  MEASURED ON THIS TREE, whose `vm_rolef` population has since grown to 44
+  sites: **30 of 44 reached before, 42 of 44 after** — i.e. every site the
+  census instrument can see. The residual 2 are `vm_counter_phase`'s two
+  role texts, which begin with a `%` conversion and so present an EMPTY
+  literal-prefix needle to the census's own hit test: instrument-blind by
+  construction, closed only by a different instrument and never by a longer
+  array. Stage-3 lanes inherit this population for the `irsb` arm.
+
+  The widening immediately found TWO defects in the pre-existing
+  resume-point block, neither reachable by the old eleven patterns, and both
+  are repaired in the same change: its `.c` side counted `&&rx_L<n>`
+  ANYWHERE, which `RX_CALL` also spells (a call RETURN address,
+  deliberately not charged to `npush`), so module `recursion` read 4 against
+  a correct pre-pass of 2; and it asserted EQUALITY where the cap's
+  soundness is an INEQUALITY — `v->npush` is an estimate
+  (`src/gen/emit_vm.c:7230` says so, and it has been measured negative), the
+  hazard is an under-count, and `(?<=a|bc)x` is a witness where the estimate
+  is legitimately high (2) and the artifact correct (1). The block now
+  reuses the CHOICE POINTS block's own `RX_PUSH(&&rx_L<n>` extraction,
+  asserts `pre-pass >= emitted`, and REPORTS the slack in its PASS text
+  rather than swallowing it.
+
+- **run_longprefix_sweep.sh** — [REVW.1] wave 1 stage 0's long-prefix
+  full-corpus sweep (2026-09-18), an OPT-IN tool (`run_object_neutrality.sh`'s
+  "not in `make test`, needs a heavier compile pass" shape), NOT a
+  `make test` section. Repairs the [MECH-REACH] gap `lens10_emission_kit_
+  charter.md` §4.2 names: the tree's only prior long-prefix control
+  (`tests/cli/run_cli_tests.sh` case3) compiles the pattern `a`, reaching
+  essentially none of `emit_vm.c`'s literal-sized scratch buffers. Compiles
+  every corpus `pattern`/`pattern-esc` line
+  (`docs/dev/w1stage0_evidence/longprefix_sweep.py`) at `-p rx` and at a
+  legal 60-byte prefix (`PCREC_MAX_PREFIX_LEN`), gcc-compiling the 60-byte
+  artifact under the harness's own GENCFLAGS wherever pcrec accepts it — a
+  gcc `-Werror` failure on code pcrec itself accepted is the K38 signal
+  this control exists to catch. Row-count tripwire against
+  `run_rxtsource_tests.sh`'s own `CENSUS_BLOCKS` pin, grepped live rather
+  than hand-copied. MEASURED at this wave's branch point: 1,499 of 1,500
+  `-p rx`-compiling patterns also compile at 60 bytes (the one exception is
+  a `PCREC_MAX_EMIT_BYTES` size-cap refusal on a deliberately pathological
+  witness, not a truncation miscompile), zero gcc anomalies — no live K38
+  recurrence found. Its committed baseline
+  (`docs/dev/w1stage0_evidence/longprefix_baseline.tsv`) is what a future
+  wave diffs its own re-run against. See `docs/dev/w1stage0.md` §1.
+
+- **run_lookaround_identity.sh** / **lookaround_classify.py** — [M6.6.2]
+  module `lookaround`'s BYTE-IDENTITY GATE and the grammar-aware classifier
+  that splits its population. Two modes since wave B+C (bucket by default,
+  pure-refactor on demand) and a THREE-part positive control; the classifier
+  is a scan and not a grep because `(?=` in a class is three literal bytes and
+  `(?<name>` is a named group. Full entry: the `[M6.6.2]` section below. Opt-in
+  as `make test-lookaround-identity`, never part of `make test`.
+  **RETIRED 2026-08-24 ([DD-14] wave A, main 0c75c96):** the ABI event
+  (PCREC_ERR_RECURSE / ERR_FLOOR −5 / PCREC_ERR_INTERNAL) changed every
+  artifact's `#define` block, and this gate's reference is pre-`A_LOOK` by
+  construction (its positive control (a) refuses anything newer), so no
+  valid pin exists past that commit. The script now REFUSES with the
+  explanation when the subject tree carries `PCREC_ERR_INTERNAL`; its last
+  valid run is recorded at [M6.6]'s close (1a8541e). Successor: the
+  [DD-14] four-axis identity gate (subroutines_design.md §9, wave E),
+  pinned at post-wave-A main.
+- **run_dfa_stamps.sh** — [DD-13] (2026-08-25), widened by [DD-13c]: the D46
+  SELECTION STAMPS (`RX_ENGINE`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`;
+  `docs/spec/match_api.md` §6.3), each held to the LOOP IT NAMES. Runs under
+  `make test-codegen` as a third script beside `run_codegen_tests.sh` and
+  `run_trie_identity.sh`. Compile-only (no `gcc`), one `awk` per artifact,
+  ~70 s over the whole corpus. Two halves:
+  - **NAMED WITNESSES** whose expected value is spelled out in the
+    file — one per documented value, including `(?:...)\z` for the
+    `-bounded` pair and `\B\b` / `^\B\b` for `"empty"` on both engines
+    ([DD-13c]; the anchored one is NOT in the corpus, so nothing but that
+    row tests it) — plus three VM rows for the hybrid iff. They pin the
+    MECHANISM; the sweep below pins AGREEMENT, and agreement is a property
+    two wrong answers can also have (an emitter that stamped `"none"`
+    everywhere AND emitted no prefilter anywhere would sail through a pure
+    agreement check).
+  - **A CORPUS SWEEP** over every `pattern` line in every `.rxt`
+    (2,772 on this tree, floored at 2,620, `LC_ALL=C`, K35), asserting:
+    exactly one of each stamp per DFA artifact, `RX_ENGINE "vm"` on every VM
+    artifact, [DD-13c]'s hybrid IFF in both directions, every value inside
+    the documented set, and stamp-equals-loop on both axes for every
+    artifact that CONTAINS a DFA scan (DFA artifacts and VM hybrids alike).
+  - **The run-pinned marker is SCOPED to the `rx_ofsskip` body** (S1 step 6):
+    the run pre-check's `rx_reqrun` blocks come from the same emitter and
+    carry the same `!memcmp(subject + cand` compare, and unscoped the marker
+    read 63 offset-set artifacts with a run pre-check as run-pinned.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
+    verdict is derived from the EMITTED MATCHER TEXT — the `memchr` call,
+    the `can_begin_match` walk, `start_max`, the skip's bound — which
+    `emit_unanchored`/`emit_attempt` write, while the macros come from
+    `emit_dfa_stamps`/`pcrec_emit_dfa_scan_stamps`. Different code paths, so
+    a drifting stamp is a red. The engine discriminator is `goto rx_L0;`
+    (the VM's program entry), NOT `RX_ENGINE`: reading the macro to decide
+    which artifact kind to check the macro on is the circularity the file
+    refuses in a comment. The HYBRID discriminator is the same kind of
+    thing — the emitted DEFINITION `static int rx_prefilter(const unsigned
+    char *subject, ...`, the line `emit_search_head` writes when emit_vm.c
+    asks emit_dfa.c for a scan under a private name.
+  - **[DD-13c] THE RUNTIME MIRRORS ARE HELD TO THE MACROS HERE**, because
+    this is the script that already compiles the whole corpus:
+    `rx_info.scan`/`.prefilter` must equal `RX_DFA_SCAN`/`RX_DFA_PREFILTER`
+    on every compiled artifact of BOTH engines (2,483), reading
+    `NULL`/`"none"` where the macros are absent. A THIRD source in the same
+    one-pass `awk` — struct-literal initializer lines, neither `#define`s nor
+    matcher text. The LINE COUNT is asserted too (exactly one of each): the
+    validation showed that without it, fields that stopped being emitted made
+    the value comparison vacuously true and the check green.
+  - **[DD-13c] THE VM HALF IS AN IFF, NOT A PROHIBITION.** The old rule was
+    "no `RX_DFA_*` macro on a VM artifact", and it was wrong about the §6.1
+    hybrid, which inlines a full DFA scan and (since [DD-13c]) stamps the
+    two lines for it. Asserted both ways with both populations printed: a
+    VM artifact carries them IFF its emitted text contains that inlined
+    body IFF `RX_VM_PREFILTER` is `"hybrid"`. The middle term is matcher
+    TEXT, so neither `#define` is ever checked against the other alone, and
+    the check refuses to pass if either side of the iff has no members
+    (an iff with an empty side asserts only one implication).
+  - **THE EMPTY-ENGINE BUCKET IS NAMED AND COUNTED, NEVER FILTERED.** Four
+    corpus patterns (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`) are proven to
+    match nothing, so their search function is one `return 0` with no loop.
+    The bucket is an EXACT NAMED MANIFEST of those four (r37 #2: a floor of
+    one answers "did it vanish", never "is it the right set"), and since
+    [DD-13c] its members are ASSERTED on the scan axis — `RX_DFA_SCAN
+    "empty"` — rather than exempted from it, plus the prefilter assertion
+    it always had (no loop => the stamp must read `"none"`).
+  - **Validation (made to fail on purpose, four ways):** scan value
+    inverted → 386 red; the `-bounded` arms dropped → 92 red; the whole
+    stamp call removed → the presence checks red on 2,022 artifacts; the
+    witness table pointed at a VM artifact → red, because each witness
+    asserts its artifact IS a DFA one before reading its value.
+
+- **run_premul_table.sh** — [OPT-3] (2026-08-26) the PRE-MULTIPLIED DFA
+  TRANSITION TABLE (`docs/design/premultiplied_dfa_table.md`,
+  `docs/spec/tuning.md` §2.13), held to the artifact rather than to its stamp.
+  Its OWN section, `make test-premul-table`, part of `make test` and
+  deliberately NOT of `make smoke` — it sweeps the whole corpus AND compiles
+  and runs sixteen matchers (~6 min), which is the same argument
+  `run_endvar_identity.sh` and `run_ir_listing.sh` already carry for running
+  under other sections.
+  - **WHY IT EXISTS.** The transform is ANSWER-PRESERVING BY CONSTRUCTION —
+    it changes the ENCODING of a state, not the machine — so the whole `.rxt`
+    corpus, both oracles and every differential agree whether or not the
+    emitter got it right in the ways that matter. Three failure modes, none
+    of which an answer comparison can reach: the state variable left `int`
+    (gcc reinstates the `movslq` the transform exists to remove; the artifact
+    is CORRECT and the optimization buys nothing); the generation-time bound
+    not switching; and a cell that is not premultiplied, or a sentinel that
+    collides with a real value.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
+    verdict comes from the EMITTED MATCHER TEXT — table declarations, table
+    cells, the state variable's declaration, the transition line — with the
+    stamp compared against it. The two come out of different write sites
+    (`dfa_table_name` writes the macro; `emit_tr_table`/`emit_acc_table`/
+    `emit_unanchored` write the tables and the loop). **The CLASS COUNT is
+    read from `rx_*_byte_class`, a different table written by a different
+    emitter function**, because §5's whole invariant is "every cell is a
+    multiple of the stride" and taking the stride from the transition table
+    would make it a tautology.
+  - **Six sections**: named witnesses one per documented value; the bound on
+    both sides WITH a non-vacuity assertion that the swept family straddles
+    it; the corpus sweep (the [DD-13c] iff both ways, stamp vs declarations,
+    the bound per machine, the ACCEPT TABLE'S LENGTH as an independent second
+    witness of the form, and the SHAPE); the cell invariant; and the deny
+    flag's answer identity, which EXCLUDES a pattern whose scan carries no
+    numeric table rather than counting it as an equal pair.
+  - **Validated in three failing directions** (each planted, rebuilt, run,
+    reverted; clean baseline 15/0): the table not premultiplied → **13/19**
+    with §5 red on 14,387 of 39,787 cells and §1/§2/§3 correctly GREEN (they
+    read declarations, the plant changed cells); the sentinel colliding →
+    **12/5**, and it took breaking BOTH bound conjuncts, since the range one
+    still refuses on its own — with §5 GREEN, because the corpus's largest
+    machine is 40,010 entries and cannot carry a collided cell, so the BOUND
+    arm is what makes a collision unreachable and the CELL arm cannot see
+    this defect; the state variable left `int` → **14/1**, §3's shape arm
+    ALONE on 1,824 machines, with every answer unchanged.
+  - **THREE MACHINES AND TWO CLAUSES (lane ucpu3, 2026-09-29).** The stamp
+    fold (`implied_stamp`) is over the SET of machines the artifact contains —
+    forward, reverse, and [ENG-ABS]'s anchored one — and the `[bound]` rule
+    carries `dfa_premul`'s SEED clause (a machine with a dead seed cell, read
+    off the emitted seed table as `-1` or `PREMUL_DEAD`, is indexed by rule).
+    Both gaps predated [UCP] U2 and had no population until U2's one-character
+    lookarounds reached the DFA (68 false reports, triu2_report.md §5).
+    Validated both directions: dropping the anchored clause from
+    `dfa_table_name` → `[agreement]` red on 51; dropping the seed clause from
+    `dfa_premul` → `[bound]` red on 68; clean 16/0.
+  - **The first run of this file found five defects in ITSELF**, and they are
+    worth reading before writing the next check here: a witness table split
+    on `|`, which is a pattern byte; a DFA-scan discriminator keyed on "has a
+    table", which called the four empty-engine artifacts stamp-without-a-scan
+    (r37 finding #5 read backwards — the [DD-13c] iff is about CONTAINING a
+    scan, and a body that is one `return 0` contains one); an `awk` field
+    index reading a variable's NAME where its TYPE was wanted, which reported
+    3,744 shape violations on a correct tree; a drift count with no names
+    beside it; and a flag row comparing one form with itself.
+
+- **run_offset_skip.sh** — [OPT-K] (2026-08-28) the OFFSET-k CANDIDATE-START
+  SKIP (`docs/design/offset_k_skip.md`, `docs/spec/tuning.md` §2.14), held to
+  the artifact rather than to its stamp. Runs under `make test-codegen` as a
+  fourth script in that group; compile-only apart from §1, ~10 s.
+  - **WHY IT EXISTS.** The mechanism is ANSWER-IDENTITY-PRESERVING BY
+    CONSTRUCTION — every test it adds to a candidate start is a NECESSARY
+    condition of a match beginning there — so the whole `.rxt` corpus, both
+    oracles, every differential AND `make test-axes` agree whether or not the
+    emitter ever selects it. Sabotage S187 is that made real: the selection
+    never fires, the tree stays green, and the row's MEASURED 4.5×-17.1×
+    is gone. Five failure modes are enumerated in the file's header; the
+    other four are the form selected where it was measured NOT to pay, the
+    stamp and the arithmetic drifting apart, the byte-frequency prior no
+    longer summing to one (which no artifact shows), and the deny flag
+    leaving a trace.
+  - **THREE SOURCES, NEVER TWO.** The expected k-set for each of the four
+    witnesses is a LITERAL in the file, read from the design note's §4.7, and
+    BOTH the `RX_DFA_PREFILTER_OFFSETS` stamp AND the emitted `rx_ofsskip`
+    helper are compared against it. `dfa_prefilter_offsets` writes the macro,
+    `pf_block_ofs` writes the helper, a human wrote the table — so any two of
+    them drifting is red. §1 (the prior sums to 1,000,000) MOVED at
+    [FINDINGS] B1 to `tests/findings/run_findings_tests.sh` §1 with the prior
+    itself, which is data now (`src/findings/default.rxt`); it still asks the
+    shipped library, through the one normalization.
+  - **IT IS PAIRED WITH `tests/offsetskip/offset_skip.rxt` AND BOTH FILES SAY
+    SO.** That corpus owns the emitted skip's ARITHMETIC and would pass on a
+    compiler that had stopped emitting the skip; this file owns the
+    POPULATION. Neither substitutes for the other, and the patterns are the
+    same on purpose.
+  - **Validated in four failing directions** (planted, rebuilt, both
+    instruments run, reverted; clean baseline 19/0 here and 80/0 in the
+    corpus): the resume off by one → **19/4** here and **79/1** there; the
+    reseed deleted → **18/1** and **79/1**, the corpus case a FALSE MATCH; the
+    selection never firing → **14/5** and **80/0 GREEN**, which is the point of
+    the file; the prior no longer summing to 1e6 → **18/1** and **80/0**.
+  - **THE FIRST PLANT MEASURED ZERO IN THE CORPUS AND THAT IS THE LESSON TO
+    CARRY.** The resume off-by-one left `offset_skip.rxt` 75/75 green: its
+    overlapping-candidate rows EXERCISE the resume line and cannot DETECT a
+    change to it, because losing a match needs the pattern to allow its own
+    scan byte BEFORE the offset it is scanned at, and none of the four
+    witnesses can. The corpus gained `[-a]{3}-b` for exactly that.
+
+- **run_anchored_match.sh** — [ENG-ABS] (2026-08-29) the ANCHORED MATCH-HERE
+  FORM (`docs/design/anchored_match_unwrapped.md`, `docs/spec/tuning.md`
+  §2.15), held to the artifact rather than to its stamp. Its own section,
+  `make test-anchored-match`, part of `make test` and NOT of `make smoke` —
+  `run_premul_table.sh`'s measured argument, plus a second compiler build for
+  its §4.
+  - **WHY IT EXISTS.** The form is ANSWER-IDENTITY-PRESERVING (§3's argument),
+    so the whole `.rxt` corpus, both oracles and `make test-axes` agree whether
+    or not the emitter ever selects it. The ANSWER half is
+    `tests/anchored/run_anchored_diff.sh`; this file owns the POPULATION and
+    the SHAPE, and the two name the same mechanism on purpose.
+  - **§2 IS r39's MISCOMPILE-1 ONE ROW OVER.** A candidate-start prefilter is a
+    set derived for the SCAN role; reusing it in a MATCH-HERE body would skip
+    past `ctx->pos` and report no match where one begins. The section reads the
+    `<prefix>_match` BODY for all three prefilter mechanisms and asserts the
+    artifact's own `<prefix>_search` carries one — so the negative cannot be
+    satisfied by a compiler that emits no prefilters at all.
+  - **§4 EXISTS BECAUSE THE OVERFLOW ARM'S POPULATION IS ZERO**, measured, not
+    assumed: the DFA caps are shared and the mandatory machines reach them
+    first. A fallback nobody can reach is a fallback nobody has tested, so §4
+    builds a reference compiler with `-DPCREC_ANCHORED_MAX_STATES=6` (that
+    knob's ONE consumer, `src/core/limits.h`) and drives real patterns through
+    the arm: no diagnostic, the stamp flips, and the artifact is the
+    `-fno-anchored-dfa` build's to the byte.
+  - **§5's FLOORS ARE THE POINT.** The form silently ceasing to be selected
+    leaves every answer right, `make test-axes` green (with nothing to deny the
+    two builds are one build) and the row's measured gain gone. Census at
+    landing: 2,786 corpus patterns — 1,489 vm, 288 refused, 825 unwrapped, 180
+    search-filter(attempt), 4 search-filter(empty), 0 search-filter(overflow).
+  - **Its own first run found two defects IN ITSELF**, both worth reading: a
+    witness reading `RX_NCAPS` off a SPLIT output, where that macro lives in
+    the `.h` and every grep returned the empty string (the row passed its own
+    guard for the wrong reason); and a byte comparison that differed only in
+    the `#include "<basename>.h"` line — the trap `run_trie_identity.sh`
+    documents at its own `gen_a`/`gen_b`, met a third time.
+
+- **run_search_pinned.sh** + **searchpin_driver.c** — [OPT-5] STEP 2
+  (2026-09-02) the START-PINNED SEARCH (`docs/design/opt5_step2_twopass.md`,
+  `docs/spec/tuning.md` §2.19), held to the artifact rather than to its stamp.
+  Its own section, `make test-search-pinned`, part of `make test` and NOT of
+  `make smoke` — `run_premul_table.sh`'s measured argument, plus a second
+  compile of every DECLINED artifact for its byte-identity leg.
+  - **WHY IT EXISTS.** Axis J is ANSWER-IDENTITY-PRESERVING, so the whole
+    `.rxt` corpus, both oracles and `make test-axes` agree whether or not the
+    emitter ever selects the pinned form. §9's FLOOR is the arm that catches
+    the form silently ceasing to be selected — with nothing to deny, the
+    denied and default builds are ONE BUILD and every answer stays right.
+  - **THE CONTROL IS UNUSUALLY WELL PLACED, and the file says so rather than
+    claiming the usual thing.** The denied build recovers the match start by
+    walking an INDEPENDENTLY BUILT REVERSE AUTOMATON (`emit_unanchored`'s own
+    note: "the two machines are independent and need not agree"), where the
+    default writes `search_from` from a compile-time proof about the FORWARD
+    machine. Nothing is shared but the answer.
+  - **§3 RECOMPUTES BOTH STAMP FOLDS FROM THE EMITTED TEXT** over the machines
+    each artifact ACTUALLY CONTAINS — a machine's repr from its accessor
+    block's own C type cross-checked against that block's prose marker, its
+    edges from the `[OPT-5] SCAN EDGE` blocks attributed by the state variable
+    their guard names. That is check 4 of the note's §5.4, and it is applied to
+    DECLINED artifacts too, which is what makes it a check of the FOLD rather
+    than of axis J.
+  - **§10's DRIVER SWEEPS EVERY STARTPOS AND READS `caps[0][0]` EXPLICITLY**,
+    which is the whole detector for S221: the absolute-offset trap is invisible
+    to a search at 0, and a plain `m`/`n` `.rxt` cell is startpos-0. It reads
+    the VERDICT too, because the one failure direction that is not a quiet
+    offset (a dead seed with P3's liveness conjunct dropped) reports a match
+    where there is none.
+  - **TWO FINDINGS AGAINST THE DESIGN NOTE, recorded in the file rather than
+    asserted away.** C3's "returns 1 on every call" is true only IN RANGE —
+    `search_from > subject_length` is disposed of by the emitted range guard's
+    own `return 0` above the scan, so `<prefix>_match` correctly returns -1
+    there on a pinned artifact exactly as on any other, and the driver counts
+    the two separately. And the hybrid's `window_end` clamp is emitted only
+    where the artifact carries an MRL clamp (`v.nclamp > 0`), so §4 asserts it
+    where it exists rather than demanding it universally.
+  - **ITS OWN FIRST RUN FOUND FOUR DEFECTS IN ITSELF**, and the first is worth
+    carrying: bash does NOT evaluate the right-hand sides of ONE `local`
+    statement left to right against each other, so `local f="$1" v="$f"` left
+    `v` EMPTY and the fold helper reported every artifact as mismatched. The
+    others were a `pcrec_ctx_fail` message split across adjacent C string literals
+    (so no single line held the sentence a grep was looking for), backticks
+    inside a double-quoted failure message running as command substitutions,
+    and the C3 counter above.
+  - Sabotage rows S218-S223 on the `searchpinned` mech arm, and the
+    transcripts are at the foot of the script. **S223** (r51fix item 1,
+    2026-09-02) is the WIRING row: §7's P0-routing-assertion check greped
+    only for the assertion's definition and message text, never for its one
+    CALL SITE (emit_dfa.c:5123) — a sabotage deleting the call while leaving
+    the definition as dead code passed vacuously, and the assertion's own
+    seed-liveness half has no sabotage witness of its own (S219 ships
+    UNREACHED beside it), so §7 was that clause's ONLY guard. §7 now carries
+    a fourth grep anchored on the call's own expression shape
+    (`start_pinned_assert_routing(cx,`, which the definition's own signature
+    — `Ctx *cx,` — never matches) and says in its own comment that it is a
+    wiring check.
+
+- **run_inline_capability.sh** — [CC-DIFF] STEP 2 (2026-09-04), the
+  CAPABILITY PROBE: does the compiler about to build an artifact ALREADY
+  inline the VM entry chain, or does the `always_inline` workaround do real
+  work under it? One witness, two arms, `nm`; no corpus sweep.
+  Wired into `make test-codegen`'s run_group (manager, 2026-09-04 at merge —
+  the lane delivered it in no target, so it certified nothing; 0.52 s).
+  - **WHY IT EXISTS, and why no preprocessor guard can replace it.** Frank
+    asked (2026-09-03 23:0x) whether there is a guard telling us the compiler
+    has the optimisation. `__has_attribute(always_inline)` says the attribute
+    is UNDERSTOOD, never that the inlining WOULD HAVE HAPPENED without it.
+    The capability is observable only in object code. [CC-DIFF] STEP 0's own
+    evidence was exactly this `nm` witness and lived only in its report.
+  - **THE METHOD.** Compile `\d{1,16}` (STEP 0's `dig-upto-16` cell) under
+    the harness's `CC` at rung INLINE and again with the attribute gone, and
+    ask whether `rx_search_run` / `rx_match_anchored` survive as symbols.
+    Absent in the no-attribute arm means REDUNDANT under that compiler;
+    present means NEEDED.
+  - **ARM B IS BUILT TWICE AND THE TWO MUST AGREE** (learnings §3). The
+    convenient spelling is the emitter's own PLAIN rung — the subject's own
+    author. So the file ALSO builds arm B by a TEXTUAL `sed` removal of the
+    attribute, which knows nothing about the emitter, and is RED if the two
+    spellings differ in source or in symbol table beyond TWO lines the file
+    normalises and then asserts POSITIVELY: the paired header's `#include`,
+    and `<PREFIX>_VM_ENTRY_SHAPE`, which MUST differ (the two arms are
+    emitted at different rungs and that stamp's job is to say which). Its
+    own first run caught the second of those as a real difference, which is
+    the check working before it was taught the exception.
+  - **IT IS A CENSUS LINE, NOT A PIN, and never red on a verdict.** Pinning
+    either answer would go red on a compiler upgrade that changed nothing
+    about pcrec. It is red on exactly two things, both failures of the PROBE:
+    the witness stopping being frameless (the [MECH-REACH] shape — a witness
+    that stopped reaching its site), and a symbol table that cannot be read
+    or two arm-B spellings that disagree.
+  - **THE DARWIN RED WAS THIS FILE's BUG (fixed 2026-10-06).** Mach-O prefixes
+    every C symbol with `_`, and both the chain-symbol read and the
+    "nm must have worked" gate compared raw names, so on the Mac the gate
+    fired on EVERY run ("could not read arm_a.o") and the probe had never
+    produced a darwin verdict — the "accepted darwin red" every Mac
+    `make test` carried. One leading `_` is now stripped off the symbol
+    itself (the object format is the fact, not `uname`). First darwin
+    verdict: gcc-16 16.2.0 prints NEEDED (`rx_match_anchored` out of line
+    without the attribute). Failing direction re-proven: `NM=true` still
+    fires the gate.
+  - **NON-VACUITY MEASURED AT LANDING, and it is the reason to trust either
+    verdict**: gcc 15.2.0 prints NEEDED (`rx_match_anchored` and
+    `rx_search_run` both out of line without the attribute — STEP 0's own
+    witness reproduced), `CC=clang` 21.1.8 prints REDUNDANT. A probe that
+    could only ever print one of its two answers would be worth nothing.
+
+- **run_entry_shape_identity.sh** + **entry_shape_driver.c** — [CC-DIFF]
+  STEP 2 (2026-09-04), the VM ENTRY-SHAPE LADDER'S ANSWER-IDENTITY GATE.
+  `--vm-entry-shape=1..4` (`docs/spec/tuning.md` §2.21) picks among four
+  emission shapes for the VM entry chain, and all four are supposed to be the
+  SAME MATCHER — the rung moves frames, canaries and body copies, never an
+  answer. Its own section, `make test-entry-shape-identity`, part of `make
+  test` and NOT of `make smoke`: `run_premul_table.sh`'s measured argument
+  (it emits and compiles 70 artifacts).
+  - **WHY IT IS A FILE AND NOT A SCRATCH SWEEP.** The write phase ran exactly
+    this comparison ad hoc — 14 patterns × 409 subjects, 0 mismatches — and
+    the run died with its scratchpad. The branch carried a CLAIM and not a
+    CHECK. What is committed can be re-run after the next change to the
+    emitter; what was run once cannot.
+  - **THE NON-VACUITY ARM IS PER WITNESS AND POSITIVE.** The ad-hoc sweep's
+    own report admitted three of its fourteen witnesses matched NOTHING, so
+    all three hashed to the all-nomatch digest and "agreed" across all five
+    shapes while testing the emitter and not one answer — `docs/dev/
+    learnings.md` §3's [MECH-REACH] shape exactly. The gate now REFUSES to
+    pass a witness whose AUTO arm produced no match.
+  - **AND THAT ARM IS WHAT REPAIRED THEM, over three runs.** `[0-9a-f]{32}`
+    and `(?<=foo)bar` really were vacuous in their SUBJECTS and were
+    re-subjected. **`(?>a*)ab` was not**: the gate reported it vacuous on the
+    new subjects too, which sent the pattern back for a reading — the atomic
+    star never gives back the `a` the following `a` needs, so its LANGUAGE IS
+    EMPTY and no subject set could have rescued it. Replaced by `(?>a*)b`.
+    The run before that found the other class: three witnesses belong to
+    modules that are OFF BY DEFAULT and were being REFUSED rather than
+    compared, so every emit is `--features all`.
+  - **THE SECOND ARM IS THAT THE RUNG REACHED THE EMITTER.** Five builds that
+    all ignored the flag agree with each other perfectly, so each build's own
+    `<PREFIX>_VM_ENTRY_SHAPE` stamp is read back from the emitted .c and the
+    run is RED unless all four tokens are realised somewhere in the table. It
+    is a CENSUS over the table and not a per-cell pin, because a framed
+    artifact legally falls to the nearest legal rung and pinning it to
+    `forward` would be wrong rather than strict.
+  - **THE STAMPS ARE GREPPED FROM THE .c, NOT `#ifdef`-ed IN THE DRIVER.**
+    The emitter writes them to the generated .c and not the paired .h, so a
+    driver `#ifdef`ing them would take its else-branch forever — a check must
+    not read a fact from a place that can quietly stop carrying it.
+  - **EVERY WITNESS IS `--engine=vm`.** The ladder only reaches VM artifacts;
+    under AUTO several of these patterns select the DFA engine and stamp no
+    rung at all, which would make the gate vacuous a second way.
+  - Landing figures: 14 witnesses × 5 shapes, rungs realised
+    plain/shared/forward/inline, 0 differences, every witness matching.
+
+- **run_facts_checks.sh** — [PATFACTS] step 3.0 (D126, 2026-09-26): the
+  pattern-facts record's own checks (`docs/design/patfacts/design.md`
+  §4.2.3). (1) INCLUDE GRAPH: the includers of `src/facts/facts_derive.h`
+  EQUAL the owner list generated from `src/facts/facts.def` as plain text
+  (every `.c` under `src/facts/` plus each row's owner field) — equality,
+  not subset, so an owner that stops owning is a failure too. (2) LINK
+  SYMBOLS: no object outside the owner list references (`nm -u`) a symbol an
+  owner object defines (`nm -g`) and `facts.h` does not declare — the escape
+  (1) cannot see, a hand `extern`. The symbol set is `nm`'s, never a name
+  list; objects are read from `$(dirname $PCREC)/obj`, and the Mach-O `_`
+  prefix is stripped on darwin. REACH lines print the row, owner, symbol and
+  object counts and an empty population FAILS rather than passing
+  vacuously. Sabotage S296 (a consumer includes the private header, caught
+  by (1) alone) and S297 (a hand extern plus call, caught by (2) alone), mech
+  arm `facts`. What it cannot see — a hand RE-SPELLING of a walk — is named
+  in `src/facts/CLAUDE.md`. Plus the `--emit-facts` listing's checks
+  (design §11.6 2-4), each against an oracle the listing does not share:
+  (3) COMPLETENESS, one `facts` row per `facts.def` row per encoding, the
+  count taken from the table's plain text; (4) WHY-TRUTHFULNESS, every deny
+  flag `axes.def` spells lists `deny:<flag>` on exactly the facts
+  `docs/spec/tuning.md`'s "Facts emptied" line for that flag names (the
+  hand-written spec, never `facts.def`'s own deny column; the line is a
+  numbered paragraph, so it may open with its `<a id>[§¶]` label); (5) DECISIONS =
+  STAMPS, the `decisions` section equal to the value `#define`s this script
+  parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
+  machinery macros excluded by NAME here, by `(` in the printer). And
+  (6) `[facts-cli]`, the query's refusals. Sabotage S298 (a row skipped),
+  S299 (a deny bit flipped in facts.def), S300 (a stamp dropped from
+  decisions). Every section resolves columns by header name within its
+  named section. (7) `[facts-e1]` ([PATFACTS] step 3.2): hand-written
+  witnesses (encoding, pattern, kind mask, nullability) must COMPILE and
+  list exactly those E1 values — the detector of the E2 seal's E1
+  invariance cross-check, which refuses a compile whose lowered tree
+  re-derives a different kind mask or nullability. REACH counts the
+  witnesses on a utf8 tree the lowering rewrites, and every `PF_KIND_*` bit
+  `facts.h` declares must have a witness. Sabotage S302 (kind mask) and
+  S303 (nullability). K69 (lane k69fix) added six CALL rows — nullability
+  that runs through a call, both sides of the least fixpoint — the detector
+  of S318 (every call nullable). (8) `[facts-e3]` ([PATFACTS] step 3.4): the E3 facts
+  (`kset_walk`, `run_pin`) are sealed on the unanchored route alone; each
+  witness's ROUTE is read out of its emitted `.c` (`RX_DFA_SCAN`
+  `unanchored`/`attempt`/absent — the artifact, never the record) and also
+  written by hand, and the E3 rows' status/`why` must be the route's
+  (`derived`; `absent` + `decline:attempt-unwrapped-nfa`; `absent` +
+  `decline:no-forward-nfa`), with the walk and pin written by hand on the
+  sealed route. REACH requires all three routes and one pin on the WIDENED
+  domain (`\zabc`: pinned, `RX_DFA_PREFILTER "none"`, asked by no pass —
+  the kind gate held). Sabotage S306 (the seal leaks to ENG_ATTEMPT) and
+  S307 (the two decline tokens swapped).
+- **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
+  WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
+  section for `run_vm_frameless.sh`'s reason. Three independent sections,
+  one per mechanism, each holding a stamp to the EMITTED TEXT it names
+  rather than to the predicate that wrote it:
+  - §1 `<PREFIX>_VM_START` ([OPT-ANCHOR-VM]) — the three values on named
+    witnesses, the BICONDITIONAL against the attempt loop's own bound in
+    both directions, the deny flag's no-trace property, the one-directional
+    agreement with the DFA route's `start_max` read off a second artifact,
+    and a population floor.
+  - §2 `<PREFIX>_END_WINDOW` ([OPT-ENDWIN]) — the derived bound against the
+    clamp's own emitted literal, the four structural declines (multiline,
+    unbounded width, `\G`, a multi-byte encoding), both engines, the deny
+    flag, and a floor read from `tests/assertions/end_window.rxt`'s own
+    pattern list.
+  - §3 `<PREFIX>_REQ_BYTE` ([OPT-REQBYTE]) — the derived byte against the
+    `memchr`'s own argument AND, asserted SEPARATELY, against its SENSE
+    (S265 inverts the sense and leaves the byte alone, so one assertion
+    covering both would have named the wrong half); the caseless-fold
+    decline, which is the arm an analysis reading pattern TEXT instead of
+    the lowered tree gets wrong; the NULL-subject obligation
+    (`memchr(NULL, c, 0)` is UB and `match_api.md` §3.1 permits an empty
+    subject), asserted on the emitted text rather than left for UBSan; and
+    the prefilter-declined VM witness, which is the population the mechanism
+    exists for. **§3.6 (2026-09-22, lane admin3) adds FIVE `-e utf8`
+    witnesses** — every §3.1 witness compiles under the byte encoding, so
+    the derived byte's lead-vs-trailing choice and the caseless fold's
+    INTERSECTION rule (`(?i)é` folds to {é, É}, whose two-byte encodings
+    share only their LEAD byte 0xC3) were exercised only by the identity
+    sweep until now. 113 checks -> 123; 213 -> 250 at §5.
+  - §3 GAINED A SECOND STAMP PER ROW at `[OPTLOOP.2]` batch 2 (2026-09-22):
+    `<PREFIX>_REQ_RUN` is asserted beside `<PREFIX>_REQ_BYTE` on every §3.1
+    and §3.6 witness, because the two facts are now chosen TOGETHER — a
+    pattern with a run of two or more bytes emits the run check and its
+    `REQ_BYTE` is the run's own scan member, while a pattern with a byte and
+    no run emits the one-byte check with the whole set's own pick. A row
+    asserting one stamp could not tell those apart, and the population split
+    is what the whole section turns on.
+  - §3.7 `[OPT-FREQPICK]` — WHICH member of the necessary set the `memchr`
+    tests. Eight witnesses, every expected byte a LITERAL hand-derived from
+    the shipped prior and quoted with its ppm, never recomputed here (a check
+    that recomputed the rule from the table it checks would pass under any
+    table, `learnings.md` §3). **BOTH DIRECTIONS**: four rows whose minimum is
+    NOT the rightmost member, so a compiler that kept PCRE2's rule fails them;
+    four whose minimum IS, so a compiler that always returned the largest byte
+    passes those and must be caught by the first four; and one of the eight is
+    a TIE at the minimum, which a rule breaking ties by "largest byte" rather
+    than by the threaded pick gets wrong. §3.7b asserts its own population is
+    RUN-FREE, without which the arm would silently be reading the run's scan
+    index instead; §3.7c asserts the encoding decline on a pattern where the
+    two rules DISAGREE, without which the decline could be a comment.
+  - §4 `<PREFIX>_REQ_RUN` (`[OPT-REQPOS]` tier 2b) — the run's own emitted
+    scan loop: the constant-length `memcmp` with its run, its length and its
+    OFFSET (where a sign error would live, and where no answer check would see
+    it on a subject that happens to start the run at the scan hit), the
+    compare's SENSE asserted separately from both, the scan byte, and — the
+    arm that catches what no grep can — a compile of every run artifact under
+    the harness's OWN `-Wall -Wextra -Werror`, which is the live detector for
+    the two emitted-text hazards this mechanism introduces (a `-Wtype-limits`
+    always-true guard at scan index 0, and a `-Wcomment` pair inside the run's
+    own comment text — `nested-comment-rec`'s actual run is a star then a
+    slash). §4.2 asserts the two shapes are EXCLUSIVE in both directions,
+    because an artifact emitting both would be sound and twice as slow. §4.3
+    carries the positive control an absence assertion needs. §4.5 pins the
+    truncation window, computed BY HAND from the prior with all four candidate
+    sums written out, so a rule that took the leftmost window instead is
+    caught. §4.4b is the arm that makes "81.4% of the corpus is untouched" a
+    checked fact: an artifact with no run must be BYTE-IDENTICAL under
+    `-fno-req-run`, which is why that bit is masked out of `rx_info.flags`
+    (the strategy mask is derived from `core/axes.def`, K92). **`grep -qF`, not a BRE, on every needle
+    containing run bytes**: a run beginning with `*` makes the preceding quote
+    a QUANTIFIER, measured on the `*/x` row, which read NOMATCH against text
+    that was verbatim present.
+    **Since [OPT-LITSCAN] S1 step 6 (abi 37)** the run check is a call of a
+    file-scope `rx_reqrun` block (and, [K66], `rx_reqrun_whole`) written by
+    the offset-skip block's own emitter, so every §3-§5 reader of the run's
+    TEXT reads the block: `reqrun_fn FILE [whole]` prints it, `PRECHK_RE`
+    matches either pre-check form (never the prefilter's own `memchr`), and
+    `reqrun_scans` asserts the scanned byte. The compare is at `cand` and the
+    member's offset lives in the scan start and in `cand = hit - off`, both
+    asserted (§4.1c); §4.3's window guard is the block's `pos + L-1 < n` /
+    `cand + L-1 >= n` pair; §3.4b asserts the block's first statement is its
+    loop guard (the empty-window arm it replaced).
+  - **§4.9 ([OPT-REQRUN-ENC], 2026-09-26, abi 37 -> 38)** is the ruling's own
+    acceptance criteria for the RUN's `!bytekey` fallback moving from
+    leftmost to rightmost: `é@` under `-e utf8` must stamp `RX_REQ_BYTE
+    "64"` (the byte `'@'`), never the shared UTF-8 lead byte `195`;
+    `Москва`'s picked byte must fall OUTSIDE the `0xC2-0xF4` lead-byte
+    range, asserted as a RANGE TEST rather than a hand-picked literal, so
+    the claim is the census's general one; and a `byte`-encoding control on
+    the identical two-byte-tie population (`é@` with no `-e` flag) must
+    still read the frequency argmin's own answer (`195`, tied-minima
+    leftmost) rather than degrade to "always rightmost" — proving the
+    `!bytekey` gate scopes the whole change to non-`byte` encodings. §3.6's
+    own utf8 multi-byte witnesses (`é`, `x(é|è)y`, `a\x{1F600}b`, `é@`) and
+    §4.5c's truncation-window witness moved to their new rightmost-fallback
+    values in the same change (`docs/dev/optloop/reqrunenc_census.md`).
+  - **WHY IT IS A STRUCTURAL GATE AT ALL.** Three of the five mechanisms it
+    now guards have NO answer-level detector anywhere in the tree:
+    [OPT-ANCHOR-VM]'s bound, [OPT-REQBYTE]'s pre-check and
+    [OPT-FREQPICK]'s CHOICE of member each remove only work the artifact
+    would have done and thrown away — or, in the pick's case, choose among
+    bytes that are all equally sound — so a plant in the sound direction
+    changes run TIME and nothing a caller can observe. This file is where they are
+    defended, and `tests/mech`'s `prechecks` arm is where that is measured.
+  - §5 `<PREFIX>_REQ_WHY` (`[OPT-PRECHECK-ADMIT]`, 2026-09-23, abi 30 -> 31) —
+    not a fifth analysis but the ADMISSION of §3's and §4's pre-checks, ruled
+    by Frank as G1 + G2 of the batch-1 after-ledger's §6 (G3 dropped on
+    x86_64 measurement). The section's whole difficulty is that **neither
+    decline is answer-detectable in either direction**: a declined pre-check
+    is a check not run, and the check could only ever return the answer the
+    engine below it then returns anyway — so the corpus arm sees nothing and
+    this file is the only detector, which is also why S269/S270 list their
+    `harness` arm as EXPECTED GREEN. §5.1 asserts the four values against
+    the artifact's own text in both directions, on the ledger's own witness
+    shapes (`^[A-Za-z]:x` is `winpath-near-miss`'s anchor, `\[` IS
+    `wild-codegrammar-json-array-begin`), with a count arm so the controls
+    cannot all stop controlling. §5.2 is the INHERITANCE: a `one-attempt`
+    decline must be accompanied by the route's own emitted bound (`start_max`
+    of `0`/`search_from`, or `attempt_max = search_from`), without which §5.1
+    would pass on a compiler that declined for no reason. §5.3 is G1's
+    DIRECTION and its ENCODING rule on ONE pair of witnesses read three ways —
+    `Q[0-9]+x` and `x[0-9]+Q` are the same two bytes in the two orders, so a
+    compiler comparing the densities backwards fails exactly one of them, and
+    `Q[0-9]+x` under `-e utf8` must EMIT because the prior is not keyed to
+    that encoding and identity is then the whole rule. §5.4 is the
+    `<string.h>` follow-through in both directions, which is where reading
+    `Job.req_byte` instead of the admission would show. **§5.6 ([K64],
+    2026-09-25, 250 -> 258 checks)** is G2's LINEARITY conjunct on the VM
+    route, in pairs that differ by exactly the fact the arm reads: the same
+    pattern framed under `--engine=vm` (must EMIT) and with an exact hybrid in
+    front (must decline), the same pattern with a count-collapsed hybrid (must
+    EMIT — a superset language is not a no-match proof) and an exact one, and
+    a frameless forced-VM program (must decline); plus `[5.6r]` rows proving
+    each witness still takes the route its reason names. The "neither decline
+    is answer-detectable" sentence above is about REMOVING a rule; one
+    direction of NARROWING G2 is answer-detectable, and
+    `tests/base/k64_precheck_forced_vm.rxt` / S274 are that detector.
+    **§5.8 ([K65], 2026-09-25, 258 -> 267 checks; chkgaps' own §5.7 renumbers
+    K65's original §5.7 to make room)** is the WHOLE-SET half on
+    a VM route with no DFA scan: each row's expected `rq_set[]` member list is
+    derived by hand from the pattern (never from a stamp) — K65's witness
+    under `-e byte` and `-e utf8` (the two picks, so the two complements), the
+    run form, a frameless unanchored forced-VM program, and three `none`
+    controls (a one-member set, an exact hybrid in front, the DFA engine);
+    `[5.8r]` rows prove the witness is unguarded VM and the control a hybrid.
+    `tests/base/k65_precheck_whole_set.rxt` / S277 are the answer-level
+    detector.
+    **§5.9 ([K66], 2026-09-25, 267 -> 274 checks)** is the WHOLE-RUN compare
+    on the same route: each row's expected whole run (the `memcmp` longer
+    than 8 bytes, and its length) and `rq_set[]` are derived by hand — K66's
+    witness under `-e byte` and `-e utf8` (two windows, one whole run), a
+    10-byte run beside a set member outside it (the rest excludes the run's
+    bytes outside the window), and three `none` controls (a run of exactly
+    8, an exact hybrid in front, `-fno-req-run`); `[5.9r]` proves the witness
+    is unguarded VM with an 8-byte `REQ_RUN` window. 3 of the rows fail on
+    the k65fix base. `tests/base/k66_precheck_whole_run.rxt` / S278 are the
+    answer-level detector.
+  - **§6 ([K68], 2026-09-26, lane `k68fix`, 274 -> 301 checks)** is the
+    REFLECTION-SURFACE guard the fix's own repair adds: `rx_info.flags` must
+    be byte-identical to baseline under each of the three batch-1 deny bits
+    (`-fno-vm-anchor-bound`/`-fno-end-window`/`-fno-req-byte`), on witnesses
+    chosen so the flag CANNOT act on most of them — K68's own repro
+    (router-prefix-order) has neither an anchor nor an end-anchor, which is
+    exactly the "moves a byte on an artifact it cannot act on" shape the
+    mask exists to rule out. No prior check in this file reads `rx_info.flags`
+    as a NUMBER for these three bits (§§1.2/2.2/3.2 assert only the stamp and
+    the emitted text), which is why the leak shipped unnoticed until
+    pcrec-bench's own reflection-surface re-pin found it. Sabotage S295
+    drops one of the three bits back out of the mask; `harness` stays green
+    by design (the leak moves no answer), §6 alone is DETECTED.
+  - **§3's AND §4's STAMPS NAME THE ANALYSIS; §5's NAMES THE EMISSION**, and
+    that split is why §3.1/§3.6's biconditional arms read `REQ_WHY` while
+    their VALUE arms still read `REQ_BYTE`/`REQ_RUN`. The alternative was
+    tried first — fold the decline into `REQ_BYTE` as a widened `"none"` —
+    and it is wrong for a reason this file finds immediately: it hides the
+    derived byte on exactly the artifacts a decline applies to, so §3.7's
+    whole `[OPT-FREQPICK]` surface would go silently vacuous as G1's
+    population grew, and a compiler that stopped deriving bytes altogether
+    would read identical to one that derived them and declined.
+  - **EVERY SECTION CARRIES ITS OWN POPULATION FLOOR (K35)**, because "every
+    artifact that stamps X also contains Y" is vacuously green when nothing
+    stamps X. §5 carries TWO, one per rule, plus a third on the population
+    that still EMITS — the last being the arm that would catch a rule
+    declining a population it was never measured on.
+  - §5.6 (2026-09-25, lane `chkgaps`, check-design closure) is the ONE
+    ANSWER-DETECTABLE ARM IN THE WHOLE SECTION, and it exists because K64
+    (`docs/dev/known_issues.md`) is exactly the case §5's own "neither
+    decline is answer-detectable" sentence gets wrong: on a step-budgeted,
+    framed, forced-`--engine=vm` one-attempt route, G2's decline is NOT
+    provably "the answer the engine below it returns anyway" — the VM can
+    give up instead. `admitimpl_answerdiff.py` (the differential this
+    admission rule was itself validated with) ran AUTO-route arms only and
+    never saw it. §5.6's witness is deliberately NOT K64's own
+    population — an UNANCHORED VM route (`([a-zA-Z0-9._%+-]+)+@`, no `^`),
+    which `req_route_one_attempt`'s own `start_anchor` conjunct already
+    keeps admitted (`REQ_WHY "emitted"`) — compiled with `--emit-main` and
+    RUN, not merely stamp-checked, so a FUTURE widening of the same defect
+    class (admitting a route that is not genuinely one-attempt) has a real
+    behavioural detector independent of whether K64's own fix has landed.
+    Sabotage S276 is that widening's failing direction: dropping the
+    `start_anchor` conjunct entirely (every VM route admitted, anchored or
+    not) flips this witness's `REQ_WHY` to `"one-attempt"` and its no-`@`
+    subject from a fast NOMATCH to a step give-up. K64's own real
+    population stays in `tests/known_fail/k64_precheck_forced_vm.rxt`,
+    reached by the known-fail ratchet rather than by this section, because
+    its current answer is the give-up itself and a section asserting the
+    CORRECT answer here would be red on the clean tree.
+  - §5.11 ([K82], lane k82fix, 2026-10-04, abi 60) — the admission
+    table's `set-leads` row and PICK's NONE answer, read off the TEXT: the
+    lead is the first `!memchr(…, B, …)` above the first `rx_reqrun(` call,
+    each row's expected byte derived by hand from the pattern and
+    `--list-analysis default`'s ppm, both directions (a rarer byte leads; a
+    commoner one, a tie under NONE and an empty set do not), an exact run
+    under the byte-rate, the deny, and the (C) NONE rows' `REQ_RUN` index.
+    §5.8/§5.9's K65/K66 rows carry the lead's consequence (the rest skips
+    the byte the lead tested) plus a `-fno-req-set-lead` row each.
+    Detector of S457-S462.
+  - §5.12 ([K82] (B), lane k82hbuild, 2026-10-05, abi 61) — THE HANDOFF,
+    read off the TEXT and held to HAND values, never to the walk that
+    computed K: the hand K pin table (`(?i)straße` K = 2 under utf8 among
+    13 rows, the fact AND the stamp), the presence biconditional and the
+    subtraction's constant, the bounded check, the run choice
+    (`ab.*xyzw` keeps `xyzw`), the cross-table check against `REQ_WHY`/
+    `REQ_RUN`, one start site per body, the `\G` readers, the round-up
+    (present iff multibyte, inside the moving branch, bounded by the
+    subject's end and nothing else), the (d') decline, the deny, Q10's
+    count-collapsed decline, and a population with floors (K35). Detector
+    of S465-S467, S469, S471-S474, S476.
+
+- **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
+  FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
+  `has_push` bool that wrote it. Its own section, `make test-codegen`, one
+  `awk` per artifact, no `gcc` compile beyond the compiler's own patterns.
+  - **WHY IT EXISTS.** A VM program that emits no `RX_PUSH` site and no
+    linked call has no resume frame to pop, so [CC-CLANG] omits the fail
+    label's pop-and-resume `goto *` dispatch entirely (clang refuses an
+    indirect goto in a function with no address-of-label expression). The
+    macro is unconditional on every VM artifact including a hybrid.
+  - **THE `goto *` COUNT IS SCOPED TO THE VM PROGRAM'S OWN FUNCTION, and
+    this file's first run is what said it must be.** `run_codegen_tests.sh`'s
+    `[DD-14-RECURSION rule 1]` counts `goto *` with a WHOLE-FILE grep, which
+    is right there (`--engine=vm` turns the hybrid prefilter off) and WRONG
+    on this file's default/`-fprefilter` axes — a hybrid's inlined
+    `ENG_ATTEMPT` scan steps by computed goto, MEASURED at 199 false
+    positives on `(?m)^`-shaped artifacts on the first run. This file scopes
+    the count to the region between the program entry (`    goto rx_L0;`)
+    and the enclosing function's closing brace.
+  - Sabotage rows S224-S226 on the new `vmframeless` mech arm (r51fix item
+    3, 2026-09-02), replacing an earlier "exercised by hand" state the r51
+    panel found (finding 3) — this was the only instrument scoping `goto *`
+    correctly on the default/force axes and had no committed row. S224
+    inverts the stamp's value at its definition site; S225 recomputes it
+    from `v.npush` (the resume-point cap's pre-pass ESTIMATE) instead of the
+    hoisted `has_push` bool, the derivation the emitter's own comment
+    rejects by name; S226 emits the macro CONDITIONALLY (only when
+    frameless) rather than unconditionally, caught by different detector
+    lines from S224's (an absence assertion and an exact-count assertion,
+    not a value-mismatch one) and so its own row rather than a second hunk
+    of S224. All three carry SAB_REACH from birth. Transcripts are at the
+    foot of the script.
+
+- **run_dfa_uniform_fold.sh** — [CC-DIFF] STEP 1 (b) (2026-09-03) the
+  UNIFORM-TABLE FOLD and its `<PREFIX>_DFA_UNIFORM_FOLDS` stamp, held to the
+  artifact's own text rather than to the scan that wrote it. Its own section,
+  `make test-dfa-uniform-fold`, part of `make test` and NOT of `make smoke` —
+  `run_vm_frameless.sh`'s argument exactly, and the same two axes (default and
+  `-fprefilter`, where the "hybrids included" half of the IFF is at risk).
+  - **WHY IT EXISTS.** The fold is ANSWER-IDENTITY-PRESERVING BY CONSTRUCTION —
+    a uniform table and its constant are the same function — so the whole
+    `.rxt` corpus, both oracles, every differential and `make test-axes` agree
+    whether or not the emitter ever folds anything. What they cannot see is the
+    fold silently ceasing to fire (every answer right, the measured 0.589 on
+    `cls-upto-4` gone), a constant emitted while the table stays (no saving),
+    or a table deleted from under a read site the change missed.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** The stamp's
+    value comes from `fold_tr`/`fold_acc` scanning the `Dfa`. This file never
+    scans a `Dfa` and never re-derives uniformity: it reads the EMITTED TEXT
+    for two facts the fold makes true TOGETHER — the accessor lost its TABLE
+    PARAMETER, and the table's NAME occurs nowhere in the file — asserts the
+    biconditional between those two, and only then compares the stamp against
+    their count. Each direction is a distinct red.
+  - **THE ABSENCE TEST IS WHOLE-FILE, NOT "NO ARRAY DEFINITION", and that is
+    the choice to keep.** The fold's real hazard is a READ SITE the change
+    missed; `emit_dfa.c` names these tables at seven emitted call sites and
+    omitting one ships a matcher naming an array that is not there. A
+    whole-file absence test covers every site without enumerating them, which
+    is exactly what an enumerated list would lose the next time a site is
+    added.
+  - **The engine discriminator is `_byte_class[256]`** — machine text every DFA
+    scan of either engine emits unconditionally and this change never folds —
+    and NOT `RX_DFA_SCAN`, for `run_dfa_stamps.sh`'s circularity reason.
+  - **The floor is a FRACTION of the DFA-carrying population, not a harvested
+    count** (K35): a sweep in which nothing folds asserts nothing about the
+    fold and would be green with the fold deleted from the emitter entirely.
+
+- **run_scan_edge_dispatch.sh** — [OPT-EDGE] STEP 1 (2026-09-03) the
+  SHARED-SENTINEL EDGE DISPATCH: that the scan edge costs the loop's GENERIC
+  PATH nothing. **DRAFT, RED ON TWO OF FOUR WITNESSES, wired into NO make
+  target and carrying NO sabotage row** — read its own STATUS header and §6
+  before using it, and do not wire it in as it stands.
+  - **WHY IT EXISTS.** [OPT-5] put one `if (state == HEAD && ...)` per edge on
+    the loop's generic path, so N edges cost N compares PER BYTE; the bench
+    sized that at x1.089 on iso-ts. [OPT-EDGE] folds the edge test into the one
+    state test the loop already had. The whole change is ANSWER-IDENTITY-
+    PRESERVING, so the corpus, both oracles and `make test-axes` agree whether
+    or not the dispatch is there.
+  - **THE CONTROL CONTAINS NONE OF THE MECHANISM.** The reference arm is the
+    same pattern under `-fno-scan-edge`, whose denial is at the PASS — no
+    heads, no renumbering, no `is_stop`, no edge path. A sabotage that puts
+    the per-edge compares back moves the subject arm and leaves the reference
+    untouched.
+  - **THE MEASURABLE IS A CYCLE LENGTH, NOT A TEXT PATTERN** (three earlier
+    checks here went vacuous as presence-by-text detectors): `objdump -dr`,
+    build the CFG, take the SHORTEST CYCLE through the byte-class table's
+    load. Layout-independent by construction, which matters because gcc places
+    the cold edge path out of line.
+  - **AND THAT ANCHOR IS THE DEFECT.** gcc HOISTS the table's address load out
+    of the loop on two of the four witnesses, so the anchor is on no cycle and
+    the file reports INCONCLUSIVE and FAILS rather than passing. Its §6
+    records three repairs tried and MEASURED — follow the register (finds the
+    prefilter's inner loop, 11 where the truth is 15), the same restricted to
+    dereferences (same 11), and `-fno-move-loop-invariants` (keeps the load in
+    the loop and also stops gcc rotating it, 33 against the denied arm's 19).
+    Identifying the loop STRUCTURALLY, or measuring the emitted C's own blocks
+    before gcc sees them, is the untried direction.
+  - Measured where it reaches (gcc 15.2.0, -O2): iso-ts 15 instructions on the
+    generic path with 12 edges against 19 denied; `[a-z]{2}[0-9]{2}`'s
+    `\d{2}[.]\d{2}` sibling the same 15 against 19. Both agree with a hand
+    count of the same disassembly, and iso-ts's 15 against the pre-[OPT-EDGE]
+    compiler's 29 is the row's own number.
+
+- **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
+  compiles every `.rxt` corpus pattern twice (default engine, and
+  `--engine=vm` forced where accepted — the wider population for the
+  VM-only stamps) and counts artifacts per STAMP VALUE for every stamp
+  `docs/spec/match_api.md` §6.3 documents plus its two joint
+  distributions, printed beside the verdict (the K39/[OPT-4] style). A
+  DIFFERENT KIND of check from `run_dfa_stamps.sh` and
+  `run_premul_table.sh`, which also count populations as a BY-PRODUCT of a
+  structural stamp-matches-loop check: this script's own claim is "has
+  every value in the spec's own vocabulary been produced by SOMETHING in
+  this tree" — a FLOOR for every value the corpus reaches (K35: rounded
+  down generously) and a REQUIRED, BUILT, ASSERTED synthetic witness for
+  every value with ZERO corpus population, checked by a completeness loop
+  rather than a hand-picked exclusion list. **Measured 2026-08-26: 2,772
+  corpus patterns, 135s at `PROCS=4` uncontended.** Two values — `"mixed"`
+  (tuning.md §2.13's own documented likely gap) AND `"indexed"` (found
+  live by the completeness loop, undocumented anywhere as a gap) — have
+  ZERO corpus population; both covered by synthetic witnesses
+  (`[01]*1[01]{13}` for "mixed", `(?:[a-z]+)@(?:[a-z]+)` with
+  `-fno-premul-table` for "indexed" — the deny flag as a direct
+  controllability lever, not a second pattern search). The census also
+  found a THIRD `RX_VM_PRUNE_CEILING` value live (`"none"`, 1,047 of 1,488
+  VM artifacts), not enumerated as a value-set table in §6.3 the way
+  `RX_DFA_PREFILTER`'s is, floored as an observed fact rather than
+  asserted complete against a documented set. Runs as part of
+  `make test-axes` (opt-in, alongside `tests/axes/run_axes.sh`) rather
+  than `make test-codegen`, despite fitting under its 2-minute budget in
+  isolation — the two share the opt-in/heavy-battery placement.
+  **Detect demonstration** (docs/dev/learnings.md §3): `dfa_table_name`
+  (src/gen/emit_dfa.c:2288) sabotaged in a scratch copy to never return
+  `"mixed"`; the census FAILS TWICE — the witness's own local check and
+  the completeness loop independently — naming the exact value and the
+  exact witness pattern. Full transcript in the script's own header.
+
+- **run_tiered_entry.sh** + **tier_driver.c** — [OPT-1] (2026-08-25) the
+  TWO-TIER DEFAULT ENTRY (`docs/design/two_tier_entry.md`,
+  `docs/spec/match_api.md` §10.9). OPT-IN, `make test-tiered-entry`, NOT in
+  `make test`: its §2 compiles the whole corpus and its §3 builds and runs
+  four matchers. The behavioural half rides `make test` already — every
+  existing differential compares answers through the un-suffixed entries, so
+  a tier that changed an answer is red across the suite, not only here.
+  - **THE FAILURE IT IS BUILT AGAINST, named before the code was written:
+    an answers-only check for this change passes on a build where the
+    optimization is ABSENT.** An artifact whose fast tier is secretly bound
+    at the stamped default answers every subject correctly and escalates
+    never. So the boundary is derived THREE ways per subject and the three
+    are compared: the escalation counted at the escalation SITE (under
+    `-DRX_TEST_TIER_HOOK`, which the artifact declares as an `extern`
+    FUNCTION — a mutable static in an artifact is a TS-1 failure and a
+    §5.3 breach, so the counter lives in the driver); the give-up predicted
+    by `<prefix>_search_in` at the FAST capacities, which is the same
+    capacity guard reached through an entry [OPT-1] does not touch; and
+    `gcc -fstack-usage`'s real frame, which is the only one of the three
+    that can tell a working optimization from an absent one.
+  - **THE DEPTHS ARE FOUND, NOT ASSUMED.** The five boundary subjects (1,
+    FAST-1, FAST, FAST+1, DEFAULT) are located by bisecting through
+    `_search_in`, so a change to the frame layout, `VM_FAST_TIER_BYTES` or
+    `vm_cost`'s ratios moves what this file tests. A hardcoded `9` would be
+    green forever and mean nothing after the first re-sizing.
+  - **§2 IS A BICONDITIONAL, checked in both directions**: tiered code
+    present ⇔ `FAST_FRAMES < RESUME_FRAMES`. Population 2,758 corpus
+    patterns (986 dfa, 1,215 vm single-tier, 272 vm tiered, 285 refused),
+    counted and printed, with a separate assertion that the TIERED side is
+    non-empty — a biconditional only ever checked on its trivial side is a
+    vacuous pass. The engine discriminator is `goto rx_L0;`, not a stamp,
+    for run_dfa_stamps.sh's circularity reason.
+  - **THE FLOOR (r38 finding 3a), and it is the arm to read first.**
+    Everything else in this check bounds the fast tier from ABOVE only —
+    `FAST <= RESUME`, the biconditional, §4's frame — so a derivation that
+    SHRINKS leaves all of them green while the tier degrades to
+    escalate-on-everything. The stamp and the bind move together and this
+    file reads both, so it could not see it. Three arms: (A) the tiered
+    corpus population floored at 250 (measured 272) and printed; (B) every
+    tiered artifact must FILL its page budget to within one frame + one
+    trail entry of the integer rounding, read off the artifact — this one
+    is DERIVATION-INDEPENDENT, asserting the property the scaling exists to
+    produce rather than re-implementing the scaling; (C) nothing tiers below
+    `VM_FAST_TIER_MIN`. **Validated by halving the derivation: floor B alone
+    went red on 271 of 271 tiered artifacts at 16 passed / 1 failed, with
+    every answer and span still correct.**
+  - **§6, THE MULTI-GROUP WITNESS (r38 3b).** `((a)|(aa))+b`, `RX_NCAPS=4`,
+    60 consecutive depths, 37 escalating, first at n=24 (a 25-byte subject).
+    `tier_driver.c` `memcmp`s the WHOLE capture array against `_in` at the
+    default descriptor, because §10.9 promises returns AND spans and the
+    specimen's single whole-match group is too weak to carry that — on it
+    "the spans agree" is nearly implied by "the returns agree".
+  - **Validation (made to fail on purpose, MEASURED 2026-08-25, planted in
+    a scratch emitter and removed):**
+    (i) the fast tier bound at the STAMPED DEFAULT ("it never escalates") →
+    §3(b) red on 2 of 6 depths (n=9 and n=342: predicted 1, counted 0) and
+    §4 red on both arms (entry frame 131,248 B) — **while §3(a)'s answers
+    stayed GREEN on all 6 depths and §2 stayed green**, which is the
+    measured proof that neither an answers-only check nor the structural
+    sweep would have caught it.
+    (ii) `FAST_FRAMES`/`FAST_TRAIL` stamped at the default while the tiered
+    code is still emitted → §2 red on **272 artifacts** (every tiered one in
+    the corpus), `mismatch-code-tiers-stamp-says-one`, AND the non-empty
+    -population arm fires too, which is the guard against §2 passing vacuously.
+
+- **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
+  see below) for each optimization's
+  signature (skip tables + skip loop, `start_max = 0` for fully-anchored
+  patterns and its ABSENCE for partially-anchored ones, memchr prefilter,
+  a table-size ceiling that only holds if minimization ran, engine selection
+  for `$` vs `^`, and the M2.12 EOL-path checks: skips present and bounded at
+  n-1, reverse skip entry guard, memchr bounded at n-1, and an ORDER check
+  that accept/EOL evaluation follows the skips), plus the OS-0b multi-engine
+  block. **Since [STD1] phase A (D37, 2026-08-13)** also a WHOLE-FILE check
+  (the stamp sits above any engine function, so `body()` does not apply):
+  `--features std1` stamps `/* Feature set: std1 (modules: classes,modifiers) */`
+  plus the `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` macros in the .c, the
+  paired `.h` carries the comment but never the macros, and a bare
+  invocation still stamps something rather than nothing. **[STD1b]
+  (2026-08-13) re-baseline:** phase A's bare invocation stamped `"none"`
+  (the pre-flip default constant); the bare default is `std1` now, so the
+  bare-invocation check flipped to expect
+  `/* Feature set: std1 (modules: classes,modifiers) */`, and a second
+  check was added for `--features none` stamping `"none"` explicitly (the
+  escape hatch, unaffected by the flip) — 33 checks before, 34 at [STD1b].
+  **[M4.4] (D44.2/D44.5, 2026-08-14) re-baseline: 37 checks.** The
+  `<prefix>_span` out-struct retires (D44.2) for a caps-array
+  `<prefix>_search` parameter, so the OS-1 entry-point-signature grep and
+  the multi-engine fixture's hand-written second-engine declaration both
+  update to the new signature; the multi-engine block's "exactly once per
+  file" assertion now targets the fixed ABI-types block's
+  `#define PCREC_RX_ABI_H` line instead of the retired span typedef, and
+  its duplicate-emission assertion INVERTS (see below); a new check builds
+  two DIFFERENTLY-PREFIXED generated headers together in one TU (D44/A-2's
+  own positive control); and two new structural checks assert
+  `rx_info.ncaps == RX_NCAPS` and `RX_NCAPS > 1 => VM` (D42.2/D44.5, §11
+  item 9 of docs/design/match_api_m4.md), both live from this commit and
+  trivially green pre-[M4.5] since `RX_NCAPS` is 1 on every artifact this
+  DFA-only emitter produces. Part
+  of `make test`;
+  env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
+  (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in),
+  CLANGGEN=1 ([CC-CLANG]: the same shape one compiler over — defaults CC
+  to clang unless already set, opt-in; the K24 noclone check is
+  gcc-specific by design and reads differently, not wrongly, under it).
+  **[M4.7c] (2026-08-17)** added two more `rx_info` cells beside the
+  ncaps/engine pair above: `pattern_len` is the pattern's ordinary byte
+  count for `'abc'` (3), and — the cell that would catch a field silently
+  reporting the MATCHED-byte count instead of the SOURCE-byte count —
+  `'a\nb'` (4 source bytes: `a`, `\`, `n`, `b`) stamps `pattern_len = 4`,
+  not 3 (the bytes the matcher itself walks). The K9 repro proper (an
+  embedded NUL, the field's whole reason for existing — docs/dev/known_issues.md
+  K9) cannot be expressed here at all, since argv has no way to carry a NUL
+  through to `pcrec`; it lives as a direct library-API C probe in
+  tests/cli/run_cli_tests.sh case16.
+
+  **[K35], 2026-08-25 ([DD-14] close): it also carries the LOCALE GUARD,
+  and that check is not about codegen at all** — it lives here because this
+  is where the tree's structural checks live. It sweeps every
+  `tests/**/run_*.sh` for a `sort` used as a COMMAND WORD and fails naming
+  any site guarded by neither an `LC_ALL=C` prefix nor an `export LC_ALL=C`
+  ABOVE it — the export's POSITION is load-bearing and the check tests it,
+  because an export below a sort guards nothing. It counts SITES and
+  GUARDED sites per LINE, so a line carrying two sorts with one guard is
+  caught rather than passed. Measured 2026-08-25: 62 sites across 53
+  scripts, all guarded; floors of 50 sites / 40 scripts make a COLLAPSED
+  sweep a failure rather than a pass (the population that vanishes is the
+  check that cannot fail). Validated in three failing directions before
+  landing: an unguarded site, a script whose export was moved BELOW its
+  sorts, and an empty population. WHY IT IS A CHECK AND NOT A CONVENTION:
+  the hazard was written down once, at `tests/cli/run_cli_tests.sh:786`,
+  and recurred five times anyway.
+
+  **[K37]/[TT-9], 2026-08-25 (srRun2, [CHK-1]): two more structural checks
+  live beside K35, same reasoning — neither is about codegen, both are
+  where the tree's structural checks live.**
+
+  **[K37] THE BARE-COMPILER-CALL GUARD.** Sweeps `tests/**/*.sh` for the
+  compiler token (`build/pcrec`, `$PCREC`, `"$PCREC"`) and fails naming any
+  site that is neither structurally excluded (a comment, a `PCREC=`
+  assignment, an `[ -x/-f "$PCREC" ]` existence test), guarded
+  (`pcrec_run`/`"$TIMEOUT_BIN"`/`gen_run`/`gen_cc` on the line), nor a
+  match for one of six reasoned, per-entry-validated ALLOWLIST regexes
+  (a diagnostic message, an env-var prefix onto a self-recursive or
+  python-worker invocation, an argument two positions past the command
+  word, a grep pattern string, a python heredoc argument, a bash -c
+  positional argument). Measured 2026-08-25: 55 scripts / 427 sites (372
+  guarded, 31 allowlisted across the 6 categories, all non-vacuous);
+  floors 40/380. Fixes docs/dev/known_issues.md K37 — see
+  `tests/lib/CLAUDE.md`'s `gen_timeout.sh`/`pcrec_run` entry for the
+  mechanism this check guards.
+
+  **A SELF-REFERENCE TRAP FOUND DURING VALIDATION, worth reading before
+  writing a sixth structural check in this file.** The FIRST version of
+  this check's own source — its regex literals, its allowlist reason
+  prose — contained the literal text `$PCREC` and `build/pcrec`, so the
+  check's own definition lines matched its own site regex and it failed
+  against ITSELF (9 sites, all inside its own block). Not the standing
+  "control shares a source with what it controls" trap (this check reads
+  no verdict pcrec computes) but its textual cousin: a check whose PATTERN
+  TEXT contains its own SEARCH TARGET is scanning itself. Fixed by writing
+  the dollar sign as a bracket expression (`[$]PCREC`, not `\$PCREC`) and
+  one letter of "pcrec" the same way (`pc[r]ec`) — identical regex
+  semantics, no contiguous byte match — and rewording prose to say "the
+  PCREC variable" rather than spell `$PCREC`. Demonstrated: reverting any
+  `[$]` back to `\$` makes the check fail against itself again.
+
+  **[TT-9] THE SANITIZER SUITE LIST.** Every `tests/*/run_*_diff.sh` must
+  be in `tests/lib/san_scripts.txt` (see its own header) or a stated
+  exclusion; today's exclusion set is empty — the enumeration found all 9
+  belong in the manifest, including 5 that were silently absent from
+  `ubsan`/`asan`/`san`'s old hand-copied lists (`tests/lookaround/`'s two
+  and three `tests/assertions/` diff scripts the same search surfaced).
+  Floor 5 (measured 9).
+
+  **BOTH VALIDATED red then green** (a scratch
+  `tests/altcls/zz_k37_validate_tmp.sh` carrying one bare `"$PCREC" --help`
+  call; a scratch `tests/altcls/run_zz_validate_diff.sh` not in the
+  manifest — both created, observed as the sole named failure, deleted).
+
+  **[SABANCHOR], 2026-08-26 (srAnchor): tests/mech/CLAUDE.md's own standing
+  tripwire, `scripts/m6read_check_sab_anchors.py`, now runs HERE as a FAILING
+  check** rather than living as an ad-hoc script someone has to remember to
+  run by hand. srTier's two-tier default entry ([OPT-1]) and the DFA scan
+  stamps ([DD-13c]) moved the emitted text three sabotage rows anchor
+  against — S67 (`src/gen/emit_dfa.c`'s `strategy_denials` mask gained a
+  member after the ALTCLS pair), S179 and S183 (`src/gen/emit_vm.c`'s
+  `_search_in` bind/delegation, whose surrounding format-string arg list
+  shrank) — and a battery script outside this tree caught all three
+  ANOMALY at a run's start; nothing IN this tree would have. The check
+  reads the tripwire's own `sabotages checked: N` line as its population
+  (floor 150, measured 180) and fails on either a stale/unreadable anchor
+  or a collapsed population, so a future refactor that moves an anchor is
+  caught by `make test-codegen` the moment it lands rather than by the next
+  full `make mech` sweep (up to ~50 min) or a battery author's memory.
+  **VALIDATED red then green** in a scratch copy of the tree (`git archive
+  HEAD` extracted outside the repo, never the live `tests/mech/sabotages/`):
+  planting a stale `SAB_BEFORE` on S01 reproduced the check's exact bad
+  branch (`STALE ANCHORS: 1`, exit 1), reverting reproduced the ok branch
+  (`all 180 anchors resolve`, exit 0).
+
+## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
+
+Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,
+and in each case the fix is a NARROWING that adds coverage rather than a
+loosening that removes it. Read them together, because they are the same
+lesson three times: a check written when only one shape existed can encode
+that shape by accident.
+
+1. **The minimization check's group is now `(?:...)`.** It was
+   `(get|post|put|delete|patch)`, and the group was incidental to what the
+   check measures (a DFA table's size) — until D42.1 made captures the
+   default, at which point the capturing spelling routes to a VM artifact
+   where the table lives in `rx_prefilter`, not in the `rx_search` body
+   `body()` extracts. A NEW companion check then asserts the same alternation
+   in its CAPTURING spelling gets a minimized table inside the prefilter,
+   which is coverage that did not exist before: the hybrid runs the same
+   forward+reverse pair through the same passes, so a minimization bug scoped
+   to that path was previously invisible.
+
+2. **`body()`'s anchor accepts an optional `static`.** The VM's prefilter is
+   the same emitter's output under a private name and a different storage
+   class, and it must be per-engine extractable for exactly the reason every
+   other body is.
+
+3. **TS-1 now distinguishes a static FUNCTION from a static OBJECT.** D19's
+   property is "no mutable file/function-scope STATE", and a function has no
+   storage to race on — but while every emitted `static` was a table, "static
+   and not const" and "mutable state" were the same set and the check could
+   not tell them apart. A VM artifact emits five static functions and keeps its
+   whole mutable working set in a LOCAL of the search entry, which is what D19
+   asks for. The discriminator is C's declarator syntax (a `(` with no `=`,
+   `;` or `[` before it), not a list of known function names, so
+   `static unsigned char rx_tbl[256] = {` — S06's sabotage, a table with its
+   `const` dropped — still has no `(` at all and is still caught, and so is
+   anything of the shape `static int rx_counter = f(0);`.
+
+   S02 and S06 were RE-RUN through `tests/mech` after these edits, because a
+   narrowed check whose sabotage was validated against the wide version has
+   not been validated at all.
+
+## THREE scripts here run under a DIFFERENT section, and the reason is measured
+
+`run_endvar_identity.sh` ([M6.2] wave A) runs under `make test-assertions`,
+on exactly the argument the two below run under `make test-vm`: it builds a
+reference compiler and sweeps the whole corpus through BOTH builds, which is
+minutes rather than seconds, and `make smoke` includes `test-codegen` and is
+already at its 60s target. It lives HERE because it is an identity
+differential, kin to `run_trie_identity.sh` by technique; it runs THERE
+because that is the module whose claim it gates. `make test` runs it either
+way.
+
+## Two scripts here RUN under `make test-vm`, and the reason is measured
+
+`run_vm_identity.sh` and `run_ir_listing.sh` live in this directory because
+they are identity and structural differentials — kin to `run_trie_identity.sh`
+by technique — but `make test-codegen` does not run them. `make smoke`
+includes `test-codegen`, and the two cost 8.0s and 2.9s against this section's
+own 0.7s + 7.4s (measured 2026-08-15). Leaving them here took `test-codegen`
+from 9.33s to 16.28s and `make smoke` to 62.98s, against a documented 60s
+target; moving them to `test-vm` puts smoke back at 54.76s.
+
+docs/testing.md asks for exactly this re-check whenever a section grows, and
+records the second finding the measurement turned up: smoke was ALREADY over
+its target on the main this lane merged, dominated by `test-known-fail`'s
+23.26s — a section that used to be nearly free, and is not this directory's to
+fix.
+
+`make test` runs all four scripts either way; only the section wrapper moved.
+
+## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
+
+Every symbol these checks look for is a function-local static or a statement
+inside the engine function — that is the measured finding OS-0b rests on, and
+it is what lets several engines share one file under D18/D20. It is also what
+makes a whole-file grep wrong as soon as there IS more than one engine:
+`rx_forward_stay[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
+reading "this pattern emits a skip table" degrades to "some engine in here
+does" while still passing. All 19 grep sites across 11 generated files now run
+against a body extracted by entry name (`body()`).
+
+An extractor is itself a thing that can silently break, so it is not trusted on
+inspection. The multi-engine block builds a two-engine file by hand — the
+fixed ABI-types block once for the file, a distinct entry name per engine,
+every other identifier
+untouched, i.e. exactly the transformation an engine finder (OS-0) will apply —
+and requires a scoped grep to find the skip table in the engine that HAS one
+('.*=.*') and NOT in the engine that does not ('^a|b'). A `body()` returning
+the whole file fails the second; one returning nothing fails the first. The
+block also compiles the fixture under GENCFLAGS.
+
+**[M4.4] (D44.2/D44/A-2) INVERTS the duplicate-emission assertion, on
+purpose.** Before the API break, duplicating `emit_span_typedef`'s call
+broke the build (gcc: `error: conflicting types for 'rx_span'`, since each
+occurrence declared a fresh anonymous struct; confirmed under -std=gnu11
+and -std=c99) — the emit-once rule was load-bearing because nothing guarded
+re-inclusion. The fixed ABI types (`rx_ctx`, `rx_matchfn`, `rx_group_entry`,
+`rx_info`, ...) are wrapped in a PREFIX-INDEPENDENT `#ifndef PCREC_RX_ABI_H`
+guard instead (the R21 panel MEASURED that a per-prefix guard fails the
+exact case it exists for: two differently-prefixed generated headers in one
+TU, each deriving a DIFFERENT guard name, both bodies re-defining the fixed
+types), so the property worth asserting flipped: duplicating the WHOLE
+guarded block (guard included) must NOT break the build anymore, and the
+codegen suite's own positive control for the guard's necessity is instead
+the two-differently-prefixed-headers check below.
+
+Validated sabotages for run_codegen_tests.sh (37 checks pass clean, as of
+[M4.4] — read the current count from a run rather than this line, which has
+already drifted at least once). Each was
+applied to a FRESH tree, with the edit asserted to have landed before the tree
+was built:
+
+| sabotage (exact edit) | result |
+|---|---|
+| `int nout = 0;` -> `int nout = 0; return 0;` in `pick_skip_states` (skip states off) | 7 fail — the 6 pre-OS-0b skip checks, unchanged by the scoping, plus the multi-engine control reporting its fixture can no longer discriminate |
+| in `body()`, `$0 ~ "^int " fn "\\(" { inside = 1 }` -> `{ inside = 1 }` (extractor returns the whole file) | 3 fail, incl. "scoped grep attributed engine A's skip table to engine B" |
+| replace only the attribution-step extraction: `&& body "$WORKDIR/multi.c" rx_search_b ...` -> `&& cp "$WORKDIR/multi.c" ...` (isolates scoping from fixture construction) | 1 fail — the attribution check alone |
+| [M4.4] `tests/mech/sabotages/S04_duplicate_typedef.sh`, RETARGETED: neuter the `PCREC_RX_ABI_H` guard (`#ifndef PCREC_RX_ABI_H` -> an unconditional `#if 1`) | 2 fail — the D44/A-2 cross-prefix compile check and the OS-0b duplicated-block compile check; a single-prefix artifact still compiles, so nothing else regresses |
+| in the fixture's rename, `s/\brx_search\b/rx_search_b/g` -> `.../rx_search/g` (engines keep one name) | 1 fail — compile, `error: redefinition of 'rx_search'` |
+
+## The OS-1 checks assert an ABSENCE, which the corpus cannot
+
+Case folding (D23) is behaviour-preserving in the direction that matters here:
+a corpus can prove `-i abc` matches `ABC`, but nothing in it can prove the
+match cost nothing. The OS-1 checks assert the emitted shape instead — that
+`-i 'aBc'` is byte-identical to `'[aA][bB][cC]'`, that a letter-free pattern is
+untouched by `-i`, that no `tolower`/`0x20`-style conversion appears anywhere,
+and that the entry-point signature is unchanged (a compiled-away option must
+not surface at run time, D18). Implement caselessness as a runtime check and
+every one of them fails while the corpus stays green.
+
+These comparisons use `-o -` and, since [M4.4], compare the `rx_search`
+ENGINE BODY (`body()`-extracted) rather than the whole file. That is not
+tidiness: writing two files emits two different `#include "<name>.h"`
+lines, so a whole-file comparison would differ for a reason unrelated to
+folding — the same trap `run_trie_identity.sh` documents at its
+`gen_a`/`gen_b`, and the reason the first version of these checks used
+`gen` and failed. **[M4.4] added a second, structurally similar reason to
+scope down to the engine body specifically**: `rx_info` (D43.1) embeds the
+source pattern text and the compiled `flags` word unconditionally, and
+both legitimately differ between two different pattern spellings (or
+between `-i` and no `-i`, even on a pattern `-i` has no folding effect on —
+the flag is still set as compiled) — the same "the stamp differs by
+design" shape D37's [STD1] case9/case10 already established in
+`tests/cli/`. D18's zero-cost claim was always about the AUTOMATON
+specifically, which is exactly what `body()` extracts; comparing the whole
+file would now fail these checks for a reason that has nothing to do with
+whether folding leaked into the runtime.
+
+`run_trie_identity.sh` also sweeps its 500-pattern corpus TWICE, once
+case-sensitive and once with `-i`. Folding rewrites the bitmaps the trie keys
+on — `Cat|CAT|cat` goes from three unrelated branches to three identical ones —
+so the folded sweep drives rule 1's accept split and rule 2's disjoint-run
+logic down paths the unfolded corpus never reaches.
+
+| sabotage (exact edit) | result |
+|---|---|
+| move the `cls_casefold` call in `p_class` from before the negation to after it | 1 codegen check (`-i '[^a]'` is not `'[^aA]'`) + 6 caseless.rxt cases |
+| delete the `cls_casefold` call in `char_node` (classes still fold, literals do not) | 1 codegen check + 14 caseless.rxt cases |
+| `if (cls_has(b, c) \|\| cls_has(b, c + 32))` -> `if (cls_has(b, c + 32))` (fold one direction only) | 1 codegen check + 8 caseless.rxt cases |
+| in run.sh, drop the `-i` mapping so `flags i` becomes a no-op | 21 of 56 caseless.rxt cases |
+
+## TS-1 guards a property NOTHING else in the repo can see
+
+D19's rule is "usable FROM threads, never threaded". For generated code that
+reduces to two mechanical facts — every emitted `static` is `const` (so it is
+.rodata with a constant initialiser: no lazy init, nothing to race on) and the
+output references no non-reentrant or allocating libc. Both hold today by
+construction, and both are invisible to correctness testing.
+
+The sabotage numbers make the point better than the prose. Making every emitted
+table a NON-CONST static fails 8 TS-1 checks and **zero** corpus cases: the code
+compiles, matches identically, and passes the entire suite while being
+thread-hostile. That is the memoisation-cache / hoisted-scratch-buffer /
+diagnostics-counter failure mode, and under D18 also a selector that caches its
+choice in a global.
+
+The sweep covers 18 emitted files across 9 emission shapes (both engines, EOL
+and non-EOL, both prefilter kinds, skip states, the never-matches path,
+case-folded, and `--emit-main`), plus the paired `.h`. The file count is itself
+asserted, so a sweep that quietly stops generating stops passing.
+
+| sabotage (exact edit) | result |
+|---|---|
+| `static const unsigned char %s_%s[%d]` -> `static unsigned char %s_%s[%d]` in `emit_u8_table` | 8 TS-1 checks, **0 corpus cases** |
+| `size_t pos = startpos;` -> `size_t pos = startpos; (void)errno;` in `emit_unanchored` | 6 TS-1 checks (+ the OS-0b compile check, incidentally, because `errno` also needs a header it does not get) |
+
+Line 1 of each file is stripped before scanning — it echoes the user's pattern
+verbatim, so a pattern named `malloc` would otherwise fail its own denylist.
+The scan does not strip C comments, so an emitted comment that merely mentions
+a denylisted symbol will trip it; that is deliberate, and the fix is to reword
+the comment rather than to weaken the list.
+
+The M2.12 additions are the sharpest illustration of why this directory
+exists: reverting the EOL path to its M2.7 state (no prefilter, no skips —
+~76x slower on `$` patterns) fails 6 checks here while the .rxt corpus still
+passes 53/53, because the change is behavior-preserving by construction.
+
+## Two kinds of check live here
+
+`run_codegen_tests.sh` asserts a SIGNATURE is present in the output — cheap,
+but it only ever proves the optimization ran, never that it was right.
+`run_trie_identity.sh` asserts EQUIVALENCE against a reference build with the
+optimization off, which proves soundness across hundreds of patterns at once.
+Prefer the second shape whenever an optimization is supposed to be
+output-preserving; the M2 journal wrongly concluded M2.8 was not structurally
+testable, and the equivalence check turned out to be both possible and far
+stronger than the corpus (a broken disjointness guard shows up on a handful of
+.rxt cases and on 64 of 500 patterns here — the measured figures and the exact
+edits behind them are in the sabotage table below). The ".rxt cases" half of
+that figure was measured at 2 when this was written and is 6 today
+(alternation_trie.rxt grew) — which is MECH-1's founding example of a
+hand-copied count going stale silently. Current figures for EVERY sabotage in
+this file come from `bash tests/mech/run_sabotage_matrix.sh` (S01..S14 cover
+this directory); the tables below keep the exact edits and the lessons, and
+the generator owns the numbers.
+
+An equivalence check has its own trap, and the fix for it is not optional: if
+BOTH builds had the optimization off, every comparison would agree and the
+script would certify a deleted optimization. `run_trie_identity.sh` therefore
+carries POSITIVE CONTROLS — patterns whose NFA fits the cap only when factored,
+so the two builds fail at different stages — and they are sabotage-validated.
+
+**There are three of them, at 4, 8 and 256 branches, and the small ones are the
+important ones.** The first version had only the 256-branch control while every
+generated pattern had 3..8 branches, and a critic broke it in one clause:
+`elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)` left all three checks
+green, `make bench`'s KEYWORD-SCALE green, and the whole `make test` suite green
+with the trie deleted for every hand-written pattern. A control that only proves
+the optimization fires OUTSIDE the corpus's own range proves nothing about the
+corpus. When adding an equivalence check, put a control inside the range of the
+inputs it actually compares.
+
+## [M6.2 wave B] the three `\b` rules, and why none is a correctness test
+
+`run_codegen_tests.sh` gained an `[M6.2-WORDB]` block of three rules from
+`assertions_design.md`, each of which is invisible to every oracle in the
+tree — this file's whole charter, three more times:
+
+1. **§3.6.2 — never index an accept table at `pos == n`.** Two axes select an
+   accept bit (the VIEW axis by position, the CLASS axis by the next byte),
+   and at end of subject there IS no next byte, so the accept is the view's
+   SCALAR one. Getting it wrong reads `s[pos]` at `pos == n` — an
+   out-of-bounds read in EMITTED code, K27's class — and usually changes NO
+   answer, because the byte one past the subject is often readable and often
+   lands in a class with the same bit. Checked two ways, because either alone
+   is weak: every class-indexed read must go through the guarded `cl` local,
+   AND the `pos >= n` guard (with the scalar accept inside it) must precede
+   the first such read. Sabotage S73.
+2. **§3.8.3.1 — no `match_start_position` at the reverse boundary except through the
+   context-indexed accept, from ANY writer.** The design states an invariant
+   rather than a patch because there is more than one writer: the reverse
+   SKIP's `match_start_position = pp;` is emitted under a COMPILE-TIME condition, so what
+   lands in the artifact is a bare unconditional assignment with no runtime
+   test to fail. The check enumerates every `match_start_position` assignment in the body
+   and requires each to be conditioned on an accept read. A companion rule
+   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `rewind_position <=
+   startpos` break, because the loop has a SECOND exit (dead state) and an
+   epilogue below it would record a position the walk never reached and index
+   the accept table with a negative state. Sabotage S72.
+3. **§7.2 item 3 — one word-set spelling per artifact.** Whatever `\w` means,
+   `\b` must agree with, and the only way to guarantee that is one definition
+   with two readers. A second copy changes nothing the day it lands and drifts
+   the day one is regenerated.
+
+**The FIXTURE is `\bx.*y\b`**, and the choice is load-bearing: it is the only
+shape carrying every emitted site at once — class-indexed accepts in BOTH
+machines, mechanism 4's seed in both, AND live forward and reverse SKIP
+states. Rule 2 is about the skip, so a fixture without one would satisfy it
+vacuously, and the check asserts the skip's presence rather than assuming it.
+
+## [M6-READ] `run_object_neutrality.sh` — the two-compiler gate
+
+Added 2026-08-21 as conversion step 2, BEFORE any emitter change. It sweeps
+every `pattern` line in every `.rxt` under `tests/` (the population grows with
+the corpus, `run_vm_identity.sh`'s formulation) through TWO pcrec builds,
+compiles both artifacts at `-O2 -g0`, and compares:
+
+  **(a)** raw `.text` + `.rodata` bytes — executed code, which contains no
+  names at all. This is the property that matters.
+  **(c)** exported symbols — [M6-READ] promises zero ABI change, and this is
+  the line that enforces it.
+  **(b)** all symbols, reported as INFO only. Renaming a static function or a
+  function-local static table renames its internal-linkage symbol; that is not
+  executed code and does not survive `strip`, but a check diffing disassembly
+  TEXT fails on it. The sample stage's first version did exactly that and
+  produced 200 lines of diff in which every line was a symbol name.
+
+**It is NOT in `make test`**, and cannot be: it needs a second compiler. It is
+a tool pointed at two builds. That also makes its reference STRONGER than the
+`*_identity.sh` family's — those build a reference from the same sources with
+a `-D` knob, which wave D measured can CANCEL a sabotage; this one takes a
+genuinely independent binary, sharing no sources with its subject.
+
+**Its own non-vacuity has two arms.** A sweep that compared nothing fails
+loudly (`same == 0`), and a pattern one build refuses while the other compiles
+is a REFUSAL MISMATCH rather than a skipped row. But the sharper control is
+self-arming and arrives with the conversion: after the rename, **(b) must be
+NON-ZERO** while (a) and (c) stay clean. If (b) came back 0 from a converted
+emitter, the gate would be reading artifacts the rename never touched.
+
+Baseline recorded at step 2, current build against itself: 33 of 40 patterns
+compared (7 refused by both), (a) and (c) clean, **(b) = 0** — which is
+correct for a self-comparison and is the number the conversion must move.
+
+## [M6-READ] the SLOTS block's non-vacuity guard, and the sabotage that earned it
+
+Added 2026-08-21, **before** any emitted identifier was renamed, because the
+rename is what makes the hazard live. `run_ir_listing.sh`'s SLOTS block
+compares two extractions that are both pattern-matched SPELLINGS the emitter
+writes: `RX_SET(<slot>` in the `.c`, `set slot_values[n]` in the listing. Renaming
+them together is the only CORRECT way to rename them — and doing so makes
+both greps match nothing, after which `diff -q` on two empty files passes.
+The check would go on reporting green while reading neither side.
+
+This is the failure this project already has in its own memory (a control
+sharing a source with the thing it controls), and [M6-READ] is a live
+occasion for it in two independent ways: the listing's prose moves with the
+emitter's variable names, and the artifact stops writing `RX_SET(2,` at all
+once the slot legend lands (`RX_SET(RX_SLOT_GROUP1_START,`).
+
+Three things now hold the block open:
+
+1. **Per-pattern non-emptiness, asserted on BOTH sides.** Every pattern in
+   `PATTERNS` has at least one capturing group, so every one must write at
+   least one slot; an empty extraction is a failure with its own message
+   naming which side went blind.
+2. **Symbolic operands are RESOLVED against the artifact's own `#define`s**,
+   so the block keeps working across the slot-legend change instead of
+   needing a flag day — and an operand that resolves to nothing is a hard
+   failure, not a silently dropped row.
+3. **A sweep-wide guard for CHOICE POINTS**, which cannot assert
+   non-emptiness per pattern (a fully-possessified pattern legitimately
+   pushes no frame) but across this sweep must find some.
+
+**Measured, both directions** (run from this directory — see the scratchpad
+warning below, which this lane walked into before getting it right):
+
+| state | old check | new check |
+|---|---|---|
+| unsabotaged | 79 pass / 0 fail | 80 pass / 0 fail |
+| listing side moved only (`set slot_values[n]`) | 68 / 11 — already caught | 69 / 11, message names the listing |
+| **BOTH sides moved** (the real post-conversion state) | **79 / 0 — all 11 SLOTS checks comparing empty against empty** | **69 / 11, message names the `.c` side** |
+
+The middle row is why the guard is not redundant: the one-sided sabotage was
+always caught, so a validation that only tried that one would have concluded
+the block was already safe. Only the both-sides case is vacuous, and it is
+the case the conversion actually produces.
+
+The guard also found a live defect in the extraction on its first run: the
+old numeric-only grep was matching `RX_SET`'s own `#define` line and silently
+dropping the operand because the macro PARAMETER name (`slot_`) is not
+`[0-9]+`. Resolving symbolic operands made it visible. `#define` lines are
+now excluded explicitly.
+
+## **[M6.4.2] `run_atomic_identity.sh`, and the ONE gate here whose reference is a PINNED COMMIT**
+
+> **[M6.4.4]: THIS ONE IS OPT-IN.** It is not in `make test`, not in
+> `make test-atomic`, and not on the `ubsan`/`asan` lists — `make
+> test-atomic-identity` runs it. The design ruled it a ONE-SHOT LANDING gate
+> (§11.2, §14 item 8) and the pinned reference below is exactly why that
+> reading is right: every run re-answers the same question about a moment that
+> has passed, and the answer cannot move unless someone edits PRE-MODULE code.
+> Its archived result lives in docs/testing.md, "The atomic landing gate". The
+> four `-D`-knob gates above are NOT affected: their references track the
+> current tree, so they are standing invariants and stay in `make test`.
+> It also has no sanitizer axis to offer — it never runs a generated matcher,
+> it compares emitted C as TEXT.
+
+The fifth `run_*_identity.sh`, and the paragraph above ("ALL FOUR GATES'
+REFERENCE KNOBS ARE NOW AT THE ACTION") asks to be read before adding one. Its
+answer for this module is that **no knob placement works, because there is no
+action to place one around.** The four predecessors each gate an ANALYSIS
+ACTION — a refinement in `eqclasses`, an interning in `make_state`, an emitter
+dispatch — and the knob works because the action runs on the population under
+test. Module `atomic-groups` refines no alphabet, interns no state and reads no
+byte it did not already read as part of a body: its whole surface is "is there
+an `A_ATOMIC` in the tree", which is FALSE for every pre-module pattern. A knob
+would gate code that never runs on the identity population, so the sweep would
+report 100% identical no matter what was sabotaged — the blindness that
+paragraph warns about, in its purest form.
+
+So the reference is built by `git archive` from a PINNED PRE-MODULE COMMIT,
+`probe_kreset_identity.sh`'s precedent ([M6.2] wave E). It shares NO SOURCES
+with the subject, so no sabotage of this tree can reach it — which also makes
+it strictly stronger than a knob build, and is the direct answer to wave D's
+own finding that a knob build's sabotage CANCELS.
+
+**Three guards keep it from going vacuous**, and the third is this module's
+own. The pin must RESOLVE (a gate that cannot build its reference SAYS so
+rather than skipping); the reference tree must not contain `A_ATOMIC` (a
+mistyped commit resolving to something recent would build a reference that
+agrees everywhere); and the POSITIVE CONTROL is the refusal-mismatch column —
+the pre-module compiler cannot compile an atomic pattern at all, so a run
+reporting zero differing AND zero refusal mismatches has lost its atomic
+population or is comparing two builds of the same tree.
+
+Landing figures: **1311 default and 1312 `--engine=vm` atomic-free corpus
+patterns byte-IDENTICAL, 0 differing, 0 refusal mismatches, 96 atomic patterns
+all refused by the reference.** K29's fix genuinely does move emitted bytes for
+`X{n,}` on the counter rung with a positive §2.2 verdict, and the gate was
+written expecting an exception bucket for it — but NO corpus pattern is in that
+family (0 of 1448), so it asserts a flat zero and the bucket was DELETED rather
+than kept "just in case". A differing-but-expected bucket is exactly the thing
+that quietly absorbs the next real difference.
+
+## **[M6.4.2] the `[M6.4-ATOMIC]` block: five rules plus 5b and 5c**
+
+Every rule matches **BOTH SPELLINGS OF A CUT** and **CALL SITES**, and both are
+corrections the R31 panel forced rather than caution. `vm_revdet_rep` cuts by
+assigning `run->resume_depth = <prefix>_rvN_frame_mark` and never touches the
+`RX_CUT` macro — `vm_cut`'s own header records a step-charge probe that
+"reported a confident zero for the revdet rung" for exactly that reason. And
+`#define RX_CUT(slot_)` is emitted UNCONDITIONALLY on every VM artifact, so
+`grep -c RX_CUT` is at least 1 on every artifact pcrec has ever produced.
+MEASURED on live artifacts before the rules were written:
+
+| pattern | `grep -c RX_CUT` | `'^ *RX_CUT('` | second spelling |
+|---|---|---|---|
+| `a*+b` | 1 | 0 | 0 |
+| `(?>a*)b` | 1 | 0 | 0 |
+| `(?:a|bc)*+d` | 1 | 0 | **1** |
+
+The first two are the CURSOR rung, frameless and correctly cutless; the third
+is REVDET. A rule spelled "the artifact contains `RX_CUT`" is green on all
+three and would be green on a compiler emitting no cut at all.
+
+**Rule 1 asserts on TWO SOURCES because R31 E3 showed one is satisfiable by a
+half-done edit.** The design's first form of RULE H3 edited `v.mrl_win` and
+called the artifact's `RX_VM_PRUNE_CEILING` stamp the check — but that flag was
+read only by the stamp and the `--emit-ir` text, while the lines that BUILD the
+ceiling were gated on `prefn` and `nclamp` and never on it. Measured by making
+exactly that edit: **the stamp reads "subject-end" (1(b) GREEN) with both
+`window_end = window[0][1]` assignments still live (1(a) RED)**. It is also
+SCOPED to `nclamp > 0` (R31 C5): the stamp is three-valued, and an unscoped
+rule is RED on the four correct `"none"` artifacts in every 46-pattern R3a
+sample. Rule 1c is the other direction — an atomic-FREE artifact must KEEP its
+ceiling, or rule 1 would pass on an emitter that switched it off for
+everything.
+
+**Rule 5 drives BOTH PREFERENCES on all six dispatch paths**, which is R31's
+re-check N1: the cursor rung SATISFIES cut-equivalence (it is frameless) and
+still answers the wrong language on a lazy body, so a greedy-only per-path
+check would have been green on the lift that miscompiles 7 of 8 lazy cells.
+
+**Rule 5c is E4/S98's detector, and it found a live bug during the lane.** Every
+`RX_CUT(n)` must name a slot the artifact's own legend declares a CUT MARK.
+With RULE 3's condition-(d) decline written into `vm_rep` alone, `vm_count_slots`
+took the revdet arm while the emitter took the frames arm, and
+`-fno-possessify '(?>(?:a|bc){2})d'` emitted `RX_SET(RX_SLOT_REVDET0_ENTRY, …)`
+and `RX_CUT(2)` onto the revdet loop's OWN entry slot — two live loops sharing
+one slot, which is the failure `vm_count_slots`' header names. Its failing
+direction was then demonstrated by reverting the fix (2 CUT-NOT-A-MARK).
+
+## [M6.5.2] the `[M6.5-DUPNAMES]` block, and `run_backref_identity.sh`
+
+**`[M6.5-DUPNAMES]` — the reflection table's ORDER, read off the ARTIFACT.**
+With `(?J)` the `rx_info.groups` table can hold ADJACENT ROWS WITH EQUAL NAMES,
+and `docs/spec/match_api.md` §5.4's caller algorithm (§5.4¶6: bsearch, walk BACK to the
+run's first row, then FORWARD to the first participating one) selects the
+LOWEST-numbered participating member ONLY IF the within-name order is
+ascending. Get it backwards and the table encodes the "last set" rule
+`backrefs_design.md` §8.3's `"xyy"` cell rules out — while the emitted matcher
+still implements "first set", so the two disagree and NO match-semantics test
+can see it.
+
+**WHY IT IS STRUCTURAL RATHER THAN A BEHAVIOURAL `.rxt` CELL**, and this is
+R32's re-check finding: without the number tiebreak, whether the emitted order
+is wrong depends on TWO unspecified properties agreeing — `qsort`'s stability
+and the direction `Ctx.named_groups` is walked in. `mod_named_groups.c`
+PREPENDS and `emit_dfa.c` walks from the head, so on glibc (a stable merge
+sort) a name-only comparator yields DESCENDING numbers within a run. A check
+that depends on that coincidence is not a control. Reading the order off the
+ARTIFACT depends on neither.
+
+**STRICTLY increasing, not merely non-decreasing**, and that is the COMPARATOR
+TOTALITY half: a comparator returning 0 for rows that differ in NUMBER would
+leave them in whatever order the sort produced, and two rows equal in BOTH
+fields would be a duplicate the table must never contain. The ORDER half is
+live exactly when a dup-name pattern is compiled; the TOTALITY half is
+exercisable on every fixture with two or more names, which is why the fixture
+set has both kinds and asserts EXACTLY 5 tables of which EXACTLY 3 carry a
+duplicated name. Failing direction demonstrated: with the tiebreak removed,
+three fixtures go red naming the offending row pair. Sabotage S120.
+
+**`run_backref_identity.sh` — the module's byte-identity gate, and the SECOND
+one here whose reference is a PINNED COMMIT.** Same ruling and same reasoning
+as `run_atomic_identity.sh` (ASK-4, ruled with R32): a knob-built reference is
+sabotaged too, and here a knob would be worse than weak — NO STAGE OF THIS
+MODULE RUNS ON THE CONTROL POPULATION, so it would gate dead code and the
+sweep would report 100% identical whatever was sabotaged.
+
+**THREE AXES, and the third is this module's own.** Under `--no-captures` the
+parser now builds an `A_CAP` for EVERY numbered group and deletes the
+unreferenced ones at end of parse (§6.3, because a FORWARD reference makes
+"will this group be referenced" unanswerable at the opening paren), so "the
+tree is what it always was" is a claim about a DELETION rather than about code
+that never ran. **That axis found a real defect on its first run**: the
+resolution pass's early return skipped the strip for a backref-FREE pattern, so
+every `--no-captures` artifact with a group emitted different bytes while
+answering identically — which is exactly the class of defect only an identity
+sweep sees.
+
+**IT COMPARES PAST D37's THREE FEATURE-STAMP LINES**, with the filter asserted
+to remove EXACTLY three from each side, and that is the precedent `tests/cli`
+case10 set rather than a loosening. `render_modules` (src/parse/enabled.c)
+renders the enabled module list by walking the registry in TABLE ORDER and
+taking each module name at its FIRST row; this module adds two rows naming
+module `recursion` at `RK_ESC 'g'`, well before the `RK_GROUP` rows where that
+name previously first appeared, so under `--features all` the stamp's list
+moves `recursion` earlier. The mask, the gate state and D37's own promise (the
+stamp's value can be passed back to `--features`) are order-independent, and
+case14 is where the stamp's CONTENT is pinned.
+
+Result at landing: default 1501/0, vm 1502/0, nocaptures 1501/0 identical, with
+the positive control at 124/124 backref-bearing patterns REFUSED by the
+pre-module compiler.
+
+## [M6.6.2] `run_lookaround_identity.sh` — module `lookaround`'s gate: BUCKET mode by default since wave B+C, pure-refactor mode on demand
+
+**The THIRD gate here whose reference is a PINNED COMMIT**, and the one where
+the pin is not merely preferable but the only possibility. `LOOKAROUND_
+IDENTITY_REF` defaults to `eacac76`, [M6.6.2]'s branch point — the last tree
+whose `struct Ast` carries the per-kind fields at top level, before D70's
+tagged union. A `-D` knob could not build this reference even in principle: a
+refactor has no gated region, and no knob can make one build use `n->rmin` and
+the other `n->u.rep.rmin` without BEING the refactor.
+
+**IT HAS TWO MODES, AND WAVE B+C FLIPPED WHICH ONE IS THE DEFAULT.**
+
+`STRICT_ALL=1` was wave 0's claim and is STRONGER than the one a module gate
+normally makes: D70's refactor was ~250 mechanical access-site renames with
+zero behaviour change, so the assertion was not "a lookaround-FREE pattern is
+unmoved" but that EVERY pattern in the population is unmoved, on the FULL RAW
+STDOUT with no stamp strip. **That mode goes red BY CONSTRUCTION the moment a
+lookaround compiles** — `(?=`, `(?!` and `(?*` patterns now build and the
+pinned reference refuses every one — which is a correct answer to the wrong
+question. It is KEPT RUNNABLE and kept documented, because it is the right
+mode for the next change of that kind (a rebase of wave 0 onto a moved base,
+any later pure refactor), and a red under it should be read as "the mode does
+not fit this tree" before it is read as a defect.
+
+`STRICT_ALL=0` is the default since wave B+C and is the ordinary module-gate
+claim: **a lookaround-FREE pattern's emitted bytes did not move.** The
+population is split by `lookaround_classify.py` and only the FREE bucket is
+compared, on all four axes.
+
+**THE STAMP STRIP IS ALLOWED IN BUCKET MODE AND ASSERTED, NOT TRUSTED.**
+`run_backref_identity.sh` is entitled to filter D37's three feature-stamp lines
+because a MODULE legitimately moves them, and this wave is such a module. So
+the three lines are stripped — and the strip REPORTS HOW MANY LINES IT REMOVED
+and requires exactly three on each side of every compiled comparison. A filter
+that quietly removed four would be absorbing precisely the difference the gate
+exists to report; a wrong count is its own failure class, `STAMP FILTER`.
+Under `STRICT_ALL=1` nothing is stripped and a stamp-only difference is a
+FINDING for the manager.
+
+**FOUR AXES** (ASK-4): `default`, `--engine=vm`, `-fno-prefilter`,
+`--no-captures`. The default alone is blind to most of `src/gen/emit_vm.c`,
+where 174 of the wave's 249 renamed sites live — under it most corpus patterns
+route to the DFA and never reach the VM emitter at all.
+
+**THE POPULATION INCLUDES THE REJECT TABLE.** Every `pattern` line from every
+`.rxt` under `tests/` (known_fail included), PLUS every pattern
+`tests/reject/run_reject_tests.sh` exercises, parsed out with `shlex` so shell
+quoting is read rather than guessed at (an unparseable row is skipped and
+COUNTED, never mangled into a different pattern). The reject half is not
+padding: those patterns are the only population that exercises the stderr
+comparison at all, so without them a refactor that moved a diagnostic would go
+unseen. Floor 1400, asserted.
+
+**THE SWEEP IS PYTHON, AND THAT IS A CORRECTNESS CHOICE.** Its two predecessors
+compare with `a="$(gen_a ...)"`, and command substitution STRIPS TRAILING
+NEWLINES — so a difference confined to trailing bytes is invisible to them. At
+a pure refactor that blind spot is not acceptable, so this sweep captures
+stdout, stderr and exit status as bytes and compares them exactly.
+
+**THE POSITIVE CONTROL IS NOW IN THREE PARTS**, because "0 differences"
+between a tree and itself is worth nothing. (a) The reference is ASSERTED
+pre-refactor: it must contain neither `A_LOOK` nor `u.rep.`, so a mistyped pin
+that resolved to something recent fails loudly instead of reporting a clean
+bill of health. (b) The gate is DEMONSTRATED RED — the recipe is in the script
+header (swap `a->u.rep.rmin` for `a->u.rep.rmax` at one `vm_rep` site in
+`src/gen/emit_vm.c`, rebuild, run, revert). A gate nobody has seen red is a
+gate nobody has checked. **(c), added at wave B+C and the one design §9.2 calls
+the half that can actually fail: the BEARING bucket must be REFUSED IN FULL by
+the reference** (`ctl_bad == 0 && ctl_ok == nb`). (a) and (b) are claims about
+the PIN and about the SCRIPT; (c) is a claim about the two COMPILERS, and it is
+re-answered on every run.
+
+**THE BUCKET SPLIT ([M6.6.2] wave B+C; it was the `WAVE E HOOK`), and it is a
+GRAMMAR-AWARE SCAN because it cannot be a grep.** `(?=` inside a character
+class is three literal bytes, `\(?=` is an escaped paren, and `(?<name>` is a
+NAMED GROUP belonging to a different module — SR-9 split that selector by TAIL
+after a 256-byte sweep found exactly three lookaround tails (`=`, `!`, `*`) and
+the named-group path for every other byte. A substring test gets all three
+wrong in the direction that ADMITS a pattern to the identity population,
+which is a silent pass. `lookaround_classify.py` tracks backslash escapes and
+class depth and FAILS SAFE toward BEARING: a truncated `(?` or `(?<`, and any
+`(*name:` whose name merely contains "look", go there though no rule names
+them. **Control (c) is what makes failing safe safe**: over-classifying costs a
+pattern from the identity population and is caught LOUDLY, because a
+lookaround-free pattern filed as bearing is one the reference COMPILES.
+Measured at the wave B+C landing: 85 bearing / 2048 free, floors 60 and 700,
+control 85/85, and 0 differences on all four axes.
+
+**AND THE CLASSIFIER'S OTHER DIRECTION WAS MEASURED TOO, WHICH THE CONTROL
+CANNOT DO.** Control (c) catches OVER-classification (a free pattern filed as
+bearing is one the reference compiles). UNDER-classification — a
+lookaround-bearing pattern quietly admitted to the identity population — has no
+such backstop, so it was measured directly: `STRICT_ALL=1` on the wave B+C tree
+reports **332 differing comparisons over the four axes, 83 distinct patterns,
+and ZERO of them in the FREE bucket**. Every pattern whose emitted bytes moved
+is one the classifier calls bearing. Re-run that pair (`STRICT_ALL=1 KEEP=1`,
+then classify the `DIFFERS` lines) after any change to the classifier or to the
+population; it is the only evidence that the split is not hiding a difference.
+
+**On demand, via `make test-lookaround-identity`** — not in `make test`, on the
+ruling `test-atomic-identity` and `test-backrefs-identity` have and for the
+same reason: the reference is a second full build of the compiler, and the
+answer cannot change unless someone edits code at or before the pin.
+
+## [DD-13b.W1.2] F9 — `rx_info.name`'s VALUE, and `nentries`
+
+Three checks in `run_codegen_tests.sh`, and the first is w1_impl's F9
+verbatim: Frank ruled at format_design §6.3 that no artifact ever carries a
+NULL name, and **nothing would have checked it** — the identity gates
+compare artifacts from a corpus with no composed file, so they are equally
+happy with a field that is always NULL and one that is always right.
+
+**THE CORPUS ARM CHECKS THE FALLBACK, NOT A SUPPLIED NAME.** Every corpus
+pattern is compiled with no name, so the sweep (every distinct `pattern`
+line under `tests/base/`, compile-only, floored at 300 against a measured
+381) asserts that each artifact stamps its own PREFIX. The other half — a
+supplied name reaching the artifact — is checked where a name can come from
+at all, in `tests/rxtsource/` against the `target` line that named it.
+
+**THE PREFIX IS VARIED, and that arm is what catches the likeliest wrong
+implementation.** With `rx` everywhere, an emitter stamping the literal
+string `"rx"` instead of `opt->prefix` is indistinguishable from a correct
+one on every artifact in the tree — the same blindness `run_ir_listing.sh`
+records for its own non-default-prefix case. Four prefixes of different
+length and shape, each of which must stamp itself.
+
+**`nentries` IS PINNED EQUAL TO `nnames` AND PRESENT.** Equality is the
+honest state of an uncomposed artifact (`docs/spec/match_api.md` §6¶3) and the
+composer is what will separate them; what the check pins is that the field
+EXISTS and is not hard-wired to 0 beside a real `nnames`, which is the shape
+a caller switching to `nentries` would silently lose every row to.
+
+## `run_n1_budget.sh` — [LIM-2] N1's structural check (2026-09-04)
+
+The AUTO route's own DFA-attempt work budget (`PCREC_MAX_AUTO_DFA_ELEMS`,
+K7's `Ctx.subset_elems` counter) and its raise surface, in
+`run_size_term.sh`'s exact §5 shape: the natural population is ZERO (the
+shipped default, 30,000,000, sits above every corpus/bench artifact's
+measured spend — `docs/dev/lanes/n1budget_report.md`) and the CLI override
+is raise-only, so the branch is driven through a REFERENCE COMPILER built
+with `-DPCREC_MAX_AUTO_DFA_ELEMS` lowered at pcrec's own compile time (a
+`FLAG_D` row for precisely this reason — was `BUILD_D` until [LIM-OVR]
+(2026-09-22) split the token, since this row also has a real caller-facing
+raise flag — matching `PCREC_MAX_VM_EMIT_CODE_BYTES`'s own precedent).
+
+**THE WITNESS AND ITS BISECTED THRESHOLDS.** `a{0,2000}` is ordinary,
+capture-free and DFA-eligible; `studies/n1budget/n1_measure` reports 6,000
+K7 elements TOTAL (forward + reverse + the optional [ENG-ABS] anchored
+machine, which this budget deliberately excludes — an optional machine's
+overflow already never refuses). The two MANDATORY machines alone were
+bisected directly against a reference compiler: a budget of 3,500 trips,
+4,000 does not — so 2,000 (lowered) trips reliably and 5,000 (raised) does
+not, which is what the six checks below drive.
+
+**SIX CLAIMS, EACH WITH ITS OWN NEGATIVE CONTROL.** (0) the shipped
+default moves nothing on the witness, and prints no note (the natural
+population is zero, asserted rather than assumed). (2) under `auto`, the
+lowered reference compiler falls back to the VM (`RX_ENGINE "vm"`) and
+prints the one-line stderr note naming both the limit and
+`--max-auto-dfa-elems`. (2c) the fallback artifact ANSWERS CORRECTLY — a
+`--emit-main` build run against two subjects, not merely "compiles". (3)
+the SAME lowered reference compiler under `--engine=dfa` is UNAFFECTED —
+`RX_ENGINE` stays `"dfa"`, no note — proving the budget is auto-only by
+construction rather than by a lucky default. (4) the raise flag ROUND
+TRIPS: `--max-auto-dfa-elems=5000` (above the mandatory spend) cancels the
+fallback. (5)/(6) raise-only against both the reference build's own
+lowered floor and the shipped default.
+
+**VALIDATED IN THE FAILING DIRECTION** (this file's own standing
+convention): forcing the new check's condition to `0 && ...` in
+`src/ir/dfa.c` reproduces exactly the two expected symptoms (checks (2) and
+its stderr-note sibling go red, `RX_ENGINE` reads `"dfa"` where `"vm"` was
+required) with every other check unaffected — reverted before delivery.
+## [M5.0] stage 1's PAIR: `run_encoding_identity.sh` (RETIRED 2026-09-05) + `run_cpset_structure.sh`
+
+**`run_encoding_identity.sh` IS RETIRED — deleted at the [FORM-CHAR] STEP 1
+merge, exactly per its own contract two paragraphs below.** The ascii-fold
+form's stamp line reaches every VM artifact, so the whole-file compare against
+the pre-stage-1 pin went red on the whole [vm]-axis population and the K35
+floor said so (`only 0 artifacts were actually compared`) — the anticipated
+"later change moves emitted bytes" case, and the ruled response is RETIRE,
+never re-pin forward. The claim is DISCHARGED on the record: 14/14 four axes
+at stage 1 (f22b65c4: 2,557 byte-identical / 0 differing / exact refusal
+agreement over 2,845) and again at stage 2 pre-merge (lane utf8s2's report,
+.abi = 22 unchanged — the byte-path proof of the genuinely-rebuilding
+lowering). The script is in git history at 05b2fe8a. `run_cpset_structure.sh`
+(below) is pin-light, still live, still in `make test`; the encoding
+backend's living acceptance is `run_encoding_checks.sh` / `make
+test-encoding-checks`. The entry below is kept as the historical record.
+
+The interval-payload refactor's acceptance is TWO instruments and the pairing
+is r54 BLOCKING C1's whole point: **byte-identity is exactly the bar a NO-OP
+passes.** A branch that changed nothing, or that built the interval pipeline
+and never used it, scores 100% on the gate. So the gate is the claim and the
+structural checks are the control on the gate, and neither is the acceptance
+alone. `make test-encoding-identity` / `make test-cpset-structure`.
+
+**`run_encoding_identity.sh` — the FOURTH gate here whose reference is a
+PINNED COMMIT, and the only one that filters NOTHING.** Its four siblings each
+strip the D37 feature stamps, or carry a named exception list, or extract a
+PROGRAM REGION because an `abi` event moved the scaffolding out from under a
+whole-file compare. None of that applies: the pin (`cb546b3a`) is this change's
+own immediate parent, so the two compilers agree about every feature, every
+stamp and every `abi` digit, and stage 1 takes NO `abi` bump — which the gate
+asserts STRUCTURALLY by reading both compilers' `.abi` stamps off an artifact
+before it sweeps anything. The comparison is the whole file, and a gate that
+ever needs an exception here has found something.
+
+**ITS PIN MUST NOT BE MOVED FORWARD LIKE A MODULE PIN.** The siblings' pins
+name the commit before a MODULE existed; this one names the commit before a
+REPRESENTATION changed, and its claim is about exactly that boundary. A future
+`abi` event does not re-pin it — if a later change moves emitted bytes this
+gate goes red and the correct response is to RETIRE it (its claim is
+discharged, the boundary is behind us), never to re-pin, which would silently
+convert a refactor gate into a rebuild compared with itself.
+
+**STAGE 1 HAS NO POSITIVE CONTROL, and §8.1.2's table says so in its own row
+rather than leaving a reader to wonder.** Every sibling's control is "the
+pre-module reference REFUSES every pattern the new corpus adds"; stage 1 adds
+no such pattern (`\x{>FF}` still refuses, `-e utf8` still refuses by name, the
+grammar is unchanged), so inventing one would mean inventing a property stage 1
+promises does not exist. What stands in for it is asserted per axis: refusal
+agreement EXACT in both directions at zero, and a population FLOOR (K35).
+Landing figures, all four axes: 2,557 / 2,558 / 2,557 / 2,557 compiled and
+byte-identical, 0 differing, 0 refusal mismatches, 288 refused by both.
+
+**`run_cpset_structure.sh` — what a no-op fails, and every needle reads the
+TREE rather than an artifact.** That division of labour is forced, not chosen:
+what stage 1 changed is a REPRESENTATION, and a correctly refactored
+representation is by construction invisible in the emitted text. There is
+nothing for an artifact-reading check to see, which is precisely why the gate
+alone cannot tell a refactor from a no-op.
+
+- **CHECK 1R IS THE PART TO COPY.** §9.2 makes it an obligation rather than a
+  nicety — *"Check 1 must be demonstrated RED against `git archive HEAD` in the
+  same wave, or it is a check nobody has seen fail"* — so all nine CHECK 1
+  needles are re-run against the pin and EVERY ONE must fail there. It costs a
+  `git archive` rather than a build, because every needle reads source text.
+- **THE NEEDLES READ CODE, NOT PROSE.** `src/core/CLAUDE.md` and two source
+  comments legitimately QUOTE `u.cls.bits` to explain what the D70 clobber
+  survey was about, and §2.2.3 requires that narration KEPT and re-derived. A
+  needle that could not tell a quotation from a read would force those
+  comments deleted or misspelled — the check's convenience bought with a real
+  explanation. Scoped to `*.c`/`*.h` with comment lines filtered.
+- **CHECK 2b's ALLOWLIST IS WHOLE-FILE, WITH A FUNCTION-SCOPED ARM
+  ([admin1008b], 2026-10-07).** A file on `ALLOW` polices nothing in it, so a
+  file whose single legitimate `u.cls.` reader is one function (possessify.c's
+  `cls_polarity`, from lane posstri) goes on `ALLOW_FN` (`FILE:FUNCTION`
+  entries) instead: `cls_scan` exempts reads between that function's column-0
+  definition and its column-0 closing brace, and nothing else in the file. Two
+  controls ride it: an entry whose function is missing or holds no read is
+  `STALE` (an exemption nothing uses would silently cover the next read to land
+  in a same-named function), and CHECK [2b'] runs the mechanism on a two-function
+  fixture every time (2 reads unscoped, 1 scoped, both STALE shapes). A
+  survey of `u.cls.` reads by function: ctxnode.c `lang_charset` (1),
+  altcls.c `altcls_walk_alt` (1), parse.c `p_class` (3), lower_enc.c
+  `lower_class_byte`/`lower_class_utf8`/`subtree_is_identity`/`wclass_of`
+  (14); cpset.c is the representation. Empty on main; the first user is
+  posstri's merge.
+- **CHECK 2's FLOOR COUNTS THE ACCESSOR FAMILY, and the reason is a finding
+  against the design's own census.** §8.1.1 words it as six sites calling
+  `pcrec_cls_bits`; FIVE want a bitmap and the sixth does not — `emit_vm.c`'s
+  `vm_isl_single` asks "is this class one literal byte", which scanned 256
+  values through `cls_has` and is now one comparison through
+  `pcrec_cls_single`. Rendering a bitmap there so a grep would find the word
+  would be writing code for the check. Two floors instead: the family at 6,
+  and `pcrec_cls_bits` proper at 5.
+- **CHECK 2d RUNS THE ASSERTION RATHER THAN GREPPING FOR IT.** No pattern can
+  reach the render helper out-of-range under `byte` — that is stage 1's whole
+  point — so the witness is built the one honest way: a scratch compiler whose
+  BYTE backend claims `max_cp = 0x10FFFF`, one `sed` and nothing else, which
+  makes `[^a]` produce intervals reaching 0x10FFFF and drives one straight into
+  a render site. A check on an assertion's PRESENCE is a check on a string.
+- **CHECK 3 IS STAGE 1's HALF OF A STAGE-2 CHECK, and says so.** §8.1.1 places
+  the stamp census at stage 2, where it diffs each `utf8` artifact against its
+  `byte` twin — and there is no twin yet. What stage 1 can do is ESTABLISH the
+  manifest (`manifests/m5_stage1_stamps.tsv`, the file stage 2 diffs against
+  rather than a memory) and demonstrate [MECH-REACH]: every stamp the census
+  names must be found on at least one sample artifact, or those needles would
+  report an empty census at stage 2 while looking like coverage. It is a
+  MANIFEST and not a threshold (r49): nothing asserts a stamp's VALUE, and a
+  drifted manifest is a diff to REVIEW, not a number to bump.
+  **RE-PINNED 2026-09-21 (lane edgeclose)**: all 12 `EMITTED_BYTES` rows
+  moved by exactly +11 bytes each ([REL-1.4]'s version stamp, D115 —
+  the unconditional " 0.1.0-beta" text plus the same-length
+  `.abi: 27 -> 28` digit substitution), no other stamp moved; reviewed
+  row by row against the gate diff before re-recording.
+- **CONSTRAINT 2 IS DELIBERATELY NOT ASSERTED**, and the absence is a finding.
+  This wave MEASURED the design's stated position wrong (see
+  `src/opt/CLAUDE.md`'s `lower_enc.c` entry) and escalated rather than
+  re-architecting. Asserting today's order would pin a position the
+  measurement does not support; asserting the other would pin one the design
+  does not. The check states the two constraints it can stand behind and NAMES
+  the third as open.
+
+## `run_tune_dial.sh` — [OPT-DIAL]'s MECHANISM-STATE CROSS-CHECK (2026-09-17)
+
+**§3e ([CLS-TREE] S2, 2026-09-30)** reads the VM test each position emits
+for a BYTE class off the text: a scattered class is a kit matcher at -2/-1
+and a bitmap at 0/+1/+2 (D131 item 5), `-fno-cls-kit` puts -2 back on the
+bitmap, a range and an ASCII fold pair are inline at every position, and
+`RX_VM_CLS_KIT` equals the kit matchers the text defines. Since clss2fix
+(review C-L8) each form is recognized by its OWN spelling (kit / bitmap /
+fold / range; anything else is a failure, never "inline"), and a class
+whose kit is larger than its bitmap keeps the bitmap at -2. **§3f** (D139)
+does the same for a DFA scan edge: its `RX_DFA_SCAN_EDGE` value and its text
+per position (range, the range-from-0 one-compare spelling, fold at -2/-1
+and its table at the default, kit at -2/-1, each row's flag). Sabotage rows
+S431 and S432 (the kit leaking into position 0) land here.
+
+The speed-vs-size dial (`--tune=-2..+2`, `docs/spec/tuning.md` §5), held to
+the ARTIFACT rather than to its stamp or to the compiler's own table. Its own
+section, `make test-tune-dial`, part of `make test` and NOT of `make smoke` —
+`run_premul_table.sh`'s measured argument (~60 artifacts across five
+positions, ~25 s).
+
+- **WHY IT EXISTS, and it is this directory's founding charter in a new
+  shape.** Every switch the dial moves is INDEPENDENTLY ANSWER-PRESERVING —
+  that is the allowlist's whole point — so an artifact built at `-2` that
+  denied the WRONG BIT would pass every answer check in this tree, at every
+  position, forever. **A sweep that only compares answers cannot see the
+  table it is sweeping.** And the stamp does not help: `<PREFIX>_TUNE`
+  records what was REQUESTED, and the defect lives between the request and
+  the build.
+- **THE EXPECTATION SIDE IS PARSED OUT OF `docs/spec/tuning.md` §5.4's
+  TABLE — the CONTRACT — never out of `src/core/tune.c`.** A check reading
+  the compiler's own table would compare the implementation to itself, and
+  this design has already been bitten by exactly that shape once: STEP 0's
+  draft policy table violated STEP 0's own allowlist rule, in STEP 0's own
+  document, because the rule was in one section and the table in another.
+  A drift between spec and compiler is RED here, which under D103 is the
+  point: the table is a PINNED CONTRACT and a cell changes only by an
+  explicit ruled diff to that spec section.
+- **THE RECOVERED SIDE IS EMITTED TEXT, three mechanisms.** The step
+  accessor's own SUBSCRIPT EXPRESSION (`transitions[s + cl]` premultiplied
+  vs `transitions[s * N + cl]` indexed, written by the representation
+  object's `emit_token` rather than by `dfa_table_name`); the `always_inline`
+  attributes on the entry chain (not `RX_VM_ENTRY_SHAPE`); and the ladder's
+  selected `K` cross-read against `RX_UNROLL_K_WHY`, where
+  `capacity-declined` is a LEGAL outcome (the declared-capacity floor).
+- **EVERY ARM ASSERTS ITS OWN NON-VACUITY, and two of them earned it.** The
+  ladder witness is pinned to a shape whose K MOVES between positions and
+  the arm FAILS if it stops moving; the entry witness must STRADDLE the term
+  (4,244 program bytes, between the middle's 4,096 and `+1`'s 8,192); the
+  nesting arm fails if `-2`'s recovered denial set is EMPTY, because the
+  nesting loops are trivially satisfied over an empty set.
+- **§6 ASSERTS A KNOWN VIOLATION AS MEASURED, WHICH IS THE ARM TO READ
+  FIRST.** `--tune=min-size` MOVES THE REFUSAL SET — it compiles
+  `[^\p{C}\p{M}\p{P}]`, which the other four positions refuse at the
+  emitted-size cap — and the design's §6.2 rule forbids that in either
+  direction. The cell is Frank's own ratified ruling, so the lane FILED the
+  finding (`docs/dev/known_issues.md` K59) rather than narrowing the table,
+  and the arm asserts TODAY'S SHAPE so it goes red the day any of the three
+  dispositions lands. A `#`-comment saying "known violation" would go stale
+  silently; an assertion cannot.
+- **Validated in three failing directions** (planted in `src/core/tune.c`,
+  rebuilt, run, reverted; clean baseline 17/0), and these are the shapes
+  sabotage rows S249/S250/S251 carry: adjacent position columns SWAPPED →
+  **9/8**, with §3a red in BOTH directions at once and §1/§2 correctly GREEN
+  (the check localising, not going uniformly red); the WRONG DENY BIT at one
+  position → **11/5**; one ladder parameter DROPPED → **14/2**, the narrowest
+  and the reason §3.5's fold needs its own row.
+- **AND THE VALIDATION FOUND A DEFECT IN THE FILE'S OWN FAILURE MESSAGES**,
+  recorded because it is worth more than the plants. Under plants 2 and 3 two
+  arms went red saying the arm was VACUOUS and the WITNESS should be
+  re-chosen — while the witness was good and the TABLE was wrong. *A check's
+  failure message is a SECOND, UNDECLARED CLAIM about the space of causes,
+  and it goes stale independently of the assertion it accompanies*
+  (`w23impl_report.md`'s own generalisation, met here from the other side).
+  Both messages now name BOTH causes and say which other arm discriminates.
+
+## TRAPS THIS DIRECTORY HAS PAID FOR — read before writing a `sed` or resolving a `CC`
+
+| about to… | know this |
+|---|---|
+| write a `sed` in a check | **this box's `sed` is BSD sed and GNU-only constructs SILENTLY NO-OP** — no error, exit 0, text unchanged. `\b` and `\|`-inside-`\(...\)` are the two MEASURED instances, both of which sat red here since the Mac move while naming an emitter change that had not happened (`docs/testing.md`, "The `sed` binary itself"). Spell it portably, never `case $(uname)` — the harness runs these on Linux too |
+| resolve a `CC` in a script here | source `tests/lib/cc_resolve.sh` BEFORE your own defaulting — it acts only when `CC` is unset, so an assignment above it makes it a no-op. `run_codegen_tests.sh` was the tree's last straggler, and the cost was the GCC-SPECIFIC [K24] block being asked of Apple clang |
+| believe a check that says the emitter drifted | rule out the TOOL first. Both traps above reported exactly that, and both were wrong |
+
+## Conventions
+
+Every check must be validated against a deliberate sabotage: disable the
+optimization in a scratchpad build and confirm the check FAILS. A structural
+test that passes under sabotage is worse than no test — it certifies nothing
+while looking like coverage. Sabotage the SPECIFIC branch under test, not the
+feature containing it. When adding an optimization to src/gen or src/opt, add
+its check here in the same change.
+
+Validated sabotages for run_trie_identity.sh. **Record the exact edit, not just
+the count** — the first version of this table carried a number produced by a
+contaminated tree (two sabotages stacked, because a `git checkout` revert
+silently failed inside a non-git tarball copy) and another that was never
+measured at all:
+
+| sabotage (exact edit) | .rxt | @200 | @500 |
+|---|---|---|---|
+| `return n;` as the first statement of `disjoint_run_len` | 2 | 21 | 64 |
+| in rule 1, hoist every accept to the front instead of partitioning the list around each (keep removing them from the list) | 16 | 38 | 94 |
+| `TRIE_ENABLED = 0` in the shipped build | 0 | 0 | 0 — only the CONTROLS fire |
+| `elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)` | 0 | 0 | 0 — only the 4- and 8-branch controls fire |
+
+Do NOT use the naive rule-1 sabotage (skip the accept split, change nothing
+else): it leaves items with `len == depth` in the list for rule 2, which then
+reads `seq + depth*32` past the allocated key — a 32-byte arena over-read, so
+the count is unstable between builds (171 and 176 observed for the same edit).
+The hoist form above is memory-safe by construction.
+
+## The [K24] partial-inlining check, and the two things that make it non-vacuous
+
+Added 2026-08-17 (k24fix lane) to `run_codegen_tests.sh`. It asserts that
+`<prefix>_search` is NOT split into a `.part` clone by gcc's partial-inlining
+pass — the property `__attribute__((noclone))` in `emit_search_head` buys, and
+the one this file's founding charter describes exactly: behaviour-preserving,
+invisible to the corpus, and worth a measured 1.33x on
+tests/bench/compare case (c). See docs/dev/known_issues.md K24 and
+docs/design/k24bisect_impl/k24_fix_note.md.
+
+Two design points, both of which this directory has learned the hard way and
+which a future editor must not "simplify" away:
+
+1. **It compiles at `-O2` EXPLICITLY, not under `$GENCFLAGS`** (which defaults
+   to `-O1`). Partial inlining is an `-O2` pass. Run at `-O1` the check would
+   pass forever, attribute present or not — a green cell with no population,
+   which is the exact failure the 256-branch-control lesson above is about.
+2. **It carries its own CONTROL, and the control's source is INDEPENDENT of
+   what it controls.** The positive asks `nm` — gcc's own output — whether a
+   clone exists. The control strips the attribute back out of the SAME
+   generated file and asserts gcc DOES clone it. Without that, a future gcc
+   that stopped splitting would make the positive vacuously green and the
+   guard would quietly stop guarding, with nobody the wiser until a bench
+   floor went red again. If the control stops firing the check FAILS and says
+   the population is gone, rather than reporting success.
+
+Validated sabotage: delete the `pcrec_sb_printf(c, "__attribute__((noclone))\n");`
+line from `emit_search_head` in src/gen/emit_dfa.c, rebuild, re-run — the check
+FAILS with "emitted artifact carries no `__attribute__((noclone))` at all"
+(measured 2026-08-17; codegen checks went 39/39 pass to 1 failure). Note the
+sabotage-then-restore rebuilds `build/pcrec`, so do it when nothing else is
+running against that binary — doing it during a `make test` contaminates that
+run and it has to be discarded and redone.
+
+## [OPT-ALTCLS] broke the trie's positive controls, and the fix generalizes
+
+2026-08-17: landing `src/opt/altcls.c`'s stage 2 (prefix factoring) turned
+`run_trie_identity.sh`'s three positive controls (4/8/256 branches) from
+factored/unfactored to factored/FACTORED — the reference build, compiled
+with `-DPCREC_NO_TRIE`, was passing anyway. Root cause: `src/opt/altcls.c`
+is a NEW pass that runs BEFORE `nfa.c`'s trie entirely, is NOT gated by
+`-DPCREC_NO_TRIE` (that macro reaches only `nfa.c`'s own trie code), and
+targets the SAME shape the controls were built from — a run of branches
+sharing a literal first byte, exactly `ctl_small`'s bare-letter prefix and
+the 256-branch control's bare binary digits. With a bare-letter prefix,
+`altcls` pre-factors the shared run on BOTH sides before `-DPCREC_NO_TRIE`
+ever gets a chance to matter, so the reference build stops being "trie
+disabled" and becomes "trie disabled AND nothing left for it to disable" —
+the exact vacuous-control failure mode this file's own header already
+warns about, from a cause its author had no way to anticipate.
+
+**The fix is narrower than the failure looks: widen every prefix BYTE from
+a bare literal to a two-member CLASS** (`a` → `[aA]`, binary digit `0` →
+`[02]`). `nfa.c`'s `trie_key` accepts ANY class-only leaf sequence (no
+single-bit restriction — see its own comment, "whose every leaf is
+A_CLASS"), while `src/opt/altcls.c`'s eligibility test requires a branch's
+FIRST atom to hold EXACTLY one byte (`altcls_single_bit`). A two-member
+class is therefore trie-eligible and altcls-ineligible in one move: altcls
+declines at the very first `altcls_branch_peel` call for every branch in
+the pattern (verified: `RX_ALTCLS_MERGES`/`RX_ALTCLS_FACTORED` both stamp
+0 on the widened controls), restoring the control's original property —
+shipped=factored, reference=unfactored, driven by `-DPCREC_NO_TRIE` alone.
+No subjects are ever run against these patterns (this file's own header:
+"no subjects, no gcc"), so widening what each position matches costs
+nothing the check verifies. Re-measured clean: all three controls green,
+the 500-pattern equivalence sweep still 500/500 identical both axes
+(case-sensitive and `-i`), zero regressions.
+
+**The generalizable lesson, for whoever adds the next AST-level pass that
+runs before `nfa.c`:** ANY pass that runs upstream of the trie and is not
+itself gated by `-DPCREC_NO_TRIE` can pre-empt a positive control built
+from bare literals the same way. This project's `-DPCREC_NO_TRIE` /
+`-fno-X` deny-flag family (D46/D47.3) is scoped PER PASS by design — no
+single flag disables "everything upstream of the trie" — so a future
+pass with equivalent reach needs the same widened-class treatment applied
+here, not a new reference-build flag.
+
+## [LOSS-REVIEW] candidate 1: the inline seam entries (lane seambuild, 2026-10-11, abi 76)
+
+`run_codegen_tests.sh`'s [M5-SEAM] declared-set check (1) is split in two:
+`residual_names` reads the EXPORTED entries (the `.h` and the
+self-contained `.c`) against the fixture's exported half, and
+`inline_entries` reads the `static inline` definition heads of
+`INLINE_RESID` (`rx_span_match`, `rx_span_match_caseless`, `rx_back_step`)
+in both `.c` forms against its inline half (1b). The per-site call counts
+are unchanged. A new arm, **[LOSS-REVIEW c1]**, compiles seven fixtures
+(byte/ucp/utf8; exact, caseless, back-step; backreference and variable)
+`-O2 -fPIC` and asks `nm -g --defined-only` that none of `INLINE_RESID` is
+global, with `rx_next_pos` as the positive control and a reach check that
+the artifact defines one of the entries whatever its linkage. Sabotage S825
+(the byte exact compare loses `static inline`) reads 21-22 failures here:
+(1)/(1b) on every span-match fixture and the nm arm on `expbref`/`expvar`.
+`run_encoding_checks.sh`'s DD12a(i) `SIG_RE` reads the `static inline
+ptrdiff_t` heads.
+
+## [M5-SEAM] two additions: the residual/hot-path barrier, and K27's probe
+
+**`[M5-SEAM/DD-12(7)]` — no engine body calls an encoding residual entry.**
+D58 built the DD-12 residual seam: an artifact embeds exactly one
+encoding's residual block, and `<prefix>_next_pos` is its first entry.
+DD-12 (7) rules that the per-encoding header is the RIGHT seam for the
+runtime-identity residue and the WRONG seam for the hot path, "ENFORCED BY
+CHECK, NOT CONVENTION" — and this file is where such a check belongs for
+the reason its own header states: **no correctness test can see it.** Under
+the byte backend `<prefix>_next_pos` IS `pos + 1`, so an engine that
+advanced through it would match identically, the whole corpus and both
+oracles would stay green, and the artifact would have acquired exactly the
+cross-seam call that makes the hot path's shape and speed depend on the
+encoding the moment a second backend lands.
+
+**[M6.5.2] THE CHECK CHANGED SHAPE, because the seam gained its SECOND and
+THIRD entries and they are not like the first.** `<prefix>_next_pos` has no
+business anywhere inside the matcher — unanchoredness is the automaton's own
+self-loop, so there is no external advance to route through. A BACKREFERENCE
+COMPARE has no automaton representation whatsoever, so forbidding the call
+forbids the construct. "Never called from an engine body" is therefore no
+longer the rule; it is the DECLARED-COUNT-ZERO case of one:
+
+> the number of CALL SITES of `<prefix>_<entry>` inside file-scope function
+> bodies other than the entry's own definition and `main()` must EXACTLY equal
+> the count the FIXTURE TABLE declares.
+
+Three design points, and the first two are R32 E7/C2's whole finding about the
+first draft of this change:
+
+- **THE EXPECTATION COMES FROM THE TEST, NOT FROM THE ARTIFACT.** A check whose
+  population is read out of the artifact's own residual declarations goes GREEN
+  exactly when the thing it guards is broken: an emitter that inlines the
+  compare AND drops the entry from the mask leaves nothing to assert, and the
+  global empty-population guard does not notice because `next_pos` is
+  unconditional and keeps it satisfied. So each fixture row DECLARES which
+  entries its artifact must carry, and the artifact's declared set is asserted
+  to EQUAL it.
+- **THE COUNT IS A DECLARED INTEGER, NOT A COUNT OF ANYTHING.** Deriving it by
+  scanning the fixture's PATTERN for `\<digit>` would be a SECOND
+  IMPLEMENTATION of PCRE2's octal disambiguation, and it would get the same
+  cells wrong that rule exists to get right — `(a)\10` is octal and contains
+  ZERO backreferences, `(a)\18` is `\01` then a literal `'8'`. Worse, a
+  scanner and the emitter would drift in the SAME direction, i.e. green on an
+  incorrect compiler. A human wrote the integer beside the pattern, and every
+  octal-ambiguous spelling is kept out of the fixture set.
+- **THE SCOPED GUARD IS EXACT, NOT A FLOOR.** The global guard cannot serve:
+  `next_pos` is unconditional, so it stays satisfied even if every
+  backref-bearing fixture were deleted. Four fixtures declare a bref entry, and
+  a floor of "at least 3" would pass while one silently lost its declaration —
+  which is the population-shrinking failure the guard exists to catch, arriving
+  through the guard itself.
+
+**COMMENT STRIPPING IS TOKEN-LEVEL AND RUNS FIRST**, and it changes
+`next_pos`'s own check in EXACTLY ONE DIRECTION — the direction that hides
+things, which is why it is named rather than absorbed. Before it, a COMMENT
+naming `<prefix>_next_pos` inside an engine body was reported as a violation,
+which is STRICTER than this check's own stated allowlist ("a residual name may
+appear (a) in a comment"). **Demonstrated before the rewrite** on a synthetic
+body whose only mention was a comment: flagged. Token stripping brings the
+implementation INTO LINE with its documented contract rather than loosening it
+past one. S68 still fires either way — its sabotage plants a real CALL, and
+stripping comments cannot hide a call.
+
+The stripper carries in-comment state ACROSS records (a `/* */` region spans
+lines), skips string and character literals so a `/*` inside one cannot open a
+comment and a residual NAME inside one is not counted as a call, and runs
+BEFORE head-detection and the column-0 brace rules — because a comment can
+otherwise contain something that looks like a definition head or a `}` at
+column 0 and desynchronise the `inbody` tracking. Matching is at TOKEN
+boundaries, not substring: `rx_span_match` is a proper prefix of
+`rx_span_match_caseless`, and a substring rule would count every caseless call
+as a case-sensitive one and pass with the emitter wired backwards.
+
+**Every failing direction was demonstrated before the check was trusted**: a
+declared count moved 1 -> 2 goes red; deleting a bref fixture row reddens the
+scoped guard; a body whose only mentions are comments and a string literal
+counts 0; a body with one real call plus its intent comment counts 1 for each
+of the two entry names.
+
+- **The population is DERIVED, not typed.** The residual entry NAMES are
+  read out of the artifact (each residual declaration is preceded by the
+  backend's own `ENCODING RESIDUAL entry` comment) — used now to CHECK the
+  fixture's declaration rather than to BE it. Finding NO residual entry at
+  all is still a FAILURE.
+- **The check reads FUNCTION BODIES, not the whole file.** A residual name
+  legitimately appears in comments, in its own declaration, and inside its
+  own definition. Ten emission shapes now (DFA memchr-prefilter, DFA bitmap-
+  prefilter, anchored, VM, `--engine=vm`, `--emit-main`, and four
+  backreference fixtures) in both artifact forms.
+
+Sabotage: `tests/mech/sabotages/S68_residual_in_hot_loop.sh` routes the
+emitted bitmap prefilter's skip loop through `<prefix>_next_pos` — the edit
+a developer holding a fresh "advance one character" helper would actually
+make. DETECTED at `codegen 3fail/41pass` with `corpus 0fail/56pass`; the
+corpus staying green is the finding, not a footnote to it.
+
+**`[K27]` — the contract's legal `(s == NULL, n == 0)` subject, RUN.**
+docs/spec/match_api.md §3.1 admits a NULL subject when `n == 0`, and the
+emitted `memchr` prefilter used to receive it: technical UB in EMITTED code
+(docs/dev/known_issues.md K27, closed by this lane). This check compiles a
+memchr-prefilter artifact, links a driver calling
+`<prefix>_search(NULL, 0, 0, NULL)` and `<prefix>_next_pos(NULL, 0, 0)`,
+and RUNS it, requiring `0 1`.
+
+Placement is the whole point and is worth understanding before moving it:
+this script is already on the `make ubsan` and `make asan` suite lists, so
+the run is instrumented there (with `-fno-sanitize-recover`, a first-hit
+abort) and pins the answers on the plain axis. K27 was invisible to the
+battery for a structural reason — the sanitizers' generated-code axis runs
+the CORPUS, and no corpus case passes `s == NULL`, so the instrumented axis
+had nothing to see. A check that only compiled the artifact would reproduce
+that hole exactly. It also fails loudly if its fixture stops carrying a
+memchr prefilter, rather than passing vacuously.
+
+**Two measured facts about the `[M5-SEAM/DD-12(7)]` extractor**, both worth
+keeping because a body extractor that silently matched nothing would make
+this check vacuous exactly like the OS-0b scoping hazard this file already
+documents:
+
+- It reaches the VM's own body, not only the DFA's. Verified by planting
+  `(void)<prefix>_next_pos(ctx->subject, ctx->len, ctx->pos);` immediately
+  inside `<prefix>_match_impl` in an emitted VM artifact: reported.
+- `main` is ALLOWLISTED. The `--emit-main` `main()` is a CALLER, not an
+  engine — a demo `main()` doing find-all through `<prefix>_next_pos` is
+  the documented caller protocol (docs/spec/match_api.md §3.1), not a
+  derailment. It does not call it today; the entry exists so a later
+  `--emit-main` that does is not misreported.
+
+**The `[M4.4/D44/A-2]` sibling** added in the same lane asserts the ABI
+block's PROPERTY (byte-identical across four prefixes of different lengths
+and shapes) rather than only its consequence (the cross-prefix one-TU
+compile above, which a block merely free of prefix-dependent content would
+also satisfy). Its control is the whole file, which must DIFFER across
+prefixes — otherwise the extractor is comparing two empty strings, or
+`--prefix` is not reaching the emitted text at all. Since [M5-SEAM] the
+block also carries a pointer to the residual entries, and that paragraph
+has to stay independent of the ENCODING axis as well as the prefix one: the
+block is emitted once per file under a prefix-independent guard, so two
+artifacts compiled for different encodings into one TU share it and only
+the first copy survives.
+
+## **[M6.2 wave E] the `[M6.2-KRESET]` block, and the identity gate that is NOT here**
+
+`\K` is module `assertions`' last construct and the first whose whole
+structural surface is provenance rather than presence. Four checks:
+
+- **rule 1** — a `\K` artifact's `<prefix>_caps_out` derives `caps[0][0]` from
+  the TRAILED slot 0, and the unconditional `caps[0][0] = (ptrdiff_t)start` is
+  GONE from it. That `start` is the prefilter's span start under the hybrid,
+  i.e. the REVERSE PASS's answer and the PRE-`\K` start, which
+  assertions_design.md §6.3 rule 1 says may bound the search and must never be
+  written out. Both directions are asserted in one artifact, plus that the
+  write goes through `RX_SET` rather than straight to `slot_values[0]` — the macro is
+  what records the old value on the trail, and without it a `\K` crossed on a
+  LOSING path stays crossed.
+- **rule 1b** — a `\K`-FREE VM artifact emits the PRE-WAVE `caps_out` body
+  **character for character**, with the two lines pinned here as LITERALS. The
+  literal is deliberate rather than lazy: "does not contain the `\K` form"
+  would pass on an emitter that had rewritten the line into some third shape.
+  This is also **the whole of wave E's byte-identity claim**, and why this
+  directory gained no fifth `run_*_identity.sh`: the emitter reads `v.nkreset`
+  into a DEFAULT ARTIFACT at exactly ONE site (`--emit-ir`'s listing and
+  `--trace`'s ACCEPT line read it too; neither writes a default artifact), so
+  the claim is about one predicate rather than about a construction spanning
+  several. Its corpus-wide half was MEASURED ONCE
+  against the genuine PRE-WAVE COMPILER (1,208/1,208 identical at the default
+  engine, 1,209/1,209 under `--engine=vm`, 0 refusal mismatches) — a reference
+  sharing NO SOURCES with the subject, which is strictly stronger than a `-D`
+  knob build and is the direct answer to wave D's own finding that a knob
+  build's sabotage CANCELS.
+- **rule 3** — the VM's match-here entry calls `<prefix>_match_impl` at
+  `ctx->pos` directly: no `caps[0][0] != ctx->pos` filter (which under `\K`
+  compares against the POST-`\K` start and rejects a genuine anchored match)
+  and no `caps[0][1] - caps[0][0]` return (which is the POST-`\K` length, and
+  a D38 callout advancing by it on `ab\K` would advance by 0 forever).
+- **rule 3b** — the DFA artifact's `rx_match` still carries its start filter
+  and its caps-derived return VERBATIM. It has to be checked on a `\K`-FREE
+  pattern, because a `\K` pattern is VM-forced and has no DFA entry at all —
+  which is also why those two lines are correct there and wave E touched
+  neither.
+
+Sabotages **S85** (R30 C3's own request: take `caps[0][0]` from the
+prefilter's span) and **S86** (the write untrailed). Their symptoms in rule 1
+are DISJOINT, which is why they are two rows rather than one edit with two
+halves; measured, S85 fails 198 corpus cases and S86 exactly 6 — the two undo
+families and nothing else.
+
+## [DD-14] wave B+C — the SUBROUTINE CALL's three structural rules
+
+Module `recursion`'s corpus is 306 oracle-verified cases and its behavioural
+instrument is `tests/recursion/run_recursion_diff.sh`. **Three of the module's
+claims are invisible to both**, and each is here for its own reason.
+
+**RULE 1 — `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES**
+(design §5.8). `src/gen/emit_vm.c`'s opening comment states, as a design
+decision, that there is "exactly ONE indirect jump in the whole function". A
+call's return is a SECOND, and §5.8 amends the invariant to a RELATION rather
+than a constant — a CONSTANT is wrong in both directions, which R34's LENS2-5
+measured: a call-free artifact is 1, one callee is 2, THREE DISTINCT callees
+are 4 however many call SITES there are (the sites share the body), and a
+wave-G fully-spliced artifact is back to 1. The five fixtures cover exactly
+that spread, and the shipped emitter answers 1 / 2 / 2 / 4 / 2.
+
+**AND THE RULE IS ONLY STATEABLE BECAUSE THE `goto *` IS WRITTEN INLINE.** The
+design sketches the return as an `RX_RETURN` MACRO, which puts one `goto *` in
+the definition and NONE at the uses — making the artifact's count `1 +
+(has_calls ? 1 : 0)` and the relation unexpressible. Emitting per region is a
+deliberate deviation recorded at `vm_region`, and sabotage S168 is the row: it
+routes the return through a macro, changes NO ANSWER, and fires on exactly
+ONE of this rule's four call-bearing fixtures — the three-distinct-callee one.
+A rule written as a constant would have passed that sabotage three times out
+of four.
+
+**[CC-CLANG], 2026-08-31 — THE LEADING "1" IS NOW `(has_push ? 1 : 0)`.** A
+FRAMELESS program (no `RX_PUSH` and no `RX_CALL` site anywhere — a
+straight-line capture, or every call site splicing to a body with no
+internal choice point of its own) omits the fail label's `goto *` too, since
+`run->resume_depth` can then never leave 0 and clang refuses an indirect
+goto in a function with no address-of-label expression at all. A shared
+callee body still implies a LINKED call, which always sets `has_push` true,
+so the leading term drops to 0 only where the trailing term is also 0. See
+`src/gen/emit_vm.c`'s file header and `run_codegen_tests.sh`'s own updated
+eleven-row fixture list for the worked cases (seven of eleven moved 1 → 0;
+the four carrying a genuinely linked call are unmoved, each for an
+independent reason — an internal `?` around the recursive call pushes on
+its own account regardless of linkage).
+
+**RULE 2 — a call-FREE artifact carries none of this module's machinery**
+(design §9.1). The resume frame gains two fields, `RX_PUSH` a line, the fail
+label a line, both resets a line each, and `RX_CALL` appears — all gated on
+ONE flag, so the byte-identity claim is STRUCTURAL rather than something a
+sweep discovers. Checked in BOTH directions in one run: the four names must be
+ABSENT from a call-free VM artifact and PRESENT in a call-bearing one, so a
+check that had stopped looking at anything cannot pass. (The corpus-wide
+measurement was taken separately against a `git archive` of the pre-module
+compiler: 2,198 of 2,198 identical, with the positive control at
+`ctl_bad = 0`.)
+
+**RULE 3 — the callee region and the lexical occurrence come from the SAME
+NODE** (wave A2's pass-ordering finding, commit 513de65; sabotage S166).
+`u.call.body` is a CACHE of "which subtree is that group's, in the tree the
+emitter will walk", and `src/opt/altcls.c` REBUILDS nodes rather than mutating
+them. **MEASURED** by moving `pcrec_callgraph_build` above that pass and
+diffing artifacts: `((?:a|b))(?1)` then emits a merged class test lexically and
+the un-merged two-branch alternation WITH ITS OWN `RX_PUSH` in the region —
+two different programs for one group — and `RX_RESUME_FRAMES` moves 2 → 3.
+**The ANSWERS do not change**, because altcls is answer-preserving in both
+directions, which is exactly why this is a structural rule and not a corpus
+cell. The fixture asserts both halves — that the merge HAPPENED
+(`RX_ALTCLS_MERGES >= 1`, so the shape can still express the hazard) and that
+NEITHER program needs a resume push.
+
+**AND THE DISCHARGE WITNESS IS MEASURED NOT TO BE A HAZARD**, which is why
+rule 3 has one fixture rather than two: `((?>a)b)(?1)` compiles
+BYTE-IDENTICALLY under the same sabotage, because `pcrec_discharge_atomic`
+splices by rewriting the PARENT's `->l` IN PLACE and the `A_CAP` a callee is
+rooted at keeps its identity. Wave A2 named both passes; only the one that
+REBUILDS the node matters.
+
+## [DD-14] waves D+E — `run_recursion_identity.sh`, opt-in as `make test-recursion-identity`
+
+> **D136 (2026-09-30): it is also the merge battery's `recidentity` stage**
+> (`scripts/battery.sh`, last). Still NOT a `make test` section (it builds a
+> second pinned compiler, ~35 min).
+
+Module `recursion`'s byte-identity gate, in `run_atomic_identity.sh`'s exact
+shape (a pinned pre-producer commit via `git archive`, since this module has
+no stage a `-D` knob could sit on — the whole surface is "is there an
+`A_CALL` in the tree", false for every pre-module pattern). **WAVE D LANDED
+THE DEFAULT-AXIS SEED AND WAVE E GREW IT TO ITS FOUR AXES** — `default`,
+`--engine=vm`, `-fno-prefilter`, `--no-captures` (design
+`subroutines_design.md` §9.1) — which is what the seed's own header said
+would happen, and nothing about the reference, the pin or the classification
+rule changed in kind. §9.2's SPLICE-vs-LINKAGE SECOND control is still
+absent and is wave G's: it needs the `-fno-splice-calls` axis §6.3's linkage
+rule introduces. Pinned at `ac4917d` (wave A2's merge —
+the last commit with `A_CALL` the KIND but no producer for either doorway,
+verified by the reference tree's `src/parse/mod_recursion.c` not existing
+rather than by grepping for port names, since wave A2's own `internal.h`
+already MENTIONS `pcrec_rcport_num` in a forward-looking comment and a
+substring search over the whole tree is a false positive on prose). **No
+retirement guard, unlike its three siblings**: their pins predate [DD-14]
+wave A's ABI event (`PCREC_ERR_RECURSE`/`ERR_FLOOR`/`PCREC_ERR_INTERNAL`,
+main `0c75c96`) and cannot be moved past it; `ac4917d` already contains that
+event (`0c75c96` is its own ancestor), so it is baked into both sides of
+every comparison here and cannot be what retires this gate. The classifier
+covers both doorways — `\g<`/`\g'` outside a class, and a `(?` construct
+whose tail is not one of the twelve named non-call shapes (`:` `=` `!` `*`
+lookbehind `<name>` `'name'` `P<` `P=` `>` atomic-group `#` `(` conditional,
+inline-option run) — and FAILS SAFE toward the call bucket on anything else,
+`lookaround_classify.py`'s rule. Landing figures: read them from a run
+(`bash tests/codegen/run_recursion_identity.sh`); the corpus splits roughly
+90% call-free to 10% call-bearing, comfortably above the 700/60 floors, and
+the positive control's own first draft caught its own bug — an early
+classifier version had no `(?>` exclusion and misclassified every atomic
+group as a call, which the reference-refuses-all-calls control refused to
+pass vacuously (153 of 287 "call-bearing" patterns were accepted by a
+pre-recursion compiler, because most of them were plain atomic groups).
+
+**WHAT WAVE E ADDED, and each piece is there because a green run alone does
+not say it.**
+
+- **THE OTHER THREE AXES.** `-fno-prefilter` is not ceremonial here: §8.2
+  forces the prefilter OFF for a call-bearing pattern, which is a touch on
+  `select_engine.c` — a file EVERY pattern goes through — and the axis that
+  pins the prefilter constant is the one that localises a predicate that
+  over-fires. `--no-captures` is the backrefs-precedent axis: §4.3 edits
+  `pcrec_bref_mark`'s union, which is `--no-captures`' own machinery, and a
+  mark-set edit that over-marks makes the flag keep slots it used to delete.
+- **A PER-AXIS POSITIVE CONTROL.** §9.2's control (the reference REFUSES
+  every call-bearing pattern) now runs on each axis rather than once,
+  because "refuses" is an answer the axis flags can in principle change —
+  both `--no-captures` and `-fno-prefilter` reach `select_engine.c`, where a
+  refusal lives.
+- **THE D37 STRIP, ASSERTED, PLUS A RAW COMPARISON BESIDE IT.** The ruled
+  claim (§9.1) is byte-identity past D37's three feature-stamp lines, with
+  the filter asserted to remove exactly three per side. This gate makes BOTH
+  comparisons and counts `stamp-moved` — pairs that differ RAW and agree
+  STRIPPED. It is 0 on all four axes and is *expected* to be, unlike
+  `backrefs`: module `recursion`'s registry rows PREDATE the module (P4
+  measured all 26 VM_ONLY before any producer existed), so `render_modules`'
+  first-row walk never moved the name. A nonzero value is a FAILURE, not a
+  note; wave F adds rows and must say so.
+- **A 23-ROW CLASSIFIER SELF-TEST, run before anything is classified.**
+  §0.3 item 9 is the census's own MEASURED instrument defect — a naive
+  `\g<` scan counts `tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` as a
+  call — and "the classifier masks classes" is a claim about code, not a
+  comment. The rows pin `^[\g<1>]$` and `^[(?&x)]$` call-free (BOTH
+  doorways' version of the defect), `a[b]\g<1>` call-bearing (masking must
+  not swallow the rest of the pattern), `(?>` as an atomic group (the row
+  the first draft got wrong), and `(?~x)` failing safe into the call bucket.
+  **Four of the rows are WAVE F's arm**: D71 item 4 made `(?(DEFINE)` this
+  module's, so the conditional exclusion grew a `(?!DEFINE)` negative
+  lookahead, and the rows pin `(?(DEFINE)abc)^x$` CALL-BEARING (a
+  DEFINE-bearing pattern with no call in it is still one this module changed,
+  which is F's own honesty argument), the DEFINE-plus-call form the same,
+  `(?(DEFINE)(?<g>a))b` the same — the SHARP one, because it scans TWO `(?`
+  occurrences, a DEFINE tail that goes to the call bucket and a `(?<g>` that
+  the named-group arm recognises, so it is what pins the ANY-occurrence rule
+  against a classifier that reads the last verdict or lets a recognised inner
+  construct rescue the pattern — and `^[(?(DEFINE)a)]$` call-FREE, because the
+  class mask has to reach the newest doorway or it reintroduces the census's
+  oldest defect.
+
+**EXERCISED IN THE FAILING DIRECTION at wave E**, which is the half a green
+run cannot supply: one byte of an emitted comment (`emit_dfa.c`'s
+`"/* Generated by pcrec. Pattern: "` → `", Pattern: "`), on a path every
+call-FREE artifact takes. MEASURED: `checks passed: 4  checks failed: 8`,
+rc 1, with every axis at `same=0`:
+
+| axis | same | differing | refused by both |
+|---|---|---|---|
+| `default` | 0 | 2199 | 240 |
+| `--engine=vm` | 0 | 2200 | 239 |
+| `-fno-prefilter` | 0 | 2200 | 239 |
+| `--no-captures` | 0 | 2199 | 240 |
+
+The four PASSes are the four positive controls, and they staying green is the
+RIGHT shape rather than a hole: the control is a claim about the REFERENCE
+(does it refuse every call-bearing pattern) and the planted byte was in the
+SUBJECT, so a control that had gone red would mean the two halves of the gate
+were reading each other. Each axis also fired its floor check, which is the
+second, independent reason the run is red. Reverted; `make` and the green
+run above are on the reverted tree.
+
+## recidfix/varland — TWO MORE NAMED EXCEPTIONS, and a mech arm this gate never had (2026-09-25)
+
+The [VAR] MVP landing (809aab12) left comparison (A) red 8/4 on every axis:
+170 call-free patterns per axis differing from `ac4917d` for reasons the file
+had no bucket for (`recidfix_report.md`). **Reading the actual 170-pattern
+list rather than trusting its size found TWO CAUSES, not one** — the report's
+own "corpus-wide count of `\1..\9`-bearing patterns (165) closely matches the
+reported 170" was a coincidence of MAGNITUDE, not of COMPOSITION.
+
+**THE FOURTH EXCEPTION, `bref_rename_rewrite()` (near `prog_region()`), is a
+MECHANICAL REWRITE rather than a manifest — the first of the four that is.**
+`d93aa931`'s [VAR] M6 ruling generalised the backreference compare
+(`<p>_bref_match` → `<p>_span_match`, two offsets → a pointer+length pair) so
+one seam entry could serve both `\1` and `${name}`. Every backreference
+spelling moves the SAME textual way, so listing them would be "every
+backreference-bearing pattern in the corpus, kept in step with it forever" —
+the K35 shape this file's other three exceptions exist to avoid. The
+admission instead rewrites the pre-module region with the ONE substitution
+the rename made and compares the result to the subject's; a region differing
+for any OTHER reason still lands in `rdiff`. It composes with the fold
+bucket (the rewrite is applied to `rb` BEFORE the fold's own deny-axis
+restore test, since `^(?i:(a))\1$`-shaped patterns need both). **MEASURED:
+155 of 170 on every axis** (union of numeric `\1`..`\9` and named
+`\k<>`/`\k''`/`\k{}`/`(?P=)` spellings — the numeric-only text census (126)
+undercounts by exactly the named population (35), which is why the
+non-vacuity arm's independent census counts both).
+
+**THE FIFTH EXCEPTION is what reading the population's REMAINDER found: 15
+of the 170 are not backreferences at all.** `^${v}$`, `^${v:-dev}$`,
+`^${a:-${b}}$` and their siblings are module `vars`' OWN construct, and no
+rewrite explains them — at `ac4917d` (which predates module `vars` by a
+month) `${` is not special syntax at all, so the pre-module reference
+compiles a COMPLETELY DIFFERENT program (two end-anchors around a literal
+`{v}`) with no relationship to `vm_var`'s emission. This is `rcallbearing`'s
+own shape one module later: module `recursion`'s call-bearing population is
+EXCLUDED from this file's classifier and asserted absent here; module `vars`
+has no such classifier (this gate is `recursion`'s, not `vars`'), so its
+population is ADMITTED instead, unconditionally, once the subject's own
+region proves `vm_var` wrote it (`run->var_value[`, that construct's one
+emitted marker). **MEASURED: 15 of 170 on every axis**, against an
+independent `${` text census of 16 (the one-byte gap is
+`tests/vars/caseless.rxt`'s deliberate raw `\xff` witness, which this
+script's `prog_region`/`stamp_strip`/`bref_rename_rewrite` pipeline reads
+through a locale-dependent `awk`/`sed` and does not decode safely — a
+PRE-EXISTING gap this lane found and did not fix, since the python
+corpus-splitting stage already carries the `surrogateescape` repair
+`vartriage_report.md`/`recidfix_report.md` made and this is a different
+stage of the same script).
+
+Both exceptions carry their own counter (`bref-rename-moved`,
+`var-construct-moved` in the axis summary line), their own printed message
+per admitted pattern, and a non-vacuity arm comparing against an
+INDEPENDENTLY DERIVED text census (never the rewrite/marker itself,
+learnings.md §3) at a wide named band — not equality, since the census
+over-counts spellings an axis can route away from the VM and the bucket only
+ever counts a REAL emitted difference.
+
+**`recidentity` IS A NEW `tests/mech/run_sabotage_matrix.sh` ARM** — this
+gate had NONE before this lane, unlike its three `run_*_identity.sh`
+siblings (`atomicidentity`/`brefidentity`/`endvarid`), because its two
+from-source reference builds make it the most expensive row that vocabulary
+can name. **S273** is the row: an off-by-one in `vm_bref`'s renamed
+`span_match` call (`ref_end - ref_start` → `ref_end - ref_start + 1`) that
+shares the rename's own emission site and must NOT be admitted by the fourth
+exception's rewrite — proving the admission is exact-text-equality-after-
+substitution and not "resembles the rename". It is also an ordinary
+wrong-answer row (`brefdiff`/`harness` catch the length defect
+independently); `recidentity`'s job is narrower — proving the new bucket
+does not swallow it.
+
+**AND WIRING THE ARM FOUND THE REASON `atomicidentity`/`brefidentity` HAVE
+SAT REGISTERED WITH ZERO ROWS SINCE 2026-08-22.** `run_recursion_identity.sh`
+(and, by the identical mechanism, `run_atomic_identity.sh` and
+`run_backref_identity.sh`) `git archive`s its two pinned reference commits —
+the pre-module pin AND the abi FILEPIN — which needs FULL GIT HISTORY.
+`tests/mech/run_sabotage_matrix.sh`'s own scratch trees are built via
+`git archive HEAD | tar -x` with NO `.git` directory (MECH-2's own stated
+rule), so the gate failed INSTANTLY inside one — `fatal: not a git
+repository`, then a hard-coded FAIL naming the pin unresolvable — **regardless
+of whether any sabotage was applied at all**. That is the worst kind of
+check-design defect: a control reporting the SAME VERDICT no matter what it
+is checking. Nobody had noticed because nobody had ever wired a real row to
+any of the three `-identity.sh` mech arms until this lane tried; the same
+structural gap is latent in `atomicidentity` and `brefidentity` today and is
+recorded here rather than fixed there (out of this lane's scope).
+
+**THE FIX IS A `git rev-parse --is-inside-work-tree` GUARD**, added to
+`run_recursion_identity.sh` right after `ROOT_DIR`/`PCREC` are resolved: "no
+git history at all" is an ENVIRONMENT limitation (SKIP, `checks passed: 0` /
+`checks failed: 0`, exit 0), distinct from "the pin doesn't resolve IN a real
+repo" (still the pre-existing loud FAIL — a real claim that the pin itself is
+wrong). `run_sabotage_matrix.sh`'s `recidentity` case detects the `^SKIP:`
+banner and routes to `any_skip=1`, the established `pc3`/`laexpand`
+convention, rather than reading an unmeasured suite as a false verdict.
+
+**CONSEQUENCE: `recidentity` WILL ALWAYS SKIP INSIDE THE MECH MATRIX** — no
+scratch tree built there will ever carry `.git` — so S273 can never get a
+real DETECTED/UNDETECTED verdict through that route; a solo
+`bash tests/mech/run_sabotage_matrix.sh S273` run reads
+`recidentity:SKIPPED-no-git-history` with `brefdiff`/`harness` (S273's other
+two assigned suites, which are answer-level and unaffected by the guard)
+carrying the row's real verdict. **S273's bucket-admission claim specifically
+— that the bref-rename exception does NOT swallow this off-by-one — was
+therefore validated MANUALLY** rather than through the mech matrix: a copy of
+`src`/`lib`/`cli` with the exact `ref_end - ref_start + 1` edit applied,
+rebuilt, and run through the SAME `bref_rename_rewrite()`/`prog_region()`
+logic this file's comparison (A) uses, against the real pre-module reference
+binary — confirming the sabotaged region differs from the rewritten
+reference (lands in `rdiff`, not the bref-rename bucket) and that the defect
+is a genuine answer-level miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`,
+sabotaged `match 0 3`, reading one byte past the referenced group's end).
+See `docs/dev/lanes/varland_report.md` for the full transcript.
+
+## [DD-14.FB] the caller-provided frame buffer's structural block (2026-08-25)
+
+Six checks in `run_codegen_tests.sh`, all of them things a `.rxt` cell is
+structurally incapable of seeing.
+
+**The first one is the compatibility promise itself.** Spec §10.8 says the
+three existing entries keep their exact signatures and adds, in its own words,
+that "the implementation lane owes a check that asserts each line". The corpus
+cannot defend that: it recompiles its driver against whatever the header says,
+every run, so a wrapper that quietly changed `<prefix>_search`'s declaration
+would pass every cell and break every vendored consumer. So all six
+declarations are pinned CHARACTER FOR CHARACTER with `grep -qxF`, on a VM
+artifact and a DFA one.
+
+**And one check on the `--trace` axis**, because that axis moves the struct the
+macros measure: a traced artifact must stamp `RX_RESUME_FRAME_SIZE` **48**
+(call-bearing) and **32** (call-free), not the untraced 40 and 24, and both
+traced artifacts must COMPILE — which is where their `_Static_assert`s live. A
+stamp stuck at 40 would hand a caller a capacity 20% larger than its
+reservation holds. Drift through the member list is unrepresentable (the list
+that emits the struct is the list that computes the size, so a trace-blind list
+emits a struct with no `id` member and fails on that); this covers the
+remaining route, a second computation blind to an axis the struct sees, and it
+was validated in the failing direction against a scratch emitter doing exactly
+that.
+
+The other six: the five sizing macros emitted exactly once on both engines
+(real on the VM artifact, INERT on the DFA one — and the alignment specifically
+NOT 0, since a caller rounding an arena cursor up to it would divide by zero);
+the three `_Static_assert`s that reconcile the stamped sizes with the real
+`sizeof`/`_Alignof`, which are sabotage row S184's build-time detector; that NO
+capacity guard compares against a stamped constant and at least four read the
+capacity fields (too FEW is also a failure — that would mean a guard was
+deleted rather than converted, and this check must not read a deletion as
+success); the delegation direction on the emitted TEXT; and `rx_info`'s four
+fields at `abi` 3.
+
+**Why the delegation direction is checked on the text.** Reversing it
+(`<prefix>_search` implemented as `<prefix>_search_in(..., NULL)`) changes NO
+ANSWER — what it costs is the `_in` entry's small stack frame, because it would
+then own the default arrays and C cannot declare a local conditionally. Every
+behavioural cell passes under either direction, so text is the only instrument
+that sees it.
+
+**One existing check moved with this wave.** `[M6.2-KRESET rule 3]` asserted
+that `<prefix>_match` calls `<prefix>_match_anchored` directly; the entry is
+now a wrapper and the call moved one level deeper. The rule's PROPERTY —
+"reaches the anchored implementation, never through `<prefix>_search`" — is
+unchanged, so the check now spans `rx_match` AND `rx_match_run` and GAINED two
+assertions rather than losing one: neither may mention `rx_search`, and
+`rx_match_in` must reach the same `rx_match_run`. An entry that filtered on
+only one of its two spellings would be wrong for exactly the callers who used
+that one.
+
+## [DD-14.FB] the recursion identity gate is now TWO comparisons (2026-08-25)
+
+`run_recursion_identity.sh` used to ask one question — "is a call-free
+pattern's whole artifact byte-identical to the pre-module pin `ac4917d`,
+past D37's three stamp lines?" — and [DD-14.FB] made that question
+unanswerable: the caller-buffer surface is UNCONDITIONAL, so every artifact
+gains ~180 lines and changes ~30, across an announced `abi` 2 → 3 boundary
+that D40 regime 1 governs. The gate now asks two questions instead, and prints
+two numbers so they never blur:
+
+- **(A) the PROGRAM REGION against the UNCHANGED `ac4917d`** — `goto
+  <prefix>_L0;` … `<prefix>_accept:`, with no filtering beyond the three
+  stamps, so a COMMENT change inside the region is still a difference. This is
+  the claim the gate was built for, still measured against the reference it
+  was built against.
+- **(B) the WHOLE FILE against a pin moved forward to `8fc1e51`** — the last
+  commit of the FB wave touching `src`/`lib`/`cli`. Everything after that pin
+  is byte-exact whole-file again, comment changes included.
+
+**WHY NOT A WIDER `stamp_strip`, MEASURED so nobody re-derives it.** Extending
+the filter with named exact lines for the FB surface needs **200 distinct
+lines** (30 old-side, 180 new-side, 69 of them comments). It fails twice: it
+**over-strips** — the filter necessarily contains `ptrdiff_t rx_match(const
+rx_ctx *ctx)` and its `_caps` sibling, whose signature lines moved when the
+bodies became statics, so the gate would stop seeing a change to the two
+declarations spec §10.8 promises are unchanged — and it **still under-covers**,
+leaving 5 (DFA) to 12 (VM) blank-line differences no whole-line pattern removes
+safely. Filtering to green is the failure this project has recorded twice.
+
+**THE TWO FB LINES INSIDE THE REGION ARE A MEASURED ZERO, NOT A FIRING
+EXCEPTION.** The region-exit guard's type and capacity operand are the only FB
+lines that can move inside a program region, and `vm_region` is emitted only
+for a call-BEARING artifact — this sweep's population is the call-FREE bucket.
+So the assertion is that NO artifact in the population carries `RX_VM_CALL_`,
+which is a leak detector for the classifier rather than a licence.
+
+**THE ELISION LIST SPLIT IN TWO, and both halves are checked.** Wave G's four
+dead-capture patterns differ from the PRE-MODULE reference (VM-selected then,
+DFA-selected now, so the region exists on one side only) and must NOT differ
+from the post-wave-G FILE PIN, where the elision is on both sides. One list,
+two expectations, each asserted against the comparison it belongs to.
+
+## [TT-11]/D76 (2026-08-25): the two pins have two OWNERS, and the FILE pin's guard is now STRUCTURAL
+
+(A)'s pin is the MODULE's promise (pre-module, never moves; its exception list
+is D75's four dead-capture patterns, above). (B)'s pin is owned by the emitted
+`abi` NUMBER (`rx_info.abi`, stamped by `src/gen/emit_dfa.c`): it IS, by
+definition, the commit that introduced the CURRENT `abi`; within an abi number
+the emitted output is byte-exact whole-file, comments included; ANY change to
+the emitted scaffolding — comments, declarations, layout — is an `abi` bump
+AND a re-pin of (B) to that change's last `src`-touching commit, in the SAME
+change (free pre-v1 under D40; the binding event it should be once pcrec ships
+v1).
+
+The gate used to guard the FILE pin with an ad-hoc
+`grep -q RESUME_FRAME_SIZE "$FILEREFSRC/src/gen/emit_dfa.c"` — a probe that
+encoded [DD-14.FB]'s own boundary by name and would say nothing about the
+NEXT scaffolding change. It now builds an artifact from EACH compiler
+(subject and file-pin) on a call-free pattern (`'a'`), reads each side's
+`.abi = N` stamp with `grep -o '\.abi = [0-9]*'`, and refuses when they
+differ, naming the fix directly: "the emitted scaffolding changed: bump `abi`
+in src/gen/emit_dfa.c and re-pin comparison (B) to this change's last src
+commit, in the same change (D76)". Validated: pointing
+`RECURSION_IDENTITY_FILEPIN` at a pre-FB commit (`ac4917d`, `.abi = 2`
+against the subject's `.abi = 3`) makes the refusal fire with that exact
+message; the default pin (`8fc1e51`, same `.abi = 3` as the subject) passes
+straight through to the sweep. Comparison (A) is untouched by this — it never
+read the probe at all.
+
+**[OPT-1], 2026-08-25 — THE SECOND SUCH EXERCISE, and the pin is `469a432`
+now.** The TWO-TIER DEFAULT ENTRY: `abi` 4 -> 5, comparison (A) byte-identical
+against the unchanged `ac4917d`, (B) re-pinned in the same change. What is new
+about it is that **no DFA artifact's bytes move at all** — a first for an `abi`
+bump — because the tier is emitted entirely by `src/gen/emit_vm.c` and a DFA
+artifact has no resume stack to tier. The `abi` number versions the artifact
+FORMAT rather than the VM, so it moves on both kinds regardless, and (B) is
+therefore re-pinned for DFA artifacts too.
+
+**[DD-13], 2026-08-25 — THE RULE'S FIRST EXERCISE BY A NON-LAYOUT CHANGE, and
+the pin was `5991d4c`.** [DD-13] gave every DFA artifact three D46
+selection stamps. It moves NO struct offset and NO emitted program byte —
+comparison (A) is byte-identical against the unchanged `ac4917d` pin on all
+five axes, which is the PROOF that the change is scaffolding only — and it
+still bumps `abi` 3 -> 4 and re-pins (B), because (B) compares WHOLE FILES and
+three new `#define` lines are a whole-file difference on ~2,000 artifacts.
+That is D76 working as ruled rather than an exception to it, and it is the
+reading a future change should copy: (A) says whether BEHAVIOUR moved, (B)
+says whether BYTES moved, and only the second is what `abi` versions.
+Demonstrated both directions on this change: with the new pin the gate is
+15/0; with `RECURSION_IDENTITY_FILEPIN=8fc1e51` (the old pin, `.abi = 3`
+against the subject's `4`) it REFUSES with the message above before the sweep
+runs.
+
+**[DD-13c], 2026-08-25 — THE SECOND EXERCISE, and the pin is
+`c940551` now.** r37's two scope findings move emitted `#define`
+bytes (the four proven-empty DFA artifacts' scan value; two new lines on every
+VM hybrid) and move nothing inside the program region, so the reading above is
+copied verbatim: `abi` 5 -> 6 (lane srTier's two-tier entry took 4 -> 5 immediately before), (B) re-pinned, (A) byte-identical
+against the unchanged `ac4917d`. Demonstrated both directions again — see the
+[DD-13c] entry in `docs/dev/dev_journal.md` for the measured numbers.
+
+- **run_size_term.sh** — [ART-SIZE]/D84's structural check (2026-08-29). Reads
+  the ARTIFACT, never the stamp alone: the four size-term stamps unconditional
+  on every VM artifact (D81), four of the six `_UNROLL_K_WHY` values driven
+  through the path each one names, the stamped `K` checked against
+  `--unroll=1/2/4/8` and against the term's own choice, and the two effective
+  caps against the flags (including that a below-default `--max-emit-*` value
+  is REFUSED — raise-only is what stops those being used to manufacture a
+  refusal on someone else's build).
+  **It builds a second compiler, and that is [ENG-ABS]'s precedent rather than
+  a new surface.** `cap-rescue` has a natural population of ZERO and the CLI
+  overrides are raise-only, so the branch cannot be reached from outside at
+  all; the check builds a REFERENCE COMPILER with the limits lowered at
+  pcrec's own compile time (`-DPCREC_SIZE_TERM_THRESHOLD=20000
+  -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000`) and drives it there. BOTH constants
+  move, not one: the threshold gates on CODE bytes, so lowering only the cap
+  gives a compiler in which the ladder never runs on the witness and the
+  pattern simply refuses. An anti-vacuity cell asserts the rescue chose a
+  DIFFERENT K from the default build, and the NATURAL cap-rescue population is
+  pinned at 0 as a CEILING that fires if a real pattern ever lands in the band
+  `docs/design/artifact_size_term.md` §4.2b calls empty. **§10 ([K100],
+  2026-10-09)** builds a THIRD reference compiler at emit_sweep's `lowsize`
+  limits and holds B1's witness `(?:aa|a){8,12}+ab` to COMPILE after both
+  restarting rows (`prefilter-collapse`, `drop-prefilter`) at a ladder K
+  (not `option`, not the default 8, which refuses), through a restarting
+  row (`VM_PREFILTER_WHY "size cap retry..."`), answering what python `re`
+  answers on 14 subjects. Red (34/1) on the tree before the fix.
+
+- **run_prefilter_collapse.sh** — [OPT-4]/K39's structural check (2026-08-29).
+  The count-collapsed hybrid prefilter, held to the ARTIFACT rather than to its
+  stamp. THE AXIS IS ANSWER-IDENTITY-PRESERVING (D46), which is exactly why it
+  needs this: the whole `.rxt` corpus, both oracles, `make test-axes` and every
+  differential agree whether or not the emitter got any of it right. Six
+  failure modes none of them can reach — the collapse silently stopping (§1
+  asserts count-independence on the DEFAULT artifact, with a failing-direction
+  control proving the equality is the collapse and not an artefact); the stamp
+  drifting from the machine (§2 compares `RX_VM_PREFILTER_LANG` against BYTES —
+  `"exact"` iff byte-identical to the `-fno-prefilter-collapse` build — over
+  seven witnesses chosen to land on named sides of the knee); the MRL ceiling
+  surviving a superset prefilter, which is a silent MATCH LOSS rather than a
+  size regression (§3, on every collapsed corpus artifact); the collapse
+  reaching the DFA ENGINE, where a superset IS a miscompile (§4's iff, both
+  directions, over 2,772 patterns); the population moving in EITHER direction
+  (§5); and the `_WHY` reason drifting from the outcome it explains (§2, §5,
+  and §1's ratio cell).
+  **THE CONTROLS DO NOT SHARE A SOURCE WITH WHAT THEY CONTROL** (learnings §3),
+  and §5 is where that costs real work. The claim it defends is that the knee
+  fires only where a COUNT made the machine big, so the obvious term — "does
+  the compiler think this pattern has a collapsible repeat" — is
+  `pcrec_has_collapsible_rep`, a CONJUNCT OF THE GATE UNDER TEST: a bug in it
+  would make the assertion agree with the defect. The replication factor is
+  therefore re-derived from the PATTERN TEXT by an awk scanner in this file,
+  which is itself pinned on 9 hand-checked patterns (an escaped brace, a brace
+  inside a class) before it is trusted, and carries a non-vacuity control
+  because a scanner answering ">= 2" for everything would make the assertion a
+  tautology.
+  **§5 IS RETIRED AND DELETED (Frank's ruling B, 2026-08-29).** It was a form
+  census over the knee's population — how many corpus artifacts sat above
+  `PCREC_PREFILTER_EXACT_NFA_STATES`, banded on both sides, with zero of them
+  of replication factor < 2. Ruling B deleted the knee, so that population no
+  longer exists and every one of those assertions would now be measuring
+  nothing. DELETED rather than left with a band of `0..0`: a check whose
+  subject has gone is worse than no check, because it reads like coverage. Its
+  replication-factor scanner went with it.
+  **WHAT REPLACED IT IS STRONGER.** The same corpus sweep now asserts RULING B
+  ITSELF — every artifact that collapses at the default must name a LADDER RUNG
+  as its reason (`n_coll - n_rung == 0`). A returning knee, by design or by
+  accident, fails there. It is not vacuous: one corpus pattern reaches the
+  [SEL-1] rung, so the assertion has a live subject.
+  **§6 IS A DIFFERENT QUESTION FROM THE REST OF THE FILE** ([OPT-4]'s second
+  commit, the [SEL-1] rung). Every other cell compares two languages for ONE
+  artifact; §6 is about an artifact that did not previously EXIST. A pattern
+  whose DFA overflows a cap AS THE ENGINE used to fall to a VM artifact with
+  `RX_VM_PREFILTER "none"`, because rebuilding the prefilter would have been
+  the identical machine that just overflowed — true of the exact language,
+  false of the collapsed one. So the question is not "which language" but "a
+  prefilter at all", and the evidence is a different stamp plus the deny flag
+  returning the old outcome, which is the section's non-vacuity control: without
+  it the cells would pass on a compiler whose caps had simply been raised.
+  **§1 SPLIT IN TWO UNDER RULING B, and the split IS the ruling.** K39 can be
+  answered two ways and only one is the default: COUNT-INDEPENDENT (reachable
+  under `-fprefilter-collapse`, asserted on K39's own pair with its
+  failing-direction control) and COUNT-BOUNDED (what a user gets — the caps
+  bound the size, and a pattern whose exact artifact they refuse compiles via
+  the size rung). Asserting only the first would be a claim about a flag nobody
+  passes; asserting only the second would let the force flag rot.
+
+## [OPT-4.1] `run_prefilter_collapse.sh` gains §6b, and §6 becomes half of a pair
+
+The count-collapsed rescue is now GATED ON NON-NULLABILITY (`docs/spec/
+tuning.md` §2.17): pcrec does not build a collapsed prefilter whose language
+matches the empty string, because such a filter admits a zero-length match at
+every position and can therefore dismiss none of them. pcrec-bench measured
+that shape at 1.2-9.9x SLOWER than no prefilter at all (its O-10 item 3, pin
+96e44c2) against the 2.2-4.6x the same rung WINS where structure survives the
+collapse — and the rung could not tell the two populations apart.
+
+**§6 AND §6b ARE THE SAME MACHINE FOUR CHARACTERS APART**, which is the only
+form of control that carries information here. §6's witness is [SEL-1]/K40's
+own overflow pattern; §6b's is that pattern wrapped in `(?:...)?` — one
+epsilon in the NFA, the same DFA overflow, opposite sides of the predicate. §6
+fails if the gate OVER-fires (a compiler that declined everything takes its
+prefilter away); §6b fails if it UNDER-fires. Neither direction is safe alone,
+and a predicate wired to a constant fails exactly one of them.
+
+**THE EVIDENCE IS A DIFFERENT STAMP FROM §6's, NECESSARILY.** A declined
+artifact carries NO `RX_VM_PREFILTER_LANG` at all — `match_api.md` §6.3's iff
+makes the language macro conditional on there being a machine to name — so the
+decline is read off `RX_ENGINE_SEL "declined-nullable"`, whose value is
+written by `pcrec_engine_sel_name` in a different file from the `fit.prefilter`
+clause that took the decision, with the ABSENCE of the LANG macro checked
+beside it as the second, independent term.
+
+**§2 GAINED A THIRD EXPECTATION RATHER THAN A SECOND FUNCTION.**
+`lang_witness exact-nullable` shares `exact`'s LANGUAGE and its byte-identity
+leg (a flag that changed nothing moved no byte) and differs only in the `_WHY`
+line it requires — `"nullable collapsed language"`, which is what separates a
+flag that reached a POLICY from one that reached a vacuity. Its two witnesses
+are the `count-collapsed` rows above them minus one character.
+
+**AND `-fprefilter` OVERRIDES THE DECLINE, asserted in §6b(3).** It is
+do-or-die (D46/D47.3): the decline's alternative is NO prefilter, which is
+exactly what an explicit `-fprefilter` forbids, so a request this pass cannot
+honour must REFUSE rather than be silently answered with its opposite. The row
+accepts either a hybrid or a named refusal and reports which — what it fails
+on is a silent override. `-fprefilter-collapse` does NOT override it: that flag
+chooses a LANGUAGE for a prefilter, not whether one exists.
+
+Sabotage rows: S206 (predicate removed) and S207 (predicate inverted), on the
+new `pfcollapse` mech arm. Both are answer-identical, so their corpus arm is
+EXPECTED green — see `tests/mech/CLAUDE.md`'s own section for why that is the
+arm working rather than a half-detection.
+
+## `run_scan_edge_census.sh` — [OPT-EDGE] STEP 1.1's population (2026-09-04)
+
+The eleven artifacts precondition (8) cost a scan edge at [OPT-EDGE] STEP 1,
+with the machine each one regains it on at STEP 1.1 — an ENUMERATED MANIFEST,
+written from the measured artifact rather than harvested at run time, plus a
+STALENESS arm (a listed pattern that is no longer a `pattern` line under
+`tests/` fails) and a non-vacuity floor.
+
+**[OPT-VEDGE] (lane vedge, 2026-10-03)** moved two manifest rows
+(`\b\w+\b\z` forward 1 -> 2, `\b\w+\z` 1 -> 3) and added SECTION (6): three
+patterns' forward/reverse/anchored edge counts under the view-tolerant edge
+(`(?:[a-z]{0,4})\z` the END-view chain and the reverse TRIM, `[0-9]{3}\z` the
+anchored machine, `a{0,4}$` the EOL-view refusal beside the trim), each
+required to read 0 0 0 under `-fno-view-edge`. Its direction half has no
+structural witness; tests/assertions/view_edge.rxt's answers are that
+detector (row S440).
+
+Two things it asserts and one it deliberately does not.
+
+- **The edge count per MACHINE**, read off the artifact's own `[OPT-5] SCAN
+  EDGE` markers attributed by the state variable each block tests. The stamp
+  is the wrong instrument: `RX_DFA_SCAN_EDGE` names axis I's BODY form, so a
+  machine going from two edges to one reads identical — and the whole-artifact
+  marker count is the wrong RESOLUTION, which is how the STEP 1 census came to
+  call two `offset-set` artifacts hazardous when the edge they lost was on
+  their REVERSE machine.
+- **The loop entry is the general head test**, wherever a machine has both a
+  seed table and an edge. That regression is invisible to any answer check
+  whose subjects never seed onto a head, and it is a LOST MATCH when they do.
+- **It is NOT a control on precondition (8) itself.** The narrowed (8) has an
+  empty population on today's corpus, so nothing here goes red if it is
+  deleted; the file's own header says so rather than implying a failing
+  direction it does not have. (8)'s failing direction belongs to a mech row
+  aimed at `dfa_form_derive`'s read-back check.
+
+Failing directions measured at the landing: 11 of 13 rows red against a build
+with the entry dispatch reverted, and 11 of 13 red against the STEP 1
+compiler.
+
+**[cgtri] 2026-10-07: §4's P3 was the UN-narrowed (8).** It asserted "no
+edge at all" on a reseeding seeded forward machine, which held only while that
+population was empty; `composition_d27.rxt`'s `(?:\b(?1)|x)(a+)` carries an
+edge on a head its seed table cannot install (answer-correct against libpcre2
+10.46) and read red. P3 now asks (8)'s own question — an edge head that is a
+non-start seed value, `seeded_heads_on` — and such machines are counted as
+the P2e FINDING. The helper was validated by planting the head into the seed
+table (1), the head onto a seed value (1), and the head onto the start cell (0).
+
+
+## [M5.0] stage 2's structural + differential acceptance: `run_encoding_checks.sh`
+
+The encoding BACKEND's acceptance, the half the `.rxt` corpus and the identity
+gate cannot make (`docs/design/utf8_design.md` §8.5, §8.1.1 check 3, §9.2's
+DD-12(7)(a) pair). `make test-encoding-checks` IS IN `TEST_SECTIONS` (D136,
+2026-09-30; it was opt-in until the silentred triage found it red and
+unnoticed): its §8.5 differential compiles and RUNS two artifacts per ASCII
+corpus block (~6,600 compiles at `ENC_MAX_BLOCKS=0`, the whole corpus, which
+rides a Linux slot), and `ENC_MAX_BLOCKS` (default 250, ~10 min) bounds it in
+`make test`. Four sections:
+
+- **§8.5 THE ASCII-CORPUS ENCODING DIFFERENTIAL.** Every ASCII-only corpus
+  pattern is compiled under BOTH encodings and run on its subjects; the two
+  artifacts must agree. With §8.1's identity gate (the `byte` artifact did not
+  move) this is TRANSITIVE to the pre-M5 compiler over the whole ASCII corpus.
+  The oracle is the OTHER ENCODING, not pcrec reading its own analysis. Its
+  positive control is the exclusion COUNT read from the harness's own DECODE —
+  a nonzero subject-exclusion count, which a text scan (reading a `\xNN`
+  subject escape as ASCII) would read as 0 (§8.5's own method-note trap).
+- **CHK3 THE STAMP CENSUS.** On an ASCII pattern the utf8 stamps EQUAL the
+  byte ones, because the lowering is the identity below 0x7F. This is the
+  only instrument that would see §2.4.1's premultiplied decline / §6.2.1's
+  engine change / §6.4's island claim, none of which changes an answer.
+- **DD12a(i) THE HOT-LOOP SHAPE IDENTITY, REBUILT** (docs/dev/known_issues.md
+  K52, [ENCCHK-DD12A]). The original instrument compared whole-object
+  `.text`/`.rodata` bytes and was VACUOUS on darwin (`objdump -j .text`
+  matches nothing on Mach-O) and mis-scoped everywhere (the whole-object
+  scope cannot admit the seam's own per-encoding residual bodies or K49's
+  retry advance). The repair compares emitted SOURCE TEXT instead — never an
+  object, never a compiler, never `objdump` — with both artifacts re-emitted
+  under the SAME prefix and basename (`run_trie_identity.sh`'s own
+  documented trap, avoided by construction) and the four residual entries
+  plus the K49 advance splice plus the `.encoding` stamp EXCISED from both
+  sides before the compare, each excision counted and floored non-empty by
+  construction. Source-text comparison is what makes a real darwin arm
+  possible at all — the check needs no working Mach-O section reader,
+  because it never reads an object file — and it sidesteps the
+  `always_inline` smear that defeated a per-symbol object-exclusion attempt
+  (K52's own finding): the smear is a compiler-inlining phenomenon that does
+  not exist in source text read before any compiler sees it. See
+  `run_encoding_checks.sh`'s own DD12a(i) section header for the full
+  account and docs/dev/lanes/encchk_report.md for the validation transcript.
+  **[enctriage] 2026-09-25**: five reds on the revived instrument were ONE
+  class — check gaps, no DD-12 (7) violation: four encoding-keyed emission
+  choices landed while it compared zero pairs ([EMIT-VERB] dropped the K50
+  attempt guard's comment marker; [OPT-ANCHOR-VM] moved the K49 advance's
+  anchor line; [OPT-ENDWIN] and [OPT-FREQPICK]/[OPT-PRECHECK-ADMIT] choose
+  per encoding at compile time and stamp the choice), plus `var_valid`'s call
+  site. Each is now a named, COUNTED, floored region held to its own stamp
+  (`SELECT_BAD`); docs/dev/lanes/enctriage_report.md.
+  **[silentred] 2026-09-30**: seven reds (9 pass / 7 fail) after [FINDINGS] B1,
+  [UCP] U2 and [OPT-LITSCAN] S1 — all STALE-CHECK, no DD-12 (7) violation, one
+  mechanism family: the byte-rate prior is BYTE-KEYED, so `<P>_FINDINGS` reads
+  a table under byte and `none` under utf8 (new region `findings_stamp`, held
+  to that coherence per pair), G1's COMPARE-NONE lets the utf8 side elide the
+  pre-check by IDENTITY where the byte side keeps it (REQ_WHY now differs in
+  both directions; `req_run_asym` excises the whole `rx_reqrun` block when the
+  stamps differ), the run-pin / rarest-`memchr` prefilter form is selected by
+  that prior too (`PRIORFORM` bucket, stamp-declared, floored, never a K50
+  manifest row), and U2's context node removed `back_step` from the one-char
+  lookbehind witnesses (`(?<=ab)` added, DD12a(ii)'s `sigpat` re-aimed).
+  The K50 manifest was NOT touched; five of its reds were the FINDINGS stamp.
+  docs/dev/lanes/silentred_report.md.
+  **[K82] (B) (lane k82hbuild, 2026-10-05, abi 61)**: THE HANDOFF is an
+  encoding-owned region (litscan_k82h.md §4.2b): K differs by encoding by
+  design and the round-up exists only under utf8, so a pre-pass
+  (`excise_handoff`) rewrites the kept gate to the discard gate's text,
+  excises the block (anchored on its opening `if (handoff_position -
+  search_from > K) {` and closing `handoff_position = search_from;` lines, at
+  most `HANDOFF_MAX_LINES` = 8, S477's detector), renames the one start site
+  and normalizes `<PREFIX>_REQ_HANDOFF`; each side is held to its stamp, the
+  presence must match unless `REQ_WHY`/`REQ_RUN` differ, and the both-sides
+  population is floored (landing 13 at the default `ENC_MAX_BLOCKS`).
+  **[OPT-LITSCAN] S1 step 6 (abi 37)**: the run pre-check is a file-scope
+  `rx_reqrun`/`rx_reqrun_whole` block, so the FREQPICK member-pick
+  normalization reads its scan start and `cand = hit - K` INSIDE those blocks
+  only (an `rx_ofsskip` block has the same line shapes and is never
+  normalized), and the stamp-held scanned byte is read off the blocks' bodies.
+  Its three DD12a(i) reds on the step-6 tree are the same three, with the
+  same FINDING pattern list, as a run of main `54bb1159`'s own script
+  (pre-existing; lane s1step6's report).
+- **DD12a(ii) THE SECOND-BACKEND VALIDATION of D58's revisit-when names.** The
+  seam's four residual entries appear in a utf8 artifact under the SAME
+  signatures the byte backend emits — the property [M6.6.2] wave D
+  demonstrated for `back_step` alone (P-1), now for a whole second backend.
+- **S-U8 THE CLAMP-STRIDE PROBE.** `(a)(?:\x{3b1}){0,3}x` under utf8 emits
+  `RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)` — the stride 2 IS α's encoded
+  length, the one readable witness that the MRL prune counts ENCODED bytes.
+
+The group-root-ADDRESS check (R2's owed stage-2 check) is NOT here — it is in
+the COMPILER (`src/opt/lower_enc.c`'s `cap_sig`), asserting on every compile
+that no `A_CAP`'s address moves across the lowering, which is stronger than a
+corpus sweep of it.
+
+## `run_comment_escape.sh` — pcrec-bench O-31 finding F1's regression net (2026-09-17)
+
+The DFA emitter's per-state "shortest input" legend
+(`src/gen/emit_dfa.c`'s `emit_state_legend`) wrote a byte-class
+representative straight into a `/* ... */` block comment with no check for
+the comment-closing sequence, so a pattern whose own bytes contain a raw
+STAR THEN SLASH — the bench's WAF witness
+(`wild-waf-crs-942500-comment-obfuscation`, the literal SQL-comment-
+obfuscation bytes `/*!*/`) — corrupted every byte the emitter wrote
+afterward: a missing terminating string quote cascading into
+undeclared-identifier errors, a genuine C COMPILE FAILURE rather than a
+wrong answer.
+
+**THE FIX IS ONE SHARED PRIMITIVE, `emit_comment_safe_byte`**, applied at
+every site in the tree that writes pattern-derived text into a comment:
+the banner (`emit_pattern_comment`) and the per-state legend
+(`emit_state_legend`). It guards TWO hazard pairs, not one — a SLASH THEN
+STAR also trips gcc's `-Wcomment` under the harness's own `-Wall -Wextra
+-Werror` GENCFLAGS default, found live while building this script's own
+checks, on a pattern that never trips the first hazard at all. Printable
+ASCII passes through unless it would complete either pair with the byte
+just rendered, in which case (like any other non-printable byte) it
+becomes `\xNN`. `emit_orientation_block`'s own one-line pattern-map
+paragraph deliberately does NOT route through the shared primitive — see
+its own comment: doing so was tried and MEASURED to move 115 currently-
+compiling corpus artifacts' bytes (every UTF-8 multi-byte literal and
+every pattern with a literal tab), because that site's policy has always
+been broader (pass everything through except the hazard pairs and a
+newline) than the shared primitive's printable-ASCII-or-hex-escape
+contract. It keeps its own loop instead, fixed for the SAME two hazard
+pairs and for a duplication bug the fix's own construction (backward
+lookup instead of a two-character lookahead) cannot reproduce.
+
+**EIGHT CHECKS, covering both hazards, both engines' state legend
+(`rx_search`'s forward machine and `rx_match`'s reverse one — the same
+byte pair reproduces on the reverse machine's own legend), non-vacuity
+(the hazard bytes are confirmed to reach the escaper rather than the
+witness silently routing around the fixed site), the definitive
+regression net (the artifact compiles under the harness's own default
+GENCFLAGS, `-Wall -Wextra -Werror`), and answer correctness against the
+oracle bytes.** A dedicated SLASH-STAR-only witness (`a\/\*b`, no closing
+pair) isolates the second hazard from the first — the check that would
+have stayed green if only the STAR-SLASH half of the fix had been built.
+
+**MEASURED, IN BOTH DIRECTIONS.** Against the pre-fix compiler this
+script fails 5 of 9 checks with exactly the reported cascade (missing
+terminating `"` character, `-Wcomment` errors under `-Werror`); against
+the fixed compiler all 9 pass. A corpus-wide byte-diff (baseline vs.
+fixed compiler, same basename in different directories per
+`run_trie_identity.sh`'s own trap, 2,856 corpus patterns) found **ZERO
+movers and zero newly-broken patterns** — every byte this fix moves
+belongs to a pattern that failed to compile before it, which the fix's
+own predicate structure (the hazard pairs are exactly what a
+pre-fix build could not survive) makes true by construction and not
+merely by measurement on today's corpus. No `abi` event.
+
+`tests/base/comment_escape.rxt` is the corpus-level acceptance: two
+blocks, oracle-verified against python3 `re`, riding `test-corpus` like
+any other `tests/base/` file — this script owns the MECHANISM and the
+GENCFLAGS bar, that file owns the ANSWER.
+
+## `run_comments_axis.sh` — [EMIT-VERB]'s axis check (2026-09-19)
+
+The emitted-comment axis's own check, and **the only script in this tree that
+compares a `-fno-comments` artifact against anything**. Every byte-identity
+gate compares DEFAULT builds, and since D112 the default IS the comment-free
+one, so the `-fcomments` artifact — the one the orientation block and the
+legends live in — has no other reader.
+
+Nine pattern pairs across both engines and the hybrid, each compiled twice
+and `gcc -Wall -Wextra -Werror -O1`'d twice, asserting the four claims the
+axis makes plus the one hazard that is invisible from inside:
+
+1. **A default artifact carries only its ESSENTIAL comments.** The
+   recogniser keys on the `PCREC_RX_ABI_H` GUARD rather than on a list of
+   that block's sentences, so a doc-comment added inside the block stays
+   essential with no edit here and one added outside it fails. A
+   NON-ESSENTIAL comment in a default artifact means an emission site was
+   added without an `pcrec_sb_cmt_open` class.
+2. **`-fcomments` restores the rest**, as a strict per-artifact inequality —
+   which is what stops (1) passing vacuously on an emitter that had stopped
+   emitting comments altogether.
+3. **The object files are identical**, with the arm's own positive control
+   beside it: the two SOURCES must differ, so a green cannot come from the
+   flag being ignored.
+4. **No size decision and no stamp moves**: the comment-EXCLUDED size (via
+   `tests/lib/size_count.sh`, the same definition the caps and the size log
+   use) and the sorted `#define` set are compared directly.
+5. **Every artifact is COMPILED.** An unbalanced region mutes the rest of its
+   buffer and a half-gated comment leaves stray `*` lines; both are C syntax
+   errors and neither is visible to any byte comparison of default builds.
+   The complementary instrument is the region-balance check in
+   `src/core/compile.c`, which fires inside the compiler.
+
+Plus the deny-beats-force precedence arm and the registry-advertisement arm.
+The two builds go to the SAME BASENAME in two directories: an artifact
+carries `#include "<basename>.h"` from `-o`, so `x_def.c` vs `x_full.c` would
+make arm 3's control pass for the wrong reason and arm 4 read a phantom
+one-byte move.
+
+## [VAR lane, 2026-09-23] DD12a(i) HAD BEEN COMPARING ZERO PAIRS
+
+`run_encoding_checks.sh`'s hot-loop shape identity — the instrument that
+proves no encoding conditional reached the engine body — invoked the compiler
+with a BARE OPERAND after `--`. **D118 retired `--source` by making a bare
+operand mean a FILE**, so since then every call answered *"not an existing
+file; a literal pattern is given with `--pattern`"*, returned 1, and was
+skipped. `PAIRS=0`, every bucket 0, every EXCISED counter 0.
+
+Three things about it are worth keeping:
+
+1. **Its own non-vacuity floor is the only reason it was visible.** With a
+   `>= 0` there, a dead instrument and a clean one print the same thing. The
+   floor is not decoration; it is the whole detector.
+2. **It went stale because `test-encoding-checks` was OPT-IN** and rode no
+   `TEST_SECTIONS` entry (D136 wired it in, 2026-09-30). An opt-in check is a check nothing re-runs when the
+   surface it drives moves underneath it — which is the same reason
+   `run_specimen_identity.sh` carried two independent stalenesses until
+   [EMIT-VERB] met it.
+3. **A mechanical rename over this file reached the regex and the tables and
+   missed the one place a NAME IS MAPPED TO A DIFFERENT NAME** — a
+   `startswith('bref_ci_')` normalisation. The renamed helper matched, fell
+   through with its own name, and the counts dict raised `KeyError`. *Find
+   the places a rename has to think, not just the places it has to type.*
+
+Also repaired in the same pass: `int` joined the return-type alternation
+(module `vars`' `$_var_valid` returns one, which no residual entry before it
+did, so the walk did not see its region at all), and `^${v}$` joined the
+explicit witness list because `var_valid` otherwise read 0 — this file's own
+"a check that never exercised `span_match` would be dead code passing
+silently", one entry over. That witness is the only one reaching an entry
+present in ONE backend's table and absent from the other's, which is the
+sharpest available test of what the excision claims.
+
+## `run_cls_fold_agreement.sh` + `fold_pairs_dump.c` — the VM class-fold
+shape, tied to `src/core/fold.c`'s table (2026-09-25, [FORM-CHAR]'s CLS
+FOLD close-out; `docs/design/compare_stack.md` §duplications)
+
+The gap S228 (`tests/base/cls_fold.rxt`'s own detector) does not close:
+the class-form table's FOLD recognizer (`src/gen/clskit.c` `is_ascii_fold_pair`;
+`vm_cls_shape` before abi 51) and the compare it emits (`pcrec_clskit_emit_inline`) are the one ASCII-fold spelling in the tree with NO
+agreement check against `pcrec_ascii_fold` (`src/core/fold.c`), the table
+`tests/backrefs/fold_agreement_check.c` otherwise treats as ground truth.
+S228 sabotages the RECOGNIZER's conjuncts and is caught by hand-picked
+witnesses in `cls_fold.rxt` (2 of the 26 real pairs); nothing ties the
+POPULATION to fold.c's real table, and nothing at all exercises the EMITTED
+COMPARE LINE itself independent of the recognizer that selects it.
+
+**Two independent sources, `fold_agreement_check.c`'s shape one mechanism
+over.** SOURCE A: `fold_pairs_dump.c`, linked against `libpcrec.a`, reads
+`pcrec_ascii_fold` directly and derives — never hand-types — every real
+fold pair (26, `A B..Z z`-shaped) and every 0x20-shaped NEAR-MISS pair that
+does not fold (6: `@`` ` / `[{` / `\|` / `]}` / `^~` / `_`DEL). SOURCE B: a
+real `--emit-main` artifact PER PAIR, compiled and RUN (never read as
+source text for its behaviour) against four probe bytes (`lo`, `hi`, and
+two fixed digit controls `'0'`/`'9'` outside the whole 0x40-0x7f candidate
+range), reading its EXIT CODE. Structural (does the artifact take the FOLD
+or the BITMAP shape) and behavioural (does the compiled binary actually
+answer right) are both asserted, on both the fold and the near-miss
+population — 26 pairs x 4 probes + 6 pairs x 4 probes + one shape assertion
+each, 163 checks measured at landing.
+
+**Floors are HALF the measured population (D110), never the measured
+number itself** — 13 fold pairs, 3 near-miss pairs — so a future change to
+`pcrec_ascii_fold` that shrank either bucket is caught as a floor breach
+rather than silently read as "fewer pairs, fine".
+
+Sabotage S275 shifts the emitted compare's own constant (`hi` -> `lo` at
+emit_vm.c:1655) — the "shift the emitted mask" case S228 cannot reach,
+since S228 only ever touches the recognizer that SELECTS the fold shape,
+never the line that RENDERS it. The plant makes `(byte | 0x20) == lo`
+unsatisfiable for every fold pair (`lo` never carries bit 0x20, and
+`byte | 0x20` always does), so every one of the 26 real fold pairs loses
+its structural shape check (the emitted constant is no longer `hi`) AND
+both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
+(`tests/mech/run_sabotage_matrix.sh S275`) — while the 6 near-miss
+(bitmap-shape) rows and SOURCE A's own checks stay green. Read the
+current DETECTED figure from a `make mech` run.
+
+
+## `run_clspack.sh` — [OPT-CLSPACK]'s shared atom table (2026-09-30)
+
+The VM's TABLE-READ byte classes (no singleton/range/fold compare covers
+them) share ONE `<prefix>_class_atoms[256]` table and a 64-bit mask per class
+when there are at least 11 of them and their partition has at most 64 atoms
+(D131 item 6, `docs/spec/tuning.md` §2.34). Answer-identity-preserving, so
+the corpus sees nothing of the choice; this file does. Rides
+`make test-cpset-structure` (~15 s) and the mech arm `clspack`. Its
+witnesses are `tests/base/clspack_atoms.rxt`'s blocks, read by case name,
+because the shipped corpus has no artifact the row fires on.
+
+- **PART 1** the row, read off each firing witness: `RX_VM_CLS_ATOMS` equals
+  an atom count THIS SCRIPT computes from the same pattern's `-fno-cls-pack`
+  artifact's bitmaps (a different output, parsed here — never the compiler's
+  own `pcrec_clskit_atoms`), one shared table, one matcher per class, no
+  bitmap left, and every program read a matcher call.
+- **PART 2** both thresholds from the other side (ten classes; 65 atoms),
+  the deny, all five `--tune` positions, and the stamp's scope (0 on a
+  class-free VM artifact, absent on a DFA one).
+- **PART 3** answer identity: each firing witness built both ways under two
+  prefixes into `tests/possessify/possdiff_driver.c` (shared), over every
+  byte 0..255 at every position of each matching subject the block carries —
+  343,040 cells at landing, floor 10,000.
+Sabotage rows S400-S404 (all DETECTED solo at landing).
+- **PART 4** ([CLS-TREE] S2, lane clss2; widened by clss2fix, review C-L6)
+  the kit's BYTE forms: at `--tune=-2`/`-1` a scattered class with fewer
+  than 11 table-read siblings, whose kit is smaller than its bitmap, reads
+  `<prefix>_class_kit<N>` (or, `-e utf8`, a wide class at or below U+00FF
+  reads its `<prefix>_wcls<N>` from the same row); each witness must take a
+  kit on the `pa` side (text + `VM_CLS_KIT` stamp) and none under
+  `-fno-cls-kit`, then the same driver compares the two over every byte at
+  every position (floor 10,000). Population: both size-leaning positions, a
+  caseless class, `-e utf8` byte and wide classes.
+- **PART 5** ([CLS-TREE] S2; D139 item 2, clss2fix) the DFA scan edge's run
+  test is the class-form table's answer: `RX_DFA_SCAN_EDGE "kit"` with its
+  `_scankit<N>` matchers at -2/-1, `"fold"` for a fold pair at -2,
+  `"bitmap"` at 0/+2 and under the row's flag, `"range"` at every position;
+  then form-vs-deny answer differentials (kit vs `-fno-cls-kit` at -2 and
+  -1 and under `-e utf8`, fold vs `-fno-cls-fold`) that compare the SEARCH
+  entry and, with `-DDIFF_MATCH`, the MATCH entry at every start — the
+  vowel witness is checked to carry kit edges on its reverse and anchored
+  machines, and only `_match` runs the anchored one (floors 5,000 each).
+Sabotage rows S430 (kit matcher built from the wrong class) and S431
+(`-fno-cls-kit` not reaching the byte rows) are S2's.
+
+## `run_wclass_census.sh` + `wclass_census.py` — [CLS-TREE] S3's A_WCLASS checks (2026-09-29)
+
+S3 wraps every class the encoding spells in more than one code unit in an
+`A_WCLASS` (the code-point set in `u.wcls`, today's byte alternation as its
+child `l`) and makes every reader walk the child — a byte-identical refactor.
+The IDENTITY is `scripts/cls_identity.py`'s (it needs a reference build, which
+`make test` cannot have). This script holds what one tree can show, and rides
+`make test-cpset-structure` (~2 s) and the mech arm `wclass`:
+
+- **PART 1, the census** (`wclass_census.py`): every `switch` in `src/` whose
+  top-level labels name an `AKind` member (the member list READ from
+  `internal.h`'s enum) must carry `case A_WCLASS` [5a], must never put it in
+  one label run with `A_CLASS` [5b] (that arm renders the SET), and must carry
+  no `default:` [5c]. A population floor (49; 50 at landing) and a SELF-TEST
+  over a synthetic source that violates each rule make a blind scanner fail
+  rather than read clean.
+- **PART 2, four reader witnesses**, each an artifact fact the reader's wrong
+  walk moves and no answer check sees: W1 `éabc` keeps its five-byte literal
+  run (the spine see-through, D-3); W2 `(é)+` keeps the cursor rung
+  (`vm_det_seq`/`vm_cap_offsets` walk the child — the inventory classified
+  them unreachable, and they are not); W3 `café|naïve|résumé` keeps its
+  island (`vm_isl_words`); W4 `x[é]y` compiles, so no reader renders the set
+  — and a reader that does refuses by `pcrec_cls_bits`' kind guard. W4 is a
+  spine ITEM on purpose: at a spine head the see-through bypasses `vm_emit`.
+
+- **PART 3, the S4 kit route** ([CLS-TREE] S4, lane s4build): K1 a wide
+  class on the VM is one `rx_decode` + one `rx_wcls0` (`RX_VM_CLS_KIT 1`,
+  frameless); K2 `-fno-cls-kit` leaves neither; K3 a one-member class keeps
+  its bytes; K4 the pool dedups (two sets, two matchers); K5 the decoder is
+  absent from a split artifact's `.h` and defined before its first call; K6
+  a utf8 caseless backreference artifact carries `rx_decode` through
+  `PcrecEncEntry.requires`; K7 the retired refusals (`\P{Unknown}` under
+  `--engine=vm`, `(\p{L})` at default axes) compile. All answer-neutral
+  facts, which is why they are structural. Rows S392 (K3), S394 (K6), S395
+  (K2).
+
+Sabotage rows S365 (a reader shares `A_CLASS`'s arm: [5b] + W4) and S366
+(`vm_isl_words`' default restored: [5a] + [5c] + W3). The W1/W2 plants
+(see-through removed from `vm_cat_flatten`; `vm_det_seq`'s arm declining)
+were measured by hand on the S3 lane (`docs/dev/lanes/s3build_report.md`).
+**[OPT-HYB-RESEED] (2026-09-29, lane reseed; reworked 2026-09-30, lane
+reseedfix, after the r1 panel): `run_codegen_tests.sh` gains an
+`[OPT-HYB-RESEED]` block** (15 checks: 11 witness rows, the clamped
+recompute, the budget arm's control and its two subjects). It covers:
+
+- `<PREFIX>_VM_RESEED` on one witness per re-seed row (`pcrec_reseed_rows`
+  until [START-TABLE] C5, the RETRY rows of `cand_rows[]` since), and its
+  absence on a forced-VM and a DFA artifact (both directions of the IFF).
+  The dense row reads the byte-rate PRIOR, so both of its arms are pinned:
+  ` (?=the)` is `adaptive-dense` under `-e byte` (the built-in default
+  prior) and `adaptive` under `-e utf8` (NONE: cardinality), and
+  `[a-z](?=the)` is `adaptive-dense` under NONE;
+- the prefilter call sites inside `<prefix>_search_run` (bounded to that
+  function's body): two on an adaptive artifact and on an exact or clamped
+  CLAMPED one, one on an exact clamp-free or a denied one; and no adaptive
+  text at all on a non-adaptive row;
+- THE CALIBRATION PER CLASS: every adaptive witness's retry must spell its
+  class's gap, block and cap and its row's starting state as literals,
+  hand-typed in the witness table from `docs/design/hyb_reseed.md` §3, so a
+  swapped or altered calibration row is red (r1 chk F4; S372);
+- the clamped witness keeping today's clamp recompute;
+- a BUDGET arm. `'(?<=a|é)x' -e utf8 --step-budget=2000 --emit-main` runs on
+  one failing candidate then 20,000 non-candidates, and on 40 dense failing
+  candidates then 20,000. Default must answer `nomatch` on both;
+  `-fno-hyb-reseed` must give up `steps` on both. The deny half is the arm's
+  own positive control: it is the evidence that the witness reaches the
+  step-everything retry.
+
+The budget arm is the only detector of S370, whose plant keeps every string
+the structural checks read, and the calibration check the only detector of
+S372. S371 trips both kinds of check.
+
+**[OPT-HYB-RESEED-FORM] A1 (2026-10-03, lane rsform, abi 56)** adds three
+witness rows and one check (the block reads 20 checks): `anchored`
+(`^(?>a|ab): (.*)$`) and `gstart` (`\G(?>a|ab)c`) stamp row `anchored` with
+ONE prefilter call site, and each artifact must EQUAL its `-fno-hyb-reseed`
+artifact byte for byte; `unbound` is the same `^` pattern under
+`-fno-vm-anchor-bound`, the control that the pattern otherwise takes
+`adaptive-dense` with the framed calibration. Sabotage S441 (the row's
+predicate answers false) is detected by the stamp, call-site and equality
+checks together.
+
+## [silentred] 2026-09-30 — `run_recursion_identity.sh` comparison (A)'s sixth exception, module `ctx-node`
+
+[UCP] U2 moves every one-character lookaround / `\b` off the VM (the
+pre-module reference's route) onto the DFA, or, under `--engine=vm`, into the
+context form, so 264 call-free patterns' program region differs from
+`ac4917d` on every axis and NO bucket named them (the gate is opt-in, so
+nothing counted the red). The bucket is keyed on the mechanism, in the file's
+own deny-axis style: a moved region is excused IFF the pattern's TEXT carries a
+lookaround / word-boundary spelling (`CTX_POP`, an independent census) AND
+denying `-fno-ctx-node` (with the three other region-moving axes, since the
+subject's DFA artifact has no VM stamps to read them from) restores the pinned
+region by EQUALITY. Non-vacuity: the bucket may not exceed the census, and
+must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
+
+## [UTF-VALID] (abi 49 -> 50, 2026-09-30, lane uvbuild)
+
+- `run_codegen_tests.sh`'s [M5-SEAM] fixture table: every row declares the
+  new always-present entry `valid_upto:0`; three new rows are its callers —
+  `residutfdfa` (`-e utf8 -futf-check`, DFA: search head + unwrapped match
+  = 2), `residutfvm` (the VM's three `_run` bodies = 3) and `residutfvar`
+  (a utf8 `${v}` artifact, whose `var_valid` is re-spelled on it = 1;
+  the span-compare population guard moves 8 -> 9). `ABI_EXPECT` 49 -> 50.
+- `run_size_term.sh`'s cap-rescue witness re-calibrated 31,500 -> 31,900
+  (every rung +425 B of code, K-invariant; K=4 measured at 31,555 by
+  bisection).
+- `run_cpset_structure.sh`'s manifest re-recorded: every `EMITTED_BYTES` row
+  +377, itemized in the script.
+- `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
+- S368's anchor re-aimed (the guard call gained its `anchored` argument).
+
+- **[MEMFN] RQ-3 (lane rq3, 2026-10-09, abi 70 -> 71; built on 69, landed
+  on the kit's R4e′.0b (70) by lane rq3land):** one stamp line on
+  every artifact, `<PREFIX>_SIMD_GUARDED_BYTES 0x0000000000000000ULL` (52
+  bytes, fixed width); `run_codegen_tests.sh`'s `ABI_EXPECT` 71 and its
+  ledger message; `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to
+  the landing merge (the lane's last src commit); the byte-count readers re-pinned by
+  measurement are listed in `docs/dev/lanes/rq3_report.md`.
+- **[DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE] (lane decattr, 2026-10-09, abi
+  68 -> 69, one event; renumber at landing if another event lands first):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 69 and its ledger message;
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's last
+  src commit; `run_fallback_table.sh` (a)'s sequences and admit/attrib/gate
+  records re-signed for both items (two new witnesses, `W_LOOKR` and
+  `W_OVFNN`, keep the rows a real collapse attempt fires);
+  `docs/dev/lanes/decattr_report.md` lists the movers.
+- **[MEMFN] R4e'.0b, THE ROUTING (lane r4e0b, 2026-10-09, abi 69 -> 70; 69
+  is decattr's event, landed first):** every
+  offset-skip/pre-check function's loop moves under `<fn>__body` and `<fn>`
+  becomes one call to it (D155 item 6). `run_codegen_tests.sh`'s
+  `ABI_EXPECT` 70 and its ledger message; `run_cpset_structure.sh` [3]'s
+  manifest re-recorded (five EMITTED_BYTES rows, +139/+141/+280); and the
+  readers of the function's LOOP re-pointed at `<fn>__body` (a reader
+  that never cites the abi number): `reqcube_check.py`'s `block()`,
+  `run_offset_skip.sh` §2's block, `run_dfa_stamps.sh`'s `in_ofs` scope,
+  `run_prechecks.sh`'s `reqrun_fn`, `run_encoding_checks.sh`'s
+  `REQRUN_FN_RE`/`REQRUN_FN_BODY_RE` (both definitions, excised together).
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's src
+  commit in a follow-up commit (it cannot name its own commit).
+- **[MEMFN] R-12, THE VMLAZY NORMALIZATION (lane vmlazy, 2026-10-09, abi 70
+  -> 72; 71 is RQ-3's, landing first; landed by lane vmlmerge as 71 -> 72,
+  the ledger message's last transition):** the VM cursor rung's lazy rmin
+  prefix is spelled as a span scan capped at rmin iterations plus the rung's
+  reach test (`docs/dev/lanes/vmlazy_report.md`). `run_codegen_tests.sh`'s
+  `ABI_EXPECT` 73 and its ledger message; `run_recursion_identity.sh` (B)'s
+  FILEPIN self-pinned in a follow-up commit. No byte-count pin moved
+  (`run_cpset_structure.sh` [3], the K59 resource rung and C5 `arms.tsv`
+  carry no lazy cursor prefix: all three suites green unchanged).
+  **`run_recursion_identity.sh` gains its EIGHTH named exception (lane
+  vmlrid, kit manager ruling R1, R-12 VMLAZY, 2026-10-09):**
+  `lazy_prefix_rewrite()`, a ONE-SIDED mechanical rewrite in the fourth's
+  shape. It turns the pre-module region's counted lazy-prefix loop into the
+  NORMALIZE spelling (capped span scan + reach test, text from 7106b370's
+  diff), reading the reach test's low-water slot number from the REFERENCE
+  artifact's own `#define RX_SLOT_SPAN_LOWk N` table, then passes the result
+  through `adv_layout_canon` like every region. Admission is exact equality,
+  composed under the bref rename, the D139 range rewrite and every deny-axis
+  restore (`+vmlazy-prefix` in their messages); `vmlazy-prefix-moved=` joins
+  the (A) line. Non-vacuity: an independent text census of lazy rmin >= 1
+  repeats (`lazy_pop`, floor 150), which the rewrite may never fire outside;
+  the bucket must fire on every axis; no subject region may still carry the
+  old loop (`LAZYOLD_TOTAL` == 0). Sabotage S711 is its negative control
+  (validated by hand: mech cannot run this gate). Figures:
+  `docs/dev/lanes/vmlmerge_report.md`, the vmlrid section.
+- **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
+  abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to `9a0cf78e`;
+  `run_prefilter_collapse.sh` gains the [anch] section (six both-anchored
+  nullable witnesses that must keep `hybrid`/`selected`/`empty_admits no`,
+  seven one-sided/partial/multiline/unanchored twins that must stay
+  `declined-nullable-default`/`empty_admits yes`); `run_facts_checks.sh`
+  [facts-e1] gains the `empty_admits` column (by hand) and two utf8
+  anchored witnesses. No other pin moves: five artifacts change program
+  (`docs/dev/optloop/nullanch/movers_result.txt`), every other one its abi
+  digits.
+- **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 65 -> 66):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 66 and its ledger message;
+  `run_prechecks.sh` 6b's `KEPT_ALWAYS` gains `-fno-poss-ctx-follow` (the
+  third engine-selecting denial); `run_recursion_identity.sh` (A) gains the
+  `poss-arms-moved` bucket (stamp-or-deny on `RX_VM_POSS_ARMS`, both
+  directions of the converse, and the `POSS_PATTERNS` manifest of §5.2's three
+  corpus movers) and (B)'s FILEPIN is self-pinned to `615eb811` (the merge of main 8cada7b9).
+- **[recidtri] (2026-10-08, lane recidtri):** `run_recursion_identity.sh`'s
+  `poss-arms-moved` bucket (possbuild, above) was delivered never having run
+  to completion (the gate is not in `TEST_SECTIONS`; `make test` could not
+  have run it) and read RED on main: (1) 10 default-axis regions differed
+  because arm A is ENGINE-SELECTING and moved them to the DFA, where the
+  VM-only stamp does not exist, so the stamped excuse never ran -- the
+  context-node set now tries the arms second (`poss-arm-a-engine-flip-moved`,
+  the named `POSS_FLIP_PATTERNS` manifest, asserted 0 on `--engine=vm`);
+  (2) the stamped-direction converse asserted a stronger property than the
+  stamp's definition ("an arm was NEEDED for a positive verdict"), failing
+  21 artifacts whose only positive verdicts are on source-possessive/atomic
+  loops (a verdict that marks nothing) -- excused ONLY for a pattern whose
+  text says one (`POSSRC_POP`, a text census), counted
+  (`poss-arms-stamped-on-source-possessive`) with a floor of 8 on the vm
+  axis. Failing direction: three plants (arms dropped from the flip set,
+  excuse population emptied, deny set emptied) each go red.
+- **[FLAGBITS] (lane flagbits, 2026-10-06, abi 64 -> 65, K92):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 65 and its ledger message;
+  `run_prechecks.sh` section 6b (every `-f` spelling `--list-axes` carries,
+  on two witnesses x `byte`/`utf8`, must leave `.flags` at baseline except the
+  four kept members, which double as the positive control; floor 40); S65/S67/
+  S295 re-aimed at the derived mask; `run_recursion_identity.sh`'s (B) FILEPIN
+  self-pinned; `tests/resource`'s two `-fno-scan-edge` byte pins move by the
+  `.flags` literal.
+- **[START-SET] stage 3 (lane ssbuild3, 2026-10-06, abi 62 -> 64; 63 is
+  the memfn kit's R4a′):** `run_codegen_tests.sh`'s `ABI_EXPECT` 64 and its
+  ledger message; `run_dfa_stamps.sh` and `run_form_census.sh` learn the two
+  DFA-hat values (`first-memchr-bounded`, `first-class-bounded`) with two
+  witnesses; `run_recursion_identity.sh`'s (B) FILEPIN self-pinned. The cpset
+  manifest did not move (the digit is one width).
+
+- **[START-SET] stage 2 (lane ssbuild2, 2026-10-05, abi 62):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 62; `run_cpset_structure.sh`'s
+  manifest re-recorded (ten rows +32, the `RX_VM_START_SCAN "none"` line; the
+  two VM-hat movers +1,843); `run_recursion_identity.sh`'s (B) FILEPIN
+  self-pinned; and `run_size_term.sh`'s §9 pool now reads the compiler's own
+  quantity (comment-excluded TOTAL bytes, `size_term_choose`'s bar), where it
+  read CODE bytes that agreed only while VM artifacts carried no table bytes —
+  the hat's K-invariant table separated them. `(?:abcd|abc|ab|a){17}z` joined
+  the pool (0.7162) because `(|a){0,12}b` moved above the bar.
+- **[MEMFN] R4a′ (lanes memfnstamp + memfnbump, 2026-10-06, abi 63):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 63; `run_cpset_structure.sh`'s
+  manifest re-recorded (every `EMITTED_BYTES` row +59/+61/+68, the two
+  `RX_MEMFN_*` lines); `run_recursion_identity.sh`'s (B) FILEPIN self-pinned;
+  `run_size_term.sh`'s cap-rescue witness re-calibrated 31,900 -> 32,300
+  (K=4 measured at 31,907 by bisection, 7 B over the old cap).
+
+- **[MEMFN] R4h layout normalization (lane advnorm, 2026-10-08, abi 66 -> 67):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 67 and its ledger message, and its three
+  text-shape greps (the forward stay skip, the view-bounded skip, the EOL skip
+  line number) now read the braced two-parenthesis loop;
+  `run_cpset_structure.sh`'s manifest re-recorded (four `EMITTED_BYTES` rows
+  +22/+116/+68/+44); `run_recursion_identity.sh` gains its SEVENTH named
+  exception, `adv_layout_canon` -- a two-sided canonicalizer inside
+  `prog_region` (every region extracted from the subject, the pin and each
+  deny-axis build) that folds the new multi-line span-scan loop back to the
+  pre-pin one-line form, with a non-vacuity census (`ADVNEW_TOTAL` >= 1,
+  `ADVOLD_TOTAL` == 0 on the subject side) -- and its (B) FILEPIN is
+  self-pinned. Sabotage S214 and S72 are re-aimed to the new printfs (intent
+  unchanged). The resource K59-PREMUL pins, `run_size_term.sh`'s pool and the
+  size tripwire did not move.
+
+
+## `run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)
+
+`docs/design/dec_fallback.md` rev 2 §4.2 B0 item 11. Its own section,
+`make test-fallback-table` (in `TEST_SECTIONS`; ~17 s since B1, it builds
+three reference compilers and four trace compilers), and mech arm
+`fallbacktable`. HAND-WRITTEN from
+today's behaviour and INDEPENDENT of T1-T4 and of the `--list-axes` dump
+(its header says so): stamps are read from the ARTIFACT, and the only
+outside source is `docs/spec/match_api.md` §6.3's hand-written value sets,
+read through `tests/lib/spec_extract.sh` (moved there from
+`tests/registry/axes_registry_check.sh`; one implementation).
+
+- **(b) the OBSERVED-STAMP LEG** (green from B0): 15 witnesses, one or more
+  per `RX_ENGINE_SEL` value (8) and `RX_UNROLL_K_WHY` value (7); per value a
+  K35 floor (>= 1 witness stamped it) and equality of the observed set with
+  the spec's set in both directions; each extraction is fail-closed on its
+  size (8 and 7). Three reference compilers, built once: `lowdfa`
+  (`-DPCREC_MAX_AUTO_DFA_ELEMS=3000`: `overflowed-prefilter`), `lowsize`
+  (`cap-rescue`, `size-model-declined`), `lowthr`
+  (`-DPCREC_SIZE_TERM_THRESHOLD=1000`: `capacity-declined`). This leg is
+  what lets the registry's two source legs retire at B5 (design §4.5).
+- **(c)** `RX_VM_PREFILTER_LANG_WHY`'s six forms and `RX_VM_PREFILTER_WHY`'s
+  drop form. The NFA-state form is compared in FULL; the two byte-figure
+  forms by SHAPE (`^size cap retry, (exact|hybrid) [0-9]+ > 1000000$`, N >
+  cap checked numerically) so an emitted-text abi event does not move them.
+- **(a) SEQUENCES** (B1, lane decfbB1): 25 witnesses, each with its
+  hand-written `row@labels > ...` sequence of `CANDTRACE fallback` records
+  (`-DPCREC_CAND_TRACE`, design §4.2 B1) and its expected rc, plus four
+  post-row state fields (`cr`, `latch` twice, `restart`) that sabotage rows
+  target. Every T1 row the corpus reaches is witnessed (rows 2-4, 6-10; row
+  10 under `overflow`, `size` and `other`), and two no-arrival controls.
+  Four TRACE compilers (`trplain`, `trlowdfa`, `trlowsize`, `trlowboth`),
+  kept separate from (b)/(c)'s untraced ones. Rows 0 and 1 have no corpus
+  arrival; their witnesses are `alloc_check` W5/W4. Red both ways
+  (`docs/dev/lanes/decfbB1_report.md`): a latch plant (S-F8's) and a deleted
+  `fb-size` record.
+- **(d) THE BOTH-DERIVATIONS ORACLE** (B2, lane decfbB2): 65 witnesses,
+  each compiled with a default-order trace compiler (`tr<set>`, today's
+  derivation asks first) and a `-DPCREC_CAND_NEW_FIRST` one (`nf<set>`, the
+  new table asks first; six more compilers, `trlowthr` and the five `nf*`).
+  A witness FAILS on a `CANDORACLE` line or a signal (the oracle aborts on
+  a difference), on the two orders disagreeing on rc or stdout, or on its
+  hand-written `CANDFIT <site> <row>` line missing from either order (it
+  stopped reaching the check it is listed for). Sites: every T1 arrival
+  the corpus reaches, T2's verdict and listing cells (every row and
+  reached scope; `--emit-ir`), T3 and T4 every row, the attribution walk's
+  eight `ENGINE_SEL` values, `pfwhy` and the three note rows. ~40 s. B5
+  deletes the oracle and this half. Detects S627-S645
+  (`docs/dev/lanes/decfbB2_report.md`). **B3 (lane decfbB3) retired its
+  T1 `arrival` and `note` sites** (12 + 3 witnesses): the walk is the
+  dispatch and the notes read the fired record, so there is no old side
+  left; 50 witnesses remain. **B4 retired its T2 sites** (27 witnesses).
+  **B5 (lane decfbB5) RETIRED THE HALF**: the oracle went with the last
+  old derivations, and the `trlowthr`/`nf*` compilers with it. Its
+  "no `CANDORACLE`, no signal" leg now rides every (a) compile
+  (`trace_sane`), where §1.9's trace-build invariants still abort.
+- **(e) THE DROP NOTES** (B3, lane decfbB3): six default-build witnesses,
+  each with the hand-written FULL stderr lines of the size-cap rungs' notes
+  it must print, in rung order (anchored; anchored then premul; prefilter),
+  or none (a `-fprefilter` collapse, a [SEL-1] retry, no arrival). Read off
+  stderr, never off the table's `note` cells. Detects S637 (a row's note
+  cell emptied) from B3. B3 also adds one (c) witness, the
+  `VM_PREFILTER_WHY` drop with `-fno-prefilter-collapse` (drop-prefilter
+  as the FIRST size rung: the only witness where its own carry is the
+  figures' source; S633's detector from B3).
+
+Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
+the tree; red on a dropped witness (the floor fires), a value removed from
+match_api's set (the equality and the size guard fire), `pcrec_engine_sel_name`
+returning `selected` for `forced`, and a changed PFLW stamp text.
+
+## [OPT-REVEND] L2 (lane revbuild, 2026-10-10, abi 72 -> 73)
+
+- **run_rev_end.sh** — LOCATE's `rev-end` row held to the artifact (in
+  `make test-codegen`; mech arm `revend`). §1 named witnesses: the stamp,
+  `rx_info.scan`, the walk's text (`for (int revend_seed = 0;`), no forward
+  machine, the tie arm (T2 `rx_match` run, T3 relocate) and the declines;
+  §2 a corpus sweep under `-fno-rev-end` (floors on the walking population);
+  §3 the size ladder's rev-end clause: a reference compiler built with
+  `PCREC_MAX_EMIT_BYTES` set between the tie witness's premul-dropped and
+  built sizes (read off `--warn-emit-bytes`, the cap's own measure, and
+  asserted to straddle) must ship it `unwrapped`, `size-cap-retry`, no
+  forward machine; §4 the dead-seed X witnesses (DFA and hybrid) compiled
+  `--emit-main` under `-fsanitize=address,undefined` and answered as the
+  `-fno-rev-end` build does. Sabotage S758-S781.
+- **run_premul_table.sh**'s scan detector learns the walk's marker
+  (`for (int revend_seed = 0;`, shared with run_dfa_stamps.sh); without it
+  the 143 rev-end artifacts read as stamp-without-a-scan (lane revtri).
+  `cand_oracle_witnesses.tsv`: `a\Kb\b` (and `-fno-rev-end a\Kb\z`) for
+  `offset-set-bounded`, `(\s+)$` for the stage-2 `search-from vm ENDSET`
+  cell (lane revtri).
+- **run_dfa_stamps.sh** gains `[start]` (`RX_DFA_START` against the text: a
+  reverse pass, the pinned form, or the absence value `"attempt-start"`) and
+  the `rev-end` scan value with its witnesses.
+- Re-pins at this event: `run_search_pinned.sh` (the `attempt-start` value;
+  the table fold over the machines present, whichever heads the list),
+  `run_anchored_match.sh` (`nomatch` on the empty engine), `run_prechecks.sh`
+  §2 (the end window is the walk's DENIED form: §2.1/§2.5 compile with
+  `-fno-rev-end`, §2.6 holds the default's absence), `run_fallback_table.sh`
+  (`seq-pfcd2`'s witness moved to `(\bcat\b){2,}\w\w`: the old one lost
+  705 B to the walk's deference and fit the cap), `run_nomatch_caps.sh`
+  (forms `attempt-start` and a rev-end witness), `run_scan_edge_census.sh`
+  and the M2.7/M2.12 gens (compile with `-fno-rev-end`: they measure the
+  forward scan), `cand_oracle_witnesses.tsv`; `ABI_EXPECT` 73 and its
+  ledger message.
+
+
+## [START-LANDING] SL2/SL3 (lane slbuild, 2026-10-10, abi 73 -> 74)
+
+- **run_start_landing.sh** + **landing_hostile_driver.c** — RECOVER's two new
+  rows held to the artifact (`docs/design/start_landing.md` §7.3; its own
+  section, `make test-start-landing`, for `test-search-pinned`'s reason; mech
+  arm `startlanding`). §1 named witnesses per value (`abcd` end-minus-width,
+  `\w+` landing, `[a-z]` both-apply, `(?s).` next-none, `a\bb` absence, the
+  utf8 guard on `.`/`\p{L}+` and its absence under `-futf-check`); §2/§4 a
+  corpus sweep holding each stamp to the text (no reverse machine, the
+  width subtraction, the landing record and its start write) and the
+  deny flags' byte-identity on declined artifacts; §3 floors per value; §5
+  the answers against the triple-deny build through `searchpin_driver.c` at
+  every startpos; §6 reach; §H the STANDING HOSTILE CELL (1 MiB of a lead
+  byte then `a`, find-all, 10 s bound). Sabotage S782-S789.
+- Re-pins at this event: `run_search_pinned.sh` (START_VALUES gains the two
+  values; the `abc`/`(?!a)` witnesses and §10's reference deny all three
+  bits; §8 counts any non-pinned value as declined), `run_nomatch_caps.sh`
+  (three witnesses relabelled `end-minus-width`, `(a){0}\w+` landing and two
+  reverse-pass witnesses added), `run_dfa_stamps.sh` [start] (the two new
+  values read off their text), `run_form_census.sh` (`RX_DFA_START`'s five
+  values tallied and floored), `cand_oracle_witnesses.tsv` (three lines),
+  `run_scan_edge_census.sh` (rows and the VEDGE block compile with
+  `-fno-start-width -fno-start-landing`: they count REVERSE edges), the
+  cpset `EMITTED_BYTES` manifest (six fixed-width rows lose their reverse
+  machine; every row moves by the ABI block's widened `search_form`
+  comment), `ABI_EXPECT` 74 and its ledger message, the FILEPIN.
+
+## [REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 74 -> 75)
+
+- **run_prechecks.sh** §5.12 reads the LANDMARK's K (`req_landmark_maxoff`) and
+  a byte or run gate (`size_t handoff_position = ...`), gains seven hand-K rows
+  for byte landmarks, and §5.12l-q: the re-entry's presence biconditional over a
+  population (floor 22 of 28), the K admission's cells, the reseed and the utf8
+  round-up inside the moving branch, the deny, the VM hybrid's non-re-entry.
+  §3.1 reads the byte gate's ASSIGN form where a byte is handed off; §4.4 and
+  §5.10's deny rows add `-fno-req-handoff`.
+- **run_dfa_stamps.sh** — `RX_DFA_PREFILTER` value `handoff`, its text marker
+  (`if (landmark_position < scan_position) {`) and a witness.
+- **run_encoding_checks.sh** (DD12a(i)) — the byte gate and the re-entry's move
+  and kept hit are encoding-owned regions; `handoff` vs a start-byte form is a
+  prior-keyed selection.
+- **cand_oracle_witnesses.tsv** — `handoff-reentry` witnesses (byte and run
+  landmark) and the deny's landing row; the self-check's read-cycle test is
+  over (slot, deny-bits) states (`cand_read_cycle`).
+- Re-pins: `ABI_EXPECT` 75 and its ledger message; the FILEPIN; SEL-1's
+  `--no-captures` fallback 2 -> 3 (the hostile cell `a.{1,50000}z`, a corpus
+  event); the size-term rescue cap 32,300 -> 33,200 (the byte gate's +571 B);
+  the cpset stamp manifest's `(?i)HeLLo` row; `run_facts_checks.sh`'s widened-
+  domain witness `\zabc` under `-fno-req-handoff`; `run_offset_skip.sh`'s uuid
+  guard adds `-fno-req-handoff`.
+
+## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+
+`run_mlinectx_identity.sh` is RETIRED with its knob (`-DPCREC_NO_MLINECTX`)
+and its contributor row: `(?m)^`/`(?m)$` are A_CTX rows, cut by the wordctx
+knob. `run_wordctx_identity.sh`'s population is now "no context-node spelling
+at an atom position" (`\b`, `\B`, a `(?m)` anchor via `tests/lib/mlscan.py`'s
+`multiline_anchor`); the `(?m)` patterns joined its MUST-DIFFER control
+(measured: identity 3,570/3,570, control 485 differ, 0 unexplained). The
+`run_mlinectx_identity.sh` entry above is history.
