@@ -29,7 +29,7 @@ Env: H (build/pcrec-harness), HT (build/z2trace/pcrec-harness), PCREC
 default build/z2x1). Run from the repo (or worktree) root; heavy modes under the
 box queue.
 """
-import collections, gzip, json, os, random, subprocess, sys, time
+import collections, gzip, hashlib, json, os, random, subprocess, sys, time, zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
@@ -53,6 +53,11 @@ def hargs(binary, fl):
     return a
 
 
+def item_key(pat):
+    """a per-pattern scratch directory name: the whole pattern's digest"""
+    return hashlib.sha1(pat).hexdigest()
+
+
 def run_c(argv, pat, env=None, timeout="60"):
     """argv + the pattern as its own BYTES (conj.py's first-run lesson)"""
     full = [os.fsencode(x) for x in ["nice", "-n", "19", "gnutimeout", timeout] + argv] + [pat]
@@ -60,16 +65,71 @@ def run_c(argv, pat, env=None, timeout="60"):
 
 
 def records(err):
+    """the trace records, each ending in the compound part's role (`-`: the
+    compile itself; a part's compile prints its records into its parent's
+    stream, so a record is attributed by its role, never by its position)"""
     kp, sp, st = [], [], []
     for ln in err.decode("latin-1").splitlines():
         f = ln.split("\t")
         if f[0] == "KITPROOF":
-            kp.append((f[1], int(f[2][2:]), int(f[3][7:])))
+            kp.append((f[1], int(f[2][2:]), int(f[3][7:]), f[4]))
         elif f[0] == "SPANSET":
-            sp.append((int(f[1]), f[2]))
+            sp.append((int(f[1]), f[2], f[3]))
         elif f[0] == "SITESTATED":
-            st.append((int(f[1]), f[2]))
+            st.append((int(f[1]), f[2], f[3]))
     return kp, sp, st
+
+
+def decision(kp):
+    """the compile's own cover decision: its LAST record of role `-` (a compile may
+    decide more than once, retries; the last is the shipped attempt's), or None"""
+    own = [x for x in kp if len(x) < 4 or x[3] == "-"]
+    return own[-1] if own else None
+
+
+def oracle_pattern(pat, role):
+    r"""the pattern PCRE2 is asked about for a statement made by `role`'s compile.
+    `\K` is dropped everywhere: it moves PCRE2's reported start (x0pcre counts an
+    anchored match not starting at the origin as none) and never what matches,
+    while a statement is about the ATTEMPT origin a FIND site's candidate is.
+    For the split's Q part (`q`, src/opt/derive.c: P with its floor anchors
+    killed, searched only past the floor) `\G` becomes `(?!)`; `^`/`\A` are false
+    there by the context (`absent-before` is not asked). A lexical rewrite: an
+    escape is copied whole, `\Q..\E`, classes and `(?#..)` verbatim."""
+    out, i, n = bytearray(), 0, len(pat)
+    while i < n:
+        c = pat[i]
+        if pat.startswith(b"(?#", i):
+            j = pat.find(b")", i)
+            j = n if j < 0 else j + 1
+            out += pat[i:j]; i = j
+        elif pat.startswith(b"\\Q", i):
+            j = pat.find(b"\\E", i + 2)
+            j = n if j < 0 else j + 2
+            out += pat[i:j]; i = j
+        elif c == 0x5C and i + 1 < n:
+            e = pat[i + 1]
+            if e == ord("K"):
+                pass
+            elif e == ord("G") and role == "q":
+                out += b"(?!)"
+            else:
+                out += pat[i:i + 2]
+            i += 2
+        elif c == ord("["):
+            j = i + 1
+            if j < n and pat[j] == ord("^"): j += 1
+            if j < n and pat[j] == ord("]"): j += 1
+            while j < n and pat[j] != ord("]"):
+                if pat[j] == 0x5C: j += 1
+                elif pat.startswith(b"[:", j):
+                    k = pat.find(b":]", j + 2)
+                    if k > 0: j = k + 1
+                j += 1
+            out += pat[i:j + 1]; i = j + 1
+        else:
+            out.append(c); i += 1
+    return bytes(out)
 
 
 # ------------------------------------------------------------------ census
@@ -132,9 +192,9 @@ def hist(path):
                 rc_other += 1
                 why[key + ("rc!=0",)] += 1
             continue
-        # one KITPROOF per decision; a compile may decide more than once (retries):
-        # the LAST is the shipped attempt's
-        w = r["kp"][-1][0] if r["kp"] else "not-asked"   # an earlier LOCATE row, or no DFA route
+        # one KITPROOF per decision; the compile's own last one (a part's are not it)
+        dk = decision(r["kp"])
+        w = dk[0] if dk else "not-asked"   # an earlier LOCATE row, or no DFA route
         why[key + (w,)] += 1
         first[(key[0], w.split("/")[0])] += 1
         if w == "cover" or w.split("/")[0] in past_c8:
@@ -167,17 +227,23 @@ def hist(path):
 
 # ------------------------------------------------------------------ stated
 def _stated_one(a):
-    (fl, pat_hex, L, sets), kind = a
+    (fl, pat_hex, L, sets, role), kind = a
     S = [frozenset(int(x, 16) for x in s.split(",") if x) for s in sets.split(";")]
-    if not _O.compile(fl, bytes.fromhex(pat_hex)):
+    if role not in ("-", "q"):
+        return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, unchecked=1, nodes=0, unk=0, bad=0)
+    # the failing-direction control: Z2_STATED_CONTROL=raw asks PCRE2 about the
+    # pattern as written and from every context, the pre-z2fix check (must read red)
+    raw = os.environ.get("Z2_STATED_CONTROL") == "raw"
+    pat = bytes.fromhex(pat_hex)
+    if not _O.compile(fl, pat if raw else oracle_pattern(pat, role)):
         return None
     # a statement is the HULL over every previous byte (the slice's roots and a
     # site's sets both are), so the PCRE2 tree is grown under the union of
     # contexts: x0's seeded site arm, witnesses within exact + 8 bytes; a byte
     # whose witness search runs out is INCONCLUSIVE and compared on neither side
     r1 = x0.part1_site(_O, dict(S=[sorted(x) for x in S], exact=L, seeded=True), "u" in fl,
-                       random.Random(7))
-    return dict(kind=kind, fl=fl, pat=pat_hex, L=L, nodes=r1.nodes, unk=r1.unknown,
+                       random.Random(7), absent=raw or role != "q")
+    return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, nodes=r1.nodes, unk=r1.unknown,
                 bad=len(r1.bad), e=r1.bad[:2])
 
 
@@ -188,11 +254,12 @@ def stated(path, mod, j):
         if r["rc"]:
             continue
         for kind, rows in (("slice", r["span"]), ("site", r["site"])):
-            for L, sets in rows:
+            for row in rows:
+                L, sets, role = (list(row) + ["-"])[:3]
                 if L <= 0:
                     continue
                 fl = r["fl"].replace("R", "") or "-"
-                seen.setdefault((fl, r["pat"], L, sets), kind)
+                seen.setdefault((fl, r["pat"], L, sets, role), kind)
     items = sorted(seen.items())
     alln = len(items)
     items = [it for i, it in enumerate(items) if i % mod == 0]
@@ -203,20 +270,30 @@ def stated(path, mod, j):
     from multiprocessing import Pool
     red = unk = n = 0
     kinds = collections.Counter()
+    roles = collections.Counter()
+    unchecked = 0
     with Pool(j, initializer=_x1_init) as pool:
         for r in pool.imap_unordered(_stated_one, items, chunksize=1):
             if r is None:
                 continue
+            if r.get("unchecked"):
+                unchecked += 1
+                print("UNCHECKED part role %s" % r["role"], r["kind"], r["fl"],
+                      bytes.fromhex(r["pat"]).decode("latin-1")[:50])
+                continue
             n += 1
             kinds[r["kind"]] += 1
+            roles[r["role"]] += 1
             unk += r["unk"]
             if r["bad"]:
                 red += 1
-                print("RED", r["kind"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50],
+                print("RED", r["kind"], r["role"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50],
                       "L=%d" % r["L"], json.dumps(r["e"][0]))
-    print("stated checked=%d (%s) red=%d inconclusive-bytes=%d" % (
-        n, ", ".join("%s %d" % kv for kv in sorted(kinds.items())), red, unk))
-    print("z2 stated: DONE rc=%d" % (1 if red else 0))
+    print("stated checked=%d (%s; by part role %s) red=%d inconclusive-bytes=%d unchecked-parts=%d" % (
+        n, ", ".join("%s %d" % kv for kv in sorted(kinds.items())),
+        ", ".join("%s %d" % kv for kv in sorted(roles.items())), red, unk, unchecked))
+    print("z2 stated: DONE rc=%d" % (1 if red or unchecked or not n else 0))
+    return 1 if red or unchecked or not n else 0
 
 
 # ------------------------------------------------------------------ X1
@@ -275,11 +352,14 @@ def x1_item(it, O):
     env = dict(os.environ, PCREC_KIT_PROOF_TRACE="1")
     p = run_c(hargs(HT, fl) + ["-o", "-", "--pattern"], pat, env)
     kp, _, _ = records(p.stderr)
-    res["why"] = kp[-1][0] if kp else ("trace-rc%d" % p.returncode)
+    dk = decision(kp)
+    res["why"] = dk[0] if dk else ("trace-rc%d" % p.returncode if p.returncode else "not-asked")
     if res["why"] != "cover":
         return res
-    res["k"] = kp[-1][1]
-    d = os.path.join(OUT, "items", "%s_%s" % (fl, it["pat"][:40]))
+    res["k"] = dk[1]
+    # keyed on the WHOLE pattern: a 20-byte prefix key let two concurrent workers
+    # share one directory, so an item could read another pattern's artifact (z2fix)
+    d = os.path.join(OUT, "items", "%s_%s" % (fl, item_key(pat)))
     ok, drv = build_art(fl, pat, d)
     if not ok:
         res["why"] = "build-failed"
@@ -296,7 +376,7 @@ def x1_item(it, O):
         plan = dict(S=[], k=res["k"], Cm1=[], absB=True, Ck=[], absA=True)
     else:
         plan = rd["plan"]
-    rnd = random.Random(hash((it["pat"], fl)) & 0xffffffff)
+    rnd = random.Random(zlib.crc32((fl + it["pat"]).encode()))
     lits = x0.text_literals(pat)
     litb = set(b for l in lits for b in l)
     if rd["why"] == "cover":
@@ -355,7 +435,7 @@ def x1(pop_path, out_path, j):
             f.write(json.dumps(r) + "\n")
             f.flush()
     print("x1 items=%d sec=%.0f" % (len(items), time.time() - t0))
-    summary(out_path)
+    return summary(out_path)
 
 
 def summary(path):
@@ -383,11 +463,12 @@ def summary(path):
     for r in errs[:10]:
         print("ERR", r["why"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:60], r.get("e", "")[:200])
     print("z2 x1: DONE rc=%d" % (1 if reds or errs else 0))
+    return 1 if reds or errs else 0
 
 
 # ------------------------------------------------------------------ exhaustive
 def exh(fl, pat, alpha, maxlen):
-    d = os.path.join(OUT, "exh_%s_%s" % (fl, pat.hex()[:40]))
+    d = os.path.join(OUT, "exh_%s_%s" % (fl, item_key(pat)))
     os.makedirs(d, exist_ok=True)
     c = os.path.join(d, "a.c")
     env = dict(os.environ, PCREC_KIT_PROOF_TRACE="1")
@@ -421,11 +502,12 @@ if __name__ == "__main__":
     elif a[0] == "hist":
         hist(a[1])
     elif a[0] == "stated":
-        stated(a[1], int(a[a.index("--mod") + 1]) if "--mod" in a else 1, jj)
+        # the verdict is the exit status too (a job that execs this reads it)
+        sys.exit(stated(a[1], int(a[a.index("--mod") + 1]) if "--mod" in a else 1, jj))
     elif a[0] == "x1":
-        x1(a[1], a[2], jj)
+        sys.exit(x1(a[1], a[2], jj))
     elif a[0] == "summary":
-        summary(a[1])
+        sys.exit(summary(a[1]))
     elif a[0] == "exh":
         alpha = bytes.fromhex(a[3]) if len(a) > 3 else b"azx09\n#"
         sys.exit(exh(a[1], a[2].encode("latin-1"), alpha, int(a[4]) if len(a) > 4 else 8))

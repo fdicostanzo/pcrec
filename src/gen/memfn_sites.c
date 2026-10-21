@@ -504,7 +504,8 @@ static uint8_t span0_exact_len(Ctx *cx, const mf_pred *p)
     }
 #ifdef PCREC_CAND_TRACE
     /* X0's set equality on every site stating exact_len > 0 (kit_proof.md
-     * §6.4 [r4 B9]): the statement as `x0.py stated` reads it. */
+     * §6.4 [r4 B9]): the statement as `x0.py stated` reads it, then the
+     * compound part's role (`-`: the compile itself). */
     if (L > 0 && getenv("PCREC_KIT_PROOF_TRACE")) {
         fprintf(stderr, "SITESTATED\t%d\t", L);
         for (int d = 0; d < L; d++) {
@@ -516,7 +517,7 @@ static uint8_t span0_exact_len(Ctx *cx, const mf_pred *p)
                     first = false;
                 }
         }
-        fputc('\n', stderr);
+        fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
     }
 #endif
     return (uint8_t)L;

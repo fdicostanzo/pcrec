@@ -14,6 +14,19 @@ as box-queue jobs. The `make test` half of Z2 is `tests/kitproof/`.
   set-equality check on every SENT statement the census recorded, deduplicated,
   1-in-M), `x1` (X0's part-2 subject families run through the BUILT artifact),
   `exh` (ruling 1's exhaustive cell), `summary`.
+  The trace records end in the compound part's role (`-`: the compile itself);
+  the decision read is the compile's OWN last `KITPROOF` (`decision`), and the
+  stated check asks PCRE2 about `oracle_pattern(P, role)`: `\K` dropped (it
+  moves only the reported start; a statement is about the attempt origin), and
+  for the split's Q part `\G` -> `(?!)` with absent-before left out (Q is
+  searched only past the floor). `Z2_STATED_CONTROL=raw` is that change's
+  failing-direction control. X1's per-item directory is keyed on the whole
+  pattern's sha1 (a 20-byte prefix key let two workers share one directory:
+  all 11 of the first X1 run's reds, lane z2fix). `x1`/`stated`/`summary`
+  exit with their verdict.
+- `s1141pop.py` — S1141's population (lane z2fix): every census item C1
+  declines, re-decided by a trace harness built with S1141's plant; 0 planted
+  `cover` admissions over a non-empty population is the equivalence figure.
 - `x1drv.c` — X1's pcrec side: answers x0pcre's `F` question for one built
   artifact (match_api.md §3.1.3's find-all loop). `X1_PLANT=1` reports every
   match end one byte late, X1's own failing-direction control.

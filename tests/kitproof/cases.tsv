@@ -28,7 +28,7 @@ verdict	-	ab|a$\n	decline	S1136: C9 at depth < k
 verdict	-	ab|a\Z\n	decline	S1136
 verdict	R	cat$	decline	S1139: C9 no-eol-view under -fno-rev-end
 verdict	-	\Zx	decline	S1140: C6 entry-const (unseeded arm)
-verdict	-	(?'w'cat)	decline	S1141: C1 finisher-dfa (a VM-finisher hybrid)
+verdict	-	(?'w'cat)	decline	S1141's reach: C1 finisher-dfa (a VM-finisher hybrid); C4 also declines it (S1141 declared equivalent, z2fix)
 verdict	-	[a-z0-9_ ]\b[a-z ]	decline	C8 machine-inexact
 facts	-	a(?=b)[a-z]	2:97,98	S1149
 facts	-	\w(?=\d)\w	2:[63],[10]	S1149

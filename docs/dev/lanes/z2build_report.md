@@ -188,3 +188,154 @@ OWED, and why: the commit, and the solo mech rows that anchor on the oracle
 `HEAD`, so a commit mid-run would change what its later rows test) and 543 is
 pending, so nothing was committed. The edits sit in the worktree; a copy of the
 diff is `build/z2tri/z2tri.patch`.
+
+## FIX (z2fix)
+
+Lane z2fix (opus), 2026-10-21, on `lane/z2build`. Rulings read through entry 5
+(the HOLD during the kit's timing window 560: from it on, edits and reads only).
+
+**Headline: none of Z2's reds is a defect in the built code.** All three are
+defects in Z2's own instruments, and each is now fixed and has a
+failing-direction control. Nothing was declined from `cover`: there was nothing
+to decline, so no conjunct was added and the population is unchanged. The
+default build is unmoved. The `src/` change is trace-build-only (every edited
+line sits inside `#ifdef PCREC_CAND_TRACE`). Measured: `known.o`, `facts.o` and
+`memfn_sites.o` built without the trace flag are byte-identical (debug info
+stripped) before and after the change. No abi event, no kit-side change, no new
+S-id.
+
+### Premise test
+
+`(*positive_lookbehind:a)b` on `ab`, through `build/pcrec-harness
+--harness=kit-proof`, answers `match 1 2`, the same as PCRE2. It does NOT
+reproduce. `(?<=a)b` gives the same answer. Both negative spellings answer
+correctly on `b`. The red came from the instrument, not the artifact.
+
+### (1) X1: an item-directory collision in z2.py
+
+`x1_item` built each artifact in `items/FLAGS_<first 40 hex of the pattern>`.
+Two patterns that share their first 20 bytes therefore shared one directory, and
+the `-j8` workers overwrote each other's `a.c`/`drv`. An item then read another
+pattern's artifact.
+
+- The evidence: 11 directories were shared by 26 items. They hold all 11 reds
+  and the `PermissionError` (an exec of a `drv` being rewritten). Both shapes
+  are this one cause:
+  - (a) `(*negative_lookbehind:a)b` shared a directory with
+    `(*negative_lookbehind:a)c` and `(?:a|b)`.
+  - (b) `(*UCP)(?i)[[:lower:]]` shared one with `(*UCP)(?i)[[:lower:]x]`, whose
+    `x` folds to `X`. That is the "second match at 1" on `aX`.
+  The fold-inert rule and the C_{-1}/read_floor code were never involved.
+- The fix: the key is the whole pattern's sha1 (`item_key`). The subject seed
+  was also `hash()` of a string, which Python randomizes per process. It is now
+  `zlib.crc32`, so X1's subjects are reproducible.
+- The re-run of the 30 formerly colliding items: 28 cover artifacts, 64,100
+  subjects, 473,046 cells, **0 bad**. That includes all 11 reds and the
+  PermissionError item.
+
+### (2) Stated check: 40 reds in 2 classes, both on the checker's side
+
+- **26 (19 slice, 7 site): statements made by a compound PART.**
+  `pcrec_compound_walk` compiles [MATCH-SPLIT]'s parts inside the parent's
+  compile, even where the final artifact is `RX_COMPOUND "none"`. Each part's
+  compile prints its own SPANSET/SITESTATED/KITPROOF into the same stderr. The
+  census attributed all of them to the whole pattern P.
+  - The part is Q, which is P with its floor anchors (`^`, `\A`, `\G`) killed
+    and searched only past the floor (src/opt/derive.c).
+  - Every one of the 26 is a floor-anchor pattern stating Q's set, for example
+    `^a|b` -> Q = `b`, S_0 = {b}, and that set is correct for Q.
+  - gdb confirmed the stack: `part_compile` -> `pcrec_cover` -> `cc_exact` ->
+    `pcrec_fact_span`.
+  - The fix: the three trace records end in the part's role (`-` for the compile
+    itself). The census keeps the role. A Q statement is checked against P with
+    `\G` -> `(?!)` and with absent-before left out of the contexts, which is
+    exactly Q's domain ("P anchored at any later start").
+  - `decision()` reads the compile's own last KITPROOF, never a part's, in
+    hist, x1 and exh.
+- **14 (12 slice, 2 site): `\K` patterns.** x0pcre counts an anchored match
+  that does not START at the origin as no match. `\K` moves PCRE2's reported
+  start, so the oracle measured the reported-start language. The statement is
+  about the attempt origin, which is a FIND site's candidate, so the stated
+  `{a,b}` for `(?:a\K)?b` is right.
+  - The fix: `oracle_pattern` drops `\K`, lexically (escapes, classes,
+    `\Q..\E` and `(?#..)` are copied verbatim). This is exact because `\K`
+    never changes what matches.
+  - `\K` never reaches `cover`: in the census, 116 `\K` items decline at C1 and
+    104 have no DFA decision.
+- **Re-check of every statement of the 66 census items behind the 40 reds,
+  re-censused with roles: 54 statements (17 own, 37 Q), red 0**, 4
+  inconclusive bytes.
+- **The control:** `Z2_STATED_CONTROL=raw` is the pre-fix check (the pattern as
+  written, every context). It reads **red 54 of 54**.
+
+### (3) Mech: S1141 equivalent, S685 not Z2's
+
+- **S1141 is an equivalent mutant at Z2. It is declared, not fixed.**
+  - The structural argument: the anchored machine A is built only where a
+    FINISH row on the compile's finisher route declares it
+    (`build_anchored_dfa`, src/core/compile.c: `verify-at`, the DFA route
+    alone). On a VM-finisher hybrid `anchored_ok` is false, so C4
+    (`anchored-A`) declines whatever C1 lets through.
+  - Measured on a scratch build of the plant: the witness `(?'w'cat)` moves its
+    first failing row from `finisher-dfa` to `anchored-A`, and its artifact
+    still reads `RX_ENGINE "vm"` / `RX_DFA_SCAN "unanchored"`.
+  - No `make test` check can see the difference, because the decline's identity
+    exists only in the trace build.
+  - The row now reads `SAB_EXPECT=UNDETECTED` with `SAB_EXPECT_REASON`. Its
+    header says what would make it DETECTED: a VM-route FINISH row that
+    declares A.
+  - The population figure is OWED. `s1141pop.py` re-decides every census item C1
+    declines (2,207 in the 543 census) with the planted trace harness. I
+    stopped my own run of it, which was waiting on the box lock behind 560; it
+    is part of job 545 and must read `planted cover admissions = 0`.
+- **S685 UNREACHED is pre-existing and not Z2's.** The row is byte-identical to
+  main's (last touched by main's `08bda4927`, R-12 VMLAZY REPLACE), and its own
+  text declares the UNREACHED as EXPECTED (VMLAZY deleted at R-12). Left alone.
+- All 18 rows anchored in the three edited files still resolve (each
+  `SAB_BEFORE` count equals its `SAB_COUNT`). `VALIDATE_ONLY` over all 894
+  rows: valid.
+
+### (4) Why X0 passed and X1 failed: X0's verdict stands
+
+- **X1's reds:** they come from z2.py's directory key alone. X0 builds no
+  per-item artifacts: it simulates conj.py's plan.
+- **The stated reds:** they come from a population X0 never had, plus the
+  oracle's `\K` rule.
+  - The Z2 census's SENT statements include part-compile statements, and X0
+    reads the whole pattern's emitted machine.
+  - X0's population (`pop.jsonl`, 1,433 items) holds no `\K` pattern, so the
+    one shared oracle trait (x0pcre's reported-start rule) never met X0's
+    population.
+- **The reading (conj.py/kvdfa) has neither defect.** It reads the whole
+  pattern's emitted machine. **X0 does not need a re-run.**
+- `x0.part1_site` gained `absent=True`, a default-preserving argument, so X0's
+  own calls are unchanged.
+
+Side record, not a stop item: the 543 census reads 44 harness/conj.py
+disagreements, all harness-decline / conj-cover, all `exact/producer-short`.
+That is the sound direction, and C8's producers-disagree internal errors are 0.
+
+### STATE AT HANDOFF
+
+- **Commits** on `lane/z2build`: this section's commit (`z2fix:` prefix).
+  `docs/dev/artifact_size_log.tsv` is left modified and uncommitted (job 541
+  rewrote it; it is not this lane's).
+- **Queued, verdicts OWED**:
+  - **`545-z2build-x1fix`** (job file `build/z2s/jobs/545-z2build-x1fix`, output
+    `build/z2x1fix/`): the builds, `make strict`, `test-kitproof`, S1141's
+    planted trace build (from `git archive HEAD`), census, hist, X1 over the
+    1,433-item population, stated 1-in-4, and s1141pop.
+    - Green iff the job.log carries `z2fix verdict: build_rc=0 census_rc=0
+      x1_rc=0 stated_rc=0 s1141_rc=0` (`expect done=1 lines=`). Each tool
+      echoes its own `DONE rc=` line.
+    - Expected: X1 red-beyond-U1 0 with no ERR, stated red 0 with no unchecked
+      part role, s1141pop admissions 0.
+  - **`546-z2build-s1141`**: S1141 solo. Expected `UNDETECTED (expected)`,
+    `unexpected: 0`.
+- **Light checks done before the HOLD:** the premise test, the 30-item X1
+  re-run, the 66-item stated re-check and its control, the S1141 witness under
+  the plant, and the default-object identity.
+- **What I ran during 560's window, before I read ruling 5:** six single-file
+  gcc compiles (the object comparison) and the start of a boxlock-waiting job,
+  which never got the lock and was stopped.
+- Last ruling applied: **5**.

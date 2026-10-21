@@ -192,7 +192,9 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   to the span slice's `S_d` (`pcrec_fact_span`, `span_facts`), 0 where a term
   sits before the origin or the slice states nothing; the trace build prints
   a `SITESTATED` record under `PCREC_KIT_PROOF_TRACE` (X0's set check reads
-  it). No context span (`ctx`) is sent on these sites.
+  it; its last field, like `SPANSET`'s and `KITPROOF`'s, is the compound
+  part's role, `-` for the compile itself: a part's compile prints into its
+  parent's stream, lane z2fix). No context span (`ctx`) is sent on these sites.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's
@@ -4549,7 +4551,8 @@ so the default and trace builds decline it and no shipped artifact moves.
   position REQUIRED, one CONTEXT item per constrained side, `site_kind`
   REPORT, `consumer` RESULT, `read_floor` SUBJECT), read by C13's ask and by
   the define. Trace build only: a `KITPROOF` record per decision under
-  `PCREC_KIT_PROOF_TRACE` (K35's denominator).
+  `PCREC_KIT_PROOF_TRACE` (K35's denominator), ending in the compound part's
+  role (`-`: the compile itself).
 - **emit_dfa.c** — the `cover` row in `cand_rows[]` after `rev-end` (LOCATE,
   CR_DFA, hands START|VERDICT, FIN `report`/`nomatch`); `emit_cover` defines the
   description at file scope (stem `<fn>_cover`), holds the class the define

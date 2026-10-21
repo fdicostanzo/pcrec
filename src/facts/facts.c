@@ -353,7 +353,8 @@ static void pf_derive(Ctx *cx, PfFactId f)
             /* X0's input (kit_proof.md §6.4): the slice's statement, every
              * exact set as a comma list of hex bytes, `;` between positions
              * (docs/design/kit_proof/x0/x0.py `stated`'s line shape), under
-             * its own switch so the CANDTRACE stream is unchanged. */
+             * its own switch so the CANDTRACE stream is unchanged; then the
+             * compound part's role, `-` for the compile itself. */
             if (getenv("PCREC_KIT_PROOF_TRACE")) {
                 fprintf(stderr, "SPANSET\t%d\t", pf->span.exact_len);
                 for (int d = 0; d < pf->span.exact_len; d++) {
@@ -365,7 +366,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
                             first = false;
                         }
                 }
-                fputc('\n', stderr);
+                fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
             }
         }
 #endif

@@ -420,10 +420,13 @@ const PcrecCover *pcrec_cover(Ctx *cx)
 #ifdef PCREC_CAND_TRACE
     /* K35's record (kit_proof.md §6.4): one per decision, the first failing
      * row or `cover` with k, under its own switch so the trace build's
-     * CANDTRACE stream is unchanged. */
+     * CANDTRACE stream is unchanged. The last field is the compound part's
+     * role (`-`: the compile itself), since a part's compile prints its own
+     * records inside its parent's stream. */
     if (getenv("PCREC_KIT_PROOF_TRACE"))
-        fprintf(stderr, "KITPROOF\t%s\tk=%d\trouted=%d\n", cv->why ? cv->why : "cover",
-                cv->why ? 0 : cv->end.k, pcrec_kit_proof_routed(cx));
+        fprintf(stderr, "KITPROOF\t%s\tk=%d\trouted=%d\t%s\n", cv->why ? cv->why : "cover",
+                cv->why ? 0 : cv->end.k, pcrec_kit_proof_routed(cx),
+                pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
 #endif
     return cv;
 }
