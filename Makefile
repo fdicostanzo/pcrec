@@ -192,7 +192,7 @@ FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/ksrc.h src/core/ks_measures.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
@@ -280,23 +280,42 @@ gen-tables:
 FIND_STORE_SRCS := $(sort $(wildcard src/findings/*.rxt))
 FIND_INCS       := src/core/findings_store.inc src/core/findings_table.inc
 FIND_STAGE0     := $(BUILD_DIR)/gen/stage0
-KS_STORES             := findings
+# [MEASURE-SET] M0 adds the `measures` row (docs/design/measure_sets.md §2.3,
+# `make gen-measures`): every committed measure_store/<id>/<rev>/set.tsv, plus
+# the DEFAULTS file the pre-parse's default table is written from (the text
+# step skips it: only the sets are embedded as text). KS_ENV_<store> is the
+# text step's environment (scripts/embed_text.sh's per-kind spelling).
+MEAS_STORE_SRCS := $(sort $(wildcard measure_store/*/*/set.tsv))
+MEAS_INCS       := src/core/measures_store.inc src/core/measures_table.inc
+KS_STORES             := findings measures
 KS_KIND_findings      := analysis
 KS_SRCS_findings      := $(FIND_STORE_SRCS)
+KS_TEXTSRCS_findings  := $(FIND_STORE_SRCS)
 KS_TEXT_findings      := src/core/findings_store.inc
 KS_TABLE_findings     := src/core/findings_table.inc
+KS_ENV_findings       :=
+KS_KIND_measures      := measures
+KS_SRCS_measures      := measure_store/DEFAULTS $(MEAS_STORE_SRCS)
+KS_TEXTSRCS_measures  := $(MEAS_STORE_SRCS)
+KS_TEXT_measures      := src/core/measures_store.inc
+KS_TABLE_measures     := src/core/measures_table.inc
+KS_ENV_measures       := EMBED_KIND=measures
 $(BUILD_DIR)/obj/core/findings.o: $(FIND_INCS)
-$(FIND_STAGE0)/findings.o: src/core/findings.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/core/findings_store.inc
+$(BUILD_DIR)/obj/core/measures.o: $(MEAS_INCS)
+$(FIND_STAGE0)/measures.o: src/core/measures.c src/core/internal.h src/core/ks_measures.h src/core/ksrc.h lib/pcrec.h
+	@mkdir -p $(dir $@)
+	$(CC) $(ALLFLAGS) -DPCREC_MEAS_STAGE0 -c -o $@ $<
+$(FIND_STAGE0)/findings.o: src/core/findings.c src/core/internal.h src/core/ksrc.h src/core/ks_measures.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/core/findings_store.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -DPCREC_FIND_STAGE0 -c -o $@ $<
-$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o,$(LIBOBJS)) $(KITOBJS) $(FIND_STAGE0)/findings.o
+$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o $(BUILD_DIR)/obj/core/measures.o,$(LIBOBJS)) $(KITOBJS) $(FIND_STAGE0)/findings.o $(FIND_STAGE0)/measures.o
 	@rm -f $@
 	ar rcs $@ $^
 $(FIND_STAGE0)/ksgen: scripts/ksgen.c $(FIND_STAGE0)/libpcrec.a
 	$(CC) $(ALLFLAGS) -o $@ $< $(FIND_STAGE0)/libpcrec.a
 .PHONY: $(KS_STORES:%=gen-%)
 $(KS_STORES:%=gen-%): gen-%: $(FIND_STAGE0)/ksgen
-	sh scripts/embed_text.sh $(KS_TEXT_$*) $(KS_SRCS_$*)
+	$(KS_ENV_$*) sh scripts/embed_text.sh $(KS_TEXT_$*) $(KS_TEXTSRCS_$*)
 	$(FIND_STAGE0)/ksgen $(KS_KIND_$*) $(KS_TABLE_$*).tmp $(KS_SRCS_$*)
 	@mv $(KS_TABLE_$*).tmp $(KS_TABLE_$*)
 

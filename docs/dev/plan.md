@@ -196,6 +196,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One src/core module parameterised by kind (analysis object, measurement sets, [TABLE-JUDGE]'s picks, later others): a section-TSV reader/validator, a name resolver (-I, NAME@REV, FILE), fill-only precedence (D93), the embed generator, a digest/stamp builder, a `--list-<kind>` shape. Plus ONE data-mover census tool: the compile population under two data versions with per-artifact lookup attribution, serving findings, measurement-set and limits changes alike.
   ROUND-TRIP (Frank 2026-10-14, "yes"): for every kind, the listing's CANONICAL view of one item IS a loadable input of that kind; checks: load->list->load same digest, list->load->list identical bytes; derived views (readers, per-target, stale flags) are not inputs. NOTE (Frank): RECONSIDER the analysis object's .rxt DATA input format (D83/DD-13) against this module's section-TSV, at its design.
   KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
+- [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
+  filed: 2026-10-13 Frank
+  status (2026-10-21): M0 BUILT on lane/m0build, abi 81 -> 82 + K112 (m0build_report.md): measures row, measure_store/ (zen4-grid1@1), --measures + config line, the stamp ("" until a kit row consults, B4), --list-measurements, S1227-S1246; runs queued
+  next: merge M0 after its queued runs read green; then M1 (test-measures recompute, answers/staleness views); the envelope default is M2
+  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
+  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
   status (2026-10-21): part 2 done (P2e, abi 81); part 1 BUILD GO 2026-10-21; R-26 filed (d970abbbc); kit Z1 building; main X0 running (lane x0oracle)
@@ -925,12 +931,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a second first-match table with a measured threshold needing a verdict (reseed rows, [PRIOR-COST-UNIFY], [SEL-COST])
   refs: docs/design/memfn/regime_eval.md; docs/dev/reviews/2026-10-14-r1-memfn-regime-eval.md (lane/memfn-r17 ab77bebaa); [LIST-TABLES] [MEASURE-SET]
   The general form of [REGIME-EVAL]: judging ANY declared selection table by replaying its picks against measured arm timings on held-out populations, with failing-direction controls. Sibling family: every selection table with measured thresholds.
-- [MEASURE-SET] STATE:not-started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
-  filed: 2026-10-13 Frank
-  status (2026-10-16): measure_sets.md rev 3 merged (r2 re-check discharged; OQ-1 ruled D166 add. 3); D166 ruled the shape (sets, relative units, compile-time load, rollback, mover census). Next: [KNOW-SRC] K0-K3 build
-  trigger: the kit's E3 commit (zero-mover table + row denies, regime_eval.md rev 2): schedule [MEASURE-SET]'s build then; until it lands C1/C5/C6 run through the kit's regime_pick
-  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
-  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
 - [DEC-RUNG] STATE:not-started — THE VM RUNG LADDER AS ONE SELECTOR
   filed: 2026-10-06 filer not recorded
   status (2026-10-06): not started; FILED 2026-10-06, decsurvey §3.5; UNSCHEDULED

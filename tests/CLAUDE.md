@@ -795,7 +795,9 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `docs/design/measure_sets.md` §9.6 over the shipped bundles and the
   fixtures, with analyze/'s `--dump-doc` as R3's and R5's independent side,
   and the loader's refusal of a derived view fed back. See its own
-  CLAUDE.md.
+  CLAUDE.md. Since [MEASURE-SET] M0 (lane m0build, 2026-10-21) the
+  `measures` kind too (`run_measures_tests.sh`, with its own independent
+  reader `ks_ref.py`), plus the measures store and loading checks.
 
 - **partlayout/** — [ENTRY-TABLE] E1 (`docs/design/compound_entries.md` rev 4
   §3.6): `make test-partlayout`, the part-layout controls' checks — the

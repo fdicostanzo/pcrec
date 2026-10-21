@@ -270,6 +270,26 @@ static unsigned ks_consulted(Ctx *cx)
     return q;
 }
 
+/* [MEASURE-SET] M0 the `<PREFIX>_MEASURES` value (measure_sets.md §3.5):
+ * the set the kit was handed, `id@rev:digest16`, iff a reader CONSULTED it —
+ * the kit's `consulted` (R-MS2), on this attempt, any earlier one
+ * (`Ctx.meas_union`) or a compound part — and "" otherwise. pcrec has no
+ * reader of its own before M4, so the kit's boolean is the whole OR today.
+ * Its content was fixed when the set loaded (stamp-on-load). */
+static const char *meas_stamp(Ctx *cx)
+{
+    const mf_measures *ms = cx->job->mf_ms;
+    bool consulted = cx->job->meas_consulted || (cx->meas_union && *cx->meas_union);
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i]) consulted = consulted || sh->facts[i].meas_consulted;
+    if (!consulted) return "";
+    if (!ms)
+        pcrec_ctx_fail(cx, 0, "internal error: the measurement set was consulted "
+                       "but the attempt handed the kit none");
+    return pcrec_sb_fragf(&cx->arena, "%s@%u:%s", ms->id, ms->rev, ms->values_digest);
+}
+
 /* [WINDOW-E1] RP: renders pcrec's knowledge stamps over the `rx_info`
  * writer's marks in csb, each line's text `pcrec_emit_findings_line`'s and
  * the value `pcrec_find_stamp`'s over `ks_consulted`, read now, after every
@@ -287,9 +307,11 @@ static void ks_stamps_render(Ctx *cx)
                        nd, ni);
     if (!nd) return;
     const char *value = pcrec_find_stamp(cx, ks_consulted(cx));
+    const char *meas = meas_stamp(cx);
     for (size_t m = 0; m < sizeof ks_marks / sizeof ks_marks[0]; m++) {
         StrBuf line = { .cx = cx };
         pcrec_emit_findings_line(cx, &line, (PcrecKsMark)m, value);
+        pcrec_emit_measures_line(cx, &line, (PcrecKsMark)m, meas);
         (void)splice_mark(c, ks_marks[m], line.p ? line.p : "");
         pcrec_sb_free(&line);
     }

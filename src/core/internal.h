@@ -2905,6 +2905,9 @@ void pcrec_pf_admits_selfcheck(Ctx *cx);
  * accessors, never a derivation (docs/design/patfacts/design.md §4.2.1). */
 #include "facts/facts.h"
 #include "core/findings.h"
+/* [MEASURE-SET] M0 the measures kind's document type (`KsMeasSet`), read
+ * by `Job.meas` below; libc-only, like core/ksrc.h. */
+#include "core/ks_measures.h"
 
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
  * types — live in src/facts/facts.h with the record that carries them
@@ -3170,6 +3173,18 @@ typedef struct {
      * right after the chain resolves (`pcrec_memfn_analysis_build`), and
      * handed to `mf_art_begin`; NULL for a Job no attempt built. */
     const struct mf_analysis *analysis;
+    /* [MEASURE-SET] M0 this attempt's LOADED measurement set (src/core/
+     * measures.c's `pcrec_meas_resolve`, right after the analysis chain;
+     * docs/design/measure_sets.md §3.4) and its stamp text `id@rev:digest16`,
+     * both NULL when nothing was named and the build has no default. LOADED
+     * is not CONSULTED: `meas_consulted` is the memfn kit's `consulted`
+     * (R-MS2), read at this attempt's `mf_art_end`, and only a consulted set
+     * is stamped (§3.5). `mf_ms` is the kit's view of `meas` (its `kit.`
+     * rows, NULL ones left out; R-MS1), built at the art's begin. */
+    const KsMeasSet *meas;
+    const char *meas_stamp;
+    bool meas_consulted;
+    const struct mf_measures *mf_ms;
     /* [MEMFN] R17-a the VM hat's FIND, defined above `<searchfn>_run`
      * (`pcrec_emit_vm_start_define`) for its entry and retry seeks
      * (src/gen/emit_dfa.c's `struct MemfnFind`); NULL where none. */
@@ -3498,6 +3513,10 @@ struct Ctx {
      * stamp reads it, so the stamp is the union over the compile's attempts.
      * NULL outside `compile_driver` (no earlier attempt). */
     unsigned            *find_union;
+    /* [MEASURE-SET] M0 the same union for the measurement set (§3.5): true
+     * once any attempt's kit read consulted it; owned by `compile_driver`,
+     * ORed by `job_cleanup`, NULL outside `compile_driver`. */
+    bool                *meas_union;
     /* [SEL-1] (2026-08-28) `auto`'s DFA-cap-overflow contract (plan row
      * [SEL-1]): a `--engine=auto` compile whose DFA build overflows a cap
      * falls back to the VM instead of refusing, and an auto-selected
@@ -6167,6 +6186,9 @@ typedef struct {
     /* [FINDINGS] B2: a CONFIG row's own `analysis <name>` (AT_MOST_ONE),
      * or NULL; composed by `cfg_merge`'s later-wins like `engine`. */
     const char *analysis;
+    /* [MEASURE-SET] M0: a CONFIG row's own `measures <set>` (AT_MOST_ONE),
+     * or NULL; composed exactly as `analysis` is. */
+    const char *measures;
 } RxtRow;
 
 /* [DD-13b.W23.4] THE FOUR `#section` RECORD TYPES (format_design §2.24).
@@ -6467,6 +6489,10 @@ typedef struct {
      * only FILLS a NULL here, never replaces it (D123-8 item 2). */
     const char *analysis;
     size_t      analysis_line;
+    /* [MEASURE-SET] M0: the composed config's `measures` value and the line
+     * of the config that supplied it, on `analysis`' rule exactly. */
+    const char *measures;
+    size_t      measures_line;
     /* [DD-13b.W1.3] the file's whole definition closure, shared by every
      * target of one source (it is a property of the FILE, not of a target).
      * Never NULL — a file with no named block gets an empty set, so the
@@ -6637,6 +6663,9 @@ void pcrec_emit_ks_mark(StrBuf *c, PcrecKsMark m);
 /* The two lines those marks stand for, `value` being the stamp's text
  * (src/gen/emit_dfa.c, the `rx_info` writer's own spelling of them). */
 void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
+/* [MEASURE-SET] M0 the `<PREFIX>_MEASURES` / `.measures = …` pair, written
+ * right after the findings pair at the same two marks (measure_sets.md §3.5). */
+void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
 /* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
  * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
  * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
@@ -6790,6 +6819,37 @@ int  pcrec_find_chain_build(Arena *a, const char *name, const RxtSource *s1,
                             const char *const *dirs, bool notes,
                             PcrecFindChain *out, pcrec_error *err);
 void pcrec_find_resolve(Ctx *cx, bool notes);
+
+/* ---- [MEASURE-SET] M0 the measurement set (src/core/measures.c;
+ * docs/design/measure_sets.md §2-§3, docs/spec/measures.md). The kind's own
+ * parse, checks and views are src/core/ks_measures.c's (libc-only).
+ *
+ * `pcrec_meas_find` resolves `ref` (`NAME`, `NAME@REV` or a FILE, by
+ * spelling alone: the kind row's `name-else-file`) over the `-I` list `dirs`
+ * (stop S2, `DIR/<NAME>.measures.tsv`, the file's header id equal to NAME)
+ * and the embedded store (S3), applying §3.3's (id, rev) shadow rule to a
+ * set read from a file; `ref` NULL is the build's DEFAULT (the `idk` class's
+ * `DEFAULTS` row), and `out->set` stays NULL when the build has none.
+ * `out->stop` names where it landed. Every allocation is `a`'s. 0, or -1
+ * with `err` filled.
+ *
+ * `pcrec_meas_resolve` is the compile's caller (`pcrec_options.measures`/
+ * `measures_dirs`), once per attempt, into `Job.meas`/`meas_stamp`; it
+ * refuses through `pcrec_ctx_fail`. The store accessors serve the listing
+ * and the checks: entry `i` of `pcrec_meas_store_count()`, its `<id>@<rev>`
+ * name, its pre-parse and its embedded TEXT; `pcrec_meas_default_for` is the
+ * class a set is the default of, or "". */
+typedef struct {
+    const KsMeasSet *set;
+    const char      *stop;
+} PcrecMeasHit;
+int pcrec_meas_find(Arena *a, const char *ref, const char *const *dirs,
+                    PcrecMeasHit *out, pcrec_error *err);
+void pcrec_meas_resolve(Ctx *cx);
+size_t pcrec_meas_store_count(void);
+const char *pcrec_meas_store_name(size_t i);
+const KsMeasSet *pcrec_meas_store_set(size_t i, const char **text, size_t *len);
+const char *pcrec_meas_default_for(const KsMeasSet *set);
 
 /* ---- [KNOW-SRC] the knowledge kinds' ROWS (src/parse/ks_analysis.c,
  * src/parse/ks_lib.c) and their TABLE (src/core/ksrc_kinds.c, the library
@@ -7741,6 +7801,8 @@ struct PcrecPartFacts {
     unsigned find_consulted;/* the queries any of its attempts consulted
                                (a bit per `PCREC_FQ_*` row), for the shell's
                                knowledge stamp (window_contract.md §3.7.3a) */
+    bool meas_consulted;    /* [MEASURE-SET] M0 any of its attempts' kit read
+                               consulted the measurement set (§3.5) */
     bool copyable;          /* [ENTRY-TABLE] E1 its search body can be copied
                                into a caller: the part compile's job-wide
                                `!Job.pl.uncopyable` (no label table) */
@@ -8047,6 +8109,13 @@ char *pcrec_find_list_file(const char *path, const char *const *dirs,
  * (`canonical` or `decoded`, docs/spec/findings.md §8.4/§8.5) of the bundle
  * `NAME` resolves to (link 0 of the chain `dirs` gives). NULL with `err`
  * filled on a refusal; caller frees. */
+/* [MEASURE-SET] M0 `--list-measurements` (src/dump/measures_dump.c;
+ * docs/spec/measures.md §6): `ref` NULL is the sets index (`view` must be
+ * NULL); else the set `ref` resolves to (a NAME, NAME@REV or FILE, over the
+ * `-I` list `dirs`), written by the kind row's `view` writer (`canonical`
+ * when NULL, or `decoded`). Malloc'd text, or NULL with `err` filled. */
+char *pcrec_meas_list(const char *ref, const char *const *dirs, const char *view,
+                      pcrec_error *err);
 char *pcrec_find_list_view(const char *name, const char *const *dirs,
                            const char *view, pcrec_error *err);
 

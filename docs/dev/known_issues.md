@@ -79,7 +79,9 @@ D158 (Frank): an optimization never reduces any pattern's ability to complete. P
 
 ---
 
-## K112 — OPEN (filed 2026-10-20, manager, from lane ctxp2d's finding F-6, ctxp2d_report.md §6) — STALE VM ROLE TEXT: the VM's `^`/`\A` role string reads "^ attempt_position of subject (absolute offset 0)" and the `(?m)^` row reads "(?m)^ attempt_position of subject or ...", apparently a `start`->`attempt_position` rename that reached a string. Kept verbatim because changing them moves `--emit-ir` bytes (an abi event). Fix with the next abi event or in [IFACE-PUSH]-style doc work.
+## K112 — FIXED 2026-10-21 (lane m0build, with the [MEASURE-SET] M0 abi event 81 -> 82, pending merge; filed 2026-10-20, manager, from lane ctxp2d's finding F-6, ctxp2d_report.md §6) — STALE VM ROLE TEXT: the VM's `^`/`\A` role string reads "^ attempt_position of subject (absolute offset 0)" and the `(?m)^` row reads "(?m)^ attempt_position of subject or ...", apparently a `start`->`attempt_position` rename that reached a string. Kept verbatim because changing them moves `--emit-ir` bytes (an abi event). Fix with the next abi event or in [IFACE-PUSH]-style doc work.
+
+**Fixed:** both rows of `src/core/ctxfn.def` now read "^ start of subject (absolute offset 0)" and "(?m)^ start of subject or after a non-final newline"; the three `tests/codegen/manifests/ir_listing_baseline/` listings that carry them were re-recorded (only those lines move), and sabotage S1243 plants the old string back (suite irlisting). The mover census `docs/dev/lanes/m0build/census.py` maps the two strings back; its full-corpus run is queued (docs/dev/lanes/m0build_report.md).
 
 ## K111 — OPEN (filed 2026-10-16, manager, from lane msrev3's finding F12 — docs/design/measure_sets.md §9.5, §11) — CASE-EXACTNESS DRIFT: the `lib` reference resolver probes with `path_is_file`, the analysis resolver with `dir_has_exact`
 

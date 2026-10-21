@@ -204,6 +204,14 @@ contents block).
   the shipped analyses and the store, §7 resolution of a name, §8 the two
   listings, §9 the `pcrec_options` fields. Cite by number (`findings.md §4`).
   History: `docs/dev/history/findings_record.md`.
+- `measures.md` — the measurement-set contract, FACTS ONLY and numbered from
+  birth ([MEASURE-SET] M0, lane m0build, 2026-10-21): §1 terms, §2 the file
+  (header keys, the four tables, the key grammar), §3 the unit/status codes,
+  the derivation registry and the values digest, §4 the `<PREFIX>_MEASURES`
+  stamp and `rx_info.measures`, §5 loading (`--measures`, the `measures`
+  config line, `-I`, the store, the class default), §6 `--list-measurements`
+  and its views, §7 the refusals, §8 the store. Cite by number
+  (`measures.md §5`).
 - `vars.md` — **module `vars`' caller-observable contract** ([VAR], 2026-09-23):
   `${name}` in a pattern, whose bytes the caller supplies per call. The
   spelling and its five bash-shaped operators, the `rx_var` type and the

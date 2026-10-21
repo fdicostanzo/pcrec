@@ -617,7 +617,10 @@ pcrec (the Makefile owns that).
   a clone without python still builds; the `LC_ALL=C od -An -v -tx1`
   invocation is PINNED [r2 A-8] (the same hex pairs under BSD and GNU `od`)
   and only the hex pairs are consumed. `tests/findings/` reads each bundle
-  back through the library and compares it with its file.
+  back through the library and compares it with its file. [MEASURE-SET] M0:
+  `EMBED_KIND=measures` writes `src/core/measures_store.inc` from
+  `measure_store/<id>/<rev>/set.tsv` (`make gen-measures`); the default,
+  `findings`, writes byte-identical output to before.
 
 - **ksgen.c** — [KNOW-SRC] K2 (lane ksrc23, 2026-10-17): the knowledge
   module's EMBED GENERATOR, `ksgen KIND OUT FILE...` (measure_sets.md rev 3
@@ -638,6 +641,13 @@ pcrec (the Makefile owns that).
   second `main` would break them. `tests/findings/` §3 is its drift check.
   [B5] a `cpfreq` block is written as its sparse code-point rows
   (`PcrecFindCp`), a `freq` block as its 256 counts.
+  [MEASURE-SET] M0 (lane m0build, 2026-10-21): the `measures` arm runs the
+  kind's own validator over each `measure_store/<id>/<rev>/set.tsv` (the
+  `<id>`/`<rev>` read off the path and held to the header) and writes the
+  parsed set, plus `measure_store/DEFAULTS`' class rows, as
+  `src/core/measures_table.inc` (`make gen-measures`; stage 0 builds
+  `measures.o` with `PCREC_MEAS_STAGE0`). `tests/knowledge/
+  meas_store_check.c` is its drift check.
   [WINDOW-E1] (lane e1build, 2026-10-17) each block row also carries its
   provenance stanza (`source`, `bytes`, `fidelity`), and the generator
   REFUSES a block with no provenance source and a store `default` block

@@ -66,6 +66,39 @@ static void *pcrec_memfn_arena_alloc(void *u, size_t n)
     return pcrec_arena_alloc(u, n);
 }
 
+/* [MEASURE-SET] M0 the kit's view of the attempt's loaded set (R-MS1,
+ * measure_sets.md §4.1): its `kit.` rows that carry a value — a NULL row is
+ * not handed over, so NULL and absent read alike, as a skip — and its
+ * identity. Facts only (D157): no `pcrec.` row, no status, no provenance.
+ * NULL when the attempt loaded no set. */
+static const mf_measures *memfn_measures(Ctx *cx)
+{
+    const KsMeasSet *set = cx->job->meas;
+    mf_measures *ms;
+    mf_measure *rows;
+    char *hex;
+    if (!set) return NULL;
+    ms = pcrec_arena_alloc(&cx->arena, sizeof *ms);
+    rows = pcrec_arena_alloc(&cx->arena, (set->nrows + 1) * sizeof *rows);
+    hex = pcrec_arena_alloc(&cx->arena, 17);
+    for (size_t i = 0; i < set->nrows; i++) {
+        const KsMeasRow *r = &set->rows[i];
+        if (strncmp(r->col[KS_MR_key], "kit.", 4) || r->value_e6 == KS_MEAS_EMPTY)
+            continue;
+        rows[ms->nrows++] = (mf_measure){ r->col[KS_MR_key], r->value_e6,
+                                          r->col[KS_MR_unit], r->col[KS_MR_source] };
+    }
+    pcrec_ks_meas_hex(set->digest, hex);
+    ms->id = set->hdr[KS_MH_ID];
+    ms->rev = set->rev;
+    ms->values_digest = hex;
+    ms->cls = set->hdr[KS_MH_CLASS];
+    ms->tier = set->hdr[KS_MH_TIER];
+    ms->composite = set->composite;
+    ms->rows = rows;
+    return ms;
+}
+
 mf_art *pcrec_memfn_art(Ctx *cx)
 {
     Job *job = cx->job;
@@ -74,11 +107,15 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         ma->u = &cx->arena;
         ma->alloc = pcrec_memfn_arena_alloc;
         /* R17-b' B1: the set is the harness lever's (a test build's), else
-           none; the analysis object is the attempt's, built eagerly by
-           compile_driver (pcrec_memfn_analysis_build): passed, never built,
-           here (NULL only for a Job no compile_driver attempt made) */
-        const mf_measures *ms = cx->emit_in && cx->emit_in->harness
-                              ? cx->emit_in->harness->measures : NULL;
+           ([MEASURE-SET] M0) the attempt's loaded set, the build's default
+           when nothing was named; the analysis object is the attempt's,
+           built eagerly by compile_driver (pcrec_memfn_analysis_build):
+           passed, never built, here (NULL only for a Job no compile_driver
+           attempt made) */
+        const mf_measures *ms = cx->emit_in && cx->emit_in->harness &&
+                                cx->emit_in->harness->measures
+                              ? cx->emit_in->harness->measures : memfn_measures(cx);
+        job->mf_ms = ms;
         job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_policy(cx->opt->flags),
                                pcrec_memfn_denies(cx->opt->flags), ms,
@@ -839,12 +876,14 @@ void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)
 
 void pcrec_memfn_art_end(Ctx *cx, mf_art *art)
 {
-    /* `consulted` (R-MS2) is not asked before [MEASURE-SET] M0 (B4), whose
-       `<PREFIX>_MEASURES` stamp is its reader: through B3b no routed finder
-       row reads a set key, so it would read 0 on every compile */
-    if (mf_art_end(art, NULL))
+    /* `consulted` (R-MS2): its reader is the `<PREFIX>_MEASURES` stamp
+       ([MEASURE-SET] M0, §3.5), rendered after this call. Through the kit's
+       B3b no routed finder row reads a set key, so it reads 0 today */
+    uint8_t consulted = 0;
+    if (mf_art_end(art, &consulted))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's artifact end "
                        "failed: %s", mf_art_error(art));
+    cx->job->meas_consulted = cx->job->meas_consulted || consulted;
     if ((mf_includes(art) & MF_INC_STRING_H) && !cx->job->string_h)
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's text calls "
                        "<string.h> functions the prologue did not include");

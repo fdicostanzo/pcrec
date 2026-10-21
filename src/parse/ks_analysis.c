@@ -31,14 +31,15 @@
 /* Stop S2's file probe: `path` refused over PCREC_MAX_FIND_BUNDLE_BYTES
  * (never truncated), parsed, and its bundles counted; FOUND hands the parse
  * (an `RxtSource *`) to the caller, who frees it. */
-static KsFile analysis_probe(const char *path, const char *name, void **doc,
-                             size_t *nitems, KsErr *err)
+static KsFile analysis_probe(const KsAlloc *a, const char *path, const char *name,
+                             void **doc, size_t *nitems, KsErr *err)
 {
     struct stat sb;
     pcrec_error perr = { 0 };
     RxtSource *src;
     bool named = false;
     size_t n = 0;
+    (void)a;                    /* the `.rxt` reader allocates its own parse */
     if (stat(path, &sb) == 0 &&
         (unsigned long long)sb.st_size > PCREC_MAX_FIND_BUNDLE_BYTES) {
         snprintf(err->msg, sizeof err->msg, "%s: %llu bytes, over "

@@ -67,6 +67,9 @@
 # routes a FIND site over a RUN span 0, which no pcrec builder states (the
 # handoff landmark is the ALL_PRESENT site's window, not a FIND's span 0), so
 # it keeps its fixture and waits for the merged landmark site (R-18).
+# [MEASURE-SET] M0 (lane m0tri): R7w's witness names the synthetic set
+# pins/r7w_unmeasured.measures.tsv, because the store's default set now answers R7's
+# key and a default compile picks R7; the control is a one-byte site D1 claims.
 # R7w is `pcrec` too, as the walk's UNROUTED default terminal (lane n2fix):
 # from B2 the finder's decision is a live DEFINE-phase selection at every FIND
 # site, and R7w is what every site no D1 row claims reads (it returns NULL and
@@ -119,7 +122,7 @@ fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
 fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
 fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
-fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
+fd	R7w	pcrec	pattern	-fno-offset-skip --measures @ROOT@/tests/memfn/pins/r7w_unmeasured.measures.tsv	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT routed=1 phase=ask	--memfn=no-fd-pres-g1	=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=

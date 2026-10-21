@@ -67,7 +67,7 @@ CTXFN_ROW(NOT_NEXT,    0x16D,  1,0,1,  1,0,1,  1,0,1,
  * a FINAL newline (`PCRE2_ALT_CIRCUMFLEX` is the option that turns it on). */
 CTXFN_ROW(MLINE_BOL,   0x1D8,  0,0,0,  1,1,0,  1,1,1,
           CONTEXT, VMCTX_MLBOL, NULL, false,
-          "(?m)^ attempt_position of subject or after a non-final newline")
+          "(?m)^ start of subject or after a non-final newline")
 /* (?m)$: end of subject, or before a newline — libpcre2's `(?![^\n])`,
  * 547/547, stated over {\n} with the absent column set (ctx_span.md §4.2.4:
  * the only A_CTX spelling of it under utf8, and today's atoms under byte). */
@@ -82,7 +82,7 @@ CTXFN_ROW(MLINE_EOL,   0x1B6,  0,1,1,  0,1,1,  0,1,1,
  * N_BOT kind did. */
 CTXFN_ROW(SUBJECT_START, 0x1C0, 0,0,0, 0,0,0,  1,1,1,
           PIN_START, VMCTX_START, NULL, false,
-          "^ attempt_position of subject (absolute offset 0)")
+          "^ start of subject (absolute offset 0)")
 /* `\z` (the parser's node since P2e; the NFA row since P2d): no next
  * character: the end PIN. Reads no membership; reads absent next, so it
  * makes the `pos == n` view live as the retired N_END kind did. */

@@ -92,6 +92,178 @@ KsReq pcrec_ks_classify(KsClassify c, const char *s)
     return KS_REQ_BAD;
 }
 
+/* `NAME@REV` is a NAME only where the row says revisions exist; anything
+ * else that is not a legal name classifies exactly as `pcrec_ks_classify`
+ * would (so under NAME_ELSE_FILE `x@0`, `x@01` and `x@` are FILEs). */
+KsReq pcrec_ks_classify_ref(KsClassify c, bool revs, const char *s,
+                            size_t *nlen, uint32_t *rev)
+{
+    const char *at = revs && c != KS_CLS_FILE_ONLY ? strchr(s, '@') : NULL;
+    *nlen = strlen(s);
+    *rev = 0;
+    if (at && pcrec_ks_name_ok(s, (size_t)(at - s)) && at[1] >= '1' &&
+        at[1] <= '9') {
+        unsigned long long v = 0;
+        const char *d = at + 1;
+        while (*d >= '0' && *d <= '9' && v <= 0xffffffffull)
+            v = v * 10 + (unsigned)(*d++ - '0');
+        if (!*d && v <= 0xffffffffull) {
+            *nlen = (size_t)(at - s);
+            *rev = (uint32_t)v;
+            return KS_REQ_NAME;
+        }
+    }
+    return pcrec_ks_classify(c, s);
+}
+
+/* ---- part 1: the section-TSV reader ---------------------------------- */
+
+/* A growable array in the caller's allocator; the allocator never frees, so
+ * growth abandons the old block (the arena's own discipline). */
+typedef struct {
+    void  *p;
+    size_t n, cap, sz;
+} KsVec;
+
+static void *ks_vec_push(const KsAlloc *a, KsVec *v)
+{
+    if (v->n == v->cap) {
+        size_t cap = v->cap ? v->cap * 2 : 16;
+        void *np = a->alloc(a->ctx, cap * v->sz);
+        if (v->n) memcpy(np, v->p, v->n * v->sz);
+        v->p = np;
+        v->cap = cap;
+    }
+    return (char *)v->p + v->sz * v->n++;
+}
+
+static char *ks_dup(const KsAlloc *a, const char *p, size_t n)
+{
+    char *d = a->alloc(a->ctx, n + 1);
+    memcpy(d, p, n);
+    d[n] = 0;
+    return d;
+}
+
+/* Splits `line[0..n)` on TAB into the vector `cells` of `char *` copies. */
+static size_t ks_split(const KsAlloc *a, const char *line, size_t n, KsVec *cells)
+{
+    size_t k = 0, at = 0;
+    for (size_t i = 0; i <= n; i++)
+        if (i == n || line[i] == '\t') {
+            *(char **)ks_vec_push(a, cells) = ks_dup(a, line + at, i - at);
+            at = i + 1;
+            k++;
+        }
+    return k;
+}
+
+/* The section being read: its header (once seen) and its rows so far. */
+typedef struct {
+    KsTsvSection s;
+    KsVec        cols, cells, lines;
+    bool         has_rows;
+    const char  *hdr;           /* the latest `#` line before the first row */
+    size_t       hdr_len;
+} KsTsvOpen;
+
+/* Closes `o` into the output vector `secs`. */
+static void ks_tsv_close(const KsAlloc *a, KsTsvOpen *o, KsVec *secs)
+{
+    if (!o->has_rows && o->hdr) {
+        o->s.ncols = ks_split(a, o->hdr + 1, o->hdr_len - 1, &o->cols);
+        o->s.cols = o->cols.p;
+    }
+    o->s.cells = o->cells.p;
+    o->s.row_line = o->lines.p;
+    *(KsTsvSection *)ks_vec_push(a, secs) = o->s;
+}
+
+static void ks_tsv_open(KsTsvOpen *o, const char *name, size_t line)
+{
+    memset(o, 0, sizeof *o);
+    o->s.name = name;
+    o->s.line = line;
+    o->cols.sz = o->cells.sz = sizeof(char *);
+    o->lines.sz = sizeof(size_t);
+}
+
+int pcrec_ks_tsv_read(const KsAlloc *a, const char *text, size_t len,
+                      KsTsv *out, KsErr *err)
+{
+    static const char tag[] = "#section ";
+    KsVec secs = { .sz = sizeof(KsTsvSection) };
+    KsTsvOpen o;
+    size_t ln = 0;
+    ks_tsv_open(&o, "", 0);
+    for (size_t at = 0; at < len;) {
+        const char *line = text + at;
+        const char *nl = memchr(line, '\n', len - at);
+        size_t n = nl ? (size_t)(nl - line) : len - at;
+        at += n + (nl ? 1 : 0);
+        ln++;
+        if (memchr(line, '\r', n) || memchr(line, '\0', n)) {
+            ks_fail(err, "line %zu: a CR or NUL byte (a section TSV is "
+                    "TAB-separated text with LF line ends)", ln);
+            return -1;
+        }
+        if (n == 0) continue;
+        if (n > sizeof tag - 1 && !memcmp(line, tag, sizeof tag - 1)) {
+            const char *name = ks_dup(a, line + sizeof tag - 1, n - (sizeof tag - 1));
+            ks_tsv_close(a, &o, &secs);
+            for (size_t i = 0; i < secs.n; i++)
+                if (!strcmp(((KsTsvSection *)secs.p)[i].name, name)) {
+                    ks_fail(err, "line %zu: section '%s' appears twice", ln, name);
+                    return -1;
+                }
+            ks_tsv_open(&o, name, ln);
+            continue;
+        }
+        if (line[0] == '#') {
+            if (!o.has_rows) { o.hdr = line; o.hdr_len = n; }
+            continue;
+        }
+        if (!o.has_rows) {
+            if (!o.hdr) {
+                ks_fail(err, "line %zu: a data row before any header line in "
+                        "section '%s'", ln, o.s.name);
+                return -1;
+            }
+            o.s.ncols = ks_split(a, o.hdr + 1, o.hdr_len - 1, &o.cols);
+            o.s.cols = o.cols.p;
+            o.has_rows = true;
+        }
+        {
+            size_t got = ks_split(a, line, n, &o.cells);
+            if (got != o.s.ncols) {
+                ks_fail(err, "line %zu: %zu fields where section '%s''s header "
+                        "names %zu", ln, got, o.s.name, o.s.ncols);
+                return -1;
+            }
+            *(size_t *)ks_vec_push(a, &o.lines) = ln;
+            o.s.nrows++;
+        }
+    }
+    ks_tsv_close(a, &o, &secs);
+    out->nsec = secs.n;
+    out->sec = secs.p;
+    return 0;
+}
+
+const KsTsvSection *pcrec_ks_tsv_section(const KsTsv *t, const char *name)
+{
+    for (size_t i = 0; i < t->nsec; i++)
+        if (!strcmp(t->sec[i].name, name)) return &t->sec[i];
+    return NULL;
+}
+
+long pcrec_ks_tsv_col(const KsTsvSection *s, const char *name)
+{
+    for (size_t i = 0; i < s->ncols; i++)
+        if (!strcmp(s->cols[i], name)) return (long)i;
+    return -1;
+}
+
 /* ---- part 2: the resolver -------------------------------------------- */
 
 /* An equality test over the entries, never discovery: a case-insensitive
@@ -139,7 +311,7 @@ static KsRes ks_probe_dir(const KsWalk *w, const char *dir, const char *entry,
         }
     }
     if (k->probe) {
-        switch (k->probe(path, name, &doc, &nitems, w->err)) {
+        switch (k->probe(w->alloc, path, name, &doc, &nitems, w->err)) {
         case KS_FILE_FOUND:
             break;
         case KS_FILE_ERROR:

@@ -46,6 +46,18 @@ elif [ -n "$off" ]; then
 else
     ok "ksrc deps (a): $ninc include lines in ksrc.c/ksrc.h, every quoted one core/ksrc.h"
 fi
+# [MEASURE-SET] M0: the measures row is held to the same rule, with its own
+# header beside ksrc.h (a tool that links the parts links this row too).
+moff="$(quoted_offenders "$ROOT/src/core/ks_measures.c" "$ROOT/src/core/ks_measures.h" |
+        grep -vE '#[[:space:]]*include[[:space:]]*"core/ks_measures\.h"')"
+mninc="$(cat "$W/ninc")"
+if [ "$mninc" -lt 3 ]; then
+    bad "ksrc deps (a'): only $mninc include line(s) read in ks_measures.c/.h (K35)"
+elif [ -n "$moff" ]; then
+    bad "ksrc deps (a'): the measures row includes outside libc + core/ksrc.h + core/ks_measures.h: $(echo "$moff" | tr '\n' ' ')"
+else
+    ok "ksrc deps (a'): $mninc include lines in ks_measures.c/.h, every quoted one core/ksrc.h or core/ks_measures.h"
+fi
 # the control
 mkdir -p "$W/plant/core"
 cp "$ROOT/src/core/ksrc.h" "$W/plant/core/"
@@ -71,6 +83,20 @@ else
         bad "ksrc deps (b): ksrc.o calls the compiler: $(echo "$bad_syms" | tr '\n' ' ')"
     else
         ok "ksrc deps (b): ksrc.c builds with -Isrc alone and its $nund undefined symbols are libc's ($(echo "$und" | tr '\n' ' '))"
+    fi
+fi
+# (b') the measures row, alone: only libc and the parts' own `pcrec_ks_`
+# names may be undefined in it
+if ! "$CC" -std=gnu11 -O2 -Wall -Wextra -Werror -I"$ROOT/src" -c \
+        -o "$W/ksm.o" "$ROOT/src/core/ks_measures.c" 2> "$W/ksm.cc"; then
+    bad "ksrc deps (b'): src/core/ks_measures.c does not compile with -Isrc alone: $(head -3 "$W/ksm.cc" | tr '\n' ' ')"
+else
+    und="$(nm -u "$W/ksm.o" | awk '{print $NF}')"
+    bad_syms="$(printf '%s\n' "$und" | grep '^_\?pcrec_' | grep -v '^_\?pcrec_ks_')"
+    if [ -n "$bad_syms" ]; then
+        bad "ksrc deps (b'): ks_measures.o calls the compiler: $(echo "$bad_syms" | tr '\n' ' ')"
+    else
+        ok "ksrc deps (b'): ks_measures.c builds with -Isrc alone and calls only libc and the parts"
     fi
 fi
 echo "checks passed: $pass"
