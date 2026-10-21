@@ -76,7 +76,27 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   the pre-2026-10-06 `\*\*\* \[test-` reader missing a Linux red. Plus the
   paired clean cases (the CPU-busy silent stage is not quiet, quoted test
   output with `rc=1` is not a status line, a stale token does not nest).
-  ~2 min together, mostly watcher polls at `--every 1`.
+  ~2 min together, mostly watcher polls at `--every 1`. [BOXQUEUE] added the
+  generic `TOOL: DONE rc=N` trailer cases (verdict 31 checks, watchrun 17).
+- **boxqueue.test** — scripts/boxqueue's self-test ([BOXQUEUE], 2026-10-21;
+  52 checks, ~65 s, one trivial job at a time). Every case gets a FRESH
+  scratch queue (`PCREC_BOXQUEUE_DIR`) and the sacrificial box lock; runners
+  and lock holders are killed by pid (safekill) on exit. The protocol both
+  ways (work exits 0/76/77/3, `--ready` 0/75/76/77/1, a hanging `--ready`,
+  a stray name, PRIO order, every answer logged), the dry run at enqueue
+  (argument error REFUSED 65, missing declarations, a hand-dropped job
+  failed on first sight) and at START, populations (`lines=` SHORT, `last=`
+  from an emit_sweep-shaped log, an OVER killed mid-run), VERDICT-RED,
+  CAP-FIRED, `waiting on <holder>`, one runner per queue, a dead runner's
+  leftovers, an `add` from inside a lock holder, `batch` (a failed stage
+  re-queued alone, `--lift`, chainrun's parser reused) and `--dry-run`'s
+  plan. TEN PLANTS, each going red: a work-75 re-queued (side effect
+  repeats), the pending original kept (runs twice), no snapshot compare
+  (stale v1 runs over an edit), no SHORT check, no mid-run OVER watch, an
+  appended per-name log (an earlier run's rows counted), state never
+  cleared (an earlier job's not-ready clock), an unbounded `--ready`, an
+  enqueue without the dry run, and the runner keeping its enqueuer's lock
+  fd.
 
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.

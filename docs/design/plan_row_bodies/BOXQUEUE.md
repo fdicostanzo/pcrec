@@ -45,6 +45,17 @@ loaded the box during the kit's heavy slot and contaminated its make test.
 - Shared by main, the kit and the bench: a session reorders only its OWN jobs.
   `chainrun` stage files become batches of jobs (nothing is thrown away).
 
+## Built (lane boxqueue, 2026-10-21)
+
+`scripts/boxqueue` (contract in its header, summary in scripts/CLAUDE.md,
+self-test scripts/tests/boxqueue.test planting each bug class below), the
+lane template in docs/dev/lanes/BOILERPLATE.md "Queue template". Where the
+build reads the design: the job is called in three MODES (`--dry-run`,
+`--ready`, the work) because `boxqueue --dry-run` must run a job's readiness
+check without its work; so 75 belongs to `--ready`, and a 75 from the work is
+the planted "side effects, then 75" bug (failed, never re-run). Requirement
+-> how met: docs/dev/lanes/boxqueue_report.md.
+
 ## Requirements observed from the 2026-10-20 ctxp2d chain (append as found)
 
 - The armed stage list omitted one owed check (recursion identity); with a
@@ -66,6 +77,18 @@ loaded the box during the kit's heavy slot and contaminated its make test.
   queued behind the still-running first chain; the lane hand-wrote a detached
   flock waiter (build/p2dval/s2/arm.sh) — the very pattern chainrun replaced.
   With a queue, corrective jobs are simply enqueued after the running one.
+- (2026-10-20 night, lane p2dland) `scripts/emit_sweep.py` printed no
+  completion line, so `scripts/verdict` read a FINISHED sweep's log as
+  INCOMPLETE and the lane read arms.tsv by hand. Requirement: every heavy
+  tool's log ends with a completion line the shared readers recognise —
+  met by ONE convention, `TOOL: DONE rc=N` (perfrun's form, now read for any
+  tool by verdict and watchrun; emit_sweep prints it on every ending), not by
+  a per-job declared completion pattern (lane boxqueue, 2026-10-21).
+- (found while building, lane boxqueue) the `make mech S1171 ...` invocation
+  was the lane BOILERPLATE's own heavy-chain template (`mech heavy 5400 make
+  mech S222 S223`): the make target takes no ids. A template that is never
+  run is prose; the template now uses `run_sabotage_matrix.sh IDS`, and the
+  queue template's dry run resolves the ids (`VALIDATE_ONLY=1`).
 
 ## Dry-run contract (Frank, 2026-10-20: "each script could support --dry-run for testing")
 

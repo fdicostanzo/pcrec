@@ -69,7 +69,9 @@
 #   boxqueue: expect NAME=N lines=ERE   N = the number of lines of THIS run's
 #                                       log matching ERE (awk ERE)
 #   boxqueue: expect NAME=N last=ERE    N = the integer right after ERE's
-#                                       match on its LAST matching line
+#                                       match (blanks skipped) on its LAST
+#                                       matching line; trailing blanks of
+#                                       an ERE are not kept
 #   Fewer than N = POPULATION-SHORT (failed: a job that ran fewer items than
 #   it declared is not green); more = POPULATION-OVER, and a `lines=` count
 #   is watched DURING the run (every BOXQUEUE_MONITOR s, 2), so a job running
@@ -177,7 +179,7 @@ exp_text() { local e k n m; [ ${#D_EXP[@]} -eq 0 ] && { echo none; return; }; fo
 # pop_count MODE ERE LOG -> the population THIS log reports
 pop_count() {
     RE=$2 awk -v M="$1" 'BEGIN {re = ENVIRON["RE"]; c = 0; v = ""}
-        match($0, re) { c++; s = substr($0, RSTART + RLENGTH); if (match(s, /^[0-9]+/)) v = substr(s, 1, RLENGTH); else v = "" }
+        match($0, re) { c++; s = substr($0, RSTART + RLENGTH); sub(/^[ \t]+/, "", s); if (match(s, /^[0-9]+/)) v = substr(s, 1, RLENGTH); else v = "" }
         END { if (M == "lines") print c; else print (v == "" ? "none" : v) }' "$3"
 }
 # pop_check LOG: one `NAME ran=M declared=N OK|SHORT|OVER` per expectation; rc 0 ok, 1 short, 2 over

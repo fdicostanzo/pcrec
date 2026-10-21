@@ -134,11 +134,14 @@ newq
 mkjob "$T/j/short" "$(D 30 none 'rows=6 lines=^row ')" 'exit 0' 'for i in 1 2 3; do echo "row $i"; done'
 mkjob "$T/j/sweep" "$(D 30 none 'argv=3938 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
 mkjob "$T/j/sweepok" "$(D 30 none 'argv=1500 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
-for j in short sweep sweepok; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null; done; run1
+mkjob "$T/j/mechlike" "$(D 30 none 'rows=2 last=^== mech run COMPLETE: ')" 'exit 0' "echo '== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc =='"
+for j in short sweep sweepok mechlike; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null; done; run1
 [ "$(st main-short)" = failed ] && res main-short | grep -q 'POPULATION-SHORT' && res main-short | grep -q 'rows ran=3 declared=6 SHORT' \
     && ok "6 rows declared, 3 ran, rc 0: failed POPULATION-SHORT" || bad "short: $(res main-short)"
 [ "$(st main-sweep)" = failed ] && res main-sweep | grep -q 'argv ran=1500 declared=3938 SHORT' && [ "$(st main-sweepok)" = green ] \
     && ok "last= population read from the job's own log: 1500 < 3938 failed, 1500 = 1500 green" || bad "last=: $(res main-sweep) / $(st main-sweepok)"
+[ "$(st main-mechlike)" = green ] && res main-mechlike | grep -q 'rows ran=2 declared=2 OK' \
+    && ok "last= with the mech trailer (the ERE's trailing blank dropped, the blank before the count skipped): 2 rows, green" || bad "mechlike: $(res main-mechlike)"
 if P=$(plant no-short 'elif [ $prc = 1 ]; then reason="POPULATION-SHORT' 'elif false; then reason="POPULATION-SHORT'); then
     newq; bq add --name 100-main-short --no-start "$T/j/short" > /dev/null; BQX=$P run1
     [ "$(st main-short)" = green ] && ok "PLANT no-short (population not checked): the short-fall reads green, the case goes red" || bad "PLANT no-short not caught: $(st main-short)"
