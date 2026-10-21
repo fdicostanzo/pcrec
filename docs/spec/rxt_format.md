@@ -117,6 +117,13 @@ re-parsed by the CLI's own option parser (`cli.md` §1.1's config-block
 paragraph), so a literal pattern on that line is spelled `--pattern 'X'`
 there too, exactly as on the command line.
 
+<a id="s1-1-p2a"></a>[1.1¶2a] A `config` body may also hold one `measures <set>` line: the
+measurement set the target's compile reads (`measures.md` §5), a set NAME,
+`NAME@REV` or FILE by spelling, composed across `from`/`with` by
+later-wins exactly as `analysis` is. The CLI's `--measures` only fills a
+target whose configs name none, and the `pcrec` line may not carry
+`--measures`.
+
 <a id="s1-1-p3"></a>[1.1¶3] A line kind whose `wave` column is above the one this build implements is
 refused BY NAME as NOT IN THIS BUILD, never as an unknown token (§1.13). At
 this build no row is above it, so that list is EMPTY, and `--list-schema`'s

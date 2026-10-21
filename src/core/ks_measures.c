@@ -83,6 +83,19 @@ static const char *const row_cols[] = { KS_MEAS_ROW_COLS(X) };
 static const char *const cell_cols[] = { KS_MEAS_CELL_COLS(X) };
 static const char *const member_cols[] = { KS_MEAS_MEMBER_COLS(X) };
 #undef X
+/* The DECODED view's field names, by slot, spelled apart from `row_cols[]`
+ * (the names a file's columns RESOLVE by): R5 holds the decode to an
+ * independent reader, so a defect in the resolution table (a column read
+ * into the wrong slot and written back from it, round-tripping cleanly) must
+ * show as a value under the wrong NAME here (S1235). */
+static const char *const row_fields[KS_MEAS_NROWCOL] = {
+    [KS_MR_key] = "key",               [KS_MR_unit] = "unit",
+    [KS_MR_value_e6] = "value_e6",     [KS_MR_abs_ns_e6] = "abs_ns_e6",
+    [KS_MR_noise_e6] = "noise_e6",     [KS_MR_n] = "n",
+    [KS_MR_status] = "status",         [KS_MR_derivation] = "derivation",
+    [KS_MR_inputs] = "inputs",         [KS_MR_deps] = "deps",
+    [KS_MR_tags] = "tags",             [KS_MR_source] = "source",
+};
 
 /* ---- small parsers ---------------------------------------------------- */
 
@@ -628,9 +641,9 @@ static int meas_write_decoded(const KsOut *o, const void *doc, KsErr *err)
             if (j == KS_MR_value_e6) {
                 if (m->value_e6 == KS_MEAS_EMPTY) num[0] = 0;
                 else snprintf(num, sizeof num, "%lld", (long long)m->value_e6);
-                rc = dec(o, scope, row_cols[j], num);
+                rc = dec(o, scope, row_fields[j], num);
             } else {
-                rc = dec(o, scope, row_cols[j], m->col[j]);
+                rc = dec(o, scope, row_fields[j], m->col[j]);
             }
         }
         snprintf(num, sizeof num, "%u", m->unit_code);

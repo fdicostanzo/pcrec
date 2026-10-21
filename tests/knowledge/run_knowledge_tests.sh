@@ -43,6 +43,10 @@
 # encoding `serves` list lost an encoding (R1's digest unmoved by the same
 # edit); R5 on a decode with two rows swapped.
 #
+# [MEASURE-SET] M0: the MEASURES kind's checks are run_measures_tests.sh
+# (R1-R5 with R4 required, the store, the loading surface), called at the end
+# with its counts added to this trailer.
+#
 # Verdict: `checks failed: 0`; under make, no `*** [test-knowledge] Error`.
 set -u
 export LC_ALL=C
@@ -225,6 +229,18 @@ if [ "$n_items" -ge 40 ]; then
     ok "population: $n_items items round-tripped (floor 40)"
 else
     bad "population: $n_items items round-tripped, under the floor 40 (K35)"
+fi
+
+# [MEASURE-SET] M0: the MEASURES kind (its own script; its counts join ours,
+# and a script that printed no trailer is a failure, never zero checks).
+mlog="$WORKDIR/measures.log"
+PCREC="$PCREC" bash "$SCRIPT_DIR/run_measures_tests.sh" > "$mlog" 2>&1
+grep -E '^(PASS|FAIL):' "$mlog"
+mp="$(sed -n 's/^checks passed: //p' "$mlog")"; mf="$(sed -n 's/^checks failed: //p' "$mlog")"
+if [ -n "$mp" ] && [ -n "$mf" ]; then
+    pass=$((pass + mp)); fail=$((fail + mf))
+else
+    bad "the measures kind's checks printed no trailer: $(tail -3 "$mlog" | tr '\n' ' ')"
 fi
 echo "checks passed: $pass"
 echo "checks failed: $fail"

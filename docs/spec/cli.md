@@ -37,6 +37,7 @@
   - [§2.7](#s2-7) `--list-schema`
   - [§2.8](#s2-8) `--list-source FILE`
   - [§2.9](#s2-9) `--list-analyses`, `--list-analysis NAME|FILE`
+  - [§2.9a](#s2-9a) `--list-measurements`, `--list-measurements=X`
   - [§2.10](#s2-10) `--emit-ir`: the VM program listing
   - [§2.11](#s2-11) `--emit-facts[=ENC,...]`: the pattern-facts listing
   - [§2.12](#s2-12) `--explain SYNTAX`
@@ -93,6 +94,8 @@ pcrec [options] -o OUT.c --pattern 'PATTERN'
 
 <a id="s1-1-2-p2"></a>[1.1.2¶2] `--analysis NAME` (or `--analysis=NAME`) names the analysis a compile reads its subject-aware rates from (`findings.md` §7). It applies to a `--pattern` compile and to each target of a file operand whose configs name none (§1.1.4). Names match `[a-z][a-z0-9_-]*`; an unknown name refuses the compile, naming the stops searched. It is legal with a compile and with `--list-analysis FILE` and refused elsewhere. An analysis moves speed and never an answer; the artifact records it in `<PREFIX>_FINDINGS`.
 
+<a id="s1-1-2-p3"></a>[1.1.2¶3] `--measures X` (or `--measures=X`) names the measurement set a compile reads its machine costs from (`measures.md` §5): a set NAME, `NAME@REV`, or (any value that is not a legal name) a FILE. A NAME is looked up as `DIR/NAME.measures.tsv` in each `-I` directory in order, then in the sets built into pcrec; a compile that names none reads the build's default, the latest committed set. It applies to a `--pattern` compile and to each target of a file operand whose configs name none (§1.1.4¶11a), and is refused with every query. A set moves speed and never an answer; an artifact whose selections consulted it records it in `<PREFIX>_MEASURES`.
+
 <a id="s1-1-3"></a>
 #### 1.1.3 Library files
 
@@ -133,6 +136,8 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 <a id="s1-1-4-p10"></a>[1.1.4¶10] `--analysis` only fills: a target whose configs name an `analysis` gets that one, and `--analysis` names it only for targets whose configs name none. A disagreement is reported in `tune`'s shape, with the file winning (`… CLI --analysis X and this file's analysis Y disagree; using the file's value (--analysis is fill-only)`). `--analysis` inside a config's `pcrec` line is refused when the file is read; a config names its analysis with its own `analysis` line.
 
 <a id="s1-1-4-p11"></a>[1.1.4¶11] A config's `pcrec <raw>` is re-parsed by this CLI's own option parser, so a flag means the same there as on the command line. It may set compile options only: an output path, `--pattern`, a prefix, a query mode or a file operand is refused. The raw text is split on whitespace with no quoting; no flag takes a value containing a space.
+
+<a id="s1-1-4-p11a"></a>[1.1.4¶11a] `--measures` only fills, by `--analysis`' rule: a target whose configs name `measures` gets that set, and a disagreement is reported with the file winning (`… CLI --measures X and this file's measures Y disagree; using the file's value (--measures is fill-only)`). `--measures` inside a config's `pcrec` line is refused when the file is read; a config names its set with its own `measures` line.
 
 <a id="s1-1-4-p12"></a>[1.1.4¶12] Every artifact stamps `rx_info.name` with the block's `name`, or its `<prefix>` when the block is unnamed (`match_api.md` §6). Diagnostics from a file-operand compile lead with `FILE:LINE` (the owning file), then the target, then pcrec's own pattern offset.
 
@@ -311,7 +316,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2"></a>
 ## 2. Listing and query surfaces
 
-<a id="s2-p1"></a>[2¶1] Ten flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Seven answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits` and `--list-schema`. `--list-source` reads the file named by its value. `--list-analyses` and `--list-analysis` list analyses. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
+<a id="s2-p1"></a>[2¶1] Eleven flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Seven answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits` and `--list-schema`. `--list-source` reads the file named by its value. `--list-analyses` and `--list-analysis` list analyses, and `--list-measurements` measurement sets. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
 
 <a id="s2-1"></a>
 ### 2.1 `--list-syntax`
@@ -358,7 +363,12 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s2-9-p1"></a>[2.9¶1] `--list-analyses` has one row per analysis built into the library (`-I` directories are never enumerated) and takes no `-I`. `--list-analysis NAME` prints the chain this invocation resolves (honouring `-I`), what each (query, encoding) answers from with the digest a stamp would carry, and the named bundle's rows, declarations and provenance. `--list-analysis FILE` (any value that is not an analysis name) prints the per-target view of a `.rxt` file. Sections and columns: `findings.md` §8.
 
-<a id="s2-9-p2"></a>[2.9¶2] `--view=V` (or `--view V`) applies to `--list-analysis NAME` only and replaces that listing with one view of the named bundle itself: `canonical`, a normalized `.rxt` text that is a loadable analysis (`findings.md` §8.4), or `decoded`, the loaded bundle field by field (§8.5). Any other value, a FILE value, or another mode is refused.
+<a id="s2-9-p2"></a>[2.9¶2] `--view=V` (or `--view V`) applies to `--list-analysis NAME` (and to `--list-measurements=X`, §2.9a) only and replaces that listing with one view of the named bundle itself: `canonical`, a normalized `.rxt` text that is a loadable analysis (`findings.md` §8.4), or `decoded`, the loaded bundle field by field (§8.5). Any other value, a FILE value, or another mode is refused.
+
+<a id="s2-9a"></a>
+### 2.9a `--list-measurements`, `--list-measurements=X`
+
+<a id="s2-9a-p1"></a>[2.9a¶1] `--list-measurements` has one row per measurement set built into pcrec, with the class each is the default of. `--list-measurements=X` (a NAME, `NAME@REV` or FILE, honouring `-I`) prints that set's canonical view, which is itself a loadable set; `--view=decoded` prints the loaded set field by field instead (`--view=canonical` is the default). Sections and columns: `measures.md` §6.
 
 <a id="s2-10"></a>
 ### 2.10 `--emit-ir`: the VM program listing
