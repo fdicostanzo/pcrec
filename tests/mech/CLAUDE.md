@@ -4093,3 +4093,16 @@ reason in the report: the stamp's consulted-OR (no kit row consults a set
 key before B4, so the stamp is "" everywhere) and the rows that need
 `make test-measures`' recompute, the answers/staleness/envelope views or
 `pcrec-measure`. Solo verdicts are OWED (queued as boxqueue jobs).
+
+**[MEASURE-SET] partmeas (lane partmeas, 2026-10-21; docs/spec/measures.md
+§5¶8, §4¶3): S1291-S1295, suite `compound`, detector
+`tests/compound/run_part_measures.sh`** (a `-DPCREC_CAND_TRACE` build's
+MFMEAS records and its synthetic per-part consult). A compound part's
+measurement set: S1291 the part re-resolves from its inherited options
+(red on the shipped `--measures=FILE` arm only: an equal set, another
+object), S1292 the walk hands it NULL, S1294 its kit view rebuilt from its
+own Job (both red on the harness-lever arm: the default set). The union:
+S1293 the shell's stamp drops the parts' bit, S1295 a part's facts never
+carry it. Also closes M0's unbuilt "stamp's consulted-OR" row above, for
+the part half, through the synthetic consult. Solo-measured by hand
+against the check (partmeas_report.md §4); the matrix verdicts are OWED.
