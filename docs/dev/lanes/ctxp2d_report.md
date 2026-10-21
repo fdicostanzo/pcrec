@@ -292,3 +292,15 @@ axes     heavy 15600 env AXES_FULL=1 HARNESS_BATCH=64 make test-axes
 - watch:   scripts/watchrun /home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/chain
 - verdict: scripts/verdict /home/pcrec/projects/pcrec/worktrees/ctxp2d/build/p2dval/chain/chain.log
 - stop:    scripts/safekill 2221081
+
+## 11. STATE AT HANDOFF (p2dfix, 2026-10-20)
+
+Rulings file last entry applied: item 5 (owed item 7, recursion-identity gate).
+
+Fixes to the four mis-invoked p2dval stages (first chain: build/p2dval/chain, axes still running):
+- sweepstart: argparse read `-e` as an option; spelled `--extra=-e --extra=utf8`.
+- mechnew/mechold: `make mech S1171 ...` made the ids MAKE TARGETS, so the full matrix ran and hit the caps. The selector is the script's positional args (matched at the id boundary, every id must match, else FATAL): `bash tests/mech/run_sabotage_matrix.sh S1171 ...`. Caps 1500 s (6 rows) and 2400 s (13 rows), from about 30 s/row measured earlier today (39 rows, ~20 min).
+- witness: the old script wrote ref.c/tip.c, so the emitted `#include "<name>.h"` differed (same-basename -o trap). build/p2dval/s2/witness.sh uses the same basename `m.c` in two directories. VERDICT, run in the foreground: 8/8 SAME (byte and utf8 x 4 patterns), zero movers; ruling 1 condition on witnesses holds (the heavy sweeps still decide the rest).
+- recid: owed item 7, `make test-recursion-identity`, added (takes the box lock itself; no re-pin).
+
+Chain2: build/p2dval/s2/stages.txt, 5 stages (sweepstart, mechnew, mechold: heavy; witness, recid: light), logdir build/p2dval/chain2. chainrun is one-per-tree (exit 75 while chain 1 lives), so build/p2dval/s2/arm.sh (detached, pid 3036831) waits on `flock build/.chainrun.lock` and then runs `chainrun --fg --keep-going` on the stages file; the heavy stages also queue on the boxlock. After chain 1 ends, chain2/chain.log appears. Watch: `tail -f build/p2dval/chain2/chain.log` (or `scripts/watchrun <tree>`). Verdict: `command grep -E '^== (stage|CHAIN)' build/p2dval/chain2/chain.log`. Stop: `scripts/safekill 3036831` before it starts; once running, the pid in chain2/chain.pid.
