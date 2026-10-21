@@ -282,4 +282,40 @@ recid      light 3600  make test-recursion-identity
 
 ## 8. STATE AT HANDOFF
 
-STATE
+- **Branch `lane/ctxp2e`.** The code is `fe37f93be`; the tip is this
+  report's commit. The tree is clean apart from this commit.
+- **Commits:**
+  - `fe37f93be`: the build;
+  - `14f541ac0`: CK-8's class half, the rows and re-aims, the derived rows,
+    docs, the spec vocabulary and the plan status;
+  - `fd8f54d27`: the reach figures, the S1191/S1192/S1197 detectors, and CK-8
+    reading a commented row;
+  - `c82239beb`: this report's reach table, ruling 1 and the chain;
+  - `6edf3227f`: the owning directories' CLAUDE.md.
+- **Rulings file** `docs/dev/lanes/ctxp2e_rulings.md` was re-read before each
+  commit and before this report. The last entry applied is "2026-10-20 manager
+  ruling 1": no abi bump, conditional on the heavy sweeps reading 0 movers.
+- **Light checks, complete:**
+  - `make -j16` and `make strict` clean;
+  - `ctxfn_table_check.py` 0 failures (classes CONTEXT=8 PIN_END=1
+    PIN_START=1);
+  - `make test-spec-history` 11/0;
+  - `[SABANCHOR]` all 877 anchor sites resolve;
+  - the mover probe: 0 on 6 arms and 8 axes, dumps identical, 76/76 witnesses
+    identical;
+  - every new or re-aimed row reached by hand (§5).
+- **Chain ARMED, detached, waiting on the lift file:**
+  - pid 1545267; lift `worktrees/ctxp2e/.lift` (the manager creates it);
+    `--keep-going`;
+  - log directory `/home/pcrec/projects/pcrec/worktrees/ctxp2e/build/p2e/chain`;
+  - chain head `6edf3227f`.
+  - Watch: `scripts/watchrun /home/pcrec/projects/pcrec/worktrees/ctxp2e/build/p2e/chain`.
+  - Verdict: `scripts/verdict /home/pcrec/projects/pcrec/worktrees/ctxp2e/build/p2e/chain/chain.log`.
+  - Stop: `scripts/safekill 1545267`.
+  - The completion line is `== CHAIN DONE`, or `== CHAIN FAILED stage=...`.
+- **Owed:** every stage of §7, listed there with its expectations. Any mover
+  in `sweepdef`, `sweepstart` or `sweepvar` turns P2e into the 81 -> 82 event:
+  stop and report before landing (ruling 1).
+- **Scratch** (gitignored, not committed), under `build/p2e/`: `base_pcrec`,
+  `probe.py`, `plant.sh`, `measure.sh`, the measure and probe logs, the movers
+  TSVs, and `ptree/` (a plant tree, safe to delete).
