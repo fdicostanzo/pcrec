@@ -157,10 +157,17 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * prefix, `pcrec_harness_reach_<prefix>` (with its row ids and count; the
  * definitions are appended to the artifact's end, mf_reach_table). Off on
  * every shipped compile, so a default artifact is untouched by it. */
+/* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, "The harness lever's kit channel"):
+ * the fourth, `--harness=kit-proof`: the compile ROUTES the `cover` LOCATE
+ * row (pcrec's half, `locate_cover_applies`) and states to the memfn kit,
+ * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
+ * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
+ * X1/X3) and never shipped; the default and trace builds decline `cover`. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
+    unsigned kit_proof : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3185,6 +3192,11 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
+     * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
+     * kit's class for the REPORT description), memoized on first ask, NULL
+     * before it. */
+    struct PcrecCover *cover;
     /* [WINDOW-E1] this attempt's analysis object (memfn.h's `mf_analysis`,
      * window_contract.md §3.1), built ONCE, eagerly, by `compile_driver`
      * right after the chain resolves (`pcrec_memfn_analysis_build`), and
@@ -3818,6 +3830,14 @@ struct Ctx {
     bool                 comp_assembled;
     Job                 *job;
 };
+
+/* [KIT-VERIFY] U1 Z2 is this compile the harness lever's `--harness=kit-proof`
+ * (PcrecHarnessOptions.kit_proof): the one place a compile may route `cover`
+ * and preview the kit's R-26.6. False on every shipped compile. */
+static inline bool pcrec_kit_proof_routed(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
+}
 
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
  * characters: the one spelling of the running max its writers share. */
@@ -7814,7 +7834,8 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
 struct PcrecPartFacts {
     bool dfa;               /* the DFA emitter wrote it (`fit.chosen`) */
     bool degraded;          /* a fallback-table row fired on its compile */
-    const char *locate;     /* LOCATE's row on its body's route (static) */
+    bool end_seeded;        /* its LOCATE walk is seeded at the subject end
+                               (`CandLocate.end_seeded`, the `rev-end` walk) */
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
@@ -8015,11 +8036,20 @@ const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
  * (no trace record, no hit), before or after emission. A conjunct's read;
  * the trace build holds it to the running conjunct's declared reads. */
 const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route);
+/* [KIT-VERIFY] U1 (kit_proof.md §2.6): the typed reads that replace a row
+ * NAME: does the LOCATE row the plain compile selects on `route` ask NEXT
+ * there (A1), and is the body's LOCATE walk seeded at the subject end (A5,
+ * through the part's facts)? */
+bool pcrec_cand_plain_locate_asks_next(Ctx *cx, int route);
+bool pcrec_cand_locate_end_seeded(Ctx *cx);
 /* The same compile's body route (`CandRoute`: the engine of the machine it
- * runs) and its `<P>_NCAPS`; the LOCATE row's name on the body's route. */
+ * runs) and its `<P>_NCAPS`. */
 int pcrec_cand_body_route(Ctx *cx);
+/* [KIT-VERIFY] U1 Z2 is this compile's FINISHER route CR_DFA (`cover_conj[]`
+ * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
+ * emitter writes, so no group above 0 is live. */
+bool pcrec_cand_finisher_dfa(Ctx *cx);
 int pcrec_dfa_ncaps(Ctx *cx);
-const char *pcrec_cand_locate_name(Ctx *cx);
 #ifdef PCREC_CAND_TRACE
 /* The trace build's declared-read check: the running conjunct's reads
  * (compound.c sets it around `holds`), NULL outside one. */

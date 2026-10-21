@@ -192,8 +192,10 @@ static void walk_free(CompWalk *w)
 }
 
 /* A1: P's plain compile runs today's attempt loop over every start -- a DFA
- * artifact on the ATTEMPT route whose BOUND is `all` and whose LOCATE is the
- * attempt loop itself. A fully anchored P is already one attempt. */
+ * artifact on the ATTEMPT route whose BOUND is `all` and whose LOCATE row
+ * hands its result to NEXT there (the attempt loop itself; [KIT-VERIFY]
+ * kit_proof.md §2.6, a field read, never the row's name). A fully anchored P
+ * is already one attempt. */
 static const CompRead a1_reads[] = {
     { CAND_SLOT_BOUND, CAND_ROUTE_ATTEMPT }, { CAND_SLOT_LOCATE, CAND_ROUTE_ATTEMPT },
 };
@@ -203,8 +205,7 @@ static bool a1_attempt_all(CompWalk *w)
     return cx->job->fit.chosen == ENGM_DFA &&
            pcrec_cand_body_route(cx) == CAND_ROUTE_ATTEMPT &&
            !strcmp(pcrec_cand_plain_selection(cx, CAND_SLOT_BOUND, CAND_ROUTE_ATTEMPT), "all") &&
-           !strcmp(pcrec_cand_plain_selection(cx, CAND_SLOT_LOCATE, CAND_ROUTE_ATTEMPT),
-                   "composite");
+           pcrec_cand_plain_locate_asks_next(cx, CAND_ROUTE_ATTEMPT);
 }
 
 /* A2: Q's derivation ran and did not decline (it killed a floor anchor and
@@ -234,12 +235,13 @@ static bool a4_parts_dfa(CompWalk *w)
     return true;
 }
 
-/* A5, PIN-ONLY: Q is never (the floor-only form), or Q's LOCATE is `rev-end`
- * -- an end-pinned Q has at most the end matches per subject; an unanchored
- * Q's many-match cost waits for B5's cost conjunct. */
+/* A5, PIN-ONLY: Q is never (the floor-only form), or Q's LOCATE walk is
+ * seeded at the subject end (the `rev-end` walk's field, [KIT-VERIFY]
+ * kit_proof.md §2.6) -- an end-pinned Q has at most the end matches per
+ * subject; an unanchored Q's many-match cost waits for B5's cost conjunct. */
 static bool a5_pin_only(CompWalk *w)
 {
-    return w->rep[SPLIT_Q].never || !strcmp(w->facts[SPLIT_Q].locate, "rev-end");
+    return w->rep[SPLIT_Q].never || w->facts[SPLIT_Q].end_seeded;
 }
 
 static const CompConj split_conj[] = {

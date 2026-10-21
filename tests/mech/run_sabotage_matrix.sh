@@ -546,6 +546,14 @@
 #     admission and its lever are read by no other suite per witness.
 #     Registered before S891-S910. Verdict: `test-compound: PASS|FAIL`, the
 #     FAIL lines counted.
+#   kitproof — added 2026-10-21 (lane z2build, [KIT-VERIFY] Z2); runs
+#     tests/kitproof/run_cover.sh (`make test-kitproof`) from the SABOTAGED
+#     tree: the `cover` row's verdicts on the harness-routed artifacts, the
+#     span slice's statements, and every answer against libpcre2 10.46's
+#     committed ones. Its own arm because the `cover` row is routed only by
+#     the test harness's lever, which no other suite compiles under. Rows:
+#     S1130-S1144, S1148, S1149. Verdict: the script's `checks passed:`/
+#     `checks failed:` trailer.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
 #     docs/spec/: the history-marker check (allowlist + known-debt baseline)
@@ -2834,6 +2842,20 @@ run_one() {
                     *) f="" ;;
                 esac
                 score_arm "$work/compound.log" "$f" "compound:${f:-ERR}fail"
+                ;;
+            kitproof)
+                # [KIT-VERIFY] tests/kitproof/run_cover.sh -- `make
+                # test-kitproof`, from the SABOTAGED tree (vocabulary note):
+                # every artifact is compiled by the tree's own
+                # build/pcrec-harness through the `cover` lever, the facts by
+                # its build/pcrec; the expectations are the tree's committed
+                # answers.tsv.
+                PCREC="$tree/build/pcrec" PCREC_HARNESS="$tree/build/pcrec-harness" \
+                    CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/kitproof/run_cover.sh" "$tree" > "$work/kitproof.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/kitproof.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/kitproof.log" | grep -oE '[0-9]+')"
+                score_arm "$work/kitproof.log" "$f" "kitproof:${f:-ERR}fail/${p:-?}pass"
                 ;;
             spechistory)
                 # tests/spec_history/run_spec_history.sh -- reads docs/spec/*.md

@@ -3328,7 +3328,7 @@ facts_force:
             char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
             pf->dfa = cx.job->fit.chosen == ENGM_DFA;
             pf->degraded = fit_nseq != 0 || fit_fired != 0;
-            pf->locate = pf->dfa ? pcrec_cand_locate_name(&cx) : NULL;
+            pf->end_seeded = pf->dfa && pcrec_cand_locate_end_seeded(&cx);
             pf->ncaps = pf->dfa ? pcrec_dfa_ncaps(&cx) : (int)cx.ncap + 1;
             pf->guarded = *pcrec_startpos_guard_text(&cx, probe, sizeof probe, "",
                                                      "p", "s", "n") != 0 ||

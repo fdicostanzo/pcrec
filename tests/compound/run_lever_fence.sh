@@ -37,8 +37,15 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # fence's own faults (S907, S909), and the memfn kit's arm-entry counter check
 # (R-MS6, R17-b' B2: `--harness=arm-reach` and the counter's reserved name),
 # and cli/CLAUDE.md's record of the harness build (its options listed since
-# R17-b' B1: a red on lane/memfn-fd @ 285590dc6, found by lane fdb2).
-ALLOW='^(cli/main\.c|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/memfn/run_arm_reach\.sh)'
+# R17-b' B1: a red on lane/memfn-fd @ 285590dc6, found by lane fdb2), and C17's
+# corpus pass, whose PASS_CONFIGS table reaches the harness-routed `cover`
+# site, and tests/kitproof/, whose checks compile every `cover` artifact
+# through the lever ([KIT-VERIFY] Z2, lane z2build), and the start table's
+# trace-build oracle (tests/codegen/run_cand_oracle.sh and its witness list),
+# whose `cover` witnesses are compiled by the trace build's pcrec-harness
+# through the lever and again without it, so a default build is shown to
+# decline the row.
+ALLOW='^(cli/main\.c|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"

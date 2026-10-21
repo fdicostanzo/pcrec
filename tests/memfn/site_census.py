@@ -69,6 +69,16 @@ DOORS = {'pcrec_memfn_define': 'gen/memfn_sites.h',
 DOOR_RX = re.compile(r'\b(' + '|'.join(DOORS) + r')\s*\(')
 CORPUS_CAP = 300            # compiles per pass
 CORPUS_FLOOR = 100          # K35: a pass that compiled fewer is not a census
+# THE PASS'S CONFIGURATIONS, one row each, every corpus pattern compiled under
+# each. The traced binary is the test harness's build (cli/main.c with
+# -DPCREC_HARNESS, which with no lever compiles exactly as build/pcrec), so a
+# site routed only by a harness lever is reached through its row here rather
+# than read as unreached ([KIT-VERIFY] Z2: the `cover` REPORT site, routed by
+# --harness=kit-proof alone, kit_proof.md §7). A new routed site adds a row.
+PASS_CONFIGS = (
+    ('default', []),
+    ('kit-proof', ['--harness=kit-proof']),
+)
 
 
 def strip_c(text):
@@ -195,7 +205,8 @@ def run(cmd, **kw):
 
 def build_traced(root, cc, files, tmp, door_files=()):
     """Recompile `files` (kit callers) and `door_files` (door callers) with
-    the shim over a copy of build/libpcrec.a and link cli/main.c; returns
+    the shim over a copy of build/libpcrec.a and link cli/main.c as the test
+    harness (PASS_CONFIGS); returns
     (binary, None) or (None, why). A door caller that also DEFINES a door
     cannot be traced this way and is refused."""
     lib = os.path.join(root, 'build/libpcrec.a')
@@ -245,7 +256,7 @@ def build_traced(root, cc, files, tmp, door_files=()):
     if run(['ar', 'rs', tlib] + objs).returncode:
         return None, 'ar r failed'
     exe = os.path.join(tmp, 'pcrec_traced')
-    r = run([cc, '-O1', '-std=gnu11'] + inc + ['-o', exe, os.path.join(root, 'cli/main.c'), tlib])
+    r = run([cc, '-O1', '-std=gnu11', '-DPCREC_HARNESS'] + inc + ['-o', exe, os.path.join(root, 'cli/main.c'), tlib])
     if r.returncode:
         return None, 'traced link failed: ' + r.stderr[:300]
     return exe, None
@@ -272,16 +283,19 @@ def corpus_patterns(root):
 
 
 def run_corpus(exe, pats, tmp):
-    """Compile every pattern; returns (compiles ok, [per-compile trace rows])."""
+    """Compile every pattern under every PASS_CONFIGS row; returns (compiles ok,
+    [per-compile trace rows], [per-compile config class: `harness` when the row
+    carries a --harness= lever, else `shipped`])."""
     trace = os.path.join(tmp, 'trace.tsv')
     out = os.path.join(tmp, 'out.c')
-    per, okc = [], 0
-    for p in pats:
+    per, tags, okc = [], [], 0
+    for p, (_, lever) in ((p, c) for p in pats for c in PASS_CONFIGS):
         if os.path.exists(trace):
             os.remove(trace)
         env = dict(os.environ, C17_TRACE_FILE=trace)
         try:
-            r = subprocess.run([exe, '--features', 'all', '-p', 'rx', '-o', out, '--pattern', p],
+            r = subprocess.run([exe] + lever + ['--features', 'all', '-p', 'rx', '-o', out,
+                                                '--pattern', p],
                                capture_output=True, env=env, timeout=30)
         except subprocess.TimeoutExpired:
             continue
@@ -293,14 +307,31 @@ def run_corpus(exe, pats, tmp):
             with open(trace) as fh:
                 rows = [l.rstrip('\n').split('\t') for l in fh if l.strip()]
         per.append(rows)
-    return okc, per
+        tags.append(config_class(lever))
+    return okc, per, tags
 
 
-def verdict(per, deleg, doors=DOORS):
+def config_class(lever):
+    """`harness` for a PASS_CONFIGS row that passes a --harness= lever (a build
+    only the test harness makes), `shipped` for every other row. Derived from
+    the lever's spelling, so a row cannot be declared shipped while routing one."""
+    return 'harness' if any(a.startswith('--harness=') for a in lever) else 'shipped'
+
+
+def verdict(per, deleg, doors=DOORS, preview=None, tags=None):
     """per: per-compile [(kind, file, func)]; deleg: {row id: set of functions}.
     A `door` row names a site (its caller); a define/emit row made INSIDE a
     door is the door's forwarding, counted against the door rows of the same
-    compile (door accounting), never a site. Returns (problems, stats)."""
+    compile (door accounting), never a site. Returns (problems, stats).
+
+    `preview` ({row id: set of functions}, with `tags`, the per-compile
+    config_class list) is the manifest's `preview` rows: sites whose door is
+    reached ONLY through the harness lever. They are listed sites like
+    `delegated` ones (an unlisted-site rule), but a preview row must be reached
+    over a `harness` compile and over NO `shipped` one (rule 4's preview
+    clause: the second half is the honesty check, a default build must not
+    reach a site the manifest calls unshipped)."""
+    preview = preview or {}
     probs = []
     seen = {}
     bad_acct = 0
@@ -318,7 +349,7 @@ def verdict(per, deleg, doors=DOORS):
                      'pcrec\'s doors (%s) differ from the door calls traced at their callers: '
                      'a door call the shim missed, or a door reaching the kit on no site\'s '
                      'behalf' % (bad_acct, ','.join(sorted(doors))))
-    listed = set().union(*deleg.values()) if deleg else set()
+    listed = set().union(*deleg.values(), *preview.values()) if (deleg or preview) else set()
     for fn in sorted(seen):
         if fn not in listed:
             probs.append('rule 2: %s reached the kit %d time(s) over the corpus pass with no '
@@ -329,8 +360,31 @@ def verdict(per, deleg, doors=DOORS):
                          'pass (none of %s called the kit): a delegation nothing renders is '
                          'vacuous, or the corpus lacks its witness'
                          % (row, ','.join(sorted(deleg[row]))))
+    pstats = {}
+    for row in sorted(preview):
+        fns = preview[row]
+        both = fns & set().union(*deleg.values()) if deleg else set()
+        if both:
+            probs.append('rule 4 (preview): row %s names %s, which a `delegated` row names too: its '
+                         'harness and shipped renders cannot be told apart'
+                         % (row, ','.join(sorted(both))))
+        hits = {'harness': 0, 'shipped': 0}
+        for rows, tag in zip(per, tags or ['shipped'] * len(per)):
+            if any((k == 'door' or fn not in doors) and fn in fns for k, _f, fn, *_ in rows):
+                hits[tag] += 1
+        pstats[row] = hits
+        if hits['shipped']:
+            probs.append('rule 4 (preview): `preview` row %s was rendered by %d SHIPPED-config '
+                         'compile(s): a default build reaches a site the manifest says only the '
+                         'harness lever routes (flip it to `delegated`, or fix the routing)'
+                         % (row, hits['shipped']))
+        if not hits['harness']:
+            probs.append('rule 4 (preview): `preview` row %s was rendered by no harness-config '
+                         'compile (none of %s called the kit): the preview is vacuous, or '
+                         'PASS_CONFIGS lacks the row that routes it'
+                         % (row, ','.join(sorted(fns))))
     calls = [sum(1 for k, _f, fn, *_ in r if k == 'door' or fn not in doors) for r in per]
-    stats = {'compiles': len(per), 'calls': sum(calls), 'max': max(calls) if calls else 0,
+    stats = {'preview': pstats, 'compiles': len(per), 'calls': sum(calls), 'max': max(calls) if calls else 0,
              'withsite': sum(1 for c in calls if c), 'seen': seen}
     return probs, stats
 
@@ -378,7 +432,20 @@ def selftest(cc):
     res.append((not p and st['seen'] == {'fake_builder': 1} and len(p2) == 2,
                 'selftest: a site behind a door is attributed to the door\'s caller, and a '
                 'door call with no traced caller fails door accounting (%d problems)' % len(p2)))
-    # (b'') the kind fold: UNSTATED is no kind; a kind per row, over compiles
+    # (b-preview) preview rows: harness-only passes; a shipped render, or no
+    # harness render, each fails (rule 4's preview clause)
+    pv = [[('define', 'f.c', 'pv_builder', '-', '-')], [], [('define', 'f.c', 'pv_builder', '-', '-')]]
+    p, st = verdict(pv, {}, preview={'PV': {'pv_builder'}}, tags=['harness', 'shipped', 'harness'])
+    p2, _ = verdict(pv, {}, preview={'PV': {'pv_builder'}}, tags=['harness', 'shipped', 'shipped'])
+    p3, _ = verdict(pv, {}, preview={'PV': {'pv_builder'}}, tags=['shipped', 'shipped', 'shipped'])
+    p4, _ = verdict([[], pv[0]], {}, preview={'PV': {'pv_builder'}}, tags=['shipped', 'shipped'])
+    res.append((not p and st['preview'] == {'PV': {'harness': 2, 'shipped': 0}}
+                and len(p2) == 1 and 'SHIPPED' in p2[0] and len(p3) == 2
+                and len(p4) == 2 and config_class(['--harness=kit-proof']) == 'harness'
+                and config_class([]) == 'shipped',
+                'selftest: a preview row passes on harness renders only; a shipped-config render '
+                'fails it, and so does a preview rendered by no harness compile'))
+    # (b-kinds) the kind fold: UNSTATED is no kind; a kind per row, over compiles
     dk = door_kinds([[('door', 'f.c', 'b', 'PF', 'DFA_SCAN'), ('door', 'f.c', 'b', 'PF', 'UNSTATED'),
                       ('door', 'f.c', 'c', 'EDGE', 'UNSTATED'), ('define', 'g.c', 'd', '-', '-')],
                      [('door', 'f.c', 'b', 'PF', 'HYB_PF')]])

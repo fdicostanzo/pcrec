@@ -32,6 +32,8 @@
  * reading their core facts through `pf_ask`, which is
  * the one path along the DEPENDS-ON edges `facts.def` declares. */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -100,6 +102,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
     case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
     case PF_WIDTH:        pf->width = (WidthIv){ -1, -1 }; break;
+    case PF_SPAN:         memset(&pf->span, 0, sizeof pf->span); break;
     case PF_NFACTS:       break;
     }
 }
@@ -165,7 +168,8 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_GSTART || code == PF_WHY_UNBOUNDED ||
                 code == PF_WHY_NULLABLE || code == PF_WHY_ASSERT_AT_START ||
                 code == PF_WHY_DEAD_START || code == PF_WHY_ALIVE_NOT_ACCEPT ||
-                code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL;
+                code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL ||
+                code == PF_WHY_ERASED || code == PF_WHY_MARKED;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
                           (unsigned char)code, 0 };
@@ -328,6 +332,44 @@ static void pf_derive(Ctx *cx, PfFactId f)
         break;
     case PF_WIDTH:
         pcrec_width_walk(cx, &cx->job->nfa, &pf->width.bmin, &pf->width.bmax);
+        break;
+    case PF_SPAN:
+        /* The machine E3 sealed, as the k-set walk's. */
+        why = pcrec_span_walk(cx, &cx->job->nfa, &pf->span);
+#ifdef PCREC_CAND_TRACE
+        {
+            /* The ONE-WALK control (ctx_span.md §3.8): the slice narrows the
+             * hull, never widens it. The hull is the k-set walk over the
+             * same machine, recomputed here (a pure walk, no fact asked), so
+             * the listing's `used` column is the default build's. */
+            KsetWalk hull;
+            pcrec_kset_walk(cx, &cx->job->nfa, &hull);
+            for (int d = 0; d < pf->span.exact_len && d < hull.nwalk; d++)
+                for (int b = 0; b < 256; b++)
+                    if ((pf->span.set[d][b >> 3] >> (b & 7) & 1) && !hull.k[d].set[b])
+                        pcrec_ctx_fail(cx, 0, "internal error: the span slice states "
+                                       "byte 0x%02x at offset %d, outside the k-set "
+                                       "walk's hull there (ctx_span.md §3.8)", b, d);
+            /* X0's input (kit_proof.md §6.4): the slice's statement, every
+             * exact set as a comma list of hex bytes, `;` between positions
+             * (docs/design/kit_proof/x0/x0.py `stated`'s line shape), under
+             * its own switch so the CANDTRACE stream is unchanged; then the
+             * compound part's role, `-` for the compile itself. */
+            if (getenv("PCREC_KIT_PROOF_TRACE")) {
+                fprintf(stderr, "SPANSET\t%d\t", pf->span.exact_len);
+                for (int d = 0; d < pf->span.exact_len; d++) {
+                    bool first = true;
+                    if (d) fputc(';', stderr);
+                    for (int b = 0; b < 256; b++)
+                        if (pf->span.set[d][b >> 3] >> (b & 7) & 1) {
+                            fprintf(stderr, "%s%02x", first ? "" : ",", b);
+                            first = false;
+                        }
+                }
+                fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
+            }
+        }
+#endif
         break;
     case PF_NFACTS:
         return;
@@ -544,6 +586,12 @@ const WidthIv *pcrec_fact_width(Ctx *cx)
     return &cx->job->pf.width;
 }
 
+const MkLang *pcrec_fact_span(Ctx *cx)
+{
+    pf_ask(cx, PF_SPAN, true);
+    return &cx->job->pf.span;
+}
+
 void pcrec_facts_force_all(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
@@ -756,6 +804,27 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         if (pf->width.bmax >= PCREC_W_UNBOUNDED)
             return pcrec_sb_fragf(&cx->arena, "[%lld,inf)", pf->width.bmin);
         return pcrec_sb_fragf(&cx->arena, "[%lld,%lld]", pf->width.bmin, pf->width.bmax);
+    case PF_SPAN: {
+        /* `L:` and one item per exact position, `kset_walk`'s spelling (a
+         * one-byte set as that byte in decimal, a wider one as `[N]`); `0`
+         * where no position is exact, `none` where the walk declined. */
+        StrBuf sb = { 0 };
+        const char *t;
+        if (pf->span.stated != MK_LANG_STATED) return "none";
+        if (pf->span.exact_len == 0) return "0";
+        sb.cx = cx;
+        pcrec_sb_printf(&sb, "%d:", pf->span.exact_len);
+        for (int d = 0; d < pf->span.exact_len; d++) {
+            int n = 0, one = 0;
+            for (int b = 0; b < 256; b++)
+                if (pf->span.set[d][b >> 3] >> (b & 7) & 1) { n++; one = b; }
+            if (n == 1) pcrec_sb_printf(&sb, "%s%d", d ? "," : "", one);
+            else pcrec_sb_printf(&sb, "%s[%d]", d ? "," : "", n);
+        }
+        t = pcrec_sb_fragf(&cx->arena, "%s", sb.p);
+        pcrec_sb_free(&sb);
+        return t;
+    }
     case PF_NFACTS:
         break;
     }

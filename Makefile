@@ -327,12 +327,14 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 # [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
-# once more with -DPCREC_HARNESS, which adds three options:
+# once more with -DPCREC_HARNESS, which adds four options:
 # `--harness=no-compound`, the compound family's force-decline lever,
 # (R17-b' B1, lane fdb1) `--harness=measures=FILE`, the kit's measurement-set
 # lever (a section-TSV set handed to mf_art_begin; read by no routed finder
 # row before B4), and (R17-b' B2) `--harness=arm-reach`, the kit's per-arm
-# entry counts for a routed finder decision, appended to the artifact
+# entry counts for a routed finder decision, appended to the artifact, and
+# ([KIT-VERIFY] U1 Z2) `--harness=kit-proof`, which routes the `cover` LOCATE
+# row and previews the kit's REPORT routing step (kit_proof.md §7)
 # (PcrecHarnessOptions, src/core/internal.h). Only the test harness and
 # bisects run it; the shipped build/pcrec has no such option.
 $(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
@@ -384,7 +386,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-compound test-endmark test-partlayout \
-      test-ci-shards
+      test-kitproof test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1499,6 +1501,14 @@ test-compound: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-compound.ran"; fi
 	EVERY=$${EVERY:-8} bash tests/compound/run_compound_unit.sh
 
+# [KIT-VERIFY] Z2 (docs/design/kit_proof.md §6.3, §6.4, §7): the `cover`
+# row's verdicts on the harness-routed artifacts, the span slice's
+# statements, and every answer against libpcre2 10.46's committed answers.
+# tests/kitproof/.
+test-kitproof: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-kitproof.ran"; fi
+	bash tests/kitproof/run_cover.sh
+
 # [ENTRY-TABLE] E1 (docs/design/compound_entries.md §3.6): the part-layout
 # controls' checks -- the independent evaluator on the real object, the
 # hand-written precedence and held fixtures, A1 disjointness, the attribute
@@ -2107,7 +2117,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-kitproof test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

@@ -113,3 +113,9 @@ report	-	^ab
 # D164 B3: the ENDSET verify needs a tie prio-const cannot decide.
 verify-at	-	(?:\s+|x\s*?)$
 verify-at	-fno-rev-end-onewalk	\s+$
+# [KIT-VERIFY] U1 Z2: `cover` is routed only by the test harness's lever, so its
+# witnesses carry `--harness=kit-proof` and run_cand_oracle.sh compiles them with
+# the trace build's pcrec-harness; the same lines are then compiled WITHOUT the
+# option and must NOT reach the row (the shipped build declines it).
+cover	--harness=kit-proof	foobar
+cover	--harness=kit-proof	\bcat\b

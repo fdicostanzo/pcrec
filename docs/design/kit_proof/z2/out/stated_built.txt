@@ -1,0 +1,6 @@
+## stated sets against 10.46 2025-08-27
+slice      -   a(?=b)[a-z]|ac         exact_len=2  green  nodes=2  
+slice      -   a(?=b)[a-z]            exact_len=2  green  nodes=2  
+slice      -   \w(?=\d)\w             exact_len=2  green  nodes=64  
+slice      -   [a-z0-9_ ]\b[a-z ]     exact_len=1  green  nodes=39  
+slice-built -   [ab](?<=a)c|bc         exact_len=2  green  nodes=3  

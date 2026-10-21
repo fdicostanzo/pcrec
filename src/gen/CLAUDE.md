@@ -180,13 +180,21 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `docs/dev/lanes/b3b_report.md`.
 - **R-26 Z1 (lane r26z1, 2026-10-21; MF_SITE_ABI 18, zero movers).** Every
   forward FIND pcrec builds states span 0's class (`memfn_sites.c`):
-  `pcrec_memfn_span0_today` (BOUNDED, `prefix_stated` STATED, `exact_len` 0,
-  `consumable_len` 0: today's truth, a sound under-statement; it carries the
-  `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS)`) on PF and OFS,
+  `pcrec_memfn_span0_stated` (BOUNDED, `prefix_stated` STATED,
+  `consumable_len` 0; it carries the
+  `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS)`; was
+  `pcrec_memfn_span0_today`, which stated `exact_len` 0 until Z2) on PF and OFS,
   and `pcrec_memfn_context_stop` (CONTEXT, `absent` FAILS, `consumable` NO,
   the site's `read_floor` SUBJECT) on MLINE's stop, both called from
-  `emit_dfa.c`'s `find_site` and `ofs_site_define`. No context span (`ctx`) is
-  sent and no site states REPORT before Z2/B1.
+  `emit_dfa.c`'s `find_site` and `ofs_site_define`. **Z2 (lane z2build,
+  2026-10-21):** `exact_len` is TRUE over the SENT sets: the largest L with
+  every offset d < L covered by the site's terms and their intersection equal
+  to the span slice's `S_d` (`pcrec_fact_span`, `span_facts`), 0 where a term
+  sits before the origin or the slice states nothing; the trace build prints
+  a `SITESTATED` record under `PCREC_KIT_PROOF_TRACE` (X0's set check reads
+  it; its last field, like `SPANSET`'s and `KITPROOF`'s, is the compound
+  part's role, `-` for the compile itself: a part's compile prints into its
+  parent's stream, lane z2fix). No context span (`ctx`) is sent on these sites.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's
@@ -1298,6 +1306,8 @@ a record's class reads `subject_class` alone; `owned_inline` reads
 `en.shape`.
 
 ## Files
+
+- **known.c / known.h** — [KIT-VERIFY] Z2: the `cover` decision (`cover_conj[]`), the machine reading `MkEnd`, the REPORT description and its proof check (section above).
 
 - **part_layout.c** — [ENTRY-TABLE] E1's three part-layout tables, the marks,
   the render and the two listings' rows (section above). A part row's layout
@@ -4519,3 +4529,42 @@ only when the kit consulted a set key, else `""`, at the ks-mark render
 point after `mf_art_end`. No kit row reads a set key before B4, so the
 stamp is `""` on every artifact today. The VM's `^`/`(?m)^` role text is
 K112's corrected wording (`src/core/ctxfn.def`).
+
+## [KIT-VERIFY] Z2 — `known.c` and the `cover` LOCATE row (lane z2build, 2026-10-21; no abi event, zero default movers)
+
+`docs/design/kit_proof.md` §1-§5, §7 Z2. **ROUTED ONLY BY THE TEST HARNESS**:
+`pcrec_kit_proof_routed` (core/internal.h: `cx->emit_in`'s harness options with
+`kit_proof` set, which only `build/pcrec-harness`'s lever sets) gates the row,
+so the default and trace builds decline it and no shipped artifact moves.
+
+- **known.c / known.h** — what is KNOWN at a `cover` candidate. `MkEnd` is the
+  MACHINE reading over the anchored machine A (`Job.adfa`): a walk over
+  virtual states (state, scan-edge count) from the EMITTED entry constant
+  (`d->s0`, both arms), liveness, the per-depth sets; `MkKnown` is a REFERENCE
+  to the kit's class. `cover_conj[]` is kit_proof §1.1's first-match table
+  (C1 finisher on CR_DFA, C3 no `\G`, C4 A built, C5 unmarked, C6 entry
+  constant, C7 fixed width, C8 the two producers agree — the machine and the
+  span slice `pcrec_fact_span`, a disagreement an internal error in the trace
+  build, C9 no eol view at depth 0..k, C10 end at k, C11 the rows at k agree
+  on C_k and absent-after, C12 utf8 start bytes, C13 the kit's pure ask
+  serves the REPORT description, C14 the class proves exactly the stated
+  sets). `pcrec_cover` memoizes one decision per Job (keyed on the machines it
+  read); its first failing row is the `why`. `pcrec_cover_site` is the ONE
+  constructor of the REPORT description (FIND / STMT / ASSIGN, every span-0
+  position REQUIRED, one CONTEXT item per constrained side, `site_kind`
+  REPORT, `consumer` RESULT, `read_floor` SUBJECT), read by C13's ask and by
+  the define. Trace build only: a `KITPROOF` record per decision under
+  `PCREC_KIT_PROOF_TRACE` (K35's denominator), ending in the compound part's
+  role (`-`: the compile itself).
+- **emit_dfa.c** — the `cover` row in `cand_rows[]` after `rev-end` (LOCATE,
+  CR_DFA, hands START|VERDICT, FIN `report`/`nomatch`); `emit_cover` defines the
+  description at file scope (stem `<fn>_cover`), holds the class the define
+  reports to the stated sets (`pcrec_cover_proof_diff`: any difference is an
+  internal error in EVERY build, never a fallback), and reports
+  `[c, c + k)` through `emit_search_success`. Site row `DELEG_COVER`
+  (memfn_sites.def); C17 lists it `delegated` and reaches it through
+  `tests/memfn/site_census.py`'s `PASS_CONFIGS`. The row declares no kit ask
+  (`kask`): a LOCATE→LOCATE ask would be a self-edge, which the read graph's
+  cycle check refuses; the predicate asks through `pcrec_cover` instead.
+- Checks: `tests/kitproof/` (`make test-kitproof`, mech arm `kitproof`);
+  the X0/X1 instruments in `docs/design/kit_proof/z2/`.

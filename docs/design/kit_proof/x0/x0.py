@@ -360,15 +360,17 @@ def part1_cover(O, plan, utf, rnd, lits):
     return r1, levels, W
 
 
-def part1_site(O, rd, utf, rnd):
-    """d < exact on a non-cover site: node sets equal the reading's hull S_d"""
+def part1_site(O, rd, utf, rnd, absent=True):
+    """d < exact on a non-cover site: node sets equal the reading's hull S_d.
+    absent=False leaves the subject start out of the contexts (a statement made
+    only past the floor, z2's split-part statements)"""
     r1 = P1()
     ex = min(rd["exact"], len(rd["S"]))
     S = [frozenset(x) for x in rd["S"]]
-    CT = contexts(utf)
+    CT = contexts(utf) if absent else contexts(utf)[1:]
     if rd["seeded"]:
         if utf:
-            ctxs = [None] + [bytes([b]) for b in range(128)] + \
+            ctxs = [None] * absent + [bytes([b]) for b in range(128)] + \
                    [b"\xc3\xa9", b"\xe2\x80\x94", b"\xf0\x9f\x98\x80", b"\x80", b"\xff"]
             cap = 2
         else:
@@ -378,8 +380,9 @@ def part1_site(O, rd, utf, rnd):
         # the reading claims a context-free language: the same sets under each
         # of several contexts, one at a time
         cap = CAP_UTF8 if utf else CAP_NATIVE
-        explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
-        for c in rnd.sample(CT[1:], 4):
+        if absent:
+            explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
+        for c in rnd.sample(contexts(utf)[1:], 4):
             explore(O, [c], ex, CAP_CTX, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
     return r1
 

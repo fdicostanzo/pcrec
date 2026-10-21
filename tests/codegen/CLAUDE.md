@@ -10,7 +10,7 @@ or it has no regression net at all.
 
 ## Files
 
-- **run_cand_oracle.sh** + **cand_oracle_witnesses.tsv** — (R17-b′ B3a also runs `tests/memfn/run_pres_picks.sh`, KW-8's witnesses, and folds its counts) [START-TABLE] C2
+- **run_cand_oracle.sh** + **cand_oracle_witnesses.tsv** — ([KIT-VERIFY] Z2: a row only the test harness's lever routes, `cover`, is reached by witnesses whose FLAGS carry the harness option, compiled by the trace build's own `pcrec-harness`, and each such line is compiled again WITHOUT it and must not reach the row, `[cand-oracle-shipped]`: a default build declines it) (R17-b′ B3a also runs `tests/memfn/run_pres_picks.sh`, KW-8's witnesses, and folds its counts) [START-TABLE] C2
   (lane stc2, 2026-10-07; `docs/design/start_table.md` §3.3 item 6): the
   BOTH-WALKS ORACLE over named witnesses. `cand_rows[]` (the one start
   table) has no reader in a default build until C3, so the script builds the
