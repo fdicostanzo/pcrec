@@ -1,0 +1,62 @@
+## X0 build/x0/res_v2.jsonl  pcre2=10.46 2025-08-27 plant='' self=None items=3390  (NO TRAILER: incomplete)
+agg admitted native items=613 p1_cells=153453415 p1_nodes=23535 p1_unknown=0 p2_cells=5812860 p2_diff=954 p2_red=1 p2_subjects=987237 red_u1shape=1 why:cover=613
+agg admitted utf8 items=584 p1_cells=290491560 p1_nodes=16406 p1_unknown=0 p2_cells=5017688 p2_diff=601 p2_red=1 p2_subjects=890907 red_u1shape=1 why:cover=584
+agg admitted-R native items=62 p1:S_d=1 p1:context-x-prefix=3 p1:end-not-k=4 p1:no-match-anywhere=5 p1_cells=10688887 p1_nodes=704 p1_red=6 p1_unknown=0 p2_cells=453405 p2_diff=15708 p2_red=6 p2_subjects=85665 red_other=6 why:cover=62
+agg admitted-R utf8 items=59 p1:no-match-anywhere=4 p1_cells=23243720 p1_nodes=598 p1_red=4 p1_unknown=0 p2_cells=411183 p2_diff=7202 p2_red=4 p2_subjects=80450 red_other=4 why:cover=59
+agg admitted-out native items=51 p1:S_d=1 p1:context-x-prefix=3 p1:end-not-k=4 p1:no-match-anywhere=5 p1_cells=8881406 p1_nodes=412 p1_red=6 p1_unknown=0 p2_cells=375217 p2_diff=15831 p2_red=6 p2_subjects=70973 red_other=6 why:cover=51
+agg admitted-out utf8 items=48 p1:no-match-anywhere=4 p1_cells=18254430 p1_nodes=364 p1_red=4 p1_unknown=0 p2_cells=333066 p2_diff=6996 p2_red=4 p2_subjects=65059 red_other=4 why:cover=48
+agg site native items=814 p1:S_d=121 p1_cells=0 p1_nodes=25557 p1_red=25 p1_unknown=4499 red_other=25 why:site=814
+agg site utf8 items=1124 p1:S_d=5 p1_cells=0 p1_nodes=18618 p1_red=1 p1_unknown=3278 red_other=1 why:site=1124
+agg witness native items=30 p1:S_d=15 p1_cells=3231261 p1_nodes=646 p1_red=3 p1_unknown=0 p2_cells=132729 p2_diff=0 p2_subjects=22677 red_other=3 why:cover=15 why:earlier-row=1 why:end-at-k=2 why:exact=2 why:finisher-dfa=3 why:fixed-width=1 why:no-eol-view=6
+agg witness utf8 items=2 p1_cells=370640 p1_nodes=42 p1_unknown=0 p2_cells=14795 p2_diff=0 p2_subjects=2810 why:cover=2
+red admitted native - b'(()|^){0}[b]' cover p1=0 p2=954 u1shape null {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted utf8 u b'(()|^){0}[b]' cover p1=0 p2=601 u1shape null {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R native R b'-{0,}?\\Z-' cover p1=1 p2=1898  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'[ab]*\\z\\W' cover p1=1 p2=2057  {"kind": "no-match-anywhere"} {"s": "0057", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'\\Zx' cover p1=1 p2=1936  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R native R b'\\zabc' cover p1=1 p2=1799  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-R native R b'\\zx' cover p1=1 p2=1928  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R native R b'\\w{0,2}?$\\W' cover p1=5918 p2=6090  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 1 {"s": "0a00", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R utf8 uR b'\\Zx' cover p1=1 p2=1824  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-R utf8 uR b'\\zabc' cover p1=1 p2=1679  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-R utf8 uR b'\\zx' cover p1=1 p2=1828  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-R utf8 uR b'-{0,}?\\Z-' cover p1=1 p2=1871  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'-{0,}?\\Z-' cover p1=1 p2=2006  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'[ab]*\\z\\W' cover p1=1 p2=2045  {"kind": "no-match-anywhere"} {"s": "0057", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'\\Zx' cover p1=1 p2=1974  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-out native - b'\\zabc' cover p1=1 p2=1799  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-out native - b'\\zx' cover p1=1 p2=1867  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out native - b'\\w{0,2}?$\\W' cover p1=5917 p2=6140  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 1 {"s": "0a00", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out utf8 u b'\\Zx' cover p1=1 p2=1750  {"kind": "no-match-anywhere"} {"s": "5a78", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted-out utf8 u b'\\zabc' cover p1=1 p2=1671  {"kind": "no-match-anywhere"} {"s": "616263", "sf": 0, "cover": [0, 3], "pcre": null} 
+red admitted-out utf8 u b'\\zx' cover p1=1 p2=1784  {"kind": "no-match-anywhere"} {"s": "78", "sf": 0, "cover": [0, 1], "pcre": null} 
+red admitted-out utf8 u b'-{0,}?\\Z-' cover p1=1 p2=1791  {"kind": "no-match-anywhere"} {"s": "2d", "sf": 0, "cover": [0, 1], "pcre": null} 
+red site native - b'((a)|ab){11,19}c' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'((a)|ab){12}c' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'((a)|ab){16}c' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'((a)|ab){17}c' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'((a)|bc){9,20}d' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [98]} null 
+red site native - b'((a)|bc){12}d' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97, 98]} null 
+red site native - b'(?:yoslwssiyybw[0-9]|dybf[0-9]|oodo[0-9]|omykisp[0-9]|idox site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [114, 116, 118, 121]} null 
+red site native - b'(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl)' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [121]} null 
+red site native - b'(?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [114, 116, 118, 121]} null 
+red site native - b'(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dw site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [114, 116, 121]} null 
+red site native - b'(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dw site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [114, 116, 121]} null 
+red site native - b'(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dw site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [114]} null 
+red site native - b'(?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [66, 98]} null 
+red site native - b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red site native - b'(ab){300}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'(a{10,20}){10,50}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'(b)(a){200,}?b' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [98]} null 
+red site native - b'(?i)\\b(?:d(?:atabas|b_nam)e[^0-9A-Z_a-z]*\\(|(?:informati site p1=1 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [73, 105]} null 
+red site native - b'a{200,500}?' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'a{200,500}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'a{50,60}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'a{500}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'(a{1,3}){65}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'(a{1,3}){64}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site native - b'(a{1,3}){66}' site p1=5 p2=None  {"kind": "S_d", "d": 0, "ctx": null, "node": "", "under": [], "over": [97]} null 
+red site utf8 u b'(a$\\n)|ab' site p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a\\Z\\n' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 
+red witness native - b'ab|a$\\n\\z' no-eol-view p1=5 p2=None  {"kind": "S_d", "d": 1, "ctx": null, "node": "61", "under": [10], "over": []} null 

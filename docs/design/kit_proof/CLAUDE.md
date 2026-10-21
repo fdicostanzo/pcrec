@@ -33,12 +33,18 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   set is unchanged (1,197 distinct patterns). Section D gains three lines appended by lane
   ctxspan2 (main `3b0f87b55`, `[r4 B9]`): `ctx_span.md`'s in-span witnesses, machine half only.
   Lane ctxspan21 (main `fd1d1fc98`, `[r4rc R2]`) appended two more lines AS TEXT, not run
-  (bench timing window): the per-thread witnesses, verdicts OWED.
+  (bench timing window): the per-thread witnesses; lane x0oracle (2026-10-21) ran them
+  (both `cover k=2`). `conj.py` also gains the `CONJ_PLANT`s of §6.3 for X0 (S1130-S1134,
+  S1139, S1140; off unless named; the default reading and `conj.txt` A-D are unchanged).
 - `witnesses.txt` — the witness list `conj.txt` D reads, with rev 2.1's K1 rows
   (`ab|a$\n`, `ab|a\Z\n`, `ab|a$\n\z`: DECLINE at `no-eol-view`; `cover` and wrong
   under the plant), and r4's three in-span witnesses (`a(?=b)[a-z]`, `\w(?=\d)\w`,
   `[a-z0-9_ ]\b[a-z ]`; plant S1149's). And revision 2.1's two per-thread witnesses
-  (`a(?=b)[a-z]|ac`, `[ab](?<=a)c|bc`; plant S1150's, `[r4rc R2]`), whose verdicts are OWED.
+  (`a(?=b)[a-z]|ac`, `[ab](?<=a)c|bc`; plant S1150's, `[r4rc R2]`); lane x0oracle ran them:
+  both `cover k=2` on the machine half.
+- `x0/` — step X0 (§7, spec §6.4): an independent libpcre2 oracle (`x0pcre.c`), the
+  driver (`x0.py`), the stated-set rows (`stated.tsv`) and the measured run
+  (`results.md`, `out/`). Own CLAUDE.md.
 - `cover_twin.py` — the SIZE-ONLY hand twin of §2.4: rewrites an artifact's
   `rx_search` into the `cover` entry. Measured once on `foobar` (main `a016b3bfa`,
   gcc 15.2 `-O2 -c`, dev box): `.text` 2,047 → 1,425 bytes, `rx_search` 100 → 61

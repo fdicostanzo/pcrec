@@ -49,6 +49,7 @@ LANGF = ["--engine=dfa", "--no-captures"]
 # exploration caps (nodes kept per depth); the oracle's own sets choose them
 CAP_NATIVE, CAP_UTF8, CAP_CTX = 64, 16, 6
 NW = 12           # full-length prefixes carried into the context/tail grid
+SITE_BUDGET = 20000   # per byte on a site, whose witnesses may be long (unknown past it)
 NCTX_EXTRA = 6    # further live contexts whose prefix tree is explored
 
 
@@ -73,8 +74,22 @@ class Oracle:
         return self.q("P", f, pat.hex()) == "ok"
 
     def nxt(self, ctx, w):
+        """hard-partial next set (an over-approximation: kept for the record)"""
         h = bytes.fromhex(self.q("N", (ctx or b"").hex(), w.hex()))
         return frozenset(b for b in range(256) if h[b >> 3] >> (b & 7) & 1)
+
+    def qnext(self, ctx, w, H, open_h=False, budget=200000):
+        """the VALIDATED next set: bytes with a complete-match witness covering
+        W·b within H more bytes (from w), and the UNKNOWN bytes (budget out; with
+        open_h also the horizon reached with no witness)"""
+        a, u = self.q("Q", (ctx or b"").hex(), w.hex(), str(max(1, H)), str(budget),
+                      "u" if open_h else "-").split()
+        a, u = bytes.fromhex(a), bytes.fromhex(u)
+        bit = lambda h: frozenset(b for b in range(256) if h[b >> 3] >> (b & 7) & 1)
+        return bit(a), bit(u)
+
+    def skips(self):
+        return int(self.q("K"))
 
     def tails(self, ctx, w, tails):
         r = self.q("T", (ctx or b"").hex(), w.hex(), ",".join(t.hex() for t in tails))
@@ -201,6 +216,7 @@ class P1:
     def __init__(self):
         self.nodes = 0
         self.cells = 0
+        self.unknown = 0
         self.bad = []
 
     def miss(self, kind, **kw):
@@ -212,28 +228,35 @@ class P1:
             self.bad.append(dict(kind=kind))
 
 
-def explore(O, ctxs, depth, cap, rnd, utf, want=None, r1=None, tl=None, kmin=None, extra=()):
-    """the PCRE2 prefix tree from the origin, grown through PCRE2's own next sets
-    (the union over `ctxs`), `depth` levels. `want[d]` is the reading's S_d: every
-    node at depth d must have exactly that next set (r1 records misses). With
-    `tl`/`kmin`: no match may end below kmin at any node (every tail tried).
+def explore(O, ctxs, depth, cap, rnd, utf, want=None, r1=None, tl=None, kmin=None, extra=(), horizon=None,
+            open_h=False, budget=200000):
+    """the PCRE2 prefix tree from the origin, grown through PCRE2's own VALIDATED
+    next sets (the union over `ctxs`), `depth` levels; a byte's witness may end
+    within `horizon` bytes of the origin (default `depth`). `want[d]` is the
+    reading's S_d: every node at depth d must have exactly that next set (r1
+    records misses; a budget-out byte is INCONCLUSIVE, compared on neither side).
+    With `tl`/`kmin`: no match may end below kmin at any node (every tail tried).
     -> (levels: [[(w, set)]], full: the depth-`depth` strings)"""
     level = [b""]
     levels = []
+    hz = depth if horizon is None else horizon
     for d in range(depth):
         row = []
         for w in level:
-            N = frozenset()
+            N, U = frozenset(), frozenset()
             for c in ctxs:
-                N |= O.nxt(c, w)
+                a, u = O.qnext(c, w, hz - d, open_h, budget)
+                N, U = N | a, U | u
+            U = U - N
             row.append((w, N))
             if r1 is not None:
                 r1.nodes += 1
-                if want is not None and N != want[d]:
+                r1.unknown += len(U)
+                if want is not None and (N - U) != (want[d] - U):
                     # under: bytes PCRE2 allows that the reading lacks (a lost
                     # match); over: bytes the reading states that PCRE2 refuses
                     r1.miss("S_d", d=d, ctx=None if len(ctxs) != 1 else ctxs[0], node=w,
-                            under=sorted(N - want[d]), over=sorted(want[d] - N))
+                            under=sorted(N - want[d] - U), over=sorted(want[d] - N - U))
                 if tl is not None:
                     for c in ctxs:
                         ls = O.tails(c, w, tl)
@@ -267,7 +290,7 @@ def part1_cover(O, plan, utf, rnd, lits):
     # that does (PCRE2's own answer, not the reading's C_{-1})
     ctx0 = None
     for c in CT:
-        if O.nxt(c, b""):
+        if O.qnext(c, b"", k)[0]:
             ctx0 = c
             break
     else:
@@ -282,6 +305,14 @@ def part1_cover(O, plan, utf, rnd, lits):
     if not W:
         r1.miss("no-full-prefix")
         return r1, levels, W
+    # C10's libpcre2 side: no match runs past k. After a full-length prefix
+    # PCRE2's VALIDATED next set must be empty (a byte with a witness is a
+    # longer match; a context byte after k is not covered, so it is not one)
+    for w in W:
+        a, u = O.qnext(ctx0, w, 6, True, SITE_BUDGET)
+        r1.nodes += 1
+        if a:
+            r1.miss("longer-than-k", ctx=ctx0, node=w, bytes=sorted(a)[:8])
     # the context x tail grid at k
     live = {}
     for c in CT:
@@ -342,14 +373,14 @@ def part1_site(O, rd, utf, rnd):
             cap = 2
         else:
             ctxs, cap = CT, 8
-        explore(O, ctxs, ex, cap, rnd, utf, want=S, r1=r1)
+        explore(O, ctxs, ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
     else:
         # the reading claims a context-free language: the same sets under each
         # of several contexts, one at a time
         cap = CAP_UTF8 if utf else CAP_NATIVE
-        explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1)
+        explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
         for c in rnd.sample(CT[1:], 4):
-            explore(O, [c], ex, CAP_CTX, rnd, utf, want=S, r1=r1)
+            explore(O, [c], ex, CAP_CTX, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
     return r1
 
 
@@ -420,6 +451,11 @@ def subjects(plan, utf, rnd, W, levels, lits, pat):
         for _ in range(12):
             sub.append(rnd.choice(allb) + w + rnd.choice(allb))
         sub += [w + w, w + rnd.choice(allb) + w, w[:-1] + w, w + w[1:]]
+        if j < 2:
+            # a match running past k: every byte after w, then an after-context byte
+            for c in sorted(set(plan["Ck"][:2]) | {plan["Ck"][-1]} if plan["Ck"] else set()):
+                for t in allb:
+                    sub.append(w + t + bytes([c]))
     # each literal path at the subject end, alone and after every byte
     paths = sorted(set(lits) | set(W[:4]))
     for j, p in enumerate(paths):
@@ -538,7 +574,7 @@ def run_item(it, O, selfp=None):
             return res
         r1 = part1_site(O, rd, utf, rnd)
         res.update(why="site", exact=rd["exact"], seeded=rd["seeded"], src=rd["src"],
-                   p1=dict(nodes=r1.nodes, cells=r1.cells, bad=len(r1.bad), e=r1.bad[:8]))
+                   p1=dict(nodes=r1.nodes, cells=r1.cells, unk=r1.unknown, bad=len(r1.bad), e=r1.bad[:8]))
     else:
         rd, st = reading(pat, fl)
         res["why"] = rd["why"]
@@ -551,7 +587,7 @@ def run_item(it, O, selfp=None):
                 if L["exact"] > 0:
                     r1 = part1_site(O, dict(S=[sorted(x) for x in L["S"]], exact=L["exact"],
                                             span=L["span"], seeded=A.seeded), utf, rnd)
-                    res.update(exact=L["exact"], p1=dict(nodes=r1.nodes, cells=r1.cells,
+                    res.update(exact=L["exact"], p1=dict(nodes=r1.nodes, cells=r1.cells, unk=r1.unknown,
                                                          bad=len(r1.bad), e=r1.bad[:8]))
             return res
         plan = rd["plan"]
@@ -559,13 +595,14 @@ def run_item(it, O, selfp=None):
             plan = apply_self(plan, selfp, rnd)
         res["k"] = plan["k"]
         r1, levels, W = part1_cover(O, plan, utf, rnd, litb)
-        res["p1"] = dict(nodes=r1.nodes, cells=r1.cells, bad=len(r1.bad), e=r1.bad[:8])
+        res["p1"] = dict(nodes=r1.nodes, cells=r1.cells, unk=r1.unknown, bad=len(r1.bad), e=r1.bad[:8])
         plan["_S"] = [frozenset(x) for x in plan["S"]]
         plan["_Cm1"], plan["_Ck"] = frozenset(plan["Cm1"]), frozenset(plan["Ck"])
         subj = subjects(plan, utf, rnd, W, levels, lits, pat)
         cells, bad, first = part2(O, plan, utf, subj, 1 if selfp == "k-plus-1" else 0)
         res["p2"] = dict(subjects=len(subj), cells=cells, bad=bad, e=first)
     res["sec"] = round(time.time() - t0, 2)
+    res["skips"] = O.skips()
     return res
 
 
@@ -573,6 +610,7 @@ def run_item(it, O, selfp=None):
 def population(out_path):
     """B: every census whole-cover / context-join pattern (conj.py census B), at
     its flags and again under -fno-rev-end where the verdict or the plan moves;
+    out: every other census DFA pattern the table admits at its own flags;
     R: every census DFA pattern whose -fno-rev-end verdict is cover; sites:
     every start-origin FIND site with a machine-read exact prefix whose pattern
     is not admitted; witnesses: witnesses.txt."""
@@ -593,6 +631,7 @@ def population(out_path):
             jobs.append((flags(p) or "-", p["pat"], "B"))
         if p.get("engine") == "dfa":
             jobs.append((flags(p) + "R", p["pat"], "R"))
+            jobs.append((flags(p) or "-", p["pat"], "A"))
     for s in sites:
         if s.get("origin") == "start" and s.get("op") == "FIND" and s.get("exact", 0) > 0:
             p = byk[(s["pop"], s["id"], s["cfg"])]
@@ -617,6 +656,11 @@ def population(out_path):
                     if b[1] == v[(fl, pat)][1]:
                         continue
                 add(fl, pat, "admitted-R")
+    # K35: what the table admits OUTSIDE the census whole-cover / context-join
+    # population (kit_proof §1.2 counts only inside it)
+    for (fl, pat, role) in jobs:
+        if role == "A" and v[(fl, pat)][0] == "cover" and (fl, pat) not in admitted:
+            add(fl, pat, "admitted-out"); admitted.add((fl, pat))
     for (fl, pat, role) in jobs:
         if role == "site" and (fl, pat) not in admitted:
             add(fl, pat, "site")
@@ -702,6 +746,7 @@ _O = None
 def _init():
     global _O
     _O = Oracle()
+    conj.PLANT = os.environ.get("CONJ_PLANT", "")
 
 
 def _work(a):
@@ -753,6 +798,7 @@ def summary(res_path):
         a["why:" + r.get("why", "?")] += 1
         if "p1" in r:
             a["p1_nodes"] += r["p1"]["nodes"]; a["p1_cells"] += r["p1"]["cells"]
+            a["p1_unknown"] += r["p1"].get("unk", 0)
             if r["p1"]["bad"]:
                 a["p1_red"] += 1
                 for e in r["p1"]["e"]:
@@ -822,7 +868,9 @@ if __name__ == "__main__":
         j = int(a[a.index("-j") + 1]) if "-j" in a else 8
         selfp = a[a.index("--self") + 1] if "--self" in a else None
         if "--plant" in a:
-            conj.PLANT = a[a.index("--plant") + 1]
+            # through the environment: the workers are forkserver children that
+            # import conj.py afresh (a parent-side assignment never reached them)
+            conj.PLANT = os.environ["CONJ_PLANT"] = a[a.index("--plant") + 1]
         only = a[a.index("--only") + 1].split(",") if "--only" in a else None
         run(a[1], a[2], j, selfp, only)
     elif a[0] == "summary":
