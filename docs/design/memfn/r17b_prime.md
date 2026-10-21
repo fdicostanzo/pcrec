@@ -1292,7 +1292,8 @@ D166's shape (regime_eval Q-REVAL-10) as a TEST input only.
 `[rev3 C11]` Two caveats, now stated:
 - the routed PRES rows read the frequency PRIOR and carry their own constants; their
   `basis` says so (UNMEASURED-DEFAULT, §1.4);
-- first-match order puts R0-R2 above D1, so "no routed row reads a set" depends on the
+- first-match order puts R0-R2 above D1 (`[rev4]` R0 and R1 are gone; R2, R5 and R8 remain
+  above D1), so "no routed row reads a set" depends on the
   routing rule (§1.6: a site renders the table's pick only if its first matching row is
   routed). That is CHECKED, not argued: the B2 and B3b byte-identity gates also run with
   the test-build lever's synthetic sets (`all-walk`, `all-v1`, `all-wide`, and the set
@@ -1339,7 +1340,7 @@ of the list, from rev 1 §5.2, measure_sets §3.6 and findall_iter.md's abi plan
 | B1 | `registry.md` §6¶8a (the five `fd-*` rows) and §6¶8b (floor). `[rev3 A9]` No `facts_listing.md` hunk (the section rides B4) |
 | B2 | none (no byte, stamp, listing or flag moves) |
 | B3b | `tuning.md` §2.40 (bit 45 retired, reserved; the kit deny named), §2.29 and §2.41 (`req-admit`/`req-use`: which rows are now the kit's, and the listing's projection); `registry.md` §6 (those axes) and §6¶8a/8b; `lib/pcrec.h`'s bit-45 comment (Q-R17P-19); `facts_listing.md` (`used`/`why` re-sourced, values unchanged) |
-| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, `[rev3 A14]` a NEW section for bit 55 (numbered at B4, after §2.48) and §3's dial table (the `size` cells); `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row; `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0); `[rev3 A9]` `facts_listing.md` §3 (the `memfn` section) |
+| B4 | `match_api.md` §6.3 (`<PREFIX>_MEASURES`) and §6 (`rx_info.measures`, beside 6¶14), §1¶7 (the W8 sub-block guard), the abi sentence, the `RX_DFA_PREFILTER` method sentences made method-neutral (setfind §11.3); `tuning.md` §2.42¶2 (the VM hat seek), §2.43¶3a, `[rev3 A14]` a NEW section for bit 55 (numbered at B4, after §2.48) and §3's dial table (the `size` cells); `limits.md` §8.4 (the `drop-kit-bytes` rung); `registry.md` floor and the bit-55 row `[rev4]` (and the `fd-r0` row removed: the floor moves +1 −1); `cli.md` (N6's refused prefix; `--list-measurements` at M0); `docs/spec/measures.md` (new, M0); `[rev3 A9]` `facts_listing.md` §3 (the `memfn` section) |
 | B5 | per row: `registry.md` (its deny), `measures.md` (new keys' cards) |
 | B6 | `limits.md` §8.3¶3 (guarded bound), `match_api.md` §6.3.10¶4 (the PF token in `MEMFN_FORMS`), `registry.md` |
 | B7 | `registry.md` and `tuning.md` §2.43 (the libc class deny) |
@@ -1355,8 +1356,8 @@ request to main, Q-R17P-22): DIFFER (moves bytes on a floor population), ASSERT_
 | B1 | `fd-r0`, `fd-r5`, `fd-r8`, `fd-ndisp`, `fd-d1` `[rev3 D8: R5 ∪ R6]`: one per built row the evaluator can score (regime_eval §5.2) | ASSERT_ZERO (no row routed), except `fd-d1` from B2 | 6 → 11 |
 | B2 | — (`fd-d1` flips) | `fd-d1`: DIFFER, floor = the one-byte DFA/hybrid population (its OFF arm is D1w, WALK, `[rev3 A17]`) | 11 |
 | B3b | `fd-pres-g1`, `fd-pres-pick`, `pres-set-lead` | DIFFER (floors per pick, §3.1 B3a) | 11 → 14 |
-| B4 | `pf-terms-mask` (the V1 FORM deny, R17-b's); `fd-r0`/`fd-ndisp` flip | DIFFER | 14 → 15 |
-| B5 | `fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE), `[rev3 A7]` `fd-vm-hat-1b`, `fd-pres-priced`, each with its row | per row | +1 each |
+| B4 | `pf-terms-mask` (the V1 FORM deny, R17-b's); ~~`fd-r0`/`fd-ndisp` flip~~ `[rev4]` `fd-r0` RETIRED with its row (§1.3a); `fd-ndisp` stays ASSERT_ZERO (no dispatch pays; R1 deleted, R2 is B6's); `fd-r5` stays ASSERT_ZERO (no default compile states a regime) | DIFFER (`pf-terms-mask`) | 14 → ~~15~~ `[rev4]` 14 (+1 −1) |
+| B5 | ~~`fd-libc-m`, `fd-none` (PAIR: its force spelling is how a later slot times NONE),~~ `[rev3 A7]` `fd-vm-hat-1b`, `fd-pres-priced` (`[rev4]` only if Q-R17P-28 builds P1), each with its row | per row | +1 each |
 | B6 | `pf-terms-w32`, `pf-terms-w16` | DIFFER at SIMD-on | +2 |
 | B7 | `libc` (the class deny) | REFUSES on DFA_ATTEMPT until its back row exists, else DIFFER | +1 |
 | B9 | `fd-r3a`, `fd-r3b`, `fd-r4` | per row | +3 |
@@ -1366,7 +1367,7 @@ took 56), leaving bits 57-63 (seven, above [IFACE-PUSH]'s ≤ 4 trigger). `[rev3
 emit_sweep's maintenance is part of each step: B3b removes bit 45's two DIFFER_PINS rows
 (`(14, 0, "é{2}cat")`, `(16, 0, ...)`, both bases) and adds the three PRES denies' arms;
 B1's five denies get ASSERT_ZERO arms, flipped to DIFFER with floors at their routing
-step; B4 adds `pf-terms-mask`'s; so `--extra` never runs a kit deny without a floor.
+step; B4 adds `pf-terms-mask`'s `[rev4]` and removes `fd-r0`'s arm with the row; so `--extra` never runs a kit deny without a floor.
 Whether `PCREC_NO_REQ_SET_LEAD` stays in `lib/pcrec.h` as a reserved, ignored name is
 Q-R17P-19.
 
@@ -1401,7 +1402,9 @@ the request, D78). The merge changes three things C10 and C17 read:
 Rev 1's census (`r17b_prime/out/census_shapes.out`) counted R17-b's movers on the kit
 branch: 996 byte / 2,910 byte-vm artifacts, one stateful site each, of which R0's ≥ 2
 RANGE population is 219 / 243 (mostly `\w`, shape (3,0,1)), and the one-member covers
-(0,1,0) 157 / 1,673. Against MAIN at B4 `[rev3]`:
+(0,1,0) 157 / 1,673. `[rev4]` The bullets below are revision 3's prediction. Where they
+name R0 or a dispatch, the `[rev4]` restatement at the end of this section supersedes them.
+Against MAIN at B4 `[rev3]`:
 - `[rev3 C3]` the set sites outside R0 move to V1 behind `__next` (plus the dispatch if
   paid) ONLY where their cover shape's saving key is in the default set and exceeds the
   regime floor (R7). Byte arm: of 620 candidate movers, 300 sit on grid1's measured
@@ -1438,6 +1441,23 @@ pre-move census is `r17b_movers.py`'s independent cover search over main's artif
 reads B4's own emitted masks. R0's firing population is itself an upper bound (R0 also
 needs its saving key below the floor). The utf8 arms' split (964 / 2,907 R17-b movers)
 was not re-run for R0.
+
+`[rev4]` **The prediction restated under §1.3a.** No dispatch ships, so a mover is a set
+site whose shape's V1 saving key is > eps, and it moves from main's walk to V1 behind
+`__next` with no form byte.
+- **Byte arm.** The six winning shapes give (1,0,0) 285, (0,1,1) 15, (2,0,0) 20,
+  (0,2,0) 132, (0,0,1) 84 and (1,1,0) 50: **586 site movers, an upper bound.** Rev 3
+  counted 320 on grid1's shapes and held item 3a's 266 conditional on grid2. They stay
+  on R7w (main's walk, zero-mover):
+  - the r2 population's losing shapes, which is R0's 219 less (2,0,0)'s 20;
+  - the 54 sites on shapes with no key (pending Q-R17P-26).
+- **Byte-vm arm.** 495 + 25 + 23 on grid1's shapes. Item 3a's share of the other 485 is
+  re-counted at B4 as before.
+- **Not movers.** The VM hat at |S| = 1, every one-byte site, every presence site, D2.
+- **The manifest.** B4's census is held to the REGENERATED manifest (§3.1a item 4),
+  never to fdb2's 860.
+- **Size.** Each mover takes V1 alone: +256..+608 B per site over main (§3.6), with no
+  dispatch increment.
 
 ### 3.6 Size (rev 1 §5.4, MEASURED on hand twins, SIZE ONLY; kept)
 
@@ -1855,6 +1875,37 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
 | `cmode_call` (M24) `[rev3]` | kind;layer | fresh buffers | the short-call cell | `kit:form.dispatch-twin` |
 | `gate` (M23) | shape;kind;position | streamed find-all | 64 Ki, 1 Mi | `kit:form.libc`, `libc:<name>@<ver>`, `pcrec:<probe>` (the consumer is pcrec's emitted DFA) |
 
+### 5.2a What grid2 measured, family by family `[rev4]`
+
+grid2read's values are kit-tier, Zen 4 and streamed (§3 of that report). Each carries
+its regime, layer, floor and confidence in `keys.tsv`. u = β_walk(dig) = 0.1891 ns/B
+(grid1 0.1892). This table reads them against §5.2's families and against what each
+row of §1.3a needs.
+
+| id | grid2 value (key) | vs rev 3 | read by | grid2read |
+|---|---|---|---|---|
+| M1-M5 | β by shape at OFF/W16/W32. V1 saves +0.420 (1,0,0), +0.012 (2,0,0), −0.133 (2,0,1) p, −0.413 (3,1,0) p, −0.464 (3,0,1), +0.390 (0,2,0), +0.548 (0,0,1), +0.211 (1,1,0), +0.268 (0,1,1) derived. S1/A1 save 69-89% / 84-94% (`kit.saving.<f>.WALK.<shape>`) | CONFIRMED to 0.1-3.3% on 11 comparable cells; three new shapes measured (item 3a) | R7, R7w | §3.2 |
+| M6 | `kit.eps.streamed.slope` 0.113% (the slope's own noise 0.247% p90); `kit.eps.findall.l64k` 1.316%; `kit.eps.streamed.short` 0.675% | regime split CONFIRMED; the slope token is smaller than grid1's 0.173% | R7, F2 | §3.1 |
+| M7-M8 | F: walk 5.86, V1 4.38, S1 4.62, A1 5.35 ns (n ≥ 64); F at n = 48: S1 21.71, A1 12.87 ns | CONFIRMED (the walk +1.1 ns on streamed buffers) | (no row at B4) | §3.3 |
+| M9 | no crossover: V1 − walk < 0 at every N ≥ 8; `kit.xover.V1.WALK.DFA_SCAN` = 8 B (UPPER bound) | **CONTRADICTED** | none (R1 deleted) | §3.3, §4 A2 |
+| M10-M11 | S1/A1 vs walk cross at the block, N\* = 64; `kit.block.W64` = 64 B | M11 CONFIRMED | R2, R8 (B6) | §3.3 |
+| M12 | V1 − walk −0.18 / −2.87 / −4.98 / −6.60 ns at N = 8 / 32 / 48 / 63 | sign reversed at N = 8 and 32 | T1 (none at B4) | §3.3 |
+| M13-M14 | c_cold V1 +2.45, S1 +3.64, A1 +3.41 ns; warm use walk 1.60, V1 2.24 ns; NEW: per u-landing walk 4.26, V1 2.54, S1/A1 0.51 ns | V1 CONFIRMED; wide c_cold +17..+25% | (none at B4) | §3.4 |
+| M15 | g\* is a PREDICTABILITY threshold: irregular landings → every form wins from g = 4; regular → V1 loses (+14.9% g = 2, +34.9% g = 8). `kit.gstar.*` keys are shape-confounded (LOW) | **CONTRADICTED** as a gap threshold | none (R5's condition changed; keys kept as evidence) | §3.5, §4 A3 |
+| M16-M18 | charge per call: OFF.2 +2.44 ns (WALK path), +0.74 (V1 path); W32.3 +0.32; per use ≤ +0.59 / +0.35 ns; scaffold ≤ 5.8 ns on 64 KiB calls, short-call unmeasured | measured (were ABSENT); T2/T3 fail | the pay rule (§2.5) | §3.6, §5 |
+| M19-M21 | LIBC F 4.27-5.82 ns, β 0.0073-0.0075 ns/B (the host's SIMD memchr); `kit.dom.<f>.LIBC.<kind>` = 0 everywhere; `kit.xover.LIBC.WALK` 4.1-6.1 B (LOW) | measured (were ABSENT) | D1/D1c stand; F1 not built | §3.7 |
+| M22 | `kit.gnone` = −1 (never) on DFA_SCAN fwd, DFA_HAT, HYB_PF; 2 B on DFA_SCAN.bounded | measured (was ABSENT) | F0 not built | §3.7 |
+| M23 | `kit.gate.byte1.DFA_SCAN.early/late/absent` = +8.1 / 0 / −247,000 u·B | measured (was ABSENT); Q-WR-9's trigger fires on the letter | P1 (Q-R17P-28) | §3.8 |
+| M24 | — | still ABSENT (no PARAM body exists) | — | — |
+| F2's cells | `kit.saving.V1.WALK.VM_ATTEMPT.r0e1c0` = +0.515; find-all at g = 2 +38.3% R, g ≥ 8 −33..−54% | measured | F2 (Q-R17P-27) | §3.7 |
+
+`p` = PROVISIONAL (a load-suspect source; the re-time is OWED, §3.1a item 1). Two
+caveats from grid2read §6 carry into every row that reads these keys:
+- **LIBC is not "SIMD-off" code.** LIBC's β is the host libc's ifunc-selected SIMD
+  `memchr`, so the `libc-mismatch` flag (§5.3, Q-R17P-14 as D167 ruled it) matters most for these
+  rows.
+- **R0's class key is a MAX.** That is why R0 retires (§1.3a).
+
 ### 5.3 The libc rows' dependency owner `[rev2]`
 
 measure_sets §2.4 has two dependency owners, `kit:` and `pcrec:`. The libc rows' measured
@@ -1871,6 +1922,20 @@ provenance `libc:<name>@<version>`; this note adds what it means for staleness:
   main, as measure_sets' owner, to take the third owner on these terms.
 
 ### 5.4 zen4-grid2: ONE slot spec `[rev2]` `[rev3: A7, C3, C5, C7, C8, C10]`
+
+`[rev4]` **The slot RAN** (grid2read §1-§2), and this section is now its record:
+- **Run.** Method `kit-grid@2`, CPU 14, 3 launches (+2 by the rerun rules), 61 min
+  required, 66.5 min with the optional passes, COMPLETE.
+- **Gate.** Green: 141 (cell, arm) pairs and 1,070 items, with 0 answer mismatches.
+- **Rerun rules.** The cross-launch trigger fired in 28 of the 32 F1 reruns (and 23 of
+  the 26 OB reruns), so the trigger revision 3 added was needed.
+- **Contamination.** One visit (F3 `f3-dig` n64k, 45 rows) was re-timed clean by the
+  requeue. Three load excursions the harness did not log were treated per arm, and
+  two of them leave the (2,0,1) and (3,1,0) rows PROVISIONAL (re-time OWED, §3.1a).
+- **Counters.** Available (`perf_event_paranoid` = 2), so F2 and F2S ran and no
+  suggestion text was needed.
+
+The estimate below overshot because 3 launches sufficed where it assumed 3.4-5.
 
 GO by D167 (Q-R17P-9 (B): one streamed condition gives both the set's constants and
 regime_eval's in-sample reference R_in; `[rev3 C10]` R_in is therefore in-sample by
@@ -1952,7 +2017,8 @@ repeated u-shape groups, which the within-launch rule cannot see).
 - **B4 reads the LATEST committed set** (D166 add. 2: the latest until M2). If grid2 and
   M0 both precede B4, that is `zen4-grid2`, and B4's census contains its selections: ONE
   abi event. grid1 is never embedded (a provisional design-time set).
-- **If B4 precedes grid2** (not recommended), B4 reads grid1 through M0: R0 fires, R7
+- `[rev4]` Moot: grid2 has run, so B4 reads zen4-grid2 (the case above).
+  ~~**If B4 precedes grid2** (not recommended), B4 reads grid1 through M0:~~ (kept as the record) R0 fires, R7
   fires only on grid1's measured shapes (`[rev3 C3]`), R1/R2 are unpaid (M16-M18 absent),
   and grid2's later landing is a default-set change, its own abi event with its
   `MOVERS.tsv` (measure_sets §3.6).
@@ -2113,6 +2179,48 @@ lands, so a bare compile never silently reads another box's literals.
 trace-build implication check; deriving it from `proven0` is the fallback if main prefers
 fewer bits.
 
+### 7.3 Revision 4's questions, each with a leaning `[rev4]`
+
+D169 answers the main question: when predictability is unknown, the form is V1. It also
+covers D1, D1w and R5's path. These three are what it leaves open.
+
+**Q-R17P-26 (Frank). A cover shape nobody has measured: V1 or the walk?**
+- **The case.** D169 is about unknown landing PREDICTABILITY, where V1's
+  worst case is a bounded loss on regular data (+15..+35%). A cover shape with no
+  measured key is a different unknown: V1's per-byte COST is unknown on it.
+- **Why it matters.** On measured multi-term shapes V1 is 13% to 46% SLOWER than the
+  walk at every landing regime (grid2read §3.2: (2,0,1), (3,1,0), (3,0,1)).
+- **Today's population.** 54 byte-arm sites on unmeasured shapes stay on main's walk
+  through R7w (§3.5).
+- **Leaning: keep the walk there (R7w)**, and measure a new shape before it routes, as
+  item 3a did for three shapes. Reading D169 as "V1 there too" would ship an
+  unmeasured loss that does not depend on the subject.
+
+**Q-R17P-27 (Frank). The VM hat at |S| = 1 (F2): does it need measured data to move?**
+- **What grid2 found.** V1 saves +0.515 on the slope there, and wins 33-54% on
+  find-all at g ≥ 8. It loses +38% at g = 2, with the crossing near 4 B (interpolated).
+- **Two readings of D169.** It keeps the walk at the VM hat "until F2" without saying
+  what F2's condition is. Either F2 fires on a default compile under the same
+  presumption D169 makes for set sites (large gaps, accept the g = 2 loss as an
+  expected loss), or F2 fires only when a measured analysis object says the gaps are
+  ≥ ~4 B.
+- **Leaning: the first.** The VM hat's trade is the same shape as the set sites'
+  trade D169 accepted. Build F2 at B5 with no density condition on default compiles,
+  list its g = 2 cells among the expected losses (§9.2a), and keep the R5-style regular
+  regime as the way to the walk.
+- **The alternative.** Wait for the gap grid between 2 and 8 B (§3.1a item 6) and for
+  a density kind in the analysis object.
+
+**Q-R17P-28 (Frank). The pre-scan trigger fired only on the letter: build P1?**
+- **The ruled trigger.** Q-WR-9 builds the priced pre-scan row P1 "when a TUG cell is
+  measured losing for want of it".
+- **What grid2 found.** It found two such cells, losing 1.5 ns per call (3.4-3.8%). On
+  absent bytes the same pre-scan wins ×49-×112.
+- **Why it matters little.** P1 reads E only at MEASURED provenance, so it would never
+  fire on a default compile; it is work for a row that only a measured bundle reaches.
+- **Leaning: record the trigger as fired but do not build P1 at B5.** Re-ask when a
+  measured-bundle workload exists (D77, high-impact focus).
+
 ---
 
 ## 8. Denies, controls and sabotage
@@ -2137,8 +2245,10 @@ fewer bits.
 - **B4 (rev 1 §6.2, kept)**: the population is a pcrec-side artifact diff (the census
   reader extended), never the kit's `moved`. SIMD-off: default against
   `--memfn=no-pf-terms-mask` (the whole move against MAIN's walk, `[rev3 C6]` the baseline
-  every prediction is stated against), against `--memfn=no-fd-r0` (R0's own effect on its
-  population), against `--memfn=no-fd-ndisp` (the dispatch's, if paid). Kit tier on the
+  every prediction is stated against), ~~against `--memfn=no-fd-r0` (R0's own effect on its
+  population), against `--memfn=no-fd-ndisp` (the dispatch's, if paid).~~ `[rev4]` R0 is
+  retired and no dispatch is paid, so those two arms are gone; the expected-loss cells
+  (§9.2a) are reported and not scored. Kit tier on the
   Linux dev box (D144 add. 1): taskset-pinned, A/A, layout-perturbed pairs (the I-148
   corrigendum's rule). Both layers reported. `[rev3 B15]` **Every kit deny at once ==
   main modulo a COMMITTED normalizer** (it strips the abi digit and the `<PREFIX>_MEASURES`
@@ -2205,8 +2315,8 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | S913 | the form byte never written (always 0) | the REACH floor per arm; the trace | B4/B8 | the same |
 | S914 | the bounded walk arm ignores `end_back` | answers (G2, corpus bounded cells); ASan over-read | B4 | `[rev3 B11]` needs `__walk` emitted (a paid dispatch or a T3-passing walk-only scaffold): UNREACHED (declared) until either exists |
 | S915 | the walk arm passed the wrong table (`start_bytes` vs `can_begin_match`) | answers on dfa-hat cells | B4 | `[rev3 B11]` as S914: UNREACHED until `__walk` is emitted |
-| S916 | R0 counts EQ terms as RANGE | movers by ID against `[rev3 B16]` `r17b_movers.py`'s independent cover search | B4 | `[rev3 B11]` a (1,1,0)-shaped cover (one RANGE plus an EQ: the plant puts it in r2, the truth does not), under a synthetic set holding the saving keys of BOTH (1,1,0) and the r2 class, so the row's skip cannot hide the plant |
-| S917 | an ABSENT set key read as 0 | the totality test (the key removed ⇒ the next row/R7) | B1 (regime_pick, shadow), B4 | R0's key |
+| ~~S916~~ `[rev4]` RETIRED with R0 at B4 (its plant has no row to act on; declared retired in the sabotage index, the S919 precedent) | R0 counts EQ terms as RANGE | movers by ID against `[rev3 B16]` `r17b_movers.py`'s independent cover search | B4 | `[rev3 B11]` a (1,1,0)-shaped cover (one RANGE plus an EQ: the plant puts it in r2, the truth does not), under a synthetic set holding the saving keys of BOTH (1,1,0) and the r2 class, so the row's skip cannot hide the plant |
+| S917 | an ABSENT set key read as 0 | the totality test (the key removed ⇒ the next row/R7) | B1 (regime_pick, shadow), B4 | ~~R0's key~~ `[rev4]` R7's key on a winning shape (removed ⇒ R7w) |
 | S918 | the pay rule ignores C_disp | the per-set expected-emission manifest | B4/B8 | a set with a failing C_disp |
 | S919 | `body` UNSTATED read as ONESHOT | G2: N/M rows must skip (an oracle case; the trace) | B1 | a builder with `body` 0 (a G2 site) |
 | S920 | the START hook's text replaced by `0` | `[rev3 B11]` an INDEPENDENT reader of the activation origin in the emitted C (the variable the entry's guard reads, located by pcrec's own emitted-text census), compared with `__form(`'s argument; not the builder's stated start (a shared source) | B4 (read; `__form(` emitted only with a paid dispatch, UNREACHED until then) | a relocate-path site (start ≠ 0) |
@@ -2233,11 +2343,15 @@ reach a route with NO DFA scan in front, or it reads green vacuously.
 | `[rev3]` SN-2 (A4) | `mf_ask` reports `exists` = 1 where the rendered form is NONE (or a wrong `proven0`) | the query/define agreement check (§4.5 rule 2); G2's query family | B1 (trace), B2 | a site whose terminal differs between two rows' readings (a NONE site under the synthetic set that makes F0 fire, in the test build) |
 | `[rev3]` SN-3 (D4) | G1's reader asks the start site before FIRST's selection is closed (or reads `pres` it did not declare) | the trace-build undeclared-read / open-selection trap | B1 | any G1-admitted artifact (`req-admit` "dominated") |
 | `[rev3]` SN-4 (C2) | a row's `basis` left UNSTATED, or a key-free row marked MEASURED | the table self-check (kit build) | B1 | the table itself (every build) |
-| `[rev3]` SN-5 (B14, C1) | R1's fast-terminal condition dropped | B4's every-derivable-key synthetic set: one-byte movers appear | B4 | a one-byte DFA_SCAN site (`a+b` shape) under that set |
+| `[rev3]` SN-5 (B14, C1) | ~~R1's~~ `[rev4]` R2's fast-terminal condition dropped | B4's every-derivable-key synthetic set: one-byte movers appear `[rev4]` (at a W16/W32 variant from B6; R1 is deleted) | ~~B4~~ `[rev4]` B6 | a one-byte DFA_SCAN site (`a+b` shape) under that set |
 | `[rev3]` SN-6 (B6, D10) | the five-pick comparator returns "agree" always (or one pick's port drops its tie rule) | the planted disagreement per pick (a site where port and pcrec must differ under the plant); the per-pick floor on non-trivial sites | B3a | per pick: a set with two equally rare members (P3), a G1-kept span (P2), a strictly-rarer set (P4) |
 | `[rev3]` SN-7 (B9) | a row edit after a routing step with no `finder_history.md` entry | the lockdown digest check | B2 onward | any routed row |
 | `[rev3]` SN-8 (C3) | R7 fires without its shape's saving key (the comparator's absent-key rule inverted) | B4's census by shape measured / not measured: a mover on an unmeasured shape | B4 | a (0,3,0)-shaped cover (not in grid2's three shapes) |
 | `[rev3]` SN-9 (D9) | the pay rule's tie direction flipped (a T1 tie pays) | the arithmetic grid with planted off-by-ones | B1 (regime_pick, shadow), B4 | a synthetic set whose saving equals the charge exactly |
+
+`[rev4]` No new sabotage id is needed by revision 4. R5's new condition is unreachable on
+every compile until a landing-regime kind exists; its plant (an UNSTATED regime read as
+REGULAR) takes an id with that kind, declared UNREACHED until then.
 
 Rev 1's SB6 (the W64 tail read), SB11 (the SIMD-on use differs; C18 already detects it)
 and SB12 (w32 routes `f == 1` to W64) move to B6, which requests its own ids; SB10 (the
@@ -2266,9 +2380,10 @@ cell's own A/A floor (§2.5's `floor(cell)`).
 1. [REGIME-EVAL]'s pre-registered bars (G0-G4 per layer and shipped filter) PASS or
    PROVISIONAL PASS on the judge populations (J1 open, J2a), the table's listing hash
    recorded (regime_eval §5.2); the hash IS the LOCKDOWN digest (§1.8).
-2. G1 at both layers on the mover population: R0 cells NULL against the walk; R7 cells
+2. G1 at both layers on the mover population: ~~R0 cells NULL against the walk;~~ R7 cells
    (measured shapes only) not worse than the walk beyond the floor on the regime their
-   key was measured in; every dispatch interval holds against its neighbour (if paid);
+   key was measured in `[rev4]` (the member-free slope regime), the EXPECTED-LOSS cells of
+   §9.2a excepted; every dispatch interval holds against its neighbour (if paid);
    the dispatch charge NULL on LINER and TUG cells.
 3. The named residual (bounded dense find-all, dfa-hat on prose (F7), dig on digits,
    vm-hat prose1m) is a STATED LOSS against the walk, shipped under Q-REVAL-1's ruling
@@ -2278,6 +2393,58 @@ cell's own A/A floor (§2.5's `floor(cell)`).
    it does not fire; that is the reason the loss ships, said here rather than left implicit.
 4. The official verdict is a bench run on the targeted hardware (D144 add. 4).
 
+### 9.2a The expected losses, named before B4 times anything `[rev4]`
+
+D169 asks B4's own measurement to name its regular-landing cells as EXPECTED losses up
+front. The rule below is pre-registered: it is committed with E5's pre-registration
+(§3.1a) and before any B4 timing, and no timing result may edit the list afterwards.
+
+**The rule.** A cell is an EXPECTED LOSS iff both hold:
+1. its site is a B4 mover at OFF (§1.3a: R7 → V1 on one of the six winning shapes);
+2. its subject's landings for that site's candidate set are REGULAR with a mean gap
+   ≤ 8 B.
+
+The 8 B bound comes from grid2's measured losing region: V1 is +14.9% at g = 2 and
++34.9% at g = 8 on regular landings. Irregular cells at the same gaps win.
+- **"Regular" is read off a counter, never the pattern.** It is the walk's branch
+  misses per landing on that cell (`perf`, as grid2's F2 pass read them). grid2
+  measured two clusters, 0.009 (regular) and 0.97-1.44 (irregular). The list's
+  boundary is **0.1 misses per landing**. That value is labelled
+  `UNMEASURED DEFAULT: between two measured clusters` (D149).
+- **No counters.** Where counters are unavailable, the cell is selected by the gap
+  sequence itself: the landing positions the walk reports, with one gap value
+  covering most landings. The cell is then marked `selected-without-counters`.
+- **Regular cells with a mean gap above 8 B** were not measured by grid2. They are
+  WATCH cells: reported, not expected, not scored.
+- **If Q-R17P-27 builds F2 without a density condition**, the VM hat's g = 2 cells
+  join the list at B5 by the same rule (grid2: +38.3%).
+
+**Known cells, pcrec side** (the list starts from these; the B4 acceptance lane adds
+the bench's):
+- grid2's own regular-landing groups: `dig` g = 2 regular and g = 8 regular, and the
+  dense `reg` find-all groups (grid2read §3.5, an. 6b-6d);
+- `dfa-hat` L = 32, where V1 is never faster (grid2read §3.5);
+- `bounded`, which crosses at ~64 B (grid2read §3.5, LOW);
+- rev 3 §9.2 item 3's named residual: bounded dense find-all, dfa-hat on prose (F7),
+  dig on digits, vm-hat prose1m;
+- real text by counts only (F2S, not timed): `bounded` on prose V1 +16.7% cycles
+  (grid2read §3.9).
+
+**The bench's cells.** The bench owns its subjects, and pcrec does not reverse-engineer
+its ledgers. A relay question therefore goes to pcrec-bench through main: *which cells
+of the sets B4 will be judged on have a set-FIND site (a byte-class prefilter, DFA hat or
+hybrid prefilter) whose subject has dense regular landings, a mean gap ≤ 8 B with one
+dominant gap?* Its answer, filtered by the rule, completes the list.
+
+**How the list is used.**
+- At G1 and at the bench verdict, each expected-loss cell is REPORTED with its
+  absolute delta against main's walk and its floor. It is not counted against B4.
+- A listed cell that loses MORE than twice grid2's measured magnitude for its gap
+  (`UNMEASURED DEFAULT: 2x`) is a FINDING. So is a listed cell that wins. Either way it is reported.
+- An UNLISTED cell that loses beyond its floor refutes B4 (§9.4).
+- **D169's revisit trigger.** Any listed cell on a REAL subject of ≥ 64 KiB is reported
+  separately as a candidate to revisit the ruling.
+
 ### 9.3 Predictions `[rev3: C6]`
 
 Rev 2 carried rev 1's grid1 figures (the S0 replay on repeated 64 KiB) with "re-stated on
@@ -2285,14 +2452,25 @@ grid2 at B4" and no restated number; under Q-R17P-9 (B) grid1's figures are not
 comparable. `[rev3 C6]` Each prediction is now an INEQUALITY on named grid2 groups, at a
 named layer, with the NULL rule; its NUMBERS are E4b's in-sample streamed replay on grid2,
 filled in before E5's pre-registration, and the judge (held-out) is what can refute them:
-- **R0**: for the hex-run and word-eq find-all groups at OFF, |pick − walk| ≤
-  max(A/A, floor) at every L in the group (R0 makes them NULL).
+- ~~**R0**: for the hex-run and word-eq find-all groups at OFF, |pick − walk| ≤
+  max(A/A, floor) at every L in the group (R0 makes them NULL).~~ `[rev4]` Withdrawn: R0 is
+  retired, and grid2 timed no hex-run/word-eq find-all group (grid2read §4 P1).
 - **R7 on measured shapes**: for the (1,0,0) and (0,1,1) groups and item 3a's three
   shapes at OFF, pick − walk ≤ −floor at every L ≥ the shape's measured crossover (V1
   saves where its key says it does).
-- **R1, if paid**: for bounded short find-all at OFF, pick − walk ≤ −floor below the
-  dispatch literal, and |pick − V1| ≤ floor above it.
-- **Regret on the grid**: R0 and R7 change find-all grid rows (R0 turns hex-run and
+  `[rev4]` grid2 gives the in-sample numbers, with E4b's replay still the formal
+  source:
+  - the member-free slope savings of §5.2a;
+  - on `dig` find-all with irregular landings, V1 at −9.7..−40.6% across g = 4..∞
+    (L = 64 KiB);
+  - (2,0,0) at +1.2%, which is 10.7× the slope token and 4.9× the slope's own noise.
+
+  Because no length row exists, the "crossover" is every L ≥ 8 for single calls.
+  Regular-landing cells are excluded by §9.2a, not predicted.
+- ~~**R1, if paid**: for bounded short find-all at OFF, pick − walk ≤ −floor below the
+  dispatch literal, and |pick − V1| ≤ floor above it.~~ `[rev4]` Withdrawn: R1 is deleted.
+- **Regret on the grid** (`[rev4]` R0 and R1 are gone: R7 alone changes find-all grid
+  rows, and only R2 at B6 would change single-call rows): R0 and R7 change find-all grid rows (R0 turns hex-run and
   word-eq to NULL); R1 and R2 change only single-call rows. `[rev3 C6]` Rev 2's
   "R0, R1, R2 change no find-all grid row" contradicted its own first bullet and is
   withdrawn.
@@ -2311,8 +2489,8 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
 - An artifact byte moved at B0-B3b, a listing stream moved outside its declared delta, or
   the five-pick shadow disagreeing anywhere.
 - A K65 conversion lost: W1 or W2 gives up where main answers.
-- An R0 cell not NULL against the walk; an R7 cell worse than the walk beyond
-  max(A/A, floor); a dispatch interval losing to its neighbour beyond the floor; a
+- ~~An R0 cell not NULL against the walk;~~ an R7 cell worse than the walk beyond
+  max(A/A, floor) `[rev4]` that is NOT on §9.2a's pre-registered expected-loss list; a dispatch interval losing to its neighbour beyond the floor; a
   non-NULL dispatch charge on a cell the dispatch does not help. `[rev3 C6]` Every
   comparison has its floor (D144 add. 1); rev 2's "any cell worse than R17-b" had none.
 - At SIMD-on, a W64 interval losing to V1 beyond the floor (D147's check).
@@ -2351,6 +2529,13 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
      M-reading row on a shared PARAM body does not pay until it is measured.
    - `[rev3 C3]` R7 is measured per cover SHAPE (β(V1)/β(walk) spans 0.57-1.41 across
      five shapes); an unmeasured shape takes the walk.
+   - `[rev4]` **Landing PREDICTABILITY is the regime axis that flips V1 against the
+     walk** (grid2read §3.5). Length does not flip it, and gap alone does not. The
+     default presumes irregular landings on large subjects (D169), so a regular-landing
+     subject is a regime that flips the decision. B4 names those cells up front
+     (§9.2a), and R5 takes the walk once a measured or stated regime says so.
+     grid2's values are one box and one streamed condition; Zen 1 (F5) may move every
+     shape key.
 2. **The independent control: RELEVANT.**
    - **B0-B3b:** byte identity by emit_sweep (pcrec's tool, sharing nothing with the
      kit's renderers); the five-pick shadow compares the kit's PORTS against pcrec's own
@@ -2379,12 +2564,21 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
      presence plants reach NON-DFA routes (W1-W3), since a DFA-route-only green is
      vacuous; rows whose site is unreachable before a step are declared UNREACHED with
      the step that reaches them.
+   - `[rev4]` **The expected-loss list** (§9.2a) is selected by a counter (the walk's
+     branch misses per landing) or by the subject's gap sequence, and is committed
+     before B4 times anything. It is never chosen from B4's own timing, which is the
+     outcome it excuses.
    - **The unavoidable shared source** is the measured numbers' own truth: controlled by
      per-group A/A floors, the NULL rule and the held-out judge, not by this design.
 3. **What moves when the data is regenerated: RELEVANT.**
    - **Through B3b, nothing:** no ROUTED row reads a measurement; the PRES picks read
      the frequency kind, so a FINDINGS bundle change moves them exactly as it moves
      today's pcrec picks, censused by [KNOW-SRC]'s one tool.
+   - `[rev4]` **From B4, under §1.3a:** a new default set can flip a shape's R7 verdict
+     either way (the six winning and three losing keys), and a newly measured shape
+     moves its sites from R7w to V1. A landing-regime kind, when built, moves R5's
+     sites to the walk: a default-moving event with its census. There are no dispatch
+     literals and no R0 verdicts any more.
    - **From B4:** a new DEFAULT set moves the dispatch literals, R0's verdict per shape,
      `[rev3 C3]` which shapes R7 routes (a newly measured shape moves its sites from the
      walk to V1), and `<PREFIX>_MEASURES` on every consulting artifact: an abi event with its
@@ -2483,6 +2677,23 @@ Rev 1's, as they stand now:
   `kit_walk`, the first table to do so after the kit's own three, and its applicability
   moves into the gate.
 
+`[rev4]` New (from grid2, each with its grid2read section):
+- **F27. Neither length nor gap decides V1 against the walk; landing predictability
+  does** (§3.3, §3.5). A compile-time table cannot see predictability. So the default is
+  a ruling (D169), and a regular regime reaches the walk only through a stated fact (R5,
+  `SF_E_REGULAR`).
+- **F28. A class key that is a MAX suppresses its own losing members** (§7 item 2). R0's
+  r2 key took the class's best saving, and three losing shapes hid behind one winner.
+  Per-shape keys make the class row redundant, and R0 retires (§1.3a).
+- **F29. An `unpaid` fallback must be the next-best form, not a habitual one** (§6, R2
+  row). R2's `unpaid` WALK was the worst form below the block. Dropping the row lets the
+  interval fall to the terminal.
+- **F30. A row keyed on a slope ignores density** (§7 item 3). F2's saving is a
+  member-free slope, while the VM hat's g = 2 find-all loses 38%. A slope key can say a
+  form is faster per byte, and never that it is faster per landing.
+- **F31. A one-byte "SIMD-off" row is the host libc's SIMD** (§7 item 5). LIBC's β is the
+  ifunc-selected `memchr`, so LIBC rows are the ones where `libc-mismatch` matters most.
+
 `[rev3]` **Unlocks recorded from critic D** (none scheduled; U1 and U3 proposed to main as
 plan rows with their triggers):
 
@@ -2531,3 +2742,19 @@ plan rows with their triggers):
 | Keep §12 updated; the first delivery stays B0-B3b zero-mover | §12, §3.1 | done |
 | Report with new questions Q-R17P-15.. and a charter checklist | `docs/dev/lanes/r17bp4_report.md` | done |
 | DESIGN ONLY: no code, no timing, no `make` beyond a light docs check | nothing under `src/`, `memfn/src`, `tests/`, `lib/` changed | done |
+
+`[rev4]` **Revision 4's brief (lane rev4, 2026-10-20):**
+
+| brief item | where | status |
+|---|---|---|
+| Read BOILERPLATE and memfn/CLAUDE.md; worktree `worktrees/rev4` from `lane/memfn-b4`; merge `lane/grid2read` alone, both sides kept on conflict | the merge commit (two index files, both sides kept) | done |
+| (1) fold grid2's contradictions into B4's table, each row change citing its measurement: R0, R7 incl. W16/W32, R5, R1, R2, R8, D1/D1c, D1w, F0, F1, F2, P1, the pay rule | §R4, §1.3a, §1.4, §2.5, §2.6, §5.2a | done |
+| M9 contradicted: R1 dropped, the crossover recorded as an upper bound | §1.3a, §2.6 | done |
+| M15 contradicted: predictability, not gap | §1.3a (R5), §1.9, §5.2a | done |
+| no dispatch at B4; R2's unpaid not WALK; F0/F1 not built (D77); F2 needs a density condition | §2.5, §1.3a, Q-R17P-27 | done |
+| (2) D169 as B4's default, with its exceptions; B4's measurement names its regular-landing cells as EXPECTED losses up front | §1.9, §9.2a | done |
+| (3) B4's gates now: D163 add. 8 (met or what remains), E8 PASS, M0; OWED: the re-time and the V1-text attribution | §3.1a | done |
+| house shape: rev 4 header, §R4 by row and source, superseded text struck or noted, a first-match row table, plain words, no line-number citations | header, §R4, §1.3 strikes, §1.3a | done |
+| CLAUDE.md entries (memfn/CLAUDE.md's r17b_prime line, r17b_prime/CLAUDE.md, the lanes index); finder_history.md logged | those files | done |
+| report `docs/dev/lanes/rev4_report.md` with row-by-row changes, open questions with leanings, checklist | that file | done |
+| DESIGN ONLY: no build, no make test, no timing | nothing under `src/`, `memfn/src`, `tests/`, `lib/` changed | done |
