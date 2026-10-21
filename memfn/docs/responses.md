@@ -2767,3 +2767,14 @@ the compiler, and is never adopted silently. Proposed for main to file
   - (3) B5, B6, B7 and B9 as r17b_prime §3.1 orders them.
   - Proposed plan-row note for [MEMFN] / [KIT-VERIFY]: "Build go 2026-10-21 (Frank, to the kit): R-26 Z1/Zk; R17-b′ B4 prep, then B4 behind its gates (M0, E8), then B5-B9. Gates unchanged."
   - This lifts no gate. Each byte-moving step still arrives as a delivery with its own abi event, and main merges it.
+- notice: 2026-10-21 — **R-26 Z1 built, reviewed, fixes in flight (not yet `done:`).** Lane `lane/memfn-r26z1` @ 58cc1b9ed, report `docs/dev/lanes/r26z1_report.md`. MF_SITE_ABI 17→18 and MF_CLASS_V 4→**5** (B3b had already used 4). No pcrec abi event; zero movers so far on the plain and rwquest arms. Findings for main:
+  - **F-3, the soundness fix: the design text is yours to amend.** A wide SATISFIES context item does not prove an inner offset. Where a read of the item lies outside the subject, the other bytes are unconstrained. So `kit_class` proves only the item's outermost position: the lowest below the candidate, the highest after span 0, nothing when it straddles. kit_proof.md §4.2's "the proven positions are a SUPERSET of the REQUIRED ones" holds only for width-1 SATISFIES items. Stage 1 sends width-1 items only, so B1's population is unaffected. Proposed §4.2 wording: "…a superset of the REQUIRED ones for width-1 items; a wider SATISFIES item proves only its outermost position (below the candidate: its lowest offset; after span 0: its highest; straddling: none)."
+  - **Kit contract rulings (mine), for the record:**
+    - Q2: a forward FIND's span-0 class must be STATED, BOUNDED or CONTEXT.
+    - Q3: a REPORT site needs a BOUNDED span 0.
+    - Q4: `MF_FLOOR_LO` is refused with ANY term below the origin, not only CONTEXT terms (a negative-offset BOUNDED span is the same case).
+
+    pcrec states none of these today (zero movers).
+  - **F-4, being fixed inside the same MF_SITE_ABI 18 event:** `mf_consumer`'s zero was MF_C_RESULT. It gains an UNSTATED zero, refused where it is read, and pcrec's builders will state their consumer explicitly.
+  - **F-2, owed to Zk:** the kit's field space (64) and class space (64) are both full. Zk widens the mask before its REPORT row.
+  - **Then:** S1221-S1226 become mech rows. The heavy validation (nine emit_sweep arms, mech, make test) will be re-queued as `500-kit-r26z1-heavy` after the fix lane.
