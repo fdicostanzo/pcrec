@@ -438,5 +438,78 @@ has 'HOLDER-IDLE-SUSPECT' && bad "a busy holder was flagged" || ok "NEGATIVE: a 
 wait "${kids[-1]}" 2>/dev/null
 unset BOXQUEUE_IDLE_WINDOW BOXQUEUE_IDLE_SAMPLE BOXQUEUE_IDLE_BOX_PCT
 
+# 24. [runnerfix] no silent skip, and a runner that notices its own script changed. The miss: a runner that predated the
+# idle-ok grammar rejected a job queued after the merge and `continue`d with nothing logged ("not asked yet", 37 idle min).
+# OLDG plants that runner back: a scratch copy whose parse_decl does not know idle-ok (the job's recorded declarations
+# were written by the NEW script's `add`, so the cached-declaration read is what fails).
+waitfor() { local i; for i in $(seq 1 ${2:-100}); do has "$1" && return 0; sleep 0.1; done; return 1; }
+rpid() { sed -n 's/^pid=\([0-9]*\).*/\1/p' "$Q/runner.pid" 2>/dev/null; }
+stoprunner() { local p; p=$(rpid); [ -n "$p" ] && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" > /dev/null 2>&1; true; }
+pst() { local x; x=$(<"/proc/$1/stat"); x=${x##*) }; set -- $x; echo "${20}"; }
+OLDG=$'idle-ok)\n                if [ -z "$rest" ]'
+mkjob "$T/j/newg" "$(IDLE_DRY "echo 'boxqueue: idle-ok';")" 'exit 0' 'echo newgrammar >> "$BQ_QUEUE.ran"'
+mkjob "$T/j/hold" "$(D 30 none none)" 'echo "held"; exit 75' 'exit 0'
+SKIPRE='pass [0-9]+ 100-main-newg SKIPPED: cannot become runnable under this runner \(pid [0-9]+\): unknown declaration .idle-ok.'
+# (a) every skip is logged, named, and shown by status
+newq; bq add --name 100-main-newg --no-start "$T/j/newg" > /dev/null
+if P=$(plant oldgrammar "$OLDG" "${OLDG/idle-ok)/idle-okold)}"); then
+    BQX=$P run1
+    [ -f "$Q/pending/100-main-newg" ] && has "$SKIPRE" && bash "$BQ" status | grep -q 'pending: 100-main-newg :: SKIPPED: cannot become runnable' && ! bash "$BQ" status | grep -q 'not asked yet' \
+        && ok "NO SILENT SKIP: a job the runner cannot read stays pending, one log line names the job and the reason, status shows it (not 'not asked yet')" || bad "skip log/status: $(ql | tail -4) / $(bash "$BQ" status)"
+    SILENT='qlog "  pass $pn $n $ans"; printf '"'"'%s\n'"'"' "$ans" > "$Q/.state/$k.answer"; printf '"'"'%s %s\n'"'"' "$n" "$ans" >> "$Q/.work/status.$$"'
+    if P2=$(plant silent-skip "$OLDG" "${OLDG/idle-ok)/idle-okold)}" "$SILENT" ':'); then
+        newq; bq add --name 100-main-newg --no-start "$T/j/newg" > /dev/null; BQX=$P2 run1
+        ! has 'SKIPPED' && bash "$BQ" status | grep -q 'pending: 100-main-newg :: not asked yet' && ok "PLANT silent-skip (the old behaviour): nothing is logged and status reads 'not asked yet', the case goes red" || bad "PLANT silent-skip not caught: $(ql | tail -3)"
+    else bad "plant silent-skip did not land"; fi
+else bad "plant oldgrammar did not land"; fi
+# (b) the script is replaced on disk between passes: the runner re-execs (same pid, same lock) and runs the job only the new script accepts
+reexec_case() { # reexec_case PLANTED_NEW_RUNNER_BASE: 0 when the stale runner re-execed and ran newg
+    newq; bq add --name 100-main-newg --no-start "$T/j/newg" > /dev/null; bq add --name 500-main-hold --no-start "$T/j/hold" > /dev/null
+    local P=$1; setsid bash "$P" run --every 1 > /dev/null 2>&1 & kids+=($!)
+    waitfor "$SKIPRE" || return 1
+    p0=$(rpid); cp "$here/boxqueue" "$T/swap.$nq"; mv "$T/swap.$nq" "$P"
+    waitfor '^== runner RE-EXEC at pass' 60 || return 2
+    waitfor 'job 100-main-newg END rc=0 outcome=green' 60 || return 3
+    return 0
+}
+if P=$(plant oldgrammar "$OLDG" "${OLDG/idle-ok)/idle-okold)}"); then
+    reexec_case "$P"; rc=$?
+    if [ $rc = 0 ] && [ "$(cat "$Q.ran" 2>/dev/null)" = newgrammar ] && [ "$(rpid)" = "$p0" ] && has '^== runner RESUMED after RE-EXEC \(pass [0-9]+\) pid='"$p0"; then
+        ok "SELF-CHANGE: the script replaced on disk between passes: one RE-EXEC line, the SAME runner pid, and the job only the new grammar accepts runs green"
+        bq run --once > /dev/null 2>&1; r2=$?
+        [ "$r2" = 75 ] && [ -f "$Q/pending/500-main-hold" ] && ok "SELF-CHANGE: the runner lock survives the exec (a second runner is REFUSED, 75) and the other pending job is untouched, not duplicated" || bad "relock: rc=$r2 $(ls "$Q/pending")"
+    else bad "reexec: rc=$rc ran=$(cat "$Q.ran" 2>/dev/null) pid $p0 -> $(rpid) :: $(ql | tail -6)"; fi
+    stoprunner
+else bad "plant oldgrammar did not land (reexec)"; fi
+if P=$(plant no-reexec "$OLDG" "${OLDG/idle-ok)/idle-okold)}" 'reexec_if_changed "$pn"' ':'); then
+    reexec_case "$P"; rc=$?
+    [ $rc = 2 ] && ok "PLANT no-reexec (the check never runs): the stale runner keeps rejecting the job after the script is replaced, the case goes red" || bad "PLANT no-reexec not caught: rc=$rc"
+    stoprunner
+else bad "plant no-reexec did not land"; fi
+# (c) the negative: no re-exec while a job is running (a live job in running/ from a dead runner blocks every pass), only after it ends
+orphan_case() { # orphan_case PLANTED_RUNNER: leaves $reex_mid (a re-exec while the orphan lived) and $reex_after
+    newq; bq add --name 100-main-newg --no-start "$T/j/newg" > /dev/null
+    local P=$1 op; sleep 30 & op=$!; kids+=($op); mkdir -p "$Q/running/200-main-orphan"; printf '%s %s\n' "$op" "$(pst "$op")" > "$Q/running/200-main-orphan/pid"
+    setsid bash "$P" run --every 1 > /dev/null 2>&1 & kids+=($!)
+    waitfor 'recover 200-main-orphan: still running' || return 1
+    cp "$here/boxqueue" "$T/swap.$nq"; mv "$T/swap.$nq" "$P"
+    sleep 3.5; reex_mid=0; has '^== runner RE-EXEC' && reex_mid=1
+    kill "$op" 2>/dev/null; wait "$op" 2>/dev/null
+    reex_after=0; waitfor '^== runner RE-EXEC' 60 && reex_after=1
+    return 0
+}
+if P=$(plant oldgrammar "$OLDG" "${OLDG/idle-ok)/idle-okold)}"); then
+    orphan_case "$P"
+    [ "$reex_mid" = 0 ] && [ "$reex_after" = 1 ] && waitfor 'job 100-main-newg END rc=0 outcome=green' 60 \
+        && ok "NEGATIVE: the script replaced while a job is running: NO re-exec until that job is gone, then one re-exec and the new job runs" || bad "orphan: mid=$reex_mid after=$reex_after :: $(ql | tail -5)"
+    stoprunner
+else bad "plant oldgrammar did not land (orphan)"; fi
+if P=$(plant reexec-midjob "$OLDG" "${OLDG/idle-ok)/idle-okold)}" '    [ -z "$(ls -A "$Q/running" 2>/dev/null)" ] || return 0
+' '' 'if recover; then pn=$((pn + 1)); pass $pn && continue; fi' 'reexec_if_changed "$pn"; if recover; then pn=$((pn + 1)); pass $pn && continue; fi'); then
+    orphan_case "$P"
+    [ "$reex_mid" = 1 ] && ok "PLANT reexec-midjob (no running-job guard, check hoisted above recover): the runner re-execs while a job runs, the case goes red" || bad "PLANT reexec-midjob not caught: mid=$reex_mid"
+    stoprunner
+else bad "plant reexec-midjob did not land"; fi
+
 echo "boxqueue.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

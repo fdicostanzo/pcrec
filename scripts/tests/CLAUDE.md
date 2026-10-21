@@ -79,7 +79,7 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   ~2 min together, mostly watcher polls at `--every 1`. [BOXQUEUE] added the
   generic `TOOL: DONE rc=N` trailer cases (verdict 31 checks, watchrun 17).
 - **boxqueue.test** — scripts/boxqueue's self-test ([BOXQUEUE], 2026-10-21;
-  79 checks since [WATCH-IDLE] (53 at [BOXQUEUE]), ~4 min, one trivial job at a time;
+  86 checks since [runnerfix] (79 at [WATCH-IDLE], 53 at [BOXQUEUE]), ~4 min, one trivial job at a time;
   run it with TMPDIR set inside your worktree, its mktemp defaults to /tmp). Every case gets a FRESH
   scratch queue (`PCREC_BOXQUEUE_DIR`) and the sacrificial box lock; runners
   and lock holders are killed by pid (safekill) on exit. The protocol both
@@ -106,6 +106,14 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   chatty job flagged), and never raising (a quiet job unnoticed); plus the
   negatives (`idle-ok`, a busy child, a busy foreign lock holder, a
   pre-change bare-none job still pending runs).
+  [runnerfix] added case 24 and THREE more plants: a stale-grammar runner
+  (the old parse_decl planted back) skips a job and the case demands a log
+  line, a status reason and the job left pending (the silent skip planted
+  back reads "not asked yet"); the script replaced on disk makes it re-exec
+  with the same pid and lock and run the job only the new script accepts
+  (the check removed: it never recovers); a live job in running/ blocks the
+  re-exec until it is gone (the guard removed and the check hoisted above
+  recover: it re-execs mid-job).
 
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.
