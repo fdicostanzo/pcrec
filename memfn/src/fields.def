@@ -261,6 +261,55 @@ MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
          "M USES it and declines an unstated one (R1). Every row born before B1 renders the "
          "same text for any mode and serves MF_ANY")
 
+/* ---- the fields: R-26 (MF_SITE_ABI 18; kit_proof.md §4.1) ----------------
+ *
+ * Span 0's prefix facts, the context spans and their facts, and the read
+ * floor. THE CLASS SPACE IS FULL (64, kit.h's _Static_assert), so these read
+ * through classes the space already has, each named in its doc; with these
+ * seven the FIELD space is full too (64). The first row that needs a class
+ * of its own (R-26.6's REPORT row needs one for `site_kind`) widens the mask
+ * first. No form reads the prefix facts, `consumable` or `read_floor` (they
+ * are facts for a choice; every row serves every value); a form HONOURS
+ * `ctx` (it tests the entries) and `absent` (it renders the rule), so every
+ * row but the generic one declines a site stating a context span, or an
+ * `absent` SATISFIES. */
+MF_FIELD(prefix_stated, MF_PH_DEFINE, HOOK, cl_prefix_stated,
+         CM(YES) | CM(OTHER),
+         "span 0's prefix facts stated (R-26.1): YES on a forward FIND's BOUNDED `pred` that "
+         "states them; 0 is UNSTATED there and refused by site_check (so HOOK), and no field "
+         "elsewhere. Every row serves MF_ANY: no form reads it")
+MF_FIELD(exact_len, MF_PH_DEFINE, VALUE, cl_exact_len,
+         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
+         "span 0's exact prefix length (R-26.1), read where prefix_stated is STATED (unstated "
+         "elsewhere): ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
+MF_FIELD(consumable_len, MF_PH_DEFINE, VALUE, cl_consumable_len,
+         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
+         "span 0's consumable prefix length (R-26.1), read where prefix_stated is STATED: "
+         "ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
+MF_FIELD(ctx, MF_PH_DEFINE, VALUE, cl_ctx,
+         CM(NONE) | CM(BACK) | CM(NONNEG) | CM(OTHER),
+         "the context spans (R-26.2), a BIT SET as `policy` is: NONE (nctx 0), else BACK for an "
+         "entry before span 0 and NONNEG for one after it, each a class the row must serve. "
+         "Only the generic row tests entries: every other row serves NONE")
+MF_FIELD(absent, MF_PH_DEFINE, HOOK, cl_absent,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the absent rule of the site's CONTEXT predicates (a context stop's `pred`, every `ctx` "
+         "entry; R-26.2), a BIT SET: YES for SATISFIES (the item holds where its byte is "
+         "absent), NO for FAILS. No context predicate: unstated (0 on a CONTEXT predicate is "
+         "refused by site_check). Every row renders FAILS (a read outside the subject fails "
+         "its term) and serves NO; the generic row renders both")
+MF_FIELD(consumable, MF_PH_DEFINE, HOOK, cl_consumable,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the consumable fact of the site's CONTEXT predicates (R-26.2), a BIT SET of YES/NO; "
+         "unstated where none is. Every row serves MF_ANY: no form reads it")
+MF_FIELD(read_floor, MF_PH_DEFINE, HOOK, cl_read_floor,
+         CM(ZERO) | CM(OTHER),
+         "site.read_floor (R-26.2, kit_proof.md §3.5): ZERO for SUBJECT (reads down to offset "
+         "0), OTHER for LO (no class of its own: the space is full); 0 is UNSTATED (refused by "
+         "site_check under a CONTEXT term below the origin, a wildcard elsewhere). Every row "
+         "serves MF_ANY: under LO no term reads below its candidate (site_check), so every "
+         "row's reads stay >= lo")
+
 /* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
 
 MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
