@@ -63,3 +63,21 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
   routed-record census (`routed_census_b3b.py`), their floors and `out/`.
   Own CLAUDE.md. The main-side proposed diff and the heavy chain live under
   `docs/dev/lanes/b3b/`. Report: `docs/dev/lanes/b3b_report.md`.
+
+- `grid2read/` — the reading of the zen4-grid2 timing slot (lane grid2read,
+  2026-10-16, analysis only): `grid2read.py`/`grload2.py`, the full output
+  `analysis.txt`, the proposed `kit-grid@2` rows `keys.tsv`, and `SHA256SUMS`
+  of the 18 slot files read. Own CLAUDE.md; the report is
+  `docs/dev/lanes/grid2read_report.md`.
+
+Revision 4 of the note (lane rev4, 2026-10-20) adds no instrument and re-runs
+none. It reads `grid2read/` (the slot's reading and its PROPOSED `keys.tsv`) as
+B4's evidence. `fdb2/predicted_movers_B4.tsv` is STALE under revision 4's table:
+item 3a's shapes now route and R0 is retired. B4 must regenerate it, which is OWED
+in the note's §3.1a item 4.
+
+Revision 4.1 of the note (lane rev41, 2026-10-21) also adds no instrument and re-runs
+none. It applies three rulings (Q-R17P-26..28). Under the term-count rule
+`fdb2/predicted_movers_B4.tsv` stays stale for a further reason: the 54 sites on untimed
+shapes now route by term count, so the regenerated manifest (the note's §3.1a item 4)
+is where their split between V1 and the walk is OWED.

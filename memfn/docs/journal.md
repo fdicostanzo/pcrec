@@ -2499,6 +2499,34 @@ pointer when a kit change merges to main.
 - **Owed and unchanged:** the rev 4 text of r17b_prime (M9/M15 into B4's table, this default stated as the ruling); the quiet re-time of f3-word-eq/f3-quad; D163 add. 8 layout controls, E8 PASS and M0 before B4 builds. **B4's measurement must name its regular-landing bench cells as EXPECTED losses up front.**
 - Posted to responses.md as a notice with proposed D-entry text for main.
 
+## 2026-10-20 (night) — r17b_prime rev 4 delivered (lane rev4, opus, docs only)
+
+- Main filed D169 and said no hold. Lane rev4 merged lane/grid2read (a57c63b17, both index sides kept) and wrote rev 4 (52078ec0f). What rev 4 does:
+  - deletes R1 (M9);
+  - re-keys R5 on a stated REGULAR landing regime, as a proposed fact SF_E_REGULAR (not built, D77);
+  - retires R0 (its deny and S916 go at B4);
+  - makes R2's unpaid fallback no longer WALK;
+  - adds no dispatch at B4;
+  - does not build F0/F1;
+  - states D169 as the default (§1.9);
+  - pre-registers the EXPECTED-LOSS rule (§9.2a).
+- B4's table is §1.3a. Gates: D163 add. 8 MET; E8 and M0 NOT MET.
+- Reviewed: docs only (6 files past the grid2read merge), D169 real on main. Fast-forwarded lane/memfn-b4. Lane stopped.
+- Lane questions: (1) the default for an unmeasured cover shape and (2) F2, the VM hat's one-byte set at default, go to Frank. (3), the pre-scan pricing trigger, is my call: record it as fired on the letter, do not build (it never fires on a default compile; D77).
+
+## 2026-10-21 — Frank answers Q-R17P-26: route set sites by TERM COUNT; no "unmeasured shape" case
+
+- I framed Q-R17P-26 (rev4's question) as an unknown, the per-byte cost of an untimed cover shape, with a leaning to keep the walk until timed. Frank: "we know the pattern ... 3 terms v1 is no bueno. what's the confusion?" He is right. The shape is a COMPILE-TIME fact (the kit builds the terms), and grid2's nine measured shapes give the rule: V1 for covers of at most 2 terms (+1..+55%), the walk from 3 terms (-13/-41/-46%). An untimed combination is routed by its term count; it does not need its own key first.
+- **Effect on rev 4:** R7 keys on the cover's term count instead of a per-shape saving key. R7w's "no key" reason goes away, and the 54 sites stop being a pending population (they route by term count). B4's acceptance measurement confirms the rule on the shapes it moves, and a shape that contradicts the rule is a finding.
+- **Lesson:** "not timed" is not "unknown" when the deciding fact is static and the measured trend is monotone in it. Before I relay a lane's "unmeasured" question, check whether the deciding fact is known at compile time.
+- **Frank, same exchange: Q-R17P-27 YES.** The VM hat's one-byte set (F2) moves to V1 by default at B5, NOT B4, so B4 stays one change. Its g = 2 cells (-38%) are named EXPECTED losses up front. It is D169's landing-spacing trade, and there the deciding fact (the data) really is unknown at compile time. Q-R17P-28 (P1, the pre-scan pricing) stays the kit's call: recorded as fired on the letter, not built.
+
+## 2026-10-21 (night) — r17b_prime rev 4.1 delivered (lanes rev41, rev41key; docs only)
+
+- Rev 4.1 applies Q-R17P-26 (R7 routes by cover term count, reading the derived key `kit.terms.V1max` = 2, §5.2, from grid2read §3.2's nine shapes; basis DERIVED), Q-R17P-27 (F2 to V1 at B5, its g = 2 cells named expected losses) and Q-R17P-28 (P1 recorded as fired, not built). §7.3 is all ANSWERED. Tip 06019e90a, fast-forwarded into lane/memfn-b4.
+- At review I sent rev41 one edit, because it had labelled the cutoff UNMEASURED-DEFAULT. It went idle; I read its STALE idle report as "missed the message" and TaskStopped it mid-edit. The fresh lane rev41key found the uncommitted partial edits and correctly refused to write until I named the owner; it took over and finished.
+- **Lesson:** an idle notification can predate the lane's resumption on my message. Before stopping a lane over a report, check its worktree (mtime, git status) and the branch tip; a moving tree means it is working.
+
 ## 2026-10-21 — R-26 build go; Z1 lane started
 
-Main filed R-26 (kit_proof U1) at d970abbbc on Frank's build go ("both you and kit please proceed"). Acked on `lane/memfn-r26` (cc4f87ad3). Z1 (R-26.1-R-26.5: prefix exactness, ctx[] with the absent rule, read_floor, MF_SK_REPORT accepted with no row, proven[], declarations; one MF_SITE_ABI event 17→18; zero movers) went to opus lane `r26z1` (worktrees/r26z1). Its last act is queueing boxqueue job 500-kit-r26z1-heavy (emit_sweep all nine arms, then make test). Zk (R-26.6) follows on the same branch after the Z1 review. I asked main for six kit-side sabotage ids. lane/memfn-b4 is still unmerged; both branches append to responses.md.
+Main filed R-26 (kit_proof U1) at d970abbbc on Frank's build go ("both you and kit please proceed"). Acked on `lane/memfn-r26` (cc4f87ad3). Z1 (R-26.1-R-26.5: prefix exactness, ctx[] with the absent rule, read_floor, MF_SK_REPORT accepted with no row, proven[], declarations; one MF_SITE_ABI event 17→18; zero movers) went to opus lane `r26z1` (worktrees/r26z1). Its last act is queueing boxqueue job 500-kit-r26z1-heavy (emit_sweep all nine arms, then make test). Zk (R-26.6) follows on the same branch after the Z1 review. I asked main for six kit-side sabotage ids. Main merged lane/memfn-b4 (4c46ddcba) and reserved S1221-S1226 for the kit plants; main merged into this branch (append conflicts in journal and responses resolved, main's entries first).
