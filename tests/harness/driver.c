@@ -414,11 +414,12 @@ int main(int argc, char **argv) {
      * usage error rather than a silent fall back to `one`, because falling
      * back would make a mis-spelled `count` answer the wrong question and
      * pass. */
-    int mode_count = 0;
+    int mode_count = 0, mode_global = 0;
     if (argc >= 5) {
-        if (strcmp(argv[4], "count") == 0)    mode_count = 1;
+        if (strcmp(argv[4], "count") == 0)       mode_count = 1;
+        else if (strcmp(argv[4], "global") == 0) mode_global = 1;
         else if (strcmp(argv[4], "one") != 0) {
-            fprintf(stderr, "driver: invalid mode '%s' (want one|count)\n", argv[4]);
+            fprintf(stderr, "driver: invalid mode '%s' (want one|count|global)\n", argv[4]);
             return 2;
         }
     }
@@ -513,6 +514,29 @@ int main(int argc, char **argv) {
             p = (fa[0][1] > fa[0][0])
                   ? RXFN(_next_pos)(buf, len, (size_t)fa[0][1] - 1)   /* [K75] */
                   : RXFN(_next_pos)(buf, len, (size_t)fa[0][0]);
+        }
+        printf("count %zu\n", nmatch);
+        free_vars(vars, nvars);
+        free(buf);
+        return 0;
+    }
+    /* [FINDALL-NEXT] mode `global`, the `mg` line (rxt_format.md §1.7.1): the
+     * count `<prefix>_next` reports from `startpos`, which is PCRE2's global
+     * iteration. A code that ends it prints as the single-search path prints
+     * one, at the position of the search that ended it (`it.lo`). */
+    if (mode_global) {
+        rx_iter it = RX_ITER_INIT(buf, len);
+        size_t nmatch = 0;
+        if (startpos) rx_iter_at(&it, startpos);
+#ifdef RXT_HAS_VARS
+        rx_iter_vars(&it, vars, nvars);
+#endif
+        while (RXFN(_next)(&it, NULL)) nmatch++;
+        if (it.rc < 0) {
+            rxt_print_negative(it.rc, RXFN(_valid_upto), buf, len, it.lo);
+            free_vars(vars, nvars);
+            free(buf);
+            return 3;
         }
         printf("count %zu\n", nmatch);
         free_vars(vars, nvars);

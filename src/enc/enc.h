@@ -552,6 +552,19 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix, const PcrecEncSiteText *sites,
                          size_t nsites, unsigned drop, unsigned stat);
+/* [FINDALL-NEXT] F-1 the out-of-line entries' STATIC TWINS: each entry in
+ * `mask` (closed over `requires`) and not in `drop` whose `inline_def` is
+ * false, written as `attr` (the caller's guarded attribute text; the enc
+ * layer names no attribute) + `static ` + its body under the name
+ * `<prefix>__<name>`, every reference to another out-of-line entry inside
+ * it rendered as that entry's twin. For a caller to place ahead of every
+ * body that calls one; `pcrec_enc_emit_defs` then writes each EXPORTED entry
+ * as a forwarder to its twin, and every internal call goes to the twin. */
+/* [FINDALL-NEXT] writes the twin's second `_` (`<p>_` + this + `<name>`)
+ * inside the scaffold bracket. */
+void pcrec_enc_twin_mark(StrBuf *sb);
+void pcrec_enc_emit_twins(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                          const char *prefix, const char *attr, unsigned drop);
 /* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
  * ahead of the engine bodies; `pcrec_enc_emit_defs` emits the rest. Both,
  * and `pcrec_enc_emit_decls`, close `mask` over `requires` first; `sites` is

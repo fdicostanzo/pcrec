@@ -1299,6 +1299,8 @@ a record's class reads `subject_class` alone; `owned_inline` reads
 
 ## Files
 
+- **emit_iter.c** — [FINDALL-NEXT] I1: the find-all iterator's text (`<prefix>_next`, its bind/step parts, the shared block's `rx_iter` and setters); the section below.
+
 - **part_layout.c** — [ENTRY-TABLE] E1's three part-layout tables, the marks,
   the render and the two listings' rows (section above). A part row's layout
   reaches its text through `layout_attr`, a map onto `attr_text.c`'s values.
@@ -4516,3 +4518,50 @@ only when the kit consulted a set key, else `""`, at the ks-mark render
 point after `mf_art_end`. No kit row reads a set key before B4, so the
 stamp is `""` on every artifact today. The VM's `^`/`(?m)^` role text is
 K112's corrected wording (`src/core/ctxfn.def`).
+
+## [FINDALL-NEXT] I1 — the find-all iterator (lane i1build, 2026-10-21; abi 82 -> 83)
+
+`docs/design/findall_iter.md` rev 3 as cut by the I1 rulings (§12 there);
+`docs/spec/match_api.md` §3.8 is the contract.
+
+- **emit_iter.c** (new) writes the iterator: the shared block's `rx_iter`,
+  its states and setters (`pcrec_emit_iter_abi_types`), the header's
+  `<prefix>_iter_buffers` and `_next` declaration, and the iterator's text
+  (`pcrec_emit_iterate`, the `iterate` combinator of `entry_rows[]`):
+  `<p>__bind_checks` (the caller-position prologue `<prefix>_search` runs,
+  via `pcrec_emit_startpos_guard`, run once at bind), `<p>__enter` (the state
+  machine and the setters' normalization), `<p>__step` (the retry, the
+  search, PCRE2's advance; commits only on a match), the VM's
+  `<p>__step_own` (the storage binding `<prefix>_search` makes, tiered or
+  frameless) and `<prefix>_next`. The engine emitters supply the search body
+  `<p>__find` and the retry `<p>__retry` and say the step's shape
+  (`PcrecIterText`).
+- **The split.** emit_dfa.c's `<prefix>_search` is a wrapper
+  (`pcrec_emit_search_wrapper`: the head and the caller-position prologue)
+  over `<p>__find`, which `emit_search_head` writes with the FIND entry's
+  linkage; `find_body_shared` makes it `noinline` on the attempt route's
+  label-table body and `always_inline` elsewhere. emit_vm.c's search loop is
+  `<p>__find`, and `<searchfn>_run` is the range test and guard over it
+  (`vm_emit_search_run_prologue`).
+- **The retry.** DFA: `pcrec_emit_dfa_retry` scans `Job.nedfa` (the notempty
+  root, built by compile.c's `build_notempty_dfa` where `reports_empty`)
+  anchored at `q` (direction `dfa_dir_retry`). VM: `vm_emit_retry`, the
+  match-caps run with `run->notempty` set, and the accept label's guard
+  `if (run->notempty && scan_position == ctx->pos) goto <p>_fail;`.
+  `<PREFIX>_ITER_RETRY` names which.
+- **The residual twins** (src/enc/enc.c): every out-of-line residual entry
+  is a static `<p>__<name>`; the exported name is a one-line forwarder.
+  Every reference writes the twin's second `_` through
+  `pcrec_enc_twin_mark`, a scaffold byte, so a renamed call is the length it
+  was. Checked by tests/codegen/run_residual_twins.sh (no PLT call in a
+  -fPIC object).
+- **THE SCAFFOLD BRACKET** (`pcrec_sb_scaffold_open`/`_close`/`_putc`,
+  src/core/sb.c): every byte of the iterator, the split's new heads and the
+  twins' forwarders is excluded from every length decision, the RQ-3 SIMD
+  bracket's rules with its own count. Measured on a sample of DFA, VM,
+  hybrid, utf8, `-futf-check`, var-bearing and compound artifacts: the
+  counted size moves only where the DFA notempty root is built (a machine,
+  counted like one) and by one byte on a compound shell's `__next_pos`
+  reference. A new iterator line goes inside the bracket.
+- **`rx_info.next`** (`emit_info_def`) points at `<prefix>_next`; `rx_nextfn`
+  is declared on the tag `struct rx_iter` ahead of `struct rx_info`.

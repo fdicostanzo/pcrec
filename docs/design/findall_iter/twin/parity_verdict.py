@@ -20,12 +20,18 @@
 # Prints the table, one VERDICT line per (subcell, regime), the batch line, then
 # `parity: DONE rc=0` and `== parity COMPLETE <verdict rows>`.
 #
+# POST-BUILD ([FINDALL-NEXT] I1, parity.sh under PARITY_POST=1): the arms are L_old (the
+# parent's artifact), L_new, A and I (the built iterator); the B64/N64/I_shared rows and
+# the batch line are absent, and I is GATED on cells 1, 3 and 4 (D171: cells 2, 5, 6 and 7
+# are reported), printed as `GATE` / `REPORT`.
+#
 # usage: python3 -I parity_verdict.py RESULTS.tsv
 import sys
 from collections import defaultdict
 
 ARMS = ["L_old", "L_new", "A", "L_tw", "I", "N64", "I_shared", "B64", "I_fill"]
 DENSE = ("c1-", "c3-")
+GATED = ("c1-", "c3-", "c4")   # D171: the post-build gate's cells
 
 
 def median(v):
@@ -84,9 +90,15 @@ for cid in cells:
                 print(f"   {a:<9}{m:>14.2f} ns  [{iqr * 100:5.2f}%]  ratio {m / base:.4f}")
         out = []
         ri = st["I"][0] / base
-        out.append(f"I {'PASS' if ri <= 1 + floor else 'FINDING'} {ri:.4f}")
+        post = "B64" not in st
+        tag = ("GATE " if cid.startswith(GATED) else "REPORT ") if post else ""
+        out.append(f"{tag}I {'PASS' if ri <= 1 + floor else 'FINDING'} {ri:.4f}")
         rn = st["L_new"][0] / base
         out.append(f"L_new {'unharmed' if abs(rn - 1) <= floor else 'OUTSIDE-FLOOR'} {rn:.4f}")
+        if post:
+            print(f"VERDICT {cid} {reg} floor {floor * 100:.2f}%: " + "; ".join(out))
+            nverd += 1
+            continue
         rb = st["B64"][0] / base
         if cid.startswith("c7"):
             out.append(f"B64 cost-reported {rb:.4f} (B64/I {st['B64'][0] / st['I'][0]:.4f})")
@@ -102,7 +114,8 @@ for cid in cells:
         out.append(f"N64 {st['N64'][0] / base:.4f}")
         print(f"VERDICT {cid} {reg} floor {floor * 100:.2f}%: " + "; ".join(out))
         nverd += 1
-print("BATCH dense rows: " + "; ".join(batch_rows))
-print(f"BATCH CELL: {'fill' if batch_ok and batch_rows else 'off'}")
+if batch_rows:
+    print("BATCH dense rows: " + "; ".join(batch_rows))
+    print(f"BATCH CELL: {'fill' if batch_ok else 'off'}")
 print("parity: DONE rc=0")
 print(f"== parity COMPLETE {nverd} verdict rows")

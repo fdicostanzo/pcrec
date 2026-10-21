@@ -31,7 +31,9 @@
 #define CAT(a, b) CAT2(a, b)
 #define F(x) CAT(PFX, x)
 #include HDR
+#ifndef PCREC_ITER_LAYOUT   /* a built artifact (abi >= 83) declares rx_iter itself */
 #include "iter_abi.h"
+#endif
 #define NCAPS CAT(PFXU, _NCAPS)
 
 #if defined(ARM_ITER) || defined(ARM_BATCH) || defined(ARM_NEXTN)

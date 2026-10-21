@@ -1,0 +1,1338 @@
+# tests/findall/cells.tsv -- [FINDALL-NEXT] the iterator differential's cells
+# (run_iter_diff.sh): ENC<TAB>FLAGS<TAB>PATTERN<TAB>SUBJECT, the pattern as written,
+# the subject in the .rxt subject-escape vocabulary. The byte patterns are lane iterdes's targeted
+# set (docs/design/findall_iter/sem/targeted.tsv) plus the retry shapes the
+# design names (\K, lookaround, anchors, compound splits); the utf8 groups
+# carry ill-formed subjects, alone and under -futf-check.
+byte		a*	
+byte		a*	a
+byte		a*	aa
+byte		a*	ab
+byte		a*	ba
+byte		a*	aab
+byte		a*	abab
+byte		a*	xax
+byte		a*	xyy
+byte		a*	abba
+byte		a*	a b
+byte		a*	,a,,b,
+byte		a*	ab ab
+byte		a*	b
+byte		a*	aaab
+byte		a*	bab
+byte		a*	c1a22
+byte		a*	a\nb\n
+byte		x?y	
+byte		x?y	a
+byte		x?y	aa
+byte		x?y	ab
+byte		x?y	ba
+byte		x?y	aab
+byte		x?y	abab
+byte		x?y	xax
+byte		x?y	xyy
+byte		x?y	abba
+byte		x?y	a b
+byte		x?y	,a,,b,
+byte		x?y	ab ab
+byte		x?y	b
+byte		x?y	aaab
+byte		x?y	bab
+byte		x?y	c1a22
+byte		x?y	a\nb\n
+byte		a|	
+byte		a|	a
+byte		a|	aa
+byte		a|	ab
+byte		a|	ba
+byte		a|	aab
+byte		a|	abab
+byte		a|	xax
+byte		a|	xyy
+byte		a|	abba
+byte		a|	a b
+byte		a|	,a,,b,
+byte		a|	ab ab
+byte		a|	b
+byte		a|	aaab
+byte		a|	bab
+byte		a|	c1a22
+byte		a|	a\nb\n
+byte		a|b*	
+byte		a|b*	a
+byte		a|b*	aa
+byte		a|b*	ab
+byte		a|b*	ba
+byte		a|b*	aab
+byte		a|b*	abab
+byte		a|b*	xax
+byte		a|b*	xyy
+byte		a|b*	abba
+byte		a|b*	a b
+byte		a|b*	,a,,b,
+byte		a|b*	ab ab
+byte		a|b*	b
+byte		a|b*	aaab
+byte		a|b*	bab
+byte		a|b*	c1a22
+byte		a|b*	a\nb\n
+byte		a?	
+byte		a?	a
+byte		a?	aa
+byte		a?	ab
+byte		a?	ba
+byte		a?	aab
+byte		a?	abab
+byte		a?	xax
+byte		a?	xyy
+byte		a?	abba
+byte		a?	a b
+byte		a?	,a,,b,
+byte		a?	ab ab
+byte		a?	b
+byte		a?	aaab
+byte		a?	bab
+byte		a?	c1a22
+byte		a?	a\nb\n
+byte		b*	
+byte		b*	a
+byte		b*	aa
+byte		b*	ab
+byte		b*	ba
+byte		b*	aab
+byte		b*	abab
+byte		b*	xax
+byte		b*	xyy
+byte		b*	abba
+byte		b*	a b
+byte		b*	,a,,b,
+byte		b*	ab ab
+byte		b*	b
+byte		b*	aaab
+byte		b*	bab
+byte		b*	c1a22
+byte		b*	a\nb\n
+byte		(a|)	
+byte		(a|)	a
+byte		(a|)	aa
+byte		(a|)	ab
+byte		(a|)	ba
+byte		(a|)	aab
+byte		(a|)	abab
+byte		(a|)	xax
+byte		(a|)	xyy
+byte		(a|)	abba
+byte		(a|)	a b
+byte		(a|)	,a,,b,
+byte		(a|)	ab ab
+byte		(a|)	b
+byte		(a|)	aaab
+byte		(a|)	bab
+byte		(a|)	c1a22
+byte		(a|)	a\nb\n
+byte		a(b|)c	
+byte		a(b|)c	a
+byte		a(b|)c	aa
+byte		a(b|)c	ab
+byte		a(b|)c	ba
+byte		a(b|)c	aab
+byte		a(b|)c	abab
+byte		a(b|)c	xax
+byte		a(b|)c	xyy
+byte		a(b|)c	abba
+byte		a(b|)c	a b
+byte		a(b|)c	,a,,b,
+byte		a(b|)c	ab ab
+byte		a(b|)c	b
+byte		a(b|)c	aaab
+byte		a(b|)c	bab
+byte		a(b|)c	c1a22
+byte		a(b|)c	a\nb\n
+byte		(ab)*	
+byte		(ab)*	a
+byte		(ab)*	aa
+byte		(ab)*	ab
+byte		(ab)*	ba
+byte		(ab)*	aab
+byte		(ab)*	abab
+byte		(ab)*	xax
+byte		(ab)*	xyy
+byte		(ab)*	abba
+byte		(ab)*	a b
+byte		(ab)*	,a,,b,
+byte		(ab)*	ab ab
+byte		(ab)*	b
+byte		(ab)*	aaab
+byte		(ab)*	bab
+byte		(ab)*	c1a22
+byte		(ab)*	a\nb\n
+byte		a{0,2}	
+byte		a{0,2}	a
+byte		a{0,2}	aa
+byte		a{0,2}	ab
+byte		a{0,2}	ba
+byte		a{0,2}	aab
+byte		a{0,2}	abab
+byte		a{0,2}	xax
+byte		a{0,2}	xyy
+byte		a{0,2}	abba
+byte		a{0,2}	a b
+byte		a{0,2}	,a,,b,
+byte		a{0,2}	ab ab
+byte		a{0,2}	b
+byte		a{0,2}	aaab
+byte		a{0,2}	bab
+byte		a{0,2}	c1a22
+byte		a{0,2}	a\nb\n
+byte		[a-c]*	
+byte		[a-c]*	a
+byte		[a-c]*	aa
+byte		[a-c]*	ab
+byte		[a-c]*	ba
+byte		[a-c]*	aab
+byte		[a-c]*	abab
+byte		[a-c]*	xax
+byte		[a-c]*	xyy
+byte		[a-c]*	abba
+byte		[a-c]*	a b
+byte		[a-c]*	,a,,b,
+byte		[a-c]*	ab ab
+byte		[a-c]*	b
+byte		[a-c]*	aaab
+byte		[a-c]*	bab
+byte		[a-c]*	c1a22
+byte		[a-c]*	a\nb\n
+byte		|a	
+byte		|a	a
+byte		|a	aa
+byte		|a	ab
+byte		|a	ba
+byte		|a	aab
+byte		|a	abab
+byte		|a	xax
+byte		|a	xyy
+byte		|a	abba
+byte		|a	a b
+byte		|a	,a,,b,
+byte		|a	ab ab
+byte		|a	b
+byte		|a	aaab
+byte		|a	bab
+byte		|a	c1a22
+byte		|a	a\nb\n
+byte		a*?	
+byte		a*?	a
+byte		a*?	aa
+byte		a*?	ab
+byte		a*?	ba
+byte		a*?	aab
+byte		a*?	abab
+byte		a*?	xax
+byte		a*?	xyy
+byte		a*?	abba
+byte		a*?	a b
+byte		a*?	,a,,b,
+byte		a*?	ab ab
+byte		a*?	b
+byte		a*?	aaab
+byte		a*?	bab
+byte		a*?	c1a22
+byte		a*?	a\nb\n
+byte		a??	
+byte		a??	a
+byte		a??	aa
+byte		a??	ab
+byte		a??	ba
+byte		a??	aab
+byte		a??	abab
+byte		a??	xax
+byte		a??	xyy
+byte		a??	abba
+byte		a??	a b
+byte		a??	,a,,b,
+byte		a??	ab ab
+byte		a??	b
+byte		a??	aaab
+byte		a??	bab
+byte		a??	c1a22
+byte		a??	a\nb\n
+byte		[0-9]+	
+byte		[0-9]+	a
+byte		[0-9]+	aa
+byte		[0-9]+	ab
+byte		[0-9]+	ba
+byte		[0-9]+	aab
+byte		[0-9]+	abab
+byte		[0-9]+	xax
+byte		[0-9]+	xyy
+byte		[0-9]+	abba
+byte		[0-9]+	a b
+byte		[0-9]+	,a,,b,
+byte		[0-9]+	ab ab
+byte		[0-9]+	b
+byte		[0-9]+	aaab
+byte		[0-9]+	bab
+byte		[0-9]+	c1a22
+byte		[0-9]+	a\nb\n
+byte		a{2,}	
+byte		a{2,}	a
+byte		a{2,}	aa
+byte		a{2,}	ab
+byte		a{2,}	ba
+byte		a{2,}	aab
+byte		a{2,}	abab
+byte		a{2,}	xax
+byte		a{2,}	xyy
+byte		a{2,}	abba
+byte		a{2,}	a b
+byte		a{2,}	,a,,b,
+byte		a{2,}	ab ab
+byte		a{2,}	b
+byte		a{2,}	aaab
+byte		a{2,}	bab
+byte		a{2,}	c1a22
+byte		a{2,}	a\nb\n
+byte		(?:ab|a)	
+byte		(?:ab|a)	a
+byte		(?:ab|a)	aa
+byte		(?:ab|a)	ab
+byte		(?:ab|a)	ba
+byte		(?:ab|a)	aab
+byte		(?:ab|a)	abab
+byte		(?:ab|a)	xax
+byte		(?:ab|a)	xyy
+byte		(?:ab|a)	abba
+byte		(?:ab|a)	a b
+byte		(?:ab|a)	,a,,b,
+byte		(?:ab|a)	ab ab
+byte		(?:ab|a)	b
+byte		(?:ab|a)	aaab
+byte		(?:ab|a)	bab
+byte		(?:ab|a)	c1a22
+byte		(?:ab|a)	a\nb\n
+byte		(a*)*	
+byte		(a*)*	a
+byte		(a*)*	aa
+byte		(a*)*	ab
+byte		(a*)*	ba
+byte		(a*)*	aab
+byte		(a*)*	abab
+byte		(a*)*	xax
+byte		(a*)*	xyy
+byte		(a*)*	abba
+byte		(a*)*	a b
+byte		(a*)*	,a,,b,
+byte		(a*)*	ab ab
+byte		(a*)*	b
+byte		(a*)*	aaab
+byte		(a*)*	bab
+byte		(a*)*	c1a22
+byte		(a*)*	a\nb\n
+byte		.	
+byte		.	a
+byte		.	aa
+byte		.	ab
+byte		.	ba
+byte		.	aab
+byte		.	abab
+byte		.	xax
+byte		.	xyy
+byte		.	abba
+byte		.	a b
+byte		.	,a,,b,
+byte		.	ab ab
+byte		.	b
+byte		.	aaab
+byte		.	bab
+byte		.	c1a22
+byte		.	a\nb\n
+byte		ab$	
+byte		ab$	a
+byte		ab$	aa
+byte		ab$	ab
+byte		ab$	ba
+byte		ab$	aab
+byte		ab$	abab
+byte		ab$	xax
+byte		ab$	xyy
+byte		ab$	abba
+byte		ab$	a b
+byte		ab$	,a,,b,
+byte		ab$	ab ab
+byte		ab$	b
+byte		ab$	aaab
+byte		ab$	bab
+byte		ab$	c1a22
+byte		ab$	a\nb\n
+byte		^a	
+byte		^a	a
+byte		^a	aa
+byte		^a	ab
+byte		^a	ba
+byte		^a	aab
+byte		^a	abab
+byte		^a	xax
+byte		^a	xyy
+byte		^a	abba
+byte		^a	a b
+byte		^a	,a,,b,
+byte		^a	ab ab
+byte		^a	b
+byte		^a	aaab
+byte		^a	bab
+byte		^a	c1a22
+byte		^a	a\nb\n
+byte		c*	
+byte		c*	a
+byte		c*	aa
+byte		c*	ab
+byte		c*	ba
+byte		c*	aab
+byte		c*	abab
+byte		c*	xax
+byte		c*	xyy
+byte		c*	abba
+byte		c*	a b
+byte		c*	,a,,b,
+byte		c*	ab ab
+byte		c*	b
+byte		c*	aaab
+byte		c*	bab
+byte		c*	c1a22
+byte		c*	a\nb\n
+byte		x	
+byte		x	a
+byte		x	aa
+byte		x	ab
+byte		x	ba
+byte		x	aab
+byte		x	abab
+byte		x	xax
+byte		x	xyy
+byte		x	abba
+byte		x	a b
+byte		x	,a,,b,
+byte		x	ab ab
+byte		x	b
+byte		x	aaab
+byte		x	bab
+byte		x	c1a22
+byte		x	a\nb\n
+byte		a	
+byte		a	a
+byte		a	aa
+byte		a	ab
+byte		a	ba
+byte		a	aab
+byte		a	abab
+byte		a	xax
+byte		a	xyy
+byte		a	abba
+byte		a	a b
+byte		a	,a,,b,
+byte		a	ab ab
+byte		a	b
+byte		a	aaab
+byte		a	bab
+byte		a	c1a22
+byte		a	a\nb\n
+byte		b*?	
+byte		b*?	a
+byte		b*?	aa
+byte		b*?	ab
+byte		b*?	ba
+byte		b*?	aab
+byte		b*?	abab
+byte		b*?	xax
+byte		b*?	xyy
+byte		b*?	abba
+byte		b*?	a b
+byte		b*?	,a,,b,
+byte		b*?	ab ab
+byte		b*?	b
+byte		b*?	aaab
+byte		b*?	bab
+byte		b*?	c1a22
+byte		b*?	a\nb\n
+byte		x*|y	
+byte		x*|y	a
+byte		x*|y	aa
+byte		x*|y	ab
+byte		x*|y	ba
+byte		x*|y	aab
+byte		x*|y	abab
+byte		x*|y	xax
+byte		x*|y	xyy
+byte		x*|y	abba
+byte		x*|y	a b
+byte		x*|y	,a,,b,
+byte		x*|y	ab ab
+byte		x*|y	b
+byte		x*|y	aaab
+byte		x*|y	bab
+byte		x*|y	c1a22
+byte		x*|y	a\nb\n
+byte		ab\K	
+byte		ab\K	a
+byte		ab\K	aa
+byte		ab\K	ab
+byte		ab\K	ba
+byte		ab\K	aab
+byte		ab\K	abab
+byte		ab\K	xax
+byte		ab\K	xyy
+byte		ab\K	abba
+byte		ab\K	a b
+byte		ab\K	,a,,b,
+byte		ab\K	ab ab
+byte		ab\K	b
+byte		ab\K	aaab
+byte		ab\K	bab
+byte		ab\K	c1a22
+byte		ab\K	a\nb\n
+byte		a\Kb	
+byte		a\Kb	a
+byte		a\Kb	aa
+byte		a\Kb	ab
+byte		a\Kb	ba
+byte		a\Kb	aab
+byte		a\Kb	abab
+byte		a\Kb	xax
+byte		a\Kb	xyy
+byte		a\Kb	abba
+byte		a\Kb	a b
+byte		a\Kb	,a,,b,
+byte		a\Kb	ab ab
+byte		a\Kb	b
+byte		a\Kb	aaab
+byte		a\Kb	bab
+byte		a\Kb	c1a22
+byte		a\Kb	a\nb\n
+byte		(?=a)	
+byte		(?=a)	a
+byte		(?=a)	aa
+byte		(?=a)	ab
+byte		(?=a)	ba
+byte		(?=a)	aab
+byte		(?=a)	abab
+byte		(?=a)	xax
+byte		(?=a)	xyy
+byte		(?=a)	abba
+byte		(?=a)	a b
+byte		(?=a)	,a,,b,
+byte		(?=a)	ab ab
+byte		(?=a)	b
+byte		(?=a)	aaab
+byte		(?=a)	bab
+byte		(?=a)	c1a22
+byte		(?=a)	a\nb\n
+byte		\G\w+	
+byte		\G\w+	a
+byte		\G\w+	aa
+byte		\G\w+	ab
+byte		\G\w+	ba
+byte		\G\w+	aab
+byte		\G\w+	abab
+byte		\G\w+	xax
+byte		\G\w+	xyy
+byte		\G\w+	abba
+byte		\G\w+	a b
+byte		\G\w+	,a,,b,
+byte		\G\w+	ab ab
+byte		\G\w+	b
+byte		\G\w+	aaab
+byte		\G\w+	bab
+byte		\G\w+	c1a22
+byte		\G\w+	a\nb\n
+byte		(?<=a)|b	
+byte		(?<=a)|b	a
+byte		(?<=a)|b	aa
+byte		(?<=a)|b	ab
+byte		(?<=a)|b	ba
+byte		(?<=a)|b	aab
+byte		(?<=a)|b	abab
+byte		(?<=a)|b	xax
+byte		(?<=a)|b	xyy
+byte		(?<=a)|b	abba
+byte		(?<=a)|b	a b
+byte		(?<=a)|b	,a,,b,
+byte		(?<=a)|b	ab ab
+byte		(?<=a)|b	b
+byte		(?<=a)|b	aaab
+byte		(?<=a)|b	bab
+byte		(?<=a)|b	c1a22
+byte		(?<=a)|b	a\nb\n
+byte		a*?|b	
+byte		a*?|b	a
+byte		a*?|b	aa
+byte		a*?|b	ab
+byte		a*?|b	ba
+byte		a*?|b	aab
+byte		a*?|b	abab
+byte		a*?|b	xax
+byte		a*?|b	xyy
+byte		a*?|b	abba
+byte		a*?|b	a b
+byte		a*?|b	,a,,b,
+byte		a*?|b	ab ab
+byte		a*?|b	b
+byte		a*?|b	aaab
+byte		a*?|b	bab
+byte		a*?|b	c1a22
+byte		a*?|b	a\nb\n
+byte		(a|)*?b	
+byte		(a|)*?b	a
+byte		(a|)*?b	aa
+byte		(a|)*?b	ab
+byte		(a|)*?b	ba
+byte		(a|)*?b	aab
+byte		(a|)*?b	abab
+byte		(a|)*?b	xax
+byte		(a|)*?b	xyy
+byte		(a|)*?b	abba
+byte		(a|)*?b	a b
+byte		(a|)*?b	,a,,b,
+byte		(a|)*?b	ab ab
+byte		(a|)*?b	b
+byte		(a|)*?b	aaab
+byte		(a|)*?b	bab
+byte		(a|)*?b	c1a22
+byte		(a|)*?b	a\nb\n
+byte		\b	
+byte		\b	a
+byte		\b	aa
+byte		\b	ab
+byte		\b	ba
+byte		\b	aab
+byte		\b	abab
+byte		\b	xax
+byte		\b	xyy
+byte		\b	abba
+byte		\b	a b
+byte		\b	,a,,b,
+byte		\b	ab ab
+byte		\b	b
+byte		\b	aaab
+byte		\b	bab
+byte		\b	c1a22
+byte		\b	a\nb\n
+byte		\B	
+byte		\B	a
+byte		\B	aa
+byte		\B	ab
+byte		\B	ba
+byte		\B	aab
+byte		\B	abab
+byte		\B	xax
+byte		\B	xyy
+byte		\B	abba
+byte		\B	a b
+byte		\B	,a,,b,
+byte		\B	ab ab
+byte		\B	b
+byte		\B	aaab
+byte		\B	bab
+byte		\B	c1a22
+byte		\B	a\nb\n
+byte		(?:)	
+byte		(?:)	a
+byte		(?:)	aa
+byte		(?:)	ab
+byte		(?:)	ba
+byte		(?:)	aab
+byte		(?:)	abab
+byte		(?:)	xax
+byte		(?:)	xyy
+byte		(?:)	abba
+byte		(?:)	a b
+byte		(?:)	,a,,b,
+byte		(?:)	ab ab
+byte		(?:)	b
+byte		(?:)	aaab
+byte		(?:)	bab
+byte		(?:)	c1a22
+byte		(?:)	a\nb\n
+byte		|	
+byte		|	a
+byte		|	aa
+byte		|	ab
+byte		|	ba
+byte		|	aab
+byte		|	abab
+byte		|	xax
+byte		|	xyy
+byte		|	abba
+byte		|	a b
+byte		|	,a,,b,
+byte		|	ab ab
+byte		|	b
+byte		|	aaab
+byte		|	bab
+byte		|	c1a22
+byte		|	a\nb\n
+byte		a??b?	
+byte		a??b?	a
+byte		a??b?	aa
+byte		a??b?	ab
+byte		a??b?	ba
+byte		a??b?	aab
+byte		a??b?	abab
+byte		a??b?	xax
+byte		a??b?	xyy
+byte		a??b?	abba
+byte		a??b?	a b
+byte		a??b?	,a,,b,
+byte		a??b?	ab ab
+byte		a??b?	b
+byte		a??b?	aaab
+byte		a??b?	bab
+byte		a??b?	c1a22
+byte		a??b?	a\nb\n
+byte		(?:a|)*?	
+byte		(?:a|)*?	a
+byte		(?:a|)*?	aa
+byte		(?:a|)*?	ab
+byte		(?:a|)*?	ba
+byte		(?:a|)*?	aab
+byte		(?:a|)*?	abab
+byte		(?:a|)*?	xax
+byte		(?:a|)*?	xyy
+byte		(?:a|)*?	abba
+byte		(?:a|)*?	a b
+byte		(?:a|)*?	,a,,b,
+byte		(?:a|)*?	ab ab
+byte		(?:a|)*?	b
+byte		(?:a|)*?	aaab
+byte		(?:a|)*?	bab
+byte		(?:a|)*?	c1a22
+byte		(?:a|)*?	a\nb\n
+byte		\Ga|	
+byte		\Ga|	a
+byte		\Ga|	aa
+byte		\Ga|	ab
+byte		\Ga|	ba
+byte		\Ga|	aab
+byte		\Ga|	abab
+byte		\Ga|	xax
+byte		\Ga|	xyy
+byte		\Ga|	abba
+byte		\Ga|	a b
+byte		\Ga|	,a,,b,
+byte		\Ga|	ab ab
+byte		\Ga|	b
+byte		\Ga|	aaab
+byte		\Ga|	bab
+byte		\Ga|	c1a22
+byte		\Ga|	a\nb\n
+byte		$|a	
+byte		$|a	a
+byte		$|a	aa
+byte		$|a	ab
+byte		$|a	ba
+byte		$|a	aab
+byte		$|a	abab
+byte		$|a	xax
+byte		$|a	xyy
+byte		$|a	abba
+byte		$|a	a b
+byte		$|a	,a,,b,
+byte		$|a	ab ab
+byte		$|a	b
+byte		$|a	aaab
+byte		$|a	bab
+byte		$|a	c1a22
+byte		$|a	a\nb\n
+byte		(?=b)|b	
+byte		(?=b)|b	a
+byte		(?=b)|b	aa
+byte		(?=b)|b	ab
+byte		(?=b)|b	ba
+byte		(?=b)|b	aab
+byte		(?=b)|b	abab
+byte		(?=b)|b	xax
+byte		(?=b)|b	xyy
+byte		(?=b)|b	abba
+byte		(?=b)|b	a b
+byte		(?=b)|b	,a,,b,
+byte		(?=b)|b	ab ab
+byte		(?=b)|b	b
+byte		(?=b)|b	aaab
+byte		(?=b)|b	bab
+byte		(?=b)|b	c1a22
+byte		(?=b)|b	a\nb\n
+byte		(?:^|,)([^,]*)	
+byte		(?:^|,)([^,]*)	a
+byte		(?:^|,)([^,]*)	aa
+byte		(?:^|,)([^,]*)	ab
+byte		(?:^|,)([^,]*)	ba
+byte		(?:^|,)([^,]*)	aab
+byte		(?:^|,)([^,]*)	abab
+byte		(?:^|,)([^,]*)	xax
+byte		(?:^|,)([^,]*)	xyy
+byte		(?:^|,)([^,]*)	abba
+byte		(?:^|,)([^,]*)	a b
+byte		(?:^|,)([^,]*)	,a,,b,
+byte		(?:^|,)([^,]*)	ab ab
+byte		(?:^|,)([^,]*)	b
+byte		(?:^|,)([^,]*)	aaab
+byte		(?:^|,)([^,]*)	bab
+byte		(?:^|,)([^,]*)	c1a22
+byte		(?:^|,)([^,]*)	a\nb\n
+byte		^\s*|\s*$	
+byte		^\s*|\s*$	a
+byte		^\s*|\s*$	aa
+byte		^\s*|\s*$	ab
+byte		^\s*|\s*$	ba
+byte		^\s*|\s*$	aab
+byte		^\s*|\s*$	abab
+byte		^\s*|\s*$	xax
+byte		^\s*|\s*$	xyy
+byte		^\s*|\s*$	abba
+byte		^\s*|\s*$	a b
+byte		^\s*|\s*$	,a,,b,
+byte		^\s*|\s*$	ab ab
+byte		^\s*|\s*$	b
+byte		^\s*|\s*$	aaab
+byte		^\s*|\s*$	bab
+byte		^\s*|\s*$	c1a22
+byte		^\s*|\s*$	a\nb\n
+byte		^\s+|\s+$	
+byte		^\s+|\s+$	a
+byte		^\s+|\s+$	aa
+byte		^\s+|\s+$	ab
+byte		^\s+|\s+$	ba
+byte		^\s+|\s+$	aab
+byte		^\s+|\s+$	abab
+byte		^\s+|\s+$	xax
+byte		^\s+|\s+$	xyy
+byte		^\s+|\s+$	abba
+byte		^\s+|\s+$	a b
+byte		^\s+|\s+$	,a,,b,
+byte		^\s+|\s+$	ab ab
+byte		^\s+|\s+$	b
+byte		^\s+|\s+$	aaab
+byte		^\s+|\s+$	bab
+byte		^\s+|\s+$	c1a22
+byte		^\s+|\s+$	a\nb\n
+byte		x*|.	
+byte		x*|.	a
+byte		x*|.	aa
+byte		x*|.	ab
+byte		x*|.	ba
+byte		x*|.	aab
+byte		x*|.	abab
+byte		x*|.	xax
+byte		x*|.	xyy
+byte		x*|.	abba
+byte		x*|.	a b
+byte		x*|.	,a,,b,
+byte		x*|.	ab ab
+byte		x*|.	b
+byte		x*|.	aaab
+byte		x*|.	bab
+byte		x*|.	c1a22
+byte		x*|.	a\nb\n
+byte		(a)|b*	
+byte		(a)|b*	a
+byte		(a)|b*	aa
+byte		(a)|b*	ab
+byte		(a)|b*	ba
+byte		(a)|b*	aab
+byte		(a)|b*	abab
+byte		(a)|b*	xax
+byte		(a)|b*	xyy
+byte		(a)|b*	abba
+byte		(a)|b*	a b
+byte		(a)|b*	,a,,b,
+byte		(a)|b*	ab ab
+byte		(a)|b*	b
+byte		(a)|b*	aaab
+byte		(a)|b*	bab
+byte		(a)|b*	c1a22
+byte		(a)|b*	a\nb\n
+byte		a\K|b	
+byte		a\K|b	a
+byte		a\K|b	aa
+byte		a\K|b	ab
+byte		a\K|b	ba
+byte		a\K|b	aab
+byte		a\K|b	abab
+byte		a\K|b	xax
+byte		a\K|b	xyy
+byte		a\K|b	abba
+byte		a\K|b	a b
+byte		a\K|b	,a,,b,
+byte		a\K|b	ab ab
+byte		a\K|b	b
+byte		a\K|b	aaab
+byte		a\K|b	bab
+byte		a\K|b	c1a22
+byte		a\K|b	a\nb\n
+byte		(?:a\K)?	
+byte		(?:a\K)?	a
+byte		(?:a\K)?	aa
+byte		(?:a\K)?	ab
+byte		(?:a\K)?	ba
+byte		(?:a\K)?	aab
+byte		(?:a\K)?	abab
+byte		(?:a\K)?	xax
+byte		(?:a\K)?	xyy
+byte		(?:a\K)?	abba
+byte		(?:a\K)?	a b
+byte		(?:a\K)?	,a,,b,
+byte		(?:a\K)?	ab ab
+byte		(?:a\K)?	b
+byte		(?:a\K)?	aaab
+byte		(?:a\K)?	bab
+byte		(?:a\K)?	c1a22
+byte		(?:a\K)?	a\nb\n
+byte		a??|b	
+byte		a??|b	a
+byte		a??|b	aa
+byte		a??|b	ab
+byte		a??|b	ba
+byte		a??|b	aab
+byte		a??|b	abab
+byte		a??|b	xax
+byte		a??|b	xyy
+byte		a??|b	abba
+byte		a??|b	a b
+byte		a??|b	,a,,b,
+byte		a??|b	ab ab
+byte		a??|b	b
+byte		a??|b	aaab
+byte		a??|b	bab
+byte		a??|b	c1a22
+byte		a??|b	a\nb\n
+byte		(?<=a)	
+byte		(?<=a)	a
+byte		(?<=a)	aa
+byte		(?<=a)	ab
+byte		(?<=a)	ba
+byte		(?<=a)	aab
+byte		(?<=a)	abab
+byte		(?<=a)	xax
+byte		(?<=a)	xyy
+byte		(?<=a)	abba
+byte		(?<=a)	a b
+byte		(?<=a)	,a,,b,
+byte		(?<=a)	ab ab
+byte		(?<=a)	b
+byte		(?<=a)	aaab
+byte		(?<=a)	bab
+byte		(?<=a)	c1a22
+byte		(?<=a)	a\nb\n
+byte		(?!a)	
+byte		(?!a)	a
+byte		(?!a)	aa
+byte		(?!a)	ab
+byte		(?!a)	ba
+byte		(?!a)	aab
+byte		(?!a)	abab
+byte		(?!a)	xax
+byte		(?!a)	xyy
+byte		(?!a)	abba
+byte		(?!a)	a b
+byte		(?!a)	,a,,b,
+byte		(?!a)	ab ab
+byte		(?!a)	b
+byte		(?!a)	aaab
+byte		(?!a)	bab
+byte		(?!a)	c1a22
+byte		(?!a)	a\nb\n
+byte		\b|a	
+byte		\b|a	a
+byte		\b|a	aa
+byte		\b|a	ab
+byte		\b|a	ba
+byte		\b|a	aab
+byte		\b|a	abab
+byte		\b|a	xax
+byte		\b|a	xyy
+byte		\b|a	abba
+byte		\b|a	a b
+byte		\b|a	,a,,b,
+byte		\b|a	ab ab
+byte		\b|a	b
+byte		\b|a	aaab
+byte		\b|a	bab
+byte		\b|a	c1a22
+byte		\b|a	a\nb\n
+byte		(?m)^|a	
+byte		(?m)^|a	a
+byte		(?m)^|a	aa
+byte		(?m)^|a	ab
+byte		(?m)^|a	ba
+byte		(?m)^|a	aab
+byte		(?m)^|a	abab
+byte		(?m)^|a	xax
+byte		(?m)^|a	xyy
+byte		(?m)^|a	abba
+byte		(?m)^|a	a b
+byte		(?m)^|a	,a,,b,
+byte		(?m)^|a	ab ab
+byte		(?m)^|a	b
+byte		(?m)^|a	aaab
+byte		(?m)^|a	bab
+byte		(?m)^|a	c1a22
+byte		(?m)^|a	a\nb\n
+byte		\z|a*	
+byte		\z|a*	a
+byte		\z|a*	aa
+byte		\z|a*	ab
+byte		\z|a*	ba
+byte		\z|a*	aab
+byte		\z|a*	abab
+byte		\z|a*	xax
+byte		\z|a*	xyy
+byte		\z|a*	abba
+byte		\z|a*	a b
+byte		\z|a*	,a,,b,
+byte		\z|a*	ab ab
+byte		\z|a*	b
+byte		\z|a*	aaab
+byte		\z|a*	bab
+byte		\z|a*	c1a22
+byte		\z|a*	a\nb\n
+byte		a*\Z	
+byte		a*\Z	a
+byte		a*\Z	aa
+byte		a*\Z	ab
+byte		a*\Z	ba
+byte		a*\Z	aab
+byte		a*\Z	abab
+byte		a*\Z	xax
+byte		a*\Z	xyy
+byte		a*\Z	abba
+byte		a*\Z	a b
+byte		a*\Z	,a,,b,
+byte		a*\Z	ab ab
+byte		a*\Z	b
+byte		a*\Z	aaab
+byte		a*\Z	bab
+byte		a*\Z	c1a22
+byte		a*\Z	a\nb\n
+byte		(a|b)*?c|	
+byte		(a|b)*?c|	a
+byte		(a|b)*?c|	aa
+byte		(a|b)*?c|	ab
+byte		(a|b)*?c|	ba
+byte		(a|b)*?c|	aab
+byte		(a|b)*?c|	abab
+byte		(a|b)*?c|	xax
+byte		(a|b)*?c|	xyy
+byte		(a|b)*?c|	abba
+byte		(a|b)*?c|	a b
+byte		(a|b)*?c|	,a,,b,
+byte		(a|b)*?c|	ab ab
+byte		(a|b)*?c|	b
+byte		(a|b)*?c|	aaab
+byte		(a|b)*?c|	bab
+byte		(a|b)*?c|	c1a22
+byte		(a|b)*?c|	a\nb\n
+byte		\Ga|b	
+byte		\Ga|b	a
+byte		\Ga|b	aa
+byte		\Ga|b	ab
+byte		\Ga|b	ba
+byte		\Ga|b	aab
+byte		\Ga|b	abab
+byte		\Ga|b	xax
+byte		\Ga|b	xyy
+byte		\Ga|b	abba
+byte		\Ga|b	a b
+byte		\Ga|b	,a,,b,
+byte		\Ga|b	ab ab
+byte		\Ga|b	b
+byte		\Ga|b	aaab
+byte		\Ga|b	bab
+byte		\Ga|b	c1a22
+byte		\Ga|b	a\nb\n
+byte		(?=ab)|a	
+byte		(?=ab)|a	a
+byte		(?=ab)|a	aa
+byte		(?=ab)|a	ab
+byte		(?=ab)|a	ba
+byte		(?=ab)|a	aab
+byte		(?=ab)|a	abab
+byte		(?=ab)|a	xax
+byte		(?=ab)|a	xyy
+byte		(?=ab)|a	abba
+byte		(?=ab)|a	a b
+byte		(?=ab)|a	,a,,b,
+byte		(?=ab)|a	ab ab
+byte		(?=ab)|a	b
+byte		(?=ab)|a	aaab
+byte		(?=ab)|a	bab
+byte		(?=ab)|a	c1a22
+byte		(?=ab)|a	a\nb\n
+byte		(?:)+a?	
+byte		(?:)+a?	a
+byte		(?:)+a?	aa
+byte		(?:)+a?	ab
+byte		(?:)+a?	ba
+byte		(?:)+a?	aab
+byte		(?:)+a?	abab
+byte		(?:)+a?	xax
+byte		(?:)+a?	xyy
+byte		(?:)+a?	abba
+byte		(?:)+a?	a b
+byte		(?:)+a?	,a,,b,
+byte		(?:)+a?	ab ab
+byte		(?:)+a?	b
+byte		(?:)+a?	aaab
+byte		(?:)+a?	bab
+byte		(?:)+a?	c1a22
+byte		(?:)+a?	a\nb\n
+byte		\d*	
+byte		\d*	a
+byte		\d*	aa
+byte		\d*	ab
+byte		\d*	ba
+byte		\d*	aab
+byte		\d*	abab
+byte		\d*	xax
+byte		\d*	xyy
+byte		\d*	abba
+byte		\d*	a b
+byte		\d*	,a,,b,
+byte		\d*	ab ab
+byte		\d*	b
+byte		\d*	aaab
+byte		\d*	bab
+byte		\d*	c1a22
+byte		\d*	a\nb\n
+byte		[ab]*?b|	
+byte		[ab]*?b|	a
+byte		[ab]*?b|	aa
+byte		[ab]*?b|	ab
+byte		[ab]*?b|	ba
+byte		[ab]*?b|	aab
+byte		[ab]*?b|	abab
+byte		[ab]*?b|	xax
+byte		[ab]*?b|	xyy
+byte		[ab]*?b|	abba
+byte		[ab]*?b|	a b
+byte		[ab]*?b|	,a,,b,
+byte		[ab]*?b|	ab ab
+byte		[ab]*?b|	b
+byte		[ab]*?b|	aaab
+byte		[ab]*?b|	bab
+byte		[ab]*?b|	c1a22
+byte		[ab]*?b|	a\nb\n
+utf8		a*	
+utf8		a*	\xc3\xa9a\xc3\xa9
+utf8		a*	a\xce\xb1\xce\xb2b
+utf8		a*	\xe2\x82\xac\xe2\x82\xac
+utf8		a*	ab
+utf8		a*	\xff\xfe
+utf8		a*	a\xc3
+utf8		a*	\x80a
+utf8		a*	\xc3\xa9\xc3
+utf8		\w*	
+utf8		\w*	\xc3\xa9a\xc3\xa9
+utf8		\w*	a\xce\xb1\xce\xb2b
+utf8		\w*	\xe2\x82\xac\xe2\x82\xac
+utf8		\w*	ab
+utf8		\w*	\xff\xfe
+utf8		\w*	a\xc3
+utf8		\w*	\x80a
+utf8		\w*	\xc3\xa9\xc3
+utf8		.	
+utf8		.	\xc3\xa9a\xc3\xa9
+utf8		.	a\xce\xb1\xce\xb2b
+utf8		.	\xe2\x82\xac\xe2\x82\xac
+utf8		.	ab
+utf8		.	\xff\xfe
+utf8		.	a\xc3
+utf8		.	\x80a
+utf8		.	\xc3\xa9\xc3
+utf8		x*|.	
+utf8		x*|.	\xc3\xa9a\xc3\xa9
+utf8		x*|.	a\xce\xb1\xce\xb2b
+utf8		x*|.	\xe2\x82\xac\xe2\x82\xac
+utf8		x*|.	ab
+utf8		x*|.	\xff\xfe
+utf8		x*|.	a\xc3
+utf8		x*|.	\x80a
+utf8		x*|.	\xc3\xa9\xc3
+utf8		(?<=a)	
+utf8		(?<=a)	\xc3\xa9a\xc3\xa9
+utf8		(?<=a)	a\xce\xb1\xce\xb2b
+utf8		(?<=a)	\xe2\x82\xac\xe2\x82\xac
+utf8		(?<=a)	ab
+utf8		(?<=a)	\xff\xfe
+utf8		(?<=a)	a\xc3
+utf8		(?<=a)	\x80a
+utf8		(?<=a)	\xc3\xa9\xc3
+utf8		\b	
+utf8		\b	\xc3\xa9a\xc3\xa9
+utf8		\b	a\xce\xb1\xce\xb2b
+utf8		\b	\xe2\x82\xac\xe2\x82\xac
+utf8		\b	ab
+utf8		\b	\xff\xfe
+utf8		\b	a\xc3
+utf8		\b	\x80a
+utf8		\b	\xc3\xa9\xc3
+utf8		a|	
+utf8		a|	\xc3\xa9a\xc3\xa9
+utf8		a|	a\xce\xb1\xce\xb2b
+utf8		a|	\xe2\x82\xac\xe2\x82\xac
+utf8		a|	ab
+utf8		a|	\xff\xfe
+utf8		a|	a\xc3
+utf8		a|	\x80a
+utf8		a|	\xc3\xa9\xc3
+utf8		(a)|.?	
+utf8		(a)|.?	\xc3\xa9a\xc3\xa9
+utf8		(a)|.?	a\xce\xb1\xce\xb2b
+utf8		(a)|.?	\xe2\x82\xac\xe2\x82\xac
+utf8		(a)|.?	ab
+utf8		(a)|.?	\xff\xfe
+utf8		(a)|.?	a\xc3
+utf8		(a)|.?	\x80a
+utf8		(a)|.?	\xc3\xa9\xc3
+utf8	-futf-check	a*	
+utf8	-futf-check	a*	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	a*	a\xce\xb1\xce\xb2b
+utf8	-futf-check	a*	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	a*	ab
+utf8	-futf-check	a*	\xff\xfe
+utf8	-futf-check	a*	a\xc3
+utf8	-futf-check	a*	\x80a
+utf8	-futf-check	a*	\xc3\xa9\xc3
+utf8	-futf-check	\w*	
+utf8	-futf-check	\w*	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	\w*	a\xce\xb1\xce\xb2b
+utf8	-futf-check	\w*	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	\w*	ab
+utf8	-futf-check	\w*	\xff\xfe
+utf8	-futf-check	\w*	a\xc3
+utf8	-futf-check	\w*	\x80a
+utf8	-futf-check	\w*	\xc3\xa9\xc3
+utf8	-futf-check	.	
+utf8	-futf-check	.	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	.	a\xce\xb1\xce\xb2b
+utf8	-futf-check	.	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	.	ab
+utf8	-futf-check	.	\xff\xfe
+utf8	-futf-check	.	a\xc3
+utf8	-futf-check	.	\x80a
+utf8	-futf-check	.	\xc3\xa9\xc3
+utf8	-futf-check	x*|.	
+utf8	-futf-check	x*|.	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	x*|.	a\xce\xb1\xce\xb2b
+utf8	-futf-check	x*|.	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	x*|.	ab
+utf8	-futf-check	x*|.	\xff\xfe
+utf8	-futf-check	x*|.	a\xc3
+utf8	-futf-check	x*|.	\x80a
+utf8	-futf-check	x*|.	\xc3\xa9\xc3
+utf8	-futf-check	(?<=a)	
+utf8	-futf-check	(?<=a)	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	(?<=a)	a\xce\xb1\xce\xb2b
+utf8	-futf-check	(?<=a)	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	(?<=a)	ab
+utf8	-futf-check	(?<=a)	\xff\xfe
+utf8	-futf-check	(?<=a)	a\xc3
+utf8	-futf-check	(?<=a)	\x80a
+utf8	-futf-check	(?<=a)	\xc3\xa9\xc3
+utf8	-futf-check	\b	
+utf8	-futf-check	\b	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	\b	a\xce\xb1\xce\xb2b
+utf8	-futf-check	\b	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	\b	ab
+utf8	-futf-check	\b	\xff\xfe
+utf8	-futf-check	\b	a\xc3
+utf8	-futf-check	\b	\x80a
+utf8	-futf-check	\b	\xc3\xa9\xc3
+utf8	-futf-check	a|	
+utf8	-futf-check	a|	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	a|	a\xce\xb1\xce\xb2b
+utf8	-futf-check	a|	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	a|	ab
+utf8	-futf-check	a|	\xff\xfe
+utf8	-futf-check	a|	a\xc3
+utf8	-futf-check	a|	\x80a
+utf8	-futf-check	a|	\xc3\xa9\xc3
+utf8	-futf-check	(a)|.?	
+utf8	-futf-check	(a)|.?	\xc3\xa9a\xc3\xa9
+utf8	-futf-check	(a)|.?	a\xce\xb1\xce\xb2b
+utf8	-futf-check	(a)|.?	\xe2\x82\xac\xe2\x82\xac
+utf8	-futf-check	(a)|.?	ab
+utf8	-futf-check	(a)|.?	\xff\xfe
+utf8	-futf-check	(a)|.?	a\xc3
+utf8	-futf-check	(a)|.?	\x80a
+utf8	-futf-check	(a)|.?	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	a*	
+utf8	-fstartpos-guard=align	a*	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	a*	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	a*	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	a*	ab
+utf8	-fstartpos-guard=align	a*	\xff\xfe
+utf8	-fstartpos-guard=align	a*	a\xc3
+utf8	-fstartpos-guard=align	a*	\x80a
+utf8	-fstartpos-guard=align	a*	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	\w*	
+utf8	-fstartpos-guard=align	\w*	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	\w*	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	\w*	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	\w*	ab
+utf8	-fstartpos-guard=align	\w*	\xff\xfe
+utf8	-fstartpos-guard=align	\w*	a\xc3
+utf8	-fstartpos-guard=align	\w*	\x80a
+utf8	-fstartpos-guard=align	\w*	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	.	
+utf8	-fstartpos-guard=align	.	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	.	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	.	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	.	ab
+utf8	-fstartpos-guard=align	.	\xff\xfe
+utf8	-fstartpos-guard=align	.	a\xc3
+utf8	-fstartpos-guard=align	.	\x80a
+utf8	-fstartpos-guard=align	.	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	x*|.	
+utf8	-fstartpos-guard=align	x*|.	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	x*|.	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	x*|.	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	x*|.	ab
+utf8	-fstartpos-guard=align	x*|.	\xff\xfe
+utf8	-fstartpos-guard=align	x*|.	a\xc3
+utf8	-fstartpos-guard=align	x*|.	\x80a
+utf8	-fstartpos-guard=align	x*|.	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	(?<=a)	
+utf8	-fstartpos-guard=align	(?<=a)	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	(?<=a)	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	(?<=a)	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	(?<=a)	ab
+utf8	-fstartpos-guard=align	(?<=a)	\xff\xfe
+utf8	-fstartpos-guard=align	(?<=a)	a\xc3
+utf8	-fstartpos-guard=align	(?<=a)	\x80a
+utf8	-fstartpos-guard=align	(?<=a)	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	\b	
+utf8	-fstartpos-guard=align	\b	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	\b	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	\b	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	\b	ab
+utf8	-fstartpos-guard=align	\b	\xff\xfe
+utf8	-fstartpos-guard=align	\b	a\xc3
+utf8	-fstartpos-guard=align	\b	\x80a
+utf8	-fstartpos-guard=align	\b	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	a|	
+utf8	-fstartpos-guard=align	a|	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	a|	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	a|	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	a|	ab
+utf8	-fstartpos-guard=align	a|	\xff\xfe
+utf8	-fstartpos-guard=align	a|	a\xc3
+utf8	-fstartpos-guard=align	a|	\x80a
+utf8	-fstartpos-guard=align	a|	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	(a)|.?	
+utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9a\xc3\xa9
+utf8	-fstartpos-guard=align	(a)|.?	a\xce\xb1\xce\xb2b
+utf8	-fstartpos-guard=align	(a)|.?	\xe2\x82\xac\xe2\x82\xac
+utf8	-fstartpos-guard=align	(a)|.?	ab
+utf8	-fstartpos-guard=align	(a)|.?	\xff\xfe
+utf8	-fstartpos-guard=align	(a)|.?	a\xc3
+utf8	-fstartpos-guard=align	(a)|.?	\x80a
+utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9\xc3

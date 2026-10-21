@@ -106,6 +106,7 @@ static void part_splice(StrBuf *c, const char *text, const PcrecPartFacts *f)
 {
     StrBuf t = { .p = (char *)text, .len = strlen(text), .cx = c->cx,
                  .simd_guarded = f->simd_guarded, .simd_size = f->simd_size,
+                 .scaf_guarded = f->scaf_guarded, .scaf_size = f->scaf_size,
                  .layout_bytes = f->layout_bytes };
     pcrec_sb_splice(c, &t);
 }
@@ -119,7 +120,8 @@ static void part_splice(StrBuf *c, const char *text, const PcrecPartFacts *f)
  * character; a never B ends the search. B's success pads the slots B does
  * not write (its own `NCAPS` below P's), the pad rule read off `groups`. */
 void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
-                                const char *searchfn, const char *upper)
+                                const char *searchfn, PcrecEntry ent,
+                                const char *upper)
 {
     if (sh->comb != COMB_FIRST_NONZERO)
         pcrec_ctx_fail(cx, 0, "internal error: compound: a combinator with no emitter");
@@ -127,14 +129,14 @@ void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
     const char *a = pcrec_sb_fragf(&cx->arena, "%s__%s_search", p, sh->role[0]);
     const char *b = sh->text[1]
                   ? pcrec_sb_fragf(&cx->arena, "%s__%s_search", p, sh->role[1]) : NULL;
-    pcrec_emit_search_head(cx, c, searchfn, PCREC_ENTRY_SEARCH);
+    pcrec_emit_search_head(cx, c, searchfn, ent);
     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
     if (b) pcrec_sb_puts(c, "    size_t lower = search_from;\n");
     pcrec_sb_puts(c, sh->floor_any ? "    {\n" : "    if (search_from == 0) {\n");
     pcrec_sb_printf(c, "        int r = %s(subject, subject_length, search_from, capture_spans);\n", a);
     callsite_emit(c, "        ", &sh->facts[0], "return r;", "return r;",
                   b ? pcrec_sb_fragf(&cx->arena,
-                          "lower = %s_next_pos(subject, subject_length, search_from);", p)
+                          "lower = %s__next_pos(subject, subject_length, search_from);", p)
                     : "return 0;");
     pcrec_sb_puts(c, "    }\n");
     if (!b) {

@@ -4138,6 +4138,17 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
   domain witness `\zabc` under `-fno-req-handoff`; `run_offset_skip.sh`'s uuid
   guard adds `-fno-req-handoff`.
 
+## [FINDALL-NEXT] I1 (lane i1build, 2026-10-21, abi 83)
+
+- **run_residual_twins.sh** — IC1, the residual twins (findall_iter.md §2.4):
+  each exported residual entry is a forwarder to a static `<prefix>__<name>`
+  and every call inside the artifact reaches the twin, read off a -O2 -fPIC
+  OBJECT (`nm` pairs a global `<p>_X` with a local `<p>__X`; a PLT32/PC32
+  relocation against the global is a miss). Seven artifacts (the iterator,
+  the subject check, variables, both engines, a compound shell), a PLANT
+  (one twin call respelled to the exported name must read as a miss) and a
+  population floor of (artifact, residual) pairs. In `make test-codegen`.
+
 ## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
 
 `run_mlinectx_identity.sh` is RETIRED with its knob (`-DPCREC_NO_MLINECTX`)

@@ -862,8 +862,8 @@ the same skip before its first search: `x?` over `"\x80\x80\x80"` is **1**
 #### 1.7.1 `mg` — the global count
 
 <a id="s1-7-1-p1"></a>[1.7.1¶1] `mg "<subject>" <n>` (or the `@file:` form above) asserts that the
-find-all iterator over the subject, `<prefix>_next` from offset 0,
-reports exactly `<n>` matches. It takes no startpos.
+find-all iterator over the subject, `<prefix>_next` from offset 0
+(`match_api.md` §3.8), reports exactly `<n>` matches. It takes no startpos.
 
 <a id="s1-7-1-p2"></a>[1.7.1¶2] The count is libpcre2's GLOBAL ITERATION's (the loop of pcre2demo.c):
 after a non-empty match, search on from its end; after an empty match at

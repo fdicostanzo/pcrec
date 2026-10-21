@@ -23,7 +23,27 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `82` on every artifact today (lane m0build bumped it
+- **`rx_info.abi` is `83` on every artifact today (lane i1build bumped it
+  from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
+  as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all
+  iterator `<prefix>_next(rx_iter *, caps)`: the shared ABI block carries
+  `rx_iter` (a fixed type, the same for every prefix), `rx_nextfn`, the
+  `PCREC_ITER_*` constants, `rx_iter_init`/`RX_ITER_INIT` and the setters
+  `rx_iter_at`/`rx_iter_vars`, and `PCREC_ERR_ITER` (-10); `struct rx_info`
+  appends `next` after `measures`; the header declares `<prefix>_next` and
+  the typed setter `<prefix>_iter_buffers`; the shared prologue stamps
+  `<PREFIX>_ITER_RETRY`. `<prefix>_search`'s body moved into a static
+  `<prefix>__find` (a DFA body; the VM's search loop is `<prefix>__find`
+  behind `<prefix>_search_run`'s range test and guard), and every exported
+  residual entry became a forwarder to a static twin `<prefix>__<name>`, which
+  every internal call now names. On an artifact whose reported span can be
+  empty (the `reports_empty` fact) the iterator carries its NOTEMPTY_ATSTART
+  retry: a notempty-rooted anchored machine (`<prefix>__retry`, DFA) or a
+  guard at the VM accept label. The iterator's text is scaffold (excluded
+  from every length decision, `StrBuf.scaf_*`); the retry machine is a
+  machine and counts. No answer of an existing entry moves. Batch filling
+  and `<prefix>_next_n` are I2's (match_api.md §3.8).
+- **`rx_info.abi` was `82` (lane m0build bumped it
   from 81, 2026-10-21: [MEASURE-SET] M0, docs/design/measure_sets.md rev 3
   §3.5-§3.6, D166 and addenda; and the K112 rider).** Every artifact gains
   `<PREFIX>_MEASURES` (written right after `<PREFIX>_FINDINGS`) and

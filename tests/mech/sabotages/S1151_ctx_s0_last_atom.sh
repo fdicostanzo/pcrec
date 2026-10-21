@@ -7,6 +7,7 @@
 # re-aimed S341 at the absent-index gate (R1); the property it guards (a
 # four-cell row reads "absent" as out) is still live, so the plant moved here
 # rather than retiring.
+# RE-ANCHORED 2026-10-21 (lane i1build, [FINDALL-NEXT] I1): the start states read the start-state machine `sm` (the notempty root's `Mach`); same plant, same detector.
 SAB_ID="S1151-ctx-s0-last-atom"
 SAB_FILE="src/ir/dfa.c"
 SAB_SUITES="ctxnode"
@@ -16,5 +17,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o0.c" --pattern "(?<![a-
 SAB_REACH_EXPECT="1"
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='    d->s0 = make_state(cx, nfa, d, &m, &root, 1, true, true, UPC_PLAIN,'
-SAB_AFTER='    d->s0 = make_state(cx, nfa, d, &m, &root, 1, true, true, m.natoms - 1,   /* SABOTAGE S1151 */'
+SAB_BEFORE='    d->s0 = make_state(cx, nfa, d, sm, &root, 1, true, true, UPC_PLAIN,'
+SAB_AFTER='    d->s0 = make_state(cx, nfa, d, sm, &root, 1, true, true, m.natoms - 1,   /* SABOTAGE S1151 */'

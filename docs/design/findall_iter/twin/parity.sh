@@ -43,6 +43,15 @@ CPU=${PARITY_CPU:-7}
 TO=${TIMEOUT_BIN:-timeout}
 CC=${CC:-gcc}
 ARMS="L_old L_new A L_tw I N64 I_shared B64 I_fill"
+# THE POST-BUILD HALF ([FINDALL-NEXT] I1, lane i1build): PARITY_POST=1 times the BUILT
+# iterator. L_old is §3.1.3's loop over the PARENT compiler's artifact (PCREC_OLD, the I0
+# commit's build); L_new and A the same loop over the I1 artifact; I that artifact's own
+# <prefix>_next. No twin is built, so no G1 and no batch/next_n arms.
+POST=${PARITY_POST:-0}
+if [ "$POST" = 1 ]; then
+    ARMS="L_old L_new A I"
+    PCREC_OLD=${PCREC_OLD:?PARITY_POST=1 needs PCREC_OLD, the parent build}
+fi
 REGIMES="R1 R2"
 # the prose source (rwcorpus's manifest pin) and the two derived slices: bytes
 # [64 KiB, 64 KiB + 1 MiB) of Moby-Dick (past the Gutenberg header), and that slice's first 4 KiB
@@ -56,7 +65,8 @@ die() { say "parity: $*" >&2; exit 2; }
 
 arm_def() { case $1 in L_old|L_new|A|L_tw) echo ARM_LOOP;; I|I_shared|I_fill) echo ARM_ITER;;
                        B64) echo ARM_BATCH;; N64) echo ARM_NEXTN;; esac; }
-arm_obj() { case $1 in L_old) echo plain_old;; L_new) echo plain_new;; A) echo plain_aa;;
+arm_obj() { if [ "$POST" = 1 ] && [ "$1" = I ]; then echo plain_new; return; fi
+           case $1 in L_old) echo plain_old;; L_new) echo plain_new;; A) echo plain_aa;;
                        L_tw|I|N64) echo twin_off;; I_shared) echo twin_shared;; B64|I_fill) echo twin_fill;; esac; }
 
 # id  pattern-key  subject  stop        (§5.3's cells; a cell with several N is several subcells)
@@ -130,33 +140,51 @@ build() {
         local A=$O/art/$pk; mkdir -p "$A"
         # shellcheck disable=SC2086
         (cd "$A" && "$PCREC" -p "$pk" $flags -o "$pk.c" --pattern "$pat") || die "pcrec refused $pat"
+        if [ "$POST" = 1 ]; then
+            # the artifact declares rx_iter itself: tdrv.c's include is empty
+            : > "$A/iter_abi.h"
+            mkdir -p "$A/old"
+            # shellcheck disable=SC2086
+            (cd "$A/old" && "$PCREC_OLD" -p "$pk" $flags -o "$pk.c" --pattern "$pat") || die "the parent pcrec refused $pat"
+        else
         cp "$here/iter_abi.h" "$A/"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_off.c" || die "mktwin off $pk"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_shared.c" --shared || die "mktwin shared $pk"
         python3 -I "$here/mktwin.py" "$pk" "$A/$pk.c" "$A/twin_fill.c" --fill || die "mktwin fill $pk"
+        fi
         local PU; PU=$(echo "$pk" | tr a-z A-Z)
         # shellcheck disable=SC2086
         local null; null=$("$PCREC" $flags --emit-facts --pattern "$pat" | awk -F'\t' '$1=="byte" && $2=="nullable"{print $7}')
         { printf '%s\t%s\t%s\tnullable=%s\t' "$pk" "${flags:--}" "$pat" "$null"
           grep -hE "^#define ${PU}_(ENGINE|DFA_SCAN|DFA_START|DFA_PREFILTER|NCAPS) " "$A/$pk.c" "$A/$pk.h" | sort -u | awk '{printf "%s=%s ", $2, $3}'
-          grep -o 'body linkage: [^;]*' "$A/twin_off.c" | head -1; } >> "$O/stamps.txt"
+          if [ "$POST" = 1 ]; then
+              if grep -q "^static __attribute__((noinline)) int ${pk}__find(" "$A/$pk.c"; then
+                  echo "body linkage: static noinline (static label table)"
+              else echo "body linkage: inline"; fi
+          else grep -o 'body linkage: [^;]*' "$A/twin_off.c" | head -1; fi; } >> "$O/stamps.txt"
         [ "$null" = no ] || die "pattern $pat is nullable: the plain twin does not apply (retry machinery)"
         # the compiles of one pattern run concurrently, then its links (the dry run's 30 s bound)
         local o pids=() arm
-        for o in plain_old plain_new plain_aa twin_off twin_shared twin_fill; do
-            local src=$A/$o.c; case $o in plain_*) src=$A/$pk.c;; esac
-            $CC -O2 -c -o "$O/obj/$pk.$o.o" -I"$A" "$src" & pids+=($!)
-            $CC -O2 -fPIC -shared -o "$O/obj/lib${pk}_$o.so" -I"$A" "$src" & pids+=($!)
+        local objs="plain_old plain_new plain_aa twin_off twin_shared twin_fill"
+        [ "$POST" = 1 ] && objs="plain_old plain_new plain_aa"
+        for o in $objs; do
+            local src=$A/$o.c inc=$A; case $o in plain_*) src=$A/$pk.c;; esac
+            [ "$POST" = 1 ] && [ $o = plain_old ] && { src=$A/old/$pk.c; inc=$A/old; }
+            $CC -O2 -c -o "$O/obj/$pk.$o.o" -I"$inc" "$src" & pids+=($!)
+            $CC -O2 -fPIC -shared -o "$O/obj/lib${pk}_$o.so" -I"$inc" "$src" & pids+=($!)
         done
         waitall "compile $pk" "${pids[@]}" || exit 2
         pids=()
         mkdir -p "$O/bin/R1/$pk" "$O/bin/R2/$pk"
         for arm in $ARMS; do
             o=$(arm_obj "$arm")
+            local inc=$A; [ "$POST" = 1 ] && [ "$arm" = L_old ] && inc="$A/old -I$A"
+            # shellcheck disable=SC2086
             $CC -O2 -Wall -Wextra -o "$O/bin/R1/$pk/$arm" -D"$(arm_def "$arm")" -DPFX="$pk" -DPFXU="$PU" \
-                -DHDR="\"$pk.h\"" -I"$A" "$here/tdrv.c" "$O/obj/$pk.$o.o" & pids+=($!)
+                -DHDR="\"$pk.h\"" -I$inc "$here/tdrv.c" "$O/obj/$pk.$o.o" & pids+=($!)
+            # shellcheck disable=SC2086
             $CC -O2 -Wall -Wextra -o "$O/bin/R2/$pk/$arm" -D"$(arm_def "$arm")" -DPFX="$pk" -DPFXU="$PU" \
-                -DHDR="\"$pk.h\"" -I"$A" "$here/tdrv.c" -L"$O/obj" -l"${pk}_$o" -Wl,-rpath,"$O/obj" & pids+=($!)
+                -DHDR="\"$pk.h\"" -I$inc "$here/tdrv.c" -L"$O/obj" -l"${pk}_$o" -Wl,-rpath,"$O/obj" & pids+=($!)
         done
         waitall "link $pk" "${pids[@]}" || exit 2
     done < <(pats)
@@ -170,7 +198,7 @@ build() {
 gate() {
     local O=$1 quick=${2:-} bad=0
     export TMPDIR=$O/tmp; mkdir -p "$TMPDIR"
-    if [ "$quick" != quick ]; then
+    if [ "$quick" != quick ] && [ "$POST" != 1 ]; then
         local m e
         for m in off shared fill; do
             e=""; [ $m = shared ] && e="TWIN_SHARED=1"; [ $m = fill ] && e="TWIN_FILL=1"

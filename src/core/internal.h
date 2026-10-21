@@ -58,11 +58,16 @@ typedef enum {
     PCREC_ENTRY_MATCH_CAPS, PCREC_ENTRY_MATCH_CAPS_IN,
     PCREC_ENTRY_NEXT_POS, PCREC_ENTRY_VALID_UPTO, PCREC_ENTRY_VAR_VALID,
     PCREC_ENTRY_INFO, PCREC_ENTRY_MAIN,
+    PCREC_ENTRY_NEXT,                      /* [FINDALL-NEXT] the find-all iterator */
     PCREC_ENTRY_PUBLIC_N,                  /* rows below are internal */
     PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
     PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
     PCREC_ENTRY_PREFILTER,
     PCREC_ENTRY_COMP_A, PCREC_ENTRY_COMP_B,
+    /* [FINDALL-NEXT] a DFA artifact's search BODY, `<p>__find`: what
+     * `<p>_search` runs after its caller-position prologue and what
+     * `<p>_next` runs at every step with none (findall_iter.md §2.1). */
+    PCREC_ENTRY_FIND,
     PCREC_ENTRY_N
 } PcrecEntry;
 
@@ -91,6 +96,8 @@ typedef enum {
     PCREC_COMB_FORWARD,         /* call a sibling for the same answer,
                                  * binding storage or not */
     PCREC_COMB_FIRST_NONZERO,   /* a compound controller (compound.md §A.2) */
+    PCREC_COMB_ITERATE,         /* [FINDALL-NEXT] the find-all iterator: bind
+                                 * once, then one STEP per call */
     PCREC_COMB_LEAF,            /* a residual: no controller */
     PCREC_COMB_DATA,            /* `info` */
     PCREC_COMB_DRIVER           /* `main` */
@@ -310,6 +317,18 @@ typedef struct {
      * read layout text. Marks are code bytes, never inside a comment, a
      * table or a SIMD bracket, so the subtraction is exact. */
     size_t        layout_bytes;
+    /* [FINDALL-NEXT] I1 (findall_iter.md §6.4) THE SCAFFOLD RECORD, the same
+     * subtraction for a second reason: the find-all iterator's fixed text
+     * (the shared block's `rx_iter`, `<prefix>_next` and its static steps,
+     * the residuals' forwarders and the search entry's prologue wrapper) is
+     * emitted inside a SCAFFOLD bracket, so no length decision -- an entry
+     * knee, a size term, a cap or its quoted figure -- reads it. Not a SIMD
+     * byte: it is never stamped. Same unit and rules as the SIMD record;
+     * the two brackets never nest in each other. */
+    bool          scaf_open;
+    size_t        scaf_at, scaf_at_uncut;
+    size_t        scaf_guarded;
+    PcrecEmitSize scaf_size;
 } StrBuf;
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
@@ -350,6 +369,12 @@ size_t pcrec_sb_len_uncut(const StrBuf *sb);
 void pcrec_sb_simd_open(StrBuf *sb);
 void pcrec_sb_simd_close(StrBuf *sb);
 void pcrec_sb_splice(StrBuf *dst, const StrBuf *src);
+/* [FINDALL-NEXT] the SCAFFOLD bracket (StrBuf.scaf_guarded): the same rules
+ * as the SIMD bracket (line boundaries, no nesting, never inside a SIMD
+ * bracket), its bytes subtracted by both decision views and never stamped. */
+void pcrec_sb_scaffold_open(StrBuf *sb);
+void pcrec_sb_scaffold_close(StrBuf *sb);
+void pcrec_sb_scaffold_putc(StrBuf *sb, char ch);
 
 /* THE DECISION VIEW, and THE ONE READER RULE that supersedes the one above:
  * any decision or stamp that compares an emitted LENGTH against a threshold
@@ -3032,6 +3057,14 @@ typedef struct {
      * needs no reverse pass, because the start is the question rather than an
      * answer. docs/design/anchored_match_unwrapped.md §2/§3. */
     Dfa    adfa;
+    /* [FINDALL-NEXT] I1 THE RETRY MACHINE (findall_iter.md §3.3): the anchored
+     * construction over the plain `nfa` rooted at `nfa.anch_start` with the
+     * NOTEMPTY start root (`Dfa.notempty`). Built on a DFA artifact whose
+     * reported span can be empty (`pcrec_fact_reports_empty`), where it is the
+     * iterator's only correct retry, so it is MANDATORY: an overflow is the
+     * DFA engine's like any machine's. `retry_ok` says it was built. */
+    Dfa    nedfa;
+    bool   retry_ok;
     /* [ENG-ABS] Did that machine BUILD, on an artifact whose `_match` this
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
@@ -7806,6 +7839,8 @@ struct PcrecPartFacts {
     bool utf_check;         /* its entries run the subject check */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
+    size_t scaf_guarded;    /* [FINDALL-NEXT] its scaffold bytes, and */
+    PcrecEmitSize scaf_size;/* their breakdown, carried into the shell */
     Arena *into;            /* in: where the strings below are copied */
     const char *memfn_forms;/* its `MEMFN_FORMS` value (in `into`) */
     unsigned find_consulted;/* the queries any of its attempts consulted
@@ -7914,7 +7949,8 @@ typedef struct PcrecCompShell {
 void pcrec_emit_compound_parts(Ctx *cx, const PcrecCompShell *sh);
 /* The `first-nonzero` combinator's ONE emitter, as `<p>_search` (§B.2). */
 void pcrec_emit_compound_search(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
-                                const char *searchfn, const char *upper);
+                                const char *searchfn, PcrecEntry ent,
+                                const char *upper);
 /* The first part's one bounded attempt at `ctx->pos`, as `e` (`_match` or
  * `_match_caps`) named `fn` (§B.3). */
 void pcrec_emit_compound_match(Ctx *cx, StrBuf *c, const PcrecCompShell *sh,
@@ -7965,11 +8001,25 @@ typedef struct {
 
 /* What an engine emitter hands `pcrec_emit_entry`: the member for the
  * combinator(s) the entry can be on its shapes, NULL elsewhere. */
+/* [FINDALL-NEXT] `iterate`: the shape of the find-all iterator's STEP
+ * (src/gen/emit_iter.c). The engine writes the search body `<p>__find` and,
+ * where the artifact can report an empty span, the retry `<p>__retry`; this
+ * says how to call them. */
+typedef struct {
+    bool vm;                    /* a VM artifact: a step takes a bound run state */
+    bool retry;                 /* the NOTEMPTY_ATSTART retry is emitted */
+    bool vars;                  /* the search takes the caller's variables */
+    PcrecFwdBind own;           /* VM: how the iterator binds its own storage
+                                 * (OWN, OWN_TIERED or EMPTY, `<p>_search`'s) */
+    const char *frames_code;    /* VM OWN_TIERED: the code that escalates */
+} PcrecIterText;
+
 typedef struct {
     const PcrecFwd *fwd;            /* forward */
     const PcrecFinish *fin;         /* finish-at */
     const char *body;               /* locate-then-finish: the DFA body's name */
     const PcrecCompShell *shell;    /* first-nonzero */
+    const PcrecIterText *iter;      /* iterate */
 } PcrecEntryText;
 
 /* Writes entry `e` into `csb` through its row's combinator emitter, or
@@ -7985,6 +8035,19 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g);
 /* src/gen/emit_dfa.c -- the DFA search entry's head (K24's `noclone`, the
  * signature, P's caller-position prologue), shared with the controller. */
 void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, PcrecEntry ent);
+/* [FINDALL-NEXT] src/gen/emit_dfa.c -- `<p>_search` as its caller-position
+ * prologue over the body `<p>__find`; and the DFA iterator's retry
+ * `<p>__retry`, the notempty machine's anchored scan (Job.nedfa). */
+void pcrec_emit_search_wrapper(Ctx *cx, StrBuf *c, const char *fn);
+void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c);
+/* [FINDALL-NEXT] src/gen/emit_iter.c -- the shared block's `rx_iter` and its
+ * setters, the header's typed buffers setter and `_next` declaration, and
+ * `iterate`'s one emitter (the bind, the step, `<prefix>_next`). */
+void pcrec_emit_iter_abi_types(StrBuf *sb);
+void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix);
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix);
+void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
+                        const PcrecIterText *t);
 
 /* src/gen/stamp_kinds.c -- THE STAMP CATALOGUE (compound.md §A.7): every
  * stamp an emitter writes, PATTERN-level (true of the pattern and the caller

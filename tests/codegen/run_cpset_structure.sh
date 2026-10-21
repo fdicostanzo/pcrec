@@ -973,6 +973,17 @@ fi
 # `#define RX_MEASURES ""`, `.measures = "",` and the `measures` member with its
 # two-line comment in the shared ABI block (diffed at the same `-o` against a
 # build of the branch point; nothing else moves but the same-width abi digits).
+#
+# RE-RECORDED 2026-10-21 at [FINDALL-NEXT] I1 (lane i1build, abi 82 -> 83):
+# every EMITTED_BYTES row moves by the iterator's scaffold, nothing else (the
+# other stamps read identically): +6,429 on a DFA artifact with no empty
+# report, +6,417 on `^foo$` (its attempt-route `__find` is `noinline`, 12
+# bytes shorter than `always_inline`), +7,137
+# on a VM artifact (its `__step_own` binding and the buffers branch), +7,549
+# on `(a(?1)?b)` (its tiered `__step_deep`). The text is rx_iter and its
+# setters in the shared block, rx_nextfn, rx_info.next, the ITER_RETRY stamp,
+# <prefix>__find, the residual twins' forwarders and <prefix>_next. Measured
+# against the I0 commit's compiler at the same `-o -`.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
