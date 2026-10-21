@@ -128,3 +128,63 @@ please proceed", then "Proceed through all items").
 `boxqueue status` shows main's `120-main-postmerge` FAILED with
 `POPULATION-SHORT: done ran=none declared=1` (its job.log lacked the
 `== postmerge COMPLETE` line), verdict GREEN.
+
+## TRIAGE (z2tri)
+
+Job 541-z2build-maketest: 74/74 sections, one red, `test-cand-oracle`.
+Rulings file read through entry 3; entry 2 applied below.
+
+**Class (b): the check legitimately sees the new `cover` row; no defect in Z2,
+no environment cause, nothing under `src/`.** Premise test: `bash
+tests/codegen/run_cand_oracle.sh` reproduces the red in about 60 s, one FAIL
+line: `[cand-oracle-coverage] rows with no witness: cover` (165 passed / 1
+failed). The check's K35 rule is that every identity in `cand_rows[]` has a
+witness line that REACHES it, and the only way to reach `cover` is the harness
+lever (`build/pcrec-harness`), which the oracle never used.
+
+Fix, in the check, no name exemption:
+
+- `cand_oracle_witnesses.tsv` gains two `cover` witnesses (`foobar`, `\bcat\b`,
+  the tests/kitproof verdict patterns) whose FLAGS carry the harness option.
+  `run_cand_oracle.sh` compiles a witness with that option by the trace build's
+  own `pcrec-harness` (same sources, same `-DPCREC_CAND_TRACE`) and keeps the
+  existing reach rule: the line must print a `CANDROW` hit for `cover`.
+- New `[cand-oracle-shipped]` check: every harness witness is compiled again
+  by the shipped trace compiler WITHOUT the option and must print NO `CANDROW`
+  hit for its row; its population is counted (at least one, equal to the
+  number of harness witnesses). Failing direction: with the second compile
+  routed through the lever (scratch copy), both witnesses FAIL with "the
+  SHIPPED compiler reaches harness-only row 'cover'" (169 passed / 2 failed).
+  Result after the fix: 171 passed / 0 failed.
+
+Ruling 2 (a manifest state `preview`):
+
+- `tests/memfn/site_manifest.tsv`: COVER `delegated` -> `preview`; the header
+  states the three-word vocabulary.
+- `site_manifest_check.py`: `preview` accepted; its emitters must spell no form
+  (rule 3), it is a listed site for rule 2, and rule 4's preview clause holds
+  it to "rendered over the harness configs, and over NO shipped config".
+- `site_census.py`: `run_corpus` also returns each compile's config class,
+  DERIVED from the row's lever (`config_class`: a `--harness=` lever is
+  `harness`, anything else `shipped`), so a row cannot be declared shipped
+  while routing the lever; `verdict` takes `preview` and the tags; a selftest
+  line covers the four directions (harness-only passes; a shipped render fails;
+  no harness render fails; a function shared with a delegated row fails).
+- Result: `bash tests/memfn/run_site_manifest.sh` 15 passed / 0 failed, "COVER
+  was rendered by 48 harness-config compile(s) and by no shipped-config one",
+  manifest 14 rows (delegated 12 / preview 1 / pending 1), floor unchanged.
+- The compound lever fence (`tests/compound/run_lever_fence.sh`) was re-run
+  and is green (3 checks, 4 controls) after one more allowlist widening:
+  `tests/codegen/run_cand_oracle.sh` and `tests/codegen/cand_oracle_witnesses.tsv`
+  (test drivers of the lever, no new global; the same kind as ruling 2's two).
+  This is a THIRD widening beyond the two the ruling named: main's call.
+
+Docs: tests/memfn/CLAUDE.md (rule 4, three-state status),
+tests/codegen/CLAUDE.md, the header of run_site_manifest.sh.
+
+OWED, and why: the commit, and the solo mech rows that anchor on the oracle
+(S594, S597, S844, S1019 and the C17 rows S510, S511, S512, S1091). Boxqueue job
+542-z2build-mech was RUNNING when the work finished (the mech matrix archives
+`HEAD`, so a commit mid-run would change what its later rows test) and 543 is
+pending, so nothing was committed. The edits sit in the worktree; a copy of the
+diff is `build/z2tri/z2tri.patch`.

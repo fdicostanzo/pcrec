@@ -78,7 +78,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   dropped, attributed to its file-scope definition (a function, or an
   initializer such as `enc_byte.c`'s `defs_bref`).
 - **site_manifest_check.py** — C17 itself. It enforces the manifest's
-  shape (two-state status, unique ids, every emitter/companion defined,
+  shape (three-state status, unique ids, every emitter/companion defined,
   and the K35 row floor) and the four rules:
   1. static half: a form in a function no pending row names → FAIL;
   2. dynamic half (R4c, Q3): keyed on `\bmf_(define|emit)\s*\(` (the
@@ -100,7 +100,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
      time (the `selftest:` lines);
   3. a delegated emitter that still spells a form → FAIL. It is VACUOUS,
      and says so, at 0 delegated rows;
-  4. a pending emitter that spells nothing → FAIL (the row is stale).
+  4. a pending emitter that spells nothing → FAIL (the row is stale). A
+     `preview` row (a site only a test-harness lever routes, shipped in no
+     build: `COVER`, [KIT-VERIFY] Z2) is accepted iff its door is rendered by
+     the corpus pass's harness configs (`site_census.PASS_CONFIGS` rows that
+     pass a harness lever, `config_class`) and by NO shipped config; its
+     emitters must spell no form (rule 3) and it is a listed site for rule 2.
+     B1 flips it to `delegated`.
 
   It prints `checks passed:`/`checks failed:`.
 - **site_census.py** — C17 rule 2's mechanism: `find_callers` (calls to
