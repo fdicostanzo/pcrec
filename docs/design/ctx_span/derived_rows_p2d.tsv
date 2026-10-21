@@ -1,0 +1,44 @@
+S1083	S1083_context-stop-proves-nothing	comment
+S1100	S1100_collapse-drops-rmin	owner:P2d:compile_ast(case A_BOL:   return fra|case A_END:   return fra)
+S1151	S1151_ctx_s0_last_atom	owner:P2d:pcrec_build_dfa(case N_END:|case N_END:   has_end = )
+S1152	S1152_mline_bol_builds_bol	witness:P2c
+S1153	S1153_mline_bol_final_newline_cell	witness:P2c
+S1154	S1154_mline_eol_builds_eol	witness:P2c
+S1155	S1155_mline_raises_lookbehind	witness:P2c
+S1156	S1156_poss_absent_row_narrows	witness:P2c
+S1157	S1157_has_bot_ignores_mline_bol	owner:P2d:pcrec_nfa_has_bot(if (nfa->st[i].k == N_BO);witness:P2c
+S1158	S1158_mline_eol_cell_flipped	witness:P2c
+S1159	S1159_has_end_ignores_absent_next	owner:P2d:pcrec_build_dfa(case N_END:|case N_END:   has_end = );witness:P2c
+S1160	S1160_reverse_left_abs_from_bot	witness:P2c
+S1161	S1161_vm_mline_bol_final_newline	owner:P2d:vm_ctx((unsigned)a->u.ctx.fn);|if (vm_ctx_forms[k].fn =|int si = vm_cls(v, bits));witness:P2c
+S124	S124_look_negative_no_cut	comment
+S125	S125_look_push_after_body	comment
+S129	S129_look_ignores_neg	comment
+S130	S130_look_ignores_behind	comment
+S14	S14_nbr_threshold	owner:P2d:compile_ast(case A_BOL:   return fra|case A_END:   return fra)
+S218	S218_pinned_predicate_widened	witness:P2c
+S219	S219_pinned_seed_conjunct_dropped	comment
+S220	S220_pinned_view_clause_dropped	comment
+S222	S222_start_stamp_forked_from_selection	witness:P2c
+S235	S235_attempt_loop_ungated	witness:P2c
+S341	S341_ctx_absent_reads_in_set	owner:P2d:clo_walk(case N_BOT:|case N_END:|if (!cl->bot_ok) break;|if (!cl->end_ok) break;)
+S365	S365_wclass_walks_the_set	owner:P2d:vm_emit_node(pcrec_sb_printf(b, "    |vm_ev(v, VE_ASSERT, next)
+S463	S463_handoff_k_minus_one	witness:P2c
+S470	S470_no_clamp	witness:P2c
+S480	S480_dfahat_t_from_s0_escapes	comment
+S490	S490_dfahat_scan_kind_conjunct	witness:P2c
+S513	S513_c11_libc_name_dropped	comment
+S608	S608_cand_read_g1_attempt_edge_undeclared	witness:P2c
+S617	S617_m4_mline_plus_k_dropped	witness:P2c
+S618	S618_m4_find_back_range_short	comment
+S693	S693_abi_not_bumped	comment
+S69	S69_endvar_against_base	owner:P2d:make_state(closure(nfa, pre, npre, )
+S70	S70_unbuilt_refusal_removed	comment
+S746	S746_look_erasure_unrecorded	owner:P2d:compile_ast(case A_BOL:   return fra|case A_END:   return fra)
+S75	S75_wordb_second_wordset	anchor:P2d:vm_ctx
+S78	S78_skip_decline_removed	witness:P2c
+S81	S81_cand_set_hardcoded_newline	witness:P2c
+S82	S82_prefilter_bound_at_zero	witness:P2c
+S83	S83_gstart_family_unconditional	comment
+S86	S86_kreset_write_untrailed	owner:P2d:vm_emit_node(pcrec_sb_printf(b, "    |vm_ev(v, VE_ASSERT, next)
+S882	S882_mark_prio_second_distance	owner:P2d:make_state(closure(nfa, pre, npre, )

@@ -167,7 +167,11 @@ typedef struct {
     bool (*set)(const NState *st, const PcrecEnc *e, uint8_t out[32]);
 } CtxContrib;
 
-static bool cr_ctx_reads(const NState *st) { return st->k == N_CTX; }
+/* A row that reads no membership (`\A`'s SUBJECT_START, `\z`'s SUBJECT_END:
+ * an absent side only) contributes no set, or every machine carrying one
+ * would gain an atom for a set nothing reads. */
+static bool cr_ctx_reads(const NState *st)
+{ return st->k == N_CTX && ctxfn_reads_membership(st->ctxfn); }
 static bool cr_ctx_set(const NState *st, const PcrecEnc *e, uint8_t out[32])
 { (void)e; memcpy(out, st->cls, 32); return true; }
 static bool cr_ns_reads(const NState *st) { return st->k == N_CSTART; }
@@ -681,9 +685,7 @@ static int eps_edge(const NState *st, int i)
     case N_ACCEPT:  return -2;
     case N_SPLIT:   return i == 0 ? st->t1 : i == 1 ? st->t2 : -2;
     case N_EPS:
-    case N_BOT:
     case N_EOL:
-    case N_END:
     case N_CTX:
     case N_GSTART:
     case N_CSTART:  return i == 0 ? st->t1 : -2;
@@ -776,20 +778,21 @@ typedef struct {
     uint8_t   accept;
     int       first;
     bool      eol_ok;
-    /* [M6.2 wave A] may a `\z` (N_END) assertion pass here — the THIRD
-     * position view, on top of `bot_ok`/`eol_ok`. The invariant the caller
+    /* [M6.2 wave A] is this position the subject's end (`pos == n`) — the
+     * THIRD position view, on top of `eol_ok`; `\z` (SUBJECT_END) and every
+     * other absent-next row read it as `right_abs`. The invariant the caller
      * owes is `end_ok => eol_ok`: every position at which `\z` holds is one
      * at which `$`/`\Z` holds too, so a closure with end_ok set and eol_ok
      * clear describes no position the machine can be in. make_state is the
      * only caller and it never spells that combination. */
     bool      end_ok;
-    bool      bot_ok;
     /* [M6.2 wave D] may a `\G` (N_GSTART) assertion pass here — "this
      * position is the `startpos` the match call was given"
      * (assertions_design.md §4.2). A THIRD position bit, and the one that is
      * not a fact about the SUBJECT at all: `bot_ok`/`eol_ok`/`end_ok` are
      * decided by where the position sits in `s[0, n)`, while this one is
-     * decided by an argument. That difference is invisible here — the closure
+     * decided by an argument (`bot_ok` reaches the closure only as
+     * `left_abs`). That difference is invisible here — the closure
      * asks the same yes/no question — and appears in `pcrec_build_dfa`, which
      * closes the start pre-set once with it set and once clear so the
      * EMITTER can choose between the two at runtime.
@@ -1011,16 +1014,8 @@ static void clo_walk(Clo *cl, int s)
                 cont_push(cl->ks, st->t2, ctx, cl->lcyc[s] ? s : -1);
                 s = st->t1;
                 continue;
-            case N_BOT:
-                if (!cl->bot_ok) break;
-                s = st->t1;
-                continue;
             case N_EOL:
                 if (!cl->eol_ok) break;
-                s = st->t1;
-                continue;
-            case N_END:
-                if (!cl->end_ok) break;
                 s = st->t1;
                 continue;
             /* [M6.2 wave D] `\G`. One bit, no byte, no interaction with any
@@ -1034,13 +1029,15 @@ static void clo_walk(Clo *cl, int s)
                 s = st->t1;
                 continue;
             /* [UCP] U2 A_CTX — `\b`, `\B`, every recognized one-character
-             * lookaround and, since [DD-11.5], `(?m)^`/`(?m)$`: the node's
-             * row of the one truth table (src/core/ctxfn.def) applied to each
-             * side's value. No per-spelling arm, which is the point: the
-             * function is data. The two `(?m)` rows read the ABSENT sides
-             * (`bot_ok`/`end_ok`, through `sides_of`) where the retired
-             * multiline NFA kinds' arms read them by name; the asymmetry those
-             * arms carried — PCRE2's `(?m)^` does NOT hold after a newline
+             * lookaround and, since [DD-11.5], `(?m)^`/`(?m)$` (P2c) and
+             * `^`/`\A`/`\z` (P2d): the node's row of the one truth table
+             * (src/core/ctxfn.def) applied to each side's value. No
+             * per-spelling arm, which is the point: the function is data. The
+             * `(?m)` and subject rows read the ABSENT sides (`bot_ok`/`end_ok`,
+             * through `sides_of`) where the retired multiline, N_BOT and N_END
+             * kinds' arms read them by name; a subject row reads no set, so
+             * its `cbit` is -1 and only its absent side decides. The
+             * asymmetry the multiline arms carried — PCRE2's `(?m)^` does NOT hold after a newline
              * that ends the string (`(?m)^` on "a\n" matches at 0 only,
              * `(?m)$` at 1 and 2; U11b; PCRE2_ALT_CIRCUMFLEX is the option
              * that turns it on) — is MLINE_BOL's `in`/`absent` cell. */
@@ -1096,7 +1093,7 @@ typedef struct {
  * the closure's own scratch generations (marks_next x2, kept in lockstep --
  * see the comment above -- and pmemo_next) and the deferred-branch stack at
  * the top of every call. */
-static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
+static void closure(Nfa *nfa, const int *pre, int npre, bool eol_ok,
                     bool end_ok, bool gst_ok, Sides sd, bool prune,
                     CloScratch *sc, int *out, int *nout, uint8_t *accept, int *first)
 {
@@ -1117,7 +1114,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
     Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
-               out, 0, 0, -1, eol_ok, end_ok, bot_ok, gst_ok,
+               out, 0, 0, -1, eol_ok, end_ok, gst_ok,
                sd.left, sd.right, sd.left_abs, sd.right_abs,
                sc->cbit, sc->ns_bit, prune,
                sc->lcyc };
@@ -1444,7 +1441,7 @@ static Sides sides_of(const Mach *m, int cons_atom, int up_atom,
  * the zero-regression property this convention buys is gone.
  *
  * WITH THE RULE AS WRITTEN THE PROPERTY HOLDS BY CONSTRUCTION, not by a flag:
- * a pattern with no `\z` has no N_END state, so `end_ok` gates nothing, so
+ * a pattern with no `\z` has no SUBJECT_END row, so `end_ok` gates nothing, so
  * `endv == eolv` at every state, so `endvar` is -1 everywhere, so
  * `dfa_has_endvar` is false and the emitter emits today's text. No `has_z`
  * conditional is needed anywhere.
@@ -1454,7 +1451,7 @@ static Sides sides_of(const Mach *m, int cons_atom, int up_atom,
  * worst case is nine closures and the pre-wave corpus is still two. The
  * guards are what make that true and each is PROVABLE rather than prudent:
  *
- *  - `has_end` off: `end_ok` gates nothing (no N_END, no absent-next row), so the
+ *  - `has_end` off: `end_ok` gates nothing (no absent-next row), so the
  *    third position view equals the second at every pre-set, element for
  *    element. Running it anyway costs a third of the subset construction's
  *    closure work on every pattern in the corpus, which is what
@@ -1485,7 +1482,7 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
              * orthogonal to the position views and rides through unchanged:
              * `\G` and `\z` can both hold at once (an empty subject searched
              * from 0), so it is a caller's parameter and not a fourth view. */
-            closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
+            closure(nfa, pre, npre, v >= V_EOL, v >= V_END, gst_ok,
                     sides_of(m, cons_atom, u, bot_ok, v >= V_END), m->prune, sc,
                     buf, &nout, &acc, &first);
             vw[v][u].list   = buf;
@@ -1569,10 +1566,10 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
          * reason: "or the end of the subject" is wave A's `end_ok`, and a
          * machine that could not see `pos == n` would refuse the empty match
          * at the end of every subject. */
-        case N_CSTART:
-        case N_END:   has_end = true; break;
+        case N_CSTART: has_end = true; break;
         /* [DD-11.5] a context row that reads "no next character" makes the
-         * `pos == n` view live: `(?m)$` needs it (`end_ok` IS its "or end of
+         * `pos == n` view live: `\z` needs it (SUBJECT_END, the retired N_END
+         * kind's reason), `(?m)$` needs it (`end_ok` IS its "or end of
          * subject" half), and `(?m)^` asks for it at the cost of one closure
          * on a construct already routed to ENG_ATTEMPT, as the retired
          * multiline `^` kind did. A four-cell row reads none. */

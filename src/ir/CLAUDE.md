@@ -381,3 +381,16 @@ enters the context list in NFA order (the measured list-order movers). The
 absent-prev row is an internal error. **nfa.c**: A_BOL/A_EOL lower to
 N_BOT/N_EOL only; `pcrec_nfa_has_bot` reads `ctxfn_reads_absent_prev` on
 N_CTX. The entries above that name the multiline kinds or the knob are history.
+**[DD-11.5] P2d (lane ctxp2d, 2026-10-20): `N_BOT`/`N_END` ARE DELETED.**
+`^`/`\A` (A_BOL) and `\z` (A_END) stay AST kinds and lower through
+`pcrec_anchor_ctxfn` (internal.h) to N_CTX rows SUBJECT_START/SUBJECT_END,
+which read no set, only an absent side (**nfa.c** `frag_ctx_row`, cls empty).
+**dfa.c**: their eps labels and closure arms delete (the N_CTX arm's gated
+absent index reads `left_abs`/`right_abs`, which `sides_of` sets from
+`bot_ok`/`end_ok` exactly as the arms read them); `Clo.bot_ok` and
+`closure()`'s `bot_ok` parameter delete (the N_BOT arm was their one reader);
+the `has_end` hoist's `case N_END` folds into the absent-next predicate;
+`cr_ctx_reads` reads `ctxfn_reads_membership`, so an absent-only row adds no
+(empty) set to the context list — load-bearing: without it `clsctx` turns on
+and the views flag changes the scan form (assertions §1d, S1171). The entries
+above that name N_BOT/N_END are history.

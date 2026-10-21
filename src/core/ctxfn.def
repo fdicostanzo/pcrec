@@ -62,3 +62,17 @@ CTXFN_ROW(MLINE_BOL,   0x1D8,  0,0,0,  1,1,0,  1,1,1,
 CTXFN_ROW(MLINE_EOL,   0x1B6,  0,1,1,  0,1,1,  0,1,1,
           VMCTX_MLEOL, NULL, false,
           "(?m)$ end of subject or before a newline")
+/* `\A` and `^` outside `(?m)` (P2d: the lowering of A_BOL): no previous
+ * character, whatever the next one is. Reads no membership, so the row's
+ * N_CTX state contributes no set to the class axis and its VM form tests the
+ * position alone; it reads absent prev, so `pcrec_nfa_has_bot` routes it to
+ * ENG_ATTEMPT exactly as the retired N_BOT kind did. */
+CTXFN_ROW(SUBJECT_START, 0x1C0, 0,0,0, 0,0,0,  1,1,1,
+          VMCTX_START, NULL, false,
+          "^ attempt_position of subject (absolute offset 0)")
+/* `\z` (P2d: the lowering of A_END): no next character. Reads no
+ * membership; reads absent next, so it makes the `pos == n` view live as the
+ * retired N_END kind did. */
+CTXFN_ROW(SUBJECT_END, 0x124,   0,0,1, 0,0,1,  0,0,1,
+          VMCTX_END, NULL, false,
+          "\\z end of subject (absolute)")

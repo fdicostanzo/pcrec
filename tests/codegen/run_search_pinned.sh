@@ -676,7 +676,7 @@ fi
 # §7 P0's ROUTING ASSERTION
 # =========================================================================
 # The predicate reads `fs = fd->s0`, which is the right state at
-# `search_from == 0` only because ENG_UNANCH implies no N_BOT/N_GSTART.
+# `search_from == 0` only because ENG_UNANCH implies no BOT-family node.
 # Nothing in P1-P5 checks that, so the compiler ASSERTS it — and a future
 # engine-selection change that routed a BOT-bearing machine here fails loudly
 # instead of eliding wrongly. Two halves: the assertion EXISTS in the source,

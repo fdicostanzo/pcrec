@@ -197,6 +197,17 @@ static Frag frag_single(NB *b, NKind k)
     return f;
 }
 
+/* A one-state N_CTX fragment for a context row that reads no set — only an
+ * absent side (src/core/ctxfn.def's SUBJECT_START/SUBJECT_END). Its `cls` stays
+ * empty, and no consumer reads it: the class axis collects a set only from a
+ * row that reads membership (src/ir/dfa.c's `cr_ctx_reads`). */
+static Frag frag_ctx_row(NB *b, uint16_t fn)
+{
+    Frag f = frag_single(b, N_CTX);
+    b->nfa->st[f.start].ctxfn = fn;
+    return f;
+}
+
 /* X* : split(preferred: body | exit); body loops back to split */
 static Frag frag_star(NB *b, const Ast *sub, bool greedy)
 {
@@ -610,9 +621,10 @@ static Frag compile_ast(NB *b, const Ast *a)
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
-    /* `^`/`\A`. A `(?m)^` never arrives here: the parser builds it as an
-     * A_CTX row ([DD-11.5]), lowered by the N_CTX arm below. */
-    case A_BOL:   return frag_single(b, N_BOT);
+    /* `^`/`\A`: the context row "no previous character" ([DD-11.5] P2d; the
+     * N_BOT kind retired into it). A `(?m)^` never arrives here: the parser
+     * builds it as an A_CTX row, lowered by the A_CTX arm below. */
+    case A_BOL:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));
     case A_EOL:
         /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
          * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with
@@ -629,15 +641,17 @@ static Frag compile_ast(NB *b, const Ast *a)
             }
         }
         return frag_single(b, N_EOL);
-    /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
-     * an assertion about an absolute subject position is the same assertion
-     * whichever direction the machine walks — the reverse machine simply
-     * evaluates it at the position its own walk STARTS from, which is the
-     * pattern's right end. */
-    case A_END:   return frag_single(b, N_END);
+    /* [M6.2 wave A] `\z`: the context row "no next character" ([DD-11.5]
+     * P2d; the N_END kind retired into it). Reversal is identity, exactly as
+     * `^`'s and N_EOL's is: an assertion about an absolute subject position is
+     * the same assertion whichever direction the machine walks — the reverse
+     * machine simply evaluates it at the position its own walk STARTS from,
+     * which is the pattern's right end (`sides_of` names the absent side by
+     * SUBJECT side, so the row reads `end_ok` in both directions). */
+    case A_END:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));
     /* [UCP] U2 A_CTX (`\b`, `\B`, a recognized one-character lookaround).
-     * Reversal is identity here too, for a DIFFERENT reason than N_BOT/
-     * N_EOL/N_END's: a context assertion is not absolute, it is a predicate
+     * Reversal is identity here too, for a DIFFERENT reason than `^`/`\z`/
+     * N_EOL's: a context assertion is not absolute, it is a predicate
      * on the two characters AROUND the position, and the closure names those
      * by SUBJECT side (left/right) rather than by walk order — so the reverse
      * machine reads the same function of the same two sides (src/ir/dfa.c's
@@ -659,7 +673,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         st->ctxfn = a->u.ctx.fn;
         return f;
     }
-    /* [M6.2 wave D] `\G`. Reversal is identity for N_BOT/N_EOL/N_END's
+    /* [M6.2 wave D] `\G`. Reversal is identity for `^`/N_EOL/`\z`'s
      * reason — it is an absolute-position assertion — and no reverse machine
      * is ever built for a pattern carrying it anyway: `pcrec_nfa_has_bot` answers
      * true below, so src/core/compile.c routes it to ENG_ATTEMPT, which has
@@ -1288,8 +1302,8 @@ void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
  * variant AND a byte-selected view on top of it. So this predicate becomes
  * "contains any BOT-family node" — the extension §3.7 asks for, and the
  * reason the reverse machine never has to evaluate a `(?m)^`. Since
- * [DD-11.5] that node is an N_CTX row reading "no previous character", and
- * the predicate says so from the row's bits.
+ * [DD-11.5] both nodes are N_CTX rows reading "no previous character" (P2c
+ * `(?m)^`, P2d `^`), and the predicate says so from the row's bits.
  *
  * `(?m)$` does NOT join: its truth at `pp` is a fact about `s[pp]`, the byte
  * the reverse walk has already consumed, which the state identity carries
@@ -1310,10 +1324,11 @@ void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 bool pcrec_nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_GSTART ||
+        if (nfa->st[i].k == N_GSTART ||
             /* [DD-11.5] a context row that reads "no previous character"
-             * (`(?m)^`'s) is a BOT-family node for this file's reason: the
-             * reverse machine would need it at its termination boundary. */
+             * (`^`/`\A`'s SUBJECT_START, `(?m)^`'s MLINE_BOL) is a BOT-family
+             * node for this file's reason: the reverse machine would need it
+             * at its termination boundary. */
             (nfa->st[i].k == N_CTX && ctxfn_reads_absent_prev(nfa->st[i].ctxfn)))
             return true;
     return false;

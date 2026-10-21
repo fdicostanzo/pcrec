@@ -306,7 +306,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave B] reversal is identity -- the predicate is symmetric in
      * the two bytes it reads (src/ir/nfa.c). [M6.2 wave D] and for `\G`
-     * because it is an absolute-position assertion, N_BOT's own reason. */
+     * because it is an absolute-position assertion, `^`'s own reason. */
     case A_CTX: case A_GSTART:
         return rd_node(cx, a);
 

@@ -133,9 +133,7 @@ static void wdrain(Walk *w, bool pass, int *ndefer)
          * classified, and the compiler says so. A new CONSUMING kind treated
          * as an assertion would be the one unsound direction this file has,
          * so the absent `default` is the check that prevents it. */
-        case N_BOT:
         case N_EOL:
-        case N_END:
         case N_CTX:
         case N_GSTART:
         /* [K50] The character-boundary gate is an assertion like the rest, and

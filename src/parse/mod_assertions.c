@@ -29,7 +29,8 @@
  *     pos + 1 == n && s[pos] == '\n'  YES        no
  *     pos == n                        YES        YES
  *
- * It gets its own AST kind (`A_END`), its own NFA state kind (`N_END`), a
+ * It gets its own AST kind (`A_END`), its own context row (`SUBJECT_END`,
+ * src/core/ctxfn.def; the NFA kind `N_END` until [DD-11.5] P2d), a
  * third closure view in src/ir/dfa.c and a third position view in both
  * emitters. D62's principle is what makes that the right spelling rather than
  * a flag: node KINDS encode STRUCTURE and node FIELDS encode parse-resolved

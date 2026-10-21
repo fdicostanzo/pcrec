@@ -9837,6 +9837,10 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Why:** Frank asked whether the full fold could state the type clearly with specific predicates or flags; a derived, exhaustively switched class does, and removes the one cost the full fold had (data recognizers the compiler cannot see). The pin facts get one definition. `$`/`\Z` and `\G` stay kinds.
 - **Cost:** P2e is a second abi event with its own mover census (the end-mark lowering's tagged form reads `A_END`, ctx_span N-3). No build without Frank's go.
 
+### D168 addendum 3 note — P2d built (lane ctxp2d, 2026-10-20)
+
+P2d folded `\A`/`\z` at the NFA layer: `N_BOT`/`N_END` and their engine arms are deleted and both lower to `N_CTX` rows (`SUBJECT_START`/`SUBJECT_END`), with `ctxfn_reads_membership` in `cr_ctx_reads`. Zero emitted-byte movers against 39457a796 (the start-arm sweep, byte and utf8 bases, and the recursion-identity gate), so it is NOT an abi event: abi stays 81 (D76/D94 key the abi on emitted text). P2e (the AST fold, the second abi event) is next and still needs Frank's build go. Report: docs/dev/lanes/ctxp2d_report.md (F-1 corrected in ctx_span.md §4.6; F-6 filed as K112).
+
 ## D169 — R17-b′ B4's default under unknown landing predictability is V1 (Frank, 2026-10-20, session 120)
 
 - **Decision:** grid2 showed that neither search length (M9: V1 beats the walk at every N >= 8) nor candidate gap (M15) decides V1 versus the walk: landing predictability does, and it is a property of the data, unknown at compile time. Short candidate gaps tend to come with short subjects, whose total search time and absolute losses are small; large gaps come with large subjects, where throughput matters. So presume large gaps and large subjects, and all else being equal, default to V1. The walk stays the default only where a measured row keeps it (the VM hat, D1w, until F2); one-byte sites keep LIBC (D1); a measured or caller-stated regular regime may select the walk (R5's MEASURED-E path).

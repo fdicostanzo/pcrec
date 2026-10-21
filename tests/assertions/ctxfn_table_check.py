@@ -21,8 +21,9 @@ offset, so a lookbehind sees the real previous byte. A cell is the
 (in, absent) for the newline rows) and see each one consistently, or the
 check fails (K35: a family that missed a cell would certify nothing).
 
-ROWS WITH A NATIVE SPELLING are asked twice: `\\b`/`\\B`/`(?m)^`/`(?m)$`
-must give the same nine cells as the lookaround spelling, so the table is
+ROWS WITH A NATIVE SPELLING are asked again per spelling: `\\b`/`\\B`/
+`(?m)^`/`(?m)$`/`\\A`/`^`/`\\z` must give the same nine cells as the
+lookaround spelling, so the table is
 tied to the construct the parser builds it for (CK-9's half on the libpcre2
 side; pcrec's own answers are the corpus's).
 
@@ -48,16 +49,20 @@ WORD = set(b"a")          # \w over the family's alphabet {a, -, \n}
 A = set(b"a")
 NL = set(b"\n")
 
-# name -> (set, canonical lookaround spelling, native spelling or None)
+# name -> (set, canonical lookaround spelling, native spellings)
+# The SUBJECT rows read no set; theirs is any set, so the family still reaches
+# every (in, *) and (*, in) cell and the grid's in row/column is checked too.
 ROWS = {
-    "BOUNDARY":    (WORD, rb"(?<=\w)(?!\w)|(?<!\w)(?=\w)", rb"\b"),
-    "NONBOUNDARY": (WORD, rb"(?<=\w)(?=\w)|(?<!\w)(?!\w)", rb"\B"),
-    "PREV":        (A,    rb"(?<=a)", None),
-    "NOT_PREV":    (A,    rb"(?<!a)", None),
-    "NEXT":        (A,    rb"(?=a)", None),
-    "NOT_NEXT":    (A,    rb"(?!a)", None),
-    "MLINE_BOL":   (NL,   rb"\A|(?<=\n)(?=[\s\S])", rb"(?m)^"),
-    "MLINE_EOL":   (NL,   rb"(?![^\n])", rb"(?m)$"),
+    "BOUNDARY":    (WORD, rb"(?<=\w)(?!\w)|(?<!\w)(?=\w)", (rb"\b",)),
+    "NONBOUNDARY": (WORD, rb"(?<=\w)(?=\w)|(?<!\w)(?!\w)", (rb"\B",)),
+    "PREV":        (A,    rb"(?<=a)", ()),
+    "NOT_PREV":    (A,    rb"(?<!a)", ()),
+    "NEXT":        (A,    rb"(?=a)", ()),
+    "NOT_NEXT":    (A,    rb"(?!a)", ()),
+    "MLINE_BOL":   (NL,   rb"\A|(?<=\n)(?=[\s\S])", (rb"(?m)^",)),
+    "MLINE_EOL":   (NL,   rb"(?![^\n])", (rb"(?m)$",)),
+    "SUBJECT_START": (NL, rb"(?<![\s\S])", (rb"\A", rb"^")),
+    "SUBJECT_END":   (NL, rb"(?![\s\S])", (rb"\z",)),
 }
 
 ROW_RE = re.compile(r"^CTXFN_ROW\(\s*(\w+)\s*,\s*(0x[0-9A-Fa-f]+)\s*,"
@@ -108,9 +113,7 @@ def main():
         return 1
     for name, grid in table.items():
         cset, canon, native = ROWS[name]
-        for label, sp in (("canonical", canon), ("native", native)):
-            if sp is None:
-                continue
+        for label, sp in [("canonical", canon)] + [("native", n) for n in native]:
             seen = observe(sp, cset)
             if isinstance(seen, str):
                 print("FAIL %s (%s %r): %s" % (name, label, sp, seen)); fails += 1

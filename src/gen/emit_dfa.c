@@ -4011,7 +4011,7 @@ static int st_emit_endvar(const DState *st)
  * [M6.2 wave A] Does any state have an END view (`\z`) distinct from its EOL
  * view? FALSE for every `\z`-free pattern BY CONSTRUCTION (src/ir/dfa.c's
  * make_state canonicalizes `endvar` against the EOL view, so a pattern with
- * no N_END state interns none), which is what makes every `if (endv)` below
+ * no absent-next row interns none), which is what makes every `if (endv)` below
  * a no-op on the existing corpus and the emitted text byte-identical to the
  * pre-wave one. tests/codegen/run_endvar_identity.sh is the check. */
 static bool dfa_has_endvar(const Dfa *d)
@@ -8915,7 +8915,7 @@ static bool finish_prio_const(const CandSel *s)
  * P0 — THE ROUTING DEPENDENCY, INHERITED AND THEREFORE STATED. The predicate
  * reads `fs = fd->s0`. That is the right state at `search_from == 0` only
  * because `ENG_UNANCH` implies `!pcrec_nfa_has_bot` (`src/core/compile.c`), i.e. no
- * `N_BOT`/`N_GSTART`/absent-prev context row: `s0` is closed with `bot_ok = true,
+ * `N_GSTART` or absent-prev context row: `s0` is closed with `bot_ok = true,
  * gst_ok = true` and `s1u[UPC_PLAIN]` with `false, false`, so with none of
  * those nodes present the two closures coincide and intern to the same id.
  * NOTHING IN P1-P5 CHECKS THIS — `dfa_needs_seed` compares only `s1u[u]`

@@ -746,7 +746,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   is PCRE2's `\A` word for word and `A_EOL`'s is PCRE2's `\Z`, so both are
   parser rows with NO engine work. `\z` is not — "end of subject, full stop"
   is strictly stronger than `\Z`, and it gets its own `A_END` kind, its own
-  `N_END` NFA kind, a third closure view (src/ir/dfa.c) and a third position
+  `N_END` NFA kind (since [DD-11.5] P2d the SUBJECT_END context row), a third closure view (src/ir/dfa.c) and a third position
   view in both emitters, per D62's kinds-encode-structure principle.
 
   **`Ast.u.anch.multiline` is deliberately left at the arena's zero here**, and that
