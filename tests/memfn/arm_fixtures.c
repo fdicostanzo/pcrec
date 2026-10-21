@@ -62,7 +62,7 @@
  * terms, or that states a window itself, is passed unchanged. The window
  * cases (seq_case) call the kit on the site as written. */
 /* MF_SITE_ABI 18 (R-26.1/R-26.2): a forward FIND's predicate STATES its class
- * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_today,
+ * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_stated,
  * pcrec_memfn_context_stop): a context stop (every term below the candidate)
  * is CONTEXT, absent FAILS, consumable NO, with the site's read_floor
  * SUBJECT; every other one is span 0, BOUNDED with its prefix facts stated

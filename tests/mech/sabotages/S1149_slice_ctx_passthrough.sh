@@ -5,7 +5,7 @@ SAB_ID='S1149-slice_ctx_passthrough'
 SAB_FILE='src/facts/kset.c'
 SAB_SUITES='kitproof'
 SAB_DESC='the span slice passes every zero-width node through (kit_proof.md §5.2'"'"'s revision-2.1 sentence as written): an in-span A_CTX neither narrows S_d nor ends exact_len'
-SAB_DOC_FIGURE='@FIG@'
+SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the matrix run of lane z2build'"'"'s heavy chain (docs/dev/lanes/z2build_report.md), owed at the slot.'
 SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a(?=b)[a-z]'"'"''
 SAB_REACH_EXPECT='REACH-COVER'
 SAB_EXPECT=DETECTED

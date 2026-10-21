@@ -13308,7 +13308,7 @@ static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent)
     const PcrecCover *cv = pcrec_cover(cx);
     mf_hooks h;
     PcrecMfU u;
-    mf_result r;
+    mf_result *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
     if (cv->why)
         pcrec_ctx_fail(cx, 0, "internal error: the cover walk was emitted on an "
                        "artifact cover_conj[] declines (%s)", cv->why);
@@ -13322,8 +13322,8 @@ static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent)
     const char *stem = dfa_fragf(cx, "%s_cover", fn);
     mf_site *s = pcrec_cover_site(cx, cv, stem, NULL, &h, &u);
     uint32_t handle = pcrec_memfn_define(cx, DELEG_COVER, s, &h, c);
-    pcrec_memfn_defined(cx, handle, &r);
-    const char *diff = pcrec_cover_proof_diff(cx, cv, &r.cls);
+    pcrec_memfn_defined(cx, handle, r);
+    const char *diff = pcrec_cover_proof_diff(cx, cv, &r->cls);
     if (*diff)
         pcrec_ctx_fail(cx, 0, "internal error: [KIT-VERIFY] the memfn kit's class for "
                        "the cover site is not the stated sets (%s; kit_proof.md §2.5)",
