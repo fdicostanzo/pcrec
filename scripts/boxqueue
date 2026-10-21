@@ -1,0 +1,606 @@
+#!/usr/bin/env bash
+# boxqueue — the box's ONE job queue ([BOXQUEUE], docs/design/plan_row_bodies/
+# BOXQUEUE.md; lane boxqueue, 2026-10-21). scripts/boxlock serializes heavy
+# runs but holds no ORDER, and scripts/chainrun reads its stages once, so a
+# running chain could not be reordered, extended or partly retried: on
+# 2026-10-20 a lane hand-wrote a detached flock waiter to queue corrective
+# stages behind its own chain (the pattern chainrun replaced), four of ten
+# stages failed on their INVOCATION after waiting for a slot, and heavy work
+# from main, the kit and the bench was ordered by promises in briefs.
+#
+#   scripts/boxqueue add [--name P-OWNER-REST | --prio P --owner O [--as REST]]
+#                        [--no-start] SCRIPT    dry-run it, then enqueue a copy
+#   scripts/boxqueue batch --owner O --prio P [--lift FILE] [--tree D]
+#                        [--no-start] STAGES    a chainrun stages file -> jobs
+#   scripts/boxqueue --dry-run | plan           every pending job's dry run +
+#                        readiness, in order, with populations and total cap
+#   scripts/boxqueue status                     runner, running job, each
+#                        pending job's last answer, recent ends
+#   scripts/boxqueue state KEY      the latest state of a job (exit 0 = green)
+#   scripts/boxqueue after KEY      a readiness helper: 0 when KEY is green,
+#                        75 while it is pending/running/failed, 77 cancelled
+#   scripts/boxqueue retry KEY | cancel KEY
+#   scripts/boxqueue start [--every S]   arm the detached runner (idempotent)
+#   scripts/boxqueue run [--every S] [--once]   the runner, foreground
+#   scripts/boxqueue path
+#
+# THE QUEUE is a directory: <main tree>/worktrees/.boxqueue/ (gitignored,
+# found from this script's location via git's common dir like boxlock's
+# lock; PCREC_BOXQUEUE_DIR overrides, which is how the self-test never
+# touches the real one) holding pending/ running/ done/ failed/, queue.log
+# (every pass, every answer) and status (the last pass, rewritten). Always
+# call the MAIN tree's copy of this script (the kit and the bench too).
+#
+# A JOB is one executable SCRIPT named PRIO-OWNER-REST (`100-main-maketest`;
+# PRIO digits, OWNER [A-Za-z0-9_]+, REST [A-Za-z0-9_.-]+ without `--`). PRIO
+# orders the queue (C-locale name order), OWNER says whose it is — a session
+# reorders, retries and cancels only its OWN jobs. Its KEY is OWNER-REST (a
+# requeue changes PRIO, never KEY). Reorder = rename; insert = `add` (or a
+# file dropped in pending/ by hand: it is dry-run on first sight); retry =
+# `retry KEY`. A job is called in three MODES (BQ_MODE is set too):
+#   JOB --dry-run   would I run CORRECTLY: parse arguments, resolve ids, check
+#                   binaries and inputs, print the exact commands and the
+#                   DECLARATIONS below; no side effects, a few seconds; exit 0
+#                   = would run correctly, else not (reason on stderr). Called
+#                   at enqueue (a failure REFUSES the job, exit 65) and again
+#                   just before START (a failure sends it to failed/).
+#   JOB --ready     can I run NOW: 0 ready, 75 not yet (EX_TEMPFAIL; first
+#                   output line = the reason, logged every pass), 76 requeue
+#                   me to the end, 77 never (cancelled). No side effects;
+#                   killed after BOXQUEUE_READY_BOUND s (20, a policy margin,
+#                   not a measurement) and counted not-ready (READY-HUNG).
+#   JOB             the work, under the box lock (the runner takes it for each
+#                   job; perfrun/mech/emit_sweep inside nest by token), cwd =
+#                   its run dir, stdin closed, output to BQ_LOG. Exit 0 done
+#                   (green only if scripts/verdict over its log is not RED and
+#                   every declared population was met), 76 requeue me, 77
+#                   never, 75 = A BUG (the not-ready answer belongs in --ready,
+#                   before any side effect: failed/ NOT-READY-AFTER-START, never
+#                   left pending to repeat its side effects), anything else
+#                   failed (124 CAP-FIRED). A failure inside BOXQUEUE_FAST s
+#                   (10) is marked FAILED-FAST: an invocation error, reported
+#                   at once.
+# DECLARATIONS, printed by --dry-run as `boxqueue: ...` lines; all three are
+# REQUIRED (no silent defaults), an unknown one refuses the job:
+#   boxqueue: cap SECONDS|none        the work's wall cap (lock wait excluded)
+#   boxqueue: patience SECONDS|none   not-ready longer than this is REPORTED
+#   boxqueue: expect none             or one line per counted population:
+#   boxqueue: expect NAME=N lines=ERE   N = the number of lines of THIS run's
+#                                       log matching ERE (awk ERE)
+#   boxqueue: expect NAME=N last=ERE    N = the integer right after ERE's
+#                                       match on its LAST matching line
+#   Fewer than N = POPULATION-SHORT (failed: a job that ran fewer items than
+#   it declared is not green); more = POPULATION-OVER, and a `lines=` count
+#   is watched DURING the run (every BOXQUEUE_MONITOR s, 2), so a job running
+#   the full matrix instead of its 6 rows is killed in seconds, not at cap.
+# ENVIRONMENT of every call: BQ_MODE BQ_JOB BQ_KEY BQ_OWNER BQ_QUEUE BOXQUEUE
+# (this script, for `"$BOXQUEUE" after KEY`); the work also gets BQ_RUNDIR
+# and BQ_LOG. Use absolute paths: cwd is never your tree.
+#
+# THE RUNNER (one per queue: flock on QUEUE/.runner.lock; a second is REFUSED,
+# exit 75; `add` arms one if none is live). Each PASS asks every pending job,
+# in order, `--ready` (on a snapshot copy) and logs every answer; then it
+# STARTS the first ready job: dry-run again, take scripts/boxlock (`--wait
+# 5`; busy = `waiting on <holder>` logged, the job stays pending, asked next
+# pass), and INSIDE the lock compare the snapshot with the pending original
+# (edited meanwhile = CHANGED, not run: the edit is honoured next pass),
+# remove the original, run the snapshot. One job at a time; the next pass
+# starts as soon as a job ends. An empty pending/ ends the runner (IDLE-EXIT).
+# A run dir moves running/NAME -> done/ or failed/TS-NAME with job, job.log,
+# dry.log and `result` (outcome rc reason wall verdict population). A runner
+# that died leaves running/NAME: the next runner finishes it from its rc if
+# the job ended, waits while it is alive, else fails it RUNNER-DIED.
+# Exit: 0 ok, 1 a reported failure (state/plan), 64 usage, 65 refused at
+# enqueue, 75 a runner is already live.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+self=$here/$(basename "${BASH_SOURCE[0]}")
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+BL=$here/boxlock V=$here/verdict
+READY_BOUND=${BOXQUEUE_READY_BOUND:-20}
+DRY_BOUND=${BOXQUEUE_DRY_BOUND:-30}
+MONITOR=${BOXQUEUE_MONITOR:-2}
+FAST=${BOXQUEUE_FAST:-10}
+LOCK_WAIT=${BOXQUEUE_LOCK_WAIT:-5}
+
+die() { echo "boxqueue: $*" >&2; exit 64; }
+now() { date -Iseconds; }
+ts() { date +%Y%m%dT%H%M%S.%N; }
+pid_start() { [ -r "/proc/$1/stat" ] || return 1; local s; s=$(<"/proc/$1/stat") || return 1; s=${s##*) }; set -- $s; printf '%s\n' "${20}"; }
+alive() { [ -n "${1:-}" ] && [ "$(pid_start "$1")" = "${2:-x}" ]; }
+
+queue_dir() {
+    if [ -n "${PCREC_BOXQUEUE_DIR:-}" ]; then printf '%s\n' "$PCREC_BOXQUEUE_DIR"; return 0; fi
+    local common
+    common=$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+    printf '%s\n' "$(dirname "$common")/worktrees/.boxqueue"
+}
+Q=$(queue_dir) || die "no queue: not in a git tree and no PCREC_BOXQUEUE_DIR"
+mkq() { mkdir -p "$Q/pending" "$Q/running" "$Q/done" "$Q/failed" "$Q/.state" "$Q/.work" "$Q/.incoming"; }
+qlog() { printf '%s\n' "$*" >> "$Q/queue.log"; }
+
+valid_name() { [[ $1 =~ ^[0-9]+-[A-Za-z0-9_]+-[A-Za-z0-9_.-]+$ ]] && [[ $1 != *--* ]]; }
+key_of() { printf '%s\n' "${1#*-}"; }
+owner_of() { local k=${1#*-}; printf '%s\n' "${k%%-*}"; }
+prio_of() { printf '%s\n' "${1%%-*}"; }
+pending_jobs() { # names, in queue order
+    local f; for f in "$Q"/pending/*; do [ -f "$f" ] && valid_name "${f##*/}" && printf '%s\n' "${f##*/}"; done | LC_ALL=C sort
+}
+pending_strays() { local f; for f in "$Q"/pending/*; do [ -f "$f" ] && ! valid_name "${f##*/}" && printf '%s\n' "${f##*/}"; done; }
+find_pending() { local f; for f in "$Q"/pending/*; do [ -f "$f" ] && [ "$(key_of "${f##*/}")" = "$1" ] && { printf '%s\n' "${f##*/}"; return 0; }; done; return 1; }
+find_running() { local d; for d in "$Q"/running/*/; do [ -d "$d" ] || continue; d=${d%/}; [ "$(key_of "${d##*/}")" = "$1" ] && { printf '%s\n' "$d"; return 0; }; done; return 1; }
+latest_end() { # latest done/ or failed/ run dir of KEY (dir names are TS-NAME, TS sortable, no '-')
+    local d n best="" bt=""
+    for d in "$Q"/done/*/ "$Q"/failed/*/; do
+        [ -d "$d" ] || continue; d=${d%/}; n=${d##*/}; n=${n#*-}
+        [ "$(key_of "$n")" = "$1" ] || continue
+        [[ ${d##*/} > $bt ]] && { bt=${d##*/}; best=$d; }
+    done
+    [ -n "$best" ] && printf '%s\n' "$best"
+}
+field() { local w; for w in $2; do case "$w" in "$1="*) printf '%s\n' "${w#*=}"; return 0 ;; esac; done; return 1; }
+
+# callj MODE SCRIPT BOUND OUT NAME: one bounded check call, output merged to OUT; rc
+callj() {
+    local mode=$1 s=$2 b=$3 o=$4 n=$5
+    ( cd "$Q/.work" && BQ_MODE=$mode BQ_JOB=$n BQ_KEY=$(key_of "$n") BQ_OWNER=$(owner_of "$n") BQ_QUEUE=$Q \
+        BOXQUEUE=$self exec "$TO" --kill-after=2 "$b" "$s" "--$mode" ) < /dev/null > "$o" 2>&1
+}
+
+# parse_decl FILE: the dry run's `boxqueue:` declarations -> D_CAP D_PAT D_EXP[] (KEY\tN\tMODE\tERE)
+parse_decl() {
+    D_CAP="" D_PAT="" D_EXP=() D_ERR=""
+    local l kw rest none=0
+    while IFS= read -r l || [ -n "$l" ]; do
+        case "$l" in "boxqueue: "*) ;; *) continue ;; esac
+        read -r kw rest <<<"${l#boxqueue: }"
+        case "$kw" in
+            cap) [[ $rest =~ ^([1-9][0-9]*|none)$ ]] || { D_ERR="cap wants seconds or none, got '$rest'"; return 1; }; D_CAP=$rest ;;
+            patience) [[ $rest =~ ^([0-9]+|none)$ ]] || { D_ERR="patience wants seconds or none, got '$rest'"; return 1; }; D_PAT=$rest ;;
+            expect)
+                if [ "$rest" = none ]; then none=1
+                elif [[ $rest =~ ^([A-Za-z0-9_]+)=([0-9]+)\ (lines|last)=(.+)$ ]]; then
+                    D_EXP+=("${BASH_REMATCH[1]}"$'\t'"${BASH_REMATCH[2]}"$'\t'"${BASH_REMATCH[3]}"$'\t'"${BASH_REMATCH[4]}")
+                else D_ERR="expect wants 'none' or 'NAME=N lines=ERE|last=ERE', got '$rest'"; return 1; fi ;;
+            *) D_ERR="unknown declaration '$kw' (cap, patience, expect)"; return 1 ;;
+        esac
+    done < "$1"
+    [ -n "$D_CAP" ] || { D_ERR="no 'boxqueue: cap' declared"; return 1; }
+    [ -n "$D_PAT" ] || { D_ERR="no 'boxqueue: patience' declared"; return 1; }
+    [ ${#D_EXP[@]} -gt 0 ] || [ $none = 1 ] || { D_ERR="no 'boxqueue: expect' declared (say 'expect none' if nothing is counted)"; return 1; }
+    [ ${#D_EXP[@]} -gt 0 ] && [ $none = 1 ] && { D_ERR="'expect none' beside counted populations"; return 1; }
+    return 0
+}
+exp_text() { local e k n m; [ ${#D_EXP[@]} -eq 0 ] && { echo none; return; }; for e in "${D_EXP[@]}"; do IFS=$'\t' read -r k n m _ <<<"$e"; printf '%s=%s ' "$k" "$n"; done | sed 's/ $//'; }
+# pop_count MODE ERE LOG -> the population THIS log reports
+pop_count() {
+    RE=$2 awk -v M="$1" 'BEGIN {re = ENVIRON["RE"]; c = 0; v = ""}
+        match($0, re) { c++; s = substr($0, RSTART + RLENGTH); if (match(s, /^[0-9]+/)) v = substr(s, 1, RLENGTH); else v = "" }
+        END { if (M == "lines") print c; else print (v == "" ? "none" : v) }' "$3"
+}
+# pop_check LOG: one `NAME ran=M declared=N OK|SHORT|OVER` per expectation; rc 0 ok, 1 short, 2 over
+pop_check() {
+    local e k n m re c worst=0 out=""
+    for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
+        IFS=$'\t' read -r k n m re <<<"$e"
+        c=$(pop_count "$m" "$re" "$1")
+        if [ "$c" = none ] || [ "$c" -lt "$n" ]; then out="$out $k ran=$c declared=$n SHORT;"; [ $worst -lt 1 ] && worst=1
+        elif [ "$c" -gt "$n" ]; then out="$out $k ran=$c declared=$n OVER;"; worst=2
+        else out="$out $k ran=$c declared=$n OK;"; fi
+    done
+    printf '%s\n' "${out:- none declared}"
+    return $worst
+}
+
+# state: QUEUE/.state/KEY.{sha,decl,since,reported,answer}, valid only for the exact pending content (sha)
+state_clear() { rm -f "$Q/.state/$1".*; }
+job_log() { printf '%s\n' "$Q/running/$1/job.log"; }   # FRESH-LOG: each run's own new file, never an earlier run's
+sha_of() { sha1sum < "$1" | cut -c1-40; }
+
+# ensure_decl NAME SNAP: declarations for this content; a first-sight dry run (a hand-dropped job) or a
+# changed content re-runs it; a failure fails the job. rc 0 = D_* set.
+ensure_decl() {
+    local n=$1 s=$2 k sh st=$Q/.state; k=$(key_of "$1"); sh=$(sha_of "$s")
+    if [ "$(cat "$st/$k.sha" 2>/dev/null)" != "$sh" ]; then
+        state_clear "$k"
+        local o=$Q/.work/dry.$$ rc
+        callj dry-run "$s" "$DRY_BOUND" "$o" "$n"; rc=$?
+        if [ $rc -ne 0 ]; then end_pending "$n" failed "DRY-RUN-FAILED rc=$rc on first sight: $(head -1 "$o")" "$o"; rm -f "$o"; return 1; fi
+        if ! parse_decl "$o"; then end_pending "$n" failed "BAD-DECLARATION on first sight: $D_ERR" "$o"; rm -f "$o"; return 1; fi
+        mv "$o" "$st/$k.decl"; printf '%s\n' "$sh" > "$st/$k.sha"
+    fi
+    parse_decl "$st/$k.decl"
+}
+
+# end_pending NAME failed|done REASON [LOGFILE]: a pending job ends without running
+end_pending() {
+    local n=$1 dest=$2 why=$3 lf=${4:-} rd k; k=$(key_of "$n")
+    rd=$Q/$dest/$(ts)-$n; mkdir -p "$rd"
+    mv "$Q/pending/$n" "$rd/job" 2>/dev/null
+    [ -n "$lf" ] && [ -f "$lf" ] && cp "$lf" "$rd/check.log"
+    local oc=failed; [ "$dest" = done ] && oc=cancelled
+    printf 'outcome=%s rc=- reason=%s wall=0s\n' "$oc" "${why// /_}" > "$rd/result"
+    state_clear "$k"
+    qlog "  job $n ENDED WITHOUT RUNNING outcome=$oc :: $why :: $rd"
+}
+next_prio() { # one past the largest pending PRIO (width kept)
+    local n m=$1 w=${#1}
+    for n in $(pending_jobs); do n=$(prio_of "$n"); [ $((10#$n)) -gt $((10#$m)) ] && m=$n; [ ${#n} -gt $w ] && w=${#n}; done
+    printf "%0${w}d\n" $((10#$m + 1))
+}
+
+# ---------- the runner's pieces ----------
+start_job() { # start_job NAME SNAP: dry-run again, take the box lock, run inside it
+    local n=$1 s=$2 rd=$Q/running/$1 k lrc o
+    k=$(key_of "$n")
+    o=$Q/.work/dry.start.$$
+    callj dry-run "$s" "$DRY_BOUND" "$o" "$n"; lrc=$?
+    if [ $lrc -ne 0 ]; then rm -f "$s"; end_pending "$n" failed "DRY-RUN-FAILED rc=$lrc at START: $(head -1 "$o")" "$o"; rm -f "$o"; return 1; fi
+    if ! parse_decl "$o"; then rm -f "$s"; end_pending "$n" failed "BAD-DECLARATION at START: $D_ERR" "$o"; rm -f "$o"; return 1; fi
+    [ -e "$rd" ] && { qlog "  job $n NOT STARTED: $rd exists (a dead runner's run? see status)"; rm -f "$s" "$o"; return 1; }
+    mkdir -p "$rd"; mv "$s" "$rd/job"; mv "$o" "$rd/dry.log"
+    qlog "== job $n START owner=$(owner_of "$n") cap=$D_CAP expect=$(exp_text) $(now)"
+    bash "$BL" run --label "queue:$n" --wait "$LOCK_WAIT" -- bash "$self" _start "$n" > "$rd/lock.log" 2>&1
+    if [ ! -e "$rd/started" ]; then
+        local h; h=$(sed -n 's/^boxlock: REFUSED .*held by \(.*\) (waited.*/\1/p' "$rd/lock.log" | tail -1)
+        qlog "  job $n waiting on ${h:-the box lock ($(head -1 "$rd/lock.log"))}; stays pending"
+        printf 'waiting on %s\n' "${h:-the box lock}" > "$Q/.state/$k.answer"
+        rm -rf "$rd"; return 1
+    fi
+    if [ -e "$rd/changed" ]; then
+        qlog "  job $n CHANGED in pending/ since its snapshot: not run; the edit is asked next pass"
+        rm -rf "$rd"; return 1
+    fi
+    finish_job "$n"
+    return 0
+}
+
+finish_job() { # finish_job NAME: read running/NAME's rc, judge, move it
+    local n=$1 rd=$Q/running/$1 k rc t0 t1 wall v vline pop prc oc reason dest
+    k=$(key_of "$n")
+    parse_decl "$rd/dry.log" || D_EXP=()
+    rc=$(cat "$rd/rc" 2>/dev/null); t0=$(field epoch "$(cat "$rd/started" 2>/dev/null)"); t1=$(cat "$rd/end" 2>/dev/null)
+    wall=$(( ${t1:-$(date +%s)} - ${t0:-$(date +%s)} ))
+    local jl; jl=$(job_log "$n"); [ -f "$jl" ] || : > "$jl"
+    if [ -n "$rc" ]; then vline=$(bash "$V" --no-rc-lines --rc "$rc" "$jl" | head -1)
+    else vline=$(bash "$V" --no-rc-lines "$jl" | head -1); fi
+    v=${vline#VERDICT }; v=${v%%:*}
+    pop=$(pop_check "$jl"); prc=$?
+    oc=failed reason=""
+    if [ -z "$rc" ]; then reason="RUNNER-DIED (no rc: the job died with its runner)"
+    elif [ -e "$rd/over" ]; then reason="POPULATION-OVER killed early: $(cat "$rd/over")"
+    else
+        case "$rc" in
+            0)  if [ "$v" = RED ]; then reason="VERDICT-RED rc=0 but a red line: ${vline#VERDICT RED: }"
+                elif [ $prc = 1 ]; then reason="POPULATION-SHORT:$pop"
+                elif [ $prc = 2 ]; then reason="POPULATION-OVER:$pop"
+                else oc=green; fi ;;
+            76) oc=requeued ;;
+            77) oc=cancelled ;;
+            75) reason="NOT-READY-AFTER-START (exit 75 from the work: readiness belongs in --ready, before any side effect)" ;;
+            124|137) reason="CAP-FIRED (${D_CAP}s)" ;;
+            *)  reason="rc=$rc" ;;
+        esac
+    fi
+    [ "$oc" = failed ] && [ -n "$rc" ] && [ "$wall" -lt "$FAST" ] && reason="$reason FAILED-FAST(${wall}s: an invocation error?)"
+    dest=done; [ "$oc" = failed ] && dest=failed
+    local to; to=$Q/$dest/$(ts)-$n
+    if [ "$oc" = requeued ]; then
+        local nn; nn=$(next_prio "$(prio_of "$n")")-$k
+        cp "$rd/job" "$Q/.incoming/$nn.$$" && mv "$Q/.incoming/$nn.$$" "$Q/pending/$nn"
+        reason="requeued as $nn"
+    fi
+    printf 'outcome=%s rc=%s reason=%s wall=%ss verdict=%s\npopulation:%s\n' "$oc" "${rc:--}" "${reason// /_}" "$wall" "$v" "$pop" > "$rd/result"
+    mv "$rd" "$to"
+    [ "$oc" = requeued ] || state_clear "$k"
+    qlog "== job $n END rc=${rc:--} outcome=$oc${reason:+ reason=$reason} wall=${wall}s verdict=$v $(now) :: $to"
+}
+
+recover() { # a dead runner's leftovers in running/; rc 1 = one is still alive (start nothing)
+    local d n p s busy=0
+    for d in "$Q"/running/*/; do
+        [ -d "$d" ] || continue; d=${d%/}; n=${d##*/}
+        if [ -f "$d/rc" ]; then qlog "  recover $n: ended under a dead runner; judging it"; finish_job "$n"; continue; fi
+        p="" s=""; [ -f "$d/pid" ] && read -r p s < "$d/pid"
+        if alive "${p:-}" "${s:-}"; then qlog "  recover $n: still running (pid $p) from a dead runner; starting nothing"; busy=1; continue; fi
+        if [ ! -e "$d/started" ]; then qlog "  recover $n: never started; dropped (its pending original stands)"; rm -rf "$d"; continue; fi
+        finish_job "$n"
+    done
+    return $busy
+}
+
+pass() { # one pass: ask every pending job, start the first ready one. rc 0 = a job ran
+    local n k s o rc ans dt t0 chosen="" csnap="" pn=$1 since age
+    local jobs; jobs=$(pending_jobs)
+    qlog "== pass $pn START $(now) pending=$(printf '%s' "$jobs" | grep -c .) box=$(bash "$BL" status 2>&1 | head -1)"
+    for n in $(pending_strays); do qlog "  pass $pn IGNORED pending/$n: not a PRIO-OWNER-REST name"; done
+    : > "$Q/.work/status.$$"
+    for n in $jobs; do
+        k=$(key_of "$n"); s=$Q/.work/$n.snap.$$
+        cp "$Q/pending/$n" "$s" 2>/dev/null || continue; chmod +x "$s"
+        if ! ensure_decl "$n" "$s"; then rm -f "$s"; continue; fi
+        o=$Q/.work/ready.$$; t0=$(date +%s%N)
+        callj ready "$s" "$READY_BOUND" "$o" "$n"; rc=$?
+        dt=$(( ($(date +%s%N) - t0) / 1000000 ))
+        local why; why=$(grep -v '^boxqueue: ' "$o" | head -1)
+        case $rc in
+            0)  ans=ready; rm -f "$Q/.state/$k.since" "$Q/.state/$k.reported"
+                if [ -z "$chosen" ]; then chosen=$n; csnap=$s; ans="ready (starting)"; fi ;;
+            75|124|137)
+                if [ $rc = 75 ]; then ans="not-ready: ${why:-no reason given}"
+                else ans="READY-HUNG: --ready killed after ${READY_BOUND}s, counted not-ready"; fi
+                [ -f "$Q/.state/$k.since" ] || date +%s > "$Q/.state/$k.since"
+                since=$(cat "$Q/.state/$k.since"); age=$(( $(date +%s) - since ))
+                ans="$ans (since $(date -d "@$since" -Iseconds))"
+                if [ "$D_PAT" != none ] && [ "$age" -gt "$D_PAT" ] && [ ! -e "$Q/.state/$k.reported" ]; then
+                    qlog "  pass $pn REPORT $n not ready for ${age}s, past its patience ${D_PAT}s :: $ans"
+                    touch "$Q/.state/$k.reported"
+                fi ;;
+            76) local nn; nn=$(next_prio "$(prio_of "$n")")-$k
+                mv "$Q/pending/$n" "$Q/pending/$nn" && ans="requeue (from --ready): now $nn" ;;
+            77) end_pending "$n" done "never (from --ready): ${why:-no reason given}" "$o"; ans="never: cancelled" ;;
+            *)  end_pending "$n" failed "READY-ERRORED rc=$rc: ${why:-no output}" "$o"; ans="READY-ERRORED rc=$rc: failed" ;;
+        esac
+        qlog "  pass $pn $n $ans (${dt}ms)"
+        [ -f "$Q/pending/$n" ] && printf '%s\n' "$ans" > "$Q/.state/$k.answer"
+        printf '%s %s\n' "$n" "$ans" >> "$Q/.work/status.$$"
+        rm -f "$o"; [ "$s" = "$csnap" ] || rm -f "$s"
+    done
+    { echo "pass $pn at $(now), runner pid $$"; cat "$Q/.work/status.$$"; } > "$Q/status.tmp" && mv "$Q/status.tmp" "$Q/status"
+    rm -f "$Q/.work/status.$$"
+    local ran=1
+    [ -n "$chosen" ] && start_job "$chosen" "$csnap" && ran=0
+    qlog "== pass $pn END $(now)"
+    return $ran
+}
+
+# ---------- commands ----------
+cmd_run() {
+    local every=60 once=0
+    while [ $# -gt 0 ]; do case "$1" in --every) every=$2; shift 2 ;; --once) once=1; shift ;; *) die "run: unknown option $1" ;; esac; done
+    mkq
+    unset PCREC_BOXLOCK_HELD    # the runner is box-wide: never nested in a caller's lock
+    exec 8>>"$Q/.runner.lock"
+    if ! flock -w 2 8; then echo "boxqueue: REFUSED: a runner is live: $(cat "$Q/runner.pid" 2>/dev/null)" >&2; exit 75; fi
+    printf 'pid=%s start=%s since=%s\n' "$$" "$(pid_start $$)" "$(now)" > "$Q/runner.pid"
+    qlog "== runner START pid=$$ every=${every}s queue=$Q $(now)"
+    trap 'qlog "== runner STOPPED by SIGTERM $(now)"; exit 143' TERM
+    trap 'qlog "== runner STOPPED by SIGINT $(now)"; exit 130' INT
+    local pn=0
+    while :; do
+        if recover; then pn=$((pn + 1)); pass $pn && continue; fi
+        [ $once = 1 ] && break
+        if [ -z "$(pending_jobs)" ] && [ -z "$(ls -A "$Q/running" 2>/dev/null)" ]; then
+            flock -u 8
+            if [ -z "$(pending_jobs)" ]; then qlog "== runner IDLE-EXIT queue empty $(now)"; exit 0; fi
+            flock -n 8 || exit 0    # an `add` raced the exit and armed another runner
+        fi
+        sleep "$every" & wait $!
+    done
+    qlog "== runner END (--once) $(now)"
+}
+
+runner_live() { ( exec 7>>"$Q/.runner.lock" && ! flock -n 7 ) 2>/dev/null; }
+cmd_start() {
+    local args=()
+    while [ $# -gt 0 ]; do case "$1" in --every) args+=(--every "$2"); shift 2 ;; *) die "start: unknown option $1" ;; esac; done
+    mkq
+    if runner_live; then echo "boxqueue: runner live: $(cat "$Q/runner.pid" 2>/dev/null)"; return 0; fi
+    rm -f "$Q/runner.pid"
+    (   # CLOSE-INHERITED-FDS: an `add` from inside a boxlock holder (a chain stage) must not hand the
+        # detached runner the holder's lock fd, or the box lock lives as long as the runner
+        for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
+        unset PCREC_BOXLOCK_HELD
+        exec setsid bash "$self" run ${args[@]+"${args[@]}"} < /dev/null >> "$Q/runner.out" 2>&1
+    ) &
+    disown
+    local i; for i in $(seq 50); do [ -s "$Q/runner.pid" ] && break; sleep 0.1; done
+    if [ -s "$Q/runner.pid" ]; then echo "boxqueue: runner armed: $(cat "$Q/runner.pid") log=$Q/queue.log"
+    else echo "boxqueue: runner did not start (or ended at once); see $Q/runner.out" >&2; fi
+}
+
+cmd_add() {
+    local name="" prio="" owner="" as="" start=1 f
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --name) name=$2; shift 2 ;; --prio) prio=$2; shift 2 ;; --owner) owner=$2; shift 2 ;;
+            --as) as=$2; shift 2 ;; --no-start) start=0; shift ;;
+            -*) die "add: unknown option $1" ;; *) break ;;
+        esac
+    done
+    [ $# -eq 1 ] || die "usage: boxqueue add [--name P-OWNER-REST | --prio P --owner O [--as REST]] [--no-start] SCRIPT"
+    f=$1; [ -f "$f" ] || die "add: no file $f"
+    if [ -z "$name" ]; then
+        if [ -n "$prio" ] || [ -n "$owner" ]; then
+            [ -n "$prio" ] && [ -n "$owner" ] || die "add: --prio and --owner go together"
+            as=${as:-$(basename "$f" | sed 's/\.[^.]*$//')}; name=$prio-$owner-$as
+        else name=$(basename "$f"); fi
+    fi
+    valid_name "$name" || die "add: '$name' is not PRIO-OWNER-REST (digits, [A-Za-z0-9_]+, [A-Za-z0-9_.-]+ without --)"
+    mkq
+    local k inc o rc p; k=$(key_of "$name")
+    p=$(find_pending "$k") && { echo "boxqueue: REFUSED $name: $k is already pending as $p" >&2; exit 65; }
+    p=$(find_running "$k") && { echo "boxqueue: REFUSED $name: $k is running ($p)" >&2; exit 65; }
+    inc=$Q/.incoming/$name.$$; cp "$f" "$inc"; chmod +x "$inc"; o=$inc.dry
+    callj dry-run "$inc" "$DRY_BOUND" "$o" "$name"; rc=$?
+    if [ $rc -ne 0 ]; then
+        echo "boxqueue: REFUSED $name: its --dry-run failed (rc=$rc$([ $rc = 124 ] && echo ", killed after ${DRY_BOUND}s")):" >&2
+        sed 's/^/  /' "$o" | tail -8 >&2; rm -f "$inc" "$o"; exit 65
+    fi
+    if ! parse_decl "$o"; then echo "boxqueue: REFUSED $name: $D_ERR" >&2; rm -f "$inc" "$o"; exit 65; fi
+    state_clear "$k"    # ADD-CLEARS-STATE: a re-added key never inherits an earlier job's since/answer
+    mv "$o" "$Q/.state/$k.decl"; sha_of "$inc" > "$Q/.state/$k.sha"
+    mv "$inc" "$Q/pending/$name"
+    qlog "== add $name cap=$D_CAP patience=$D_PAT expect=$(exp_text) $(now)"
+    echo "boxqueue: queued $name (cap $D_CAP, patience $D_PAT, expect $(exp_text))"
+    grep -v '^boxqueue: ' "$Q/.state/$k.decl" | sed 's/^/  /'
+    [ $start = 1 ] && cmd_start
+    return 0
+}
+
+cmd_batch() {
+    local owner="" prio="" lift="" tree="" start=1 sf
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --owner) owner=$2; shift 2 ;; --prio) prio=$2; shift 2 ;; --lift) lift=$2; shift 2 ;;
+            --tree) tree=$2; shift 2 ;; --no-start) start=0; shift ;;
+            -*) die "batch: unknown option $1" ;; *) break ;;
+        esac
+    done
+    [ $# -eq 1 ] && [ -n "$owner" ] && [ -n "$prio" ] || die "usage: boxqueue batch --owner O --prio P [--lift FILE] [--tree D] [--no-start] STAGES"
+    [[ $prio =~ ^[0-9]+$ ]] || die "batch: --prio wants digits"
+    sf=$(cd "$(dirname "$1")" 2>/dev/null && pwd)/$(basename "$1")
+    [ -z "$tree" ] && { tree=$(git -C "$(dirname "$sf")" rev-parse --show-toplevel 2>/dev/null) || die "batch: --tree not given and $sf is not in a git tree"; }
+    tree=$(cd "$tree" 2>/dev/null && pwd) || die "batch: no tree $tree"
+    case "$lift" in ''|/*) ;; *) lift=$(pwd)/$lift ;; esac
+    local parsed; parsed=$(bash "$here/chainrun" --check "$sf") || exit 64   # chainrun's parser and cap rules, reused
+    mkq
+    local bid i=0 prev="" sn class cap cmd name jf w=${#prio} nst
+    bid=b$(date +%Y%m%d%H%M%S)$$; nst=$(printf '%s\n' "$parsed" | grep -c .)
+    while read -r sn class cap cmd; do
+        cap=${cap#cap=}; name=$(printf "%0${w}d" $((10#$prio + i)))-$owner-$bid.$sn; jf=$Q/.work/$name
+        {
+            echo '#!/usr/bin/env bash'
+            echo "# boxqueue job: stage $((i + 1))/$nst ($sn, chainrun class $class) of $sf, batch $bid"
+            echo "# (generated by \`boxqueue batch\`; every job runs under the box lock)"
+            echo 'set -u'
+            printf 'TREE=%q CAP=%q PREV=%q LIFT=%q SN=%q CMD=%q\n' "$tree" "$cap" "$prev" "$lift" "$sn" "$cmd"
+            cat <<'JOB'
+case "${1:-}" in
+    --dry-run)
+        [ -d "$TREE" ] || { echo "no tree $TREE" >&2; exit 1; }
+        echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: expect none"
+        echo "would run in $TREE: $CMD"; exit 0 ;;
+    --ready)
+        [ -z "$LIFT" ] || [ -e "$LIFT" ] || { echo "waiting for lift file $LIFT"; exit 75; }
+        [ -z "$PREV" ] && exit 0
+        exec bash "$BOXQUEUE" after "$PREV" ;;
+esac
+cd "$TREE" || exit 1
+STAGE_NAME=$SN STAGE_LOG=$BQ_LOG CHAIN_DIR=$BQ_RUNDIR CHAIN_TREE=$TREE exec bash -c "$CMD"
+JOB
+        } > "$jf"
+        bash "$self" add --name "$name" --no-start "$jf" < /dev/null || { rm -f "$jf"; echo "boxqueue: batch stopped at stage $sn (earlier stages stay queued)" >&2; exit 65; }
+        rm -f "$jf"
+        prev=$(key_of "$name"); i=$((i + 1)) lift=""
+    done <<<"$parsed"
+    echo "boxqueue: batch $bid: $i job(s) queued; each waits for the one before it to go green"
+    [ $start = 1 ] && cmd_start
+    return 0
+}
+
+cmd_state() { # state KEY -> pending|running|green|failed|cancelled|requeued|none
+    local k=$1 d oc
+    find_pending "$k" > /dev/null && { echo pending; return 1; }
+    find_running "$k" > /dev/null && { echo running; return 1; }
+    d=$(latest_end "$k") || { echo none; return 1; }
+    oc=$(field outcome "$(head -1 "$d/result" 2>/dev/null)") || oc=unknown
+    echo "$oc"; [ "$oc" = green ]
+}
+cmd_after() {
+    local s; s=$(cmd_state "$1")
+    case "$s" in
+        green) exit 0 ;;
+        pending|running) echo "waiting on $1 ($s)"; exit 75 ;;
+        failed) echo "waiting on $1, which FAILED (boxqueue retry $1, or cancel this job)"; exit 75 ;;
+        cancelled) echo "upstream $1 was cancelled"; exit 77 ;;
+        *) echo "no job $1 in the queue (a typo?)"; exit 1 ;;
+    esac
+}
+cmd_retry() {
+    local k=$1 d n
+    find_pending "$k" > /dev/null || find_running "$k" > /dev/null && { echo "boxqueue: $k is already pending/running" >&2; exit 65; }
+    d=$(latest_end "$k") || { echo "boxqueue: no ended run of $k" >&2; exit 65; }
+    n=${d##*/}; n=${n#*-}
+    bash "$self" add --name "$n" "$d/job"
+}
+cmd_cancel() {
+    local k=$1 n
+    n=$(find_pending "$k") || { find_running "$k" > /dev/null && echo "boxqueue: $k is RUNNING: stop it with scripts/safekill PID ($(cat "$(find_running "$k")/pid" 2>/dev/null))" >&2 || echo "boxqueue: $k is not pending" >&2; exit 65; }
+    end_pending "$n" done "cancelled by hand"
+    echo "boxqueue: cancelled $n"
+}
+cmd_status() {
+    mkq
+    if runner_live; then echo "runner: live $(cat "$Q/runner.pid" 2>/dev/null)"; else echo "runner: none"; fi
+    echo "box: $(bash "$BL" status 2>&1 | head -1)"
+    local d; for d in "$Q"/running/*/; do [ -d "$d" ] && echo "running: ${d%/} $(cat "$d/pid" 2>/dev/null)"; done
+    local n k; for n in $(pending_jobs); do k=$(key_of "$n"); echo "pending: $n :: $(cat "$Q/.state/$k.answer" 2>/dev/null || echo 'not asked yet')"; done
+    for n in $(pending_strays); do echo "IGNORED: pending/$n (not a PRIO-OWNER-REST name)"; done
+    for d in $(ls -d "$Q"/done/*/ "$Q"/failed/*/ 2>/dev/null | awk -F/ '{print $(NF-1) "\t" $0}' | LC_ALL=C sort | tail -5 | cut -f2); do
+        echo "ended: ${d%/} :: $(head -1 "$d/result" 2>/dev/null)"
+    done
+}
+cmd_plan() {
+    mkq
+    local n s o rc dl rl i=0 bad=0 total=0 capn="" e
+    printf '%-4s %-40s %-8s %-10s %s\n' "#" JOB DRY-RUN CAP "READY / EXPECT"
+    for n in $(pending_jobs); do
+        i=$((i + 1)); s=$Q/.work/$n.plan.$$; cp "$Q/pending/$n" "$s"; chmod +x "$s"; o=$s.out
+        callj dry-run "$s" "$DRY_BOUND" "$o" "$n"; rc=$?
+        if [ $rc -ne 0 ]; then dl="FAIL($rc)"; bad=1; D_CAP=- ; D_EXP=()
+        elif ! parse_decl "$o"; then dl="BAD-DECL"; bad=1; D_CAP=-
+        else dl=ok; [ "$D_CAP" = none ] && capn=" (+ uncapped)" || total=$((total + D_CAP)); fi
+        callj ready "$s" "$READY_BOUND" "$o.r" "$n"; rc=$?
+        case $rc in 0) rl=ready ;; 75) rl="not-ready: $(grep -v '^boxqueue: ' "$o.r" | head -1)" ;; 76) rl=requeue ;; 77) rl=never ;;
+            124|137) rl="READY-HUNG" ;; *) rl="ready-errored($rc)"; bad=1 ;; esac
+        printf '%-4s %-40s %-8s %-10s %s / expect %s\n' "$i" "$n" "$dl" "$D_CAP" "$rl" "$(exp_text)"
+        [ "$dl" = ok ] || sed 's/^/       | /' "$o" | tail -4
+        rm -f "$s" "$o" "$o.r"
+    done
+    echo "plan: $i pending job(s), total cap ${total}s$capn$([ $bad = 1 ] && echo '; SOME WOULD NOT RUN CORRECTLY')"
+    return $bad
+}
+
+# _start NAME — INSIDE the box lock (boxlock run execs this): the stale-copy guard, then the work
+cmd__start() {
+    local n=$1 rd=$Q/running/$1 jlog jpid rc mpid capv
+    printf 'pid=%s start=%s epoch=%s since=%s\n' "$$" "$(pid_start $$)" "$(date +%s)" "$(now)" > "$rd/started"
+    if ! cmp -s "$rd/job" "$Q/pending/$n"; then touch "$rd/changed"; exit 0; fi   # STALE-COPY guard
+    rm -f "$Q/pending/$n"                                                         # STALE-PENDING guard
+    parse_decl "$rd/dry.log" || D_EXP=()
+    jlog=$(job_log "$n")
+    capv=(); [ "$D_CAP" != none ] && capv=("$TO" --kill-after=60 "$D_CAP")
+    ( cd "$rd" && BQ_MODE=run BQ_JOB=$n BQ_KEY=$(key_of "$n") BQ_OWNER=$(owner_of "$n") BQ_QUEUE=$Q BOXQUEUE=$self \
+        BQ_RUNDIR=$rd BQ_LOG=$jlog exec setsid ${capv[@]+"${capv[@]}"} "$rd/job" ) < /dev/null > "$jlog" 2>&1 &
+    jpid=$!
+    printf '%s %s\n' "$jpid" "$(pid_start "$jpid")" > "$rd/pid"
+    (   # POPULATION-OVER watch: a `lines=` count past its declaration kills the job now, not at cap.
+        # It drops the inherited lock fd first, or its last `sleep` outlives the job holding the box lock.
+        local e k nn m re c f
+        for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
+        while kill -0 "$jpid" 2>/dev/null; do
+            sleep "$MONITOR"
+            for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
+                IFS=$'\t' read -r k nn m re <<<"$e"; [ "$m" = lines ] || continue
+                c=$(pop_count lines "$re" "$jlog")
+                if [ "$c" -gt "$nn" ]; then
+                    echo "$k ran>=$c declared=$nn" > "$rd/over"; kill -TERM -- "-$jpid" 2>/dev/null; exit 0
+                fi
+            done
+        done
+    ) &
+    mpid=$!
+    wait "$jpid"; rc=$?   # RC-CAPTURE: the job's rc, before anything else runs
+    kill "$mpid" 2>/dev/null; wait "$mpid" 2>/dev/null
+    printf '%s\n' "$rc" > "$rd/rc"; date +%s > "$rd/end"
+    exit 0
+}
+
+case "${1:-}" in
+    add) shift; cmd_add "$@" ;;
+    batch) shift; cmd_batch "$@" ;;
+    --dry-run|plan) cmd_plan ;;
+    status) cmd_status ;;
+    state) [ $# = 2 ] || die "usage: boxqueue state KEY"; cmd_state "$2" ;;
+    after) [ $# = 2 ] || die "usage: boxqueue after KEY"; cmd_after "$2" ;;
+    retry) [ $# = 2 ] || die "usage: boxqueue retry KEY"; cmd_retry "$2" ;;
+    cancel) [ $# = 2 ] || die "usage: boxqueue cancel KEY"; cmd_cancel "$2" ;;
+    start) shift; cmd_start "$@" ;;
+    run) shift; cmd_run "$@" ;;
+    _start) cmd__start "$2" ;;
+    path) echo "$Q" ;;
+    -h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' ;;
+    *) die "usage: boxqueue add|batch|--dry-run|plan|status|state|after|retry|cancel|start|run|path (-h for the contract)" ;;
+esac
