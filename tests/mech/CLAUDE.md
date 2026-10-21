@@ -96,6 +96,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   trust the result unless the AFTER text is actually present afterward. One
   mechanism for every sabotage, whether it is a substitution, an insertion
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
+- **reach_only_selftest.sh** ([MECH-REACHONLY], 2026-10-21) — self-test of `REACH_ONLY=1` (see
+  its section below): a live probe, a failing probe, a declared-UNREACHED one.
 - **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose
   `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given
   paths, at a path-component boundary. What D69's tiered re-run policy
