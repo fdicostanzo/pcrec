@@ -47,8 +47,8 @@ status outside §3.1's table is a FAIL; (c) `values_digest` recomputed by finder
 digest, now written from the spec (it previously copied the same first-letter rule -- the control
 shared its mistake with what it controlled, learnings §3); (d) `ks_ref.py digest FILE` must equal
 the header; (e) `build/pcrec --list-measurements=FILE` must exit 0 (the C loader's digest, unit row,
-code table, card and header checks). Count: finder_check 960 -> 964 checks (its summary line; two new per-set checks, ks_ref
-and the loader, the rest of the delta being the shared ones).
+code table, card and header checks). Count: finder_check now 964 checks (two new per set: ks_ref and the loader, plus the
+code-table guard; the pre-change total was not recorded).
 
 Red/green (logs in `build/tmp/`, not committed):
 - GREEN, new files: `make test-memfn-finder` rc 0, `finder_check checks passed: 964, failed: 0`.
