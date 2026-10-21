@@ -38,8 +38,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   `scripts/perfrun` wraps a chain's make-test line, picks a (make -jJ, PROCS=P) shape from `scripts/perfrun.shapes` (least-sampled uncontaminated), samples CPU + per-section times, returns make's rc unchanged, records a ledger row (`docs/dev/ttune_ledger.tsv`, per-run files folded by `scripts/perfrun --fold`). Red-shape triage (K44-ONLY / LOAD-SUSPECT flagged, not re-run) in BOILERPLATE.md. Profile #0 (decfbB0, -j6 PROCS=16, 13.5 min, ~83% busy, load1 up to 84, serial stretches small) and the DECISION RULE + default-derivation options (P = ceil(nproc/J) from MAKEFLAGS) in docs/dev/ttune_measurement.md. NEXT: chains use perfrun; when the rule's evidence bar is met a follow-up lane changes the default (procs_default.sh). Report docs/dev/lanes/ttune_report.md. Sequel to [TT-12]/K44.
 - [BOXQUEUE] STATE:started — ONE BOX-WIDE JOB QUEUE: jobs as scripts, exit codes say what next
   filed: 2026-10-20 Frank
-  status (2026-10-21): BUILT on lane/boxqueue (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template (its `make mech IDS` bug fixed); awaiting merge.
-  next: merge; then the first real queued night (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
+  status (2026-10-21): MERGED b42c0e8f1 (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template; bench told (I-155), kit told.
+  next: the first real queued jobs (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
   refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/boxqueue; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md; docs/dev/lanes/boxqueue_report.md
   A queue directory (pending/running/done/failed); each job an executable script, ordered by name prefix, owner in the name. One runner holds scripts/boxlock per job; the job's exit code decides: 0 done, 75 not ready, 76 requeue, 77 cancelled, else failed. Readiness lives at the top of each script before any side effect; snapshot at start; bounded not-ready answers; every pass logged. Shared by main, the kit and the bench; chainrun stage files become job batches.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
@@ -524,6 +524,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [WATCH-IDLE] STATE:not-started — THE IDLE-BOX ALARM: a box that should be busy and is not
+  filed: 2026-10-21 Frank
+  status (2026-10-21): filed; standing directive to grow watchrun (or a sibling) from each new miss shape.
+  trigger: build at the next observed miss, or bundled with the next watchrun change; collect shapes here meanwhile.
+  refs: scripts/watchrun; scripts/boxqueue; scripts/chainrun; scripts/boxlock
+  Frank (2026-10-21): "more than once ... the computer cpus go idle while there was supposed to be a test suite running and no one noticed." One box-level check that fires when the box is idle (load and the run trees' CPU near zero for N min) while the record says work is owed: a chain WAITING on a .lift nobody touched; a stage or queue job waiting on a boxlock whose holder is idle or orphaned; a queue with pending jobs and no runner; a lane's OWED chain never armed; a live run tree using no CPU while its log still grows (heartbeat-only output). Shapes seen so far: P2e/P2d chains waiting on .lift; mech stage cap fired at 1800 s on 12 rows (cap too tight, not idle, but the same "nobody looked" class).
 - [UTF-PAT] STATE:not-started — UTF-8 AS THE PATTERN-TEXT ENCODING
   filed: 2026-09-05 Frank
   status (2026-10-12): M5.0 closed 2026-09-12 (all stages landed), so the "stage 2/3-4" wording below names M5.0's stages and is history; the row is unblocked and unscheduled. CHARTERED by Frank 2026-09-05, fifty-fifth session, UNSCHEDULED: "using utf as the Regex encoding.…
