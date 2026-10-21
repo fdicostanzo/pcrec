@@ -48,8 +48,19 @@ def _helper(c, pfx, m, fn):
         return None
 
 
+def _entry(c, m):
+    """the EMITTED entry constant X of machine m: `<m>_state = X;` (unseeded)
+    or `<m>_state = P ? <seed>[..] : X;` (seeded, P the start position's
+    name; X is the absent-predecessor entry). The emitter does not promise X = row 0 (`\\Zx` writes
+    2, and row 0 is the eol view's target: kit_proof X0's R1). None if no
+    such line is emitted."""
+    r = re.search(r"\b%s_state = (?:[a-z_]+ \? [^;:]*: )?(-?\d+);" % m, c)
+    return int(r.group(1)) if r else None
+
+
 class Machine:
-    """One emitted machine, states renumbered to ROWS 0..n-1 (row 0 = start)."""
+    """One emitted machine, its states renumbered to ROWS 0..n-1. The entry
+    row is `entry`, read from the emitted constant, never assumed to be 0."""
 
     def __init__(self, c, m, pfx="rx"):
         self.ok = False
@@ -96,14 +107,39 @@ class Machine:
                 self.views[vn] = [norm(v[rowf(av(r))]) if rowf(av(r)) < len(v) else None
                                   for r in range(nrow)]
         self.seeded = self.seed is not None
+        # the entry: unseeded, the one entry row; seeded, the ABSENT-
+        # predecessor entry (None = dead, or no entry line was emitted)
+        x = _entry(c, m)
+        self.entry_read = x is not None
+        self.entry = norm(x) if x is not None else None
         self.has_views = bool(self.views) or self.by_class is not None
         # liveness: can reach any accept (plain, class-indexed or a view's)
         self.acc_any = [self.acc[r] or (self.by_class and any(self.by_class[r])) or
                         any(vv[r] is not None and self.acc[vv[r]] for vv in self.views.values())
                         for r in range(nrow)]
-        live = set(r for r in range(nrow) if self.acc_any[r])
+        # the VIEW-GATED byte (kit_proof X0's R2): the emitted loop takes the
+        # eol view at a subject-final '\n' and steps the VIEW state on it, so
+        # a row q consumes that '\n' to t = step(eol[q], '\n'), and the match
+        # ends at the subject end, accepted there as the emitted end test does
+        # (end view if live, else eol view, else plain). The plain table does
+        # not carry this edge (`(a$\n)|ab`: S_1 = {b, \n}, not {b}).
+        eol = self.views.get("eol_view")
+        self.vnl = [False] * nrow
+        if eol:
+            for r in range(nrow):
+                if eol[r] is not None:
+                    t = self.next[eol[r]][bc[10]]
+                    self.vnl[r] = t is not None and self.acc_end(t)
+        self.live = self.liveness()
+        self.ok = True
+
+    def liveness(self):
+        """the rows that can reach an accept: plain, class-indexed or a view's,
+        or the view-gated final '\n' (vnl); recomputed by a plant that edits
+        the table"""
+        live = set(r for r in range(self.nrow) if self.acc_any[r] or self.vnl[r])
         pred = {}
-        for r in range(nrow):
+        for r in range(self.nrow):
             for t in self.next[r]:
                 if t is not None:
                     pred.setdefault(t, set()).add(r)
@@ -113,22 +149,34 @@ class Machine:
             for r in pred.get(t, ()):
                 if r not in live:
                     live.add(r); todo.append(r)
-        self.live = live
-        self.ok = True
+        return live
 
     def step(self, r, b):
         return self.next[r][self.bc[b]]
 
+    def acc_end(self, t):
+        """row t accepts at the subject end (p == n): the end view when live,
+        else the eol view when live, else the plain accept (the emitted
+        end test's order)"""
+        for vn in ("end_view", "eol_view"):
+            v = self.views.get(vn)
+            if v and v[t] is not None:
+                return self.acc[v[t]]
+        return self.acc[t]
+
     def starts(self, ctx=None, absent=True):
-        """the entry rows. Unseeded: {0}. Seeded: under a context SET `ctx`
-        (bytes the predecessor may be) plus the absent predecessor when
-        `absent`; ctx None = every context (the union over all)."""
+        """the entry rows. Unseeded: {entry}. Seeded: under a context SET `ctx`
+        (bytes the predecessor may be) plus the absent-predecessor entry when
+        `absent`; ctx None = every context (the union over all). The entry is
+        the EMITTED constant (`entry`), not row 0."""
+        if not self.entry_read:
+            raise ValueError("kvdfa: no emitted entry constant for this machine")
         if not self.seeded:
-            return {0}
+            return {self.entry} if self.entry is not None else set()
         bs = range(256) if ctx is None else ctx
         s = {self.seed[self.bc[b]] for b in bs}
         if absent:
-            s.add(0)
+            s.add(self.entry)
         return {r for r in s if r is not None}
 
 
@@ -143,8 +191,10 @@ def lang(M, starts, cap=CAP):
     Q = {st: b""} if st else {}
     S, exact, cex = [], None, None
     span = cap
+    ended = False   # a view-gated '\n' ended a match at this depth
+    view_d = []     # depths whose set gained a byte only through the eol view
     for j in range(cap):
-        if not Q:
+        if not Q or ended:
             span = j; break
         if any(M.acc_any[q] for T in Q for q in T):
             span = j; break
@@ -152,6 +202,13 @@ def lang(M, starts, cap=CAP):
         for T in Q:
             B[T] = frozenset(b for b in range(256)
                              if any(M.step(q, b) is not None and M.step(q, b) in M.live for q in T))
+            if any(M.vnl[q] for q in T):
+                # the TRUE set (manager ruling, X0 R2): a byte reached through
+                # the eol view is a byte some match carries at depth j
+                if 10 not in B[T] and j not in view_d:
+                    view_d.append(j)
+                B[T] = B[T] | {10}
+                ended = True
         union = frozenset().union(*B.values())
         if exact is None and len(set(B.values())) > 1:
             exact = j
@@ -171,7 +228,7 @@ def lang(M, starts, cap=CAP):
         Q = Qn
     if exact is None:
         exact = span
-    return dict(S=S, span=span, exact=exact, cex=cex, Qk=Q)
+    return dict(S=S, span=span, exact=exact, cex=cex, Qk=Q, view_d=view_d)
 
 
 def uniform(F, S, exact, starts=None):
@@ -205,7 +262,7 @@ def uniform(F, S, exact, starts=None):
 def whole(M, L, starts):
     """the language is exactly S_0 x .. x S_k-1, fixed width k, decided."""
     k = L["span"]
-    if starts != {0} or M.seeded or M.has_views or k == 0 or k >= CAP:
+    if starts != {M.entry} or M.seeded or M.has_views or k == 0 or k >= CAP:
         return 0
     if L["exact"] != k or not L["Qk"]:
         return 0
@@ -242,10 +299,11 @@ def forward_path(F, S0, cap=CAP):
     """A SCAN-RESTART site (span 0's set narrower than the language's S_0: the
     forward scan restarts where its start row stops self-looping, and the
     reverse pass recovers the start): the per-position ENGAGED sets of the
-    forward machine from row 0 (S_0 = the site's set; then every byte that
-    keeps some reached row live and off the start row), with the same entry
-    rule as uniform(). -> (best, contig, sets)."""
-    Q, S, best, contig, run = {0}, [frozenset(S0)], 0, 0, True
+    forward machine from its emitted entry row (S_0 = the site's set; then
+    every byte that keeps some reached row live and off the start row), with
+    the same entry rule as uniform(). -> (best, contig, sets)."""
+    e0 = F.entry   # the emitted entry row (the start row), never assumed 0
+    Q, S, best, contig, run = {e0}, [frozenset(S0)], 0, 0, True
     for j in range(cap):
         Qn = {F.step(q, b) for q in Q for b in S[j]}
         Qn.discard(None)
@@ -261,7 +319,7 @@ def forward_path(F, S0, cap=CAP):
             break
         Q = Qn
         nxt = frozenset(b for b in range(256) for q in Q
-                        if F.step(q, b) is not None and F.step(q, b) != 0 and F.step(q, b) in F.live)
+                        if F.step(q, b) is not None and F.step(q, b) != e0 and F.step(q, b) in F.live)
         if not nxt:
             break
         S.append(nxt)

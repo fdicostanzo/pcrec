@@ -1,7 +1,12 @@
 # kit_proof — [KIT-VERIFY] U1: REPORT WITHOUT AN ENGINE, with D161 addendum 16's context spans
 
-Status: DESIGN NOTE, **revision 2.1** (lane `u1rev21`, 2026-10-18, main `fa322a7f6`,
-abi 80, `MF_SITE_ABI` 16, `MF_CLASS_V` 3). Revision 2.1 applies the re-check of revision
+Status: DESIGN NOTE, **revision 2.2** (lane `x0fix`, 2026-10-21, main `63a7c3315`,
+abi 81). Revision 2.2 fixes the two reading defects step X0 found (R1, R2), recounts §1.2
+from the fixed table (K35), files U20 and re-runs X0; its changed text is marked
+`[x0fix <id>]`. Read §R2.2 first. Revision 2.1 below is otherwise the design of record.
+
+Revision 2.1: lane `u1rev21`, 2026-10-18, main `fa322a7f6`,
+abi 80, `MF_SITE_ABI` 16, `MF_CLASS_V` 3. Revision 2.1 applies the re-check of revision
 2 (same review file, section "Re-check of revision 2", all ACCEPTED); its changed text is
 marked `[r3rc <id>]`. Read §R2.1 first. Revision 2 was lane `u1rev` (main `542b0cecb`);
 revision 1 was lane `u1design` (main `a016b3bfa`).
@@ -42,6 +47,25 @@ Inputs: D161 addenda 4-16 (16 is the ruling), D157, D158; reviews r2
 `memfn/r17b_prime.md` §1, §4.3-§4.6; `locate_finish.md` §1-§2, §5.1; `compound.md` §A.1
 (`split_conj[]`); plan rows [KIT-VERIFY], [MATCH-KNOWN], [CAPS-KNOWN]; memfn R-25 (as
 corrected in `memfn/docs/requests.md`).
+
+---
+
+## §R2.2. What revision 2.2 changed (X0 finding → section)
+
+Step X0 (lane `x0oracle`, `kit_proof/x0/results.md`) did not pass. It found two defects
+in `conj.py`'s reading, which is the prototype of `MkEnd` + `MkLang`, plus a population
+the table admits that §1.2 did not count. All three are fixed here. The R2 fix follows
+the manager's ruling (2026-10-21): the stated per-position set is the TRUE byte set,
+including bytes reached through a view-gated edge. Nothing under `src/`, `memfn/` or
+`tests/` changed, and R-26's fields are unchanged.
+
+| finding | disposition | section / file |
+|---|---|---|
+| R1: the reading took an UNSEEDED machine's entry to be row 0 | sound-M1 now holds on BOTH arms: `e(⊥)` and the unseeded entry are the EMITTED constant `X` (`anchored_state = X;`), read by kvdfa (`Machine.entry`, `starts()`) and by C6 in `conj.py`. The X0 premise test `\Zx` read `cover` at main and now reads `entry-const`. So do `\zx`, `\zabc`, `-{0,}?\Z-` (both encodings) and `[ab]*\z\W`. `\w{0,2}?$\W` declines at `no-eol-view` (both flag arms). The same row-0 assumption also sat in kvdfa's seeded `starts()`, which added row 0 for the absent predecessor even when `X` is dead; in `forward_path` (the forward machine's start row); and in `whole()` | §1.1 C6, §6.3 S1140 (now both arms), `conj.py` `k_entry`, `docs/dev/kvcensus/kvdfa.py`, its selftest |
+| R2: the plain walk's hull dropped eol-view bytes (`(a$\n)\|ab`: `S_1 = {b}`, libpcre2 `{b, \n}`) | the TRUE set is now stated. The machine reading adds the byte a row consumes through its eol view at a subject-final `\n` (the emitted loop's own step: `step(eol[q], '\n')` into a row that accepts at the end), counts that path as a match ending at `d + 1`, and treats such rows as live. §5.2's sentence about C8 is corrected, and the requirement on `span_facts` is stated. No shape was found where the true set is unsound, so no conjunct is added. The plant `plain-walk` (no S-id: the S1130-S1150 range is full) restores the old walk, and X0 must read it red | §5.2, `kvdfa.lang` / `Machine.vnl` / `acc_end`, `conj.machine`, `x0.py` |
+| K35: the table admits census DFA patterns outside §1.2's population (99 at X0, 10 of them R1) | §1.2 is recounted from the table itself on the fixed reading, and every count that cites it moves | §1.2, §7 B1, `docs/design/CLAUDE.md` |
+| the libpcre2 10.46 `MATCH_INVALID_UTF` + `ANCHORED` start past a leading invalid byte | filed as U20, with a probe. It is the DOCUMENTED skip (`pcre2unicode(3)`), applied before the anchor. `\G` does not move with it | `docs/dev/upstream_issues.md` U20, `kit_proof/x0/u20_probe.c` |
+| X0 re-run | both parts, the witnesses, the plants and X0's self-plants, on the fixed reading | §6.4 X0 RESULT, `kit_proof/x0/results.md` |
 
 ---
 
@@ -187,7 +211,7 @@ so the sabotage rows and the other notes still cite C3-C14 correctly.
 | C3 | `no-gstart` | machine | the route's NFA holds no `N_GSTART` (no `gstart_seed_state` is emitted) | `\G` makes `search_from` the only start; the machine cannot see it as a byte set `[r3 snd-m3]`. Today every `\G` body takes the attempt route, so C1 declines first and C3's plant is UNREACHED (§6.3 S1142). The row exists so the admission does not rest on that routing fact |
 | C4 | `anchored-A` | machine | A (`job->adfa`) is built | the reading needs it; `anchored_ok` false or over the cap declines (4 corpus patterns, `conj.txt` B) |
 | C5 | `unmarked-A` | machine | A carries no D164 `END_MARK` accept distances (asserted: a `tagged` form's lowering is not on A) | the mark moves A's accept depth, so `k` would not be the match width `[r3 fam-m4]`. Today such bodies are `rev-end` and C5 is an assertion. It is NOT in `conj.py`, which has no population for it `[r3rc m8]` |
-| C6 | `entry-const` | machine | unseeded A: one entry. Seeded A: every live seeded entry is ONE row `r0`, and `e(⊥)` is the EMITTED entry constant `X` of `search_from ? seed[class(s[search_from − 1])] : X` (`emit_dfa.c:6246`). `X = r0` makes absent-before SATISFIES, `X` dead makes it FAILS; any other `X` declines | `e(⊥)` is not row 0: `(?<=x)cat` has `X` dead, and reading row 0 is wrong on 168 of 3,798 cells (`"cat"` from 0: (0,3) against nomatch) `[r3 snd-M1]`. The trace build asserts that the `X` the reading used is the one the emitter writes |
+| C6 | `entry-const` | machine | unseeded A: one LIVE entry, the EMITTED constant `X` of `anchored_state = X;` `[x0fix R1]`. Seeded A: every live seeded entry is ONE row `r0`, and `e(⊥)` is the EMITTED entry constant `X` of `search_from ? seed[class(s[search_from − 1])] : X` (`emit_dfa.c:6246`). `X = r0` makes absent-before SATISFIES, `X` dead makes it FAILS; any other `X` declines | `e(⊥)` is not row 0: `(?<=x)cat` has `X` dead, and reading row 0 is wrong on 168 of 3,798 cells (`"cat"` from 0: (0,3) against nomatch) `[r3 snd-M1]`. The unseeded entry is not row 0 either `[x0fix R1]`: `\Zx` emits `anchored_state = 2` (row 1), and row 0 is its eol view's target. Read from row 0, `\Zx` admitted `S_0 = {x}` and answered (1,2) on `"Zx"`, where PCRE2 has no match (X0's R1). The trace build asserts that the `X` the reading used is the one the emitter writes, on both arms |
 | C7 | `fixed-width` | machine | from `r0` there is a depth `k`, `1 ≤ k ≤ MF_MAX_SPAN_POS`, such that no row reached at a depth `< k` accepts in ANY form (plain, class-indexed, end view, eol view), and the rows at `k` are not empty | an accept below `k` is a shorter match. Reading a view accept as "not an end" was rev 1's hole `[r3 snd-B1]`. `k ≥ 1` also declines every nullable body, and C4 and C10 decline them all again, which is why its plant S1143 is UNREACHED `[r3rc M-C]` |
 | C8 | `exact` | span fact | `exact_len ≥ k` on the producer's span 0, and the producer's `S_d` equals A's `S_d` for `d < k` | the language from the origin is `S_0 × … × S_{k−1}` for this artifact's encoding (kvp-contract S1: per encoding). The equality is fam-M2's control (§5.2). The `why` has two details `[r3rc m2]`. `exact/machine-inexact` means A's language from `r0` is not a product. `exact/producers-disagree` means `span_facts`' `S_d` ≠ A's `S_d`, two producers disagreeing about one language, which is a defect: the trace build asserts 0 of it. `conj.py` reads only the machine half (§R2.1, PARTIAL) |
 | C9 | `no-eol-view` | machine | no row at ANY depth `0..k` of the walk carries a non-identity eol view `[r3rc K1]` | at `k` an eol view is neither "a byte follows" nor "the subject ends": reading it as the end is wrong on 19 of 3,777 cells (`cat$` under `-fno-rev-end`, `"ccat\n"` from 0: cover none, PCRE2 (1,4)), and not reading it gives NOMATCH on `"cat"` `[r3 snd-B1]`. BELOW `k` a mid-pattern non-multiline `$`/`\Z` followed by a consumed `\n` is a transition only under the eol view, which the plain walk cannot see. Revision 2 tested depth `k` only, so `ab\|a$\n` read `cover` with `k` = 2 and gave NOMATCH on `"a\n"` from 0, where PCRE2 gives (0,2) (likewise `ab\|a\Z\n` and `ab\|a$\n\z`). The census population is 0, so X0 on the admitted set could not have found it `[r3rc K1]` |
@@ -901,8 +925,43 @@ through. ~~as every zero-width node is.~~ On `ab|a$\n` the slice states `S_0 = {
 is a true HULL fact: the byte language is the product. It does not say that `a\n` matches
 anywhere but at the subject end. The slice's `exact_len` is therefore never a cover
 admission by itself. The position constraint lives on A as an eol view, and C9 declines
-the body on A's walk. C8's equality of the two producers' `S_d` holds on such a body, so
-C8 cannot catch it, and C9 is the conjunct that must.
+the body on A's walk. ~~C8's equality of the two producers' `S_d` holds on such a body, so
+C8 cannot catch it, and C9 is the conjunct that must.~~
+
+**C8's two producers agree on such a body only when A is read THROUGH its eol view**
+`[x0fix R2]`. X0 refuted the struck sentence. The emitted loop takes the eol view at a
+subject-final `\n` and steps the VIEW state on that byte. So `a\n` consumes its `\n`
+through `step(eol[q], '\n')`, an edge the plain table does not carry. A plain walk of A
+states `S_1 = {b}` on `(a$\n)|ab`, against libpcre2's `{b, \n}`. That is an UNDER-stated
+set: sent, it would let a filter skip the match `"a\n"`. C8 would then read
+`exact/producers-disagree` on every such body, which the trace build asserts never
+happens. Ruling (manager, 2026-10-21): every stated per-position set is the TRUE byte
+set, view-gated bytes included, and the site is not declined for it. Both producers
+must therefore state the true set:
+- **the machine reading** (`MkLang`'s prototype, `kvdfa.lang`) adds the byte `\n` at
+  depth `d` for every row `q` on the walk whose eol view `eol[q]` steps on `\n` into a
+  row that accepts at the subject end. The end test is the emitted one: the end view
+  when live, else the eol view, else the plain accept. Such a path is a match ending at
+  `d + 1` (so `k ≤ d + 1`), and such a row is live even if no plain edge reaches an
+  accept (`a$\n`). An END view gates no byte, because nothing follows the subject end,
+  so only eol views add bytes. After this change the machine reading states `S_1 = {b, \n}`,
+  `exact_len` 2 on `(a$\n)|ab` and on the three K1 witnesses, equal to the slice;
+- **`span_facts`** (the extended `pcrec_kset_walk`) must pass a position-only assertion
+  through WITH its continuation. The thread that crosses a non-multiline `$`/`\Z` keeps
+  its following classes (`\n`, here) in the frontier, exactly as an ordinary edge does,
+  because the subject end is not known at compile time. It must not drop the thread
+  (that is the plain walk's under-statement), and it must not narrow `S_d` to the
+  position's own byte (a position constraint is not a byte constraint). Today's walk
+  passes every assertion kind, `N_EOL` among them, in `kset.c`'s `wdrain` (it widens the
+  frontier), so it is expected to state the true set already. Z2's C8 control checks that on every body whose machine reading gains a
+  view byte; kvdfa reports those depths as `view_d`.
+
+C9 still declines every such body for `cover`, so the admitted set is not moved by R2.
+What R2 changes is the `exact_len` and the sent sets on NON-cover sites (§5.2's next
+paragraphs), and X0's site role is the check for it. The exposure count (`kit_proof/x0/
+exposure.py`) names the census population whose sets gained a view byte. No shape was
+found for which the true set is unsound: adding a byte to a hull is always safe for a
+filter, and `exact_len` can only fall when the view byte splits the subsets.
 
 **A context item inside span 0 does NOT pass through** `[r4 B9]`. An `A_CTX` (`\b`, `\B`,
 every recognized one-character lookaround, and after `ctx_span.md` part 2 `(?m)^`/`(?m)$`)
@@ -1041,7 +1100,7 @@ not read the row's predicate.
 | S1137 | `read_floor` stated as `MF_FLOOR_LO` on a cover site | `\bcat\b`: under §3.5's rule the kit refuses the site, so C13 fails and `cover` declines. If the refusal were also gone, `"concat"` from 3 gives PCRE2 nomatch and the plant (3,6) | the kit's R-26.2 refusal fixture (`MF_FLOOR_LO` with a below-origin CONTEXT term), then X1's `search_from` sweep `[r3rc m5]` |
 | S1138 | the emitter defines the composite's description while the predicate read the REPORT ask | `foobar` | the DEFAULT build's class check (§2.5), then the trace agreement |
 | S1139 | TWO edits `[r3rc M-C]`: C9 dropped AND an eol view at `k` read as the end. With C9 dropped alone, C11 declines every witness (`after-agree`), so that plant cannot go red | `cat$` under `-fno-rev-end` on `"9cat\n"` from 0: PCRE2 (1,4), the plant none (9 cells of 1,495); `cat\Z` 1 of 1,524. MEASURED with the critic's `x0lite_p.py` plant `C9E` | X1's deny arm |
-| S1140 | `e(⊥) :=` row 0 | `(?<=x)cat` on `"cat"`: PCRE2 nomatch, the plant (0,3) | X1 |
+| S1140 | `e(⊥) :=` row 0, on BOTH arms `[x0fix R1]` (seeded: the absent entry; unseeded: the entry) | `(?<=x)cat` on `"cat"`: PCRE2 nomatch, the plant (0,3); unseeded, `\Zx` on `"Zx"`: PCRE2 nomatch, the plant (1,2) (X0's R1, which was this plant shipped in the reading) | X0, X1 |
 | S1141 | C1 keyed on the LOCATOR route | bench `syntax/grp-named-quote` (`(?'w'cat)`, a hybrid): group 1 unwritten | the group check; K35's `selected ⊆ engine dfa` |
 | S1142 | C3 dropped | none reaches: every `\G` body takes `CR_ATTEMPT`, so C1 declines first | ships declared UNREACHED with that argument; flips to a witness if a `CR_DFA` `\G` body appears |
 | S1143 | C7's `k ≥ 1` dropped (nullable admitted) | NONE REACHES `[r3rc M-C]`. A nullable body has `k` = 0, so its rows at `k` are the entry. If the language holds any non-empty string the entry has a live successor and C10 declines (`a?`, `a*`, `[ab]?`, `(?:ab)?`, `b?\z`). If the language is `{ε}` alone (a zero-width body: `(?:)`, `(?=a)`, `\b`, `$` under the deny) no anchored machine is built and C4 declines. If either got through, `k` = 0 leaves no BOUNDED span 0, so R-26.2 refuses the REPORT site and C13 fails. MEASURED: 21 nullable probes under the plant all decline, at C4 or C10 | ships declared UNREACHED with this argument; flips to a witness if a nullable body ever passes C4 and C10 |
@@ -1131,6 +1190,18 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
   stated-set check reads the union-narrowing statements RED and the per-thread slice
   green. The per-thread witnesses read `cover k=2` and are clean. X0 re-runs once R1/R2
   are ruled on, and at Z2 on the slice (`x0.py stated` takes any producer's sets).
+
+  **X0 RE-RUN on revision 2.2's reading** `[x0fix]` (lane `x0fix`, 2026-10-21, main
+  `63a7c3315`, libpcre2 10.46): **OWED**. The run is queued as boxqueue job
+  `530-x0fix-x0run` (log: `scripts/boxqueue status`; outputs in
+  `worktrees/x0fix/build/x0fix/out/`). The recount job is `300-x0fix-recount`. Passing
+  means 0 differences beyond U1 on every role, and every plant red where it reaches.
+  Measured before queueing, on a smoke population of the R1 and R2 items: every R1 item
+  now declines (`\Zx`, `\zx`, `[ab]*\z\W` at `entry-const`; `\w{0,2}?$\W` at
+  `no-eol-view`); `(a$\n)|ab` (both encodings) and the K1 witness `ab|a$\n` read
+  `S_1 = {b, \n}` with 0 differences; the new `plain-walk` plant turns all three red
+  (`under: [10]` at d = 1). The fresh agent that reads the verdicts replaces this
+  paragraph with the result.
 - **X1, the same oracle on the BUILT artifacts** (Z2's harness-routed builds and B1's
   default build): every `cover` artifact compiled, run against libpcre2 10.46 with the
   X0 subject families.
