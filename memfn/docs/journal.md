@@ -2513,3 +2513,9 @@ pointer when a kit change merges to main.
 - B4's table is §1.3a. Gates: D163 add. 8 MET; E8 and M0 NOT MET.
 - Reviewed: docs only (6 files past the grid2read merge), D169 real on main. Fast-forwarded lane/memfn-b4. Lane stopped.
 - Lane questions: (1) the default for an unmeasured cover shape and (2) F2, the VM hat's one-byte set at default, go to Frank. (3), the pre-scan pricing trigger, is my call: record it as fired on the letter, do not build (it never fires on a default compile; D77).
+
+## 2026-10-21 — Frank answers Q-R17P-26: route set sites by TERM COUNT; no "unmeasured shape" case
+
+- I framed Q-R17P-26 (rev4's question) as an unknown, the per-byte cost of an untimed cover shape, with a leaning to keep the walk until timed. Frank: "we know the pattern ... 3 terms v1 is no bueno. what's the confusion?" He is right. The shape is a COMPILE-TIME fact (the kit builds the terms), and grid2's nine measured shapes give the rule: V1 for covers of at most 2 terms (+1..+55%), the walk from 3 terms (-13/-41/-46%). An untimed combination is routed by its term count; it does not need its own key first.
+- **Effect on rev 4:** R7 keys on the cover's term count instead of a per-shape saving key. R7w's "no key" reason goes away, and the 54 sites stop being a pending population (they route by term count). B4's acceptance measurement confirms the rule on the shapes it moves, and a shape that contradicts the rule is a finding.
+- **Lesson:** "not timed" is not "unknown" when the deciding fact is static and the measured trend is monotone in it. Before I relay a lane's "unmeasured" question, check whether the deciding fact is known at compile time.
