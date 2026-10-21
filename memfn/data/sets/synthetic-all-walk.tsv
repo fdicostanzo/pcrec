@@ -12,7 +12,7 @@ tier	synthetic
 composite	0
 members	
 unit_key	kit.beta.WALK.DFA_SCAN.r1e0c0
-method	kit-synthetic@1
+method	kit-synthetic@2
 run	-
 box	-
 compiler	-
@@ -23,7 +23,6 @@ rows	83
 values_digest	b3ea024ae0fe2fbb
 #section cards
 #owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
-kit	beta	1	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	eps	1	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
 kit	xover	1	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
@@ -41,6 +40,24 @@ kit	ffloor	1	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	cdisp_use	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	ufloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	wfloor	1	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	beta	2	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
+kit	saving	2	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
+kit	eps	2	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
+kit	xover	2	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	block	2	form	bytes	synthetic	-	-	-	-	-	-	-
+kit	gstar	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	lstar	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	g8	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3a	2	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3b	2	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	delta	2	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	dfloor	2	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_call	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cfloor	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ffloor	2	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_use	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ufloor	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	wfloor	2	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-
 #section rows
 #key	unit	value_e6	abs_ns_e6	noise_e6	n	status	derivation	inputs	deps	tags	source
 kit.beta.WALK.DFA_SCAN.r1e0c0	ratio	1000000	-	-	-	measured	-	-	-	-	synthetic

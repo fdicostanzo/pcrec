@@ -249,16 +249,16 @@ def main():
             "kit-private interim set (pre-[MEASURE-SET]); format owner pcrec (regime_eval.md "
             "Q-REVAL-10). A TEST INPUT: no compile reads it but through the harness lever"),
         "synthetic-all-walk.tsv": render(
-            "synthetic-all-walk", "synthetic", "kit-synthetic@1", "kit-synthetic.tsv",
+            "synthetic-all-walk", "synthetic", "kit-synthetic@2", "kit-synthetic.tsv",
             synthetic_rows(0.0, 1000000000, 64), "synthetic extreme: all-walk (r17b_prime.md §8.2)"),
         "synthetic-all-v1.tsv": render(
-            "synthetic-all-v1", "synthetic", "kit-synthetic@1", "kit-synthetic.tsv",
+            "synthetic-all-v1", "synthetic", "kit-synthetic@2", "kit-synthetic.tsv",
             synthetic_rows(0.5, 0, 64), "synthetic extreme: all-v1 (r17b_prime.md §8.2)"),
         "synthetic-all-wide.tsv": render(
-            "synthetic-all-wide", "synthetic", "kit-synthetic@1", "kit-synthetic.tsv",
+            "synthetic-all-wide", "synthetic", "kit-synthetic@2", "kit-synthetic.tsv",
             synthetic_rows(0.5, 0, 0), "synthetic extreme: all-wide (r17b_prime.md §8.2)"),
         "synthetic-every-key.tsv": render(
-            "synthetic-every-key", "synthetic", "kit-synthetic@1", "kit-synthetic.tsv",
+            "synthetic-every-key", "synthetic", "kit-synthetic@2", "kit-synthetic.tsv",
             synthetic_rows(0.5, 36, 64, every=True),
             "synthetic: every key a finder row or its pay rule can read (R-MS1, R-MS4; B4's "
             "every-derivable-key set)"),

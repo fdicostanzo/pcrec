@@ -27,10 +27,9 @@ reorder the cards section and add an empty `libc`. Not required by anything that
   the two code bytes; synthetic rows status `measured` (tier `synthetic` and the source column
   carry the label); the four synthetic sets gain the unit row (ratio 1, `measured`); header
   comment now cites `docs/spec/measures.md`. Sets regenerated.
-- `memfn/data/cards/kit-synthetic.tsv`: a `beta` card appended to `kit-synthetic@1` (the unit
-  row has to be on-card). No existing row changed. Note: the cards file is "append-only by
-  version"; this appends a quantity within @1 rather than opening @2. A ruling is welcome
-  if you want @2 (every synthetic set's cards section and `method` would move).
+- `memfn/data/cards/kit-synthetic.tsv`: `kit-synthetic@2` added (ruled by the manager): @1's rows plus a `beta` card for the unit row;
+  the synthetic sets' `method` is now `kit-synthetic@2`. @1 is untouched: the loader refused
+  sets built on it because the unit row's quantity had no card there (§3.1¶2).
 - `docs/design/memfn/r17b_prime/b4prep/mk_lever_set.py` + regenerated `b4prep-v1max2.tsv`
   (it imports generate.py's `row`/`render`, so it would have KeyError'd; and its set had defects
   3 and 4): placeholders `measured`, unit row added. 11 rows (was 10). Digest `af6f4d99889cfea7`.
@@ -92,7 +91,6 @@ between the two builds, so movers=0 is expected; the sweep is the proof.)
 
 Charter: valid digests + other missing spec fields, regenerated sets, cards if they cite digests
 (they do not), an independent red/green check wired in an existing target, readers, sweep, CLAUDE.md.
-Committed: all of it except the sweep verdict (OWED, §5). Beyond the charter: the `beta` card in
-`kit-synthetic@1` (needed by the unit row), the b4prep lever set and its generator (a reader of
+Committed: all of it except the sweep verdict (OWED, §5). Beyond the charter: `kit-synthetic@2` (needed by the unit row), the b4prep lever set and its generator (a reader of
 generate.py), finder_check's own digest corrected. Deliberately not done: canonical byte form
-(§1), a `kit-synthetic@2` (§2).
+(§1), 

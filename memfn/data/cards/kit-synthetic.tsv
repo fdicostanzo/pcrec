@@ -8,7 +8,6 @@
 # kit-grid@2's cards fix them.
 #
 #owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
-kit	beta	1	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	eps	1	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
 kit	xover	1	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
@@ -26,3 +25,24 @@ kit	ffloor	1	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	cdisp_use	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	ufloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	wfloor	1	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-
+# kit-synthetic@2 (lane setdig): @1 plus `beta`, the quantity of the unit row. @1 stays as
+# committed: the loader refuses a synthetic set built on it (measures.md §3.1¶2: unit_key must
+# name a row, and that row's quantity needs a card here, which @1 lacked).
+kit	beta	2	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
+kit	saving	2	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
+kit	eps	2	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
+kit	xover	2	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	block	2	form	bytes	synthetic	-	-	-	-	-	-	-
+kit	gstar	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	lstar	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	g8	2	form;kind	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3a	2	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	h3b	2	-	bytes	synthetic	-	-	-	-	-	-	-
+kit	delta	2	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	dfloor	2	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_call	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cfloor	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ffloor	2	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	cdisp_use	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	ufloor	2	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
+kit	wfloor	2	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-
