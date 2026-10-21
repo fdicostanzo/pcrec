@@ -358,3 +358,95 @@ GREEN: `run_group: 16/16 scripts passed`, rc 0, and the grep for make's
 - Not merged anywhere.
 - Scratch, gitignored: `build/r26/` (reference build, sweep logs, plants
   log, heavy job dir).
+
+## 9. Review fixes (lane r26z1fix)
+
+Rulings file: last entry applied is the kit manager's review of Z1 (F-4 in Z1,
+S1221-S1226 as real mech rows). Both fixes are inside the SAME, not-yet-
+delivered MF_SITE_ABI 18 event: MF_SITE_ABI stays 18, pcrec abi stays 81, and
+no artifact moves (no emitted byte depends on `consumer`; all six pcrec
+builders already state ENGINE).
+
+### 9.1 F-4: `mf_consumer` gains an UNSTATED zero
+
+`typedef enum { MF_C_UNSTATED = 0, MF_C_RESULT, MF_C_ENGINE } mf_consumer;`
+(memfn.h; the comment now says UNSTATED is refused and drops the Z1 NOTE).
+
+Every reader of `consumer`, found by grep (`->consumer`, `.consumer`,
+`MF_C_`) over memfn/, src/, cli/, lib/, tests/:
+
+| reader | what it does now |
+|---|---|
+| memfn/src/compose.c `site_check` (`in_enum`) | the general reader, run for every site: UNSTATED is REFUSED ("`consumer` is UNSTATED ..."); out-of-enum as before |
+| memfn/src/compose.c `kit_proof_check`, REPORT rule (R-26.3) | UNSTATED on a REPORT site is refused by name; any non-RESULT is still refused. The rule no longer relies on the general reader (defence in depth) |
+| memfn/src/formhash.c | WRITES ENGINE into its scratch site; no read |
+| memfn/src/finder.c, kit.h `kind` | name the consumer KIND (`site_kind`), a different field; they never read `consumer` |
+| src/gen/memfn_sites.c (2 builders), emit_dfa.c (3), emit_vm.c (1) | six builders, all behind `pcrec_memfn_site`; each already STATES ENGINE (grep: six callers, six writes). Unchanged |
+| tests: proof_check.c, proven_check.c, arm_fixtures.c | state ENGINE or RESULT; unchanged |
+| tests: memfn/tests/g2/g2_gen.c (generator, refusal baseline `s0`, MISMATCH baseline `s0`, API baseline `f0`), g2_simd_gen.c `build_site` | the baselines were zero-filled and never wrote `consumer`; they now state ENGINE (a zero is refused). The generated-site builder already mapped it to RESULT/ENGINE |
+
+New fixtures: proof_check.c family A "UNSTATED consumer on a REPORT site"
+(expects a refusal naming `consumer`); g2_gen.c refusal table
+"consumer-unstated".
+
+Plant red, then green: with the general check turned off and the REPORT rule
+put back to Z1's `consumer == ENGINE` test (the old "zero reads as RESULT"
+behaviour), `run_proof.sh` goes RED, 2 failed (plain and traced): "A refuse
+UNSTATED consumer on a REPORT site: refused without naming `consumer`: mf_define:
+no row serves `site_kind` REPORT". Restored: 932 passed / 0 failed. (Turning off
+only the general check stays green, because the REPORT rule refuses UNSTATED on
+its own: that is the point of keeping both.)
+
+### 9.2 The six mech rows (tests/mech/sabotages/)
+
+S1221_form_claims_untested_offset.sh, S1222_absent_satisfies_dropped.sh,
+S1223_absent_fails_yielded.sh, S1224_proof_bit_simd_only.sh,
+S1225_optional_position_overfilter.sh, S1226_unstated_field_accepted.sh. The
+FROM/TO text is the run_proof.sh plant text exactly (§4), arm `memfnfinder`,
+SAB_EXPECT=DETECTED, SAB_COUNT=1. tests/mech/CLAUDE.md names them.
+
+`VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh S1221 S1222 S1223 S1224
+S1225 S1226`: FIELDS OK for all six, "6 definition(s) valid". The anchor
+check `python3 scripts/m6read_check_sab_anchors.py`: "sabotages checked: 853
+(883 anchor sites); all anchors resolve". The measured mech figures are OWED to
+the job below.
+
+### 9.3 Light checks at the fix (cap 4 cores; logs `build/r26z1fix/*.log`)
+
+| check | result |
+|---|---|
+| `make strict` | clean |
+| `make test-codegen` | green (no `*** [...test-codegen]` line) |
+| `make test-memfn-finder` | 1,959 / 0 (was 1,955: the new fixture, plain and traced) |
+| arms / rows / forms / deleg / manifest / link / stamps / reach / arch / rank / guarded / simdfloor | 383 / 244 / 5 / 14 / 13 / 8 / 25 / 4 / 15 / 15 / 10 / 51, all 0 failed |
+| `make test-memfn-g2` (quick tier) | green after the baselines were fixed (refusal fail 0, api fail 0, sites failed 0). Its first run was RED on 36 refusal and 2 api cases: the zero-filled baselines (§9.1) |
+| emit_sweep plain and rwquest (`build/r26z1fix/sweeps.sh`, log `sweeps.out`) | DETACHED, WAITING on the box lock (held by queue:520-kit-b4prep-f3rr when launched): OWED. Logs `build/r26z1fix/sweep_plain.log`, `sweep_rwquest.log`. They are also steps 1 and 7 of the queued job |
+
+Note: `--arms plain` does not exist (`--arms` takes `start` only); plain is the
+default arm, run as the previous lane did, with `--ref-bin build/r26/sweep/pcrec.ref`
+(cc4f87ad3) against a fresh copy of build/pcrec.
+
+### 9.4 The queued job
+
+`500-kit-r26z1-heavy`, source `build/r26/heavy/500-kit-r26z1-heavy`, rewritten.
+Order: build; emit_sweep plain simd comments utf8 vm start rwquest variant trace
+(against cc4f87ad3; variant and trace take `--tree-rev` HEAD at run time);
+ONE `PROCS=4 bash tests/mech/run_sabotage_matrix.sh S1221 S1222 S1223 S1224
+S1225 S1226 S1083`; then `scripts/perfrun --label r26z1 -- maketest.make.log`.
+The dry run also runs the mech VALIDATE_ONLY and requires 7 rows. Logs: one per
+step in `build/r26/heavy/<step>.log` (steps sweep_plain ... sweep_trace, mech,
+maketest), the job log `worktrees/.boxqueue/{done,failed}/<TS>-500-kit-r26z1-heavy/job.log`.
+Completion: the job ends `== r26z1 heavy: 0 step(s) failed`; nine
+`emit_sweep: DONE rc=0` lines; mech: `== mech run COMPLETE` in
+`build/r26/heavy/mech.log` with the seven rows DETECTED; make test's verdict is
+`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' build/r26/heavy/maketest.make.log`
+(empty = green) with the `.perfrun` note.
+
+### 9.5 Charter vs committed (this round)
+
+| promise | artifact | state |
+|---|---|---|
+| F-4: `mf_consumer` UNSTATED zero, refused wherever read, inside the same abi event | memfn.h; compose.c (2 readers); g2 baselines; §9.1 | done; no artifact mover expected (sweeps OWED, job above) |
+| F-4 refusal fixture "UNSTATED consumer on a REPORT site", plant red then green | proof_check.c family A; g2_gen.c "consumer-unstated" | done (red 2 failed, green 932 / 0) |
+| S1221-S1226 as real mech rows | tests/mech/sabotages/S1221..S1226; tests/mech/CLAUDE.md | done to the VALIDATE_ONLY and anchor check; measured verdicts OWED (job) |
+| heavy job rewritten: nine sweeps, one mech call, make test, queued | `500-kit-r26z1-heavy` | queued (§9.4) |
