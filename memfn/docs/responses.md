@@ -2826,3 +2826,8 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **B4 is still blocked on E8.** Kit items left before the brief:
     - the interim measure sets' first-letter digests;
     - the compound-part measures question above.
+- done: 2026-10-21 — **The kit's interim and synthetic measure sets are now valid under docs/spec/measures.md (m0build report item 11).** Branch `lane/memfn-setdig` (cut from main 764223688); report `docs/dev/lanes/setdig_report.md`.
+  - **What was wrong:** the digest hashed the first letters of unit and status, and the FNV basis was mistyped. The synthetic sets also used a status outside §3.1 and had no unit row, so the loader refused all five.
+  - **Fix:** generate.py is corrected and the sets regenerated. kit-interim-grid1 now digests to 13a6536315af1520, equal to zen4-grid1@1. The `kit-synthetic@2` card was appended; @1 is kept as committed. b4prep's lever set has the same fix.
+  - **Check:** finder_check C now holds each set by the spec digest, ks_ref.py and `--list-measurements`. The old files read red: 12 FAILs.
+  - **Validation:** emit_sweep plain arm rc 0, 0 movers on 11 streams. No pcrec source changed.
