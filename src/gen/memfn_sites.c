@@ -404,6 +404,29 @@ void pcrec_memfn_window_is_candidate(mf_pred *p)
     p->overshoot = 0;
 }
 
+/* [MEMFN] R-26.1 (MF_SITE_ABI 18): span 0's class and its prefix facts as
+ * today's truth (kit_proof.md §7's Z1 row): exact_len 0 is a sound
+ * under-statement (pcrec states no exactness yet), so nothing is consumable. */
+_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS,
+               "span 0's positions (the longest run term pcrec hands the kit) fit the "
+               "kit's prefix facts (R-26.5)");
+
+void pcrec_memfn_span0_today(mf_pred *p)
+{
+    p->span_class = MF_SPAN_BOUNDED;
+    p->prefix_stated = MF_PREFIX_STATED;
+    p->exact_len = 0;
+    p->consumable_len = 0;
+}
+
+void pcrec_memfn_context_stop(mf_site *s)
+{
+    s->pred.span_class = MF_SPAN_CONTEXT;
+    s->pred.absent = MF_ABSENT_FAILS;
+    s->pred.consumable = MF_CONSUMABLE_NO;
+    s->read_floor = MF_FLOOR_SUBJECT;
+}
+
 /* ---- the answering block's provenance stanza (R-24, MF_SITE_ABI 15) -------
  *
  * The findings vocabulary's closed `fidelity` tokens

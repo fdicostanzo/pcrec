@@ -63,10 +63,37 @@ static void g2_need(mf_site *w)
         if (w->pred.term[i].need == MF_NEED_UNSTATED) w->pred.term[i].need = MF_REQUIRED;
 }
 
+/* MF_SITE_ABI 18 (R-26.1/R-26.2, lane r26z1; NOT blinded text): a forward
+ * FIND's predicate STATES its class as pcrec's builders do, applied at the
+ * kit call with the window, after every perturbation: a context stop (every
+ * term below the candidate) is CONTEXT, absent FAILS (every row's reading of
+ * a read outside the subject, G2's reference's too), consumable NO, the site's
+ * read_floor SUBJECT; every other one is span 0, BOUNDED, its prefix facts
+ * stated as today's truth (exact_len 0). A site stating a class keeps it. */
+static void g2_span0(mf_site *w)
+{
+    if (w->op != MF_OP_FIND || w->reverse || !w->pred.nterm || w->pred.span_class) return;
+    int below = 1;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++) {
+        const mf_term *t = &w->pred.term[i];
+        if (t->offset + (t->kind == MF_T_RUN ? (int32_t)t->run_len : 1) > 0) below = 0;
+    }
+    if (below) {
+        w->pred.span_class = MF_SPAN_CONTEXT;
+        w->pred.absent = MF_ABSENT_FAILS;
+        w->pred.consumable = MF_CONSUMABLE_NO;
+        if (!w->read_floor) w->read_floor = MF_FLOOR_SUBJECT;
+    } else {
+        w->pred.span_class = MF_SPAN_BOUNDED;
+        w->pred.prefix_stated = MF_PREFIX_STATED;
+    }
+}
+
 static mf_site g2_win(const mf_site *s)
 {
     mf_site w = *s;
     g2_need(&w);
+    g2_span0(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
