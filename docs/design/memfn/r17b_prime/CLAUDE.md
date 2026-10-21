@@ -69,3 +69,9 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
   `analysis.txt`, the proposed `kit-grid@2` rows `keys.tsv`, and `SHA256SUMS`
   of the 18 slot files read. Own CLAUDE.md; the report is
   `docs/dev/lanes/grid2read_report.md`.
+
+Revision 4 of the note (lane rev4, 2026-10-20) adds no instrument and re-runs
+none. It reads `grid2read/` (the slot's reading and its PROPOSED `keys.tsv`) as
+B4's evidence. `fdb2/predicted_movers_B4.tsv` is STALE under revision 4's table:
+item 3a's shapes now route and R0 is retired. B4 must regenerate it, which is OWED
+in the note's §3.1a item 4.
