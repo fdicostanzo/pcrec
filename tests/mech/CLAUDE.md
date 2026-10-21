@@ -96,6 +96,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   trust the result unless the AFTER text is actually present afterward. One
   mechanism for every sabotage, whether it is a substitution, an insertion
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
+- **reach_only_selftest.sh** ([MECH-REACHONLY], 2026-10-21) — self-test of `REACH_ONLY=1` (see
+  its section below): a live probe, a failing probe, a declared-UNREACHED one.
 - **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose
   `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given
   paths, at a path-component boundary. What D69's tiered re-run policy
@@ -1074,6 +1076,25 @@ never built** — the verdict is already known and the minutes buy nothing. A ro
 may declare `SAB_EXPECT=UNREACHED` with a mandatory `SAB_EXPECT_REASON`, and
 the reverse direction is checked as `NOW REACHED`, on exactly the argument
 `NOW DETECTED` rests on.
+
+**`REACH_ONLY=1` EVALUATES EVERY ROW'S REACH PROBES, NO PLANTS** ([MECH-REACHONLY],
+2026-10-21; apply_here.md §5). It builds the ONE clean tree (`git archive HEAD`,
+JOBS-wide), then runs each selected row's `SAB_REACH`/`SAB_REACH_POP` through
+the SAME block a full run executes (an early exit after it, not a second copy of
+the rules): no per-row archive, plant, build or suite. One line per row, verdict
+column `REACHED` | `UNREACHED<why>` | `declared-UNREACHED (reason)` |
+`NOW-REACHED` (row declares UNREACHED but the probe is live; reported, not a
+failure) | `NO-PROBE`; then `mech-reach-only: DONE rc=N rows=.. reached=..
+unreached=.. declared-unreached=.. now-reached=.. no-probe=.. at SHA` (the
+`TOOL: DONE rc=N` convention, so `scripts/verdict`/`watchrun` read it). rc 1 iff a row NOT declared
+UNREACHED reads unreached; rc 2 on a lost row. It takes the box lock like any
+mech run (the probes compile), skips the encoding baseline and the asan
+instrument probe, and, like a full run, measures committed HEAD only. Run it
+before delivering a strategy-widening change (BOILERPLATE "Delivery bar").
+Self-test: `bash tests/mech/reach_only_selftest.sh` (three fake rows in a temp
+`MECH_SAB_DIR`: a live probe, a failing probe that must read UNREACHED and fail
+the run, a failing probe declared UNREACHED that must not). Wall time and the
+population on main: docs/dev/lanes/reachonly_report.md.
 
 **`VALIDATE_ONLY=1` CHECKS EVERY DEFINITION IN SECONDS.** The field checks are
 FATALs raised inside `run_one`, i.e. when a row actually RUNS — a malformed
@@ -2984,8 +3005,8 @@ agreement, not the sense).
 
 **THE SWEEP THIS RE-POINT PROMPTED FOUND TWO MORE ROWS AFFECTED, PLUS ONE
 UNRELATED REACH DRIFT** (same lane, an ad hoc reach-only probe over all 112
-reach-bearing rows — no cheap reach-only mode exists in the driver itself,
-`VALIDATE_ONLY=1` stops before the reach block runs). **S267**
+reach-bearing rows — the driver's own `REACH_ONLY=1` mode, [MECH-REACHONLY],
+now does that sweep; `VALIDATE_ONLY=1` stops before the reach block runs). **S267**
 (`S267_req_run_memcmp_inverted.sh`, [OPT-REQPOS]) shares S265's root cause
 and its exact witness (`a=b`): its `SAB_REACH` still asserts `RX_REQ_RUN
 "613d62@1"` and the run-check's `memcmp` text, but `a=b` now stamps
