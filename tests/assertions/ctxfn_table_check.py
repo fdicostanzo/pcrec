@@ -82,7 +82,7 @@ ROW_RE = re.compile(r"^CTXFN_ROW\(\s*(\w+)\s*,\s*(0x[0-9A-Fa-f]+)\s*,"
                     r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
                     r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
                     r"\s*([01])\s*,\s*([01])\s*,\s*([01])\s*,"
-                    r"\s*(CONTEXT|PIN_START|PIN_END)\s*,", re.M)
+                    r"\s*(?:/\*.*?\*/\s*)*(CONTEXT|PIN_START|PIN_END)\s*,", re.M | re.S)
 
 PIN_GRIDS = {"PIN_START": [0, 0, 0, 0, 0, 0, 1, 1, 1],
              "PIN_END":   [0, 0, 1, 0, 0, 1, 0, 0, 1]}

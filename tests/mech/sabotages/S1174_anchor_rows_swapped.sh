@@ -11,7 +11,7 @@ SAB_ID="S1174-anchor-rows-swapped"
 SAB_FILE="src/parse/mod_assertions.c"
 SAB_SUITES="harness assertions"
 SAB_DESC='the assertions port builds \A as the SUBJECT_END row and \z as the SUBJECT_START row'
-SAB_DOC_FIGURE='OWED (lane ctxp2e): reach measured by hand, see docs/dev/lanes/ctxp2e_report.md §5'
+SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, tests/assertions/absolute.rxt 201 failed / 668 passed'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='        k = A_CTX; pin = CTXFN_SUBJECT_START; pcrec_lb_raise(cx, 1); break;'

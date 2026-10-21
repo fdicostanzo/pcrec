@@ -9,7 +9,7 @@ SAB_ID="S1187-ctx-class-derivation-drops-end-pin"
 SAB_FILE="src/core/internal.h"
 SAB_SUITES="harness"
 SAB_DESC='CTXFN_CLASS_OF never answers CTX_PIN_END'
-SAB_DOC_FIGURE='OWED (lane ctxp2e): reach measured by hand, see docs/dev/lanes/ctxp2e_report.md §5'
+SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, the build refuses (static assertion: SUBJECT_END written PIN_END, derived CONTEXT)'
 SAB_EXPECT='BUILD-REFUSED'
 SAB_COUNT='1'
 SAB_BEFORE='     : (fn) == CTXFN_GRID_PIN_END ? CTX_PIN_END : CTX_CONTEXT)'

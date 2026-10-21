@@ -5,9 +5,9 @@
 # (widths.c EM_E).
 SAB_ID="S1192-emptypath-end-pin-unmarked"
 SAB_FILE="src/facts/widths.c"
-SAB_SUITES="harness"
+SAB_SUITES="pfcollapse"
 SAB_DESC='the empty-path anchor mask gives \z mask 0 instead of EM_E'
-SAB_DOC_FIGURE='OWED (lane ctxp2e): reach measured by hand, see docs/dev/lanes/ctxp2e_report.md §5'
+SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, prefilter-collapse 1 failed / 70 passed (tests/base/nullable_anch.rxt reads 0 failed: answer-identical)'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='            case CTX_PIN_END:   return em_cat(acc, 1u << EM_E);'

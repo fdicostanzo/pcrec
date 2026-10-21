@@ -11,7 +11,7 @@ SAB_ID="S1176-ctx-row-frag-drops-fn"
 SAB_FILE="src/ir/nfa.c"
 SAB_SUITES="harness assertions"
 SAB_DESC='the NFA lowers ^/\A/\z (the context rows that read no membership) to an N_CTX state with truth function 0'
-SAB_DOC_FIGURE='OWED (lane ctxp2e): reach measured by hand, see docs/dev/lanes/ctxp2e_report.md §5'
+SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, tests/assertions/absolute.rxt 193 failed / 676 passed'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
 SAB_BEFORE='        st->ctxfn = a->u.ctx.fn;'
