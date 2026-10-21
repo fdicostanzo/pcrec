@@ -33,7 +33,7 @@ unchanged by them:
                         S-id, the range is full)
 
 usage:
-  python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
+  python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2; F = K35's table-side count)
   python3 -I conj.py witnesses < FLAGS<TAB>PATTERN lines       # one verdict per line
   python3 -I conj.py rarm PATTERNS.tsv.gz                       # default vs -fno-rev-end
 FLAGS: '-' or any of i (caseless), u (-e utf8), R (-fno-rev-end).
@@ -310,6 +310,31 @@ def census(sites_path, pats_path):
         print("why", *k, v)
     for k, v in sorted(cover.items(), key=str):
         print("cover", *k, v)
+    print("## F. [x0fix K35] cover_conj[] over EVERY census pattern at its own flags: the")
+    print("##    population counted FROM THE TABLE, not from the census's whole/ctx text classes")
+    fh, fc, fx = collections.Counter(), collections.Counter(), collections.defaultdict(list)
+    seen = {}
+    for p in pats:
+        fl = ("i" if p.get("icase") else "") + ("u" if p.get("enc") == "utf8" else "")
+        key = (fl or "-", p["pat"])
+        if key not in seen:
+            seen[key] = verdict(bytes.fromhex(p["pat"]).decode("latin-1"), fl or "-")[0]
+        why = seen[key]
+        inB = bool(p.get("whole") or (p.get("ctx_whole") and p.get("ctx_expr") == 1))
+        fh[(p["pop"], p["cfg"], why)] += 1
+        if why == "cover":
+            fc[(p["pop"], p["cfg"], "in-B" if inB else "outside-B")] += 1
+            if not inB and len(fx[(p["pop"], p["cfg"])]) < 4:
+                fx[(p["pop"], p["cfg"])].append(bytes.fromhex(p["pat"]).decode("latin-1")[:40])
+    for k, v in sorted(fh.items(), key=str):
+        print("all-why", *k, v)
+    for k, v in sorted(fc.items(), key=str):
+        print("all-cover", *k, v)
+    for k, v in sorted(fx.items(), key=str):
+        print("e.g. outside-B", *k, " ".join(repr(x) for x in v))
+    dc = collections.Counter(("utf8" if "u" in k[0] else "native") for k, w in seen.items() if w == "cover")
+    print("all-cover distinct (flags, pattern):", " ".join("%s=%d" % kv for kv in sorted(dc.items())),
+          "total=%d" % sum(dc.values()))
     print("## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:")
     print("##    exact_len is stated over the SENT sets, min(k, sent))")
     e = collections.Counter()

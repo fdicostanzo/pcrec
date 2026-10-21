@@ -1190,6 +1190,18 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
   stated-set check reads the union-narrowing statements RED and the per-thread slice
   green. The per-thread witnesses read `cover k=2` and are clean. X0 re-runs once R1/R2
   are ruled on, and at Z2 on the slice (`x0.py stated` takes any producer's sets).
+
+  **X0 RE-RUN on revision 2.2's reading** `[x0fix]` (lane `x0fix`, 2026-10-21, main
+  `63a7c3315`, libpcre2 10.46): **OWED**. The run is queued as boxqueue job
+  `530-x0fix-x0run` (log: `scripts/boxqueue status`; outputs in
+  `worktrees/x0fix/build/x0fix/out/`). The recount job is `300-x0fix-recount`. Passing
+  means 0 differences beyond U1 on every role, and every plant red where it reaches.
+  Measured before queueing, on a smoke population of the R1 and R2 items: every R1 item
+  now declines (`\Zx`, `\zx`, `[ab]*\z\W` at `entry-const`; `\w{0,2}?$\W` at
+  `no-eol-view`); `(a$\n)|ab` (both encodings) and the K1 witness `ab|a$\n` read
+  `S_1 = {b, \n}` with 0 differences; the new `plain-walk` plant turns all three red
+  (`under: [10]` at d = 1). The fresh agent that reads the verdicts replaces this
+  paragraph with the result.
 - **X1, the same oracle on the BUILT artifacts** (Z2's harness-routed builds and B1's
   default build): every `cover` artifact compiled, run against libpcre2 10.46 with the
   X0 subject families.
