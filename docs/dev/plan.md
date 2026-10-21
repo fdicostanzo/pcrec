@@ -180,7 +180,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-13 Frank
   status (2026-10-17): R17-b' B1+B2 landed on main (merge 0ec28bddd); R-23 landed (merge 3f04dff85, MF_SITE_ABI 14); B3 next; the grid2 harness is ready, its timed run in the evening quiet window; owners each own their pieces
   next: [REGIME-CORPUS] and [REGIME-EVAL] first; then [REGIME-TWIN]; D6 rounds on each design and result
-  refs: docs/design/regime_tables.md; decisions D157 D161 D162 D165 D166; [FINDALL-NEXT] [MEASURE-SET] [REGIME-LANDINGS] [UTF-RW]
+  refs: docs/design/regime_tables.md; decisions D157 D161 D162 D165 D166 D169; [FINDALL-NEXT] [MEASURE-SET] [REGIME-LANDINGS] [UTF-RW]
   Order: (1) [REGIME-CORPUS] real subjects + user questions; (2) [REGIME-EVAL] replay evaluator, pre-registered acceptance, held-out populations, failing-direction controls; (3) [REGIME-TWIN] the dispatch timed; (4) D6 critic rounds on designs and on results; (5) prerequisites in parallel: [FINDALL-NEXT] (D165), [REGIME-LANDINGS], [MEASURE-SET], the kit's R17-b′; (6) R17-b″ with F4/F7 and D165's parity gate; (7) official verdict: F5 Zen 1 + a bench run on targeted hardware (D144 add. 4). ACCEPTANCE (Frank 2026-10-13): looser bars are fine; outliers and some regression are accepted for a cleaner, clearer design. OWNERSHIP (Frank): the kit owns its rows, evaluator and twin; pcrec owns knowledge plumbing, arms and its own tables; each comments on the other's work.
   - [REGIME-CORPUS] STATE:started — REAL-WORLD SUBJECT CORPUS + a blinded "user" agent's questions
     filed: 2026-10-13 Frank
