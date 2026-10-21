@@ -27,6 +27,10 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   to argv as a Python `str`, which is re-encoded as UTF-8, so non-ASCII patterns
   compiled as different bytes (8 utf8-born corpus patterns read `exact`); the pattern
   now goes to argv as its own bytes.
+  REVISED FOR REVISION 2.2 (lane x0fix, 2026-10-21): C6 reads the EMITTED entry on both
+  arms (kvdfa's `Machine.entry`; X0's R1), the anchored machine comes from `machine()`,
+  and `CONJ_PLANT=plain-walk` (no S-id) drops the eol view's gated `\n` (X0's R2). The
+  `e0-row0` plant (S1140) now applies on both arms.
 - `conj.txt` — `conj.py`'s output (all four sections) at main `fa322a7f6` (rev 2.1).
   Against revision 2's run at `542b0cecb` it moves only by C2's retirement (B: every
   `no-start-site` row now reads `cover`) and by the three K1 witnesses (D); the admitted
