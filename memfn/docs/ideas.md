@@ -733,3 +733,11 @@ call restarts cold.
   main owns. The kit's interest is a fact: a batch entry lets the kit's
   find state be function-local. Relayed to main; discussion before any
   design.
+
+## 2026-10-21 — partial covers: a span need not be searched all or nothing (Frank)
+
+- Frank's example: `x\w\dabc\d{20}`. The span's front is costly, but a few bytes in it drops to cheap terms. Today's position grain already partly does this. The search reads one chosen position (here `x`, required byte `b`, run `abc`) and verifies the rest; `\w`/`\d` are never scanned. The 2-term rule (D169 add.) applies only to the byte SET at the position actually scanned.
+- The open half is at the SET grain: search a SUPERSET of the position's set that has fewer terms, then verify the exact set on each candidate. Example: `\w` = 4 terms (walk), but `[0-9]|[A-z]` = 2 terms admits only 5 extra bytes (`[\]^` and backquote), so it can route to V1. A 1-term hull `[0-z]` admits 12 extra bytes.
+- Trade-off: the false-candidate rate from the extra members, priced with the byte prior, against the term-count saving (grid2's per-shape V1 savings). Verification is already paid by the consumer, so a superset filter is sound for FIND, never for a REPORT proof.
+- Not built and not timed. Trigger: a measured set-FIND site of ≥ 3 terms whose ≤ 2-term superset adds a low-rate member set. Bench or grid cells would show it.
+- Frank's clarification (same day): the point is the V1-vs-walk decision. The term count need not be the span head's. The FIND can filter at a cheaper position a few bytes into the span, where the set has ≤ 2 terms, so V1 applies. It then verifies the costly head positions per candidate. Shape: price the scan POSITION by the form its set would take (V1 at ≤ 2 terms, else the walk) together with its rate, not by rate alone. Who picks: the kit has RQ-2's position ranking (rates) and the per-position sets; the offset-skip FIND already scans at offset k. Open fact to check before any design: whether every set-FIND site the B4 manifest routes to the walk has a ≤ 2-term position within its span.

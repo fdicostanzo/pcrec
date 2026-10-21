@@ -3907,6 +3907,16 @@ set (a DFA hat's T), arm `candoracle`: the trace build's asked-class hold
 (`cand_asked_hold`) aborts where the define's class differs. S1086-S1088 are
 allocated to fdb2 and unused. Figures: `docs/dev/lanes/fdb2_report.md` §10.
 
+**S1221-S1226 (lane r26z1fix, 2026-10-21, [MEMFN] R-26 Z1; kit_proof.md
+§3-§4):** the kit-side rows, one per `tests/memfn/run_proof.sh` plant (the
+same FROM/TO text): S1221 the class proves one position past each RUN term;
+S1222 a SATISFIES context item rendered as FAILS (candidate dropped); S1223
+every context item rendered SATISFIES (candidate yielded); S1224 a proof bit
+set only when the policy allows SIMD (C-PROOF); S1225 an OPTIONAL SET term
+tests one member fewer; S1226 an UNSTATED `absent` accepted. All arm
+`memfnfinder` (part `proof`). Mech figures OWED to the job
+500-kit-r26z1-heavy; `docs/dev/lanes/r26z1_report.md` §9.
+
 **S917, S919, S921, S1018-S1020, S1025 (lane fdb1, 2026-10-16, [MEMFN] R17-b′
 B1; r17b_prime.md rev 3 §8.3):** the B1 rows of S911-S922 and SN-1..SN-9
 (SN-k = S(1016+k)). S917 an absent set key read as 0 (`fd_lookup`), S919 an

@@ -128,6 +128,17 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
  * least term offset (d_min, the span's beginning: 0 at offset 0, -1 for
  * MLINE's predecessor term), overshoot 0. */
 void pcrec_memfn_window_is_candidate(mf_pred *p);
+/* [MEMFN] R-26.1/R-26.2 (MF_SITE_ABI 18; kit_proof.md §4.1, §7's Z1 row):
+ * a forward FIND's predicate is SPAN 0 or a CONTEXT STOP, and each states its
+ * class's facts. span0_today: BOUNDED, prefix_stated STATED, exact_len 0,
+ * consumable_len 0 (today's truth: no exactness is stated yet, a sound
+ * under-statement). context_stop: site `s`'s predicate, every term below the
+ * candidate (MLINE's `{\n}` at -1), is CONTEXT with absent FAILS (no byte
+ * before the subject start, no candidate there: the attempt loop's edge
+ * attempt covers it) and consumable NO, and the site's read_floor SUBJECT
+ * (its reads below the origin go down to offset 0). */
+void pcrec_memfn_span0_today(mf_pred *p);
+void pcrec_memfn_context_stop(mf_site *s);
 
 /* The answering block's provenance stanza onto `p` (R-24, MF_SITE_ABI 15):
  * `p->bytes` is the block's `provenance bytes` row (0 when it declares none)

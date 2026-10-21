@@ -185,7 +185,8 @@ typedef struct {
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
     [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
-    [FLD_moved] = MF_ANY,
+    [FLD_moved] = MF_ANY, \
+    MF_SERVES_PROOF_TODAY
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -397,6 +398,12 @@ static int kind_cl(uint8_t k)
     case MF_SK_HYB_PF:      return CL_HYB_PF;
     case MF_SK_VM_ATTEMPT:  return CL_VM_ATTEMPT;
     case MF_SK_DFA_ATTEMPT: return CL_DFA_ATTEMPT;
+    /* R-26.3 (MF_SITE_ABI 18): REPORT has no class of its own (the class
+       space is full, fields.def). OTHER is in no row's kinds (KD_ALL), so
+       the gate declines every row on a REPORT site (R2, naming `site_kind`):
+       the table admits REPORT where a REPORT row exists, and none does
+       before R-26.6, whose row needs the mask widened for its class */
+    case MF_SK_REPORT:      return CL_OTHER;
     }
     return CL_OTHER;
 }

@@ -61,9 +61,36 @@
  * the kit call, so every fixture keeps its description; a site with no
  * terms, or that states a window itself, is passed unchanged. The window
  * cases (seq_case) call the kit on the site as written. */
+/* MF_SITE_ABI 18 (R-26.1/R-26.2): a forward FIND's predicate STATES its class
+ * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_today,
+ * pcrec_memfn_context_stop): a context stop (every term below the candidate)
+ * is CONTEXT, absent FAILS, consumable NO, with the site's read_floor
+ * SUBJECT; every other one is span 0, BOUNDED with its prefix facts stated
+ * as today's truth (exact_len 0). A site that states a class itself is
+ * passed unchanged. */
+static void fx_span0(mf_site *w)
+{
+    if (w->op != MF_OP_FIND || w->reverse || !w->pred.nterm || w->pred.span_class) return;
+    int below = 1;
+    for (unsigned i = 0; i < w->pred.nterm && i < MF_MAX_TERM; i++) {
+        const mf_term *t = &w->pred.term[i];
+        if (t->offset + (t->kind == MF_T_RUN ? (int32_t)t->run_len : 1) > 0) below = 0;
+    }
+    if (below) {
+        w->pred.span_class = MF_SPAN_CONTEXT;
+        w->pred.absent = MF_ABSENT_FAILS;
+        w->pred.consumable = MF_CONSUMABLE_NO;
+        if (!w->read_floor) w->read_floor = MF_FLOOR_SUBJECT;
+    } else {
+        w->pred.span_class = MF_SPAN_BOUNDED;
+        w->pred.prefix_stated = MF_PREFIX_STATED;
+    }
+}
+
 static mf_site fx_win(const mf_site *s)
 {
     mf_site w = *s;
+    fx_span0(&w);
     if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
         int32_t d = w.pred.term[0].offset;
         for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
@@ -872,7 +899,9 @@ static void seq_case(const char *name, const mf_site *s, const mf_hooks *hd,
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     mf_result res = { 0 };
     uint32_t h = 0;
-    int rc = mf_define(art, s, hd, &sd, &h);
+    mf_site sc = *s;
+    fx_span0(&sc);          /* the window cases state span 0 as pcrec does */
+    int rc = mf_define(art, &sc, hd, &sd, &h);
     for (const char *o = ops; !rc && *o; o++)
         rc = *o == 'L' ? mf_locals(art, h, hl, &su)
            : *o == 'U' ? mf_use(art, h, hu, &su, &res)

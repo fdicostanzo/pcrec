@@ -9,7 +9,12 @@
  *
  *   FIND / SKIP   one loop over [lo, n - end_back), forward or reverse; a
  *                 candidate is a hit iff every term holds AND every byte a
- *                 term reads lies in [floor, n) (rule 2, §14.7)
+ *                 term reads lies in [floor, n) (rule 2, §14.7). A FIND's
+ *                 context spans (R-26.2, MF_SITE_ABI 18: `ctx`, and a context
+ *                 stop's own `pred`) join the conjunction under their
+ *                 `absent` rule: SATISFIES also holds where the item reads
+ *                 outside the subject. This row is the only one that tests
+ *                 them before R-26.6
  *   VERIFY        the conjunction at cand == lo, behind the range test
  *                 `lo + end_back < n` unless the site's `empty` is EXCLUDED
  *                 or the caller guards it (F1: the range is the site's, and
@@ -53,6 +58,10 @@ typedef struct {
     const char     *miss;              /* the miss value's text               */
     int             has_floor;         /* hooks->floor is given and not "0"   */
     unsigned        used;              /* PARAM_* the text actually reads     */
+    int             own_sets;          /* test SET terms with the kit's own
+                                          range test, never the member hook
+                                          (a `ctx` entry's: the hook numbers
+                                          the site's own terms only)          */
 } rctx;
 
 /* An arena string "<base><suffix>". */
@@ -132,7 +141,7 @@ static int set_test(kb *b, const uint8_t set[32], const char *byte)
 static int member_test(rctx *rc, kb *b, const mf_term *t, uint32_t id,
                        const char *byte)
 {
-    if (rc->h && rc->h->member) {
+    if (!rc->own_sets && rc->h && rc->h->member) {
         const char *m = rc->h->member(rc->h->u, id, byte);
         kb_printf(b, "(%s)", m ? m : "0");
         return 1;
@@ -212,6 +221,62 @@ static int pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
     return reads;
 }
 
+/* R-26.2 (MF_SITE_ABI 18): a CONTEXT predicate's verdict at `cand` under its
+ * `absent` rule. FAILS is pred_test's conjunction unchanged (a read outside
+ * the subject fails its term: the text every row renders for a context stop
+ * today). SATISFIES holds as well wherever some read of the item lies
+ * outside the subject [0, n): `(!(every read inside) || conjunction)`. A read
+ * inside the subject is decided by its byte; one below a stated `floor` (the
+ * caller's read limit, §14.7) fails, as every read there does. */
+static int ctx_pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
+                         const char *cand)
+{
+    if (p->span_class != MF_SPAN_CONTEXT || p->absent != MF_ABSENT_SATISFIES)
+        return pred_test(rc, b, p, pidx, cand);
+    int first = 1;
+    kb_puts(b, "(!(");
+    for (unsigned t = 0; t < p->nterm; t++) {
+        const mf_term *tm = &p->term[t];
+        long off = tm->offset, len = tm->kind == MF_T_SET ? 1 : (long)tm->run_len;
+        if (off < 0) {
+            and_sep(b, &first);
+            kb_printf(b, "%s >= %ld", cand, -off);
+        }
+        if (off + len > 0) {
+            and_sep(b, &first);
+            at(b, cand, off + len);
+            kb_printf(b, " <= %s", rc->N);
+            rc->used |= PARAM_N;
+        }
+    }
+    kb_puts(b, first ? "1) || " : ") || ");
+    pred_test(rc, b, p, pidx, cand);
+    kb_puts(b, ")");
+    return 1;
+}
+
+/* The site's own predicate at `cand` (span 0, or a context stop) AND every
+ * `ctx` entry (R-26.2: the site's candidates are those where all of them
+ * hold, each under its `absent`); any other predicate is ctx_pred_test's
+ * alone. With no `ctx` entry the text is the predicate's, unchanged. */
+static int site_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
+                     const char *cand)
+{
+    const mf_site *s = rc->s;
+    if (p != &s->pred || !s->nctx || !s->ctx) return ctx_pred_test(rc, b, p, pidx, cand);
+    kb_puts(b, "(");
+    int reads = ctx_pred_test(rc, b, p, pidx, cand);
+    int own = rc->own_sets;
+    rc->own_sets = 1;
+    for (unsigned i = 0; i < s->nctx; i++) {
+        kb_puts(b, " && ");
+        reads |= ctx_pred_test(rc, b, &s->ctx[i], 0, cand);
+    }
+    rc->own_sets = own;
+    kb_puts(b, ")");
+    return reads;
+}
+
 /* RULED Q-R7-1 (MF_SITE_ABI 6): a READS-BELOW FIND (memfn.h's MF_OP_FIND),
  * one whose every term reads below its candidate, is bounded by its reads:
  * c <= n and c + d <= n, d = max(0, end_back + E), E the largest
@@ -243,7 +308,7 @@ static void find_loop(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
     int rd = p == &rc->s->pred ? reads_below_d(rc->s) : -1;
     kb test;
     kb_init(&test, rc->art->a);
-    pred_test(rc, &test, p, pidx, cand);
+    site_test(rc, &test, p, pidx, cand);
     const char *t = test.p ? test.p : "(0)";
     rc->used |= PARAM_N | PARAM_LO;
     if (rd >= 0 && !rev) {
@@ -506,7 +571,7 @@ static int stmt_on_cand(rctx *rc, kb *b)
 
     kb test;
     kb_init(&test, rc->art->a);
-    pred_test(rc, &test, &s->pred, 0, C);
+    site_test(rc, &test, &s->pred, 0, C);
     if (h->on_cand_reach) {
         kb_printf(&test, " && %s + %u <= %s", C, h->on_cand_reach, rc->N);
     }
@@ -843,7 +908,10 @@ static const gate_contract generic_ct = {
     [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
     [FLD_indent]          = MF_ANY,     /* :390, :489, :566 */
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
-    MF_SERVES_WINDOW_TODAY
+    MF_SERVES_WINDOW_ONLY
+    MF_SERVES_PROOF_ANY
+    [FLD_ctx]             = MF_ANY,     /* site_test: every entry, ` && `-joined (R-26.2) */
+    [FLD_absent]          = MF_ANY,     /* ctx_pred_test: FAILS and SATISFIES */
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
     [FLD_fold_kind]       = MF_ANY,     /* mm_render: NONE exact, else the fold text */
     [FLD_ref]             = MF_ANY,     /* mm_render parenthesizes a non-identifier */

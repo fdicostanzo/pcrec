@@ -2760,3 +2760,41 @@ the compiler, and is never adopted silently. Proposed for main to file
 - notice: 2026-10-21 — **FRANK RULING (for main to file; proposed text as an addendum to D169): Q-R17P-26 is answered.** "A set site's form is chosen by its cover's TERM COUNT, a compile-time fact: V1 for at most 2 terms, the walk for 3 or more. That is grid2's measured trend over all nine timed shapes (V1 +1..+55% at 1-2 terms, -13/-41/-46% at 3). An untimed combination routes by its term count and needs no per-shape key first. B4's acceptance measurement confirms the rule on the shapes it moves; a contradicting shape is a finding, not a default." r17b_prime rev 4.1 applies it (R7 and R7w, §1.9, §9.2a's population).
 - notice: 2026-10-21 — **FRANK RULING (for main to file with the term-count addendum): Q-R17P-27 YES.** "The VM hat's one-byte attempt search (F2) defaults to V1 at B5, not B4, with its dense g = 2 cells (V1 -38%) named as expected losses up front. It is D169's landing trade (V1 +33..+54% at g >= 8)." The kit's call on Q-R17P-28: P1 recorded as fired on the letter, not built (it never fires on a default compile; D77).
 - notice: 2026-10-21 — **r17b_prime rev 4.1 on lane/memfn-b4** (docs only; reports `docs/dev/lanes/rev41_report.md`): Frank's two 2026-10-21 answers and the kit's P1 call applied. R7 now routes set sites by cover term count via the derived key `kit.terms.V1max` = 2 (§5.2; source grid2read §3.2). All §7.3 questions are ANSWERED. B4's gates are unchanged: E8 and M0 NOT MET; the OWED list stands (quiet re-time, V1-text attribution, walk byte compare, mover manifest regenerated, now also giving the 54 no-key sites' term-count split, and the expected-loss list).
+- ack: 2026-10-21 — **R-26 (kit_proof U1), Frank's build go.** Branch `lane/memfn-r26` (cut from main d970abbbc). Staged per kit_proof.md §7: **Z1** (R-26.1-R-26.5, zero movers, one `MF_SITE_ABI` event 17→18) goes to one opus lane now; **Zk** (R-26.6, REPORT row UNROUTED + `mf_preview`) follows on the same branch once Z1 is reviewed, because both edit `finder.c`'s gate and the REPORT kind is R-26.3's. Heavy validation (emit_sweep all arms, mech on the kit-side ids, make test) goes through `scripts/boxqueue` in the kit band. Kit-side sabotage ids: I will ask main for a block when Z1's plants are written. Note for the merge: this file also gains notices on `lane/memfn-b4` (unmerged); both branches only append, so the conflict is end-of-file order only.
+- notice: 2026-10-21 — **Frank's build go to the kit (direct): "Ok to proceed through sections 1-3 of work as described above".** The sections are:
+  - (1) R-26 Z1 then Zk;
+  - (2) R17-b′ B4's five pre-brief OWED items (r17b_prime §3.1a), starting now in a lane, and then B4 itself once its gates hold (M0, E8);
+  - (3) B5, B6, B7 and B9 as r17b_prime §3.1 orders them.
+  - Proposed plan-row note for [MEMFN] / [KIT-VERIFY]: "Build go 2026-10-21 (Frank, to the kit): R-26 Z1/Zk; R17-b′ B4 prep, then B4 behind its gates (M0, E8), then B5-B9. Gates unchanged."
+  - This lifts no gate. Each byte-moving step still arrives as a delivery with its own abi event, and main merges it.
+- notice: 2026-10-21 — **R-26 Z1 built, reviewed, fixes in flight (not yet `done:`).** Lane `lane/memfn-r26z1` @ 58cc1b9ed, report `docs/dev/lanes/r26z1_report.md`. MF_SITE_ABI 17→18 and MF_CLASS_V 4→**5** (B3b had already used 4). No pcrec abi event; zero movers so far on the plain and rwquest arms. Findings for main:
+  - **F-3, the soundness fix: the design text is yours to amend.** A wide SATISFIES context item does not prove an inner offset. Where a read of the item lies outside the subject, the other bytes are unconstrained. So `kit_class` proves only the item's outermost position: the lowest below the candidate, the highest after span 0, nothing when it straddles. kit_proof.md §4.2's "the proven positions are a SUPERSET of the REQUIRED ones" holds only for width-1 SATISFIES items. Stage 1 sends width-1 items only, so B1's population is unaffected. Proposed §4.2 wording: "…a superset of the REQUIRED ones for width-1 items; a wider SATISFIES item proves only its outermost position (below the candidate: its lowest offset; after span 0: its highest; straddling: none)."
+  - **Kit contract rulings (mine), for the record:**
+    - Q2: a forward FIND's span-0 class must be STATED, BOUNDED or CONTEXT.
+    - Q3: a REPORT site needs a BOUNDED span 0.
+    - Q4: `MF_FLOOR_LO` is refused with ANY term below the origin, not only CONTEXT terms (a negative-offset BOUNDED span is the same case).
+
+    pcrec states none of these today (zero movers).
+  - **F-4, being fixed inside the same MF_SITE_ABI 18 event:** `mf_consumer`'s zero was MF_C_RESULT. It gains an UNSTATED zero, refused where it is read, and pcrec's builders will state their consumer explicitly.
+  - **F-2, owed to Zk:** the kit's field space (64) and class space (64) are both full. Zk widens the mask before its REPORT row.
+  - **Then:** S1221-S1226 become mech rows. The heavy validation (nine emit_sweep arms, mech, make test) will be re-queued as `500-kit-r26z1-heavy` after the fix lane.
+- notice: 2026-10-21 — **Please file one plan row (Frank, to the kit: "file these as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit").** Proposed row:
+  `- [MEMFN-POSCOST] STATE:not-started — price a set-FIND's scan position by the form its set takes, plus superset covers`
+  - filed: 2026-10-21 (Frank, kit session).
+  - next: the B4 build goes ahead as agreed. Neither refinement is built now.
+  - trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a ≤ 2-term position within their span, and grid/bench timing shows the gain.
+  - The B4-prep closing lane takes the count from the manifest.
+  - charter, part 1: a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate. The scan position is priced by rate and by the form its set takes (V1 at ≤ 2 terms, `kit.terms.V1max`), not by rate alone.
+  - charter, part 2: a ≥ 3-term set may be searched through a ≤ 2-term SUPERSET filter, then verified exactly. For example, `\w` through `[0-9]|[A-z]` admits 5 extra members. This is a FIND filter only; it never proves anything for a REPORT site.
+  - refs: memfn/docs/ideas.md 2026-10-21; r17b_prime.md §1.3a R7/R7w.
+- notice: 2026-10-21 — **A third part for [MEMFN-POSCOST] (Frank: "we may run into similar questions when verifying an entire span").** Please append to the row's charter:
+  > (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not in pattern order. Each position takes its cheapest exact test: a word compare over literal runs, or a set test, possibly a superset test first. Proven offsets are skipped, as R-14's trim already does.
+
+  The fact behind it: ofsskip's `verify_chain` tests terms ascending by offset (pattern order). K82/R-1 already showed that lead order is part of the form's cost. Trigger: the same survey plus a verify-cost reading on dense-candidate cells. Nothing is built.
+- done: 2026-10-21 — **R-26.1-R-26.5 (kit_proof Z1): READY TO MERGE.** Branch `lane/memfn-r26` @ 50c6f2f26 (the merge of `lane/memfn-r26z1` @ d78a1453d into the kit branch, which also carries main 4c46ddcba). Report: `docs/dev/lanes/r26z1_report.md` (§9 covers the review fixes). MF_SITE_ABI 17→18, MF_CLASS_V 4→5. **No pcrec abi event, no pcrec byte moved.**
+  - Heavy validation ran as boxqueue job `500-kit-r26z1-heavy` (verdict GREEN) at d78a1453d, against base cc4f87ad3. Logs: `worktrees/r26z1/build/r26/heavy/`.
+  - emit_sweep, nine arms: plain, comments, simd, utf8, vm, start, rwquest, variant and trace all exit rc 0. The direct arms read movers=0 asymmetric=0. The paired arms read identical ref/working differ counts.
+  - mech, one call: S1221-S1226 and S1083 all DETECTED (7 rows; 0 unexpected/undetected/unreached/anomalies).
+  - make test via perfrun: rc 0, class green, uncontaminated, no `*** [test-` lines.
+  - The merge into the kit branch added only the lanes index line; `make strict` is clean.
+  - Merging this onto main conflicts only in the append-only docs.

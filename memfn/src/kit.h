@@ -186,13 +186,32 @@ static inline int32_t kit_d_min(const mf_pred *p)
  * storage, states its own. R17-b' B1 (MF_SITE_ABI 12) adds the two facts
  * R-19 states on every site: no row born before B1 reads the call mode or
  * the START hook, so each renders the same for any value of either. */
-#define MF_SERVES_WINDOW_TODAY \
+#define MF_SERVES_WINDOW_ONLY \
     [FLD_window_stated]   = CM(YES), \
     [FLD_move_back]       = CM(D_MIN), \
     [FLD_overshoot]       = CM(ZERO), \
     [FLD_decl_point]      = MF_ANY, \
     [FLD_body]            = MF_ANY, \
     [FLD_start]           = MF_ANY,
+/* R-26 (MF_SITE_ABI 18): no row born before it reads span 0's prefix facts,
+ * a context predicate's `consumable` or the site's `read_floor` (facts for a
+ * choice, never an obligation on a form), so each serves every value; none
+ * tests a `ctx` entry, and each renders a context stop's `absent` FAILS (a
+ * read outside the subject fails its term), so each serves only NONE and NO
+ * there. The generic row states its own (it tests both). */
+#define MF_SERVES_PROOF_ANY \
+    [FLD_prefix_stated]   = MF_ANY, \
+    [FLD_exact_len]       = MF_ANY, \
+    [FLD_consumable_len]  = MF_ANY, \
+    [FLD_consumable]      = MF_ANY, \
+    [FLD_read_floor]      = MF_ANY,
+#define MF_SERVES_PROOF_TODAY \
+    MF_SERVES_PROOF_ANY \
+    [FLD_ctx]             = CM(NONE), \
+    [FLD_absent]          = CM(NO),
+#define MF_SERVES_WINDOW_TODAY \
+    MF_SERVES_WINDOW_ONLY \
+    MF_SERVES_PROOF_TODAY
 
 /* ---- the per-artifact state ---------------------------------------------- */
 
