@@ -22,7 +22,7 @@ text is marked `[rev4.1]`; superseded rev 4 text is struck through or noted, nev
 | §0 item 2: the "R7 only where the shape has a measured key" bullet struck and replaced; the `[rev4]` R0 bullet re-pointed at the term-count rule; the §0 step table's B4 row | §0 |
 | §R4's rows for the default, R0 and R7 gain strikes and notes | §R4 |
 | Rev 3's rows 16 and 17 (R7, R7w) and the "R7 is gated on a measured key" note are marked superseded | §1.3 |
-| R7 (row 12): fact is the cover's term count ≤ 2; the nine shape keys are in the evidence column and no row reads them; `basis` is UNMEASURED-DEFAULT by the self-check's rule (R7 reads no key, as D1), the constant 2 labelled in place (D149) | §1.3a row 12 |
+| R7 (row 12): fact is the cover's term count ≤ 2; R7 reads the derived key `kit.terms.V1max` = 2 (§5.2); `basis` DERIVED by the self-check's rule | §1.3a row 12 |
 | R7w (row 13): reached for ONE reason (≥ 3 terms); the "measured-loss / unmeasured" bullets struck; the no-cover case (no V1 form to route to) stated; how the rule is held honest | §1.3a row 13 and notes |
 | The R0 note's "R7's per-shape comparator" sentence re-pointed at the count | §1.3a notes |
 | The §1.8 row-edit log sentence names rev 4.1's edits | §1.8 |
@@ -80,11 +80,17 @@ text is marked `[rev4.1]`; superseded rev 4 text is struck through or noted, nev
 Nothing was impossible. These are judgment points inside the instructions:
 
 1. **The threshold's home.** The ruling says "term count, a compile-time fact". The table's
-   convention is that thresholds are set keys. I kept the constant `2` as a literal in R7's
-   row, labelled in place (D149) as a trend over nine timed shapes, and set R7's `basis` to
-   UNMEASURED-DEFAULT by the same self-check rule D1 uses (a row that reads no key). I did
-   not invent a derived key. If the kit manager prefers a derived `kit.terms.V1.WALK.max`
-   read from the nine keys, it is a one-row edit.
+   convention is that thresholds are set keys. I first kept the constant `2` as a literal in
+   R7's row and set `basis` to UNMEASURED-DEFAULT (a row that reads no key, as D1). That
+   misstated the basis: the cutoff is MEASURED, drawn from grid2read §3.2's nine shapes (V1
+   wins on every 1-2 term shape, loses on every 3+ term shape). At the manager's review the
+   key route was taken instead: the derived key `kit.terms.V1max` = 2 is defined in
+   r17b_prime §5.2 (provenance, the nine savings, confidence: the (2,0,1) and (3,1,0) values
+   PROVISIONAL, their signs not), R7 reads it, and R7's `basis` is DERIVED by the self-check's
+   rule for a derived key (§1.2; the manager's brief said MEASURED, the note's own rule
+   spells it DERIVED, since MEASURED is for keys read straight from a set). The note has no
+   key file and `grid2read/keys.tsv` is SHA256SUMS-pinned, so the key lives in the note's
+   text, not a new tsv.
 2. **Term counts of the losers.** The ruling says "-13/-41/-46% at 3". By the shape
    notation (RANGE, EQ, CUBE), (2,0,1) is 3 terms but (3,1,0) and (3,0,1) are 4 each. The
    rule ("3 or more") is unaffected; the note records 3, 4 and 4.
@@ -103,7 +109,7 @@ Nothing was impossible. These are judgment points inside the instructions:
 |---|---|
 | Read BOILERPLATE, memfn/CLAUDE.md, the rulings (journal + two notices) | done |
 | Worktree `worktrees/rev41` on `lane/memfn-rev41` from `lane/memfn-b4`; first command printed the toplevel | done |
-| Q-R17P-26: R7 on term count; per-shape keys kept as evidence | done (§1.3a row 12, §5.2a) |
+| Q-R17P-26: R7 on term count; threshold a derived key | done (§1.3a row 12, §5.2) |
 | R7w loses its "shape with no key" reason | done (§1.3a row 13) |
 | §1.9 default-table row naming Q-R17P-26 | done |
 | §1.3a rows | done |

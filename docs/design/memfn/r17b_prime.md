@@ -229,7 +229,7 @@ grid2read_report.md`. Every number is rev 4's, unchanged; no new measurement.
 
 | change | rev 4 | rev 4.1 | where |
 |---|---|---|---|
-| **R7 keys on TERM COUNT** (Q-R17P-26) | fires where the cover's shape has a measured saving key > eps; an unmeasured shape does not hold | fires where the cover has **at most 2 terms** (range + eq + cube terms, a compile-time fact the kit builds). The nine per-shape saving keys stay as the EVIDENCE the rule is drawn from; no row reads them | §1.3a row 12, §1.3 row 16 note, §5.2a M1-M5, §8.3 |
+| **R7 keys on TERM COUNT** (Q-R17P-26) | fires where the cover's shape has a measured saving key > eps; an unmeasured shape does not hold | fires where the cover has **at most 2 terms** (range + eq + cube terms, a compile-time fact the kit builds). The threshold is the derived key `kit.terms.V1max` = 2 (§5.2), drawn from the nine per-shape saving keys' signs; R7 reads that key, not the nine | §1.3a row 12, §1.3 row 16 note, §5.2 (the key), §5.2a M1-M5, §8.3 |
 | **R7w loses its "no key" reason** | reached for two reasons: measured-loss and unmeasured | reached for ONE: the cover has **3 or more terms** (the three measured losers are 3, 4 and 4 terms; an untimed combination routes by its count) | §1.3a row 13 and notes, §1.3 row 17 note |
 | §1.9 default table | a shape with NO measured key → WALK until Q-R17P-26 is ruled | the row is replaced: such a shape routes by its term count, like every other | §1.9 table |
 | the 54 no-key sites | stay on R7w, pending Q-R17P-26 | route by term count. Their split between V1 and the walk is OWED to the REGENERATED mover manifest (§3.1a item 4); this revision does not compute it | §3.5, §9.2a, §3.1a item 4 |
@@ -705,7 +705,7 @@ key.
 | 9 | D1c `context-1b` | P | all | DFA_ATTEMPT | no span 0 ∧ one context predicate of one byte | LIBC back | — | none | UNMEASURED-DEFAULT | B2 (locked) | §3.7 (o-back: LIBC regret +208% at g = 2, best elsewhere) |
 | 10 | D1w `walk-1b` | P | all | every kind but DFA_ATTEMPT | one member | WALK | — | none | UNMEASURED-DEFAULT | B2 (locked) | D169 keeps it until F2 |
 | 11 | D2 `run` | P | all | all | span 0 is a RUN term | RUN | — | the nested table's | UNMEASURED-DEFAULT | B3b (locked) | not timed |
-| 12 | R7 `liner` | P,A (+I at w16/w32) | all | all | ~~`kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.streamed.slope` (an ABSENT key does not hold)~~ `[rev4.1]` the cover's TERM COUNT ≤ 2 (range + eq + cube terms of the cover `pf_terms_mask` builds; a compile-time fact, so an untimed combination needs no key first). The constant 2 is the sign change across grid2's nine timed shapes (evidence column); it is written in the row, not read from a key | the layer's LINER form: V1 at OFF; W64 at W16/W32 where built (B6) | — | the FORM denies (`pf-terms-mask` at B4) | ~~DERIVED~~ `[rev4.1]` UNMEASURED-DEFAULT by the self-check's rule (R7 now reads no key, as D1 reads none); the constant 2 is labelled in place (D149) as a trend over nine timed shapes, Q-R17P-26 | B4 | §3.2 (the evidence the rule is drawn from; V1 vs the walk): saves for 1-2 terms: (1,0,0) +0.420, (0,0,1) +0.548, (2,0,0) +0.012, (0,1,1) +0.268, (0,2,0) +0.390, (1,1,0) +0.211; loses for 3 or more: (2,0,1) −0.133 (3 terms), (3,1,0) −0.413 (4), (3,0,1) −0.464 (4). `[rev4.1]` The rule is V1's (grid2 timed V1 against the walk); B6 decides the W64 form's own condition |
+| 12 | R7 `liner` | P,A (+I at w16/w32) | all | all | ~~`kit.saving.<LINER(layer)>.WALK.<shape>` > `kit.eps.streamed.slope` (an ABSENT key does not hold)~~ `[rev4.1]` the cover's TERM COUNT ≤ 2 (range + eq + cube terms of the cover `pf_terms_mask` builds; a compile-time fact, so an untimed combination needs no key first). The threshold is the derived key `kit.terms.V1max` = 2 (§5.2; the sign change across grid2's nine timed shapes); an ABSENT key does not hold, so R7 falls to R7w | the layer's LINER form: V1 at OFF; W64 at W16/W32 where built (B6) | — | the FORM denies (`pf-terms-mask` at B4) | DERIVED `[rev4.1]` (the self-check's rule: R7 reads a derived key, `kit.terms.V1max`, drawn from nine MEASURED shapes) | B4 | §3.2 (the evidence the rule is drawn from; V1 vs the walk): saves for 1-2 terms: (1,0,0) +0.420, (0,0,1) +0.548, (2,0,0) +0.012, (0,1,1) +0.268, (0,2,0) +0.390, (1,1,0) +0.211; loses for 3 or more: (2,0,1) −0.133 (3 terms), (3,1,0) −0.413 (4), (3,0,1) −0.464 (4). `[rev4.1]` The rule is V1's (grid2 timed V1 against the walk); B6 decides the W64 form's own condition |
 | 13 | R7w `walk-default` | P | off | all | always | WALK (main's form) | — | none | UNMEASURED-DEFAULT (it reads nothing; `[rev4.1]` it is reached for ONE reason, below) | B4 | `[rev4.1]` covers of 3 or more terms: the three measured losers, and any untimed combination by its count. ~~the three losing shapes (measured); shapes with no key (Q-R17P-26)~~ |
 
 Notes on the rev 4 table:
@@ -740,8 +740,8 @@ Notes on the rev 4 table:
     3-term shape that wins, or a 2-term shape that loses) is a FINDING, reported with
     its cells, not a default to shrug off (§9.2 item 2, §9.4).
   The self-check needs no change: R7w reads nothing, so its `basis` stays
-  UNMEASURED-DEFAULT. `[rev4.1]` R7 now reads no key either, so its `basis` is
-  UNMEASURED-DEFAULT too, with the constant labelled in place (row 12).
+  UNMEASURED-DEFAULT. `[rev4.1]` R7's `basis` is DERIVED: it reads the derived key
+  `kit.terms.V1max` (row 12), not a bare literal.
 - **`SF_E_REGULAR` is a PROPOSED site fact, not built.** It says the landings are
   regular. Its home is the analysis object, as a new [FINDINGS] query kind (proposed
   `landing-regime`, values `regular` / `irregular`, UNSTATED zero) in `find_queries[]`,
@@ -1950,6 +1950,20 @@ read by `gridread.py` @ 540649453). Citations "§x" are to gridread_report.md.
   once grid2 measures them, M19/M20, which is exactly why R1's applicability is row data
   and not key absence), `kit.block.W64` (R2; M11), `kit.dom.<f>.LIBC.<kind>` (F1; M19-M21),
   `kit.lstar`/`kit.g8` (R8). B4's check runs a synthetic set holding every one of them.
+  `[rev4.1]` One more, **`kit.terms.V1max`** (R7; Q-R17P-26): the largest cover term count
+  n such that every timed shape of at most n terms has a V1 saving above the null floor and
+  the next count up loses. Its value is **2**, derived from grid2read §3.2's nine shapes
+  by the stated rule: 1-2 terms save (+42.0% (1,0,0), +54.8% (0,0,1), +1.2% (2,0,0),
+  +26.8% (0,1,1), +39.0% (0,2,0), +21.1% (1,1,0)); 3 and 4 terms lose (-13.3% (2,0,1),
+  -41.3% (3,1,0), -46.4% (3,0,1)). Provenance grid2read §3.2 (an. 4, 4b, 4c). Confidence:
+  the (2,0,1) and (3,1,0) VALUES are PROVISIONAL (load-suspect cells, re-time OWED, §3.1a
+  item 1) but their SIGNS are not in doubt, and the key reads only signs. The note has no
+  key file of its own and grid2read's `keys.tsv` is pinned by its SHA256SUMS, so the key
+  is stated here, in §5.2's list of derived keys, with the rule above as its derivation
+  (a one-line reduction over the nine saving keys' signs; the converter adds it to the
+  derived set at B4). R7's `basis` is DERIVED by the self-check's rule (§1.2). A re-time
+  that flipped a sign would move the key, and that is a default-set change with its census
+  (§10 item 3).
 - **INTERPRETATION, recorded so the arm is built (not a value any row reads):** grid1's
   EXT arms put the DFA's own per-byte step at 0.1885 ns/B (armread), within 0.4% of u.
   So on a DFA consumer NONE costs about what WALK costs per byte, and its saving against
@@ -2723,9 +2737,9 @@ filled in before E5's pre-registration, and the judge (held-out) is what can ref
    - `[rev4]` **From B4, under §1.3a:** ~~a new default set can flip a shape's R7 verdict
      either way (the six winning and three losing keys), and a newly measured shape
      moves its sites from R7w to V1.~~ `[rev4.1]` R7 reads no key now, so a regenerated
-     default set does NOT move R7's verdicts; the nine saving keys are evidence for the
-     rule's constant (2), and re-measuring them can only reopen that constant, which is a
-     row edit (a ruled diff with its census, §1.8), not a data regeneration. A landing-regime kind, when built, moves R5's
+     default set moves R7's verdicts only through `kit.terms.V1max` (derived from the nine
+     saving keys' signs); a regenerated set whose signs keep the same sign change moves
+     nothing, and one that flips a sign moves that key, a default-moving event with its census. A landing-regime kind, when built, moves R5's
      sites to the walk: a default-moving event with its census. There are no dispatch
      literals and no R0 verdicts any more.
    - **From B4:** a new DEFAULT set moves the dispatch literals, R0's verdict per shape,
