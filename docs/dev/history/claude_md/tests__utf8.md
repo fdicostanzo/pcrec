@@ -1,0 +1,352 @@
+# History of tests/utf8/CLAUDE.md: the full original text, moved verbatim from commit d3d4c5834 when the file was reduced to an index.
+
+# tests/utf8 — the [M5.0] utf8-encoding corpus (D27 blinded, promoted)
+
+Thirteen `.rxt` files, 524 blocks, authored BLIND (D27: denied `src/`,
+`tests/`, everything beyond `docs/design/utf8_d27_extract.md`) against the
+PRE-stage-2 tree by cell `utf8corpus`, then PROMOTED against the merged
+[M5.0] stage 2 tree by lane `utfprom` (2026-09-05). No `.rxt` directive
+exists for this corpus's own oracle rule beyond what `tests/harness/run.sh`
+already reads — it rides `test-corpus` exactly like every other per-module
+directory (`tests/classes/`, `tests/modifiers/`, `tests/named_groups/`): no
+dedicated `make test-utf8` target, because none of these files carries a
+structural/differential check today (unlike `tests/lookaround/` or
+`tests/recursion/`, which pair their `.rxt` corpus with a `run_*_diff.sh`).
+A byte-mirror libpcre2/pcrec-under-utf8 differential (the natural next
+instrument, on the shape `tests/atomic_groups/run_atomic_diff.sh`
+established) is a real gap this corpus's own author flagged (REPORT.md
+§7 item 1) and this promotion did not build — filed as open work, not
+invented as harness syntax that doesn't exist.
+
+## Provenance
+
+- **Author**: D27-blinded cell `utf8corpus` (`worktrees/utf8corpus-cell/`),
+  2026-09-05. `d27/REPORT.md` there is the full authoring record: sizing
+  vs. the extract's own table, the byte-decomposition finding, the oracle
+  drift (libpcre2 10.37 on this cell, not the project's 10.46 reference —
+  re-verification against 10.46 owed on the Linux slot, per the manager's
+  brief), and the independent checker (`d27_scratch/check_rxt.py`, 5/5
+  planted corruptions caught).
+- **Promoter**: lane `utfprom`, NOT blinded, against `05b2fe8a` (stage 2 +
+  the ascii-fold form merged). `docs/dev/lanes/utfprom_report.md` is the
+  promotion record: per-axis promoted/still-perr/divergent counts, the one
+  genuine divergence (moved to `tests/known_fail/`, below), the corpus-bug
+  fix applied at promotion (a missing `encoding utf8` line on 8 of
+  `axis02_class_boundary.rxt`'s blocks), and the `# pcre2-only` marking
+  pass this directory needed that no other per-module directory has
+  needed yet.
+- **10.46 re-verification**: still owed (memory `pcrec-cross-platform-
+  verification`: this Mac box's libpcre2 is 10.37; 10.46 verification
+  happens on the Linux slot). Every oracle-driven expectation in this
+  corpus traces to 10.37 through the author's own drift-validation sweep
+  (REPORT.md §3), not to 10.46 directly.
+
+## Oracle rule — the SECOND directory in the tree with its own
+
+`tests/assertions/` is the one other directory whose oracle rule differs
+from the project default (python3 `re`), for a measured reason stated in
+its own CLAUDE.md. This directory is the second, for a DIFFERENT measured
+reason: **`tests/harness/verify_rxt.py`'s subject decoder
+(`decode_subject`) is byte-oriented, not UTF-8-aware** — every `\xHH`
+escape becomes one python `str` character one-for-one, while the PATTERN
+text is read as real UTF-8 and compiled as a true Unicode string. Under
+`encoding utf8` (and, it turns out, under `encoding byte` too, whenever a
+LITERAL multi-byte character sits in the pattern source) a multi-byte
+UTF-8 sequence in either the pattern or a subject therefore compiles or
+matches as the WRONG NUMBER of "characters" under python — not because the
+construct is unsupported (the usual `# pcre2-only` reason elsewhere in the
+tree) but because the shared harness's own default oracle has no notion of
+character boundaries at all. MEASURED at promotion: 211 spurious FAILUREs
+under the default python sweep, on cells the LIVE harness
+(`tests/harness/run.sh`, the real oracle) answers correctly. Every
+affected block carries `# pcre2-only`, and `python3 tests/harness/
+verify_rxt.py tests/utf8` is 100% PASS on what's left (376 pass / 0 fail /
+959 skip) — see `docs/dev/upstream_issues.md` for the citable record.
+`tests/harness/run.sh` (the LIVE oracle, pcrec's actual compiled behaviour
+against each block's recorded expectation) is unaffected by any of this
+and is what every promoted block's real correctness rests on.
+
+## Files
+
+Each `axis<NN>_*.rxt` corresponds one-to-one to a section of
+`docs/design/utf8_d27_extract.md` cited in the file's own header; the
+`_byte.rxt` siblings (axes 1-3 only) are the `encoding byte` MIRROR arm —
+see axis 1's own header for why a byte-mirror exists and what it measures
+(a literal multi-byte sequence matches identically to a byte-literal
+reading; a class/quantifier/range/alternation wrapping one is
+BYTE-DECOMPOSED, matching any of its individual bytes independently — the
+whole reason the utf8 encoding module needs to exist).
+
+| file | blocks | perr | real | notes |
+|---|---:|---:|---:|---|
+| axis01_encoded_length.rxt | 64 | 0 | 64 | promoted clean |
+| axis01_encoded_length_byte.rxt | 64 | 12 | 52 | 4 newly promoted (`\x{}`<=U+00FF); 12 still refuse, now a RANGE error not a module error |
+| axis02_class_boundary.rxt | 24 | 2 | 22 | promoted; corpus bug fixed (8 blocks were missing `encoding utf8`) |
+| axis02_class_boundary_byte.rxt | 24 | 6 | 18 | 4 newly promoted; 4 still refuse (range), 2 still refuse (`\p`, unaffected) |
+| axis03_invalid_utf8.rxt | 27 | 0 | 27 | promoted clean |
+| axis03_invalid_utf8_byte.rxt | 27 | 0 | 27 | untouched (already fully real as authored) |
+| axis04_p_categories.rxt | 148 | 0 | 148 | **PROMOTED at [M5.0] stage 3** — 462 cases, ZERO semantic divergences against the oracle answers the blinded author carried in each block's comment. 12 blocks went to `tests/known_fail/k53_uprops_oversize.rxt` (148 -> 136) and came BACK at [K53-SELRETRY], 2026-09-10, restoring the generator's own stated 148 — see below |
+| axis05_p_refusals.rxt | 34 | 34 | 0 | untouched, and CONFIRMED at stage 3 rather than assumed: all 34 are permanent PCRE2 error-147 refusals and all 34 still refuse with the producer live |
+| axis06_caseless_fold.rxt | 48 | 4 | 44 | PINNED TO TODAY'S BEHAVIOUR, not promoted to the oracle — see below |
+| axis07_caseless_1ton.rxt | 11 | 0 | 11 | pinned to today's behaviour; agrees with the oracle on every cell |
+| axis08_lookbehind_varwidth.rxt | 24 | 3 | 21 | promoted; `features` line added per block (missing as authored) |
+| axis09_nextpos_findall.rxt | 18 | 0 | 18 | promoted; the block moved to `known_fail` at promotion is BACK (K49 fixed). **-2 at [K50]**: the two mid-character-`startpos` blocks moved to `run_startbnd_diff.sh` §6, which can express the deny arm — see below |
+| axis10_surrogate_witness.rxt | 9 | 0 | 9 | promoted clean; the 3 `^\p{L}$` blocks promoted at [UCP] U0 (`-e utf8` implies `unicode-props`) |
+| axis11_startpos_boundary.rxt | 7 | 0 | 7 | **NEW at [K50]**, and the first file here outside the D27 extract's axes — see below |
+| axis12_scripts.rxt | 26 | 7 | 19 | **NEW at [M5.0] stage 5** — the SCRIPT properties, and the first file in this directory whose every expectation is the 10.46 REFERENCE's own answer rather than a local library's; see below |
+| wclass_illformed.rxt | 47 | 0 | 47 | **NEW at [CLS-TREE] S4** — the ILL-FORMED MATRIX (48 combinations; the one pcrec refuses, `x(\\p{Xwd})y` at default axes on its prefilter's total size, is written as a REFUSED comment by the generator): 12 wide-class kinds × 14 ill-formed byte kinds (stray continuation, truncations, overlongs, surrogates, above U+10FFFF, F5/FE leads) × {default engine, `engine vm`} × {bare, captured}, plus one member and one non-member per class. The VM's kit route decodes and the byte route walks the automaton; they must reject the same bytes. GENERATED by `gen_wclass_illformed.py` (oracle: `pcre2test` 10.48 under UTF\|MATCH_INVALID_UTF, cross-checked against pcrec `--engine=dfa` on every cell before writing). Detector for S390/S391 |
+| axis13_ctx_illformed.rxt | 8 | 0 | 8 | **NEW at [UCP] U2** — the CONTEXT NODE over ill-formed UTF-8 (ucp_design.md §2.3's hazard cells): a non-ASCII context set stays a VM lookaround (`(?<=[^a])a` on `80 61` is nomatch), and ASCII sets are exact byte-wise over stray continuation, lead and 0xFF bytes. Oracle: libpcre2 UTF\|MATCH_INVALID_UTF, generated from 10.48 and re-verified on 10.46 (32/32); `verify_ucp.py`'s verb oracle cannot express MIU, so the harness is its live check |
+
+**[M5.0 stage 3] AXIS 4 IS THE LANE'S SHARPEST ACCEPTANCE RESULT, and it is
+worth saying why rather than only that it passed.** The 148 blocks were written
+by a D27-BLINDED author against the pre-stage-2 tree, from the goal, with each
+block's oracle-measured answer carried as a comment above a `perr` line —
+`tests/recursion/`'s wave-D mechanism, one module over. The stage-3 promotion
+turned those comments back into `m`/`n` lines mechanically and ran them: **462
+of 506 cases green on the first run, 44 failures, and every one of the 44 was
+the SAME compile-size refusal on six patterns** — no wrong span, no wrong
+membership, no wrong negation, on a corpus the implementation had never seen.
+The six went to `known_fail` as K53, which is an ENGINE issue (an OPTIONAL DFA
+machine's bytes refusing patterns that compile without it) and not a `\p` one.
+
+**AND K53 WAS FIXED 2026-09-10 ([K53-SELRETRY]), so the twelve blocks are back
+here at their authored positions and the 44 failures are 0.** The lift left no
+pointer stanzas, and what made the positions recoverable is that this file is
+written in the CANONICAL general-category order — `L M N P S Z C`, then
+`Lu..Co Cn` — so the gaps were exactly where `L`, `C` and `Cn` belong and the
+header's own block count said how many were missing. Their carried oracles
+were exercised for the FIRST time by that run (a parked block does not compile,
+so nothing had ever checked them) and all agreed. **The fix is in the DRIVER
+and not in this module**: on a size-cap refusal with the optional anchored
+machine present, `compile_driver` drops it and re-emits.
+
+**577 blocks here, MEASURED 2026-09-10** (`cat tests/utf8/*.rxt | grep -c
+'^pattern '`), of which 67 are `perr` (`grep -c '^perr'` over the same files).
+**+16 at [K53-SELRETRY]**, the twelve `\p` general-category blocks returning to
+`axis04_p_categories.rxt` and the four `Unknown` script spellings to
+`axis12_scripts.rxt`.
+
+**THE PRE-EXISTING SPLIT BELOW DOES NOT RECONCILE WITH EITHER MEASUREMENT AND
+IS LEFT AS WRITTEN RATHER THAN QUIETLY CORRECTED.** It reads 336 real / 219
+`perr` summing to 555, where the two commands above give 577 and 67 — a gap of
+22 blocks and 152 `perr` that [K53-SELRETRY]'s own +16 does not explain and
+this lane did not investigate, since nothing it touched could have caused it
+(the likeliest candidate is [M5.0] stage 4's `fold.rxt`, 18 blocks, plus the
+promotions that turned `perr` blocks into live ones without moving this
+sentence). Re-derive it from a run before citing it. The historical narrative
+that follows is unedited:
+
+**555 blocks here** (529 before [M5.0] stage 5's `axis12_scripts.rxt` added
+26). The authored population was 524; [K50] moved 2 out of
+axis09 (to `run_startbnd_diff.sh` §6, which can express the deny arm) and
+added 7 in axis11, so 317 real / 212 `perr` at that point, and 336 real / 219 `perr` after stage 5 (counted, not derived: `grep -c '^pattern' tests/utf8/*.rxt` and the same for `^perr`). It read 523 between promotion and
+K49's fix on the same day, while axis09's "midstart-row3-boundary" block sat
+in `tests/known_fail/`; that block is restored. Full per-axis reasoning, including every `features`/
+`encoding` line added at promotion and why, is each file's own header
+comment plus `docs/dev/lanes/utfprom_report.md`.
+
+## [M5.0 stage 5] axis12 IS ORACLED FROM THE REFERENCE, not from this box
+
+Every other file here carries expectations produced by whatever libpcre2 the
+authoring box had. `axis12_scripts.rxt`'s do not: the cells were bundled into
+one stdin payload and driven on the 10.46 REFERENCE over the tailnet (reading
+and writing nothing there), and its answers are what the file pins. The two
+local libraries were then asked the SAME 57 cells for comparison — Homebrew
+10.48 agrees on 57, macOS's system 10.42 on 54.
+
+**Those three disagreeing cells are the reason it was done this way.** They
+are U+00B7 and U+0300 under `\p{Greek}`/`\p{scx=Greek}`: Unicode revised the
+Script_Extensions of both between 14.0.0 and the 16.0.0 pin, so a file oracled
+from `/usr/lib` on this Mac would have pinned three cells against the version
+pcrec's own tables are NOT at. `tests/uprops/uprops_compare.py`'s
+`SCX_REVISED` is the same fact on the membership side.
+
+The file's own point is one measured behaviour: **`\p{Greek}` is
+`Script | Script_Extensions` and `\p{sc=Greek}` is `Script` alone.** Its first
+two blocks are the same four subjects under the two spellings, and U+0342 and
+U+0300 are the ones that flip. `\p{Unknown}` and its three other spellings
+(`\p{sc=Unknown}`, `\p{scx=Unknown}`, `\p{Zzzz}`) spent 2026-09-06..09-10 in
+`tests/known_fail/k53_uprops_oversize.rxt` — they exceeded the emitted-source
+cap under `utf8` at default axes — and are LIVE BLOCKS at the end of this file
+since [K53-SELRETRY], un-edited from the same reference probe. `\P{Unknown}`
+was live throughout, which is what exercised the derived complement while its
+positive twin was parked.
+
+## The one genuine divergence: K49 — FOUND, PARKED, AND FIXED (2026-09-05)
+
+`axis09_nextpos_findall.rxt`'s "midstart-row3-boundary" block
+(`(?<!.)` at startpos=2 over a subject whose byte 2 is a real character
+boundary) disagreed with its ARGUED expectation: pcrec answered a match at
+`(3,3)`, an illegal mid-character byte offset, where the design position
+says no match. Filed as `docs/dev/known_issues.md` K49 and moved to
+`tests/known_fail/` at promotion per `docs/spec/rxt_format.md`'s own rule
+("a cell whose correct answer is DISPUTED, not merely unbuilt, is not a
+`perr` case... move it to `tests/known_fail/`").
+
+**Lane `k49fix` fixed it the same day and the cell is back here, live and
+green**, in its authored position with the pointer comment gone; the
+known_fail file is deleted and this file is 20 blocks / 80 cases again — the
+count its own generator header always claimed. The bug was the emitted VM's
+unanchored retry advancing one BYTE past a failed startpos instead of to the
+next character boundary; the advance now comes from the encoding backend
+(`src/enc/enc.h`'s `advance` field).
+
+**WHY THIS BLOCK AND NOT ITS THREE NEIGHBOURS, which is the part to
+remember when adding to this axis.** Rows 1, 2 and 4 all answer on their
+FIRST attempt — row 4's `(?!.)` at a mid-character startpos succeeds
+immediately because `.` has no path from a continuation byte — so none of
+them exercises the retry advance at all. Row 3 is the only cell in the block
+whose first attempt FAILS, and that is exactly why it was the only one that
+could see the defect. A cell that tests a retry has to be built to fail
+first.
+
+**AND IT HAD A SIBLING THE CORPUS COULD NOT SEE**: `\B` under `-e utf8`
+reported a mid-character position from an ordinary `startpos=0` on the DFA
+(K50), because the DFA implements "try the next start" with a byte-granular
+self-loop rather than with the VM's retry loop. This corpus had no
+`\B`-under-`utf8` cell; the natural place for one was a future axis, and the
+byte-mirror libpcre2 differential named below would have found it.
+
+## [K50] FIXED 2026-09-06 (lane `k50bnd`), and it left this directory THREE things
+
+**`axis11_startpos_boundary.rxt` — the first file here outside the D27
+extract's axes.** The paragraph above predicted where the cell would go and
+this is it: K50's own `\B` witness (restored from `tests/known_fail/`, which
+is now empty of it), the 3- and 4-byte-character widths, an ill-formed-byte
+row for `utf8_design.md` §2.6(c), and a witness for a SECOND site the K50
+entry's own site list had filed no witness for — `ENG_ATTEMPT`'s `start++`
+loop, measured wrong at `(?m)^a|\B` over `61 CE B1` at `startpos = 1`. That
+file's header carries why the family is exactly this shape; the short form is
+that only a pattern which can match EMPTY at a mid-character position can
+ANSWER there, so a positive pattern cannot detect any of it.
+
+**`run_startbnd_diff.sh` — the directory's FIRST non-`.rxt` suite**
+(`make test-startbnd`). It is NOT the byte-mirror libpcre2 differential the
+section below still owes; it is the caller-startpos AXIS's own instrument,
+plus a cross-engine §5 whose cells are pinned to libpcre2 10.46 rather than to
+the other engine. That pinning is the point: for a whole milestone BOTH
+ENGINES ANSWERED THE SAME WRONG THING, so no cross-engine comparison could
+have caught K50 and nothing that compares pcrec against itself ever will.
+
+**TWO `axis09` CELLS MOVED INTO IT, and the move is a RULING rather than a
+consequence.** `midstart-row2-MID-la` and `midstart-row4-MID-leading-neg`
+assert §2.6.1.1's permissive answer at a MID-CHARACTER `startpos`, which the
+new default-on boundary guard now refuses; Frank's 2026-09-05 ruling moves
+those semantics to the `-fno-startpos-guard` arm VERBATIM rather than retiring
+them, so they are pinned in `run_startbnd_diff.sh` §6 and `axis09` carries a
+pointer where each stood. **They could not stay as `.rxt` cells**: no
+directive spells a compile flag, and none spells a give-up at a NON-ZERO
+startpos (`gu` is offset-0 only). Both are `.rxt` FORMAT questions — the
+manager's call under dd13b — so the cells moved to an instrument that can
+express them rather than acquiring invented syntax. If the format grows either
+directive, the blocks come back.
+
+**ONE THING THIS DIRECTORY FOUND FOR THE FIX, which is the reason to keep
+these files honest.** The guard's first version refused OFFSET 0 of a subject
+that begins with a continuation byte — 21 cells across `axis01`, `axis03` and
+`axis09` stopped answering, `a` on the one-byte subject `\x80` among them.
+That is `utf8_design.md` §2.6/ASK 1's ruled semantics ("an ill-formed sequence
+matches nothing, no validation pass, no error return") turned into "ill-formed
+input is an error", and it was caught by wiring the axis into
+`make test-axes`, not by the new suite — whose own subject list had no subject
+beginning with a continuation byte until this found the gap.
+
+## THE STAGE-4 GAP IS CLOSED — axis06 PROMOTED, and one finding came out of it
+
+**[M5.0] stage 4 landed 2026-09-08 (lane `utf8s4`) and axis06 was promoted
+exactly as the paragraph below predicted**: the recorded
+`PCRE2_UTF|PCRE2_CASELESS` values restored from each block's own comment, the
+ASCII-fold-pinned values dropped, `features unicode-props` added to the four
+`[^\p{Ll}]` blocks that had been `perr` since authoring. **178 of 178 cells
+that did not need module `unicode-props` were GREEN ON THE FIRST RUN** — the
+Unicode fold agrees with the blinded author's recorded oracle cell for cell.
+
+**AND THE PREDICTED "fifth finding" IS REAL, in the four `\p`-bodied blocks.**
+Their recorded oracle is WRONG on two cells each: it says `[^\p{Ll}]` caseless
+MATCHES "A" and U+212A, and the live oracle says it matches NEITHER (nor "a";
+it matches "5"). `docs/design/utf8_design.md` §4.3's own measured table already
+carried the "A" cell as `no match`, so the corpus and the design disagreed and
+the design is the one that was measured. **The cause is visible in the
+provenance**: those four blocks were `perr` from authoring until stage 4, so
+their oracle values had never been exercised against anything — they were
+reasoned out rather than read off. Under `-i` module `unicode-props`
+substitutes `\p{L&}` for `\p{Ll}`, "A" and U+212A are both IN `L&`, and the
+negation is over that closed set. The comment is left UNCHANGED for provenance
+with the correction recorded beside it, per this directory's own rule.
+
+**`fold.rxt` is new and is NOT part of the blinded corpus** — it is the
+implementation lane's own file, named for the design's §8.2 sabotage table, and
+it holds the cells the D27 axis structurally could not: axis06 is entirely
+about SINGLE CHARACTERS, so the tree had no witness for §4.2(c) (a RANGE
+pulling in a partner outside itself), for fold-before-negate over a range, for
+the `byte` arm's §4.5 discriminator (0xE9 must NOT fold to 0xC9), or for
+stage 4's own per-contribution finding. 45 cells, oracle-first, 45/45.
+
+**`hv_space.rxt` is [K72]'s regression** (lane k7273, 2026-09-29, NOT part of
+the blinded corpus): `\h \H \v \V` and their bracketed forms under `-e utf8`
+against PCRE2_UTF's lists (every member, 24 edge non-members, run-lengths)
+plus the `byte` control. 17 blocks / 420 cells, every block `# pcre2-only`,
+every cell read from libpcre2 10.46 (transcript
+`docs/dev/lanes/k7273_evidence/hv_space_10.46.txt`).
+
+**`k73_startskip.rxt` is [K73]'s regression** (lane k73utf, 2026-09-29, NOT
+part of the blinded corpus): nullable and start-asserting patterns (`''`,
+`\B`, `x*`, `(?=)`, `^`, `$`, `\b`, `\G`, `\G|b`, `(?m)^a|\B`, `a|`) over
+five subjects that begin with a continuation byte and three that do not. 11
+blocks / 86 cells, every block `# pcre2-only`, every cell from libpcre2 10.46
+under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF (`docs/dev/lanes/k73utf_evidence/
+k73_witness_10.46.txt`); 45 of them fail on the pre-fix compiler. Two oracle
+cells are left out on purpose and the file's header says which and why.
+**`run_startbnd_diff.sh` gained two things with it**: the two-arm driver
+sweeps `<prefix>_match` as well as `<prefix>_search`, with its own
+`match-buckets:` line and its own 150 floor (the DFA's unwrapped `_match` had
+no guard and a search-only sweep could not see it), and §5 carries seven
+[K73] engine rows pinned to the same 10.46 transcript.
+
+## The gap as it stood before stage 4 (kept for the record)
+
+Per the manager's explicit instruction at promotion time: `axis06_
+caseless_fold.rxt` and `axis07_caseless_1ton.rxt` are PINNED TO TODAY'S
+REAL BEHAVIOUR, not promoted to the PCRE2_UTF|PCRE2_CASELESS oracle their
+own future-case comments (left in place, unchanged, for provenance)
+record. `(?i)`/`flags i` under `-e utf8` does ASCII-only fold today
+(stage 4, non-ASCII caseless folding, has not landed) — 20 of axis06's 44
+live blocks (29 cells) disagree with the recorded oracle for exactly that
+reason, and are NOT filed as findings: landing stage 4 is "restore the
+oracle values from the comments above, drop the ASCII-fold values,
+re-run," the same mechanical shape `tests/recursion/`'s `wave=` argument
+uses for an unbuilt module. axis07 (11 blocks, the "1:n non-matching"
+design) happens to agree with the oracle on every cell already, for its
+own checked reason — see that file's header.
+
+## [START-LANDING] landing_illformed.rxt (lane slbuild, 2026-10-10)
+
+- **landing_illformed.rxt** — the RECOVER row `landing`'s ill-formed cells
+  (docs/design/start_landing.md §7.3 §6): four patterns that take `landing`
+  with the first-character guard (`.`, `\p{L}+`, `[a-zé]+`, `.x?`), 140
+  cells whose subjects put an ill-formed or truncated sequence where a
+  landing falls, at every startpos pcrec accepts. Every expectation is
+  libpcre2 10.46's under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF (`# pcre2-only`).
+  Run by the corpus harness and by `tests/codegen/run_start_landing.sh` under
+  every deny arm; mech S785's harness target.
+- **gen_landing_illformed.py** — its generator (builds a libpcre2 helper
+  under build/gen_landing and writes the file FROM the oracle). Committed as
+  the record of how the file was made.
+
+## Maintenance
+
+Landing module `unicode-props` (stage 3): axis04, axis05, and the 6
+still-perr `\p{...}`-bodied blocks scattered through axis02/axis08/axis10
+promote the same way this lane promoted everything else — re-derive
+compile status, replace `perr` with the block's own future-case comment,
+re-run `bash tests/harness/run.sh tests/utf8`, watch for divergences.
+
+Landing stage 4 (non-ASCII caseless folding): axis06/axis07 promote by
+restoring the PCRE2_UTF|PCRE2_CASELESS comment values in place of the
+ASCII-fold-pinned ones currently live; re-run and expect 0 divergences
+per the file headers' own reasoning, or a fifth finding if that
+expectation is wrong.
+
+Building the byte-mirror libpcre2 differential (REPORT.md's own open
+item 1, axes 6/7/9/10 currently have no mirror file at all): follow
+`tests/atomic_groups/run_atomic_diff.sh`'s shape, not a new one.
