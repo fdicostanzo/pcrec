@@ -22,7 +22,8 @@ against an INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run 
   slice statements of `ctx_span.md` §3.8 and kit_proof §5.2 (must read green).
 - `results.md` — the measured X0 run: population, counts, every red cell classified,
   the plants and X0's self-plants, the oracle defects found and fixed, the regime.
-- `out/` — the committed transcripts `results.md` cites (summaries and the plant /
+- `out/` — the committed transcripts `results.md` cites (`summary_admitted.txt` the final
+  admitted-roles run, `summary_sites.txt` the sites run, the plant /
   stated / witness outputs; the per-item JSONL stays in `build/x0/`, regenerable).
 
 Oracle hazards found while building it (each would have produced confident wrong

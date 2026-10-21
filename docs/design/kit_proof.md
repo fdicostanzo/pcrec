@@ -1102,10 +1102,35 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
   libpcre2. The k3-sound run (1,057 configs / 4,029,044 cells and 501,250 context cells,
   0 differences beyond U1; six failing controls red) and the re-check's run (1,197
   admitted patterns, 1,638,884 cells, 0 differences beyond U1) are X0's PRECURSORS on
-  the critic's instrument. **X0 itself has NOT been run** `[r3rc PARTIAL con-M5]`. In
-  particular its per-position, per-byte set-equality part has no precursor at all,
-  because the critic's runs are differentials drawn through the reading. It is OWED at
-  step X0 (§7), before Z2, on `conj.py` revision 2.1's reading.
+  the critic's instrument.
+
+  **X0 RESULT** (lane `x0oracle`, 2026-10-21, main `d970abbbc`, libpcre2 10.46,
+  `kit_proof/x0/results.md`): **NOT PASSED; two real reading defects, `conj.py`
+  unpatched.** The oracle is `kit_proof/x0/x0pcre.c`. It shares no code with kvdfa, and
+  every byte it puts in a set carries a complete-match witness. Plain hard partial
+  matching over-approximates and was first misread as reading defects. On the 1,197
+  census patterns §1.2 counts, both parts agree with libpcre2 beyond U1: part 1 has 0
+  differences over 43,764 prefix nodes × 256 bytes and 443.9M context × prefix × tail
+  cells; part 2 has 18.95M cells, every difference on `(()|^){0}[b]` (U1). The two
+  defects are outside that population:
+  - **R1.** `k_entry` reads an UNSEEDED machine's entry as row 0. The emitter does not
+    promise that: `\Zx` emits `anchored_state = 2`, and row 0 is the eol view's target.
+    So `\Zx`, `\zx`, `\zabc`, `-{0,}?\Z-`, `[ab]*\z\W` and `\w{0,2}?$\W` read `cover`
+    and answer where PCRE2 and pcrec's artifact never match. Their machines carry an
+    unseeded entry ≠ 0 and a view table. This is sound-M1 on the unseeded arm, and C6
+    must read the emitted constant on both arms.
+  - **R2.** On a non-cover site the plain walk drops bytes consumed only through an eol
+    view: `(a$\n)|ab` states `S_1 = {b}` where libpcre2 has `{b, \n}`. This refutes
+    §5.2's "C8's equality of the two producers' `S_d` holds on such a body".
+  - **K35.** The table admits 99 census DFA patterns at their own flags beyond §1.2's
+    population. 89 of them are clean; the other 10 are R1.
+
+  The plants turn red on the reading: S1130 239/239, S1131 54/54, S1136 its three K1
+  witnesses (0 census movers), S1139 53/55 (the 2 are `\d$(?!\n)`, where the plant
+  changes no answer), S1140 67/67, S1132-S1134 300/300 each. S1143 is UNREACHED. S1150's
+  stated-set check reads the union-narrowing statements RED and the per-thread slice
+  green. The per-thread witnesses read `cover k=2` and are clean. X0 re-runs once R1/R2
+  are ruled on, and at Z2 on the slice (`x0.py stated` takes any producer's sets).
 - **X1, the same oracle on the BUILT artifacts** (Z2's harness-routed builds and B1's
   default build): every `cover` artifact compiled, run against libpcre2 10.46 with the
   X0 subject families.
