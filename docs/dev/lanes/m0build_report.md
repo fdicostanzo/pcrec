@@ -190,3 +190,127 @@ OWED to a fresh agent once they end: read the three verdicts; if the census
 reads 0 movers, commit `measure_store/movers/0001.tsv`; fill §4's and §5's
 verdicts here; triage any red. Last rulings entry applied: none (the file
 holds no entries).
+
+## 8. TRIAGE (m0tri, 2026-10-21, sonnet)
+
+Input: job `300-m0build-test`, log `build/m0scratch/test.log`, `sections ran:
+73/73`, rc 2, perfrun `class=RED-REAL` (contaminated=YES: the box ran other
+trees' work beside it, so each red was reproduced standalone, below).
+14 sections red, 112 `FAIL` lines. They fall into four causes; one is a real
+defect of M0, three are stale pins/witnesses/allowlists that the abi 82
+change legitimately moves.
+
+| cause | class | sections it reddens |
+|---|---|---|
+| 1. `MEASURES` has no row in `src/gen/stamp_kinds.c` | (a) real, M0's | compound, corpus, findings, partlayout, vm, possessify, lookaround, assertions, capturediff, codegen (every compile of a compound) |
+| 2. `+43` bytes per artifact (`#define RX_MEASURES ""`, `.measures = "",`) | (b) stale pin | resource (K59-PREMUL rescue 762911 -> 762954) |
+| 2'. the same stamps move the size-cap code count by 79 | (b) stale witness | fallback-table (`seq-pfcd2`) |
+| 3. C4 reads the store's set id and class labels as architecture vocabulary | (b) missing allowlist rows | memfn-arch |
+| 4. the default set now answers the finder's R7 key | (b) stale witness | memfn-rows (`fd/R7w`) |
+
+### 8.1 Cause 1 (class a): the stamp catalogue
+
+`src/gen/stamp_kinds.c` is the compound's stamp filter (docs/design/
+compound.md §A.7): a stamp it does not classify is an INTERNAL ERROR on a
+compound's shell, "so a new stamp cannot ship on a compound unclassified".
+M0 added `<PREFIX>_MEASURES` and its compound value (`memfn_stamps.c`'s union
+over P and the parts, match_api §6.3.10¶13) but not the catalogue row, so
+every pattern the compound driver admits (`a{0,4}^`, `a\Gb`, `x\G`,
+`^\s+|\s+$`, the whole `tests/compound/split.rxt`) refused with
+`the stamp MEASURES has no row in the stamp catalogue`. Every red section
+above except resource, fallback-table, memfn-arch and memfn-rows is this one
+cause (the populations that read 0 admitted compounds, the "could not build a
+DFA artifact" and "REFUSAL MISMATCH default accepted, --no-captures refused"
+lines are all the same refusal, seen from different checks). No answer
+changed: nothing matched or failed to match differently, the compile was
+refused. Fix d056e97d6: one row, `{ "MEASURES", false, SK_PATTERN }` beside
+`FINDINGS`, which is the same shape (the value is the plain artifact's, or
+the union over P and the parts, which the shell computes itself).
+
+### 8.2 Cause 2 (class b): +43 bytes on every artifact
+
+Diffing `a(b|c)+d` and `[a-z]+@[a-z]+\.com` against the branch point
+f2dae53f9's own compiler (built in `build/m0scratch/tri/basetree`, same `-o`
+basename): the abi digits (same width) and exactly two added lines,
+`#define RX_MEASURES ""` (+22) and `    .measures = "",` (+21); 43 bytes.
+The K59-PREMUL rescue pin of `a{5,25000}` (`tests/resource/
+run_resource_tests.sh`) moves 762911 -> 762954, exactly +43. Re-pinned
+b52fdda2d by that script's own mechanism (a dated comment with the diffing
+evidence, the rescued count and the old counts in the `ok` message).
+
+### 8.3 Cause 2': the size-cap code count moves by 79
+
+`run_fallback_table.sh` `seq-pfcd2` (`(\bcat\b){2,}\w\w`, -e utf8, the
+`trlowsize` reference compiler with a 30,000 code-byte cap) failed with
+`refused (rc 1) ... refuse@size`. Built the `trlowsize` compiler for both
+trees: the drop-prefilter rung's record reads `sc=30170/30000` here against
+`30091/30000` at the branch point, +79 (the two stamp lines count toward the
+emitted code size the cap reads, a larger figure than the file's +43). The
+witness's window is inherently narrow, because the drop saves only 146
+bytes, so the old witness fitted 55 bytes under the cap after the drop and
+fits 24 over it now. Chose `(\bcat\b){2,}[a-z]\d` (same two rows, `restart=1` on
+record 2, drop record 30,089 so about 57 under: the old margin), measured by
+scanning thirteen tails with both reference compilers. Commit fc3bed3ef. The
+next stamp that adds bytes to every artifact will move this witness again.
+
+### 8.4 Cause 3 (class b): C4 and the store's labels
+
+`tests/memfn/arch_blind_check.py` (C4, `make test-memfn-arch`) reads the set
+id `zen4-grid1` and the class label `x86_64-avx2/zen4` as architecture
+vocabulary outside `memfn/`: `lib/pcrec.h` (1 hit), `src/core/ks_measures.h`
+(1), `measures_store.inc` (1), `measures_table.inc` (2 isa-name, 6 arch-noun),
+`tests/knowledge/run_measures_tests.sh` (10) and seven sabotage rows (S1228,
+S1229, S1237, S1238, S1241, S1245, S1246: 1-2 each). All are DATA labels
+compared as strings, never a branch on an architecture, so each got a row in
+`tests/memfn/c4_allowlist.tsv` (D107's shape: scope, path, class, allowed
+count, reason; counts are the reported hit counts, so a new hit or a stale
+row is red). `C4_ALLOW_FLOOR` is a lower bound and unchanged. Commit
+ceeaef2ad. **Judgement call for the manager**: the M0 design (measure_sets.md)
+never mentions C4, and a store that names a box class is the one place the
+arch-blindness rule meets measured data; the allowlist is the check's own
+mechanism, but if the rule should be that pcrec's source never names a set,
+the labels would have to live in the store text only (the table and embed
+files are generated from it).
+
+### 8.5 Cause 4 (class b): R7w's unmeasured witness
+
+`tests/memfn/rows_check.py` holds `fd/R7w` (the finder walk's
+UNMEASURED-DEFAULT terminal) to the witness `[a-z]+@[a-z]+\.com`
+-fno-offset-skip. A/B with the traced kit (`mktp.sh` in `build/m0scratch/tri`,
+the recipe rows_check itself uses): at the branch point the site's FD record
+reads `row=R7w pick=WALK basis=UNMEASURED-DEFAULT`; on this tree it reads
+`row=R7 pick=V1 basis=DERIVED`, because the store's default set now answers
+the key `kit.saving.V1.WALK.r1e0c0` (and `kit.block.W64`, `kit.xover...`,
+`kit.eps.streamed.slope`: FDKEY found=1). This is the M0 design working
+(`docs/spec/measures.md` §5¶6: a compile naming no set reads the build's default): R7 is a shadow row (`routed=0`),
+so no artifact byte moves, the artifact's stamp stays `""` ("no routed finder
+row reads a set key today", `pcrec_memfn_art_end`), and `rt.stdout ==
+rp.stdout` still holds. The witness had to reach R7w by a measured-key
+absence instead: `tests/memfn/pins/r7w_unmeasured.measures.tsv`, a frozen
+SYNTHETIC set (the canonical view of zen4-grid1@1 minus its `kit.saving.*`
+rows, id `r7w-unmeasured`, tier `synthetic`, `rows`/`values_digest`
+recomputed by `tests/knowledge/mfixtures.py`'s `redigest`), passed as
+`--measures @ROOT@/...` (rows_check expands `@ROOT@`). Commit 65fba103f.
+
+### 8.6 Standalone verdicts
+
+Every command is `make PROCS=4 test-X` against the lane's working tree
+(committed state fc3bed3ef) unless marked; logs in
+`build/m0scratch/tri/X.log`, the table in `tri/summary.txt`.
+
+| section | verdict (solo, tree at fc3bed3ef) |
+|---|---|
+| test-compound, test-partlayout, test-findings | rc 0 |
+| test-vm, test-possessify, test-lookaround, test-assertions, test-capturediff, test-codegen | rc 0 |
+| test-memfn-arch, test-memfn-rows (also 244/0 on its own), test-fallback-table (146/0 on its own), test-resource | rc 0 |
+| test-corpus | rc 0 |
+
+All 14 sections green standalone under `scripts/boxlock run --label m0tri`
+(PROCS=4); the A/B against the branch point showed no answer change anywhere.
+The tracked `docs/dev/artifact_size_log.tsv` is rewritten by a corpus run and
+was restored, not committed. Commits on `lane/m0build`: d056e97d6 (stamp row),
+b52fdda2d (K59 pin), ceeaef2ad (C4 allowlist), 65fba103f (R7w witness),
+fc3bed3ef (seq-pfcd2), plus this section. Owed: queue job
+`303-m0build-retest` (full `make test`, log `build/m0scratch/retest.log`,
+expect `sections ran: 73/73`). RACE NOTE: jobs 301/302 were still pending
+(not running) when the fixes were committed, so they will archive the fixed HEAD.
