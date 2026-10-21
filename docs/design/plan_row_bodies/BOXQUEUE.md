@@ -49,3 +49,44 @@ loaded the box during the kit's heavy slot and contaminated its make test.
 
 - The armed stage list omitted one owed check (recursion identity); with a
   queue it is one more job dropped in, not a new chain.
+- Four of ten stages failed on their INVOCATION, not their subject: `--extra -e`
+  rejected by argparse (rc 2 in 0 s); `make mech S1171 ...` read the ids as make
+  targets and ran the FULL matrix to two cap fires (100 min of box time lost); a
+  witness script compared artifacts written to different `-o` basenames (8/8
+  false DIFFER, the known trap). Requirement: a job declares a cheap `--dry`
+  preflight the runner calls at ENQUEUE time (argument parsing, ids resolve,
+  files exist), and a job whose first seconds look wrong (rc 2 instantly, or a
+  population far larger than declared) is reported at once rather than at cap.
+  A job also states its EXPECTED population (e.g. "6 mech rows") so the runner
+  can compare it with what the job's own log reports.
+- A heavy stage waiting on the lock held by another stage of the SAME chain is
+  correct queueing, but it is invisible in the chain log until the stage ends;
+  the runner's per-pass log should show "waiting on <holder>".
+- chainrun allows one chain per tree, so the corrective stages could not be
+  queued behind the still-running first chain; the lane hand-wrote a detached
+  flock waiter (build/p2dval/s2/arm.sh) — the very pattern chainrun replaced.
+  With a queue, corrective jobs are simply enqueued after the running one.
+
+## Dry-run contract (Frank, 2026-10-20: "each script could support --dry-run for testing")
+
+- Every job script accepts `--dry-run`: it does everything EXCEPT the work —
+  parses its arguments, resolves its ids (mech rows, sweep arms, refs), checks
+  that binaries and inputs exist, and prints the exact commands it would run
+  plus its EXPECTED population (rows, cells, arms). No side effects, bounded to
+  a few seconds; exit 0 = would run correctly, non-zero = would not (reason on
+  stderr).
+- Dry-run answers "would I run CORRECTLY", which is different from readiness
+  (exit 75) answering "can I run NOW"; a job can pass one and fail the other.
+- The runner calls `--dry-run` at ENQUEUE (a job that fails it is refused at
+  once, so a bad invocation never waits hours for a slot) and again just before
+  START (the tree or inputs may have changed meanwhile).
+- `boxqueue --dry-run` runs every pending job's dry run and readiness check and
+  prints the plan: order, ready/not-ready, expected populations, total cap — a
+  whole queue can be checked before a night is committed to it.
+- The runner's self-test plants a job whose dry run lies (passes, then the
+  real run's population differs from the declared one) and shows the runner
+  flags it from the job's own log.
+- The corrected sweep stage failed AGAIN in 0 s: `--arms` and `--extra` are
+  mutually exclusive in emit_sweep.py. A fix written without running the fixed
+  command is the dry-run contract's own case: the fix lane's re-arm would have
+  been refused at enqueue.
