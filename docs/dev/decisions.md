@@ -9860,3 +9860,13 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 **Condition.** This bar is TIMING only. B4's correctness gates are unchanged: zero answer movers, the identity sweeps, mech rows for every new or moved anchor, and make test.
 
 **Revisit when** any trigger in plan.md §3 fires. Then the dropped piece returns for the step that needs it.
+
+## D171 — the find-all iterator's fixed setup cost is accepted (Frank, 2026-10-21)
+
+**Decision.** The parity slot's FINDING cells (c2 whole iteration on a 1-byte or empty subject, c5 one match on a 1-byte subject, c6 R1 the shared static-label body, c7 the caller stopping after 3 matches) show `I` about 1.8-3.9 ns slower than today's `_search` loop. Frank, 2026-10-21: "those are pretty degenerate cases ... I'm ok with the ~2ns overhead." These are STATED costs of the interface, not findings that block I1. I1 builds with `<prefix>_next` as the primary entry. The batch cell is `off` (B64 lost to `I` on every dense cell).
+
+**What still holds.** D165's parity gate still binds the dense cells (c1, c3, c4), and the post-build gate re-times the built artifacts. A dense-cell loss there is still a finding.
+
+**Why.** The losses are fixed costs on cells that finish in a few nanoseconds. On dense subjects the iterator is already faster (c1 -4..-6%). Part of the gap is the twin re-running `_search`'s entry checks on every call, which the built I1 hoists into bind.
+
+**Noted for I2 (not decided here).** The public `next_n` (k = 64) arm measured 0.58x of today's loop on prose through the PLT (c3-4k R2) and 0.94x on c1. It also measured 26x on c7, where it filled 64 matches for a caller who wanted 3. B64's internal cache kept one exported call per match and lost, so the gain comes from removing calls, not from caching. Frank's idea of a caller-side macro over a local buffer is that shape; see the journal for 2026-10-21.
