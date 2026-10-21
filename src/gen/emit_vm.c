@@ -12489,10 +12489,6 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "}\n\n",
         en->ai, v->p, v->p, v->p, v->p);
 
-    /* [VAR] THE ONCE-PER-CALL RESOLUTION (variables_common.md §3.2, §5's
-     * EXPANSION half), emitted only on a var-bearing artifact. */
-    vm_emit_vars_resolve(v, en);
-
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* Start a fresh attempt: every group unset, nothing to undo, both\n"
@@ -12626,6 +12622,12 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         }
         if (v->nwcls) pcrec_sb_puts(c, "\n");
     }
+
+    /* [VAR] THE ONCE-PER-CALL RESOLUTION (variables_common.md §3.2, §5's
+     * EXPANSION half), emitted only on a var-bearing artifact. Below the
+     * residual entries: it calls `<prefix>__var_valid`, a static twin
+     * ([FINDALL-NEXT] F-1) with no declaration ahead of its definition. */
+    vm_emit_vars_resolve(v, en);
 
     /* ---- the prefilter (§6.1, §4.7) ------------------------------------ */
     const char *prefn = NULL;
