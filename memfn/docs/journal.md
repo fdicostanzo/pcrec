@@ -2563,3 +2563,15 @@ Zk (R-26.6) is on lane/memfn-r26zk @ 6f03281cb. The kit's class/field sets are n
 - Q4 ACCEPTED, with a carry: RPT moves no byte while unrouted, so it has no deny row yet. B1, which routes it, owes its deny row.
 - F-2 noted for main's Z2: `mf_ask` takes a const art, so `mf_preview` must be called at art setup, before any ask (kit_proof §7's protocol already places it there).
 Heavy validation: boxqueue `500-kit-r26zk-heavy`.
+
+## 2026-10-21 (later) — the kit's part of R-26 is done, B4 prep is closed, set digests fixed; idle
+
+- Main merged: Z1 (5cc3d7179), Zk (ec10382cf) and b4prep (c7c4ce015).
+- Zk: one 128-bit `kit_set`, the REPORT class, row RPT unrouted, `mf_preview`. S1251-S1256 DETECTED; 0 movers.
+- b4prep closing:
+  - the F3 re-time is MEASURED, with no sign change;
+  - the manifest of record has 1,766 movers, identical at abi 81 and 82, lost=0 (shadow_census now fails on a dropped compile);
+  - the 2 "exceptions" are compound parts with no measure set. Main ruled that parts inherit the parent's resolved set and fixes it before B4.
+- POSCOST counts: 21 positions, a floor; 408 superset hulls of 603 sites. Filed on main's row.
+- setdig: all five kit sets now load under measures.md. My ruling: a committed card version is append-only, so @2 is new and @1 is kept.
+- Lesson: the idle-notification lesson again. setdig's idle notice predated my ruling, so I checked its tree before acting and re-sent the ruling.
