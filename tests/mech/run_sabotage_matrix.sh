@@ -3518,6 +3518,10 @@ if [ "$REACH_ONLY" = "1" ]; then
     ro_declared="$(ro_count '^declared-UNREACHED')"
     ro_now="$(ro_count '^NOW-REACHED')"
     ro_noprobe="$(ro_count '^NO-PROBE')"
+    # `total` is otherwise set below this block (after the verdict counters),
+    # which this mode exits before reaching: under `set -u` the unset read
+    # killed the run before its DONE trailer.
+    total="$(wc -l < "$results_file.rows" | tr -d ' ')"
     echo
     if [ "$total" -ne "${#sab_files[@]}" ]; then
         echo "*** FATAL: ${#sab_files[@]} row(s) requested but only $total arrived. ***"
