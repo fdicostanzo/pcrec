@@ -129,6 +129,15 @@ defect traced to that edge (design §4.2.1, §10).
   compile. Witnesses: `run_facts_checks.sh` [facts-e1] (its sixth column)
   and `run_prefilter_collapse.sh` [anch]; sabotage S611 (the start half
   dropped), S613 (a nullable call with no empty path) anchor here.
+  **[FINDALL-NEXT] I0 (lane i1build, 2026-10-21): `reports_empty`** (E1, no
+  deny, `pcrec_pattern_reports_empty`): can some match's REPORTED span be
+  empty -- a nullable pattern, or one whose `\K` can be crossed with no
+  byte after it (`ab\K`). One walk computes, per subtree, the least
+  consumed length of a path that crosses no `\K` and the least length after
+  the last `\K` a path crosses (`RepW`). `pf_check_e1` holds it to the
+  lowered tree and `nullable ⇒ reports_empty`. Its readers are the
+  find-all iterator's retry gate (compile.c's notempty machine, the VM
+  accept guard, `<PREFIX>_ITER_RETRY`).
 
 - **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
   ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which

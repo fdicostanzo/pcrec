@@ -1381,6 +1381,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
 typedef struct {
     bool prune;
     bool reverse;
+    bool noacc;               /* [FINDALL-NEXT] a start state that never accepts */
     bool has_end;             /* a `pos == n`-only view must be computed */
     bool has_gst;             /* [wave D] a `\G` start family must be closed */
     int  natoms;              /* [UCP] U2 context atoms, each closed on its own */
@@ -1487,7 +1488,7 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
                     buf, &nout, &acc, &first);
             vw[v][u].list   = buf;
             vw[v][u].nlist  = nout;
-            vw[v][u].accept = acc;
+            vw[v][u].accept = m->noacc ? 0 : acc;
             /* D164 B3 `mark_prio`'s probe (endmark.md §R.1.4): at a pre-set's
              * END closure (`pos == n`, no byte to the right) holding two or
              * more distances, the one priority reaches first. */
@@ -1633,7 +1634,14 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                                (size_t)nfa->n * 3 * d->natoms * sizeof(int));
     int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
-    Mach m = { prune, reverse, has_end, has_gst, d->natoms, d->atomvec };
+    Mach m = { prune, reverse, false, has_end, has_gst, d->natoms, d->atomvec };
+    /* [FINDALL-NEXT] I0 the notempty root's START closures: unpruned, so
+     * every thread below an empty accept survives, and never accepting, so
+     * the empty matches at the start are gone (Dfa.notempty). */
+    Mach ne = m;
+    ne.prune = false;
+    ne.noacc = true;
+    const Mach *sm = d->notempty ? &ne : &m;
     sc.cbit = cbit;
     sc.ns_bit = -1;
     const unsigned readable = d->nctx ? ~ctx_rows_knobbed() : 0u;
@@ -1667,13 +1675,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * for exactly that reason — it is the one combination that is
      * unreachable, and closing `s0` with the bit clear would silently delete
      * `\G\A`-shaped matches at offset 0. */
-    d->s0 = make_state(cx, nfa, d, &m, &root, 1, true, true, UPC_PLAIN,
+    d->s0 = make_state(cx, nfa, d, sm, &root, 1, true, true, UPC_PLAIN,
                        &sc, scratch);
     d->s1u[UPC_PLAIN] =
-        make_state(cx, nfa, d, &m, &root, 1, false, false, UPC_PLAIN,
+        make_state(cx, nfa, d, sm, &root, 1, false, d->notempty, UPC_PLAIN,
                    &sc, scratch);
     for (int u = UPC_PLAIN + 1; u < m.natoms; u++)
-        d->s1u[u] = make_state(cx, nfa, d, &m, &root, 1, false, false, u,
+        d->s1u[u] = make_state(cx, nfa, d, sm, &root, 1, false, d->notempty, u,
                                &sc, scratch);
     /* [M6.2 wave D] `\G`'s interior family, closed only when the machine has
      * a `\G` to gate — the same pay-only-when-it-differs guard `has_end` is
@@ -1696,8 +1704,8 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * the reference build structurally the pre-wave emitter, which no edit to
      * the analysis can undo. */
     for (int u = 0; u < m.natoms; u++)
-        d->s1g[u] = m.has_gst
-            ? make_state(cx, nfa, d, &m, &root, 1, false, true, u,
+        d->s1g[u] = m.has_gst && !d->notempty
+            ? make_state(cx, nfa, d, sm, &root, 1, false, true, u,
                          &sc, scratch)
             : d->s1u[u];
     for (int u = m.natoms; u < PCREC_MAX_CTX_ATOMS; u++)

@@ -174,3 +174,126 @@ bool pcrec_empty_masks_admit(unsigned set)
 {
     return (set & ~(1u << EM_SE)) != 0;
 }
+
+/* [FINDALL-NEXT] I0 REPORTS-EMPTY: can a match's REPORTED span be empty, i.e.
+ * is the minimum reported width 0 (docs/design/findall_iter.md §3.3, IT13)?
+ * The find-all iterator's NOTEMPTY_ATSTART retry is emitted exactly where it
+ * is, so the fact must be sound in the direction that matters: a pattern it
+ * calls false must never report an empty span (the census control, §3.3).
+ *
+ * ONE ANALYSIS OVER THE REPORTED SPAN, not a list of constructs. A path's
+ * reported width is its width after the LAST `\K` it crosses, or its whole
+ * width when it crosses none, so each subtree carries two minima: `nok`, the
+ * least width of a path with no `\K`, and `k`, the least tail after the last
+ * `\K` of a path with one. Concatenation is `nok = a.nok + b.nok`,
+ * `k = min(b.k, a.k + b.nok)`; alternation takes each minimum. A width is
+ * only ever compared with 0, so it is three-valued (`RW_ZERO`, `RW_POS`,
+ * `RW_INF`), which keeps the sums exact with no overflow. It is `nullable`
+ * where no `\K` occurs (only `nok` is ever finite), and a superset of it
+ * always: an empty path reports an empty span.
+ *
+ * `A_CALL` does not follow `u.call.body` (src/opt/atomic.c:22-36): `nok` is
+ * the call graph's least fixpoint (`u.call.nonnullable`, K69), and `k` is 0
+ * whenever the pattern holds a `\K` anywhere, since the callee may cross it
+ * and end where it did -- the conservative side, which costs a retry and
+ * never an answer. A lookaround reports nothing of its own (`\K` inside one
+ * does not move the outer match's reported start, PCRE2's default refuses it
+ * there), so it is a zero-width atom. The switch has no `default:`. */
+enum { RW_ZERO, RW_POS, RW_INF };
+typedef struct { unsigned char nok, k; } RepW;
+
+/* The sum of two three-valued widths. */
+static unsigned char rw_add(unsigned char a, unsigned char b)
+{
+    return a == RW_INF || b == RW_INF ? RW_INF : a > b ? a : b;
+}
+
+static unsigned char rw_min(unsigned char a, unsigned char b) { return a < b ? a : b; }
+
+/* A path through `a` then `b`. */
+static RepW rw_cat(RepW a, RepW b)
+{
+    RepW r = { rw_add(a.nok, b.nok), rw_min(b.k, rw_add(a.k, b.nok)) };
+    return r;
+}
+
+static RepW rw_node(const Ast *a, bool has_k);
+
+/* The pair of an `A_ALT` spine: the least of each over its items. */
+static RepW rw_alt(const Ast *a, bool has_k)
+{
+    RepW u = { RW_INF, RW_INF };
+    for (;;) {
+        RepW x = rw_node(a->k == A_ALT ? a->r : a, has_k);
+        u.nok = rw_min(u.nok, x.nok);
+        u.k = rw_min(u.k, x.k);
+        if (a->k != A_ALT) return u;
+        a = a->l;
+    }
+}
+
+/* The (no-`\K`, `\K`-tail) minimum widths of `a`'s paths. */
+static RepW rw_node(const Ast *a, bool has_k)
+{
+    const RepW zero = { RW_ZERO, RW_INF };
+    RepW acc = zero;
+    for (;;) {
+        switch (a->k) {
+        case A_WCLASS: case A_CLASS: {
+            RepW x = { RW_POS, RW_INF };
+            return rw_cat(x, acc);
+        }
+        case A_EMPTY: case A_EOL: case A_CTX: case A_GSTART: case A_LOOK:
+        case A_BREF: case A_VAR:
+            return acc;   /* zero-width, or possibly empty, and no `\K` */
+        case A_KRESET: {
+            RepW x = { RW_INF, RW_ZERO };
+            return rw_cat(x, acc);
+        }
+        case A_CALL: {
+            RepW x = { a->u.call.nonnullable ? RW_POS : RW_ZERO,
+                       has_k ? RW_ZERO : RW_INF };
+            return rw_cat(x, acc);
+        }
+        case A_CAP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            /* the spine is left-nested: fold its right items into `acc`, the
+             * tail that follows, from the right */
+            while (a->k == A_CAT) {
+                acc = rw_cat(rw_node(a->r, has_k), acc);
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            return rw_cat(rw_alt(a, has_k), acc);
+        case A_REP: {
+            RepW b = rw_node(a->l, has_k), it;
+            /* k copies: no `\K` on any copy, or the last `\K` in some copy
+             * (the tail then is that copy's alone at its least). */
+            if (a->u.rep.rmax == 0) it = zero;
+            else {
+                it.nok = a->u.rep.rmin == 0 ? RW_ZERO : b.nok;
+                it.k = b.k;
+            }
+            return rw_cat(it, acc);
+        }
+        }
+        return acc;   /* unreachable: -Wswitch makes a new kind a build error */
+    }
+}
+
+/* Visits one node: records a `\K`. */
+static void rw_find_k(void *ud, const Ast *a)
+{
+    if (a->k == A_KRESET) *(bool *)ud = true;
+}
+
+bool pcrec_pattern_reports_empty(const Ast *root)
+{
+    bool has_k = false;
+    pcrec_ast_visit(root, rw_find_k, &has_k);
+    RepW w = rw_node(root, has_k);
+    return w.nok == RW_ZERO || w.k == RW_ZERO;
+}

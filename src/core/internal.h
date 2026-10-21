@@ -2393,6 +2393,16 @@ typedef struct {
      * more distances whose priority-first distance is c. Read nowhere else. */
     bool     prio_probe;
     uint8_t  prio_seen;
+    /* [FINDALL-NEXT] I0 THE NOTEMPTY START ROOT (findall_iter.md §3.3): set by
+     * the caller before the build of the find-all iterator's retry machine.
+     * Every START state is then the start closure with its ACCEPTING threads
+     * removed and with no accept pruning -- the empty matches at the start
+     * are rejected and every lower-priority non-empty thread continues, which
+     * is "the preferred match among the non-empty ones" -- and is closed with
+     * `\G` true, because the retry runs at the search's own start. Every
+     * state after the first byte is the ordinary construction's. An INPUT, so
+     * `pcrec_build_min_dfa`'s memo keys on it; the build never writes it. */
+    bool     notempty;
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
 } Dfa;

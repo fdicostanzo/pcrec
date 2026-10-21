@@ -931,12 +931,12 @@ rxt_file_case() {
                 return 0
             fi
             case_kind+=("n"); case_start+=(""); case_end+=("") ;;
-        mc)
+        mc|mg)
             if [[ ! "$tail" =~ ^([0-9]+)$ ]]; then
-                record_fail_class value-shape "$f" "$ln" "bad 'mc' line tail '$tail' (want a match count)"
+                record_fail_class value-shape "$f" "$ln" "bad '$kind' line tail '$tail' (want a match count)"
                 return 0
             fi
-            case_kind+=("mc"); case_start+=("${BASH_REMATCH[1]}"); case_end+=("") ;;
+            case_kind+=("$kind"); case_start+=("${BASH_REMATCH[1]}"); case_end+=("") ;;
     esac
     case_line+=("$ln")
     case_subject+=("@file:$path")
@@ -1173,6 +1173,7 @@ run_case_loop() {
         # case never joins a batch (its block is ineligible).
         local darg="$subj" dmode="one"
         [ "${case_kind[$i]}" = "mc" ] && dmode="count"
+        [ "${case_kind[$i]}" = "mg" ] && dmode="global"   # [FINDALL-NEXT] §1.7.1
         if [ "$mode" = "batched" ]; then
             out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$bidx" "$subj" "$pos")"
         else
@@ -1291,10 +1292,12 @@ run_case_loop() {
         # compares its one number. It carries no `g`/`gp` expectations (a
         # capture expectation over a find-all has no meaning — WHICH match's
         # captures?) and cannot, since the `g` arm attaches to `m` alone.
-        if [ "$kind" = "mc" ]; then
+        # [FINDALL-NEXT] `mg` is the same comparison: driver.c counted
+        # through `<prefix>_next` (mode `global`, rxt_format.md §1.7.1).
+        if [ "$kind" = "mc" ] || [ "$kind" = "mg" ]; then
             expect="count ${case_start[$i]}"
             if [ "$out" = "$expect" ]; then
-                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: mc '$cur_pattern' subject=\"$subj\" expect=${case_start[$i]}"
+                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: $kind '$cur_pattern' subject=\"$subj\" expect=${case_start[$i]}"
                 record_pass
             else
                 record_fail "$cur_file" "$line" \
@@ -1869,7 +1872,8 @@ flush_block() {
                 # `tests/harness/dispatch_gen.sh` is the batching landing's
                 # own generator and a second escape/counting vocabulary
                 # inside it is the drift this format keeps declining.
-                if [ -n "${case_file[$_bri]:-}" ] || [ "${case_kind[$_bri]}" = "mc" ]; then
+                if [ -n "${case_file[$_bri]:-}" ] || [ "${case_kind[$_bri]}" = "mc" ] ||
+                   [ "${case_kind[$_bri]}" = "mg" ]; then
                     _batch_excluded=1
                     break
                 fi
@@ -3196,7 +3200,7 @@ for file in "${files[@]}"; do
             # leg C's class), not an unknown token.
             record_fail_class value-shape "$file" "$lineno" \
                 "'var' wants a name then a double-quoted value, 'var-unset' a bare name (got '$line')"
-        elif [[ "$line" =~ ^mc[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
+        elif [[ "$line" =~ ^(mc|mg)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             # `mc "<subject>" <n>` — the FIND-ALL COUNT (format_design
             # §2.21). The rule is `docs/spec/match_api.md` §3.1's shipped
             # protocol BY REFERENCE and the loop lives in driver.c; this arm
@@ -3204,12 +3208,14 @@ for file in "${files[@]}"; do
             # `pos = max(end, pos+1)`, which double-counts an empty match
             # found beyond the scan position.
             if [ "$have_block" != "1" ]; then
-                record_fail_class unknown-token-in-scope "$file" "$lineno" "'mc' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'${BASH_REMATCH[1]}' line before any pattern block"
             else
-                case_kind+=("mc")
+                # [FINDALL-NEXT] `mg`, the GLOBAL count (rxt_format.md §1.7.1),
+                # rides this arm: same shape, counted by `<prefix>_next`.
+                case_kind+=("${BASH_REMATCH[1]}")
                 case_line+=("$lineno")
-                case_subject+=("${BASH_REMATCH[1]}")
-                case_start+=("${BASH_REMATCH[2]}")
+                case_subject+=("${BASH_REMATCH[2]}")
+                case_start+=("${BASH_REMATCH[3]}")
                 case_end+=("")
                 case_startpos+=("0")
                 case_gspec+=("")
@@ -3217,7 +3223,7 @@ for file in "${files[@]}"; do
                 case_route+=("$cur_route")
                 case_file+=("")
             fi
-        elif [[ "$line" =~ ^(m|n|ms|ns|mc)[[:space:]]+(([0-9]+)[[:space:]]+)?@file:\"([^\"]*)\"(.*)$ ]]; then
+        elif [[ "$line" =~ ^(m|n|ms|ns|mc|mg)[[:space:]]+(([0-9]+)[[:space:]]+)?@file:\"([^\"]*)\"(.*)$ ]]; then
             # [DD-13b.W23.3, H15/H6] A `@file:` SUBJECT, with `as <id>` and
             # `sha256 <hex64>` as INDEPENDENTLY OPTIONAL suffixes
             # (format_design §2.18). The bytes are the file's, byte-exact —
@@ -3246,9 +3252,9 @@ for file in "${files[@]}"; do
             # a file that quietly tested nothing.
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'under' line before any pattern block"
-            elif [[ ! "${BASH_REMATCH[2]}" =~ ^(m|n|ms|ns|mc)[[:space:]] ]]; then
+            elif [[ ! "${BASH_REMATCH[2]}" =~ ^(m|n|ms|ns|mc|mg)[[:space:]] ]]; then
                 record_fail_class value-shape "$file" "$lineno" \
-                    "'under <convention>' wraps an m/n/ms/ns/mc case line (got '${BASH_REMATCH[2]}')"
+                    "'under <convention>' wraps an m/n/ms/ns/mc/mg case line (got '${BASH_REMATCH[2]}')"
             else
                 total_under_skips=$((total_under_skips + 1))
             fi

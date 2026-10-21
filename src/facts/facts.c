@@ -64,6 +64,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_KINDS:        pf->kinds = 0; break;
     case PF_NULLABLE:     pf->nullable = false; break;
     case PF_EMPTY_ADMITS: pf->empty_masks = 0; break;
+    case PF_REPORTS_EMPTY: pf->reports_empty = false; break;
     case PF_START_ANCHOR: pf->start_anchor = PCREC_SANCH_NONE; break;
     case PF_START_SET:
         memset(pf->start_set.bits, 0xFF, sizeof pf->start_set.bits);
@@ -245,6 +246,9 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_EMPTY_ADMITS:
         pf->empty_masks = pcrec_pattern_empty_masks(pf->root);
         break;
+    case PF_REPORTS_EMPTY:
+        pf->reports_empty = pcrec_pattern_reports_empty(pf->root);
+        break;
     case PF_START_ANCHOR:
         pf->start_anchor = pcrec_start_anchor(pf->root);
         break;
@@ -352,6 +356,7 @@ void pcrec_facts_seal_e1(Ctx *cx, const struct Ast *root)
     pf_ask(cx, PF_KINDS, false);
     pf_ask(cx, PF_NULLABLE, false);
     pf_ask(cx, PF_EMPTY_ADMITS, false);
+    pf_ask(cx, PF_REPORTS_EMPTY, false);
 }
 
 /* THE E1 INVARIANCE CROSS-CHECK (design §3): the same two derivations over
@@ -366,6 +371,7 @@ static void pf_check_e1(Ctx *cx, const struct Ast *root)
     unsigned kinds = pcrec_pattern_kinds(root);
     bool nullable = pcrec_pattern_nullable(root);
     unsigned masks = pcrec_pattern_empty_masks(root);
+    bool rep_empty = pcrec_pattern_reports_empty(root);
     if (kinds != pf->kinds)
         pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the kind mask sealed "
                        "at E1 (0x%x) disagrees with the lowered tree's (0x%x)",
@@ -382,6 +388,15 @@ static void pf_check_e1(Ctx *cx, const struct Ast *root)
         pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the empty-path "
                        "masks sealed at E1 (0x%x) disagree with the lowered "
                        "tree's (0x%x)", pf->empty_masks, masks);
+    /* [FINDALL-NEXT] the same invariance, and the reported width held to
+     * nullability in the one direction it must hold: an empty match reports
+     * an empty span, so a nullable tree that read `reports_empty` false would
+     * lose the iterator's retry. */
+    if (rep_empty != pf->reports_empty || (pf->nullable && !pf->reports_empty))
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] reports_empty sealed "
+                       "at E1 (%s) disagrees with the lowered tree's (%s) or "
+                       "with nullability (%s)", pf->reports_empty ? "yes" : "no",
+                       rep_empty ? "yes" : "no", pf->nullable ? "yes" : "no");
     if ((pf->empty_masks != 0) != pf->nullable)
         pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the empty-path "
                        "masks (0x%x) disagree with nullability (%s)",
@@ -422,6 +437,12 @@ bool pcrec_fact_empty_admits(Ctx *cx)
 {
     pf_ask(cx, PF_EMPTY_ADMITS, true);
     return pcrec_empty_masks_admit(cx->job->pf.empty_masks);
+}
+
+bool pcrec_fact_reports_empty(Ctx *cx)
+{
+    pf_ask(cx, PF_REPORTS_EMPTY, true);
+    return cx->job->pf.reports_empty;
 }
 
 int pcrec_fact_start_anchor(Ctx *cx)
@@ -631,6 +652,8 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         return pf->nullable ? "yes" : "no";
     case PF_EMPTY_ADMITS:
         return pcrec_empty_masks_admit(pf->empty_masks) ? "yes" : "no";
+    case PF_REPORTS_EMPTY:
+        return pf->reports_empty ? "yes" : "no";
     case PF_START_ANCHOR:
         return pcrec_start_anchor_name(pf->start_anchor);
     case PF_START_SET: {

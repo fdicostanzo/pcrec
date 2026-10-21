@@ -347,6 +347,11 @@ typedef struct {
      * masks the empty paths carry (src/facts/widths.c), nonzero exactly where
      * `nullable`. No deny. Read as `empty_admits` (`pcrec_fact_empty_admits`). */
     unsigned  empty_masks;
+    /* [FINDALL-NEXT] I0 E1 structural, forced at the seal: the minimum
+     * REPORTED width is 0 (src/facts/widths.c). No deny. Read by the find-all
+     * iterator, whose NOTEMPTY_ATSTART retry is emitted exactly where it
+     * holds (`pcrec_fact_reports_empty`). */
+    bool      reports_empty;
     /* [OPT-ANCHOR-VM] E2 core: `PCREC_SANCH_*`; `PCREC_SANCH_NONE` under
      * `-fno-vm-anchor-bound`, deliberately indistinguishable from "nothing to
      * bound". The VM bounds its attempt loop on it; the DFA asserts its own,
@@ -437,6 +442,9 @@ bool           pcrec_fact_nullable(Ctx *cx);     /* E1 */
  * final newline — an empty path lacks a non-multiline start or end anchor.
  * False where the pattern is not nullable. */
 bool           pcrec_fact_empty_admits(Ctx *cx);
+/* E1: the minimum reported width is 0 -- some match's REPORTED span can be
+ * empty (a nullable pattern, or one whose `\K` can sit at the end). */
+bool           pcrec_fact_reports_empty(Ctx *cx);
 
 int            pcrec_fact_start_anchor(Ctx *cx);
 const StartSet *pcrec_fact_start_set(Ctx *cx);   /* E2 */
