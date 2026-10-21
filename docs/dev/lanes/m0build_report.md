@@ -314,3 +314,20 @@ fc3bed3ef (seq-pfcd2), plus this section. Owed: queue job
 `303-m0build-retest` (full `make test`, log `build/m0scratch/retest.log`,
 expect `sections ran: 73/73`). RACE NOTE: jobs 301/302 were still pending
 (not running) when the fixes were committed, so they will archive the fixed HEAD.
+
+## CENSUS (m0cens)
+
+Job 301 crashed in the writer, not the compare: corpus patterns are bytes (emit_sweep's decode_escape), the mover rows
+joined them as str. Fixed: patterns written via `emit_sweep.encode_escape`; added `--no-normalize` (planted-mover check).
+The 23 s is real: one compile is ~5 ms (base and new both produce output; 46,360 compiles / 8 workers). Premise test
+(--limit 20, 200 compiles): 0 movers normalized; with `--no-normalize` 76 movers (abi 81->82 line etc.), so a real
+difference shows. Full run (4,636 patterns x 5 arms, jobs 2): 4 movers, all one shape, NOT in the declared list:
+`RX_VM_PREFILTER_WHY "size cap retry, hybrid N > 1000000"` (c-utf8 + facts arms) moves N by +79 for `(\p{Xwd})x` and
+`x(\p{Xwd})y` (1040975->1041054, 1016219->1016298): the emitted-size measure the cap compares includes M0's scaffolding
+bytes. Not normalized (STOP RULE); job 304 not queued; nothing committed (302 mech RUNNING). Result file:
+build/m0scratch/cfull_try.tsv.
+
+Ruling (manager, 2026-10-21): the +79 is a DECLARED mover (byte-count reader class, D94 addendum; the size cap counts
+code bytes scaffolding included, D84). census.py now masks ONLY the N digits in `RX_VM_PREFILTER_WHY "size cap retry,
+hybrid N > M"`, on both sides, so the rung text, cap and every other byte must still match (same decision, same
+engine); a changed rung or any other byte still shows. Re-check of the 2 witnesses x 5 arms: 0 movers.

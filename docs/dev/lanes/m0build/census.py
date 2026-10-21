@@ -55,6 +55,10 @@ ABI = [(b"(abi 82)", b"(abi 81)"), (b"(PCREC_RX_ABI_H + 0) != 82", b"(PCREC_RX_A
 K112 = [(b"^ start of subject (absolute offset 0)", b"^ attempt_position of subject (absolute offset 0)"),
         (b"(?m)^ start of subject or after a non-final newline",
          b"(?m)^ attempt_position of subject or after a non-final newline")]
+# Declared mover (manager ruling 2026-10-21, D84/D94 addendum): the size cap counts code bytes, scaffolding
+# included, so the quoted N moves; ONLY these digits, in this one text, masked on BOTH sides, so the rest of
+# the line (rung, token, cap) and every other byte must still match.
+WHY = re.compile(rb'(RX_VM_PREFILTER_WHY[ \t]+"size cap retry, hybrid )\d+( > \d+")')
 SIZE = re.compile(rb"\d+ bytes of emitted C source \(\d+ of code\)")
 
 ARMS = [
@@ -66,7 +70,12 @@ ARMS = [
 ]
 
 
+NORMALIZE = True
+
+
 def normalize_new(out):
+    if not NORMALIZE:
+        return out
     lines = out.split(b"\n")
     res, i = [], 0
     while i < len(lines):
@@ -114,6 +123,8 @@ def one(task):
     if rb != rn:
         moved.append(("rc", "base=%d new=%d" % (rb, rn)))
     nn = normalize_new(on)
+    if NORMALIZE:
+        ob, nn = WHY.sub(rb"\1N\2", ob), WHY.sub(rb"\1N\2", nn)
     if ob != nn:
         moved.append(("bytes", first_diff(ob, nn)))
     if SIZE.sub(b"N", eb) != SIZE.sub(b"N", normalize_new(en)):
@@ -129,6 +140,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--no-normalize", action="store_true",
+                    help="switch the declared-scaffolding normalization off (the planted-mover check)")
     ap.add_argument("--movers", default="")
     ap.add_argument("--old", default="")
     ap.add_argument("--new-set", default="zen4-grid1@1:13a6536315af1520")
@@ -136,15 +149,17 @@ def main():
     sys.path.insert(0, os.path.join(a.tree, "scripts"))
     import emit_sweep  # noqa: E402  (the corpus enumeration, one implementation)
     corpus = emit_sweep.enumerate_corpus(a.new, a.tree, 60)
-    pats = sorted(set(p for _, _, p in corpus))
+    pats = sorted(set(p for _, _, p in corpus))   # bytes: corpus patterns need not be UTF-8
     if a.limit:
         pats = pats[:a.limit]
+    global NORMALIZE
+    NORMALIZE = not a.no_normalize
     tasks = [(arm, flags, a.base, a.new, p) for arm, flags in ARMS for p in pats]
     movers = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as ex:
         for arm, pat, moved in ex.map(one, tasks, chunksize=16):
             for what, d in moved:
-                movers.append((arm, pat, what, d))
+                movers.append((arm, emit_sweep.encode_escape(pat), what, d))
     with open(a.out, "w", encoding="utf-8", errors="backslashreplace") as f:
         f.write("# m0build census: base=%s new=%s patterns=%d arms=%d\n" % (a.base, a.new, len(pats), len(ARMS)))
         f.write("#arm\tpattern\tmoved\tfirst_difference\n")
