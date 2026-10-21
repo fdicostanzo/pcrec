@@ -354,6 +354,7 @@ static void build_site(vsite *v)
     mf_site *s = &v->site;
     memset(s, 0, sizeof *s);
     s->abi = MF_SITE_ABI;
+    s->consumer = MF_C_ENGINE;
     s->form = MF_FORM_FUNC;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_RETURN;

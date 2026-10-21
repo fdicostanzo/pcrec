@@ -2274,6 +2274,7 @@ static void refusal_table(void)
     /* a valid EXPR/FIND/RETURN baseline the cases perturb */
     memset(&s0, 0, sizeof s0);
     s0.abi = MF_SITE_ABI;
+    s0.consumer = MF_C_ENGINE;
     s0.form = MF_FORM_EXPR;
     s0.op = MF_OP_FIND;
     s0.handoff = MF_H_RETURN;
@@ -2423,6 +2424,7 @@ static void refusal_table(void)
     NCASE("on_miss_leaves-on-ON_CAND",      NULL,      (s.form = MF_FORM_STMT, s.handoff = MF_H_ON_CAND, s.on_miss_leaves = 1));
     NCASE("use-out-of-enum",                NULL,      s.use = 7);
     NCASE("consumer-out-of-enum",           NULL,      s.consumer = 7);
+    NCASE("consumer-unstated",              NULL,      s.consumer = MF_C_UNSTATED);
     NCASE("pred-need-out-of-enum",          NULL,      s.pred.need = (mf_need)5);
     {
         static mf_pred two2[2];
@@ -3743,6 +3745,7 @@ static void mm_refusals(void)
     mf_hooks h0;
     memset(&s0, 0, sizeof s0);
     s0.abi = MF_SITE_ABI;
+    s0.consumer = MF_C_ENGINE;
     s0.form = MF_FORM_STMT;
     s0.op = MF_OP_MISMATCH;
     s0.handoff = MF_H_ON_DIFF;
@@ -3823,6 +3826,7 @@ static void mm_refusals(void)
         mf_hooks fh;
         memset(&f0, 0, sizeof f0);
         f0.abi = MF_SITE_ABI;
+        f0.consumer = MF_C_ENGINE;
         f0.form = MF_FORM_EXPR;
         f0.op = MF_OP_FIND;
         f0.handoff = MF_H_RETURN;

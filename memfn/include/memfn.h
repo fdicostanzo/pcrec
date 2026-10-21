@@ -366,12 +366,11 @@ typedef enum { MF_T_SET, MF_T_RUN, MF_T_REF } mf_term_kind;
  * Nonzero only on a MISMATCH site, else refused. */
 typedef enum { MF_FOLD_NONE, MF_FOLD_ASCII, MF_FOLD_UCP } mf_fold;
 
-/* §8.2 `consumer`. A REPORT site (MF_SK_REPORT, R-26.3) states MF_C_RESULT,
- * refused otherwise. NOTE (R-26 Z1, recorded, not changed: the request keeps
- * the enum as it is): MF_C_RESULT is this enum's ZERO, so a REPORT site that
- * leaves `consumer` unwritten reads as RESULT; a renumbering with an
- * UNSTATED zero is its own MF_SITE_ABI event (docs/dev/lanes/r26z1_report.md) */
-typedef enum { MF_C_RESULT, MF_C_ENGINE } mf_consumer;
+/* §8.2 `consumer`. UNSTATED (0) is not a consumer and is REFUSED (MF_SITE_ABI
+ * 18, R-26 Z1 review F-4): every site states what consumes its answer, so a
+ * REPORT site that leaves `consumer` unwritten is not read as RESULT. A REPORT
+ * site (MF_SK_REPORT, R-26.3) states MF_C_RESULT, refused otherwise. */
+typedef enum { MF_C_UNSTATED = 0, MF_C_RESULT, MF_C_ENGINE } mf_consumer;
 
 /* The CALL MODE of the entry body a site sits in (R-19, MF_SITE_ABI 12;
  * r17b_prime.md §2.4, §4.2): a FACT, the knowledge key M. UNSTATED (0) is
