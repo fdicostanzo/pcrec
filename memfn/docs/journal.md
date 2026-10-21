@@ -2485,3 +2485,16 @@ pointer when a kit change merges to main.
   Mech 2/2 and every sweep arm show 0 movers. Posted `done: R-25`.
 - The make test was load-contaminated by main's lanes, which main owned and explained. Its passes stand.
 - **Lesson:** `python3 -I` is not universal for repo scripts: emit_sweep's variant/trace paths import a sibling module. A chain template must run emit_sweep without `-I`, or the script must fix its own path (notice filed).
+
+## 2026-10-20 (evening) — Frank ruling: B4's default under unknown landing predictability is V1
+
+- **Question** (owed since grid2read: M9 and M15 contradicted). Neither search length nor candidate gap decides between V1 and the walk. Landing PREDICTABILITY decides it: on irregular landings V1 wins from g = 4 and the walk pays about one mispredict per landing (4.2-5.4 ns); on regular landings V1 loses +15..+46% at g = 2 and +34.9% at g = 8, while the walk is cheap. Predictability is a property of the data, unknown at compile time.
+- **Ruling (Frank, verbatim gist):** short candidate gaps tend to come with short subjects, so the total search time is small and the losses are small IN ABSOLUTE TERMS ("only a weirdo is using this to replace every e in a Gutenberg bible"). Presume large gaps with large subjects, where throughput matters. All else being equal, the default is **V1**.
+- **What it fixes for B4:**
+  - the default compile emits V1 where rev 3's table had a length crossover (R1, already dropped: no interval) or a gap threshold;
+  - the walk is the default only where a separate measured row already keeps it: the VM hat (D1w, until F2's condition is settled);
+  - one-byte sites keep LIBC (D1, measured best-or-tied nearly everywhere);
+  - a caller-stated or measured regular regime (R5's MEASURED-E path) may still select the walk;
+  - R2's `unpaid` fallback is not WALK (grid2read §6).
+- **Owed and unchanged:** the rev 4 text of r17b_prime (M9/M15 into B4's table, this default stated as the ruling); the quiet re-time of f3-word-eq/f3-quad; D163 add. 8 layout controls, E8 PASS and M0 before B4 builds. **B4's measurement must name its regular-landing bench cells as EXPECTED losses up front.**
+- Posted to responses.md as a notice with proposed D-entry text for main.
