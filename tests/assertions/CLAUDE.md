@@ -536,3 +536,10 @@ recorded in `src/parse/mod_modifiers.c`.
   oracle rule; the rest agree with python3 `re` under the documented mapping
   (`\z` is python's `\Z`), checked by the lane against an independently
   written reader as well as by the directory's own verifier.
+
+[DD-11.5] P2e (lane ctxp2e, 2026-10-20): `ctxfn_table_check.py` (CK-8, §1b)
+also reads each row's CLASS column and checks it against the class
+libpcre2's observed cells imply (PIN_START iff exactly the absent row,
+PIN_END iff exactly the absent column), with a floor of one row per class
+(K35). Failing direction, measured on a planted copy of the .def: a pin
+written CONTEXT reports its row and class and the empty class.

@@ -4481,3 +4481,13 @@ columns; two forms `VMCTX_MLBOL`/`VMCTX_MLEOL` emit the old `(?m)^`/`(?m)$`
 text and role strings verbatim, and the two hand arms in `vm_emit`'s
 A_BOL/A_EOL cases are DELETED. `emit_dfa.c`: `PCREC_ARTIFACT_ABI` 81 (the DFA
 list-order movers, `docs/dev/history/abi_changelog.md`).
+
+## [DD-11.5] P2e (lane ctxp2e, 2026-10-20; NO abi event, zero movers)
+
+`emit_vm.c`: the `case A_BOL: case A_END:` arm is deleted; `^`/`\A`/`\z` are
+A_CTX nodes, and `vm_ctx` sends a row that reads no membership straight to
+`vm_ctx_row` with set -1 (so no empty class is interned, P2d's F-3), before
+the byte-image check. `vm_ctx_forms` reads ctxfn.def's new CLASS column
+position (ignored). Every other label list lost its two tokens. Emitted text,
+`--emit-ir` and `--emit-facts` are byte-identical to P2d's (4,636 corpus
+patterns, 6 arms + 8 axes).

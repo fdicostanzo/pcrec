@@ -1,0 +1,80 @@
+S-U4	S-U4_width_rule_byte_units	owner:P2e:pcrec_cwmax(case A_CTX:)
+S104	S104_mark_one_run_member	owner:P2e:pcrec_bref_mark(case A_CTX:)
+S107	S107_bref_not_nullable	owner:P2e:pcrec_nullable(case A_CTX:)
+S1083	S1083_context-stop-proves-nothing	comment
+S108	S108_rdshape_accepts_bref	owner:P2e:gk_build(case A_CTX:);owner:P2e:rd_shape(case A_CTX:)
+S1100	S1100_collapse-drops-rmin	owner:P2e:compile_ast(case A_CTX:)
+S1152	S1152_mline_bol_builds_bol	witness:P2c
+S1153	S1153_mline_bol_final_newline_cell	witness:P2c
+S1154	S1154_mline_eol_builds_eol	witness:P2c
+S1155	S1155_mline_raises_lookbehind	witness:P2c
+S1156	S1156_poss_absent_row_narrows	witness:P2c
+S1157	S1157_has_bot_ignores_mline_bol	witness:P2c
+S1158	S1158_mline_eol_cell_flipped	witness:P2c
+S1159	S1159_has_end_ignores_absent_next	witness:P2c
+S1160	S1160_reverse_left_abs_from_bot	witness:P2c
+S1161	S1161_vm_mline_bol_final_newline	witness:P2c
+S1174	S1174_anchor_rows_swapped	anchor:P2e:pcrec_anchor_ctxfn
+S1176	S1176_ctx_row_frag_drops_fn	anchor:P2e:frag_ctx_row
+S124	S124_look_negative_no_cut	comment
+S125	S125_look_push_after_body	comment
+S127	S127_look_not_nullable	owner:P2e:pcrec_nullable(case A_CTX:)
+S129	S129_look_ignores_neg	comment
+S130	S130_look_ignores_behind	comment
+S14	S14_nbr_threshold	owner:P2e:compile_ast(case A_CTX:)
+S156	S156_call_not_nullable	owner:P2e:pcrec_nullable(case A_CTX:)
+S157	S157_possessify_across_call	owner:P2e:first_of(case A_CTX:);owner:P2e:gk_build(case A_CTX:)
+S158	S158_call_target_unmarked	owner:P2e:pcrec_bref_mark(case A_CTX:)
+S159	S159_mark_follows_body	owner:P2e:pcrec_bref_mark(case A_CTX:)
+S160	S160_revdet_reverses_call	owner:P2e:rd_shape(case A_CTX:)
+S174	S174_elision_marks_live_group_dead	owner:P2e:pcrec_has_live_capture(case A_CTX:)
+S177	S177_splice_slots_uncounted	owner:P2e:vm_count_slots(case A_CTX:)
+S218	S218_pinned_predicate_widened	witness:P2c
+S219	S219_pinned_seed_conjunct_dropped	comment
+S220	S220_pinned_view_clause_dropped	comment
+S222	S222_start_stamp_forked_from_selection	witness:P2c
+S235	S235_attempt_loop_ungated	witness:P2c
+S302	S302_e1_kind_mask_moves_under_lowering	owner:P2e:lower_walk(case A_CTX:)
+S305	S305_lit_run_slot_walk_overskips	owner:P2e:vm_count_slots(case A_CTX:)
+S338	S338_t3_two_character_body	owner:P2e:lang_charset(case A_CTX:)
+S339	S339_t3_capture_bearing_body	owner:P2e:lang_charset(case A_CTX:)
+S341	S341_ctx_absent_reads_in_set	comment
+S365	S365_wclass_walks_the_set	owner:P2e:vm_emit_node(case A_CTX:)
+S366	S366_wclass_island_default	owner:P2e:vm_isl_words(case A_CTX:)
+S446	S446_req_cube_crosses_repeat	owner:P2e:rb_walk(case A_CTX:)
+S463	S463_handoff_k_minus_one	witness:P2c
+S465	S465_width_counts_characters	owner:P2e:rb_walk(case A_CTX:)
+S470	S470_no_clamp	witness:P2c
+S480	S480_dfahat_t_from_s0_escapes	comment
+S490	S490_dfahat_scan_kind_conjunct	witness:P2c
+S498	S498_walk_call_drops_bytes	owner:P2e:ss_walk(case A_CTX:)
+S499	S499_walk_bref_drops_bytes	owner:P2e:ss_walk(case A_CTX:)
+S49	S49_poss_eol_follow_ignored	owner:P2e:first_of(case A_CTX:)
+S500	S500_walk_var_drops_bytes	owner:P2e:ss_walk(case A_CTX:)
+S501	S501_walk_look_consumes	owner:P2e:ss_walk(case A_CTX:)
+S513	S513_c11_libc_name_dropped	comment
+S52	S52_revdet_first_iteration_captures	owner:P2e:vm_rev_emit(case A_CTX:)
+S588	S588_poss_call_in_lookaround_ignored	owner:P2e:pss_walk(case A_CTX:)
+S58	S58_mrl_minw_underreports	owner:P2e:pcrec_minw(case A_CTX:)
+S59	S59_mrl_minw_overreports	owner:P2e:pcrec_minw(case A_CTX:)
+S608	S608_cand_read_g1_attempt_edge_undeclared	witness:P2c
+S613	S613_nullable_call_no_empty_path	owner:P2e:em_set(case A_CTX:|return em_cat(acc, 1u <<)
+S617	S617_m4_mline_plus_k_dropped	witness:P2c
+S618	S618_m4_find_back_range_short	comment
+S693	S693_abi_not_bumped	comment
+S69	S69_endvar_against_base	comment
+S70	S70_unbuilt_refusal_removed	comment
+S746	S746_look_erasure_unrecorded	owner:P2e:compile_ast(case A_CTX:)
+S761	S761_end_pin_optional_repeat	owner:P2e:ew_walk_marked(case A_CTX:)
+S78	S78_skip_decline_removed	witness:P2c
+S807	S807_min0_repeat_no_set_shift	owner:P2e:rb_walk(case A_CTX:)
+S81	S81_cand_set_hardcoded_newline	witness:P2c
+S82	S82_prefilter_bound_at_zero	witness:P2c
+S83	S83_gstart_family_unconditional	comment
+S84	S84_gstart_takes_end_exemption	owner:P2e:first_of(case A_CTX:)
+S86	S86_kreset_write_untrailed	owner:P2e:vm_emit_node(case A_CTX:)
+S893	S893_cmp3-kill-skips-gstart	owner:P2e:q_rewrite(case A_CTX:|if (lb) return (QRes){ a|q->killed_bol++;)
+S904	S904_cmp14-prune-called-group	owner:P2e:q_rewrite(case A_CTX:|if (lb) return (QRes){ a|q->killed_bol++;)
+S91	S91_discharge_unconditional	owner:P2e:dis_walk(case A_CTX:)
+S94	S94_rdshape_accepts_atomic	owner:P2e:rd_shape(case A_CTX:)
+S97	S97_discharge_inherits_stamp	owner:P2e:dis_walk(case A_CTX:)

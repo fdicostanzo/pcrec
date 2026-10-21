@@ -485,7 +485,7 @@ static bool subtree_is_identity(const LowerCtx *lc, const Ast *a)
             for (int i = 0; i < a->u.cls.n; i++)
                 if (a->u.cls.iv[i].hi > ops->identity_max) return false;
             return true;
-        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
@@ -540,7 +540,7 @@ static void lower_walk(LowerCtx *lc, Ast **slot)
             if (repl) *slot = repl;
             return;
         }
-        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
@@ -604,7 +604,7 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:

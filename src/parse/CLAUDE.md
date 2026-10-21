@@ -2192,3 +2192,18 @@ REFUSES BY NAME (re-check R3; population 0 today). `mod_assertions.c`'s
 multiline pin is deleted. `registry.c`'s `^`/`$` descriptions now name the
 context node. `ctxnode.c`'s `look_fn` and `pcrec_ast_ctx` take `uint16_t`.
 The `Ast.u.anch.multiline` mentions above are history.
+
+## [DD-11.5] P2e (lane ctxp2e, 2026-10-20): `^`/`\A`/`\z` build the context node
+
+`pcrec_ast_pin` (parse.c) builds a subject PIN: an A_CTX over no set with
+row SUBJECT_START (`^` outside `(?m)`, and `\A`) or SUBJECT_END (`\z`),
+spelled as an anchor (`u.ctx.anchor`, so `\A*` stays error 109 through
+`pcrec_is_bare_anchor`'s A_CTX arm). parse.c's `^` and mod_assertions.c's
+`\A`/`\z` call it; `\A` still raises LB 1 there. definitions.c:
+`pcrec_ast_is_core` loses the two kinds (A_CTX is core), and
+`eol_tail_plain` admits the end pin by switching on `pcrec_ctx_class` (D164's
+tagged form reads `\z` inside `\Z`'s row, ctx_span N-3). Every other label
+list here lost its A_BOL/A_END tokens; A_CTX already shared each arm.
+The registry's `^` row description still says "A_BOL" (its text is
+`--list-syntax` output and the compliance doc's generated section; filed,
+not changed: docs/dev/lanes/ctxp2e_report.md F-3).

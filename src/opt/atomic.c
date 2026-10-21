@@ -62,7 +62,7 @@ bool pcrec_has_atomic(const Ast *a)
         switch (a->k) {
         case A_ATOMIC:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] A backreference carries no subtree at all — `l` and `r` are
          * unused — so it can neither BE a cut nor CONTAIN one. */
@@ -153,7 +153,7 @@ bool pcrec_has_lookaround(const Ast *a)
         switch (a->k) {
         case A_LOOK:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:
@@ -228,7 +228,7 @@ bool pcrec_has_collapsible_rep(const Ast *a)
             if (a->u.rep.rmin > 1 || a->u.rep.rmax > 1) return true;
             a = a->l;
             continue;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
@@ -295,7 +295,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
     for (;;) {
         if (a->reg == row) return true;
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] no subtree; the `a->reg == row` test at the top of the loop
          * has already answered for the node itself. */
@@ -434,7 +434,7 @@ static bool ds_has(const DischargeSet *d, const Ast *grp)
 static Ast *dis_walk(DischargeSet *d, Ast *a)
 {
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET:
     /* [M6.5.2] TRANSPARENT to nothing and containing nothing: a backreference
      * has no body for a cut to hide in. */
@@ -589,7 +589,7 @@ bool pcrec_has_bref(const Ast *a)
          * and would have declined either way — which is exactly why it had
          * to be found by reading the message rather than by a red test. */
         case A_VAR:
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
             return false;
         /* [M6.6.2] DESCENDS. A backreference inside a lookaround body compares
@@ -659,7 +659,7 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
             for (int i = 0; i < a->u.bref.nrefs; i++)
                 if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;
             return;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
             return;
         /* [M6.6.2] DESCENDS, for `pcrec_has_bref`'s reason: the marked set is
@@ -819,7 +819,7 @@ bool pcrec_has_live_capture(const Ast *a)
         switch (a->k) {
         case A_CAP:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
@@ -932,7 +932,7 @@ bool pcrec_has_linked_call(const Ast *a)
         switch (a->k) {
         case A_CALL:
             return a->u.call.link != CALL_SPLICE;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
@@ -968,7 +968,7 @@ bool pcrec_has_call(const Ast *a)
         switch (a->k) {
         case A_CALL:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:

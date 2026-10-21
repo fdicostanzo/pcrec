@@ -77,8 +77,11 @@ fi
 #     src/core/ctxfn.def, its nine cells derived from libpcre2 through the
 #     row's canonical lookaround spelling (and its native ones where it has
 #     them: \b, \B, (?m)^, (?m)$, \A, ^, \z) over the {a,-,\n} family; every row must
-#     reach all nine cells. FAILING DIRECTION: one flipped cell (SP-8,
-#     sabotage S1158) is reported by row and cell.
+#     reach all nine cells. [DD-11.5] P2e: each row's written CLASS (the
+#     column the analyses switch on) must be the class libpcre2's observed
+#     cells imply, and each class must have a row. FAILING DIRECTION: one
+#     flipped cell (SP-8, sabotage S1158) is reported by row and cell; a pin
+#     written CONTEXT (S1186, by-hand on a planted copy) by row and class.
 # ---------------------------------------------------------------------------
 echo
 echo "== [DD-11.5] CK-8 the context truth table against libpcre2 =="

@@ -42,9 +42,10 @@
  *
  * A `(?m)^` holds after every newline, so it constrains nothing about the
  * subject's start and this walk must answer NONE for it. Since [DD-11.5] it
- * is not an A_BOL at all but an A_CTX row (the parser's choice of node), and
- * the A_CTX arm below answers NONE for every context node — so no `case
- * A_BOL:` here can forget the modifier, which was D62 control 3's hazard.
+ * is an A_CTX row (the parser's choice of node), and so since [DD-11.5] P2e is
+ * a plain `^`: they are two ROWS, and the A_CTX arm below answers SA_BOT only
+ * for the row whose CLASS is the start pin — so no arm here can mistake one
+ * for the other, which was D62 control 3's hazard.
  *
  * WHERE IT IS CALLED: by the pattern-facts record (`src/facts/facts.c`), on
  * the `start_anchor` fact's first ask, over the LOWERED tree the E2 seal
@@ -111,8 +112,19 @@ static unsigned sa_walk(const Ast *a)
              * begins and its facts do. */
             if (a->u.rep.rmin >= 1) { a = a->l; continue; }
             return acc;
-        case A_BOL:
-            return acc | SA_BOT;
+        case A_CTX:
+            /* [DD-11.5] P2e `^`/`\A` is the start PIN, a context row; every
+             * other row (the end pin `\z`, `\b`, a lookaround, a `(?m)`
+             * anchor) constrains where the match ends or what surrounds a
+             * position, not where it began. */
+            switch (pcrec_ctx_class(a)) {
+            case CTX_PIN_START:
+                return acc | SA_BOT;
+            case CTX_PIN_END:
+            case CTX_CONTEXT:
+                return acc;
+            }
+            return acc;   /* unreachable: -Wswitch makes a new class a build error */
         case A_GSTART:
             return acc | SA_GSTART;
         /* Consumes a byte, so it says nothing about the position it begins at. */
@@ -124,8 +136,6 @@ static unsigned sa_walk(const Ast *a)
          * walk's two and has no consumer. */
         case A_EMPTY:
         case A_EOL:
-        case A_END:
-        case A_CTX:
         case A_KRESET:
         case A_LOOK:
         /* The two deliberate declines — see the header. */

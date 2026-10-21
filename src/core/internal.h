@@ -736,20 +736,7 @@ typedef enum {
     A_ALT,     /* l | r  (l is preferred branch) */
     A_REP,     /* l{rmin,rmax}, rmax == -1 for unbounded; greedy flag */
     A_EMPTY,   /* matches empty string */
-    A_BOL,     /* ^ and \A : start of subject */
     A_EOL,     /* $ and \Z : end of subject or before a final \n */
-    /* [M6.2 wave A] `\z` — end of subject, FULL STOP. A distinct KIND rather
-     * than a flag on A_EOL, and the two spellings are not interchangeable
-     * here: D62's principle is that node KINDS encode STRUCTURE and node
-     * FIELDS encode PARSE-RESOLVED MODIFIER STATE. `\z` is not a modifier
-     * variant of `$` — no option turns one into the other, `\Z` really IS
-     * A_EOL (an exact alias, assertions_design.md §3.2), and the position
-     * sets differ permanently: `$`/`\Z` hold at `n` AND at `n-1` before a
-     * final newline, `\z` only at `n`. So it is structure, it gets a kind,
-     * and mrl.c:18-24's exhaustive-switch-no-default rule earns its keep:
-     * adding this member is a compile error at every analysis that must
-     * decide about it. */
-    A_END,
     /* [UCP] U2 (ucp_design.md §2.2) THE CONTEXT ASSERTION: a zero-width
      * node carrying a code-point SET `C` (`u.ctx.iv`/`n`) and a TRUTH
      * FUNCTION (`u.ctx.fn`) over the two booleans (prev ∈ C, next ∈ C), with
@@ -772,7 +759,20 @@ typedef enum {
      * THE SET IS CODE POINTS, and an engine reads it byte-wise only where
      * every member is one byte of the encoding (§2.3) —
      * `pcrec_ctx_set_bytes` is that precondition, and it is CHECKED at every
-     * site that turns the set into bytes. */
+     * site that turns the set into bytes.
+     *
+     * [DD-11.5] Since part 2 the function reads an ABSENT side too (9 cells,
+     * src/core/ctxfn.def), and since P2e (D168 addendum 3) `^`/`\A` and `\z`
+     * are rows of it with an empty set: SUBJECT_START and SUBJECT_END, the
+     * former kinds A_BOL and A_END. What those kinds told an analysis is now
+     * the row's CLASS, `pcrec_ctx_class(n)` (below `struct Ast`):
+     * `CTX_PIN_START` (the match position is offset 0), `CTX_PIN_END` (it is
+     * `n`), or `CTX_CONTEXT`. An analysis that must know switches on it with
+     * no `default:`, so a new class is a compile error there exactly as a new
+     * kind is (mrl.c's rule); the class is derived from the grid, never
+     * written by a producer. `\z` is still not `$` under an option: `$`/`\Z`
+     * stays A_EOL (it holds at `n-1` before a final newline too), and `\G`
+     * stays A_GSTART (a runtime position). */
     A_CTX,
     /* [M6.2 wave D] `\G` — the FIRST MATCHING POSITION, i.e. the `startpos`
      * the match call was given (`docs/spec/match_api.md` §3.1;
@@ -1161,14 +1161,42 @@ typedef struct { unsigned lo, hi; } PcrecCpRange;
     ((a) << 0 | (b) << 1 | (c) << 2 | (d) << 3 | (e) << 4 | (f) << 5 |        \
      (g) << 6 | (h) << 7 | (i) << 8)
 enum {
-#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, cls, side, join, neg, role) \
     CTXFN_##name = CTXFN_GRID(a, b, c, d, e, f, g, h, i),
 #include "core/ctxfn.def"
 #undef CTXFN_ROW
 };
-#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, cls, side, join, neg, role) \
     _Static_assert(CTXFN_##name == (hex), "ctxfn.def row " #name ": the grid "  \
                    "and its stated value disagree");
+#include "core/ctxfn.def"
+#undef CTXFN_ROW
+
+/* [DD-11.5] P2e (D168 addendum 3) THE CLASS of a context function: what an
+ * ANALYSIS needs to know about a context node, as a closed set an analysis
+ * switches on with no `default:`. A PIN is a function that passes exactly at
+ * one subject edge whatever the neighbours are: its grid is the absent row
+ * (START: no previous character, offset 0) or the absent column (END: no
+ * next character, offset n) and nothing else. Every other function is
+ * CONTEXT, which tells an analysis nothing about where a match starts or
+ * ends.
+ *
+ * DERIVED FROM THE GRID, by equality with the pin's grid, and NOT from the
+ * three predicates: "reads absent prev and no membership" also holds for
+ * the complement, `(?<=[\s\S])` ("there IS a previous character", grid
+ * 1,1,1, 1,1,1, 0,0,0 = 0x03F), which is no pin, and a predicate
+ * composition would have called it one. The row's written CLASS column is a
+ * statement the build checks against this derivation, HEX's shape. */
+typedef enum { CTX_CONTEXT, CTX_PIN_START, CTX_PIN_END } CtxClass;
+#define CTXFN_GRID_PIN_START CTXFN_GRID(0, 0, 0, 0, 0, 0, 1, 1, 1)
+#define CTXFN_GRID_PIN_END   CTXFN_GRID(0, 0, 1, 0, 0, 1, 0, 0, 1)
+#define CTXFN_CLASS_OF(fn)                                                    \
+    ((fn) == CTXFN_GRID_PIN_START ? CTX_PIN_START                            \
+     : (fn) == CTXFN_GRID_PIN_END ? CTX_PIN_END : CTX_CONTEXT)
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, cls, side, join, neg, role) \
+    _Static_assert(CTXFN_CLASS_OF(CTXFN_##name) == CTX_##cls, "ctxfn.def row " \
+                   #name ": the written class " #cls " is not the one its "   \
+                   "grid derives");
 #include "core/ctxfn.def"
 #undef CTXFN_ROW
 
@@ -1201,17 +1229,6 @@ static inline bool ctxfn_reads_membership(uint16_t fn)
             ctxfn_cell(fn, k, 1) != ctxfn_cell(fn, k, 0)) return true;
     return false;
 }
-/* [DD-11.5] P2d: the context row an absolute-position anchor KIND lowers to —
- * `^`/`\A` (A_BOL) is SUBJECT_START, `\z` (A_END) is SUBJECT_END. The AST
- * keeps the two kinds as structure for the analyses that read them; this is
- * the one place both engines (the NFA lowering, the VM's emitted form) learn
- * which row each is. Called only from an `A_BOL`/`A_END` label; any other
- * kind gets 0, the function no position passes, never a plausible row. */
-static inline uint16_t pcrec_anchor_ctxfn(AKind k)
-{
-    return k == A_BOL ? CTXFN_SUBJECT_START : k == A_END ? CTXFN_SUBJECT_END : 0;
-}
-
 typedef struct Ast Ast;
 struct Ast {
     /* ---- COMMON FIELDS ----------------------------------------------------
@@ -1414,12 +1431,15 @@ struct Ast {
 
         /* [UCP] U2 A_CTX: the context set (code points, sorted disjoint
          * intervals — A_CLASS's own representation) and the truth function,
-         * a row of src/core/ctxfn.def's 9-cell table (bit `3p + q`). */
+         * a row of src/core/ctxfn.def's 9-cell table (bit `3p + q`). A row
+         * that reads no membership (`^`/`\A`'s SUBJECT_START, `\z`'s
+         * SUBJECT_END) carries the empty set (`iv` NULL, `n` 0). */
         struct {
             const PcrecCpRange *iv;
             int                 n;
             uint16_t            fn;
-            /* SPELLED AS AN ESCAPE ANCHOR (`\b`/`\B`), so PCRE2's grammar
+            /* SPELLED AS AN ESCAPE ANCHOR (`\b`/`\B`, `^`/`\A`/`\z`, a `(?m)`
+             * anchor), so PCRE2's grammar
              * makes it not directly quantifiable (`\b*` is error 109) while
              * a lookaround-born node is (`(?=a)*` compiles) —
              * `pcrec_is_bare_anchor`'s one reader. Parse-resolved spelling
@@ -1427,11 +1447,12 @@ struct Ast {
             bool                anchor;
         } ctx;
 
-        /* A_BOL and A_EOL carry NO payload. Until [DD-11.5] they shared a
+        /* A_EOL carries NO payload. Until [DD-11.5] it and A_BOL shared a
          * multiline field (D62); the parser now resolves `(?m)` into
          * the choice of NODE — `(?m)^`/`(?m)$` are A_CTX rows of
          * src/core/ctxfn.def — so no analysis can match `case A_EOL:` and
-         * forget a field (ctx_span.md §4.4, D62 addendum). */
+         * forget a field (ctx_span.md §4.4, D62 addendum). Since P2e a plain
+         * `^`/`\A` is an A_CTX row too (SUBJECT_START). */
 
         /* A_BREF: the backreference payload. */
         struct {
@@ -1855,6 +1876,15 @@ struct Ast {
         } call;
     } u;
 };
+
+/* [DD-11.5] P2e the CLASS of context node `n` (an A_CTX): `CTX_PIN_START`
+ * for `^`/`\A`, `CTX_PIN_END` for `\z`, `CTX_CONTEXT` for every other row.
+ * Derived from the node's truth function (CTXFN_CLASS_OF), never stored, so
+ * no producer can build a node whose class disagrees with its grid. */
+static inline CtxClass pcrec_ctx_class(const Ast *n)
+{
+    return CTXFN_CLASS_OF(n->u.ctx.fn);
+}
 
 /* Sets bit `c` in the 256-bit membership map `b`. */
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -3441,9 +3471,9 @@ struct Ctx {
      * branch in characters (src/parse/mod_lookaround.c — at parse time for a
      * call-free body, in `pcrec_lookaround_fix_widths` for a deferred one).
      * It is NOT derivable from the tree afterwards, which is why it is not a
-     * fact accessor: `\A` and `^` are one node kind (A_BOL) and only `\A`
-     * counts, a one-character lookbehind becomes an A_CTX node, and a DEFINE
-     * body PCRE2 counts may be dropped. Nesting does not accumulate (a `\b`
+     * fact accessor: `\A` and `^` are one node (the SUBJECT_START row) and
+     * only `\A` counts, a one-character lookbehind becomes an A_CTX node, and
+     * a DEFINE body PCRE2 counts may be dropped. Nesting does not accumulate (a `\b`
      * inside a lookbehind is a max, not a sum), and dead code counts —
      * PCRE2's own rule, copied rather than the true reach, because a larger
      * LB would refuse subjects PCRE2 accepts. `[[:<:]]`/`[[:>:]]` count 1 in
@@ -4468,6 +4498,9 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
 /* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
 Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn);
+/* [DD-11.5] P2e a subject PIN (`^`/`\A`: CTXFN_SUBJECT_START, `\z`:
+ * CTXFN_SUBJECT_END) as the context node: no set, spelled as an anchor. */
+Ast *pcrec_ast_pin(Ctx *cx, uint16_t fn);
 
 /* [UCP] U2 T3, a lookaround's lowering (src/parse/ctxnode.c): the ordered
  * first-match rows as DATA — name, deny flag, one-line predicate, its test,
@@ -5068,7 +5101,7 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
     for (;;) {
         f(ud, a);
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         /* [VAR] A_VAR IS A LEAF LIKE A_BREF: its bytes come from the

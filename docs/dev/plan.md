@@ -198,8 +198,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   KINDS (Frank 2026-10-14): analysis object, measurement sets, [TABLE-JUDGE] picks, AND the EVALUATOR PARAMETER TABLE ([REGIME-EVAL]'s verdict-changing constants: the prereg hash = the kind's digest, the report's prereg diff = the census tool's diff). Placement rule: compiler numbers -> limits.def; measured decision numbers -> measurement sets; harness thresholds -> a [KNOW-SRC] kind. Until built, each kind's file uses the canonical format from day one.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
-  status (2026-10-21): started; P2a-P2c MERGED to main (merge d06b530f7, abi 81; heavy validation green, ctxbuild_report.md §9); P2d (\A/\z at the NFA layer) built + landed (lane ctxp2d, zero movers, abi stays 81, ctxp2d_report.md; K112 filed), P2e next; part 1 not started; design ctx_span.md rev 2.1, D168 + add. 1-3
-  next: P2e (abi event; needs Frank's build go); tell the kit abi 81
+  status (2026-10-21): started; P2e landed (abi 81, zero movers; heavy chain green, ctxp2e_report.md 7a); part 2 done; next = part 1 (kit_proof Z2/UL-0)
+  next: part 1, the span-context producer (kit_proof Z2/UL-0)
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.

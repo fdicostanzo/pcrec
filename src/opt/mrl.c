@@ -155,9 +155,7 @@ long long pcrec_minw(const Ast *a)
         case A_CLASS:
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
-        case A_BOL:
         case A_EOL:
-        case A_END:
         /* [M6.2 wave B] `\b`/`\B` consume no byte, exactly as every other
          * assertion here does. The word-boundary pair reads the bytes AROUND
          * the position, which is not the same thing as consuming one, and a
@@ -324,7 +322,7 @@ bool pcrec_nullable(const Ast *a)
             a = a->l;
             continue;
         case A_CLASS: return false;
-        case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
+        case A_EMPTY: case A_EOL: return true;
         /* [M6.2 wave B] zero-width, hence nullable. [M6.2 wave D] `\G` too.
          * NULLABLE is about the BYTES a node can consume, not about whether
          * it can succeed — an assertion that fails still consumes nothing. */
@@ -538,9 +536,7 @@ long long pcrec_cwmax(const Ast *a)
             /* One CHARACTER, exactly and by definition — see the header. */
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
-        case A_BOL:
         case A_EOL:
-        case A_END:
         /* The assertions consume no byte at their widest either: `\b`/`\B`
          * READ the bytes around the position without consuming one, so 0 is
          * exact at BOTH ends of the interval, not conservative at either. */
@@ -679,9 +675,7 @@ long long pcrec_cwmin(const Ast *a)
         case A_CLASS:
             return pcrec_sat_add(acc, 1, MRL_MINW_MAX);
         case A_EMPTY:
-        case A_BOL:
         case A_EOL:
-        case A_END:
         case A_CTX:
         /* A backreference's minimum is 0 EXACTLY, `pcrec_minw`'s own measured
          * argument (a group can publish an empty capture), and the unit does

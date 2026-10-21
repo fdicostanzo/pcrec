@@ -14,7 +14,7 @@
  *             po_qo, po_qi, po_qa,     p = out:    q = out, in, absent
  *             pi_qo, pi_qi, pi_qa,     p = in
  *             pa_qo, pa_qi, pa_qa,     p = absent
- *             VMSIDE, JOIN, NEG, ROLE)
+ *             CLASS, VMSIDE, JOIN, NEG, ROLE)
  *
  * The VALUE is DERIVED from the grid (`CTXFN_GRID`, internal.h); HEX is the
  * number the design table states, and internal.h asserts the two agree, so a
@@ -25,6 +25,18 @@
  * it (learnings.md §3). The table's independent control is CK-8: each row's
  * canonical lookaround spelling against libpcre2 (ctx_span.md §6).
  *
+ * CLASS is what an ANALYSIS reads ([DD-11.5] P2e, D168 addendum 3): `PIN_START`
+ * for the function that passes exactly where there is no previous character
+ * (offset 0), `PIN_END` for exactly no next character (offset n), `CONTEXT`
+ * for every other row. Like HEX it is a statement the build checks: the class
+ * is DERIVED from the grid (internal.h's `CTXFN_CLASS_OF`), and internal.h
+ * asserts the written column agrees, so a pin's grid cannot be edited without
+ * the build refusing it. Analyses switch on `pcrec_ctx_class(node)`, which
+ * reads the derivation, never this column, with no `default:` (mrl.c's rule),
+ * so a new class is a compile error at every site that must decide about it,
+ * exactly as a node kind was. Its independent control is CK-8's class half:
+ * libpcre2's observed cells of the row's spelling are the pin grid or not.
+ *
  * The four VM columns are `src/gen/emit_vm.c`'s `vm_ctx_forms` (the emitted
  * test's shape and the listing's role text); every other includer ignores
  * them. A row whose absent cells copy its `out` cells is a pre-[DD-11.5]
@@ -33,46 +45,47 @@
 
 /* \b (mod_assertions): p != q, absent as out. */
 CTXFN_ROW(BOUNDARY,    0x0AA,  0,1,0,  1,0,1,  0,1,0,
-          VMCTX_BOTH, "!=", false, "\\b word boundary")
+          CONTEXT, VMCTX_BOTH, "!=", false, "\\b word boundary")
 /* \B: p == q. */
 CTXFN_ROW(NONBOUNDARY, 0x155,  1,0,1,  0,1,0,  1,0,1,
-          VMCTX_BOTH, "==", false, "\\B not a word boundary")
+          CONTEXT, VMCTX_BOTH, "==", false, "\\B not a word boundary")
 /* (?<=C) (src/parse/ctxnode.c's recognizer). */
 CTXFN_ROW(PREV,        0x038,  0,0,0,  1,1,1,  0,0,0,
-          VMCTX_PREV, NULL, false, "previous character in the set")
+          CONTEXT, VMCTX_PREV, NULL, false, "previous character in the set")
 /* (?<!C) */
 CTXFN_ROW(NOT_PREV,    0x1C7,  1,1,1,  0,0,0,  1,1,1,
-          VMCTX_PREV, NULL, true,  "previous character not in the set")
+          CONTEXT, VMCTX_PREV, NULL, true,  "previous character not in the set")
 /* (?=C) */
 CTXFN_ROW(NEXT,        0x092,  0,1,0,  0,1,0,  0,1,0,
-          VMCTX_NEXT, NULL, false, "next character in the set")
+          CONTEXT, VMCTX_NEXT, NULL, false, "next character in the set")
 /* (?!C) */
 CTXFN_ROW(NOT_NEXT,    0x16D,  1,0,1,  1,0,1,  1,0,1,
-          VMCTX_NEXT, NULL, true,  "next character not in the set")
+          CONTEXT, VMCTX_NEXT, NULL, true,  "next character not in the set")
 /* (?m)^ (the parser, P2c): start of subject, or after a newline that is not
  * the subject's last byte — libpcre2's `\A|(?<=\n)(?=[\s\S])`, 547/547. The
  * `in`/`absent` cell is 0 because PCRE2's default `(?m)^` does not hold after
  * a FINAL newline (`PCRE2_ALT_CIRCUMFLEX` is the option that turns it on). */
 CTXFN_ROW(MLINE_BOL,   0x1D8,  0,0,0,  1,1,0,  1,1,1,
-          VMCTX_MLBOL, NULL, false,
+          CONTEXT, VMCTX_MLBOL, NULL, false,
           "(?m)^ attempt_position of subject or after a non-final newline")
 /* (?m)$: end of subject, or before a newline — libpcre2's `(?![^\n])`,
  * 547/547, stated over {\n} with the absent column set (ctx_span.md §4.2.4:
  * the only A_CTX spelling of it under utf8, and today's atoms under byte). */
 CTXFN_ROW(MLINE_EOL,   0x1B6,  0,1,1,  0,1,1,  0,1,1,
-          VMCTX_MLEOL, NULL, false,
+          CONTEXT, VMCTX_MLEOL, NULL, false,
           "(?m)$ end of subject or before a newline")
-/* `\A` and `^` outside `(?m)` (P2d: the lowering of A_BOL): no previous
- * character, whatever the next one is. Reads no membership, so the row's
- * N_CTX state contributes no set to the class axis and its VM form tests the
- * position alone; it reads absent prev, so `pcrec_nfa_has_bot` routes it to
- * ENG_ATTEMPT exactly as the retired N_BOT kind did. */
+/* `\A` and `^` outside `(?m)` (the parser's node since P2e; the NFA row since
+ * P2d): no previous character, whatever the next one is: the start PIN.
+ * Reads no membership, so the row's N_CTX state contributes no set to the
+ * class axis and its VM form tests the position alone; it reads absent prev,
+ * so `pcrec_nfa_has_bot` routes it to ENG_ATTEMPT exactly as the retired
+ * N_BOT kind did. */
 CTXFN_ROW(SUBJECT_START, 0x1C0, 0,0,0, 0,0,0,  1,1,1,
-          VMCTX_START, NULL, false,
+          PIN_START, VMCTX_START, NULL, false,
           "^ attempt_position of subject (absolute offset 0)")
-/* `\z` (P2d: the lowering of A_END): no next character. Reads no
- * membership; reads absent next, so it makes the `pos == n` view live as the
- * retired N_END kind did. */
+/* `\z` (the parser's node since P2e; the NFA row since P2d): no next
+ * character: the end PIN. Reads no membership; reads absent next, so it
+ * makes the `pos == n` view live as the retired N_END kind did. */
 CTXFN_ROW(SUBJECT_END, 0x124,   0,0,1, 0,0,1,  0,0,1,
-          VMCTX_END, NULL, false,
+          PIN_END, VMCTX_END, NULL, false,
           "\\z end of subject (absolute)")

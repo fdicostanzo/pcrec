@@ -20,18 +20,19 @@
 # subject the assertion pins. pcrec has no word boundary today (module
 # `assertions`), so A_BOL is the whole available population and is the right
 # target.
+#
+# RE-AIMED at [DD-11.5] P2e (lane ctxp2e, 2026-10-20): `^`/`\A` is no longer
+# the kind A_BOL but the A_CTX row SUBJECT_START, and first_of decides it in
+# the A_CTX arm's class switch (CTX_PIN_START). The plant gives that case the
+# end pin's answer (transparent), the same mistake at its new site.
 SAB_ID="S49-poss-bol-follow-ignored"
 SAB_FILE="src/opt/possessify.c"
 SAB_SUITES="possdiff"
 SAB_DESC="start-of-subject in the follow treated as transparently as end-of-subject: the upward-closure argument behind the one measured exemption applied to an assertion it does not cover"
 SAB_DOC_FIGURE="tests/possessify/run_possdiff.sh: the a{0,4}^ family diverges"
 SAB_COUNT=1
-SAB_BEFORE='        First r;
-        bs_all(r.f);
-        r.nullable = false;
-        return r;
-    }
-    case A_EOL:'
-SAB_AFTER='        return fst_empty(true);  /* SABOTAGE S49 */
-    }
-    case A_EOL:'
+SAB_BEFORE='             * `pcrec_poss_ctx_admits` never narrows it. */
+        case CTX_CONTEXT:'
+SAB_AFTER='             * `pcrec_poss_ctx_admits` never narrows it. */
+            return fst_empty(true);  /* SABOTAGE S49 */
+        case CTX_CONTEXT:'

@@ -120,9 +120,7 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
         /* Zero-width: consumes nothing, so the first byte comes from what
          * follows (§3.2). */
         case A_EMPTY:
-        case A_BOL:
         case A_EOL:
-        case A_END:
         case A_CTX:
         case A_GSTART:
         case A_KRESET:

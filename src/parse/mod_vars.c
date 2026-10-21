@@ -223,7 +223,7 @@ static void vars_assign(Ctx *cx, Ast *a)
         if (!a) return;
         vars_assign_node(cx, a);
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_VAR: case A_CALL:
             return;

@@ -131,8 +131,18 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
              * empty iteration, which ends wherever it began. */
             if (a->u.rep.rmin >= 1) { a = a->l; continue; }
             return EW_NONE;
-        case A_END:
-            return EW_Z;
+        case A_CTX:
+            /* [DD-11.5] P2e `\z` is the end PIN, a context row. Every other
+             * row is END-blind for the reasons the zero-width list below
+             * gives, a `(?m)$` included (decline (4) in the header). */
+            switch (pcrec_ctx_class(a)) {
+            case CTX_PIN_END:
+                return EW_Z;
+            case CTX_PIN_START:
+            case CTX_CONTEXT:
+                return EW_NONE;
+            }
+            return EW_NONE;   /* unreachable: -Wswitch makes a new class a build error */
         case A_EOL:
             /* A `(?m)$` (decline (4) in the header) is an A_CTX row since
              * [DD-11.5] and takes that arm's EW_NONE. */
@@ -146,8 +156,6 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
          * is the safe answer and the widening is a later mechanism's, not a
          * special case here. */
         case A_EMPTY:
-        case A_BOL:
-        case A_CTX:
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
@@ -296,10 +304,8 @@ static void em_tails(const Ast *a, EmWalk *w)
             em_push(w, a);
             return;
         /* Consumes, asserts something else, or is not lowered by B3. */
-        case A_END:
         case A_CLASS:
         case A_EMPTY:
-        case A_BOL:
         case A_CTX:
         case A_GSTART:
         case A_KRESET:

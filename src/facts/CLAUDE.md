@@ -336,3 +336,11 @@ Maintenance: update this file when a file is added, moved in or removed.
 DELETED; a `(?m)` anchor is an A_CTX node, whose arm in each walk already
 answered what the multiline branch did (ctx_span.md §4.4 table A). `kset.c`:
 the two multiline NFA labels are gone.
+
+## [DD-11.5] P2e (lane ctxp2e, 2026-10-20): the pins are A_CTX rows
+
+Four STILL-SPECIAL sites of ctx_span.md §4.6 switch on `pcrec_ctx_class(n)`
+with no `default:`: startanch.c `sa_walk` (start pin -> SA_BOT), endwin.c
+`ew_walk_marked` (end pin -> EW_Z), and widths.c `em_set` (start pin EM_S,
+end pin EM_E). req.c, startset.c and endwin.c's `em_tails` only lost their
+A_BOL/A_END label tokens.

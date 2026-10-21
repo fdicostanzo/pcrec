@@ -1558,7 +1558,7 @@ static const RegDef bol_def[] = {
  * shipped in definitions.c) says A_EOL is NOT core: `$`'s non-multiline
  * form is `\Z`'s own shipped alias, and `\Z` itself reduces FURTHER —
  * `\Z ≡ (?=\n?\z)` — so bare `$` is not "already core" the way bare `^`
- * (A_BOL, aliasing `\A`, which IS core) is. `^`'s census-§1 claim
+ * (`\A`'s own node, which IS core) is. `^`'s census-§1 claim
  * "already core" and `$`'s survive only until §2's full-reduction ruling
  * is applied literally; `$` needed a SECOND real substitution instead of
  * an identity entry once it was. Verified against libpcre2 already

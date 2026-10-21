@@ -189,7 +189,7 @@ static bool la_has_kreset(const Ast *a)
         switch (a->k) {
         case A_KRESET:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_BREF:
         case A_VAR:
             return false;

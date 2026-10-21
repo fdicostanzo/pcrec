@@ -11,8 +11,8 @@
  *
  *  1. KILL. Every `\G` becomes the never node (an empty `A_CLASS`):
  *     REQUIRED, since a `\G` left in Q would assert at the position the
- *     controller searches Q from. Every `^`/`\A` (`A_BOL`; a `(?m)^` is
- *     an A_CTX row, [DD-11.5]) becomes never: a route optimization,
+ *     controller searches Q from. Every `^`/`\A` (the start-PIN context row;
+ *     a `(?m)^` is another row, [DD-11.5]) becomes never: a route optimization,
  *     false past the floor anyway. NOT killed: a node inside a lookbehind or
  *     inside a group called (transitively) from one, which can be read at a
  *     position below the attempt start; `(?m)^`. A `\G` there DECLINES.
@@ -62,7 +62,7 @@ static void qf_walk(QFacts *f, const Ast *a, bool lb)
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET: case A_VAR:
             return;
         case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
@@ -222,13 +222,23 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
         }
         q->killed_g++;
         return (QRes){ never_node(cx), true, false };
-    case A_BOL:
-        if (lb) return (QRes){ a, false, false };
-        q->killed_bol++;
-        return (QRes){ never_node(cx), true, false };
+    case A_CTX:
+        /* [DD-11.5] P2e `^`/`\A` is the start PIN row, the floor anchor this
+         * kills; every other row (`\z`, `\b`, a lookaround, a `(?m)^`)
+         * stays. */
+        switch (pcrec_ctx_class(a)) {
+        case CTX_PIN_START:
+            if (lb) return (QRes){ a, false, false };
+            q->killed_bol++;
+            return (QRes){ never_node(cx), true, false };
+        case CTX_PIN_END:
+        case CTX_CONTEXT:
+            return (QRes){ a, false, false };
+        }
+        return (QRes){ a, false, false };   /* unreachable: -Wswitch */
     case A_CLASS:
         return (QRes){ a, is_never_leaf(a), false };
-    case A_EMPTY: case A_EOL: case A_END: case A_CTX: case A_KRESET:
+    case A_EMPTY: case A_EOL: case A_KRESET:
     case A_BREF: case A_VAR: case A_WCLASS:
     /* Calls are left as they are (§B.1): a callee is rewritten at its own
      * lexical position, and the call reaches the rewritten group. */
@@ -288,8 +298,13 @@ static void qp_walk(QProps *p, const Ast *a, bool lb)
     for (;;) {
         switch (a->k) {
         case A_GSTART: p->g++; return;
-        case A_BOL: if (!lb) p->bol_out++; return;
-        case A_CLASS: case A_EMPTY: case A_EOL: case A_END: case A_CTX:
+        case A_CTX:
+            switch (pcrec_ctx_class(a)) {
+            case CTX_PIN_START: if (!lb) p->bol_out++; return;
+            case CTX_PIN_END: case CTX_CONTEXT: return;
+            }
+            return;
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
             return;
         case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
