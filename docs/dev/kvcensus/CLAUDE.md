@@ -29,6 +29,14 @@ only; no clock is read, gcc is never run on an artifact.
   entry constant is emitted. The committed census tables below were produced
   with the old reading; `../../design/kit_proof/x0/exposure.py` counts the
   machines either change reaches.
+  Measured (lane x0read, `../../design/kit_proof/x0/out/exposure.txt`, over every census
+  pattern at its own flags): R1 reaches machines whose emitted entry is not row 0, all
+  view-carrying (anchored 7 seeded + 74 unseeded, forward 1 + 33, anchored-language 32
+  unseeded, on each encoding; `-fno-rev-end` adds 9 + 80 forward); R2 reaches 5 patterns
+  whose language gains a byte through an eol view (4 under `-fno-rev-end`). So
+  `sites.tsv.gz`/`patterns.tsv.gz` CAN move on those rows (their `starts()`, `whole()` and
+  `forward_path()` columns read row 0, and the hull misses the view byte); they are NOT
+  regenerated here, and a regeneration is filed as a follow-up for the manager.
 - `kvvm.py` — the VM's leading literal prefix off `--emit-ir`'s program
   section (strict: stops at a capture write; relaxed: a capture open at the
   attempt start does not stop it).

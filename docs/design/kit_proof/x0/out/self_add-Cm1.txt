@@ -1,16 +1,16 @@
-## X0 build/x0/res_self_add-Cm1.jsonl  pcre2=10.46 2025-08-27 plant='' self='add-Cm1' items=150
-agg admitted native items=80 p1:C_-1=5 p1_cells=23750141 p1_nodes=3612 p1_red=5 p1_unknown=0 p2_cells=1296860 p2_diff=1068 p2_red=6 p2_subjects=222087 red_other=5 red_u1shape=1 why:cover=80
-agg admitted utf8 items=70 p1:C_-1=21 p1_cells=36936080 p1_nodes=1948 p1_red=6 p1_unknown=0 p2_cells=1073467 p2_diff=80 p2_red=5 p2_subjects=178705 red_other=6 why:cover=70
+## X0 /home/pcrec/projects/pcrec/worktrees/x0fix/build/x0fix/res_self_add-Cm1.jsonl  pcre2=10.46 2025-08-27 plant='' self='add-Cm1' items=150
+agg admitted native items=80 p1:C_-1=5 p1_cells=23749627 p1_nodes=3627 p1_red=5 p1_unknown=0 p2_cells=1295330 p2_diff=1053 p2_red=6 p2_subjects=222080 red_other=5 red_u1shape=1 why:cover=80
+agg admitted utf8 items=70 p1:C_-1=21 p1_cells=36936080 p1_nodes=1938 p1_red=6 p1_unknown=0 p2_cells=1072854 p2_diff=74 p2_red=5 p2_subjects=178910 red_other=6 why:cover=70
 red admitted native - b'(()|^){0}[b]' cover p1=0 p2=1001 u1shape null {"s": "0062", "sf": 0, "cover": [1, 2], "pcre": null} 
-red admitted native - b'(?<!a)b' cover p1=1 p2=43  {"kind": "C_-1", "ctx": "61", "pcre": false, "reading": true} {"s": "6162", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted native - b'(?<!a)b' cover p1=1 p2=25  {"kind": "C_-1", "ctx": "61", "pcre": false, "reading": true} {"s": "6162", "sf": 0, "cover": [1, 2], "pcre": null} 
 red admitted native - b'(?<=a)c' cover p1=1 p2=3  {"kind": "C_-1", "ctx": "80", "pcre": false, "reading": true} {"s": "8063", "sf": 0, "cover": [1, 2], "pcre": null} 
 red admitted native - b'\\Bx' cover p1=1 p2=3  {"kind": "C_-1", "ctx": "9f", "pcre": false, "reading": true} {"s": "9f78", "sf": 0, "cover": [1, 2], "pcre": null} 
 red admitted native - b'\\b[0-9]{2}-[0-9]{2}' cover p1=1 p2=15  {"kind": "C_-1", "ctx": "56", "pcre": false, "reading": true} {"s": "5630302d3030", "sf": 0, "cover": [1, 6], "pcre": null} 
-red admitted native - b'\\Bfoo' cover p1=1 p2=3  {"kind": "C_-1", "ctx": "9f", "pcre": false, "reading": true} {"s": "9f666f6f", "sf": 0, "cover": [1, 4], "pcre": null} 
-red admitted utf8 u b'(?<!a)b' cover p1=1 p2=36  {"kind": "C_-1", "ctx": "61", "pcre": false, "reading": true} {"s": "6162", "sf": 0, "cover": [1, 2], "pcre": null} 
+red admitted native - b'\\Bfoo' cover p1=1 p2=6  {"kind": "C_-1", "ctx": "9f", "pcre": false, "reading": true} {"s": "9f666f6f", "sf": 0, "cover": [1, 4], "pcre": null} 
+red admitted utf8 u b'(?<!a)b' cover p1=1 p2=25  {"kind": "C_-1", "ctx": "61", "pcre": false, "reading": true} {"s": "6162", "sf": 0, "cover": [1, 2], "pcre": null} 
 red admitted utf8 u b'\\Bfoo' cover p1=4 p2=2  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} {"s": "9f666f6f", "sf": 1, "cover": [1, 4], "pcre": null} 
-red admitted utf8 u b'\\B(?<!a)d' cover p1=4 p2=4  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} {"s": "9f64", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted utf8 u b'\\B(?<!a)d' cover p1=4 p2=2  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} {"s": "9f64", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted utf8 u b'\\Bcat\\B' cover p1=4 p2=0  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} null 
-red admitted utf8 u b'\\B\\B\\w' cover p1=4 p2=10  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} {"s": "9f30", "sf": 1, "cover": [1, 2], "pcre": null} 
+red admitted utf8 u b'\\B\\B\\w' cover p1=4 p2=17  {"kind": "C_-1", "ctx": "c39f", "pcre": false, "reading": true} {"s": "9f30", "sf": 1, "cover": [1, 2], "pcre": null} 
 red admitted utf8 u b'(?<=a)b' cover p1=4 p2=28  {"kind": "C_-1", "ctx": "c380", "pcre": false, "reading": true} {"s": "8062", "sf": 1, "cover": [1, 2], "pcre": null} 
 == X0 run COMPLETE: items=150 sec=23.9

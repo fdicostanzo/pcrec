@@ -63,9 +63,11 @@ including bytes reached through a view-gated edge. Nothing under `src/`, `memfn/
 |---|---|---|
 | R1: the reading took an UNSEEDED machine's entry to be row 0 | sound-M1 now holds on BOTH arms: `e(⊥)` and the unseeded entry are the EMITTED constant `X` (`anchored_state = X;`), read by kvdfa (`Machine.entry`, `starts()`) and by C6 in `conj.py`. The X0 premise test `\Zx` read `cover` at main and now reads `entry-const`. So do `\zx`, `\zabc`, `-{0,}?\Z-` (both encodings) and `[ab]*\z\W`. `\w{0,2}?$\W` declines at `no-eol-view` (both flag arms). The same row-0 assumption also sat in kvdfa's seeded `starts()`, which added row 0 for the absent predecessor even when `X` is dead; in `forward_path` (the forward machine's start row); and in `whole()` | §1.1 C6, §6.3 S1140 (now both arms), `conj.py` `k_entry`, `docs/dev/kvcensus/kvdfa.py`, its selftest |
 | R2: the plain walk's hull dropped eol-view bytes (`(a$\n)\|ab`: `S_1 = {b}`, libpcre2 `{b, \n}`) | the TRUE set is now stated. The machine reading adds the byte a row consumes through its eol view at a subject-final `\n` (the emitted loop's own step: `step(eol[q], '\n')` into a row that accepts at the end), counts that path as a match ending at `d + 1`, and treats such rows as live. §5.2's sentence about C8 is corrected, and the requirement on `span_facts` is stated. No shape was found where the true set is unsound, so no conjunct is added. The plant `plain-walk` (no S-id: the S1130-S1150 range is full) restores the old walk, and X0 must read it red | §5.2, `kvdfa.lang` / `Machine.vnl` / `acc_end`, `conj.machine`, `x0.py` |
-| K35: the table admits census DFA patterns outside §1.2's population (99 at X0, 10 of them R1) | §1.2 is recounted from the table itself on the fixed reading, and every count that cites it moves | §1.2, §7 B1, `docs/design/CLAUDE.md` |
+| K35: the table admits census DFA patterns outside §1.2's population (99 at X0, 10 of them R1) | §1.2 is recounted from the table itself on the fixed reading (`conj.txt` F, queued job `300-x0fix-recount`): **91** outside the census text classes (49 native, 42 utf8; 99 - the 10 R1 items now declining + 2 newly admitted), so the `cover` population is **79 / 51 bench, 712 / 526 corpus patterns (native / utf8), 1,288 distinct (flags, pattern)**, and B1's movers move with it | §1.2, §7 B1, `docs/design/CLAUDE.md` |
 | the libpcre2 10.46 `MATCH_INVALID_UTF` + `ANCHORED` start past a leading invalid byte | filed as U20, with a probe. It is the DOCUMENTED skip (`pcre2unicode(3)`), applied before the anchor. `\G` does not move with it | `docs/dev/upstream_issues.md` U20, `kit_proof/x0/u20_probe.c` |
 | X0 re-run | both parts, the witnesses, the plants and X0's self-plants, on the fixed reading | §6.4 X0 RESULT, `kit_proof/x0/results.md` |
+| X0 re-run (result) | **PASSES**: 0 differences beyond U1 on every role, the witnesses clean, every plant and self-plant red where it reaches; one caveat, 175 inconclusive part-1 cells on `(?:[a-z]{0,3}\z\|x)[0-9]{3}` (not a difference) | §6.4 X0 RE-RUN, `kit_proof/x0/results.md`, `x0/out/` |
+| exposure of R1 and R2 (`x0/out/exposure.txt`, over every census pattern at its own flags) | R1: machines whose EMITTED entry is not row 0, all view-carrying: anchored 7 seeded + 74 unseeded, forward 1 + 33, anchored-language 32 (the same counts on utf8; `-fno-rev-end` adds 9 + 80 forward); R2: 5 patterns whose language gains a byte through an eol view (4 under `-fno-rev-end`). kvcensus's committed `sites.tsv.gz`/`patterns.tsv.gz` were produced with the old reading, so their entry-derived columns and those hulls can move; regeneration is filed as a follow-up, not run | §6.4, `docs/dev/kvcensus/CLAUDE.md` |
 
 ---
 
@@ -181,7 +183,7 @@ for the new fields (named here, the kit's to write at Z1).
 | what U1 is | a search whose kit site PROVES the whole sub-problem at every candidate it yields returns the first candidate as the match, with no DFA, no start recovery and no handback (§1) |
 | where it sits | ONE new LOCATE row, `cover`, after `rev-end` and before `composite`. It hands `SPAN`/`NOMATCH` to the EXISTING `FIN2 report`/`FIN1 nomatch`. The row is a WALK (the kit's stream). The FACT it reads (`MkKnown`) and the FINISHER are source-neutral `[r3 fam-M1]` (§2.1) |
 | its admission | `cover_conj[]`, a listed first-match conjunct table (§1.1) `[r3 fam-M4]`: route, site, pattern and machine conjuncts, then the kit's |
-| stage 1 population | `CR_DFA` finisher artifacts only `[r3 snd-M2, fam-M5]`. **66 bench / 560 corpus native sites, 46 / 413 utf8** (census sites, origin start, whole-cover). `cover_conj[]` admits 71 / 585 native and 47 / 420 utf8 whole-cover PATTERNS: the start-origin ones (66 / 558, 46 / 413) plus, with C2 retired, 5 / 27 and 1 / 7 with no start-origin site `[r3rc M-A]`. Context joins add 6 bench / 80 corpus native and 3 / 65 utf8, U-ctxorigin's 12 / 9 included `[r3 snd-M4, r3rc M-A]` (§1.2) |
+| stage 1 population | `CR_DFA` finisher artifacts only `[r3 snd-M2, fam-M5]`. **66 bench / 560 corpus native sites, 46 / 413 utf8** (census sites, origin start, whole-cover). `cover_conj[]` admits 71 / 585 native and 47 / 420 utf8 whole-cover PATTERNS: the start-origin ones (66 / 558, 46 / 413) plus, with C2 retired, 5 / 27 and 1 / 7 with no start-origin site `[r3rc M-A]`. Context joins add 6 bench / 80 corpus native and 3 / 65 utf8, U-ctxorigin's 12 / 9 included `[r3 snd-M4, r3rc M-A]` (§1.2). Counted from the table at revision 2.2, the `cover` population is 79 / 712 native and 51 / 526 utf8 patterns, 91 of them outside the text classes above `[x0fix K35]` |
 | what the entry loses | the forward machine's tables and scan loop, the start recovery, the K82 handoff and any pre-check (`foobar` twin: `.text` 2,047 → 1,425 B, SIZE ONLY, §2.4) |
 | the `\b` rewrite | READ off the route's anchored machine (seed table, emitted entry constant, class-indexed accept). For stage 1 it is DFA-only. At U1b a facts-layer derivation becomes the context fact and this reading its control `[r3 fam-Q3]` (§3) |
 | the fact producer | split `[r3 fam-M2]`: `span_facts`' first slice gives `S_d`, `exact_len` and the hull, computed by EXTENDING the k-set walk (`pcrec_kset_walk`, `src/facts/kset.c`; priority-free) rather than by a new `src/facts/spans.c` `[r4 Q-r4-3]`. A reading of A gives the end at `k` and the context sets (§5.2) |
@@ -257,7 +259,9 @@ count, not a conjunct.
 | … dead groups only (`CR_DFA`, NCAPS ≥ 2) | 1 / 1 | 8 / 7 sites | yes (FIN2's fill; witness bench `syntax/rec-define`) |
 | context joins admitted (C1-C12, a start-origin site) | 6 / 3 | 68 / 56 | yes (§3) |
 | context joins admitted with no start-origin site (U-ctxorigin's, recounted) | 0 / 0 | 12 / 9 | yes `[r3rc M-A]` (was NO in revision 2) |
-| **admitted patterns, all** | **77 / 50** | **665 / 485** | the `cover` population (B1's movers) |
+| … of which in the census text classes (revision 2.1's count) | 77 / 50 | 665 / 485 | yes |
+| … of which OUTSIDE them: the table admits them though kvcensus's whole/ctx text classes do not name them, e.g. `(?m)a$`, `(?m)done$` (`conj.txt` F, `[x0fix K35]`) | 2 / 1 | 47 / 41 | yes |
+| **admitted patterns, all** | **79 / 51** | **712 / 526** | the `cover` population (B1's movers), counted from the table `[x0fix K35]` |
 | context joins declined at `end-at-k` (the lazy forms) | 0 / 0 | 4 / 4 | never |
 | whole-cover on a VM finisher (DFA_SCAN on a hybrid, DFA_HAT, HYB_PF, VM_ATTEMPT) | 11 / 7 sites | 390 / 138 sites | NO: [CAPS-KNOWN] |
 | context joins on the VM | 4 / 3 | 23 / 19 patterns | NO: [CAPS-KNOWN] with U1b's facts-layer reading |
@@ -267,7 +271,14 @@ The context-join counts are the k3-sound critic's 80 / 65 corpus patterns, repro
 68 + 12 = 80 and 56 + 9 = 65, and with C2 retired all 80 / 65 are admitted. The admitted
 total, 77 / 665 native and 50 / 485 utf8, equals the critic's `eolwalk.py` counts over
 the same census. Deduplicated by (flags, pattern) it is the 1,197 patterns of the
-critic's 0-difference run `[r3rc M-A]`. The census's text-based 84 / 69 included the 4 lazy
+critic's 0-difference run `[r3rc M-A]`. **Revision 2.2 recount `[x0fix K35]`** (`conj.txt`
+F, `cover_conj[]` over EVERY census pattern at its own flags): the 1,197 are unchanged
+(R1 and R2 touch none of them), and the table admits 91 more (49 native-flag, 42 utf8:
+`(?m)…$` shapes the census's text classes do not name), so the population is 79 / 712
+native and 51 / 526 utf8, 659 + 629 = **1,288** distinct patterns. Against X0's 99 outside
+the census classes: 10 were R1 items and now decline at `entry-const`/`no-eol-view`; 2
+are new (`(?:[a-z]{0,3}\z|x)[0-9]{3}`, both encodings, which the row-0 reading declined at
+`end-at-k`). The §1.2 rows above this one are the census text classes and do not move. The census's text-based 84 / 69 included the 4 lazy
 non-covers. Revision 1's 71 / 686 had counted the hybrids' DFA_SCAN and DFA_HAT sites,
 whose finisher is the VM. Its "DFA_HAT 6" row was wrong for the same reason: every
 DFA_HAT whole-cover site sits on a VM-engine artifact.
@@ -1191,17 +1202,40 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
   green. The per-thread witnesses read `cover k=2` and are clean. X0 re-runs once R1/R2
   are ruled on, and at Z2 on the slice (`x0.py stated` takes any producer's sets).
 
-  **X0 RE-RUN on revision 2.2's reading** `[x0fix]` (lane `x0fix`, 2026-10-21, main
-  `63a7c3315`, libpcre2 10.46): **OWED**. The run is queued as boxqueue job
-  `530-x0fix-x0run` (log: `scripts/boxqueue status`; outputs in
-  `worktrees/x0fix/build/x0fix/out/`). The recount job is `300-x0fix-recount`. Passing
-  means 0 differences beyond U1 on every role, and every plant red where it reaches.
-  Measured before queueing, on a smoke population of the R1 and R2 items: every R1 item
-  now declines (`\Zx`, `\zx`, `[ab]*\z\W` at `entry-const`; `\w{0,2}?$\W` at
-  `no-eol-view`); `(a$\n)|ab` (both encodings) and the K1 witness `ab|a$\n` read
-  `S_1 = {b, \n}` with 0 differences; the new `plain-walk` plant turns all three red
-  (`under: [10]` at d = 1). The fresh agent that reads the verdicts replaces this
-  paragraph with the result.
+  **X0 RE-RUN on revision 2.2's reading** `[x0fix]` (lane `x0fix` setup, lane `x0read`
+  reading, 2026-10-21, main `63a7c3315`, libpcre2 10.46; queued job `530-x0fix-x0run`, rc
+  0, 1,063 s; `kit_proof/x0/results.md` and `x0/out/`): **PASSES.**
+  - **Part 1** reads 0 differences on every role: the 1,197 admitted patterns over
+    43,800 prefix nodes and 443.9M context x prefix x tail cells, 0 inconclusive;
+    admitted-R (113 items, 36.2M cells), admitted-out (91 items, 29.4M cells) and the
+    witnesses (32 items, 3.6M cells) likewise.
+  - **Part 2** reads 0 differences beyond U1: 18.95M cells over 3.15M subjects on the
+    admitted role, every one of the 1,589 differing cells on `(()|^){0}[b]` (U1); 0 on the
+    other roles. The sites run (1,939 of 1,941 completed; the two seeded utf8 stragglers
+    NOT RUN again) reads 0 red: R2's `(a$\n)|ab` is closed, and no non-U1 difference
+    remains anywhere.
+  - **R1 and R2 are closed.** The six R1 patterns decline and left the admitted roles
+    (admitted-R 121 -> 113, admitted-out 99 -> 91); the three K1 witnesses and
+    `(a$\n)|ab` read `S_1 = {b, \n}` and agree with libpcre2.
+  - **The plants are red where they reach**: S1130 239/239, S1131 54/54, S1132-S1134
+    300/300 each, S1136 on its three K1 witnesses (0 census movers), S1139 53/55 (the 2 are
+    `\d$(?!\n)` under `-fno-rev-end`, where the plant changes no answer), S1140 76/76
+    (it now reaches the unseeded R1 shapes), `plain-walk` red on `(a$\n)|ab` (both
+    encodings) and the three K1 witnesses; S1150's check reads the union-narrowing
+    statements RED and the per-thread slice green, S1149's pass-through statements RED.
+    X0's self-plants are all red (`drop-Ck`, `flip-absA`, `over-S`, `under-S`, `k-plus-1`
+    on every sampled item, `add-Cm1` on the 11 it reaches).
+  - **One caveat, not a difference**: 175 inconclusive part-1 cells per run on
+    `(?:[a-z]{0,3}\z|x)[0-9]{3}` (both encodings, in admitted-R and admitted-out;
+    `cover k=4`, 0 differences in both parts). They are `[a-z]` bytes at depth 0 where
+    hard partial matching reports a prefix and the witness search finds no complete
+    match, so they are compared on neither side. The admitted role has 0 inconclusive.
+  - **Exposure** (`x0/out/exposure.txt`): R1's reach is the machines whose emitted entry is
+    not row 0 (anchored 7 seeded + 74 unseeded, forward 1 + 33, anchored-language 32 on
+    each encoding; all view-carrying), R2's is 5 patterns whose language gains a byte
+    through an eol view (4 under `-fno-rev-end`). kvcensus's committed tables were produced
+    with the old reading and can move on those; regeneration is filed, not run.
+  X1 and the slice half of C8 stay OWED (Z2, B1).
 - **X1, the same oracle on the BUILT artifacts** (Z2's harness-routed builds and B1's
   default build): every `cover` artifact compiled, run against libpcre2 10.46 with the
   X0 subject families.
@@ -1267,7 +1301,7 @@ PCRE2-only syntax that python refuses.
 | **Z2** | pcrec: `span_facts`' first slice, as the extended `pcrec_kset_walk` with `ctx_span.md` §3.3's in-span rule `[r4 Q-r4-3, B9]`; `MkLang`/`MkEnd`/`MkKnown`; `cover_conj[]`; the `cover` row and `emit_cover`; the default-build class check; true `exact_len` over the sent sets on every start-origin FIND site; the `--emit-facts` slice; `compound.c`'s field reads (§2.6). **Routing:** the default build and the trace build both decline `cover` (the trace build decides as the default does). Only `build/pcrec-harness --harness=kit-proof` routes both pcrec's row and the kit's REPORT row (the `--harness=no-compound` lever's shape, `compile.c:3351`); the kit side through `mf_preview` (below) `[r3rc M-B]`. **C17:** `emit_cover`'s door call site lands with a `pending` row in `site_manifest.tsv`, so rule 1 stays green. **`.list`:** the row carries no `.list` at Z2. If the self-check requires one, Z2 is a declared `--list-axes` delta (B3b's precedent) | pcrec | 0 (default build) | emit_sweep 0 movers; X1 and X3 on the harness-routed artifacts, which are B1's artifacts (same pcrec row, same kit text); K35; the agreement assertion |
 | **measure** | directional hand timing on the dev box, in a window cleared with Frank (memory `pcrec-box-shared-with-frank`): harness-routed `cover` artifacts against default on lit-l8, year4, file-ext-order, hex8-bounded, `match`/`search_short`/`throughput` | lane | — | [KIT-VERIFY]'s D77 trigger; GO/NO-GO for B1 |
 | (kit) | R17-b′ B4, the LOCKDOWN (set-site routing, M0's stamp, the size rung) | kit | B4's census | B4's |
-| **B1** | THE ONE BYTE-MOVING EVENT, **after B4**: the REPORT row routed in the default build together with pcrec's row; `PCREC_NO_KIT_PROOF` (bit 57) and the listing's `fact_deny`; `.list`; the `"cover"` stamp; the C17 row `pending` → `delegated`; abi +1 with every §6.1 reader; spec hunks §6.2; S1130-S1148 land (S1149 lands at Z2 with the slice it plants `[r4 B9]`); the bench `[inbox]` note | pcrec + the kit's routing in one commit | the `cover` population (77 bench / 665 corpus native, 50 / 485 utf8 patterns, §1.2) `[r3rc M-A]` | the full battery (the manager's), mech for every new and moved anchor, `make test-axes` with the new arm, X5 |
+| **B1** | THE ONE BYTE-MOVING EVENT, **after B4**: the REPORT row routed in the default build together with pcrec's row; `PCREC_NO_KIT_PROOF` (bit 57) and the listing's `fact_deny`; `.list`; the `"cover"` stamp; the C17 row `pending` → `delegated`; abi +1 with every §6.1 reader; spec hunks §6.2; S1130-S1148 land (S1149 lands at Z2 with the slice it plants `[r4 B9]`); the bench `[inbox]` note | pcrec + the kit's routing in one commit | the `cover` population (79 bench / 712 corpus native, 51 / 526 utf8 patterns, 1,288 distinct, counted from the table, §1.2) `[r3rc M-A, x0fix K35]` | the full battery (the manager's), mech for every new and moved anchor, `make test-axes` with the new arm, X5 |
 | **official** | the bench's verdict on the targeted hardware (D144 add. 4) | bench, via main | — | — |
 
 **Why B1 lands after B4.** Row edits are free until the lockdown (B4). The REPORT row is

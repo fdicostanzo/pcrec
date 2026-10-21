@@ -1,4 +1,4 @@
-# kit_proof/conj.py rev 2.1 at main fa322a7f6 (census pin 2523cfe4b), build/pcrec of the lane tree; compile-only
+# kit_proof/conj.py rev 2.2 at main 63a7c3315 + lane x0fix (R1/R2 fixed; section F added), build/pcrec of the lane tree; compile-only; run by the queued job 300-x0fix-recount
 ## A. stage-1 SITES (census, origin start, whole > 0) by FINISHER route
 sites bench native CR_DFA DFA_SCAN OFS 42
 sites bench native CR_DFA DFA_SCAN PF 24
@@ -61,6 +61,58 @@ cover corpus utf8 ctx no-start-site 9
 cover corpus utf8 ctx start-site 56
 cover corpus utf8 whole no-start-site 7
 cover corpus utf8 whole start-site 413
+## F. [x0fix K35] cover_conj[] over EVERY census pattern at its own flags: the
+##    population counted FROM THE TABLE, not from the census's whole/ctx text classes
+all-why bench native anchored-A 20
+all-why bench native cover 79
+all-why bench native earlier-row 12
+all-why bench native end-at-k 62
+all-why bench native exact 56
+all-why bench native finisher-dfa 95
+all-why bench native fixed-width 18
+all-why bench native refused 25
+all-why bench utf8 anchored-A 20
+all-why bench utf8 cover 51
+all-why bench utf8 earlier-row 12
+all-why bench utf8 end-at-k 34
+all-why bench utf8 entry-const 1
+all-why bench utf8 exact 45
+all-why bench utf8 finisher-dfa 88
+all-why bench utf8 fixed-width 18
+all-why bench utf8 refused 22
+all-why corpus native anchored-A 110
+all-why corpus native cover 712
+all-why corpus native earlier-row 207
+all-why corpus native end-at-k 619
+all-why corpus native entry-const 98
+all-why corpus native exact 150
+all-why corpus native finisher-dfa 2325
+all-why corpus native fixed-width 203
+all-why corpus native no-eol-view 18
+all-why corpus native refused 374
+all-why corpus utf8 anchored-A 93
+all-why corpus utf8 cover 526
+all-why corpus utf8 earlier-row 197
+all-why corpus utf8 end-at-k 457
+all-why corpus utf8 entry-const 93
+all-why corpus utf8 exact 127
+all-why corpus utf8 finisher-dfa 2240
+all-why corpus utf8 fixed-width 200
+all-why corpus utf8 no-eol-view 18
+all-why corpus utf8 refused 347
+all-cover bench native in-B 77
+all-cover bench native outside-B 2
+all-cover bench utf8 in-B 50
+all-cover bench utf8 outside-B 1
+all-cover corpus native in-B 665
+all-cover corpus native outside-B 47
+all-cover corpus utf8 in-B 485
+all-cover corpus utf8 outside-B 41
+e.g. outside-B bench native '(?m)done$' '(?m)èª\x9e$'
+e.g. outside-B bench utf8 '(?m)done$'
+e.g. outside-B corpus native '(?m)a$' '(?m)abc$' '(?m)ERROR$' '(?m).$'
+e.g. outside-B corpus utf8 '(?m)a$' '(?m)abc$' '(?m)ERROR$' '(?m:a$)'
+all-cover distinct (flags, pattern): native=659 utf8=629 total=1288
 ## E. stage-1 sites whose SENT span 0 covers fewer positions than k (family B1:
 ##    exact_len is stated over the SENT sets, min(k, sent))
 sent bench native OFS sent<k 21
@@ -94,23 +146,23 @@ rarm corpus native anchored-A finisher-dfa 33
 rarm corpus native earlier-row anchored-A 8
 rarm corpus native earlier-row cover 10
 rarm corpus native earlier-row end-at-k 11
-rarm corpus native earlier-row entry-const 6
+rarm corpus native earlier-row entry-const 9
 rarm corpus native earlier-row exact 5
-rarm corpus native earlier-row fixed-width 45
+rarm corpus native earlier-row fixed-width 42
 rarm corpus native earlier-row no-eol-view 75
 rarm corpus utf8 anchored-A finisher-dfa 25
 rarm corpus utf8 earlier-row anchored-A 7
 rarm corpus utf8 earlier-row cover 10
 rarm corpus utf8 earlier-row end-at-k 11
-rarm corpus utf8 earlier-row entry-const 6
+rarm corpus utf8 earlier-row entry-const 9
 rarm corpus utf8 earlier-row exact 7
-rarm corpus utf8 earlier-row fixed-width 45
+rarm corpus utf8 earlier-row fixed-width 42
 rarm corpus utf8 earlier-row no-eol-view 69
 e.g. anchored-A finisher-dfa '\\Ga$|b$' '\\Ga$|b$' '^a|b$' '^a|b$'
 e.g. earlier-row anchored-A '\\z' '\\z' '\\Z' '\\Z'
 e.g. earlier-row cover 'done\\z' 'done\\z' 'b\\z' 'b\\z'
 e.g. earlier-row end-at-k '\\w+\\z' '\\w+\\z' '[^c]{1,3}\\z' '[^c]{1,3}\\z'
-e.g. earlier-row entry-const '(?:\\Bx\\n|x)$' '(?:\\Bx\\n|x)$' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$'
+e.g. earlier-row entry-const '\\d+$(?=\\n)' '\\d+$(?=\\n)' 'a\\Z(?=\\n)' 'a\\Z(?=\\n)'
 e.g. earlier-row exact '.*\\.txt$' '[a-z]+\\.txt$' '[a-z]+\\.txt$' '(?:foo|barbaz)$'
 e.g. earlier-row fixed-width '(?:[a-z]{0,1024})\\z' '(?:[a-z]{0,1024})\\z' 'a*\\z' 'a*\\z'
 e.g. earlier-row no-eol-view '\\d+$' '\\d+$' '.*\\.txt$' '\\s+$'
@@ -131,7 +183,7 @@ e.g. earlier-row no-eol-view '\\d+$' '\\d+$' '.*\\.txt$' '\\s+$'
 R   cat$                     no-eol-view    
 R   cat\Z                    no-eol-view    
 R   \bcat$                   no-eol-view    
--   a$\n                     fixed-width    
+-   a$\n                     no-eol-view    
 -   \Gfoo                    finisher-dfa   
 -   foo|\Gbar                finisher-dfa   
 -   \w+?(?:)\b               end-at-k       

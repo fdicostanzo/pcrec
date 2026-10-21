@@ -122,3 +122,69 @@ queued behind kit `500-kit-r26z1-heavy` (cap 6 h) and m0build's three jobs.
 - Last rulings entry applied: none (`x0fix_rulings.md` reads "(none yet)" at every
   checkpoint).
 - Stop rule: not triggered by anything measured so far. R-26 needs no change.
+
+## READ (x0read) (2026-10-21, lane x0read, sonnet; docs only, no `src/`, nothing run but a one-pattern comparison)
+
+Brief: read the two queued jobs and fill the OWED numbers, following the checklist above.
+Both jobs ran green: `300-x0fix-recount` (rc 0, 332 s, `== RECOUNT COMPLETE`) and
+`530-x0fix-x0run` (the newest of the two queued, rc 0, 1,063 s, 13:55-14:13, `== X0FIX RUN
+COMPLETE`; the earlier x0run job was cancelled by hand and wrote nothing).
+
+**VERDICT: X0 PASSES on revision 2.2's reading.** Premise test: the job log ends
+`== X0FIX RUN COMPLETE`; `out/` holds `summary_admitted.txt` and `summary_sites.txt`.
+Each summary was read, not the completion line:
+
+- Part 1: 0 differences on every role (admitted 43,800 nodes, 443,947,845 cells, 0
+  inconclusive).
+- Part 2: 0 differences beyond U1: the only red items are `(()|^){0}[b]`, native 975 and
+  utf8 614 differing cells. The sites run (1,939 of 1,941; the two utf8 stragglers NOT
+  RUN again) has no red, so R2's `(a$\n)|ab` is closed. Witnesses: 0 differences.
+- Plants: S1130 239/239, S1131 54/54, S1132-S1134 300/300, S1136 three K1 witnesses
+  (0 census movers), S1139 53/55 (the 2 are `\d$(?!\n)` under R, unchanged from 2.1),
+  S1140 76/76, `plain-walk` red on `(a$\n)|ab` (both encodings) and the three K1
+  witnesses; S1150 and S1149 stated-set checks red / slice green; X0's own plants all red
+  (`add-Cm1` on the 11 it reaches).
+
+**What did not read clean, stated exactly**: 175 inconclusive part-1 cells per run on one
+pattern, `(?:[a-z]{0,3}\z|x)[0-9]{3}` (native and utf8, in admitted-R and admitted-out;
+`cover k=4`, 0 differences in both parts). The cells are `[a-z]` bytes at depth 0 where
+hard partial matching reports a prefix but the witness search finds no complete match,
+compared on neither side. I read this as the over-approximation x0oracle's defect 1
+describes, not a reading defect, but it is a verified-nothing region of 700 cells and the
+manager may want it ruled. The pattern is new in the population: the row-0 reading
+declined it at `end-at-k` (checked by running the revision 2.1 `conj.py` and kvdfa from
+`235767b1f~1`), revision 2.2 admits it. The admitted role proper has 0 inconclusive.
+
+**Population (K35, `conj.txt` F)**: the 1,197 text-class patterns are unchanged (77 / 665
+native, 50 / 485 utf8, sections A and B identical to revision 2.1); the table admits 91
+more (49 native, 42 utf8), so `cover` is 79 / 712 native and 51 / 526 utf8, **1,288
+distinct (flags, pattern)**. Against X0's 99: -10 (the R1 items, now `entry-const` /
+`no-eol-view`) +2 (the pattern above). The old 77 / 665 and 50 / 485 rows are kept as the
+"census text classes" subset. Updated: kit_proof §0's stage-1 population row, §1.2's table
+and paragraph, §R2.2's K35 row, §7 B1's mover cell, §6.4's X0 RE-RUN paragraph, the
+design CLAUDE.md entry, and `x0/results.md` (a revision 2.2 section on top, the x0oracle
+record kept below). `conj.txt` regenerated from the three recount outputs (D keeps its
+appended headers; the only D change is `a$\n` `fixed-width` -> `no-eol-view`). `out/*.txt`
+and `exposure.txt` copied to `kit_proof/x0/out/`.
+
+**Exposure (checklist g)**: R1 reaches machines whose emitted entry is not row 0, all
+view-carrying: anchored 7 seeded + 74 unseeded, forward 1 + 33, anchored-language 32
+(same on utf8; `-fno-rev-end` adds 9 + 80 forward). R2 reaches 5 patterns at default flags
+(4 under R). kvcensus's committed `sites.tsv.gz`/`patterns.tsv.gz` read row 0 and the
+plain hull, so they CAN move on those rows; recorded in `docs/dev/kvcensus/CLAUDE.md`.
+**Follow-up for the manager, not run here: regenerate the two kvcensus tables with the
+rev 2.2 kvdfa** (and with them any count citing them, e.g. kit_proof §1.2's text-class
+rows, which `conj.py census` reads).
+
+Not done / owed unchanged: X1 and the slice half of C8 (Z2, B1); plant `plain-walk` has
+no S-id (range full). One note on `plain-walk`: only `(a$\n)|ab` of the five R2 exposure
+shapes turns red among the sites; I did not trace why the other four stay green.
+
+### STATE AT HANDOFF (x0read)
+
+- Commits on `lane/x0fix`: the x0read docs/results commit follows `26aafc8fe`.
+- Validation: the reading is COMPLETE; nothing is owed except the follow-ups above. No
+  `make`, no queue job started by this lane.
+- Last rulings entry applied: none (`x0fix_rulings.md` read "(none yet)" at the start and
+  again before this commit).
+- Stop rule: not triggered (no non-U1 difference, no plant stayed green).

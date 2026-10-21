@@ -4,7 +4,8 @@ X0 checks `../conj.py`'s reading (the prototype of `MkEnd` + `MkLang`) against a
 INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run by `make`, nothing
 reads a clock, nothing under `src/` is touched. Lane `x0oracle`, 2026-10-21, on revision
 2.1 (NOT passed: R1, R2); lane `x0fix`, 2026-10-21, re-run on revision 2.2's fixed
-reading. Results: `results.md`.
+reading, read by lane `x0read`: **PASSES** (0 differences beyond U1, every plant red).
+Results: `results.md` (revision 2.2 section on top, the x0oracle record below it).
 
 - `x0pcre.c` — the libpcre2-8 side: a line-protocol server (`V`, `K`, `P`, `N`, `Q`,
   `T`, `F`; protocol in its header) that knows no reading. `Q` is the per-byte next

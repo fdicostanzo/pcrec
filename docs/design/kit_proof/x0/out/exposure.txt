@@ -1,0 +1,83 @@
+## x0fix exposure: kvcensus patterns at own flags (default); DFA ones also -fno-rev-end (R)
+R1 entry!=0 anchored R native seeded views 7
+R1 entry!=0 anchored R native unseeded views 74
+R1 entry!=0 anchored R utf8 seeded views 7
+R1 entry!=0 anchored R utf8 unseeded views 74
+R1 entry!=0 anchored default native seeded views 7
+R1 entry!=0 anchored default native unseeded views 74
+R1 entry!=0 anchored default utf8 seeded views 7
+R1 entry!=0 anchored default utf8 unseeded views 74
+R1 entry!=0 anchored-lang default native unseeded views 32
+R1 entry!=0 anchored-lang default utf8 unseeded views 32
+R1 entry!=0 forward R native seeded views 9
+R1 entry!=0 forward R native unseeded views 80
+R1 entry!=0 forward R utf8 seeded views 9
+R1 entry!=0 forward R utf8 unseeded views 80
+R1 entry!=0 forward default native seeded views 1
+R1 entry!=0 forward default native unseeded views 33
+R1 entry!=0 forward default utf8 seeded views 1
+R1 entry!=0 forward default utf8 unseeded views 33
+R2 view-gated byte R native 4
+R2 view-gated byte R utf8 4
+R2 view-gated byte default native 5
+R2 view-gated byte default utf8 5
+entry dead anchored R native seeded no-views 35
+entry dead anchored R utf8 seeded no-views 34
+entry dead anchored default native seeded no-views 35
+entry dead anchored default utf8 seeded no-views 34
+entry dead anchored-lang default native seeded no-views 7
+entry dead anchored-lang default native seeded views 2
+entry dead anchored-lang default utf8 seeded no-views 7
+entry dead anchored-lang default utf8 seeded views 2
+items R native 2099
+items R utf8 2392
+items default native 4527
+items default utf8 4938
+machines anchored R native seeded no-views 206
+machines anchored R native seeded views 19
+machines anchored R native unseeded no-views 1271
+machines anchored R native unseeded views 212
+machines anchored R utf8 seeded no-views 202
+machines anchored R utf8 seeded views 19
+machines anchored R utf8 unseeded no-views 1543
+machines anchored R utf8 unseeded views 214
+machines anchored default native seeded no-views 206
+machines anchored default native seeded views 19
+machines anchored default native unseeded no-views 1271
+machines anchored default native unseeded views 212
+machines anchored default utf8 seeded no-views 202
+machines anchored default utf8 seeded views 19
+machines anchored default utf8 unseeded no-views 1543
+machines anchored default utf8 unseeded views 214
+machines anchored-lang default native seeded no-views 36
+machines anchored-lang default native seeded views 6
+machines anchored-lang default native unseeded no-views 443
+machines anchored-lang default native unseeded views 112
+machines anchored-lang default utf8 seeded no-views 36
+machines anchored-lang default utf8 seeded views 6
+machines anchored-lang default utf8 unseeded no-views 452
+machines anchored-lang default utf8 unseeded views 121
+machines forward R native seeded no-views 214
+machines forward R native seeded views 21
+machines forward R native unseeded no-views 1296
+machines forward R native unseeded views 218
+machines forward R utf8 seeded no-views 164
+machines forward R utf8 seeded views 67
+machines forward R utf8 unseeded no-views 1569
+machines forward R utf8 unseeded views 223
+machines forward default native seeded no-views 278
+machines forward default native seeded views 4
+machines forward default native unseeded no-views 2292
+machines forward default native unseeded views 90
+machines forward default utf8 seeded no-views 230
+machines forward default utf8 seeded views 50
+machines forward default utf8 unseeded no-views 2620
+machines forward default utf8 unseeded views 94
+e.g. R1 entry!=0 anchored seeded views '(?m)\\bx*$' '[ab]*?$\\b' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$' '\\W{0,2}?(?:\\b|a)$'
+e.g. R1 entry!=0 anchored unseeded views '$[^\\n]*' '$|\\n' '(?:$|[^abc]){2,}' '(?:=|$)(?:.|$)*'
+e.g. R1 entry!=0 anchored-lang unseeded views '((a)|(b))*$' '(.*)$' '(.*)\\z' '(.*?)$'
+e.g. R1 entry!=0 forward seeded views '(?m)\\bx*$' '(?m)\\bx*$' '[ab]*?$\\b' '[ab]{0,}?(?:(?=\\w)|(?<=\\w))$'
+e.g. R1 entry!=0 forward unseeded views '$[^\\n]*' '$|\\n' '(?:$|[^abc]){2,}' '(?:=|$)(?:.|$)*'
+e.g. R2 R '[ab]{2,}$\\W' '[ab]{2,}\\Z\\W' '\\w{0,2}?$\\W' 'a$\\n'
+e.g. R2 default '(a$\\n)|ab' '[ab]{2,}$\\W' '[ab]{2,}\\Z\\W' '\\w{0,2}?$\\W'
+== exposure COMPLETE: items=13956
