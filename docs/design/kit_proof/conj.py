@@ -28,7 +28,7 @@ unchanged by them:
   absb-flip      S1133  absent-before flipped
   absa-flip      S1134  absent-after flipped
   c9-eol-as-end  S1139  C9 dropped AND an eol view at k read as the end
-  e0-row0        S1140  e(⊥) := row 0, not the emitted constant
+  e0-row0        S1140  e(⊥) := row 0, not the emitted constant (both arms)
 
 usage:
   python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
@@ -93,17 +93,23 @@ def k_machine(st):
 
 
 def k_entry(st):
-    # e(⊥) is the EMITTED entry constant X of `search_from ? seed[..] : X`
-    # (sound M1), never row 0; the seeded entries must be ONE live row r0
-    A, c = st["A"], st["c"]
+    # e(⊥) is the EMITTED entry constant X (sound M1), never row 0, on BOTH
+    # arms: unseeded `anchored_state = X;`, seeded `search_from ? seed[..] : X`
+    # (rev 2.2, X0's R1: `\Zx` writes X = 2, and row 0 is the eol view's
+    # target). kvdfa reads X (Machine.entry); the seeded entries must be ONE
+    # live row r0
+    A = st["A"]
+    if not A.entry_read:
+        return False
+    x = A.entry
+    if PLANT == "e0-row0":
+        x = 0   # S1140: row 0 read as e(⊥), not the emitted constant X (both arms)
     if not A.seeded:
-        st.update(r0=0, Cm1=frozenset(range(256)), absB=True)
+        if x is None or x not in A.live:
+            return False
+        st.update(r0=x, Cm1=frozenset(range(256)), absB=True)
         plant_before(st)
         return True
-    m = re.search(r"anchored_state = search_from \? rx_anchored_seed_state\[.*?\] : (-?\d+);", c)
-    if not m:
-        return False
-    x = A.norm(int(m.group(1)))
     ent = collections.defaultdict(set)
     for b in range(256):
         e = A.seed[A.bc[b]]
@@ -112,8 +118,6 @@ def k_entry(st):
     if len(ent) != 1:
         return False
     r0 = next(iter(ent))
-    if PLANT == "e0-row0":
-        x = 0   # S1140: row 0 read as e(⊥), not the emitted constant X
     if x == r0:
         absB = True
     elif x is None or x not in A.live:

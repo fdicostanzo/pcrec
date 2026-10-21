@@ -1,0 +1,13 @@
+# libpcre2-8 10.46 2025-08-27
+finding                            a                        subj=\x80a off=0 MIU+ANCHORED: match (1,2)
+finding (compile-time ANCHORED)    a                        subj=\x80a off=0 MIU: match (1,2)
+finding (two invalid bytes)        abc                      subj=\xFF\xFEabc off=0 MIU+ANCHORED: match (2,5)
+finding (truncated lead byte)      a                        subj=\xC3a off=0 MIU+ANCHORED: match (1,2)
+documented skip, unanchored        a                        subj=\x80a off=0 MIU: match (1,2)
+control: valid byte, no skip       a                        subj=ba off=0 MIU+ANCHORED: rc -1
+control: offset at the valid char  a                        subj=\x80a off=1 MIU+ANCHORED: match (1,2)
+control: UTF without MIU           a                        subj=\x80a off=0 UTF+ANCHORED: rc -22
+control: no UTF                    a                        subj=\x80a off=0 bytes+ANCHORED: rc -1
+control: ^ is not moved            ^a                       subj=\x80a off=0 MIU: rc -1
+\G after the skip                  \Ga                      subj=\x80a off=0 MIU: rc -1
+partial at the skip point          (?(DEFINE)(?<g>a))(?&g)  subj=\x80 off=0 MIU+ANCHORED: PARTIAL (1,1)

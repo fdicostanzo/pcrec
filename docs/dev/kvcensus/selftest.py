@@ -57,6 +57,7 @@ A2 = copy.deepcopy(A)        # PLANT: 'c' enters a COPY of the shared row that h
 kc, kd = split(A2, ord("c")), split(A2, ord("d"))
 r1 = A2.next[0][kc]
 A2.next.append(list(A2.next[r1])); A2.acc.append(A2.acc[r1]); A2.acc_any.append(A2.acc_any[r1])
+A2.vnl.append(A2.vnl[r1])
 A2.next[-1][kd] = None
 A2.nrow += 1
 A2.next[0][kc] = A2.nrow - 1
@@ -64,6 +65,24 @@ A2.live.add(A2.nrow - 1)
 ck("PLANT [ac][bd] minus c->d: exact drops to 1", kvdfa.lang(A2, A2.starts())["exact"], 1)
 A, L = LF("abc[α-ω]x", "-e", "utf8")
 ck("utf8 abc[alpha-omega]x: exact 4 of span 6 (mixed)", (L["exact"], L["span"]), (4, 6))
+# the EMITTED entry (kit_proof X0 R1): `\Zx` writes `anchored_state = 2` (row 1);
+# row 0 is the eol view's target. From the entry the language is empty; from
+# row 0 it would read {x} (the defect).
+A, L = LF("\\Zx")
+ck("entry \\Zx: the emitted entry is row 1, not 0", A.entry, 1)
+ck("entry \\Zx: empty language from the entry (span 0)", (L["span"], L["S"]), (0, []))
+ck("PLANT \\Zx walked from row 0: reads S_0 = {x}", kvdfa.lang(A, {0})["S"][:1], [frozenset({ord("x")})])
+# the VIEW-GATED byte (X0 R2): a subject-final '\n' consumed through the eol view
+A, L = LF("(a$\\n)|ab")
+ck("view (a$\\n)|ab: S_1 = {b, \\n}, exact 2, span 2", (sorted(L["S"][1]), L["exact"], L["span"]),
+   ([10, 98], 2, 2))
+A3 = copy.deepcopy(A)        # PLANT: the view edge dropped (the plain walk)
+A3.vnl = [False] * A3.nrow
+A3.live = A3.liveness()
+ck("PLANT (a$\\n)|ab with the view edge dropped: S_1 = {b}", sorted(kvdfa.lang(A3, A3.starts())["S"][1]), [98])
+A, L = LF("a$\\n")
+ck("view a$\\n: S = [{a}, {\\n}], span 2 (live only through the view)", (L["S"], L["span"]),
+   ([frozenset({97}), frozenset({10})], 2))
 
 # ---- 2. delta_uniform / consumable (the forward machine) -------------------
 F = kvdfa.Machine(C("abc\\d{3,7}"), "forward")
