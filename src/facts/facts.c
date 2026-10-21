@@ -32,6 +32,8 @@
  * reading their core facts through `pf_ask`, which is
  * the one path along the DEPENDS-ON edges `facts.def` declares. */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -348,6 +350,23 @@ static void pf_derive(Ctx *cx, PfFactId f)
                         pcrec_ctx_fail(cx, 0, "internal error: the span slice states "
                                        "byte 0x%02x at offset %d, outside the k-set "
                                        "walk's hull there (ctx_span.md §3.8)", b, d);
+            /* X0's input (kit_proof.md §6.4): the slice's statement, every
+             * exact set as a comma list of hex bytes, `;` between positions
+             * (docs/design/kit_proof/x0/x0.py `stated`'s line shape), under
+             * its own switch so the CANDTRACE stream is unchanged. */
+            if (getenv("PCREC_KIT_PROOF_TRACE")) {
+                fprintf(stderr, "SPANSET\t%d\t", pf->span.exact_len);
+                for (int d = 0; d < pf->span.exact_len; d++) {
+                    bool first = true;
+                    if (d) fputc(';', stderr);
+                    for (int b = 0; b < 256; b++)
+                        if (pf->span.set[d][b >> 3] >> (b & 7) & 1) {
+                            fprintf(stderr, "%s%02x", first ? "" : ",", b);
+                            first = false;
+                        }
+                }
+                fputc('\n', stderr);
+            }
         }
 #endif
         break;

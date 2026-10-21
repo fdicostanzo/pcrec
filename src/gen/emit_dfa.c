@@ -6616,7 +6616,7 @@ static mf_site *find_site(const PcrecFind *f)
         pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
     pcrec_memfn_window_is_candidate(&s->pred);
     if (back) pcrec_memfn_context_stop(s);      /* R-26.2: MLINE's stop */
-    else      pcrec_memfn_span0_today(&s->pred);
+    else      pcrec_memfn_span0_stated(cx, &s->pred);
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
@@ -7259,7 +7259,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->consumer = MF_C_ENGINE;
     ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
     pcrec_memfn_window_is_candidate(&s->pred);
-    pcrec_memfn_span0_today(&s->pred);          /* R-26.1 */
+    pcrec_memfn_span0_stated(f->cx, &s->pred);  /* R-26.1, Z2 */
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
