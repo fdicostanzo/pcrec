@@ -2575,3 +2575,18 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
 - POSCOST counts: 21 positions, a floor; 408 superset hulls of 603 sites. Filed on main's row.
 - setdig: all five kit sets now load under measures.md. My ruling: a committed card version is append-only, so @2 is new and @1 is kept.
 - Lesson: the idle-notification lesson again. setdig's idle notice predated my ruling, so I checked its tree before acting and re-sent the ruling.
+
+## 2026-10-21 (evening) — B4's E8 on real text: V1 is not a safe default; B4 HELD for Frank
+
+- The window ran twice: run 1 was disturbed by an unlocked compile run; run 2 is the record.
+- Run 2 is formally INVALID on one anchor, SS2d, which read N at +9.1% against grid2's +9.3%. Both runs agree on the substance.
+- J1 movers (19 patterns, 94 cells, subjects ≥ 1 MiB): V1 WINS 46 cells (−3..−55%), LOSES 35 (+2..+41%), NULL 13. Absolute sum: V1 saves 93.6 ms and loses 35.5 ms.
+  - The wins are non-English text (−39..−55%), some binaries, and two prose patterns.
+  - The losses are English logs (L10 +17..+41%, including zero-match cells), code (C16) and prose (P14 ~+20%).
+- e8why (counts only, docs/dev/lanes/e8why_report.md):
+  - Both arms stop at the same bytes; only the cost between stops differs.
+  - The losses come from DENSE and PREDICTABLE stops: E ≤ 0.4 empty 8-byte blocks and Q < 0.8 mispredicts per stop. That rule catches every loss of +9% or more, with 5 small false positives; both terms are needed.
+  - Set size, shape, position and density alone do not separate losers from winners.
+  - grid2's anchors fit the same axis.
+  - D169's premise ("unknown predictability → presume irregular") fails for structured English text, where stops are predictable.
+- Taken to Frank as a decision. B4 stays held.
