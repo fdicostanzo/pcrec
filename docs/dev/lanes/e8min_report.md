@@ -9,7 +9,7 @@ corpus mode's output is byte-for-byte unchanged in format). Files: `docs/design/
 Pipeline: `shadow_census.py manifest --patterns` over the 177 rwquest patterns (flags spelled as the CLI would: `(?ims)`
 inline, `-e utf8`, `--ucp`), lever set `b4prep-v1max2.tsv`, traced harness from `mk_trace_harness.sh`. 177 compiles, rc0 172,
 refused in both 5 (N06 N11 N12 N13 N25), lost 0. 41 set sites; **19 mover patterns** (13 byte, 6 utf8) against the plan's
-"~40 or fewer of ~54": the estimate was high by about 2x. By shape: r1e0c0 11 sites, r0e0c1 3, r0e2c0 4, r1e1c0 1, r2e0c0 1
+"~40 or fewer of ~54": the estimate was high by about 2x. By shape: r1e0c0 11 sites, r0e0c1 3, r0e2c0 3, r1e1c0 1, r2e0c0 1
 (cells at 1 or 2 terms). Mixed patterns (a mover site and a non-mover set site in one pattern): none. Non-mover set sites:
 r3e0c1 (5), no-key (7), others. Mover list: `e8min/j1_census.tsv` (mover=1 rows; last column is the question id).
 Movers by question: B09 B10 B22 C16 C21 L10 N02 N08 N10 N15 N18 P04 P05 P06 P12 P14 P15 P24 S03.
