@@ -14,190 +14,14 @@ tree, which is what the manual-only reasoning below does not cover.
 
 ## Files
 
-- **pcre2_abi.h** — the shared PCRE2 8-bit binding, shared. Extracted from
-  pcre2_oracle.c by PC-3, when tests/registry/pcre2_check.c became a second
-  consumer and would otherwise have copied it — two descriptions of somebody
-  else's ABI is the shape of the `\v` bug this project already paid for.
-  **[ORACLE-LINK] (D98, 2026-09-09) RETIRED THE DLOPEN SHIM THIS FILE USED TO
-  BE**: it now `#include`s the real `<pcre2.h>` and every consumer links
-  `-lpcre2-8` directly (resolved at build time by `tests/lib/
-  resolve_pcre2.sh`), deleting the candidate-SONAME list, dlsym resolution
-  and the ELF-only `dlinfo(RTLD_DI_LINKMAP)` path — the structural fix for
-  U13/U15b (the dlopen shim could, and measurably did, resolve a DIFFERENT
-  libpcre2 than the one any `#include <pcre2.h>`-based tool on the same box
-  saw; direct linking cannot have that skew). The `Pcre2Abi` struct's field
-  names and `pcre2_abi_load`/`_version`/`_unicode_version`/`_path`'s
-  signatures are UNCHANGED, so this stays a one-home ABI description in the
-  sense that mattered originally — every consumer's call sites compile as
-  written. `pcre2_abi_load()` always succeeds now (a missing library is a
-  link-time failure, never a value this function returns), so the "fuzz
-  oracle fails hard, pcre2_check.c skips loudly" POLICY split moved from a
-  runtime branch inside this file to WHEN each caller's build script probes
-  `tests/lib/resolve_pcre2.sh` (before vs. never, matching each caller's
-  original policy). **[M4.7d]** added `pcre2_pattern_info_8` and
-  `pcre2_get_ovector_count_8` to the resolved symbol set, plus
-  `PCRE2_ABI_INFO_CAPTURECOUNT` — now just `PCRE2_INFO_CAPTURECOUNT`'s real
-  enumerator (both confirmed value 4; originally MEASURED by probe, back
-  when dlopen'd libpcre2 had no header here to read the constant off of, see
-  git history for that transcript). Every symbol this header uses now comes
-  from the real header, so a box's libpcre2-8 either has the full API and
-  links, or it doesn't and the build fails to link — there is no partial
-  "missing one new symbol" case dlsym used to distinguish.
-  **[S5-ARM] (2026-09-11, lane abifix) FIXED A BUG [ORACLE-LINK] ITSELF
-  INTRODUCED INTO THIS HEADER'S OWN INTERNAL ORDERING**: the conversion's
-  `#include <pcre2.h>` landed ABOVE the `#define _GNU_SOURCE`/`#include
-  <dlfcn.h>` pair on the (false) claim that pcre2.h "does not touch
-  <features.h> itself" — it does, transitively, via its own `#include
-  <stdlib.h>` (a real glibc header). On the Linux reference box this
-  silently reintroduced the exact K-uprops-abi-order ordering hazard the
-  `a38ca912` guard below was built to catch, for every consumer regardless
-  of the consumer's own include order, invisible on darwin (which never
-  runs that branch) until this header was next built on Linux — two days
-  later. Fixed by moving `_GNU_SOURCE`/`<dlfcn.h>` back above `#include
-  <pcre2.h>`. A second, PORTABLE guard (`#ifdef NULL` at the very top,
-  before this header's own first `#include`) was added alongside the
-  original glibc-specific one so a genuine consumer-side ordering mistake
-  now fails at darwin build time too, not only on the Linux box — one
-  consumer, `tests/probes/probe_altcls_pcre2norm.c` (not part of `make
-  test`), had exactly that mistake and is fixed in the same change.
-- **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h. `pcre2_oracle 'PATTERN'
-  <subject-file> [startpos]` → `match S0 E0 [S1 E1 ...]` / `nomatch` /
-  `cerr <code>` / `mlimit <code>` (PCRE2 match-limit safeguard tripped — not
-  a verdict) / `ovtoosmall <code>` (defensive-only, not expected to fire —
-  see below). **[M4.7d]**: the `match` line now carries EVERY capture-group
-  span (index 0 the whole match, index `k` group `k`), not just the whole
-  match — the ovector is sized to `capturecount + 1` pairs, queried fresh
-  per pattern via `pcre2_pattern_info_8` right after compile, which is also
-  what makes a never-participated group read back `(-1, -1)` in both
-  offsets rather than undefined memory (PCRE2_UNSET, all bits set — cast to
-  a signed type of the same width this IS the literal `-1`, bit-for-bit
-  pcrec's own `PCREC_UNSET`, so no numeric remapping exists anywhere in this
-  file — see tests/fuzz/README.md's "Capture-group span comparison" for the
-  measurement transcript this rests on).
-- **fuzz_driver.c** — subject-from-file driver template for pcrec-generated
-  matchers, owned by this fuzzer (not a reuse of tests/harness/driver.c).
-  Compiled ONCE against a throwaway pattern and reused for every subsequent
-  pattern's gen.o (fuzz.py's dominant per-pattern cost saver — see
-  README.md "Performance"), which is only safe because this file reads
-  `rx_info.ncaps` at RUNTIME rather than the compile-time `RX_NCAPS` macro
-  (that macro is baked in from the THROWAWAY pattern, wrong for any other
-  pattern's own group count — see this file's own header comment and
-  README.md's "RX_NCAPS is NOT part of what's shared" section for the
-  274/317-divergence stack-smash this caused before the fix, this session).
-  Prints `match S0 E0 [S1 E1 ...]` (**[M4.7d]**: every `caps[k]` pair, `k` in
-  `[0, rx_info.ncaps)` — was whole-match-only before) / `nomatch` / `steps`
-  (PCREC_ERR_STEPS) / `frames` (PCREC_ERR_FRAMES) — never `TIMEOUT`, that's
-  fuzz.py's own subprocess-level sentinel for a hung child, distinct from a
-  bounded-budget verdict. `tests/registry/pc4_driver.c` shares the identical
-  shared-driver trick and had the identical latent bug, fixed the same
-  session (README.md) — its own output stays whole-match-only, since PC-3's
-  pattern space carries no capturing constructs (see its own file comment).
-- **fuzz.py** — generator + comparator + runner:
-  `python3 tests/fuzz/fuzz.py [--seed N] [--patterns 300] [--subjects 15]
-  [--keep] [--jobs N]`. Deterministic per `--seed`. See its module
-  docstring and `EXCLUDED FROM GENERATION` block for what's not generated
-  and why. Beside the general grammar it carries `TRAP_TEMPLATES` (~8% of
-  generated patterns), shape-focused rows for preference bugs the unbiased
-  generator CAN produce but essentially never rolls. Three classes today:
-  R2's overlapping-prefix alternation under a lazy quantifier (R2-M1/R2-S1),
-  R21/K17's outer star over a lazy nullable prefix plus a nested nullable
-  quantified group — the latter measured to move its class from ~1e-4 of
-  patterns to 4% — and K18's sibling family (fixed 2026-08-15), where the
-  redirect is lost one hop SHORT of a loop entry rather than at one. The K18
-  rows pin BOTH alternation orders on purpose: the ingredient is that the arm
-  whose exit edge lands on the already-seen state is the PREFERRED one, not
-  that it is lazy, and a greedy nullable arm gets that by being written first
-  — two of the K18 entry's own "does not diverge" controls were live
-  miscompiles with their arms swapped. Two rows carry a `{0,2}` body, which is
-  a separately-reachable sub-case a corpus built from the original witness
-  cannot produce at all. **Add a row whenever a preference bug is found by
-  something other than this fuzzer**; that is what the block is for. Check
-  each addition in the FAILING direction (the K17 rows expand to 111 distinct
-  patterns giving 28 divergences against the pre-fix compiler and 0 against
-  the fixed one; the nine K18 rows expand to 64 distinct patterns giving 56
-  divergences over 543 cells against the pre-K18 compiler and 0 against the
-  fixed one) — a trap that never fired against the bug it names is
-  decoration. A template is `.format`ted with `{a}/{b}/{q}`, so a literal
-  brace in a row must be DOUBLED (`{{0,2}}`); an unescaped one raises
-  `KeyError` inside `gen_trap` on the draw that picks it, which is a broken
-  fuzzer rather than a broken trap. **[M4.7d]** added the sibling
-  `CAPTURE_TEMPLATES`/`gen_capture()` (same `.format()` mechanism, same
-  brace-doubling rule), drawn at ~20% density in `main()`'s pattern loop
-  (mutually exclusive with the ~8% trap lane) specifically to make the
-  quantified-group / group-around-alternation / nested-group combinations
-  routine rather than incidental — the unbiased grammar produces SOME
-  capturing group often (`gen_atom`'s own ~14%-per-draw rate) but rarely
-  lands a quantifier directly around one or a group directly inside another
-  quantified group in the same draw. This lane's subjects run up to 8 bytes
-  (the trap lane's run up to 4) because capture-span bugs (cross-iteration
-  retention, empty-final-iteration overwrite) need multiple loop iterations
-  to surface at all. Do not add a row for a bug that is still OPEN: traps run inside
-  `make fuzz`, which must stay green, so deferred bugs belong in
-  `tests/known_fail/` instead. Compiles every pattern with an explicit
-  `--step-budget=STEP_BUDGET` (env-overridable, README.md "Step/frame budget
-  policy") rather than the VM's bring-up 1,000,000 default, so a
-  pathological pattern resolves to a fast, correctly bucketed
-  `PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES` verdict instead of a harness-clock
-  collision. Every subprocess call this file makes (pcrec compile, gcc
-  compile/link, the generated matcher, the PCRE2 oracle) now catches its own
-  `TimeoutExpired` and reports a classified cell rather than raising — the
-  oracle side (`oracle_run()`) and the pcrec-compile side
-  (`compile_with_pcrec()`) were the two found missing this discipline this
-  session (both crashed a multi-thousand-pattern run outright before the
-  fix; `compile_and_link()`'s GCC-TIMEOUT handling was always correct and is
-  the pattern the fix generalizes). `RUN_TIMEOUT` (the generated-matcher and
-  oracle execution bound, `pcrec_run()`/`oracle_run()`) now reads
-  `tests/lib/gen_timeout.sh runsecs` the same way `tests/vm/vm_oracle.py`'s
-  `RUN_TIMEOUT` does — one shared number rather than this file's own
-  literal — via `subprocess.run(..., timeout=RUN_TIMEOUT)` rather than a
-  per-run `scripts/watchdog` wrapper, since this is a thousands-of-cells
-  inner loop where watchdog's fixed per-run startup cost would multiply the
-  campaign's runtime. GENERATED-code compiles (the gen.c compile and its
-  link) additionally carry the D45-third-addendum CPU-primary budget via
-  the `_cpu_limited` ulimit shim reading `gen_timeout.sh cpusecs`; the
-  oracle-shim and driver-template compiles are hand-written C, outside
-  D45's scope, and deliberately stay on the wall bound alone.
-  **[M4.7e] second addendum** added `MODULE_CLASS_ATOMS` next to
-  `CLASS_ATOMS` — the classes-module escapes (`\d \D \w \W \s \S`) and two
-  POSIX `[:name:]` forms (`[[:alpha:]] [[:digit:]]`), drawn at a modest,
-  NAMED weight (`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom
-  branch in `gen_atom`, not merged into `CLASS_ATOMS` itself) — closing the
-  README.md-documented finding that the differential gate was open
-  (`pcrec_default_features="std1"`) but the generator never actually
-  emitted anything std1's two modules own. `modifiers` generation stays
-  out of scope, owed to [M7.0] (docs/dev/plan.md) rather than added here.
-- **README.md** — full usage, exception-list rationale, output-bucket
-  reference, triage process, and documented findings from this tool's
-  build session (a real PCRE2 match-limit oracle bug now fixed, and a
-  tracked PCRE2 optimizer quirk on `{0}`-quantified anchor alternations).
-- **run_capturediff_gate.sh** — **[M4.7e]** the GATE-ON wiring: runs
-  `fuzz.py` at ONE FIXED seed/patterns/subjects (its own argparse
-  defaults, spelled out in the script so a future default change there
-  doesn't silently resize this gate), asserts fuzz.py's own zero-divergence
-  exit code, and additionally asserts every exclusion-bucket LABEL fuzz.py's
-  summary prints is still present in the output (no-silent-caps: a bucket
-  vanishing from the summary text, not just its count going to zero, is
-  itself a regression this gate catches). Probes libpcre2 presence itself
-  BEFORE calling fuzz.py — since [ORACLE-LINK] via `tests/lib/
-  resolve_pcre2.sh` at build time (was: build `pcre2_oracle.c` unconditionally
-  and call its own `--version`, which did the real dlopen attempt) — and
-  SKIPS loudly (PC-3's own pattern, tests/registry/run_registry_tests.sh)
-  rather than calling into fuzz.py's
-  oracle plumbing, which is deliberately fail-hard (see pcre2_abi.h's entry
-  above) — right for a manual dev tool, wrong for a `make test` section on a
-  libpcre2-less box. `make test-capturediff` is its Makefile target, part of
-  `make test` proper (unlike `test-spec`).
-- **campaigns/** — **[M4.7e]** committed logs from the AT-SCALE, many-seed
-  capture differential campaign (D35-style provenance: date, HEAD commit,
-  libpcre2 version, seed list). Evidence, like docs/measurements/ reports —
-  no check reads these; `make test-capturediff` above is the live,
-  re-measured regression gate. Re-run manually (`python3 tests/fuzz/fuzz.py
-  --seed N ...` per seed, or the driver loop recorded in the campaign log
-  itself) rather than from a make target, same manual-only posture as
-  `make fuzz`.
-- **failures/\<timestamp\>/NNNN_\<kind\>/** — repro bundles (pattern.txt,
-  subject.hex/.bin, outputs.txt) written by runs that found divergences.
-  Regenerated output, not committed fixtures — safe to delete.
+- **pcre2_abi.h** — the shared PCRE2 8-bit binding, shared.
+- **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h.
+- **fuzz_driver.c** — subject-from-file driver template for pcrec-generated matchers, owned by this fuzzer (not a reuse of tests/harness/driver.c).
+- **fuzz.py** — generator + comparator + runner: `python3 tests/fuzz/fuzz.py [--seed N] [--patterns 300] [--subjects 15] [--keep] [--jobs N]`.
+- **README.md** — full usage, exception-list rationale, output-bucket reference, triage process, and documented findings from this tool's build session (a real PCRE2 ...
+- **run_capturediff_gate.sh** — **[M4.7e]** the GATE-ON wiring: runs `fuzz.py` at ONE FIXED seed/patterns/subjects (its own argparse defaults, spelled out in the script so ...
+- **campaigns/** — **[M4.7e]** committed logs from the AT-SCALE, many-seed capture differential campaign (D35-style provenance: date, HEAD commit, libpcre2 version, seed ...
+- **failures/\<timestamp\>/NNNN_\<kind\>/** — repro bundles (pattern.txt, subject.hex/.bin, outputs.txt) written by runs that found divergences.
 
 ## Conventions
 
@@ -239,5 +63,6 @@ for artifacts under the threshold. See fuzz.py's own comment above
 `K41_OVERSIZE_BYTES` and `run_capturediff_gate.sh`'s EXPECT-block comment
 for the full derivation and the three-run determinism proof.
 
-Maintenance: update this file and README.md when the generator's covered
-feature set, the exclusion list, or the output-bucket classification changes.
+(Rest of this section: see the history file.)
+
+History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__fuzz.md`.
