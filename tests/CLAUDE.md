@@ -799,6 +799,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `measures` kind too (`run_measures_tests.sh`, with its own independent
   reader `ks_ref.py`), plus the measures store and loading checks.
 
+- **kitproof/** — [KIT-VERIFY] Z2 (`docs/design/kit_proof.md` §6.3-§7):
+  `make test-kitproof`, the `cover` row's checks on artifacts compiled through
+  the test harness's lever (the only route to it before B1): verdicts, the span
+  slice's statements, and answers at every startoffset plus the find-all loop
+  against libpcre2 10.46's committed answers. See its own CLAUDE.md.
+
 - **partlayout/** — [ENTRY-TABLE] E1 (`docs/design/compound_entries.md` rev 4
   §3.6): `make test-partlayout`, the part-layout controls' checks — the
   INDEPENDENT EVALUATOR (an attribute-stripped call graph, the owners'

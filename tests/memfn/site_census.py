@@ -69,6 +69,16 @@ DOORS = {'pcrec_memfn_define': 'gen/memfn_sites.h',
 DOOR_RX = re.compile(r'\b(' + '|'.join(DOORS) + r')\s*\(')
 CORPUS_CAP = 300            # compiles per pass
 CORPUS_FLOOR = 100          # K35: a pass that compiled fewer is not a census
+# THE PASS'S CONFIGURATIONS, one row each, every corpus pattern compiled under
+# each. The traced binary is the test harness's build (cli/main.c with
+# -DPCREC_HARNESS, which with no lever compiles exactly as build/pcrec), so a
+# site routed only by a harness lever is reached through its row here rather
+# than read as unreached ([KIT-VERIFY] Z2: the `cover` REPORT site, routed by
+# --harness=kit-proof alone, kit_proof.md §7). A new routed site adds a row.
+PASS_CONFIGS = (
+    ('default', []),
+    ('kit-proof', ['--harness=kit-proof']),
+)
 
 
 def strip_c(text):
@@ -195,7 +205,8 @@ def run(cmd, **kw):
 
 def build_traced(root, cc, files, tmp, door_files=()):
     """Recompile `files` (kit callers) and `door_files` (door callers) with
-    the shim over a copy of build/libpcrec.a and link cli/main.c; returns
+    the shim over a copy of build/libpcrec.a and link cli/main.c as the test
+    harness (PASS_CONFIGS); returns
     (binary, None) or (None, why). A door caller that also DEFINES a door
     cannot be traced this way and is refused."""
     lib = os.path.join(root, 'build/libpcrec.a')
@@ -245,7 +256,7 @@ def build_traced(root, cc, files, tmp, door_files=()):
     if run(['ar', 'rs', tlib] + objs).returncode:
         return None, 'ar r failed'
     exe = os.path.join(tmp, 'pcrec_traced')
-    r = run([cc, '-O1', '-std=gnu11'] + inc + ['-o', exe, os.path.join(root, 'cli/main.c'), tlib])
+    r = run([cc, '-O1', '-std=gnu11', '-DPCREC_HARNESS'] + inc + ['-o', exe, os.path.join(root, 'cli/main.c'), tlib])
     if r.returncode:
         return None, 'traced link failed: ' + r.stderr[:300]
     return exe, None
@@ -272,16 +283,18 @@ def corpus_patterns(root):
 
 
 def run_corpus(exe, pats, tmp):
-    """Compile every pattern; returns (compiles ok, [per-compile trace rows])."""
+    """Compile every pattern under every PASS_CONFIGS row; returns (compiles ok,
+    [per-compile trace rows])."""
     trace = os.path.join(tmp, 'trace.tsv')
     out = os.path.join(tmp, 'out.c')
     per, okc = [], 0
-    for p in pats:
+    for p, (_, lever) in ((p, c) for p in pats for c in PASS_CONFIGS):
         if os.path.exists(trace):
             os.remove(trace)
         env = dict(os.environ, C17_TRACE_FILE=trace)
         try:
-            r = subprocess.run([exe, '--features', 'all', '-p', 'rx', '-o', out, '--pattern', p],
+            r = subprocess.run([exe] + lever + ['--features', 'all', '-p', 'rx', '-o', out,
+                                                '--pattern', p],
                                capture_output=True, env=env, timeout=30)
         except subprocess.TimeoutExpired:
             continue

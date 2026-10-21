@@ -29,13 +29,16 @@
 # RE-PINNED 2026-10-09 (lane n7uret, D147 add. 14): N7U retired, so the
 # manifest holds 13 rows and C17_ROW_FLOOR is 13 (`=13` then a comment); the
 # SETREST plant leaves 12, below 13: same defect, same detector.
+# RE-PINNED 2026-10-21 (lane z2build, [KIT-VERIFY] Z2): COVER listed, so the
+# manifest holds 14 rows and C17_ROW_FLOOR is 14 (`=14` then a comment); the
+# SETREST plant leaves 13, below 14: same defect, same detector.
 SAB_ID="S512-c17-row-below-floor"
 SAB_FILE="tests/memfn/site_manifest.tsv"
 SAB_SUITES="memfnmanifest"
 SAB_DESC='the SETREST row is deleted from the site manifest (its emitter stays listed by PRE and VERIFY), taking the row count below its K35 floor'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/memfnmanifest_report.md §4); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S512.'
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^SETREST[[:space:]]+req_site_define[[:space:]]|1
-tests/memfn/run_site_manifest.sh|^C17_ROW_FLOOR=13[[:space:]]|1'
+tests/memfn/run_site_manifest.sh|^C17_ROW_FLOOR=14[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # The row's head is commented out, which deletes the row for every reader.
