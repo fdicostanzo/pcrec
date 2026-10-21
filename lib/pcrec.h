@@ -1671,7 +1671,7 @@ typedef struct {
 
     /* [MEASURE-SET] M0 (docs/spec/measures.md, docs/design/measure_sets.md
      * §3): THE MEASUREMENT SET a compile reads its machine-side costs from —
-     * a NAME (`zen4-grid1`), a NAME@REV (`zen4-grid1@1`), or a FILE (any
+     * a NAME (`myset`), a NAME@REV (`myset@1`), or a FILE (any
      * value that is not a legal name, by spelling alone: `./x`, `x.tsv`). A
      * NAME is resolved over `DIR/<name>.measures.tsv` for each DIR of
      * `measures_dirs` in order (NULL-terminated, NULL for none), then the

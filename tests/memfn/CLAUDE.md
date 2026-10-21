@@ -136,7 +136,17 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   positive plants per class derived from the compiler's own installation
   (`cc -dM -E` ISA-flag diffs, resource headers, `-dumpmachine`; classes 7-9
   are structural and take synthetic plants, said so), a zero-plant class is
-  RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (27) is a literal in
+  RED, a hex-escape negative control. FILE-LEVEL EXEMPTION (lane m0c4,
+  2026-10-21): the generated measure-store tables `src/core/measures_store.inc`
+  and `measures_table.inc` are DATA written by `make gen-measures` from
+  `measure_store/` (a set id and class labels as strings), so
+  `arch_blind_check.py`'s `DATA_EXEMPT` skips them by exact path, naming
+  each one's generator; a new set adds no row. A scratch control plants the
+  same box name in an exempt path (must not hit) and in a neighbouring
+  hand-written source (must hit). The 12 hits of the old per-label code rows
+  left the allowlist with it (58 -> 46 hits); the nine `tests/` rows naming
+  the shipped set id stay (fixtures and anchors that read the store text).
+  `C4_ALLOW_FLOOR` (27) is a literal in
   the script. The plants are box-dependent: a Linux run may widen a class.
   Classes 1-2 plant the WHOLE derived population (not a sample) since lane
   r4clx (2026-10-06: ubuntubudu's sample missed `ABM`/`__LAHF_SAHF__`); the

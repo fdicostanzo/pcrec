@@ -102,7 +102,7 @@ typedef struct {
 
 /* Parses and validates `text[0..len)` as a set (§1.6's checks, the spec's
  * failure table): 0 with `*out` set, or -1 with `err` filled. `where` names
- * the input in a refusal ("FILE", "the built-in store's zen4-grid1@1"). */
+ * the input in a refusal ("FILE", "the built-in store's myset@1"). */
 int pcrec_ks_meas_parse(const KsAlloc *a, const char *text, size_t len,
                         const char *where, const KsMeasSet **out, KsErr *err);
 

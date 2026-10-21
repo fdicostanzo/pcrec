@@ -331,3 +331,27 @@ Ruling (manager, 2026-10-21): the +79 is a DECLARED mover (byte-count reader cla
 code bytes scaffolding included, D84). census.py now masks ONLY the N digits in `RX_VM_PREFILTER_WHY "size cap retry,
 hybrid N > M"`, on both sides, so the rung text, cap and every other byte must still match (same decision, same
 engine); a changed rung or any other byte still shows. Re-check of the 2 witnesses x 5 arms: 0 movers.
+
+## C4 (m0c4)
+
+Ruling applied: m0build_rulings.md entry 1 (manager, 2026-10-21). C4 (`make test-memfn-arch`) now exempts the two
+embedded store tables, `src/core/measures_store.inc` and `src/core/measures_table.inc`, as a CLASS by file:
+`arch_blind_check.py`'s `DATA_EXEMPT` maps each exact path to its generator (`scripts/embed_text.sh` and
+`scripts/ksgen.c measures`, both `make gen-measures` from `measure_store/`) and the reason. It sits beside the
+existing directory-level exclusion (`tests/memfn`) and follows its style (the header says what is exempt and why).
+A new set adds no allowlist row.
+
+- ceeaef2ad's code rows (5 rows, 12 hits: `lib/pcrec.h`, `src/core/ks_measures.h`, both `.inc` files) are removed. The two
+  comments citing the set name now read `myset` / `myset@1` (`lib/pcrec.h` ~1674, `src/core/ks_measures.h` 105).
+- The 8 `tests/` rows from the same commit (the knowledge check and seven sabotage rows) STAY: the rows' fixtures and
+  anchors read the store's own text verbatim (`zen4-grid1`), they are tests, not pcrec source, and the ruling named only
+  the two generated tables and the two comments. Said here so the manager can rule otherwise.
+- Allowlist: 58 -> 46 hits, 25 rows. `C4_ALLOW_FLOOR` (27) is a lower bound and is unchanged (46 >= 27).
+- Plant: the scratch control writes `zen4-grid1` into both exempt paths (must not hit) and into
+  `src/core/not_generated.c` (must hit as class 6): both PASS, so the exemption is file-scoped by construction.
+- Validation (this worktree): `make strict` rc 0; `make test-memfn-arch` 17/0 on the script, section 282 passed / 0
+  failed, rc 0; `make test-knowledge` rc 0 (no test- error lines).
+- Byte identity: `pcrec -p rx -o out.c --emit-main --pattern 'a(b|c)+d'` from build/pcrec and from a `git archive HEAD`
+  build of the pre-change tree (same `-o` basename `out.c`, different directories): sha256 b9791e33...1bd, identical.
+- Timing: 304-m0build-census2 had not started at any commit (boxqueue status: pending, "not asked yet", 500-kit-r26zk-heavy
+  running), so 304 will run on the post-C4 tree.
