@@ -280,6 +280,33 @@ recid      light 3600  make test-recursion-identity
   - make test's verdict:
     `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' build/p2e/chain/test.log.make`.
 
+## 7a. Validation verdicts (read 2026-10-21 from the chain logs)
+
+Chain `build/p2e/chain/chain.log` ran 9/9 stages at head `2e133ad09` (its last
+line is `== CHAIN FAILED stage=mechnew rc=124`: mechnew's 1800 s cap fired on its
+last row, S1197, handled below). Logs are under
+`worktrees/ctxp2e/build/p2e/chain/`.
+
+| stage | verdict | log |
+|---|---|---|
+| build | GREEN | `build.log` |
+| strict | GREEN | `strict.log` |
+| test | GREEN (perfrun rc=0, section-errors=0; no `*** [test-` line in `test.log.make`) | `test.log`, `test.log.make` |
+| sweepdef | GREEN, `movers=0 asymmetric=0` on every stream vs `73c2bb655` | `sweepdef.log` |
+| sweepstart | GREEN, `movers=0 asymmetric=0` on every stream and arm vs `73c2bb655` | `sweepstart.log` |
+| sweepvar | GREEN, `movers=0 asymmetric=0`, `VARIANTS: CLEAN` | `sweepvar.log` |
+| mechold | GREEN, 41 rows, unexpected 0 (undetected 1 and unreached 1 are the rows' declared expectations) | `mechold.log` |
+| recid | GREEN, 18 passed / 0 failed | `recid.log` |
+| mechnew | S1186-S1196 DETECTED in the log; cap fired on S1197 (see below) | `mechnew.log` |
+
+- **S1197:** re-run alone through `scripts/boxqueue` by the manager:
+  DETECTED, `corpus:10fail/27pass`, 1 row, unexpected 0
+  (`worktrees/.boxqueue/done/20261021T021917.628495569-200-main-p2e-S1197/job.log`).
+- **Ruling 1 condition met:** the three emit_sweep logs report 0 movers on every
+  stream and arm against `73c2bb655`, so P2e is NOT an abi event. abi stays 81
+  (D76/D94 key the abi on emitted text); D168 add. 3's "own abi event" was
+  conditional on movers (N-3), which measured zero.
+
 ## 8. STATE AT HANDOFF
 
 - **Branch `lane/ctxp2e`.** The code is `fe37f93be`; the tip is this
