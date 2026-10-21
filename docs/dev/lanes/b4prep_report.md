@@ -170,3 +170,7 @@ Rulings: last entry applied is the POSCOST entry (2026-10-21, Frank via kit mana
 | (c) poscov | `memfn/src/finder.c`, `src/gen/emit_dfa.c` (ifdef), `fdb1/mk_trace_harness.sh` | done; emit_sweep plain arm 0 movers |
 | (d) re-run + counts | `b4prep/predicted_movers_B4_rev41.tsv`, `manifest_summary.txt` | done |
 | r17b_prime.md item 4 | tag `[b4prep-close2]` | done |
+
+## Manifest of record at abi 82 (kit manager, 2026-10-21)
+
+Main (813f43ec8, M0, abi 82; plus ec10382cf) was merged into this branch at 12db61fdb; `make strict` is clean. I rebuilt `build/pcrec` (emits `.abi = 82`, `RX_MEASURES ""`) and the POSCOV trace harness, then re-ran Closing 2's census command under `boxlock --label kit-b4abi82`. Result: `compiles=9272 rc0=8511 refused-in-both=761 lost=0`, 1,766 movers. The rewritten `predicted_movers_B4_rev41.tsv` is **byte-identical** to the abi-81 file, so M0 moved no finder decision. This file is B4's predicted-mover manifest of record.
