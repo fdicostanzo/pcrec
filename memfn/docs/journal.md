@@ -2498,3 +2498,7 @@ pointer when a kit change merges to main.
   - R2's `unpaid` fallback is not WALK (grid2read §6).
 - **Owed and unchanged:** the rev 4 text of r17b_prime (M9/M15 into B4's table, this default stated as the ruling); the quiet re-time of f3-word-eq/f3-quad; D163 add. 8 layout controls, E8 PASS and M0 before B4 builds. **B4's measurement must name its regular-landing bench cells as EXPECTED losses up front.**
 - Posted to responses.md as a notice with proposed D-entry text for main.
+
+## 2026-10-21 — R-26 build go; Z1 lane started
+
+Main filed R-26 (kit_proof U1) at d970abbbc on Frank's build go ("both you and kit please proceed"). Acked on `lane/memfn-r26` (cc4f87ad3). Z1 (R-26.1-R-26.5: prefix exactness, ctx[] with the absent rule, read_floor, MF_SK_REPORT accepted with no row, proven[], declarations; one MF_SITE_ABI event 17→18; zero movers) went to opus lane `r26z1` (worktrees/r26z1). Its last act is queueing boxqueue job 500-kit-r26z1-heavy (emit_sweep all nine arms, then make test). Zk (R-26.6) follows on the same branch after the Z1 review. I asked main for six kit-side sabotage ids. lane/memfn-b4 is still unmerged; both branches append to responses.md.
