@@ -27171,3 +27171,28 @@ Recorded before the timing window runs, so the judged artifacts are fixed in adv
 - the census, the job's inputs and the plan, by the hashes in the file.
 
 J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about 40. D170 is applied to r17b_prime §9.2/§3.1a at kit commit 7d6b4ee05. The window runs as one queue job, `560-kit-e8-window`: quiet-gated, idle-ok, 112 groups, ~20 min, under Frank's standing timing clearance for 2026-10-21. Bench cells (I-156) join later as FINDING-only lines and do not gate.
+
+## 2026-10-21 (session 121, day) — part 1 built through Z2; M0; iterator I1; queue honesty
+
+**Accomplished (all on main and pushed unless noted):**
+- Part 1 build go (Frank). R-26 filed for the kit (d970abbbc). The kit's Z1 (5cc3d7179) and Zk (ec10382cf) merged.
+- X0 first FAILED: the reading took row 0 as the entry, and the hull dropped eol-view bytes. Ruled: the stated set is the TRUE set. Fixed in rev 2.2; X0 PASSES (5cceda570).
+- Z2 built, harness-only. X1 first read 11 reds; all were instrument defects (item-directory collisions under -j8, part-compile statements, the \K start), none in the product. X1 then read 0 red beyond U1 over 20.7M cells. MERGED aeb381c25.
+- [MEASURE-SET] M0 (abi 82, K112 rider) MERGED 813f43ec8. Its first make test was red: a missing stamp_kinds row (real) plus 4 stale pins.
+- Compound parts inherit the parent's resolved measure set (83ff3efad), the B4 gate main owed. K113 filed for the analysis chain.
+- [MECH-REACHONLY] (a9e10b53c): 847 rows in 89 s, 0 unexpectedly unreached.
+- [WATCH-IDLE] (f99b335f3) + runnerfix (6a4b90dbd): the queue refuses expect lines that can lie, flags idle jobs, logs every skip, and re-execs on a script change.
+- Kit merges: B4 design rev 4.1, b4prep, setdig. D170 (B4's minimal E8 bar) and the E5 prereg journaled. [MEMFN-POSCOST] filed.
+- Iterator: the parity slot set the batch cell OFF. D171 (Frank): the ~2 ns setup cost is accepted. I1 built on lane/i1build (I0 + I1, abi 83; NOT merged, checks queued). Frank's generic RX_FOREACH via rx_info is planned for I2; I1 already puts rx_iter, rx_nextfn and rx_info.next in the shared ABI.
+
+**Rulings today (Frank):** core product over harness ("the test harness is our project and we can change it any time"); "build what is needed and not theoretical needs"; the iterator interface and the ~2 ns cost; the box cleared for timing today and tonight; the generic macro usable without the .h.
+
+**Mistakes:**
+- My own 120 job had an expect line that could not match.
+- I merged the queue grammar without restarting the runner, so a kit job sat 37 min.
+- The i1build lane ran a ~726-compile check at PROCS=8 outside the lock during the kit's E8 window. The kit re-ran r2 clean, and the BOILERPLATE timing-window rule was added (07f239adf).
+- My context hit 94%, because Reading files in docs/design/ and docs/dev/lanes/ auto-injects their huge CLAUDE.md indexes.
+
+**Kit finding:** B4's V1 default slows 10/19 real-user movers by 14-41% (E8 r2). B4 is on hold; the kit is measuring Frank's flattened-loop twins.
+
+**Next:** read the queued jobs (see wake.md STEP 0): the Z2 post-merge battery, I1's five, the cover timing (GO/NO-GO for B1; an early sign of slow sparse cells).
