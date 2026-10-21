@@ -270,7 +270,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
        serve is REFUSED (no fall-back to the walk below, which could render
        another form under the routed row's name). Everything else walks. */
     const char *rid = NULL;
-    const arm *ra = fd_route(art, art->nsites + 1, s, def, quiet, &rid);
+    const arm *ra = fd_route(art, art->nsites + 1, s, def, gphases, quiet, &rid);
     *row = rid;
     if (rid && ra != &fd_nested_walk) {
         for (size_t i = 0; ra && i < NARMS; i++)
@@ -281,9 +281,11 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     }
     /* R-26.3: a REPORT site renders only through a ROUTED finder row that
        serves REPORT (the candidate is the answer: no pre-table form was
-       written for one, and NONE is not a legal reply). None exists before
-       R-26.6, so it is refused here, never walked (define_sel names it) */
-    if (s->site_kind == MF_SK_REPORT) return NULL;
+       written for one, and NONE is not a legal reply). The REPORT row
+       (R-26.6) is unrouted until its step, so on any art that does not
+       preview it a REPORT site is refused here, never walked (define_sel
+       names it); where it decides, its pick is this walk */
+    if (s->site_kind == MF_SK_REPORT && !rid) return NULL;
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
 }
@@ -399,6 +401,32 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
     memcpy(out->proven0, out->proven[0 - MF_PROOF_LO], sizeof out->proven0);
     memcpy(out->proven_prev, out->proven[-1 - MF_PROOF_LO], sizeof out->proven_prev);
     return why;
+}
+
+/* THE REPORT ROW'S APPLICABILITY (R-26.3, R-26.6; kit.h): the arms' walk
+ * as select_arm takes it (quiet), the chosen row's class, and that class held
+ * EQUAL to the REQUIRED sets at every offset. A wider SATISFIES context item
+ * proves only its outermost position (pred_proves), so such a site is one
+ * the row does not apply to. */
+int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                     unsigned gphases)
+{
+    gate_in in = { s, def, NULL, NULL };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
+    gate_verdict why = { 0, 0 };
+    size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, &why);
+    mf_class c;
+    if (i >= NARMS || kit_class(arms[i], s, &c)) return 0;
+    /* the REQUIRED sets: every term of span 0 and of every `ctx` entry at
+       every position it reads (R-26.3 makes them all REQUIRED), unclipped */
+    uint8_t req[MF_MAX_FWD - MF_PROOF_LO][32];
+    memset(req, 0xFF, sizeof req);
+    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
+        term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, req);
+    for (unsigned k = 0; s->ctx && k < s->nctx; k++)
+        for (unsigned t = 0; t < s->ctx[k].nterm && t < MF_MAX_TERM; t++)
+            term_prove(&s->ctx[k].term[t], MF_PROOF_LO, MF_MAX_FWD - 1, req);
+    return !memcmp(req, c.proven, sizeof req);
 }
 
 const gate_contract *kit_arm_contract(size_t i)
@@ -1200,9 +1228,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
            site with no row; a routed arm can also be DENIED or not apply,
            which declines nothing and so names no field */
         if (s->site_kind == MF_SK_REPORT && !rid)
-            return kit_fail(art, "mf_define: no row serves `site_kind` REPORT (R-26.3: the "
-                            "finder table admits a REPORT site where a REPORT row exists, "
-                            "and none does before R-26.6)");
+            return kit_fail(art, "mf_define: no row serves `site_kind` REPORT here: the "
+                            "REPORT row (RPT, R-26.6) is unrouted until its routing step "
+                            "and decides only on an art previewing it (mf_preview), and "
+                            "only where its form proves every REQUIRED term's set exactly "
+                            "(R-26.3: NONE is not a legal reply)");
         gate_in in = { s, def, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
@@ -1459,6 +1489,21 @@ int mf_reach(mf_art *art, const char *stem)
     int oom = 0;
     art->reach_stem = art_copy(art, stem, &oom);
     if (oom) return kit_fail(art, "mf_reach: out of memory");
+    return 0;
+}
+
+int mf_preview(mf_art *art, const char *step)
+{
+    if (art->err[0]) return -1;
+    if (art->preview)
+        return kit_fail(art, "mf_preview: called twice on one art");
+    if (art->nsites)
+        return kit_fail(art, "mf_preview: called after the first define");
+    const char *named = fd_preview_step(step);
+    if (!named)
+        return kit_fail(art, "mf_preview: `%s` is not a routing step the kit names",
+                        step ? step : "(null)");
+    art->preview = named;
     return 0;
 }
 

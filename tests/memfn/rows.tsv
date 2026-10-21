@@ -79,6 +79,13 @@
 # ask), every other row on `chosen`; rows_check.py requires its witness to be
 # ASKED (asked >= 1) and its control not, and every traced compile's `asked`
 # to equal its own `phase=ask` FD records (P4 counted from `P3+P4`).
+# R-26.6 (lane r26zk): RPT, the REPORT row, lands UNROUTED; only an art
+# previewing its step (mf_preview "R-26.6") routes it, and no pcrec build
+# calls mf_preview before Z2's harness lever (kit_proof.md §7), so its reach
+# is `pending-site:Z2`. Its witness `fd-RPT` is a REPORT site on a preview art
+# (its signature the shadow's FD record); its control is `fd-R7w`, a set site
+# on a plain art (the row is not chosen there; the same REPORT site on a plain
+# art is refused, which tests/memfn/proof_check.c holds).
 #
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
@@ -125,3 +132,4 @@ fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT routed=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=
+fd	RPT	pending-site:Z2	fixture	-	fd-RPT	 row=RPT pick=PROOF	-	fd-R7w

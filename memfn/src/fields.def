@@ -156,6 +156,9 @@ MF_CLASS(L_W16,       "the finder walk's layer variant: the 16-byte SIMD layer")
 MF_CLASS(L_W32,       "the finder walk's layer variant: the 32-byte SIMD layer")
 MF_CLASS(N_REQUIRED,  "the decided span's need: MF_REQUIRED")
 MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
+/* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
+   first 64 (kit.h's kit_set) */
+MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -313,12 +316,14 @@ MF_FIELD(read_floor, MF_PH_DEFINE, HOOK, cl_read_floor,
 /* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
 
 MF_FIELD(site_kind, MF_PH_DEFINE, HOOK, cl_site_kind,
-         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) | CM(OTHER),
+         CM(DFA_SCAN) | CM(DFA_HAT) | CM(HYB_PF) | CM(VM_ATTEMPT) | CM(DFA_ATTEMPT) |
+         CM(REPORT) | CM(OTHER),
          "the site's consumer kind (r17b_prime.md §4.3), read in the finder walk only (fd_facts; "
          "elsewhere unstated): pcrec STATES it from B2 (PR-3), so at B1 every site reads "
          "UNSTATED and a row that reads the kind (D1, D1c, D1w) declines (R1). There is no ANY "
          "kind ([rev3 A22]): a row serving every kind serves every kind class and does not USE "
-         "the field")
+         "the field. REPORT (R-26.3) is served by the REPORT row alone (R-26.6): every other "
+         "row's kinds leave it out, so the gate declines them on a REPORT site")
 MF_FIELD(layer, MF_PH_DEFINE, VALUE, cl_layer,
          CM(L_OFF) | CM(L_W16) | CM(L_W32) | CM(OTHER),
          "the layer variant the finder walk evaluates (a fact of the walk's input, not of the "

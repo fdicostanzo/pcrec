@@ -298,6 +298,9 @@ struct mf_art {
     const char  *reach_stem;
     const char **reach_row;
     uint32_t     nreach, reach_cap;
+    /* R-26.6: the routing step this art PREVIEWS (mf_preview; the kit's own
+       spelling from finder.c's fd_previews[]), NULL on every shipped art */
+    const char  *preview;
     char        err[256];
 };
 
@@ -489,13 +492,28 @@ int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
 void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def);
 /* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
  * that renders the table's pick for FIND site `s` (handle `handle`, the next
- * handle at a define) where the decision's rows are routed, and *row its
- * terminal row's id; NULL where the site renders its pre-table form (*row
- * NULL), or where a routed pick has no arm (*row set: a kit build error the
- * caller refuses). `quiet` 1 for the query (no record, no reach). */
+ * handle at a define) where the decision's rows are routed (or, R-26.6, their
+ * step previewed on `art`), and *row its terminal row's id; NULL where the
+ * site renders its pre-table form (*row NULL), or where a routed pick has no
+ * arm (*row set: a kit build error the caller refuses). `gphases` are the
+ * selection's gate phases (a REPORT site's exactness is asked under them);
+ * `quiet` 1 for the query (no record, no reach). */
 #define fd_route MF_NS(fd_route)
 const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
-                           const mf_hooks *def, int quiet, const char **row);
+                           const mf_hooks *def, unsigned gphases, int quiet,
+                           const char **row);
+/* The kit's own spelling of routing step `step` where the finder table names
+ * it as previewable (mf_preview, R-26.6), else NULL. */
+#define fd_preview_step MF_NS(fd_preview_step)
+const char *fd_preview_step(const char *step);
+/* 1 iff the form the composer's walk chooses for REPORT site `s` under the
+ * gate's phases `gphases` proves, at every offset in [MF_PROOF_LO,
+ * MF_MAX_FWD), EXACTLY the intersection of the REQUIRED terms' sets there
+ * (span 0's and every `ctx` entry's; all ones where none reads): the REPORT
+ * row's applicability (R-26.3, K96), never a check of it (compose.c). */
+#define kit_report_exact MF_NS(kit_report_exact)
+int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                     unsigned gphases);
 /* fd_route's answer for a routed pick that IS the composer's own walk (D2's
  * RUN: the nested fn_rows[] walk, its BODY/PREFIX rows and their denies
  * unchanged, R17-b' B3b): a marker, never rendered or read; the caller walks
