@@ -71,6 +71,9 @@ please proceed", then "Proceed through all items").
 
 1. `540-z2build-sweep`: emit_sweep vs `fc926a603`, streams c-default/c-vm/
    emit-ir/composition, `--arms start`, `--variant all`: **0 movers expected**.
+   MEASURED for the first part before handoff (`build/z2land/sweep/main.log`):
+   c-default, c-vm, emit-ir 0 movers over 5,811 argv patterns (5,357-5,358
+   compiled), composition 0 movers over 387 files, self-check passed.
    Then facts and dumps as a MEASUREMENT: declared deltas are the new
    `span_facts` row on every `--emit-facts` listing and the
    `PCREC_SPAN_WALK_SUBSETS` row of `--list-limits`; nothing else should move.
