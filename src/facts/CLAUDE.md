@@ -303,6 +303,23 @@ defect traced to that edge (design §4.2.1, §10).
   `RunPin` gained `at`/`len`/`idx` and the derivation takes the byte-rate. On
   an exact run it is the pre-row pin exactly (the C3 manifest's 0
   off-diagonal); `--emit-facts` renders `o` or `o:at+len`.
+  **[KIT-VERIFY] U1 Z2 (lane z2build): THE SPAN SLICE** (`pcrec_span_walk`,
+  fact `span_facts`, E3 core; kit_proof.md §5.2 UL-0, ctx_span.md §3.3-§3.4,
+  §3.8): the k-set walk EXTENDED to an exact subset walk from the same root
+  over the same machine. Threads carry a next-byte restriction R (merged by
+  union at a shared state, U2), successors are taken per BYTE CLASS of the
+  machine so every item sees its previous byte exactly, and the zero-width
+  kinds are applied rather than passed (`N_CTX`'s 9-cell row, `N_EOL`'s
+  end-or-final-newline split, `\G` opaque). The result is `MkLang`
+  (`facts.h`): the TRUE per-offset sets and the exact prefix, the context
+  before the origin ranging over every byte class and the subject start.
+  `KsetWalk` is UNCHANGED (its readers are unmoved by construction); the
+  trace build holds the slice inside that hull. Declines a machine whose
+  language is a superset (`Nfa.erased`) or carries mark distances. Bounded
+  by `PCREC_PREFIX_K_MAX` positions and `PCREC_SPAN_WALK_SUBSETS` subsets
+  over twice that depth for liveness (limits.def). Readers: the `cover`
+  LOCATE row's C8 and every start-origin FIND site's `exact_len`
+  statement (src/gen/emit_dfa.c).
 
 ## What the check cannot catch
 
