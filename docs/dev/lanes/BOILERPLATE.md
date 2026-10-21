@@ -200,6 +200,8 @@ the lane's failure: re-run the named sections solo (`make test-X`); green solo
 = green-by-diagnosis (known_issues K44). `RED-REAL` is the lane's. Do not
 re-run the whole suite at another shape to "check"; the rotation owns shapes.
 
+**TIMING WINDOWS ARE BOX-WIDE (2026-10-21).** Before ANY multi-core command run outside the queue (a compile batch, a sweep, a differential, a `PROCS>1` script), check `scripts/boxqueue status`. If a quiet-gated timing job is running (`idle-ok`, a `-slot`/`-window`/`-parity` name, or a label saying timing), do not run it: queue it as a job, or wait for the window to end. A lane's "light" work at PROCS=8 during the kit's E8 window contaminated its timing (2026-10-21). The quiet gate only checks quiet at the START of a window; keeping the box quiet afterwards is every lane's job.
+
 ## Queue template: a job script for `scripts/boxqueue` ([BOXQUEUE])
 A job is one executable script named `PRIO-OWNER-REST`, called three ways
 (scripts/boxqueue's header is the contract). `--dry-run` resolves everything
