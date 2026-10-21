@@ -967,6 +967,12 @@ fi
 # EMITTED_BYTES rows +27, exactly the one new line every artifact carries,
 # `#define RX_COMPOUND "none"` (26 bytes and its newline); no sample pattern is
 # a compound, and nothing else moved (the diff read row by row).
+#
+# RE-RECORDED 2026-10-21 at [MEASURE-SET] M0 (lane m0build, abi 81 -> 82): all
+# twelve EMITTED_BYTES rows +193, exactly the scaffolding every artifact gains:
+# `#define RX_MEASURES ""`, `.measures = "",` and the `measures` member with its
+# two-line comment in the shared ABI block (diffed at the same `-o` against a
+# build of the branch point; nothing else moves but the same-width abi digits).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

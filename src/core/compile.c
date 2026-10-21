@@ -196,6 +196,8 @@ static void job_cleanup(Ctx *cx)
         /* [WINDOW-E1] F-5: the attempt's end, so its asks join the
          * compile's union before its record is freed (D167 addendum 3). */
         if (cx->find_union) *cx->find_union |= pcrec_find_asked(cx);
+        /* [MEASURE-SET] M0: and its kit read's `consulted` (§3.5) */
+        if (cx->meas_union && cx->job->meas_consulted) *cx->meas_union = true;
         free(cx->job->nfa.st);
         free(cx->job->rnfa.st);
         free(cx->job->dfa.st);
@@ -2025,6 +2027,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [WINDOW-E1] F-5 the queries every finished attempt consulted
        (`Ctx.find_union`): the knowledge stamp is their union */
     unsigned find_union = 0;
+    /* [MEASURE-SET] M0 the same union for the measurement set (§3.5) */
+    bool meas_union = false;
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
      * way `overflow_why` is and for exactly the same reason: `job_cleanup`
@@ -2167,6 +2171,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.fit_nseq = fit_nseq;
         cx.dfa_memo = &dmemo;
         cx.find_union = &find_union;
+        cx.meas_union = &meas_union;
         if (dfa_disabled)
             memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
@@ -2517,6 +2522,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * attempt only, since every attempt resolves the same inputs to the
          * same chain. */
         pcrec_find_resolve(&cx, attempt == 0);
+        /* [MEASURE-SET] M0 THE MEASUREMENT SET, resolved beside the analysis
+         * and for the same reason (a bad `--measures` refuses before the
+         * parse): the named set, else the build's default (the LATEST set,
+         * §3.4). Per attempt because it lives in this attempt's arena. */
+        pcrec_meas_resolve(&cx);
         /* [WINDOW-E1] THE ANALYSIS OBJECT, built here and nowhere else: once
          * per attempt, EAGERLY, from the chain just resolved, so its build
          * point does not depend on which kit call comes first
@@ -3332,6 +3342,7 @@ facts_force:
                                "arena or its forms were never stamped");
             pf->memfn_forms = pcrec_sb_fragf(pf->into, "%s", cx.job->memfn_forms);
             pf->find_consulted = find_union | pcrec_find_asked(&cx);
+            pf->meas_consulted = meas_union || cx.job->meas_consulted;
         }
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;

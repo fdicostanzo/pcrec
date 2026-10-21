@@ -1,0 +1,2 @@
+#id	rev	class	box	tier	composite	method	supersedes	values_digest	file_sha256	status
+zen4-grid1	1	x86_64-avx2/zen4	AMD Ryzen 7 7700X, CPU 14	scratch	0	kit-grid@1		13a6536315af1520	d332967cc5aa0d499729c7977261a2e2adbb4194c16a987191c59160968d33de	current

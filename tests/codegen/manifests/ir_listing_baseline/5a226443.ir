@@ -61,7 +61,7 @@ lookpos
 #section program
 #label	op	args	target	note
 L0	label			
-	assert	^ attempt_position of subject (absolute offset 0)	L2	
+	assert	^ start of subject (absolute offset 0)	L2	
 	fail			backtrack
 L2	label			group 1 opens
 	set	slot_values[4] <- scan_position		group 1 open, PENDING until this iteration closes

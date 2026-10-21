@@ -567,6 +567,10 @@ typedef struct {
      * §8.4/§8.5) instead of the chain-and-resolution listing; NULL for that
      * listing. A modifier of that one mode, not a mode of its own. */
     const char *list_view;
+    /* [MEASURE-SET] M0 `--list-measurements` ("" : the sets index) and
+     * `--list-measurements=X` (X a set NAME, NAME@REV or FILE: that set's
+     * canonical view, or `--view`'s), docs/spec/measures.md §6. */
+    const char *list_measurements;
     const char *target;
     const char **libdirs;
     size_t      nlibdirs, libcap;
@@ -647,6 +651,7 @@ typedef struct {
     X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
     X(LIST_ANALYSES,    list_analyses,    INT, "--list-analyses")        \
     X(LIST_ANALYSIS,    list_analysis,    PTR, "--list-analysis")        \
+    X(LIST_MEASUREMENTS, list_measurements, PTR, "--list-measurements")  \
     X(FILES,            nfiles,           INT, "a file operand")
 
 typedef enum {
@@ -706,7 +711,7 @@ static int cli_modes_count(unsigned modes)
     (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(LIST_VERBS) |         \
      CMB(LIST_FAMILIES) | CMB(LIST_AXES) | CMB(LIST_LIMITS) |             \
      CMB(LIST_SCHEMA) | CMB(EXPLAIN) | CMB(LIST_ANALYSES) |               \
-     CMB(LIST_ANALYSIS))
+     CMB(LIST_ANALYSIS) | CMB(LIST_MEASUREMENTS))
 
 /* `--count-groups` refuses the registry queries and nothing else: it TAKES
  * a pattern, so it composes with the pattern-bearing modes below it. */
@@ -1317,6 +1322,32 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.analysis = v;
         }
+        /* [MEASURE-SET] M0 `--measures NAME|NAME@REV|FILE` (or `=`): the
+         * measurement set a compile reads (docs/spec/measures.md §5),
+         * FILL-ONLY against a target's `measures` config line like
+         * `--analysis`. Any non-empty value is a NAME or a FILE by spelling
+         * (the row's `name-else-file`); the library resolves and refuses. */
+        else if (!strcmp(a, "--measures") || !strncmp(a, "--measures=", 11)) {
+            const char *v;
+            if (a[10] == '=') v = a + 11;
+            else if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            } else v = argv[++i];
+            if (!*v) {
+                cli_err("missing value for --measures");
+                return 1;
+            }
+            opt.measures = v;
+        }
+        else if (!strcmp(a, "--list-measurements")) st->list_measurements = "";
+        else if (!strncmp(a, "--list-measurements=", 20)) {
+            if (!a[20]) {
+                cli_err("missing value for --list-measurements=");
+                return 1;
+            }
+            st->list_measurements = a + 20;
+        }
         else if (!strcmp(a, "--list-analyses")) st->list_analyses = 1;
         else if (!strcmp(a, "--view") || !strncmp(a, "--view=", 7)) {
             if (a[6] == '=') st->list_view = a + 7;
@@ -1695,6 +1726,18 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                     pk.flag_value, pk.file_value);
         ts.opt.analysis = pk.chosen;
     }
+    /* [MEASURE-SET] M0 `measures` is fill-only by the same rule and the
+     * same part (measure_sets.md §3.3). */
+    {
+        KsPick pk = pcrec_ks_pick(ts.opt.measures, t->measures);
+        if (pk.disagree)
+            cli_err("%s:%zu: target '%s': CLI --measures %s and this file's "
+                    "measures %s disagree; using the file's value "
+                    "(--measures is fill-only)",
+                    src_path, t->measures_line, t->prefix,
+                    pk.flag_value, pk.file_value);
+        ts.opt.measures = pk.chosen;
+    }
 
     /* `budget frames=` sizes the ARTIFACT's resume stack, which is
      * `--backtrack-frames`, not the caller-supplied buffer of §10 —
@@ -2031,6 +2074,7 @@ int main(int argc, char **argv)
             pcrec_ks_classify(pcrec_ks_analysis.list_classify,
                               st.list_analysis) == KS_REQ_FILE;
         const int resolves = st.nfiles || st.list_analysis ||
+                             (st.list_measurements && *st.list_measurements) ||
                              (st.pattern && m0 == 0);
         if ((st.libdirs && !resolves) ||
             (st.opt.analysis && !(st.nfiles || la_file ||
@@ -2044,6 +2088,17 @@ int main(int argc, char **argv)
             return 1;
         }
         st.opt.analysis_dirs = st.libdirs;
+        /* [MEASURE-SET] M0: `-I` is the measures kind's S2 too (§3.2), and
+         * `--measures` reaches exactly a compile (a set's own listing names
+         * its set; the per-target view is M1's). */
+        st.opt.measures_dirs = st.libdirs;
+        if (st.opt.measures && !(st.nfiles || (st.pattern && m0 == 0))) {
+            cli_err("--measures applies to a compile (a file operand or "
+                    "--pattern) only");
+            free(st.libdirs);
+            free(st.files);
+            return 1;
+        }
     }
 
     /* [KNOW-SRC] K3: `--view` selects a view of ONE bundle, so it applies to
@@ -2052,8 +2107,10 @@ int main(int argc, char **argv)
     if (st.list_view &&
         !(st.list_analysis &&
           pcrec_ks_classify(pcrec_ks_analysis.list_classify,
-                            st.list_analysis) == KS_REQ_NAME)) {
-        cli_err("--view applies to --list-analysis NAME only");
+                            st.list_analysis) == KS_REQ_NAME) &&
+        !(st.list_measurements && *st.list_measurements)) {
+        cli_err("--view applies to --list-analysis NAME or "
+                "--list-measurements=X only");
         free(st.libdirs);
         free(st.files);
         return 1;
@@ -2475,6 +2532,35 @@ static int cli_dispatch(CliState st)
         else
             v = pcrec_find_list_file(st.list_analysis, st.libdirs,
                                      st.opt.analysis, &lerr);
+        free(st.libdirs);
+        if (!v) {
+            cli_err("%s", lerr.msg);
+            return 1;
+        }
+        fputs(v, stdout);
+        free(v);
+        return 0;
+    }
+
+    /* [MEASURE-SET] M0 THE MEASUREMENT-SET LISTINGS (docs/spec/measures.md
+     * §6): the analysis listings' shape and position, for the same reason
+     * (the `-I` list is freed here). */
+    if (st.list_measurements) {
+        char *v;
+        pcrec_error lerr = { 0 };
+        if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1 ||
+            (modes & ~CLI_MODES_REGISTRY_QUERY)) {
+            cli_err("--list-measurements is a separate query; use one");
+            free(st.libdirs);
+            return 1;
+        }
+        if (pattern || outpath || flavour) {
+            cli_err("--list-measurements takes no pattern, no -o and no --flavour");
+            free(st.libdirs);
+            return 1;
+        }
+        v = pcrec_meas_list(*st.list_measurements ? st.list_measurements : NULL,
+                            st.libdirs, st.list_view, &lerr);
         free(st.libdirs);
         if (!v) {
             cli_err("%s", lerr.msg);

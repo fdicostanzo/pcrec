@@ -165,11 +165,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 80
-#error "pcrec: this artifact (abi 81) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 82
+#error "pcrec: this artifact (abi 82) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 81
+#define PCREC_RX_ABI_H 82
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1257,7 +1257,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `81` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `82` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1285,6 +1285,7 @@ compile time, where one exists.
 | 26 | `vars` | `const char *const *` | the variable NAMES the pattern mentions, in first-mention order; `NULL` when none (`docs/spec/vars.md`) | — |
 | 27 | `nvars` | `int` | entries in `vars[]` | `<PREFIX>_NVARS` (var-bearing artifacts) |
 | 28 | `findings` | `const char *` | which findings each query the compile asked (on any attempt) was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
+| 29 | `measures` | `const char *` | the measurement set a reader consulted (on any attempt), as `id@rev:digest`; `""` when none was consulted; never `NULL` | `<PREFIX>_MEASURES` (byte-identical) |
 
 <a id="s6-p2"></a>[6¶2] Every field listed without a mirror is reachable only by reading
 `<prefix>_info` at run time — `ngroups` included.
@@ -1366,6 +1367,11 @@ binary. It names the analysis a byte-rate came from in plain text, so a
 shipped binary discloses the name of the analysis it was built under
 (`docs/spec/findings.md` §5 states the grammar and the digest).
 
+<a id="s6-p14a"></a>[6¶14a] **`measures`** mirrors `<PREFIX>_MEASURES` for the same reason. It names
+the measurement set in plain text, so a shipped binary discloses the id of the
+set it was built under (`docs/spec/measures.md` §4 states the grammar and the
+digest).
+
 <a id="s6-p15"></a>[6¶15] **`frame_capacity`'s sentinel differs from the same-named option's.** On the
 INPUT side `pcrec_options.frame_capacity == 0` means "let the compiler size
 it" and a positive value is a request; on the OUTPUT side
@@ -1398,7 +1404,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `81` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `82` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1582,6 +1588,7 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_MEMFN_FORMS`, `_MEMFN_LIBC` | all | string | — | [§6.3.10¶3](#s6-3-10-p3) |
 | `<PREFIX>_SIMD_GUARDED_BYTES` | all | integer | — | [§6.3.10¶8](#s6-3-10-p8) |
 | `<PREFIX>_FINDINGS` | all | string | `findings` | [§6.3.10¶10](#s6-3-10-p10) |
+| `<PREFIX>_MEASURES` | all | string | `measures` | [§6.3.10¶12](#s6-3-10-p12) |
 | `<PREFIX>_NCAPS` | all (`.h`) | integer | `ncaps` | §5 |
 | `<PREFIX>_RESUME_FRAMES`, `_TRAIL_FRAMES`, `_RESUME_FRAME_SIZE`, `_TRAIL_FRAME_SIZE`, `_BUFFER_ALIGN` | all (`.h`) | integer | the sizing fields | §10.4 |
 | `<PREFIX>_NVARS`, `<PREFIX>_VAR_<NAME>` | var-bearing (`.h`) | integer | `nvars` | `docs/spec/vars.md` |
@@ -2422,6 +2429,23 @@ kit included (its artifact end), so an ask made while the engine body is
 emitted is recorded. The bundle name is plain text in the
 artifact.
 
+<a id="s6-3-10-p12"></a>[6.3.10¶12] **`<PREFIX>_MEASURES`** — the measurement set this artifact's
+selections consulted; mirrored byte for byte by `rx_info.measures`. Written
+right after `<PREFIX>_FINDINGS`.
+
+```c
+#define RX_MEASURES "zen4-grid1@1:13a6536315af1520"   /* consulted */
+#define RX_MEASURES ""                                /* nothing consulted */
+```
+
+<a id="s6-3-10-p13"></a>[6.3.10¶13] The value is the set the compile LOADED (`docs/spec/measures.md` §4),
+written iff a reader consulted it: pcrec's own readers (none exist today) or
+the search-code kit's (its `consulted`), on ANY attempt of the compile, and on
+a compound on P's compile or any part's. A lookup that found no row still
+consults. With nothing consulted the value is `""` and the artifact's bytes
+are the same under every set. No kit row reads a set today, so every artifact
+carries `""`.
+
 <a id="s6-3-11"></a>
 #### 6.3.11 Feature set, tuning position, alternation normalization
 
@@ -2492,6 +2516,7 @@ stamp's absence (§6.3.1¶5).
 | pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
+| pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |
 | machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, the VM's string stamps | `"compound"` |
 | machine (count) | `_DFA_UNIFORM_FOLDS`, `_RUN_WORDS`, the VM's counts and masks | `-1` |
 
@@ -2726,6 +2751,12 @@ typedef struct {
     int                part_residual;       /* PCREC_PART_UNSET / _AUTO /
                                                _SHARED / _INLINE; tuning.md
                                                §2.53 */
+    const char        *measures;            /* the MEASUREMENT SET: NAME,
+                                               NAME@REV or FILE; NULL = the
+                                               build's default */
+    const char *const *measures_dirs;       /* NULL-terminated directory
+                                               list searched for
+                                               NAME.measures.tsv; NULL = none */
 } pcrec_options;
 ```
 
@@ -2764,6 +2795,16 @@ preset cell is empty), else unset; unset or `auto`/`none` throughout, the
 artifact is byte-identical to one built without them. A value outside its set
 refuses the compile through `pcrec_error`. `tuning.md` §2.51-§2.53 is their
 contract.
+
+<a id="s8-2-p7b"></a>[8.2¶7b] **`measures` and `measures_dirs`** choose the measurement set a compile
+reads its machine-side costs from: a NAME or NAME@REV resolved over
+`DIR/<name>.measures.tsv` for each of `measures_dirs`, then the sets built
+into the library; any other value is a FILE. `NULL` is the build's default,
+the latest committed set. A set changes speed, never an answer or a give-up;
+a set that does not resolve or parse, or that reuses a committed set's id with
+other values, refuses the compile through `pcrec_error`. A consulted set's id
+is stamped into the artifact (`<PREFIX>_MEASURES`). `docs/spec/measures.md` is
+their contract.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`

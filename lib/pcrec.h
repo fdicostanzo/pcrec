@@ -1668,6 +1668,23 @@ typedef struct {
     uint32_t           part_layout;
     int                part_inline_rank;
     int                part_residual;
+
+    /* [MEASURE-SET] M0 (docs/spec/measures.md, docs/design/measure_sets.md
+     * §3): THE MEASUREMENT SET a compile reads its machine-side costs from —
+     * a NAME (`zen4-grid1`), a NAME@REV (`zen4-grid1@1`), or a FILE (any
+     * value that is not a legal name, by spelling alone: `./x`, `x.tsv`). A
+     * NAME is resolved over `DIR/<name>.measures.tsv` for each DIR of
+     * `measures_dirs` in order (NULL-terminated, NULL for none), then the
+     * sets built into this library. NULL MEANS THE BUILD'S DEFAULT: the
+     * latest committed set.
+     *
+     * A set changes SPEED, never an answer or a give-up. A set that does not
+     * resolve, does not parse, or reuses a committed set's id with other
+     * values REFUSES the compile through `pcrec_error`. A set some reader
+     * consulted is disclosed in the artifact (`<PREFIX>_MEASURES`,
+     * `rx_info.measures`); one nobody consulted leaves both "". */
+    const char        *measures;
+    const char *const *measures_dirs;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

@@ -19,8 +19,8 @@
  * fixed `KsErr`, so a tool that links the parts (`pcrec-measure`, §7.1)
  * links nothing else of `src/`.
  *
- * WHAT IS NOT HERE YET, by step (§9.7): the section-TSV reader (part 1)
- * lands with its first reader, the `measures` kind (M0). The embed
+ * The section-TSV reader (part 1) landed with its first reader, the
+ * `measures` kind ([MEASURE-SET] M0, `src/core/ks_measures.c`). The embed
  * generator (part 4) is `scripts/ksgen.c` (K2), which links these parts. The
  * views (part 6) are here since K3: `pcrec_ks_view_write` dispatches a view
  * NAME to the row's writer columns, and `pcrec_ks_derived_section` is the
@@ -139,9 +139,10 @@ typedef struct KsKind {
     /* Reads `path` and reports whether it defines item `name`. NULL for a
      * resolve-only kind (`lib`), whose stop answers by existence alone. On
      * KS_FILE_FOUND `*doc` is the kind's parse, owned by the caller; on
-     * every other answer the probe has released it. */
-    KsFile (*probe)(const char *path, const char *name, void **doc,
-                    size_t *nitems, KsErr *err);
+     * every other answer the probe has released it. `a` is the walk's
+     * allocator, for a kind whose parse lives in it ([MEASURE-SET] M0). */
+    KsFile (*probe)(const KsAlloc *a, const char *path, const char *name,
+                    void **doc, size_t *nitems, KsErr *err);
     /* §9.6's two views of ONE loaded item (`doc` is the kind's own item
      * handle, not the probe's parse): the CANONICAL view, which IS a
      * loadable input of the kind, and the DECODED view, the loaded document
@@ -213,6 +214,52 @@ bool pcrec_ks_name_ok(const char *s, size_t n);
 
 /* What spelling `s` is under classification `c`. */
 KsReq pcrec_ks_classify(KsClassify c, const char *s);
+
+/* The same for a kind whose row accepts `NAME@REV` (`revs`, §3.2): a legal
+ * name followed by `@` and decimal digits with no leading zero is a NAME
+ * too. On KS_REQ_NAME `*nlen` is the name's length and `*rev` the pinned
+ * revision (0: none, the latest). With `revs` false this is
+ * `pcrec_ks_classify` exactly. */
+KsReq pcrec_ks_classify_ref(KsClassify c, bool revs, const char *s,
+                            size_t *nlen, uint32_t *rev);
+
+/* ---- part 1: the section-TSV reader (§9.2 part 1) --------------------- */
+
+/* One section of a `table_contract.md` §2/§4 stream: its name (`""` for the
+ * leading anonymous table), its header's column names, and its rows as
+ * `nrows * ncols` cells, row-major, each a NUL-terminated copy. `line` is
+ * the 1-based line of the `#section` line (0 for the anonymous one) and
+ * `row_line[i]` row i's own. */
+typedef struct {
+    const char         *name;
+    size_t              line;
+    size_t              ncols;
+    const char *const  *cols;
+    size_t              nrows;
+    const char *const  *cells;
+    const size_t       *row_line;
+} KsTsvSection;
+typedef struct {
+    size_t              nsec;
+    const KsTsvSection *sec;
+} KsTsv;
+
+/* Reads `text[0..len)` into sections, with no filesystem access. The rules
+ * are the contract's: a `#section NAME` line at column 1 opens a section; a
+ * section's header is its LAST `#` line before its first data row (§4¶8),
+ * and every later `#` line is a comment; a data row splits on TAB and must
+ * carry exactly its header's field count (§5¶1). An empty line is skipped.
+ * Refused, naming the line: a data row with no header, a field-count
+ * mismatch, a section name used twice, a CR or NUL byte. 0, or -1 with
+ * `err` filled. */
+int pcrec_ks_tsv_read(const KsAlloc *a, const char *text, size_t len,
+                      KsTsv *out, KsErr *err);
+
+/* The section named `name`, or NULL. */
+const KsTsvSection *pcrec_ks_tsv_section(const KsTsv *t, const char *name);
+
+/* The index of column `name` in `s`, or -1 (columns resolve BY NAME, §3¶1). */
+long pcrec_ks_tsv_col(const KsTsvSection *s, const char *name);
 
 /* ---- part 3: fill-only precedence (D93) ------------------------------ */
 

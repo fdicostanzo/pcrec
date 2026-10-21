@@ -862,6 +862,13 @@ static int pcrec_raw_analysis_check(RxtP *p, size_t line, const char *raw)
                             "'pcrec' may not carry '--analysis': a config "
                             "names its analysis with its own 'analysis' "
                             "line");
+        /* [MEASURE-SET] M0: the same rule for the measurement set */
+        if ((n == 10 && !strncmp(w, "--measures", 10)) ||
+            (n > 10 && !strncmp(w, "--measures=", 11)))
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                            "'pcrec' may not carry '--measures': a config "
+                            "names its measurement set with its own "
+                            "'measures' line");
     }
     return 0;
 }
@@ -3404,6 +3411,19 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                 if (f->row) f->row->analysis = v;
                 continue;
             }
+            if (tok_is(tok, "measures")) {
+                /* [MEASURE-SET] M0: names ONE measurement set — a NAME,
+                 * NAME@REV or FILE by spelling (docs/spec/measures.md §5);
+                 * the compile resolves it. Composed like `analysis`. */
+                const char *v = value_trimmed(&p, tok);
+                if (!*v) {
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                             "'measures' needs a set name or a file");
+                    goto fail;
+                }
+                if (f->row) f->row->measures = v;
+                continue;
+            }
             RxtRow *cr = f->row;
             if (tok_is(tok, "pcrec")) {
                 const char *raw = line_value(tok);
@@ -3902,6 +3922,8 @@ typedef struct {
     const char *pcrec_raw;
     const char *analysis;       /* [FINDINGS] B2: later-wins, one scalar */
     size_t      analysis_line;  /* the config row that supplied it */
+    const char *measures;       /* [MEASURE-SET] M0: `analysis`' rule */
+    size_t      measures_line;
 } RxtSet;
 
 /* Zero-fills `s` and sets budget_steps/budget_frames to -1 (unset) -- RxtSet's
@@ -3932,6 +3954,10 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
         dst->analysis = add->analysis;
         dst->analysis_line = add->analysis_line;
     }
+    if (add->measures) {
+        dst->measures = add->measures;
+        dst->measures_line = add->measures_line;
+    }
     if (add->budget_steps  >= 0) dst->budget_steps  = add->budget_steps;
     if (add->budget_frames >= 0) dst->budget_frames = add->budget_frames;
     if (add->pcrec_raw) {
@@ -3961,6 +3987,8 @@ static void set_from_row(RxtSet *s, const RxtRow *r)
     s->pcrec_raw = r->pcrec_raw;
     s->analysis = r->analysis;
     s->analysis_line = r->analysis ? r->line : 0;
+    s->measures = r->measures;
+    s->measures_line = r->measures ? r->line : 0;
 }
 
 /* A config MATERIALISES ONCE, and `seen` is what makes that true rather
@@ -4519,6 +4547,8 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->defs = defs;
         t->analysis = s.analysis;
         t->analysis_line = s.analysis_line;
+        t->measures = s.measures;
+        t->measures_line = s.measures_line;
 
         /* THE PER-KIND TABLE (§1.5), applied exactly once. */
         t->features_only = blk->features_only;

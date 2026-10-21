@@ -7,15 +7,17 @@
  * analysis row brings the `.rxt` reader, and a tool that links the parts
  * alone (`pcrec-measure`, §7.1) brings its own one-row table instead of this
  * one. The rows are defined in their own TUs (src/parse/ks_analysis.c,
- * src/parse/ks_lib.c); `measures`, `picks` and `evaluator-params` join when
- * their steps build (§9.8). */
+ * src/parse/ks_lib.c, src/core/ks_measures.c since [MEASURE-SET] M0);
+ * `picks` and `evaluator-params` join when their steps build (§9.8). */
 
 #include <string.h>
 
 #include "core/internal.h"
+#include "core/ks_measures.h"
 #include "core/ksrc.h"
 
-const KsKind *const pcrec_ks_kinds[] = { &pcrec_ks_analysis, &pcrec_ks_lib };
+const KsKind *const pcrec_ks_kinds[] = { &pcrec_ks_analysis, &pcrec_ks_lib,
+                                         &pcrec_ks_measures };
 
 const KsKind *pcrec_ks_kind(const char *name)
 {

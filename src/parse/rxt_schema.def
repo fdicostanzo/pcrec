@@ -185,6 +185,9 @@ PCREC_RXT_SCHEMA(CONFIG, "tune",     TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PC
 /* [FINDINGS] B0: names ONE analysis (a bundle) — TOKEN and AT_MOST_ONE,
  * no longer a LIST of data blocks (D123-1/2). */
 PCREC_RXT_SCHEMA(CONFIG, "analysis", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
+/* [MEASURE-SET] M0: names ONE measurement set (a NAME, NAME@REV or FILE by
+ * spelling; docs/spec/measures.md §5), `analysis`' row shape exactly. */
+PCREC_RXT_SCHEMA(CONFIG, "measures", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
 
 /* ---- BLOCK scope — a pattern block's own lines ------------------------
  *
