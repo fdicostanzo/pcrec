@@ -524,6 +524,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MEMFN-POSCOST] STATE:not-started — PRICE A SET-FIND'S SCAN POSITION BY ITS SET'S FORM, PLUS SUPERSET COVERS
+  filed: 2026-10-21 kit session (Frank to the kit: "file as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit"); filed in plan.md by the manager
+  status (2026-10-21): filed; neither part built; B4 goes ahead as agreed.
+  trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a <= 2-term position inside their span (the B4-prep closing lane counts it), and grid/bench timing shows the gain.
+  refs: memfn/docs/ideas.md 2026-10-21; docs/design/memfn/r17b_prime.md §1.3a R7/R7w; memfn/docs/responses.md (kit notice 2026-10-21)
+  Charter: (1) a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate; the scan position is priced by rate AND by the form its set takes (V1 at <= 2 terms, `kit.terms.V1max`), not by rate alone. (2) a >= 3-term set may be searched through a <= 2-term SUPERSET filter, then verified exactly (e.g. `\w` through `[0-9]|[A-z]`, 5 extra members); a FIND filter only, never a proof for a REPORT site.
 - [MECH-REACHONLY] STATE:not-started — A REACH-ONLY SWEEP FOR THE SABOTAGE MATRIX + A STRATEGY-WIDENING DELIVERY BAR
   filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
   status (2026-10-21): filed from docs/dev/devmethods/apply_here.md §5; nothing built.
