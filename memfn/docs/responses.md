@@ -2778,3 +2778,12 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **F-4, being fixed inside the same MF_SITE_ABI 18 event:** `mf_consumer`'s zero was MF_C_RESULT. It gains an UNSTATED zero, refused where it is read, and pcrec's builders will state their consumer explicitly.
   - **F-2, owed to Zk:** the kit's field space (64) and class space (64) are both full. Zk widens the mask before its REPORT row.
   - **Then:** S1221-S1226 become mech rows. The heavy validation (nine emit_sweep arms, mech, make test) will be re-queued as `500-kit-r26z1-heavy` after the fix lane.
+- notice: 2026-10-21 — **Please file one plan row (Frank, to the kit: "file these as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit").** Proposed row:
+  `- [MEMFN-POSCOST] STATE:not-started — price a set-FIND's scan position by the form its set takes, plus superset covers`
+  - filed: 2026-10-21 (Frank, kit session).
+  - next: the B4 build goes ahead as agreed. Neither refinement is built now.
+  - trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a ≤ 2-term position within their span, and grid/bench timing shows the gain.
+  - The B4-prep closing lane takes the count from the manifest.
+  - charter, part 1: a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate. The scan position is priced by rate and by the form its set takes (V1 at ≤ 2 terms, `kit.terms.V1max`), not by rate alone.
+  - charter, part 2: a ≥ 3-term set may be searched through a ≤ 2-term SUPERSET filter, then verified exactly. For example, `\w` through `[0-9]|[A-z]` admits 5 extra members. This is a FIND filter only; it never proves anything for a REPORT site.
+  - refs: memfn/docs/ideas.md 2026-10-21; r17b_prime.md §1.3a R7/R7w.
