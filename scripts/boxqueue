@@ -61,21 +61,63 @@
 #                   failed (124 CAP-FIRED). A failure inside BOXQUEUE_FAST s
 #                   (10) is marked FAILED-FAST: an invocation error, reported
 #                   at once.
-# DECLARATIONS, printed by --dry-run as `boxqueue: ...` lines; all three are
-# REQUIRED (no silent defaults), an unknown one refuses the job:
+# DECLARATIONS, printed by --dry-run as `boxqueue: ...` lines; the first
+# three are REQUIRED (no silent defaults), an unknown one refuses the job:
 #   boxqueue: cap SECONDS|none        the work's wall cap (lock wait excluded)
 #   boxqueue: patience SECONDS|none   not-ready longer than this is REPORTED
-#   boxqueue: expect none             or one line per counted population:
-#   boxqueue: expect NAME=N lines=ERE   N = the number of lines of THIS run's
-#                                       log matching ERE (awk ERE)
-#   boxqueue: expect NAME=N last=ERE    N = the integer right after ERE's
-#                                       match (blanks skipped) on its LAST
-#                                       matching line; trailing blanks of
-#                                       an ERE are not kept
+#   boxqueue: expect none reason=WHY  nothing counted; WHY says what catches a
+#                                     crash (e.g. `the work's rc is the
+#                                     tool's rc, exec'd`). A bare `none` is
+#                                     REFUSED: a job that swallowed its tool's
+#                                     rc and said `none` scored GREEN on a
+#                                     crash (reachonly, 2026-10-21)
+#   or one line per counted population:
+#   boxqueue: expect NAME=N [log=PATH] lines=ERE
+#                                     N = the number of lines of the log
+#                                     matching ERE (awk ERE)
+#   boxqueue: expect NAME=N [log=PATH] last=ERE
+#                                     N = the integer right after ERE's
+#                                     match (blanks skipped) on its LAST
+#                                     matching line; trailing blanks of
+#                                     an ERE are not kept
+#   boxqueue: witness NAME=LINE       REQUIRED for a last= expect: one sample
+#                                     line the work would print; the dry run
+#                                     reads N back from it with the SAME
+#                                     matcher and refuses a count the matcher
+#                                     cannot produce (`last=^== X COMPLETE`
+#                                     with no integer after it read SHORT on a
+#                                     green 46-minute run, 2026-10-21)
+#   log=PATH names the file the population is read from (default: the job's
+#   own job.log; relative = under the run dir, i.e. job.log.make): a tool that
+#   writes its OWN log (perfrun's `-- LOG`) reads POPULATION-SHORT on job.log
+#   (m0build 303). Its last matching line / DONE trailer is read there too.
 #   Fewer than N = POPULATION-SHORT (failed: a job that ran fewer items than
 #   it declared is not green); more = POPULATION-OVER, and a `lines=` count
 #   is watched DURING the run (every BOXQUEUE_MONITOR s, 2), so a job running
 #   the full matrix instead of its 6 rows is killed in seconds, not at cap.
+#   The grammar checks above gate `add`/`retry`/`batch` ONLY; a job already
+#   pending, or dropped into pending/ by hand, is read with the older lenient
+#   grammar (bare `expect none` accepted) so queued work never changes.
+#   boxqueue: idle-ok [SECONDS]       OPTIONAL. The IDLE-BOX ALARM ([WATCH-IDLE]):
+#                                     while a job runs, the runner samples the
+#                                     box CPU (/proc/stat), the job's OWN process
+#                                     tree CPU and its logs' growth every
+#                                     BOXQUEUE_IDLE_SAMPLE s (15); when ALL of
+#                                     them stay idle for BOXQUEUE_IDLE_WINDOW s
+#                                     (600) it logs one IDLE-SUSPECT line to
+#                                     queue.log and `status` and marks the
+#                                     result idle=SUSPECT; it never kills. Idle
+#                                     = box busy < BOXQUEUE_IDLE_BOX_PCT (5) AND
+#                                     tree < BOXQUEUE_IDLE_TREE_PCT (5, percent
+#                                     of ONE core) AND no log growth. Every
+#                                     number is an UNMEASURED default. A tree at
+#                                     100% of one core is busy however small a
+#                                     share of the box. `idle-ok` alone turns
+#                                     the alarm off (a legitimately quiet job,
+#                                     e.g. a quiet-gated timing slot); `idle-ok
+#                                     SECONDS` is a longer window. The same
+#                                     alarm watches a NON-queue box-lock holder
+#                                     that blocks a pending job (HOLDER-IDLE).
 # ENVIRONMENT of every call: BQ_MODE BQ_JOB BQ_KEY BQ_OWNER BQ_QUEUE BOXQUEUE
 # (this script, for `"$BOXQUEUE" after KEY`); the work also gets BQ_RUNDIR
 # and BQ_LOG. Use absolute paths: cwd is never your tree.
@@ -106,6 +148,13 @@ DRY_BOUND=${BOXQUEUE_DRY_BOUND:-30}
 MONITOR=${BOXQUEUE_MONITOR:-2}
 FAST=${BOXQUEUE_FAST:-10}
 LOCK_WAIT=${BOXQUEUE_LOCK_WAIT:-5}
+# the IDLE-BOX ALARM's numbers: ALL UNMEASURED defaults ([WATCH-IDLE], 2026-10-21; tune from the first real
+# false alarm or miss). Idle = box busy < BOX_PCT and the job's tree < TREE_PCT (percent of ONE core) and no log growth.
+IDLE_WINDOW=${BOXQUEUE_IDLE_WINDOW:-600}
+IDLE_SAMPLE=${BOXQUEUE_IDLE_SAMPLE:-15}
+IDLE_BOX_PCT=${BOXQUEUE_IDLE_BOX_PCT:-5}
+IDLE_TREE_PCT=${BOXQUEUE_IDLE_TREE_PCT:-5}
+CLK=$(getconf CLK_TCK 2>/dev/null || echo 100)
 
 die() { echo "boxqueue: $*" >&2; exit 64; }
 now() { date -Iseconds; }
@@ -154,44 +203,92 @@ callj() {
         BOXQUEUE=$self exec "$TO" --kill-after=2 "$b" "$s" "--$mode" ) < /dev/null > "$o" 2>&1
 }
 
-# parse_decl FILE: the dry run's `boxqueue:` declarations -> D_CAP D_PAT D_EXP[] (KEY\tN\tMODE\tERE)
+# parse_decl FILE: the dry run's `boxqueue:` declarations -> D_CAP D_PAT D_EXP[] (KEY\tN\tLOG\tMODE\tERE)
+# D_IDLE ("" default window | ok | SECONDS) D_STRICT (newline-joined problems the ENQUEUE gate refuses; the
+# lenient re-reads at START ignore it, so a job queued before a grammar change never changes)
+EXPECT_FORMS="valid expect forms:
+  boxqueue: expect none reason=WHY                 (nothing counted; WHY says what catches a crash)
+  boxqueue: expect NAME=N [log=PATH] lines=ERE     (N = lines of the log matching ERE)
+  boxqueue: expect NAME=N [log=PATH] last=ERE      (N = the integer right after ERE's match on its LAST
+                                                    matching line; also print: boxqueue: witness NAME=LINE)"
+ere_ok() { RE=$1 awk 'BEGIN { match("", ENVIRON["RE"]) }' > /dev/null 2>&1; }
 parse_decl() {
-    D_CAP="" D_PAT="" D_EXP=() D_ERR=""
-    local l kw rest none=0
+    D_CAP="" D_PAT="" D_EXP=() D_ERR="" D_IDLE="" D_STRICT="" D_WIT=()
+    local l kw rest none=0 nreason="" e k n lg m re w c wf
     while IFS= read -r l || [ -n "$l" ]; do
         case "$l" in "boxqueue: "*) ;; *) continue ;; esac
         read -r kw rest <<<"${l#boxqueue: }"
         case "$kw" in
             cap) [[ $rest =~ ^([1-9][0-9]*|none)$ ]] || { D_ERR="cap wants seconds or none, got '$rest'"; return 1; }; D_CAP=$rest ;;
             patience) [[ $rest =~ ^([0-9]+|none)$ ]] || { D_ERR="patience wants seconds or none, got '$rest'"; return 1; }; D_PAT=$rest ;;
+            idle-ok)
+                if [ -z "$rest" ]; then D_IDLE=ok
+                elif [[ $rest =~ ^[1-9][0-9]*$ ]]; then D_IDLE=$rest
+                else D_ERR="idle-ok wants nothing (alarm off) or SECONDS (a longer window), got '$rest'"; return 1; fi ;;
+            witness)
+                [[ $rest =~ ^([A-Za-z0-9_]+)=(.*)$ ]] || { D_ERR="witness wants NAME=LINE, got '$rest'"; return 1; }
+                D_WIT+=("${BASH_REMATCH[1]}"$'\t'"${BASH_REMATCH[2]}") ;;
             expect)
                 if [ "$rest" = none ]; then none=1
-                elif [[ $rest =~ ^([A-Za-z0-9_]+)=([0-9]+)\ (lines|last)=(.+)$ ]]; then
-                    D_EXP+=("${BASH_REMATCH[1]}"$'\t'"${BASH_REMATCH[2]}"$'\t'"${BASH_REMATCH[3]}"$'\t'"${BASH_REMATCH[4]}")
-                else D_ERR="expect wants 'none' or 'NAME=N lines=ERE|last=ERE', got '$rest'"; return 1; fi ;;
-            *) D_ERR="unknown declaration '$kw' (cap, patience, expect)"; return 1 ;;
+                elif [[ $rest =~ ^none\ reason=(.+)$ ]]; then none=1 nreason=${BASH_REMATCH[1]}
+                elif [[ $rest =~ ^([A-Za-z0-9_]+)=([0-9]+)\ (log=([^ ]+)\ )?(lines|last)=(.+)$ ]]; then
+                    D_EXP+=("${BASH_REMATCH[1]}"$'\t'"${BASH_REMATCH[2]}"$'\t'"${BASH_REMATCH[4]:-@job}"$'\t'"${BASH_REMATCH[5]}"$'\t'"${BASH_REMATCH[6]}")
+                else D_ERR="expect '$rest' is not a valid form
+$EXPECT_FORMS"; return 1; fi ;;
+            *) D_ERR="unknown declaration '$kw' (cap, patience, expect, witness, idle-ok)"; return 1 ;;
         esac
     done < "$1"
     [ -n "$D_CAP" ] || { D_ERR="no 'boxqueue: cap' declared"; return 1; }
     [ -n "$D_PAT" ] || { D_ERR="no 'boxqueue: patience' declared"; return 1; }
-    [ ${#D_EXP[@]} -gt 0 ] || [ $none = 1 ] || { D_ERR="no 'boxqueue: expect' declared (say 'expect none' if nothing is counted)"; return 1; }
+    [ ${#D_EXP[@]} -gt 0 ] || [ $none = 1 ] || { D_ERR="no 'boxqueue: expect' declared
+$EXPECT_FORMS"; return 1; }
     [ ${#D_EXP[@]} -gt 0 ] && [ $none = 1 ] && { D_ERR="'expect none' beside counted populations"; return 1; }
+    # ---- strict (enqueue-gate) findings; never a parse failure
+    [ $none = 1 ] && [ -z "$nreason" ] && D_STRICT="a bare 'expect none' is refused: say 'expect none reason=WHY' (WHY = what catches the tool crashing: its rc is the job's rc, or a trailer the verdict reads); a job that swallowed its tool's rc and declared 'none' scored GREEN on a crash
+$EXPECT_FORMS"
+    for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
+        IFS=$'\t' read -r k n lg m re <<<"$e"
+        if ! ere_ok "$re"; then D_STRICT="${D_STRICT:+$D_STRICT
+}expect $k: '$re' is not a valid ERE (awk)"; continue; fi
+        [ "$m" = last ] || continue
+        if [[ $re =~ (^|[^\\])\$$ ]]; then D_STRICT="${D_STRICT:+$D_STRICT
+}expect $k: last=$re ends in \$, so no integer can follow its match; the count can never be produced
+$EXPECT_FORMS"; continue; fi
+        w=""; for c in ${D_WIT[@]+"${D_WIT[@]}"}; do [ "${c%%$'\t'*}" = "$k" ] && w=${c#*$'\t'}; done
+        if [ -z "$w" ]; then D_STRICT="${D_STRICT:+$D_STRICT
+}expect $k: a last= expect needs 'boxqueue: witness $k=LINE' (a sample line the work prints), so the dry run can read $n back with the same matcher
+$EXPECT_FORMS"; continue; fi
+        wf=$Q/.work/wit.$$.$RANDOM; mkdir -p "$Q/.work"
+        printf '%s\n' "$w" > "$wf"; c=$(pop_count last "$re" "$wf"); rm -f "$wf"
+        if [ "$c" != "$n" ]; then D_STRICT="${D_STRICT:+$D_STRICT
+}expect $k: the matcher last=$re reads '$c' from the witness line '$w', not the declared $n: the count cannot come from its own matcher
+$EXPECT_FORMS"; fi
+    done
     return 0
 }
-exp_text() { local e k n m; [ ${#D_EXP[@]} -eq 0 ] && { echo none; return; }; for e in "${D_EXP[@]}"; do IFS=$'\t' read -r k n m _ <<<"$e"; printf '%s=%s ' "$k" "$n"; done | sed 's/ $//'; }
+exp_text() { local e k n m; [ ${#D_EXP[@]} -eq 0 ] && { echo none; return; }; for e in "${D_EXP[@]}"; do IFS=$'\t' read -r k n _ <<<"$e"; printf '%s=%s ' "$k" "$n"; done | sed 's/ $//'; }
+# exp_log RD LG: the file an expectation reads (@job = the job's own log; relative = under the run dir)
+exp_log() { case "$2" in @job) job_log "$(basename "$1")" ;; /*) printf '%s\n' "$2" ;; *) printf '%s\n' "$1/$2" ;; esac; }
 # pop_count MODE ERE LOG -> the population THIS log reports
 pop_count() {
+    [ -f "$3" ] || { [ "$1" = lines ] && echo 0 || echo none; return; }
     RE=$2 awk -v M="$1" 'BEGIN {re = ENVIRON["RE"]; c = 0; v = ""}
         match($0, re) { c++; s = substr($0, RSTART + RLENGTH); sub(/^[ \t]+/, "", s); if (match(s, /^[0-9]+/)) v = substr(s, 1, RLENGTH); else v = "" }
         END { if (M == "lines") print c; else print (v == "" ? "none" : v) }' "$3"
 }
-# pop_check LOG: one `NAME ran=M declared=N OK|SHORT|OVER` per expectation; rc 0 ok, 1 short, 2 over
+# pop_check RD: one `NAME ran=M declared=N OK|SHORT|OVER` per expectation, each read from ITS log (default the
+# job's job.log); rc 0 ok, 1 short, 2 over. A last= that read nothing says why (never matched / matched with no integer)
 pop_check() {
-    local e k n m re c worst=0 out=""
+    local e k n lg m re c worst=0 out="" f why
     for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
-        IFS=$'\t' read -r k n m re <<<"$e"
-        c=$(pop_count "$m" "$re" "$1")
-        if [ "$c" = none ] || [ "$c" -lt "$n" ]; then out="$out $k ran=$c declared=$n SHORT;"; [ $worst -lt 1 ] && worst=1
+        IFS=$'\t' read -r k n lg m re <<<"$e"
+        f=$(exp_log "$1" "$lg")
+        c=$(pop_count "$m" "$re" "$f")
+        if [ "$c" = none ] || [ "$c" -lt "$n" ]; then
+            why=""
+            if [ ! -f "$f" ]; then why="(log $f does not exist)"
+            elif [ "$c" = none ]; then [ "$(pop_count lines "$re" "$f")" = 0 ] && why="(matcher never matched in $lg)" || why="(matched, but no integer follows it)"; fi
+            out="$out $k ran=$c declared=$n SHORT$why;"; [ $worst -lt 1 ] && worst=1
         elif [ "$c" -gt "$n" ]; then out="$out $k ran=$c declared=$n OVER;"; worst=2
         else out="$out $k ran=$c declared=$n OK;"; fi
     done
@@ -236,6 +333,86 @@ next_prio() { # one past the largest pending PRIO (width kept)
     printf "%0${w}d\n" $((10#$m + 1))
 }
 
+# ---------- the idle-box alarm ([WATCH-IDLE]) ----------
+# tree_ticks ROOT: CPU ticks (utime+stime+cutime+cstime) of every live process in session ROOT or descending from it
+# (read by exact pid from /proc, never a process-name grep: watchrun's rule)
+tree_ticks() {
+    local root=$1 f line rest pid t=0 q d
+    local -A PP=() SS=() TT=()
+    for f in /proc/[0-9]*/stat; do
+        read -r line 2>/dev/null < "$f" || continue
+        pid=${f#/proc/}; pid=${pid%/stat}; rest=${line##*) }; set -- $rest
+        PP[$pid]=$2; SS[$pid]=$4; TT[$pid]=$(( ${12} + ${13} + ${14} + ${15} ))
+    done
+    for pid in "${!PP[@]}"; do
+        q=$pid d=0
+        while [ "$q" -gt 1 ] && [ $d -lt 64 ]; do
+            if [ "$q" = "$root" ] || [ "${SS[$q]:-}" = "$root" ]; then t=$((t + TT[$pid])); break; fi
+            q=${PP[$q]:-0}; d=$((d + 1))
+        done
+    done
+    echo "$t"
+}
+cpu_total_idle() { local _ u n s i w x y z; read -r _ u n s i w x y z _ < /proc/stat; echo "$((u+n+s+i+w+x+y+z)) $((i+w))"; }   # iowait counts idle (the ghostty phantom, memory pcrec-ghostty-iowait)
+log_sizes() { local f t=0 sz; for f in "$@"; do sz=$(stat -c %s "$f" 2>/dev/null) && t=$((t + sz)); done; echo "$t"; }
+# idle_sample ROOT STATEVAR... is inline below; idle_line BOXPCT TREEPCT IDLESEC WINDOW -> the one actionable line
+idle_line() {
+    echo "box busy $1% (<${IDLE_BOX_PCT}%), process tree $2% of one core (<${IDLE_TREE_PCT}%), no log growth, for $3 s (window $4 s; every number an UNMEASURED default: tune BOXQUEUE_IDLE_*, or declare 'boxqueue: idle-ok [SECONDS]' if this quiet stage is legitimate)"
+}
+# idle_watch NAME RD JPID WINDOW: run in the background beside a job; never kills anything. A flag raised is
+# QUEUE/running/NAME/idle (the line), cleared into idle.seen when activity resumes
+idle_watch() {
+    local n=$1 rd=$2 jpid=$3 win=$4 f
+    for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
+    local pt pi ct ci tk ptk ls pls t0 t1 dms bpct tpct idle_ms=0 flagged=0 e k nn lg m re logs
+    read -r pt pi <<<"$(cpu_total_idle)"; ptk=$(tree_ticks "$jpid"); t0=$(date +%s%N)
+    logs=("$rd/job.log"); for e in ${D_EXP[@]+"${D_EXP[@]}"}; do IFS=$'\t' read -r k nn lg m re <<<"$e"; [ "$lg" = @job ] || logs+=("$(exp_log "$rd" "$lg")"); done
+    pls=$(log_sizes "${logs[@]}")
+    while kill -0 "$jpid" 2>/dev/null; do
+        sleep "$IDLE_SAMPLE"; kill -0 "$jpid" 2>/dev/null || break
+        read -r ct ci <<<"$(cpu_total_idle)"; tk=$(tree_ticks "$jpid"); t1=$(date +%s%N); ls=$(log_sizes "${logs[@]}")
+        dms=$(( (t1 - t0) / 1000000 )); [ $dms -lt 1 ] && dms=1
+        bpct=0; [ $((ct - pt)) -gt 0 ] && bpct=$(( 100 * ((ct - pt) - (ci - pi)) / (ct - pt) ))
+        tpct=$(( 100000 * (tk - ptk) / (CLK * dms) ))
+        if [ "$bpct" -lt "$IDLE_BOX_PCT" ] && [ "$tpct" -lt "$IDLE_TREE_PCT" ] && [ "$ls" = "$pls" ]; then idle_ms=$((idle_ms + dms))
+        else
+            if [ $flagged = 1 ]; then
+                qlog "  job $n IDLE-CLEARED after $((idle_ms / 1000)) s idle: busy again (box $bpct%, tree $tpct% of one core, logs $([ "$ls" = "$pls" ] && echo quiet || echo growing)) $(now)"
+                mv "$rd/idle" "$rd/idle.seen" 2>/dev/null; flagged=0
+            fi
+            idle_ms=0
+        fi
+        if [ $flagged = 0 ] && [ $((idle_ms / 1000)) -ge "$win" ]; then
+            flagged=1; idle_line "$bpct" "$tpct" $((idle_ms / 1000)) "$win" > "$rd/idle"
+            qlog "  job $n IDLE-SUSPECT: $(cat "$rd/idle") $(now)"
+        fi
+        pt=$ct pi=$ci ptk=$tk pls=$ls t0=$t1
+    done
+}
+# holder_idle PID LABEL: a NON-queue box-lock holder blocking a pending job, one sample per runner pass
+# (QUEUE/.holder = pid ticks total idle epoch idle_since flagged); same thresholds, tree CPU + box CPU only (its logs are unknown)
+holder_idle() {
+    local pid=$1 label=$2 st=$Q/.holder ct ci tk now_s bpct tpct dt
+    local opid optk opt opi oep oidle oflag
+    read -r ct ci <<<"$(cpu_total_idle)"; tk=$(tree_ticks "$pid"); now_s=$(date +%s)
+    if [ -f "$st" ]; then read -r opid optk opt opi oep oidle oflag < "$st"; fi
+    if [ "${opid:-}" != "$pid" ] || [ $((now_s - ${oep:-0})) -le 0 ]; then
+        printf '%s %s %s %s %s 0 0\n' "$pid" "$tk" "$ct" "$ci" "$now_s" > "$st"; rm -f "$Q/holder.idle"; return 0
+    fi
+    dt=$((now_s - oep)); bpct=0; [ $((ct - opt)) -gt 0 ] && bpct=$(( 100 * ((ct - opt) - (ci - opi)) / (ct - opt) ))
+    tpct=$(( 100 * (tk - optk) / (CLK * dt) ))
+    if [ "$bpct" -lt "$IDLE_BOX_PCT" ] && [ "$tpct" -lt "$IDLE_TREE_PCT" ]; then oidle=$((oidle + dt))
+    else
+        [ "$oflag" = 1 ] && { qlog "  box-lock holder pid=$pid label=$label HOLDER-IDLE-CLEARED: busy again $(now)"; rm -f "$Q/holder.idle"; }
+        oidle=0 oflag=0
+    fi
+    if [ "$oflag" = 0 ] && [ "$oidle" -ge "$IDLE_WINDOW" ]; then
+        oflag=1; { printf 'HOLDER-IDLE-SUSPECT box-lock holder pid=%s label=%s: box busy %s%%, its process tree %s%% of one core, for %s s while a queue job waits (window %s s, UNMEASURED defaults; scripts/boxlock status)\n' "$pid" "$label" "$bpct" "$tpct" "$oidle" "$IDLE_WINDOW"; } > "$Q/holder.idle"
+        qlog "  $(cat "$Q/holder.idle") $(now)"
+    fi
+    printf '%s %s %s %s %s %s %s\n' "$pid" "$tk" "$ct" "$ci" "$now_s" "$oidle" "$oflag" > "$st"
+}
+
 # ---------- the runner's pieces ----------
 start_job() { # start_job NAME SNAP: dry-run again, take the box lock, run inside it
     local n=$1 s=$2 rd=$Q/running/$1 k lrc o
@@ -252,8 +429,11 @@ start_job() { # start_job NAME SNAP: dry-run again, take the box lock, run insid
         local h; h=$(sed -n 's/^boxlock: REFUSED .*held by \(.*\) (waited.*/\1/p' "$rd/lock.log" | tail -1)
         qlog "  job $n waiting on ${h:-the box lock ($(head -1 "$rd/lock.log"))}; stays pending"
         printf 'waiting on %s\n' "${h:-the box lock}" > "$Q/.state/$k.answer"
+        local hp; hp=$(printf '%s' "$h" | sed -n 's/^pid=\([0-9][0-9]*\).*/\1/p')
+        [ -n "$hp" ] && holder_idle "$hp" "$(printf '%s' "$h" | sed -n 's/.*label=\([^ ]*\).*/\1/p')"
         rm -rf "$rd"; return 1
     fi
+    rm -f "$Q/.holder" "$Q/holder.idle"    # the lock is ours: no foreign holder to watch
     if [ -e "$rd/changed" ]; then
         qlog "  job $n CHANGED in pending/ since its snapshot: not run; the edit is asked at once (a new pass)"
         rm -rf "$rd"; return 0
@@ -272,7 +452,17 @@ finish_job() { # finish_job NAME: read running/NAME's rc, judge, move it
     if [ -n "$rc" ]; then vline=$(bash "$V" --no-rc-lines --rc "$rc" "$jl" | head -1)
     else vline=$(bash "$V" --no-rc-lines "$jl" | head -1); fi
     v=${vline#VERDICT }; v=${v%%:*}
-    pop=$(pop_check "$jl"); prc=$?
+    pop=$(pop_check "$rd"); prc=$?
+    # a population read from ANOTHER log (log=PATH): that log's red lines count too
+    local e k2 n2 lg2 m2 re2 xl xv
+    if [ "$v" != RED ]; then
+        for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
+            IFS=$'\t' read -r k2 n2 lg2 m2 re2 <<<"$e"; [ "$lg2" = @job ] && continue
+            xl=$(exp_log "$rd" "$lg2"); [ -f "$xl" ] || continue
+            xv=$(bash "$V" --no-rc-lines "$xl" | head -1)
+            case "$xv" in "VERDICT RED"*) vline=$xv; v=RED; break ;; esac
+        done
+    fi
     oc=failed reason=""
     if [ -z "$rc" ]; then reason="RUNNER-DIED (no rc: the job died with its runner)"
     elif [ -e "$rd/over" ]; then reason="POPULATION-OVER killed early: $(cat "$rd/over")"
@@ -297,10 +487,11 @@ finish_job() { # finish_job NAME: read running/NAME's rc, judge, move it
         cp "$rd/job" "$Q/.incoming/$nn.$$" && mv "$Q/.incoming/$nn.$$" "$Q/pending/$nn"
         reason="requeued as $nn"
     fi
-    printf 'outcome=%s rc=%s reason=%s wall=%ss verdict=%s\npopulation:%s\n' "$oc" "${rc:--}" "${reason// /_}" "$wall" "$v" "$pop" > "$rd/result"
+    local idl=""; { [ -e "$rd/idle" ] || [ -e "$rd/idle.seen" ]; } && idl=" idle=SUSPECT"
+    printf 'outcome=%s rc=%s reason=%s wall=%ss verdict=%s%s\npopulation:%s\n' "$oc" "${rc:--}" "${reason// /_}" "$wall" "$v" "$idl" "$pop" > "$rd/result"
     mv "$rd" "$to"
     [ "$oc" = requeued ] || state_clear "$k"
-    qlog "== job $n END rc=${rc:--} outcome=$oc${reason:+ reason=$reason} wall=${wall}s verdict=$v $(now) :: $to"
+    qlog "== job $n END rc=${rc:--} outcome=$oc${reason:+ reason=$reason} wall=${wall}s verdict=$v$idl $(now) :: $to"
 }
 
 recover() { # a dead runner's leftovers in running/; rc 1 = one is still alive (start nothing)
@@ -435,6 +626,7 @@ cmd_add() {
         sed 's/^/  /' "$o" | tail -8 >&2; rm -f "$inc" "$o"; exit 65
     fi
     if ! parse_decl "$o"; then echo "boxqueue: REFUSED $name: $D_ERR" >&2; rm -f "$inc" "$o"; exit 65; fi
+    if [ -n "$D_STRICT" ]; then echo "boxqueue: REFUSED $name: $D_STRICT" >&2; rm -f "$inc" "$o"; exit 65; fi
     state_clear "$k"    # ADD-CLEARS-STATE: a re-added key never inherits an earlier job's since/answer
     mv "$o" "$Q/.state/$k.decl"; sha_of "$inc" > "$Q/.state/$k.sha"
     mv "$inc" "$Q/pending/$name"
@@ -476,7 +668,7 @@ cmd_batch() {
 case "${1:-}" in
     --dry-run)
         [ -d "$TREE" ] || { echo "no tree $TREE" >&2; exit 1; }
-        echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: expect none"
+        echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: expect none reason=chainrun stage: the stage command is exec'd, so its rc is the job's rc"
         echo "would run in $TREE: $CMD"; exit 0 ;;
     --ready)
         [ -z "$LIFT" ] || [ -e "$LIFT" ] || { echo "waiting for lift file $LIFT"; exit 75; }
@@ -533,7 +725,8 @@ cmd_status() {
     mkq
     if runner_live; then echo "runner: live $(cat "$Q/runner.pid" 2>/dev/null)"; else echo "runner: none"; fi
     echo "box: $(bash "$BL" status 2>&1 | head -1)"
-    local d; for d in "$Q"/running/*/; do [ -d "$d" ] && echo "running: ${d%/} $(cat "$d/pid" 2>/dev/null)"; done
+    local d; for d in "$Q"/running/*/; do [ -d "$d" ] || continue; echo "running: ${d%/} $(cat "$d/pid" 2>/dev/null)"; [ -f "${d}idle" ] && echo "  $(sed 's/^/IDLE-SUSPECT: /' "${d}idle")"; done
+    [ -f "$Q/holder.idle" ] && echo "$(cat "$Q/holder.idle")"
     local n k; for n in $(pending_jobs); do k=$(key_of "$n"); echo "pending: $n :: $(cat "$Q/.state/$k.answer" 2>/dev/null || echo 'not asked yet')"; done
     for n in $(pending_strays); do echo "IGNORED: pending/$n (not a PRIO-OWNER-REST name)"; done
     for d in $(ls -d "$Q"/done/*/ "$Q"/failed/*/ 2>/dev/null | awk -F/ '{print $(NF-1) "\t" $0}' | LC_ALL=C sort | tail -5 | cut -f2); do
@@ -555,6 +748,7 @@ cmd_plan() {
             124|137) rl="READY-HUNG" ;; *) rl="ready-errored($rc)"; bad=1 ;; esac
         printf '%-4s %-40s %-8s %-10s %s / expect %s\n' "$i" "$n" "$dl" "$D_CAP" "$rl" "$(exp_text)"
         [ "$dl" = ok ] || sed 's/^/       | /' "$o" | tail -4
+        [ "$dl" = ok ] && [ -n "$D_STRICT" ] && { echo "       | LEGACY (queued under the older grammar; runs as before, but add/retry would refuse it):"; printf '%s\n' "$D_STRICT" | head -1 | sed 's/^/       | /'; }
         rm -f "$s" "$o" "$o.r"
     done
     echo "plan: $i pending job(s), total cap ${total}s$capn$([ $bad = 1 ] && echo '; SOME WOULD NOT RUN CORRECTLY')"
@@ -563,7 +757,7 @@ cmd_plan() {
 
 # _start NAME — INSIDE the box lock (boxlock run execs this): the stale-copy guard, then the work
 cmd__start() {
-    local n=$1 rd=$Q/running/$1 jlog jpid rc mpid capv
+    local n=$1 rd=$Q/running/$1 jlog jpid rc mpid capv ipid
     printf 'pid=%s start=%s epoch=%s since=%s\n' "$$" "$(pid_start $$)" "$(date +%s)" "$(now)" > "$rd/started"
     if ! cmp -s "$rd/job" "$Q/pending/$n"; then touch "$rd/changed"; exit 0; fi   # STALE-COPY guard
     rm -f "$Q/pending/$n"                                                         # STALE-PENDING guard
@@ -576,13 +770,14 @@ cmd__start() {
     printf '%s %s\n' "$jpid" "$(pid_start "$jpid")" > "$rd/pid"
     (   # POPULATION-OVER watch: a `lines=` count past its declaration kills the job now, not at cap.
         # It drops the inherited lock fd first, or its last `sleep` outlives the job holding the box lock.
-        local e k nn m re c f
+        local e k nn lg m re c f xl
         for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
         while kill -0 "$jpid" 2>/dev/null; do
             sleep "$MONITOR"
             for e in ${D_EXP[@]+"${D_EXP[@]}"}; do
-                IFS=$'\t' read -r k nn m re <<<"$e"; [ "$m" = lines ] || continue
-                c=$(pop_count lines "$re" "$jlog")
+                IFS=$'\t' read -r k nn lg m re <<<"$e"; [ "$m" = lines ] || continue
+                xl=$(exp_log "$rd" "$lg")
+                c=$(pop_count lines "$re" "$xl")
                 if [ "$c" -gt "$nn" ]; then
                     echo "$k ran>=$c declared=$nn" > "$rd/over"; kill -TERM -- "-$jpid" 2>/dev/null; exit 0
                 fi
@@ -590,8 +785,10 @@ cmd__start() {
         done
     ) &
     mpid=$!
+    ipid=""
+    if [ "$D_IDLE" != ok ]; then idle_watch "$n" "$rd" "$jpid" "${D_IDLE:-$IDLE_WINDOW}" & ipid=$!; fi
     wait "$jpid"; rc=$?   # RC-CAPTURE: the job's rc, before anything else runs
-    kill "$mpid" 2>/dev/null; wait "$mpid" 2>/dev/null
+    kill "$mpid" $ipid 2>/dev/null; wait "$mpid" $ipid 2>/dev/null
     printf '%s\n' "$rc" > "$rd/rc"; date +%s > "$rd/end"
     exit 0
 }
