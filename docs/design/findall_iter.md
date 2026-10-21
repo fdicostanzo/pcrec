@@ -1140,6 +1140,30 @@ before any timing. The post-build gate uses the built artifacts.
   as the run's correctness gate.
 - This lane read no clock.
 
+#### Parity result (2026-10-21)
+
+The pre-build parity slot ran (boxqueue job `150-parity-slot`, 207 s, 24 of 24 verdicts, answer
+gate G1-G4 passed). It used the twin for `I`, `B64`, `I_shared` and `N64`; the per-block numbers
+are in `docs/dev/lanes/parity_report.md`, "RESULT (parread)". Facts:
+
+- **Batch cell: `off`.** `B64` is slower than `I` on all ten c1 and c3 subcells in both regimes,
+  by 7% to 29% against floors of 0.36% to 3.47%, so it beats `I` on none.
+- **`I` against `L_old`:** at or below it on c1 (4% to 6% faster), c3, c4 and c6 R2. Worse beyond
+  the floor, so a FINDING, on 11 of 24 blocks over 6 cells: c2-a, c2-b and c2-e (both regimes, +23%
+  to +52%, +2.1 to +3.9 ns), c5 (R1 +51%, R2 +15%), c6 R1 (+11.6%) and c7 (R1 +17%, R2 +14%; the R2
+  floor is 5.59%). The fixed-cost findings are an upper bound: the twin's `__find` runs the per-call
+  entry checks that this design moves to bind.
+- **`B64`, gated on cells 1-6:** 20 of 22 blocks are FINDINGs; c3-4k R2 and c3-1m R2 pass. Cell 7
+  (reported): `B64` is about 28 times `L_old`, the over-fill cost of a batch abandoned after 3 matches.
+- **`_search` unharmed:** `L_new / L_old` is within the floor on 22 of 24 blocks (the two outside,
+  c3-4k R2 and c7 R1, compare byte-identical builds).
+- **Reported only:** `N64` and `I_shared` are in the report's table; `I_shared` is above `I` in
+  22 of 24 blocks.
+- **Quietness:** the run was not fully quiet (load1 1.33 to 2.76, median 1.71; the SMT sibling
+  median 0.0% busy, max 78.6%; launch 5 carried 53 of the 61 rows with a busy sibling). The batch-cell
+  verdict and the fixed-cost findings rest on margins far above that noise; the marginal blocks are
+  listed in the report.
+
 ---
 
 ## 6. The abi event, the spec, the migration, the checks
