@@ -59,15 +59,14 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 - D2 stays `pending-site:R-18`.
 - candoracle's reach gap is on main's check-design list.
 
-**In flight (2026-10-21 ~00:30, idle wait):** nothing is running. No lanes, chains, watchers or crons.
-- **R-25 is ON MAIN.** Kit branch `lane/memfn-b4` @ 913aa23b1 (worktree `worktrees/memfn-b4`) carries Frank's V1 ruling (D169, filed by main), r17b_prime **rev 4** (lane rev4, merged with lane/grid2read) and its notices. Main's wake lists merging it.
-- **Waiting for Frank** (asked 2026-10-20 night, plain words):
-  1. the default for an UNMEASURED cover shape (leaning: the walk until it is measured);
-  2. F2, the VM hat's one-byte set: V1 on default compiles at B5 with its 2 B cells as expected losses (leaning: yes).
-  Record his answers in journal.md plus a responses.md notice with proposed D text.
-- **B4 gates:** D163 add. 8 MET; E8 and M0 NOT MET. OWED before the B4 brief: grid2read §8's quiet re-time (about 2 min, heavy slot), the V1-text attribution, the slot walk vs main's walk byte compare, the mover manifest regenerated, the expected-loss list filled.
-- **Heavy runs:** `scripts/boxlock run --label kit -- CMD`, or opt into main's `scripts/boxqueue` (kit band 500-699; docs/dev/lanes/boxqueue_report.md "Opt-in: the kit"). Run emit_sweep WITHOUT `python3 -I` until main's fix is confirmed.
-- **Prune when quiet:** `memfn-r25`, `r25-mt`, `r25tri-main`, `rev4` (lane/memfn-rev4 is merged into b4).
+**In flight (2026-10-21 ~02:00, idle wait):** nothing is running. No lanes, chains, watchers or crons.
+- **Kit branch `lane/memfn-b4` @ f5f1e3c05** (worktree `worktrees/memfn-b4`) is for main to merge, as listed in main's wake. It carries:
+  - D169's notice (V1 default; main has FILED D169);
+  - Frank's 2026-10-21 answers (set sites route by term count, `kit.terms.V1max` = 2; F2 to V1 at B5) as notices with proposed D text for main to file;
+  - r17b_prime **rev 4 + 4.1** (B4's table §1.3a, default §1.9, gates §3.1a; every §7.3 question ANSWERED).
+- **B4 gates:** D163 add. 8 MET; E8 and M0 NOT MET. OWED before the B4 brief: grid2read §8's quiet re-time (about 2 min, heavy slot), the V1-text attribution against grid1's arm, a byte compare of the slot's walk against main's walk, the mover manifest regenerated (including the 54 no-key sites' term-count split), and the expected-loss list filled.
+- **Heavy runs:** `scripts/boxlock run --label kit -- CMD`, or main's `scripts/boxqueue` (kit band 500-699). Run emit_sweep WITHOUT `python3 -I` until main's fix is confirmed.
+- **Prune when quiet:** `rev4`, `rev41` (both merged into b4).
 
 **Worktrees:** KEEP `memfn-r25`, `memfn-pinfix` (until merged), `rowfix` (merged; prunable once quiet), `memfn-slot` (scratch). 22 merged kit trees were pruned on 2026-10-18.
 
