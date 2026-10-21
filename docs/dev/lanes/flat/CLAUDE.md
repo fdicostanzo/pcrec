@@ -11,3 +11,6 @@ Nothing here is product code or built by `make`.
 - `oracle.py` — libpcre2 10.46 on a sample of real subjects; grid2's oracle for the anchors.
 - `read.py LOG` — the timing log as the report's tables.
 - `jobs/570-kit-flat-twin` — the one boxqueue job (build, gate, quiet-gated grid2/time.sh, reading).
+- `stretch.c`, `stretch_counts.tsv` — count-only per-64-byte-stretch inputs (empty blocks/stretches, mask
+  transitions) per timed subject; report §2a.
+- `reading.md`, `time_FLAT.log` — the window's reading and its time.sh log (copied from the slot).
