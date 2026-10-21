@@ -29,6 +29,8 @@ unchanged by them:
   absa-flip      S1134  absent-after flipped
   c9-eol-as-end  S1139  C9 dropped AND an eol view at k read as the end
   e0-row0        S1140  e(⊥) := row 0, not the emitted constant (both arms)
+  plain-walk     (none) the eol view's gated final '\n' dropped (X0's R2; no
+                        S-id, the range is full)
 
 usage:
   python3 -I conj.py census SITES.tsv.gz PATTERNS.tsv.gz      # recount (§1.2)
@@ -88,8 +90,19 @@ def k_gstart(st):
 
 
 def k_machine(st):
-    st["A"] = A = kvdfa.Machine(st["c"], "anchored")
+    st["A"] = A = machine(st["c"])
     return A.ok
+
+
+def machine(c):
+    """the anchored machine; under CONJ_PLANT=plain-walk the eol view's gated
+    final '\n' edge is dropped (rev 2.1's plain walk, X0's R2: no S-id, the
+    S1130-S1150 range is full; X0's site role must read it red)"""
+    A = kvdfa.Machine(c, "anchored")
+    if A.ok and PLANT == "plain-walk":
+        A.vnl = [False] * A.nrow
+        A.live = A.liveness()
+    return A
 
 
 def k_entry(st):
