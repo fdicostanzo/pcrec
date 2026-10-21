@@ -1,1795 +1,246 @@
 # src/opt — algorithmic optimization passes
 
-Transformations pcrec must do because gcc cannot (APPROACH §5): they change
-the algorithm, not the instruction selection. Passes run between DFA
-construction (src/ir) and emission (src/gen).
+Transformations pcrec must do because gcc cannot (APPROACH §5): they change the
+algorithm, not the instruction selection. Passes run between DFA construction
+(src/ir) and emission (src/gen). Several files here are ANALYSES (no mutation)
+that live here because an error in them is silent (wrong answers, no warning).
+
+## Standing rules
+
+- Maintenance: update this file when passes are added/removed; every directory
+  CLAUDE.md lists its files.
+- A TRANSFORMATION pass takes (Ctx *, Dfa *) or (Ctx *, Nfa *), mutates in place
+  and MUST be behavior-preserving; every pass needs corpus coverage that would
+  catch a semantic change (the full suite runs against post-pass output).
+  Scan-avoidance analyses that only inform codegen (prefilters, skip states) live
+  in the emitter; move one here only if it grows its own IR transformation.
+- AST-level passes (altcls.c, `pcrec_discharge_atomic`) take (Ctx *, Ast *) and
+  RETURN the possibly-new root, which the caller MUST PUBLISH. Still
+  behavior-preserving, corpus-covered, deny-only + D46-stamped.
+- Every pass is gated by a D46 deny bit (`-fno-*`) and observable by a stamp.
+  A new selection axis owes a D46 stamp+force pair and a sabotage-matrix row.
+- Soundness direction: every decision is in the SOUND direction; anything
+  unmodellable DECLINES (declining is always safe). `pcrec_minw` rounds DOWN
+  (under-estimate safe); `pcrec_maxw`/`pcrec_cwmax` round UP (under-estimate is a
+  silent miscompile, false match on negative lookbehind).
+- Switches over `AKind` have NO `default:` arm (a new node kind must be a compile
+  error under `make strict`'s -Wswitch). Seven such switches live in atomic.c;
+  each new whole-tree predicate lands there.
+- Walks of `A_CAT`/`A_ALT` spines and `A_CAP` chains are ITERATIVE (D10/DD-10/K20);
+  only paren nesting recurses (Theta(d)).
+- A WHOLE-TREE predicate MUST NOT follow `Ast.u.call.body` (the AST's first back
+  edge; non-terminating on `(a(?1))`); the callee is visited at its own lexical
+  position. Six of atomic.c's seven switches DECLINE `A_CALL`; `pcrec_bref_mark`
+  marks `u.call.target` without descent.
+- Memos live ON THE NODE or in a Ctx-owned struct, never in a file-static
+  ([TS-3] forbids mutable globals). The arena's ZERO must be the sound answer
+  (`u.call.minw` 0, `nonnullable` inverted, `maxw_known` false -> UNBOUNDED).
+- ONE derivation per fact (memory `pcrec-general-mechanisms-not-special-cases`):
+  possessify's unique-iteration predicate is exported to revdet.c; saturating
+  arithmetic is `pcrec_sat_add`/`pcrec_sat_mul` in mrl.c (ceiling as parameter);
+  `pcrec_nullable` is mrl.c's; `pcrec_state_view_invariant` (scanedge.c) is read by
+  emit_dfa.c's axis J. Do not add a second spelling.
+- Never make an optimisation flag change which ENGINE a pattern gets: the free
+  atomic discharge is NOT gated by `-fno-possessify`.
+- Pass order is part of the design (reviewable fact, asserted by
+  `tests/codegen/run_cpset_structure.sh`): altcls first after parse;
+  `pcrec_discharge_atomic` right after altcls (hoisted out of select_engine,
+  [DD-14] wave G); `pcrec_callgraph_build` AFTER every node-REBUILDING pass
+  (altcls rebuilds `A_CAP`; the graph's `.body` is the only writer, here only) and
+  BEFORE engine selection; `pcrec_postresolve` right after the graph;
+  `pcrec_lower_enc` AFTER postresolve and BEFORE `pcrec_build_nfa`/`pcrec_emit_vm`,
+  splicing IN PLACE (never reallocating a group root; `cap_sig` checks it).
+- Passes run once; select_engine's rewrite/`discharge` socket is deleted
+  ([TOUR-5]); building one needs a first customer (docs/dev/plan.md [ENG-CUT]).
+- Rewrites that change tree shape must not introduce capturing groups (altcls
+  allocates only A_CLASS/A_CAT/A_ALT/A_EMPTY).
+- Changing emitted text from any pass = abi bump + identity-gate re-pin in the
+  same change (D76/D94); update `docs/spec/` (tuning.md, match_api.md) for any
+  caller-visible change (D80).
+- Failure memory: `minimize.c`'s local tables are the only compile-path
+  allocations the Job does not own: free by hand before `pcrec_ctx_nomem`. A new
+  input read in `src/ir/dfa.c` or dfamemo.c MUST join the dfamemo key.
+- A `Ctx`-less walker (`pcrec_minw`/`pcrec_maxw`/predicates) cannot see a memo
+  except via node fields; pcrec_minw is legitimately called before the graph
+  exists (possessify).
+- `-fno-scan-edge`/`-fno-view-edge` gate the PASS itself (an emitter filter cannot
+  put back deleted states); emit_dfa.c's axes carry the same bit (one bit, two
+  readers). scanedge: the emitter CHECKS the head layout (`dfa_form_derive` fails
+  loudly if a head is not at `n - nheads + k`); heads are the machine's TOP rows
+  in their existing relative order (precondition 7 relies on that).
+- `$`-follow/multiline facts are read off the NODE (A_CTX rows), never from
+  `cx->mods` at verdict time ((?m) is scoped; D47.5 addendum, assertions_design.md §8).
+- Verdict surfaces are artifact stamps, not prose: `ENGINE_SEL` values are a
+  closed set (K35); give a distinct population a distinct value
+  (`ESEL_DECLINED_NULLABLE_DEFAULT`), keep placement argument in internal.h.
+- Do not carry a pass's soundness argument here: it lives in the file's own header
+  (read it before touching possessify's verdict ladder, revdet's uniqueness checks,
+  scanedge's eight preconditions, altcls's ladder boundary).
 
 ## Files
 
-- **altcls.c** — [OPT-ALTCLS] ALTERNATION -> CLASS NORMALIZATION
-  (docs/dev/plan.md's [OPT-ALTCLS] row). The FIRST pass in the pipeline —
-  `pcrec_altcls` runs immediately after parse, before `pcrec_select_engine`
-  and everything it drives (possessify/revdet/mrl, both machine builds, both
-  emitters), which is why this pass is declared in internal.h ahead of
-  `pcrec_select_engine` rather than grouped with the ENG-BREP passes below.
-
-  TWO STAGES, both AST-to-AST REWRITES (unlike possessify.c/revdet.c's
-  in-place annotation, this pass changes tree SHAPE and returns a possibly-
-  new root, which its caller must PUBLISH). Stage 1
-  merges a maximal ADJACENT run of A_ALT branches that are each a bare
-  A_CLASS (parse.c already normalizes every literal to a singleton class)
-  into ONE class holding the union — `b|c` -> `[bc]`. Stage 2 runs on stage
-  1's output and factors a maximal ADJACENT run of branches sharing a
-  literal first byte into `byte + (?:remainder)` — `frank|fred` ->
-  `fr(?:ank|ed)` — recursively, via an ITERATIVE prefix-extension loop
-  (D10/DD-10/K20: prefix LENGTH is pattern-shaped) plus recursion bounded by
-  SPLIT depth only (`PCREC_MAX_ALTCLS_FACTOR_DEPTH`, core/limits.h;
-  branch-count-shaped, always safe to decline past the cap). NO CAPTURING
-  GROUPS are ever introduced — the file allocates A_CLASS/A_CAT/A_ALT/A_EMPTY
-  nodes only — which is what discharges the plan row's "must emit
-  non-capturing groups or it changes the group count" obligation BY
-  CONSTRUCTION rather than by a runtime check.
-
-  D46: both stages are independently gated (`PCREC_NO_ALTCLS_MERGE`/
-  `PCREC_NO_ALTCLS_FACTOR`, lib/pcrec.h — DENY-only, the original
-  per-selection-point family's shape, not the prefilter's force pair) and
-  independently stamped (`<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED`,
-  src/gen/emit_dfa.c's shared `pcrec_emit_prologue` — this pass runs before
-  either engine exists, so unlike possessify/revdet/prefilter's VM-only
-  stamps this one is common to both emitters).
-
-  Full soundness argument, the generalization-ladder boundary (why stage 2
-  is prefix factoring rather than a wider multi-char class merge — that is
-  UNSOUND, `frank|fred` -> `fr[ae][nd]k?` accepts cross-products it must
-  not), and the recursion-discipline reasoning are all in the file's own
-  header. Tests: tests/altcls/. Sabotage: tests/mech/sabotages/ (S66/S67).
-
-- **callgraph.c** — [DD-14] wave B+C: THE CALL GRAPH. Which groups are
-  called, what each callee region can reach, and the two things no walker in
-  this tree can answer for itself.
-
-  **IT EXISTS BECAUSE `Ast.u.call.body` IS THE AST'S FIRST BACK EDGE.** Every
-  walker in `src/` was written for a TREE — `pcrec_minw`, `pcrec_has_atomic`
-  and `pcrec_has_bref` are bare `const Ast *` descents with no context, no
-  memo and no visited set — so a question whose answer for a call genuinely
-  IS the callee's ("how wide is this?", "can it match empty?") is not
-  expressible at the walker at all. A WHOLE-TREE PREDICATE needs none of this
-  and MUST NOT follow the edge: it already visits the callee at the callee's
-  own lexical position, so following it is redundant AND non-terminating
-  (`(a(?1))` hangs the COMPILER, in predicates asked of every pattern).
-
-  **THE PASS ORDER IS THE DESIGN AND IT IS WAVE A2's FINDING**, not the
-  design document's — `subroutines_design.md` does not address it anywhere.
-  `.body` is a CACHE of "which subtree is that group's, IN THE TREE THE
-  EMITTER WILL WALK", and two passes above this one REBUILD nodes rather
-  than mutating them: `pcrec_altcls` allocates a fresh `A_CAP` over a merged
-  class (`*r = *a; r->l = body;`), and `pcrec_discharge_atomic` splices an
-  `A_ATOMIC` out. A `.body` captured at END OF PARSE — where design §4.2 and
-  wave A2's `PendingRef` comment both put it — therefore names a subtree that
-  is no longer in the tree, and under `CALL_LINKAGE` the callee REGION is
-  emitted from the stale one while the LEXICAL occurrence comes from the new
-  one. **So this pass runs after `pcrec_select_engine` and before emission,
-  and it is the only writer of `.body` anywhere.**
-
-  **MEASURED, AND THE MEASUREMENT NARROWED THE CLAIM.** With the bind moved
-  above `pcrec_altcls`, `((?:a|b))(?1)` emits TWO DIFFERENT PROGRAMS FOR ONE
-  GROUP — a merged class test lexically, the un-merged two-branch alternation
-  with its own `RX_PUSH` in the region — and `RX_RESUME_FRAMES` moves 2 -> 3
-  with it. **The ANSWERS do not change**, because `altcls` is answer-preserving
-  in both directions, which is exactly why no corpus cell can see this and the
-  detector is `[DD-14-RECURSION rule 3]` in `tests/codegen`. **And the
-  DISCHARGE witness is NOT a hazard**: `((?>a)b)(?1)` compiles BYTE-IDENTICALLY
-  under the same sabotage, because the discharge splices by rewriting the
-  PARENT's `->l` in place and the `A_CAP` a callee is rooted at keeps its
-  identity. Wave A2 named both passes; only the one that REBUILDS the node
-  matters. Sabotage row S166.
-
-  **[K69] IT PUBLISHES `nonnullable` TOO, READ OFF `minw`** (`cg_minw_publish`:
-  `nonnullable = minw != 0`), before the E1 seal. That is the LEAST fixpoint
-  and exact; the emitter's own iteration, removed, started at "nullable" and
-  only rose (the GREATEST one), so `(a|(?1))*` carried a guard its body can
-  never need. The paragraph below is the wave B+C record, kept for `W`.
-
-  **IT COMPUTES `minw` AND NOT `nullable` OR `W`, WHICH IS A DEVIATION FROM
-  §4.4b's "one mechanism"** and is the wave's largest amendment to the design.
-  Both exceptions are the same reason — the RECURRENCE lives in the emitter
-  and cannot be moved. `vm_nullable` was `static` to `src/gen/emit_vm.c` and
-  was the emitter's own definition of the property the empty-iteration guard
-  is emitted on ([PATFACTS] 3.5 exported it as `mrl.c`'s `pcrec_nullable`, so
-  that half of the reason is gone and the fixpoint's home is K69's open
-  question); a copy here would be a second answer for the two to disagree
-  about, which is the failure mode `vm_marked`, `vm_cuts` and
-  `vm_cursor_fits` are each ONE predicate to avoid. And `W` is a set of SLOT
-  INDICES, which are assigned by `vm_count_slots`' walk over the emitter's own
-  rung decisions and exist nowhere else. What this file owns is the GRAPH both
-  fixpoints iterate over, exported so the emitter does not re-derive "which
-  groups are called and what does each reach".
-
-  **[PATFACTS] 3.6 (R3, 2026-09-28, lane pf36): `pcrec_cg_sat_add`/
-  `pcrec_cg_sat_mul` AND `CG_EXP_INF` ARE RETIRED.** They were a second
-  spelling of `src/opt/mrl.c`'s saturating add/multiply and of
-  `PCREC_MINW_MAX` under a different name; this file now calls `mrl.c`'s
-  `pcrec_sat_add`/`pcrec_sat_mul` directly with `PCREC_MINW_MAX` as the
-  ceiling. `pcrec_cg_sat_add`'s own extra leading guard
-  (`a >= cap || b >= cap`) is dropped rather than carried forward — it is
-  provably redundant on the non-negative domain every real call here uses
-  (mrl.c's own header carries the proof). See `mrl.c`'s entry below.
-
-  **THE MEMO LIVES ON THE NODE, NOT IN THIS FILE.** `u.call.minw` and
-  `u.call.nonnullable` are cached on the `A_CALL` because the walkers that
-  READ them have no `Ctx` to reach a memo through, and the only other spelling
-  is a file-static — a mutable global, which [TS-3]'s concurrent-compile test
-  exists to forbid. Every one is written so **the arena's zero is the SOUND
-  answer**, since `pcrec_minw` is legitimately called from `possessify.c`
-  before this pass runs: `minw` 0 under-estimates (its safe direction), and
-  `nonnullable` is INVERTED so a zero reads NULLABLE, the direction that EMITS
-  the guard.
-
-  **AND IT RE-ASKED MODULE `lookaround`'s §2.7 `\K` REFUSAL THROUGH THE
-  GRAPH, THEN DELETED THE CHECK.** `la_has_kreset` runs in the PARSE HOOK,
-  where it must (the only place with a pattern OFFSET), and at that instant
-  `.body` is NULL and a forward call's target is unparsed — so wave A2 left
-  three answers: re-check after resolution, refuse the combination, or MEASURE
-  what 10.46 does. This lane built the first, then measured: **PCRE2's rule is
-  LEXICAL.** `(?=(a\Kb))x` is error 199 and `(?=(?1))(a\Kb)` COMPILES and
-  matches (1,2) on "ab", so the first two answers are OVER-REJECTIONS. The
-  check was deleted and pcrec re-measured: **7 of 7 cells agree with libpcre2,
-  including the isolating `^(?:((?:a)\Kb)){0}(?=(?1))ab$`** where the `\K` is
-  reachable only through the call inside the lookahead. Structural reason:
-  design §5.3a excludes slots 0 and 1 from `W` so the `\K` survives the
-  RETURN, and `vm_look` restores the CURSOR from `SLOT_LOOK_POS` rather than
-  slot 0 so it survives the ASSERTION. The file's own `\K` note carries the
-  measurement; cells in `tests/recursion/kreset.rxt`.
-
-  **[DD-14.LB] IT ALSO RUNS THE `maxw` FIXPOINT**, `minw`'s mirror, descending
-  from `PCREC_W_UNBOUNDED` because over-estimating is `pcrec_maxw`'s free
-  direction and under-estimating is its miscompile. **It uses NO CYCLE TEST**,
-  and the `reach` closure sitting right there is why that is worth stating:
-  `reaches(i, i)` would answer "is target i in a cycle" directly, and it is the
-  WRONG question. `pcrec_sat_add` saturates, so a target in a cycle reads its own
-  published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED` and
-  never leaves the top — and the same absorption gives the right answer for a
-  target that merely REACHES a cycle without being in one (`g = (?&h)x` with
-  `h` recursive is genuinely unbounded), which a cycle test gets wrong unless
-  it is widened into exactly this propagation. One mechanism instead of two,
-  with a cell for each half in `tests/recursion/inlookaround.rxt`.
-
-- **derive.c** — [COMPOUND] build step B2 (lane cpb02, 2026-10-12;
-  `docs/design/compound.md` §B.1, §B.8, §E.3 G5): DERIVATIONS, tree rewrites
-  that make a compound's part from its parent, run as the driver's tree-hook
-  list's second entry (after the composer, before `pcrec_altcls`).
-  `pcrec_derive_split_q` is [MATCH-SPLIT]'s Q: KILL every `\G` (required) and
-  every `^`/`\A` with no `(?m)` (route only) to the never node (an empty
-  `A_CLASS`), except inside a lookbehind or a group called (transitively)
-  from one, where a `\G` DECLINES; then PRUNE bottom-up (a never `CAT` item,
-  a never `ALT` arm dropped, `REP{>=1}`/positive `LOOK`/groups of never are
-  never, `REP{0,...}`/negative `LOOK` of never are EMPTY) under the
-  GROUP-KEEP RULE (a call or backreference target is never deleted: its arm
-  stays as a never arm, counted for A2). Spines iterative, no `.body`
-  descent, no `default:`. An independent walk of P and of Q checks G5 (no
-  `\G` survives, every surviving `^`/`\A` in a lookbehind region, no kept
-  group deleted) and gives the killed count as P's anchors less Q's; "nothing
-  killed" declines. The report (`PcrecDeriveReport`) goes to
-  `PcrecEmitIn.derive_report`. `pcrec_ast_crosses_attempts` reads the
-  registry's attempt-scope column (`RF_CROSSES_ATTEMPTS`) off a node's row
-  (A3, B4's). Check: `tests/compound/` (B2, against the twin by language).
-
-- **lower_enc.c** — [M5.0] THE ENCODING LOWERING: the AST→AST rewrite that
-  turns a tree of CODE-POINT classes into one the byte tier can express, and
-  the one pass in this compiler that knows how an encoding spells a character.
-  (`docs/design/utf8_design.md` §2.1, §2.1.2, §2.3.)
-
-  **[CLS-TREE] S3 (2026-09-29): IT IS THE ONE PRODUCER OF `A_WCLASS`.**
-  `lower_class_utf8` wraps its non-empty byte rewrite in `wclass_of`: an
-  `A_WCLASS` over the replaced class's own (shared) code-point set with the
-  rewrite as its child. The splice is still one pointer into a leaf slot, so
-  R2's group-root signature holds (`cap_sig` walks through the wrapper); the
-  empty-set case stays a byte-confined empty `A_CLASS`; the byte instance
-  never reaches it. `lower_walk` and `subtree_is_identity` refuse the kind
-  loudly (the pass never re-walks its own product; a revbody is built above
-  it). Every reader below walks the child, byte-identically
-  (`docs/dev/lanes/s3build_report.md`).
-
-  **[M5.0] STAGE 2 LANDED THE UTF8 INSTANCE.** The file is now a `LowerOps`
-  TABLE — one row per encoding, selected once by id, no `if (enc == UTF8)`
-  anywhere (DD-12 (7) in the pass, mirroring the emitter's sealed backends).
-  A row carries `lower_class` (byte: the identity + §2.1's confinement check;
-  utf8: §2.3's range-to-byte-sequence decomposition, an `A_ALT` of `A_CAT`s of
-  byte-range classes, surrogate range absent), `identity_max` (the bound below
-  which the rewrite is the identity — 0xFF byte, 0x7F utf8), and `pat_char`
-  (the parser's literal reader, exported as `pcrec_pat_char` — a byte under
-  `byte`, a full UTF-8 decode that `pcrec_ctx_fail`s on ill-formed pattern text under
-  `utf8`, §2.7). Under `byte` the utf8 row is never selected and every artifact
-  is byte-identical, which is why the identity gate stays 100%.
-
-  **THE `u.rep.revbody` GAP STAGE 1 MEASURED IS RESOLVED HERE (stage-2
-  finding, report §4).** `revdet.c` builds a reversed COPY of a quantifier body
-  BEFORE this pass; reversal and lowering do not commute (a two-byte char
-  reversed at the byte level is `B1 CE`, but revbody is reversed at the
-  code-point level), so lowering the reversed copy would emit the wrong byte
-  order. The `A_REP` arm therefore CLEARS `revbody` (drops the
-  reverse-deterministic rung to a correct fallback) for any body the lowering
-  WOULD CHANGE — `subtree_is_identity` decides, keyed on `identity_max`. Under
-  `byte` no body is ever above `identity_max`, so the clear is unreachable and
-  the identity gate holds; under `utf8` the 413 corpus revdet classes are ASCII
-  (below `identity_max`), so their reverse machines are kept and consistent by
-  IDENTITY with their forward twins — which §8.5's differential exercises at 0
-  divergences. Only a genuinely non-ASCII revdet body drops the rung, trading
-  throughput for correctness (§2.5.1's decline discipline).
-
-  **ITS POSITION IN `compile.c` IS A REVIEWABLE FACT, NOT AN IMPLEMENTATION
-  DETAIL** (§13 obligation 4). The file's header derives it from three ordering
-  constraints and the call site restates them. Two are settled and asserted by
-  `tests/codegen/run_cpset_structure.sh`: it must run BEFORE `pcrec_build_nfa`
-  and `pcrec_emit_vm` (the two byte-only consumers — and note `emit_vm` is
-  handed the AST ROOT, which is why "between the parser and the IR" is not a
-  position at all for half this compiler), and AFTER `pcrec_postresolve`
-  (which asks lookbehind widths in CHARACTERS, and after lowering a two-byte
-  character is an `A_CAT` of two byte classes).
-
-  **THE THIRD CONSTRAINT WAS RESOLVED AS A PROPERTY, NOT A POSITION (stage-1
-  ruling R2).** §2.1.2's original text said the lowering "cannot run before
-  :961" (`pcrec_callgraph_build`) because a pass that REBUILDS nodes makes
-  `u.call.body` stale — right rule, inverted conclusion (a rebuilding pass would
-  have to run ABOVE the graph, colliding with the postresolve constraint and
-  leaving no legal slot). MEASURED with a scratch rebuilding lowering: at
-  `:1000` it moved 45 of `tests/recursion`'s 179 artifacts (empty `W`
-  save/restore), above :961 none. R2's cure is the pass's SHAPE:
-  `pcrec_lower_enc` SPLICES IN PLACE (mutates the parent's child pointer,
-  never reallocates a node that is or contains a group root), so `:1000`
-  stands and the staleness is inexpressible. Stage 2 built it that way and
-  added the owed group-root-ADDRESS check: `cap_sig` snapshots the count and a
-  mixed hash of every `A_CAP` address before and after the pass and `pcrec_ctx_fail`s
-  if either moved — the invariant as a diagnosed fact rather than a shape a
-  reviewer reads.
-
-  **THE WALK IS ITERATIVE ON `A_CAT`/`A_ALT` SPINES** (D10/DD-10/K20) and does
-  NOT follow `u.call.body` — `postresolve.c`'s walk header carries both
-  arguments, and both apply. It has no `default:` arm, so a new node kind is a
-  COMPILE ERROR here: "can this construct contain a character set" is a
-  question only that kind's author can answer, and inheriting "no" would leave
-  a code-point class in a subtree the emitter reads as bytes.
-
-- **postresolve.c** — [DD-14.LB] THE POST-RESOLUTION CHECKS: the pass for every
-  rule that must refuse a pattern AT A PATTERN OFFSET and cannot be decided
-  until the call graph exists. Run from `pcrec_compile` immediately after
-  `pcrec_callgraph_build`.
-
-  **IT EXISTS BECAUSE TWO FACTS COLLIDE AND NEITHER WILL MOVE.** A module's
-  parse hook is the only place in this compiler that holds a pattern offset
-  (`Ast` carries no position of any kind — PARSE-1, and `AltInfo.last_bar`
-  exists because of it), and the call graph does not exist until after parse
-  and after every rewriting pass (`callgraph.c` above, wave A2's finding). So a
-  rule whose answer depends on a callee is DECIDED where it cannot be RAISED
-  and raised where it cannot be decided.
-
-  **THE RESOLUTION IS THREE MOVES AND THEY ARE A SHAPE, NOT A CASE:** the hook
-  RECORDS (the offset, on the node, in the module's own `u.*` payload), the
-  graph is BUILT, this pass RE-ASKS the module's own rule at the recorded
-  offset. Today's one customer is module `lookaround`'s §2.5 fixed-width rule
-  for a lookbehind whose body carries a call; the shape recurs (§6.3's splice
-  eligibility, a variable-length lookbehind follow-on, the next module that
-  meets a call), so a second occurrence extends a list rather than inventing a
-  second post-graph timing.
-
-  **THE SPLIT OF OWNERSHIP IS THE DESIGN.** This file owns the WALK and the
-  ORDER and knows nothing about lookbehind widths;
-  `src/parse/mod_lookaround.c` owns the RULE and its three refusal sentences
-  and knows nothing about the call graph. Inlining the rule here would be a
-  second derivation of "is this branch fixed-width" for the hook's own to
-  disagree with — the failure `Ast.u.look.widths` is stored to prevent, one
-  level down.
-
-  **ORDER IS PART OF THE CONTRACT**: recorded constructs are visited in
-  ASCENDING PATTERN OFFSET, so a pattern with two offending lookbehinds refuses
-  at the FIRST, which is what the hook would have done. Walk order is not that
-  order and is not close to it — a flat concatenation is LEFT-NESTED, so a
-  spine walk reaches the RIGHTMOST element first and would report the LAST
-  offender.
-
-  **A SKIPPED PASS IS LOUD BY CONSTRUCTION.** The pending state is encoded as
-  `u.look.widths == NULL`, which `vm_look_behind` already `pcrec_ctx_fail`s on by
-  name — so losing this pass is an internal error on the first call-bearing
-  lookbehind rather than a back-step of width zero. Encoding "pending" in a new
-  boolean instead would have made the same loss a WRONG SPAN, and on a negative
-  lookbehind a FALSE MATCH. Its walk runs through `pcrec_ast_visit`
-  (core/internal.h, [L1-X2], 2026-09-17 code review), the generic pre-order
-  walk this file's own descent and `callgraph.c`'s used to duplicate byte
-  for byte — the house style ("what varies is which edges they follow")
-  holds for `revdet.c`/`possessify.c`/`select_engine.c`/`altcls.c`, which
-  each still carry their OWN descent because theirs genuinely rebuild,
-  thread FOLLOW, or reverse, and did not hold for this pair, whose edges
-  were identical. It does not follow
-  `u.call.body`, which is both design §4.4's non-terminating compile and
-  redundant, since a lookbehind inside a called group is visited at its own
-  lexical position anyway. Sabotage: S169 (never called; DETECTED,
-  14fail/23pass, every failure a pattern-compile failure) and S170 (resolves
-  but never refuses; DETECTED, 4fail/33pass, the opposite half of the same
-  file). Tests: `tests/recursion/inlookaround.rxt`.
-
-- **prefix_k.c** — [OPT-K] THE OFFSET-k SELECTION: which of the offsets
-  every match must carry are worth testing before the DFA's transition loop
-  is entered (`docs/design/offset_k_skip.md`). Like `select_engine.c` and
-  `mrl.c` it is an ANALYSIS rather than a transformation — it mutates
-  nothing and returns a `PrefixKSets` the emitter reads.
-
-  **THE WALK IS A FACT AND LEFT THIS FILE** ([PATFACTS] step 3.4, lane
-  pf34): which bytes a match carries at each offset from its own start is the
-  E3 fact `kset_walk`, derived in `src/facts/kset.c` from the wrapped NFA's
-  `anch_start` (that file's header and `src/facts/CLAUDE.md` carry why the
-  NFA and not the DFA's start state, and why the walk is sound in one
-  direction only). This file is the DECISION over it (design §4.2.2
-  carve-out (c)): it reads the walk through `pcrec_fact_kset_walk`
-  (`PrefixKSets.walk` points at the memo), weighs each offset's set by the
-  MASS primitive into its OWN `ppm[]` (the walk reads no prior, r1 A2), and
-  picks the scan offset and verifies. **Offset 0's escape set `k0` stays the
-  BASELINE's**, from the DFA derivation that owns it, so no set has two
-  sources, and §2.1 of the note is why that set is CORRECT to be as wide as
-  it is (a `\b` machine's start state escapes on every word character
-  because it must REMEMBER the left-hand context, not because a match can
-  begin there).
-
-  **THE SELECTION IS A COST MODEL, AND THE MODEL WAS MEASURED WRONG ONCE.**
-  Five constants, four of them measured off this box
-  (`docs/dev/opt3_dfa_scan_measurement.md`), over a byte-rate the compile's
-  analysis declares — [FINDINGS] B1 built the hook this paragraph once named:
-  the table left this file for `src/findings/default.rxt` (the shipped
-  default, D83's FALLBACK) and the selection reads a set's MASS through
-  `pcrec_find_set_ppm` (`src/core/findings.c`), which under an encoding the
-  data does not serve is the set's CARDINALITY. The prior is deliberately NOT derived from
-  the comparative bench's own log text: that would be a control sharing a
-  source with what it controls (learnings.md §3), and every measurement in the
-  note would then be a measurement of a table fitted to its own subjects.
-  What the model got wrong is recorded at the constant it produced: it
-  predicted 13x for `\b[0-9]{10,19}\b` and the box measured 0.96x-1.02x three
-  times, because a VERIFY removes loop ENTRIES while a SCAN removes BYTES.
-  The selection therefore requires the scan offset to MOVE off 0 — a MEASURED
-  rule, stated as such beside the model rather than folded into it.
-
-  Tests: `tests/offsetskip/` (answers), `tests/codegen/run_offset_skip.sh`
-  (the artifact, the population, and the prior's own sum), sabotage rows
-  S185/S186/S187 and S188 (re-aimed here at step 3.4: the escape set handed
-  to the selection as the walk's offset 0).
-
-  **[OPT-LITSCAN] S1**'s PIN (`run_pinned`/`run_o`) was computed here beside
-  the selection until [PATFACTS] step 3.4 made it the E3 derived fact
-  `run_pin` (`src/facts/kset.c`); nothing in this file reads it now. The
-  DECISION is `src/gen/emit_dfa.c`'s run-pinned rows, which read it through
-  `us_run_pin` — the kind gate the pure fact's readers owe
-  (docs/design/litscan_s1.md §1.1; patfacts design §4.5).
-- **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
-  docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
-  it answers which engine compiles this pattern, and it exists as a pass
-  rather than as compile.c's old inline `if` because of what its future
-  customers are. The backrefs-finite expansion and the atomic/possessive cut
-  are not analyses that RETURN a verdict, they are REWRITES that DISCHARGE
-  one — `(abc)\1` is VM-forced until the expansion turns it into `abcabc`, at
-  which point it is DFA-compilable. So the socket carried an optional
-  `discharge` hook and the pass was a FIXPOINT with a bound, shipped with zero
-  hooks registered (§5.2's own instruction: the bound exists from day one so a
-  later rewrite pair cannot loop).
-
-  **[TOUR-5] (2026-09-20) THE REWRITE HALF IS DELETED** (r61 F2). Nothing ever
-  registered a hook — the two named customers each declined for a reason
-  recorded at its own site (atomic.c below; possessify.c below) — and the
-  fixpoint's rewrite arm could not have served one, since it set a local
-  `rewrote` flag without publishing a new root. D77: the analysis TABLE stays
-  and runs ONCE; engine_m4.md §5.2 keeps the design record and docs/dev/
-  plan.md's [ENG-CUT] row owns building the plumbing when a rewrite first
-  needs it. The paragraph above is the socket's history, not the tree's
-  current shape.
-
-  **[M6.5.2] AND IT IS WHERE THE PREFILTER IS REFUSED.** A backref-bearing
-  pattern gets `fit.prefilter = false`, and `-fprefilter` on one is a REFUSAL
-  rather than a silent override — D46's do-or-die posture, applied to a request
-  the pattern cannot honour. The reason is §7.1's and it is measured twice
-  over: the capture-erased approximation a prefilter would be built from is not
-  even a SUPERSET once the referenced group's transitive closure holds an
-  assertion or an atomic/possessive operator (12 of 18 positive-control cells
-  are false negatives across those two reasons, plus 3 of 5 for the transitive
-  case), and where it IS a superset its leftmost SPAN differs from the true one
-  on up to 389 subjects in one family — so the EXACT anchored window
-  `engine_m4.md` §6.1's hybrid needs cannot be had either way. That line is
-  also what makes `src/ir/nfa.c`'s missing `A_BREF` arm unreachable rather than
-  lucky: nothing builds a machine for a language a backreference is not in.
-
-  **[DD-14] AND A CALL-BEARING PATTERN GETS NO PREFILTER EITHER — WAVE E's
-  LINE, LANDED IN WAVE B+C.** Erasing a call is not a superset, it is a
-  DIFFERENT language, and the counterexample is one line (§8.2): `a(?1)b` with
-  group 1 = `x` matches "axb"; erase the call and `ab` is left, which does
-  not. So the prefilter's REJECTION would be a false negative — the one thing
-  a prefilter may never be — which is unlike `lookaround`'s erasure (a
-  one-line superset proof) and exactly like `backrefs`' above.
-
-  **IT COULD NOT WAIT FOR WAVE E, and that is measured rather than argued.**
-  `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `pcrec_ctx_fail`s by name,
-  annotated "unreachable: VM_ONLY, no prefilter" — and "unreachable" was true
-  only while nothing PRODUCED an `A_CALL`. MEASURED on the wave's own branch
-  before the predicate existed: `(a)(?1)`, `(?R)` and `(?<n>a)(?&n)` each
-  answered `pcrec: internal error: bad AST node`, because a capture-bearing
-  pattern routes to the VM, the VM asks for its prefilter, and the prefilter
-  build walks a node it refuses. The choice was not "ship the optimisation
-  early" but "ship a compiler that cannot compile the module's own corpus".
-  S165 is the row, and its own header records that the SILENT-SKIP prediction
-  §9.3 makes becomes reachable only at wave G, which builds §8.3's sound
-  approximation and makes an erased machine constructible at all. The cost is
-  measured and stated: 21x-350x on the sparse-candidate shape a prefilter
-  exists for, over the non-recursive half of the population.
-
-  **[M6.4.2/D67] SR-8 IS BUILT HERE, AND `forces_kreset` RETIRED INTO IT.**
-  `\K` was the first VM_ONLY producer and got a bespoke analysis at [M6.2]
-  wave E; `(?>` is the second, and `tests/registry/registry_check.c`'s tripwire
-  said in advance what to do about it — *"If a SECOND construct arrives here, do
-  not add a second exception: two is when the generic consultation has earned
-  its axis and SR-8 is the right build."* So `forces_registry` replaces
-  `forces_kreset`: producers stamp each node with the registry ROW they were
-  dispatched on (`Ast.reg`, via the ONE `pcrec_ast_stamp` call), and this
-  analysis ANDs `pcrec_ast_engines()` over the POST-DISCHARGE tree with `why`
-  taken from the first DFA-excluding node's row. Backrefs' twelve rows ([M6.5])
-  will need no line here at all.
-
-  The DELETIONS are the point: `has_kreset`, `forces_kreset`,
-  `Ctx.first_kreset_pos` and the tripwire's `\K` exception are all GONE, and
-  `Ast.reg_at` ([K110]; it was `Ctx.first_vmonly_pos`, a first-wins
-  counter that went stale once the discharge deleted an earlier node) is the
-  one generic offset field where two per-construct ones would have been. `\K`'s shipped diagnostic is reproduced
-  BYTE FOR BYTE by the generic path, which is D67's "same verdict, same
-  position" made checkable.
-
-  **`forces_captures` does NOT retire** (D67 contract note 1): it is
-  REQUEST-derived, a property of the generation request with no registry row
-  behind it. Two kinds of forcing therefore remain, and the `--engine=dfa`
-  override has to tell them apart — `EngineAnalysis` gains a `node_derived`
-  bit and the branch takes the captures arm ONLY when no node-derived analysis
-  contributed a why. **That closed a defect live on the shipped compiler**:
-  `--engine=dfa '(a)\Kb'` answered "pass --no-captures", advice that cannot
-  help, because `\K` still forces the VM after the captures are gone.
-  `RX_ENGINE_WHY`'s first-row rule is untouched — the second why exists only
-  for the override.
-
-  **The FREE DISCHARGE runs from `src/core/compile.c`'s pipeline**, before
-  engine selection and unconditionally ([DD-14] wave G hoisted it out of the
-  top of `pcrec_select_engine`; see the pass-order entry at the end of this
-  file). That ordering is what makes a per-ROW column produce a per-PATTERN
-  answer: `--engine=dfa '[^"]*+"'` succeeds because the node is GONE by the
-  time `forces_registry` looks, while `--engine=dfa '(?>a|ab)c'` refuses by
-  name. See atomic.c's own entry for why it was never registered in the
-  `discharge` socket [TOUR-5] has since deleted.
-
-  `forces_captures` triggers on the requested OUTPUT rather than the presence
-  of a `(`: `a(b|c)+d` under `--no-captures` is capture-free WORK and stays on
-  the DFA forever.
-
-  **THE PARAGRAPH THAT USED TO STAND HERE EXPIRED RATHER THAN BEING WRONG.** It
-  ran: every `VM_ONLY` registry row is gated by a module with no producer, so
-  the parser refuses those patterns long before selection runs — which is also
-  why SR-8's flip is smaller than its row implies (§9.1: zero currently-refused
-  constructs become compilable when the VM exists). Module `assertions` now HAS
-  a producer and `\K` is its `VM_ONLY` row, so SR-8's flip has its first member
-  and the override's second branch (below) stops being empty by population.
-
-  **[M4.7a] SR-8 ITSELF: the consuming socket is deliberately NOT built
-  here.** Zero producers means zero customers (D18/OS-0/D53's standing
-  discipline against unpopulated machinery), and a hand-built `Ctx` proving
-  a socket works is a control sharing a source with what it controls — it
-  proves plumbing, not that a real producer's contract would look like the
-  one guessed at sample size zero. Instead,
-  `tests/registry/registry_check.c`'s `check_engine_capability_tripwire`
-  asserts every `VM_ONLY`-masked `RS_MODULE` row has NO wired producer —
-  the fact that makes engine-capability refusal unreachable today — so the
-  day a module wires the first one, that check fails and names this file as
-  the thing to build BEFORE the producer lands, not after. **It FIRED on `\K`
-  (2026-08-19), which is the day it was written for, and the answer was still
-  not SR-8**: `\K`'s verdict is not "some registry column says VM", it is "this
-  AST carries a node whose write is path-dependent" — a fact about the tree, not
-  about the table — so a construct-specific row is the honest shape, and a
-  generic column lookup designed around one customer is what D18/OS-0/D53
-  forbid. The tripwire keeps its demand for the other 47 rows and gains a NAMED
-  exception that PAYS: it asserts live that `--engine=dfa` on `a\Kb` refuses by
-  the construct's own name AND that the same pattern compiles on the default
-  engine. A SECOND construct arriving there is when the generic consultation has
-  earned its axis.
-
-  It also DRIVES possessify.c, and the placement is a reported deviation from
-  §2.8's literal reading rather than a silent choice. §2.8 proposes
-  possessification as an `EngineAnalysis` row whose `discharge` hook does the
-  rewrite; the SHAPE claim is right and possessify.c keeps it, but the
-  registration was never available and [TOUR-5] has since deleted the hook.
-  `discharge`'s contract was "rewrite so the ENGINE FORCING no longer
-  applies", which possessification cannot do and must not claim to — a
-  capture-bearing pattern still needs the VM afterwards — and a hook ran only
-  when the pattern was VM-FORCED, so registering there would possessify a
-  capture-bearing pattern and SKIP a capture-free one built with
-  `--engine=vm`: the same artifact kind, the same emitter, optimised
-  differently for a reason invisible from outside. The
-  driver is therefore the CHOSEN engine, which is the honest condition — see
-  `run_possessify` and its comment.
-
-  This file also owns the §5.6 override's REFUSALS, and it runs before machine
-  construction so a caller who asked for an impossible combination pays no
-  automaton for the diagnostic. The two refusal triggers are spelled
-  differently on purpose (§9.2 item 2): a captures conflict names
-  `--no-captures` as the way out, since the caller asked for captures merely by
-  not passing it; a `VM_ONLY`-construct conflict names the construct.
-
-  **[M6.2 wave E] the second branch HAS a population now — `\K` — and it ran
-  for the first time without a line of it changing**, which is the whole value
-  of having written it at [M4.5b] against no customer. `pcrec --features
-  assertions --engine=dfa 'a\Kb'` refuses with "\K at pattern offset 1
-  requires the VM engine, which --engine=dfa excludes", where the captures
-  branch's `--no-captures` advice would have been a lie: no flag makes a `\K`
-  pattern DFA-compilable.
-
-  **[M4.6f] (2026-08-17):** the PREFILTER FORCE PAIR (D46's controllability
-  half for `fit.prefilter`, §6.1/§4.7) is applied here, immediately after the
-  derived value's own computation and in the same do-or-die posture the
-  `--engine` switch above uses. `-fprefilter`/`-fno-prefilter`
-  (`PCREC_FORCE_PREFILTER`/`PCREC_NO_PREFILTER`) override the derived
-  boolean in EITHER direction — unlike the ladder's DENY-only family, because
-  `fit.prefilter` is one verdict for the whole artifact rather than a
-  per-quantifier step, so there is no addressing problem FORCE would create.
-  Both flags together refuse (ambiguous request); `-fprefilter` additionally
-  refuses whenever `fit.chosen != ENGM_VM` (no VM artifact exists to attach a
-  prefilter to — reachable via explicit `--engine=dfa` or auto routing to the
-  DFA because the pattern requests no captures). `-fno-prefilter` never
-  refuses: `--engine=vm` already ships a pure, prefilter-free VM artifact
-  today, so denying the hybrid is always buildable. The axis's D46
-  observability half — `RX_VM_PREFILTER` — lives in src/gen/emit_vm.c, read
-  from `job->fit.prefilter` directly rather than recomputed. Tests:
-  tests/prefilter/.
-
-  **[SEL-1] (2026-08-28) `auto`'s DFA-CAP-OVERFLOW CONTRACT IS A FOURTH ROW
-  IN THE FIXPOINT, `forces_dfa_overflow`** — plan row [SEL-1], K40's fix:
-  a DFA build that overflows a cap (state count, table entries, K7's
-  element budget; src/ir/dfa.c's two "pattern too complex" sites) is a
-  SELECTION OUTCOME under `auto`, not a refusal, and the general mechanism
-  is that the build reports "over budget" as a RESULT this file's existing
-  fixpoint consumes, exactly like `forces_captures`/`forces_registry` — no
-  try/catch at the `pcrec_ctx_fail` site, no second selector. It CANNOT fire on
-  the pass that discovers the overflow (selection runs before the DFA is
-  built), so it only ever returns non-trivially on `src/core/compile.c`'s
-  ONE-SHOT RETRY of the whole pipeline (`Ctx.dfa_disabled`, set only there)
-  — the only mechanism this compiler has for "abandon everything below this
-  point" is its one `setjmp`, so feeding the result back means running the
-  pass again with one more input bit, not adding a second recovery point.
-  `cx->dfa_disabled` ALSO folds into the prefilter derivation just above
-  (`has_bref || has_call || cx->dfa_disabled`, all three silently drop it)
-  in the SAME step that excludes `ENGM_DFA` — a retry's own DFA build would
-  be the identical construction that just overflowed, so the fallback must
-  not attempt it a second time (the plan row's cost bound: at most one
-  refused build dearer than `--engine=vm`). `--engine=dfa` and
-  `-fprefilter` are UNTOUCHED — `compile.c`'s retry never fires under
-  either, so this row never fires under `--engine=dfa`'s override branch
-  either, which is also why `node_derived` is `false` and effectively moot
-  for it. `RX_ENGINE_WHY` carries `cx->dfa_overflow_why`'s text
-  (e.g. `"dfa overflowed: >32000 states"`) when this row is the one that
-  won `why` on the ordinary first-wins rule; when a request-derived reason
-  (captures) wins instead, the prefilter is STILL dropped, through
-  `dfa_disabled` rather than through `why` — the two effects are
-  independent by construction. `src/gen/emit_vm.c`'s `--emit-ir` listing
-  needs its own arm for the identical reason `has_bref`/`has_call` did
-  ([M6.5.2]/[DD-14 wave E]'s precedent: without one, the line falsely
-  claims the `--engine=vm` side effect). Tests: tests/vm/run_vm_tests.sh
-  §3b, tests/prefilter/ (see its own CLAUDE.md's "[SEL-1]" section).
-
-- **select_engine.c — T2 and the attribution walk, beside the old code**
-  ([DEC-FALLBACK] B2, lane decfbB2, 2026-10-08; `docs/design/
-  dec_fallback.md` §1.4/§1.7; no reader switched, no abi event).
-  `pf_admits[]` is the PREFILTER ADMISSION as ten first-match rows over a
-  `PfAdmitSel` (the kind mask, `would_prefilter`, the two flags), each with
-  a verdict, the `--emit-ir` listing value and an `ENGINE_SEL` cell;
-  `fit_attrib_walk` is `esel_of` as a read of the admission row's cell and
-  then the latest fired ladder row's (`Ctx.fit_seq`). Rows ask
-  `nullable`/`empty_admits` only where today's derivation does (row 4
-  carries `!has_var`), because an ask marks a fact used and `--emit-facts`
-  lists it. Under `-DPCREC_CAND_TRACE` the both-derivations oracle holds
-  the T2 walk to the verdict ternary and the two declined flags (and stores
-  the row in `EngineFit.pf_admit`) and the walk to `esel_of`, in both
-  orders (`-DPCREC_CAND_NEW_FIRST`); B4/B5 switch the readers.
-- **select_engine.c — T2 IS THE ADMISSION** ([DEC-FALLBACK] B4, lane
-  decfbB4, 2026-10-08; no abi event, zero movers). `prefilter_decision`
-  walks `pf_admits[]` after its refusals and writes `EngineFit.pf_admit`
-  (never NULL), `fit.prefilter` (the row's verdict) and the two
-  `prefilter_declined_nullable*` flags (from the row's `esel` cell; their
-  one reader left is `esel_of`, until B5). `lang_nullable_declinable`, the
-  `has_var` ternary and the verdict ternary are deleted; row 3
-  (`var-nullable`) is F1's holder. Each row also carries the `--emit-ir`
-  `prefilter` line's prose (`note`, moved verbatim from emit_vm.c's chain;
-  `overflow-drop`'s is a `%s` format over `dfa_overflow_why`), and the
-  chain's per-arm rationale comments sit above their rows. THE NULLABILITY
-  FACT IS ASKED UP FRONT, before the walk (`has_var ? nullable :
-  empty_admits`, result discarded): the deleted derivation asked it on
-  every compile, so `--emit-facts`' `used` column lists `empty_admits` on
-  every non-`${...}` pattern, and the walk alone asks it only where a
-  nullability row is reached (decfbB2 finding 7). The oracle's
-  `admit`/`admit-listing` checks retired with their old side; §1.4 (b)'s
-  `has_var` invariant stays (trace build), and the trace's `admit` record
-  prints the walk's row.
-- **select_engine.c — `ENGINE_SEL` IS THE ATTRIBUTION WALK** ([DEC-FALLBACK]
-  B5, lane decfbB5, 2026-10-08; no abi event, zero movers). `esel_of`
-  keeps its call site and its [TOUR-5] premise check and returns
-  `fit_attrib_walk`: `forced`, else the admission row's `esel` cell, else
-  the latest fired T1 row whose cell for the final prefilter is not PASS
-  (ROLE by the latched `dfa_was_engine`), else `selected` (dec_fallback.md
-  §1.7). The nine-arm ternary and its arm table are deleted, and so are
-  `EngineFit.prefilter_declined_nullable{,_default}`, write-only once the
-  ternary went (the walk reads `fit->pf_admit->esel`). The walk also
-  reports where the token came from (an ordinal `ESEL_FROM_*`, or
-  `ESEL_FROM_ROW + i`), which the trace's `attrib` record prints as the
-  row's name, so the trace compare against a pre-B5 parent held the walk to
-  the ternary. The oracle's `attrib` site is gone with the oracle.
-  **B7 ([DEC-FALLBACK], lane decfbB7): `declined-nullable` is order 3 (the
-  T2 cell sits before T1's `collapsed-prefilter`), `declined-nullable-default`'s
-  desc loses the false `--engine=vm` clause (F-B2), and
-  `pcrec_pf_admit_table_row` lists T2 whole as the `prefilter-admit` axis.**
-  **B6 ([DEC-FALLBACK], lane decfbB6): T2 rows carry the `--list-axes`
-  `axlist` cell for `declined-nullable-default` (row `var-nullable`) and
-  `declined-nullable` (row `nullable-collapsed`), and `esel_ends[]` holds
-  the cells of the two values no row produces (`forced`, `selected`);
-  `pcrec_pf_admits_list_row` is T2's half of `pcrec_fb_list_row`
-  (src/core/compile.c).**
-- **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
-  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
-  plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s
-  `pcrec_has_lookaround` and [DD-14]'s `pcrec_has_call`, which live here for
-  this file's own stated reason:
-  SEVEN switches over `AKind` with NO `default:` arm, so a node kind added later
-  is a compile error at each of them rather than a silent inheritance. That is
-  seven of the tree's twenty-SEVEN such sites in one file — its densest
-  concentration of the alarm, and the reason each new whole-tree predicate
-  keeps landing here rather than beside its own module.
-
-  **[DD-14] EVERY WALK IN THIS FILE IS A WHOLE-TREE WALK, AND THAT NOW HAS A
-  SECOND CONSEQUENCE.** `Ast.u.call.body` is the AST's first `Ast*` -> `Ast*`
-  back edge, and `subroutines_design.md` §4.4's rule is that a whole-tree
-  predicate MUST NOT follow it: the callee is visited at its own lexical
-  position anyway, and following the edge is a non-terminating compile on
-  `(a(?1))` — in predicates asked of every pattern. Six of the seven switches
-  therefore DECLINE `A_CALL` outright. The seventh is `pcrec_bref_mark`, whose
-  arm is `mark[u.call.target] = true` and no descent (§4.3): a call names a
-  group exactly as a reference does, so without it `--no-captures` deletes
-  group 1's `A_CAP` out from under `(a)(?1)`. The mark is NOT transitive and
-  needs no fixpoint — a call from inside group 1 to group 3 is an `A_CALL`
-  node in the tree, so the whole-tree walk reaches it wherever it sits.
-
-  **`pcrec_has_call`** ([DD-14], `subroutines_design.md` §4.3) is
-  `pcrec_has_bref`'s sibling, and **AT WAVE B+C IT IS WIRED**. Its consumer is
-  the `fit.prefilter` line in `select_engine.c`, which design §11 schedules for
-  wave E and which landed here because without it `src/ir/nfa.c`'s `A_CALL`
-  arm is REACHABLE: every capture-bearing call pattern answered "internal
-  error: bad AST node", measured on the wave's own branch. Wave A2 placed the
-  predicate and deliberately left the call site absent, on the ground that a
-  fake one would pre-satisfy the row that owns the real one; the real one now
-  exists and S165 is that row.
-
-  **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
-  `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
-  ONE expression, at one site, at one point in the pipeline — `Vm.mrl_win` in
-  src/gen/emit_vm.c, post-discharge. Same hazard through a different door: the
-  prefilter is built from the lookaround-ERASED pattern (src/ir/nfa.c lowers an
-  `A_LOOK` to an epsilon), so its window END is not an upper bound on the real
-  match's end, while its rejection and its span START stay sound. FLAT rather
-  than shaped — §5.6 names the narrower "a lookaround inside an alternation"
-  predicate and rejects it as a second analysis with no independent check.
-  **AT WAVE A2 THE PREDICATE IS PLACED AND ITS CONJUNCT IS NOT YET IN
-  `v.mrl_win`**: wave E adds `&& !pcrec_has_lookaround(root)` and sabotage row
-  S-LA12 deletes it. Nothing produces an `A_LOOK` before wave B+C, so the
-  conjunct could not be exercised and would pre-satisfy its own detector.
-
-  **`pcrec_has_bref`** is §7.1's predicate — does anything here compare subject
-  text to subject text — and its ONE reader is `select_engine.c`, which forces
-  `EngineFit.prefilter` OFF for such a pattern. **`pcrec_bref_mark`** computes
-  §3.2.4's MARKED SET: the union of every `A_BREF`'s `refs`, which for a
-  by-name reference over a duplicated name is EVERY member of the run and not
-  merely the member some analysis thinks it resolves to. R32's re-check E13 is
-  why: §8.3's chain reads them all at MATCH time, so an unmarked member is read
-  under write-on-traverse and E1 returns through it — and the measured cell
-  shows there is no member to pick, because
-  `(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on "aba" resolves to the SECOND
-  member, which is the one being re-entered. Both are asked of the
-  POST-DISCHARGE tree, exactly as `pcrec_has_atomic` is.
-
-  **`pcrec_discharge_atomic` — THE FREE DISCHARGE.** Deletes every `A_ATOMIC`
-  whose cut is PROVABLY a no-op and splices its body back in. The condition is
-  possessify's §2.2 verdict asked TRANSPARENTLY (with the group's own follow),
-  because the verdict's entire content is *"no retreat into this loop can
-  produce a match the preferred path does not"*, which is precisely *"the cut
-  deletes nothing"* about the ERASED tree. MEASURED at 0 violations over 532
-  positive-verdict patterns (`out/free_discharge.txt`). It ships for the
-  `A_ATOMIC(A_REP(X))` arm ONLY; the plain-group `(?>X)` arm is DEFERRED at
-  ZERO measured cells (R31 E7) and needs a callable (U1)/(U2) predicate over an
-  arbitrary subtree, which possessify.c does not expose.
-
-  **THE VERDICT ALONE IS NOT THE CONDITION, AND THE DESIGN SAID IT WAS.** Two
-  narrowings were forced by measurement during [M6.4.2], both of the shape §14
-  item 9 predicts (a §2.2 CONSEQUENCE an emitted shape depended on):
-
-  - **GREEDY ONLY.** For a greedy body the loop's FIRST exit IS the maximal
-    exit, so the cut fires where §2.2 says the loop lands. For a LAZY one the
-    first exit is the MINIMAL exit, while §2.2's positive verdict rests on the
-    PREFERENCE COLLAPSE — licensed by the FOLLOW forcing the loop to the
-    maximal exit — and the cut fires BEFORE the follow is ever consulted.
-    Measured: `(?>a*?)b` on "aaab" is (3,4) and `a*?b` is (0,4), on a positive
-    verdict. §5.3's own measurement could not have found it: it drives the
-    possessive SUFFIX spellings, and there is no lazy one (`a*?+` is an error),
-    so all 532 positive-verdict patterns are greedy.
-  - **KEYED ON THE GROUP, NOT THE QUANTIFIER.** The verdict is about a GROUP,
-    with that group's follow, and two nested groups over one quantifier ask two
-    different questions. Measured: `(?>a*+)a` parses to
-    A_ATOMIC(A_ATOMIC(A_REP(a))); the inner group's verdict (empty follow,
-    positive) discharged the inner correctly, and the OUTER then found its
-    now-spliced `A_REP` child already in the set and discharged itself on a
-    verdict computed for a different follow — `a*a` on "aaa" is (0,3) where
-    `(?>a*+)a` is NOMATCH.
-
-  **WHY IT WAS NEVER REGISTERED IN `EngineAnalysis.discharge`**, the socket
-  engine_m4.md §5.2 designed with this module named as its customer — and the
-  third reason is why [TOUR-5] (2026-09-20) deleted the socket outright.
-  A hook ran only when the pattern was already VM-FORCED, so a capture-free
-  `a*+` would be discharged differently under `--engine=vm` than by default;
-  `discharge`'s contract was "rewrite so the ENGINE FORCING no longer
-  applies", which a PARTIALLY dischargeable pattern cannot honour; and the
-  fixpoint in select_engine.c NEVER CALLED a registered hook — it set
-  `rewrote = true` for any non-NULL one without publishing a new root, so
-  registering would have run the analysis 8 times and rewritten nothing. It
-  is therefore an ordinary AST pass, driven from `src/core/compile.c`'s
-  pipeline since [DD-14] wave G.
-
-  **[K93] ITS SURVEY SEES CALL SITES TOO.** The verdict comes from
-  possessify's own walk, which since K93 joins every call site's context
-  into a called group's, so `((?>a+))b(?1)a` keeps its cut (the call re-runs
-  it under the follow `a`); before, the default build was right only because
-  possessify re-marked the loop, and `-fno-possessify` answered (0,4).
-
-  **NOT gated by `-fno-possessify`.** The discharge is semantics-preserving by
-  its own verdict, and gating it would make an OPTIMISATION flag change which
-  ENGINE a pattern gets. The consequence is that emission-neutrality (a
-  discharged possessive emits byte-identical VM code, because possessify
-  re-derives the same verdict on the same quantifier) holds only in that flag's
-  ABSENCE — under it the discharge runs and `run_possessify` does not.
-
-  **`pcrec_has_atomic`** is H3's predicate, read at EMISSION and therefore
-  POST-discharge: `[^"]*+"` compiles to a pure DFA with the MRL ceiling intact,
-  `(?>a|ab)c` is VM-forced with the ceiling off. **`pcrec_ast_stamped_by`** is
-  D65's built-status signal for a row that reaches no doorway (RK_QUANTSUFFIX),
-  reading the SR-8 stamp rather than a second fact.
-
-- **possessify.c** — [ENG-BREP] POSSESSIFICATION
-  (docs/design/eng_brep_design.md §2, D47.1: possessify-first in both the
-  application order and the build order). Marks every `A_REP` for which no
-  retreat into the loop can produce a match the PREFERRED path does not, so
-  src/gen/emit_vm.c can emit it with no resume frames and no giveback.
-
-  A REWRITE, not an analysis that returns a verdict (§2.8's shape claim): it
-  does not observe that the loop needs no frames, it MAKES the quantifier one
-  that needs none. It is monotone — it returns how many quantifiers it NEWLY
-  marked, a marked quantifier is never unmarked — which is what lets
-  select_engine.c drive it to a fixpoint in two rounds.
-
-  **[M6.4.2] `pcrec_poss_survey` — the SAME verdict, as a QUERY.** The free
-  discharge (atomic.c) needs §2.2's answer on one `A_REP` without marking
-  anything, and a SECOND implementation of §2.2 is the one thing this file must
-  never grow: every conjunct in it is a measured refutation of a simpler rule
-  somebody believed. So the survey runs the same `pss_walk` — same FOLLOW
-  accumulation, same enclosing-loop term, the same lines — and reports positive
-  verdicts through a callback instead of writing `Ast.u.rep.possessive`. One pass is
-  exact rather than an approximation of the fixpoint: the verdict reads no
-  `possessive` field anywhere, so a second round marks nothing new.
-
-  **A_ATOMIC IS TRANSPARENT AT TWO OF THIS FILE'S THREE SWITCHES AND NOT AT
-  THE THIRD, and the design said all three.** `first_of` and `gk_build` read
-  through the cut, which is right: FIRST is the bytes a node can BEGIN with and
-  a cut removes whole MATCHES, and the position automaton read through the cut
-  has MORE positions and MORE follow edges than a cut-aware one, so the verdict
-  can only become more conservative. `pss_walk` is different, and the
-  difference is that it threads FOLLOW — **and FOLLOW is exactly what the cut
-  cuts.**
-
-  MEASURED, on both engines, before the arm was corrected: with the group's own
-  follow passed through, `(?>(?:a|bc)*?)d` on "abcd" answers **(0,4) where
-  libpcre2 answers (3,4)**. The lazy loop's verdict came out POSITIVE because
-  its follow looked like `{d}` and `may_end` looked false, so the lazy conjunct
-  did not fire — but `d` is not that loop's follow: the group COMMITS at the
-  loop's first exit, which for a lazy loop is the MINIMAL one, and `d` runs
-  only after that commitment. §2.2's collapse argument assumes the loop can be
-  RE-ENTERED, which is precisely what the cut deletes. So an atomic body is
-  walked as a SELF-CONTAINED PATTERN: empty follow, `may_end` true. A
-  quantifier that is not last in the body still gets its real within-body
-  follow from the A_CAT arm.
-
-  §6.4a's 776,160-cell sweep (10,504 REFUTABLE, 0 violations) could not have
-  found this: its generator is `PRE (?>QB q|QB xy) tail`-shaped, so a
-  quantifier inside the group is always followed by something INSIDE it, and
-  the cell where the quantifier ENDS the atomic body is not in its population.
-
-  **THE SURVEY ASKS A DIFFERENT QUESTION AND GETS THE OTHER FOLLOW.** The free
-  discharge asks "would DELETING this group change the answer", whose answer
-  for the erased tree is the TRANSPARENT verdict. The two genuinely differ:
-  `(?>a*)a` is NOMATCH on "aaa" while `a*a` is (0,3), and only the transparent
-  reading refuses to discharge it, while only the cut-aware reading is right
-  about the MARK the emitter needs. Same node, two questions, two follows —
-  which is why `pss_verdict` is factored out and both come from the same lines.
-
-  **STILL SOUND BUT MEASURABLY INCOMPLETE where it IS transparent.** An atomic
-  group IS a unique-match guarantee, so a §2.2 that understood `A_ATOMIC` in
-  `gk_build` would accept all 8,820 patterns in the "quantifier WRAPPING the
-  atomic group" position where transparency accepts 0. Declining is always
-  safe, so that is an opportunity deliberately not taken in [M6.4.2].
-
-  **The rule is REPAIRED, and the obvious version of it is measured WRONG.**
-  "FIRST(body) disjoint from FOLLOW(quantifier), body non-nullable" is the
-  analysis as [ENG-BREP]'s own plan row stated it and it is UNSOUND: 117
-  counterexamples, every one a body like `(a|ab)` whose iterations can end in
-  two places. The body must ALSO admit a unique iteration — (U1)
-  one-unambiguous and (U2) prefix-free on its position (Glushkov) automaton —
-  and the disjointness arm carries a LAZY-ONLY conjunct (a lazy `Q` needs a
-  non-nullable remainder, 316 measured cells) that the R24 panel added after
-  the design lane's own probe structurally could not see the question. Read
-  the file's header before touching the verdict ladder; every conjunct in it
-  is a refutation somebody paid for.
-
-  Two things it inherits that are easy to lose. Every set is computed in the
-  SOUND direction, so anything unmodellable widens to all bytes and DECLINES —
-  declining is always available and always safe. And A_CAT/A_ALT spines are
-  walked ITERATIVELY (D10/DD-10/R1 R-2, and K20 the third time): a
-  20,000-character pattern segfaulted pcrec once already for want of that, and
-  three of this file's walks descend those spines.
-
-  **[M6.2 wave A] the `$`-follow exemption's gate is live AND SCOPE-CORRECT
-  (D47.5 + its 2026-08-18 addendum; D62; assertions_design.md §8).** "Live"
-  turned out to be necessary and NOT sufficient, and this file is where that
-  was found out. The live read was `P.multiline = cx->mods.multiline`, taken
-  once AFTER the parse — i.e. the parser's end-of-pattern option state — while
-  `(?m)` in PCRE2 is SCOPED. Two of the four reachable shapes disagree in the
-  unsound direction: `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)` both end the parse
-  with multiline=false and both contain a genuinely multiline `$`, so both
-  would have possessified a quantifier whose retreat is the only route to the
-  match — measured as lost-match cells, correct answer `(0,1)`, possessified
-  answer NO MATCH. D47.5's own recorded obligation names the leading-`(?m)`
-  shape, the one the old code got right, so discharging it would have left
-  both defects live. The cure: `first_of` reads `a->u.anch.multiline` off the NODE,
-  the parser resolves it at the `$` itself, `ParseMods` is now incomplete
-  outside `src/parse/` so no later pass can repeat the mistake, and `\z`
-  (A_END) takes the same exemption with no gate at all — its satisfying set is
-  the singleton {n}, so the upward-closure argument is strictly sharper than
-  `$`'s and nothing can make it false. The exemption FIRING is checked through
-  the artifact's `<PREFIX>_VM_STRATS` stamp in both directions
-  (tests/assertions/run_assertions_tests.sh); the historical account of the
-  verdict-time read follows.
-
-  Before wave A: the analysis read
-  `cx->mods.multiline` at verdict time rather than carrying a comment about
-  what pcrec does not support yet. `$` in a quantifier's follow is measured
-  safe at 0 diverging cells without `(?m)` and unsafe under it (re-measured
-  2026-08-18: 0/168 vs 12/168 on the greedy population — the 0/720 vs
-  180/720 previously cited here came from a since-changed probe population;
-  qualitative claim unchanged), so the exemption is conditional on a fact
-  that stops being true without anyone revisiting the analysis. Module
-  `assertions` inherits the test obligation — AND the R30 panel found this
-  gate's verdict-time read is SCOPE-BLIND (end-of-pattern state, while (?m)
-  is scoped): the miscompile cells and the parse-time-resolution cure are
-  assertions_design.md §8 / decisions.md D47.5's addendum.
-
-  **[M6.2 wave D] `\G` DECLINES, and it takes `\A`'s arm rather than `\z`'s —
-  a THIRD reason for the same verdict, which is why it has its own row in the
-  STRATS check rather than riding either neighbour's.** The exemption rests on
-  UPWARD CLOSURE, not on the satisfying set being a singleton: `\z`'s singleton
-  is `{n}`, ABOVE every retreat position, and `\G`'s is `{startpos}`, BELOW
-  every one. So `\G` is DOWNWARD-closed exactly like `\A` — every retreat moves
-  TOWARD the one position that satisfies it — and possessifying deletes the
-  retreat that is the only route to the match. Witness, measured:
-  `(x)?a{0,4}\G` on `"aaaa"` answers `(0,0)` shipped and NO MATCH under `\z`'s
-  arm (sabotage S84), which is D47.5's own failure mode one construct over.
-
-  **[M6.2 wave E] `\K` is TRANSPARENT, and it is the one arm in `first_of`
-  that needs no closure argument at all.** Every other zero-width kind here had
-  to be classified by WHICH WAY its satisfying set is closed, because each can
-  FAIL and the whole question is whether a retreat turns a failure into a
-  success. `\K` cannot fail — it is an epsilon in the NFA — so "modelled as
-  absent" is the fact rather than an approximation, and it takes A_EMPTY's arm.
-  The tempting wrong worry runs the other way: possessifying a loop that
-  CONTAINS a `\K` is also safe, because the cut discards retreat frames only
-  after the loop has exited at its chosen count, and a trial iteration that
-  failed has already had its `\K` write rewound by the fail label's trail
-  rewind — so the writes surviving a cut are exactly the winning path's.
-
-  Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
-  checks are needed and what each is blind to); failing-direction controls
-  tests/mech/sabotages/S45-S49.
-
-  **[K93] A CALL TARGET'S VERDICT HOLDS UNDER EVERY CONTEXT ITS BODY RUNS
-  IN** (lane k93fix, 2026-10-07). The `A_CALL` arm used to rest on the
-  premise that a callee's lexical position is where its follow is "the real
-  one"; a call re-runs the group under the CALL SITE's follow, and
-  `(a+)b(?1)a` lost every match. Each group (group 0 = the root, `(?R)`'s
-  target) now carries a JOINED context (`CallCtx`: follow, enclosing-loop
-  firsts, may-end), keyed by GROUP NUMBER so it works before the call graph
-  binds `.body` (the free discharge runs there). Context-only walks record
-  every `A_CALL`'s context and iterate to a fixpoint (a site inside a called
-  group sees a context that depends on that group's own join); a call
-  inside a lookaround, which the walk never enters, joins the TOP context.
-  The `A_CAP` arm (and `pss_root` for the root) walks the body under
-  lexical-join-call-sites. Why one walk suffices: the verdict is a
-  conjunction over contexts, and the follow a nested item sees distributes
-  over the union. Call-free patterns allocate nothing and walk once
-  (byte-identical). Tests: `tests/recursion/k93.rxt`,
-  `tests/possessify/calls.txt`; sabotage S586-S588.
-
-  **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 66) TWO ARMS widen
-  FIRST soundly** (`docs/design/poss_arms.md` rev 2.1; the file header lists
-  every conjunct with its witness). ARM A: an `A_CTX` gate is valued by the
-  characters it can admit next — A0 in `first_of` (nothing known on its left,
-  so only a lookahead-born gate narrows), A1 as a re-ask of row 3 over Q's
-  continuation with each gate valued by Q's LAST polarities (greedy, m >= 1).
-  A1 needs the continuation as a SEQUENCE, so `pss_walk` threads a `PCont`
-  chain beside FOLLOW (a marker at each `A_CAP` end, where K93's join is
-  unioned; an atomic body's own end), summarized once per link (`PSum`, the
-  R-4 fix: per Q only the gate groups are evaluated). The summary valued A0
-  must EQUAL the walk's FOLLOW at every verdict, an internal error otherwise
-  (R-5); under `--emit-ir` it is also checked against the plain fold. ARM B:
-  `A_BREF`'s FIRST is the capture fact's union over refs[] of each group's
-  TEXT first (`text_first`, where a gate is (empty, nullable) — N1), folded
-  by the seam's own caseless relation (`pcrec_enc_span_fold`), memoized per
-  group number with in-progress and `PCREC_MAX_POSS_REF_DEPTH` both widening.
-  The per-walk state is `Fq` (on `Pss`), never a static. `Ctx.poss_arms`
-  (the `<PREFIX>_VM_POSS_ARMS` stamp) says which arm a positive verdict
-  NEEDED: A1 directly, A0/B by a SHADOW walk with that arm off (run only when
-  the arm narrowed something). Deny bits `-fno-poss-ctx-follow` (kept,
-  engine-selecting) / `-fno-poss-bref-first` (masked). Tests:
-  tests/possessify/ (the exhaustive arms possdiff, the oracle cells, the
-  stamp/route-flip section, `ctx_admits_check.c`); sabotage S560-S565,
-  S601-S604.
-
-  It also EXPORTS its unique-iteration predicate (`pcrec_uniq_scratch` /
-  `pcrec_uniq_iteration`, declared in core/internal.h) for revdet.c below, which
-  asks the identical question of the REVERSED body. The export exists so that
-  there is one implementation of a rule carrying three measured refutations,
-  not two that could drift.
-
-- **revdet.c** — [ENG-BREP] the REVERSE-DETERMINISTIC RUNG's analysis
-  (docs/design/engine_m4.md §2.5, docs/design/eng_brep_design.md §3, and the
-  lane's emitted-shape sketch at
-  docs/design/rungselect_impl/rungselect_design.md). Marks every `A_REP` whose
-  consumed run decomposes into iterations UNIQUELY and RECOVERABLY FROM THE
-  RIGHT, so src/gen/emit_vm.c can emit ONE body copy instead of `rmax` of them.
-
-  **The verdict and the material for it are ONE FIELD.** `Ast.u.rep.revbody` holds the
-  body's REVERSED AST and is non-NULL exactly when the rung applies, so the
-  three emitter sites that must agree about the rung (`vm_cost_rep`,
-  `vm_count_slots`, `vm_rep`) read one field rather than each re-deciding — and
-  the site that selects the rung cannot select it without having the thing the
-  rung needs. `Ast.u.rep.possessive`'s precedent, one rung down.
-
-  **The rule is TWO unique-iteration checks and each has a witness.** FORWARD
-  (on the body) is what makes the emitted scan deterministic and licenses the
-  per-iteration cut; its witness is `(aa?)`, which fails (U2). REVERSE (on the
-  reversed body, the identical predicate on the identical construction) is what
-  makes the retreat computable locally; its witness is `(?:ab|b)`, which PASSES
-  forward and fails reversed, because reversed it is `(?:ba|b)` whose two
-  initial positions are both `b`. That second class is exactly the residual
-  engine_m4.md §2.5 predicts the boundary-record rung shrinks to.
-
-  The forward predicate is IMPORTED from possessify.c (`pcrec_uniq_iteration`,
-  with `pcrec_uniq_scratch` for the reusable position workspace) rather than
-  reimplemented. Every conjunct in it is a refutation somebody measured, and a
-  second copy of that rule is the worst place in this tree to keep two sources
-  of truth.
-
-  **`rd_alt_disjoint` checks a property that is already implied**, and that is
-  deliberate. The emitted backward walk has no choice points — at an alternation
-  it reads the next byte and jumps to the one branch that can begin with it —
-  which is a strictly stronger thing to depend on than "the walk lands in the
-  right place". (U1) implies it, but "implied by" is how a dependency quietly
-  survives a change to what it depends on, so the check is re-derived directly
-  on the reversed tree the emitter will walk. `pcrec_revdet_first` is exported
-  so the check and the emitted dispatch read one computation.
-
-  **[M6.2 wave E] `\K` DECLINES, and it is the only decline in this file that
-  is a CORRECTNESS requirement rather than a missed rung.** This rung suppresses
-  the per-iteration capture writes and RECOVERS them afterwards by walking
-  backwards over ITERATION BOUNDARIES (§3.4's derivation). A `\K` position is
-  not on that lattice — it is wherever the winning path crossed it — so a
-  suppressed `\K` write is one nothing ever recovers, and the artifact would
-  report the wrong start silently. `rd_shape` declines the body, which makes
-  `rd_reverse` and `rd_alt_disjoint` unreachable for it; `rd_reverse`'s arm
-  ctx_fails LOUDLY rather than copying the node, because reversal is NOT
-  identity for `\K` — the seven kinds it sits beside survive reversal because
-  each is a PREDICATE, and `\K` is not one.
-
-  Same two inheritances as possessify.c and for the same reasons. Every decision
-  is in the SOUND direction, so anything unmodellable DECLINES and a declined
-  quantifier matches exactly what it matches today — which is also what makes
-  `-fno-revdet` byte-identity-safe. And A_CAT/A_ALT spines are walked
-  ITERATIVELY (D10/DD-10/R1 R-2, K20): the REVERSAL is the harder half of that
-  obligation, because reversing a spine means REBUILDING one, and a quantifier
-  body is allowed to be a 20,000-element concatenation.
-
-  Tests: tests/rungselect/ (its own CLAUDE.md explains why three separate checks
-  are needed); failing-direction controls tests/mech/sabotages/S50-S52.
-
-- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half, and
-  since [M6.6.2] wave A the WIDTH analysis in both directions
-
-  **[PATFACTS] 3.5 (2026-09-27, lane pf35): `pcrec_nullable` LIVES HERE NOW**
-  — the ONE node-nullability function (patfacts design §4.3, R4), moved
-  verbatim from `src/gen/emit_vm.c`'s `static vm_nullable`, `A_CALL` arm
-  (`!u.call.nonnullable`) kept. A node-grain pure function, no memo, beside
-  `pcrec_minw` because `minw == 0` asks the same question through widths.
-  The two disagreed on `A_CALL` until K69 (lane k69fix) made `nonnullable`
-  the least fixpoint, published by `callgraph.c` before the E1 seal; they
-  agree on every kind now, and the E1 fact (`src/facts/widths.c`) composes
-  `pcrec_nullable(root)` — step 3.5 closed, one owner, one definition.
-
-  **[PATFACTS] 3.6 (R3, 2026-09-28, lane pf36): `pcrec_sat_add`/
-  `pcrec_sat_mul` LIVE HERE NOW, TAKING THE CEILING AS A PARAMETER** —
-  `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` and `src/opt/callgraph.c`'s
-  `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (with its own retired `CG_EXP_INF`
-  macro, the same value as `PCREC_MINW_MAX` under a different name) were the
-  same four-line saturating-arithmetic algorithm typed twice — R3's finding.
-  `callgraph.c` now calls this pair directly with `PCREC_MINW_MAX` as the
-  ceiling. `src/gen/emit_vm.c`'s `pcrec_vm_fadd`/`pcrec_vm_fmul` are a THIRD
-  copy (lens 1's X3, the 2026-09-17 code review) left OUT of this step —
-  design.md's row scopes 3.6 to mrl.c/callgraph.c, and emit_vm.c sits in a
-  higher layer (gen) than this pair's home (opt); `tests/core/
-  sat_arith_check.c`'s cross-family check now compares this shared
-  primitive against `pcrec_vm_fadd`/`pcrec_vm_fmul` (two independent
-  implementations, where three agreed before).
-
-  **[M5.0] STAGE 2 RE-AIMED THE MAX-WIDTH CHAIN INTO CHARACTERS, so this file
-  now holds THREE functions in TWO units.** `pcrec_minw` is unchanged (BYTES,
-  the MRL prune, EXACT per byte-class on the LOWERED tree). `pcrec_maxw`
-  RETIRED — a grep found its only transitive consumer was the lookbehind
-  width rule, which always wanted the unit 10.46 measures lookbehind length in
-  (CHARACTERS) — and became `pcrec_cwmax`, its `A_CLASS` arm answering exactly
-  1 in every encoding (a class is one character by definition); `pcrec_cwmin`
-  is its new partner. `u.call.maxw`/`maxw_known` are `cwmax`/`cwmax_known`, and
-  `callgraph.c` runs a third fixpoint (`cwmin`) beside them. Under `byte` the
-  two units coincide, so every published value and every lookbehind verdict is
-  what the byte pair gave — the identity gate is the proof. The paragraphs
-  below are the wave-A/DD-14.LB history read in BYTES; the mechanism is
-  identical one unit over, and "the one thing a utf8 backend must revisit"
-  below IS this change. `tests/mrl/cwmax_check.c` is the re-aimed census.
-
-  **[M6.6.2 wave A] `pcrec_maxw` JOINED `pcrec_minw` IN THIS FILE, AND ITS
-  SOUND DIRECTION IS THE OPPOSITE ONE.** Everything below about
-  under-estimating being safe describes `pcrec_minw` alone. `pcrec_maxw` — the
-  greatest number of subject bytes any match of a node can consume — may
-  OVER-estimate for free, and an UNDER-estimate is its silent miscompile,
-  because its consumer is the lookaround module's fixed-width rule
-  (`lookaround_design.md` §2.5: a lookbehind branch is admitted only when
-  `minw == maxw`, and the artifact then back-steps exactly that many bytes).
-  Two functions, one arithmetic, opposite obligations — which is why each
-  carries its own header saying which way it rounds. `PCREC_W_UNBOUNDED`
-  (core/internal.h) is where rounding up runs out, and it is deliberately the
-  SAME VALUE as `PCREC_MINW_MAX` so that unbounded ABSORBS through
-  `pcrec_sat_add` and, at `pcrec_sat_mul(UNBOUNDED, 0, MRL_MINW_MAX)`, correctly collapses to 0
-  for an unbounded repeat of a zero-width body.
-
-  **[DD-14 wave B+C] `pcrec_minw`'s `A_CALL` ARM READS A VALUE OFF THE NODE**
-  (`u.call.minw`), filled by `src/opt/callgraph.c`'s Kleene fixpoint from
-  INFINITY DOWNWARD over the call graph. It is on the NODE rather than in a
-  memo because this function's signature has no `Ctx` to reach one through and
-  the only alternative is a file-static, i.e. a mutable global [TS-3] forbids.
-  `minw == PCREC_MINW_MAX` means THE CALLEE MATCHES NOTHING, which is a LEGAL
-  compile (`^(a(?1)b)$` compiles on 10.46 and matches nothing at any length) —
-  read through this arm it makes the enclosing pattern's `minw` infinite, and
-  the MRL prune reads that as "no position can match", so pcrec answers NOMATCH
-  in constant time where 10.46 spends its own guard finding out. The pair that
-  pins both directions is `tests/recursion/mrl.rxt`: infinity must be
-  REACHABLE and must not be reached by an APPROXIMATION.
-
-  **[DD-14.LB] `pcrec_maxw`'s ARM NOW READS A MEMO TOO, AND THE ASYMMETRY IS
-  IN HOW IT READS IT.** The arm was `PCREC_W_UNBOUNDED` unconditionally through
-  wave B+C — EXACT for a recursive callee (design §3.4(d) measured libpcre2
-  refusing exactly that inside a lookbehind, error 125) and a sound
-  OVER-estimate for every other, which is this function's safe direction. It
-  now answers `u.call.maxw` when `u.call.maxw_known`, filled by a SECOND Kleene
-  fixpoint in `callgraph.c`, `minw`'s mirror descending from
-  `PCREC_W_UNBOUNDED`.
-
-  **THE SECOND FIELD IS THE WHOLE ASYMMETRY.** `minw`'s memo needs no validity
-  flag because the arena's zero (0) is its SOUND direction — an under-estimate
-  prunes less and can never delete a live position — which is what lets
-  `possessify.c` call `pcrec_minw` before the graph exists. `maxw`'s safe
-  direction is the opposite one, so a bare `long long maxw` whose arena zero is
-  0 would be a silent MISCOMPILE (an under-estimated maximum lets a
-  variable-width branch through the lookbehind rule as fixed, and on a NEGATIVE
-  lookbehind that is a false match). `maxw_known` is the arena-zero-safe half,
-  exactly as `u.call.nonnullable`'s inverted polarity is: false means "answer
-  `PCREC_W_UNBOUNDED`", which is what the arm answered before the memo existed.
-
-  **AND WHAT MOVED WAS THE CONSUMER, NOT THE WRITER.** Wave B+C's objection to
-  tightening this arm was a TIMING one and it was correct: the consumer, module
-  `lookaround`'s fixed-width rule, runs in the PARSE HOOK — where it must, to
-  refuse with a pattern offset — and the graph does not exist until every call
-  is resolved. [DD-14.LB] answered it by re-asking the rule after the graph
-  exists (`postresolve.c` below) rather than by trying to make the hook see
-  through a call. The two cells the objection was written about are no longer
-  parked: one compiles, and the other turned out to be a §2.5 capability limit
-  the timing gap was masking (`tests/recursion/inlookaround.rxt`).
-
-  **`pcrec_maxw`'s ONLY CALLER IS module `lookaround`'s width rule**, at BOTH
-  of its timings now, so its own instrument is still `tests/mrl/maxw_check.c` —
-  see that directory's CLAUDE.md for why the three existing instruments
-  structurally cannot see it. Sabotage: S171 (the `maxw` fixpoint stopped after
-  one round; DETECTED, 2fail/35pass, on the two-hop chain cell alone).
-
-  **THE ONE THING A UTF-8 BACKEND MUST REVISIT.** `A_CLASS` answers 1 byte in
-  both functions. For `minw` that is a deliberate LOOSE under-estimate and
-  stays sound under any encoding; for `maxw` it is EXACT only because
-  `PCREC_ENC_UTF8` has no backend and `src/core/compile.c:196` refuses it by
-  name. When that refusal goes, `maxw`'s arm must become the encoding's
-  maximum code-unit length or the fixed-width rule silently accepts
-  variable-width branches. The two arms look identical and are not.
-
-  **[M6.5.2] `A_BREF` CONTRIBUTES 0, and it is EXACT rather than
-  conservative** — this file said so before the kind existed ("Lookaround,
-  backreferences and `(*ATOMIC)` have no producers today; when they gain one,
-  each contributes 0 here until someone measures otherwise"), and the measured
-  answer is that 0 is right for a reason the other zero-width members do not
-  share. They consume nothing EVER; a backreference consumes `ref_end -
-  ref_start` bytes, a match-time quantity with no compile-time lower bound
-  above zero — a group can publish an EMPTY capture, so 0 is genuinely
-  attainable. Any positive value would be an OVER-estimate, this file's unsound
-  direction.
-
-  MEASURED on the emitted artifact rather than argued: `(a)\1{3}c` emits
-  `RX_PRUNE_TOO_SHORT(scan_position, 1)` before the reference chain — the `c`
-  alone, with all three references contributing nothing to the follow-min. That
-  is the under-estimate, and it prunes less rather than deleting a live
-  position. **The [M6.4] failure mode has no analogue here**: what crossed a
-  cut there was a follow-BOUND carried into a loop past a construct that
-  changes where the loop can end, and a backreference brackets nothing and
-  bounds nothing — it contributes a term, and the term is the safe one.
-  `EngineFit.prefilter` is false for these patterns, so `Vm.mrl_win` is false
-  too and the ceiling stamps `subject-end` or `none` rather than a
-  prefilter window.
-  (`pcrec_minw`; docs/design/k23_impl/k23_design.md §4.3, adopted by D51
-  ruling 1 as K23's fix of record). The least number of subject bytes any
-  match of a node can consume, over the eight AST kinds. That is the whole
-  file: where the numbers are USED, and the lattice rule that makes a clamp
-  sound at stride > 1, live at the emission sites in src/gen/emit_vm.c, which
-  threads `minw` down its own walk as a FOLLOW-MIN accumulator rather than
-  computing it per program point.
-
-  It is NOT a transformation and mutates nothing, which makes it the odd file
-  in this directory — it sits here rather than in the emitter because an error
-  in it is SILENT in the same way possessify.c's and revdet.c's are, and for
-  the same reason deserves its own file, its own tests and its own stated
-  direction of safety. Under-estimating always prunes less; OVER-estimating
-  deletes real matches with no compile error, no warning and no failing test
-  unless the corpus happens to contain the shape.
-
-  **The switch is EXHAUSTIVE with no live default arm, and that is a design
-  obligation rather than a style preference** (§4.2's failure mode 1, sharpened
-  by R26 V7). A node kind added after this file was written must be a COMPILE
-  ERROR here — under `-Wswitch`, which `make strict` promotes — rather than a
-  silent inheritance of whatever a default returned. The unreachable trailing
-  `return 0` is the safe value, and says so.
-
-  Two things it walks ITERATIVELY for src/ir/nfa.c's R-2 reason (D10/DD-10,
-  K20): a left-leaning `A_CAT` spine and an `A_CAP` chain are as long as the
-  PATTERN, not as deep as its nesting. What stays recursive descends one paren
-  level per frame, i.e. Θ(d) — which is what K18 actually teaches, and is the
-  correction to this design note's own refuted prediction 2 (`pss_walk`
-  recurses on pattern structure today and compiles a 249-paren pattern fine;
-  `clo_visit` was a problem because it recursed Θ(d²), not because it
-  recursed).
-
-  Arithmetic saturates at `PCREC_MINW_MAX` (core/internal.h, shared with the
-  emitter's accumulator so a long concatenation of saturated subtrees cannot
-  overflow past the ceiling that exists to prevent it). A wrapped product is
-  not merely wrong, it is wrong in the UNSOUND direction whenever it lands on
-  a small positive value; saturation is an under-estimate, which is safe
-  twice over.
-
-  Tests: tests/mrl/ (its own CLAUDE.md; the `.rxt` corpus there is
-  D27-BLINDED and found a real gap in the first implementation).
-
-- **scanedge.c** — [OPT-5] THE DFA SCAN EDGE: a counted class run stops
-  being *m* table steps. Runs on every machine immediately after
-  `pcrec_minimize_dfa` (it needs the canonical state set, and nothing after
-  it rebuilds a `DState`), and it is the one pass in this directory that
-  DELETES states rather than annotating or rewriting nodes.
-
-  **THE MEASURED NEED** is `docs/dev/opt5_step0_profile.md`: the DFA's
-  per-byte step is `state = next_state[state + class]`, whose load ADDRESS is
-  the value the previous iteration's load RETURNED — pointer-chasing, 3.62
-  ns/byte on an in-class letter run against 0.60 for pcrec's OWN VM on the
-  identical language, flat across a 64x count range. The VM wins because its
-  loop-carried register is a CURSOR. This pass gives the DFA that loop where
-  a region of its state graph is doing nothing but counting; §7 of the
-  profile is explicit that address-independence is the first-order fix and a
-  SIMD run-extension stacks on top ([OPT-SIMD]), never instead.
-
-  **THE CRITERION IS A PROPERTY OF THE TRANSITION TABLE, not of `{m,n}`.**
-  Nothing here reads the AST or knows what construct produced the states: a
-  SCAN-SHAPED state advances on one class and leaves by the SAME door on
-  every other, and a chain is a maximal run of them sharing (class, exit,
-  accept bit). `[a-z]{0,n}` is the simplest instance rather than a special
-  case of one; `[a-z]*`/`[a-z]+` are the unbounded one-state form;
-  `[a-z]{3,10}` is TWO chains because the exit target changes when the
-  machine starts accepting; `[0-9]{4}-[0-9]{2}` has one per run. The
-  two-class control `([a-z]|[0-9]X){0,8}` is left exactly as it is.
-
-  **EIGHT PRECONDITIONS, EVERY ONE A DECLINE, and two of them were
-  MEASURED rather than reasoned.** The file's header carries the first five
-  and (6)-(8) sit at their own sites; the three worth knowing before editing
-  anything are (8) ([OPT-EDGE] STEP 1, NARROWED at STEP 1.1) a chain head may
-  not be a state any SEED family (`s1u`/`s1g`) names **on a machine whose
-  prefilter RESEEDS** — the offset-set pair, whose skip writes the state
-  variable MID-BODY where the emitted loop's one stop test cannot see it; the
-  answer comes from the emitter's own axis-B selection
-  (`pcrec_dfa_scan_state_written`) rather than from a second derivation here,
-  and `pcrec_scanedge_dfa` takes it as a PARAMETER — see the [OPT-EDGE] block
-  below; (6) a chain head
-  may not be any state's `eolvar`/`endvar` target — the emitted loop steps from the
-  VIEW-SELECTED state, not from the state variable, so a view pointing at a
-  head reaches the killed table cell with the edge never having run
-  (`a{0,4}$`, 87 cells of tests/possessify/possessify.rxt, the right match
-  END and the wrong START) — and (7) when one chain's fall-through is
-  another's head the source must have the smaller state index, because the
-  emitted blocks are plain `if`s in state order.
-
-  **THE DELETION IS WHAT BUYS THE SIZE AND IT RESTS ON ONE CLAIM about the
-  EMITTED loop**: when the ordinary step runs, the state variable never holds
-  a chain head together with a byte of that head's scan class. The header
-  spells out the things that make it true (where the edge sits — since
-  [OPT-EDGE] STEP 1 that is a whole PATH rather than a position; that it is
-  its own `if`; that a head is excluded from `pick_skip_states`; that no seed
-  can name one; and that the scan consumes what the bound allows).
-  MEASURED: `[a-z]{0,16384}`'s forward machine goes from 16,385 states to 2,
-  its artifact from 725,729 to 17,776 source bytes and 212,800 to 16,192
-  `.so` bytes.
-
-  `-fno-scan-edge` (`PCREC_NO_SCAN_EDGE`) gates the pass ITSELF, which is
-  where the soundness half has to live: an emitter filter cannot put back
-  states this pass removed. `src/gen/emit_dfa.c`'s axis H carries the same
-  bit so `--list-axes` can name the flag that addresses the axis; one bit,
-  two readers. Tests: the answer corpora it reaches (counterk, classes,
-  bounded_repeats, possessify, k18_*), `docs/spec/tuning.md` §2.18;
-  sabotage rows S213 (the criterion's exit-uniformity clause) and S214 (the
-  emitted loop's count bound), with DISJOINT detectors.
-
-  **[OPT-VEDGE] (2026-10-03, lane vedge) RELAXES (3) AND (6) UNDER ITS OWN
-  DENY BIT, `-fno-view-edge` (`PCREC_NO_VIEW_EDGE`, bit 42).** (3): on a
-  machine whose walk ENDS at `n` — the new `end_is_exit` parameter, true for
-  the forward and anchored machines and false for the reverse one, which
-  starts at `n` and steps from its view — a member may carry an END view
-  and no EOL view; `end_acc_of` joins chain compatibility (`same_shape`)
-  beside the plain bit, and a member whose plain bit is set over a clear END
-  bit is refused. (6): a head that is a view target is TRIMMED (the chain
-  starts at its class successor, if that state's only way in is the head)
-  instead of refusing the chain. Customer: `(?:[a-z]{0,n})\z`, both passes
-  (docs/dev/lanes/vedge_report.md). Tests: tests/assertions/view_edge.rxt,
-  tests/codegen/run_scan_edge_census.sh section (6); sabotage S440 (the
-  reverse machine handed `end_is_exit = true`).
-
-  **[OPT-EDGE] STEP 1 (2026-09-03) MADE THIS PASS RENUMBER, and the
-  renumbering is folded into the compaction it already did.** The emitted
-  loop used to pay ONE COMPARE PER EDGE on its generic path — `if (state ==
-  HEAD && ...)`, evaluated at every state on every iteration, so the entry
-  cost was O(edges) per byte and the bench measured iso-ts (8 edges in
-  `rx_search`) at x1.089 against a `-fno-scan-edge` arm. The fix is to make
-  the heads share the ONE sentinel test the loop already had: the surviving
-  states are permuted so the HEADS ARE THE MACHINE'S TOP ROWS, in their
-  existing relative order, and `src/gen/emit_dfa.c` then tests "dead or a
-  head" with one unsigned compare. Three things about it:
-
-  - **The heads go to the TOP, not below zero, so the table base is not
-    biased at all.** The dead value is already above every live cell under
-    both representations (65535 by `PREMUL_MAX_ENTRIES`; `-1` read as
-    unsigned), and a head must remain a VALID TABLE ROW because the ordinary
-    step still reads its row for every class but its own.
-  - **The permutation is NOT MONOTONE**, unlike minimize.c's compaction, so
-    it cannot write `d->st` in place — a head moving UP would clobber a state
-    not yet visited. It goes through a scratch array.
-  - **Precondition (7) survives because the heads keep their RELATIVE
-    order**: (7) compares two HEADS, and a permutation that preserves their
-    order preserves the comparison.
-
-  The emitter CHECKS the layout rather than assuming it (`dfa_form_derive`
-  fails loudly if a head is not at `n - nheads + k`), which is the one form
-  of check here that cannot share a source with what it checks.
-
-  **[OPT-EDGE] STEP 1.1 (2026-09-04) NARROWED PRECONDITION (8), AND THE
-  NARROWING IS TWO CHANGES BECAUSE (8) TURNED OUT TO GUARD TWO HAZARDS.**
-  Only one was ever named. The state variable is written in three places, and
-  STEP 1 refused both non-step writers with one rule:
-
-  - the offset-set prefilter's RESEED writes MID-BODY, after the loop's stop
-    test has been passed, where nothing can see it. THAT is what (8) is for,
-    and it is now conditioned on the machine's actual prefilter form;
-  - the START SEED (`seed_emit_seeded`) writes `s1u[upc(s[startpos - 1])]`
-    ONCE PER SEARCH, before the loop. `emit_scan_loop`'s entry dispatch asked
-    `state == cell_of(s0)`, which was exact only while (8) refused every
-    other seed target as a head — so the entry's correctness was a fact about
-    THIS PASS, recorded nowhere but in a comment in the emitter. The entry now
-    asks the loop's own question (`is_stop && !is_dead`), and the obligation
-    is discharged where it belongs.
-
-  **MEASURED, and it corrects the STEP 1 census.** All ELEVEN artifacts (8)
-  cost an edge get it back. Seven regain it on the FORWARD machine and four on
-  the REVERSE one — including `\Bfoo\B` and `\bfoo\B`, which the STEP 1
-  census called hazardous from their artifact-level `RX_DFA_PREFILTER` stamp:
-  the edge they lost was never on the machine that carries the prefilter, and
-  the reverse loop has none at all. The narrowed (8) therefore has an EMPTY
-  population on today's corpus, and is kept because the mechanism is real, not
-  because a witness exists. `tests/codegen/run_scan_edge_census.sh` is the
-  check and says in its own header what it cannot see.
-
-  **[OPT-5] STEP 2 (2026-09-02) EXPORTED PRECONDITIONS (2) AND (3) AS
-  `pcrec_state_view_invariant`**, and the file's own apology for spelling
-  them locally is thereby discharged. `member_ok` used to hold the three-view
-  comparison inline with a note saying `state_acc_varies`' definition "lives
-  in the emitter, which is the wrong direction for this file to depend in".
-  STEP 2's start-pinned search asks the SAME question of the forward
-  machine's start state — does this state's accept depend on WHERE it is or
-  on WHAT COMES NEXT — so the body moved into an exported predicate that
-  `src/gen/emit_dfa.c`'s axis-J selection calls, and `member_ok` is now one
-  line that calls it. **One derivation, two readers**, which is what memory
-  `pcrec-general-mechanisms-not-special-cases` requires of a general fact two
-  passes read; a second copy in the emitter is the parallel mechanism it
-  forbids. `state_acc_varies` stays in the emitter and stays about a
-  different question (skip eligibility, which ignores the position views
-  entirely). The predicate is deliberately STRICTER than STEP 2's soundness
-  needs — it refuses a state carrying a view variant at all, where the
-  elision needs only the variant's accept BIT to agree — and the relaxation
-  has its own trigger (`docs/design/opt5_step2_twopass.md` §7 item 14).
-
-- **dfamemo.c** — [OPT-RETRY-REUSE] (lane k67, 2026-09-29) THE MACHINE
-  MEMO: `pcrec_build_min_dfa` is `pcrec_build_dfa` + `pcrec_minimize_dfa`, and
-  every DFA build site in `src/core/compile.c` goes through it. The driver's
-  retry ladders re-run the whole pipeline per attempt and most rungs change
-  nothing a machine is built from (the drop ladder's anchored machine and
-  premultiplied table, the VM's unroll K), so a machine is memoized ACROSS
-  ATTEMPTS keyed by everything construction and minimization read — the
-  NFA's states, the six build parameters, four `pcrec_options` fields and
-  the PRIOR `subset_elems` (a running budget, so an identical machine reached
-  with more already charged is a different question). A hit restores a deep
-  copy in a fresh build's ownership shape and charges the same
-  `subset_elems`; only clean builds are stored (an overflowed optional
-  machine also wrote `Ctx`, which a restore cannot replay). No per-rung
-  clause: a rung that changes a construction input misses by content. The
-  memo is `compile_driver`'s local, freed at its every exit; its storage is
-  its own arena. K67 (`\p{L}+ -e utf8`) 0.99 s -> 0.37 s on top of
-  [OPT-CLOSURE-CTX]; emitted bytes identical by `scripts/cls_identity.py` and
-  `scripts/emit_sweep.py`. **A new input read in `src/ir/dfa.c` or here must
-  join the key** — `pcrec_build_dfa`'s header says so beside the reads.
-
-- **minimize.c** — DFA minimization by Moore-style partition refinement with
-  signature hashing. The EOL-view edge (`eolvar`) participates as an extra
-  alphabet symbol so `$`-machines minimize correctly, and since [M6.2] wave A
-  the END-view edge (`endvar`, `\z`'s) as a second one. **The two are not
-  symmetric**: `eolvar == -1` means "self" while `endvar == -1` means "same as
-  the EOL view", so both edges are RESOLVED through that chain before entering
-  a signature and re-canonicalized against the resolved target on rebuild.
-  **[M6.2 wave B]**: the INITIAL PARTITION splits on BOTH accept bits
-  (`accept*2 + waccept`), because a state has two independent accept outputs
-  once `\b` exists — the bit for "the next byte is a word character" and the
-  bit for "it is not" — and merging states that agree on one and differ on the
-  other would answer a `\b` with the wrong bit at every position of the right
-  kind. The TRANSITION axis needed nothing added, which is the payoff of
-  baking the word view into `tr[]` rather than interning it (src/ir/CLAUDE.md).
-  `Dfa.s1w` remaps alongside `s0`/`s1`; forgetting it would leave mechanism
-  4's seed pointing into the PRE-merge numbering — a wrong start state rather
-  than a missing one, on every pattern that minimizes, which is most of them.
-  **[M6.2 wave D]** `Dfa.s1g[]` — `\G`'s own start family — remaps in a SECOND
-  loop for the identical reason. The two loops are written out rather than
-  merged over a pointer array because they are independent arrays each holding
-  its own pre-merge id, so each is translated exactly once even on a `\G`-free
-  machine where every `s1g[u]` happens to equal the `s1u[u]` beside it.
-  Byte-identity survives because the key is handed out in first-occurrence
-  order and only two of its four values occur without a word context.
-  Byte-identity on `\z`-free patterns holds by construction rather than by a
-  conditional — with every `endvar` at -1 the appended signature column is a
-  duplicate of the one before it, and a duplicated column cannot change a
-  partition. Behavior-preserving:
-  priority/leftmost-first semantics are already baked into the transition
-  structure before this runs. Shrinks emitted tables (code size + cache).
-  **[M4.7b/K7]:** its five local tables are the ONLY allocations on the compile
-  path the Job does not own, so this is the one file where failing cleanly
-  means freeing by hand before `pcrec_ctx_nomem`; the header note claiming "no
-  pcrec_ctx_fail paths" is updated accordingly. **K25 is filed against this pass**,
-  not against K7's accounting: Moore refinement needs O(n) rounds on an
-  n-state chain, so `a{0,25000}` spends a measured 15.3 s here against 0.03 s
-  for parse, NFA build and both subset constructions combined. Bounded memory,
-  terminates, behaviour-preserving — a cost, not a failure — but it is what
-  currently sets tests/resource/'s CPU budget.
-
-- **startanch.c** — MOVED to `src/facts/startanch.c` at [PATFACTS] step 3.0
-  (D126): the start anchor is a pattern FACT, derived behind the record's
-  accessor. Its entry lives in `src/facts/CLAUDE.md` now.
-
-- **endwin.c** — MOVED to `src/facts/endwin.c` at [PATFACTS] step 3.0 (D126),
-  where the encoding DESCRIPTOR became a declared parameter (carve-out (d)).
-  Its entry lives in `src/facts/CLAUDE.md` now.
-
-- **reqbyte.c** — **DELETED at [FINDINGS] B1 = [PATFACTS] step 3.1 (D126).
-  Step 3.0 moved the WALK to `src/facts/req.c`; B1 moved the three PICKS
-  (`rb_pick`, `rn_scan_index`, `rn_window_start`) beside the rate primitives
-  in `src/core/findings.c` (as `pcrec_find_set_pick`,
-  `pcrec_find_run_scan_index`, `pcrec_find_run_window_start`, each "build the
-  candidate order, ask one primitive") and the two derived-fact compositions
-  (`pcrec_req_window`/`pcrec_req_pick`) into `src/facts/req.c` (design
-  §4.2.2 carve-out (b)). The history below is kept as written; its
-  `bytekey`/`pcrec_byte_freq_ppm` are now the byte-rate accessor and the
-  PICK/MASS primitives' NONE answers.** [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
-  BYTE. `pcrec_req_byte` answered *which byte does every match of this pattern
-  contain* — PCRE2's `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT`, which pcrec
-  computed nowhere and which is the largest single weighted gap
-  `capability@0.1` measured (`cycle1_analysis.md` M1: five throughput rows at
-  0.93-9.74 ns/byte against a 0.017 floor three other engines reach).
-
-  **IT EXTENDS THE PREFILTER PRIMITIVE.** The DFA scan's
-  `RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same window,
-  keyed on a CANDIDATE START; this is the same instrument keyed on a
-  NECESSARY byte and hoisted one level out, which is what lets it serve the
-  VM route — where the hybrid prefilter is declined outright for a
-  backreference or a linked call, and where three of the five target rows
-  live.
-
-  **THE ANALYSIS PRODUCES A SET AND THE EMITTER PICKS ONE MEMBER**, because
-  `A_ALT` INTERSECTS: a one-byte-per-node analysis would give up at every
-  alternation. "Rightmost" is carried alongside the set rather than recovered
-  from it, since a set has no order.
-
-  **[OPT-FREQPICK]** (`[OPTLOOP.2]` batch 2, 2026-09-22,
-  `docs/design/reqbyte_freq_pick.md`): WHICH member is no longer PCRE2's
-  choice. It is the ARGMIN of `pcrec_byte_freq_ppm` — the static
-  byte-frequency prior `prefix_k.c` already ships for `[OPT-OFSK]`, a second
-  CALL and not a second table — because every member is a byte every match
-  must contain, so the `memchr` is sound for any of them and the one that pays
-  is the one a subject is least likely to hold. PCRE2's rightmost rule
-  survives as the TIEBREAK, which preserves the property it was chosen for: a
-  later multi-byte form is a WIDENING of this mechanism, and `req_run` below
-  IS that widening. Measured: 13.60% of the corpus moves its emitted byte,
-  and no new axis bit — which member is tested is a VALUE under
-  `-fno-req-byte`.
-
-  **THE PRIOR IS READ ONLY UNDER `byte`**, and the reason is not caution: a
-  byte-frequency table is a fact about a corpus UNDER an encoding, and the
-  shipped one is keyed to `byte` by its contents — its whole 0x80-0xFF half is
-  the 2 ppm floor, so under `-e utf8` it calls the bytes a Latin corpus uses
-  MOST the rarest there are and an argmin over it would take a shared UTF-8
-  lead byte. Elsewhere the pick falls back to the rightmost member, which is
-  byte for byte the pre-[OPT-FREQPICK] answer, so the fallback can never
-  regress anything and the `-e utf8` identity gates are a free control.
-
-  **[OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN** (same batch,
-  `docs/design/reqpos_2b.md`): the same fact at WORD grain, produced by a
-  SECOND ACCUMULATOR on this same walk rather than by a second pass. Each
-  subtree carries the longest guaranteed-contiguous literal run it contains
-  plus its own guaranteed head and tail runs, so a concatenation can JOIN the
-  left factor's suffix to the right factor's prefix — which is what finds a run
-  neither factor carries alone. `Job.req_byte` becomes the run's own scan
-  member when a run ships, chosen at this file's single return so the stamp and
-  the one emitted `memchr` cannot disagree.
-
-  Three declines are its own, each a missed opportunity and never an unsound
-  claim, and the SECOND is the one where the opposite deletes a match: a
-  multi-member class contributes nothing and breaks contiguity around it (every
-  caselessly folded literal); a MIN-0 REPEAT breaks contiguity, because a
-  C-comment pattern's two delimiters abut only in the match where the repeat
-  takes no iterations; and an alternation keeps only its branches' longest
-  common prefix and common suffix, so nothing is claimed across a
-  non-common interior and nothing is ever joined across a repeat's iterations.
-  A run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to the
-  lowest-prior window containing the scan member, never split in two.
-
-  **[OPT-REQRUN-ENC] (2026-09-26, abi 37 -> 38): `rn_scan_index`'s
-  `!bytekey` FALLBACK IS RIGHTMOST, NOT LEFTMOST.** The scan member under
-  `byte` is the argmin of `pcrec_byte_freq_ppm` as above; under any encoding
-  the table is not keyed to (today, `-e utf8` alone) the fallback used to be
-  the run's leftmost member and is now its RIGHTMOST — `rb_pick`'s own
-  `!bytekey` fallback, one mechanism at two call sites rather than a second
-  byte-range rule. The D77 census
-  (`docs/dev/optloop/reqrunenc_census.md`) re-measured the OLD fallback
-  against pcrec-bench's O-60 finding: a `-e utf8` run is complete lowered
-  UTF-8 code-unit sequences, so its LEFTMOST byte is a UTF-8 LEAD BYTE
-  whenever the run opens mid-character — shared by every character in that
-  script block, so the emitted `memchr` stopped on nearly every byte of a
-  non-Latin subject instead of the rare one the literal needs. A run's
-  RIGHTMOST byte is a lead byte only if the run itself is truncated
-  mid-character (an alternation's common suffix stopping between a lead
-  byte and its continuation), measured in ZERO of 912 real `-e utf8` runs
-  (bench+corpus); a byte-range-aware "skip lead bytes" candidate was
-  byte-IDENTICAL to the rightmost one on that whole population, so it is
-  not built (D77). `rn_window_start`'s own `!bytekey` fallback (leftmost of
-  the admissible truncation-window range) is UNCHANGED, but for a member at
-  the run's own last index the admissible range collapses to one candidate
-  — the run's own last `PCREC_MAX_REQ_RUN_EMIT` bytes — so "leftmost of the
-  range" and "the run's own tail" coincide rather than compete. No new
-  stamp, no new declaration, no `rx_info` layout move: the bump moves the
-  emitted `memchr`/`memcmp` target byte and `<PREFIX>_REQ_RUN`'s `@offset`
-  VALUE on movers (236/1,167 bench, 763/10,818 corpus artifact-configs
-  under `-e utf8`); `byte`-encoding artifacts are untouched by construction.
-
-  **TWO THINGS DIFFER FROM PCRE2's OWN FACT, both deliberately.** The whole
-  window counts, not "other than at its start" — PCRE2 excludes the first
-  unit because its consumer is a per-attempt check, and this one runs once
-  per call over `[search_from, subject_length)` where every byte of every
-  match lies. And a LOOKAROUND's body is not descended into, because a
-  lookbehind's bytes sit BEFORE the match's start and can be outside that
-  window entirely: a correctness decline, not a missed opportunity.
-
-  **THE EMPTY SET IS THE SAFE ANSWER** and disables the check — which is why
-  the exhaustive switch matters more here than the default would cost: a
-  default arm inheriting "empty" would be SOUND, so a new node kind that
-  really did carry a necessary byte would silently never contribute one.
-
-  Tests: `tests/codegen/run_prechecks.sh` §3 (both stamps held to the emitted
-  `memchr`'s own argument AND, separately, to its SENSE; the caseless-fold
-  decline; the NULL-subject obligation in both emitted shapes; both engines,
-  with the prefilter-declined VM witness named; population floors for the byte
-  and for the run), §3.6 (the run's multi-byte `-e utf8` shape, including the
-  rightmost-fallback witnesses `é`/`a\x{1F600}b`/`é@`), §3.7 (the pick rule's
-  own both-directions witness set, with every expected byte a hand-derived
-  LITERAL and the encoding decline asserted rather than trusted), §4 (the
-  run's emitted scan loop, its window guard's two forms with the positive
-  control an absence assertion needs, the truncation window computed by hand
-  from the prior, the `-fno-req-run` fallback's byte identity, both engines,
-  the declines one witness each, and a population floor), and §4.9
-  ([OPT-REQRUN-ENC]'s own acceptance: `é@` stamps the byte `'@'` and not the
-  shared UTF-8 lead byte, `Москва`'s picked byte is asserted OUT OF the
-  0xC2-0xF4 lead-byte range by a range test rather than a hand-picked
-  literal, and the `byte`-encoding control still prefers the rare byte over
-  the common one); failing-direction controls
-  `tests/mech/sabotages/S265` (the byte check's sense), `S266` (the pick's
-  argmin inverted — structural detector only, since every member is sound),
-  `S267` (the run compare's sense), `S268` (an alternation's head claimed
-  from one branch, the answer-detectable form of "a run longer than the
-  analysis proved") and `S294` ([OPT-REQRUN-ENC]'s own row: `rn_scan_index`'s
-  `!bytekey` return reverted to `0` — structural detector only, since every
-  run member is equally sound and the plant costs only which byte the
-  `-e utf8` `memchr`/`memcmp` targets).
-
-## Conventions
-
-A TRANSFORMATION pass takes (Ctx *, Dfa *) or (Ctx *, Nfa *), mutates in
-place, and must be behavior-preserving — every pass needs corpus coverage that would catch a
-semantic change (the full suite runs against post-pass output). Scan-avoidance
-analyses that only inform codegen (prefilters, skip states) live in the
-emitter instead; move one here if it grows its own IR transformation.
-
-altcls.c is the one AST-LEVEL exception to the "mutates in place" half: it
-runs before NFA/DFA construction exists to mutate, so it takes (Ctx *, Ast *)
-and RETURNS the (possibly new) root instead — the same shape
-`pcrec_discharge_atomic` takes, for the same reason (the rewrite can change
-tree SHAPE, which an in-place field mutation cannot express), and with the
-same obligation on its caller to PUBLISH what it returns. Still
-behavior-preserving, still
-corpus-covered, still deny-only + D46-stamped like every pass in this
-directory.
-
-## [DD-14 wave G] The splice linkage, and the two predicates it added
-
-**`callgraph.c` DECIDES THE LINKAGE.** `cg_eligibility` sets
-`Ast.u.call.link = CALL_SPLICE` iff the target is not in a cycle
-(`reaches(i, i)`) AND the spliced expansion fits `PCREC_MAX_SPLICE_NODES`, with
-the expansion COMPOSING over nested splices (`exp(i) = nodes(body[i]) + SUM_j
-site[i][j] * (splice(j) ? exp(j) - 1 : 0)`), evaluated cycles-first then over
-the DAG and saturating so that "too big to count" declines like "cannot be
-counted". A second budget bounds the SUM. The decision is per TARGET, not per
-site, and the function says why that is a choice rather than a necessity.
-`-fno-splice-calls` (`PCREC_NO_SPLICE_CALLS`) returns before any of it, so the
-denied build is EXACTLY the artifact wave B+C shipped — which is what makes it
-design §9.2's control rather than a fourth variant.
-
-**AND THE PASS ORDER MOVED, ONCE.** `pcrec_discharge_atomic` is hoisted out of
-`pcrec_select_engine` into `src/core/compile.c`, right after `pcrec_altcls`.
-That is what makes two constraints satisfiable together: the call graph must run
-AFTER every pass that REBUILDS a node (callgraph.c's own header argument), and
-ENGINE SELECTION must now run AFTER the call graph, because the linkage is what
-selection reads. The hoist also fixed a latent drop — `select_engine` assigned
-the discharged root to a LOCAL, so a discharge at the very root was thrown away.
-
-**`atomic.c` GAINS TWO TREE PREDICATES**, both beside `pcrec_has_call` for this
-file's standing reason:
-
-- `pcrec_has_linked_call` — `pcrec_has_call`'s NARROWING. §8.1's "not regular"
-  and §8.2's "erasure is a different language" are both arguments about a call
-  with NO FINITE INLINING; a spliced call has one and it is exact. Reads
-  `u.call.link`, so it is meaningful only AFTER `pcrec_callgraph_build` — which
-  is why that pass moved ahead of selection.
-- `pcrec_has_live_capture` — the DEAD-CAPTURE ELISION. A group is dead when no
-  emitted code can WRITE it: its only occurrence sits under an `A_REP{0,0}`
-  (which emits nothing) and a call to it is capture-transparent (design §3.1,
-  MEASURED through the live ovector). **NOT a `DEFINE` rule** —
-  `(?(DEFINE)...)`, `(?:...){0}` and `(a){0}b` are one structural situation, and
-  a DEFINE-shaped special case would have been a parallel mechanism for two
-  thirds of its own population. Its polarity is named for the safe answer:
-  over-reporting liveness costs an engine, under-reporting loses a capture.
-
-**`select_engine.c` READS BOTH.** `forces_captures` consults the second (so an
-all-dead pattern is DFA-eligible), the prefilter predicate consults the first,
-and `first_dfa_excluding` exempts a `CALL_SPLICE` node BEFORE the generic SR-8
-row test — which is `(?>`'s per-row-conservative/per-pattern-true gap closed by
-the LINKAGE instead of by a deletion, because deleting a call means copying its
-callee's `A_CAP` nodes into the tree.
-
-Maintenance: update this file when passes are added/removed.
-
-## [OPT-4.1] the nullability predicate — ONE derivation, THREE readers
-
-The pattern-facts record's E1 `nullable` fact (`src/facts/widths.c`,
-`pcrec_nullable(root)` since K69, `pcrec_minw(root) == 0` before it; until [PATFACTS] step 3.2 it was the copy
-`EngineFit.lang_nullable`, which the fit site wrote) is the one derivation of
-that fact in the tree. Three sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
-rescue is DECLINED, and what stands in its place is no prefilter at all — on a
-rung the alternative to the collapsed machine is not the exact one, because
-the exact machine is what failed), `src/core/compile.c`'s build gate (under
-`-fprefilter-collapse` the collapse is declined and the EXACT prefilter is
-kept), and the `--emit-ir` listing's `; prefilter` line, which would otherwise
-name a FLAG the caller did not pass as the reason an artifact has none.
-
-**IT IS `src/opt/mrl.c`'s EXISTING WIDTH ANALYSIS AND NOT A SECOND WALK.**
-`pcrec_minw` already answers for the PREFILTER's lowering rather than for the
-pattern's semantics — `A_CAP`/`A_ATOMIC` transparent as `src/ir/nfa.c` lowers
-them, `A_LOOK` 0 as the prefilter lowers it (to epsilon), `A_CALL` off the
-callgraph fixpoint, which `compile.c` has already run by the time selection
-asks. Its documented direction is UNDER-estimation, so `minw == 0` may claim
-nullable where the true language is not, and that direction is the safe one
-here: declining a rescue costs a filter, never an answer.
-
-**AND THE COLLAPSED LANGUAGE'S NULLABILITY IS THE EXACT PATTERN'S**, which is
-why one fact serves both languages. The collapse rewrites
-`X{m,n}` as `X{min(m,1),}`, and `min(m,1) == 0` iff `m == 0`, so an `A_REP` is
-nullable on exactly the same condition before and after; concatenation and
-alternation combine 0-ness identically. One walk answers for both languages.
-
-**THE MEASURED NEED** is pcrec-bench O-10 item 3 at pin 96e44c2: where
-structure survives the collapse the rescue wins 2.2-4.6x, and where the
-collapsed language is nullable it LOSES 1.2-9.9x, because the filter admits a
-zero-length match at every position and can dismiss nothing. `-fprefilter`
-is do-or-die and is never silently dropped, and what that means differs by
-RUNG: on the SIZE rung it OVERRIDES the decline (its alternative there is no
-prefilter, which that flag forbids), while on the [SEL-1] rung it makes the
-rung ineligible so the decline is never reached and the compile REFUSES.
-`-fprefilter-collapse` overrides on neither, because it chooses a LANGUAGE and
-not whether a filter exists. `docs/spec/tuning.md` §2.17 is the
-contract.
-
-## [OPT-4.2] the decline generalizes off the rung — ONE PREDICATE, TWO SCOPES
-
-[OPT-4.1]'s decline above is scoped to a ladder ATTEMPT
-(`cx->collapse_reason != CR_NONE`): it only ever fires while a RUNG is
-offering the count-collapsed rescue. The ORDINARY hybrid — `auto` (or forced
-`--engine=vm` plus `-fprefilter`) with no cap ever hit — still built its
-pattern's own EXACT prefilter unconditionally, nullable or not, which is
-exactly the same defect one door over: `(a)*`'s own language matches the
-empty string (no collapse involved at all — this is not a repeat the
-collapse touches), and its prefilter could never dismiss a position either.
-The population that reaches this path GREW when [OPT-5]'s scan edge landed:
-`(a|b){0,30000}`-family patterns that used to be SIZE-REFUSED (and so took
-the [OPT-4] size rung's own decline above) now compile inside every cap and
-never reach a rung at all.
-
-`select_engine.c`'s fit site derived ONE shared local (since [DEC-FALLBACK]
-B4 it is T2's rows 3-5, below the backreference and linked-call rows; since
-[DEC-VAR-ATTRIB] rows 4-5, below the `var` construct row too; the text keeps
-the old name for the history),
-`lang_nullable_declinable` (`nullable && !has_bref &&
-!has_call && !force_on` — since [NULLABLE-ANCH] (abi 68) its first conjunct
-is the E1 fact `empty_admits`, not bare nullability, except on a `${...}`
-pattern, which kept `nullable` so its `ENGINE_SEL` token held (F1 of
-`docs/dev/lanes/nullanch0_report.md`), until [DEC-VAR-ATTRIB] (abi 69) made
-`var` a construct row ahead of both declines and deleted that exception, so a
-`${...}` pattern stamps `selected`; S612 plants the old bare read) — the exact conjuncts [OPT-4.1]'s decline above
-already had, minus the collapsible-repeat kind, which is meaningless off
-a rung: the ordinary path never collapses anything, so there is always a
-concrete prefilter to decline), and reads it into BOTH declines:
-
-- `prefilter_declined_nullable` (unchanged) additionally needs
-  `collapse_reason != CR_NONE` and the E1 collapsible-repeat kind — a rung
-  ran and there was a distinct rescue to refuse.
-- `prefilter_declined_nullable_default` (new) additionally needs
-  `collapse_reason == CR_NONE` and `would_prefilter` — a LOCAL answering "is
-  `fit.chosen == ENGM_VM` and would this compile actually have built a
-  prefilter, absent the decline" (the same condition the final `fit.prefilter`
-  ternary falls through to), further guarded by `!cx->dfa_disabled` so the
-  decline cannot fire on a retry whose OWN prefilter construction overflowed
-  with no rung offered (`ESEL_OVERFLOWED_DFA`/`_PREFILTER`'s own population —
-  the r47sel-1 false-stamp shape one level over: without the guard, a DFA
-  build that genuinely had nothing to offer would stamp "a rescue was
-  refused" instead of "nothing survived").
-
-The two fields are MUTUALLY EXCLUSIVE by construction (one requires
-`collapse_reason != CR_NONE`, the other its negation) and get their own
-`ESEL_DECLINED_NULLABLE_DEFAULT` value (internal.h) rather than sharing
-`ESEL_DECLINED_NULLABLE` — the K35 "closed value set silently losing a
-member" shape: a rung OFFERED and REFUSED a rescue is a different population
-from an ordinary compile that never had a rung to begin with, and the bench
-buckets on `RX_ENGINE_SEL` precisely because it cannot bucket on prose.
-`internal.h`'s own enum comment carries the placement argument (why the new
-value sits adjacent to `ESEL_SELECTED` rather than appended after
-`ESEL_SIZE_CAP_RETRY`); `docs/spec/tuning.md` §2.17 and `match_api.md` §6.3
-are the caller-facing contract. `tests/resource`'s `(a|b){0,30000}` cell and
-`tests/prefilter`'s `(a)*` witness are the two populations
-(size-cap-rescued-then-declined-anyway vs. never-capped-at-all).
-
-## [K53-SELRETRY] `ESEL_SIZE_CAP_RETRY` gains a SECOND RUNG, not a second value
-
-`select_engine.c`'s `fit.engine_sel` ladder had one arm meaning "an
-emitted-SIZE cap forced a retry and the retry shipped", reachable only from
-`collapse_reason == CR_SIZECAP` with a surviving prefilter. [K53-SELRETRY]
-adds a second rung to the same retry ladder in `compile_driver` — drop the
-OPTIONAL anchored machine and re-emit — and it reads the SAME value, through
-`cx->size_drop_rung != SDR_NONE`.
-
-**The value's stated reachability was a description, not part of its
-meaning**, and `internal.h`'s own comment now says so. What a consumer needs
-beyond "a size cap forced a retry" is WHICH contributor was dropped, and that
-is answered by the artifact's own axis stamps rather than by a second value
-here: the prefilter rung is legible as `_DFA_PREFILTER` with
-`_PREFILTER_LANG_WHY "count-collapsed"`, the drop rung as
-`_DFA_MATCH "search-filter"`. **The two rungs are MUTUALLY EXCLUSIVE BY
-ENGINE** — the first requires a VM hybrid, the second implies `ENGM_DFA`
-through `Job.anchored_ok` — so the pair is exact and no third fact is needed.
-
-**NO `fit.prefilter` CONJUNCT ON THE NEW HALF**, and the asymmetry is the
-point. That conjunct exists because a size-refused VM compile can end with no
-prefilter at all, and stamping "a prefilter survived" would name a decision
-the artifact did not take. A DFA-engine artifact has no prefilter to survive —
-`fit.prefilter` is false on every member of this rung's population — so
-requiring one would make the arm unreachable on exactly the patterns it exists
-for. Minting a second value instead would have put one event in two homes,
-which is the drift this macro's whole comment history is about.
-
-Sabotage S238 is the failing direction (the rung fires and stamps
-`"selected"`); S237 is its sibling one file over (the rung never fires at all).
-
-## [OPT-PRECHECK-ADMIT] whether a pre-check is EMITTED is not this directory's question
-
-`reqbyte.c` derives two facts — the necessary BYTE and the necessary literal
-RUN — and since 2026-09-23 it does not decide whether either is acted on.
-`src/gen/emit_dfa.c`'s `req_admit` does (`docs/spec/tuning.md` §2.29, ratified
-G1 + G2 of the batch-1 after-ledger), and it declines on two grounds the bench
-measured as pure cost: a search route that runs ONE attempt, and a
-candidate-start `memchr` already scanning a byte at least as rare.
-
-**The split is visible in the stamps and a reader has to know which is which.**
-`<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` name what THIS pass found — a fact
-about the pattern, unchanged by any decline. `<PREFIX>_REQ_WHY` names whether
-the artifact used it, and which rule declined. So a check that wants to assert
-this pass's derivation reads the first two, and a check that wants the emitted
-text reads the third; `tests/codegen/run_prechecks.sh` §3 and §5 are those two
-readers.
-
-**[K65] the set is PUBLISHED, not only picked from.** `pcrec_req_byte` now
-also writes the whole necessary set into `Job.req_set` (a `ReqSet` bitmap),
-because the emitter's no-DFA-scan route tests every member rather than the
-pick (`src/gen/emit_dfa.c`'s `emit_req_set_rest`). The walk, the pick and the
-run are unchanged; the set was always computed and is now kept.
-
-**[K66] the whole run is PUBLISHED beside its window.** `ReqRun` gains
-`whole`/`whole_len`/`at`: the stored run (up to `PCREC_MAX_REQ_RUN_SCAN`
-bytes) the window `bytes` is cut from, with `bytes == whole + at`. Same
-call, same derivation, so `Job.req_run` stays the one field every reader
-(the emitter, `[OPT-LITSCAN]` S1's pin) reads; the window's choice is
-unchanged.
-
-**Nothing here changed, and that is the point.** The admission is an emit-time
-decision over facts this directory already produced, so no pass, no field and
-no walk moved — which is why the change's own byte census shows every moving
-artifact only LOSING text.
-
-## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
-
-`possessify.c`: `pcrec_poss_ctx_admits` reads the 9-cell row (`ctxfn_cell`) and
-NEVER narrows a row that reads an absent side (B3/A4: value identity with the
-retired multiline arms); `ps_node` records no gate group for one; the A_EOL
-arm's multiline branch is deleted (a `(?m)$` is an A_CTX node). `derive.c`:
-the two `multiline` clauses are deleted (a `(?m)^` reaches the A_CTX arm).
-The `u.anch.multiline` mentions above are history.
-
-## [DD-11.5] P2e (lane ctxp2e, 2026-10-20): the pins are A_CTX rows
-
-`A_BOL`/`A_END` are no longer kinds. Three sites here read the start/end pin
-and now switch on `pcrec_ctx_class(n)` with no `default:`: derive.c's
-`q_rewrite` (kills the start pin) and `qp_walk` (G5 counts it), and
-possessify.c's `first_of` (the end pin is transparent; the start pin widens,
-which is the CONTEXT answer since its row reads an absent side). possessify.c's
-`ps_node` now copies `first_of`'s nullability on its non-gate A_CTX branch:
-`\z` is the one nullable A_CTX (the §4.6 census filed that line as a LABEL;
-ctxp2e_report.md F-2). Every other label list lost its two tokens.
+- altcls.c — [OPT-ALTCLS] FIRST pass: stage 1 merges adjacent bare-class alt
+  branches (`b|c` -> `[bc]`); stage 2 prefix-factors adjacent literal-first-byte
+  branches (`frank|fred` -> `fr(?:ank|ed)`), iterative loop + depth cap
+  `PCREC_MAX_ALTCLS_FACTOR_DEPTH`. Gates `PCREC_NO_ALTCLS_MERGE`/`_FACTOR`
+  (deny-only), stamps `<PREFIX>_ALTCLS_MERGES`/`_FACTORED` (common to both
+  emitters). Wider multi-char class merge is UNSOUND. Tests tests/altcls/;
+  sabotage S66/S67.
+- callgraph.c — [DD-14] THE CALL GRAPH: which groups are called, what they reach;
+  sole writer of `.body`; Kleene fixpoints for `minw`, `maxw` ([DD-14.LB], no cycle
+  test: saturation absorbs), `cwmin`; publishes `nonnullable` off `minw` ([K69],
+  least fixpoint); `cg_eligibility` decides `CALL_SPLICE` per TARGET (not in a
+  cycle, expansion within `PCREC_MAX_SPLICE_NODES`, composing over nested splices,
+  saturating; `-fno-splice-calls` returns before any of it). Does NOT compute
+  nullable/W (recurrence lives in the emitter). `\K` inside lookaround through a call
+  is NOT refused (PCRE2's rule is lexical; tests/recursion/kreset.rxt). Sabotage
+  S166 (pass order), S165 (prefilter vs call), S171 (maxw one round).
+- derive.c — [COMPOUND] B2 DERIVATIONS: `pcrec_derive_split_q` ([MATCH-SPLIT]'s Q:
+  kill `\G`/non-multiline `^` `\A` to the never node, prune bottom-up, GROUP-KEEP
+  rule, G5 check, `PcrecDeriveReport`); `pcrec_ast_crosses_attempts`. Runs second in
+  the tree-hook list (after the composer, before altcls). Tests tests/compound/.
+- lower_enc.c — [M5.0] ENCODING LOWERING: `LowerOps` table, one row per encoding (no
+  `if (enc == ...)`); code-point classes -> byte-sequence ASTs; sole producer of
+  `A_WCLASS` ([CLS-TREE] S3); clears `u.rep.revbody` where lowering would change the
+  body (`subtree_is_identity` vs `identity_max`); exports `pcrec_pat_char`; no
+  `default:` arm; does not follow `u.call.body`. Tests: tests/codegen/run_cpset_structure.sh.
+- postresolve.c — [DD-14.LB] POST-RESOLUTION CHECKS: re-asks module `lookaround`'s
+  fixed-width rule at the pattern offset the hook RECORDED, after the graph exists
+  (record -> build graph -> re-ask). Owns WALK and ORDER (ascending pattern offset);
+  `src/parse/mod_lookaround.c` owns the RULE. Pending is `u.look.widths == NULL`
+  (loud by construction). Walks via `pcrec_ast_visit`. Sabotage S169/S170; tests
+  tests/recursion/inlookaround.rxt.
+- prefix_k.c — [OPT-K] offset-k SELECTION (docs/design/offset_k_skip.md): the cost
+  model over `pcrec_fact_kset_walk` (the walk is the E3 fact in `src/facts/kset.c`);
+  offset-0 escape set `k0` stays the baseline's; mass via `pcrec_find_set_ppm`
+  (src/core/findings.c; prior not derived from the bench log); the scan offset must
+  MOVE off 0 (measured rule). Tests tests/offsetskip/, tests/codegen/run_offset_skip.sh;
+  sabotage S185-S188. [OPT-LITSCAN] S1's pin is the E3 fact `run_pin`.
+- select_engine.c — per-pattern ENGINE selection ([M4.5b], engine_m4.md §5.1): the
+  analysis table run once. `forces_registry` (SR-8, D67; `Ast.reg`/`Ast.reg_at`
+  stamped by `pcrec_ast_stamp`), `forces_captures` (request-derived; `node_derived`
+  bit tells the `--engine=dfa` refusals apart), `forces_dfa_overflow` ([SEL-1], fed
+  back by compile.c's one-shot retry via `Ctx.dfa_disabled`). Owns the `--engine`
+  override refusals (before machine construction) and the prefilter refusals:
+  backrefs ([M6.5.2]), calls ([DD-14]), `dfa_disabled`; [M4.6f] the PREFILTER FORCE
+  PAIR (`-fprefilter`/`-fno-prefilter`, both refuse together; `-fprefilter` refuses
+  when `fit.chosen != ENGM_VM`; D46; tests/prefilter/). Drives possessify.c on the
+  CHOSEN engine (`run_possessify`). T2 (`pf_admits[]`, ten first-match rows over
+  `PfAdmitSel`) is the prefilter admission and `fit_attrib_walk` (`esel_of`) the
+  `ENGINE_SEL` attribution ([DEC-FALLBACK] B2-B7, dec_fallback.md §1.4/§1.7); rows ask
+  `nullable`/`empty_admits` only where the old derivation did. Tests tests/vm/
+  run_vm_tests.sh §3b, tests/prefilter/, tests/registry/registry_check.c tripwire.
+- atomic.c — [M6.4.2] `pcrec_discharge_atomic` (the FREE DISCHARGE: deletes an
+  `A_ATOMIC(A_REP(X))` cut whose TRANSPARENT possessify verdict is positive; GREEDY
+  only; keyed on the GROUP; survey sees call sites [K93]); the seven no-`default:`
+  switches; predicates `pcrec_has_atomic` (read post-discharge), `pcrec_has_bref`,
+  `pcrec_bref_mark` (§3.2.4 marked set; all refs of a duplicated name),
+  `pcrec_has_lookaround` (twin of has_atomic, read with `Vm.mrl_win`),
+  `pcrec_has_call`, `pcrec_has_linked_call` (narrowing; meaningful only after the
+  graph), `pcrec_has_live_capture` (dead-capture elision; not a DEFINE rule),
+  `pcrec_ast_stamped_by` (SR-8 stamp for RK_QUANTSUFFIX). Not registered in a
+  `discharge` socket.
+- possessify.c — [ENG-BREP] POSSESSIFICATION (eng_brep_design.md §2, D47.1): marks
+  `A_REP` needing no resume frames; monotone; returns newly-marked count. Verdict is
+  FIRST/FOLLOW disjoint + non-nullable + unique iteration (U1)/(U2) + lazy-only
+  conjunct (every conjunct is a paid refutation: read the header). `pcrec_poss_survey`
+  is the SAME verdict as a query. `A_ATOMIC` is transparent in `first_of`/`gk_build`,
+  NOT in `pss_walk` (self-contained, empty follow). `\G` takes `\A`'s (downward-closed)
+  decline arm; `\K` is transparent (epsilon). [K93] call targets carry a JOINED
+  `CallCtx`; [ART-POSS-ARMS] arms A (A_CTX gates; `PCont`/`PSum`, R-5 equality check)
+  and B (`A_BREF` FIRST via `text_first`); `Ctx.poss_arms` stamp
+  `<PREFIX>_VM_POSS_ARMS`; deny bits `-fno-poss-ctx-follow`/`-fno-poss-bref-first`;
+  [DD-11.5] `pcrec_poss_ctx_admits` never narrows a row reading an absent side.
+  Exports `pcrec_uniq_scratch`/`pcrec_uniq_iteration`. Tests tests/possessify/;
+  sabotage S45-S49, S84, S560-S565, S586-S588, S601-S604, S612.
+- revdet.c — [ENG-BREP] REVERSE-DETERMINISTIC RUNG analysis (engine_m4.md §2.5,
+  eng_brep_design.md §3): `Ast.u.rep.revbody` is verdict AND material (non-NULL iff
+  the rung applies; read by `vm_cost_rep`, `vm_count_slots`, `vm_rep`). Forward
+  uniqueness imported from possessify; reverse check on the reversed body;
+  `rd_alt_disjoint` re-derived on purpose; `pcrec_revdet_first` exported; `\K`
+  DECLINES (correctness requirement). Tests tests/rungselect/; sabotage S50-S52.
+- mrl.c — [M4.6d] width analyses: `pcrec_minw` (BYTES, MRL prune, exhaustive switch,
+  saturating at `PCREC_MINW_MAX`; `A_CALL` reads `u.call.minw`; `A_BREF` contributes
+  0, exact), `pcrec_cwmin`/`pcrec_cwmax` (CHARACTERS; `A_CLASS` = 1; `maxw` retired
+  into `cwmax`; only caller is module `lookaround`'s width rule), `pcrec_nullable`
+  ([PATFACTS] 3.5, one owner), `pcrec_sat_add`/`pcrec_sat_mul` ([PATFACTS] 3.6).
+  `PCREC_W_UNBOUNDED == PCREC_MINW_MAX` so unbounded absorbs. Tests tests/mrl/
+  (D27-blinded corpus; `maxw_check.c`, `cwmax_check.c`), tests/core/sat_arith_check.c.
+- scanedge.c — [OPT-5] DFA SCAN EDGE: after `pcrec_minimize_dfa`, DELETES scan-shaped
+  state chains (criterion is a property of the transition table, not of `{m,n}`);
+  EIGHT preconditions, each a decline ((6) view-target heads, (7) smaller source index,
+  (8) no seed-family head on a RESEEDING prefilter, taken as a PARAMETER from
+  `pcrec_dfa_scan_state_written`); [OPT-EDGE] STEP 1 renumbers heads to the top rows;
+  STEP 1.1 narrowed (8); [OPT-VEDGE] relaxes (3)/(6) under `-fno-view-edge`
+  (`PCREC_NO_VIEW_EDGE`, bit 42; `end_is_exit` parameter); exports
+  `pcrec_state_view_invariant` (STEP 2). Gate `-fno-scan-edge` (`PCREC_NO_SCAN_EDGE`),
+  docs/spec/tuning.md §2.18. Tests: counterk/classes/bounded_repeats/possessify/k18_*,
+  tests/codegen/run_scan_edge_census.sh, tests/assertions/view_edge.rxt; sabotage
+  S213, S214, S440.
+- dfamemo.c — [OPT-RETRY-REUSE] MACHINE MEMO: `pcrec_build_min_dfa` (build +
+  minimize), every DFA build site in compile.c goes through it; memoized across retry
+  attempts by content key; only clean builds stored; compile_driver's local.
+- minimize.c — Moore-style DFA minimization with signature hashing; `eolvar` and
+  `endvar` (resolved through the EOL chain) join the signature; initial partition
+  splits on BOTH accept bits (`accept*2 + waccept`); `Dfa.s1w` and `Dfa.s1g[]` remap
+  in their own loops. Moore needs O(n) rounds (K25: `a{0,25000}` sets
+  tests/resource's CPU budget).
+- startanch.c, endwin.c — MOVED to `src/facts/` ([PATFACTS] step 3.0, D126); entries in
+  src/facts/CLAUDE.md.
+- reqbyte.c — DELETED ([FINDINGS] B1 = [PATFACTS] 3.1, D126): walk -> `src/facts/req.c`,
+  picks -> `src/core/findings.c` (`pcrec_find_set_pick`, `pcrec_find_run_scan_index`,
+  `pcrec_find_run_window_start`), compositions `pcrec_req_window`/`pcrec_req_pick`
+  -> src/facts/req.c. Its rules, still binding on those homes: the analysis produces
+  a SET and the emitter picks one member (ALT intersects); the pick is the ARGMIN of
+  the byte-rate prior (rightmost tiebreak) and the prior is read ONLY under `byte`
+  (elsewhere rightmost; [OPT-FREQPICK]/[OPT-REQRUN-ENC] abi 37->38: `!bytekey`
+  fallback is RIGHTMOST); [OPT-REQPOS] 2b necessary literal RUN (declines: multi-member
+  class, MIN-0 repeat, alternation keeps common prefix/suffix only; truncated to the
+  lowest-prior window of `PCREC_MAX_REQ_RUN_EMIT`); a LOOKAROUND body is not descended;
+  the empty set is the safe answer; [K65] `Job.req_set`, [K66] `ReqRun.whole/whole_len/at`.
+  Tests tests/codegen/run_prechecks.sh §3, §3.6, §3.7, §4, §4.9; sabotage S265-S268, S294.
+
+## Per-topic entries (kept as one-line tags; cited by tests/mech sabotage rows)
+
+- [DD-14 wave G] splice linkage: `callgraph.c` sets `CALL_SPLICE`; atomic.c gains
+  `pcrec_has_linked_call` and `pcrec_has_live_capture`; select_engine reads both
+  (`forces_captures`, prefilter predicate, `first_dfa_excluding` exempts
+  `CALL_SPLICE` before the SR-8 row test).
+- [M4.6f] the prefilter force pair, applied in select_engine.c (see its entry above;
+  cited by S64, D46 do-or-die; docs/spec/tuning.md §2.17).
+- [OPT-4.1] nullability predicate: ONE derivation (E1 `nullable`, `src/facts/widths.c`
+  over `pcrec_nullable`), THREE readers: select_engine's `fit.prefilter` clause (a
+  collapse rung's rescue is DECLINED for a nullable language), compile.c's build gate
+  (`-fprefilter-collapse`), the `--emit-ir` `; prefilter` line. `-fprefilter` overrides
+  on the SIZE rung, makes the [SEL-1] rung ineligible (compile REFUSES);
+  `-fprefilter-collapse` overrides on neither. Contract: docs/spec/tuning.md §2.17.
+- [OPT-4.2] the decline generalizes off the rung: ONE predicate (`lang_nullable_declinable`
+  = `empty_admits` && !has_bref && !has_call && !force_on; now T2 rows 3-5),
+  TWO scopes: `prefilter_declined_nullable` (rung offered, `collapse_reason != CR_NONE`)
+  and `_default` (`CR_NONE`, `would_prefilter`, `!cx->dfa_disabled`); mutually exclusive;
+  own value `ESEL_DECLINED_NULLABLE_DEFAULT`. Contract docs/spec/tuning.md §2.17 and
+  match_api.md §6.3. Tests tests/resource `(a|b){0,30000}`, tests/prefilter `(a)*`;
+  sabotage S216, S612.
+- [K53-SELRETRY] `ESEL_SIZE_CAP_RETRY` covers BOTH retry rungs (prefilter collapse; drop
+  the optional anchored machine, `cx->size_drop_rung != SDR_NONE`); mutually exclusive by
+  engine; NO `fit.prefilter` conjunct on the DFA half; which rung is read from axis
+  stamps. Sabotage S237/S238.
+- [OPT-PRECHECK-ADMIT] whether a pre-check is EMITTED is NOT this directory's question:
+  `src/gen/emit_dfa.c`'s `req_admit` decides (docs/spec/tuning.md §2.29);
+  `<PREFIX>_REQ_BYTE`/`_REQ_RUN` = what the pass FOUND, `_REQ_WHY` = whether used
+  (readers: tests/codegen/run_prechecks.sh §3 and §5).
+- [DD-11.5] parts 2 and P2e: `A_BOL`/`A_END` are no longer kinds; start/end pins are
+  A_CTX rows read via `pcrec_ctx_class(n)` with no `default:` (derive.c `q_rewrite`,
+  `qp_walk`; possessify.c `first_of`, `ps_node`); `\z` is the one nullable A_CTX.
+
+## Pointers
+
+APPROACH.md §5; docs/design/engine_m4.md (§2.5, §5.1, §5.2, §6.1); eng_brep_design.md;
+atomic_groups_design.md; subroutines_design.md (§3-§5, §8-§9); lookaround_design.md;
+utf8_design.md §2; offset_k_skip.md; opt5 docs (docs/dev/opt5_step0_profile.md,
+docs/design/opt5_step2_twopass.md); poss_arms.md; dec_fallback.md; reqpos_2b.md;
+reqbyte_freq_pick.md; docs/spec/tuning.md (§2.17, §2.18, §2.29); docs/dev/decisions.md
+(D10, D46, D47.5, D67, D77, D126); src/facts/CLAUDE.md; tests/{mrl,possessify,rungselect,
+altcls,prefilter,recursion,offsetskip}/CLAUDE.md; tests/mech/sabotages/.
+
+History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__opt.md
