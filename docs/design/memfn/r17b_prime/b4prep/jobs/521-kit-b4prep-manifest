@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# 521-kit-b4prep-manifest: regenerate B4's predicted-mover manifest under rev 4.1's term-count lever set (b4prep item 4)
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/b4prep
+B=$W/docs/design/memfn/r17b_prime/b4prep
+H=$W/build/pcrec-mftrace-harness
+SET=$B/b4prep-v1max2.tsv
+OUT=$B/predicted_movers_B4_rev41.tsv
+case "${1:-}" in
+    --dry-run)
+        [ -x "$H" ] && [ -x "$W/build/pcrec" ] && [ -f "$SET" ] || { echo "missing harness, pcrec or set" >&2; exit 1; }
+        python3 -I -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "$W/docs/design/memfn/r17b_prime/fdb1/shadow_census.py" || exit 1
+        echo "would run: shadow_census.py manifest --bin $H --ls-bin $W/build/pcrec --set $SET --jobs 4 --out $OUT"
+        echo "boxqueue: cap 1800"; echo "boxqueue: patience none"; echo "boxqueue: expect none"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+exec gnutimeout 1700 python3 "$W/docs/design/memfn/r17b_prime/fdb1/shadow_census.py" manifest \
+    --bin "$H" --ls-bin "$W/build/pcrec" --set "$SET" --jobs 4 --out "$OUT"

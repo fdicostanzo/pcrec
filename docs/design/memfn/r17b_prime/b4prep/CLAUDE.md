@@ -13,4 +13,6 @@ Measurement and record only; no kit code. Nothing here is built or run by pcrec'
   `521-kit-b4prep-manifest`; absent until that job has run).
 - `f3rr.md`, `raw_F3rr.tsv` — item 1's re-time (written after the queued job `520-kit-b4prep-f3rr` has run; absent until then).
 
+- `jobs/` — the two boxqueue job scripts as enqueued (`520-kit-b4prep-f3rr`, `521-kit-b4prep-manifest`).
+
 Never edit `../grid2read/keys.tsv` or anything `../grid2read/SHA256SUMS` covers.
