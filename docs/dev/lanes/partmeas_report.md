@@ -218,3 +218,33 @@ Queued as boxqueue jobs, owner `partmeas`, each declaring
 
 Logs are in each job's BQ_RUNDIR (`scripts/boxqueue status`). All are OWED.
 A fresh agent reads them with `scripts/verdict`.
+
+## TRIAGE (pmtri)
+
+The lane's job 302 ended red in exactly two sections (premise held).
+Neither failure is an answer change or an emitted-byte mover.
+
+- test-codegen: ONE failure, `[SABANCHOR]`, row S1031_object_built_lazily.sh
+  SITE 2 ANCHOR NOT FOUND. Class (b), a stale anchor the change legitimately
+  moved: the lane made the measures build eager (`pcrec_memfn_measures_build`),
+  so the `const mf_measures *ms = ...` line S1031 anchored on left
+  `pcrec_memfn_art`. Fix by the row's own mechanism: SAB_BEFORE2/SAB_AFTER2
+  re-derived to the live `job->mf = mf_art_begin(` line (still inside
+  `pcrec_memfn_art`, where the sabotage plants the lazy analysis build).
+  `scripts/m6read_check_sab_anchors.py`: all 884 rows resolve. The S1031 mech
+  run itself is not re-run here (heavy; the plant site and its text are
+  equivalent, the detector is C-E1-1 in the findings suite).
+- test-memfn-arch: ONE failure, C4 class 6 (arch-noun), the new
+  tests/compound/run_part_measures.sh line 51 spelled the box name
+  `zen4-grid1`. Class (b)/(a-in-test): rather than add an allowlist row
+  (the list only descends), the script now resolves the default set from
+  `measure_store/DEFAULTS` (id@rev -> id/rev/set.tsv), so no box name is
+  written. run_part_measures.sh 14/14 PASS; test-memfn-arch 17/17 PASS.
+- main merged into lane/partmeas first (ruling 1); one doc conflict
+  (docs/dev/lanes/CLAUDE.md index lines) resolved by keeping both rows.
+- STATE AT HANDOFF (pmtri): the full standalone `make test-codegen` re-run
+  was still in flight when pmtri ended (log: build/pmtri_codegen.log in the
+  worktree; read its verdict with the `*** [..test-` grep). The one red check
+  in that section ([SABANCHOR]) is verified directly:
+  scripts/m6read_check_sab_anchors.py "all anchors resolve". Rulings applied:
+  1 (merge main).

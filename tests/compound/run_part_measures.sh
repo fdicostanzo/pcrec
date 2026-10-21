@@ -48,7 +48,10 @@ fi
 H="$TRB/pcrec-harness"
 
 printf '#section header\n#key\tvalue\nid\tpartmeas-synth\nrev\t7\nvalues_digest\t00000000deadbeef\n' > "$W/h.tsv"
-cp "$ROOT_DIR/measure_store/zen4-grid1/1/set.tsv" "$W/f.tsv"
+# the build's default set (measure_store/DEFAULTS: `idk<TAB>id@rev`), found by
+# its id and rev, so no box name is spelled here (C4's arch-noun class)
+dset=$(awk -F'\t' 'NR == 1 {split($2, a, "@"); print a[1] "/" a[2] "/set.tsv"}' "$ROOT_DIR/measure_store/DEFAULTS")
+cp "$ROOT_DIR/measure_store/$dset" "$W/f.tsv"
 # a set's stamp text, from its header section alone
 want() { awk -F'\t' '/^#section /{s = ($0 == "#section header")} s && $1 == "id" {i = $2}
                      s && $1 == "rev" {r = $2} s && $1 == "values_digest" {d = $2}
