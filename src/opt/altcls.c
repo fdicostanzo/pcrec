@@ -174,7 +174,7 @@ static Ast *altcls_class_from_set(Ctx *cx, PcrecCpSet *s)
  * is a bare A_CLASS holding exactly one byte -- a single literal character.
  * On success, `*byte0_out` is that byte and `*rest_out` is the branch with
  * its first atom removed (A_EMPTY if nothing remains). Any other shape --
- * a wider class, an A_REP/A_ALT/A_CAP/A_BOL/A_EOL/A_EMPTY leading atom --
+ * a wider class, an A_REP/A_ALT/A_CAP/A_CTX/A_EOL/A_EMPTY leading atom --
  * DECLINES (returns false), which stage 2 treats as "not a factoring
  * candidate here," always safe. */
 static bool altcls_branch_peel(Ctx *cx, Ast *branch, int *byte0_out, Ast **rest_out)
@@ -399,11 +399,10 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     switch (a->k) {
     case A_CLASS:
     case A_EMPTY:
-    case A_BOL:
     case A_EOL:
-    case A_END:
     /* [M6.2 wave B] zero-width, so there is nothing for either stage to
-     * merge or factor -- the same answer A_BOL/A_EOL/A_END already give. */
+     * merge or factor -- the same answer A_EOL already gives. Since
+     * [DD-11.5] P2e `^`/`\A`/`\z` are A_CTX rows and take this arm too. */
     case A_CTX:
     /* [M6.2 wave D] `\G` likewise: zero-width, nothing to merge or factor. */
     case A_GSTART:

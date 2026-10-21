@@ -63,8 +63,8 @@ bool pcrec_pattern_nullable(const Ast *root)
  * nullability for their own soundness, so `nullable` keeps its meaning.
  *
  * EVERY OTHER ZERO-WIDTH NODE IS MASK 0 — always satisfiable, today's answer:
- * a lookaround, a context node, `\G`, `\K`, a multiline `^`/`$`, a
- * backreference, a variable, and a NULLABLE CALL. The call does not follow
+ * a lookaround, a context node that is not a pin, `\G`, `\K`, a multiline
+ * `^`/`$`, a backreference, a variable, and a NULLABLE CALL. The call does not follow
  * `u.call.body` (the AST's back edge; src/opt/atomic.c:22-36): it reads the
  * call graph's least fixpoint (`u.call.nonnullable`, K69) for WHETHER it has
  * an empty path and answers mask 0 for which. Mask 0 errs only toward
@@ -120,16 +120,21 @@ static unsigned em_set(const Ast *a)
         switch (a->k) {
         case A_WCLASS: return 0;   /* a wide class consumes a character */
         case A_CLASS: return 0;    /* so does a byte class: no empty path */
-        case A_EMPTY: case A_CTX: case A_GSTART: case A_KRESET: case A_LOOK:
+        case A_EMPTY: case A_GSTART: case A_KRESET: case A_LOOK:
         case A_BREF: case A_VAR:
             return acc;
         case A_CALL:
             return a->u.call.nonnullable ? 0 : acc;
-        case A_BOL:
-            return em_cat(acc, 1u << EM_S);
+        case A_CTX:
+            /* [DD-11.5] P2e the subject PINS are context rows: `^`/`\A`
+             * marks S, `\z` marks E; every other row is mask 0. */
+            switch (pcrec_ctx_class(a)) {
+            case CTX_PIN_START: return em_cat(acc, 1u << EM_S);
+            case CTX_PIN_END:   return em_cat(acc, 1u << EM_E);
+            case CTX_CONTEXT:   return acc;
+            }
+            return acc;   /* unreachable: -Wswitch makes a new class a build error */
         case A_EOL:
-            return em_cat(acc, 1u << EM_E);
-        case A_END:
             return em_cat(acc, 1u << EM_E);
         case A_CAP: case A_ATOMIC:
             a = a->l;

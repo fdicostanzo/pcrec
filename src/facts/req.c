@@ -605,9 +605,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
          * refuses to look at. One rule for all of them, `rr_none`, rather
          * than a per-assertion contiguity argument nothing has measured. */
         case A_EMPTY:
-        case A_BOL:
         case A_EOL:
-        case A_END:
         case A_CTX:
         case A_GSTART:
         case A_KRESET:

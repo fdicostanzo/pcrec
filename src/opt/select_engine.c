@@ -251,7 +251,7 @@ static void earliest_dfa_excluding(const Ast *a, const Ast **best)
         /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
         case A_WCLASS:
             return;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] A LEAF, and its OWN stamp is what excludes the DFA — the
          * test at the top of this loop has already read it. There is no

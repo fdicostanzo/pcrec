@@ -71,6 +71,17 @@ Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn)
     return a;
 }
 
+/* [DD-11.5] P2e A subject PIN as the context node: `^`/`\A` (fn
+ * CTXFN_SUBJECT_START) or `\z` (CTXFN_SUBJECT_END), over no set, since
+ * neither row reads membership. Spelled as an anchor, so `\A*` keeps the
+ * escape grammar's error 109 (`pcrec_is_bare_anchor`). */
+Ast *pcrec_ast_pin(Ctx *cx, uint16_t fn)
+{
+    Ast *a = pcrec_ast_ctx(cx, NULL, 0, fn);
+    a->u.ctx.anchor = true;
+    return a;
+}
+
 /* [DD-11.5] THE NEWLINE CONVENTIONS a `(?m)` anchor can be built under, as
  * a first-match table (ctx_span.md §3.3 [r4rc R3]). A `(?m)` anchor is the
  * context node only where the convention's newline is ONE byte: CRLF is a
@@ -167,7 +178,8 @@ void pcrec_ast_stamp(Ast *a, const RegRow *rw, size_t at)
  * where `(^)*` is not. `try_quant` tests the two separately for that reason. */
 /* Exhaustive no-default switch (mrl.c's rule) over whether AST kind `a->k` is
  * a BARE zero-width anchor standing alone as a group's whole body: true for
- * A_BOL/A_EOL/A_END/A_WORDB/A_NWORDB/A_GSTART/A_KRESET, false for every kind
+ * A_EOL/A_GSTART/A_KRESET and an anchor-spelled A_CTX (`\b`/`\B`, `^`/`\A`/
+ * `\z`, a `(?m)` anchor), false for every kind
  * that consumes text (A_BREF, A_CALL) or is a bracketing construct with its
  * own body (A_ATOMIC, A_LOOK, A_CAP) -- each `false` case's comment carries
  * the measured PCRE2 cells that make it the answer rather than the reflex.
@@ -182,7 +194,7 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * The grammar is about the spelling, so the field carries it. */
     case A_CTX:
         return a->u.ctx.anchor;
-    case A_BOL: case A_EOL: case A_END:
+    case A_EOL:
     case A_GSTART:
     /* [M6.2 wave E] `\K` joins them, and it is the one member of this list
      * that is not an assertion — which changes nothing here, because the rule
@@ -1717,11 +1729,13 @@ static Ast *p_atom(Ctx *cx)
      * (D62; assertions_design.md §8.2) — into the CHOICE OF NODE ([DD-11.5],
      * D168 addendum 1; ctx_span.md §4.4 table A): `(?m)^` is the context
      * node over the newline set with the `MLINE_BOL` row, a plain `^` is
-     * A_BOL. No field carries the modifier past this line, so no analysis
-     * can match `case A_BOL:` and forget it. */
+     * the start PIN (the `SUBJECT_START` row, P2e). No field carries the
+     * modifier past this line; the two nodes differ in their row, so their
+     * CLASS differs (`pcrec_ctx_class`) and no analysis can read one as the
+     * other. */
     case '^':
         if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_BOL, apos);
-        return node(cx, A_BOL);
+        return pcrec_ast_pin(cx, CTXFN_SUBJECT_START);
     case '$': {
         /* [VAR] THE `${` DOORWAY, and it is an `if` here rather than a
          * registry lookup because `$` is base grammar with no doorway to hang

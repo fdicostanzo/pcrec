@@ -194,7 +194,7 @@ const char *pcrec_def_tag_name(DefTag tag)
  * lookaround, and the path-fact family (\K, backrefs, DD-14 call) — \G
  * stays primitive")? A definition's OWN core-syntax text must never contain
  * `A_EOL` — the kind full reduction REMOVES (`\Z`/`(?m)$` reduce to
- * `A_LOOK`+`A_END`, definitions_table.md §2), so its appearance inside a
+ * `A_LOOK` over `\z`, definitions_table.md §2), so its appearance inside a
  * definition's expansion is the regression this check exists to catch.
  * [UCP] U2: `\b`/`\B` used to be two more such kinds (A_WORDB/A_NWORDB);
  * they now build the CONTEXT NODE, A_CTX, which is the reduction's target
@@ -215,9 +215,6 @@ bool pcrec_ast_is_core(AKind k)
     case A_ALT:
     case A_REP:
     case A_EMPTY:
-    case A_BOL:      /* \A only, in the fully-reduced target — see the note
-                      * at definitions_table.md §2 ("\A is core") */
-    case A_END:      /* \z */
     case A_GSTART:   /* \G "stays primitive" (D66) — still core vocabulary */
     case A_KRESET:   /* \K, the path-fact family */
     case A_CAP:
@@ -232,7 +229,9 @@ bool pcrec_ast_is_core(AKind k)
                       * one-character lookaround NORMALIZE to (ucp_design.md
                       * §2.2 — normalize to a node, not to text), so it is
                       * the reduction's target vocabulary, not a spelling
-                      * replaced away */
+                      * replaced away. Since [DD-11.5] P2e it is also `\A`
+                      * and `\z` (the two pins; definitions_table.md §2: "\A
+                      * is core") */
     case A_CALL:     /* DD-14 call, the path-fact family */
         return true;
     case A_EOL:      /* $/\Z's shipped alias — replaced away under full
@@ -426,9 +425,20 @@ static bool eol_tail_plain(const Ast *a)
         for (int i = 0; i < a->u.cls.n; i++)
             if (a->u.cls.iv[i].hi > 0x7F) return false;
         return true;
-    case A_EMPTY: case A_END:
+    case A_EMPTY:
         return true;
-    case A_EOL: case A_LOOK: case A_BOL: case A_CTX: case A_GSTART:
+    case A_CTX:
+        /* [DD-11.5] P2e `\Z`'s row is `(?=\n?\z)`, and its `\z` is the end
+         * PIN, which the tail admits; every other row is an assertion. */
+        switch (pcrec_ctx_class(a)) {
+        case CTX_PIN_END:
+            return true;
+        case CTX_PIN_START:
+        case CTX_CONTEXT:
+            return false;
+        }
+        return false;   /* unreachable: -Wswitch makes a new class a build error */
+    case A_EOL: case A_LOOK: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
         return false;
     }

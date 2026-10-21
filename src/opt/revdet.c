@@ -104,7 +104,7 @@ static void rd_shape(Shape *S, const Ast *a)
             return;
         case A_CLASS:
             return;
-        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_EMPTY: case A_EOL:
         /* [M6.2 wave B] DECLINE, which is always available and always safe.
          * [M6.2 wave D] `\G` declines with them, and it is the least
          * interesting decline in the file: a `\G` inside a quantifier body
@@ -303,7 +303,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * met; LOUD, because this arm would read the set as bytes. */
     case A_WCLASS:
         pcrec_wcls_misplaced(cx, "rd_reverse");
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     /* [M6.2 wave B] reversal is identity -- the predicate is symmetric in
      * the two bytes it reads (src/ir/nfa.c). [M6.2 wave D] and for `\G`
      * because it is an absolute-position assertion, `^`'s own reason. */
@@ -546,7 +546,7 @@ void pcrec_revdet_first(Ctx *cx, const Ast *a, uint8_t *out)
         /* [CLS-TREE] S3 (D-6): the `default:` that stood here became the full
          * enumeration, so a kind added later is a `-Wswitch` alarm here
          * rather than a silent widening. The answer is unchanged. */
-        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_ATOMIC: case A_LOOK: case A_BREF: case A_VAR:
             /* Unreachable on a shape-scanned body; widening to ALL BYTES is
@@ -601,7 +601,7 @@ static bool rd_alt_disjoint(Ctx *cx, const Ast *a)
         /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
         case A_WCLASS:
             return true;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART:
             return true;
         /* [M6.2 wave E] `\K` DECLINES rather than joining the row above.
@@ -731,7 +731,7 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
     /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
     case A_WCLASS:
         return;
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     /* [M6.2 wave E] `\K` joins them here with no caveat: this walk only
      * HUNTS for A_REP nodes to offer the rung to, and a leaf of any kind
      * hosts none. The verdict about `\K` is rd_shape's, one level down.

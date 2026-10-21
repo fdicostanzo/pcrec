@@ -12,10 +12,11 @@
  * §3.2). pcrec's own node comments already state PCRE2's `\A` and `\Z`
  * semantics word for word:
  *
- *     A_BOL   "assert start of subject"                          == PCRE2 \A
+ *     `^`     "assert start of subject"                          == PCRE2 \A
  *     A_EOL   "assert end-of-subject or before-final-\n"          == PCRE2 \Z
  *
- * so `\A` lowers to A_BOL, `\Z` lowers to A_EOL, and NO ENGINE WORK EXISTS
+ * so `\A` builds `^`'s node (since [DD-11.5] P2e the SUBJECT_START context
+ * row, `pcrec_ast_pin`), `\Z` builds A_EOL, and NO ENGINE WORK EXISTS
  * for either — no closure bit, no table, no VM arm, no emitter branch. The
  * design lane measured the alias claim rather than reading it off the
  * comments: a 1,008-cell differential against libpcre2 at zero
@@ -29,12 +30,13 @@
  *     pos + 1 == n && s[pos] == '\n'  YES        no
  *     pos == n                        YES        YES
  *
- * It gets its own AST kind (`A_END`), its own context row (`SUBJECT_END`,
- * src/core/ctxfn.def; the NFA kind `N_END` until [DD-11.5] P2d), a
- * third closure view in src/ir/dfa.c and a third position view in both
- * emitters. D62's principle is what makes that the right spelling rather than
- * a flag: node KINDS encode STRUCTURE and node FIELDS encode parse-resolved
- * MODIFIER STATE, and no option turns `\Z` into `\z`.
+ * It gets its own node, the context row `SUBJECT_END` (src/core/ctxfn.def,
+ * the end PIN; the AST kind `A_END` until [DD-11.5] P2e, the NFA kind
+ * `N_END` until P2d), a third closure view in src/ir/dfa.c and a third
+ * position view in both emitters. D62's principle is what makes that the
+ * right spelling rather than a flag on `$`: no option turns `\Z` into `\z`,
+ * so they are two nodes, and the row's CLASS (`CTX_PIN_END`) is the
+ * structure every analysis that must decide about `\z` switches on.
  *
  * INDEPENDENT OF MULTILINE, AND OF NOTBOL/NOTEOL. PCRE2's `\A`, `\Z` and
  * `\z` "only ever match at the very start and end of the subject string,
@@ -58,10 +60,10 @@
  *
  * NOT REPEATABLE, and inherited rather than restated: `\A*` `\z*` `\Z*` are
  * all PCRE2 error 109 while `(\z)*` compiles (measured against libpcre2
- * 10.46, this lane). A_BOL and A_EOL are already in parse.c's bare-quantified
- * rejection and in the bare-anchor group wrap; A_END joined both, so all
- * three spellings get the base grammar's own answer with no rule of this
- * module's own. */
+ * 10.46, this lane). `^` and A_EOL are already in parse.c's bare-quantified
+ * rejection and in the bare-anchor group wrap; `\z` joined both (since P2e
+ * through the pin's `u.ctx.anchor`), so all three spellings get the base
+ * grammar's own answer with no rule of this module's own. */
 
 #include <stdio.h>
 #include <string.h>
@@ -79,13 +81,16 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {
     AKind k;
+    uint16_t pin = 0;   /* A_CTX: the subject PIN's row (`\A`, `\z`) */
     switch (rw->sel) {
-    /* [UTF-VALID] `\A` counts 1 toward LB and `^` does not (both are
-     * A_BOL, which is why the fact is raised HERE and not read off the
-     * tree): measured on 10.46, utf_valid_design.md §1.4. */
-    case 'A': k = A_BOL; pcrec_lb_raise(cx, 1); break;   /* \A — the alias, §3.2 */
+    /* [UTF-VALID] `\A` counts 1 toward LB and `^` does not (both are the
+     * SUBJECT_START row, which is why the fact is raised HERE and not read
+     * off the tree): measured on 10.46, utf_valid_design.md §1.4. */
+    case 'A':   /* \A — the alias, §3.2 */
+        k = A_CTX; pin = CTXFN_SUBJECT_START; pcrec_lb_raise(cx, 1); break;
     case 'Z': k = A_EOL; break;   /* \Z — the alias, §3.2 */
-    case 'z': k = A_END; break;   /* \z — the one that needs a machine */
+    case 'z':   /* \z — the one that needs a machine */
+        k = A_CTX; pin = CTXFN_SUBJECT_END; break;
     /* [M6.2 wave B] the word-boundary pair, and they need the OTHER kind of
      * machine: `\A`/`\Z`/`\z` are questions about the POSITION, answerable by
      * an integer compare, while these are questions about the two BYTES
@@ -177,7 +182,7 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * (`\k<name>`, `\g{-1}`). Leaving it zero would rewind the cursor to the
      * start of the pattern. */
     res.end = cx->pos;
-    res.node = pcrec_ast_node(cx, k);
+    res.node = k == A_CTX ? pcrec_ast_pin(cx, pin) : pcrec_ast_node(cx, k);
     /* [M6.4.2 / SR-8, D67] THE STAMP, applied UNIFORMLY to all eight rows
      * rather than to `\K` alone, so "this module's producer stamps what it
      * builds" is a property of the port rather than a per-row exception a
@@ -215,11 +220,11 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      *     b\Z      "ab\n"    (1,2)       (1,2)      (1,2)     <- not
      *
      * An artifact is compiled ONCE and that parameter arrives at MATCH time,
-     * so the emitter will have to know which A_BOL nodes came from `\A` and
-     * which from `^` — information a pure alias throws away. The fix, when it
-     * has a customer, is a PARSE-RESOLVED PROVENANCE FIELD in D62's shape
-     * (kinds encode structure, fields encode parse-resolved state), written
-     * exactly here.
+     * so the emitter will have to know which SUBJECT_START nodes came from
+     * `\A` and which from `^` — information a pure alias throws away. The
+     * fix, when it has a customer, is a PARSE-RESOLVED PROVENANCE FIELD in
+     * D62's shape (kinds encode structure, fields encode parse-resolved
+     * state), written exactly here.
      *
      * IT IS NOT BUILT NOW, and that is the house rule rather than laziness: a
      * field with no consumer has no test that can go red, and unpopulated

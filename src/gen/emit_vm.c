@@ -1891,10 +1891,10 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
     /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
      * enumeration, so a kind added later is a `-Wswitch` alarm here rather
      * than a silent decline. `A_CAP` is unreachable (`bare` above). */
-    case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_CAP: case A_ATOMIC:
     case A_LOOK: case A_BREF: case A_VAR: case A_CALL:
-        /* A_ALT (choice), A_EMPTY (zero length), A_BOL/A_EOL (zero-width
+        /* A_ALT (choice), A_EMPTY (zero length), A_EOL/A_CTX (zero-width
          * assertions, which would make "scan ahead by stride" wrong).
          *
          * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected for
@@ -1970,7 +1970,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
     }
     /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
      * enumeration; the answer is unchanged. */
-    case A_ALT: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_ALT: case A_EMPTY: case A_EOL:
     case A_CTX: case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
     case A_BREF: case A_VAR: case A_CALL:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
@@ -2085,7 +2085,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         /* [M6.2 wave E] `\K` carries no capture NUMBER, so it contributes
          * nothing to this dense index. It is also unreachable here — this
          * runs only on a revdet-approved body and src/opt/revdet.c's shape
@@ -2925,7 +2925,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * site instead (§3.8), because that is per-SUBJECT work the fail label
      * never sees, which is exactly what that budget meters and not what
      * this analysis sizes. */
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     /* [VAR] ZERO analysis cost, `A_BREF`'s cell for `A_BREF`'s reason: the
      * compare's byte-by-byte work is charged against the WORK budget at the
      * emission site, which is per-SUBJECT work this analysis does not size. */
@@ -3188,7 +3188,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                            bool under_atomic)
 {
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     /* [M6.2 wave E] `\K` allocates NO slot, and that is the mechanism rather
      * than an accident. Its write goes to slot 0 — group 0's start — which
      * `nstate`'s `2 * ncaps` term has reserved since [M4.5b] and which
@@ -4049,7 +4049,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
      * repeat, a capture, an assertion or a runtime-width operand is not a
      * finite set of literal words this enumeration writes. */
     case A_REP: case A_CAP: case A_ATOMIC: case A_LOOK:
-    case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:
+    case A_EOL: case A_CTX: case A_GSTART:
     case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
         return false;
     }
@@ -5539,7 +5539,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         pcrec_wcls_misplaced(v->cx, "vm_rev_emit");
     /* [CLS-TREE] S3 (D-6): the `default:` that stood here became this full
      * enumeration, still falling to the hard error below. */
-    case A_EMPTY: case A_BOL: case A_EOL: case A_END: case A_CTX:
+    case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_ATOMIC: case A_LOOK:
     case A_BREF: case A_VAR: case A_CALL:
         /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
@@ -7413,7 +7413,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
         case A_VAR:
@@ -7498,7 +7498,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF:
         case A_VAR:
@@ -8356,7 +8356,7 @@ typedef struct {
 } VmCtxForm;
 
 static const VmCtxForm vm_ctx_forms[] = {
-#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, side, join, neg, role) \
+#define CTXFN_ROW(name, hex, a, b, c, d, e, f, g, h, i, cls, side, join, neg, role) \
     { CTXFN_##name, side, join, neg, role },
 #include "core/ctxfn.def"
 #undef CTXFN_ROW
@@ -8372,9 +8372,11 @@ static void vm_ctx_side(Vm *v, StrBuf *b, int ci, int side)
     pcrec_sb_puts(b, "))");
 }
 
-/* A_CTX — `\b`, `\B` and every recognized one-character lookaround — as one
- * guarded test of the byte(s) around the cursor, in the form `vm_ctx_forms`
- * names for the node's truth function.
+/* A_CTX — `\b`, `\B`, every recognized one-character lookaround, the `(?m)`
+ * anchors and the subject pins `^`/`\A`/`\z` — as one guarded test of the
+ * byte(s) around the cursor, in the form `vm_ctx_forms` names for the node's
+ * truth function. A row that reads no membership (the pins) tests the
+ * position alone and interns no set (`vm_ctx_row`'s -1).
  *
  * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction rather
  * than defensive padding: the natural spelling reads `s[-1]` at `pos == 0`
@@ -8392,6 +8394,10 @@ static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next);
 
 static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
 {
+    if (!ctxfn_reads_membership(a->u.ctx.fn)) {
+        vm_ctx_row(v, entry, a->u.ctx.fn, -1, next);
+        return;
+    }
     uint8_t bits[32];
     if (!pcrec_enc_set_bytes(pcrec_enc_by_id(v->cx->opt->encoding),
                              a->u.ctx.iv, a->u.ctx.n, bits))
@@ -8925,16 +8931,6 @@ static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
     case A_EMPTY:
         vm_lbl(v, entry, "empty");
         vm_goto(v, next);
-        return;
-    case A_BOL:
-    case A_END:
-        /* `^`/`\A` and `\z` ([DD-11.5] P2d): the context rows SUBJECT_START
-         * and SUBJECT_END, the same rows the NFA lowers them to, emitted by
-         * their `vm_ctx_forms` forms. A `(?m)^` is an A_CTX node (MLINE_BOL).
-         * assertions_design.md §9.3: both engines carry every construct,
-         * because `--engine=vm` is what makes the DFA's answers trustworthy
-         * rather than an echo of themselves. */
-        vm_ctx_row(v, entry, pcrec_anchor_ctxfn(a->k), -1, next);
         return;
     case A_EOL:
         /* A `(?m)$` is an A_CTX row (`vm_ctx`'s MLINE_EOL form). */

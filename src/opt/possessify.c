@@ -109,7 +109,7 @@
  * A_CTX row — this analysis reads the node it is already holding, and
  * `ParseMods` is now an incomplete type outside
  * src/parse/ so no later pass can repeat the mistake (§8.6). `\z` needs no
- * gate at all — see the A_END arm.
+ * gate at all — see the A_CTX arm's end-pin case.
  *
  * EVERY SET IS COMPUTED IN THE SOUND DIRECTION. A construct this analysis
  * cannot model widens to "all bytes", which makes the disjointness test fail
@@ -174,8 +174,8 @@ static bool bs_intersects(const uint8_t *a, const uint8_t *b)
  * differ for a MEASURED reason rather than a stylistic one: `^` widens to all
  * bytes (80 of 240 diverging cells if it does not), while `$` is transparent
  * when multiline is off (0 of 720) and widens when it is on (180 of 720).
- * `\z` (A_END) is transparent unconditionally — the same argument with a
- * singleton position set and nothing to gate on. Multiline-ness is read off
+ * `\z` (the end-pin A_CTX row) is transparent unconditionally — the same
+ * argument with a singleton position set and nothing to gate on. Multiline-ness is read off
  * THE NODE, never from the parse state; see the A_EOL arm. */
 typedef struct {
     uint8_t f[32];
@@ -334,8 +334,8 @@ static void cap_index(PossCap *F, const Ast *a, bool fill)
         /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
         case A_WCLASS:
             return;
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
-        case A_END: case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
+        case A_CLASS: case A_EMPTY: case A_EOL:
+        case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
         case A_VAR:
         /* a call's body is the AST's back edge; its A_CAP is visited at its
          * own lexical position */
@@ -403,7 +403,7 @@ static bool cap_group(Fq *q, int g, First *out)
 static First text_first(Fq *q, const Ast *a)
 {
     switch (a->k) {
-    case A_EMPTY: case A_BOL: case A_EOL: case A_END: case A_CTX:
+    case A_EMPTY: case A_EOL: case A_CTX:
     case A_GSTART: case A_KRESET: case A_LOOK:
         return fst_empty(true);
     case A_CAP: case A_ATOMIC:
@@ -638,15 +638,6 @@ static First first_of(Fq *q, const Ast *a)
     case A_KRESET:
         return fst_empty(true);
 
-    case A_BOL: {
-        /* `^` is DOWNWARD-closed where `$` is upward-closed: it holds only at
-         * offset 0, so a retreat can reach a position satisfying it from one
-         * that does not. Widen and decline. */
-        First r;
-        bs_all(r.f);
-        r.nullable = false;
-        return r;
-    }
     case A_EOL:
         /* D47.5's LIVE GATE: transparent, because `$` means "the subject end
          * (or before a final newline)" — a set no retreat can reach from
@@ -659,26 +650,15 @@ static First first_of(Fq *q, const Ast *a)
          * now carries that fact, so there is no field left to misread. */
         return fst_empty(true);
 
-    case A_END:
-        /* [M6.2 wave A] `\z` is the exemption's own argument, sharpened.
-         * `$`'s satisfying set is {n} plus {n-1} before a final newline, and
-         * the upward-closure argument has to reason about that second
-         * position; `\z`'s is the SINGLETON {n}. If `\z` fails at a
-         * quantifier's maximal exit it fails at every retreat position, since
-         * every retreat position is strictly smaller. Transparent, and
-         * UNCONDITIONALLY so — no option makes `\z` true anywhere else, which
-         * is exactly why it is a separate node kind and not a flag on
-         * A_EOL. */
-        return fst_empty(true);
-
     case A_GSTART:
-        /* [M6.2 wave D] WIDEN AND DECLINE, and `\G` takes `^`'s arm for
-         * `^`'s exact reason rather than `\z`'s.
+        /* [M6.2 wave D] WIDEN AND DECLINE, and `\G` takes `^`'s answer for
+         * `^`'s exact reason rather than `\z`'s (both are A_CTX rows since
+         * [DD-11.5] P2e; see that arm's class switch).
          *
          * The exemption below rests on UPWARD CLOSURE: if the assertion fails
          * at a quantifier's maximal exit it fails at every smaller retreat
          * position too, so the retreat cannot rescue a match. `\G` is
-         * DOWNWARD-closed, like `^` two arms up — it holds at exactly one
+         * DOWNWARD-closed, like `^` in the A_CTX arm — it holds at exactly one
          * position, `startpos`, and every retreat moves TOWARD it. So a
          * retreat can reach a position satisfying `\G` from one that does
          * not, which is precisely the case possessification would delete.
@@ -696,8 +676,32 @@ static First first_of(Fq *q, const Ast *a)
         }
 
     case A_CTX:
+        /* [DD-11.5] P2e THE SUBJECT PINS ARE CONTEXT ROWS, and their CLASS
+         * decides here, because the two pins are closed in opposite
+         * directions. */
+        switch (pcrec_ctx_class(a)) {
+        case CTX_PIN_END:
+            /* [M6.2 wave A] `\z` is the exemption's own argument, sharpened.
+             * `$`'s satisfying set is {n} plus {n-1} before a final newline,
+             * and the upward-closure argument has to reason about that
+             * second position; `\z`'s is the SINGLETON {n}. If `\z` fails at
+             * a quantifier's maximal exit it fails at every retreat position,
+             * since every retreat position is strictly smaller. Transparent,
+             * and UNCONDITIONALLY so — no option makes `\z` true anywhere
+             * else, which is exactly why it is its own node and not a flag
+             * on A_EOL. */
+            return fst_empty(true);
+        case CTX_PIN_START:
+            /* `^`/`\A` is DOWNWARD-closed where `$` is upward-closed: it
+             * holds only at offset 0, so a retreat can reach a position
+             * satisfying it from one that does not. Widen and decline, which
+             * is the CONTEXT answer below: the row reads an absent side, so
+             * `pcrec_poss_ctx_admits` never narrows it. */
+        case CTX_CONTEXT:
+            break;
+        }
         /* [M6.2 wave B] WIDEN AND DECLINE, and this is NOT the treatment
-         * `\z`/`$` get one arm up -- it is `^`'s.
+         * `\z`/`$` get -- it is `^`'s.
          *
          * The exemption above rests on UPWARD CLOSURE: if `$` fails at a
          * quantifier's maximal exit it fails at every smaller retreat
@@ -977,9 +981,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
         g->ok = false;
         return gk_parts_empty(true);
     case A_EMPTY:
-    case A_BOL:
     case A_EOL:
-    case A_END:
     case A_CTX:
     case A_GSTART:
     /* [M6.2 wave E] `\K` too, and here it is the LITERAL truth rather than
@@ -1206,8 +1208,9 @@ typedef struct {
  * WHY A SUMMARY (R-4). Folding the chain per quantifier is quadratic:
  * `(?:a+|a+|…)(?:\b|)…` at n = 6,400 took 64.85 s against 0.90 s denied. But
  * WHICH items are reached at zero consumption does not depend on Q, because
- * every A_CTX is non-nullable whatever P is. So each chain link carries,
- * once, a `PSum`: the bytes of every reached item that is not a
+ * every gate is non-nullable whatever P is (a gate is an A_CTX row valued
+ * by P; `\z`, the one nullable A_CTX, is never one). So each chain link
+ * carries, once, a `PSum`: the bytes of every reached item that is not a
  * left-dependent gate, the reached gates grouped by their set C with S(P)
  * precomputed for the three non-empty P, and whether the match can end.
  * Per Q only the groups are evaluated: O(distinct gate sets x |LAST|).
@@ -1303,8 +1306,11 @@ static PSum ps_node(Pss *P, const Ast *a)
         } else {
             First f = first_of(&P->fq, a);
             memcpy(r.u, f.f, 32);
+            /* `first_of`'s own nullability: every gate is non-nullable, and
+             * `\z` ([DD-11.5] P2e, the end pin, never a gate) is transparent. */
+            r.nullable = f.nullable;
         }
-        return r;                       /* non-nullable, as `first_of` */
+        return r;
     case A_CAP: case A_ATOMIC:
         return ps_node(P, a->l);
     case A_CAT: {
@@ -1344,8 +1350,8 @@ static PSum ps_node(Pss *P, const Ast *a)
      * met; LOUD, because `first_of`'s class arm would read the set. */
     case A_WCLASS:
         pcrec_wcls_misplaced(P->cx, "ps_node");
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
-    case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
+    case A_CLASS: case A_EMPTY: case A_EOL:
+    case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
         break;
     }
@@ -1521,8 +1527,8 @@ static First item_first(Pss *P, const Ast *a, bool a0)
      * met; LOUD, because `first_of`'s class arm would read the set. */
     case A_WCLASS:
         pcrec_wcls_misplaced(P->cx, "item_first");
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
-    case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
+    case A_CLASS: case A_EMPTY: case A_EOL:
+    case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
         break;
     }
@@ -1762,7 +1768,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
     case A_WCLASS:
         return;
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_CLASS: case A_EMPTY: case A_EOL:
     /* [M6.2 wave E] `\K` joins them with no caveat: this walk only HUNTS
      * for A_REP nodes to offer the verdict to, and a leaf hosts none. What
      * `\K` MEANS to the analysis is `first_of`'s answer, above. */

@@ -89,7 +89,7 @@ static bool lang_charset(const Ast *a, PcrecCpSet *acc)
          * text whose width is not one character: not this row's language. */
         case A_CAP:
         case A_EMPTY:
-        case A_BOL: case A_EOL: case A_END: case A_CTX: case A_GSTART:
+        case A_EOL: case A_CTX: case A_GSTART:
         case A_KRESET: case A_LOOK:
         case A_BREF: case A_VAR: case A_CALL:
         /* [CLS-TREE] S3: made below the lowering, never at parse time.

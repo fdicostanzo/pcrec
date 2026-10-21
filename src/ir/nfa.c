@@ -197,17 +197,6 @@ static Frag frag_single(NB *b, NKind k)
     return f;
 }
 
-/* A one-state N_CTX fragment for a context row that reads no set — only an
- * absent side (src/core/ctxfn.def's SUBJECT_START/SUBJECT_END). Its `cls` stays
- * empty, and no consumer reads it: the class axis collects a set only from a
- * row that reads membership (src/ir/dfa.c's `cr_ctx_reads`). */
-static Frag frag_ctx_row(NB *b, uint16_t fn)
-{
-    Frag f = frag_single(b, N_CTX);
-    b->nfa->st[f.start].ctxfn = fn;
-    return f;
-}
-
 /* X* : split(preferred: body | exit); body loops back to split */
 static Frag frag_star(NB *b, const Ast *sub, bool greedy)
 {
@@ -556,7 +545,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
 
 /* A branch is trie-eligible iff it is a left-leaning A_CAT chain (or a single
  * node) whose every leaf is A_CLASS — i.e. a fixed-length sequence of byte
- * classes. A_REP/A_ALT/A_EMPTY/A_BOL/A_EOL branches are not, and are chained
+ * classes. A_REP/A_ALT/A_EMPTY/A_EOL/A_CTX branches are not, and are chained
  * around the eligible runs at their original priority. Returns false and
  * leaves *out untouched when ineligible. In reverse mode the step order is
  * flipped, since rev(X.Y) = rev(Y).rev(X). */
@@ -621,10 +610,6 @@ static Frag compile_ast(NB *b, const Ast *a)
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
-    /* `^`/`\A`: the context row "no previous character" ([DD-11.5] P2d; the
-     * N_BOT kind retired into it). A `(?m)^` never arrives here: the parser
-     * builds it as an A_CTX row, lowered by the A_CTX arm below. */
-    case A_BOL:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));
     case A_EOL:
         /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
          * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with
@@ -641,22 +626,20 @@ static Frag compile_ast(NB *b, const Ast *a)
             }
         }
         return frag_single(b, N_EOL);
-    /* [M6.2 wave A] `\z`: the context row "no next character" ([DD-11.5]
-     * P2d; the N_END kind retired into it). Reversal is identity, exactly as
-     * `^`'s and N_EOL's is: an assertion about an absolute subject position is
-     * the same assertion whichever direction the machine walks — the reverse
-     * machine simply evaluates it at the position its own walk STARTS from,
-     * which is the pattern's right end (`sides_of` names the absent side by
-     * SUBJECT side, so the row reads `end_ok` in both directions). */
-    case A_END:   return frag_ctx_row(b, pcrec_anchor_ctxfn(a->k));
-    /* [UCP] U2 A_CTX (`\b`, `\B`, a recognized one-character lookaround).
-     * Reversal is identity here too, for a DIFFERENT reason than `^`/`\z`/
-     * N_EOL's: a context assertion is not absolute, it is a predicate
-     * on the two characters AROUND the position, and the closure names those
-     * by SUBJECT side (left/right) rather than by walk order — so the reverse
-     * machine reads the same function of the same two sides (src/ir/dfa.c's
-     * `sides_of`). `\b` alone is also symmetric, which is why wave B never
-     * needed that mapping; a lookbehind is not.
+    /* [UCP] U2 A_CTX (`\b`, `\B`, a recognized one-character lookaround,
+     * a `(?m)` anchor and, since [DD-11.5] P2e, `^`/`\A` and `\z`: the rows
+     * SUBJECT_START/SUBJECT_END, which retired N_BOT/N_END at P2d and the
+     * AST kinds A_BOL/A_END at P2e). Reversal is identity: the closure names
+     * the two characters AROUND the position by SUBJECT side (left/right)
+     * rather than by walk order, so the reverse machine reads the same
+     * function of the same two sides (src/ir/dfa.c's `sides_of`); for a pin
+     * that is the absent side, so `\z` reads `end_ok` in both directions,
+     * exactly as N_EOL does. `\b` alone is also symmetric, which is why wave
+     * B never needed that mapping; a lookbehind is not.
+     *
+     * A ROW THAT READS NO MEMBERSHIP has the empty set (`n` 0), whose byte
+     * image is empty, and no consumer reads it: the class axis collects a set
+     * only from a row that reads membership (src/ir/dfa.c's `cr_ctx_reads`).
      *
      * THE BYTE IMAGE IS TAKEN UNDER §2.3's PRECONDITION, and a set that fails
      * it is refused here rather than sampled: every producer (`\b`'s port,
