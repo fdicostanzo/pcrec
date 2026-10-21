@@ -2787,3 +2787,7 @@ the compiler, and is never adopted silently. Proposed for main to file
   - charter, part 1: a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate. The scan position is priced by rate and by the form its set takes (V1 at ≤ 2 terms, `kit.terms.V1max`), not by rate alone.
   - charter, part 2: a ≥ 3-term set may be searched through a ≤ 2-term SUPERSET filter, then verified exactly. For example, `\w` through `[0-9]|[A-z]` admits 5 extra members. This is a FIND filter only; it never proves anything for a REPORT site.
   - refs: memfn/docs/ideas.md 2026-10-21; r17b_prime.md §1.3a R7/R7w.
+- notice: 2026-10-21 — **A third part for [MEMFN-POSCOST] (Frank: "we may run into similar questions when verifying an entire span").** Please append to the row's charter:
+  > (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not in pattern order. Each position takes its cheapest exact test: a word compare over literal runs, or a set test, possibly a superset test first. Proven offsets are skipped, as R-14's trim already does.
+
+  The fact behind it: ofsskip's `verify_chain` tests terms ascending by offset (pattern order). K82/R-1 already showed that lead order is part of the form's cost. Trigger: the same survey plus a verify-cost reading on dense-candidate cells. Nothing is built.
