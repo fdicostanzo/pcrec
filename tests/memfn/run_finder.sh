@@ -116,6 +116,14 @@ TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_presence.sh" "$ROOT" > "$WORK/presenc
 rc=$?
 part presence "$WORK/presence.log"
 [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/presence.log")" -gt 0 ] || { echo "FAIL: run_presence exited $rc with no failed check"; tf=$((tf + 1)); }
+# [MEMFN] R-26 (lane r26z1, MF_SITE_ABI 18): span 0's prefix facts, the
+# context spans, the absent rule, the read floor, the REPORT kind and the
+# per-offset proof (tests/memfn/run_proof.sh: the refusal fixtures, the class,
+# C-PROOF, the generated family against its byte-loop oracle, plain and traced)
+LIB="$LIB" TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_proof.sh" > "$WORK/proof.log" 2>&1
+rc=$?
+part proof "$WORK/proof.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/proof.log")" -gt 0 ] || { echo "FAIL: run_proof exited $rc with no failed check"; tf=$((tf + 1)); }
 echo "checks passed: $tp"
 echo "checks failed: $tf"
 [ "$tf" -eq 0 ]

@@ -315,17 +315,17 @@ static int row_tests(const arm *a, const mf_pred *p, const mf_term *t)
             p->need == MF_REQUIRED);
 }
 
-/* Intersects the bytes term `t` admits at each of its positions into the
- * per-offset proof `pv` (proven[]'s layout), clipped to its range: a SET
- * term's set at its offset, a RUN term's position j under its mask at
- * offset + j (R-26.4). */
-static void term_prove(const mf_term *t, uint8_t pv[][32])
+/* Intersects the bytes term `t` admits at each of its positions in [dlo,
+ * dhi] into the per-offset proof `pv` (proven[]'s layout), clipped to its
+ * range: a SET term's set at its offset, a RUN term's position j under its
+ * mask at offset + j (R-26.4). */
+static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32])
 {
     long len = t->kind == MF_T_RUN ? (long)t->run_len : t->kind == MF_T_SET ? 1 : 0;
     if (t->kind == MF_T_RUN && !t->run) return;
     for (long j = 0; j < len; j++) {
         long d = (long)t->offset + j;
-        if (d < MF_PROOF_LO || d >= MF_MAX_FWD) continue;
+        if (d < MF_PROOF_LO || d >= MF_MAX_FWD || d < dlo || d > dhi) continue;
         uint8_t b[32];
         if (t->kind == MF_T_SET) {
             memcpy(b, t->set, 32);
@@ -337,6 +337,31 @@ static void term_prove(const mf_term *t, uint8_t pv[][32])
         }
         for (unsigned i = 0; i < 32; i++) pv[d - MF_PROOF_LO][i] &= b[i];
     }
+}
+
+/* The positions of predicate `p` its candidates PROVE (R-26.4), [*dlo, *dhi]:
+ * every one, except on a CONTEXT predicate stating absent SATISFIES. There the
+ * ITEM holds wherever SOME read of it lies outside the subject (R-26.2), so a
+ * position is proven only where its being inside the subject implies every
+ * read is: the item's lowest offset for an item below the candidate (no read
+ * at a negative offset reaches past n), its highest for one after span 0 (no
+ * read at or after k reaches below 0), none for an item on both sides. A
+ * one-offset item proves that offset either way. */
+static void pred_proves(const mf_pred *p, long *dlo, long *dhi)
+{
+    *dlo = MF_PROOF_LO;
+    *dhi = MF_MAX_FWD - 1;
+    if (p->span_class != MF_SPAN_CONTEXT || p->absent != MF_ABSENT_SATISFIES) return;
+    long lo = 0, hi = 0;
+    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++) {
+        long a = p->term[t].offset;
+        long b = a + (p->term[t].kind == MF_T_RUN ? (long)p->term[t].run_len : 1) - 1;
+        if (t == 0 || a < lo) lo = a;
+        if (t == 0 || b > hi) hi = b;
+    }
+    if (hi < 0)       *dlo = *dhi = lo;
+    else if (lo >= 0) *dlo = *dhi = hi;
+    else              *dlo = 1, *dhi = 0;
 }
 
 const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
@@ -357,13 +382,17 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
            entry, so each term the row TESTS proves its bytes at every position
            it reads (a position outside the subject only where its CONTEXT
            predicate states absent SATISFIES, which the definition allows) */
+        long dlo, dhi;
+        pred_proves(&s->pred, &dlo, &dhi);
         for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
             if (row_tests(a, &s->pred, &s->pred.term[t]))
-                term_prove(&s->pred.term[t], out->proven);
-        for (unsigned i = 0; s->ctx && i < s->nctx; i++)
+                term_prove(&s->pred.term[t], dlo, dhi, out->proven);
+        for (unsigned i = 0; s->ctx && i < s->nctx; i++) {
+            pred_proves(&s->ctx[i], &dlo, &dhi);
             for (unsigned t = 0; t < s->ctx[i].nterm && t < MF_MAX_TERM; t++)
                 if (row_tests(a, &s->ctx[i], &s->ctx[i].term[t]))
-                    term_prove(&s->ctx[i].term[t], out->proven);
+                    term_prove(&s->ctx[i].term[t], dlo, dhi, out->proven);
+        }
     }
     /* proven0 and proven_prev are COPIES (kit_proof.md §4.2), equal by
        construction */
