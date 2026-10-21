@@ -135,6 +135,8 @@ typedef struct {
 
 /* [COMPOUND] What a part's compile reports (defined in the driver group). */
 typedef struct PcrecPartFacts PcrecPartFacts;
+/* [MEASURE-SET] the measurement set a part inherits (defined beside `Job`). */
+typedef struct PcrecMeasInherit PcrecMeasInherit;
 
 /* [COMPOUND] THE HARNESS-ONLY OPTIONS (compound.md §A.11, D163 add. 2 item
  * 2): outside `pcrec_options` and outside the caller contract, reached only
@@ -194,6 +196,10 @@ typedef struct {
     PcrecPartFacts *facts;
     /* [COMPOUND] the harness lever (NULL on every shipped path). */
     const PcrecHarnessOptions *harness;
+    /* [MEASURE-SET] a compound PART's measurement set, the walking
+     * attempt's own (non-NULL exactly on a walk's part compile): the part
+     * takes it and resolves none of its own. */
+    const PcrecMeasInherit *meas;
     /* [COMPOUND] out (the unit drive's decline controls, compound.md §E.4):
      * the last walk's verdict, the first failing conjunct's id or "admit";
      * untouched where no walk ran (NULL: not wanted). */
@@ -2909,6 +2915,17 @@ void pcrec_pf_admits_selfcheck(Ctx *cx);
  * by `Job.meas` below; libc-only, like core/ksrc.h. */
 #include "core/ks_measures.h"
 
+/* [MEASURE-SET] The set a compound part's compile reads: the walking
+ * attempt's RESOLVED set, its stamp text and the kit view its art is handed
+ * (`Job.meas`, `meas_stamp`, `mf_ms`), so P and its parts can never read two
+ * sets (docs/spec/measures.md §5¶8). Each lives in the walking attempt's
+ * arena, which outlives the part's compile. */
+struct PcrecMeasInherit {
+    const KsMeasSet *set;
+    const char *stamp;
+    const struct mf_measures *kit;
+};
+
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
@@ -3179,8 +3196,9 @@ typedef struct {
      * both NULL when nothing was named and the build has no default. LOADED
      * is not CONSULTED: `meas_consulted` is the memfn kit's `consulted`
      * (R-MS2), read at this attempt's `mf_art_end`, and only a consulted set
-     * is stamped (§3.5). `mf_ms` is the kit's view of `meas` (its `kit.`
-     * rows, NULL ones left out; R-MS1), built at the art's begin. */
+     * is stamped (§3.5). `mf_ms` is the view the kit's art is handed
+     * (R-MS1), built eagerly beside `meas` by `pcrec_memfn_measures_build`.
+     * A compound part takes all three from its walk (`PcrecEmitIn.meas`). */
     const KsMeasSet *meas;
     const char *meas_stamp;
     bool meas_consulted;
@@ -6680,6 +6698,11 @@ void pcrec_memfn_opts_check(Ctx *cx);
  * once per attempt, right after `pcrec_find_resolve`; records no ask and
  * refuses nothing a reader's ask would not. */
 void pcrec_memfn_analysis_build(Ctx *cx);
+/* [MEASURE-SET] Builds the measurement-set view this attempt's kit art is
+ * handed into `Job.mf_ms` (src/gen/memfn_sites.c): a part's inherited view,
+ * else the harness lever's set, else the `kit.` rows of `Job.meas`. Called
+ * by `compile_driver` once per attempt, right after `pcrec_meas_resolve`. */
+void pcrec_memfn_measures_build(Ctx *cx);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`
@@ -6835,7 +6858,8 @@ void pcrec_find_resolve(Ctx *cx, bool notes);
  *
  * `pcrec_meas_resolve` is the compile's caller (`pcrec_options.measures`/
  * `measures_dirs`), once per attempt, into `Job.meas`/`meas_stamp`; it
- * refuses through `pcrec_ctx_fail`. The store accessors serve the listing
+ * refuses through `pcrec_ctx_fail`. A compound part resolves nothing: it
+ * takes its walk's (`PcrecEmitIn.meas`). The store accessors serve the listing
  * and the checks: entry `i` of `pcrec_meas_store_count()`, its `<id>@<rev>`
  * name, its pre-parse and its embedded TEXT; `pcrec_meas_default_for` is the
  * class a set is the default of, or "". */

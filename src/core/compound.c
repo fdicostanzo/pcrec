@@ -50,10 +50,14 @@ static unsigned part_kept(unsigned need)
  * request (nothing exported, `need` kept) and part mode, its derivation's
  * report to `report` and its facts to `facts` (each NULL: not wanted).
  * `unrendered` keeps the placeholder prefix, for text the compound splices
- * into its own (which renders it). The part is already checked. */
+ * into its own (which renders it). `meas` is the walking attempt's
+ * measurement set, which the part reads instead of resolving `parent`'s
+ * options again (NULL: no walk, as from `pcrec_compile_part`). The part is
+ * already checked. */
 static int part_compile(const char *pattern, const pcrec_options *parent,
                         const CompPart *part, PcrecDeriveReport *report,
                         PcrecPartFacts *facts, bool unrendered, PcrecEntry pe,
+                        const PcrecMeasInherit *meas,
                         pcrec_output *out, pcrec_error *err)
 {
     pcrec_options o;
@@ -67,7 +71,7 @@ static int part_compile(const char *pattern, const pcrec_options *parent,
                              .part_entry = pe,
                              .bound = part->bound, .derive = part->derive->fn,
                              .derive_report = report, .unrendered = unrendered,
-                             .facts = facts, .harness = NULL };
+                             .facts = facts, .harness = NULL, .meas = meas };
     return pcrec_compile_driver(pattern, &o, out, err, NULL, NULL, NULL, NULL,
                                 NULL, &in);
 }
@@ -108,7 +112,7 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
         return -1;
     }
     return part_compile(pattern, parent, part, report, NULL, false,
-                        PCREC_ENTRY_COMP_A, out, err);
+                        PCREC_ENTRY_COMP_A, NULL, out, err);
 }
 
 /* ---- [COMPOUND] B4: THE ROW TABLE, THE PLACEMENT TABLE AND THE WALK -------
@@ -159,10 +163,13 @@ struct CompWalk {
 
 /* Part `i` of the walk's row, compiled on its first ask: 0, or -1 (the part
  * refused). Its parent options are P's own (the placeholder prefix: the text
- * is spliced unrendered, so K79 holds across the compound). */
+ * is spliced unrendered, so K79 holds across the compound), and so is its
+ * measurement set: this attempt's resolved one, never resolved again. */
 static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
+        const Job *job = w->cx->job;
+        const PcrecMeasInherit meas = { job->meas, job->meas_stamp, job->mf_ms };
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
@@ -172,7 +179,7 @@ static int walk_part(CompWalk *w, int i)
                                  * part-layout mark names: its operand's */
                                 i == w->row->arg[0] ? PCREC_ENTRY_COMP_A
                                                     : PCREC_ENTRY_COMP_B,
-                                &w->out[i],
+                                &meas, &w->out[i],
                                 &w->err[i]);
     }
     return w->rc[i];

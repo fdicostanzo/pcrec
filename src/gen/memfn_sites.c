@@ -99,6 +99,37 @@ static const mf_measures *memfn_measures(Ctx *cx)
     return ms;
 }
 
+void pcrec_memfn_measures_build(Ctx *cx)
+{
+    const PcrecEmitIn *in = cx->emit_in;
+    /* a part: the walking attempt's view, the same object its own art is
+       handed (§5¶8); R17-b' B1: the harness lever's set (a test build's);
+       else ([MEASURE-SET] M0) the attempt's loaded set, the build's default
+       when nothing was named */
+    cx->job->mf_ms = in && in->meas ? in->meas->kit
+                   : in && in->harness && in->harness->measures ? in->harness->measures
+                   : memfn_measures(cx);
+}
+
+#ifdef PCREC_CAND_TRACE
+#include <stdlib.h>
+/* [MEASURE-SET] THE MEASURES RECORD: the set an art is handed, read off
+ * mf_art_begin's argument, `MFMEAS<TAB>role<TAB>id@rev:digest<TAB>view
+ * object<TAB>loaded set object`, the role `-` off a part and a NULL set `-`,
+ * one per art, in the trace build with PCREC_MF_MEAS_TRACE set. The two
+ * object columns are addresses, compared within one run only: equal on P
+ * and its parts is the SAME set, not an equal one. */
+static void meas_record(Ctx *cx, const mf_measures *ms)
+{
+    if (!getenv("PCREC_MF_MEAS_TRACE")) return;
+    fprintf(stderr, "MFMEAS\t%s\t", cx->emit_in && cx->emit_in->part_role
+                                         ? cx->emit_in->part_role : "-");
+    if (ms) fprintf(stderr, "%s@%u:%s", ms->id, ms->rev, ms->values_digest);
+    else fprintf(stderr, "-");
+    fprintf(stderr, "\t%p\t%p\n", (const void *)ms, (const void *)cx->job->meas);
+}
+#endif
+
 mf_art *pcrec_memfn_art(Ctx *cx)
 {
     Job *job = cx->job;
@@ -106,19 +137,16 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
         ma->u = &cx->arena;
         ma->alloc = pcrec_memfn_arena_alloc;
-        /* R17-b' B1: the set is the harness lever's (a test build's), else
-           ([MEASURE-SET] M0) the attempt's loaded set, the build's default
-           when nothing was named; the analysis object is the attempt's,
-           built eagerly by compile_driver (pcrec_memfn_analysis_build):
-           passed, never built, here (NULL only for a Job no compile_driver
-           attempt made) */
-        const mf_measures *ms = cx->emit_in && cx->emit_in->harness &&
-                                cx->emit_in->harness->measures
-                              ? cx->emit_in->harness->measures : memfn_measures(cx);
-        job->mf_ms = ms;
+        /* the set view and the analysis object are the attempt's, built
+           eagerly by compile_driver (pcrec_memfn_measures_build,
+           pcrec_memfn_analysis_build): passed, never built, here (NULL only
+           for a Job no compile_driver attempt made) */
+#ifdef PCREC_CAND_TRACE
+        meas_record(cx, job->mf_ms);
+#endif
         job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags), ms,
+                               pcrec_memfn_denies(cx->opt->flags), job->mf_ms,
                                job->analysis);
         if (!job->mf) pcrec_ctx_nomem(cx);
         /* R17-b' B2 (R-MS6): the harness lever's arm-entry counter, under the
@@ -883,6 +911,18 @@ void pcrec_memfn_art_end(Ctx *cx, mf_art *art)
     if (mf_art_end(art, &consulted))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's artifact end "
                        "failed: %s", mf_art_error(art));
+#ifdef PCREC_CAND_TRACE
+    /* [MEASURE-SET] the SYNTHETIC CONSULT (trace build only): with
+       PCREC_MF_MEAS_CONSULT=ROLE the part ROLE's art reads as consulted, so
+       the shell's union (memfn_stamps.c's meas_stamp) is checkable before
+       any kit row reads a set key (tests/knowledge/run_part_measures.sh) */
+    {
+        const char *r = getenv("PCREC_MF_MEAS_CONSULT");
+        if (r && cx->emit_in && cx->emit_in->part_role &&
+            !strcmp(r, cx->emit_in->part_role))
+            consulted = 1;
+    }
+#endif
     cx->job->meas_consulted = cx->job->meas_consulted || consulted;
     if ((mf_includes(art) & MF_INC_STRING_H) && !cx->job->string_h)
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's text calls "

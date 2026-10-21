@@ -2441,7 +2441,8 @@ right after `<PREFIX>_FINDINGS`.
 <a id="s6-3-10-p13"></a>[6.3.10¶13] The value is the set the compile LOADED (`docs/spec/measures.md` §4),
 written iff a reader consulted it: pcrec's own readers (none exist today) or
 the search-code kit's (its `consulted`), on ANY attempt of the compile, and on
-a compound on P's compile or any part's. A lookup that found no row still
+a compound on P's compile or any part's; every part reads the set P's compile
+loaded (`docs/spec/measures.md` §5¶8). A lookup that found no row still
 consults. With nothing consulted the value is `""` and the artifact's bytes
 are the same under every set. No kit row reads a set today, so every artifact
 carries `""`.
