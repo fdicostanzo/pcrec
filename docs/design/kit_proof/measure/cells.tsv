@@ -1,0 +1,8 @@
+lit-l8	abcdefgh
+year4	\d{4}
+file-ext-order	\.tar|\.tar\.gz
+hex8-bounded	\b[0-9a-f]{8}\b
+foobar	foobar
+cat-bounded	\bcat\b
+done-eol	(?m)done$
+word-digit	\w(?=\d)\w

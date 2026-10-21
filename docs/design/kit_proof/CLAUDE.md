@@ -57,3 +57,4 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   `rx_search` into the `cover` entry. Measured once on `foobar` (main `a016b3bfa`,
   gcc 15.2 `-O2 -c`, dev box): `.text` 2,047 → 1,425 bytes, `rx_search` 100 → 61
   instructions (`-S`, the site inlined in both). Not a timing, not a verdict.
+- `measure/` — the `measure` step (§7): directional timing of the harness-routed `cover` artifacts against default (lane covertime, 2026-10-21): subject generator with python-`re` expected answers, timing driver, `measure.sh`, `read.py`, the boxqueue job. Own CLAUDE.md. This directory's "nothing was timed" does not apply to `measure/`.
