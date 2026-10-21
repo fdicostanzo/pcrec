@@ -111,9 +111,15 @@ Directory CLAUDE.md files: src/gen, src/facts, src/ir, tests, tests/findall
 
 ## 4. STATE AT HANDOFF
 
-Branch `lane/i1build`: I0 `ac4021692`, I1 and the FILEPIN self-pin after it
-(`git -C worktrees/i1build log --oneline e05050a48..`). Built and committed;
-**nothing below has run**. Queued as boxqueue jobs (owner `i1build`):
+Branch `lane/i1build`: I0 `ac4021692`, I1 `38a439e25`, the FILEPIN self-pin
+`6834bc26c` (`tests/codegen/run_recursion_identity.sh` -> `38a439e25`), then
+this report's commit. Rulings read: entries 1-2 (last applied: 2). Built and
+committed; **nothing below has run**. Queued at 2026-10-21 ~17:30 behind
+`560-kit-e8-window` as boxqueue jobs (owner `i1build`; the job scripts and
+`i0ref.sh`, which builds the I0 commit's pcrec into `build/i0ref`, are in
+`worktrees/i1build/build/i1jobs/`, uncommitted scratch). Each job is capped at
+8 cores; 640 waits for 600-630 to end and for the quiet gate (load1 < 2.0
+twice a minute apart), pinned to cpu7:
 
 | job | what | read |
 |---|---|---|
