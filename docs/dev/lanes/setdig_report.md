@@ -28,7 +28,7 @@ reorder the cards section and add an empty `libc`. Not required by anything that
   carry the label); the four synthetic sets gain the unit row (ratio 1, `measured`); header
   comment now cites `docs/spec/measures.md`. Sets regenerated.
 - `memfn/data/cards/kit-synthetic.tsv`: `kit-synthetic@2` added (ruled by the manager): @1's rows plus a `beta` card for the unit row;
-  the synthetic sets' `method` is now `kit-synthetic@2`. @1 is untouched: the loader refused
+  the synthetic sets' `method` is now `kit-synthetic@2`. generate.py now copies only the method's own version's cards into a set (the loader refuses two cards for one quantity). @1 is untouched: the loader refused
   sets built on it because the unit row's quantity had no card there (§3.1¶2).
 - `docs/design/memfn/r17b_prime/b4prep/mk_lever_set.py` + regenerated `b4prep-v1max2.tsv`
   (it imports generate.py's `row`/`render`, so it would have KeyError'd; and its set had defects

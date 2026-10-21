@@ -333,7 +333,8 @@ def check_sets(root, form):
         ver = method.split("@")[1]
         on = {c["quantity"]: c for c in crow if c["ver"] == ver}
         secc = ["\t".join(r[h] for h in s["cards"]["head"]) for r in s["cards"]["rows"]]
-        (ok() if secc == cards[table] else bad("%s: its cards section is not %s.tsv" % (fn, table)))
+        mine = [c for c in cards[table] if c.split("\t")[2] == ver]
+        (ok() if secc == mine else bad("%s: its cards section is not %s.tsv" % (fn, table)))
         rows = s["rows"]["rows"]
         bogus = sorted({r["unit"] for r in rows if r["unit"] not in UNIT_CODE} |
                        {r["status"] for r in rows if r["status"] not in STATUS_CODE})

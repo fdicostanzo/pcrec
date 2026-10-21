@@ -229,8 +229,10 @@ def render(set_id, tier, method, cards_file, rows, label):
     with open(os.path.join(HERE, "..", "cards", cards_file)) as fh:
         for ln in fh:
             ln = ln.rstrip("\n")
-            if ln.startswith("#owner") or (ln and not ln.startswith("#")):
-                out.append(ln)
+            f = ln.split("\t")
+            if ln.startswith("#owner") or (ln and not ln.startswith("#")
+                                           and f[2] == method.split("@")[1]):
+                out.append(ln)             # the method's own version only: a set holds one card per quantity
     out.append("#section rows")
     out.append("#key\tunit\tvalue_e6\tabs_ns_e6\tnoise_e6\tn\tstatus\tderivation\tinputs\tdeps\ttags\tsource")
     for r in rows:

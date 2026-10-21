@@ -23,23 +23,6 @@ rows	83
 values_digest	b3ea024ae0fe2fbb
 #section cards
 #owner	quantity	ver	dims	unit	subject	lengths	launches	rounds	aa_rule	gate_e6	env	deps
-kit	saving	1	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
-kit	eps	1	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
-kit	xover	1	form;vs;kind	bytes	synthetic	-	-	-	-	-	-	-
-kit	block	1	form	bytes	synthetic	-	-	-	-	-	-	-
-kit	gstar	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
-kit	lstar	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
-kit	g8	1	form;kind	bytes	synthetic	-	-	-	-	-	-	-
-kit	h3a	1	-	bytes	synthetic	-	-	-	-	-	-	-
-kit	h3b	1	-	bytes	synthetic	-	-	-	-	-	-	-
-kit	delta	1	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	dfloor	1	form;vs;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	cdisp_call	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	cfloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	ffloor	1	form;kind;lenclass	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	cdisp_use	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	ufloor	1	kind;layer;nforms	walkbytes	synthetic	-	-	-	-	-	-	-
-kit	wfloor	1	form;kind	walkbytes	synthetic	-	-	-	-	-	-	-
 kit	beta	2	form;kind;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	saving	2	form;vs;shape	ratio	synthetic	-	-	-	-	-	-	-
 kit	eps	2	subject;lenclass	ratio	synthetic	-	-	-	-	-	-	-
