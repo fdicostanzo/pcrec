@@ -526,7 +526,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Backlog
 - [MECH-REACHONLY] STATE:not-started — A REACH-ONLY SWEEP FOR THE SABOTAGE MATRIX + A STRATEGY-WIDENING DELIVERY BAR
   filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
-  status (2026-10-21): filed from docs/dev/devmethods/apply_here.md §5; nothing built.
+  status (2026-10-21): built on lane/reachonly (REACH_ONLY=1, self-test, BOILERPLATE line, mech CLAUDE section); the first full sweep + self-test are queued (boxqueue job 200-reachonly-reach), results owed in reachonly_report.md.
   trigger: the next strategy-widening change (a new row, a widened admission, a new rung), or the next full matrix that finds UNREACHED rows an optimization moved.
   refs: docs/dev/devmethods/apply_here.md §5; tests/mech/CLAUDE.md; docs/dev/lanes/BOILERPLATE.md; [SABANCHOR]
   Problem: when an optimization starts firing in new places it moves sabotage witnesses and size-rung witnesses off their sites, and nothing notices until a full matrix runs (five instances 2026-09-22..2026-10-13). Charter, one careful lane (cost: medium): (1) `REACH_ONLY=1` for tests/mech/run_sabotage_matrix.sh evaluates every row's reach probes against the tree without building any sabotage (minutes, not hours); (2) a BOILERPLATE delivery-bar line: a change that makes a strategy fire in new places runs the reach-only sweep and the size-rung witness set, and re-aims each moved witness with the new deny flag in the same delivery.
