@@ -63,3 +63,9 @@ population against MAIN at each build step (`../r17b_prime.md` §3.5).
   routed-record census (`routed_census_b3b.py`), their floors and `out/`.
   Own CLAUDE.md. The main-side proposed diff and the heavy chain live under
   `docs/dev/lanes/b3b/`. Report: `docs/dev/lanes/b3b_report.md`.
+
+- `grid2read/` — the reading of the zen4-grid2 timing slot (lane grid2read,
+  2026-10-16, analysis only): `grid2read.py`/`grload2.py`, the full output
+  `analysis.txt`, the proposed `kit-grid@2` rows `keys.tsv`, and `SHA256SUMS`
+  of the 18 slot files read. Own CLAUDE.md; the report is
+  `docs/dev/lanes/grid2read_report.md`.
