@@ -561,3 +561,54 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Note (for the kit's planning, not a request):** D161 addendum 16 sets [KIT-VERIFY]'s direction: per-origin-offset proven sets generalising `proven0`/`proven_prev`, a pcrec `consumable_len` statement, pcrec-stated prefix exactness replacing add. 10's `byte_form`, and context (fixed lookbehinds, position-rewritten `\b`) as spans before the origin with an absent-byte bit. Nothing is built until main's census (lane kvcensus) reports; the kit's comments on the addendum are welcome in responses.md.
 
 **Sabotage ids:** kit-side on request (next free main ledger id S1130).
+
+## R-26 (2026-10-21, pcrec manager) — the per-offset proof, prefix exactness, CONTEXT spans in `mf_site.ctx[]` with an absent rule, the read floor, and the REPORT consumer
+
+**Customer:** [KIT-VERIFY] U1, `docs/design/kit_proof.md` rev 2.1 (D161 add. 16; reviews
+r2, r3; census docs/dev/kvcensus.md). **After R-25** (`proven0` honours `need`; 524 of
+650 native OFS sites send OPTIONAL offset-0 terms today) and **after R17-b′ B3b**
+(span 0's BOUNDED class).
+
+| item | what pcrec needs (facts) | landing bar |
+|---|---|---|
+| R-26.1 | a BOUNDED span 0 of a FIND site carries `prefix_stated`, `exact_len`, `consumable_len` (kit_proof.md §4.1). `prefix_stated` UNSTATED is refused there; on every other predicate it must be 0. `consumable_len > exact_len` is refused | one `MF_SITE_ABI` event, readers by grep. ZERO artifact movers on every emit_sweep arm, with pcrec stating STATED / 0 / 0 on every site in the same change |
+| R-26.2 | `mf_site.ctx[]`/`nctx` (appended last): CONTEXT predicates with `absent` and `consumable` (UNSTATED refused there, 0 required elsewhere), offsets in `[−MF_MAX_BACK, 0)` or `[k, k + MF_MAX_AHEAD)`, at most `MF_MAX_CTX`, refused on a site with no BOUNDED span 0. MLINE's stop predicate states `span_class` CONTEXT, `absent` FAILS, `consumable` NO. COMPLETENESS and BINDING read `absent`: under SATISFIES a candidate whose context offset lies outside the subject is yielded when the other spans hold, under FAILS it is not. `read_floor` (enum, §3.5): reads lie in `[floor, n)`; `MF_FLOOR_LO` with a CONTEXT term at a negative offset is refused, since such a term has no verdict inside the subject `[r3rc m5]` | MLINE's restatement: zero movers. A G2 fixture per `absent` value at `c = 0` and at `c + k = n`, completeness checked by the byte-loop oracle. A refusal fixture per UNSTATED field (`absent`, `consumable`, `read_floor`, `prefix_stated`), including "UNSTATED `absent` read as 0" |
+| R-26.3 | `site_kind` `MF_SK_REPORT`: the candidate is the answer, with no engine behind it; the site states `consumer` `MF_C_RESULT` (refused otherwise) `[r3rc m3]`. Every span-0 and context term is REQUIRED (refused otherwise). NONE is not a legal reply: a row that cannot serve every REQUIRED term does not apply (K96). On a REPORT site binding and completeness together make `proven[d]` EQUAL to the REQUIRED term's set at every `d`; the host checks equality (C14) `[r3rc m1]` | refused before R-26. The finder gate (`finder.c`) admits it wherever a REPORT row exists. A fixture with one OPTIONAL term on a REPORT site, refused |
+| R-26.4 | `mf_class.proven[]` (kit_proof.md §4.2). `kit_class` COPIES `proven0`/`proven_prev` from it | `MF_CLASS_V` 4. G2: at every candidate of every generated site, every proven offset holds, including negative offsets, offsets after the span, and the absent rule. **COMPLETENESS**: a site whose form proves an OPTIONAL position yields every covered position where all spans hold (obligation 1), with an over-filter plant (a form testing a narrower set than the term) caught by the byte-loop oracle `[r3 snd-m5]`. C-PROOF: identical across SIMD off and every live level. The Q-R17P-25 trace check is extended to every `d` |
+| R-26.5 | declarations: `MF_MAX_SPAN_POS` (derived from `MF_MAX_TERM`; pcrec asserts `PCREC_MAX_REQ_RUN_SCAN ≤` it), `MF_MAX_AHEAD` 1 (D77, labelled with its trigger), `MF_MAX_CTX` 2 (items, derived from stage 1's source: one before, one after; trigger UL-8) `[r4 B1]`, `MF_PROOF_LO`, `MF_MAX_FWD` | declarations only |
+| R-26.6 | the kit's REPORT row lands UNROUTED (`fd_rows[].routed` false, `finder.c:964`). The host states, through `mf_preview(art, "R-26.6")` (kit_proof.md §7, `[r3rc M-B]`), that an art is a harness PREVIEW of that routing step and is never shipped; on such an art the kit decides as it will once the step routes | zero movers on every arm; `mf_preview` refused after the first define, twice, or for a step the kit does not name; no `options.def` row for it, so `mf_opts_check` refuses any `--memfn=` spelling of it; the row's G2 fixtures run in the kit's suite |
+
+**Grain and exactness** `[r4 B1]`: one `ctx[]` entry per context ITEM (§4.1); pcrec
+sends EXACT items only in R-26, so no entry carries an exactness field and the kit
+treats every `ctx[]` entry as an equivalence.
+
+**R-26.7, FILED (not in R-26's landing; trigger UL-b or UL-g)** `[r4 B1]`: a per-item
+exactness fact, `EXACT` / `SUPERSET` with an UNSTATED zero refused on a CONTEXT
+predicate, where a SUPERSET item is a necessary condition only (a filter, never a
+proof: a REPORT site refuses it). Its customers are a wider lookbehind sent as a filter
+on seeded DFA sites (`ctx_span.md` UL-b, kit_proof U4) and the producer as a
+prefilter's context oracle (UL-g). Neither exists today, so the field is not asked for
+(D77); the first customer files it as its own request.
+
+**Readers the kit updates (K96, per field: class and `serves`/`uses`)**: `fields.def`
+(one `MF_FIELD` row per new field, with `cl_*` classify functions in `gate.c`), every
+arm's `[FLD_x] =` contract table (`ofsskip.c:753`, `pffind.c:364`, `precheck.c:362`,
+`runcmp.c:553`, `vrun.c:470`, `generic.c:814`, `mismatch.c:247`, and `finder.c`'s
+`[FLD_site_kind]` gate at `:205`), and `memfn/tests/g2/g2_gen.c`/`g2.h` (generation of the new
+fields and the REPORT kind).
+
+**Not asked:** any method. Which row serves REPORT and with which form is the kit's
+(D157, D161 add. 6).
+
+**Sequencing:** R-25 → R17-b′ B3b → R-26.1-R-26.5 at zero movers (Z1) → R-26.6 (Zk) →
+pcrec's Z2 → B1, which routes the REPORT row together with pcrec's abi event (a kit byte
+move is a pcrec abi event in the same commit).
+
+**Sabotage ids:** pcrec-side S1130-S1150 PROPOSED (kit_proof.md §6.3; S1149 `[r4 B9]`, S1150 `[r4rc R2]`). Kit-side ids
+on request: a form claiming an untested offset; an absent-SATISFIES candidate dropped;
+an absent-FAILS candidate yielded; a proof bit set only by a SIMD row (C-PROOF); an
+over-filter on an OPTIONAL position; an UNSTATED field accepted.
+
+**Build go:** Frank, 2026-10-21 ("both you and kit please proceed"): this is the build go for [DD-11.5] part 1 / [KIT-VERIFY] U1 on both sides. Text is kit_proof.md rev 2.1 §4.3, filed verbatim. Staging per kit_proof.md §7: Z1 (R-26.1-R-26.5, zero movers) then Zk (R-26.6, REPORT row UNROUTED); main runs X0 meanwhile and builds Z2 on top of Zk; B1 (the one byte-moving event) waits for R17-b′ B4.
+
+**Sabotage ids:** kit-side on request (main ledger next free S1221).
