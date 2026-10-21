@@ -93,3 +93,48 @@ landings) loses 8.5-13.3% and dig L = 32 g = 16 loses 2.6%, and the rule lists n
 
 Resource use: `make -j4` once (about 10 s), a few dozen compiles; no make test, no sanitizer, no timed run; only the two queued
 jobs are heavy. Scratch under this worktree's `build/` (gitignored); nothing written outside the worktree except by the queue's own run dirs.
+
+## Closing (lane b4close)
+
+2026-10-21. Rulings file `b4prep_rulings.md`: all three entries applied (the short-subject class, the I-156 note, the POSCOST count).
+
+**Item 1: CLOSED, no sign changed.** `b4prep/f3rr.md`, `raw_F3rr.tsv`. Re-timed V1 vs walk: word-eq (2,0,1) -13.71% (was -13.27%),
+quad (3,1,0) -41.26% (was -41.26%); S1/A1 betas within 1.7% of grid2read's (quad S1 0.2816 vs 0.2864 ratio). All values MEASURED (no
+LOAD-SUSPECT cell, A/A held in all 4 groups). word-eq A1 beta now exists: 0.019163 ns/B. keys.tsv and SHA256SUMS untouched.
+
+**Item 4: CLOSED. The 9 s wall is real, not a short sweep (K35 check).** The job's header says population 4636 distinct patterns x 2 arms
+= 9272 compiles (the ~9.2k sizing) and 2374 set sites. Checked from the output: 2374 data rows = 2374 sites; every one of fdb2's 2369
+old sites is present with identical members and shape (0 lost, 5 new; the corpus grew 4624 -> 4636 patterns); 1457 distinct patterns carry
+a site in both. Compiles are ~1 ms each (the harness compiles to stdout; 4 jobs), so 9 s is consistent. A residual gap: `shadow_census.py manifest`
+ignores a compile's return code (`rc` is returned but unread), so a failed compile would silently drop a pattern; the old-site cross-check above
+is the evidence none did.
+- Movers: 1766 (arm, pattern) = byte 658 + byte-vm 1108 (fdb2: 860 = 320 + 540). By the ID (arm, pattern): all 860 old movers are movers
+  again (only-OLD 0); 906 are new (byte 338, byte-vm 568). By group, the new V1 sites per shape: r1e0c0 780 (unchanged), r0e2c0 330, r0e0c1 259,
+  r0e1c0 159, r1e1c0 124, r2e0c0 43, r0e1c1 40, r1e0c1 19, r0e0c2 15 (counts are sites, all arms; full table in `manifest_summary.txt`).
+- Of those, the shapes with no saving key in keys.tsv that now route to V1 are r0e1c0 (159 sites), r1e0c1 (19), r0e0c2 (15): 193 sites over both arms.
+- The "54 no-key sites": the summary cannot reproduce the 54 (it was a byte-arm count among R17-b's 620 candidate movers, a different
+  denominator, and the keys.tsv-keyed set has changed since). On the regenerated manifest, sites on shapes with no keys.tsv key: byte
+  arm 172 sites = 71 V1 (57 at 1 term, 14 at 2) + 101 WALK (41 shape "-", 45 at 3 terms, 15 at 4); byte-vm 240 = 122 V1 + 118 WALK.
+  So of the byte-arm no-key sites with a term count (131), 71 route V1 and 60 walk.
+- Rule check ("V1 iff terms <= 2") finds 2 sites that disagree, both byte arm, both WALK at 2 terms: `(?:\Gx|\b)(?:ab|cd)\b` (kind DFA_HAT,
+  r0e0c1) and `(?i)(?:^|;|\|)\s*(?:cat|ls|id|whoami)\b` (kind DFA_SCAN, r0e2c0). Re-running the harness shows both are row R7w with
+  basis UNMEASURED-DEFAULT and 2 members: the cause is NOT established; the two kinds (DFA_HAT, DFA_SCAN) differ from the ones the lever set was proven on,
+  and a missing per-kind row in the lever set is the likeliest reading (unverified). FINDING (small): the term-count rule as spelled by rev 4.1 and the lever set disagree on 2 of 2374
+  sites; B4's census must say which wins.
+
+**Short-subject ruling: applied.** `expected_losses.md` section 3e and r17b_prime §9.2a register SS1 (dfa-hat L = 32 g = 2, same cell as EL5),
+SS2a-e (dfa-hat L = 32 at g = 16/32/64/256/inf) and SS3 (dig L = 32 g = 16) under a new L <= 64 B class, tagged `[b4prep-close]`; 3b is ruled.
+
+**POSCOST count (rulings entry 3): OWED, with cause.** The manifest (and the finder shadow trace behind it) carries one shape per site, the
+SCANNED position's cover; it has no per-position covers, so "has a <= 2-term position anywhere within its span" and "has a <= 2-term superset
+filter" cannot be counted from it. What it does give: the walk-routed set-FIND sites with >= 3 terms at the scanned position number 517
+(byte 241, byte-vm 276; 179/201 of them are r3e0c1, the `\w`-like class). `--emit-facts` has `kset_walk` (per-position set SIZES, e.g.
+`[3],[3],[4],[10],[3],120`) and `RX_DFA_PREFILTER_OFFSETS`, which are neither covers nor a span. Exact fix (a build, not done here): extend the harness's FD
+trace line with `poscov=<terms per position over the span>` (it already holds each position's byte set), rerun `521`'s command (~9 s,
+`shadow_census.py manifest --bin build/pcrec-mftrace-harness --ls-bin build/pcrec --set b4prep/b4prep-v1max2.tsv --jobs 4`), then count the 517 sites
+by min(terms over positions) <= 2, and for the superset filter state the hull merge (merge cover terms by hull while the merged filter stays
+<= 2 terms and adds <= k extra members; k to be stated). Needs a build go for the harness edit.
+
+## State at handoff (lane b4close)
+Items 1 and 4 CLOSED; POSCOST OWED (needs a harness build go); short-subject class registered; §3.1a items 1 and 4 marked `[b4prep-close]`.
+Rulings: last entry applied is the POSCOST entry (2026-10-21, Frank via kit manager).

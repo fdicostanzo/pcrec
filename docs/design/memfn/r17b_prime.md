@@ -1319,7 +1319,7 @@ gate stands.
 | **M0** ([MEASURE-SET]'s first step) | **NOT MET** | Plan row [MEASURE-SET] is not started. [KNOW-SRC] K0-K3, its prerequisite, are done (plan, 2026-10-17) | M0 builds the store, `ksgen`'s measures kind, the embed, `<PREFIX>_MEASURES` and `rx_info.measures`, and `--list-measurements`. If M0 lands after B4, its stamp is a second abi event (§3.1 B4 row) |
 
 **OWED before B4 is briefed** (from grid2read §8-§9, plus rev 4's own consequences):
-1. `[b4prep]` **OWED, QUEUED** (job `520-kit-b4prep-f3rr`; artifact `r17b_prime/b4prep/f3rr.md` once it has run). **The quiet re-time of the two load-suspect F3 cells** (grid2read §8 item 1): `f3-word-eq`
+1. `[b4prep-close]` **CLOSED** (job `520-kit-b4prep-f3rr` green; `r17b_prime/b4prep/f3rr.md`, raw `raw_F3rr.tsv`: no sign changed, V1 -13.7% on (2,0,1) and -41.3% on (3,1,0), all values MEASURED; keys.tsv not edited). **The quiet re-time of the two load-suspect F3 cells** (grid2read §8 item 1): `f3-word-eq`
    n1m and `f3-quad` n64k with their partners, about 2 minutes.
    - **Command.** It is quoted verbatim in grid2read §8. Run it in the slot directory
      `worktrees/memfn-slot/grid2`, with `RAW_TAG=F3rr` and its own `PASS_STATUS`, so
@@ -1342,7 +1342,7 @@ gate stands.
    the kit compiler under `--memfn=no-pf-terms-mask`, while B4's baseline is MAIN's walk
    (§9.2 [rev3 C6]). Owed: a byte compare of the two walks' emitted text on grid2's
    cells, before B4's G1 reads the slot's walk as main's.
-4. `[b4prep]` **OWED, QUEUED** (job `521-kit-b4prep-manifest`; artifacts `r17b_prime/b4prep/predicted_movers_B4_rev41.tsv` and its summary once it has run; the lever set and tooling are committed). **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
+4. `[b4prep-close]` **CLOSED** (job `521-kit-b4prep-manifest` green; `r17b_prime/b4prep/predicted_movers_B4_rev41.tsv`, summary `manifest_summary.txt`: 1766 movers (byte 658, byte-vm 1108) against fdb2's 860, the 860 all kept, 906 new; the no-key split is in the report's Closing section; two DFA-kind sites disagree with the term rule, see the report). **B4's predicted-mover manifest, regenerated.** `r17b_prime/fdb2/predicted_movers_B4.tsv`
    (860 movers) predicts R7 on grid1's shapes only, under the interim set.
    - **Why it is stale.** Under rev 4, item 3a's three shapes route too, and R0's rows
      are gone. `[rev4.1]` Under the term-count rule the untimed 1-2 term covers route too,
@@ -2561,6 +2561,16 @@ The 8 B bound comes from grid2's measured losing region: V1 is +14.9% at g = 2 a
   covering most landings. The cell is then marked `selected-without-counters`.
 - **Regular cells with a mean gap above 8 B** were not measured by grid2. They are
   WATCH cells: reported, not expected, not scored.
+- `[b4prep-close]` **The SHORT-SUBJECT class** (kit manager, confirmed by main,
+  2026-10-21; D169's reasoning). A second class of EXPECTED LOSS: a B4 mover at OFF
+  (condition 1) whose call length L is at most 64 B, at any gap and any landing
+  regularity. The regular-landing rule above stays as written. Registered under it,
+  before any B4 timing, are the three grid2 losses it was written for (the rows are in
+  `r17b_prime/b4prep/expected_losses.md` section 3b): **SS1** dfa-hat (0,1,1) L = 32 g = 2
+  (+41.3%, also EL5 under the regular class), **SS2** dfa-hat (0,1,1) L = 32 at g >= 16
+  (+8.5% / +13.3% / +11.3% / +9.3% / +8.7% at g = 16 / 32 / 64 / 256 / inf), **SS3** dig
+  (1,0,0) L = 32 g = 16 (+2.6%). The 2x FINDING line holds for this class too; a loss
+  outside the listed classes still refutes B4 (§9.4).
 - ~~**If Q-R17P-27 builds F2 without a density condition**, the VM hat's g = 2 cells
   join the list at B5 by the same rule (grid2: +38.3%).~~ `[rev4.1]` **Q-R17P-27 is
   answered YES: F2 is built at B5 without a density condition, so the VM hat's g = 2

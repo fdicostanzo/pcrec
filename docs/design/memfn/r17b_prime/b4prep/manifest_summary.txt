@@ -1,0 +1,82 @@
+== NEW (predicted_movers_B4_rev41.tsv): 2374 set sites, 1766 (arm, pattern) movers
+   shape -        row R7w  pick WALK  sites 86
+   shape r0e0c1   row R7   pick V1    sites 259
+   shape r0e0c1   row R7w  pick WALK  sites 1
+   shape r0e0c2   row R7   pick V1    sites 15
+   shape r0e0c3   row R7w  pick WALK  sites 5
+   shape r0e1c0   row R7   pick V1    sites 159
+   shape r0e1c1   row R7   pick V1    sites 40
+   shape r0e1c2   row R7w  pick WALK  sites 10
+   shape r0e2c0   row R7   pick V1    sites 330
+   shape r0e2c0   row R7w  pick WALK  sites 1
+   shape r0e2c1   row R7w  pick WALK  sites 6
+   shape r0e3c0   row R7w  pick WALK  sites 31
+   shape r0e3c1   row R7w  pick WALK  sites 4
+   shape r0e4c0   row R7w  pick WALK  sites 12
+   shape r1e0c0   row R7   pick V1    sites 780
+   shape r1e0c1   row R7   pick V1    sites 19
+   shape r1e0c3   row R7w  pick WALK  sites 2
+   shape r1e1c0   row R7   pick V1    sites 124
+   shape r1e1c1   row R7w  pick WALK  sites 10
+   shape r1e2c0   row R7w  pick WALK  sites 14
+   shape r1e2c1   row R7w  pick WALK  sites 1
+   shape r1e3c0   row R7w  pick WALK  sites 2
+   shape r2e0c0   row R7   pick V1    sites 43
+   shape r2e0c1   row R7w  pick WALK  sites 4
+   shape r2e0c2   row R7w  pick WALK  sites 6
+   shape r2e1c1   row R7w  pick WALK  sites 2
+   shape r3e0c0   row R7w  pick WALK  sites 26
+   shape r3e0c1   row R7w  pick WALK  sites 380
+   shape r4e0c0   row R7w  pick WALK  sites 2
+   movers by arm: {'byte-vm': 1108, 'byte': 658}
+== OLD (predicted_movers_B4.tsv): 2369 set sites, 860 (arm, pattern) movers
+   shape -        row R7w  pick WALK  sites 86
+   shape r0e0c1   row R7w  pick WALK  sites 260
+   shape r0e0c2   row R7w  pick WALK  sites 15
+   shape r0e0c3   row R7w  pick WALK  sites 5
+   shape r0e1c0   row R7w  pick WALK  sites 159
+   shape r0e1c1   row R7   pick V1    sites 40
+   shape r0e1c2   row R7w  pick WALK  sites 10
+   shape r0e2c0   row R7w  pick WALK  sites 326
+   shape r0e2c1   row R7w  pick WALK  sites 6
+   shape r0e3c0   row R7w  pick WALK  sites 31
+   shape r0e3c1   row R7w  pick WALK  sites 4
+   shape r0e4c0   row R7w  pick WALK  sites 12
+   shape r1e0c0   row R7   pick V1    sites 780
+   shape r1e0c1   row R7w  pick WALK  sites 19
+   shape r1e0c3   row R7w  pick WALK  sites 2
+   shape r1e1c0   row R7w  pick WALK  sites 124
+   shape r1e1c1   row R7w  pick WALK  sites 10
+   shape r1e2c0   row R7w  pick WALK  sites 14
+   shape r1e2c1   row R7w  pick WALK  sites 1
+   shape r1e3c0   row R7w  pick WALK  sites 2
+   shape r2e0c0   row R7   pick V1    sites 43
+   shape r2e0c1   row R7w  pick WALK  sites 4
+   shape r2e0c2   row R7w  pick WALK  sites 6
+   shape r2e1c1   row R7w  pick WALK  sites 2
+   shape r3e0c0   row R7w  pick WALK  sites 26
+   shape r3e0c1   row R7w  pick WALK  sites 380
+   shape r4e0c0   row R7w  pick WALK  sites 2
+   movers by arm: {'byte-vm': 540, 'byte': 320}
+== keyed shapes in keys.tsv: r0e0c1,r0e1c1,r0e2c0,r1e0c0,r1e1c0,r2e0c0,r2e0c1,r3e0c1,r3e1c0
+== NEW sites on shapes with NO saving key (the 'no-key sites'), by arm, term count, pick
+   arm byte    terms None pick WALK  sites 41
+   arm byte    terms 1    pick V1    sites 57
+   arm byte    terms 2    pick V1    sites 14
+   arm byte    terms 3    pick WALK  sites 45
+   arm byte    terms 4    pick WALK  sites 15
+   arm byte-vm terms None pick WALK  sites 45
+   arm byte-vm terms 1    pick V1    sites 102
+   arm byte-vm terms 2    pick V1    sites 20
+   arm byte-vm terms 3    pick WALK  sites 57
+   arm byte-vm terms 4    pick WALK  sites 16
+   TOTAL arm byte    pick V1    sites 71
+   TOTAL arm byte    pick WALK  sites 101
+   TOTAL arm byte-vm pick V1    sites 122
+   TOTAL arm byte-vm pick WALK  sites 118
+== rule check: sites whose pick disagrees with 'V1 iff terms <= 2': 2
+    ('byte', '(?:\\\\Gx|\\\\b)(?:ab|cd)\\\\b', '1', 2, 'r0e0c1', 'R7w', 'WALK')
+    ('byte', '(?i)(?:^|;|\\\\|)\\\\s*(?:cat|ls|id|whoami)\\\\b', '1', 2, 'r0e2c0', 'R7w', 'WALK')
+== movers by ID: NEW 1766, OLD 860, in both 860, only NEW 906, only OLD 0
+   only NEW by arm: {'byte': 338, 'byte-vm': 568}
+   only OLD by arm: {}

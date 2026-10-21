@@ -63,6 +63,24 @@ them to the list: widening the rule is main's call (and §9.2a says the list is 
 They are movers under the term-count rule and join the list only through a counter reading at B4 (the rule's "no
 counters" fallback: the gap sequence itself, marked `selected-without-counters`).
 
+## 3e. `[b4prep-close]` The SHORT-SUBJECT class, registered (ruling 2026-10-21, kit manager, confirmed by main)
+
+3b is RULED: §9.2a gains a SHORT-SUBJECT class (L <= 64 B, D169's reasoning); the regular-landing rule stays as written. The
+three unlisted grid2 losses are registered under it before any B4 timing. The 2x FINDING line holds for the class; a loss
+outside the listed classes still refutes B4 (§9.4). This section does not edit EL1-EL11.
+
+| id | cell | landings | grid2 V1 vs walk | 2x line (FINDING) | source |
+|---|---|---|---|---|---|
+| SS1 | dfa-hat (0,1,1), g = 2, L = 32 | regular (also EL5) | +41.3% R | +82.6% | §6b |
+| SS2a | dfa-hat (0,1,1), g = 16, L = 32 | unpredictable | +8.5% R | +17.0% | §6b |
+| SS2b | dfa-hat (0,1,1), g = 32, L = 32 | unpredictable | +13.3% R | +26.6% | §6b |
+| SS2c | dfa-hat (0,1,1), g = 64, L = 32 | unpredictable | +11.3% R | +22.6% | §6b |
+| SS2d | dfa-hat (0,1,1), g = 256, L = 32 | unpredictable | +9.3% R | +18.6% | §6b |
+| SS2e | dfa-hat (0,1,1), g = inf, L = 32 | unpredictable | +8.7% R | +17.4% | §6b |
+| SS3 | dig (1,0,0), g = 16, L = 32 | unpredictable | +2.6% R | +5.2% | §6b |
+
+SS1 is the same cell as EL5 (one cell, two classes; scored once, against the tighter of the two lines, which are equal).
+
 ## 4. The relay question to pcrec-bench (DRAFT; main sends it; the lane writes nothing to pcrec-bench)
 
 > pcrec-bench: for the sets B4 (kit routing commit, R17-b prime) will be judged on, which cells have a set-FIND
@@ -78,4 +96,4 @@ counters" fallback: the gap sequence itself, marked `selected-without-counters`)
 
 - The bench's cells (relay, section 4), owner main, trigger: before E5's pre-registration.
 - A counter reading of the walk's misses per landing on every B4 G1 cell (to apply the boundary): owner B4's acceptance lane.
-- Main's ruling on 3b.
+- ~~Main's ruling on 3b.~~ `[b4prep-close]` Ruled and registered (3e).
