@@ -4510,7 +4510,10 @@ comment's continuation lines count as code in the size classifier), and
 by `pcrec_emit_findings_line` and the new `pcrec_emit_measures_line`
 (`<PREFIX>_MEASURES` and `.measures =`). `memfn_sites.c`: `memfn_measures`
 builds the kit's `mf_measures` from the compile's set (`Job.meas`; the
-harness set overrides it) and records `mf_art_end`'s `consulted` in
+harness set overrides it), once per attempt and eagerly
+(`pcrec_memfn_measures_build`, into `Job.mf_ms`; a compound part takes its
+walk's view instead, lane partmeas, `docs/spec/measures.md` §5¶8), and
+records `mf_art_end`'s `consulted` in
 `Job.meas_consulted`. `memfn_stamps.c`: `meas_stamp` renders `id@rev:digest`
 only when the kit consulted a set key, else `""`, at the ks-mark render
 point after `mf_art_end`. No kit row reads a set key before B4, so the
