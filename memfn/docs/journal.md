@@ -2530,3 +2530,11 @@ pointer when a kit change merges to main.
 ## 2026-10-21 — R-26 build go; Z1 lane started
 
 Main filed R-26 (kit_proof U1) at d970abbbc on Frank's build go ("both you and kit please proceed"). Acked on `lane/memfn-r26` (cc4f87ad3). Z1 (R-26.1-R-26.5: prefix exactness, ctx[] with the absent rule, read_floor, MF_SK_REPORT accepted with no row, proven[], declarations; one MF_SITE_ABI event 17→18; zero movers) went to opus lane `r26z1` (worktrees/r26z1). Its last act is queueing boxqueue job 500-kit-r26z1-heavy (emit_sweep all nine arms, then make test). Zk (R-26.6) follows on the same branch after the Z1 review. I asked main for six kit-side sabotage ids. Main merged lane/memfn-b4 (4c46ddcba) and reserved S1221-S1226 for the kit plants; main merged into this branch (append conflicts in journal and responses resolved, main's entries first).
+
+## 2026-10-21 — Frank's build go for the next stretch: R-26, the B4 prep and B4, then B5-B9
+
+Frank, to the kit directly, after I laid out the plan in three sections: "Ok to proceed through sections 1-3 of work as described above". The three sections:
+- (1) R-26: Z1 (building), then Zk (R-26.6, the REPORT row UNROUTED plus `mf_preview`) on the same branch after the Z1 review.
+- (2) R17-b′ B4: the five pre-brief OWED items of r17b_prime §3.1a, starting now in a second lane. The 2-minute F3 re-time is queued through boxqueue. Then B4 itself, briefed once its gates hold (main's M0, started today, and E8 PASS or PROVISIONAL PASS).
+- (3) B5 (F2: the VM hat to V1, the reverse plant), B6 (shadow runs against the predictions), B7 (the deny classes) and B9 (LOCKDOWN, then R17-b″ / entry_rows), each as designed in r17b_prime §3.1.
+This is a build go, so it does NOT lift any gate. B4 still waits for M0 and E8. Every byte move still lands as a pcrec abi event in the same commit, with main merging. The B4 timing windows go through boxqueue/boxlock and are cleared with Frank as usual.
