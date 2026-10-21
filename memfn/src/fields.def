@@ -141,9 +141,9 @@ MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by no
 /* the finder table's gate fields (R17-b' B1, MF_SITE_ABI 12; r17b_prime.md
    §1.2 [rev3 D1, A22]): the call mode (R-19), the site's consumer kind
    (§4.3; STATED by pcrec from B2, PR-3), the layer variant the finder walk
-   evaluates and the decided span's need. These twelve classes fill the
-   class space to its 64-bit mask (kit.h's _Static_assert): the next class
-   needs the mask widened first */
+   evaluates and the decided span's need. These twelve classes filled the
+   class space's first 64-bit mask; since R-26 Zk a class set is a 128-bit
+   kit_set (kit.h), so a class is added here with no other edit */
 MF_CLASS(ONESHOT,     "mf_site.body MF_BODY_ONESHOT: one call answers one search")
 MF_CLASS(PARAM,       "mf_site.body MF_BODY_PARAM: a shared body, M a run-time parameter (reserved)")
 MF_CLASS(DFA_SCAN,    "site kind: a DFA body's forward scan")
@@ -264,11 +264,11 @@ MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
 /* ---- the fields: R-26 (MF_SITE_ABI 18; kit_proof.md §4.1) ----------------
  *
  * Span 0's prefix facts, the context spans and their facts, and the read
- * floor. THE CLASS SPACE IS FULL (64, kit.h's _Static_assert), so these read
- * through classes the space already has, each named in its doc; with these
- * seven the FIELD space is full too (64). The first row that needs a class
- * of its own (R-26.6's REPORT row needs one for `site_kind`) widens the mask
- * first. No form reads the prefix facts, `consumable` or `read_floor` (they
+ * floor. They were written when the class space was full (64), so they read
+ * through classes it already had, each named in its doc; with these seven
+ * the FIELD space reached 64 too. R-26 Zk widened both sets to 128 bits
+ * (kit.h's kit_set) before its REPORT row took a class of its own. No form
+ * reads the prefix facts, `consumable` or `read_floor` (they
  * are facts for a choice; every row serves every value); a form HONOURS
  * `ctx` (it tests the entries) and `absent` (it renders the rule), so every
  * row but the generic one declines a site stating a context span, or an

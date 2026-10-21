@@ -68,13 +68,30 @@ enum {
     FLD_N
 };
 
-_Static_assert(CL_N <= 64, "a class set is one uint64_t mask");
-_Static_assert(FLD_N <= 64, "a field set is one uint64_t mask");
+/* A CLASS SET or a FIELD SET: one bit per CL_* or FLD_* value. Both spaces
+ * filled their first 64-bit mask (R-26 Z1, docs/dev/lanes/r26z1_report.md
+ * F-2), so the set is one 128-bit word (GNU C's unsigned __int128, which
+ * every compiler the kit is built with has on its 64-bit targets): every
+ * contract table, `uses` entry and verdict below is written in CM/FM/MF_ANY
+ * and reads the same at any width, so widening it again is this typedef and
+ * the two asserts. kit_set_low names a set's lowest member. */
+typedef unsigned __int128 kit_set;
+#define KIT_SET_BITS 128
+_Static_assert(CL_N <= KIT_SET_BITS, "a class set is one kit_set");
+_Static_assert(FLD_N <= KIT_SET_BITS, "a field set is one kit_set");
 
-#define CM(c)  (1ull << CL_##c)     /* one class, as a class-set mask        */
-#define FM(f)  (1ull << FLD_##f)    /* one field, as a field-set mask        */
-#define MF_ANY (~0ull)              /* every class: the field is irrelevant to
-                                       the row's output (declared, never assumed) */
+#define CM(c)  ((kit_set)1 << CL_##c)   /* one class, as a class-set mask    */
+#define FM(f)  ((kit_set)1 << FLD_##f)  /* one field, as a field-set mask    */
+#define MF_ANY (~(kit_set)0)            /* every class: the field is irrelevant
+                                           to the row's output (declared,
+                                           never assumed)                    */
+
+/* The lowest member of set `m`, or -1 for the empty set. */
+static inline int kit_set_low(kit_set m)
+{
+    uint64_t lo = (uint64_t)m, hi = (uint64_t)(m >> 64);
+    return lo ? __builtin_ctzll(lo) : hi ? 64 + __builtin_ctzll(hi) : -1;
+}
 
 /* One `uses` entry: on a site whose form and handoff classes are in
  * `forms`/`handoffs`, at the phases in `phases`, the row reads `fields`
@@ -84,10 +101,10 @@ _Static_assert(FLD_N <= 64, "a field set is one uint64_t mask");
  * counter, Q-R4h-1 (a)); `when_cls` 0, every entry's zero-initialized tail,
  * is unconditional. */
 typedef struct {
-    uint64_t forms, handoffs;
+    kit_set  forms, handoffs;
     unsigned phases;
-    uint64_t fields;
-    uint64_t when_cls;
+    kit_set  fields;
+    kit_set  when_cls;
     unsigned when_fld;
 } gate_use;
 
@@ -100,7 +117,7 @@ typedef struct {
     const char     *table, *row;    /* the trace's names                     */
     const gate_use *uses;
     unsigned        nuses;
-    uint64_t        serves[FLD_N];
+    kit_set         serves[FLD_N];
 } gate_contract;
 
 /* The finder walk's own facts (finder.c, R17-b' B1): the fields.def fields
@@ -127,7 +144,7 @@ typedef struct {
  * rule 2 (stated, class not served). Both 0 is a pass; anything else
  * DECLINES the row (N3: the walks skip it, `mf_use` refuses). */
 typedef struct {
-    uint64_t r1, r2;
+    kit_set r1, r2;
 } gate_verdict;
 
 #define gate_check    MF_NS(gate_check)
