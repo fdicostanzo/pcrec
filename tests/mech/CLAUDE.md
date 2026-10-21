@@ -4025,3 +4025,28 @@ S1188 (startanch), S1189/S1190 (derive's kill and G5 count), S1191/S1192
 transparency), S1195 (eol_tail_plain, N-3), S1196 (`ps_node`'s nullability),
 S1197 (`pcrec_ast_pin`'s anchor spelling). Reach by hand and the owed solo
 runs: `docs/dev/lanes/ctxp2e_report.md`.
+
+**[MEASURE-SET] M0 — S1227-S1246 (lane m0build, 2026-10-21, abi 82;
+`docs/design/measure_sets.md` rev 3 §8.5's proposed rows renumbered, the
+old->new table in `docs/dev/lanes/m0build_report.md`):** the measures kind
+row, the store, loading and the stamp. Eighteen rows score on the
+`knowledge` arm (`tests/knowledge/run_knowledge_tests.sh`, which runs
+`run_measures_tests.sh`): the digest (S1227 skips row 0, S1244 drops the
+domain's NUL), the validator and readers (S1230 the probe ignores the id,
+S1231 the S2 mismatch falls through, S1233 a derived view loads, S1235 two
+unit codes collide, S1236 the section-TSV field count goes unchecked,
+S1239 rows stay unsorted), the writers (S1232 canonical drops `cells`,
+S1234 a symmetric column swap in BOTH writers, `SAB_FILE2`, so only R5
+sees it), the store (S1229 the default table names the wrong class, S1237
+the shadow rule keyed on id alone, S1238 a shadowing set with other values
+loads, S1241 the embedded text short by one byte), loading (the config
+line wins over the flag in S1228, the flag reaches a registry query in
+S1245, a `pcrec` raw line carries the flag in S1246) and the mirror
+(S1240 `rx_info.measures` differs from the stamp). S1242 is the
+dependency rule (suite `core`, `tests/core/ksrc_deps_check.sh` (a')/(b')),
+S1243 puts K112's stale role string back (suite `irlisting`). S693
+(`codegen`) re-pinned BEFORE 82 / AFTER 81. Not built, each with its
+reason in the report: the stamp's consulted-OR (no kit row consults a set
+key before B4, so the stamp is "" everywhere) and the rows that need
+`make test-measures`' recompute, the answers/staleness/envelope views or
+`pcrec-measure`. Solo verdicts are OWED (queued as boxqueue jobs).

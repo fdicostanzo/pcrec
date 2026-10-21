@@ -147,6 +147,10 @@ tier, and PCRE2 is a moving target with no specification.
 - `REFERENCES.md` — the repository's reference list for cited external
   publications. Cite a paper by its key (`[Author##]`); add a new paper's
   entry there in the same change that first cites it.
+- `measure_store/` — the COMMITTED measurement sets ([MEASURE-SET] M0,
+  `docs/spec/measures.md` §8): `<id>/<rev>/set.tsv` with its
+  `PROVENANCE.md`, the class defaults `DEFAULTS` and their log, embedded
+  into libpcrec by `make gen-measures`. See its own CLAUDE.md.
 - `oracle_store/` — the COMMITTED reference-oracle answer store
   (`docs/design/oracle_interface.md`, lane `orstore`, 2026-09-10): one
   directory per `OracleId`, one self-checking TSV per question kind,
