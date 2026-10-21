@@ -7810,7 +7810,8 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
 struct PcrecPartFacts {
     bool dfa;               /* the DFA emitter wrote it (`fit.chosen`) */
     bool degraded;          /* a fallback-table row fired on its compile */
-    const char *locate;     /* LOCATE's row on its body's route (static) */
+    bool end_seeded;        /* its LOCATE walk is seeded at the subject end
+                               (`CandLocate.end_seeded`, the `rev-end` walk) */
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
@@ -8011,15 +8012,20 @@ const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
  * (no trace record, no hit), before or after emission. A conjunct's read;
  * the trace build holds it to the running conjunct's declared reads. */
 const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route);
+/* [KIT-VERIFY] U1 (kit_proof.md §2.6): the typed reads that replace a row
+ * NAME: does the LOCATE row the plain compile selects on `route` ask NEXT
+ * there (A1), and is the body's LOCATE walk seeded at the subject end (A5,
+ * through the part's facts)? */
+bool pcrec_cand_plain_locate_asks_next(Ctx *cx, int route);
+bool pcrec_cand_locate_end_seeded(Ctx *cx);
 /* The same compile's body route (`CandRoute`: the engine of the machine it
- * runs) and its `<P>_NCAPS`; the LOCATE row's name on the body's route. */
+ * runs) and its `<P>_NCAPS`. */
 int pcrec_cand_body_route(Ctx *cx);
 /* [KIT-VERIFY] U1 Z2 is this compile's FINISHER route CR_DFA (`cover_conj[]`
  * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
  * emitter writes, so no group above 0 is live. */
 bool pcrec_cand_finisher_dfa(Ctx *cx);
 int pcrec_dfa_ncaps(Ctx *cx);
-const char *pcrec_cand_locate_name(Ctx *cx);
 #ifdef PCREC_CAND_TRACE
 /* The trace build's declared-read check: the running conjunct's reads
  * (compound.c sets it around `holds`), NULL outside one. */

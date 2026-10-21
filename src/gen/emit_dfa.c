@@ -5432,6 +5432,11 @@ typedef struct CandLocate {
      * RECOVER with, 0 where it asks none ([r2-landing]). */
     bool         whole;
     unsigned     recover;
+    /* [KIT-VERIFY] U1 (kit_proof.md §2.6): the walk is SEEDED AT THE SUBJECT
+     * END (`rev-end`), so every match it reports ends there or before a final
+     * newline: compound A5's "Q is end-pinned", read as this field rather
+     * than as the row's name. */
+    bool         end_seeded;
     /* the `CT_*` bits of the hands its walk gives FINISH on a DFA-hat route
      * (E-LF): START (a SPAN), VERDICT (NOMATCH), ENDSET (a tie), each asked
      * by the walk where it emits that arm (`cand_finish_ask`). */
@@ -9668,7 +9673,7 @@ static const CandRow cand_rows[] = {
       .needs = { [CAND_ROUTE_DFA] = { CAND_MR, CN(CAND_SLOT_RECOVER), CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_rev_end },
                     .scan = { [CAND_ROUTE_DFA] = "rev-end" },
-                    .whole = true, .recover = CAND_HAND_WINDOW,
+                    .whole = true, .recover = CAND_HAND_WINDOW, .end_seeded = true,
                     .fin = CT_START | CT_VERDICT | CT_ENDSET } },
     /* [KIT-VERIFY] U1 `cover` (kit_proof.md §2): the kit's site PROVES the
      * whole fixed-width sub-problem, context included, at every candidate it
@@ -11177,7 +11182,7 @@ static const CandRow *cand_locate_of(Ctx *cx)
 _Thread_local const CompConj *pcrec_comp_reading;
 #endif
 
-const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route)
+static const CandRow *cand_plain_row(Ctx *cx, int slot, int route)
 {
 #ifdef PCREC_CAND_TRACE
     if (pcrec_comp_reading) {
@@ -11199,11 +11204,25 @@ const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route)
         pcrec_ctx_fail(cx, 0, "internal error: the selection projection has no "
                        "reader for slot %d on route %d", slot, route);
 #ifdef PCREC_CAND_TRACE
-    const CandRow *r = cand_select_quiet((CandSlot)slot, &s);
+    return cand_select_quiet((CandSlot)slot, &s);
 #else
-    const CandRow *r = cand_select((CandSlot)slot, &s, cx->opt->flags);
+    return cand_select((CandSlot)slot, &s, cx->opt->flags);
 #endif
-    return r->c.name;
+}
+
+const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route)
+{
+    return cand_plain_row(cx, slot, route)->c.name;
+}
+
+/* [KIT-VERIFY] U1 (kit_proof.md §2.6, UL-4): A1's field read, never a row
+ * name: the LOCATE row the plain compile selects on `route` hands its result
+ * to NEXT there (its walk asks NEXT), which the composite's attempt loop does
+ * and a walk that answers the whole window itself (`cover`) does not. */
+bool pcrec_cand_plain_locate_asks_next(Ctx *cx, int route)
+{
+    return (cand_plain_row(cx, CAND_SLOT_LOCATE, route)->needs[route].cells &
+            CN(CAND_SLOT_NEXT)) != 0;
 }
 
 int pcrec_cand_body_route(Ctx *cx)
@@ -11221,9 +11240,11 @@ int pcrec_dfa_ncaps(Ctx *cx)
     return dfa_artifact_ncaps(cx);
 }
 
-const char *pcrec_cand_locate_name(Ctx *cx)
+/* [KIT-VERIFY] U1 (kit_proof.md §2.6, UL-4): A5's field read: is the body's
+ * LOCATE walk seeded at the subject end (`CandLocate.end_seeded`)? */
+bool pcrec_cand_locate_end_seeded(Ctx *cx)
 {
-    return cand_locate_of(cx)->c.name;
+    return cand_locate_of(cx)->u.locate.end_seeded;
 }
 
 /* LOCATE's row as the body's EMITTER asks it: the selection, its `LOCATE`
