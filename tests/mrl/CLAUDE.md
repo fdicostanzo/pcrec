@@ -20,25 +20,23 @@ and `tests/counterk/` inherited:
   nowhere when denied, that D51 ruling 2's three obligations have code behind
   them, and that K23 actually COLLAPSED.
 
-**A FOURTH ARRIVED WITH [M6.6.2] wave A** and it does not fit the shape above,
-which is why it is called out rather than folded into the list:
-`cwmax_check.c` (run as `run_mrl_tests.sh` §8; born `maxw_check.c`) reads a
-number the compiler NEVER EMITS. `src/opt/mrl.c` has `pcrec_cwmax` (born
-`pcrec_maxw`, re-aimed into CHARACTERS at [M5.0] stage 2) — `pcrec_minw`'s twin with the
-opposite sound direction — whose only consumer is the lookaround module's
-fixed-width rule. When this paragraph was written that rule DID NOT EXIST, so
-none of the three instruments above could be red because of it: no bound to
-emit, no differential arm to disagree, no `.rxt` cell whose answer depended on
-it. **[M6.6] LANDED THE CONSUMER AND THAT HALF EXPIRED** (verified at the
-[DD-14] close, 2026-08-25: `src/parse/mod_lookaround.c:298/309` calls
-`pcrec_cwmax`/`pcrec_cwmin` to decide FIXED; `src/opt/callgraph.c`
-carries their call-aware fixpoints) — a wrong `cwmax` is now an answer-level
-defect, a lookbehind wrongly accepted or wrongly refused. What did NOT expire
-is the reason the check exists: it reads the number DIRECTLY, so it goes red
-for causes no answer-comparison reaches — an over-estimate that is still SOUND
-(and therefore invisible to every match) but wide enough to be wrong. The check links
-`libpcrec.a`, parses every `pattern` line in `tests/` to an AST and calls the
-two analyses directly.
+## Files
+
+- `01_trailing.rxt` — what FOLLOWS a quantifier, which is the quantity the bound is about: trailing literals, `$`, alternations of unequal length, trailing quantifiers, ...
+- `02_alternation.rxt` — the minimum of an alternation is the SMALLER branch.
+- `03_zerowidth.rxt` — `a*`, `{0,n}`, `(a|)`, `()`, `^`, `$` and stacked zero-minimum quantifiers, where the bound must be exactly 0.
+- `04_nesting.rxt` — quantifiers inside quantifiers, where minimums MULTIPLY and a bound that adds is wrong in the dangerous direction.
+- `05_multibyte_body.rxt` — 2- and 3-byte bodies at subject lengths that are NOT multiples of the body width.
+- `06_lazy.rxt` — lazy quantifiers alone and mixed greedy/lazy when they nest.
+- `07_partial_and_startpos.rxt` — matches that do not reach the subject end and do not start at offset 0.
+- `08_nomatch.rxt` — near-miss subjects where the right answer is "no match", the direction in which a too-SMALL bound is invisible.
+- `09_captures.rxt` — group spans through the shapes above, including the `RX_UNSET` branches.
+- (`10_owed_a1_3_65.rxt` was here and is DELIBERATELY ABSENT. The owed `(a{1,3}){65}` region belongs to the D27 corpus of record, ...
+- `11_motivating_shape_small.rxt` — a small-scale echo of the promise's own motivating shape, as a positive control that the "faster" half is real.
+- `patterns.txt` — the differential's designed family, organised by WHERE a minimum-bytes number can be wrong rather than by pattern shape.
+- `run_mrldiff.sh` — the differential.
+- `run_mrl_tests.sh` — the structural checks and acceptance cells.
+- `cwmax_check.c` — [M6.6.2 wave A; RE-AIMED at [M5.0] stage 2] the CHARACTER width pair `pcrec_cwmin`/`pcrec_cwmax` against the whole `.rxt` corpus.
 
 ## What this directory is, and what it is NOT
 
@@ -75,152 +73,6 @@ exactly that runtime expression; this lane had deferred it as a residual on
 §9.3's "once-per-trip is believed enough", which splits into a FREQUENCY that
 holds and a VALUE that does not.
 
-No instrument derived from the implementation was going to say so — the
-differential agreed (both arms explored the same space), the corpus had no
-such shape, and the structural checks saw a bound emitted at every site with
-the right arithmetic for the model the emitter had. That is D27's claim
-measured again, and it is the reason the mechanism now has its own acceptance
-cell in `run_mrl_tests.sh` (§1b) rather than resting on a corpus this
-directory does not own.
+(Rest of this section: see the history file.)
 
-The remaining ten families came back clean, which is also information: they
-sweep trailing constructs, alternation minima, zero-width and zero-minimum
-shapes, nesting, multi-byte bodies, laziness, partial and non-zero-start
-matches, required-no-match subjects and capture spans through all of the
-above, and found nothing.
-
-## Files
-
-- `01_trailing.rxt` — what FOLLOWS a quantifier, which is the quantity the
-  bound is about: trailing literals, `$`, alternations of unequal length,
-  trailing quantifiers, and nothing at all.
-- `02_alternation.rxt` — the minimum of an alternation is the SMALLER branch.
-  A bound that took the left branch, or the longer one, over-estimates.
-- `03_zerowidth.rxt` — `a*`, `{0,n}`, `(a|)`, `()`, `^`, `$` and stacked
-  zero-minimum quantifiers, where the bound must be exactly 0.
-- `04_nesting.rxt` — quantifiers inside quantifiers, where minimums MULTIPLY
-  and a bound that adds is wrong in the dangerous direction.
-- `05_multibyte_body.rxt` — 2- and 3-byte bodies at subject lengths that are
-  NOT multiples of the body width. This is R26 E1's territory reached from
-  outside: a bound applied at the wrong granularity lands the cursor between
-  two legal iteration boundaries.
-- `06_lazy.rxt` — lazy quantifiers alone and mixed greedy/lazy when they nest.
-- `07_partial_and_startpos.rxt` — matches that do not reach the subject end
-  and do not start at offset 0.
-- `08_nomatch.rxt` — near-miss subjects where the right answer is "no match",
-  the direction in which a too-SMALL bound is invisible.
-- `09_captures.rxt` — group spans through the shapes above, including the
-  `RX_UNSET` branches. Half the promise is where the groups land.
-- (`10_owed_a1_3_65.rxt` was here and is DELIBERATELY ABSENT. The owed
-  `(a{1,3}){65}` region belongs to the D27 corpus of record,
-  `../base/d27_k23_ambiguous_decomposition.rxt`, which also discharges the
-  counter-K lane's checkpoint-2 hand-off — `../base/d27_large_counts.rxt:58`
-  deliberately left the region unpinned. What this directory keeps of that
-  episode is the MECHANISM guard in `run_mrl_tests.sh` §1b and the account
-  above.)
-- `11_motivating_shape_small.rxt` — a small-scale echo of the promise's own
-  motivating shape, as a positive control that the "faster" half is real.
-- `patterns.txt` — the differential's designed family, organised by WHERE a
-  minimum-bytes number can be wrong rather than by pattern shape.
-- `run_mrldiff.sh` — the differential. Reuses
-  `../possessify/possdiff_driver.c` (as the rung-select and counter-K suites
-  do) because the claim is identical for every member of D47.3's deny family.
-- `run_mrl_tests.sh` — the structural checks and acceptance cells.
-- `cwmax_check.c` — [M6.6.2 wave A; RE-AIMED at [M5.0] stage 2] the CHARACTER
-  width pair `pcrec_cwmin`/`pcrec_cwmax` against the whole `.rxt` corpus. Born
-  `maxw_check.c` sweeping the BYTE pair; when stage 2 re-aimed the maxw chain
-  into characters (`pcrec_maxw` retired, `pcrec_cwmax` and its `cwmin` partner
-  are the lookbehind width rule's consumers), this instrument moved with its
-  subject, unchanged in spirit.
-
-  **THAT MOVE CARRIED A PREMISE THAT EXPIRED, AND IT WAS RED IN `make test`
-  FOR A DAY BEFORE ANYONE FILED IT** (repaired 2026-09-05, lane k49fix, which
-  found it as a side finding while fixing K49). The re-aim rested on "this
-  file parses under `byte`, where one character is one byte" — true until
-  `tests/utf8/` merged, and false the moment it did: those blocks carry
-  `encoding utf8`, their oracle spans are BYTE offsets into multi-byte
-  subjects, and CHECK 2 was comparing bytes against a CHARACTER quantity. 21
-  cells of `axis01_encoded_length.rxt` went red, all of them the same shape
-  (`[^a]` matching one 2-byte character read as "span 2 EXCEEDS cwmax=1").
-  **THE MISMATCH WAS IN THE CHECK, AND THAT WAS VERIFIED BEFORE THE CHECK WAS
-  TOUCHED** — every one of the 21 spans is exactly one character, so cwmax was
-  right in characters throughout. An under-estimate would have been an ENGINE
-  bug in the silent direction (the lookbehind fixed-width rule reads this
-  number), which is why ruling it out came first and why the repair carries no
-  `src/` change at all.
-
-  The rule now is two halves that must move together: a block is PARSED under
-  its own `encoding` (so cwmax is computed on the AST the block means — under
-  `byte` a literal `[EUR]` is three byte classes, under `utf8` one character
-  class), and its oracle span is MEASURED in the same unit (characters under
-  `utf8`, bytes under `byte`, the latter unchanged to the line). The character
-  count is a one-line predicate over the subject's own bytes — non-continuation
-  bytes in `subject[start..end)` — deliberately sharing no source with pcrec's
-  own notion of a boundary, since this file exists to check an analysis from
-  outside. MEASURED after the repair: 216 utf8 blocks / 307 utf8 spans, 101 of
-  them with a byte width exceeding their character width, 0 violations.
-  Checks from BOTH SIDES, because either inequality alone is passed by a
-  degenerate implementation: `cwmax >= cwmin` at every NODE (passed by
-  `return PCREC_W_UNBOUNDED;`) AND every oracle-verified span in the corpus
-  within the root's `cwmax` (passed by `return 0;`). The second is the only
-  constraint on cwmax in this tree that does not come from pcrec — the spans
-  are python-`re`- and libpcre2-verified — and it is the direction that
-  miscompiles, since an under-estimated cwmax makes a variable-width
-  lookbehind branch look fixed. `PCREC_CWMAX_SABOTAGE={zero,unbounded,swap}`
-  corrupts what the check reads — `zero` and `unbounded` are the two
-  degenerate implementations that pass one inequality each, `swap` returns
-  `cwmin` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
-  `tests/parse/branch_count_check.c`'s rule that an unsabotaged green check is
-  worth nothing. **THE ENCODING-AWARE HALF HAS TWO FLOORS OF ITS OWN**, on the
-  same rule, because a character count that is never exercised is dead code
-  that passes silently: the utf8 block population must be NONZERO, and at least
-  one compared span's BYTE width must EXCEED its character width (the first
-  alone is satisfied by a utf8 corpus of ASCII-only subjects, where the two
-  counts coincide and the decode proves nothing). Both were validated in the
-  failing direction — disabling the `encoding` reader trips the first, and
-  turning the character count back into a byte count trips the second (and is
-  caught twice, since it also produces 84 CHECK 2 violations). Measured at wave
-  A: 122 files, 2168 blocks, 1914 patterns parsed, 254 refused, 12,637 nodes
-  swept (9,583 with a bounded maxw), 8,901 oracle spans, 0 violations. Measured
-  after the 2026-09-05 repair: 208 files, 3884 blocks, 3293 parsed, 591
-  refused, 23,820 nodes (18,698 bounded), 11,222 oracle spans, 0 violations.
-
-## What the two scripts carry that the corpus cannot
-
-**`run_mrldiff.sh` sweeps BOTH ENGINES, and that is this suite's own axis.**
-The two get different CEILINGS: `--engine=vm` turns the DFA prefilter off, so
-the bound measures to the SUBJECT END; the default path threads the
-prefilter's match-end window (D51 ruling 2), which is tighter and is the form
-that ships. A sweep on either alone leaves the other's arithmetic untested,
-and the window form is the riskier of the two — it is the only conservative
-choice in this design that errs UNSOUND if it is ever stale, because a stale
-window is too SMALL.
-
-It also carries STRIDE, for the reason R26 E1 made unavoidable: bodies of
-width 1, 2 and 3, at subject lengths on and off the stride lattice. An 855-cell
-differential once blessed an unsound clamp because every body in its corpus
-came from a single-byte alphabet, and at stride 1 the broken clamp and the
-correct one emit arithmetically equal code — zero of its 506 stride-1 cells
-could ever have gone red.
-
-**`run_mrl_tests.sh` asserts the things both arms of a differential agree
-about.** The differential cannot see that K23 collapsed, because both its arms
-answer; the acceptance cell pins the exemplar at a step budget of EIGHT and
-requires the denied build to fail there, so the check measures the pruning and
-not the box. Same shape for the suffix residual (§9.1): the default build
-answers a 16-byte trailing suffix within 64 steps and the `--engine=vm` build
-does not, which is what makes the ceiling stamp worth having.
-
-## The denial leaves NO TRACE, deliberately
-
-`-fno-length-prune` on a pattern that carries no bound emits BYTE-IDENTICAL C,
-and `run_mrl_tests.sh` asserts that over every pattern in the tree (701 of
-them today). That property is what makes the denied build a ground truth
-rather than merely a second build, and it is why `<PREFIX>_VM_PRUNE_CEILING`
-stamps `"none"` under the denial rather than naming it — the same rule
-`emit_dfa.c`'s strategy-denial mask states for `rx_info.flags`, one stamp
-over. The denial is checked by the ABSENCE of bounds, never by a stamp saying
-it was passed.
-
-Maintenance: update this file when files are added/removed or their roles
-change.
+History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__mrl.md`.
