@@ -43,4 +43,8 @@ clean:
 # only sees the directory, so the files are named here.
 tests/hooks.testreport: hooks/no_cd_worktree.sh hooks/pre-push-light ../.claude/settings.json
 
+# boxqueue.test drives boxlock (the job lock), verdict (each job's verdict),
+# chainrun (`batch` reuses its parser) and safekill (cleanup).
+tests/boxqueue.testreport: boxlock verdict chainrun safekill
+
 .DELETE_ON_ERROR:

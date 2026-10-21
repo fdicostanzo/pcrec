@@ -118,6 +118,10 @@ watch --log "$D/mech.log"
 [ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: DONE .*mech run COMPLETE.*VERDICT GREEN' && ok "--log: a mech trailer appearing fires DONE with the verdict" || bad "--log: rc=$wrc $out"
 watch --log "$D/mech.log"
 [ "$wrc" = 2 ] && ok "--log on an already-complete log: NOT ARMED" || bad "--log complete at startup: rc=$wrc"
+: > "$D/sweep.log"   # [BOXQUEUE] the generic `TOOL: DONE rc=N` trailer (emit_sweep.py's) is a default done line
+( sleep 2; echo 'population: argv=3938' >> "$D/sweep.log"; echo 'emit_sweep: DONE rc=0' >> "$D/sweep.log" ) &
+watch --log "$D/sweep.log"
+[ "$wrc" = 0 ] && printf '%s' "$out" | grep -q '^watchrun: DONE .*emit_sweep: DONE rc=0.*VERDICT GREEN' && ok "--log: emit_sweep's DONE trailer fires DONE with the verdict" || bad "--log sweep: rc=$wrc $out"
 : > "$D/slow.log"; ( for i in 1 2 3 4 5 6; do echo tick >> "$D/slow.log"; sleep 1; done ) & kids+=($!)
 watch --max-sec 3 --log "$D/slow.log"
 [ "$wrc" = 6 ] && printf '%s' "$out" | grep -q '^watchrun: CAP .*watched 3s' && ok "--max-sec: CAP, exit 6 (relaunch)" || bad "cap: rc=$wrc $out"

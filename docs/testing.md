@@ -874,7 +874,12 @@ The sanitizer and lint targets (`make san`/`ubsan`/`asan`/`lint`/`alloc`) and
 `make test-recursion-identity` take the box lock like `test-axes` (the target
 re-invokes itself as `<target>-locked` under `scripts/boxlock run`); CI never
 runs them (it is the per-PR tier only) and the Mac, with no `flock`, runs them
-unlocked; `PCREC_BOXLOCK=0` opts out.
+unlocked; `PCREC_BOXLOCK=0` opts out. ORDER between heavy runs is
+`scripts/boxqueue`'s ([BOXQUEUE], 2026-10-21): one box-wide job queue whose
+runner takes the box lock for each job in turn and logs every pass ("waiting
+on <holder>" while someone outside the queue holds it); a lane enqueues jobs
+(or a chainrun stages file with `boxqueue batch`) instead of arming its own
+waiter. Contract in the script's header, summary in scripts/CLAUDE.md.
 
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 

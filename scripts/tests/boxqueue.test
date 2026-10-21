@@ -1,0 +1,332 @@
+#!/usr/bin/env bash
+# boxqueue self-test: every case in a FRESH scratch queue (PCREC_BOXQUEUE_DIR
+# under mktemp) with a SACRIFICIAL box lock (PCREC_BOXLOCK_FILE), trivial
+# jobs written here, runners and lock holders tracked and killed by pid. Each
+# bug class the plan row body names is PLANTED back into a scratch copy of the
+# script (the anchor must match exactly once, or the plant itself FAILs) and
+# its case must go red against the plant: a job doing side effects then
+# returning 75; a stale pending copy (run twice; an edit overtaken by its
+# snapshot); a population short-fall; a dry run that lies (the job runs far
+# past its declared population, caught only at cap); a counter reading
+# pre-existing state (an earlier run's log, an earlier job's not-ready clock);
+# a readiness check that hangs; an enqueue that skips the dry run; a runner
+# inheriting its enqueuer's box-lock fd. Light: one job at a time, no make.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/boxqueue.test.XXXXXX")
+kids=()
+cleanup() {
+    local f p
+    for f in "$T"/q*/runner.pid; do [ -f "$f" ] && p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$f") && [ -n "$p" ] && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    for p in ${kids[@]+"${kids[@]}"}; do [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    rm -rf "$T"
+}
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export PCREC_BOXLOCK_FILE=$T/box.lock BOXQUEUE_READY_BOUND=3 BOXQUEUE_LOCK_WAIT=1 BOXQUEUE_MONITOR=0.5 BOXQUEUE_EVERY=1
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT
+BQ=$here/boxqueue BL=$here/boxlock
+mkdir -p "$T/j"
+nq=0
+newq() { nq=$((nq + 1)); Q=$T/q$nq; export PCREC_BOXQUEUE_DIR=$Q; }
+bq() { "$TO" "${BQTO:-60}" bash "${BQX:-$BQ}" "$@"; }
+run1() { bq run --once --every 1 > /dev/null 2>&1; }      # passes until one starts nothing
+ql() { cat "$Q/queue.log" 2>/dev/null; }
+has() { ql | grep -Eq -- "$1"; }
+st() { bash "$BQ" state "$1" 2>/dev/null; }
+res() { local d; d=$(ls -d "$Q"/done/*/ "$Q"/failed/*/ 2>/dev/null | awk -F/ '{print $(NF-1) "\t" $0}' | LC_ALL=C sort | cut -f2 | grep -- "-$1/\$" | tail -1); [ -n "$d" ] && cat "$d/result"; }
+# D CAP PATIENCE EXPECT... -> a --dry-run body
+D() { local c=$1 p=$2 e out; shift 2; out="echo 'boxqueue: cap $c'; echo 'boxqueue: patience $p';"
+      for e in "$@"; do out="$out echo 'boxqueue: expect $e';"; done; printf '%s exit 0' "$out"; }
+# mkjob FILE DRY READY WORK
+mkjob() { printf '#!/usr/bin/env bash\nset -u\ncase "${1:-}" in\n  --dry-run) %s ;;\n  --ready) %s ;;\nesac\n%s\n' "$2" "$3" "$4" > "$1"; chmod +x "$1"; }
+# plant NAME FROM TO [FROM TO ...]: a scratch scripts/ copy with the changes in boxqueue; echo its path
+plant() {
+    local nm=$1 d=$T/plant_$1; shift; mkdir -p "$d/scripts" "$d/tests/lib"
+    cp "$here/boxqueue" "$here/boxlock" "$here/verdict" "$here/chainrun" "$d/scripts/"; cp "$here/../tests/lib/timeout_bin.sh" "$d/tests/lib/"
+    python3 -c 'import sys
+p = sys.argv[1]; s = open(p).read(); a = sys.argv[2:]
+for i in range(0, len(a), 2):
+    assert s.count(a[i]) == 1, "anchor"
+    s = s.replace(a[i], a[i + 1])
+open(p, "w").write(s)' "$d/scripts/boxqueue" "$@" 2>/dev/null || return 1
+    echo "$d/scripts/boxqueue"
+}
+
+# 1. order + green + state
+newq
+mkjob "$T/j/b" "$(D 30 none none)" 'exit 0' 'echo B >> "$BQ_QUEUE.order"'
+mkjob "$T/j/a" "$(D 30 none none)" 'exit 0' 'echo A >> "$BQ_QUEUE.order"'
+bq add --name 200-main-b --no-start "$T/j/b" > /dev/null; bq add --name 100-main-a --no-start "$T/j/a" > /dev/null
+run1
+[ "$(tr -d '\n' < "$Q.order")" = AB ] && [ "$(st main-a)" = green ] && [ "$(st main-b)" = green ] && [ -z "$(ls "$Q/pending")" ] \
+    && ok "two ready jobs run in PRIO order (100 before 200), both green, pending/ empty" || bad "order/green: $(cat "$Q.order" 2>/dev/null) $(st main-a) $(st main-b)"
+has '^== runner IDLE-EXIT|^== runner END' && has '^  pass 1 100-main-a ready \(starting\)' && has '^  pass 1 200-main-b ready ' \
+    && ok "every pass logs every job's answer" || bad "pass log: $(ql)"
+
+# 2. the exit-code protocol of the work: 76 requeue to the end, 77 cancelled, other failed (fast)
+newq
+mkjob "$T/j/rq" "$(D 30 none none)" 'exit 0' 'n=$(cat "$BQ_QUEUE.c" 2>/dev/null || echo 0); echo $((n + 1)) > "$BQ_QUEUE.c"; [ "$n" = 0 ] && exit 76; exit 0'
+mkjob "$T/j/never" "$(D 30 none none)" 'echo "not until the go file"; exit 75' 'exit 0'
+mkjob "$T/j/c77" "$(D 30 none none)" 'exit 0' 'exit 77'
+mkjob "$T/j/r3" "$(D 30 none none)" 'exit 0' 'echo boom; exit 3'
+bq add --name 100-main-rq --no-start "$T/j/rq" > /dev/null; bq add --name 500-main-wait --no-start "$T/j/never" > /dev/null
+bq add --name 110-main-c77 --no-start "$T/j/c77" > /dev/null; bq add --name 120-main-r3 --no-start "$T/j/r3" > /dev/null
+run1
+has 'END rc=76 outcome=requeued reason=requeued as 501-main-rq' && [ "$(st main-rq)" = green ] && [ "$(cat "$Q.c")" = 2 ] \
+    && ok "work exit 76: requeued to the END (501, past 500), ran again, green" || bad "76: $(st main-rq) $(ql | grep rq)"
+[ "$(st main-c77)" = cancelled ] && ok "work exit 77: done/, cancelled" || bad "77: $(st main-c77)"
+[ "$(st main-r3)" = failed ] && res main-r3 | grep -q 'rc=3 reason=rc=3_FAILED-FAST' && ok "work exit 3: failed/, marked FAILED-FAST" || bad "rc3: $(res main-r3)"
+[ -f "$Q/pending/500-main-wait" ] && has 'pass [0-9]+ 500-main-wait not-ready: not until the go file' \
+    && ok "a not-ready (75) job stays pending with its reason logged" || bad "75 pending: $(ls "$Q/pending")"
+
+# 3. not-ready, then ready
+mkjob "$Q/pending/500-main-wait" "$(D 30 none none)" '[ -e "$BQ_QUEUE.go" ] || { echo "not until the go file"; exit 75; }; exit 0' 'echo went'
+run1; [ -f "$Q/pending/500-main-wait" ] && ok "edited pending job (go file absent) still waits" || bad "edited wait ran early"
+touch "$Q.go"; run1
+[ "$(st main-wait)" = green ] && ok "the go file appears: the job runs next pass, green" || bad "go: $(st main-wait) $(ql | tail -5)"
+
+# 4. side effects then 75 (from the WORK, not --ready): failed at once, never re-run
+newq
+mkjob "$T/j/side" "$(D 30 none none)" 'exit 0' 'echo x >> "$BQ_QUEUE.side"; exit 75'
+bq add --name 100-main-side --no-start "$T/j/side" > /dev/null; run1
+[ "$(st main-side)" = failed ] && res main-side | grep -q NOT-READY-AFTER-START && [ "$(wc -l < "$Q.side")" = 1 ] \
+    && ok "side effects then exit 75: failed NOT-READY-AFTER-START, side effect done once" || bad "side75: $(st main-side) $(wc -l < "$Q.side" 2>/dev/null)"
+if P=$(plant side75 '75) reason="NOT-READY-AFTER-START' '75) oc=requeued; reason="NOT-READY-AFTER-START'); then
+    newq; bq add --name 100-main-side --no-start "$T/j/side" > /dev/null; BQX=$P BQTO=6 run1
+    [ "$(wc -l < "$Q.side" 2>/dev/null || echo 0)" -gt 1 ] && ok "PLANT side75 (a work-75 re-queued): the side effect repeats, the case goes red against it" \
+        || bad "PLANT side75 not caught: $(wc -l < "$Q.side" 2>/dev/null)"
+else bad "plant side75 did not land (anchor moved?)"; fi
+
+# 5. stale pending copies
+newq
+mkjob "$T/j/once" "$(D 30 none none)" 'exit 0' 'echo x >> "$BQ_QUEUE.n"'
+bq add --name 100-main-once --no-start "$T/j/once" > /dev/null; run1
+[ "$(wc -l < "$Q.n")" = 1 ] && [ -z "$(ls "$Q/pending")" ] && ok "a started job's pending original is gone: it ran exactly once" || bad "once: $(wc -l < "$Q.n")"
+if P=$(plant keep-pending 'rm -f "$Q/pending/$n"' ':'); then
+    newq; bq add --name 100-main-once --no-start "$T/j/once" > /dev/null; BQX=$P BQTO=6 run1
+    [ "$(wc -l < "$Q.n" 2>/dev/null || echo 0)" -gt 1 ] && ok "PLANT keep-pending (original not removed at start): the job runs again, the case goes red" || bad "PLANT keep-pending not caught"
+else bad "plant keep-pending did not land"; fi
+cat > "$T/j/ver" <<'EOF'
+#!/usr/bin/env bash
+VERSION=v1
+case "${1:-}" in
+    --dry-run) echo 'boxqueue: cap 30'; echo 'boxqueue: patience none'; echo 'boxqueue: expect none'; exit 0 ;;
+    --ready) [ -e "$BQ_QUEUE.edited" ] || { touch "$BQ_QUEUE.edited"; sed -i 's/^VERSION=v1/VERSION=v2/' "$BQ_QUEUE/pending/$BQ_JOB"; }; exit 0 ;;
+esac
+echo "ran $VERSION" >> "$BQ_QUEUE.ver"
+EOF
+chmod +x "$T/j/ver"
+newq; bq add --name 100-main-ver --no-start "$T/j/ver" > /dev/null; run1
+[ "$(cat "$Q.ver" 2>/dev/null)" = "ran v2" ] && has 'job 100-main-ver CHANGED in pending/' \
+    && ok "an edit to the pending original after its snapshot: CHANGED, not run; the EDITED job runs" || bad "changed: $(cat "$Q.ver" 2>/dev/null)"
+if P=$(plant no-cmp 'if ! cmp -s "$rd/job" "$Q/pending/$n"; then' 'if false; then'); then
+    newq; bq add --name 100-main-ver --no-start "$T/j/ver" > /dev/null; BQX=$P run1
+    [ "$(cat "$Q.ver" 2>/dev/null)" = "ran v2" ] && bad "PLANT no-cmp not caught" || ok "PLANT no-cmp (no snapshot compare): the stale v1 runs, the case goes red"
+else bad "plant no-cmp did not land"; fi
+
+# 6. population short-fall (lines= and last=)
+newq
+mkjob "$T/j/short" "$(D 30 none 'rows=6 lines=^row ')" 'exit 0' 'for i in 1 2 3; do echo "row $i"; done'
+mkjob "$T/j/sweep" "$(D 30 none 'argv=3938 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
+mkjob "$T/j/sweepok" "$(D 30 none 'argv=1500 last=^population: argv=')" 'exit 0' 'echo "population: argv=1500 composition_files=304"; echo "emit_sweep: DONE rc=0"'
+mkjob "$T/j/mechlike" "$(D 30 none 'rows=2 last=^== mech run COMPLETE: ')" 'exit 0' "echo '== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc =='"
+for j in short sweep sweepok mechlike; do bq add --name 100-main-$j --no-start "$T/j/$j" > /dev/null; done; run1
+[ "$(st main-short)" = failed ] && res main-short | grep -q 'POPULATION-SHORT' && res main-short | grep -q 'rows ran=3 declared=6 SHORT' \
+    && ok "6 rows declared, 3 ran, rc 0: failed POPULATION-SHORT" || bad "short: $(res main-short)"
+[ "$(st main-sweep)" = failed ] && res main-sweep | grep -q 'argv ran=1500 declared=3938 SHORT' && [ "$(st main-sweepok)" = green ] \
+    && ok "last= population read from the job's own log: 1500 < 3938 failed, 1500 = 1500 green" || bad "last=: $(res main-sweep) / $(st main-sweepok)"
+[ "$(st main-mechlike)" = green ] && res main-mechlike | grep -q 'rows ran=2 declared=2 OK' \
+    && ok "last= with the mech trailer (the ERE's trailing blank dropped, the blank before the count skipped): 2 rows, green" || bad "mechlike: $(res main-mechlike)"
+if P=$(plant no-short 'elif [ $prc = 1 ]; then reason="POPULATION-SHORT' 'elif false; then reason="POPULATION-SHORT'); then
+    newq; bq add --name 100-main-short --no-start "$T/j/short" > /dev/null; BQX=$P run1
+    [ "$(st main-short)" = green ] && ok "PLANT no-short (population not checked): the short-fall reads green, the case goes red" || bad "PLANT no-short not caught: $(st main-short)"
+else bad "plant no-short did not land"; fi
+
+# 7. a dry run that lies: declared 2 rows, the work runs 20 -> killed early, not at cap
+newq
+mkjob "$T/j/lie" "$(D 60 none 'rows=2 lines=^row ')" 'exit 0' 'for i in $(seq 20); do echo "row $i"; sleep 0.3; done'
+bq add --name 100-main-lie --no-start "$T/j/lie" > /dev/null; t0=$(date +%s); run1; w=$(( $(date +%s) - t0 ))
+[ "$(st main-lie)" = failed ] && res main-lie | grep -q 'POPULATION-OVER_killed_early' && [ "$w" -lt 5 ] \
+    && ok "a lying dry run (2 declared, 20 run): killed early POPULATION-OVER in ${w}s" || bad "lie: ${w}s $(res main-lie)"
+if P=$(plant no-watch '[ "$m" = lines ] || continue' 'continue'); then
+    newq; bq add --name 100-main-lie --no-start "$T/j/lie" > /dev/null; t0=$(date +%s); BQX=$P run1; w=$(( $(date +%s) - t0 ))
+    { [ "$w" -ge 5 ] || ! res main-lie | grep -q killed_early; } && ok "PLANT no-watch (no mid-run count): the job runs its whole length (${w}s), the case goes red" || bad "PLANT no-watch not caught"
+else bad "plant no-watch did not land"; fi
+
+# 8a. a counter reading pre-existing state: the second run's population from an EARLIER run's log
+newq
+mkjob "$T/j/two" "$(D 30 none 'rows=3 lines=^row ')" 'exit 0' 'n=$(cat "$BQ_QUEUE.c" 2>/dev/null || echo 0); echo $((n + 1)) > "$BQ_QUEUE.c"; if [ "$n" = 0 ]; then echo "row a"; echo "row b"; exit 1; fi; echo "row c"'
+bq add --name 100-main-two --no-start "$T/j/two" > /dev/null; run1; bq retry --no-start main-two > /dev/null; run1
+[ "$(st main-two)" = failed ] && res main-two | grep -q 'rows ran=1 declared=3 SHORT' \
+    && ok "a retry is counted from ITS OWN log (1 row, not 2+1): SHORT" || bad "fresh log: $(res main-two)"
+if P=$(plant append-log 'job_log() { printf '"'"'%s\n'"'"' "$Q/running/$1/job.log"; }' 'job_log() { printf '"'"'%s\n'"'"' "$Q/$(key_of "$1").log"; }' \
+        '< /dev/null > "$jlog" 2>&1 &' '< /dev/null >> "$jlog" 2>&1 &'); then
+    newq; bq add --name 100-main-two --no-start "$T/j/two" > /dev/null; BQX=$P run1; BQX=$P bq retry --no-start main-two > /dev/null; BQX=$P run1
+    [ "$(st main-two)" = green ] && ok "PLANT append-log (one log per job name, appended): the earlier run's rows count, green, the case goes red" || bad "PLANT append-log not caught: $(res main-two)"
+else bad "plant append-log did not land"; fi
+
+# 8b. ... and an earlier job's not-ready clock (patience)
+newq
+mkjob "$T/j/pat" "$(D 30 1 none)" 'echo "never ready"; exit 75' 'exit 0'
+bq add --name 100-main-pat --no-start "$T/j/pat" > /dev/null; run1; sleep 2.2; run1
+has 'REPORT 100-main-pat not ready for [0-9]+s, past its patience 1s' && [ "$(ql | grep -c 'REPORT 100-main-pat')" = 1 ] \
+    && ok "not ready past its patience: REPORTED, once" || bad "patience: $(ql | grep REPORT)"
+since1=$(ql | sed -n 's/.*100-main-pat not-ready: never ready (since \([^)]*\)).*/\1/p' | head -1)
+bq cancel main-pat > /dev/null; sleep 1.2; bq add --name 100-main-pat --no-start "$T/j/pat" > /dev/null; run1
+since2=$(ql | sed -n 's/.*100-main-pat not-ready: never ready (since \([^)]*\)).*/\1/p' | tail -1)
+[ -n "$since1" ] && [ "$since1" != "$since2" ] && ok "a re-added job starts a fresh not-ready clock ($since1 -> $since2)" || bad "stale since: $since1 / $since2"
+if P=$(plant keep-state 'state_clear() { rm -f "$Q/.state/$1".*; }' 'state_clear() { :; }'); then
+    newq; bq add --name 100-main-pat --no-start "$T/j/pat" > /dev/null; BQX=$P run1; s1=$(ql | sed -n 's/.*(since \([^)]*\)).*/\1/p' | head -1)
+    BQX=$P bq cancel main-pat > /dev/null; sleep 1.2; BQX=$P bq add --name 100-main-pat --no-start "$T/j/pat" > /dev/null; BQX=$P run1
+    s2=$(ql | sed -n 's/.*(since \([^)]*\)).*/\1/p' | tail -1)
+    [ "$s1" = "$s2" ] && ok "PLANT keep-state (state never cleared): the re-added job inherits the old clock, the case goes red" || bad "PLANT keep-state not caught: $s1 / $s2"
+else bad "plant keep-state did not land"; fi
+
+# 9. a readiness check that hangs: killed after the bound, counted not-ready, logged
+newq
+mkjob "$T/j/hang" "$(D 30 none none)" 'sleep 30; exit 0' 'exit 0'
+bq add --name 100-main-hang --no-start "$T/j/hang" > /dev/null; t0=$(date +%s); BQTO=20 run1; w=$(( $(date +%s) - t0 ))
+has '100-main-hang READY-HUNG: --ready killed after 3s' && [ -f "$Q/pending/100-main-hang" ] && [ "$w" -lt 10 ] \
+    && ok "a hanging --ready: killed after 3s, READY-HUNG logged, job stays pending (${w}s)" || bad "hang: ${w}s $(ql | grep hang)"
+if P=$(plant no-bound 'exec "$TO" --kill-after=2 "$b" "$s" "--$mode"' 'exec "$s" "--$mode"'); then
+    newq; bq add --name 100-main-hang --no-start "$T/j/hang" > /dev/null; t0=$(date +%s); BQX=$P BQTO=8 run1; w=$(( $(date +%s) - t0 ))
+    { [ "$w" -ge 8 ] && ! has READY-HUNG; } && ok "PLANT no-bound (unbounded check): the pass hangs (${w}s), the case goes red" || bad "PLANT no-bound not caught: ${w}s"
+else bad "plant no-bound did not land"; fi
+
+# 10. dry run at ENQUEUE: a failing dry run, missing declarations, a hand-dropped job
+newq
+mkjob "$T/j/argerr" "$(D 30 none none | sed 's/ exit 0$//') "'echo "emit_sweep.py: error: --arms and --extra/--extra-base are exclusive" >&2; exit 2' 'exit 0' 'echo ran >> "$BQ_QUEUE.ran"'
+out=$(bq add --name 100-main-argerr --no-start "$T/j/argerr" 2>&1); rc=$?
+[ "$rc" = 65 ] && printf '%s' "$out" | grep -q 'REFUSED 100-main-argerr: its --dry-run failed (rc=2)' && printf '%s' "$out" | grep -q 'are exclusive' && [ -z "$(ls "$Q/pending")" ] \
+    && ok "a dry run failing on its arguments (rc 2): REFUSED at enqueue (65), reason shown, nothing queued" || bad "argerr: rc=$rc $out"
+mkjob "$T/j/nodecl" "echo 'boxqueue: cap 30'; exit 0" 'exit 0' 'exit 0'
+out=$(bq add --name 100-main-nodecl --no-start "$T/j/nodecl" 2>&1); rc=$?
+[ "$rc" = 65 ] && printf '%s' "$out" | grep -q "no 'boxqueue: patience' declared" && ok "missing declarations: REFUSED (no silent defaults)" || bad "nodecl: rc=$rc $out"
+cp "$T/j/argerr" "$Q/pending/100-main-hand"; run1
+[ "$(st main-hand)" = failed ] && res main-hand | grep -q 'DRY-RUN-FAILED_rc=2_on_first_sight' && [ ! -e "$Q.ran" ] \
+    && ok "a job dropped into pending/ by hand is dry-run on first sight and failed, never run" || bad "hand: $(res main-hand)"
+if P=$(plant no-dry-add '    if [ $rc -ne 0 ]; then
+        echo "boxqueue: REFUSED $name: its --dry-run' '    if false; then
+        echo "boxqueue: REFUSED $name: its --dry-run'); then
+    newq; BQX=$P bq add --name 100-main-argerr --no-start "$T/j/argerr" > /dev/null 2>&1
+    [ -n "$(ls "$Q/pending" 2>/dev/null)" ] && ok "PLANT no-dry-add (enqueue skips the dry run): the bad job is queued, the case goes red" || bad "PLANT no-dry-add not caught"
+else bad "plant no-dry-add did not land"; fi
+
+# 11. dry run again at START: the input vanished after enqueue
+newq
+mkjob "$T/j/input" "[ -e \"\$BQ_QUEUE.input\" ] || { echo 'no input file' >&2; exit 1; }; $(D 30 none none)" 'exit 0' 'echo ran >> "$BQ_QUEUE.ran"'
+touch "$Q.input"; bq add --name 100-main-input --no-start "$T/j/input" > /dev/null; rm -f "$Q.input"; run1
+[ "$(st main-input)" = failed ] && res main-input | grep -q 'DRY-RUN-FAILED_rc=1_at_START' && [ ! -e "$Q.ran" ] \
+    && ok "the dry run is re-asked at START: the vanished input fails it there, the work never runs" || bad "start dry: $(res main-input)"
+
+# 12. waiting on <holder>
+newq
+mkjob "$T/j/w" "$(D 30 none none)" 'exit 0' 'exit 0'
+bq add --name 100-main-w --no-start "$T/j/w" > /dev/null
+setsid bash "$BL" run --label other-holder -- sleep 5 > /dev/null 2>&1 & kids+=($!); sleep 0.5
+run1
+has 'job 100-main-w waiting on pid=[0-9]+ label=other-holder' && [ -f "$Q/pending/100-main-w" ] && [ ! -d "$Q/running/100-main-w" ] \
+    && ok "box lock held elsewhere: 'waiting on pid=.. label=other-holder' logged, the job stays pending" || bad "waiting: $(ql | grep waiting)"
+grep -q 'waiting on' <(bash "$BQ" status) && ok "status shows the waiting answer" || bad "status: $(bash "$BQ" status)"
+wait "${kids[-1]}" 2>/dev/null; run1
+[ "$(st main-w)" = green ] && ok "the holder ends: the job runs next pass" || bad "after holder: $(st main-w)"
+
+# 12b. a job that takes the box lock itself (the kit's `boxlock run --label kit`) nests, never deadlocks
+newq
+mkjob "$T/j/kit" "$(D 30 none none)" 'exit 0' "bash '$BL' run --label kit --no-wait -- echo nested-ok"
+bq add --name 100-kit-slot --no-start "$T/j/kit" > /dev/null; run1
+[ "$(st kit-slot)" = green ] && grep -q nested-ok "$(ls -d "$Q"/done/*-100-kit-slot)/job.log" \
+    && ok "a job calling boxlock run itself (the kit's slot form) nests inside the runner's lock" || bad "nest: $(res kit-slot)"
+
+# 13. one runner per queue
+newq
+bq add --name 500-main-never --no-start "$T/j/never" > /dev/null
+bq start --every 1 > /dev/null; sleep 0.5
+out=$(bq run --once 2>&1); rc=$?
+[ "$rc" = 75 ] && printf '%s' "$out" | grep -q 'REFUSED: a runner is live' && ok "a second runner is REFUSED (75) naming the live one" || bad "two runners: rc=$rc $out"
+out=$(bq start); printf '%s' "$out" | grep -q 'runner live' && ok "start is idempotent (a live runner is reported, not doubled)" || bad "start twice: $out"
+p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$Q/runner.pid"); bash "$here/safekill" "$p" > /dev/null 2>&1
+
+# 14. a dead runner's leftovers
+newq; mkdir -p "$Q/running/100-main-dead" "$Q/running/110-main-ended"
+sleep 0 & dead=$!; wait "$dead"
+for d in dead ended; do r=$Q/running/1$([ $d = dead ] && echo 00 || echo 10)-main-$d
+    cp "$T/j/w" "$r/job"; printf 'boxqueue: cap 30\nboxqueue: patience none\nboxqueue: expect none\n' > "$r/dry.log"
+    printf 'pid=%s start=1 epoch=%s since=x\n' "$dead" "$(date +%s)" > "$r/started"; printf '%s 1\n' "$dead" > "$r/pid"; done
+echo 0 > "$Q/running/110-main-ended/rc"; date +%s > "$Q/running/110-main-ended/end"; echo ok > "$Q/running/110-main-ended/job.log"
+run1
+[ "$(st main-dead)" = failed ] && res main-dead | grep -q RUNNER-DIED && [ "$(st main-ended)" = green ] && [ -z "$(ls "$Q/running")" ] \
+    && ok "a dead runner's leftovers: a job with no rc fails RUNNER-DIED, one that ended is judged from its rc" || bad "recover: $(st main-dead) $(st main-ended)"
+
+# 15. rc 0 with a red line is not green; a cap fires
+newq
+mkjob "$T/j/red" "$(D 30 none none)" 'exit 0' "echo 'make: *** [Makefile:646: test-corpus] Error 1'; exit 0"
+mkjob "$T/j/cap" "$(D 1 none none)" 'exit 0' 'sleep 5'
+bq add --name 100-main-red --no-start "$T/j/red" > /dev/null; bq add --name 110-main-cap --no-start "$T/j/cap" > /dev/null; run1
+[ "$(st main-red)" = failed ] && res main-red | grep -q VERDICT-RED && ok "rc 0 but a red make line: failed VERDICT-RED (scripts/verdict over the job's log)" || bad "red: $(res main-red)"
+[ "$(st main-cap)" = failed ] && res main-cap | grep -q 'CAP-FIRED' && ok "cap 1 s, work 5 s: failed CAP-FIRED" || bad "cap: $(res main-cap)"
+
+# 16. --ready's other answers; a stray name
+newq
+mkjob "$T/j/r77" "$(D 30 none none)" 'echo "superseded by 120"; exit 77' 'exit 0'
+mkjob "$T/j/r1" "$(D 30 none none)" 'echo "typo in readiness"; exit 1' 'exit 0'
+mkjob "$T/j/r76" "$(D 30 none none)" '[ -e "$BQ_QUEUE.r76" ] && exit 0; touch "$BQ_QUEUE.r76"; exit 76' 'exit 0'
+bq add --name 100-main-r77 --no-start "$T/j/r77" > /dev/null; bq add --name 110-main-r1 --no-start "$T/j/r1" > /dev/null
+bq add --name 120-main-r76 --no-start "$T/j/r76" > /dev/null; bq add --name 900-main-last --no-start "$T/j/w" > /dev/null
+cp "$T/j/w" "$Q/pending/junk"; run1
+[ "$(st main-r77)" = cancelled ] && [ "$(st main-r1)" = failed ] && res main-r1 | grep -q READY-ERRORED \
+    && ok "--ready 77: cancelled; --ready errors (rc 1): failed READY-ERRORED" || bad "ready codes: $(st main-r77) $(st main-r1)"
+has 'requeue \(from --ready\): now 901-main-r76' && [ "$(st main-r76)" = green ] && ok "--ready 76: renamed to the end (901), then ran" || bad "ready 76: $(ql | grep r76)"
+has 'IGNORED pending/junk' && ok "a pending file with no PRIO-OWNER-REST name is IGNORED, logged" || bad "stray"
+
+# 17. the runner does not inherit its enqueuer's box-lock fd
+newq
+setsid bash "$BL" run --label enqueuer -- bash -c "bash '$BQ' add --name 100-main-fd '$T/j/w' > /dev/null; sleep 1" > /dev/null 2>&1 & kids+=($!)
+for _ in $(seq 40); do [ "$(st main-fd)" = green ] && break; sleep 0.5; done
+[ "$(st main-fd)" = green ] && bash "$BL" status | grep -q '^free' && ok "add from inside a lock holder: the auto-started runner waits for it, then runs the job; the lock ends free" \
+    || bad "fd inherit: $(st main-fd) $(bash "$BL" status)"
+if P=$(plant keep-fds 'for f in /proc/$BASHPID/fd/*; do f=${f##*/}; [ "$f" -gt 2 ] 2>/dev/null && [ "$f" -lt 255 ] && eval "exec $f>&-"; done
+        unset PCREC_BOXLOCK_HELD' 'unset PCREC_BOXLOCK_HELD'); then
+    newq
+    setsid bash "$BL" run --label enqueuer -- bash -c "bash '$P' add --name 100-main-fd '$T/j/w' > /dev/null; sleep 1" > /dev/null 2>&1 & kids+=($!)
+    for _ in $(seq 16); do [ "$(st main-fd)" = green ] && break; sleep 0.5; done
+    [ "$(st main-fd)" = green ] && bad "PLANT keep-fds not caught" || ok "PLANT keep-fds (the runner keeps the enqueuer's lock fd): the job never gets the lock, the case goes red"
+    p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$Q/runner.pid" 2>/dev/null); [ -n "$p" ] && bash "$here/safekill" "$p" > /dev/null 2>&1
+else bad "plant keep-fds did not land"; fi
+
+# 18. batch: a chainrun stages file becomes jobs; a failed stage re-queues alone
+newq; mkdir -p "$T/tree"
+printf '%s\n' '# a stages file' 'a light 10 test -e "$CHAIN_TREE/flag" && echo A > "$CHAIN_TREE/a.out"' 'b light 10 test -e "$CHAIN_TREE/a.out" && echo "B $STAGE_NAME" > "$CHAIN_TREE/b.out"' > "$T/stages"
+bq batch --owner main --prio 300 --tree "$T/tree" --no-start "$T/stages" > "$T/batch.out" 2>&1; rc=$?
+ka=$(ls "$Q/pending" | sed -n 's/^300-//p'); kb=$(ls "$Q/pending" | sed -n 's/^301-//p')
+[ "$rc" = 0 ] && [ -n "$ka" ] && [ -n "$kb" ] && ok "batch: two stages -> 300-$ka, 301-$kb" || bad "batch: rc=$rc $(cat "$T/batch.out")"
+run1
+[ "$(st "$ka")" = failed ] && [ -f "$Q/pending/301-$kb" ] && has "301-$kb not-ready: waiting on $ka, which FAILED" \
+    && ok "stage a fails: b waits (not cancelled), naming a as FAILED" || bad "batch fail: $(st "$ka") $(ql | grep 301 | tail -2)"
+touch "$T/tree/flag"; bq retry --no-start "$ka" > /dev/null; run1
+[ "$(st "$ka")" = green ] && [ "$(st "$kb")" = green ] && [ "$(cat "$T/tree/b.out")" = "B b" ] \
+    && ok "retry a alone: a green, then b runs (STAGE_NAME set), green" || bad "batch retry: $(st "$ka") $(st "$kb")"
+bq batch --owner main --prio 400 --tree "$T/tree" --lift "$T/lift" --no-start "$T/stages" > /dev/null 2>&1; run1
+has '400-main-b[0-9]+\.a not-ready: waiting for lift file' && ok "batch --lift: the first job waits for the lift file" || bad "lift: $(ql | tail -4)"
+printf 'a light ttune true\n' > "$T/stages.bad"; git init -q "$T/emptyrepo" 2>/dev/null
+out=$(bq batch --owner main --prio 500 --tree "$T/emptyrepo" --no-start "$T/stages.bad" 2>&1); rc=$?
+[ "$rc" = 64 ] && printf '%s' "$out" | grep -q 'cap=ttune' && ok "batch reuses chainrun's parser: a ttune cap with no ledger refuses (64)" || bad "batch parse: rc=$rc $out"
+
+# 19. --dry-run: the whole queue's plan
+newq
+mkjob "$T/j/p1" "$(D 600 none 'rows=6 lines=^== row ')" 'exit 0' 'exit 0'
+bq add --name 100-main-p1 --no-start "$T/j/p1" > /dev/null; bq add --name 500-main-never --no-start "$T/j/never" > /dev/null
+out=$(bq --dry-run); rc=$?
+[ "$rc" = 0 ] && printf '%s' "$out" | grep -q '100-main-p1 .* ok .*600 .*ready / expect rows=6' && printf '%s' "$out" | grep -q 'not-ready: not until the go file' \
+    && printf '%s' "$out" | grep -q 'total cap 630s' && ok "--dry-run prints order, dry-run, cap, readiness and populations, total cap" || bad "plan: rc=$rc $out"
+cp "$T/j/argerr" "$Q/pending/200-main-bad"; out=$(bq --dry-run); rc=$?
+[ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'SOME WOULD NOT RUN CORRECTLY' && [ -f "$Q/pending/200-main-bad" ] \
+    && ok "--dry-run with a broken job: exit 1, the job named, nothing moved" || bad "plan bad: rc=$rc $out"
+
+echo "boxqueue.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

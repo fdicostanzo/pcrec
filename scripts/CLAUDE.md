@@ -459,6 +459,10 @@ pcrec (the Makefile owns that).
   `docs/design/start_table/row_census.py`, which imports it. Self-test:
   `tests/emit_sweep.py.test` (the arms over their own manifests, ~5 s); the
   mech `emitsweep` arm runs it. See `docs/dev/lanes/stc0_report.md`.
+  Every ending (a pass, a red, an argparse refusal, a traceback) prints ONE
+  last line `emit_sweep: DONE rc=N` ([BOXQUEUE], 2026-10-21), the
+  completion convention `verdict`/`watchrun` read: before it a finished
+  sweep read INCOMPLETE and lane p2dland read arms.tsv by hand.
 
   **THE `-fmemfn-simd` AND `-fcomments` ARMS ([SWEEPARM], 2026-10-16).** Both
   flags have DIFFER_PINS cells (byte and utf8, c-default and c-vm, stamp floor
@@ -666,9 +670,10 @@ pcrec (the Makefile owns that).
   number). The numbering rule is docs/spec/CLAUDE.md's "Numbering and
   citation"; `make test-spec-history` runs `--check`. Standard library only.
 
-- **boxlock / chainrun / watchrun / verdict** — the RUN-CONTROL family
-  (apply_here.md proposals 2 and 6, lane runkit, 2026-10-20): one lock, one
-  chain runner, one watcher and one verdict reader, so lanes and the manager
+- **boxlock / chainrun / watchrun / verdict / boxqueue** — the RUN-CONTROL
+  family (apply_here.md proposals 2 and 6, lane runkit, 2026-10-20; boxqueue
+  [BOXQUEUE], lane boxqueue, 2026-10-21): one lock, one chain runner, one
+  watcher, one verdict reader and one box-wide job queue, so lanes and the manager
   stop hand-writing chain.sh/waiter/watcher scripts that re-introduce the
   same bugs (dev_methods_handoff.md §7). Each self-test plants the historical
   bug back into a scratch copy and shows it caught. Plain bash + coreutils +
@@ -719,11 +724,51 @@ pcrec (the Makefile owns that).
     TREE resolves only its LIVE chain. Self-test `tests/watchrun.test`.
   - **verdict** — `verdict [--rc N] [--no-rc-lines] LOG...`: `VERDICT
     GREEN|RED|INCOMPLETE: ...` + evidence, exit 0/1/2. Reads make's error
-    lines (both the Linux `Makefile:N:` and the bare form), perfrun's DONE
-    line (LOG.perfrun read automatically; its class shown), mech's COMPLETE
+    lines (both the Linux `Makefile:N:` and the bare form), any tool's
+    `TOOL: DONE rc=N` trailer (perfrun's — LOG.perfrun read automatically,
+    its class shown — and emit_sweep.py's since [BOXQUEUE]; read under
+    `--no-rc-lines` too), mech's COMPLETE
     (red iff unexpected > 0) / FATAL, battery and chainrun trailers,
     run_group summaries and hand-chain `rc=` status lines; never a FAIL grep
     or "sections ran". No completion line and no red line = INCOMPLETE
     (killed), never green. Self-test `tests/verdict.test`.
+    THE COMPLETION CONVENTION: a tool that ends a run prints ONE
+    `TOOL: DONE rc=N` line on every ending; verdict and watchrun (default
+    `--done`) read it with no per-tool rule. Chosen over a per-job declared
+    completion ERE (lane boxqueue): a declared ERE is a control written by
+    the author of what it controls, and it fixes only queue jobs, not a hand
+    `scripts/verdict LOG` or a `watchrun --log` on a bare sweep log.
+  - **boxqueue** — THE BOX'S ONE JOB QUEUE ([BOXQUEUE], docs/design/
+    plan_row_bodies/BOXQUEUE.md; the script header is the contract). A
+    directory, `<main>/worktrees/.boxqueue/` (`PCREC_BOXQUEUE_DIR`
+    overrides): `pending/ running/ done/ failed/`, `queue.log` (every pass,
+    every job's answer, `waiting on <holder>`, START/END), `status`. A job is
+    an executable script named `PRIO-OWNER-REST` (KEY = OWNER-REST), called
+    three ways: `--dry-run` (would I run correctly: prints the commands and
+    the REQUIRED `boxqueue: cap|patience|expect` declarations; called at
+    enqueue — a failure REFUSES it, exit 65 — and again at START), `--ready`
+    (can I run now: 0 / 75 not yet + reason / 76 requeue to the end / 77
+    never; bounded 20 s, a hang = READY-HUNG; not-ready past `patience` is
+    REPORTED once), and the work (under scripts/boxlock, which the runner
+    takes per job: 0 is green only if `verdict` is not RED and every `expect
+    NAME=N lines=ERE|last=ERE` population is met — SHORT fails, an OVER
+    `lines=` count kills the job mid-run; 76 requeue; 77 cancelled; 75 is a
+    BUG, failed NOT-READY-AFTER-START; else failed, FAILED-FAST under 10 s).
+    Commands: `add [--name N | --prio P --owner O] SCRIPT`, `batch --owner O
+    --prio P [--lift F] [--tree D] STAGES` (a chainrun stages file, parsed by
+    `chainrun --check`, becomes one job per stage whose `--ready` is
+    `boxqueue after <previous KEY>`; a failed stage re-queues alone with
+    `retry`), `--dry-run`/`plan` (the whole queue's plan and total cap),
+    `status`, `state KEY`, `after KEY`, `retry KEY`, `cancel KEY`, `start`
+    (detached runner; `add` arms one), `run [--once]`. One runner per queue
+    (flock on `.runner.lock`, a second REFUSED 75); it exits when pending/ is
+    empty; the detached runner closes every inherited fd (an `add` from
+    inside a lock holder must not keep the box lock); a dead runner's
+    `running/` is judged from its rc, waited on while alive, else
+    RUNNER-DIED. Job state (declarations, the not-ready clock) is keyed by
+    KEY and content sha and cleared on add/leave, so a re-added job never
+    inherits an earlier one's. OPT-IN for the kit and the bench: a slot
+    script becomes a job (its own `boxlock run --label kit` stays valid:
+    inside a queue job it nests by token). Self-test `tests/boxqueue.test`.
 
 Maintenance: update this file when scripts are added/removed or change role.

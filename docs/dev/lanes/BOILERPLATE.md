@@ -124,6 +124,14 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   `build/chainrun/<ts>-<name>/chain.log`; read any log's verdict with
   `scripts/verdict LOG`. The manager watches with `scripts/watchrun TREE`
   (one line on an actionable state, then exits).
+  OR ENQUEUE IT ([BOXQUEUE], 2026-10-21; template below): `scripts/boxqueue
+  batch --owner NAME --prio P --lift worktrees/NAME/.lift build/STAGES` turns
+  the same stages file into one queue job per stage, or `scripts/boxqueue
+  add` queues a job script you wrote. Every job is dry-run AT ENQUEUE, so a
+  bad invocation is refused in seconds instead of after hours waiting for a
+  slot; a failed stage is retried ALONE (`scripts/boxqueue retry KEY`); a
+  corrective or forgotten check is one more job, never a second chain or a
+  hand-written waiter. `scripts/boxqueue status` answers "why has X not run".
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
@@ -172,10 +180,12 @@ In a chainrun stages file (`NAME CLASS CAP COMMAND`, scripts/chainrun's header):
     build   light 300   make -j16
     strict  light 600   make strict
     test    light ttune scripts/perfrun --label NAME -- "$STAGE_LOG.make"
-    mech    heavy 5400  make mech S222 S223
+    mech    light 5400  bash tests/mech/run_sabotage_matrix.sh S222 S223
 
-(perfrun and mech take the box lock themselves, so `light` is enough for
-them; `heavy` is for a command that does not. `ttune` sizes the cap from the
+(NOT `make mech S222 S223`: the make target takes no ids, so make runs the
+FULL matrix and then fails on `S222` as a target — 100 min of box time,
+2026-10-20. perfrun and the matrix take the box lock themselves, so `light`
+is enough for them; `heavy` is for a command that does not. `ttune` sizes the cap from the
 ledger's longest clean run times 1.5.) perfrun returns make's rc unchanged.
 
 It picks a rotated parallelism shape, writes make's output to the log
@@ -189,6 +199,41 @@ resource CPU-cap cells) and `class=LOAD-SUSPECT` are the SHAPE's finding, not
 the lane's failure: re-run the named sections solo (`make test-X`); green solo
 = green-by-diagnosis (known_issues K44). `RED-REAL` is the lane's. Do not
 re-run the whole suite at another shape to "check"; the rotation owns shapes.
+
+## Queue template: a job script for `scripts/boxqueue` ([BOXQUEUE])
+A job is one executable script named `PRIO-OWNER-REST`, called three ways
+(scripts/boxqueue's header is the contract). `--dry-run` resolves everything
+and prints the REQUIRED declarations; `--ready` answers "can I run now"
+with no side effects; the plain call is the work, run under the box lock:
+
+    #!/usr/bin/env bash
+    # 200-NAME-mech: mech rows S222 S223 on worktrees/NAME
+    set -u
+    TREE=/home/pcrec/projects/pcrec/worktrees/NAME IDS="S222 S223"
+    case "${1:-}" in
+        --dry-run)    # ids resolve (VALIDATE_ONLY: seconds, no build, no lock)
+            out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
+                { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
+            n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+            [ -n "$n" ] || { echo "no field-validation line" >&2; exit 1; }
+            echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
+            echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+            echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
+            exit 0 ;;
+        --ready)      # 0 now / 75 not yet (first line = the reason) / 77 never
+            exec bash "$BOXQUEUE" after NAME-build ;;
+    esac
+    cd "$TREE" || exit 1
+    exec bash tests/mech/run_sabotage_matrix.sh $IDS
+
+`scripts/boxqueue add --name 200-NAME-mech FILE` dry-runs it (an unknown id
+is REFUSED, exit 65) and queues a copy. Exit codes of the work: 0 done (green
+only if `scripts/verdict` reads no red line AND the declared population was
+met: 1 row of 2 is POPULATION-SHORT), 76 requeue me, 77 never, anything else
+failed; a 75 from the WORK is a bug (readiness belongs in `--ready`). A
+`lines=ERE` population that runs past its count (the full matrix instead of
+6 rows) is killed within seconds. `scripts/boxqueue --dry-run` checks the
+whole queue's plan before a night is committed to it.
 
 ## Lifecycle (Frank's ruling 2026-09-06 — replaces all keepalive guidance)
 - NO self-keepalive crons. Subagent caches are 5-minute TTL; periodic ticks

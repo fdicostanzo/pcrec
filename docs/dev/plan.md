@@ -38,9 +38,9 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   `scripts/perfrun` wraps a chain's make-test line, picks a (make -jJ, PROCS=P) shape from `scripts/perfrun.shapes` (least-sampled uncontaminated), samples CPU + per-section times, returns make's rc unchanged, records a ledger row (`docs/dev/ttune_ledger.tsv`, per-run files folded by `scripts/perfrun --fold`). Red-shape triage (K44-ONLY / LOAD-SUSPECT flagged, not re-run) in BOILERPLATE.md. Profile #0 (decfbB0, -j6 PROCS=16, 13.5 min, ~83% busy, load1 up to 84, serial stretches small) and the DECISION RULE + default-derivation options (P = ceil(nproc/J) from MAKEFLAGS) in docs/dev/ttune_measurement.md. NEXT: chains use perfrun; when the rule's evidence bar is met a follow-up lane changes the default (procs_default.sh). Report docs/dev/lanes/ttune_report.md. Sequel to [TT-12]/K44.
 - [BOXQUEUE] STATE:started — ONE BOX-WIDE JOB QUEUE: jobs as scripts, exit codes say what next
   filed: 2026-10-20 Frank
-  status (2026-10-20): FILED with its design agreed in discussion; BUILD GO given ("Build it tomorrow. You might learn some other requirements from this run").
-  next: brief a build lane on 2026-10-21 after the ctxp2d validation chain ends; append requirements observed from that run to the body first.
-  refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md
+  status (2026-10-21): BUILT on lane/boxqueue (lane boxqueue): scripts/boxqueue + tests/boxqueue.test (53 checks, 10 plants), emit_sweep's `emit_sweep: DONE rc=N` trailer read by verdict/watchrun as the general `TOOL: DONE rc=N` convention, BOILERPLATE queue template (its `make mech IDS` bug fixed); awaiting merge.
+  next: merge; then the first real queued night (main jobs), the kit's and the bench's opt-in (inbox note drafted in the report).
+  refs: docs/design/plan_row_bodies/BOXQUEUE.md; scripts/boxqueue; scripts/chainrun; scripts/boxlock; docs/dev/lanes/runkit_report.md; docs/dev/lanes/boxqueue_report.md
   A queue directory (pending/running/done/failed); each job an executable script, ordered by name prefix, owner in the name. One runner holds scripts/boxlock per job; the job's exit code decides: 0 done, 75 not ready, 76 requeue, 77 cancelled, else failed. Readiness lives at the top of each script before any side effect; snapshot at start; bounded not-ready answers; every pass logged. Shared by main, the kit and the bench; chainrun stage files become job batches.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
