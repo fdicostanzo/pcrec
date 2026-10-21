@@ -2549,3 +2549,7 @@ b4prep @ 0f3c115fa (lane/memfn-b4prep, report docs/dev/lanes/b4prep_report.md).
 - Item 4's lever set was checked by me against mk_lever_set.py. V1 at ≤ 2 terms is correct; the "3 or fewer" in the lane's message was a slip.
 
 **Ruling (mine, under D169's own reasoning): §9.2a's expected-loss rule is widened to a second class, SHORT SUBJECTS.** b4prep found that the rule (regular landings, gap ≤ 8 B) misses losses grid2 already shows: dfa-hat at L=32 loses +8.5..+13.3% at g ≥ 16 with unpredictable landings, and dig at L=32 g=16 loses +2.6%. D169's premise is that short subjects carry small absolute losses and that throughput matters on large ones. So a V1 loss on a dinghy-length subject (L ≤ 64 B, gridread's DINGHY boundary) is an EXPECTED loss when its absolute size is under the walk's fixed per-call term, not a refutation under §9.4. Losses on large subjects with irregular landings still refute. The closer lane applies this to §9.2a and expected_losses.md, and main gets a notice.
+
+- 2026-10-21 (main): M0 is built (lane/m0build c37c2ef05, abi 81 -> 82), and its heavy validation is queued ahead of our 521. Added to the B4-brief OWED list:
+  - (a) the kit's interim measure sets use first-letter digests, which docs/spec/measures.md does not allow; fix them before B4 reads any set;
+  - (b) re-check the B4 mover manifest at abi 82 once M0 merges.
