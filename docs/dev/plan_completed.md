@@ -6178,3 +6178,13 @@ Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on 
   refs: docs/dev/reviews/2026-10-18-r1-e1.md (F1, F2, L7); docs/dev/lanes/e1_report.md §10; docs/design/compound_entries.md §3.1
   Four writers spell function-linkage attributes, each its own way: K24's guarded `noclone` (emit_dfa.c `emit_search_head`), the VM entry rung's `en.ai`/`en.ai_body` (emit_vm.c `vm_plan_entry`), [OPT-1]'s `noinline` on `_deep` (emit_comb.c), and the part table's `layout_texts[]`. F1/F2 were drift between them (an unguarded gcc-only `noipa`). Charter: ONE value-to-guarded-text table that all four read, ZERO MOVERS (emit_sweep default + every axis byte-identical); a guard shape stated once.
   Closure note (2026-10-18, lane attrtab): built as an opportunity item on Frank's GO of 2026-10-18 (the trigger was waived). The table is `attr_texts[]` in src/gen/attr_text.c, the guard shape stated once (`ATTR_GUARDED`); the plain `static inline` writers A4-A7 stay out of scope. Sabotage S1113/S1119/S1124 re-aimed onto the table, S1123 new.
+
+## Completed 2026-10-21
+
+- [MECH-REACHONLY] STATE:completed — A REACH-ONLY SWEEP FOR THE SABOTAGE MATRIX + A STRATEGY-WIDENING DELIVERY BAR
+  filed: 2026-10-21 manager (apply_here.md §5 / §8, owner's go 2026-10-20)
+  status (2026-10-21): built on lane/reachonly (REACH_ONLY=1, self-test, BOILERPLATE line, mech CLAUDE section); the first full sweep + self-test are queued (boxqueue job 200-reachonly-reach), results owed in reachonly_report.md.
+  trigger: the next strategy-widening change (a new row, a widened admission, a new rung), or the next full matrix that finds UNREACHED rows an optimization moved.
+  refs: docs/dev/devmethods/apply_here.md §5; tests/mech/CLAUDE.md; docs/dev/lanes/BOILERPLATE.md; [SABANCHOR]
+  Problem: when an optimization starts firing in new places it moves sabotage witnesses and size-rung witnesses off their sites, and nothing notices until a full matrix runs (five instances 2026-09-22..2026-10-13). Charter, one careful lane (cost: medium): (1) `REACH_ONLY=1` for tests/mech/run_sabotage_matrix.sh evaluates every row's reach probes against the tree without building any sabotage (minutes, not hours); (2) a BOILERPLATE delivery-bar line: a change that makes a strategy fire in new places runs the reach-only sweep and the size-rung witness set, and re-aims each moved witness with the new deny flag in the same delivery.
+  completed (2026-10-21): merged a9e10b53c; REACH_ONLY=1 sweeps 847 rows in 89 s (440 reached, 0 undeclared unreached, 14 declared, 393 no probe); report docs/dev/lanes/reachonly_report.md.
