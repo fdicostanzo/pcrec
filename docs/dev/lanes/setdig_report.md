@@ -94,3 +94,8 @@ Charter: valid digests + other missing spec fields, regenerated sets, cards if t
 Committed: all of it except the sweep verdict (OWED, §5). Beyond the charter: `kit-synthetic@2` (needed by the unit row), the b4prep lever set and its generator (a reader of
 generate.py), finder_check's own digest corrected. Deliberately not done: canonical byte form
 (§1), 
+
+
+### §5 verdict (kit manager, 2026-10-21)
+
+The emit_sweep plain arm (`--ref 764223688`, under `boxlock --label kit-setdig`) ended `emit_sweep: DONE rc=0`, with all 11 streams `movers=0 asymmetric=0`. ZERO movers.
