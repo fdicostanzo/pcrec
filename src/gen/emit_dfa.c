@@ -6579,6 +6579,28 @@ static mf_site *find_site(const PcrecFind *f)
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
+#ifdef PCREC_MF_POSCOV
+    /* [MEMFN-POSCOST] SURVEY INSTRUMENTATION (lane b4close2), compiled ONLY
+     * into the traced harness's library (mk_trace_harness.sh with POSCOV=1,
+     * -DPCREC_MF_POSCOV; the default build has none of this text): hands the
+     * kit's trace build the k-set walk's byte set at each offset 0..nwalk-1
+     * (the SPAN the FIND's candidate start carries) beside the scanned set,
+     * for the `poscov=`/`hull=` fields of its `MFTRACE FD` record. It reads
+     * a fact and writes the kit's trace state; the site, hooks and emitted
+     * text are untouched. */
+    {
+        extern void MF_NS(trace_poscov)(const uint8_t scan[32], int32_t off, unsigned n,
+                                        const uint8_t (*pos)[32]);
+        const KsetWalk *w = pcrec_fact_kset_walk(cx);
+        uint8_t pos[PCREC_PREFIX_K_MAX][32];
+        memset(pos, 0, sizeof pos);
+        for (int i = 0; i < w->nwalk; i++)
+            for (int b = 0; b < 256; b++)
+                if (w->k[i].set[b]) pos[i][b >> 3] |= (uint8_t)(1u << (b & 7));
+        MF_NS(trace_poscov)(s->pred.term[0].set, s->pred.term[0].offset, (unsigned)w->nwalk,
+                            (const uint8_t (*)[32])pos);
+    }
+#endif
     return s;
 }
 

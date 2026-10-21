@@ -843,6 +843,182 @@ static int fd_scope(const mf_site *s)
  * CALLED only by an MF_TRACE build (compose.c); its records print only
  * there. */
 
+#ifdef MF_TRACE
+/* ---- POSCOV, THE POSITION-COST SURVEY FIELD (trace build only; lane b4close2,
+ * [MEMFN-POSCOST]) ---------------------------------------------------------
+ *
+ * Survey instrumentation, not a selection input: nothing below is read by a
+ * row, a gate or an arm, and it moves no byte and no art state. A trace-build
+ * pcrec (src/gen/emit_dfa.c under -DPCREC_MF_POSCOV, never the default build)
+ * hands the walk-routed FIND site's SPAN here just before it defines the
+ * site: the k-set walk's byte set at each offset 0..n-1 from the candidate
+ * start (pcrec's `kset_walk` fact, the bytes every match carries there), and
+ * the scanned set with its offset. fd_shadow prints three fields on each FIND
+ * record:
+ *   poscov=t0,t1,...  the exact cover's TERM COUNT at each walk position
+ *                     (`mf_set_terms` at MF_SET_K, the cover the form would
+ *                     render); `x` where it declines (no cover within K
+ *                     terms or the budget); `-` when no walk was handed.
+ *   hull=E/T          the SCANNED position's best SUPERSET of at most 2
+ *                     terms: E = its extra members (hull minus the set), T
+ *                     the terms it uses (1 or 2); `exact` where the scanned
+ *                     set's own cover already has <= 2 terms (extras 0);
+ *                     `>16` where no 1- or 2-term superset has <= 16 extras.
+ *   walk0=same|diff|-  whether the walk's position 0 is the scanned set
+ *                     (it differs where the scan set is narrower than the
+ *                     first-byte set, e.g. the DFA hat's S ∩ E*).
+ * HULL CONSTRUCTION (exact, not a heuristic): the terms are the cover
+ * vocabulary's own, every CUBE (care mask M, value V: 3^8 of them) and every
+ * ARC (L, W: 1 <= W <= 128). Let S be the scanned set. L = the terms T with
+ * T ∩ S nonempty and |T \ S| <= 16 (an arc grows monotonically in W, so the
+ * enumeration stops at the first width over budget). The hull is the minimum,
+ * over one term A in L, or two A, B in L with S ⊆ A ∪ B, of |(A ∪ B) \ S|;
+ * ties go to fewer terms. Because any superset pair with <= 16 extras has
+ * each member inside L, the search over L x L is complete for that budget:
+ * `>16` means NO 2-term superset has <= 16 extras. The terms need not lie
+ * inside S (a hull is a SUPERSET filter, its extras are candidates a verify
+ * must reject). */
+#define FD_PC_MAX 32
+static struct {
+    int      have;
+    uint8_t  scan[32];
+    int32_t  off;
+    unsigned n;
+    uint8_t  pos[FD_PC_MAX][32];
+} fd_pc;
+static char fd_pc_text[256];            /* " poscov=.. hull=.. walk0=.." for this site */
+
+void MF_NS(trace_poscov)(const uint8_t scan[32], int32_t off, unsigned n,
+                         const uint8_t (*pos)[32]);
+void MF_NS(trace_poscov)(const uint8_t scan[32], int32_t off, unsigned n,
+                         const uint8_t (*pos)[32])
+{
+    memset(&fd_pc, 0, sizeof fd_pc);
+    memcpy(fd_pc.scan, scan, 32);
+    fd_pc.off = off;
+    fd_pc.n = n > FD_PC_MAX ? FD_PC_MAX : n;
+    for (unsigned i = 0; i < fd_pc.n; i++) memcpy(fd_pc.pos[i], pos[i], 32);
+    fd_pc.have = 1;
+}
+
+typedef struct { uint64_t w[4]; } pc_bits;
+
+static unsigned pc_pop(const pc_bits *b)
+{
+    return (unsigned)(__builtin_popcountll(b->w[0]) + __builtin_popcountll(b->w[1]) +
+                      __builtin_popcountll(b->w[2]) + __builtin_popcountll(b->w[3]));
+}
+
+/* The minimum-extras 1- or 2-term superset of `set` (see the header): returns
+ * 1 and *extra, *nt, or 0 for none within 16 extras. */
+static int pc_hull(const uint8_t set[32], unsigned *extra, unsigned *nt)
+{
+    pc_bits S, notS;
+    memcpy(&S, set, 32);
+    for (int i = 0; i < 4; i++) notS.w[i] = ~S.w[i];
+    size_t cap = 4096, n = 0;
+    pc_bits *L = malloc(cap * sizeof *L);
+    if (!L) return 0;
+    for (unsigned M = 0; M < 256; M++)
+        for (unsigned V = 0; V < 256; V++) {
+            if (V & ~M) continue;
+            pc_bits t = { { 0, 0, 0, 0 } };
+            for (unsigned x = 0; x < 256; x++)
+                if ((x & M) == V) t.w[x >> 6] |= 1ull << (x & 63);
+            pc_bits in = { { t.w[0] & S.w[0], t.w[1] & S.w[1], t.w[2] & S.w[2], t.w[3] & S.w[3] } };
+            pc_bits out = { { t.w[0] & notS.w[0], t.w[1] & notS.w[1], t.w[2] & notS.w[2],
+                              t.w[3] & notS.w[3] } };
+            if (!pc_pop(&in) || pc_pop(&out) > 16) continue;
+            if (n == cap) {
+                cap *= 2;
+                pc_bits *g = realloc(L, cap * sizeof *L);
+                if (!g) { free(L); return 0; }
+                L = g;
+            }
+            L[n++] = t;
+        }
+    for (unsigned a = 0; a < 256; a++) {
+        pc_bits t = { { 0, 0, 0, 0 } };
+        for (unsigned w = 1; w <= 128; w++) {
+            unsigned x = (a + w - 1) & 0xFFu;
+            t.w[x >> 6] |= 1ull << (x & 63);
+            pc_bits out = { { t.w[0] & notS.w[0], t.w[1] & notS.w[1], t.w[2] & notS.w[2],
+                              t.w[3] & notS.w[3] } };
+            if (pc_pop(&out) > 16) break;
+            pc_bits in = { { t.w[0] & S.w[0], t.w[1] & S.w[1], t.w[2] & S.w[2], t.w[3] & S.w[3] } };
+            if (!pc_pop(&in)) continue;
+            if (n == cap) {
+                cap *= 2;
+                pc_bits *g = realloc(L, cap * sizeof *L);
+                if (!g) { free(L); return 0; }
+                L = g;
+            }
+            L[n++] = t;
+        }
+    }
+    unsigned best = 17, bt = 0;
+    for (size_t i = 0; i < n; i++) {
+        pc_bits rem = { { S.w[0] & ~L[i].w[0], S.w[1] & ~L[i].w[1], S.w[2] & ~L[i].w[2],
+                          S.w[3] & ~L[i].w[3] } };
+        if (!(rem.w[0] | rem.w[1] | rem.w[2] | rem.w[3])) {
+            pc_bits o = { { L[i].w[0] & notS.w[0], L[i].w[1] & notS.w[1], L[i].w[2] & notS.w[2],
+                            L[i].w[3] & notS.w[3] } };
+            unsigned e = pc_pop(&o);
+            if (e < best || (e == best && bt != 1)) { best = e; bt = 1; }
+            continue;
+        }
+        for (size_t j = 0; j < n; j++) {
+            if ((rem.w[0] & ~L[j].w[0]) | (rem.w[1] & ~L[j].w[1]) | (rem.w[2] & ~L[j].w[2]) |
+                (rem.w[3] & ~L[j].w[3]))
+                continue;
+            pc_bits o = { { (L[i].w[0] | L[j].w[0]) & notS.w[0], (L[i].w[1] | L[j].w[1]) & notS.w[1],
+                            (L[i].w[2] | L[j].w[2]) & notS.w[2], (L[i].w[3] | L[j].w[3]) & notS.w[3] } };
+            unsigned e = pc_pop(&o);
+            if (e < best || (e == best && bt == 0)) { best = e; bt = 2; }
+        }
+    }
+    free(L);
+    if (best > 16) return 0;
+    *extra = best;
+    *nt = bt;
+    return 1;
+}
+
+/* Builds fd_pc_text for the FIND site `s` (consumes the note). */
+static void pc_prepare(const mf_site *s)
+{
+    char *p = fd_pc_text, *e = fd_pc_text + sizeof fd_pc_text;
+    const mf_term *t = &s->pred.term[0];
+    int ok = fd_pc.have && t->kind == MF_T_SET && t->offset == fd_pc.off &&
+             !memcmp(fd_pc.scan, t->set, 32);
+    if (!ok) {
+        snprintf(fd_pc_text, sizeof fd_pc_text, " poscov=- hull=- walk0=-");
+        fd_pc.have = 0;
+        return;
+    }
+    p += snprintf(p, (size_t)(e - p), " poscov=");
+    for (unsigned i = 0; i < fd_pc.n; i++) {
+        mf_cover c;
+        if (mf_set_terms(fd_pc.pos[i], MF_SET_K, &c))
+            p += snprintf(p, (size_t)(e - p), "%s%u", i ? "," : "", c.n);
+        else
+            p += snprintf(p, (size_t)(e - p), "%sx", i ? "," : "");
+    }
+    if (!fd_pc.n) p += snprintf(p, (size_t)(e - p), "-");
+    mf_cover c0;
+    unsigned ex = 0, nt = 0;
+    if (mf_set_terms(t->set, MF_SET_K, &c0) && c0.n <= 2)
+        p += snprintf(p, (size_t)(e - p), " hull=exact");
+    else if (pc_hull(t->set, &ex, &nt))
+        p += snprintf(p, (size_t)(e - p), " hull=%u/%u", ex, nt);
+    else
+        p += snprintf(p, (size_t)(e - p), " hull=>16");
+    snprintf(p, (size_t)(e - p), " walk0=%s",
+             !fd_pc.n ? "-" : !memcmp(fd_pc.pos[0], t->set, 32) ? "same" : "diff");
+    fd_pc.have = 0;
+}
+#endif
+
 static void put_decision(const fd_x *q, int slot, const fd_decision *d)
 {
 #ifndef MF_TRACE
@@ -856,6 +1032,7 @@ static void put_decision(const fd_x *q, int slot, const fd_decision *d)
             q->ff.need == CL_N_REQUIRED ? "REQUIRED" : "OPTIONAL", q->members);
     if (q->has_cover) fprintf(stderr, " shape=r%ue%uc%u", q->sh_r, q->sh_e, q->sh_c);
     else fputs(" shape=-", stderr);
+    if (slot == FD_FIND) fputs(fd_pc_text, stderr);       /* poscov= hull= walk0= */
     const fd_row *t = d->terminal < FD_NROWS ? &fd_rows[d->terminal] : NULL;
     fprintf(stderr, " row=%s", t ? t->id : "-");
     if (slot == FD_FIND) {
@@ -888,6 +1065,9 @@ void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_ho
        (fd_pres, recorded there), so the shadow walks slot FIND only */
     int scope = fd_scope(s) & (1 << FD_FIND);
     if (!scope) return;
+#ifdef MF_TRACE
+    pc_prepare(s);                      /* the survey field; one per site, all layers */
+#endif
     /* the layer variants: SIMD-off always; W16 and W32 where the site may
        carry SIMD text (its policy has no PORTABLE_ONLY) */
     int nly = (s->policy & MF_P_PORTABLE_ONLY) ? 1 : 3;
