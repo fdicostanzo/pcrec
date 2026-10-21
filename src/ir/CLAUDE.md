@@ -394,3 +394,9 @@ the `has_end` hoist's `case N_END` folds into the absent-next predicate;
 (empty) set to the context list — load-bearing: without it `clsctx` turns on
 and the views flag changes the scan form (assertions §1d, S1171). The entries
 above that name N_BOT/N_END are history.
+
+**[DD-11.5] P2e (lane ctxp2e, 2026-10-20): the AST kinds `A_BOL`/`A_END` are
+DELETED too.** `^`/`\A`/`\z` reach **nfa.c** as A_CTX nodes (rows
+SUBJECT_START/SUBJECT_END, empty set) and take the A_CTX arm; `frag_ctx_row`
+and the two kind arms delete (`pcrec_anchor_ctxfn` is gone from internal.h).
+The NFA is state-for-state the P2d one: zero emitted-byte movers.

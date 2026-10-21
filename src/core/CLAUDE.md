@@ -1851,3 +1851,19 @@ a `uint64_t` parameter (`cand_select`, `DFA_SELECT`, the memfn/clskit deny
 maps) and `emit_dfa.c` still prints it as a number into `.flags = N`; those
 are the residue an [IFACE-PUSH] representation change must still touch. The
 gate is `tests/core/flag_access_check.py`; no abi event, no byte moved.
+
+## [DD-11.5] P2e (lane ctxp2e, 2026-10-20): `A_BOL`/`A_END` deleted; the CLASS column
+
+- **ctxfn.def** gains a CLASS column (after the grid, before the VM side):
+  `CONTEXT`, `PIN_START` or `PIN_END`. It is a written statement, checked
+  like HEX: internal.h derives the class from the grid (`CTXFN_CLASS_OF`,
+  equality with the two pin grids, `CTXFN_GRID_PIN_START`/`_END`) and a
+  per-row `_Static_assert` refuses a disagreement. CK-8's class half
+  (tests/assertions/ctxfn_table_check.py) checks the column against
+  libpcre2's observed cells.
+- **internal.h**: `A_BOL` and `A_END` leave `AKind`; `CtxClass`
+  (`CTX_CONTEXT`/`CTX_PIN_START`/`CTX_PIN_END`) and
+  `pcrec_ctx_class(const Ast *)` (below `struct Ast`, reads the derivation,
+  never the column) are new; `pcrec_anchor_ctxfn` is deleted;
+  `pcrec_ast_pin` is declared (parse.c). Analyses that need "anchored at
+  start / pinned at end" switch on the class with no `default:`.

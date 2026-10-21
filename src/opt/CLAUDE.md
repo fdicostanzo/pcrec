@@ -1782,3 +1782,14 @@ retired multiline arms); `ps_node` records no gate group for one; the A_EOL
 arm's multiline branch is deleted (a `(?m)$` is an A_CTX node). `derive.c`:
 the two `multiline` clauses are deleted (a `(?m)^` reaches the A_CTX arm).
 The `u.anch.multiline` mentions above are history.
+
+## [DD-11.5] P2e (lane ctxp2e, 2026-10-20): the pins are A_CTX rows
+
+`A_BOL`/`A_END` are no longer kinds. Three sites here read the start/end pin
+and now switch on `pcrec_ctx_class(n)` with no `default:`: derive.c's
+`q_rewrite` (kills the start pin) and `qp_walk` (G5 counts it), and
+possessify.c's `first_of` (the end pin is transparent; the start pin widens,
+which is the CONTEXT answer since its row reads an absent side). possessify.c's
+`ps_node` now copies `first_of`'s nullability on its non-gate A_CTX branch:
+`\z` is the one nullable A_CTX (the §4.6 census filed that line as a LABEL;
+ctxp2e_report.md F-2). Every other label list lost its two tokens.
