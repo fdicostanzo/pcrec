@@ -178,6 +178,15 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   kind MF_USE_ENTRY is a PROPOSED main-side diff
   (`docs/dev/lanes/b3b/proposed/entry_use.diff`). Report:
   `docs/dev/lanes/b3b_report.md`.
+- **R-26 Z1 (lane r26z1, 2026-10-21; MF_SITE_ABI 18, zero movers).** Every
+  forward FIND pcrec builds states span 0's class (`memfn_sites.c`):
+  `pcrec_memfn_span0_today` (BOUNDED, `prefix_stated` STATED, `exact_len` 0,
+  `consumable_len` 0: today's truth, a sound under-statement; it carries the
+  `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS)`) on PF and OFS,
+  and `pcrec_memfn_context_stop` (CONTEXT, `absent` FAILS, `consumable` NO,
+  the site's `read_floor` SUBJECT) on MLINE's stop, both called from
+  `emit_dfa.c`'s `find_site` and `ofs_site_define`. No context span (`ctx`) is
+  sent and no site states REPORT before Z2/B1.
 - **R-24 (lane r24, 2026-10-17; MF_SITE_ABI 15, zero movers).**
   `pcrec_memfn_prov_stanza(mf_prov *, bytes, fidelity-token)` in
   `memfn_sites.c` maps an answering block's provenance stanza onto the kit's

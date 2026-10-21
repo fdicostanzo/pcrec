@@ -581,6 +581,42 @@ P9 moves.)
   step). `ROWS_FLOOR` 39, `KIT_SRC_FLOOR` 15. A finder row's deny (`fd-r8`)
   is not a SIMD form and needs no `simd_accept.tsv` line.
 
+### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
+
+- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** —
+  R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make
+  test-memfn-finder` (run_finder.sh; about 40 s). `proof_check.c` reads the
+  kit through memfn.h only: family A, a refusal per rule with ACCEPT controls
+  of every shape (each UNSTATED field among them: `prefix_stated`,
+  `span_class`, `absent` -- "UNSTATED absent read as 0" --, `consumable`,
+  `read_floor`; `exact_len`/`consumable_len`; the `ctx` shape; MF_FLOOR_LO with
+  a term below the origin; REPORT's `consumer`, an OPTIONAL term or item, no
+  BOUNDED span 0, and a well-formed REPORT site, which no row serves before
+  R-26.6), each held to the field its refusal names; family B, `proven[]` at
+  negative offsets, inside span 0 and after it, with the copies; family C,
+  a seeded GENERATED space (span 0 with 0..2 context items under either
+  `absent`, OPTIONAL terms and items, context stops, FUNC sites of the generic
+  and offset-skip shapes), each site's class asked under every layer and held
+  EQUAL (C-PROOF), its text and GENERATED facts written for `proof_run.c`.
+  `proof_run.c` is the byte-loop ORACLE (no kit header; `proof_meta.h` is
+  data only): every candidate the kit yields, from every lo, over every
+  subject of length 0..4 on the site's alphabet and sampled ones to 7, is
+  checked for BIND (REQUIRED items hold), PROOF (every proven offset holds:
+  its byte in the set, or outside the subject under a SATISFIES item), EXACT
+  (the first position where what the text asks and the proof hold) and COMPL
+  (obligation 1: no position where every item holds is skipped), and per
+  site the binding subset and the position-wise superset (both stated for
+  width-1 SATISFIES items only: a wider one proves its outermost position,
+  r26z1_report.md F-3). Floors (K35) on the absent cells R-26.2 names: a
+  SATISFIES candidate yielded before span 0 (c = 0) and after it (c + k = n),
+  a FAILS candidate refused at each. Run twice, against the kit and against it
+  compiled -DMF_TRACE (the define's re-ask: every offset, and the copies).
+  `run_proof.sh --plant ID` / `--plants` runs the same over a COPY of
+  memfn/src with one of the six kit-side plants (S1221 a form claiming an
+  untested offset, S1222 a SATISFIES candidate dropped, S1223 a FAILS one
+  yielded, S1224 a proof bit only under SIMD, S1225 an over-filter on an
+  OPTIONAL position, S1226 an UNSTATED field accepted); each must go red.
+
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** —
