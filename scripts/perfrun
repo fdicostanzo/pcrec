@@ -124,7 +124,7 @@ python3 "$here/sectiontimes" report "$sections.raw" > "$sections" 2>/dev/null; r
 
 # ---- classify ----
 secerr=$(grep -cE '\*\*\* \[(Makefile:[0-9]+: )?test-' "$log")
-errnames=$(grep -oE '\*\*\* \[(Makefile:[0-9]+: )?test-[^]]*' "$log" | sed -E 's/.*(test-[^]]*)/\1/' | sort -u | tr '\n' ' ')
+errnames=$(grep -aoE '\*\*\* \[(Makefile:[0-9]+: )?test-[^]]*' "$log" | sed -E 's/.*(test-[^]]*)/\1/' | sort -u | tr '\n' ' ')
 k1807=ok; grep -E 'FAIL|TIMED OUT|exit 124|timed out|diverged|REGRESS' "$log" | grep -q 'counterk\.rxt:1807' && k1807=RED
 kcap=ok;  grep -q 'CPU limit exceeded' "$log" && kcap=RED
 loadsus=$(grep -cE 'TIMED OUT|INCONCLUSIVE|CPU limit exceeded|exit 12[34]' "$log")
