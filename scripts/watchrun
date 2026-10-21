@@ -28,7 +28,8 @@
 #       END)  --quiet-min N (default 25)  --quiet-sec S  --every S (poll,
 #       default 60)  --max-hours H | --max-sec S (default 4 h: relaunch on CAP)
 # --done ERE defaults to the known trailers: chainrun's CHAIN DONE/FAILED,
-# battery's BATTERY DONE, mech's COMPLETE/FATAL, perfrun's DONE line.
+# battery's BATTERY DONE, mech's COMPLETE/FATAL, any tool's `TOOL: DONE rc=N`
+# trailer (perfrun's, emit_sweep.py's).
 #
 # THE ONE LINE, and the exit code:
 #   0  watchrun: CHAIN-END|STAGE-END|DONE <target> :: <the line> :: <verdict>
@@ -42,7 +43,7 @@
 # reported (startup state); only a transition fires.
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-DONE_ERE='^== (CHAIN DONE|CHAIN FAILED|BATTERY DONE|mech run COMPLETE)|^perfrun: DONE rc=|^FATAL:'
+DONE_ERE='^== (CHAIN DONE|CHAIN FAILED|BATTERY DONE|mech run COMPLETE)|^[A-Za-z0-9_.-]+: DONE rc=|^FATAL:'
 
 on=chain quiet=1500 every=60 maxh=4h maxs=14400 log="" pid="" done_ere=$DONE_ERE target=""
 while [ $# -gt 0 ]; do

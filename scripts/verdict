@@ -23,7 +23,10 @@
 #   make      `*** [<target>] Error N` in either form (`Makefile:N: ` prefix
 #             or none; Interrupt/Killed/Terminated too), and `make: *** ...`
 #             (No rule to make target, ...)                               R
-#   perfrun   `perfrun: DONE rc=N ... class=C`                C; R if N != 0
+#   trailer   `TOOL: DONE rc=N ...` (TOOL [A-Za-z0-9_.-]+): the one
+#             completion convention a tool adopts (perfrun's line, and
+#             emit_sweep.py's since lane boxqueue)            C; R if N != 0
+#             perfrun's `class=C` is shown as a note
 #   mech      `== mech run COMPLETE: ... (unexpected: U, ...)`  C; R if U > 0
 #             (the matrix's own exit rule); `== mech FIELD VALIDATION
 #             COMPLETE` C; a line starting `FATAL:`                     C+R
@@ -67,10 +70,10 @@ recs=$(for f in "${all[@]}"; do [ -r "$f" ] && awk -v F="$f" -v RCL="$rclines" '
     function rec(k, t) { printf "%s\t%s:%d: %s\n", k, F, FNR, t }
     { line = $0; sub(/\r$/, "", line) }
     line ~ /\*\*\* \[.*\] (Error [0-9]+|Interrupt|Killed|Terminated)/ || line ~ /make(\[[0-9]+\])?: \*\*\* / { rec("R", line); next }
-    line ~ /^perfrun: DONE rc=[0-9]+/ {
-        n = line; sub(/^perfrun: DONE rc=/, "", n); n = n + 0
+    line ~ /^[A-Za-z0-9_.-]+: DONE rc=[0-9]+/ {
+        n = line; sub(/^[A-Za-z0-9_.-]+: DONE rc=/, "", n); n = n + 0
         rec("C", line); if (n != 0) rec("R", line)
-        if (match(line, /class=[A-Za-z0-9-]+/)) rec("N", "perfrun " substr(line, RSTART, RLENGTH) " (BOILERPLATE triage rule: K44-ONLY / LOAD-SUSPECT reds are the shape'"'"'s, re-run the sections solo)")
+        if (line ~ /^perfrun: / && match(line, /class=[A-Za-z0-9-]+/)) rec("N", "perfrun " substr(line, RSTART, RLENGTH) " (BOILERPLATE triage rule: K44-ONLY / LOAD-SUSPECT reds are the shape'"'"'s, re-run the sections solo)")
         next }
     line ~ /^== mech run COMPLETE:/ {
         u = line; if (match(u, /unexpected: [0-9]+/)) { u = substr(u, RSTART + 12, RLENGTH - 12) + 0 } else u = 0

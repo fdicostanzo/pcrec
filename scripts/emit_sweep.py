@@ -3361,5 +3361,27 @@ def main():
     sys.exit(0 if overall_ok else 1)
 
 
+def completion_trailer():
+    """[BOXQUEUE] ONE completion line on every ending (a pass, a red, an
+    argparse refusal, a traceback): `emit_sweep: DONE rc=N`, the `TOOL: DONE
+    rc=N` convention scripts/verdict and scripts/watchrun read. Without it a
+    finished sweep read INCOMPLETE (lane p2dland read arms.tsv by hand,
+    2026-10-20). A run re-exec'd under scripts/boxlock never reaches this
+    line in the parent; the exec'd child prints its own."""
+    try:
+        main()
+    except SystemExit as e:
+        c = e.code
+        rc = 0 if c is None else c if isinstance(c, int) else 1
+        sys.stderr.flush()
+        print(f"emit_sweep: DONE rc={rc}", flush=True)
+        raise
+    except BaseException:
+        sys.stderr.flush()
+        print("emit_sweep: DONE rc=1 (uncaught exception, traceback follows)", flush=True)
+        raise
+    print("emit_sweep: DONE rc=0", flush=True)
+
+
 if __name__ == "__main__":
-    main()
+    completion_trailer()

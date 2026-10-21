@@ -48,6 +48,12 @@ out=$("$TO" 20 bash "$V" "$T/pr.log"); rc=$?
 L pg 'x' > /dev/null; printf 'perfrun: DONE rc=0 wall 700s class=green\n' > "$T/pg.log.perfrun"
 expect GREEN 0 "perfrun DONE rc=0" "$T/pg.log"
 
+# the generic `TOOL: DONE rc=N` trailer (emit_sweep.py's since [BOXQUEUE]); it is
+# read under --no-rc-lines too (chainrun and boxqueue pass it), unlike an rc line
+expect GREEN 0 "emit_sweep: DONE rc=0 under --no-rc-lines" --no-rc-lines "$(L es0 'population: argv=3938' 'emit_sweep: DONE rc=0')"
+expect RED 1 "emit_sweep: DONE rc=2 (an argparse refusal)" --no-rc-lines "$(L es2 'emit_sweep.py: error: --arms and --extra are exclusive' 'emit_sweep: DONE rc=2')"
+expect INCOMPLETE 2 "the same sweep log without its trailer" --no-rc-lines "$(L es9 'population: argv=3938')"
+
 # mech
 expect GREEN 0 "mech COMPLETE unexpected 0 (and a FAIL: line is not read)" "$(L m0 'FAIL: some check text' '== mech run COMPLETE: 4 rows (unexpected: 0, undetected: 1, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc ==')"
 expect RED 1 "mech COMPLETE unexpected 2" "$(L m2 '== mech run COMPLETE: 4 rows (unexpected: 2, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at abc ==')"
