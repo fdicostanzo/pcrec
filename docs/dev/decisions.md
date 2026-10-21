@@ -9850,3 +9850,13 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Decision:** grid2 showed that neither search length (M9: V1 beats the walk at every N >= 8) nor candidate gap (M15) decides V1 versus the walk: landing predictability does, and it is a property of the data, unknown at compile time. Short candidate gaps tend to come with short subjects, whose total search time and absolute losses are small; large gaps come with large subjects, where throughput matters. So presume large gaps and large subjects, and all else being equal, default to V1. The walk stays the default only where a measured row keeps it (the VM hat, D1w, until F2); one-byte sites keep LIBC (D1); a measured or caller-stated regular regime may select the walk (R5's MEASURED-E path).
 - **Effect:** `docs/design/memfn/r17b_prime.md` (rev 4) states this as B4's default; B4's own measurement names its regular-landing bench cells as EXPECTED losses up front. Nothing builds from this alone. B4 still waits on D163 add. 8's layout controls, E8 PASS and M0. The ruling notice is the last entry of `memfn/docs/responses.md`.
 - **Revisit when:** a real (non-synthetic) workload shows dense regular landings over a large subject.
+
+## D170 — B4's kit-tier timing bar is the minimal E8 (manager, 2026-10-21)
+
+**Decision.** For R17-b′ B4, the kit-tier timing bar in `docs/design/memfn/r17b_prime.md` §9.2 items 1 and 3 and §3.1a's E8 row changes from "G0-G4 per layer and filter" to: G0 counts, G1 against always-walk, G3, §9.4's per-cell rule against the pre-registered expected-loss (EL) and short-subject (SS) list, and §9.2 item 2's term-count check. E4b and E14 leave B4's gate list. Every dropped piece keeps its revival trigger in `r17b_prime/e8min/plan.md` §3 (a third interacting row, more than two forms at one site, a second box, or a constant fitted after reading J1).
+
+**Why.** Frank, 2026-10-21, on the E8 go: "Build what is needed and not theoretical needs. These things have a way of ballooning." And: "This is a testing harness so it's valuable but I don't want to spend too much time here unless that time adds value. Spend more time engineering on the core product." B4 has one moving row (R7), fits nothing from J1, and keeps its official verdict on the bench run on targeted hardware. The dropped machinery (replay, cross-fit, sealing, regime caps, dispatch timing, a second box) answers questions B4 does not ask.
+
+**Condition.** This bar is TIMING only. B4's correctness gates are unchanged: zero answer movers, the identity sweeps, mech rows for every new or moved anchor, and make test.
+
+**Revisit when** any trigger in plan.md §3 fires. Then the dropped piece returns for the step that needs it.

@@ -79,7 +79,8 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   ~2 min together, mostly watcher polls at `--every 1`. [BOXQUEUE] added the
   generic `TOOL: DONE rc=N` trailer cases (verdict 31 checks, watchrun 17).
 - **boxqueue.test** — scripts/boxqueue's self-test ([BOXQUEUE], 2026-10-21;
-  53 checks, ~65 s, one trivial job at a time). Every case gets a FRESH
+  79 checks since [WATCH-IDLE] (53 at [BOXQUEUE]), ~4 min, one trivial job at a time;
+  run it with TMPDIR set inside your worktree, its mktemp defaults to /tmp). Every case gets a FRESH
   scratch queue (`PCREC_BOXQUEUE_DIR`) and the sacrificial box lock; runners
   and lock holders are killed by pid (safekill) on exit. The protocol both
   ways (work exits 0/76/77/3, `--ready` 0/75/76/77/1, a hanging `--ready`,
@@ -97,6 +98,14 @@ report (`.DELETE_ON_ERROR`) — a red run must not leave a green artifact.
   cleared (an earlier job's not-ready clock), an unbounded `--ready`, an
   enqueue without the dry run, and the runner keeping its enqueuer's lock
   fd.
+  [WATCH-IDLE] added cases 20-23 and SIX more plants: the bare-`none` gate
+  off (an rc-swallowing job scores GREEN), every population read from
+  job.log (the green 73/73 run reads SHORT), the witness read-back off (the
+  `done=1 last=^...` shape accepted), the idle alarm ignoring the job's own
+  tree CPU (a one-core busy loop falsely flagged), ignoring log growth (a
+  chatty job flagged), and never raising (a quiet job unnoticed); plus the
+  negatives (`idle-ok`, a busy child, a busy foreign lock holder, a
+  pre-change bare-none job still pending runs).
 
 Maintenance: update this file when .test files are added/removed or a
 script's test coverage changes meaningfully.

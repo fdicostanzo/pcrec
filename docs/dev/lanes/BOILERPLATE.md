@@ -219,12 +219,30 @@ with no side effects; the plain call is the work, run under the box lock:
             echo "would run in $TREE: bash tests/mech/run_sabotage_matrix.sh $IDS"
             echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
             echo "boxqueue: expect rows=$n last=^== mech run COMPLETE: "
+            echo "boxqueue: witness rows=== mech run COMPLETE: $n rows (a sample of the line)"
             exit 0 ;;
         --ready)      # 0 now / 75 not yet (first line = the reason) / 77 never
             exec bash "$BOXQUEUE" after NAME-build ;;
     esac
     cd "$TREE" || exit 1
     exec bash tests/mech/run_sabotage_matrix.sh $IDS
+
+THE EXPECT DECLARATION has exactly these forms ([WATCH-IDLE]; `add` REFUSES
+anything else and prints them): `expect none reason=WHY` (nothing counted; WHY
+says what catches the tool crashing, e.g. "exec'd, so the tool's rc is the
+job's rc"; a bare `none` is refused: a job that swallowed its tool's rc and
+said `none` scored GREEN on a crash); `expect NAME=N [log=PATH] lines=ERE` (N =
+lines of the log matching ERE); `expect NAME=N [log=PATH] last=ERE` (N = the
+integer right after ERE's match on its last matching line, so it ALSO needs
+`boxqueue: witness NAME=LINE`, a sample line the work prints, which the dry
+run reads N back from with the same matcher: `last=^== X COMPLETE` with no
+count after it read SHORT on a green 46-minute run). `log=PATH` names the file
+the population is read from when the tool writes its OWN log (perfrun's
+`-- LOG`; default job.log; relative = under the run dir, e.g. `log=job.log.make`
+for `$STAGE_LOG.make`). A quiet but healthy stage (a single-threaded gate, a
+quiet-gated timing slot) declares `boxqueue: idle-ok` (or `idle-ok SECONDS`)
+so the IDLE-SUSPECT alarm (no CPU in the box or the job's tree, no log growth,
+10 min) does not cry wolf; the alarm never kills.
 
 `scripts/boxqueue add --name 200-NAME-mech FILE` dry-runs it (an unknown id
 is REFUSED, exit 65) and queues a copy. Exit codes of the work: 0 done (green
