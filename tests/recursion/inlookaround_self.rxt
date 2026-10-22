@@ -1,0 +1,100 @@
+# tests/recursion/inlookaround_self.rxt -- K127 (lane langfix2): a call inside
+# a lookbehind whose length computation RE-ENTERS A GROUP CONTAINING THAT
+# LOOKBEHIND is refused, as libpcre2 10.46 refuses it (err 125, "length of
+# lookbehind assertion is not limited"). pcrec accepted these before the fix
+# (a lookbehind contributes 0 to its group's width, so the callee's width
+# looked fixed) and the artifacts answered no-match or gave up with
+# PCREC_ERR_FRAMES. The rule (`pcrec_callgraph_lookbehind_recurses`): follow
+# the lookbehind body's calls, and each callee's calls, except calls inside a
+# nested lookaround; refuse if a reached group contains the lookbehind
+# anywhere (a lookaround included). A call under `{0}` still counts.
+#
+# The ACCEPTED controls are the boundary: a call to a group that does not
+# contain the lookbehind, and the re-entry reached only through a lookahead.
+#
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# p2probe); every `perr` block is one libpcre2 also refuses (err 125).
+
+# THE ADVERSARY'S CELLS: the whole pattern, called from a lookbehind inside it.
+pattern (?<=(?R))x
+features recursion,lookaround
+perr
+
+pattern x(?<=(?R))
+features recursion,lookaround
+perr
+
+# A numbered group calling itself from a lookbehind in its body.
+pattern ((?<=(?1))a)
+features recursion,lookaround
+perr
+
+# Negative polarity.
+pattern ((?<!(?1))x)
+features recursion,lookaround
+perr
+
+# Through a second group that calls back (`(?2)` -> `(?1)`, which contains it).
+pattern ((?<=(?2))a)(b|(?1))
+features recursion,lookaround
+perr
+
+# The lookbehind nested in a lookahead inside the called group still counts.
+pattern (a(?=(?<=(?1))))
+features recursion,lookaround
+perr
+
+# Under `{0}` (lexical, as libpcre2 counts it).
+pattern ((?<=(?1){0})x)
+features recursion,lookaround
+perr
+
+# Under an atomic group.
+pattern ((?<=(?>(?1)))x)
+features recursion,lookaround,atomic-groups
+perr
+
+# One of two top-level alternatives.
+pattern (?<=(?R)|b)x
+features recursion,lookaround
+perr
+
+# A DEFINE'd named group.
+pattern (?(DEFINE)(?<g>a(?<=(?&g))))x(?&g)
+features recursion,lookaround,named-groups
+perr
+
+# ACCEPTED: the callee does not contain the lookbehind.
+pattern (?<=(?1))(a)
+features recursion,lookaround
+m "aa" 1 2
+g 1 1 2
+n "a"
+
+# ACCEPTED: a lookbehind after the group it calls.
+pattern (a)(?<=(?1))
+features recursion,lookaround
+m "aa" 0 1
+g 1 0 1
+n "b"
+
+# ACCEPTED: the call back to group 1 is reached only through a lookahead in group 2.
+pattern ((?<=(?2))a)(b(?=(?1)))
+features recursion,lookaround
+n "ba"
+n "b"
+n "xa"
+
+# ACCEPTED: the lookbehind sits in a group the lookbehind does not call.
+pattern ((?<=(?2)))(?2)(a)
+features recursion,lookaround
+n "a"
+n "aa"
+
+# ACCEPTED: a forward named call (the deferred width re-check's own cell).
+pattern ^(?:(?<g>ab)){0}ab(?<=(?&g))$
+features recursion,lookaround,named-groups
+m "ab" 0 2
+g 1 -1 -1
+n "abab"
+

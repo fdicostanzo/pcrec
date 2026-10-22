@@ -1,0 +1,88 @@
+# tests/utf8/octal_wide.rxt -- K125 (lane langfix2): an octal escape above
+# `\377` (`\400`..`\777`, U+0100..U+01FF) is ACCEPTED under utf8, in a
+# class and outside one, and as the octal reading of the backreference-vs-
+# octal rule; it is refused (err 151 "octal value is greater than \377 in
+# 8-bit non-UTF-8 mode") under byte only. The ceiling is the encoding's
+# universe, the same range check braced `\x{...}` takes (pattern_language.md
+# §5.2). pcrec refused the utf8 cells with the byte-mode diagnostic before
+# the fix.
+#
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 at PCRE2_UTF (build/lf2/
+# gen.py over p2probe). Outside a class a `\4`.. escape is module
+# `backrefs`' digit row (pattern_language.md §7.3), so those blocks enable it.
+
+# THE ADVERSARY'S CELL: `\400` is U+0100.
+pattern \400
+features backrefs
+encoding utf8
+m "\xc4\x80" 0 2
+n "\xc4\x81"
+n "a"
+
+# The top of the three-digit range, U+01FF.
+pattern \777
+features backrefs
+encoding utf8
+m "\xc7\xbf" 0 2
+n "\xc7\xbe"
+
+# In a class.
+pattern [\400]
+encoding utf8
+m "\xc4\x80" 0 2
+n "a"
+
+# A class range across the whole three-digit band above `\377`.
+pattern [\400-\777]
+encoding utf8
+m "\xc5\xbf" 0 2
+m "\xc4\x80" 0 2
+m "\xc7\xbf" 0 2
+n "\xc8\x80"
+n "\xc3\xbf"
+
+# Negated: matches any OTHER character, one whole character wide.
+pattern [^\400]
+encoding utf8
+n "\xc4\x80"
+m "\xc3\xa9" 0 2
+
+# After a group: `\400` with one group is the OCTAL reading (rule 3: 4 > 1 group).
+pattern (a)\400
+features backrefs
+encoding utf8
+m "a\xc4\x80" 0 3
+g 1 0 1
+n "a"
+
+# Quantified.
+pattern \400+
+features backrefs
+encoding utf8
+m "\xc4\x80\xc4\x80" 0 4
+n "\xc4\x81"
+
+# Caseless: U+0100 and U+0101 are a fold pair.
+pattern \400
+features backrefs,modifiers
+encoding utf8
+flags i
+m "\xc4\x81" 0 2
+m "\xc4\x80" 0 2
+
+# CONTROL: the scan takes at most three digits -- `\1000` is `\100` then `0`.
+pattern \1000
+features backrefs
+encoding utf8
+m "@0" 0 2
+n "@"
+
+# CONTROL: under byte the same escape is still err 151 ...
+pattern \400
+features backrefs
+perr
+
+# ... and in a class.
+pattern [\400]
+perr
+

@@ -1,0 +1,96 @@
+# tests/modifiers/optrun_group.rxt -- K124 (lane langfix2): a GROUP whose
+# whole body is a bare option setting is an ordinary repeatable group.
+# libpcre2 10.46 refuses a quantifier on the bare run itself (`a(?i)*`, err
+# 109, pinned in tests/reject/) but accepts it on any group around one:
+# `(?:(?i))*a`, `((?s))?a`, `(?=(?m))+a`, `(?>(?i))*a`, `(?i:(?s))*a`. The
+# group's body matches the empty string and its option change ends at its
+# `)`, so `(?:(?i))*a` is `a` (case-sensitive). pcrec refused all of these
+# as err 109 before the fix, because the group handed the run's own
+# `not_repeatable` flag up to the quantifier; `pcrec_wrap_bare_anchor` now
+# seals every group's body so the group is repeatable.
+#
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# p2probe). The two `perr` controls at the end are libpcre2's own err 109.
+
+# THE ADVERSARY'S CELL: `*` on a non-capturing group of `(?i)`; the `(?i)` ends at
+# the group's `)`, so the `a` stays case-sensitive.
+pattern (?:(?i))*a
+features modifiers
+n "A"
+m "a" 0 1
+
+# `?` on a capturing group of `(?s)`: group 1 is the empty match.
+pattern ((?s))?a
+features modifiers
+m "a" 0 1
+g 1 0 0
+n "b"
+
+# `+` on a lookahead of `(?m)`.
+pattern (?=(?m))+a
+features modifiers,lookaround,assertions
+m "a" 0 1
+
+# `{2}` on a group of an unsetting run.
+pattern (?:(?-i)){2}a
+features modifiers
+m "a" 0 1
+n "A"
+
+# `{0}`.
+pattern (?:(?i)){0}a
+features modifiers
+n "A"
+m "a" 0 1
+
+# `+` (at least one empty iteration).
+pattern (?:(?i))+a
+features modifiers
+n "A"
+m "a" 0 1
+
+# An atomic group.
+pattern (?>(?i))*a
+features modifiers,atomic-groups
+m "a" 0 1
+n "A"
+
+# A scoped group whose body is a bare run.
+pattern (?i:(?s))*a
+features modifiers
+m "a" 0 1
+n "A"
+
+# A named group.
+pattern (?<n>(?i))+a
+features modifiers,named-groups
+m "a" 0 1
+g 1 0 0
+
+# Mid-pattern, under `?`, after a literal.
+pattern x(?:(?i))?a
+features modifiers
+n "xA"
+m "xa" 0 2
+
+# A `(?U)` run in a group does not leak out: the `a+` after it stays greedy.
+pattern (?:(?U))*a+
+features modifiers
+m "aa" 0 2
+
+# CONTROL (accepted before the fix too): two runs in one group.
+pattern (?:(?i)(?s))*a
+features modifiers
+m "a" 0 1
+n "A"
+
+# CONTROL: the bare run quantified is still err 109 at pattern start ...
+pattern (?i)*a
+features modifiers
+perr
+
+# ... and mid-pattern.
+pattern a(?i)*
+features modifiers
+perr
+
