@@ -571,6 +571,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
+  filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
+  status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
+  trigger: a user with two prefixes differing only in case, or the next rx abi event (bundle the fix there).
+  refs: lane/subst docs/dev/lanes/subst_rulings.md R14; subst_api_r4_draft.md §1¶3; [M4-SUBST]
+  Charter: one general rule for every emitted uppercase identifier derived from a prefix (stamps, header guards), so case-only-different prefixes never collide; replaces the #error. An rx abi event.
 - [LINT-FRAME] STATE:not-started — `make lint` COMPILER STACK-FRAME CEILING PER CALL-GRAPH CYCLE
   filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
   status (2026-10-22): filed; nothing built. PCREC_OWN_FRAME marking is checked only by its effect (S1340 on the compilestack arm)
