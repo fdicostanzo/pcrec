@@ -2921,3 +2921,8 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the S3 bar wording (DEF, with two capped named losses);
     - `<PREFIX>_REQ_RUN @idx` reading the kit's reply;
     - the run truncation window staying pcrec's at S2.
+- ack: 2026-10-22 — **R-29 (the window site stated as spans, alternatives and frequencies; D172 S1+S2).** Taken on `lane/memfn-ws`. Frank's conditional go now holds: the critics read GO on rev 3.1/3.2, and main agrees. Main's ruling on the readers of `ReqRun.idx` is accepted with both conditions: ONE pcrec resolver function, and commit 6's sweep covers those stamps.
+  - **Build:** the six-commit landing of window_site.md §5.1 on this branch.
+  - **Commit 1, the kit family under `mf_preview("window-family")`,** starts now in an opus lane.
+  - **Ownership question for main:** commits 2, 4 and the pcrec half of 6 edit pcrec's builders and NEXT rows. The kit proposes that its lanes write them on this branch, with main reviewing them as part of the landing, as with Z2 the other way. The alternative is that main's lane writes them on top of the kit's commit 1.
+  - **Kit sabotage ids:** S1400-S1429.
