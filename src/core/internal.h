@@ -5386,7 +5386,11 @@ const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
  * is a no-op on any node `_pending` declines, so a future second caller
  * cannot use it to re-derive an already-resolved table. */
 bool pcrec_lookaround_width_pending(const Ast *a);
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
+/* K127: `recurses` is the call graph's answer to "does this lookbehind's
+ * length computation re-enter a group containing the lookbehind"
+ * (`pcrec_callgraph_lookbehind_recurses`); true refuses as UNBOUNDED, at
+ * the recorded offset, before the width rule is asked. */
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses);
 
 /* K123: splits a lookbehind body into its `nbr` TOP-LEVEL branches, written
  * order, into `out[0..nbr-1]`. `nbr` (the parse's `AltInfo.nbr`, stored as
@@ -5655,6 +5659,14 @@ bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
  * SHARED REGION for `i` at all — a target with no linked site has no region,
  * no entry label, no exit label and no second `goto *`. */
 bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
+/* K127: does lookbehind `look`'s length computation RE-ENTER ITSELF — does a
+ * call in its body, followed through callees' calls, reach a group whose
+ * region contains `look`? Calls inside a nested lookaround are not followed
+ * (they contribute no length). libpcre2 10.46 refuses exactly these with err
+ * 125 "length of lookbehind assertion is not limited": `(?<=(?R))x`,
+ * `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`, `(a(?=(?<=(?1))))`, while
+ * `(a)(?<=(?1))` and `(?<=a(?=(?R)))x` compile. */
+bool        pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset

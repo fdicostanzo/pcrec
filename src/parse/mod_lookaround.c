@@ -423,9 +423,17 @@ bool pcrec_lookaround_width_pending(const Ast *a)
  * maximum — UNBOUNDED still, and exactly, for a callee in a cycle (design
  * §3.4(d): libpcre2 refuses that itself, err 125). Nothing about the RULE
  * moved; only the moment it is asked. */
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses)
 {
     if (!pcrec_lookaround_width_pending(a)) return;
+
+    /* K127: a lookbehind whose length re-enters a group containing it has no
+     * length (libpcre2's err 125), whatever its branches would measure. */
+    if (recurses) {
+        char buf[LA_MSG_MAX];
+        la_width_refusal(buf, sizeof buf, 0, PCREC_W_UNBOUNDED);
+        pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
+    }
 
     const int nbr = a->u.look.nbranch;
     if (nbr < 1)
