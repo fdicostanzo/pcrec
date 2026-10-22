@@ -35,3 +35,22 @@ no emitter change = corpus/tag move, legitimate).
 ## STATE AT HANDOFF
 - Queued: 705-vrepin-bisect (ready; i2build-parity is green so it is not held; box busy with 664-i2build-maketest2).
 - OWED: bisect result; cause ruling; re-pin; green `--variant all` run. No rulings file entries read (none existed).
+
+## Bisect verdict and cause ruling (lane vrepin2, 2026-10-22)
+- 705-vrepin-bisect GREEN: FIRST BAD (first-parent) 813f43ec8 (merge of lane/m0build, [MEASURE-SET] M0, abi 81 -> 82),
+  last good f5550b10d. lowsize/byte emit-ir-auto at f5550b10d vs 813f43ec8 (pins_*.py in build/vrepin):
+  no-linked-call 123 -> 122, yes 1456 -> 1446, no-size-cap 76 -> 83, yes-collapsed 33 -> 35, refused 3444 -> 3446;
+  -fprefilter yes 1597 -> 1587. Not a corpus move: M0's tests/ delta adds no corpus rows (reach not rising).
+- Cause: M0's stamp scaffolding (`<PREFIX>_MEASURES`, rx_info.measures) grows every artifact; m0build_report.md
+  section 8.3 measured the size-cap code count moving by +79 and the manager ruled it a DECLARED mover (byte-count
+  reader class, D94 addendum; the size cap counts code bytes, scaffolding included, D84). The lowered 30000-byte
+  cap therefore trips ~10 patterns sitting just under it: yes -> no-size-cap / yes-collapsed. Same shape as the
+  precedents in emit_sweep.py's VARIANT_PINS comment (R4e'.0b 2026-10-09, VMLAZY +58 B). RULING: (a), legitimate;
+  no K131. Pattern-level list NOT yet extracted (probe sweep dirs are deleted); 709-vrepin-measure keeps them.
+- Re-pin NOT yet made: it needs measured values for every lowered cell at main, so it waits on the job.
+## OWED (fresh follow-up lane)
+1. 709-vrepin-measure (queued): keep_<sha>/ per-row TSVs for lowsize/byte at f5550b10d vs 813f43ec8 (diff the
+   emit-ir-auto tag per pattern, list them here), and build/vrepin/pins_all_head.py = `--variant all --emit-pins`
+   at branch HEAD.
+2. Paste pins_all_head.py into VARIANT_PINS (pprint width 120), add a dated RE-PINNED block (cause above, 813f43ec8),
+   then queue `emit_sweep --ref HEAD --tree-rev HEAD --variant all` as 710-vrepin-all, expect green.
