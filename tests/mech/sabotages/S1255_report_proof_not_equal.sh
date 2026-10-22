@@ -14,5 +14,5 @@ SAB_DESC=$'a report site whose proven[d] is not the required set accepted: compo
 SAB_DOC_FIGURE="Plant run 2026-10-21 (lane r26zk, build/r26zk/light/plants_all.log): run_proof.sh --plant S1255 goes red. The mech figure is OWED to the heavy job 500-kit-r26zk-heavy; read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1255."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE=$'    return !memcmp(req, c.proven, sizeof req);'
-SAB_AFTER=$'    return !memcmp(req[-MF_PROOF_LO], c.proven[-MF_PROOF_LO], sizeof req - (size_t)(-MF_PROOF_LO) * 32);'
+SAB_BEFORE=$'    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {'
+SAB_AFTER=$'    for (long d = 0; d < MF_MAX_FWD; d++) {'
