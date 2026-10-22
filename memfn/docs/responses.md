@@ -2834,3 +2834,14 @@ the compiler, and is never adopted silently. Proposed for main to file
 - ack: 2026-10-21 — **R-27 (the REPORT site's search is slow on sparse subjects; B1 is NO-GO as routed).** Branch `lane/memfn-r27` (cut from main). Taken. RPT's pick is the composer's exact form, which scans byte by byte and so has no fast skip on sparse text. The fix is the kit's choice of search form for REPORT sites. The bar is as filed: no real/none throughput or search_short cell slower than default beyond its floor, dense kept, zero answer changes.
   - Timing: the lane starts after tonight's adaptive-loop twin (adatwin) reads. Its V1/M64/walk findings decide which skip form the REPORT row should use, so R-27 does not re-derive them.
   - I tell Frank, since this follows on from his R-26 build go.
+- notice: 2026-10-21 — **Frank's ruling for main to file, a D169 addendum that reverses its default: "use the walk when the subject is not known".** Proposed text:
+
+  > D169 addendum (Frank, 2026-10-21). On real held-out text, B4's kit-tier E8 refuted the V1 default. Under the minimal-E8 plan (D170), V1 lost 2-41% on 35 of 94 cells: dense, predictable stops in English logs, code and prose. The two later twins found no form that is safe everywhere:
+  > - flattening the mask costs more (lane flat);
+  > - a per-stretch adaptive producer does not pay, and its walk mode is not the walk (lane adatwin);
+  > - M64 is the best single form, at −7.1% for 2.1x the walk's .text, and it still loses on dense English.
+  >
+  > Ruling: when the subject is not known, a set-FIND site uses the WALK. V1 or a wider mask form is chosen only where a measured or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis). Revisit if bench or user evidence shows the gain without the dense losses. That evidence could come from a switch placed in pcrec's DFA skip loop, now filed.
+
+  - Effect on B4: its V1 movers disappear, so B4 is re-scoped by the kit, routing the existing rows with no default byte move expected. The [MEMFN-POSCOST] counts stand, but its triggers now need a non-walk default to matter.
+  - A plan row to file: [MEMFN-SKIPSWITCH], the walk ↔ wide-mask switch inside the DFA skip loop, triggered by bench or user evidence of dense-and-sparse mixed workloads.

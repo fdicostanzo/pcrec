@@ -2575,3 +2575,13 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
 - POSCOST counts: 21 positions, a floor; 408 superset hulls of 603 sites. Filed on main's row.
 - setdig: all five kit sets now load under measures.md. My ruling: a committed card version is append-only, so @2 is new and @1 is kept.
 - Lesson: the idle-notification lesson again. setdig's idle notice predated my ruling, so I checked its tree before acting and re-sent the ruling.
+
+## 2026-10-21 (late) — Frank's ruling: the WALK when the subject is not known (reverses D169's default)
+
+Frank: "the choice, which i agree with, is to use the walk when the subject is not known".
+- Evidence: B4's minimal E8 on real text (V1 loses up to +41% on dense, predictable English text), lane flat (flattening costs more), and lane adatwin (the in-producer adaptive loop does not pay; M64 is the best single form at −7.1% for 2.1x the walk's .text, still with dense English losses).
+- Effect:
+  - set-FIND sites route to the walk by default;
+  - V1/M64 only where a MEASURED or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis);
+  - B4 is re-scoped, since its V1 movers disappear;
+  - M64 and a switch inside pcrec's DFA skip loop are FILED for later, triggered by bench or user evidence.
