@@ -2670,3 +2670,8 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - R2: the FALLBACK. The general form retires the `run_pin` fact's selection, a facts-stream mover on every listing; filed with its kit rule (per-offset R-meet, mass, ties HIGHER) and trigger (a mover census, main's acceptance).
 - R3: RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` and R-26.6 stay until S3 (window_site.md notes). After R1 no old-field REPORT site exists that RPT cannot prove exactly: S1255/S1256 declared equivalent.
 - Checks moved: G2's `consumer` variant removed (its draw kept); proof_check/proof_run lose the retired facts; arm pins lose the W0-W2 cases (floor 89); test-memfn-rank asserts pcrec states no ranking. Light checks green after 6-p4 (6-p3 missed one `end_back` reader, the set FIND's storage point). Heavy job `582-kit-wsc6-heavy` owed (docs/dev/lanes/wsc6_report.md §7).
+
+
+## 2026-10-22 — D172 S2 commit 6, final fixes (lane wsc7)
+
+- Trace shadow: `pcrec_fact_span_stated` (non-pass) for C8 unless the harness routes the cover; the 6-p4 positional D11-bound read replaced by the define's own holdback; F-3 reworded. S293 retired for S1421; S1138 re-aimed (solo DETECTED both). Declared facts delta (span_facts used yes->no, facts_listing.md section 4.1 paragraph 2; main approved) and the one --list-limits row are checked both ways by emit_sweep. Light checks green. Heavy job `583-kit-wsc7-heavy` owed (docs/dev/lanes/wsc7_report.md section 5).
