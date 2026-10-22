@@ -1,0 +1,49 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+lim-000	lim		a	[$0]	empty	0	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-001	lim		x*	<$0>	empty	0	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-002	lim		a	[$0]	empty	1	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-003	lim		x*	<$0>	empty	1	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-004	lim		a	[$0]	empty	2	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-005	lim		x*	<$0>	empty	2	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-006	lim		a	[$0]	empty	3	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-007	lim		x*	<$0>	empty	3	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-008	lim		a	[$0]	empty	4	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-009	lim		x*	<$0>	empty	4	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-010	lim		a	[$0]	empty	5	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-011	lim		x*	<$0>	empty	5	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-012	lim		a	[$0]	empty	7	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-013	lim		x*	<$0>	empty	7	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-014	lim		a	[$0]	empty	8	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-015	lim		x*	<$0>	empty	8	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-016	lim		a	[$0]	empty	9	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-017	lim		x*	<$0>	empty	9	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-018	lim		a	[$0]	empty	63	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-019	lim		x*	<$0>	empty	63	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-020	lim		a	[$0]	empty	64	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-021	lim		x*	<$0>	empty	64	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-022	lim		a	[$0]	empty	65	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-023	lim		x*	<$0>	empty	65	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-024	lim		a	[$0]	empty	127	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-025	lim		x*	<$0>	empty	127	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-026	lim		a	[$0]	empty	128	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-027	lim		x*	<$0>	empty	128	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-028	lim		a	[$0]	empty	129	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-029	lim		x*	<$0>	empty	129	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-030	lim		a	[$0]	empty	200	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-031	lim		x*	<$0>	empty	200	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-032	lim		a	[$0]	empty	1000	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-033	lim		x*	<$0>	empty	1000	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-034	lim		a	[$0]	empty	all	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	diff
+lim-035	lim		x*	<$0>	empty	all	abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab	diff
+lim-036	lim		q	[$0]	empty	0	abc	diff
+lim-037	lim		q	[$0]	empty	0		diff
+lim-038	lim			[$0]	empty	0		diff
+lim-039	lim		q	[$0]	empty	1	abc	diff
+lim-040	lim		q	[$0]	empty	1		diff
+lim-041	lim			[$0]	empty	1		diff
+lim-042	lim		q	[$0]	empty	2	abc	diff
+lim-043	lim		q	[$0]	empty	2		diff
+lim-044	lim			[$0]	empty	2		diff
+lim-045	lim		q	[$0]	empty	all	abc	diff
+lim-046	lim		q	[$0]	empty	all		diff
+lim-047	lim			[$0]	empty	all		diff

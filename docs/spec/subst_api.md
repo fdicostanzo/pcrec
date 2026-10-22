@@ -414,5 +414,5 @@ differences:
 | 10 | on an error, `outlength` is `PCRE2_UNSET` | 0, with the code |
 | 11 | ill-formed UTF-8 under `MATCH_INVALID_UTF`: its global loop | the iterator's (match_api.md §3.8¶2a): `x*` → `[$0]` on `"a\xffb"` gives `[]a[]\xff[]b[]`, 4 substitutions, where libpcre2 gives 3 |
 | 12 | no step budget | the rx's give-up ends the find-all with its code |
-| 13 | a UTF replacement is checked, an ill-formed one is −23 at substitute time | under `-e utf8` refused at template compile; under `-e byte` a template is bytes and binds only to a byte rx when it holds a byte above 0x7F (§2¶5) |
+| 13 | a UTF replacement is checked at substitute time, even with no match: an ill-formed one is a UTF-8 error code (−3 .. −23) | under `-e utf8` refused at template compile; under `-e byte` a template is bytes and binds only to a byte rx when it holds a byte above 0x7F (§2¶5) |
 | 14 | a start offset past the subject is −33 (`BADOFFSET`) | the iterator's (match_api.md §3.8): `rx_iter_at` past `n` finds no match, and the glue copies the subject with 0 substitutions |

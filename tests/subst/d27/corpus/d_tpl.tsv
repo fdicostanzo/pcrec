@@ -1,0 +1,130 @@
+# id	family	flags	pattern	template	unset	limit	subject	mode
+tpl-000	tpl		(a)(b)?	$0	empty	all	xaab ab a	diff
+tpl-001	tpl		(a)(b)?	${0}	empty	all	xaab ab a	diff
+tpl-002	tpl		(a)(b)?	[$0]	empty	all	xaab ab a	diff
+tpl-003	tpl		(a)(b)?	$1	empty	all	xaab ab a	diff
+tpl-004	tpl		(a)(b)?	${1}	empty	all	xaab ab a	diff
+tpl-005	tpl		(a)(b)?	$1$2	empty	all	xaab ab a	diff
+tpl-006	tpl		(a)(b)?	${1}2	empty	all	xaab ab a	diff
+tpl-007	tpl		(a)(b)?	$12	empty	all	xaab ab a	diff
+tpl-008	tpl		(a)(b)?	$2$1	empty	all	xaab ab a	diff
+tpl-009	tpl		(a)(b)?	$$	empty	all	xaab ab a	diff
+tpl-010	tpl		(a)(b)?	$$1	empty	all	xaab ab a	diff
+tpl-011	tpl		(a)(b)?	$$$1	empty	all	xaab ab a	diff
+tpl-012	tpl		(a)(b)?	$$$$	empty	all	xaab ab a	diff
+tpl-013	tpl		(a)(b)?	$01	empty	all	xaab ab a	diff
+tpl-014	tpl		(a)(b)?	${01}	empty	all	xaab ab a	diff
+tpl-015	tpl		(a)(b)?	$000002	empty	all	xaab ab a	diff
+tpl-016	tpl		(a)(b)?	${0000}	empty	all	xaab ab a	diff
+tpl-017	tpl		(a)(b)?		empty	all	xaab ab a	diff
+tpl-018	tpl		(a)(b)?	lit	empty	all	xaab ab a	diff
+tpl-019	tpl		(a)(b)?	x\\ny	empty	all	xaab ab a	diff
+tpl-020	tpl		(a)(b)?	\\$1	empty	all	xaab ab a	diff
+tpl-021	tpl		(a)(b)?	\\	empty	all	xaab ab a	diff
+tpl-022	tpl		(a)(b)?	\\\\	empty	all	xaab ab a	diff
+tpl-023	tpl		(a)(b)?	}	empty	all	xaab ab a	diff
+tpl-024	tpl		(a)(b)?	{	empty	all	xaab ab a	diff
+tpl-025	tpl		(a)(b)?	{$1}	empty	all	xaab ab a	diff
+tpl-026	tpl		(a)(b)?	${1}}	empty	all	xaab ab a	diff
+tpl-027	tpl		(a)(b)?	$1}	empty	all	xaab ab a	diff
+tpl-028	tpl		(a)(b)?	$1{	empty	all	xaab ab a	diff
+tpl-029	tpl		(a)(b)?	a$1b$2c$0d	empty	all	xaab ab a	diff
+tpl-030	tpl		(a)(b)?	$0$0$0$0$0$0$0$0	empty	all	xaab ab a	diff
+tpl-031	tpl		(a)(b)?	\x01\x7f\xc3\xbf$1	empty	all	xaab ab a	diff
+tpl-032	tpl		(a)(b)?	$1a	empty	all	xaab ab a	diff
+tpl-033	tpl		(a)(b)?	$1_	empty	all	xaab ab a	diff
+tpl-034	tpl		(a)(b)?	$2.5	empty	all	xaab ab a	diff
+tpl-035	tpl		(a)(b)?	%$1%	empty	all	xaab ab a	diff
+tpl-036	tpl		(a)(b)?	$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0$0	empty	all	xaab ab a	diff
+tpl-037	tpl		(a)(b)?	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$1	empty	all	xaab ab a	diff
+tpl-038	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$10	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-039	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$10	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-040	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$11	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-041	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$12	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-042	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	${12}	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-043	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$123	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-044	tpl		(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)	$13	empty	all	abcdefghijkl-abcdefghijkl	diff
+tpl-045	tpl		(?<n>a)	$	empty	all	xax	diff
+tpl-046	tpl		(?<n>a)	a$	empty	all	xax	diff
+tpl-047	tpl		(?<n>a)	$ 	empty	all	xax	diff
+tpl-048	tpl		(?<n>a)	$-	empty	all	xax	diff
+tpl-049	tpl		(?<n>a)	$+	empty	all	xax	diff
+tpl-050	tpl		(?<n>a)	$!	empty	all	xax	diff
+tpl-051	tpl		(?<n>a)	$\\	empty	all	xax	diff
+tpl-052	tpl		(?<n>a)	$.	empty	all	xax	diff
+tpl-053	tpl		(?<n>a)	$/	empty	all	xax	diff
+tpl-054	tpl		(?<n>a)	${	empty	all	xax	diff
+tpl-055	tpl		(?<n>a)	${1	empty	all	xax	diff
+tpl-056	tpl		(?<n>a)	${}	empty	all	xax	diff
+tpl-057	tpl		(?<n>a)	${ 1}	empty	all	xax	diff
+tpl-058	tpl		(?<n>a)	${1 }	empty	all	xax	diff
+tpl-059	tpl		(?<n>a)	${-1}	empty	all	xax	diff
+tpl-060	tpl		(?<n>a)	${1a}	empty	all	xax	diff
+tpl-061	tpl		(?<n>a)	${a b}	empty	all	xax	diff
+tpl-062	tpl		(?<n>a)	${a-b}	empty	all	xax	diff
+tpl-063	tpl		(?<n>a)	${1:-x}	empty	all	xax	diff
+tpl-064	tpl		(?<n>a)	${1:+x}	empty	all	xax	diff
+tpl-065	tpl		(?<n>a)	${n:-w}	empty	all	xax	diff
+tpl-066	tpl		(?<n>a)	${n-w}	empty	all	xax	diff
+tpl-067	tpl		(?<n>a)	${n+w}	empty	all	xax	diff
+tpl-068	tpl		(?<n>a)	$*MARK	empty	all	xax	tplrefuse
+tpl-069	tpl		(?<n>a)	${*MARK}	empty	all	xax	tplrefuse
+tpl-070	tpl		(?<n>a)	$*	empty	all	xax	diff
+tpl-071	tpl		(?<n>a)	${*}	empty	all	xax	diff
+tpl-072	tpl		(?<n>a)	$65536	empty	all	xax	diff
+tpl-073	tpl		(?<n>a)	${65536}	empty	all	xax	diff
+tpl-074	tpl		(?<n>a)	$99999999999999999999	empty	all	xax	diff
+tpl-075	tpl		(?<n>a)	${99999999999999999999}	empty	all	xax	diff
+tpl-076	tpl		(?<n>a)	$}	empty	all	xax	diff
+tpl-077	tpl		(?<n>a)	${!}	empty	all	xax	diff
+tpl-078	tpl		(?<n>a)	${!1}	empty	all	xax	diff
+tpl-079	tpl		(?<n>a)	${!a b}	empty	all	xax	diff
+tpl-080	tpl		(?<n>a)	$\xc3\x83\xc2\xa9	empty	all	xax	diff
+tpl-081	tpl		(?<n>a)	${\xc3\x83\xc2\xa9}	empty	all	xax	diff
+tpl-082	tpl		(?<n>a)	\\u$1	empty	all	xax	diff
+tpl-083	tpl		(?<n>a)	${{1}}	empty	all	xax	diff
+tpl-084	tpl		(?<n>a)	$&	empty	all	xaxay	finding:F2
+tpl-085	tpl		(?<n>a)	[$&]	empty	all	xaxay	finding:F2
+tpl-086	tpl		(?<n>a)	$`	empty	all	xaxay	finding:F2
+tpl-087	tpl		(?<n>a)	$'	empty	all	xaxay	finding:F2
+tpl-088	tpl		(?<n>a)	$_	empty	all	xaxay	finding:F1
+tpl-089	tpl		(?<n>a)	[$`|$&|$'|$_]	empty	all	xaxay	finding:F1
+tpl-090	tpl		(?<n>a)	${&}	empty	all	xaxay	diff
+tpl-091	tpl		(?<n>a)	${_}	empty	all	xaxay	diff
+tpl-092	tpl		(?<n>a)	$_x	empty	all	xaxay	finding:F1
+tpl-093	tpl		(?<n>a)	${`}	empty	all	xaxay	diff
+tpl-094	tpl		(?<_>a)(?<_1>b)?	$_	empty	all	xab-a	finding:F1
+tpl-095	tpl		(?<_>a)(?<_1>b)?	[$_]	empty	all	xab-a	finding:F1
+tpl-096	tpl		(?<_>a)(?<_1>b)?	${_}	empty	all	xab-a	diff
+tpl-097	tpl		(?<_>a)(?<_1>b)?	$_1	empty	all	xab-a	finding:F1
+tpl-098	tpl		(a)	$0001	empty	all	xax	diff
+tpl-099	tpl		(a)	${0001}	empty	all	xax	diff
+tpl-100	tpl		(a)	$00	empty	all	xax	diff
+tpl-101	tpl		(a)	$065535	empty	all	xax	diff
+tpl-102	tpl		(a)	${065536}	empty	all	xax	diff
+tpl-103	tpl		(a)	$0065536	empty	all	xax	diff
+tpl-104	tpl		(a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xax	diff
+tpl-105	tpl		(a)	$LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL	empty	all	xax	finding:F7
+tpl-106	tpl		(a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xax	diff
+tpl-107	tpl		(a)	$1$	empty	all	xax	diff
+tpl-108	tpl		(a)	$1${	empty	all	xax	diff
+tpl-109	tpl		(a)	$$$	empty	all	xax	diff
+tpl-110	tpl		(a)	${1}$	empty	all	xax	diff
+tpl-111	tpl		(?<n>a)	$65535	empty	all	xax	diff
+tpl-112	tpl		(?<n>a)	${65535}	empty	all	xax	diff
+tpl-113	tpl		(?<n>a)	$2	empty	all	xax	diff
+tpl-114	tpl		(?<n>a)	${2}	empty	all	xax	diff
+tpl-115	tpl		(?<n>a)	$nope	empty	all	xax	diff
+tpl-116	tpl		(?<n>a)	${nope}	empty	all	xax	diff
+tpl-117	tpl		(?<n>a)	$N	empty	all	xax	diff
+tpl-118	tpl		(?<n>a)	$n_	empty	all	xax	diff
+tpl-119	tpl		(?<n>a)	$nn	empty	all	xax	diff
+tpl-120	tpl		(?<n>a)	$n	empty	all	xaxa	diff
+tpl-121	tpl		(?<n>a)	${n}	empty	all	xaxa	diff
+tpl-122	tpl		(?<n>a)	$n$n	empty	all	xaxa	diff
+tpl-123	tpl		(?<n>a)	${n}x	empty	all	xaxa	diff
+tpl-124	tpl		(?<n>a)	$nx	empty	all	xaxa	diff
+tpl-125	tpl		(?<n>a)	$n-x	empty	all	xaxa	diff
+tpl-126	tpl		(?<n>a)	$n.x	empty	all	xaxa	diff
+tpl-127	tpl		(?<n>a)	$n$1	empty	all	xaxa	diff
+tpl-128	tpl		(?<n>a)	${n}${1}$0	empty	all	xaxa	diff
