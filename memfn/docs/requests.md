@@ -659,7 +659,7 @@ for the re-run.
 
 **Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** S1430-S1439 allocated to the kit (main ledger; S1400-S1429 went to D172 S2).
 
-**Correction (main, 2026-10-22, from the kit's delivery at lane/memfn-r28 @ 8b48b8ceb):** the facts above are WRONG on the live path. `pcrec_mf_form_hash` and `pcrec_mf_set_terms` have no caller from pcrec's src/, cli/ or lib/, and a painted probe on `a` reads 31,668 B. The ~62 KB figure came from a static `-fstack-usage` sum. R-28 therefore does not lower the compile floor. It stands as a robustness guard: no kit frame above 4 KB, enforced by a link-time check. Lane dd10b is re-measuring the live baseline.
+**Correction, revised (main, 2026-10-22):** the kit's delivery (lane/memfn-r28 @ 8b48b8ceb) reported that the two frames have no caller from src/, cli/ or lib/ and are off the live path. Lane dd10b's gdb trace on lane/dd10 shows `pcrec_mf_set_terms` IS live, reached transitively through kit code: emit_dfa -> cand_ask -> mf_ask -> find_facts -> set_terms. The painted cost depends on the pattern and the tree: `a` reads 61,616 B on lane/dd10 and `abc` 24,120 B; main's build reads 31,668 B on `a`. The compile stack is the MAX of this path and the nesting cost, not their sum. R-28's landing bar stands: no kit frame above 4 KB, and the live baseline should drop.
 
 ## R-29 (2026-10-22, pcrec manager) — the window site stated as spans, alternatives and frequencies; the decision and its text are the kit's
 
