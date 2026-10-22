@@ -62,7 +62,7 @@ All green at the tip (checks passed / failed 0): test-core 7; arch 17; arms 383;
 
 Job `570-kit-r28-heavy` (script: `build/r28/570-kit-r28-heavy` in the worktree, copied into the queue by `boxqueue add`): `make -j16`; nine emit_sweep arms (plain with the dumps stream, simd, comments, utf8, vm, start, rwquest, variant, trace) against base ce5aa67a8, binary built from `git archive` into `build/r28ref`; mech S1255 (`PROCS=4`); `scripts/perfrun --label r28` for `make test`. Per-step logs under `build/r28/heavy/`.
 
-JOB_LINE
+Queued with `scripts/boxqueue add --name 570-kit-r28-heavy` (id `570-kit-r28-heavy`, cap 21600 s, idle-ok, no quiet gate). Read it with `scripts/boxqueue status` and `scripts/verdict` on its `job.log` under `worktrees/.boxqueue/{running,done,failed}/*570-kit-r28-heavy/`. Completion lines to expect: nine `emit_sweep: DONE rc=0` (the queue's declared population, `sweeps=9`), `== r28 step mech rc=0` with a `DETECTED` line for S1255, the `maketest` step's `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` empty (read beside `maketest.make.log.perfrun`), and the trailer `== r28 heavy: 0 step(s) failed`. Result: OWED, none read.
 
 ## 8. Charter vs committed
 
