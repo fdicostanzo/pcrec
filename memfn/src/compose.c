@@ -1565,7 +1565,6 @@ int mf_preview(mf_art *art, const char *step)
     if (art->nsites)
         return kit_fail(art, "mf_preview: called after the first define");
     const char *named = fd_preview_step(step);
-    if (!named) named = wf_preview_step(step);     /* D172: "window-family" */
     if (!named)
         return kit_fail(art, "mf_preview: `%s` is not a routing step the kit names",
                         step ? step : "(null)");

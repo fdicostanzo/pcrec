@@ -1490,12 +1490,9 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * or for a step the kit does not name. It is no `--memfn=` option (no
  * options.def row), so mf_opts_check refuses every spelling of it. */
 int      mf_preview(mf_art *, const char *step);
-/* (D172, S2 commit 1) The step "window-family" previews THE WINDOW FAMILY
- * (window_site.md rev 3.2 §2): on such an art a site stating alternatives
- * (mf_site.nalt) is decided and rendered by the family from its window facts
- * alone, and mf_wdecide answers. Since S2 commit 6 the family is EVERY art's
- * and the step is a no-op, accepted only until pcrec stops previewing it
- * (retired at the next kit commit of the same landing). */
+/* (D172) The step "window-family" previewed THE WINDOW FAMILY through S2
+ * commit 5; since commit 6 the family is every art's and the step is no
+ * longer one the kit names (refused). */
 
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *

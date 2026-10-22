@@ -5,7 +5,7 @@
 #
 # memfn/tests/run_g2_win.sh — G2'S WINDOW FAMILY (docs/design/memfn/
 # window_site.md rev 3.2; the kit's window family, memfn/src/window.c,
-# reachable only under mf_preview(art, "window-family")). run_g2.sh's section
+# every art's since D172 S2 commit 6). run_g2.sh's section
 # 4w; runnable alone.
 #
 #   1. g2/g2_win_gen.c against the kit (LIB, default build/libpcrec.a; the

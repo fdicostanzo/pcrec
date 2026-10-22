@@ -758,7 +758,6 @@ int run_cmp_sat(const mf_term *t);
 struct wf_plan;
 
 #define wf_check        MF_NS(wf_check)
-#define wf_preview_step MF_NS(wf_preview_step)
 #define wf_prepare      MF_NS(wf_prepare)
 #define wf_floor_class  MF_NS(wf_floor_class)
 #define wf_floor_arm    MF_NS(wf_floor_arm)
@@ -768,8 +767,6 @@ struct wf_plan;
  * statements the family describes; on a site stating none, NULL. `frame`
  * 1: also the frame rules the family reads (the preview's own route). */
 const char *wf_check(const mf_site *s, int frame);
-/* The kit's spelling of `step` where it is the window family's, else NULL. */
-const char *wf_preview_step(const char *step);
 /* PHASE 2's selection for window site `s` (wf_check'd) under the define
  * hooks `def` (the frame's), the gate reading `gphases`, traced unless
  * `quiet`: the decision (phase 1), then Table E. On the

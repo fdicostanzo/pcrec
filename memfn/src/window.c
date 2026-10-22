@@ -1018,13 +1018,6 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
     snprintf(out->path, sizeof out->path, "%s", d->path);
 }
 
-/* "window-family" was the family's preview step through S2 commit 5; since
- * commit 6 the family is every art's, and the step is accepted as a no-op
- * only until pcrec stops previewing it (the next pcrec commit). */
-const char *wf_preview_step(const char *step)
-{
-    return step && !strcmp(step, "window-family") ? "window-family" : NULL;
-}
 
 int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
 {
