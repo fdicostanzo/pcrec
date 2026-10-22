@@ -78,7 +78,7 @@ if [ "$(wc -l < "$WORKDIR/oracle.txt")" -ne "$((ncases * 2))" ]; then
 fi
 
 # ---- per case, per engine arm ---------------------------------------------
-nexact=0; nlossy=0; nrun=0
+nexact=0; nlossy=0; nrun=0; niter=0; nlossy_iter=0
 idx=0
 while IFS=$'\t' read -r cls pat subj || [ -n "${cls:-}" ]; do
     case "${cls:-}" in ''|'#'*) continue;; esac
@@ -141,12 +141,32 @@ while IFS=$'\t' read -r cls pat subj || [ -n "${cls:-}" ]; do
         elif [ "$got" != "$want_p" ]; then
             bad "encseam [$arm]: '$pat' over '$subj' -> [$got], oracle protocol says [$want_p] (re.finditer: [$want_f])"
         fi
+        # [FINDALL-NEXT] I4: the iterator (RX_FOREACH over fa_info) is PCRE2's
+        # global iteration, so it answers re.finditer on EVERY case: the lossy
+        # class is exact under it (match_api.md §3.8, §3.8.2).
+        got="$(gen_run "encseam iter $arm '$pat'" "$d/drv" iter "$subj")"; rc=$?
+        niter=$((niter + 1))
+        if [ "$rc" -ne 0 ]; then
+            bad "encseam iter [$arm]: the iterator for '$pat' over '$subj' exited $rc"
+        elif [ "$got" != "$want_f" ]; then
+            bad "encseam iter [$arm]: '$pat' over '$subj' -> [$got], re.finditer says [$want_f]"
+        elif [ "$cls" = lossy ]; then
+            nlossy_iter=$((nlossy_iter + 1))
+        fi
     done
 done < "$CASES"
 
 if [ "$nrun" -gt 0 ] && [ "$fail" -eq 0 ]; then
     ok "§3.1 find-all via <prefix>_next_pos: $nrun compiled runs ($ncases cases x 2 engine arms) match the python3 're' protocol oracle span for span"
     ok "class accounting: $nexact cases agree with re.finditer exactly; $nlossy are the documented empty-preferring lossy class (a strict subset), both checked in both directions"
+fi
+# The iterator's population: every lossy case on both arms must have run and
+# agreed with re.finditer (K35: the class the iterator exists to fix is the
+# one counted).
+if [ "$niter" -gt 0 ] && [ "$fail" -eq 0 ] && [ "$nlossy_iter" -eq $((nlossy * 2)) ] && [ "$nlossy" -gt 0 ]; then
+    ok "the find-all iterator: $niter runs answer re.finditer span for span, including all $nlossy lossy cases on both arms ($nlossy_iter runs)"
+else
+    bad "the find-all iterator: $nlossy_iter lossy runs agreed with re.finditer, want $((nlossy * 2)) ($niter iterator runs)"
 fi
 
 echo

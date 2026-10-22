@@ -385,6 +385,53 @@ else
 fi
 
 # =========================================================================
+# §1b  THE FIND-ALL ITERATOR ([FINDALL-NEXT] I4, findall_iter_i2.md §5.2)
+# =========================================================================
+# The same artifacts through `fa_next` and RX_FOREACH: tests/findall/
+# iter_drv.c is the iterator's one differential driver, and its G arm is
+# libpcre2's global loop with pcre2demo's NOTEMPTY_ATSTART|ANCHORED retry
+# after an empty match, i.e. PCRE2's own iteration, where \G asserts at each
+# search's start. Every subject of the sweep, escaped onto one line, on every
+# FA_PATS artifact; a DIFF fails (I, N, X, F, Fstop, ... against G).
+it_cells=0; it_bad=0
+python3 - "$WORKDIR/subjects" > "$WORKDIR/iter_subj.txt" <<'PY'
+import os, sys
+d = sys.argv[1]
+for name in sorted(os.listdir(d)):
+    b = open(os.path.join(d, name), "rb").read()
+    o = []
+    for c in b:
+        ch = chr(c)
+        if ch == "\\": o.append("\\\\")
+        elif ch == "\n": o.append("\\n")
+        elif ch == "\t": o.append("\\t")
+        elif ch == "\r": o.append("\\r")
+        elif c < 0x20 or c > 0x7E: o.append("\\x%02x" % c)
+        else: o.append(ch)
+    print("".join(o))
+PY
+for pat in "${FA_PATS[@]}"; do
+    d="${FA_DIR[$pat]}"
+    [ -f "$d/gen.o" ] || continue
+    retry=0; grep -q '_ITER_RETRY "none"' "$d/gen.c" || retry=1
+    if ! $CC -O1 -std=gnu11 -DPFX=fa -DPFXU=FA -DHDR='"gen.h"' -I"$d" $PCRE2_CFLAGS \
+            -o "$d/it" "$ROOT_DIR/tests/findall/iter_drv.c" "$d/gen.o" $PCRE2_LIBS 2>>"$d/err"; then
+        bad "§1b iterator: could not link tests/findall/iter_drv.c for '$pat': $(tail -3 "$d/err")"
+        continue
+    fi
+    while IFS= read -r l; do
+        it_cells=$((it_cells + 1))
+        case "$l" in OK*|SKIP*) ;; *) it_bad=$((it_bad + 1)); printf 'ITER %s: %s\n' "$pat" "$l" >> "$WORKDIR/fadiffs.txt";; esac
+    done < <("$d/it" "$pat" byte "$retry" < "$WORKDIR/iter_subj.txt" 2>&1)
+done
+if [ "$it_bad" -eq 0 ] && [ "$it_cells" -ge $(( ${#FA_PATS[@]} * NSUBJ )) ]; then
+    ok "§1b iterator: $it_cells subject runs over ${#FA_PATS[@]} patterns: fa_next, fa_next_n and RX_FOREACH answer libpcre2's global iteration (pcre2demo's retry), \\G contiguous at each search's start"
+else
+    bad "§1b iterator: $it_bad of $it_cells subject runs differ from libpcre2's global iteration (want >= $(( ${#FA_PATS[@]} * NSUBJ )) runs):"
+    grep '^ITER' "$WORKDIR/fadiffs.txt" | head -10 >&2
+fi
+
+# =========================================================================
 # §3  THE TWO ENTRIES (R30 E8), SCOPED
 # =========================================================================
 # `<prefix>_match_caps` needs a VM artifact to be interesting on a
@@ -502,6 +549,7 @@ echo
 echo "== Summary =="
 echo "  §2 sweep     patterns $npat  subjects $NSUBJ  DFA cells $ncells  VM cells $nvm  divergences $ndiff  oracle-skipped $nskip"
 echo "  §1 find-all  runs $fa_cells  divergences $fa_diff"
+echo "  §1b iterator runs $it_cells  divergences $it_bad"
 echo "  §3 entries   cells $ent_cells  agree $ent_agree  legitimate-disagreements $ent_dis  bad $ent_bad"
 echo "  §0 plumbing  python-verified control cells $npy  disagreements $npybad"
 echo "checks passed: $pass"

@@ -85,6 +85,16 @@ CC=${CC:-gcc}
 GENCFLAGS=${GENCFLAGS:-}
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 fail=0
+# [FINDALL-NEXT] I4 (findall_iter_i2.md §5.2): the ITERATOR ARM. Every rung's
+# artifact is also linked with tests/findall/iter_drv.c, the iterator's one
+# differential driver, over the witness's subjects: its arms hold
+# RX_FOREACH, <prefix>_next_n and the alternation of the two to the same
+# artifact's <prefix>_next (the delivery layer), and <prefix>_next to
+# libpcre2's global loop (an oracle that shares no source with pcrec). Rung
+# identity is not this arm's expectation: the iterator's answers are PCRE2's
+# global iteration's, which the find-all loop above does not claim.
+. tests/lib/resolve_pcre2.sh
+it_cells=0; it_bad=0
 bad() { echo "run_entry_shape_identity.sh: FAIL: $*" >&2; fail=1; }
 
 # ============================================================================
@@ -142,6 +152,25 @@ for w in "${witnesses[@]}"; do
             bad "$label: compile at rung $s failed: $(head -3 "$d/cc$s.err")"
             ok=0; break
         fi
+        if [ "$PCRE2_AVAILABLE" = 1 ]; then
+            retry=0; grep -q '_ITER_RETRY "none"' "$d/a$s.c" || retry=1
+            if $CC -O1 -std=gnu11 $GENCFLAGS -DPFX=rx -DPFXU=RX -DHDR='"art.h"' -I"$d" $PCRE2_CFLAGS \
+                    -o "$d/it$s" tests/findall/iter_drv.c "$d/a$s.c" $PCRE2_LIBS 2>"$d/itcc$s.err"; then
+                # shellcheck disable=SC2086
+                for t in $subj; do
+                    case "$t" in @EMPTY) echo "";; *) printf '%s\n' "$t" | sed 's/@SP/ /g';; esac
+                done | "$d/it$s" "$pat" byte "$retry" > "$d/it$s.out" 2>&1
+                n_it=$(wc -l < "$d/it$s.out")
+                it_cells=$((it_cells + n_it))
+                n_ok=$(grep -cE '^(OK|SKIP)	' "$d/it$s.out")
+                if [ "$n_ok" -ne "$n_it" ] || [ "$n_it" -eq 0 ]; then
+                    it_bad=$((it_bad + n_it - n_ok + 1))
+                    bad "$label rung $s: the iterator arm parts from libpcre2's global iteration or from <prefix>_next: $(grep -vE '^(OK|SKIP)	' "$d/it$s.out" | head -2 | tr '\n' ' ')"
+                fi
+            else
+                bad "$label rung $s: tests/findall/iter_drv.c did not build against the rung's artifact: $(head -3 "$d/itcc$s.err")"
+            fi
+        fi
         rm -f "$d/art.h"
         # ARM 2: what the emitter says it DID.
         st=$(grep -o 'RX_VM_ENTRY_SHAPE "[a-z]*"' "$d/a$s.c" | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -178,6 +207,12 @@ for want in plain shared forward inline; do
     esac
 done
 
+if [ "$PCRE2_AVAILABLE" = 1 ]; then
+    [ "$it_cells" -ge "$nwit" ] || bad "the iterator arm ran $it_cells subject cells over $nwit witnesses: it reached nothing"
+    echo "run_entry_shape_identity.sh: iterator arm $it_cells subject cells, $it_bad not OK"
+else
+    echo "run_entry_shape_identity.sh: SKIP the iterator arm: libpcre2-8 not resolvable (tests/lib/resolve_pcre2.sh)" >&2
+fi
 echo "run_entry_shape_identity.sh: $nwit witnesses x 5 shapes; rungs realised:$shapes_seen"
 if [ "$fail" -ne 0 ]; then
     echo "run_entry_shape_identity.sh: FAILED" >&2

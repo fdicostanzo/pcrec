@@ -9,12 +9,14 @@
 #      artifact and driver built with AddressSanitizer + UBSan, every region
 #      the iterator reads or writes heap-backed by the driver; built with
 #      -DRX_FOREACH_PAIRS=8 for the I4 cells (findall_iter_i2.md §5.1).
+#   3. (I4) run_one_body.sh: <p>__one's body is I1's <p>_next body, as text.
 # The `mg` corpus (global.rxt) rides test-corpus like every other .rxt file.
 # env: as run_iter_diff.sh; ASAN=0 skips part 2 (a build without libasan).
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
 bash "$SCRIPT_DIR/run_iter_diff.sh" "$SCRIPT_DIR/cells.tsv" || fail=1
+bash "$SCRIPT_DIR/run_one_body.sh" || fail=1
 
 if [ "${ASAN:-1}" = "1" ]; then
     WORK="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-findall-asan.XXXXXX")"
