@@ -16,7 +16,7 @@ SAB_SUITES="vm"
 SAB_DESC="an empty iteration FAILS the path instead of taking the loop's exit continuation (its capture writes are rolled back)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails across the whole nullable-body family"
 SAB_COUNT=1
-SAB_BEFORE="                  gslot, v->p, cur);
+SAB_BEFORE="                  gslot, v->p, top);
         vm_goto(v, exit);"
-SAB_AFTER="                  gslot, v->p, cur);
+SAB_AFTER="                  gslot, v->p, top);
         vm_fail(v);  /* SABOTAGE S38 */"
