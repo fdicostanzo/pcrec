@@ -3,7 +3,7 @@
 # MARKER IS DROPPED. A request a constraint row (P1-P3) holds is a selection
 # outcome, reported in `<PREFIX>_PART_LAYOUT` as `CLASS=V/held`; planted, the
 # stamp says the request was honoured. Seen by the hand-written held stamps
-# (fixtures `held-compound`, `constraint-*`) and the evaluator's expected
+# (fixtures `constraint-*`) and the evaluator's expected
 # stamp.
 SAB_ID="S1118-partlayout-held-dropped"
 SAB_FILE="src/gen/part_layout.c"

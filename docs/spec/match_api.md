@@ -2663,7 +2663,8 @@ controls' stamps (`tuning.md` §2.51-§2.53), in the shared prologue right after
 
 ```c
 #define RX_PART_LAYOUT "prefilter=inline"      /* (a)b  --part-layout=prefilter:inline */
-#define RX_PART_LAYOUT "compound=inline/held"  /* ^\s+|\s+$  --part-layout=compound:inline */
+#define RX_PART_LAYOUT "prefilter=inline/held" /* ^(a)b  --part-layout=prefilter:inline */
+#define RX_PART_LAYOUT "compound=inline"       /* ^\s+|\s+$  --part-layout=compound:inline */
 #define RX_PART_LAYOUT "compound=inline/none"  /* (a)b  --part-layout=compound:inline */
 ```
 
