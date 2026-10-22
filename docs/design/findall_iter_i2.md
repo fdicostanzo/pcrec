@@ -276,7 +276,7 @@ I1 already uses.)
   match. That is the same test `_next` pays per call. Hoisting it out of the loop would need
   a second body, which is what fam-2 removed. §4.1 states what the loop is expected to look
   like.
-- **No exported entry calls another** (D163 add. 12 / `compound_entries.md` §3.0 I3): both
+- **No exported entry calls another** (D163 add. 12 / `compound_entries.md` §3.0 invariant I3, not stage I3): both
   inline the static part.
 - **No new entry** `[r1 fam-1]`. `_next_n` is not a `PcrecEntry`. The single `iterate` row
   (`PCREC_ENTRY_NEXT` on `sh_dfa`/`sh_vm`, `PCREC_COMB_ITERATE`, `EM_ITER`) emits both

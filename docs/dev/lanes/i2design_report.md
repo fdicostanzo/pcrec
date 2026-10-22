@@ -103,3 +103,56 @@ the note, the pointer and the index entry. Then this report and the lanes-index 
 Rulings: none (the file is empty). Nothing is owed by this lane. Next: the manager's
 critic panel on `docs/design/findall_iter_i2.md`, then a build lane with Frank's go
 (already given for I2).
+
+---
+
+## REVISION 2 (lane i2rev, 2026-10-21)
+
+Lane i2rev (opus) applied the r1 panel on `lane/i2design`. DESIGN ONLY: nothing under
+`src/`, `cli/`, `lib/` or `tests/` changed, and nothing ran on the box. The one computation
+was a python simulation of the fill count in the scratchpad (§3.3's formula). Rulings file
+`i2rev_rulings.md`: one entry (2026-10-21 ~22:05, the critics' verbatim findings), applied.
+That file is gitignored too.
+
+**Delivered.**
+- `docs/dev/reviews/2026-10-21-r1-findall-i2.md`: the disposition table, then the three
+  critics' findings verbatim.
+- `docs/design/findall_iter_i2.md` revision 2, with §R2 (finding → section) at the top and
+  changed text marked `[r1 <id>]`.
+- `findall_iter.md` §12's pointer, rewritten for the kept stage numbers.
+- The `docs/design/CLAUDE.md` and `docs/dev/reviews/CLAUDE.md` entries.
+
+**What changed in the design.**
+- `__one` is I1's `_next` body. `_next` = `__one`, and `_next_n` = a loop of `__one`. There
+  is no new `PcrecEntry`.
+- This stage is **I4**: revision 1's rename is withdrawn.
+- The doubling starts at 1.
+- Timing: A/A floors, gates for "never worse", a positive gain (c3-4k R2, c3-1m R2) and
+  early-stop bounds (c7 and a new sparse cell c8), and an objdump hypothesis first.
+- S1309-S1320, each with a witness and a reach count.
+- Spec hunks for when `rc` is meaningful, for resuming after an early exit (UNDEFINED), for
+  the meanings of `PCREC_ERR_ITER`, and for C99/`-Wcomma`.
+- Unlocks U-I2-7..10. The callback entry is dissolved.
+
+**For the manager (none of these stopped the lane).**
+1. **The doubling start moves Frank's own number** (his charter: "4 → 64"). The manager's
+   disposition (sem-1) is applied and recorded as the manager's call, which Frank may
+   reverse. The cost of the start of 1: 70 calls instead of 68 on 4,096 matches.
+2. **sem-5 named three meanings of `PCREC_ERR_ITER`.** The note lists four, adding the
+   NULL-`next_n` refusal from revision 1's own edges table. This is a completion, not a
+   change.
+3. **The re-queue rule has two thresholds** (load1 median 1.0, SMT sibling 25 %). Both are
+   labelled UNMEASURED DEFAULTS. They are the lane's, not the panel's; the manager may
+   restate them.
+4. **Names kept.** The file name `findall_iter_i2.md`, the lane names and the `U-I2-n`
+   ids keep "i2". Renaming the file would move four readers for no reader's benefit.
+   Frank's build go ("I2") names this stage.
+5. **One edge left as revision 1 had it.** A body that calls `next`/`next_n` on its own
+   iterator stays "allowed, but skipped". Only resuming after a break became UNDEFINED
+   (chk-6). Making the in-body case undefined too would be consistent, but no disposition
+   asked for it.
+
+STATE AT HANDOFF: commits on `lane/i2design`: the note revision 2 with its pointer and
+index entry, then the review file, this section and the lanes-index line. Last ruling
+applied: 2026-10-21 ~22:05. Next: the build lane (Frank's go), whose commit carries the
+plan next-line rewrite and D171's gloss (note §6).
