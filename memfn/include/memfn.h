@@ -536,8 +536,9 @@ typedef enum { MF_FLOOR_UNSTATED = 0, MF_FLOOR_SUBJECT, MF_FLOOR_LO } mf_read_fl
  *
  * STATED FACTS, appended to mf_site LAST at S2's commit 1 (no MF_SITE_ABI
  * number moves before commit 6, where the old fields retire), and read ONLY
- * on an art previewing the window family (mf_preview(art, "window-family")):
- * no default path decides anything from them. Elsewhere they are checked as
+ * on an art previewing the window family (mf_preview(art, "window-family"):
+ * since S2's commit 5 pcrec's DEFAULT art, the old path being a harness
+ * lever's until commit 6 deletes it). Elsewhere they are checked as
  * statements (a malformed one is refused, naming it) and otherwise ignored,
  * so a site stating them BESIDE its old fields renders as before.
  *
@@ -1495,7 +1496,10 @@ int      mf_preview(mf_art *, const char *step);
 /* (D172, S2 commit 1) The step "window-family" previews THE WINDOW FAMILY
  * (window_site.md rev 3.2 §2): on such an art a site stating alternatives
  * (mf_site.nalt) is decided and rendered by the family from its window facts
- * alone, and mf_wdecide answers. Every other art ignores those facts. */
+ * alone, and mf_wdecide answers. Every other art ignores those facts. The
+ * ONE exception to "never called by a shipped compile" (S2 commit 5, the
+ * lever's default flipped): pcrec previews this step on every art but a
+ * harness lever's, until commit 6 retires the step with the old path. */
 
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *

@@ -9,7 +9,10 @@ WHAT IT DOES. Builds a pcrec whose kit is compiled -DMF_TRACE (the
 tests/memfn/mk_mftrace_lib.sh swap over build/libpcrec.a), compiles every
 corpus pattern (scripts/emit_sweep.py's own enumeration: every `.rxt` under
 tests/, `--features all`) at the default engine and at --engine=vm with the
-lever MF_WSHADOW=1, and reads the kit's `MFTRACE WSHADOW` records
+lever MF_WSHADOW=1, under pcrec's INVERSE lever `--harness=window-legacy`
+(since commit 5 the family is the default; the shadow records only a site
+the OLD path defined, so the old side exists only under that lever, until
+commit 6 deletes it), and reads the kit's `MFTRACE WSHADOW` records
 (memfn/src/window.c `wf_shadow`): per window site, the old path's column
 and the family's, for `reseed` (the RE-SEED bit against "the old site is
 the offset-skip block"), `stop`, `plan` (tested offsets, ascending), `pin`,
@@ -78,7 +81,7 @@ def build_traced(tree, out):
     subprocess.run(["bash", os.path.join(tree, "tests/memfn/mk_mftrace_lib.sh"), lib,
                     os.path.join(tree, "build/libpcrec.a"), "-std=gnu11", "-O2"],
                    check=True, env=env)
-    subprocess.run([cc, "-O2", "-std=gnu11", "-I" + os.path.join(tree, "lib"),
+    subprocess.run([cc, "-O2", "-std=gnu11", "-DPCREC_HARNESS", "-I" + os.path.join(tree, "lib"),
                     "-I" + os.path.join(tree, "src"), "-o", exe,
                     os.path.join(tree, "cli/main.c"), lib], check=True)
     return exe
@@ -91,7 +94,7 @@ def corpus(tree, exe):
 
 
 def one(exe, pattern, engine):
-    argv = [exe, "-p", "rx", "--features", "all", "-o", "-"]
+    argv = [exe, "--harness=window-legacy", "-p", "rx", "--features", "all", "-o", "-"]
     if engine:
         argv.append("--engine=" + engine)
     argv += ["--pattern", pattern]
