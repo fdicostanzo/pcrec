@@ -1363,6 +1363,10 @@ gate stands.
      gates it; it still locates libc's crossover and would sharpen F2's expected loss;
    - hex-run/word-eq find-all timing.
 
+### 3.1b B4' as landed (lane b4p, 2026-10-21; Frank's walk ruling, D169 addendum) `[rev4.2]`
+
+B4 was the routing commit whose content was R7's V1 default. The ruling removed that content; what landed is the lockdown and the deletions the ruling made redundant, with NO pcrec artifact byte moved and NO abi event. R7w (always the walk) is the MEASURED default for every set FIND (E8's real-text verdict, `walk_vs_v1_record.md` §5). R7, R5 and R0 are WITHDRAWN (ids reserved, never reused); their denies `fd-r5` and `fd-r0` retire (the `memfn` floor 14 -> 12, a DECLARED stream-5 delta, `r17b_prime/b4p/`); S916 retires (a design-table id, never a file), S917 reads UNREACHED (no deciding row reads a set key), S922/S1079/S1105 are re-aimed at `fd_row_decides`. Every row decides (the `routed` bit and the listing's `routed`/`locked` columns are deleted); RPT, the REPORT row, stays held for its R-26.6 preview, the one gate left. The trace-only shadow, the `FDKEY` records and the POSCOV field retire; the expected-mover set is EMPTY. Re-open trigger for a wide form: plan row [MEMFN-REGIME]. R7w now USES `site_kind` and SERVES `table_ref` REF (its arm reads the offered table), so a site that states no kind, or offers no table, stays the composer's. Not built (out of scope): the V1 form port, the `drop-kit-bytes` rung and bit 55, `--emit-facts memfn`, PR-10's comment change. The row-edit log is `memfn/docs/finder_history.md`; the report `docs/dev/lanes/b4p_report.md`.
+
 ### 3.2 Why the first delivery needs no measurement set `[rev2]` `[rev3: C11, B6]`
 
 Rev 1 said nothing could ship before grid2 (F8). With the routing bits of §1.6 that is

@@ -57,13 +57,14 @@ subject):
      class expected at least twice and OTHER at least twice per field.
 
   THE FINDER TABLE (R17-b' B1, lane fdb1; table `fd`, memfn/src/finder.c):
-     its rows render nothing until their routing step (a finder decision is
-     the MF_TRACE build's SHADOW), so a `fd` row's witness is a fixture whose
-     SHADOW records (`MFTRACE FD`, stderr) carry the signature, and the trace
-     must show the row chosen there (its END record, phase `shadow`). A `fd`
-     row no B1 site can reach (it reads the consumer kind, E, H, a W64 pick,
-     or B3a's presence facts) has witness kind `-` and prints UNREACHED with
-     its step, never a pass.
+     a `fd` row's decision is read from the traced compile's records: a FIND
+     row's `MFTRACE FDROUTE` (row and arm; its pick renders the text its
+     pre-table arm did, so the artifact cannot tell it apart) and a PRES
+     row's `MFTRACE FD ... slot=PRES`; the trace must show the row chosen
+     there (its END record). B4' (lane b4p) retired the trace-only shadow, so
+     no unrouted decision is recorded. A `fd` row no site can reach (it reads
+     E, H, a W64 pick or a fast terminal) has witness kind `-` and prints
+     UNREACHED with its step, never a pass.
 
   THE ASK (lane b3breach, the kit manager's ruling): a row DECIDED AT THE
      ASK is reached when asked, and its rows.tsv signature carries ` phase=ask`
@@ -232,11 +233,11 @@ def build(root, cc, tmp):
 
 
 def fd_records(err):
-    """The finder table's trace records (R17-b' B1/B2): the shadow's `MFTRACE FD`
-    decisions and, since B2, the ROUTED decisions' `MFTRACE FDROUTE` (row and the
-    arm that rendered it). A `fd` row's signature is read from these: a routed
-    row's pick renders the text its pre-table arm would (zero movers, §1.6), so
-    the artifact cannot tell it apart, and the record is its observation."""
+    """The finder table's trace records: the PRES decisions' `MFTRACE FD` and the
+    FIND decisions' `MFTRACE FDROUTE` (row and the arm that rendered it). A `fd`
+    row's signature is read from these: a decided row's pick renders the text
+    its pre-table arm would (zero movers, §1.6), so the artifact cannot tell it
+    apart, and the record is its observation."""
     return "\n".join(ln for ln in err.decode("utf-8", "replace").splitlines()
                      if ln.startswith(("MFTRACE FD ", "MFTRACE FDROUTE ")))
 
@@ -248,7 +249,7 @@ class Art:
 
 
 def compile_pattern(root, tp, flags, pat, label):
-    # `@ROOT@` in a flag is the checked tree (R7w's `--measures` fixture, lane m0tri)
+    # `@ROOT@` in a flag is the checked tree
     flags = [f.replace("@ROOT@", root) for f in flags]
     argv_tail = ["-p", "rx", "--features", "all"] + flags + ["-o", "-", "--pattern", pat]
     rt = run([tp] + argv_tail)
@@ -272,7 +273,7 @@ def render_fixture(fx, tmp, name, label, shadow=False):
         bad("%s: fixture %s does not render (rc %d)" % (label, name, r.returncode))
         return None
     if shadow:
-        # a finder row's rendering is its SHADOW record (R17-b' B1)
+        # a finder row's rendering is its trace record
         text = fd_records(r.stderr)
         return Art(label, text, trace_chosen(r.stderr), text, r.stderr)
     text = ""

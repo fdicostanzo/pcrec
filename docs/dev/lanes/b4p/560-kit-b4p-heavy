@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# 560-kit-b4p-heavy: lane b4p (R17-b' B4'), DO-THEN-FINISH heavy validation at the final tip:
+# `make test` through scripts/perfrun, then ONE `PROCS=4 run_sabotage_matrix.sh` over the re-anchored,
+# re-aimed and retired sabotage rows plus the kit rows whose detector (the finder check, run_proof.sh)
+# this lane edited. Queue it with:  scripts/boxqueue add --name 560-kit-b4p-heavy FILE
+#   --dry-run  VALIDATE_ONLY: the ids resolve and their anchors apply (seconds, no build, no lock)
+#   --ready    the kit's quiet gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no
+#              box-lock holder (a make test is load-guarded; K44)
+#   (work)     make -j16, perfrun make test (log job.log.make), the matrix (job.log); rc = either's
+# Verdicts: the make log by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (empty = green) beside
+# job.log.make.perfrun; the matrix by its `== mech run COMPLETE` trailer and each row's verdict line.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/b4p
+MAIN=/home/pcrec/projects/pcrec
+# re-anchored: S1020 S596; re-aimed (the routed bit is gone): S1079 S1105 S922; retired UNREACHED: S917;
+# detector edited: S921 S1025 S1103 S1108 S1122 S1253 S1254 S1256
+IDS="S1020 S596 S1079 S1105 S922 S917 S921 S1025 S1103 S1108 S1122 S1253 S1254 S1256"
+NIDS=14
+STATE=$W/build/b4p_job/ready.state
+case "${1:-}" in
+    --dry-run)
+        [ -x "$MAIN/scripts/perfrun" ] || { echo "no perfrun" >&2; exit 1; }
+        git -C "$W" diff --quiet HEAD || { echo "worktree dirty" >&2; exit 1; }
+        out=$(VALIDATE_ONLY=1 bash -c 'cd "$1" && shift && bash tests/mech/run_sabotage_matrix.sh "$@"' _ "$W" $IDS 2>&1) ||
+            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
+        n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+        [ "$n" = "$NIDS" ] || { echo "field validation read '$n' rows, expected $NIDS" >&2; exit 1; }
+        echo "would run in $W: make -j16; scripts/perfrun --label b4p -- \$BQ_LOG.make; PROCS=4 bash tests/mech/run_sabotage_matrix.sh $IDS"
+        echo "boxqueue: cap 10800"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
+        echo "boxqueue: expect mech=$NIDS last=^== mech run COMPLETE: "
+        echo "boxqueue: witness mech=== mech run COMPLETE: $NIDS rows (a sample of the line)"
+        exit 0 ;;
+    --ready)
+        mkdir -p "$(dirname "$STATE")" || exit 1
+        now=$(date +%s)
+        if ls "$MAIN"/worktrees/.boxqueue/running/* > /dev/null 2>&1; then rm -f "$STATE"; echo "a queue job is running"; exit 75; fi
+        h=$("$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case "$h" in HELD*) rm -f "$STATE"; echo "box lock $h"; exit 75 ;; esac
+        l=$(cut -d' ' -f1 /proc/loadavg)
+        if ! awk -v l="$l" 'BEGIN { exit !(l < 2.0) }'; then rm -f "$STATE"; echo "load1 $l >= 2.0"; exit 75; fi
+        first=$(cat "$STATE" 2>/dev/null || echo 0)
+        if [ "$first" -gt 0 ] && [ $((now - first)) -le 600 ]; then
+            [ $((now - first)) -ge 55 ] && exit 0
+            echo "second quiet sample due in $((55 - now + first)) s (load1 $l)"; exit 75
+        fi
+        echo "$now" > "$STATE"
+        echo "first quiet sample taken (load1 $l); the second is due in 55 s"; exit 75 ;;
+esac
+rm -f "$STATE"
+cd "$W" || exit 1
+export TMPDIR=$W/build/tmp
+export PYTHONIOENCODING=utf-8:surrogateescape
+mkdir -p "$TMPDIR"
+make -j16 || exit 1
+"$MAIN/scripts/perfrun" --label b4p -- "$BQ_LOG.make"
+rc1=$?
+grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' "$BQ_LOG.make" > /dev/null && rc1=1
+echo "== b4p make test rc=$rc1"
+PROCS=4 bash tests/mech/run_sabotage_matrix.sh $IDS
+rc2=$?
+echo "== b4p mech rc=$rc2"
+[ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]

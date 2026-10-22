@@ -1,0 +1,8 @@
+# R17-b' B4' (lane b4p; memfn/docs/responses.md "B4 RE-SCOPED"): the DECLARED
+# registry-dump delta. B4' REMOVES two kit denies with their withdrawn rows
+# and adds nothing; every other line of every surface is byte-identical.
+# Read by dumps_delta.py, both ways: every declared line leaves, nothing else
+# does.
+#surface	section	row
+--list-axes	memfn	fd-r0
+--list-axes	memfn	fd-r5

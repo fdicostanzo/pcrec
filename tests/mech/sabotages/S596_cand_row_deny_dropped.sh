@@ -23,5 +23,5 @@ SAB_DESC='a dropped deny: the kit PRES row P4 (set-leads, bit 45 retired into it
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/stc2_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S596.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",'
-SAB_AFTER='      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL /* SABOTAGE S596 */, FB_UNMEASURED_DEFAULT, "B3b",'
+SAB_BEFORE='      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",'
+SAB_AFTER='      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, NULL /* SABOTAGE S596 */, FB_UNMEASURED_DEFAULT, "B3b",'
