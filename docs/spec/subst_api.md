@@ -256,6 +256,17 @@ carrying its name), and `user`. A custom glue builds it with
 `rx_subst_ctx_init` (§7¶4). The element writes `cur->prev`, `cur->w` and
 `cur->fits` (§4¶2); it writes no other caller state.
 
+<a id="s4-p8"></a>[4¶8] **The `rx_ctx` function family.** The element is the third function type
+over `rx_ctx`, beside the two match_api.md defines; each is a row of one
+table, and a fourth consumer would be a fourth row. An `rx_substfn` is not
+an `rx_renderfn`: it takes a batch and a binding.
+
+| type | reads from `ctx` | produces | its binding |
+|---|---|---|---|
+| `rx_matchfn` (match_api.md §2¶4) | `pos` and the captures so far | a length, or -1 | `rx_callout_ref.user` |
+| `rx_renderfn` (match_api.md §2¶7) | one completed match | one segment's bytes | the segment's `seg_user` entry (§3¶5) |
+| `rx_substfn` (`<s>_render`) | a batch of `k` completed matches | the batch's bytes, through `cur` | `rx_subst_binding` (§3) |
+
 <a id="s5"></a>
 ## 5. Generating a subst artifact
 

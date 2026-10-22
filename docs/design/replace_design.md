@@ -1088,17 +1088,23 @@ facts of today's tree make it a contract rather than a free mode:
 
 - The iterator says `s[0, n)` must not change while it is live (§3.8¶8,
   UNDEFINED). In-place writes into `s`.
-- The matcher reads behind `lo`: lookbehind up to LB bytes, and `\b`. LB is
-  internal today (`<prefix>_VALID_LB`, §9.4), not in `rx_info`.
+- The matcher reads behind `lo`: lookbehind, `\b`, and a `\K` match whose
+  reading began before its reported start. The bound on how far it reads is
+  the pattern's BACK-REACH, not LB: LB (`<prefix>_VALID_LB`, §9.4) is the
+  lookbehind width the UTF check covers, and `\K` and a lookbehind nested in
+  a lookahead both read past it (substfix correction, 2026-10-22). Neither
+  number is in `rx_info` today.
 - The render reads referenced groups, and by R2.5 rule 3 these may lie before
   the reported start.
 
 The sufficient rule is that every write lands below every byte still to be
-read: below `lo − LB` for the next search, and below the lowest referenced
-group start of the current match. The glue can check this per match before
+read: below `lo − back-reach` for the next search, and below the lowest
+referenced group start of the current match. The glue can check this per match before
 writing (sizing the render first with `out == NULL`). It needs three things:
-a §3.8¶8 relaxation ("bytes below `lo − LB` may change"), LB published in
-`rx_info` (an abi event), and a rule for what happens when the check fails
+a §3.8¶8 relaxation ("bytes below `lo − back-reach` may change"), the
+back-reach published in `rx_info` (an abi event; unbounded for a pattern
+whose reach is not finite, which then refuses in-place), and a rule for what
+happens when the check fails
 mid-subject. **[PROPOSED]** ROADMAP, with this contract recorded so the build
 does not discover it (D77). Trigger: a user ask, or a measured need where the
 out-of-place copy dominates. Pure deletion (an empty template) always
@@ -1107,9 +1113,11 @@ satisfies the write rule, and is the obvious first instance.
 **Streaming** (mode (2)) needs a CHUNKED iterator, which is [M3]'s, with
 [ITER-BLOCK] as its nearest sibling. The element needs no change: a render
 reads `ctx->subject` at absolute offsets, and a window glue rebases them. The
-holdback the plan row stamps from `maxw` gains one term: LB plus any
-referenced group before the start, which is bounded by LB because a group can
-only precede the start through lookbehind or `\K`. This note's Q6 (a
+holdback the plan row stamps from `maxw` gains one term: the back-reach
+(above), which also bounds any referenced group before the start, because a
+group can only precede the start through lookbehind or `\K`. The templates'
+`$_`, `` $` `` and `$'` (subst_api.md §2¶1) read the WHOLE subject, so a
+template carrying one refuses streaming as a var-bearing pattern does. This note's Q6 (a
 var-bearing pattern refuses streaming) stands. D38 §7.2's sink form
 `rx_subst_to(sink)` becomes a GLUE variant (`pcrec_subst_to`): no element
 change, which is the point of the split.

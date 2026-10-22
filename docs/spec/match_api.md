@@ -1257,6 +1257,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_UNSET_VAR` | −8 | below the floor | refused: an unset or ill-formed variable value (`docs/spec/vars.md`) |
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
 | `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5), or a record `RX_FOREACH` cannot use (§3.8.2¶5); `<prefix>_next`, `<prefix>_next_n` and `RX_FOREACH` leave it, in `it.rc` |
+| `PCREC_SUBST_NOSPACE` … `PCREC_SUBST_MISSING_REF` | −11 … −16 | below the floor | reserved for the subst artifact (`docs/spec/subst_api.md` §8), whose block defines them; no match entry returns one, and no other code takes these values |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
 resource. A DFA artifact has no counter and never returns one, though it
