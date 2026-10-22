@@ -14,13 +14,21 @@
 # compiler that stopped exercising what it is for: the RETRY cells (subjects
 # where the iterator's answer differs from match_api.md §3.1.3's loop, i.e.
 # where the NOTEMPTY_ATSTART retry decided a match) and the compiled groups.
+# [FINDALL-NEXT] I4: each subject's R= field lists the reach tokens of the I4
+# arms (iter_drv.c's header); every token named in REACH_NEED must be reached
+# on at least one cell (K35: a sabotage row whose witness never meets its
+# condition is UNREACHED, findall_iter_i2.md §5.4), and the counts print.
+# A give-up is documented under -futf-check (an ill-formed subject) and under
+# --step-budget (the cells that end the iteration mid-batch, S1311's witness).
 #
 # usage: run_iter_diff.sh [CELLS.tsv ...]   (default: cells.tsv beside this)
 #   cells: ENC<TAB>FLAGS<TAB>PATTERN<TAB>SUBJECT, the pattern as written, the
 #   subject in the .rxt subject-escape vocabulary (\t \n \r \\ \xNN); '#'
 #   lines are comments.
 # env: PCREC, CC, GENCFLAGS, PROCS (default 8), MIN_RETRY (default 25),
-#   MIN_GROUPS (default 20), ARMS (default "auto vm dfa"), KEEP=1
+#   MIN_GROUPS (default 20), ARMS (default "auto vm dfa"), KEEP=1,
+#   REACH_NEED (default: every I4 token but kmaxcap/frefused, which only an
+#   -DRX_FOREACH_PAIRS=8 build reaches)
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,6 +41,7 @@ PROCS="${PROCS:-8}"
 MIN_RETRY="${MIN_RETRY:-25}"
 MIN_GROUPS="${MIN_GROUPS:-20}"
 ARMS="${ARMS:-auto vm dfa}"
+REACH_NEED="${REACH_NEED:-n3m4 split gumid done63 vmcaps2 f1 f2 fstopend n0fresh n0bound n0ended fcount2 fcount63 fabi}"
 KEEP="${KEEP:-0}"
 export WATCHDOG_SECTION="${WATCHDOG_SECTION:-findall}"
 # the oracle's flags, once (tests/lib/resolve_pcre2.sh: pkg-config, else a
@@ -142,10 +151,17 @@ while IFS= read -r l; do echo "FAIL: findall: $l" >&2; fail=1; done \
     < <(grep -E '^(DIFF|REFUSED|CCFAIL|RUNFAIL|STAMPBAD)' "$WORKDIR/all.out" | head -40)
 # a give-up is the documented difference only under -futf-check
 while IFS= read -r l; do echo "FAIL: findall: undocumented give-up: $l" >&2; fail=1; done \
-    < <(grep '^GIVEUP' "$WORKDIR/all.out" | awk -F'\t' '$4 !~ /-futf-check/' | head -20)
+    < <(grep '^GIVEUP' "$WORKDIR/all.out" | awk -F'\t' '$4 !~ /-futf-check|--step-budget/' | head -20)
 [ "$ngroups" -ge "$MIN_GROUPS" ] || { echo "FAIL: findall: $ngroups compiled groups, floor $MIN_GROUPS" >&2; fail=1; }
 [ "$nretry" -ge "$MIN_RETRY" ] || { echo "FAIL: findall: $nretry retry cells, floor $MIN_RETRY: the retry is not being exercised" >&2; fail=1; }
 echo "findall: groups=$ngroups ok=$nok giveup=$ngu skip=$nskip illformed=$nill retry-cells=$nretry dfa-root=$nroot vm-guard=$nguard"
+reach=""
+for t in $REACH_NEED; do
+    c="$(grep -E '^(OK|GIVEUP|ILLFORMED|DIFF)	' "$WORKDIR/all.out" | grep -cE "	R=([^	]* )?$t( |	|\$)")"
+    reach="$reach $t=$c"
+    [ "$c" -ge 1 ] || { echo "FAIL: findall: reach token '$t' met on 0 cells: its sabotage witness is UNREACHED (K35)" >&2; fail=1; }
+done
+echo "findall: reach$reach"
 if [ "$fail" -ne 0 ]; then
     echo "FAIL: findall: the iterator differential is red" >&2
     exit 1
