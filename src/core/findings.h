@@ -422,8 +422,9 @@ int pcrec_find_run_window_start(const uint32_t *rate,
                                 const unsigned char *bytes,
                                 const unsigned char *mask, int n, int idx);
 
-/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
- * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
+/* MASS over `set` (`set[b]` nonzero for a member), in ppm, capped at
+ * 1,000,000: a per-set cost input (the DFA candidate rate,
+ * `pcrec_dfa_cand_ppm`; the offset-k selection's until D172 S2 commit 6). */
 unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256]);
 
 /* ---- [KNOW-SRC] THE LOOKUP TRACE (measure_sets.md rev 3 §9.3) -------------

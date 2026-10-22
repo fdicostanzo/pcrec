@@ -163,22 +163,11 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
  * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
  * X1/X3) and never shipped; the default and trace builds decline `cover`. */
-/* D172 S2 commit 5 (window_site.md rev 3.2 §5.1): the fifth,
- * `--harness=window-legacy`, the INVERSE lever: the window family is the
- * DEFAULT since commit 5 (every art previews it at setup, mf_preview(art,
- * "window-family"): every site stating window facts is decided and rendered
- * by the family, and the DFA prefilter's NEXT rows read its PHASE-1 reply,
- * mf_wdecide); this lever restores the OLD path (no preview, the planner's
- * pick), so a mover can be localized by flipping back. Its artifacts must be
- * byte-identical to the default build's (tests/memfn/run_wreply.sh). It and
- * `kit-proof` (whose art previews R-26.6: one preview per art) both take the
- * old path. Retires with the old path at commit 6. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
-    unsigned window_legacy : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -2953,29 +2942,13 @@ struct PcrecMeasInherit {
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
 
-/* ---- [OPT-K] the offset-k SELECTION (src/opt/prefix_k.c) ----
+/* ---- [OPT-K] the offset-k skip ----
  *
- * The walk it selects from is the `kset_walk` fact (`KsetWalk`,
- * src/facts/facts.h; derived in src/facts/kset.c, [PATFACTS] step 3.4). */
-
-typedef struct {
-    const KsetWalk *walk;             /* the fact the selection read */
-    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on walk->k[j].set */
-    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
-     * keeps exactly the offset-0 filter it had before this row. */
-    int      nsel;
-    int      sel[PCREC_OFSK_MAX_SET]; /* indices into walk->k[], ASCENDING by offset */
-    int      scan;                    /* index into sel[]: the memchr offset */
-    int      maxk;                    /* walk->k[sel[nsel-1]].k */
-    unsigned rate_ppm;                /* predicted candidate rate, selected */
-    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
-} PrefixKSets;
-
-/* `k0` is the offset-0 byte set the DFA derivation already owns
- * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
- * it. See docs/design/offset_k_skip.md §3. Asked only on the `ENG_UNANCH`
- * branch, after the E3 seal: the walk is an E3 fact. */
-void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o);
+ * The walk it reads is the `kset_walk` fact (`KsetWalk`, src/facts/facts.h;
+ * derived in src/facts/kset.c). WHICH offsets it tests is the memfn kit's
+ * window family's (D172 S2 commit 6: memfn/src/window.c's A-model/C-model,
+ * prefix_k's selection transcribed; window_site.md §3.2), read off its
+ * phase-1 reply; pcrec states the walk and nothing chosen. */
 
 /* D164 B3 THE `rev-end` WALK's FORM: the rows of `revend_forms[]`
  * (src/gen/emit_dfa.c; docs/design/endmark.md §R.1), in table order.
@@ -3853,17 +3826,6 @@ struct Ctx {
 static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 {
     return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
-}
-
-/* D172 S2 commit 5: does this compile's art preview the window family, so
- * its DFA prefilter NEXT rows read the family's phase-1 reply? True on every
- * shipped compile; false under the inverse lever `--harness=window-legacy`
- * and under `--harness=kit-proof` (its art previews R-26.6), which keep the
- * old path. */
-static inline bool pcrec_window_family_on(const Ctx *cx)
-{
-    const PcrecHarnessOptions *h = cx->emit_in ? cx->emit_in->harness : NULL;
-    return !h || (!h->window_legacy && !h->kit_proof);
 }
 
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`

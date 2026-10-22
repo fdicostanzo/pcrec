@@ -165,12 +165,6 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         if (pcrec_kit_proof_routed(cx) && mf_preview(job->mf, "R-26.6"))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
                            "R-26.6 routing preview: %s", mf_art_error(job->mf));
-        /* D172 S2 commit 5 (window_site.md §5.1): the window family, the
-           DEFAULT, stated at art setup like R-26.6 (an art previews one
-           step: a kit-proof art and the inverse lever take the old path) */
-        if (pcrec_window_family_on(cx) && mf_preview(job->mf, "window-family"))
-            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
-                           "window-family preview: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }

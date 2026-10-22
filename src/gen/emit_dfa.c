@@ -1117,6 +1117,39 @@ static void ofs_test_run(OfsTest *t, const unsigned char *run,
     t->noffsets  = n;
 }
 
+/* D172 S2 commit 6 THE RUN MEMBER's ONE RESOLVER (window_site.md rev 3.2
+ * §3.4's `@idx` row; R-29's ruling on `ReqRun.idx`'s readers): the window
+ * position the run `r`'s scan member sits at, as the memfn kit's window
+ * family's reply names it for the run WINDOW's statement, the one every run
+ * pre-check part states (`req_part_window`: one span, each position its byte
+ * or cube, core all, verify YES; the reply's member is the least-mass
+ * position, ties to the higher, R whole). Every reader of the member calls
+ * this, with no branch of its own: the part's scan (`req_run_tests`), the
+ * `<PREFIX>_REQ_RUN` `@idx` and `<PREFIX>_REQ_BYTE` stamps, the [OPT-REQPOS]
+ * note, `req_set_leads_own` and the pick shadow. The truncation window, cut
+ * before any statement exists, keeps pcrec's index (`r->idx`, a limit of the
+ * statement), and the reply must agree with it (one rule over one statement,
+ * §3.4): a disagreement is loud. No window (`len < 2`): no member to ask. */
+static int req_run_member(Ctx *cx, const ReqRun *r)
+{
+    if (r->len < 2) return r->idx;
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, 0, r->len, MF_VERIFY_YES);
+    for (int j = 0; j < r->len; j++) pcrec_memfn_wpos_cube(sp, j, r->bytes[j], r->mask[j]);
+    mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
+    pcrec_memfn_window_stated(cx, s, a, 1, MF_WFLOOR_SUBJECT);
+    mf_wreply w;
+    if (mf_wdecide(pcrec_memfn_art(cx), s, &w) || !w.run_stated)
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit names no member for the run "
+                       "window's statement (src/gen/emit_dfa.c, req_run_member)");
+    if (w.run_member != r->idx)
+        pcrec_ctx_fail(cx, 0, "internal error: the window family's run member %d is not the "
+                       "run window's own index %d (src/gen/emit_dfa.c, req_run_member)",
+                       (int)w.run_member, r->idx);
+    return (int)w.run_member;
+}
+
 /* The run pre-check's tests, the ONE derivation the pre-check site's builder
  * (`req_site_define`) reads for its run predicates, each defined as a block
  * and called from one site, so a block cannot be written without its call
@@ -1141,10 +1174,11 @@ static int req_run_tests(Ctx *cx, OfsTest t[2], bool whole)
      * exact compare of T, deleting every match not in upper case on the one
      * route where this is the only proof (litscan_s4.md §2.3.4, S4). */
     if (r->len < 2) return 0;
-    ofs_test_run(&t[0], r->bytes, r->mask, r->len, r->idx);
+    int m = req_run_member(cx, r);
+    ofs_test_run(&t[0], r->bytes, r->mask, r->len, m);
     r = pcrec_fact_req_whole_run(cx);   /* the same struct's core half */
     if (!whole || r->whole_len <= r->len) return 1;
-    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx);
+    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + m);
     return 2;
 }
 
@@ -1363,7 +1397,7 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
                          bool masked)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
-    int prev = 0, k;
+    int prev = 0, k, m = req_run_member(cx, r);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (i == 0 && masked) {
         /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
@@ -1378,7 +1412,7 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
             " (a byte matches where\n"
             "%s * byte & mask equals it), so a window without them holds no match\n"
             "%s * at all; the scan is on position %d of the run. */\n",
-            indent, indent, r->idx);
+            indent, indent, m);
     } else if (i == 0) {
         pcrec_sb_printf(c,
             "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
@@ -1387,7 +1421,7 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
         pcrec_sb_printf(c,
             "\", so a window without them holds no match at all;\n"
             "%s * the scan is on byte %d at offset %d of the run. */\n",
-            indent, (int)r->bytes[r->idx], r->idx);
+            indent, (int)r->bytes[m], m);
     } else if (masked) {
         pcrec_sb_printf(c,
             "%s/* [K66] every match contains the whole %d-position run \"", indent,
@@ -4540,17 +4574,16 @@ typedef struct {
     bool empty;          /* nothing can match: the whole body is one `return 0` */
     DfaPfKind kind;      /* the prefilter the forward scan carries */
     CandSet   cand;      /* D63's candidate set; meaningful when kind != NONE */
-    /* [OPT-K] THE OFFSET-k SKIP'S SELECTION, derived from the same call and
-     * read by the same two readers. `ofsk.nsel == 0` — the answer for every
-     * pattern before this row and for most patterns after it — means the
-     * forward scan carries exactly the offset-0 filter `kind` names above.
-     * docs/design/offset_k_skip.md. */
-    PrefixKSets ofsk;
+    /* [OPT-K] THE K-SET WALK (the `kset_walk` fact) the window statement
+     * states, asked where `kind` is not NONE; NULL elsewhere. Which offsets
+     * the skip tests is the reply's (`wr`), never pcrec's choice (D172 S2
+     * commit 6). docs/design/offset_k_skip.md. */
+    const KsetWalk *walk;
     /* D172 S2 commit 4 THE WINDOW FAMILY's PHASE-1 REPLY (window_site.md rev
      * 3.2 §0, §2.4) for this machine's DFA prefilter statement, asked wherever
-     * `kind` is not NONE and the family is on (the default since commit 5;
-     * `wr_stated`; `window_reply_ask`). The NEXT rows' key clauses read
-     * it instead of the planner's pick (`next_keys[]`); `wr_entry` is the
+     * `kind` is not NONE (`wr_stated`; `window_reply_ask`). The NEXT rows'
+     * key clauses read it (`next_keys[]`), and so does every reader of the
+     * offset rows' candidate test (`ofs_test_of`); `wr_entry` is the
      * chosen alternative's ENTRY fact, read off the statement it answers. */
     bool      wr_stated;
     uint8_t   wr_entry;
@@ -4698,17 +4731,19 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * all. A k-set selected without them would be a second, weaker version of
      * an argument this function already makes — the fork D63's header
      * forbids. */
-    if (o->kind != DFA_PF_NONE)
-        pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
-    PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "nsel=%d", o->ofsk.nsel);
-    /* D172 S2 commit 4: the family's decision over the same statement the
-       k-set selection weighed (so the walk is already asked); the default
-       since commit 5, off under the inverse lever */
-    if (o->kind != DFA_PF_NONE && pcrec_window_family_on(cx))
+    /* D172 S2 commit 6 (window_site.md §3.4 [rev3 bB5]): the BUILDER that
+       states frequencies to the family asks the byte-rate, for exactly the
+       population prefix_k's selection asked it (every offset-0 prefilter),
+       so `_FINDINGS`' consulted line and the UNDERIVABLE/BROKEN diagnostics
+       do not move; then the walk, and the family's decision over the
+       statement */
+    if (o->kind != DFA_PF_NONE) {
+        (void)pcrec_find_byte_rate(cx);
+        o->walk = pcrec_fact_kset_walk(cx);
         window_reply_ask(cx, o);
-#ifdef OPTK_DEBUG
-    { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
-#endif
+    }
+    PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "path=%s",
+                          o->wr_stated ? o->wr.path : "-");
 }
 
 /* ---- [DD-13c] IS THIS ARTIFACT'S SEARCH BODY THE EMPTY ENGINE? -----------
@@ -6665,7 +6700,7 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
  * Never its member (the reply's). Not stated
  * under `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`. The facts are
  * read without a pass (`_stated`) where no pass of this compile asked them,
- * and only where prefix_k already weighed the walk (`us->ofsk.walk`), so
+ * and only where the builder already asked the walk (`us->walk`), so
  * neither the facts' `used` record nor the byte-rate's consulted population
  * moves. No rank, pick or plan is computed here (D157). */
 /* Does the walk prove window position (`byte`, `mask`) at offset `d`: every
@@ -6682,7 +6717,7 @@ static bool walk_proves(const KsetWalk *wk, int d, unsigned byte, unsigned mask)
 static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
                         uint32_t offer, bool bounded, mf_walt **out)
 {
-    const KsetWalk *wk = us->ofsk.walk;
+    const KsetWalk *wk = us->walk;
     bool reseed = wk && wk->nwalk >= 1 && us->cand.count >= 1 && us->cand.count < 256 &&
                   !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP);
     const ReqRun *r = NULL;
@@ -7149,10 +7184,10 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * docs/design/offset_k_skip.md is the note. In one paragraph: the four forms
  * above filter a candidate start on the byte AT it; these two filter it on a
  * SET of (offset, byte-set) tests that every match must satisfy, of which the
- * offset-0 test is one member. The selection lives in src/opt/prefix_k.c and
- * is carried in `UnanchStart.ofsk`; `nsel == 0` — the answer for every pattern
- * before [OPT-K] and for most patterns after it — is what makes the four forms
- * above still the ones selected, byte for byte.
+ * offset-0 test is one member. The selection is the memfn kit's window family
+ * (D172 S2 commit 6), read off its phase-1 reply (`UnanchStart.wr`); a reply
+ * choosing PARKED without C-pin — the answer for most patterns — is what makes
+ * the four forms above still the ones selected, byte for byte.
  *
  * THESE TWO SIT AT THE HEAD OF THE LIST, so a pattern with a k-set takes them
  * and one without falls through to exactly what it had. `-fno-offset-skip`
@@ -7160,34 +7195,29 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * byte-identical to the pre-row compiler's output and is therefore a valid
  * control rather than a fourth variant (D82). */
 
-/* D172 S2 commit 4 THE NEXT KEYS (window_site.md rev 3.2 §2.4): the clause
- * of each offset row's predicate that reads WHICH candidate test was chosen,
- * as a declared map. By default (commit 5) it is the window family's
- * phase-1 reply (`UnanchStart.wr`), held to the field values each
- * row lists (`WR_ANY`: the row does not read that field); under the inverse
- * lever `--harness=window-legacy` (and on a kit-proof art) it is the
- * planner's pick (`pick`, the old clause). The rows below the
- * offset rows read no key: first-match order reaches them exactly where the
- * reply chose PARKED without C-pin (RE-SEED clear), and a RE-SEED bit that
- * reaches a row which does not re-seed is refused loudly (`dfa_form_derive`).
- * Under `PCREC_NO_OFFSET_SKIP`/`PCREC_NO_RUN_PREFILTER` pcrec states no R
+/* D172 S2 THE NEXT KEYS (window_site.md rev 3.2 §2.4): the clause of each
+ * offset row's predicate that reads WHICH candidate test was chosen, as a
+ * declared map over the window family's phase-1 reply (`UnanchStart.wr`),
+ * each row held to the field values it lists (`WR_ANY`: the row does not
+ * read that field). The rows below the offset rows read no key: first-match
+ * order reaches them exactly where the reply chose PARKED without C-pin
+ * (RE-SEED clear), and a RE-SEED bit that reaches a row which does not
+ * re-seed is refused loudly (`dfa_form_derive`). Under
+ * `PCREC_NO_OFFSET_SKIP`/`PCREC_NO_RUN_PREFILTER` pcrec states no R
  * (`pf_window_of`), so no reply carries C-pin there (§2.4, V2). */
 typedef enum { NK_RUN_PINNED, NK_OFFSET_SET, NK_N } NextKey;
 enum { WR_ANY = 0xFF };
-static bool nk_pick_run_pinned(const CandSel *s);
-static bool nk_pick_offset_set(const CandSel *s);
 static const struct {
     const char *rows;                   /* the rows whose predicate reads the key */
-    bool (*pick)(const CandSel *);      /* the old path: the planner's pick */
-    uint8_t entry, reseed, pinned;      /* else the reply's chosen ENTRY, its
-                                           RE-SEED bit, C-pin (`mf_wreply.pinned`) */
+    uint8_t entry, reseed, pinned;      /* the reply's chosen ENTRY, its RE-SEED
+                                           bit, C-pin (`mf_wreply.pinned`) */
     const char *basis;
 } next_keys[NK_N] = {
-    [NK_RUN_PINNED] = { "run-pinned[-bounded]", nk_pick_run_pinned, WR_ANY, 1, 1,
+    [NK_RUN_PINNED] = { "run-pinned[-bounded]", WR_ANY, 1, 1,
                         "the reply's plan carries C-pin and its RE-SEED bit is set "
                         "(§2.4, §3.5): RESEED + C-pin, or PARKED + C-pin" },
-    [NK_OFFSET_SET] = { "offset-set[-bounded]", nk_pick_offset_set, MF_ENTRY_RESEED, 1,
-                        WR_ANY, "the reply chose the RESEED alternative, RE-SEED set "
+    [NK_OFFSET_SET] = { "offset-set[-bounded]", MF_ENTRY_RESEED, 1, WR_ANY,
+                        "the reply chose the RESEED alternative, RE-SEED set "
                         "(§2.4); its C-pin plans took the run-pinned rows above" },
 };
 
@@ -7197,20 +7227,19 @@ static bool wr_field_is(unsigned want, unsigned v)
     return want == WR_ANY || want == v;
 }
 
-/* Does key `k` hold for selection `s`: the reply's declared fields where the
- * family answered one, else (the old path) the planner's pick. */
+/* Does key `k` hold for selection `s`: the reply's declared fields (no reply,
+ * no offset prefilter: `kind` is NONE). */
 static bool next_key_holds(const CandSel *s, NextKey k)
 {
     const UnanchStart *u = s->us;
-    if (!u->wr_stated) return next_keys[k].pick(s);
-    return wr_field_is(next_keys[k].entry, u->wr_entry) &&
+    return u->wr_stated && wr_field_is(next_keys[k].entry, u->wr_entry) &&
            wr_field_is(next_keys[k].reseed, u->wr.reseed) &&
            wr_field_is(next_keys[k].pinned, u->wr.pinned);
 }
 
 /* The clause all the offset-set candidates share: this is the forward scan,
  * an offset-0 prefilter was already approved, and the offset-set key holds
- * (the k-set pass selected at least one offset, or the reply chose RESEED).
+ * (the reply chose RESEED).
  * The selection RIDES the offset-0 verdict and is never
  * asked independently of it — everything it inherits was proved by
  * `unanch_start`, and a k-set selected without that would be a second, weaker
@@ -7219,12 +7248,6 @@ static bool pf_ofs_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
     return s->forward && u->kind != DFA_PF_NONE && next_key_holds(s, NK_OFFSET_SET);
-}
-/* The planner's offset-set pick: the k-set pass selected an offset. */
-static bool nk_pick_offset_set(const CandSel *s)
-{
-    const UnanchStart *u = s->us;
-    return u->ofsk.nsel > 0;
 }
 /* The bounded offset-set form: that, plus the D11 bound. */
 static bool pf_ofs_bounded_applies(const CandSel *s)
@@ -7237,15 +7260,12 @@ static bool pf_ofs_applies(const CandSel *s)
  * clause by clause; the bounded twin adds `views`, as the offset-set pair's
  * does. (0) the offset-set rows' own common clause: the forward scan, riding
  * the offset-0 verdict `unanch_start` proved. (1) a necessary run exists.
- * (2) the walk pins it at `o`. (3) IDENTITY: the scan is the same byte at the
- * same offset it is today — the model's scan offset is the run's scan member
- * (`s = o + idx`), or with no model selection the offset-0 `memchr` byte is
- * that member at offset 0. (4) the row ADDS something: the model's own
- * selection does not already test the whole run (class A keeps `offset-set`).
- * It reads analysis output only — never which row a later entry would pick,
- * and never the pre-check's admission. */
+ * (2) the walk pins it at `o`. (3)-(4), the stop IS R's member and the plan
+ * does not already test all of R (class A keeps `offset-set`), are the window
+ * family's C-pin since D172 S2 (window_site.md §2.3), read off its reply
+ * (`NK_RUN_PINNED`). It reads analysis output only — never which row a later
+ * entry would pick, and never the pre-check's admission. */
 static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us);
-static void ofs_test_model(const UnanchStart *us, OfsTest *t);
 
 /* The run PIN as this file's readers may see it: the `run_pin` fact where
  * `unanch_start` approved an offset-0 prefilter, and "not pinned" everywhere
@@ -7261,9 +7281,9 @@ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
 }
 
 /* Clauses (0)-(2) are facts of the machine and the run, asked as ever (so the
- * facts' `used` record is the same on either path; the reply can carry
- * C-pin only where they hold, since R is stated only then); the key
- * (`NK_RUN_PINNED`) is the reply, or clauses (3)-(4) on the old path. */
+ * facts' `used` record does not move; the reply can carry C-pin only where
+ * they hold, since R is stated only then); clauses (3)-(4), which candidate
+ * test was chosen, are the reply's (`NK_RUN_PINNED`). */
 static bool pf_run_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
@@ -7274,32 +7294,6 @@ static bool pf_run_applies_common(const CandSel *s)
     if (!pin.pinned) return false;
     return next_key_holds(s, NK_RUN_PINNED);
 }
-/* The planner's run-pinned pick, clauses (3)-(4) above: the model's scan is
- * the pin's member, and the model's own selection does not test all of R. */
-static bool nk_pick_run_pinned(const CandSel *s)
-{
-    const UnanchStart *u = s->us;
-    const ReqRun *r = pcrec_fact_req_run(s->cx);
-    const PrefixKSets *o = &u->ofsk;
-    RunPin pin = us_run_pin(s->cx, u);
-    /* [OPT-LITSCAN] S4 C3: the scan is the PIN's — its exact stretch's
-     * picked position, `bytes[pin.at + pin.idx]` at offset `pin.o +
-     * pin.idx`. On an exact run that is the run's own `idx` at `pin.o +
-     * idx`, as before. */
-    int sp = pin.o + pin.idx;
-    if (o->nsel > 0) {
-        if (o->walk->k[o->sel[o->scan]].k != sp) return false;
-    } else if (!(sp == 0 && u->kind == DFA_PF_ONE_BYTE &&
-                 u->cand.byte == r->bytes[pin.at + pin.idx])) {
-        return false;
-    }
-    if (o->nsel > 0) {
-        OfsTest t;
-        ofs_test_model(u, &t);
-        if (ofs_test_verifies_run(s->cx, &t, u)) return false;
-    }
-    return true;
-}
 /* The bounded run-pinned form: that, plus the D11 bound. */
 static bool pf_run_bounded_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return pf_run_applies_common(s) && u->views; }
@@ -7307,79 +7301,61 @@ static bool pf_run_bounded_applies(const CandSel *s)
 static bool pf_run_applies(const CandSel *s)
 { return pf_run_applies_common(s); }
 
-/* Fills `*t` with the MODEL's own candidate test, `us`'s k-set selection
- * re-expressed (it needs `nsel > 0`): the scan is the selected offset `scan`
- * names, the terms are every other selected offset in ascending order, and
- * the guard is the selection's own `maxk`. It is what an offset-set row
- * emits, and what the run rows' predicate asks "does it already test the
- * run?" of. */
-static void ofs_test_model(const UnanchStart *us, OfsTest *t)
-{
-    const PrefixKSets *o = &us->ofsk;
-    memset(t, 0, sizeof *t);
-    const PrefixK *sc = &o->walk->k[o->sel[o->scan]];
-    t->scan_k    = sc->k;
-    t->scan_byte = sc->count == 1 ? sc->byte : -1;
-    for (int i = 0; i < o->nsel; i++)
-        if (i != o->scan) t->term[t->nterm++].k = &o->walk->k[o->sel[i]];
-    t->maxk     = o->maxk;
-    t->noffsets = o->nsel;
-}
 
-/* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
- * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block. */
-static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
-                        OfsTest *t)
+
+
+/* D172 S2 commit 6 THE CANDIDATE TEST FROM THE REPLY (window_site.md rev 3.2
+ * §3.4): the test row `pf` emits, read off the window family's phase-1 reply
+ * `us->wr` and nothing pcrec chose: the scan is the reply's STOP (its one
+ * byte, `stop_set`), the terms are the reply's PLAN in its ascending order,
+ * a pinned stretch (C-pin, `pinned`) ONE run term at `run_lo` whose bytes are
+ * R's as stated (the window's from R's placement, `pin.o - pin.at`), every
+ * other offset its walk term. The guard is the largest offset tested, and
+ * the offsets tested are the plan's with the stop's. False, with `*t`
+ * zeroed, for a row that emits no `<p>_ofsskip` block; a reply that cannot
+ * be the row's (no stop, a run row without C-pin, an offset off the walk) is
+ * pcrec's defect, and loud. */
+static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf, OfsTest *t)
 {
-    const PrefixKSets *o = &us->ofsk;
-    const ReqRun *r = pcrec_fact_req_run(cx);
+    const mf_wreply *w = &us->wr;
+    const KsetWalk *wk = us->walk;
     memset(t, 0, sizeof *t);
     if (pf->u.pf.emit_block == NULL) return false;
-    /* D172 S2 commit 4: the offset-set rows are chosen by the family's reply
-       (the default since commit 5), while this test is still the planner's selection
-       until commit 6; a row the planner selected no offset for is loud */
-    if (!pf->u.pf.run_term && o->nsel <= 0)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-set row (%s) on a machine the "
-                       "planner selected no offset for (src/gen/emit_dfa.c, ofs_test_of)",
-                       pf->tok);
-    if (!pf->u.pf.run_term) { ofs_test_model(us, t); return true; }
-
-    /* THE RUN ROWS. The scan is the run's own scan member at its pinned
-     * offset; the terms are every model-selected offset OUTSIDE the run,
-     * plus the run itself as ONE term at `run_o`, all ascending. The run term
-     * includes the scan byte, as the pre-check's compare does, so the compare
-     * is the same constant-length `memcmp`. */
-    /* [OPT-LITSCAN] S4 C3: the run term is the PINNED STRETCH (`bytes +
-     * pin.at`, `pin.len` positions, at `pin.o`), always exact, so this never
-     * sets `run_mask`; on an exact run the stretch is the whole window. */
-    RunPin pin = us_run_pin(cx, us);
-    int ro = pin.o, rl = pin.len, sp = ro + pin.idx;
-    t->scan_k    = sp;
-    t->scan_byte = r->bytes[pin.at + pin.idx];
-    t->run_o     = ro;
-    t->run_len   = rl;
-    t->run_bytes = r->bytes + pin.at;
-    /* The predicate's clauses 2 and 3 read back from the emitter's side. Each
-     * can fail only if the predicate and this derivation have drifted, which
-     * this file prefers loud (`DfaForm.cx`'s own comment). */
-    if (!pin.pinned)
-        pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
-                               "an unpinned run");
-    if (o->nsel > 0 ? o->walk->k[o->sel[o->scan]].k != sp
-                    : (sp != 0 || o->walk->k[0].count != 1 || o->walk->k[0].byte != t->scan_byte ||
-                       us->cand.byte != t->scan_byte))
-        pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
-                               "scan is not the run's scan member at offset %d", sp);
-    bool placed = false;
-    for (int i = 0; i < o->nsel; i++) {
-        const PrefixK *k = &o->walk->k[o->sel[i]];
-        if (k->k >= ro && k->k < ro + rl) continue;
-        if (!placed && k->k > ro) { t->term[t->nterm++].k = NULL; placed = true; }
-        t->term[t->nterm++].k = k;
+    if (!us->wr_stated || !w->has_stop || !wk || w->stop < 0 || w->stop >= wk->nwalk ||
+        (pf->u.pf.run_term && !w->pinned))
+        pcrec_ctx_fail(cx, 0, "internal error: offset row `%s` reached with no reply it can "
+                       "read (path %s; src/gen/emit_dfa.c, ofs_test_of)", pf->tok,
+                       us->wr_stated ? w->path : "unasked");
+    int nb = 0, b = -1;
+    for (int x = 0; x < 256; x++)
+        if (w->stop_set[x >> 3] >> (x & 7) & 1) { nb++; b = x; }
+    t->scan_k = w->stop;
+    t->scan_byte = nb == 1 ? b : -1;
+    if (pf->u.pf.run_term) {
+        const ReqRun *r = pcrec_fact_req_run(cx);
+        RunPin pin = us_run_pin(cx, us);
+        t->run_o = w->run_lo;
+        t->run_len = w->run_len;
+        t->run_bytes = r->bytes + (w->run_lo - (pin.o - pin.at));
     }
-    if (!placed) t->term[t->nterm++].k = NULL;
-    t->noffsets = t->nterm - 1 + rl;
-    t->maxk     = o->maxk > ro + rl - 1 ? o->maxk : ro + rl - 1;
+    int maxk = w->stop, n = 1;
+    bool placed = false;
+    for (unsigned i = 0; i < w->nplan; i++) {
+        int o = w->plan[i];
+        if (o > maxk) maxk = o;
+        if (o != w->stop) n++;
+        if (t->run_len && o >= t->run_o && o < t->run_o + t->run_len) {
+            if (!placed) { t->term[t->nterm++].k = NULL; placed = true; }
+            continue;
+        }
+        if (o == w->stop) continue;
+        if (o < 0 || o >= wk->nwalk || wk->k[o].k != o || t->nterm >= PCREC_OFSK_MAX_SET)
+            pcrec_ctx_fail(cx, 0, "internal error: the reply's plan tests offset %d, which "
+                           "the walk does not state (src/gen/emit_dfa.c, ofs_test_of)", o);
+        t->term[t->nterm++].k = &wk->k[o];
+    }
+    t->maxk = maxk;
+    t->noffsets = n;
     return true;
 }
 
@@ -9145,7 +9121,7 @@ static const DfaDir dfa_dir_reverse = {
  *     WHERE THE SCAN BEGINS, which is sound for a search and wrong for a
  *     match-here, where the start is the caller's. Nothing here has to say so:
  *     `anch_start` hands this machine's form an `UnanchStart` whose `kind` is
- *     `DFA_PF_NONE` and whose `ofsk.nsel` is 0, and every axis-B candidate
+ *     `DFA_PF_NONE` and which carries no reply, and every axis-B candidate
  *     requires one of those to be non-trivial, so axis B's total fallback is
  *     what the ordinary walk selects. The flag here is about the STAY skips,
  *     which are a different mechanism and DO apply (§3.7).
@@ -10663,8 +10639,9 @@ static bool req_set_leads_own(Ctx *cx)
     int q;
     if (r->len < 2) return false;
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
-    cand[0] = r->bytes[r->idx];
-    care[0] = r->mask[r->idx];
+    int m = req_run_member(cx, r);
+    cand[0] = r->bytes[m];
+    care[0] = r->mask[m];
     cand[1] = (unsigned char)q;
     care[1] = 0xFF;
     return pcrec_find_pick(pcrec_find_byte_rate(cx), cand, care, 2, 0) == 1;
@@ -10841,7 +10818,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         /* the run: scan position and window */
         if (run->whole_len >= 2) {
             const ReqRun *w = pcrec_fact_req_run_stated(cx);
-            int n = run->whole_len, ps = w->at + w->idx, ks = k.run_scan;
+            int n = run->whole_len, ps = w->at + req_run_member(cx, w), ks = k.run_scan;
             if (pick_plant("scan")) ks = (ks + 1) % n;
             pick_rec("scan", ps, ks, 1, ps != n - 1, kind);
             int lo_s = ps - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = ps;
@@ -13807,11 +13784,11 @@ static void emit_rev_end(Ctx *cx, const char *fn, PcrecEntry ent)
  * caller's `ctx->pos` — so the value it is derived from is built here rather
  * than borrowed:
  *
- *   - `kind` is `DFA_PF_NONE`, `cand` is empty and `ofsk.nsel` is 0,
+ *   - `kind` is `DFA_PF_NONE`, `cand` is empty and no reply is asked,
  *     UNCONDITIONALLY. That is the whole of why axis B selects its total
  *     fallback for this machine, with no branch anywhere and no `applies`
  *     clause that knows this machine exists: every real prefilter candidate
- *     requires `kind != DFA_PF_NONE` or `ofsk.nsel > 0`. A candidate-start
+ *     requires `kind != DFA_PF_NONE`. A candidate-start
  *     skip CHOOSES WHERE THE SCAN BEGINS, which is sound for a search and
  *     wrong for a match-here.
  *   - the view flags are recomputed from THIS machine alone, where the search
@@ -13829,7 +13806,7 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
     *o = *us;
     o->kind = DFA_PF_NONE;
     memset(&o->cand, 0, sizeof o->cand);
-    memset(&o->ofsk, 0, sizeof o->ofsk);
+    o->walk = NULL;
     o->eol     = dfa_has_eolvar(ad);
     o->endv    = dfa_has_endvar(ad);
     o->viewsel = o->eol || o->endv;
@@ -15051,7 +15028,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * [PATFACTS] the value is the `req_byte` fact's ONE renderer
          * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
         pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE",
-                           pcrec_fact_stamp(cx, PF_REQ_BYTE));
+                           pcrec_fact_stamp_req_byte(cx, req_run_member(
+                               cx, pcrec_fact_req_run_stated(cx))));
     }
     /* [OPT-REQPOS] tier 2b `<PREFIX>_REQ_RUN` — THE NECESSARY LITERAL RUN,
      * beside `<PREFIX>_REQ_BYTE` and in the same family-(a) shape for the same
@@ -15077,7 +15055,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * analysis found, and `<PREFIX>_REQ_WHY` names whether it was emitted.
      * [PATFACTS] the value is the `req_run` fact's ONE renderer
      * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
-    pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", pcrec_fact_stamp(cx, PF_REQ_RUN));
+    pcrec_sb_stamp_str(c, g->upper, "REQ_RUN",
+                       pcrec_fact_stamp_req_run(cx, req_run_member(
+                           cx, pcrec_fact_req_run_stated(cx))));
     /* [OPT-PRECHECK-ADMIT] `<PREFIX>_REQ_WHY` — WHY THIS ARTIFACT DOES OR DOES
      * NOT CARRY A WHOLE-WINDOW PRE-CHECK. A §6.3 family-(a) SELECTION FACT for
      * its two siblings' reason, in the same place: unconditional, on every

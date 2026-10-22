@@ -832,8 +832,9 @@ int pcrec_find_run_window_start(const uint32_t *rate,
     return best;
 }
 
-/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): the MASS
- * of `set` under this compile's byte-rate, capped at 1,000,000. It was the
+/* A per-set cost input (the DFA candidate rate; the offset-k selection's
+ * until D172 S2 commit 6 moved it into the memfn kit): the MASS of `set`
+ * under this compile's byte-rate, capped at 1,000,000. It was the
  * one rate read with no gate at all (PFI R9); under NONE it is now the
  * uniform rate's mass, i.e. the set's CARDINALITY, the no-information prior
  * for choosing among sets (findings design §0.8). */

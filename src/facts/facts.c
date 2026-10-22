@@ -842,3 +842,21 @@ const char *pcrec_fact_stamp(Ctx *cx, PfFactId f)
     pf_ask(cx, f, true);
     return pcrec_fact_render(cx, f);
 }
+
+const char *pcrec_fact_stamp_req_run(Ctx *cx, int member)
+{
+    pf_ask(cx, PF_REQ_RUN, true);
+    PatFacts *pf = &cx->job->pf;
+    if (pf->req_run.len < 2) return "none";
+    return pf_hex(cx, pf->req_run.bytes, pf->req_run.mask, pf->req_run.len, member);
+}
+
+const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member)
+{
+    pf_ask(cx, PF_REQ_BYTE, true);
+    PatFacts *pf = &cx->job->pf;
+    const ReqRun *r = &pf->req_run;
+    if (r->len >= 2 && r->mask[member] == 0xFF)
+        return pcrec_sb_fragf(&cx->arena, "%d", r->bytes[member]);
+    return pcrec_fact_render(cx, PF_REQ_BYTE);
+}

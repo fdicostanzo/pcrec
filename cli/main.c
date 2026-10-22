@@ -1215,9 +1215,6 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
         /* [KIT-VERIFY] U1 Z2: route `cover` and preview the kit's R-26.6 */
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
-        /* D172 S2 commit 5: the inverse lever, the window family's OLD
-           path (no family preview; NEXT reads the planner's pick) */
-        else if (!strcmp(a, "--harness=window-legacy")) st->harness.window_legacy = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;

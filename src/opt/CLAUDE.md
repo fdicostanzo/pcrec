@@ -110,12 +110,12 @@ that live here because an error in them is silent (wrong answers, no warning).
   `src/parse/mod_lookaround.c` owns the RULE. Pending is `u.look.widths == NULL`
   (loud by construction). Walks via `pcrec_ast_visit`. Sabotage S169/S170; tests
   tests/recursion/inlookaround.rxt.
-- prefix_k.c — [OPT-K] offset-k SELECTION (docs/design/offset_k_skip.md): the cost
-  model over `pcrec_fact_kset_walk` (the walk is the E3 fact in `src/facts/kset.c`);
-  offset-0 escape set `k0` stays the baseline's; mass via `pcrec_find_set_ppm`
-  (src/core/findings.c; prior not derived from the bench log); the scan offset must
-  MOVE off 0 (measured rule). Tests tests/offsetskip/, tests/codegen/run_offset_skip.sh;
-  sabotage S185-S188. [OPT-LITSCAN] S1's pin is the E3 fact `run_pin`.
+- (prefix_k.c, the [OPT-K] offset-k SELECTION, RETIRED at D172 S2 commit 6: the
+  memfn kit's window family decides which offsets the skip tests, prefix_k's
+  model transcribed as its A-model/C-model rows (memfn/src/window.c, constants
+  memfn/src/plan_cost.def); pcrec states the walk, `kset_walk`, as a fact and
+  reads the family's phase-1 reply. Its header's MISCOMPILE-1 account (role A
+  k0 vs role B the walk's frontier[0]) is docs/design/offset_k_skip.md's.)
 - select_engine.c — per-pattern ENGINE selection ([M4.5b], engine_m4.md §5.1): the
   analysis table run once. `forces_registry` (SR-8, D67; `Ast.reg`/`Ast.reg_at`
   stamped by `pcrec_ast_stamp`), `forces_captures` (request-derived; `node_derived`
