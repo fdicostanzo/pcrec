@@ -1182,8 +1182,9 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
  * (ExtPort.base), owned by parse.c because it is the base grammar's own
  * rule migrated to the seam, not a module's production: inside a class a
  * backreference is impossible, so `\0`..`\7` begin an octal escape — the
- * selector digit plus up to two more octal digits, value <= \377, PCRE2
- * error 151 above it with the offset where the digits ran out (FIX-3's
+ * selector digit plus up to two more octal digits, value <= the encoding's
+ * universe (\377 under byte), PCRE2 error 151 above it with the offset
+ * where the digits ran out (FIX-3's
  * measured semantics, 41 cells, zero disagreements; pinned in
  * tests/base/class_escape_fallbacks.rxt). The port never moves cx->pos —
  * it reports `end` and the caller advances at RESULT (check06's rule). */
@@ -1200,7 +1201,10 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
         val = val * 8 + (cx->pat[p] - '0');
         p++; ndig++;
     }
-    if (val > 0xff) {
+    /* K125: the ceiling is the ENCODING'S universe, the `\x{...}` rule's
+     * range check (§2.7.3): `\400`..`\777` are U+0100..U+01FF under utf8
+     * (libpcre2 10.46 PCRE2_UTF) and err 151 under byte only. */
+    if ((unsigned)val > cls_universe(cx)) {
         ExtResult err = { .what = EXT_REFUSAL, .at = p, .msg = "",
                           .answered_at = want };
         snprintf(err.msg, sizeof err.msg,
