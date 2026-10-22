@@ -51,6 +51,7 @@
  * (docs/dev/lanes/wsc1_report.md, finding F-1).
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "kit.h"
@@ -1043,9 +1044,14 @@ int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
     if (art->err[0] || site->abi != MF_SITE_ABI || !site->nalt ||
         wf_check(site, 0))
         return -1;
-    wf_dec d;
-    decide(art, site, 1, &d);
-    reply_of(&d, out);
+    /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
+       above 4 KB is a kit defect; terms.c's targets are the precedent); the
+       ask is pure, so not the art's arena; a refused allocation is -1 */
+    wf_dec *d = calloc(1, sizeof *d);
+    if (!d) return -1;
+    decide(art, site, 1, d);
+    reply_of(d, out);
+    free(d);
     return 0;
 }
 
@@ -1314,6 +1320,7 @@ typedef struct {
     const struct wf_plan *w;
     const mf_hooks       *def;
     unsigned              gphases;
+    wf_legacy            *L;        /* the translation's storage, wf_prepare's */
 } wf_ex;
 
 /* E-func / E-stmt hold where the plan translates with its own semantics
@@ -1326,9 +1333,8 @@ static int e_legacy_holds(const void *x)
     const wf_ex *e = x;
     unsigned eb;
     if (e->d->s->site_kind == MF_SK_REPORT || !legacy_ok(e->d, e->w, &eb)) return 0;
-    wf_legacy L;
-    translate(e->d, e->w, eb, &L);
-    return kit_legacy_serves(e->d->art, &L.site, e->def, e->gphases);
+    translate(e->d, e->w, eb, e->L);
+    return kit_legacy_serves(e->d->art, &e->L->site, e->def, e->gphases);
 }
 
 static const gate_use use_e_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -1382,7 +1388,10 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
     struct wf_plan *w = art->a->alloc(art->a->u, sizeof *w);
     char *pid = art->a->alloc(art->a->u, sizeof d->path);
-    if (!d || !w || !pid) { *why = "out of memory"; return -1; }
+    /* the legacy translation (~5 KB) is the art's too, not a stack local of
+       e_legacy_holds (R-28); every translate() rewrites it whole */
+    wf_legacy *L = art->a->alloc(art->a->u, sizeof *L);
+    if (!d || !w || !pid || !L) { *why = "out of memory"; return -1; }
     decide(art, s, quiet, d);
     plan_of(d, def, w);
     memcpy(pid, d->path, sizeof d->path);
@@ -1391,7 +1400,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     gate_in in = { s, def, NULL, NULL, &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict v = { 0, 0 };
-    wf_ex e = { d, w, def, gphases };
+    wf_ex e = { d, w, def, gphases, L };
     size_t r = kit_walk(&wf_etable, 0, &in, gphases, 0, &e, &tc, &v);
     if (r >= WF_NEROWS) {
         /* E-generic is the table's last row: only its contract can leave a
@@ -1408,8 +1417,6 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
         return 0;
     }
     unsigned eb;
-    wf_legacy *L = art->a->alloc(art->a->u, sizeof *L);
-    if (!L) { *why = "out of memory"; return -1; }
     legacy_ok(d, w, &eb);
     translate(d, w, eb, L);
     *legacy = &L->site;
