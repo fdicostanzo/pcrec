@@ -17,7 +17,10 @@ passages it replaces carry an `[R4: ...]` marker. Its spec draft is
 `subst_api_r4_draft.md`, which replaces `docs/spec/subst_api.md` at build
 time.** **REVISION 4a (lane substr4b, 2026-10-22): §R4.15 applies the R4
 light panel (`../dev/reviews/2026-10-22-r2-subst-r4-panel.md`, two critics);
-the §R4 passages it changed are edited in place.**
+the §R4 passages it changed are edited in place.** **REVISION 4b (lane substr4c,
+2026-10-22): §R4.16 applies rulings R9-R11 (pieces are `unsigned char`, the
+support unit is emitted, one replace-all function in the support unit); each
+change is marked `[R4b]`, and the interface has no open question.**
 
 ## REVISION 4 — the interface rework: an independent template, an optional map, pieces, one support unit (lane substr4, 2026-10-22) — READ THIS FIRST
 
@@ -27,7 +30,7 @@ contract this revision proposes is drafted in full as `subst_api_r4_draft.md`
 (the numbered spec form), which replaces `docs/spec/subst_api.md` at build
 time. Cites below of the form `draft §N¶K` are to that draft. It applies the
 lane brief's rulings and the later entries R5-R8 of
-`docs/dev/lanes/subst_rulings.md`; R8 is the last applied. The probes behind
+`docs/dev/lanes/subst_rulings.md`; R8 was the last applied in revision 4; revision 4b applies R9-R11 (§R4.16). The probes behind
 §R4.13 are `subst_measurements/r4_*`, run against libpcre2 10.46 on the Linux
 dev box.
 
@@ -398,6 +401,11 @@ recipe follows it. `tests/subst/` runs each recipe with a forced give-up, a
 forced `BADSPAN` and a forced NOSPACE. The `(const ptrdiff_t (*)[2])` cast is
 gone: the element's `caps` is spelled as the iterators' (C2-3).
 
+[R4b, R11] The recipes stay for every destination that is not one caller
+buffer (a `FILE *`, a scatter list, a rope). For the one buffer, the support
+unit holds `rx_subst_replace_all` (draft §10¶6-¶10): the batch recipe's loop,
+error rule and sizing written once.
+
 - **The gap pieces.** With `RX_SUBST_GAPS`, piece 0 of each match is
   `s[prev, start)`, and the tail `s[o.prev, n)` is the caller's last write.
   Without the flag there are no gap pieces and no tail: replacements only. A
@@ -439,23 +447,19 @@ strict flag (R6); flatten is kept, in the support unit (R8); the helpers live
 once in a support unit written by `pcrec --emit-support`, which works on its
 own (R7, R8).
 
-Still open, each with a leaning:
+[R4b] Rulings R9-R11 closed the first two questions and the replace-all
+question (below). The interface now has NO open question.
 
-1. **Piece pointer type.** Your sketch said `const char *`, but the subject
-   and the variables are `unsigned char` everywhere else in pcrec's
-   interface.
-   - Leaning: `unsigned char`, so that no source needs a cast. A language
-     binding casts once at its boundary either way.
-2. **Is the support file written by the compiler, or shipped as a fixed
-   file?**
-   - Leaning: written by `pcrec --emit-support`. It then always matches the
-     compiler's own version, and generated code depends on nothing pcrec did
-     not write.
-   - The alternative is a file in the pcrec source tree that users copy. It
-     is simpler to find, but it can drift from the compiler a user actually
-     runs.
-   - Either way, it is one file. One source file of the program sets a macro
-     before including it to get the function bodies (draft §10¶2).
+Closed, each as ruled:
+
+1. **[CLOSED, R9: "agree unsigned".]** Pieces are `const unsigned char *`,
+   the type of the subject everywhere in the API (draft §4¶3, §9 row 2).
+2. **[CLOSED, R10: "agree".]** The support unit is written by
+   `pcrec --emit-support`, not shipped. Frank's Makefile concern (a re-emit
+   must not force recompiles) is the plan row `[CLI-OUTKEEP]`: `-o` writes
+   only when the output's bytes change. That row is its own change; the
+   subst build does not implement it (draft §10¶2).
+
 3. **[ANSWERED by panel r2's adoption, §R4.4.]** Only helper users and
    case-forcing templates link the support file. The check and the context
    setup are small `static` functions in the shared types block, one copy per
@@ -470,11 +474,9 @@ Still open, each with a leaning:
      any pattern (probed: their meaning never depends on the group count;
      a missing group is an unknown group, as `$8` is), so they stay
      accepted, as do `\0dd` and `\o{}`.
-5. **Confirm one reading of rulings 4 and 5.** The generic "substitute
-   everything into my buffer" function from R3 (`pcrec_subst`, not tied to any
-   regex) goes too: it is string handling, and the recipes replace it. If you
-   meant only the per-regex fused form to go, that loop could come back as
-   one more support-unit helper over pieces.
+5. **[CLOSED, R11: "3. yes".]** The "substitute everything into my buffer"
+   function returns, ONCE, as `rx_subst_replace_all` in the support unit, over
+   pieces and over the existing matcher types (§R4.16).
 
 Manager-level, decided here (say if any is wrong):
 
@@ -596,6 +598,13 @@ match_api.md §3.8¶9a (it names `rx_subst_ctx_init`) and §4's reservation of
   forced `BADSPAN` and a forced NOSPACE (no tail written, code returned);
   `\Uß` and `\LȺ` sized by the bound; pcrec-only ill-formed-UTF-8 case
   cells (draft §2¶14a), never sent to libpcre2 (it crashes, U22).
+  [R4b] `rx_subst_replace_all` (draft §10¶6-¶10): a forced give-up, a forced
+  `BADSPAN`, a forced `UNSET` and a forced NOSPACE of the output buffer and
+  of the scratch (the code returned, `*len` as §10¶8-¶9 say, no tail, no
+  partial output counted as success); a zero-match subject; a buffer of
+  exactly the needed size and one a byte short; and an EQUIVALENCE test that
+  runs it beside the §6¶4 buffer recipe over the whole corpus and asserts the
+  same bytes, the same length and the same code (draft §10¶10).
 - `subst_drv.c` (401 lines): rewritten around the draft §6 recipes, through
   flatten, in the three map modes, linking an emitted support unit.
 
@@ -839,6 +848,7 @@ independent of both the regex and the template:
 
 - `pcrec_subst_map_names` and `rx_group_run`;
 - `rx_subst_flatten`;
+- [R4b] `rx_subst_replace_all`, the one replace-all function (§R4.16);
 - the UTF-8 case mapping;
 - `pcrec_support_id`, its content id.
 
@@ -857,11 +867,14 @@ guards (draft §10).
   program defines `PCREC_SUPPORT_IMPLEMENTATION` before including it. Every
   other unit includes it for the declarations, or does not include it at
   all, because each subst header already declares what it calls.
-- **Deterministic.** Its text depends only on the pcrec build.
+- **Deterministic.** Its text depends only on the pcrec build. [R4b] A
+  Makefile that re-emits it would recompile its users every time; plan row
+  `[CLI-OUTKEEP]` (`-o` writes only when the bytes change) is the cure, and
+  the subst build does not implement it.
 - **The alternative: a fixed file shipped in the pcrec tree** (for example
   `lib/pcrec_support.h`). It is simpler to find, but it can drift from the
   compiler a user runs, and it would be the first generated-code dependency
-  pcrec did not emit. The leaning stays the emitted file (§R4.9 question 2).
+  pcrec did not emit. [R4b] R10 ruled the emitted file (§R4.9 question 2).
 
 **Version safety.** Every external name is a macro over a name that carries
 the abi (`rx_subst_flatten` → `rx_subst_flatten_v<abi>`). A subst artifact
@@ -979,6 +992,48 @@ by the manager; one was narrowed by the evidence (C1-3's single digits).
 | family (d) | a shared stamp-header prefix (`rx_info`/`rx_subst_info`): CANDIDATE, not adopted; trigger: a third record kind, or the first skew report | review file |
 | family (e) | `--emit-support` is a new cli.md subsection (no emit-mode table exists) | §R4.14 |
 | unlocks | five recorded as candidates with triggers; none scheduled | review file |
+
+### R4.16 Rulings R9-R11 applied (revision 4b, lane substr4c, 2026-10-22)
+
+| ruling | what it said | where it landed |
+|---|---|---|
+| R9 | pieces are `const unsigned char *` | already so in draft §4¶3 and §9 row 2, and in every recipe; the open question is closed (§R4.9 Q1) |
+| R10 | the support unit is emitted by `pcrec --emit-support` | the open question is closed (§R4.9 Q2); the Makefile concern points at plan row `[CLI-OUTKEEP]`, not built here (draft §10¶2, §R4.14) |
+| R11 | ONE replace-all function in the support unit, over the existing function-pointer types | draft §10¶6-¶10, §6¶8, §8 table, §9 row 1; tests in §R4.10; §R4.7 |
+
+**The signature** (draft §10¶6):
+
+```c
+int rx_subst_replace_all(rx_nextnfn next_n, rx_iter *it,
+                         const struct rx_subst_info *t, const rx_ctx *ctx,
+                         const rx_subst_map *map, unsigned flags,
+                         rx_subst_out *o,
+                         unsigned char *restrict out, size_t cap, size_t *len);
+```
+
+**The matcher type.** `rx_matchfn` is the anchored match-here type and cannot
+iterate. The type that fits is its find-all sibling `rx_nextnfn`
+(match_api.md §2¶8a; `rx_info.next_n`), which main and lane/i2build both
+define, and the support unit reads no other. No new matcher interface is
+invented. The element comes from the record (`t->render`).
+
+**Two consequences, for Frank's eye.** (1) "Never allocates" means the
+workspace is the caller's: `o` carries the piece array and, for a case-forcing
+template, the scratch (the case region's size depends on the match, so no
+fixed stack buffer could bound it). The function's own storage is one stack
+array of `RX_FOREACH_PAIRS` capture pairs, the figure `RX_FOREACH` already
+uses. (2) The return is an `int` code, not a size, because the error codes
+are negative `int`s: the size needed arrives in `*len` with
+`PCREC_SUBST_NOSPACE`, and a scratch shortfall is told apart by
+`o->sneed > o->scap`.
+
+**Behaviour.** It writes the full result and returns 0 with `*len`; on too
+small a buffer it keeps matching, sums, and returns NOSPACE with the total
+(no match searched twice); every other negative code is returned as is, with
+no tail, by the §6¶1 error rule. The batch recipe is its reference, and the
+equivalence test pins them together.
+
+**Open questions for the interface: none.**
 
 ---
 

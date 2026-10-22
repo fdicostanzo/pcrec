@@ -2,7 +2,8 @@
      REVISION 4 (lane substr4, 2026-10-22; rulings R4-R8 of
      docs/dev/lanes/subst_rulings.md applied; the R4 light panel's
      dispositions applied by lane substr4b, docs/dev/reviews/
-     2026-10-22-r2-subst-r4-panel.md). Design only: it replaces
+     2026-10-22-r2-subst-r4-panel.md; REVISION 4b, lane substr4c: rulings
+     R9-R11 applied, the ONE replace-all function of section 10). Design only: it replaces
      docs/spec/subst_api.md at build time, when this comment goes. Below this
      comment the text is facts-only, in the spec's numbered form. -->
 # Compiled substitution — the subst artifact contract
@@ -33,8 +34,9 @@ never allocates and never copies a byte of output, except the bytes of a
 case-forcing form, which it writes into the caller's scratch buffer. The
 check and the context setup are small `static` functions in every subst
 header's shared types block (§3¶8, §7¶3). The larger shared functions (the
-by-name helper, the flatten and the case mapping) are in one SUPPORT UNIT,
-which a program compiles once, and only when it uses one of them (§10). Background, informational only:
+by-name helper, the flatten, the replace-all function and the case mapping)
+are in one SUPPORT UNIT, which a program compiles once, and only when it uses
+one of them (§10). Background, informational only:
 `docs/design/replace_design.md` §R4.
 
 <a id="s1"></a>
@@ -658,7 +660,10 @@ one ERROR RULE: a negative return from the setup, the element or the
 iterator (`it.rc < 0` after the loop) means the output so far is a PREFIX of
 a failed find-all. The recipe then returns the code and does NOT write the
 tail, so an error never looks like complete output with the later matches
-left unreplaced. Each starts from the same setup:
+left unreplaced. The support unit's one replace-all function (§10¶6) is these
+rules in a single call for the common destination, a caller's buffer; the
+recipes stay for every other one (a `FILE *`, a scatter list). Each starts
+from the same setup:
 
 ```c
 rx_iter it = RX_ITER_INIT(s, n);                  /* setters while FRESH */
@@ -775,6 +780,20 @@ if (rc == PCREC_SUBST_NOSPACE && o.sneed > o.scap) {      /* o.n == 0, o.sn == 0
 if (rc < 0) return rc;
 ```
 
+<a id="s6-p8"></a>[6¶8] **Into one caller buffer, in one call**, with `rx_subst_replace_all`
+(§10¶6), which is §6¶4's recipe with the loop, the error rule and the sizing
+written once:
+
+```c
+size_t len;
+rx_subst_piece pc[64 * DMY_PIECES];
+rx_subst_out o = { pc, 64 * DMY_PIECES };         /* plus scratch, if the template forces case */
+rc = rx_subst_replace_all(rx_info.next_n, &it, &dmy_subst_info, &ctx, map, flags,
+                          &o, buf, cap, &len);
+if (rc == PCREC_SUBST_NOSPACE && o.sneed <= o.scap)
+    /* buf was too small: len bytes suffice; grow buf and call again on a FRESH iterator */;
+```
+
 <a id="s7"></a>
 ## 7. The caller contract
 
@@ -833,10 +852,10 @@ reserved.
 
 | code | value | returned by | meaning |
 |---|---|---|---|
-| `PCREC_SUBST_NOSPACE` | −11 | element | `pc` or `scratch` is too small for the call; `need`/`sneed` say what suffices (§4¶10) |
+| `PCREC_SUBST_NOSPACE` | −11 | element, replace-all | `pc` or `scratch` is too small for the call; `need`/`sneed` say what suffices (§4¶10). From `rx_subst_replace_all` also: `out` is too small, and `*len` says what suffices (§10¶8) |
 | `PCREC_SUBST_BADSPAN` | −12 | element | a span the splice cannot express (§4¶16) |
 | `PCREC_SUBST_UNSET` | −14 | element | under `RX_SUBST_STRICT`: a referenced group is unset |
-| `PCREC_SUBST_MISMATCH` | −15 | check, context setup, helper, element | a record, rx, map, flag, option or context that does not belong to the call |
+| `PCREC_SUBST_MISMATCH` | −15 | check, context setup, helper, element, replace-all | a record, rx, map, flag, option or context that does not belong to the call |
 | `PCREC_SUBST_MISSING_REF` | −16 | check, context setup, helper | reference `*bad_ref` does not resolve (§3¶8, §3¶13) |
 | `PCREC_ERR_UNSET_VAR` | −8 | element, context helper | under `RX_SUBST_STRICT`: a `${!name}` is unset |
 
@@ -848,7 +867,7 @@ joined by the recipes of §6¶1, to libpcre2's. The differences:
 
 | # | `pcre2_substitute` | pcrec |
 |---|---|---|
-| 1 | writes bytes into one buffer, NUL-terminated | writes pieces (§4¶1); bytes, if wanted, are the caller's (`rx_subst_flatten`, §10), with no NUL |
+| 1 | writes bytes into one buffer, NUL-terminated | writes pieces (§4¶1); bytes, if wanted, are the caller's (`rx_subst_flatten`, `rx_subst_replace_all`, §10), with no NUL |
 | 2 | `PCRE2_UCHAR *` output | pieces of `const unsigned char *`; a NUL is ordinary output |
 | 3 | `SUBSTITUTE_EXTENDED`, `_LITERAL` and `_UNKNOWN_UNSET` are run-time flags | the dialect is the template's module, chosen at compile (§2¶7); an unknown reference is `MISSING_REF` before any output, or an intentional `RX_SUBST_NOGROUP` (§3¶6) |
 | 4 | an unknown group: −49 while substituting | `MISSING_REF` at the check, at the context setup: before any output, and on a subject with no match too |
@@ -874,11 +893,11 @@ joined by the recipes of §6¶1, to libpcre2's. The differences:
 
 <a id="s10-p1"></a>[10¶1] **The support unit** holds the larger functions that every template,
 and every rx, shares: `pcrec_subst_map_names` (§3¶13), `rx_group_run`
-(§3¶17), `rx_subst_flatten` (§10¶4), and the UTF-8 case mapping used by case
-regions (§2¶14). No subst artifact defines any of them. The check and the
+(§3¶17), `rx_subst_flatten` (§10¶4), `rx_subst_replace_all` (§10¶6), and the
+UTF-8 case mapping used by case regions (§2¶14). No subst artifact defines any of them. The check and the
 context setup are NOT here: they are `static` in the shared types block
 (§3¶8, §7¶3). So a program links one support unit only when it calls a
-helper or uses a template with case forcing (whose element calls the case
+helper, flatten or replace-all, or uses a template with case forcing (whose element calls the case
 mapping, and fails to link without it). A template with neither needs no
 support unit.
 
@@ -890,7 +909,10 @@ declarations, and their definitions under `#ifdef
 PCREC_SUPPORT_IMPLEMENTATION`. A program includes it wherever it likes, and
 defines `PCREC_SUPPORT_IMPLEMENTATION` before including it in exactly one
 translation unit. Its text depends only on the pcrec build: two runs of one
-pcrec write identical files.
+pcrec write identical files. A Makefile that regenerates it on every build
+would recompile its users each time; the plan row `[CLI-OUTKEEP]` (`-o` writes
+only when the bytes change) is the cure, and is a separate change from this
+design.
 
 <a id="s10-p3"></a>[10¶3] **External names carry the abi.** The declarations map each
 function's name to a name ending in the abi number (`rx_subst_flatten` is a
@@ -927,3 +949,61 @@ size_t rx_subst_flatten(const rx_subst_piece *pc, size_t n,
 total does not fit in a `size_t`. When the total fits in `cap`, it copies the
 pieces back to back into `out`; otherwise it writes nothing. `out == NULL`
 with `cap == 0` only sizes. `out` must not overlap any piece.
+
+<a id="s10-p6"></a>[10¶6] **`rx_subst_replace_all`** is the one replace-all function: every
+match of one find-all, substituted, written into the caller's buffer.
+
+```c
+int rx_subst_replace_all(rx_nextnfn next_n, rx_iter *it,
+                         const struct rx_subst_info *t, const rx_ctx *ctx,
+                         const rx_subst_map *map, unsigned flags,
+                         rx_subst_out *o,
+                         unsigned char *restrict out, size_t cap, size_t *len);
+```
+
+`next_n` is the pattern's matcher through the type match_api.md §2¶8a already
+defines: `rx_info.next_n`, the artifact's `<prefix>_next_n`. No new matcher
+type exists. `it` is a FRESH or BOUND iterator, and it carries the subject.
+`t` is the template's record, which supplies the element (`t->render`) and its
+`npieces`. `ctx` and `map` come from the context setup (§7¶3). `o` is the
+caller's workspace: `pc` and `cap` (the piece array), and `scratch` and `scap`
+when `t->uses` has `RX_SUBST_USES_SCRATCH`. The function allocates nothing.
+Its only storage besides `o` is one stack array of `RX_FOREACH_PAIRS` capture
+pairs (match_api.md §3.8.2), so a batch is `k` matches, the least of
+`RX_FOREACH_PAIRS / ctx->ncap`, `o->cap / P` and 64. `P` is `t->npieces`.
+
+<a id="s10-p7"></a>[10¶7] **Result.** It returns 0 when the whole result, every
+replacement and every gap and the tail, is in `out[0, *len)`; `*len` is its
+length. A call that returns anything else leaves `out` unspecified and counts
+none of it as output. `flags` takes `RX_SUBST_STRICT` and nothing else: the
+function always renders gaps (`RX_SUBST_GAPS`), and another bit is
+`PCREC_SUBST_MISMATCH`, as is a `ctx->subject` or `ctx->len` that is not the
+iterator's, a NULL argument, a `t->render` or `next_n` that is NULL, a record
+with `RX_SUBST_USES_SCRATCH` and no `o->scratch`, and `k == 0` (a pattern with
+more than `RX_FOREACH_PAIRS` pairs per match, or an `o->cap` below `P`). The
+caller sets `o->pc`, `cap`, `scratch` and `scap`; the function sets
+`n`, `sn`, `prev`, `need` and `sneed` itself (the last two to 0 at the start)
+and ignores their incoming values.
+
+<a id="s10-p8"></a>[10¶8] **Too small a buffer.** When the result does not fit in `cap`, it
+keeps matching, sums the lengths without writing past `cap`, and returns
+`PCREC_SUBST_NOSPACE` with `*len` the total that suffices (`SIZE_MAX` when the
+total does not fit a `size_t`). No match is searched twice and no partial
+output is success. The caller grows `out` and calls again on a FRESH
+iterator. A scratch that is too small for one match returns
+`PCREC_SUBST_NOSPACE` with `o->sneed > o->scap` and `*len` untouched, so the
+caller tells the two apart as §6¶7 does (a scratch sized by §4¶22's bound
+never sees it). The function retries the batch with `k = 1` before it reports
+that.
+
+<a id="s10-p9"></a>[10¶9] **Errors** follow §6¶1's rule exactly. A negative return from
+the element, the iterator or the check (a give-up, `PCREC_SUBST_BADSPAN`,
+`PCREC_SUBST_UNSET`, `PCREC_ERR_UNSET_VAR`) is returned as it is, `*len` is
+untouched and no tail is written. The output before the failure is a prefix of
+a failed find-all, and `out` is not to be read as a result. The function reads
+`it->rc` after the loop, as the recipes do.
+
+<a id="s10-p10"></a>[10¶10] **Equivalence.** For every input on which §6¶4's recipe returns
+0, `rx_subst_replace_all` returns 0 with the same bytes and the same `*len`;
+on a failure both return the same code. `tests/subst/` runs the two side by
+side over the whole corpus.
