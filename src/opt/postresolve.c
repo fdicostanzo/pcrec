@@ -151,5 +151,6 @@ void pcrec_postresolve(Ctx *cx, Ast *root)
                         "deferred checks and then collected %d", want, p.n);
 
     for (int i = 0; i < want; i++)
-        pcrec_lookaround_fix_widths(cx, p.at[i]);
+        pcrec_lookaround_fix_widths(cx, p.at[i],
+                                    pcrec_callgraph_lookbehind_recurses(cx, p.at[i]));
 }

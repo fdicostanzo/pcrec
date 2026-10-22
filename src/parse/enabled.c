@@ -288,8 +288,11 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
         if (named) {
             label = named;
         } else {
+            /* Every comma separates two names, so an empty name anywhere --
+             * leading, doubled or TRAILING (`classes,`) -- is looked up and
+             * refused; a `while (*p)` loop used to drop the trailing one. */
             const char *p = spec;
-            while (*p) {
+            for (;;) {
                 const char *comma = strchr(p, ',');
                 size_t len = comma ? (size_t)(comma - p) : strlen(p);
                 unsigned bits = find_module_bits(p, len);
@@ -300,7 +303,8 @@ int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
                     return -1;
                 }
                 mask |= bits;
-                p = comma ? comma + 1 : p + len;
+                if (!comma) break;
+                p = comma + 1;
             }
             label = "explicit";
         }

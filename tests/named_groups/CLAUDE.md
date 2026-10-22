@@ -19,6 +19,12 @@ refusals a `.rxt` block CAN express (duplicate name; leading digit).
   covers every slot these patterns declare; there is no pending-VM half
   the way tests/captures/basic.rxt has one.
 
+- **utf8_names.rxt** — group names under `-e utf8` (K116, lane langfix):
+  first character \p{L} or `_`, later \p{L} \p{Nd} or `_`, the 128-byte
+  wall, and a reference by a Unicode name through every reader (`\k<>`,
+  `(?P=)`, `\g{}`, `\k{}`, `(?&)`). Every block `# pcre2-only`, libpcre2
+  10.46 PCRE2_UTF (python's identifier rule differs at these margins).
+
 ## Oracle split
 
 python3 `re` speaks only `(?P<name>...)`. The `(?P<name>...)` blocks are

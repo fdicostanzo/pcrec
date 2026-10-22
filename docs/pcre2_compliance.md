@@ -371,8 +371,8 @@ is the octal byte 0x08 and compiles to a pure DFA, while `(a)\1` refuses
 
 **FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class,
 so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape
-(up to three octal digits; above `\377` it is PCRE2 error 151, wording and
-offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the
+(up to three octal digits; above `\377` it is PCRE2 error 151 under byte,
+wording and offset reproduced, and U+0100..U+01FF under utf8 since K125), `\8` `\9` `\g` `\k` are the LITERAL characters (the
 complete fallback set over all 62 `[\c]` probes), tails re-enter as members
 (`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range
 endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2
@@ -2347,7 +2347,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
 | after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
 | after `(*` | `(*UCP)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
-| after `(*` | `(*UTF)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
+| after `(*` | `(*UTF)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |

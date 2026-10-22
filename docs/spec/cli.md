@@ -237,7 +237,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-11"></a>
 ### 1.11 `--no-captures`
 
-<a id="s1-11-p1"></a>[1.11¶1] Emits `RX_NCAPS 1` and forces the DFA engine: the capture-free artifact shape for a group-bearing pattern. Captures are on by default.
+<a id="s1-11-p1"></a>[1.11¶1] Emits `RX_NCAPS 1`: the capture-free artifact shape for a group-bearing pattern. Captures are on by default. It does not force an engine: with no captures to report, `--engine=auto` picks the DFA wherever the pattern allows one (`(a)(b)` builds `RX_ENGINE "dfa"`), a construct that needs the VM still gets it (`(a)\1`), and `--engine=vm --no-captures` builds a VM artifact with `RX_NCAPS 1`.
 
 <a id="s1-12"></a>
 ### 1.12 `--trace`
@@ -283,7 +283,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-17"></a>
 ### 1.17 `--features LIST`: the module gate
 
-<a id="s1-17-p1"></a>[1.17¶1] `LIST` is comma-separated module names, a frozen named set (`std1`), `all`, or `none`. An explicit `--features` wins over the bare default, which resolves through `pcrec_default_features` and is `std1`. `std1` is {`classes`, `modifiers`}, and its contents never change after it ships. `--features none` reproduces the bare behaviour of the earliest releases. The flag composes with every mode, not only a compile. An unknown module name is refused by name, listing the vocabulary (`unknown module 'X' (names are --list-syntax's module column; also 'all', 'none', or a named set: std1)`). A construct outside the enabled set is refused with `requires module 'X'`.
+<a id="s1-17-p1"></a>[1.17¶1] `LIST` is comma-separated module names, a frozen named set (`std1`), `all`, or `none`; `--features=LIST` is the same flag. An empty name (a leading, doubled or trailing comma, `--features classes,`) is refused as an unknown module `''`. An explicit `--features` wins over the bare default, which resolves through `pcrec_default_features` and is `std1`. `std1` is {`classes`, `modifiers`}, and its contents never change after it ships. `--features none` reproduces the bare behaviour of the earliest releases. The flag composes with every mode, not only a compile. An unknown module name is refused by name, listing the vocabulary (`unknown module 'X' (names are --list-syntax's module column; also 'all', 'none', or a named set: std1)`). A construct outside the enabled set is refused with `requires module 'X'`.
 
 <a id="s1-17-p2"></a>[1.17¶2] The library has the same lever: `pcrec_options.features` takes the same vocabulary per `pcrec_compile()` call with no process-global write; NULL there means "no request" rather than `std1` (`match_api.md` §8.2).
 

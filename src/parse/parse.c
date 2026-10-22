@@ -174,8 +174,8 @@ void pcrec_ast_stamp(Ast *a, const RegRow *rw, size_t at)
  *
  * `not_repeatable` is deliberately NOT part of this predicate: it is a
  * per-NODE flag a bare option run sets (R20/SPEC-1) rather than a property of
- * a KIND, and it must NOT be wrapped — `(?:(?i))*` is error 109 in libpcre2,
- * where `(^)*` is not. `try_quant` tests the two separately for that reason. */
+ * a KIND. `a(?i)*` is error 109 where `(^)*` is not, so `try_quant` tests the
+ * two separately; a group closes over either (K124, `pcrec_wrap_bare_anchor`). */
 /* Exhaustive no-default switch (mrl.c's rule) over whether AST kind `a->k` is
  * a BARE zero-width anchor standing alone as a group's whole body: true for
  * A_EOL/A_GSTART/A_KRESET and an anchor-spelled A_CTX (`\b`/`\B`, `^`/`\A`/
@@ -280,12 +280,25 @@ bool pcrec_is_bare_anchor(const Ast *a)
     return false;
 }
 
-/* Wraps `body` in an A_CAT with a trailing A_EMPTY when it is a bare anchor
- * (pcrec_is_bare_anchor), so a quantifier lands on a CAT rather than directly
- * on the anchor -- unchanged otherwise. */
+/* Seals a group's body so the GROUP is a repeatable item: wraps `body` in an
+ * A_CAT with a trailing A_EMPTY when it is a bare anchor (pcrec_is_bare_anchor),
+ * so the quantifier lands on a CAT rather than directly on the anchor; clears
+ * the flag of a body that is a bare option run; unchanged otherwise. Every
+ * body-carrying group calls it at its `)`.
+ *
+ * K124: a bare option run is err 109 only where IT is the quantified item
+ * (`a(?i)*`); a group whose whole body is one (`(?:(?i))*a`, `((?s))?a`,
+ * `(?i:(?s))*`, `(?>(?i))+`) is an ordinary repeatable group in libpcre2
+ * 10.46, matching what its (empty) body matches. The run is an A_EMPTY whose
+ * flag only the quantifier check reads, so clearing it in place, rather than
+ * wrapping it, leaves the tree of every group that was already right (`((?i))a`,
+ * `x(?>(?i))y`) exactly as it was. */
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
 {
-    if (!pcrec_is_bare_anchor(body)) return body;
+    if (!pcrec_is_bare_anchor(body)) {
+        body->not_repeatable = false;
+        return body;
+    }
     Ast *cat = node(cx, A_CAT);
     cat->l = body;
     cat->r = node(cx, A_EMPTY);
@@ -300,7 +313,12 @@ Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
  *
  *   - the skip set is {09,0A,0B,0C,0D,20,85} — 0x85 (NEL) is skipped, so
  *     this is NOT \s's set (census 6), and the set is written out here
- *     rather than derived from any class table;
+ *     rather than derived from any class table. It is a set of pattern
+ *     CHARACTERS, read in the pattern's encoding: under `utf8` it is
+ *     Unicode Pattern_White_Space, which adds U+200E U+200F U+2028 U+2029
+ *     (K115: libpcre2 10.46 PCRE2_UTF census over every code point, lane
+ *     langfix); under `byte` no character exceeds 0xFF, so those four are
+ *     inert and the byte set is unchanged;
  *   - a `#` comment runs to the next 0x0A ONLY — 0x0D and even the skipped
  *     0x85 do NOT terminate it (`(?x)a#c\rb` matches just "a"): the
  *     terminator is the NEWLINE convention (NEWLINE_LF, DD-11), not the
@@ -317,13 +335,26 @@ Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
  *
  * xlevel == 0 makes every call a no-op, which is what keeps the base
  * grammar byte-identical with the module disabled. */
-/* True for the seven bytes (?x)'s pattern-whitespace skip set includes --
+/* True for the characters (?x)'s pattern-whitespace skip set includes --
  * deliberately NOT \s's set (0x85 NEL included), per the banner above's
  * measured table. */
-static bool xskip_byte(int c)
+static bool xskip_char(unsigned c)
 {
     return c == 0x09 || c == 0x0a || c == 0x0b || c == 0x0c ||
-           c == 0x0d || c == 0x20 || c == 0x85;
+           c == 0x0d || c == 0x20 || c == 0x85 ||
+           c == 0x200e || c == 0x200f || c == 0x2028 || c == 0x2029;
+}
+
+/* The byte length of the skippable pattern character at cx->pos, 0 if it is
+ * not one. A byte >= 0x80 is decoded in the pattern's encoding
+ * (pcrec_pat_char), so ill-formed text refuses here exactly as it would one
+ * step later as a literal. */
+static int xskip_len(Ctx *cx, int c)
+{
+    if (c < 0x80) return xskip_char((unsigned)c) ? 1 : 0;
+    int len;
+    unsigned cp = pcrec_pat_char(cx, cx->pos, &len);
+    return xskip_char(cp) ? len : 0;
 }
 
 /* [M4-QUOTING] true iff `\Q` at cx->pos would quote NOTHING: the next two
@@ -378,7 +409,8 @@ static void xskip(Ctx *cx)
                 while ((c = peekc(cx)) >= 0 && c != 0x0a) cx->pos++;
                 continue;
             }
-            if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
+            int n = c >= 0 ? xskip_len(cx, c) : 0;
+            if (n) { cx->pos += (size_t)n; continue; }
         }
         if (pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
             peekc(cx) == '\\' && peekc2(cx) == 'E') {
@@ -896,6 +928,10 @@ int pcrec_hexval(int c)
     return -1;
 }
 
+/* Skips the spaces and tabs a brace interior admits (defined with try_quant;
+ * `\x{...}` reads the same measured set, K117). */
+static void skip_quant_space(Ctx *cx);
+
 /* Shared control/metachar escape decoding; returns byte value or -1 if the
  * escape is not a plain character escape. `epos` = offset of the '\'. */
 static int esc_char_value(Ctx *cx, size_t epos)
@@ -928,6 +964,7 @@ static int esc_char_value(Ctx *cx, size_t epos)
             long long v = 0;
             int ndig = 0;
             cx->pos++;                                     /* the '{' */
+            skip_quant_space(cx);   /* K117: 10.46 admits spaces/tabs */
             while (pcrec_hexval(peekc(cx)) >= 0) {
                 v = v * 16 + pcrec_hexval(nextc(cx));
                 if (v > 0x7FFFFFFFll) v = 0x7FFFFFFFll;    /* saturate: any
@@ -935,6 +972,7 @@ static int esc_char_value(Ctx *cx, size_t epos)
                     a 100-digit operand from overflowing the accumulator */
                 ndig++;
             }
+            skip_quant_space(cx);   /* ... around the digits, never inside */
             if (peekc(cx) != '}') {
                 /* Not '}' and not a hex digit (the loop above consumed those)
                  * — 10.46's err-167 shape, which also covers the unclosed
@@ -1149,8 +1187,9 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
  * (ExtPort.base), owned by parse.c because it is the base grammar's own
  * rule migrated to the seam, not a module's production: inside a class a
  * backreference is impossible, so `\0`..`\7` begin an octal escape — the
- * selector digit plus up to two more octal digits, value <= \377, PCRE2
- * error 151 above it with the offset where the digits ran out (FIX-3's
+ * selector digit plus up to two more octal digits, value <= the encoding's
+ * universe (\377 under byte), PCRE2 error 151 above it with the offset
+ * where the digits ran out (FIX-3's
  * measured semantics, 41 cells, zero disagreements; pinned in
  * tests/base/class_escape_fallbacks.rxt). The port never moves cx->pos —
  * it reports `end` and the caller advances at RESULT (check06's rule). */
@@ -1167,7 +1206,10 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
         val = val * 8 + (cx->pat[p] - '0');
         p++; ndig++;
     }
-    if (val > 0xff) {
+    /* K125: the ceiling is the ENCODING'S universe, the `\x{...}` rule's
+     * range check (§2.7.3): `\400`..`\777` are U+0100..U+01FF under utf8
+     * (libpcre2 10.46 PCRE2_UTF) and err 151 under byte only. */
+    if ((unsigned)val > cls_universe(cx)) {
         ExtResult err = { .what = EXT_REFUSAL, .at = p, .msg = "",
                           .answered_at = want };
         snprintf(err.msg, sizeof err.msg,
@@ -1546,9 +1588,10 @@ static Ast *p_group(Ctx *cx, size_t apos)
  * an ordinary/named/non-capturing group this open paren starts, parses the
  * body accordingly, and -- for a body-carrying group -- saves/restores the
  * scoped inline-option state around it (moved here from p_group at MOD-0.5c,
- * since a body-CARRYING group is the scope boundary, not a bare `(?i)`). For a
- * capturing group, propagates `not_repeatable` from the body onto the A_CAP
- * wrapper so `((?i))*` answers the same under captures on or off. Reads/writes
+ * since a body-CARRYING group is the scope boundary, not a bare `(?i)`). The
+ * group is repeatable whatever its body (K124): `pcrec_wrap_bare_anchor`
+ * clears a bare option run's flag, so `((?i))*` answers the same under
+ * captures on or off. Reads/writes
  * cx->pos/cx->depth/cx->mods throughout. Caller invariant: called only from
  * p_group, which has already bumped cx->depth against PCREC_MAX_GROUP_DEPTH. */
 static Ast *p_group_body(Ctx *cx, size_t apos)
@@ -1667,15 +1710,9 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
         Ast *cap = node(cx, A_CAP);
         cap->l = body;
         cap->u.cap.no = capno;
-        /* PROPAGATED, not defaulted: `not_repeatable` is a property of what
-         * the group RETURNS to p_rep, and p_rep tests the returned node's own
-         * flag. Leaving the wrapper at the arena's zero would make `((?i))*`
-         * legal with captures on and error 109 with --no-captures — a
-         * divergence between the two modes, which is precisely what §5.4's
-         * gate exists to forbid. Whether pcrec should reject `((?i))*` at all
-         * is a separate, pre-existing question this node must not silently
-         * answer. */
-        cap->not_repeatable = body->not_repeatable;
+        /* Repeatable whatever the body (K124): the seal above already
+         * cleared a bare option run's flag, so `((?i))*` answers the same
+         * with captures on and with --no-captures (§5.4's gate). */
         body = cap;
     }
     return body;
@@ -2047,6 +2084,10 @@ have:
                 pcrec_ctx_fail(cx, cx->pos,
                          "possessive quantifier requires module '%s'",
                          rw->module);
+            /* K122: a possessive quantifier is GREEDY whatever `(?U)` says —
+             * `(?U)a*+` is `(?>a*)`, never `(?>a*?)` (libpcre2 10.46:
+             * `(?U)a*+` on "aaa" [0,3), `(?U)a{2,3}+` [0,3)). */
+            r->u.rep.greedy = true;
             size_t plus = cx->pos;
             cx->pos++;                       /* the `+` */
             Ast *at_ = node(cx, A_ATOMIC);

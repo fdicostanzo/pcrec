@@ -9,6 +9,8 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
 
 ## Files
 
+- `pattern_language_record.md` — the record of `docs/spec/pattern_language.md`, which was born
+  facts-only and numbered (lane speclang, `[SPEC-LANG]`); later history goes here.
 - `match_api_record.md` — FROZEN. The history `docs/spec/match_api.md`
   carried until its facts-only rewrite: every flagged paragraph of the old
   text, verbatim and in order, each tagged with its old section and line

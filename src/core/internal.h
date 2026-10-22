@@ -1269,9 +1269,9 @@ struct Ast {
      * are pinned in tests/reject/.
      *
      * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
-     * option run, src/parse/mod_modifiers.c) and PROPAGATED onto A_CAP and
-     * A_ATOMIC from their bodies (src/parse/parse.c, mod_named_groups.c,
-     * mod_atomic_groups.c), and it is READ off an atom of ANY kind by
+     * option run, src/parse/mod_modifiers.c), never propagated: a group
+     * whose body is one is repeatable (K124): `pcrec_wrap_bare_anchor` clears it
+     * at every group's `)`; and it is READ off an atom of ANY kind by
      * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
 
@@ -5386,7 +5386,21 @@ const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
  * is a no-op on any node `_pending` declines, so a future second caller
  * cannot use it to re-derive an already-resolved table. */
 bool pcrec_lookaround_width_pending(const Ast *a);
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
+/* K127: `recurses` is the call graph's answer to "does this lookbehind's
+ * length computation re-enter a group containing the lookbehind"
+ * (`pcrec_callgraph_lookbehind_recurses`); true refuses as UNBOUNDED, at
+ * the recorded offset, before the width rule is asked. */
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses);
+
+/* K123: splits a lookbehind body into its `nbr` TOP-LEVEL branches, written
+ * order, into `out[0..nbr-1]`. `nbr` (the parse's `AltInfo.nbr`, stored as
+ * `u.look.nbranch`) is AUTHORITATIVE: exactly `nbr - 1` `A_ALT` spine nodes
+ * are peeled and whatever is left is the first branch, which may itself be
+ * an `A_ALT` — a non-capturing or scoped group `(?<=(?:ab|cd))x` parses to
+ * a bare alternation, indistinguishable by kind from the spine. The one home
+ * of the split: the width rule and `vm_look_behind` both read it. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out);
 
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
@@ -5402,7 +5416,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
  * name a group that exists, and one that is wider accepts a spelling PCRE2
  * refuses. That is the drift `pcrec_is_bare_anchor` was made one function for,
  * one construct later. */
-size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
@@ -5645,6 +5659,15 @@ bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
  * SHARED REGION for `i` at all — a target with no linked site has no region,
  * no entry label, no exit label and no second `goto *`. */
 bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
+/* K127: does lookbehind `look`'s length computation RE-ENTER ITSELF — does a
+ * call in its body, followed through callees' calls, reach a group whose
+ * region contains `look`? Calls inside a nested lookahead are not followed
+ * (they contribute no length); calls inside a nested lookbehind are. libpcre2
+ * 10.46 refuses exactly these with err 125 "length of lookbehind assertion is
+ * not limited": `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`,
+ * `(a(?=(?<=(?1))))`, `((?<=(?2)))(a(?<=(?1)))`, while `(a)(?<=(?1))`,
+ * `(?<=a(?=(?R)))x` and `((?<=(?2)))(a(?=(?1)))` compile. */
+bool        pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset

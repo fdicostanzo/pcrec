@@ -1,0 +1,450 @@
+   AGREE         U001 '.' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U002 '.' {'feats': 'all'}
+   AGREE         U003 '(?s).' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U004 '(?s).' {'feats': 'all'}
+   AGREE         U005 '[^a]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U006 '[^a]' {'feats': 'all'}
+   AGREE         U007 '\\W' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U008 '\\W' {'feats': 'all'}
+   AGREE         U009 '\\D' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U010 '\\D' {'feats': 'all'}
+   AGREE         U011 '\\S' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U012 '\\S' {'feats': 'all'}
+   AGREE         U013 '\\H' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U014 '\\H' {'feats': 'all'}
+   AGREE         U015 '\\V' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U016 '\\V' {'feats': 'all'}
+   AGREE         U017 '\\N' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U018 '\\N' {'feats': 'all'}
+   AGREE         U019 '.+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U020 '.+' {'feats': 'all'}
+   AGREE         U021 'a.b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U022 'a.b' {'feats': 'all'}
+   AGREE         U023 'b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U024 'b' {'feats': 'all'}
+   AGREE         U025 '[\\x{80}-\\x{10ffff}]' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U026 '[\\x{80}-\\x{10ffff}]' {'feats': 'all'}
+   AGREE         U027 '[^\\x{0}-\\x{7f}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U028 '[^\\x{0}-\\x{7f}]' {'feats': 'all'}
+   AGREE         U029 '\\p{Any}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U030 '\\p{Any}' {'feats': 'all'}
+   AGREE         U031 '\\P{L}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U032 '\\P{L}' {'feats': 'all'}
+!! PCREC-REFUSE  U033 '\\X' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'misc' is enabled but \\X is not implemented yet (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 1", "M 0 1", "N", "N", "M 0 2", "M 0 3", "M 0 4", "M 0 3", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U034 '\\X' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'misc' is enabled but \\X is not implemented yet (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1"], "ncap": 0}
+   AGREE         U035 '.\\z' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U036 '.\\z' {'feats': 'all'}
+   AGREE         U037 '(?s).*' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U038 '(?s).*' {'feats': 'all'}
+   AGREE         U039 '[\\x{d7ff}-\\x{e000}]' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U040 '[\\x{d7ff}-\\x{e000}]' {'feats': 'all'}
+   AGREE         U041 '\\p{Cn}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U042 '\\p{Cn}' {'feats': 'all'}
+   AGREE         U043 '\\p{Co}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U044 '\\p{Co}' {'feats': 'all'}
+   AGREE         U045 '\\p{Cs}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U046 '\\p{Cs}' {'feats': 'all'}
+   AGREE         U047 '\\p{C}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U048 '\\p{C}' {'feats': 'all'}
+   AGREE         U049 '[^\\p{L}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U050 '[^\\p{L}]' {'feats': 'all'}
+   AGREE         U051 '\\x{ffff}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U052 '\\x{ffff}' {'feats': 'all'}
+   AGREE         U053 '\\x{10ffff}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U054 '\\x{10ffff}' {'feats': 'all'}
+   AGREE         U055 '\\x{fffd}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U056 '\\x{fffd}' {'feats': 'all'}
+   AGREE         U057 '(?i)[^k]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U058 '(?i)[^k]' {'feats': 'all'}
+   AGREE         U059 '\\b.' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U060 '\\b.' {'feats': 'all'}
+   AGREE         U061 '\\B.' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U062 '\\B.' {'feats': 'all'}
+   BOTH-REFUSE   U063 'ÿ' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U064 'aÃ' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U065 'À\x80' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U066 'í\xa0\x80' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U067 'ô\x90\x80\x80' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U068 'ø\x88\x80\x80\x80' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U069 '[ÿ]' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U070 '\\ÿ' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U071 'â\x82' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U072 '(?x)aâ\x80¨b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U073 '(?x)aÂ\x85b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U074 '(?x)aâ\x80\x8eb' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U075 '(?x)aâ\x80\x8bb' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U076 '(?x)aÂ\xa0b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U077 '(?x)aã\x80\x80b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U078 '(?x)[â\x80¨]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U079 '(?xx)[â\x80¨a]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U080 '(?x)a#â\x80¨b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U081 '(?x)a#Â\x85b' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U082 '(?x)a\x85b' {'feats': 'all'}
+   AGREE         U083 '(?x)a\xa0b' {'feats': 'all'}
+   AGREE         U084 '(?x)a\x0bb' {'feats': 'all'}
+   AGREE         U085 '(?x)a\x0cb' {'feats': 'all'}
+   AGREE         U086 '(?x)a#c\rb' {'feats': 'all'}
+   AGREE         U087 '(?x)a#c\x85b' {'feats': 'all'}
+   AGREE         U088 '(?x)a#c\nb' {'feats': 'all'}
+   BOTH-REFUSE   U089 '\\x{110000}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U090 '\\x{d800}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U091 '\\x{dfff}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U092 '\\x{d7ff}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U093 '\\x{e000}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U094 '\\x{7f}\\x{80}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U095 '\\x{7ff}\\x{800}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U096 '\\x{ffff}\\x{10000}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U097 '[\\x{7f}-\\x{80}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U098 '[\\x{7ff}-\\x{800}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U099 '[\\x{ffff}-\\x{10000}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U100 '[\\x{10fffe}-\\x{10ffff}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U101 '[^\\x{0}-\\x{10fffe}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U102 '\\x{00000010ffff}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U103 '\\x{1000000}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U104 '[\\x{d7ff}-\\x{e000}]+' {'enc': 'utf8', 'feats': 'all'}
+!! PCREC-REFUSE  U105 '\\777' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: octal value is greater than \\377 in 8-bit non-UTF-8 mode (pattern offset 4)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U106 '\\o{777}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'misc' is enabled but \\o is not implemented yet (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U107 '[\\777]' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: octal value is greater than \\377 in 8-bit non-UTF-8 mode (pattern offset 5)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         U108 '\\x{100}+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U109 'Ã©+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U110 '[Ã©]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U111 '[^Ã©]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U112 '[Ã\xa0-Ã¿]+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U113 '\\Ã©' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U114 '[\\Ã©]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U115 '(?i)k' {'ucp': False, 'feats': 'all'}
+   AGREE         U116 '(?i)k' {'ucp': True, 'feats': 'all'}
+   AGREE         U117 '(?i)\\xe9' {'ucp': False, 'feats': 'all'}
+   AGREE         U118 '(?i)\\xe9' {'ucp': True, 'feats': 'all'}
+   AGREE         U119 '(?i)[\\xc0-\\xde]' {'ucp': False, 'feats': 'all'}
+   AGREE         U120 '(?i)[\\xc0-\\xde]' {'ucp': True, 'feats': 'all'}
+   AGREE         U121 '(?i)[^a]' {'ucp': False, 'feats': 'all'}
+   AGREE         U122 '(?i)[^a]' {'ucp': True, 'feats': 'all'}
+   AGREE         U123 '(?i)[a-z]+' {'ucp': False, 'feats': 'all'}
+   AGREE         U124 '(?i)[a-z]+' {'ucp': True, 'feats': 'all'}
+   AGREE         U125 '(?i)\\x{ff}' {'ucp': False, 'feats': 'all'}
+   AGREE         U126 '(?i)\\x{ff}' {'ucp': True, 'feats': 'all'}
+   AGREE         U127 '(?i)[[:upper:]]' {'ucp': False, 'feats': 'all'}
+   AGREE         U128 '(?i)[[:upper:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U129 '(?i)[[:lower:]]' {'ucp': False, 'feats': 'all'}
+   AGREE         U130 '(?i)[[:lower:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U131 '(?i)[[:^lower:]]' {'ucp': False, 'feats': 'all'}
+   AGREE         U132 '(?i)[[:^lower:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U133 '(?i)[^[:lower:]]' {'ucp': False, 'feats': 'all'}
+   AGREE         U134 '(?i)[^[:lower:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U135 '(?i)\\w' {'ucp': False, 'feats': 'all'}
+   AGREE         U136 '(?i)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U137 '(?i)[^\\W]' {'ucp': False, 'feats': 'all'}
+   AGREE         U138 '(?i)[^\\W]' {'ucp': True, 'feats': 'all'}
+   AGREE         U139 '(?i)[k-m]' {'ucp': False, 'feats': 'all'}
+   AGREE         U140 '(?i)[k-m]' {'ucp': True, 'feats': 'all'}
+   AGREE         U141 '(?i)[^k-m]' {'ucp': False, 'feats': 'all'}
+   AGREE         U142 '(?i)[^k-m]' {'ucp': True, 'feats': 'all'}
+   AGREE         U143 '(?i)\\x{b5}' {'ucp': False, 'feats': 'all'}
+   AGREE         U144 '(?i)\\x{b5}' {'ucp': True, 'feats': 'all'}
+   AGREE         U145 '(?i)\\xdf' {'ucp': False, 'feats': 'all'}
+   AGREE         U146 '(?i)\\xdf' {'ucp': True, 'feats': 'all'}
+   AGREE         U147 '(?i)[Z-a]' {'ucp': False, 'feats': 'all'}
+   AGREE         U148 '(?i)[Z-a]' {'ucp': True, 'feats': 'all'}
+   AGREE         U149 '(?i)[@-\\x60]' {'ucp': False, 'feats': 'all'}
+   AGREE         U150 '(?i)[@-\\x60]' {'ucp': True, 'feats': 'all'}
+   AGREE         U151 '(?i)(a)\\1' {'ucp': False, 'feats': 'all'}
+   AGREE         U152 '(?i)(a)\\1' {'ucp': True, 'feats': 'all'}
+   AGREE         U153 '(?i)(\\xe9)\\1' {'ucp': False, 'feats': 'all'}
+   AGREE         U154 '(?i)(\\xe9)\\1' {'ucp': True, 'feats': 'all'}
+   AGREE         U155 '(?i)\\x5b' {'ucp': False, 'feats': 'all'}
+   AGREE         U156 '(?i)\\x5b' {'ucp': True, 'feats': 'all'}
+   AGREE         U157 '(?i)[^\\x00-\\x60]' {'ucp': False, 'feats': 'all'}
+   AGREE         U158 '(?i)[^\\x00-\\x60]' {'ucp': True, 'feats': 'all'}
+   AGREE         U159 '(?i)k' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U160 '(?i)s' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U161 '(?i)\\x{e5}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U162 '(?i)\\x{df}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U163 '(?i)\\x{3c3}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U164 '(?i)\\x{1c5}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U165 '(?i)\\x{345}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U166 '(?i)i' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U167 '(?i)\\x{130}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U168 '(?i)\\x{131}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U169 '(?i)\\x{b5}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U170 '(?i)\\x{ff}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U171 '(?i)\\x{1e9b}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U172 '(?i)\\x{3b8}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U173 '(?i)\\x{2126}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U174 '(?i)\\x{10d0}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U175 '(?i)\\x{13a0}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U176 '(?i)\\x{10400}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U177 '(?i)\\x{1e900}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U178 '(?i)[a-z]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U179 '(?i)[^k]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U180 '(?i)[^a-z]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U181 '(?i)[k-k]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U182 '(?i)[\\x{3c2}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U183 '(?i)[\\x{1c4}-\\x{1c6}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U184 '(?i)[\\x{3a3}-\\x{3a3}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U185 '(?i)[[:lower:]]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U186 '(?i)[[:lower:]k]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U187 '(?i)\\p{Lu}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U188 '(?i)\\p{Ll}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U189 '(?i)\\p{Lt}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U190 '(?i)\\P{Lu}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U191 '(?i)\\p{L&}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U192 '(?i)[^\\p{Lu}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U193 '(?i)\\p{Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U194 '(?i)(k)\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U195 '(?i)(\\x{3c3})\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U196 '(?i)(\\x{df})\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U197 '(?i)(s)\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U198 '(?i)(\\x{345})\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U199 '(?i)(ss)\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U200 '(?i)(\\x{1c4})\\1' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U201 '(?i)(?<=k)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U202 '(?i)\\x{130}+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U203 '(?i)[\\x{130}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U204 '(?i)[\\x{100}-\\x{17f}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U205 '(?i)[^\\x{100}-\\x{17f}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U206 '(?i)\\w' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U207 '(?i)\\W' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U208 '\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U209 '\\W' {'ucp': True, 'feats': 'all'}
+   AGREE         U210 '\\d' {'ucp': True, 'feats': 'all'}
+   AGREE         U211 '\\D' {'ucp': True, 'feats': 'all'}
+   AGREE         U212 '\\s' {'ucp': True, 'feats': 'all'}
+   AGREE         U213 '\\S' {'ucp': True, 'feats': 'all'}
+   AGREE         U214 '[[:alpha:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U215 '[[:alnum:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U216 '[[:digit:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U217 '[[:xdigit:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U218 '[[:punct:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U219 '[[:graph:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U220 '[[:print:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U221 '[[:space:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U222 '[[:blank:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U223 '[[:cntrl:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U224 '[[:upper:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U225 '[[:lower:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U226 '[[:word:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U227 '[[:ascii:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U228 '[[:^alpha:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U229 '\\b.' {'ucp': True, 'feats': 'all'}
+   AGREE         U230 '\\B.' {'ucp': True, 'feats': 'all'}
+   AGREE         U231 'a\\b' {'ucp': True, 'feats': 'all'}
+   AGREE         U232 '(?aW)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U233 '(?aD)\\d' {'ucp': True, 'feats': 'all'}
+   AGREE         U234 '(?aS)\\s' {'ucp': True, 'feats': 'all'}
+   AGREE         U235 '(?aP)[[:alpha:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U236 '(?aT)[[:digit:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U237 '(?aP)[[:digit:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U238 '(?a)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U239 '(?a)(?^)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U240 '(?aW)(?-aW)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U241 '(?aW:\\w)\\w' {'ucp': True, 'feats': 'all'}
+   AGREE         U242 '\\h' {'ucp': True, 'feats': 'all'}
+   AGREE         U243 '\\v' {'ucp': True, 'feats': 'all'}
+   AGREE         U244 '(?i)[[:upper:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U245 '(?i)[[:lower:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U246 '(?i)\\xe9' {'ucp': True, 'feats': 'all'}
+   AGREE         U247 '(?i)\\xff' {'ucp': True, 'feats': 'all'}
+   AGREE         U248 '(?i)(\\xe9)\\1' {'ucp': True, 'feats': 'all'}
+   AGREE         U249 '(?aW)(?i)\\xe9' {'ucp': True, 'feats': 'all'}
+   AGREE         U250 '[\\w]' {'ucp': True, 'feats': 'all'}
+   AGREE         U251 '[^\\w]' {'ucp': True, 'feats': 'all'}
+   AGREE         U252 '[\\W\\d]' {'ucp': True, 'feats': 'all'}
+   AGREE         U253 '[[:^digit:]]' {'ucp': True, 'feats': 'all'}
+   AGREE         U254 '\\d' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U255 '\\D' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U256 '\\s' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U257 '\\S' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+!! PCREC-REFUSE  U258 '\\w' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP \\w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 0)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 2", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 1", "M 0 1", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U259 '\\W' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP \\W is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "M 0 3", "M 0 2", "M 0 3", "M 0 3", "M 0 3", "M 0 3", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "N", "N", "N", "N", "N", "M 0 1", "M 0 2", "M 0 4", "M 0 3", "M 0 4", "M 0 2", "M 0 2", "M 0 4", "M 0 1", "M 0 2", "M 0 3", "N"], "ncap": 0}
+!! PCREC-REFUSE  U260 '[[:alpha:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:alpha:] is a wide set (677 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "N", "N", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3"], "ncap": 0}
+   AGREE         U261 '[[:digit:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U262 '[[:space:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+!! PCREC-REFUSE  U263 '[[:punct:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:punct:] is a wide set (193 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "N", "N", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 1", "M 0 2", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U264 '[[:graph:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:graph:] is a wide set (737 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "N", "N", "N", "N", "M 0 3", "N", "N", "M 0 2", "M 0 3", "M 0 2", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "M 0 3", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 1", "M 0 1", "M 0 1", "N", "N", "M 0 4", "N", "N", "M 0 2", "M 0 2", "M 0 4", "M 0 1", "M 0 2", "M 0 3", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U265 '[[:print:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:print:] is a wide set (732 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "N", "M 0 2", "M 0 3", "M 0 3", "M 0 3", "M 0 3", "N", "M 0 2", "M 0 3", "M 0 2", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "M 0 3", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "N", "M 0 4", "N", "N", "M 0 2", "M 0 2", "M 0 4", "M 0 1", "M 0 2", "M 0 3", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U266 '[[:upper:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:upper:] is a wide set (651 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U267 '[[:lower:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:lower:] is a wide set (662 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         U268 '[[:xdigit:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U269 '[[:cntrl:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U270 '[[:blank:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+!! PCREC-REFUSE  U271 '[[:alnum:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:alnum:] is a wide set (770 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "N", "N", "N", "M 0 2", "M 0 3", "M 0 1", "N", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U272 '[[:word:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP [:word:] is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 1)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 2", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 1", "M 0 1", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3"], "ncap": 0}
+!! PCREC-REFUSE  U273 '\\b' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP \\b is not built yet under encoding 'utf8': it reads the Unicode word set, which is not byte-expressible, and needs [UCP] U3/U4; (?aW) restricts it to the ASCII word set, or use -e byte (pattern offset 0)"}
+     pcre2: {"res": ["M 0 0", "M 0 0", "N", "N", "N", "N", "N", "N", "N", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "N", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 0"], "ncap": 0}
+!! PCREC-REFUSE  U274 '\\B' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP \\B is not built yet under encoding 'utf8': it reads the Unicode word set, which is not byte-expressible, and needs [UCP] U3/U4; (?aW) restricts it to the ASCII word set, or use -e byte (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 0", "N", "N", "N", "N", "N", "N", "N", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "N"], "ncap": 0}
+   AGREE         U275 '(?aW)\\w' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U276 '(?aW)\\b' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U277 '(?aP)[[:alpha:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U278 '(?aD)\\d' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U279 '(?aS)\\s' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U280 '(?aT)[[:xdigit:]]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U281 '\\h' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U282 '\\v' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U283 '\\H' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U284 '\\V' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U285 '[\\d]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U286 '[\\s\\d]' {'enc': 'utf8', 'ucp': True, 'feats': 'all'}
+   AGREE         U287 '\\p{L}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U288 '\\p{Lu}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U289 '\\p{L&}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U290 '\\p{Lc}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U291 '\\p{LC}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U292 '\\p{Any}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U293 '\\p{Xan}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U294 '\\p{Xps}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U295 '\\p{Xsp}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U296 '\\p{Xuc}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U297 '\\p{Xwd}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U298 '\\p{Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U299 '\\p{sc=Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U300 '\\p{scx=Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U301 '\\p{Script=Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U302 '\\p{Script_Extensions=Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U303 '\\p{sc:Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U304 '\\p{^L}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U305 '\\P{^L}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U306 '\\pL' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U307 '\\PL' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U308 '\\p{ L u }' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U309 '\\p{l_u}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U310 '\\p{LU}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U311 '\\p{grek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U312 '\\p{Grek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U313 '\\p{SC=GREEK}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U314 '\\p{Han}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U315 '\\p{Latin}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U316 '\\p{Common}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U317 '\\p{Inherited}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U318 '\\p{Zinh}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U319 '\\p{Qaai}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U320 '\\p{Katakana_Or_Hiragana}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U321 '\\p{Hrkt}' {'enc': 'utf8', 'feats': 'all'}
+!! PCREC-REFUSE  U322 '\\p{Alphabetic}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 14)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "M 0 2"], "ncap": 0}
+!! PCREC-REFUSE  U323 '\\p{bc=L}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 8)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 1", "N", "N", "N", "M 0 2", "N", "M 0 3", "M 0 4", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   U324 '\\p{InGreek}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U325 '\\p{Foo}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U326 '\\p' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U327 '\\p{' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U328 '\\p{L' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U329 '\\p{}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U330 '\\p{Nd}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U331 '\\p{N}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U332 '\\p{Cf}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U333 '\\p{Zl}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U334 '\\p{Zs}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U335 '\\p{Sm}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U336 '\\p{Pc}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U337 '\\p{Me}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U338 '\\p{Lm}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U339 '\\p{Cc}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U340 '[\\p{L}\\d]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U341 '[^\\p{L}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U342 '[\\P{L}]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U343 '[\\p{Greek}a]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U344 '\\p{L}+' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U345 '\\P{Any}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U346 '\\p{^Any}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U347 '\\p{Cn}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U348 '\\p{Unknown}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U349 '\\p{Zzzz}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U350 '\\p{Arabic}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U351 '\\p{sc=Arabic}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U352 '\\p{Thaana}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U353 '\\p{Yi}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U354 '\\p{Kawi}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U355 '\\p{Nag_Mundari}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U356 '\\p{Todhri}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U357 '\\p{Garay}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U358 '\\p{L&amp}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U359 '\\p{Xan' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U360 '\\p{gc=L}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U361 '\\p{General_Category=L}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U362 '\\p{isGreek}' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   U363 '\\p{Is_Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U364 '\\p{Greek_}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U365 '\\p{ Greek }' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U366 '\\p{G r e e k}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U367 '\\p{-Greek}' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U368 '\\p{^ Greek}' {'enc': 'utf8', 'feats': 'all'}
+!! PCREC-REFUSE  U369 '\\p{ ^Greek}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 11)"}
+     pcre2: {"res": ["M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 3", "M 0 3", "M 0 3", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "M 0 4", "M 0 3", "M 0 3", "N", "N", "N", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 2", "M 0 4", "M 0 3", "M 0 4", "M 0 2", "M 0 2", "M 0 4", "M 0 1", "M 0 2", "M 0 3", "M 0 3", "M 0 2", "M 0 2", "M 0 2"], "ncap": 0}
+!! PCREC-REFUSE  U370 '\\p{Bidi_Class=L}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 16)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "M 0 3", "N", "M 0 3", "M 0 2", "M 0 2", "M 0 3", "M 0 2", "N", "N", "N", "N", "M 0 2", "M 0 3", "M 0 1", "N", "N", "N", "M 0 2", "N", "M 0 3", "M 0 4", "N", "N", "N", "N", "N", "N", "M 0 3", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U371 '\\p{Bidi_Control}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 16)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U372 '\\p{bidi_m}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 10)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U373 '\\p{Lowercase}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 13)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "M 0 2", "M 0 2", "N", "N", "N", "N", "N", "N", "N", "M 0 3", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  U374 '\\p{Emoji}' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 9)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 1", "N", "N", "N", "N", "N", "N", "N", "M 0 4", "N", "N", "M 0 3", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         U375 '\\p{L}' {'feats': 'all'}
+   AGREE         U376 '\\p{Greek}' {'feats': 'all'}
+   AGREE         U377 '\\p{Latin}' {'feats': 'all'}
+   AGREE         U378 '\\p{Common}' {'feats': 'all'}
+   AGREE         U379 '\\p{Han}' {'feats': 'all'}
+   AGREE         U380 '\\p{Lu}' {'feats': 'all'}
+   AGREE         U381 '\\p{Xwd}' {'feats': 'all'}
+   AGREE         U382 '\\P{L}' {'feats': 'all'}
+   AGREE         U383 '\\p{Cn}' {'feats': 'all'}
+   AGREE         U384 '\\p{Any}' {'feats': 'all'}
+   AGREE         U385 '[\\p{Han}]' {'feats': 'all'}
+   AGREE         U386 '\\p{Han}a|b' {'feats': 'all'}
+   AGREE         U387 '\\P{Any}' {'feats': 'all'}
+   AGREE         U388 '[^\\P{Any}]' {'feats': 'all'}
+   AGREE         U389 '\\p{Inherited}' {'feats': 'all'}
+   AGREE         U390 '\\p{Zs}' {'feats': 'all'}
+   AGREE         U391 '\\h' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U392 '\\v' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U393 '\\H' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U394 '\\V' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U395 '[\\h]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U396 '[\\v]' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         U397 '[^\\h]' {'enc': 'utf8', 'feats': 'all'}
+!! PCREC-REFUSE  U398 '\\R' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'misc' is enabled but \\R is not implemented yet (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 2", "M 0 3", "M 0 3", "N"], "ncap": 0}
