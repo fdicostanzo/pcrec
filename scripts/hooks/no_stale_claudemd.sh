@@ -48,7 +48,7 @@ check() {
     sz=$(wc -c < "$1/CLAUDE.md" 2>/dev/null) || return 0
     case $sz in ''|*[!0-9]*) return 0 ;; esac
     if [ "$sz" -gt "$LIMIT" ]; then
-        echo "BLOCKED by scripts/hooks/no_stale_claudemd.sh: $1/CLAUDE.md is $((sz / 1024)) KB and would be injected; use Bash (sed -n / grep / cat > heredoc) for this path." >&2
+        echo "BLOCKED by scripts/hooks/no_stale_claudemd.sh: $1/CLAUDE.md is $((sz / 1024)) KB and would be injected (stale pre-de-bulk copy). Bring the worktree up to date with main or prune it; a Bash read may inject it too." >&2
         exit 2
     fi
 }
