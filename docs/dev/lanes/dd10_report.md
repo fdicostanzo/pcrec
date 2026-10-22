@@ -34,7 +34,7 @@ engine auto, x86-64, gcc 15.2 `-O2`, the 7700X dev box.
 
 | family (depth 250) | before | after |
 |---|---|---|
-| `a` alone (the floor) | 61,616 | 61,616 |
+| `a` alone ("the floor"; see the §5 item 1 correction) | 61,616 | 61,616 |
 | `((((a))))` plain groups | 250,504 | 250,504 |
 | `(a\|(a\|…b))` | 2,715,460 | 250,504 |
 | `(?:(?:a)*)*` | 2,723,668 | 250,504 |
@@ -136,6 +136,27 @@ patterns PCRE2 accepts) and an iterative parser were not built.
    static). They are not in a nesting recursion, so they set the floor every
    compile pays, not the slope; they are half a 128 KB thread on their own.
    `terms.c` `dfs` (1,376 B) is recursive: its bound was not surveyed here.
+
+   **CORRECTION (lane dd10b, 2026-10-22, its rulings R1; painted
+   measurement, not static).** The 62 KB is not a floor every compile pays.
+   It is the search-site path some patterns select, and it varies by pattern
+   and by tree. On lane/dd10 the painted probe reads `a` 61,616, `(a)`
+   62,912, `(abc)` 26,628 and `abc` 24,120 B. A gdb backtrace at the overflow
+   of `a` on a 44 KB thread shows the live chain: `pcrec_compile` →
+   `compile_driver` (9,296 B) → `pcrec_emit_dfa` → `pcrec_emit_prologue`
+   (1,488) → `req_admit`/`cand_select` → `req_dominated_applies` (3,072) →
+   `dfa_cand_scan` → `cand_ask` → `pcrec_mf_ask` → `select_arm` →
+   `pcrec_mf_fd_route` → `find_facts` (memfn/src/finder.c) →
+   `pcrec_mf_set_terms`, which is where the guard page was hit. So
+   `pcrec_mf_set_terms` IS on the live path on this tree. Its callers are
+   inside memfn, which is why no caller from src/, cli/ or lib/ names it.
+   `pcrec_mf_form_hash` was not seen on a live path, so its 36 KB is static
+   only. On main's build after the kit's B4' (main tree build/libpcrec.a,
+   2026-10-21 23:59) the same probe reads `a` 31,668 B (the kit's figure)
+   and `abc` 42,436 B. The cost moves with the kit's routing.
+   This path is paid after the parse, so it is not added to the nesting
+   cost: plain groups sit at 62,912 B from depth 20 to depth 100 and only
+   then climb. limits.md §3.10¶3 now says this.
 2. **The next parser lever**: `ExtResult` carries `char msg[256]` by value
    (312 B) through `pcrec_ext_group` (368 B frame), `group_answer` (448 B)
    and `pcrec_laport_group` (736 B), which is most of the module-doorway

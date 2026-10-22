@@ -4,7 +4,7 @@ Lane dd10b (opus), 2026-10-22, branch `lane/dd10b` off `lane/dd10` @
 1a7823bee. Build go: manager under Frank's "keep busy" (2026-10-21), parked on
 the branch. Standing ruling: dd10 R1 (keep the 250 cap, state the measured
 budget, no lower cap, no parser rewrite). Rulings file `dd10b_rulings.md`:
-empty at handoff.
+R1 (check dd10's baseline attribution) applied, in section 5a.
 
 ## 1. Summary
 
@@ -36,7 +36,7 @@ Probe: `tests/thread/compile_stack_driver.c` (painted, guard-paged thread).
 
 | family | d=250 before | d=250 after | per level before → after | max depth on 128 KB before → after |
 |---|---|---|---|---|
-| `a` alone (floor) | 61,616 | 61,616 | — | — |
+| `a` alone (search-site path, not a floor: §5a) | 61,616 | 61,616 | — | — |
 | `((((a))))` plain / `(?:` / `(?:…)*` | 250,504 | 118,760 | 944 → 416 | 123 → 250 (cap) |
 | `(a\|(a\|…b))` | 250,504 | 187,336 | — | 123 → 166 |
 | `(a(a…)?)?` | 362,736 | 362,736 | 1,376 (analysis) | 81 → 81 |
@@ -122,8 +122,31 @@ codegen identity gates) are in the queued `make test`.
    `esc_atom` were `PCREC_OWN_FRAME` (out of line). That is about 25 KB at
    250. It does not move the budget while the analysis sets the worst, so it
    was not done.
-3. The floor (62 KB, the memfn frames, dd10 finding 1) is now a third of the
-   plain-group total at depth 250.
+3. The search-site path (§5a) is the largest single cost for any pattern
+   nested less than about 100 plain groups deep.
+
+## 5a. Ruling R1: the "62 KB floor" re-attributed (painted, not static)
+
+All numbers here come from the painted driver and none from `-fstack-usage`.
+The floor is not universal. On this branch `a` reads 61,616 B, `(a)`
+62,912, `(abc)` 26,628 and `abc` 24,120. On main's own build
+(`build/libpcrec.a`, 2026-10-21 23:59, after the kit's B4'), `a` reads
+31,668 (the kit's figure) and `abc` 42,436. A gdb backtrace at the overflow
+of `a` on a 44 KB thread names the live chain (frame sizes from the stack
+pointers): `compile_driver` 9,296, then `pcrec_emit_prologue` 1,488, then
+`req_dominated_applies` 3,072, then the `cand_*` scan and `pcrec_mf_ask`
+(about 2 KB together), then memfn's `pcrec_mf_fd_route` and `find_facts`,
+then `pcrec_mf_set_terms`, where the guard page was hit. So
+`pcrec_mf_set_terms` is live on this tree, called from inside memfn, which
+is why src/, cli/ and lib/ show no caller. `pcrec_mf_form_hash` was not seen
+live. The path is paid after the parse, so it is the larger of two costs and
+not a sum with the nesting cost: plain groups read 62,912 B at depths 20, 50
+and 100. Corrected in dd10_report.md §5 item 1 (marked as dd10b's) and in
+limits.md §3.10¶3's last sentence. The budget and every 128 KB depth in the
+spec were already painted measurements (driver high-water, and bisection on
+a 131,072-byte thread), so none of them changed. The search-site cost moves
+with the kit's routing, and at 24-63 KB it stays far under the 432 KB
+budget.
 
 ## 6. Validation done in the lane
 
@@ -141,8 +164,8 @@ codegen identity gates) are in the queued `make test`.
 
 ## 7. STATE AT HANDOFF
 
-- Branch `lane/dd10b`, all committed. Rulings file: no entries (none
-  applied). It must merge AFTER lane/dd10 (it is built on it).
+- Branch `lane/dd10b`, all committed. Rulings file: R1 applied (last
+  entry). It must merge AFTER lane/dd10 (it is built on it).
 - OWED (queued, held, under the box lock, owner dd10b): `685-dd10b-build`
   (`make -j16`), `685-dd10b-strict`, `685-dd10b-test` (`scripts/perfrun
   --label dd10b`), `685-dd10b-mech` (S1336 S1337 S1338 S1339 S1340 S1440,
