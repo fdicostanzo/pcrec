@@ -94,7 +94,7 @@ file is the index and the standing rules.
 - hooks/pre-push — [TT-1] full `make test` push gate; `make hooks`.
 - hooks/pre-push-light — light push gate: tree-wide plan lint + spec scan + `make strict`; `make hooks HOOKS=pre-push-light` installs it AS pre-push; self-check `tests/hooks.test`.
 - hooks/no_cd_worktree.sh — PreToolUse(Bash) hook (.claude/settings.json): blocks `cd` into `worktrees/` and chained `cd`; allows `git -C`, absolute paths, quoted cd, `( )` subshells; fails open.
-- hooks/no_stale_claudemd.sh (+ test_no_stale_claudemd.sh) — PreToolUse(Read|Write|Edit|NotebookEdit) hook: blocks a file under worktrees/<n>/ when a CLAUDE.md on its path from the worktree root exceeds 24 KB (stale pre-de-bulk copies get auto-injected into context); use Bash for such paths; fails open.
+- hooks/no_stale_claudemd.sh (+ test_no_stale_claudemd.sh) — PreToolUse(Read|Write|Edit|NotebookEdit) hook: blocks a file under worktrees/<n>/ when a CLAUDE.md on its path from the worktree root exceeds 32 KB (stale pre-de-bulk copies get auto-injected into context); use Bash for such paths; fails open.
 - hooks/post_compact.sh — SessionStart(compact) hook: prints re-entry instruction, docs/dev/owner.md and docs/dev/wake.md up to WORK QUEUE; read-only, exit 0; relies on those files being current.
 - hooks/pre-commit — [PLAN-LINT]/[SPEC-HOOK] opt-in commit gate (`make hooks HOOKS=pre-commit`); `PCREC_HOOK_TRACE=FILE` for the self-test (tests/spec_history/run_hook_selftest.sh, `make test-spec-history`).
 - plan_lint.sh / plan_lint.py — docs/dev/plan.md linter; modes: none, `--staged`, `--selftest`, `--stale` (informational, run at wake), `--rules`; `make test-plan-lint`.
