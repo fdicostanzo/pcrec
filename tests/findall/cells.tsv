@@ -1391,3 +1391,9 @@ byte		(a)(b)?(c)?	abcabcabcab
 byte		(a)(b)?(c)?	
 byte		(a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?	aaaa
 byte		(a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?	abcdefghij a
+# The bare `\G` on the DFA: an empty match at n ends the iteration (the STEP's
+# past-the-end test, lane i2build; S1321's witness).
+byte		\G	
+byte		\G	a
+byte		\G	ab
+byte		\G	abc

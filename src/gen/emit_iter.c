@@ -240,7 +240,10 @@ static void emit_enter(StrBuf *c, const char *p, bool checks)
         "}\n\n");
 }
 
-/* `<p>__step`, one STEP (findall_iter.md §2.1, §3.1-§3.3): where RETRY is set
+/* `<p>__step`, one STEP (findall_iter.md §2.1, §3.1-§3.3): past the end
+ * (`lo > n`, where an empty match at `n` leaves it) done, with no search: the
+ * search body has no caller-position guard, and a `\G` artifact's would
+ * report an empty match at `lo` there. Where RETRY is set
  * the retry R at `lo` and, on its no match, the search one character on;
  * else the search at `lo`. Returns 1 (a match in `c`, `NCAPS` pairs, and the
  * iterator advanced), 0 (done) or a code; `*at` is the start of the search
@@ -262,7 +265,8 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         "    const unsigned char *s = it->s;\n"
         "    size_t n = it->n;\n"
         "    size_t lo = it->lo;\n"
-        "    int r;\n", p, runp, runt);
+        "    int r;\n"
+        "    if (lo > n) { *at = lo; return 0; }   /* an empty match at n ended it */\n", p, runp, runt);
     if (t->retry)
         pcrec_sb_printf(c,
             "    if (it->flags & PCREC_ITER_F_RETRY) {   /* an empty match was reported at lo */\n"
