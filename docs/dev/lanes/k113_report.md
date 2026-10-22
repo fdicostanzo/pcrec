@@ -45,3 +45,16 @@ Queued as one batch, owner k113, prio 700 (stages: build, strict, sweep, compoun
 build/STAGES): the sweep is `emit_sweep --ref 0e8fca96e` and must read 0 movers (if any byte
 moves: STOP, abi event). Verdicts: `scripts/boxqueue status`; mech completion line
 `== mech run COMPLETE`. Rulings read through: none.
+
+## Triage: §14 C-E1-4 compound witness (lane k113tri)
+Cause: stale expectation, not a defect. The check counted compiles as `KSTRACE ... resolve`
+groups (want >= 3); K113 removes exactly those per-part records, so it read 1. The
+compound still compiles its parts: the per-attempt reader records
+(`KSTRACE analysis byte-rate pcrec_req_pick <bundle>`) still appear once per attempt (3 for
+`^\s+|\s+$`). Fixed in tests/findings/e1_object_check.py: compiles = `pcrec_req_pick`
+records (floor 3), AND exactly one resolve group whose object set is whole, AND every reader
+record names the shell object's bundle (parts carry the one object). Not vacuous: a part that
+re-resolves adds resolve groups (fails "1 resolve"); a part that drops out fails the floor.
+Run standalone against a fresh -DPCREC_KS_TRACE build: the new check PASSES (3 compiles).
+The full §14 section was not rerun by the lane (the queue retry does it); the standalone
+"multi" row failed only because RES (the suite's res dir) was absent in the ad hoc run.
