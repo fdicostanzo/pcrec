@@ -33,12 +33,12 @@ for tpl in ['$', 'a$', '$ ', '$-', '$+', '$!', '$\\', '$.', '$/', '${', '${1', '
     add(T, '', r'(?<n>a)', tpl, 'xax', mode='tplrefuse' if 'MARK' in tpl else 'diff')
 # PCRE2 10.46's other non-extended forms (pcre2api: $& $` $' $_), which §2¶1's table omits
 for tpl in ['$&', '[$&]', '$`', "$'", '$_', '[$`|$&|$\'|$_]', '${&}', '${_}', '$_x', '${`}']:
-    add(T, '', r'(?<n>a)', tpl, 'xaxay', mode='diff' if '{' in tpl else ('finding:F1' if '_' in tpl else 'finding:F2'))
+    add(T, '', r'(?<n>a)', tpl, 'xaxay')   # substfix: F1/F2 fixed, retagged diff
 for tpl in ['$_', '[$_]', '${_}', '$_1']:
-    add(T, '', r'(?<_>a)(?<_1>b)?', tpl, 'xab-a', mode='diff' if '{' in tpl else 'finding:F1')
+    add(T, '', r'(?<_>a)(?<_1>b)?', tpl, 'xab-a')   # substfix: F1 fixed, retagged diff
 for tpl in ['$0001', '${0001}', '$00', '$065535', '${065536}', '$0065536', '${' + 'L' * 129 + '}', '$' + 'L' * 129,
             '${' + 'L' * 300 + '}', '$1$', '$1${', '$$$', '${1}$']:
-    add(T, '', r'(a)', tpl, 'xax', mode='finding:F7' if tpl == '$' + 'L' * 129 else 'diff')
+    add(T, '', r'(a)', tpl, 'xax')   # substfix: F7 fixed, retagged diff
 for tpl in ['$65535', '${65535}', '$2', '${2}', '$nope', '${nope}', '$N', '$n_', '$nn']:   # parse, then bind refusal
     add(T, '', r'(?<n>a)', tpl, 'xax')
 for tpl in ['$n', '${n}', '$n$n', '${n}x', '$nx', '$n-x', '$n.x', '$n$1', '${n}${1}$0']:
@@ -85,10 +85,10 @@ add(N, '', r'(?<n>a)(?<m>b)', '${m}${n}$m$n', 'ab')
 add(N, '', r'(?<' + 'L' * 32 + r'>a)', '${' + 'L' * 32 + '}', 'xa')
 add(N, '', r'(?<' + 'L' * 33 + r'>a)', '${' + 'L' * 33 + '}', 'xa')
 add(N, '', r'(?<' + 'L' * 128 + r'>a)', '$' + 'L' * 128, 'xa')
-add(N, '-e utf8', '(?<é>a)', '[${é}]', 'xa', mode='finding:F3')
-add(N, '-e utf8', '(?<é>a)', '[$é]', 'xa', mode='finding:F3')
-add(N, '-e utf8', '(?<aé>a)', '[${aé}]', 'xa', mode='finding:F3')
-add(N, '', r'(?<_>a)(?<_1>b)', '<$_|$_1|${_}1>', 'ab', mode='finding:F1')
+add(N, '-e utf8', '(?<é>a)', '[${é}]', 'xa')   # substfix: F3 fixed (template side), retagged diff
+add(N, '-e utf8', '(?<é>a)', '[$é]', 'xa')   # substfix: F3 fixed (template side), retagged diff
+add(N, '-e utf8', '(?<aé>a)', '[${aé}]', 'xa')   # substfix: F3 fixed (template side), retagged diff
+add(N, '', r'(?<_>a)(?<_1>b)', '<$_|$_1|${_}1>', 'ab')   # substfix: F1 fixed, retagged diff
 add(N, '--no-captures', r'(?<n>a)', '$n', 'a', mode='expectrc:BIND -16 0')
 add(N, '', r'(?J)(?<n>a)|(?<n>b)|(?<n>c)', '[$n]', 'cba')
 add(N, '', r'(?|(?<n>a)|(?<n>b))', '[$n]', 'ab')
@@ -142,8 +142,8 @@ for pat in ['x*', '.', r'\w+', r'(.)', '\u00e9', r'[^a]', '', r'(?=.)', r'\b', r
         add(U, '-e utf8', pat, '[$0]', subj, mode='known:11' if illf else 'diff')
 add(U, '-e utf8 -i', 'é', '[$0]', 'ÉéE')
 add(U, '-e utf8', '(é)', 'è$1è', 'aéb')
-add(U, '-e utf8', 'a', b'[\xff]', 'aa', mode='finding:F4')   # ill-formed template under utf8
-add(U, '-e utf8', 'a', b'[\xc3]', 'aa', mode='finding:F4')
+add(U, '-e utf8', 'a', b'[\xff]', 'aa')   # ill-formed template under utf8 (substfix: F4 fixed, retagged diff)
+add(U, '-e utf8', 'a', b'[\xc3]', 'aa')   # substfix: F4 fixed, retagged diff
 add(U, '', 'a', b'[\xff]', 'aa')
 add(U, '-e utf8', 'x*', '[$0]', b'a\xffb', limit=1)
 add(U, '-e utf8', 'x*', '[$0]', b'a\xffb', limit=2, mode='known:11')

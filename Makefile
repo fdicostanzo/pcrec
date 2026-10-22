@@ -384,7 +384,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-compound test-endmark test-partlayout \
-      test-findall test-subst test-ci-shards
+      test-findall test-subst test-subst-d27 test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1521,6 +1521,13 @@ test-subst: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-subst.ran"; fi
 	bash tests/subst/run_subst_tests.sh
 
+# [M4-SUBST] the D27 blinded corpus (tests/subst/d27/, lane substd27, adopted
+# by lane substfix): eleven differential families against libpcre2 under
+# ASan+UBSan, the API drivers, the CLI/header suite; scored by run_d27.sh.
+test-subst-d27: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-subst-d27.ran"; fi
+	bash tests/subst/run_d27.sh
+
 # D164 B3 (docs/design/endmark.md §R.6): the `rev-end` walk's form table, its
 # answers under three arms, the probe census, the gates and the declines.
 test-endmark: all
@@ -2121,7 +2128,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-findall test-subst test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-findall test-subst test-subst-d27 test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

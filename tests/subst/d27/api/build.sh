@@ -1,13 +1,16 @@
 #!/bin/sh
 # Builds the artifacts the hand-written API drivers use, then each driver
 # under ASan+UBSan (and t_threads also under TSan), and runs them.
-# usage: api/build.sh [PCREC]   (default: the substd27 cell's build/pcrec)
+# usage: api/build.sh [PCREC]   (default: $PCREC, else the tree's build/pcrec)
+# substfix (adoption): paths, the timeout binary and the compiler from the
+# environment ($OUT is required).
 set -u
 D=$(cd "$(dirname "$0")" && pwd)
-P=${1:-/home/pcrec/projects/pcrec/worktrees/substd27-cell/build/pcrec}
-O=${OUT:-/tmp/claude-1001/substd27/out/api}
+P=${1:-${PCREC:-$D/../../../../build/pcrec}}
+O=${OUT:?OUT must name a scratch directory}
 mkdir -p "$O"
-T="timeout 60"
+T="${TIMEOUT_BIN:-timeout} 60"
+gcc() { command "${CC:-gcc}" "$@"; }
 rx() { pfx=$1; shift; $T "$P" --features all -p "$pfx" -o "$O/$pfx.c" "$@" || echo "RX-FAIL $pfx"; }
 sb() { pfx=$1; shift; $T "$P" -p "$pfx" -o "$O/$pfx.c" "$@" || echo "SUBST-FAIL $pfx"; }
 

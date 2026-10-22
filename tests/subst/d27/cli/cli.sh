@@ -2,11 +2,14 @@
 # substd27 CLI + header-composition cases (subst_api.md §1, §5, §6¶6, §7¶5).
 # usage: cli/cli.sh [PCREC]     prints PASS/FAIL per case and a total
 set -u
-P=${1:-/home/pcrec/projects/pcrec/worktrees/substd27-cell/build/pcrec}
-O=${OUT:-/tmp/claude-1001/substd27/out/cli}
+# substfix (adoption): paths, the timeout binary and the compiler from the
+# environment ($OUT is required).
 D=$(cd "$(dirname "$0")" && pwd)
+P=${1:-${PCREC:-$D/../../../../build/pcrec}}
+O=${OUT:?OUT must name a scratch directory}
 rm -rf "$O"; mkdir -p "$O"
-T="timeout 60"
+T="${TIMEOUT_BIN:-timeout} 60"
+gcc() { command "${CC:-gcc}" "$@"; }
 np=0; nf=0
 ok()  { np=$((np+1)); echo "PASS $1"; }
 bad() { nf=$((nf+1)); echo "FAIL $1: $2"; }

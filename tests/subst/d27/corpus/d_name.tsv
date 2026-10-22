@@ -94,10 +94,10 @@ name-091	name		(?<n>a)(?<m>b)	${m}${n}$m$n	empty	all	ab	diff
 name-092	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xa	diff
 name-093	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	${LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL}	empty	all	xa	diff
 name-094	name		(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	$LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL	empty	all	xa	diff
-name-095	name	-e utf8	(?<\xc3\xa9>a)	[${\xc3\xa9}]	empty	all	xa	finding:F3
-name-096	name	-e utf8	(?<\xc3\xa9>a)	[$\xc3\xa9]	empty	all	xa	finding:F3
-name-097	name	-e utf8	(?<a\xc3\xa9>a)	[${a\xc3\xa9}]	empty	all	xa	finding:F3
-name-098	name		(?<_>a)(?<_1>b)	<$_|$_1|${_}1>	empty	all	ab	finding:F1
+name-095	name	-e utf8	(?<\xc3\xa9>a)	[${\xc3\xa9}]	empty	all	xa	diff
+name-096	name	-e utf8	(?<\xc3\xa9>a)	[$\xc3\xa9]	empty	all	xa	diff
+name-097	name	-e utf8	(?<a\xc3\xa9>a)	[${a\xc3\xa9}]	empty	all	xa	diff
+name-098	name		(?<_>a)(?<_1>b)	<$_|$_1|${_}1>	empty	all	ab	diff
 name-099	name	--no-captures	(?<n>a)	$n	empty	all	a	expectrc:BIND -16 0
 name-100	name		(?J)(?<n>a)|(?<n>b)|(?<n>c)	[$n]	empty	all	cba	diff
 name-101	name		(?|(?<n>a)|(?<n>b))	[$n]	empty	all	ab	diff

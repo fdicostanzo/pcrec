@@ -121,8 +121,8 @@ utf-118	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	\xf4\x90\x80\x80	diff
 utf-119	utf	-e utf8	(*UCP)\\w+	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
 utf-120	utf	-e utf8 -i	\xc3\xa9	[$0]	empty	all	\xc3\x89\xc3\xa9E	diff
 utf-121	utf	-e utf8	(\xc3\xa9)	\xc3\xa8$1\xc3\xa8	empty	all	a\xc3\xa9b	diff
-utf-122	utf	-e utf8	a	[\xff]	empty	all	aa	finding:F4
-utf-123	utf	-e utf8	a	[\xc3]	empty	all	aa	finding:F4
+utf-122	utf	-e utf8	a	[\xff]	empty	all	aa	diff
+utf-123	utf	-e utf8	a	[\xc3]	empty	all	aa	diff
 utf-124	utf		a	[\xff]	empty	all	aa	diff
 utf-125	utf	-e utf8	x*	[$0]	empty	1	a\xffb	diff
 utf-126	utf	-e utf8	x*	[$0]	empty	2	a\xffb	known:11

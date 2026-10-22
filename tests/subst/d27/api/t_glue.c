@@ -172,8 +172,9 @@ int main(void)
     it = RX_ITER_INIT((const unsigned char *)"x", SIZE_MAX);
     L = K = 5;
     rc = pcrec_subst(&b, &it, 0, NULL, 0, &L, &K);
-    CHECK("glue.saturate.null.out", rc == 0 && L == SIZE_MAX,
-          "rc %d L %zu: §6¶2 'out == NULL sizes only and returns 0' vs NOSPACE/SIZE_MAX", rc, L);
+    /* substfix: F8 was a DOC finding; §6¶2 now says a size past size_t is NOSPACE with SIZE_MAX */
+    CHECK("glue.saturate.null.out", rc == PCREC_SUBST_NOSPACE && L == SIZE_MAX,
+          "rc %d L %zu: §6¶2 a saturated size is NOSPACE with *outlen SIZE_MAX", rc, L);
     it = RX_ITER_INIT((const unsigned char *)"x", SIZE_MAX - 1);
     rc = pcrec_subst(&b, &it, 0, NULL, 0, &L, &K);
     CHECK("glue.nosat.max-1", rc == 0 && L == SIZE_MAX - 1, "rc %d L %zu", rc, L);

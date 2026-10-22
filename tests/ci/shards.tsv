@@ -92,4 +92,5 @@ test-endmark	2	60	ESTIMATED: lane b3land, unmeasured on the runner (re-measure w
 test-partlayout	3	100.0	ESTIMATED (lane e1: 43 s wall on the 16-thread dev box at JOBS=8, 2.9 CPU-min; not yet runner-measured)
 test-findall	1	40	ESTIMATED (lane i1build: 20 s wall on the 16-thread dev box at PROCS=8; not yet runner-measured)
 test-subst	3	10	ESTIMATED (lane substb2: about 4 s wall on the dev box; not yet runner-measured)
+test-subst-d27	1	300	ESTIMATED (lane substfix: about 1,500 differential cases, one ASan driver process each, plus the API and CLI suites; not yet measured)
 test-ci-shards	3	5.9	ci-measured sections.tsv

@@ -84,7 +84,8 @@ int main(void)
     /* §4¶7: "the element writes cur->prev and cur->w; it writes no other caller state" -- fits? */
     cur = (rx_subst_cur){ 0, 0, 1 };
     rc = s1_render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 1, RX_SUBST_GAPS, out, 2, &cur);
-    CHECK("el.writes.fits", cur.fits == 1, "the element cleared cur->fits (now %d): §4¶7 says it writes only prev and w", cur.fits);
+    /* substfix: F6 was a DOC finding; §4¶7 now says the element writes fits too (§4¶2) */
+    CHECK("el.writes.fits", cur.fits == 0, "the element did not clear cur->fits on an output past cap (now %d)", cur.fits);
 
     /* BADSPAN (§4¶5) */
     ptrdiff_t bs[2][3][2] = { { { 3, 2 }, { -1, -1 }, { -1, -1 } } };

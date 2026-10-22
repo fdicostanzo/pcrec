@@ -21,5 +21,11 @@ contract is `docs/spec/subst_api.md`; the design `docs/design/replace_design.md`
   EXPECT P2 LABEL REACH. `P2` states libpcre2's answer where it differs
   (labelled with the subst_api.md §9 row) or `same`.
 
+- `run_d27.sh` — `make test-subst-d27` (its own section, CI shard 1; NOT in
+  the mech arm, it is ~1,500 cases): runs the D27 blinded corpus in `d27/`
+  and scores it (every family's case count, no FAIL/FINDING/FIXED?, the API
+  drivers and the CLI suite clean). SKIPS loudly without libpcre2.
+- `d27/` — the D27 blinded corpus (lane substd27), adopted; own CLAUDE.md.
+
 Without libpcre2 the oracle arms are skipped (`SKIP: subst oracle`); every
 other arm runs. Maintenance: update this file when files are added/removed.

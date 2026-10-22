@@ -27,12 +27,15 @@ sys.path.insert(0, HERE)
 from esc import unesc, esc, cstr  # noqa: E402
 from ref_pcre2 import ref  # noqa: E402
 
-CELL = '/home/pcrec/projects/pcrec/worktrees/substd27-cell'
+# substfix (adoption): paths from the environment, not the writer's cell.
+ROOT = os.path.abspath(os.path.join(HERE, '..', '..', '..', '..'))
+TIMEOUT = os.environ.get('TIMEOUT_BIN', 'timeout')
+CC = os.environ.get('CC', 'gcc')
 SAN = ['-fsanitize=address,undefined', '-fno-sanitize-recover=undefined', '-g', '-O1', '-std=gnu11']
 
 
 def sh(args, **kw):
-    return subprocess.run(['timeout', '120'] + args, capture_output=True, **kw)
+    return subprocess.run([TIMEOUT, '120'] + args, capture_output=True, **kw)
 
 
 def load(paths):
@@ -57,21 +60,29 @@ def load(paths):
     return cases
 
 
+def tenc(flags):
+    """substfix: the template's encoding is the case's -e (subst_api.md §2¶5)."""
+    f = flags.split()
+    return 'utf8' if ('-e' in f and f[f.index('-e') + 1] == 'utf8') or '--encoding=utf8' in f else 'byte'
+
+
 def main():
     argv = sys.argv[1:]
-    work = '/tmp/claude-1001/substd27/out'
-    pcrec = CELL + '/build/pcrec'
+    work = None
+    pcrec = os.environ.get('PCREC', os.path.join(ROOT, 'build', 'pcrec'))
     if '--work' in argv:
         i = argv.index('--work'); work = argv[i + 1]; del argv[i:i + 2]
     if '--pcrec' in argv:
         i = argv.index('--pcrec'); pcrec = argv[i + 1]; del argv[i:i + 2]
+    if not work:
+        sys.exit('run_diff.py: --work DIR is required')
     os.makedirs(work, exist_ok=True)
     cases = load(argv)
 
     rxs, subs = {}, {}
     for c in cases:
         rxs.setdefault((c['flags'], c['pat']), 'r%d' % len(rxs))
-        subs.setdefault((c['tpl'], c['unset']), 's%d' % len(subs))
+        subs.setdefault((c['tpl'], c['unset'], tenc(c['flags'])), 's%d' % len(subs))
 
     def comp_rx(item):
         (flags, pat), pfx = item
@@ -80,10 +91,11 @@ def main():
         return pfx, r.returncode, r.stderr.decode('latin-1').strip()
 
     def comp_sub(item):
-        (tpl, unset), pfx = item
+        (tpl, unset, enc), pfx = item
         tf = '%s/%s.tpl' % (work, pfx)
         open(tf, 'wb').write(tpl)
-        r = sh([pcrec, '-p', pfx, '--unset=' + unset, '-o', '%s/%s.c' % (work, pfx), '--subst-file', tf])
+        r = sh([pcrec, '-p', pfx, '-e', enc, '--unset=' + unset, '-o', '%s/%s.c' % (work, pfx),
+                '--subst-file', tf])
         return pfx, r.returncode, r.stderr.decode('latin-1').strip()
 
     with ThreadPoolExecutor(4) as ex:
@@ -93,7 +105,7 @@ def main():
     ok_sub = {p for p, (rc, _) in subres.items() if rc == 0}
 
     def cc(pfx):
-        r = sh(['gcc'] + SAN + ['-c', '-I', work, '-o', '%s/%s.o' % (work, pfx), '%s/%s.c' % (work, pfx)])
+        r = sh([CC] + SAN + ['-c', '-I', work, '-o', '%s/%s.o' % (work, pfx), '%s/%s.c' % (work, pfx)])
         return pfx, r.returncode, r.stderr.decode('latin-1')[-2000:]
     with ThreadPoolExecutor(4) as ex:
         ccres = list(ex.map(cc, sorted(ok_rx | ok_sub)))
@@ -105,7 +117,7 @@ def main():
     runnable = []
     for c in cases:
         c['rx'] = rxs[(c['flags'], c['pat'])]
-        c['sub'] = subs[(c['tpl'], c['unset'])]
+        c['sub'] = subs[(c['tpl'], c['unset'], tenc(c['flags']))]
         if c['rx'] in ok_rx and c['sub'] in ok_sub:
             runnable.append(c)
     with open(work + '/cases_hdrs.inc', 'w') as h:
@@ -122,13 +134,13 @@ def main():
             h.write('  { "none", 0, 0, 0, 0, 0, 0, 0 },\n')
         h.write('};\n')
     objs = ['%s/%s.o' % (work, p) for p in sorted(ok_rx | ok_sub)]
-    r = sh(['gcc'] + SAN + ['-I', work, '-I', HERE, '-o', work + '/driver', HERE + '/diff_driver.c'] + objs)
+    r = sh([CC] + SAN + ['-I', work, '-I', HERE, '-o', work + '/driver', HERE + '/diff_driver.c'] + objs)
     if r.returncode:
         sys.exit('driver build failed:\n' + r.stderr.decode('latin-1')[-4000:])
     env = dict(os.environ, ASAN_OPTIONS='detect_leaks=1:abort_on_error=0', UBSAN_OPTIONS='print_stacktrace=1')
     res = {}
     for c in runnable:   # one process per case: a sanitizer abort is that case's verdict alone
-        r = subprocess.run(['timeout', '30', work + '/driver', c['id']], capture_output=True, env=env)
+        r = subprocess.run([TIMEOUT, '30', work + '/driver', c['id']], capture_output=True, env=env)
         out = r.stdout.decode('latin-1').strip()
         res[c['id']] = (r.returncode, out, r.stderr.decode('latin-1')[-3000:])
 
@@ -162,6 +174,11 @@ def verdict(c, rxres, subres, res):
     if src != 0:
         if want and want['kind'] == 'err' and want['code'] in (-35, -58, -59, -49) and want['where'] == 'substitute':
             return 'PASS', 'template refused; pcre2 %d' % want['code']
+        # substfix: a utf8 template is UTF-checked at compile (subst_api.md
+        # §2¶3, §9 row 13), where pcre2 returns a UTF-8 error at substitute
+        if (want and want['kind'] == 'err' and -23 <= want['code'] <= -3 and want['where'] == 'substitute'
+                and tenc(c['flags']) == 'utf8'):
+            return 'PASS', 'template refused at compile; pcre2 UTF-8 error %d' % want['code']
         if mode == 'tplrefuse':
             return 'PASS', 'template refused as expected'
         return (klabel if known else 'FAIL'), 'template refused (%s) but pcre2 %s' % (serr[:150], want)
