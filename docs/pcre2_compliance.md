@@ -2347,7 +2347,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
 | after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
 | after `(*` | `(*UCP)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
-| after `(*` | `(*UTF)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
+| after `(*` | `(*UTF)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |

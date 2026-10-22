@@ -197,9 +197,9 @@ group        = "(" alternation ")"                            (* capturing, §5.
 <a id="s3-2"></a>
 ### 3.2 Extended mode
 
-<a id="s3-2-p1"></a>[3.2¶1] Under `(?x)` (§6.2), outside a class and outside `\Q…\E`, the whitespace characters `\t \n \x0b \f \r` and space, and under `-e byte` also `\x85`, are ignored, and `#` begins a comment that ends at the next `\n` (or the end of the pattern). Whitespace is ignored between items and between a quantifier and its `?`/`+` suffix (`(?x)a+ ?` is `a+?`), but not inside a token: `(?x)( ?:a)` is a group starting with a quantifier, refused, and `(?x)(? i)` is refused. Inside braces only space and tab are allowed in any mode (§3.1). An escaped space, `\ `, is a literal space. `(?xx)` additionally ignores space and tab inside a class (`(?xx)[ a]` matches `a` and not a space).
+<a id="s3-2-p1"></a>[3.2¶1] Under `(?x)` (§6.2), outside a class and outside `\Q…\E`, the whitespace characters `\t \n \x0b \f \r`, space and U+0085 (under `-e byte` the byte `\x85`) are ignored, and under `-e utf8` also U+200E, U+200F, U+2028 and U+2029 (§3.2¶2), and `#` begins a comment that ends at the next `\n` (or the end of the pattern). Whitespace is ignored between items and between a quantifier and its `?`/`+` suffix (`(?x)a+ ?` is `a+?`), but not inside a token: `(?x)( ?:a)` is a group starting with a quantifier, refused, and `(?x)(? i)` is refused. Inside braces only space and tab are allowed in any mode (§3.1). An escaped space, `\ `, is a literal space. `(?xx)` additionally ignores space and tab inside a class (`(?xx)[ a]` matches `a` and not a space).
 
-<a id="s3-2-p2"></a>[3.2¶2] Under `-e utf8` and `(?x)`, pcrec ignores the same ASCII set and nothing else; PCRE2 also ignores U+0085, U+200E, U+200F, U+2028 and U+2029 there. This is a defect (§9): `(?x)a`, U+2028, `b` (the pattern bytes `(?x)a\xe2\x80\xa8b`) on `ab` is no match under pcrec and `[0, 2)` under PCRE2.
+<a id="s3-2-p2"></a>[3.2¶2] Under `-e utf8` the ignored set is Unicode's Pattern_White_Space, read as characters: `(?x)a`, U+2028, `b` (the pattern bytes `(?x)a\xe2\x80\xa8b`) on `ab` → `[0, 2)`. Under `-e byte` no character exceeds `\xff`, so the same bytes are three literals there. A comment still ends only at `\n`, and `(?xx)` still ignores only space and tab inside a class.
 
 <a id="s4"></a>
 ## 4. Matching
@@ -272,7 +272,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\cX`, `\o{...}` | a control character, an octal code point | `misc`, not built (§8.1) |
 | `\N{U+h...}` | a code point by number | `unicode-props`, not built (§8.1) |
 
-<a id="s5-2-p1"></a>[5.2¶1] `\x` with no hex digit after it, and `\x{` with no hex digit or a non-hex character before `}`, are refused. Inside braces pcrec accepts hex digits only: `\x{ 41}` and `\x{41 }` are refused, and PCRE2 accepts both (§9). Inside a class the same escapes have the same meanings, and the octal and digit escapes are base-tier there (§5.5).
+<a id="s5-2-p1"></a>[5.2¶1] `\x` with no hex digit after it, and `\x{` with no hex digit or a non-hex character before `}`, are refused. Spaces and tabs may stand between `{` and the digits and between the digits and `}`, never among the digits: `\x{ 41 }` is `A`, `\x{4 1}` is refused. Inside a class the same escapes have the same meanings, and the octal and digit escapes are base-tier there (§5.5).
 
 <a id="s5-3"></a>
 ### 5.3 Refused escapes
@@ -394,7 +394,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `r` | caseless matching restricted to ASCII-with-ASCII and non-ASCII-with-non-ASCII; under `byte` it changes nothing; under `utf8` it is refused ("not implemented under encoding 'utf8'") | `modifiers` |
 
 1. <a id="s6-2-p2"></a>[6.2¶2] Any other letter is refused ("unrecognized character after (? or (?-"), and an unclosed setting is refused.
-2. <a id="s6-2-p3"></a>[6.2¶3] A letter whose module is not enabled is refused naming that module: `(?m)a` under `std1` is refused with `inline option 'm' (multiline) requires module 'assertions'`, even with no `^` or `$` in the pattern.
+2. <a id="s6-2-p3"></a>[6.2¶3] A letter whose module is not enabled is refused naming that module: `(?m)a` under `std1` is refused with `inline option 'm' (multiline) requires module 'assertions'`, even with no `^` or `$` in the pattern. So `(?m)` needs `assertions` and `(?J)` needs `backrefs` besides `modifiers`, while `--list-syntax` names only `modifiers` on their rows (the row dispatches the option run; the letter names its own module).
 3. <a id="s6-2-p4"></a>[6.2¶4] `-i` on the command line is `(?i)` at the start of the pattern; there is no command-line spelling of the other letters (§2.5).
 4. <a id="s6-2-p5"></a>[6.2¶5] `(?n)` applies from where it is written to the end of its scope; a group opened before it, or after its scope closes, still captures: `(a(?n)(b))(c)` on `abc` → group 1 `[0, 2)` (the outer group), group 2 `[2, 3)` (the `(c)`).
 
@@ -483,7 +483,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 |---|---|---|
 | `(?<name>X)`, `(?'name'X)`, `(?P<name>X)` | `X` | the next group number, and the name `name` |
 
-1. <a id="s7-5-p1"></a>[7.5¶1] A name is an ASCII letter or `_` followed by ASCII letters, digits and `_`, at most 128 bytes (`PCREC_MAX_GROUP_NAME`). A name starting with a digit is refused; a longer name is refused. A name containing a non-ASCII letter is refused under every encoding; PCRE2 accepts one under UTF (§9).
+1. <a id="s7-5-p1"></a>[7.5¶1] A name is an ASCII letter or `_` followed by ASCII letters, digits and `_`, at most 128 bytes (`PCREC_MAX_GROUP_NAME`). A name starting with a digit is refused; a longer name is refused. Under `-e utf8` a name character may also be any letter (`\p{L}`), and after the first any decimal digit (`\p{Nd}`): `(?<é>a)\k<é>` compiles; the limit stays 128 bytes. Under `-e byte` a byte above `\x7f` is never a name character. `rx_info.groups` carries the name's bytes as written.
 2. <a id="s7-5-p2"></a>[7.5¶2] A named group is numbered with the unnamed ones, by position (§4.4): `(?<n>a)(?<n2>b)(c)` on `abc` → groups 1, 2, 3.
 3. <a id="s7-5-p3"></a>[7.5¶3] Two groups with one name are refused ("two named subpatterns have the same name") unless `(?J)` is in effect at the second declaration (§6.2); `(?<n>a)|(?J)(?<n>b)` compiles.
 4. <a id="s7-5-p4"></a>[7.5¶4] How a caller finds a group by name is `match_api.md` §5.4; how a library definition's names reach a caller is `match_api.md` §5.5.
@@ -597,13 +597,13 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s9-p1"></a>[9¶1] The compliance page (`docs/pcre2_compliance.md`) is the construct-by-construct delta; this section lists every difference this document states, at the option mapping of §1.2.
 
-1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4); `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); a group name with a non-ASCII letter under `utf8` (§7.5); whitespace inside `\x{...}` (§5.2); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
+1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4); `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
 2. <a id="s9-p3"></a>[9¶3] Give-ups. A VM artifact may answer `PCREC_ERR_STEPS`, `PCREC_ERR_FRAMES` or `PCREC_ERR_WORK` where libpcre2 answers (§4.6), including the left recursions where libpcre2 concludes no match (`limits.md` §6).
 3. <a id="s9-p4"></a>[9¶4] A recursion with no way to complete. `(?R)` alone, on any subject, is no match under pcrec; libpcre2 returns its recursion-loop error.
 4. <a id="s9-p5"></a>[9¶5] A start position beyond the subject. `startpos > n` returns no match; libpcre2 returns an offset error (`match_api.md` §9.2¶4).
 5. <a id="s9-p6"></a>[9¶6] Module `vars`. With the module enabled, `${name}` and its forms are pcrec syntax with no PCRE2 meaning (§7.10).
-6. <a id="s9-p7"></a>[9¶7] Ownership. `--list-syntax`'s `(?J)` row names module `modifiers`; the refusal of `(?J)` names `backrefs`, and enabling `modifiers` alone does not accept it.
-7. <a id="s9-p8"></a>[9¶8] Extended mode under `utf8`. pcrec does not ignore U+0085, U+200E, U+200F, U+2028 and U+2029 under `(?x)`, and libpcre2 does (§3.2). This one changes an answer and is a defect.
+6. <a id="s9-p7"></a>[9¶7] — retired (moved to §6.2¶3).
+7. <a id="s9-p8"></a>[9¶8] — retired (the difference is gone; §3.2¶2).
 
 <a id="s10"></a>
 ## 10. Construct index

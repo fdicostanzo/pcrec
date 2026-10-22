@@ -45,6 +45,11 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
   escaped-whitespace-stays-literal, class interiors untouched. Notes the
   one cell the line-oriented `.rxt` format cannot express (comment-to-
   embedded-newline; see tests/probes/probe_mod05.c instead).
+- **xmode_utf8.rxt** — single `x` under `-e utf8` (K115, lane langfix): the
+  skip set is Unicode Pattern_White_Space (adds U+0085 as a character,
+  U+200E U+200F U+2028 U+2029), the comment terminator and `xx`'s class
+  deletion are unchanged, and two `byte` controls. Every block
+  `# pcre2-only`, libpcre2 10.46 PCRE2_UTF.
 - **xxmode.rxt** — the D30 §7 `xx` hazard: `(?xx)[a- ]` / `(?xx)[a-\ ]` /
   `(?xx)[\ -a]`, plus tab deletion in class interiors, both against the
   single-`x` contrast.
