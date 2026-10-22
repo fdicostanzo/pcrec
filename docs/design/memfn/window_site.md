@@ -1,551 +1,551 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 1)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 2)
 
-Lane uwin (kit manager's lane), 2026-10-21, branch `lane/memfn-uwin` cut from `lane/memfn-b4scope`
-(`3da6aa04c`). DESIGN ONLY: there is NO BUILD GO. Nothing under `memfn/src`, `src/`, `cli/`,
-`lib/` or `tests/` changed; no make, no timing run.
+Rev 2: lane uwin2 (kit manager's lane), 2026-10-21, branch `lane/memfn-uwin2` = rev 1 + the kit branch
+`lane/memfn-b4scope` (B4′ landed in it: `MF_SITE_ABI` 19, the routed bit gone, R7/R5/R0 withdrawn; tip
+`cc6eec191`). DESIGN ONLY, NO BUILD GO: no `memfn/src`/`src/`/`cli/`/`lib/`/`tests/` edit, no make, no timing.
 
-Direction: Frank, 2026-10-21, to the kit. Today's hand-off is three mechanisms for one fact:
-`mf_site.ctx[]` with its `absent` rule and caps; the REPORT kind with its own row (RPT) and check
-(`kit_report_exact`); and fast rows with narrow intakes (ofsskip needs `plan_hint` and pcrec's
-tables, so R-27 had to re-describe pcrec's site to fit it, panel finding M1). Frank's model:
-pcrec states SPANS, each with a start offset (may be negative), a set per position and a
-REQUIRED CORE; REPORT is the find-window with every span verified; most choices are declared
-tables.
+Rev 2 applies the D6 panel `docs/dev/reviews/2026-10-21-r2-memfn-window-site.md` (P1-P7, G1-G10,
+F1-F7, Q1-Q5) and the kit manager's rulings of 2026-10-21, which SUPERSEDE the panel's P2 and Q2:
+- **the stop choice** (Frank: "if we are simply picking the least frequent byte, why do we need pcrec?
+  doesn't pcrec send a table of frequencies?"): pcrec sends spans and frequencies, NO plan hint; the
+  kit's tables carry pcrec's planner's rules as declared rows over those frequencies (§3);
+- **the stamp** `<PREFIX>_DFA_PREFILTER_OFFSETS` reads the kit's reply (§3.4);
+- **the failure-shift / Horspool row** is a declared row whose use condition reads the frequencies;
+  its threshold is OWED to job 581; hex8 is the kit's call and B1 does not wait on it (§6);
+- **staging after B4′**: S1 (kit family + R-27 preview), S2 (the restatement, one request), S3 = B1 (§5);
+- **the S2 request text** (Appendix A).
 
-Reads behind this note: `memfn/include/memfn.h` (MF_SITE_ABI 18), `memfn/src/{compose,finder,
-ofsskip,generic,pffind,fields.def}`, integration.md §14.5, §14.6, §14.7, §14.9, §15.1, §R4.3.5;
-kit_proof.md §2.5, §3, §4; window_contract.md §2; ctx_span.md §3; requests R-18, R-21, R-25,
-R-26, R-27; r27_report.md §2-§5; the panel `docs/dev/reviews/2026-10-21-r1-memfn-r27.md`;
-walk_vs_v1_record.md; D161, D168, D169 + addendum.
+Changed text is marked `[rev2 <id>]`; Appendix B places every finding by id.
 
 ---
 
 ## 0. One screen
 
-**The facts (§1).** A window site states one or more SPANS and its frame:
+**pcrec states facts; the kit decides everything else.** A window site states:
 
 | fact | per | meaning | unstated |
 |---|---|---|---|
 | start | span | signed offset of the span's first position from the candidate | refused |
-| sets | span position | the byte set the position must hold (all 256 = "any byte") | refused (a span has ≥ 1 position) |
-| core | span | the contiguous stretch of positions that must lie INSIDE the subject; may be empty | refused (empty is a stated value) |
-| verify | span | YES: every candidate the kit yields satisfies this span, whatever the kit thinks it needs. NO: a true filter the kit may use or skip | refused |
-| table offer | span position | pcrec already emits a membership table for this set, under this name (a host capability) | no offer (never read as a set) |
-| floor | site | SUBJECT (reads may go to offset 0) or pcrec's expression; a candidate needing a read below an expression floor is pcrec's EDGE | refused where any span reaches below the candidate |
-| frame | site | today's form/op/handoff/empty/end_back/use/body/decl_point/hooks, unchanged | as today |
-| subject facts | art | the analysis object and the measure set, already on `mf_art_begin` | as today |
+| sets | span position | the byte set the position must hold (all 256 = any byte; empty is legal, §1.2) | refused |
+| core | span | the contiguous positions that must lie INSIDE the subject; may be empty | refused (empty is a value) |
+| verify | span | YES: every yielded candidate satisfies the span. NO: a true filter the kit may use or skip | refused |
+| table offer | span position | pcrec already emits a membership table for this set, under this name | no offer |
+| floor | site | SUBJECT, or pcrec's expression F (reads below F are pcrec's EDGE) | refused where a span reaches below the candidate |
+| frame | site | form/op/handoff/empty/use/body/decl_point/hooks as today, plus the span range `span_lo`/`span_hi` `[rev2 F7b]` | as today |
+| alternatives | site | 1 or 2 span lists, EACH a sound candidate definition on its own; the kit answers which it serves `[rev2 kit-mgr 1]` | one |
+| frequencies | art | the byte-rate pcrec already declares (`pcrec_find_set_ppm`'s source: the analysis object on `mf_art_begin`) and the measure set | as today (E-1) |
 
-**The absence rule.** A position that falls off the subject (before 0 or at/after `n`) PASSES
-outside the core and FAILS inside it. No per-position bit is needed: absence is monotone at both
-edges, so a position between two core positions can never be absent alone (§1.2).
+**The absence rule.** A position off the subject PASSES outside the core and FAILS inside it. No
+per-position bit is needed: absence happens only at the edges (§1.2).
 
-**One row family (§2).** Every forward FIND (PF, MLINE, the VM hat, the offset-skip block, the
-pre-check's FUNC parts, the REPORT/cover site) is served by ONE family of five declared
-first-match tables over the stated spans: A the STOP PICK, B the STOP'S FIND FORM (the finder
-table's FIND slot, the walk for an unknown subject; a [MEMFN-REGIME] slot left empty), C the
-VERIFY PLAN, D the RESUME, E the FRAME. The generic row is the family's floor.
+**One row family (§2):** A STOP (least cost under the planner's measured model), B FIND FORM (by
+the same measured costs; the finder's FIND slot), C VERIFY PLAN (all verify-YES positions; on native
+sites, the model's greedy subset of the verify-NO ones), ADOPT (does the skip pay at all: the 2x bar),
+D RESUME (step 1; the Horspool row where its frequency predictor says so), E FRAME. Floor: `generic`.
 
-**What retires (§4).** `ctx[]`/`nctx` and `MF_MAX_CTX`/`MF_MAX_AHEAD`; `absent`, `consumable`,
-`consumable_len`, `exact_len`, `prefix_stated`, the BOUNDED/CONTEXT span classes; the REPORT
-kind's special meaning, RPT and `kit_report_exact`; the per-term `need` (it becomes the per-span
-verify); `read_floor` (merged with the `floor` hook); the window fields W0-W2; `consumer`;
-ofsskip/pffind as separate arms with narrow intakes; then, after the M5 comparator holds,
-`plan_hint`, `plan_pos` and `rank_*`.
+**No plan hint, no interim (§3).** The planner's rules (`src/opt/prefix_k.c`) move into the kit's
+tables as declared rows reading pcrec's frequencies, with its constants as DATA in a declared table
+with provenance. On native sites they reproduce today's choices, so the restatement is ZERO movers,
+proven by emit_sweep. This IS M5 + M5′ (integration.md §14.9 items 2-3, Q40 RULED YES) folded into
+the restatement; there is no "honour pcrec's pick" step and no later switch event.
 
-**Staging (§5), every step zero artifact movers until B1:** W1 the kit's internal span form and
-the family, built from today's fields (kit-only, no ABI) → W2 R-27 on the family, preview-only →
-W3 pcrec states spans (`MF_SITE_ABI` 19, pcrec builder restatement, shadow-compared) → W4 the old
-fields retire (`MF_SITE_ABI` 20) → W5 the stop pick moves to the kit, then `plan_hint` retires
-(`MF_SITE_ABI` 21) → B1 routes REPORT by default: the ONE byte-moving step here, a pcrec abi event
-with its deny row in the same commit.
-
-**Open questions for Frank: §9** (five, each with a leaning).
+**Staging (§5):** **S1** (kit) the family + R-27's preview, developed against the NEW statement,
+landing together with **S2** (pcrec + kit, one request): pcrec states spans and frequencies only, the
+old fields and `plan_hint` retire, Z2's cover site is restated, ONE `MF_SITE_ABI` event ("next at
+landing"), zero movers. **S3 = B1**: REPORT routed by default, the one byte-moving step, a pcrec abi
+event with its deny row in the same commit.
 
 ---
 
 ## 1. The facts
 
-### 1.1 The minimal set, and what each replaces
+### 1.1 The set, what each replaces, and the producer obligations
 
-A SPAN is a run of consecutive positions `start, start+1, ..., start+len-1` relative to the
-candidate `c`, one byte set per position. A gap inside a span is a position whose set is all 256
-bytes. The site's candidates are the positions `c` where EVERY span holds (a conjunction). Spans
-may overlap; the kit never needs a stacking rule, because each span is tested on its own terms.
+A SPAN is a run of consecutive positions `start .. start+len-1` relative to the candidate `c`, one
+set per position; a gap is an all-256 position. Candidates are the `c` where every span of the
+chosen alternative holds. Spans may overlap; positions at one offset are tested as their
+intersection (§2.3).
 
-| fact | replaces today | why it is enough |
+| fact | replaces | why it is enough |
 |---|---|---|
-| span start + sets | `mf_term` (SET/RUN, `offset`, `set`, `run`/`mask`/`run_len`), `ctx[]` entries, the context stop's `pred`, W0-W2 (`window_stated`, `move_back`, `overshoot`) | a RUN term with a mask is a product of per-position cubes, so sets lose nothing; every FIND site today states `move_back` = its least offset and `overshoot` 0 (`pcrec_memfn_window_is_candidate`), i.e. "the window is the candidate", which the span start already says |
-| core | `absent` (SATISFIES/FAILS), `span_class` BOUNDED/CONTEXT, the "every term read below n" rule (§14.5 rule 3), Q-R7-1's reads-below range | §1.2 |
-| verify | per-term `need`, per-predicate `need`, `consumable`, `consumable_len`, the REPORT kind's "every term REQUIRED" | §1.4 |
-| table offer | `table_ref` + `table_name` | the same capability, per position; a row that wants it reads it, no row requires it (§2.4) |
-| floor | `read_floor` (enum) and the `floor` hook (text) | one fact, §1.3 |
+| start + sets | `mf_term` (SET/RUN/mask), `ctx[]`, the context stop's `pred`, W0-W2 | a masked RUN is a product of per-position sets; every FIND site states "the window is the candidate" today (`pcrec_memfn_window_is_candidate`) |
+| core | `absent`, `span_class` BOUNDED/CONTEXT, §14.5 rule 3, Q-R7-1's reads-below range, `end_back` `[rev2 F3/Q5]` | §1.2; `end_back` 1 is a full-set core position at the window's end |
+| verify | per-term/per-predicate `need`, `consumable`, `consumable_len`, REPORT's "every term REQUIRED" | §1.4 |
+| table offer | `table_ref` + `table_name` | the same capability per position; no row requires it |
+| floor | `read_floor` + the `floor` hook | §1.3 |
+| alternatives | `plan_hint`'s implicit "pcrec chose the skip" (`pf_ofs_applies` reading `ofsk.nsel`) | §3.2: the baseline scan and the offset-k skip are two DIFFERENT sound conjunctions (`\b\.[0-9]{4}Z`: `.` is outside k0), so neither can be folded into the other |
+| frequencies | `plan_hint`, `plan_pos`, `rank_n/pos/ppm` | the kit derives every rank and pick from the byte-rate it already receives |
 
-Bounds: ONE position range per site (the least and greatest offset any span may reach), a SHAPE
-bound DERIVED from pcrec's producers (`PCREC_PREFIX_K_MAX` on each side of span 0,
-`PCREC_MAX_REQ_RUN_SCAN` for the run) and asserted where pcrec builds the site; and a span count
-derived the same way. Neither is a tuning constant and neither carries a trigger. `mf_class.proven[]`
-keeps its meaning over that range.
+**Spans are finite; the limits are pcrec's** `[rev2 P7]`. The contract states no span count or reach
+cap. One kit-side bound stays, because `mf_class.proven[]` is a fixed array `[rev2 F1]`: the PROOF
+range `[MF_PROOF_LO, MF_MAX_FWD)`. A position outside it is still tested and carries no proof bit; a
+consumer that needs its proof (the cover site) declines on pcrec's side, as C6/C11 decline today.
+Trigger to grow it: a longer lookaround becomes a context source (§7), an `MF_CLASS_V` layout event.
 
-**Every fact has an UNSTATED handling (no silent defaults).** A missing start, set, core or
-verify is refused naming the field; an empty core is a stated value; a missing table offer means
-"no table", never a set; the subject facts keep E-1's present-or-explicitly-absent rule.
+**Producer obligations** (asserted where pcrec builds the site):
+- a verify-NO span's core is a SUBSET of the positions where absence truly fails `[rev2 F6]` (a wider
+  core would drop true candidates);
+- each alternative is sound on its own;
+- a SATISFIES item wider than one byte whose meaning is whole-item is not a span; the producer
+  declines it (§1.2).
 
-**Not a fact, stated so nobody adds it:** exactness (EXACT/SUPERSET). The kit tests byte
-MEMBERSHIP and proves membership (`proven[]`). Whether a verified span is a LANGUAGE proof is
-pcrec's reading of the kit's proof (kit_proof §4.2 "Language vs membership"). So R-26.7 is not
-needed: a SUPERSET context item is sent as a verify-NO span (a filter), and a `cover` site
-declines on an inexact item exactly as today (C6/C11), all on pcrec's side.
+Every fact has an UNSTATED handling; exactness (EXACT/SUPERSET) is not a fact (R-26.7 dissolves: a
+SUPERSET item is sent only as verify NO, a filter that can never be read as a proof).
 
-### 1.2 The core rule, and why no per-position absent bit is needed
+### 1.2 The core rule
 
-**Rule.** At candidate `c`, a span holds iff for every position `d` of the span:
-- `c + d` inside the subject: `s[c+d]` is in the position's set;
-- `c + d` outside the subject: `d` lies outside the core.
+At candidate `c`, a span holds iff for every position `d`: `c+d` inside `[0, n)` → `s[c+d]` in the
+set; `c+d` outside → `d` lies outside the core. Any per-position absent assignment equals one
+contiguous core (the convex hull of the FAILS positions: a position between two core positions can
+never be off the subject alone). Width-1 SATISFIES items read the same whole-item and per-position;
+the facts critic PROBED-AND-HELD both, the cover mapping (all-0xff FAILS item included), MLINE `{-1:\n}`
+keeping `c = n` reachable, and `\z` as an empty set outside the core.
 
-**Claim.** Any per-position absent assignment pcrec could state is equivalent to one contiguous
-core. Proof: let FAILS-positions be those where absence must fail. Take the core as their convex
-hull. A position `p` inside the hull lies between core positions `q1 ≤ p ≤ q2`. If `c+p < 0` then
-`c+q1 < 0`; if `c+p ≥ n` then `c+q2 ≥ n`. Either way the span already fails, so `p`'s own absent
-verdict never decides anything. Absence can only happen at the two edges, never in the middle.
+**An empty set** inside a core never holds (the site yields nothing: floor row). Outside the core
+it is LIVE `[rev2 F7d]`: it holds exactly when the position is off the subject (`\z`: `c+k = n`).
 
-**Per-position vs per-item.** The generic row's `ctx_pred_test` today treats a SATISFIES item as
-a whole ("holds if any read is outside"). Per position, an absent position passes and a present
-one is still tested. The two agree on every item any producer emits: SATISFIES items are width 1
-(kit_proof §3.3's table; ctx_span §3.5 declines a negative lookbehind or lookahead wider than one
-byte). A future SATISFIES item wider than one byte whose meaning is whole-item is not a span; the
-producer declines it (§7).
-
-**Every current site, restated** (builders read by grep at `3da6aa04c`):
-
-| site (builder) | spans | core | verify |
+| site (builder, at `cc6eec191`) | spans | core | verify |
 |---|---|---|---|
-| PF FIND, DFA scan / HYB_PF (`find_site`, `emit_dfa.c`) | one, `{0: S}` (S = the candidate set, table offered) | `[0]` | YES (`need` REQUIRED today) |
-| PF bounded (`holdback`, `end_back` 1) | as PF; the range keeps `end_back` | `[0]` | YES |
-| VM hat seek (VM_ATTEMPT) | one, `{0: S}` | `[0]` | YES |
-| MLINE `(?m)^` stop (`mline_find_of` + `pcrec_memfn_context_stop`) | one, `{-1: \n}` | `[-1]` (today's `absent` FAILS) | YES; floor = the expression `start` (the edge is pcrec's) |
-| offset-skip FUNC (`ofs_pred_of`) and the pre-check's FUNC parts | two: R = the run (REQUIRED today) and K = the scan byte and the selected k-set positions (OPTIONAL today) | R: all its positions; K: all its positions | R YES, K NO |
-| cover / REPORT, main's Z2 (aeb381c25: `known.c` `cover_ctx_item` and the site builder, `emit_dfa.c` `emit_cover`, `DELEG_COVER`; routed only through the harness lever `--harness=kit-proof`, which calls `mf_preview(art, "R-26.6")`) | span 0 `{0..k-1: S_d}`; one span per context item, `{-1: C_{-1}}` and/or `{k: C_k}` | span 0: `[0, k)`; an item: its position if FAILS, empty if SATISFIES | all YES |
-| kit_proof §3.3 rows: `\b`/`\B`, `(?<=X)`, `(?<!X)`, `(?m)$`, `(?=X)`/`(?!X)` width 1, `\z` (`C_k = ∅`, SATISFIES) | a one-position span at -1 or k | FAILS → in core; SATISFIES → empty core | as the consumer needs |
+| PF FIND, DFA scan / HYB_PF (`find_site`, `emit_dfa.c`) | `{0: k0}` | `[0]`; bounded: `[0, 1]` with `{1: any}` `[rev2 F3]` | YES |
+| VM hat seek | `{0: S}` | `[0]` | YES |
+| MLINE `(?m)^` (`mline_find_of`) | `{-1: \n}` | `[-1]` | YES; floor = expression `start` |
+| offset-skip (`ofs_pred_of`) | alternative 1: `{0: k0}` (the baseline); alternative 2: R = the run (if any), K = `{0: F0}` (the walk's frontier, role B) and every walked k-set offset | alt 2: R all, K all | R YES, F0 YES (the "offset 0 always verified" rule), other K NO |
+| pre-check FUNC parts | ONE span per part `[rev2 F7a]` | all | as the part's need |
+| cover / REPORT (Z2: `known.c`, `emit_cover`) | span 0 `{0..k-1: S_d}`; one span per context item | `[0, k)`; an item: its position if FAILS, empty if SATISFIES | all YES |
 
-`\z` shows the rule's reach: an empty set with an empty core means "this position must not
-exist", i.e. `c + k = n`. An empty set inside a core can never hold; the site is well defined and
-its answer is "no candidate" (§2.4 sends it to the floor row, panel S5).
+Out of the family, unchanged: PRESENCE (`pspans`, ALL_PRESENT: no position relative to a candidate),
+SKIP/ADVANCE, VMRUN, MISMATCH.
 
-**Out of the family, unchanged:** PRESENCE spans (`pspans`, ALL_PRESENT): their offset from the
-match start is unbounded (`omin` only), so they have no position relative to a candidate and no
-core. SKIP/ADVANCE, the EXPR VERIFY run compare (VMRUN) and MISMATCH are other operations; the
-verify chain's run compare (runcmp) is shared with VMRUN, as today.
+### 1.3 The floor and the edge
 
-### 1.3 The floor and the edge (one fact for two fields)
+- **SUBJECT**: reads lie in `[0, n)`; below 0 the core rule decides. REPORT states it.
+- **an expression F** (`F <= lo`): reads lie in `[F, n)`; a candidate needing a read in `[0, F)` is
+  NOT COVERED: the kit does not yield it and pcrec's EDGE attempt owns it (today's MLINE).
 
-Today MLINE states BOTH `read_floor` SUBJECT and the `floor` hook `"start"`; the enum says reads
-may reach offset 0, the hook says they stay at or above `start`. One fact replaces both:
-- **SUBJECT**: every read lies in `[0, n)`; below 0 the core rule decides. A REPORT site states it.
-- **an expression F** (pcrec's text, `floor <= lo` its precondition, Q-G2-6): every read lies in
-  `[F, n)`. A candidate whose span positions would need a read in `[0, F)` is NOT COVERED: the
-  kit does not yield it and pcrec's EDGE attempt owns it (window_contract §2.4 "Coverage and the
-  edge", today's MLINE behaviour).
+**The guard is three-way** `[rev2 F2]`, per non-core position: off the subject (`< 0` or `>= n`)
+→ passes; inside `[0, F)` → the edge's (the candidate is not covered); else → membership. Rev 1's
+two-way guard read `\b`'s `{-1}` position below F as "passes" and yielded a candidate the edge owns.
+Core positions get ONE hoisted bound per candidate: every core position inside `[F, n)` (`[0, n)` under
+SUBJECT).
 
-This replaces kit_proof §3.5's refusal ("LO with a below-origin term has no verdict") by the edge
-rule that MLINE already lives under. A site whose consumer cannot own an edge (REPORT) states
-SUBJECT; that is pcrec's builder obligation, asserted there.
+### 1.4 `need`, `consumable`, REPORT
 
-**The candidate range** becomes one rule: `c ≥ lo`, `c ≤ n`, every core position of every span
-inside `[floor, n - end_back)`, every non-core read inside `[floor, n)` or below 0. Q-R7-1's
-special reads-below range is this rule's case with no core at or after offset 0 (`(?m)^$` on
-"a\n" still finds 2).
-
-### 1.4 Where `need`, `consumable`, R-26.7 and the REPORT kind go
-
-- **`need` → verify, at SPAN grain.** §14.5's REQUIRED ("a pcrec decision relies on it having
-  been tested") and window_contract's T-NEED ("dropping it could let a budgeted engine do more
-  work") are one obligation: every yielded candidate satisfies the span. OPTIONAL is "true, speed
-  only". Today only the offset-skip predicate mixes needs inside one predicate (run REQUIRED,
-  scan byte and k-set OPTIONAL, `ofs_pred_of`); it becomes two spans, R and K. Every other
-  builder states one need per predicate. The rule "the kit may never ADD a constraint pcrec did
-  not pass" survives unchanged.
-- **R-25 survives as the proof rule, not as a field:** `proven[d]` states only what the rendered
-  plan TESTS (§2.4), whatever a span's verify says.
-- **`consumable` / `consumable_len` → verify.** No row reads either (fields.def: "no form reads
-  it"). Their only stated non-zero value is the cover site's `consumable_len = k` with every term
-  REQUIRED, which verify YES already says. The other reading, "prove it if cheap and I will use
-  it", has no customer; filed (§9 does not ask it, D77).
-- **`exact_len` / `prefix_stated` → pcrec-internal.** No kit row reads them. They are pcrec's
-  interpretation of `proven[]` as a language proof (`span0_exact_len`, the X0 check), and stay in
-  pcrec's `MkLang`.
-- **R-26.7 (EXACT/SUPERSET) dissolves** (§1.1).
-- **The REPORT kind.** REPORT is the window site with every span verify YES. Its separate row,
-  its separate exactness check and its refusals keyed on the kind retire. What is left is a
-  CATEGORY fact: what consumes the candidates. `site_kind` and `consumer` fold into one consumer
-  category (window_contract's S3 already retires `consumer`), whose value for the cover site is
-  "pcrec's finisher reports it". The find-form table reads only one thing from it, the VM
-  attempt's seek role (D1 vs D1w). §9 Q3 asks whether to keep that value at all.
+- `need` becomes the span's verify (REQUIRED = YES, OPTIONAL = NO). The kit never ADDS a constraint.
+- R-25 survives as the proof rule: `proven[d]` states only what the rendered plan TESTS. Restated
+  `[rev2 F5]`: `proven[d]` = "for every yielded `c` with `c+d` inside the subject, `s[c+d]` is in the
+  set"; it says nothing about off-subject positions, which the core rule governs. The core's own
+  control is the sentinel buffers (§8) and the plant "absent-FAILS candidate yielded".
+- `consumable`/`consumable_len`: no reader; retire. `exact_len`/`prefix_stated`: pcrec-internal (`MkLang`).
+- **REPORT is the window site with every span verify YES. Nothing else** `[rev2 P3/Q3]`: no consumer
+  category, no label. The VM hat's seek (rev 1's only reader, D1 vs D1w) is a FRAME fact: the frame
+  says the site is the VM attempt's seek, and Table B reads it.
 
 ---
 
 ## 2. One row family
 
-### 2.1 The shape
-
 ```
-  candidate stream at c ≥ lo:
-    A  pick the STOP: one position d* of one span (or none: the floor row)
-    B  FIND the next p ≥ c + d* with s[p] in set(d*)            -> c = p - d*
-    C  test the VERIFY PLAN at c, under one core bound + per-position guards
-    D  on failure, RESUME at c + shift (1 unless a shift row holds)
-    E  render all of it in the site's FRAME (FUNC function / STMT block)
-  floor: the generic row (a byte loop over the conjunction), reached when A, B or C has no row
+  ADOPT  which alternative (native offset-skip sites: baseline vs skip, the 2x bar)
+  A      the STOP: one core position d* (least model cost)
+  B      FIND the next p in [max(c + d*, F, 0), n) with s[p] in set(d*); empty if the start >= n   [rev2 F4]
+  C      test the VERIFY PLAN at c (one hoisted core bound, three-way guards outside it)
+  D      on failure RESUME at c + shift
+  E      render in the site's FRAME
+  floor: generic (a byte loop over the chosen alternative's spans under the core rule)
 ```
 
-Every table is a `kit_table` on the kit's one walk (`kit_walk`, compose.c): first match, each row
-with its contract (fields.def), its predicate, its deny where it moves bytes, and its basis. No
-if-then web: the choice of stop, form, plan, resume and frame is five lookups.
+Every table is a `kit_table` on `kit_walk` (compose.c): first match, a contract per row, a deny where it
+moves bytes, a basis; every cost row reads ONE declared cost table (§3.3).
 
-### 2.2 Table A — the stop pick
+### 2.1 Table A — the stop
 
-| row | holds when | stop | basis | lives |
-|---|---|---|---|---|
-| A-hint | pcrec states `plan_hint`/`plan_pos` | that position | pcrec's model (transitional) | W1 → retires at W5 |
-| A-one | the site's verify spans have exactly one position not proven by another (PF, MLINE, the VM hat) | that position | derived | W1 |
-| A-model | a multi-position site | `prefix_k`'s pick, transcribed (its five constants, the 2x materiality bar, `verify_cost`; each labelled where it stands, D149) | pcrec's model, moved (§3) | W5 |
-| A-mass | a multi-position site no earlier row decides (before W5: the REPORT site) | the position of least byte-rate mass (presence.c's `set_mass`, cardinality without a table); ties by the declared TIE column | derived; the tie column is MEASURED by job 581's PRR arm (panel T1) | W2 |
-| (none) | — | the floor row renders the site | — | — |
-
-The TIE column is one declared column shared with P3's pick (panel U5): today P3 breaks ties
-RIGHTMOST and R-27's PRO was measured LEFTMOST. Until PRR reads, the column states LEFTMOST for
-A-mass and RIGHTMOST for P3 and is labelled UNMEASURED DEFAULT on A-mass.
-
-A stop must lie in a span's CORE (a non-core position may be absent, so it cannot be the stop);
-it may come from a verify-NO span (today's OFS scan byte is OPTIONAL).
-
-### 2.3 Table B — how the stop is found
-
-Table B IS the finder table's slot FIND (`fd_rows`, finder.c), asked for the one-position
-sub-question "find the next byte in set(d*) at offset d*". No second walk implementation exists
-(panel M3, D122).
-
-| row (today's id) | holds when | form | basis |
+| row | holds when | stop | basis |
 |---|---|---|---|
-| D1c | the stop lies below the candidate (MLINE) | the libc back search (`pf_memchr_back`) | UNMEASURED DEFAULT (today's) |
-| D1 | one member, not the VM attempt's seek role | `memchr` | UNMEASURED DEFAULT (today's) |
-| PAIR | the stop is a two-member cube inside a verify span's literal stretch, in a FUNC frame (today's `fn-pair` predicate restated over spans) | two `memchr` streams, the nearer hit | today's |
-| (SIMD layer) | `-fmemfn-simd`: vrun's PREFIX rows over the stop's stretch | today's | today's, inert at OFF |
-| REGIME (SLOT, EMPTY) | [MEMFN-REGIME] states the subject's stops are sparse or irregular | a wide form (V1/M64) | — : designed as a slot, NOT filled |
-| D1w | one member in the seek role (the VM hat, Q-R5) | the table walk | UNMEASURED DEFAULT |
-| R7w | every other set | the WALK (Frank, 2026-10-21: "the walk when the subject is not known"; walk_vs_v1_record.md) | MEASURED (B4′) |
+| A-cost | always | the core position of least model cost: `scan_cost(B's form) + mass · verify_cost(plan) + mass · plan_rate · C_ENTER` (`prefix_k.c` `model_cost`); on native skip alternatives the stop is a singleton at `k > 0` (the "scan must move" rule, measured: §3.2) | pcrec's planner, its constants as data (§3.3) |
+| (none) | no core position | the floor row | — |
 
-D2 (span 0 a RUN term → the nested fn walk) and RPT (FF_PROOF) retire: a run's stop is one of its
-positions under A, and REPORT is not a separate form.
+A stop lies in a core and may come from a verify-NO span. Ties: ONE stated rule `[rev2 P5]`,
+"the lower offset" (prefix_k's `cost < best` over ascending offsets), labelled UNMEASURED DEFAULT
+until job 581's PRR arm reads. **Zero-mover caveat:** run-pinned sites take today's stop from the
+rarity rank, "ties to the higher offset" (`mf_pred.rank_*`). Whether a model tie ever falls inside a
+run on the corpus is a COUNT S1 owes (§5, S1 go reading); if nonzero, the tie rule is a declared
+column per verify kind (run stretch: higher; otherwise: lower), both UNMEASURED DEFAULT, never a
+special-case branch.
 
-### 2.4 Table C — the verify plan
+### 2.2 Table B — how the stop is found
 
-The plan is ONE object: the list of positions tested at a stop, in order, each with its test. The
-renderer walks it, `proven[]` is computed from it, and a trace build asserts the rendered
-positions equal it (panel S1).
+Table B IS the finder's FIND slot (`fd_rows`, finder.c), asked "the next byte in set(d*) at offset d*".
 
-| question | row | rule |
+| row | holds when | form | basis |
+|---|---|---|---|
+| D1c | the stop lies below the candidate | libc back search | UNMEASURED DEFAULT (today's) |
+| PAIR | the stop's facts: a two-member set inside a verify-YES literal stretch `[rev2 P6]` | two `memchr` streams | today's; a frame that cannot host it declines in E |
+| (SIMD) | `-fmemfn-simd`: vrun's PREFIX rows | today's | inert at OFF |
+| D1 | one member, the frame is not the VM seek | `memchr` (C_MEMCHR) | MEASURED (§3.3) |
+| D1w | one member, the frame IS the VM seek | the table walk | UNMEASURED DEFAULT (today's) |
+| R7w | every other set | the WALK (C_BITMAP; Frank 2026-10-21, walk_vs_v1_record.md) | MEASURED (B4′) |
+
+The REGIME slot of rev 1 is gone `[rev2 P5]`: [MEMFN-REGIME] adds its row when it is built. D2 and
+RPT retire.
+
+### 2.3 Table C — the verify plan
+
+The plan is ONE object (positions in order, each with its test): the renderer walks it, `proven[]`
+is computed from it, a trace build asserts rendered = plan. C is a PLAN BUILDER with its real choice
+rows `[rev2 P4]`; the text shape (one `&&` chain or branches) is a measured property of the E rows,
+not of C.
+
+| step | row | rule |
 |---|---|---|
-| which positions | C-all | every position of every verify-YES span, minus the stop's own when its set is the stop's (the find proved it) |
-|  | C-hint (W1 → W5) | plus every position pcrec sent in a verify-NO span (today: prefix_k's selected subset; ofsskip tests every sent term) |
-|  | C-model (W5) | plus the verify-NO positions prefix_k's selection would test, transcribed (§3) |
-| grouping | C-run | inside ONE span, a maximal stretch of consecutive one-member or cube positions is ONE run compare (runcmp's rows: memcmp / words / overlap); a verify-NO span's positions are tested one by one. This is today's grouping on every routed row; W3's identity gate checks it |
-|  | C-meet | two spans' positions at one offset are tested once, as the intersection (panel S5: merge by OFFSET); an empty intersection sends the site to the floor row (plant R27-i) |
-| a set's test | C-table | an offered table: pcrec's name (rule 7) |
-|  | C-own | no offer: the kit's own test (generic's `set_test`, one rendering) |
-| order | C-asc | ascending offset (today's ofsskip and generic order) |
-| bounds | C-core | ONE hoisted test that every core position is inside `[floor, n - end_back)` for this `c` (`c + K ≤ n`, `c + D ≥ 0`); every non-core position tested as `(outside ? pass : member)` with its own guard. No read leaves `[0, n)`, nor `[F, n)` under an expression floor (panel M4/S3; the counterexample "cat" + FAILS `s`@3 has `@3` inside the core, so the hoisted bound rejects `c = 0` on "cat") |
-| text shape | C-chain | the plan as ONE `&&` chain after the bound test, `pos = c + 1` on failure (the shape job 580 measured as PRO; separate branches read 1.2-1.8x on year4) |
+| 1 merge | C-meet | positions at one offset, across spans, are ONE position with the intersection set, BEFORE grouping `[rev2 F7c]`; an empty intersection inside a core → floor row |
+| 2 select | C-yes | every verify-YES position |
+|  | C-model | on a native skip alternative: plus the verify-NO positions the planner's greedy pass picks (ascending mass, kept while the model cost falls; at most `PCREC_OFSK_MAX_SET - 1`) (§3.2) |
+|  | C-none | otherwise no verify-NO position |
+| 3 drop | C-stop | minus the stop's own position when B's set equals it, EXCEPT inside a run stretch: a stop inside a run keeps the stretch whole `[rev2 G2]` (ofsskip.c's one run compare); witness: an in-run stop reached, with a floor |
+| 4 group | C-run | a maximal stretch of consecutive one-member or cube positions inside one span is one run compare (runcmp's rows) |
+| 5 test | C-table / C-own | an offered table (pcrec's name), else the kit's own `set_test` |
+| 6 order | C-asc | ascending offset (today's) |
+
+### 2.4 ADOPT — does the skip pay
+
+| row | holds when | answer |
+|---|---|---|
+| ADOPT-skip | the site states two alternatives, and the skip alternative's best plan costs less than HALF the baseline's (`best · 2 < base`, prefix_k's MATERIAL 2/1) | the skip alternative |
+| ADOPT-one | otherwise | the first (baseline) alternative |
+
+This is integration.md §14.9 item 3 / Q40, RULED YES: the kit decides adoption. pcrec keeps its
+semantic row (`offset-set`, applies when a walked set beyond offset 0 exists and its deny
+`-fno-offset-skip` is not set); when it applies, pcrec states both alternatives; denied, only the
+baseline. The deny keeps its identity `[rev2 G3]`.
 
 ### 2.5 Table D — the resume
 
-| row | holds when | resume | deny | basis |
-|---|---|---|---|---|
-| D-shift (fn-shift, R-27's E4) | DECLARED, NOT BUILT: a plan where some tested offset `j` has `t > 1` (the least `t` with `S_{j-t} ⊄ S_j`) | `c + t` at the failing `j`; separate branches | its own | trigger: a measured cell; job 580 read it costing year4 12-48%, so never a default |
-| D-hors (panel U6) | DECLARED, NOT BUILT: a long span of dense sets where the stop search gains nothing | Horspool over sets: a bad-character shift from the window's last position | its own | trigger FIRED in 580 (hex8); job 581 measures it |
-| D-one | always | `c + 1` | — | the floor of this table (today's) |
+| row | holds when | resume | basis |
+|---|---|---|---|
+| D-hors | a declared USE CONDITION over the frequencies (below) | Horspool over the TESTED sets: shift `sh[b]` = least `t` with `b` in the tested set at `last - t`, else the window length `[rev2 F7e]` | job 581 |
+| D-one | always | `c + 1` | the floor (today's) |
+
+**D-hors's use condition** reads only masses (the byte-rate summed per set, presence.c's `set_mass`):
+- predicted false-start survival = `sum over j >= 1 of prod_{i<=j} mass(test_i)` over the plan's tests;
+- the candidate rate = the stop's mass;
+- the expected advance `sum_b rate[b] · sh[b]`.
+
+Job 581 (`581-kit-r27-follow`, lane r27b) labels each cell WIN/LOSE for HRS and finds the best
+threshold rule per predictor against the no-rule baseline. **State at writing: 581 is PENDING in the
+queue; its table does not exist.** So the row is declared with its three predictors and its threshold
+**OWED to 581**; it is not built until the table names a rule that beats the baseline. If none does,
+D-hors is not built and hex8 stays a named loss (§6).
+D-shift (580's shift, cost year4 12-48%) is FILED with its trigger, not in the table.
 
 ### 2.6 Table E — the frame
 
 | row | holds when | text |
 |---|---|---|
-| E-func | FUNC / RETURN, miss `n`, no expression floor | today's `static inline size_t` function with the D155 selector seam and the PREFIX slot (ofsskip's frame, transcribed) |
-| E-stmt | STMT / ASSIGN (or ON_MISS) | today's PF block: the guard, the post-test, the bounded wrapper (`end_back` 1), the `moved` hook, the storage point (`decl_point`) |
+| E-func | FUNC/RETURN, miss `n`, no expression floor | today's `static inline size_t` (D155 seam, PREFIX slot) |
+| E-stmt | STMT/ASSIGN or ON_MISS | today's PF block (guard, post-test, `moved` hook, `decl_point`) |
 | E-generic | anything else | the floor row |
 
-The frame is where the panel's M1 fix lands for free: a REPORT site is STMT/ASSIGN, so it is
-served by E-stmt with no re-description and no FUNC rewrite.
+A REPORT site is STMT/ASSIGN: E-stmt, no re-description (the r1 panel's M1).
 
-### 2.7 The floor, and what folds where
+### 2.7 What folds where
 
-The floor row is `generic` (compose.c's last arm): a byte loop over every span under the core
-rule. It honours every fact, so no deny leaves a site without code (§14.6).
-
-| row today | fate | where |
-|---|---|---|
-| `pf_memchr`, `pf_memchr_bounded` | FOLD | A-one + B D1 + C (empty plan) + E-stmt (bounded by `end_back`) |
-| `pf_walk`, `pf_walk_bounded` | FOLD | A-one + B R7w/D1w + E-stmt |
-| `pf_memchr_back` | FOLD | A-one + B D1c + E-stmt, floor expression |
-| `ofsskip` (`fn-memchr`, `fn-pair`, vrun PREFIX) | FOLD | A-hint/A-model + B D1/PAIR/SIMD + C + E-func |
-| `precheck` (3 rows) | STAY (ALL_PRESENT); its FUNC parts render through the family | — |
-| `runcmp` | STAY as C-run's compare rows and VMRUN's EXPR VERIFY | — |
-| `mismatch_inplace` | STAY (MISMATCH) | — |
-| `generic` | STAY: the family's floor | — |
-| RPT (`fd_rows`), `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2's nested walk | RETIRE | §4 |
-
----
-
-## 3. The stop choice moves to the kit (integration.md §14.9 item 2, §R4.3.5's M5)
-
-**Path.**
-1. **W1**: A-hint is the first row, so every native site renders pcrec's pick, byte for byte.
-2. **W5a, the transcription, zero movers.** `prefix_k`'s selection is transcribed into the kit as
-   A-model and C-model (the stop AND the verify-NO subset). pcrec now sends the WHOLE k-set slice
-   as the verify-NO span. On every compile, the trace build's SHADOW COMPARATOR asks A-model and
-   C-model and asserts they equal pcrec's `plan_hint`, `plan_pos` and the subset pcrec selected;
-   A-hint still decides. Population: every OFS and pre-check FUNC site of every emit_sweep arm,
-   with a floor on the comparison count (a comparator that compared nothing is red, K35).
-3. **W5b, the switch, zero movers.** A-model decides; A-hint is deleted; emit_sweep every arm is
-   byte-identical (MEASURED, the plain arm is the witness: panel M6).
-4. **W5c, retirement.** pcrec stops computing `plan_hint`/`plan_pos`/`rank_*`; vrun's KB pick
-   reads the kit's own ranking from byte-rate (window_contract S2/S3); `MF_SITE_ABI` 21.
-5. **Not in M5:** ADOPTION (whether an offset-skip block exists at all) stays pcrec's semantic row
-   until M5′, the ruled byte-moving event of §R4.3.5 (Q40).
-
-**Comparator honesty.** The comparator's two sides are pcrec's live model and the kit's
-transcription: it proves the MIGRATION is byte-identical, not that the pick is right. Correctness
-stays with the byte-loop oracle (`proof_run`) and the answer gates, which share no source with
-either side.
-
-**A-mass vs A-model on REPORT sites.** Before W5, REPORT sites (no hint) take A-mass. At W5a the
-comparator also LOGS, unasserted, A-model's pick on every REPORT site. If the two differ on any
-of job 580's eight cells beyond noise, that is §9 Q2's measurement; if not, A-mass retires into
-A-model and the family has one stop rule.
-
----
-
-## 4. What retires, with its readers (by grep at `3da6aa04c`; re-grep at each build commit)
-
-| retires | at | readers |
-|---|---|---|
-| `mf_site.ctx`/`nctx`, `MF_MAX_CTX`, `MF_MAX_AHEAD` (the caps and UL-8's trigger) | W4 | `memfn.h`, `memfn/include/CLAUDE.md`, compose.c (site check), generic.c (`site_test`), finder.c (`[FLD_ctx]`), fields.def/gate.c (`cl_ctx`), `src/gen/known.c` (`cover_ctx_item`), `tests/memfn/proof_check.c`, `memfn/tests/g2/` |
-| `mf_pred.absent`/`consumable`, `mf_absent`, `mf_consumable` | W4 | `memfn.h`, compose.c, generic.c (`ctx_pred_test`), gate.c (`cl_absent`, `cl_consumable`), fields.def, `src/gen/known.c`, `src/gen/memfn_sites.c` (`pcrec_memfn_context_stop`) |
-| `prefix_stated`, `exact_len`, `consumable_len` (contract fields; pcrec keeps them in `MkLang`) | W4 | `memfn.h`, fields.def/gate.c, compose.c, `src/gen/memfn_sites.c` (`pcrec_memfn_span0_stated`, `span0_exact_len`), `src/gen/known.c` |
-| `span_class` BOUNDED / CONTEXT (PRESENCE stays) | W4 | `memfn.h`, compose.c, finder.c (`SF_SPAN0`, `SF_CONTEXT_STOP`), `memfn_sites.c` |
-| `read_floor` (merged into the floor fact) | W4 | `memfn.h`, compose.c, gate.c (`cl_read_floor`), fields.def, `memfn_sites.c`, `known.c` |
-| W0-W2 (`window_stated`, `move_back`, `overshoot`, the unbounded sentinels) | W4 | `memfn.h`, compose.c, fields.def, `memfn_sites.c` (`pcrec_memfn_window_is_candidate`) |
-| per-term and per-predicate `need` (becomes the span's verify) | W4 | `memfn.h`, every builder (`emit_dfa.c`, `emit_vm.c`, `memfn_sites.c`, `known.c`), compose.c (`pred_kinds`), finder.c (`[FLD_need]`, `cl_need`), presence spans (keep their own need) |
-| REPORT's special meaning: RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, the RESULT-only refusals | W2 (RPT unrouted, preview only, so no default byte) | finder.c, compose.c, kit.h, `memfn/src/CLAUDE.md`, `memfn/docs/finder_history.md`, `tests/memfn/run_proof.sh`, `arm_fixtures.c`, `proof_check.c`, S1255, S1256 (re-aimed at the family's proof and the floor row) |
-| `consumer` (folded into the consumer category) | W4 | `memfn.h`, compose.c, `emit_dfa.c`, `emit_vm.c`, `memfn_sites.c`, `known.c`, `formhash.c`, `memfn/tests/g2/g2_gen.c` |
-| ofsskip/pffind as arms (their narrow intakes: one-byte scan, tables required, `plan_hint` required) | W1 | compose.c `arms[]`, precheck.c (FUNC parts), `tests/memfn/rows.tsv`, finder.c's `fd_route` arm map |
-| `plan_hint`, `plan_pos`, `rank_n`/`rank_pos`/`rank_ppm` | W5c | `memfn.h`, ofsskip.c, precheck.c, vrun.c, compose.c, formhash.c, `emit_dfa.c` (`ofs_pred_of`, `ofs_pred_rank`), `memfn_sites.c`, `known.c`, `memfn/tests/g2/*`, `tests/memfn/{proven_check.c,arm_fixtures.c,rank_check.py,proof_check.c}`, the `[OPT-REQPOS]` note and the `REQ_RUN @idx` spec text (§14.9 item 1's re-spec, a `docs/spec/findings.md` hunk) |
-| `mf_preview("R-26.6")` | stays until B1; then its step name retires with RPT | `memfn_sites.c` (`pcrec_memfn_art`, behind `pcrec_kit_proof_routed`), `src/core/internal.h`, the R-26.6 sabotage rows S1251-S1254 |
-| Z2's cover statement in R-26 terms (ctx items, REPORT kind, `consumer` RESULT, prefix facts `exact_len = consumable_len = k`, `read_floor` SUBJECT) | restated at W3, old spelling gone at W4 | `known.c` (`cover_ctx_item`, the site builder, `pcrec_cover_proof_diff`), `emit_dfa.c` (`emit_cover`), `memfn_sites.c` (`pcrec_memfn_span0_stated`: the true `exact_len` stays pcrec-internal), the kitproof arm's rows (§5.1) |
-
----
-
-## 5. Staging at zero artifact movers
-
-| step | side | what | movers | `MF_SITE_ABI` | pcrec abi | deny |
-|---|---|---|---|---|---|---|
-| W1 | kit | the INTERNAL span form: one function reads today's `mf_site` (terms, needs, `ctx[]`, `absent`, the context stop, `floor`/`read_floor`, `plan_hint`) into spans + core + verify + offers; tables A-E; ofsskip/pffind become rows of it | 0, MEASURED (emit_sweep every arm, identity gates, G2, `REACH_ONLY=1` mech re-aim) | none | none | none (no byte moves) |
-| W2 | kit | R-27 on the family: A-mass, C-own, the core bound, E-stmt for REPORT; RPT and `kit_report_exact` retire into the family's plan-derived proof; preview-only (`mf_preview`) | 0 default; preview arts move (harness only) | none | none | owed at B1 (panel Q1) |
-| W3 | pcrec (a request main files: "the window site stated as spans") + kit | pcrec's builders state spans directly (PF, MLINE, VM hat, OFS, pre-check FUNC parts, and Z2's cover site, §5.1); the kit's trace build asserts W1's internal form from the OLD fields equals the STATED spans on every compile | 0, MEASURED | 19 (appended fields) | none | none |
-| W4 | kit + pcrec builders | the old fields leave the contract (§4's W4 rows) | 0, MEASURED | 20 (layout) | none | none |
-| W5a/b/c | kit (transcription, switch) + pcrec (stop computing) | §3 | 0, MEASURED at each | 21 at W5c | none | none |
-| B1 | kit + pcrec, ONE commit | REPORT routed by default (the cover site renders the family's text); also waits for R17-b′ B4 (R-27's sequencing) | YES: the cover artifacts | none | YES, same commit (readers by grep, D76/D94; G1 both layers; R-27.1's 650 re-run) | YES, born in this commit |
-| later | kit | Table B's REGIME slot ([MEMFN-REGIME]); Table D's shift rows (each on its measured trigger); M5′ adoption (Q40) | each its own event | as needed | each | each its own |
-
-Every `MF_SITE_ABI` event is a kit-contract change: memfn journal, ledger, `memfn.h` comment,
-`memfn/include/CLAUDE.md`. W3 is the only step pcrec must REQUEST (main files it on main before
-its lane is briefed); W4 and W5c each carry a pcrec builder hunk in the same commit as the kit's.
-
-### 5.1 W3's pcrec restatement includes Z2's cover site `[addendum: kit manager, 2026-10-21]`
-
-Main's Z2 (merged `aeb381c25`, harness-only, 0 default movers) states the cover site in
-R-26's terms: `ctx[]` items, the REPORT kind, `consumer` RESULT, span 0's prefix facts and
-`read_floor` SUBJECT, with `mf_preview("R-26.6")` on the lever's arts. W3's request names
-it as one of the builders it restates, beside PF, MLINE, the VM hat, OFS and the pre-check
-FUNC parts:
-
-| Z2 states today (R-26 terms) | W3 states | moves |
-|---|---|---|
-| `pred` = span 0, k SET terms, all REQUIRED, BOUNDED, `exact_len = consumable_len = k` | span 0 `{0..k-1: S_d}`, core `[0, k)`, verify YES; `exact_len` stays in `MkLang` (C8/X0 keep reading it there) | nothing (harness-only arts) |
-| `ctx[]` items at -1 and k (`cover_ctx_item`), `absent`, `consumable` YES | one span per item, core per §1.2, verify YES | nothing |
-| `site_kind` REPORT, `consumer` RESULT | the consumer category's RESULT value (§9 Q3) | nothing |
-| `read_floor` SUBJECT | floor SUBJECT | nothing |
-| `pcrec_cover_proof_diff` (the DEFAULT build holds the kit's class to the stated sets, C14) | unchanged in meaning: the stated sets are the verify spans' sets; it stays pcrec's check | nothing |
-| `mf_preview("R-26.6")` behind the lever | unchanged until B1 | nothing |
-
-Its zero-mover witness is the same as Z2's: emit_sweep (every arm) for the default build,
-plus the lever's own arts compared before/after the restatement (`--harness=kit-proof`,
-the kitproof arm's 393 cells and X1), because the default build never renders the cover
-site.
-
-**Sabotage re-aims are DERIVED, never hand-listed.** At each W step (W1-W5, B1), in the
-step's own commit, the build lane runs this rule over EVERY row in `tests/mech/sabotages/`
-(Z2's S1130-S1141, S1144, S1148, S1149 and whatever of S1257-S1290 exists by then are
-members, not the list):
-1. **Candidates** = rows whose `SAB_FILE` is in `git diff --name-only <base>..HEAD`.
-2. **Anchor test**: `VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh <candidates>`;
-   a row whose `SAB_BEFORE` no longer resolves MUST be re-aimed.
-3. **Intent test**: a candidate whose `SAB_BEFORE`/`SAB_AFTER` text lies inside a changed
-   hunk of the diff (grep the anchor's lines against `git diff -U0`), or names an identifier
-   §4 retires at this step, is re-aimed with its intent re-verified (BOILERPLATE: "a re-anchor
-   needs its intent re-verified").
-4. **Reach test**: `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` over the arms the
-   step touches (`kitproof`, `memfnfinder`, `memfng2`); every row whose witness no longer
-   reaches its site is re-aimed.
-5. The step's report prints the derived list with the rule's output (the union of 2-4) and
-   the count; a row may be RETIRED only where §4 retires the code it plants in, named with
-   its successor plant (e.g. S1256 "NONE accepted on REPORT" becomes the floor-row plant on
-   an all-verify site).
-
-Illustration only (not the list): an identifier pre-screen at main `ca4ec4d10`, restricted
-to the files the W steps edit, already flags about 22 rows (S1101, S1102, S1133, S1137,
-S1222-S1226, S1251, S1252, S1256, S689, S736, S737, S750-S754, S794, S849, S917). Steps 1-4
-find the rest, Z2's rows anchored in edited hunks included.
-
-Why W1 before W3: R-27 is not blocked on pcrec. The kit can normalize today's fields itself and
-prove the family at zero movers; pcrec's restatement then has a comparator ready.
-
----
-
-## 6. R-27 as the first consumer
-
-Job 580 (r27_report.md §5): PRO, the window search with no shift, meets R-27.1's bar on 42 of 48
-non-match cells and beats today's REPORT pick everywhere. Misses: hex8-bounded (4 cells),
-cat-bounded `search_short`/dense against COV (1.18), file-ext-order `search_short`/none (1.033).
-SHF fixes most of hex8 `search_short` but costs year4 12-48%. Under this design PRO IS the family:
-A-mass (memchr for one member, the walk for a set via Table B), C-chain, D-one, E-stmt.
-
-| finding | answer under the family |
+| row today | fate |
 |---|---|
-| M1 (RPT re-describes the site) | DISSOLVED. Nothing re-describes: the family reads pcrec's spans; STMT/ASSIGN is E-stmt; the stop is Table A, not `plan_hint` written over pcrec's MF_NO_PRED; SET→RUN is C-run's grouping |
-| M2 (fallback as if-then) | the floor row of every table, ending in generic |
-| M3 (a second walk inside ofsskip) | Table B is the finder's FIND slot; [MEMFN-REGIME]'s slot is its row, no new code |
-| M4 + S3 (read limits under ctx) | C-core: one hoisted core bound, per-position guards outside the core, the floor fact. The "cat" + FAILS `s`@3 counterexample is a core position |
-| M5 (E4 is a REPORT special case) | D-shift, a declared row with its own predicate, deny and census; not built |
-| M6 (zero movers argued) | every W step's zero is MEASURED by the emit_sweep plain arm |
-| M7 (POSCOST notice) | stands: R-27 is [MEMFN-POSCOST]'s first built member; main's row |
-| S1 (a dropped ctx item keeps `proven[]`) | the plan is one object: `proven[]` from it, the renderer walks it, a trace assertion holds rendered = plan; drift plant kept |
-| S2 (over-reads invisible) | unchanged harness fix: exact-size buffers with per-site satisfying sentinels, `make asan`; plants R27-g, R27-h |
-| S4 | dissolved (no s′) |
-| S5 (merge by offset) | C-meet; empty intersection → floor row; plant R27-i |
-| S6 (stop reach) | a harness switch beside `mf_preview` forcing each Table A row and each core position in turn; floors on walk stops, stops at d > 0 and a shift strictly between 1 and j+1 |
-| S7 | plant R27-e2; a gap is a full-set position (native now); table = set asserted where C-table reads an offer |
-| S8 | the kit is encoding-blind: spans are bytes; the cover builder states `end_back` 0; the 8-bit precondition is the frame's |
-| T1 | the TIE column (§2.2); PRR in job 581 |
-| T2-T9 | job 581's, unchanged by this shape: the no-clock differential vs python `re`, PRF (FUNC proxy) for the three literal cells, the profile header and "scalar only" (SIMD is pcrec-bench's, D144 add. 4), absolute ns columns, PRO2 A/A, hits per KiB, `cpu_busy`, the match-regime flag |
-| Q1 (deny) | born at B1's routing commit, or earlier in any commit that moves a default byte |
-| Q2 (tie) | the declared column |
-| Q3 (E4) | D-shift or nothing |
+| `pf_memchr`, `pf_memchr_bounded`, `pf_walk`, `pf_walk_bounded`, `pf_memchr_back` | FOLD: A + B (D1/R7w/D1w/D1c) + C (empty plan; bounded = a full-set core position) + E-stmt |
+| `ofsskip` (`fn-memchr`, `fn-pair`, vrun PREFIX) | FOLD: ADOPT + A + B + C-model + E-func |
+| `precheck` | STAY (ALL_PRESENT); its FUNC parts render through the family |
+| `runcmp`, `mismatch_inplace`, `generic` | STAY (C-run's compare; MISMATCH; the floor) |
+| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2 | RETIRE |
 
-**hex8-bounded stays an algorithm question.** It is a span of dense sets (`[0-9a-f]` x 8) with
-context; a stop search gains little on hex-rich text. D-hors (Horspool over sets) is its candidate
-as a declared row: job 581 measures it. If it misses, the honest options are a waiver of that cell
-for B1 or a further measured row, never a hex8-only special case (§9 Q4).
-
-**Unlocks from the panel, placed:** U1 (context on ordinary FIND sites) is native: any span not
-covering offset 0 is served. U2 = §3. U3 = Table B. U4/U6 = Table D. U5 = the tie column. U7 =
-the harness.
+**Deny identities and form names are preserved** `[rev2 G3]`: `fd-d1` still denies the C library on a
+one-member stop outside the VM seek (→ D1w), `fd-pres-*`/`pres-set-lead` are untouched, `vrun-*` keep
+their names and effects; `vrun-kb` keeps its effect and reads the kit's own ranking from the
+frequencies instead of `rank_*`, a wording change in `registry.md §6¶8a` (D80) in S2's commit. Every
+`_MEMFN_FORMS` form name a folded row emitted is kept as that path's form name.
 
 ---
 
-## 7. The pcrec-side producer: D168 / [DD-11.5], `ctx_span.md`
+## 3. The stop choice is the kit's, from pcrec's frequencies
 
-D168's ONE producer (`span_facts`, `MkLang`) states span 0's per-offset slice `S_d` and one
-record per context ITEM (`MkCtx`: terms at offsets, `absent`, `form`). It maps onto spans with no
-new field:
+### 3.1 Why there is no plan hint
 
-| `MkLang`/`MkCtx` | span |
+pcrec's planner (`prefix_k.c`) reads two things: the pattern's sets (which pcrec states as spans) and
+the byte-rate (which pcrec already declares on the art). The kit has both, so pcrec has nothing left
+to say about the plan. Sending a pick would be sending a method (D157). The kit's tables therefore
+carry the planner's RULES as declared rows (§2.1, §2.3 C-model, §2.4), each reading the same
+frequencies pcrec's planner reads today.
+
+### 3.2 The rules, as rows
+
+| prefix_k rule | row | measured basis (prefix_k.c) |
+|---|---|---|
+| the cost model `model_cost` and `verify_cost` (with the mispredict term) | A-cost, C-model | §3.3 |
+| greedy verify selection, exact because each verify multiplies the entry rate independently | C-model | derived (the code's own argument) |
+| offset 0 always verified with the WALK's set F0 (role B), never k0 | the skip alternative's F0 span is verify YES (§1.2) | MISCOMPILE-1, S188 |
+| the scan must MOVE off offset 0, and a moved scan is a singleton | A-cost on the skip alternative | MEASURED: uuid 4.5x, iso-ts 4.8x, stack-frame 7.2x, needleXYZW 17.1x moved; bignum 0.96-1.02x stayed (offset_k_skip.md §7.3) |
+| adopt only at 2x | ADOPT-skip | §4.5's argument + the measured spread (ipv4's 1.5-1.6x inside the error bars) |
+| the baseline is k0's cost (C_MEMCHR if one member, else C_BITMAP) | ADOPT's `base` | as C_MEMCHR/C_BITMAP |
+
+On REPORT sites "verify everything" is fixed, so only A-cost and B apply (C-model and ADOPT have
+nothing to choose).
+
+### 3.3 The constants: data, with provenance, no new tuning
+
+**Correction to the panel (P2):** the panel called the constants "unmeasured". `prefix_k.c` documents
+them as MEASURED:
+- C_MEMCHR = 0.055 cycles/byte (opt3_dfa_scan_measurement.md §4, CONTROL 1);
+- C_BITMAP = 1.16 cycles/byte (same table);
+- C_ENTER = 10.7 cycles/byte × the ~2 bytes a false start survives, its sensitivity swept over 1,352
+  patterns (offset_k_skip.md §4.3);
+- C_MISPRED from a measured before/after (offset_k_skip.md §7.3);
+- the 2x bar from §4.5's argument.
+
+Nuance: C_VERIFY (2.5 cycles/candidate) has no cited number beyond the header's claim; the table says so.
+
+They move as DATA: one declared kit table (an X-macro beside `options.def`, e.g. `plan_cost.def`:
+name, value, unit, provenance cite, box), read by every cost row; `prefix_k.c`'s values verbatim, no
+re-measurement, no new constant. Re-measuring any of them is a byte-moving kit event (integration.md
+§21.3): its own deny, pcrec abi event and G1 at both layers.
+
+### 3.4 The stamps read the kit's reply `[rev2 G4]`
+
+Once the kit picks, `<PREFIX>_DFA_PREFILTER_OFFSETS` (the offset list, `*` on the scan) and
+`<PREFIX>_DFA_PREFILTER`'s `offset-set` value are written from the kit's reply (the chosen
+alternative, the stop, the plan positions), never from a pcrec-side recomputation. Today's streamed
+writer (`dfa_prefilter_offsets`, `emit_dfa.c`) becomes a read of the reply; the reply must exist
+before the stamp line is written (the site is asked first, as `mf_ask` already allows). The spec hunk,
+in S2's commit: `match_api.md §6.3.1¶5a` (the stamp names the selection the artifact RUNS, now the
+kit's), `tuning.md §2.14¶3` and `§2.30¶2` (who chooses the offsets). The identity gate reads both
+stamp lines; their VALUES must not move at S2. `<PREFIX>_FINDINGS`'s consulted line likewise must not
+move.
+
+### 3.5 What S2 does NOT fold
+
+integration.md §R4.3.5 also lists "the reseed becomes unconditional" for M5′. That moves bytes (the
+reseed is keyed on adoption today), so it is NOT in S2: after S2 the reseed stays keyed exactly as
+today, on the adoption answer, now read from the kit's reply. Making it unconditional is a separate
+measured event, filed if anyone wants it (D77).
+
+---
+
+## 4. What retires, with its readers (re-grepped at `cc6eec191` `[rev2 G10]`; re-grep at the build commit)
+
+All rows retire at S2 unless marked.
+
+| retires | readers |
 |---|---|
-| `S_d`, d < `exact_len` | span 0's positions; core = all; verify per the consumer (cover: YES) |
-| an item's terms | one span from its least to its greatest offset; gaps full-set |
-| `absent` FAILS / SATISFIES | core = the item's positions / empty (width-1 SATISFIES only, §1.2) |
-| `form` EXACT | may be verify YES and be consumed as a proof (pcrec's reading) |
-| `form` SUPERSET | sent only as verify NO (a filter); a cover site declines on it (pcrec-side, as today) |
+| `ctx`/`nctx`, `MF_MAX_CTX`, `MF_MAX_AHEAD` | `memfn.h`, `memfn/include/CLAUDE.md`, compose.c, gate.c, generic.c, fields.def, `src/gen/known.c`, `src/ir/dfa.c`, `src/core/internal.h`, `tests/memfn/proof_check.c` |
+| `absent`, `consumable`, `consumable_len`, `mf_absent` | `memfn.h`, kit.h, compose.c, gate.c, generic.c, fields.def, `memfn/tests/g2/{g2_gen,g2_simd_gen}.c`, `known.c`, `memfn_sites.{c,h}`, `tests/memfn/{arm_fixtures.c,proof_run.c,proof_check.c}` |
+| `prefix_stated`, `exact_len` (contract side; `MkLang` keeps them) | `memfn.h`, kit.h, compose.c, gate.c, fields.def, formhash.c, g2 generators, `known.{c,h}`, `memfn_sites.{c,h}`, `tests/memfn/{proven_check,arm_fixtures,proof_check}.c` |
+| `span_class` BOUNDED/CONTEXT (PRESENCE stays) | `memfn.h`, compose.c, gate.c, generic.c, formhash.c, g2 generators, `known.c`, `memfn_sites.c`, `emit_dfa.c`, `tests/memfn/{proven_check.c,arm_fixtures.c,run_proof.sh,proof_check.c}` |
+| `read_floor` (merged into floor) | `memfn.h`, kit.h, compose.c, gate.c, fields.def, g2 generators, `known.{c,h}`, `memfn_sites.{c,h}`, `tests/memfn/{arm_fixtures,proof_check}.c` |
+| W0-W2 (`window_stated`, `move_back`, `overshoot`), `end_back` | `memfn.h`, kit.h, compose.c, finder.c, gate.c, fields.def, formhash.c, g2 generators, `memfn_sites.{c,h}`, `tests/memfn/{run_arm_pins.sh,proven_check.c,arm_fixtures.c,proof_check.c}`, `tests/codegen/run_fallback_table.sh` |
+| per-term/per-predicate `need` (presence spans keep theirs) | `memfn.h`, every builder (`emit_dfa.c`, `emit_vm.c`, `memfn_sites.c`, `known.c`), compose.c, finder.c, gate.c |
+| `site_kind` REPORT's meaning, `consumer` | `memfn.h`, kit.h, compose.c, finder.c (incl. R7w's proof-site condition, B4′), gate.c, fields.def, g2_gen.c, `known.{c,h}`, `memfn_sites.{c,h}`, `emit_dfa.c`, `src/parse/rxt_source.c` (check), `tests/memfn/{site_census.py,site_manifest.tsv,site_manifest_check.py,finder_check.py,proven_check.c,arm_fixtures.c,proof_check.c}`, S1091, S1102 |
+| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` | finder.c, kit.h, compose.c, `memfn/src/CLAUDE.md`, `tests/memfn/{rows.tsv,row_floors.tsv,arm_fixtures.c,run_proof.sh,finder_check.py,run_rows.sh,proof_check.c}`, S1255, S1256 |
+| `plan_hint`, `plan_pos`, `rank_n/pos/ppm`, `MF_RANK_MAX` | `memfn.h`, compose.c, formhash.c, ofsskip.c, precheck.c, vrun.c, `memfn/tests/{run_g2_simd.py,g2/*}`, `known.c`, `memfn_sites.c`, `emit_dfa.c` (`ofs_pred_of`, `ofs_pred_rank`), `tests/memfn/{run_rank.sh,rank_check.py,proven_check.c,arm_fixtures.c,proof_check.c}`; the `REQ_RUN @idx` spec text and the `[OPT-REQPOS]` note (§14.9 item 1's re-spec, a `findings.md` hunk) |
+| pcrec's selection (`pcrec_prefix_ksets`' pick; the walk `kset_walk` STAYS, it is a fact) | `src/opt/prefix_k.c`, `src/core/internal.h`, `emit_dfa.c` (`ofsk`, `pf_ofs_applies`), `tests/codegen/{run_offset_skip.sh,run_form_census.sh}`, S187, S188 (S188's plant stays pcrec's: F0 is a stated set) |
+| ofsskip/pffind as arms | compose.c `arms[]`, precheck.c, `tests/memfn/rows.tsv`, finder.c's arm map |
+| `mf_preview("R-26.6")` | stays until S3; then retires with RPT: `memfn_sites.c`, `src/core/internal.h`, S1251-S1254 |
 
-**Free consequences (Frank).** A fixed-length POSITIVE lookbehind longer than one byte
-(`(?<=ab)`) is a two-position span at -2..-1, core both. A lookahead AFTER the span longer than
-one byte is a span at `k..k+w-1`. `\b` and a width-1 negative lookbehind are one-position spans
-outside the core.
+---
 
-**The UL-8 cap lift dissolves.** `MF_MAX_CTX` = 2 existed because stage 1's machine reading
-states one item each side, and `MF_MAX_AHEAD` = 1 because its after-context is one byte. With
-spans, a site's count and reach are shape bounds derived from the producer (§1.1), so there is
-no cap to lift and no trigger to wait on.
+## 5. Staging
 
-**What does NOT dissolve:** the SOURCE switch. The DFA machine reading cannot see a lookbehind
-wider than one byte (kit_proof §3.3: the DFA reads one seed byte), so a cover site with
-`(?<=ab)` needs the facts-layer producer to be THE context source, with the machine reading as
-its control (ctx_span P1b). That is pcrec's own event with its own controls (X1 against
-libpcre2); the kit side is ready the day it lands.
+### 5.1 The order and the S1/S2 decision `[rev2 P1, G9, G10]`
+
+Order: B4′ (landed in this branch) → S1+S2 as ONE landing → S3.
+
+**S1 and S2 land together; no adapter is built.** S1 built alone would have to read today's fields
+(terms, `need`, `ctx[]`, `plan_hint`) to render anything, which is exactly the adapter P1 rejected,
+and its zero-mover proof would compare the family against a translation sharing its model. Instead the
+kit lane develops the family against the NEW statement on its own branch (G2 generates span sites
+directly; fixtures state spans), while the pcrec builder hunk is written to the same request; the
+manager merges both as one commit pair at one `MF_SITE_ABI` event. The only places today's fields
+remain are the sites outside the family (PRESENCE, SKIP/ADVANCE, VMRUN, MISMATCH), which S2 does not
+touch: that is the "unavoidable" set, and it is not an adapter.
+
+### 5.2 The steps
+
+| | S1 (kit) | S2 (pcrec + kit, ONE request) | S3 = B1 (kit + pcrec, ONE commit) |
+|---|---|---|---|
+| content | the family (ADOPT, A-E, the cost table §3.3, C as plan builder, the three-way guard, the merged plan object); RPT and `kit_report_exact` replaced by the family's plan-derived proof; R-27 on the family in PREVIEW (`mf_preview`, harness lever only) | pcrec's builders state spans, alternatives and frequencies only (PF, MLINE, VM hat, OFS, pre-check FUNC parts, Z2's cover site §5.4); §4's rows retire; `plan_hint`/`rank_*` retire; pcrec's planner selection retires; stamps read the reply (§3.4) | REPORT routed by default: the cover site renders the family's text |
+| owner | kit lane | main files the request; a pcrec lane writes the builder hunk; the kit lane the kit hunk; manager merges both | kit + pcrec |
+| witness | G2 over a GENERATED span space against the scalar byte loop; `proof_run` (BIND/PROOF/EXACT/COMPL) with the sentinel buffers (r1 panel S2); the preview arts' answers (kitproof arm, 393 cells, X1) | emit_sweep on EVERY arm, byte-identical to the pre-S2 main (default, every deny arm, `--engine=vm`, both SIMD layers); stamp lines included; per-old-row REACH FLOORS (§5.3) read before and after; `REACH_ONLY=1` mech re-aim | the 650 harness (R-27.1), answer gate, G1 alpha at both layers vs the new deny |
+| abi events | none (no default byte) | ONE `MF_SITE_ABI` event, "next at landing" `[rev2 G7]`; NO pcrec abi event (zero movers) | pcrec abi bump (readers by grep, D76/D94) in the same commit |
+| spec hunks | none | `match_api.md §6.3.1¶5a`, `tuning.md §2.14¶3`, `§2.30¶2` (§3.4); `registry.md §6¶8a` (`vrun-kb`'s source, G3); `findings.md` (`REQ_RUN @idx` as pcrec's rarity fact) | the routed REPORT row's deny in `registry.md §6¶8a` (+ the section floor `§6¶8b`); the cover stamps where caller-visible |
+| deny | none | none new; every existing deny keeps its identity (§2.7) | born here, as the step's alpha OFF arm |
+| sabotage | kit-side ids on request: a plan claiming an untested offset; an absent-FAILS candidate yielded (F5); an absent-SATISFIES candidate dropped; an empty-intersection site not sent to the floor; a below-F read treated as passing (F2); an in-run stop splitting the stretch (G2) | §5.4's derived re-aims; ids on request (main's ledger next free after R-27's S1331) | the routed row denied but still rendering; RPT-free proof mismatch |
+| go | the S1 go readings: G2 + proof_run green; the run-tie COUNT (§2.1) reported; the preview's model picks on the 8 R-27 cells listed against 580's mass picks (no clock) | zero movers MEASURED on every arm; every reach floor met before AND after; derived sabotage list run green | R-27.1 at BOTH layers: no `real`/`none` throughput or search_short cell slower beyond its floor, `dense` not slower than COV; zero answer changes; hex8's cells as §6 says |
+| no-go | any G2/proof red | any mover, any floor missed, any stamp value moved | any non-hex8 cell slower beyond floor |
+
+### 5.3 Reach floors per old row `[rev2 G5]`
+
+Before S2, the trace build counts, per OLD row (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
+`pf_walk_bounded`, `pf_memchr_back`, `ofsskip` per form, pre-check FUNC parts, the cover site under the
+lever), its sites over the emit_sweep corpus; after S2 the same population is counted on the family
+PATH that replaces it (§2.7's map), and each path's count must be at least the old row's. The counter
+is the kit's existing reach counter (`row_contracts.md`); the driver is `scripts/emit_sweep.py` with
+the trace build. A path with zero reach is red (K35).
+
+### 5.4 Z2's cover site, and the derived sabotage rule
+
+S2 restates Z2's cover site (span 0 `[0, k)` YES; one span per context item; floor SUBJECT;
+`exact_len` stays in `MkLang`; `pcrec_cover_proof_diff` unchanged in meaning; `mf_preview` until S3).
+Its zero-mover witness is emit_sweep for the default build plus the lever's arts compared before and
+after (`--harness=kit-proof`, the kitproof arm's 393 cells and X1), because the default build never
+renders it.
+
+**Sabotage re-aims are DERIVED.** In the step's commit, over every row in `tests/mech/sabotages/`:
+1. candidates: rows whose `SAB_FILE` is in `git diff --name-only <base>..HEAD`;
+2. anchor test: `VALIDATE_ONLY=1` over the candidates; an unresolved `SAB_BEFORE` is re-aimed;
+3. intent test: an anchor inside a changed hunk, or naming an identifier §4 retires, is re-aimed with
+   its intent re-verified;
+4. reach test: `REACH_ONLY=1` over the arms the step touches; a row that stopped reaching is re-aimed;
+5. **suite test** `[rev2 G6]`: a row whose `SAB_SUITES` names a suite whose DETECTOR the step edits
+   or retires gets a FULL run (its detection, not only its anchor);
+6. the report prints the union and its count; a row retires only with the code it plants in, named
+   with its successor plant.
+
+Z2's cover rows are S1130-S1141, S1144, S1148 and S1149 (members, not the list). **There is no
+S1257-S1290** on any branch `[rev2 G6]`; rev 1's range is withdrawn and main corrects D172's brief.
+
+---
+
+## 6. R-27 and hex8
+
+Job 580: the window search with no shift (PRO) meets R-27.1 on 42 of 48 non-match cells. Under the
+family PRO is A + B + C-yes + D-one + E-stmt; S1's preview renders it with A-cost's pick rather than
+580's least-mass pick (the two coincide wherever B's form is the same for every candidate stop).
+
+**hex8 is the kit's judgement call (Frank).** REPORT routing (S3) proceeds REGARDLESS of hex8. If
+job 581 yields a D-hors rule that clears hex8's cells, D-hors ships in S1 (or a later kit event) as a
+declared row. If no row clears them, S3 ships with hex8-bounded's cells named in its report as a
+known, MEASURED loss (580/581's numbers). No hex-only row, no waiver step.
+
+The r1 panel's R-27 findings keep rev 1's answers under the new names (M1 E-stmt; M3 the FIND slot;
+M4/S3 core bound + three-way guard; M5 D-shift filed; S1 one plan object; S5 C-meet; T1 §2.1).
+
+---
+
+## 7. The pcrec producer (D168, `ctx_span.md`)
+
+`MkLang`'s `S_d` are span 0's positions; each `MkCtx` item is one span (least to greatest offset, gaps
+full-set; FAILS → core, width-1 SATISFIES → empty core; EXACT may be YES, SUPERSET only NO). A longer
+lookbehind or lookahead is a longer span with no new field. What does NOT dissolve: the proof range
+(§1.1, F1) and the SOURCE switch (the DFA machine reading sees one seed byte, so `(?<=ab)` needs the
+facts-layer producer as THE context source, pcrec's own event with X1 as its control).
 
 ---
 
 ## 8. The three standing questions (`docs/design/CLAUDE.md`)
 
-1. **Measurement regime: RELEVANT, only at the byte-moving steps.** W1-W5 move no artifact byte,
-   so they are identity steps, read by emit_sweep and the identity gates, not by timing. B1 is
-   read in R-27.1's regime: the 650 harness (match / search_short / throughput x real / none /
-   dense), scalar layer, Linux, `taskset`-pinned, with job 581's absolute columns and A/A pair; G1
-   at both layers; the SIMD verdict is pcrec-bench's (D144 add. 4). A-mass's tie and D-hors are
-   accepted on 581's readings, in every regime their sites can be in (K-1).
-2. **Independent control: RELEVANT.** Answers: the byte-loop oracle (`proof_run`'s BIND, PROOF,
-   EXACT, COMPL, with S2's sentinel buffers) and job 581's python `re` differential, neither
-   sharing source with the family. Movers: emit_sweep's pcrec-side artifact diff, never the kit's
-   own `moved`. W3's comparator (normalized old fields vs stated spans) and W5's comparator
-   (transcription vs pcrec's live model) are MIGRATION controls: they share a model by design
-   and prove identity only, which §3 states.
-3. **What moves when data is regenerated: RELEVANT.** A-mass and A-model read the analysis
-   object's byte-rate and the measure set. Regenerating either can move a stop, which moves
-   bytes: a pcrec abi event (integration.md §21.3). At W5b the CONSULTED stamp (`<PREFIX>_FINDINGS`,
-   D167 add. 2) moves from pcrec's ask to the kit's `consulted`; its VALUE must not change, and
-   W5b's identity gate reads the stamp line too.
+1. **Measurement regime: RELEVANT at S3 and at D-hors only.** S1 and S2 move no default byte: identity
+   steps read by emit_sweep. S3 is read in R-27.1's regime (650 harness: match / search_short /
+   throughput × real / none / dense; scalar layer; Linux, `taskset`-pinned; 581's absolute columns and
+   A/A pair; G1 at both layers; SIMD verdict pcrec-bench's, D144 add. 4). The cost table's numbers
+   were measured where `prefix_k.c` cites; moving them is its own event.
+2. **Independent control: RELEVANT.** Answers: `proof_run`'s byte loop with sentinel buffers, 581's
+   python `re` differential, G2's scalar byte loop over a generated span space; none shares source with
+   the family. Movers: emit_sweep's pcrec-side artifact diff, never the kit's `moved`. S2's zero is
+   read against the PRE-S2 main's artifacts, which were produced by pcrec's own planner: the planner and
+   its kit transcription share a MODEL (rules and constants) but no code, so the diff proves the move,
+   not that the model is right; correctness stays with the answer gates.
+3. **What moves when data is regenerated: RELEVANT.** Every cost row reads the byte-rate and the
+   cost table. Regenerating the byte-rate (the analysis object, the default prior) or re-measuring a
+   constant can move a stop, a plan or an adoption: a pcrec abi event (integration.md §21.3) and the
+   `DFA_PREFILTER*` stamps' values (D80). S2's identity gate reads the stamp lines.
 
 ---
 
-## 9. Open questions for Frank (plain words, each with a leaning)
+## 9. Questions, as ruled
 
-- **Q1. Should a span's start be one offset, or a range?** Today every site's span starts at a
-  fixed distance from the candidate. The K82 handoff's fused gate (R-18) would want "the second
-  span starts 3 to 7 bytes after the first". *Leaning:* one offset now; a start range is added
-  the day that multi-span site is built (D77). Nothing today needs it.
-- **Q2. One rule for picking the stop, or two?** The kit's copy of pcrec's planner picks the stop
-  for native sites; the "rarest position" rule picked it for R-27's measured REPORT cells.
-  *Leaning:* one rule. At the planner move (W5) log both on the eight cells; if they agree within
-  noise, keep only the planner.
-- **Q3. Does a REPORT site still name its consumer at all?** Once "report" just means "verify
-  everything", the only thing left is a label saying pcrec's finisher reads the answer, and no
-  kit table reads it. *Leaning:* keep the label as one value of the consumer category (so every
-  site states its consumer), with no special handling anywhere.
-- **Q4. hex8-bounded: wait for the Horspool-over-sets measurement, or decide now?** No measured
-  form clears that cell. *Leaning:* measure the Horspool row in job 581; if it misses, ask you to
-  waive that one cell for B1 rather than build a hex-specific row.
-- **Q5. Fold `end_back` into the spans?** "The candidate needs one more byte after it" is exactly
-  a full-set core position at +1, so the bounded PF rows' range field could become a span.
-  *Leaning:* not now: it moves the bounded rows' text for a pure simplification; filed, and
-  worth doing only together with another change to those rows.
+- **Q1 one offset or a range:** one offset (both critics); a range waits for K82's fused gate.
+- **Q2 the stop rule:** SUPERSEDED by the kit manager's ruling: one set of rules, the planner's, in the
+  kit, from pcrec's frequencies (§3). No interim, no switch event.
+- **Q3 REPORT's label:** deleted (§1.4).
+- **Q4 hex8:** the kit's call; S3 does not wait; a named loss if no row clears it (§6).
+- **Q5 `end_back`:** folded now, as a full-set core position (§1.1).
+
+One item for the panel that reviews rev 2, not for Frank: the ALTERNATIVES fact (§1.1). It is the
+minimal fact that lets adoption move to the kit without a pick from pcrec; a reviewer should try to
+fold it away (I could not: the two conjunctions differ, `\b\.[0-9]{4}Z`).
 
 ---
 
-## 10. Charter vs committed
+## Appendix A. The S2 request text (for main to file in `memfn/docs/requests.md`; facts only, D157)
+
+> **R-NN (date, pcrec manager) — the window site stated as spans and frequencies; the plan and its
+> adoption are the kit's**
+>
+> **Customer:** D172 (Frank, 2026-10-21: "pcrec states spans; the find-window and REPORT are the same
+> request; choices are table-driven"), and integration.md §14.9 items 2-3 / Q40 (RULED YES: the kit
+> decides adoption).
+>
+> **Facts pcrec will state, for every FIND site of the family (PF, PF bounded, MLINE, the VM hat seek,
+> the offset-skip block, the pre-check's FUNC parts, Z2's cover site):**
+>
+> | fact | meaning |
+> |---|---|
+> | spans | per span: a signed start offset from the candidate, one byte set per position, a contiguous required core (possibly empty), and verify YES (every yielded candidate satisfies it) or NO (a true filter) |
+> | table offers | per position, where pcrec already emits a membership table for that set, its name |
+> | floor | SUBJECT, or an expression F; a candidate needing a read in `[0, F)` is pcrec's edge |
+> | frame | the site's form/op/handoff/empty/use/body/decl_point/hooks and its span range; whether it is the VM attempt's seek |
+> | alternatives | one or two span lists, each a sound candidate definition alone (the offset-skip block states its baseline scan and its walked k-sets) |
+> | frequencies | the analysis object's byte-rate and the measure set, as already passed on `mf_art_begin` |
+>
+> pcrec stops stating `plan_hint`, `plan_pos`, `rank_*`, `ctx[]`, `absent`, `consumable`,
+> `consumable_len`, `exact_len`, `prefix_stated`, `span_class` BOUNDED/CONTEXT, `read_floor`, W0-W2,
+> `end_back`, per-term `need`, `consumer` and REPORT's kind meaning.
+>
+> **What pcrec needs back:** the C text for the site; which alternative it serves; the positions it
+> tests and the one it searches for (pcrec writes `<PREFIX>_DFA_PREFILTER`/`_OFFSETS` from them); the
+> proof class as today.
+>
+> **Landing bar:** zero artifact movers on every emit_sweep arm, stamp lines included; per-old-row
+> reach floors met on the replacing paths; every existing deny keeps its identity; one `MF_SITE_ABI`
+> event, numbered at landing; the derived sabotage list (window_site.md §5.4) green.
+>
+> **Not asked:** any method. How the kit picks, plans, finds or resumes is the kit's (D157).
+>
+> **Sequencing:** after B4′; the kit's family and R-27's preview land with this step, never before it
+> on old fields; B1 follows as its own byte-moving event.
+>
+> **Sabotage ids:** kit-side on request (main ledger next free after S1331). Correction to D172's
+> brief: the Z2 cover rows that exist are S1130-S1141, S1144, S1148 and S1149; S1257-S1290 does not
+> exist.
+
+---
+
+## Appendix B. Where each finding landed
+
+| id | landed | | id | landed |
+|---|---|---|---|---|
+| P1 | §5.1 (no adapter, one landing) | | G6 | §5.4 step 5; range corrected |
+| P2 | superseded by kit-mgr ruling 1: §3 | | G7 | §5.2 "next at landing" |
+| P3 | §1.4 (label deleted; VM seek a frame fact) | | G8 | §5.2 (one request, Appendix A) |
+| P4 | §2.3 (plan builder; text shape in E) | | G9 | superseded by P1 |
+| P5 | §2.1 tie, §2.2 REGIME gone, §2.5 D-shift filed | | G10 | §5.1 order; §4 re-grepped at `cc6eec191` |
+| P6 | §2.2 PAIR on the stop's facts | | F1 | §1.1 proof range with its trigger |
+| P7 | §1.1 (spans finite, limits pcrec's) | | F2 | §1.3 three-way guard |
+| G1 | dissolved (no transcription comparator; C-model reproduces the subset) | | F3 | §1.1/§1.2 `end_back` as a core position |
+| G2 | §2.3 C-stop | | F4 | §2 B's clamped start |
+| G3 | §2.7 deny identities; §5.2 spec hunk | | F5 | §1.4 restated; plant in §5.2 |
+| G4 | §3.4 | | F6 | §1.1 producer obligation |
+| G5 | §5.3 | | F7a-e | §1.2 (a, d), §0 frame (b), §2.3 (c), §2.5 (e) |
+| Q1-Q5 | §9 | | U1-U7 | unchanged as filed (panel §3) |
+| kit-mgr 1 | §3, §2.1, §2.4 | | kit-mgr 3 | §2.5, §6 |
+| kit-mgr 2 | §3.4 | | kit-mgr 4, 5 | §5, Appendix A |
+
+## Appendix C. Charter vs committed
 
 | charter item (brief) | where | state |
 |---|---|---|
-| 1. the minimal facts, each with its unstated handling | §1.1 | done |
-| 1. the core rule proven over every current site (known.c, emit_dfa.c, span_facts, MLINE FAILS, R-26 ctx items) and every row's use of ctx/absent/consumable/need/site_kind/consumer/plan_hint/plan_pos/table_ref | §1.2 (sites), §1.4 + §4 (row readers) | done, by grep at `3da6aa04c` |
-| 1. where `need`, `consumable`, R-26.7 go | §1.4 | done: need → verify (span grain); consumable → verify; R-26.7 dissolves |
-| 2. one row family as declared tables: stop pick, stop find (walk; REGIME slot unfilled), verify chain under the edge rule with no read outside [0, n), generic floor | §2.2-§2.7 | done |
-| 2. which rows fold, stay, retire | §2.7 | done |
-| 3. stop choice to the kit, first row = prefix_k's pick, comparator, `plan_hint` retires | §3 | done |
-| 4. what retires, readers by grep | §4 | done (re-grep owed at each build commit) |
-| 5. staging at zero movers; byte-moving steps as pcrec abi events; `MF_SITE_ABI` events; pcrec vs kit side | §5 | done |
-| 6. R-27 as first consumer; M1-M7, S1-S8, T1-T9 answered; hex8 and U6 | §6 | done |
-| 7. the pcrec producer (D168, ctx_span); UL-8 dissolves | §7 | done (the source switch does not dissolve, stated) |
-| 8. open questions in plain words with leanings | §9 | done (5) |
-| standing questions | §8 | done |
-| no edits under memfn/src, src/, cli/, lib/, tests/; no make; no timing | — | held |
-| a row in docs/design/memfn/CLAUDE.md | that file | done |
-| addendum (kit manager): W3's restatement includes Z2's cover statement; sabotage re-aims DERIVED by rule + grep | §5.1 | done (rule stated; its output is each build step's) |
-| claims needing a run | §5 every "MEASURED" zero; §2.4 C-run's grouping = today's (W3's identity gate); §3 the comparator population floor | OWED to the build lanes |
+| apply every ruling of the r2 review | Appendix B | done |
+| 1. no plan_hint; the planner's rules as rows over frequencies; adoption the kit's; zero movers; constants as data; "unmeasured" corrected | §3, §2.1, §2.4 | done (zero movers OWED to S2's emit_sweep; the run-tie count OWED to S1) |
+| 2. the OFFSETS stamp reads the reply, spec hunk | §3.4, §5.2 | done |
+| 3. Horspool row with predictors; 581 folded or threshold OWED; hex8 the kit's call | §2.5, §6 | 581 PENDING: threshold OWED |
+| 4. S1/S2/S3 with content, owner, witness, abi, spec, sabotage, go/no-go; S1+S2 together decided | §5 | done |
+| 5. the S2 request text with the range correction | Appendix A | done |
+| rev 1's length or shorter; one-screen lead; CLAUDE.md row | whole note; `docs/design/memfn/CLAUDE.md` | done |
+| design only: no src/tests edits, no make, no timing | — | held |
