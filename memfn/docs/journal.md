@@ -2626,3 +2626,16 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - end_back becomes a core position.
 - Frank on the failure shift: "not sure you determine when to use it". Job 581 tests a static predictor (predicted survival length from the default byte-rate) against measured wins.
 - **Frank, 2026-10-21: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands."** This is the BUILD GO for D172's unified window site, conditional on rev 2 passing its panel and main's agreement. hex8 is the kit's judgement call, and REPORT routing (B1) proceeds regardless of hex8.
+
+## 2026-10-22 — D172 build started; main's ownership conditions
+
+- Critics: rev 3.1 re-verification GO. Main agreed rev 3.1 plus seven notes, folded into rev 3.2 (b5603b3c0). Main filed R-29 (d44ddaaf3), Appendix A verbatim, with a ruling on the ReqRun.idx readers: one pcrec resolver function, and commit 6's sweep covers those stamps. Frank's conditional go now holds.
+- Named S3 losses, stated plainly to Frank and in R-29: hex8 throughput/dense 1.53x, hex8 search_short/dense 1.14x, file-ext search_short/none 1.03x, file-ext match/real 1.04x and match/none 1.07x.
+- Commit 1 (the kit family under `mf_preview("window-family")`) is building in lane wsc1.
+- R-28 (stack frames) is building in lane r28 under Frank's standing "keep busy" word, relayed by main. Its ids are S1430-S1439.
+- **Main's conditions for (A), where kit lanes write the pcrec-side commits 2, 4 and the pcrec half of 6. Every pcrec-side brief must carry them:**
+  1. pcrec-path edits (src/, cli/, lib/, docs/spec) go in commits that touch ONLY pcrec paths, separate from kit-path commits;
+  2. read docs/dev/coding_guide.md before editing src/;
+  3. what pcrec states is EXACTLY R-29's fact table. A builder that computes anything unlisted, or shapes a fact for a kit method, is a D157 breach and main bounces it;
+  4. main runs its own read-only review of the pcrec-side commits before the landing.
+  Abi and stamp events go through main's D94 reader-grep ritual at landing.
