@@ -125,7 +125,8 @@ LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 # directories as LIBSRCS and KITSRCS.
 KITSRCS  := $(wildcard memfn/src/*.c)
 KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
-KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def
+KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def \
+            memfn/src/plan_cost.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness

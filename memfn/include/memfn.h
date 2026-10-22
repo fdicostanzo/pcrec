@@ -532,6 +532,87 @@ typedef enum { MF_CONSUMABLE_UNSTATED = 0, MF_CONSUMABLE_YES, MF_CONSUMABLE_NO }
  *             case) */
 typedef enum { MF_FLOOR_UNSTATED = 0, MF_FLOOR_SUBJECT, MF_FLOOR_LO } mf_read_floor;
 
+/* ---- THE WINDOW SITE (D172; docs/design/memfn/window_site.md rev 3.2) ------
+ *
+ * STATED FACTS, appended to mf_site LAST at S2's commit 1 (no MF_SITE_ABI
+ * number moves before commit 6, where the old fields retire), and read ONLY
+ * on an art previewing the window family (mf_preview(art, "window-family")):
+ * no default path decides anything from them. Elsewhere they are checked as
+ * statements (a malformed one is refused, naming it) and otherwise ignored,
+ * so a site stating them BESIDE its old fields renders as before.
+ *
+ * A SPAN is a run of consecutive positions start .. start + len - 1 relative
+ * to the candidate c, one byte set per position (all 256: any byte; empty is
+ * legal). THE CORE RULE (window_site.md §1.2): at candidate c a span holds iff
+ * for every position d, c + d inside [0, n) means s[c + d] lies in the set,
+ * and c + d outside it means d lies outside the span's CORE (the contiguous
+ * positions that must lie inside the subject; it may be empty). VERIFY: YES,
+ * every candidate the kit yields satisfies the span; NO, a true filter the
+ * kit may use or skip (every match satisfies it). A TABLE OFFER names, per
+ * position, a membership table pcrec already emits for that position's set
+ * (its id, rendered through the `table_name` hook); 0 is no offer.
+ *
+ * An ALTERNATIVE is one list of spans, a sound candidate definition alone,
+ * with its ENTRY fact: PARKED (the candidates are where the parked machine
+ * leaves its start state), RESEED (candidates from the walk, the machine
+ * re-seeded at each), or NONE (no entry fact: the candidate is the window's
+ * own). A site states one or two, UNORDERED; the kit chooses (phase 1,
+ * mf_wdecide) and renders the choice (phase 2, mf_define under the preview).
+ *
+ * THE FLOOR: SUBJECT (reads lie in [0, n); below 0 the core rule decides) or
+ * EXPR, the `floor` hook's text F (F <= lo): a candidate needing a read in
+ * [0, F) is NOT COVERED, never yielded, and pcrec's EDGE attempt owns it.
+ * Per non-core position the guard is three-way: off the subject passes,
+ * inside [0, F) is the edge's, else membership.
+ *
+ * Every fact has an UNSTATED zero, refused where it is read (an empty core is
+ * a value: `core` STATED with `core_len` 0). The FRAME (form, op, handoff,
+ * empty, use, body, decl_point, site_kind, the hooks, span_lo/span_hi, the
+ * FUNC name `pred.fn_ref`) is today's fields, read by phase 2 only. */
+typedef enum { MF_VERIFY_UNSTATED = 0, MF_VERIFY_YES, MF_VERIFY_NO } mf_verify;
+typedef enum { MF_CORE_UNSTATED = 0, MF_CORE_STATED } mf_core;
+typedef enum { MF_ENTRY_UNSTATED = 0, MF_ENTRY_NONE, MF_ENTRY_PARKED,
+               MF_ENTRY_RESEED } mf_entry;
+typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wfloor;
+
+/* Positions one span states: a SHAPE BOUND, DERIVED as MF_MAX_SPAN_POS is
+ * (the longest piece pcrec states is a run its analysis truncates to
+ * PCREC_MAX_REQ_RUN_SCAN, 32 positions). */
+#define MF_WSPAN_POS MF_MAX_SPAN_POS
+/* Spans one alternative states: a SHAPE BOUND, DERIVED from pcrec's widest
+ * statement, the reseed alternative: one span per walked offset (at most
+ * PCREC_PREFIX_K_MAX, 24, offset 0's F0 included) plus the run R, inside
+ * MF_MAX_TERM. pcrec asserts its own bound <= this where it states spans. */
+#define MF_WMAX_SPAN MF_MAX_TERM
+/* Alternatives one site states (window_site.md §0: an unordered set of 1 or
+ * 2). A SHAPE BOUND, not a tuning constant. */
+#define MF_WMAX_ALT 2
+/* The offsets a span position may lie at: [-MF_MAX_BACK, MF_WREACH). A SHAPE
+ * BOUND, CHOSEN at 64 (D77): twice the longest piece (MF_WSPAN_POS) past the
+ * longest walk; TRIGGER: a pcrec statement past it, refused naming `start`.
+ * Positions outside the proof range [MF_PROOF_LO, MF_MAX_FWD) are tested,
+ * never proven (window_site.md §1.1). */
+#define MF_WREACH 64
+
+typedef struct {
+    int32_t  start;                     /* offset of position 0 from c        */
+    uint8_t  len;                       /* 1..MF_WSPAN_POS                    */
+    uint8_t  verify;                    /* mf_verify                          */
+    uint8_t  core;                      /* mf_core                            */
+    uint8_t  core_lo, core_len;         /* the core: positions [core_lo,
+                                           core_lo + core_len) of the span;
+                                           core_len 0 is the empty core       */
+    uint8_t  set[MF_WSPAN_POS][32];     /* position j's set, mf_term.set's
+                                           layout                             */
+    uint32_t table_ref[MF_WSPAN_POS];   /* position j's table offer, 0: none  */
+} mf_wspan;
+
+typedef struct {
+    uint8_t         entry;              /* mf_entry                           */
+    uint8_t         nspan;              /* 1..MF_WMAX_SPAN                    */
+    const mf_wspan *spans;
+} mf_walt;
+
 typedef struct {                    /* one position term, relative to cand    */
     mf_term_kind   kind;
     int32_t        offset;          /* bytes from cand, >= -MF_MAX_BACK; the
@@ -809,6 +890,18 @@ typedef struct {
        declines a site stating any (the gate's field `ctx`) */
     const mf_pred  *ctx;
     uint8_t         nctx;
+    /* THE WINDOW SITE'S FACTS (D172, window_site.md rev 3.2 §1; S2 commit 1,
+       appended LAST, no MF_SITE_ABI number move until commit 6): the
+       alternatives alts[0..nalt), each its spans and ENTRY, and the floor
+       (mf_wfloor; EXPR's F is the `floor` hook's text). nalt 0 / alts NULL:
+       not a window site (every pcrec site at commit 1). Read only on an art
+       previewing "window-family" (mf_preview); elsewhere checked as
+       statements and not read. wfloor UNSTATED is refused where a span
+       position lies below the candidate (window_site.md §0), and is a
+       wildcard elsewhere: no read there can fall below lo, so below F */
+    uint8_t         nalt;
+    const mf_walt  *alts;
+    uint8_t         wfloor;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -1385,6 +1478,64 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * or for a step the kit does not name. It is no `--memfn=` option (no
  * options.def row), so mf_opts_check refuses every spelling of it. */
 int      mf_preview(mf_art *, const char *step);
+/* (D172, S2 commit 1) The step "window-family" previews THE WINDOW FAMILY
+ * (window_site.md rev 3.2 §2): on such an art a site stating alternatives
+ * (mf_site.nalt) is decided and rendered by the family from its window facts
+ * alone, and mf_wdecide answers. Every other art ignores those facts. */
+
+/* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
+ *
+ * THE DECISION, no text: pcrec asks with the spans, the alternatives and the
+ * frequencies (the analysis object's byte-rate on mf_art_begin), never a
+ * frame fact; the kit answers what its text will do. pcrec's NEXT rows and
+ * the stamps read this reply (window_site.md §3.4's reply-to-stamp table).
+ *   alt         the chosen alternative's index in site.alts
+ *   reseed      THE RE-SEED BIT (§3.5): 1 iff the plan needs the matcher
+ *               re-seeded at each candidate (a RESEED choice, or a PARKED one
+ *               whose plan reads the run R: C-pin)
+ *   has_stop    1: the text FINDS the stop and tests the plan around it; 0:
+ *               the floor row (no core position, or an empty meet inside a
+ *               core), whose byte loop tests every plan position
+ *   stop        the stop's offset d* from the candidate; stop_set its set
+ *   plan[]      the offsets the text TESTS at each candidate besides the
+ *               stop's find, ascending (C-asc): the stop's own offset only
+ *               where its set is not the find's (C-stop) or a pinned stretch
+ *               keeps it; under C-pin every offset of the pinned stretch.
+ *               plan_term[i]: the compare position i belongs to (C-run,
+ *               C-pin): equal values are ONE compare, in plan order
+ *   pinned      1 iff C-pin fired: the run R is compared whole
+ *   run_stated  1 iff the chosen alternative states R (its verify-NO span of
+ *               two or more positions); then run_member is R's MEMBER (the
+ *               offset of its least-mass exact position, ties to the higher
+ *               offset), and [run_lo, run_lo + run_len) the stretch of exact
+ *               positions around it. The reply is the ONE owner of both
+ *   path        the decision's path id: "parked", "reseed", "mass", "floor",
+ *               "empty", each with "+pin" where C-pin fired
+ * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */
+#define MF_WPLAN_MAX (MF_WREACH + MF_MAX_BACK)
+typedef struct {
+    uint8_t  alt;
+    uint8_t  reseed;
+    uint8_t  has_stop;
+    int32_t  stop;
+    uint8_t  stop_set[32];
+    uint8_t  nplan;
+    int32_t  plan[MF_WPLAN_MAX];
+    uint8_t  plan_term[MF_WPLAN_MAX];
+    uint8_t  pinned;
+    uint8_t  run_stated;
+    int32_t  run_member;
+    int32_t  run_lo;
+    uint8_t  run_len;
+    char     path[16];
+} mf_wreply;
+/* THE PHASE-1 ASK: the family's decision for window site `site` on `art`,
+ * which must preview "window-family" (refused otherwise: nothing reaches the
+ * family without the lever). PURE, as mf_ask is: no text, no handle, no art
+ * state, no error set. Returns 0, or -1 where the site is not one the family
+ * describes (the define would refuse it). */
+#define mf_wdecide MF_NS(wdecide)
+int      mf_wdecide(const mf_art *, const mf_site *site, mf_wreply *out);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte

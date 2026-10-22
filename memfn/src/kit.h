@@ -133,11 +133,21 @@ typedef struct fd_facts {
  * or, in the run compare's walk, the RUN term; in the finder walk also its
  * own facts (`fd`, NULL in every other walk, where its fields read
  * unstated). */
+/* The window family's walk facts (window.c, D172 S2 commit 1): the window
+ * site and the alternative the walk weighs (Table A, per alternative) or
+ * chose (Table E). The fields.def window fields read them and nothing else,
+ * so they are UNSTATED in every other walk. */
+typedef struct wf_facts {
+    const mf_site *site;
+    const mf_walt *alt;
+} wf_facts;
+
 typedef struct {
     const mf_site  *s;
     const mf_hooks *h;
     const mf_term  *t;
     const fd_facts *fd;
+    const wf_facts *wf;     /* the window family's walks only, else NULL      */
 } gate_in;
 
 /* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
@@ -260,6 +270,12 @@ typedef struct {
        -1 when the art does not count) */
     const char       *fd_row;
     int               reach_k;
+    /* D172 S2 commit 1: a window site the family rendered on a preview art
+       (window.c). `wplan` is the plan its FLOOR row renders (NULL where the
+       family's text is a legacy row's, `site` then holding the plan
+       translated into that row's site); `wpath` the decision's path id */
+    const struct wf_plan *wplan;
+    const char       *wpath;
 } site_rec;
 
 struct mf_art {
@@ -316,6 +332,25 @@ const char *kit_presence_check(const mf_site *s);
  * by the public port and by the routed PRES slot (finder.c fd_pres). */
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
                     const uint8_t *start_set, mf_pres_picks *out);
+
+/* THE BYTE-RATE and its masses (presence.c), one definition the PRES ports
+ * and the window family read: the analysis object's `byte-rate` table (ppm
+ * per byte, uint32_t[256]) or NULL where it carries none (no object, the
+ * kind absent, PRIOR_NONE). kit_set_mass is pcrec_find_set_ppm's arithmetic
+ * (capped at 1e6; NONE: the uniform mass of the cardinality); kit_set_sum
+ * the uncapped sum, PICK's cube mass (pcrec_find_pick, run_rank). */
+#define kit_byte_rate MF_NS(kit_byte_rate)
+#define kit_set_mass  MF_NS(kit_set_mass)
+#define kit_set_sum   MF_NS(kit_set_sum)
+const uint32_t *kit_byte_rate(const mf_art *art);
+uint32_t kit_set_mass(const uint32_t *rate, const uint8_t set[32]);
+uint32_t kit_set_sum(const uint32_t *rate, const uint8_t set[32]);
+
+/* The kit's own membership test of `byte` (an unsigned char expression)
+ * against `set` (generic.c): the set's maximal byte ranges, OR-ed; "0" for
+ * the empty set, "1" for the full one. 1 iff the text reads `byte`. */
+#define kit_set_test MF_NS(kit_set_test)
+int kit_set_test(kb *b, const uint8_t set[32], const char *byte);
 
 #define kit_fail MF_NS(kit_fail)
 /* Records the first internal error on the artifact; always returns -1. */
@@ -713,6 +748,49 @@ int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). */
 int run_cmp_sat(const mf_term *t);
+
+/* ---- THE WINDOW FAMILY (window.c; D172 S2 commit 1) ----------------------
+ *
+ * window_site.md rev 3.2 §2: Tables A (the stop, its alternative half) with
+ * the MARGIN row, C (the verify plan), D (the resume), E (the frame) and the
+ * TIE table, over a window site's facts, on an art previewing
+ * "window-family" (mf_preview) and nowhere else. */
+struct wf_plan;
+
+#define wf_check        MF_NS(wf_check)
+#define wf_preview_step MF_NS(wf_preview_step)
+#define wf_active       MF_NS(wf_active)
+#define wf_prepare      MF_NS(wf_prepare)
+#define wf_floor_class  MF_NS(wf_floor_class)
+#define wf_floor_arm    MF_NS(wf_floor_arm)
+#define wf_plan_reads_table MF_NS(wf_plan_reads_table)
+
+/* NULL iff site `s`'s window facts (alts, spans, entries, wfloor) are
+ * statements the family describes; on a site stating none, NULL. `frame`
+ * 1: also the frame rules the family reads (the preview's own route). */
+const char *wf_check(const mf_site *s, int frame);
+/* The kit's spelling of `step` where it is the window family's, else NULL. */
+const char *wf_preview_step(const char *step);
+/* 1 iff `art` previews the window family. */
+int wf_active(const mf_art *art);
+/* PHASE 2's selection for window site `s` (wf_check'd) under the define
+ * hooks `def` (the frame's), the gate reading `gphases`, traced unless
+ * `quiet`: the decision (phase 1), then Table E. On the
+ * family's FLOOR row, *plan is the plan it renders and *legacy NULL; on a
+ * row reproducing today's text, *legacy is the plan translated into that
+ * row's site (selected by the composer's walk as ever) and *plan NULL. Both
+ * live in the art's arena. *path is the decision's path id. 0, or -1 with
+ * *why. */
+int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
+               unsigned gphases, int quiet, const mf_site **legacy,
+               const struct wf_plan **plan, const char **path, const char **why);
+/* The class of the floor row's text for `plan` (R-25: the positions it
+ * TESTS, the stop's find included), and whether that text reads a table of
+ * pcrec's (mf_defined's `reads_table`). */
+void wf_floor_class(const struct wf_plan *plan, mf_class *out);
+int  wf_plan_reads_table(const struct wf_plan *plan);
+/* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
+extern const arm wf_floor_arm;
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 
