@@ -12808,7 +12808,8 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
      * sabotage S07's anchor keeps its text), before the scan loop and its
      * `seedhead` jump, dominating every use in this body. */
     if (fwd->pf_find.handle) {
-        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back);
+        /* its D11 bound: the `{1: any}` its window's first span carries */
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->alts[0].spans[0].len == 2);
         find_locals(c, "    ", &fd, &fwd->pf_find);
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
