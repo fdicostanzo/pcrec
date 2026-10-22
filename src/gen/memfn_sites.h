@@ -128,9 +128,10 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
  * (window_site.md rev 3.2 §1): one or two alternatives, each its ENTRY and
  * its spans (start, one set per position, a contiguous core, verify), the
  * table offers, and the floor. Facts only (D157): no rank, no pick, no plan;
- * the kit decides from them and from the byte-rate it already holds. Nothing
- * reads them on a default art until the family's lever flips (commit 5), so
- * stating them moves no byte. */
+ * the kit decides from them and from the byte-rate it already holds. Since
+ * commit 5 the family decides every art's window sites from them (the old
+ * fields beside them are read only under the inverse lever
+ * `--harness=window-legacy` and on a kit-proof art), at zero movers. */
 /* `n` zeroed alternatives in the arena. */
 mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
 /* Gives alternative `a` its ENTRY and `n` zeroed spans in the arena, which

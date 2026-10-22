@@ -4547,9 +4547,9 @@ typedef struct {
      * docs/design/offset_k_skip.md. */
     PrefixKSets ofsk;
     /* D172 S2 commit 4 THE WINDOW FAMILY's PHASE-1 REPLY (window_site.md rev
-     * 3.2 §0, §2.4) for this machine's DFA prefilter statement, asked under
-     * the harness lever `--harness=window-reply` wherever `kind` is not
-     * NONE (`wr_stated`; `window_reply_ask`). The NEXT rows' key clauses read
+     * 3.2 §0, §2.4) for this machine's DFA prefilter statement, asked wherever
+     * `kind` is not NONE and the family is on (the default since commit 5;
+     * `wr_stated`; `window_reply_ask`). The NEXT rows' key clauses read
      * it instead of the planner's pick (`next_keys[]`); `wr_entry` is the
      * chosen alternative's ENTRY fact, read off the statement it answers. */
     bool      wr_stated;
@@ -4702,9 +4702,9 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
         pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
     PCREC_CAND_TRACE_RECF("NEXT", "dfa", "prefix-k", "nsel=%d", o->ofsk.nsel);
     /* D172 S2 commit 4: the family's decision over the same statement the
-       k-set selection weighed (so the walk is already asked), under the
-       lever only */
-    if (o->kind != DFA_PF_NONE && pcrec_window_reply_lever(cx))
+       k-set selection weighed (so the walk is already asked); the default
+       since commit 5, off under the inverse lever */
+    if (o->kind != DFA_PF_NONE && pcrec_window_family_on(cx))
         window_reply_ask(cx, o);
 #ifdef OPTK_DEBUG
     { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
@@ -7162,10 +7162,11 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
 
 /* D172 S2 commit 4 THE NEXT KEYS (window_site.md rev 3.2 §2.4): the clause
  * of each offset row's predicate that reads WHICH candidate test was chosen,
- * as a declared map. Off the harness lever it is the planner's pick (`pick`,
- * today's clause, unchanged); under `--harness=window-reply` it is the window
- * family's phase-1 reply (`UnanchStart.wr`), held to the field values each
- * row lists (`WR_ANY`: the row does not read that field). The rows below the
+ * as a declared map. By default (commit 5) it is the window family's
+ * phase-1 reply (`UnanchStart.wr`), held to the field values each
+ * row lists (`WR_ANY`: the row does not read that field); under the inverse
+ * lever `--harness=window-legacy` (and on a kit-proof art) it is the
+ * planner's pick (`pick`, the old clause). The rows below the
  * offset rows read no key: first-match order reaches them exactly where the
  * reply chose PARKED without C-pin (RE-SEED clear), and a RE-SEED bit that
  * reaches a row which does not re-seed is refused loudly (`dfa_form_derive`).
@@ -7177,8 +7178,8 @@ static bool nk_pick_run_pinned(const CandSel *s);
 static bool nk_pick_offset_set(const CandSel *s);
 static const struct {
     const char *rows;                   /* the rows whose predicate reads the key */
-    bool (*pick)(const CandSel *);      /* off the lever: the planner's pick */
-    uint8_t entry, reseed, pinned;      /* under it: the reply's chosen ENTRY, its
+    bool (*pick)(const CandSel *);      /* the old path: the planner's pick */
+    uint8_t entry, reseed, pinned;      /* else the reply's chosen ENTRY, its
                                            RE-SEED bit, C-pin (`mf_wreply.pinned`) */
     const char *basis;
 } next_keys[NK_N] = {
@@ -7197,7 +7198,7 @@ static bool wr_field_is(unsigned want, unsigned v)
 }
 
 /* Does key `k` hold for selection `s`: the reply's declared fields where the
- * lever asked one, else the planner's pick. */
+ * family answered one, else (the old path) the planner's pick. */
 static bool next_key_holds(const CandSel *s, NextKey k)
 {
     const UnanchStart *u = s->us;
@@ -7260,9 +7261,9 @@ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
 }
 
 /* Clauses (0)-(2) are facts of the machine and the run, asked as ever (so the
- * facts' `used` record is the same either side of the lever; the reply can
- * carry C-pin only where they hold, since R is stated only then); the key
- * (`NK_RUN_PINNED`) is clauses (3)-(4) off the lever, the reply under it. */
+ * facts' `used` record is the same on either path; the reply can carry
+ * C-pin only where they hold, since R is stated only then); the key
+ * (`NK_RUN_PINNED`) is the reply, or clauses (3)-(4) on the old path. */
 static bool pf_run_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
@@ -7334,8 +7335,8 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
     const ReqRun *r = pcrec_fact_req_run(cx);
     memset(t, 0, sizeof *t);
     if (pf->u.pf.emit_block == NULL) return false;
-    /* D172 S2 commit 4: under the harness lever the offset-set rows are chosen
-       by the family's reply, while this test is still the planner's selection
+    /* D172 S2 commit 4: the offset-set rows are chosen by the family's reply
+       (the default since commit 5), while this test is still the planner's selection
        until commit 6; a row the planner selected no offset for is loud */
     if (!pf->u.pf.run_term && o->nsel <= 0)
         pcrec_ctx_fail(cx, 0, "internal error: an offset-set row (%s) on a machine the "
@@ -7534,8 +7535,8 @@ static int ofs_window_of(Ctx *cx, const UnanchStart *us, mf_walt **walts)
  * window family's decision over `us`'s DFA prefilter statement
  * (`ofs_window_of`), into `us->wr`, with the chosen alternative's ENTRY. The
  * decision reads no frame fact, so one ask serves every NEXT row and every
- * selection of this machine. Asked only under the harness lever, whose art
- * previews the family; a refusal is pcrec's defect (the statement is the one
+ * selection of this machine. Asked wherever the art previews the family
+ * (the default); a refusal is pcrec's defect (the statement is the one
  * the block defines). */
 static void window_reply_ask(Ctx *cx, UnanchStart *us)
 {

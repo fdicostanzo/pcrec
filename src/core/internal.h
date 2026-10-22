@@ -163,20 +163,22 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
  * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
  * X1/X3) and never shipped; the default and trace builds decline `cover`. */
-/* D172 S2 commit 4 (window_site.md rev 3.2 §2.4, §5.1): the fifth,
- * `--harness=window-reply`: the art previews the kit's WINDOW FAMILY
- * (mf_preview(art, "window-family"), at art setup), so every site stating
- * window facts is decided and rendered by the family (phase 2), and the DFA
- * prefilter's NEXT rows read the family's PHASE-1 reply (mf_wdecide) instead
- * of the planner's pick. Its artifacts must be byte-identical to the default
- * build's (the lever's witness, memfn/tests/wreply_sweep.sh); the default
- * flips at commit 5. Refused beside `kit-proof` (one preview per art). */
+/* D172 S2 commit 5 (window_site.md rev 3.2 §5.1): the fifth,
+ * `--harness=window-legacy`, the INVERSE lever: the window family is the
+ * DEFAULT since commit 5 (every art previews it at setup, mf_preview(art,
+ * "window-family"): every site stating window facts is decided and rendered
+ * by the family, and the DFA prefilter's NEXT rows read its PHASE-1 reply,
+ * mf_wdecide); this lever restores the OLD path (no preview, the planner's
+ * pick), so a mover can be localized by flipping back. Its artifacts must be
+ * byte-identical to the default build's (tests/memfn/run_wreply.sh). It and
+ * `kit-proof` (whose art previews R-26.6: one preview per art) both take the
+ * old path. Retires with the old path at commit 6. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
-    unsigned window_reply : 1;
+    unsigned window_legacy : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3853,13 +3855,15 @@ static inline bool pcrec_kit_proof_routed(const Ctx *cx)
     return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
 }
 
-/* D172 S2 commit 4: is this compile the harness lever `--harness=window-reply`
- * (PcrecHarnessOptions.window_reply), whose art previews the window family
- * and whose DFA prefilter NEXT rows read its phase-1 reply? False on every
- * shipped compile until commit 5 flips the default. */
-static inline bool pcrec_window_reply_lever(const Ctx *cx)
+/* D172 S2 commit 5: does this compile's art preview the window family, so
+ * its DFA prefilter NEXT rows read the family's phase-1 reply? True on every
+ * shipped compile; false under the inverse lever `--harness=window-legacy`
+ * and under `--harness=kit-proof` (its art previews R-26.6), which keep the
+ * old path. */
+static inline bool pcrec_window_family_on(const Ctx *cx)
 {
-    return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->window_reply;
+    const PcrecHarnessOptions *h = cx->emit_in ? cx->emit_in->harness : NULL;
+    return !h || (!h->window_legacy && !h->kit_proof);
 }
 
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
