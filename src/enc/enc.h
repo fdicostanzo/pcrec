@@ -541,7 +541,8 @@ static inline int pcrec_enc_ready(const PcrecEnc *e)
  * [EMIT-ENTRIES] `drop` and `stat` are the artifact's linkage for the
  * out-of-line entries (src/gen/entries.c): after `mask` is closed over
  * `requires`, an entry in `drop` is not written and one in `stat` is
- * written `static`. Both 0 is every entry as it always was. */
+ * written `static`. Both 0 is every entry as it always was. [FINDALL-NEXT]
+ * The declarations write no `stat` entry: it is its static twin alone. */
 void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, unsigned drop, unsigned stat);
 /* [MEMFN] M7 (D58 addendum 2): `sites[0..nsites)` are the kit's rendered

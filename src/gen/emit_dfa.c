@@ -1971,9 +1971,15 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * static table (the DFA attempt route's direct threading), which gcc
      * refuses to duplicate and which stays one shared function. The layout
      * is fixed: the part table's class `find` has no subject yet. */
-    if (ent == PCREC_ENTRY_FIND)
-        pcrec_sb_puts(c, pcrec_attr_text(find_body_shared(cx) ? PCREC_ATTR_NOINLINE
-                                                              : PCREC_ATTR_INLINE));
+    if (ent == PCREC_ENTRY_FIND) {
+        const bool shared = find_body_shared(cx);
+        pcrec_sb_puts(c, pcrec_attr_text(shared ? PCREC_ATTR_NOINLINE : PCREC_ATTR_INLINE));
+        /* An always_inline body is OWNED (A1's shape): a part it calls is
+         * called from its callers, `_search` and `_next` (part_layout.c's
+         * `callers`). */
+        if (!shared)
+            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_FIND);
+    }
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s)\n{\n",
@@ -13894,8 +13900,10 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_sb_cmt_close(c);
     /* [ENTRY-TABLE] E1: a body that keeps label addresses in a static table
      * can never be copied into a caller (gcc's own refusal, H1), so the part
-     * layout's P2 reads this as the body's `copyable` fact. */
-    if (d->n > 0) cx->job->pl.uncopyable = true;
+     * layout's P2 reads this as the body's `copyable` fact. [FINDALL-NEXT]
+     * Not a `<p>__find` body: that one is `noinline` (`find_body_shared`)
+     * and the subject is its `_search` wrapper, which copies. */
+    if (d->n > 0 && ent != PCREC_ENTRY_FIND) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);

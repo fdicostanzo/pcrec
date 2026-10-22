@@ -18,14 +18,18 @@
 # row `RANK<TAB>UNWITNESSED<TAB>reason`, reported and never passed; a rank
 # with neither is a failure.
 #
+# [FINDALL-NEXT] I1 (lane i1tri2): a DFA body's sites are `find`'s (`rx__find`,
+# which `search` and `next` call); a VM `search_run`'s are in its search loop
+# `rx__find`; residual calls name the static twin `rx__<name>`.
+#
 # rank	id	arms	pattern	from	to	site	count
-R0	tie	-	(?:\s+|x\s*?)$	search	match	rx_match(	1
+R0	tie	-	(?:\s+|x\s*?)$	find	match	rx_match(	1
 R1	vm-in	-	(a)b	search_in	search	return rx_search(	1
-R1	split-f	-	^\s+|\s+$	search	comp_a	rx__f_search(	1
-R1	split-np	-	^\s+|\s+$	search	next_pos	rx_next_pos(	1
+R1	split-f	-	^\s+|\s+$	find	comp_a	rx__f_search(	1
+R1	split-np	-	^\s+|\s+$	find	next_pos	rx__next_pos(	1
 R2	hyb-entry	-	(a)b	search_run	prefilter	rx_prefilter(	1
-R2	split-q	-	^\s+|\s+$	search	comp_b	rx__q_search(	1
-R2	gfloor	-	a\Gb	search	comp_a	rx__f_search(	1
-R2	utf	utf8,utfcheck	abc	search	valid_upto	rx_valid_upto(	1
+R2	split-q	-	^\s+|\s+$	find	comp_b	rx__q_search(	1
+R2	gfloor	-	a\Gb	find	comp_a	rx__f_search(	1
+R2	utf	utf8,utfcheck	abc	search	valid_upto	rx__valid_upto(	1
 R3	hyb-clamp	-	(a+)bcd	search_run	prefilter	rx_prefilter(	2
 R3	hyb-adapt	-	(?>a\Kb)c	search_run	prefilter	rx_prefilter(	2

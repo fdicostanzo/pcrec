@@ -99,7 +99,9 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, unsigned drop, unsigned stat)
 {
     if (!e || !e->entries) return;
-    mask = pcrec_enc_mask_close(e, mask) & ~drop;
+    /* [FINDALL-NEXT] a `stat` entry is its twin alone, defined ahead of
+     * every caller (`pcrec_enc_emit_twins`), so it has no declaration. */
+    mask = pcrec_enc_mask_close(e, mask) & ~drop & ~stat;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && !t->inline_def) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
@@ -108,7 +110,6 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
             }
-            if (stat & t->id) pcrec_sb_puts(sb, "static ");
             pcrec_enc_emit_text(sb, t->decls, prefix, NULL);
         }
 }
