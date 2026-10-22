@@ -122,6 +122,43 @@ void pcrec_memfn_term_set(mf_term *t, int off, const uint8_t set[256],
 void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
                           const unsigned char *mask, int len, mf_need need);
 
+/* ---- the WINDOW statement (D172 S2 commit 2; R-29's fact table) ----------
+ *
+ * The facts a FIND site of the window family states BESIDE its old fields
+ * (window_site.md rev 3.2 §1): one or two alternatives, each its ENTRY and
+ * its spans (start, one set per position, a contiguous core, verify), the
+ * table offers, and the floor. Facts only (D157): no rank, no pick, no plan;
+ * the kit decides from them and from the byte-rate it already holds. Nothing
+ * reads them on a default art until the family's lever flips (commit 5), so
+ * stating them moves no byte. */
+/* `n` zeroed alternatives in the arena. */
+mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
+/* Gives alternative `a` its ENTRY and `n` zeroed spans in the arena, which
+ * the caller fills in order (the walked offsets in walk-index order, §1.1's
+ * obligation); returns them. */
+mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n);
+/* Fills span `w`: `len` positions from `start`, verify `v`, its core every
+ * position (narrow it with pcrec_memfn_wspan_core); every set empty until a
+ * position setter below fills it. */
+void pcrec_memfn_wspan(mf_wspan *w, int start, int len, mf_verify v);
+/* Narrows span `w`'s core to positions [lo, lo + len) (len 0: the empty
+ * core, the absence-satisfies case). */
+void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len);
+/* Position `j` of span `w`: the bytes of a 256-entry table (nonzero = in),
+ * of a 32-byte bitset, every byte, or the cube {x : (x & mask) == byte}; a
+ * nonzero `offer` is pcrec's table for that set, named by the site's
+ * `table_name` hook. */
+void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer);
+void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32]);
+void pcrec_memfn_wpos_any(mf_wspan *w, int j);
+void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask);
+/* States alternatives `alts[0..n)` and floor `fl` on site `s`, checking
+ * pcrec's own bounds against the kit's shape bounds (MF_WMAX_ALT,
+ * MF_WMAX_SPAN, MF_WSPAN_POS, [-MF_MAX_BACK, MF_WREACH)) loudly: a statement
+ * past one is pcrec's defect, never truncated. */
+void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
+                               mf_wfloor fl);
+
 /* States the window facts (W0-W2, MF_SITE_ABI 11; setfind.md §2.2) of a
  * forward FIND's predicate `p`, its terms already filled, whose window IS its
  * candidate, as every FIND pcrec builds today: window_stated 1, move_back the
@@ -252,6 +289,13 @@ typedef struct {
     const char *moved;    /* [MEMFN] R17-b' B2 the statement run where the
                            * candidate moved off `pos` (PR-2: the DFA hat's
                            * re-seed), NULL for none                         */
+    const mf_walt *walts; /* D172 S2 commit 2 the window statement's
+                           * alternatives where the builder holds the forward
+                           * scan's start analysis (the DFA prefilter, PARKED
+                           * and RESEED: emit_dfa.c `pf_window_of`), `nwalt`
+                           * of them; NULL elsewhere, where find_site states
+                           * the term's own one alternative                  */
+    int         nwalt;
 } PcrecFind;
 /* The memchr form's statement declares `const void *q`, the hit or NULL, in
  * the caller's block; nothing after it reads `q`. */

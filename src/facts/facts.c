@@ -568,6 +568,12 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx)
     return &cx->job->pf.kset_walk;
 }
 
+const RunPin *pcrec_fact_run_pin_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_RUN_PIN, false);
+    return &cx->job->pf.run_pin;
+}
+
 const RunPin *pcrec_fact_run_pin(Ctx *cx)
 {
     pf_ask(cx, PF_RUN_PIN, true);
