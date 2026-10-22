@@ -255,7 +255,8 @@ static bool cc_width(CoverSt *st)
  * exact [r3rc m2]; the slice stating less is an under-statement, sound. */
 static bool cc_exact(CoverSt *st)
 {
-    const MkLang *l = st->cv->lang = pcrec_fact_span(st->cx);
+    const MkLang *l = st->cv->lang = pcrec_kit_proof_routed(st->cx)
+        ? pcrec_fact_span(st->cx) : pcrec_fact_span_stated(st->cx);
     int k = st->w.k;
     if (!st->w.exact) { st->detail = "machine-inexact"; return false; }
     if (l->stated != MK_LANG_STATED) { st->detail = "producer-unstated"; return false; }

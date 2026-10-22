@@ -5650,6 +5650,7 @@ struct MemfnFind {
     const mf_site *site;
     uint32_t       handle;
     bool           reads_table;
+    int            holdback;   /* the D11 bound the builder stated (`PcrecFind.holdback`) */
 };
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
@@ -6774,7 +6775,7 @@ static struct MemfnFind find_define(StrBuf *file, const PcrecFind *f)
     mf_hooks h;
     PcrecMfU u;
     mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
-    struct MemfnFind d = { find_site(f), 0, false };
+    struct MemfnFind d = { find_site(f), 0, false, f->holdback };
     find_hooks(f, d.site, NULL, &h, &u);
     d.handle = pcrec_memfn_define(f->cx, f->site, d.site, &h, file);
     pcrec_memfn_defined(f->cx, d.handle, r);
@@ -6794,14 +6795,14 @@ static void find_locals(StrBuf *c, const char *ind, const PcrecFind *f,
 }
 
 /* Writes one use of defined FIND `d` at indent `ind`; `f` must describe the
- * site `d` defined (its D11 bound, the `{1: any}` its first span carries, is
- * checked here, loudly). */
+ * site `d` defined (its D11 bound is checked against the one the define
+ * stated, `d->holdback`, loudly). */
 static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
                      const struct MemfnFind *d)
 {
     mf_hooks h;
     PcrecMfU u;
-    if (d->site->alts[0].spans[0].len != (f->holdback ? 2 : 1))
+    if (d->holdback != f->holdback)
         pcrec_ctx_fail(f->cx, 0, "internal error: a FIND used with a D11 bound "
                        "its define did not state (src/gen/emit_dfa.c, find_use)");
     find_hooks(f, d->site, ind, &h, &u);
@@ -12808,8 +12809,8 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
      * sabotage S07's anchor keeps its text), before the scan loop and its
      * `seedhead` jump, dominating every use in this body. */
     if (fwd->pf_find.handle) {
-        /* its D11 bound: the `{1: any}` its window's first span carries */
-        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->alts[0].spans[0].len == 2);
+        /* its D11 bound: the one its define stated */
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.holdback);
         find_locals(c, "    ", &fd, &fwd->pf_find);
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);

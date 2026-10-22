@@ -517,6 +517,11 @@ const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
 const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
+/* The same non-pass read of `span`, for the trace build's cover shadow
+ * (`locate_cover_applies` -> `pcrec_cover` -> C8): a check, not a pass, so
+ * the trace build's `used` column is the default build's. The harness-routed
+ * cover decision keeps the pass ask (`cc_exact`). */
+const MkLang   *pcrec_fact_span_stated(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *

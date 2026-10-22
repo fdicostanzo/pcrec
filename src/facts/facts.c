@@ -598,6 +598,12 @@ const MkLang *pcrec_fact_span(Ctx *cx)
     return &cx->job->pf.span;
 }
 
+const MkLang *pcrec_fact_span_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_SPAN, false);
+    return &cx->job->pf.span;
+}
+
 void pcrec_facts_force_all(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
