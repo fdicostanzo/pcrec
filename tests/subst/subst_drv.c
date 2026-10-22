@@ -8,8 +8,10 @@
  *
  *   ID RXI SBI PATTERN P2OPTS STRICT LIMIT SUBJECT VARS
  *
- * RXI/SBI index tab.c's tables; P2OPTS is the oracle's compile options (bit
- * 1 PCRE2_UTF|PCRE2_MATCH_INVALID_UTF, bit 2 PCRE2_CASELESS); STRICT is 1
+ * RXI/SBI index tab.c's tables; P2OPTS is the oracle's options (bit 1
+ * PCRE2_UTF|PCRE2_MATCH_INVALID_UTF, bit 2 PCRE2_CASELESS, bit 4
+ * PCRE2_SUBSTITUTE_EXTENDED, bit 8 no oracle call: P2 `na`, which keeps
+ * the cells libpcre2 crashes on, §9 row 19, away from it); STRICT is 1
  * for RX_SUBST_STRICT; LIMIT is a decimal count or `all`, optionally
  * `@START` (rx_iter_at, and the oracle's start offset); VARS is `-` or
  * `name=value,...` (`name` alone: the variable is passed with p == NULL).
@@ -58,6 +60,9 @@
  *          variable unset: rc
  *   nogap  the per-match recipe without RX_SUBST_GAPS (no tail): rc,
  *          length, output
+ *   scr    (a case region) the element over the first match with no scratch
+ *          room, then with exactly the sneed it reported, then one byte
+ *          less: sneed, rc, sn, rc
  *   p2     pcre2_substitute (GLOBAL when LIMIT is all, plain when 1;
  *          UNSET_EMPTY unless STRICT): rc, output; `na` for any other
  *          LIMIT, for variables, or with no oracle
@@ -67,7 +72,8 @@
  *
  * and once, before the cells, the `unit` line: flatten's SIZE_MAX total and
  * its untouched short buffer, the helper on group number -1, and
- * MAP_ABSENT's count. */
+ * MAP_ABSENT's count. Every rx_subst_out carries the one scratch buffer
+ * `scr`, which a template with a case region needs (§4¶22). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,6 +89,9 @@
 #endif
 
 #define OUTMAX (1u << 16)
+
+static unsigned char scr[2 * OUTMAX];   /* every out's scratch: recipes consume pieces before reuse */
+#define SCR .scratch = scr, .scap = sizeof scr
 
 /* Decodes hex `h` into a malloc'd buffer; its length in *n. */
 static unsigned char *unhex(const char *h, size_t *n)
@@ -180,7 +189,7 @@ static int rec_next(const Cell *c, const rx_subst_map *map, unsigned fl, size_t 
     int bad, rc = rx_subst_ctx_init(&ctx, it, c->rx, c->sb, map, vres, fl & RX_SUBST_STRICT, &bad);
     ptrdiff_t (*caps)[2] = malloc((size_t)c->rx->ncaps * sizeof *caps);
     rx_subst_piece *pc = malloc((size_t)c->sb->npieces * sizeof *pc);
-    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces };
+    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces, SCR };
     *len = 0;
     *k = 0;
     while (rc == 0 && *k < limit && c->rx->next(it, caps)) {
@@ -228,7 +237,7 @@ static int rec_batch(const Cell *c, const rx_subst_map *map, rx_iter *it,
     int bad, rc = rx_subst_ctx_init(&ctx, it, c->rx, c->sb, map, vres, c->strict, &bad);
     ptrdiff_t (*caps)[2] = malloc((size_t)(K * c->rx->ncaps) * sizeof *caps);
     rx_subst_piece *pc = malloc((size_t)(K * c->sb->npieces) * sizeof *pc);
-    rx_subst_out o = { .pc = pc, .cap = (size_t)(K * c->sb->npieces) };
+    rx_subst_out o = { .pc = pc, .cap = (size_t)(K * c->sb->npieces), SCR };
     *len = 0;
     if (rc == 0) {
         do {
@@ -256,7 +265,7 @@ static int rec_foreach(const Cell *c, const rx_subst_map *map, rx_iter *it,
     rx_ctx ctx;
     int bad, rc = rx_subst_ctx_init(&ctx, it, c->rx, c->sb, map, vres, c->strict, &bad);
     rx_subst_piece *pc = malloc((size_t)c->sb->npieces * sizeof *pc);
-    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces };
+    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces, SCR };
     *len = 0;
     if (rc < 0) { free(pc); return rc; }
     RX_FOREACH(c->rx, it, m) {
@@ -283,7 +292,7 @@ static int rec_ra(const Cell *c, const rx_subst_map *map, int dirty,
     rx_iter it;
     int bad, rc;
     rx_subst_piece *pc = malloc((size_t)(64 * c->sb->npieces) * sizeof *pc);
-    rx_subst_out o = { .pc = pc, .cap = (size_t)(64 * c->sb->npieces) };
+    rx_subst_out o = { .pc = pc, .cap = (size_t)(64 * c->sb->npieces), SCR };
     iter_fresh(&it, c->s, c->n, dirty, c->v, c->nv);
     *len = 0;
     rc = rx_subst_ctx_init(&ctx, &it, c->rx, c->sb, map, vres, c->strict, &bad);
@@ -303,7 +312,7 @@ static int element_vars(const Cell *c, const rx_subst_map *map, int mode)
     rx_iter it = RX_ITER_INIT(c->s, c->n);
     ptrdiff_t (*caps)[2] = malloc((size_t)c->rx->ncaps * sizeof *caps);
     rx_subst_piece *pc = malloc((size_t)c->sb->npieces * sizeof *pc);
-    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces };
+    rx_subst_out o = { .pc = pc, .cap = (size_t)c->sb->npieces, SCR };
     int bad, rc = 1;
     (void)rx_subst_ctx_init(&ctx, &it, c->rx, c->sb, map, vres, 0, &bad);
     for (int j = 0; j < c->sb->nvrefs; j++) { vres[j].name = c->sb->vrefs[j]; vres[j].p = 0; vres[j].len = 0; }
@@ -343,6 +352,7 @@ static void oracle(const unsigned char *pat, size_t plen, unsigned p2opts,
     uint32_t so = PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
     if (global) so |= PCRE2_SUBSTITUTE_GLOBAL;
     if (!strict) so |= PCRE2_SUBSTITUTE_UNSET_EMPTY;
+    if (p2opts & 4) so |= PCRE2_SUBSTITUTE_EXTENDED;
     PCRE2_SIZE ol = sizeof buf;
     int rc = pcre2_substitute(re, s, n, g_start, so, md, NULL,
                               (PCRE2_SPTR)sb->template_text, sb->template_len, buf, &ol);
@@ -488,7 +498,7 @@ int main(void)
             arm("dirty", rc, len, out2);
             {   /* stale: replace-all over an ENDED iterator */
                 rx_subst_piece pc1[64];
-                rx_subst_out o = { .pc = pc1, .cap = 64 };
+                rx_subst_out o = { .pc = pc1, .cap = 64, SCR };
                 ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
                 iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
                 (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
@@ -517,7 +527,7 @@ int main(void)
         {   /* room, mis, unk, blen: the element against hand-made inputs */
             rx_subst_piece *pc = malloc((size_t)(2 * sb->npieces + 1) * sizeof *pc);
             ptrdiff_t (*caps)[2] = malloc((size_t)(2 * rx->ncaps) * sizeof *caps);
-            rx_subst_out o = { .pc = pc, .cap = 2 * (size_t)sb->npieces - 1, .n = 0, .prev = 0 };
+            rx_subst_out o = { .pc = pc, .cap = 2 * (size_t)sb->npieces - 1, .n = 0, .prev = 0, SCR };
             iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
             (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
             for (int j = 0; j < 2 * rx->ncaps; j++) caps[j][0] = caps[j][1] = -1;
@@ -537,7 +547,7 @@ int main(void)
             o.cap = (size_t)sb->npieces; o.n = 0;
             {
                 rx_subst_piece pa[64];
-                rx_subst_out oa = { .pc = pa, .cap = 64 };
+                rx_subst_out oa = { .pc = pa, .cap = 64, SCR };
                 printf("\tunk=%d,%d", sb->render(&ctx, &map, caps, 0, RX_SUBST_GAPS | 0x4u, &o),
                        (int)sb->npieces <= 64
                        ? rx_subst_replace_all(rx->next_n, &it, sb, &ctx, &map, RX_SUBST_GAPS, &oa, out2, OUTMAX, &len)
@@ -577,10 +587,33 @@ int main(void)
         iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
         rc = rec_next(&c, &map, c.strict, limit, &it, out2, &len, &k);
         arm("nogap", rc, len, out2);
+        if (sb->uses & RX_SUBST_USES_SCRATCH) {   /* scr: scratch of exactly sneed (§4¶14) */
+            rx_subst_piece *pc = malloc((size_t)sb->npieces * sizeof *pc);
+            ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
+            rx_subst_out o = { .pc = pc, .cap = (size_t)sb->npieces, .scratch = scr, .scap = 0 };
+            iter_fresh(&it, c.s, c.n, 0, c.v, c.nv);
+            (void)rx_subst_ctx_init(&ctx, &it, rx, sb, &map, vres, 0, &bad);
+            if (rx->next(&it, caps)) {
+                int r0 = sb->render(&ctx, &map, caps, 1, RX_SUBST_GAPS, &o);
+                size_t need = r0 == PCREC_SUBST_NOSPACE ? o.sneed : 0;
+                o.n = o.sn = o.prev = 0;
+                o.scap = need;
+                int r1 = sb->render(&ctx, &map, caps, 1, RX_SUBST_GAPS, &o);
+                size_t sn = o.sn;
+                int r2 = 0;
+                if (need) {
+                    o.n = o.sn = o.prev = 0;
+                    o.scap = need - 1;
+                    r2 = sb->render(&ctx, &map, caps, 1, RX_SUBST_GAPS, &o);
+                }
+                printf("\tscr=%zu,%d,%zu,%d", need, r1, sn, r2);
+            }
+            free(pc); free(caps);
+        }
 
     oracle_arm:
 #ifdef SUBST_PCRE2
-        if ((all || limit == 1) && !v)
+        if ((all || limit == 1) && !v && !(p2opts & 8))
             oracle(pat, plen, p2opts, sb, c.strict, all, c.s, c.n, mainrc == 0 ? mainlen : 0);
         else
             printf("\tp2=na\tp2short=na");

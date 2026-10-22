@@ -18,11 +18,29 @@
  * The emitted element is straight-line code per template item: no template
  * interpreter, no name lookup, no byte copied. Every item is one piece
  * store. A reference reads its slot through the artifact's private run walk
- * (`<prefix>_subst_slot`), the one place the map is read per match. */
+ * (`<prefix>_subst_slot`), the one place the map is read per match.
+ *
+ * Module `subst-extended` (§2¶7-¶14a) adds two shapes. A CONDITIONAL is a
+ * participation test choosing one text's pieces, padded with empty pieces
+ * to the larger text's count so the stride stays fixed (§4¶7). CASE FORCING
+ * makes one CASE REGION per template, from the top-level item that holds the
+ * first case event to the end (§4¶8): one piece per match, written into the
+ * caller's scratch by `<prefix>_region`, straight-line code again, whose
+ * case state moves by two small tables computed here from the DECLARED rule
+ * table `case_rules` (§2¶13). Such an element renders each match through
+ * `<prefix>_match` twice: a sizing pass that validates and counts, stopping
+ * before the first failing match, then, when the bytes fit, a writing pass
+ * (§4¶14, §4¶22). A character's case step is ASCII and inline under byte;
+ * under utf8 it is the support unit's `rx_subst_case_utf8` over the
+ * generated case map (`src/core/case_tables.inc`), and the record then
+ * carries the unit's content id. */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
+#include "core/case_tables.inc"
 
 /* THE SUBST TYPES BLOCK, part 1: codes, flags, types, the empty piece. The
  * support declarations (whose names carry the abi) and part 2 follow it. */
@@ -182,7 +200,7 @@ static const char subst_check_setup[] =
  * spelling (§10¶3), in the order the declarations below give them. */
 static const char *const support_names[] = {
     "rx_group_run", "pcrec_subst_map_names", "rx_subst_flatten",
-    "rx_subst_replace_all", "pcrec_support_id",
+    "rx_subst_replace_all", "rx_subst_case_utf8", "pcrec_support_id",
 };
 
 /* The support unit's declarations, after the name macros. */
@@ -218,6 +236,12 @@ static const char support_decls[] =
 "                                const rx_subst_map *map, unsigned flags,\n"
 "                                rx_subst_out *o,\n"
 "                                unsigned char *restrict out, size_t cap, size_t *len);\n"
+"/* A case region's UTF-8 case step (module subst-extended): s[0, n) into\n"
+" * dst (NULL: counted only), its first character in case first and the rest\n"
+" * in case rest (0 itself, 1 upper, 2 lower); a byte that begins no\n"
+" * well-formed character is copied. Returns the bytes. */\n"
+"extern size_t rx_subst_case_utf8(unsigned char *dst, const unsigned char *s, size_t n,\n"
+"                                 int first, int rest);\n"
 "/* The support unit's content id: a hash of its own text. */\n"
 "extern const unsigned long long pcrec_support_id;\n"
 "#endif\n";
@@ -384,6 +408,93 @@ static const char support_defs[] =
 "    return count > 2147483647u ? 2147483647 : (int)count;\n"
 "}\n";
 
+/* The UTF-8 case step's code, after its two tables (`case_map_text`). */
+static const char support_case[] =
+"\n"
+"/* The code point cp maps to under m (1 upper, 2 lower): a binary search of\n"
+" * the map; a code point not listed maps to itself. */\n"
+"static unsigned rx_subst_case_cp_(unsigned cp, int m)\n"
+"{\n"
+"    const unsigned (*t)[2] = m == 1 ? rx_subst_upper_ : rx_subst_lower_;\n"
+"    size_t lo = 0, hi = m == 1 ? sizeof rx_subst_upper_ / sizeof *rx_subst_upper_\n"
+"                               : sizeof rx_subst_lower_ / sizeof *rx_subst_lower_;\n"
+"    while (lo < hi) {\n"
+"        size_t mid = lo + (hi - lo) / 2;\n"
+"        if (t[mid][0] == cp) return t[mid][1];\n"
+"        if (t[mid][0] < cp) lo = mid + 1; else hi = mid;\n"
+"    }\n"
+"    return cp;\n"
+"}\n"
+"\n"
+"/* The well-formed UTF-8 character at s[0, n): its length, with *cp its\n"
+" * value; 0 when s[0] begins none. */\n"
+"static int rx_subst_utf8_char_(const unsigned char *s, size_t n, unsigned *cp)\n"
+"{\n"
+"    unsigned b = s[0], v;\n"
+"    int len = b < 0x80 ? 1 : b >= 0xC2 && b <= 0xDF ? 2 : b >= 0xE0 && b <= 0xEF ? 3\n"
+"            : b >= 0xF0 && b <= 0xF4 ? 4 : 0;\n"
+"    if (len == 0 || (size_t)len > n) return 0;\n"
+"    v = len == 1 ? b : b & (0x7Fu >> len);\n"
+"    for (int i = 1; i < len; i++) {\n"
+"        if ((s[i] & 0xC0) != 0x80) return 0;\n"
+"        v = v << 6 | (s[i] & 0x3Fu);\n"
+"    }\n"
+"    if ((len == 3 && (v < 0x800 || (v >= 0xD800 && v <= 0xDFFF))) || (len == 4 && (v < 0x10000 || v > 0x10FFFF)))\n"
+"        return 0;\n"
+"    *cp = v;\n"
+"    return len;\n"
+"}\n"
+"\n"
+"PCREC_SUPPORT_DEF size_t rx_subst_case_utf8(unsigned char *dst, const unsigned char *s, size_t n,\n"
+"                                            int first, int rest)\n"
+"{\n"
+"    size_t i = 0, w = 0;\n"
+"    int m = first;\n"
+"    while (i < n) {\n"
+"        unsigned cp;\n"
+"        int len = rx_subst_utf8_char_(s + i, n - i, &cp);\n"
+"        if (len == 0) {                            /* ill-formed: the byte, unchanged */\n"
+"            if (dst) dst[w] = s[i];\n"
+"            w++, i++;\n"
+"        } else {\n"
+"            if (m) cp = rx_subst_case_cp_(cp, m);\n"
+"            if (cp < 0x80) { if (dst) dst[w] = (unsigned char)cp; w += 1; }\n"
+"            else if (cp < 0x800) {\n"
+"                if (dst) { dst[w] = (unsigned char)(0xC0 | cp >> 6); dst[w + 1] = (unsigned char)(0x80 | (cp & 0x3F)); }\n"
+"                w += 2;\n"
+"            } else if (cp < 0x10000) {\n"
+"                if (dst) { dst[w] = (unsigned char)(0xE0 | cp >> 12); dst[w + 1] = (unsigned char)(0x80 | (cp >> 6 & 0x3F));\n"
+"                           dst[w + 2] = (unsigned char)(0x80 | (cp & 0x3F)); }\n"
+"                w += 3;\n"
+"            } else {\n"
+"                if (dst) { dst[w] = (unsigned char)(0xF0 | cp >> 18); dst[w + 1] = (unsigned char)(0x80 | (cp >> 12 & 0x3F));\n"
+"                           dst[w + 2] = (unsigned char)(0x80 | (cp >> 6 & 0x3F)); dst[w + 3] = (unsigned char)(0x80 | (cp & 0x3F)); }\n"
+"                w += 4;\n"
+"            }\n"
+"            i += (size_t)len;\n"
+"        }\n"
+"        m = rest;\n"
+"    }\n"
+"    return w;\n"
+"}\n";
+
+/* The case map's two tables as support-unit text, from the generated map
+ * (`src/core/case_tables.inc`, the one source of the mapping). */
+static void case_map_text(StrBuf *u)
+{
+    static const struct { const char *name; const PcrecCaseMap *m; size_t n; } maps[] = {
+        { "rx_subst_upper_", pcrec_case_upper_map, PCREC_CASE_UPPER_COUNT },
+        { "rx_subst_lower_", pcrec_case_lower_map, PCREC_CASE_LOWER_COUNT },
+    };
+    pcrec_sb_puts(u, "\n/* The simple case map, upper then lower, sorted by code point. */\n");
+    for (size_t t = 0; t < sizeof maps / sizeof *maps; t++) {
+        pcrec_sb_printf(u, "static const unsigned %s[][2] = {", maps[t].name);
+        for (size_t i = 0; i < maps[t].n; i++)
+            pcrec_sb_printf(u, "%s{0x%X,0x%X},", i % 6 ? " " : "\n    ", maps[t].m[i].cp, maps[t].m[i].to);
+        pcrec_sb_puts(u, "\n};\n");
+    }
+}
+
 /* The support unit's content id: 64-bit FNV-1a over its own text. */
 static unsigned long long support_hash(const char *s)
 {
@@ -422,7 +533,8 @@ static void emit_shared_blocks(StrBuf *sb)
     emit_subst_block(sb);
 }
 
-char *pcrec_emit_support(void)
+/* The support unit's text, with *id its content id. */
+static char *support_unit(unsigned long long *id)
 {
     StrBuf u = { 0 }, all = { 0 };
     pcrec_sb_printf(&u, "/* Generated by pcrec %s (abi %d). The subst SUPPORT UNIT\n"
@@ -437,14 +549,22 @@ char *pcrec_emit_support(void)
                       "#ifndef PCREC_SUPPORT_DEFINED\n#define PCREC_SUPPORT_DEFINED\n");
     const size_t head = u.len;
     pcrec_sb_puts(&u, support_defs);
+    case_map_text(&u);
+    pcrec_sb_puts(&u, support_case);
     pcrec_sb_puts(&u, "#endif /* PCREC_SUPPORT_DEFINED */\n#endif\n");
     /* The content id is the hash of every other byte of the unit, and its
      * line opens the definitions so each of them can read it. */
-    unsigned long long id = support_hash(u.p ? u.p : "");
+    *id = support_hash(u.p ? u.p : "");
     pcrec_sb_printf(&all, "%.*s\nPCREC_SUPPORT_DEF const unsigned long long pcrec_support_id = "
-                          "0x%016llxull;\n%s", (int)head, u.p, id, u.p + head);
+                          "0x%016llxull;\n%s", (int)head, u.p, *id, u.p + head);
     pcrec_sb_free(&u);
     return pcrec_sb_take(&all);
+}
+
+char *pcrec_emit_support(void)
+{
+    unsigned long long id;
+    return support_unit(&id);
 }
 
 /* The provenance line: pcrec's version, the abi and the template, escaped
@@ -469,7 +589,7 @@ static void emit_subst_decls(StrBuf *sb, const char *p, const char *up, const Su
                         "#error \"pcrec: two subst artifacts whose prefixes differ only in case "
                         "share the stamps %s_*; rename one\"\n#endif\n", up, up);
     pcrec_sb_stampf(sb, up, "NREFS", "%d", at_least_one(t->nrefs));
-    pcrec_sb_stampf(sb, up, "PIECES", "%zu", t->nitems + 1);
+    pcrec_sb_stampf(sb, up, "PIECES", "%zu", t->npieces);
     pcrec_sb_stampf(sb, up, "MAXNUM", "%d", t->maxnum);
     pcrec_sb_stampf(sb, up, "NVREFS", "%d", at_least_one(t->nvrefs));
     pcrec_sb_printf(sb, "extern const struct rx_subst_info %s_subst_info;\n", p);
@@ -565,6 +685,20 @@ static void emit_subst_slot(StrBuf *c, const char *p)
         "}\n", p, p);
 }
 
+/* `4 * depth` spaces: the extra indent of a conditional's text. */
+static void emit_indent(StrBuf *c, int depth)
+{
+    if (depth) pcrec_sb_printf(c, "%*s", 4 * depth, "");
+}
+
+/* `n` empty pieces: a conditional's padding to its larger text (§4¶7). */
+static void emit_subst_pad(StrBuf *c, size_t n, int depth)
+{
+    if (!n) return;
+    emit_indent(c, depth);
+    pcrec_sb_printf(c, "        for (size_t z = 0; z < %zu; z++, q++) { q->p = rx_subst_empty; q->len = 0; }\n", n);
+}
+
 /* A reference's piece store: reference r, group number k (-1 for a name). */
 static void emit_subst_ref(StrBuf *c, const char *p, int r, int k)
 {
@@ -573,8 +707,10 @@ static void emit_subst_ref(StrBuf *c, const char *p, int r, int k)
 }
 
 /* One template item's piece store, inside the per-match loop. */
-static void emit_subst_item(StrBuf *c, const char *p, const SubstTmpl *t, const SubstItem *it)
+static void emit_subst_item(StrBuf *c, const char *p, const SubstTmpl *t, const SubstItem *it,
+                            int depth)
 {
+    emit_indent(c, depth);
     switch (it->kind) {
     case SUBST_LIT:
         pcrec_sb_puts(c, "        q->p = (const unsigned char *)");
@@ -591,9 +727,11 @@ static void emit_subst_item(StrBuf *c, const char *p, const SubstTmpl *t, const 
         emit_subst_ref(c, p, it->ref, -1);
         break;
     case SUBST_VAR:
-        pcrec_sb_printf(c, "        q->p = ctx->vars[%d].p ? ctx->vars[%d].p : rx_subst_empty;\n"
-                           "        q->len = ctx->vars[%d].p ? ctx->vars[%d].len : 0; q++;\n",
-                        it->ref, it->ref, it->ref, it->ref);
+        pcrec_sb_printf(c, "        q->p = ctx->vars[%d].p ? ctx->vars[%d].p : rx_subst_empty;\n",
+                        it->ref, it->ref);
+        emit_indent(c, depth);
+        pcrec_sb_printf(c, "        q->len = ctx->vars[%d].p ? ctx->vars[%d].len : 0; q++;\n",
+                        it->ref, it->ref);
         break;
     case SUBST_SUBJECT:
         pcrec_sb_puts(c, "        q->p = s; q->len = ctx->len; q++;\n");
@@ -604,28 +742,302 @@ static void emit_subst_item(StrBuf *c, const char *p, const SubstTmpl *t, const 
     case SUBST_AFTER:
         pcrec_sb_puts(c, "        q->p = s + c[0][1]; q->len = ctx->len - (size_t)c[0][1]; q++;\n");
         break;
+    case SUBST_COND:
+    case SUBST_CASE:                      /* emit_subst_items' and the region's */
+        break;
     }
 }
 
-/* The element: the memory-safety re-asserts once per call (§4¶10), the room
- * test, then per match the span checks, the gap and the items' pieces in
- * template order. A failing match commits the matches before it (§4¶21). */
-static void emit_subst_render(StrBuf *c, const char *p, const SubstTmpl *t)
+/* The pieces of items [i, end) of one template sequence outside the case
+ * region (§4¶6-¶7), at `depth`. A conditional tests its group once and
+ * stores the chosen text's pieces, then empty ones up to the larger text's
+ * count. */
+static void emit_subst_items(StrBuf *c, const char *p, const SubstTmpl *t, size_t i, size_t end,
+                             int depth)
 {
-    const size_t np = t->nitems + 1;
+    while (i < end) {
+        const SubstItem *it = &t->items[i];
+        if (it->kind != SUBST_COND) {
+            emit_subst_item(c, p, t, it, depth);
+            i++;
+            continue;
+        }
+        const size_t set = i + 1, unset = set + it->nset, next = unset + it->nunset;
+        const size_t width = it->pset > it->punset ? it->pset : it->punset;
+        emit_indent(c, depth);
+        if (it->num == 0) {               /* `${0:...}`: the match is always set */
+            pcrec_sb_puts(c, "        {\n");
+            emit_subst_items(c, p, t, set, unset, depth + 1);
+            emit_subst_pad(c, width - it->pset, depth + 1);
+        } else {
+            pcrec_sb_printf(c, "        {\n");
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "            int sl%d = %s_subst_slot(map, %d, %d, c, nc);\n",
+                            depth, p, it->ref, it->num);
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "            if (sl%d == -3) { rc = PCREC_SUBST_MISMATCH; break; }\n", depth);
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "            if (sl%d >= 0) {\n", depth);
+            emit_subst_items(c, p, t, set, unset, depth + 2);
+            emit_subst_pad(c, width - it->pset, depth + 2);
+            emit_indent(c, depth);
+            pcrec_sb_puts(c, "            } else {\n");
+            emit_subst_items(c, p, t, unset, next, depth + 2);
+            emit_subst_pad(c, width - it->punset, depth + 2);
+            emit_indent(c, depth);
+            pcrec_sb_puts(c, "            }\n");
+        }
+        emit_indent(c, depth);
+        pcrec_sb_puts(c, "        }\n");
+        i = next;
+    }
+}
+
+/* THE CASE TABLE, §2¶13 as data: the rows in order, read first-match per
+ * event; the compiler turns them into the artifact's two state tables
+ * (`case_state_tables`). A state is a REGION and a pending ONE-SHOT, each
+ * none (0), upper (1) or lower (2). */
+enum { CW_ALWAYS, CW_REGION, CW_NO_REGION, CW_ONESHOT };   /* the "when" column */
+enum { CB_KEEP, CB_NONE, CB_EVENT };                      /* "becomes": unchanged, none, the event's case */
+enum { CC_NONE, CC_ONESHOT, CC_REGION, CC_ITSELF };       /* "the character" */
+#define EV(e) (1u << (e))
+static const struct {
+    unsigned events;
+    int      when, region, oneshot, chr;
+} case_rules[] = {
+    { EV(SUBST_EV_UPPER) | EV(SUBST_EV_LOWER),         CW_REGION,    CB_EVENT, CB_NONE,  CC_NONE },
+    { EV(SUBST_EV_UPPER) | EV(SUBST_EV_LOWER),         CW_NO_REGION, CB_EVENT, CB_KEEP,  CC_NONE },
+    { EV(SUBST_EV_ONE_UPPER) | EV(SUBST_EV_ONE_LOWER), CW_ALWAYS,    CB_NONE,  CB_EVENT, CC_NONE },
+    { EV(SUBST_EV_END),                                CW_ALWAYS,    CB_NONE,  CB_NONE,  CC_NONE },
+    { EV(SUBST_EV_CHAR),                               CW_ONESHOT,   CB_KEEP,  CB_NONE,  CC_ONESHOT },
+    { EV(SUBST_EV_CHAR),                               CW_REGION,    CB_KEEP,  CB_KEEP,  CC_REGION },
+    { EV(SUBST_EV_CHAR),                               CW_ALWAYS,    CB_KEEP,  CB_KEEP,  CC_ITSELF },
+};
+#undef EV
+
+/* The artifact's state tables from `case_rules`: next[event][state] and,
+ * for a character, mode[state] (0 itself, 1 upper, 2 lower), with state =
+ * region * 3 + one-shot. */
+static void case_state_tables(unsigned char next[SUBST_NEVENTS][9], unsigned char mode[9])
+{
+    for (int ev = 0; ev < SUBST_NEVENTS; ev++)
+        for (int st = 0; st < 9; st++) {
+            const int region = st / 3, one = st % 3;
+            const int ecase = ev == SUBST_EV_UPPER || ev == SUBST_EV_ONE_UPPER ? 1 : 2;
+            size_t r = 0;
+            while (!(case_rules[r].events & (1u << ev))
+                   || (case_rules[r].when == CW_REGION && !region)
+                   || (case_rules[r].when == CW_NO_REGION && region)
+                   || (case_rules[r].when == CW_ONESHOT && !one))
+                r++;                      /* the last row of each event is unconditional */
+            const int nr = case_rules[r].region == CB_KEEP ? region
+                         : case_rules[r].region == CB_NONE ? 0 : ecase;
+            const int no = case_rules[r].oneshot == CB_KEEP ? one
+                         : case_rules[r].oneshot == CB_NONE ? 0 : ecase;
+            next[ev][st] = (unsigned char)(nr * 3 + no);
+            if (ev == SUBST_EV_CHAR)
+                mode[st] = (unsigned char)(case_rules[r].chr == CC_ONESHOT ? one
+                                         : case_rules[r].chr == CC_REGION ? region : 0);
+        }
+}
+
+/* The case region's machinery: the state tables, the case step (ASCII and
+ * inline, or the support unit's UTF-8 one) and `<prefix>_put`, which runs
+ * one source span through them. */
+static void emit_case_kit(StrBuf *c, const char *p, bool utf)
+{
+    unsigned char next[SUBST_NEVENTS][9], mode[9];
+    case_state_tables(next, mode);
+    pcrec_sb_printf(c, "\n/* The case state (region * 3 + one-shot; 0 none, 1 upper, 2 lower) after\n"
+                       " * \\U \\L \\u \\l \\E and a character, and a character's case in each\n"
+                       " * state: docs/spec/subst_api.md §2¶13's table. */\n"
+                       "static const unsigned char %s_case_next[%d][9] = {\n", p, SUBST_NEVENTS);
+    for (int ev = 0; ev < SUBST_NEVENTS; ev++) {
+        pcrec_sb_puts(c, "    {");
+        for (int st = 0; st < 9; st++) pcrec_sb_printf(c, "%s%d", st ? ", " : " ", next[ev][st]);
+        pcrec_sb_puts(c, " },\n");
+    }
+    pcrec_sb_printf(c, "};\nstatic const unsigned char %s_case_mode[9] = {", p);
+    for (int st = 0; st < 9; st++) pcrec_sb_printf(c, "%s%d", st ? ", " : " ", mode[st]);
+    pcrec_sb_puts(c, " };\n");
+    if (!utf)
+        pcrec_sb_printf(c,
+            "\n/* The case step under byte: ASCII letters only (§2¶14). */\n"
+            "static size_t %s_case_bytes(unsigned char *dst, const unsigned char *b, size_t n,\n"
+            "                            int first, int rest)\n"
+            "{\n"
+            "    for (size_t i = 0; dst && i < n; i++) {\n"
+            "        const int m = i ? rest : first;\n"
+            "        const unsigned char x = b[i];\n"
+            "        dst[i] = m == 1 && x >= 'a' && x <= 'z' ? (unsigned char)(x - 32)\n"
+            "               : m == 2 && x >= 'A' && x <= 'Z' ? (unsigned char)(x + 32) : x;\n"
+            "    }\n"
+            "    return n;\n"
+            "}\n", p);
+    pcrec_sb_printf(c,
+        "\n/* Appends b[0, n) to the region at dst + w (dst NULL: counted only) under\n"
+        " * case state *st, which its first character moves; the new length,\n"
+        " * SIZE_MAX once it stops fitting a size_t. */\n"
+        "static size_t %s_put(unsigned char *dst, size_t w, const unsigned char *b, size_t n, int *st)\n"
+        "{\n"
+        "    int first;\n"
+        "    size_t m;\n"
+        "    if (!n) return w;\n"
+        "    first = %s_case_mode[*st];\n"
+        "    *st = %s_case_next[%d][*st];\n"
+        "    m = %s%s(dst && w != SIZE_MAX ? dst + w : (unsigned char *)0, b, n, first, %s_case_mode[*st]);\n"
+        "    return m > SIZE_MAX - w ? SIZE_MAX : w + m;\n"
+        "}\n", p, p, p, SUBST_EV_CHAR, utf ? "" : p, utf ? "rx_subst_case_utf8" : "_case_bytes", p);
+}
+
+/* One region line at `depth`: `w = <prefix>_put(dst, w, B, N, &st);`. */
+static void emit_region_put(StrBuf *c, const char *p, int depth, const char *b, const char *n)
+{
+    emit_indent(c, depth);
+    pcrec_sb_printf(c, "    w = %s_put(dst, w, %s, %s, &st);\n", p, b, n);
+}
+
+/* Items [i, end) of the case region, at `depth`: each source span runs
+ * through `<prefix>_put`, each case event moves the state; a reference's
+ * failure returns from `<prefix>_region`. */
+static void emit_region_items(StrBuf *c, const char *p, const SubstTmpl *t, size_t i, size_t end,
+                              int depth)
+{
+    char b[96], n[96];
+    while (i < end) {
+        const SubstItem *it = &t->items[i];
+        switch (it->kind) {
+        case SUBST_LIT:
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "    w = %s_put(dst, w, (const unsigned char *)", p);
+            pcrec_emit_c_string_literal(c, t->lit + it->off, it->len);
+            pcrec_sb_printf(c, ", %zu, &st);\n", it->len);
+            break;
+        case SUBST_GROUP:
+        case SUBST_NAME:
+            if (it->kind == SUBST_GROUP && it->num == 0) {
+                emit_region_put(c, p, depth, "s + c[0][0]", "(size_t)(c[0][1] - c[0][0])");
+                break;
+            }
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "    if ((rc = %s_subst_group(s, c, %s_subst_slot(map, %d, %d, c, nc), "
+                               "flags, &g)) < 0) return rc;\n",
+                            p, p, it->ref, it->kind == SUBST_NAME ? -1 : it->num);
+            emit_region_put(c, p, depth, "g.p", "g.len");
+            break;
+        case SUBST_VAR:
+            snprintf(b, sizeof b, "ctx->vars[%d].p ? ctx->vars[%d].p : rx_subst_empty", it->ref, it->ref);
+            snprintf(n, sizeof n, "ctx->vars[%d].p ? ctx->vars[%d].len : 0", it->ref, it->ref);
+            emit_region_put(c, p, depth, b, n);
+            break;
+        case SUBST_SUBJECT:
+            emit_region_put(c, p, depth, "s", "ctx->len");
+            break;
+        case SUBST_BEFORE:
+            emit_region_put(c, p, depth, "s", "(size_t)c[0][0]");
+            break;
+        case SUBST_AFTER:
+            emit_region_put(c, p, depth, "s + c[0][1]", "ctx->len - (size_t)c[0][1]");
+            break;
+        case SUBST_CASE:
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "    st = %s_case_next[%d][st];\n", p, it->num);
+            break;
+        case SUBST_COND: {
+            const size_t set = i + 1, unset = set + it->nset, next = unset + it->nunset;
+            if (it->num == 0) {           /* `${0:...}`: the match is always set */
+                emit_region_items(c, p, t, set, unset, depth);
+                i = next;
+                continue;
+            }
+            emit_indent(c, depth);
+            pcrec_sb_printf(c, "    if ((sl = %s_subst_slot(map, %d, %d, c, nc)) == -3) "
+                               "return PCREC_SUBST_MISMATCH;\n", p, it->ref, it->num);
+            emit_indent(c, depth);
+            pcrec_sb_puts(c, "    if (sl >= 0) {\n");
+            emit_region_items(c, p, t, set, unset, depth + 1);
+            emit_indent(c, depth);
+            pcrec_sb_puts(c, "    } else {\n");
+            emit_region_items(c, p, t, unset, next, depth + 1);
+            emit_indent(c, depth);
+            pcrec_sb_puts(c, "    }\n");
+            i = next;
+            continue;
+        }
+        }
+        i++;
+    }
+}
+
+/* `<prefix>_region`: the case region of one match (§4¶8), its bytes
+ * written at dst (NULL: counted only) and their count in *len. The case
+ * state starts at none for every match. */
+static void emit_region(StrBuf *c, const char *p, const SubstTmpl *t)
+{
+    pcrec_sb_printf(c,
+        "\n/* Match c's case region (docs/spec/subst_api.md §4¶8): its bytes, case\n"
+        " * forcing applied, written at dst (NULL: counted only) and counted in *len. */\n"
+        "static int %s_region(const rx_ctx *ctx, const rx_subst_map *map, ptrdiff_t (*c)[2],\n"
+        "                     size_t nc, unsigned flags, unsigned char *dst, size_t *len)\n"
+        "{\n"
+        "    const unsigned char *s = ctx->subject ? ctx->subject : rx_subst_empty;\n"
+        "    rx_subst_piece g = { rx_subst_empty, 0 };\n"
+        "    size_t w = 0;\n"
+        "    int st = 0, rc = 0, sl = 0;\n"
+        "    (void)map; (void)c; (void)nc; (void)flags; (void)s; (void)g; (void)rc; (void)sl;\n", p);
+    emit_region_items(c, p, t, t->region, t->nitems, 0);
+    pcrec_sb_puts(c, "    *len = w;\n    return 0;\n}\n");
+}
+
+/* The per-match span checks and the gap (§4¶16-¶18, §4¶5), the first lines
+ * of a match's rendering in both element shapes. */
+static void emit_subst_span_gap(StrBuf *c)
+{
+    pcrec_sb_puts(c, "        if (c[0][0] < 0 || c[0][1] < c[0][0] || (size_t)c[0][1] > ctx->len\n"
+                     "            || ((flags & RX_SUBST_GAPS) && (size_t)c[0][0] < prev)) {\n"
+                     "            rc = PCREC_SUBST_BADSPAN;\n"
+                     "            break;\n"
+                     "        }\n"
+                     "        if (flags & RX_SUBST_GAPS) { q->p = s + prev; q->len = (size_t)c[0][0] - prev; q++; }\n");
+}
+
+/* Does a piece of the template read a group through `<prefix>_subst_group`
+ * (a conditional's own test reads only the slot)? */
+static bool subst_reads_group(const SubstTmpl *t)
+{
+    for (size_t i = 0; i < t->nitems; i++)
+        if (t->items[i].kind == SUBST_NAME || (t->items[i].kind == SUBST_GROUP && t->items[i].num))
+            return true;
+    return false;
+}
+
+/* The element's opening: the memory-safety re-asserts once per call
+ * (§4¶10) and the room test. */
+static void emit_subst_render_head(StrBuf *c, const char *p, const SubstTmpl *t, bool region)
+{
+    const size_t np = t->npieces;
     pcrec_sb_printf(c, "\nint %s_render(const rx_ctx *ctx, const rx_subst_map *map,\n"
                        "    ptrdiff_t (*caps)[2], size_t k, unsigned flags, rx_subst_out *o)\n{\n", p);
-    pcrec_sb_printf(c, "    const unsigned char *s = ctx->subject ? ctx->subject : rx_subst_empty;\n"
-                       "    const size_t nc = ctx->ncap, P = (flags & RX_SUBST_GAPS) ? %zu : %zu;\n"
-                       "    size_t prev = o->prev, i;\n"
-                       "    rx_subst_piece *pc;\n"
-                       "    int rc = 0;\n", np, np - 1);
-    if (!t->nrefs) pcrec_sb_puts(c, "    (void)map;\n");
+    if (region)
+        pcrec_sb_printf(c, "    const size_t nc = ctx->ncap, P = (flags & RX_SUBST_GAPS) ? %zu : %zu;\n"
+                           "    size_t prev = o->prev, i, j, slen = 0, sum = 0;\n"
+                           "    rx_subst_piece *pc;\n"
+                           "    int rc = 0;\n", np, np - 1);
+    else
+        pcrec_sb_printf(c, "    const unsigned char *s = ctx->subject ? ctx->subject : rx_subst_empty;\n"
+                           "    const size_t nc = ctx->ncap, P = (flags & RX_SUBST_GAPS) ? %zu : %zu;\n"
+                           "    size_t prev = o->prev, i;\n"
+                           "    rx_subst_piece *pc;\n"
+                           "    int rc = 0;\n", np, np - 1);
+    if (!t->nrefs && !region) pcrec_sb_puts(c, "    (void)map;\n");
+    if (t->nrefs && !subst_reads_group(t)) pcrec_sb_printf(c, "    (void)%s_subst_group;\n", p);
     pcrec_sb_puts(c, "    if ((flags & ~(RX_SUBST_GAPS | RX_SUBST_STRICT))");
     if (t->nvrefs)          /* a hand-filled ctx must carry the resolved variables */
         pcrec_sb_printf(c, "\n        || !ctx->vars || ctx->nvars < %d", t->nvrefs);
     if (t->nrefs)
         pcrec_sb_printf(c, "\n        || (map && (map->run ? map->nrun : map->nslot) < %d)", t->nrefs);
+    if (region)
+        pcrec_sb_puts(c, "\n        || !o->scratch");
     pcrec_sb_puts(c, ")\n        return PCREC_SUBST_MISMATCH;\n");
     if (t->nvrefs)
         pcrec_sb_printf(c, "    if (flags & RX_SUBST_STRICT)\n"
@@ -634,18 +1046,20 @@ static void emit_subst_render(StrBuf *c, const char *p, const SubstTmpl *t)
     pcrec_sb_puts(c, "    if (o->n > o->cap || (P && k > (o->cap - o->n) / P)) {\n"
                      "        o->need = (P && k > (SIZE_MAX - o->n) / P) ? SIZE_MAX : o->n + k * P;\n"
                      "        return PCREC_SUBST_NOSPACE;\n"
-                     "    }\n"
-                     "    for (i = 0, pc = o->pc + o->n; i < k; i++, pc += P) {\n"
+                     "    }\n");
+}
+
+/* The element: the re-asserts and the room test, then per match the span
+ * checks, the gap and the items' pieces in template order. A failing match
+ * commits the matches before it (§4¶21). */
+static void emit_subst_render(StrBuf *c, const char *p, const SubstTmpl *t)
+{
+    emit_subst_render_head(c, p, t, false);
+    pcrec_sb_puts(c, "    for (i = 0, pc = o->pc + o->n; i < k; i++, pc += P) {\n"
                      "        ptrdiff_t (*c)[2] = caps + i * nc;\n"
-                     "        rx_subst_piece *q = pc;\n"
-                     "        if (c[0][0] < 0 || c[0][1] < c[0][0] || (size_t)c[0][1] > ctx->len\n"
-                     "            || ((flags & RX_SUBST_GAPS) && (size_t)c[0][0] < prev)) {\n"
-                     "            rc = PCREC_SUBST_BADSPAN;\n"
-                     "            break;\n"
-                     "        }\n"
-                     "        if (flags & RX_SUBST_GAPS) { q->p = s + prev; q->len = (size_t)c[0][0] - prev; q++; }\n");
-    for (size_t i = 0; i < t->nitems; i++)
-        emit_subst_item(c, p, t, &t->items[i]);
+                     "        rx_subst_piece *q = pc;\n");
+    emit_subst_span_gap(c);
+    emit_subst_items(c, p, t, 0, t->nitems, 0);
     pcrec_sb_puts(c, "        prev = (size_t)c[0][1];\n"
                      "    }\n"
                      "    o->n += i * P;\n"
@@ -653,21 +1067,75 @@ static void emit_subst_render(StrBuf *c, const char *p, const SubstTmpl *t)
                      "    return rc;\n}\n");
 }
 
-/* The encoding a template binds under: its own, when a byte of it is
- * non-ASCII (it was read in that encoding: names, the UTF check); -1, any,
- * when every byte is ASCII and reads the same in each. */
-static int subst_bind_encoding(const char *tmpl, size_t len, int encoding)
+/* The element of a template with a case region: `<prefix>_match` renders
+ * one match, its region into dst; the element sizes the batch's scratch
+ * through it (dst NULL), stopping before the first failing match, refuses
+ * the call when that does not fit, and then writes the matches it
+ * validated (§4¶14, §4¶21, §4¶22). */
+static void emit_subst_render_region(StrBuf *c, const char *p, const SubstTmpl *t)
 {
+    emit_region(c, p, t);
+    pcrec_sb_printf(c,
+        "\n/* Match c's pieces at q, its gap starting at prev, and its case region's\n"
+        " * bytes at dst (NULL: counted only, its piece empty), *slen those bytes. */\n"
+        "static int %s_match(const rx_ctx *ctx, const rx_subst_map *map, ptrdiff_t (*c)[2],\n"
+        "                    size_t nc, unsigned flags, size_t prev, rx_subst_piece *q,\n"
+        "                    unsigned char *dst, size_t *slen)\n"
+        "{\n"
+        "    const unsigned char *s = ctx->subject ? ctx->subject : rx_subst_empty;\n"
+        "    int rc = 0;\n"
+        "    do {\n", p);
+    emit_subst_span_gap(c);
+    emit_subst_items(c, p, t, 0, t->region, 0);
+    pcrec_sb_printf(c,
+        "        if ((rc = %s_region(ctx, map, c, nc, flags, dst, slen)) < 0) break;\n"
+        "        q->p = dst ? dst : rx_subst_empty; q->len = dst ? *slen : 0; q++;\n"
+        "    } while (0);\n"
+        "    return rc;\n"
+        "}\n", p);
+    emit_subst_render_head(c, p, t, true);
+    pcrec_sb_printf(c,
+        "    for (i = 0, pc = o->pc + o->n; i < k; i++, pc += P) {   /* sizing: validate and count */\n"
+        "        if ((rc = %s_match(ctx, map, caps + i * nc, nc, flags, prev, pc, NULL, &slen)) < 0) break;\n"
+        "        sum = slen > SIZE_MAX - sum ? SIZE_MAX : sum + slen;\n"
+        "        prev = (size_t)caps[i * nc][1];\n"
+        "    }\n"
+        "    if (o->sn > o->scap || sum > o->scap - o->sn) {\n"
+        "        o->sneed = sum > SIZE_MAX - o->sn ? SIZE_MAX : o->sn + sum;\n"
+        "        return PCREC_SUBST_NOSPACE;\n"
+        "    }\n"
+        "    for (j = 0, prev = o->prev, pc = o->pc + o->n; j < i; j++, pc += P) {   /* writing */\n"
+        "        (void)%s_match(ctx, map, caps + j * nc, nc, flags, prev, pc, o->scratch + o->sn, &slen);\n"
+        "        o->sn += slen;\n"
+        "        prev = (size_t)caps[j * nc][1];\n"
+        "    }\n"
+        "    o->n += i * P;\n"
+        "    o->prev = prev;\n"
+        "    return rc;\n}\n", p, p);
+}
+
+/* The encoding a template binds under (§2¶5): its own, when a byte of it is
+ * non-ASCII (it was read in that encoding: names, the UTF check, escapes
+ * above 0x7F) or it forces case (the mapping is the encoding's); -1, any,
+ * otherwise, as an all-ASCII template reads the same in each. */
+static int subst_bind_encoding(const char *tmpl, size_t len, const SubstTmpl *t, int encoding)
+{
+    if (t->region < t->nitems) return encoding;
     for (size_t i = 0; i < len; i++)
         if ((unsigned char)tmpl[i] >= 0x80) return encoding;
     return -1;
 }
 
-/* The record. No template of the core module calls into the support unit,
- * so `support` is NULL and `support_id` 0. */
+/* The record. A template with a case region writes scratch; under utf8 its
+ * element calls the support unit's case step, so the record carries that
+ * unit's content id and points at the unit's own (§3¶8 compares them). */
 static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char *p,
                             const SubstTmpl *t, const PcrecSubstOptions *o)
 {
+    const bool region = t->region < t->nitems;
+    const bool unit = region && o->encoding == PCREC_ENC_UTF8;
+    unsigned long long id = 0;
+    if (unit) free(support_unit(&id));
     pcrec_sb_printf(c, "\nconst struct rx_subst_info %s_subst_info = {\n", p);
     pcrec_sb_printf(c, "    .abi = %d,\n    .name = \"%s\",\n    .template_text = ",
                     pcrec_artifact_abi(), p);
@@ -677,12 +1145,16 @@ static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char 
     if (t->nrefs) pcrec_sb_printf(c, "    .refs = %s_subst_refs,\n", p);
     else pcrec_sb_puts(c, "    .refs = NULL,\n");
     pcrec_sb_printf(c, "    .maxnum = %d,\n    .npieces = %zu,\n    .nvrefs = %d,\n",
-                    t->maxnum, t->nitems + 1, t->nvrefs);
+                    t->maxnum, t->npieces, t->nvrefs);
     if (t->nvrefs) pcrec_sb_printf(c, "    .vrefs = %s_subst_vrefs,\n", p);
     else pcrec_sb_puts(c, "    .vrefs = NULL,\n");
-    pcrec_sb_printf(c, "    .encoding = %d,\n    .uses = 0,\n    .support_id = 0,\n"
-                       "    .support = NULL,\n    .render = %s_render,\n};\n",
-                    subst_bind_encoding(tmpl, len, o->encoding), p);
+    pcrec_sb_printf(c, "    .encoding = %d,\n    .uses = %s,\n",
+                    subst_bind_encoding(tmpl, len, t, o->encoding), region ? "RX_SUBST_USES_SCRATCH" : "0");
+    if (unit)
+        pcrec_sb_printf(c, "    .support_id = 0x%016llxull,\n    .support = &pcrec_support_id,\n", id);
+    else
+        pcrec_sb_puts(c, "    .support_id = 0,\n    .support = NULL,\n");
+    pcrec_sb_printf(c, "    .render = %s_render,\n};\n", p);
 }
 
 void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
@@ -694,7 +1166,9 @@ void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
     const char *up = pcrec_sb_upper(&a, p);
 
     emit_subst_provenance(&c, tmpl, len);
-    pcrec_sb_stamp_str(&c, up, "SUBST_MODULES", t->uses_pcrec ? "subst,subst-pcrec" : "subst");
+    pcrec_sb_stamp_str(&c, up, "SUBST_MODULES",
+                       t->uses_ext ? (t->uses_pcrec ? "subst,subst-extended,subst-pcrec" : "subst,subst-extended")
+                                   : (t->uses_pcrec ? "subst,subst-pcrec" : "subst"));
     if (o->header_name) {
         pcrec_sb_printf(&c, "#include \"%s\"\n\n", o->header_name);
         emit_subst_header(&h, tmpl, len, p, up, t);
@@ -706,7 +1180,11 @@ void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
     }
     emit_subst_tables(&c, p, t);
     if (t->nrefs) emit_subst_slot(&c, p);
-    emit_subst_render(&c, p, t);
+    if (t->region < t->nitems) {
+        emit_case_kit(&c, p, o->encoding == PCREC_ENC_UTF8);
+        emit_subst_render_region(&c, p, t);
+    } else
+        emit_subst_render(&c, p, t);
     emit_subst_info(&c, tmpl, len, p, t, o);
 
     out->c_src = pcrec_sb_take(&c);

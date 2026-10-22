@@ -15,10 +15,15 @@ A cell is one TAB-separated line (`#` lines are comments):
 
   FLAGS     pcrec's rx flags beyond `--features all` (`-` none): `-e utf8`,
             `-i`, `--no-captures`; `-e utf8` and `-i` also set the oracle's
-  PATTERN   as written; `rep:N:TEXT` is TEXT repeated N times
+  PATTERN   as written; `rep:N:TEXT` is TEXT repeated N times; `rxt:NAME`
+            is the target of NAME.rxt beside the cell file, a COMPOSED rx
+            (subst_api.md §3¶3: no map is refused at the context setup;
+            pcre2 cannot answer, so P2 is na)
   TEMPLATE  as written, compiled through --subst-file; `esc:T` decodes T's
             \\xNN \\n \\t \\\\ first; `arg:T` compiles through --subst;
-            a leading `utf8:` compiles it with `-e utf8` (subst_api.md §2¶5)
+            leading `utf8:` compiles it with `-e utf8` (subst_api.md §2¶5),
+            then `ext:` with `--features subst-extended` (§2¶7; the oracle
+            gets PCRE2_SUBSTITUTE_EXTENDED)
   STRICT    blank | strict (RX_SUBST_STRICT at run time, §4¶23)
   LIMIT     a count, or `all`; `@START` after it starts the iterator (and
             the oracle) at START
@@ -51,7 +56,12 @@ with no variables or one too few, and under STRICT an unset one is
 PCREC_ERR_UNSET_VAR; where pcre2 answers the same, the element without
 RX_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does, and
 pcre2 at outlength == the length is NOMEMORY asking for length + 1 (its
-NUL, §9 row 6).
+NUL, §9 row 6). A template with a case region (RX_SUBST_USES_SCRATCH) also
+renders its first match into scratch of exactly the `sneed` a scratch-less
+call reported (§4¶14), and one byte less is NOSPACE again; a cell carrying
+the `bound` token holds that `sneed` to §4¶22's 1.5 x bound over its subject.
+
+REACH_NEED is per cell file, by its directory's name.
 """
 
 import os
@@ -66,13 +76,18 @@ CODES = {
 }
 PCRE2_NOMEMORY = -48
 RX_FOREACH_PAIRS = 256      # match_api.md §3.8.2's default
-REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
+REACH_NEED = {}
+REACH_NEED['subst'] = ['composed', 'S1538', 'S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
               'nogroupceiling', 'batch64', 'illformed', 'badspancorner', 'nul',
               'vars', 'abi', 'giveup', 'subject', 'before', 'after', 'amp', 'start',
               'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',
               'blen', 'negnum', 'flatsat', 'absent', 'lim', 'short', 'exact', 'size',
               'count', 'batch', 'foreach', 'dirty', 'stale', 'nomap', 'hand', 'room',
               'mis', 'nog', 'pairs', 'nmchk']
+REACH_NEED['subst-extended'] = [
+    'S1530', 'S1531', 'S1532', 'S1533', 'S1534', 'S1535', 'S1537', 'S1539',
+    'scr', 'bound', 'illcase', 'cond', 'esc', 'casetable', 'nest',
+    'size', 'count', 'batch', 'foreach', 'dirty', 'room', 'mis', 'unk', 'nogap']
 
 
 def decode(t):
@@ -156,7 +171,16 @@ def main():
     for (flags, pat), i in rxs.items():
         args = [pcrec, '--features', 'all', '-p', 'r%d' % i, '-o', os.path.join(work, 'r%d.c' % i)]
         args += [] if flags == '-' else flags.split()
-        r = subprocess.run(args + ['--pattern', raw(pat)], capture_output=True)
+        if pat.startswith('rxt:'):    # a copy whose target carries this rx's prefix
+            with open(os.path.join(os.path.dirname(os.path.abspath(cells_path)), pat[4:] + '.rxt')) as f:
+                text = re.sub(r'(?m)^target[^=\n]*=', 'target r%d =' % i, f.read())
+            rf = os.path.join(work, 'r%d.rxt' % i)
+            with open(rf, 'w') as f:
+                f.write(text)
+            args.append(rf)
+        else:
+            args += ['--pattern', raw(pat)]
+        r = subprocess.run(args, capture_output=True)
         if not check(r.returncode == 0, 'rx %d (%s) refused: %s' % (i, pat, r.stderr.decode('latin-1').strip())):
             return finish(passed, failed)
         srcs.append('r%d.c' % i)
@@ -165,6 +189,9 @@ def main():
         if tmpl.startswith('utf8:'):
             args += ['-e', 'utf8']
             tmpl = tmpl[5:]
+        if tmpl.startswith('ext:'):
+            args += ['--features', 'subst-extended']
+            tmpl = tmpl[4:]
         if tmpl.startswith('arg:'):
             args += ['--subst', tmpl[4:].encode('latin-1')]
         else:
@@ -208,7 +235,8 @@ def main():
     # ---- run -------------------------------------------------------------
     lines = []
     for c in cells:
-        p2opts = (1 if '-e utf8' in c[1] else 0) | (2 if re.search(r'(^| )-i( |$)', c[1]) else 0)
+        p2opts = (1 if '-e utf8' in c[1] else 0) | (2 if re.search(r'(^| )-i( |$)', c[1]) else 0) \
+            | (4 if re.match(r'(utf8:)?ext:', c[3]) else 0) | (8 if c[9] == 'na' else 0)
         if c[7] == '-':
             v = '-'
         else:
@@ -239,6 +267,8 @@ def main():
     p2_compared = 0
     for c in cells:
         cid, expect, p2want, label, reach = c[0], c[8], c[9], c[10], c[11]
+        composed = c[2].startswith('rxt:')
+        ext = bool(re.match(r'(utf8:)?ext:', c[3]))
         g = got.get(cid)
         if not check(g is not None, '%s: no driver line' % cid):
             continue
@@ -252,8 +282,10 @@ def main():
             # with no map the numbers are the slots: the same verdict as the
             # helper's map (§3¶8, §3¶14)
             want_nm = g['check'] if kind == 'check' or chk[0] == '0' else '0,-1'
+            if composed:        # a composed rx refuses the no-map form outright (§3¶3)
+                want_nm = '%s,-1' % mm
             if check(g['nmchk'] == want_nm, '%s: the check with no map %s, want %s' % (cid, g['nmchk'], want_nm)):
-                reached.add('nmchk')
+                reached.add('composed' if composed else 'nmchk')
         if kind == 'check':
             name, row = rest.rsplit(':', 1)
             check(chk == [str(CODES[name]), row], '%s: check %s, want %s,%s' % (cid, g['check'], CODES[name], row))
@@ -268,7 +300,7 @@ def main():
                 L, hx = len(want), want.hex() or '-'
                 same = '0,%d,%s' % (L, hx)
                 check(main_ == ['0', str(L), n, hx], '%s: main %s, want 0,%d,%s,%r' % (cid, g['main'], L, n, want))
-                arms = [('nomap', 'nomap', same), ('hand', 'hand', same)]
+                arms = [('nomap', 'nomap', '%s,0,-' % mm if composed else same), ('hand', 'hand', same)]
                 if all_ and int(g['nc']) > RX_FOREACH_PAIRS:
                     # more pairs per match than the stack array: RX_FOREACH and
                     # replace-all refuse (match_api.md §3.8.2¶5, subst_api.md §10¶7)
@@ -312,7 +344,7 @@ def main():
                     and bm[0] == mm:
                 reached.add('bmis')
             if kind == 'out' and main_[2] != '0' and re.search(r'\$\{?[1-9A-Za-z]', c[3]) \
-                    and '${!' not in c[3]:
+                    and '${!' not in c[3] and not ext:
                 # an intended NOGROUP renders empty, RX_SUBST_STRICT included (§3¶6, §9 row 20)
                 if check(g.get('nog', '').split(',')[0] == '0' and int(g['nog'].split(',')[1]) < L,
                          '%s: a NOGROUP map under STRICT gave %s, want 0 and shorter than %d' % (cid, g.get('nog'), L)):
@@ -325,6 +357,15 @@ def main():
                                               '%s: element rendered an unset variable under STRICT: %s'
                                               % (cid, g.get('vuerr'))):
                     reached.add('vuerr')
+            sc = g.get('scr', '').split(',')
+            if 'scr' in g and check(len(sc) == 4 and sc[1] == '0' and sc[2] == sc[0]
+                                    and sc[3] == (ns if sc[0] != '0' else '0'),
+                                    '%s: scratch of exactly sneed: sneed,rc,sn,rc-at-one-less %s' % (cid, g['scr'])):
+                reached.add('scr')
+                if 'bound' in reach.split(','):
+                    n_in = len(decode(c[6]))
+                    check(int(sc[0]) <= (3 * n_in + 1) // 2,
+                          '%s: sneed %s past 1.5 x the %d bytes entering the region' % (cid, sc[0], n_in))
             if 'lim' in g:
                 a, b = g['lim'].split(',')
                 if check(a == b, '%s: the recipe stopped at LIMIT with the iterator at %s, %s after exactly LIMIT calls'
@@ -355,7 +396,7 @@ def main():
         if failed == before and reach != '-':
             reached.update(reach.split(','))
 
-    for t in REACH_NEED:
+    for t in REACH_NEED[os.path.basename(os.path.dirname(os.path.abspath(cells_path)))]:
         check(t in reached, 'reach token %s carried by no passing cell (K35)' % t)
     if have_p2:
         check(p2_compared >= 30, 'only %d cells compared with pcre2 (floor 30)' % p2_compared)

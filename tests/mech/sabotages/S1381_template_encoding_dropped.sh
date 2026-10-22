@@ -12,5 +12,5 @@ SAB_DESC='the subst compile parses every template as byte'
 SAB_DOC_FIGURE='Owed: lane substfix queued this row (docs/dev/lanes/substfix_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1381.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, &t, err);'
-SAB_AFTER='    int rc = pcrec_subst_parse(&a, tmpl, len, PCREC_ENC_BYTE, &t, err);   /* SABOTAGE S1381 */'
+SAB_BEFORE='    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, o->extended, &t, err);'
+SAB_AFTER='    int rc = pcrec_subst_parse(&a, tmpl, len, PCREC_ENC_BYTE, o->extended, &t, err);   /* SABOTAGE S1381 */'

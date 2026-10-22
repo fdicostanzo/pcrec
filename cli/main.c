@@ -2096,15 +2096,22 @@ static int cli_subst(const CliState *st)
     /* Every rx option is REFUSED rather than ignored (§5¶1): any
      * `pcrec_options` field but the prefix and the encoding (the template is
      * read in `-e`'s encoding), and the CLI's own rx-only flags. Compared
-     * against a default record, so an option added later is refused too. */
+     * against a default record, so an option added later is refused too.
+     * `--features` names the template's own modules: `subst-extended`
+     * (§2¶7) is the one there is. */
     pcrec_options d;
     pcrec_default_options(&d);
     d.prefix = st->opt.prefix;
     d.encoding = st->opt.encoding;
-    if (memcmp(&d, &st->opt, sizeof d) != 0 || st->features || st->pattern_esc ||
+    if (memcmp(&d, &st->opt, sizeof d) != 0 || st->pattern_esc ||
         st->flavour || st->target || st->nlibdirs) {
-        cli_err("--subst/--subst-file takes only -p, -e and -o: "
+        cli_err("--subst/--subst-file takes only -p, -e, -o and --features subst-extended: "
                 "an option for a pattern compile was given");
+        return 1;
+    }
+    if (st->features && strcmp(st->features, "subst-extended") != 0) {
+        cli_err("--features with --subst/--subst-file takes only the template module "
+                "'subst-extended', not '%s'", st->features);
         return 1;
     }
     size_t len = 0;
@@ -2118,7 +2125,7 @@ static int cli_subst(const CliState *st)
 
     int to_stdout = !strcmp(st->outpath, "-");
     char *hpath = NULL;
-    PcrecSubstOptions so = { st->opt.prefix, NULL, st->opt.encoding };
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->opt.encoding, st->features != NULL };
     if (!to_stdout) {
         size_t ol = strlen(st->outpath);
         if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }

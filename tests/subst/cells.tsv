@@ -73,3 +73,4 @@ asciiutf8	-e utf8	(é)	<$1>	blank	all	a\xc3\xa9b	-	out:a<\xc3\xa9>b:1	same	-	-
 encbind	-e utf8	(é)	esc:\xc3\xa8$1	blank	all	a\xc3\xa9b	-	check:MISMATCH:-1	na	-	encbind
 encbind2	-	a	utf8:esc:\xc3\xa8$0	blank	all	a	-	check:MISMATCH:-1	na	-	encbind
 varerrnul	-	(a)	${!v}-$1	strict	all	a	v=X	out:X-a:1	na	-	-
+composed	-	rxt:composed	[$0]	blank	all	xaya	-	out:x[a]y[a]:2	na	-	S1538

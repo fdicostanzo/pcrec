@@ -236,7 +236,7 @@ int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o
         err->input = PCREC_ERR_INPUT_TEMPLATE;
         return -1;
     }
-    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, &t, err);
+    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, o->extended, &t, err);
     if (rc == 0) pcrec_emit_subst(tmpl, len, &t, o, out);
     pcrec_arena_free(&a);
     return rc;

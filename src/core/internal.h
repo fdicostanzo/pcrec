@@ -4990,6 +4990,11 @@ Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx);      /* \cX */
 Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx);     /* \xHH, \x{HHHH} */
 Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx);   /* \o{OOO}, \NNN, \0 */
 Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx); /* \N{U+HHHH} */
+/* The values behind them, Ctx-free, shared with the substitution-template
+ * parser (src/parse/definitions.c): a digit run's value in base 8 or 16 (-1
+ * when empty or not digits, saturated at 0x7FFFFFFF), and `\cX`'s byte. */
+long pcrec_esc_digits_value(const char *s, size_t len, int base);
+int  pcrec_esc_ctrl_value(int x);
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
@@ -7803,14 +7808,25 @@ typedef enum {
     SUBST_VAR,     /* `${!name}`: vrefs[ref], the caller's variable */
     SUBST_SUBJECT, /* `$_`: the whole subject */
     SUBST_BEFORE,  /* `` $` ``: the subject before the match */
-    SUBST_AFTER    /* `$'`: the subject after the match */
+    SUBST_AFTER,   /* `$'`: the subject after the match */
+    SUBST_COND,    /* `${n:-text}` / `${n:+set:unset}` (module subst-extended): group
+                    * `num`, reference `ref`; its SET branch is the next `nset` items,
+                    * its UNSET branch the `nunset` after them (nested items included) */
+    SUBST_CASE     /* `\U \L \u \l \E` (module subst-extended): `num` is the event,
+                    * a SubstCaseEvent; no piece of its own */
 } SubstItemKind;
+
+/* A case-forcing event, in the order of subst_api.md §2¶13's table rows. */
+typedef enum { SUBST_EV_UPPER, SUBST_EV_LOWER, SUBST_EV_ONE_UPPER, SUBST_EV_ONE_LOWER,
+               SUBST_EV_END, SUBST_EV_CHAR, SUBST_NEVENTS } SubstCaseEvent;
 
 typedef struct {
     SubstItemKind kind;
     size_t        off, len;   /* SUBST_LIT: its bytes in SubstTmpl.lit */
     int           ref;
     int           num;
+    size_t        nset, nunset;   /* SUBST_COND: the items of each branch */
+    size_t        pset, punset;   /* SUBST_COND: the pieces of each branch (§4¶7) */
 } SubstItem;
 
 /* One row of the reference list (subst_api.md §3¶2): a name with number -1,
@@ -7821,8 +7837,10 @@ typedef struct {
 } SubstRef;
 
 typedef struct {
-    SubstItem   *items;        /* one per piece after the gap: npieces = nitems + 1 */
+    SubstItem   *items;        /* template order; a SUBST_COND's branches follow it */
     size_t       nitems;
+    size_t       npieces;      /* pieces per match, the gap included (§4¶5) */
+    size_t       region;       /* the top-level item the CASE REGION starts at, or nitems */
     char        *lit;          /* every literal item's bytes */
     size_t       nlit;
     SubstRef    *refs;         /* the reference list, first-appearance order */
@@ -7831,13 +7849,15 @@ typedef struct {
     int          nvrefs;
     int          maxnum;       /* the highest group number, or 0 */
     bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
+    bool         uses_ext;     /* a module `subst-extended` form appears */
+    size_t       lit_floor;    /* parser-private: no literal joins an item below it */
 } SubstTmpl;
 
-/* Parses `s[0, n)`, read in `encoding` (PCREC_ENC_*), into `t`. Returns 0,
- * or -1 with `err` filled (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a
- * template offset). */
-int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl *t,
-                      pcrec_error *err);
+/* Parses `s[0, n)`, read in `encoding` (PCREC_ENC_*), into `t`; `extended`
+ * selects module `subst-extended` (§2¶7). Returns 0, or -1 with `err` filled
+ * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). */
+int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, bool extended,
+                      SubstTmpl *t, pcrec_error *err);
 
 /* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
  * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
@@ -7847,6 +7867,7 @@ typedef struct {
     const char *prefix;
     const char *header_name;
     int         encoding;
+    bool        extended;      /* module subst-extended (`--features subst-extended`) */
 } PcrecSubstOptions;
 
 /* Emits the subst artifact for `t` (src/gen/emit_subst.c): `out->c_src`, and

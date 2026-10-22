@@ -2,12 +2,14 @@
 # tests/subst/run_subst_tests.sh -- [M4-SUBST] `make test-subst`: the subst
 # artifact's checks (docs/spec/subst_api.md, replace_design.md §R4).
 #
-#   1. run_subst_tests.py over cells.tsv: every cell's stated answer through
+#   1. run_subst_tests.py over cells.tsv, then over module subst-extended's
+#      tests/subst-extended/cells.tsv: every cell's stated answer through
 #      the spec's recipes and replace-all, the generic arms (its header), and
 #      libpcre2's pcre2_substitute where it can answer.
 #   2. the template compiler's refusals: each must exit 1 naming a template
 #      offset, never emit (D26: the wording is not pinned, the offset is);
-#      the reserved prefixes and the refused options.
+#      the reserved prefixes and the refused options; under `--features
+#      subst-extended`, the module's own refusals (§2¶8-¶12).
 #   3. the header contract (§1¶3, §10): a subst header with no rx block of
 #      its abi does not compile; `-o -` is one self-contained `.c`; an rx and
 #      a subst header of one prefix share a translation unit, and two subst
@@ -45,13 +47,17 @@ ok()  { pass=$((pass + 1)); }
 bad() { fail=$((fail + 1)); echo "FAIL: $*"; }
 
 # ---- 1. the cells ----------------------------------------------------------
-python3 -I "$SCRIPT_DIR/run_subst_tests.py" "$WORK/cells" "$SCRIPT_DIR/cells.tsv" > "$WORK/cells.log" 2>&1
-rc=$?
-cat "$WORK/cells.log"
-p="$(sed -n 's/^checks passed: //p' "$WORK/cells.log")"
-f="$(sed -n 's/^checks failed: //p' "$WORK/cells.log")"
-pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
-[ "$rc" = 0 ] || [ "${f:-1}" != 0 ] || bad "run_subst_tests.py exited $rc"
+EXT_CELLS="$ROOT_DIR/tests/subst-extended/cells.tsv"
+for cells in "$SCRIPT_DIR/cells.tsv" "$EXT_CELLS"; do
+    tag="$(basename "$(dirname "$cells")")"
+    python3 -I "$SCRIPT_DIR/run_subst_tests.py" "$WORK/$tag" "$cells" > "$WORK/$tag.log" 2>&1
+    rc=$?
+    sed "s/^/$tag: /" "$WORK/$tag.log" | grep -v "^$tag: checks "
+    p="$(sed -n 's/^checks passed: //p' "$WORK/$tag.log")"
+    f="$(sed -n 's/^checks failed: //p' "$WORK/$tag.log")"
+    pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
+    [ "$rc" = 0 ] || [ "${f:-1}" != 0 ] || bad "run_subst_tests.py over $tag exited $rc"
+done
 
 # ---- 2. refusals: TEMPLATE<TAB>OFFSET ----------------------------------------
 while IFS=$'\t' read -r tmpl off; do
@@ -78,6 +84,69 @@ x$LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
 $+	0
 ${&}	2
 EOF
+# module subst-extended's refusals, each at its offset (§2¶8-¶12): a
+# backslash + two digits, an escape not in the table, a trailing backslash,
+# a \Q left open in conditional text, the operators that are not
+# conditionals, malformed escapes, nesting past PCREC_MAX_TEMPLATE_NESTING
+nest11="$(printf '${1:+%.0s' 1 2 3 4 5 6 7 8 9 10 11)x}}}}}}}}}}}"
+while IFS=$'\t' read -r enc tmpl off; do
+    case "$enc" in ''|'#'*) continue ;; esac
+    [ "$tmpl" = NEST11 ] && tmpl="$nest11"
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -e "$enc" --features subst-extended -o "$WORK/r.c" --subst "$tmpl" > /dev/null 2> "$WORK/r.err"; then
+        bad "extended template '$tmpl' ($enc) compiled; want a refusal at offset $off"
+    elif grep -q "(template offset $off)\$" "$WORK/r.err"; then ok
+    else bad "extended template '$tmpl' ($enc): $(head -1 "$WORK/r.err"), want template offset $off"
+    fi
+done <<'EOF'
+byte	\10	0
+byte	a\101	1
+byte	\81	0
+byte	\q	0
+byte	\d	0
+byte	ab\	2
+byte	${1:-\Qa}	5
+byte	${1:-x	6
+byte	${1:=x}	0
+byte	${1:?x}	0
+byte	${1:}	0
+byte	${1:x}	0
+byte	${1-x}	0
+byte	${1+x}	0
+byte	${!v:-x}	0
+byte	\x{100}	0
+byte	\N{U+41}	0
+byte	\o{}	0
+byte	\o{18}	0
+byte	\o	0
+byte	\x{}	0
+byte	\x{41	0
+byte	\xg	0
+byte	\c	0
+byte	x\N	1
+utf8	\x{110000}	0
+utf8	\x{d800}	0
+utf8	\N{U+}	0
+utf8	\N{41}	0
+utf8	\N{u+41}	0
+byte	NEST11	50
+EOF
+# a 10-deep nest compiles; `--features subst-extended` is the only module
+# --subst takes (§5¶1), and the module's forms refuse without it (§2¶4)
+nest10="$(printf '${1:+%.0s' 1 2 3 4 5 6 7 8 9 10)x}}}}}}}}}}"
+if "$TIMEOUT_BIN" 60 "$PCREC" -p s --features subst-extended -o "$WORK/r.c" --subst "$nest10" > /dev/null 2>&1; then ok
+else bad "a 10-deep conditional was refused"; fi
+for fl in "--features all" "--features subst-extended,vars" "--features std1"; do
+    if "$TIMEOUT_BIN" 60 "$PCREC" $fl -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "--subst accepted $fl"; else ok; fi
+done
+for t in '${1:+a}' '${1:-a}'; do
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst "$t" > /dev/null 2> "$WORK/r.err"; then
+        bad "'$t' compiled without module subst-extended"
+    elif grep -q "requires module 'subst-extended'" "$WORK/r.err"; then ok
+    else bad "'$t' without the module: $(head -1 "$WORK/r.err")"; fi
+done
+"$TIMEOUT_BIN" 60 "$PCREC" -p sx --features subst-extended -o "$WORK/sx.c" --subst '\U$1' &&
+    grep -q '^#define SX_SUBST_MODULES "subst,subst-extended"$' "$WORK/sx.c" && ok ||
+    bad "an extended artifact does not stamp SX_SUBST_MODULES subst,subst-extended"
 # under -e utf8 the template is UTF-checked (§2¶3) and names take \p{L}
 # (§2¶1a); under byte the same name is refused
 for t in "$(printf '[\xff]')" "$(printf 'ab\xc3')"; do
@@ -202,11 +271,18 @@ if [ "${ASAN:-1}" = 1 ]; then
             ASAN_OPTIONS=detect_leaks=0 \
             python3 -I "$SCRIPT_DIR/run_subst_tests.py" "$WORK/asan" "$SCRIPT_DIR/cells.tsv" > "$WORK/asan.log" 2>&1
         rc=$?
-        sed 's/^/asan: /' "$WORK/asan.log" | grep -v '^asan: checks '
-        p="$(sed -n 's/^checks passed: //p' "$WORK/asan.log")"
-        f="$(sed -n 's/^checks failed: //p' "$WORK/asan.log")"
-        pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
-        [ "$rc" = 0 ] || [ "${f:-1}" != 0 ] || bad "the ASan pass of run_subst_tests.py exited $rc"
+        GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
+            ASAN_OPTIONS=detect_leaks=0 \
+            python3 -I "$SCRIPT_DIR/run_subst_tests.py" "$WORK/asanx" "$EXT_CELLS" > "$WORK/asanx.log" 2>&1
+        rcx=$?
+        for lg in asan asanx; do
+            sed "s/^/$lg: /" "$WORK/$lg.log" | grep -v "^$lg: checks "
+            p="$(sed -n 's/^checks passed: //p' "$WORK/$lg.log")"
+            f="$(sed -n 's/^checks failed: //p' "$WORK/$lg.log")"
+            pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
+            r=$rc; [ "$lg" = asanx ] && r=$rcx
+            [ "$r" = 0 ] || [ "${f:-1}" != 0 ] || bad "the ASan pass of run_subst_tests.py ($lg) exited $r"
+        done
     else
         echo "SKIP: subst asan (the compiler cannot build -fsanitize=address)"
     fi
