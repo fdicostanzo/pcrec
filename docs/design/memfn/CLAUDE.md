@@ -61,6 +61,7 @@ finding ids to sections).
 - `row_contracts.md` — [MEMFN-ROWCON] first-match table mechanism exported by
   the kit (`fields.def`, `honours` allowlists, reach counters); evidence in
   `probes/rowcon/`.
+- `window_site.md` — the UNIFIED WINDOW SITE design, rev 3.1 (D172; panels r2 and 2026-10-22-r1 + job 581 + verification critic V1-V7 applied; design only, Frank's conditional build go): pcrec states spans (start, sets, required core, verify), an unordered set of alternatives each with its ENTRY fact (parked/reseed), and frequencies, never a plan; a two-phase ask (decision reply read by pcrec's NEXT rows and the OFFSETS stamp, then text); one row family (stop with adoption as one least-cost choice + the 2x MARGIN row, find form, verify plan incl. C-pin, resume incl. the PROVISIONAL Horspool row D-hors, frame; generic floor) carrying prefix_k's rules exactly over pcrec's byte-rate, its constants as a data table with box and basis; S1+S2 one branch of six commits (zero movers, one MF_SITE_ABI event), then S3 (REPORT routed + D-hors, scalar, judged against DEF with two named capped losses); Appendix A is the S2 request text.
 - `walk_vs_v1_record.md` — the CLOSED record of the set-FIND form question (2026-10-21): walk vs V1, flattening, M64, the adaptive loop; measurements, sizes, Frank's ruling (the walk when the subject is unknown), what not to retry and when to re-open. Read it before proposing a non-walk default.
 
 ## Pointers
