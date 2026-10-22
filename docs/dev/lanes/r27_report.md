@@ -324,7 +324,7 @@ SHF against R-27.1's bar: 9 miss(es)
 **Reading (kit manager, 2026-10-21):**
 - **PRO, the window search with no shift, is the form.**
   - It is FASTER than today's REPORT pick on every cell.
-  - Against DEF it is FASTER or NULL on 18 of the 24 non-match cells.
+  - It meets R-27.1's bar on 42 of the 48 non-match cells (against DEF; dense against COV).
   - Its misses: hex8-bounded (4 cells), cat-bounded `search_short`/dense against COV (1.18), and
     file-ext-order `search_short`/none (1.033, a literal cell where T3's FUNC proxy question applies).
 - **SHF must not be a general default.**
