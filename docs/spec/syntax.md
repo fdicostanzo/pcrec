@@ -259,3 +259,192 @@ A group nests at most 250 deep (`PCREC_MAX_GROUP_DEPTH`); one more is refused ("
 | `$` under `(?m)` | also right before any `\n` | no | `assertions` (§7.1) |
 
 `a$` on `a\n` → `[0, 1)`; on `a\n\n` no match; on `a\r\n` no match: only `\n` is a newline for `^`, `$`, `.`, `\Z` and `\N`. `^a` from `startpos` 1 on `ba` is no match; `\G` (§7.1) is the assertion that anchors at `startpos`.
+
+## 6. The default modules
+
+`classes` and `modifiers` are the set `std1`, enabled by every compile that does not name its own `--features` (§2.3).
+
+### 6.1 Module `classes`
+
+| spelling | matches one character in | engines | quantifiable |
+|---|---|---|---|
+| `\d` | `[0-9]` | any | yes |
+| `\D` | not `\d` | any | yes |
+| `\s` | `[\t\n\x0b\f\r ]` | any | yes |
+| `\S` | not `\s` | any | yes |
+| `\w` | `[A-Za-z0-9_]` | any | yes |
+| `\W` | not `\w` | any | yes |
+| `\h` | under `byte` `[\t \xa0]`; under `utf8` U+0009, U+0020, U+00A0, U+1680, U+180E, U+2000-U+200A, U+202F, U+205F, U+3000 | any | yes |
+| `\H` | not `\h` | any | yes |
+| `\v` | under `byte` `[\n\x0b\f\r\x85]`; under `utf8` U+000A-U+000D, U+0085, U+2028, U+2029 | any | yes |
+| `\V` | not `\v` | any | yes |
+| `\N` | not `\n`, whatever `(?s)` says; refused inside a class | any | yes |
+| `[[:name:]]` | the POSIX set `name` (below); only inside a class | any | yes |
+| `[[:^name:]]` | the complement of the POSIX set `name` | any | yes |
+
+The POSIX names and their sets, without UCP: `alnum` `[0-9A-Za-z]`, `alpha` `[A-Za-z]`, `ascii` `[\x00-\x7f]`, `blank` `[\t ]`, `cntrl` `[\x00-\x1f\x7f]`, `digit` `[0-9]`, `graph` `[\x21-\x7e]`, `lower` `[a-z]`, `print` `[\x20-\x7e]`, `punct` the 32 characters of `graph` that are not `alnum`, `space` `[\t\n\x0b\f\r ]`, `upper` `[A-Z]`, `word` `[A-Za-z0-9_]`, `xdigit` `[0-9A-Fa-f]`. Any other name is refused ("unknown POSIX class name").
+
+1. The sets above are the same under `byte` and `utf8`: `\w` does not match `é` under `-e utf8` unless UCP is on. Under UCP (§7.8) `\d \s \w` and the POSIX sets are Unicode property sets (`cli.md` §1.9). `\h \H \v \V` do not depend on UCP.
+2. A negated escape (`\D`, `\S`, `\W`, `\H`, `\V`) and `\N` match only well-formed characters under `utf8`.
+3. Under `-i` a POSIX `lower` or `upper` set matches both cases (`(?i)[[:upper:]]` matches `a`), except under UCP (`cli.md` §1.9¶5); `\d \s \w` have no case.
+4. Every set above, on every byte `0x00`-`0xFF` under `-e byte`, is libpcre2's set at options `0`.
+
+### 6.2 Module `modifiers`
+
+An option setting changes how the rest of the pattern is read. `(?LETTERS)` sets options from that point to the end of the enclosing group (or of the pattern), including the group's later alternatives: `a(?i)b|c` matches `aB` and `C` and not `AB`. `(?LETTERS:X)` sets them for `X` only. `(?LETTERS-LETTERS)` sets the letters before `-` and unsets those after; `(?^LETTERS)` first resets `i m n r s x xx U` to off, then sets `LETTERS`; `-` may not follow `^`. `(?)` and `(?-)` change nothing.
+
+| letter | meaning | module |
+|---|---|---|
+| `i` | caseless: a literal, a class or a backreference matches every case partner under the encoding's fold (`cli.md` §1.8) | `modifiers` |
+| `m` | multiline `^` and `$` (§5.8) | `assertions` (§7.1) |
+| `s` | `.` matches `\n` (§5.4) | `modifiers` |
+| `x` | extended: whitespace and `#` comments ignored (§3.2) | `modifiers` |
+| `xx` | `x`, and space and tab ignored inside a class (§3.2); `-x` unsets both | `modifiers` |
+| `n` | no auto-capture: `(X)` is `(?:X)`; named groups (§7.5) still capture | `modifiers` |
+| `U` | ungreedy: a quantifier without `?` is lazy and one with `?` is greedy | `modifiers` |
+| `J` | duplicate group names allowed (§7.5); survives `(?^)` | `backrefs` (§7.3) |
+| `a` | `(?aD)`, `(?aS)`, `(?aW)`, `(?aP)`, `(?aT)`, or `(?a)` for all five: restrict a family of sets to ASCII under UCP (`cli.md` §1.9¶4); no effect without UCP; survives `(?^)` | `modifiers` |
+| `r` | caseless matching restricted to ASCII-with-ASCII and non-ASCII-with-non-ASCII; under `byte` it changes nothing; under `utf8` it is refused ("not implemented under encoding 'utf8'") | `modifiers` |
+
+1. Any other letter is refused ("unrecognized character after (? or (?-"), and an unclosed setting is refused.
+2. A letter whose module is not enabled is refused naming that module: `(?m)a` under `std1` is refused with `inline option 'm' (multiline) requires module 'assertions'`, even with no `^` or `$` in the pattern.
+3. `-i` on the command line is `(?i)` at the start of the pattern; there is no command-line spelling of the other letters (§2.5).
+4. `(?n)` applies from where it is written to the end of its scope; a group opened before it, or after its scope closes, still captures: `(a(?n)(b))(c)` on `abc` → group 1 `[0, 2)` (the outer group), group 2 `[2, 3)` (the `(c)`).
+
+## 7. Opt-in modules
+
+Each module in this section has producers and is enabled by naming it in `--features` (or by `all`); `ucp` and `unicode-props` are also enabled by `-e utf8` (§2.3).
+
+### 7.1 Module `assertions`
+
+Each construct matches the empty string at a position that satisfies its condition.
+
+| spelling | condition at position `p` | engines | quantifiable |
+|---|---|---|---|
+| `\b` | exactly one of the characters before `p` and at `p` is a word character, the subject's ends counting as non-word | any | no |
+| `\B` | not `\b` | any | no |
+| `\A` | `p` is 0, whatever `startpos` is | any | no |
+| `\Z` | `p` is the end of the subject, or `p` is before a `\n` that is the subject's last character | any | no |
+| `\z` | `p` is the end of the subject | any | no |
+| `\G` | `p` is `startpos` | any | no |
+| `\K` | always true; sets the start of the reported match to `p` | vm | no |
+| `(?m)` | the option letter that changes `^` and `$` (§5.8) | any | — |
+
+1. The word characters for `\b` and `\B` are `\w`'s set (§6.1): ASCII without UCP, so under `byte` `\b\xe9` on `a\xe9` → `[1, 2)`. Under UCP they are Unicode's word set under `byte` (Latin-1) and refused under `utf8` (`cli.md` §1.9¶7).
+2. `\K` changes only the reported start: `a\Kb` on `ab` → `[1, 2)`; `(a\Kb)` on `ab` → `[1, 2)`, group 1 `[0, 2)`. `\K` inside any lookaround is refused ("not allowed inside a lookaround").
+3. Inside a class, `\b` is U+0008 (§5.5) and the others are refused.
+
+### 7.2 Module `atomic-groups`
+
+| spelling | matches | engines | quantifiable |
+|---|---|---|---|
+| `(?>X)` | the first way `X` matches at this position (§4.2); if what follows fails, no other way of `X` is tried | vm | yes |
+| `X*+`, `X++`, `X?+`, `X{n,m}+`, `X{n,}+`, `X{,m}+`, `X{n}+` | `(?>X*)`, `(?>X+)` and so on | vm | no |
+
+`(?>a|ab)c` on `abc` is no match; `a++a` on `aaa` is no match; `a{1,2}+a` on `aaa` → `[0, 3)`. A possessive quantifier is a quantifier, so a further quantifier after it is refused (`a*+?`). `(*atomic:X)` is the same construct in PCRE2 and is refused as part of module `verbs` (§8.1).
+
+### 7.3 Module `backrefs`
+
+A backreference matches exactly the text the referenced group holds at that point on the current path (§4.4). If the group is unset, the backreference fails. Under `-i` the comparison folds by the encoding's fold (`cli.md` §1.8¶6): `(a)\1` under `-i` on `aA` → `[0, 2)`.
+
+| spelling | refers to | engines |
+|---|---|---|
+| `\N`, `\NN...` | group N, by the digit rule below | vm |
+| `\gN`, `\g{N}` | group N | vm |
+| `\g{-N}`, `\g-N` | the Nth group counting back from this point: `(a)\g{-1}` is group 1 | vm |
+| `\g{+N}` | the Nth group counting forward from this point | vm |
+| `\k<name>`, `\k'name'`, `\k{name}`, `\g{name}`, `(?P=name)` | the group named `name` (§7.5) | vm |
+| `\0`, `\0o`, `\0oo` | not a backreference: an octal character (§5.2) | any |
+| `(?J)` | the option allowing duplicate names (§7.5) | any |
+
+1. The digit rule. After `\`, take the whole run of decimal digits as N. If the run starts with `0` it is octal (§5.2). Otherwise, if N < 10, or the pattern has at least N capturing groups in total, it is a backreference to group N; otherwise the leading octal digits (at most three) are an octal character and the rest of the run is literal digits. So `(a)\10` is `(a)` then U+0008; `(a)\11` on `a\t` → `[0, 2)`; `\18` is U+0001 then `8`; ten groups then `\10` is a backreference to group 10.
+2. A backreference to a group the pattern does not have is refused, by number (`(a)\2`, "refers to capture group 2, but this pattern has 1"), by relative position (`\g{0}`, `(a)\g{-2}`) or by name (`\k<m>` with no group `m`). `\8` and `\9` in a pattern with fewer groups are refused the same way.
+3. A reference to a group that has not run yet on the path fails rather than matching empty: `\1(a)` on `aa` is no match; `(a\1)` on `aa` is no match. A group may be referenced before it is written, and the reference sees its value from an earlier iteration: `(a\2|b)(c)` on `bcac` → `[0, 2)`.
+4. With duplicate names (`(?J)`), a by-name reference refers to the lowest-numbered group of that name that is set: `(?J)(?<n>a)(?<n>b)\k<n>` on `aba` → `[0, 3)`.
+5. A backreference inside a lookbehind is refused (§7.4).
+6. Inside a class, `\1`-`\7`, `\8`, `\9`, `\g` and `\k` are base-tier characters (§5.5).
+
+### 7.4 Module `lookaround`
+
+A lookaround matches the empty string at `p` when its condition holds; it consumes nothing.
+
+| spelling | condition | engines | quantifiable |
+|---|---|---|---|
+| `(?=X)`, `(*pla:X)`, `(*positive_lookahead:X)` | `X` matches starting at `p` | vm | yes |
+| `(?!X)`, `(*nla:X)`, `(*negative_lookahead:X)` | `X` does not match starting at `p` | vm | yes |
+| `(?<=X)`, `(*plb:X)`, `(*positive_lookbehind:X)` | `X` matches ending at `p` | vm | yes |
+| `(?<!X)`, `(*nlb:X)`, `(*negative_lookbehind:X)` | `X` does not match ending at `p` | vm | yes |
+| `(?*X)`, `(*napla:X)`, `(*non_atomic_positive_lookahead:X)` | as `(?=X)`, non-atomic | vm | yes |
+| `(?<*X)`, `(*naplb:X)`, `(*non_atomic_positive_lookbehind:X)` | as `(?<=X)`, non-atomic | vm | yes |
+
+1. A positive lookaround is atomic: the first way its body matches is kept, and a later failure does not retry the body. `(?=(a|ab))\1c` on `abc` is no match, while the non-atomic `(?*(a|ab))\1c` on `abc` → `[0, 3)`, group 1 `[0, 2)`.
+2. Groups inside a positive lookaround keep the values of the way that succeeded (`(?=(a))a` on `a` → group 1 `[0, 1)`); groups inside a negative lookaround are unset after it (`(?!(a))b` on `b` → group 1 unset).
+3. A lookbehind reads characters before `p` even when they are before `startpos` (`(?<=b)a` from `startpos` 1 on `ba` → `[1, 2)`).
+4. Every top-level alternative of a lookbehind's body must match a fixed number of characters; different alternatives may differ (`(?<=a|bc)x` compiles). A body that can match a varying number of characters within one alternative is refused with a capability diagnostic (shape 5): `(?<=(a|bc))x`, `(?<=a+)x`, and any lookbehind containing a backreference (`(a)(?<=\1)`). Fixed counts are characters, so `(?<=é)a` under `utf8` on `éa` → `[2, 3)`.
+5. A quantifier on a lookaround means the assertion is optional when its minimum is 0 and required once otherwise: `(?=a)*b` on `b` → `[0, 1)`, `(?=a){2}a` on `a` → `[0, 1)`.
+6. There is no non-atomic negative lookaround: `(*nanla:...)` and `(*nanlb:...)` are refused ("(*alpha_assertion) not recognized"), as PCRE2 refuses them. `\K` inside any lookaround is refused (§7.1).
+
+### 7.5 Module `named-groups`
+
+| spelling | matches | captures |
+|---|---|---|
+| `(?<name>X)`, `(?'name'X)`, `(?P<name>X)` | `X` | the next group number, and the name `name` |
+
+1. A name is an ASCII letter or `_` followed by ASCII letters, digits and `_`, at most 128 bytes (`PCREC_MAX_GROUP_NAME`). A name starting with a digit is refused; a longer name is refused. A name containing a non-ASCII letter is refused under every encoding; PCRE2 accepts one under UTF (§9).
+2. A named group is numbered with the unnamed ones, by position (§4.4): `(?<n>a)(?<n2>b)(c)` on `abc` → groups 1, 2, 3.
+3. Two groups with one name are refused ("two named subpatterns have the same name") unless `(?J)` is in effect at the second declaration (§6.2); `(?<n>a)|(?J)(?<n>b)` compiles.
+4. How a caller finds a group by name is `match_api.md` §5.4; how a library definition's names reach a caller is `match_api.md` §5.5.
+5. `(?<` followed by `=`, `!` or `*` is a lookbehind (§7.4), not a name.
+
+### 7.6 Module `quoting`
+
+`\Q` begins quoting and `\E` ends it. Every character between them is a literal, `\` included: `\Qa.b\E.` matches `a.b` followed by any character, and `\Q\\E` matches one `\`.
+
+1. A `\Q` with no `\E` quotes to the end of the pattern. A `\E` with no `\Q` is ignored (`a\E` matches `a`).
+2. Quoting is transparent to the item structure: a quantifier after `\E` applies to the last quoted character (`\Qab\E+` matches `abb`), and an empty `\Q\E` is nothing (`a\Q\E*` is `a*`).
+3. Inside quotes, `(?x)` whitespace and `#` are literals (`(?x)\Qa b\E` matches `a b`).
+4. Inside a class, `\Q...\E` quotes members: `[\Qa-c\E]` matches `a`, `-` and `c` and not `b`; `[\Q]\E]` matches `]`.
+5. Quoting is lexical: it never makes a group, so `(a\Qb)c\E)` quotes `b)c` and the final `)` closes the group.
+
+### 7.7 Module `recursion`
+
+A subroutine call matches the called group's pattern at the current position, as if its text were written there, with the options in effect where the group is written.
+
+| spelling | calls | engines |
+|---|---|---|
+| `(?R)`, `(?0)`, `\g<0>`, `\g'0'` | the whole pattern | vm |
+| `(?N)`, `\g<N>`, `\g'N'` | group N | vm |
+| `(?+N)`, `(?-N)`, `\g<+N>`, `\g<-N>`, `\g'+N'`, `\g'-N'` | the Nth group counting forward or back from the call | vm |
+| `(?&name)`, `(?P>name)`, `\g<name>`, `\g'name'` | the group named `name` | vm |
+| `(?(DEFINE)X)` | nothing: `X` never runs where it is written and exists to be called | any |
+
+1. Digits are read as one decimal number, so a leading zero does not change it: `(?01)` and `\g<01>` call group 1, while `(?00)` and `\g<00>` call the whole pattern. `(?10)` and `(?-10)` are multi-digit calls.
+2. A call to a group the pattern does not have is refused (`(a)(?2)`; `(?-1)(a)` counts back past the first group).
+3. A call is not atomic: a later failure backtracks into it. `^(a|ab)(?1)c$` on `aabc` → `[0, 4)`.
+4. Groups set inside a call are restored when the call returns; the call leaves the caller's groups as they were before it. `(a|b)(?1)` on `ab` → group 1 `[0, 1)`.
+5. `(?(DEFINE)X)` must have one alternative; `(?(DEFINE)a|c)` is refused. Groups inside `X` are numbered in place; a call into them restores them on return (item 4), so they are never set on the reported path: `(?(DEFINE)(?<d>\d+))(?&d)-(?&d)` on `12-34` → `[0, 5)`, group 1 unset.
+6. Each call that the artifact keeps as a call (rather than writing the group's text in place, `tuning.md` §2.9) uses a resume frame, so call depth is bounded by the artifact's frame and trail capacities and an exhausted capacity is the give-up `PCREC_ERR_FRAMES` (`limits.md` §3.2, §4). Left recursion is `limits.md` §6. A call whose group can never complete (`(?R)` alone) answers no match.
+
+### 7.8 Module `ucp`
+
+| spelling | meaning | engines |
+|---|---|---|
+| `(*UCP)` at the start of the pattern | UCP semantics, as `--ucp` | any |
+| `(*UTF)`, `(*UTF8)` at the start of the pattern | confirm `-e utf8`; refused under `byte` ("requires --encoding=utf8") | any |
+
+1. Start-of-pattern options must precede every other item, in any order (`(*UCP)(*UTF)` and `(*UTF)(*UCP)` are both accepted); elsewhere they are refused ("(*VERB) not recognized or malformed").
+2. What UCP changes — `\d \s \w`, the POSIX classes, `\b \B`, and the caseless fold of the POSIX case sets — and which UCP sets are refused under `utf8`, is `cli.md` §1.9 and `limits.md` §3.8. Under `byte`, UCP sets are their Unicode sets clamped to `0x00`-`0xFF`: `--ucp` `\w` matches `\xe9`, `[[:alpha:]]` matches `\xaa`, `\d` does not match `\xb2`.
+3. `--ucp` and `(*UCP)` need module `ucp` enabled under `byte`; `-e utf8` enables it.
+
+### 7.9 Module `unicode-props`
+
+| spelling | matches one character | engines | quantifiable |
+|---|---|---|---|
+| `\p{X}` | with property `X` | any | yes |
+| `\P{X}`, `\p{^X}` | without property `X` (`\P{^X}` is `\p{X}`) | any | yes |
+
+The accepted names (general categories, `L&`/`Lc`, `Any`, `Xan Xps Xsp Xuc Xwd`, scripts in three namespaces), their case and separator rules, the clamping under `byte` and the refused names are `cli.md` §1.17.1. Under `-i`, `\p{Lu}`, `\p{Ll}` and `\p{Lt}` are `\p{L&}` (`cli.md` §1.8¶5). A property escape is valid inside a class. A malformed escape (`\p` with no name) is refused. The tables are Unicode 16.0.0.
+
+### 7.10 Module `vars`
+
+`${name}` matches, literally, the bytes the caller passes for variable `name` in the call that runs the match; `${name:-word}` and the other bash-shaped forms supply defaults. The spelling, the caller's array, the refusals and the engine are `vars.md` §2-§7. Without the module, `${` is refused (`requires module 'vars'`) anywhere outside a class; PCRE2 reads the same text as `$` followed by literals, which can never match. Inside a class, `$` and `{` are literals (`[${]` matches `{`).
