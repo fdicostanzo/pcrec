@@ -165,11 +165,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 82
-#error "pcrec: this artifact (abi 82) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 83
+#error "pcrec: this artifact (abi 83) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 82
+#define PCREC_RX_ABI_H 83
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1039,8 +1039,9 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
 <a id="s5-1"></a>
 ### 5.1 What a written slot holds
 
-<a id="s5-1-p1"></a>[5.1¶1] Two rules govern which value a group inside a repeated construct holds,
-measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
+<a id="s5-1-p1"></a>[5.1¶1] Three rules govern which value a group inside a repeated construct holds.
+The first two are three-way unanimous (python `re`, libpcre2 and pcrec
+agree); the third is libpcre2's, and python `re` differs from it:
 
 1. <a id="s5-1-p2"></a>[5.1¶2] **Cross-iteration retention.** A group inside a quantifier whose
    subexpression did not run in the FINAL iteration keeps its value from the
@@ -1048,6 +1049,16 @@ measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
    2 as `[0,1)`. Unset means "never participated in the whole match".
 2. <a id="s5-1-p3"></a>[5.1¶3] **An empty final iteration still overwrites.** `(a*)*` and `(a?)*` over
    `"aaa"` both report group 1 as `[3,3)`.
+3. <a id="s5-1-p3a"></a>[5.1¶3a] **An iteration that matched empty ends an unbounded repeat,
+   and the repeat's last MANDATORY iteration is one of them.** After an
+   iteration of `X*`, `X+` or `X{m,}` that consumed nothing, no further
+   iteration runs: the continuation follows, and a failure there backtracks
+   into that iteration. For `m >= 1` this includes iteration `m`; iterations
+   `1..m-1`, and every copy of a bounded `X{m,n}`, are not covered.
+   `(?:()|a)+?b` over `"ab"` matches `[0,2)` with group 1 UNSET: iteration 1
+   takes `()`, which is empty, so no second iteration may follow it, and the
+   match is found by backtracking into iteration 1 and taking `a`. python
+   `re` reports group 1 as `[0,0)` there.
 
 <a id="s5-1-p4"></a>[5.1¶4] After a successful match a slot holds the group's last-executed span or is
 genuinely unset; a caller never reasons about which iteration produced it.
@@ -1257,7 +1268,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `82` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `83` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1404,7 +1415,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `82` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `83` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 

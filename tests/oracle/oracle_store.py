@@ -11,7 +11,7 @@ consumers that turn a `Question` batch into an `Answer` batch; this file is
 only the shared vocabulary (§2-§5) and the store format (§7-§8) both of them
 and every future adapter speak.
 
-## The six kinds (§2)
+## The six kinds (§2), and `case-map` (SUBST-CASE, a seventh)
 
 Each kind's Question fields, in serialization order (§4):
 
@@ -21,6 +21,8 @@ Each kind's Question fields, in serialization order (§4):
     name-accept     namespace, name
     membership      property, encoding
     pattern-info    pattern
+    case-map        direction, encoding      (one row per direction; its
+                    answer is every non-identity `cp>to` pair)
 
 `pattern`/`subject` are raw BYTES; every other field is a decimal integer or
 a bare identifier, already tab/newline/backslash-free by its own grammar (§4)
@@ -71,6 +73,7 @@ KIND_QUESTION_FIELDS = {
     "name-accept": ("namespace", "name"),
     "membership": ("property", "encoding"),
     "pattern-info": ("pattern",),
+    "case-map": ("direction", "encoding"),
 }
 
 # Per-kind ANSWER column names (§5), in the order written to a store row
@@ -89,6 +92,9 @@ KIND_ANSWER_COLUMNS = {
     "name-accept": ("verdict", "code"),
     "membership": ("intervals",),    # "lo1-hi1 lo2-hi2 ..." (hex, ascending)
     "pattern-info": ("capturecount", "namecount", "nametable"),
+    # "cp>to cp>to ..." (hex, ascending by cp): the code points a `\U$0` /
+    # `\L$0` substitution CHANGES; every scalar value not listed maps to itself.
+    "case-map": ("pairs",),
 }
 
 # [UCP] `property` joins them: under a UCP OracleId it carries a class

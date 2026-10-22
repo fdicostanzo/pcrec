@@ -122,6 +122,15 @@ contents block).
 - `findings.md` -- findings contract (data, normalization, stamp, listings).
 - `measures.md` -- measurement-set contract ([MEASURE-SET] M0), numbered from
   birth.
+- `pattern_language.md` -- the PATTERN LANGUAGE: every accepted construct, its meaning
+  (match semantics, captures, preference order), module gate and refusal
+  shape, per encoding and option; pcrec's own definition, of which
+  `docs/pcre2_compliance.md` is the delta. Numbered from birth. §10 is the
+  construct index, one line per `--list-syntax` row (syntax, module,
+  section) in a `| syntax | module | section |` table under the heading
+  `10. Construct index`: `tests/registry/syntax_index_check.py` (in
+  `make test-registry`) reads that table and the heading numbers, so keep
+  both shapes. A new registry row needs its §10 line in the same change.
 - `vars.md` -- module `vars` ([VAR]) caller-observable contract (`${name}`,
   `rx_var`, `PCREC_ERR_UNSET_VAR`); not yet in the numbered-facts form
   described above.

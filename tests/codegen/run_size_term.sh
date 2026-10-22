@@ -92,6 +92,27 @@ got="$(stamp UNROLL_K "$WORK/n8.c")"
 [ "$got" = "1" ] && ok "the size term's chosen K (1) is on the artifact" \
                  || bad "the size term chose a K the artifact does not carry: '$got'"
 
+# NEST8's K=1 rests on `X+` NEVER taking the counter rung, K=1 included: a
+# one-trip counter adds two trail entries per entry to the `+`, and at K=1 that
+# lowers the declared capacity below the floor (§3.3a), so the term moves to
+# K=2 (lane cfcount). Asserted directly from the rung stamp, so a regression
+# is named here and not only through NEST8's K; `{2,}` is the control that the
+# rung still serves an unbounded repeat with a mandatory count to chunk.
+rung_counter() {   # rung_counter <file.c>: is the COUNTER bit in RX_VM_RUNGS?
+    local m b
+    m="$(sed -n 's/^#define RX_VM_RUNGS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u$/\1/p' "${1%.c}.h" "$1" | head -1)"
+    [ -n "$m" ] && [ -n "$b" ] || { echo "unreadable"; return; }
+    [ $(( 0x$m & 0x$b )) -ne 0 ] && echo yes || echo no
+}
+for cell in 'no|(?:ab|b)+c' 'yes|(?:ab|b){2,}c'; do
+    want="${cell%%|*}"; p="${cell#*|}"
+    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=1 -o "$WORK/r1.c" --pattern "$p" 2>/dev/null
+    got="$(rung_counter "$WORK/r1.c")"
+    [ "$got" = "$want" ] && ok "--unroll=1: '$p' takes the counter rung: $got" \
+                         || bad "--unroll=1: '$p' takes the counter rung: '$got', expected $want"
+done
+
 # --- 4. the effective caps follow the flags --------------------------------
 pcrec_run "$PCREC" -p rx --features all -o "$WORK/c1.c" --pattern 'a(b|c)+d' 2>/dev/null
 [ "$(stamp MAX_EMIT_BYTES "$WORK/c1.c")" = "1000000" ] \

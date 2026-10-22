@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 82
+#define PCREC_ARTIFACT_ABI 83
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -3013,8 +3013,12 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
              * came from, which is how a caller tells its own group from a
              * delivered one without counting — delivery is BY NAME (D89
              * point 2(c)) and the number is the artifact's business. */
-            pcrec_sb_printf(c, "    { \"%s\", %d, %d, ",
-                      sorted[i]->name, sorted[i]->number, slot);
+            /* The name goes through the string-literal escaper: a utf8
+             * name's bytes >= 0x80 (K116) come out as `\NNN`, and an
+             * ASCII name, the only kind before K116, is byte-identical. */
+            pcrec_sb_puts(c, "    { ");
+            emit_c_string_literal(c, sorted[i]->name, strlen(sorted[i]->name));
+            pcrec_sb_printf(c, ", %d, %d, ", sorted[i]->number, slot);
             if (sorted[i]->scope)
                 emit_c_string_literal(c, sorted[i]->scope,
                                       strlen(sorted[i]->scope));

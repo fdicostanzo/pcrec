@@ -228,8 +228,17 @@ static RbSet rb_intersect(RbSet l, RbSet r)
 
 /* What every run operation needs besides its operands: the compile (for the
  * position constructor's refusal) and the largest member set one position
- * may have, handed in by `pcrec_req_walk`'s caller. */
-typedef struct { Ctx *cx; int pos_set; } RbWalk;
+ * may have, handed in by `pcrec_req_walk`'s caller. The rest is `rb_walk`'s
+ * own: its per-level result storage, `slot[d]` two `RbVal`s for the children
+ * of the walk at recursion depth `d`, so a value never sits in a C frame
+ * ([DD-10]: one `RbVal` is over a kilobyte, and the walk recurses once per
+ * nesting level). */
+typedef struct {
+    Ctx *cx;
+    int pos_set;
+    int depth, nslot;
+    RbVal **slot;
+} RbWalk;
 
 /* How many bytes the cube with mask `k` holds: two to the free bits. */
 static int rn_members(int k)
@@ -471,38 +480,137 @@ static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
     return o;
 }
 
-/* The bytes and the runs EVERY match of `a` must contain.
+/* The two result slots for the children of the walk at the current depth,
+ * allocated the first time the walk reaches that depth and reused after: the
+ * storage is bounded by the deepest nesting, not by the node count. */
+static RbVal *rb_slots(RbWalk *w)
+{
+    if (w->depth >= w->nslot) {
+        int n = w->nslot ? 2 * w->nslot : 16;
+        RbVal **t = pcrec_arena_alloc(&w->cx->arena, (size_t)n * sizeof *t);
+        if (w->nslot) memcpy(t, w->slot, (size_t)w->nslot * sizeof *t);
+        w->slot = t;
+        w->nslot = n;
+    }
+    if (!w->slot[w->depth])
+        w->slot[w->depth] = pcrec_arena_alloc(&w->cx->arena, 2 * sizeof(RbVal));
+    return w->slot[w->depth];
+}
+
+/* The combining steps, each in its own frame (`PCREC_OWN_FRAME`): the set and
+ * run operations pass kilobyte structs by value, and inlined into
+ * `rb_walk_at` their temporaries would ride every level of its recursion. */
+
+/* `acc` := the empty answer, the identity of the concatenation. */
+static PCREC_OWN_FRAME void rb_init(RbVal *acc)
+{
+    acc->set  = rb_empty();
+    acc->runs = rr_unit();
+}
+
+/* `acc` := `r` followed by `acc`: `r` is to the RIGHT of everything still to
+ * be walked and to the LEFT of everything in `acc`, which is why the union and
+ * the concatenation are spelled in this order and not the other. */
+static PCREC_OWN_FRAME void rb_cat_into(RbVal *acc, const RbVal *r)
+{
+    acc->set  = rb_union(r->set, acc->set, r->runs.maxw);
+    acc->runs = rr_cat(r->runs, acc->runs);
+}
+
+/* `r` := the alternation of `b` and `r`: only what both guarantee. */
+static PCREC_OWN_FRAME void rb_alt_into(const RbWalk *w, RbVal *r,
+                                        const RbVal *b)
+{
+    r->set  = rb_intersect(b->set, r->set);
+    r->runs = rr_alt(w, b->runs, r->runs);
+}
+
+/* `acc` := a stretch of width `maxw` that makes no byte necessary and breaks
+ * every run, followed by `acc`. */
+static PCREC_OWN_FRAME void rb_gap_into(RbVal *acc, long long maxw)
+{
+    acc->set  = rb_union(rb_empty(), acc->set, maxw);
+    acc->runs = rr_cat(rr_none(maxw), acc->runs);
+}
+
+/* `acc` := a repeat of at least one iteration of body `b`, followed by `acc`
+ * (`rb_walk_at`'s `A_REP` arm says what survives the repeat). */
+static PCREC_OWN_FRAME void rb_rep_into(RbVal *acc, const RbVal *b, int rmax)
+{
+    RbRuns rep = rr_none(rr_rep_w(rmax, b->runs.maxw));
+    /* [K82] the body's run at its own offset: the FIRST iteration begins
+     * where the repeat does. */
+    rep.best = b->runs.best;
+    acc->set  = rb_union(b->set, acc->set, rep.maxw);
+    acc->runs = rr_cat(rep, acc->runs);
+}
+
+/* `acc` := the lowered class `a`, followed by `acc`. */
+static PCREC_OWN_FRAME void rb_class_into(const RbWalk *w, RbVal *acc,
+                                          const Ast *a)
+{
+    int b = pcrec_cls_single(w->cx, a);
+    unsigned char k = 0xFF, t = (unsigned char)b;
+    if (b < 0 && (!pcrec_cls_cube(w->cx, a, &k, &t) ||
+                  rn_members(k) > w->pos_set)) {
+        /* A class that is not one cube of at most `pos_set` members
+         * contributes no byte and no run, and it also BREAKS contiguity for
+         * everything around it — which `rr_none`'s cleared `all` is exactly
+         * what says. One byte wide: the tree is lowered. */
+        rb_gap_into(acc, 1);
+        return;
+    }
+    /* Only a single byte is a member of the necessary SET; a cube position is
+     * one the RUN carries (litscan_s4.md §2.3.1). */
+    acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
+    acc->runs = rr_cat(rr_pos(w, t, k), acc->runs);
+}
+
+/* `acc` := a zero-width assertion followed by `acc`: no byte, and a broken run. */
+static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
+{
+    acc->runs = rr_cat(rr_none(0), acc->runs);
+}
+
+static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t);
+
+/* Writes into `*out` the bytes and the runs EVERY match of `a` must contain,
+ * one recursion level deeper than its caller (see `RbWalk.slot`). */
+static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
+{
+    RbVal *t = rb_slots(w);
+    w->depth++;
+    rb_walk_at(w, a, out, t);
+    w->depth--;
+}
+
+/* The bytes and the runs EVERY match of `a` must contain, into `*acc`; `t` is
+ * this level's two child slots.
  *
  * The `A_CAT` spine is walked ITERATIVELY down `->l` and the `A_ALT` spine
  * iteratively down its own, for `src/opt/mrl.c`'s and `pcrec_ast_visit`'s
  * shared reason: both spines are as long as the PATTERN, not as deep as its
  * nesting, and this project has segfaulted its own compiler on a 20,000-byte
  * literal for want of exactly that. What remains recursive descends one paren
- * level per frame. (The census probe that measured this mechanism's
- * population re-learned the same lesson independently, `c2prep_report.md` F5.)
+ * level per frame, and holds only pointers across the descent: every value
+ * lives in `*acc` or a slot ([DD-10] measured 12.9 KB per frame, 21 KB per
+ * nesting level, before it did).
  *
  * `acc` carries what has been learned to the RIGHT of the current node, which
  * is what keeps the rightmost pick correct across an arbitrarily long spine
  * without a second pass — and, for the runs, what makes each step an ordinary
  * concatenation with the accumulated right-hand side. */
-static RbVal rb_walk(const RbWalk *w, const Ast *a)
+static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
 {
-    RbVal acc;
-    acc.set  = rb_empty();
-    acc.runs = rr_unit();
+    rb_init(acc);
 
     for (;;) {
         switch (a->k) {
-        case A_CAT: {
-            /* `a->r` is to the RIGHT of everything still to be walked and to
-             * the LEFT of everything in `acc`, which is why the union and the
-             * concatenation are spelled in this order and not the other. */
-            RbVal r = rb_walk(w, a->r);
-            acc.set  = rb_union(r.set, acc.set, r.runs.maxw);
-            acc.runs = rr_cat(r.runs, acc.runs);
+        case A_CAT:
+            rb_walk(w, a->r, &t[0]);
+            rb_cat_into(acc, &t[0]);
             a = a->l;
             continue;
-        }
         case A_CAP:
         case A_ATOMIC:
         /* [CLS-TREE] S3: TRANSPARENT to its byte child, which is exactly
@@ -515,20 +623,15 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
             a = a->l;
             continue;
         case A_ALT: {
-            const Ast *t = a->l;
-            RbVal r = rb_walk(w, a->r), b;
-            while (t->k == A_ALT) {
-                b = rb_walk(w, t->r);
-                r.set  = rb_intersect(b.set, r.set);
-                r.runs = rr_alt(w, b.runs, r.runs);
-                t = t->l;
+            /* `t[0]` the branches so far, `t[1]` the next one. */
+            bool first = true;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                rb_walk(w, b, &t[first ? 0 : 1]);
+                if (!first) rb_alt_into(w, &t[0], &t[1]);
+                first = false;
             }
-            b = rb_walk(w, t);
-            r.set  = rb_intersect(b.set, r.set);
-            r.runs = rr_alt(w, b.runs, r.runs);
-            acc.set  = rb_union(r.set, acc.set, r.runs.maxw);
-            acc.runs = rr_cat(r.runs, acc.runs);
-            return acc;
+            rb_cat_into(acc, &t[0]);
+            return;
         }
         case A_REP:
             /* `rmin == 0` admits the empty iteration, on which the body
@@ -542,15 +645,10 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              * witness family). So the repeat is walked for the set exactly as
              * before, and its run contribution is taken here rather than by
              * falling through. */
+            rb_walk(w, a->l, &t[0]);
             if (a->u.rep.rmin >= 1) {
-                RbVal b = rb_walk(w, a->l);
-                RbRuns rep = rr_none(rr_rep_w(a->u.rep.rmax, b.runs.maxw));
-                /* [K82] the body's run at its own offset: the FIRST
-                 * iteration begins where the repeat does. */
-                rep.best = b.runs.best;
-                acc.set  = rb_union(b.set, acc.set, rep.maxw);
-                acc.runs = rr_cat(rep, acc.runs);
-                return acc;
+                rb_rep_into(acc, &t[0], a->u.rep.rmax);
+                return;
             }
             /* AND AT `rmin == 0` THE REPEAT STILL BREAKS CONTIGUITY, which is
              * a different obligation from the empty SET above and is the one
@@ -566,32 +664,11 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              * [K82] The body is still walked, for its WIDTH alone: a min-0
              * repeat contributes no byte and no run, but it does move every
              * run (and [REQ-HANDOFF-L1] every set member) to its right. */
-            {
-                long long rw = rr_rep_w(a->u.rep.rmax, rb_walk(w, a->l).runs.maxw);
-                acc.set  = rb_union(rb_empty(), acc.set, rw);
-                acc.runs = rr_cat(rr_none(rw), acc.runs);
-            }
-            return acc;
-        case A_CLASS: {
-            int b = pcrec_cls_single(w->cx, a);
-            unsigned char k = 0xFF, t = (unsigned char)b;
-            if (b < 0 && (!pcrec_cls_cube(w->cx, a, &k, &t) ||
-                          rn_members(k) > w->pos_set)) {
-                /* A class that is not one cube of at most `pos_set` members
-                 * contributes no byte and no run, and it also BREAKS
-                 * contiguity for everything around it — which `rr_none`'s
-                 * cleared `all` is exactly what says. One byte wide: the
-                 * tree is lowered. */
-                acc.set  = rb_union(rb_empty(), acc.set, 1);
-                acc.runs = rr_cat(rr_none(1), acc.runs);
-                return acc;
-            }
-            /* Only a single byte is a member of the necessary SET; a cube
-             * position is one the RUN carries (litscan_s4.md §2.3.1). */
-            acc.set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc.set, 1);
-            acc.runs = rr_cat(rr_pos(w, t, k), acc.runs);
-            return acc;
-        }
+            rb_gap_into(acc, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));
+            return;
+        case A_CLASS:
+            rb_class_into(w, acc, a);
+            return;
         /* Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
          * is not descended into, and the header says why that is a
          * CORRECTNESS decline rather than a missed opportunity.
@@ -610,8 +687,8 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
-            acc.runs = rr_cat(rr_none(0), acc.runs);
-            return acc;
+            rb_assert_into(acc);
+            return;
         /* The two deliberate declines, `src/facts/startanch.c`'s for the same
          * reasons: a backreference's bytes are the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. Both are the
@@ -619,9 +696,8 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
         case A_BREF:
         case A_VAR:
         case A_CALL:
-            acc.set  = rb_union(rb_empty(), acc.set, PCREC_W_UNBOUNDED);
-            acc.runs = rr_cat(rr_none(PCREC_W_UNBOUNDED), acc.runs);
-            return acc;
+            rb_gap_into(acc, PCREC_W_UNBOUNDED);
+            return;
         }
     }
 }
@@ -636,10 +712,11 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
 void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
                     RbRun *run)
 {
-    RbWalk w = { cx, pos_set };
-    RbVal v = rb_walk(&w, root);
-    *set = v.set;
-    *run = v.runs.best;
+    RbWalk w = { cx, pos_set, 0, 0, NULL };
+    RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
+    rb_walk(&w, root, v);
+    *set = v->set;
+    *run = v->runs.best;
 }
 
 /* The rate rule a derived pick answered by, for `--emit-facts`' `why`

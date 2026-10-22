@@ -51,7 +51,7 @@ plant_spec() {
     S1256) # the REPORT row applies without its exactness fact
         echo 'finder.c@@{ "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,@@{ "RPT", FD_FIND, KN_P, SF_SPAN0, 0,' ;;
     S1255) # the exactness test compares span 0's offsets only (d >= 0)
-        echo 'compose.c@@    return !memcmp(req, c.proven, sizeof req);@@    return !memcmp(req[-MF_PROOF_LO], c.proven[-MF_PROOF_LO], sizeof req - (size_t)(-MF_PROOF_LO) * 32);' ;;
+        echo 'compose.c@@    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {@@    for (long d = 0; d < MF_MAX_FWD; d++) {' ;;
     S1252) # mf_preview accepted twice
         echo 'compose.c@@    if (art->preview)\n        return kit_fail(art, "mf_preview: called twice@@    if (0)\n        return kit_fail(art, "mf_preview: called twice' ;;
     S1251) # mf_preview accepted after the first define

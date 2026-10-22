@@ -1292,8 +1292,14 @@ static bool vm_counter_fits(const Vm *v, const Ast *a)
      * has nothing to gain. `X*` and `X+` therefore never reach this rung —
      * their rmin is 0 or 1 — while `X{4000,}` does, and before this clause it
      * did not: it replicated 4,001 mandatory copies and was REFUSED while
-     * `X{4000}` compiled. §8.5 cell 3 names both spellings. */
-    if (a->u.rep.rmax < 0) return a->u.rep.rmin >= v->unroll_k;
+     * `X{4000}` compiled. §8.5 cell 3 names both spellings.
+     *
+     * The `rmin >= 2` term is what makes that claim hold at K = 1, where
+     * `rmin >= K` alone sends `X+` to a one-trip counter: two trail entries
+     * per entry (the init and the trip write) to emit the one copy the
+     * frames rung emits anyway, and the lower declared capacity that follows
+     * (cfcount_report.md). */
+    if (a->u.rep.rmax < 0) return a->u.rep.rmin >= v->unroll_k && a->u.rep.rmin >= 2;
     return a->u.rep.rmin >= v->unroll_k
         || (a->u.rep.rmax - a->u.rep.rmin) >= v->unroll_k;
 }
@@ -1870,6 +1876,12 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
         pcrec_cls_bits(cx, a, out[0]);
         return 1;
     case A_CAT: {
+        /* Every approved element is at least one byte, so a spine longer
+         * than `cap` cannot fit: declining FIRST bounds the recursion down
+         * the left-nested spine by `cap` rather than by the pattern ([DD-10]). */
+        int len = 1;
+        for (const Ast *t = a; t->k == A_CAT; t = t->l)
+            if (++len > cap) return 0;
         int nl = vm_det_seq(cx, a->l, out, cap);
         if (nl == 0) return 0;
         int nr = vm_det_seq(cx, a->r, out + nl, cap - nl);
@@ -2018,6 +2030,21 @@ static bool vm_cursor_fits(Ctx *cx, const Ast *rep, uint8_t (*seq)[32],
     *stride = len;
     *ncaps = n;
     return true;
+}
+
+/* Whether `rep` takes the cursor rung, and its body's capture count, for the
+ * two pre-passes that need only those: `vm_cursor_fits` with its 2 KB of
+ * scratch in this frame, which is the point ([DD-10]) — both callers recurse
+ * into the body afterwards, and the scratch would otherwise ride every level
+ * of that recursion. */
+static PCREC_OWN_FRAME bool vm_cursor_applies(Ctx *cx, const Ast *rep,
+                                              int *ncaps)
+{
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0;
+    *ncaps = 0;
+    return vm_cursor_fits(cx, rep, seq, &stride, caps, ncaps);
 }
 
 /* ---- §2.5's REVERSE-DETERMINISTIC rung: the two facts every site needs ----
@@ -2329,9 +2356,8 @@ static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
 static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
+    int nc;
+    const bool cursor = vm_cursor_applies(v->cx, a, &nc);
     Cost c = { 0, 0, 0, 0, false, false };
 
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return c;
@@ -2368,7 +2394,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * Counting the EMITTED copies here instead of the ITERATIONS would be a
      * silent cap of precisely the kind the revdet arm below records finding the
      * hard way: the artifact would size for 8 iterations and take 4000. */
-    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
+    if (!cursor
         && !vm_revdet_fits(a, under_atomic)
         && !pcrec_opt_has(v->cx->opt, PCREC_NO_COUNTER)
         && vm_counter_fits(v, a)) {
@@ -2387,6 +2413,9 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
             c.pt = (pcrec_nullable(a->l) ? 1 : 0) + body.trail + body.pt;
             c.frames = mm * body.frames;
             c.trail  = mm * body.trail + (mm >= K ? 1 + mm / K : 0);
+            /* K128: a nullable body's last-mandatory-iteration guard write,
+             * once per trip when the residue is empty (vm_counter_phase). */
+            if (pcrec_nullable(a->l)) c.trail += mm % K ? 1 : mm / K;
             return c;
         }
         const long long nn = a->u.rep.rmax - a->u.rep.rmin;
@@ -2452,7 +2481,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
 
-    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
+    if (!cursor
         && vm_revdet_fits(a, under_atomic)) {
         const bool move = vm_rev_canmove(a, cuts);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
@@ -2505,7 +2534,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 
     Cost body = vm_cost(v, a->l, false);
 
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+    if (cursor) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
          * plus one write per capture in the body per (re)try — all of which
          * the resume frame's own mark rewinds, so they do not accumulate.
@@ -2562,6 +2591,8 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
         c.pt = (pcrec_nullable(a->l) ? 1 : 0) + body.trail + body.pt;
         c.frames = (long long)a->u.rep.rmin * body.frames;
         c.trail = (long long)a->u.rep.rmin * body.trail;
+        /* K128: the last mandatory iteration's guard write (vm_star_lastg). */
+        if (a->u.rep.rmin >= 1 && pcrec_nullable(a->l)) c.trail += 1;
         return c;
     }
 
@@ -3019,11 +3050,10 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
                                bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+    int nc;
+    const bool cursor = vm_cursor_applies(v->cx, a, &nc);
+    if (cursor) {
         /* [ENG-BREP] the possessive span loop allocates NEITHER — no
          * low-water slot and no resume point. Mirrors vm_cursor_rep's own
          * branch; the two are the same condition read twice, which is the
@@ -3110,6 +3140,11 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
                          : (nopt >= K ? K + nopt % K : nopt);
         if (copies > v->maxcopies) v->maxcopies = copies;
         for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
+        /* The unbounded tail is vm_star's, and a nullable body's star owns a
+         * guard here exactly as on the frames rung. Uncounted, that guard
+         * shared its slot with the counter (K128 found it: the last
+         * mandatory iteration's guard write landed on the live counter). */
+        if (a->u.rep.rmax < 0 && pcrec_nullable(a->l)) v->nguard++;
         return;
     }
     /* frames rung: the star's own push, or one per optional copy. The
@@ -5922,7 +5957,9 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
                          int next, bool greedy, long long bw);
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
                           int next, int mslot, long long bw, bool pref_ok);
-static void vm_star(Vm *v, int cur, const Ast *a, int next);
+static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg);
+static int vm_star_lastg(Vm *v, const Ast *a);
+static int vm_lastg_entry(Vm *v, int entry, int lastg);
 
 /* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
  * `count mod K` residue emitted by the caller's own tail.
@@ -5949,7 +5986,8 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next);
  * express that. Unrolling does not disturb it: at K > 1 the pushes occur in
  * the same order and mean the same thing. */
 static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
-                             int next, int ctr, bool optional, long long bw)
+                             int next, int ctr, bool optional, long long bw,
+                             int lastg)
 {
     StrBuf *b = v->b;
     const int K = v->unroll_k;
@@ -6055,6 +6093,11 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                                      vm_rolef(v, "%lld * ((ptrdiff_t)%d - slot_values[%d])",
                                               bw, count - (i + 1), ctr));
                 }
+                /* With no residue, copy K-1 of the LAST trip is the last
+                 * mandatory iteration; every trip records it and the last
+                 * trip's write is the one the star reads (K128). */
+                if (residue == 0 && i == K - 1)
+                    cur = vm_lastg_entry(v, cur, lastg);
                 if (dyn) vm_emit_fd(v, cur, a->l, nx, F, dyn);
                 else     vm_emit_f(v, cur, a->l, nx, cf);
             } else if (a->u.rep.greedy) {
@@ -6117,6 +6160,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             int nx = vm_label(v);
             /* Mandatory replicated copies: the frames rung's own arithmetic,
              * at a smaller count. */
+            if (i == residue - 1) cur = vm_lastg_entry(v, cur, lastg);
             int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(residue - i, bw), F),
                                  -1, "MRL: mandatory residue copies plus the "
                                      "follow do not fit");
@@ -6238,6 +6282,9 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
      * iteration then also discards the mandatory bodies' own dead frames, so
      * the loop is atomic as a whole, which is what "possessive" means. */
     const int mark = cuts ? vm_slot_mark(v, v->nmark++) : -1;
+    /* K128: the empty-iteration guard of an unbounded nullable tail, written
+     * by the LAST mandatory iteration (vm_star_lastg). -1 otherwise. */
+    const int lastg = vm_star_lastg(v, a);
     /* [M4.6d] the rung's two MRL quantities, taken once (the frames rung's
      * own reason: per-copy recomputation would be quadratic in the count). */
     const long long F  = v->fmin;
@@ -6272,11 +6319,12 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
 
     if (m >= K) {
         int done = vm_label(v);
-        vm_counter_phase(v, cur, a, m, done, ctr, false, bw);
+        vm_counter_phase(v, cur, a, m, done, ctr, false, bw, lastg);
         cur = done;
     } else {
         for (int i = 0; i < m; i++) {
             int nx = vm_label(v);
+            if (i == m - 1) cur = vm_lastg_entry(v, cur, lastg);
             int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(m - i, bw), F), -1,
                                  "MRL: mandatory copies left plus the follow "
                                  "do not fit");
@@ -6322,7 +6370,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
          * defect this wave is required to carry. */
         if (cuts) {
             int cutl = vm_label(v);
-            vm_star(v, cur, a, cutl);
+            vm_star(v, cur, a, cutl, lastg);
             vm_lbl(v, cutl, "counter rung, unbounded tail: the loop is "
                             "complete -- cut back to the mark (K29)");
             vm_cut(v, mark, "cut: the loop is complete and owns no live "
@@ -6330,7 +6378,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
             vm_goto(v, next);
             return;
         }
-        vm_star(v, cur, a, next);
+        vm_star(v, cur, a, next, lastg);
         return;
     }
     if (nopt == 0) {
@@ -6344,8 +6392,34 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
                                      a->u.rep.greedy || a->u.rep.possessive);
         return;
     }
-    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true, bw);
+    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true, bw, -1);
     else           vm_opt_chain(v, cur, a->l, nopt, next, a->u.rep.greedy, bw);
+}
+
+/* Assigns the empty-iteration guard an unbounded repeat's LAST MANDATORY
+ * iteration writes, or returns -1 when there is none to write (a bounded
+ * repeat, `rmin == 0`, or a body that cannot match empty). The star then
+ * uses this slot as its own guard rather than assigning a second one, so
+ * vm_count_slots' one-guard-per-loop count is unchanged (K128). */
+static int vm_star_lastg(Vm *v, const Ast *a)
+{
+    if (a->u.rep.rmax >= 0 || a->u.rep.rmin < 1 || !pcrec_nullable(a->l))
+        return -1;
+    return vm_slot_guard(v, v->nguard++);
+}
+
+/* Emits, at `entry`, the guard write that records where the last mandatory
+ * iteration begins, and returns the label that iteration's copy is emitted
+ * at; with `lastg < 0` it emits nothing and returns `entry` (K128). */
+static int vm_lastg_entry(Vm *v, int entry, int lastg)
+{
+    if (lastg < 0) return entry;
+    int body = vm_label(v);
+    vm_lbl(v, entry, "the last mandatory iteration: record where it began");
+    vm_set(v, lastg, "(ptrdiff_t)scan_position",
+           "empty-iteration guard: where the last mandatory iteration began");
+    vm_goto(v, body);
+    return body;
 }
 
 /* Emits the unbounded star (`X{m,}` past its mandatory prefix) on the frames rung.
@@ -6363,15 +6437,43 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
  * by reading the code.
  *
  * The body is moved VERBATIM: same locals, same order, same emitted text. Its
- * one parameter change is the entry label's name. */
-static void vm_star(Vm *v, int cur, const Ast *a, int next)
+ * one parameter change is the entry label's name.
+ *
+ * `lastg` is the guard slot the caller's LAST MANDATORY iteration wrote
+ * (vm_star_lastg), or -1 where there is none: the star then reuses it as its
+ * own guard and tests it once at entry (K128, below). With -1 the emitted
+ * text is the extraction's, byte for byte. */
+static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg)
 {
     /* the unbounded star */
     bool guard = pcrec_nullable(a->l);
-    int gslot = guard ? vm_slot_guard(v, v->nguard++) : -1;
+    int gslot = lastg >= 0 ? lastg : guard ? vm_slot_guard(v, v->nguard++) : -1;
     int bentry = vm_label(v), bend = vm_label(v), exit = vm_label(v);
+    int top = cur;
 
-    vm_lbl(v, cur, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
+    /* [K128] THE LAST MANDATORY ITERATION IS THE LOOP'S FIRST. PCRE2 compiles
+     * `X{m,}` as m-1 plain copies and ONE repeating bracket, so its empty-
+     * iteration test (the KET's "matched an empty string: do not repeat")
+     * already applies to iteration m. Here iteration m is a mandatory copy
+     * emitted by the caller, which recorded where it began in this guard
+     * (`lastg`): if it consumed nothing the loop runs no iteration at all and
+     * takes the exit, exactly as the bend's test below does for the loop's
+     * own iterations. Without this, `(?:()|a)+?b` on "ab" ran a second
+     * iteration after the empty first one and kept group 1 = (0,0) from it,
+     * where libpcre2 backtracks into the first and leaves group 1 unset. */
+    if (lastg >= 0) {
+        top = vm_label(v);
+        vm_lbl(v, cur, "unbounded repeat: entered after the mandatory "
+                       "iterations");
+        pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position == slot_values[%d]) goto %s_L%d;\n",
+                  gslot, v->p, exit);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "empty-iteration rule: the last mandatory iteration consumed "
+              "nothing, so the loop does not iterate (K128)");
+        vm_goto(v, top);
+    }
+
+    vm_lbl(v, top, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
                             a->u.rep.greedy ? "greedy" : "lazy",
                             guard ? ", nullable body (empty-iteration guard)"
                                   : ""));
@@ -6424,7 +6526,7 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
          * mechanism that mutates a frame in place, which does not survive the
          * loop being re-entered. */
         pcrec_sb_printf(v->b, "    if ((ptrdiff_t)scan_position != slot_values[%d]) goto %s_L%d;\n",
-                  gslot, v->p, cur);
+                  gslot, v->p, top);
         vm_goto(v, exit);
     } else {
         vm_goto(v, cur);
@@ -6432,6 +6534,20 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
 
     vm_lbl(v, exit, "unbounded repeat: the exit");
     vm_goto(v, next);}
+
+/* Emits `a` on the cursor rung when it takes it, answering whether it did.
+ * Its own frame holds the rung's 2 KB of scratch, so `vm_rep`'s frame, which
+ * the frames rung below re-enters once per nesting level, does not ([DD-10]). */
+static PCREC_OWN_FRAME bool vm_cursor_try(Vm *v, int entry, const Ast *a,
+                                          int next, bool under_atomic)
+{
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, ncaps = 0;
+    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &ncaps)) return false;
+    vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
+    return true;
+}
 
 /* Emits a bounded/unbounded repeat's FRAME-based rung: one resume frame
  * per iteration, pushed on entry and popped on backtrack, the fallback
@@ -6443,9 +6559,6 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
  * last rung, never itself declined. */
 static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, ncaps = 0;
     const bool cuts = vm_cuts(a, under_atomic);
 
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) {   /* X{0} matches empty */
@@ -6457,10 +6570,8 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         return;
     }
 
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &ncaps)) {
-        vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
+    if (vm_cursor_try(v, entry, a, next, under_atomic))
         return;
-    }
 
     /* [ENG-BREP] the ladder's second rung, below the cursor and above the
      * frames. `a->u.rep.revbody` is src/opt/revdet.c's verdict AND the material the
@@ -6589,8 +6700,10 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * copy is not optional, so a position from which the remaining mandatory
      * copies cannot fit fails the whole quantifier. Every other site on this
      * rung takes an EXIT instead, because every other copy is optional. */
+    const int lastg = vm_star_lastg(v, a);
     for (int i = 0; i < a->u.rep.rmin; i++) {
         int nx = vm_label(v);
+        if (i == a->u.rep.rmin - 1) cur = vm_lastg_entry(v, cur, lastg);
         int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
                              -1, "MRL: mandatory copies left plus the follow "
                                  "do not fit");
@@ -6604,7 +6717,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         return;
     }
 
-    vm_star(v, cur, a, next);
+    vm_star(v, cur, a, next, lastg);
 }
 
 /* ---- [M6.4.2] THE ATOMIC GROUP ------------------------------------------
@@ -7146,11 +7259,12 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
  * THE BRANCH NODES ARE WALKED HERE AND THE WIDTHS ARE NOT RE-DERIVED. §3.1(c)
  * stores `u.look.widths` precisely so this function does not recompute them;
  * what it must still do is find the branch SUBTREES, because `vm_emit` needs
- * them. The walk fills its array from the END for `p_alt_info`'s reason (a
- * flat alternation is LEFT-NESTED, so the spine yields branches backwards) —
- * the same loop shape `mod_lookaround.c`'s `la_widths` uses, so index `i`
- * pairs branch `i` with `widths[i]` by construction — and a spine that
- * disagrees with `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
+ * them. They come from `pcrec_lookbehind_branches` (mod_lookaround.c), the
+ * one split `la_widths` also reads, so index `i` pairs branch `i` with
+ * `widths[i]` by construction: it peels exactly `nbranch - 1` spine nodes
+ * from the END (a flat alternation is LEFT-NESTED) and takes what is left as
+ * branch 0, which may itself be an alternation (K123); a spine SHORTER than
+ * `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
 static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 {
     const int m = a->u.look.nbranch;
@@ -7191,22 +7305,7 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
     int *bl   = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
     int *bodl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
     int *endl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
-    {
-        int i = m;
-        const Ast *t = a->l;
-        for (; t->k == A_ALT; t = t->l) {
-            if (i <= 1)
-                pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
-                                   "alternation spine is longer than its "
-                                   "stored branch count");
-            br[--i] = t->r;
-        }
-        if (i != 1)
-            pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
-                               "alternation spine is shorter than its stored "
-                               "branch count");
-        br[0] = t;
-    }
+    pcrec_lookbehind_branches(v->cx, a->l, m, br);
     for (int i = 0; i < m; i++) {
         bl[i]   = vm_label(v);
         bodl[i] = vm_label(v);
@@ -13011,6 +13110,18 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
                               "subject_length", false);
 
+    /* [VAR] K129: THE VARIABLES ARE RESOLVED HERE, right after the caller-
+     * position guard and above every check that can answer `0` from a proof
+     * (the end window, the necessary byte, the root width, the prefilter, the
+     * start-set seek). A refusal is not an answer: `a${v}` with `v` unset
+     * used to return 0 on "bbb" because the necessary-byte memchr ran first,
+     * while `<prefix>_match` refused it -- the two entries must make the
+     * same checks in the same order (match_api.md §3.2¶2). The ctx's own
+     * `vars`/`nvars` first, because the resolve reads them. */
+    if (v->cx->n_var_exps)
+        pcrec_sb_puts(c, "    ctx.vars = vars; ctx.nvars = nvars;\n");
+    pcrec_sb_puts(c, vm_vars_resolve_insert(v, "&ctx"));
+
     /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW, the same clamp the DFA's own
      * search entries write, from the same the `end_window` fact and the same
      * emitter (`pcrec_emit_end_window_clamp`, src/gen/emit_dfa.c) — one text,
@@ -13358,11 +13469,6 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    %s_run_state_init(run);\n"
         "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
         "    ctx.caps = NULL; ctx.user = NULL;\n"
-        /* [VAR] the ctx's OWN `vars`/`nvars`, from this entry's trailing
-         * pair, and then the once-per-call resolution — in that order,
-         * because the resolve reads the fields the line above writes. */
-        "%s"
-        "%s"
         "%s"
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
@@ -13392,9 +13498,6 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "%s"
         "%s",
         v->p,
-        /* [VAR] the ctx's own `vars`/`nvars`, then the resolve. */
-        v->cx->n_var_exps ? "    ctx.vars = vars; ctx.nvars = nvars;\n" : "",
-        vm_vars_resolve_insert(v, "&ctx"),
         reseed_decl,
         v->p, v->nclamp > 0 ? ", window_end" : "",
         /* [M6.2 wave D] `startpos`, NOT `start`. `start` is the position this
@@ -13461,6 +13564,13 @@ static void vm_emit_match_run(Vm *v, const GenNames *g, const VmEntry *en)
         "    if (ctx->pos > ctx->len) return -1;\n",
         en->ai, g->matchfn, v->p);
     vm_emit_match_guard(v, c);
+    /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
+     * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
+     * `ctx->vars` with no new parameter and stays an `rx_matchfn` byte for
+     * byte. That is the whole reason the pair rides the ctx. Resolved right
+     * after the guard and above the offset-0 rule's NOMATCH answer, in the
+     * search entry's own order (K129). */
+    pcrec_sb_puts(c, vm_vars_resolve_insert(v, "ctx"));
     /* [K73] The offset-0 start rule, NOMATCH form: a match-here entry cannot
      * report a match beginning anywhere but `ctx->pos`, and none begins at a
      * position that is not a character start. */
@@ -13468,14 +13578,8 @@ static void vm_emit_match_run(Vm *v, const GenNames *g, const VmEntry *en)
                           "ctx->len", PCREC_START0_NOMATCH);
     pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
-        /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
-         * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
-         * `ctx->vars` with no new parameter and stays an `rx_matchfn` byte
-         * for byte. That is the whole reason the pair rides the ctx. */
-        "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n",
-        v->p,
-        vm_vars_resolve_insert(v, "ctx"), v->p,
+        v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -13524,18 +13628,17 @@ static void vm_emit_match_caps_run(Vm *v, const GenNames *g, const VmEntry *en)
         "    if (ctx->pos > ctx->len) return -1;\n",
         en->ai, g->matchcapsfn, v->p);
     vm_emit_match_guard(v, c);
+    pcrec_sb_puts(c, vm_vars_resolve_insert(v, "ctx"));   /* K129: as _match */
     pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
                           "ctx->len", PCREC_START0_NOMATCH);
     pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
-        "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    if (result < 0) return result;\n"
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        v->p,
-        vm_vars_resolve_insert(v, "ctx"), v->p,
+        v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
 }

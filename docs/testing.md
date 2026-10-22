@@ -219,7 +219,11 @@ current oracle-exclusion catalog).
   (`^*` — python accepts, PCRE2 rejects error 109), past-end `pos`
   clamping for nullable patterns (python clamps; pcrec/PCRE2 reject), and
   repeat counts above 65535 (`a{65536}` — python's ceiling is 4294967294,
-  PCRE2's is 65535 with error 105; U5, added 2026-08-10 with K5's fix). Blocks
+  PCRE2's is 65535 with error 105; U5, added 2026-08-10 with K5's fix), and
+  an unbounded repeat after an EMPTY last mandatory iteration (`(?:()|a)+?b`
+  on "ab": python iterates again and keeps group 1 = (0,0), PCRE2 does not
+  iterate and leaves it unset; U21, `tests/captures/empty_iteration.rxt`,
+  K128, 2026-10-22). Blocks
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
   the skip count. Keep such cases rare and justified; every exclusion must
@@ -1454,6 +1458,13 @@ reservation does not.
   question asked under it is a question about TSan. It prints a `KNOWN:` line
   on a green run — K33 is a live defect D73 chose to keep — and FAILS if the
   default entry ever stops dying. See its own header for the causal control.
+  Its second script, `tests/thread/run_compile_stack.sh` ([DD-10]), asks the
+  same of the COMPILER: `pcrec_compile` at nesting depth 250/251 and on long
+  chains, on a thread of `docs/spec/limits.md` §3.10's 432 KB budget
+  (`PCREC_COMPILE_STACK_BUDGET`, read from `--list-limits`), with a
+  32 KB-thread control that must die. It SKIPS, saying so, when make's CFLAGS
+  are not the Makefile's own (the budget is measured at the default flags).
+  ~5 s on the Linux dev box (~45 s before K130's fix).
 
 - **`make test-premul-table`** (`tests/codegen/run_premul_table.sh`) —
   [OPT-3]'s PRE-MULTIPLIED DFA TRANSITION TABLE

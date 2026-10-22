@@ -41,9 +41,14 @@ supplies per call. The contract is `docs/spec/vars.md`; the design is
   libpcre2 reads `${v}` as an assertion followed by a literal `{`, a spelling
   no subject can match. Scoring these cells against either would report a
   divergence on every one and mean nothing.
-- `run_vars_tests.sh` — the section (`make test-vars`), two arms: the corpus
-  and the oracle. In `TEST_SECTIONS`, in `tests/lib/san_scripts.txt`, and its
+- `run_vars_tests.sh` — the section (`make test-vars`), three arms: the
+  corpus, the oracle and (K129, lane corefix) the entries. In `TEST_SECTIONS`, in `tests/lib/san_scripts.txt`, and its
   own `vars` arm in `tests/mech/run_sabotage_matrix.sh`.
+- `entries_driver.c` — K129's driver: calls all six entries (`_search`,
+  `_match`, `_match_caps` and their `_in` twins) at offset 0 with no variable
+  bound and requires `PCREC_ERR_UNSET_VAR` from every one. Arm 3 of
+  `run_vars_tests.sh` links it against eight artifacts, one per proof-based
+  exit that used to answer before the variables were resolved.
 - `gen_corpus_plan.md` — §2.5's K35 population census, stated BEFORE the
   fact: the six axes, what gets exhaustive coverage and what gets sampled,
   what is deliberately not an axis, why the generator is declined under D77,

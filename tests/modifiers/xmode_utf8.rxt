@@ -1,0 +1,122 @@
+# tests/modifiers/xmode_utf8.rxt — module `modifiers`: single `x` under
+# `-e utf8` skips Unicode Pattern_White_Space, not only the byte set
+# xmode.rxt covers (K115). libpcre2 10.46 with PCRE2_UTF, censused over every
+# code point (lane langfix, `(?x)a<cp>b` against "ab"), skips exactly
+# {09,0A,0B,0C,0D,20} plus U+0085 U+200E U+200F U+2028 U+2029 — Unicode's
+# Pattern_White_Space. Before K115 pcrec skipped only the bytes, so every
+# Unicode member read as a literal and `(?x)a<U+2028>b` matched nothing.
+#
+# The same census found the other two whitespace rules UNCHANGED by UTF: a
+# `#` comment still ends only at 0x0A (a U+2028 inside one does not end it),
+# and `(?xx)`'s class-interior deletion is still exactly {09,20}. The `byte`
+# blocks at the end are the control: there no character exceeds 0xFF, so
+# U+2028's bytes stay literals, while a raw 0x85 byte is skipped as before.
+#
+# ORACLE: every block is libpcre2 10.46 (PCRE2_UTF for `encoding utf8`,
+# options 0 for `encoding byte`), each subject run against the oracle by
+# lane langfix. python `re`'s verbose mode skips only ASCII whitespace, so
+# the blocks that hinge on a Unicode member are `# pcre2-only`.
+
+# ---- each Pattern_White_Space member above ASCII is skipped ----------------
+
+# pcre2-only
+pattern (?x)ab
+features modifiers
+encoding utf8
+m "ab" 0 2
+
+# pcre2-only
+pattern (?x)a‎b
+features modifiers
+encoding utf8
+m "ab" 0 2
+
+# pcre2-only
+pattern (?x)a‏b
+features modifiers
+encoding utf8
+m "ab" 0 2
+
+# pcre2-only
+pattern (?x)a b
+features modifiers
+encoding utf8
+m "ab" 0 2
+n "a\xe2\x80\xa8b"
+
+# ---- skipped at a token boundary: the quantifier still binds to `a` --------
+
+# pcre2-only
+pattern (?x)a +b
+features modifiers
+encoding utf8
+m "aab" 0 3
+
+# pcre2-only
+pattern (?x)a {2}b
+features modifiers
+encoding utf8
+m "aab" 0 3
+
+# ---- escaped, it is a literal ----------------------------------------------
+
+# pcre2-only
+pattern (?x)a\ b
+features modifiers
+encoding utf8
+m "a\xe2\x80\xa8b" 0 5
+n "ab"
+
+# ---- NOT members: U+00A0 and U+3000 are \s under UCP but not pattern space --
+
+# pcre2-only
+pattern (?x)a b
+features modifiers
+encoding utf8
+m "a\xc2\xa0b" 0 4
+n "ab"
+
+# pcre2-only
+pattern (?x)a　b
+features modifiers
+encoding utf8
+n "ab"
+
+# ---- a comment still ends only at 0x0A -------------------------------------
+
+# pcre2-only
+pattern (?x)a# b
+features modifiers
+encoding utf8
+m "ab" 0 1
+
+# ---- classes: single x never touches them, xx deletes only 09/20 -----------
+
+# pcre2-only
+pattern (?x)[ ]
+features modifiers
+encoding utf8
+m "\xe2\x80\xa8" 0 3
+
+# pcre2-only
+pattern (?xx)[ ]
+features modifiers
+encoding utf8
+m "\xe2\x80\xa8" 0 3
+
+# ---- byte control: no character exceeds 0xFF -------------------------------
+
+# U+0085's UTF-8 spelling under byte is two characters: 0xC2 stays a literal
+# and the 0x85 after it is skipped.
+# pcre2-only
+pattern (?x)ab
+features modifiers
+encoding byte
+m "a\xc2b" 0 3
+
+# pcre2-only
+pattern (?x)a b
+features modifiers
+encoding byte
+m "a\xe2\x80\xa8b" 0 5
+n "ab"

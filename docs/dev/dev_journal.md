@@ -27217,3 +27217,30 @@ J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about
 - Writing a file into an old worktree's docs/dev/lanes/ re-injected the old (pre-de-bulk) CLAUDE.md files. Write rulings with Bash heredocs.
 
 **Next:** see wake.md.
+
+## 2026-10-22 — landlang: lane/langfix2 landed on main
+
+Merged lane/langfix2 (speclang, langfix, langfix2, langfix3, lf3tri: docs/spec/pattern_language.md, syntax_index_check.py, K115-K118, K122-K127) as 19be546b1. The only conflict was the lanes history index (docs/dev/history/claude_md/docs__dev__lanes.md), resolved by keeping both sides. Branch validation was green before the merge (707-lf3tri-test full make test, 699-langfix3-mech, 708-langfix3-k124diff zero unattributed movers); on main only the light checks ran: make, make strict, test-plan-lint, test-spec-history, test-registry, all clean. [SPEC-LANG] moved to plan_completed.md (refs corrected to pattern_language.md); four candidate rows filed (LOWERENC-SEAL, LANG-DIAG-WORDING, LANG-K118-LETTER-MODULE, LANG-F8-F9); the stale compliance row on whitespace inside braces corrected through the annotation store. [M3.0] is streaming and not closed by this lane.
+
+## 2026-10-22 (session 123) — Frank's "1,2,3 go" (subst, stack depth, language spec): reviews, D27 adversaries, fixes; langfix landed
+
+**Accomplished:**
+- LANDED on main: lane/langfix2 (speclang + langfix + langfix2 + langfix3 + lf3tri; K115-K127, docs/spec/pattern_language.md), a8897e529, CI green. K74 widened (22ef344ce).
+- [DD-10] on lane/dd10b: pre-merge review (dd10rev: no code bugs, 3 test/spec must-fixes) applied by dd10fix (K130 fixed, PCREC_SPINE_EACH, measured budget 432 KB); dd10tri re-anchored 3 sabotage rows; the landing hit a parse.c conflict with K125, so dd10merge merged main INTO lane/dd10b (87e89a6ed). Re-validation queued.
+- Core defects found by the iterator adversary (iterd27: 43,783 checks, NO iterator defect): K128 wrong capture after an empty repeat iteration, K129 unset vars missed by _search. Fixed on lane/corefix (abi 87) plus a pre-existing vm_counter_fits defect (cfcount) that the fix exposed via a 1.9x size regression (NEST8); FULLY GREEN.
+- Subst: code review (substcode) + D27 blinded corpus (substd27, ~1,763 cases; `$_` wrong output) fixed by substfix, corpus adopted as test-subst-d27; then Frank ruled an interface rework (R4-R8: optional lookup table, name helper, piece output with no malloc, subst-extended, blank-unset default, helpers in a standalone `pcrec --emit-support` unit, flatten kept). Design R4 delivered (lane/subst 7cea1fcb6), no build go.
+- Iterator spec corrections (iterdoc, lane/iterdoc) ride the I1+I2 landing. Frank's find-all bench prepared (lane/findbench; smoke green; timing job ready).
+- Kit: R-28 done (lane/memfn-r28 4e49ed417); D172 S2 commits 1-6 + fixes on lane/memfn-wsc7, heavy queued; main agreed two declared listing deltas. The kit's bisect cleared it of the variant tag-floor drop: cause M0's stamps (813f43ec8), legitimate; re-pinned on lane/vrepin.
+
+**Mistakes / lessons:**
+- Several queue jobs failed on their own scripts (wrong expect line, wrong `state` key, str/bytes, a dependency on a replaced job): job scripts need the same review as code. One job pasted the values it then checked (green by construction); removed.
+- A lane counted declared-UNREACHED rows as unreached; a base built from `git archive` cannot run the mech clean-tree clone.
+
+**Next:** see wake.md.
+
+## 2026-10-22 (session 124) — context-growth audit and fix
+
+Frank: the manager's context fills faster than usual even after the de-bulk. Lane ctxaudit measured 12 manager transcripts (message.usage): the cause is Claude Code's auto-injection of nested CLAUDE.md files on Read/Write/Edit. It was the largest bucket in every pre-de-bulk session (100-450k est. tokens, ~1.7x that real; one session ~750k), and it fell to ~10k in the post-de-bulk sessions. The residue: ~110 old worktrees keep pre-de-bulk copies (docs/dev/lanes/CLAUDE.md up to 472 KB). One Write of a rulings file into worktrees/i2design cost ~258k real tokens in one turn. The fixed overhead grew only 4.6k in two weeks. Lane ctxfix (merged 70cf1b9ef): PreToolUse hook scripts/hooks/no_stale_claudemd.sh blocks Read/Write/Edit under a worktree path with a CLAUDE.md over 32 KB (the lane's 24 KB would have blocked live lanes under src/parse, whose main copy is 25 KB; raised at review); tests/harness/CLAUDE.md de-bulked 48.8 -> 2.8 KB (132 lines, so the line-count criterion had missed it); 6 worktrees pruned (only 6 eligible; the rest are dirty or unmerged). Still over 16 KB in main: src/parse 25 KB, src/opt 18 KB, root 16.8 KB, src/gen 16.6 KB.
+Also: subst R4 light panel (substr4c1 semantics, substr4c2 interface) delivered 18 findings (3 high: case-state rule wrong, ill-formed UTF-8 under case forcing undefined and crashes libpcre2, \ddd is group-count-dependent); substr4b applying them to the design. 710-findbench-parity queued for the 19:00 window.
+
+## 2026-10-22 landdd10: merged lane/dd10b (ce54c42de; make strict, registry, plan-lint, spec-history, claudemd-size, thread/run_compile_stack all green); [DD-10] moved to plan_completed.md, duplicate row from the merge removed; filed [LINT-FRAME].

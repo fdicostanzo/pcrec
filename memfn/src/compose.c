@@ -332,10 +332,10 @@ static int row_tests(const arm *a, const mf_pred *p, const mf_term *t)
 }
 
 /* Intersects the bytes term `t` admits at each of its positions in [dlo,
- * dhi] into the per-offset proof `pv` (proven[]'s layout), clipped to its
- * range: a SET term's set at its offset, a RUN term's position j under its
- * mask at offset + j (R-26.4). */
-static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32])
+ * dhi] into the per-offset proof `pv` (proven[]'s layout, row 0 = offset
+ * `base`), clipped to its range: a SET term's set at its offset, a RUN term's
+ * position j under its mask at offset + j (R-26.4). */
+static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32], long base)
 {
     long len = t->kind == MF_T_RUN ? (long)t->run_len : t->kind == MF_T_SET ? 1 : 0;
     if (t->kind == MF_T_RUN && !t->run) return;
@@ -351,7 +351,7 @@ static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32])
             for (unsigned x = 0; x < 256; x++)
                 if ((x & m) == t->run[j]) b[x >> 3] |= (uint8_t)(1u << (x & 7));
         }
-        for (unsigned i = 0; i < 32; i++) pv[d - MF_PROOF_LO][i] &= b[i];
+        for (unsigned i = 0; i < 32; i++) pv[d - base][i] &= b[i];
     }
 }
 
@@ -373,7 +373,7 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
            row TESTS proves its bytes at every position it reads */
         for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
             if (row_tests(a, &s->pred, &s->pred.term[t]))
-                term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, out->proven);
+                term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, out->proven, MF_PROOF_LO);
     }
     /* proven0 and proven_prev are COPIES (kit_proof.md §4.2), equal by
        construction */
@@ -396,11 +396,14 @@ int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
     if (i >= NARMS || kit_class(arms[i], s, &c)) return 0;
     /* the REQUIRED sets: every term of span 0 at every position it reads
        (R-26.3 makes them all REQUIRED), unclipped */
-    uint8_t req[MF_MAX_FWD - MF_PROOF_LO][32];
-    memset(req, 0xFF, sizeof req);
-    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
-        term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, req);
-    return !memcmp(req, c.proven, sizeof req);
+    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
+        uint8_t req[1][32];             /* one offset's row: a 41-row table was a 1.3 KB frame (R-28) */
+        memset(req, 0xFF, sizeof req);
+        for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
+            term_prove(&s->pred.term[t], d, d, req, d);
+        if (memcmp(req[0], c.proven[d - MF_PROOF_LO], 32)) return 0;
+    }
+    return 1;
 }
 
 const gate_contract *kit_arm_contract(size_t i)

@@ -19,6 +19,11 @@
 - Every search site migrates to the kit (Q42 reversed; completeness is a ruled D77 exception); each step zero-mover (R4e'.0b/D155 the one ordered byte move). Memchr ratchet C12 ends at 0 outside the kit; C17 at 0 pending. A byte-moving kit change still needs its measured trigger and G1 alpha at both layers.
 - D155: a function that does work never contains `#if`; a selector's whole body may be the `#if` chain, one call per arm.
 
+## Compile-time stack (R-28)
+
+- The kit runs inside `pcrec_compile`, on a caller's thread of any size. Bar: NO kit function has a stack frame over 4 KB; working storage beyond that lives on the heap (or the caller's arena) and an allocation failure takes a loud refusal (`mf_form_hash` -1; `mf_set_terms` -1, which is not a decline). Held by `tests/memfn/run_link_checks.sh` (`make test-memfn-link`), which compiles every `memfn/src` file `-O2 -fstack-usage`.
+- PEAK, measured 2026-10-22 (gcc 15.2 x86_64 -O2): the largest single frame is 3,600 B (`pcrec_mf_form_hash`; next `define_sel` 3,408 B, `kit_report_exact` 3,184 B, `pair_facts` 2,448 B). The deepest measured kit chain (`mf_form_hash` over both canonical forms, which renders a site through `mf_emit`, and `mf_set_terms` at K=4 on a painted stack) reaches 13.7 KB. Before R-28 the frames were 36,368 B (`mf_form_hash`) and 36,256 B (`mf_set_terms`) and the same chain reached 47.1 KB. Re-measure if a recursion or a fixed table is added (`dfs` recurses at most `MF_SET_K` deep at 1,376 B a level).
+
 ## The boundary with pcrec
 
 - Boundary: pcrec's sources reach the kit ONLY through `memfn/include/memfn.h`; the kit links nothing from `src/`, `cli/`, `lib/`. Generated artifacts never depend on the kit (only TEXT reaches them). pcrec->memfn carries facts only (D157).

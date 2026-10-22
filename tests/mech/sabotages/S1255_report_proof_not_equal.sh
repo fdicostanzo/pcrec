@@ -23,5 +23,5 @@ SAB_DOC_FIGURE="Plant run 2026-10-21 (lane r26zk, build/r26zk/light/plants_all.l
 SAB_EXPECT=UNDETECTED
 SAB_EXPECT_REASON="equivalent since D172 S2 commit 6: no REPORT site exists that the REPORT row's form cannot prove exactly (the context spans and absent retired), so the exactness test is unobservable until S3 retires RPT"
 SAB_COUNT=1
-SAB_BEFORE=$'    return !memcmp(req, c.proven, sizeof req);'
-SAB_AFTER=$'    return !memcmp(req[-MF_PROOF_LO], c.proven[-MF_PROOF_LO], sizeof req - (size_t)(-MF_PROOF_LO) * 32);'
+SAB_BEFORE=$'    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {'
+SAB_AFTER=$'    for (long d = 0; d < MF_MAX_FWD; d++) {'

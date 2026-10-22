@@ -123,24 +123,7 @@ scripts, any failing fails the section.
   their `name` lines commented, since a head makes a file unreadable to
   `verify_rxt.py`; the count-collapsed blocks (HYC, `\B(a|b){1,3}` on "xa")
   are compiled collapsed by the differential's `collapse` config.
-- `dfahat_f1.rxt` + `gen_dfahat_f1.py` — the ss3 D6 panel's BLOCKER
-  sound-F1 witnesses (`(?<=\w) *a` and eleven more): a byte of `S` leaves
-  every seed state where it is, so the old `T = S & E*` dropped a start byte
-  and its `T == S` assertion REFUSED them at default flags. With `T = S` the
-  admission declines and the artifact is the deny arm's. GENERATED (libpcre2,
-  every startpos; byte-tier blocks python-verified too). Every block must
-  compile (the harness), equal the deny arm byte for byte ([dfa-deny]) and
-  answer as libpcre2 does; the pre-fix compiler fails all 322 cases.
-- `compile_fuzz.py` — the COMPILE-ONLY arm (the panel's lesson: an answer
-  differential cannot see a pattern that no longer compiles): 9,000
-  generated seeded patterns (a fixed seed; 30% from an F1-shaped template),
-  each `-fno-start-set` compile must be matched by a default compile, and an
-  internal error on either arm fails; floors on the deny-compiling
-  population and on the DFA-hat reach. On the pre-fix compiler it reads 70
-  hits (4 in 9,000 with `TEMPLATE=0`, the critic's grammar); ~25 s.
-- `dfahat_paths.rxt` — hand-written, python-verified: the SET form's
-  clamp-path witness `\B(?<!a)[de]` on "xd" (S483) and S488's nullable-S
-  seeded skip `\b\B|\b(?:ab|cd)`.
+- `dfahat_f1.rxt` + `gen_dfahat_f1.py`, `compile_fuzz.py` (the COMPILE-ONLY arm), `dfahat_paths.rxt` — stage 3's panel witnesses and fuzz arm: full entries moved verbatim to NOTES.md, section "Stage 3 entries: dfahat_f1, compile_fuzz, dfahat_paths".
 - `run_dfahat_checks.sh` — stage 3's runner (`make test-startset`; ~6 min on
   the Mac), in two parts (the ss3 D6 panel's checks-M1), `DFAHAT_PART=answers`
   (mech arm `dfahat`: the five fixture files through the harness, as written
@@ -186,3 +169,5 @@ prefilter now fits the cap, so no VM hat), `s2_vm_forced` +30 (the new
 `captures/structure_anchors_misc.rxt:7`, whose dedup twins in `rev_end.rxt`
 take the ids), `s3_dfa` -2 (two end-pinned DFA
 bodies whose search is now the walk, so the DFA hat changes nothing).
+
+See also NOTES.md in this directory (history, lessons, rationale, moved detail).

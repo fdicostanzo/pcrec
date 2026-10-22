@@ -1165,7 +1165,7 @@ reject '\p{!}' "\\p{...}: not a one-letter Unicode property code pcrec recognise
 # a retired refusal row leaves unproven.
 reject_gated unicode-props '\p{Q}'   "\\p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 5)"
 reject_gated unicode-props '\p{}'    "\\p{...}: not a one-letter Unicode property code pcrec recognises (pattern offset 4)"
-reject_gated unicode-props '\pA'     "\\p: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 3)"
+reject_gated unicode-props '\pA'     "\\p: not a one-letter Unicode property code pcrec recognises (pattern offset 3)"
 reject_gated unicode-props '\p{bc=L}'         "module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 8)"
 reject_gated unicode-props '\p{Alphabetic}'   "module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 14)"
 reject_gated unicode-props '\p{Foo}'          "module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 7)"
@@ -1178,10 +1178,14 @@ reject_gated unicode-props '\p{Assigned}'     "module 'unicode-props' is enabled
 # has and PCRE2 does not — so it must refuse, and as the module's gap rather
 # than as an unknown name, since pcrec cannot tell it from a real one.
 reject_gated unicode-props '\p{Hrkt}'         "module 'unicode-props' is enabled but \\p{...}: this Unicode property is not implemented yet (pattern offset 8)"
-# The MALFORMED tier is gate-INDEPENDENT and stays so: a shape that is not a
-# property escape at all is still owed the module, at either gate.
-reject_gated unicode-props '\p{L'    "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 4)"
-reject_gated unicode-props '\p!'     "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 3)"
+# The MALFORMED tier owes the module at the CLOSED gate only (pinned above).
+# It used to be gate-independent, which told a caller with the module ENABLED
+# to enable it (lane speclang's finding 6, fixed by lane langfix): with the
+# gate open it is PCRE2's error 146 and nothing more. `\pA` above, the bare
+# one-letter unknown name, drops the clause at the open gate for the same
+# reason `\p{Q}` always did.
+reject_gated unicode-props '\p{L'    "\\p: malformed property escape (pattern offset 4)"
+reject_gated unicode-props '\p!'     "\\p: malformed property escape (pattern offset 3)"
 # THE RANGE-ENDPOINT RULE, PRODUCED. `[0-\p{L}]` and `[\p{L}-z]` are
 # `\p requires module` at the closed gate (pinned above, unmoved) and PCRE2's
 # own error 150 once the set is real — measured, libpcre2 gives 150 for both.

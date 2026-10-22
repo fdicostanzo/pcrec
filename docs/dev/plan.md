@@ -211,16 +211,47 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
 - [M4-SUBST] STATE:started — compiled substitution: the implementation row of replace_design.md
   filed: 2026-10-12 Frank
-  status (2026-10-22): lane subst phase A, design revision under D173 (independent element over an rx shape, driven by the find-all iterators); then D6 panel and Frank's discussion before any build
-  next: starts on Frank's word; no row-specific trigger recorded
+  status (2026-10-22): design R4c ruled (panels r2 + use-case fit r3); BUILD GO 2026-10-22 ("Subst is a go"); lanes substb2 (interface, lane/subst) and substcase (case table) building
+  next: substb2 + substcase deliver; then the extended-forms lane; replace-all waits for I1+I2 on main; then a D27 adversary and the landing
   refs: docs/design/replace_design.md; docs/design/subst_template_design.md; docs/design/variables_roadmap.md; decisions D18 D26 D38 D173
   COMPILED SUBSTITUTION: the IMPLEMENTATION ROW of docs/design/replace_design.md (design of record: D38's fourteen rulings in docs/design/subst_template_design.md plus replace_design.md's caller variable environment). RESTATED 2026-10-12 (Frank kept the row, session 111): M4 shipped 2026-08-18, so nothing waits on M4 any more; unscheduled, starts on Frank's word. [VAR] M9 (the variable side of replacement, docs/design/variables_roadmap.md) is gated on THIS row's core landing. CHARTER (Frank, 2026-08-12: the headline xmas item): the `pcre2_substitute` capability as an AOT artifact — pattern AND replacement template compiled together into one emitted C function (match + splice), first/global modes, caller-buffer zero-allocation mode plus an output-sizing mode.
   The template compiler is almost completely independent of the matcher (Frank's observation, recorded because it sequences the work): it consumes only the capture-offset CONTRACT, so its design note can precede M4 even though end-to-end substitution is capture-gated. AOT-only win to preserve in the design: `$n`/`${name}` references are resolved and BOUNDS-CHECKED AT COMPILE TIME against the pattern's own group count — a template naming a group that does not exist is a compile error, where PCRE2 discovers it at substitute time. Tier the template language: core `$n`/`${name}`/literal escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing, ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's earn-its-axis discipline.
   BEYOND-PCRE2 DIRECTION (Frank, 2026-08-13: "this might be an area where we provide more capability than pcre2"): richer shell-style transforms and C FUNCTION CALLBACKS as template segments — a segment that calls an embedder-defined `extern` to render, reusing M4-CALLOUTS' static-extern primitive verbatim (compile-time bound, zero cost when absent). Discipline: everything past PCRE2's surface lives in pcrec's own clearly-flagged namespace (SR-10's rule) so the D26 compatibility story stays clean — PCRE2-compatible core, pcrec-extended templates opt-in; non-portability is a non-issue for the embedded niche, which is compiling in anyway.
   RE-AFFIRMED + SHARPENED (Frank, 2026-09-06, fifty-sixth session: "extremely fast search/replace engine ... no allocation ... stream or in-place ... the replace front end would know the group output so it wouldn't have to interpret the replacement string. thats pretty cool stuff"): two MODES join the charter with their honest boundaries stated up front. (1) IN-PLACE: free exactly when replacement length <= match length (the write cursor trails the read cursor and the invariant holds left-to-right); a GROWING replacement cannot be in-place left-to-right without a gap — the mode's contract states the boundary rather than letting a caller discover it.
   (2) STREAMING, with the AOT-specific win: a streaming replace needs a HOLDBACK buffer for a partial match at the chunk boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller supplies a fixed buffer of stamped size, zero allocation; the [DD-14.FB] BufSurface precedent for caller-provided capacity), and an unbounded-width pattern REFUSES streaming mode honestly by name. No runtime engine can promise a compile-time holdback bound; it falls out of the architecture. Positioning note: this is a completeness-category differentiator (memory pcrec-post-spine-direction, 09-06) — subst is where full PCRE semantics + AOT beats both the subset engines (no captures/templates) and pcre2 (runtime template interpretation)
-
+- [FINDALL-NEXT] STATE:started — find-all iterator / callback entry over a caller-filled versioned struct
+  filed: 2026-10-09 Frank
+  status (2026-10-22): I1 (abi 83) + I2 (abi 84) built on lane/i1build, lane/i2build, NOT merged; D27 adversary: no iterator defect (spec fixes lane/iterdoc); I2 timing + Frank's bench (lane/findbench) owed
+  next: after its quiet-box parity timing run, build I1 (the iterator, `<prefix>_next` over `rx_iter`); findall_iter.md rev 3, D165 add. 3-4
+  refs: docs/spec/match_api.md; tests/assertions/gstart_findall.c; tests/encseam/findall_driver.c; tests/codegen/entry_shape_driver.c; docs/dev/lanes/f3search_driver.c; decisions D38 D76 D80 D83 D94 D132 D158; known_issues K75 K105
+  wrap the find-all advance (match_api.md §3.1 "Finding every match": `p = non-empty ? <prefix>_next_pos(s,n,end-1) : <prefix>_next_pos(s,n,start)`, the [K75]/D132 aligned rule) in an emitted macro or `static inline` per-artifact helper (e.g. `<prefix>_next_start(s, n, caps)`), so callers stop hand-copying it and the looping rule can change later without touching callers. TODAY: the spec carries the loop as prose a caller copies; three in-tree drivers copy it by hand (tests/assertions/gstart_findall.c:64, tests/encseam/findall_driver.c:45, tests/codegen/entry_shape_driver.c:75; plus docs/dev/lanes/f3search_driver.c).
+  EVAL QUESTIONS: (1) macro vs `static inline` in the artifact's .h vs an exported function (header-inline keeps it free and type-checked; an exported symbol is an rx_info/[V-E] entry-pointer candidate); (2) helper for the ADVANCE only, or a whole step `<prefix>_search_next(s,n,&p,caps)` returning the next match — the latter is where future flexibility pays: replace_design.md §3.8 notes the §3.1 loop cannot express PCRE2's NOTEMPTY_ATSTART retry for empty-preferring patterns, and [OPT-HYB-RESEED-XCALL]/xcall.md §5 held a caller-owned cross-call state (`_search_ex` + `pcrec_search_state`) that would ride the same entry; (3) relation to [V-E]'s entry-pointer struct; (4) it is emitted scaffolding: an abi event + spec hunk (D76/D94/D80), and the drivers migrate to it in the same change. Cost S.
+  LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.
 ## Candidates ([OPTLOOP])
+- [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; the K127 fix made the seal redundant (langfix3_report.md)
+  next: rides the next abi event (retirement is an abi bump plus identity re-pin, D76/D94)
+  refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
+  The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
+- [LANG-DIAG-WORDING] STATE:not-started — refusal wording and blame offsets from the language fixes (D26 tier)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; collected from the langfix reports, all diagnostic position or wording, none a match answer
+  next: file-only; fix when a diagnostic row is touched anyway (D26: probably the wrong tier to spend effort on)
+  refs: docs/dev/lanes/langfix3_report.md; docs/dev/lanes/langfix2_report.md; decisions D26
+  `\p{Xyz}` refusal wording (with K118's tier); the pre-existing `\x{ }` blame offsets; the K127 blame offset on multi-lookbehind cycles.
+- [LANG-K118-LETTER-MODULE] STATE:not-started — per-letter module column on the option-letter rows (K118, (?J) ownership)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; needs a --list-syntax schema change, so a manager and owner call
+  next: rides [IFACE-PUSH] (the one interface push); not before
+  refs: docs/dev/lanes/langfix_report.md; [IFACE-PUSH]
+  The column would be read by the letter gate in mod_modifiers.c instead of hard-coded FEAT_BACKREFS/FEAT_ASSERTIONS, shown by --list-syntax, and compared by an open-gate --explain clause.
+- [LANG-F8-F9] STATE:not-started — unknown \p name refusal shape (F8) and \p{ ^Greek} caret after space (F9)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; langfix2 F8/F9 as the report states them
+  next: a uprops row; start on the manager's word
+  refs: docs/dev/lanes/langfix2_report.md; docs/spec/pattern_language.md §2.4
+  F8: pcrec answers shape 2 (enabled but not implemented) where libpcre2 answers a grammar error (shape 7) for \p{Foo}, \p{InGreek}, \p{gc=L}, \p{Hrkt}, \c at end, [\c], \N{U+41} under byte; telling unknown from unbuilt needs a name census against 10.46. F9: \p{ ^Greek} / \p{ ^L} are refused where libpcre2 accepts them; the fix is in the pinned uprops scanner.
 - [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model
   filed: 2026-09-27 filer not recorded
   status (2026-10-12): step 1 was DESIGNED 2026-10-03 and NOT built (docs/design/sel_cost.md, selcostdes_report.md): no bucket clears D119 as a compile-time selection term because the material losses flip sign by subject or regime; the live part is the ADMISSION RULE and its trigger…
@@ -540,6 +571,36 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
+  filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
+  status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
+  trigger: a user with two prefixes differing only in case, or the next rx abi event (bundle the fix there).
+  refs: lane/subst docs/dev/lanes/subst_rulings.md R14; subst_api_r4_draft.md §1¶3; [M4-SUBST]
+  Charter: one general rule for every emitted uppercase identifier derived from a prefix (stamps, header guards), so case-only-different prefixes never collide; replaces the #error. An rx abi event.
+- [LINT-FRAME] STATE:not-started — `make lint` COMPILER STACK-FRAME CEILING PER CALL-GRAPH CYCLE
+  filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
+  status (2026-10-22): filed; nothing built. PCREC_OWN_FRAME marking is checked only by its effect (S1340 on the compilestack arm)
+  trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
+  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
+  Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
+  filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
+  status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).
+  trigger: a user asking for build-time name checks.
+  refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G2); [M4-SUBST]
+  Charter: emit <PREFIX>_GROUP_<name> stamps (siblings of _VAR_<NAME>) and a per-template reference X-macro list, so a bad ${name} fails at compile time.
+- [SUBST-INPLACE] STATE:not-started — IN-PLACE SUBSTITUTION: FLATTEN INTO THE SUBJECT'S OWN BUFFER
+  filed: 2026-10-22 manager (use-case fit review G4; Frank: "Agree with subst changes")
+  status (2026-10-22): filed; nothing built. The R4 contract forbids overlap between scratch/output and the subject.
+  trigger: the first in-place user.
+  refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G4); replace_design.md §R4.8; [M4-SUBST]
+  Charter: a support-unit flatten that checks §R4.8's overlap rule before writing and stages any piece it would overwrite in o->scratch, so a template can rewrite its subject in place.
+- [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
+  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
+  status (2026-10-22): filed; nothing built. Today every -o output is overwritten in place.
+  next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
+  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
+  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
 - [ITER-BLOCK] STATE:not-started — FIND-ALL BY BLOCKS: SEARCH A BLOCK, RETURN ITS MATCHES, ELSE THE NEXT BLOCK
   filed: 2026-10-21 Frank (I2 discussion: "search a block for answers, if you find at least one, stop and return them, if you find none, go to the next block. that way the oversearch is bounded")
   status (2026-10-21): filed; nothing built. I2 ships with the batch doubling from 1 (bounds the early-break over-scan with no new mechanism); this row is the general form.
@@ -647,14 +708,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts on Frank's word; no row-specific trigger recorded
   refs: docs/dev/lanes/parkmeas_report.md; decisions D137
   why the whole-suite saving is ~9.5% against the prototype's 4.28x/18.65x isolated ratios (tt4m_time.md attributes it STRUCTURALLY to 3 of the then-38 sections reaching run.sh — that is a claim, not a measurement; no per-section timestamps survive in either log, tt4m_time.md s.206). METHOD needs no src/ edit: run each `TEST_SECTIONS` target as its own serial `make <section>` under wall/CPU/RSS capture, both arms back to back on ubuntubudu (executor, `gnutimeout`, quiet box, bench handshake first). DECIDES: whether the saving is exactly the reached sections' deltas (flip HARNESS_BATCH — the ceiling is unreached-section cost) or a reached section's ratio is far below 4.28x (the win is eaten inside it; report names where); either way names the dominant unreached sections. Exact command block + result criteria: docs/dev/lanes/parkmeas_report.md A8.
-- [SPEC-LANG] STATE:not-started — the missing spec: pcrec's own definition of the regex language it supports
-  filed: 2026-10-09 Frank
-  status (2026-10-09): not started; FILED 2026-10-09 by Frank, session 102, from reading docs/spec/match_api.md; FOR EVALUATION, unscheduled
-  next: starts on Frank's word; no row-specific trigger recorded
-  refs: docs/spec/match_api.md; docs/spec/syntax.md; docs/pcre2_compliance.md; scripts/mk_d27_cell.sh; decisions D26 D27
-  `docs/spec/syntax.md` (name provisional): every accepted construct, its meaning (match semantics, captures, priority), its module gate and refusal, per encoding and option, stated as pcrec's contract rather than as a delta to PCRE2. TODAY the nearest things are comparisons or indexes, not a definition: docs/pcre2_compliance.md (a construct-by-construct survey AGAINST PCRE2, declared spec-tier in place at [SPEC-1.9]), registry.md / `--list-syntax` (a generated construct index), the per-module design notes. The new doc is what those then COMPARE AGAINST (the compliance page becomes the delta; the registry index its generated cross-check).
-  VALIDATION (Frank): an adversarial lane given ONLY the tool (build/pcrec + emitted artifacts) and THE DOC — no src/ or tests/ (D27 cell shape: scripts/mk_d27_cell.sh with an allowlist of the doc + binary) — with "a penchant for mischief": its job is to make the doc and the tool disagree (constructs the doc omits, sentences the binary contradicts, edge cases at module gates/encodings/options), each disagreement a doc fix or a filed defect; libpcre2 available as a reference oracle where the doc claims PCRE2 equivalence.
-  EVAL QUESTIONS: generated vs hand-written halves (DOC-DRV's three-component model is the precedent: generated facts + independent prose + keyed annotations); grammar form (EBNF vs table-per-construct); D26 tiering (exact for what MATCHES and which module owns a construct, loose for diagnostic wording); how it stays true (a check that every `--list-syntax` row has a doc entry and vice versa). Cost M-L.
 - [RXT-ONE-READER] STATE:not-started — ONE .rxt PARSER
   filed: 2026-10-10 Frank
   status (2026-10-10): not started; FILED 2026-10-10 by Frank, session 105: "it should be unified. but we have to focus" — UNSCHEDULED, admin column
@@ -736,14 +789,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a shipped-cap refusal flip caused by a stamp-only change, or the [RXINFO-REMODEL] stamp rework (which will add/move stamp lines).
   refs: docs/dev/lanes/rq2_report.md; decisions D84
   RQ-3's `#define RX_SIMD_GUARDED_BYTES 0x...ULL` added a constant +52 B to every artifact and, by itself, moved 18 patterns across the LOWERED caps (the lowsize/lowboth variant cells; the cap's quoted "bytes of emitted code" moved 30098 -> 30150 on the same pattern); any future stamp does the same at the boundary. RQ-3's "SIMD bytes are neutral to length decisions" did not cover its own stamp line. QUESTION: should the size caps (and the [ART-SIZE] ladder's size term) exclude stamp/metadata lines the way they already exclude comments, so a refusal tracks code and tables only? Population at SHIPPED caps: 0 known (only lowered-cap variants observed). Trigger: a shipped-cap refusal flip caused by a stamp-only change, or the [RXINFO-REMODEL] stamp rework (which will add/move stamp lines).
-- [FINDALL-NEXT] STATE:not-started — find-all iterator / callback entry over a caller-filled versioned struct
-  filed: 2026-10-09 Frank
-  status (2026-10-16): findall_iter.md rev 3 merged (r5 panels discharged; no owner check D165 add.3; meter per logical search add.4; batch setter; S deferred to I2). Next: parity timing slot (quiet box), then the I1 build
-  next: after its quiet-box parity timing run, build I1 (the iterator, `<prefix>_next` over `rx_iter`); findall_iter.md rev 3, D165 add. 3-4
-  refs: docs/spec/match_api.md; tests/assertions/gstart_findall.c; tests/encseam/findall_driver.c; tests/codegen/entry_shape_driver.c; docs/dev/lanes/f3search_driver.c; decisions D38 D76 D80 D83 D94 D132 D158; known_issues K75 K105
-  wrap the find-all advance (match_api.md §3.1 "Finding every match": `p = non-empty ? <prefix>_next_pos(s,n,end-1) : <prefix>_next_pos(s,n,start)`, the [K75]/D132 aligned rule) in an emitted macro or `static inline` per-artifact helper (e.g. `<prefix>_next_start(s, n, caps)`), so callers stop hand-copying it and the looping rule can change later without touching callers. TODAY: the spec carries the loop as prose a caller copies; three in-tree drivers copy it by hand (tests/assertions/gstart_findall.c:64, tests/encseam/findall_driver.c:45, tests/codegen/entry_shape_driver.c:75; plus docs/dev/lanes/f3search_driver.c).
-  EVAL QUESTIONS: (1) macro vs `static inline` in the artifact's .h vs an exported function (header-inline keeps it free and type-checked; an exported symbol is an rx_info/[V-E] entry-pointer candidate); (2) helper for the ADVANCE only, or a whole step `<prefix>_search_next(s,n,&p,caps)` returning the next match — the latter is where future flexibility pays: replace_design.md §3.8 notes the §3.1 loop cannot express PCRE2's NOTEMPTY_ATSTART retry for empty-preferring patterns, and [OPT-HYB-RESEED-XCALL]/xcall.md §5 held a caller-owned cross-call state (`_search_ex` + `pcrec_search_state`) that would ride the same entry; (3) relation to [V-E]'s entry-pointer struct; (4) it is emitted scaffolding: an abi event + spec hunk (D76/D94/D80), and the drivers migrate to it in the same change. Cost S.
-  LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.
 - [STAMP-REVIEW] STATE:not-started — REVIEW THE STAMP CONCEPT
   filed: 2026-10-09 Frank
   status (2026-10-09): not started; FILED 2026-10-09 by Frank, session 102; FOR EVALUATION; pairs with [RXINFO-REMODEL]
@@ -827,13 +872,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-08-13): not started
   next: starts on Frank's word; no row-specific trigger recorded
   (R1 A-10)
-- [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler
-  filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
-  status (2026-08-13): not started
-  next: starts on Frank's word; no row-specific trigger recorded
-  refs: tests/cli; decisions D19
-  (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone ABSORBED [TS-4] (was STATE:not-started; merged 2026-10-12, plclean [PLAN-LINT] step 2): — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points).
-  Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH THREAD-SAFETY CONTEXT (D19; audit paragraph moved here from the retired section intro 2026-10-12): audited 2026-08-09, generated code and the library are BOTH thread-safe today (every emitted static is const, no file-scope mutable state anywhere in src/, Ctx and its jmp_buf are locals of pcrec_compile); these steps exist to keep that true, because it is invisible to every current test and a one-line change can destroy it.
 - [OS-0] STATE:not-started — the optional engine finder module (D20)
   filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
   status (2026-08-13): not started

@@ -2926,3 +2926,15 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Commit 1, the kit family under `mf_preview("window-family")`,** starts now in an opus lane.
   - **Ownership question for main:** commits 2, 4 and the pcrec half of 6 edit pcrec's builders and NEXT rows. The kit proposes that its lanes write them on this branch, with main reviewing them as part of the landing, as with Z2 the other way. The alternative is that main's lane writes them on top of the kit's commit 1.
   - **Kit sabotage ids:** S1400-S1429.
+- done: 2026-10-22 — **R-28 (the kit's compile-time stack frames): READY TO MERGE. Branch `lane/memfn-r28` @ (this commit). Report `docs/dev/lanes/r28_report.md`, including §9 "Live-path correction".**
+  - **Frames:** no kit frame is above 4 KB; the largest is 3,600 B.
+    - `pcrec_mf_form_hash` 36,368 → 3,600 B;
+    - `pcrec_mf_set_terms` now a small heap wrapper;
+    - `kit_report_exact` 4,448 → 3,184 B;
+    - `form_hash_text` 4,352 → 2,304 B.
+  - **Peak:** stated in memfn/CLAUDE.md. A guard in test-memfn-link fails any kit function above 4096 B, with a planted witness and a floor.
+  - **Live compile stack**, dd10 + R-28, painted (job 572): `a` 61,616 → 25,552 B; `abc` 24,120 → 24,068 B; `a(b|c)+d` 62,912 → 28,424 B. The earlier "no caller" claim was wrong: set_terms is reached via emit_dfa → cand_ask → mf_ask → find_facts (main's dd10b, gdb).
+  - **Zero movers:**
+    - an old-vs-new driver over 23,004 lines is byte-identical;
+    - job 571: 8 of 9 emit_sweep arms rc=0, with 0 movers on every arm (dumps included), mech S1255 DETECTED, make test green (section-errors=0).
+  - **The 9th arm (`--variant all`) is RED on BASE-LEVEL stale tag floors only.** It fails identically on the reference side. Bisect job 577 shows the counts identical at 9950aa672, 6a0ad4029, 5893e47dc and ce5aa67a8, so the cause predates both. Main owns the re-pin.
