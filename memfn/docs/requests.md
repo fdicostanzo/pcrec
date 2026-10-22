@@ -657,4 +657,4 @@ for the re-run.
 |---|---|---|
 | R-28.1 | the kit's compile-time C stack use per call is bounded and small compared with a 128 KB thread (target: no single kit frame above 4 KB; the kit states its peak) | dd10's `tests/thread/run_compile_stack.sh` (in `test-stackdepth` once lane/dd10 merges) stays green; the `a` baseline drops by the frames removed; zero emitted-byte movers |
 
-**Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** kit-side on request (main ledger next free S1400).
+**Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** S1430-S1439 allocated to the kit (main ledger; S1400-S1429 went to D172 S2).
