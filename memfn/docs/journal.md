@@ -2661,3 +2661,19 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Family rules generalized, keyed on facts: F0 is the first verify-YES span at 0; C-pin's clause 4 counts tests through the other spans; R's member and stretch keyed on R's verify (NO: exact run, as before; YES: cube-mass member, R whole). These move preview-only REPORT plans (literal span 0 pinned whole): S3's form question.
 - Full shadow: 0 on every column over 8157 sites (1070 parts) and G2. Finding: known.o lacked its memfn.h dependency (stale incremental object declined `cover`); fixed in the pcrec-path commit.
 - Heavy job `578-kit-wsc3-heavy` (emit_sweep ×4 vs 3cd809da1, make test) queued and owed (docs/dev/lanes/wsc3_report.md).
+
+## 2026-10-22 (morning) — D172 S2 commits 4-6 built; heavy 582 running
+
+- Commit 4 (wsc4, the two-phase ask under a lever): heavy 579 was RED on test-compound's G7 lever fence only, a test-layout fence. The cause: run_wreply.sh spelled `--harness=window-reply` outside the allowlist. It was fixed forward in 6-t1, and commits 4-5 are marked "red on G7 only" for bisect.
+- Commits 5-6 (wsc5, then wsc6):
+  - the family is the default;
+  - pcrec's planner (prefix_k.c) is deleted;
+  - NEXT and the stamps read the reply;
+  - one req_run_member resolver;
+  - the old fields are deleted or refused (R1); the renderer interface stays kit-only, and moving it to a kit-internal struct is FILED;
+  - R2 is the FALLBACK: the pin placement stays a stated fact, because the general form moves the `--emit-facts` stream on every artifact. The general form is FILED;
+  - R3: RPT stays until S3;
+  - MF_SITE_ABI is now 20.
+- Process lesson, re-learned: rulings sent by SendMessage to a BUSY lane were never read (wsc5, twice). Use the worktree rulings file. The memory `pcrec-rulings-file-in-worktree` is updated.
+- **Review note for main's landing review (FILED follow-up, not built):** 6-p4 (77927192f) reads the D11 bound back from pcrec's own statement BY POSITION: `alts[0].spans[0].len == 2` at emit_dfa.c:12812. It is correct today (byte-identical on the witnesses) but fragile against D172's unordered rule. Fix: pass pcrec's own holdback fact to pf_find_of instead. It is a small pcrec-path commit, validated by light checks plus an emit_sweep.
+- Also for main: F-3. PCREC_OFSK_MAX_SET's `--list-limits` description still names the deleted prefix_k.c. Rewording it moves the dumps stream, so it needs main's approval.
