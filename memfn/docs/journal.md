@@ -2601,3 +2601,6 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
   - e64≈0 with transitions 10-23: the losers;
   - e64≈0 with transitions ~31: random-dense, wins.
   So Frank's per-stretch adaptive loop (walk ↔ M64) has its inputs. Next: a count-only simulation before any timing or build.
+- adasim (count-only, d1be27483): the walk ↔ M64 per-64-byte rule is simulated at −13.2% vs the walk on flat's J1 cells (M64 −7.4%, oracle −16.8%). It keeps 90-93% of M64's wins. The dense-regular losers fall to +0.3..+3.6%; the worst cell is +8-10%.
+  - It is decided by three unmeasured things: the observation cost ob (at 6 ns the gain mostly goes); whether the mode carries across calls (a cold start per call → −1.3%); and R2 carried across calls on short dfa-hat cells (+36%).
+  - Verdict: worth ONE timed twin, as a pricing probe for ob. Taken to Frank.
