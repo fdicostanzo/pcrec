@@ -44,7 +44,7 @@ chose to keep them, plus lane-owned evidence/instrument files.
 - `<lane>_brief.md` — parked-lane launch brief, where present
   (A `NAME_rulings.md` file is polled by a running lane.)
 - `<name>_evidence/`, `grid1/`, `grid2/`, `gridread/`, `costmodel/`,
-  `armread/`, `b3b/`, `m0build/`, `mechpar_chain/`, `origsurvey/`, `pcscope/`,
+  `armread/`, `b3b/`, `b4p/`, `m0build/`, `mechpar_chain/`, `origsurvey/`, `pcscope/`,
   `r17b2/`, `regimefacts/`, `rwcorpus/`, `rwquest/`, `rwquest2/`, `sbscope/`,
   `slotarms/` — per-lane instrument/evidence directories (data, drivers,
   logs) cited by the matching report.

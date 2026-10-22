@@ -338,8 +338,8 @@ static const fd_row fd_rows[] = {
       "a TUG cell measured losing for want of the priced pre-scan (P1, B5)", &ct_p9, 0 },
     /* slot FIND, appended after slot PRES so every earlier row keeps its index
        (mf_class.pres_row carries 1 + an index): the REPORT row (R-26.6,
-       kit_proof.md §2.5, §7 Zk), the last FIND row, UNROUTED until its step;
-       a preview art (mf_preview) routes it. It serves the REPORT kind alone,
+       kit_proof.md §2.5, §7 Zk), the last FIND row, HELD for its step
+       (fd_previews); a preview art (mf_preview) lets it decide. It serves the REPORT kind alone,
        so its place among the FIND rows decides nothing */
     { "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
