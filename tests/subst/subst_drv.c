@@ -9,7 +9,8 @@
  *
  * RXI/SBI index tab.c's tables; P2OPTS is the oracle's compile options (bit
  * 1 PCRE2_UTF|PCRE2_MATCH_INVALID_UTF, bit 2 PCRE2_CASELESS); LIMIT is a
- * decimal count or `all`; VARS is `-` or `name=value,...` (`name` alone: the
+ * decimal count or `all`, optionally `@START` (rx_iter_at, and the oracle's
+ * start offset); VARS is `-` or `name=value,...` (`name` alone: the
  * variable is passed with p == NULL). One output line per cell, TAB-
  * separated, the arms as name=fields (the runner, run_subst_tests.py,
  * compares them; nothing is judged here):
@@ -28,6 +29,18 @@
  *   dirty  every rx_iter field RX_ITER_INIT does not write holds 0xA5, then
  *          the glue: rc, *outlen, the output
  *   mis    the element called with ctx->ncap != the binding's ncaps: rc
+ *   stale  the glue over a BOUND iterator (one <rx>_next taken), then over
+ *          an ENDED one: the two codes
+ *   unk    the element called with an unknown flag bit: rc
+ *   bmis   bind with one run too few (`na` when the template names none),
+ *          then against a copy of the rx record with ncaps 0: the two codes
+ *   vmis   for a template with ${!name}: the element with ctx->vars NULL,
+ *          then with ctx->nvars one short: the two codes (`na` otherwise)
+ *   vuerr  for an --unset=error template with ${!name}: the element over
+ *          the first match with every resolved variable's p NULL: rc
+ *   nogap  a custom glue without RX_SUBST_GAPS (renderings back to back,
+ *          no tail): rc, length, output
+ *   p2ro   pcre2_substitute with SUBSTITUTE_REPLACEMENT_ONLY: rc, output
  *   p2     pcre2_substitute (GLOBAL when LIMIT is all, plain when 1;
  *          UNSET_EMPTY when the subst is --unset=empty): rc, output; `na`
  *          for any other LIMIT, for variables, or with no oracle
@@ -92,8 +105,10 @@ static rx_var *parse_vars(char *s, size_t *nv)
     return v;
 }
 
+static size_t g_start;   /* the cell's @START, 0 without one */
+
 /* A FRESH iterator over s[0, n), every field RX_ITER_INIT leaves alone set
- * to 0xA5 when `dirty`, with the variables applied. */
+ * to 0xA5 when `dirty`, with the variables and the cell's start applied. */
 static void iter_fresh(rx_iter *it, const unsigned char *s, size_t n, int dirty,
                        const rx_var *v, size_t nv)
 {
@@ -103,11 +118,13 @@ static void iter_fresh(rx_iter *it, const unsigned char *s, size_t n, int dirty,
     } else
         *it = RX_ITER_INIT(s, n);
     if (v) rx_iter_vars(it, v, nv);
+    if (g_start) rx_iter_at(it, g_start);
 }
 
-/* The custom glue at k = 1: the element per <rx>_next match, then the tail. */
-static int glue_k1(const rx_subst_binding *b, rx_iter *it, size_t limit,
-                   unsigned char *out, size_t cap, size_t *len)
+/* The custom glue at k = 1: the element per <rx>_next match, then (with
+ * RX_SUBST_GAPS in `flags`) the tail. */
+static int glue_k1f(const rx_subst_binding *b, rx_iter *it, size_t limit, unsigned flags,
+                    unsigned char *out, size_t cap, size_t *len)
 {
     rx_var vres[64];
     rx_ctx ctx;
@@ -117,15 +134,46 @@ static int glue_k1(const rx_subst_binding *b, rx_iter *it, size_t limit,
     size_t done = 0;
     *len = 0;
     while (rc == 0 && done < limit && b->rx->next(it, caps)) {
-        rc = b->sub->render(b, &ctx, (const ptrdiff_t (*)[2])caps, 1, RX_SUBST_GAPS,
+        rc = b->sub->render(b, &ctx, (const ptrdiff_t (*)[2])caps, 1, flags,
                             out, cap, &cur);
         done++;
     }
     if (rc == 0 && done < limit && it->rc < 0) rc = it->rc;
     if (rc == 0) {
-        rx_subst_put(&cur, out, cap, ctx.subject + cur.prev, ctx.len - cur.prev);
+        if (flags & RX_SUBST_GAPS)
+            rx_subst_put(&cur, out, cap, ctx.subject + cur.prev, ctx.len - cur.prev);
         *len = cur.w;
     }
+    free(caps);
+    return rc;
+}
+
+static int glue_k1(const rx_subst_binding *b, rx_iter *it, size_t limit,
+                   unsigned char *out, size_t cap, size_t *len)
+{
+    return glue_k1f(b, it, limit, RX_SUBST_GAPS, out, cap, len);
+}
+
+/* The element over the first match with a hand-built ctx whose resolved
+ * variables are `mode` 1: absent (vars NULL), 2: one short, 3: all unset.
+ * Returns the element's code (1 when there is no match). */
+static int element_vars(const rx_subst_binding *b, const unsigned char *s, size_t n, int mode,
+                        unsigned char *out, size_t cap)
+{
+    rx_var vres[64];
+    rx_ctx ctx;
+    rx_subst_cur cur = { 0, 0, 1 };
+    rx_iter it = RX_ITER_INIT(s, n);
+    ptrdiff_t (*caps)[2] = malloc((size_t)b->ncaps * sizeof *caps);
+    int rc = 1;
+    (void)rx_subst_ctx_init(&ctx, &it, b, vres);
+    for (int j = 0; j < b->sub->nvrefs; j++) { vres[j].name = b->sub->vrefs[j]; vres[j].p = 0; vres[j].len = 0; }
+    ctx.vars = vres;
+    ctx.nvars = (size_t)b->sub->nvrefs;
+    if (mode == 1) ctx.vars = 0;
+    if (mode == 2) ctx.nvars--;
+    if (b->rx->next(&it, caps))
+        rc = b->sub->render(b, &ctx, (const ptrdiff_t (*)[2])caps, 1, RX_SUBST_GAPS, out, cap, &cur);
     free(caps);
     return rc;
 }
@@ -136,6 +184,7 @@ static void oracle(const unsigned char *pat, size_t plen, unsigned p2opts,
                    const struct rx_subst_info *sb, int global,
                    const unsigned char *s, size_t n, size_t mainlen)
 {
+    static unsigned char buf[OUTMAX];
     int ec;
     PCRE2_SIZE eo;
     uint32_t co = 0;
@@ -147,16 +196,20 @@ static void oracle(const unsigned char *pat, size_t plen, unsigned p2opts,
     uint32_t so = PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
     if (global) so |= PCRE2_SUBSTITUTE_GLOBAL;
     if (sb->unset == PCREC_SUBST_UNSET_EMPTY) so |= PCRE2_SUBSTITUTE_UNSET_EMPTY;
-    static unsigned char buf[OUTMAX];
     PCRE2_SIZE ol = sizeof buf;
-    int rc = pcre2_substitute(re, s, n, 0, so, md, NULL,
+    int rc = pcre2_substitute(re, s, n, g_start, so, md, NULL,
                               (PCRE2_SPTR)sb->template_text, sb->template_len, buf, &ol);
     printf("\tp2=%d,", rc);
     if (rc >= 0) phex(buf, ol); else putchar('-');
     ol = mainlen;
-    rc = pcre2_substitute(re, s, n, 0, so, md, NULL,
+    rc = pcre2_substitute(re, s, n, g_start, so, md, NULL,
                           (PCRE2_SPTR)sb->template_text, sb->template_len, buf, &ol);
     printf("\tp2short=%d,%zu", rc, (size_t)ol);
+    ol = sizeof buf;
+    rc = pcre2_substitute(re, s, n, g_start, so | PCRE2_SUBSTITUTE_REPLACEMENT_ONLY, md, NULL,
+                          (PCRE2_SPTR)sb->template_text, sb->template_len, buf, &ol);
+    printf("\tp2ro=%d,", rc);
+    if (rc >= 0) phex(buf, ol); else putchar('-');
     pcre2_match_data_free(md);
     pcre2_code_free(re);
 }
@@ -184,6 +237,9 @@ int main(void)
         if (nf != 8) { printf("BADLINE\n"); continue; }
         int rxi = atoi(f[1]), sbi = atoi(f[2]);
         unsigned p2opts = (unsigned)atoi(f[4]);
+        char *atp = strchr(f[5], '@');
+        g_start = 0;
+        if (atp) { *atp = 0; g_start = (size_t)strtoull(atp + 1, NULL, 10); }
         int all = !strcmp(f[5], "all");
         size_t limit = all ? SIZE_MAX : (size_t)strtoull(f[5], NULL, 10);
         size_t plen, n, nv;
@@ -262,7 +318,44 @@ int main(void)
             ctx.ncap = (size_t)b.ncaps + 1;
             printf("\tmis=%d", sb->render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 0,
                                           RX_SUBST_GAPS, out2, sizeof out2, &cur));
+            cur = (rx_subst_cur){ 0, 0, 1 };
+            ctx.ncap = (size_t)b.ncaps;
+            printf("\tunk=%d", sb->render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 0,
+                                          RX_SUBST_GAPS | 0x2u, out2, sizeof out2, &cur));
         }
+        {   /* the glue refuses an iterator that is not FRESH */
+            ptrdiff_t (*caps)[2] = malloc((size_t)rx->ncaps * sizeof *caps);
+            int r1, r2;
+            iter_fresh(&it, s, n, 0, v, nv);
+            (void)rx->next(&it, caps);
+            r1 = pcrec_subst(&b, &it, limit, out2, sizeof out2, &len, &k);
+            iter_fresh(&it, s, n, 0, v, nv);
+            while (rx->next(&it, caps)) {}
+            r2 = pcrec_subst(&b, &it, limit, out2, sizeof out2, &len, &k);
+            free(caps);
+            printf("\tstale=%d,%d", r1, r2);
+        }
+        {   /* bind refusals: one run short, an rx with no slot */
+            rx_subst_binding b2;
+            struct rx_info rx0 = *rx;
+            int bad2;
+            rx0.ncaps = 0;
+            if (sb->nruns > 0)
+                printf("\tbmis=%d,", pcrec_subst_bind(&b2, rx, sb, runs, (size_t)sb->nruns - 1, NULL, 0, &bad2));
+            else
+                printf("\tbmis=na,");
+            printf("%d", pcrec_subst_bind(&b2, &rx0, sb, runs, 64, NULL, 0, &bad2));
+        }
+        if (sb->nvrefs > 0) {
+            printf("\tvmis=%d,%d", element_vars(&b, s, n, 1, out2, sizeof out2),
+                   element_vars(&b, s, n, 2, out2, sizeof out2));
+            if (sb->unset == PCREC_SUBST_UNSET_ERROR)
+                printf("\tvuerr=%d", element_vars(&b, s, n, 3, out2, sizeof out2));
+        }
+        iter_fresh(&it, s, n, 0, v, nv);
+        rc = glue_k1f(&b, &it, limit, 0, out2, sizeof out2, &len);
+        printf("\tnogap=%d,%zu,", rc, len);
+        if (rc == 0) phex(out2, len); else putchar('-');
 
     oracle_arm:
 #ifdef SUBST_PCRE2

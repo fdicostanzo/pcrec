@@ -17,9 +17,11 @@ A cell is one TAB-separated line (`#` lines are comments):
             `-i`, `--no-captures`; `-e utf8` and `-i` also set the oracle's
   PATTERN   as written; `rep:N:TEXT` is TEXT repeated N times
   TEMPLATE  as written, compiled through --subst-file; `esc:T` decodes T's
-            \\xNN \\n \\t \\\\ first; `arg:T` compiles through --subst
+            \\xNN \\n \\t \\\\ first; `arg:T` compiles through --subst;
+            a leading `utf8:` compiles it with `-e utf8` (subst_api.md §2¶5)
   UNSET     empty | error (`--unset=`)
-  LIMIT     a count, or `all`
+  LIMIT     a count, or `all`; `@START` after it starts the iterator (and
+            the oracle) at START
   SUBJECT   in the escape vocabulary above; `rep:N:TEXT` repeats
   VARS      `-`, or `name=value,...` (`name` alone: passed with p == NULL)
   EXPECT    out:TEXT:N (the output and the substitution count) |
@@ -36,8 +38,14 @@ the length fits exactly; cap == length - 1 is NOSPACE with the full length
 and count (S1353); the k = 1 custom glue answers the same; a 0xA5-dirty
 iterator answers the same (S1352); the element refuses a foreign ncap
 (S1351); a LIMIT stop leaves the iterator where exactly LIMIT <rx>_next calls
-leave it (S1349); and where pcre2 answers the same, pcre2 at outlength ==
-the length is NOMEMORY asking for length + 1 (its NUL, §R3.10 row 1).
+leave it (S1349); the glue refuses a BOUND and an ENDED iterator with
+PCREC_ERR_ITER; the element refuses an unknown flag; bind refuses one run too
+few and an rx with no slot; for `${!name}` templates the element refuses a
+ctx with no variables or one too few, and under --unset=error renders an
+unset one as PCREC_ERR_UNSET_VAR; where pcre2 answers the same, the element
+without RX_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does,
+and pcre2 at outlength == the length is NOMEMORY asking for length + 1 (its
+NUL, §R3.10 row 1).
 """
 
 import os
@@ -53,7 +61,9 @@ CODES = {
 PCRE2_NOMEMORY = -48
 REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1349', 'S1350', 'S1351', 'S1352',
               'S1353', 'S1354', 'S1355', 'nogroupceiling', 'batch64', 'illformed',
-              'badspancorner', 'nul', 'vars', 'abi', 'giveup']
+              'badspancorner', 'nul', 'vars', 'abi', 'giveup',
+              'subject', 'before', 'after', 'amp', 'start', 'agree', 'utf8tmpl', 'encbind',
+              'fresh', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap']
 
 
 def decode(t):
@@ -133,6 +143,9 @@ def main():
         srcs.append('r%d.c' % i)
     for (tmpl, unset), i in sbs.items():
         args = [pcrec, '-p', 's%d' % i, '--unset=' + unset, '-o', os.path.join(work, 's%d.c' % i)]
+        if tmpl.startswith('utf8:'):
+            args += ['-e', 'utf8']
+            tmpl = tmpl[5:]
         if tmpl.startswith('arg:'):
             args += ['--subst', tmpl[4:].encode('latin-1')]
         else:
@@ -239,6 +252,25 @@ def main():
                 check(g['dirty'].split(',')[0] == str(code), '%s: dirty iterator %s' % (cid, g['dirty']))
             if check(g['mis'] == str(CODES['MISMATCH']), '%s: element took a foreign ncap: %s (S1351)' % (cid, g['mis'])):
                 reached.add('S1351')
+            mm = str(CODES['MISMATCH'])
+            if check(g.get('unk') == mm, '%s: element took an unknown flag: %s' % (cid, g.get('unk'))):
+                reached.add('unk')
+            it_ = str(CODES['ITER'])
+            if check(g.get('stale') == '%s,%s' % (it_, it_),
+                     '%s: the glue over a BOUND, ENDED iterator gave %s, want PCREC_ERR_ITER twice' % (cid, g.get('stale'))):
+                reached.add('fresh')
+            bm = g.get('bmis', '').split(',')
+            if check(len(bm) == 2 and bm[0] in ('na', mm) and bm[1] == mm,
+                     '%s: bind took one run too few or an rx with no slot: %s' % (cid, g.get('bmis'))) and bm[0] == mm:
+                reached.add('bmis')
+            if '${!' in c[3]:
+                if check(g.get('vmis') == '%s,%s' % (mm, mm),
+                         '%s: element took a ctx with no / too few variables: %s' % (cid, g.get('vmis'))):
+                    reached.add('vmis')
+                if c[4] == 'error' and check(g.get('vuerr') == str(CODES['UNSET_VAR']),
+                                             '%s: element rendered an unset variable under --unset=error: %s'
+                                             % (cid, g.get('vuerr'))):
+                    reached.add('vuerr')
             if 'lim' in g:
                 a, b = g['lim'].split(',')
                 if check(a == b, '%s: the glue stopped at LIMIT with the iterator at %s, %s after exactly LIMIT calls (S1349)'
@@ -251,6 +283,12 @@ def main():
                 text, n = rest.rsplit(':', 1)
                 want = decode(text)
                 ok = check(p2 == '%s,%s' % (n, want.hex() or '-'), '%s: pcre2 %s, want the same %s,%r' % (cid, p2, n, want))
+                ng, ro = g.get('nogap', ''), g.get('p2ro', '')
+                if 'nogap' in g and check(ro.startswith(n + ',') and ng.split(',', 2)[0] == '0'
+                                          and ng.split(',', 2)[2] == ro.split(',', 1)[1],
+                                          '%s: the element without GAPS gave %s, pcre2 REPLACEMENT_ONLY %s'
+                                          % (cid, ng, ro)):
+                    reached.add('nogap')
                 check(g.get('p2short') == '%d,%d' % (PCRE2_NOMEMORY, len(want) + 1),
                       '%s: pcre2 at outlength %d: %s, want NOMEMORY asking %d (its NUL)' % (cid, len(want), g.get('p2short'), len(want) + 1))
             elif p2want.startswith('out:'):

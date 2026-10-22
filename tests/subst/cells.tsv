@@ -54,3 +54,22 @@ varfirst	-	(a)	${!v}-$1	empty	all	a	v=1,v=2	out:1-a:1	na	-	-
 varerr	-	(a)	${!v}-$1	error	all	a	-	rc:UNSET_VAR	na	-	-
 varerrok	-	(a)	${!v}-$1	error	all	a	v=	out:-a:1	na	-	-
 giveup	--step-budget=100 -fno-prefilter	(a+)+b	[$1]	empty	all	ab aab aaaaaaaaaaaac ab	-	rc:STEPS	out:[a] [aa] aaaaaaaaaaaac [a]:3	a give-up: pcrec's step budget ended the find-all (match_api 4); pcre2 has no such budget	giveup
+# lane substfix: PCRE2 10.46's other non-extended forms (measured), $_ never a name
+us	-	(?<_>a)(?<_1>b)?	[$_]	empty	all	xab-a	-	out:x[xab-a]-[xab-a]:2	same	-	subject
+us1	-	(?<_>a)(?<_1>b)?	[$_1]	empty	all	xab-a	-	out:x[xab-a1]-[xab-a1]:2	same	-	-
+usbrace	-	(?<_>a)(?<_1>b)?	[${_}]	empty	all	xab-a	-	out:x[a]-[a]:2	same	-	-
+amp	-	(a)(b)?	[$&]	empty	all	xab-a	-	out:x[ab]-[a]:2	same	-	amp
+prepost	-	a\Kb	[$&|$`|$']	empty	all	xab-ab	-	out:xa[b|xa|-ab]-a[b|xab-a|]:2	same	-	before,after
+at	-	a	[$_|$`|$']	empty	all@2	xaya	-	out:xay[xaya|xay|]:1	same	-	start
+atcopy	-	a	<$0>	empty	all@2	aaxa	-	out:aax<a>:1	same	-	start
+at1	-	a	<$0>	empty	1@1	aaxa	-	out:a<a>xa:1	same	-	-
+# rx_group_run (the block's name lookup) agrees with the compiler's own \k<name> resolution
+agreedup	-	(?J)(?:(?<n>a)|(?<n>b))\k<n>	<${n}|$0>	empty	all	xbbxaa	-	out:x<b|bb>x<a|aa>:2	same	-	agree
+agreepfx	-	(?<ab>x)(?<a>y)\k<a>	[$a|$ab]	empty	all	xyy	-	out:[y|x]:1	same	-	agree
+name128	-	(?<LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL>a)	[$LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL]	empty	all	xa	-	out:x[a]:1	same	-	-
+# the template's encoding (subst_api.md §2¶5)
+utf8tmpl	-e utf8	(é)	utf8:esc:\xc3\xa8$1\xc3\xa8	empty	all	a\xc3\xa9b	-	out:a\xc3\xa8\xc3\xa9\xc3\xa8b:1	same	-	utf8tmpl
+asciiutf8	-e utf8	(é)	<$1>	empty	all	a\xc3\xa9b	-	out:a<\xc3\xa9>b:1	same	-	-
+encbind	-e utf8	(é)	esc:\xc3\xa8$1	empty	all	a\xc3\xa9b	-	bind:MISMATCH:-1	na	-	encbind
+encbind2	-	a	utf8:esc:\xc3\xa8$0	empty	all	a	-	bind:MISMATCH:-1	na	-	encbind
+varerrnul	-	(a)	${!v}-$1	error	all	a	v=X	out:X-a:1	na	-	-
