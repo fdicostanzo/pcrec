@@ -18,7 +18,7 @@ STATE AT HANDOFF:
 | # | sha | path class | what |
 |---|---|---|---|
 | (a) | 9329ac05b | PCREC PATH (src/, cli/ only) | the lever; the phase-1 ask; the NEXT keys as a declared map; the RE-SEED refusal; the offset-set guard |
-| (b) | c6e878a1b | pcrec-side TEST (tests/memfn/ only) | `tests/memfn/run_wreply.sh`, the lever check and its plants S1412-S1414; `tests/memfn/CLAUDE.md` |
+| (b) | 8000da2db | pcrec-side TEST (tests/memfn/ only) | `tests/memfn/run_wreply.sh`, the lever check and its plants S1412-S1414; `tests/memfn/CLAUDE.md` |
 | (c) | this commit | docs (`docs/dev/lanes/`, the lane index, the kit journal) | this report |
 
 Main reviews (a): it touches no file under `memfn/`, `tests/` or `docs/`.
@@ -117,7 +117,7 @@ pre-check parts). Mismatches 0 on every column (reseed, stop, plan, pin, group, 
 mass 53, mass+pin 8, parked 32, parked+pin 1, reseed 6. The FULL shadow (with `--g2`) is in the heavy
 job (§7). Log: `build/wsc4/light_a/wshadow.log`.
 
-## 5. Light checks (Linux dev box, gcc 15.2; code tip c6e878a1b = (a)'s product tree; logs `build/wsc4/light_a/`)
+## 5. Light checks (Linux dev box, gcc 15.2; code tip 8000da2db = (a)'s product tree; logs `build/wsc4/light_a/`)
 
 | check | result |
 |---|---|
