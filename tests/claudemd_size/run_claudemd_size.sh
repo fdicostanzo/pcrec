@@ -32,6 +32,15 @@ head -c 99999 /dev/zero | tr '\0' x > "$T/worktrees/old/CLAUDE.md"
 head -c 99999 /dev/zero | tr '\0' x > "$T/docs/dev/history/claude_md/CLAUDE.md"
 CLAUDEMD_ROOT="$T" bash "$CHK" --all >/dev/null 2>&1; check $? 0 "worktrees/ and the history archive are skipped"
 
+# hot-path row: docs/dev/CLAUDE.md is held to 4 KB (5 KB fails, 3 KB passes)
+mkdir -p "$T/docs/dev"
+head -c 5000 /dev/zero | tr '\0' x > "$T/docs/dev/CLAUDE.md"
+CLAUDEMD_ROOT="$T" bash "$CHK" --all >"$T/out" 2>&1; check $? 1 "5 KB docs/dev/CLAUDE.md must fail"
+grep -q 'docs/dev/CLAUDE.md is 5000 bytes, limit 4096' "$T/out"; check $? 0 "hot-path message names the 4096 limit"
+head -c 3000 /dev/zero | tr '\0' x > "$T/docs/dev/CLAUDE.md"
+CLAUDEMD_ROOT="$T" bash "$CHK" --all >/dev/null 2>&1; check $? 0 "3 KB docs/dev/CLAUDE.md must pass"
+rm "$T/docs/dev/CLAUDE.md"
+
 # --staged judges the staged content
 git -C "$T" init -q && git -C "$T" config user.email t@t && git -C "$T" config user.name t
 head -c 13000 /dev/zero | tr '\0' x > "$T/a/CLAUDE.md"
