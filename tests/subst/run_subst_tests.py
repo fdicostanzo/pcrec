@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """tests/subst/run_subst_tests.py -- [M4-SUBST] the subst artifact's checks
-(docs/spec/subst_api.md; replace_design.md §R3): every cell of cells.tsv compiled
+(docs/spec/subst_api.md; replace_design.md §R4): every cell of cells.tsv compiled
 and run through subst_drv.c, held to its stated answer AND to libpcre2's
 pcre2_substitute, the independent oracle, where pcre2 can answer.
 
@@ -11,7 +11,7 @@ wrapper).
 
 A cell is one TAB-separated line (`#` lines are comments):
 
-  ID FLAGS PATTERN TEMPLATE UNSET LIMIT SUBJECT VARS EXPECT P2 LABEL REACH
+  ID FLAGS PATTERN TEMPLATE STRICT LIMIT SUBJECT VARS EXPECT P2 LABEL REACH
 
   FLAGS     pcrec's rx flags beyond `--features all` (`-` none): `-e utf8`,
             `-i`, `--no-captures`; `-e utf8` and `-i` also set the oracle's
@@ -19,33 +19,39 @@ A cell is one TAB-separated line (`#` lines are comments):
   TEMPLATE  as written, compiled through --subst-file; `esc:T` decodes T's
             \\xNN \\n \\t \\\\ first; `arg:T` compiles through --subst;
             a leading `utf8:` compiles it with `-e utf8` (subst_api.md §2¶5)
-  UNSET     empty | error (`--unset=`)
+  STRICT    blank | strict (RX_SUBST_STRICT at run time, §4¶23)
   LIMIT     a count, or `all`; `@START` after it starts the iterator (and
             the oracle) at START
   SUBJECT   in the escape vocabulary above; `rep:N:TEXT` repeats
   VARS      `-`, or `name=value,...` (`name` alone: passed with p == NULL)
   EXPECT    out:TEXT:N (the output and the substitution count) |
-            rc:NAME (the glue's code) | bind:NAME:ROW (bind's code, *bad_ref)
+            rc:NAME (the recipe's code, or the setup's) |
+            check:NAME:ROW (the check's code over the by-name helper's map,
+            *bad_ref)
   P2        same (pcre2 answers EXPECT's out exactly) | out:TEXT:N |
             rc:NUMBER (pcre2's own answer, a stated difference) | na
   LABEL     `-` when P2 is same or na, else the difference's name
-            (replace_design.md §R3.10's row)
+            (subst_api.md §9's row)
   REACH     `-`, or comma-separated tokens; every token of REACH_NEED must
             be carried by at least one PASSING cell (K35)
 
-Per `out` cell the generic arms hold too: out == NULL sizes the same; cap ==
-the length fits exactly; cap == length - 1 is NOSPACE with the full length
-and count (S1353); the k = 1 custom glue answers the same; a 0xA5-dirty
-iterator answers the same (S1352); the element refuses a foreign ncap
-(S1351); a LIMIT stop leaves the iterator where exactly LIMIT <rx>_next calls
-leave it (S1349); the glue refuses a BOUND and an ENDED iterator with
-PCREC_ERR_ITER; the element refuses an unknown flag; bind refuses one run too
-few and an rx with no slot; for `${!name}` templates the element refuses a
-ctx with no variables or one too few, and under --unset=error renders an
-unset one as PCREC_ERR_UNSET_VAR; where pcre2 answers the same, the element
-without RX_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does,
-and pcre2 at outlength == the length is NOMEMORY asking for length + 1 (its
-NUL, §R3.10 row 1).
+Per cell the generic arms hold too (subst_drv.c's header names each): with
+LIMIT all, §6¶4's batch recipe, §6¶5's RX_FOREACH recipe, replace-all into
+a buffer that fits (the count), sized only, at exact capacity, one byte
+short (NOSPACE with the full length), and over a 0xA5-dirty iterator answer
+what §6¶2's per-match recipe answers; replace-all refuses an ENDED iterator;
+with a LIMIT the recipe leaves the iterator where exactly LIMIT <rx>_next
+calls leave it; a template without names answers the same with no map and
+with a hand-filled map; the element refuses a piece array one short with
+NOSPACE before writing, a map slot past ncaps (as the check does), an
+unknown flag, a match end past ctx->len; the check refuses a map one entry
+short and an rx with no slot; a map of NOGROUP entries under STRICT renders
+every reference as unset; for `${!name}` templates the element refuses a ctx
+with no variables or one too few, and under STRICT an unset one is
+PCREC_ERR_UNSET_VAR; where pcre2 answers the same, the element without
+RX_SUBST_GAPS answers what pcre2's SUBSTITUTE_REPLACEMENT_ONLY does, and
+pcre2 at outlength == the length is NOMEMORY asking for length + 1 (its
+NUL, §9 row 6).
 """
 
 import os
@@ -54,16 +60,19 @@ import subprocess
 import sys
 
 CODES = {
-    'NOSPACE': -11, 'BADSPAN': -12, 'RENDER': -13, 'UNSET': -14,
+    'NOSPACE': -11, 'BADSPAN': -12, 'UNSET': -14,
     'MISMATCH': -15, 'MISSING_REF': -16, 'UNSET_VAR': -8, 'ITER': -10,
     'STEPS': -2,
 }
 PCRE2_NOMEMORY = -48
-REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1349', 'S1350', 'S1351', 'S1352',
-              'S1353', 'S1354', 'S1355', 'nogroupceiling', 'batch64', 'illformed',
-              'badspancorner', 'nul', 'vars', 'abi', 'giveup',
-              'subject', 'before', 'after', 'amp', 'start', 'agree', 'utf8tmpl', 'encbind',
-              'fresh', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap', 'blen', 'negnum']
+RX_FOREACH_PAIRS = 256      # match_api.md §3.8.2's default
+REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
+              'nogroupceiling', 'batch64', 'illformed', 'badspancorner', 'nul',
+              'vars', 'abi', 'giveup', 'subject', 'before', 'after', 'amp', 'start',
+              'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',
+              'blen', 'negnum', 'flatsat', 'absent', 'lim', 'short', 'exact', 'size',
+              'count', 'batch', 'foreach', 'dirty', 'stale', 'nomap', 'hand', 'room',
+              'mis', 'nog', 'pairs']
 
 
 def decode(t):
@@ -92,6 +101,14 @@ def decode(t):
 def raw(t):
     m = re.match(r'rep:(\d+):(.*)$', t, re.S)
     return (m.group(2) * int(m.group(1))).encode('latin-1') if m else t.encode('latin-1')
+
+
+# The `unit` line's answer (subst_drv.c's unit()): flatten's total saturates
+# at SIZE_MAX and a short buffer is left untouched, its total still 4
+# (§10¶4); the helper refuses a numbered reference -3 as MISSING_REF
+# (§3¶13); under RX_SUBST_MAP_ABSENT a name and a number the rx lacks are
+# both NOGROUP, counted 2, *bad_ref the first (§3¶15).
+UNIT_WANT = 'unit\tflat=1,1,4\tneg=-16\tabsent=0,2,0,-1'
 
 
 def main():
@@ -125,14 +142,16 @@ def main():
             col = line.split('\t')
             if not check(len(col) == 12, '%s:%d: %d columns, want 12' % (cells_path, ln, len(col))):
                 continue
+            if not check(col[4] in ('blank', 'strict'), '%s:%d: STRICT %r' % (cells_path, ln, col[4])):
+                continue
             cells.append(col)
 
     rxs, sbs = {}, {}
     for c in cells:
         rxs.setdefault((c[1], c[2]), len(rxs))
-        sbs.setdefault((c[3], c[4]), len(sbs))
+        sbs.setdefault(c[3], len(sbs))
 
-    # ---- compile every rx and subst artifact, one pcrec each -------------
+    # ---- compile every rx and subst artifact, and the support unit --------
     srcs = []
     for (flags, pat), i in rxs.items():
         args = [pcrec, '--features', 'all', '-p', 'r%d' % i, '-o', os.path.join(work, 'r%d.c' % i)]
@@ -141,8 +160,8 @@ def main():
         if not check(r.returncode == 0, 'rx %d (%s) refused: %s' % (i, pat, r.stderr.decode('latin-1').strip())):
             return finish(passed, failed)
         srcs.append('r%d.c' % i)
-    for (tmpl, unset), i in sbs.items():
-        args = [pcrec, '-p', 's%d' % i, '--unset=' + unset, '-o', os.path.join(work, 's%d.c' % i)]
+    for tmpl, i in sbs.items():
+        args = [pcrec, '-p', 's%d' % i, '-o', os.path.join(work, 's%d.c' % i)]
         if tmpl.startswith('utf8:'):
             args += ['-e', 'utf8']
             tmpl = tmpl[5:]
@@ -158,6 +177,9 @@ def main():
         if not check(r.returncode == 0, 'subst %d (%s) refused: %s' % (i, tmpl, r.stderr.decode('latin-1').strip())):
             return finish(passed, failed)
         srcs.append('s%d.c' % i)
+    r = subprocess.run([pcrec, '--emit-support', '-o', os.path.join(work, 'support.h')], capture_output=True)
+    if not check(r.returncode == 0, '--emit-support: ' + r.stderr.decode('latin-1').strip()):
+        return finish(passed, failed)
 
     # ---- the table: headers in both orders (subst first, then rx first) --
     with open(os.path.join(work, 'subst_tab.h'), 'w') as f:
@@ -198,24 +220,22 @@ def main():
                 else:
                     vs.append(raw(item).hex())
             v = ','.join(vs)
-        lines.append('\t'.join([c[0], str(rxs[(c[1], c[2])]), str(sbs[(c[3], c[4])]),
-                                raw(c[2]).hex() or '-', str(p2opts), c[5],
-                                decode(c[6]).hex() or '-', v]))
+        lines.append('\t'.join([c[0], str(rxs[(c[1], c[2])]), str(sbs[c[3]]),
+                                raw(c[2]).hex() or '-', str(p2opts), '1' if c[4] == 'strict' else '0',
+                                c[5], decode(c[6]).hex() or '-', v]))
     r = subprocess.run([drv], input='\n'.join(lines) + '\n', capture_output=True, text=True)
     if not check(r.returncode == 0, 'driver exited %d: %s' % (r.returncode, r.stderr[-2000:])):
         return finish(passed, failed)
     out = r.stdout.splitlines()
-    check(out and out[0] == 'unit\tput=1,0', 'unit: rx_subst_put does not saturate at SIZE_MAX (S1350): %r' % (out[:1],))
-    reached = {'S1350'} if out and out[0] == 'unit\tput=1,0' else set()
+    reached = set()
+    if check(out and out[0] == UNIT_WANT, 'unit: %r, want %r' % (out[:1], UNIT_WANT)):
+        reached.update(['flatsat', 'negnum', 'absent'])
     got = {}
     for ln in out[1:]:
-        if ln.startswith('shape\t'):
-            if check(ln == 'shape\tneg=0', 'rx_shape_match took a needed row numbered -3: %r' % ln):
-                reached.add('negnum')
-            continue
         f = ln.split('\t')
         got[f[0]] = dict(x.split('=', 1) for x in f[1:])
 
+    mm, ns = str(CODES['MISMATCH']), str(CODES['NOSPACE'])
     p2_compared = 0
     for c in cells:
         cid, expect, p2want, label, reach = c[0], c[8], c[9], c[10], c[11]
@@ -224,72 +244,93 @@ def main():
             continue
         before = failed
         kind, _, rest = expect.partition(':')
-        bind = g['bind'].split(',')
-        if check(g.get('babi') == str(CODES['MISMATCH']), '%s: a record of another abi bound: %s' % (cid, g.get('babi'))):
+        chk = g['check'].split(',')
+        all_ = c[5].split('@')[0] == 'all'
+        if check(g.get('babi') == mm, '%s: the check took a record of another abi: %s' % (cid, g.get('babi'))):
             reached.add('abi')
-        if kind == 'bind':
+        if kind == 'check':
             name, row = rest.rsplit(':', 1)
-            check(bind == [str(CODES[name]), row], '%s: bind %s, want %s,%s' % (cid, g['bind'], CODES[name], row))
-        elif check(bind == ['0', '-1'], '%s: bind refused: %s' % (cid, g['bind'])):
+            check(chk == [str(CODES[name]), row], '%s: check %s, want %s,%s' % (cid, g['check'], CODES[name], row))
+        elif kind == 'rc' and chk[0] != '0':
+            # a code the setup itself gives (an unset variable under STRICT)
+            check(chk[0] == str(CODES[rest]), '%s: setup %s, want %d' % (cid, g['check'], CODES[rest]))
+        elif check(chk == ['0', '-1'], '%s: check refused: %s' % (cid, g['check'])):
             main_ = g['main'].split(',')
             if kind == 'out':
                 text, n = rest.rsplit(':', 1)
                 want = decode(text)
-                L = len(want)
-                check(main_ == ['0', str(L), n, want.hex() or '-'],
-                      '%s: main %s, want 0,%d,%s,%r' % (cid, g['main'], L, n, want))
-                check(g['size'] == '0,%d,%s' % (L, n), '%s: size-only %s' % (cid, g['size']))
-                check(g.get('exact') == '0,%d,%s' % (L, n), '%s: exact cap %s' % (cid, g.get('exact')))
-                if L:
-                    if check(g.get('short') == '%d,%d,%s' % (CODES['NOSPACE'], L, n),
-                             '%s: cap = len - 1 gives %s, want NOSPACE,%d,%s (S1353)' % (cid, g.get('short'), L, n)):
-                        reached.add('S1353')
-                check(g['k1'] == '0,%d,%s' % (L, want.hex() or '-'), '%s: k=1 glue %s' % (cid, g['k1']))
-                if check(g['dirty'] == '0,%d,%s' % (L, want.hex() or '-'), '%s: dirty iterator %s' % (cid, g['dirty'])) \
-                        and '${!' in c[3] and c[7] == '-':
-                    reached.add('S1352')
+                L, hx = len(want), want.hex() or '-'
+                same = '0,%d,%s' % (L, hx)
+                check(main_ == ['0', str(L), n, hx], '%s: main %s, want 0,%d,%s,%r' % (cid, g['main'], L, n, want))
+                arms = [('nomap', 'nomap', same), ('hand', 'hand', same)]
+                if all_ and int(g['nc']) > RX_FOREACH_PAIRS:
+                    # more pairs per match than the stack array: RX_FOREACH and
+                    # replace-all refuse (match_api.md §3.8.2¶5, subst_api.md §10¶7)
+                    arms += [('batch', 'batch', same), ('fe', 'pairs', '%d,0,-' % CODES['ITER']),
+                             ('ra', 'pairs', '%s,0,-' % mm), ('size', 'pairs', '%s,0' % mm)]
+                elif all_:
+                    arms += [('batch', 'batch', same), ('fe', 'foreach', same),
+                             ('ra', 'count', '%s,%d,%s' % (n, L, hx)), ('size', 'size', '%s,%d' % (n, L)),
+                             ('exact', 'exact', '%s,%d' % (n, L)), ('dirty', 'dirty', '%s,%d,%s' % (n, L, hx))]
+                    if L:
+                        arms.append(('short', 'short', '%s,%d' % (ns, L)))
+                for a, tok, w in arms:
+                    if a in ('nomap', 'hand') and a not in g:
+                        continue
+                    if check(g.get(a) == w, '%s: %s %s, want %s' % (cid, a, g.get(a), w)):
+                        reached.add(tok)
             else:
-                code = CODES[rest]
-                check(main_ == [str(code), '0', '0', '-'], '%s: main %s, want %d,0,0' % (cid, g['main'], code))
-                check(g['size'].split(',')[0] == str(code), '%s: size-only %s' % (cid, g['size']))
-                check(g['k1'].split(',')[0] == str(code), '%s: k=1 glue %s' % (cid, g['k1']))
-                check(g['dirty'].split(',')[0] == str(code), '%s: dirty iterator %s' % (cid, g['dirty']))
-            if check(g['mis'] == str(CODES['MISMATCH']), '%s: element took a foreign ncap: %s (S1351)' % (cid, g['mis'])):
-                reached.add('S1351')
-            mm = str(CODES['MISMATCH'])
+                code = str(CODES[rest])
+                check(main_[0] == code, '%s: main %s, want %s' % (cid, g['main'], code))
+                for a in (['batch', 'fe', 'ra', 'size', 'dirty'] if all_ else []) + ['nomap', 'hand']:
+                    if a in g:
+                        check(g[a].split(',')[0] == code, '%s: %s %s, want %s' % (cid, a, g[a], code))
+            if all_ and check(g.get('stale') == str(CODES['ITER']),
+                              '%s: replace-all over an ENDED iterator gave %s, want PCREC_ERR_ITER' % (cid, g.get('stale'))):
+                reached.add('stale')
+            rm = g.get('room', '').split(',')
+            if check(len(rm) == 3 and rm[0] == ns and rm[2] == '1',
+                     '%s: the element one piece short gave %s, want NOSPACE untouched' % (cid, g.get('room'))):
+                reached.add('room')
+            if 'mis' in g and check(g['mis'] == '%d,%s' % (CODES['MISSING_REF'], mm),
+                                    '%s: a map slot at ncaps: check,element %s, want MISSING_REF,MISMATCH' % (cid, g['mis'])):
+                reached.add('mis')
             if 'blen' in g and check(g['blen'] == str(CODES['BADSPAN']),
                                      '%s: element took a match end past ctx->len: %s' % (cid, g['blen'])):
                 reached.add('blen')
-            if check(g.get('unk') == mm, '%s: element took an unknown flag: %s' % (cid, g.get('unk'))):
+            if check(g.get('unk') == '%s,%s' % (mm, mm), '%s: an unknown flag: element,replace-all %s' % (cid, g.get('unk'))):
                 reached.add('unk')
-            it_ = str(CODES['ITER'])
-            if check(g.get('stale') == '%s,%s' % (it_, it_),
-                     '%s: the glue over a BOUND, ENDED iterator gave %s, want PCREC_ERR_ITER twice' % (cid, g.get('stale'))):
-                reached.add('fresh')
             bm = g.get('bmis', '').split(',')
             if check(len(bm) == 2 and bm[0] in ('na', mm) and bm[1] == mm,
-                     '%s: bind took one run too few or an rx with no slot: %s' % (cid, g.get('bmis'))) and bm[0] == mm:
+                     '%s: the check took one map entry too few or an rx with no slot: %s' % (cid, g.get('bmis'))) \
+                    and bm[0] == mm:
                 reached.add('bmis')
+            if kind == 'out' and main_[2] != '0' and re.search(r'\$\{?[1-9A-Za-z]', c[3]) \
+                    and '${!' not in c[3]:
+                # an intended NOGROUP renders empty, RX_SUBST_STRICT included (§3¶6, §9 row 20)
+                if check(g.get('nog', '').split(',')[0] == '0' and int(g['nog'].split(',')[1]) < L,
+                         '%s: a NOGROUP map under STRICT gave %s, want 0 and shorter than %d' % (cid, g.get('nog'), L)):
+                    reached.add('nog')
             if '${!' in c[3]:
                 if check(g.get('vmis') == '%s,%s' % (mm, mm),
                          '%s: element took a ctx with no / too few variables: %s' % (cid, g.get('vmis'))):
                     reached.add('vmis')
-                if c[4] == 'error' and check(g.get('vuerr') == str(CODES['UNSET_VAR']),
-                                             '%s: element rendered an unset variable under --unset=error: %s'
-                                             % (cid, g.get('vuerr'))):
+                if c[4] == 'strict' and check(g.get('vuerr') == str(CODES['UNSET_VAR']),
+                                              '%s: element rendered an unset variable under STRICT: %s'
+                                              % (cid, g.get('vuerr'))):
                     reached.add('vuerr')
             if 'lim' in g:
                 a, b = g['lim'].split(',')
-                if check(a == b, '%s: the glue stopped at LIMIT with the iterator at %s, %s after exactly LIMIT calls (S1349)'
+                if check(a == b, '%s: the recipe stopped at LIMIT with the iterator at %s, %s after exactly LIMIT calls'
                          % (cid, a, b)):
-                    reached.add('S1349')
+                    reached.add('lim')
         # the oracle
         if p2want != 'na' and have_p2:
             p2 = g.get('p2', 'na')
             if p2want == 'same':
                 text, n = rest.rsplit(':', 1)
                 want = decode(text)
-                ok = check(p2 == '%s,%s' % (n, want.hex() or '-'), '%s: pcre2 %s, want the same %s,%r' % (cid, p2, n, want))
+                check(p2 == '%s,%s' % (n, want.hex() or '-'), '%s: pcre2 %s, want the same %s,%r' % (cid, p2, n, want))
                 ng, ro = g.get('nogap', ''), g.get('p2ro', '')
                 if 'nogap' in g and check(ro.startswith(n + ',') and ng.split(',', 2)[0] == '0'
                                           and ng.split(',', 2)[2] == ro.split(',', 1)[1],
@@ -300,9 +341,9 @@ def main():
                       '%s: pcre2 at outlength %d: %s, want NOMEMORY asking %d (its NUL)' % (cid, len(want), g.get('p2short'), len(want) + 1))
             elif p2want.startswith('out:'):
                 text, n = p2want[4:].rsplit(':', 1)
-                ok = check(p2 == '%s,%s' % (n, decode(text).hex() or '-'), '%s: pcre2 %s, want the stated difference %s' % (cid, p2, p2want))
+                check(p2 == '%s,%s' % (n, decode(text).hex() or '-'), '%s: pcre2 %s, want the stated difference %s' % (cid, p2, p2want))
             else:
-                ok = check(p2.split(',')[0] == p2want[3:], '%s: pcre2 %s, want the stated %s' % (cid, p2, p2want))
+                check(p2.split(',')[0] == p2want[3:], '%s: pcre2 %s, want the stated %s' % (cid, p2, p2want))
             check(p2want == 'same' or label != '-', '%s: a pcre2 difference with no LABEL' % cid)
             p2_compared += 1
         if failed == before and reach != '-':

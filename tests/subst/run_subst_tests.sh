@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 # tests/subst/run_subst_tests.sh -- [M4-SUBST] `make test-subst`: the subst
-# artifact's checks (docs/spec/subst_api.md, replace_design.md §R3).
+# artifact's checks (docs/spec/subst_api.md, replace_design.md §R4).
 #
-#   1. run_subst_tests.py over cells.tsv: every cell's stated answer, the
-#      generic arms (sizing, NOSPACE, the k = 1 glue, the dirty iterator, the
-#      foreign ncap, the LIMIT stop), and libpcre2's pcre2_substitute where it
-#      can answer (its header).
+#   1. run_subst_tests.py over cells.tsv: every cell's stated answer through
+#      the spec's recipes and replace-all, the generic arms (its header), and
+#      libpcre2's pcre2_substitute where it can answer.
 #   2. the template compiler's refusals: each must exit 1 naming a template
-#      offset, never emit (D26: the wording is not pinned, the offset is).
-#   3. the header contract (§R3.8, §R3.11): a subst header with no rx block
-#      of its abi does not compile; `-o -` is one self-contained `.c`; an rx
-#      and a subst header of one prefix, and subst headers whose prefixes
-#      differ only in case, share a translation unit.
-#   4. the cells again with the artifacts and driver under AddressSanitizer +
-#      UBSan (the glue's stack batch buffer, S1364, is an overrun ASan sees
-#      on any box; a stack canary only on some). ASAN=0 skips it.
+#      offset, never emit (D26: the wording is not pinned, the offset is);
+#      the reserved prefixes and the refused options.
+#   3. the header contract (§1¶3, §10): a subst header with no rx block of
+#      its abi does not compile; `-o -` is one self-contained `.c`; an rx and
+#      a subst header of one prefix share a translation unit, and two subst
+#      headers whose prefixes differ only in case do not (the #error).
+#   4. the support unit (`--emit-support`, §10¶2, cli.md §1.20): needs no
+#      argument, refuses any, writes identical bytes twice, is ASCII, and
+#      builds both ways (PCREC_SUPPORT_IMPLEMENTATION in one TU beside a
+#      declarations-only TU; PCREC_SUPPORT_STATIC alone).
+#   5. the cells again with the artifacts and driver under AddressSanitizer +
+#      UBSan (replace-all's stack batch and exact-capacity buffers are
+#      overruns ASan sees on any box). ASAN=0 skips it.
 #
 # Without libpcre2 the oracle arms are not run and the section says so
 # (`SKIP: subst oracle`); every other arm still runs.
@@ -92,13 +96,15 @@ for t in "$(printf '[${\xc3\xa9}]')" "$(printf '[$\xc3\xa9x1]')"; do
         bad "byte template '$t' compiled (a byte >= 0x80 names nothing under byte)"
     else ok; fi
 done
-# the subst-block names reserve their families (cli.md §1.6¶2 row 4), on
-# both compile paths
-for pfx in rx_shape rx_subst rx_subst_x rx_group pcrec_subst; do
+# the subst-block and support-unit names reserve their families (cli.md
+# §1.6¶2 row 4), on both compile paths
+for pfx in rx_subst rx_subst_x rx_group pcrec_subst pcrec_support pcrec_support_id; do
     if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "prefix $pfx compiled a subst"; else ok; fi
     if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --pattern 'a' > /dev/null 2>&1; then bad "prefix $pfx compiled an rx"; else ok; fi
 done
-if "$TIMEOUT_BIN" 60 "$PCREC" -p rx_shapes -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix rx_shapes (no family) was refused"; fi
+for pfx in rx_shape pcrec_supports; do     # no family (rx_shape's went with R3's bind)
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p $pfx -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix $pfx (no family) was refused"; fi
+done
 # every pattern-compile option is refused with --subst, never ignored (§5¶1)
 for fl in -i --no-captures --engine=vm --emit-main --trace "--features all" --ucp --max-nfa-states=99999999; do
     if "$TIMEOUT_BIN" 60 "$PCREC" $fl -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "--subst accepted $fl"; else ok; fi
@@ -110,10 +116,14 @@ else ok; fi
 if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst 'x' --pattern 'a' > /dev/null 2>&1; then
     bad "--subst with --pattern was accepted"
 else ok; fi
+# unset handling is a flag of the call (RX_SUBST_STRICT), not an option:
+# --unset= is unknown on every path (cli.md §1.19¶1)
 for u in error empty; do
-    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --unset=$u --pattern 'a' > /dev/null 2>&1; then
-        bad "--unset=$u without --subst was accepted"
-    else ok; fi
+    for mode in "--pattern a" "--subst x"; do
+        if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --unset=$u $mode > /dev/null 2>&1; then
+            bad "--unset=$u with $mode was accepted"
+        else ok; fi
+    done
 done
 
 # ---- 3. the header contract ------------------------------------------------
@@ -132,23 +142,60 @@ for h in "$WORK/hs.h" "$WORK/hs.c"; do
     if LC_ALL=C grep -q '[^[:print:][:space:]]' "$h"; then bad "$(basename "$h") is not ASCII"; else ok; fi
 done
 grep -q '^#define HS_NVREFS 1$' "$WORK/hs.h" && ok || bad "hs.h carries no HS_NVREFS 1"
-# an rx and a subst artifact of ONE prefix, and two subst artifacts whose
-# prefixes differ only in case, in one translation unit (§1¶3)
+# an rx and a subst artifact of ONE prefix, and two subst artifacts of
+# different prefixes, in one translation unit, the numbered-reference
+# assert of §3¶3 included; two whose prefixes differ only in case are the
+# #error (§1¶3)
 mkdir -p "$WORK/tu"
 if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p pair -o "$WORK/tu/pair.c" --pattern '(a)' &&
    "$TIMEOUT_BIN" 60 "$PCREC" -p pair -o "$WORK/tu/pair_sub.c" --subst '[$1]' &&
    "$TIMEOUT_BIN" 60 "$PCREC" -p sq -o "$WORK/tu/sq.c" --subst '<$0>' &&
-   "$TIMEOUT_BIN" 60 "$PCREC" -p sQ -o "$WORK/tu/sQ.c" --subst '[$0]'; then
-    printf '%s\n' '#include "pair.h"' '#include "pair_sub.h"' '#include "sq.h"' '#include "sQ.h"' \
-        'int main(void) { rx_subst_binding b; rx_subst_run r[PAIR_NREFS]; int bad;' \
-        '    return pcrec_subst_bind(&b, &pair_info, &pair_subst_info, r, 1, 0, 0, &bad)' \
-        '        || sq_subst_info.render == sQ_subst_info.render; }' > "$WORK/tu/main.c"
+   "$TIMEOUT_BIN" 60 "$PCREC" -p sQ -o "$WORK/tu/sQ.c" --subst '[$0]' &&
+   "$TIMEOUT_BIN" 60 "$PCREC" -p sr -o "$WORK/tu/sr.c" --subst '[$0]'; then
+    printf '%s\n' '#include "pair.h"' '#include "pair_sub.h"' '#include "sq.h"' '#include "sr.h"' \
+        '_Static_assert(PAIR_MAXNUM < PAIR_NCAPS, "a numbered reference past the pattern");' \
+        'int main(void) { rx_ctx ctx; rx_var vres[PAIR_NVREFS]; int bad;' \
+        '    rx_iter it = RX_ITER_INIT((const unsigned char *)"a", 1);' \
+        '    return rx_subst_ctx_init(&ctx, &it, &pair_info, &pair_subst_info, NULL, vres, 0, &bad)' \
+        '        || sq_subst_info.render == sr_subst_info.render; }' > "$WORK/tu/main.c"
     if "$CC" $GENCFLAGS -I "$WORK/tu" -o "$WORK/tu/main" "$WORK/tu/main.c" "$WORK/tu/pair.c" \
-           "$WORK/tu/pair_sub.c" "$WORK/tu/sq.c" "$WORK/tu/sQ.c" 2> "$WORK/tu/err" && "$WORK/tu/main"; then ok
-    else bad "rx+subst of one prefix, or sq+sQ, in one TU: $(head -3 "$WORK/tu/err")"; fi
+           "$WORK/tu/pair_sub.c" "$WORK/tu/sq.c" "$WORK/tu/sr.c" 2> "$WORK/tu/err" && "$WORK/tu/main"; then ok
+    else bad "rx+subst of one prefix, or sq+sr, in one TU: $(head -3 "$WORK/tu/err")"; fi
+    printf '%s\n' '#include "sq.h"' '#include "sQ.h"' > "$WORK/tu/case.c"
+    if "$CC" $GENCFLAGS -fsyntax-only -I "$WORK/tu" "$WORK/tu/case.c" 2> "$WORK/tu/case.err"; then
+        bad "sq.h and sQ.h shared a translation unit"
+    elif grep -q 'differ only in case' "$WORK/tu/case.err"; then ok
+    else bad "sq.h + sQ.h failed without the #error: $(head -2 "$WORK/tu/case.err")"; fi
 else bad "the one-TU artifacts did not compile"; fi
 
-# ---- 4. the cells under ASan + UBSan ----------------------------------------
+# ---- 4. the support unit ---------------------------------------------------
+mkdir -p "$WORK/sup"
+if "$TIMEOUT_BIN" 60 "$PCREC" --emit-support > "$WORK/sup/a.h" &&
+   "$TIMEOUT_BIN" 60 "$PCREC" --emit-support -o "$WORK/sup/b.h" &&
+   "$TIMEOUT_BIN" 60 "$PCREC" --emit-support -o - > "$WORK/sup/c.h"; then
+    if cmp -s "$WORK/sup/a.h" "$WORK/sup/b.h" && cmp -s "$WORK/sup/a.h" "$WORK/sup/c.h"; then ok
+    else bad "--emit-support wrote different bytes on stdout, -o FILE and -o -"; fi
+    if LC_ALL=C grep -q '[^[:print:][:space:]]' "$WORK/sup/a.h"; then bad "the support unit is not ASCII"; else ok; fi
+    grep -q 'pcrec_support_id = 0x[0-9a-f]\{16\}ull;' "$WORK/sup/a.h" && ok || bad "the support unit defines no 64-bit content id"
+else bad "--emit-support failed"; fi
+for extra in "-p x" "--pattern a" "--subst x" "-e utf8" "--features all" "-i" "--emit-main"; do
+    if "$TIMEOUT_BIN" 60 "$PCREC" --emit-support $extra -o "$WORK/sup/r.h" > /dev/null 2>&1; then
+        bad "--emit-support accepted $extra"
+    else ok; fi
+done
+printf '%s\n' '#define PCREC_SUPPORT_IMPLEMENTATION' '#include "a.h"' > "$WORK/sup/impl.c"
+printf '%s\n' '#include "a.h"' '#include "pair_sub.h"' \
+    'int main(void) { rx_subst_piece p[2] = { { (const unsigned char *)"ab", 2 }, { (const unsigned char *)"c", 1 } };' \
+    '    unsigned char b[4]; return rx_subst_flatten(p, 2, b, sizeof b) != 3 || memcmp(b, "abc", 3); }' > "$WORK/sup/use.c"
+printf '%s\n' '#define PCREC_SUPPORT_STATIC' '#include "a.h"' \
+    'int main(void) { return rx_subst_flatten((const rx_subst_piece *)0, 0, (unsigned char *)0, 0) != 0; }' > "$WORK/sup/st.c"
+if "$CC" $GENCFLAGS -I "$WORK/sup" -I "$WORK/tu" -o "$WORK/sup/use" "$WORK/sup/use.c" "$WORK/sup/impl.c" \
+       "$WORK/tu/pair_sub.c" 2> "$WORK/sup/err" && "$WORK/sup/use"; then ok
+else bad "the support unit as an implementation TU + a user TU: $(head -3 "$WORK/sup/err")"; fi
+if "$CC" $GENCFLAGS -I "$WORK/sup" -o "$WORK/sup/st" "$WORK/sup/st.c" 2> "$WORK/sup/err" && "$WORK/sup/st"; then ok
+else bad "the support unit under PCREC_SUPPORT_STATIC: $(head -3 "$WORK/sup/err")"; fi
+
+# ---- 5. the cells under ASan + UBSan ----------------------------------------
 if [ "${ASAN:-1}" = 1 ]; then
     if printf 'int main(void){return 0;}\n' | "$CC" -fsanitize=address -x c - -o "$WORK/asanprobe" 2>/dev/null; then
         GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
