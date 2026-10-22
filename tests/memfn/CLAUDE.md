@@ -44,6 +44,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **proven_check.c** — R-25 (lane memfn-r25): the form class's proven sets honour the row's declared `tests`.
 ### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
 - **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness.
+### D172 S2 commit 4's lever check (lane wsc4)
+- **run_wreply.sh** — the harness lever `--harness=window-reply` (the art previews the kit's window family; the DFA prefilter's NEXT rows read the phase-1 reply, emit_dfa.c `next_keys[]`): lever ON byte-identical to build/pcrec over witnesses reaching every NEXT key x five flag sets, each witness's stamp held; REACH through a perturbed tree copy (RESEED unstated: no offset-set row under the lever; R stated under `-fno-run-prefilter`: the RE-SEED refusal fires); `--plants` S1412-S1414 each red; `--sweep ARGS` is emit_sweep over the corpus with the lever binary as the working side (heavy, box lock), commit 5's rerun. Opt-in, no make target; ~10 s.
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** — `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
 ### The SIMD floor rule, C9-x86 (lane r13, [MEMFN] R-13, R4e' batch 1)
