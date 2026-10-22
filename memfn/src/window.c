@@ -1086,6 +1086,11 @@ static int legacy_ok(const wf_dec *d, const struct wf_plan *w, unsigned *eb)
         if (w->off[i] >= 0) neg_only = 0;
     }
     if (!terms) return 0;
+    /* one term per compare at most: bounded by the positions, so a plan of
+       more positions than a predicate holds terms stays the floor's */
+    unsigned np = 0;
+    for (unsigned i = 0; i < w->n; i++) np += !full(w->set[i]);
+    if (np > MF_MAX_TERM) return 0;
     *eb = 0;
     if (fulls) {
         /* a full-set position is the range's end only: past every term, at 1 */
