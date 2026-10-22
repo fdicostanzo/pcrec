@@ -17,7 +17,7 @@ R5 and R7: D and E below no longer have a deciding row that reads a set key.
 WHAT IT CONTROLS, AND AGAINST WHAT (each expectation is written HERE, from the
 design's text, sharing no code with the kit):
 
-  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 17 rows
+  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 16 rows
      the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn), by slot and
      in order; a basis on every row; a pick on every FIND row; no MEASURED row
      that reads no key (but R7w, MEASURED by the walk ruling); every row
@@ -104,7 +104,8 @@ unreached = []
 
 # R-26.6 (lane r26zk): RPT, the REPORT row, the last FIND row (listed after
 # slot PRES in the table), UNROUTED: no row routes before its step
-FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w", "D2",
+# D172 S2 commit 6 (lane wsc5): D2 RETIRED (window_site.md §2.2), id reserved
+FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w",
              "R7w", "RPT"]
 # the ids B4' withdrew (reserved, never reused) and their denies (retired)
 WITHDRAWN_ROWS = ["R0", "R5", "R7"]
@@ -563,12 +564,13 @@ def check_pres_routing(fx, fxt, tmp):
     _, _, _, _, ref, _ = fd_run(fx, "pre-omin")
     (ok() if ref and "omin" in ref else
      bad("a presence span with omin < 0 was not refused naming `omin`: %s" % ref))
-    # D2 routes the RUN fixture through the composer's walk
-    _, rt, _, fr = fd_routed(fx, "run3")
+    # D2 RETIRED (D172 S2 commit 6): the RUN fixture is decided by no routed
+    # row and renders the composer's own walk, as D2's pick did
+    rc, rt, _, fr = fd_routed(fx, "run3")
     _, rtt, _, frt = fd_routed(fxt, "run3")
-    (ok() if rt == "D2" and rtt == "D2" and [x.get("row") for x in frt] == ["D2"] else
-     bad("run3: decided by %s (traced %s, FDROUTE %s), the design's routed row is D2"
-         % (rt, rtt, [x.get("row") for x in frt])))
+    (ok() if not rc and rt == "-" and rtt == "-" and not frt else
+     bad("run3: decided by %s (traced %s, FDROUTE %s), no row routes a RUN span 0 since D2 "
+         "retired" % (rt, rtt, [x.get("row") for x in frt])))
 
 
 # ---- G ----------------------------------------------------------------------

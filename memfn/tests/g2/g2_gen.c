@@ -31,12 +31,6 @@
 #include "memfn.h"
 #include "g2.h"
 
-/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
- * and today's window IS its candidate: window_stated 1, move_back the least
- * term offset (d_min), overshoot 0. pcrec's builders state it; G2 states it
- * at the kit call, after every perturbation, so a refusal case keeps the
- * refusal it was written for. A site with no terms, or that states a window
- * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
 /* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
  * zero, and every term and read predicate STATES its need. G2's sites were
  * written when 0 meant REQUIRED (their memset/zero-filled terms say
@@ -64,12 +58,13 @@ static void g2_need(mf_site *w)
 }
 
 /* MF_SITE_ABI 18 (R-26.1/R-26.2, lane r26z1; NOT blinded text): a forward
- * FIND's predicate STATES its class as pcrec's builders do, applied at the
- * kit call with the window, after every perturbation: a context stop (every
- * term below the candidate) is CONTEXT, absent FAILS (every row's reading of
- * a read outside the subject, G2's reference's too), consumable NO, the site's
- * read_floor SUBJECT; every other one is span 0, BOUNDED, its prefix facts
- * stated as today's truth (exact_len 0). A site stating a class keeps it. */
+ * FIND's predicate STATES its class (the renderer interface since MF_SITE_ABI
+ * 20, which G2 drives directly), applied at the kit call after every
+ * perturbation: a context stop (every term below the candidate) is CONTEXT
+ * (a read outside the subject fails its term, G2's reference's reading
+ * too); every other one is span 0, BOUNDED. A site stating a class keeps it.
+ * (The window facts W0-W2 and R-26's prefix/context facts this once stated
+ * left the site at D172 S2 commit 6.) */
 static void g2_span0(mf_site *w)
 {
     if (w->op != MF_OP_FIND || w->reverse || !w->pred.nterm || w->pred.span_class) return;
@@ -78,15 +73,7 @@ static void g2_span0(mf_site *w)
         const mf_term *t = &w->pred.term[i];
         if (t->offset + (t->kind == MF_T_RUN ? (int32_t)t->run_len : 1) > 0) below = 0;
     }
-    if (below) {
-        w->pred.span_class = MF_SPAN_CONTEXT;
-        w->pred.absent = MF_ABSENT_FAILS;
-        w->pred.consumable = MF_CONSUMABLE_NO;
-        if (!w->read_floor) w->read_floor = MF_FLOOR_SUBJECT;
-    } else {
-        w->pred.span_class = MF_SPAN_BOUNDED;
-        w->pred.prefix_stated = MF_PREFIX_STATED;
-    }
+    w->pred.span_class = below ? MF_SPAN_CONTEXT : MF_SPAN_BOUNDED;
 }
 
 static mf_site g2_win(const mf_site *s)
@@ -94,14 +81,6 @@ static mf_site g2_win(const mf_site *s)
     mf_site w = *s;
     g2_need(&w);
     g2_span0(&w);
-    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
-        int32_t d = w.pred.term[0].offset;
-        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
-            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
-        w.pred.window_stated = 1;
-        w.pred.move_back = d;
-        w.pred.overshoot = 0;
-    }
     return w;
 }
 #define G2W(s) (&(struct { mf_site v; }){ g2_win(s) }.v)
@@ -246,7 +225,7 @@ typedef struct {
     uint8_t  fn_ref_on;
     uint8_t  plan;                /* plan_hint set                            */
     uint8_t  policy_simd;         /* MF_P_PORTABLE_ONLY cleared               */
-    uint8_t  inloop, sizelean, deny_overlap, consumer;
+    uint8_t  inloop, sizelean, deny_overlap;
     uint32_t ppm_seed;
     uint8_t  cell_site;           /* generated as a term cell's focus         */
     /* lane g2x: per-predicate plan_hint / plan_pos / fn_ref, set explicitly
@@ -967,7 +946,6 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
     uint32_t a = g->ppm_seed % (MF_PPM_FULL + 1), b = (g->ppm_seed >> 7) % (MF_PPM_FULL + 1);
     s->cand_ppm_lo = a < b ? a : b;
     s->cand_ppm_hi = a < b ? b : a;
-    s->consumer = g->consumer ? MF_C_ENGINE : MF_C_RESULT;
     s->policy = (g->policy_simd ? 0 : MF_P_PORTABLE_ONLY) | (g->inloop ? MF_P_INLOOP : 0)
               | (g->sizelean ? MF_P_SIZE_LEANING : 0);
     s->denies = g->deny_overlap ? MF_D_RUN_OVERLAP : 0;
@@ -2049,7 +2027,8 @@ static void base_site(gsite *g, int ci)
     g->inloop = rn(2);
     g->sizelean = rn(5) == 0;
     g->deny_overlap = rn(3) == 0;
-    g->consumer = rn(2);
+    (void)rn(2);    /* the retired `consumer`'s draw (MF_SITE_ABI 20), kept so the
+                       generated space does not move */
     g->on_miss_mode = (uint8_t)rn(3);
     g->d.via = (uint8_t)(g->d.form == G2_FORM_FUNC ? rn(3) : rn(2));
 }
@@ -2274,7 +2253,6 @@ static void refusal_table(void)
     /* a valid EXPR/FIND/RETURN baseline the cases perturb */
     memset(&s0, 0, sizeof s0);
     s0.abi = MF_SITE_ABI;
-    s0.consumer = MF_C_ENGINE;
     s0.form = MF_FORM_EXPR;
     s0.op = MF_OP_FIND;
     s0.handoff = MF_H_RETURN;
@@ -2423,8 +2401,6 @@ static void refusal_table(void)
     NCASE("on_miss_leaves-on-RETURN",       NULL,      s.on_miss_leaves = 1);
     NCASE("on_miss_leaves-on-ON_CAND",      NULL,      (s.form = MF_FORM_STMT, s.handoff = MF_H_ON_CAND, s.on_miss_leaves = 1));
     NCASE("use-out-of-enum",                NULL,      s.use = 7);
-    NCASE("consumer-out-of-enum",           NULL,      s.consumer = 7);
-    NCASE("consumer-unstated",              NULL,      s.consumer = MF_C_UNSTATED);
     NCASE("pred-need-out-of-enum",          NULL,      s.pred.need = (mf_need)5);
     {
         static mf_pred two2[2];
@@ -3745,7 +3721,6 @@ static void mm_refusals(void)
     mf_hooks h0;
     memset(&s0, 0, sizeof s0);
     s0.abi = MF_SITE_ABI;
-    s0.consumer = MF_C_ENGINE;
     s0.form = MF_FORM_STMT;
     s0.op = MF_OP_MISMATCH;
     s0.handoff = MF_H_ON_DIFF;
@@ -3826,7 +3801,6 @@ static void mm_refusals(void)
         mf_hooks fh;
         memset(&f0, 0, sizeof f0);
         f0.abi = MF_SITE_ABI;
-        f0.consumer = MF_C_ENGINE;
         f0.form = MF_FORM_EXPR;
         f0.op = MF_OP_FIND;
         f0.handoff = MF_H_RETURN;
@@ -4198,7 +4172,6 @@ static void st_ref_base(st_big *B, mf_hooks *h, int W, int member)
     s->handoff = MF_H_ADVANCE;
     s->empty = MF_EMPTY_NOP;
     s->span_hi = MF_SPAN_UNBOUNDED;
-    s->consumer = MF_C_RESULT;
     s->policy = MF_P_PORTABLE_ONLY;
     s->pred.nterm = (uint8_t)W;
     s->pred.plan_hint = MF_NO_PRED;
@@ -4579,7 +4552,6 @@ static void m_policy(gsite *g, int c)
     g->inloop = c == 2;
     g->sizelean = c == 3;
 }
-static void m_consumer(gsite *g, int c) { g->consumer = (uint8_t)c; }
 static void m_cmt(gsite *g, int c)      { g->cmt = (uint8_t)c; }
 static void m_via(gsite *g, int c)      { g->d.via = (uint8_t)c; }
 
@@ -4622,7 +4594,6 @@ static void sem_group(const gsite *s)
         }
     }
     for (int c = 0; c < 4; c++) sem_emit(s, G2_V_POLICY, c, m_policy);
-    for (int c = 0; c < 2; c++) sem_emit(s, G2_V_CONSUMER, c, m_consumer);
     for (int c = 0; c < 2; c++) sem_emit(s, G2_V_CMT, c, m_cmt);
     for (int c = 0; c < (d->form == G2_FORM_FUNC ? 3 : 2); c++) sem_emit(s, G2_V_VIA, c, m_via);
     /* memfn.h (K-1): an ALL_PRESENT FUNC site's name is site.pred.fn_ref;

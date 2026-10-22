@@ -45,7 +45,7 @@
 /* The byte-rate table the compile's analysis object carries (ppm per byte,
  * uint32_t[256]), or NULL where it carries none (no object, the kind absent,
  * or present with no table: PRIOR_NONE). */
-static const uint32_t *byte_rate(const mf_art *art)
+const uint32_t *kit_byte_rate(const mf_art *art)
 {
     const mf_analysis *an = art->an;
     for (uint16_t i = 0; an && an->kinds && i < an->nkinds; i++)
@@ -75,15 +75,24 @@ static uint32_t cube_mass(const uint32_t *rate, unsigned t, unsigned mask)
     return (uint32_t)m;
 }
 
-/* The mass of a byte SET (256-bit), capped at 1e6. NONE: cardinality. */
-static uint32_t set_mass(const uint32_t *rate, const uint8_t set[32])
+/* The mass of a byte SET (256-bit), capped at 1e6. NONE: cardinality.
+ * pcrec_find_set_mass's arithmetic; the window family's A-model reads it
+ * (kit.h). */
+uint32_t kit_set_mass(const uint32_t *rate, const uint8_t set[32])
+{
+    unsigned long long t = kit_set_sum(rate, set);
+    return t > 1000000u ? 1000000u : (uint32_t)t;
+}
+
+/* The same sum UNCAPPED: PICK's cube mass over any set (a byte is rate[b],
+ * a cube the sum of its members'). NONE: cardinality. */
+uint32_t kit_set_sum(const uint32_t *rate, const uint8_t set[32])
 {
     unsigned long long t = 0;
     unsigned k = 0;
     for (unsigned b = 0; b < 256; b++)
         if (set[b >> 3] >> (b & 7) & 1) { k++; if (rate) t += rate[b]; }
-    if (!rate) t = uniform_mass(k);
-    return t > 1000000u ? 1000000u : (uint32_t)t;
+    return rate ? (uint32_t)t : uniform_mass(k);
 }
 
 /* The mass of the window [s, s + MF_PRES_WINDOW) of the run: the sum over
@@ -143,7 +152,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     out->set_pick = out->run_scan = out->run_window = -1;
     out->set_leads = out->dominated = out->landmark = -1;
     if (!s->npspan) return;
-    const uint32_t *rate = byte_rate(art);
+    const uint32_t *rate = kit_byte_rate(art);
     const mf_pred *run = NULL;
     int best = -1;
     uint32_t lo = 0;
@@ -217,7 +226,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
         if (!run) {
             memset(set, 0, sizeof set);
             if (q >= 0) set[q >> 3] = (uint8_t)(1u << (q & 7));
-            h = set_mass(rate, set);
+            h = kit_set_mass(rate, set);
         } else {
             const mf_term *t = &run->term[0];
             unsigned len = t->run_len - (unsigned)at < MF_PRES_WINDOW
@@ -227,10 +236,10 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
                 memset(set, 0, sizeof set);
                 for (unsigned b = 0; b < 256; b++)
                     if ((b & mask) == t->run[j]) set[b >> 3] |= (uint8_t)(1u << (b & 7));
-                h = (h * set_mass(rate, set) + 999999u) / 1000000u;
+                h = (h * kit_set_mass(rate, set) + 999999u) / 1000000u;
             }
         }
-        if (start_set) m = set_mass(rate, start_set);
+        if (start_set) m = kit_set_mass(rate, start_set);
         if (h == 0) out->landmark = 1;
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);

@@ -109,7 +109,6 @@ MF_CLASS(PRED,        "ret_pred names one of preds")
 MF_CLASS(REF,         "a nonzero hook id (fn_ref / table_ref)")
 MF_CLASS(UNBOUNDED,   "span_hi == MF_SPAN_UNBOUNDED")
 MF_CLASS(RUN_OVERLAP, "denies == MF_D_RUN_OVERLAP")
-MF_CLASS(D_MIN,       "move_back == the predicate's d_min (its least term offset): the window IS the candidate (W1, MF_SITE_ABI 11)")
 /* hook text */
 MF_CLASS(IDENT,       "a bare C identifier (lexical: [A-Za-z_][A-Za-z0-9_]*)")
 MF_CLASS(MISS_N,      "`miss` is the same hooks' `n`: the MF_MISS_N token, or the text of `n` itself")
@@ -159,6 +158,16 @@ MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
 /* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
    first 64 (kit.h's kit_set) */
 MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
+/* D172 S2 commit 1 (window_site.md rev 3.2 §1): the window family's facts,
+   read in the family's own walks only (window.c; gate_in.wf), never on a
+   default art */
+MF_CLASS(PARKED,      "entry PARKED: the candidates are where the parked machine leaves its start state")
+MF_CLASS(RESEED,      "entry RESEED: candidates from the walk, the machine re-seeded at each")
+MF_CLASS(NOENTRY,     "entry NONE: no entry fact (REPORT, pre-check parts, the VM seek, MLINE)")
+MF_CLASS(CORED,       "the alternative has a core position (one that must lie inside the subject)")
+MF_CLASS(NOCORE,      "the alternative has no core position")
+MF_CLASS(W_SUBJECT,   "wfloor SUBJECT: reads lie in [0, n); below 0 the core rule decides")
+MF_CLASS(W_EXPR,      "wfloor EXPR: the `floor` hook's F; a read in [0, F) is pcrec's edge")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -236,22 +245,6 @@ MF_FIELD(stride, MF_PH_DEFINE, VALUE, cl_stride,
          "elsewhere it is no field (unstated). At MANY a row that renders the site USES `s` and "
          "`cursor` (its own byte at offset i is s[cursor + i], Q-R10-4: a conditional `uses` "
          "entry), so an unstated one declines (R1)")
-MF_FIELD(window_stated, MF_PH_DEFINE, OBLIG, cl_window_stated,
-         CM(NO) | CM(YES) | CM(OTHER),
-         "OBLIG: W0, pred.window_stated (MF_SITE_ABI 11, setfind.md §2.2), set by every FIND builder. "
-         "Read on a FORWARD FIND only, where 0 is refused (site_check): YES there. Elsewhere it "
-         "is no field of the site's (1 is refused), so it reads as unstated. Every row born "
-         "before R17-a serves YES")
-MF_FIELD(move_back, MF_PH_DEFINE, VALUE, cl_move_back,
-         CM(D_MIN) | CM(OTHER),
-         "W1, pred.move_back, read where window_stated is 1 (unstated elsewhere): D_MIN where the "
-         "window is the candidate (move_back == d_min), else OTHER (back > 0, or the reserved "
-         "MF_MOVE_UNBOUNDED; back < 0 is refused by site_check). Every row born before R17-a "
-         "serves D_MIN only")
-MF_FIELD(overshoot, MF_PH_DEFINE, VALUE, cl_overshoot,
-         CM(ZERO) | CM(OTHER),
-         "W2, pred.overshoot, read where window_stated is 1 (unstated elsewhere): ZERO, or OTHER "
-         "(a bound, or the reserved MF_OVER_UNBOUNDED). Every row born before R17-a serves ZERO")
 MF_FIELD(decl_point, MF_PH_DEFINE, OBLIG, cl_decl_point,
          CM(NO) | CM(YES) | CM(OTHER),
          "OBLIG: W4, site.decl_point (MF_SITE_ABI 11, setfind.md §7.1), a HOST CAPABILITY set by "
@@ -263,55 +256,6 @@ MF_FIELD(body, MF_PH_DEFINE, HOOK, cl_body,
          "by site_check). 0 is UNSTATED, as a hook ID's 0 is (so HOOK): a finder row that reads "
          "M USES it and declines an unstated one (R1). Every row born before B1 renders the "
          "same text for any mode and serves MF_ANY")
-
-/* ---- the fields: R-26 (MF_SITE_ABI 18; kit_proof.md §4.1) ----------------
- *
- * Span 0's prefix facts, the context spans and their facts, and the read
- * floor. They were written when the class space was full (64), so they read
- * through classes it already had, each named in its doc; with these seven
- * the FIELD space reached 64 too. R-26 Zk widened both sets to 128 bits
- * (kit.h's kit_set) before its REPORT row took a class of its own. No form
- * reads the prefix facts, `consumable` or `read_floor` (they
- * are facts for a choice; every row serves every value); a form HONOURS
- * `ctx` (it tests the entries) and `absent` (it renders the rule), so every
- * row but the generic one declines a site stating a context span, or an
- * `absent` SATISFIES. */
-MF_FIELD(prefix_stated, MF_PH_DEFINE, HOOK, cl_prefix_stated,
-         CM(YES) | CM(OTHER),
-         "span 0's prefix facts stated (R-26.1): YES on a forward FIND's BOUNDED `pred` that "
-         "states them; 0 is UNSTATED there and refused by site_check (so HOOK), and no field "
-         "elsewhere. Every row serves MF_ANY: no form reads it")
-MF_FIELD(exact_len, MF_PH_DEFINE, VALUE, cl_exact_len,
-         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
-         "span 0's exact prefix length (R-26.1), read where prefix_stated is STATED (unstated "
-         "elsewhere): ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
-MF_FIELD(consumable_len, MF_PH_DEFINE, VALUE, cl_consumable_len,
-         CM(ZERO) | CM(ONE) | CM(MANY) | CM(OTHER),
-         "span 0's consumable prefix length (R-26.1), read where prefix_stated is STATED: "
-         "ZERO, ONE or MANY. Every row serves MF_ANY: no form reads it")
-MF_FIELD(ctx, MF_PH_DEFINE, VALUE, cl_ctx,
-         CM(NONE) | CM(BACK) | CM(NONNEG) | CM(OTHER),
-         "the context spans (R-26.2), a BIT SET as `policy` is: NONE (nctx 0), else BACK for an "
-         "entry before span 0 and NONNEG for one after it, each a class the row must serve. "
-         "Only the generic row tests entries: every other row serves NONE")
-MF_FIELD(absent, MF_PH_DEFINE, HOOK, cl_absent,
-         CM(YES) | CM(NO) | CM(OTHER),
-         "the absent rule of the site's CONTEXT predicates (a context stop's `pred`, every `ctx` "
-         "entry; R-26.2), a BIT SET: YES for SATISFIES (the item holds where its byte is "
-         "absent), NO for FAILS. No context predicate: unstated (0 on a CONTEXT predicate is "
-         "refused by site_check). Every row renders FAILS (a read outside the subject fails "
-         "its term) and serves NO; the generic row renders both")
-MF_FIELD(consumable, MF_PH_DEFINE, HOOK, cl_consumable,
-         CM(YES) | CM(NO) | CM(OTHER),
-         "the consumable fact of the site's CONTEXT predicates (R-26.2), a BIT SET of YES/NO; "
-         "unstated where none is. Every row serves MF_ANY: no form reads it")
-MF_FIELD(read_floor, MF_PH_DEFINE, HOOK, cl_read_floor,
-         CM(ZERO) | CM(OTHER),
-         "site.read_floor (R-26.2, kit_proof.md §3.5): ZERO for SUBJECT (reads down to offset "
-         "0), OTHER for LO (no class of its own: the space is full); 0 is UNSTATED (refused by "
-         "site_check under a CONTEXT term below the origin, a wildcard elsewhere). Every row "
-         "serves MF_ANY: under LO no term reads below its candidate (site_check), so every "
-         "row's reads stay >= lo")
 
 /* ---- the fields: the finder walk's own facts (finder.c; fd_facts) -------- */
 
@@ -442,6 +386,40 @@ MF_FIELD(run, MF_PH_RUN, VALUE, cl_run,
 MF_FIELD(run_len, MF_PH_RUN, VALUE, cl_run_len,
          CM(ONE) | CM(MANY) | CM(OTHER),
          "the RUN term's length (OTHER: 0)")
+
+/* ---- the fields: THE WINDOW SITE (D172 S2 commit 1; window_site.md §1) -----
+ *
+ * Appended LAST. Each is read in the window family's walks only (window.c,
+ * through gate_in.wf: the alternative the walk weighs, or the chosen one) and
+ * is UNSTATED in every other walk, so no row born before the family is
+ * declined by a site stating them beside its old fields (the default path
+ * reads none of them). Table A's rows key on `entry` and `core`; Table E's
+ * rows on the frame's own fields and `wfloor`. */
+MF_FIELD(alts, MF_PH_DEFINE, VALUE, cl_alts,
+         CM(ONE) | CM(MANY) | CM(OTHER),
+         "mf_site.nalt, the alternatives stated (ONE, or MANY for two: the MARGIN row's case)")
+MF_FIELD(entry, MF_PH_DEFINE, HOOK, cl_entry,
+         CM(PARKED) | CM(RESEED) | CM(NOENTRY) | CM(OTHER),
+         "the weighed alternative's ENTRY fact (mf_entry); 0 is UNSTATED and refused by the "
+         "family's check (so HOOK): a row keyed on it USES it")
+MF_FIELD(span_start, MF_PH_DEFINE, VALUE, cl_span_start,
+         CM(NONNEG) | CM(BACK) | CM(OTHER),
+         "the weighed alternative's spans' starts, a BIT SET: NONNEG for a span starting at or "
+         "after the candidate, BACK for one starting below it")
+MF_FIELD(core, MF_PH_DEFINE, VALUE, cl_core,
+         CM(CORED) | CM(NOCORE) | CM(OTHER),
+         "whether the weighed alternative has a core position (the union of its spans' cores)")
+MF_FIELD(verify, MF_PH_DEFINE, VALUE, cl_verify,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the weighed alternative's spans' verify facts, a BIT SET of YES and NO")
+MF_FIELD(toffer, MF_PH_DEFINE, VALUE, cl_toffer,
+         CM(NONE) | CM(REF) | CM(OTHER),
+         "the weighed alternative's table offers: NONE, or REF where some position offers one "
+         "(pcrec emits it iff mf_defined says the text reads it)")
+MF_FIELD(wfloor, MF_PH_DEFINE, HOOK, cl_wfloor,
+         CM(W_SUBJECT) | CM(W_EXPR) | CM(OTHER),
+         "the window site's floor (mf_wfloor): SUBJECT, or EXPR (the `floor` hook's F); 0 is "
+         "UNSTATED (refused where a span reaches below the candidate, a wildcard elsewhere)")
 
 #ifdef MF_FIELDS_UNDEF_CLASS
 #undef MF_CLASS

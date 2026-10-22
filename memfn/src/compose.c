@@ -258,11 +258,13 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
  * mf_use's re-check. The trace still labels the walk `define`. A row with an
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
+static const char *site_check(const mf_site *s);
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
 {
-    gate_in in = { s, def, NULL, NULL };
+    gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
        ROUTED row renders the table's pick, through the arm that renders it,
@@ -290,6 +292,18 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     return i < NARMS ? arms[i] : NULL;
 }
 
+/* 1 iff site `s` is in the vocabulary and the walk above (the finder's routed
+ * pick included) chooses a row for it under the gate's `gphases`: asked
+ * quietly, writing nothing (the window family's Table E, window.c: a plan
+ * renders through today's row only where today's row serves its frame). */
+int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                      unsigned gphases)
+{
+    gate_verdict why = { 0, 0 };
+    const char *rid;
+    return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid) != NULL;
+}
+
 /* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13, 18) ---------
  *
  * What row `a`'s text for site `s` proves, as facts (D157): every row today
@@ -297,7 +311,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
  * libc column; and, on a FIND, per offset d in [MF_PROOF_LO, MF_MAX_FWD),
  * the bytes every candidate's byte at d lies in (proven[], MF_CLASS_V 5,
  * R-26.4): the intersection over the terms THE ROW TESTS of span 0 (or a
- * context stop) and of every `ctx` entry, at each position each reads (a SET
+ * context stop), at each position each reads (a SET
  * term's set, a RUN term's position under its mask), all ones where no
  * tested term reads d or the op yields no candidate; proven0 and proven_prev
  * are its d = 0 and d = -1 rows, copied. Which
@@ -341,31 +355,6 @@ static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32], l
     }
 }
 
-/* The positions of predicate `p` its candidates PROVE (R-26.4), [*dlo, *dhi]:
- * every one, except on a CONTEXT predicate stating absent SATISFIES. There the
- * ITEM holds wherever SOME read of it lies outside the subject (R-26.2), so a
- * position is proven only where its being inside the subject implies every
- * read is: the item's lowest offset for an item below the candidate (no read
- * at a negative offset reaches past n), its highest for one after span 0 (no
- * read at or after k reaches below 0), none for an item on both sides. A
- * one-offset item proves that offset either way. */
-static void pred_proves(const mf_pred *p, long *dlo, long *dhi)
-{
-    *dlo = MF_PROOF_LO;
-    *dhi = MF_MAX_FWD - 1;
-    if (p->span_class != MF_SPAN_CONTEXT || p->absent != MF_ABSENT_SATISFIES) return;
-    long lo = 0, hi = 0;
-    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++) {
-        long a = p->term[t].offset;
-        long b = a + (p->term[t].kind == MF_T_RUN ? (long)p->term[t].run_len : 1) - 1;
-        if (t == 0 || a < lo) lo = a;
-        if (t == 0 || b > hi) hi = b;
-    }
-    if (hi < 0)       *dlo = *dhi = lo;
-    else if (lo >= 0) *dlo = *dhi = hi;
-    else              *dlo = 1, *dhi = 0;
-}
-
 const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
 {
     memset(out, 0, sizeof *out);
@@ -380,21 +369,11 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
               "class cannot say what a candidate's bytes are (R-25)";
     } else if (s->op == MF_OP_FIND) {
         /* THE PER-OFFSET PROOF (MF_CLASS_V 5, R-26.4): every candidate satisfies
-           the site's predicate (span 0, or a context stop) and every `ctx`
-           entry, so each term the row TESTS proves its bytes at every position
-           it reads (a position outside the subject only where its CONTEXT
-           predicate states absent SATISFIES, which the definition allows) */
-        long dlo, dhi;
-        pred_proves(&s->pred, &dlo, &dhi);
+           the site's predicate (span 0, or a context stop), so each term the
+           row TESTS proves its bytes at every position it reads */
         for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
             if (row_tests(a, &s->pred, &s->pred.term[t]))
-                term_prove(&s->pred.term[t], dlo, dhi, out->proven, MF_PROOF_LO);
-        for (unsigned i = 0; s->ctx && i < s->nctx; i++) {
-            pred_proves(&s->ctx[i], &dlo, &dhi);
-            for (unsigned t = 0; t < s->ctx[i].nterm && t < MF_MAX_TERM; t++)
-                if (row_tests(a, &s->ctx[i], &s->ctx[i].term[t]))
-                    term_prove(&s->ctx[i].term[t], dlo, dhi, out->proven, MF_PROOF_LO);
-        }
+                term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, out->proven, MF_PROOF_LO);
     }
     /* proven0 and proven_prev are COPIES (kit_proof.md §4.2), equal by
        construction */
@@ -405,28 +384,23 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
 
 /* THE REPORT ROW'S APPLICABILITY (R-26.3, R-26.6; kit.h): the arms' walk
  * as select_arm takes it (quiet), the chosen row's class, and that class held
- * EQUAL to the REQUIRED sets at every offset. A wider SATISFIES context item
- * proves only its outermost position (pred_proves), so such a site is one
- * the row does not apply to. */
+ * EQUAL to the REQUIRED sets at every offset. */
 int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
                      unsigned gphases)
 {
-    gate_in in = { s, def, NULL, NULL };
+    gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, &why);
     mf_class c;
     if (i >= NARMS || kit_class(arms[i], s, &c)) return 0;
-    /* the REQUIRED sets: every term of span 0 and of every `ctx` entry at
-       every position it reads (R-26.3 makes them all REQUIRED), unclipped */
+    /* the REQUIRED sets: every term of span 0 at every position it reads
+       (R-26.3 makes them all REQUIRED), unclipped */
     for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
         uint8_t req[1][32];             /* one offset's row: a 41-row table was a 1.3 KB frame (R-28) */
         memset(req, 0xFF, sizeof req);
         for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
             term_prove(&s->pred.term[t], d, d, req, d);
-        for (unsigned k = 0; s->ctx && k < s->nctx; k++)
-            for (unsigned t = 0; t < s->ctx[k].nterm && t < MF_MAX_TERM; t++)
-                term_prove(&s->ctx[k].term[t], d, d, req, d);
         if (memcmp(req[0], c.proven[d - MF_PROOF_LO], 32)) return 0;
     }
     return 1;
@@ -547,39 +521,11 @@ static const char *skip_check(const mf_site *s)
     return NULL;
 }
 
-/* The window fields' rules (W0-W3, MF_SITE_ABI 11; setfind.md §2.2), NULL
- * iff they hold: a forward FIND states its window (W0 1; a 0 is unstated,
- * never "move-back 0", so a builder that forgot is refused here rather than
- * read as a zero-fill); every other site, and every preds[] entry, states
- * none; W1/W2 are stated only under W0; and back = move_back - d_min is not
- * negative (R-18 defines it). The decl_point capability (W4) is 0 or 1. */
+/* The declaration point's rule (W4, MF_SITE_ABI 11; setfind.md §7.1): 0 or
+ * 1. (W0-W2, the window fields, left the site at D172 S2 commit 6.) */
 static const char *window_check(const mf_site *s)
 {
-    const mf_pred *p = &s->pred;
     if (s->decl_point > 1) return "`decl_point` is not 0 or 1";
-    for (unsigned i = 0; s->preds && i < s->npred; i++)
-        if (s->preds[i].window_stated || s->preds[i].move_back || s->preds[i].overshoot)
-            return "a preds[] entry states a window (`window_stated`): only a forward "
-                   "FIND's pred has one";
-    if (!kit_window_site(s)) {
-        if (p->window_stated)
-            return "`window_stated` is for a forward FIND only: no window is defined "
-                   "on this site";
-    } else if (p->window_stated != 1) {
-        return p->window_stated
-             ? "`window_stated` is not 0 or 1"
-             : "a forward FIND states its window (`window_stated` 1): 0 is unstated, "
-               "never move-back 0";
-    }
-    if (!p->window_stated) {
-        if (p->move_back || p->overshoot)
-            return "`move_back`/`overshoot` are stated only under `window_stated` 1";
-        return NULL;
-    }
-    if (p->move_back != MF_MOVE_UNBOUNDED &&
-        (int64_t)p->move_back - kit_d_min(p) < 0)
-        return "`move_back` is below the span's beginning (back < 0): no meaning "
-               "is defined for it yet (R-18)";
     return NULL;
 }
 
@@ -654,8 +600,6 @@ const char *kit_presence_check(const mf_site *s)
                    "BOUNDED and CONTEXT are reserved)";
         if (!pred_kinds(p, &kinds, &why)) return why;
         if (p->nterm != 1) return "a presence span is ONE term (`pspans`, PR-5)";
-        if (p->window_stated || p->move_back || p->overshoot)
-            return "a presence span states no window (`window_stated` 0: C-1, no omax)";
         if (p->omin < 0) return "a presence span's `omin` is below the match start";
         if (p->plan_hint != MF_NO_PRED || p->plan_pos || p->fn_ref || p->rank_n)
             return "a presence span carries no plan (`plan_hint`, `plan_pos`, `fn_ref`, "
@@ -778,12 +722,15 @@ static const char *pres_layout_check(const mf_art *art, const mf_site *s, const 
     return NULL;
 }
 
-/* ---- R-26 (MF_SITE_ABI 18): span 0, its prefix, the context spans --------
+/* ---- R-26 (MF_SITE_ABI 18): span 0 and the context stop -----------------
  *
- * kit_proof.md rev 2.1 §4.1, §3.4-§3.5; memfn.h's mf_span_class, mf_prefix,
- * mf_absent, mf_consumable, mf_read_floor and mf_site.ctx. Every fact has an
- * UNSTATED zero, refused where it is read and required 0 where it is no
- * field: a zero is never read as a value. */
+ * kit_proof.md rev 2.1 §4.1; memfn.h's mf_span_class. A forward FIND's
+ * `pred` is span 0 (BOUNDED) or a context stop (CONTEXT): a class the
+ * window family's translation and G2 write (the renderer interface, D172
+ * S2 commit 6), refused UNSTATED. Span 0's prefix facts, the context spans,
+ * `absent`/`consumable` and `read_floor` retired at that commit: a context
+ * stop's read outside the subject fails its term, the one rule every row
+ * renders. */
 
 /* The extent of term `t`: the bytes it reads from its offset. */
 static long term_extent(const mf_term *t)
@@ -800,75 +747,12 @@ static int pred_reads_below(const mf_pred *p)
     return p->nterm > 0;
 }
 
-/* k, span 0's end: the largest term offset plus its extent. */
-static long span0_end(const mf_pred *p)
-{
-    long k = 0;
-    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++) {
-        long e = p->term[t].offset + term_extent(&p->term[t]);
-        if (t == 0 || e > k) k = e;
-    }
-    return k;
-}
-
-/* 1 iff offset `d` is a position some term of `p` reads (a SENT position). */
-static int pred_sends(const mf_pred *p, long d)
-{
-    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++) {
-        const mf_term *tm = &p->term[t];
-        if (tm->kind != MF_T_SET && tm->kind != MF_T_RUN) continue;
-        if (d >= tm->offset && d < tm->offset + term_extent(tm)) return 1;
-    }
-    return 0;
-}
-
-/* Which predicate proof_clear holds: the site's `pred`, a `ctx` entry, a
- * `pspans` or `preds[]` entry (its refusal names it). */
-enum { PC_PRED, PC_CTX, PC_PART };
-
-/* NULL iff predicate `p` states no fact of a class it does not carry: no
- * prefix fact unless it is span 0, no absent/consumable unless CONTEXT. */
-static const char *proof_clear(const mf_pred *p, int span0, int context, int where)
-{
-    static const char *const prefix_why[3] = {
-        "`prefix_stated`, `exact_len` or `consumable_len` stated on a predicate that is "
-        "not span 0 (only a forward FIND's BOUNDED `pred` carries them; 0 elsewhere)",
-        "`prefix_stated`, `exact_len` or `consumable_len` stated on a `ctx` entry (only a "
-        "forward FIND's BOUNDED `pred` carries them; 0 elsewhere)",
-        "`prefix_stated`, `exact_len` or `consumable_len` stated on a `pspans` or "
-        "`preds[]` entry (only a forward FIND's BOUNDED `pred` carries them; 0 elsewhere)",
-    };
-    if (!span0 && (p->prefix_stated || p->exact_len || p->consumable_len))
-        return prefix_why[where];
-    if (!context && (p->absent || p->consumable))
-        return "`absent` or `consumable` stated on a predicate that is not CONTEXT (a "
-               "context stop's `pred` or a `ctx` entry carries them; 0 elsewhere)";
-    return NULL;
-}
-
-/* A CONTEXT predicate's own facts, NULL iff stated. */
-static const char *context_facts(const mf_pred *p)
-{
-    if (!in_enum(p->absent, MF_ABSENT_FAILS)) return "`absent` outside mf_absent";
-    if (p->absent == MF_ABSENT_UNSTATED)
-        return "a CONTEXT predicate leaves `absent` UNSTATED (0 is no rule: SATISFIES or "
-               "FAILS is stated, never read as either, MF_SITE_ABI 18)";
-    if (!in_enum(p->consumable, MF_CONSUMABLE_NO)) return "`consumable` outside mf_consumable";
-    if (p->consumable == MF_CONSUMABLE_UNSTATED)
-        return "a CONTEXT predicate leaves `consumable` UNSTATED (0 is no fact, "
-               "MF_SITE_ABI 18)";
-    return NULL;
-}
-
 static const char *kit_proof_check(const mf_site *s)
 {
-    const char *why;
     const mf_pred *p = &s->pred;
     int fwd = kit_window_site(s);
     int bounded = fwd && p->span_class == MF_SPAN_BOUNDED;
     int stop = fwd && p->span_class == MF_SPAN_CONTEXT;
-    int below = 0;      /* a CONTEXT term below the origin (read_floor's rule) */
-    int negterm = 0;    /* any term below the origin (MF_FLOOR_LO's rule) */
 
     /* span 0's class on the site's own predicate (an ALL_PRESENT site's is not
        read and states none) */
@@ -885,100 +769,15 @@ static const char *kit_proof_check(const mf_site *s)
     if (stop && !pred_reads_below(p))
         return "a CONTEXT `pred` reads at or after its candidate: a context stop's every "
                "term reads below it (`span_class`)";
-    if ((why = proof_clear(p, bounded, stop, PC_PRED))) return why;
-    if (bounded) {
-        if (!in_enum(p->prefix_stated, MF_PREFIX_STATED))
-            return "`prefix_stated` outside mf_prefix";
-        if (p->prefix_stated == MF_PREFIX_UNSTATED)
-            return "span 0 leaves `prefix_stated` UNSTATED (a BOUNDED span 0 states its "
-                   "prefix facts, MF_SITE_ABI 18)";
-        if (p->exact_len > MF_MAX_SPAN_POS) return "`exact_len` > MF_MAX_SPAN_POS";
-        for (long d = 0; d < p->exact_len; d++)
-            if (!pred_sends(p, d))
-                return "`exact_len` covers a span-0 position no term sends (positions "
-                       "[0, exact_len) are all SENT)";
-        if (p->consumable_len > p->exact_len)
-            return "`consumable_len` > `exact_len` (a consumer cannot skip a position "
-                   "the prefix does not prove exact)";
-    }
-    if (stop) {
-        if ((why = context_facts(p))) return why;
-        below = 1;
-    }
-    for (unsigned t = 0; t < p->nterm && t < MF_MAX_TERM; t++)
-        if (p->term[t].offset < 0) negterm = 1;
-    for (unsigned i = 0; s->preds && i < s->npred; i++) {
-        if ((why = proof_clear(&s->preds[i], 0, 0, PC_PART))) return why;
-        for (unsigned t = 0; t < s->preds[i].nterm && t < MF_MAX_TERM; t++)
-            if (s->preds[i].term[t].offset < 0) negterm = 1;
-    }
-    for (unsigned i = 0; s->pspans && i < s->npspan; i++)
-        if ((why = proof_clear(&s->pspans[i], 0, 0, PC_PART))) return why;
-
-    /* the context spans */
-    if (s->nctx > MF_MAX_CTX) return "nctx > MF_MAX_CTX";
-    if (s->nctx && !s->ctx) return "`nctx` without `ctx`";
-    if (!s->nctx && s->ctx) return "`ctx` without `nctx`";
-    if (s->nctx && (!bounded || span0_end(p) < 1))
-        return "a `ctx` entry on a site with no BOUNDED span 0 reaching past its candidate "
-               "(context spans sit around span 0, R-26.2)";
-    long k = bounded ? span0_end(p) : 0;
-    for (unsigned i = 0; i < s->nctx; i++) {
-        const mf_pred *c = &s->ctx[i];
-        uint32_t kinds = 0;
-        if (c->span_class != MF_SPAN_CONTEXT)
-            return c->span_class == MF_SPAN_UNSTATED
-                 ? "a `ctx` entry leaves `span_class` UNSTATED (it states CONTEXT)"
-                 : "a `ctx` entry states a class other than CONTEXT (`span_class`)";
-        if (!pred_kinds(c, &kinds, &why)) return why;
-        if (kinds & ~(MF_TK_SET | MF_TK_RUN)) return "a `ctx` entry's terms are SET or RUN terms";
-        if (c->window_stated || c->move_back || c->overshoot)
-            return "a `ctx` entry states no window (`window_stated` 0)";
-        if (c->plan_hint != MF_NO_PRED || c->plan_pos || c->fn_ref || c->rank_n)
-            return "a `ctx` entry carries no plan (`plan_hint`, `plan_pos`, `fn_ref`, `rank_n`)";
-        if (c->omin || c->member_order) return "a `ctx` entry states no presence fact";
-        if ((why = proof_clear(c, 0, 1, PC_CTX))) return why;
-        if ((why = context_facts(c))) return why;
-        for (unsigned t = 0; t < c->nterm; t++) {
-            long lo = c->term[t].offset, hi = lo + term_extent(&c->term[t]);
-            int before = lo >= -MF_MAX_BACK && hi <= 0;
-            int after = lo >= k && hi <= k + MF_MAX_AHEAD;
-            if (!before && !after)
-                return "a `ctx` term outside [-MF_MAX_BACK, 0) and [k, k + MF_MAX_AHEAD), k "
-                       "span 0's end";
-            if (before) below = negterm = 1;
-        }
-    }
-
-    /* the read floor */
-    if (!in_enum(s->read_floor, MF_FLOOR_LO)) return "`read_floor` outside mf_read_floor";
-    if (below && s->read_floor == MF_FLOOR_UNSTATED)
-        return "a site carrying a CONTEXT term below the origin leaves `read_floor` UNSTATED "
-               "(SUBJECT or LO is stated, never read as either, MF_SITE_ABI 18)";
-    if (negterm && s->read_floor == MF_FLOOR_LO)
-        return "`read_floor` LO with a term below the origin: that byte exists and may not "
-               "be read, so the term has no verdict (kit_proof.md §3.5)";
 
     /* THE REPORT KIND (R-26.3; kit_proof.md §2.5) */
     if (s->site_kind == MF_SK_REPORT) {
-        if (s->consumer == MF_C_UNSTATED)
-            return "a REPORT site leaves `consumer` UNSTATED (it states MF_C_RESULT, never "
-                   "read as either, MF_SITE_ABI 18)";
-        if (s->consumer != MF_C_RESULT)
-            return "a REPORT site states `consumer` MF_C_RESULT (the candidate is the answer)";
         if (!bounded) return "a REPORT site reports span 0's candidate: a BOUNDED span 0";
         if (p->need != MF_REQUIRED) return "a REPORT site's span 0 is REQUIRED (`need`)";
         for (unsigned t = 0; t < p->nterm; t++)
             if (p->term[t].need != MF_REQUIRED)
                 return "a REPORT site states every span-0 term REQUIRED (`need`): NONE is "
                        "not a legal reply";
-        for (unsigned i = 0; i < s->nctx; i++) {
-            if (s->ctx[i].need != MF_REQUIRED)
-                return "a REPORT site states every context span REQUIRED (`need`)";
-            for (unsigned t = 0; t < s->ctx[i].nterm; t++)
-                if (s->ctx[i].term[t].need != MF_REQUIRED)
-                    return "a REPORT site states every context term REQUIRED (`need`)";
-        }
     }
     return NULL;
 }
@@ -993,10 +792,6 @@ static const char *site_check(const mf_site *s)
     if (s->use == MF_USE_ENTRY && s->op != MF_OP_ALL_PRESENT)
         return "`use` ENTRY is the presence verdict's: an ALL_PRESENT site only "
                "(MF_VOCAB 4)";
-    if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
-    if (s->consumer == MF_C_UNSTATED)
-        return "`consumer` is UNSTATED (RESULT or ENGINE is stated, never read as either, "
-               "MF_SITE_ABI 18)";
     if (s->end_back > 1) return "end_back is not 0 or 1";
     if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
         return "on_miss_leaves is not 0 or 1";
@@ -1152,6 +947,31 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
+/* THE WINDOW SITE's route (D172; window.c): since S2 commit 6 the window
+ * family decides and renders EVERY site stating alternatives, on every art,
+ * from its window facts alone (`*s` becomes the plan translated into a
+ * legacy row's site, or `*plan` the family floor's plan). A pre-check's FUNC
+ * parts state their own (wsc3 ruling 3): each part's plan replaces its terms
+ * (`*s` the translated copy). 0, or -1 with *why. */
+static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *def,
+                        unsigned gphases, int quiet, const mf_site **s,
+                        const struct wf_plan **plan, const char **path, const char **why)
+{
+    const char *pid;
+    *plan = NULL;
+    if (path) *path = NULL;
+    if ((*why = wf_parts_check(site))) return -1;
+    if (wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
+        return -1;
+    if (!site->nalt && !site->alts && !site->wfloor) return 0;
+    if ((*why = wf_check(site, 1))) return -1;
+    const mf_site *leg;
+    if (wf_prepare(art, site, def, gphases, quiet, &leg, plan, &pid, why)) return -1;
+    if (leg) *s = leg;
+    if (path) *path = pid;
+    return 0;
+}
+
 /* THE DEFINE-TIME QUERY's body (r17b_prime.md §4.5): mf_define's checks and
  * selection over the phases `gphases`, writing nothing: no text, no handle,
  * no helper, no art state, no error, and no trace record of its walk (the
@@ -1162,7 +982,17 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
 {
     const char *why;
     memset(out, 0, sizeof *out);
-    if (art->err[0] || s->abi != MF_SITE_ABI || site_check(s) || s->denies != art->denies)
+    if (art->err[0] || s->abi != MF_SITE_ABI) return -1;
+    /* D172: a window site is the family's (its floor's class, or the class
+       of the row its plan's translation takes) */
+    const struct wf_plan *wplan = NULL;
+    if (window_route(art, s, def, gphases, 1, &s, &wplan, NULL, &why)) return -1;
+    if (wplan) {
+        if (s->denies != art->denies) return -1;
+        wf_floor_class(wplan, out);
+        return 0;
+    }
+    if (site_check(s) || s->denies != art->denies)
         return -1;
     /* THE PRESENCE ASK (R17-b' B3b, §1.4): the host lays a pre-check's parts
        out from its presence links, so it asks before any part exists (an
@@ -1211,9 +1041,15 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (s->abi != MF_SITE_ABI)
         return kit_fail(art, "mf_define: site abi %u, kit abi %u", s->abi,
                         (unsigned)MF_SITE_ABI);
-    const char *why = site_check(s);
+    const char *why = NULL, *wpath = NULL;
+    const struct wf_plan *wplan = NULL;
+    const mf_site *ws = s;      /* the window site, where the family routes */
+    if (window_route(art, s, def, gphases, 0, &s, &wplan, &wpath, &why))
+        return kit_fail(art, "mf_define: %s", why);
+    why = wplan ? NULL : site_check(s);
     if (why)
-        return kit_fail(art, "mf_define: outside the vocabulary: %s", why);
+        return kit_fail(art, "mf_define: outside the vocabulary%s: %s",
+                        s != ws ? " (the window family's plan, translated)" : "", why);
     /* the compile's denies are one value (RULED Q-M1b-1): a site's text and
        the art's helpers and stamps read the same ones */
     if (s->denies != art->denies)
@@ -1221,8 +1057,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
-    const char *rid;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
+    const char *rid = NULL;
+    const arm *row = wplan ? &wf_floor_arm
+                           : select_arm(art, s, def, gphases, &declined, 0, &rid);
     if (!row) {
         /* ONE refusal (ruling (d)), walked or routed: it names the routed
            finder row where one decided the site, and what the gate declined
@@ -1236,7 +1073,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                             "and decides only on an art previewing it (mf_preview), and "
                             "only where its form proves every REQUIRED term's set exactly "
                             "(R-26.3: NONE is not a legal reply)");
-        gate_in in = { s, def, NULL, NULL };
+        gate_in in = { s, def, NULL, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
         if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
@@ -1245,7 +1082,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                                        : "(no row applies; the generic row must)");
     }
     mf_class cls;
-    const char *cw = kit_class(row, s, &cls);
+    const char *cw = NULL;
+    if (wplan) wf_floor_class(wplan, &cls);
+    else cw = kit_class(row, s, &cls);
     if (cw) return kit_fail(art, "mf_define: %s", cw);
 
     if (art->nsites == art->cap) {
@@ -1259,10 +1098,12 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     uint32_t h = ++art->nsites;
     site_rec *r = &art->sites[h - 1];
     memset(r, 0, sizeof *r);
-    r->site = *s;
+    r->site = wplan ? *ws : *s;
     r->arm = row;
     r->fd_row = rid;
     r->reach_k = -1;
+    r->wplan = wplan;
+    r->wpath = wpath;
     if (art->reach_stem && rid) {
         /* R-MS6: one counter per arm of a routed site (one arm: no dispatch
            is emitted before B4/B8) */
@@ -1282,11 +1123,16 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (rid)
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
                 art->trace_id, h, rid, row->ct->row);
+    /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
+       rendering it, the finder row deciding its find where one does) */
+    if (wpath)
+        fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
+                art->trace_id, h, wpath, row->id, rid ? rid : "-");
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what
-       renders) */
-    {
+       renders). The window family's floor states no presence span */
+    if (!wplan) {
         const char *pw = NULL;
         if (fd_pres(art, h, s, FD_PRES_DEFINE, &r->cls, &pw))
             return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);
@@ -1307,7 +1153,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
        that searches nothing proves nothing (Q-R17P-25) */
     {
         mf_class q;
-        if (ask_sel(art, s, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
+        if (ask_sel(art, ws, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
             return kit_fail(art, "mf_define: the define-time query's class differs "
                             "from the define's (r17b_prime.md §4.5 rule 2)");
         /* R-26.4: for EVERY offset d, and the two copies equal by
@@ -1350,7 +1196,8 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
         return kit_fail(art, "mf_use: handle %u is used before its mf_locals "
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
-    gate_in in = { &r->site, use, NULL, NULL };
+    wf_facts wff = { &r->site, NULL };
+    gate_in in = { &r->site, use, NULL, NULL, r->wplan ? &wff : NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
@@ -1431,7 +1278,8 @@ int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
     memset(out, 0, sizeof *out);
     snprintf(out->form_id, sizeof out->form_id, "%s", r->arm->id);
     out->handle = handle;
-    out->reads_table = r->arm->reads_table && site_tabled(&r->site);
+    out->reads_table = r->wplan ? wf_plan_reads_table(r->wplan)
+                                : r->arm->reads_table && site_tabled(&r->site);
     out->includes = r->arm->includes;
     out->cls = r->cls;
     snprintf(out->row, sizeof out->row, "%s", r->fd_row ? r->fd_row : "");

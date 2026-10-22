@@ -4458,7 +4458,6 @@ static mf_site *vm_run_site(Vm *v, const unsigned char *run, int len, int off)
     s->empty = MF_EMPTY_EXCLUDED;
     s->guard_by_caller = 1;
     s->use = MF_USE_DISCARD;
-    s->consumer = MF_C_ENGINE;
     s->pred.nterm = 1;
     s->pred.need = MF_REQUIRED;
     pcrec_memfn_term_run(&s->pred.term[0], off, run, NULL, len, MF_REQUIRED);

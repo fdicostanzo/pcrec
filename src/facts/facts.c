@@ -568,6 +568,12 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx)
     return &cx->job->pf.kset_walk;
 }
 
+const RunPin *pcrec_fact_run_pin_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_RUN_PIN, false);
+    return &cx->job->pf.run_pin;
+}
+
 const RunPin *pcrec_fact_run_pin(Ctx *cx)
 {
     pf_ask(cx, PF_RUN_PIN, true);
@@ -589,6 +595,12 @@ const WidthIv *pcrec_fact_width(Ctx *cx)
 const MkLang *pcrec_fact_span(Ctx *cx)
 {
     pf_ask(cx, PF_SPAN, true);
+    return &cx->job->pf.span;
+}
+
+const MkLang *pcrec_fact_span_stated(Ctx *cx)
+{
+    pf_ask(cx, PF_SPAN, false);
     return &cx->job->pf.span;
 }
 
@@ -835,4 +847,22 @@ const char *pcrec_fact_stamp(Ctx *cx, PfFactId f)
 {
     pf_ask(cx, f, true);
     return pcrec_fact_render(cx, f);
+}
+
+const char *pcrec_fact_stamp_req_run(Ctx *cx, int member)
+{
+    pf_ask(cx, PF_REQ_RUN, true);
+    PatFacts *pf = &cx->job->pf;
+    if (pf->req_run.len < 2) return "none";
+    return pf_hex(cx, pf->req_run.bytes, pf->req_run.mask, pf->req_run.len, member);
+}
+
+const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member)
+{
+    pf_ask(cx, PF_REQ_BYTE, true);
+    PatFacts *pf = &cx->job->pf;
+    const ReqRun *r = &pf->req_run;
+    if (r->len >= 2 && r->mask[member] == 0xFF)
+        return pcrec_sb_fragf(&cx->arena, "%d", r->bytes[member]);
+    return pcrec_fact_render(cx, PF_REQ_BYTE);
 }

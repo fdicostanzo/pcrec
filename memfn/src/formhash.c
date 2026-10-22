@@ -248,7 +248,6 @@ static int canon(const char *id, mf_site *s, mf_hooks *h)
     s->empty = walk ? MF_EMPTY_NOP : MF_EMPTY_EXCLUDED;
     s->on_miss_leaves = libc;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
     s->ret_pred = MF_NO_PRED;
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
@@ -257,9 +256,7 @@ static int canon(const char *id, mf_site *s, mf_hooks *h)
     s->pred.nterm = 1;
     s->pred.need = MF_REQUIRED;
     s->pred.plan_hint = MF_NO_PRED;
-    s->pred.window_stated = 1;
     s->pred.span_class = MF_SPAN_BOUNDED;       /* span 0 (MF_SITE_ABI 18) */
-    s->pred.prefix_stated = MF_PREFIX_STATED;
     mf_term *t = &s->pred.term[0];
     t->kind = MF_T_SET;
     t->need = MF_REQUIRED;

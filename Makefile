@@ -125,7 +125,8 @@ LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 # directories as LIBSRCS and KITSRCS.
 KITSRCS  := $(wildcard memfn/src/*.c)
 KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
-KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def
+KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def \
+            memfn/src/plan_cost.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness
@@ -207,11 +208,15 @@ $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
 # emit_vm.c is one (VMRUN since M1b, VMSPAN since R4h): its omission here
 # left it compiled against a stale memfn.h after M7 prep grew mf_hooks
 # (`*** stack smashing detected ***` on every backreference compile).
+# known.c is one too (Z2's cover site, through src/gen/known.h): its omission
+# left it compiled against a stale memfn.h after D172 grew mf_pred, and every
+# `--harness=kit-proof` compile declined `cover` in an incremental build only
+# (lane wsc3, 2026-10-22).
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
 $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
-$(BUILD_DIR)/obj/gen/memfn_sites.o \
+$(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
-    src/gen/memfn_sites.h src/gen/memfn_sites.def
+    src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
@@ -1416,9 +1421,9 @@ test-memfn-simdfloor: all
 
 # [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
 # predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
-# stderr) over the corpus at three arms: each ranking equals a brute force
-# under the compile's byte-rate, a predicate with no RUN term carries
-# rank_n 0, and a PRE predicate scans rank_pos[0]. Seconds, plus the probe
+# stderr) over the corpus at three arms: since D172 S2 commit 6 every
+# predicate carries rank_n 0 (the ranking is the kit's renderer interface;
+# pcrec states none), and N4's FIND door holds. Seconds, plus the probe
 # build.
 test-memfn-rank: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi

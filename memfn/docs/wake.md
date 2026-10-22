@@ -1,66 +1,60 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-18 ~22:15, paused for the night)
+# memfn wake — kit session hand-off (rewritten 2026-10-22 at Frank's /close)
 
-This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follow its §1, the wake order. This file is rewritten at every pause and holds the current state. History lives in `journal.md`.
+This file is the kit session's orientation. Run `/pcrec-memfn-manager` and follow its §1 wake order. The file is rewritten at every pause and holds the current state; history lives in `journal.md`.
 
 ## 1. Who you are and where you work
 
-- You are the pcrec-memory-functions kit manager (`pcrecdev3`). Main is `pcrecdev1`; run ListAgents to find it.
-- `requests.md` is main's to write, and only main writes it. `responses.md` is yours to write, and only you write it.
+- You are the pcrec-memory-functions kit manager (`pcrecdev3`). Main is `pcrecdev1`; find it with ListAgents.
+- `requests.md` is main's and only main writes it. `responses.md` is yours and only you write it.
 - **Box:** the Linux dev box, repo `/home/pcrec/projects/pcrec`. Use `gnutimeout`. Commit with `-c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
-- **Merges go through main.** Send main the branch, sha, target and validation.
-- **Kit branches:** one per delivered unit, cut from a main that contains the request.
-  - `lane/memfn-r25` (worktree `worktrees/memfn-r25`) is the latest and carries this file. It is NOT merged.
-  - `lane/memfn-pinfix` (worktree `worktrees/memfn-pinfix`) was delivered to main for merging.
-- **Never `cd`**, not even inside one compound command. Use `git -C`, `make -C`, `env -C` and absolute paths.
-- **Worktree removal:** only `scripts/wtprune`, naming the kit's own trees (`--apply NAME..`); dirty or nested targets via `--apply --force NAME..`. Never `rm -rf`.
+- **Never `cd`**, and **never `git stash`**: the stash list is shared by every worktree.
+- Remove worktrees only with `scripts/wtprune`.
+- **Rulings to a BUSY lane go in its worktree rulings file** (`<lane>_rulings.md`) plus a one-line pointer message. SendMessage alone went unread twice on 2026-10-22.
+- **Every queue job's `--ready)` branch starts with main's hold:** `case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac`.
 
 ## 2. Read, in this order
 
 1. `memfn/CLAUDE.md`.
-2. `requests.md` on main (newest R-25) and `responses.md` on lane/memfn-r25.
-3. The tail of `journal.md`.
-4. `docs/dev/lanes/r25_report.md` and `docs/dev/lanes/pinfix_report.md`.
-5. For B4: `docs/design/memfn/r17b_prime.md` rev 3 §3.1, plus the grid2read findings (M9/M15).
+2. `requests.md` (newest R-29, R-28) and `responses.md` on main.
+3. The tail of `journal.md`, on branch `lane/memfn-ws`.
+4. `docs/design/memfn/window_site.md` rev 3.2, which is the D172 design and R-29.
+5. Lane reports `docs/dev/lanes/wsc1..wsc7_report.md`: the D172 build.
 
-## 3. Rules in force
+## 3. Current state
 
-- **Box calendar (Frank):** the bench's re-baseline runs from 2026-10-19 01:00 TO COMPLETION (~16:00 Mon).
-  - Until main announces the bench's closing sentinel, the kit runs NOTHING CPU-bound. Docs and thinking are fine.
-  - After that: dev by day, bench at night.
-- **Timing runs** are cleared through main, and main clears them with Frank. Correctness heavy suites need one heavy slot from main.
-- **Mech in a heavy chain:** ONE `PROCS=4 run_sabotage_matrix.sh <ids>` invocation, [TT-MECHPAR]. Score by the per-row column: accept only `DETECTED` or `(EXPECTED`.
-- **After ANY `src/`/`memfn/src` edit, run all of these:**
-  - `python3 -I scripts/m6read_check_sab_anchors.py`;
-  - `bash tests/codegen/run_codegen_tests.sh`;
-  - test-core.
-- **A delivery's make test and its mech rows run at the SAME tip.**
-- **A red suite stage gets a TRIAGE lane** before you read its log.
-
-## 4. Current state
-
-Rewritten 2026-10-21 ~21:40 at Frank's /close.
-- **Versions:** pcrec abi 82, `MF_SITE_ABI` 19, `MF_VOCAB` 4, `MF_CLASS_V` 5.
-- **R-26's kit part:** DONE and merged (Z1, Zk).
-- **The set-FIND form question is CLOSED.** Read `docs/design/memfn/walk_vs_v1_record.md` before proposing any non-walk default. Frank's ruling: the WALK when the subject is unknown; D169's addendum is filed. [MEMFN-SKIPSWITCH] is in Boonies.
-- **B4:** RE-SCOPE OWED. Its V1 movers disappear under the walk ruling. Expected shape: route the existing rows, with no default byte move; the measured-regime path stays. Send main the new shape. The minimal-E8 work stays on lane/memfn-e8min (D170).
-- **R-27 (REPORT speed on sparse text):** DESIGN ONLY at `lane/memfn-r27` @ b4875f947, report `docs/dev/lanes/r27_report.md`. Design: D161 window search, extensions E1/E2/E4 to existing rows, plants R27-a..f, questions Q1-Q3 in §0.
-  - **No build go.** Frank: "lets see what the design returns. after you wake, run the critic pass on it."
-  - **Timing job `580-kit-r27-cover` is QUEUED** behind main's i1build jobs, with a quiet gate.
-    - Completion line: `== r27 COMPLETE rows=1800 launches=5`.
-    - Table: `worktrees/memfn-r27/build/r27/job/r27_table.md`.
-    - Job log: `worktrees/.boxqueue/{done,failed}/<TS>-580-kit-r27-cover/job.log`.
-    - Paste the table into r27_report.md §5.
-- **Unmerged kit branches for main:** lane/memfn-r27 (record, ruling notices, the R-27 design), lane/memfn-e8min, lane/memfn-flat, lane/memfn-adatwin (measurement records). Ask main to merge them as records.
-- **Nothing running** except job 580 waiting in the queue. No lanes, crons or watchers.
-- **Prunable once merged and quiet:** r26z1, r26zk, b4prep, memfn-r26, setdig, e8min, flat, adatwin.
+- **Versions:** MF_SITE_ABI is 19 on main and 20 on the D172 branch. MF_VOCAB 4, MF_CLASS_V 5. pcrec abi 82; D172 S2 has no pcrec abi event.
+- **D172 S2 (R-29): all six commits are BUILT; the final validation is OWED.**
+  - **Branch chain:** wsc1 → wsc2 → wsc3 (these three are merged into `lane/memfn-ws` @ 87fad066d) → wsc4 → wsc5 → wsc6 → **wsc7 @ 170c5fac6 = the landing tip**.
+  - **Job 583-kit-wsc7-heavy is QUEUED** at 170c5fac6. Logs: `worktrees/wsc7/build/wsc7/heavy/` and `worktrees/.boxqueue/{done,failed}/<TS>-583-kit-wsc7-heavy/job.log`. Green means all of:
+    - `== wsc7 heavy: 0 step(s) failed`;
+    - five `emit_sweep: DONE rc=0`, each artifact stream at movers=0;
+    - the facts stream's `DECLARED MOVES` at about 3,356 patterns (span_facts `used` yes→no);
+    - `== mech run COMPLETE: 155 rows (unexpected: 0`;
+    - `mech-reach-only: DONE`;
+    - an empty `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` on `worktrees/wsc7/build/wsc7/heavy/maketest.make.log`.
+  - **If 583 is green:**
+    1. merge wsc7 into `lane/memfn-ws` (`git merge` ALONE, then `make strict`);
+    2. post `done: R-29` in responses.md with the sha;
+    3. SendMessage main. Main runs its review lane on the pcrec-side commits plus the D94 ritual, then merges.
+    Points for main's review: commits 4-5 were red on the G7 lever fence only (fixed forward in 6-t1); 6-p3..6-t2 carried the end_back red (fixed in 6-p4); R2 was built as the FALLBACK (general form FILED); the renderer interface move is FILED.
+  - **If 583 is red:** launch a TRIAGE lane before reading the log.
+- **Next after the landing:** S3 = B1, REPORT routed by default. It is a pcrec abi event plus a deny row in the same commit, with D-hors (stop mass ≥ ~146k ppm, PROVISIONAL). The acceptance bar is in window_site §6: scalar layer, against DEF, five named capped losses. Frank: "we need this regardless of where hex lands".
+- **R-28:** DONE, `lane/memfn-r28` @ 4e49ed417. Main merges it after its dd10/dd10b lanes. Its one red, the variant tag floors, is base-level; the re-pin is main's (bisect job 577).
+- **Job 584-kit-r27c-probe is QUEUED.** It times Frank's hex8 ideas: PB (boundary pair: left context + S_0, with c=lo checked once), PC (a second in-core probe), PBC, and the classes random and utf8 (generated). Table: `worktrees/r27c/build/r27c/job/r27c_table.md`. Completion line `== r27c COMPLETE rows=3450 launches=5`. Next: fill r27c_report.md's RESULT section and bring Frank the reading. Does "least predicted mass among single/pair/probe" pick each winner? If PB wins, it becomes one declared row plus the start-of-subject rule, after the D172 landing.
+- **Unmerged kit branches:** lane/memfn-ws (with wsc4-7 to come), lane/memfn-r28, lane/memfn-r27b and lane/memfn-r27c (measurement records).
+- **Nothing is running except jobs 583 and 584 in the queue.** No lanes, no crons, no watchers.
 
 **OWED (carried):**
-- The five PRES rows' g2 floors are PLACEHOLDER.
-- D2 is `pending-site:R-18`.
-- candoracle's reach gap is on main's list.
+- the five PRES rows' g2 floors are PLACEHOLDER;
+- D2 is retired in D172 6-k2;
+- candoracle's reach gap is on main's list;
+- F-4 (pf_walk's K96 gap) is FILED;
+- the renderer interface move to a kit-internal struct is FILED;
+- R2's general form (every exact stretch stated, the kit picks) is FILED.
 
-## 5. Next actions on wake
+## 4. Next actions on wake
 
-1. **Critic pass on R-27's design (Frank's instruction).** Run 2-4 read-only critics on r27_report.md: soundness of the skip/verify/proof equality, the E1/E2/E4 row extensions vs the general mechanism, the measurement regime, and an unlocks lens. Consolidate into `docs/dev/reviews/<date>-r1-memfn-r27.md`, then bring Frank the findings plus a build-go question. Fold in job 580's table if it has run.
-2. Send main B4's re-scoped shape.
-3. Heavy runs go through `scripts/boxqueue` (kit band 500-699) with a quiet gate and `idle-ok`. Run emit_sweep WITHOUT `python3 -I`.
+1. Read 583's verdict, then land D172 S2 (§3).
+2. Read 584's table and bring Frank the reading.
+3. After main merges D172 S2: brief S3 (B1).
+4. Prune delivered worktrees with `scripts/wtprune` once they are merged and quiet: wsc1-7, r28m, r28m0, vb-*, uwin*, b4p, r27b, r27c.

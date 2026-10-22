@@ -6,9 +6,10 @@
  *
  *   a term holds at c iff every byte it reads lies in [0, n) and matches
  *   (rule 2, §14.7; the floor is 0 here);
- *   a CONTEXT item (a context stop, a `ctx` entry) whose reads fall outside
- *   [0, n) takes its `absent` verdict, SATISFIES holds and FAILS does not
- *   (R-26.2), and is its terms' conjunction otherwise;
+ *   a CONTEXT item (a context stop) whose reads fall outside [0, n) does not
+ *   hold (FAILS, the one rule since D172 S2 commit 6 retired `absent`; the
+ *   SATISFIES arm below stays for a fact file that states it), and is its
+ *   terms' conjunction otherwise;
  *   the range is [lo, n) for span 0, [lo, n] for a context stop (Q-R7-1).
  *
  * For each site, each subject over its alphabet (every string of length
@@ -28,13 +29,25 @@
  *          included, lies before the answer;
  * and per site: every REQUIRED term's set at d contains proven[d] (binding),
  * and a REQUIRED position is proven (the position-wise superset).
- * Floors (K35) on the cells the request names: a candidate at c = 0 yielded
- * through a SATISFIES item before span 0, one at c + k = n through one after
- * it, and the FAILS cells refused there.
+ * Floor (K35) on the cell the request names that the family still reaches:
+ * the FAILS cell refused below the subject (a context stop at c = 0). The
+ * SATISFIES cells and the after-span-0 cell left with the context spans
+ * (D172 S2 commit 6); their counts are printed, unfloored.
+ *
+ * READS (D172 S2 review S2, lane wsc1): every call is repeated with the
+ * subject in an EXACT-SIZE buffer ending at a guard page (a read at or past
+ * n faults) and starting at one (a read below 0 faults), and between pads
+ * of a SENTINEL byte (twice: the byte most of the site's terms hold, and one
+ * none hold), so a read outside [0, n) that changes an answer goes red; each
+ * must answer as the plain call does.
  */
+#include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "proof_meta.h"
 
@@ -42,7 +55,48 @@ extern const pm_site pm_sites[];
 extern const pm_fn pm_fns[];
 extern const unsigned pm_nsites;
 
-static long failed, passed, cells, cands;
+static long failed, passed, cells, cands, read_calls;
+
+/* ---- the read-limit layouts (READS) ---------------------------------------- */
+
+static long page;
+static unsigned char *reg_hi, *reg_lo;  /* guard after / before a page        */
+static sigjmp_buf jb;
+static volatile sig_atomic_t in_call;
+static void on_fault(int sig)
+{
+    (void)sig;
+    if (in_call) siglongjmp(jb, 1);
+    _exit(3);
+}
+
+static void layouts_init(void)
+{
+    page = sysconf(_SC_PAGESIZE);
+    reg_hi = mmap(NULL, 2 * (size_t)page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    reg_lo = mmap(NULL, 2 * (size_t)page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (reg_hi == MAP_FAILED || reg_lo == MAP_FAILED) { perror("mmap"); exit(2); }
+    mprotect(reg_hi + page, (size_t)page, PROT_NONE);
+    mprotect(reg_lo, (size_t)page, PROT_NONE);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = on_fault;
+    sigaction(SIGSEGV, &sa, NULL);
+    sigaction(SIGBUS, &sa, NULL);
+}
+
+/* The call in layout `buf` (the subject copied there); 1 on a fault. */
+static int guarded(unsigned si, unsigned char *buf, const unsigned char *s, long n,
+                   unsigned long from, unsigned long *r)
+{
+    memcpy(buf, s, (size_t)n);
+    in_call = 1;
+    if (sigsetjmp(jb, 1)) { in_call = 0; return 1; }
+    *r = pm_fns[si](buf, (unsigned long)n, from);
+    in_call = 0;
+    read_calls++;
+    return 0;
+}
 static long sat_before, sat_after, fails_before, fails_after;
 
 static int in_set(const unsigned char *set, unsigned b) { return set[b >> 3] >> (b & 7) & 1; }
@@ -171,9 +225,52 @@ static void fail(const pm_site *x, const unsigned char *s, long n, long lo, cons
     }
 }
 
+/* READS: the call in every layout answers as the plain one. */
+static int reads_check(unsigned si, const unsigned char *s, long n, unsigned long from,
+                       unsigned long want, const unsigned char sentinel[2])
+{
+    static unsigned char pad[16 + 16 + 16];
+    unsigned long r;
+    const char *where = NULL;
+    if (guarded(si, reg_hi + page - n, s, n, from, &r)) where = "a fault (guard at s + n)";
+    else if (r != want) where = "another answer (guard at s + n)";
+    else if (guarded(si, reg_lo + page, s, n, from, &r)) where = "a fault (guard below s)";
+    else if (r != want) where = "another answer (guard below s)";
+    for (int k = 0; !where && k < 2; k++) {
+        memset(pad, sentinel[k], sizeof pad);
+        if (guarded(si, pad + 16, s, n, from, &r)) where = "a fault (sentinel pads)";
+        else if (r != want) where = "another answer between sentinel pads";
+    }
+    if (!where) return 0;
+    if (++failed <= 30)
+        printf("FAIL: site %s READS: %s, n %ld from %lu\n", pm_sites[si].name, where, n, from);
+    return 1;
+}
+
+/* The byte most of the site's terms hold, and one none holds. */
+static void sentinels(const pm_site *x, unsigned char out[2])
+{
+    int best = 0, bc = -1, worst = 0, wc = 1 << 30;
+    for (int b = 0; b < 256; b++) {
+        int k = 0;
+        for (int i = 0; i < x->npred; i++)
+            for (int t = 0; t < x->p[i].nterm; t++) {
+                const pm_term *tm = &x->p[i].t[t];
+                for (int j = 0; j < tm->len; j++)
+                    k += tm->kind == PM_SET ? in_set(tm->set, (unsigned)b) : tm->run[j] == b;
+            }
+        if (k > bc) { bc = k; best = b; }
+        if (k < wc) { wc = k; worst = b; }
+    }
+    out[0] = (unsigned char)best;
+    out[1] = (unsigned char)worst;
+}
+
 static void run_subject(unsigned si, const unsigned char *s, long n)
 {
     const pm_site *x = &pm_sites[si];
+    unsigned char sent[2];
+    sentinels(x, sent);
     long hi = x->stop ? n + 1 : n;
     /* the miss value: the site's `n` for span 0 (no candidate takes it); a
        context stop's range reaches n, so its miss is (size_t)-1 */
@@ -182,6 +279,7 @@ static void run_subject(unsigned si, const unsigned char *s, long n)
         for (long from = lo; from <= n;) {
             unsigned long r = pm_fns[si](s, (unsigned long)n, (unsigned long)from);
             cells++;
+            if (reads_check(si, s, n, (unsigned long)from, r, sent)) break;
             long want = -1, first_all = -1;
             for (long c = from; c < hi; c++)
                 if (asked_hold(x, s, n, c) && proof_fails(x, s, n, c) == 9999) { want = c; break; }
@@ -276,6 +374,7 @@ static void site_static(unsigned si)
 int main(void)
 {
     unsigned char s[8];
+    layouts_init();
     unsigned long long rng = 88172645463325252ull;
     for (unsigned si = 0; si < pm_nsites; si++) {
         const pm_site *x = &pm_sites[si];
@@ -302,14 +401,14 @@ int main(void)
         }
         if (failed == before) passed++;     /* one check per site: all its cells */
     }
-    printf("proof_run: %u sites, %ld calls, %ld candidates checked\n", pm_nsites, cells, cands);
+    printf("proof_run: %u sites, %ld calls, %ld candidates checked, %ld calls in the read-limit "
+           "layouts\n", pm_nsites, cells, cands, read_calls);
     printf("absent cells: SATISFIES yielded before span 0 %ld, after it %ld; FAILS refused "
            "before %ld, after %ld\n", sat_before, sat_after, fails_before, fails_after);
-    /* K35: the cells R-26.2 names, each reached */
-    int floor_ok = sat_before >= 100 && sat_after >= 100 && fails_before >= 100 &&
-                   fails_after >= 100 && pm_nsites >= 300;
+    /* K35: the FAILS cell below the subject, reached */
+    int floor_ok = fails_before >= 100 && pm_nsites >= 300;
     if (!floor_ok) {
-        printf("FAIL: a floor: every absent cell >= 100, sites >= 300\n");
+        printf("FAIL: a floor: the FAILS cell before span 0 >= 100, sites >= 300\n");
         failed++;
     } else {
         passed++;

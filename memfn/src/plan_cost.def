@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: pcrec 7050f8652 (relicensed 0BSD by its author, D145 addendum
+ *   1): src/opt/prefix_k.c's cost-model constants (C_MEMCHR, C_BITMAP,
+ *   C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM/DEN) and src/core/limits.def's
+ *   PCREC_OFSK_MAX_SET, transcribed as data (memfn/PROVENANCE.md).
+ *
+ * memfn/src/plan_cost.def — THE WINDOW FAMILY'S COST TABLE (D172,
+ * docs/design/memfn/window_site.md rev 3.2 §3.3): ONE declared table every
+ * cost row reads (window.c's A-model, C-model and MARGIN), prefix_k's
+ * INTEGERS verbatim, no re-measurement. Each row states its value, its unit,
+ * where the number came from, the box it was measured on, and its BASIS
+ * (MEASURED / DERIVED / ARGUED / MEASURED x ASSUMED / UNMEASURED DEFAULT,
+ * D149: a value that is none of the first four says so in place).
+ *
+ *   MF_COST(name, value, unit, provenance, box, basis)
+ *
+ * Units: hundredths of a cycle per subject byte (the scans) or per candidate
+ * (a verify, an entry); masses are ppm (MF_PPM_FULL). Every division in the
+ * rows that read this table is integer and truncates, in prefix_k's order.
+ *
+ * RE-MEASURING ANY ROW IS A BYTE-MOVING KIT EVENT (integration.md §21.3): its
+ * own deny, a pcrec abi event, G1 at both layers. HORS_MIN (§3.3's last row)
+ * is NOT here: it is D-hors's, which lands at S3 with its own deny. */
+#ifndef MF_COST
+#define MF_COST(name, value, unit, provenance, box, basis)
+#define MF_PLAN_COST_UNDEF
+#endif
+
+MF_COST(C_MEMCHR, 6, "1/100 cycle per subject byte",
+        "docs/dev/opt3_dfa_scan_measurement.md §4 CONTROL 1 (0.055 c/B, glibc AVX2 memchr)",
+        "ubuntubudu, Ryzen 5 1600", "MEASURED")
+MF_COST(C_BITMAP, 116, "1/100 cycle per subject byte",
+        "docs/dev/opt3_dfa_scan_measurement.md §4, row 1 (1.16 c/B, the 256-entry walk)",
+        "ubuntubudu, Ryzen 5 1600", "MEASURED")
+MF_COST(C_VERIFY, 250, "1/100 cycle per candidate",
+        "none beyond prefix_k.c's header: one extra offset's load + table probe",
+        "-", "UNMEASURED DEFAULT")
+MF_COST(C_ENTER, 2000, "1/100 cycle per loop entry",
+        "[OPT-3]'s measured 10.7 c/B times an ASSUMED ~2 bytes a false start survives; "
+        "sensitivity swept over 1,352 corpus patterns (offset_k_skip.md §4.3)",
+        "ubuntubudu, Ryzen 5 1600", "MEASURED x ASSUMED")
+MF_COST(C_MISPRED, 1500, "1/100 cycle per mispredicted verify",
+        "the before/after of docs/design/offset_k_skip.md §7.3",
+        "ubuntubudu, Ryzen 5 1600", "DERIVED")
+MF_COST(MATERIAL_NUM, 2, "ratio numerator",
+        "offset_k_skip.md §4.5's argument (ipv4's 1.5-1.6x inside the model's error bars)",
+        "-", "ARGUED")
+MF_COST(MATERIAL_DEN, 1, "ratio denominator",
+        "offset_k_skip.md §4.5 (the MARGIN: a RESEED wins at best * NUM < base * DEN)",
+        "-", "ARGUED")
+MF_COST(MAX_SET, 4, "positions",
+        "src/core/limits.def PCREC_OFSK_MAX_SET: F0 plus the scan plus at most two verify-NO "
+        "offsets (a compile budget)",
+        "-", "UNMEASURED DEFAULT")
+
+#ifdef MF_PLAN_COST_UNDEF
+#undef MF_COST
+#undef MF_PLAN_COST_UNDEF
+#endif

@@ -2908,6 +2908,24 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the Q-R17P-27 notice.
 - notice: 2026-10-21 — **D172's brief names sabotage range S1257-S1290.** The window-site panel (G6) found no file in that range on any branch; the only mentions are wake.md and decisions.md:9880. Please correct the range.
 - notice: 2026-10-21 — **Frank's build go for D172 (the unified window site), CONDITIONAL**: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands." Proposed D172 addendum text, for main to file: "Build go (Frank, 2026-10-21, to the kit): conditional on window_site rev 2 passing its D6 panel and main's agreement. hex8-bounded is the kit's judgement call; REPORT routing (B1) does not wait on hex8." Rev 2 is being written now. Its pcrec-builder restatement comes to you as ONE request text for you to file.
+- ack: 2026-10-22 — **R-28 (the kit's compile-time stack frames; formhash.c and terms.c at about 36 KB each).** Taken, on branch `lane/memfn-ws` (cut from main ce5aa67a8). Shape:
+  - a zero-mover kit change that moves the two large frames' working storage off the stack;
+  - the kit states its peak per call;
+  - dd10's `run_compile_stack.sh` is the bar.
+  It is a small sonnet lane, launched once the build go is confirmed. Kit-side sabotage ids are to be requested at plant time. Note: window_site rev 3.1's Appendix A provisionally reserves S1400-S1429, so R-28's ids should come from above that, or main re-assigns at filing.
+- notice: 2026-10-22 — **D172 design, window_site.md rev 3.1, is on `lane/memfn-ws` @ 1616e3d6f (merge of lane/memfn-uwin3 @ e25a1f51a).**
+  - Panels: r2 (rev 1), 2026-10-22-r1 (rev 2: three blockers, resolved in rev 3), and a rev 3 verification (V1-V3 → rev 3.1). A short re-verification of 3.1 is running.
+  - Then this goes to you for agreement, per Frank's conditional go: "if the critics and main like the plan then i approve".
+  - Appendix A is the S2 request text for you to file.
+  - Three questions for you are in §9:
+    - the S3 bar wording (DEF, with two capped named losses);
+    - `<PREFIX>_REQ_RUN @idx` reading the kit's reply;
+    - the run truncation window staying pcrec's at S2.
+- ack: 2026-10-22 — **R-29 (the window site stated as spans, alternatives and frequencies; D172 S1+S2).** Taken on `lane/memfn-ws`. Frank's conditional go now holds: the critics read GO on rev 3.1/3.2, and main agrees. Main's ruling on the readers of `ReqRun.idx` is accepted with both conditions: ONE pcrec resolver function, and commit 6's sweep covers those stamps.
+  - **Build:** the six-commit landing of window_site.md §5.1 on this branch.
+  - **Commit 1, the kit family under `mf_preview("window-family")`,** starts now in an opus lane.
+  - **Ownership question for main:** commits 2, 4 and the pcrec half of 6 edit pcrec's builders and NEXT rows. The kit proposes that its lanes write them on this branch, with main reviewing them as part of the landing, as with Z2 the other way. The alternative is that main's lane writes them on top of the kit's commit 1.
+  - **Kit sabotage ids:** S1400-S1429.
 - done: 2026-10-22 — **R-28 (the kit's compile-time stack frames): READY TO MERGE. Branch `lane/memfn-r28` @ (this commit). Report `docs/dev/lanes/r28_report.md`, including §9 "Live-path correction".**
   - **Frames:** no kit frame is above 4 KB; the largest is 3,600 B.
     - `pcrec_mf_form_hash` 36,368 → 3,600 B;
@@ -2920,3 +2938,35 @@ the compiler, and is never adopted silently. Proposed for main to file
     - an old-vs-new driver over 23,004 lines is byte-identical;
     - job 571: 8 of 9 emit_sweep arms rc=0, with 0 movers on every arm (dumps included), mech S1255 DETECTED, make test green (section-errors=0).
   - **The 9th arm (`--variant all`) is RED on BASE-LEVEL stale tag floors only.** It fails identically on the reference side. Bisect job 577 shows the counts identical at 9950aa672, 6a0ad4029, 5893e47dc and ce5aa67a8, so the cause predates both. Main owns the re-pin.
+
+- done: 2026-10-22 — **R-29 (D172 S1+S2, the window site stated as spans, alternatives and frequencies): READY TO MERGE. Branch `lane/memfn-ws` @ a2d4d9738, validated as `lane/memfn-wsmain` at the same sha. It contains main bf33d2dab, so it merges into main cleanly (trial merge-tree rc=0). Reports: `docs/dev/lanes/wsc1..wsc7_report.md` and `wsframe_report.md`; the design of record is `docs/design/memfn/window_site.md` rev 3.2.**
+  - **Versions:** MF_SITE_ABI 19→20. pcrec abi stays 83 (main's): D172 S2 has NO pcrec abi event, and every emitted byte is unchanged against main (the sweeps below).
+  - **Validation:** job 586-kit-wsmain-heavy at a2d4d9738 vs REF bf33d2dab is GREEN (`worktrees/.boxqueue/done/20261022T171338.062136463-586-kit-wsmain-heavy/job.log`):
+    - build and strict;
+    - five emit_sweep streams (plain, arms-start, -fno-run-prefilter, -fmemfn-simd, --engine=vm), every one rc=0 with every artifact stream at movers=0, and the facts stream's DECLARED MOVES at patterns=3451 rows=6828 (span_facts `used` yes→no; 3356 before main's new corpus);
+    - test-codegen;
+    - make test: perfrun class=green, section-errors=0, contaminated=no, and no `*** [...test-X] Error` line;
+    - test-memfn-link (R-28's frame bar).
+    - wreply: 0 checks failed, rc=0.
+    - mech (155 rows, 0 unexpected) and mech-reach-only (reached 204, unreached 0) were green at wsc7 (job 583). Nothing after them moves an essential byte.
+  - **Since wsc7, for your review:**
+    1. **wsc8 5fed19321:** the [OPT-REQPOS]/[K66] note read `masked` off the FUNC part's terms, which were empty since wsc5, so masked runs printed the exact-bytes note under -fcomments. That was 583's only red. It now reads the run fact. Comment text only.
+    2. **Merge of main 1d83e8430:** six conflicts.
+       - compose.c keeps D172's logic AND R-28's frame changes: term_prove's `base`, kit_report_exact one row per offset.
+       - The rest are CLAUDE.md, index and ledger files, with both sides kept.
+       - No version number was bumped by both sides.
+    3. **wsframe aba15302e:** D172's new window.c broke R-28's 4 KB frame bar: mf_wdecide 10,720 B, e_legacy_holds 5,088 B.
+       - `wf_dec` now goes on the heap (calloc/free, -1 on refusal, the terms.c precedent).
+       - `wf_legacy` now comes from wf_prepare's arena allocation, with its "out of memory" refusal.
+       - Frames are now 64 B and 48 B, and the largest kit frame is 3,600 B.
+       - 76/76 outputs are byte-identical, and the G2 window suite is 6032/0 (including the ASan+UBSan driver).
+  - **Earlier points for review** (see the wsc reports):
+    - commits 4-5 were red on the G7 lever fence only, fixed forward in 6-t1;
+    - 6-p3..6-t2 carried the end_back red, fixed in 6-p4;
+    - R2 was built as the FALLBACK, and its general form is FILED;
+    - the renderer interface move to a kit-internal struct is FILED.
+  - **OWED, carried:**
+    - the five PRES rows' g2 floors are placeholders;
+    - F-4 (pf_walk's K96 gap) is FILED;
+    - memfn/CLAUDE.md's peak line says define_sel is 3,408 B; it is 3,456 B after main's merge, a doc-only fix in the next kit commit.
+  - **Next:** S3 = B1 (REPORT routed by default; a pcrec abi event plus its deny row) is briefed only after you merge this.

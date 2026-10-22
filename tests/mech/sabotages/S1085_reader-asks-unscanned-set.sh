@@ -22,6 +22,6 @@ SAB_DOC_FIGURE="MEASURED 2026-10-18 by lane rowfix, solo (run_sabotage_matrix.sh
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
-    return pf_site_of(cx, pf, sc->set, us->views);'
+    return pf_site_of(cx, us, pf, sc->set, us->views);'
 SAB_AFTER='    *sc = us->cand;   /* SABOTAGE S1085 */
-    return pf_site_of(cx, pf, sc->set, us->views);'
+    return pf_site_of(cx, us, pf, sc->set, us->views);'
