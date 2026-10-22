@@ -2072,6 +2072,10 @@ have:
                 pcrec_ctx_fail(cx, cx->pos,
                          "possessive quantifier requires module '%s'",
                          rw->module);
+            /* K122: a possessive quantifier is GREEDY whatever `(?U)` says —
+             * `(?U)a*+` is `(?>a*)`, never `(?>a*?)` (libpcre2 10.46:
+             * `(?U)a*+` on "aaa" [0,3), `(?U)a{2,3}+` [0,3)). */
+            r->u.rep.greedy = true;
             size_t plus = cx->pos;
             cx->pos++;                       /* the `+` */
             Ast *at_ = node(cx, A_ATOMIC);
