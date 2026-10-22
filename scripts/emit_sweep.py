@@ -524,12 +524,12 @@ DIFFER_PINS = {
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
     # finder table's five denies. No finder row is ROUTED at B1, so each deny
     # moves no byte: ASSERT_ZERO (below) on both bases and both streams. Each
-    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r0/fd-r5/
-    # fd-ndisp at B4, fd-r8 at B6), so `--extra` never runs a kit deny
+    # flips to a DIFFER floor at its routing step (fd-d1 at B2, fd-r8 at
+    # B6; fd-r0/fd-r5 RETIRED at B4' with their rows, fd-ndisp stays ASSERT_ZERO), so `--extra` never runs a kit deny
     # without a floor.
     **{(base, "--memfn=no-" + row, stream): (0, 0, None)
        for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-       for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp")},
+       for row in ("fd-r8", "fd-ndisp")},
     # [MEMFN] R17-b' B2 (lane fdb2; r17b_prime.md §3.4 [rev3 A17]): fd-d1
     # FLIPS. D1 is routed, so its deny moves every one-byte DFA and hybrid
     # site to D1w's walk over the offered table (answer-identical; no start
@@ -580,7 +580,7 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     # [MEMFN] R17-b' B1: the finder table's denies, inert until their rows route
     (base, "--memfn=no-" + row, stream)
     for base in ("byte", "utf8") for stream in ("c-default", "c-vm")
-    for row in ("fd-r0", "fd-r5", "fd-r8", "fd-ndisp")} | {
+    for row in ("fd-r8", "fd-ndisp")} | {
     # R17-b' B2: fd-d1 acts on the DFA body's and the hybrid's one-byte sites
     # only; under --engine=vm it has none
     ("byte", "--memfn=no-fd-d1", "c-vm"), ("utf8", "--memfn=no-fd-d1", "c-vm")} | {

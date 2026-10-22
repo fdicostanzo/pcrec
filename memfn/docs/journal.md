@@ -2611,3 +2611,18 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - E1 and E4 are special cases, to become FIND-slot and body rows. Over-reads are invisible to proof_run. Job 580 does not measure the tie, the FUNC proxy or the SIMD layer.
   - The proposal to Frank: read 580, run follow-up job 581, write design rev 2, then the build go. No build go was asked.
 - Job 580 started at about 21:38 (main moved it to the front).
+
+## 2026-10-21 (late night) — B4′ delivered; window-site panel; Frank's CONDITIONAL BUILD GO for D172
+
+- B4′ is all green at edeb3344f:
+  - sweep 556: 4 legs rc=0. The first sweep, 555, was red only because the dumps stream read the declared deny delta;
+  - heavy run 560: make test plus mech on 14 rows;
+  - MF_SITE_ABI 18→19.
+  It was merged into lane/memfn-b4scope, `done:` was posted, and main accepted it (it merges after its job 670).
+- Window-site design rev 1 (lane uwin) and its D6 panel r2, three critics: REVISE, no blocker. Rulings are in `docs/dev/reviews/2026-10-21-r2-memfn-window-site.md`:
+  - one restatement step, with no adapter;
+  - the kit's tables carry prefix_k's cost rules, reading pcrec's frequencies, with no interim plan_hint. This follows Frank's question "if we are simply picking the least frequent byte, why do we need pcrec?";
+  - the consumer label is deleted;
+  - end_back becomes a core position.
+- Frank on the failure shift: "not sure you determine when to use it". Job 581 tests a static predictor (predicted survival length from the default byte-rate) against measured wins.
+- **Frank, 2026-10-21: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands."** This is the BUILD GO for D172's unified window site, conditional on rev 2 passing its panel and main's agreement. hex8 is the kit's judgement call, and REPORT routing (B1) proceeds regardless of hex8.

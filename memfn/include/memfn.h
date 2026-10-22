@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 18  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 19  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -146,7 +146,11 @@
                            5, appended LAST) with proven0/proven_prev COPIED
                            from it; the bounds MF_MAX_SPAN_POS, MF_MAX_AHEAD,
                            MF_MAX_CTX, MF_PROOF_LO, MF_MAX_FWD. No MF_VOCAB
-                           move; no pcrec byte moved. */
+                           move; no pcrec byte moved. 19 (B4', lane b4p, the
+                           LOCKDOWN under the walk ruling): mf_finder_row
+                           loses its routed and locked columns (every
+                           FIND and PRES row decides; the listing's layout
+                           moved). No MF_VOCAB move; no pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -1452,8 +1456,6 @@ typedef struct {
     const char          *basis;     /* MEASURED|DERIVED|UNMEASURED-DEFAULT      */
     const char          *evidence;
     const char          *refuted_by;
-    uint8_t              routed;    /* 1 once its routing step has landed       */
-    uint8_t              locked;    /* = routed until B4 (§1.8)                 */
     const char          *step;      /* the step that routes it                  */
     uint8_t              nkeys;
     const mf_finder_key *keys;
