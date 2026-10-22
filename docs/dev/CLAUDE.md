@@ -53,7 +53,7 @@ Process records
 - `ph3_reassessment_2026-09-28.md` — D125 close-out phase 3 reassessment of eleven dormant rows.
 - `dd11_family_2026-10-18.md` — [DD-11] family survey.
 - `wake.md`, `owner.md` — untracked hand-off brief and owner's view.
-- `history/` — build history moved out of the spec tier (`*_record.md`: match_api, registry, table_contract, limits, cli, facts_listing, ir_listing, findings, rxt_format, tuning).
+- `history/` — build history moved out of the spec tier (`*_record.md`: match_api, registry, table_contract, limits, cli, facts_listing, ir_listing, findings, rxt_format, tuning, pattern_language).
 - `lanes/` — per-lane logs/reports (own CLAUDE.md). `reviews/` — compiled D6 checkpoint critic reviews. `summaries/` — executive summaries for Frank (own CLAUDE.md).
 - `optloop/` — OPTLOOP per-cycle analyses (D119; own CLAUDE.md). `devmethods/` — development-methods hand-off (own CLAUDE.md). `meta/` — sidecar learnings about developing WITH models (`ai_dev_learnings.md`; own CLAUDE.md). `findings_measure/` — [FINDINGS] Q5 run-level estimator measurement (`estimator_report.md`; own CLAUDE.md). `utf8_attrib_twin/` — [OPT-HYB-RESEED] bench packaging (`I-114.md`; own CLAUDE.md). `reseed/` — [OPT-HYB-RESEED] instruments/results (own CLAUDE.md; design `docs/design/hyb_reseed.md`). `lookaround_census/` — harness for the lookaround census (own CLAUDE.md).
 - `nf25_notes_for_authors.md` — running notebook toward a response to the [NF25] authors.
