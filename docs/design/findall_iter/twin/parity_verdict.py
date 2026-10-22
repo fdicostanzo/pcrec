@@ -25,6 +25,19 @@
 # the batch line are absent, and I is GATED on cells 1, 3 and 4 (D171: cells 2, 5, 6 and 7
 # are reported), printed as `GATE` / `REPORT`.
 #
+# I4 ([FINDALL-NEXT] I4, lane i2build; findall_iter_i2.md §4; parity.sh under PARITY_I4=1):
+# the arms are I_i1/I_i1b (the I1 artifact's _next, two compiles), I (this artifact's _next),
+# F/Fb (RX_FOREACH, two compiles), I_info, N4, N64. Each gated ratio has its own floor from
+# its A/A pair, over the launches: floor = max(|median(X/X') - 1|, IQR(X/X')/median(X/X'))
+# with X = I_i1 for gate 1 and X = F for gates 2-4. Gates (a loss is a FINDING):
+#   1 "_next unharmed"  I/I_i1 <= 1 + floor_I        every cell, R1 and R2
+#   2 "never worse"     F/I <= 1 + floor_F           c1, c3, c4, c6
+#   3 "the gain"        F/I <  1 - floor_F           c3-4k R2 and c3-1m R2
+#   4 "early stop"      F/I <= 1 + floor_F           c7, c8
+# N4/I, N64/I, I_info/I and (I_info - F) per match on c1-4k are reported. QUIET is "no"
+# where a launch's median load1 is above 1.0 or its SMT sibling was above 25 % busy
+# (UNMEASURED DEFAULTS, the note's re-queue rule). The rules live in i4_verdict.py.
+#
 # usage: python3 -I parity_verdict.py RESULTS.tsv
 import sys
 from collections import defaultdict
@@ -51,6 +64,10 @@ def quantile(v, q):
 
 
 rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1], encoding="ascii")]
+if any(r[3] == "Fb" for r in rows[1:]):
+    sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.abspath(__file__)))
+    import i4_verdict
+    sys.exit(i4_verdict.main(rows))
 hdr, rows = rows[0], rows[1:]
 col = {h: i for i, h in enumerate(hdr)}
 data = defaultdict(list)
