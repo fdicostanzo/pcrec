@@ -5,9 +5,705 @@
 2026-10-21): §R2 below supersedes the COUPLING this note and
 `subst_template_design.md` assumed (one function per pattern and template)
 with Frank's independent substitution element over the find-all iterator.
-Read §R2 first; superseded passages below are marked in place.**
+Read §R2 first; superseded passages below are marked in place.** **REVISION 3
+(lane substr3, 2026-10-22): §R3 applies the D6 panel r1
+(`../dev/reviews/2026-10-22-r1-subst-design.md`, three critics, every finding
+accepted). Read §R3 first, then §R2; §R2 passages R3 replaces carry an `[R3: ...]`
+marker.**
 
-## REVISION 2 — compiled substitution as an INDEPENDENT ELEMENT (lane subst, 2026-10-21) — READ THIS FIRST
+## REVISION 3 — the panel's dispositions applied (lane substr3, 2026-10-22) — READ THIS FIRST
+
+**Status: PROPOSED, design only.** Nothing under `src/`, `cli/`, `lib/` or
+`tests/` was touched. Two probes were run on the Linux dev box against the head
+of `lane/subst` (abi 84, the I4 iterator) and libpcre2 10.46. Per the lane brief,
+their sources and transcripts stay in the session scratchpad. The transcript
+lines this section rests on are quoted in §R3.14.
+
+### R3.0 What changed, finding by finding
+
+Each panel id maps to the section that discharges it. The review file has the
+critics' verbatim text and the manager's dispositions.
+
+| id | what R3 does | where |
+|---|---|---|
+| crit1-1 | §R2.5 rule 1's "ordered and non-overlapping by construction" is false. The element checks every span and returns `PCREC_SUBST_BADSPAN`. PCRE2's stricter test is stated, the corner is documented with a witness, and nothing is added to match_api §3.8 | §R3.6, §R3.14 |
+| crit1-2 | names bind to a (first, count) RUN of `rx->groups` rows, and the render walks it per match_api §5.4¶6. `rx_group_run` is the one name-to-run helper; two other sites are named as later adopters | §R3.2 |
+| crit1-3 | the NOSPACE capacity differs from PCRE2's by exactly 1 (no NUL). Labelled and spec'd | §R3.5, §R3.10 |
+| crit1-4 | the unset axis already has D38 Q3's strict variant. R3 names it `error` and gives it a code | §R3.7 |
+| crit1-5 | probed: consistent with match_api §9 and with `_search` in a loop. Pinned as stated behaviour; the PCRE2 difference is located in libpcre2's anchored retry | §R3.14 |
+| crit1-6, crit3-1 | distinct codes, and `*outlen`/`*nsubst` are written on every return path | §R3.5 |
+| crit2-1 | the element is BATCH-shaped (k matches per call; per-match is k = 1). Q-F2 is restated | §R3.1, §R3.16 |
+| crit2-2 | subst and rx artifacts come from ONE pcrec build, checked at compile (`#error`) and at bind. The shape-contract alternative is named as a candidate | §R3.8 |
+| crit2-3 | the glue sizes its buffer from `rx->ncaps` and drives `next_n` itself, with k = 1 above the batch buffer. No group count PCRE2 accepts is refused | §R3.4 |
+| crit2-4 | the timing cell is rebuilt: separated vs a D163 composite twin, A/A floors, the listed cells, `pcre2_substitute` as an external row | §R3.13 |
+| crit2-5 | `ctx.ncap` vs §2¶6 is reconciled; renderer segments get their `user`; "no resume after `limit`" is stated | §R3.1, §R3.4, §R3.9 |
+| crit2-6 | the NEEDED shape is an `rx_group_entry` array and bind is a generic shape match. The version number goes to [IFACE-PUSH]; the `.h`/`.c` stamp rule follows §6.3.1; the three function types are recorded as one family | §R3.2, §R3.8, §R3.12 |
+| crit2-7 | the general form is a PER-MATCH CONSUMER. Only the shape type and the generic bind are built; two later members are named with triggers | §R3.12 |
+| crit3-2 | the binding records the rx, its `ncaps` and a tag. The glue and the element check them once per call | §R3.3 |
+| crit3-3 | lengths saturate. An overflow is NOSPACE with `*outlen = SIZE_MAX`, and a length never travels through a signed return | §R3.4, §R3.5 |
+| crit3-4 | `<S>_NREFS` is `max(1, n)` | §R3.3 |
+| crit3-5 | bind has distinct codes and names the offending reference; `dlopen` is covered by the run-time abi check | §R3.3, §R3.5 |
+| crit3-6 | `${!name}` is resolved once per call by the glue, against the iterator's variables; bind cannot see them | §R3.7 |
+| crit3-7 | `out` contents after a failure are unspecified, `out` must not overlap `s` (`restrict` plus a UB sentence) | §R3.9 |
+| crit3-8 | a context-init helper for custom glue, and a §3.8¶9 spec hunk naming the `rx_iter` fields pcrec's shared code reads | §R3.9 |
+| crit3-9 | thread safety is stated | §R3.9 |
+| crit3-10 | the differences from PCRE2, and the grow-and-retry recipe | §R3.10 |
+| crit3-11 | `--subst-file`; the header include order | §R3.11 |
+| crit3-12 | in-place stays a contract only, and the overlap rule is now explicit | §R3.9, §R2.6 |
+
+One finding is the lane's own, made while writing §R3.9 (F-R3-1): §R2.4's glue read
+`it->vars` on a FRESH iterator. On a FRESH iterator with no `rx_iter_vars` call, that
+field is garbage (match_api §3.8¶5: "every field `RX_ITER_INIT` does not write may hold
+any value before the first call"). The §R3.9 helper reads it only when the
+`PCREC_ITER_OPT_VARS` bit says it was set.
+
+### R3.1 The element is batch-shaped
+
+crit2-1 is right that §R2.8's "one out-of-TU call per match" is not D171's
+class. D171 accepted a FIXED cost per find-all. The I4 note measured `next_n`
+at k = 64 against the per-match loop, and found the gain comes from removing
+calls. So the element renders a BATCH: k consecutive matches of one find-all
+per call. The per-match render is the case k = 1.
+
+```c
+/* Where one find-all's output stands between element calls. */
+typedef struct rx_subst_cur {
+    size_t prev;   /* end of the last match consumed: the next gap starts here */
+    size_t w;      /* bytes the output needs so far; SIZE_MAX once that overflowed */
+    int    fits;   /* 1 while every one of those bytes is in out */
+} rx_subst_cur;
+
+#define RX_SUBST_GAPS 0x1u   /* copy [cur->prev, start) before each rendering */
+
+/* Renders k consecutive matches. caps holds k * ctx->ncap pairs; match i is at
+ * caps + i * ctx->ncap, as <prefix>_next_n writes them. With RX_SUBST_GAPS the
+ * gap before each match is copied first (substitution). Without it the
+ * renderings are written back to back (a templated grep -o). Any other flag
+ * bit is refused. Bytes go to out[cur->w, cap) while everything fits, and
+ * never past cap. Returns 0 or a negative code (§R3.5); the length is in
+ * cur->w, never in the return value. */
+typedef int rx_substfn(const struct rx_subst_binding *b, const rx_ctx *ctx,
+                       const ptrdiff_t (*caps)[2], size_t k, unsigned flags,
+                       unsigned char *restrict out, size_t cap, rx_subst_cur *cur);
+```
+
+What moved, and why:
+
+- **The gap copy moves into the element** (§R2.5 rule 1 had it in the glue).
+  A batch cannot be rendered without its gaps unless the element hands k
+  separate renderings back. Handing them back would take a second buffer or
+  k returns, which is the per-match shape again. `RX_SUBST_GAPS` keeps the
+  render-only use that §R2.4's "custom glue is first-class" promised.
+- **The length travels in `cur->w` (a `size_t`), and the return is a code.**
+  So no length can be read as a code (crit3-3's ptrdiff_t cast), and a
+  rendering longer than `PTRDIFF_MAX` needs no special case: it saturates
+  (§R3.4).
+- **One write helper**, `rx_subst_put(cur, out, cap, src, len)`, sits in the
+  subst block. Every emitted render calls it for every byte run. It holds the
+  fit test and the saturation, so the overflow rule is written once rather than
+  in every emitted template.
+- **`ctx` carries what is constant over the call**: `subject`, `len`, `ncap`,
+  `vars`/`nvars` (the per-call resolved view, §R3.7) and `user`. Per match, the
+  element sets `pos` and `caps` in a local copy, only when the template has
+  `rx_renderfn` segments (match_api §2¶7). For each segment, `user` is that
+  segment's own pointer, taken from the binding (§R3.3). This discharges
+  crit2-5's "segments unbindable".
+- **`ctx.ncap` gets its first producer.** The element's `ctx.ncap` is the
+  `ncaps` of a COMPLETED match. That is the "ncaps on completion" reading the
+  type's own comment already gives. match_api §2¶6 currently says the field has
+  no producer; phase B's spec hunk says that the subst element is now the first
+  producer, and that it writes the completion value, not a watermark. The
+  element checks `ctx->ncap == b->ncaps` once per call (§R3.3).
+
+**Cost, restated.** There is one out-of-TU call per BATCH, not per match. At the
+glue's doubling, a find-all of M matches makes about `M/64 + 7` element calls,
+plus one `next_n` call per batch. Inside the element, each named reference costs
+two loads (the run, and the first row's slot) plus one participation test per
+run member. A run of one is the common case. Numbered references cost nothing
+extra (D61). All of this is UNMEASURED. §R3.13 is the cell that measures it.
+
+### R3.2 The needed shape, the run, and the generic bind
+
+**The NEEDED shape is an `rx_group_entry` array** (crit2-6). `rx_group_entry`
+already exists in the shared block (match_api §2¶8), and it already has every
+column a reference needs:
+
+| column | a `$k` / `${k}` row | a `${name}` row | a `${site.group}` row (Q-M2) |
+|---|---|---|---|
+| `name` | NULL | `"name"` | `"group"` |
+| `number` | `k` | `-1` (any) | `-1` |
+| `slot` | `-1` (needed, not delivered) | `-1` | `-1` |
+| `ref` | NULL | NULL | `"site"` |
+
+So the subst record's reference list is `const rx_group_entry *needs`, and
+`rx_subst_ref` (§R2.4) is withdrawn. Bind becomes a generic match of a needed
+array against an offered shape (`rx_info`'s `ncaps`, `ngroups` and `groups`).
+It knows nothing about templates. That is the shape type crit2-7 asks to have
+built now, and the only one (§R3.12).
+
+**Satisfaction**, replacing §R2.2's table:
+
+| needed row | satisfied when | binding records |
+|---|---|---|
+| `number == 0` | always | nothing (slot 0 is a constant) |
+| `number == k ≥ 1`, `name == NULL` | `k <= ngroups && k < ncaps` | nothing (slot `k` is a constant, D61) |
+| `name != NULL` | `rx_group_run` finds a run of `count ≥ 1` rows in the right scope, and every row of the run has `slot >= 0` | `{first, count}`: row indexes into `rx->groups` |
+
+**A name binds to its RUN**, not to one slot (crit1-2). A run's members are
+contiguous ROWS of `rx->groups`, because the array is sorted by (name, number)
+(match_api §5.4¶4-¶5). Their SLOTS are not contiguous. So the binding stores
+`{first, count}` into `rx->groups`, and `rx->groups` itself is the slot list.
+Per match, the render walks the run per match_api §5.4¶6: the first row whose
+slot participated (both offsets set) is the group, and a run with no
+participating member is unset. crit1's cell `(?J)(?<n>a)|(?<n>b)`, `[${n}]` on
+`"xaby"` then renders `x[a][b]y`, which is PCRE2's answer. §R2.2's single-int
+binding gave `x[a][]y`. The run of one is a one-row walk.
+
+**One name-to-run helper**, in the subst block:
+
+```c
+/* The run of rows named `name` in scope `ref` (NULL: the caller scope,
+ * rows [0, nnames); otherwise the delivered rows [nnames, nentries) of site
+ * `ref`, match_api §5.5). Writes the first row's index to *first and returns
+ * the run's length, 0 when there is none. bsearch, then walk back to the
+ * run's head (match_api §5.4¶6's first two steps). */
+static inline int rx_group_run(const struct rx_info *rx, const char *name,
+                               const char *ref, int *first);
+```
+
+There are three name-to-run sites today, and the bind uses only this one. The
+other two are LATER ADOPTERS and are not rewritten now:
+
+- match_api §5.4¶6's caller prose. It can point at `rx_group_run` once the helper
+  moves into the rx shared block, which is an rx abi event. The trigger is the
+  next rx abi event, or [IFACE-PUSH].
+- The compiler's own resolution for the emitted `\k<name>`. This is C under
+  `src/`, not header text, so "one helper" there means the same algorithm checked
+  by an agreement cell (phase B: `rx_group_run` against the compiler's resolver
+  over the `(?J)` corpus). It does not mean shared code.
+
+### R3.3 The binding
+
+```c
+typedef struct rx_subst_run { int first, count; } rx_subst_run;   /* rows of rx->groups */
+
+typedef struct rx_subst_binding {
+    uint32_t                    tag;      /* PCREC_SUBST_BOUND, written last by a successful bind */
+    int32_t                     ncaps;    /* rx->ncaps at bind: the pairs every caps entry holds */
+    const struct rx_info       *rx;       /* the record bound against */
+    const struct rx_subst_info *sub;
+    const rx_subst_run         *runs;     /* the caller's <S>_NREFS entries, one per NAMED row */
+    void *const                *seg_user; /* one per rx_renderfn segment; NULL when the
+                                             template has none (bind checks the count) */
+} rx_subst_binding;
+
+/* 0 = bound. Otherwise PCREC_SUBST_MISMATCH (a record from another build, or
+ * nruns / nseg too small) or PCREC_SUBST_MISSING_REF (the rx delivers no slot
+ * for needs[*bad_ref]). *bad_ref is -1 unless the code is MISSING_REF. Reads
+ * only the two records. Never allocates. On a refusal, b->tag is not BOUND. */
+static inline int pcrec_subst_bind(rx_subst_binding *b, const struct rx_info *rx,
+                                   const struct rx_subst_info *sub,
+                                   rx_subst_run *runs, size_t nruns,
+                                   void *const *seg_user, size_t nseg,
+                                   int *bad_ref);
+```
+
+- **The binding carries the rx** (crit3-2), so the glue takes no separate
+  `rx`. Pairing a binding with the wrong rx through the glue is then
+  impossible. What remains is a caller who hands the element a `caps` array
+  from a different artifact. The element catches that once per call:
+  `ctx->ncap != b->ncaps` returns `PCREC_SUBST_MISMATCH`. It does not catch a
+  different rx with the same `ncaps`. That case is UNDEFINED, and phase B's spec
+  says so beside match_api §3.8¶8's "another artifact" rule, which has the same
+  shape and the same reason (D165 addendum 3: no owner check).
+- **`<S>_NREFS` is `max(1, number of named rows)`** (crit3-4), so
+  `rx_subst_run runs[<S>_NREFS]` is never a zero-length array. `nruns` is
+  checked against the record's own count.
+- **Distinct refusals** (crit3-5): `MISMATCH` for "these records do not belong
+  together" (a different abi, a `nruns` that is too small, a missing
+  `seg_user`), and `MISSING_REF` with the offending row's index, from which a
+  diagnostic names the reference, `rx->name`, and what the rx does offer
+  (§R2.2's message). The `dlopen` case is covered: bind compares `rx->abi`,
+  `sub->abi` and the including header's `PCREC_RX_ABI_H` at run time.
+- **Read-only after bind.** Nothing writes a binding after bind returns
+  (§R3.9, thread safety).
+
+### R3.4 The glue
+
+```c
+#ifndef PCREC_SUBST_PAIRS
+#define PCREC_SUBST_PAIRS 256          /* the glue's batch buffer, in pairs */
+#endif
+
+/* Every match of `it` (FRESH, setters applied), up to `limit` of them, gaps
+ * copied, each match rendered, the tail copied. Returns 0 or a negative code
+ * (§R3.5). *outlen and *nsubst are written on EVERY path: on 0, the produced
+ * length and the substitution count; on PCREC_SUBST_NOSPACE, the capacity
+ * that suffices (SIZE_MAX: none does) and the full count; on any other code,
+ * 0 and 0. out == NULL sizes only. out must not overlap s[0, n). */
+static inline int pcrec_subst(const rx_subst_binding *b, rx_iter *it, size_t limit,
+                              unsigned char *restrict out, size_t cap,
+                              size_t *outlen, size_t *nsubst)
+{
+    *outlen = 0; *nsubst = 0;
+    if (b->tag != PCREC_SUBST_BOUND || b->rx->abi != PCREC_RX_ABI_H
+        || b->sub->abi != PCREC_RX_ABI_H || b->ncaps != b->rx->ncaps || !b->rx->next_n)
+        return PCREC_SUBST_MISMATCH;                       /* once per call */
+    const size_t nc = (size_t)b->ncaps;                    /* >= 1 (match_api §5¶2) */
+    size_t kmax = nc <= PCREC_SUBST_PAIRS ? PCREC_SUBST_PAIRS / nc : 1;
+    if (kmax > 64) kmax = 64;
+    ptrdiff_t buf[kmax * nc][2];                           /* >= one match at any ncaps */
+    rx_var vres[b->sub->nvrefs ? b->sub->nvrefs : 1];      /* ${!name}, once per call */
+    rx_ctx ctx;
+    int rc = rx_subst_ctx_init(&ctx, it, b, vres);         /* §R3.7, §R3.9 */
+    if (rc < 0) return rc;
+    rx_subst_cur cur = { 0, 0, out != NULL };
+    size_t k = 1, done = 0;
+    while (done < limit) {
+        size_t want = k < limit - done ? k : limit - done;  /* never fetch past limit */
+        size_t got = b->rx->next_n(it, buf, want);
+        rc = b->sub->render(b, &ctx, (const ptrdiff_t (*)[2])buf, got, RX_SUBST_GAPS,
+                            out, cap, &cur);
+        if (rc < 0) return rc;
+        done += got;
+        if (got < want) {                                  /* the iterator ended */
+            if (it->rc < 0) return it->rc;
+            break;
+        }
+        if (k < kmax) k = 2 * k < kmax ? 2 * k : kmax;
+    }
+    rx_subst_put(&cur, out, cap, ctx.subject + cur.prev, ctx.len - cur.prev);   /* the tail */
+    *nsubst = done;
+    *outlen = cur.w;
+    return (cur.w == SIZE_MAX || (out && !cur.fits)) ? PCREC_SUBST_NOSPACE : 0;
+}
+```
+
+- **It drives `next_n` itself**, not `RX_FOREACH` (crit2-3). This is for two
+  reasons. First, `RX_FOREACH` refuses `ncaps > RX_FOREACH_PAIRS` (the I4
+  ruling's 255-group ceiling), while PCRE2 has no group limit below 65,535; the
+  glue's buffer is sized from `rx->ncaps` and falls to k = 1 above
+  `PCREC_SUBST_PAIRS`, so no group count PCRE2 accepts is refused. Second,
+  `RX_FOREACH` over-fetches past a stop. crit2-4's `limit = 4` cell fetches 7
+  matches (1 + 2 + 4). The glue caps every request at the remaining limit, so
+  `limit = 1` runs exactly one search, and `limit = 4` fetches exactly 4.
+- **Stack cost.** The buffer is a VLA of `16 * kmax * ncaps` bytes on LP64.
+  That is 4,096 bytes when `ncaps <= 256`, and `16 * ncaps` above it (k = 1).
+  At PCRE2's ceiling that is 1 MiB, more than a 128 KB thread stack holds (the
+  same class as match_api §5.3's frame-size note). A caller with that many
+  groups writes the ten-line custom glue with a heap buffer, because the element
+  takes any `caps` array (§R3.12). Phase B's spec states the bound. The glue
+  needs C99 (VLAs, `for` declarations), as `RX_FOREACH` already does.
+- **`limit`** keeps §R2.4's meaning: `1` is PCRE2's non-global substitution,
+  and `SIZE_MAX` is global. With `limit == 0` the loop does not run, the
+  subject is copied, and the iterator stays FRESH. **No resume after a
+  `limit` stop** (crit2-5). The iterator is then BOUND, positioned after match
+  `limit`, but the tail has already been copied into `out`. So a second
+  `pcrec_subst` call on it would produce a second copy of the rest. The spec
+  says: after a return with `*nsubst == limit`, the iterator's state is
+  unspecified for the glue. A caller who wants to resume uses the element and
+  its own loop.
+- **Saturation** (crit3-3). `rx_subst_put` adds lengths with an overflow test.
+  A total past `SIZE_MAX - 1` sets `cur.w = SIZE_MAX` and clears `fits`, and
+  the glue returns NOSPACE with `*outlen = SIZE_MAX`, meaning no buffer
+  suffices. That is reachable only with 32-bit `size_t`. `*nsubst <= n + 1`,
+  and gcc caps an object at `PTRDIFF_MAX` bytes, so the count cannot wrap.
+
+### R3.5 Codes and `*outlen`
+
+The subst codes sit below `PCREC_ERR_ITER` (−10), which keeps them clear of the
+give-up range and of every existing refusal. Their VALUES are PROPOSED and are
+fixed at landing as the next free numbers below the floor, the same house rule
+as an abi number. Every code is distinct, and an element or glue never returns
+`-1`.
+
+| name (PROPOSED value) | returned by | meaning | `*outlen`, `*nsubst` |
+|---|---|---|---|
+| `PCREC_SUBST_NOSPACE` (−11) | glue | `out` too small. The output in `out` is the first `cap` bytes or less (unspecified, §R3.9) | the capacity that suffices, or `SIZE_MAX` (none does); the FULL count |
+| `PCREC_SUBST_BADSPAN` (−12) | element, glue | the rx reported a span the splice cannot express (§R3.6) | 0, 0 |
+| `PCREC_SUBST_RENDER` (−13) | element, glue | an `rx_renderfn` segment returned `-1` | 0, 0 |
+| `PCREC_SUBST_UNSET` (−14) | element, glue | `--unset=error`: a referenced GROUP is unset in this match (PCRE2's −55 class) | 0, 0 |
+| `PCREC_SUBST_MISMATCH` (−15) | bind, glue, element | the records, binding, flags or caps do not belong together (§R3.3) | 0, 0 |
+| `PCREC_SUBST_MISSING_REF` (−16) | bind | the rx delivers no slot for `needs[*bad_ref]` (PCRE2's −49 class, at bind) | (bind writes `*bad_ref`) |
+| `PCREC_ERR_UNSET_VAR` (−8, exists) | glue | `--unset=error`: a `${!name}` variable is unset (§R3.7) | 0, 0 |
+| the iterator's code (§4) | glue | a give-up or refusal ended the find-all | 0, 0 |
+
+**NOSPACE's capacity is PCRE2's minus one** (crit1-3). PCRE2 reports 12 for
+`a*` → `[$0]` on `"bab"` because it counts its NUL terminator; pcrec reports 11
+because the output has no NUL (D38 Q4, length only). The spec states this
+exactly. A caller porting a PCRE2 grow-and-retry loop that adds 1 gets a
+buffer one byte larger than needed, which is harmless.
+
+**On a code other than NOSPACE, `*outlen` and `*nsubst` are 0.** PCRE2 writes
+`PCRE2_UNSET` (`~0`) there. pcrec does not, because `SIZE_MAX` already means
+"no buffer suffices" on NOSPACE. The return code is what tells the caller
+which case it is in.
+
+### R3.6 Span validation: BADSPAN
+
+**§R2.5 rule 1 was FALSE** (crit1-1, BLOCKER). A `\K` reached through a
+SUBROUTINE CALL from a lookaround runs, and the iterator then reports a span
+whose end precedes its start, or whose start precedes the previous match's
+end. pcrec refuses `\K` written lexically inside a lookaround, as PCRE2 does,
+but not one reached through a call. The iterator reports these spans
+correctly, as `pcre2_match` does (§R3.14 probe 1). What fails is the splice: an
+unsigned gap wraps, and `memcpy` runs `SIZE_MAX` bytes.
+
+**The rule.** The element checks every span before it uses one:
+
+- with `RX_SUBST_GAPS`: `end < start`, or `start < cur->prev`, returns
+  `PCREC_SUBST_BADSPAN`;
+- without it (renderings back to back): only `end < start` is refused. Overlap
+  is harmless there, and a templated `grep -o` over `x|(?<=(?1))y|(\Kx)`
+  renders both of the overlapping matches.
+
+**PCRE2's test is stricter, and pcrec documents the corner rather than
+matching it.** `pcre2_substitute` returns −60 (BADSUBSPATTERN) when a match
+STARTS BEFORE THE SEARCH START, or ends before it starts. The search start
+equals the previous match's end, except after an empty match whose
+NOTEMPTY_ATSTART retry failed. There the search starts one character later,
+so a match reported at the empty match's own position is accepted by pcrec
+and refused by PCRE2. The iterator does not expose its per-search start, and
+cheap exposure is not available. `next_n` writes only caps. A start field
+would be an `rx_iter` layout change and an abi event, and in a batch it would
+need one word per entry. So R3 takes the manager's "else" branch: pcrec checks
+against the previous END, and the spec names the corner with its witness
+(§R3.14, probe 1c). `^|(?<=(?1))y|(?!)(\Kz)` on `"zy"`: the iterator reports
+`[0,0) [0,2)`, pcrec renders `[][zy]`, and PCRE2 returns −60.
+
+**match_api §3.8 gains NO "ordered, non-overlapping" sentence** (the manager's
+ruling). The iterator legitimately reports such spans, as `pcre2_match` does,
+and the restriction belongs to the consumer that needs it. §R2.8's closing
+claim that "the two spec needs are clarifications" loses its first item.
+
+**Population.** Every pattern that reaches a `\K` through a call from a
+lookaround. Both witnesses are crit1's. The cost is two compares per match,
+inside the element.
+
+### R3.7 The unset axis and `${!name}`
+
+**D38 Q3 already decided the axis** (crit1-4): "unset-but-existing group renders
+EMPTY by default, as a GENERATION AXIS with a strict PCRE2-error variant". R3
+spells the two values `--unset=empty` (the default) and `--unset=error`. Under
+`error` the element returns `PCREC_SUBST_UNSET` on the first match in which a
+referenced group (a run: none of its members participated) is unset. PCRE2's
+own default is the error (−55), and its `SUBSTITUTE_UNSET_EMPTY` is pcrec's
+default. That difference was ruled at D38, and §R3.10 lists it. The record
+carries the axis value the subst was compiled with (`unset`), and that value
+is stamped.
+
+**`${!name}` is resolved once per call, by the glue, against the iterator's
+variables** (crit3-6). Bind cannot check it: variables are bound to the
+ITERATOR (`rx_iter_vars`, match_api §3.8¶4), not to the rx, and they are not
+known until the call. `rx_subst_ctx_init` scans the iterator's `rx_var` array by
+name once per call (variables_common.md §3.2's rule) for each of the record's
+`vrefs`. It writes the matches, in the template's own order, into the glue's
+`vres` array, and points `ctx.vars` at that array. A name the caller did not
+pass is UNSET (variables_common.md §3.4). The render then reads its j-th
+variable as `ctx->vars[j]`, a constant index, and every entry still carries its
+name. So an `rx_renderfn` segment that scans `ctx->vars` by name still works.
+
+Unset variables follow the same axis. `empty` renders nothing (variables_common
+§2.4's replacement default). `error` returns the existing `PCREC_ERR_UNSET_VAR`
+before any output, because a variable cannot change between matches. This
+keeps one code per meaning.
+
+### R3.8 One build, and the version number
+
+**Same-build rule** (crit2-2): **a subst artifact and an rx artifact used
+together must come from the same pcrec build, which means the same `abi`.**
+This is checked twice:
+
+- **At compile time**, by the shared block's existing `#error`. The subst header
+  carries a copy of the rx shared block under `PCREC_RX_ABI_H`, so a TU that
+  includes a subst header and an rx header of different abi does not compile.
+- **At bind** (and again by the glue), by comparing `rx->abi`, `sub->abi` and
+  the including header's number. This covers `dlopen` and separately compiled
+  TUs.
+
+An rx abi event (any scaffolding change, D76/D94, comments included) therefore
+also orphans every subst artifact built before it. That cost is accepted and
+stated, not designed around.
+
+**The narrower alternative is NOT designed here.** It would key the bind to a
+SHAPE-CONTRACT version (the render on primitives: subject, caps, vars), so that
+a subst would survive rx scaffolding changes. It is named as a candidate under
+[DD-3] / [RXINFO-REMODEL], for the manager to file. Its trigger is a caller who
+needs subst and rx artifacts from different builds (a prebuilt template library
+or an [ART-MGR] catalog).
+
+**Q-M3 is resolved: no new number.** The subst record carries `abi`, which
+equals the shared `PCREC_RX_ABI_H`. That is all the same-build rule needs. The
+subst block lives only in subst headers, so its LANDING changes no rx artifact
+(no rx abi event, and today's artifacts stay byte-identical). Any LATER change
+to the subst block's text is an abi event under D76/D94, moving every rx reader.
+That is the cost §R2.10(3) weighed. A subst-block number of its own is filed
+with [IFACE-PUSH] as a candidate.
+
+**Stamps follow match_api §6.3.1¶1.** The subst `.h` carries the constants a
+caller needs to DECLARE STORAGE or `_Static_assert`:
+
+- `<S>_NREFS`: the binding's run count, `max(1, n)`;
+- `<S>_NSEGS`: the `seg_user` count, `max(1, n)`;
+- `<S>_MAXNUM`: the highest `$k`, or 0.
+
+This is the same family as `<PREFIX>_NCAPS`, `<PREFIX>_NVARS` and §10.4's
+sizing macros. Every other subst stamp (`<S>_UNSET`, the module tier, the
+template's reference census) goes into the `.c` only.
+
+### R3.9 The caller contract
+
+- **`out` must not overlap `s[0, n)`** (crit3-7). The glue and the element
+  declare `out` `restrict`. An overlapping call is UNDEFINED, and the spec says
+  so in one sentence. In-place is the separate contract of §R2.6 (crit3-12),
+  still contract-only.
+- **`out` after a failure** (Q-M1, crit3-7): on any negative return, NOSPACE
+  included, the contents of `out[0, cap)` are UNSPECIFIED. This is PCRE2's own
+  stance. A caller who needs the subject intact keeps it out of place, and the
+  previous rule already requires that.
+- **Thread safety** (crit3-9). A binding is read-only after bind, so one
+  binding may serve any number of threads at once, each with its own
+  iterator, `out` and `vres`. The records are `const`. The glue keeps all
+  per-call state in automatic storage. The iterator's own rule is match_api
+  §3.8¶11's.
+- **The context-init helper** (crit3-8):
+
+  ```c
+  /* ctx for an element call over iterator `it` with binding `b`: subject, len
+   * and ncap from them; vars resolved into vres (b->sub->nvrefs entries, at
+   * least 1); user NULL (segments get theirs per call, §R3.1). Returns 0 or
+   * PCREC_ERR_UNSET_VAR (--unset=error). Reads it->vars only when the
+   * iterator is BOUND or ENDED, or FRESH with PCREC_ITER_OPT_VARS set. */
+  static inline int rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it,
+                                      const rx_subst_binding *b, rx_var *vres);
+  ```
+
+  A custom glue calls this instead of writing `rx_ctx`'s eight members
+  positionally. That leaves the struct's layout free to grow without breaking
+  callers. The last clause of the comment is the fix for F-R3-1 (§R3.0).
+- **The iterator fields pcrec's shared code reads.** Phase B's spec hunk to
+  match_api §3.8¶9 adds one sentence: `s` and `n` hold their bound values in
+  every state; `vars` and `nvars` hold them once the iterator is BOUND (bind
+  normalizes them) and, while FRESH, only if `rx_iter_vars` was called
+  (`PCREC_ITER_OPT_VARS`). pcrec's shared blocks (`RX_FOREACH`, the subst
+  block) read exactly these fields. A caller still reads them only through
+  `rx_subst_ctx_init`.
+
+### R3.10 Where pcrec's substitution differs from `pcre2_substitute`
+
+| # | PCRE2 | pcrec | source |
+|---|---|---|---|
+| 1 | NOSPACE capacity counts the NUL (`a*`→`[$0]` on `"bab"`: 12) | no NUL, so 11 | D38 Q4; §R3.5 |
+| 2 | writes a NUL; `PCRE2_UCHAR *` | length only; `unsigned char *`; embedded NULs are legal output | D38 Q4 |
+| 3 | `SUBSTITUTE_EXTENDED`, `_LITERAL`, `_UNKNOWN_UNSET` as run-time flags | the dialect is the template's compile-time module tier; unknown references are a bind refusal; unset is a compile-time axis | D38 Q3/Q5; §R3.7 |
+| 4 | unknown group: −49 at substitute time | `MISSING_REF` at bind, before any output | §R3.3 |
+| 5 | unset group: −55 unless `UNSET_EMPTY` | empty unless `--unset=error` | D38 Q3 |
+| 6 | NOSPACE: the error, no count | NOSPACE and the full count | §R3.5 |
+| 7 | the NOSPACE retry is a second call | the same: a second pass over a FRESH copy of the iterator (match_api §3.8¶10) | §R2.5 rule 4 |
+| 8 | non-global (1) or global (all) | any `limit`; `0` copies the subject | §R3.4 |
+| 9 | −60 when a match starts before the SEARCH start | `BADSPAN` when it starts before the previous END; the empty-retry corner differs | §R3.6 |
+| 10 | on error, `outlength = PCRE2_UNSET` | 0, with the code | §R3.5 |
+| 11 | `MATCH_INVALID_UTF` global iteration: the anchored retry reports a match past an ill-formed byte | the iterator's answer, equal to `_search` in a loop | §R3.14 probe 2 |
+
+**The grow-and-retry recipe**, which phase B's guide and spec carry:
+
+```c
+rx_iter it0 = RX_ITER_INIT(s, n), it = it0;     /* keep a FRESH copy for the retry */
+size_t len, k;
+int rc = pcrec_subst(&b, &it, SIZE_MAX, out, cap, &len, &k);
+if (rc == PCREC_SUBST_NOSPACE && len != SIZE_MAX) {
+    unsigned char *big = malloc(len ? len : 1);
+    it = it0;                                    /* a second match pass, as PCRE2's */
+    rc = pcrec_subst(&b, &it, SIZE_MAX, big, len, &len, &k);
+}
+```
+
+### R3.11 The CLI and the header
+
+- **`--subst-file FILE`** (crit3-11) beside `--subst TEMPLATE`. It reads the
+  template from a file, byte for byte, so a template with quotes, `$` or a
+  newline needs no shell escaping. The two options are mutually exclusive,
+  and each excludes `--pattern`. Spelling is the manager's call.
+- **`-o dmy.c` also writes `dmy.h`**, as an rx compile does. The `.h` holds the
+  rx shared block (guard `PCREC_RX_ABI_H`), then the subst block (guard
+  `PCREC_SUBST_H`, which `#error`s unless `PCREC_RX_ABI_H` is defined to the
+  number the subst was built with), then `dmy`'s own declarations.
+- **Include order.** A TU may include an rx header and any number of subst
+  headers in any order. Whichever comes first defines the shared block and the
+  guard drops the later copies; the subst block follows the shared block
+  inside each subst header, so its precondition always holds. One
+  `#include "dmy.h"` is enough to write a custom glue, and `RX_FOREACH` comes
+  with it.
+
+### R3.12 The general form: a per-match consumer
+
+crit2-7's unlock, accepted as design text. A substitution is one member of a
+family: a **per-match consumer**. It is a spec over a DECLARED NEEDED SHAPE,
+bound once to an OFFERED shape, and driven per batch. The family:
+
+| member | what it consumes into | status | trigger |
+|---|---|---|---|
+| render (this note) | bytes, with or without gaps | DESIGNED (phase B builds it) | built |
+| extract-to-struct | a typed record per match (named fields, numeric conversion) | NAMED, not built | a structured-extraction ask from a user |
+| a pcre2-ovector adapter | renders over a libpcre2 ovector instead of an iterator's caps | NAMED, not built | the bench wants templated output from both engines over one template |
+| split, count, callbacks | glue only: no element, because none needs a shape | glue recipes | when asked |
+
+**Built now (in phase B): only the shared shape type and the generic bind.** The
+shape type is `rx_group_entry` as the needed array, plus `rx_subst_run`. The
+bind is `pcrec_subst_bind`'s matcher, written over two shapes, not over
+templates. The batch element makes §R2.6's sink and streaming glue thin loops
+over `next_n` (D38 §7.2's `pcrec_subst_to`).
+
+**One function family over `rx_ctx`** (crit2-6), recorded here so a fourth
+member is a row rather than a surprise:
+
+| type | consumes | produces | binding |
+|---|---|---|---|
+| `rx_matchfn` | `ctx` (pos, caps so far) | a length or fail | `rx_callout_ref.user` |
+| `rx_renderfn` | `ctx` (one completed match) | one segment's bytes | per-segment `user` (§R3.3 `seg_user`) |
+| `rx_substfn` | a binding, `ctx`, a batch of k matches | the batch's bytes into a cursor | `rx_subst_binding` |
+
+Q-M5 is answered by this table. `rx_substfn` is not an `rx_renderfn`, because it
+consumes a batch and a binding, and a renderer consumes one match. A compiled
+subst used as another template's segment would be a k = 1 adapter, a
+`rx_renderfn` wrapping a binding. That is an unlock, not built, and its trigger
+is a template that names another compiled template.
+
+### R3.13 The phase-B timing cell, rebuilt
+
+crit2-4. The question is whether the separated design (the shipped form: the
+glue in the caller's TU, the batch element out of TU) loses to a fused one.
+The comparator is a hand-written **D163 composite twin**: one TU, one exported
+symbol, the render inlined into the `__one` loop. This is what §R2.7's fused
+convenience would emit.
+
+| arm | what |
+|---|---|
+| `SEP` | the shipped glue, batch element in another TU (static link) |
+| `SEP-PLT` | the same with the element in a `-fPIC` shared object |
+| `K1` | the shipped glue with the batch forced to 1 (the per-match shape) |
+| `COMP` | the composite twin |
+| `SEP'`, `COMP'` | A/A repeats; floor = max(\|median ratio − 1\|, IQR/median) per ratio (D165's convention) |
+| `PCRE2` | `pcre2_substitute(GLOBAL)`: an external row, reported, never gated |
+
+| cell | why |
+|---|---|
+| `a` → `b` over 1 MiB of `a` | the densest case: the call cost is all there is |
+| `(\w+)` → `<$1>` over prose | ordinary density |
+| `$1` at `ncaps ≈ 30` | the caps buffer's width, and the batch at `kmax = 8` |
+| `${w}` named, dense | the run walk's two loads |
+| `limit = 4` on a dense subject | fetch count = 4 exactly (a correctness check run in the timing harness) |
+
+**Gate.** `SEP/COMP <= 1 + floor` on the two dense cells. A loss builds §R2.7's
+fused composite, which is Q-F2's trigger. `K1/SEP` is a diagnostic. It reports
+how much the batch shape is worth, and gates nothing. The cell is quiet-gated
+and queued like the I4 parity cell. The thresholds are UNMEASURED DEFAULTS
+until the first run.
+
+### R3.14 The two probes
+
+**Probe 1: does the iterator TERMINATE on both backward-span patterns?** YES.
+It drove `<p>_next` directly with a cap of `4n + 16` iterations (a cap hit
+would be non-termination), then `RX_FOREACH` under the same cap.
+
+- Short subjects. `x(?=(?1))|(b\K)` on `"xb"` gives `[2,1)` and ends with `rc 0`;
+  on `"bxbx"`, `[1,1) [3,2)`. `x|(?<=(?1))y|(\Kx)` on `"xy"` gives
+  `[0,1) [0,2)` and ends with `rc 0`; on `"xyxyyx"`, five matches.
+- Long subjects. The units `xb`, `xy`, `xyb`, `bx`, `xxyy` and `xbxy` were each
+  repeated 1,000 and 100,000 times (up to 400,000 bytes). Every run ENDED with
+  `rc 0`. Every match count is at most `n` (for example, `k1` on `'xb'x100000`
+  gives 100,000 matches, all backward; `k2` on `'xxyy'x100000` gives 300,000
+  matches, 100,000 of them starting before the previous end). `RX_FOREACH`
+  gave the same counts. No cap was hit.
+- **Probe 1c, the corner.** `^|(?<=(?1))y|(?!)(\Kz)` on `"zy"`: the iterator
+  gives `[0,0) [0,2)`, `pcre2_match` from 1 gives `[0,2)`, and
+  `pcre2_substitute(GLOBAL)` gives −60. This is §R3.6's corner witness.
+
+The iterator is lane/i2build's (unmerged). This lane reports the result and
+changes nothing there. Termination is by construction: `lo` never decreases,
+and each search starts at or after it.
+
+**Probe 2: the iterator on an ill-formed UTF-8 subject** (crit1-5). It is
+CONSISTENT with match_api §9 as written, and with `_search` in a loop. It is
+NOT a defect candidate. Over 15 cells (`x*`, `''` and `a|x*`, under `-e utf8`,
+on `"a\xffb"`, `"a\xe3b"`, `"a\x80b"`, `"\xff"` and `"a\xe3\x81b"`):
+
+- the iterator, the match_api §3.1.3 `_search` loop and a per-position `_search`
+  agree on all 15. `x*` on `"a\xffb"` gives `(0,0) (1,1) (2,2) (3,3)`. A stray
+  continuation start is refused (`rc -7` at that position) and skipped, per
+  §9.2 and §9.5;
+- match_api §9.3¶1 says "an ill-formed LEAD byte (`0xFF`, a truncated `0xE3`) is
+  a valid start and is attempted", and the empty match at 1 is exactly that;
+- **libpcre2's single searches agree with pcrec's at every offset.** Under
+  `PCRE2_UTF|PCRE2_MATCH_INVALID_UTF`, `x*` and `''` from offsets 0-3 of
+  `"a\xffb"` and of `"a\xe3b"` give `(0,0) (1,1) (2,2) (3,3)`;
+- **PCRE2's global iteration differs on 6 of 15 cells**, the three with an
+  interior ill-formed lead byte (`"a\xffb"`, `"a\xe3b"`, `"a\xe3\x81b"`) for
+  `x*` and for `''`. It reports 3 matches, none at 1. The cause is located: its
+  NOTEMPTY_ATSTART|ANCHORED retry at offset 0 returns `(2,2)`, a match NOT at
+  the anchor, past the invalid byte. So PCRE2's loop never searches from 1.
+  This is the class match_api §9.3¶3 already states for the anchored entries
+  (libpcre2 under `PCRE2_ANCHORED` reports a match at a moved start; pcrec's
+  anchored contract cannot). `a|x*`, whose retry is not needed, agrees on all
+  five subjects.
+
+So the corpus pins the iterator's answer as STATED behaviour: `sg` cells with
+`x*` → `[$0]` on `"a\xffb"` giving `[]a[]\xff[]b[]`, 4 substitutions. The
+oracle column records libpcre2's 3 as the known difference. One spec candidate
+goes to the manager: match_api §3.8¶2 says "the matches are PCRE2's global
+iteration's" without the ill-formed exception, and its phase-B hunk should cite
+§9.3¶3's class.
+
+### R3.15 The standing questions, what R3 changes
+
+1. **Measurement regime.** R3 adds no number. §R3.13's cell names its regime:
+   dense independent matches, one thread, the dev box, gcc 15.2, the quiet
+   gate, and D165's floors. The two probes are ANSWERS (spans, counts,
+   termination), not timings.
+2. **Independent control.** The corpus oracle stays `pcre2_substitute`. Where
+   pcrec differs by design, the expectation is pcrec's stated behaviour and the
+   cell carries PCRE2's answer beside it: §R3.10 rows 1, 6, 9 and 11, each with
+   a witness. The run-walk cell is controlled by PCRE2's own duplicate-name
+   answer. The BADSPAN cells are controlled by PCRE2's −60. The PROPOSED
+   sabotage rows for phase B (S1346-S1355) are listed in the review file's
+   candidates. Their witnesses and reach counts are owed at build.
+3. **What moves when regenerated.** No rx artifact moves at landing. After
+   landing, a change to the subst block is an rx abi event (§R3.8).
+
+### R3.16 Open questions, restated after R3
+
+For Frank, in plain words, with the leaning first. These four are unchanged in
+substance, and their leanings are updated:
+
+- **Q-F1. When does a template meet its rx?** Leaning: once, at run time,
+  before any output, by filling a small binding from the rx's record. This
+  works for any rx whose group names fit, including one where the same name
+  occurs twice. Numbered groups cost nothing extra. The new constraint is that
+  the template and the rx must come from the same pcrec build, and both the
+  compiler and the bind check it. An optional build-time check exists when the
+  user names the pattern.
+- **Q-F2. Should a one-symbol "substitute with this pattern" function also
+  ship?** Leaning, stronger than before: no, unless the timing cell shows the
+  separate pieces losing to it on dense matches. The pieces now hand over up to
+  64 matches per call instead of one, so the remaining difference is only that
+  the fused form can inline the rendering into the match loop. If it ever
+  ships, it is built from the same two pieces.
+- **Q-F3. First vs all.** Leaning: one function with a "how many" argument
+  (1 = first, unlimited = all). The argument now also caps how far the
+  iterator runs ahead, so "first" does exactly one search.
+- **Q-F4. In-place substitution.** Leaning: the contract is written down and
+  built only when someone asks. The out-of-place rule is now explicit: the
+  output may not overlap the subject.
+
+For the manager, R3 closes the five: Q-M1 (unspecified, §R3.9), Q-M2 (allowed,
+the `ref` column, §R3.2), Q-M3 (shared abi; own number to [IFACE-PUSH], §R3.8),
+Q-M4 (§R3.5's table) and Q-M5 (no, §R3.12). One new item: whether
+`PCREC_SUBST_PAIRS`'s 256, copied from `RX_FOREACH_PAIRS`, should be measured
+in §R3.13. It is an unmeasured default and is labelled as one.
+
+---
+
+## REVISION 2 — compiled substitution as an INDEPENDENT ELEMENT (lane subst, 2026-10-21) — READ §R3 FIRST
 
 **Status: PROPOSED, design only.** Nothing under `src/`, `cli/`, `lib/` or
 `tests/` was touched. The probe behind every **[MEASURED]** claim below is
