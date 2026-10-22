@@ -989,6 +989,14 @@ fi
 # twelve EMITTED_BYTES rows -145, exactly `<prefix>_iter_buffers`' two-line doc
 # comment, which lane i1tri made NON-ESSENTIAL (D112 item 2) after the I1
 # re-record above; nothing else moved.
+#
+# RE-RECORDED 2026-10-21 at [FINDALL-NEXT] I4 (lane i2build, abi 83 -> 84): all
+# twelve EMITTED_BYTES rows +3,645, the same on DFA, VM and tiered artifacts:
+# rx_nextnfn, the RX_FOREACH block (its comment, RX_FOREACH_PAIRS, rx_foreach,
+# rx_foreach_begin, rx_foreach_pull, the macro) and the rx_info.next_n member in
+# the shared block, `.next_n =` in rx_info, <prefix>__one with <prefix>_next
+# and <prefix>_next_n over it, <prefix>_next_n's header declaration, and the
+# STEP's past-the-end line; nothing else moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
