@@ -23,8 +23,8 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `87` on every artifact today (lane corefix bumped it
-  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; 83-86 were
+- **`rx_info.abi` is `83` on every artifact today (lane corefix bumped it
+  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; the number was first taken as 87, renumbered to 83 at landing; 84-87 are
   allocated to other branches, and whichever lands later renumbers).** Two
   defect fixes in the VM emitter. K128: an unbounded repeat `X{m,}` (m >= 1)
   with a nullable body now records where its last mandatory iteration began
