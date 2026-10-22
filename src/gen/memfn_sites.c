@@ -571,106 +571,6 @@ void pcrec_memfn_part_window_stated(Ctx *cx, mf_pred *p, const mf_walt *alts, in
     p->wfloor = (uint8_t)fl;
 }
 
-void pcrec_memfn_window_is_candidate(mf_pred *p)
-{
-    int32_t d = p->term[0].offset;
-    for (unsigned i = 1; i < p->nterm && i < MF_MAX_TERM; i++)
-        if (p->term[i].offset < d) d = p->term[i].offset;
-    p->window_stated = 1;
-    p->move_back = d;
-    p->overshoot = 0;
-}
-
-/* [MEMFN] R-26.1 (MF_SITE_ABI 18): span 0's class and its prefix facts.
- * [KIT-VERIFY] U1 Z2 (kit_proof.md §5.2, "Z2's statement on every
- * start-origin FIND site" [r3 fam-B1]): `exact_len` is the TRUE exact prefix
- * over the SENT sets, the largest L such that every position in [0, L) is
- * sent and the set sent there (the intersection of every term reading it)
- * equals the span slice's `S_d` (`pcrec_fact_span`, which bounds L by its own
- * exact prefix). A site with a term below its candidate has another origin
- * than the match start and states 0, as does a route whose slice is not
- * stated (no E3 machine, an erased or marked one). Nothing consumes it yet:
- * `consumable_len` stays 0. */
-_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_MAX_SPAN_POS,
-               "span 0's positions (the longest run term pcrec hands the kit) fit the "
-               "kit's prefix facts (R-26.5)");
-_Static_assert(PCREC_PREFIX_K_MAX <= MF_MAX_SPAN_POS,
-               "the span slice's exact prefix fits the kit's prefix facts (R-26.5)");
-
-/* The bytes term `t` admits at offset `d`, into `out` (mf_term.set's
- * layout); false where it does not read `d`. */
-static bool term_set_at(const mf_term *t, int d, uint8_t out[32])
-{
-    memset(out, 0, 32);
-    if (t->kind == MF_T_SET) {
-        if (d != t->offset) return false;
-        memcpy(out, t->set, 32);
-        return true;
-    }
-    if (t->kind != MF_T_RUN || d < t->offset || d >= t->offset + (int)t->run_len)
-        return false;
-    unsigned j = (unsigned)(d - t->offset), m = t->mask ? t->mask[j] : 0xFFu;
-    for (unsigned b = 0; b < 256; b++)
-        if ((b & m) == t->run[j]) out[b >> 3] |= (uint8_t)(1u << (b & 7));
-    return true;
-}
-
-static uint8_t span0_exact_len(Ctx *cx, const mf_pred *p)
-{
-    int L = 0;
-    for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++)
-        if (p->term[i].offset < 0) return 0;
-    const MkLang *l = pcrec_fact_span(cx);
-    if (l->stated != MK_LANG_STATED) return 0;
-    for (int d = 0; d < l->exact_len; d++) {
-        uint8_t sent[32], one[32];
-        bool covered = false;
-        memset(sent, 0xff, sizeof sent);
-        for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++) {
-            if (!term_set_at(&p->term[i], d, one)) continue;
-            covered = true;
-            for (int k = 0; k < 32; k++) sent[k] &= one[k];
-        }
-        if (!covered || memcmp(sent, l->set[d], 32)) break;
-        L = d + 1;
-    }
-#ifdef PCREC_CAND_TRACE
-    /* X0's set equality on every site stating exact_len > 0 (kit_proof.md
-     * §6.4 [r4 B9]): the statement as `x0.py stated` reads it, then the
-     * compound part's role (`-`: the compile itself). */
-    if (L > 0 && getenv("PCREC_KIT_PROOF_TRACE")) {
-        fprintf(stderr, "SITESTATED\t%d\t", L);
-        for (int d = 0; d < L; d++) {
-            bool first = true;
-            if (d) fputc(';', stderr);
-            for (int b = 0; b < 256; b++)
-                if (l->set[d][b >> 3] >> (b & 7) & 1) {
-                    fprintf(stderr, "%s%02x", first ? "" : ",", b);
-                    first = false;
-                }
-        }
-        fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
-    }
-#endif
-    return (uint8_t)L;
-}
-
-void pcrec_memfn_span0_stated(Ctx *cx, mf_pred *p)
-{
-    p->span_class = MF_SPAN_BOUNDED;
-    p->prefix_stated = MF_PREFIX_STATED;
-    p->exact_len = span0_exact_len(cx, p);
-    p->consumable_len = 0;
-}
-
-void pcrec_memfn_context_stop(mf_site *s)
-{
-    s->pred.span_class = MF_SPAN_CONTEXT;
-    s->pred.absent = MF_ABSENT_FAILS;
-    s->pred.consumable = MF_CONSUMABLE_NO;
-    s->read_floor = MF_FLOOR_SUBJECT;
-}
-
 /* ---- the answering block's provenance stanza (R-24, MF_SITE_ABI 15) -------
  *
  * The findings vocabulary's closed `fidelity` tokens
@@ -993,7 +893,6 @@ mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h)
     s->empty = MF_EMPTY_NOP;
     s->on_miss_leaves = 1;              /* `on_diff` returns */
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
     s->fold_kind = span_fold_kind(es->fold_kind);
     s->pred.nterm = 1;
     s->pred.need = MF_REQUIRED;
@@ -1050,7 +949,6 @@ mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
     s->reverse = a->reverse;
     s->empty = MF_EMPTY_NOP;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
     s->span_hi = a->span;
     s->count_by_caller = a->count != NULL;
     s->pred.nterm = (uint8_t)a->stride;

@@ -70,10 +70,11 @@ typedef struct PcrecCover {
 const PcrecCover *pcrec_cover(Ctx *cx);
 
 /* THE REPORT DESCRIPTION (kit_proof.md §2.5): the FIND / STMT / ASSIGN site
- * `cover` asks and defines, from the admitted decision `cv` alone (span 0 =
- * S_0..S_{k-1}, every term REQUIRED; one CONTEXT item per constrained side,
- * REQUIRED, with its absent rule; `site_kind` REPORT, `consumer` RESULT,
- * `read_floor` SUBJECT), and its hooks at indent `ind` (NULL at a define).
+ * `cover` asks and defines, from the admitted decision `cv` alone: its WINDOW
+ * statement (D172, window_site.md §1.2's cover row: span 0 = S_0..S_{k-1},
+ * one span per constrained context side, its core empty where absence
+ * SATISFIES; every span verify YES; the floor SUBJECT) and the frame
+ * (`site_kind` REPORT), and its hooks at indent `ind` (NULL at a define).
  * `stem` is the storage stem the define offers (W5). The ask (C13) and the
  * define read this one constructor. */
 mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,

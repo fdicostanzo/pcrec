@@ -445,9 +445,9 @@ static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
  * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
  *
  * It holds no `Dfa` and no `DfaForm`, so a consumer without a DFA fills one
- * from its own facts and has it described for the same kit renderer
- * (`ofs_pred_of`; the offset-skip function, memfn/src/ofsskip.c): the run
- * pre-check does (`req_run_tests`, §7.2 step 6), on every route, and
+ * from its own facts and states it to the same kit renderer (as a window
+ * part, `req_part_window`; the offset-skip function, memfn/src/ofsskip.c): the
+ * run pre-check does (`req_run_tests`, §7.2 step 6), on every route, and
  * `[OPT-VMSEED]` is the next (§1.5). The `PrefixK`
  * pointers point into the caller's `UnanchStart`, which outlives every use
  * (the reason `DfaForm` held the selection by pointer before this). */
@@ -1189,114 +1189,6 @@ static const char *req_run_fn_name(Ctx *cx, int i)
     return dfa_fragf(cx, i ? "%s_reqrun_whole" : "%s_reqrun", cx->opt->prefix);
 }
 
-/* [MEMFN] R4c Describes candidate test `t` as ONE predicate of a kit site
- * (integration.md §15.1): its terms in `t`'s own ascending order, a NULL
- * walk term being the run; the scan a byte term of its own, at its offset,
- * unless it is a byte of the run; `plan_hint`/`plan_pos` naming what pcrec's
- * block scans (§14.9). The run is REQUIRED; a model-selected offset is
- * OPTIONAL, there for speed only (§14.5). A multi-byte offset is reached
- * through its `<p>_ofs_k<k>` table, `table_ref` k + 1. `fn_ref` names the
- * function the predicate is defined as.
- *
- * The two fields the description does not carry, the loop guard `maxk` and
- * the scan byte, the kit re-derives from the terms, so they are checked here
- * against `t`'s own: a disagreement is drift between the derivation
- * (`ofs_test_of`, `ofs_test_run`) and the description, and loud. So are the
- * block's two unreachable shapes, a scan that is not one byte and a verify
- * chain with no term. */
-#ifdef PCREC_CAND_TRACE
-/* [START-TABLE] C1 the selection-trace record of one offset-k predicate's
- * NEED classification (kit boundary B20): per term, `r` a run or `s` a
- * set/byte, `R`/`O` its need, `*` on the term the plan scans. */
-static void ofs_pred_trace(const mf_pred *p)
-{
-    char sig[3 * MF_MAX_TERM + 1];
-    int n = 0;
-    for (int i = 0; i < p->nterm; i++) {
-        sig[n++] = p->term[i].kind == MF_T_RUN ? 'r' : 's';
-        sig[n++] = p->term[i].need == MF_REQUIRED ? 'R' : 'O';
-        if (i == p->plan_hint) sig[n++] = '*';
-    }
-    sig[n] = 0;
-    PCREC_CAND_TRACE_REC("PRESENCE", "-", sig, "ofs-need");
-}
-#endif
-
-_Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
-               "an offset-skip block's terms (PCREC_OFSK_MAX_SET verify offsets "
-               "plus its scan) must fit one memfn predicate (C14)");
-_Static_assert(MF_RANK_MAX >= PCREC_MAX_REQ_RUN_SCAN,
-               "a predicate's position ranking holds every position of the "
-               "longest run term pcrec hands the kit, so it is never truncated");
-
-/* States the ranking of `t`'s run term on `p` ([MEMFN] RQ-2, D157): every
- * position of the term, ordered by the compile's prior rate, with each
- * position's rate (`pcrec_find_run_rank`). */
-static void ofs_pred_rank(Ctx *cx, const OfsTest *t, mf_pred *p)
-{
-    int pos[PCREC_MAX_REQ_RUN_SCAN];
-    uint32_t mass[PCREC_MAX_REQ_RUN_SCAN];
-    pcrec_find_run_rank(pcrec_find_byte_rate(cx), t->run_bytes, t->run_mask,
-                        t->run_len, pos, mass);
-    for (int i = 0; i < t->run_len; i++) {
-        p->rank_pos[i] = (uint16_t)pos[i];
-        p->rank_ppm[i] = mass[i];
-    }
-    p->rank_n = (uint8_t)t->run_len;
-}
-
-static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
-{
-    int sp = t->scan_k, reach = 0;
-    bool in_run = t->run_len > 0 && sp >= t->run_o && sp < t->run_o + t->run_len;
-    if (!in_run && t->scan_byte < 0)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip whose scan "
-                               "offset is not a single byte value");
-    if (!in_run && t->nterm == 0)
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip with an empty "
-                               "verify chain");
-    p->need = MF_REQUIRED;
-    p->fn_ref = fn_ref;
-    bool placed = in_run;
-    for (int i = 0; i < t->nterm; i++) {
-        const PrefixK *k = t->term[i].k;
-        if (!placed && sp < (k ? k->k : t->run_o)) {
-            p->plan_hint = p->nterm;
-            pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
-            placed = true;
-        }
-        if (!k) {
-            if (in_run) {
-                p->plan_hint = p->nterm;
-                p->plan_pos = (uint16_t)(sp - t->run_o);
-                ofs_pred_rank(cx, t, p);
-            }
-            pcrec_memfn_term_run(&p->term[p->nterm++], t->run_o, t->run_bytes,
-                                 t->run_mask, t->run_len, MF_REQUIRED);
-        } else {
-            pcrec_memfn_term_set(&p->term[p->nterm++], k->k, k->set,
-                                 k->count > 1 ? (uint32_t)k->k + 1 : 0, MF_OPTIONAL);
-        }
-    }
-    if (!placed) {
-        p->plan_hint = p->nterm;
-        pcrec_memfn_term_byte(&p->term[p->nterm++], sp, t->scan_byte, MF_OPTIONAL);
-    }
-    for (int i = 0; i < p->nterm; i++) {
-        const mf_term *m = &p->term[i];
-        int last = m->offset + (m->kind == MF_T_RUN ? (int)m->run_len : 1) - 1;
-        if (last > reach) reach = last;
-    }
-#ifdef PCREC_CAND_TRACE
-    ofs_pred_trace(p);
-#endif
-    if (reach != t->maxk || (in_run && t->run_bytes[sp - t->run_o] != t->scan_byte))
-        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip's memfn "
-                       "description disagrees with its test (maxk %d, the "
-                       "terms reach %d; scan byte %d at offset %d)",
-                       t->maxk, reach, t->scan_byte, sp);
-}
-
 static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c);
 
 /* D172 THE PRE-CHECK's FUNC PART `p`'s WINDOW STATEMENT, per part (the kit
@@ -1776,9 +1668,9 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
     }
-    for (int i = 0; i < nrun; i++) {
+    for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
         if (i == 0 && handoff) s->ret_pred = (uint8_t)np;
-        ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
+        p[np++].fn_ref = (uint32_t)i + 1;
     }
     for (int i = 0; i < nrest; i++) {
         p[np].need = MF_REQUIRED;
@@ -6774,16 +6666,13 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     return n;
 }
 
-/* The site for FIND `f`: its window is its candidate (W0-W2, R17-a), and a
- * FIND that names a storage stem (`f->stem`, the set sites) offers its
- * declaration point (W4) and states the stem's hook id (W5). */
-/* D172 S2 commit 2 FIND `f`'s window statement on site `s`, beside its old
- * fields (window_site.md §1.2): the DFA prefilter's alternatives where its
+/* D172 S2 FIND `f`'s window statement on site `s` (window_site.md §1.2; its
+ * only statement since commit 6): the DFA prefilter's alternatives where its
  * builder supplied them (`f->walts`), else the term's own one alternative
  * with no entry fact: the VM hat's seek `{0: S}` (its table offered), and
  * MLINE's predecessor stop `{-1: \n}`, whose floor is the expression
  * `f->floor` (reads in [0, F) are its attempt loop's edge). A D11 bound
- * (`holdback`, today's `end_back`) is a core `{1: any}`. */
+ * (`holdback`) is a core `{1: any}`. */
 static void find_window(const PcrecFind *f, mf_site *s)
 {
     Ctx *cx = f->cx;
@@ -6797,7 +6686,7 @@ static void find_window(const PcrecFind *f, mf_site *s)
     if (f->table != PCREC_FIND_NO_TABLE)
         pcrec_memfn_wpos_table(sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
     else
-        pcrec_memfn_wpos_bits(sp, 0, s->pred.term[0].set);
+        pcrec_memfn_wpos_cube(sp, 0, (unsigned)f->byte, 0xFFu);
     if (f->holdback) pcrec_memfn_wpos_any(sp, 1);
     pcrec_memfn_window_stated(cx, s, a, 1, f->floor ? MF_WFLOOR_EXPR : MF_WFLOOR_SUBJECT);
 }
@@ -6832,21 +6721,9 @@ static mf_site *find_site(const PcrecFind *f)
     s->op = MF_OP_FIND;
     s->handoff = MF_H_ASSIGN;
     s->empty = back ? MF_EMPTY_AT_N : f->holdback ? MF_EMPTY_NOP : MF_EMPTY_MISS;
-    s->end_back = (uint8_t)(f->holdback ? 1 : 0);
     s->on_miss_leaves = !f->holdback;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
     s->site_kind = f->kind;
-    s->pred.nterm = 1;
-    s->pred.need = MF_REQUIRED;
-    if (table)
-        pcrec_memfn_term_set(&s->pred.term[0], f->offset, f->set, (uint32_t)f->table,
-                             MF_REQUIRED);
-    else
-        pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
-    pcrec_memfn_window_is_candidate(&s->pred);
-    if (back) pcrec_memfn_context_stop(s);      /* R-26.2: MLINE's stop */
-    else      pcrec_memfn_span0_stated(cx, &s->pred);
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
     find_window(f, s);
@@ -6917,13 +6794,14 @@ static void find_locals(StrBuf *c, const char *ind, const PcrecFind *f,
 }
 
 /* Writes one use of defined FIND `d` at indent `ind`; `f` must describe the
- * site `d` defined (its `end_back` is checked here, loudly). */
+ * site `d` defined (its D11 bound, the `{1: any}` its first span carries, is
+ * checked here, loudly). */
 static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
                      const struct MemfnFind *d)
 {
     mf_hooks h;
     PcrecMfU u;
-    if (d->site->end_back != (f->holdback ? 1 : 0))
+    if (d->site->alts[0].spans[0].len != (f->holdback ? 2 : 1))
         pcrec_ctx_fail(f->cx, 0, "internal error: a FIND used with a D11 bound "
                        "its define did not state (src/gen/emit_dfa.c, find_use)");
     find_hooks(f, d->site, ind, &h, &u);
@@ -6941,7 +6819,7 @@ static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
 static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
                       const uint8_t table[256])
 {
-    const uint8_t *set = d->site->pred.term[0].set;
+    const uint8_t *set = d->site->alts[0].spans[0].set[0];
     for (int b = 0; b < 256; b++)
         if (((set[b >> 3] >> (b & 7)) & 1) != (table[b] != 0))
             pcrec_ctx_fail(cx, 0, "internal error: N4 door: the FIND's set and "
@@ -7485,15 +7363,19 @@ static const char *ofs_site_fn_name(void *u, uint32_t fn_ref)
     return dfa_fragf(pu->cx, "%s_ofsskip", f->p);
 }
 
-/* [MEMFN] R4c `table_name`: a multi-byte offset's verify table, `table_ref`
- * its offset + 1 (`ofs_pred_of`). */
+/* [MEMFN] R4c `table_name`: the table a window offer names (`win_offer_name`:
+ * a multi-byte offset's verify table, or the PF site's candidate table); the
+ * site states no other id since D172 S2 commit 6. */
 static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 {
     const PcrecMfU *pu = u;
     const DfaForm *f = pu->own;
     const char *w = win_offer_name(pu->cx, f->p, table_ref);
-    if (w) return w;
-    return ofsk_tbl_name(pu->cx, f->p, (int)table_ref - 1);
+    if (!w)
+        pcrec_ctx_fail(pu->cx, 0, "internal error: the offset-skip site's table_ref %u "
+                       "names no window offer (src/gen/emit_dfa.c, ofs_site_table_name)",
+                       (unsigned)table_ref);
+    return w;
 }
 
 /* D172 S2 commit 2 the DFA prefilter's window statement as the offset-skip
@@ -7541,11 +7423,8 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->handoff = MF_H_RETURN;
     s->empty = MF_EMPTY_MISS;
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_ENGINE;
-    ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
-    pcrec_memfn_window_is_candidate(&s->pred);
-    pcrec_memfn_span0_stated(f->cx, &s->pred);  /* R-26.1, Z2 */
-    {   /* D172 S2 commit 2: the DFA prefilter's window statement */
+    s->pred.fn_ref = 1;                 /* the function's name hook (K-1) */
+    {   /* D172 S2: the DFA prefilter's window statement, its only one */
         mf_walt *walts;
         int n = ofs_window_of(f->cx, f->us, &walts);
         pcrec_memfn_window_stated(f->cx, s, walts, n, MF_WFLOOR_SUBJECT);
@@ -8611,7 +8490,6 @@ static mf_site *req_pres_site(Ctx *cx, const mf_pres_proof *proof)
     s->handoff = MF_H_ON_MISS;
     s->empty = MF_EMPTY_MISS;
     s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
-    s->consumer = MF_C_ENGINE;
     s->site_kind = site_kind_of(cx, SKS_PRE);
     s->on_miss_leaves = 1;      /* REQ_ON_MISS is a `return` (Q-G2-18) */
     s->pspans = req_pres_spans(cx, &s->npspan);

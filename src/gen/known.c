@@ -442,26 +442,6 @@ static bool cover_side_stated(const uint8_t set[32], uint8_t absent)
     return !(all && absent == MK_ABS_SATISFIES);
 }
 
-/* A CONTEXT item: one SET term at `off` over `set`, REQUIRED, its absent
- * rule; NULL-equivalent (no item) where the side constrains nothing. */
-static bool cover_ctx_item(mf_pred *p, int off, const uint8_t set[32], uint8_t absent)
-{
-    if (!cover_side_stated(set, absent)) return false;
-    memset(p, 0, sizeof *p);
-    p->nterm = 1;
-    p->need = MF_REQUIRED;
-    p->plan_hint = MF_NO_PRED;
-    p->term[0].kind = MF_T_SET;
-    p->term[0].offset = off;
-    p->term[0].need = MF_REQUIRED;
-    memcpy(p->term[0].set, set, 32);
-    p->term[0].ppm_hi = MF_PPM_FULL;
-    p->span_class = MF_SPAN_CONTEXT;
-    p->absent = absent == MK_ABS_SATISFIES ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS;
-    p->consumable = MF_CONSUMABLE_YES;
-    return true;
-}
-
 /* The kit's `fn_name` hook on the description's define: its storage stem. */
 static const char *cover_fn_name(void *u, uint32_t fn_ref)
 {
@@ -469,20 +449,19 @@ static const char *cover_fn_name(void *u, uint32_t fn_ref)
     return ((const PcrecMfU *)u)->own;
 }
 
-/* D172 S2 commit 2 the cover site's window statement (window_site.md rev 3.2
- * §1.2's cover row), beside its old fields: one alternative, no entry fact;
- * span 0 `{0..k-1: S_d}` with core [0, k), and one span per context item the
- * old fields state (`cover_ctx_item`: the side before at -1, after at k), its
- * core its one position where absence FAILS and empty where it SATISFIES;
- * every span verify YES (REPORT); the floor SUBJECT. Not stated where k is 0
- * (no span 0; the old fields alone, as today). */
+/* D172 S2 the cover site's window statement (window_site.md rev 3.2 §1.2's
+ * cover row), its only statement since commit 6: one alternative, no entry
+ * fact; span 0 `{0..k-1: S_d}` with core [0, k), and one span per context
+ * side that constrains anything (`cover_side_stated`: the side before at -1,
+ * after at k), its core its one position where absence FAILS and empty where
+ * it SATISFIES; every span verify YES (REPORT); the floor SUBJECT. k >= 1 on
+ * every cover (C7, `cc_width`). */
 static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
 {
     const struct { int off; const uint8_t *set; uint8_t absent; } side[2] = {
         { -1, e->ctx_before, e->absent_before }, { e->k, e->ctx_after, e->absent_after },
     };
     int n = 1;
-    if (!e->k) return;
     for (int i = 0; i < 2; i++) n += cover_side_stated(side[i].set, side[i].absent);
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, n);
@@ -504,8 +483,6 @@ mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,
 {
     const MkEnd *e = &cv->end;
     mf_site *s = pcrec_memfn_site(cx, DELEG_COVER);
-    mf_pred *ctx = pcrec_memfn_preds(cx, MF_MAX_CTX);
-    int n = 0;
     s->body = MF_BODY_ONESHOT;          /* R-23 */
     s->form = MF_FORM_STMT;
     s->op = MF_OP_FIND;
@@ -513,29 +490,7 @@ mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,
     s->empty = MF_EMPTY_MISS;
     s->on_miss_leaves = 1;              /* `on_miss` returns NOMATCH */
     s->use = MF_USE_POSITION;
-    s->consumer = MF_C_RESULT;          /* [r3rc m3] the candidate is the result */
     s->site_kind = MF_SK_REPORT;
-    s->read_floor = MF_FLOOR_SUBJECT;   /* §3.5: reads go down to offset 0 */
-    s->pred.nterm = e->k;
-    s->pred.need = MF_REQUIRED;
-    s->pred.plan_hint = MF_NO_PRED;
-    for (int d = 0; d < e->k; d++) {
-        mf_term *t = &s->pred.term[d];
-        t->kind = MF_T_SET;
-        t->offset = d;
-        t->need = MF_REQUIRED;
-        memcpy(t->set, e->set[d], 32);
-        t->ppm_hi = MF_PPM_FULL;
-    }
-    pcrec_memfn_window_is_candidate(&s->pred);
-    s->pred.span_class = MF_SPAN_BOUNDED;
-    s->pred.prefix_stated = MF_PREFIX_STATED;
-    s->pred.exact_len = e->k;           /* §4.1: a cover site states k */
-    s->pred.consumable_len = e->k;
-    if (cover_ctx_item(&ctx[n], -1, e->ctx_before, e->absent_before)) n++;
-    if (cover_ctx_item(&ctx[n], e->k, e->ctx_after, e->absent_after)) n++;
-    s->ctx = n ? ctx : NULL;
-    s->nctx = (uint8_t)n;
     s->decl_point = stem != NULL;
     s->pred.fn_ref = stem != NULL;
     cover_window(cx, s, e);
