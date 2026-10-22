@@ -2648,3 +2648,9 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Family rules generalized, keyed on facts: F0 is the first verify-YES span at 0; C-pin's clause 4 counts tests through the other spans; R's member and stretch keyed on R's verify (NO: exact run, as before; YES: cube-mass member, R whole). These move preview-only REPORT plans (literal span 0 pinned whole): S3's form question.
 - Full shadow: 0 on every column over 8157 sites (1070 parts) and G2. Finding: known.o lacked its memfn.h dependency (stale incremental object declined `cover`); fixed in the pcrec-path commit.
 - Heavy job `578-kit-wsc3-heavy` (emit_sweep ×4 vs 3cd809da1, make test) queued and owed (docs/dev/lanes/wsc3_report.md).
+
+## 2026-10-22 — D172 S2 commit 4: the two-phase ask under the lever (lane wsc4)
+
+- The lever is the harness option `--harness=window-reply` (build/pcrec-harness only): the art previews `"window-family"` at setup (phase 2: the family renders every site stating window facts), and pcrec asks phase 1 (`mf_wdecide`) over the DFA prefilter's statement. The offset rows' pick clauses read the reply through emit_dfa.c's declared map `next_keys[]`: run-pinned = C-pin and RE-SEED, offset-set = the RESEED alternative; RE-SEED reaching a non-re-seeding row is refused. Default path unchanged; the default flips at commit 5.
+- No kit change: the reply already carried alt, reseed, pinned, member/stretch and path.
+- Witness `tests/memfn/run_wreply.sh`: lever ON vs OFF identity (65 cases), reach through a perturbed statement (RESEED unstated; R under `-fno-run-prefilter`), plants S1412-S1414 red; `--sweep` is emit_sweep over the corpus with the lever binary, commit 5's rerun. Heavy job `579-kit-wsc4-heavy` owed (docs/dev/lanes/wsc4_report.md).
