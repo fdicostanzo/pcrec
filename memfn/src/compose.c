@@ -258,11 +258,13 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
  * mf_use's re-check. The trace still labels the walk `define`. A row with an
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
+static const char *site_check(const mf_site *s);
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
 {
-    gate_in in = { s, def, NULL, NULL };
+    gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site the finder table decides with a
        ROUTED row renders the table's pick, through the arm that renders it,
@@ -288,6 +290,18 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     if (s->site_kind == MF_SK_REPORT && !rid) return NULL;
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
+}
+
+/* 1 iff site `s` is in the vocabulary and the walk above (the finder's routed
+ * pick included) chooses a row for it under the gate's `gphases`: asked
+ * quietly, writing nothing (the window family's Table E, window.c: a plan
+ * renders through today's row only where today's row serves its frame). */
+int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                      unsigned gphases)
+{
+    gate_verdict why = { 0, 0 };
+    const char *rid;
+    return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid) != NULL;
 }
 
 /* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13, 18) ---------
@@ -411,7 +425,7 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
 int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
                      unsigned gphases)
 {
-    gate_in in = { s, def, NULL, NULL };
+    gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, &why);
@@ -1149,6 +1163,37 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
+/* THE WINDOW SITE's route (D172 S2 commit 1; window.c). A site stating
+ * alternatives has its window facts checked as statements on every art; on
+ * an art previewing "window-family" the family decides and renders it from
+ * them alone (`*s` becomes the plan translated into a legacy row's site, or
+ * `*plan` the family floor's plan), and elsewhere it renders from its old
+ * fields, which it must then state. 0, or -1 with *why. */
+static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *def,
+                        unsigned gphases, int quiet, const mf_site **s,
+                        const struct wf_plan **plan, const char **path, const char **why)
+{
+    const char *pid;
+    *plan = NULL;
+    if (path) *path = NULL;
+    if (!site->nalt && !site->alts && !site->wfloor) return 0;
+    int on = wf_active(art);
+    if ((*why = wf_check(site, on))) return -1;
+    if (!on) {
+        if (!site->pred.nterm) {
+            *why = "a site stating only window facts renders only on an art previewing "
+                   "\"window-family\" (mf_preview): it states no old field";
+            return -1;
+        }
+        return 0;
+    }
+    const mf_site *leg;
+    if (wf_prepare(art, site, def, gphases, quiet, &leg, plan, &pid, why)) return -1;
+    if (leg) *s = leg;
+    if (path) *path = pid;
+    return 0;
+}
+
 /* THE DEFINE-TIME QUERY's body (r17b_prime.md §4.5): mf_define's checks and
  * selection over the phases `gphases`, writing nothing: no text, no handle,
  * no helper, no art state, no error, and no trace record of its walk (the
@@ -1159,7 +1204,18 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
 {
     const char *why;
     memset(out, 0, sizeof *out);
-    if (art->err[0] || s->abi != MF_SITE_ABI || site_check(s) || s->denies != art->denies)
+    if (art->err[0] || s->abi != MF_SITE_ABI) return -1;
+    /* D172 S2 commit 1: a window site on a preview art is the family's (its
+       floor's class, or the class of the row its plan's translation takes);
+       elsewhere its window facts are statements only */
+    const struct wf_plan *wplan = NULL;
+    if (window_route(art, s, def, gphases, 1, &s, &wplan, NULL, &why)) return -1;
+    if (wplan) {
+        if (s->denies != art->denies) return -1;
+        wf_floor_class(wplan, out);
+        return 0;
+    }
+    if (site_check(s) || s->denies != art->denies)
         return -1;
     /* THE PRESENCE ASK (R17-b' B3b, §1.4): the host lays a pre-check's parts
        out from its presence links, so it asks before any part exists (an
@@ -1208,9 +1264,15 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (s->abi != MF_SITE_ABI)
         return kit_fail(art, "mf_define: site abi %u, kit abi %u", s->abi,
                         (unsigned)MF_SITE_ABI);
-    const char *why = site_check(s);
+    const char *why = NULL, *wpath = NULL;
+    const struct wf_plan *wplan = NULL;
+    const mf_site *ws = s;      /* the window site, where the family routes */
+    if (window_route(art, s, def, gphases, 0, &s, &wplan, &wpath, &why))
+        return kit_fail(art, "mf_define: %s", why);
+    why = wplan ? NULL : site_check(s);
     if (why)
-        return kit_fail(art, "mf_define: outside the vocabulary: %s", why);
+        return kit_fail(art, "mf_define: outside the vocabulary%s: %s",
+                        s != ws ? " (the window family's plan, translated)" : "", why);
     /* the compile's denies are one value (RULED Q-M1b-1): a site's text and
        the art's helpers and stamps read the same ones */
     if (s->denies != art->denies)
@@ -1218,8 +1280,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)s->denies,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
-    const char *rid;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 0, &rid);
+    const char *rid = NULL;
+    const arm *row = wplan ? &wf_floor_arm
+                           : select_arm(art, s, def, gphases, &declined, 0, &rid);
     if (!row) {
         /* ONE refusal (ruling (d)), walked or routed: it names the routed
            finder row where one decided the site, and what the gate declined
@@ -1233,7 +1296,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                             "and decides only on an art previewing it (mf_preview), and "
                             "only where its form proves every REQUIRED term's set exactly "
                             "(R-26.3: NONE is not a legal reply)");
-        gate_in in = { s, def, NULL, NULL };
+        gate_in in = { s, def, NULL, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
         if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
@@ -1242,7 +1305,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                                        : "(no row applies; the generic row must)");
     }
     mf_class cls;
-    const char *cw = kit_class(row, s, &cls);
+    const char *cw = NULL;
+    if (wplan) wf_floor_class(wplan, &cls);
+    else cw = kit_class(row, s, &cls);
     if (cw) return kit_fail(art, "mf_define: %s", cw);
 
     if (art->nsites == art->cap) {
@@ -1256,10 +1321,12 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     uint32_t h = ++art->nsites;
     site_rec *r = &art->sites[h - 1];
     memset(r, 0, sizeof *r);
-    r->site = *s;
+    r->site = wplan ? *ws : *s;
     r->arm = row;
     r->fd_row = rid;
     r->reach_k = -1;
+    r->wplan = wplan;
+    r->wpath = wpath;
     if (art->reach_stem && rid) {
         /* R-MS6: one counter per arm of a routed site (one arm: no dispatch
            is emitted before B4/B8) */
@@ -1279,11 +1346,16 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (rid)
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s\n",
                 art->trace_id, h, rid, row->ct->row);
+    /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
+       rendering it, the finder row deciding its find where one does) */
+    if (wpath)
+        fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
+                art->trace_id, h, wpath, row->id, rid ? rid : "-");
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what
-       renders) */
-    {
+       renders). The window family's floor states no presence span */
+    if (!wplan) {
         const char *pw = NULL;
         if (fd_pres(art, h, s, FD_PRES_DEFINE, &r->cls, &pw))
             return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);
@@ -1304,7 +1376,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
        that searches nothing proves nothing (Q-R17P-25) */
     {
         mf_class q;
-        if (ask_sel(art, s, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
+        if (ask_sel(art, ws, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
             return kit_fail(art, "mf_define: the define-time query's class differs "
                             "from the define's (r17b_prime.md §4.5 rule 2)");
         /* R-26.4: for EVERY offset d, and the two copies equal by
@@ -1347,7 +1419,8 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
         return kit_fail(art, "mf_use: handle %u is used before its mf_locals "
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
-    gate_in in = { &r->site, use, NULL, NULL };
+    wf_facts wff = { &r->site, NULL };
+    gate_in in = { &r->site, use, NULL, NULL, r->wplan ? &wff : NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
@@ -1428,7 +1501,8 @@ int mf_defined(const mf_art *art, uint32_t handle, mf_result *out)
     memset(out, 0, sizeof *out);
     snprintf(out->form_id, sizeof out->form_id, "%s", r->arm->id);
     out->handle = handle;
-    out->reads_table = r->arm->reads_table && site_tabled(&r->site);
+    out->reads_table = r->wplan ? wf_plan_reads_table(r->wplan)
+                                : r->arm->reads_table && site_tabled(&r->site);
     out->includes = r->arm->includes;
     out->cls = r->cls;
     snprintf(out->row, sizeof out->row, "%s", r->fd_row ? r->fd_row : "");
@@ -1498,6 +1572,7 @@ int mf_preview(mf_art *art, const char *step)
     if (art->nsites)
         return kit_fail(art, "mf_preview: called after the first define");
     const char *named = fd_preview_step(step);
+    if (!named) named = wf_preview_step(step);     /* D172: "window-family" */
     if (!named)
         return kit_fail(art, "mf_preview: `%s` is not a routing step the kit names",
                         step ? step : "(null)");

@@ -2639,3 +2639,12 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   3. what pcrec states is EXACTLY R-29's fact table. A builder that computes anything unlisted, or shapes a fact for a kit method, is a D157 breach and main bounces it;
   4. main runs its own read-only review of the pcrec-side commits before the landing.
   Abi and stamp events go through main's D94 reader-grep ritual at landing.
+
+## 2026-10-22 — D172 S2 commit 1 built (lane wsc1)
+
+- The window family is in `memfn/src/window.c`, reachable only under `mf_preview(art, "window-family")`. Facts appended to `mf_site` with no `MF_SITE_ABI` number move (commit 6 numbers it); fields.def's window fields classify only in the family's walks.
+- Phase 1 `mf_wdecide` (pure); phase 2 through Table E: E-func/E-stmt hand the plan, translated into today's row's site, to the composer's walk (so their text is today's rows'), E-generic is the family's floor (one hoisted core bound, the three-way edge guard).
+- `plan_cost.def` carries prefix_k's integers with provenance, box and basis; C_VERIFY and MAX_SET are UNMEASURED DEFAULT. D-hors is not built (S3).
+- G2's window family (`memfn/tests/run_g2_win.sh`) green; plants WSC1-P1..P8 all red (ids pending in S1400-S1429). proof_run gained read-limit layouts (review S2), witness WSC1-R1.
+- Finding F-1 for the next design revision: C-meet must not merge a PARKED alternative's R into its verify-YES positions unless the plan re-seeds. The rest (F-2..F-18) are in `docs/dev/lanes/wsc1_report.md` §5.
+- Heavy run `575-kit-wsc1-heavy` (emit_sweep plain vs 7050f8652, make test) queued.

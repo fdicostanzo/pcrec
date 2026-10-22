@@ -213,7 +213,7 @@ static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_ro
  * declined (a domain's total fallback), when no row serves. */
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
-    gate_in in = { NULL, NULL, t, NULL };
+    gate_in in = { NULL, NULL, t, NULL, NULL };
     gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&rc_table, 0, &in, MF_PH_RUN, art->denies, r, &tc, &why);

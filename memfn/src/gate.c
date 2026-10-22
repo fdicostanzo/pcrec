@@ -661,6 +661,82 @@ static int cl_read_floor(const gate_in *in)
     return CL_OTHER;
 }
 
+/* ---- the window site's facts (D172 S2 commit 1; window.c) -----------------
+ *
+ * Read off the window family's walk facts (gate_in.wf: the site and the
+ * alternative the walk weighs) and nothing else: UNSTATED in every other
+ * walk, so no row born before the family sees them. */
+
+static int cl_alts(const gate_in *in)
+{
+    if (!in->wf) return -1;
+    unsigned n = in->wf->site->nalt;
+    return n == 1 ? CL_ONE : n == 2 ? CL_MANY : CL_OTHER;
+}
+
+static int cl_entry(const gate_in *in)
+{
+    if (!in->wf || !in->wf->alt) return -1;
+    switch ((mf_entry)in->wf->alt->entry) {
+    case MF_ENTRY_UNSTATED: return -1;
+    case MF_ENTRY_NONE:     return CL_NOENTRY;
+    case MF_ENTRY_PARKED:   return CL_PARKED;
+    case MF_ENTRY_RESEED:   return CL_RESEED;
+    }
+    return CL_OTHER;
+}
+
+/* The weighed alternative's spans as class SETS: `span_start` NONNEG/BACK
+ * by each span's start, `verify` YES/NO by each span's verify (OTHER for a
+ * value outside mf_verify). 0 where no alternative is weighed. */
+static kit_set wspan_classes(const gate_in *in, int which)
+{
+    kit_set m = 0;
+    const mf_walt *a = in->wf ? in->wf->alt : NULL;
+    for (unsigned i = 0; a && a->spans && i < a->nspan; i++) {
+        const mf_wspan *sp = &a->spans[i];
+        if (which == 0)
+            m |= sp->start < 0 ? CM(BACK) : CM(NONNEG);
+        else
+            m |= sp->verify == MF_VERIFY_YES ? CM(YES) : sp->verify == MF_VERIFY_NO ? CM(NO)
+                                                                          : CM(OTHER);
+    }
+    return m;
+}
+
+static int cl_span_start(const gate_in *in) { return first_class(wspan_classes(in, 0)); }
+static int cl_verify(const gate_in *in)     { return first_class(wspan_classes(in, 1)); }
+
+static int cl_core(const gate_in *in)
+{
+    const mf_walt *a = in->wf ? in->wf->alt : NULL;
+    if (!a) return -1;
+    for (unsigned i = 0; a->spans && i < a->nspan; i++)
+        if (a->spans[i].core_len) return CL_CORED;
+    return CL_NOCORE;
+}
+
+static int cl_toffer(const gate_in *in)
+{
+    const mf_walt *a = in->wf ? in->wf->alt : NULL;
+    if (!a) return -1;
+    for (unsigned i = 0; a->spans && i < a->nspan; i++)
+        for (unsigned j = 0; j < a->spans[i].len && j < MF_WSPAN_POS; j++)
+            if (a->spans[i].table_ref[j]) return CL_REF;
+    return CL_NONE;
+}
+
+static int cl_wfloor(const gate_in *in)
+{
+    if (!in->wf) return -1;
+    switch ((mf_wfloor)in->wf->site->wfloor) {
+    case MF_WFLOOR_UNSTATED: return -1;
+    case MF_WFLOOR_SUBJECT:  return CL_W_SUBJECT;
+    case MF_WFLOOR_EXPR:     return CL_W_EXPR;
+    }
+    return CL_OTHER;
+}
+
 /* `s`, `n`, `lo`: IDENT iff a bare identifier. */
 static int ident_or_other(const char *text)
 {
@@ -819,6 +895,8 @@ static kit_set class_set_of(unsigned f, const gate_in *in, int k)
     if (f == FLD_ctx && in->s) return ctx_classes(in->s);
     if (f == FLD_absent && in->s) return context_classes(in->s, 0);
     if (f == FLD_consumable && in->s) return context_classes(in->s, 1);
+    if (f == FLD_span_start) return wspan_classes(in, 0);
+    if (f == FLD_verify) return wspan_classes(in, 1);
     return (kit_set)1 << k;
 }
 

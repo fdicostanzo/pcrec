@@ -721,7 +721,7 @@ static int n_interval(const fd_x *q, const fd_row *r, unsigned long long *a,
 
 static void fd_decide(fd_x *q, int slot, const gate_tctx *tc, fd_decision *d)
 {
-    gate_in in = { q->site, NULL, NULL, &q->ff };
+    gate_in in = { q->site, NULL, NULL, &q->ff, NULL };
     gate_verdict why = { 0, 0 };
     memset(d, 0, sizeof *d);
     q->phase = FD_PH_TERMINAL;
@@ -914,7 +914,7 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
         return NULL;
     }
     q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
-    gate_in in = { s, def, NULL, &q.ff };
+    gate_in in = { s, def, NULL, &q.ff, NULL };
     gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &tc, &d);
@@ -1021,7 +1021,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             q.members = popcount256(sp->term[0].set);
             if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
         }
-        gate_in in = { s, NULL, NULL, &q.ff };
+        gate_in in = { s, NULL, NULL, &q.ff, NULL };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;

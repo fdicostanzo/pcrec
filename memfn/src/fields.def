@@ -159,6 +159,16 @@ MF_CLASS(N_OPTIONAL,  "the decided span's need: MF_OPTIONAL")
 /* R-26 Zk (R-26.6): the REPORT kind's own class, the first class past the
    first 64 (kit.h's kit_set) */
 MF_CLASS(REPORT,      "site kind: the candidate is the answer, no engine behind it (R-26.3)")
+/* D172 S2 commit 1 (window_site.md rev 3.2 §1): the window family's facts,
+   read in the family's own walks only (window.c; gate_in.wf), never on a
+   default art */
+MF_CLASS(PARKED,      "entry PARKED: the candidates are where the parked machine leaves its start state")
+MF_CLASS(RESEED,      "entry RESEED: candidates from the walk, the machine re-seeded at each")
+MF_CLASS(NOENTRY,     "entry NONE: no entry fact (REPORT, pre-check parts, the VM seek, MLINE)")
+MF_CLASS(CORED,       "the alternative has a core position (one that must lie inside the subject)")
+MF_CLASS(NOCORE,      "the alternative has no core position")
+MF_CLASS(W_SUBJECT,   "wfloor SUBJECT: reads lie in [0, n); below 0 the core rule decides")
+MF_CLASS(W_EXPR,      "wfloor EXPR: the `floor` hook's F; a read in [0, F) is pcrec's edge")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -442,6 +452,40 @@ MF_FIELD(run, MF_PH_RUN, VALUE, cl_run,
 MF_FIELD(run_len, MF_PH_RUN, VALUE, cl_run_len,
          CM(ONE) | CM(MANY) | CM(OTHER),
          "the RUN term's length (OTHER: 0)")
+
+/* ---- the fields: THE WINDOW SITE (D172 S2 commit 1; window_site.md §1) -----
+ *
+ * Appended LAST. Each is read in the window family's walks only (window.c,
+ * through gate_in.wf: the alternative the walk weighs, or the chosen one) and
+ * is UNSTATED in every other walk, so no row born before the family is
+ * declined by a site stating them beside its old fields (the default path
+ * reads none of them). Table A's rows key on `entry` and `core`; Table E's
+ * rows on the frame's own fields and `wfloor`. */
+MF_FIELD(alts, MF_PH_DEFINE, VALUE, cl_alts,
+         CM(ONE) | CM(MANY) | CM(OTHER),
+         "mf_site.nalt, the alternatives stated (ONE, or MANY for two: the MARGIN row's case)")
+MF_FIELD(entry, MF_PH_DEFINE, HOOK, cl_entry,
+         CM(PARKED) | CM(RESEED) | CM(NOENTRY) | CM(OTHER),
+         "the weighed alternative's ENTRY fact (mf_entry); 0 is UNSTATED and refused by the "
+         "family's check (so HOOK): a row keyed on it USES it")
+MF_FIELD(span_start, MF_PH_DEFINE, VALUE, cl_span_start,
+         CM(NONNEG) | CM(BACK) | CM(OTHER),
+         "the weighed alternative's spans' starts, a BIT SET: NONNEG for a span starting at or "
+         "after the candidate, BACK for one starting below it")
+MF_FIELD(core, MF_PH_DEFINE, VALUE, cl_core,
+         CM(CORED) | CM(NOCORE) | CM(OTHER),
+         "whether the weighed alternative has a core position (the union of its spans' cores)")
+MF_FIELD(verify, MF_PH_DEFINE, VALUE, cl_verify,
+         CM(YES) | CM(NO) | CM(OTHER),
+         "the weighed alternative's spans' verify facts, a BIT SET of YES and NO")
+MF_FIELD(toffer, MF_PH_DEFINE, VALUE, cl_toffer,
+         CM(NONE) | CM(REF) | CM(OTHER),
+         "the weighed alternative's table offers: NONE, or REF where some position offers one "
+         "(pcrec emits it iff mf_defined says the text reads it)")
+MF_FIELD(wfloor, MF_PH_DEFINE, HOOK, cl_wfloor,
+         CM(W_SUBJECT) | CM(W_EXPR) | CM(OTHER),
+         "the window site's floor (mf_wfloor): SUBJECT, or EXPR (the `floor` hook's F); 0 is "
+         "UNSTATED (refused where a span reaches below the candidate, a wildcard elsewhere)")
 
 #ifdef MF_FIELDS_UNDEF_CLASS
 #undef MF_CLASS

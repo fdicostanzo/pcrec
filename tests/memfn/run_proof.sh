@@ -16,8 +16,9 @@
 #
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (the six kit-side rows of R-26, S1221-S1226, and
-#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; the table
-#                  below): the run must go red. Writes only the work
+#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; WSC1-R1,
+#                  D172 S2's witness that proof_run's read-limit layouts
+#                  catch an over-read; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
@@ -63,10 +64,13 @@ plant_spec() {
         echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 0;' ;;
     S1254) # a `--memfn=` spelling reaches the preview (an options.def row)
         echo 'options.def@@MF_OPT("vrun-w32", MF_OPT_DENY,@@MF_OPT("preview", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR, "plant")\nMF_OPT("vrun-w32", MF_OPT_DENY,' ;;
+    WSC1-R1) # an over-read past n (D172 S2 review S2's witness for proof_run's read-limit layouts):
+        # a term's read bound one byte loose, so the generic row reads s[n]
+        echo 'generic.c@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s", rc->N);@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s + 1", rc->N);' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1221 S1222 S1223 S1224 S1225 S1226 S1251 S1252 S1253 S1254 S1255 S1256 ZK6 ZK7"
+PLANTS="S1221 S1222 S1223 S1224 S1225 S1226 S1251 S1252 S1253 S1254 S1255 S1256 ZK6 ZK7 WSC1-R1"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

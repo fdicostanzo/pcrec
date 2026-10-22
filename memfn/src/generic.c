@@ -109,9 +109,10 @@ static void at(kb *b, const char *cand, long k)
 
 /* The kit's own membership test of `byte` (an unsigned char expression):
  * the set's maximal byte ranges, OR-ed. Empty set "0", full set "1".
+ * Shared with the window family's floor (kit.h).
  * Returns 1 iff the text reads `byte` (the caller declares only what is
  * read: the artifacts compile under -Wall -Wextra -Werror). */
-static int set_test(kb *b, const uint8_t set[32], const char *byte)
+int kit_set_test(kb *b, const uint8_t set[32], const char *byte)
 {
     int first = 1, any = 0;
     for (int lo = 0; lo < 256; lo++) {
@@ -146,7 +147,7 @@ static int member_test(rctx *rc, kb *b, const mf_term *t, uint32_t id,
         kb_printf(b, "(%s)", m ? m : "0");
         return 1;
     }
-    return set_test(b, t->set, byte);
+    return kit_set_test(b, t->set, byte);
 }
 
 /* The conjunction `p` at candidate `cand`, as one parenthesized C condition:
