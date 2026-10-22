@@ -2677,3 +2677,17 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Process lesson, re-learned: rulings sent by SendMessage to a BUSY lane were never read (wsc5, twice). Use the worktree rulings file. The memory `pcrec-rulings-file-in-worktree` is updated.
 - **Review note for main's landing review (FILED follow-up, not built):** 6-p4 (77927192f) reads the D11 bound back from pcrec's own statement BY POSITION: `alts[0].spans[0].len == 2` at emit_dfa.c:12812. It is correct today (byte-identical on the witnesses) but fragile against D172's unordered rule. Fix: pass pcrec's own holdback fact to pf_find_of instead. It is a small pcrec-path commit, validated by light checks plus an emit_sweep.
 - Also for main: F-3. PCREC_OFSK_MAX_SET's `--list-limits` description still names the deleted prefix_k.c. Rewording it moves the dumps stream, so it needs main's approval.
+
+## 2026-10-22 (close, on Frank's /close) — D172 S2 built and fixed; final heavy and probe timing queued
+
+- D172 S2's six commits are built across lanes wsc1-wsc6, and the final fixes are in wsc7 (lane/memfn-wsc7 @ 170c5fac6):
+  - the trace build now uses the non-pass `pcrec_fact_span_stated`;
+  - the bound comes from pcrec's own holdback fact;
+  - F-3's limits wording is changed;
+  - S293 → S1421; S1138 is re-aimed;
+  - emit_sweep gains `--facts-declared-moves` and `--dumps-declared-rows`.
+- Main APPROVED two declared listing deltas: span_facts `used` yes→no on about 3,356 patterns (facts_listing §4.1¶2), and the PCREC_OFSK_MAX_SET `--list-limits` row.
+- Heavy job 582 at wsc6 was RED: the facts-stream `used` flip, the trace shadow, and two stale plants. NO miscompile; all artifact streams read 0 movers. The re-run is **583-kit-wsc7-heavy, QUEUED**.
+- R-28: delivered (lane/memfn-r28 @ 4e49ed417). The painted stack for `a` went from 61,616 to 25,552 B. Main merges it after dd10.
+- Variant tag-floor bisect (job 577): the counts are identical from 9950aa672 through ce5aa67a8. The re-pin is main's.
+- Frank's hex8 ideas, a boundary pair (left context + S_0) and a core probe, plus random and utf8 classes: **job 584-kit-r27c-probe is QUEUED** (lane/memfn-r27c @ 8269bd171). Its differential stage is green.
