@@ -86,7 +86,79 @@ Per row, with `med` and `IQR` over the 5 launches:
 
 ## RESULT
 
-(OWED: filled by the agent that reads the run.)
+Read 2026-10-21 by lane coverread from job `650-covertime-slot` (`outcome=green rc=0 wall=229s`).
+Rulings file `covertime_rulings.md`: no entries ("none yet").
+
+**Readable: yes.** Gate passed (`216 arm cells ... all equal to python re`, before any clock);
+`== covertime COMPLETE rows=1080 launches=5` (the reading rule's "rows=1944" is an arithmetic slip:
+8 x 3 x 3 x 3 x 5 = 1080); launch-start lines load1 0.89-1.00, cpu7 0.0%, sibling cpu15 0.0-1.0%, end
+sibling 0.5% (no NOISY launch); A/A |AA/DEF - 1| median 0.001, p90 0.005, max 0.017 (below the 0.03
+bar). Run-to-run spread is small: nearly all IQRs are under 1% of the median; the largest are
+hex8-bounded throughput (COV IQR 1.6%), word-digit throughput dense (COV 2.4%), done-eol throughput
+dense (COV 1.7%), year4 search_short none (COV 3.3%). Every SLOWER/FASTER reading clears its floor
+(0.020-0.040) by a wide margin except the near-edge rows (year4 match real 0.957, foobar match none
+0.927 FASTER).
+
+### Per regime (geomean COV/DEF; FASTER/NULL/SLOWER of 8 cells)
+
+| regime | real | none | dense |
+|---|---|---|---|
+| throughput | 2.083 (2/0/6) | 2.149 (2/0/6) | 0.573 (7/0/1) |
+| search_short | 1.932 (1/0/7) | 2.463 (1/0/7) | 0.449 (7/0/1) |
+| match | 0.991 (1/7/0) | 0.986 (1/7/0) | 1.002 (0/8/0) |
+
+Totals: throughput 11 FASTER / 0 NULL / 13 SLOWER; search_short 9 / 0 / 15; match 2 / 22 / 0.
+**28 FINDINGS** (every SLOWER row; the list is the table's FINDINGS section: 13 throughput + 15
+search_short, 0 match).
+
+### Per cell (COV/DEF; real / none / dense)
+
+| cell | throughput | search_short | match |
+|---|---|---|---|
+| lit-l8 | 9.91 / 10.46 / 0.289 | 3.86 / 6.26 / 0.332 | NULL x3 |
+| foobar | 7.49 / 7.81 / 0.319 | 3.98 / 5.21 / 0.318 | NULL, FASTER 0.927 (none), NULL |
+| file-ext-order | 3.73 / 4.13 / 0.953 | 2.84 / 5.05 / 0.372 | NULL x3 |
+| cat-bounded | 1.35 / 1.21 / 0.407 | 2.03 / 2.49 / 0.342 | NULL x3 |
+| done-eol | 1.27 / 1.33 / 0.468 | 1.21 / 1.97 / 0.355 | NULL x3 |
+| year4 | 1.21 / 1.33 / 0.740 | 1.42 / 1.74 / 0.508 | FASTER 0.957 (real), NULL, NULL |
+| hex8-bounded | FASTER 0.908 / FASTER 0.925 / SLOWER 1.317 | 1.56 / 1.31 / SLOWER 1.172 | NULL x3 |
+| word-digit | FASTER 0.681 / 0.679 / 0.709 | FASTER 0.818 / 0.735 / 0.580 | NULL x3 |
+
+(Unmarked numbers in `real`/`none` columns of the other cells are SLOWER; `dense` unmarked are
+FASTER.) Cover is FASTER on `dense` for throughput and search_short in every cell except
+hex8-bounded (SLOWER 1.317 and 1.172). Only word-digit (the lookahead-bearing class pair) is FASTER
+across every throughput and search_short class. `match` is NULL or within ~7% everywhere; no SLOWER.
+
+### The prediction (cover `rx_search` has no memchr, slow on sparse subjects): CONFIRMED
+
+The cells where DEF has a literal prefilter (lit-l8, foobar, file-ext-order) lose most on the
+sparse classes: lit-l8 `throughput` real/none 9.9x / 10.5x (65.6 us -> 650 us per ~1 MiB find-all,
+about 0.62 ns/byte for COV against about 0.06 ns/byte for DEF), foobar 7.5x / 7.8x, file-ext-order
+3.7x / 4.1x; `search_short` none 6.3x (lit-l8), 5.2x (foobar), 5.1x (file-ext-order). `none` is worse
+than `real` in every one of those cells (pure scan). The same cells flip to FASTER on `dense`
+(lit-l8 0.289, foobar 0.319, file-ext-order 0.953 throughput; 0.32-0.37 search_short), where the
+per-match saving dominates. Cells without a literal prefilter in DEF (year4, cat-bounded, done-eol,
+hex8-bounded) lose far less (1.2-2.5x), and word-digit wins. This lane did not read the emitted
+text; the "byte compare, no memchr" mechanism is the handoff's artifact reading, consistent with
+these timings but not proven by them.
+
+### Against `design/kit_proof.md` section 8.1
+
+Section 8.1 predicts a sparse `throughput` cell reads near null. It does not: of 16 sparse
+(`real`/`none`) throughput rows, 12 are SLOWER by 1.2-10.5x, 4 are FASTER (hex8-bounded 0.91-0.93,
+word-digit 0.68), and none reads NULL. The prediction is contradicted.
+
+### GO / NO-GO input for B1 (numbers only; the ruling is the manager's)
+
+By the reading rule, cover as routed by the harness build on this population is not a net win:
+sparse `throughput` and `search_short` (the realistic and pure-scan classes) are SLOWER in 6 and 7
+of 8 cells for `real` and for `none` alike, geomean 2.08 / 2.15 (throughput) and 1.93 / 2.46
+(search_short); the broad wins are `dense` (geomean 0.57 throughput, 0.45 search_short) and one cell
+(word-digit). `match` is neutral (geomean 0.99, 22 of 24 NULL). The rule makes any SLOWER cell a
+FINDING whatever the geomean; there are 28. Read plainly, the numbers read NO-GO for turning the
+cover proof on by default as the harness build routes it today. Scope: 8 cells (4 from the brief, 4
+from the admitted cases); one machine (Zen 4, one pinned core, gcc 15.2 -O2); the official verdict
+is the bench's (D144 addendum 4).
 
 ## Notes
 
