@@ -31,8 +31,8 @@ the row.
   from it**), `LICENSE.txt`, `generate.py` and the vendored `.txt` files
   unmodified — six of them since [M5.0] stage 5 added `Scripts.txt`,
   `ScriptExtensions.txt` and `PropertyValueAliases.txt`. Derives
-  `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc` and
-  `src/enc/utf8_fold_pairs.inc`.
+  `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc`,
+  `src/enc/utf8_fold_pairs.inc` and `src/core/case_tables.inc` ([SUBST-CASE]).
 
   **A SOURCE FILE CAN ARRIVE FOR A REASON THE DESIGN DID NOT NAME**, and stage
   5 is the worked example: `utf8_design.md` §3.3 lists the files it expects

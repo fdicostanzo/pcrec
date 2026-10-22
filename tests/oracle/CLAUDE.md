@@ -118,6 +118,8 @@ DATA this code produces and reads; this directory is the CODE.
   CLAUDE.md for what this discharges. Both runs REGENERATE the whole file
   (§7.1a: never an unsorted append).
 
+- **build_casemap_store.py** / **case_map_check.py** — [SUBST-CASE], kind `case-map`: capture libpcre2 10.46's `\U`/`\L` over every scalar value (ctypes `pcre2_substitute`, refuses a non-10.46 lib), and `make test-casemap`'s every-code-point comparison with `src/core/case_tables.inc` (reads no UCD).
+
 ## Validation run at landing (2026-09-10, lane `orstore`)
 
 - `local_adapter.py` run as `__main__`: all six kinds answered against the

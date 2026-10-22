@@ -532,6 +532,13 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   casemap — added 2026-10-22 ([SUBST-CASE], lane substcase); runs
+#     tests/oracle/case_map_check.py: the generated case map
+#     (src/core/case_tables.inc) against the committed libpcre2 10.46 store
+#     for every scalar value. Its own arm because the table is not yet read by
+#     the compiler: a plant on it moves no artifact and no corpus answer, and
+#     only the oracle comparison can be red for it. Verdict: the script's
+#     `checks passed:`/`checks failed:` summary. Registered before S1520.
 #   axesmemfn — added 2026-10-16 ([RUNAXES], lane runaxes); runs
 #     tests/axes/run_axes.sh with MEMFN_REACH_ONLY=1 AXES=--memfn
 #     MEMFN_EVERY=40 from the sabotaged tree (its build/pcrec, python3): the
@@ -3353,6 +3360,14 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
                 score_arm "$work/fallbacktable.log" "$f" "fallbacktable:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            casemap)
+                # [SUBST-CASE] see the vocabulary entry above.
+                python3 -I "$tree/tests/oracle/case_map_check.py" \
+                    > "$work/casemap.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/casemap.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/casemap.log" | grep -oE '[0-9]+')"
+                score_arm "$work/casemap.log" "$f" "casemap:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

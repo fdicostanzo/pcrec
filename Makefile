@@ -386,7 +386,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
-      test-kitproof test-ci-shards
+      test-kitproof test-casemap test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1569,6 +1569,13 @@ test-ucp: all
 test-clskit: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-clskit.ran"; fi
 	bash tests/clskit/run_clskit_tests.sh
+
+# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to
+# libpcre2 10.46's own pcre2_substitute answers for EVERY scalar value, from the
+# committed oracle store (the `case-map` kind); no libpcre2 needed at run time.
+test-casemap:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-casemap.ran"; fi
+	python3 -I tests/oracle/case_map_check.py
 
 test-uprops-utf8: all
 	ENC=utf8 bash tests/uprops/run_uprops_tests.sh
