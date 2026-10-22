@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "parse/parse_mods.h"
 
 typedef struct { unsigned bit; const char *name; } MaskName;
@@ -258,7 +259,8 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "rows that reject.\n"
                  "# `built` (D65): has the owning module's producer landed for "
                  "THIS construct, derived live by driving `syntax` through a "
-                 "gate-forced-open doorway call — 'built'/'unbuilt' for "
+                 "gate-forced-open doorway call under each encoding (built "
+                 "under any one is built) — 'built'/'unbuilt' for "
                  "RS_MODULE rows, '-' where the question does not arise "
                  "(RS_BASE/RS_REJECTED). Orthogonal to `status`/`roadmap`, "
                  "which stay PCRE2/base-grammar facts.\n"
@@ -821,13 +823,14 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
  * one place. */
 /* Drives row `r`'s own `syntax` through the doorway machinery (doorway_route +
  * doorway_call, an isolated one-shot Ctx: memset, own setjmp, arena freed on
- * every exit) at WHATEVER GATE the caller has already installed, and
+ * every exit) under encoding `enc`, at WHATEVER GATE the caller has already
+ * installed, and
  * classifies the result: EXT_NODE/EXT_MEMBERS/EXT_SCALAR -> BUILT_YES, an
  * EXT_REFUSAL answered at WANT_RESULT (D33's "gate open, port missing" signal)
  * -> BUILT_NO, anything else -> BUILT_DEFECT. Does not itself touch the
  * enabled-module gate -- pcrec_construct_built_status forces it, so the gate
  * mutation lives in exactly one place. */
-static PcrecBuiltStatus built_status_probe(const RegRow *r)
+static PcrecBuiltStatus built_status_probe(const RegRow *r, int enc)
 {
     Ctx cx;
     memset(&cx, 0, sizeof cx);
@@ -850,7 +853,8 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
      * The fix is the DEFAULTS rather than a NULL check in `cls_universe`,
      * because "which encoding is this parse for" has a right answer here and
      * it is the default one: these probes ask what the REGISTRY does, and the
-     * registry's answers are the default encoding's. A tolerant
+     * registry's answers are the default encoding's. The one exception is
+     * this probe's `enc`, which its caller walks over every encoding. A tolerant
      * `cls_universe` would instead let a genuinely optionless Ctx reach the
      * parser and silently answer for `byte` whatever the caller meant.
      *
@@ -858,6 +862,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
      * the indeterminate-after-longjmp locals C's rule is about. */
     pcrec_options probe_opt;
     pcrec_default_options(&probe_opt);
+    probe_opt.encoding = enc;
     cx.opt = &probe_opt;
     if (setjmp(cx.jb)) {
         /* the row's own well-formed `syntax` (SR-1's own rule: every row's
@@ -1093,7 +1098,14 @@ PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r)
     if (pcrec_enabled_set_spec("all", err, sizeof err) != 0)
         return PCREC_BUILT_DEFECT;   /* unreachable: "all" is always valid */
 
-    PcrecBuiltStatus result = built_status_probe(r);
+    /* EVERY ENCODING IS ASKED, the default first, and the first answer that
+     * is not `unbuilt` stands: a producer that has landed under ANY encoding
+     * pcrec compiles has landed. `(*UTF)` is the case that needs it -- its
+     * producer accepts under `-e utf8` and refuses under `byte` by design, so
+     * a byte-only probe read it `unbuilt` (lane speclang's finding 9). */
+    PcrecBuiltStatus result = PCREC_BUILT_NO;
+    for (int enc = PCREC_ENC_BYTE; pcrec_enc_by_id(enc); enc++)
+        if ((result = built_status_probe(r, enc)) != PCREC_BUILT_NO) break;
 
     pcrec_enabled_set_spec(saved[0] ? saved : "none", err, sizeof err);
     return result;

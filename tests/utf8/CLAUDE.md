@@ -20,6 +20,7 @@ invented as harness syntax that doesn't exist.
 
 - **landing_illformed.rxt** — the RECOVER row `landing`'s ill-formed cells (docs/design/start_landing.md §7.3 §6): four patterns that take `landing` with the ...
 - **gen_landing_illformed.py** — its generator (builds a libpcre2 helper under build/gen_landing and writes the file FROM the oracle).
+- **octal_wide.rxt** — K125 (lane langfix2): `\400`..`\777` are U+0100..U+01FF under utf8 (in a class, outside, the digit rule's octal reading, caseless); err 151 under byte (two `perr` controls). libpcre2 10.46 PCRE2_UTF-generated, no python arm; spec `octal_wide.gen.py` beside it (tests/lib/p2gen.py).
 
 ## Provenance
 

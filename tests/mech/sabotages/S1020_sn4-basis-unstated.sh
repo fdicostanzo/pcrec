@@ -4,7 +4,7 @@
 #
 # WHAT IT BREAKS. Every finder row states its basis (MEASURED / DERIVED /
 # UNMEASURED-DEFAULT), so a default is never read as measured: the listing
-# and the facts section print it. The plant leaves R0's basis at the
+# and the facts section print it. The plant leaves R7w's basis (the default row) at the
 # UNSTATED zero (memfn/src/finder.c `fd_rows[]`).
 #
 # WHERE IT IS SEEN. The table self-check (tests/memfn/finder_check.py A, arm
@@ -13,9 +13,9 @@
 SAB_ID="S1020-sn4-basis-unstated"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="memfnfinder"
-SAB_DESC="the finder row R0 states no basis (FB_UNSTATED), so its listing reads no provenance for a set-reading decision"
+SAB_DESC="the finder row R7w states no basis (FB_UNSTATED), so its listing reads no provenance for the default every set FIND takes"
 SAB_DOC_FIGURE="HAND-MEASURED by lane fdb1: see docs/dev/lanes/fdb1_report.md (the solo mech run of this row)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-r0", FB_DERIVED, "B4",'
-SAB_AFTER='      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-r0", FB_UNSTATED, "B4",   /* SABOTAGE S1020 */'
+SAB_BEFORE='      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B4",'
+SAB_AFTER='      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNSTATED, "B4",   /* SABOTAGE S1020 */'

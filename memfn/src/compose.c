@@ -282,7 +282,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     /* R-26.3: a REPORT site renders only through a ROUTED finder row that
        serves REPORT (the candidate is the answer: no pre-table form was
        written for one, and NONE is not a legal reply). The REPORT row
-       (R-26.6) is unrouted until its step, so on any art that does not
+       (R-26.6) is held for its preview step, so on any art that does not
        preview it a REPORT site is refused here, never walked (define_sel
        names it); where it decides, its pick is this walk */
     if (s->site_kind == MF_SK_REPORT && !rid) return NULL;
@@ -1321,8 +1321,6 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
             return kit_fail(art, "mf_define: proven0/proven_prev are not proven[0]/"
                             "proven[-1] (R-26.4: copies)");
     }
-    /* the finder table's trace-only shadow (finder.c): records, no byte */
-    fd_shadow(art, h, s, def);
 #endif
 
     if (row->define(art, h, def, file_scope)) return -1;

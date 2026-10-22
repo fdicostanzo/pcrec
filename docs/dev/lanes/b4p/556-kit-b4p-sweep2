@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# 556-kit-b4p-sweep2: lane b4p (R17-b' B4'), the byte-identity sweeps against the pre-B4' tip f6fb97780:
+# plain (every stream but the dumps), the registry dumps with the DECLARED delta checked both ways,
+# every DIFFER_PINS arm (--arms start: utf8, simd, comments, the start denies), and --engine=vm.
+# emit_sweep runs WITHOUT python3 -I. Queue it with:  scripts/boxqueue add --name 556-kit-b4p-sweep2 FILE
+# Fix round (MF_SITE_ABI 19): the arms-start and vm legs now also run --streams "$ALLBUTDUMPS" (the declared --list-axes
+# delta, fd-r0/fd-r5 leaving, made the dumps stream rc=1 there; dumps_delta.py covers it both ways).
+# The tip is whatever HEAD of the worktree is when the job runs (printed on the first line).
+# Each leg prints `== b4p sweep NAME rc=N`; the declared population is the four rc=0 lines.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/b4p
+REF=f6fb97780
+REFBIN=$W/build/scratch/ref/build/pcrec
+OUT=$W/build/b4p_job/sweep
+D=$W/docs/design/memfn/r17b_prime/b4p
+ALLBUTDUMPS=c-default,c-vm,emit-ir,composition,facts,emit-ir-auto,stderr
+case "${1:-}" in
+    --dry-run)
+        [ -x "$REFBIN" ] || { echo "no reference binary $REFBIN" >&2; exit 1; }
+        git -C "$W" rev-parse --verify "$REF^{commit}" >/dev/null || exit 1
+        git -C "$W" diff --quiet HEAD || { echo "worktree dirty" >&2; exit 1; }
+        python3 -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$W/scripts/emit_sweep.py" "$D/dumps_delta.py" || exit 1
+        echo "would run in $W: make -j8; emit_sweep --ref $REF [plain streams]; dumps_delta.py; emit_sweep --arms start; emit_sweep --extra=--engine=vm"
+        echo "boxqueue: cap 14400"; echo "boxqueue: patience none"
+        echo "boxqueue: expect sweeps=4 lines=^== b4p sweep [a-z0-9-]+ rc=0\$"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+cd "$W" || exit 1
+export TMPDIR=$W/build/tmp
+mkdir -p "$TMPDIR" "$OUT" || exit 1
+echo "== b4p sweep tip $(git rev-parse HEAD) vs $REF"
+make -j8 || exit 1
+python3 scripts/emit_sweep.py --ref "$REF" --streams "$ALLBUTDUMPS" --jobs 8 --out "$OUT/plain"
+echo "== b4p sweep plain rc=$?"
+python3 -I "$D/dumps_delta.py" "$REFBIN" "$W/build/pcrec"
+echo "== b4p sweep dumps-delta rc=$?"
+python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --arms start --streams "$ALLBUTDUMPS" --no-self-check --jobs 8 --out "$OUT/arms"
+echo "== b4p sweep arms-start rc=$?"
+python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --extra=--engine=vm --streams "$ALLBUTDUMPS" --no-differ-floor --no-self-check --jobs 8 --out "$OUT/vm"
+echo "== b4p sweep vm rc=$?"

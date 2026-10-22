@@ -58,9 +58,9 @@ plant_spec() {
     S1253) # mf_preview accepts any step a row names (B4, B1, ...)
         echo 'finder.c@@        if (strcmp(step, fd_previews[i])) continue;@@        if (0) continue;' ;;
     ZK6) # the preview leaks: the REPORT row decides on every art
-        echo 'finder.c@@    return r->routed || (art->preview \&\& !strcmp(art->preview, r->step));@@    return r->routed || !strcmp(r->step, "R-26.6");' ;;
+        echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 1;' ;;
     ZK7) # a preview art routes nothing (the REPORT row never decides)
-        echo 'finder.c@@    return r->routed || (art->preview \&\& !strcmp(art->preview, r->step));@@    return r->routed;' ;;
+        echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 0;' ;;
     S1254) # a `--memfn=` spelling reaches the preview (an options.def row)
         echo 'options.def@@MF_OPT("vrun-w32", MF_OPT_DENY,@@MF_OPT("preview", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR, "plant")\nMF_OPT("vrun-w32", MF_OPT_DENY,' ;;
     *) return 1 ;;

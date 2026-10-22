@@ -22,6 +22,13 @@
  *                                        144, not merely unconventional —
  *                                        swept, all 256 first-byte values)
  *   later bytes   ASCII letter, digit or '_'
+ *   under utf8    first char \p{L} or '_', later chars \p{L} \p{Nd} or '_'
+ *                                       (K116: PCRE2_UTF census over every
+ *                                        code point, both positions, set-
+ *                                        equal to those classes; lane
+ *                                        langfix). `byte` stays ASCII-only
+ *                                        (the non-UTF census admits no
+ *                                        byte >= 0x80)
  *   length        1..128 bytes          (129 is PCRE2 error 148; swept
  *                                        1..2000 bytes of an otherwise-
  *                                        valid name — a measured WALL, not
@@ -67,6 +74,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "parse/parse_mods.h"
 
 /* An arena-owned, NUL-terminated copy of pat[start, start+len) — the one
@@ -79,6 +87,45 @@ static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
     memcpy(p, s, len);
     p[len] = '\0';
     return p;
+}
+
+/* Is `cp` in the bare-namespace Unicode property `prop` (normalised name)?
+ * A binary search of the same generated interval table `\p{..}` reads. */
+static bool ng_in_prop(Ctx *cx, const char *prop, unsigned cp)
+{
+    int n = 0;
+    const PcrecCpRange *iv = pcrec_uprops_span(prop, &n);
+    if (!iv)
+        pcrec_ctx_fail(cx, cx->pos, "internal error: the group-name rule "
+                       "names property '%s', which unicode-props does not "
+                       "ship", prop);
+    int lo = 0, hi = n - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (cp < iv[mid].lo) hi = mid - 1;
+        else if (cp > iv[mid].hi) lo = mid + 1;
+        else return true;
+    }
+    return false;
+}
+
+/* The byte length of the name character at p[i] (`first`: in the leading
+ * position), 0 if there is none. A byte >= 0x80 is a name character only
+ * under an encoding wider than a byte, decoded by the encoding's own reader
+ * (`pcrec_pat_char`, so `p` must point into `cx->pat`), and only when it
+ * stays inside the caller's bound `n`. */
+static int ng_name_char(Ctx *cx, const char *p, size_t n, size_t i, bool first)
+{
+    if (i >= n) return 0;
+    unsigned char b = (unsigned char)p[i];
+    if (b < 0x80)
+        return (first ? isalpha(b) : isalnum(b)) || b == '_' ? 1 : 0;
+    if (pcrec_enc_by_id(cx->opt->encoding)->max_cp <= 0xFFu) return 0;
+    int len;
+    unsigned cp = pcrec_pat_char(cx, (size_t)(p - cx->pat) + i, &len);
+    if (i + (size_t)len > n) return 0;
+    return ng_in_prop(cx, "L", cp) || (!first && ng_in_prop(cx, "ND", cp))
+               ? len : 0;
 }
 
 /* [M6.5.2] THE NAME GRAMMAR AS ONE FUNCTION, four readers.
@@ -95,17 +142,18 @@ static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
  * Returns the name's length starting at `p[i]`, or 0 with `*why` set. The
  * caller decides what a SHORT answer means: the declaring port requires the
  * closing delimiter next, the reference ports require the whole body. */
-size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why)
 {
     size_t start = i;
-    if (i >= n || !(isalpha((unsigned char)p[i]) || p[i] == '_')) {
+    int len = ng_name_char(cx, p, n, i, true);
+    if (len == 0) {
         *why = "subpattern name expected (a name starts with a letter or "
                "'_', never a digit)";
         return 0;
     }
-    while (i < n && (isalnum((unsigned char)p[i]) || p[i] == '_'))
-        i++;
+    do i += (size_t)len;
+    while ((len = ng_name_char(cx, p, n, i, false)) > 0);
     return i - start;
 }
 
@@ -154,7 +202,7 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
     size_t name_start = i;
     {
         const char *why = NULL;
-        size_t len = pcrec_group_name_scan(p, n, i, &why);
+        size_t len = pcrec_group_name_scan(cx, p, n, i, &why);
         if (len == 0) REFUSE(i < n ? i : at, "%s", why);
         i += len;
     }
@@ -264,7 +312,6 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
             Ast *cap = pcrec_ast_node(cx, A_CAP);
             cap->l = body;
             cap->u.cap.no = capno;
-            cap->not_repeatable = body->not_repeatable;
             body = cap;
         }
 

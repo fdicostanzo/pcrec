@@ -8,18 +8,23 @@ UNREACHED/OWED items it cannot check yet (never as a pass).
     finder_check.py --root TREE --fx PLAIN_FX --fxt TRACED_FX --tmp DIR
 
 Two fixture drivers (tests/memfn/arm_fixtures.c): PLAIN_FX linked against
-build/libpcrec.a, TRACED_FX against the kit rebuilt -DMF_TRACE (the finder
-shadow's `MFTRACE FD`/`FDKEY` records and the define-time query's re-ask).
+build/libpcrec.a, TRACED_FX against the kit rebuilt -DMF_TRACE (the routed
+decision's `MFTRACE FDROUTE` and the PRES `MFTRACE FD` records, and the
+define-time query's re-ask). B4' (lane b4p, LOCKDOWN) retired the trace-only
+shadow, its `FD` FIND records and the `FDKEY` lookup records, and withdrew R0,
+R5 and R7: D and E below no longer have a deciding row that reads a set key.
 
 WHAT IT CONTROLS, AND AGAINST WHAT (each expectation is written HERE, from the
 design's text, sharing no code with the kit):
 
-  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 19 rows
-     the design locks at B4 less B5's (§1.3, §1.4), by slot and in order; a
-     basis on every row; a pick on every FIND row; no MEASURED row that reads
-     no key; every row reading a DERIVED key (the converter's closed list,
-     §5.2 C1: saving, xover, block, dom, lstar, g8) is DERIVED; the last row
-     of each slot reads nothing; no routed row at B1 (§1.6); every key the
+  A. THE TABLE (C2's self-check, [rev3 C2]; the listing, R-MS4): the 17 rows
+     the design locks at B4' (§1.3, §1.4; R0, R5 and R7 withdrawn), by slot and
+     in order; a basis on every row; a pick on every FIND row; no MEASURED row
+     that reads no key (but R7w, MEASURED by the walk ruling); every row
+     reading a DERIVED key (the converter's closed list, §5.2 C1: saving,
+     xover, block, dom, lstar, g8) is DERIVED; the last row of each slot
+     reads nothing; the listing carries no `routed`/`locked` column (the bit
+     is deleted, LOCKDOWN); every key the
      kit's (no `pcrec.` key, R-MS1); every deny registered in options.def or
      one of B3b's three. SN-4 (S1020) plants an UNSTATED basis.
   B. R-MS3: `walk` and `libc` hash, the forms later steps build are refused;
@@ -30,15 +35,13 @@ design's text, sharing no code with the kit):
      set's `cards` section equal to its card table, `rows` and
      `values_digest` (measure_sets §1.6, recomputed here) as its header
      says; each card dep form resolves or is OWED with its step.
-  D. R-MS1: every finder site under NO set, the FULL synthetic set, and the
-     full set less each key it reads in turn (a decision that read a removed
-     key must move: S917's detector); a `pcrec.` row and an out-of-bound
-     value are refused (no clamp).
-  E. R-MS4 keys: every key the shadow looked up under the full set matches a
-     template its row declares.
-  F. R-MS2: `consulted` is 0 on every compile at B1, the traced shadow's
-     reads included (no routed row reads a key before B4); the true arms are
-     OWED to B4.
+  D. R-MS1: every finder site under NO set and the FULL synthetic set decides
+     the same rows; a `pcrec.` row and an out-of-bound value are refused (no
+     clamp). (The key-removal loop, S917's detector, went with the rows that
+     read a key: S917 is UNREACHED.)
+  E. (retired with the shadow's FDKEY records: no deciding row reads a key.)
+  F. R-MS2: `consulted` is 0 on every compile (no deciding row reads a key);
+     the true arms are OWED to the first row that does.
   G. THE QUERY FAMILY (§4.5 rule 2): every fixture's class agrees with its
      define's and with this file's own reading of the site and the text
      (arm_fixtures --query); the query is pure (the same artifacts with and
@@ -64,21 +67,20 @@ design's text, sharing no code with the kit):
      no analysis object and with one stating each fidelity value (UNSTATED
      and an out-of-enum 9 included). The layout is prov_check.c's static
      assertions (appended, never reordered).
-  J. A DENY reaches its row: `--memfn=no-fd-r0` skips R0 on its witness.
-  K. B2's ROUTING (§1.6, R17-b' B2): the rows the design routes at B2 (D1,
-     D1c, D1w) are routed and LOCKED, every other row is neither; each routed
-     row DECIDES the one-byte site it is written for (the kit's report
+  J. The retired denies are REFUSED: `--memfn=no-fd-r0` and `no-fd-r5` name
+     no row since B4' (withdrawn with R0 and R5).
+  K. B2's ROUTING (§1.6, R17-b' B2): each of D1, D1c, D1w DECIDES the
+     one-byte site it is written for (the kit's report
      `mf_result.row` and the traced `MFTRACE FDROUTE` record, two
      observations) and the text is that row's pick, read here from the text
      by this file's own signature (LIBC: one memchr with the kit's guard;
      LIBC_BACK: the memchr from the floor and the `+ 1` store; WALK: the
      table walk and its post-test; the DFA hat's bounded block and moved
-     test); a set site is decided by NO routed row (S922's reverse: routing
-     early); `--memfn=no-fd-d1` moves the DFA_SCAN byte site to D1w's walk
-     (`fd-d1`'s OFF arm, [rev3 A17]).
-  M. B3b's ROUTING (§1.4, §1.6, R17-b' B3b): the rows the design routes at B3b
-     (D2 and slot PRES's P0, P2, P3, P4, P9) are routed and LOCKED with B2's;
-     their three denies are registered (`fd-pres-g1`, `fd-pres-pick`,
+     test); a fixture whose consumer kind is UNSTATED is decided by NO row
+     (R7w's contract serves the stated kinds only); `--memfn=no-fd-d1` moves
+     the DFA_SCAN byte site to D1w's walk (`fd-d1`'s OFF arm, [rev3 A17]).
+  M. B3b's ROUTING (§1.4, §1.6, R17-b' B3b): D2 and slot PRES's P0, P2, P3,
+     P4, P9 decide; their three denies are registered (`fd-pres-g1`, `fd-pres-pick`,
      `pres-set-lead`). Each PRES fixture's span is decided by the row and
      carries the link written HERE from §1.4's table (P0 REQUIRED: verified
      whole; P3: the pick verified, a member of a set with a run not verified;
@@ -102,21 +104,22 @@ unreached = []
 
 # R-26.6 (lane r26zk): RPT, the REPORT row, the last FIND row (listed after
 # slot PRES in the table), UNROUTED: no row routes before its step
-FIND_ROWS = ["R0", "R5", "R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w", "D2",
-             "R7", "R7w", "RPT"]
+FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w", "D2",
+             "R7w", "RPT"]
+# the ids B4' withdrew (reserved, never reused) and their denies (retired)
+WITHDRAWN_ROWS = ["R0", "R5", "R7"]
+RETIRED_DENIES = ["fd-r0", "fd-r5"]
+# a MEASURED row that reads no key: R7w, MEASURED by the walk ruling's real-text
+# verdict (walk_vs_v1_record.md §5), not by a set key
+KEYLESS_MEASURED = {"R7w"}
 PRES_ROWS = ["P0", "P2", "P3", "P4", "P9"]
 DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
-B1_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp", "fd-d1"]
+B1_DENIES = ["fd-r8", "fd-ndisp", "fd-d1"]
 B3B_DENIES = ["fd-pres-g1", "fd-pres-pick", "pres-set-lead"]
 PENDING_DENIES = {}
 LATER_FORMS = {"V1": "B4", "W64": "B6", "NONE": "B5", "dispatch-twin": "B4/B8"}
 FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
-# the rows the design routes at B2 and B3b (r17b_prime.md §1.6, §3.1 rows
-# B2 and B3b); every other row routes at B4 or later
-ROUTED_B2 = {"D1", "D1c", "D1w"}
-ROUTED_B3B = {"D2", "P0", "P2", "P3", "P4", "P9"}
-ROUTED = ROUTED_B2 | ROUTED_B3B
 # M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
 # table (link = v<verify>p<proven_by>m<member>o<order>; member 1 + the
 # chosen index, order 0 the head, 1 the run, 2 the rest)
@@ -168,7 +171,7 @@ def listing(fx):
             opts.append(c[1])
         else:
             rows.append(dict(zip(("id", "slot", "needs", "pick", "unpaid", "deny", "basis",
-                                  "routed", "locked", "step", "keys"), c)))
+                                  "step", "keys"), c)))
     return rows, opts
 
 
@@ -195,17 +198,13 @@ def check_table(fx):
             continue
         if r["slot"] == "FIND" and r["pick"] in ("-", ""):
             bad("%s: a FIND row with no pick" % r["id"])
-        if not ks and r["basis"] == "MEASURED":
+        if not ks and r["basis"] == "MEASURED" and r["id"] not in KEYLESS_MEASURED:
             bad("%s: MEASURED but reads no key" % r["id"])
         quant = {k.split(".")[1] for k in ks if k.count(".") >= 1}
         if quant & DERIVED_Q and r["basis"] != "DERIVED":
             bad("%s: reads the derived %s but its basis is %s" % (r["id"], sorted(quant & DERIVED_Q), r["basis"]))
         if any(not k.startswith("kit.") for k in ks):
             bad("%s: reads a key that is not the kit's: %s" % (r["id"], ks))
-        want = "1" if r["id"] in ROUTED else "0"
-        if r["routed"] != want or r["locked"] != want:
-            bad("%s: routed %s / locked %s at B3b (the routed rows are %s; no row routes "
-                "before its step)" % (r["id"], r["routed"], r["locked"], sorted(ROUTED)))
         d = r["deny"]
         if d != "-" and d not in opts and PENDING_DENIES.get(d) != r["step"]:
             bad("%s: deny %s is not in options.def" % (r["id"], d))
@@ -218,6 +217,11 @@ def check_table(fx):
             ok()
     for d in B1_DENIES:
         (ok() if d in opts else bad("options.def lacks B1's deny %s" % d))
+    for d in RETIRED_DENIES:
+        (ok() if d not in opts else bad("options.def still holds %s (retired at B4')" % d))
+    for rid in WITHDRAWN_ROWS:
+        (ok() if rid not in [r["id"] for r in rows] else
+         bad("the listing still holds the withdrawn row %s (its id is reserved)" % rid))
     for d in B3B_DENIES:
         (ok() if d in opts else bad("options.def lacks B3b's deny %s" % d))
     for d, step in PENDING_DENIES.items():
@@ -388,17 +392,17 @@ def fd_run(fx, site, setpath=None, opts=None):
         argv += ["--opts", opts]
     r = run(argv)
     out, err = r.stdout.decode(), r.stderr.decode()
-    dec, keys = [], []
+    dec = []
     for ln in err.splitlines():
-        if ln.startswith("MFTRACE FD "):
+        if ln.startswith("MFTRACE FD "):                 # slot PRES (the define's and the ask's)
+            dec.append(dict(t.split("=", 1) for t in ln.split()[2:] if "=" in t))
+        elif ln.startswith("MFTRACE FDROUTE "):          # slot FIND (the routed decision)
             d = dict(t.split("=", 1) for t in ln.split()[2:] if "=" in t)
+            d["slot"] = "FIND"
             dec.append(d)
-        elif ln.startswith("MFTRACE FDKEY "):
-            d = dict(t.split("=", 1) for t in ln.split()[2:] if "=" in t)
-            keys.append(d)
     cons = re.search(r"^CONSULTED\t(\d+)", out, re.M)
     ref = re.search(r"^REFUSED\t(.*)$", out, re.M)
-    return r.returncode, dec, keys, (int(cons.group(1)) if cons else None), \
+    return r.returncode, dec, [], (int(cons.group(1)) if cons else None), \
         (ref.group(1) if ref else None), err
 
 
@@ -406,36 +410,22 @@ def decisions(dec):
     return [(d.get("slot"), d.get("pred", "-"), d.get("layer"), d.get("row")) for d in dec]
 
 
-def tpl_match(tpl, key):
-    rx = "".join("[A-Za-z0-9_+-]+" if p.startswith("<") else re.escape(p)
-                 for p in re.split(r"(<[^>]+>)", tpl))
-    return re.fullmatch(rx, key) is not None
-
-
-def write_set_without(full, drop, path):
-    secs = open(full, encoding="utf-8").read().split("\n")
-    with open(path, "w") as fh:
-        for ln in secs:
-            if ln.split("\t")[0] == drop:
-                continue
-            fh.write(ln + "\n")
-
-
 def check_sites(root, fx, fxt, tmp, rows):
     full = os.path.join(root, "memfn/data/sets/synthetic-every-key.tsv")
-    tpls = {r["id"]: keys_of(r) for r in rows}
-    nsite = nkey = 0
+    nsite = 0
+    # sites a FIND/PRES decision exists for (consumer kind stated or a presence
+    # span); a fixture whose kind is UNSTATED is decided by no FIND row
     for site in FD_SITES:
         rc0, dec0, _, cons0, ref0, err0 = fd_run(fxt, site)
-        rc1, dec1, keys1, cons1, ref1, err1 = fd_run(fxt, site, full)
+        rc1, dec1, _, cons1, ref1, err1 = fd_run(fxt, site, full)
         if rc0 or rc1 or ref0 or ref1:
             bad("%s: the kit refused (no set rc %d %s; full set rc %d %s)" % (site, rc0, ref0, rc1, ref1))
             continue
-        if not dec0 or not dec1:
-            bad("%s: the shadow wrote no decision (NULL %d, full %d records)" % (site, len(dec0), len(dec1)))
-            continue
         nsite += 1
-        # no shadow decision is declined on `need` (a row's contract refusing the
+        # D: a decision does not depend on the set (no deciding row reads a key)
+        (ok() if decisions(dec0) == decisions(dec1) else
+         bad("%s: the full set moved the decision (%s -> %s)" % (site, decisions(dec0), decisions(dec1))))
+        # no gate decision is declined on `need` (a row's contract refusing the
         # span it was the first to hold on: P0 held an OPTIONAL span its
         # REQUIRED-only contract refused, 1439 would-declines in B1/B2's N2
         # census, lane n2fix). Not on every field: these fixtures leave
@@ -445,40 +435,15 @@ def check_sites(root, fx, fxt, tmp, rows):
               if ln.startswith("MFTRACE END table=fd ") and
               (" phase=shadow " in ln or " phase=define " in ln)
               and " would_decline=1 " in ln and "need:" in ln]
-        (ok() if not wd else bad("%s: the shadow's gate declined on need (%s)" % (site, wd[0])))
+        (ok() if not wd else bad("%s: the gate declined on need (%s)" % (site, wd[0])))
         if site == "pre-opt":                   # K35: the OPTIONAL presence span is on the record
             opt = [d for d in dec0 if d.get("slot") == "PRES" and d.get("need") == "OPTIONAL"]
             (ok() if opt else bad("pre-opt: no OPTIONAL PRES decision, the would-decline control is blind"))
+        # F: no deciding row reads a set key
         for c, what in ((cons0, "no set"), (cons1, "the full set")):
-            (ok() if c == 0 else bad("%s: consulted %s under %s (no routed row reads a key at B1)"
+            (ok() if c == 0 else bad("%s: consulted %s under %s (no deciding row reads a key)"
                                        % (site, c, what)))
-        # E: every looked-up key is declared by its row
-        for k in keys1:
-            row, key = k.get("row"), k.get("key")
-            if not any(tpl_match(t, key) for t in tpls.get(row, [])):
-                bad("%s: row %s looked up %s, which it does not declare (R-MS4)" % (site, row, key))
-            else:
-                ok()
-        # D: each key the decision read, removed in turn, moves the reading row off
-        chosen = {(d.get("slot"), d.get("pred", "-"), d.get("layer")): d.get("row") for d in dec1}
-        found = sorted({(k["row"], k["key"]) for k in keys1 if k.get("found") == "1"})
-        for row, key in found:
-            if row not in chosen.values():
-                continue                        # read by a row the walk passed over
-            nkey += 1
-            path = os.path.join(tmp, "less.tsv")
-            write_set_without(full, key, path)
-            rc2, dec2, _, _, ref2, _ = fd_run(fxt, site, path)
-            if rc2 or ref2:
-                bad("%s: the set less %s is refused: %s" % (site, key, ref2))
-                continue
-            ch2 = {(d.get("slot"), d.get("pred", "-"), d.get("layer")): d.get("row") for d in dec2}
-            moved = [kk for kk, v in chosen.items() if v == row and ch2.get(kk) == row]
-            (ok() if not moved else
-             bad("%s: with %s ABSENT row %s still decides %s (an absent key read as a value: "
-                 "S917)" % (site, key, row, moved)))
     (ok() if nsite == len(FD_SITES) else bad("%d of %d finder sites ran" % (nsite, len(FD_SITES))))
-    (ok() if nkey >= 3 else bad("only %d read keys were removed in turn (K35 floor 3)" % nkey))
     # refusals: a pcrec. row; a value past the bound
     for name, body in (("pcrec-row", "pcrec.beta.WALK.DFA_SCAN.r1e0c0\tratio\t1000000\t-\t-\t-\tmeasured"),
                        ("too-big", "kit.eps.streamed.slope\tratio\t2000000000000000000\t-\t-\t-\tmeasured")):
@@ -491,8 +456,9 @@ def check_sites(root, fx, fxt, tmp, rows):
     # plain build: consulted 0 under the full set too
     rc, _, _, cons, ref, _ = fd_run(fx, "set10", full)
     (ok() if rc == 0 and cons == 0 else bad("plain build: consulted %s (rc %d %s)" % (cons, rc, ref)))
-    unreached.append("R-MS2: consulted's true arms (an ABSENT and a present key read by a ROUTED "
-                     "row) have no routed reader before B4")
+    unreached.append("R-MS2: consulted's true arms (an ABSENT and a present key read by a deciding "
+                     "row) have no reader since B4' withdrew R0, R5 and R7 (S917 is UNREACHED); "
+                     "the first row with a key comparator ([MEMFN-REGIME], B6) re-opens them")
     # I: the call mode is a stated fact (R-23): every body value is stated
     # once; the three that are not a mode are refused naming `body`
     for site, want in (("set10-nobody", "`body` UNSTATED"),
@@ -506,19 +472,14 @@ def check_sites(root, fx, fxt, tmp, rows):
     r1_b = [ln for ln in err_b.splitlines() if "table=fd" in ln and " row=R1 " in ln and "verdict=" in ln]
     (ok() if not ref_b and r1_b and not any("body:R1" in ln for ln in r1_b) else
      bad("body ONESHOT: refused (%s) or R1's gate names `body`: %s" % (ref_b, r1_b[:1])))
-    # J: a deny reaches its row (R0's witness under the R0 set, its key set)
-    r0set = os.path.join(tmp, "r0.tsv")
-    with open(r0set, "w") as fh:
-        fh.write("#section header\n#key\tvalue\nid\tr0\n#section rows\n#key\tunit\tvalue_e6\n"
-                 "kit.saving.V1.WALK.r2\tratio\t0\nkit.saving.V1.WALK.r2e0c0\tratio\t0\n"
-                 "kit.eps.streamed.slope\tratio\t10000\n")
-    _, d_on, _, _, _, _ = fd_run(fxt, "set2r", r0set)
-    _, d_off, _, _, _, _ = fd_run(fxt, "set2r", r0set, "no-fd-r0")
-    on = [d.get("row") for d in d_on if d.get("slot") == "FIND"]
-    off = [d.get("row") for d in d_off if d.get("slot") == "FIND"]
-    (ok() if on == ["R0"] and off and "R0" not in off else
-     bad("--memfn=no-fd-r0 does not skip R0 on its witness (%s -> %s)" % (on, off)))
-    for d in ("fd-r5", "fd-r8", "fd-ndisp"):
+    # J: the retired denies name no row (withdrawn with R0 and R5 at B4')
+    for d in RETIRED_DENIES + ["fd-r7"]:
+        r = run([os.path.join(root, "build", "pcrec"), "-p", "rx", "--pattern", "a(b|c)+d",
+                 "--memfn=no-" + d, "-o", os.path.join(tmp, "retired.c")])
+        (ok() if r.returncode != 0 and b"unknown option" in r.stderr else
+         bad("--memfn=no-%s was not refused as an unknown option (rc %d): the deny is retired "
+             "(B4')" % (d, r.returncode)))
+    for d in ("fd-r8", "fd-ndisp"):
         unreached.append("deny %s: its row cannot hold on a B2 fixture (E, H, or W64 "
                          "unbuilt); its reach is its routing step's" % d)
 
@@ -553,8 +514,8 @@ def check_routing(fx, fxt):
         _, rt, _, _ = fd_routed(fx, site)
         _, _, _, fr = fd_routed(fxt, site)
         (ok() if rt == "-" and not fr else
-         bad("%s: decided by a routed row %s (FDROUTE %s): no row routes it before B4"
-             % (site, rt, [d.get("row") for d in fr])))
+         bad("%s: decided by row %s (FDROUTE %s): a fixture with no stated consumer kind "
+             "is decided by no row" % (site, rt, [d.get("row") for d in fr])))
     _, rt, text, _ = fd_routed(fx, "byte1t", "no-fd-d1")
     (ok() if rt == "D1w" and re.search(B2_ROUTES["byte1vm"][1], text) else
      bad("--memfn=no-fd-d1: byte1t decided by %s with %r, not D1w's walk ([rev3 A17])"

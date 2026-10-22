@@ -174,6 +174,13 @@ if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --names; then rc
 if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check-annotations; then rc=1; fi
 PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --tension
 
+# [SPEC-LANG]: docs/spec/pattern_language.md §10, the hand-written construct index of the
+# language definition, against the same dump: a row missing from the doc, a
+# doc line naming no row, a module that disagrees, or a section the doc does
+# not have fails. Two independent sources; the script plants its own
+# mutations first and fails if any goes unreported.
+if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/syntax_index_check.py"; then rc=1; fi
+
 # PC-3: the same table against libpcre2, which is the one authority none of the
 # above is. It links the same library and includes the same header — DIRECT
 # LINKING since [ORACLE-LINK] (D98, 2026-09-09; was a runtime dlopen through

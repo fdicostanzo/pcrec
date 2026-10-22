@@ -920,6 +920,82 @@ bool pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j)
     return cg->reach[(size_t)i * (size_t)cg->ntarget + (size_t)j] != 0;
 }
 
+/* K127: marks, in `mark` (by target index), every call in `a` that counts
+ * toward a lookbehind's LENGTH — every call except one inside a nested
+ * lookahead, which contributes 0. A nested lookbehind is followed, as
+ * libpcre2 follows it (`((?<=(?2)))(a(?<=(?1)))` is err 125). Lexical: a call
+ * under `{0}` counts, as it does for libpcre2 (`((?<=(?1){0})x)` is err 125).
+ * Spine-iterative (K20). */
+static void cg_length_calls(const struct CallGraph *cg, const Ast *a,
+                            unsigned char *mark)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CALL: {
+            int i = cg_index(cg, a->u.call.target);
+            if (i >= 0) mark[i] = 1;
+            return;
+        }
+        case A_LOOK:
+            if (a->u.look.behind) { a = a->l; continue; }
+            return;
+        case A_CLASS: case A_EMPTY: case A_EOL:
+        case A_CTX: case A_GSTART: case A_KRESET:
+        case A_BREF: case A_VAR:
+            return;
+        case A_CAP: case A_REP: case A_ATOMIC: case A_WCLASS:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            const Ast *t = a;
+            for (; t->k == k; t = t->l) cg_length_calls(cg, t->r, mark);
+            a = t;
+            continue;
+        }
+        }
+        /* No `default:` — coding_guide §1.3. */
+        return;
+    }
+}
+
+typedef struct { const Ast *node; bool found; } CgFind;
+
+/* pcrec_ast_visit callback: notes whether the walk meets `node`. */
+static void cg_find(void *ud, const Ast *a)
+{
+    CgFind *f = ud;
+    if (a == f->node) f->found = true;
+}
+
+/* K127: internal.h's declaration states the rule. A worklist over target
+ * indices: each reached region is searched for `look` (any position,
+ * lookarounds included — `(a(?=(?<=(?1))))` refuses), then contributes its
+ * own length-bearing calls. Bounded by the target count; a region is
+ * expanded once. */
+bool pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look)
+{
+    const struct CallGraph *cg = cx->callgraph;
+    const int n = pcrec_callgraph_ntargets(cg);
+    if (n == 0) return false;
+    unsigned char *mark = pcrec_arena_alloc(&cx->arena, (size_t)n);
+    unsigned char *done = pcrec_arena_alloc(&cx->arena, (size_t)n);
+    cg_length_calls(cg, look->l, mark);
+    for (bool grew = true; grew; ) {
+        grew = false;
+        for (int i = 0; i < n; i++) {
+            if (!mark[i] || done[i]) continue;
+            done[i] = 1;
+            grew = true;
+            CgFind f = { look, false };
+            pcrec_ast_visit(cg->body[i], cg_find, &f);
+            if (f.found) return true;
+            cg_length_calls(cg, cg->body[i], mark);
+        }
+    }
+    return false;
+}
+
 /* True iff target i was decided spliceable (tolerates a NULL graph or splice
  * array). */
 bool pcrec_callgraph_spliced(const struct CallGraph *cg, int i)

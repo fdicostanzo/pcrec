@@ -38,3 +38,5 @@ tests	tests/mech/sabotages/S1238_meas_shadow_values_unchecked.sh	6	1	a [MEASURE-
 tests	tests/mech/sabotages/S1241_meas_embedded_text_short.sh	6	2	a [MEASURE-SET] M0 check or sabotage row naming the shipped set id `zen4-grid1` (its fixtures and anchors read the store's own text verbatim); a data label, not a branch on an architecture
 tests	tests/mech/sabotages/S1245_meas_flag_reaches_query.sh	6	1	a [MEASURE-SET] M0 check or sabotage row naming the shipped set id `zen4-grid1` (its fixtures and anchors read the store's own text verbatim); a data label, not a branch on an architecture
 tests	tests/mech/sabotages/S1246_meas_pcrec_line_carries_flag.sh	6	1	a [MEASURE-SET] M0 check or sabotage row naming the shipped set id `zen4-grid1` (its fixtures and anchors read the store's own text verbatim); a data label, not a branch on an architecture
+tests	tests/lookaround/lookbehind_group_alt.gen.py	1	2	a test SUBJECT string "adx" (a, d, x: the lookbehind alternatives ab|cd then x), not the ADX extension
+tests	tests/lookaround/lookbehind_group_alt.rxt	1	2	the generated corpus carrying the subject "adx" (two rows), not the ADX extension

@@ -7175,11 +7175,12 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
  * THE BRANCH NODES ARE WALKED HERE AND THE WIDTHS ARE NOT RE-DERIVED. §3.1(c)
  * stores `u.look.widths` precisely so this function does not recompute them;
  * what it must still do is find the branch SUBTREES, because `vm_emit` needs
- * them. The walk fills its array from the END for `p_alt_info`'s reason (a
- * flat alternation is LEFT-NESTED, so the spine yields branches backwards) —
- * the same loop shape `mod_lookaround.c`'s `la_widths` uses, so index `i`
- * pairs branch `i` with `widths[i]` by construction — and a spine that
- * disagrees with `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
+ * them. They come from `pcrec_lookbehind_branches` (mod_lookaround.c), the
+ * one split `la_widths` also reads, so index `i` pairs branch `i` with
+ * `widths[i]` by construction: it peels exactly `nbranch - 1` spine nodes
+ * from the END (a flat alternation is LEFT-NESTED) and takes what is left as
+ * branch 0, which may itself be an alternation (K123); a spine SHORTER than
+ * `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
 static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 {
     const int m = a->u.look.nbranch;
@@ -7220,22 +7221,7 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
     int *bl   = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
     int *bodl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
     int *endl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
-    {
-        int i = m;
-        const Ast *t = a->l;
-        for (; t->k == A_ALT; t = t->l) {
-            if (i <= 1)
-                pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
-                                   "alternation spine is longer than its "
-                                   "stored branch count");
-            br[--i] = t->r;
-        }
-        if (i != 1)
-            pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
-                               "alternation spine is shorter than its stored "
-                               "branch count");
-        br[0] = t;
-    }
+    pcrec_lookbehind_branches(v->cx, a->l, m, br);
     for (int i = 0; i < m; i++) {
         bl[i]   = vm_label(v);
         bodl[i] = vm_label(v);

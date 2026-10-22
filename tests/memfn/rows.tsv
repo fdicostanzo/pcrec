@@ -44,49 +44,40 @@
 # (NEXT's `handoff` row ranks above the start-byte rows).
 #
 # [MEMFN] R17-b' B1 (lane fdb1): table `fd`, the finder table (memfn/src/
-# finder.c `fd_rows[]`), 19 rows. None is routed at B1, so none renders a
-# byte: a `fd` row's "rendering" is the MF_TRACE build's SHADOW record
-# (`MFTRACE FD ... row=<id> pick=<form>`), and rows_check.py reads a `fd`
-# witness's signature from the fixture's FD records. Every `fd` row's reach is
-# `pending-site:<its routing step>` (r17b_prime.md §3.4 [rev3 B7]); a row no
-# B1 site can reach (it reads the consumer kind, stated from B2; E, read by no
-# row before B3a; H, B9's; a W64 pick, B6's; or B3a's presence facts) has
-# witness kind `-` and prints UNREACHED with its step. Each routing step flips
-# its rows to `pcrec` with a census floor and a witness. R17-b' B2 (lane fdb2)
-# routed D1, D1c and D1w: their reach is `pcrec`, their witness a pattern,
-# and their signature is read from the traced compile's `MFTRACE FDROUTE`
-# record (row and arm), not the artifact, because a routed row's pick renders
-# exactly the text its pre-table arm did (zero movers): the text cannot tell
-# the routed decision apart (r17b_prime.md §1.6 [rev3 B5]). R17-b' B3b (lane
-# b3b) routed slot PRES (P0, P2, P3, P4, P9) and D2: the PRES rows' reach is
-# `pcrec`, their witness a pattern, their signature the `MFTRACE FD ...
-# slot=PRES` record of the deciding row and the span's final link (the define's
-# records, phase define; P2's, whose pre-check is never defined, the presence
-# ask's, phase ask, chosen at phase SHADOW); P9 is reached under P3's deny
-# (`--memfn=no-fd-pres-pick`), P4's signature is the HEAD member's `+P4`. D2
-# routes a FIND site over a RUN span 0, which no pcrec builder states (the
-# handoff landmark is the ALL_PRESENT site's window, not a FIND's span 0), so
-# it keeps its fixture and waits for the merged landmark site (R-18).
-# [MEASURE-SET] M0 (lane m0tri): R7w's witness names the synthetic set
-# pins/r7w_unmeasured.measures.tsv, because the store's default set now answers R7's
-# key and a default compile picks R7; the control is a one-byte site D1 claims.
-# R7w is `pcrec` too, as the walk's UNROUTED default terminal (lane n2fix):
-# from B2 the finder's decision is a live DEFINE-phase selection at every FIND
-# site, and R7w is what every site no D1 row claims reads (it returns NULL and
-# renders the pre-table arm until B4), so the census chooses it; its signature
-# is the `MFTRACE FD` record's, and its control is a one-byte site D1 claims.
-# A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling) says so in
-# its SIGNATURE: the `MFTRACE FD` record's ` phase=ask` is part of it (P2 today,
-# whose pre-check is asked and never defined). n2_report.py --floors holds such
-# a row to its floor on the REACH line's `asked=N` (selections decided at the
-# ask), every other row on `chosen`; rows_check.py requires its witness to be
-# ASKED (asked >= 1) and its control not, and every traced compile's `asked`
-# to equal its own `phase=ask` FD records (P4 counted from `P3+P4`).
-# R-26.6 (lane r26zk): RPT, the REPORT row, lands UNROUTED; only an art
-# previewing its step (mf_preview "R-26.6") routes it, and no pcrec build
+# finder.c `fd_rows[]`), 17 rows since B4' (lane b4p: R0, R5 and R7 withdrawn,
+# ids reserved). A `fd` FIND row's signature is read from the traced compile's
+# `MFTRACE FDROUTE` record (row and arm): a decided row's pick renders
+# exactly the text its pre-table arm did (zero movers), so the artifact's text
+# cannot tell the decision apart (r17b_prime.md §1.6 [rev3 B5]). Every `fd`
+# row's reach is `pending-site:<its step>` (r17b_prime.md §3.4 [rev3 B7]) or
+# `pcrec`; a row no site can reach (it reads E, H, a W64 pick, or a fast
+# terminal) has witness kind `-` and prints UNREACHED with its step. R17-b'
+# B2 (lane fdb2) routed D1, D1c and D1w: their reach is `pcrec`, their
+# witness a pattern. R17-b' B3b (lane b3b) routed slot PRES (P0, P2, P3, P4,
+# P9) and D2: the PRES rows' reach is `pcrec`, their witness a pattern, their
+# signature the `MFTRACE FD ... slot=PRES` record of the deciding row and the
+# span's final link (the define's records, phase define; P2's, whose
+# pre-check is never defined, the presence ask's, phase ask, chosen at phase
+# SHADOW); P9 is reached under P3's deny (`--memfn=no-fd-pres-pick`), P4's
+# signature is the HEAD member's `+P4`. D2 routes a FIND site over a RUN span
+# 0, which no pcrec builder states (the handoff landmark is the ALL_PRESENT
+# site's window, not a FIND's span 0), so it keeps its fixture and waits for
+# the merged landmark site (R-18).
+# R7w, the default every set FIND takes (B4', MEASURED by the walk ruling), is
+# `pcrec`: its signature is the FDROUTE record's, its control a one-byte site D1
+# claims. A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
+# says so in its SIGNATURE: the `MFTRACE FD` record's ` phase=ask` is part of
+# it (P2 today, whose pre-check is asked and never defined). n2_report.py
+# --floors holds such a row to its floor on the REACH line's `asked=N`
+# (selections decided at the ask), every other row on `chosen`; rows_check.py
+# requires its witness to be ASKED (asked >= 1) and its control not, and every
+# traced compile's `asked` to equal its own `phase=ask` FD records (P4 counted
+# from `P3+P4`).
+# R-26.6 (lane r26zk): RPT, the REPORT row, is held for its preview step: only
+# an art previewing it (mf_preview "R-26.6") decides it, and no pcrec build
 # calls mf_preview before Z2's harness lever (kit_proof.md §7), so its reach
 # is `pending-site:Z2`. Its witness `fd-RPT` is a REPORT site on a preview art
-# (its signature the shadow's FD record); its control is `fd-R7w`, a set site
+# (its signature the FDROUTE record); its control is `fd-R7w`, a set site
 # on a plain art (the row is not chosen there; the same REPORT site on a plain
 # art is refused, which tests/memfn/proof_check.c holds).
 #
@@ -116,8 +107,6 @@ fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
-fd	R0	pending-site:B4	fixture	-	fd-R0	 row=R0 pick=WALK	-	fd-R7-r2
-fd	R5	pending-site:B4	-	-	-	-	-	-
 fd	R8	pending-site:B6	-	-	-	-	-	-
 fd	R3a	pending-site:B9	-	-	-	-	-	-
 fd	R3b	pending-site:B9	-	-	-	-	-	-
@@ -127,12 +116,11 @@ fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
-fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 pick=RUN	-	fd-R7w
-fd	R7	pending-site:B4	fixture	-	fd-R7	 row=R7 pick=V1	-	fd-R7w
-fd	R7w	pcrec	pattern	-fno-offset-skip --measures @ROOT@/tests/memfn/pins/r7w_unmeasured.measures.tsv	[a-z]+@[a-z]+\.com	 row=R7w pick=WALK	-	x+y
+fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 arm=generic	-	fd-R7w
+fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
-fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT routed=1 phase=ask	--memfn=no-fd-pres-g1	=
+fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=
-fd	RPT	pending-site:Z2	fixture	-	fd-RPT	 row=RPT pick=PROOF	-	fd-R7w
+fd	RPT	pending-site:Z2	fixture	-	fd-RPT	 row=RPT arm=generic	-	fd-R7w

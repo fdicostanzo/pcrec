@@ -462,6 +462,11 @@
 #     build/libpcrec.a and compiles its memfn/src with -DMF_TRACE.
 #     Registered before S917, S919, S1018, S1020 and S1025. S1089 (R-23)
 #     joined it: the finder check's call-mode family; S919 is retired UNREACHED.
+#     R17-b' B4' (lane b4p, 2026-10-21): S916 retired with R0 (it was a design-
+#     table id, never registered as a file; its id is reserved), S917 is
+#     UNREACHED (LOCKDOWN withdrew R0, R5 and R7, the only rows reading a set
+#     key), S922/S1079/S1105 are re-aimed at fd_row_decides (the `routed` bit
+#     they planted is deleted), S1020 is re-anchored to R7w.
 #     S1092 (R-24) joined it too: the finder check's provenance family L.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
