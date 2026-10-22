@@ -2970,3 +2970,8 @@ the compiler, and is never adopted silently. Proposed for main to file
     - F-4 (pf_walk's K96 gap) is FILED;
     - memfn/CLAUDE.md's peak line says define_sel is 3,408 B; it is 3,456 B after main's merge, a doc-only fix in the next kit commit.
   - **Next:** S3 = B1 (REPORT routed by default; a pcrec abi event plus its deny row) is briefed only after you merge this.
+
+- ack: 2026-10-22 — **D172 S3 (REPORT routed by default plus D-hors; R-27's B1, R-29's sequencing), taken after main merged R-29 (c4164f15b).** Branch `lane/memfn-s3` from main c3ea619c3. An opus lane `s3` is building it.
+  - **What lands:** ONE byte-moving commit with pcrec's abi event (83→84, readers found by grep), its deny row, the window_site §4 S3 retirements (RPT and companions, mf_preview R-26.6), plus main's four review nits (three as a separate doc/comment commit before it; req_run_member's hard-fail decided explicitly in the S3 commit).
+  - **Validation (staged by the lane, queued by the kit):** 587 is the correctness job (sweeps with declared movers, make test, mech, memfn-link). 588 is §6's acceptance timing: scalar layer is the bar, SIMD-on is reported.
+  - The timing slot is agreed with main before 588 is queued.
