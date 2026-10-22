@@ -1,7 +1,7 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 19 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 20 (20: D172 S2 commit 6, lane wsc5: a site stating alternatives is the window family's on every art, `mf_wdecide` on any art, the `"window-family"` preview step retired, finder row D2 out of the listing; no layout, MF_VOCAB or MF_CLASS_V move; 3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
   `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a);
   6: M4 prep, R-7: a reads-below FIND's range bounded by its reads
   (Q-R7-1, at `MF_OP_FIND`), `MF_EMPTY_AT_N` (Q-R7-2) and `on_miss`'s

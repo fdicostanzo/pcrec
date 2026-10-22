@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 19  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 20  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -150,7 +150,16 @@
                            LOCKDOWN under the walk ruling): mf_finder_row
                            loses its routed and locked columns (every
                            FIND and PRES row decides; the listing's layout
-                           moved). No MF_VOCAB move; no pcrec byte moved. */
+                           moved). No MF_VOCAB move; no pcrec byte moved. 20
+                           (D172 S2 commit 6, lane wsc5; window_site.md rev
+                           3.2 §5.1): a site stating alternatives is the
+                           window family's on EVERY art (its old fields are
+                           no longer a route to a row), mf_wdecide answers on
+                           any art, the preview step "window-family" is
+                           retired, and the finder row D2 leaves the
+                           listing (mf_finder_rows' indices after it move).
+                           No layout move; no MF_VOCAB or MF_CLASS_V move;
+                           no pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
