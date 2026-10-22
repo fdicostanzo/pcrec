@@ -184,6 +184,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
 | 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
+| 4 `subst-block` | the subst block's names (`subst_api.md` §1¶2): `rx_subst_*`, `rx_shape_*`, `rx_group_*`, `pcrec_subst*` | `rx_subst`, `rx_shape`, `rx_group` or `pcrec_subst`, alone or followed by `_` |
 
 <a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 
@@ -317,7 +318,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-19"></a>
 ### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
 
-<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [--unset=empty|error] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand or a query, and `--unset=` is refused without one of them. A template refusal exits 1 naming the template offset. The artifact, the template language and `--unset` are `subst_api.md`.
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] [--unset=empty|error] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand or a query, and `--unset=` is refused without one of them. A template refusal exits 1 naming the template offset. The artifact, the template language and `--unset` are `subst_api.md`.
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

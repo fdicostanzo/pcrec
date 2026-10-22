@@ -169,11 +169,29 @@ static bool ns_harness(const char *p)
     return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
 }
 
+/* row 4: the subst block's prefix-free names (docs/spec/subst_api.md §1¶2)
+ * share a TU with any rx artifact, so a prefix that opens one of their
+ * families spells a block name (`-p rx_shape`'s `rx_shape_match`). */
+static const char *const ns_subst_families[] = {
+    "rx_subst", "rx_shape", "rx_group", "pcrec_subst",
+};
+static bool ns_subst_block(const char *p)
+{
+    for (size_t i = 0; i < sizeof ns_subst_families / sizeof ns_subst_families[0]; i++) {
+        size_t l = strlen(ns_subst_families[i]);
+        if (!strncmp(p, ns_subst_families[i], l) && (p[l] == '\0' || p[l] == '_'))
+            return true;
+    }
+    return false;
+}
+
 static const NsReserve ns_reserved[] = {
     { "parts", ns_parts,
       "contains `__`, which is reserved for a compound's parts (<prefix>__<role>)" },
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
+    { "subst-block", ns_subst_block,
+      "opens a family the subst block names (rx_subst, rx_shape, rx_group, pcrec_subst)" },
 };
 
 /* The reservation row `p` falls under, or NULL. */
@@ -217,7 +235,7 @@ int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o
         err->input = PCREC_ERR_INPUT_TEMPLATE;
         return -1;
     }
-    int rc = pcrec_subst_parse(&a, tmpl, len, &t, err);
+    int rc = pcrec_subst_parse(&a, tmpl, len, o->encoding, &t, err);
     if (rc == 0) pcrec_emit_subst(tmpl, len, &t, o, out);
     pcrec_arena_free(&a);
     return rc;

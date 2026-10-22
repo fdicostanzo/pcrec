@@ -538,6 +538,36 @@ int pcrec_utf8_encode(unsigned cp, unsigned char b[4])
     return 4;
 }
 
+/* The one compile-time UTF-8 decoder (enc.h): the character at s[at], or why
+ * it is ill-formed. Beside the encoder for the same reason. */
+PcrecUtf8Status pcrec_utf8_decode(const unsigned char *s, size_t n, size_t at,
+                                  unsigned *cp, int *len)
+{
+    /* The minimum value each length may encode: anything below it is an
+     * OVERLONG spelling. */
+    static const unsigned min_of[5] = { 0, 0, 0x80, 0x800, 0x10000 };
+    unsigned char b0 = s[at];
+    unsigned v;
+    int need;
+
+    if (b0 < 0x80) { *cp = b0; *len = 1; return PCREC_UTF8_OK; }
+    else if ((b0 & 0xE0) == 0xC0) { need = 2; v = b0 & 0x1Fu; }
+    else if ((b0 & 0xF0) == 0xE0) { need = 3; v = b0 & 0x0Fu; }
+    else if ((b0 & 0xF8) == 0xF0) { need = 4; v = b0 & 0x07u; }
+    else { *len = 1; return PCREC_UTF8_BAD_LEAD; }
+    *len = need;
+    for (int i = 1; i < need; i++) {
+        if (at + (size_t)i >= n || (s[at + (size_t)i] & 0xC0) != 0x80)
+            return PCREC_UTF8_TRUNCATED;
+        v = (v << 6) | (s[at + (size_t)i] & 0x3Fu);
+    }
+    *cp = v;
+    if (v < min_of[need]) return PCREC_UTF8_OVERLONG;
+    if (v >= 0xD800 && v <= 0xDFFF) return PCREC_UTF8_SURROGATE;
+    if (v > 0x10FFFF) return PCREC_UTF8_TOO_BIG;
+    return PCREC_UTF8_OK;
+}
+
 /* Byte image of a byte-expressible context set (see enc.h). */
 bool pcrec_enc_set_bytes(const PcrecEnc *e, const PcrecCpRange *iv, int n,
                          uint8_t out[32])

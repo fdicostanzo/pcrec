@@ -7692,7 +7692,10 @@ typedef enum {
     SUBST_LIT,     /* template bytes [off, off + len) */
     SUBST_GROUP,   /* `$k` / `${k}`: group `ref`, a constant slot (D61) */
     SUBST_NAME,    /* `$name` / `${name}`: needs[ref], run `ref` of the binding */
-    SUBST_VAR      /* `${!name}`: vrefs[ref], the caller's variable */
+    SUBST_VAR,     /* `${!name}`: vrefs[ref], the caller's variable */
+    SUBST_SUBJECT, /* `$_`: the whole subject */
+    SUBST_BEFORE,  /* `` $` ``: the subject before the match */
+    SUBST_AFTER    /* `$'`: the subject after the match */
 } SubstItemKind;
 
 typedef struct {
@@ -7719,19 +7722,22 @@ typedef struct {
     bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
 } SubstTmpl;
 
-/* Parses `s[0, n)` into `t`. Returns 0, or -1 with `err` filled
- * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). */
-int pcrec_subst_parse(Arena *a, const char *s, size_t n, SubstTmpl *t,
+/* Parses `s[0, n)`, read in `encoding` (PCREC_ENC_*), into `t`. Returns 0,
+ * or -1 with `err` filled (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a
+ * template offset). */
+int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl *t,
                       pcrec_error *err);
 
 /* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
  * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
  * `header_name` is the `.h` the `.c` includes, or NULL for one
- * self-contained `.c`; `unset_error` is `--unset=error`. */
+ * self-contained `.c`; `unset_error` is `--unset=error`; `encoding` is the
+ * template's (`-e`, PCREC_ENC_*). */
 typedef struct {
     const char *prefix;
     const char *header_name;
     bool        unset_error;
+    int         encoding;
 } PcrecSubstOptions;
 
 /* Emits the subst artifact for `t` (src/gen/emit_subst.c): `out->c_src`, and

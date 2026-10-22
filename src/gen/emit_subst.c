@@ -97,6 +97,8 @@ static const char subst_block[] =
 "    const char *const    *vrefs;         /* their names; NULL when none */\n"
 "    int                   nsegs;         /* rx_renderfn segments (0 in module subst) */\n"
 "    int                   unset;         /* PCREC_SUBST_UNSET_EMPTY / _ERROR */\n"
+"    int                   encoding;      /* the rx encoding the template was read in, or\n"
+"                                            -1: an ASCII template reads the same in any */\n"
 "    rx_substfn           *render;\n"
 "};\n"
 "\n"
@@ -113,12 +115,13 @@ static const char subst_block[] =
 "}\n"
 "\n"
 "/* Checks a match's span and, under RX_SUBST_GAPS, copies the gap before it.\n"
-" * A span ending before it starts, or (with gaps) starting before the\n"
-" * previous match's end, is PCREC_SUBST_BADSPAN. */\n"
+" * A span ending before it starts or past the subject's end, or (with gaps)\n"
+" * starting before the previous match's end, is PCREC_SUBST_BADSPAN. */\n"
 "static inline int rx_subst_span(rx_subst_cur *cur, unsigned char *restrict out, size_t cap,\n"
-"                                const unsigned char *s, const ptrdiff_t (*c)[2], unsigned flags)\n"
+"                                const unsigned char *s, size_t len,\n"
+"                                const ptrdiff_t (*c)[2], unsigned flags)\n"
 "{\n"
-"    if (c[0][0] < 0 || c[0][1] < c[0][0]) return PCREC_SUBST_BADSPAN;\n"
+"    if (c[0][0] < 0 || c[0][1] < c[0][0] || (size_t)c[0][1] > len) return PCREC_SUBST_BADSPAN;\n"
 "    if (flags & RX_SUBST_GAPS) {\n"
 "        if ((size_t)c[0][0] < cur->prev) return PCREC_SUBST_BADSPAN;\n"
 "        rx_subst_put(cur, out, cap, s + cur->prev, (size_t)c[0][0] - cur->prev);\n"
@@ -192,7 +195,8 @@ static const char subst_block[] =
 "    for (int i = 0; i < nneeds; i++) {\n"
 "        const rx_group_entry *e = &needs[i];\n"
 "        if (!e->name) {                            /* a number: a constant slot (D61) */\n"
-"            if (e->number != 0 && (e->number > rx->ngroups || e->number >= rx->ncaps))\n"
+"            if (e->number < 0 || (e->number != 0\n"
+"                                  && (e->number > rx->ngroups || e->number >= rx->ncaps)))\n"
 "                return i;\n"
 "            continue;\n"
 "        }\n"
@@ -209,7 +213,8 @@ static const char subst_block[] =
 "}\n"
 "\n"
 "/* Binds subst `sub` to rx `rx` into *b: 0, or PCREC_SUBST_MISMATCH (a\n"
-" * record of another abi, nruns or nseg too small) or\n"
+" * record of another abi, an rx with no slot or of another encoding than a\n"
+" * non-ASCII template's, nruns or nseg too small) or\n"
 " * PCREC_SUBST_MISSING_REF (the rx delivers no slot for\n"
 " * sub->needs[*bad_ref]). *bad_ref is -1 unless the code is MISSING_REF.\n"
 " * Reads only the two records; never allocates. On a refusal b->tag is not\n"
@@ -222,6 +227,7 @@ static const char subst_block[] =
 "    *bad_ref = -1;\n"
 "    b->tag = 0;\n"
 "    if (rx->abi != PCREC_RX_ABI_H || sub->abi != PCREC_RX_ABI_H || rx->ncaps < 1\n"
+"        || (sub->encoding >= 0 && sub->encoding != rx->encoding)\n"
 "        || nruns < (size_t)sub->nruns\n"
 "        || (sub->nsegs && (!seg_user || nseg < (size_t)sub->nsegs)))\n"
 "        return PCREC_SUBST_MISMATCH;\n"
@@ -271,9 +277,10 @@ static const char subst_block[] =
 "#define PCREC_SUBST_PAIRS 256    /* the glue's batch buffer, in pairs: an UNMEASURED default */\n"
 "#endif\n"
 "\n"
-"/* THE GLUE: every match of `it` (FRESH, setters applied), up to `limit` of\n"
-" * them (1: the first match; SIZE_MAX: all), gaps copied, each match\n"
-" * rendered, the tail copied. Returns 0 or a negative code. *outlen and\n"
+"/* THE GLUE: every match of `it` (FRESH, setters applied; any other state is\n"
+" * PCREC_ERR_ITER), up to `limit` of them (1: the first match; SIZE_MAX:\n"
+" * all), gaps copied, each match rendered, the tail copied. Returns 0 or a\n"
+" * negative code. *outlen and\n"
 " * *nsubst are written on EVERY path: on 0, the produced length and the\n"
 " * substitution count; on PCREC_SUBST_NOSPACE, the capacity that suffices\n"
 " * (SIZE_MAX: none does) and the full count; on any other code, 0 and 0.\n"
@@ -288,6 +295,7 @@ static const char subst_block[] =
 "    if (b->tag != PCREC_SUBST_BOUND || b->rx->abi != PCREC_RX_ABI_H\n"
 "        || b->sub->abi != PCREC_RX_ABI_H || b->ncaps != b->rx->ncaps || !b->rx->next_n)\n"
 "        return PCREC_SUBST_MISMATCH;\n"
+"    if ((it->hdr & ~PCREC_ITER_OPT_MASK) != PCREC_ITER_FRESH) return PCREC_ERR_ITER;\n"
 "    const size_t nc = (size_t)b->ncaps;\n"
 "    size_t kmax = nc <= PCREC_SUBST_PAIRS ? PCREC_SUBST_PAIRS / nc : 1;\n"
 "    if (kmax > 64) kmax = 64;\n"
@@ -352,6 +360,7 @@ static void emit_subst_decls(StrBuf *sb, const char *p, const char *up, const Su
     pcrec_sb_stampf(sb, up, "NREFS", "%d", at_least_one(t->nnamed));
     pcrec_sb_stampf(sb, up, "NSEGS", "%d", 1);
     pcrec_sb_stampf(sb, up, "MAXNUM", "%d", t->maxnum);
+    pcrec_sb_stampf(sb, up, "NVREFS", "%d", at_least_one(t->nvrefs));
     pcrec_sb_printf(sb, "extern const struct rx_subst_info %s_subst_info;\n", p);
     pcrec_sb_printf(sb, "int %s_render(const rx_subst_binding *b, const rx_ctx *ctx,\n"
                         "    const ptrdiff_t (*caps)[2], size_t k, unsigned flags,\n"
@@ -359,19 +368,22 @@ static void emit_subst_decls(StrBuf *sb, const char *p, const char *up, const Su
 }
 
 /* The `.h`: provenance, include guard, the rx shared block, the subst block,
- * the template's declarations. */
+ * the template's declarations. The guard spells the prefix VERBATIM under a
+ * stem no rx header uses (an rx guard is `PCREC_GEN_<UPPER>_H`), so it
+ * collides with neither an rx header of the same prefix nor a subst header
+ * whose prefix differs only in case. */
 static void emit_subst_header(StrBuf *h, const char *tmpl, size_t len, const char *p,
                               const char *up, const SubstTmpl *t)
 {
     emit_subst_provenance(h, tmpl, len);
-    pcrec_sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", up, up);
+    pcrec_sb_printf(h, "#ifndef PCREC_SUBST_GEN_%s_H\n#define PCREC_SUBST_GEN_%s_H\n\n", p, p);
     pcrec_sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
     pcrec_emit_rx_abi_block(h);
     pcrec_sb_putc(h, '\n');
     emit_subst_block(h);
     pcrec_sb_putc(h, '\n');
     emit_subst_decls(h, p, up, t);
-    pcrec_sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", up);
+    pcrec_sb_printf(h, "\n#endif /* PCREC_SUBST_GEN_%s_H */\n", p);
 }
 
 /* The record's tables: the NEEDED rows and the `${!name}` names. */
@@ -417,8 +429,19 @@ static void emit_subst_item(StrBuf *c, const char *tmpl, const SubstItem *it, in
                            "rx_subst_run_slot(b, %d, c), %d)) < 0) return rc;\n", it->ref, uerr);
         break;
     case SUBST_VAR:
+        if (uerr)
+            pcrec_sb_printf(c, "        if (!ctx->vars[%d].p) return PCREC_ERR_UNSET_VAR;\n", it->ref);
         pcrec_sb_printf(c, "        if (ctx->vars[%d].p) rx_subst_put(cur, out, cap, ctx->vars[%d].p, "
                            "ctx->vars[%d].len);\n", it->ref, it->ref, it->ref);
+        break;
+    case SUBST_SUBJECT:
+        pcrec_sb_puts(c, "        rx_subst_put(cur, out, cap, s, ctx->len);\n");
+        break;
+    case SUBST_BEFORE:
+        pcrec_sb_puts(c, "        rx_subst_put(cur, out, cap, s, (size_t)c[0][0]);\n");
+        break;
+    case SUBST_AFTER:
+        pcrec_sb_puts(c, "        rx_subst_put(cur, out, cap, s + c[0][1], ctx->len - (size_t)c[0][1]);\n");
         break;
     }
 }
@@ -428,9 +451,6 @@ static void emit_subst_item(StrBuf *c, const char *tmpl, const SubstItem *it, in
 static void emit_subst_render(StrBuf *c, const char *tmpl, const char *p, const SubstTmpl *t,
                               bool unset_error)
 {
-    bool uses_rc = false;
-    for (size_t i = 0; i < t->nitems; i++)
-        if (t->items[i].kind == SUBST_GROUP || t->items[i].kind == SUBST_NAME) uses_rc = true;
     pcrec_sb_printf(c, "int %s_render(const rx_subst_binding *b, const rx_ctx *ctx,\n"
                        "    const ptrdiff_t (*caps)[2], size_t k, unsigned flags,\n"
                        "    unsigned char *restrict out, size_t cap, rx_subst_cur *cur)\n{\n", p);
@@ -438,23 +458,35 @@ static void emit_subst_render(StrBuf *c, const char *tmpl, const char *p, const 
                      "    const size_t nc = ctx->ncap;\n"
                      "    int rc;\n");
     pcrec_sb_printf(c, "    if (b->tag != PCREC_SUBST_BOUND || b->sub != &%s_subst_info\n"
-                       "        || nc != (size_t)b->ncaps || (flags & ~RX_SUBST_GAPS))\n"
-                       "        return PCREC_SUBST_MISMATCH;\n", p);
+                       "        || nc != (size_t)b->ncaps || (flags & ~RX_SUBST_GAPS)", p);
+    if (t->nvrefs)          /* a custom ctx must carry the resolved variables */
+        pcrec_sb_printf(c, "\n        || !ctx->vars || ctx->nvars < %d", t->nvrefs);
+    pcrec_sb_puts(c, ")\n        return PCREC_SUBST_MISMATCH;\n");
     pcrec_sb_puts(c, "    for (size_t i = 0; i < k; i++) {\n"
                      "        const ptrdiff_t (*c)[2] = caps + i * nc;\n"
-                     "        if ((rc = rx_subst_span(cur, out, cap, s, c, flags)) < 0) return rc;\n");
+                     "        if ((rc = rx_subst_span(cur, out, cap, s, ctx->len, c, flags)) < 0) return rc;\n");
     for (size_t i = 0; i < t->nitems; i++)
         emit_subst_item(c, tmpl, &t->items[i], unset_error);
     pcrec_sb_puts(c, "        cur->prev = (size_t)c[0][1];\n"
                      "    }\n");
-    if (!uses_rc) pcrec_sb_puts(c, "    (void)rc;\n");
     pcrec_sb_puts(c, "    return 0;\n}\n");
+}
+
+/* The encoding a template binds under: its own, when a byte of it is
+ * non-ASCII (it was read in that encoding: names, the UTF check); -1, any,
+ * when every byte is ASCII and reads the same in each. */
+static int subst_bind_encoding(const char *tmpl, size_t len, int encoding)
+{
+    for (size_t i = 0; i < len; i++)
+        if ((unsigned char)tmpl[i] >= 0x80) return encoding;
+    return -1;
 }
 
 /* The record. */
 static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char *p,
-                            const SubstTmpl *t, bool unset_error)
+                            const SubstTmpl *t, const PcrecSubstOptions *o)
 {
+    const bool unset_error = o->unset_error;
     pcrec_sb_printf(c, "const struct rx_subst_info %s_subst_info = {\n", p);
     pcrec_sb_printf(c, "    .abi = %d,\n    .name = \"%s\",\n    .template_text = ",
                     pcrec_artifact_abi(), p);
@@ -467,8 +499,10 @@ static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char 
                     t->nnamed, t->maxnum, t->nvrefs);
     if (t->nvrefs) pcrec_sb_printf(c, "    .vrefs = %s_subst_vrefs,\n", p);
     else pcrec_sb_puts(c, "    .vrefs = NULL,\n");
-    pcrec_sb_printf(c, "    .nsegs = 0,\n    .unset = %s,\n    .render = %s_render,\n};\n",
-                    unset_error ? "PCREC_SUBST_UNSET_ERROR" : "PCREC_SUBST_UNSET_EMPTY", p);
+    pcrec_sb_printf(c, "    .nsegs = 0,\n    .unset = %s,\n    .encoding = %d,\n"
+                       "    .render = %s_render,\n};\n",
+                    unset_error ? "PCREC_SUBST_UNSET_ERROR" : "PCREC_SUBST_UNSET_EMPTY",
+                    subst_bind_encoding(tmpl, len, o->encoding), p);
 }
 
 void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
@@ -496,7 +530,7 @@ void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
     }
     emit_subst_tables(&c, p, t);
     emit_subst_render(&c, tmpl, p, t, o->unset_error);
-    emit_subst_info(&c, tmpl, len, p, t, o->unset_error);
+    emit_subst_info(&c, tmpl, len, p, t, o);
 
     out->c_src = pcrec_sb_take(&c);
     out->h_src = o->header_name ? pcrec_sb_take(&h) : NULL;

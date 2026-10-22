@@ -250,7 +250,7 @@ static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
           "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
-          "       pcrec [-p PREFIX] [--unset=empty|error] -o OUT.c --subst 'TEMPLATE'\n"
+          "       pcrec [-p PREFIX] [-e ENC] [--unset=empty|error] -o OUT.c --subst 'TEMPLATE'\n"
           "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
           "                 below); each is compiled exactly as the other\n"
           "                 form compiles a literal --pattern. A prefix\n"
@@ -534,9 +534,11 @@ typedef struct {
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
     /* [M4-SUBST] a SUBST compile (docs/spec/subst_api.md §5): the template text
-     * (`--subst`) or its file (`--subst-file`), and `--unset=`. */
+     * (`--subst`) or its file (`--subst-file`), and `--unset=` (given at all,
+     * and which value). */
     const char *subst;
     const char *subst_file;
+    int         unset_given;
     int         unset_error;
     int         list_syntax;
     int         list_definitions;
@@ -1103,8 +1105,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (a[7] == '-') st->subst_file = argv[++i];
             else st->subst = argv[++i];
         }
-        else if (!strcmp(a, "--unset=empty")) st->unset_error = 0;
-        else if (!strcmp(a, "--unset=error")) st->unset_error = 1;
+        else if (!strcmp(a, "--unset=empty")) { st->unset_given = 1; st->unset_error = 0; }
+        else if (!strcmp(a, "--unset=error")) { st->unset_given = 1; st->unset_error = 1; }
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -2085,6 +2087,20 @@ static int cli_subst(const CliState *st)
         cli_err("--subst/--subst-file needs -o");
         return 1;
     }
+    /* Every rx option is REFUSED rather than ignored (§5¶1): any
+     * `pcrec_options` field but the prefix and the encoding (the template is
+     * read in `-e`'s encoding), and the CLI's own rx-only flags. Compared
+     * against a default record, so an option added later is refused too. */
+    pcrec_options d;
+    pcrec_default_options(&d);
+    d.prefix = st->opt.prefix;
+    d.encoding = st->opt.encoding;
+    if (memcmp(&d, &st->opt, sizeof d) != 0 || st->features || st->pattern_esc ||
+        st->flavour || st->target || st->nlibdirs) {
+        cli_err("--subst/--subst-file takes only -p, -e, --unset= and -o: "
+                "an option for a pattern compile was given");
+        return 1;
+    }
     size_t len = 0;
     char *owned = NULL;
     const char *tmpl = st->subst;
@@ -2096,7 +2112,7 @@ static int cli_subst(const CliState *st)
 
     int to_stdout = !strcmp(st->outpath, "-");
     char *hpath = NULL;
-    PcrecSubstOptions so = { st->opt.prefix, NULL, st->unset_error != 0 };
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->unset_error != 0, st->opt.encoding };
     if (!to_stdout) {
         size_t ol = strlen(st->outpath);
         if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }
@@ -2160,7 +2176,7 @@ int main(int argc, char **argv)
         free(st.files);
         return rc;
     }
-    if (st.unset_error) {
+    if (st.unset_given) {
         cli_err("--unset= applies to --subst/--subst-file only");
         free(st.libdirs);
         free(st.files);

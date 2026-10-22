@@ -115,6 +115,7 @@ PCREC_MAX_ALTCLS_FACTOR_DEPTH
 PCREC_MAX_REPEAT
 PCREC_MAX_GROUP_DEPTH
 PCREC_MAX_GROUP_NAME
+PCREC_MAX_TEMPLATE_GROUP
 PCREC_VERB_NAME_MAX
 PCREC_VERB_LIMIT_ACC_MAX
 PCREC_UPROP_NAME_MAX
@@ -172,8 +173,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 74 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 74 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 75 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 75 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
