@@ -48,11 +48,12 @@ import sys
 CODES = {
     'NOSPACE': -11, 'BADSPAN': -12, 'RENDER': -13, 'UNSET': -14,
     'MISMATCH': -15, 'MISSING_REF': -16, 'UNSET_VAR': -8, 'ITER': -10,
+    'STEPS': -2,
 }
 PCRE2_NOMEMORY = -48
 REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1349', 'S1350', 'S1351', 'S1352',
               'S1353', 'S1354', 'S1355', 'nogroupceiling', 'batch64', 'illformed',
-              'badspancorner', 'nul', 'vars']
+              'badspancorner', 'nul', 'vars', 'abi', 'giveup']
 
 
 def decode(t):
@@ -207,6 +208,8 @@ def main():
         before = failed
         kind, _, rest = expect.partition(':')
         bind = g['bind'].split(',')
+        if check(g.get('babi') == str(CODES['MISMATCH']), '%s: a record of another abi bound: %s' % (cid, g.get('babi'))):
+            reached.add('abi')
         if kind == 'bind':
             name, row = rest.rsplit(':', 1)
             check(bind == [str(CODES[name]), row], '%s: bind %s, want %s,%s' % (cid, g['bind'], CODES[name], row))

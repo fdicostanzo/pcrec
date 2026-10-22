@@ -15,6 +15,7 @@
  * compares them; nothing is judged here):
  *
  *   bind   pcrec_subst_bind's code and *bad_ref
+ *   babi   bind against a copy of the rx record with abi + 1: the code
  *   main   pcrec_subst(limit) into a buffer that fits: rc, *outlen, *nsubst,
  *          the output
  *   size   the same with out == NULL: rc, *outlen, *nsubst
@@ -196,6 +197,13 @@ int main(void)
         int bad;
         int brc = pcrec_subst_bind(&b, rx, sb, runs, 64, NULL, 0, &bad);
         printf("%s\tbind=%d,%d", f[0], brc, bad);
+        {   /* babi: a record of another abi is refused at bind */
+            struct rx_info rx2 = *rx;
+            rx_subst_binding b2;
+            int bad2;
+            rx2.abi++;
+            printf("\tbabi=%d", pcrec_subst_bind(&b2, &rx2, sb, runs, 64, NULL, 0, &bad2));
+        }
         size_t mainlen = 0;
         int mainrc = brc;
         if (brc != 0) goto oracle_arm;

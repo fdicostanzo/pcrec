@@ -384,7 +384,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-compound test-endmark test-partlayout \
-      test-findall test-ci-shards
+      test-findall test-subst test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1514,6 +1514,13 @@ test-findall: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findall.ran"; fi
 	bash tests/findall/run_findall_tests.sh
 
+# [M4-SUBST] the subst artifact (compiled substitution, D173): its cells
+# against pcre2_substitute, the generic arms, the template refusals and the
+# header contract (tests/subst/).
+test-subst: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-subst.ran"; fi
+	bash tests/subst/run_subst_tests.sh
+
 # D164 B3 (docs/design/endmark.md §R.6): the `rev-end` walk's form table, its
 # answers under three arms, the probe census, the gates and the declines.
 test-endmark: all
@@ -2114,7 +2121,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-findall test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-findall test-subst test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

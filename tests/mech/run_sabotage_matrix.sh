@@ -401,6 +401,11 @@
 #     global iteration over tests/findall/cells.tsv on three engine arms, the
 #     iterator's state-machine arms, the <PREFIX>_ITER_RETRY stamp against the
 #     text, and the ASan cells. Registered before S1297.
+#   subst — added 2026-10-22 ([M4-SUBST] phase B, lane substb2); runs
+#     tests/subst/run_subst_tests.sh: the subst artifact's cells against
+#     pcre2_substitute and their generic arms, the template refusals and the
+#     header contract. SKIPS its oracle arms (not the section) without
+#     libpcre2. Registered before S1346.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -3167,6 +3172,15 @@ run_one() {
                     f="$(grep '^checks failed:' "$work/findall.log" | tail -1 | grep -oE '[0-9]+')"
                     score_arm "$work/findall.log" "$f" "findall:${f:-ERR}fail/${p:-?}pass"
                 fi
+                ;;
+            subst)
+                # [M4-SUBST] tests/subst/run_subst_tests.sh — see the
+                # vocabulary entry above. Its last two lines are the totals.
+                PCREC="$pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/subst/run_subst_tests.sh" > "$work/subst.log" 2>&1
+                p="$(grep '^checks passed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                f="$(grep '^checks failed:' "$work/subst.log" | tail -1 | grep -oE '[0-9]+')"
+                score_arm "$work/subst.log" "$f" "subst:${f:-ERR}fail/${p:-?}pass"
                 ;;
             twins)
                 # [FINDALL-NEXT] tests/codegen/run_residual_twins.sh — see the

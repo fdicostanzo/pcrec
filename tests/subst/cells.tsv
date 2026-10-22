@@ -38,6 +38,7 @@ duprun3	-	(?J)(?<n>a)|(?<n>b)|(?<n>c)	<$n>	empty	all	cba	-	out:<c><b><a>:3	same	
 kreset	-	ab\Kc	[$0]	empty	all	abcabc	-	out:ab[c]ab[c]:2	same	-	-
 lbcap	-	(?<=(a))b	[$1$0]	empty	all	abab	-	out:a[ab]a[ab]:2	same	-	-
 backward	-	x(?=(?1))|(b\K)	[$0]	empty	all	xb	-	rc:BADSPAN	rc:-60	R3.10 row 9: the same class (pcre2 -60)	S1347
+backward2	-	x(?=(?1))|(b\K)	[x]	empty	all	xb	-	rc:BADSPAN	rc:-60	R3.10 row 9: the same class (pcre2 -60)	S1347
 overlap	-	x|(?<=(?1))y|(\Kx)	[$0]	empty	all	xy	-	rc:BADSPAN	rc:-60	R3.10 row 9: the same class (pcre2 -60)	S1346
 corner	-	^|(?<=(?1))y|(?!)(\Kz)	[$0]	empty	all	zy	-	out:[][zy]:2	rc:-60	R3.10 row 9: pcre2 tests the SEARCH start, pcrec the previous END	badspancorner
 utf8	-e utf8	.	<$0>	empty	all	\xc3\xa9 a	-	out:<\xc3\xa9>< ><a>:3	same	-	-
@@ -52,3 +53,4 @@ varnull	-	(a)	${!v}-$1	empty	all	a	v	out:-a:1	na	-	-
 varfirst	-	(a)	${!v}-$1	empty	all	a	v=1,v=2	out:1-a:1	na	-	-
 varerr	-	(a)	${!v}-$1	error	all	a	-	rc:UNSET_VAR	na	-	-
 varerrok	-	(a)	${!v}-$1	error	all	a	v=	out:-a:1	na	-	-
+giveup	--step-budget=100 -fno-prefilter	(a+)+b	[$1]	empty	all	ab aab aaaaaaaaaaaac ab	-	rc:STEPS	out:[a] [aa] aaaaaaaaaaaac [a]:3	a give-up: pcrec's step budget ended the find-all (match_api 4); pcre2 has no such budget	giveup
