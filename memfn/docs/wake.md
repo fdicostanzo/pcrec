@@ -38,25 +38,21 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 
 ## 4. Current state
 
-Rewritten 2026-10-21 ~15:45 when the kit went idle.
-- **Versions:** pcrec abi **82** (M0 merged). `MF_SITE_ABI` **18**, `MF_VOCAB` 4, `MF_CLASS_V` **5**.
-- **Merged on main today:**
-  - R-25;
-  - lane/memfn-b4 (r17b_prime rev 4 + 4.1, D169);
-  - R-26 Z1 (5cc3d7179) and Zk (ec10382cf);
-  - b4prep (c7c4ce015).
-- **R-26 (kit_proof U1):** the kit's part is DONE. Main builds Z2 next. Z2 calls `mf_preview` at art setup, before any `mf_ask`. **B1** (main's routing event) owes RPT's deny row.
-- **B4 (R17-b′ routing commit), state of the gates:**
-  - **Met:** M0, and D163 add. 8.
-  - **Not met:** **E8** (main's [REGIME-EVAL]); main's fix so a **compound part inherits the parent's resolved measure set** (main's ruling, a B4 gate).
-  - The kit's pre-brief items are all closed.
-  - The **manifest of record** is `docs/design/memfn/r17b_prime/b4prep/predicted_movers_B4_rev41.tsv`: 1,766 movers, identical at abi 81/82. Its two NOMS rows are compound parts.
-  - The expected-loss list is EL1-EL11 plus the short-subject class SS1-SS3 (L ≤ 64 B; my ruling, confirmed by main).
-  - The bench's §9.2a answer (inbox I-156) is pending.
-- **lane/memfn-setdig** (the interim-set digests, done) is for main to merge.
-- **Filed, not built:** [MEMFN-POSCOST], three parts (position pricing, superset hull, verify order). Counts are on its row: 21 positions (a floor) and 408 hulls (≤ 8 extra) of 603 sites. It waits on timing.
-- **In flight:** nothing. No lanes, chains, watchers or crons; the kit is in an idle wait.
-- **Worktrees prunable once quiet** (all merged): r26z1, r26zk, b4prep, memfn-r26. setdig waits until it is merged.
+Rewritten 2026-10-21 ~21:40 at Frank's /close.
+- **Versions:** pcrec abi 82, `MF_SITE_ABI` 18, `MF_VOCAB` 4, `MF_CLASS_V` 5.
+- **R-26's kit part:** DONE and merged (Z1, Zk).
+- **The set-FIND form question is CLOSED.** Read `docs/design/memfn/walk_vs_v1_record.md` before proposing any non-walk default. Frank's ruling: the WALK when the subject is unknown; D169's addendum is filed. [MEMFN-SKIPSWITCH] is in Boonies.
+- **B4:** RE-SCOPE OWED. Its V1 movers disappear under the walk ruling. Expected shape: route the existing rows, with no default byte move; the measured-regime path stays. Send main the new shape. The minimal-E8 work stays on lane/memfn-e8min (D170).
+- **R-27 (REPORT speed on sparse text):** DESIGN ONLY at `lane/memfn-r27` @ b4875f947, report `docs/dev/lanes/r27_report.md`. Design: D161 window search, extensions E1/E2/E4 to existing rows, plants R27-a..f, questions Q1-Q3 in §0.
+  - **No build go.** Frank: "lets see what the design returns. after you wake, run the critic pass on it."
+  - **Timing job `580-kit-r27-cover` is QUEUED** behind main's i1build jobs, with a quiet gate.
+    - Completion line: `== r27 COMPLETE rows=1800 launches=5`.
+    - Table: `worktrees/memfn-r27/build/r27/job/r27_table.md`.
+    - Job log: `worktrees/.boxqueue/{done,failed}/<TS>-580-kit-r27-cover/job.log`.
+    - Paste the table into r27_report.md §5.
+- **Unmerged kit branches for main:** lane/memfn-r27 (record, ruling notices, the R-27 design), lane/memfn-e8min, lane/memfn-flat, lane/memfn-adatwin (measurement records). Ask main to merge them as records.
+- **Nothing running** except job 580 waiting in the queue. No lanes, crons or watchers.
+- **Prunable once merged and quiet:** r26z1, r26zk, b4prep, memfn-r26, setdig, e8min, flat, adatwin.
 
 **OWED (carried):**
 - The five PRES rows' g2 floors are PLACEHOLDER.
@@ -65,7 +61,6 @@ Rewritten 2026-10-21 ~15:45 when the kit went idle.
 
 ## 5. Next actions on wake
 
-1. Create the heartbeat cron (`17,47 * * * *`) only if something is running. Read requests.md for new items.
-2. If main reports E8 PASS and the compound-part fix merged, brief **B4**: r17b_prime rev 4.1 §1.3a/§3.1, ONE pcrec abi event, held to the manifest of record by ID, on a kit worktree cut from main.
-3. Prune merged worktrees with `scripts/wtprune` (dry run, then `--apply`).
-4. Heavy runs go through `scripts/boxqueue` (kit band 500-699) or `scripts/boxlock run`. Run emit_sweep WITHOUT `python3 -I`; `--arms` takes only `start` (copy the nine-arm spellings from the r26zk heavy job script).
+1. **Critic pass on R-27's design (Frank's instruction).** Run 2-4 read-only critics on r27_report.md: soundness of the skip/verify/proof equality, the E1/E2/E4 row extensions vs the general mechanism, the measurement regime, and an unlocks lens. Consolidate into `docs/dev/reviews/<date>-r1-memfn-r27.md`, then bring Frank the findings plus a build-go question. Fold in job 580's table if it has run.
+2. Send main B4's re-scoped shape.
+3. Heavy runs go through `scripts/boxqueue` (kit band 500-699) with a quiet gate and `idle-ok`. Run emit_sweep WITHOUT `python3 -I`.

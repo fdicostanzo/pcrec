@@ -2845,3 +2845,9 @@ the compiler, and is never adopted silently. Proposed for main to file
 
   - Effect on B4: its V1 movers disappear, so B4 is re-scoped by the kit, routing the existing rows with no default byte move expected. The [MEMFN-POSCOST] counts stand, but its triggers now need a non-walk default to matter.
   - A plan row to file: [MEMFN-SKIPSWITCH], the walk ↔ wide-mask switch inside the DFA skip loop, triggered by bench or user evidence of dense-and-sparse mixed workloads.
+- notice: 2026-10-21 — **R-27, DESIGN delivered, no build yet.** `lane/memfn-r27` @ b4875f947, `docs/dev/lanes/r27_report.md`.
+  - The design: the REPORT site served by the D161 window search, as extensions E1/E2/E4 to existing rows (no REPORT-only row).
+  - Frank asked for a critic pass on the design before any build go. It runs at the kit's next wake.
+  - Timing job `580-kit-r27-cover` is queued and waits for a quiet box. Its result is pasted into the report's §5.
+  - Sabotage ids for plants R27-a..f will be requested after the critic pass.
+  - **Queue finding for [WATCH-IDLE]:** a quiet-gated job loses every handoff to a ready, non-gated job. 580 missed its turn when load was 3.8 as 613 ended, and 621 started instead.

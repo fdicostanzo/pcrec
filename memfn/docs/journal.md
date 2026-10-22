@@ -2585,3 +2585,13 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - V1/M64 only where a MEASURED or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis);
   - B4 is re-scoped, since its V1 movers disappear;
   - M64 and a switch inside pcrec's DFA skip loop are FILED for later, triggered by bench or user evidence.
+
+## 2026-10-21 (close) — R-27 design delivered (no build); session closing on Frank's /close
+
+- R-27 (the REPORT site's speed on sparse text) is DESIGN ONLY, at lane/memfn-r27 @ b4875f947; report docs/dev/lanes/r27_report.md. No build go yet: Frank, "lets see what the design returns. after you wake, run the critic pass on it."
+  - Frank's lens: R-27 IS the D161 window search, whose test covers every REQUIRED term. Design: the stop is the least-mass span-0 position (memchr, or the walk for a set), followed by ofsskip's verify chain.
+  - Extensions to existing rows: E1 (a set scan by the walk in ofsskip), E2 (verify_chain tests ctx items and table-less sets), E4 (a static failure shift, needed for hex8's search_short).
+  - Existing rows alone serve only 3 of 8 cells.
+  - Plants R27-a..f are proposed; ids are owed by main.
+  - Timing job 580-kit-r27-cover is QUEUED and OWED. It lost a handoff to a non-gated job: a queue finding for main.
+- Earlier today, recorded above: Frank's walk ruling and its CLOSED record (docs/design/memfn/walk_vs_v1_record.md); [MEMFN-SKIPSWITCH] moved to Boonies.
