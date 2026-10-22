@@ -3,7 +3,10 @@
 # the subject in the .rxt subject-escape vocabulary. The byte patterns are lane iterdes's targeted
 # set (docs/design/findall_iter/sem/targeted.tsv) plus the retry shapes the
 # design names (\K, lookaround, anchors, compound splits); the utf8 groups
-# carry ill-formed subjects, alone and under -futf-check.
+# carry ill-formed subjects, alone and under -futf-check. `a\x80a` and
+# `\xc3\xa9\x80a` put a stray continuation byte right after a non-empty
+# match (K75's aligned end, S1300's witness: findall_iter.md §6.8 S923); they
+# ride every utf8 group that can report a non-empty match.
 byte		a*	
 byte		a*	a
 byte		a*	aa
@@ -1129,6 +1132,8 @@ utf8		a*	\xff\xfe
 utf8		a*	a\xc3
 utf8		a*	\x80a
 utf8		a*	\xc3\xa9\xc3
+utf8		a*	a\x80a
+utf8		a*	\xc3\xa9\x80a
 utf8		\w*	
 utf8		\w*	\xc3\xa9a\xc3\xa9
 utf8		\w*	a\xce\xb1\xce\xb2b
@@ -1138,6 +1143,8 @@ utf8		\w*	\xff\xfe
 utf8		\w*	a\xc3
 utf8		\w*	\x80a
 utf8		\w*	\xc3\xa9\xc3
+utf8		\w*	a\x80a
+utf8		\w*	\xc3\xa9\x80a
 utf8		.	
 utf8		.	\xc3\xa9a\xc3\xa9
 utf8		.	a\xce\xb1\xce\xb2b
@@ -1147,6 +1154,8 @@ utf8		.	\xff\xfe
 utf8		.	a\xc3
 utf8		.	\x80a
 utf8		.	\xc3\xa9\xc3
+utf8		.	a\x80a
+utf8		.	\xc3\xa9\x80a
 utf8		x*|.	
 utf8		x*|.	\xc3\xa9a\xc3\xa9
 utf8		x*|.	a\xce\xb1\xce\xb2b
@@ -1156,6 +1165,8 @@ utf8		x*|.	\xff\xfe
 utf8		x*|.	a\xc3
 utf8		x*|.	\x80a
 utf8		x*|.	\xc3\xa9\xc3
+utf8		x*|.	a\x80a
+utf8		x*|.	\xc3\xa9\x80a
 utf8		(?<=a)	
 utf8		(?<=a)	\xc3\xa9a\xc3\xa9
 utf8		(?<=a)	a\xce\xb1\xce\xb2b
@@ -1183,6 +1194,8 @@ utf8		a|	\xff\xfe
 utf8		a|	a\xc3
 utf8		a|	\x80a
 utf8		a|	\xc3\xa9\xc3
+utf8		a|	a\x80a
+utf8		a|	\xc3\xa9\x80a
 utf8		(a)|.?	
 utf8		(a)|.?	\xc3\xa9a\xc3\xa9
 utf8		(a)|.?	a\xce\xb1\xce\xb2b
@@ -1192,6 +1205,8 @@ utf8		(a)|.?	\xff\xfe
 utf8		(a)|.?	a\xc3
 utf8		(a)|.?	\x80a
 utf8		(a)|.?	\xc3\xa9\xc3
+utf8		(a)|.?	a\x80a
+utf8		(a)|.?	\xc3\xa9\x80a
 utf8	-futf-check	a*	
 utf8	-futf-check	a*	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	a*	a\xce\xb1\xce\xb2b
@@ -1201,6 +1216,8 @@ utf8	-futf-check	a*	\xff\xfe
 utf8	-futf-check	a*	a\xc3
 utf8	-futf-check	a*	\x80a
 utf8	-futf-check	a*	\xc3\xa9\xc3
+utf8	-futf-check	a*	a\x80a
+utf8	-futf-check	a*	\xc3\xa9\x80a
 utf8	-futf-check	\w*	
 utf8	-futf-check	\w*	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	\w*	a\xce\xb1\xce\xb2b
@@ -1210,6 +1227,8 @@ utf8	-futf-check	\w*	\xff\xfe
 utf8	-futf-check	\w*	a\xc3
 utf8	-futf-check	\w*	\x80a
 utf8	-futf-check	\w*	\xc3\xa9\xc3
+utf8	-futf-check	\w*	a\x80a
+utf8	-futf-check	\w*	\xc3\xa9\x80a
 utf8	-futf-check	.	
 utf8	-futf-check	.	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	.	a\xce\xb1\xce\xb2b
@@ -1219,6 +1238,8 @@ utf8	-futf-check	.	\xff\xfe
 utf8	-futf-check	.	a\xc3
 utf8	-futf-check	.	\x80a
 utf8	-futf-check	.	\xc3\xa9\xc3
+utf8	-futf-check	.	a\x80a
+utf8	-futf-check	.	\xc3\xa9\x80a
 utf8	-futf-check	x*|.	
 utf8	-futf-check	x*|.	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	x*|.	a\xce\xb1\xce\xb2b
@@ -1228,6 +1249,8 @@ utf8	-futf-check	x*|.	\xff\xfe
 utf8	-futf-check	x*|.	a\xc3
 utf8	-futf-check	x*|.	\x80a
 utf8	-futf-check	x*|.	\xc3\xa9\xc3
+utf8	-futf-check	x*|.	a\x80a
+utf8	-futf-check	x*|.	\xc3\xa9\x80a
 utf8	-futf-check	(?<=a)	
 utf8	-futf-check	(?<=a)	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	(?<=a)	a\xce\xb1\xce\xb2b
@@ -1255,6 +1278,8 @@ utf8	-futf-check	a|	\xff\xfe
 utf8	-futf-check	a|	a\xc3
 utf8	-futf-check	a|	\x80a
 utf8	-futf-check	a|	\xc3\xa9\xc3
+utf8	-futf-check	a|	a\x80a
+utf8	-futf-check	a|	\xc3\xa9\x80a
 utf8	-futf-check	(a)|.?	
 utf8	-futf-check	(a)|.?	\xc3\xa9a\xc3\xa9
 utf8	-futf-check	(a)|.?	a\xce\xb1\xce\xb2b
@@ -1264,6 +1289,8 @@ utf8	-futf-check	(a)|.?	\xff\xfe
 utf8	-futf-check	(a)|.?	a\xc3
 utf8	-futf-check	(a)|.?	\x80a
 utf8	-futf-check	(a)|.?	\xc3\xa9\xc3
+utf8	-futf-check	(a)|.?	a\x80a
+utf8	-futf-check	(a)|.?	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	a*	
 utf8	-fstartpos-guard=align	a*	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	a*	a\xce\xb1\xce\xb2b
@@ -1273,6 +1300,8 @@ utf8	-fstartpos-guard=align	a*	\xff\xfe
 utf8	-fstartpos-guard=align	a*	a\xc3
 utf8	-fstartpos-guard=align	a*	\x80a
 utf8	-fstartpos-guard=align	a*	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	a*	a\x80a
+utf8	-fstartpos-guard=align	a*	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	\w*	
 utf8	-fstartpos-guard=align	\w*	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	\w*	a\xce\xb1\xce\xb2b
@@ -1282,6 +1311,8 @@ utf8	-fstartpos-guard=align	\w*	\xff\xfe
 utf8	-fstartpos-guard=align	\w*	a\xc3
 utf8	-fstartpos-guard=align	\w*	\x80a
 utf8	-fstartpos-guard=align	\w*	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	\w*	a\x80a
+utf8	-fstartpos-guard=align	\w*	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	.	
 utf8	-fstartpos-guard=align	.	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	.	a\xce\xb1\xce\xb2b
@@ -1291,6 +1322,8 @@ utf8	-fstartpos-guard=align	.	\xff\xfe
 utf8	-fstartpos-guard=align	.	a\xc3
 utf8	-fstartpos-guard=align	.	\x80a
 utf8	-fstartpos-guard=align	.	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	.	a\x80a
+utf8	-fstartpos-guard=align	.	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	x*|.	
 utf8	-fstartpos-guard=align	x*|.	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	x*|.	a\xce\xb1\xce\xb2b
@@ -1300,6 +1333,8 @@ utf8	-fstartpos-guard=align	x*|.	\xff\xfe
 utf8	-fstartpos-guard=align	x*|.	a\xc3
 utf8	-fstartpos-guard=align	x*|.	\x80a
 utf8	-fstartpos-guard=align	x*|.	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	x*|.	a\x80a
+utf8	-fstartpos-guard=align	x*|.	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	(?<=a)	
 utf8	-fstartpos-guard=align	(?<=a)	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	(?<=a)	a\xce\xb1\xce\xb2b
@@ -1327,6 +1362,8 @@ utf8	-fstartpos-guard=align	a|	\xff\xfe
 utf8	-fstartpos-guard=align	a|	a\xc3
 utf8	-fstartpos-guard=align	a|	\x80a
 utf8	-fstartpos-guard=align	a|	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	a|	a\x80a
+utf8	-fstartpos-guard=align	a|	\xc3\xa9\x80a
 utf8	-fstartpos-guard=align	(a)|.?	
 utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9a\xc3\xa9
 utf8	-fstartpos-guard=align	(a)|.?	a\xce\xb1\xce\xb2b
@@ -1336,3 +1373,5 @@ utf8	-fstartpos-guard=align	(a)|.?	\xff\xfe
 utf8	-fstartpos-guard=align	(a)|.?	a\xc3
 utf8	-fstartpos-guard=align	(a)|.?	\x80a
 utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9\xc3
+utf8	-fstartpos-guard=align	(a)|.?	a\x80a
+utf8	-fstartpos-guard=align	(a)|.?	\xc3\xa9\x80a

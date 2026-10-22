@@ -32,7 +32,8 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   (docs/design/findall_iter/sem/targeted.tsv), the retry shapes the design
   names (`\K`, lookaround, anchors, compound splits) over 18 subjects, and
   utf8 groups with ill-formed subjects, plain, `-futf-check` and
-  `-fstartpos-guard=align`.
+  `-fstartpos-guard=align` (`a\x80a` and `\xc3\xa9\x80a` put a stray right
+  after a non-empty match: S1300's witness, K75's aligned end).
 - **gen_global.py** — writes **global.rxt**, the `mg` corpus
   (rxt_format.md §1.7.1), from libpcre2's counts through `iter_drv.c`, with
   `# pcre2-only` computed against python `re.finditer`. global.rxt rides
