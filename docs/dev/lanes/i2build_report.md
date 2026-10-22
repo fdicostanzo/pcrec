@@ -112,15 +112,25 @@ was exercised on synthetic data.
 ## 5. STATE AT HANDOFF
 
 Head: this report's commit on `lane/i2build`. Last src commit `881eac3cf`; FILEPIN
-self-pin `14a395706`. Nothing below has run. The job scripts are in
-`worktrees/i2build/build/i2jobs/` (uncommitted scratch, like I1's).
+self-pin `14a395706`. The job scripts are in `worktrees/i2build/build/i2jobs/`
+(uncommitted scratch, like I1's). The queue holds its own copy of each script.
+
+**662 has already run, out of order, and is GREEN.** Its `--ready` waited on `state
+i2build-mech`, which printed `none` (661 was not queued yet), so it started as soon as it
+was added. The census needs no other job, so the result stands: `mover census: 4670
+patterns, 9340 compiles per side, same 8579, same-refused 761, CLEAN`
+(`worktrees/.boxqueue/done/20261021T223939.158574479-662-i2build-census/job.log`).
+Two fixes were applied at enqueue time. 661's `--dry-run` now creates its `TMPDIR`
+(`mktemp` had failed in the backtick self-test). 663's `--ready` now waits on 660, 661 and
+662, treating `none` as not ended, so the timing job still runs LAST. 660, 661 and 663 had
+not run at handoff.
 
 | key | what | green line / read |
 |---|---|---|
 | `660-i2build-maketest` | make -j8, make strict, `perfrun -- make test` (8,8); ready after i1build-census and i1build-parity leave pending/running | no `*** [...test-X] Error` line in `job.log.make` (`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`) |
 | `661-i2build-mech` | mech S1309-S1321 + S693; ready once 660 has ended, whatever its verdict | `== mech run COMPLETE: 14 rows`, every row DETECTED |
-| `662-i2build-census` | `tests/findall/mover_census.py`, I1 (`e0139d8c6`) vs I4, whole corpus; ready once 661 has ended | exits 0: CLEAN (I4 is scaffold, zero counted movers expected) |
-| `663-i2build-parity` | the I4 timing cell, quiet-gated, idle-ok, LAST; ready once 662 has ended | `== parity COMPLETE 26 verdict rows`, then the G1-G4 lines and `I4 GATES: N FINDING(s)` (a FINDING is a reported result, not a job failure) |
+| `662-i2build-census` | `tests/findall/mover_census.py`, I1 (`e0139d8c6`) vs I4, whole corpus | DONE: GREEN, CLEAN (4670 patterns, 0 movers) |
+| `663-i2build-parity` | the I4 timing cell, quiet-gated, idle-ok, LAST; ready once 660, 661 and 662 have ended | `== parity COMPLETE 26 verdict rows`, then the G1-G4 lines and `I4 GATES: N FINDING(s)` (a FINDING is a reported result, not a job failure) |
 
 **Expected reds to triage in 660.** I could not run these under the box rules; the list
 comes from I1's triage history:
