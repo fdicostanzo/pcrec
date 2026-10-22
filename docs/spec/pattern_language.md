@@ -84,7 +84,7 @@
 ### 1.3 The contract tiers
 
 1. <a id="s1-3-p1"></a>[1.3¶1] What an accepted pattern matches — the span, every group's span, and whether a search finds a match at all — is exact. A wrong answer is always a defect.
-2. <a id="s1-3-p2"></a>[1.3¶2] Whether a construct is accepted, and which module owns it, is exact: the module named in a refusal is the module that owns the construct, and a construct PCRE2 accepts is either accepted, or refused by one of the refusal shapes of §2.4, never accepted with a different meaning.
+2. <a id="s1-3-p2"></a>[1.3¶2] Whether a construct is accepted, and which module owns it, is exact: the module named in a refusal is the module that owns the construct, and a construct PCRE2 accepts is either accepted, or refused by one of the refusal shapes of §2.4, never accepted with a different meaning; the one pcrec extension, module `vars`' `${`, is §7.10.
 3. <a id="s1-3-p3"></a>[1.3¶3] pcrec's own pattern offset in a diagnostic is exact under pcrec's own convention (`cli.md` §3.3¶4).
 4. <a id="s1-3-p4"></a>[1.3¶4] The wording of a diagnostic is not part of this contract, except the substring `requires module 'X'` and the other shape markers of §2.4. PCRE2's error numbers and offsets are never promised.
 
@@ -140,7 +140,7 @@
 
 | shape | marker in the diagnostic | means |
 |---|---|---|
-| 1 gated | `requires module 'X'` | the construct is real and owned by module `X`, which this compile did not enable |
+| 1 gated | `requires module 'X'` | the construct is real and owned by module `X`, which this compile did not enable (module `verbs` uses this shape at every gate state, §8.1) |
 | 2 unbuilt | `module 'X' is enabled but ... is not implemented yet` | `X` is enabled and has no producer for this construct |
 | 3 out of scope | `is outside pcrec's scope and no module will implement it` | real PCRE2 syntax pcrec excludes permanently (§8.2) |
 | 4 engine | `requires the VM engine, which --engine=dfa excludes` | the construct (as rewritten, §4.5) needs the VM and `--engine=dfa` was requested |
