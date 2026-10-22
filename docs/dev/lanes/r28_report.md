@@ -77,3 +77,9 @@ Queued with `scripts/boxqueue add --name 570-kit-r28-heavy` (id `570-kit-r28-hea
 | re-anchor + solo rows | S1255 re-anchored; plant RED; the mech row runs in the heavy job (the box lock was held by a queue `make test`) |
 | report, job id | this file; job id in section 7 |
 | spec hunk (D80) | none: `mf_set_terms`' new -1 is internal to the kit (`kit.h`, no caller, not in `docs/spec/`) |
+
+## 9. Live-path correction
+
+Section 4's finding that the 36 KB kit frames were "not on the live compile path" (no caller of `pcrec_mf_set_terms`) was WRONG. Main's lane dd10b found the live chain with gdb: `emit_dfa` -> `cand_ask` -> `mf_ask` -> `find_facts` -> `set_terms`. On lane/dd10 (painted probe) `pcrec_compile` peaks at 61,616 B on the pattern `a` and 24,120 B on `abc`; the main build reads `a` at 31,668 B. The "31,668 both" before/after in section 4 therefore measured a tree where the probe did not reach the frames. R-28 moving the kit's large frames to the heap should lower the lane/dd10 numbers; the spec hunk verdict of section 8 ("no caller") should be re-read in that light.
+
+Painted before/after: queued job `572-kit-r28-meas` (script `docs/dev/lanes/r28/r28meas-job`, copy in the queue). It builds libpcrec.a in worktrees/r28m0 (before, lane/dd10) and worktrees/r28m (after, lane/dd10 + R-28), runs `tests/thread/compile_stack_driver.c` (painted, guarded 768 KB thread, one pattern per run) for `a`, `abc`, `a(b|c)+d`, and prints pattern / before B / after B / delta. Held by `--ready` until `i2build-parity` ends. Completion line: `== r28meas COMPLETE` (three `ROW` lines before it). Result: OWED, none read.
