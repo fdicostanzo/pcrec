@@ -753,13 +753,12 @@ int run_cmp_sat(const mf_term *t);
  *
  * window_site.md rev 3.2 §2: Tables A (the stop, its alternative half) with
  * the MARGIN row, C (the verify plan), D (the resume), E (the frame) and the
- * TIE table, over a window site's facts, on an art previewing
- * "window-family" (mf_preview) and nowhere else. */
+ * TIE table, over a window site's facts: since S2 commit 6 the route of
+ * every site stating alternatives, on every art. */
 struct wf_plan;
 
 #define wf_check        MF_NS(wf_check)
 #define wf_preview_step MF_NS(wf_preview_step)
-#define wf_active       MF_NS(wf_active)
 #define wf_prepare      MF_NS(wf_prepare)
 #define wf_floor_class  MF_NS(wf_floor_class)
 #define wf_floor_arm    MF_NS(wf_floor_arm)
@@ -771,8 +770,6 @@ struct wf_plan;
 const char *wf_check(const mf_site *s, int frame);
 /* The kit's spelling of `step` where it is the window family's, else NULL. */
 const char *wf_preview_step(const char *step);
-/* 1 iff `art` previews the window family. */
-int wf_active(const mf_art *art);
 /* PHASE 2's selection for window site `s` (wf_check'd) under the define
  * hooks `def` (the frame's), the gate reading `gphases`, traced unless
  * `quiet`: the decision (phase 1), then Table E. On the
@@ -816,14 +813,6 @@ void wf_floor_class(const struct wf_plan *plan, mf_class *out);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
 extern const arm wf_floor_arm;
-#ifdef MF_TRACE
-/* D172 S2 commit 3 THE TRACE SHADOW (window.c): under the lever MF_WSHADOW,
- * window site `s` defined as handle `h` on a non-preview art, the family's
- * decision and text beside the old path's, one MFTRACE WSHADOW record. */
-#define wf_shadow MF_NS(wf_shadow)
-void wf_shadow(const mf_art *art, const mf_site *s, const mf_hooks *def, unsigned gphases,
-               uint32_t h);
-#endif
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 

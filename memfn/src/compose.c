@@ -1163,15 +1163,12 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
     return &art->sites[handle - 1];
 }
 
-/* THE WINDOW SITE's route (D172 S2 commit 1; window.c). A site stating
- * alternatives has its window facts checked as statements on every art; on
- * an art previewing "window-family" the family decides and renders it from
- * them alone (`*s` becomes the plan translated into a legacy row's site, or
- * `*plan` the family floor's plan), and elsewhere it renders from its old
- * fields, which it must then state (its `pred`, or a pre-check's `preds`).
- * A pre-check's FUNC parts state their own (wsc3 ruling 3): checked the same
- * way, and on the preview each part's plan replaces its terms (`*s` the
- * translated copy). 0, or -1 with *why. */
+/* THE WINDOW SITE's route (D172; window.c): since S2 commit 6 the window
+ * family decides and renders EVERY site stating alternatives, on every art,
+ * from its window facts alone (`*s` becomes the plan translated into a
+ * legacy row's site, or `*plan` the family floor's plan). A pre-check's FUNC
+ * parts state their own (wsc3 ruling 3): each part's plan replaces its terms
+ * (`*s` the translated copy). 0, or -1 with *why. */
 static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *def,
                         unsigned gphases, int quiet, const mf_site **s,
                         const struct wf_plan **plan, const char **path, const char **why)
@@ -1179,20 +1176,11 @@ static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *
     const char *pid;
     *plan = NULL;
     if (path) *path = NULL;
-    int on = wf_active(art);
     if ((*why = wf_parts_check(site))) return -1;
-    if (on && wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
+    if (wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
         return -1;
     if (!site->nalt && !site->alts && !site->wfloor) return 0;
-    if ((*why = wf_check(site, on))) return -1;
-    if (!on) {
-        if (!site->pred.nterm && !site->npred) {
-            *why = "a site stating only window facts renders only on an art previewing "
-                   "\"window-family\" (mf_preview): it states no old field";
-            return -1;
-        }
-        return 0;
-    }
+    if ((*why = wf_check(site, 1))) return -1;
     const mf_site *leg;
     if (wf_prepare(art, site, def, gphases, quiet, &leg, plan, &pid, why)) return -1;
     if (leg) *s = leg;
@@ -1211,9 +1199,8 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     const char *why;
     memset(out, 0, sizeof *out);
     if (art->err[0] || s->abi != MF_SITE_ABI) return -1;
-    /* D172 S2 commit 1: a window site on a preview art is the family's (its
-       floor's class, or the class of the row its plan's translation takes);
-       elsewhere its window facts are statements only */
+    /* D172: a window site is the family's (its floor's class, or the class
+       of the row its plan's translation takes) */
     const struct wf_plan *wplan = NULL;
     if (window_route(art, s, def, gphases, 1, &s, &wplan, NULL, &why)) return -1;
     if (wplan) {
@@ -1357,8 +1344,6 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (wpath)
         fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
                 art->trace_id, h, wpath, row->id, rid ? rid : "-");
-    /* D172 S2 commit 3: the trace shadow (the localizer), lever MF_WSHADOW */
-    if ((ws->nalt || wf_has_parts(ws)) && !wf_active(art)) wf_shadow(art, ws, def, gphases, h);
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what

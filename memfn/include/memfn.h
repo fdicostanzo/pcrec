@@ -536,11 +536,9 @@ typedef enum { MF_FLOOR_UNSTATED = 0, MF_FLOOR_SUBJECT, MF_FLOOR_LO } mf_read_fl
  *
  * STATED FACTS, appended to mf_site LAST at S2's commit 1 (no MF_SITE_ABI
  * number moves before commit 6, where the old fields retire), and read ONLY
- * on an art previewing the window family (mf_preview(art, "window-family"):
- * since S2's commit 5 pcrec's DEFAULT art, the old path being a harness
- * lever's until commit 6 deletes it). Elsewhere they are checked as
- * statements (a malformed one is refused, naming it) and otherwise ignored,
- * so a site stating them BESIDE its old fields renders as before.
+ * by the window family on EVERY art since S2's commit 6 (through commit 5 an
+ * art previewed it, mf_preview(art, "window-family")). A malformed statement
+ * is refused, naming it.
  *
  * A SPAN is a run of consecutive positions start .. start + len - 1 relative
  * to the candidate c, one byte set per position (all 256: any byte; empty is
@@ -749,9 +747,8 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
      * as THE WINDOW SITE's `mf_site.nalt`/`alts`/`wfloor` are, the part
      * being one FIND candidate definition (its frame the offset-skip
      * function's: FUNC/RETURN, miss `n`). 0/NULL/0 on every other predicate
-     * (refused there: a site states its own on `mf_site`). Read only on an
-     * art previewing "window-family" (mf_preview); elsewhere checked as
-     * statements and not read */
+     * (refused there: a site states its own on `mf_site`). Read by the
+     * window family on every art (S2 commit 6) */
     uint8_t         nalt;
     const mf_walt  *alts;
     uint8_t         wfloor;
@@ -909,9 +906,9 @@ typedef struct {
        appended LAST, no MF_SITE_ABI number move until commit 6): the
        alternatives alts[0..nalt), each its spans and ENTRY, and the floor
        (mf_wfloor; EXPR's F is the `floor` hook's text). nalt 0 / alts NULL:
-       not a window site (every pcrec site at commit 1). Read only on an art
-       previewing "window-family" (mf_preview); elsewhere checked as
-       statements and not read. wfloor UNSTATED is refused where a span
+       not a window site. Read by the window family on every art (S2 commit
+       6: the family is the route of every site stating them). wfloor
+       UNSTATED is refused where a span
        position lies below the candidate (window_site.md §0), and is a
        wildcard elsewhere: no read there can fall below lo, so below F */
     uint8_t         nalt;
@@ -1496,10 +1493,9 @@ int      mf_preview(mf_art *, const char *step);
 /* (D172, S2 commit 1) The step "window-family" previews THE WINDOW FAMILY
  * (window_site.md rev 3.2 §2): on such an art a site stating alternatives
  * (mf_site.nalt) is decided and rendered by the family from its window facts
- * alone, and mf_wdecide answers. Every other art ignores those facts. The
- * ONE exception to "never called by a shipped compile" (S2 commit 5, the
- * lever's default flipped): pcrec previews this step on every art but a
- * harness lever's, until commit 6 retires the step with the old path. */
+ * alone, and mf_wdecide answers. Since S2 commit 6 the family is EVERY art's
+ * and the step is a no-op, accepted only until pcrec stops previewing it
+ * (retired at the next kit commit of the same landing). */
 
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *
@@ -1550,8 +1546,7 @@ typedef struct {
     char     path[16];
 } mf_wreply;
 /* THE PHASE-1 ASK: the family's decision for window site `site` on `art`,
- * which must preview "window-family" (refused otherwise: nothing reaches the
- * family without the lever). PURE, as mf_ask is: no text, no handle, no art
+ * any art (S2 commit 6). PURE, as mf_ask is: no text, no handle, no art
  * state, no error set. Returns 0, or -1 where the site is not one the family
  * describes (the define would refuse it). */
 #define mf_wdecide MF_NS(wdecide)

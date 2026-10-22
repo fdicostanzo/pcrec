@@ -10,9 +10,10 @@
  *
  * WHAT IT IS. One row family over a WINDOW SITE's facts (memfn.h "THE WINDOW
  * SITE": spans with start, sets, core and verify; one or two alternatives,
- * each with its ENTRY; table offers; the floor; the frame), reachable ONLY on
- * an art previewing "window-family" (mf_preview). Nothing on a default art
- * reaches it, so no emitted byte moves at this commit.
+ * each with its ENTRY; table offers; the floor; the frame). Since S2 commit 6
+ * it is the route of EVERY site stating alternatives, on every art (through
+ * commit 5 an art had to preview "window-family"; the old path, the site's
+ * own old fields, is deleted).
  *
  *   phase 1 (DECISION, no text; mf_wdecide)
  *     A  the STOP per alternative (rows A-empty A-parked A-model A-mass
@@ -1017,11 +1018,9 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
     snprintf(out->path, sizeof out->path, "%s", d->path);
 }
 
-int wf_active(const mf_art *art)
-{
-    return art->preview && !strcmp(art->preview, "window-family");
-}
-
+/* "window-family" was the family's preview step through S2 commit 5; since
+ * commit 6 the family is every art's, and the step is accepted as a no-op
+ * only until pcrec stops previewing it (the next pcrec commit). */
 const char *wf_preview_step(const char *step)
 {
     return step && !strcmp(step, "window-family") ? "window-family" : NULL;
@@ -1031,7 +1030,7 @@ int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
 {
     memset(out, 0, sizeof *out);
     /* the decision reads no frame fact (§0): only the window facts are held */
-    if (art->err[0] || !wf_active(art) || site->abi != MF_SITE_ABI || !site->nalt ||
+    if (art->err[0] || site->abi != MF_SITE_ABI || !site->nalt ||
         wf_check(site, 0))
         return -1;
     wf_dec d;
@@ -1869,217 +1868,3 @@ const arm wf_floor_arm = {
     ARM_TESTS_EVERY,
 };
 
-#ifdef MF_TRACE
-/* ---- THE TRACE SHADOW (D172 S2 commit 3; window_site.md §5.1, a LOCALIZER) --
- *
- * Under a traced kit and the harness lever `MF_WSHADOW` (environment), every
- * window site defined on a NON-preview art prints one record comparing what
- * the family would decide and render with what today's old path does:
- *   MFTRACE WSHADOW art= site= reseed=O/F stop=O/F plan=O/F pin=O/F
- *                   group=O/F arm=O/F text=O/F yields=O/F part= alt= path=
- * and a pre-check's FUNC parts one record each (`part` its index, `-` on a
- * site's own record; wsc3 ruling 3), decided as the part's FIND site, its
- * text the composite's. `yields` is 0 where a side can yield no candidate
- * (an empty REQUIRED set; the family's A-empty), for wshadow.py's declared
- * equivalence (wsc3 ruling 2). O columns are read off the old fields the site still states (the scanned
- * term `plan_hint`/`plan_pos`, the terms' offsets: today's ofsk.sel/scan, a
- * FUNC frame being the offset-skip block, so the re-seeding forms), F off
- * the family's phase-1 decision (mf_wdecide's reply). `arm` and `text` are
- * each side's row and normalized text hash (mf_form_hash_text), both sides
- * rendered the SAME way, on a scratch art of the site's own prefix, policy,
- * denies, measures and analysis (the family's previewing "window-family"):
- * one-call (mf_emit) where the define reads the use phase, else the define
- * then (where the scratch art serves it with the define's hooks) a use. The shadow shares the family's MODEL with prefix_k
- * (the decision is prefix_k transcribed), so a zero here is a localizer
- * reading, never acceptance (window_site.md §5.1 commit 3, review "seq").
- * The scratch arts state the sentinel prefix WSH_PREFIX, which this record
- * never runs on, so a scratch render does not recurse. */
-#include <stdarg.h>
-#include <stdlib.h>
-
-#define WSH_PREFIX "mf_wshadow"
-
-static void wsh_puts(void *u, const char *s) { kb_puts(u, s); }
-static void wsh_vprintf(void *u, const char *fmt, va_list ap)
-{
-    kb *b = u;
-    va_list cp;
-    va_copy(cp, ap);
-    int n = vsnprintf(NULL, 0, fmt, cp);
-    va_end(cp);
-    if (n < 0) return;
-    char *t = b->a->alloc(b->a->u, (size_t)n + 1);
-    if (!t) { b->oom = 1; return; }
-    vsnprintf(t, (size_t)n + 1, fmt, ap);
-    kb_putn(b, t, (size_t)n);
-}
-static int  wsh_cmt_open(void *u, int tier) { (void)u; (void)tier; return 0; }
-static void wsh_cmt_close(void *u) { (void)u; }
-static void wsh_stamp(void *u, const char *name, const char *v) { kb_printf(u, "#S %s %s\n", name, v); }
-static void wsh_stamp_int(void *u, const char *name, long long v) { kb_printf(u, "#S %s %lld\n", name, v); }
-static void wsh_cstr(void *u, const uint8_t *s, size_t n)
-{
-    for (size_t i = 0; i < n; i++) kb_printf(u, "\\x%02x", s[i]);
-}
-static void wsh_cbyte(void *u, int *prevp, uint8_t byte, int (*x)(uint8_t))
-{
-    (void)u; (void)prevp; (void)byte; (void)x;
-}
-static void wsh_legend(void *u, uint8_t byte) { (void)u; (void)byte; }
-
-/* Site `s` rendered on a scratch art (previewing the family where `fam`):
- * its row into `arm` and its normalized text hash into `hex`; "refused" /
- * "-" where the scratch art refuses it. */
-static void wsh_render(const mf_art *art, const mf_site *s, const mf_hooks *def,
-                       unsigned gphases, int fam, char hex[17], char arm[48])
-{
-    kb body, file;
-    kb_init(&body, art->a);
-    kb_init(&file, art->a);
-    mf_sink sb = { .u = &body, .puts = wsh_puts, .vprintf = wsh_vprintf,
-                   .cmt_open = wsh_cmt_open, .cmt_close = wsh_cmt_close, .stamp = wsh_stamp,
-                   .cstr = wsh_cstr, .comment_byte = wsh_cbyte, .legend_byte = wsh_legend,
-                   .stamp_int = wsh_stamp_int };
-    mf_sink sf = sb;
-    sf.u = &file;
-    mf_result res;
-    uint32_t h;
-    snprintf(hex, 17, "-");
-    snprintf(arm, 48, "refused");
-    mf_art *sa = mf_art_begin(art->a, WSH_PREFIX, art->policy, art->denies, art->ms, art->an);
-    if (!sa || (fam && mf_preview(sa, "window-family"))) return;
-    memset(&res, 0, sizeof res);
-    int rc = gphases & MF_PH_USE ? mf_emit(sa, s, def, &sb, &sf, &res)
-                                 : mf_define(sa, s, def, &sf, &h) || mf_defined(sa, h, &res);
-    if (rc || body.oom || file.oom) return;
-    /* a define-only site: its use too, with the define's hooks, where the
-       scratch art serves one (a set row's define writes little or nothing) */
-    if (!(gphases & MF_PH_USE) && (!s->decl_point || !mf_locals(sa, h, def, &sb)))
-        (void)mf_use(sa, h, def, &sb, NULL);
-    kb all;
-    kb_init(&all, art->a);
-    if (file.len) kb_putn(&all, file.p, file.len);
-    if (body.len) kb_putn(&all, body.p, body.len);
-    mf_form_hash_text(all.p ? all.p : "", hex);
-    snprintf(arm, 48, "%s", res.form_id);
-}
-
-/* Appends offset `o` (and, where `g` >= 0, its compare group `g`) to the
- * comma lists `pl`/`gr`. */
-static void wsh_add(kb *pl, kb *gr, int32_t o, int g)
-{
-    kb_printf(pl, "%s%d", pl->len ? "," : "", (int)o);
-    kb_printf(gr, "%s%d", gr->len ? "," : "", g);
-}
-
-/* The old path's columns off the old fields: the scanned term (`plan_hint`,
- * `plan_pos` inside a run; MF_NO_PRED: a one-term site's term, else none,
- * stop -999) and every other tested offset, ascending, a run one compare
- * group; `*yields` 0 where a REQUIRED SET term is empty (no candidate can
- * hold it), else 1. */
-static void wsh_old(const mf_site *s, int32_t *stop, kb *pl, kb *gr, int *pin, int *reseed,
-                    int *yields)
-{
-    const mf_pred *p = &s->pred;
-    int32_t off[MF_WPLAN_MAX];
-    int grp[MF_WPLAN_MAX], n = 0, g = 0;
-    *stop = -999;
-    *pin = 0;
-    *yields = 1;
-    for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++)
-        if (p->term[i].kind == MF_T_SET && p->term[i].need == MF_REQUIRED &&
-            !count(p->term[i].set))
-            *yields = 0;
-    *reseed = s->form == MF_FORM_FUNC && p->plan_hint != MF_NO_PRED;
-    unsigned scan = p->plan_hint != MF_NO_PRED ? p->plan_hint : p->nterm == 1 ? 0u : MF_NO_PRED;
-    if (scan < p->nterm) {
-        const mf_term *t = &p->term[scan];
-        *stop = t->offset + (t->kind == MF_T_RUN ? (int32_t)p->plan_pos : 0);
-        *pin = t->kind == MF_T_RUN;
-    }
-    for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++, g++) {
-        const mf_term *t = &p->term[i];
-        unsigned len = t->kind == MF_T_RUN ? t->run_len : 1;
-        if (i == scan && t->kind != MF_T_RUN) continue;   /* C-stop */
-        for (unsigned j = 0; j < len && n < MF_WPLAN_MAX; j++) {
-            off[n] = t->offset + (int32_t)j;
-            grp[n++] = g;
-        }
-    }
-    for (int a = 0; a < n; a++)             /* ascending (C-asc), stable */
-        for (int b = a + 1; b < n; b++)
-            if (off[b] < off[a]) {
-                int32_t to = off[a]; off[a] = off[b]; off[b] = to;
-                int tg = grp[a]; grp[a] = grp[b]; grp[b] = tg;
-            }
-    for (int i = 0; i < n; i++) wsh_add(pl, gr, off[i], grp[i]);
-}
-
-/* One record: window site `ws` (a site, or a part's FIND site where `part` >=
- * 0) decided by the family against the old fields `ws` still states, with
- * the two texts already rendered (`oh`/`oa`, `fh`/`fa`). A part re-seeds
- * nothing (the pre-check's run search starts no machine), so its old
- * `reseed` column is 0. */
-static void wsh_record(const mf_art *art, uint32_t h, int part, const mf_site *ws,
-                       const char *oh, const char *oa, const char *fh, const char *fa)
-{
-    wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
-    if (!d) return;
-    decide(art, ws, 1, d);
-    mf_wreply r;
-    reply_of(d, &r);
-    kb opl, ogr, fpl, fgr, pt;
-    kb_init(&opl, art->a); kb_init(&ogr, art->a);
-    kb_init(&fpl, art->a); kb_init(&fgr, art->a);
-    kb_init(&pt, art->a);
-    int32_t ostop;
-    int opin, ores, oyld;
-    wsh_old(ws, &ostop, &opl, &ogr, &opin, &ores, &oyld);
-    if (part >= 0) {
-        ores = 0;
-        kb_printf(&pt, "%d", part);
-    }
-    for (unsigned i = 0; i < r.nplan; i++) wsh_add(&fpl, &fgr, r.plan[i], r.plan_term[i]);
-    static const char *const entry[] = { "unstated", "none", "parked", "reseed" };
-    uint8_t e = ws->alts[r.alt].entry;
-    fprintf(stderr, "MFTRACE WSHADOW art=%u site=%u reseed=%d/%d stop=%d/%d plan=%s/%s "
-            "pin=%d/%d group=%s/%s arm=%s/%s text=%s/%s yields=%d/%d part=%s alt=%s path=%s\n",
-            art->trace_id, h, ores, r.reseed, (int)ostop, r.has_stop ? (int)r.stop : -999,
-            opl.len ? opl.p : "-", fpl.len ? fpl.p : "-", opin, r.pinned,
-            ogr.len ? ogr.p : "-", fgr.len ? fgr.p : "-", oa, fa, oh, fh, oyld,
-            strcmp(d->path, "empty") != 0, pt.len ? pt.p : "-",
-            e <= MF_ENTRY_RESEED ? entry[e] : "?", r.path);
-}
-
-void wf_shadow(const mf_art *art, const mf_site *s, const mf_hooks *def, unsigned gphases,
-               uint32_t h)
-{
-    if (!getenv("MF_WSHADOW") || !strcmp(art->prefix, WSH_PREFIX)) return;
-    mf_site old = *s;               /* the old path alone: no window facts */
-    old.nalt = 0;
-    old.alts = NULL;
-    old.wfloor = 0;
-    if (wf_has_parts(s)) {          /* nor any part's */
-        mf_pred *np = art->a->alloc(art->a->u, s->npred * sizeof *np);
-        if (!np) return;
-        memcpy(np, s->preds, s->npred * sizeof *np);
-        for (unsigned i = 0; i < s->npred; i++) {
-            np[i].nalt = 0;
-            np[i].alts = NULL;
-            np[i].wfloor = 0;
-        }
-        old.preds = np;
-    }
-    char oh[17], fh[17], oa[48], fa[48];
-    wsh_render(art, &old, def, gphases, 0, oh, oa);
-    wsh_render(art, s, def, gphases, 1, fh, fa);
-    if (s->nalt) wsh_record(art, h, -1, s, oh, oa, fh, fa);
-    /* the parts: one record each, the composite's text on every one */
-    for (unsigned i = 0; s->preds && i < s->npred; i++) {
-        if (!s->preds[i].nalt) continue;
-        mf_site ps;
-        wf_part_site(s, i, &ps);
-        wsh_record(art, h, (int)i, &ps, oh, oa, fh, fa);
-    }
-}
-#endif
