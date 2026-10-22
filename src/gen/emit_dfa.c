@@ -14389,6 +14389,30 @@ void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
     emit_c_string_literal(sb, s, len);
 }
 
+/* [M4-SUBST] The shared block, the abi digit and the comment escaper,
+ * exported for `emit_subst.c`: a subst header carries a copy of the rx shared
+ * block (replace_design.md §R3.8), so both artifacts spell it from this one
+ * emitter and a subst landing moves no rx byte. */
+void pcrec_emit_rx_abi_block(StrBuf *sb)
+{
+    emit_rx_abi_types(sb);
+}
+
+/* The abi number every artifact this build emits carries. */
+int pcrec_artifact_abi(void)
+{
+    return PCREC_ARTIFACT_ABI;
+}
+
+/* Writes `len` input bytes into an open C comment through the one
+ * comment-safe escaper (`emit_comment_safe_byte`). */
+void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len)
+{
+    int prev = 0;
+    for (size_t i = 0; i < len; i++)
+        emit_comment_safe_byte(sb, &prev, (unsigned char)s[i], NULL);
+}
+
 /* Everything from the pattern comment through the four declarations, in the
  * exact order pcrec_emit_dfa emitted it before this refactor — including the
  * `#include <string.h>` the unanchored engine's memchr prefilter needs, which

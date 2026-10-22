@@ -7679,6 +7679,30 @@ const char *pcrec_revend_form_name(RevendForm f);
 const char *pcrec_mark_prio_name(Ctx *cx);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
+/* [M4-SUBST] src/gen/emit_dfa.c's shared block, abi digit and comment
+ * escaper, for the subst emitter (replace_design.md §R3.8). */
+void pcrec_emit_rx_abi_block(StrBuf *sb);
+int  pcrec_artifact_abi(void);
+void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
+
+/* [M4-SUBST] THE SUBSTITUTION-TEMPLATE COMPILER (src/gen/emit_subst.c,
+ * docs/spec/subst.md, replace_design.md §R3). Compiles `tmpl[0, len)` (the
+ * core template language) into a subst artifact: `out->c_src` and
+ * `out->h_src`, both malloc'd, freed by `pcrec_output_free`. `prefix` must be
+ * a valid emitted-symbol prefix; `header_name` is the `.h` the `.c` includes;
+ * `unset_error` selects `--unset=error`. Returns 0, or -1 with `err` filled
+ * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). The
+ * only caller is the CLI; out of memory aborts (a detached StrBuf). */
+typedef struct {
+    const char *prefix;
+    const char *header_name;
+    bool        unset_error;
+} PcrecSubstOptions;
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err);
+/* True iff `p` is a prefix `pcrec_compile` accepts (a C identifier within
+ * PCREC_MAX_PREFIX_LEN, no reserved family); else false with `why` filled. */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
  * SIZING SURFACE, as five facts the emitter that knows the run state's layout

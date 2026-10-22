@@ -184,6 +184,24 @@ static const NsReserve *ns_reserved_by(const char *p)
     return NULL;
 }
 
+/* [M4-SUBST] True iff `p` is a prefix pcrec_compile accepts; else false
+ * with `why` filled. The subst compiler's -p check, so a template and a
+ * regex share one prefix rule (valid_prefix + the reservation table). */
+bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
+{
+    if (!valid_prefix(p)) {
+        snprintf(why, whysz, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+                 PCREC_MAX_PREFIX_LEN);
+        return false;
+    }
+    const NsReserve *ns = ns_reserved_by(p);
+    if (ns) {
+        snprintf(why, whysz, "invalid symbol prefix: it %s", ns->why);
+        return false;
+    }
+    return true;
+}
+
 /* Frees every heap array and StrBuf a Job may have allocated
  * (NFA/DFA/reverse-DFA/optional-anchored-DFA state+table arrays, the
  * text/header/vm/ir scratch buffers, the two [ART-SIZE] scratch buffers, the
