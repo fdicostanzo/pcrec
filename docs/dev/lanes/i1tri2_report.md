@@ -72,26 +72,19 @@ box from 20:37. The direct runs above were single-process but some ran
 during that window before its quiet gate (the gate read load1 1.32 when it
 passed); report this to the kit if its numbers look off.
 
-## 3. test-startset (OWED: the rows, not the diagnosis)
+## 3. test-startset
 
 `vmhat_checks.py` [vm-movers] forced: 13 movers not in
-`manifest_s2_vm_forced.tsv`, 0 manifest rows not movers; every shown id is
-`tests/findall/global.rxt:<line> [--features all]`. global.rxt is I1's new
-corpus file (i1build's census re-pinned rxtsource only; BOILERPLATE's
-delivery bar names the start-set manifests too). The auto arm and the DFA
-hat (s3) read clean. The fix is +13 rows, every one a global.rxt block, no
-existing row moved (the pinfix 2026-10-18 precedent: rows from the check's
-own mover list).
-
-The full list of 13 needs ~58 compiles (the global.rxt blocks under
-`--engine=vm`), over BOILERPLATE's 50-compile cap, and kit job
-`575-kit-adatwin` held the box in a timing window. So the listing runs as a
-DETACHED `scripts/boxlock run` waiter (label `i1tri2-globalmovers`,
-script `worktrees/i1build/build/i1tri2/movers.py`, which applies
-`vmhat_checks.py`'s own mover rule to global.rxt's blocks) and writes
-`worktrees/i1build/build/i1tri2/movers.out`: one manifest row per line,
-`id<TAB>options<TAB>pattern_hex`. Expected: exactly 13 lines, all
-`tests/findall/global.rxt:*`, including lines 30, 174, 339, 378, 417, 1271.
+`manifest_s2_vm_forced.tsv`, every one a `tests/findall/global.rxt` block,
+I1's new corpus file (i1build re-pinned rxtsource only; BOILERPLATE's
+delivery bar names the start-set manifests too). LEGITIMATE. The auto arm
+and the DFA hat read clean. The list was computed under `scripts/boxlock
+run` (58 compiles, over the 50 cap; it waited out kit job 575's timing
+window) by `build/i1tri2/movers.py`, which applies `vmhat_checks.py`'s own
+mover rule to global.rxt's blocks: exactly 13 rows, including the six 611
+printed. Appended with a history line, no existing row moved (manifest
+3,709 -> 3,722 corpus+bench rows): commit 97364030b. Not re-run end to end
+here: job 609 runs test-startset.
 
 ## 4. Ids and proposals
 
@@ -109,17 +102,9 @@ empty at every checkpoint, no entry applied. Main NOT merged into the
 branch. `docs/dev/artifact_size_log.tsv` (rewritten by 611's test-corpus)
 restored to HEAD so the jobs' clean-tree dry run passes.
 
-OWED step (a fresh agent or the manager, ~2 min):
-1. Wait for `worktrees/i1build/build/i1tri2/movers.out` to be non-empty
-   (`scripts/boxlock status` shows the waiter until it runs; it runs after
-   `575-kit-adatwin` releases the box). Check: 13 lines, every id
-   `tests/findall/global.rxt:*`.
-2. Append them to `tests/startset/manifests/manifest_s2_vm_forced.tsv`
-   (after the last row) with one history comment line in the file's own
-   style, e.g. `# i1tri2 (2026-10-21, [FINDALL-NEXT] I1): +13 rows, every
-   one a tests/findall/global.rxt block (I1's new corpus file); vmhat
-   mover rule on lane/i1build; no existing row moved.`
-3. Commit on lane/i1build. That commit opens job 609's readiness gate.
+The startset rows (§3) were committed before handoff (97364030b), so job
+609's readiness gate (a commit after 24dff6c65 touching the manifest) is
+open.
 
 Jobs (scripts in `worktrees/i1build/build/i1jobs/`, uncommitted scratch;
 owner i1build):
