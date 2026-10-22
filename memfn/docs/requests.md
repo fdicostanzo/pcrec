@@ -612,3 +612,39 @@ over-filter on an OPTIONAL position; an UNSTATED field accepted.
 **Build go:** Frank, 2026-10-21 ("both you and kit please proceed"): this is the build go for [DD-11.5] part 1 / [KIT-VERIFY] U1 on both sides. Text is kit_proof.md rev 2.1 §4.3, filed verbatim. Staging per kit_proof.md §7: Z1 (R-26.1-R-26.5, zero movers) then Zk (R-26.6, REPORT row UNROUTED); main runs X0 meanwhile and builds Z2 on top of Zk; B1 (the one byte-moving event) waits for R17-b′ B4.
 
 **Sabotage ids:** kit-side on request (main ledger next free S1221).
+
+## R-27 (2026-10-21, pcrec manager) — the REPORT site's yield cost on sparse subjects: B1 is NO-GO until it is not slower than the default build
+
+**Customer:** [KIT-VERIFY] U1 B1 (routing the REPORT row by default). **Evidence:** main's
+`cover` timing, `docs/dev/lanes/covertime_report.md` RESULT (job `650-covertime-slot`, merge
+735b91865): 8 cells x match/search_short/throughput x real/none/dense, 5 launches, answer gate
+216/216, A/A max 0.017.
+
+**Facts (COV/DEF, real / none / dense):**
+
+| cell | throughput | search_short |
+|---|---|---|
+| lit-l8 | 9.91 / 10.46 / 0.289 | 3.86 / 6.26 / 0.332 |
+| foobar | 7.49 / 7.81 / 0.319 | 3.98 / 5.21 / 0.318 |
+| file-ext-order | 3.73 / 4.13 / 0.953 | 2.84 / 5.05 / 0.372 |
+| cat-bounded | 1.35 / 1.21 / 0.407 | 2.03 / 2.49 / 0.342 |
+| done-eol | 1.27 / 1.33 / 0.468 | 1.21 / 1.97 / 0.355 |
+| year4 | 1.21 / 1.33 / 0.740 | 1.42 / 1.74 / 0.508 |
+| hex8-bounded | 0.908 / 0.925 / 1.317 | 1.56 / 1.31 / 1.172 |
+| word-digit | 0.681 / 0.679 / 0.709 | 0.818 / 0.735 / 0.580 |
+
+`match` is NULL or within 7% everywhere. On lit-l8 throughput (none) the REPORT site spends about
+0.62 ns/byte against the default build's about 0.06 ns/byte. The losses are largest where the
+default build's site has a literal it searches for, and on the `none` class (no candidates at
+all). The dense wins are real and wanted.
+
+| item | what pcrec needs (facts) | landing bar |
+|---|---|---|
+| R-27.1 | on a REPORT site, the cost of scanning a subject region that holds NO candidate is not above the default build's cost on the same pattern and subject (the default build's site for these 8 cells is today's routed row) | main re-runs the 650 harness (`docs/design/kit_proof/measure/`) on the kit's delivery: no `real`/`none` throughput or search_short cell SLOWER beyond its floor, and the `dense` class not slower than today's COV numbers above. Zero answer changes (the harness's gate) |
+
+**Not asked:** any method (D157). Which row or form serves the region with no candidate is the kit's.
+
+**Sequencing:** B1 waits for R-27 and R17-b′ B4. pcrec's side (Z2) is merged and needs no change
+for the re-run.
+
+**Sabotage ids:** kit-side on request (main ledger next free S1331).
