@@ -1,10 +1,11 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.1)
 
 Rev 3: lane uwin3, 2026-10-22 (rev 2 + the kit branch). DESIGN ONLY: no source or test edit, no make,
 no timing. Applies the panel `docs/dev/reviews/2026-10-22-r1-memfn-window-site-rev2.md` and job 581's
 reading (`docs/dev/lanes/r27b_report.md` RESULT). Every code claim was re-read; where the code says more
 than the panel, the code wins (`[code]`). Marks: `[rev3 <id>]`, `bB*` build, `dD*` dir, `rR*` rit.
 The step rev 2 called "S3 = B1" is **S3** here (not finding bB1). Appendix B places every finding.
+Rev 3.1 (uwin3, 2026-10-22): the verification critic's V1-V7 text fixes, each re-read in the code; marks `[rev3.1 V<n>]`.
 
 ---
 
@@ -67,8 +68,11 @@ truncates a long run to its stated stretch (`pcrec_find_run_window_start`) befor
 
 **Producer obligations** (asserted where pcrec builds the site): a verify-NO core is a SUBSET of the
 positions where absence truly fails; each alternative is sound alone under its entry; each walked offset
-is its OWN one-position span `[rev3 bB4]`; the pinned run R is stated in BOTH alternatives as verify NO
-`[rev3 bB1]`; a whole-item SATISFIES item wider than one byte is declined. Exactness is not a fact
+is its OWN one-position span `[rev3 bB4]`; the pinned run R (verify NO) is stated in the RESEED alternative,
+and in the PARKED one ONLY where today's `nsel == 0` pin holds as a producer fact (`pf_run_applies_common`:
+pinned scan member at offset 0, `DFA_PF_ONE_BYTE`, k0 = {R's byte there} = F0): R's offsets count from the
+match start, a parked candidate need not be one (`\b\.ab`: k0 = word bytes, R=`.ab` @0, meet empty)
+`[rev3.1 V1]`; R is not stated where its NEXT rows are denied (§2.4) `[rev3.1 V2]`; a whole-item SATISFIES item wider than one byte is declined. Exactness is not a fact
 (R-26.7 dissolves: a SUPERSET item is sent only as verify NO, never readable as a proof).
 
 ### 1.2 The core rule
@@ -83,7 +87,7 @@ position is off the subject (`\z`: `c+k = n`).
 
 | site (builder) | alternatives (entry) | spans | core | verify |
 |---|---|---|---|---|
-| the DFA prefilter (PF FIND `find_site`, offset-skip `ofs_pred_of`; HYB_PF) | PARKED: `{0: k0}` + R; RESEED (where pcrec's `offset-set` row applies, undenied): `{0: F0}` + one span per walked offset + R | as listed | `[0]` (bounded `[0, 1]` with `{1: any}`); R all; walked all | k0 YES, F0 YES, walked NO, R NO |
+| the DFA prefilter (PF FIND `find_site`, offset-skip `ofs_pred_of`; HYB_PF) | PARKED: `{0: k0}` (+ R only under §1.1's pin fact `[rev3.1 V1]`); RESEED (forward scan, kind != `DFA_PF_NONE`, k0 with 1-255 members, prefix_k.c's own gate; `-fno-offset-skip` undenied) `[rev3.1 V6]`: `{0: F0}` + one span per walked offset + R | as listed | `[0]` (bounded `[0, 1]` with `{1: any}`); R all; walked all | k0 YES, F0 YES, walked NO, R NO |
 | VM hat seek | one | `{0: S}` | `[0]` | YES |
 | MLINE `(?m)^` (`mline_find_of`, BOTH callers `[rev3 bB7]`) | one | `{-1: \n}` | `[-1]` | YES; floor = expression `start` |
 | pre-check FUNC parts | one | one span per part | all | as the part's need |
@@ -181,7 +185,7 @@ from it, a trace build asserts rendered = plan. The text shape is the E rows'.
 |  | C-none | otherwise no verify-NO position (PARKED alternatives, REPORT, parts) |
 | 3 pin | C-pin | `[rev3 bB1]` R becomes ONE compare (its selected offsets dropped) when R is stated (length >= 2), the stop IS R's scan member (the run position the mass rule picks; on a PARKED alternative k0 is that one byte), and the plan does not already test all of R. `[code]` narrower than the panel's "a stop inside the stretch": `pf_run_applies_common` requires EQUALITY with the scan member |
 | 4 drop | C-stop | minus the stop's own position when B's set equals it, except inside a pinned stretch (C-pin keeps it whole) |
-| 5 group | C-run | a maximal stretch of consecutive one-member or cube positions inside ONE stated span is one run compare; never across one-position spans `[rev3 bB4]` |
+| 5 group | C-run | a maximal stretch of consecutive one-member or cube positions inside ONE stated span is one run compare; never across one-position spans, whose positions stay SEPARATE terms (`ofs_test_model`, one term per selected offset) unless C-pin made the stretch whole `[rev3 bB4, rev3.1 V3]` |
 | 6 test | C-table / C-own | an offered table (pcrec's name), else the kit's own `set_test` |
 | 7 order | C-asc | ascending offset (today's) |
 
@@ -202,6 +206,10 @@ order reaches them only when `nsel == 0`. After S2 the same rows, order and deni
 
 `-fno-offset-skip` keeps its identity: denied, pcrec states only the PARKED alternative (and the
 run-pinned pair's deny bits remove C-pin's row from pcrec's NEXT, as today).
+**A denied NEXT row's fact is not stated `[rev3.1 V2]`:** under `PCREC_NO_OFFSET_SKIP` or
+`PCREC_NO_RUN_PREFILTER` (the run-pinned pair's deny bits, emit_dfa.c's `dfa_pfs[]` head) pcrec does not
+state R, so no reply can carry C-pin and the OFFSETS stamp cannot show a pinned plan. C-model and
+A-model never read R, so the RESEED alternative's choice is unchanged under `PCREC_NO_RUN_PREFILTER`.
 
 ### 2.5 Table D — the resume `[rev3 dD3, 581]`
 
@@ -308,9 +316,11 @@ first ask of `pcrec_find_byte_rate` (findings.c), today made by askers that reti
 rank's callers). The builder that states frequencies to a family site asks it there, for exactly today's
 population, so neither moves.
 
-### 3.5 The reseed is the chosen alternative's entry
+### 3.5 The reseed is the NEXT row form's property `[rev3.1 V4]`
 
-The reseed is keyed on the reply's chosen alternative's ENTRY, a fact; no special keying `[rev3 dD1]`.
+The re-seed is the property of the form pcrec's NEXT row picks from the reply (`.reseeds` on the
+row), NOT keyed on ENTRY: a RESEED choice re-seeds, and so does PARKED + C-pin (today's `nsel == 0`
+`run-pinned`, rendered by `pf_emit_ofs`). PARKED without C-pin does not `[rev3 dD1]`.
 Making it unconditional (integration.md §R4.3.5's M5′ item) would mean stating every alternative as
 RESEED: a byte-moving pcrec event, filed if anyone wants it (D77).
 
@@ -461,8 +471,10 @@ core position); 581 settles the LEFTMOST tie on set positions and the STMT frame
 - **`<PREFIX>_REQ_RUN`'s `@idx`** ("which position of the run the scan tests", `findings.md` §4): after S2
   the kit picks it by the same mass rule. Read the reply, as OFFSETS does, or stay pcrec's rarity fact?
   Its value cannot move at S2. Leaning: read the reply, in commit 6, with the findings.md hunk.
-- **The run truncation window** (`pcrec_find_run_window_start`, least mass, ties leftmost) is a
-  frequency-based choice inside pcrec shaping R. Leaning: pcrec's at S2, a limit of the statement like
+- **The run truncation window** (`pcrec_find_run_window_start`, least mass, ties leftmost) and **C-pin's
+  scan member** (`pcrec_run_pin`: `pcrec_find_pick` over the run's exact positions listed highest index
+  first, so ties go HIGHER, the run-stretch tie rule; the stretch is the maximal exact run around it)
+  `[rev3.1 V5]` are frequency-based choices inside pcrec shaping R. Leaning: pcrec's at S2, a limit of the statement like
   the proof range; revisit when a span longer than `PCREC_MAX_REQ_RUN_EMIT` is stated.
 
 **OPEN, for S1 to measure:** the two counts (§5.2). **Filed:** UL1-UL4 (panel §3); PRF's reading on
@@ -494,7 +506,10 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 >
 > **Producer obligations pcrec asserts:** a verify-NO core is a subset of the positions where absence
 > truly fails; each alternative is sound alone under its entry; each walked offset is its own
-> one-position span; the pinned run, when pinned, is stated in every alternative as verify NO.
+> one-position span; the pinned run R (verify NO) is stated in the RESEED alternative, and in the
+> PARKED one only where the pinned scan member is at offset 0, the filter is one byte and k0 = F0 =
+> {R's byte there} (a parked candidate is otherwise not a match start). Under the deny bits
+> `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`, pcrec does not state R at all.
 >
 > pcrec stops stating `plan_hint`, `plan_pos`, `rank_*`, `ctx[]`, `absent`, `consumable`,
 > `consumable_len`, `exact_len`, `prefix_stated`, `span_class` BOUNDED/CONTEXT, `read_floor`, W0-W2,
@@ -517,8 +532,9 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 >
 > **Sequencing:** after B4′; S3 (REPORT routed, D-hors) follows as its own byte-moving event.
 >
-> **Sabotage ids:** kit-side from a range this request reserves; pcrec-side from main's ledger above the
-> highest id on main and in worktrees at filing. The Z2 cover rows that exist are S1130-S1141, S1144,
+> **Sabotage ids:** kit-side S1400-S1429 (30 ids, reserved by this request; S1331-S1340 and S1386-S1393
+> are taken on main and in worktrees, R-28 names S1400 next free; main confirms at filing); pcrec-side
+> from main's ledger above the highest id on main and in worktrees at filing. The Z2 cover rows that exist are S1130-S1141, S1144,
 > S1148 and S1149; S1257-S1290 does not exist.
 
 ---
@@ -532,6 +548,9 @@ B6 §6; B7 §2.2 D1c, §1.2 and §5.3 (both MLINE callers); B8 §2.2; B9 §2, §
 column; D6 §1.4; D7 Appendix A; D8 held (§3.1); UL1-UL4 §9 (filed). rit R1 §4 (defers to §5.4); R2 §4;
 R3 §4; R4 §5.2; R5 §5.2; R6 §5.2; R7 Appendix A; R8 §4. §2's S3 ruling §6. Job 581: leftmost tie §2.1;
 STMT frame §2.6; HRS §2.5, §3.3, §6.
+
+**The rev-3 verification critic (rev 3.1):** V1 §1.1, §1.2 PF row, Appendix A; V2 §1.1, §2.4,
+Appendix A; V3 §2.3 C-run; V4 §3.5; V5 §9; V6 §1.2 PF row; V7 Appendix A (range S1400-S1429).
 
 **The r2 panel (2026-10-21) and the kit manager's rulings, as they stand in rev 3:** P1 §5.1; P2
 superseded by kit-mgr 1 (§3); P3 §1.4; P4 §2.3; P5 §2.1 tie column, §2.2 (REGIME gone), §2.5 (D-shift
