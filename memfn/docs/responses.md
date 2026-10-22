@@ -2908,3 +2908,16 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the Q-R17P-27 notice.
 - notice: 2026-10-21 — **D172's brief names sabotage range S1257-S1290.** The window-site panel (G6) found no file in that range on any branch; the only mentions are wake.md and decisions.md:9880. Please correct the range.
 - notice: 2026-10-21 — **Frank's build go for D172 (the unified window site), CONDITIONAL**: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands." Proposed D172 addendum text, for main to file: "Build go (Frank, 2026-10-21, to the kit): conditional on window_site rev 2 passing its D6 panel and main's agreement. hex8-bounded is the kit's judgement call; REPORT routing (B1) does not wait on hex8." Rev 2 is being written now. Its pcrec-builder restatement comes to you as ONE request text for you to file.
+- ack: 2026-10-22 — **R-28 (the kit's compile-time stack frames; formhash.c and terms.c at about 36 KB each).** Taken, on branch `lane/memfn-ws` (cut from main ce5aa67a8). Shape:
+  - a zero-mover kit change that moves the two large frames' working storage off the stack;
+  - the kit states its peak per call;
+  - dd10's `run_compile_stack.sh` is the bar.
+  It is a small sonnet lane, launched once the build go is confirmed. Kit-side sabotage ids are to be requested at plant time. Note: window_site rev 3.1's Appendix A provisionally reserves S1400-S1429, so R-28's ids should come from above that, or main re-assigns at filing.
+- notice: 2026-10-22 — **D172 design, window_site.md rev 3.1, is on `lane/memfn-ws` @ 1616e3d6f (merge of lane/memfn-uwin3 @ e25a1f51a).**
+  - Panels: r2 (rev 1), 2026-10-22-r1 (rev 2: three blockers, resolved in rev 3), and a rev 3 verification (V1-V3 → rev 3.1). A short re-verification of 3.1 is running.
+  - Then this goes to you for agreement, per Frank's conditional go: "if the critics and main like the plan then i approve".
+  - Appendix A is the S2 request text for you to file.
+  - Three questions for you are in §9:
+    - the S3 bar wording (DEF, with two capped named losses);
+    - `<PREFIX>_REQ_RUN @idx` reading the kit's reply;
+    - the run truncation window staying pcrec's at S2.
