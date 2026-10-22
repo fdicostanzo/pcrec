@@ -30,7 +30,7 @@ Entry point: the `pcrec` command-line tool. Parses flags, calls `pcrec_compile()
 
 ## Files
 
-- `main.c` — the whole CLI: option parsing (`cli_parse`/`CliState`, `cli_axis_apply`, `CLI_MODE_TABLE`), `cli_dispatch`, `compile_sources`/`apply_target`, output writing (`-o OUT.c` also yields OUT.h; `-o -` prints C to stdout), `cli_err`, and the query modes: SR-3 syntax queries (`--list-syntax`, `--explain`, `--flavour`, `--list-verbs`, `--list-families`, `--list-definitions`, `--list-axes`, `--list-limits`, `--list-schema`), `--count-groups --pattern P` (MOD-0.1 §18.1), `--probe-ask` (§18.2), `--emit-ir`, `--emit-facts`, `--list-analyses`/`--list-analysis`, `--features`, `--version`, `-h`.
+- `main.c` — the whole CLI: option parsing (`cli_parse`/`CliState`, `cli_axis_apply`, `CLI_MODE_TABLE`), `cli_dispatch`, `compile_sources`/`apply_target`, output writing (`-o OUT.c` also yields OUT.h; `-o -` prints C to stdout), `cli_err`, and the query modes: SR-3 syntax queries (`--list-syntax`, `--explain`, `--flavour`, `--list-verbs`, `--list-families`, `--list-definitions`, `--list-axes`, `--list-limits`, `--list-schema`), `--subst`/`--subst-file`/`--unset=` (`cli_subst`, a subst artifact, `docs/spec/cli.md` §1.19), `--count-groups --pattern P` (MOD-0.1 §18.1), `--probe-ask` (§18.2), `--emit-ir`, `--emit-facts`, `--list-analyses`/`--list-analysis`, `--features`, `--version`, `-h`.
 
 ## Pointers
 

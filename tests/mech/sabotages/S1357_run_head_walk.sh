@@ -1,5 +1,5 @@
 # S1357 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: rx_group_run does not walk back to the run's head after the bsearch.
 # Witness: the `duprun3` cell (three `n` rows, bsearch lands on the middle): <c><b><a> expected.

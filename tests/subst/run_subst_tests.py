@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """tests/subst/run_subst_tests.py -- [M4-SUBST] the subst artifact's checks
-(docs/spec/subst.md; replace_design.md §R3): every cell of cells.tsv compiled
+(docs/spec/subst_api.md; replace_design.md §R3): every cell of cells.tsv compiled
 and run through subst_drv.c, held to its stated answer AND to libpcre2's
 pcre2_substitute, the independent oracle, where pcre2 can answer.
 

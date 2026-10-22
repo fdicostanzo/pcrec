@@ -1,5 +1,5 @@
 # S1351 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the element's ctx->ncap == binding ncaps check is removed.
 # Witness: every cell's mis arm (the element at k = 0 with ncap + 1) must return MISMATCH.

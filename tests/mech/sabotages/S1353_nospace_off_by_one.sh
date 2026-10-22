@@ -1,5 +1,5 @@
 # S1353 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the fit test is len < room, so an output exactly cap long is NOSPACE.
 # Witness: every out cell's exact arm (cap == the length) must return 0.

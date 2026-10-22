@@ -1,5 +1,5 @@
 # S1349 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the glue's batch is not capped at the remaining limit, so it renders matches past it.
 # Witness: the `lim4` cell (`a` -> `b` on 8 a's, limit 4): bbbbaaaa expected; the lim arm (iterator position) too.

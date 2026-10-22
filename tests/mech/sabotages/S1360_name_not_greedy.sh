@@ -1,5 +1,5 @@
 # S1360 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: a bare $name reads one byte, so `$gx` is $g then a literal x.
 # Witness: the `greedyname` cell (`[$gx]` on `(?<g>b)`): bind MISSING_REF expected.

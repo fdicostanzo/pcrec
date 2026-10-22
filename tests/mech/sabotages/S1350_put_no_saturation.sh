@@ -1,5 +1,5 @@
 # S1350 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: rx_subst_put's saturation is removed, so a length past SIZE_MAX wraps.
 # Witness: the driver's unit line: w = SIZE_MAX - 5 plus 10 bytes must read w == SIZE_MAX, fits 0.

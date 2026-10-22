@@ -1,5 +1,5 @@
 # S1354 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: --unset=error renders an unset numbered group empty instead of refusing.
 # Witness: the `unseterr` cell (`(a)|(b)` -> `[$1|$2]`, --unset=error): rc UNSET expected.

@@ -205,7 +205,7 @@ bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
 /* [M4-SUBST] Compiles a substitution template into a subst artifact: the
  * prefix check `pcrec_compile` applies, the template parse, the emitter.
  * Not a pattern compile, so it does not run `compile_driver` and has no
- * `Ctx` (docs/spec/subst.md §5). */
+ * `Ctx` (docs/spec/subst_api.md §5). */
 int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
                         pcrec_output *out, pcrec_error *err)
 {

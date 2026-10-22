@@ -1,5 +1,5 @@
 # S1346 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the start < previous-end span check is removed, so an overlapping span's gap wraps.
 # Witness: the `overlap` cell (`x|(?<=(?1))y|(\Kx)` on "xy", `[$0]`): BADSPAN expected, the wrapped gap saturates to NOSPACE.

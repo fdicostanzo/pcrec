@@ -122,6 +122,9 @@ contents block).
 - `findings.md` -- findings contract (data, normalization, stamp, listings).
 - `measures.md` -- measurement-set contract ([MEASURE-SET] M0), numbered from
   birth.
+- `subst_api.md` -- the subst artifact (compiled substitution, [M4-SUBST]): the
+  template language, the needed shape and bind, the element, the glue, codes,
+  the differences from `pcre2_substitute`; numbered from birth.
 - `vars.md` -- module `vars` ([VAR]) caller-observable contract (`${name}`,
   `rx_var`, `PCREC_ERR_UNSET_VAR`); not yet in the numbered-facts form
   described above.

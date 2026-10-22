@@ -4,7 +4,7 @@
  * Design: docs/design/replace_design.md §R3 (the element this list feeds),
  * docs/design/subst_template_design.md §3.1-§3.2 (the core language and the
  * measured grammar corners it must reproduce), D38 Q1/Q2/Q5. Spec:
- * docs/spec/subst.md §2.
+ * docs/spec/subst_api.md §2.
  *
  * THE LANGUAGE IS PCRE2's NON-EXTENDED TEMPLATE, module `subst`, plus ONE
  * pcrec form, `${!name}` (the caller's variable, module `subst-pcrec`,

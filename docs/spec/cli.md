@@ -27,6 +27,7 @@
   - [§1.17](#s1-17) `--features LIST`: the module gate
     - [§1.17.1](#s1-17-1) Module `unicode-props`
   - [§1.18](#s1-18) The `-f`/`-fno-` family and the other flags that share its spelling
+  - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -312,6 +313,11 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-18-p2"></a>[1.18¶2] `-futf-check` and `-fstartpos-guard=align` share the spelling and are contract axes (`tuning.md` §2.36 and §2.23): they select which answer a call gives. `-futf-check` makes every entry refuse an ill-formed subject with `PCREC_ERR_UTF` (-9), PCRE2_UTF's contract; `-fstartpos-guard=align` moves a mid-character `startpos` forward to the next character start instead of refusing it (`match_api.md` §9.2). Both are off by default and inert under `-e byte`. `-futf-check=extent` is reserved and refused by name (exit 1); `-fstartpos-guard=align` together with `-fno-startpos-guard` is refused as contradictory.
 
 <a id="s1-18-p3"></a>[1.18¶3] `-fcomments` and `-fno-comments` control the emitted artifact's human commentary and nothing else (`tuning.md` §2.24). The default is `-fno-comments`: an artifact carries only its essential comments, the generated-by line naming pcrec and the `abi` and echoing the pattern, and the shared type block's doc-comments. `-fcomments` restores the rest. Deny wins over force. The object file, the comment-excluded source size, every emitted `#define` and the size-cap verdicts are identical under either setting. A `config` block or a file-operand target may set either spelling, and an explicit command-line flag wins (§1.1.4).
+
+<a id="s1-19"></a>
+### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [--unset=empty|error] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand or a query, and `--unset=` is refused without one of them. A template refusal exits 1 naming the template offset. The artifact, the template language and `--unset` are `subst_api.md`.
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces

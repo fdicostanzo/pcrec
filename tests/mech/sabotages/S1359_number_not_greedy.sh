@@ -1,5 +1,5 @@
 # S1359 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: a group number reads one digit, so `$12` is $1 then a literal 2.
 # Witness: the `greedynum` cell (`$12` on `(b)`): bind MISSING_REF expected.

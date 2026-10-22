@@ -1,5 +1,5 @@
 /* tests/subst/subst_drv.c -- [M4-SUBST] the subst artifact's answer driver
- * (docs/spec/subst.md, replace_design.md §R3). Linked with the runner's
+ * (docs/spec/subst_api.md, replace_design.md §R3). Linked with the runner's
  * generated `tab.c` (every rx and subst artifact of the cell file, from one
  * pcrec) and libpcre2-8, the independent oracle.
  *

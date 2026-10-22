@@ -40,6 +40,7 @@ Maintenance: update this file when files are added/removed or their roles change
 - `part_layout.def` — part-layout vocabulary X-macros (`PL_CLASS/VALUE/RANK/WHY`).
 - `axes.def` — optimization-axis table (deny/force tokens, `-fno-X`/`-fX` spellings, default polarity).
 - `limits.h` / `limits.def` — every accept/reject/promise number, provenance-tiered.
+- `compile.c` also holds `pcrec_subst_compile` ([M4-SUBST]): prefix check, template parse, `pcrec_emit_subst`. It runs OUTSIDE `compile_driver` with no `Ctx`, so an allocation failure there aborts (CLI-only caller until [IFACE-PUSH]).
 - `internal.h` — shared types (Arena, StrBuf, Ctx, Job, Nfa, Dfa, Ast union, RegRow vocabulary, VerbName/PosixName tables, ExtPort types, BufSurface, CompPart/PcrecEmitIn, fit/ladder types) and layer-grouped declarations.
 - `compile.c` — pipeline driver (`compile_driver`, retry/fit ladder, tune application, composer/tree hooks, compound walk, `pcrec_ctx_fail`, `pcrec_default_options`, `pcrec_count_groups`, `pcrec_compile_driver` exported face).
 - `compile_defs.c` — `pcrec_compile_defs` (`--source` composition entry) and nothing else.

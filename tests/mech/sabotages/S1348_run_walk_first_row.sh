@@ -1,5 +1,5 @@
 # S1348 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: a named run resolves to its first row whatever participated (the single-slot binding of R2).
 # Witness: the `duprun` cell (`(?J)(?<n>a)|(?<n>b)`, `[${n}]` on "xaby"): x[a][b]y expected, x[a][]y planted.

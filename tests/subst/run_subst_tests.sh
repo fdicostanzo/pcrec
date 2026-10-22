@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tests/subst/run_subst_tests.sh -- [M4-SUBST] `make test-subst`: the subst
-# artifact's checks (docs/spec/subst.md, replace_design.md §R3).
+# artifact's checks (docs/spec/subst_api.md, replace_design.md §R3).
 #
 #   1. run_subst_tests.py over cells.tsv: every cell's stated answer, the
 #      generic arms (sizing, NOSPACE, the k = 1 glue, the dirty iterator, the

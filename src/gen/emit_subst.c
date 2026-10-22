@@ -5,7 +5,7 @@
  * needed shape and the generic bind §R3.2-§R3.3, the glue §R3.4, the codes
  * §R3.5, BADSPAN §R3.6, the unset axis and `${!name}` §R3.7, one build
  * §R3.8, the caller contract §R3.9, the header §R3.11). Contract:
- * docs/spec/subst.md.
+ * docs/spec/subst_api.md.
  *
  * An artifact is a `.c` and a `.h`. The `.h` carries a copy of the rx shared
  * block (`pcrec_emit_rx_abi_block`, emit_dfa.c's one emitter, under its

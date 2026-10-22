@@ -1,5 +1,5 @@
 # S1362 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: `${!name}` is read as the group `name`.
 # Witness: the `var` cells (`${!v}-$1` on `(a)`): bind MISSING_REF where X-a is expected.

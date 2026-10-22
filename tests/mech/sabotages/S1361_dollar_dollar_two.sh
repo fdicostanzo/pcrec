@@ -1,5 +1,5 @@
 # S1361 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: `$$` is copied as two dollars.
 # Witness: the `dollar` cell (`x\ny$$$1`): one `$` expected.

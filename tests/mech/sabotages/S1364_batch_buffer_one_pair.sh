@@ -1,5 +1,5 @@
 # S1364 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the glue's batch buffer holds kmax pairs, not kmax * ncaps.
 # Witness: the `ncaps30`/`ncaps300` cells (next_n writes ncaps pairs per entry): a stack overrun.

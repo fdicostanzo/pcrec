@@ -437,7 +437,10 @@ is per-prefix and is declared outside the block.
   var-bearing artifact's `<prefix>_match` an `rx_matchfn`.
 - <a id="s2-p6"></a>[2¶6] **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.** Every
   emitted call site sets `ncap = 0` and nothing advances it, so no caller can
-  observe a watermark; it is reserved for a future mid-match view.
+  observe a watermark; it is reserved for a future mid-match view. The
+  "ncaps on completion" reading has one producer, the subst element
+  (`docs/spec/subst_api.md` §4): its `ctx.ncap` is the `ncaps` of a COMPLETED
+  match, every pair written.
 - <a id="s2-p7"></a>[2¶7] **`rx_renderfn` carries a sizing protocol**: called with `out == NULL` and
   `outcap == 0` it writes nothing and returns the length it would produce.
   The typedef is in every artifact's block; a FUNCTION of this type is
@@ -1069,6 +1072,14 @@ starts at `<prefix>_next_pos(s, n, q)`. An empty match at `n` ends the
 iteration. `\G` asserts at each search's start, as it does in PCRE2's loop.
 The reported span is the one `<prefix>_search` reports, `\K` included.
 
+<a id="s3-8-p2a"></a>[3.8¶2a] **On an ill-formed UTF-8 subject** the iteration is the loop of ¶2 over
+§9's per-position answers, which `_search` called in that loop also gives.
+libpcre2's own global iteration (under `PCRE2_MATCH_INVALID_UTF`) can differ
+there: its anchored retry after an empty match reports a match past an
+ill-formed byte rather than at the anchor, §9.3¶3's class, so it skips
+positions the loop of ¶2 visits. `x*` on `"a\xffb"` under `-e utf8` gives
+four empty matches, at 0, 1, 2 and 3; libpcre2's loop gives three, none at 1.
+
 <a id="s3-8-p3"></a>[3.8¶3] **Each search has its own budget.** The anchored retry at `q` and the search
 after it are two searches; each runs with the step, work and frame budgets a
 `<prefix>_search` call runs with (§3.5, §10.9), and a give-up in either ends
@@ -1113,6 +1124,14 @@ and none is detected.
 `it.rc < 0`: it is then the start of the search that ended the iteration
 (on a `PCREC_ERR_UTF` refusal, the position `<prefix>_valid_upto` is asked
 from). Every other field's value is unspecified to the caller.
+
+<a id="s3-8-p9a"></a>[3.8¶9a] **The fields pcrec's shared code reads.** `s` and `n` hold their bound
+values in every state. `vars` and `nvars` hold theirs once the iterator is
+BOUND (the first call normalizes them) and, while it is FRESH, only if
+`rx_iter_vars` was called (`PCREC_ITER_OPT_VARS` set in `hdr`). The shared
+blocks (`RX_FOREACH`, and a subst artifact's block, `docs/spec/subst_api.md` §7)
+read exactly these fields under exactly these conditions; a caller still
+reads none of them, and uses `rx_subst_ctx_init` where it needs a context.
 
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an
 independent iterator at the same point, and either may be advanced. Each

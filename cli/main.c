@@ -260,7 +260,7 @@ static void usage(FILE *f)
           "  --subst 'T'    compile the SUBSTITUTION TEMPLATE T ($n ${n}\n"
           "                 $name ${name} $$, and ${!var}) into a subst\n"
           "                 artifact: a render element any rx whose groups\n"
-          "                 fit binds to at run time (docs/spec/subst.md)\n"
+          "                 fit binds to at run time (docs/spec/subst_api.md)\n"
           "  --subst-file F the template is FILE's bytes, verbatim\n"
           "  --unset=V      a subst's unset group or variable: empty\n"
           "                 (default) renders nothing, error refuses\n"
@@ -533,7 +533,7 @@ typedef struct {
     /* [REL-1.10] the literal PATTERN, set ONLY by `--pattern` (D118): the
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
-    /* [M4-SUBST] a SUBST compile (docs/spec/subst.md §5): the template text
+    /* [M4-SUBST] a SUBST compile (docs/spec/subst_api.md §5): the template text
      * (`--subst`) or its file (`--subst-file`), and `--unset=`. */
     const char *subst;
     const char *subst_file;
@@ -2070,7 +2070,7 @@ static char *read_whole_file(const char *path, size_t *len)
     return buf;
 }
 
-/* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst.md §5): `--subst
+/* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst_api.md §5): `--subst
  * TEMPLATE` or `--subst-file FILE` with `-o`, writing the `.c` and its `.h`
  * (`-o -`: one self-contained `.c` on stdout). Exclusive with `--pattern`,
  * a file operand and every query. Returns 0, or 1 on any refusal. */

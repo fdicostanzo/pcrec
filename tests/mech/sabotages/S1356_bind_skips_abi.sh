@@ -1,5 +1,5 @@
 # S1356 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: bind no longer compares the records' abi with the header's.
 # Witness: every cell's babi arm (an rx record copy with abi + 1) must be MISMATCH.

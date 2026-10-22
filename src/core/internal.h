@@ -7686,7 +7686,7 @@ int  pcrec_artifact_abi(void);
 void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
 
 /* [M4-SUBST] A PARSED SUBSTITUTION TEMPLATE (src/parse/subst_template.c,
- * docs/spec/subst.md §2): a flat item list in template order, and the NEEDED
+ * docs/spec/subst_api.md §2): a flat item list in template order, and the NEEDED
  * shape, every group the template references, each once. Arena-owned. */
 typedef enum {
     SUBST_LIT,     /* template bytes [off, off + len) */
@@ -7724,7 +7724,7 @@ typedef struct {
 int pcrec_subst_parse(Arena *a, const char *s, size_t n, SubstTmpl *t,
                       pcrec_error *err);
 
-/* [M4-SUBST] The subst artifact's generation options (docs/spec/subst.md
+/* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
  * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
  * `header_name` is the `.h` the `.c` includes, or NULL for one
  * self-contained `.c`; `unset_error` is `--unset=error`. */

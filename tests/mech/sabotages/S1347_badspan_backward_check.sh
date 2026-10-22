@@ -1,5 +1,5 @@
 # S1347 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the end < start span check is removed, so a backward span is rendered.
 # Witness: the `backward2` cell (`x(?=(?1))|(b\K)` on "xb", `[x]`, no group read): BADSPAN expected.

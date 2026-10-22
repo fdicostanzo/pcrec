@@ -1,5 +1,5 @@
 # S1352 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: rx_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1).
 # Witness: the `varunset` cell's dirty arm (`${!v}-$1`, no variables, every rx_iter field 0xA5): a wild pointer read.

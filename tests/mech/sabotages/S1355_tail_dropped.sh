@@ -1,5 +1,5 @@
 # S1355 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: the glue drops the tail after the last match.
 # Witness: the `tail` cell (`a` -> `b` on "xa y"): xb y expected.

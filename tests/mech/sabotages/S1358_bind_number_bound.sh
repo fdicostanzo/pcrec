@@ -1,5 +1,5 @@
 # S1358 -- [M4-SUBST] phase B (lane substb2; docs/design/replace_design.md §R3,
-# docs/spec/subst.md).
+# docs/spec/subst_api.md).
 #
 # Plant: a numbered reference binds up to ngroups + 1 whatever ncaps delivers.
 # Witness: the `nosuchnum` cell (`$1$2` on `(a)`): bind MISSING_REF row 1 expected.
