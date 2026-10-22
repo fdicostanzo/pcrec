@@ -61,6 +61,7 @@ finding ids to sections).
 - `row_contracts.md` — [MEMFN-ROWCON] first-match table mechanism exported by
   the kit (`fields.def`, `honours` allowlists, reach counters); evidence in
   `probes/rowcon/`.
+- `window_site.md` — the UNIFIED WINDOW SITE design, rev 1 (Frank's 2026-10-21 direction; design only, no build go): spans with a start offset, a set per position, a REQUIRED CORE (absent passes outside it, fails inside) and a per-span verify flag; one row family of five declared tables (stop pick, stop find = the finder's FIND slot, verify plan, resume, frame) with generic as floor; what retires (`ctx[]` and its caps, the REPORT kind and RPT, the narrow intakes, `plan_hint` after the M5 comparator); staging W1-W5 at zero movers then B1; R-27's panel findings answered.
 - `walk_vs_v1_record.md` — the CLOSED record of the set-FIND form question (2026-10-21): walk vs V1, flattening, M64, the adaptive loop; measurements, sizes, Frank's ruling (the walk when the subject is unknown), what not to retry and when to re-open. Read it before proposing a non-walk default.
 
 ## Pointers
