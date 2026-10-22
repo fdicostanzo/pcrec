@@ -169,3 +169,7 @@ what counts:
 | full make test | 713-cfcount-test, OWED |
 | mech on S693, S1470-S1475, S191 + touched rows | 713-cfcount-mech (19 rows), OWED |
 | STOP RULE (answer change, or growth > 10%) | not fired on the evidence so far. make test, the diff and the census's stop10 decide it |
+
+## jobfix (sonnet, 2026-10-22): 713 -> 714
+- 713 ran green in substance (wall 126 s): lane rc=0 reach 458 reached / unreached=0 NOT-declared (15 declared-UNREACHED), base rc=0 455 reached / 0 NOT-declared, "no row newly unreached". It failed only POPULATION-SHORT: its declaration counted `^== mech run COMPLETE: ` lines, which a REACH_ONLY run never prints (it ends `mech-reach-only: DONE`).
+- 714-cfcount-reach: expect now `runs=2 lines=^(lane|base) mech-reach-only: DONE rc=0 ` (the job's own echoed `$side $trailer` lines, one per side); the dead grep for the COMPLETE line is dropped. Otherwise identical.
