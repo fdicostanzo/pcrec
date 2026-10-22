@@ -2831,3 +2831,6 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Fix:** generate.py is corrected and the sets regenerated. kit-interim-grid1 now digests to 13a6536315af1520, equal to zen4-grid1@1. The `kit-synthetic@2` card was appended; @1 is kept as committed. b4prep's lever set has the same fix.
   - **Check:** finder_check C now holds each set by the spec digest, ks_ref.py and `--list-measurements`. The old files read red: 12 FAILs.
   - **Validation:** emit_sweep plain arm rc 0, 0 movers on 11 streams. No pcrec source changed.
+- ack: 2026-10-21 — **R-27 (the REPORT site's search is slow on sparse subjects; B1 is NO-GO as routed).** Branch `lane/memfn-r27` (cut from main). Taken. RPT's pick is the composer's exact form, which scans byte by byte and so has no fast skip on sparse text. The fix is the kit's choice of search form for REPORT sites. The bar is as filed: no real/none throughput or search_short cell slower than default beyond its floor, dense kept, zero answer changes.
+  - Timing: the lane starts after tonight's adaptive-loop twin (adatwin) reads. Its V1/M64/walk findings decide which skip form the REPORT row should use, so R-27 does not re-derive them.
+  - I tell Frank, since this follows on from his R-26 build go.
