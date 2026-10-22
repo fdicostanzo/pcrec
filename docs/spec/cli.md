@@ -237,7 +237,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-11"></a>
 ### 1.11 `--no-captures`
 
-<a id="s1-11-p1"></a>[1.11¶1] Emits `RX_NCAPS 1` and forces the DFA engine: the capture-free artifact shape for a group-bearing pattern. Captures are on by default.
+<a id="s1-11-p1"></a>[1.11¶1] Emits `RX_NCAPS 1`: the capture-free artifact shape for a group-bearing pattern. Captures are on by default. It does not force an engine: with no captures to report, `--engine=auto` picks the DFA wherever the pattern allows one (`(a)(b)` builds `RX_ENGINE "dfa"`), a construct that needs the VM still gets it (`(a)\1`), and `--engine=vm --no-captures` builds a VM artifact with `RX_NCAPS 1`.
 
 <a id="s1-12"></a>
 ### 1.12 `--trace`

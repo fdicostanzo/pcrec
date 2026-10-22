@@ -130,6 +130,7 @@
 - <a id="s2-3-p3"></a>[2.3¶3] With no `--features`, the set is `std1` = {`classes`, `modifiers`}. An explicit list REPLACES `std1`; it does not add to it: `--features named-groups` compiles `(?<n>a)` and refuses `\d` and `(?i)`.
 - <a id="s2-3-p4"></a>[2.3¶4] `-e utf8` enables `unicode-props` and `ucp` in addition to whatever the list names.
 - <a id="s2-3-p5"></a>[2.3¶5] `--features none` enables nothing: `\d`, `[[:digit:]]`, `[\d]` and `(?i)` are refused, naming `classes` and `modifiers`.
+- <a id="s2-3-p5a"></a>[2.3¶5a] The gate governs pattern SYNTAX, not compile options: `-i` (`PCREC_CASELESS`) works under every feature set, `--features none` included, because case folding is base machinery and `(?i)` is only the modifiers module's spelling of it (§6.2¶4). `--ucp` is the exception, refused without module `ucp`, because it changes what `\d \s \w \b` mean and only that module implements the change (§7.8).
 
 <a id="s2-3-p6"></a>[2.3¶6] A module whose construct has no producer in this build refuses the construct even when enabled (§2.4, shape 2). §6 and §7 are the modules with producers; §8 lists the rest.
 
@@ -274,6 +275,8 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s5-2-p1"></a>[5.2¶1] `\x` with no hex digit after it, and `\x{` with no hex digit or a non-hex character before `}`, are refused. Spaces and tabs may stand between `{` and the digits and between the digits and `}`, never among the digits: `\x{ 41 }` is `A`, `\x{4 1}` is refused. Inside a class the same escapes have the same meanings, and the octal and digit escapes are base-tier there (§5.5).
 
+<a id="s5-2-p2"></a>[5.2¶2] An octal escape's value is range-checked like `\x{...}`'s, against the encoding: above `\377` (`\400`-`\777`, U+0100-U+01FF) it is refused under `byte` ("octal value is greater than \377") and accepted under `utf8`, in a class, outside one, and as the octal reading of the digit rule (§7.3¶2): `(a)\400` under `utf8` is `a` then U+0100.
+
 <a id="s5-3"></a>
 ### 5.3 Refused escapes
 
@@ -292,7 +295,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 1. <a id="s5-5-p2"></a>[5.5¶2] A `]` immediately after `[` or `[^` is a member, not the terminator: `[]a]` matches `]` and `a`; `[^]a]` matches neither. `[]` with no later `]` is refused ("missing terminating ]"), as is any class with no terminator.
 2. <a id="s5-5-p3"></a>[5.5¶3] `x-y` is a range of code points from `x` to `y` inclusive; `x` and `y` may be literals or single-character escapes (`[\x{41}-\x{43}]`, `[\t-\r]`, `[a-\x{7a}]`). A range with `y < x` is refused ("range out of order"). A range whose endpoint is a set (`[\d-z]`, `[a-\d]`, `[\w-.]`, `[[:alpha:]-z]`) is refused ("invalid range").
 3. <a id="s5-5-p4"></a>[5.5¶4] A `-` that cannot start or end a range is a literal: first (`[-a]`), last (`[a-]`), or right after a range (`[a-c-e]` matches `a`-`c` and `-`, not `d`).
-4. <a id="s5-5-p5"></a>[5.5¶5] The character escapes of §5.2 mean the same inside a class. Escapes that are different inside a class: `\b` is U+0008; `\0`-`\7` begin an octal escape of up to three octal digits (a value above `\377` under `byte` is refused); `\8`, `\9`, `\g` and `\k` are the literal letters (`[\k<n>]` matches `k`, `<`, `n` and `>`); `\` + a non-alphanumeric character is that character. These are base-tier inside a class even though the same spellings outside a class belong to `backrefs`.
+4. <a id="s5-5-p5"></a>[5.5¶5] The character escapes of §5.2 mean the same inside a class. Escapes that are different inside a class: `\b` is U+0008; `\0`-`\7` begin an octal escape of up to three octal digits (a value above `\377` is a code point up to U+01FF under `utf8` and is refused under `byte`, §5.2¶2); `\8`, `\9`, `\g` and `\k` are the literal letters (`[\k<n>]` matches `k`, `<`, `n` and `>`); `\` + a non-alphanumeric character is that character. These are base-tier inside a class even though the same spellings outside a class belong to `backrefs`.
 5. <a id="s5-5-p6"></a>[5.5¶6] Refused inside a class: `\B \A \Z \z \G \K \R \X` ("not valid inside a character class"), `\N`, and an unknown escape (`[\y]`).
 6. <a id="s5-5-p7"></a>[5.5¶7] `[:name:]` inside a class is a POSIX class (§6.1, module `classes`); `[:name:]` outside a class is refused ("only valid inside a character class"). `[.x.]` and `[=x=]` inside a class are refused ("POSIX collating elements are not supported"), as PCRE2 refuses them.
 7. <a id="s5-5-p8"></a>[5.5¶8] The class escapes `\d \D \s \S \w \W \h \H \v \V` inside a class add their sets (§6.1, module `classes`). `\p{...}` and `\P{...}` add a property set (§7.9). `\Q...\E` inside a class quotes its contents as members (§7.6, module `quoting`); a lone `\E` in a class needs `quoting` too.
@@ -312,10 +315,10 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `X{n,m}` | n to m | greedy |
 | `X{,m}` | 0 to m | greedy |
 | any of the above + `?` | the same | lazy |
-| any of the above + `+` | the same | possessive, module `atomic-groups` (§7.2) |
+| any of the above + `+` | the same | possessive (greedy, whatever `(?U)` says), module `atomic-groups` (§7.2) |
 
 1. <a id="s5-6-p1"></a>[5.6¶1] `n` and `m` are decimal, at most 65535 (`PCREC_MAX_REPEAT`); a larger number is refused ("number too big"), and `m < n` is refused ("numbers out of order"). Leading zeros are allowed. Space and tab may surround the numbers and the comma (`a{ 1 , 2 }`); any other character inside makes the `{` a literal (§3.1).
-2. <a id="s5-6-p2"></a>[5.6¶2] A quantifier with nothing before it in its branch (`*a`, `a|*b`, `(*a`, `{1}`) is refused ("quantifier does not follow a repeatable item"), as is one after a construct whose `quantifiable` is `no` (§1.4): `^*`, `a$?`, `\b*`, `\K+`. `(^)*` and `(?:$)?` are groups and are quantifiable.
+2. <a id="s5-6-p2"></a>[5.6¶2] A quantifier with nothing before it in its branch (`*a`, `a|*b`, `(*a`, `{1}`) is refused ("quantifier does not follow a repeatable item"), as is one after a construct whose `quantifiable` is `no` (§1.4): `^*`, `a$?`, `\b*`, `\K+`. `(^)*` and `(?:$)?` are groups and are quantifiable, and so is a group whose whole body is an option setting: `(?:(?i))*a`, `((?s))?a` and `(?=(?m))+a` compile, the group matching the empty string and its option change ending at its `)`, so `(?:(?i))*a` matches `a` and not `A`. The option setting itself is not quantifiable (`a(?i)*` is refused).
 3. <a id="s5-6-p3"></a>[5.6¶3] A large bounded count can exceed a compile budget and be refused with a resource shape (§2.4): `a{0,65535}` exceeds `PCREC_MAX_NFA_STATES` at the default (`limits.md` §3.3).
 4. <a id="s5-6-p4"></a>[5.6¶4] `X{0}` matches the empty string, and a group inside it is reported as `[p, p)` where `p` is the position (§4.4). `(?:){3}` matches the empty string.
 
@@ -388,14 +391,14 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `x` | extended: whitespace and `#` comments ignored (§3.2) | `modifiers` |
 | `xx` | `x`, and space and tab ignored inside a class (§3.2); `-x` unsets both | `modifiers` |
 | `n` | no auto-capture: `(X)` is `(?:X)`; named groups (§7.5) still capture | `modifiers` |
-| `U` | ungreedy: a quantifier without `?` is lazy and one with `?` is greedy | `modifiers` |
+| `U` | ungreedy: a quantifier without `?` is lazy and one with `?` is greedy; a possessive quantifier (`+` suffix) stays greedy (`(?U)a*+` on `aaa` → `[0, 3)`) | `modifiers` |
 | `J` | duplicate group names allowed (§7.5); survives `(?^)` | `backrefs` (§7.3) |
 | `a` | `(?aD)`, `(?aS)`, `(?aW)`, `(?aP)`, `(?aT)`, or `(?a)` for all five: restrict a family of sets to ASCII under UCP (`cli.md` §1.9¶4); no effect without UCP; survives `(?^)` | `modifiers` |
 | `r` | caseless matching restricted to ASCII-with-ASCII and non-ASCII-with-non-ASCII; under `byte` it changes nothing; under `utf8` it is refused ("not implemented under encoding 'utf8'") | `modifiers` |
 
 1. <a id="s6-2-p2"></a>[6.2¶2] Any other letter is refused ("unrecognized character after (? or (?-"), and an unclosed setting is refused.
 2. <a id="s6-2-p3"></a>[6.2¶3] A letter whose module is not enabled is refused naming that module: `(?m)a` under `std1` is refused with `inline option 'm' (multiline) requires module 'assertions'`, even with no `^` or `$` in the pattern. So `(?m)` needs `assertions` and `(?J)` needs `backrefs` besides `modifiers`, while `--list-syntax` names only `modifiers` on their rows (the row dispatches the option run; the letter names its own module).
-3. <a id="s6-2-p4"></a>[6.2¶4] `-i` on the command line is `(?i)` at the start of the pattern; there is no command-line spelling of the other letters (§2.5).
+3. <a id="s6-2-p4"></a>[6.2¶4] `-i` on the command line sets the same matching mode as `(?i)` at the start of the pattern, as a compile option rather than a construct: it is not gated, and works with `modifiers` disabled (§2.3¶5a). There is no command-line spelling of the other letters (§2.5).
 4. <a id="s6-2-p5"></a>[6.2¶5] `(?n)` applies from where it is written to the end of its scope; a group opened before it, or after its scope closes, still captures: `(a(?n)(b))(c)` on `abc` → group 1 `[0, 2)` (the outer group), group 2 `[2, 3)` (the `(c)`).
 
 <a id="s7"></a>
@@ -472,8 +475,9 @@ group        = "(" alternation ")"                            (* capturing, §5.
 1. <a id="s7-4-p2"></a>[7.4¶2] A positive lookaround is atomic: the first way its body matches is kept, and a later failure does not retry the body. `(?=(a|ab))\1c` on `abc` is no match, while the non-atomic `(?*(a|ab))\1c` on `abc` → `[0, 3)`, group 1 `[0, 2)`.
 2. <a id="s7-4-p3"></a>[7.4¶3] Groups inside a positive lookaround keep the values of the way that succeeded (`(?=(a))a` on `a` → group 1 `[0, 1)`); groups inside a negative lookaround are unset after it (`(?!(a))b` on `b` → group 1 unset).
 3. <a id="s7-4-p4"></a>[7.4¶4] A lookbehind reads characters before `p` even when they are before `startpos` (`(?<=b)a` from `startpos` 1 on `ba` → `[1, 2)`).
-4. <a id="s7-4-p5"></a>[7.4¶5] Every top-level alternative of a lookbehind's body must match a fixed number of characters; different alternatives may differ (`(?<=a|bc)x` compiles). A body that can match a varying number of characters within one alternative is refused with a capability diagnostic (shape 5): `(?<=(a|bc))x`, `(?<=a+)x`, and any lookbehind containing a backreference (`(a)(?<=\1)`). Fixed counts are characters, so `(?<=é)a` under `utf8` on `éa` → `[2, 3)`.
-5. <a id="s7-4-p6"></a>[7.4¶6] A quantifier on a lookaround means the assertion is optional when its minimum is 0 and required once otherwise: `(?=a)*b` on `b` → `[0, 1)`, `(?=a){2}a` on `a` → `[0, 1)`.
+4. <a id="s7-4-p5"></a>[7.4¶5] Every top-level alternative of a lookbehind's body must match a fixed number of characters; different alternatives may differ (`(?<=a|bc)x` compiles). A body that can match a varying number of characters within one alternative is refused with a capability diagnostic (shape 5): `(?<=(a|bc))x`, `(?<=a+)x`, and any lookbehind containing a backreference (`(a)(?<=\1)`). Fixed counts are characters, so `(?<=é)a` under `utf8` on `éa` → `[2, 3)`. An alternative may itself be a group of alternatives when they share one length: `(?<=(?:ab|cd)|e)x` and `(?<=(?i:ab|cd))x` compile, while `(?<=(?:a|bc))x` is variable and refused like `(?<=(a|bc))x`.
+5. <a id="s7-4-p5a"></a>[7.4¶5a] A subroutine call inside a lookbehind (§7.7) is measured through the called group. A lookbehind whose call re-enters a group containing that lookbehind, directly or through the called groups' own calls, has no length and is refused, as libpcre2 refuses it: `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`. A call inside a nested lookaround is not followed (`(?<=a(?=(?R)))x` compiles), and `(a)(?<=(?1))` compiles.
+6. <a id="s7-4-p6"></a>[7.4¶6] A quantifier on a lookaround means the assertion is optional when its minimum is 0 and required once otherwise: `(?=a)*b` on `b` → `[0, 1)`, `(?=a){2}a` on `a` → `[0, 1)`.
 6. <a id="s7-4-p7"></a>[7.4¶7] There is no non-atomic negative lookaround: `(*nanla:...)` and `(*nanlb:...)` are refused ("(*alpha_assertion) not recognized"), as PCRE2 refuses them. `\K` inside any lookaround is refused (§7.1).
 
 <a id="s7-5"></a>
@@ -597,10 +601,12 @@ group        = "(" alternation ")"                            (* capturing, §5.
 
 <a id="s9-p1"></a>[9¶1] The compliance page (`docs/pcre2_compliance.md`) is the construct-by-construct delta; this section lists every difference this document states, at the option mapping of §1.2.
 
-1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4); `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
+1. <a id="s9-p2"></a>[9¶2] Refusals of accepted syntax. Every construct of §8.1, every construct whose module a compile does not enable, and these capability and grammar refusals: a lookbehind alternative of varying length, or containing a backreference (§7.4), including a group of alternatives of different lengths (`(?<=(?:a|bc))x`), which libpcre2 accepts as a variable-length lookbehind; `(?r)` under `utf8` (§6.2); the wide UCP sets and UCP `\b \B` under `utf8` (§7.8); binary and `Bidi_Class` properties (`cli.md` §1.17.1); `${` outside a class without module `vars` (§7.10); a pattern over a compile budget (§2.4 shape 6).
 2. <a id="s9-p3"></a>[9¶3] Give-ups. A VM artifact may answer `PCREC_ERR_STEPS`, `PCREC_ERR_FRAMES` or `PCREC_ERR_WORK` where libpcre2 answers (§4.6), including the left recursions where libpcre2 concludes no match (`limits.md` §6).
 3. <a id="s9-p4"></a>[9¶4] A recursion with no way to complete. `(?R)` alone, on any subject, is no match under pcrec; libpcre2 returns its recursion-loop error.
+   - <a id="s9-p4a"></a>[9¶4a] More generally, where libpcre2's recursion-loop check fires (`PCRE2_ERROR_RECURSELOOP`) because a call can re-enter its own group without consuming, pcrec's matcher runs the search instead and answers a match, no match or a give-up (§4.6): `(?:a|(?R))+` on `a` → `[0, 1)`, on `aa` → `[0, 2)`, on `b` `PCREC_ERR_FRAMES`; `((?1)?a)` on `a` → `[0, 1)`.
 4. <a id="s9-p5"></a>[9¶5] A start position beyond the subject. `startpos > n` returns no match; libpcre2 returns an offset error (`match_api.md` §9.2¶4).
+   - <a id="s9-p5a"></a>[9¶5a] A start position inside a character under `utf8` (`.` on `éa` from `startpos` 1) returns `PCREC_ERR_STARTPOS`; libpcre2 with `PCRE2_MATCH_INVALID_UTF` searches on from the next character (`[2, 3)`) (`match_api.md` §9.2).
 5. <a id="s9-p6"></a>[9¶6] Module `vars`. With the module enabled, `${name}` and its forms are pcrec syntax with no PCRE2 meaning (§7.10).
 6. <a id="s9-p7"></a>[9¶7] — retired (moved to §6.2¶3).
 7. <a id="s9-p8"></a>[9¶8] — retired (the difference is gone; §3.2¶2).
