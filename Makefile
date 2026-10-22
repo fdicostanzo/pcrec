@@ -385,7 +385,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
-      test-spec-history test-plan-lint test-compound test-endmark test-partlayout \
+      test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
       test-kitproof test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
@@ -1666,6 +1666,14 @@ test-plan-lint:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-plan-lint.ran"; fi
 	bash tests/plan_lint/run_plan_lint.sh
 
+# CLAUDE.md files are orientation guides, not history or notes (Frank,
+# 2026-10-22): scripts/check_claudemd_size.sh --all over the tree (limits in
+# its one table) plus its sabotage self-test. Text only, no dependence on
+# `all`. The commit-time gate is the pre-commit hook's --staged row.
+test-claudemd-size:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-claudemd-size.ran"; fi
+	bash tests/claudemd_size/run_claudemd_size.sh
+
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
 # analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
 # ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
@@ -2117,7 +2125,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-kitproof test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean
