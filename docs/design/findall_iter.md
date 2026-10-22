@@ -1767,3 +1767,11 @@ here; docs/dev/lanes/i1build_report.md carries the evidence.
   landed with I1; I0's `mg` parser support and the fact landed first, with
   zero artifact movers (report).
 - **The `mg` line is §1.7.1 of rxt_format.md**, a subsection of `mc`'s.
+
+**Pointer: I2 (lane i2design, 2026-10-21).** I2's design is
+`findall_iter_i2.md`: `<prefix>_next_n` and the generic `RX_FOREACH` over
+`rx_info.next_n`. It WITHDRAWS the internal batch (§2.3, §3.4a, the `batch`
+column, `rx_iter_batch`, `rc_next`/`bhead`/`bcount`, the `B64` arm) on the
+parity slot's `off` verdict and D171. The "I2 appends" list above therefore
+shrinks to the kit's `st`, which keeps §1.3's rule and becomes stage I3 there.
+`rx_iter` is unchanged at I2.
