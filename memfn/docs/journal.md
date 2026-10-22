@@ -2663,3 +2663,10 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - NOT done, rulings asked: R1 (which old fields leave `mf_site`: the translation and G2 still use plan_hint/rank_*/end_back/span_class/need), R2 (R's placement once the pin's selection retires), R3 (RPT/kit_report_exact: window_site.md §4 keeps them with R-26.6 until S3; Appendix A retires them at S2).
 - Heavy job `580-kit-wsc5-heavy` owed (docs/dev/lanes/wsc5_report.md §7).
 
+
+## 2026-10-22 — D172 S2 commit 6 completed: R1-R3 (lane wsc6)
+
+- R1: pcrec's window sites and FUNC parts state R-29's facts only (6-p3); the kit deleted W0-W2, the prefix facts, `absent`/`consumable`, `ctx`/`nctx` (and the generic row's context test), `read_floor` and `consumer` with their rules and gate fields (6-k4, 6-k5). `plan_hint`, `plan_pos`, `rank_*`, `end_back`, `span_class` BOUNDED/CONTEXT and `need` stay as the RENDERER INTERFACE (the translation's and G2's); `wf_check` refuses a window site or part stating any (`wf_old_fields`, plant S1419). `MF_SITE_ABI` 20's text records the layout move; no MF_VOCAB or MF_CLASS_V move. FILED: the interface as a kit-internal struct (trigger: the next G2 site-builder regeneration, or a renderer change).
+- R2: the FALLBACK. The general form retires the `run_pin` fact's selection, a facts-stream mover on every listing; filed with its kit rule (per-offset R-meet, mass, ties HIGHER) and trigger (a mover census, main's acceptance).
+- R3: RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` and R-26.6 stay until S3 (window_site.md notes). After R1 no old-field REPORT site exists that RPT cannot prove exactly: S1255/S1256 declared equivalent.
+- Checks moved: G2's `consumer` variant removed (its draw kept); proof_check/proof_run lose the retired facts; arm pins lose the W0-W2 cases (floor 89); test-memfn-rank asserts pcrec states no ranking. Light checks green after 6-p4 (6-p3 missed one `end_back` reader, the set FIND's storage point). Heavy job `582-kit-wsc6-heavy` owed (docs/dev/lanes/wsc6_report.md §7).
