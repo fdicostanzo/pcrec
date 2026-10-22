@@ -345,8 +345,8 @@ void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
  * epilogue is `pcrec_ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
  * `REFUSE(at, "%s", buf)` here and `pcrec_ctx_fail(cx, at, "%s", buf)` there render
  * the same string at the same offset through the same formatter. `buf` is 256
- * bytes for `ExtResult.msg`'s reason, which is the buffer the hook's text used
- * to be formatted straight into. It cannot truncate: the longest arm is 148
+ * bytes because `ExtResult.msg` was once a 256-byte array the hook's text was
+ * formatted straight into, and `pcrec_ext_msgf` still cuts there. It cannot truncate: the longest arm is 148
  * bytes of template and 166 with both widths at their widest
  * (`PCREC_W_UNBOUNDED` is `1 << 40`, 13 digits) — and a width that large is
  * refused by the arm ABOVE it anyway, so 166 is a ceiling no live path
@@ -610,8 +610,10 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         long long lo = 0, hi = 0;
         int *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
         if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
-            char buf[LA_MSG_MAX];
-            la_width_refusal(buf, sizeof buf, lo, hi);
+            /* In the arena, not this frame: this port is a level of the
+             * parser's group recursion (limits.md §3.10, dd10b). */
+            char *buf = pcrec_arena_alloc(&cx->arena, LA_MSG_MAX);
+            la_width_refusal(buf, LA_MSG_MAX, lo, hi);
             REFUSE(at, "%s", buf);
         }
         a->u.look.widths  = w;

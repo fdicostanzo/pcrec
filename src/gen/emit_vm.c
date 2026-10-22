@@ -1870,6 +1870,12 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
         pcrec_cls_bits(cx, a, out[0]);
         return 1;
     case A_CAT: {
+        /* Every approved element is at least one byte, so a spine longer
+         * than `cap` cannot fit: declining FIRST bounds the recursion down
+         * the left-nested spine by `cap` rather than by the pattern ([DD-10]). */
+        int len = 1;
+        for (const Ast *t = a; t->k == A_CAT; t = t->l)
+            if (++len > cap) return 0;
         int nl = vm_det_seq(cx, a->l, out, cap);
         if (nl == 0) return 0;
         int nr = vm_det_seq(cx, a->r, out + nl, cap - nl);
@@ -2018,6 +2024,21 @@ static bool vm_cursor_fits(Ctx *cx, const Ast *rep, uint8_t (*seq)[32],
     *stride = len;
     *ncaps = n;
     return true;
+}
+
+/* Whether `rep` takes the cursor rung, and its body's capture count, for the
+ * two pre-passes that need only those: `vm_cursor_fits` with its 2 KB of
+ * scratch in this frame, which is the point ([DD-10]) — both callers recurse
+ * into the body afterwards, and the scratch would otherwise ride every level
+ * of that recursion. */
+static PCREC_OWN_FRAME bool vm_cursor_applies(Ctx *cx, const Ast *rep,
+                                              int *ncaps)
+{
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0;
+    *ncaps = 0;
+    return vm_cursor_fits(cx, rep, seq, &stride, caps, ncaps);
 }
 
 /* ---- §2.5's REVERSE-DETERMINISTIC rung: the two facts every site needs ----
@@ -2329,9 +2350,8 @@ static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
 static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
+    int nc;
+    const bool cursor = vm_cursor_applies(v->cx, a, &nc);
     Cost c = { 0, 0, 0, 0, false, false };
 
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return c;
@@ -2368,7 +2388,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * Counting the EMITTED copies here instead of the ITERATIONS would be a
      * silent cap of precisely the kind the revdet arm below records finding the
      * hard way: the artifact would size for 8 iterations and take 4000. */
-    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
+    if (!cursor
         && !vm_revdet_fits(a, under_atomic)
         && !pcrec_opt_has(v->cx->opt, PCREC_NO_COUNTER)
         && vm_counter_fits(v, a)) {
@@ -2452,7 +2472,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
 
-    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
+    if (!cursor
         && vm_revdet_fits(a, under_atomic)) {
         const bool move = vm_rev_canmove(a, cuts);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
@@ -2505,7 +2525,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 
     Cost body = vm_cost(v, a->l, false);
 
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+    if (cursor) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
          * plus one write per capture in the body per (re)try — all of which
          * the resume frame's own mark rewinds, so they do not accumulate.
@@ -3019,11 +3039,10 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
                                bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+    int nc;
+    const bool cursor = vm_cursor_applies(v->cx, a, &nc);
+    if (cursor) {
         /* [ENG-BREP] the possessive span loop allocates NEITHER — no
          * low-water slot and no resume point. Mirrors vm_cursor_rep's own
          * branch; the two are the same condition read twice, which is the
@@ -6434,6 +6453,20 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
     vm_lbl(v, exit, "unbounded repeat: the exit");
     vm_goto(v, next);}
 
+/* Emits `a` on the cursor rung when it takes it, answering whether it did.
+ * Its own frame holds the rung's 2 KB of scratch, so `vm_rep`'s frame, which
+ * the frames rung below re-enters once per nesting level, does not ([DD-10]). */
+static PCREC_OWN_FRAME bool vm_cursor_try(Vm *v, int entry, const Ast *a,
+                                          int next, bool under_atomic)
+{
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, ncaps = 0;
+    if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &ncaps)) return false;
+    vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
+    return true;
+}
+
 /* Emits a bounded/unbounded repeat's FRAME-based rung: one resume frame
  * per iteration, pushed on entry and popped on backtrack, the fallback
  * shape every quantifier this file's other rungs (possessify's frameless
@@ -6444,9 +6477,6 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
  * last rung, never itself declined. */
 static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, ncaps = 0;
     const bool cuts = vm_cuts(a, under_atomic);
 
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) {   /* X{0} matches empty */
@@ -6458,10 +6488,8 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         return;
     }
 
-    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &ncaps)) {
-        vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
+    if (vm_cursor_try(v, entry, a, next, under_atomic))
         return;
-    }
 
     /* [ENG-BREP] the ladder's second rung, below the cursor and above the
      * frames. `a->u.rep.revbody` is src/opt/revdet.c's verdict AND the material the

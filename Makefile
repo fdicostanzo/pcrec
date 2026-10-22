@@ -1598,9 +1598,16 @@ test-thread: all
 # call-bearing default entry does not fit a 128 KB thread -- so the arm that
 # reproduces it is a PINNED state, and the script FAILS if it ever stops
 # reproducing, because the record would then be out of date.
+#
+# [DD-10] ITS SECOND SCRIPT ASKS THE SAME OF THE COMPILER: pcrec_compile at the
+# nesting cap, and on long chains, on a thread of docs/spec/limits.md §3.10's
+# stated budget (~5 s, single-process, since K130's fix). The budget is
+# measured at the default CFLAGS, so the script is told where CFLAGS came from
+# and SKIPS otherwise.
 test-stackdepth: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-stackdepth.ran"; fi
 	bash tests/thread/run_stackdepth_tests.sh
+	COMPILE_STACK_CFLAGS_ORIGIN='$(origin CFLAGS)' COMPILE_STACK_CFLAGS='$(CFLAGS)' bash tests/thread/run_compile_stack.sh
 
 # [DD-14.FB] the caller-provided frame buffer's MEASUREMENTS, OPT-IN -- the
 # same shape and the same reasoning as test-specimen below: section 2 reserves

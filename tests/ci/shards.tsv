@@ -43,7 +43,7 @@ test-resource	3	255.6	ci-measured sections.tsv
 test-capturediff	1	8.2	ci-measured sections.tsv
 test-known-fail	1	0.5	ci-measured sections.tsv
 test-thread	2	34.9	ci-measured sections.tsv
-test-stackdepth	2	0.5	ci-measured sections.tsv
+test-stackdepth	2	8	ESTIMATED: [DD-10] added run_compile_stack.sh, 5 local-s x 1.44 on top of the measured 0.5 (45 s before K130's fix)
 test-premul-table	2	87.3	ci-measured sections.tsv
 test-anchored-match	2	288.9	ci-measured sections.tsv
 test-search-pinned	3	157.1	ci-measured sections.tsv

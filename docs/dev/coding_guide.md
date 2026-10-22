@@ -181,6 +181,9 @@ grep the file for the helper that already builds it.
 `A_CAT`/`A_ALT` spines are LEFT-NESTED and as long as the pattern, so a walk
 descends a spine ITERATIVELY and recurses only into items hanging off it (a
 20,000-character pattern segfaulted pcrec once for want of this — K20, D10/DD-10).
+`PCREC_SPINE_EACH(e, root, kind)` (`core/internal.h`) is that loop: it yields
+each element of the spine right to left, head last; use it rather than a
+hand-written `for (; a->k == A_CAT; a = a->l)` and its separate head step.
 A whole-tree walk must NOT follow `Ast.u.call.body`, the AST's first back edge,
 and each `A_CALL` arm says why declining it is exact. `src/opt/atomic.c:22-36` is
 the canonical statement — cite it, copy it. `pcrec_ast_visit` (`core/internal.h`,

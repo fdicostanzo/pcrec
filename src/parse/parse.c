@@ -1210,10 +1210,10 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
      * range check (§2.7.3): `\400`..`\777` are U+0100..U+01FF under utf8
      * (libpcre2 10.46 PCRE2_UTF) and err 151 under byte only. */
     if ((unsigned)val > cls_universe(cx)) {
-        ExtResult err = { .what = EXT_REFUSAL, .at = p, .msg = "",
+        ExtResult err = { .what = EXT_REFUSAL, .at = p,
+                          .msg = "octal value is greater than \\377 in 8-bit "
+                                 "non-UTF-8 mode",
                           .answered_at = want };
-        snprintf(err.msg, sizeof err.msg,
-                 "octal value is greater than \\377 in 8-bit non-UTF-8 mode");
         return err;
     }
     res.scalar = val;
