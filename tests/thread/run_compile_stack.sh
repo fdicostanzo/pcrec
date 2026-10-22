@@ -41,7 +41,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LIBPCREC="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 KEEP="${KEEP:-0}"
 
-COMPILE_STACK=786432    # docs/spec/limits.md §3.10's stated budget, 768 KB
+COMPILE_STACK=442368    # docs/spec/limits.md §3.10's stated budget, 432 KB
 CONTROL_STACK=32768       # below the baseline every compile pays
 DEPTH=250                 # PCREC_MAX_GROUP_DEPTH
 
@@ -79,7 +79,17 @@ fi
 rep() { local s="" i; for ((i = 0; i < $2; i++)); do s+="$1"; done; printf '%s' "$s"; }
 
 # nest <open> <core> <close> <depth> — the pattern nested <depth> levels deep.
-nest() { rep "$1" "$4"; printf '%s' "$2"; rep "$3" "$4"; }
+# <open> is a printf format given the level's index, so a family whose groups
+# must differ (named groups) can number them; a format with no conversion
+# prints as itself.
+nest() {
+    local i el
+    for ((i = 0; i < $4; i++)); do
+        # shellcheck disable=SC2059
+        printf -v el "$1" "$i"; printf '%s' "$el"
+    done
+    printf '%s' "$2"; rep "$3" "$4"
+}
 
 # chain <depth-free element printf format> <count> <separator> — element i is
 # printf "$1" i, so alternatives are distinct (nothing folds them away).
@@ -117,6 +127,8 @@ optnest-vm;(?:a;;)?;all;2
 look;(?=;a;);all;0
 lookbehind;(?<=;a;);all;0
 atomic;(?>;a;);all;0
+inlineopt;(?i:;a;);all;0
+named;(?<n%d>;a;);all;0
 '
 while IFS=';' read -r name open core close feat eng; do
     [ -n "$name" ] || continue

@@ -1456,7 +1456,7 @@ reservation does not.
   default entry ever stops dying. See its own header for the causal control.
   Its second script, `tests/thread/run_compile_stack.sh` ([DD-10]), asks the
   same of the COMPILER: `pcrec_compile` at nesting depth 250/251 and on long
-  chains, on a thread of `docs/spec/limits.md` §3.10's 768 KB budget, with a
+  chains, on a thread of `docs/spec/limits.md` §3.10's 432 KB budget, with a
   32 KB-thread control that must die. ~45 s on the Linux dev box.
 
 - **`make test-premul-table`** (`tests/codegen/run_premul_table.sh`) —

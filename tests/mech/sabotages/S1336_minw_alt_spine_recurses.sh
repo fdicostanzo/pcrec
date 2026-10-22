@@ -1,6 +1,6 @@
 # S1336 ([DD-10], lane dd10) -- pcrec_minw recurses down the A_ALT spine again: one C frame per alternative.
 # K114's crash shape: answers are unchanged, so only the compile-stack arm (a 20,000-capture alternation on
-# limits.md §3.10's 768 KB thread) can see it. Detector: tests/thread/run_compile_stack.sh (test-stackdepth).
+# limits.md §3.10's 432 KB thread) can see it. Detector: tests/thread/run_compile_stack.sh (test-stackdepth).
 SAB_ID="S1336-minw-alt-spine-recurses"
 SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="compilestack"
