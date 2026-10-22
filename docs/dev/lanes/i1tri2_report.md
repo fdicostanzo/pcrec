@@ -72,9 +72,26 @@ box from 20:37. The direct runs above were single-process but some ran
 during that window before its quiet gate (the gate read load1 1.32 when it
 passed); report this to the kit if its numbers look off.
 
-## 3. test-startset
+## 3. test-startset (OWED: the rows, not the diagnosis)
 
-PENDING at this commit, see STATE AT HANDOFF.
+`vmhat_checks.py` [vm-movers] forced: 13 movers not in
+`manifest_s2_vm_forced.tsv`, 0 manifest rows not movers; every shown id is
+`tests/findall/global.rxt:<line> [--features all]`. global.rxt is I1's new
+corpus file (i1build's census re-pinned rxtsource only; BOILERPLATE's
+delivery bar names the start-set manifests too). The auto arm and the DFA
+hat (s3) read clean. The fix is +13 rows, every one a global.rxt block, no
+existing row moved (the pinfix 2026-10-18 precedent: rows from the check's
+own mover list).
+
+The full list of 13 needs ~58 compiles (the global.rxt blocks under
+`--engine=vm`), over BOILERPLATE's 50-compile cap, and kit job
+`575-kit-adatwin` held the box in a timing window. So the listing runs as a
+DETACHED `scripts/boxlock run` waiter (label `i1tri2-globalmovers`,
+script `worktrees/i1build/build/i1tri2/movers.py`, which applies
+`vmhat_checks.py`'s own mover rule to global.rxt's blocks) and writes
+`worktrees/i1build/build/i1tri2/movers.out`: one manifest row per line,
+`id<TAB>options<TAB>pattern_hex`. Expected: exactly 13 lines, all
+`tests/findall/global.rxt:*`, including lines 30, 174, 339, 378, 417, 1271.
 
 ## 4. Ids and proposals
 
@@ -85,4 +102,41 @@ floor, that is fix 7's move, not a regression.
 
 ## STATE AT HANDOFF
 
-PENDING.
+Head of `lane/i1build`: the commit carrying this report. Commits:
+`b0d11cc6a` (fixes 1-5), `94a5c4d50` (fixes 6-10), `ca3b0bfc6` (fix 11),
+`24dff6c65` (report draft), this one. Rulings file `i1tri2_rulings.md`:
+empty at every checkpoint, no entry applied. Main NOT merged into the
+branch. `docs/dev/artifact_size_log.tsv` (rewritten by 611's test-corpus)
+restored to HEAD so the jobs' clean-tree dry run passes.
+
+OWED step (a fresh agent or the manager, ~2 min):
+1. Wait for `worktrees/i1build/build/i1tri2/movers.out` to be non-empty
+   (`scripts/boxlock status` shows the waiter until it runs; it runs after
+   `575-kit-adatwin` releases the box). Check: 13 lines, every id
+   `tests/findall/global.rxt:*`.
+2. Append them to `tests/startset/manifests/manifest_s2_vm_forced.tsv`
+   (after the last row) with one history comment line in the file's own
+   style, e.g. `# i1tri2 (2026-10-21, [FINDALL-NEXT] I1): +13 rows, every
+   one a tests/findall/global.rxt block (I1's new corpus file); vmhat
+   mover rule on lane/i1build; no existing row moved.`
+3. Commit on lane/i1build. That commit opens job 609's readiness gate.
+
+Jobs (scripts in `worktrees/i1build/build/i1jobs/`, uncommitted scratch;
+owner i1build):
+
+| job | runs | ready when | green line |
+|---|---|---|---|
+| `609-i1build-solo` | `make -j8`, `make strict`, `make -k` on 611's eight red sections serially (PROCS=JOBS=8) | a commit after `24dff6c65` touches `manifest_s2_vm_forced.tsv` | `scripts/verdict` on its job.log: no `*** [Makefile:N: test-X] Error` line |
+| `612-i1build-maketest` | 611's script verbatim: make, strict, `scripts/perfrun --label i1build --shape 8,8` | `boxqueue after i1build-solo` = 0 | `scripts/verdict` on `job.log.make`: `VERDICT GREEN`, perfrun `DONE rc=0` |
+| `621-i1build-mech` (unchanged, already pending) | mech S1297-S1308, S504 S701 S891 S902 S1126 S1151 S693, S02 S05 | after i1build-maketest green | `== mech run COMPLETE: 21 rows`, 0 unexpected |
+| `631-i1build-census` (unchanged) | `tests/findall/mover_census.py` I0 vs I1 | after mech green | the census exits 0 |
+| `641-i1build-parity` (unchanged) | parity timing, PARITY_POST=1 | after census green + quiet gate | cells c1, c3, c4 read `GATE I PASS` |
+
+621-641 keep waiting on the KEY `i1build-maketest`, which 612 now carries;
+they were not re-added. Note on 621: fixes 6/7 and 9 edited emit_dfa.c and
+enc.c, and `scripts/m6read_check_sab_anchors.py` reads all 922 anchors
+resolving after them, so the mech row list needs no re-anchor.
+
+Watch in 609/612: partlayout's `p2:` population (§4), and compound's
+`check_entry_ranks.py` re-seed population half, validated here on 8
+patterns only.
