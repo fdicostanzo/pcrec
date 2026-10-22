@@ -2938,3 +2938,35 @@ the compiler, and is never adopted silently. Proposed for main to file
     - an old-vs-new driver over 23,004 lines is byte-identical;
     - job 571: 8 of 9 emit_sweep arms rc=0, with 0 movers on every arm (dumps included), mech S1255 DETECTED, make test green (section-errors=0).
   - **The 9th arm (`--variant all`) is RED on BASE-LEVEL stale tag floors only.** It fails identically on the reference side. Bisect job 577 shows the counts identical at 9950aa672, 6a0ad4029, 5893e47dc and ce5aa67a8, so the cause predates both. Main owns the re-pin.
+
+- done: 2026-10-22 — **R-29 (D172 S1+S2, the window site stated as spans, alternatives and frequencies): READY TO MERGE. Branch `lane/memfn-ws` @ a2d4d9738, validated as `lane/memfn-wsmain` at the same sha. It contains main bf33d2dab, so it merges into main cleanly (trial merge-tree rc=0). Reports: `docs/dev/lanes/wsc1..wsc7_report.md` and `wsframe_report.md`; the design of record is `docs/design/memfn/window_site.md` rev 3.2.**
+  - **Versions:** MF_SITE_ABI 19→20. pcrec abi stays 83 (main's): D172 S2 has NO pcrec abi event, and every emitted byte is unchanged against main (the sweeps below).
+  - **Validation:** job 586-kit-wsmain-heavy at a2d4d9738 vs REF bf33d2dab is GREEN (`worktrees/.boxqueue/done/20261022T171338.062136463-586-kit-wsmain-heavy/job.log`):
+    - build and strict;
+    - five emit_sweep streams (plain, arms-start, -fno-run-prefilter, -fmemfn-simd, --engine=vm), every one rc=0 with every artifact stream at movers=0, and the facts stream's DECLARED MOVES at patterns=3451 rows=6828 (span_facts `used` yes→no; 3356 before main's new corpus);
+    - test-codegen;
+    - make test: perfrun class=green, section-errors=0, contaminated=no, and no `*** [...test-X] Error` line;
+    - test-memfn-link (R-28's frame bar).
+    - wreply: 0 checks failed, rc=0.
+    - mech (155 rows, 0 unexpected) and mech-reach-only (reached 204, unreached 0) were green at wsc7 (job 583). Nothing after them moves an essential byte.
+  - **Since wsc7, for your review:**
+    1. **wsc8 5fed19321:** the [OPT-REQPOS]/[K66] note read `masked` off the FUNC part's terms, which were empty since wsc5, so masked runs printed the exact-bytes note under -fcomments. That was 583's only red. It now reads the run fact. Comment text only.
+    2. **Merge of main 1d83e8430:** six conflicts.
+       - compose.c keeps D172's logic AND R-28's frame changes: term_prove's `base`, kit_report_exact one row per offset.
+       - The rest are CLAUDE.md, index and ledger files, with both sides kept.
+       - No version number was bumped by both sides.
+    3. **wsframe aba15302e:** D172's new window.c broke R-28's 4 KB frame bar: mf_wdecide 10,720 B, e_legacy_holds 5,088 B.
+       - `wf_dec` now goes on the heap (calloc/free, -1 on refusal, the terms.c precedent).
+       - `wf_legacy` now comes from wf_prepare's arena allocation, with its "out of memory" refusal.
+       - Frames are now 64 B and 48 B, and the largest kit frame is 3,600 B.
+       - 76/76 outputs are byte-identical, and the G2 window suite is 6032/0 (including the ASan+UBSan driver).
+  - **Earlier points for review** (see the wsc reports):
+    - commits 4-5 were red on the G7 lever fence only, fixed forward in 6-t1;
+    - 6-p3..6-t2 carried the end_back red, fixed in 6-p4;
+    - R2 was built as the FALLBACK, and its general form is FILED;
+    - the renderer interface move to a kit-internal struct is FILED.
+  - **OWED, carried:**
+    - the five PRES rows' g2 floors are placeholders;
+    - F-4 (pf_walk's K96 gap) is FILED;
+    - memfn/CLAUDE.md's peak line says define_sel is 3,408 B; it is 3,456 B after main's merge, a doc-only fix in the next kit commit.
+  - **Next:** S3 = B1 (REPORT routed by default; a pcrec abi event plus its deny row) is briefed only after you merge this.
