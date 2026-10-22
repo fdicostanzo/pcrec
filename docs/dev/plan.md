@@ -530,12 +530,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
-- [MEMFN-SKIPSWITCH] STATE:not-started — A WALK <-> WIDE-MASK SWITCH INSIDE THE DFA SKIP LOOP
-  filed: 2026-10-21 manager, from the kit's notice of Frank's D169 addendum ruling ("use the walk when the subject is not known")
-  status (2026-10-21): filed; nothing built. The walk is the default for unknown subjects (D169 addendum); no single mask form is safe on dense and sparse text alike (kit lanes flat, adatwin).
-  trigger: bench or user evidence of dense-and-sparse mixed workloads where the walk leaves a measured gain on the table.
-  refs: docs/dev/decisions.md D169 addendum; memfn/docs/responses.md (kit notice 2026-10-21, lane/memfn-r27 cf5909eb1); docs/design/memfn/walk_vs_v1_record.md (the closed record: what not to retry, when to re-open)
-  Charter: a set-FIND site switches between the walk and a wide-mask form at run time inside pcrec's DFA skip loop, so a subject's sparse stretches get the mask's gain and its dense stretches keep the walk. Note: the kit's adatwin found a per-stretch adaptive PRODUCER does not pay; this row is the switch at pcrec's skip-loop level, a different site.
 - [MEMFN-POSCOST] STATE:not-started — PRICE A SET-FIND'S SCAN POSITION BY ITS SET'S FORM, PLUS SUPERSET COVERS
   filed: 2026-10-21 kit session (Frank to the kit: "file as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit"); filed in plan.md by the manager
   status (2026-10-21): filed; neither part built; B4 goes ahead as agreed. Counts (kit b4close2, manifest at abi 82): of 603 walk-routed set sites, 21 have a <= 2-term position inside their span (a floor), 408 have a <= 2-term superset hull with <= 8 extra members; timing still owed for the trigger.
@@ -1064,6 +1058,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   One channel, off by default and switchable (a CLI flag / pcrec_options field / config line; never changes an artifact byte), on which every decision site writes one record: the table and the row that fired, the rows that declined ahead of it and the conjunct that failed, the inputs read (facts, analysis block + provenance + why, measurement-set row, explicit control vs preset), and a held/declined outcome where one applies. pcrec's tables write pcrec records; the kit writes its OWN records through a text callback on the seam (facts in, kit text out: D157 holds).
   Family (SIBLING lens): the compile-time selection trace start_table.md C0 built for the gates is this channel's machine form, so promote it rather than add a parallel writer; [LIST-TABLES] lists what the rows ARE, this lists which fired; `--emit-facts` lists facts. Design question: one channel with a machine (TSV) and a human rendering, or two. Distinct from [V-H] (a runtime matcher trace) and [DEBUG-CHECKS] (runtime checks).
 ## Boonies
+- [MEMFN-SKIPSWITCH] STATE:not-started — A WALK <-> WIDE-MASK SWITCH INSIDE THE DFA SKIP LOOP
+  filed: 2026-10-21 manager, from the kit's notice of Frank's D169 addendum ruling ("use the walk when the subject is not known")
+  status (2026-10-21): BOONIES (Frank: "adaptive methods haven't proved their worth"). Near-duplicate of the kit's adatwin (per-stretch switch -2.2%, reading cost 5-7 ns). Nothing built.
+  trigger: bench or user evidence of dense-and-sparse mixed workloads where the walk leaves a measured gain on the table.
+  refs: docs/dev/decisions.md D169 addendum; memfn/docs/responses.md (kit notice 2026-10-21, lane/memfn-r27 cf5909eb1); docs/design/memfn/walk_vs_v1_record.md (the closed record: what not to retry, when to re-open)
+  Charter: a set-FIND site switches between the walk and a wide-mask form at run time inside pcrec's DFA skip loop, so a subject's sparse stretches get the mask's gain and its dense stretches keep the walk. Note: the kit's adatwin found a per-stretch adaptive PRODUCER does not pay; this row is the switch at pcrec's skip-loop level, a different site.
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank
   status (2026-08-29): not started; BOONIES TIER — LATE GAME; Frank, 2026-08-29 forty-fifth session, filed UNPLANNED "(ironic)": a doc plan item for a spec on UPGRADING pcrec
