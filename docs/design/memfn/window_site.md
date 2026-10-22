@@ -377,12 +377,28 @@ listed per row `[rev3 rR1]`.
 | W0-W2, `end_back` | `memfn.h`, kit.h, compose.c, finder.c, gate.c, fields.def, formhash.c, g2 generators, `memfn_sites.{c,h}`, `tests/memfn/{run_arm_pins.sh,proven_check.c,arm_fixtures.c,proof_check.c}`, `tests/codegen/run_fallback_table.sh` |
 | per-term/per-predicate `need` (presence spans keep theirs) | `memfn.h`, every builder (`emit_dfa.c`, `emit_vm.c`, `memfn_sites.c`, `known.c`), compose.c, finder.c, gate.c |
 | `site_kind` REPORT's meaning, `consumer` `[rev3 rR2]` | `memfn.h`, `memfn/include/CLAUDE.md`, kit.h, compose.c, finder.c, gate.c, fields.def, formhash.c (its canonical site sets `consumer`), g2.h, g2_gen.c, g2_simd_gen.c, `known.{c,h}`, `memfn_sites.{c,h}`, `emit_dfa.c`, `src/parse/rxt_source.c`, `tests/memfn/{site_census.py,site_manifest.tsv,site_manifest_check.py,finder_check.py,proven_check.c,arm_fixtures.c,proof_check.c,run_deleg_sites.sh}` |
-| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2 | finder.c, kit.h, compose.c, `memfn/src/CLAUDE.md`, `tests/memfn/{rows.tsv,row_floors.tsv,arm_fixtures.c,run_proof.sh,finder_check.py,run_rows.sh,proof_check.c}` |
+| RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` (at S3, with the R-26.6 step below), D2 | finder.c, kit.h, compose.c, `memfn/src/CLAUDE.md`, `tests/memfn/{rows.tsv,row_floors.tsv,arm_fixtures.c,run_proof.sh,finder_check.py,run_rows.sh,proof_check.c}` |
 | `plan_hint`, `plan_pos`, `rank_n/pos/ppm`, `MF_RANK_MAX` | `memfn.h`, compose.c, formhash.c, ofsskip.c, precheck.c, vrun.c, `memfn/tests/{run_g2_simd.py,g2/*}`, `known.c`, `memfn_sites.c`, `emit_dfa.c` (`ofs_pred_of`, `ofs_pred_rank`), `tests/memfn/{run_rank.sh,rank_check.py,proven_check.c,arm_fixtures.c,proof_check.c}` |
 | pcrec's selection (`pcrec_prefix_ksets`' pick; the walk `kset_walk` STAYS, it is a fact) | `src/opt/prefix_k.c`, `src/core/internal.h`, `emit_dfa.c` (`ofsk`, the NEXT predicates §2.4, `ofs_test_model`), `tests/codegen/{run_offset_skip.sh,run_form_census.sh}` |
 | `pcrec_run_pin`'s selection (commit 6, §2.3) `[rev3.2 n4]` | `src/facts/{kset.c,facts_derive.h,facts.c,facts.def}` (`PF_RUN_PIN`, the `run_pin` text `o`/`o:at+len`), `emit_dfa.c` (`us_run_pin`; `pf_run_applies_common`, `ofs_test_model`, `ofs_test_verifies_run`), `prefix_k.c` (comment); `--emit-facts` makes it caller-visible: `facts_listing.md §4.1.2¶7`, `tuning.md §2.30¶4`, `§2.39¶4`, `findings.md` §4; tests naming it: `tests/rxtsource`, `tests/litscan/{reqcube.rxt,gen_reqcube.py}`, `tests/endmark/b3_*.tsv`, `tests/axes/start_landing_movers.tsv`, mech S280, S285, S306 |
 | ofsskip/pffind as arms | compose.c `arms[]`, precheck.c, `tests/memfn/rows.tsv`, finder.c's arm map |
 | `mf_preview("R-26.6")` | stays until S3; then retires with RPT: `memfn_sites.c`, `src/core/internal.h` |
+
+**RPT and its companions retire at S3, not S2 (the kit manager's R3, 2026-10-22).** RPT,
+`kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` and the `"R-26.6"` preview step STAY through S2: the
+preview step is accepted only while RPT names it, so deleting RPT at commit 6 would refuse every kit-proof
+compile, and RPT still serves the old-field REPORT sites G2 and `proof_check.c` state. They retire at S3,
+when REPORT is routed (§5.2). This table's row above, §2.7's RETIRE row and Appendix A's "kit retires" line
+listed them for S2; §4's own last row already kept the preview step until S3. Recorded in
+`docs/dev/lanes/wsc6_report.md`.
+
+**The old fields at commit 6 (the kit manager's R1, 2026-10-22).** pcrec states none of them. The fields no
+renderer reads are DELETED with their `site_check` rules: W0-W2, the prefix facts, `absent`/`consumable`,
+`ctx`/`nctx` (with the generic row's context test), `read_floor` and `consumer`. `plan_hint`, `plan_pos`,
+`rank_*`, `end_back`, `span_class` BOUNDED/CONTEXT and `need` STAY as the kit's RENDERER INTERFACE: written
+only by the family's translation and by G2, never by a host, and a window site stating one is refused.
+Moving that interface into a kit-internal struct is filed (trigger: the next G2 site-builder regeneration,
+or a renderer change).
 
 **`MF_SITE_ABI` readers `[rev3 rR3]`:** `memfn.h`; compose.c and presence.c (the refusals); formhash.c
 and `memfn_sites.c` (fills); `g2_gen.c` (incl. abi-mismatch cases), `g2_simd_gen.c`; the ledgers and
@@ -582,6 +598,9 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 >
 > **The kit retires `[rev3 rR7]`:** RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2, ofsskip
 > and pffind as arms (folded), and every reader of the fields above in ofsskip.c, precheck.c and vrun.c.
+>
+> *(Note, the kit manager's R3, 2026-10-22: RPT, `kit_report_exact`, `SF_PROOF_EXACT` and `FF_PROOF`
+> retire at S3, when REPORT is routed, with the `"R-26.6"` preview step (§4); D2 retired at S2.)*
 >
 > **Landing bar** (window_site.md §5): one branch of six commits, one landing; zero movers on every
 > emit_sweep arm, stamps included; the findings mover manifests unchanged; reach floors met; every deny
