@@ -164,7 +164,9 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   carry their docs/spec/ hunk in the same change. D76/D94: emitted-
   scaffolding changes ARE an abi bump + identity re-pin, readers found BY
   GREP. Update the owning directory's CLAUDE.md for file adds/removes/role
-  changes. Oracle-verify test expectations.
+  changes; CLAUDE.md is orientation only (12 KB limit, pre-commit and
+  `make test-claudemd-size` enforce it), so history, lessons and session
+  notes go in that directory's NOTES.md (create it on first need). Oracle-verify test expectations.
 - Mech/sabotage: take S-ids from the range YOUR BRIEF names. With no range,
   the highest S-id on main is NOT enough: `memfn/docs/requests.md` reserves
   ranges for the kit (`grep -n 'Sabotage ids' memfn/docs/requests.md`) and
