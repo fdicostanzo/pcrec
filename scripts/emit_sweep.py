@@ -1114,6 +1114,8 @@ class StreamResult:
         self.both_ok = 0
         self.both_refuse = 0
         self.movers = []       # list of (key, hunk)
+        self.declared_patterns = 0   # --facts-declared-moves: patterns whose listing moved as declared
+        self.declared_moves = 0      # ... and the rows that moved
         self.asymmetric = []   # list of (key, side_ok_a, side_ok_b, err_a, err_b)
         self.mirrored = False  # both sides one binary: identity trivial
         self.hash_a = {}       # pattern index -> sha256 of side a's output
@@ -1162,8 +1164,64 @@ def facts_diff_keys(c_a, c_b):
     return {"\t".join(x.split("\t")[:2]) for x, y in zip(al, bl) if x != y}
 
 
+FACTS_COLUMNS = ("encoding", "fact", "grain", "epoch", "status", "used", "value", "why", "note")
+
+
+def parse_fact_moves(spec):
+    """`--facts-declared-moves FACT:COLUMN:FROM>TO[,...]` -> [(fact, column
+    index, from, to)]. The facts listing's data rows are tab-separated in
+    FACTS_COLUMNS order (docs/spec/facts_listing.md)."""
+    moves = []
+    for item in spec.split(","):
+        fact, col, ft = item.split(":", 2)
+        frm, to = ft.split(">", 1)
+        moves.append((fact, FACTS_COLUMNS.index(col), frm, to))
+    return moves
+
+
+def facts_declared_delta(c_a, c_b, moves):
+    """Judges two facts listings (REF, NEW) against DECLARED moves, BOTH WAYS:
+    (problems, n_moved). Every data row of NEW equals REF's row except the
+    declared moves' cells (REF's FROM -> NEW's TO, the rest of the row
+    identical), and EVERY REF row of a declared fact whose cell is FROM has
+    moved (a declared move that did not happen is a problem, as is an
+    undeclared line, an added or removed line, and a row of a declared fact
+    that moved by a cell other than the declared one). Comment and section
+    lines must be identical."""
+    al = c_a.decode("utf-8", "replace").splitlines()
+    bl = c_b.decode("utf-8", "replace").splitlines()
+    if len(al) != len(bl):
+        return ["line count %d -> %d" % (len(al), len(bl))], 0
+    by_fact = {}
+    for m in moves:
+        by_fact.setdefault(m[0], []).append(m)
+    problems, n = [], 0
+    for x, y in zip(al, bl):
+        if x.startswith("#") or not x.strip():
+            if x != y:
+                problems.append("comment line moved: %r" % x[:60])
+            continue
+        fx, fy = x.split("\t"), y.split("\t")
+        decl = by_fact.get(fx[1]) if len(fx) > 1 else None
+        if not decl:
+            if x != y:
+                problems.append("undeclared row moved: %s" % "\t".join(fx[:2]))
+            continue
+        want = list(fx)
+        for _, col, frm, to in decl:
+            if want[col] == frm:
+                want[col] = to
+        if fy != want:
+            problems.append("%s row is not the declared move of REF's (%s)"
+                            % ("\t".join(fx[:2]), "unmoved" if fy == fx else "other change"))
+        elif want != fx:
+            n += 1
+    return problems, n
+
+
 def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
-                     census_fn=None, declared_keys=None, tally_fn=None):
+                     census_fn=None, declared_keys=None, tally_fn=None,
+                     declared_moves=None):
     """ONE pattern of an argv stream, compared INSIDE the worker so only a
     small tuple (never the artifacts) crosses back to the merge:
     (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b, hit, tags_a,
@@ -1197,11 +1255,15 @@ def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
         if hunk is not None and declared_keys is not None:
             if not facts_diff_keys(c_a, c_b) <= declared_keys:
                 hit = False
+    n_declared = 0
+    if declared_moves is not None and ok_a and ok_b:
+        problems, n_declared = facts_declared_delta(c_a, c_b, declared_moves)
+        hunk = "\n".join(problems[:6]) if problems else None
     tags_a = tags_b = None
     if tally_fn is not None:
         tags_a = tally_fn(c_a)
         tags_b = tags_a if mirror else tally_fn(c_b)
-    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit, tags_a, tags_b, pat
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit, tags_a, tags_b, pat, n_declared
 
 
 def merge_argv_stream(name, rows, mirror):
@@ -1215,7 +1277,10 @@ def merge_argv_stream(name, rows, mirror):
     if rows and rows[0][9] is not None:
         res.tags = [collections.Counter(), collections.Counter()]
         res.tag_pats = [collections.defaultdict(set), collections.defaultdict(set)]
-    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit, tags_a, tags_b, pat) in enumerate(rows):
+    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit, tags_a, tags_b, pat, n_declared) in enumerate(rows):
+        if n_declared:
+            res.declared_patterns += 1
+            res.declared_moves += n_declared
         if res.tags is not None:
             for side, tags in ((0, tags_a), (1, tags_b)):
                 for t in tags:
@@ -1381,8 +1446,32 @@ DUMP_SURFACES = ("--list-syntax", "--list-definitions", "--list-verbs",
                  "--list-schema")
 
 
-def sweep_dumps(bin_a, bin_b, timeout):
+def dumps_declared_delta(flag, out_a, out_b, declared):
+    """Judges one registry dump against DECLARED line moves, BOTH ways:
+    `declared` is {(flag, first tab field): True}; every other line is
+    byte-identical in order, every declared row exists on both sides and
+    differs. Returns the problems."""
+    la = out_a.decode("utf-8", "replace").splitlines()
+    lb = out_b.decode("utf-8", "replace").splitlines()
+    if len(la) != len(lb):
+        return ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
+    problems = []
+    for x, y in zip(la, lb):
+        key = (flag, x.split("\t")[0])
+        if key in declared:
+            if x == y:
+                problems.append("%s: declared row %s did not move" % key)
+            declared[key] = True
+            if y.split("\t")[0] != key[1]:
+                problems.append("%s: declared row %s lost its key" % key)
+        elif x != y:
+            problems.append("%s: undeclared row moved: %r" % (flag, x[:60]))
+    return problems
+
+
+def sweep_dumps(bin_a, bin_b, timeout, declared_rows=()):
     res = StreamResult("dumps")
+    declared = {tuple(r.split(":", 1)): False for r in declared_rows}
     res.population = len(DUMP_SURFACES)
     for flag in DUMP_SURFACES:
         rc_a, out_a, err_a = run([bin_a, flag], timeout)
@@ -1394,9 +1483,20 @@ def sweep_dumps(bin_a, bin_b, timeout):
             res.both_refuse += 1
         elif out_a != out_b:
             res.both_ok += 1
-            res.movers.append((flag, first_diff_hunk(out_a, out_b)))
+            if any(k[0] == flag for k in declared):
+                problems = dumps_declared_delta(flag, out_a, out_b, declared)
+                if problems:
+                    res.movers.append((flag, "\n".join(problems[:6])))
+                else:
+                    res.declared_patterns += 1
+                    res.declared_moves += sum(1 for k in declared if k[0] == flag)
+            else:
+                res.movers.append((flag, first_diff_hunk(out_a, out_b)))
         else:
             res.both_ok += 1
+            for k in declared:
+                if k[0] == flag:
+                    res.movers.append((flag, "declared row %s did not move (surface identical)" % k[1]))
     return res
 
 
@@ -1769,6 +1869,9 @@ def report_stream(res, floor=None, identity_required=False):
                  f"both_refuse={res.both_refuse} movers={len(res.movers)} "
                  f"asymmetric={len(res.asymmetric)}")
     ok = True
+    if res.declared_patterns:
+        lines.append(f"  DECLARED MOVES (--facts-declared-moves, judged both ways): "
+                     f"patterns={res.declared_patterns} rows={res.declared_moves}")
     if res.asymmetric:
         ok = False
         lines.append(f"  ASYMMETRIC ROWS ({len(res.asymmetric)}), first 5:")
@@ -2891,6 +2994,17 @@ def main():
                          "a census hit AND every moved listing line is one of these "
                          "kind:KEY heads (e.g. byte:RX_VM_PROGRAM_BYTES,"
                          "utf8:RX_VM_PROGRAM_BYTES)")
+    ap.add_argument("--facts-declared-moves", metavar="FACT:COLUMN:FROM>TO[,...]",
+                    help="the facts stream's DECLARED delta, judged both ways per "
+                         "pattern: the listing's only movers are these cells (e.g. "
+                         "span_facts:used:yes>no), every REF row holding FROM has "
+                         "moved to TO, nothing else moved; the stream is then "
+                         "required at movers=0 and reports the declared count")
+    ap.add_argument("--dumps-declared-rows", metavar="FLAG:KEY[,...]",
+                    help="the dumps stream's DECLARED delta, judged both ways: on "
+                         "each named surface (e.g. --list-limits) the row whose "
+                         "first field is KEY must differ and every other line must "
+                         "be byte-identical")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -3074,6 +3188,9 @@ def main():
                     extra=list(run_extra) + (["-e", "utf8"] if enc == "utf8" else [])),
                 declared_keys={"\t".join(k.split(":", 1)) for k in
                                args.census_facts_keys.split(",")})
+        if args.facts_declared_moves:
+            facts_census.setdefault("facts", {})["declared_moves"] = parse_fact_moves(
+                args.facts_declared_moves)
         tasks = []
         comp_files_run = []
         comp_out = None
@@ -3125,7 +3242,8 @@ def main():
                 [f for _, f in comp_files_run], done[:len(comp_files_run)])
         if "dumps" in streams:
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
-            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout)
+            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout,
+                                         args.dumps_declared_rows.split(",") if args.dumps_declared_rows else ())
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     if variants:
