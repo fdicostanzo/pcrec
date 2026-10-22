@@ -530,6 +530,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [MEMFN-REGIME] STATE:not-started — A REGIME-GATED WIDE FORM, DESIGNED AGAINST THE WALK, ONCE A LANDING REGIME EXISTS AT THE CALL
+  filed: 2026-10-21 manager, at the kit's B4' notice (lane/memfn-b4scope f6fb97780); D169 addendum
+  status (2026-10-21): filed; nothing built. B4' withdraws V1 (R7), R5 and R0: the walk (R7w) is every set FIND's default. This row is now the only route back to a wide form.
+  trigger: a measured or caller-stated landing regime exists at the call (a subject analysis, or a caller hint).
+  refs: docs/dev/decisions.md D169 addendum; docs/design/memfn/walk_vs_v1_record.md; memfn/docs/responses.md (B4' notice)
+  Charter: when the trigger fires, design ONE regime-gated wide-form row (V1 or a wider mask) and time it against the walk on dense and sparse text; it applies only where the regime says the stops are sparse or irregular. Also holds Q-R17P-27's VM hat (|S|=1 V1 on the VM) if Frank moves it here.
 - [MEMFN-POSCOST] STATE:not-started — PRICE A SET-FIND'S SCAN POSITION BY ITS SET'S FORM, PLUS SUPERSET COVERS
   filed: 2026-10-21 kit session (Frank to the kit: "file as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit"); filed in plan.md by the manager
   status (2026-10-21): filed; neither part built; B4 goes ahead as agreed. Counts (kit b4close2, manifest at abi 82): of 603 walk-routed set sites, 21 have a <= 2-term position inside their span (a floor), 408 have a <= 2-term superset hull with <= 8 extra members; timing still owed for the trigger.
