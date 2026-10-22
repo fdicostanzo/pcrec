@@ -22,11 +22,8 @@ SAB_COUNT=1
 SAB_BEFORE='            if (!hyphen) {
                 const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
                 if (!e->restrict_ok) {
-                    char buf[112];
-                    snprintf(buf, sizeof buf,
-                             "inline option '"'"'r'"'"' (caseless-restrict) is not "
-                             "implemented under encoding '"'"'%s'"'"'", e->name);
-                    return modport_refuse(want, i, buf);
+                    REFUSE(i, "inline option '"'"'r'"'"' (caseless-restrict) is not "
+                              "implemented under encoding '"'"'%s'"'"'", e->name);
                 }
             }
             break;'
