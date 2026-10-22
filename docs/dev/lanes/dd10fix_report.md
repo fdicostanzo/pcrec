@@ -123,3 +123,14 @@ Read each verdict with `scripts/boxqueue state dd10fix-<stage>` and
   agent or the manager reads the five verdicts. A red sweep stream names its
   movers in its log; any mover there contradicts §1's equivalence argument and
   is a finding against this lane.
+
+## dd10merge: main merged into lane/dd10b (2026-10-22, lane dd10merge, sonnet)
+
+Merge commit 87e89a6ed (main a8897e529 into lane/dd10b). Three conflicts:
+- `src/parse/parse.c` `pcrec_clsport_octal`: kept main's K125 bound (`(unsigned)val > cls_universe(cx)`) and its comment, with the diagnostic as the constant text dd10b's `ExtResult.msg` pointer takes (no `snprintf` into a struct array). The text is byte-identical to main's.
+- `docs/dev/plan.md` ([DD-10] row beside [M4-SUBST]) and the lanes history index: both sides kept.
+- Grep of the merged tree for other `.msg` writes added by K115-K127: none; the new `\p` refusals use the `REFUSE` macro (arena text).
+
+Checked: `make -j2`, `make strict` clean; `make test-reject test-registry test-plan-lint test-spec-history` green (no `*** [test-` lines); `tests/thread/run_compile_stack.sh` 39 passed, 0 failed (budget 442,368 B holds). 28 refusal compiles (default and `-e utf8`; K125/K115-K127 shapes) byte-identical to main's build.
+
+OWED (queued, not waited on): 717-dd10merge-test (full make test via perfrun), 717-dd10merge-mech (S1336-S1340 S1440 S1480 S332 S446 S807, expect 10 rows DETECTED), 717-dd10merge-sweep (emit_sweep main vs merge, ZERO movers required). Job scripts: worktrees/dd10b/build/jobs/.
