@@ -210,7 +210,21 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   PREPROCESSING THE VALUE is the thing to decline, for a structural reason: a
   fold is a relation between two sides, the subject side is not folded, and
   under `utf8` there is no canonical byte string to fold to.
-- `replace_design.md` — SEARCH/REPLACE, the variable layer (2026-09-23, lane
+- `replace_design.md` — **REVISION 2 (lane subst, 2026-10-21, design only;
+  read §R2 first): compiled substitution as an INDEPENDENT ELEMENT** (Frank's
+  2026-10-21 direction, to be D173). A subst artifact per template (render
+  + record), bound once to any rx whose `rx_info` shape delivers its
+  references (numbers constant by D61, names through a slot table), run by a
+  prefix-independent glue over `RX_FOREACH` (gaps, `limit`, single-pass
+  sizing). §R2.1 is the row-by-row staleness table against D38's design.
+  The template language STANDS, the pattern+template coupling is
+  SUPERSEDED, resolution MOVES to bind, and the emitted loop is CLOSED by
+  the iterator. §R2.3 is [MEASURED] 12 cells against `pcre2_substitute`, 0
+  diffs (`subst_measurements/`). §R2.6 restates in-place/streaming as
+  contracts, §R2.8 names the unmeasured costs and the phase-B timing cell,
+  §R2.11 holds the open questions. Superseded passages are marked in place
+  here, in `subst_template_design.md` and in `variables_roadmap.md` M9.
+  Original text: SEARCH/REPLACE, the variable layer (2026-09-23, lane
   vardesign; PROPOSED over a RULED baseline; **PANELED (r1) AND REVISED
   (lane varfix, same day) — §3.9's `.rxt` var-line proposal moved to
   `variables_common.md` §3.5 (it was documented substitution-only though
@@ -259,7 +273,12 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   (c) already names), the DFA route (a measured throughput bottleneck plus the
   placement precondition), width declarations, and `[V-E]`/`[LIB]`. §6 maps
   the design onto five plan rows.
-- `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
+- `subst_measurements/` — `replace_design.md` §R2.3's probe (glue + bind over
+  the find-all iterator vs libpcre2 `pcre2_substitute`; `run.sh PCREC OUTDIR`,
+  transcript; own CLAUDE.md).
+- `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14;
+  **its pattern+template COUPLING is superseded by `replace_design.md` §R2,
+  2026-10-21; banner at top, passages marked in place**):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
   only the capture-offset CONTRACT. **PROPOSED throughout; no panel has seen
