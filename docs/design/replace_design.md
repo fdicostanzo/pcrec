@@ -794,6 +794,8 @@ nothing more:
 **The shape a template NEEDS** is its reference list: the group NUMBERS it
 names (`$k`, `${k}`) and the group NAMES it names (`${name}`, `$name`).
 
+**[R3: this table is SUPERSEDED by §R3.2's satisfaction table (the needed shape as `rx_group_entry` rows; names bind to runs).]**
+
 **Satisfaction** (the rule the bind applies):
 
 | reference | satisfied when | slot used |
@@ -836,6 +838,8 @@ Names do not, and nothing here adds name macros.
 **Not proposed: pinning name slots as constants at compile time.** Its only
 gain is the one `int` load per named reference. Trigger: phase B's timing
 cell (R2.8) shows that load measurable on a dense named-reference cell.
+
+**[R3: the paragraph below is right about the rule and wrong about the binding: a single slot per name cannot hold a run (crit1-2). SUPERSEDED by §R3.2's (first, count) run.]**
 
 **Duplicate names** (row 11, now DUE). A name binds to its RUN. The render
 applies §5.4¶6, "the first member that participated", which is PCRE2's rule
@@ -882,6 +886,8 @@ Three pieces, with one owner each:
 | **rx** | its own artifact (unchanged) | pattern | how to find matches; publishes its shape in `rx_info` |
 | **subst** | its own artifact (NEW) | template | how to render ONE match into bytes; publishes its reference list |
 | **glue** | shared code in the subst artifact's header (static inline, prefix-independent, like `RX_FOREACH`) | nothing | gaps, the loop, sizing, the count |
+
+**[R3: `rx_subst_ref`, the per-match `rx_substfn` and `struct rx_subst_info` below are SUPERSEDED by §R3.1 (the batch-shaped element) and §R3.2 (the needed shape as an `rx_group_entry` array).]**
 
 **The subst artifact** (`pcrec -p dmy --subst '${y}.${m}'`, R2.7) exports one
 call interface (D88 add. 1): a render function and a record.
@@ -944,6 +950,8 @@ ptrdiff_t dmy_render(const int *slot, const rx_ctx *ctx,
 per §5.4¶6. The unset arm is D38 Q3's axis at its default. The guard keeps
 `subject + -1` from ever being formed.)
 
+**[R3: the `int slot[]` binding is SUPERSEDED by §R3.3's `rx_subst_binding` (runs, `ncaps`, identity, segment `user`s).]**
+
 **The binding** is caller-owned, `int slot[<S>_NREFS]`, filled once:
 
 ```c
@@ -952,6 +960,8 @@ per §5.4¶6. The unset arm is D38 Q3's axis at its default. The guard keeps
 static inline int pcrec_subst_bind(const struct rx_info *rx,
                                    const struct rx_subst_info *sub, int *slot);
 ```
+
+**[R3: the glue below is SUPERSEDED by §R3.4 (drives `next_n` with a buffer sized from `ncaps`, no over-fetch past `limit`, saturating lengths, `*outlen`/`*nsubst` on every path, the binding carries the rx). Its `rx_ctx` initializer reads `it->vars` on a FRESH iterator (F-R3-1).]**
 
 **The glue** is the loop Frank sketched, made exact:
 
@@ -1013,6 +1023,8 @@ to keep the global loop's empty-match machinery out of the first-match path,
 and that machinery now lives in the iterator. `RX_FOREACH` starts its batches
 at one entry (I4's doubling), so `limit = 1` fetches one match.
 
+**[R3: the two paragraphs below are SUPERSEDED by §R3.9 (the context-init helper, the §3.8¶9 hunk, and F-R3-1: `it->vars` is garbage on a FRESH iterator without `rx_iter_vars`) and §R3.7 (`${!name}` resolved once per call).]**
+
 **What the glue reads that a caller may not.** `it->s`, `it->n`, `it->vars`
 and `it->nvars` are fields §3.8¶9 leaves "unspecified to the caller". The glue
 is pcrec's own shared code, exactly as `RX_FOREACH` reads `it->hdr`, so phase
@@ -1033,6 +1045,8 @@ element is useful without the glue. This is the modularity Frank asked for,
 and it costs the caller nothing they did not choose.
 
 ### R2.5 The glue's rules — who does what
+
+**[R3: rule 1 is FALSE as written (panel crit1-1, BLOCKER): a `\K` reached through a subroutine call from a lookaround reports backward and overlapping spans. SUPERSEDED by §R3.6 (the element checks every span, `PCREC_SUBST_BADSPAN`); the spec sentence proposed at its end is WITHDRAWN.]**
 
 1. **Gaps are the glue's.** It copies `[prev_end, start)` before each match and
    `[last_end, n)` at the end. This needs reported spans ORDERED and
@@ -1061,6 +1075,7 @@ and it costs the caller nothing they did not choose.
    returns its code. **[PROPOSED]** the output buffer's contents are then
    UNSPECIFIED, as PCRE2's are on error, and a caller who needs the subject
    intact substitutes out of place (Q-M1).
+   **[R3: rule 5 is decided: §R3.5's codes, `out` unspecified (§R3.9).]**
 6. **Unset groups render per the template's Q3 axis** (default empty), decided
    when the subst is compiled.
 7. **Output is length-only, no NUL** (D38 Q4), 8-bit clean.
@@ -1119,6 +1134,8 @@ change, which is the point of the split.
   `pcrec_err_input`'s `PCREC_ERR_INPUT_TEMPLATE` is already in `lib/pcrec.h`
   (D38 Q8) and finally gets its producer. The entry's shape is phase B's,
   under [IFACE-PUSH]'s one-push rule.
+**[R3: the bullet below on the subst block's versioning is decided by §R3.8 (same build, shared abi); the header layout and include order are §R3.11.]**
+
 - **The rx artifact does not change.** The subst block (types, bind, glue)
   lives only in subst headers, which include a copy of the rx shared block
   under its existing guard. Its `#error` on an abi mismatch already refuses a
@@ -1131,6 +1148,8 @@ change, which is the point of the split.
   one interface, holding a private rx and a private subst, built from the
   same two elements by the same composition machinery. It is not a third
   mechanism. **[PROPOSED]** not built until R2.8's measurement or a user ask.
+
+**[R3: this table is SUPERSEDED by §R3.1's restated cost (one call per BATCH, two loads per named reference) and §R3.13's rebuilt timing cell; the closing paragraph's "two spec clarifications" lose the first (§R3.6: no ordering sentence in §3.8).]**
 
 ### R2.8 What modularity costs — named, and the measurement that would act on it
 
@@ -1178,6 +1197,7 @@ iterator.
    own identity pins in phase B. If the subst block takes the shared abi
    number rather than its own (Q-M3), every rx artifact's abi readers move in
    phase B's commit. That is the cost Q-M3 weighs.
+   **[R3: item 3's open choice is made: the shared abi, no own number (§R3.8).]**
 
 ### R2.11 Open questions
 
@@ -1199,6 +1219,8 @@ For Frank (plain words, leaning first):
 - **Q-F4. In-place substitution.** Leaning: write the contract down now (R2.6)
   and build it on an ask. It needs a relaxation of the iterator's "subject
   must not change" rule and a published lookbehind width.
+
+**[R3: Q-M1..Q-M5 below are CLOSED by §R3.16; Frank's Q-F1..Q-F4 above are restated there with updated leanings.]**
 
 For the manager:
 

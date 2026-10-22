@@ -210,8 +210,23 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   PREPROCESSING THE VALUE is the thing to decline, for a structural reason: a
   fold is a relation between two sides, the subject side is not folded, and
   under `utf8` there is no canonical byte string to fold to.
-- `replace_design.md` — **REVISION 2 (lane subst, 2026-10-21, design only;
-  read §R2 first): compiled substitution as an INDEPENDENT ELEMENT** (Frank's
+- `replace_design.md` — **REVISION 3 (lane substr3, 2026-10-22, design only;
+  read §R3 first) applies the D6 panel r1
+  (`../dev/reviews/2026-10-22-r1-subst-design.md`, every finding accepted).**
+  The element is batch-shaped (k matches per call, gaps inside, length in a
+  `size_t` cursor). Names bind to `(first, count)` runs of `rx->groups`
+  through one `rx_group_run` helper. The binding carries the rx, its `ncaps`
+  and a tag. The glue drives `next_n` with a buffer sized from `ncaps` and
+  never fetches past `limit`. Every span is checked (`PCREC_SUBST_BADSPAN`;
+  §R2.5 rule 1 was false). There are six distinct codes, `*outlen` is written
+  on every path, and lengths saturate. One pcrec build serves both artifacts
+  (no new version number). The note also states the differences from
+  `pcre2_substitute`, the per-match-consumer family, and the rebuilt timing
+  cell. Two probes are recorded: the iterator terminates on both
+  backward-span patterns, and on ill-formed UTF-8 it is consistent with §9,
+  with libpcre2's anchored retry located as the difference. §R2 passages R3
+  replaces carry `[R3: ...]` markers. **REVISION 2 (lane subst, 2026-10-21,
+  design only): compiled substitution as an INDEPENDENT ELEMENT** (Frank's
   2026-10-21 direction, to be D173). A subst artifact per template (render
   + record), bound once to any rx whose `rx_info` shape delivers its
   references (numbers constant by D61, names through a slot table), run by a
