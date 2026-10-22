@@ -147,3 +147,33 @@ advance 1.19 (word-digit) to 7.2 (lit-l8); the measured side is in `pop.tsv` aft
 
 No timing was run by the lane; the readings of section 4 and the predictor separation of section 5 wait for the job.
 The panel's M5/U6 questions (E4 as a gated body row; whether HRS replaces it) are answered by that table, not here.
+
+## RESULT (job 581, green; kit manager's reading 2026-10-22)
+
+The job is `worktrees/.boxqueue/done/20261021T235901.743030658-581-kit-r27-follow`, completion line `== r27b COMPLETE rows=2745 launches=5`. The differential stage was green. Scalar layer only. The full table is committed at `docs/dev/lanes/r27b_evidence/r27b_table_581.md`.
+
+- **PRO (the window search) is re-confirmed.**
+  - It misses the same 6 cells as in 580.
+  - PRO2/PRO, the A/A pair, sits at 0.987-1.029, so alignment noise is inside the floor.
+- **PRR (rightmost tie) loses.**
+  - It reads 1.23-1.57x on year4 and 1.03-1.40x on hex8, plus three SLOWER match cells.
+  - So the tie rule is LEFTMOST, settled (Q2, T1, U5).
+- **PRF (the FUNC-shaped twin) loses to the inline statement on the literal cells.**
+  - It reads 1.03-1.09x on `search_short`/none and 1.07-1.25x on dense versus COV.
+  - The frame matters (T3): REPORT keeps the STMT frame; no FUNC rendering for it.
+- **HRS (Horspool over sets, end-first skip): it wins hex8 and loses on everything else.**
+  - **hex8:** 0.458 throughput/real, 0.490 throughput/none, 0.523 `search_short`/real and 0.173 `search_short`/none against DEF. `search_short`/dense is within bar against COV.
+  - **hex8's one miss** is throughput/dense (an all-hex subject), at HRS/COV 1.158. No measured form clears that cell: PRO 1.068, SHF 1.042.
+  - **Every other cell loses**, up to 4.4x on lit-l8.
+- **SHF (the failure shift)** is not needed once HRS serves hex8. Its rule fits (advance ≥ 6, 0 contradicting) but its wins elsewhere are marginal. D-shift stays unbuilt.
+- **The predictor (Frank: "not sure you determine when to use it").**
+  - The STOP SET'S MASS separates HRS's winner from its losers with 0 contradicting cells: HRS iff stop mass ≥ ~28% of bytes (284,434 ppm). The next densest stop is 74,760 ppm.
+  - Honest limit: there is ONE winning cell, so the rule is in-sample and its threshold lies anywhere in (74,760, 284,434].
+  - It is physically sensible: there is no rare stop to skip to, so skip by the window's end instead.
+
+**Kit manager's judgement on hex8 (Frank: "for hex, make the judgement call"):**
+- The window site gets ONE declared resume row, `D-hors`, keyed on the stop set's mass at or above a threshold. The threshold is PROVISIONAL: fit on 8 cells with 1 winner, labelled as such, and set at the geometric middle of the gap (about 146,000 ppm).
+- Its first new population is its re-test trigger. Any site that crosses the threshold in a later bench is read before the row is called measured.
+- hex8 routes with it.
+- hex8 throughput/dense (an all-hex subject) ships as a NAMED, MEASURED loss: +16% against today's REPORT form. No form clears it.
+- REPORT routing (B1) does not wait on hex8.
