@@ -659,6 +659,8 @@ for the re-run.
 
 **Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** S1430-S1439 allocated to the kit (main ledger; S1400-S1429 went to D172 S2).
 
+**Correction (main, 2026-10-22, from the kit's delivery at lane/memfn-r28 @ 8b48b8ceb):** the facts above are WRONG on the live path. `pcrec_mf_form_hash` and `pcrec_mf_set_terms` have no caller from pcrec's src/, cli/ or lib/, and a painted probe on `a` reads 31,668 B. The ~62 KB figure came from a static `-fstack-usage` sum. R-28 therefore does not lower the compile floor. It stands as a robustness guard: no kit frame above 4 KB, enforced by a link-time check. Lane dd10b is re-measuring the live baseline.
+
 ## R-29 (2026-10-22, pcrec manager) — the window site stated as spans, alternatives and frequencies; the decision and its text are the kit's
 
 
