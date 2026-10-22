@@ -1421,9 +1421,9 @@ test-memfn-simdfloor: all
 
 # [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
 # predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
-# stderr) over the corpus at three arms: each ranking equals a brute force
-# under the compile's byte-rate, a predicate with no RUN term carries
-# rank_n 0, and a PRE predicate scans rank_pos[0]. Seconds, plus the probe
+# stderr) over the corpus at three arms: since D172 S2 commit 6 every
+# predicate carries rank_n 0 (the ranking is the kit's renderer interface;
+# pcrec states none), and N4's FIND door holds. Seconds, plus the probe
 # build.
 test-memfn-rank: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi
