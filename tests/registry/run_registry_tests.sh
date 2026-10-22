@@ -796,18 +796,22 @@ fi
 # 35 -> 37 ([UCP] U2): PCREC_MAX_CTX_SETS and PCREC_MAX_CTX_ATOMS, two more
 # anchored rows (limits.md §3.9), each one [doc] check. Measured: 37 PASS.
 # (limits.md §3.8), read from a run.
+# 37 -> 39 ([DD-10], lanes dd10/dd10fix): PCREC_MAX_GROUP_DEPTH gained the
+# §3.10 anchor (dd10, the SEVENTH reader to miss this shape, caught by
+# dd10fix) and PCREC_COMPILE_STACK_BUDGET is a new anchored row (§3.10).
+# Read from a run (39).
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 37 ]; then
+if [ "$limitsn" -ne 39 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 37." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 39." >&2
         echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
         echo "registry:   on purpose, update this number in the same commit; if not," >&2
         echo "registry:   coverage was removed" >&2
     else
         limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
-        echo "registry: limits_check shows $limitsn passing checks (37 expected; ${limitsnf:-?} failed," >&2
+        echo "registry: limits_check shows $limitsn passing checks (39 expected; ${limitsnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 37 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 39 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

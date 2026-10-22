@@ -1456,8 +1456,11 @@ reservation does not.
   default entry ever stops dying. See its own header for the causal control.
   Its second script, `tests/thread/run_compile_stack.sh` ([DD-10]), asks the
   same of the COMPILER: `pcrec_compile` at nesting depth 250/251 and on long
-  chains, on a thread of `docs/spec/limits.md` §3.10's 432 KB budget, with a
-  32 KB-thread control that must die. ~45 s on the Linux dev box.
+  chains, on a thread of `docs/spec/limits.md` §3.10's 432 KB budget
+  (`PCREC_COMPILE_STACK_BUDGET`, read from `--list-limits`), with a
+  32 KB-thread control that must die. It SKIPS, saying so, when make's CFLAGS
+  are not the Makefile's own (the budget is measured at the default flags).
+  ~5 s on the Linux dev box (~45 s before K130's fix).
 
 - **`make test-premul-table`** (`tests/codegen/run_premul_table.sh`) —
   [OPT-3]'s PRE-MULTIPLIED DFA TRANSITION TABLE

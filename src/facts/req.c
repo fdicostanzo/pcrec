@@ -623,15 +623,13 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
             a = a->l;
             continue;
         case A_ALT: {
-            const Ast *b = a->l;
-            rb_walk(w, a->r, &t[0]);
-            while (b->k == A_ALT) {
-                rb_walk(w, b->r, &t[1]);
-                rb_alt_into(w, &t[0], &t[1]);
-                b = b->l;
+            /* `t[0]` the branches so far, `t[1]` the next one. */
+            bool first = true;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                rb_walk(w, b, &t[first ? 0 : 1]);
+                if (!first) rb_alt_into(w, &t[0], &t[1]);
+                first = false;
             }
-            rb_walk(w, b, &t[1]);
-            rb_alt_into(w, &t[0], &t[1]);
             rb_cat_into(acc, &t[0]);
             return;
         }

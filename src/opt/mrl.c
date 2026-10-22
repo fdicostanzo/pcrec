@@ -71,6 +71,7 @@
  * what changed is that they are now claims rather than defaults.
  */
 
+#include <limits.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -273,13 +274,12 @@ long long pcrec_minw(const Ast *a)
         case A_ALT: {
             /* The left-nested spine, iteratively ([DD-10]: one frame per
              * branch overflowed an 8 MB stack at 200,000 branches). */
-            long long m = pcrec_minw(a->r);
-            for (a = a->l; a->k == A_ALT; a = a->l) {
-                long long r = pcrec_minw(a->r);
+            long long m = LLONG_MAX;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_minw(b);
                 if (r < m) m = r;
             }
-            long long l = pcrec_minw(a);
-            return pcrec_sat_add(acc, l < m ? l : m, MRL_MINW_MAX);
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP:
             /* `rmax == -1` (unbounded) is not special: the MINIMUM is rmin
@@ -627,13 +627,12 @@ long long pcrec_cwmax(const Ast *a)
             continue;
         case A_ALT: {
             /* The left-nested spine, iteratively: `pcrec_minw`'s arm. */
-            long long m = pcrec_cwmax(a->r);
-            for (a = a->l; a->k == A_ALT; a = a->l) {
-                long long r = pcrec_cwmax(a->r);
+            long long m = LLONG_MIN;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_cwmax(b);
                 if (r > m) m = r;
             }
-            long long l = pcrec_cwmax(a);
-            return pcrec_sat_add(acc, l > m ? l : m, MRL_MINW_MAX);
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP: {
             /* `rmax == -1` (unbounded) IS special here, unlike in `minw`:
@@ -723,13 +722,12 @@ long long pcrec_cwmin(const Ast *a)
             continue;
         case A_ALT: {
             /* The left-nested spine, iteratively: `pcrec_minw`'s arm. */
-            long long m = pcrec_cwmin(a->r);
-            for (a = a->l; a->k == A_ALT; a = a->l) {
-                long long r = pcrec_cwmin(a->r);
+            long long m = LLONG_MAX;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_cwmin(b);
                 if (r < m) m = r;
             }
-            long long l = pcrec_cwmin(a);
-            return pcrec_sat_add(acc, l < m ? l : m, MRL_MINW_MAX);
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP:
             return pcrec_sat_add(acc,

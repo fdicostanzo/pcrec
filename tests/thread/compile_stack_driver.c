@@ -7,10 +7,17 @@
  * (D19). docs/spec/limits.md §3.10 states the budget this measures.
  *
  * THE STACK IS PAINTED AND GUARDED. It is mmap'd here, filled with a known
- * byte, and its lowest page is made inaccessible, so an overflow is a SIGSEGV
- * at the guard rather than a silent write into whatever lies below (a stack
- * handed to pthread_attr_setstack gets no guard page of its own). After the
- * join the first byte that is no longer the paint marks the high-water point.
+ * byte, and the GUARD bytes below it are made inaccessible, so an overflow is
+ * a SIGSEGV at the guard rather than a silent write into whatever lies below
+ * (a stack handed to pthread_attr_setstack gets no guard of its own). After
+ * the join the first byte that is no longer the paint marks the high-water
+ * point.
+ *
+ * THE GUARD IS 64 KB, NOT ONE PAGE. A frame larger than the guard can move
+ * the stack pointer past it and write beyond, and the compiler has frames
+ * near 10 KB (`compile_driver`); without -fstack-clash-protection, which is
+ * not every gcc's default (the Mac's is one), nothing probes the pages a
+ * frame skips. 64 KB is several times the largest frame measured.
  *
  * Usage: compile_stack_driver STACK_BYTES PATTERN_FILE [FEATURES [ENGINE]]
  *   FEATURES  pcrec_options.features (default "all"; "-" for NULL)
@@ -33,6 +40,7 @@
 #include "pcrec.h"
 
 #define PAINT 0xA5
+#define GUARD (64 * 1024)
 
 struct job {
     const char  *pattern;
@@ -90,11 +98,12 @@ int main(int argc, char **argv)
     if (strcmp(j.features, "-") == 0) j.features = NULL;
     j.engine = argc > 4 ? atoi(argv[4]) : 0;
 
-    unsigned char *map = mmap(NULL, size + page, PROT_READ | PROT_WRITE,
+    const size_t guard = (GUARD + page - 1) / page * page;
+    unsigned char *map = mmap(NULL, size + guard, PROT_READ | PROT_WRITE,
                               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (map == MAP_FAILED) { perror("mmap"); return 2; }
-    if (mprotect(map, page, PROT_NONE) != 0) { perror("mprotect"); return 2; }
-    unsigned char *stk = map + page;
+    if (mprotect(map, guard, PROT_NONE) != 0) { perror("mprotect"); return 2; }
+    unsigned char *stk = map + guard;
     memset(stk, PAINT, size);
 
     pthread_attr_t at;

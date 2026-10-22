@@ -69,6 +69,7 @@
  * not the meaning.
  */
 
+#include <assert.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -454,13 +455,15 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
         return rc_find_root_call(a->l, pend);
     case A_CAT: case A_ALT: {
         /* The left-nested spine, iteratively ([DD-10]): visited right to left,
-         * so the LAST hit is the leftmost call in text order. */
+         * so the LAST hit is the leftmost call in text order. A spine node has
+         * both children; the `!a` test above is for the walk's entry. */
         const AKind k = a->k;
         const Ast *h = NULL, *x;
-        for (; a->k == k; a = a->l)
-            if ((x = rc_find_root_call(a->r, pend)) != NULL) h = x;
-        x = rc_find_root_call(a, pend);
-        return x ? x : h;
+        PCREC_SPINE_EACH(e, a, k) {
+            assert(e && "rc_find_root_call: a spine node is missing a child");
+            if ((x = rc_find_root_call(e, pend)) != NULL) h = x;
+        }
+        return h;
     }
     }
     return NULL;

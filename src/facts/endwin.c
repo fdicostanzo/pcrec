@@ -110,15 +110,15 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
              * the anchor on the path that consumed the `x`. */
             /* A zero-width trailing factor hands the question LEFT, down the
              * spine, so that direction is iterative too ([DD-10]): `m` is the
-             * strongest anchor the zero-width factors passed so far promise. */
+             * strongest anchor the factors walked so far promise, and `\z`
+             * is the strongest there is. */
             int m = EW_NONE;
-            for (; a->k == A_CAT; a = a->l) {
-                int r = ew_walk_marked(a->r, em);
-                if (pcrec_cwmax(a->r) != 0) return r > m ? r : m;
-                if (r == EW_Z) return EW_Z;
+            PCREC_SPINE_EACH(f, a, A_CAT) {
+                int r = ew_walk_marked(f, em);
                 if (r > m) m = r;
+                if (m == EW_Z || pcrec_cwmax(f) != 0) return m;
             }
-            { int l = ew_walk_marked(a, em); return l > m ? l : m; }
+            return m;
         }
         case A_CAP:
         case A_ATOMIC:
@@ -131,12 +131,12 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
         case A_ALT: {
             /* THE WEAKEST OF THE TWO, because the claim is "every match": a
              * `\z` branch and a `$` branch together promise only `$`. */
-            int m = ew_walk_marked(a->r, em);
-            for (a = a->l; a->k == A_ALT; a = a->l) {
-                int r = ew_walk_marked(a->r, em);
+            int m = EW_Z;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                int r = ew_walk_marked(b, em);
                 if (r < m) m = r;
             }
-            { int l = ew_walk_marked(a, em); return l < m ? l : m; }
+            return m;
         }
         case A_REP:
             /* At `rmin >= 1` the LAST iteration ends where the repeat ends,

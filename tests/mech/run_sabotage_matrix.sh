@@ -2321,7 +2321,8 @@ run_one() {
             compilestack)
                 # [DD-10] tests/thread/run_compile_stack.sh — the COMPILER on a
                 # thread of limits.md §3.10's budget (vocabulary entry above).
-                LIBPCREC="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                LIBPCREC="$tree/build/libpcrec.a" PCREC="$tree/build/pcrec" \
+                    CC="$CC" TMPDIR="$work" \
                     bash "$tree/tests/thread/run_compile_stack.sh" \
                     > "$work/compilestack.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/compilestack.log" | grep -oE '[0-9]+')"

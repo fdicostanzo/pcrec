@@ -244,6 +244,18 @@ void  pcrec_arena_free(Arena *a);
  * measures the result; nothing checks the marking itself. */
 #define PCREC_OWN_FRAME __attribute__((noinline))
 
+/* Loops over the elements of a left-nested `kind` spine (`A_CAT` or `A_ALT`)
+ * rooted at `root`, with `e` naming each in turn: every spine node's right
+ * child from the top down, then the head below the last node, so the order is
+ * right to left in pattern text. A spine is as long as the pattern, not as
+ * deep as its nesting, so a walk iterates it here and recurses only into the
+ * elements ([DD-10]; coding_guide.md §2.4). A `root` of another kind is one
+ * element. `break` and `return` leave the loop as usual. */
+#define PCREC_SPINE_EACH(e, root, kind)                                        \
+    for (const Ast *e##_at_ = (root), *e;                                       \
+         e##_at_ && (e = e##_at_->k == (kind) ? e##_at_->r : e##_at_, 1);       \
+         e##_at_ = e##_at_->k == (kind) ? e##_at_->l : NULL)
+
 /* ---- growable string buffer (codegen output) ---- */
 
 /* `cx` is the owning compile, or NULL — and unlike Arena, NULL is a REAL case

@@ -84,18 +84,30 @@ static unsigned sa_walk(const Ast *a)
              * `pcrec_minw(l) == 0`, which is "zero-width on SOME path" and
              * would let `(?:x|)^y` claim `^`'s anchor on the path that
              * consumed the `x`. The asymmetry is the whole correctness
-             * argument for this arm. */
-            if (pcrec_cwmax(a->l) == 0) {
-                /* Then EVERY element of the left spine is zero-width and each
-                 * contributes its own facts; walked iteratively ([DD-10]). */
-                const Ast *t = a->l;
-                for (; t->k == A_CAT; t = t->l) acc |= sa_walk(t->r);
-                acc |= sa_walk(t);
-                a = a->r;
+             * argument for this arm.
+             *
+             * So the walk continues at the LEFTMOST factor that can consume
+             * (the rightmost factor when none can), and every factor to its
+             * left is zero-width and contributes its own facts. Found in one
+             * pass over the spine, asking `pcrec_cwmax` of each factor once:
+             * asking it of each left PREFIX was quadratic in the pattern's
+             * length (K130); a prefix is zero-width exactly when each of its
+             * factors is, since no factor's width is negative. */
+            {
+                const Ast *next = NULL, *last = NULL;
+                PCREC_SPINE_EACH(f, a, A_CAT) {
+                    if (!last) last = f;
+                    if (pcrec_cwmax(f) != 0) next = f;
+                }
+                if (!next) next = last;
+                bool left = false;
+                PCREC_SPINE_EACH(f, a, A_CAT) {
+                    if (left) acc |= sa_walk(f);
+                    else left = f == next;
+                }
+                a = next;
                 continue;
             }
-            a = a->l;
-            continue;
         case A_CAP:
         case A_ATOMIC:
         /* [CLS-TREE] S3: TRANSPARENT to its byte child, which is exactly
@@ -111,9 +123,9 @@ static unsigned sa_walk(const Ast *a)
             /* INTERSECTION, because the claim is "every match", and a match of
              * the alternation is a match of one branch. A fact must hold on
              * both to hold on the alternation. */
-            unsigned m = sa_walk(a->r);
-            for (a = a->l; a->k == A_ALT; a = a->l) m &= sa_walk(a->r);
-            return acc | (m & sa_walk(a));
+            unsigned m = ~0u;
+            PCREC_SPINE_EACH(b, a, A_ALT) m &= sa_walk(b);
+            return acc | m;
         }
         case A_REP:
             /* `rmin == 0` admits the empty iteration, which asserts nothing
