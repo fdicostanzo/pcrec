@@ -1292,8 +1292,14 @@ static bool vm_counter_fits(const Vm *v, const Ast *a)
      * has nothing to gain. `X*` and `X+` therefore never reach this rung —
      * their rmin is 0 or 1 — while `X{4000,}` does, and before this clause it
      * did not: it replicated 4,001 mandatory copies and was REFUSED while
-     * `X{4000}` compiled. §8.5 cell 3 names both spellings. */
-    if (a->u.rep.rmax < 0) return a->u.rep.rmin >= v->unroll_k;
+     * `X{4000}` compiled. §8.5 cell 3 names both spellings.
+     *
+     * The `rmin >= 2` term is what makes that claim hold at K = 1, where
+     * `rmin >= K` alone sends `X+` to a one-trip counter: two trail entries
+     * per entry (the init and the trip write) to emit the one copy the
+     * frames rung emits anyway, and the lower declared capacity that follows
+     * (cfcount_report.md). */
+    if (a->u.rep.rmax < 0) return a->u.rep.rmin >= v->unroll_k && a->u.rep.rmin >= 2;
     return a->u.rep.rmin >= v->unroll_k
         || (a->u.rep.rmax - a->u.rep.rmin) >= v->unroll_k;
 }
