@@ -4,6 +4,10 @@
 # usage: api/build.sh [PCREC]   (default: $PCREC, else the tree's build/pcrec)
 # substfix (adoption): paths, the timeout binary and the compiler from the
 # environment ($OUT is required).
+# substb2: the R4 interface -- the support unit is emitted once ($O/support.h,
+# each driver defines PCREC_SUPPORT_IMPLEMENTATION in t.h), and unset handling
+# is the run-time RX_SUBST_STRICT flag, so no artifact is compiled with
+# --unset=.
 set -u
 D=$(cd "$(dirname "$0")" && pwd)
 P=${1:-${PCREC:-$D/../../../../build/pcrec}}
@@ -36,13 +40,14 @@ sb s2 --subst '<$0>'
 sb sn --subst '$3${zz}$1'
 sb snm --subst '[$n|$m|$1]'
 sb sv --subst '[${!v}|${!w}|${!v}]'
-sb sve --unset=error --subst '[${!v}|${!w}]'
-sb se1 --unset=error --subst '[$1|$2]'
+sb sve --subst '[${!v}|${!w}]'
+sb se1 --subst '[$1|$2]'
 sb s0 --subst '$0'
 sb sall --subst '$n$2$0${n}$1$n${m}$0$2'
 printf 'a\000$1\000b' > "$O/snul.tpl"; sb snul --subst-file "$O/snul.tpl"
 sb snone --subst 'lit'
 sb sdn --subst '<$n>'
+$T "$P" --emit-support -o "$O/support.h" || echo "SUBST-FAIL support"
 
 SAN="-fsanitize=address,undefined -fno-sanitize-recover=undefined -g -O1 -std=gnu11"
 fail=0

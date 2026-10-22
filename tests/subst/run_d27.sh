@@ -15,8 +15,11 @@
 #      that now passes must be retagged `diff`, or a regression of it would
 #      read as a finding);
 #   2. the API drivers: all eight built, each exit 0 with 0 FAIL and >= 1
-#      PASS, and the TSan thread run exit 0;
-#   3. the CLI suite: fail=0 and pass >= CLI_FLOOR (the writer's 76 cases).
+#      PASS, and the TSan thread run exit 0 (substb2: the drivers keep their
+#      names but run the R4 interface -- check, map, pieces, replace-all, the
+#      §6 recipes; see d27/CLAUDE.md);
+#   3. the CLI suite: fail=0 and pass >= CLI_FLOOR (the writer's 76 cases;
+#      substb2: retired R3 cases are replaced by R4 ones, the floor holds).
 #
 # Without libpcre2 the section SKIPS loudly (the corpus has no oracle-free
 # arm). env: PCREC, CC, TMPDIR, KEEP=1

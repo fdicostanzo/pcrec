@@ -6,7 +6,7 @@ usage: run_diff.py CASES.tsv [CASES.tsv...] [--work DIR] [--pcrec BIN]
 CASES.tsv columns (tab-separated, '#' comments; fields use lib/esc.py's
 escapes):  id  family  flags  pattern  template  unset  limit  subject  [mode]
   flags   extra pcrec compile flags (always plus --features all), e.g. -e utf8
-  unset   empty | error
+  unset   empty | error   (substb2: error = the run-time flag RX_SUBST_STRICT)
   limit   all | N
   subject the subject bytes, or <NULL> for a NULL pointer (length 0)
   mode    diff (default) | nogap (element without RX_SUBST_GAPS vs
@@ -15,7 +15,13 @@ escapes):  id  family  flags  pattern  template  unset  limit  subject  [mode]
           difference row N: printed, not a failure)
 
 Every rx and subst artifact is compiled once; one driver TU includes every
-header (subst_api.md §1¶3), linked under -fsanitize=address,undefined.
+header (subst_api.md §1¶3) and the support unit (`pcrec --emit-support`,
+§10), linked under -fsanitize=address,undefined.
+
+substb2: driven through the R4 interface (the driver's header says how); the
+`unset` column is the run-time RX_SUBST_STRICT flag of the case (no `--unset=`
+at template compile, so one subst artifact serves both), never a compile
+argument.
 """
 import os
 import subprocess
@@ -82,7 +88,7 @@ def main():
     rxs, subs = {}, {}
     for c in cases:
         rxs.setdefault((c['flags'], c['pat']), 'r%d' % len(rxs))
-        subs.setdefault((c['tpl'], c['unset'], tenc(c['flags'])), 's%d' % len(subs))
+        subs.setdefault((c['tpl'], tenc(c['flags'])), 's%d' % len(subs))
 
     def comp_rx(item):
         (flags, pat), pfx = item
@@ -91,10 +97,10 @@ def main():
         return pfx, r.returncode, r.stderr.decode('latin-1').strip()
 
     def comp_sub(item):
-        (tpl, unset, enc), pfx = item
+        (tpl, enc), pfx = item
         tf = '%s/%s.tpl' % (work, pfx)
         open(tf, 'wb').write(tpl)
-        r = sh([pcrec, '-p', pfx, '-e', enc, '--unset=' + unset, '-o', '%s/%s.c' % (work, pfx),
+        r = sh([pcrec, '-p', pfx, '-e', enc, '-o', '%s/%s.c' % (work, pfx),
                 '--subst-file', tf])
         return pfx, r.returncode, r.stderr.decode('latin-1').strip()
 
@@ -117,9 +123,12 @@ def main():
     runnable = []
     for c in cases:
         c['rx'] = rxs[(c['flags'], c['pat'])]
-        c['sub'] = subs[(c['tpl'], c['unset'], tenc(c['flags']))]
+        c['sub'] = subs[(c['tpl'], tenc(c['flags']))]
         if c['rx'] in ok_rx and c['sub'] in ok_sub:
             runnable.append(c)
+    r = sh([pcrec, '--emit-support', '-o', work + '/support.h'])   # substb2: the support unit (§10)
+    if r.returncode:
+        sys.exit('--emit-support failed:\n' + r.stderr.decode('latin-1')[-2000:])
     with open(work + '/cases_hdrs.inc', 'w') as h:
         for p in sorted(ok_rx | ok_sub):
             h.write('#include "%s.h"\n' % p)
@@ -127,11 +136,11 @@ def main():
         h.write('static const struct tcase cases[] = {\n')
         for c in runnable:
             lim = 'SIZE_MAX' if c['limit'] == 'all' else '(size_t)%s' % c['limit']
-            h.write('  { %s, &%s_info, &%s_subst_info, %s, %d, %d, %s, %d },\n' % (
+            h.write('  { %s, &%s_info, &%s_subst_info, %s, %d, %d, %s, %d, %d },\n' % (
                 cstr(c['id'].encode()), c['rx'], c['sub'], cstr(c['subj']), len(c['subj']),
-                int(c['snull']), lim, int(c['mode'] == 'nogap')))
+                int(c['snull']), lim, int(c['mode'] == 'nogap'), int(c['unset'] == 'error')))
         if not runnable:
-            h.write('  { "none", 0, 0, 0, 0, 0, 0, 0 },\n')
+            h.write('  { "none", 0, 0, 0, 0, 0, 0, 0, 0 },\n')
         h.write('};\n')
     objs = ['%s/%s.o' % (work, p) for p in sorted(ok_rx | ok_sub)]
     r = sh([CC] + SAN + ['-I', work, '-I', HERE, '-o', work + '/driver', HERE + '/diff_driver.c'] + objs)
@@ -210,10 +219,10 @@ def verdict(c, rxres, subres, res):
     if got[0] == 'BIND' and got[1] == -16 and want['kind'] == 'err' and want['code'] == -55:
         # pcre2 met an unset group before the unknown one; ask it again with
         # UNSET_EMPTY: an unknown reference is then -49, which pcrec moves to
-        # bind (§9 row 4)
+        # the setup (§9 row 4)
         w2 = ref(c['pat'], c['flags'], c['tpl'], c['subj'], lim, 'empty', gaps=mode != 'nogap')
         if w2['kind'] == 'err' and w2['code'] == -49:
-            return 'PASS', 'MISSING_REF at bind; pcre2 -49 under UNSET_EMPTY (§9 row 4)'
+            return 'PASS', 'MISSING_REF at the setup; pcre2 -49 under UNSET_EMPTY (§9 row 4)'
     if want['kind'] == 'ok':
         ok = (got[0] == 'RUN' and got[1] == 0 and got[4] == 0 and got[7] == want['out']
               and got[3] == want['n'] and got[6] == want['n'] and got[2] == len(want['out']) and got[8] == 'ok')
