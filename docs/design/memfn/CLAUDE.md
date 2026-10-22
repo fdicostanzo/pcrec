@@ -61,6 +61,7 @@ finding ids to sections).
 - `row_contracts.md` — [MEMFN-ROWCON] first-match table mechanism exported by
   the kit (`fields.def`, `honours` allowlists, reach counters); evidence in
   `probes/rowcon/`.
+- `walk_vs_v1_record.md` — the CLOSED record of the set-FIND form question (2026-10-21): walk vs V1, flattening, M64, the adaptive loop; measurements, sizes, Frank's ruling (the walk when the subject is unknown), what not to retry and when to re-open. Read it before proposing a non-walk default.
 
 ## Pointers
 
@@ -71,4 +72,3 @@ D91, D144, D146, D147 (+ addenda), D155, D157, D161-D169; `memfn/CLAUDE.md`,
 lane reports under `docs/dev/lanes/`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__design__memfn.md
-- `walk_vs_v1_record.md` — the CLOSED record of the set-FIND form question (2026-10-21): walk vs V1, flattening, M64, the adaptive loop; measurements, sizes, Frank's ruling (the walk when the subject is unknown), what not to retry and when to re-open. Read it before proposing a non-walk default.
