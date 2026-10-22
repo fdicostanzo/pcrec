@@ -165,6 +165,16 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         if (pcrec_kit_proof_routed(cx) && mf_preview(job->mf, "R-26.6"))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
                            "R-26.6 routing preview: %s", mf_art_error(job->mf));
+        /* D172 S2 commit 4 (window_site.md §2.4): the harness lever's
+           window family, stated at art setup like R-26.6 (an art previews
+           one step, so the two levers are refused together); never on a
+           shipped compile until commit 5 */
+        if (pcrec_window_reply_lever(cx) && pcrec_kit_proof_routed(cx))
+            pcrec_ctx_fail(cx, 0, "--harness=window-reply and --harness=kit-proof "
+                           "preview two kit steps; an art previews one");
+        if (pcrec_window_reply_lever(cx) && mf_preview(job->mf, "window-family"))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
+                           "window-family preview: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }

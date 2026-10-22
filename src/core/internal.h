@@ -163,11 +163,20 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
  * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
  * X1/X3) and never shipped; the default and trace builds decline `cover`. */
+/* D172 S2 commit 4 (window_site.md rev 3.2 §2.4, §5.1): the fifth,
+ * `--harness=window-reply`: the art previews the kit's WINDOW FAMILY
+ * (mf_preview(art, "window-family"), at art setup), so every site stating
+ * window facts is decided and rendered by the family (phase 2), and the DFA
+ * prefilter's NEXT rows read the family's PHASE-1 reply (mf_wdecide) instead
+ * of the planner's pick. Its artifacts must be byte-identical to the default
+ * build's (the lever's witness, memfn/tests/wreply_sweep.sh); the default
+ * flips at commit 5. Refused beside `kit-proof` (one preview per art). */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
+    unsigned window_reply : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3842,6 +3851,15 @@ struct Ctx {
 static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 {
     return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
+}
+
+/* D172 S2 commit 4: is this compile the harness lever `--harness=window-reply`
+ * (PcrecHarnessOptions.window_reply), whose art previews the window family
+ * and whose DFA prefilter NEXT rows read its phase-1 reply? False on every
+ * shipped compile until commit 5 flips the default. */
+static inline bool pcrec_window_reply_lever(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->window_reply;
 }
 
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
