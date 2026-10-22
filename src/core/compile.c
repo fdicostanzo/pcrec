@@ -169,11 +169,12 @@ static bool ns_harness(const char *p)
     return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
 }
 
-/* row 4: the subst block's prefix-free names (docs/spec/subst_api.md §1¶2)
- * share a TU with any rx artifact, so a prefix that opens one of their
- * families spells a block name (`-p rx_shape`'s `rx_shape_match`). */
+/* row 4: the subst types block's and the support unit's prefix-free names
+ * (docs/spec/subst_api.md §1¶2) share a TU with any rx artifact, so a prefix
+ * that opens one of their families spells one of them (`-p rx_group`'s
+ * `rx_group_run`). */
 static const char *const ns_subst_families[] = {
-    "rx_subst", "rx_shape", "rx_group", "pcrec_subst",
+    "rx_subst", "rx_group", "pcrec_subst", "pcrec_support",
 };
 static bool ns_subst_block(const char *p)
 {
@@ -191,7 +192,7 @@ static const NsReserve ns_reserved[] = {
     { "harness-lever", ns_harness,
       "begins with a prefix reserved for pcrec's own internal symbols" },
     { "subst-block", ns_subst_block,
-      "opens a family the subst block names (rx_subst, rx_shape, rx_group, pcrec_subst)" },
+      "opens a family the subst block names (rx_subst, rx_group, pcrec_subst, pcrec_support)" },
 };
 
 /* The reservation row `p` falls under, or NULL. */

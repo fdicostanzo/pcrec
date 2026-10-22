@@ -7686,12 +7686,13 @@ int  pcrec_artifact_abi(void);
 void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
 
 /* [M4-SUBST] A PARSED SUBSTITUTION TEMPLATE (src/parse/subst_template.c,
- * docs/spec/subst_api.md §2): a flat item list in template order, and the NEEDED
- * shape, every group the template references, each once. Arena-owned. */
+ * docs/spec/subst_api.md §2-§3): a flat item list in template order, one item
+ * per PIECE, and the REFERENCE LIST, every group the template references
+ * other than group 0, each once, in first-appearance order. Arena-owned. */
 typedef enum {
-    SUBST_LIT,     /* template bytes [off, off + len) */
-    SUBST_GROUP,   /* `$k` / `${k}`: group `ref`, a constant slot (D61) */
-    SUBST_NAME,    /* `$name` / `${name}`: needs[ref], run `ref` of the binding */
+    SUBST_LIT,     /* lit[off, off + len): a run of literal bytes, `$$` decoded */
+    SUBST_GROUP,   /* `$k` / `${k}` / `$&`: group `num`, reference `ref` (-1 for group 0) */
+    SUBST_NAME,    /* `$name` / `${name}`: reference `ref` */
     SUBST_VAR,     /* `${!name}`: vrefs[ref], the caller's variable */
     SUBST_SUBJECT, /* `$_`: the whole subject */
     SUBST_BEFORE,  /* `` $` ``: the subject before the match */
@@ -7700,22 +7701,25 @@ typedef enum {
 
 typedef struct {
     SubstItemKind kind;
-    size_t        off, len;   /* the item's own template bytes */
+    size_t        off, len;   /* SUBST_LIT: its bytes in SubstTmpl.lit */
     int           ref;
+    int           num;
 } SubstItem;
 
-/* One NEEDED row (replace_design.md §R3.2): a name with number -1, or a
- * number with name NULL. */
+/* One row of the reference list (subst_api.md §3¶2): a name with number -1,
+ * or a number >= 1 with name NULL. */
 typedef struct {
     const char *name;
     int         number;
-} SubstNeed;
+} SubstRef;
 
 typedef struct {
-    SubstItem   *items;
+    SubstItem   *items;        /* one per piece after the gap: npieces = nitems + 1 */
     size_t       nitems;
-    SubstNeed   *needs;        /* rows [0, nnamed) named, then the numbered */
-    int          nneeds, nnamed;
+    char        *lit;          /* every literal item's bytes */
+    size_t       nlit;
+    SubstRef    *refs;         /* the reference list, first-appearance order */
+    int          nrefs;
     const char **vrefs;        /* `${!name}` names, first-reference order */
     int          nvrefs;
     int          maxnum;       /* the highest group number, or 0 */
@@ -7731,12 +7735,10 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl
 /* [M4-SUBST] The subst artifact's generation options (docs/spec/subst_api.md
  * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
  * `header_name` is the `.h` the `.c` includes, or NULL for one
- * self-contained `.c`; `unset_error` is `--unset=error`; `encoding` is the
- * template's (`-e`, PCREC_ENC_*). */
+ * self-contained `.c`; `encoding` is the template's (`-e`, PCREC_ENC_*). */
 typedef struct {
     const char *prefix;
     const char *header_name;
-    bool        unset_error;
     int         encoding;
 } PcrecSubstOptions;
 
@@ -7744,6 +7746,10 @@ typedef struct {
  * `out->h_src` when a header is named, both malloc'd. */
 void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
                       const PcrecSubstOptions *o, pcrec_output *out);
+
+/* [M4-SUBST] THE SUPPORT UNIT (src/gen/emit_subst.c, docs/spec/subst_api.md
+ * §10): its whole text, malloc'd; it depends on the pcrec build alone. */
+char *pcrec_emit_support(void);
 
 /* THE SUBSTITUTION-TEMPLATE COMPILER (src/core/compile.c): parse, then
  * emit. Returns 0, or -1 with `err` filled. The only caller is the CLI until

@@ -1,7 +1,9 @@
 /* subst_template.c — [M4-SUBST] THE SUBSTITUTION-TEMPLATE PARSER: template
- * text to a flat item list plus its NEEDED shape (the references it makes).
+ * text to a flat item list, one item per PIECE, plus its REFERENCE LIST (the
+ * groups it references, in first-appearance order).
  *
- * Design: docs/design/replace_design.md §R3 (the element this list feeds),
+ * Design: docs/design/replace_design.md §R4 (the pieces this list becomes,
+ * §R4.5; the reference list a map indexes, §R4.3),
  * docs/design/subst_template_design.md §3.1-§3.2 (the core language and the
  * measured grammar corners it must reproduce), D38 Q1/Q2/Q5. Spec:
  * docs/spec/subst_api.md §2.
@@ -131,15 +133,29 @@ static int st_intern(Arena *a, const char **v, int *n, const char *name, size_t 
     return (*n)++;
 }
 
-/* Append a literal byte run, coalescing with a literal item just before it. */
-static void st_lit(SubstTmpl *t, size_t off, size_t len)
+/* Append literal bytes `b[0, len)`, joining a literal item just before it:
+ * adjacent literal bytes, `$$` included, are ONE piece (subst_api.md §2¶1). */
+static void st_lit(SubstTmpl *t, const char *b, size_t len)
 {
-    if (t->nitems && t->items[t->nitems - 1].kind == SUBST_LIT &&
-        t->items[t->nitems - 1].off + t->items[t->nitems - 1].len == off) {
+    memcpy(t->lit + t->nlit, b, len);
+    if (t->nitems && t->items[t->nitems - 1].kind == SUBST_LIT)
         t->items[t->nitems - 1].len += len;
-        return;
-    }
-    t->items[t->nitems++] = (SubstItem){ SUBST_LIT, off, len, 0 };
+    else
+        t->items[t->nitems++] = (SubstItem){ SUBST_LIT, t->nlit, len, 0, 0 };
+    t->nlit += len;
+}
+
+/* The reference index of group `num` (name NULL) or of the name `name[0,
+ * len)`, appending a row to the reference list when it is new. */
+static int st_ref(Arena *a, SubstTmpl *t, const char *name, size_t len, int num)
+{
+    for (int r = 0; r < t->nrefs; r++)
+        if (name ? t->refs[r].name && strlen(t->refs[r].name) == len
+                       && !memcmp(t->refs[r].name, name, len)
+                 : !t->refs[r].name && t->refs[r].number == num)
+            return r;
+    t->refs[t->nrefs] = (SubstRef){ name ? st_strndup(a, name, len) : NULL, name ? -1 : num };
+    return t->nrefs++;
 }
 
 /* Read a decimal group number at `s[*i]` (at least one digit there), greedy,
@@ -189,9 +205,8 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl
     /* Every bound below is the template's own length: an item, a reference
      * and a name each consume at least one byte. */
     t->items = pcrec_arena_alloc(a, (n + 1) * sizeof *t->items);
-    const char **named = pcrec_arena_alloc(a, (n + 1) * sizeof *named);
-    int *nums = pcrec_arena_alloc(a, (n + 1) * sizeof *nums);
-    int nnum = 0;
+    t->lit = pcrec_arena_alloc(a, n + 1);
+    t->refs = pcrec_arena_alloc(a, (n + 1) * sizeof *t->refs);
     t->vrefs = pcrec_arena_alloc(a, (n + 1) * sizeof *t->vrefs);
     size_t i = 0;
 
@@ -199,13 +214,13 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl
         size_t at = i;
         if (s[i] != '$') {
             while (i < n && s[i] != '$') i++;
-            st_lit(t, at, i - at);
+            st_lit(t, s + at, i - at);
             continue;
         }
         if (i + 1 >= n) return st_fail(err, at, "template ends with '$'");
         unsigned char c = (unsigned char)s[i + 1];
         if (c == '$') {                             /* `$$`: one literal `$` */
-            st_lit(t, i + 1, 1);
+            st_lit(t, s + i + 1, 1);
             i += 2;
             continue;
         }
@@ -216,7 +231,7 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl
         int first = 0;
         SubstItemKind pk = st_punct(c);
         if (pk == SUBST_BEFORE || pk == SUBST_AFTER || pk == SUBST_SUBJECT) {
-            t->items[t->nitems++] = (SubstItem){ pk, at, 2, 0 };
+            t->items[t->nitems++] = (SubstItem){ pk, at, 2, 0, 0 };
             i += 2;
             continue;
         }
@@ -269,28 +284,17 @@ int pcrec_subst_parse(Arena *a, const char *s, size_t n, int encoding, SubstTmpl
 
         if (var) {
             t->items[t->nitems++] = (SubstItem){ SUBST_VAR, at, i - at,
-                                                 st_intern(a, t->vrefs, &t->nvrefs, name, nlen) };
+                                                 st_intern(a, t->vrefs, &t->nvrefs, name, nlen), 0 };
             t->uses_pcrec = true;
         } else if (name) {
             t->items[t->nitems++] = (SubstItem){ SUBST_NAME, at, i - at,
-                                                 st_intern(a, named, &t->nnamed, name, nlen) };
-        } else {
-            int k = (int)num, j = 0;
-            while (j < nnum && nums[j] != k) j++;
-            if (j == nnum) nums[nnum++] = k;
+                                                 st_ref(a, t, name, nlen, 0), 0 };
+        } else {                                    /* group 0 is no reference (§3¶2) */
+            int k = (int)num;
             if (k > t->maxnum) t->maxnum = k;
-            t->items[t->nitems++] = (SubstItem){ SUBST_GROUP, at, i - at, k };
+            t->items[t->nitems++] = (SubstItem){ SUBST_GROUP, at, i - at,
+                                                 k ? st_ref(a, t, NULL, 0, k) : -1, k };
         }
     }
-
-    /* The NEEDED shape: every named row first (row j is run j of the
-     * binding, replace_design.md §R3.3), then every numbered row, each once,
-     * in first-reference order. */
-    t->nneeds = t->nnamed + nnum;
-    t->needs = pcrec_arena_alloc(a, ((size_t)t->nneeds + 1) * sizeof *t->needs);
-    for (int j = 0; j < t->nnamed; j++)
-        t->needs[j] = (SubstNeed){ named[j], -1 };
-    for (int j = 0; j < nnum; j++)
-        t->needs[t->nnamed + j] = (SubstNeed){ NULL, nums[j] };
     return 0;
 }

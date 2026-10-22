@@ -250,7 +250,8 @@ static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
           "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
-          "       pcrec [-p PREFIX] [-e ENC] [--unset=empty|error] -o OUT.c --subst 'TEMPLATE'\n"
+          "       pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst 'TEMPLATE'\n"
+          "       pcrec --emit-support [-o FILE]\n"
           "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
           "                 below); each is compiled exactly as the other\n"
           "                 form compiles a literal --pattern. A prefix\n"
@@ -262,8 +263,9 @@ static void usage(FILE *f)
           "                 artifact: a render element any rx whose groups\n"
           "                 fit binds to at run time (docs/spec/subst_api.md)\n"
           "  --subst-file F the template is FILE's bytes, verbatim\n"
-          "  --unset=V      a subst's unset group or variable: empty\n"
-          "                 (default) renders nothing, error refuses\n"
+          "  --emit-support the subst SUPPORT UNIT (flatten, replace-all, the\n"
+          "                 by-name map helper) to stdout or -o FILE; takes\n"
+          "                 no other option (docs/spec/subst_api.md 10)\n"
           "  -o FILE        output C file; a matching header FILE with .h is\n"
           "                 also written. '-o -' prints self-contained C to\n"
           "                 stdout with no header file. '-o DIR' writes\n"
@@ -534,12 +536,11 @@ typedef struct {
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
     /* [M4-SUBST] a SUBST compile (docs/spec/subst_api.md §5): the template text
-     * (`--subst`) or its file (`--subst-file`), and `--unset=` (given at all,
-     * and which value). */
+     * (`--subst`) or its file (`--subst-file`); and `--emit-support`, the
+     * support unit (§10), a mode that takes no other option. */
     const char *subst;
     const char *subst_file;
-    int         unset_given;
-    int         unset_error;
+    int         emit_support;
     int         list_syntax;
     int         list_definitions;
     int         list_verbs;
@@ -1105,8 +1106,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (a[7] == '-') st->subst_file = argv[++i];
             else st->subst = argv[++i];
         }
-        else if (!strcmp(a, "--unset=empty")) { st->unset_given = 1; st->unset_error = 0; }
-        else if (!strcmp(a, "--unset=error")) { st->unset_given = 1; st->unset_error = 1; }
+        else if (!strcmp(a, "--emit-support")) st->emit_support = 1;
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -2078,9 +2078,9 @@ static char *read_whole_file(const char *path, size_t *len)
  * a file operand and every query. Returns 0, or 1 on any refusal. */
 static int cli_subst(const CliState *st)
 {
-    if (st->pattern || st->nfiles || cli_modes_active(st)) {
+    if (st->pattern || st->nfiles || cli_modes_active(st) || st->emit_support) {
         cli_err("--subst/--subst-file compiles a template, so it takes no "
-                "--pattern, file operand or query");
+                "--pattern, file operand, query or --emit-support");
         return 1;
     }
     if (!st->outpath) {
@@ -2097,7 +2097,7 @@ static int cli_subst(const CliState *st)
     d.encoding = st->opt.encoding;
     if (memcmp(&d, &st->opt, sizeof d) != 0 || st->features || st->pattern_esc ||
         st->flavour || st->target || st->nlibdirs) {
-        cli_err("--subst/--subst-file takes only -p, -e, --unset= and -o: "
+        cli_err("--subst/--subst-file takes only -p, -e and -o: "
                 "an option for a pattern compile was given");
         return 1;
     }
@@ -2112,7 +2112,7 @@ static int cli_subst(const CliState *st)
 
     int to_stdout = !strcmp(st->outpath, "-");
     char *hpath = NULL;
-    PcrecSubstOptions so = { st->opt.prefix, NULL, st->unset_error != 0, st->opt.encoding };
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->opt.encoding };
     if (!to_stdout) {
         size_t ol = strlen(st->outpath);
         if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }
@@ -2141,6 +2141,38 @@ static int cli_subst(const CliState *st)
     }
     free(hpath);
     free(owned);
+    return rc;
+}
+
+/* [M4-SUBST] THE SUPPORT-UNIT MODE (docs/spec/subst_api.md §10¶2, cli.md
+ * §1.20): `--emit-support` writes the support unit to stdout, or to `-o
+ * FILE`. It takes NOTHING else: the whole CliState but `outpath` and the flag
+ * itself must equal a fresh one's, so an option added later is refused too.
+ * Returns 0, or 1 on a refusal or a write error. */
+static int cli_emit_support(const CliState *st)
+{
+    CliState rest, fresh;
+    memcpy(&rest, st, sizeof rest);            /* padding included: main zeroed st */
+    memset(&fresh, 0, sizeof fresh);
+    pcrec_default_options(&fresh.opt);
+    rest.outpath = NULL;
+    rest.emit_support = 0;
+    if (memcmp(&rest, &fresh, sizeof rest) != 0) {
+        cli_err("--emit-support takes no pattern, template, query or other option "
+                "(only -o FILE)");
+        return 1;
+    }
+    char *text = pcrec_emit_support();
+    int rc = 0;
+    if (!st->outpath || !strcmp(st->outpath, "-")) {
+        fputs(text, stdout);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            cli_err("write error on stdout");
+            rc = 1;
+        }
+    } else if (write_file(st->outpath, text) != 0)
+        rc = 1;
+    free(text);
     return rc;
 }
 
@@ -2176,11 +2208,11 @@ int main(int argc, char **argv)
         free(st.files);
         return rc;
     }
-    if (st.unset_given) {
-        cli_err("--unset= applies to --subst/--subst-file only");
+    if (st.emit_support) {
+        const int rc = cli_emit_support(&st);
         free(st.libdirs);
         free(st.files);
-        return 1;
+        return rc;
     }
 
     /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE

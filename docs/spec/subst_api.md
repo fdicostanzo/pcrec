@@ -5,122 +5,283 @@
 
 - [§1](#s1) The artifact
 - [§2](#s2) The template language
-- [§3](#s3) The needed shape and the bind
+- [§3](#s3) References and the map
 - [§4](#s4) The element
 - [§5](#s5) Generating a subst artifact
-- [§6](#s6) The glue
+- [§6](#s6) Driving the element
 - [§7](#s7) The caller contract
 - [§8](#s8) Codes
 - [§9](#s9) Differences from `pcre2_substitute`
+- [§10](#s10) The support unit
 <!-- spec-toc:end -->
 
-<a id="s0-p1"></a>[0¶1] A SUBST ARTIFACT is a compiled substitution template: emitted C that renders
-the matches of any rx artifact whose groups the template's references fit,
-bound at run time. It holds no pattern and no matcher. An rx artifact finds
-the matches (`docs/spec/match_api.md` §3.8, the find-all iterator), the
-subst artifact renders them, and the GLUE in the subst header drives one
-with the other. Background, informational only: `docs/design/replace_design.md`
-§R3.
+<a id="s0-p1"></a>[0¶1] A SUBST ARTIFACT is a compiled substitution template: emitted C
+that turns the matches of a find-all into an array of PIECES, each a pointer
+and a length. It holds no pattern and no matcher, and it is compiled without
+one. An rx artifact finds the matches (`docs/spec/match_api.md` §3.8), the
+subst artifact renders them, and the caller's own loop drives one with the
+other (§6¶1). A template's group references reach the rx's groups through
+an optional MAP (§3¶4): with no map, the numbers are the slots. The element
+never allocates and never copies a byte of output, except the bytes of a
+case-forcing form, which it writes into the caller's scratch buffer. The
+check and the context setup are small `static inline` functions in every subst
+header's shared types block (§3¶8, §7¶3). The larger shared functions (the
+by-name helper, the flatten, the replace-all function and the case mapping)
+are in one SUPPORT UNIT, which a program compiles once, and only when it uses
+one of them (§10). Background, informational only:
+`docs/design/replace_design.md` §R4.
 
 <a id="s1"></a>
 ## 1. The artifact
 
-<a id="s1-p1"></a>[1¶1] **Files.** `pcrec -p dmy -o dmy.c --subst TEMPLATE` writes `dmy.c` and
-`dmy.h` (§5). The `.h`, under the guard `PCREC_SUBST_GEN_dmy_H` (the
+<a id="s1-p1"></a>[1¶1] **Files.** `pcrec -p dmy -o dmy.c --subst TEMPLATE` writes `dmy.c`
+and `dmy.h` (§5). The `.h`, under the guard `PCREC_SUBST_GEN_dmy_H` (the
 prefix as written, case kept), holds, in order: the rx shared block
-(match_api.md §2, under its `PCREC_RX_ABI_H` guard), the SUBST BLOCK (§3,
-§4, §6, under the guard `PCREC_SUBST_H`), and the template's own
-declarations:
+(match_api.md §2, under its `PCREC_RX_ABI_H` guard), the SUBST TYPES block (the
+types, codes and flags of §3¶4, §4¶3 and §8¶1, the two `static inline` functions
+`pcrec_subst_check` (§3¶8) and `rx_subst_ctx_init` (§7¶3), and the support
+unit's declarations (§10¶3a), under the guard `PCREC_SUBST_H`), and the template's own
+declarations. Under the shared guard, a translation unit holds one copy of
+the two functions, however many subst headers it includes. The header holds
+no other function body. For the template `${y}.${m}`:
 
 ```c
-#define DMY_NREFS  1    /* rx_subst_run runs[DMY_NREFS]: max(1, named references) */
-#define DMY_NSEGS  1    /* void *seg_user[DMY_NSEGS]: max(1, renderer segments) */
-#define DMY_MAXNUM 2    /* the highest $k, or 0 */
+#define DMY_NREFS  2    /* group references: entries a map covers; max(1, n) */
+#define DMY_PIECES 4    /* pieces per match, the gap piece included (§4¶5) */
+#define DMY_MAXNUM 0    /* the highest group number referenced, or 0 */
 #define DMY_NVREFS 1    /* rx_var vres[DMY_NVREFS]: max(1, ${!name} references) */
 extern const struct rx_subst_info dmy_subst_info;
-int dmy_render(const rx_subst_binding *b, const rx_ctx *ctx,
-    const ptrdiff_t (*caps)[2], size_t k, unsigned flags,
-    unsigned char *restrict out, size_t cap, rx_subst_cur *cur);
+int dmy_render(const rx_ctx *ctx, const rx_subst_map *map,
+    ptrdiff_t (*caps)[2], size_t k, unsigned flags, rx_subst_out *o);
 ```
 
-<a id="s1-p2"></a>[1¶2] **One exported interface**: `<prefix>_render` (the element, §4) and
-`<prefix>_subst_info` (the record, §3). Everything else in the block is
-`static inline` or a macro, prefix-independent.
+<a id="s1-p2"></a>[1¶2] **One exported interface**: `<prefix>_render` (the element,
+§4¶1) and `<prefix>_subst_info` (the record, §3¶1). Everything else
+in the header is a type, a macro, one of the two shared `static inline` functions
+(§1¶1) or a declaration of the support unit (§10), and none of it names a
+prefix. Those names start with `rx_subst`, `rx_group`,
+`pcrec_subst` or `pcrec_support`, the spellings cli.md §1.6¶2 reserves.
 
-<a id="s1-p3"></a>[1¶3] **Include order.** A translation unit may include any number of rx headers
-and subst headers, in any order. The first header defines the shared block
-and its guard drops later copies; the subst block follows the shared block
-inside every subst header. A subst header's own guard is never an rx
-header's, so an rx and a subst artifact may share a prefix. Two artifacts
-whose prefixes differ only in case share their uppercase stamp names
-(match_api.md §6.3), and two rx headers share their guard too, so the
-prefixes in one translation unit differ after uppercasing. One
-`#include "dmy.h"` is enough to call the glue or write a custom one, and
-`RX_FOREACH` comes with it.
+<a id="s1-p3"></a>[1¶3] **Include order.** A translation unit may include any number of
+rx headers, subst headers and the support header, in any order. The first
+header defines each shared block, and the block's guard drops later copies. A
+subst header's own guard is never an rx header's, so an rx artifact and a
+subst artifact may share a prefix. Two artifacts whose prefixes differ only in
+case share their uppercase stamp names (match_api.md §6.3), so the prefixes in
+one translation unit must still differ after uppercasing. A subst header
+enforces that: it opens its stamps with `#ifdef <PREFIX>_PIECES` and an
+`#error` naming the collision. One `#include
+"dmy.h"` is enough to drive the element from any iterator, and `RX_FOREACH`
+comes with it.
 
-<a id="s1-p4"></a>[1¶4] **One build.** A subst artifact and an rx artifact used together come from
-the same pcrec build, which means the same `abi` (match_api.md §6¶17). A
-translation unit whose shared block is of another abi does not compile: the
-subst block opens with an `#error` naming the abi. At run time, bind and the
-glue compare `rx_info.abi`, `rx_subst_info.abi` and the including header's
-`PCREC_RX_ABI_H` (§3¶5), which covers separately compiled units and
-`dlopen`. An rx abi event therefore also retires every subst artifact built
-before it.
+<a id="s1-p4"></a>[1¶4] **One build.** A subst artifact, the rx artifacts it is used with
+and the support unit come from the same pcrec build, which means the same
+`abi` (match_api.md §6¶17). A translation unit whose shared block has another
+abi does not compile: the types block opens with an `#error` naming the abi.
+The support unit's external names carry the abi (§10¶3), so a program that
+links a support unit of another abi does not link. The support unit also
+carries a CONTENT ID, a hash of its own text, and a record that calls into
+it holds the id its build emitted; the check (§3¶8) refuses a difference
+(§10¶3). That catches two support units of one abi but different text, for
+example after a UCD regeneration moved the case table. The check also
+compares the record's `abi` with the shared block's at run time, which
+covers `dlopen`. An rx abi event therefore also retires every subst artifact
+and support unit built before it.
 
-<a id="s1-p5"></a>[1¶5] **Self-contained.** `-o -` writes one `.c` to stdout holding the shared
-block, the subst block and the definitions, with no header.
+<a id="s1-p5"></a>[1¶5] **Self-contained.** `-o -` writes one `.c` to stdout holding the
+shared blocks and the definitions, with no header. A template without case
+forcing then needs nothing else: the check and the context setup are in the
+shared block (§1¶1). Neither does a case-forcing template whose
+encoding is `byte` (or -1): its element carries the ASCII case step inline.
+Only a `utf8` template with case forcing also needs the support unit (§10),
+whose UTF-8 case mapping it calls.
 
 <a id="s2"></a>
 ## 2. The template language
 
-<a id="s2-p1"></a>[2¶1] The core language is PCRE2's non-extended replacement template (module
-`subst`):
+<a id="s2-p1"></a>[2¶1] The core language is PCRE2's non-extended replacement template
+(module `subst`). Each form renders as one PIECE (§4¶5). Adjacent literal
+bytes, `$$` included, form ONE piece: `x\ny$$` is one piece of five bytes.
+
+| form | renders | the piece points into |
+|---|---|---|
+| `$0`, `${0}`, `$&` | the whole match | the subject |
+| `$n`, `${n}` | capturing group n; the digits are GREEDY (`$12` is group 12; `${1}2` is group 1 then `2`; `${01}` is group 1) | the subject |
+| `$name`, `${name}` | the named group; a bare name is GREEDY over the name characters (`$gx` is the name `gx`) | the subject |
+| `` $` `` | the subject before the match: `s[0, start)` | the subject |
+| `$'` | the subject after the match: `s[end, n)` | the subject |
+| `$_` | the whole subject `s[0, n)`; never a name (`$_1` is the subject then `1`) | the subject |
+| `$$` | one `$` | the artifact's constant data |
+| any other byte | itself, a backslash included (`x\ny` is five bytes) | the artifact's constant data |
+
+<a id="s2-p2"></a>[2¶2] **Names** are the pattern's group names: a letter or `_` first,
+then letters, digits or `_`, at most 128 bytes (`PCREC_MAX_GROUP_NAME`). Under
+`-e byte` a letter and a digit are ASCII. Under `-e utf8` a letter is any
+`\p{L}` character and a digit any `\p{Nd}`. A bare `$name` cannot start with
+`_`, because that is `$_`; `${_}` is the group named `_`. `` $` ``, `$'` and
+`$_` read the subject from offset 0, whatever start position the iterator was
+given.
+
+<a id="s2-p3"></a>[2¶3] **`${!name}`** is the caller's variable `name` (module
+`subst-pcrec`). It renders as one piece pointing at the variable's bytes,
+`ctx->vars[j]` for the template's j-th variable reference (§4¶24;
+`docs/spec/vars.md` for the value model). A variable with `p == NULL` is
+UNSET.
+
+<a id="s2-p4"></a>[2¶4] **Refused at compile**, each with a template offset
+(`pcrec_error.input` is `PCREC_ERR_INPUT_TEMPLATE`): `$` at the end; `$`
+before a byte that starts no reference; an unterminated or malformed `${...}`;
+a group number above 65535 (`PCREC_MAX_TEMPLATE_GROUP`) or a group name longer
+than 128 bytes; `$*MARK` and `${*MARK}` (no pcrec artifact reports a mark
+name); without module `subst-extended`, every form of §2¶7; and under `-e
+utf8`, a template that is not well-formed UTF-8. The diagnostic's wording is
+not part of the contract.
+
+<a id="s2-p5"></a>[2¶5] **Encoding.** A template is read in `-e`'s encoding (§5¶1), as
+PCRE2 reads a replacement in its pattern's encoding: the name characters
+(§2¶2), the case mapping (§2¶14) and, under `utf8`, the
+well-formedness check and the escapes above U+00FF. The record carries that
+encoding when the template has a byte above 0x7F or a case-forcing form, and
+-1 otherwise (an all-ASCII template without case forcing reads the same in
+every encoding). The check (§3¶8), and so the context setup (§7¶3) and the
+by-name helper (§3¶13), refuses an rx of another encoding than the record's
+when the record's is not -1. So `\U$1` compiled under `-e byte` and used
+with a `-e utf8` rx is refused before any output, rather than rendering
+`straße` as `STRAßE` where PCRE2 renders `STRAẞE`.
+
+<a id="s2-p6"></a>[2¶6] **References are not resolved at compile.** A template names
+groups by number or name. Which caps slot each one reads is decided per call
+by the map (§3¶4), never by the template compiler.
+
+<a id="s2-p7"></a>[2¶7] **Module `subst-extended`** is PCRE2's extended replacement syntax
+(`PCRE2_SUBSTITUTE_EXTENDED`), selected at template compile with `--features
+subst-extended` (§5¶1). It changes the meaning of a backslash, which then
+introduces an escape (§2¶10), and it adds the conditional forms and case
+forcing. Every rule of §2 not changed below still holds. What each form
+renders is libpcre2 10.46's answer (D26: exact). **This pcrec does not build
+the module:** `--features subst-extended` is refused, and so is every form of
+§2¶8-¶14a, as requiring module `subst-extended` (§2¶4). §2¶8-¶14a, §4¶8 and
+§4¶22's case region, and the case mapping of §10¶1 are the module's contract
+for the pcrec that builds it; until then no record has
+`RX_SUBST_USES_SCRATCH`, and every record's `support` is NULL.
+
+<a id="s2-p8"></a>[2¶8] **The conditional forms**, where `n` is a group number or name:
 
 | form | renders |
 |---|---|
-| `$0`, `${0}`, `$&` | the whole match |
-| `$n`, `${n}` | capturing group n; the digits are GREEDY (`$12` is group 12; `${1}2` is group 1 then `2`) |
-| `$name`, `${name}` | the named group; a bare name is GREEDY over the name characters (`$gx` is the name `gx`) |
-| `` $` `` | the subject before the match: `s[0, start)` |
-| `$'` | the subject after the match: `s[end, n)` |
-| `$_` | the whole subject `s[0, n)`; never a name (`$_1` is the subject then `1`) |
-| `$$` | one `$` |
-| any other byte | itself, a backslash included (`x\ny` is five bytes) |
+| `${n:-text}` | the group when it is SET, `text` when it is UNSET. A group set to the empty string is set, and renders empty |
+| `${n:+set:unset}` | `set` when the group is set (empty included), `unset` when it is not |
+| `${n:+set}` | `set` when the group is set, nothing when it is not |
+| `${n-text}`, `${n+text}`, `${n:=text}`, `${n:?text}` | refused at compile |
 
-<a id="s2-p1a"></a>[2¶1a] **Names** are the pattern's group names: a letter or `_` first, then
-letters, digits or `_`, at most 128 bytes (`PCREC_MAX_GROUP_NAME`). Under
-`-e byte` a letter and a digit are ASCII; under `-e utf8` a letter is any
-`\p{L}` character and a digit any `\p{Nd}`. A bare `$name` cannot start with
-`_`, which is `$_`; `${_}` is the group named `_`. `` $` ``, `$'` and `$_`
-read the subject from offset 0 whatever start position the iterator was
-given.
+<a id="s2-p9"></a>[2¶9] **Conditional text** is itself a template: references,
+`${!name}`, nested conditionals, escapes and case forcing all work inside it
+(`${1:-${2:-z}}`; `${1:+<$1>:${2:+<$2>:none}}`). The text ends at the first
+`}` that is not escaped and does not close a nested `${`. In `:+` text, the
+first unescaped `:` separates `set` from `unset`. In `:-` text, a `:` is
+ordinary (`${1:-a:b}` renders `a:b`). `\:` and `\}` are a literal `:` and
+`}`. A `\Q...\E` inside the text protects `}` and `:` too: `${1:-\Qa}b\E}`
+renders `a}b` when group 1 is unset, and `${1:+a\Q:\Eb:c}` renders `a:b`
+when it is set. A `\Q` left open inside the text is refused at compile
+(libpcre2 gives −58). A reference inside the text that is unset follows
+§4¶23.
 
-<a id="s2-p2"></a>[2¶2] **`${!name}`** is the caller's variable `name` (module `subst-pcrec`): the
-`rx_var` of that name bound to the iterator by `rx_iter_vars`, first match
-wins, its bytes copied (`docs/spec/vars.md` for the value model). A name the
-caller did not pass, or passed with `p == NULL`, is UNSET.
+<a id="s2-p10"></a>[2¶10] **Escapes** under `subst-extended`. Each one is constant bytes, and
+so part of a literal piece:
 
-<a id="s2-p3"></a>[2¶3] **Refused at compile**, each with a template offset (`pcrec_error.input`
-is `PCREC_ERR_INPUT_TEMPLATE`): `$` at the end, `$` before a byte that
-starts no reference, an unterminated or malformed `${...}`, a group number
-above 65535 (`PCREC_MAX_TEMPLATE_GROUP`), a group name longer than 128
-bytes, `$*MARK` and `${*MARK}` (no pcrec artifact reports a mark name), an
-operator form `${n:-w}` `${n:+w}` `${name-w}` (module `subst-extended`, not
-built), and under `-e utf8` a template that is not well-formed UTF-8. The
-diagnostic's wording is not part of the contract.
+| escape | renders |
+|---|---|
+| `\a` `\e` `\f` `\n` `\r` `\t` | BEL, ESC, FF, LF, CR, TAB |
+| `\0`, `\0d`, `\0dd` (`\0` and up to two more octal digits) | that byte (`\012` is LF, `\01` is 0x01; `\08` is NUL then `8`) |
+| `\o{ddd}` | that octal value |
+| `\xhh` (up to two hex digits), `\x{h..}` | that value; above 0xFF only under `-e utf8`, written as its UTF-8 |
+| `\N{U+h..}` | that code point, under `-e utf8` only |
+| `\cX` | the control character of `X` |
+| `\` + any other non-alphanumeric byte | that byte (`\$`, `\\`, `\:`, `\}`) |
+| `\Q ... \E` | the bytes between, taken literally (`\Qa$1\E` is `a$1`; outside conditional text an unterminated `\Q` runs to the end; inside it, §2¶9) |
+| `\E` with no open `\Q` | nothing, and it ends case forcing (§2¶13) |
 
-<a id="s2-p4"></a>[2¶4] **References are not resolved at compile.** A template names groups; which
-slot a name occupies is the rx's. A reference no rx offers is refused at
-bind (§3), before any output.
+<a id="s2-p11"></a>[2¶11] An escape not in the table (a letter such as `\q`, or a `\` at the end) is
+refused at compile.
 
-<a id="s2-p5"></a>[2¶5] **Encoding.** A template is read in `-e`'s encoding (§5¶1), as PCRE2 reads
-a replacement in its pattern's: the name characters (§2¶1a) and, under
-`utf8`, the well-formedness check. A template with a byte above 0x7F binds
-only to an rx of that encoding (§3¶5); an ASCII template reads the same in
-every encoding and binds to any.
+<a id="s2-p12"></a>[2¶12] **`\1` to `\9`**, a single digit with no digit after it, are
+group references, the same as `$1` to `$9`, on a pattern of any group count
+(`\8` on a one-group pattern is an unknown group, as `$8` is). EVERY other
+backslash-digit form whose first digit is `1`-`9` is REFUSED at compile,
+because its meaning in PCRE2 depends on the PATTERN'S group count and a
+template is compiled without its pattern (§2¶6). Measured on libpcre2 10.46:
+`\10` is group 10 on a pattern with ten or more groups and the byte 0x08
+otherwise; `\101` is group 101 or `A`; `\77` is group 77 or `?`; `\81` is
+group 81 or an unknown group (−49); `\400` is −57 below 400 groups. `${10}`,
+`\o{10}` and `\010` say each meaning unambiguously. A diagnostic should say
+so ("depends on the pattern's group count; write `${10}` or `\o{10}`"); its
+wording is not part of the contract.
+
+<a id="s2-p13"></a>[2¶13] **Case forcing.** Case state is the template's running state in
+OUTPUT order, and it has two parts: a REGION (none, upper or lower) and a
+pending ONE-SHOT (none, upper or lower). A `\U` inside conditional text
+stays in force after the text ends. A character is anything produced: a
+literal, a group's characters, a variable's or conditional text's. The state
+moves by this table, read first-match per event (libpcre2 10.46's rule):
+
+| event | when | region becomes | one-shot becomes | the character |
+|---|---|---|---|---|
+| `\U` or `\L` | a region is set | upper or lower | none (a pending one-shot is dropped) | — |
+| `\U` or `\L` | no region | upper or lower | unchanged | — |
+| `\u` or `\l` | always | none | upper or lower | — |
+| `\E` (no `\Q` open) | always | none | none | — |
+| a character | a one-shot is pending | unchanged | none | mapped by the one-shot |
+| a character | a region is set | unchanged | unchanged | mapped by the region |
+| a character | otherwise | unchanged | unchanged | itself |
+
+<a id="s2-p13a"></a>[2¶13a] The table's witnesses (each an oracle row of `tests/subst/`, libpcre2 10.46):
+
+| template | on `(\w+)` over | renders |
+|---|---|---|
+| `\Ua\ubc` | — | `ABc` (`\u` ends the region) |
+| `\L\uabc` | — | `Abc` |
+| `\u\U\Lab` | — | `ab` (the second `\U`/`\L` drops the pending `\u`) |
+| `\u\Uab` | — | `AB` (the first keeps it) |
+| `\l\Uab` | — | `aB` |
+| `\U\uab` | — | `Ab` |
+| `\U\L\uab` | — | `Ab` |
+| `\Ua\Lb\ucd` | — | `AbCd` |
+| `\UaB\EcD` | — | `ABcD` |
+| `\u\E$1` | `hELLo` | `hELLo` (`\E` drops the one-shot) |
+| `\L\u$1` | `hELLo` | `HELLo` (not `\U`: the region is gone) |
+
+<a id="s2-p13b"></a>[2¶13b] The earlier measured rows, all consistent with the table:
+
+| template | subject | renders |
+|---|---|---|
+| `\U$1\E $2` on `(\w+) (\w+)` | `hello world` | `HELLO world` |
+| `\U$1 x \L$2 Y\E z` on `(\w+) (\w+)` | `hello WORLD` | `HELLO X world y z` |
+| `\u\L$1 \l\U$2` on `(\w+) (\w+)` | `hELLO world` | `Hello wORLD` |
+| `\L\u$1 \U\l$2` on `(\w+) (\w+)` | `hELLO world` | `HELLO world` (each one-shot ends its region) |
+| `\u${2:-x}` on `(b)(c)?` | `abd` | `aXd` |
+| `${2:-\Ux}y` on `(b)(c)?` | `abd` | `aXYd` |
+| `\U${2:+$2:\Ezz}y` on `(b)(c)?` | `abd` | `azzyd` |
+| `\U\Qa$\E$1` on `(b)` | `abc` | `aA$Bc` (`\E` ends the `\Q` first) |
+
+<a id="s2-p14"></a>[2¶14] **The case mapping.** Under `-e utf8`, a character maps to the
+single code point libpcre2 10.46 maps it to. That mapping may change the byte
+length: `ß` (2 bytes) upper-cases to `ẞ` (U+1E9E, 3 bytes), and U+01C6
+upper-cases to U+01C4 under both `\U` and `\u`. Some characters keep their
+case: `ı` under `\U`, and U+212A and U+0130 under `\L`. No mapping crosses
+between ASCII and non-ASCII, so a 1-byte character never changes length; a
+2-byte character may grow to 3 (`ß` → `ẞ`, U+023A → U+2C65 under `\L`), and
+no character grows by more than half its bytes. Under every other encoding,
+only ASCII letters change.
+
+<a id="s2-p14a"></a>[2¶14a] **Ill-formed UTF-8 under case forcing.** The iterator walks
+ill-formed subjects (§9 row 11), so a case region can copy ill-formed bytes.
+Each byte that does not begin a well-formed character is copied unchanged,
+and counts one byte in the sizing pass (§4¶22). The well-formed characters
+around it map as usual. libpcre2 10.46 has no usable answer here (§9 row
+19), so these cells are pcrec's own and stay out of the differential.
 
 <a id="s3"></a>
-## 3. The needed shape and the bind
+## 3. References and the map
 
 <a id="s3-p1"></a>[3¶1] **The record:**
 
@@ -130,67 +291,162 @@ struct rx_subst_info {
     const char           *name;          /* the artifact's own name (its prefix) */
     const char           *template_text;
     size_t                template_len;
-    int                   nneeds;        /* rows in needs[] */
-    const rx_group_entry *needs;         /* the NEEDED shape */
-    int                   nruns;         /* named rows: the runs a binding holds */
-    int                   maxnum;        /* highest $k, or 0 */
+    int                   nrefs;         /* group references: rows in refs[] */
+    const rx_group_entry *refs;          /* the REFERENCE LIST (§3¶2) */
+    int                   maxnum;        /* highest group number referenced, or 0 */
+    int                   npieces;       /* pieces per match, gap included (§4¶5) */
     int                   nvrefs;        /* ${!name} references */
-    const char *const    *vrefs;         /* their names; NULL when none */
-    int                   nsegs;         /* rx_renderfn segments */
-    int                   unset;         /* PCREC_SUBST_UNSET_EMPTY / _ERROR */
-    int                   encoding;      /* PCREC_ENC_* the template was read in;
-                                            -1 for an ASCII template (§2¶5) */
+    const char *const    *vrefs;         /* their names, in reference order; NULL when none */
+    int                   encoding;      /* PCREC_ENC_* (§2¶5), or -1 */
+    unsigned              uses;          /* RX_SUBST_USES_SCRATCH when a case-forcing form appears */
+    unsigned long long    support_id;    /* the support unit's content id from this build; 0 when unused */
+    const unsigned long long *support;   /* &pcrec_support_id when the template calls the unit; else NULL */
     rx_substfn           *render;
 };
 ```
 
-<a id="s3-p2"></a>[3¶2] **The NEEDED shape** is an array of `rx_group_entry` (match_api.md §2¶8):
-every group the template references, once each, the NAMED rows first
-(`name` set, `number` -1) and then the NUMBERED rows (`name` NULL), each in
-first-reference order; `slot` is -1 and `ref` NULL throughout. Named row
-`j` is run `j` of a binding.
+<a id="s3-p2"></a>[3¶2] **The reference list** is `refs[0, nrefs)`: every group the
+template references other than group 0, each once, in the order of its first
+appearance in the template, conditions and conditional text included. A
+numbered reference is the row `{NULL, k, -1, NULL}`. A named reference is the
+row `{"name", -1, -1, NULL}`. The list is fixed when the template is
+compiled, and the caller may read it (its index is the REFERENCE INDEX r).
+`$0`, `$&`, `` $` ``, `$'` and `$_` always read slot 0 and the subject, and
+are not in the list.
 
-<a id="s3-p3"></a>[3¶3] **Satisfaction**, row by row, against the rx's `rx_info`:
+<a id="s3-p3"></a>[3¶3] **With no map** (`map == NULL`), the numbers are the slots:
+numbered reference k reads caps slot k. A named reference has no slot without
+a map, and the check refuses it (§3¶8). On an rx whose slot k is group k
+for every k up to `ngroups` (match_api.md §6¶4), which is every captures-on
+rx, the template's `$k` is then the rx's group k. On a COMPOSED rx
+(`ncaps > ngroups + 1`), a slot above `ngroups` belongs to a delivered group
+(match_api.md §5.5¶5), so the check refuses the no-map form there outright
+(`PCREC_SUBST_MISMATCH`): a composed rx takes a map, by hand or from the
+by-name helper (§3¶13). The no-map form is for a template and a pattern
+written together. A caller can check it at build time from the two
+artifacts' stamps: `_Static_assert(DMY_MAXNUM < RX_NCAPS, "the template
+references a group the regex lacks");` holds on every rx that is not
+composed, and named references need a map anyway.
 
-| needed row | satisfied when |
-|---|---|
-| number 0 | always |
-| number k ≥ 1 | `k <= ngroups` and `k < ncaps`; slot k is then group k (match_api.md §6¶4) |
-| a negative number | never (no compiled template holds one) |
-| a name | the name has a run of rows in `groups[0, nnames)` and every row of it has `0 <= slot < ncaps` |
-
-<a id="s3-p4"></a>[3¶4] **A name binds to its RUN**: rows `[first, first + count)` of
-`rx_info.groups`, which is several rows under duplicate names (match_api.md
-§5.4¶5). Per match the element resolves it by match_api.md §5.4¶6: the first
-row whose slot participated; a run none of whose rows participated is
-unset. `rx_group_run(rx, name, ref, &first)` is the block's name-to-run
-helper (`ref` NULL: the caller scope; otherwise the rows spelled
-`ref.name` in `[nnames, nentries)`).
-
-<a id="s3-p5"></a>[3¶5] **Binding.**
+<a id="s3-p4"></a>[3¶4] **The map:**
 
 ```c
-int pcrec_subst_bind(rx_subst_binding *b, const struct rx_info *rx,
-                     const struct rx_subst_info *sub,
-                     rx_subst_run *runs, size_t nruns,
-                     void *const *seg_user, size_t nseg, int *bad_ref);
+#define RX_SUBST_NOGROUP (-1)            /* a slot[] entry: "no group", always unset */
+
+typedef struct rx_subst_run { int first, count; } rx_subst_run;
+
+typedef struct rx_subst_map {
+    const int          *slot;    /* caps slots, or RX_SUBST_NOGROUP */
+    size_t              nslot;   /* entries in slot[] */
+    const rx_subst_run *run;     /* NULL: reference r reads slot[r] */
+    size_t              nrun;    /* entries in run[] */
+} rx_subst_map;
 ```
 
-returns 0, or `PCREC_SUBST_MISMATCH` (a record of another abi, an rx with
-no slot, an rx whose `encoding` is not the record's when that is not -1
-(§2¶5), `nruns < sub->nruns`, or `nseg < sub->nsegs`), or
-`PCREC_SUBST_MISSING_REF` with `*bad_ref` the index of the first needed row
-the rx does not satisfy (otherwise `*bad_ref` is -1). It reads the two
-records only, never allocates, and writes `b->tag = PCREC_SUBST_BOUND` last;
-on a refusal the tag is not BOUND. `runs` (and `seg_user`) must outlive the
-binding, which keeps pointers to them and to both records.
+<a id="s3-p5"></a>[3¶5] With `run == NULL`, reference r reads the single entry
+`slot[r]`. With `run` set, reference r reads the entries `slot[run[r].first,
+run[r].first + run[r].count)`. Per match, reference r resolves to the FIRST of
+them that participated (both offsets set, set-to-empty included). If none
+did, the reference is unset. This is match_api.md §5.4¶6's rule for a
+duplicated name, and it applies to any list the caller supplies. Any slot may
+appear, including slot 0 and including one slot under two references. The map
+is `const` and the element only reads it.
 
-<a id="s3-p6"></a>[3¶6] **The binding is read-only after bind.** One binding may serve any number
-of threads at once, each with its own iterator and `out`.
+<a id="s3-p6"></a>[3¶6] **`RX_SUBST_NOGROUP`** in `slot[]` says, on purpose, that the
+reference has no group. It never participates, so the reference is always
+unset: a plain reference renders empty, `${n:-text}` renders `text`, and
+`${n:+set:unset}` renders `unset`. It is never an error, `RX_SUBST_STRICT`
+included (§4¶23).
 
-<a id="s3-p7"></a>[3¶7] **`rx_shape_match(needs, nneeds, rx, runs)`** is the generic matcher bind
-uses: the index of the first needed row the offered shape does not satisfy,
-or -1, filling `runs`. It knows nothing about templates.
+<a id="s3-p7"></a>[3¶7] **Filling a map by hand.** The caller reads the reference list
+(§3¶2) and writes the slots. For `${y}.${m}` over `(?<m>\d+)/(?<y>\d+)`:
+
+```c
+static const int ymd_slot[] = { 2, 1 };              /* refs: y, then m */
+static const rx_subst_map ymd = { ymd_slot, 2, NULL, 0 };
+```
+
+<a id="s3-p8"></a>[3¶8] **The check**, a `static inline` function in the shared types block
+(§1¶1), validates a template and a map against an rx's record, whichever way
+the map was filled. The context setup (§7¶3) runs it, so a bad template, map
+or rx is refused once per find-all, BEFORE the first match and whether or
+not there is one:
+
+```c
+int pcrec_subst_check(const struct rx_subst_info *t, const rx_subst_map *map,
+                      const struct rx_info *rx, unsigned flags, int *bad_ref);
+```
+
+<a id="s3-p8a"></a>[3¶8a] The check reads `rx->ncaps`, `rx->ngroups` and `rx->encoding` only. A
+caller with no `rx_info` (an adapter over another engine's offsets) fills
+those three fields of a zeroed one.
+
+<a id="s3-p9"></a>[3¶9] It returns 0, or one of:
+
+- <a id="s3-p10"></a>[3¶10] `PCREC_SUBST_MISMATCH`: a record of another abi than the shared block's,
+  a record whose `support` is set and differs from its `support_id` (§10¶3),
+  `rx->ncaps == 0`, an rx whose `encoding` differs from the record's when the
+  record's is not -1 (§2¶5), an unknown flag bit, no map on a composed rx
+  (§3¶3), or a map whose arrays are too short (`run == NULL` and `nslot <
+  nrefs`, or `run` set and `nrun < nrefs`);
+- <a id="s3-p11"></a>[3¶11] `PCREC_SUBST_MISSING_REF`, with `*bad_ref` set to the first reference index
+  r that does not resolve. With no map, that is a numbered reference
+  `k >= rx->ncaps` or any named reference. With a map, it is a `run[r]` with
+  `count < 1` or reaching past `nslot`, or an entry that is neither
+  `RX_SUBST_NOGROUP` nor a slot in `[0, rx->ncaps)`.
+
+<a id="s3-p12"></a>[3¶12] `*bad_ref` is -1 unless the code is `MISSING_REF`. The check
+reads only `t`, `map` and the three `rx` fields, never allocates, and is
+`O(nrefs + nslot)`. The context setup runs it (§7¶4). A caller who fills
+`ctx` by hand calls it once before the first render; the element itself only
+re-asserts memory safety per call (§4¶10).
+
+<a id="s3-p13"></a>[3¶13] **The by-name helper**, in the support unit, fills a map from an
+rx's record for any rx and any template that share group names:
+
+```c
+#define RX_SUBST_MAP_ABSENT 0x1u   /* a reference the rx lacks: RX_SUBST_NOGROUP, not refused */
+
+int pcrec_subst_map_names(const struct rx_subst_info *t, const struct rx_info *rx,
+                          unsigned opts, int *slot, size_t nslot,
+                          rx_subst_run *run, size_t nrun,
+                          rx_subst_map *map, int *bad_ref, size_t *nabsent);
+```
+
+<a id="s3-p14"></a>[3¶14] For each reference r in order, it appends that reference's
+slots to `slot` and writes `run[r]`:
+
+| reference | slots | the rx lacks it when |
+|---|---|---|
+| number k ≥ 1 | `k` (match_api.md §6¶4) | `k > ngroups` or `k >= ncaps` |
+| a name | the slots of its run of rows in `groups[0, nnames)`, in row order (match_api.md §5.4¶5) | there is no run, or a row's slot is outside `[0, ncaps)` |
+
+<a id="s3-p15"></a>[3¶15] A reference the rx lacks is refused (`MISSING_REF`, `*bad_ref = r`), or, with
+`RX_SUBST_MAP_ABSENT` in `opts`, gets the single entry `RX_SUBST_NOGROUP`.
+`*nabsent` (when `nabsent` is not NULL) is the number of references that got
+`RX_SUBST_NOGROUP` that way, and on success `*bad_ref` is the first of them
+(-1 when there is none), so a caller can log or refuse a misspelled name
+rather than have it render empty. The
+option is off unless the caller passes it; leave it off unless the template
+is meant for a set of rxes that each carry only some of its names.
+
+<a id="s3-p16"></a>[3¶16] It then fills `*map` and returns `pcrec_subst_check(t, map,
+rx, 0, bad_ref)`'s code; `*nabsent` keeps its count either way. It returns `PCREC_SUBST_MISMATCH` for a record of
+another abi or support unit, an rx whose `encoding` is not the record's when
+that is not -1 (§2¶5), an unknown `opts` bit, `nrun < nrefs`, or `nslot` too
+small.
+`DMY_NREFS + <RX>_NCAPS` slots always suffice. It reads the two records only
+and never allocates. `slot` and `run` must outlive every use of the map.
+
+<a id="s3-p17"></a>[3¶17] **`rx_group_run(rx, name, ref, &first)`**, in the support
+unit, is the name-to-run helper that the by-name helper uses. It is THE
+implementation of match_api.md §5.4¶6's lookup (the `bsearch` and the walk
+back to the run's first row); any later by-name consumer calls it rather than
+growing another copy, and the per-match "first that participated" half is
+the element's run walk (§3¶5). `ref` NULL means
+the caller scope. Otherwise it selects the rows spelled `ref.name` in
+`[nnames, nentries)`. It returns the run's length and writes the first row's
+index to `*first`, or returns 0 when there is no such run.
 
 <a id="s4"></a>
 ## 4. The element
@@ -198,234 +454,596 @@ or -1, filling `runs`. It knows nothing about templates.
 <a id="s4-p1"></a>[4¶1] **The element** is the artifact's `<prefix>_render`, of type:
 
 ```c
-typedef int rx_substfn(const rx_subst_binding *b, const rx_ctx *ctx,
-                       const ptrdiff_t (*caps)[2], size_t k, unsigned flags,
-                       unsigned char *restrict out, size_t cap, rx_subst_cur *cur);
+typedef int rx_substfn(const rx_ctx *ctx, const rx_subst_map *map,
+                       ptrdiff_t (*caps)[2], size_t k, unsigned flags,
+                       rx_subst_out *o);
 ```
 
-renders `k` consecutive matches of one find-all. `caps` holds `k * ctx->ncap`
-pairs, match `i` at `caps + i * ctx->ncap`, as `<prefix>_next_n` writes them.
-`k = 1` is the per-match case; `k = 0` checks the call and renders nothing.
+<a id="s4-p1a"></a>[4¶1a] `caps` is spelled exactly as `<prefix>_next`, `<prefix>_next_n` and
+`RX_FOREACH`'s body variable spell it, so the array an iterator wrote passes
+straight through with no cast. The element only reads it.
 
-<a id="s4-p2"></a>[4¶2] **The cursor** carries one find-all's output between calls. A first
-call starts from `{0, 0, out != NULL}`. Bytes are written to `out[w, cap)`
-while everything so far fits and never past `cap`; `w` counts every byte
-either way. A total past `SIZE_MAX - 1` saturates: `w` becomes `SIZE_MAX`
-and `fits` 0.
+<a id="s4-p2"></a>[4¶2] It renders `k` consecutive matches of one find-all. `caps` holds
+`k * ctx->ncap` pairs, with match `i` at `caps + i * ctx->ncap`, as
+`<prefix>_next_n` writes them. `k = 1` is the per-match case. `k = 0` checks
+the call and renders nothing.
+
+<a id="s4-p3"></a>[4¶3] **The output record** carries one find-all's output between calls.
+The caller sets `pc`, `cap`, `scratch` and `scap`, and starts `n`, `sn` and
+`prev` at 0. The element writes `n`, `sn`, `prev`, `need` and `sneed`, and
+reads the rest.
 
 ```c
-typedef struct rx_subst_cur {
-    size_t prev;   /* end of the last match consumed: the next gap starts here */
-    size_t w;      /* bytes the output needs so far; SIZE_MAX once that overflowed */
-    int    fits;   /* 1 while every one of those bytes is in out */
-} rx_subst_cur;
+typedef struct rx_subst_piece {
+    const unsigned char *p;   /* never NULL; not to be read when len == 0 (§4¶9) */
+    size_t               len;
+} rx_subst_piece;
+
+typedef struct rx_subst_out {
+    rx_subst_piece *pc;       /* the caller's piece array */
+    size_t          cap;      /* its entries */
+    size_t          n;        /* pieces written so far: pc[0, n) */
+    unsigned char  *scratch;  /* the caller's scratch bytes, or NULL */
+    size_t          scap;     /* its size */
+    size_t          sn;       /* scratch bytes used so far */
+    size_t          prev;     /* end of the last match rendered: the next gap starts here */
+    size_t          need;     /* after PCREC_SUBST_NOSPACE: the entries pc needs */
+    size_t          sneed;    /* after PCREC_SUBST_NOSPACE: the bytes scratch needs */
+} rx_subst_out;
 ```
 
-<a id="s4-p3"></a>[4¶3] **Flags.** With `RX_SUBST_GAPS`, the subject bytes `[cur->prev, start)`
-are copied before each match's rendering (a substitution). Without it the
-renderings are written back to back (a templated `grep -o`). Any other bit
-is refused.
+<a id="s4-p4"></a>[4¶4] A caller may set `n` and `sn` back to 0 between calls to reuse
+the arrays, after it has consumed the pieces; reset them together, because a
+piece may point into scratch. Pieces that point into scratch are invalid once
+the caller moves, frees or reuses the scratch, so a caller that grows scratch
+first consumes or drops every piece in `pc[0, n)` and resets `n` and `sn` to
+0 (§6¶7). The element keeps no other state.
 
-<a id="s4-p4"></a>[4¶4] **The call is checked once:** a binding that is not BOUND, a binding of
-another subst artifact, `ctx->ncap != b->ncaps`, an unknown flag, or, for a
-template with `${!name}` references, `ctx->vars == NULL` or
-`ctx->nvars < nvrefs` returns `PCREC_SUBST_MISMATCH`. A `caps` array from a different rx artifact with
-the same `ncaps` is not detected and is UNDEFINED, as handing an iterator to
-another artifact is (match_api.md §3.8¶8).
+<a id="s4-p5"></a>[4¶5] **Pieces per match are fixed.** A call writes exactly `k * P`
+pieces, where `P` is `npieces` (`<PREFIX>_PIECES`) under `RX_SUBST_GAPS` and
+`npieces - 1` without it. Match `i`'s pieces are `pc[n0 + i*P, n0 +
+(i+1)*P)`, where `n0` is `n` before the call. Under `RX_SUBST_GAPS`, each
+match's first piece is the GAP, the subject bytes `[prev, start)`. Then, in
+template order:
 
-<a id="s4-p5"></a>[4¶5] **Spans are checked per match.** A whole-match span that is unset
-(`{-1, -1}`), ends before it starts or ends past `ctx->len`, or, under
-`RX_SUBST_GAPS`, starts before the previous match's end, returns
-`PCREC_SUBST_BADSPAN`; so does a referenced group's set span that ends
-before it starts. Both are reported by the iterator for a `\K`
-reached through a subroutine call from a lookaround (`x(?=(?1))|(b\K)` on
-`"xb"` reports `[2,1)`; `x|(?<=(?1))y|(\Kx)` on `"xy"` reports `[0,1)` then
-`[0,2)`). Without `RX_SUBST_GAPS` only the first test applies.
+- <a id="s4-p6"></a>[4¶6] one piece per literal run or reference (§2¶1);
+- <a id="s4-p7"></a>[4¶7] for a conditional, the pieces of the text it chose, followed by empty
+  pieces up to the larger of its two texts' counts;
+- <a id="s4-p8"></a>[4¶8] for the CASE REGION, one piece: from the template's first case-forcing
+  escape to its end, rendered into scratch (§4¶22).
 
-<a id="s4-p6"></a>[4¶6] **Unset.** A referenced group that did not participate (a run none of whose
-rows did) renders nothing under `--unset=empty`, the default; under
-`--unset=error` the element returns `PCREC_SUBST_UNSET`. The record's
-`unset` says which. An unset `${!name}` follows the same axis (§6¶5): under
-`--unset=error` an entry of `ctx->vars` with `p == NULL` returns
-`PCREC_ERR_UNSET_VAR`.
+<a id="s4-p9"></a>[4¶9] A piece with nothing to render (an empty gap, an empty or unset group, an
+empty variable, padding) is still written, with `len` 0. No piece is dropped.
+`p` is never NULL: where the source address would be NULL or undefined (the
+subject of a `(NULL, 0)` call, match_api.md §3.1¶8; an unset group's `{-1,
+-1}` offsets; a variable whose `p` is NULL), it is `rx_subst_empty`, a
+constant byte in the shared types block. A caller tests `len`, never `p`.
 
-<a id="s4-p7"></a>[4¶7] **`ctx`** is constant over the call: `subject`, `len`, `ncap` (the `ncaps` of
-a completed match, every pair written; match_api.md §2¶6), `vars`/`nvars`
-(the call's resolved `${!name}` values in the template's order, each entry
-carrying its name), and `user`. A custom glue builds it with
-`rx_subst_ctx_init` (§7¶4). The element writes `cur->prev`, `cur->w` and
-`cur->fits` (§4¶2); it writes no other caller state.
+<a id="s4-p10"></a>[4¶10] **The call is re-asserted first, before anything is written.** The
+full check ran at the context setup (§3¶8, §7¶4); per call the element
+re-asserts only what memory safety needs, in `O(1)` plus one compare per
+slot it reads. It returns:
 
-<a id="s4-p8"></a>[4¶8] **The `rx_ctx` function family.** The element is the third function type
-over `rx_ctx`, beside the two match_api.md defines; each is a row of one
-table, and a fourth consumer would be a fourth row. An `rx_substfn` is not
-an `rx_renderfn`: it takes a batch and a binding.
+- <a id="s4-p11"></a>[4¶11] `PCREC_SUBST_MISMATCH` for an unknown flag bit, for `ctx->vars == NULL` or
+  `ctx->nvars < nvrefs` on a template with `${!name}` references, for a
+  record with `RX_SUBST_USES_SCRATCH` and `scratch == NULL`, for a map whose
+  arrays are shorter than the reference list (§3¶10's length test), and for a
+  slot read during the run walk that is neither `RX_SUBST_NOGROUP` nor in
+  `[0, ctx->ncap)` (at that match, with §4¶21's commit rule). The last two
+  can only fire on a map the check never saw: a context filled by hand
+  without the check, or a map changed after it;
+- <a id="s4-p12"></a>[4¶12] — retired.
+- <a id="s4-p13"></a>[4¶13] `PCREC_ERR_UNSET_VAR` under `RX_SUBST_STRICT` for an unset variable
+  (§4¶23);
+- <a id="s4-p14"></a>[4¶14] `PCREC_SUBST_NOSPACE` when `cap - n < k * P`, with `need = n + k * P`, or
+  when the case regions to be committed do not fit in `scap - sn`, with
+  `sneed = sn +` their exact bytes. A product or sum that does not fit in a
+  `size_t` is NOSPACE with `need` (or `sneed`) `SIZE_MAX`. `n`, `sn` and
+  `prev` are then unchanged. The scratch sizing pass validates each match as
+  it goes (§4¶16, §4¶23) and stops BEFORE the first match that fails, so
+  `sneed` covers only the matches §4¶21 would commit: a bad span never
+  reaches the arithmetic, and NOSPACE never asks for more than a retry can
+  use.
+
+<a id="s4-p15"></a>[4¶15] A `caps` array from an rx with another `ncaps` than `ctx->ncap` is
+UNDEFINED. A map or context built for another template with as many
+references is undetected and renders that map's slots, just as handing an
+iterator to another artifact is undetected (match_api.md §3.8¶8).
+
+<a id="s4-p16"></a>[4¶16] **Spans are checked per match.** The element returns
+`PCREC_SUBST_BADSPAN` for any of these:
+
+- <a id="s4-p17"></a>[4¶17] a whole-match span that is unset (`{-1, -1}`), ends before it starts, or
+  ends past `ctx->len`;
+- <a id="s4-p18"></a>[4¶18] under `RX_SUBST_GAPS`, a whole-match span that starts before `prev`;
+- <a id="s4-p19"></a>[4¶19] a referenced group's set span that ends before it starts.
+
+<a id="s4-p20"></a>[4¶20] The iterator reports such spans for a `\K` reached through a
+subroutine call from a lookaround. `x(?=(?1))|(b\K)` on `"xb"` reports
+`[2,1)`, and `x|(?<=(?1))y|(\Kx)` on `"xy"` reports `[0,1)` then `[0,2)`.
+Without `RX_SUBST_GAPS` the start-before-`prev` test is not applied.
+
+<a id="s4-p21"></a>[4¶21] **A failing match commits the matches before it.** When match `i`
+of the call fails with `BADSPAN` or `UNSET` (§4¶23), the pieces and scratch
+bytes of matches `0 .. i-1` are written and counted: `n` grows by `i * P`, `sn`
+by their scratch bytes, and `prev` becomes the end of match `i - 1`. Nothing of
+match `i` is counted. A call never leaves part of a match counted. The
+committed matches are a PREFIX of a failed find-all, never a finished one: a
+caller that writes them must not then write the tail (§6¶1).
+
+<a id="s4-p22"></a>[4¶22] **Scratch.** A piece points into the artifact's constant data,
+the subject, a caller variable, or the caller's scratch buffer. Only the case
+region writes scratch: its bytes, with case forcing applied, exist nowhere
+else. A template without case forcing (`uses` without `RX_SUBST_USES_SCRATCH`)
+never writes scratch, and `scratch` may be NULL. For one that has it, the
+element first works out the batch's exact scratch bytes, refuses the call if
+they do not fit (§4¶10), and only then writes. Under `-e utf8`, a case
+region never needs more than one and a half times EVERY byte that enters it,
+its constant bytes included (`\Uß` writes 3 bytes for 2; §2¶14), rounded
+up; ill-formed bytes count one each (§2¶14a). Under other encodings, it needs
+exactly the bytes that enter it. A caller that sizes scratch by that bound
+never sees a scratch NOSPACE.
+
+<a id="s4-p23"></a>[4¶23] **Unset.** A referenced group that did not participate renders an
+empty piece. That is the default, which differs from `pcre2_substitute`'s
+default (`PCRE2_ERROR_UNSET`, −55, unless `PCRE2_SUBSTITUTE_UNSET_EMPTY`). Under
+`RX_SUBST_STRICT`, the element instead returns `PCREC_SUBST_UNSET` at the first
+match that has one (§4¶21). This applies to a plain reference, a `\1`-`\9`
+reference, and a reference inside conditional text. A conditional's own test
+(`${n:-...}`, `${n:+...}`) is never an error: choosing its text is what it
+does. An `RX_SUBST_NOGROUP` entry is never an error (§3¶6). An unset
+`${!name}` follows the same flag: an empty piece by default, and under the flag
+`PCREC_ERR_UNSET_VAR` before anything is written.
+
+<a id="s4-p24"></a>[4¶24] **`ctx`** is constant over the call. It holds `subject`, `len`,
+`ncap` (the `ncaps` of a completed match, every pair written; match_api.md
+§2¶6), `vars`/`nvars` (the `${!name}` values in the template's `vrefs` order,
+each entry carrying its name), and `user`. The caller fills it with
+`rx_subst_ctx_init` (§7¶3), or directly and then runs the check (§3¶12). The
+element writes only `o` and the caller's scratch.
+
+<a id="s4-p25"></a>[4¶25] **Flags.**
+
+| flag | value | effect |
+|---|---|---|
+| `RX_SUBST_GAPS` | `0x1u` | a gap piece before each match (§4¶5): a substitution |
+| `RX_SUBST_STRICT` | `0x2u` | an unset group or variable is an error (§4¶23) |
+
+<a id="s4-p26"></a>[4¶26] Without `RX_SUBST_GAPS`, the renderings come back to back, as
+in a templated `grep -o`. Any other bit is `PCREC_SUBST_MISMATCH`.
+
+<a id="s4-p27"></a>[4¶27] **The `rx_ctx` function family.** The element is the third
+function type over `rx_ctx`, beside the two that match_api.md defines. Each is
+a row of one table, and a fourth consumer would be a fourth row. An
+`rx_substfn` is not an `rx_renderfn`: it takes a batch and a map, and it
+produces pieces, not bytes.
 
 | type | reads from `ctx` | produces | its binding |
 |---|---|---|---|
 | `rx_matchfn` (match_api.md §2¶4) | `pos` and the captures so far | a length, or -1 | `rx_callout_ref.user` |
-| `rx_renderfn` (match_api.md §2¶7) | one completed match | one segment's bytes | the segment's `seg_user` entry (§3¶5) |
-| `rx_substfn` (`<s>_render`) | a batch of `k` completed matches | the batch's bytes, through `cur` | `rx_subst_binding` (§3) |
+| `rx_renderfn` (match_api.md §2¶7) | one completed match | one segment's bytes | per segment |
+| `rx_substfn` (`<s>_render`) | a batch of `k` completed matches | `k * P` pieces | the map (§3¶4), optional |
 
 <a id="s5"></a>
 ## 5. Generating a subst artifact
 
-<a id="s5-p1"></a>[5¶1] `pcrec [-p PREFIX] [-e ENC] [--unset=empty|error] -o OUT.c --subst TEMPLATE`, or
-`--subst-file FILE` for a template read from FILE byte for byte (a template
-with quotes, `$` or a newline needs no shell escaping). Exactly one of the
-two; neither combines with `--pattern`, a file operand or a query, and
-`--unset=` applies to them alone. `-e` is the template's encoding (§2¶5,
-default `byte`). Every other option is a pattern compile's and is REFUSED
-with `--subst` (`-i`, `--no-captures`, `--engine=`, `--emit-main`,
-`--trace`, `--features` and the rest), never ignored. `-p` follows `pcrec_compile`'s prefix
-rules (`docs/spec/cli.md`). The template compiler has no library entry
-(`lib/pcrec.h` names none) and is reached only through the CLI.
+<a id="s5-p1"></a>[5¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c
+--subst TEMPLATE`, or `--subst-file FILE` for a template read from FILE byte
+for byte (a template with quotes, `$` or a newline then needs no shell
+escaping). Give exactly one of the two. Neither combines with `--pattern`, a
+file operand or a query. `-e` is the template's encoding (§2¶5, default
+`byte`). `--features subst-extended` will select §2¶7's module; this pcrec
+does not build it, so `--features` is refused with `--subst`. Every other
+option is a pattern compile's and is REFUSED with `--subst`, never ignored:
+`-i`, `--no-captures`, `--engine=`, `--emit-main`, `--trace` and the rest.
+Unset handling is a flag of the call (§4¶23), not an option. `-p` follows
+`pcrec_compile`'s prefix rules (`docs/spec/cli.md`). The template compiler has
+no library entry (`lib/pcrec.h` names none) and is reached only through the
+CLI.
 
-<a id="s5-p2"></a>[5¶2] **Stamps.** The `.h` carries the storage constants of §1¶1 (`NREFS`,
-`NSEGS`, `MAXNUM`, `NVREFS`). The `.c` alone
-carries `<PREFIX>_SUBST_UNSET` (`"empty"` or `"error"`) and
-`<PREFIX>_SUBST_MODULES` (`"subst"`, or `"subst,subst-pcrec"` when a
-`${!name}` appears), match_api.md §6.3.1's `.c`-only rule.
+<a id="s5-p2"></a>[5¶2] **Stamps.** The `.h` carries the storage constants of §1¶1:
+`NREFS` (`max(1, nrefs)`), `PIECES` (`npieces`, at least 1), `MAXNUM` and
+`NVREFS` (`max(1, nvrefs)`). The `.c` alone carries `<PREFIX>_SUBST_MODULES`
+(`subst`, then `,subst-extended` and `,subst-pcrec` when they are used), by
+match_api.md §6.3.1's `.c`-only rule.
+
+<a id="s5-p3"></a>[5¶3] `pcrec --emit-support [-o FILE]` writes the support unit (§10).
+It takes no pattern, no template and no other option.
 
 <a id="s6"></a>
-## 6. The glue
+## 6. Driving the element
 
-<a id="s6-p1"></a>[6¶1] **The glue** is in the subst block:
+<a id="s6-p1"></a>[6¶1] The support unit ships no loop. A caller drives the element from
+any iterator in a few lines, and those lines are where the caller decides how
+many matches to take, where the bytes go and when to grow storage. The recipes
+below are the reference forms, and `tests/subst/` runs each one, including
+with a forced give-up, a forced `BADSPAN` and a forced NOSPACE. They share
+one ERROR RULE: a negative return from the setup, the element or the
+iterator (`it.rc < 0` after the loop) means the output so far is a PREFIX of
+a failed find-all. The recipe then returns the code and does NOT write the
+tail, so an error never looks like complete output with the later matches
+left unreplaced. The support unit's one replace-all function (§10¶6) is these
+rules in a single call for the common destination, a caller's buffer; the
+recipes stay for every other one (a `FILE *`, a scatter list). Each starts
+from the same setup:
 
 ```c
-int pcrec_subst(const rx_subst_binding *b, rx_iter *it, size_t limit,
-                unsigned char *restrict out, size_t cap,
-                size_t *outlen, size_t *nsubst);
+rx_iter it = RX_ITER_INIT(s, n);                  /* setters while FRESH */
+const rx_subst_map *map = NULL;                   /* or a filled map (§3) */
+unsigned flags = 0;                               /* or RX_SUBST_STRICT */
+rx_var vres[DMY_NVREFS];
+rx_ctx ctx;
+int bad, rc = rx_subst_ctx_init(&ctx, &it, &rx_info, &dmy_subst_info, map, vres, flags, &bad);
+if (rc < 0) return rc;                            /* nothing written; bad names a MISSING_REF */
 ```
 
-renders every match of `it` (FRESH, its setters applied; an iterator in any
-other state returns `PCREC_ERR_ITER` and is left as it was), up to `limit`
-of them: the gap before each, each match, then the tail after the last.
-`limit` 1 is PCRE2's non-global substitution, `SIZE_MAX` its global one, and
-0 copies the subject and leaves the iterator FRESH, running no search and
-so no check of the subject either (a `-futf-check` artifact's refusal comes
-from its search). The glue requests no
-match past `limit`: `limit = 1` runs exactly one search.
-
-<a id="s6-p2"></a>[6¶2] **Returns** 0 or a negative code (§8). `*outlen` and `*nsubst` are written
-on every path: on 0, the produced length and the substitution count; on
-`PCREC_SUBST_NOSPACE`, the capacity that suffices (`SIZE_MAX`: none does)
-and the full count; on any other code, 0 and 0. `out == NULL` sizes only
-and returns 0, or `PCREC_SUBST_NOSPACE` with `*outlen == SIZE_MAX` when the
-size does not fit in a `size_t`.
-
-<a id="s6-p3"></a>[6¶3] **Sizing is one pass**: the glue writes while the output fits, counts past
-the end, and reports the capacity needed. A retry runs the find-all again,
-on a FRESH copy of the iterator (match_api.md §3.8¶10):
+<a id="s6-p2"></a>[6¶2] **Per match, with `<prefix>_next`**, a substitution written to
+a stream:
 
 ```c
-rx_iter it0 = RX_ITER_INIT(s, n), it = it0;     /* keep a FRESH copy */
-size_t len, k;
-int rc = pcrec_subst(&b, &it, SIZE_MAX, out, cap, &len, &k);
-if (rc == PCREC_SUBST_NOSPACE && len != SIZE_MAX) {
-    unsigned char *big = malloc(len ? len : 1);
-    it = it0;
-    rc = pcrec_subst(&b, &it, SIZE_MAX, big, len, &len, &k);
+ptrdiff_t caps[RX_NCAPS][2];
+rx_subst_piece pc[DMY_PIECES];
+rx_subst_out o = { .pc = pc, .cap = DMY_PIECES }; /* plus scratch, if the template forces case */
+while (rx_next(&it, caps)) {
+    o.n = 0; o.sn = 0;                            /* together: a piece may point into scratch */
+    rc = dmy_render(&ctx, map, caps, 1, flags | RX_SUBST_GAPS, &o);
+    if (rc < 0) return rc;                        /* the stream holds a prefix: no tail */
+    for (size_t i = 0; i < o.n; i++) fwrite(pc[i].p, 1, pc[i].len, f);
+}
+if (it.rc < 0) return it.rc;                      /* a give-up ended the find-all: no tail */
+if (n > o.prev) fwrite(s + o.prev, 1, n - o.prev, f);   /* the tail */
+return 0;
+```
+
+<a id="s6-p3"></a>[6¶3] To stop after `limit` matches, count the loop. The iterator stays
+resumable (match_api.md §3.8).
+
+<a id="s6-p4"></a>[6¶4] **In batches, with `<prefix>_next_n`**, into one growing buffer.
+The pieces of a batch stay valid while the subject and the variables do, so a
+buffer that is too small is grown and the same batch is flattened again. No
+match is ever searched twice. `append` checks for overflow before any
+arithmetic on the total:
+
+```c
+static int append(unsigned char **buf, size_t *cap, size_t *w,
+                  const rx_subst_piece *pc, size_t n)
+{
+    size_t need = rx_subst_flatten(pc, n, *buf + *w, *cap - *w);
+    if (need == SIZE_MAX || need > SIZE_MAX - *w) return -1;      /* the total overflows */
+    if (need > *cap - *w) {
+        if (grow(buf, cap, *w + need) < 0) return -1;
+        rx_subst_flatten(pc, n, *buf + *w, *cap - *w);
+    }
+    *w += need;
+    return 0;
+}
+
+enum { K = 64 };
+ptrdiff_t caps[K * RX_NCAPS][2];
+rx_subst_piece pc[K * DMY_PIECES];
+rx_subst_out o = { .pc = pc, .cap = K * DMY_PIECES };
+size_t got, w = 0;
+do {
+    got = rx_next_n(&it, caps, K);
+    o.n = 0; o.sn = 0;
+    rc = dmy_render(&ctx, map, caps, got, flags | RX_SUBST_GAPS, &o);
+    if (rc < 0) return rc;                        /* pc[0, o.n) is committed; this recipe drops it */
+    if (append(&buf, &cap, &w, pc, o.n) < 0) return OUT_OF_MEMORY;
+} while (got == K);
+if (it.rc < 0) return it.rc;                      /* no tail */
+if (n > o.prev) {
+    rx_subst_piece tail = { s + o.prev, n - o.prev };
+    if (append(&buf, &cap, &w, &tail, 1) < 0) return OUT_OF_MEMORY;
+}
+return 0;
+```
+
+<a id="s6-p4a"></a>[6¶4a] `OUT_OF_MEMORY` is the caller's own code. A caller that wants the committed
+matches of a failing batch (§4¶21) flattens `pc[0, o.n)` before it returns,
+and still writes no tail.
+
+<a id="s6-p5"></a>[6¶5] **With `RX_FOREACH`**, one match per body. The loop's own end
+state is the iterator's, read after the loop as in §6¶2:
+
+```c
+RX_FOREACH(&rx_info, &it, m) {
+    o.n = 0; o.sn = 0;
+    if ((rc = dmy_render(&ctx, map, m, 1, flags | RX_SUBST_GAPS, &o)) < 0) break;
+    consume(pc, o.n);
+}
+if (rc < 0) return rc;                            /* set before the loop by the setup: 0 */
+if (it.rc < 0) return it.rc;                      /* meaningful: the loop ran to its end */
+/* then the tail, as §6¶2 */
+```
+
+<a id="s6-p5a"></a>[6¶5a] `it.rc` is read only when the body did not `break` (match_api.md
+§3.8.2¶4).
+
+<a id="s6-p6"></a>[6¶6] **Replacements only** (a templated `grep -o`): leave out
+`RX_SUBST_GAPS`. Each match then gets `DMY_PIECES - 1` pieces, and there is no
+tail. The error rule still holds: on a negative return, the output is a
+prefix.
+
+<a id="s6-p7"></a>[6¶7] **Case forcing.** A template with `RX_SUBST_USES_SCRATCH`
+also needs `o.scratch` and `o.scap`. One that sizes scratch by §4¶22's bound
+never sees a scratch NOSPACE. Otherwise, after `PCREC_SUBST_NOSPACE` with
+`sneed > scap`, the caller grows the scratch and renders the same `caps`
+again. Growing moves the scratch, so every piece that points into it goes
+stale: the call is made with `n == 0` and `sn == 0`, as in §6¶4's loop, and
+the retry renders the whole batch afresh:
+
+```c
+rc = dmy_render(&ctx, map, caps, got, fl, &o);
+if (rc == PCREC_SUBST_NOSPACE && o.sneed > o.scap) {      /* o.n == 0, o.sn == 0 here */
+    if (o.sneed == SIZE_MAX || grow_scratch(&o.scratch, &o.scap, o.sneed) < 0)
+        return OUT_OF_MEMORY;
+    rc = dmy_render(&ctx, map, caps, got, fl, &o);
+}
+if (rc < 0) return rc;
+```
+
+<a id="s6-p8"></a>[6¶8] **Into one caller buffer, in one call**, with `rx_subst_replace_all`
+(§10¶6), which is §6¶4's recipe with the loop, the error rule and the sizing
+written once:
+
+```c
+size_t len;
+rx_subst_piece pc[64 * DMY_PIECES];
+rx_subst_out o = { .pc = pc, .cap = 64 * DMY_PIECES };   /* plus scratch, if it forces case */
+rc = rx_subst_replace_all(rx_info.next_n, &it, &dmy_subst_info, &ctx, map, flags,
+                          &o, buf, cap, &len);
+if (rc == PCREC_SUBST_NOSPACE && o.sneed <= o.scap)
+    /* buf was too small: len bytes suffice; grow buf and call again on a FRESH iterator */;
+/* rc >= 0: the number of matches substituted; 0 means buf holds the subject unchanged */
+```
+
+<a id="s6-p9"></a>[6¶9] **The setup wrapper.** A program writes the setup and the
+replace-all call once, for any rx and any template, and then substitutes in
+one call. `examples/subst/` builds and runs this exact text:
+
+```c
+/* every match of rx over s[0, n) substituted by t into out[0, cap): the
+ * number of matches (>= 0) with *len the length, or a negative code */
+static int sub_all(const struct rx_info *rx, const struct rx_subst_info *t,
+                   const rx_subst_map *map, unsigned flags,
+                   const unsigned char *s, size_t n,
+                   unsigned char *out, size_t cap, size_t *len)
+{
+    rx_iter it = RX_ITER_INIT(s, n);
+    rx_var vres[t->nvrefs > 0 ? t->nvrefs : 1];
+    rx_subst_piece pc[64 * (size_t)t->npieces];
+    rx_subst_out o = { .pc = pc, .cap = 64 * (size_t)t->npieces };   /* plus scratch, if it forces case */
+    rx_ctx ctx;
+    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, &bad);
+    if (rc < 0) return rc;
+    return rx_subst_replace_all(rx->next_n, &it, t, &ctx, map, flags, &o, out, cap, len);
 }
 ```
 
-<a id="s6-p4"></a>[6¶4] **No resume after `limit`.** After a return with `*nsubst == limit` the
-tail is already in `out` and the iterator's state is unspecified to the
-glue; a caller who resumes a find-all drives the element with its own loop.
-
-<a id="s6-p5"></a>[6¶5] **Variables** are resolved once per call, before any output: each
-`${!name}` against the iterator's `rx_var` array. Under `--unset=error` an
-unset one returns `PCREC_ERR_UNSET_VAR`.
-
-<a id="s6-p6"></a>[6¶6] **Stack.** The glue fetches matches with `rx_info.next_n` in batches of 1,
-2, 4, ... up to `min(64, PCREC_SUBST_PAIRS / ncaps)` entries (at least 1),
-into an automatic array of that many entries: `16 * kmax * ncaps` bytes on
-LP64, 4,096 when `ncaps <= 256` and `16 * ncaps` above it. No group count is
-refused. `PCREC_SUBST_PAIRS` (default 256, an unmeasured default) may be
-defined before the header. A caller with very many groups and a small stack
-writes a custom glue with a heap buffer (§7¶5). The glue needs C99.
+<a id="s6-p9a"></a>[6¶9a] `sub_all(&ip_info, &ipm_subst_info, NULL, 0, s, n, buf, sizeof buf, &len)` is
+then the whole substitution. A call with `out == NULL` and `cap == 0` sizes it
+(§10¶7).
 
 <a id="s7"></a>
 ## 7. The caller contract
 
-<a id="s7-p1"></a>[7¶1] **`out` must not overlap `s[0, n)`**; both glue and element declare it
-`restrict`, and an overlapping call is UNDEFINED. In-place substitution is
-not provided.
+<a id="s7-p1"></a>[7¶1] **Pieces are borrowed.** A piece that points into the subject
+is valid while `s[0, n)` is unchanged. One that points at a variable is valid
+while that variable's bytes are unchanged. One that points into scratch is
+valid until the caller reuses, moves or frees those bytes (§4¶4). Literal
+pieces, and `rx_subst_empty`, are valid for the program's life. The element
+reads the subject and the variables, and never writes them.
 
-<a id="s7-p2"></a>[7¶2] **After a negative return** the contents of `out[0, cap)` are unspecified,
-`PCREC_SUBST_NOSPACE` included.
+<a id="s7-p1a"></a>[7¶1a] **No overlap.** `o->scratch[0, scap)` must not overlap the subject,
+any variable's bytes, `pc[0, cap)`, `caps` or `o` itself, and `pc` must not
+overlap any of those either; otherwise the behaviour is UNDEFINED. An
+in-place caller (`docs/design/replace_design.md` §R4.8) keeps its scratch and
+its piece array apart from the buffer it rewrites.
 
-<a id="s7-p3"></a>[7¶3] **Concurrency.** The records are `const` and a binding is read-only (§3¶6);
-the glue keeps all per-call state in automatic storage; an iterator follows
-match_api.md §3.8¶11.
+<a id="s7-p2"></a>[7¶2] **After a negative return,** `n`, `sn` and `prev` are as
+§4¶10 and §4¶21 say. Pieces at `pc[n, cap)` and scratch at
+`scratch[sn, scap)` hold unspecified values.
 
-<a id="s7-p4"></a>[7¶4] **The context helper** for a custom glue:
-
-```c
-int rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it,
-                      const rx_subst_binding *b, rx_var *vres);
-```
-
-fills `subject`, `len` and `ncap` from the iterator and the binding,
-resolves the record's `${!name}` references into `vres` (at least
-`<PREFIX>_NVREFS` entries, `max(1, nvrefs)`, owned by the caller for the
-call) and points
-`ctx->vars` at it, and sets `user` to NULL. It reads the iterator's
-variables only where match_api.md §3.8¶9a says they hold their values.
-Returns 0 or `PCREC_ERR_UNSET_VAR` (`--unset=error`).
-
-<a id="s7-p5"></a>[7¶5] **A custom glue** is any loop that fetches matches from an iterator and
-calls the element; the block's own glue is one.
-`rx_subst_put(cur, out, cap, src, len)` is the block's one write helper,
-under the cursor rules of §4¶2. Per-match rendering with `<prefix>_next`:
+<a id="s7-p3"></a>[7¶3] **The context setup:**
 
 ```c
-rx_ctx ctx; rx_var vres[DMY_NVREFS]; rx_subst_cur cur = { 0, 0, 1 };
-ptrdiff_t caps[RX_NCAPS][2];
-rx_subst_ctx_init(&ctx, &it, &b, vres);
-while (rx_next(&it, caps))
-    if (dmy_subst_info.render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 1,
-                              RX_SUBST_GAPS, out, cap, &cur) < 0) break;
-rx_subst_put(&cur, out, cap, ctx.subject + cur.prev, ctx.len - cur.prev);
+int rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it, const struct rx_info *rx,
+                      const struct rx_subst_info *t, const rx_subst_map *map,
+                      rx_var *vres, unsigned flags, int *bad_ref);
 ```
+
+<a id="s7-p3a"></a>[7¶3a] It is a `static inline` function in the shared types block (§1¶1), not in the
+support unit, so a program that needs nothing else needs no support unit.
+
+<a id="s7-p4"></a>[7¶4] It first runs `pcrec_subst_check(t, map, rx, flags, bad_ref)`
+(§3¶8) and returns its code on failure, before touching `ctx`; this is the
+check a zero-match subject still sees. It then sets `subject` and `len` from
+the iterator and `ncap` to `rx->ncaps`. It resolves
+the template's `${!name}` references by name against the iterator's
+variables (first match wins) into `vres`, which needs at least
+`<PREFIX>_NVREFS` entries and is owned by the caller for the find-all. It
+points `ctx->vars` at `vres` and sets `user` to NULL. It reads the iterator's
+variables only where match_api.md §3.8¶9a says they hold their values. It
+returns 0, or `PCREC_ERR_UNSET_VAR` when `flags` has `RX_SUBST_STRICT` and a
+variable is unset. A caller may instead fill `ctx` and the variable array
+itself, in `vrefs` order.
+
+<a id="s7-p5"></a>[7¶5] **Concurrency.** The record and a map are `const`, and the element
+keeps no state outside `o` and the scratch. One map may serve any number of
+threads at once, each with its own iterator, `ctx`, `vres`, `o` and scratch.
+An iterator follows match_api.md §3.8¶11.
 
 <a id="s8"></a>
 ## 8. Codes
 
-<a id="s8-p1"></a>[8¶1] The codes sit below `PCREC_ERR_ITER` and none is a give-up (match_api.md
-§4). Glue and element never return -1.
+<a id="s8-p1"></a>[8¶1] The codes sit below `PCREC_ERR_ITER`, and none of them is a
+give-up (match_api.md §4). Nothing here returns -1. The value −13 is
+reserved. On success the element, the check, the setup and the helper
+return 0, and `rx_subst_replace_all` returns its match count (§10¶7).
 
 | code | value | returned by | meaning |
 |---|---|---|---|
-| `PCREC_SUBST_NOSPACE` | −11 | glue | `out` too small (§6¶2) |
-| `PCREC_SUBST_BADSPAN` | −12 | element, glue | a span the splice cannot express (§4¶5) |
-| `PCREC_SUBST_RENDER` | −13 | element, glue | a renderer segment returned -1 (no core form produces one) |
-| `PCREC_SUBST_UNSET` | −14 | element, glue | `--unset=error`: a referenced group is unset |
-| `PCREC_SUBST_MISMATCH` | −15 | bind, element, glue | records, binding, flags or caps that do not belong together |
-| `PCREC_SUBST_MISSING_REF` | −16 | bind | the rx delivers no slot for `needs[*bad_ref]` |
-| `PCREC_ERR_UNSET_VAR` | −8 | glue, element | `--unset=error`: a `${!name}` is unset |
-| `PCREC_ERR_ITER` | −10 | glue | the iterator was not FRESH (§6¶1) |
-| the iterator's code | match_api.md §4 | glue | a give-up or refusal ended the find-all |
+| `PCREC_SUBST_NOSPACE` | −11 | element, replace-all | `pc` or `scratch` is too small for the call; `need`/`sneed` say what suffices (§4¶10). From `rx_subst_replace_all` also: `out` is too small, and `*len` says what suffices (§10¶8) |
+| `PCREC_SUBST_BADSPAN` | −12 | element | a span the splice cannot express (§4¶16) |
+| `PCREC_SUBST_UNSET` | −14 | element | under `RX_SUBST_STRICT`: a referenced group is unset |
+| `PCREC_SUBST_MISMATCH` | −15 | check, context setup, helper, element, replace-all | a record, rx, map, flag, option or context that does not belong to the call |
+| `PCREC_SUBST_MISSING_REF` | −16 | check, context setup, helper | reference `*bad_ref` does not resolve (§3¶8, §3¶13) |
+| `PCREC_ERR_UNSET_VAR` | −8 | element, context helper | under `RX_SUBST_STRICT`: a `${!name}` is unset |
 
 <a id="s9"></a>
 ## 9. Differences from `pcre2_substitute`
 
-<a id="s9-p1"></a>[9¶1] Where the answers agree, `tests/subst/` holds pcrec to libpcre2's. The
-differences:
+<a id="s9-p1"></a>[9¶1] Where the answers agree, `tests/subst/` holds pcrec's answers,
+joined by the recipes of §6¶1, to libpcre2's. The differences:
 
 | # | `pcre2_substitute` | pcrec |
 |---|---|---|
-| 1 | the NOSPACE capacity counts a NUL (`a*` → `[$0]` on `"bab"`: 12) | no NUL, so one less (11) |
-| 2 | writes a NUL; `PCRE2_UCHAR *` | length only; `unsigned char *`; a NUL is ordinary output |
-| 3 | `SUBSTITUTE_EXTENDED`, `_LITERAL`, `_UNKNOWN_UNSET` are run-time flags | the dialect is the template's module; an unknown reference is a bind refusal; unset is the `--unset` axis |
-| 4 | an unknown group: −49 when substituting | `PCREC_SUBST_MISSING_REF` at bind, before any output |
-| 5 | an unset group: −55 unless `SUBSTITUTE_UNSET_EMPTY` | empty unless `--unset=error` |
-| 6 | NOSPACE: no count | NOSPACE with the full count |
-| 7 | the NOSPACE retry is a second call | the same, over a FRESH copy of the iterator (§6¶3) |
-| 8 | first or all | any `limit`; 0 copies the subject |
+| 1 | writes bytes into one buffer, NUL-terminated | writes pieces (§4¶1); bytes, if wanted, are the caller's (`rx_subst_flatten`, `rx_subst_replace_all`, §10), with no NUL |
+| 2 | `PCRE2_UCHAR *` output | pieces of `const unsigned char *`; a NUL is ordinary output |
+| 3 | `SUBSTITUTE_EXTENDED`, `_LITERAL` and `_UNKNOWN_UNSET` are run-time flags | the dialect is the template's module, chosen at compile (§2¶7); an unknown reference is `MISSING_REF` before any output, or an intentional `RX_SUBST_NOGROUP` (§3¶6) |
+| 4 | an unknown group: −49 while substituting | `MISSING_REF` at the check, at the context setup: before any output, and on a subject with no match too |
+| 5 | an unset group: −55 by default, empty under `SUBSTITUTE_UNSET_EMPTY` | empty by default; `PCREC_SUBST_UNSET` under `RX_SUBST_STRICT` (§4¶23). Inside conditional text the same, where libpcre2 gives −55 (`${1:-$2}` with both unset) |
+| 6 | NOSPACE: no count; with `OVERFLOW_LENGTH`, the length needed, counting a NUL | NOSPACE in pieces is known before any match is rendered (`k * P`); a byte length is the flatten's total, with no NUL |
+| 7 | the NOSPACE retry is a second call that matches again | no match is searched again: the caller grows its storage and renders or flattens the same batch (§6¶4) |
+| 8 | the first match or all of them | any count: the caller's loop (§6¶3) |
 | 9 | −60 when a match starts before the SEARCH start | `BADSPAN` when it starts before the previous match's END: `^\|(?<=(?1))y\|(?!)(\Kz)` on `"zy"` renders `[$0]` as `[][zy]` where libpcre2 returns −60 |
-| 10 | on an error, `outlength` is `PCRE2_UNSET` | 0, with the code |
+| 10 | on an error, `outlength` is `PCRE2_UNSET` | no length; the matches before the failing one are committed (§4¶21) |
 | 11 | ill-formed UTF-8 under `MATCH_INVALID_UTF`: its global loop | the iterator's (match_api.md §3.8¶2a): `x*` → `[$0]` on `"a\xffb"` gives `[]a[]\xff[]b[]`, 4 substitutions, where libpcre2 gives 3 |
-| 12 | no step budget | the rx's give-up ends the find-all with its code |
-| 13 | a UTF replacement is checked at substitute time, even with no match: an ill-formed one is a UTF-8 error code (−3 .. −23) | under `-e utf8` refused at template compile; under `-e byte` a template is bytes and binds only to a byte rx when it holds a byte above 0x7F (§2¶5) |
-| 14 | a start offset past the subject is −33 (`BADOFFSET`) | the iterator's (match_api.md §3.8): `rx_iter_at` past `n` finds no match, and the glue copies the subject with 0 substitutions |
+| 12 | no step budget | the rx's give-up ends the find-all with its code (`it.rc`) |
+| 13 | a UTF replacement is checked at substitute time, even with no match: an ill-formed one is a UTF-8 error code (−3 .. −23) | under `-e utf8` it is refused at template compile; under `-e byte` a template is bytes |
+| 14 | a start offset past the subject is −33 (`BADOFFSET`) | the iterator's (match_api.md §3.8): `rx_iter_at` past `n` finds no match, and the recipe copies the subject |
+| 15 | group numbers are the pattern's | with a map, any reference may read any slot (§3¶5) |
+| 16 | `\10`, `\101`, `\77`, `\81`, `\400` and every `\` + `1`-`9` + more digits: a group, an octal byte or an error, by the pattern's group count | refused at template compile (§2¶12); `\1`-`\9` alone, `\0dd` and `\o{}` are accepted |
+| 17 | `$*MARK` renders the mark name (empty when there is none) | refused at compile (§2¶4) |
+| 18 | `${!name}` is −35 | the caller's variable (§2¶3) |
+| 19 | case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF`: libpcre2 10.46 SEGFAULTS (`\U$_` on pattern `b` over `"ab\xffc"`; `\U$'` over `"abc\xc3\xa0\xff"`) or reads past the substring (`\U$_` over `"abc\xc3"` writes `\xc3\x80`) | ill-formed bytes are copied unchanged and counted one each (§2¶14a); `docs/dev/upstream_issues.md` U22 |
+| 20 | `UNKNOWN_UNSET` without `UNSET_EMPTY`: a reference to an unknown group is −55 (`[$9]`) | an `RX_SUBST_NOGROUP` entry renders empty, `RX_SUBST_STRICT` included (§3¶6) |
+
+<a id="s10"></a>
+## 10. The support unit
+
+<a id="s10-p1"></a>[10¶1] **The support unit** holds the larger functions that every template,
+and every rx, shares: `pcrec_subst_map_names` (§3¶13), `rx_group_run`
+(§3¶17), `rx_subst_flatten` (§10¶4), `rx_subst_replace_all` (§10¶6), and the
+UTF-8 case mapping used by case regions (§2¶14). No subst artifact defines any of them. The check and the
+context setup are NOT here: they are `static inline` in the shared types block
+(§3¶8, §7¶3). So a program links one support unit only when it calls a
+helper, flatten or replace-all, or uses a `utf8` template with case forcing
+(whose element calls the case mapping, and fails to link without it).
+A `byte` (or -1) template with case forcing carries the ASCII case step
+inline and calls nothing here. A template with neither needs no support
+unit.
+
+<a id="s10-p2"></a>[10¶2] **`pcrec --emit-support [-o FILE]`** writes it: one file, to
+stdout by default or to FILE. It needs no other argument, and it refuses any
+pattern, template, query or other option. The file holds the rx shared block
+and the subst types block under their guards, the support functions'
+declarations, and their definitions under `#ifdef
+PCREC_SUPPORT_IMPLEMENTATION`. A program includes it wherever it likes, and
+defines `PCREC_SUPPORT_IMPLEMENTATION` before including it in exactly one
+translation unit. Its text depends only on the pcrec build: two runs of one
+pcrec write identical files. A Makefile that regenerates it on every build
+would recompile its users each time; the plan row `[CLI-OUTKEEP]` (`-o` writes
+only when the bytes change) is the cure, and is a separate change from this
+design.
+
+<a id="s10-p3"></a>[10¶3] **External names carry the abi.** The declarations map each
+function's name to a name ending in the abi number (`rx_subst_flatten` is a
+macro for `rx_subst_flatten_v<abi>`). An artifact and a support unit of
+different abis therefore fail to link, rather than call each other. **The
+content id.** The unit also defines `pcrec_support_id` (a macro over
+`pcrec_support_id_v<abi>`), a 64-bit hash of the unit's own text that the
+emitter computes. A record whose template calls into the unit (case forcing)
+has `support` pointing at that object and `support_id` the id its own build
+emitted; a record that calls nothing there has `support` NULL and references
+no support symbol. The check refuses `*support != support_id` (§3¶10), and
+the by-name helper compares the record's `support_id` with its own when it
+is not 0. So two support units of one abi but different text (a UCD
+regeneration, a flatten fix) are caught at setup, not silently mixed. The
+unit's text is a reader of the abi number (D76/D94): a change to it is an abi
+event, and the identity gate pins its bytes.
+
+<a id="s10-p3a"></a>[10¶3a] **`PCREC_SUPPORT_STATIC`.** Defined before the first pcrec
+header of a translation unit, it makes every definition of the unit `static`
+(and implies `PCREC_SUPPORT_IMPLEMENTATION`): a private copy for that
+translation unit, with no external names, so a library and an application can
+each carry one without a link clash. The subst headers then declare none of
+the unit's names; the unit's own definitions declare them, so that
+translation unit includes the support unit before any code that calls it. The
+artifacts that use that copy are compiled in the same translation unit (the
+`-o -` form, or an `#include` of their `.c`).
+
+<a id="s10-p4"></a>[10¶4] **`rx_subst_flatten`**:
+
+```c
+size_t rx_subst_flatten(const rx_subst_piece *pc, size_t n,
+                        unsigned char *restrict out, size_t cap);
+```
+
+<a id="s10-p5"></a>[10¶5] It returns the pieces' total length, or `SIZE_MAX` when the
+total does not fit in a `size_t`. When the total fits in `cap`, it copies the
+pieces back to back into `out`; otherwise it writes nothing. `out == NULL`
+with `cap == 0` only sizes. `out` must not overlap any piece.
+
+<a id="s10-p6"></a>[10¶6] **`rx_subst_replace_all`** is the one replace-all function: every
+match of one find-all, substituted, written into the caller's buffer.
+
+```c
+int rx_subst_replace_all(rx_nextnfn next_n, rx_iter *it,
+                         const struct rx_subst_info *t, const rx_ctx *ctx,
+                         const rx_subst_map *map, unsigned flags,
+                         rx_subst_out *o,
+                         unsigned char *restrict out, size_t cap, size_t *len);
+```
+
+<a id="s10-p6a"></a>[10¶6a] `next_n` is the pattern's matcher through the type match_api.md §2¶8a already
+defines: `rx_info.next_n`, the artifact's `<prefix>_next_n`. No new matcher
+type exists. `it` is a FRESH or BOUND iterator, and it carries the subject.
+`t` is the template's record, which supplies the element (`t->render`) and its
+`npieces`. `ctx` and `map` come from the context setup (§7¶3). `o` is the
+caller's workspace: `pc` and `cap` (the piece array), and `scratch` and `scap`
+when `t->uses` has `RX_SUBST_USES_SCRATCH`. The function allocates nothing.
+Its only storage besides `o` is one stack array of `RX_FOREACH_PAIRS` capture
+pairs (match_api.md §3.8.2), so a batch is `k` matches, the least of
+`RX_FOREACH_PAIRS / ctx->ncap`, `o->cap / P` and 64. `P` is `t->npieces`.
+
+<a id="s10-p7"></a>[10¶7] **Result.** It returns the NUMBER OF MATCHES substituted,
+`>= 0` (`INT_MAX` when there are more), when the whole result, every
+replacement and every gap and the tail, is in `out[0, *len)`; `*len` is its
+length. 0 means no match: `out` holds the subject unchanged. A call that
+returns a negative code leaves `out` unspecified and counts none of it as
+output. `out == NULL` with `cap == 0` only SIZES, as the flatten does
+(§10¶5): the same count, `*len` the total, nothing written. `out == NULL`
+with `cap > 0` is `PCREC_SUBST_MISMATCH`. `flags` takes `RX_SUBST_STRICT` and nothing else: the
+function always renders gaps (`RX_SUBST_GAPS`), and another bit is
+`PCREC_SUBST_MISMATCH`. An iterator neither FRESH nor BOUND is
+`PCREC_ERR_ITER`. `PCREC_SUBST_MISMATCH` is also a `ctx->subject` or `ctx->len` that is not the
+iterator's, a NULL argument, a `t->render` or `next_n` that is NULL, a record
+with `RX_SUBST_USES_SCRATCH` and no `o->scratch`, and `k == 0` (a pattern with
+more than `RX_FOREACH_PAIRS` pairs per match, or an `o->cap` below `P`). The
+caller sets `o->pc`, `cap`, `scratch` and `scap`; the function sets
+`n`, `sn`, `prev`, `need` and `sneed` itself (the last two to 0 at the start)
+and ignores their incoming values.
+
+<a id="s10-p8"></a>[10¶8] **Too small a buffer.** When the result does not fit in `cap`, it
+keeps matching, sums the lengths without writing past `cap`, and returns
+`PCREC_SUBST_NOSPACE` with `*len` the total that suffices (`SIZE_MAX` when the
+total does not fit a `size_t`). No match is searched twice and no partial
+output is success. The caller grows `out` and calls again on a FRESH
+iterator. A scratch that is too small for one match returns
+`PCREC_SUBST_NOSPACE` with `o->sneed > o->scap` and `*len` untouched, so the
+caller tells the two apart as §6¶7 does (a scratch sized by §4¶22's bound
+never sees it). The function retries the batch with `k = 1` before it reports
+that.
+
+<a id="s10-p9"></a>[10¶9] **Errors** follow §6¶1's rule exactly. A negative return from
+the element, the iterator or the check (a give-up, `PCREC_SUBST_BADSPAN`,
+`PCREC_SUBST_UNSET`, `PCREC_ERR_UNSET_VAR`) is returned as it is, `*len` is
+untouched and no tail is written. The output before the failure is a prefix of
+a failed find-all, and `out` is not to be read as a result. The function reads
+`it->rc` after the loop, as the recipes do.
+
+<a id="s10-p10"></a>[10¶10] **Equivalence.** For every input on which §6¶4's recipe returns
+0, `rx_subst_replace_all` returns 0 with the same bytes and the same `*len`;
+on a failure both return the same code. `tests/subst/` runs the two side by
+side over the whole corpus.

@@ -28,6 +28,7 @@
     - [§1.17.1](#s1-17-1) Module `unicode-props`
   - [§1.18](#s1-18) The `-f`/`-fno-` family and the other flags that share its spelling
   - [§1.19](#s1-19) `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
+  - [§1.20](#s1-20) `--emit-support`: the subst support unit
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -184,7 +185,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
 | 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
-| 4 `subst-block` | the subst block's names (`subst_api.md` §1¶2): `rx_subst_*`, `rx_shape_*`, `rx_group_*`, `pcrec_subst*` | `rx_subst`, `rx_shape`, `rx_group` or `pcrec_subst`, alone or followed by `_` |
+| 4 `subst-block` | the subst types block's and the support unit's names (`subst_api.md` §1¶2): `rx_subst_*`, `rx_group_*`, `pcrec_subst*`, `pcrec_support*` | `rx_subst`, `rx_group`, `pcrec_subst` or `pcrec_support`, alone or followed by `_` |
 
 <a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 
@@ -318,7 +319,12 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-19"></a>
 ### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
 
-<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] [--unset=empty|error] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand or a query, and `--unset=` is refused without one of them. A template refusal exits 1 naming the template offset. The artifact, the template language and `--unset` are `subst_api.md`.
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them (`--features` included, while module `subst-extended` is not built). A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
+
+<a id="s1-20"></a>
+### 1.20 `--emit-support`: the subst support unit
+
+<a id="s1-20-p1"></a>[1.20¶1] `pcrec --emit-support [-o FILE]` writes the subst support unit (`subst_api.md` §10) to stdout, or to FILE (`-o -` is stdout). It is the one emit command that takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and `--emit-facts` §2.11 all take one): it takes no pattern, template, query or other option, and refuses any. Its output depends only on the pcrec build: two runs of one pcrec write identical files.
 
 <a id="s2"></a>
 ## 2. Listing and query surfaces
