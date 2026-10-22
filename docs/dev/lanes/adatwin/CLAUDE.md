@@ -11,3 +11,5 @@ flat's slot (`../flat/`: its M64 producer, oracle and method). Nothing here is p
 - `size.py OUT` — object size per (cell, arm): `.text`, `.rodata`, the producer alone (noinline build), its C bytes.
 - `read.py LOG` — the timing log as the report's tables, plus the paired comparisons (OBS vs M64 = ob, carried vs within).
 - `jobs/575-kit-adatwin` — the one boxqueue job (build, gate, sizes, quiet-gated grid2/time.sh, reading).
+- `time_ADAPT.log`, `reading.md`, `size.md`, `switch_real.tsv` — the window's time.sh log, its reading, the size table
+  and the real-subject mode counts (copied from the slot).
