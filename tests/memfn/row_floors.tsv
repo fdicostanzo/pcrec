@@ -60,7 +60,7 @@
 # counts from n2_results.md; floor(0.9 x chosen)): D1 129159 = floor(0.9 x
 # 143510) (pf_memchr 112482 + pf_memchr_bounded 31028), D1c 4287 = floor(0.9 x
 # 4764) (pf_memchr_back), D1w 211402 = floor(0.9 x 234892). R7w 300852 =
-# floor(0.9 x 334280): the unrouted default terminal, chosen at every FIND site
+# floor(0.9 x 334280): the default terminal (routed since B4'), chosen at every FIND site
 # no D1 row claims (pf_walk 533563 + pf_walk_bounded 35609 - D1w 234892). The
 # g2 floors of D1/D1c/D1w stay PLACEHOLDER (G2 chooses them 0 times).
 #
@@ -99,8 +99,6 @@ fn	fn-pair	5205	10422
 fn	fn-memchr	117902	18981
 fn	vrun-w16	70	743
 fn	vrun-w32	70	743
-fd	R0	-	PLACEHOLDER
-fd	R5	-	PLACEHOLDER
 fd	R8	-	PLACEHOLDER
 fd	R3a	-	PLACEHOLDER
 fd	R3b	-	PLACEHOLDER
@@ -111,7 +109,6 @@ fd	D1	129159	PLACEHOLDER
 fd	D1c	4287	PLACEHOLDER
 fd	D1w	211402	PLACEHOLDER
 fd	D2	-	PLACEHOLDER
-fd	R7	-	PLACEHOLDER
 fd	R7w	300852	PLACEHOLDER
 fd	P0	618251	PLACEHOLDER
 fd	P2	1359454	PLACEHOLDER

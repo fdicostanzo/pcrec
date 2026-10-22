@@ -39,7 +39,7 @@ This is the kit session's orientation file. Run `/pcrec-memfn-manager` and follo
 ## 4. Current state
 
 Rewritten 2026-10-21 ~21:40 at Frank's /close.
-- **Versions:** pcrec abi 82, `MF_SITE_ABI` 18, `MF_VOCAB` 4, `MF_CLASS_V` 5.
+- **Versions:** pcrec abi 82, `MF_SITE_ABI` 19, `MF_VOCAB` 4, `MF_CLASS_V` 5.
 - **R-26's kit part:** DONE and merged (Z1, Zk).
 - **The set-FIND form question is CLOSED.** Read `docs/design/memfn/walk_vs_v1_record.md` before proposing any non-walk default. Frank's ruling: the WALK when the subject is unknown; D169's addendum is filed. [MEMFN-SKIPSWITCH] is in Boonies.
 - **B4:** RE-SCOPE OWED. Its V1 movers disappear under the walk ruling. Expected shape: route the existing rows, with no default byte move; the measured-regime path stays. Send main the new shape. The minimal-E8 work stays on lane/memfn-e8min (D170).

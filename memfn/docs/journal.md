@@ -2595,3 +2595,34 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - Plants R27-a..f are proposed; ids are owed by main.
   - Timing job 580-kit-r27-cover is QUEUED and OWED. It lost a handoff to a non-gated job: a queue finding for main.
 - Earlier today, recorded above: Frank's walk ruling and its CLOSED record (docs/design/memfn/walk_vs_v1_record.md); [MEMFN-SKIPSWITCH] moved to Boonies.
+
+## 2026-10-21 (night) — wake: R-27 critic panel, B4 re-scoped and launched, F2 parked
+
+- Woke on branch `lane/memfn-b4scope`, cut from main 9950aa672. Main had merged all four kit branches: e8min, flat, adatwin and r27.
+- **B4 re-scoped (B4′)** under Frank's walk ruling. Main agreed it as posted:
+  - R7w, the walk, is the MEASURED default for every set FIND;
+  - R7, R5 and R0 are withdrawn, and fd-r0, fd-r5 and S916 retire;
+  - lockdown;
+  - empty mover set, no abi event.
+  Main filed [MEMFN-REGIME] as the trigger for any regime-gated wide-form row. Lane `b4p` (sonnet) builds it on `lane/memfn-b4p`, and its heavy run is queued in the kit band.
+- **Q-R17P-27 re-answered by Frank** (via main): F2, the VM hat → V1, is NOT built. It waits for [MEMFN-REGIME] on both engines: "it'll have its day".
+- **R-27 critic panel** (Frank's instruction): three critics (sound, mech, meas). The record is `docs/dev/reviews/2026-10-21-r1-memfn-r27.md`.
+  - Verdict REVISE. M1 is a BLOCKER: RPT re-describes pcrec's site. The fix is to widen ofsskip's contract instead.
+  - E1 and E4 are special cases, to become FIND-slot and body rows. Over-reads are invisible to proof_run. Job 580 does not measure the tie, the FUNC proxy or the SIMD layer.
+  - The proposal to Frank: read 580, run follow-up job 581, write design rev 2, then the build go. No build go was asked.
+- Job 580 started at about 21:38 (main moved it to the front).
+
+## 2026-10-21 (late night) — B4′ delivered; window-site panel; Frank's CONDITIONAL BUILD GO for D172
+
+- B4′ is all green at edeb3344f:
+  - sweep 556: 4 legs rc=0. The first sweep, 555, was red only because the dumps stream read the declared deny delta;
+  - heavy run 560: make test plus mech on 14 rows;
+  - MF_SITE_ABI 18→19.
+  It was merged into lane/memfn-b4scope, `done:` was posted, and main accepted it (it merges after its job 670).
+- Window-site design rev 1 (lane uwin) and its D6 panel r2, three critics: REVISE, no blocker. Rulings are in `docs/dev/reviews/2026-10-21-r2-memfn-window-site.md`:
+  - one restatement step, with no adapter;
+  - the kit's tables carry prefix_k's cost rules, reading pcrec's frequencies, with no interim plan_hint. This follows Frank's question "if we are simply picking the least frequent byte, why do we need pcrec?";
+  - the consumer label is deleted;
+  - end_back becomes a core position.
+- Frank on the failure shift: "not sure you determine when to use it". Job 581 tests a static predictor (predicted survival length from the default byte-rate) against measured wins.
+- **Frank, 2026-10-21: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands."** This is the BUILD GO for D172's unified window site, conditional on rev 2 passing its panel and main's agreement. hex8 is the kit's judgement call, and REPORT routing (B1) proceeds regardless of hex8.

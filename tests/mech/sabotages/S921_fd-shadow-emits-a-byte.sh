@@ -13,6 +13,8 @@
 # arm memfnarms): every fixture's `def` part digest moves. (The design names
 # emit_sweep's sample as this row's detector; the pins see the same byte with
 # no reference build.)
+# B4' (lane b4p) retired the shadow itself; the plant stands as the control
+# that the define hosting the finder's decision writes no byte of its own.
 SAB_ID="S921-fd-shadow-emits-a-byte"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="memfnarms"

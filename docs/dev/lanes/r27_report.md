@@ -201,8 +201,142 @@ The claims:
 
 ### RESULT
 
-OWED at the time of writing. The run's own `r27_table.md` is the table, and it is pasted here when
-the job ends (section 8).
+Job `580-kit-r27-cover` ran 2026-10-21 21:45 (main moved it to the front of the queue), `done/20261021T214518.528437275-580-kit-r27-cover/job.log`,
+completion line `== r27 COMPLETE rows=1800 launches=5`. Scalar layer only (SIMD not read; panel finding T4).
+The ratios are DEF-relative (`dense` against COV). Absolute columns are owed (T5).
+
+| cell | regime | class | COV/DEF | PRO/DEF | SHF/DEF | AA/DEF | floor(PRO) | PRO | SHF | dense: PRO/COV SHF/COV |
+|---|---|---|---|---|---|---|---|---|---|---|
+| lit-l8 | throughput | real | 9.931 | 0.956 | 0.957 | 1.002 | 0.020 | FASTER | FASTER |  |
+| lit-l8 | throughput | none | 10.468 | 0.995 | 0.994 | 1.000 | 0.020 | NULL | NULL |  |
+| lit-l8 | throughput | dense | 0.289 | 0.266 | 0.263 | 0.998 | 0.020 | FASTER | FASTER | 0.921 0.911 |
+| lit-l8 | search_short | real | 3.826 | 0.843 | 0.821 | 1.002 | 0.020 | FASTER | FASTER |  |
+| lit-l8 | search_short | none | 6.159 | 0.957 | 0.960 | 0.997 | 0.020 | FASTER | FASTER |  |
+| lit-l8 | search_short | dense | 0.332 | 0.259 | 0.269 | 0.998 | 0.060 | FASTER | FASTER | 0.781 0.810 |
+| lit-l8 | match | real | 1.004 | 1.002 | 1.015 | 1.001 | 0.020 | NULL | NULL |  |
+| lit-l8 | match | none | 1.000 | 1.012 | 1.009 | 1.003 | 0.020 | NULL | NULL |  |
+| lit-l8 | match | dense | 0.996 | 0.999 | 0.998 | 0.999 | 0.020 | NULL | NULL | 1.003 1.002 |
+| year4 | throughput | real | 1.233 | 0.874 | 1.123 | 1.000 | 0.020 | FASTER | SLOWER |  |
+| year4 | throughput | none | 1.321 | 0.907 | 1.263 | 0.992 | 0.023 | FASTER | SLOWER |  |
+| year4 | throughput | dense | 0.736 | 0.692 | 0.654 | 0.997 | 0.020 | FASTER | FASTER | 0.939 0.888 |
+| year4 | search_short | real | 1.440 | 0.897 | 1.357 | 0.999 | 0.030 | FASTER | SLOWER |  |
+| year4 | search_short | none | 1.755 | 0.953 | 1.484 | 1.014 | 0.025 | FASTER | SLOWER |  |
+| year4 | search_short | dense | 0.517 | 0.466 | 0.483 | 1.009 | 0.048 | FASTER | FASTER | 0.901 0.935 |
+| year4 | match | real | 0.955 | 1.001 | 0.954 | 1.000 | 0.020 | NULL | FASTER |  |
+| year4 | match | none | 0.992 | 1.002 | 0.991 | 0.998 | 0.020 | NULL | NULL |  |
+| year4 | match | dense | 0.991 | 1.003 | 0.987 | 1.002 | 0.020 | NULL | NULL | 1.012 0.996 |
+| file-ext-order | throughput | real | 3.750 | 0.925 | 0.936 | 1.000 | 0.020 | FASTER | FASTER |  |
+| file-ext-order | throughput | none | 4.113 | 1.000 | 1.011 | 1.000 | 0.020 | NULL | NULL |  |
+| file-ext-order | throughput | dense | 0.946 | 0.515 | 0.503 | 0.993 | 0.020 | FASTER | FASTER | 0.544 0.532 |
+| file-ext-order | search_short | real | 2.857 | 0.803 | 0.804 | 0.999 | 0.020 | FASTER | FASTER |  |
+| file-ext-order | search_short | none | 5.057 | 1.033 | 1.119 | 0.996 | 0.020 | SLOWER | SLOWER |  |
+| file-ext-order | search_short | dense | 0.370 | 0.228 | 0.216 | 1.006 | 0.062 | FASTER | FASTER | 0.618 0.585 |
+| file-ext-order | match | real | 0.998 | 1.043 | 1.000 | 1.002 | 0.020 | SLOWER | NULL |  |
+| file-ext-order | match | none | 0.981 | 1.057 | 0.992 | 0.992 | 0.020 | SLOWER | NULL |  |
+| file-ext-order | match | dense | 0.998 | 0.999 | 1.007 | 1.001 | 0.020 | NULL | NULL | 1.000 1.009 |
+| hex8-bounded | throughput | real | 0.907 | 0.940 | 0.810 | 1.007 | 0.020 | FASTER | FASTER |  |
+| hex8-bounded | throughput | none | 0.924 | 1.021 | 0.817 | 0.995 | 0.020 | SLOWER | FASTER |  |
+| hex8-bounded | throughput | dense | 1.326 | 1.389 | 1.375 | 0.996 | 0.020 | SLOWER | SLOWER | 1.047 1.037 |
+| hex8-bounded | search_short | real | 1.545 | 1.411 | 1.077 | 0.996 | 0.020 | SLOWER | SLOWER |  |
+| hex8-bounded | search_short | none | 1.305 | 1.058 | 0.743 | 1.006 | 0.020 | SLOWER | NULL |  |
+| hex8-bounded | search_short | dense | 1.172 | 1.128 | 0.681 | 1.001 | 0.020 | SLOWER | FASTER | 0.962 0.581 |
+| hex8-bounded | match | real | 1.005 | 1.002 | 1.003 | 1.000 | 0.020 | NULL | NULL |  |
+| hex8-bounded | match | none | 0.997 | 0.999 | 1.003 | 0.999 | 0.020 | NULL | NULL |  |
+| hex8-bounded | match | dense | 1.007 | 1.002 | 1.004 | 1.001 | 0.020 | NULL | NULL | 0.995 0.996 |
+| foobar | throughput | real | 7.526 | 0.968 | 0.961 | 1.002 | 0.020 | FASTER | FASTER |  |
+| foobar | throughput | none | 7.767 | 1.008 | 1.001 | 1.003 | 0.020 | NULL | NULL |  |
+| foobar | throughput | dense | 0.319 | 0.301 | 0.304 | 0.997 | 0.020 | FASTER | FASTER | 0.944 0.954 |
+| foobar | search_short | real | 4.018 | 0.921 | 0.931 | 0.998 | 0.020 | FASTER | FASTER |  |
+| foobar | search_short | none | 5.224 | 1.004 | 1.030 | 1.003 | 0.020 | NULL | SLOWER |  |
+| foobar | search_short | dense | 0.317 | 0.319 | 0.301 | 1.000 | 0.020 | FASTER | FASTER | 1.005 0.950 |
+| foobar | match | real | 0.983 | 0.975 | 0.997 | 0.998 | 0.020 | FASTER | NULL |  |
+| foobar | match | none | 0.926 | 0.925 | 1.000 | 1.002 | 0.020 | FASTER | NULL |  |
+| foobar | match | dense | 1.002 | 0.999 | 1.003 | 0.998 | 0.020 | NULL | NULL | 0.997 1.002 |
+| cat-bounded | throughput | real | 1.348 | 0.647 | 0.655 | 0.999 | 0.020 | FASTER | FASTER |  |
+| cat-bounded | throughput | none | 1.212 | 0.557 | 0.566 | 0.999 | 0.020 | FASTER | FASTER |  |
+| cat-bounded | throughput | dense | 0.409 | 0.293 | 0.302 | 1.000 | 0.020 | FASTER | FASTER | 0.717 0.737 |
+| cat-bounded | search_short | real | 2.046 | 0.667 | 0.683 | 1.010 | 0.027 | FASTER | FASTER |  |
+| cat-bounded | search_short | none | 2.521 | 0.652 | 0.666 | 1.004 | 0.020 | FASTER | FASTER |  |
+| cat-bounded | search_short | dense | 0.341 | 0.402 | 0.399 | 0.998 | 0.020 | FASTER | FASTER | 1.180 1.170 |
+| cat-bounded | match | real | 1.001 | 0.999 | 1.001 | 1.002 | 0.020 | NULL | NULL |  |
+| cat-bounded | match | none | 1.001 | 0.999 | 0.998 | 1.000 | 0.020 | NULL | NULL |  |
+| cat-bounded | match | dense | 1.015 | 0.965 | 0.940 | 0.979 | 0.026 | FASTER | FASTER | 0.950 0.926 |
+| done-eol | throughput | real | 1.275 | 0.685 | 0.706 | 0.999 | 0.020 | FASTER | FASTER |  |
+| done-eol | throughput | none | 1.331 | 0.668 | 0.702 | 0.996 | 0.020 | FASTER | FASTER |  |
+| done-eol | throughput | dense | 0.469 | 0.325 | 0.327 | 0.999 | 0.020 | FASTER | FASTER | 0.692 0.696 |
+| done-eol | search_short | real | 1.218 | 0.571 | 0.573 | 1.000 | 0.020 | FASTER | FASTER |  |
+| done-eol | search_short | none | 1.949 | 0.583 | 0.602 | 0.997 | 0.020 | FASTER | FASTER |  |
+| done-eol | search_short | dense | 0.348 | 0.274 | 0.291 | 0.999 | 0.020 | FASTER | FASTER | 0.787 0.836 |
+| done-eol | match | real | 1.012 | 1.002 | 0.998 | 1.003 | 0.020 | NULL | NULL |  |
+| done-eol | match | none | 1.000 | 1.000 | 1.000 | 0.999 | 0.020 | NULL | NULL |  |
+| done-eol | match | dense | 1.030 | 1.028 | 1.006 | 1.002 | 0.037 | NULL | NULL | 0.998 0.976 |
+| word-digit | throughput | real | 0.680 | 0.197 | 0.199 | 1.000 | 0.020 | FASTER | FASTER |  |
+| word-digit | throughput | none | 0.679 | 0.172 | 0.173 | 0.995 | 0.020 | FASTER | FASTER |  |
+| word-digit | throughput | dense | 0.709 | 0.681 | 0.687 | 1.001 | 0.020 | FASTER | FASTER | 0.961 0.969 |
+| word-digit | search_short | real | 0.823 | 0.259 | 0.259 | 0.988 | 0.020 | FASTER | FASTER |  |
+| word-digit | search_short | none | 0.786 | 0.215 | 0.218 | 1.003 | 0.020 | FASTER | FASTER |  |
+| word-digit | search_short | dense | 0.593 | 0.482 | 0.527 | 0.994 | 0.020 | FASTER | FASTER | 0.813 0.889 |
+| word-digit | match | real | 0.984 | 1.001 | 1.005 | 1.001 | 0.020 | NULL | NULL |  |
+| word-digit | match | none | 0.984 | 0.986 | 1.002 | 1.002 | 0.020 | NULL | NULL |  |
+| word-digit | match | dense | 0.996 | 1.000 | 1.000 | 0.997 | 0.050 | NULL | NULL | 1.004 1.004 |
+
+PRO against R-27.1's bar: 6 miss(es)
+- file-ext-order/search_short/none PRO/DEF 1.033
+- hex8-bounded/throughput/none PRO/DEF 1.021
+- hex8-bounded/throughput/dense PRO/COV 1.047
+- hex8-bounded/search_short/real PRO/DEF 1.411
+- hex8-bounded/search_short/none PRO/DEF 1.058
+- cat-bounded/search_short/dense PRO/COV 1.180
+
+SHF against R-27.1's bar: 9 miss(es)
+- year4/throughput/real SHF/DEF 1.123
+- year4/throughput/none SHF/DEF 1.263
+- year4/search_short/real SHF/DEF 1.357
+- year4/search_short/none SHF/DEF 1.484
+- file-ext-order/search_short/none SHF/DEF 1.119
+- hex8-bounded/throughput/dense SHF/COV 1.037
+- hex8-bounded/search_short/real SHF/DEF 1.077
+- foobar/search_short/none SHF/DEF 1.030
+- cat-bounded/search_short/dense SHF/COV 1.170
+
+```
+PRO against R-27.1's bar: 6 miss(es)
+- file-ext-order/search_short/none PRO/DEF 1.033
+- hex8-bounded/throughput/none PRO/DEF 1.021
+- hex8-bounded/throughput/dense PRO/COV 1.047
+- hex8-bounded/search_short/real PRO/DEF 1.411
+- hex8-bounded/search_short/none PRO/DEF 1.058
+- cat-bounded/search_short/dense PRO/COV 1.180
+
+SHF against R-27.1's bar: 9 miss(es)
+- year4/throughput/real SHF/DEF 1.123
+- year4/throughput/none SHF/DEF 1.263
+- year4/search_short/real SHF/DEF 1.357
+- year4/search_short/none SHF/DEF 1.484
+- file-ext-order/search_short/none SHF/DEF 1.119
+- hex8-bounded/throughput/dense SHF/COV 1.037
+- hex8-bounded/search_short/real SHF/DEF 1.077
+- foobar/search_short/none SHF/DEF 1.030
+- cat-bounded/search_short/dense SHF/COV 1.170
+== r27 COMPLETE rows=1800 launches=5
+```
+
+**Reading (kit manager, 2026-10-21):**
+- **PRO, the window search with no shift, is the form.**
+  - It is FASTER than today's REPORT pick on every cell.
+  - It meets R-27.1's bar on 42 of the 48 non-match cells (against DEF; dense against COV).
+  - Its misses: hex8-bounded (4 cells), cat-bounded `search_short`/dense against COV (1.18), and
+    file-ext-order `search_short`/none (1.033, a literal cell where T3's FUNC proxy question applies).
+- **SHF must not be a general default.**
+  - It fixes most of hex8 `search_short` (none 0.743, dense 0.681).
+  - It costs year4 12-48% and costs file-ext-order.
+  - So E4 is either a body row gated on its own predicate (panel M5) or replaced by the
+    Horspool-over-sets form (U6). U6's trigger FIRED: SHF still misses hex8 `search_short`/real
+    (1.077) and `throughput`/dense.
+- **hex8-bounded is the open cell.** No measured form clears it.
+- **match regime:** PRO reads SLOWER on file-ext-order (1.043, 1.057). This is T9's case, and
+  read_r27.py does not count it.
+
 
 ## 6. Build plan (for the lane that gets the go)
 
