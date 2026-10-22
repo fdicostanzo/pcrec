@@ -2138,7 +2138,7 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 #    are unchanged.
 #  - 206cf0a0b -> HEAD moves no tag (kit, docs, test pins only).
 # MANIFESTS (thin tags) re-measured by the run itself and unchanged.
-# RE-PINNED 2026-10-22 (lane vrepin/vrepin3, main a8897e529 merged). `--variant all` read
+# RE-PINNED 2026-10-22 (lane vrepin/vrepin3, re-measured after merging main a8897e529). `--variant all` read
 # the lowered-cap TAG FLOORS below pin: lowsize/lowboth byte no-linked-call 123 -> 122, yes
 # 1456 -> 1446, no-size-cap 76 -> 83, yes-collapsed 33 -> 35, refused 3444 -> 3446. CAUSE,
 # bisected (705-vrepin-bisect) to 813f43ec8 ([MEASURE-SET] M0, abi 81 -> 82): its stamp

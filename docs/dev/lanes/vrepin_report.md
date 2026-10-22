@@ -67,3 +67,11 @@ no emitter change = corpus/tag move, legitimate).
   and leaves the edit UNCOMMITTED, then runs `--variant all` with floors).
 - OWED: after 711, diff pins_all_head2.py vs the pasted pins; any cell moving by more than the merge's corpus rows
   explains is the STOP RULE (report). After 710 is green, commit the script (if 710's prelude changed it) and END.
+
+## jobfix (sonnet, 2026-10-22): 711 diff, 710 -> 715
+- 710 failed READY-ERRORED: its `--ready` asked `boxqueue after 711-vrepin-remeasure`; the KEY is OWNER-REST (`vrepin-remeasure`), no PRIO prefix.
+- Diff of 711's emitted pins (build/vrepin/pins_all_head2.py) vs the committed VARIANT_PINS (7924c9136): NONE. All 10 cells
+  equal (also byte-identical to pins_all_head.py). 711 (08:30) re-measured the merged HEAD and 709's values (08:20) were
+  already taken there; nothing to explain, no values to re-commit. The RE-PINNED block now says "re-measured after merging main a8897e529".
+- 715-vrepin-all: the pin-pasting prelude is removed (it copied the checked values in, green by construction); the job
+  runs `--variant all` against the committed pins, `--ready` is unconditional (no dependency left), and it exits on the tool's rc.
