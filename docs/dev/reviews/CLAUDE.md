@@ -27,7 +27,8 @@ non-obvious code in src/ and odd-looking test cases trace to a finding here.
 ## Files
 
 - `YYYY-MM-DD-rN-<topic>.md` — one review per checkpoint, R1 (2026-08-09
-  m1) through the 2026-10-18 panels (r1-e1, r2-kitverify-proof,
+  m1) through the 2026-10-21 panel r1-memfn-r27 (the R-27 window-search
+  design) and the 2026-10-18 panels (r1-e1, r2-kitverify-proof,
   r3-kit-proof-u1, r4-ctx-span); the dated index of what each covers is in
   the history file. Where a review has critic texts they sit in a sibling
   directory of the same name (e.g. `2026-10-05-r4-startset/`,
