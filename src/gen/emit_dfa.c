@@ -1275,7 +1275,8 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
 
 /* [OPT-REQPOS] / [K66] pcrec's NOTE on run pre-check test `i` (0 the
  * window, 1 the whole run): the fact the test's call rests on, the run's
- * bytes escaped for the comment, `masked` where the test carries a mask.
+ * bytes escaped for the comment, with its mask where the run's own array
+ * (the window's for test 0, the whole run's for test 1) carries one.
  *
  * [K66] WHY A WHOLE RUN. The window is cut from the run by the byte-rate
  * (`pcrec_find_run_window_start`), so with only the window compared, a
@@ -1285,11 +1286,12 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
  * on "e" + 36 `a`s + "~#~#~#~#"); the second call compares the whole run, so
  * the proof rests on the run, which is the pattern's.
  * `req_set_rest_members`' header says why that route and only that one. */
-static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i,
-                         bool masked)
+static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, int i)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
     int prev = 0, k, m = req_run_member(cx, r);
+    bool masked = i == 0 ? run_mask_or_null(r->mask, r->len) != NULL
+                         : run_mask_or_null(r->whole_mask, r->whole_len) != NULL;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (i == 0 && masked) {
         /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
@@ -1462,8 +1464,7 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
     const PcrecMfU *pu = u;
     const mf_pred *p = &pu->site->preds[part];
     StrBuf *sb = pcrec_memfn_sink_sb(pu->cx, c);
-    if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1,
-                                  p->term[0].mask != NULL);
+    if (p->fn_ref)   req_note_run(pu->cx, sb, pu->indent, (int)p->fn_ref - 1);
     else if (!part)  req_note_byte(sb, pu->indent, mf_term_byte(&p->term[0]));
     else             req_note_rest(sb, pu->indent);
 }
