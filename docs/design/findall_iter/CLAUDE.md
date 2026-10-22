@@ -79,6 +79,15 @@ stay in `out/` as the record.
 - `parity_expect.py` — G3's independent answers (python `re` over the subject bytes).
 - `parity_verdict.py` — §5.3's table and verdict rule (floor from the A/A arm, I and B64
   gates, the batch cell, I_shared/N64 reported), ending `== parity COMPLETE <rows>`.
+- **[FINDALL-NEXT] I4 (lane i2build, `../findall_iter_i2.md` §4):** `PARITY_I4=1` (implies
+  `PARITY_POST=1`, `PCREC_OLD` = the I1 compiler) adds arms `I_i1`/`I_i1b` (the I1 artifact's
+  `_next`, two compiles), `I` (this compiler's `_next`), `F`/`Fb` (RX_FOREACH over `rx_info`,
+  two compiles), `I_info` (`rx_info.next` per match), `N4`/`N64` (`_next_n`, entries NCAPS
+  apart), cell `c8` (one match at byte 16 of 1 MiB, stop 1); the answer reference is `I_i1`;
+  G4 expects no PLT call of the rx_info arms. `tdrv.c` gains `ARM_FOREACH`, `ARM_INFO` and
+  `NEXTN_K`. `i4_verdict.py` (called by `parity_verdict.py` when an `Fb` arm is present):
+  per-ratio A/A floors over the launches, gates G1 `I/I_i1`, G2 `F/I` never worse, G3 the
+  positive gain on c3-4k/c3-1m R2, G4 c7/c8, and the `QUIET` line the queue job re-queues on.
 - `parity_job.sh` — the `150-parity-slot` boxqueue job (`--dry-run` a no-clock build and
   the quick gate; `--ready` the quiet gate, load1 < 2.0 twice a minute apart, read back
   from `queue.log`; the work `exec taskset -c 7 parity.sh run`).
