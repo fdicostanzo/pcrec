@@ -198,9 +198,9 @@ Committed on `lane/subst`:
 - c05f137e9: §R3;
 - 106c7f04b: the §R2 markers and the design index;
 - 9911ddeb0: the review and the reviews index;
-- this report's commit.
+- 780288323: this report (this line amended after).
 
-`make test-spec-history`: see the handback (run after this commit). No owed runs.
+`make test-spec-history` 11/0 PASS (run on 780288323 while the queue ran a non-timing job). No owed runs.
 Last rulings entry applied: none (the file is empty).
 
 A fresh agent resumes from §R3.16's answers. Phase B is a build lane with a build
