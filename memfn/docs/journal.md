@@ -2739,3 +2739,12 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - The English prior is off by 20-100x on generated utf8.
 - HRS is the overall hex8 winner and catastrophic on the literal cells (up to 80x).
 - No arm passes R-27.1 everywhere. The reading goes to Frank: PB is not the hex8 answer; the selector needs a per-byte cost term beside mass.
+
+## 2026-10-22 (evening) — R-29 delivered
+
+- Job 585 (wsc8) was GREEN. Main had moved 97 commits (R-28 + langfix), with six conflicts, compose.c among them.
+- Lane wsmain merged main in at 1d83e8430. The merged tree failed R-28's 4 KB frame bar on D172's new window.c. Lane wsframe moved wf_dec to the heap and wf_legacy to the arena (aba15302e): 76/76 outputs identical, G2 window 6032/0.
+- Job 586 at a2d4d9738 vs main bf33d2dab is GREEN on every step, including make test (uncontaminated) and memfn-link. wreply is 0 failed.
+- lane/memfn-ws was fast-forwarded. done: R-29 is posted at 25ec6f665 and main is told.
+- Lesson: a lane that ENDS before a GO arrives misses it. A GO for a stopped lane goes to a fresh lane, and the old lane must be TaskStopped first so it cannot wake and race the new one in the same worktree.
+- Next: S3 (B1) after main merges. Frank's call is owed on the r27c reading (HRS for wide sets, plus a cost term in the selector).
