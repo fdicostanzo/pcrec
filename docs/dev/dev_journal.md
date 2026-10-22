@@ -27237,3 +27237,8 @@ Merged lane/langfix2 (speclang, langfix, langfix2, langfix3, lf3tri: docs/spec/p
 - A lane counted declared-UNREACHED rows as unreached; a base built from `git archive` cannot run the mech clean-tree clone.
 
 **Next:** see wake.md.
+
+## 2026-10-22 (session 124) — context-growth audit and fix
+
+Frank: the manager's context fills faster than usual even after the de-bulk. Lane ctxaudit measured 12 manager transcripts (message.usage): the cause is Claude Code's auto-injection of nested CLAUDE.md files on Read/Write/Edit. It was the largest bucket in every pre-de-bulk session (100-450k est. tokens, ~1.7x that real; one session ~750k), and it fell to ~10k in the post-de-bulk sessions. The residue: ~110 old worktrees keep pre-de-bulk copies (docs/dev/lanes/CLAUDE.md up to 472 KB). One Write of a rulings file into worktrees/i2design cost ~258k real tokens in one turn. The fixed overhead grew only 4.6k in two weeks. Lane ctxfix (merged 70cf1b9ef): PreToolUse hook scripts/hooks/no_stale_claudemd.sh blocks Read/Write/Edit under a worktree path with a CLAUDE.md over 32 KB (the lane's 24 KB would have blocked live lanes under src/parse, whose main copy is 25 KB; raised at review); tests/harness/CLAUDE.md de-bulked 48.8 -> 2.8 KB (132 lines, so the line-count criterion had missed it); 6 worktrees pruned (only 6 eligible; the rest are dirty or unmerged). Still over 16 KB in main: src/parse 25 KB, src/opt 18 KB, root 16.8 KB, src/gen 16.6 KB.
+Also: subst R4 light panel (substr4c1 semantics, substr4c2 interface) delivered 18 findings (3 high: case-state rule wrong, ill-formed UTF-8 under case forcing undefined and crashes libpcre2, \ddd is group-count-dependent); substr4b applying them to the design. 710-findbench-parity queued for the 19:00 window.
