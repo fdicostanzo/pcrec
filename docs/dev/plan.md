@@ -530,6 +530,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [ITER-BLOCK] STATE:not-started — FIND-ALL BY BLOCKS: SEARCH A BLOCK, RETURN ITS MATCHES, ELSE THE NEXT BLOCK
+  filed: 2026-10-21 Frank (I2 discussion: "search a block for answers, if you find at least one, stop and return them, if you find none, go to the next block. that way the oversearch is bounded")
+  status (2026-10-21): filed; nothing built. I2 ships with the batch doubling from 1 (bounds the early-break over-scan with no new mechanism); this row is the general form.
+  trigger: [M3] streaming, or a caller asking for bounded latency per call, or I2's timing showing the 1-start costs a measured gain.
+  refs: docs/design/findall_iter_i2.md (rev 2, sem-1); docs/dev/reviews/2026-10-21-r1-findall-i2.md; [FINDALL-NEXT]; [M3]
+  Charter: `next_n` fills from matches whose START lies in the current block [p, p+B) (B in pages; batch may start at 64); a block with no match moves on to the next, so the over-search past the caller's last wanted match is at most one block. Needs a caller-supplied start limit on every engine's search ("leftmost match starting before X", scanning past X only to finish a match that started before it): the start table's BOUND slot (start_max / attempt_max) is the existing mechanism to generalize, not a new scan loop. Semantics to state: a match straddling the block end belongs to the block it starts in; "returned < k" no longer means ended (state says).
 - [MEMFN-REGIME] STATE:not-started — A REGIME-GATED WIDE FORM, DESIGNED AGAINST THE WALK, ONCE A LANDING REGIME EXISTS AT THE CALL
   filed: 2026-10-21 manager, at the kit's B4' notice (lane/memfn-b4scope f6fb97780); D169 addendum
   status (2026-10-21): filed; nothing built. B4' withdraws V1/R5/R0; the walk is every set FIND's default. Frank: V1 waits for this row on both engines, the VM version (Q-R17P-27) included: "it'll have its day".
