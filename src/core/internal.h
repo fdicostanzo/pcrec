@@ -1270,8 +1270,8 @@ struct Ast {
      *
      * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
      * option run, src/parse/mod_modifiers.c), never propagated: a group
-     * whose body is one is repeatable (K124), which `pcrec_wrap_bare_anchor`
-     * seals at every group's `)`; and it is READ off an atom of ANY kind by
+     * whose body is one is repeatable (K124): `pcrec_wrap_bare_anchor` clears it
+     * at every group's `)`; and it is READ off an atom of ANY kind by
      * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
 

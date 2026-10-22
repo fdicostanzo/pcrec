@@ -14,7 +14,7 @@ directory asserts that the description and the shipped parser actually agree.
 - **run_pc4.sh / pc4_check.c / pc4_driver.c / pc4_subjects.h** — PC-4 (MOD-0.3e), the SEMANTIC differential R8/C4-2 asked for and PC-3 deliberately is not: what a PRODUCED ...
 - **axes_registry_check.sh** — [CHK-2] piece 1(a): the OPTIMIZATION-AXIS registry's own check, a DIFFERENT registry from the SR-1 syntax table above.
 - **limits_check.sh** — [LIM-1] (D90, 2026-08-30): the numeric-limits table's own check, the SIXTH registry-family TSV surface's independent side.
-- **syntax_index_check.py** — [SPEC-LANG]: `docs/spec/pattern_language.md` §10 (the language spec's hand-written construct index) against `pcrec --list-syntax`: missing/extra rows, module disagreements, sections the doc lacks; plants three mutations of the real doc first and fails if one goes unreported. Run by run_registry_tests.sh.
+- **syntax_index_check.py** — [SPEC-LANG]: `docs/spec/pattern_language.md` §10 (the language spec's hand-written construct index) against `pcrec --list-syntax`: missing/extra rows, module disagreements, sections the doc lacks; plants three mutations of the real doc first and fails if one goes unreported. Run by run_registry_tests.sh. A population FLOOR (`ROWS_FLOOR`, 142 rows): raise it in any change that adds a construct.
 - `tests/lib/spec_extract.sh` — section "[decfbB0b] the extractors moved to `tests/lib/spec_extract.sh`" (history file)
 
 ## Two hand-written assertions that must not be tidied away (R5 N-1)

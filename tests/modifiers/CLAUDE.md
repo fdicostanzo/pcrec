@@ -31,7 +31,8 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
 - **optrun_group.rxt** — K124 (lane langfix2): a GROUP whose whole body is
   an option setting is repeatable (`(?:(?i))*a`, `((?s))?a`, `(?=(?m))+a`,
   `(?>(?i))*a`, `(?i:(?s))*a`); the bare run quantified stays err 109 (two
-  `perr` controls). libpcre2 10.46-generated, no python arm.
+  `perr` controls). libpcre2 10.46-generated, no python arm; spec
+  `optrun_group.gen.py` beside it (tests/lib/p2gen.py).
 - **scope.rxt** — where `(?i)`/`(?-i)`/`(?i:...)` starts and stops
   applying: from-position, unset mid-pattern, group-close restore, and the
   measured PARSE-1 sibling-alternation-branch leak.

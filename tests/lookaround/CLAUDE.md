@@ -23,7 +23,7 @@ going down is the module landing.
 - **nonatomic_ahead.rxt** — `(?*` only, and `# pcre2-only` IN ITS ENTIRETY (python has no `(?*` at all, G5) — computed, not declared, ten blocks of ten.
 - **lookbehind.rxt** — `(?<=` and `(?<!` with FIXED bodies and SAME-length alternatives, which is what keeps the file python-verifiable: python's rule is narrower than ...
 - **lookbehind_widths.rxt** — DIFFERENT-length branches, `# pcre2-only` in its entirety (G1).
-- **lookbehind_group_alt.rxt** — K123 (lane langfix2): a lookbehind alternative that is a non-capturing or scoped GROUP of alternatives. Same-length groups compile (first branch, later branch, `(?i:`, `(*plb:`, negative, captures, nesting); different-length ones are §7.4's capability `perr` (libpcre2 accepts them), never the old internal error. libpcre2 10.46-generated, no python arm.
+- **lookbehind_group_alt.rxt** — K123 (lane langfix2): a lookbehind alternative that is a non-capturing or scoped GROUP of alternatives. Same-length groups compile (first branch, later branch, `(?i:`, `(*plb:`, negative, captures, nesting); different-length ones are §7.4's capability `perr` (libpcre2 accepts them), never the old internal error. libpcre2 10.46-generated, no python arm; spec `lookbehind_group_alt.gen.py` beside it (tests/lib/p2gen.py).
 - **startpos.rxt** — `ms`/`ns` cells over a lookbehind, and **the axis a startpos-blind corpus would miss entirely**.
 - **nonatomic_behind.rxt** — `(?<*`, `# pcre2-only` (G5), carrying §3.6's measured witness `(?<*(a)|(ba))c\2` on "bacba" BY NAME **and its atomic control** ...
 - **workbudget.rxt** — §3.7's long-subject LEADING multi-branch lookbehind (R33 C1-6), so the `n·Σk_i` charge shape is MEASURED rather than reasoned about.

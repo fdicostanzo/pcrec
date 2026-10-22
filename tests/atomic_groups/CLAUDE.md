@@ -25,7 +25,7 @@ at R31 (`docs/dev/reviews/2026-08-22-r31-atomic-groups-design.md`).
   discharge's own boundary: same group, and only the follow decides whether the
   cut costs anything.
 - **possessive.rxt** — the four suffix spellings including `{n}+`, `{n,}+` and
-- **possessive_ungreedy.rxt** — K122 (lane langfix2): every possessive suffix under `(?U)` is GREEDY (`(?U)a*+` on "aaa" (0,3)); each block twice, default engine and `engine vm`, beside lazy-under-`(?U)` controls. libpcre2 10.46-generated, `# pcre2-only` (python has no `(?U)`).
+- **possessive_ungreedy.rxt** — K122 (lane langfix2): every possessive suffix under `(?U)` is GREEDY (`(?U)a*+` on "aaa" (0,3)); each block twice, default engine and `engine vm`, beside lazy-under-`(?U)` controls. libpcre2 10.46-generated, `# pcre2-only` (python has no `(?U)`); regenerate with `python3 tests/lib/p2gen.py tests/atomic_groups/possessive_ungreedy.gen.py` (its spec, beside it).
   `{,n}+`. Section 6 is the EQUIVALENCE as cells, each spelling beside its
   group twin. Section 8 is where python `re` diverges and `*+`/`++` do not,
   which is what makes the controls beside it load-bearing. **Section 10

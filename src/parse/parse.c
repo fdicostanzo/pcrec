@@ -1588,9 +1588,10 @@ static Ast *p_group(Ctx *cx, size_t apos)
  * an ordinary/named/non-capturing group this open paren starts, parses the
  * body accordingly, and -- for a body-carrying group -- saves/restores the
  * scoped inline-option state around it (moved here from p_group at MOD-0.5c,
- * since a body-CARRYING group is the scope boundary, not a bare `(?i)`). For a
- * capturing group, propagates `not_repeatable` from the body onto the A_CAP
- * wrapper so `((?i))*` answers the same under captures on or off. Reads/writes
+ * since a body-CARRYING group is the scope boundary, not a bare `(?i)`). The
+ * group is repeatable whatever its body (K124): `pcrec_wrap_bare_anchor`
+ * clears a bare option run's flag, so `((?i))*` answers the same under
+ * captures on or off. Reads/writes
  * cx->pos/cx->depth/cx->mods throughout. Caller invariant: called only from
  * p_group, which has already bumped cx->depth against PCREC_MAX_GROUP_DEPTH. */
 static Ast *p_group_body(Ctx *cx, size_t apos)

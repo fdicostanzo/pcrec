@@ -29,6 +29,11 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DOC = os.path.join(ROOT, "docs", "spec", "pattern_language.md")
 
+# The population floor: both sides held equal could still both shrink (a
+# --list-syntax that drops rows and a doc edited to match). Raise it in any
+# change that adds a construct; lower it only in one that removes one.
+ROWS_FLOOR = 142
+
 HEADING = re.compile(r"^#{2,6}\s+(\d+[a-z]?(?:\.\d+[a-z]?)*)\.?\s")
 INDEX_HEAD = re.compile(r"^#{2,6}\s+(?:<a[^>]*></a>\s*)?\d+\.?\s+Construct index\s*$")
 CELL_CODE = re.compile(r"^`(.*)`$")
@@ -145,8 +150,9 @@ def main():
     text = open(doc, encoding="utf-8").read()
     sections, index = read_doc(text)
     fails = []
-    if not rows:
-        fails.append("population: --list-syntax printed no rows")
+    if len(rows) < ROWS_FLOOR:
+        fails.append("population: --list-syntax printed %d rows, below the floor %d"
+                     % (len(rows), ROWS_FLOOR))
     if not index:
         fails.append("population: pattern_language.md has no §10 index lines")
     fails += selftest(rows, text)
