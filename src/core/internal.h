@@ -5661,11 +5661,12 @@ bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
 bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
 /* K127: does lookbehind `look`'s length computation RE-ENTER ITSELF — does a
  * call in its body, followed through callees' calls, reach a group whose
- * region contains `look`? Calls inside a nested lookaround are not followed
- * (they contribute no length). libpcre2 10.46 refuses exactly these with err
- * 125 "length of lookbehind assertion is not limited": `(?<=(?R))x`,
- * `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`, `(a(?=(?<=(?1))))`, while
- * `(a)(?<=(?1))` and `(?<=a(?=(?R)))x` compile. */
+ * region contains `look`? Calls inside a nested lookahead are not followed
+ * (they contribute no length); calls inside a nested lookbehind are. libpcre2
+ * 10.46 refuses exactly these with err 125 "length of lookbehind assertion is
+ * not limited": `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`,
+ * `(a(?=(?<=(?1))))`, `((?<=(?2)))(a(?<=(?1)))`, while `(a)(?<=(?1))`,
+ * `(?<=a(?=(?R)))x` and `((?<=(?2)))(a(?=(?1)))` compile. */
 bool        pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No

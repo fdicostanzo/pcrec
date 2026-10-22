@@ -7,8 +7,8 @@
 # §5.2). pcrec refused the utf8 cells with the byte-mode diagnostic before
 # the fix.
 #
-# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 at PCRE2_UTF (build/lf2/
-# gen.py over p2probe). Outside a class a `\4`.. escape is module
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 at PCRE2_UTF (tests/lib/
+# p2gen.py over p2probe). Outside a class a `\4`.. escape is module
 # `backrefs`' digit row (pattern_language.md §7.3), so those blocks enable it.
 
 # THE ADVERSARY'S CELL: `\400` is U+0100.

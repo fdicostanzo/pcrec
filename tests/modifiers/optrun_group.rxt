@@ -9,7 +9,7 @@
 # `not_repeatable` flag up to the quantifier; `pcrec_wrap_bare_anchor` now
 # seals every group's body so the group is repeatable.
 #
-# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
 # p2probe). The two `perr` controls at the end are libpcre2's own err 109.
 
 # THE ADVERSARY'S CELL: `*` on a non-capturing group of `(?i)`; the `(?i)` ends at

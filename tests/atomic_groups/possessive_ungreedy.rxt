@@ -6,7 +6,7 @@
 # before the fix (the desugar kept the ungreedy default), so every block
 # here is written twice, the default engine and `engine vm`.
 #
-# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
 # p2probe, the adversary's own oracle driver), never by hand. python3 `re`
 # has no `(?U)`, so every block is `# pcre2-only`.
 
@@ -176,3 +176,4 @@ pattern (?U)a+
 features atomic-groups,classes,modifiers
 engine vm
 m "aaa" 0 1
+

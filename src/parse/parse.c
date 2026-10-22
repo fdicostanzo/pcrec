@@ -174,8 +174,8 @@ void pcrec_ast_stamp(Ast *a, const RegRow *rw, size_t at)
  *
  * `not_repeatable` is deliberately NOT part of this predicate: it is a
  * per-NODE flag a bare option run sets (R20/SPEC-1) rather than a property of
- * a KIND, and it must NOT be wrapped — `(?:(?i))*` is error 109 in libpcre2,
- * where `(^)*` is not. `try_quant` tests the two separately for that reason. */
+ * a KIND. `a(?i)*` is error 109 where `(^)*` is not, so `try_quant` tests the
+ * two separately; a group closes over either (K124, `pcrec_wrap_bare_anchor`). */
 /* Exhaustive no-default switch (mrl.c's rule) over whether AST kind `a->k` is
  * a BARE zero-width anchor standing alone as a group's whole body: true for
  * A_EOL/A_GSTART/A_KRESET and an anchor-spelled A_CTX (`\b`/`\B`, `^`/`\A`/
@@ -281,19 +281,24 @@ bool pcrec_is_bare_anchor(const Ast *a)
 }
 
 /* Seals a group's body so the GROUP is a repeatable item: wraps `body` in an
- * A_CAT with a trailing A_EMPTY when it is a bare anchor (pcrec_is_bare_anchor)
- * or a node that is not repeatable on its own -- unchanged otherwise. Every
- * body-carrying group calls it at its `)`, so the quantifier lands on a CAT
- * rather than directly on the anchor or the option run.
+ * A_CAT with a trailing A_EMPTY when it is a bare anchor (pcrec_is_bare_anchor),
+ * so the quantifier lands on a CAT rather than directly on the anchor; clears
+ * the flag of a body that is a bare option run; unchanged otherwise. Every
+ * body-carrying group calls it at its `)`.
  *
  * K124: a bare option run is err 109 only where IT is the quantified item
  * (`a(?i)*`); a group whose whole body is one (`(?:(?i))*a`, `((?s))?a`,
  * `(?i:(?s))*`, `(?>(?i))+`) is an ordinary repeatable group in libpcre2
- * 10.46, matching what its (empty) body matches. The CAT's own flag is the
- * arena's false, so nothing above the group inherits the run's flag. */
+ * 10.46, matching what its (empty) body matches. The run is an A_EMPTY whose
+ * flag only the quantifier check reads, so clearing it in place, rather than
+ * wrapping it, leaves the tree of every group that was already right (`((?i))a`,
+ * `x(?>(?i))y`) exactly as it was. */
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
 {
-    if (!pcrec_is_bare_anchor(body) && !body->not_repeatable) return body;
+    if (!pcrec_is_bare_anchor(body)) {
+        body->not_repeatable = false;
+        return body;
+    }
     Ast *cat = node(cx, A_CAT);
     cat->l = body;
     cat->r = node(cx, A_EMPTY);

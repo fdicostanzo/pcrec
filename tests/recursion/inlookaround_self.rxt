@@ -6,13 +6,14 @@
 # looked fixed) and the artifacts answered no-match or gave up with
 # PCREC_ERR_FRAMES. The rule (`pcrec_callgraph_lookbehind_recurses`): follow
 # the lookbehind body's calls, and each callee's calls, except calls inside a
-# nested lookaround; refuse if a reached group contains the lookbehind
-# anywhere (a lookaround included). A call under `{0}` still counts.
+# nested lookahead (a nested lookbehind's calls ARE followed); refuse if a
+# reached group contains the lookbehind anywhere (a lookaround included). A
+# call under `{0}` still counts.
 #
 # The ACCEPTED controls are the boundary: a call to a group that does not
 # contain the lookbehind, and the re-entry reached only through a lookahead.
 #
-# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
 # p2probe); every `perr` block is one libpcre2 also refuses (err 125).
 
 # THE ADVERSARY'S CELLS: the whole pattern, called from a lookbehind inside it.
@@ -64,6 +65,29 @@ pattern (?(DEFINE)(?<g>a(?<=(?&g))))x(?&g)
 features recursion,lookaround,named-groups
 perr
 
+# A NESTED LOOKBEHIND IS FOLLOWED (lane langfix3): group 2 re-enters group 1
+# through its own lookbehind. libpcre2 10.46: err 125 at offset 1.
+pattern ((?<=(?2)))(a(?<=(?1)))
+features recursion,lookaround
+perr
+
+# The same through a negative lookbehind (libpcre2: err 125 at 1).
+pattern ((?<=(?2)))(a(?<!(?1)))
+features recursion,lookaround
+perr
+
+# The nested lookbehind's call after a literal (libpcre2: err 125 at 1).
+pattern ((?<=(?2)))(a(?<=b(?1)))
+features recursion,lookaround
+perr
+
+# A three-group cycle through two nested lookbehinds. libpcre2 reports err 125
+# at offset 31 (the lookbehind in group 3); pcrec refuses at 19 (group 2's),
+# which is also on the cycle.
+pattern (?<=(?1)|(?2))(a)(b(?<=(?3)))(c(?<=(?2)))
+features recursion,lookaround
+perr
+
 # ACCEPTED: the callee does not contain the lookbehind.
 pattern (?<=(?1))(a)
 features recursion,lookaround
@@ -84,6 +108,22 @@ features recursion,lookaround
 n "ba"
 n "b"
 n "xa"
+
+# ACCEPTED: the same re-entry through a nested LOOKAHEAD is not followed. (On
+# "aa" both libpcre2 (-52, recursion loop) and pcrec (-3) give up at match
+# time, so no such subject is here.)
+pattern ((?<=(?2)))(a(?=(?1)))
+features recursion,lookaround
+n "a"
+n "ba"
+n "x"
+
+# ACCEPTED: the same through a negative lookahead.
+pattern ((?<=(?2)))(a(?!(?1)))
+features recursion,lookaround
+n "a"
+n "ba"
+n "x"
 
 # ACCEPTED: the lookbehind sits in a group the lookbehind does not call.
 pattern ((?<=(?2)))(?2)(a)

@@ -15,7 +15,7 @@
 # 5) -- a clean `perr`, the same answer `(?<=(a|bc))x` has always had, never
 # the internal error.
 #
-# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (build/lf2/gen.py over
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
 # p2probe); the `perr` blocks are pcrec's documented capability refusal and
 # libpcre2 ACCEPTS them, which each block's comment says.
 

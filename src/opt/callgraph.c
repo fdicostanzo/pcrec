@@ -922,8 +922,10 @@ bool pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j)
 
 /* K127: marks, in `mark` (by target index), every call in `a` that counts
  * toward a lookbehind's LENGTH — every call except one inside a nested
- * lookaround, which contributes 0. Lexical: a call under `{0}` counts, as it
- * does for libpcre2 (`((?<=(?1){0})x)` is err 125). Spine-iterative (K20). */
+ * lookahead, which contributes 0. A nested lookbehind is followed, as
+ * libpcre2 follows it (`((?<=(?2)))(a(?<=(?1)))` is err 125). Lexical: a call
+ * under `{0}` counts, as it does for libpcre2 (`((?<=(?1){0})x)` is err 125).
+ * Spine-iterative (K20). */
 static void cg_length_calls(const struct CallGraph *cg, const Ast *a,
                             unsigned char *mark)
 {
@@ -935,6 +937,8 @@ static void cg_length_calls(const struct CallGraph *cg, const Ast *a,
             return;
         }
         case A_LOOK:
+            if (a->u.look.behind) { a = a->l; continue; }
+            return;
         case A_CLASS: case A_EMPTY: case A_EOL:
         case A_CTX: case A_GSTART: case A_KRESET:
         case A_BREF: case A_VAR:
