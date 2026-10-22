@@ -27196,3 +27196,24 @@ J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about
 **Kit finding:** B4's V1 default slows 10/19 real-user movers by 14-41% (E8 r2). B4 is on hold; the kit is measuring Frank's flattened-loop twins.
 
 **Next:** read the queued jobs (see wake.md STEP 0): the Z2 post-merge battery, I1's five, the cover timing (GO/NO-GO for B1; an early sign of slow sparse cells).
+
+## 2026-10-21 (session 122, evening) — de-bulk, I1 three triage rounds, B1 NO-GO, B4' re-scope, I2 design to build
+
+**Accomplished (pushed through bd41fda95 unless noted):**
+- CLAUDE.md DE-BULK (Frank's ask): 60 files over 200 lines became short indexes (58,924 -> ~4,100 lines); full text verbatim in docs/dev/history/claude_md/ (a2e4b990c, 65ae3041c). Post-merge make test green 74/74.
+- stfix (4c9c19e7b): scripts/sectiontimes reads bytes; a 0xff in make output had killed make mid-run (job 610 truncated); perfrun's section-name grep uses -a.
+- Z2 post-merge check green (make test + recursion identity); CI green on Z2.
+- I1 (lane/i1build, NOT merged): triage rounds i1tri (4 real defects + ~10 stale checks), i1tri2 (3 real defects: FIND owner bit, label-table uncopyable, enc residual decl), i1tri3 (test controller names; compound parts copyable is right, fixture re-pinned with spec hunks), s1300 (missing witness, 36 cells; S1300 DETECTED). make test green (613); census + parity queued.
+- Cover timing (650) read: B1 NO-GO (cover 2-10x slower on sparse text, 2-3x faster on dense). R-27 filed (9fe7d47cf); kit's R-27 design panel says REVISE (blocker: the REPORT row rewrites pcrec's stated site).
+- Kit merges: e8min, flat, adatwin, memfn-r27 (5919896ac..c24a6c458).
+- Frank's rulings: walk when the subject is not known (D169 addendum, af5e6079a + af3cd1a70); [MEMFN-SKIPSWITCH] to Boonies ("adaptive methods haven't proved their worth"); B4' agreed (walk default, R7/R5/R0 withdrawn); [MEMFN-REGIME] filed; Q-R17P-27 re-answered: V1 on the VM waits for REGIME (D169 note bd41fda95); go for I2 (design + critic, then build) and K113; bench saved for Friday night.
+- I2: design (i2design), 3-critic panel, revision 2 + review r1 (lane/i2design); build lane i2build running (abi 84). Ruling R1: _next object identity impossible (second caller of shared statics); replaced by a text check + the timing gate.
+- K113 built (lane/k113): parts inherit the analysis chain via partmeas's channel; findings C-E1-4 stale check fixed (k113tri); chain re-running in the queue.
+- [BOXQUEUE-GATEFAIR] filed (quiet-gated jobs lose handoffs; the kit's find).
+
+**Mistakes:**
+- My brief let lane i2tri2 run single-process checks outside the queue during the kit's adatwin timing; BOILERPLATE rule tightened (13941270f); kit told.
+- My hand-edited hold on job 631 used `ls` over two globs, which fails when one glob is empty: I1's census sat ~25 min. Use `compgen -G`.
+- Writing a file into an old worktree's docs/dev/lanes/ re-injected the old (pre-de-bulk) CLAUDE.md files. Write rulings with Bash heredocs.
+
+**Next:** see wake.md.
