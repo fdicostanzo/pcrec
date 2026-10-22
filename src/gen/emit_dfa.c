@@ -1265,6 +1265,23 @@ static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
 
 static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c);
 
+/* D172 THE PRE-CHECK's FUNC PART `p`'s WINDOW STATEMENT, per part (the kit
+ * manager's wsc3 ruling 3; window_site.md rev 3.2 §1.2's pre-check row),
+ * beside its old fields: one alternative with no entry fact, one span, the
+ * run test `t` scans for at the candidate (each position its byte, or the
+ * cube its mask leaves), core all, verify YES (the part is REQUIRED: the
+ * block returns only where the whole run begins); the floor SUBJECT. Never
+ * its scan member (the reply's). */
+static void req_part_window(Ctx *cx, const OfsTest *t, mf_pred *p)
+{
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, 0, t->run_len, MF_VERIFY_YES);
+    for (int j = 0; j < t->run_len; j++)
+        pcrec_memfn_wpos_cube(sp, j, t->run_bytes[j], t->run_mask ? t->run_mask[j] : 0xFF);
+    pcrec_memfn_part_window_stated(cx, p, a, 1, MF_WFLOOR_SUBJECT);
+}
+
 /* Describes the WHOLE pre-check to the memfn kit as one site and defines it
  * here, at file scope above the search entry whose pre-check uses it: the
  * kit writes the run pre-check's search blocks (one `static inline` function
@@ -1734,6 +1751,8 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
         pcrec_memfn_term_byte(&p[np].term[0], 0, rest[i], MF_REQUIRED);
         p[np++].nterm = 1;
     }
+    for (int k = 0; k < np; k++)        /* D172: each FUNC part's own window */
+        if (p[k].fn_ref) req_part_window(cx, &t[p[k].fn_ref - 1], &p[k]);
     s->handoff = handoff ? MF_H_ASSIGN : MF_H_ON_MISS;
     s->use = MF_USE_ENTRY;      /* the presence verdict's use (MF_VOCAB 4) */
     s->npred = (uint16_t)np;
@@ -6605,47 +6624,78 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
  * 3.2 §1.2's PF row, R-29's fact table), stated by the forward search
  * machine's PF site and by its offset-skip block alike, from `us`. Fills
  * `*out` with its alternatives and returns how many (1 or 2):
- *   PARKED  {0: k0}, the start state's escape set (`us->cand`), verify YES,
- *           its table offered (`can_begin_match`); plus the run R where
- *           §1.1's pin fact holds: an exact position of R at offset 0, the
- *           one-byte filter, k0 = F0 = {that byte};
+ *   PARKED  {0: P}, verify YES, `offer` its table: P the set the parked scan
+ *           takes as its candidates, `us->cand` (k0, the start state's
+ *           escape set) or, on the DFA hat, its start set T (the start_set
+ *           fact, the bytes a match can begin with: startset.md §2 F, the
+ *           hat re-seeds the landing state from the byte before it); plus
+ *           the run R where §1.1's pin fact holds: R's position at offset 0,
+ *           the one-byte filter, k0 = F0 = {that byte};
  *   RESEED  where `-fno-offset-skip` is not given and prefix_k's own gate
  *           holds (k0 with 1-255 members, the walk stated): {0: F0} verify
  *           YES, then EVERY walked offset k >= 1 as its own one-position
  *           span, verify NO, core [0], in walk-index (ascending) order, its
  *           `<p>_ofs_k<k>` offered where it has two or more members; then R.
- * `bounded` (the PF site's D11 `end_back`) adds a core `{1: any}` to each
- * offset-0 span. R is the necessary run's window (`req_run`), each position
- * exact or its cube, verify NO, core all, at the offset its pinned stretch
- * fixes (`run_pin`: o - at), never its member or stretch (the reply's);
- * not stated under `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`, nor
- * where the pin would place the window below the match start. The facts are
+ * `bounded` (the machine's D11 bound, `us->views`: no candidate at n - 1)
+ * adds a core `{1: any}` to each offset-0 span, on every site that states
+ * it (wsc3 D-5). R is the run window's WALK-PROVEN stretch, verify NO,
+ * core all: the PINNED STRETCH (`run_pin`: `bytes[at .. at+len)` at offset
+ * `o`, the walk's own singletons, kset.c `pcrec_run_pin`), widened over each
+ * adjacent window position `i` whose offset `o - at + i` the walk proves (its
+ * k-set within the position's cube: `walk_proves`), each stated as its byte
+ * or cube. Every position is then a necessary condition of a match at its
+ * offset (the walk stops before any match can end); a window position the
+ * walk does not prove there is not stated (the kit manager's wsc3 ruling 4).
+ * Never its member (the reply's). Not stated
+ * under `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`. The facts are
  * read without a pass (`_stated`) where no pass of this compile asked them,
  * and only where prefix_k already weighed the walk (`us->ofsk.walk`), so
  * neither the facts' `used` record nor the byte-rate's consulted population
  * moves. No rank, pick or plan is computed here (D157). */
-static int pf_window_of(Ctx *cx, const UnanchStart *us, bool bounded, mf_walt **out)
+/* Does the walk prove window position (`byte`, `mask`) at offset `d`: every
+ * byte its k-set holds there lies in the position's cube? False past the
+ * walk (no offset there says anything). */
+static bool walk_proves(const KsetWalk *wk, int d, unsigned byte, unsigned mask)
+{
+    if (d < 0 || d >= wk->nwalk) return false;
+    for (int x = 0; x < 256; x++)
+        if (wk->k[d].set[x] && (x & mask) != (byte & mask)) return false;
+    return true;
+}
+
+static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
+                        uint32_t offer, bool bounded, mf_walt **out)
 {
     const KsetWalk *wk = us->ofsk.walk;
     bool reseed = wk && wk->nwalk >= 1 && us->cand.count >= 1 && us->cand.count < 256 &&
                   !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP);
     const ReqRun *r = NULL;
-    int w = 0;          /* R's offset from the candidate */
+    RunPin pin = { false, 0, 0, 0, 0 };
     if (wk && us->kind != DFA_PF_NONE && !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&
         !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {
         r = pcrec_fact_req_run_stated(cx);
-        const RunPin *pin = r->len >= 2 ? pcrec_fact_run_pin_stated(cx) : NULL;
-        if (pin && pin->pinned && pin->o >= pin->at) w = pin->o - pin->at;
-        else r = NULL;
+        if (r->len >= 2) pin = *pcrec_fact_run_pin_stated(cx);
+        if (!pin.pinned) r = NULL;
     }
-    bool parked_r = r && w == 0 && r->mask[0] == 0xFF && us->kind == DFA_PF_ONE_BYTE &&
-                    us->cand.count == 1 && us->cand.byte == r->bytes[0] && wk &&
-                    wk->nwalk >= 1 && wk->k[0].count == 1 && wk->k[0].byte == r->bytes[0];
+    for (int i = 0; r && i < pin.len; i++)
+        if (pin.o + i >= wk->nwalk || wk->k[pin.o + i].count != 1 ||
+            wk->k[pin.o + i].byte != r->bytes[pin.at + i])
+            pcrec_ctx_fail(cx, 0, "internal error: the run pin's stretch is not the walk's "
+                           "singletons at offset %d (src/gen/emit_dfa.c, pf_window_of)",
+                           pin.o + i);
+    int w = pin.o - pin.at, lo = pin.at, hi = pin.at + pin.len;   /* R: window [lo, hi) */
+    while (r && lo > 0 && walk_proves(wk, w + lo - 1, r->bytes[lo - 1], r->mask[lo - 1])) lo--;
+    while (r && hi < r->len && walk_proves(wk, w + hi, r->bytes[hi], r->mask[hi])) hi++;
+    int z0 = -w;        /* the window position at offset 0 */
+    bool parked_r = r && z0 >= lo && z0 < hi && r->mask[z0] == 0xFF &&
+                    us->kind == DFA_PF_ONE_BYTE && us->cand.count == 1 &&
+                    us->cand.byte == r->bytes[z0] && wk->k[0].count == 1 &&
+                    wk->k[0].byte == r->bytes[z0];
     int n = reseed ? 2 : 1, z = bounded ? 2 : 1;
     mf_walt *a = pcrec_memfn_walts(cx, n);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
     pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
-    pcrec_memfn_wpos_table(&sp[0], 0, us->cand.set, WIN_OFFER_FIND + PCREC_FIND_CAN_BEGIN);
+    pcrec_memfn_wpos_table(&sp[0], 0, parked, offer);
     if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
     mf_wspan *rsp[2] = { parked_r ? &sp[1] : NULL, NULL };
     if (reseed) {
@@ -6665,9 +6715,9 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, bool bounded, mf_walt **
     }
     for (int i = 0; i < 2; i++) {
         if (!rsp[i]) continue;
-        pcrec_memfn_wspan(rsp[i], w, r->len, MF_VERIFY_NO);
-        for (int j = 0; j < r->len; j++)
-            pcrec_memfn_wpos_cube(rsp[i], j, r->bytes[j], r->mask[j]);
+        pcrec_memfn_wspan(rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
+        for (int j = lo; j < hi; j++)
+            pcrec_memfn_wpos_cube(rsp[i], j - lo, r->bytes[j], r->mask[j]);
     }
     *out = a;
     return n;
@@ -6947,10 +6997,11 @@ static PcrecFind pf_site_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
                             const uint8_t *set, bool views)
 {
     bool hat = pf->u.pf.scan_set != NULL;
+    PcrecFindTable tbl = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN;
     mf_walt *walts;
-    int nwalt = pf_window_of(cx, us, views, &walts);
+    int nwalt = pf_window_of(cx, us, set, WIN_OFFER_FIND + (uint32_t)tbl, views, &walts);
     return (PcrecFind){ .walts = walts, .nwalt = nwalt, .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
-                        .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
+                        .table = tbl,
                         .set = set, .pos = "scan_position", .subject = "subject",
                         .len = "subject_length", .holdback = views ? 1 : 0,
                         .on_miss = views ? NULL : "return 0;",
@@ -7396,10 +7447,12 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     pcrec_memfn_window_is_candidate(&s->pred);
     pcrec_memfn_span0_stated(f->cx, &s->pred);  /* R-26.1, Z2 */
     {   /* D172 S2 commit 2: the DFA prefilter's window statement, as the PF
-           site states it; the function returns any candidate below n, so no
-           D11 core position (the caller's text clamps) */
+           site states it, the D11 bound included where the machine has one
+           (the caller's text clamps to it: wsc3 D-5); the offset rows sit
+           above the DFA hat, so the parked set is k0 */
         mf_walt *walts;
-        int n = pf_window_of(f->cx, f->us, false, &walts);
+        int n = pf_window_of(f->cx, f->us, f->us->cand.set,
+                             WIN_OFFER_FIND + PCREC_FIND_CAN_BEGIN, f->views, &walts);
         pcrec_memfn_window_stated(f->cx, s, walts, n, MF_WFLOOR_SUBJECT);
     }
     PcrecMfU u = { f->cx, s, f, NULL };

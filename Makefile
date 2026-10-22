@@ -208,11 +208,15 @@ $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
 # emit_vm.c is one (VMRUN since M1b, VMSPAN since R4h): its omission here
 # left it compiled against a stale memfn.h after M7 prep grew mf_hooks
 # (`*** stack smashing detected ***` on every backreference compile).
+# known.c is one too (Z2's cover site, through src/gen/known.h): its omission
+# left it compiled against a stale memfn.h after D172 grew mf_pred, and every
+# `--harness=kit-proof` compile declined `cover` in an incremental build only
+# (lane wsc3, 2026-10-22).
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
 $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
-$(BUILD_DIR)/obj/gen/memfn_sites.o \
+$(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
-    src/gen/memfn_sites.h src/gen/memfn_sites.def
+    src/gen/memfn_sites.h src/gen/memfn_sites.def src/gen/known.h
 
 # [M5.0 stage 3] THE DERIVATION STEP, NAMED IN ITS GENERAL FORM: **a data
 # source compiles to generated tables** (third_party/README.md; Frank's
