@@ -211,8 +211,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
 - [M4-SUBST] STATE:started — compiled substitution: the implementation row of replace_design.md
   filed: 2026-10-12 Frank
-  status (2026-10-22): R3 built + hardened on lane/subst; Frank ruled an interface rework; design R4 delivered (lane/subst 7cea1fcb6: replace_design §R4, subst_api_r4_draft.md); NO build go yet
-  next: light critic panel on R4, then Frank's remaining questions (substr4_report.md) and his build go; lands after [FINDALL-NEXT]'s I1+I2
+  status (2026-10-22): design R4c ruled (panels r2 + use-case fit r3); BUILD GO 2026-10-22 ("Subst is a go"); lanes substb2 (interface, lane/subst) and substcase (case table) building
+  next: substb2 + substcase deliver; then the extended-forms lane; replace-all waits for I1+I2 on main; then a D27 adversary and the landing
   refs: docs/design/replace_design.md; docs/design/subst_template_design.md; docs/design/variables_roadmap.md; decisions D18 D26 D38 D173
   COMPILED SUBSTITUTION: the IMPLEMENTATION ROW of docs/design/replace_design.md (design of record: D38's fourteen rulings in docs/design/subst_template_design.md plus replace_design.md's caller variable environment). RESTATED 2026-10-12 (Frank kept the row, session 111): M4 shipped 2026-08-18, so nothing waits on M4 any more; unscheduled, starts on Frank's word. [VAR] M9 (the variable side of replacement, docs/design/variables_roadmap.md) is gated on THIS row's core landing. CHARTER (Frank, 2026-08-12: the headline xmas item): the `pcre2_substitute` capability as an AOT artifact — pattern AND replacement template compiled together into one emitted C function (match + splice), first/global modes, caller-buffer zero-allocation mode plus an output-sizing mode.
   The template compiler is almost completely independent of the matcher (Frank's observation, recorded because it sequences the work): it consumes only the capture-offset CONTRACT, so its design note can precede M4 even though end-to-end substitution is capture-gated. AOT-only win to preserve in the design: `$n`/`${name}` references are resolved and BOUNDS-CHECKED AT COMPILE TIME against the pattern's own group count — a template naming a group that does not exist is a compile error, where PCRE2 discovers it at substitute time. Tier the template language: core `$n`/`${name}`/literal escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing, ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's earn-its-axis discipline.
@@ -579,6 +579,18 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SUBST-NAMECHK] STATE:not-started — BUILD-TIME CHECK OF A SUBST TEMPLATE'S NAMED GROUP REFERENCES
+  filed: 2026-10-22 manager (use-case fit review G2; Frank: "Agree with subst changes")
+  status (2026-10-22): filed; nothing built. Numbered references are checkable today by _Static_assert(<S>_MAXNUM < <RX>_NCAPS), stated in the subst spec; names are checked at context setup (run time).
+  trigger: a user asking for build-time name checks.
+  refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G2); [M4-SUBST]
+  Charter: emit <PREFIX>_GROUP_<name> stamps (siblings of _VAR_<NAME>) and a per-template reference X-macro list, so a bad ${name} fails at compile time.
+- [SUBST-INPLACE] STATE:not-started — IN-PLACE SUBSTITUTION: FLATTEN INTO THE SUBJECT'S OWN BUFFER
+  filed: 2026-10-22 manager (use-case fit review G4; Frank: "Agree with subst changes")
+  status (2026-10-22): filed; nothing built. The R4 contract forbids overlap between scratch/output and the subject.
+  trigger: the first in-place user.
+  refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G4); replace_design.md §R4.8; [M4-SUBST]
+  Charter: a support-unit flatten that checks §R4.8's overlap rule before writing and stages any piece it would overwrite in o->scratch, so a template can rewrite its subject in place.
 - [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
   filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
   status (2026-10-22): filed; nothing built. Today every -o output is overwritten in place.
