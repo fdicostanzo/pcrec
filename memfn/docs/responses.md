@@ -2879,3 +2879,31 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Validation when briefed:** emit_sweep on all arms with 0 movers; movers-by-ID against the empty manifest; the registry delta in both directions; mech on the retired and re-anchored rows; then make test at the same tip.
   - **Why do it at all:** simplification. Three rows, two denies, one sabotage row and the routed-bit shadow machinery go, and the table states the ruling's default as a MEASURED row. Lane tier: sonnet. Asks for you: (1) agree the shape; (2) relay the F2 question to Frank; (3) file the trigger row.
 - notice: 2026-10-21 — **Q-R17P-27 re-answered by Frank (relayed by main): F2 (the VM hat at |S| = 1 → V1) is NOT built at B5.** It waits for [MEMFN-REGIME] on both engines: "it'll have its day". This supersedes the earlier YES, which predated the walk reversal (D169 addendum). The kit records it here and in its journal. r17b_prime's B5 row (c) changes in the next design revision. Proposed D-entry text, for main to file as a D169 addendum note: "Q-R17P-27 (2026-10-21, after the walk reversal): F2 is not built; V1 on the VM hat waits for [MEMFN-REGIME] with the DFA side."
+- done: 2026-10-21 — **B4′ (R17-b′ B4 re-scoped under the walk ruling, main's go 2026-10-21): READY TO MERGE. Branch `lane/memfn-b4scope` @ (this commit; it contains the merge 8d0666c1b of `lane/memfn-b4p` @ edeb3344f). Report `docs/dev/lanes/b4p_report.md`, including its "Fix round". No pcrec abi event, and no artifact byte moved.**
+  - **What changed:**
+    - R7w (the walk) is the MEASURED default for every set FIND;
+    - R7, R5 and R0 are withdrawn (ids reserved), and fd-r0/fd-r5 are retired (memfn floor 14→12, registry.md §6¶8a);
+    - LOCKDOWN: the `routed` bit, the trace-only shadow, FDKEY and POSCOV are deleted;
+    - **MF_SITE_ABI 18→19**: `mf_finder_row` lost `routed`/`locked`. No emitted-byte reader; the `.abi` stamp is PCREC_ARTIFACT_ABI and did not move;
+    - R7w's contract now serves `site_kind` and `table_ref` REF (kit ruling: routing it with the old contract refused 48 proof sites);
+    - RPT stays preview-held (fd_previews).
+  - **Sabotage:**
+    - S916 never had a file;
+    - S917 reads UNREACHED (EXPECTED; it re-arms when a key-reading row returns);
+    - S922, S1079 and S1105 are re-aimed at `fd_row_decides`;
+    - S1020 and S596 are re-anchored.
+  - **Validation at edeb3344f, all GREEN:**
+    - job 556-kit-b4p-sweep2: emit_sweep plain / dumps-delta / arms-start (utf8, simd, comments, start denies) / `--engine=vm`, all rc=0 against f6fb97780;
+    - job 560-kit-b4p-heavy: `make test` rc=0 (no `*** [test-` lines) and mech `14 rows (unexpected 0, undetected 0, unreached 1 EXPECTED)`;
+    - logs under worktrees/.boxqueue/done/*-556-kit-b4p-sweep2 and *-560-kit-b4p-heavy;
+    - the first sweep (555) was RED only because its arms and vm legs included the `dumps` stream, i.e. the DECLARED deny delta (triage). The script was fixed;
+    - `make strict` is clean on the merged kit branch.
+  - **Left for main:**
+    - the dead instruments `fdb1/shadow_census.py`, `fdb1/mk_trace_harness.sh` and the b4prep manifest jobs read the retired shadow (docs-only records; delete or mark them at your discretion);
+    - the CLI lever `--harness=measures=FILE` is KEPT (tests/compound/run_part_measures.sh reads it).
+  - **Also on this branch:**
+    - the R-27 panel review (r1);
+    - the D172 window-site panel review (`docs/dev/reviews/2026-10-21-r2-memfn-window-site.md`);
+    - job 580's table in r27_report.md §5;
+    - the Q-R17P-27 notice.
+- notice: 2026-10-21 — **D172's brief names sabotage range S1257-S1290.** The window-site panel (G6) found no file in that range on any branch; the only mentions are wake.md and decisions.md:9880. Please correct the range.
