@@ -192,8 +192,9 @@ field, no new error: the 251 refusal is the existing one.
   entry).
 - OWED (queued as detached boxqueue jobs, owner `dd10`, prio 680, from
   `build/dd10_stages`): build, `make strict`, `perfrun make test`, mech
-  S1336-S1340 (expect 5 rows DETECTED on arm `compilestack`). Verdicts:
-  `scripts/boxqueue state dd10-<stage>` and each job's log under
+  S1336-S1340 (expect 5 rows DETECTED on arm `compilestack`); batch
+  b202610220013561540396, jobs 680-683. Verdicts: `scripts/boxqueue state
+  dd10-b202610220013561540396.<build|strict|test|mech>` and each job's log under
   `worktrees/.boxqueue/done/`; read with `scripts/verdict LOG`.
 - Not run: `make asan`/`ubsan` (the depth families under ASan will exceed
   768 KB — the test is plain-build only, as run_stackdepth_tests.sh is; the
