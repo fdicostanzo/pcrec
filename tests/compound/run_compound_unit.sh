@@ -79,6 +79,8 @@ echo "== B4: the shell's structure (call-site rows, namespace table, drop-compou
 CC="$CC" PCREC="$PCREC" PCREC_HARNESS="$HARNESS" bash "$SCRIPT_DIR/run_shell_checks.sh" || rc=1
 echo "== the parts' measurement set (inherited) and the shell's MEASURES union =="
 CC="$CC" bash "$SCRIPT_DIR/run_part_measures.sh" || rc=1
+echo "== the parts' analysis chain and object (inherited, K113) =="
+CC="$CC" bash "$SCRIPT_DIR/run_part_analysis.sh" || rc=1
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
 if [ "${PCRE2_AVAILABLE:-0}" = 1 ]; then
     echo "== B4 G2+G4: the split compound against the lever and libpcre2 =="

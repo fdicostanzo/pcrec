@@ -203,9 +203,9 @@ typedef struct {
     PcrecPartFacts *facts;
     /* [COMPOUND] the harness lever (NULL on every shipped path). */
     const PcrecHarnessOptions *harness;
-    /* [MEASURE-SET] a compound PART's measurement set, the walking
-     * attempt's own (non-NULL exactly on a walk's part compile): the part
-     * takes it and resolves none of its own. */
+    /* [MEASURE-SET]/[K113] a compound PART's measurement set and analysis
+     * chain/object, the walking attempt's own (non-NULL exactly on a walk's
+     * part compile): the part takes them and resolves none of its own. */
     const PcrecMeasInherit *meas;
     /* [COMPOUND] out (the unit drive's decline controls, compound.md §E.4):
      * the last walk's verdict, the first failing conjunct's id or "admit";
@@ -2922,15 +2922,20 @@ void pcrec_pf_admits_selfcheck(Ctx *cx);
  * by `Job.meas` below; libc-only, like core/ksrc.h. */
 #include "core/ks_measures.h"
 
-/* [MEASURE-SET] The set a compound part's compile reads: the walking
- * attempt's RESOLVED set, its stamp text and the kit view its art is handed
- * (`Job.meas`, `meas_stamp`, `mf_ms`), so P and its parts can never read two
- * sets (docs/spec/measures.md §5¶8). Each lives in the walking attempt's
- * arena, which outlives the part's compile. */
+/* [MEASURE-SET]/[K113] What a compound part's compile reads instead of
+ * resolving again: the walking attempt's RESOLVED knowledge sources, so P
+ * and its parts can never read two of either (docs/spec/measures.md §5¶8).
+ * The measurement set, its stamp text and the kit view its art is handed
+ * (`Job.meas`, `meas_stamp`, `mf_ms`); the analysis chain and the analysis
+ * object (`Job.find.chain`, `Job.analysis`). One channel for both: a new
+ * resolved source joins this struct, not a parallel parameter. Each lives
+ * in the walking attempt's arena, which outlives the part's compile. */
 struct PcrecMeasInherit {
     const KsMeasSet *set;
     const char *stamp;
     const struct mf_measures *kit;
+    const PcrecFindChain *chain;
+    const struct mf_analysis *analysis;
 };
 
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value

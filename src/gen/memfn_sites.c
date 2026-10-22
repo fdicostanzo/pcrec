@@ -255,6 +255,12 @@ void pcrec_memfn_analysis_build(Ctx *cx)
 {
     const PcrecFindQuery *q;
     size_t n = 0;
+    /* [K113] a part is handed its walk's object, built from the chain it
+       shares (the walk's invariant check stands) */
+    if (cx->emit_in && cx->emit_in->meas) {
+        cx->job->analysis = cx->emit_in->meas->analysis;
+        return;
+    }
     while (pcrec_find_query(n)) n++;
     mf_akind *k = pcrec_arena_alloc(&cx->arena, n * sizeof *k);
     mf_analysis *an = pcrec_arena_alloc(&cx->arena, sizeof *an);

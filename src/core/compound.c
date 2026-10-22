@@ -51,8 +51,8 @@ static unsigned part_kept(unsigned need)
  * report to `report` and its facts to `facts` (each NULL: not wanted).
  * `unrendered` keeps the placeholder prefix, for text the compound splices
  * into its own (which renders it). `meas` is the walking attempt's
- * measurement set, which the part reads instead of resolving `parent`'s
- * options again (NULL: no walk, as from `pcrec_compile_part`). The part is
+ * measurement set and analysis chain/object, which the part reads instead of
+ * resolving `parent`'s options again (NULL: no walk, as from `pcrec_compile_part`). The part is
  * already checked. */
 static int part_compile(const char *pattern, const pcrec_options *parent,
                         const CompPart *part, PcrecDeriveReport *report,
@@ -169,7 +169,8 @@ static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
         const Job *job = w->cx->job;
-        const PcrecMeasInherit meas = { job->meas, job->meas_stamp, job->mf_ms };
+        const PcrecMeasInherit meas = { job->meas, job->meas_stamp, job->mf_ms,
+                                        &job->find.chain, job->analysis };
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
