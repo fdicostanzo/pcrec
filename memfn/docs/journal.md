@@ -2604,3 +2604,11 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
 - adasim (count-only, d1be27483): the walk ↔ M64 per-64-byte rule is simulated at −13.2% vs the walk on flat's J1 cells (M64 −7.4%, oracle −16.8%). It keeps 90-93% of M64's wins. The dense-regular losers fall to +0.3..+3.6%; the worst cell is +8-10%.
   - It is decided by three unmeasured things: the observation cost ob (at 6 ns the gain mostly goes); whether the mode carries across calls (a cold start per call → −1.3%); and R2 carried across calls on short dfa-hat cells (+36%).
   - Verdict: worth ONE timed twin, as a pricing probe for ob. Taken to Frank.
+
+## 2026-10-21 (late) — adaptive loop timed (adatwin, 98f4a50f8): it does not pay; M64 is the best single form; B4's choice goes back to Frank
+
+- ns-weighted vs the walk: V1 −3.9%, M64 −7.1%, ADAPT −2.2%, ADAPT carried +13.5%.
+- The dense English losses remain: P14 +29%, C16 +29%. The cause comes from the mode counts: walk mode INSIDE the producer is not the walk. The per-stretch reading (ob) costs 5-7 ns, adasim's losing case.
+- Size per artifact (.text): walk 1.30 KB, V1 1.94, M64 2.71, ADAPT 3.30. Speed gain per added KB: M64 over V1 +4.3%/KB; ADAPT pays negative.
+- Contamination: a main triage lane ran outside the queue from 20:40 to 20:56. Groups saw max load1 2.39 with 6 harness waits; the lane's report has no contamination section. The arms are interleaved, and the conclusions are relative and mechanism-backed (mode counts, ob). I judge them directionally safe and did not re-run; a re-run is available if Frank wants firm numbers.
+- R-27 note: REPORT's sparse slowness wants the SKIP the default build already has, not a new form.

@@ -1,0 +1,403 @@
+# grid2 time.sh method=kit-grid@2 Thu Oct 22 12:38:57 AM UTC 2026 frank-desktop phase=EXT load1=1.32 gov=performance cpu=14 launches=3 rerun_extra=2 rerun_null=0.031 cross_launch_trigger=on base_copies=3 loadmax=1.5 loadbreach=3.0
+# ns = ns per pass (median over launches of each launch's 7-round median); delta = arm - base; floor = |base#b - base| (A/A); aac = |base#c - base| (the held-out A/A);
+# spread = per-launch min..max as % of the arm's median; per_match = delta / matches (all mode); verdict NULL when |delta| <= floor
+# raw per-launch values: /home/pcrec/projects/pcrec/worktrees/adatwin/build/adt/slot/time/raw_ADAPT.tsv
+cell       subject                                mode  arm              ns         base       delta     floor       aac        spread  per_match verdict
+j1-L10     logs__apache_access.log                all   walk#b   1481509.84   1477630.52    +3879.32   3879.32   5251.47   -0.3..+0.2%          - A/A
+j1-L10     logs__apache_access.log                all   walk#c   1472379.05   1477630.52    -5251.47   3879.32   5251.47   -0.3..+0.5%          - A/A
+j1-L10     logs__apache_access.log                all   V1       1755094.53   1477630.52  +277464.01   3879.32   5251.47   -0.4..+0.4%          - LOSS
+j1-L10     logs__apache_access.log                all   M64      1922539.47   1477630.52  +444908.95   3879.32   5251.47   -0.1..+0.2%          - LOSS
+j1-L10     logs__apache_access.log                all   OBS      1953701.69   1477630.52  +476071.17   3879.32   5251.47   -0.4..+0.0%          - LOSS
+j1-L10     logs__apache_access.log                all   ADAPT    2118512.25   1477630.52  +640881.73   3879.32   5251.47   -0.6..+0.3%          - LOSS
+j1-L10     logs__apache_access.log                all   ADAPTC   2112867.88   1477630.52  +635237.36   3879.32   5251.47   -0.1..+0.0%          - LOSS
+j1-L10     logs__apache_access.log                all   ADAPT1C   2103972.62   1477630.52  +626342.10   3879.32   5251.47   -0.1..+0.0%          - LOSS
+# group 1 done: j1-L10 logs__apache_access.log all load1-at-start=1.32 load1-at-end=1.41 waits=0 launches=3
+j1-L10     logs__apache_error.log                 all   walk#b   2796172.47   2794588.25    +1584.22   1584.22   1670.00   -0.6..+0.0%          - A/A
+j1-L10     logs__apache_error.log                 all   walk#c   2796258.25   2794588.25    +1670.00   1584.22   1670.00   -0.0..+0.0%          - A/A
+j1-L10     logs__apache_error.log                 all   V1       3897961.81   2794588.25 +1103373.56   1584.22   1670.00   -0.1..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   M64      3834327.38   2794588.25 +1039739.13   1584.22   1670.00   -0.1..+0.0%          - LOSS
+j1-L10     logs__apache_error.log                 all   OBS      3913326.38   2794588.25 +1118738.13   1584.22   1670.00   -0.1..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   ADAPT    3646368.44   2794588.25  +851780.19   1584.22   1670.00   -0.3..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   ADAPTC   3742341.38   2794588.25  +947753.13   1584.22   1670.00   -1.6..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   ADAPT1C   3676347.50   2794588.25  +881759.25   1584.22   1670.00   -0.1..+0.2%          - LOSS
+# group 2 done: j1-L10 logs__apache_error.log all load1-at-start=1.41 load1-at-end=1.29 waits=0 launches=3
+j1-L10     logs__bgl.log                          all   walk#b  13299412.75  13186081.50  +113331.25 113331.25 200267.75   -0.3..+0.5%          - A/A
+j1-L10     logs__bgl.log                          all   walk#c  13386349.25  13186081.50  +200267.75 113331.25 200267.75   -0.1..+0.5%          - A/A
+j1-L10     logs__bgl.log                          all   V1      12124790.75  13186081.50 -1061290.75 113331.25 200267.75   -0.0..+0.0%          - WIN
+j1-L10     logs__bgl.log                          all   M64     11846805.00  13186081.50 -1339276.50 113331.25 200267.75   -0.0..+0.0%          - WIN
+j1-L10     logs__bgl.log                          all   OBS     12325359.12  13186081.50  -860722.38 113331.25 200267.75   -0.1..+0.1%          - WIN
+j1-L10     logs__bgl.log                          all   ADAPT   12926607.00  13186081.50  -259474.50 113331.25 200267.75   -0.0..+0.1%          - WIN
+j1-L10     logs__bgl.log                          all   ADAPTC  12921064.00  13186081.50  -265017.50 113331.25 200267.75   -0.3..+0.2%          - WIN
+j1-L10     logs__bgl.log                          all   ADAPT1C  12192094.00  13186081.50  -993987.50 113331.25 200267.75   -0.1..+0.0%          - WIN
+# group 3 done: j1-L10 logs__bgl.log all load1-at-start=1.29 load1-at-end=1.21 waits=0 launches=3
+j1-L10     logs__hadoop.log                       all   walk#b  31277371.00  31278498.50    -1127.50   1127.50  18374.50   -0.3..+0.0%     -0.060 A/A
+j1-L10     logs__hadoop.log                       all   walk#c  31260124.00  31278498.50   -18374.50   1127.50  18374.50   -0.2..+0.1%     -0.983 A/A
+j1-L10     logs__hadoop.log                       all   V1      36597106.50  31278498.50 +5318608.00   1127.50  18374.50   -0.3..+0.1%   +284.646 LOSS
+j1-L10     logs__hadoop.log                       all   M64     38321198.50  31278498.50 +7042700.00   1127.50  18374.50   -0.4..+1.1%   +376.917 LOSS
+j1-L10     logs__hadoop.log                       all   OBS     38782513.50  31278498.50 +7504015.00   1127.50  18374.50   -0.2..+0.2%   +401.606 LOSS
+j1-L10     logs__hadoop.log                       all   ADAPT   35688116.50  31278498.50 +4409618.00   1127.50  18374.50   -0.3..+0.1%   +235.998 LOSS
+j1-L10     logs__hadoop.log                       all   ADAPTC  35733993.00  31278498.50 +4455494.50   1127.50  18374.50   -0.1..+0.1%   +238.453 LOSS
+j1-L10     logs__hadoop.log                       all   ADAPT1C  35787944.50  31278498.50 +4509446.00   1127.50  18374.50   -0.3..+0.3%   +241.340 LOSS
+# group 4 done: j1-L10 logs__hadoop.log all load1-at-start=1.21 load1-at-end=1.16 waits=0 launches=3
+j1-L10     logs__linux_syslog.log                 all   walk#b   1251881.06   1253849.92    -1968.86   1968.86   1289.16   -0.2..+0.5%          - A/A
+j1-L10     logs__linux_syslog.log                 all   walk#c   1255139.08   1253849.92    +1289.16   1968.86   1289.16   -0.4..+0.1%          - A/A
+j1-L10     logs__linux_syslog.log                 all   V1       1756989.38   1253849.92  +503139.46   1968.86   1289.16   -0.1..+0.7%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   M64      1783707.25   1253849.92  +529857.33   1968.86   1289.16   -0.2..+0.1%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   OBS      1821844.19   1253849.92  +567994.27   1968.86   1289.16   -0.5..+0.3%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   ADAPT    1668747.91   1253849.92  +414897.99   1968.86   1289.16   -0.2..+0.8%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   ADAPTC   1715327.00   1253849.92  +461477.08   1968.86   1289.16   -0.7..+0.0%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   ADAPT1C   1708182.28   1253849.92  +454332.36   1968.86   1289.16   -0.2..+0.0%          - LOSS
+# group 5 done: j1-L10 logs__linux_syslog.log all load1-at-start=1.16 load1-at-end=1.12 waits=0 launches=3
+j1-L10     logs__openstack.log                    all   walk#b  28970629.50  29101792.00  -131162.50 131162.50  65518.50   -0.1..+0.2%          - A/A
+j1-L10     logs__openstack.log                    all   walk#c  29036273.50  29101792.00   -65518.50 131162.50  65518.50   -0.3..+0.9%          - A/A
+j1-L10     logs__openstack.log                    all   V1      34630726.50  29101792.00 +5528934.50 131162.50  65518.50   -0.2..+0.3%          - LOSS
+j1-L10     logs__openstack.log                    all   M64     36451742.00  29101792.00 +7349950.00 131162.50  65518.50   -0.0..+0.4%          - LOSS
+j1-L10     logs__openstack.log                    all   OBS     37383028.50  29101792.00 +8281236.50 131162.50  65518.50   -0.7..+0.5%          - LOSS
+j1-L10     logs__openstack.log                    all   ADAPT   34822017.50  29101792.00 +5720225.50 131162.50  65518.50   -0.6..+0.7%          - LOSS
+j1-L10     logs__openstack.log                    all   ADAPTC  35051285.00  29101792.00 +5949493.00 131162.50  65518.50   -0.1..+0.4%          - LOSS
+j1-L10     logs__openstack.log                    all   ADAPT1C  35130124.00  29101792.00 +6028332.00 131162.50  65518.50   -0.2..+0.4%          - LOSS
+# group 6 done: j1-L10 logs__openstack.log all load1-at-start=1.12 load1-at-end=1.18 waits=0 launches=3
+j1-L10     logs__zookeeper.log                    all   walk#b   5315118.81   5311981.00    +3137.81   3137.81  24004.75   -1.8..+0.3%    +18.138 A/A
+j1-L10     logs__zookeeper.log                    all   walk#c   5335985.75   5311981.00   +24004.75   3137.81  24004.75   -0.4..+0.3%   +138.756 A/A
+j1-L10     logs__zookeeper.log                    all   V1       6293652.25   5311981.00  +981671.25   3137.81  24004.75   -0.4..+0.5%  +5674.400 LOSS
+j1-L10     logs__zookeeper.log                    all   M64      6319572.50   5311981.00 +1007591.50   3137.81  24004.75   -0.1..+0.4%  +5824.228 LOSS
+j1-L10     logs__zookeeper.log                    all   OBS      6469392.62   5311981.00 +1157411.62   3137.81  24004.75   -0.0..+0.6%  +6690.241 LOSS
+j1-L10     logs__zookeeper.log                    all   ADAPT    6104328.25   5311981.00  +792347.25   3137.81  24004.75   -0.9..+0.1%  +4580.042 LOSS
+j1-L10     logs__zookeeper.log                    all   ADAPTC   6185434.31   5311981.00  +873453.31   3137.81  24004.75   -1.1..+0.0%  +5048.863 LOSS
+j1-L10     logs__zookeeper.log                    all   ADAPT1C   6022889.00   5311981.00  +710908.00   3137.81  24004.75   -1.4..+1.3%  +4109.295 LOSS
+# group 7 done: j1-L10 logs__zookeeper.log all load1-at-start=1.18 load1-at-end=1.50 waits=0 launches=3
+# quiet gate: j1-P14 prose__pg1184.txt all waited 4x20s, load1 now 1.28
+j1-P14     prose__pg1184.txt                      all   walk#b   6414035.62   6413847.25     +188.37    188.37   1943.13   -0.1..+0.0%     +0.096 A/A
+j1-P14     prose__pg1184.txt                      all   walk#c   6411904.12   6413847.25    -1943.13    188.37   1943.13   -0.1..+0.0%     -0.986 A/A
+j1-P14     prose__pg1184.txt                      all   V1       7704125.38   6413847.25 +1290278.13    188.37   1943.13   -0.1..+0.1%   +654.964 LOSS
+j1-P14     prose__pg1184.txt                      all   M64      7614498.88   6413847.25 +1200651.63    188.37   1943.13   -0.1..+0.0%   +609.468 LOSS
+j1-P14     prose__pg1184.txt                      all   OBS      7650516.75   6413847.25 +1236669.50    188.37   1943.13   -0.7..+0.3%   +627.751 LOSS
+j1-P14     prose__pg1184.txt                      all   ADAPT    8262727.88   6413847.25 +1848880.63    188.37   1943.13   -0.3..+0.0%   +938.518 LOSS
+j1-P14     prose__pg1184.txt                      all   ADAPTC   8204133.12   6413847.25 +1790285.87    188.37   1943.13   -0.4..+0.0%   +908.775 LOSS
+j1-P14     prose__pg1184.txt                      all   ADAPT1C   8189074.00   6413847.25 +1775226.75    188.37   1943.13   -1.4..+0.2%   +901.130 LOSS
+# group 8 done: j1-P14 prose__pg1184.txt all load1-at-start=1.28 load1-at-end=1.22 waits=4 launches=3
+# rerun: j1-P14 prose__pg135.txt all (within-launch A/A beyond NULL=244543: 0; cross-launch spread of ADAPT beyond max(A/A floor, NULL)=244543: 1): +2 launches
+j1-P14     prose__pg135.txt                       all   walk#b   7881804.75   7878579.88    +3224.87   3224.87    326.88   -0.1..+0.8%     +0.770 A/A
+j1-P14     prose__pg135.txt                       all   walk#c   7878253.00   7878579.88     -326.88   3224.87    326.88   -0.1..+0.0%     -0.078 A/A
+j1-P14     prose__pg135.txt                       all   V1       9506471.50   7878579.88 +1627891.62   3224.87    326.88   -0.4..+0.5%   +388.704 LOSS
+j1-P14     prose__pg135.txt                       all   M64      9402432.88   7878579.88 +1523853.00   3224.87    326.88   -0.3..+0.4%   +363.862 LOSS
+j1-P14     prose__pg135.txt                       all   OBS      9464789.12   7878579.88 +1586209.24   3224.87    326.88   -0.9..+0.4%   +378.751 LOSS
+j1-P14     prose__pg135.txt                       all   ADAPT   10182168.50   7878579.88 +2303588.62   3224.87    326.88  -0.2..+10.8%   +550.045 LOSS
+j1-P14     prose__pg135.txt                       all   ADAPTC  10044893.38   7878579.88 +2166313.50   3224.87    326.88   -0.3..+0.4%   +517.267 LOSS
+j1-P14     prose__pg135.txt                       all   ADAPT1C  10046716.75   7878579.88 +2168136.87   3224.87    326.88   -0.2..+0.2%   +517.702 LOSS
+# group 9 done: j1-P14 prose__pg135.txt all load1-at-start=1.22 load1-at-end=1.13 waits=0 launches=5
+j1-P14     prose__pg1400.txt                      all   walk#b   2530041.00   2528095.47    +1945.53   1945.53   2793.06   -0.0..+0.5%     +1.643 A/A
+j1-P14     prose__pg1400.txt                      all   walk#c   2530888.53   2528095.47    +2793.06   1945.53   2793.06   -0.1..+0.3%     +2.359 A/A
+j1-P14     prose__pg1400.txt                      all   V1       3054104.78   2528095.47  +526009.31   1945.53   2793.06   -0.2..+0.1%   +444.265 LOSS
+j1-P14     prose__pg1400.txt                      all   M64      3013173.81   2528095.47  +485078.34   1945.53   2793.06   -0.3..+0.0%   +409.695 LOSS
+j1-P14     prose__pg1400.txt                      all   OBS      3030659.59   2528095.47  +502564.12   1945.53   2793.06   -0.6..+0.0%   +424.463 LOSS
+j1-P14     prose__pg1400.txt                      all   ADAPT    3289642.12   2528095.47  +761546.65   1945.53   2793.06   -0.2..+0.0%   +643.198 LOSS
+j1-P14     prose__pg1400.txt                      all   ADAPTC   3236584.56   2528095.47  +708489.09   1945.53   2793.06   -0.1..+0.3%   +598.386 LOSS
+j1-P14     prose__pg1400.txt                      all   ADAPT1C   3241123.12   2528095.47  +713027.65   1945.53   2793.06   -0.3..+0.1%   +602.219 LOSS
+# group 10 done: j1-P14 prose__pg1400.txt all load1-at-start=1.13 load1-at-end=1.09 waits=0 launches=3
+j1-P14     prose__pg2600.txt                      all   walk#b   7797054.88   7797395.50     -340.62    340.62    761.50   -0.0..+0.9%     -0.229 A/A
+j1-P14     prose__pg2600.txt                      all   walk#c   7796634.00   7797395.50     -761.50    340.62    761.50   -0.0..+0.1%     -0.511 A/A
+j1-P14     prose__pg2600.txt                      all   V1       9476538.75   7797395.50 +1679143.25    340.62    761.50   -0.1..+0.1%  +1126.942 LOSS
+j1-P14     prose__pg2600.txt                      all   M64      9322663.62   7797395.50 +1525268.12    340.62    761.50   -0.0..+0.0%  +1023.670 LOSS
+j1-P14     prose__pg2600.txt                      all   OBS      9330974.25   7797395.50 +1533578.75    340.62    761.50   -0.0..+0.0%  +1029.247 LOSS
+j1-P14     prose__pg2600.txt                      all   ADAPT    9981095.50   7797395.50 +2183700.00    340.62    761.50   -0.3..+0.7%  +1465.570 LOSS
+j1-P14     prose__pg2600.txt                      all   ADAPTC   9924754.12   7797395.50 +2127358.62    340.62    761.50   -0.6..+1.0%  +1427.757 LOSS
+j1-P14     prose__pg2600.txt                      all   ADAPT1C  10020076.50   7797395.50 +2222681.00    340.62    761.50   -0.1..+0.0%  +1491.732 LOSS
+# group 11 done: j1-P14 prose__pg2600.txt all load1-at-start=1.09 load1-at-end=1.07 waits=0 launches=3
+j1-P14     prose__pg2701.txt                      all   walk#b   3031052.84   3029843.38    +1209.46   1209.46   1547.93   -0.0..+0.7%     +0.492 A/A
+j1-P14     prose__pg2701.txt                      all   walk#c   3031391.31   3029843.38    +1547.93   1209.46   1547.93   -0.0..+0.3%     +0.629 A/A
+j1-P14     prose__pg2701.txt                      all   V1       3660194.75   3029843.38  +630351.37   1209.46   1547.93   -0.1..+0.2%   +256.345 LOSS
+j1-P14     prose__pg2701.txt                      all   M64      3635113.12   3029843.38  +605269.74   1209.46   1547.93   -0.1..+0.2%   +246.145 LOSS
+j1-P14     prose__pg2701.txt                      all   OBS      3649800.19   3029843.38  +619956.81   1209.46   1547.93   -0.6..+0.7%   +252.117 LOSS
+j1-P14     prose__pg2701.txt                      all   ADAPT    3934237.94   3029843.38  +904394.56   1209.46   1547.93   -0.1..+0.0%   +367.790 LOSS
+j1-P14     prose__pg2701.txt                      all   ADAPTC   3854532.62   3029843.38  +824689.24   1209.46   1547.93   -0.6..+0.0%   +335.376 LOSS
+j1-P14     prose__pg2701.txt                      all   ADAPT1C   3854788.69   3029843.38  +824945.31   1209.46   1547.93   -0.1..+0.2%   +335.480 LOSS
+# group 12 done: j1-P14 prose__pg2701.txt all load1-at-start=1.07 load1-at-end=1.05 waits=0 launches=3
+j1-P14     prose__pg996.txt                       all   walk#b   5529636.38   5526283.81    +3352.57   3352.57   1483.43   -0.1..+0.2%     +1.962 A/A
+j1-P14     prose__pg996.txt                       all   walk#c   5524800.38   5526283.81    -1483.43   3352.57   1483.43   -0.0..+0.1%     -0.868 A/A
+j1-P14     prose__pg996.txt                       all   V1       6783466.88   5526283.81 +1257183.07   3352.57   1483.43   -0.1..+0.0%   +735.625 LOSS
+j1-P14     prose__pg996.txt                       all   M64      6760925.62   5526283.81 +1234641.81   3352.57   1483.43   -0.0..+0.3%   +722.435 LOSS
+j1-P14     prose__pg996.txt                       all   OBS      6809203.00   5526283.81 +1282919.19   3352.57   1483.43   -0.1..+0.3%   +750.684 LOSS
+j1-P14     prose__pg996.txt                       all   ADAPT    7258142.12   5526283.81 +1731858.31   3352.57   1483.43   -0.2..+0.1%  +1013.375 LOSS
+j1-P14     prose__pg996.txt                       all   ADAPTC   7169115.50   5526283.81 +1642831.69   3352.57   1483.43   -0.0..+0.1%   +961.282 LOSS
+j1-P14     prose__pg996.txt                       all   ADAPT1C   7166960.12   5526283.81 +1640676.31   3352.57   1483.43   -0.4..+0.0%   +960.021 LOSS
+# group 13 done: j1-P14 prose__pg996.txt all load1-at-start=1.05 load1-at-end=1.04 waits=0 launches=3
+j1-C16     code__c.src                            all   walk#b   7858681.12   7812588.00   +46093.12  46093.12   8348.12   -0.4..+0.7%    +35.402 A/A
+j1-C16     code__c.src                            all   walk#c   7820936.12   7812588.00    +8348.12  46093.12   8348.12   -0.1..+1.4%     +6.412 A/A
+j1-C16     code__c.src                            all   V1       8667876.00   7812588.00  +855288.00  46093.12   8348.12   -0.2..+0.0%   +656.903 LOSS
+j1-C16     code__c.src                            all   M64      7706164.75   7812588.00  -106423.25  46093.12   8348.12   -0.2..+0.3%    -81.738 WIN
+j1-C16     code__c.src                            all   OBS      7508772.38   7812588.00  -303815.62  46093.12   8348.12   -0.0..+0.2%   -233.345 WIN
+j1-C16     code__c.src                            all   ADAPT    9641512.38   7812588.00 +1828924.38  46093.12   8348.12   -0.1..+0.7%  +1404.704 LOSS
+j1-C16     code__c.src                            all   ADAPTC  10007576.62   7812588.00 +2194988.62  46093.12   8348.12   -0.8..+0.7%  +1685.859 LOSS
+j1-C16     code__c.src                            all   ADAPT1C   9920601.38   7812588.00 +2108013.38  46093.12   8348.12   -1.0..+1.1%  +1619.058 LOSS
+# group 14 done: j1-C16 code__c.src all load1-at-start=1.04 load1-at-end=1.03 waits=0 launches=3
+j1-C16     code__java.src                         all   walk#b  23155341.25  23174940.50   -19599.25  19599.25  53688.75   -0.1..+0.3%          - A/A
+j1-C16     code__java.src                         all   walk#c  23121251.75  23174940.50   -53688.75  19599.25  53688.75   -0.2..+0.2%          - A/A
+j1-C16     code__java.src                         all   V1      27797950.50  23174940.50 +4623010.00  19599.25  53688.75   -0.6..+0.2%          - LOSS
+j1-C16     code__java.src                         all   M64     25646061.50  23174940.50 +2471121.00  19599.25  53688.75   -0.1..+0.3%          - LOSS
+j1-C16     code__java.src                         all   OBS     25056208.50  23174940.50 +1881268.00  19599.25  53688.75   -0.0..+0.0%          - LOSS
+j1-C16     code__java.src                         all   ADAPT   31207030.00  23174940.50 +8032089.50  19599.25  53688.75   -0.9..+0.0%          - LOSS
+j1-C16     code__java.src                         all   ADAPTC  31776358.50  23174940.50 +8601418.00  19599.25  53688.75   -0.2..+0.2%          - LOSS
+j1-C16     code__java.src                         all   ADAPT1C  32457033.00  23174940.50 +9282092.50  19599.25  53688.75   -0.0..+0.4%          - LOSS
+# group 15 done: j1-C16 code__java.src all load1-at-start=1.03 load1-at-end=1.02 waits=0 launches=3
+j1-C16     code__javascript.src                   all   walk#b   3093242.62   3077093.09   +16149.53  16149.53   8779.72   -0.9..+1.2%  +2691.588 A/A
+j1-C16     code__javascript.src                   all   walk#c   3085872.81   3077093.09    +8779.72  16149.53   8779.72   -0.8..+0.6%  +1463.287 A/A
+j1-C16     code__javascript.src                   all   V1       3173771.12   3077093.09   +96678.03  16149.53   8779.72   -0.0..+0.0% +16113.005 LOSS
+j1-C16     code__javascript.src                   all   M64      2634605.44   3077093.09  -442487.65  16149.53   8779.72   -0.3..+0.0% -73747.942 WIN
+j1-C16     code__javascript.src                   all   OBS      2562856.03   3077093.09  -514237.06  16149.53   8779.72   -0.4..+0.0% -85706.177 WIN
+j1-C16     code__javascript.src                   all   ADAPT    3703011.12   3077093.09  +625918.03  16149.53   8779.72   -0.8..+0.4% +104319.672 LOSS
+j1-C16     code__javascript.src                   all   ADAPTC   3768240.50   3077093.09  +691147.41  16149.53   8779.72   -1.2..+0.0% +115191.235 LOSS
+j1-C16     code__javascript.src                   all   ADAPT1C   3867613.50   3077093.09  +790520.41  16149.53   8779.72   -0.5..+0.0% +131753.402 LOSS
+# group 16 done: j1-C16 code__javascript.src all load1-at-start=1.02 load1-at-end=1.01 waits=0 launches=3
+j1-C16     code__python.src                       all   walk#b  14828909.00  14906730.75   -77821.75  77821.75   4959.25   -0.2..+0.6%          - A/A
+j1-C16     code__python.src                       all   walk#c  14901771.50  14906730.75    -4959.25  77821.75   4959.25   -0.5..+0.6%          - A/A
+j1-C16     code__python.src                       all   V1      18376833.25  14906730.75 +3470102.50  77821.75   4959.25   -0.0..+0.1%          - LOSS
+j1-C16     code__python.src                       all   M64     17692367.25  14906730.75 +2785636.50  77821.75   4959.25   -0.1..+0.1%          - LOSS
+j1-C16     code__python.src                       all   OBS     17319251.00  14906730.75 +2412520.25  77821.75   4959.25   -0.0..+0.1%          - LOSS
+j1-C16     code__python.src                       all   ADAPT   18783077.25  14906730.75 +3876346.50  77821.75   4959.25   -0.0..+1.7%          - LOSS
+j1-C16     code__python.src                       all   ADAPTC  19251756.00  14906730.75 +4345025.25  77821.75   4959.25   -0.3..+0.2%          - LOSS
+j1-C16     code__python.src                       all   ADAPT1C  19160336.00  14906730.75 +4253605.25  77821.75   4959.25   -0.0..+1.2%          - LOSS
+# group 17 done: j1-C16 code__python.src all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=3
+j1-C16     code__rust.src                         all   walk#b   1643048.34   1637395.81    +5652.53   5652.53   5160.03   -0.4..+0.0%          - A/A
+j1-C16     code__rust.src                         all   walk#c   1642555.84   1637395.81    +5160.03   5652.53   5160.03   -0.4..+0.1%          - A/A
+j1-C16     code__rust.src                         all   V1       1872456.66   1637395.81  +235060.85   5652.53   5160.03   -0.1..+0.0%          - LOSS
+j1-C16     code__rust.src                         all   M64      1743879.78   1637395.81  +106483.97   5652.53   5160.03   -0.0..+0.0%          - LOSS
+j1-C16     code__rust.src                         all   OBS      1707085.06   1637395.81   +69689.25   5652.53   5160.03   -0.3..+0.1%          - LOSS
+j1-C16     code__rust.src                         all   ADAPT    2098544.97   1637395.81  +461149.16   5652.53   5160.03   -0.7..+0.5%          - LOSS
+j1-C16     code__rust.src                         all   ADAPTC   2172358.25   1637395.81  +534962.44   5652.53   5160.03   -0.1..+0.1%          - LOSS
+j1-C16     code__rust.src                         all   ADAPT1C   2170820.34   1637395.81  +533424.53   5652.53   5160.03   -0.2..+0.1%          - LOSS
+# group 18 done: j1-C16 code__rust.src all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=3
+j1-N08     nonenglish__pg2650.txt                 all   walk#b    206007.62    206101.66      -94.04     94.04    228.16   -0.2..+0.2%          - A/A
+j1-N08     nonenglish__pg2650.txt                 all   walk#c    205873.50    206101.66     -228.16     94.04    228.16   -0.2..+0.1%          - A/A
+j1-N08     nonenglish__pg2650.txt                 all   V1         90268.81    206101.66  -115832.85     94.04    228.16   -0.1..+4.7%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   M64        81638.84    206101.66  -124462.82     94.04    228.16   -0.1..+0.1%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   OBS        79268.54    206101.66  -126833.12     94.04    228.16   -0.1..+0.7%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   ADAPT      79902.70    206101.66  -126198.96     94.04    228.16   -0.9..+0.9%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   ADAPTC     79985.26    206101.66  -126116.40     94.04    228.16   -0.5..+0.1%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   ADAPT1C     79990.01    206101.66  -126111.65     94.04    228.16   -0.6..+0.2%          - WIN
+# group 19 done: j1-N08 nonenglish__pg2650.txt all load1-at-start=1.01 load1-at-end=1.00 waits=0 launches=3
+j1-N08     nonenglish__pg6698.txt                 all   walk#b    232821.90    232620.20     +201.70    201.70     16.05   -0.1..+1.7%          - A/A
+j1-N08     nonenglish__pg6698.txt                 all   walk#c    232604.15    232620.20      -16.05    201.70     16.05   -0.0..+0.2%          - A/A
+j1-N08     nonenglish__pg6698.txt                 all   V1        106293.39    232620.20  -126326.81    201.70     16.05   -4.1..+0.4%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   M64        92472.79    232620.20  -140147.41    201.70     16.05   -0.1..+0.1%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   OBS        90237.76    232620.20  -142382.44    201.70     16.05   -0.1..+0.0%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   ADAPT      89797.82    232620.20  -142822.38    201.70     16.05   -0.0..+0.2%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   ADAPTC     90533.65    232620.20  -142086.55    201.70     16.05   -0.2..+0.0%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   ADAPT1C     90638.87    232620.20  -141981.33    201.70     16.05   -0.0..+0.0%          - WIN
+# group 20 done: j1-N08 nonenglish__pg6698.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-N08     nonenglish__pg798.txt                  all   walk#b    204286.40    204372.97      -86.57     86.57    149.07   -0.1..+0.1%          - A/A
+j1-N08     nonenglish__pg798.txt                  all   walk#c    204223.90    204372.97     -149.07     86.57    149.07   -0.1..+0.0%          - A/A
+j1-N08     nonenglish__pg798.txt                  all   V1         93499.99    204372.97  -110872.98     86.57    149.07   -0.8..+1.0%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   M64        80797.73    204372.97  -123575.24     86.57    149.07   -0.0..+0.2%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   OBS        79288.64    204372.97  -125084.33     86.57    149.07   -0.1..+0.0%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   ADAPT      78713.75    204372.97  -125659.22     86.57    149.07   -0.1..+0.1%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   ADAPTC     79307.53    204372.97  -125065.44     86.57    149.07   -0.0..+0.3%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   ADAPT1C     78933.04    204372.97  -125439.93     86.57    149.07   -0.1..+0.5%          - WIN
+# group 21 done: j1-N08 nonenglish__pg798.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-N10     nonenglish__pg2650.txt                 all   walk#b    205825.23    205502.70     +322.53    322.53    144.04   -0.1..+0.5%          - A/A
+j1-N10     nonenglish__pg2650.txt                 all   walk#c    205646.74    205502.70     +144.04    322.53    144.04   -0.1..+0.2%          - A/A
+j1-N10     nonenglish__pg2650.txt                 all   V1         94659.44    205502.70  -110843.26    322.53    144.04   -4.8..+0.1%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   M64        81727.03    205502.70  -123775.67    322.53    144.04   -0.2..+0.1%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   OBS        82274.75    205502.70  -123227.95    322.53    144.04   -0.6..+0.1%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   ADAPT      79567.29    205502.70  -125935.41    322.53    144.04   -0.2..+0.3%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   ADAPTC     79364.05    205502.70  -126138.65    322.53    144.04   -0.3..+0.2%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   ADAPT1C     82417.79    205502.70  -123084.91    322.53    144.04   -0.9..+0.1%          - WIN
+# group 22 done: j1-N10 nonenglish__pg2650.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-N10     nonenglish__pg6698.txt                 all   walk#b    232618.72    232627.21       -8.49      8.49     60.55   -0.1..+0.2%          - A/A
+j1-N10     nonenglish__pg6698.txt                 all   walk#c    232566.66    232627.21      -60.55      8.49     60.55   -0.0..+0.1%          - A/A
+j1-N10     nonenglish__pg6698.txt                 all   V1        106651.99    232627.21  -125975.22      8.49     60.55   -0.8..+0.9%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   M64        92390.33    232627.21  -140236.88      8.49     60.55   -0.1..+0.0%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   OBS        93078.65    232627.21  -139548.56      8.49     60.55   -0.9..+0.1%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   ADAPT      90218.27    232627.21  -142408.94      8.49     60.55   -0.1..+0.0%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   ADAPTC     89642.23    232627.21  -142984.98      8.49     60.55   -0.3..+0.4%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   ADAPT1C     93210.99    232627.21  -139416.22      8.49     60.55   -0.6..+0.0%          - WIN
+# group 23 done: j1-N10 nonenglish__pg6698.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-N10     nonenglish__pg798.txt                  all   walk#b    204090.00    204113.68      -23.68     23.68      3.44   -0.0..+0.1%          - A/A
+j1-N10     nonenglish__pg798.txt                  all   walk#c    204117.12    204113.68       +3.44     23.68      3.44   -0.1..+0.1%          - A/A
+j1-N10     nonenglish__pg798.txt                  all   V1         93533.42    204113.68  -110580.26     23.68      3.44   -4.3..+1.4%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   M64        81054.17    204113.68  -123059.51     23.68      3.44   -0.2..+0.0%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   OBS        81779.54    204113.68  -122334.14     23.68      3.44   -0.9..+0.0%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   ADAPT      78908.98    204113.68  -125204.70     23.68      3.44   -0.1..+0.0%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   ADAPTC     78783.30    204113.68  -125330.38     23.68      3.44   -0.1..+0.1%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   ADAPT1C     81669.82    204113.68  -122443.86     23.68      3.44   -0.0..+0.2%          - WIN
+# group 24 done: j1-N10 nonenglish__pg798.txt all load1-at-start=1.00 load1-at-end=1.08 waits=0 launches=3
+j1-B10     binary__BILLS-118-1-hr.zip             all   walk#b 133656701.00 133733430.00   -76729.00  76729.00 148015.00   -0.0..+0.2%     -0.051 A/A
+j1-B10     binary__BILLS-118-1-hr.zip             all   walk#c 133881445.00 133733430.00  +148015.00  76729.00 148015.00   -0.2..+0.4%     +0.099 A/A
+j1-B10     binary__BILLS-118-1-hr.zip             all   V1     106619698.00 133733430.00 -27113732.00  76729.00 148015.00   -0.3..+0.2%    -18.114 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   M64     98875229.50 133733430.00 -34858200.50  76729.00 148015.00   -0.3..+0.1%    -23.288 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   OBS    105185423.50 133733430.00 -28548006.50  76729.00 148015.00   -0.1..+0.1%    -19.072 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   ADAPT  103871891.50 133733430.00 -29861538.50  76729.00 148015.00   -0.0..+0.0%    -19.950 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   ADAPTC 146952201.50 133733430.00 +13218771.50  76729.00 148015.00   -0.0..+0.8%     +8.831 LOSS
+j1-B10     binary__BILLS-118-1-hr.zip             all   ADAPT1C 145852072.00 133733430.00 +12118642.00  76729.00 148015.00   -0.0..+0.0%     +8.096 LOSS
+# group 25 done: j1-B10 binary__BILLS-118-1-hr.zip all load1-at-start=1.08 load1-at-end=1.03 waits=0 launches=3
+j1-B10     binary__django-5.0.tar                 all   walk#b  17488337.00  17598820.25  -110483.25 110483.25  60959.75   -0.2..+0.2%     -0.521 A/A
+j1-B10     binary__django-5.0.tar                 all   walk#c  17537860.50  17598820.25   -60959.75 110483.25  60959.75   -0.3..+0.2%     -0.288 A/A
+j1-B10     binary__django-5.0.tar                 all   V1      10812538.75  17598820.25 -6786281.50 110483.25  60959.75   -0.2..+0.1%    -32.015 WIN
+j1-B10     binary__django-5.0.tar                 all   M64     10035300.62  17598820.25 -7563519.63 110483.25  60959.75   -0.4..+0.3%    -35.682 WIN
+j1-B10     binary__django-5.0.tar                 all   OBS     10625253.12  17598820.25 -6973567.13 110483.25  60959.75   -0.3..+0.2%    -32.899 WIN
+j1-B10     binary__django-5.0.tar                 all   ADAPT   10930603.88  17598820.25 -6668216.37 110483.25  60959.75   -0.1..+0.0%    -31.458 WIN
+j1-B10     binary__django-5.0.tar                 all   ADAPTC  12760381.75  17598820.25 -4838438.50 110483.25  60959.75   -0.3..+0.0%    -22.826 WIN
+j1-B10     binary__django-5.0.tar                 all   ADAPT1C  13421460.75  17598820.25 -4177359.50 110483.25  60959.75   -0.1..+0.0%    -19.707 WIN
+# group 26 done: j1-B10 binary__django-5.0.tar all load1-at-start=1.03 load1-at-end=1.02 waits=0 launches=3
+j1-B10     binary__libpng-1.6.43.tar              all   walk#b   1435101.73   1435633.36     -531.63    531.63    570.30   -0.1..+0.1%     -0.148 A/A
+j1-B10     binary__libpng-1.6.43.tar              all   walk#c   1436203.66   1435633.36     +570.30    531.63    570.30   -0.1..+0.2%     +0.159 A/A
+j1-B10     binary__libpng-1.6.43.tar              all   V1        516201.59   1435633.36  -919431.77    531.63    570.30   -0.2..+0.1%   -255.540 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   M64       453096.88   1435633.36  -982536.48    531.63    570.30   -0.1..+1.0%   -273.079 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   OBS       463058.01   1435633.36  -972575.35    531.63    570.30   -0.1..+0.3%   -270.310 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   ADAPT     487830.03   1435633.36  -947803.33    531.63    570.30   -0.1..+0.9%   -263.425 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   ADAPTC    584384.45   1435633.36  -851248.91    531.63    570.30   -0.0..+0.1%   -236.589 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   ADAPT1C    587871.89   1435633.36  -847761.47    531.63    570.30   -0.0..+0.0%   -235.620 WIN
+# group 27 done: j1-B10 binary__libpng-1.6.43.tar all load1-at-start=1.02 load1-at-end=1.02 waits=0 launches=3
+j1-B10     binary__libpng-1.6.43.tar.gz           all   walk#b   4404579.94   4424398.56   -19818.62  19818.62  21612.68   -0.0..+0.0%     -0.401 A/A
+j1-B10     binary__libpng-1.6.43.tar.gz           all   walk#c   4402785.88   4424398.56   -21612.68  19818.62  21612.68   -0.0..+0.1%     -0.438 A/A
+j1-B10     binary__libpng-1.6.43.tar.gz           all   V1       3503038.62   4424398.56  -921359.94  19818.62  21612.68   -0.3..+0.0%    -18.652 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   M64      3246532.50   4424398.56 -1177866.06  19818.62  21612.68   -0.0..+0.1%    -23.845 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   OBS      3447661.69   4424398.56  -976736.87  19818.62  21612.68   -0.4..+0.0%    -19.773 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   ADAPT    3411345.75   4424398.56 -1013052.81  19818.62  21612.68   -0.1..+0.4%    -20.508 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   ADAPTC   4817527.31   4424398.56  +393128.75  19818.62  21612.68   -0.0..+0.0%     +7.959 LOSS
+j1-B10     binary__libpng-1.6.43.tar.gz           all   ADAPT1C   4839911.44   4424398.56  +415512.88  19818.62  21612.68   -0.7..+0.2%     +8.412 LOSS
+# group 28 done: j1-B10 binary__libpng-1.6.43.tar.gz all load1-at-start=1.02 load1-at-end=1.01 waits=0 launches=3
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   walk#b  23864798.50  23880187.50   -15389.00  15389.00  20023.00   -0.4..+0.8%     -0.062 A/A
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   walk#c  23860164.50  23880187.50   -20023.00  15389.00  20023.00   -0.6..+0.1%     -0.080 A/A
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   V1      18505004.00  23880187.50 -5375183.50  15389.00  20023.00   -0.0..+0.3%    -21.572 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   M64     16957751.50  23880187.50 -6922436.00  15389.00  20023.00   -0.0..+0.0%    -27.782 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   OBS     18068764.00  23880187.50 -5811423.50  15389.00  20023.00   -0.8..+0.0%    -23.323 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   ADAPT   17854737.75  23880187.50 -6025449.75  15389.00  20023.00   -0.1..+0.1%    -24.182 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   ADAPTC  25941035.50  23880187.50 +2060848.00  15389.00  20023.00   -0.2..+0.1%     +8.271 LOSS
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   ADAPT1C  25912191.50  23880187.50 +2032004.00  15389.00  20023.00   -0.0..+0.0%     +8.155 LOSS
+# group 29 done: j1-B10 binary__python-3.12.7-docs-html.tar.bz2 all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=3
+# rerun: j1-P05 prose__pg1184.txt all (within-launch A/A beyond NULL=21267.9: 0; cross-launch spread of walk#c beyond max(A/A floor, NULL)=21267.9: 1): +2 launches
+j1-P05     prose__pg1184.txt                      all   walk#b    683774.28    686062.27    -2287.99   2287.99   1931.30   -0.9..+0.6%   -228.799 A/A
+j1-P05     prose__pg1184.txt                      all   walk#c    687993.57    686062.27    +1931.30   2287.99   1931.30   -1.5..+3.8%   +193.130 A/A
+j1-P05     prose__pg1184.txt                      all   V1        497077.40    686062.27  -188984.87   2287.99   1931.30   -0.0..+0.1% -18898.487 WIN
+j1-P05     prose__pg1184.txt                      all   M64       445695.74    686062.27  -240366.53   2287.99   1931.30   -0.2..+0.1% -24036.653 WIN
+j1-P05     prose__pg1184.txt                      all   OBS       447268.71    686062.27  -238793.56   2287.99   1931.30   -0.4..+0.1% -23879.356 WIN
+j1-P05     prose__pg1184.txt                      all   ADAPT     436980.24    686062.27  -249082.03   2287.99   1931.30   -1.5..+2.3% -24908.203 WIN
+j1-P05     prose__pg1184.txt                      all   ADAPTC    446952.80    686062.27  -239109.47   2287.99   1931.30   -0.1..+0.1% -23910.947 WIN
+j1-P05     prose__pg1184.txt                      all   ADAPT1C    441269.35    686062.27  -244792.92   2287.99   1931.30   -0.2..+0.2% -24479.292 WIN
+# group 30 done: j1-P05 prose__pg1184.txt all load1-at-start=1.01 load1-at-end=1.00 waits=0 launches=5
+j1-P05     prose__pg135.txt                       all   walk#b    773706.76    772553.80    +1152.96   1152.96  19629.82   -0.7..+1.2%    +21.754 A/A
+j1-P05     prose__pg135.txt                       all   walk#c    792183.62    772553.80   +19629.82   1152.96  19629.82   -0.5..+1.3%   +370.374 A/A
+j1-P05     prose__pg135.txt                       all   V1        548028.55    772553.80  -224525.25   1152.96  19629.82   -0.0..+0.2%  -4236.325 WIN
+j1-P05     prose__pg135.txt                       all   M64       472547.62    772553.80  -300006.18   1152.96  19629.82   -0.4..+0.1%  -5660.494 WIN
+j1-P05     prose__pg135.txt                       all   OBS       471283.60    772553.80  -301270.20   1152.96  19629.82   -0.1..+0.4%  -5684.343 WIN
+j1-P05     prose__pg135.txt                       all   ADAPT     425388.38    772553.80  -347165.42   1152.96  19629.82   -0.1..+0.4%  -6550.291 WIN
+j1-P05     prose__pg135.txt                       all   ADAPTC    472635.14    772553.80  -299918.66   1152.96  19629.82   -0.0..+0.2%  -5658.843 WIN
+j1-P05     prose__pg135.txt                       all   ADAPT1C    483409.12    772553.80  -289144.68   1152.96  19629.82   -0.2..+0.0%  -5455.560 WIN
+# group 31 done: j1-P05 prose__pg135.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+# rerun: j1-P05 prose__pg1400.txt all (within-launch A/A beyond NULL=7424.54: 0; cross-launch spread of walk beyond max(A/A floor, NULL)=7424.54: 1): +2 launches
+j1-P05     prose__pg1400.txt                      all   walk#b    238204.84    238257.44      -52.60     52.60    101.80   -1.5..+1.5%     -0.062 A/A
+j1-P05     prose__pg1400.txt                      all   walk#c    238155.64    238257.44     -101.80     52.60    101.80   -1.3..+0.4%     -0.120 A/A
+j1-P05     prose__pg1400.txt                      all   V1        163013.46    238257.44   -75243.98     52.60    101.80   -0.2..+0.1%    -88.418 WIN
+j1-P05     prose__pg1400.txt                      all   M64       143726.82    238257.44   -94530.62     52.60    101.80   -0.3..+0.1%   -111.082 WIN
+j1-P05     prose__pg1400.txt                      all   OBS       143175.56    238257.44   -95081.88     52.60    101.80   -0.1..+0.2%   -111.730 WIN
+j1-P05     prose__pg1400.txt                      all   ADAPT     145284.82    238257.44   -92972.62     52.60    101.80   -0.4..+0.2%   -109.251 WIN
+j1-P05     prose__pg1400.txt                      all   ADAPTC    151551.77    238257.44   -86705.67     52.60    101.80   -0.1..+0.4%   -101.887 WIN
+j1-P05     prose__pg1400.txt                      all   ADAPT1C    151336.36    238257.44   -86921.08     52.60    101.80   -0.1..+0.3%   -102.140 WIN
+# group 32 done: j1-P05 prose__pg1400.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=5
+j1-P05     prose__pg2600.txt                      all   walk#b    734907.90    731654.02    +3253.88   3253.88   1748.37   -0.1..+0.0%   +250.298 A/A
+j1-P05     prose__pg2600.txt                      all   walk#c    729905.65    731654.02    -1748.37   3253.88   1748.37   -0.1..+0.1%   -134.490 A/A
+j1-P05     prose__pg2600.txt                      all   V1        506155.06    731654.02  -225498.96   3253.88   1748.37   -0.1..+0.1% -17346.074 WIN
+j1-P05     prose__pg2600.txt                      all   M64       386706.50    731654.02  -344947.52   3253.88   1748.37   -0.1..+0.0% -26534.425 WIN
+j1-P05     prose__pg2600.txt                      all   OBS       391893.35    731654.02  -339760.67   3253.88   1748.37   -0.0..+0.2% -26135.436 WIN
+j1-P05     prose__pg2600.txt                      all   ADAPT     400372.38    731654.02  -331281.64   3253.88   1748.37   -0.0..+0.1% -25483.203 WIN
+j1-P05     prose__pg2600.txt                      all   ADAPTC    398815.86    731654.02  -332838.16   3253.88   1748.37   -0.1..+0.1% -25602.935 WIN
+j1-P05     prose__pg2600.txt                      all   ADAPT1C    397422.14    731654.02  -334231.88   3253.88   1748.37   -0.0..+0.1% -25710.145 WIN
+# group 33 done: j1-P05 prose__pg2600.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-P05     prose__pg2701.txt                      all   walk#b    266582.83    265410.91    +1171.92   1171.92   4272.45   -0.0..+1.8%    +14.292 A/A
+j1-P05     prose__pg2701.txt                      all   walk#c    269683.36    265410.91    +4272.45   1171.92   4272.45   -0.5..+0.5%    +52.103 A/A
+j1-P05     prose__pg2701.txt                      all   V1        176410.20    265410.91   -89000.71   1171.92   4272.45   -0.0..+0.0%  -1085.375 WIN
+j1-P05     prose__pg2701.txt                      all   M64       142892.08    265410.91  -122518.83   1171.92   4272.45   -0.3..+0.1%  -1494.132 WIN
+j1-P05     prose__pg2701.txt                      all   OBS       143713.74    265410.91  -121697.17   1171.92   4272.45   -0.1..+0.0%  -1484.112 WIN
+j1-P05     prose__pg2701.txt                      all   ADAPT     147765.48    265410.91  -117645.43   1171.92   4272.45   -0.0..+0.0%  -1434.700 WIN
+j1-P05     prose__pg2701.txt                      all   ADAPTC    147994.47    265410.91  -117416.44   1171.92   4272.45   -0.4..+0.1%  -1431.908 WIN
+j1-P05     prose__pg2701.txt                      all   ADAPT1C    148216.71    265410.91  -117194.20   1171.92   4272.45   -0.2..+0.0%  -1429.198 WIN
+# group 34 done: j1-P05 prose__pg2701.txt all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+# rerun: j1-P05 prose__pg996.txt all (within-launch A/A beyond NULL=16938.5: 0; cross-launch spread of walk#c beyond max(A/A floor, NULL)=16938.5: 1): +2 launches
+j1-P05     prose__pg996.txt                       all   walk#b    548552.88    546404.52    +2148.36   2148.36   2496.97   -0.9..+6.6%  +2148.360 A/A
+j1-P05     prose__pg996.txt                       all   walk#c    543907.55    546404.52    -2496.97   2148.36   2496.97   -0.4..+3.8%  -2496.970 A/A
+j1-P05     prose__pg996.txt                       all   V1        382745.96    546404.52  -163658.56   2148.36   2496.97   -0.0..+0.1% -163658.560 WIN
+j1-P05     prose__pg996.txt                       all   M64       292870.60    546404.52  -253533.92   2148.36   2496.97   -0.2..+0.3% -253533.920 WIN
+j1-P05     prose__pg996.txt                       all   OBS       298789.26    546404.52  -247615.26   2148.36   2496.97   -0.4..+2.3% -247615.260 WIN
+j1-P05     prose__pg996.txt                       all   ADAPT     300537.12    546404.52  -245867.40   2148.36   2496.97   -0.1..+0.1% -245867.400 WIN
+j1-P05     prose__pg996.txt                       all   ADAPTC    300073.71    546404.52  -246330.81   2148.36   2496.97   -0.2..+0.1% -246330.810 WIN
+j1-P05     prose__pg996.txt                       all   ADAPT1C    303272.83    546404.52  -243131.69   2148.36   2496.97   -0.0..+0.1% -243131.690 WIN
+# group 35 done: j1-P05 prose__pg996.txt all load1-at-start=1.00 load1-at-end=1.11 waits=0 launches=5
+j1-P12     prose__pg1184.txt                      all   walk#b   1746516.47   1747774.78    -1258.31   1258.31   3872.28   -0.6..+1.1%   -139.812 A/A
+j1-P12     prose__pg1184.txt                      all   walk#c   1751647.06   1747774.78    +3872.28   1258.31   3872.28   -0.5..+0.2%   +430.253 A/A
+j1-P12     prose__pg1184.txt                      all   V1       1700080.47   1747774.78   -47694.31   1258.31   3872.28   -0.1..+0.0%  -5299.368 WIN
+j1-P12     prose__pg1184.txt                      all   M64      1810433.53   1747774.78   +62658.75   1258.31   3872.28   -0.0..+0.0%  +6962.083 LOSS
+j1-P12     prose__pg1184.txt                      all   OBS      1961012.44   1747774.78  +213237.66   1258.31   3872.28   -0.0..+0.2% +23693.073 LOSS
+j1-P12     prose__pg1184.txt                      all   ADAPT    2112984.59   1747774.78  +365209.81   1258.31   3872.28   -0.1..+0.0% +40578.868 LOSS
+j1-P12     prose__pg1184.txt                      all   ADAPTC   2272978.78   1747774.78  +525204.00   1258.31   3872.28   -0.1..+0.7% +58356.000 LOSS
+j1-P12     prose__pg1184.txt                      all   ADAPT1C   2061067.66   1747774.78  +313292.88   1258.31   3872.28   -0.0..+0.3% +34810.320 LOSS
+# group 36 done: j1-P12 prose__pg1184.txt all load1-at-start=1.11 load1-at-end=1.09 waits=0 launches=3
+# rerun: j1-P12 prose__pg135.txt all (within-launch A/A beyond NULL=66175.3: 0; cross-launch spread of ADAPT1C beyond max(A/A floor, NULL)=66175.3: 1): +2 launches
+j1-P12     prose__pg135.txt                       all   walk#b   2134526.47   2134687.06     -160.59    160.59   6930.53   -0.5..+0.3%     -3.088 A/A
+j1-P12     prose__pg135.txt                       all   walk#c   2127756.53   2134687.06    -6930.53    160.59   6930.53   -0.2..+1.3%   -133.279 A/A
+j1-P12     prose__pg135.txt                       all   V1       2068374.56   2134687.06   -66312.50    160.59   6930.53   -0.6..+0.2%  -1275.240 WIN
+j1-P12     prose__pg135.txt                       all   M64      2238684.09   2134687.06  +103997.03    160.59   6930.53   -0.1..+0.2%  +1999.943 LOSS
+j1-P12     prose__pg135.txt                       all   OBS      2411251.97   2134687.06  +276564.91    160.59   6930.53   -0.0..+0.3%  +5318.556 LOSS
+j1-P12     prose__pg135.txt                       all   ADAPT    2591459.88   2134687.06  +456772.82    160.59   6930.53   -0.2..+0.1%  +8784.093 LOSS
+j1-P12     prose__pg135.txt                       all   ADAPTC   2686238.91   2134687.06  +551551.85    160.59   6930.53   -0.1..+3.2% +10606.766 LOSS
+j1-P12     prose__pg135.txt                       all   ADAPT1C   2479516.62   2134687.06  +344829.56    160.59   6930.53   -0.5..+2.2%  +6631.338 LOSS
+# group 37 done: j1-P12 prose__pg135.txt all load1-at-start=1.09 load1-at-end=2.39 waits=0 launches=5
+# quiet gate: j1-P12 prose__pg1400.txt all waited 2x20s, load1 now 1.22
+# rerun: j1-P12 prose__pg1400.txt all (within-launch A/A beyond NULL=20685: 0; cross-launch spread of ADAPT1C beyond max(A/A floor, NULL)=20685: 1): +2 launches
+j1-P12     prose__pg1400.txt                      all   walk#b    670100.56    670450.29     -349.73    349.73   4955.75   -0.4..+0.5%     -0.546 A/A
+j1-P12     prose__pg1400.txt                      all   walk#c    675406.04    670450.29    +4955.75    349.73   4955.75   -0.6..+0.5%     +7.743 A/A
+j1-P12     prose__pg1400.txt                      all   V1        658205.48    670450.29   -12244.81    349.73   4955.75   -0.0..+0.5%    -19.133 WIN
+j1-P12     prose__pg1400.txt                      all   M64       665915.41    670450.29    -4534.88    349.73   4955.75   -0.1..+0.3%     -7.086 WIN
+j1-P12     prose__pg1400.txt                      all   OBS       708589.39    670450.29   +38139.10    349.73   4955.75   -0.0..+0.1%    +59.592 LOSS
+j1-P12     prose__pg1400.txt                      all   ADAPT     738657.41    670450.29   +68207.12    349.73   4955.75   -0.0..+0.0%   +106.574 LOSS
+j1-P12     prose__pg1400.txt                      all   ADAPTC    795132.95    670450.29  +124682.66    349.73   4955.75   -0.1..+7.5%   +194.817 LOSS
+j1-P12     prose__pg1400.txt                      all   ADAPT1C    827619.98    670450.29  +157169.69    349.73   4955.75   -7.5..+0.1%   +245.578 LOSS
+# group 38 done: j1-P12 prose__pg1400.txt all load1-at-start=1.22 load1-at-end=1.18 waits=2 launches=5
+j1-P12     prose__pg2600.txt                      all   walk#b   2043493.91   2037670.75    +5823.16   5823.16     97.06   -0.8..+1.4%   +582.316 A/A
+j1-P12     prose__pg2600.txt                      all   walk#c   2037573.69   2037670.75      -97.06   5823.16     97.06   -0.1..+0.6%     -9.706 A/A
+j1-P12     prose__pg2600.txt                      all   V1       1965533.47   2037670.75   -72137.28   5823.16     97.06   -0.2..+0.0%  -7213.728 WIN
+j1-P12     prose__pg2600.txt                      all   M64      2135584.09   2037670.75   +97913.34   5823.16     97.06   -0.1..+0.0%  +9791.334 LOSS
+j1-P12     prose__pg2600.txt                      all   OBS      2295065.72   2037670.75  +257394.97   5823.16     97.06   -0.1..+0.0% +25739.497 LOSS
+j1-P12     prose__pg2600.txt                      all   ADAPT    2456905.88   2037670.75  +419235.13   5823.16     97.06   -0.0..+0.1% +41923.513 LOSS
+j1-P12     prose__pg2600.txt                      all   ADAPTC   2587851.22   2037670.75  +550180.47   5823.16     97.06   -0.6..+0.3% +55018.047 LOSS
+j1-P12     prose__pg2600.txt                      all   ADAPT1C   2380272.62   2037670.75  +342601.87   5823.16     97.06   -0.1..+0.0% +34260.187 LOSS
+# group 39 done: j1-P12 prose__pg2600.txt all load1-at-start=1.18 load1-at-end=1.14 waits=0 launches=3
+# rerun: j1-P12 prose__pg2701.txt all (within-launch A/A beyond NULL=21870.6: 0; cross-launch spread of ADAPTC beyond max(A/A floor, NULL)=21870.6: 1): +2 launches
+j1-P12     prose__pg2701.txt                      all   walk#b    699105.96    702314.98    -3209.02   3209.02   1827.75   -0.4..+0.8%    -55.328 A/A
+j1-P12     prose__pg2701.txt                      all   walk#c    700487.23    702314.98    -1827.75   3209.02   1827.75   -0.5..+5.2%    -31.513 A/A
+j1-P12     prose__pg2701.txt                      all   V1        658055.67    702314.98   -44259.31   3209.02   1827.75   -0.1..+0.0%   -763.092 WIN
+j1-P12     prose__pg2701.txt                      all   M64       713813.77    702314.98   +11498.79   3209.02   1827.75   -0.0..+0.1%   +198.255 LOSS
+j1-P12     prose__pg2701.txt                      all   OBS       763621.51    702314.98   +61306.53   3209.02   1827.75   -0.1..+0.1%  +1057.009 LOSS
+j1-P12     prose__pg2701.txt                      all   ADAPT     816147.58    702314.98  +113832.60   3209.02   1827.75   -0.1..+0.2%  +1962.631 LOSS
+j1-P12     prose__pg2701.txt                      all   ADAPTC    875200.33    702314.98  +172885.35   3209.02   1827.75   -0.7..+3.1%  +2980.782 LOSS
+j1-P12     prose__pg2701.txt                      all   ADAPT1C    806823.91    702314.98  +104508.93   3209.02   1827.75   -0.1..+1.5%  +1801.878 LOSS
+# group 40 done: j1-P12 prose__pg2701.txt all load1-at-start=1.14 load1-at-end=1.07 waits=0 launches=5
+j1-P12     prose__pg996.txt                       all   walk#b   1265170.30   1262380.66    +2789.64   2789.64  11932.66   -1.2..+1.1%  +2789.640 A/A
+j1-P12     prose__pg996.txt                       all   walk#c   1250448.00   1262380.66   -11932.66   2789.64  11932.66   -0.9..+0.5% -11932.660 A/A
+j1-P12     prose__pg996.txt                       all   V1       1174414.17   1262380.66   -87966.49   2789.64  11932.66   -0.4..+0.3% -87966.490 WIN
+j1-P12     prose__pg996.txt                       all   M64      1263872.69   1262380.66    +1492.03   2789.64  11932.66   -0.1..+0.0%  +1492.030 NULL
+j1-P12     prose__pg996.txt                       all   OBS      1363749.14   1262380.66  +101368.48   2789.64  11932.66   -0.1..+0.0% +101368.480 LOSS
+j1-P12     prose__pg996.txt                       all   ADAPT    1450858.84   1262380.66  +188478.18   2789.64  11932.66   -0.0..+0.0% +188478.180 LOSS
+j1-P12     prose__pg996.txt                       all   ADAPTC   1565039.44   1262380.66  +302658.78   2789.64  11932.66   -0.3..+0.1% +302658.780 LOSS
+j1-P12     prose__pg996.txt                       all   ADAPT1C   1457377.69   1262380.66  +194997.03   2789.64  11932.66   -0.1..+0.0% +194997.030 LOSS
+# group 41 done: j1-P12 prose__pg996.txt all load1-at-start=1.07 load1-at-end=1.05 waits=0 launches=3
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   walk#b     21141.65     21137.80       +3.85      3.85     19.25   -0.0..+0.0%     +0.001 A/A
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   walk#c     21157.05     21137.80      +19.25      3.85     19.25   -0.2..+0.2%     +0.005 A/A
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   V1         28486.29     21137.80    +7348.49      3.85     19.25   -0.0..+0.0%     +1.794 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   M64        27076.37     21137.80    +5938.57      3.85     19.25   -0.4..+0.1%     +1.450 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   OBS        33881.00     21137.80   +12743.20      3.85     19.25   -0.1..+0.3%     +3.111 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   ADAPT      42811.93     21137.80   +21674.13      3.85     19.25   -0.2..+0.2%     +5.292 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   ADAPTC     42472.52     21137.80   +21334.72      3.85     19.25   -0.1..+0.0%     +5.209 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   ADAPT1C     33043.45     21137.80   +11905.65      3.85     19.25   -0.1..+0.0%     +2.907 LOSS
+# group 42 done: an-dig g2-dig-n64k-g8-L1k-reg-S all load1-at-start=1.05 load1-at-end=1.10 waits=0 launches=3
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   walk#b     45037.36     45099.50      -62.14     62.14     90.75   -0.1..+0.0%     -0.000 A/A
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   walk#c     45008.75     45099.50      -90.75     62.14     90.75   -0.5..+0.1%     -0.001 A/A
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   V1         48979.62     45099.50    +3880.12     62.14     90.75   -0.3..+1.7%     +0.030 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   M64        59100.35     45099.50   +14000.85     62.14     90.75   -0.0..+0.1%     +0.107 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   OBS        57287.46     45099.50   +12187.96     62.14     90.75   -0.1..+0.5%     +0.093 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   ADAPT      56765.84     45099.50   +11666.34     62.14     90.75   -0.1..+0.1%     +0.089 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   ADAPTC     47333.16     45099.50    +2233.66     62.14     90.75   -0.1..+0.3%     +0.017 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   ADAPT1C     47379.14     45099.50    +2279.64     62.14     90.75   -0.1..+0.2%     +0.017 LOSS
+# group 43 done: an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S all load1-at-start=1.10 load1-at-end=1.07 waits=0 launches=3
+
+time.sh: COMPLETE rows=344 groups=43 reruns=7 xreruns=7 requeued=0 wall=1014s
