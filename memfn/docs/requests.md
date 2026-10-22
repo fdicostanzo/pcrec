@@ -648,3 +648,13 @@ all). The dense wins are real and wanted.
 for the re-run.
 
 **Sabotage ids:** kit-side on request (main ledger next free S1331).
+
+## R-28 (2026-10-22, pcrec manager) — the kit's compile-time stack frames: two ~36 KB frames are pcrec_compile's whole stack floor
+
+**Facts (lane dd10, [DD-10], lane/dd10 1a7823bee, `docs/dev/lanes/dd10_report.md` §5; measured with a painted-stack probe, x86_64 gcc -O2):** `pcrec_compile` on the pattern `a` needs about 62 KB of C stack. Of that, `memfn/src/formhash.c` `pcrec_mf_form_hash` has a 36,368 B frame and `memfn/src/terms.c` `pcrec_mf_set_terms` a 36,256 B frame. After dd10, chains of 20k-40k elements sit at this ~62 KB floor. pcrec's stack budget on lane/dd10 (unmerged; its new limits section) is 768 KB at nesting depth 250. A 128 KB thread (musl's default) reaches 47 nested lookarounds or 123 plain groups, so the floor is about half of a small thread's stack before any pattern-dependent use.
+
+| item | what pcrec needs (facts) | landing bar |
+|---|---|---|
+| R-28.1 | the kit's compile-time C stack use per call is bounded and small compared with a 128 KB thread (target: no single kit frame above 4 KB; the kit states its peak) | dd10's `tests/thread/run_compile_stack.sh` (in `test-stackdepth` once lane/dd10 merges) stays green; the `a` baseline drops by the frames removed; zero emitted-byte movers |
+
+**Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** kit-side on request (main ledger next free S1400).
