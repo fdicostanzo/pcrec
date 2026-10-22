@@ -55,6 +55,13 @@ change.
   `"compound"` (match_api.md §6.3.12) and are held in one place,
   `tests/codegen/run_dfa_stamps.sh`'s compound bucket.
 
+- **p2gen.py / p2probe.c** — (lane langfix3, 2026-10-22; written by lane
+  langfix2) `python3 tests/lib/p2gen.py SPEC.gen.py > FILE.rxt`: writes `.rxt`
+  blocks whose expectations come from libpcre2 (p2probe.c, built on demand
+  into build/p2gen/), never from pcrec. Each generated corpus's SPEC sits
+  beside it as `<name>.gen.py` (K122-K127's five files). An author's tool,
+  never run by make; the reference is libpcre2 10.46 on the Linux dev box.
+
 - Also (one-line entries for these are in the history file): `run_san_group.sh`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__lib.md`.

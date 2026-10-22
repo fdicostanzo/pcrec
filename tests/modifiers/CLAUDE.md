@@ -28,6 +28,11 @@ empty, and that refusal stays pinned; the module-NAME half of that check —
 WHY a pattern is refused, not just THAT — is tests/reject/'s job, not
 this directory's, since a `.rxt` `perr` block cannot assert WHY).
 
+- **optrun_group.rxt** — K124 (lane langfix2): a GROUP whose whole body is
+  an option setting is repeatable (`(?:(?i))*a`, `((?s))?a`, `(?=(?m))+a`,
+  `(?>(?i))*a`, `(?i:(?s))*a`); the bare run quantified stays err 109 (two
+  `perr` controls). libpcre2 10.46-generated, no python arm; spec
+  `optrun_group.gen.py` beside it (tests/lib/p2gen.py).
 - **scope.rxt** — where `(?i)`/`(?-i)`/`(?i:...)` starts and stops
   applying: from-position, unset mid-pattern, group-close restore, and the
   measured PARSE-1 sibling-alternation-branch leak.
@@ -45,6 +50,11 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
   escaped-whitespace-stays-literal, class interiors untouched. Notes the
   one cell the line-oriented `.rxt` format cannot express (comment-to-
   embedded-newline; see tests/probes/probe_mod05.c instead).
+- **xmode_utf8.rxt** — single `x` under `-e utf8` (K115, lane langfix): the
+  skip set is Unicode Pattern_White_Space (adds U+0085 as a character,
+  U+200E U+200F U+2028 U+2029), the comment terminator and `xx`'s class
+  deletion are unchanged, and two `byte` controls. Every block
+  `# pcre2-only`, libpcre2 10.46 PCRE2_UTF.
 - **xxmode.rxt** — the D30 §7 `xx` hazard: `(?xx)[a- ]` / `(?xx)[a-\ ]` /
   `(?xx)[\ -a]`, plus tab deletion in class interiors, both against the
   single-`x` contrast.

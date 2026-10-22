@@ -889,6 +889,17 @@ case10() {
     assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
     assert_contains "case10: ...and is refused BY NAME" \
         "$(cat "$d/ef1.txt")" "unknown module 'nosuchmodule'"
+    # langfix2 (adversary F14): every comma separates two names, so a
+    # TRAILING comma is an empty name refused like a leading one, and
+    # `--features=LIST` is the same flag as `--features LIST`.
+    pcrec_run "$PCREC" --features classes, --probe-ask result '\d' \
+        >/dev/null 2>"$d/ef2.txt"; rc=$?
+    assert_eq "case10: a trailing comma in --features exits 1" "1" "$rc"
+    assert_contains "case10: ...as the empty module name" \
+        "$(cat "$d/ef2.txt")" "unknown module ''"
+    assert_eq "case10: --features=LIST is --features LIST" \
+        "refusal	\d requires module 'classes'" \
+        "$(pcrec_run "$PCREC" --features=none --probe-ask result '\d' | cut -f6,10)"
     # a BASE-TIER compile under --features all emits byte-identical MATCHER
     # code to one without: the gate exists for module rows only and must
     # never perturb a base pattern's compile path (this pin's original "no

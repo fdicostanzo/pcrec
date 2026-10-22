@@ -1,0 +1,60 @@
+   AGREE         Z001 'a\\Kb' {'feats': 'all'}
+   AGREE         Z002 '(a\\Kb)' {'feats': 'all'}
+   AGREE         Z003 '(?:a\\K|b)c' {'feats': 'all'}
+   AGREE         Z004 'a\\K|b' {'feats': 'all'}
+   AGREE         Z005 '(a\\K)+' {'feats': 'all'}
+   AGREE         Z006 'a\\Kx|ab' {'feats': 'all'}
+   AGREE         Z007 '(a\\K)(?1)' {'feats': 'all'}
+   AGREE         Z008 'a\\K\\Kb' {'feats': 'all'}
+   AGREE         Z009 '(?>a\\K)b' {'feats': 'all'}
+   AGREE         Z010 'a+\\Kb' {'feats': 'all'}
+   AGREE         Z011 '\\Ka' {'feats': 'all'}
+   AGREE         Z012 'a(?:\\K)?b' {'feats': 'all'}
+   AGREE         Z013 '(?:a\\K)*b' {'feats': 'all'}
+   AGREE         Z014 'a\\Kb|abc' {'feats': 'all'}
+   AGREE         Z015 '(a)\\K\\1' {'feats': 'all'}
+   AGREE         Z016 '(?=ab)a\\Kb' {'feats': 'all'}
+   AGREE         Z017 'a\\K$' {'feats': 'all'}
+   AGREE         Z018 '\\K$' {'feats': 'all'}
+   AGREE         Z019 'a(?R)?\\Kb' {'feats': 'all'}
+   AGREE         Z020 '(a\\K|b)+c' {'feats': 'all'}
+   AGREE         Z021 '(?n)(a)(?<x>b)\\1' {'feats': 'all'}
+   AGREE         Z022 '(?n)(a)(?<x>b)\\k<x>' {'feats': 'all'}
+   AGREE         Z023 '(?n)(?<x>a)(b)(?<y>c)?\\2' {'feats': 'all'}
+   BOTH-REFUSE   Z024 '(?n)(a)\\1' {'feats': 'all'}
+   AGREE         Z025 '(?n)((?<x>a))\\1' {'feats': 'all'}
+   AGREE         Z026 '(?J)(?<n>a)|(?<n>b)(?&n)' {'feats': 'all'}
+   AGREE         Z027 '(?J)(?<n>a)(?<n>b)(?&n)' {'feats': 'all'}
+   AGREE         Z028 '(?J)(?:(?<n>a)|(?<n>b))\\g{n}' {'feats': 'all'}
+   AGREE         Z029 '(?J)(?<n>a)?(?<n>b)\\k<n>' {'feats': 'all'}
+   AGREE         Z030 '(?J)(?<n>a)(?<n>b)?\\k<n>' {'feats': 'all'}
+   AGREE         Z031 '(?J)(?<n>a)(?<n>b)(?P=n)' {'feats': 'all'}
+   AGREE         Z032 '(?J)(?<n>.)(?<n>.)\\k<n>{2}' {'feats': 'all'}
+   AGREE         Z033 '(?U)(?^)a+' {'feats': 'all'}
+   AGREE         Z034 '(?U)a+(?^)a+' {'feats': 'all'}
+   AGREE         Z035 '(?U:a+)a' {'feats': 'all'}
+   AGREE         Z036 '(?U)(?-U)a+' {'feats': 'all'}
+   AGREE         Z037 '(?U)a{2}' {'feats': 'all'}
+   AGREE         Z038 '(?U)a{2}?' {'feats': 'all'}
+   AGREE         Z039 '(?U)a{1,2}?b' {'feats': 'all'}
+   AGREE         Z040 '(?U)(a+?)' {'feats': 'all'}
+   AGREE         Z041 '(?U)a??' {'feats': 'all'}
+   AGREE         Z042 '(?U)a?' {'feats': 'all'}
+   AGREE         Z043 '(?n)(?^)(a)' {'feats': 'all'}
+   AGREE         Z044 '(?x)(?^)a b' {'feats': 'all'}
+   AGREE         Z045 '(?xx)(?^x)[ a]' {'feats': 'all'}
+   AGREE         Z046 '(?s)(?^).' {'feats': 'all'}
+   AGREE         Z047 '(?m)(?^)^b' {'feats': 'all'}
+   AGREE         Z048 '(?i)(?^i)A' {'feats': 'all'}
+!! PCREC-REFUSE  Z049 '(?:(?i))*a' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: quantifier does not follow a repeatable item (pattern offset 8)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "N", "M 0 1", "M 0 1", "M 1 2", "M 0 1", "M 1 2", "N", "N", "M 0 1", "M 0 1", "M 2 3", "N", "M 0 1"], "ncap": 0}
+!! PCREC-REFUSE  Z050 '(?:(?i))+a' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: quantifier does not follow a repeatable item (pattern offset 8)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "N", "M 0 1", "M 0 1", "M 1 2", "M 0 1", "M 1 2", "N", "N", "M 0 1", "M 0 1", "M 2 3", "N", "M 0 1"], "ncap": 0}
+   AGREE         Z051 '((?s)).' {'feats': 'all'}
+   AGREE         Z052 '(?:(?m)|x)*a' {'feats': 'all'}
+!! PCREC-REFUSE  Z053 '(?:(?i)){0}a' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: quantifier does not follow a repeatable item (pattern offset 10)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "N", "M 0 1", "M 0 1", "M 1 2", "M 0 1", "M 1 2", "N", "N", "M 0 1", "M 0 1", "M 2 3", "N", "M 0 1"], "ncap": 0}
+   AGREE         Z054 '(?:a|(?i))*b' {'feats': 'all'}

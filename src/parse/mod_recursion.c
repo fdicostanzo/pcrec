@@ -346,7 +346,7 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
                 site = "*";
             } else {
                 const char *why = NULL;
-                size_t len = pcrec_group_name_scan(sp, slen, 0, &why);
+                size_t len = pcrec_group_name_scan(cx, sp, slen, 0, &why);
                 if (len != slen)
                     REFUSE(at, "%s names the delivery site '%.*s', which is "
                                "not a valid scope name (%s)",
@@ -362,7 +362,7 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
                    "call BY NUMBER is spelled (?N) or (?+N)/(?-N))");
     {
         const char *why = NULL;
-        size_t len = pcrec_group_name_scan(body, blen, 0, &why);
+        size_t len = pcrec_group_name_scan(cx, body, blen, 0, &why);
         if (len != blen)
             REFUSE(at, "%s", why ? why : "invalid subpattern name");
     }

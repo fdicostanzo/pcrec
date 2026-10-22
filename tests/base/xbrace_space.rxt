@@ -1,0 +1,61 @@
+# tests/base/xbrace_space.rxt — spaces and tabs inside `\x{...}` (K117).
+#
+# libpcre2 10.46 admits spaces and tabs between `{` and the digits and
+# between the digits and `}`, never among the digits, and nothing else as
+# padding (a newline is error 167; a `pattern` line cannot carry one, so
+# that cell is in the lane report, not here): the same set a brace quantifier's
+# interior admits. Measured by lane langfix at options 0 and PCRE2_UTF; the
+# padding changes nothing about the range check (`\x{ 100 }` is still error
+# 134 under byte) or the digits-missing rule (`\x{ }` is error 178).
+#
+# ORACLE: libpcre2 10.46, every block run against it by lane langfix.
+# python `re` has no braced `\x{...}`, so every block is `# pcre2-only`.
+
+# pcre2-only
+pattern \x{ 41}
+m "zA" 1 2
+
+# pcre2-only
+pattern \x{41 }
+m "zA" 1 2
+
+# pcre2-only
+pattern \x{	41	}
+m "zA" 1 2
+
+# pcre2-only
+pattern \x{  4a }+
+m "zAJJB" 2 4
+
+# pcre2-only
+pattern [\x{ 41}-\x{ 43 }]+
+m "zABCD" 1 4
+
+# ---- utf8: the padding is read the same way above 0xFF --------------------
+
+# pcre2-only
+pattern \x{ 3b1}
+encoding utf8
+m "z\xc3\xa9\xce\xb1" 3 5
+
+# pcre2-only
+pattern \x{ 10FFFF }
+encoding utf8
+m "z\xf4\x8f\xbf\xbf" 1 5
+
+# ---- refusals --------------------------------------------------------------
+
+# a space AMONG the digits: error 167
+# pcre2-only
+pattern \x{ 4 1}
+perr
+
+# padding and no digits: error 178
+# pcre2-only
+pattern \x{ }
+perr
+
+# padding does not widen the byte universe: error 134
+# pcre2-only
+pattern \x{ 100 }
+perr

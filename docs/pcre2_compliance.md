@@ -288,7 +288,7 @@ S210 pins the structural-byte guard (`(a\Qb)c\E)`).
 
 | syntax | status | becomes |
 |---|---|---|
-| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — |
+| whitespace inside `{ }` in `\g{ 2 }`, `\k{ n }`, `\p{ L }`, `\x{ 41 }` | `OK` | — |
 | `\u{...}` (ALT_BSUX) | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: braced-items -->
@@ -298,13 +298,14 @@ S210 pins the structural-byte guard (`(a\Qb)c\E)`).
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`base:braced-whitespace-scope`**
+**`base:braced-whitespace-scope`** (2026-10-22)
 
-Reached only via constructs that are themselves rejected. **This row's
-scope was too narrow and its dismissal was wrong for the case that
-mattered** (R7): the REPEAT quantifier is base-tier and very much reached,
-and pcrec silently compiled `a{ 1}` as literal text until K8. See the
-Quantifiers section.
+Spaces and tabs (never a newline) around the contents of a braced item are
+accepted for `\g{ 1 }`, `\k{ n }`, `\p{ L }` and, since K117, `\x{ 41 }`,
+as libpcre2 10.46 does (tests/base/xbrace_space.rxt). The earlier verdict
+that this was REJECTED was wrong for the quantifier (K8, see the
+Quantifiers section) and is stale for the escapes. `\o{ 101 }` and
+`\N{ U+41 }` accept padding in PCRE2 but are not built in pcrec.
 
 **`base:alt-bsux-u-brace`**
 
@@ -371,8 +372,8 @@ is the octal byte 0x08 and compiles to a pure DFA, while `(a)\1` refuses
 
 **FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class,
 so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape
-(up to three octal digits; above `\377` it is PCRE2 error 151, wording and
-offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the
+(up to three octal digits; above `\377` it is PCRE2 error 151 under byte,
+wording and offset reproduced, and U+0100..U+01FF under utf8 since K125), `\8` `\9` `\g` `\k` are the LITERAL characters (the
 complete fallback set over all 62 `[\c]` probes), tails re-enter as members
 (`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range
 endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2
@@ -2347,7 +2348,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 142 rows 
 | after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
 | after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
 | after `(*` | `(*UCP)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | Unicode properties for \d \s \w \b and the POSIX classes (PCRE2_UCP) |
-| after `(*` | `(*UTF)a` | `REJECTED` | `unbuilt` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
+| after `(*` | `(*UTF)a` | `REJECTED` | `built` | planned | `ucp` | dfa|vm | UTF mode — a restatement of --encoding=utf8, refused under byte — also spelled `(*UTF8)a` |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
