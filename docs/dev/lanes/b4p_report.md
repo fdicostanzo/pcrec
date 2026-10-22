@@ -165,3 +165,43 @@ S1079 S1105 S922 S921 S1025 S1103 S1108 S1122 S1253 S1254 S1256 DETECTED;
 | light checks, run myself | all green above, except emit_sweep / solo mech / REACH_ONLY (box lock; queued) |
 | heavy: chain script, kit band, quiet gate, `idle-ok`, not run by me | 560 (and 555) queued |
 | deliverable: this report, committed | yes |
+
+## Fix round (MF_SITE_ABI 19, sweep leg streams, requeue)
+
+**1. MF_SITE_ABI 18 -> 19** (B4' removed `routed`/`locked` from `mf_finder_row`).
+Readers of the CURRENT number found by grep (`MF_SITE_ABI`, `ABI 18`, backtick and
+prose forms, across `memfn/`, `src/`, `tests/`, `docs/`, `scripts/`, `Makefile`):
+
+| reader | action |
+|---|---|
+| `memfn/include/memfn.h` `#define MF_SITE_ABI` + its history comment | 19, history line added |
+| `memfn/include/CLAUDE.md` ("It carries", "Versions" line) | 19, history entry added |
+| `memfn/docs/wake.md` "Versions" line | 19 |
+| `memfn/src/presence.c`, `memfn/src/formhash.c`, `src/gen/memfn_sites.c` | symbolic (`s->abi = MF_SITE_ABI`, `!= MF_SITE_ABI`); no edit |
+| `docs/design/memfn/integration.md` ("`_Static_assert(MF_SITE_ABI == PCREC_MF_SITE_ABI)`") | design prose; no `PCREC_MF_SITE_ABI` symbol exists in the tree; no edit |
+
+Every other `MF_SITE_ABI 18` hit (kit.h, gate.c, compose.c, generic.c, fields.def, g2 generators,
+`tests/memfn/*`, `src/gen/memfn_sites.*`, historical lane reports and journals) is a provenance label
+("introduced at 18"), not a reader of the current number; left as is. No emitted-byte reader exists:
+pcrec's `.abi` stamp is `PCREC_ARTIFACT_ABI` (82), untouched.
+
+**2. Job script.** `555-kit-b4p-sweep` is replaced by `docs/dev/lanes/b4p/556-kit-b4p-sweep2`: the
+`arms-start` and `vm` legs now pass `--streams "$ALLBUTDUMPS"` like the plain leg (the declared
+`--list-axes` delta, fd-r0/fd-r5 leaving, no longer makes them rc=1; `dumps_delta.py` covers it both
+ways). The job prints the worktree HEAD on its first line; it names no pinned tip. `560-kit-b4p-heavy`
+also reads the worktree HEAD (no pinned sha), so it was retried as is.
+
+**Light checks (all in worktree, after `make`)**: `make strict` clean; `m6read_check_sab_anchors.py`
+899 sabotages, all anchors resolve; `run_codegen_tests.sh` 331 passed / 0 failed; `make test-core` rc=0;
+`make test-registry` rc=0; `make test-memfn` does not exist, so every non-opt-in `test-memfn-*` target
+(arch arms deleg finder forms g2 guarded link manifest rank reach rows simdfloor stamps) ran: 14 of 14 rc=0
+(logs in the lane's `build/tmp/tm-*.log`, summary `build/tmp/tm-all.log`).
+
+**Queue (not run by me).** Fix commit `5c079769c` (tip at queueing).
+- `556-kit-b4p-sweep2` (cap 14400, `expect sweeps=4 lines=^== b4p sweep [a-z0-9-]+ rc=0$`): completion = four
+  `== b4p sweep NAME rc=0` lines (plain, dumps-delta, arms-start, vm). Log: its run dir under
+  `worktrees/.boxqueue/` (`job.log`).
+- `560-kit-b4p-heavy` (retried; `boxqueue retry`): completion = `== b4p make test rc=0`, `== b4p mech rc=0` and
+  `== mech run COMPLETE: 14 rows`; `job.log.make` + `job.log.make.perfrun` for the suite. A duplicate
+  `561-kit-b4p-heavy2` was queued by mistake and cancelled before running.
+- The prior `555-kit-b4p-sweep` ended RED (2 red lines; the dumps-stream delta, this fix).
