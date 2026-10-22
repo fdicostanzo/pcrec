@@ -44,6 +44,7 @@ trap 'rm -rf "$WORK"' EXIT
 FLOOR_SITES=1500                # every generated site renders (no refusal)
 FLOOR_CONTROLS=23               # the lever's controls and the NOP refusals (26)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
+FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
 FLOOR_CALLS=3300000             # answer calls, each in four layouts (3745812)
 FLOOR_HITS=550000               # (622264)
 PATH_FLOORS="empty:175 parked:285 reseed:105 mass:670 floor:110"
@@ -56,31 +57,33 @@ FORM_FLOORS="wf-floor:740 generic:355 pf_memchr:210 ofsskip:26 pf_walk:15"
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
-# Placeholder ids until the kit manager assigns S1400-S1429 ones.
+# Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8.
 plant_spec() {
     case "$1" in
-    WSC1-P1) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
+    S1400) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
         echo 'window.c@@                kb_printf(t, "(%s >= %s + %d \&\& ", rc->C, rc->FL, -d);\n                rc->used |= PARAM_FL;@@                kb_printf(t, "(");' ;;
-    WSC1-P2) # C-run merging singletons: positions one-position spans cover grouped into one compare
+    S1401) # C-run merging singletons: positions one-position spans cover grouped into one compare
         echo 'window.c@@                join = !p->one_pos \&\& !q->one_pos \&\&@@                join =' ;;
-    WSC1-P3) # the MARGIN's direction flipped
+    S1402) # the MARGIN's direction flipped
         echo 'window.c@@    return l < r || (l == r \&\& wf_ties[T_MARGIN].to == TIE_RESEED);@@    return l > r || (l == r \&\& wf_ties[T_MARGIN].to == TIE_RESEED);' ;;
-    WSC1-P4) # a tie flipped: A-mass at a set position to the HIGHER offset
+    S1403) # a tie flipped: A-mass at a set position to the HIGHER offset
         echo 'window.c@@    [T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER,@@    [T_MASS_SET]     = { "A-mass at a set position", TIE_HIGHER,' ;;
-    WSC1-P5) # a core position read as outside the core: the plan's LAST tested position
+    S1404) # a core position read as outside the core: the plan's LAST tested position
         # (the hoisted bound's upper end; a core position inside the bound is
         # tested by the bound, so a per-position plant there is equivalent)
         echo 'window.c@@        w->core[i] = (uint8_t)rd_core(d, p);@@        w->core[i] = (uint8_t)(rd_core(d, p) \&\& i + 1 < n);' ;;
-    WSC1-P6) # an empty meet inside a core not sent to the floor row
+    S1405) # an empty meet inside a core not sent to the floor row
         echo 'window.c@@        if (m->p[k].present \&\& m->p[k].core \&\& !count(m->p[k].set)) return 1;@@        if (0) return 1;' ;;
-    WSC1-P7) # C-pin splitting the stretch: the pinned positions not one compare
+    S1406) # C-pin splitting the stretch: the pinned positions not one compare
         echo 'window.c@@                join = in_pinned(d, o) \&\& in_pinned(d, o - 1);@@                join = 0;' ;;
-    WSC1-P8) # an untested offset claimed: the class proves one past each tested position
+    S1407) # an untested offset claimed: the class proves one past each tested position
         echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
+    S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
+        echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="WSC1-P1 WSC1-P2 WSC1-P3 WSC1-P4 WSC1-P5 WSC1-P6 WSC1-P7 WSC1-P8"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -206,6 +209,8 @@ ctl=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'controls refused 
 floor controls "${ctl:-0}" "$FLOOR_CONTROLS"
 qry=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'queries agreeing [0-9]+' | grep -oE '[0-9]+$')
 floor queries "${qry:-0}" "$FLOOR_QUERIES"
+two=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'two runs refused [0-9]+' | grep -oE '[0-9]+$')
+floor two_runs "${two:-0}" "$FLOOR_TWO_RUNS"
 floor calls "$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $5}')" "$FLOOR_CALLS"
 floor hits "$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $7}')" "$FLOOR_HITS"
 for pf in $PATH_FLOORS; do floor "path ${pf%%:*}" "$(val paths "${pf%%:*}")" "${pf#*:}"; done

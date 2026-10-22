@@ -117,8 +117,9 @@ typedef struct {
 typedef struct {
     const mf_walt *alt;
     wf_pos   p[WF_NPOS];
-    int      run;               /* R: the first span of >= 2 positions, each one
-                                   member or a cube, else -1                  */
+    int      run;               /* R: THE span of >= 2 positions, each one
+                                   member or a cube (wf_check refuses a second,
+                                   so no list order decides it), else -1      */
     size_t   arow;              /* Table A's chosen row                       */
     int      has_stop;
     int32_t  stop;
@@ -185,6 +186,19 @@ static int span_in_core(const mf_wspan *sp, unsigned j)
     return j >= sp->core_lo && j < (unsigned)sp->core_lo + sp->core_len;
 }
 
+/* 1 iff span `sp` has the run R's SHAPE: two or more positions, each one
+ * member or a cube. R is identified by this shape alone (the facts carry no
+ * R label), so an alternative states at most one such span (wf_check; the
+ * kit manager's F-8 ruling: alternatives and spans are unordered, D172). */
+static int run_shaped(const mf_wspan *sp)
+{
+    int a, b;
+    if (sp->len < 2) return 0;
+    for (unsigned j = 0; j < sp->len; j++)
+        if (!shape(sp->set[j], &a, &b)) return 0;
+    return 1;
+}
+
 /* C-MEET (step 1): every offset the alternative states, as one position. */
 static void merge(const mf_walt *alt, wf_alt *m)
 {
@@ -198,10 +212,8 @@ static void merge(const mf_walt *alt, wf_alt *m)
     for (unsigned i = 0; i < alt->nspan; i++) {
         const mf_wspan *sp = &alt->spans[i];
         int yes = sp->verify == MF_VERIFY_YES;
-        int runlike = sp->len >= 2;
         for (unsigned j = 0; j < sp->len; j++) {
             wf_pos *p = pos_at(m, sp->start + (int32_t)j);
-            int a, b;
             p->present = 1;
             for (unsigned x = 0; x < 32; x++) p->set[x] &= sp->set[j][x];
             if (span_in_core(sp, j)) p->core = 1;
@@ -212,9 +224,8 @@ static void merge(const mf_walt *alt, wf_alt *m)
             }
             if (sp->len == 1) p->one_pos = 1;
             else p->multi = 1;
-            if (!shape(sp->set[j], &a, &b)) runlike = 0;
         }
-        if (runlike && m->run < 0) m->run = (int)i;
+        if (run_shaped(sp)) m->run = (int)i;
     }
 }
 
@@ -254,6 +265,7 @@ const char *wf_check(const mf_site *s, int frame)
         reseed += al->entry == MF_ENTRY_RESEED;
         if (!al->nspan || !al->spans) return "an alternative states no span (`nspan`, `spans`)";
         if (al->nspan > MF_WMAX_SPAN) return "`nspan` > MF_WMAX_SPAN";
+        unsigned nrun = 0;
         for (unsigned i = 0; i < al->nspan; i++) {
             const mf_wspan *sp = &al->spans[i];
             if (!sp->len || sp->len > MF_WSPAN_POS) return "a span's `len` is not 1..MF_WSPAN_POS";
@@ -271,7 +283,11 @@ const char *wf_check(const mf_site *s, int frame)
             if (!sp->core_len && sp->core_lo)
                 return "an empty core states `core_lo` 0 (one spelling of no core)";
             if (sp->start < 0) below = 1;
+            nrun += (unsigned)run_shaped(sp);
         }
+        if (nrun > 1)
+            return "an alternative states two spans of the run R's shape (two or more positions, "
+                   "each one member or a cube): R is identified by its shape, so it is unique";
     }
     if (below && s->wfloor == MF_WFLOOR_UNSTATED)
         return "a span reaches below the candidate and `wfloor` is UNSTATED (SUBJECT or EXPR "

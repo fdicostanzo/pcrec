@@ -43,7 +43,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds).
 - **proven_check.c** — R-25 (lane memfn-r25): the form class's proven sets honour the row's declared `tests`.
 ### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
-- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `WSC1-R1` (an over-read past n) is their witness.
+- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness.
 ### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** — `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
 ### The SIMD floor rule, C9-x86 (lane r13, [MEMFN] R-13, R4e' batch 1)
