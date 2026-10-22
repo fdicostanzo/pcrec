@@ -2595,3 +2595,19 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - Plants R27-a..f are proposed; ids are owed by main.
   - Timing job 580-kit-r27-cover is QUEUED and OWED. It lost a handoff to a non-gated job: a queue finding for main.
 - Earlier today, recorded above: Frank's walk ruling and its CLOSED record (docs/design/memfn/walk_vs_v1_record.md); [MEMFN-SKIPSWITCH] moved to Boonies.
+
+## 2026-10-21 (night) — wake: R-27 critic panel, B4 re-scoped and launched, F2 parked
+
+- Woke on branch `lane/memfn-b4scope`, cut from main 9950aa672. Main had merged all four kit branches: e8min, flat, adatwin and r27.
+- **B4 re-scoped (B4′)** under Frank's walk ruling. Main agreed it as posted:
+  - R7w, the walk, is the MEASURED default for every set FIND;
+  - R7, R5 and R0 are withdrawn, and fd-r0, fd-r5 and S916 retire;
+  - lockdown;
+  - empty mover set, no abi event.
+  Main filed [MEMFN-REGIME] as the trigger for any regime-gated wide-form row. Lane `b4p` (sonnet) builds it on `lane/memfn-b4p`, and its heavy run is queued in the kit band.
+- **Q-R17P-27 re-answered by Frank** (via main): F2, the VM hat → V1, is NOT built. It waits for [MEMFN-REGIME] on both engines: "it'll have its day".
+- **R-27 critic panel** (Frank's instruction): three critics (sound, mech, meas). The record is `docs/dev/reviews/2026-10-21-r1-memfn-r27.md`.
+  - Verdict REVISE. M1 is a BLOCKER: RPT re-describes pcrec's site. The fix is to widen ofsskip's contract instead.
+  - E1 and E4 are special cases, to become FIND-slot and body rows. Over-reads are invisible to proof_run. Job 580 does not measure the tie, the FUNC proxy or the SIMD layer.
+  - The proposal to Frank: read 580, run follow-up job 581, write design rev 2, then the build go. No build go was asked.
+- Job 580 started at about 21:38 (main moved it to the front).
