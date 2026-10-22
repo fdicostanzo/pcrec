@@ -2136,8 +2136,9 @@ enum {
     NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
 };
 
-/* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
- *      src/opt/prefix_k.c) ---- */
+/* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c; the
+ *      selection is the kit's window family, memfn/src/window.c, since
+ *      prefix_k.c retired at D172 S2 commit 6) ---- */
 
 /* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
  * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and

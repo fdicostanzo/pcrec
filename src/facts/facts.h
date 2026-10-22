@@ -411,9 +411,11 @@ typedef struct {
      * (`pcrec_fact_req_landmark_maxoff`), -1 where there is no landmark. */
     long long req_landmark_maxoff;
     /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
-     * over the wrapped forward NFA from its anchored start. The offset-k
-     * selection (src/opt/prefix_k.c) reads it; no deny — each USE has its
-     * row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
+     * over the wrapped forward NFA from its anchored start. The offset-skip
+     * window statement (src/gen/emit_dfa.c `window_reply_ask`) states it to the
+     * kit, whose window family makes the selection (memfn/src/window.c,
+     * A-model/C-model; prefix_k.c retired at D172 S2 commit 6); no deny —
+     * each USE has its row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
     KsetWalk  kset_walk;
     /* [OPT-LITSCAN] S1 E3 derived: the run's window pinned on the walk. No
      * deny of its own; a denied run (`len == 0`) pins nothing. */

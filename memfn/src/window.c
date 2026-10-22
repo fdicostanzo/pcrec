@@ -1037,6 +1037,10 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
 }
 
 
+/* -1 where the art has failed, the site is not a window site the family
+ * reads, or the decision's heap allocation is refused (OOM, R-28): every
+ * pcrec caller turns -1 into pcrec_ctx_fail, so a refusal is never read as
+ * a decision. */
 int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
 {
     memset(out, 0, sizeof *out);
