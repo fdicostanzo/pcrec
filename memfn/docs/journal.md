@@ -2702,3 +2702,13 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - strict is clean.
 - Re-validation 585-kit-wsc8-heavy (build, strict, five sweeps, test-codegen; job script at 349f424d5) is to be queued AFTER main's 710-findbench-parity has run, at main's request.
   - mech, reach, wreply and make test are carried from 583: the change is non-essential comment text only.
+
+## 2026-10-22 (late afternoon) — r27c reading (job 584, scalar layer)
+
+- Job 584 is GREEN: rows=3450, launches=5, differential 92 builds with 0 mismatches. The RESULT is in r27c_report.md §7 (lane r27cread) @ 8ac6fb066. The table, populations and raw rows are committed in r27c_evidence @ aa388977b.
+- PB/PBC do NOT close hex8 throughput/dense: 1.06/1.04 against COV, 1.39/1.36 against DEF. They win against COV on hex8 search_short only. They close cat throughput/dense.
+- PC loses on year4 (1.03-2.9 against PRO) and on hex8. It pays on cat and on foobar search_short.
+- Least-mass pick: 37/60. Mass prices hits, not loop cost, and all ten year4 rows are wrong.
+- The English prior is off by 20-100x on generated utf8.
+- HRS is the overall hex8 winner and catastrophic on the literal cells (up to 80x).
+- No arm passes R-27.1 everywhere. The reading goes to Frank: PB is not the hex8 answer; the selector needs a per-byte cost term beside mass.
