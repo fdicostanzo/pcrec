@@ -112,11 +112,8 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
 
     Ast *a = pcrec_ast_node(cx, A_ATOMIC);
     a->l = body;
-    /* PROPAGATED, not defaulted — A_CAP's own rule, and for the same reason:
-     * `not_repeatable` is a property of what this construct RETURNS to p_rep,
-     * and p_rep tests the returned node's flag. `(?>(?i))*` must answer the
-     * same way `((?i))*` does rather than diverging on the wrapper. */
-    a->not_repeatable = body->not_repeatable;
+    /* Repeatable whatever the body (K124): `(?>(?i))*` answers as `((?i))*`
+     * does, through the seal above rather than a copied flag. */
     /* SR-8/D67: the stamp, from the row this port was dispatched on. Not a
      * copy of the mask — the ROW, so the `engines` column keeps exactly one
      * home and `select_engine.c` can also name the construct. */

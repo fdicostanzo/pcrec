@@ -611,18 +611,10 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         la_lb_raise(cx, w, info.nbr);
     }
 
-    /* PROPAGATED, not defaulted — A_CAP's rule and A_ATOMIC's, for their
-     * reason: `not_repeatable` is a property of what this construct RETURNS to
-     * `p_rep`, and `p_rep` tests the returned node's own flag. Note what this
-     * does and does not decide. `(?=a)*` and the other thirteen quantified
-     * forms compile (§2.6, and `pcrec_is_bare_anchor` answers FALSE for
-     * A_LOOK, which is what lets them); `(?=(?i))*` COMPILES in libpcre2 10.46
-     * (measured at this wave) and pcrec refuses it, exactly as pcrec already
-     * refuses `((?i))*` and `(?>(?i))*`. That is ONE pre-existing question
-     * about a bare option run — parse.c's A_CAP arm records it — and
-     * propagating here keeps it one question instead of giving this construct
-     * a second, divergent answer. */
-    a->not_repeatable = body->not_repeatable;
+    /* `not_repeatable` stays the arena's false (K124): a lookaround is a
+     * repeatable item whatever its body — `(?=(?i))*` COMPILES in libpcre2
+     * 10.46, as `((?i))*` and `(?>(?i))*` do — so the body's flag is not
+     * copied up. */
 
     /* SR-8/D67: the stamp, from the row this port was dispatched on — the ROW
      * and not a copy of its mask, so `engines` keeps exactly one home and

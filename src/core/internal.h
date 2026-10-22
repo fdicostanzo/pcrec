@@ -1269,9 +1269,9 @@ struct Ast {
      * are pinned in tests/reject/.
      *
      * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
-     * option run, src/parse/mod_modifiers.c) and PROPAGATED onto A_CAP and
-     * A_ATOMIC from their bodies (src/parse/parse.c, mod_named_groups.c,
-     * mod_atomic_groups.c), and it is READ off an atom of ANY kind by
+     * option run, src/parse/mod_modifiers.c), never propagated: a group
+     * whose body is one is repeatable (K124), which `pcrec_wrap_bare_anchor`
+     * seals at every group's `)`; and it is READ off an atom of ANY kind by
      * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
 

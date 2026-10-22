@@ -280,12 +280,20 @@ bool pcrec_is_bare_anchor(const Ast *a)
     return false;
 }
 
-/* Wraps `body` in an A_CAT with a trailing A_EMPTY when it is a bare anchor
- * (pcrec_is_bare_anchor), so a quantifier lands on a CAT rather than directly
- * on the anchor -- unchanged otherwise. */
+/* Seals a group's body so the GROUP is a repeatable item: wraps `body` in an
+ * A_CAT with a trailing A_EMPTY when it is a bare anchor (pcrec_is_bare_anchor)
+ * or a node that is not repeatable on its own -- unchanged otherwise. Every
+ * body-carrying group calls it at its `)`, so the quantifier lands on a CAT
+ * rather than directly on the anchor or the option run.
+ *
+ * K124: a bare option run is err 109 only where IT is the quantified item
+ * (`a(?i)*`); a group whose whole body is one (`(?:(?i))*a`, `((?s))?a`,
+ * `(?i:(?s))*`, `(?>(?i))+`) is an ordinary repeatable group in libpcre2
+ * 10.46, matching what its (empty) body matches. The CAT's own flag is the
+ * arena's false, so nothing above the group inherits the run's flag. */
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
 {
-    if (!pcrec_is_bare_anchor(body)) return body;
+    if (!pcrec_is_bare_anchor(body) && !body->not_repeatable) return body;
     Ast *cat = node(cx, A_CAT);
     cat->l = body;
     cat->r = node(cx, A_EMPTY);
@@ -1692,15 +1700,9 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
         Ast *cap = node(cx, A_CAP);
         cap->l = body;
         cap->u.cap.no = capno;
-        /* PROPAGATED, not defaulted: `not_repeatable` is a property of what
-         * the group RETURNS to p_rep, and p_rep tests the returned node's own
-         * flag. Leaving the wrapper at the arena's zero would make `((?i))*`
-         * legal with captures on and error 109 with --no-captures — a
-         * divergence between the two modes, which is precisely what §5.4's
-         * gate exists to forbid. Whether pcrec should reject `((?i))*` at all
-         * is a separate, pre-existing question this node must not silently
-         * answer. */
-        cap->not_repeatable = body->not_repeatable;
+        /* Repeatable whatever the body (K124): the seal above already
+         * cleared a bare option run's flag, so `((?i))*` answers the same
+         * with captures on and with --no-captures (§5.4's gate). */
         body = cap;
     }
     return body;
