@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# 555-kit-b4p-sweep: lane b4p (R17-b' B4'), the byte-identity sweeps against the pre-B4' tip f6fb97780:
+# 556-kit-b4p-sweep2: lane b4p (R17-b' B4'), the byte-identity sweeps against the pre-B4' tip f6fb97780:
 # plain (every stream but the dumps), the registry dumps with the DECLARED delta checked both ways,
 # every DIFFER_PINS arm (--arms start: utf8, simd, comments, the start denies), and --engine=vm.
-# emit_sweep runs WITHOUT python3 -I. Queue it with:  scripts/boxqueue add --name 555-kit-b4p-sweep FILE
+# emit_sweep runs WITHOUT python3 -I. Queue it with:  scripts/boxqueue add --name 556-kit-b4p-sweep2 FILE
+# Fix round (MF_SITE_ABI 19): the arms-start and vm legs now also run --streams "$ALLBUTDUMPS" (the declared --list-axes
+# delta, fd-r0/fd-r5 leaving, made the dumps stream rc=1 there; dumps_delta.py covers it both ways).
+# The tip is whatever HEAD of the worktree is when the job runs (printed on the first line).
 # Each leg prints `== b4p sweep NAME rc=N`; the declared population is the four rc=0 lines.
 set -u
 W=/home/pcrec/projects/pcrec/worktrees/b4p
@@ -32,7 +35,7 @@ python3 scripts/emit_sweep.py --ref "$REF" --streams "$ALLBUTDUMPS" --jobs 8 --o
 echo "== b4p sweep plain rc=$?"
 python3 -I "$D/dumps_delta.py" "$REFBIN" "$W/build/pcrec"
 echo "== b4p sweep dumps-delta rc=$?"
-python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --arms start --no-self-check --jobs 8 --out "$OUT/arms"
+python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --arms start --streams "$ALLBUTDUMPS" --no-self-check --jobs 8 --out "$OUT/arms"
 echo "== b4p sweep arms-start rc=$?"
-python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --extra=--engine=vm --no-differ-floor --no-self-check --jobs 8 --out "$OUT/vm"
+python3 scripts/emit_sweep.py --ref-bin "$REFBIN" --extra=--engine=vm --streams "$ALLBUTDUMPS" --no-differ-floor --no-self-check --jobs 8 --out "$OUT/vm"
 echo "== b4p sweep vm rc=$?"
