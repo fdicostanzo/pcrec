@@ -12,3 +12,10 @@ only). Answer measurements, no timing.
   into OUTDIR (use a gitignored `build/` path), links, runs.
 - `transcript.txt` — the run §R2 cites (12 cells + the undersized-buffer
   case, `fails=0`).
+- `r4_probe_ext.py`, `r4_probe_ext2.py`, `r4_probe_ext3.py`, `r4_transcript.txt`
+  — lane substr4 (2026-10-22), the probes behind `../replace_design.md` §R4.13:
+  libpcre2 10.46's `pcre2_substitute` under `SUBSTITUTE_EXTENDED` (the
+  conditional forms, escapes, `\1`-`\9` and `\NN`, case forcing in byte and
+  UTF mode), through ctypes and the D27 corpus's `ref_pcre2.py`. Answers, no
+  timing. `python3 r4_probe_ext.py` etc.; the transcript is the run §R4.13
+  cites.

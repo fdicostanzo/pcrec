@@ -9,9 +9,818 @@ Read §R2 first; superseded passages below are marked in place.** **REVISION 3
 (lane substr3, 2026-10-22): §R3 applies the D6 panel r1
 (`../dev/reviews/2026-10-22-r1-subst-design.md`, three critics, every finding
 accepted). Read §R3 first, then §R2; §R2 passages R3 replaces carry an `[R3: ...]`
-marker.**
+marker.** **REVISION 4 (lane substr4, 2026-10-22): §R4 applies Frank's interface
+rework and rulings R5-R8 (the template compiled independently of the regex,
+an optional reference map, pieces instead of bytes, no glue, module
+`subst-extended` designed in, one support unit). Read §R4 first; the §R3 and §R2
+passages it replaces carry an `[R4: ...]` marker. Its spec draft is
+`subst_api_r4_draft.md`, which replaces `docs/spec/subst_api.md` at build
+time.**
 
-## REVISION 3 — the panel's dispositions applied (lane substr3, 2026-10-22) — READ THIS FIRST
+## REVISION 4 — the interface rework: an independent template, an optional map, pieces, one support unit (lane substr4, 2026-10-22) — READ THIS FIRST
+
+**Status: PROPOSED, design only, NO BUILD GO.** Nothing under `src/`, `cli/`,
+`lib/` or `tests/` was touched, and `docs/spec/subst_api.md` is unchanged. The
+contract this revision proposes is drafted in full as `subst_api_r4_draft.md`
+(the numbered spec form), which replaces `docs/spec/subst_api.md` at build
+time. Cites below of the form `draft §N¶K` are to that draft. It applies the
+lane brief's rulings and the later entries R5-R8 of
+`docs/dev/lanes/subst_rulings.md`; R8 is the last applied. The probes behind
+§R4.13 are `subst_measurements/r4_*`, run against libpcre2 10.46 on the Linux
+dev box.
+
+**Premise test (the brief's).** Today the binding is MANDATORY. The element
+and the glue both take an `rx_subst_binding`, and only `pcrec_subst_bind` can
+make one BOUND. The element returns `PCREC_SUBST_MISMATCH` for any binding
+that is not (`subst_api.md` §4¶4), and the glue takes nothing else
+(`subst_api.md` §6¶1). So a template cannot render a match until it has been
+bound to one rx's record, and the bind refuses any number or name that rx does
+not have. That is the coupling Frank's rulings remove.
+
+**STOP RULE: did not fire.** Every form, the extended module included, is
+rendered without allocation.
+
+- **No bytes written.** A form whose bytes already exist is a piece pointing
+  at them:
+  - the artifact's constant data: literals, `$$`, every escape, and
+    conditional default text;
+  - the subject: references and gaps;
+  - a caller variable: `${!name}`.
+- **Bytes written into the caller's scratch.** Only case forcing writes
+  bytes. It writes them into the caller's scratch, sized exactly before any
+  write, and a too-small scratch returns NOSPACE with the size needed
+  (§R4.13).
+- **Renderer segments** (`rx_renderfn`) still have no producer. If one ever
+  exists, it writes scratch the same way.
+
+### R4.0 Frank's rulings (2026-10-22)
+
+From the lane brief:
+
+1. **Setup is INDEPENDENT of the regex.** The template and the regex are
+   compiled independently, so their group numbers need not correspond. The
+   render takes an OPTIONAL lookup table from the template's references to the
+   regex's groups, and NULL means the numbers match (identity). "Users of C
+   can do glue work."
+2. **A table has three possible sources:**
+   - (A) the caller fills it by hand, reading the template's published
+     reference list;
+   - (B) there is no table, because the numbers match (1:1 use);
+   - (C) one universal helper cross-references the regex's group table with
+     the template's BY NAME, for sets of regexes and templates that share a
+     group-name vocabulary.
+3. **Missing-group handling is optional**: a run-time choice between blank
+   and an error (its default was open; R6 below rules it).
+4. **NO fused "substitute with this regex" one-call form.** The user can write
+   it, and there is no substitution-specific optimization work.
+5. **The render RETURNS AN ARRAY OF PIECES `{const char *ptr, size_t len}`.**
+   - There is no string handling in pcrec, and the array fits other languages'
+     string types. NO MALLOC.
+   - Pieces point into the template's constant data, the subject, or the
+     caller's variable values.
+   - Byte-producing forms (case transforms) write into a CALLER-PROVIDED
+     scratch buffer, and a too-small buffer returns NOSPACE with the size
+     needed and nothing half-written.
+
+From `subst_rulings.md`:
+
+- **R5** (the manager, Frank's refinement; to be applied here):
+  - (1) A lookup-table entry deliberately set to "no group" is INTENTIONAL: it
+    always renders as an unset reference, never an error. The name helper
+    takes an option for a name the regex does not have: refuse it, or mark
+    the entry "no group".
+  - (2) An unset group at match time is decided PER REFERENCE by the template,
+    through PCRE2's extended forms (`${n:-text}`, `${n:+set:unset}`), with
+    PCRE2's exact semantics measured on libpcre2 10.46. Rev 4 designs module
+    `subst-extended` in, and maps each form onto pieces without malloc.
+  - (3) For plain references, the manager leans towards BLANK by default with
+    a strict flag.
+- **R6** (Frank): "Plain `$n`/`${name}` on an unset group renders BLANK by
+  default; a strict flag makes it an error. State the difference from PCRE2's
+  default (PCRE2_ERROR_UNSET) in the spec."
+- **R7** (Frank): "There are a number of universal functions like that one
+  [flatten], and the xref helper, that should be part of a library or source
+  the user may have. Then they are included once." Every regex-independent
+  and template-independent helper lives in ONE support unit. The manager
+  leans towards `pcrec --emit-support` as the vehicle. Each artifact carries
+  only its data, its render and the shared types. The RX side is out of
+  scope (a candidate only).
+- **R8** (Frank): KEEP flatten in the support unit ("it will help with
+  debugging"). `pcrec --emit-support` MUST WORK BY ITSELF: no pattern, no
+  template and no other flag, writing to stdout or `-o FILE`. Specify it in
+  the spec draft, with the cli.md hunk.
+
+### R4.1 What changed against R3
+
+| R3 piece | R4 | where |
+|---|---|---|
+| `pcrec_subst_bind`, mandatory, against one rx's record; `rx_subst_binding` | WITHDRAWN. The element takes an optional MAP, where NULL means identity. One check validates any map, and the rx-aware resolver survives as helper (C) | §R4.3, §R4.4; draft §3 |
+| the NEEDED shape: named rows first, then numbered | the REFERENCE LIST, in first-appearance order across numbers and names (the map's index) | draft §3¶2 |
+| `rx_shape_match` | `pcrec_subst_map_names` (helper C), in the support unit: the same walk, writing SLOTS and runs, with an option to mark a missing reference `RX_SUBST_NOGROUP` (R5.1) | draft §3¶13-¶16 |
+| no way to say "no group" | `RX_SUBST_NOGROUP` in a map: always unset, never an error (R5.1) | draft §3¶6 |
+| the element writes bytes through a cursor | the element writes PIECES, `k * P` per call | §R4.5; draft §4 |
+| the glue `pcrec_subst` (limit, sizing pass, retry over a FRESH copy, `PCREC_SUBST_PAIRS`) | WITHDRAWN (rulings 4 and 5): recipes in draft §6 | §R4.7 |
+| NOSPACE: a byte capacity, and the retry matches again | NOSPACE: pieces (`k * P`) or scratch bytes, decided before any write; nothing is searched twice | §R4.5 |
+| `--unset=empty\|error`, a compile-time axis with a stamp | the run-time flag `RX_SUBST_STRICT`, default BLANK (R6); `--unset=` and `<S>_SUBST_UNSET` go | §R4.6 |
+| `subst-extended` refused | DESIGNED IN (R5.2): conditionals, escapes, `\1`-`\9`, case forcing, as libpcre2 10.46 measures them; selected with `--features subst-extended` | §R4.13; draft §2¶7-¶14 |
+| `seg_user`, `<S>_NSEGS`, `PCREC_SUBST_RENDER` | gone; −13 is reserved | §R4.5 |
+| every helper a `static inline` in every subst header (about 250 lines each) | ONE support unit, `pcrec --emit-support`; headers carry types and declarations only (R7, R8) | §R4.14; draft §10 |
+| bind's encoding refusal | helper (C) only | draft §2¶5 |
+| §R3.13's timing cell | RETIRED (ruling 4) | §R4.11 |
+| Q-F2, Q-F3 | CLOSED by ruling 4 and the recipes | §R4.9 |
+
+Unchanged from R3: the core template language and its parser, the batch
+element, BADSPAN (§R3.6), the same-build rule (§R3.8, now also covering the
+support unit), `${!name}` resolved once per find-all (§R3.7, through
+`rx_subst_ctx_init`'s new signature), `rx_group_run` (it moves into the support
+unit), the header guards (§R3.11), and the answer differences of §R3.10 rows
+9 and 11.
+
+### R4.2 The interface on one page
+
+```c
+/* in every subst header (the types block) */
+typedef struct rx_subst_piece { const unsigned char *p; size_t len; } rx_subst_piece;
+typedef struct rx_subst_run   { int first, count; } rx_subst_run;
+typedef struct rx_subst_map   { const int *slot; size_t nslot;
+                                const rx_subst_run *run; size_t nrun; } rx_subst_map;
+typedef struct rx_subst_out   { rx_subst_piece *pc; size_t cap, n;
+                                unsigned char *scratch; size_t scap, sn;
+                                size_t prev, need, sneed; } rx_subst_out;
+#define RX_SUBST_GAPS    0x1u      /* a gap piece before each match */
+#define RX_SUBST_STRICT  0x2u      /* unset group or variable: an error (default: blank) */
+#define RX_SUBST_NOGROUP (-1)      /* a map entry: "no group", always unset, never an error */
+
+/* per template */
+int dmy_render(const rx_ctx *ctx, const rx_subst_map *map,      /* map NULL: identity */
+               const ptrdiff_t (*caps)[2], size_t k, unsigned flags, rx_subst_out *o);
+
+/* the support unit (pcrec --emit-support), once per program */
+int    pcrec_subst_check(const struct rx_subst_info *t, const rx_subst_map *map,
+                         size_t ncaps, unsigned flags, int *bad_ref);
+int    pcrec_subst_map_names(const struct rx_subst_info *t, const struct rx_info *rx,
+                             unsigned opts, int *slot, size_t nslot,
+                             rx_subst_run *run, size_t nrun,
+                             rx_subst_map *map, int *bad_ref);    /* helper (C) */
+int    rx_group_run(const struct rx_info *rx, const char *name, const char *ref, int *first);
+int    rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it, size_t ncaps,
+                         const struct rx_subst_info *t, rx_var *vres, unsigned flags);
+size_t rx_subst_flatten(const rx_subst_piece *pc, size_t n,
+                        unsigned char *restrict out, size_t cap);
+/* + the UTF-8 case mapping the case regions call */
+```
+
+The template publishes these stamps: `<S>_NREFS` (references a map covers,
+`max(1, n)`), `<S>_PIECES` (pieces per match, the gap included, at least 1),
+`<S>_MAXNUM` and `<S>_NVREFS`. With these a caller sizes every array
+statically: `rx_subst_piece pc[64 * DMY_PIECES]` holds a 64-match batch.
+
+### R4.3 The map's entry: why a slot list with optional runs, not "(first group, count)"
+
+The brief proposed a table entry of `(first group, count)`, with count 1
+normally, so that duplicate-name groups are expressible. The intent is right:
+a duplicated name needs several candidates, and the first one that
+participated wins (match_api.md §5.4¶6). Without that rule, crit1's
+`(?J)(?<n>a)|(?<n>b)` cell renders `x[a][]y` where PCRE2 renders `x[a][b]y`.
+But the pair cannot index either of the two things a "group" could mean:
+
+- **Over group NUMBERS**, a run is not contiguous. In `(?J)(?<n>a)(x)(?<n>b)`,
+  `n` is groups 1 and 3, so `{1, 2}` would name groups 1 and 2, which is
+  wrong.
+- **Over ROWS of `rx->groups`**, as R3's binding used it, unnamed groups have
+  no row. A hand-filler mapping `$1` to the rx's group 3 has nothing to point
+  at, and the render would need the rx's record per call. That is the
+  coupling ruling 1 removes.
+
+**R4's entry is a SLOT LIST with optional runs over it** (draft §3¶4-¶5).
+There are three levels, and at each one NULL means "the simple case":
+
+| map | reference r reads | who uses it |
+|---|---|---|
+| `NULL` | slot `k` for `$k`; a name is refused | (B): 1:1 use |
+| `{slot, nslot, NULL, 0}` | `slot[r]`, one entry | (A): a hand-filler's renumbering; the common hand case is ONE `int` array |
+| `{slot, nslot, run, nrun}` | the first participating slot of `slot[run[r].first, +count)` | (C), and any hand-filler who wants duplicates |
+
+**The plain-int alternative** (`const int *map`, one slot per reference) is
+the middle row. It is the simplest thing a hand-filler writes, and R4 keeps it
+as that row. On its own it cannot express a duplicated name, and duplicated
+names are what helper (C) must serve. So the runs are a second, optional
+array, not a replacement. Indexing slots rather than rows keeps the map
+independent of `rx_group_entry`'s layout and of `rx_info`. That is why the
+pcre2-ovector unlock (§R4.11) can use the same map.
+
+**"No group" is an entry value** (R5.1): `RX_SUBST_NOGROUP` (-1) in
+`slot[]`. It never participates, so the reference is always unset:
+- plain, it renders empty, even under `RX_SUBST_STRICT`;
+- `${n:-text}` renders `text`;
+- `${n:+set:unset}` renders `unset`.
+
+That is the deliberate "this regex has no such group" that ruling R5.1
+describes (draft §3¶6). Helper (C)'s option `RX_SUBST_MAP_ABSENT` writes that
+value for a reference the rx lacks, instead of refusing it (draft §3¶14).
+With that option, one template serves a SET of regexes that each carry only
+some of its names (ruling 2C's case).
+
+**`$0` and the whole-subject forms are not in the map.** `$0`, `$&`,
+`` $` ``, `$'` and `$_` are defined by the match span and the subject. A
+caller who wants a reference to read the whole match maps it to slot 0.
+
+**Named references with no map (B) are refused, never guessed**: the check
+returns `MISSING_REF` naming the reference.
+
+### R4.4 One validation
+
+**One function, `pcrec_subst_check`, in the support unit, validates any map,
+whatever its source** (draft §3¶8-¶12). It refuses:
+
+- a record of another abi;
+- an unknown flag;
+- a map whose arrays are shorter than the reference list;
+- an entry that is neither `RX_SUBST_NOGROUP` nor a slot in `[0, ncaps)`;
+- a run that is empty or reaches past `nslot`;
+- with no map, a number `>= ncaps` or any name.
+
+It is `O(nrefs + nslot)` and never allocates. Helper (C) ends by calling it.
+**Every element call runs it first**, before writing anything (draft §4¶10).
+
+There are two designs:
+
+- **R4's: check per call, no token.** No binding struct and no tag. A
+  hand-filled map can never reach the output unchecked, at a cost of one pass
+  over the references per call: a few compares per 64-match batch, and per
+  match in a k = 1 loop. The cost is UNMEASURED.
+- **The alternative: a "checked" token**, written by the check and read by the
+  element, would save that pass. It also brings back a mandatory setup object,
+  and ruling 1's "optional table" reads as no such object.
+
+The trigger for the token: a profile of a user's k = 1 loop showing the check
+(D77). Because the element calls the support unit's one check rather than a
+private copy, a program that uses a subst artifact links the support unit
+(§R4.14). There is one rule and one implementation.
+
+**Identity (B) is checked against `ncaps` only** (draft §3¶3). On a composed
+rx, `$k` above `ngroups` reaches a delivered group by number. That is
+memory-safe, and the draft says so. Helper (C) applies the rx-aware rule
+`k <= ngroups`.
+
+### R4.5 Pieces
+
+- **Fixed stride.** A call writes exactly `k * P` pieces, where `P =
+  <S>_PIECES` with gaps and `P - 1` without (draft §4¶5). Empty pieces (an
+  empty gap, an unset group, a conditional's padding) are written with
+  `len` 0, never dropped. A conditional takes the larger of its two texts'
+  piece counts, and the shorter text is padded. The case region is one piece
+  (§R4.13). The consequences:
+  - NOSPACE in pieces is static, `k * P`, and is decided before any match is
+    rendered;
+  - match `i`'s pieces sit at a known offset, so per-match output (a JSON
+    line, a templated `grep -o`) needs no index array;
+  - adjacent literals merge (`x\ny$$` is one piece), so `P` counts items,
+    not bytes.
+- **`p` is never NULL.** A zero-length piece points at a valid address that
+  must not be read. Rust's `from_raw_parts` and some FFI layers reject NULL
+  even at length 0, and the flatten's `memcpy` stays out of the `NULL, 0`
+  undefined case.
+- **`const unsigned char *`, not ruling 5's `const char *`**, because the
+  subject (`rx_iter.s`) and `rx_var.p` are `unsigned char`. A piece is then
+  exactly the `{p, len}` half of `rx_var`. This is a question for Frank
+  (§R4.9).
+- **"Nothing half-written"** (draft §4¶10, ¶21):
+  - NOSPACE (pieces or scratch) is decided before anything is written, and
+    the counts do not move;
+  - an error at match `i` (BADSPAN, or UNSET under the strict flag) commits
+    the whole matches `0 .. i-1` and nothing of match `i`.
+- **No match is ever searched twice.** R3's NOSPACE retry re-ran the
+  find-all (§R3.10 row 7). With pieces:
+  - a byte buffer that is too small is the caller's flatten, which grows the
+    buffer and flattens the same batch again (draft §6¶4);
+  - a scratch NOSPACE re-renders the same `caps` with a bigger scratch
+    (draft §6¶7).
+
+  This difference from PCRE2 is now in pcrec's favour (draft §9 row 7).
+
+### R4.6 Unset: blank by default, a strict flag (R6, RULED)
+
+- **Plain references.** A group that did not participate renders an empty
+  piece. `RX_SUBST_STRICT` makes it `PCREC_SUBST_UNSET` at that match (draft
+  §4¶23). This holds for `$n`, `${name}`, `\1`-`\9` and references inside
+  conditional text.
+- **The conditionals' own tests never error.** Choosing a text is what they
+  do.
+- **`RX_SUBST_NOGROUP` never errors** (R5.1).
+- **`${!name}` follows the same flag**, with `PCREC_ERR_UNSET_VAR` before
+  any output.
+- **The spec states the difference from PCRE2 plainly** (draft §4¶23, §9 row
+  5): libpcre2's default is `PCRE2_ERROR_UNSET` (−55) unless
+  `SUBSTITUTE_UNSET_EMPTY`. That covers conditional text too: libpcre2 gives
+  −55 for `${1:-$2}` with both groups unset, and pcrec renders it blank.
+
+D38 Q3's generation axis therefore becomes a call flag. It costs one
+predictable branch per referenced group per match, which is unmeasured and of
+the run walk's class. `--unset=` leaves the CLI, and with it the
+`<S>_SUBST_UNSET` stamp and the record's `unset` field.
+
+### R4.7 How it interlocks with the iterators
+
+The support unit ships no loop (rulings 4 and 5). The reference recipes are
+in draft §6, each a few lines, and `tests/subst/` runs each one at build. They
+share one rule: **the caller's loop owns "how many" and "where the bytes go";
+the element owns spans, gaps and references.** The two core shapes:
+
+```c
+/* per match: <prefix>_next, gap pieces included, written to a stream */
+while (rx_next(&it, caps)) {
+    o.n = 0;
+    if (dmy_render(&ctx, map, (const ptrdiff_t (*)[2])caps, 1, flags | RX_SUBST_GAPS, &o) < 0) break;
+    for (size_t i = 0; i < o.n; i++) fwrite(pc[i].p, 1, pc[i].len, f);
+}
+fwrite(s + o.prev, 1, n - o.prev, f);                 /* the tail: o.prev is the last end */
+
+/* batch: <prefix>_next_n, 64 matches per element call */
+do {
+    got = rx_next_n(&it, caps, 64);
+    o.n = 0;
+    if (dmy_render(&ctx, map, (const ptrdiff_t (*)[2])caps, got, flags | RX_SUBST_GAPS, &o) < 0) break;
+    consume(pc, o.n);                                  /* writev, rx_subst_flatten, a rope ... */
+} while (got == 64);
+```
+
+- **The gap pieces.** With `RX_SUBST_GAPS`, piece 0 of each match is
+  `s[prev, start)`, and the tail `s[o.prev, n)` is the caller's last write.
+  Without the flag there are no gap pieces and no tail: replacements only. A
+  caller who wants the gaps skipped (an edit list) can also keep the flag and
+  step over every `P`-th piece.
+- **`RX_FOREACH`** gives one match per body, so it calls the element with
+  `k = 1` (draft §6¶5). That is one element call per match, the caller's
+  choice. `<prefix>_next_n` is the batch path.
+- **Limits and resumption are free.** R3's glue could not resume after its
+  `limit` (§R3.4), and it capped `next_n` so as not to over-fetch. A caller's
+  loop counts its own matches, and with `_next` or `_next_n` the iterator
+  stays resumable (match_api.md §3.8). Only `RX_FOREACH`'s early-exit rule
+  (match_api.md §3.8.2¶4) still applies, to its own users.
+- **The variables.** `rx_subst_ctx_init` resolves `${!name}` by name from the
+  iterator's variables once per find-all. A caller with its own variables
+  fills `ctx.vars` in the template's `vrefs` order. That is the same
+  identity, hand or by-name choice the group map makes.
+
+### R4.8 In-place and streaming (§R2.6), as far as pieces change them
+
+- **Pieces are borrowed** (draft §7¶1). Nothing in a batch is read until the
+  caller consumes the pieces, so §R2.6's in-place write rule gains one term.
+  A write must land below every byte the next search reads (`lo −
+  back-reach`), AND below the lowest source of every piece not yet consumed.
+  With `k = 1` and immediate consumption, that is §R2.6's rule as written.
+  In-place stays a contract with no build.
+- **Streaming gets cheaper, not harder.** A window glue flushes the pieces of
+  the matches before its holdback point and then slides. That flush is a
+  `writev` of pointers into the window, with no copy. §R2.6's holdback is
+  unchanged, and so is its rule that `$_`, `` $` `` and `$'` refuse streaming.
+  A case region's piece is in scratch, so it outlives the window.
+- **The flatten** declares `out` `restrict` against every piece (draft
+  §10¶5). Flattening into the subject is the in-place case above.
+
+### R4.9 Questions for Frank (plain words)
+
+Ruled since the brief, and applied: unset renders blank by default with a
+strict flag (R6); flatten is kept, in the support unit (R8); the helpers live
+once in a support unit written by `pcrec --emit-support`, which works on its
+own (R7, R8).
+
+Still open, each with a leaning:
+
+1. **Piece pointer type.** Your sketch said `const char *`, but the subject
+   and the variables are `unsigned char` everywhere else in pcrec's
+   interface.
+   - Leaning: `unsigned char`, so that no source needs a cast. A language
+     binding casts once at its boundary either way.
+2. **Is the support file written by the compiler, or shipped as a fixed
+   file?**
+   - Leaning: written by `pcrec --emit-support`. It then always matches the
+     compiler's own version, and generated code depends on nothing pcrec did
+     not write.
+   - The alternative is a file in the pcrec source tree that users copy. It
+     is simpler to find, but it can drift from the compiler a user actually
+     runs.
+   - Either way, it is one file. One source file of the program sets a macro
+     before including it to get the function bodies (draft §10¶2).
+3. **Every program that uses a template must compile the support file once.**
+   The template's render calls the support file's one validation function,
+   rather than carrying its own copy.
+   - Leaning: yes. One rule, written once. A mismatched or missing support
+     file is a link error, never a wrong answer, because the function names
+     carry the version (draft §10¶3).
+   - The alternative is to give each template a private copy of the check,
+     so that a program with no helpers needs no support file. That means two
+     copies of one rule.
+4. **One PCRE2 spelling cannot survive independence.** In PCRE2's extended
+   templates, `\10` means group 10 if the pattern has at least ten groups,
+   and the byte 0x08 otherwise. A template compiled without its pattern
+   cannot know which.
+   - Leaning: refuse `\10`-style escapes at template compile, and point at
+     `${10}` and `\o{10}`, which are unambiguous. `\1` to `\9` work as
+     usual.
+5. **Confirm one reading of rulings 4 and 5.** The generic "substitute
+   everything into my buffer" function from R3 (`pcrec_subst`, not tied to any
+   regex) goes too: it is string handling, and the recipes replace it. If you
+   meant only the per-regex fused form to go, that loop could come back as
+   one more support-unit helper over pieces.
+
+Manager-level, decided here (say if any is wrong):
+
+- the stride is fixed, and empty and padding pieces are kept;
+- `p` is never NULL;
+- the matches before a failing one are committed;
+- the check runs per call, with no token;
+- identity is checked against `ncaps` only;
+- the reference list is in first-appearance order;
+- the extended module is selected with `--features subst-extended`;
+- the case region runs from the first case escape to the template's end
+  (§R4.13);
+- PCRE2's case-forcing combinations are reproduced as measured, oddities
+  included (D26 exact tier).
+
+### R4.10 What the existing build keeps and drops
+
+Sizes are lines in `lane/subst` at c09063494. "Rewrite" means the file's job
+stays and its text is mostly new.
+
+**The template parser.** `src/parse/subst_template.c` (296 lines) is KEPT.
+That covers the core language, the greedy rules, names, the UTF check and
+every refusal. It changes in three ways:
+
+- the reference list goes into first-appearance order;
+- adjacent `SUBST_LIT` items merge, and `npieces` is counted;
+- **NEW:** the `subst-extended` grammar of draft §2¶7-¶14 (conditionals,
+  escapes, `\1`-`\9`, the `\NN` refusal, case escapes) is added. The
+  conditionals reuse `src/core/varexp.c`, which already parses and refuses
+  `${n:-w}` (`subst_template.c`'s header), so its operator forms become
+  accepted under the module instead of refused. That is about 250 lines.
+
+`SubstTmpl` (`src/core/internal.h`) changes: `nnamed`/`nneeds` become
+`nrefs`, and `npieces` and the case-region start are added. Items gain the
+kinds `COND_UNSET`, `COND_SET` and `CASE_REGION`.
+
+**The needs and shape records.** `needs` becomes `refs` (the same
+`rx_group_entry` rows), and `nruns` becomes `nrefs`. These go: `nsegs`,
+`unset`, `<S>_NSEGS` and `<S>_SUBST_UNSET`. These are added: `npieces`,
+`uses`, `<S>_PIECES`, and `subst-extended` in `<S>_SUBST_MODULES`.
+
+**bind becomes validate plus helper (C), both in the support unit.** Gone:
+`pcrec_subst_bind`, `rx_subst_binding` and `PCREC_SUBST_BOUND`.
+`rx_shape_match` becomes `pcrec_subst_map_names`, the same loop writing slots
+and runs, plus the `RX_SUBST_MAP_ABSENT` option. It keeps the negative-number
+refusal and the run-slot range test. `pcrec_subst_check` is new, at about 25
+lines. `rx_group_run` is unchanged and moves into the support unit.
+
+**The element: byte copy becomes pieces.** In `src/gen/emit_subst.c`:
+
+- the binding's identity tests become the support check's call, the vars
+  test and the room test;
+- each item's `rx_subst_put` becomes one piece store;
+- the gap becomes a piece;
+- the run walk reads the map's slots, and stays in the render as a private
+  `static` (it is hot, per match);
+- **NEW:** conditionals (one participation test, then one text's pieces and
+  the padding) and the case region (a sizing pass, then a writing pass into
+  scratch, both over the same item interpreter).
+
+The element emitter grows from about 70 lines to about 200.
+
+**The NOSPACE logic.** `rx_subst_cur`, `rx_subst_put`, saturation, `fits` and
+`PCREC_SUBST_PAIRS` all go. NOSPACE becomes one compare for pieces and the
+case region's sizing pass for scratch. The flatten holds the only remaining
+saturation, in about 12 lines.
+
+**The glue.** `pcrec_subst` is WITHDRAWN (about 40 lines). Its batch doubling
+was a copy of `RX_FOREACH`'s (the substfix residual), so that duplication
+goes with it.
+
+**The support unit (NEW, R7 and R8).** `src/gen/emit_subst.c` gains
+`pcrec_emit_support`, which writes the file of draft §10: the shared blocks,
+the declarations, and under `PCREC_SUPPORT_IMPLEMENTATION` the check, helper
+(C), `rx_group_run`, `rx_subst_ctx_init`, the flatten and the UTF-8 case
+mapping. That is about 300 lines of emitted text, most of it moved from
+today's block. The case mapping table is new data (§R4.13). §R4.14 says what
+leaves every header.
+
+**The CLI.** In `cli/main.c`:
+
+- `--unset=` goes, with its two refusals and its help line;
+- `--features subst-extended` becomes accepted on a subst compile, and only
+  that module;
+- `--emit-support [-o FILE]` is new, a standalone mode like the other emit
+  commands.
+
+That is about 60 lines.
+
+**The spec.** `docs/spec/subst_api.md` is replaced by the draft. Each in-tree
+citation of it (§1¶2, §1¶3, §2¶1, §2¶5, §3¶3, §5¶2, §5 and §9) exists in the
+draft with the topic its citer means. The spec has never been on main, so its
+other paragraphs are renumbered freely. `cli.md` gets the hunk in §R4.14.
+match_api.md §3.8¶9a (it names `rx_subst_ctx_init`) and §4's reservation of
+−11..−16 stand.
+
+**The tests and the driver.** The answers stay, because they are
+`pcre2_substitute`'s and the recipes reproduce its global loop.
+
+- `tests/subst/cells.tsv` (75 lines): about 10 `bind:` expectations become
+  `check:`, and the `UNSET` column becomes the strict flag. NEW cells: one
+  per §R4.13 transcript row, oracle `pcre2_substitute` with `EXTENDED`; the
+  NOGROUP and MAP_ABSENT arms; a scratch NOSPACE re-render.
+- `subst_drv.c` (401 lines): rewritten around the draft §6 recipes, through
+  flatten, in the three map modes, linking an emitted support unit.
+
+**The D27 corpus.** What still applies:
+
+- the eleven differential families (`corpus/d_*.tsv`, about 1,500 cases)
+  apply unchanged. Only `lib/diff_driver.c` (141 lines, rewritten to the
+  batch recipe) and `run_diff.py`'s unset column (now the strict flag) move;
+- the API drivers (`api/t_*.c`, about 950 lines) test the OLD promises, so
+  most are rewritten or retired. `t_bind` and `t_shape` go to the check and
+  helper (C), `t_glue` is retired into the recipes, `t_element` moves to
+  pieces, and `t_vars`, `t_threads`, `t_iter` and `t_utf` adapt;
+- `cli/cli.sh`: its `--unset` cases become refused-option cases.
+
+**A fresh D27 round is OWED** for the new surfaces: the map's modes and
+NOGROUP, the check, pieces and stride, NOSPACE before any write,
+commit-on-error, scratch, the extended module, and `--emit-support`. It goes
+to a writer blinded to `src/` and given only the draft (D27).
+
+**Sabotage rows S1346-S1382 (37):**
+
+- **KEPT, re-anchored to the piece form (25):** S1346, S1347, S1348, S1352,
+  S1354, S1357, S1359, S1360, S1361, S1362, S1365, S1366, S1369, S1370,
+  S1371, S1372, S1373, S1374, S1375, S1376, S1377, S1379, S1380 (its witness
+  loses `--unset=`), S1381, S1382. S1354 and S1375 now plant the flag's
+  default.
+- **RE-AIMED (6):**
+  - S1351 becomes "the check accepts a slot `>= ncaps`";
+  - S1353 becomes the room compare;
+  - S1356 becomes the check's abi test;
+  - S1358 becomes helper (C)'s `k <= ngroups`;
+  - S1368 and S1378 move to helper (C).
+- **RETIRED with the glue (6):** S1349, S1350 (its saturation returns as a
+  flatten row), S1355, S1363, S1364 and S1367.
+- **NEW (about 15):**
+  - the core interface (about 7): a name accepted with no map, a run past
+    `nslot`, the gap left out of the stride, a NULL `p`, NOSPACE committing
+    part of a batch, an error committing match `i`, flatten writing on a
+    short buffer;
+  - the extended module (about 6): `:-` firing on a set-but-empty group,
+    padding dropped, the case region's state reset at a conditional's end,
+    `\NN` accepted, scratch sized one byte short, NOGROUP erroring under
+    strict;
+  - the support unit (about 2): its names without the abi suffix, and
+    `--emit-support` needing an argument.
+
+  Ids come at build, from a range the manager names.
+
+**Rough size of the change:**
+
+- product code: about 900 lines touched, about 600 of them new (the
+  extended module and the support emitter);
+- the case mapping table: new generated data;
+- spec: a full replacement, about 600 lines, plus cli.md's hunk;
+- tests: about 1,600 lines rewritten, plus the extended cells;
+- mech: 25 kept, 6 re-aimed, 6 retired, about 15 new;
+- one D27 round.
+
+Two build lanes is the honest size: one for the interface, R4's core, and one
+for `subst-extended` and the case data, which can follow.
+
+### R4.11 Lenses: siblings, and what pieces unlock
+
+**SIBLING-OF-A-FAMILY.**
+
+- **Pieces and capture pairs.** A piece is a capture pair RESOLVED: `{s +
+  caps[k][0], caps[k][1] - caps[k][0]}`, generalized to the artifact's
+  constants, the caller's variables and scratch. It is exactly the `{p, len}`
+  value half of `rx_var` (match_api.md §2¶1). So these are one family with two
+  spellings: offsets where everything is in the subject (caps), and pointers
+  where it is not (pieces). If a third consumer wants `{p, len}`, the shared
+  block could hoist an `rx_bytes` type that `rx_var` then holds. That is an rx
+  abi event: a candidate for [IFACE-PUSH], not here. POSIX `struct iovec` is a
+  third sibling, with the same shape and different types.
+- **Is the by-name helper the same as `rx_group_run`?** No. It is a LOOP over
+  `rx_group_run`, plus D61 for numbered references. `rx_group_run` stays the
+  single name-to-run primitive (§R3.2). It is the same thing R3 built as
+  `rx_shape_match`, with its output changed from rows to slots and with the
+  NOGROUP option added.
+- **The map is the per-match consumer family's binding** (§R3.12). The
+  extract-to-struct member, when it comes, takes the same map. The helper
+  serves it unchanged if it reads any `rx_group_entry` reference list rather
+  than a template record. So at build the helper takes `(refs, nrefs)`, and
+  the template signature is a one-line wrapper. That is cheap, and it is the
+  general form.
+- **The support unit and the rx shared block.** Every rx header still carries
+  `RX_FOREACH`'s machinery (`rx_foreach_begin`/`_pull`) and the iterator's
+  setters as `static inline` text. The same R7 treatment would move the
+  non-inline-critical parts into the same support unit. That is a CANDIDATE
+  only (R7 puts it out of scope), and moving it is an rx abi event.
+  `RX_FOREACH`'s per-batch pull is hot and probably stays inline.
+- **`rx_ctx`'s function family** (draft §4¶27) keeps its three rows. The
+  `rx_substfn` row's binding column changes to "the map, optional".
+
+**UNLOCKS, each with its trigger:**
+
+| unlock | why pieces enable it | trigger |
+|---|---|---|
+| zero-copy output: `writev` straight from the piece array | pieces are iovec-shaped | a user writing substitutions to a file or socket |
+| bindings for other languages with no pcrec string type: Rust `&[u8]` slices, Python `bytes.join`, Go `[]byte` | `p` is never NULL and nothing is owned | the first binding |
+| editors, ropes and patch lists: a gap piece is "unchanged", a template piece is "new" | the fixed stride says which is which | an editor or diff use |
+| NOSPACE without re-matching (draft §9 row 7) | the pieces of a batch stay valid | built in |
+| one template over a SET of regexes that share names only partly | helper (C)'s `RX_SUBST_MAP_ABSENT` plus `${name:-...}` | a user with several patterns and one output format |
+| the pcre2-ovector adapter (§R3.12's named member) | the map indexes SLOTS, not `rx_info` rows; the adapter converts `PCRE2_SIZE` pairs to `ptrdiff_t` | the bench wants templated output from both engines |
+| the shape-contract version (§R3.8's narrower alternative) | the element no longer reads `rx_info`, only `rx_ctx`, caps and the map | unchanged: a prebuilt template library or an [ART-MGR] catalog |
+
+**§R3.13's timing cell is RETIRED.** Its only consequence was building the
+fused form, and ruling 4 rules that out. Nothing measures the per-call check,
+the run-time strict branch or the case region's two passes. All three are
+labelled UNMEASURED, with triggers in §R4.4 and §R4.6. The case region's
+trigger is a user's hot `\U` template.
+
+### R4.12 The standing questions (`docs/design/CLAUDE.md`)
+
+1. **Measurement regime: relevant only to answers.** R4 produces no timing.
+   The §R4.13 probes are ANSWERS from libpcre2 10.46 (bytes, codes and
+   counts), which hold on any box. The moved costs are labelled unmeasured,
+   with triggers.
+2. **Independent control: relevant.**
+   - The answers' oracle stays `pcre2_substitute`, a different implementation
+     of the whole job, now with `SUBSTITUTE_EXTENDED` for the module.
+   - The recipes in `tests/subst/` are caller code, written by the test
+     author and not shipped.
+   - **The case mapping table** is a new data set, and it must not share a
+     source with its check. pcrec's table is DERIVED from the vendored UCD
+     (`third_party/`, through a `generate.py`, the house shape) by PCRE2's
+     single-code-point rule. Its control is libpcre2's own answer for every
+     code point under `\U`, `\L`, `\u` and `\l`. Those answers are collected
+     by RUNNING libpcre2 into `oracle_store/` as a new question kind, which is
+     that store's charter. The NEW-DATASET lens is answered: the product's
+     data lives in `third_party/` plus generated tables, the control's in
+     `oracle_store/`.
+   - The populations are counted by the existing runners. A per-code-point
+     check counts 0x110000 minus the surrogates.
+   - A fresh D27 writer covers the interface promises.
+   - Each new sabotage row's witness reach is owed at build ([MECH-REACH]).
+3. **What moves when regenerated: relevant.**
+   - No rx artifact moves, because the types block lives only in subst
+     headers and the support unit (§R3.8).
+   - Every subst artifact's text changes, which is no event, because none has
+     ever been on main.
+   - After landing, a change to the types block or to the support unit's text
+     is an abi event (D76/D94). A UCD regeneration that moves the case table
+     moves the support unit's bytes, so it is one too, with readers found by
+     grep.
+
+### R4.13 Module `subst-extended`, measured (R5.2)
+
+**Probes:** `subst_measurements/r4_probe_ext*.py`, transcript
+`subst_measurements/r4_transcript.txt`. These are libpcre2 10.46 2025-08-27
+`pcre2_substitute` calls with `GLOBAL | OVERFLOW_LENGTH | EXTENDED`, through
+ctypes and the D27 corpus's `ref_pcre2.py`: 97 cells, answers only. The draft
+§2¶7-¶14 states each rule. What the probes established:
+
+| rule | witness (template on pattern, subject → output) |
+|---|---|
+| `${n:-t}` fires on UNSET only; a set-empty group renders itself | `[${1:-D}]` on `(a?)b`, `b ab` → `[] [a]`; on `(a)?b` → `[D] [a]` |
+| `${n:+s:u}`: set (empty included) picks `s`; `${n:+s}` with no `u` renders nothing when unset | `[${1:+S:N}]` on `(a?)b` → `[S] [S]`; `[${1:+S}]` on `(a)?b` → `[] [S]` |
+| no-colon and other operators are refused | `${1-D}`, `${1+S:N}` → −58; `${1:=D}`, `${1:?D}` → −59 |
+| text is a template: nesting, escapes, `$$` | `[${1:-${2:-z}}]` → `[z] [c] [a]`; `[${1:-x$$y}]` → `[x$y]`; `[${1:-a\:b\}c}]` → `[a:b}c]` |
+| `:` is literal in `:-` text, and the first unescaped `:` splits `:+` text; `}` closes | `[${1:-a:b}]` → `[a:b]`; `[${1:+a}b:c}]` → `[b:c}] [ab:c}]` |
+| an unset reference INSIDE text is −55 unless `UNSET_EMPTY` | `[${1:-$2}]` → −55 (pcrec: blank by default, R6) |
+| unknown group in a condition | `${9:-D}` → −49 (pcrec: `MISSING_REF` or NOGROUP) |
+| escapes | `\n\t\x41\x{42}\101\\\$` → LF TAB `A B A \ $`; `\a\e\f\r\0`; `\o{101}` → `A`; `\cA` → 0x01; `\x4` → 0x04; `\q` and a trailing `\` → −57 |
+| UTF-only escapes | `\x{100}` and `\N{U+41}` → −57 without UTF; with UTF, U+0100 as UTF-8 and `A` |
+| `\Q..\E` | `<\Qa$1\E>` → `<a$1>`; an unterminated `\Q` runs to the end |
+| `\1`-`\9` are groups; `\NN` depends on the pattern | `<\1>` → the group; `\8` on one group → −49; `\10` → 0x08 with one group, group 10 with twelve |
+| case forcing persists, applies to literals, and outlives a branch | `\U$1 x \L$2 Y\E z` → `HELLO X world y z`; `${2:-\Ux}y` → `XY`; `${1:+\U$1:x}y$1` → `BYB` |
+| single-character combinations | `\u\Lab` → `Ab`; `\l\UAB` → `aB`; `\L\uAB` → `AB`; `\U\lab` → `ab`; `\L\u$1` acts as `\U` |
+| `\u` applies to the next character produced, even through a condition | `\u${2:-x}` → `X` |
+| `\E` ends `\Q` first, and then case forcing | `\U\Qa$\E$1` → `A$B` |
+| UTF mapping is single code point and may change length | `ß` → `ẞ` (2 → 3 bytes); U+01C6 → U+01C4 under `\U` and `\u`; `ı` unchanged under `\U`; U+212A and U+0130 unchanged under `\L` |
+| byte mode changes ASCII only | `\U` on bytes 0xE0 0xC0 leaves them |
+| `$*MARK` renders empty with no mark | pcrec keeps refusing it (no artifact reports a mark), draft §9 row 17 |
+| `${!v}` is −35 | pcrec's own form (draft §9 row 18) |
+
+**How each form maps onto pieces, with no malloc:**
+
+- **Escapes, `\Q..\E` and every literal run** are constant bytes, merged into
+  literal pieces.
+- **A conditional** is one participation test (the map's run walk, the same
+  as a plain reference), then the chosen text's pieces, padded to the
+  larger text's count, so the stride stays fixed. A default text is literal
+  pieces in the artifact's constant data, so no scratch is needed (R5.2's
+  expectation, confirmed).
+- **Case forcing cannot be resolved at compile time.** The state is the
+  template's running state in OUTPUT order, and a branch can switch it on
+  for everything after it (`${2:-\Ux}y`). So R4 makes ONE CASE REGION per
+  template: from the first case escape, in template order, to the template's
+  end. It is rendered into scratch as ONE piece per match, by the same item
+  interpreter run twice:
+  - a sizing pass, so that NOSPACE is decided before any write, with
+    `sneed` exact;
+  - then a writing pass that applies the case state dynamically.
+
+  Everything before the region stays zero-copy. Bytes inside the region that
+  end up unforced are copied unchanged, which costs bytes and never changes
+  an answer.
+
+  A tighter region (ending at a `\E` that every path reaches) is a later
+  refinement with no trigger yet.
+- **Scratch bound.** Under UTF-8 a single-code-point mapping grows a
+  character from at most 2 bytes to 3 (ß → ẞ, ɐ → Ɐ). So the region needs at
+  most its constant bytes plus 1.5 times its copied bytes, and a caller that
+  sizes scratch by that bound never sees NOSPACE. Under other encodings the
+  bytes are exact. The bound is stated in draft §4¶22. Its exactness for all
+  of Unicode is a property of the derived table, and the per-code-point
+  control (§R4.12) checks it.
+- **`\NN` refused** (§R4.9 question 4) and **`$*MARK` refused** are the two
+  places where the extended module differs from PCRE2 in what it accepts.
+  Both are stated in draft §9.
+
+### R4.14 The support unit (R7, R8)
+
+**What it is.** It is one file holding every function that is independent of
+both the regex and the template:
+
+- `pcrec_subst_check` and `pcrec_subst_map_names`;
+- `rx_group_run` and `rx_subst_ctx_init`;
+- `rx_subst_flatten`;
+- the UTF-8 case mapping.
+
+It also carries the rx shared block and the subst types block under their
+guards (draft §10).
+
+**The vehicle.** `pcrec --emit-support [-o FILE]` writes it.
+
+- **On its own (R8).** It takes no pattern, template or other option, and
+  anything else on the line is refused. It writes to stdout by default, or to
+  FILE.
+- **One file, with an implementation guard.** One translation unit of the
+  program defines `PCREC_SUPPORT_IMPLEMENTATION` before including it. Every
+  other unit includes it for the declarations, or does not include it at
+  all, because each subst header already declares what it calls.
+- **Deterministic.** Its text depends only on the pcrec build.
+- **The alternative: a fixed file shipped in the pcrec tree** (for example
+  `lib/pcrec_support.h`). It is simpler to find, but it can drift from the
+  compiler a user runs, and it would be the first generated-code dependency
+  pcrec did not emit. The leaning stays the emitted file (§R4.9 question 2).
+
+**Version safety.** Every external name is a macro over a name that carries
+the abi (`pcrec_subst_check` → `pcrec_subst_check_v<abi>`). A subst artifact
+and a support unit from different builds fail to LINK. The run-time abi
+comparison in the check then covers only `dlopen`.
+
+**What R7 deletes from the as-built block** (presented as the simplification
+it is):
+
+- **Every function body in every subst header.** Today each header carries
+  about 250 lines of `static inline` code: `rx_subst_put`, `rx_subst_span`,
+  `rx_subst_group`, `rx_subst_run_slot`, `rx_group_run`, `rx_shape_match`,
+  `pcrec_subst_bind`, `rx_subst_ctx_init` and `pcrec_subst`. Some of them are
+  withdrawn by §R4.1, and the rest move to the support unit. Of these, only
+  the per-match run walk stays in the artifact, as the render's own private
+  code. A subst header becomes types, macros, the stamps and two
+  declarations.
+- **The `rx_shape` spelling of the `subst-block` reservation** (cli.md
+  §1.6¶2; review item MF2). Nothing is named `rx_shape*` any more.
+- **What does NOT go, against the rulings file's expectation:**
+  - The other reserved spellings stay. `rx_subst*`, `pcrec_subst*` and
+    `rx_group*` are still the types', flags', and support functions' names,
+    and a pattern prefix can still collide with them.
+  - MF1's guard rule stays: each artifact still has its own header with its
+    own declarations, and its guard must still differ from an rx header's of
+    the same prefix.
+  - What R7 does remove is the larger class behind both items: TWO HEADERS
+    DEFINING THE SAME FUNCTION TEXT (a subst header and the support file, or
+    two subst headers of different builds in one unit). After R7 a header
+    defines no function, so the only same-name collisions left are types and
+    macros. The shared guard and the abi `#error` already handle those.
+
+**The `cli.md` hunk** (for the build; `docs/spec/cli.md` §1.19¶1 today
+describes the subst compile with `--unset=`):
+
+> `pcrec [-p PREFIX] [-e ENC] [--features subst-extended] -o OUT.c --subst
+> TEMPLATE` (or `--subst-file FILE`) compiles a substitution template
+> (the subst spec's §5). `--features` takes `subst-extended` and no other
+> module there; every pattern-compile option is refused. `pcrec
+> --emit-support [-o FILE]` writes the subst support unit (the subst spec's
+> section 10) to stdout or FILE. It takes no other argument and refuses any.
+
+(The hunk lands in the same commit as the draft, which is when the new
+section 10 exists to be cited by number.)
+
+**The RX side (out of scope, a CANDIDATE only).** The same treatment applies
+to the rx shared block's inline helpers: the iterator setters, and the
+`rx_foreach_*` machinery behind `RX_FOREACH`. It would make the support unit
+the one home for all of pcrec's shared caller-side code. The cost is an rx
+abi event and every rx caller linking the unit. The trigger is a second
+module whose shared code is not hot.
+
+---
+
+## REVISION 3 — the panel's dispositions applied (lane substr3, 2026-10-22) — READ §R4 FIRST
 
 **Status: PROPOSED, design only.** Nothing under `src/`, `cli/`, `lib/` or
 `tests/` was touched. Two probes were run on the Linux dev box against the head
@@ -58,6 +867,8 @@ any value before the first call"). The §R3.9 helper reads it only when the
 `PCREC_ITER_OPT_VARS` bit says it was set.
 
 ### R3.1 The element is batch-shaped
+
+**[R4: the batch stays; the cursor, `rx_subst_put`, the byte output and the binding argument are SUPERSEDED by §R4.5 (pieces) and the draft's §4 (`<s>_render(ctx, map, caps, k, flags, o)`)]**
 
 crit2-1 is right that §R2.8's "one out-of-TU call per match" is not D171's
 class. D171 accepted a FIXED cost per find-all. The I4 note measured `next_n`
@@ -124,6 +935,8 @@ extra (D61). All of this is UNMEASURED. §R3.13 is the cell that measures it.
 
 ### R3.2 The needed shape, the run, and the generic bind
 
+**[R4: the NEEDED shape becomes the REFERENCE LIST in first-appearance order; the bind is SUPERSEDED by the optional map, the one check and helper (C) (§R4.3, §R4.4). The satisfaction table survives as helper (C)'s table; `rx_group_run` and its later adopters stand]**
+
 **The NEEDED shape is an `rx_group_entry` array** (crit2-6). `rx_group_entry`
 already exists in the shared block (match_api §2¶8), and it already has every
 column a reference needs:
@@ -184,6 +997,8 @@ other two are LATER ADOPTERS and are not rewritten now:
 
 ### R3.3 The binding
 
+**[R4: WITHDRAWN (ruling 1): no binding object; §R4.3-§R4.4]**
+
 ```c
 typedef struct rx_subst_run { int first, count; } rx_subst_run;   /* rows of rx->groups */
 
@@ -229,6 +1044,8 @@ static inline int pcrec_subst_bind(rx_subst_binding *b, const struct rx_info *rx
   (§R3.9, thread safety).
 
 ### R3.4 The glue
+
+**[R4: WITHDRAWN (rulings 4 and 5): no shipped loop; the draft's §6 recipes, §R4.7]**
 
 ```c
 #ifndef PCREC_SUBST_PAIRS
@@ -311,6 +1128,8 @@ static inline int pcrec_subst(const rx_subst_binding *b, rx_iter *it, size_t lim
 
 ### R3.5 Codes and `*outlen`
 
+**[R4: `*outlen`/`*nsubst` go with the glue; NOSPACE now means pieces or scratch, decided before any write (§R4.5); `PCREC_SUBST_RENDER` (−13) is reserved with no producer; the draft's §8 is the table]**
+
 The subst codes sit below `PCREC_ERR_ITER` (−10), which keeps them clear of the
 give-up range and of every existing refusal. Their VALUES are PROPOSED and are
 fixed at landing as the next free numbers below the floor, the same house rule
@@ -381,6 +1200,8 @@ lookaround. Both witnesses are crit1's. The cost is two compares per match,
 inside the element.
 
 ### R3.7 The unset axis and `${!name}`
+
+**[R4: the axis becomes the run-time flag of §R4.6 (default BLANK, ruled R6); `${!name}` resolution stands, through `rx_subst_ctx_init`'s new signature]**
 
 **D38 Q3 already decided the axis** (crit1-4): "unset-but-existing group renders
 EMPTY by default, as a GENERATION AXIS with a strict PCRE2-error variant". R3
@@ -453,6 +1274,8 @@ template's reference census) goes into the `.c` only.
 
 ### R3.9 The caller contract
 
+**[R4: `out`'s overlap and after-failure rules become the pieces-are-borrowed and commit rules (draft §7¶1-¶2, §4¶21); `rx_subst_ctx_init` takes `(ctx, it, ncaps, t, vres, flags)`]**
+
 - **`out` must not overlap `s[0, n)`** (crit3-7). The glue and the element
   declare `out` `restrict`. An overlapping call is UNDEFINED, and the spec says
   so in one sentence. In-place is the separate contract of §R2.6 (crit3-12),
@@ -491,6 +1314,8 @@ template's reference census) goes into the `.c` only.
 
 ### R3.10 Where pcrec's substitution differs from `pcre2_substitute`
 
+**[R4: rows 1-3, 5-8 and 10 and the grow-and-retry recipe are SUPERSEDED by the draft's §9 and §6¶4 (no match is searched twice); rows 4, 9 and 11 stand]**
+
 | # | PCRE2 | pcrec | source |
 |---|---|---|---|
 | 1 | NOSPACE capacity counts the NUL (`a*`→`[$0]` on `"bab"`: 12) | no NUL, so 11 | D38 Q4; §R3.5 |
@@ -520,6 +1345,8 @@ if (rc == PCREC_SUBST_NOSPACE && len != SIZE_MAX) {
 
 ### R3.11 The CLI and the header
 
+**[R4: `--unset=` leaves the CLI (§R4.6); the rest stands]**
+
 - **`--subst-file FILE`** (crit3-11) beside `--subst TEMPLATE`. It reads the
   template from a file, byte for byte, so a template with quotes, `$` or a
   newline needs no shell escaping. The two options are mutually exclusive,
@@ -536,6 +1363,8 @@ if (rc == PCREC_SUBST_NOSPACE && len != SIZE_MAX) {
   with it.
 
 ### R3.12 The general form: a per-match consumer
+
+**[R4: the family stands; the shared binding is now the optional map and helper (C) (§R4.11); the `rx_substfn` row's binding column reads "the map, optional"]**
 
 crit2-7's unlock, accepted as design text. A substitution is one member of a
 family: a **per-match consumer**. It is a spec over a DECLARED NEEDED SHAPE,
@@ -570,6 +1399,8 @@ subst used as another template's segment would be a k = 1 adapter, a
 is a template that names another compiled template.
 
 ### R3.13 The phase-B timing cell, rebuilt
+
+**[R4: RETIRED: ruling 4 rules out the fused form this cell could build (§R4.11)]**
 
 crit2-4. The question is whether the separated design (the shipped form: the
 glue in the caller's TU, the batch element out of TU) loses to a fused one.
@@ -671,6 +1502,8 @@ iteration's" without the ill-formed exception, and its phase-B hunk should cite
    landing, a change to the subst block is an rx abi event (§R3.8).
 
 ### R3.16 Open questions, restated after R3
+
+**[R4: Q-F2 and Q-F3 are CLOSED by ruling 4 and the recipes; Q-F1 is answered by ruling 1 (independent, optional map); Q-F4 stands with §R4.8's added term. Frank's open items are §R4.9]**
 
 For Frank, in plain words, with the leaning first. These four are unchanged in
 substance, and their leanings are updated:
@@ -1063,6 +1896,7 @@ and it costs the caller nothing they did not choose.
    (`(?<=(a))b`) or a group before `\K` precedes the start. The render reads
    the subject, not the gap, so buffer mode is unaffected (the `lbcap` cell),
    but in-place and streaming must account for it (R2.6).
+**[R4: rule 4 is SUPERSEDED: pieces are sized before any write and no match is searched twice (§R4.5).]**
 4. **Sizing is single-pass by default.** The glue writes while the output
    fits, keeps counting past the overflow and always reports the capacity
    required. This is PCRE2's `OVERFLOW_LENGTH` behaviour made unconditional,
@@ -1081,6 +1915,8 @@ and it costs the caller nothing they did not choose.
 7. **Output is length-only, no NUL** (D38 Q4), 8-bit clean.
 
 ### R2.6 In-place and streaming — the honest contract
+
+**[R4: stands, with §R4.8's added term: a write must also land below every unconsumed piece's source]**
 
 **In-place** (the 2026-09-06 charter's mode (1)). The idea "free when
 replacement ≤ match" is true for the write cursor against the gaps, but three
