@@ -65,7 +65,8 @@ text, with regressions on dense English. That fails it.
   speed-leaning `--tune` position would still regress English logs.
 - **Filed for later:**
   - [MEMFN-SKIPSWITCH]: a walk ↔ wide-mask switch inside pcrec's DFA skip loop itself, the
-    only place a "walk mode" is really the walk.
+    only place a "walk mode" is really the walk. **Moved to BOONIES** (Frank, 2026-10-21,
+    main 388353af7: "adaptive methods haven't proved their worth"; a near-duplicate of adatwin).
   - [MEMFN-POSCOST]: position pricing, superset hulls, verify order. Its counts stand, but they
     matter only once a non-walk default exists.
 - **Sibling, not this question:** R-27 (the REPORT row is slow on sparse text). It needs the
@@ -83,8 +84,9 @@ text, with regressions on dense English. That fails it.
 
 - bench (pcrec-bench, the official tier) or a real user shows a workload where a wide form
   wins without the dense-English losses; or
-- [MEMFN-SKIPSWITCH] is built as a switch in pcrec's DFA loop and a timed twin shows it beats
-  the walk on dense text and keeps the sparse wins; or
+- ~~[MEMFN-SKIPSWITCH] is built as a switch in pcrec's DFA loop and a timed twin shows it
+  beats the walk on dense text and keeps the sparse wins; or~~ (in Boonies: Frank,
+  2026-10-21, "adaptive methods haven't proved their worth"; not a re-open path);
 - a subject analysis or caller hint becomes available at the call (then the measured path
   applies, not a new default).
 
