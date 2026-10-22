@@ -417,6 +417,8 @@ The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. 
 
 **Witness:** transcripts in docs/dev/lanes/k73utf_evidence/ (lane/k73utf). Pre-existing, independent of K73. Status: deferred; the ill-formed-position semantics family (with K75) should own it.
 
+**Widened 2026-10-22 (D27 lane iterd27 + lane iterdoc):** the same divergence reproduces for `\z`, `\Z`, `(?m)$` and `(?<!.)` at an ill-formed end, not only `$` and `\B`. Repros: worktrees/.mgr/iterd27/ (manager scratch, uncommitted) and docs/dev/lanes/iterdoc_report.md on lane/iterdoc.
+
 ---
 
 ## K73 — FIXED 2026-09-29 (lane k73utf, ruling (a); abi 46 -> 47) — empty pattern on a lone ill-formed byte under `-e utf8` (found by lane ucpu2, 2026-09-29, side finding)
