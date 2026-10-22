@@ -1,0 +1,912 @@
+# History of docs/dev/CLAUDE.md - moved verbatim from docs/dev/CLAUDE.md at commit d3d4c5834 (replaced there by a short index)
+# docs/dev/ — development-process documents
+
+Documents that track execution against the design, not the product itself.
+Append-only where noted; the restart/status-recovery record for the project.
+
+## Files
+
+- `bench_wishlist.md` — pcrec-side list of bench cells we want but have not asked for (started 2026-10-08 at Frank's request); pull from it deliberately when a bench set opens or a decision stalls on a measurement.
+
+- `plan.md` — the ACTIVE milestone/step tracker mirroring APPROACH §9
+  (rewritten 2026-10-12 by [PLAN-LINT] step 2 into Policy / Active /
+  Candidates / Backlog / Boonies / Deferred; see `lanes/plclean_report.md`;
+  long row bodies live in `docs/design/plan_row_bodies/`);
+  STATE:completed rows do not live here. Since 2026-10-12 ([PLAN-LINT]
+  step 3, `lanes/planlint_report.md`) every row has ONE format, defined in
+  the file's Policy section and enforced by `scripts/plan_lint.sh`
+  (`make test-plan-lint`, strict, no baseline): a head line
+  `- [ID] STATE:<not-started|started|blocked|deferred> — <title>`, then
+  `filed:`, one dated `status (ISO date):` line rewritten in place,
+  `next:`/`trigger:`, optional `refs:`, and a charter of at most 6 lines.
+  Greppable states (`STATE:not-started|started|blocked|deferred`); recipes
+  in the Policy section. `scripts/plan_lint.sh --stale` is the by-hand
+  report (stale `started` rows, open rows whose status says MERGED,
+  unresolved `[ID]` references). Expand a milestone into substeps only when
+  work on it begins.
+- `plan_completed.md` — archive of completed plan rows, grouped by
+  completion date, text preserved verbatim (split from plan.md 2026-08-13).
+  A row cited elsewhere as "docs/dev/plan.md [ID]" lives here once it is
+  STATE:completed; `grep -c "STATE:completed" docs/dev/plan_completed.md`
+  counts them. Since 2026-10-12 it also holds the plan.md cleanup's verbatim archives: "Retired free text", "Completed 2026-10-12", "Superseded and merged rows" and "Row history moved out of live plan.md rows" (the long status stacks that were replaced by charter + dated status). [PLAN-LINT] step 3 appended the format-A normalisation's history (every row's old head parenthetical, verbatim), the two deleted rows, the archived [FORM-CHAR2] and two wedged fragments found on the way; its `### [ID]` entries are headings, never `- [ID]` row heads, so no row of plan.md has a second home.
+- `dev_journal.md` — append-only dated journal, newest at bottom. Append an
+  entry after every significant work session; this is the primary
+  restart/status-recovery record.
+- `decisions.md` — ADR-lite decision log (D1, D2, ...): decision, why,
+  revisit-when. Add an entry whenever a choice would surprise a future reader.
+- `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
+  than fixed immediately; each has a minimal repro and a scheduled milestone.
+  Open as of 2026-08-19: K28 (emitted dead-state-DFA
+  artifact fails the harness's own -O1 -Werror GENCFLAGS —
+  maybe-uninitialized caps in the `<prefix>_match` wrapper; found by the
+  [M6.2] wave B corpus, pre-existing, own-slice fix scheduled before the
+  module close),
+  K26 (INFRASTRUCTURE: LeakSanitizer
+  is a measured no-op on this box, so make asan's leak tier has never run —
+  canary obligation + host-config ruling recorded in the entry), K25 (compile TIME in DFA
+  minimization — Moore refinement needs O(n) rounds on a chain, so
+  `a{0,25000}` spends a measured 15.3 s of its 15.4 s there against
+  0.03 s for everything K7's accounting bounds; filed out of K7's fix,
+  bounded memory, terminates), K9 (the public
+  API takes no pattern length, so a pattern containing NUL compiles as its
+  prefix and reports success — rx_info.pattern_len at the M4 freeze is the
+  fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
+  exhausts the step budget on a 100-byte ordinary input; found by the D27
+  blinded quantifier corpus 2026-08-16; regression in
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K28
+  (FIXED 2026-08-19, [M6.2] repair slice — the own-slice fix it was
+  scheduled for: an anchored pattern whose DFA is one dead state emitted
+  C that failed the harness's own `-O1 -Werror` GENCFLAGS, gcc reporting
+  a `caps` array maybe-uninitialized on a read the wrapper's own
+  `found != 1` test makes unreachable. Fixed by INITIALIZING it;
+  restructuring the test into two `if`s was measured NOT to silence it.
+  THE ENTRY NAMED ONE SITE AND THERE WERE THREE — `<prefix>_match`,
+  `<prefix>_match_caps` and the standalone `main()`, the latter two
+  hidden because `-Werror` stops at the first report. Clean at all five
+  opt levels and on both sanitizer axes; the six excluded corpus
+  spellings reinstated oracle-verified in the same change). K27
+  (CLOSED 2026-08-18, [M5-SEAM] — the emitter-touching wave it was
+  scheduled for: `if (pos >= n) return 0;` above the non-EOL memchr
+  arm only, the EOL arm's own bound already implying s != NULL;
+  UBSan-verified in both directions — guarded artifact clean,
+  guard-stripped artifact reproduces the report; regression rides the
+  ubsan battery via the [K27] codegen check). K7
+  (CLOSED 2026-08-18, [M4.7b] — the entry whose own DIAGNOSIS was the
+  thing that was wrong: it placed the memory in the subset construction,
+  and it was in the NFA builder. The `X{m,n}` tail loop in src/ir/nfa.c
+  rebuilt its out-patch set every iteration, Theta(n^2) arena traffic
+  behind a LINEAR state count, which is exactly why no cap could see it
+  — `a{0,20000}` 4.68 GB -> 13.2 MB, and both caps K7 called unreachable
+  now fire in 0.1 s. A SECOND, unrelated quadratic in the exact-count
+  form — n+1 states whose state-SETS average n/2 — is bounded by the new
+  PCREC_MAX_SUBSET_ELEMS, which NARROWS exact repeats above `a{9795}`.
+  The caller-abort, the worst item on its list because pcrec is a
+  library, is closed by routing every malloc-failure site through
+  pcrec_ctx_nomem(). Pinned by tests/resource/). K24
+  (CLOSED 2026-08-17, k24fix lane — the only throughput-only entry this
+  file has carried: gcc -O2's partial-inlining pass was splitting
+  `<prefix>_search` into a trampoline plus a `.part.0` clone in every
+  unanchored DFA artifact since the [M4.4] API break, identical
+  instructions, a pure code-PLACEMENT cost that held compare.sh case
+  (c)'s D12 floor red. Fixed by `__attribute__((noclone))` on
+  `<prefix>_search` in the EMITTED text — pcrec cannot dictate its
+  users' CFLAGS. Floor never touched; case (c) came back to 391.063
+  MB/s at its historical spread, gate 10/10. The VM was never at risk,
+  and the reason is structural: a computed-goto body cannot be
+  outlined). K22
+  (CLOSED 2026-08-16 by the F-1 ruling, decisions.md D47 ADDENDUM: hang
+  half fixed by the interim product guard; the compile-these-shapes half
+  re-homed as plan row [ENG-CLAMP]'s charter, not a bug). K18 (FIXED 2026-08-15, k18-rewrite lane: the
+  empty-iteration exit lost when the ε re-arrival passes THROUGH an
+  already-seen state rather than landing ON a loop entry — K17's structurally
+  distinct sibling. The closure memo is now keyed on (state, open-loop
+  context) and the redirect on "this loop is OPEN on my path", per
+  design/k18_memo_design.md's A2; 1,459 live guard cases in tests/base/ on
+  four axes, blast radius 8 of 622 corpus patterns, 251/251 changed cells
+  toward the oracle. Its precondition status for M4.6's hybrid is
+  DISCHARGED). K17 (FIXED 2026-08-14 same day as found —
+  R21 panel E-1; the K1 one-shot guard removed from clo_visit, 120
+  family tests, 294/294 changed cells toward the oracle), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
+  from the `{U+` row, `[\N{U+41}]` now promises module `unicode-props`;
+  guarded by `check_class_syntax_reach` and seven offset pins — see
+  docs/dev/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
+  return a tagged ExtResult, one epilogue renders refusals, call sites end in
+  internal-error walls — the stub-build repro now exits 1 cleanly at both
+  sites; the cls_set range-check hazard stays assigned to the first
+  scalar-returning module),
+  K12 (FIXED 2026-08-11 by MOD-0.1's endpoint-rule slice: the five-step §16
+  order in p_class, SET-shape certified from the measured class_expect column
+  through the returned-claims epilogue; body-dependent rows like `\p` keep
+  their module promise until unicode-props' first WIDE producer lands —
+  MOD-0.6 landed recogniser-only and deliberately kept this boundary, see
+  design_notes_mod06.md §8.2 — a pinned, deliberate boundary), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
+  rows answered the CLASS position with module `backrefs` for constructs it
+  can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
+  now octal/literal fallback per RF_CLASS_BASE) and K14 (FIXED 2026-08-11 in
+  MOD-0.1's first slice: pcrec named a module for constructs its own
+  compliance survey calls architecturally OUT-OF-SCOPE — now a ROADMAP_NEVER
+  column per-row and per-VerbName, a no-promise diagnostic, and a
+  both-directions prose⇔column check), and K2 (FIXED 2026-08-22 by module
+  `backrefs` shipping ([M6.5.2]), confirmed with a FIXED marker at
+  [SPEC-1.10] 2026-08-30 after the module landing had left the entry
+  looking orphaned: `\1` under `--features backrefs` now reads "refers to
+  capture group 1, but this pattern has 0" rather than the stale
+  "(backreference/octal)" wording; the gate-closed default message is
+  unchanged and was never the defect). Failing regressions live in
+  tests/known_fail/ (excluded from `make test`).
+- `upstream_issues.md` — suspected bugs and divergences in OTHER engines
+  (PCRE2, python re) found by our differential tooling; the citable
+  rationale behind oracle exclusions. Add an entry whenever tooling
+  implicates another engine.
+- `chunks_2026-10-11.md` — the SEQUENCING VIEW after session 108 (Frank: vet and chunk the ideas so we do not rabbit-hole): chunks 0-6 with gates, rules (one design thread per chunk, new ideas parked), and the parked list. plan.md rows remain the per-item record.
+- `chain_profile.md` — [TT-5] stage-1 read-only profile of the per-merge
+  validation chain (`make test`/`strict`/`ubsan`/`asan`/`lint`/mech):
+  stage wall times across three logged runs (a growth trend, not one
+  sample), what each stage re-does that another already did, and a ranked
+  candidate list with the measurement each needs before becoming a row.
+  Written 2026-08-23; re-read before citing its numbers if the battery
+  driver or `tests/mech/sabotages/` have changed since.
+- `tt8_mech.md` — [TT-8]'s memo: the mech `PROCS` leak into inner
+  `reject`/`harness` sharding (found live via `ps`/`/proc/<pid>/environ`
+  sampling, not only read from the dispatch code), the `INNER_PROCS` fix,
+  single-row before/after validation, the D69 retro-diff evidence
+  (`build/mech_m64.log` vs `mech_m65.log`: zero rows observed flipping
+  DETECTED -> UNDETECTED without their own `SAB_FILE`/definition changing),
+  and the manager's still-owed commands (the PROCS re-validation sweep, the
+  full "after" matrix) — both box-exclusive and not run by this lane.
+  Written 2026-08-23.
+- `history/` — build history moved OUT of the spec tier (records, never normative): `match_api_record.md`, `registry_record.md`, `table_contract_record.md`, `limits_record.md`, `cli_record.md`, `facts_listing_record.md`, `ir_listing_record.md`, `findings_record.md`, `rxt_format_record.md` and `tuning_record.md` (the history the spec docs carried until their facts-only rewrites, frozen) and `abi_changelog.md` (the LIVING `abi` change log; a bump adds its entry there). See history/CLAUDE.md.
+- `lanes/` — per-lane restart logs and delivery reports (`<lane>_log.md`, `<lane>_report.md`; optional, the lane's own voice, historical after merge). See lanes/CLAUDE.md.
+- `reviews/` — compiled checkpoint critic reviews (D6), one file per
+  checkpoint: findings, triage dispositions, reflection.
+- `summaries/` — executive summaries written for Frank at his request, the
+  manager's voice, each citing the ledger/review it summarises. See
+  summaries/CLAUDE.md.
+- `learnings.md` — the consolidated learnings digest, distilled from a
+  complete read of the journal (written 2026-08-17 at Frank's request,
+  126 entries in). Eight sections: measurement discipline, oracle
+  strategy, check design (summary — the fuller catalogue is in the
+  manager's memory), testing strategy, design process, orchestration,
+  durable technical facts, and the meta-lesson. Future sessions read
+  THIS instead of the whole journal's HISTORY for inherited lessons —
+  the journal TAIL remains the mandatory session-start read for current
+  work; update this file at session close only when a NEW lesson class
+  appears.
+- `coding_guide.md` — THE WIRED CODING GUIDE (2026-09-17, lane codeguide;
+  Frank's added deliverable at the Q1 ruling, `reviews/2026-09-17-code-review.md`
+  §3): the rules a session WRITING C under `src/`/`cli/`/`lib/` follows,
+  distilled from the twelve-lens code review. Six sections — the house
+  disciplines the review verified tree-wide (pcrec_ctx_nomem routing and the
+  Job-buffer attachment rule stated as a RULE not a count; the no-`default:`
+  exhaustive switch as the `-Wswitch` alarm; `volatile` across `setjmp`; zero
+  function-local statics; the emitters' single-letter locals as house
+  convention; D90's limits.def boundary in BOTH directions), the taught
+  primitives IN THEIR CURRENT STATE (sb.c, `PCREC_MAX_EMIT_NAME_LEN`,
+  `vm_slot_expr`, the K20 spine-walk discipline, arena/Ctx ownership — each
+  marked `[wave N]` where a refactor wave will change it, so the guide never
+  instructs use of an unbuilt primitive), the emitted-text rules (abi events
+  found BY GREP, comment escaping, what the identity gates do NOT see, keep
+  columns near sabotage anchors), Frank's five-question altitude rubric with
+  the anti-perversion clause verbatim, check-writing (points at
+  `learnings.md` §3, adds the review's five new instances), and the
+  probed-and-held do-nots. **WIRED** by a root-CLAUDE.md situation-index row
+  and a `lanes/BOILERPLATE.md` line, so a writer lane reads it before its
+  first edit. Rules, not findings: when a wave lands, the `[wave N]` marker
+  is deleted and the rule restated.
+- `tt4_measurement.md` — [TT-4.1] MEASUREMENT memo (Frank's order: measure
+  before any harness change to `make test`'s batched compilation).
+  Stage A: a `gcc`/`cc`/`pcrec` invocation-census shim over one full
+  `make test`, section by section — invocation counts, gcc-bound
+  core-seconds, section wall+CPU; names `corpus` (255.79s gcc-core) and
+  `atomic` (70.65s) as the two worst gcc-bound sections, NOT the
+  `rungselect`/`counterk` sections whose wall is largest among the rest
+  (dominated by match-execution/harness-loop time, not gcc) — with a
+  direct shim-off isolation measurement backing that split. Stage B: a
+  batching prototype (never the harness) measuring three compile shapes
+  (one-shot baseline / link-batching / whole-TU batching) at several
+  batch sizes on real patterns from those two sections — best measured
+  speed-up 3.66x (shape B / TU-batching, N=16, against the harness's own
+  12-way-parallel baseline), a confirmed emitter-side obstacle
+  (`PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` are unprefixed `#define`s
+  that collide when TU-concatenating matchers built with different
+  `--features`), and the measured cost of one batch member failing to
+  compile. **Stage A2** (manager-requested, same day): Stage A left 76%
+  of `make test`'s 3,777 CPU-s unattributed; added `timeout`/`python3`
+  shims and re-censused the top remainder sections, finding `corpus` is
+  the ONLY section with any per-case matcher-run exec at all (19,185
+  spawns) — the other six (`assertions`, `rungselect`, `counterk`,
+  `backrefs`, `mrl`, `altcls`) already run their whole subject sweep
+  inside ONE process via their own C differential drivers, invisible to
+  any exec-boundary shim by construction. **A second manager finding
+  (same day) then DECOMPOSED what first looked like one "245.59x
+  exec-batching" lever into TWO separate effects**: this box's
+  `/usr/bin/timeout` is uutils coreutils (0.8.0), measured costing
+  ~108.7ms/call at ~0 CPU vs. GNU coreutils' ~4ms — a WALL-CLOCK-only,
+  near-free, one-`PATH`-substitution lever worth ~43% of `corpus`'s own
+  section wall alone, explicitly scoped as ITS OWN row rather than folded
+  into batching design; the TRUE exec-batching-specific lever (reducing
+  process COUNT, not `timeout`'s own overhead), isolated once the binary
+  choice is fixed, is a much smaller 5.57x. Three levers, on two
+  different axes (CPU vs. wall), stated honestly: gcc-batching nets ~12%
+  of the suite's total CPU; the `timeout`-swap and exec-batching levers
+  answer a wall-clock question, concentrated entirely in `corpus`, and
+  are not additive with the CPU figure. The remaining majority of both
+  axes is real differential-driver/oracle compute this row reports as
+  unaddressed rather than assumed solved. Evidence lives in
+  `studies/tt4_batching/` (census shim, bench harness, committed results);
+  see its own CLAUDE.md. No recommendation about the harness's own design
+  beyond what the numbers directly support — that is [TT-4.2]'s row (the
+  `timeout`-binary swap is a separate row again, per the manager).
+- `tt7_combined_axis.md` — [TT-7] evidence memo for `make san`, the ONE
+  combined `-fsanitize=address,undefined,leak` axis proposed to replace
+  running `ubsan` and `asan` back to back (chain_profile.md candidate (a),
+  75m00s measured for the two separate passes at m65). Diagnosis
+  distinctness (three scratch sabotages plus three planted into copies of
+  `tests/harness/driver.c` against a real generated matcher, each caught by
+  its own tool — the leak case reproduces K26's documented LSan-no-op on
+  this box, unaffected by combining), D45 budget parity (measured
+  byte-identical to either single axis, all four `tests/lib/gen_timeout.sh`
+  functions), and the exact command + pass criteria for the manager's
+  timing run. See also `docs/testing.md`'s "[TT-7] combined axis"
+  subsection. **STATUS: PENDING** the timing run — WHICH RAN 2026-08-23 (45:50 vs 63:43, adopted; see
+  docs/testing.md "[TT-7] combined axis — ADOPTED"); the memo's own text
+  predates the adoption and stays as the evidence record.
+- `k75_measurement.md` — K75's measurement (2026-09-30, lane k75m): PCRE2 10.48 at a continuation-byte startoffset, kinds A (mid-character) / B (stray) / T (truncated), U vs MATCH_INVALID_UTF, anchored or not; PCRE2 draws no A/B line; the find-all alignment `next_pos(end-1)` as the minimal fix. See `lanes/k75m_report.md`.
+- `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
+  lives in this directory but is not committed. Committed docs win on any
+  disagreement with it.
+- `owner.md` — untracked (gitignored) OWNER'S VIEW (Frank, 2026-10-20): the
+  one file the owner reads at a glance — open questions with one-line
+  summaries, what is running now, what is next, blockers/issues, done
+  today. The manager refreshes it at every state change; committed docs
+  win on any disagreement.
+
+- `bare_pcrec_survey.txt` — K37's evidence (2026-08-25, lane srMech): the
+  line-numbered list of every bare (unbudgeted) `pcrec` invocation in
+  tests/**/*.sh outside tests/recursion/ — 45 files / 347 call sites at
+  ae9c98c. Data for the harness lane that lands one `pcrec_run` helper;
+  regenerate by grep when it is consumed, then delete this file.
+
+Maintenance: update this file when files are added/removed or their roles
+change.
+- `walk_survey.md` — the GRATUITOUS-WALK SURVEY (2026-10-09, lane walksurvey, opus, survey + measurement only, nothing under `src/`): Frank's "is there another class where we are doing gratuitous walks besides the end anchored ones". A per-phase subject-load instrument (the artifact compiled with call-per-load hooks, loads attributed to phases by the emitted line; validated on `\d+$`, its REVEND twin, tight cases, two planted passes and gcov) over every bench cell and every corpus pattern block; twelve classes ranked by bench impact with owner rows, answer-checked hand-twins for the top ones, and filing suggestions (not filings). Headline: the reverse pass re-deriving a start the forward scan landed on (K4, 51% of bench patterns, −20..−42% in twins) and its fixed-width sibling (K3), a latent QUADRATIC in the caseless required-run gate under find-all (K5, ~200x/23-26x off-bench), plus the known K1/K11 and the [ENG-TACTICS] landmark population. Instrument and data: `studies/walk_survey/`.
+- `clsmask_candidates.md` — the [VM-CLSMASK] CANDIDATE CENSUS (2026-10-16, lane clscand, opus, measurement only, nothing under `src/`/`tests/`): Frank's "find the best candidate patterns" before any design. A source-rewrite per-site class-test counter over every VM-routed artifact (auto 2,179 / forced-VM 4,863; corpus, bench, rwquest, an ipv4 reference row), byte sets evaluated by each site's own emitted predicate, validated exactly against walk_survey's load instrument with a failing-direction control. Columns (a)-(e) per artifact, a stated score (run tests + re-visits + shared start-skip tests, times block coverage), top-20 tables per config. Headline: the `\w`-token family (`(\w+) \1`, auto = VM) leads; ipv4 is a good illustration but a mediocre candidate (auto's VM makes 0.011 tests/B; forced VM rank 83/475); under forced VM the attempt loop's start skip out-tests the whole program. Five timing candidates named. Instrument and data: `clsmask_candidates/`.
+- `opt3_dfa_scan_measurement.md` — [OPT-3] STEP 1 (2026-08-26, lane srOpt3, measurement only, nothing under `src/`): attributes the DFA's per-byte cost between the candidate-start SKIP loop and the TRANSITION loop. The skip loop is NOT the loss — it is entered 190,651 times on `t-b` and skips ZERO bytes, because the byte that returns the machine to state 0 is consumed by the transition loop first, so it can only ever skip the 2nd..nth byte of a non-candidate run (real text's runs are length 1). All the cost is the transition loop at ~3.2 ns / 10.7 cycles per table step, LATENCY-bound on a 7-cycle address+load chain (2 independent streams run 1.97x faster). A 7x faster shufti skip makes all three bench subjects SLOWER. Recommends pre-multiplying the transition table by its stride: measured 1.27x on the bench's own row, answer-identical over 40,469 answer lines / 91 subjects, 1.465x -> 1.151x against PCRE2-JIT.
+- `opt5_step0_profile.md` — [OPT-5] STEP 0 (2026-08-31, lane opt5m, measurement only, nothing under `src/`): why the counted DFA loses ~5-6x to pcrec's OWN VM on in-class letter runs yet wins ~2x on digits. Mechanism: the DFA's premultiplied walk is a DATA-dependent loop-carried chain (next_state's load address is the previous iteration's loaded value — pointer-chasing; opt3's 7-cycle shape, now every DFA machine's by [ENG-FORM]), the VM's possessified span-loop is ADDRESS-only (independent loads). Both ratios FLAT across a 64x n range → no count crossover, NOT a limits.def threshold; the digits win is fixed per-call overhead under the bench's find-all regime (one rx_search per byte on a nullable pattern). Candidate fix (unchartered): emit the VM's bounded-scan shape for any DFA region isomorphic to "count one class up to a bound".
+- `opt5_step2_premeasure.md` — [OPT-5] STEP 2 pre-panel measurement (2026-09-01, lane opt5m2 24ba0c4, measurement only): the three numbers `docs/design/opt5_step2_twopass.md` §7 owed before the D6 panel — M1 `N_pinned` = 175 over 2,845 corpus patterns (all pure-DFA, ZERO among VM hybrids on the DEFAULT axis; decline reasons 1,642 notacc / 47 view / 8 classctx / 0 at the seed stage), M2 `N_declined_by_view` = 16 at today's tree (all `(?m)...$`), M3 the whole-form `(?:[a-z]{0,2048})\z` decline is `member_ok`'s precondition (3), the position-view check, confirmed by a discriminating probe pair. Also records the same-basename `-o` methodology bug that over-counted M2 by ~100x before it was reported. The lane's `src/gen/emit_dfa.c` `[OPT5M2-PROBE]` stamp is measurement-only and deliberately did NOT land.
+- `optvmfl_step0.md` — [OPT-VMFL] STEP 0 (2026-09-02, lane vmfl0, measurement only, nothing under `src/`/`tests/`/`docs/spec/`): the bench's forced-VM ×9 (O-14/I-31/I-32) traced further. (a) the `has_push`/`RX_RESUME_FRAMES` census over 2,603 VM-compiled corpus+bench artifacts finds divergence runs in ONE direction only — 198 `frames>1`-yet-frameless artifacts, ALL of them lookaround constructs whose body has no choice point (`vm_cost`'s uniform lookaround charge over-counting to completion), ZERO of the opposite (`frames==1`-yet-pushing) direction I-32 flagged as theoretically live; also finds the frameless shape reaches 35% of its own population under ordinary `auto` selection, not only `--engine=vm`-forced builds. (b) a direct-branch-dispatcher hand-twin (computed `goto *` → `switch` over the artifact's own resume-label set) on three `frames>=2` bench artifacts is answer-identical on 15/15 subject cells but MIXED on timing — `nest2-64` (24 resume labels, digit-run-scan-dominated body) 3-4% faster on both regimes measured, `csv5`/`ctx-lazy-256` (4-6 labels, dispatch/literal-chain-dominated bodies) flat to 2.9% SLOWER — the D77 trigger for building the dispatcher for real is NOT met by this evidence. (c) drafts (does not land) `RX_VM_FRAMELESS`, a (b)-family `.c`-private unconditional boolean stamp reading `has_push` at its own definition site, no `rx_info` mirror per the `RX_DFA_TABLE`/D77 precedent.
+- `opt5m2_m2_changed_patterns.txt` — lane opt5m2 24ba0c4's companion data for the memo's M2: the verbatim 16-pattern list whose artifacts move when `unanch_start`'s `start_acc` is narrowed from `state_acc_any` to the view-strict read. The seed of the NAMED MANIFEST the [OPT-5] STEP 2 note's S218 control is defined against (r49 [check M2]: pin the shape-defined class with a floor, never the count 16).
+- `engabs_reach_probe.md` — 2026-08-30 read-only probe answering bench O-9 ask (ii): `unwrapped` stops at `PCREC_ANCHORED_MAX_STATES` = 4096 by design (ladder per skeleton × form; the `\z` wrapper halves the reachable count for `{0,n}`); the refusal-vs-fallback stamp facts for ask (i).
+- `opt2_anchored_match_measurement.md` — [OPT-2] STEP 2 (2026-08-28, lane opt2m, measurement only, nothing under `src/`): REFUTES the plan row's hypothesis — comparing `rx_match` on `orig`'s plain DFA vs its `(?:orig)\z` DFA over the bench's 85 compliance subjects shows only 3.7% overhead (3.3% on matching subjects), not the 3.7x/2.15x gap it was meant to explain, because a `match`-regime subject IS the match end-to-end so the plain form also scans to the end. Instead, a cost-isolation patch deleting the `\z` artifact's reverse pass cuts the DFA-vs-VM gap on matching subjects from 2.08x behind to 1.05x (parity), and to 0.57x (43% AHEAD) on the 35 ordinary short valid-email subjects — the reverse pass is ~50% of DFA cost on every matching subject, because `rx_match` never needs the match START the reverse pass computes (`ctx->pos` already is it). Recommends `[ENG-ABS]`'s already-chartered unwrapped-forward-DFA anchored entry (not built here) as the lever, now with a second, independent forcing-function measurement behind it.
+- `spec_survey.md` — [SPEC-1] step 1 (2026-08-25, lane srSpec, read-only): the spec-coverage gap table (54 rows), the proposed docs/spec/ file set, the ordered [SPEC-1.n] lanes, and the STALE OR WRONG findings. A survey deliverable like chain_profile.md; superseded row by row as the lanes land.
+- `artifact_size_census.md` — [ART-SIZE] STEP 1 (2026-08-28, lane artsize, measurement only, nothing under `src/`/`tests/`): the census Frank's 2 MB-VM-artifact concern chartered. Over 2,772 corpus+bench patterns (2,488 compiled, 0 gcc timeouts/budget kills anywhere in the shipped corpus — median `.o` 6,760 B, p99 14,364 B), every top-20 outlier by `.o` and by gcc time is the SAME mechanism (a bounded/exact repeat over a >1-branch alternation forced onto the counter/frames rungs); a byte attribution (prose/tables/program/scaffold/main, validated to sum to the file size on all 2,488 artifacts) finds program+tables correlates with `.o` at r=0.99 while comments alone correlate at only r=0.43 — a size term should price program+tables, not source bytes. The 2 MB witness (the fuzz gate's seed-1 pattern) sits 3x above the corpus's own largest artifact and is NOT explained by any existing cap being near its boundary — `PCREC_MAX_VM_REPEAT_COPIES` (64) and `PCREC_MAX_VM_REPLICATION_PRODUCT` (131,072 nodes) sit at 47% and 5.7% respectively, both calibrated against runaway/exponential blowup rather than "cap-compliant and still 2 MB," which is exactly STEP 2's gap. Tension curves on the witness + top-5 corpus outliers find THREE separate levers: `--unroll=1` is free on nested-repeat patterns (75-79% smaller, no measured speed cost) and nearly useless on single-level large-count ones; `-fno-premul-table` is the well-behaved already-expected [OPT-3] trade; `--engine=vm` is the measured shape of "size vs performance" itself — shrinks `.o` to 4-9% of default on prefiltered patterns at up to a measured 359,000x throughput cost on the failing path, because the hybrid DFA prefilter IS the size and the speed at once. `docs/dev/artifact_size_census/census.py` (own CLAUDE.md) reproduces §2-§5.
+- `artifact_size_log.tsv` — [ART-SIZE.1b]'s METRICS LOG, the ratchet lane's
+  own deliverable (Frank's ruling on docs/dev/plan.md's [ART-SIZE.1b] row:
+  the log IS the deliverable, per-pattern movement is a `git diff` a
+  reviewer reads, never a per-pattern gate). Written by
+  `tests/size/run_size_log.sh` at the END of a FULL-CORPUS `test-corpus`
+  run (never by a targeted/partial run — see that script's own header):
+  one row per corpus artifact test-corpus already compiled — pattern id,
+  engine/rungs/prefilter stamps, comment-excluded size, gcc CPU/wall
+  seconds, load1 — stamped with a header naming the commit, date, load at
+  start, and the row count the SAME run produced (so a truncated file is
+  detectable by comparing the two, `tests/size/check_size_tripwire.sh`'s
+  own unpinned-max guard). **DELIBERATELY NOT under `docs/measurements/`**
+  despite matching that directory's stable-filename/diffable shape (D35):
+  `docs/CLAUDE.md`'s own rule for that directory is "no check may read
+  these files" and `check_size_tripwire.sh` DOES read this one every
+  `make test` — a same-run live artifact a check reads is a different
+  thing from an archived report a check trusts as a stale oracle, but
+  keeping it out of that directory avoids the ambiguity by construction.
+  Read with `scripts/size_diff OLD.tsv NEW.tsv` for a summarised movement
+  report rather than a raw two-file diff. See `tests/size/CLAUDE.md` and
+  `docs/testing.md` "The artifact-size log".
+- `ccdiff_step0.md` — [CC-DIFF] STEP 0 (2026-09-02, lane ccdiff, measurement only, nothing under `src/`/`tests/`/`docs/spec/`): why clang beats gcc by ×2.4-2.6 on some bench cells and loses by ×2 on others, from the SAME emitted C (bench ledger 2026-09-02 §5). ONE transformation carries the general forced-VM signal (§5.2's 0.599 median over 43 throughput cells): **clang inlines the VM entry chain `rx_search`→`rx_search_run`(→`rx_match_anchored` when frameless) and gcc stops at the first call boundary**, so every gcc `<prefix>_search` call builds a 152-byte frame for `rx_run_state`+`rx_run_buffers`, pays a `-fstack-protector-strong` canary (the arrays trigger it; Ubuntu default) and CALLs out of line, for storage a frameless artifact never touches — witnessed by `nm`: `rx_search_run` is a local symbol in the gcc build of loglines `stack-frame` and absent from the clang one. Second, narrower: **uniform-table constant folding** — LLVM folds a variable-index load from an all-equal constant object (`ConstantFoldLoadFromUniformValue`), gcc 15 does not, so on `cls-upto-4` clang proves the whole DFA step dead (all six tables uniform after [OPT-5]'s scan edge absorbed them) and deletes the outer loop, the table bases and the frame: 142 insns → 76. The two CONTROLS where clang loses are gcc doing something right and are unrelated to either: `floor`/thr/vm (1.996) is gcc **rotating the attempt loop and merging two redundant subject-length compares** (4 insns/2 branches vs clang's 6/3), `level-context`/search (1.693) is clang **failing to hoist a loop-invariant bound** out of a duplicated prefilter block (48-insn loop vs gcc's 16). `floor`/match/auto's ledger 0.432 **DOES NOT REPRODUCE** (measured ~0.79 on a byte-identical artifact; clang's absolute number matches the ledger to 1.4%, gcc's is 2× this lane's) and shows no transformation difference — a layout artefact for the bench to re-run, not a pcrec finding.
+- `ccdiff_step0_evidence/` — [CC-DIFF] STEP 0's reproduction pieces: the three hand-twin transforms (`twinA.py` uniform-table folding, `twinC.py` single-IV scan edge, `twinV.py` always_inline the VM helpers), their diffs against the emitted artifacts, the per-cell hot-loop disassembly under both toolchains, the corpus reach sweep (`sweep.tsv`, 180 artifacts) and the timing logs. Text only; no objects or shared libraries.
+- `optvmfl_step0_evidence/` — [OPT-VMFL] STEP 0's reproduction pieces archived out of the session scratchpad by the manager at merge (2026-09-02): the census script + its JSON result, the hand-twin transform (`handtwin/make_twin.py`), the correctness/timing driver sources and the 5-trial logs the memo `optvmfl_step0.md` §3 cites. Generated artifacts (.c/.h/.o/.bin) are NOT archived — they regenerate from the pinned compiler.
+- `tt12_cpu_samples_battery_de32a4b.tsv`, `tt12_battery_stage_markers_de32a4b.log` — [TT-12] STEP 0's raw data: the union battery of 2026-09-02 on de32a4b sampled every 30 s (load1, all-core busy%, stage tag) plus the battery's timestamped stage markers; the analysis lane reads these, never re-runs the battery for them.
+- `tt12_step0_profile.md` — [TT-12] STEP 0 (2026-09-03, lane tt12a, analysis only, no runs): per-stage idle core-hours from the samples above — `san` (18.5 idle core-hours, 30 of its 34 scripts are structurally single-threaded regardless of `PROCS`, the 4 PROCS-aware ones' CPU spikes located by ordinal position) and `mech` (14.0 idle core-hours; 44.5% of samples sit in a narrow band just above the `PROCS=4` row-concurrency ceiling since only 2 of ~30 suite arms read `PROCS` themselves — battery.sh's `PROCS=4` contradicts [TT-8]'s own 28:43-vs-36:36 `PROCS=6` finding). `test-axes` (opt5i's `axes2.log`): each axis's ~175 s is one `tests/harness/run.sh` run bottlenecked on ONE 3,065-case `.rxt` file among 190 (file-granularity dispatch, not a `PROCS` cap). `test` at `-j12` is the opposite problem — load1 47.6 on 12 cores (K44). Five ranked recommendations, each naming its confirming measurement (D77); none built here.
+- `ttune_measurement.md` — [TT-JTUNE] living doc (2026-10-08, lane ttune2): the perfrun instrument and ledger columns, the red-shape triage rule, profile #0 (decfbB0, -j6 PROCS=16), the decision rule for when the rotation ledger is enough, options for deriving the PROCS default, and the ledger readings (appended). `ttune_ledger.tsv` / `ttune_ledger.d/` (created by `scripts/perfrun --fold`) hold the rows and their sample/section files.
+- `dfa_online_minimization_study.md` — [LIM-2] STUDY-1 (2026-09-04, lane dfamin, READ-ONLY: nothing under `src/`/`tests/`, no `make`, no compile, no benchmark; REVISED the same day after Frank clarified the charter — §3 rewritten, §4 extended, §5 changed, §1-§2 untouched). Chartered after lim2's census found `tests/base/k18_cost_gates.rxt`'s witness shrinking 97.06% under minimization (27,575 raw states → 1,010), so raw subset-construction size cannot bound the EMITTED (minimized) table's size and no percent-of-raw margin can be made to. Asks whether states can be compacted AS THEY ARE GENERATED. **§1** states what a state is here — a priority-ORDERED list per class-axis view plus `eolvar`/`endvar`, interned on all of it (`src/ir/dfa.c:809`/`:871`) — and finds two things the charter did not name: the final emitted state NUMBERING is `minimize.c:161`'s first-occurrence order over the RAW creation order, so byte identity is *plausibly* preserved by any compaction that merges into the earlier state but must be MEASURED (three named holes), and compaction MOVES THE REFUSAL SET (the caps read `d->n`) while NOT reducing the K7 `subset_elems` charge. **§2** is the web survey: Nicol & Frohme, "Deconstructing Subset Construction — Reducing While Determinizing" (arXiv 2505.10319, TACAS 2026) is the closest published work; the whole incremental-minimization family (Watson/Daciuk 2003; Almeida–Moreira–Reis 2014) minimizes a COMPLETE automaton, so "anytime" does not mean "before the machine exists"; Baburin & Cotterell (DCFS 2025) prove predicting subset blow-up PSPACE-hard. **§3** (revised) answers Frank's two-pass questions from the code. The thorough pass is an OPTIMIZATION, not a correctness requirement — `minimize.c:69`/`:160` already make "merged nothing" an ordinary shipped outcome — with three non-correctness dependencies, of which the scan-edge one is an ORDERING constraint and whose minimality half is left as an open question for a prototype. It gives a five-tier taxonomy of merges by what each must know, whose ranking criterion is that **only Tier 1 (dominated positions) and Tier 4 (a full online registry) make CONSTRUCTION cheaper** — Tiers 2 and 3 merge states already paid for. And it records the reframing: **a size bail needs provable INEQUIVALENCE while compaction proves EQUIVALENCE**, so compaction cannot make the projection exact unless the incremental result IS the artifact — which is the one configuration where Frank's optional-second-pass idea and lim2's margin problem solve each other, and it is a property of the full registry alone. **§4** is the brittleness analysis: candidate B (dominance pruning) is brittle as the tree stands because three of its seven failure modes live in a counted-repeat × assertion cross-product cell no existing sweep generates; the full registry C is the more dangerous mechanism and the better-CHECKABLE one, because it alone can be diffed for isomorphism against the existing pipeline over the whole corpus. **§5** recommends: solve lim2's bail separately and now (it is a different problem); READ THE PAPER FIRST since C is only ranked on its abstract; then M1 (the closed fraction) and M2 (the dominance prize) decide between B and C. Do NOT build A (periodic partial minimization) — it is the one candidate ranked down on merits rather than on missing measurements, since no M1 outcome favours it. **§6 is M5, DONE 2026-09-04 by lane `m5paper` (READ-ONLY, same terms): the paper and its MIT-licensed Java reference implementation (`github.com/jn1z/OTF`) read in full, retiring §2.3's and §3.8's `unverified` marks. It INVERTS the ranking. The OTF loop's output is REDUCED, NOT MINIMAL — paper §3.1 requires a final minimization and the implementation runs an unconditional Hopcroft pass after it — so candidate C's defining property (optional second pass, hence raw = emitted and an EXACT projection) is FALSE, and no intermediate count is a lower bound either. Two structural findings: the paper's Table 1 is a 2×2 of this study's own candidates (its SC-S IS candidate B, its OTF is candidate A plus a generalization layer), and C REQUIRES A rather than subsuming A′ because UNIFY is called only from the intermediate minimization — so "do not build A" and "build C" are inconsistent. C is demoted below B; §5.1's step 4 becomes B-first; M1 must measure the paper's partition rule rather than the closed fraction (§3.5's "precisely the closed subgraph" is too pessimistic and was the sole basis for ranking A down); M6's second-pass half is answered in advance and only its scan-edge minimality-vs-finality question survives. Their evaluation contains NO regular expressions and no counted repeats at all.**
+- `nf25_notes_for_authors.md` — the running notebook toward a response-to-the-authors document for [NF25] (Frank, 2026-09-04: "if we successfully use this paper to build an algorithm ... generate a doc in response ... for now, keep notes"); every lane that builds on or measures against [NF25] appends a dated bullet in the same change.
+- `form_char_step0.md` — [FORM-CHAR] STEP 0 + [OPT-CLSPACK] STEP 0 (2026-09-04, lane form0, measurement only, nothing under `src/`/`tests/`/`docs/spec/`): is a caseless CLASS test faster than a folded COMPARE, and is a 256-byte table load faster than the 32-byte bit array's load+shift+and, on both engines, cache footprint counted. Four hand-twin families, each a mechanical transform of an emitted base artifact's own class-bitmap or scan-edge tables (byte sets parsed off the compiler's OWN emitted text, never re-derived from the pattern), correctness-checked per twin against its base (52/52 cells agree) and sized (`.text`/`.rodata`, `gcc -O2 -c`) under the evening box hold. (A) VM literal chain `abcdef` caseless, 6 sites: `fold` wins both axes (-38% `.text`, `.rodata` deleted entirely), `table` loses both (+31% `.text`, 8× `.rodata`), `atom` is between — **and a `gcc -O2 -S` compiler-equivalence check CLOSES this family's speed question without a stopwatch**: `c=='a'||c=='A'`, `(c=='a')|(c=='A')` and `(c|0x20)=='a'` all compile to the SAME branchless mask+compare+sete with no load at all, so `table`'s one-load-latency argument has nothing to beat here (`studies/form_char_twins/asm_evidence.c`, `results/three_spellings.s`). (B) a general (`[a-zA-Z0-9_]`, 4 runs) and sparse (`[aeiou]`, 5 singletons) class, 1 site each: `table` loses `.text` at both; `rangecmp` is a near-wash on general (+2.8%) and a clear win on sparse (-5.6%) — genuinely open pending timing, since both real alternatives here DO read from memory. (C) the DFA scan edge — a small witness (`(?i)a{2,40}Z`, 4 sites), a `nonpair` witness (`[ace]{2,40}Z`, 4 sites, NOT a case-fold pair) and `ci-256` (pcrec-bench's own bitmap-edge witness, read-only, 8 sites, every site a case-fold pair): the "bitmap" 256-byte body costs `.text` at every scale (+24% small, +20% nonpair, +0.8% ci-256) and all the `.rodata` `range`/`fold` need none of; on the NON-fold-pair witness `range`/`fold` compile to byte-identical objects (the fallback discipline confirmed), while on the fold-pair witnesses they diverge by a small, real, now compiler-explained margin (`fold`'s one mask+compare vs `range`'s two-compare-plus-or) — the earlier draft called this "noise" and that was an understatement, corrected here. `table` vs `range`/`fold` stays genuinely open pending timing, unlike family A. (D) N=16 distinct classes (`abcdefghijklmnop` caseless VM, above the plan row's ~10-class estimate): the shared atom table is SMALLER than both alternatives on `.text` (-41%/-54%) as well as `.rodata` (2×/16× smaller) — not a space-for-time trade on this axis, a plausible CSE mechanism named but not disassembly-confirmed, genuinely open pending timing + disassembly. Recommends AGAINST the 256-byte table form everywhere measured; `fold` (family A) is now ready to build on its own merits (the speed question is closed); `atom`@N≥16 (family D) is the second candidate, contingent on timing. Owes: the timing run itself (scoped to families B/C/D — no longer A) and a disassembly read of family D. Evidence and reproduction harness at `studies/form_char_twins/` (own CLAUDE.md/README.md).
+- `xarch_step0.md` — [XARCH] STEP 0 (2026-09-05, lane xarch0, measurement
+  only, nothing under `src/`): macOS/M1/gcc-16 vs Linux/Ryzen/gcc-15.2 on
+  identical emitted C. Half 1 (compile rates): a full-corpus SIZELOG run
+  joined against the already-committed Linux log at its own commit
+  (`81731547`) -- 0 `size_bytes` movers across 2,925 common rows (byte
+  identity holds perfectly), gcc CPU-seconds ratio Mac/Linux median 0.518
+  (Mac ~1.93x faster, flat across DFA/VM engine stamps), reaffirming
+  [TT-14] (spawn tax, not compute) with an independent number; also notes
+  a 37-row gap (all Linux-only, all from four assertions `.rxt` files at
+  that WIP-commit's own 751 pre-existing test failures -- not investigated
+  further, out of scope). Half 2 (matcher throughput at the bench's pin
+  `334fd10e`): THE HOOK -- `floor` forced-VM at `--vm-entry-shape=1/2/3`
+  on ARM shows `forward` TYING `plain` (ratio 0.996-1.004), NOT
+  reproducing the x86 ledger's 2.0x `forward`-shape regression, confirming
+  o17facts's I-50 section 2 hypothesis that the x86 regression is a
+  gcc-15.2 inline-merge idiom loss rather than a `forward`-shape property;
+  NEW finding neither side predicted -- `shared` is the ARM outlier
+  instead, ~3x slower than both other shapes. Also: altwide
+  `w-8`/`w-64`/`w-256` vm+auto ratios (0.49-1.10x, nothing near 5x),
+  bounded `cls-upto-4/32/1024`+`dig-upto-16` dispatch-overhead cells (Mac
+  ~2.1-4.5x faster, with the `cls-upto` cells' two runs disagreeing up to
+  35% with each other -- flagged as likely Apple Silicon P-core/E-core
+  scheduling noise at nanosecond scale, uncorrected), and loglines
+  `iso-ts` marked INCONCLUSIVE (a synthesized, non-bench subject produced
+  the opposite sign from the bench's pinned ratio -- a subject-mismatch
+  artifact, not a finding). Every number SCRATCH TIER.
+- `xarch_step0_evidence/` -- [XARCH] STEP 0's reproduction pieces: the two
+  size-log TSVs (Mac and Linux copies) and their join script/output
+  (`half1/`), the `--vm-entry-shape` hook driver and its three run logs
+  (`half2_hook/`), the generic throughput-sweep driver plus interleaved
+  round-robin orchestrator plus read-only bench-subject reproduction
+  script (`half2_altwide/`), the whole-subject match-dispatch driver
+  (`half2_bounded/`), and the synthesized loglines subject
+  (`half2_loglines/`). Text/driver-source only; no generated
+  `.c`/`.h`/`.o` artifacts (they regenerate from the pinned compiler and
+  pattern text cited in the memo).
+- `tt4m_darwin_validation.md` — [TT-4M] STEP 1 (2026-09-08, lane tt4m,
+  measurement + prototype only, nothing under `tests/harness/`/`src/`):
+  re-opens [TT-4]'s closed batched-build question on darwin, where [TT-14]/
+  [XARCH] find the Mac's cost is process-dispatch spawn tax, not gcc CPU.
+  Shape L (one gcc invocation naming N pcrec-emitted `.c` sources plus a
+  generated dispatch `main()`, never concatenating source — each `.c` its
+  own translation unit by construction) beats the harness's
+  one-gcc-call-per-pattern shape at every batch size tried, up to **4.28x
+  wall / 2.79x CPU at N=64** on a 126-pattern/413-case `tests/base` slice,
+  zero answer-identity mismatches at any N, and a confirmed structural
+  win over [TT-4.1]'s TU-concatenation approach (no `--features`
+  homogeneity restriction needed — checked directly with a genuinely
+  heterogeneous pair). **The bigger of two levers was not the one this row
+  set out to isolate**: of N=64's 4.28x, the gcc-invocation-count lever
+  contributes 2.65x on its own, while an UNPLANNED second lever — fewer
+  DISTINCT executables launched at case-run time (126 binaries → 2)
+  collapsing macOS's per-binary first-launch cost — contributes 11.79x on
+  its own, confirmed directly by a same-binary-reuse microbenchmark
+  (4.72ms/call warm vs. baseline's 75.4ms/call average across mostly-cold
+  binaries). Degradation (one bad batch member) reproduces [TT-4.1]'s
+  Linux shape exactly: cheap to detect, expensive to recover (linear in
+  N). D77's residual trigger for a multi-pattern pcrec CLI mode is NOT
+  met — pcrec's own spawn cost is ~1.5-2.8% of the batched path's total
+  wall at every N, cross-validated by an independent standalone
+  measurement. Serial-only (box-coordination held the box for a
+  concurrent encoding-checks run for the whole construction phase) — does
+  NOT replicate [TT-4.1]'s Linux finding that too-large N regresses under
+  PARALLEL dispatch; that replication is owed to STEP 2. Evidence and
+  reproduction harness at `studies/tt4m_batchrun/` (own CLAUDE.md).
+- `tt4m_step2a_parallel_sizing.md` — [TT-4M] STEP 2 (2a) (2026-09-08, lane
+  tt4m2, measurement only, extends the STEP 1 prototype with a new
+  `parallel` subcommand in `studies/tt4m_batchrun/batchrun.py` -- nothing
+  under `tests/harness/`/`src/` touched; REVISED 2026-09-08 by the r55
+  panel and lane tt4m2f -- two corrections below, `docs/dev/reviews/
+  2026-09-08-r55-tt4m-batching.md`): the owed PARALLEL-dispatch N x P
+  sizing STEP 1 left serial-only. On a 1,022-pattern/7,729-case
+  cross-corpus pool (larger than STEP 1's `tests/base`-only slice, sized
+  to give N=64 and N=16 several batches per worker at every P swept),
+  sweeps N in {16,64,128} x P in {4,8,12}: the knee is **P=8 at every N**
+  (this box's own performance-core count, 8 of 10 `hw.ncpu` -- going
+  P=8->P=12 buys 0-5% wall and COSTS up to 15% more CPU to contention, and
+  at N=128 starves 4 of 12 requested workers outright, reproducing
+  [TT-4.1]'s Linux non-monotonicity MECHANISM in the form this box's
+  population produces it -- **but the N=128/P=12 cell's own starvation was
+  FOREORDAINED by the pool size** (1,022 patterns / 128 = 8 batches,
+  always short of 12 workers, regardless of the box's core count or
+  scheduler) rather than an independently emergent hardware-driven
+  finding; the mechanism is real, the specific cell is not a fresh
+  confirmation of it -- R55-3, num-F1). Wall time is a near-flat plateau
+  across N=16-128 at P=8 (~9% spread) while worst-case degradation-recovery
+  cost scales linearly with N (3.6s to 29.2s) -- recommends **N=64, P=8**
+  on that asymmetry, which does NOT rest on the N=128/P=12 cell. Zero
+  answer-identity mismatches across all 9 cells. K44 relief (S5): this
+  sweep's peak load1 (10.44) is ~4.4x below K44's documented
+  47.6-at-PROCS=12, suggestive but NOT apples-to-apples (K44 is a full
+  multi-section `make -j12 test`, this is an isolated corpus-compile
+  prototype) -- named as owed to STEP 2c/2d. Addendum: the same-pool serial
+  baseline landed at 547.52s wall / 320.60s CPU, giving **18.65x wall
+  speedup** at the recommended N=64/P=8 cell end to end (bigger than
+  STEP 1's 4.28x because it combines STEP 1's two levers WITH this row's
+  own parallel-dispatch lever) -- with the honest caveat that this compares
+  batching+parallelism TOGETHER against NEITHER, since `run.sh` today is
+  already unbatched-but-PARALLEL and this tool has no unbatched-parallel
+  mode to isolate that middle ground (named as owed, not built, D77), AND
+  a DIRECTIONAL caveat (R55-8, num-F5): the serial baseline ran concurrently
+  with the tail of the N x P sweep and so absorbed MORE contention than a
+  quiet-box run would, inflating its own wall number and biasing 18.65x
+  FAVORABLY (an overestimate), not neutrally. Per-pattern case-extraction
+  keying was fixed (R55-5, num-F4: matched on pattern TEXT alone, not
+  (pattern, flags, features) -- 12 of 1,022 patterns misattributed,
+  aggregate case count barely moved by coincidence, the 7.56
+  cases/pattern density line unchanged after re-derivation).
+- `tt4m_batch_customers.md` — [TT-4M-TIME]'s ENUMERATION half (2026-09-10,
+  lane rpkg, read-only, nothing under `src/`/`tests/`): every place in the
+  tree that re-invokes `tests/harness/run.sh` (`HARNESS_BATCH`'s literal
+  customer set, found BY GREP and cited file:line, each row stating
+  whether it forwards the flag today) or runs its own per-pattern
+  `pcrec`+`gcc` compile loop outside `run.sh` entirely (a bash-only env
+  var cannot reach these, but the batching LEVER is the same one).
+  Chartered because a from-memory customer count was wrong once (the
+  `[TT-4M-TIME]` CORRECTION: `san`'s `run_san_group` re-invocation of
+  `run.sh` under `GENCFLAGS` was missed). Names `make mech`'s per-sabotage
+  `run_sabotage_matrix.sh:1952` as the highest-value unclaimed customer on
+  population/runtime alone (not measured here), and two found-but-not-
+  customers with their own reasons (`tests/bench/run_bench.sh`'s
+  GCC-TIME loop, whose per-pattern timing IS its measurement; the six
+  single-process differential drivers `tt4_measurement.md` already
+  attributed). No timing run, no recommendation beyond the enumeration.
+- `cls_tree_study.md` — [CLS-TREE] THE STUDY (2026-09-11, lane clstudy,
+  opus, study only, nothing under `src/`/`tests/`/`docs/spec/`; no design
+  note, no panel — those are gated on this memo). Frank's reframing of
+  [CLS-TREE] from "a third form for huge classes" to THE GENERAL SHAPE — a
+  class matcher COMPOSED PER-SECTION from a small kit of representations,
+  STATICALLY SELECTED — prototyped and measured over the real populations
+  (the 312 distinct `unicode-props` sets / 10,961 intervals, K53's six sets
+  with their complements, and the 41 distinct byte classes the shipped
+  corpus actually contains). Reproduction harness `studies/cls_tree_study/`
+  (own CLAUDE.md/README.md). Every matcher built was verified EXHAUSTIVELY
+  against an independently constructed reference on all 1,114,112 code
+  points — never sampled.
+  **THE HEADLINE**: today a code-point class costs automaton TABLE bytes and
+  nothing else (`obj_text` is a constant 788/672 bytes across ALL 312
+  baseline rows, confirming K53's diagnosis as a property of the whole
+  population rather than of the six it examined); `\p{L}` under `-e utf8` is
+  **227,409 object bytes today against 4,359 as a kit matcher, 52x**, and
+  `\p{Xwd}` 294,153 against 5,326, 55x.
+  **DELIVERABLE (1) has no per-class answer and that IS the finding** — no
+  single representation wins any real code-point set; `\p{L}` at the middle
+  policy is 27 sections of four different forms, so the KIT is the answer and
+  a per-class dial setting would be choosing among matchers the search never
+  proposes. [CLS-TREE]'s own SEED (`BSEARCH`, "a binary tree of ranges") is
+  chosen 12 times across 72 cells and never at the speed end — it earns a
+  place and is nobody's main story.
+  **DELIVERABLE (2), the sectioning rule, is a DP** minimizing
+  `rodata + text + lambda*ops` over contiguous partitions, where lambda IS
+  [OPT-DIAL]'s dial arrived at from the algorithm rather than fitted to it;
+  what it PICKS is described (sections break where DENSITY breaks, not where
+  intervals are; `PAGE64` is the size end's workhorse and `BITMAP` the speed
+  end's; the extreme speed notch collapses to few huge bitmaps at a 5.6x
+  size blow-up for 6 probe ops and the dial should stop before it).
+  **DELIVERABLE (3): the D77 verdict is that CONSTRAINT 2's PRE-ANALYSIS
+  CACHE IS NOT TRIGGERED** — discovery on the worst real set (930 intervals)
+  is **25.86 ms** in C, single-threaded (the committed
+  `crosscheck_uprops.tsv` number; the memo's 26.4/26.7 table figures are
+  jitter-level lane-side re-runs), less than a fifth of the 144 ms
+  `build/pcrec` already spends compiling that one pattern today; the
+  algorithm prices every kit member in O(1)/O(k) WITHOUT materializing
+  tables, which is a property of the algorithm and survives a worse
+  population. Its subsidiary measurement: the EXACT Quine-McCluskey
+  minimizer (tier 2) costs **4.9x the discovery time to change 10 of 126
+  sectionings for 0.36% fewer ops** and is dropped — the algebraically
+  impressive half of the analysis was the half that did not pay.
+  **DELIVERABLE (4)/CONSTRAINT 1 is discharged as a MEASUREMENT**: given
+  nothing but the set `{0x53,0x73}`, the O(k) `cube_of` returns "bit 5 is
+  free", i.e. `(c|0x20)=='s'` — [FORM-CHAR]'s shipped `ascii-fold` object
+  rediscovered with no fold table, no letter test and no pair classifier.
+  **And the general form covers TWICE the population the special case does**:
+  8 of the 41 corpus byte classes take a one-cube test and only FOUR are
+  case-fold pairs — `{a,c}` (xor 0x02), `{g,k}` (xor 0x04) and `{A,B,a,b}`
+  (two free bits) are emitted as 32-byte bitmap tables today and today's
+  `(lo^hi)==0x20`-and-both-letters classifier is structurally blind to them.
+  Across the whole byte-class population the kit is **1,584 bytes of `.text`
+  and ZERO `.rodata`** where the corpus carries 319 32-byte table sites.
+  Provenance-blindness is then used as a TESTING lever (composition
+  identities as a free oracle on arbitrary unreachable sets: 438 cells,
+  1,114,112 code points each, 0 mismatches) — a check a provenance-TAGGED
+  design could not have written.
+  **Read §8 for the three bugs the study's own instruments caught**, each
+  worth more than the bug: a cost model that prices a form without building
+  it is only safe if something independently builds and checks (the
+  `PAGE64` O(k) price double-counted a shared page and suppressed the
+  all-empty leaf); two implementations of one algorithm found an integer
+  floor `log2` and a duplicated fixed term that left them disagreeing on 12
+  of 36 cells while each stayed self-consistent; and a Pareto point
+  DOMINATED ON BOTH AXES is a modelling error, not a result — the first cost
+  model priced only `.rodata` and the sweep built to characterize a
+  trade-off refuted the model that generated it. §9 names what is NOT
+  settled, headed by: ns/char is a membership loop, NOT either engine, so
+  nothing here licenses an end-to-end throughput claim, and the plan row's
+  own DFA/hybrid-seam question is untouched.
+- `tt4m_time.md` — [TT-4M-TIME]'s TIMING memo (2026-09-12/13, lane
+  tt4mtime, measurement only, nothing under `src/`/`tests/`): the clean,
+  post-`a2c89c06`-fix, quiet-box `make test` timing pair at `HARNESS_BATCH`
+  unset vs `=64 PROCS=8`, at pin `99d2b6fe`. Headline: ~9.5% wall / ~8-10%
+  CPU saving, an order of magnitude below [TT-4M]'s own isolated-corpus
+  prototype ratios (4.28x/18.65x) because `HARNESS_BATCH` reaches at most
+  3 of `make test`'s 38 sections (`test-corpus`, `test-rxtsource`,
+  negligibly `test-known-fail`) — the other ~35 (single-process
+  differential drivers, fixed-scenario CLI/codegen compiles, python fuzz)
+  never call `tests/harness/run.sh` and pay their full unbatched cost
+  either way; attribution is structural (no per-section timestamps survive
+  in either log) not measured per-section. Full count identity confirmed
+  (checks passed/failed, corpus counts, `sections ran: 38/38` byte-
+  identical both runs). **Finding, not chartered before this memo**: the
+  suite is NOT green-except-`inline_capability` on this tree —
+  `test-anchored-match`'s `run_anchored_diff.sh` FAILS identically in both
+  runs (26 patterns whose emitted C does not compile under the harness's
+  own `-Werror` flags), invisible to prior partial runs that were killed
+  before reaching that section. Also names two un-held-constant confounds
+  (run 2's `PROCS=8` vs run 1's default 10; run 2's higher residual load1)
+  — both biasing AGAINST the measured saving, not inflating it — and
+  states the flip decision's residuals (SIZELOG's `-c`-only CPU/wall
+  caveat under batching; `make mech`'s harness arm never sets
+  `HARNESS_BATCH`, tt4m3_report.md F4) without recommending the flip
+  itself. Re-verifies `tt4m_batch_customers.md` current at the new pin
+  (sabotage-subtree growth is comment-only, no new customer) and completes
+  the san-arm feasibility note (batching's `GENCFLAGS` threading confirmed
+  by static read; the actual Linux-side sanitizer probe is owed, K54 blocks
+  it on this box). Docs `docs/dev/artifact_size_log.tsv`'s regeneration by
+  both runs as NOT to be committed (batch-mode SIZELOG caveats, warm box).
+- `optdial_size_sweep.md` — [OPT-DIAL] §7 SIZE SWEEP (2026-09-15, lane
+  dialsweep, measurement only, nothing under `src/`/`tests/`): the ONE run
+  `docs/design/opt_dial_inventory.md` §7 names as moving six UNMEASURED
+  switches at once, over the full 3,478-row corpus population (matching
+  `docs/dev/artifact_size_log.tsv`'s own row count at a nearby commit).
+  Reuses `tests/harness/run.sh`'s existing `RXTFLAGS`/`RXTDUMP`/`SIZELOG`
+  hooks — the identical mechanism `tests/axes/run_axes.sh` already drives
+  — read-only, nothing under `tests/` touched. **Headline: `-fno-tiered-entry`
+  is the cleanest two-axis result in the sweep** — every one of its 330
+  movers (9.49% reach) shrinks by a near-fixed ~1,953-1,957 B, against the
+  inventory's already-measured ~5x per-call TIME win, a clean
+  MEASURED-TRADE graduation. **`-fno-anchored-dfa` (the bonus switch §7
+  item 3 names) has by far the largest reach of anything in the whole
+  inventory — 43.39% of the corpus, monotone, median -3,075 B, worst
+  -266,794 B** — replacing the inventory's own "not from the corpus"
+  caveat (its size number came from one hand-picked 30,000-count shape)
+  with a real corpus-general one. `-fno-altcls-merge`/`-fno-altcls-factor`
+  mostly confirm the inventory's own "likely a PURE WIN" hypothesis on
+  size (~90%+ of the reached population favors keeping each ON) but each
+  has a real, single, non-monotone counter-example that blocks a strict
+  PURE WIN verdict — the same shape `--unroll=K`'s own non-monotone byte
+  curve already warns about. `-fno-offset-skip` graduates to a clean
+  MEASURED TRADE too. `-fno-possessify` and `-fno-revdet` — the two
+  switches that had NO time number before this sweep either — stay fully
+  UNMEASURED: this sweep discharges only their size half, and a matching
+  throughput sweep (not built here) is what would finish the job.
+  `-fno-altcls-merge` also hits ONE already-documented K45 refusal
+  (`tests/size/size_term.rxt`'s nested-repeat tower, the same
+  `REFUSAL_PATTERN` entry `tests/axes/run_axes.sh` already carries) — not
+  a defect this lane found, cross-checked against every pass's own
+  `RXTDUMP` (K35: zero undocumented refusals on any of the seven flags).
+  Reproduction: `docs/dev/optdial_size_sweep/` (own CLAUDE.md) — the
+  orchestrator, the join/analysis script, and the raw per-pass tables.
+  Does NOT edit `docs/design/opt_dial_inventory.md` itself (D80: a design
+  document's own revision is its own change) — this memo is the evidence
+  a follow-on revision would cite.
+- `dialtrain_byteid.md` — [K59RUNG-BYTEID] (2026-09-17, lane byteid,
+  measurement only, nothing under `src/`/`tests/`): the corpus-wide
+  emit-diff confirmation `k59rung_report.md` left OWED — does the
+  dial+K59 train (merge `cf0962e3`) move any emitted byte for an artifact
+  that already compiled at the branch point? `cmtfix_report.md`'s own
+  methodology (baseline via `git archive` of the branch point's first
+  parent, fixed = the merged tip, every corpus `pattern`/`pattern-esc`
+  line compiled by both at default flags, byte-diffed). Over 3,938
+  pattern lines (211 files): 0 identical, 2,438 both-refuse
+  (module-gated, unrelated), 0 newly-fixed/newly-broken, and **1,500
+  movers, every one of them exactly +27 bytes** — the unconditional
+  `RX_TUNE "balanced"` stamp line plus a same-length `.abi: 25 -> 26`
+  digit substitution, confirmed by full-diff inspection across the
+  corpus's whole size range (35 KB to 665 KB), not merely by the size
+  delta. Reconciles against `dialimpl_report.md`'s own `+23-28`-byte
+  §5.3a prediction and its `+31`-byte real witness (a longer, non-`rx`
+  prefix this sweep's default-prefix driver does not reach) rather than
+  re-deriving it. K59's own drop-ladder rung requires a prior
+  size-cap-refused attempt (`src/core/compile.c:1074`), which nothing in
+  this corpus reaches at default flags — corroborates
+  `k59rung_report.md`'s structural no-move argument without independently
+  exercising the rung itself. Reproduction:
+  `docs/dev/dialtrain_byteid_evidence/` (own CLAUDE.md).
+- `f2_rescue_split.md` — [O-31 F2] (2026-09-17, lane f2rescue, measurement
+  only, nothing under `src/`/`tests/`): why the captures axis strips
+  pcrec's own prefilter rescue on `trim-nested-star` and whether the
+  decline boundary can narrow to "declines only when a capture
+  intersects the collapsed region." **Corrects the ask's own premise on
+  two points before answering it.** The witness (`trim-nested-star`,
+  and a second corpus instance found here, `evil-alt-nested`) never
+  reaches the count-collapse rung at all — `(\s+)*`/`(([a-z]+)*)+` have
+  no counted `{m,n}` to collapse — so what fires is [OPT-4.2]'s
+  collapse-agnostic DEFAULT decline, not [OPT-4.1]'s rung-scoped
+  "nullable-collapse rescue" the ask names. And `winpath-near-miss`
+  (zero capturing groups; `auto` selects the DFA identically with and
+  without `--no-captures`) is not in this population at all — its own
+  ledger row is the unrelated `auto`-vs-forced-`--engine=vm` comparison,
+  which the O-31 outbox's "mirrors" phrasing folds together with the
+  real captures-axis finding. Both declines derive from ONE local,
+  `lang_nullable_declinable` (`select_engine.c:888`), with **no capture
+  conjunct at all** — captures matter only as one of several routes
+  that force VM selection (`forces_captures`, `select_engine.c:99-135`,
+  wholly independent of nullability); once VM is chosen by any route,
+  the same whole-pattern-nullability test (`pcrec_minw(root)==0`)
+  applies uniformly. A constructed witness family
+  (`[a-z]{0,60000}` bare / capture spanning it / capture disjoint but
+  still whole-nullable / capture disjoint and whole-pattern
+  non-nullable) shows the RUNG-scoped decline is **structurally
+  unreachable whenever captures are present** — captures route to VM
+  before the exact DFA build the retry mechanism exists to catch the
+  overflow of ever runs — confirmed corpus-wide (3,938 shipped `pattern`
+  lines + the bench's 58-pattern capability set, both at default flags:
+  56+2 hit the DEFAULT decline, **zero** hit the rung form in either).
+  **Verdict: the boundary cannot narrow by capture location** — not as
+  a small change, and not at all: two of three real witnesses have no
+  "collapsed region" to intersect, the rung form the ask names is
+  already unreachable under captures on any witness, and even a
+  constructed disjoint-capture case (`(x)?[a-z]{0,60000}`, capture
+  outside the quantifier, whole pattern still nullable via the
+  capture's own optionality) shows the decline is correctly keyed on
+  GLOBAL emptiness-admission — the exact property that makes a
+  position-skip prefilter valueless — which has no relationship to
+  where any one capture sits. `phone-list-nested-plus` survives not by
+  escaping a captures constraint but because it was never subject to
+  one: `pcrec_minw(root)==1`, non-nullable, full stop. Recommends two
+  design-event candidates instead (a partial-admission prefilter; a VM
+  step budget, the same lever O-31 finding 3 already asks for) — neither
+  built or measured further here (D77).
+- `w1stage0.md` — [REVW.1] wave 1 stage 0 (2026-09-18, lane w1stage0): the
+  emission-kit wave's PRECONDITION stage, three deliverables, nothing under
+  `src/`/`cli`/`lib/` touched. (1) The long-prefix full-corpus sweep
+  (`tests/codegen/run_longprefix_sweep.sh`), repairing the [MECH-REACH] gap
+  the charter names (the only prior long-prefix control compiles the
+  pattern `a`): 1,499 of 1,500 `-p rx`-compiling corpus patterns also
+  compile at the legal 60-byte prefix boundary, zero gcc `-Werror`
+  anomalies — no live K38 recurrence found; committed baseline
+  `docs/dev/w1stage0_evidence/longprefix_baseline.tsv`. (2) The `irsb`
+  byte-neutrality arm (EP2's addition): a new block in
+  `tests/codegen/run_ir_listing.sh` pinning the `--emit-ir` listing's raw
+  bytes per pattern against a committed baseline, the stream none of the
+  four standing `.c`-identity gates compare — pins the OUTPUT, not the
+  render mechanism (D108); sabotage S258 detected. (3) The listing-reach
+  census (EP2's addition): measures whether `run_ir_listing.sh`'s
+  population reaches the rung emitters whose role text IS the listing —
+  27 of 41 `vm_rolef` call sites (66%) for the 11-pattern fixture set, 31
+  of 41 (76%) for the whole corpus at default engine selection, both
+  missing lookbehind and subroutine-call emission entirely — recorded as a
+  finding for a future stage-3 lane's population choice, not acted on
+  here.
+- `k60_measurement.md` — **K60 THE MEASUREMENT** (2026-09-18, lane k60meas,
+  opus; measurement only — the one `src/` change is a clearly-marked
+  `[K60-PROBE]` commit the manager drops at merge). Chartered by Frank after
+  a first disposition proposal was rejected for being flag-shaped.
+  **It refutes three of `known_issues.md` K60's own claims, so read §5
+  before citing that entry.** (1) K60's "ONE CONFIRMED MECHANISM" — a
+  never-reset `cx.size_cap_refused`/`cx.dfa_overflowed` — is wrong: the
+  `Ctx` is a loop-local `memset` at the top of every attempt
+  (`compile.c:704-706`), so both flags are per-attempt by construction and
+  **zero of 148 measured absorptions involve a stale flag**; K60's
+  disposition (1) is therefore a fix for a defect that does not exist.
+  (2) W1's absorptions are not the ladder catch — the ladder cannot run for
+  a DFA-engine artifact at all. (3) The THIRD mechanism K60 suspected is
+  real and is the ONLY one either of its own witnesses has:
+  `emit_state_legend` (`src/gen/emit_dfa.c:3615-3618,3660`) allocates five
+  buffers with raw `malloc` and returns silently on NULL — a deliberate,
+  documented cosmetic degradation that never calls `pcrec_ctx_nomem` and never
+  reaches the recovery point.
+  **Four deliverables, each with its method.** (1) The instrument gained a
+  SUSTAINED mode (fail N and everything after): W3 collapses 25 absorbed →
+  **0**, W4 108 → **0**, W1 15 → **5**, and those five are the compile's
+  LAST five allocations — so absorption is real and unconditional, while a
+  *real* failing allocator still yields a correct refusal in 564 of 569
+  forced failures. (2) All 148 absorptions attributed by call site: 40
+  (27%) `emit_state_legend`, 108 (73%) the `[ART-SIZE]` ladder's blanket
+  catch swallowing `pcrec_ctx_nomem`-routed failures, 0 stale-flag. (3) **The
+  population is 2 of 3,159 corpus patterns (0.06%) at default axes and 17
+  (0.54%) under `-e utf8`** — a handful, not thousands — broken down by
+  rung. (4) The candidate (give `pcrec_ctx_nomem` its own `longjmp` value, since
+  the tree has one `longjmp` and all five `setjmp` sites test it as a
+  boolean) **eliminates 108 of 108 ladder absorptions and 0 of 40 legend
+  absorptions**: sound and complete for the mechanism it addresses,
+  structurally unable to reach the other, which is the memo's most useful
+  result. Also records a constraint on any LANDED version (C11 7.13.1.1p2
+  does not permit `v = setjmp(env)`; the standards-clean spelling with the
+  same per-arrival property is named) and the probe-off corpus byte
+  identity (3,159 lines: 1,158 identical, 0 differing).
+  **§6 is the recommendation**: take disposition (2) for the ladder, strike
+  disposition (1) as refuted, and treat the legend as a SEPARATE defect
+  none of K60's three dispositions fits — Frank's call, three options given.
+- `w2census.md` — [REVW.2]'s precondition census (2026-09-18, lane
+  w2census): `tools/review/fragment_census.py` (new) over `src/gen/
+  emit_vm.c` and `src/gen/emit_dfa.c`, the EP2-chartered three-category
+  `char <ident>[<expr>]` scratch-buffer census. Reproduces EP2's
+  `emit_vm.c` statement count exactly (58) but finds ONE MORE declarator
+  (67 vs EP2's reported 66) — traced to `flr[32]` (`emit_vm.c:4894`,
+  `vm_revdet_rep`), a real bare-literal declarator EP2's own per-statement
+  tally dropped because it shares a declaration statement with two
+  `PCREC_MAX_EMIT_NAME_LEN` buffers. Reports `emit_dfa.c`'s category (c) —
+  the population EP2 never measured — in full (6 declarators/5 statements,
+  including a cross-file finding: `PCREC_STARTPOS_GUARD_TEXT_MAX` sizes
+  THREE bare-macro-no-margin sites total across both files, not just
+  `emit_vm.c`'s `mguard`). Combined floor for the repaired stage-3
+  acceptance criterion (ANY size expression, excluding only `Vm.up` by
+  name): 80 statements / 91 declarators. See `docs/dev/lanes/
+  w2census_report.md` for this lane's second deliverable (the listing-
+  reach widening measurement: a 5-pattern added set, all drawn from the
+  existing corpus, reaching 39 of 41 `vm_rolef` sites — up from 27 —
+  contingent on `run_ir_listing.sh` gaining a per-pattern `--features`
+  flag it does not have today; 2 sites are structurally unreachable by
+  any pattern, having no literal prefix at all).
+- `findings_measure/` — `[FINDINGS]` Q5's run-level estimator measurement
+  (D123 addendum 3, lane `runest`, 2026-09-25): which estimator (byte
+  independence product / bigram / trigram / word-token / hybrid) best
+  predicts a literal run's rarity per subject class, at what table size,
+  scored against true held-out occurrence counts and the WAF `union`/
+  `select`/`from` sign question. Recommends a per-class BIGRAM table as
+  the run-level KIND. Read `findings_measure/estimator_report.md`; its own
+  CLAUDE.md indexes the corpora manifest, the shared counting module
+  (R27b) and the derived data.
+- `optloop/` — the OPTIMIZATION LOOP's per-cycle analyses (D119): one
+  `cycleN_analysis.md` per cycle, with the machine-readable ranked table and
+  the scripts that produced it. Cycle 1 (2026-09-22, lane optrev) ranks all
+  128 (pattern, regime) cells of pcrec-bench's `capability@0.1` at pin
+  `25b1984f`, buckets them by cause off the D81 stamps, and proposes six
+  plan rows. See `optloop/CLAUDE.md`.
+- `devmethods/` — the DEVELOPMENT-METHODS HAND-OFF (2026-10-20, lane devmethods, docs only): `dev_methods_handoff.md` (portable practices with rule / why / how, anti-patterns, start-up checklist), `apply_here.md` (ranked proposals for this project, unruled) and the four journal reader notes they were built from. See `devmethods/CLAUDE.md`.
+- `meta/` — the SIDECAR: learnings about developing WITH models that
+  transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
+  that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is
+  the living record; see `meta/CLAUDE.md`.
+- `backlog_triage_2026-09-22.md` — [BACKLOG-TRIAGE] (2026-09-22, lane
+  backtri, D113/D86): the 93-row backlog inventory (81 `STATE:not-started`
+  + 12 dormant `STATE:started` rows), each placed into a D86 lane column
+  with its D77 trigger/dependencies, three ranked column lists, close/fold
+  candidates, and one top proposal per column. Corrects an unanchored-grep
+  row-count error (100/102 claimed elsewhere vs. 81 anchored) and flags
+  several rows whose trigger milestone already landed without the row
+  being revisited (DD-1's content already shipped under [M5.0] stage 4;
+  DD-2/DD-6/M4-CALLOUTS/M4-SUBST all name the now-shipped M4/M6). See
+  `docs/dev/lanes/backtri_report.md` for the delivery record.
+- `memcmp_lowering_study.md` — [OPT-LITSCAN] P4's `memcmp`-lowering study
+  (2026-09-27, lane memcmpstudy, measurement only, nothing under `src/`):
+  gcc-16 inlines every constant length 1-64 tested to a call-free compare
+  at `-O1`/`-O2`/`-O3` except one narrow cliff at `L=31`; odd lengths
+  decompose as a greedy NON-overlapping power-of-two chain (each piece its
+  own branch), not the overlapping or byte-tail forms guessed at, while
+  clang uses the overlapping form and renders it branchless; a real
+  emitted `\.tar` artifact confirms the probe exactly, gcc even hoisting
+  the compare constant out of the scan loop. Verdict: P4 needs no length
+  bound or form split for today's corpus. **§10 (same-day follow-up per
+  the manager/Frank): the primary `[WORD-FOLD]`/S4 mask candidate is the
+  OVERLAPPING masked form, never a single wide masked load (ASan would
+  flag its over-read) — and timed in a tight loop with the wide form's own
+  bounds guard assumed already discharged, the overlapping form is 17-35%
+  FASTER, not slower, at every `L ∈ {5,6,7,10,12}` tested, reproducibly;
+  gcc also regresses to a real branch on the masked overlap where the
+  unmasked one was branchless via `ccmp`, while clang stays branchless
+  either way.** See `memcmp_lowering_study/CLAUDE.md` for the reproduction
+  pieces.
+- `utf8_attrib.md` — [UTF8-ATTRIB] (2026-09-27, lane utf8attrib, opus,
+  READ-ONLY, nothing under `src/`/`tests/`): attribution of the twelve
+  unattributed utf8@0.1 large-subject losses against the bench's re-measure
+  at 751b9c6d (O-63), read from the stamps, `--emit-facts` and the emitted
+  `memchr` arguments at three pins (ce658cb7 / 751b9c6d / main abi 41), with
+  SCRATCH-tier Mac hand-twins. The lookbehind trio is ONE algorithmic defect:
+  the VM hybrid re-seeds from its prefilter only when an MRL clamp exists, so
+  a lookaround-erased (over-approximating) prefilter leaves the attempt loop
+  stepping every position (twin ×25-×124; drafted row `[OPT-HYB-RESEED]`).
+  Its (B) section is the relayable answer to O-63 ask (a): `lit-sharp-s`'s
+  ×2.84 is the pre-check's rightmost byte `e`, not F3; `lit-cyr-run`'s
+  flatness IS F3 (the forced tail window `сква` passes, then memchr 0xD0);
+  main's NONE rules keep the pre-check and move the DFA scan to the
+  literal's second byte by a cost-model tie.
+- `utf8_attrib_twin/` — [OPT-HYB-RESEED] packaged for the bench (2026-09-27,
+  lane reseedtwin, packaging + verification only, nothing under `src/`/
+  `tests/`): `I-114.md` is a self-contained inbox item (pin, compile
+  commands, the three hand-twin diffs, a subject generator, a find-all
+  driver, and Mac scratch numbers) for a bench dev with no access to
+  pcrec's tree. Own CLAUDE.md.
+- `reseed/` — `[OPT-HYB-RESEED]`'s instruments and results (2026-09-29,
+  lane reseed): the D77 census, the byte-identity sweep, the per-startpos
+  answer differential and the Mac scratch timing table. Own CLAUDE.md. The
+  design is `docs/design/hyb_reseed.md`.
+- `ph3_reassessment_2026-09-28.md` — D125 close-out PHASE 3 (lane ph3survey, read-only, 2026-09-28): the eleven dormant/parked rows ([TT-4M], [DD-8], [DD-11], [CC-CLANG], [OPT-3], [OPT-5], [ENG-ABS], [ENG-ISL], [DD-13], [DD-13b.W1.3], [CLS-TREE]) each reassessed — charter, delivered vs remaining, trigger state against what shipped since, a PROPOSED disposition (CLOSE / CLOSE-AND-FILE / RE-PARK / RE-CHARTER) — for Frank's ruling. Proposals, not rulings; the plan rows change only when ruled.
+- `ucp_study.md` — [UCP] THE STUDY (2026-09-28, lane ucpthink, opus, study
+  only, nothing under `src/`/`tests/`/`docs/spec/`; the design is a later
+  scheduled task): demand (corpus + bench census: 62% of UCP-sensitive
+  corpus patterns need `\b`, bench 32%; bench 46/91 need only `\d`/`\s`/small
+  POSIX), the oracle semantics on 10.46 and 10.48 (UCP `\w` ≡ `\p{Xwd}` incl.
+  Mn/Pc, `\d` ≡ Nd, `\s` ≡ Xsp; the two caseless cells; UCP without UTF),
+  `\b` ≡ its lookaround spelling (579,195 subjects × 3 modes, 0
+  disagreements; pcrec's `\b` and the spelling identical to libpcre2, but
+  the rewrite moves 72-85% of `\b` patterns off the DFA and is unbuildable
+  over `\p{Xwd}`), a SKETCH of Frank's head-state insertion as a predicate
+  VIEW (the `eolvar`/`endvar` mechanism generalized, dispatched from
+  [OPT-EDGE]'s top rows) with its hazards and the VM-forcing population it
+  would cover (492/1,101 no-captures VM rows are lookaround-only), the
+  [CLS-TREE] dependency measured (`\p{Xwd}` 197,685 B DFA, REFUSED on the
+  VM, so any captured UCP `\w` is unbuildable today), and options (a)/(b)/(c)
+  with open questions. §G carries side findings (`(?r)` ignored under
+  `-e utf8`: a 4-cell answer divergence; the ENGINE_WHY kind/offset
+  mismatch). Harness `studies/ucp_study/` (own CLAUDE.md).
+- `lookaround_census.md` — [UCP] Q2/Q3's SHAPE census (2026-09-28, lane
+  lacensus, sonnet, measurement only, nothing under `src/`/`tests/`/
+  `docs/spec/`): reproduces `ucp_study.md`'s 492/1,101 "VM-only-because-of-
+  lookaround" population (493, +1 — a truncation artifact in the original
+  census's 200-byte pattern column, found and explained rather than just
+  corrected) from its own committed TSVs (reused, not recompiled — the 18
+  commits since only touch `tests/findings/`), then classifies every
+  lookaround OCCURRENCE by SHAPE via a from-scratch pattern-text parser
+  (not `--emit-ir`, which states lookbehind width directly but not
+  lookahead's): (a) single char/class width 1, (b) fixed width k (incl.
+  k=0), (c) bounded variable width, (d) unbounded, (e) contains a
+  capture/backref/call/nested lookaround. Headline: shape (a) alone reaches
+  34.9% of the population (44-49% on the bench and non-adversarial corpus
+  sub-populations); widening to (a) or (b) with k≤2 reaches 56.8%
+  (55.6-67.4%) — a bounded-context DFA predicate view does not need the
+  full general mechanism to cover the majority. One systematically-
+  enumerated adversarial test file (`tests/lookaround/d27/matrix.rxt`) is
+  58% of the whole population and reads materially LOWER on shape (a) than
+  either the bench or the rest of the corpus, so the memo carries both
+  readings rather than one blended number. Two found-and-fixed bugs in the
+  census's OWN lexical family regex (a naive "capturing group" test
+  false-positived on `(*pla:`-style alpha-verb spellings, in both the
+  population-selection scan and the shape parser itself, caught by
+  comparing against expectation on `tests/lookaround/alpha_spellings.rxt`).
+  Harness `docs/dev/lookaround_census/` (own CLAUDE.md).
+- `sel_cost_census.md` — [SEL-COST] STEP 0 (2026-09-29, lane selcost0,
+  sonnet, analysis only, nothing under `src/`/`tests/`/`docs/spec/`, no
+  builds): the mandated exhaustive read of pcrec-bench's `syntax@0.1`
+  roster (pin `751b9c6d`) before any selection mechanism is designed —
+  every (pattern, regime) cell, auto vs the only non-auto comparator the
+  roster carries (forced `--engine=vm`, caps class only; no forced-DFA
+  and no forced-VM-nocaps testee exist there, flagged as bench asks),
+  cause-grouped. Of four cause buckets, TWO are already filed elsewhere
+  (D: the `(?:P)\z` whole-subject wrapper's fixed cost, [OS-4],
+  corroborated by bench findings O-74/O-63; B: the class-run DFA's
+  pointer-chasing loss to the VM, [OPT-5]) and two are new — A, a small
+  consistent ~1.05-1.27x fixed per-call cost on anchored/bounded-position
+  DFA forms, and C, the genuinely open one: the DFA-front hybrid
+  prefilter's cost vs. the plain `req_byte`/`req_run` precheck it
+  suppresses is NOT uniformly a win or a loss on the SAME compile-time
+  pattern signature — it flips by regime (large-subject-throughput vs. a
+  short/whole-subject call) and, on one pair (`lka-pos`/`lka-neg`,
+  identical stamps), by the subject's own match density — the boundary a
+  selection term must actually clear, since no compile-time-only signal
+  distinguishes the two. Recommends the mechanism's SHAPE (a first-match
+  predicate-row table keyed on compile-time pattern signature, valued
+  per assumed call regime) without designing it. Reproduction:
+  `docs/dev/sel_cost_census/` (own CLAUDE.md).
+- `ctx_prefilter_census.md` — [CTX-PREFILTER] STEP 0 (2026-09-29, lane
+  lacens2, sonnet, measurement only, nothing under `src/`): over the 354
+  patterns still VM-routed post-[UCP]-U2, every POSITIVE multi-character
+  lookaround's necessary one-character condition. 146 such occurrences
+  (143 patterns, 96 from one boundary-matrix test file); 31 (21%) have NO
+  sound necessary byte (body can match zero-width, e.g. `(?=\n?\z)`,
+  correctly excluded rather than guessed); of the remaining 115, 111
+  (96.5%) are NARROW (size<=8, or not already implied by the adjacent
+  consuming atom). A tightening estimate is stated explicitly as an
+  INDEPENDENCE MODEL (today's compiled `RX_REQ_BYTE` selectivity times the
+  necessary set's own selectivity on `APPROACH.md`'s prose as the
+  representative subject), not a joint-position measurement — the real gap
+  before this is decision-grade. Verdict: the narrowness finding is real
+  and cheap to confirm; recommends NOT building from this alone (the
+  independence-model gap, and a thin 6-pattern bench-derived share of the
+  population) — a joint-position measurement is the D77 trigger. Harness
+  `docs/dev/lookaround_census/` (own CLAUDE.md, shared with
+  `eng_look_census.md` below).
+- `ctx_prefilter_joint.md` — [CTX-PREFILTER] JOINT-POSITION measurement (2026-09-29, lane ctxjoint, sonnet, measurement only, nothing under `src/`): replaces `ctx_prefilter_census.md`'s independence model with the measured joint quantity — of the positions the lookaround-free prefilter admits, how many the necessary one-character condition rejects — over the 99 applicable patterns x 6 subjects (bench capability + syntax throughput texts sha-verified, two prose texts), libpcre2 as the membership oracle, `T ⊆ C1 ⊆ C0` checked in all 594 cells, four positive/negative controls. Headline: rejection is large (candidate-weighted 60-77%, false candidates removed 96.5-100%) and the model's per-pattern gap is 0.21-0.37 in both directions; but NO D77 trigger is met — the one real bench construct that clears the removal threshold (`lka-pos`/`lka-verb`, 59% at 1.58/KB) has a per-byte, not candidate-bound, loss (auto == forced-VM at 1.21 ns/B, store pin 751b9c6d), i.e. `[OPT-HYB-RESEED]` sits upstream. Study code `studies/ctx_prefilter_joint/`.
+- `eng_look_census.md` — [ENG-LOOK] STEP 0 (2026-09-29, lane lacens2,
+  sonnet, measurement only, nothing under `src/`): over the same
+  population, FIXED-LENGTH k=2-4 lookarounds' product-construction state
+  growth, by length and direction. 98 candidates (97 compile; one bench
+  pattern skipped, over pcrec's own emit-size limit before any lookaround
+  product is added). LOOKBEHIND (54 occurrences, composed against the
+  FORWARD erased-pattern machine — the correctly-scoped construction):
+  real, small growth, baselines of 2-3 states growing to 3-10. LOOKAHEAD
+  (86 rows, two constructions each) surfaced a MECHANISM PROBLEM: this
+  census's own literal brief (product against the REVERSE machine) reads
+  EXACTLY ZERO growth in all 43 cases, because pcrec's reverse machine
+  only walks the matched span and never traverses a lookahead's own body
+  (past the match end, zero-width) — a wrong-shaped-but-reproducible
+  measurement, recorded as the finding rather than silently corrected.
+  plan.md's OWN stated ENG-LOOK mechanism (bounded lookahead as a forward-
+  pass "k-byte delayed acceptance") is built and measured too, but this
+  script composes it from the pattern's START rather than at the
+  assertion's own position, so ITS number is a model, not a clean bound
+  either (can even read negative growth, an artifact of the simplification
+  — the trustworthy fact from that half is just the delayed-accept
+  sub-automaton's own size, 3-5 states). Verdict: state-count is not what
+  would block building (every number measured or modeled is small,
+  nowhere near the 32,000/10,000-state caps) — what blocks it is the
+  unresolved lookahead attachment-point design question and a population
+  that is 72/98 one boundary-matrix file. Recommends the D6 design panel
+  plan.md's own row already schedules, not a build from this alone.
+  Harness `docs/dev/lookaround_census/` (own CLAUDE.md).
+- `kvcensus.md` — the [KIT-VERIFY] PROOF CENSUS D161 addendum 16 gates the build on (2026-10-18, lane kvcensus, opus, compile-only, nothing under `src/`): per kit search site (5,183 bench+corpus rows x native/utf8, 7,620 sites, read at pcrec's own doors by a `--wrap` probe that also asks `mf_ask`) the origin, offsets sent and need, what the kit proves today (offset 0 / −1 only), the EXACT prefix from the origin (off pcrec's anchored machine, or PCRE2 alone for VM-only patterns), `consumable_len` per consumer (plain DFA via delta_uniform on the emitted forward table, VM literal prefix off `--emit-ir`, whole-cover), context spans (`\b`/lookaround shapes, expressibility with the absent-byte bit; pcrec does NOT rewrite `\b` by position) and a savings bound from armread's Zen 4 constants. Headline: whole-cover is the build's population (87 bench / 1,060 corpus patterns, +10/+107 with context); the DFA prefix entry is worth <0.5 ns/candidate at the median; 9% of PF/OFS sites are SCAN-RESTART origins (span 0 is not the match start); R-25's exposure is 524 OFS sites. PCRE2 controls in both directions, plants in `kvcensus/selftest.txt`. Instruments and data: `kvcensus/` (own CLAUDE.md).
+- `dd11_family_2026-10-18.md` — survey of the [DD-11] family (2026-10-18, lane dd11set, sonnet, no builds): what [DD-11.5] means today after UCP U1/U2, which gates are met or stale, the `\b` next-character fold customer, and proposed dispositions for the family's other items (recommendations; Frank rules).

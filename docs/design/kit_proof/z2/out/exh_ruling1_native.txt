@@ -1,0 +1,4 @@
+trace decision: [('cover', 4, 1)]
+RX_DFA_SCAN cover
+libpcre2 10.46 2025-08-27 alphabet=7 maxlen=8 subjects=6725601 cells=66243390 diffs=0 pcre_err=0
+z2 exh: DONE rc=0

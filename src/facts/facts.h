@@ -245,6 +245,29 @@ typedef struct {
     long long bmin, bmax;
 } WidthIv;
 
+/* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (fact `span_facts`, E3 core;
+ * docs/design/kit_proof.md §5.1-§5.2 UL-0, docs/design/ctx_span.md §3.2-§3.4,
+ * §3.8): span 0 at the MATCH-START origin, priority-free, on the lowered
+ * machine the k-set walk reads. `set[d]` is the TRUE byte set some match
+ * carries at offset d from its own start, the context before it ranging
+ * over every byte and the subject start (kit_proof.md §R2.2's ruling: a
+ * byte reached through a `$` before a final newline is in it), and
+ * `exact_len` the largest L such that, for every d < L, the length-(d+1)
+ * prefixes of the matches are exactly `set[0] x .. x set[d]` and no match
+ * ends before d + 1. An UNDER-statement of `exact_len` is sound; `set[d]`
+ * is meaningful only for d < `exact_len`. `stated` is MK_LANG_UNSTATED (the
+ * empty value) on a route that never sealed E3 or where the walk declined
+ * (an erased or marked machine): a reader then states 0. The k-set walk's
+ * `KsetWalk` stays the pass-through HULL its consumers read; these are the
+ * narrowed sets (ctx_span.md §3.8 [r4rc R2]). */
+typedef enum { MK_LANG_UNSTATED = 0, MK_LANG_STATED } MkLangState;
+typedef struct {
+    uint8_t  stated;                       /* MkLangState                     */
+    uint8_t  exact_len;                    /* 0..PCREC_PREFIX_K_MAX           */
+    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len; bit b & 7 of
+                                              byte b >> 3 (mf_term.set's)   */
+} MkLang;
+
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
  * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
@@ -325,7 +348,13 @@ typedef enum {
     PF_WHY_ASSERT_AFTER,
     /* D164 B3 `end_mark`'s L3 decline: a subroutine call re-enters a body with
      * another continuation, so no node is path-final for every caller. */
-    PF_WHY_CALL
+    PF_WHY_CALL,
+    /* [KIT-VERIFY] U1 Z2 `span_facts`' declines (src/facts/kset.c): the
+     * machine's language is a SUPERSET of the pattern's (`Nfa.erased`), or
+     * its accepts carry D164 mark distances (a lowered `$` tail, whose bytes
+     * lie past the match end); `nullable` and `dead-start` are Λ's. */
+    PF_WHY_ERASED,
+    PF_WHY_MARKED
 } PfWhyCode;
 
 typedef struct {
@@ -400,6 +429,11 @@ typedef struct {
      * carries its row deny. */
     LandChar  land_char;
     WidthIv   width;
+    /* [KIT-VERIFY] U1 Z2 E3 core, sealed on the `ENG_UNANCH` branch only:
+     * the span slice over the wrapped NFA (`MkLang`). No deny of its own:
+     * its readers (the `cover` row, the FIND sites' `exact_len` statement)
+     * state what it gives. */
+    MkLang    span;
     PfWhy     why[PF_NFACTS];
     /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
      * asks the facts no pass asked, after the artifact is complete, and
@@ -485,6 +519,7 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
+const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *

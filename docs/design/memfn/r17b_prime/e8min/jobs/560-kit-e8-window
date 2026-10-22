@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# 560-kit-e8-window: B4's kit-tier verdict (E8): build, correctness gate, ONE timing window, f2perf on losers, verdict
+# (docs/design/memfn/r17b_prime/e8min/plan.md). NOT enqueued by its author: the window needs Frank's clearance
+# (shared box). Everything it writes is under $OUT (the e8min worktree's build/e8slot, gitignored); the results to
+# commit are $OUT/e8_cells.tsv, $OUT/verdict.txt, and the logs named in the final lines.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/e8min
+E=$W/docs/design/memfn/r17b_prime/e8min
+D=$W/docs/dev/lanes
+OUT=$W/build/e8slot
+PCREC=${PCREC:-/home/pcrec/projects/pcrec/worktrees/memfn-r17/build/pcrec}
+GRID2=/home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2
+export OUT PCREC CPU=14 LAUNCHES=3
+case "${1:-}" in
+    --dry-run)
+        [ -x "$PCREC" ] && "$PCREC" --list-axes 2>/dev/null | grep -q pf-terms-mask || { echo "no kit compiler at $PCREC" >&2; exit 1; }
+        [ -x "$GRID2/bin/dig/V1/run" ] && [ -d "$GRID2/subj" ] || { echo "no grid2 slot binaries" >&2; exit 1; }
+        for f in e8build.sh e8design.py readslot.py verdict.py j1_census.tsv j1_patterns.tsv; do [ -f "$E/$f" ] || { echo "missing $E/$f" >&2; exit 1; }; done
+        for f in grid1/check.sh grid2/time.sh grid2/f2perf.sh grid2/paranoid.sh; do [ -f "$D/$f" ] || { echo "missing $D/$f" >&2; exit 1; }; done
+        for f in readslot.py verdict.py e8design.py; do python3 -I -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "$E/$f" || exit 1; done
+        n=$(python3 -I "$E/e8design.py" plan | wc -l); j=$(python3 -I "$E/e8design.py" plan | awk -F'\t' '$1=="J1"' | wc -l)
+        [ "$n" -gt 0 ] || { echo "empty design" >&2; exit 1; }
+        python3 -I "$E/e8design.py" plan | awk -F'\t' '$1=="J1"{print $4}' | while read -r f; do [ -r "$f" ] || { echo "unreadable subject $f" >&2; exit 1; }; done || exit 1
+        echo "would run: e8build.sh $OUT; grid1/check.sh; grid2/time.sh PHASE=EXT RAW_TAG=E8 CPU=14 LAUNCHES=3 (quiet gate); readslot.py; grid2/f2perf.sh F2_ITEM=6 on losers; verdict.py"
+        echo "design: $n groups ($j J1 cells, $((n - j)) anchor/control cells), all mode all"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
+        echo "boxqueue: expect groups=$n last=^time.sh: COMPLETE rows=[0-9]+ groups="
+        echo "boxqueue: witness groups=time.sh: COMPLETE rows=$((n * 3)) groups=$n reruns=0 xreruns=0 requeued=0 wall=1000s"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+log() { echo "e8-window: $*"; }
+log "start $(date -Is) load1=$(cut -d' ' -f1 /proc/loadavg)"
+bash "$E/e8build.sh" "$OUT" || { log "build failed"; exit 1; }
+OUT=$OUT ORACLE_CMD=true SKIP_DEEP=1 bash "$D/grid1/check.sh" > "$OUT/check.out" 2>&1; rc=$?
+tail -8 "$OUT/check.out"
+[ "$rc" = 0 ] && [ ! -s "$OUT/excluded" ] || { log "correctness gate failed rc=$rc (an excluded arm is a kit bug, not a timing question)"; exit 1; }
+w=0; while :; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 1.5)}" && break; [ "$w" -ge 1800 ] && break; sleep 30; w=$((w + 30)); done
+log "quiet load1=$(cut -d' ' -f1 /proc/loadavg) waited=${w}s"
+env PHASE=EXT RAW_TAG=E8 PASS_STATUS="$OUT/time_E8.status" bash "$D/grid2/time.sh" > "$OUT/time_E8.log" 2>&1
+tail -1 "$OUT/time_E8.log"
+grep -q '# ANSWER MISMATCH' "$OUT/time_E8.log" && { log "answer mismatch in a timed launch"; exit 1; }
+tail -1 "$OUT/time_E8.log" | grep -q 'time.sh: COMPLETE' || { log "timing did not complete"; exit 1; }
+python3 -I "$E/readslot.py" cells "$OUT" "$E/j1_census.tsv" > "$OUT/e8_cells.tsv" || exit 1
+python3 -I "$E/readslot.py" losers "$OUT" "$OUT/e8_cells.tsv" > "$OUT/groups2.tsv" || exit 1
+log "losers for f2perf: $(($(wc -l < "$OUT/groups2.tsv") - 1))"
+env STATUS="$OUT/f2.status" F2_ITEM=6 bash "$D/grid2/f2perf.sh" > "$OUT/f2.log" 2>&1; tail -1 "$OUT/f2.log"
+python3 -I "$E/readslot.py" cells "$OUT" "$E/j1_census.tsv" > "$OUT/e8_cells.tsv" || exit 1
+python3 -I "$E/verdict.py" "$OUT/e8_cells.tsv" "$E/../b4prep/expected_losses.md" "$E/j1_census.tsv" > "$OUT/verdict.txt"
+cat "$OUT/verdict.txt"
+log "results: $OUT/e8_cells.tsv $OUT/verdict.txt $OUT/time_E8.log $OUT/time/raw_E8.tsv $OUT/f2/raw.tsv"
+log "end $(date -Is)"
+exit 0

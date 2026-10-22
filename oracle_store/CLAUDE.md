@@ -42,6 +42,7 @@ dev box) is a separate, gitignored cache under `build/oracle_cache/` — see
   digit-MB bound `docs/design/oracle_interface.md` §7.3/§13 left as an
   open question — now MEASURED rather than estimated, so plain committed
   text needs no revisiting.
+- `libpcre2-10.46-utf/case-map.tsv` — [SUBST-CASE]: the `case-map` kind, 2 rows (`upper`, `lower`): every code point libpcre2's `\U$0`/`\L$0` changes (`cp>to` pairs; unlisted = unchanged), swept over all scalar values by `tests/oracle/build_casemap_store.py`; the control for `src/core/case_tables.inc`.
 - `libpcre2-10.46-ucp/membership.tsv` — [UCP] U1 (D130 Q9): the SAME kind
   under a UCP OracleId (`ucp=1`), 46 rows — every construct of
   `tests/ucp/ucp_sets.py` (`\d \s \w` and the 13 POSIX classes) under `byte`

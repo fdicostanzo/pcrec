@@ -76,3 +76,12 @@ DELEG_SITE(MLINE, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
            MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_PRE)
 DELEG_SITE(N7, MF_OP_MISMATCH, DELEG_H(MF_H_ON_DIFF),
            MF_TK_REF, DELEG_LOOP, MF_USE_POSITION, DELEG_ENTRY_NONE)
+/* COVER ([KIT-VERIFY] U1 Z2; kit_proof.md §2.5): the `cover` LOCATE row's
+ * REPORT description, a FIND / STMT / ASSIGN over span 0's k SET terms plus
+ * its CONTEXT items (`mf_site.ctx`), built by `pcrec_cover_site`
+ * (src/gen/known.c) and defined and used by `emit_cover` (emit_dfa.c). It is
+ * the search entry's whole walk, once per call: budget 1. Routed only by the
+ * harness lever at Z2 (`--harness=kit-proof`), so no shipped compile reaches
+ * it before B1. */
+DELEG_SITE(COVER, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
+           MF_TK_SET, DELEG_SCAN, MF_USE_POSITION, DELEG_ENTRY_NONE)

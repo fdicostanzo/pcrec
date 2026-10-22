@@ -27161,3 +27161,86 @@ Continues the checkpoint entry above (seambuild, a5inv, mssurvey). After it:
 - **[WATCH-IDLE] filed** (Frank: idle CPUs while a suite should run, unnoticed, more than once): one box-level alarm for "should be busy and is not"; shapes collected in the row (Backlog); memory pcrec-watch-idle-box.
 - **Mistakes:** mechnew's 1800 s cap was sized without arithmetic from P2d's 840 s for 6 rows; my first job-script write tripped the no-cd hook (a heredoc holding `cd "$TREE" ||` reads as a chained cd; write job files with the editor).
 - **Lessons:** size a mech stage cap from measured seconds per row; this box's `tail` is uutils (`tail -n N`, not `tail -N`).
+
+## 2026-10-21 — E5 pre-registration for R17-b′ B4's minimal E8 (main's record; D170)
+
+Recorded before the timing window runs, so the judged artifacts are fixed in advance. The pre-registration is `docs/design/memfn/r17b_prime/e8min/prereg.md` at kit commit **bf70e5dff** (lane/memfn-e8min), file sha256 `0af8d46ea1eb50d3fee2a520a1648d93a087443bbe16661578a7d2865c6c5d25`. Its table pins:
+- verdict script `e8min/verdict.py` sha256 `4bbd2156a31f165a9896f7ac2a9e3980316644d5fb2c9af3e0c02a7f3f7fe0eb`;
+- expected-loss list `b4prep/expected_losses.md` sha256 `cdfeba6f46540bef716edfc128730116c6a5a905d64e0e3c4cb2b840ce68b9bb`;
+- window job `e8min/jobs/560-kit-e8-window`, git blob `5e621eeb362ce0d0f88c2580e1780b1b8403f104`;
+- the census, the job's inputs and the plan, by the hashes in the file.
+
+J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about 40. D170 is applied to r17b_prime §9.2/§3.1a at kit commit 7d6b4ee05. The window runs as one queue job, `560-kit-e8-window`: quiet-gated, idle-ok, 112 groups, ~20 min, under Frank's standing timing clearance for 2026-10-21. Bench cells (I-156) join later as FINDING-only lines and do not gate.
+
+## 2026-10-21 (session 121, day) — part 1 built through Z2; M0; iterator I1; queue honesty
+
+**Accomplished (all on main and pushed unless noted):**
+- Part 1 build go (Frank). R-26 filed for the kit (d970abbbc). The kit's Z1 (5cc3d7179) and Zk (ec10382cf) merged.
+- X0 first FAILED: the reading took row 0 as the entry, and the hull dropped eol-view bytes. Ruled: the stated set is the TRUE set. Fixed in rev 2.2; X0 PASSES (5cceda570).
+- Z2 built, harness-only. X1 first read 11 reds; all were instrument defects (item-directory collisions under -j8, part-compile statements, the \K start), none in the product. X1 then read 0 red beyond U1 over 20.7M cells. MERGED aeb381c25.
+- [MEASURE-SET] M0 (abi 82, K112 rider) MERGED 813f43ec8. Its first make test was red: a missing stamp_kinds row (real) plus 4 stale pins.
+- Compound parts inherit the parent's resolved measure set (83ff3efad), the B4 gate main owed. K113 filed for the analysis chain.
+- [MECH-REACHONLY] (a9e10b53c): 847 rows in 89 s, 0 unexpectedly unreached.
+- [WATCH-IDLE] (f99b335f3) + runnerfix (6a4b90dbd): the queue refuses expect lines that can lie, flags idle jobs, logs every skip, and re-execs on a script change.
+- Kit merges: B4 design rev 4.1, b4prep, setdig. D170 (B4's minimal E8 bar) and the E5 prereg journaled. [MEMFN-POSCOST] filed.
+- Iterator: the parity slot set the batch cell OFF. D171 (Frank): the ~2 ns setup cost is accepted. I1 built on lane/i1build (I0 + I1, abi 83; NOT merged, checks queued). Frank's generic RX_FOREACH via rx_info is planned for I2; I1 already puts rx_iter, rx_nextfn and rx_info.next in the shared ABI.
+
+**Rulings today (Frank):** core product over harness ("the test harness is our project and we can change it any time"); "build what is needed and not theoretical needs"; the iterator interface and the ~2 ns cost; the box cleared for timing today and tonight; the generic macro usable without the .h.
+
+**Mistakes:**
+- My own 120 job had an expect line that could not match.
+- I merged the queue grammar without restarting the runner, so a kit job sat 37 min.
+- The i1build lane ran a ~726-compile check at PROCS=8 outside the lock during the kit's E8 window. The kit re-ran r2 clean, and the BOILERPLATE timing-window rule was added (07f239adf).
+- My context hit 94%, because Reading files in docs/design/ and docs/dev/lanes/ auto-injects their huge CLAUDE.md indexes.
+
+**Kit finding:** B4's V1 default slows 10/19 real-user movers by 14-41% (E8 r2). B4 is on hold; the kit is measuring Frank's flattened-loop twins.
+
+**Next:** read the queued jobs (see wake.md STEP 0): the Z2 post-merge battery, I1's five, the cover timing (GO/NO-GO for B1; an early sign of slow sparse cells).
+
+## 2026-10-21 (session 122, evening) — de-bulk, I1 three triage rounds, B1 NO-GO, B4' re-scope, I2 design to build
+
+**Accomplished (pushed through bd41fda95 unless noted):**
+- CLAUDE.md DE-BULK (Frank's ask): 60 files over 200 lines became short indexes (58,924 -> ~4,100 lines); full text verbatim in docs/dev/history/claude_md/ (a2e4b990c, 65ae3041c). Post-merge make test green 74/74.
+- stfix (4c9c19e7b): scripts/sectiontimes reads bytes; a 0xff in make output had killed make mid-run (job 610 truncated); perfrun's section-name grep uses -a.
+- Z2 post-merge check green (make test + recursion identity); CI green on Z2.
+- I1 (lane/i1build, NOT merged): triage rounds i1tri (4 real defects + ~10 stale checks), i1tri2 (3 real defects: FIND owner bit, label-table uncopyable, enc residual decl), i1tri3 (test controller names; compound parts copyable is right, fixture re-pinned with spec hunks), s1300 (missing witness, 36 cells; S1300 DETECTED). make test green (613); census + parity queued.
+- Cover timing (650) read: B1 NO-GO (cover 2-10x slower on sparse text, 2-3x faster on dense). R-27 filed (9fe7d47cf); kit's R-27 design panel says REVISE (blocker: the REPORT row rewrites pcrec's stated site).
+- Kit merges: e8min, flat, adatwin, memfn-r27 (5919896ac..c24a6c458).
+- Frank's rulings: walk when the subject is not known (D169 addendum, af5e6079a + af3cd1a70); [MEMFN-SKIPSWITCH] to Boonies ("adaptive methods haven't proved their worth"); B4' agreed (walk default, R7/R5/R0 withdrawn); [MEMFN-REGIME] filed; Q-R17P-27 re-answered: V1 on the VM waits for REGIME (D169 note bd41fda95); go for I2 (design + critic, then build) and K113; bench saved for Friday night.
+- I2: design (i2design), 3-critic panel, revision 2 + review r1 (lane/i2design); build lane i2build running (abi 84). Ruling R1: _next object identity impossible (second caller of shared statics); replaced by a text check + the timing gate.
+- K113 built (lane/k113): parts inherit the analysis chain via partmeas's channel; findings C-E1-4 stale check fixed (k113tri); chain re-running in the queue.
+- [BOXQUEUE-GATEFAIR] filed (quiet-gated jobs lose handoffs; the kit's find).
+
+**Mistakes:**
+- My brief let lane i2tri2 run single-process checks outside the queue during the kit's adatwin timing; BOILERPLATE rule tightened (13941270f); kit told.
+- My hand-edited hold on job 631 used `ls` over two globs, which fails when one glob is empty: I1's census sat ~25 min. Use `compgen -G`.
+- Writing a file into an old worktree's docs/dev/lanes/ re-injected the old (pre-de-bulk) CLAUDE.md files. Write rulings with Bash heredocs.
+
+**Next:** see wake.md.
+
+## 2026-10-22 — landlang: lane/langfix2 landed on main
+
+Merged lane/langfix2 (speclang, langfix, langfix2, langfix3, lf3tri: docs/spec/pattern_language.md, syntax_index_check.py, K115-K118, K122-K127) as 19be546b1. The only conflict was the lanes history index (docs/dev/history/claude_md/docs__dev__lanes.md), resolved by keeping both sides. Branch validation was green before the merge (707-lf3tri-test full make test, 699-langfix3-mech, 708-langfix3-k124diff zero unattributed movers); on main only the light checks ran: make, make strict, test-plan-lint, test-spec-history, test-registry, all clean. [SPEC-LANG] moved to plan_completed.md (refs corrected to pattern_language.md); four candidate rows filed (LOWERENC-SEAL, LANG-DIAG-WORDING, LANG-K118-LETTER-MODULE, LANG-F8-F9); the stale compliance row on whitespace inside braces corrected through the annotation store. [M3.0] is streaming and not closed by this lane.
+
+## 2026-10-22 (session 123) — Frank's "1,2,3 go" (subst, stack depth, language spec): reviews, D27 adversaries, fixes; langfix landed
+
+**Accomplished:**
+- LANDED on main: lane/langfix2 (speclang + langfix + langfix2 + langfix3 + lf3tri; K115-K127, docs/spec/pattern_language.md), a8897e529, CI green. K74 widened (22ef344ce).
+- [DD-10] on lane/dd10b: pre-merge review (dd10rev: no code bugs, 3 test/spec must-fixes) applied by dd10fix (K130 fixed, PCREC_SPINE_EACH, measured budget 432 KB); dd10tri re-anchored 3 sabotage rows; the landing hit a parse.c conflict with K125, so dd10merge merged main INTO lane/dd10b (87e89a6ed). Re-validation queued.
+- Core defects found by the iterator adversary (iterd27: 43,783 checks, NO iterator defect): K128 wrong capture after an empty repeat iteration, K129 unset vars missed by _search. Fixed on lane/corefix (abi 87) plus a pre-existing vm_counter_fits defect (cfcount) that the fix exposed via a 1.9x size regression (NEST8); FULLY GREEN.
+- Subst: code review (substcode) + D27 blinded corpus (substd27, ~1,763 cases; `$_` wrong output) fixed by substfix, corpus adopted as test-subst-d27; then Frank ruled an interface rework (R4-R8: optional lookup table, name helper, piece output with no malloc, subst-extended, blank-unset default, helpers in a standalone `pcrec --emit-support` unit, flatten kept). Design R4 delivered (lane/subst 7cea1fcb6), no build go.
+- Iterator spec corrections (iterdoc, lane/iterdoc) ride the I1+I2 landing. Frank's find-all bench prepared (lane/findbench; smoke green; timing job ready).
+- Kit: R-28 done (lane/memfn-r28 4e49ed417); D172 S2 commits 1-6 + fixes on lane/memfn-wsc7, heavy queued; main agreed two declared listing deltas. The kit's bisect cleared it of the variant tag-floor drop: cause M0's stamps (813f43ec8), legitimate; re-pinned on lane/vrepin.
+
+**Mistakes / lessons:**
+- Several queue jobs failed on their own scripts (wrong expect line, wrong `state` key, str/bytes, a dependency on a replaced job): job scripts need the same review as code. One job pasted the values it then checked (green by construction); removed.
+- A lane counted declared-UNREACHED rows as unreached; a base built from `git archive` cannot run the mech clean-tree clone.
+
+**Next:** see wake.md.
+
+## 2026-10-22 (session 124) — context-growth audit and fix
+
+Frank: the manager's context fills faster than usual even after the de-bulk. Lane ctxaudit measured 12 manager transcripts (message.usage): the cause is Claude Code's auto-injection of nested CLAUDE.md files on Read/Write/Edit. It was the largest bucket in every pre-de-bulk session (100-450k est. tokens, ~1.7x that real; one session ~750k), and it fell to ~10k in the post-de-bulk sessions. The residue: ~110 old worktrees keep pre-de-bulk copies (docs/dev/lanes/CLAUDE.md up to 472 KB). One Write of a rulings file into worktrees/i2design cost ~258k real tokens in one turn. The fixed overhead grew only 4.6k in two weeks. Lane ctxfix (merged 70cf1b9ef): PreToolUse hook scripts/hooks/no_stale_claudemd.sh blocks Read/Write/Edit under a worktree path with a CLAUDE.md over 32 KB (the lane's 24 KB would have blocked live lanes under src/parse, whose main copy is 25 KB; raised at review); tests/harness/CLAUDE.md de-bulked 48.8 -> 2.8 KB (132 lines, so the line-count criterion had missed it); 6 worktrees pruned (only 6 eligible; the rest are dirty or unmerged). Still over 16 KB in main: src/parse 25 KB, src/opt 18 KB, root 16.8 KB, src/gen 16.6 KB.
+Also: subst R4 light panel (substr4c1 semantics, substr4c2 interface) delivered 18 findings (3 high: case-state rule wrong, ill-formed UTF-8 under case forcing undefined and crashes libpcre2, \ddd is group-count-dependent); substr4b applying them to the design. 710-findbench-parity queued for the 19:00 window.
+
+## 2026-10-22 landdd10: merged lane/dd10b (ce54c42de; make strict, registry, plan-lint, spec-history, claudemd-size, thread/run_compile_stack all green); [DD-10] moved to plan_completed.md, duplicate row from the merge removed; filed [LINT-FRAME].

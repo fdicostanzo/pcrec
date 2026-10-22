@@ -3094,9 +3094,13 @@ static void check_built_status_defects(void)
      * registry's byte-default probe does not ask). */
     /* 142 = 111 + 15 + 16 -> 142 = 112 + 14 + 16 ([UCP] U1): `(*UCP)` is
      * built. `(*UTF)`/`(*UTF8)` stay `unbuilt` in this BYTE-default probe. */
-    else if (checked != 142 || built != 112 || unbuilt != 14 || na != 16)
+    /* 142 = 112 + 14 + 16 -> 142 = 114 + 12 + 16 (lane langfix): the probe
+     * asks EVERY encoding now, so `(*UTF)`/`(*UTF8)`, which compile under
+     * `-e utf8`, read `built`. No other row moves (measured: the
+     * --list-syntax diff is those two rows and the header line). */
+    else if (checked != 142 || built != 114 || unbuilt != 12 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 142 = 112 + 14 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 142 = 114 + 12 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

@@ -1,0 +1,178 @@
+# J1 pattern list: id, extra argv, pattern (e8min/mk_j1_patterns.py)
+L01	-	\bERROR\b
+L02	-	\b(?:\d{1,3}\.){3}\d{1,3}\b
+L03	-	\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b
+L04	-	\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}
+L05	-	(?i)authentication failure
+L06	-	"\s5\d\d\s
+L07	-	"(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"
+L08	-	"GET [^"]*\.php[^"]* HTTP/1\.\d" 404
+L09	-	container_\d+_\d+_\d+_\d+
+L10	-	\b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b
+L11	-	req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}
+L12	-	(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b
+L13	-	\b(?:WARNING|ERROR|CRITICAL|TRACE)\b
+L14	-	status: (\d{3}) len: (\d+) time: (\d+\.\d+)
+L15	-	RAS (?:KERNEL|APP) FATAL
+L16	-	^(?!- )\S+
+L17	-	R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d
+L18	-	(?i)\b(\w+)\s+\1\b
+L19	-	(?i)File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*
+L20	-	(?i)0x[0-9a-f]{15,16}
+L21	-	Exception
+L22	-	Connection broken for id \d+
+L23	-	\b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]
+L24	-	(?m)^(?!.*\bINFO\b).*$
+L25	-	(?i)kernel panic
+L26	-	\[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d
+L27	-	(?m)^.{400,}$
+L28	-	\[(notice|error|warn|crit|alert|emerg)\]
+C01	-	\b(?:TODO|FIXME|XXX|HACK)\b.*
+C02	-	(?m)^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$
+C03	-	(?m)^\s*#\s*include\s*[<"]([^>"]+)[>"]
+C04	-	(?m)^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b
+C05	-	"(?:[^"\\\n]|\\.)*"
+C06	-	(?m)^\s*def\s+(\w+)\s*\(
+C07	-	(?m)^class\s+(\w+)\((.*?)\):
+C08	-	(?m)^(?:from\s+[\w.]+\s+)?import\s+.+$
+C09	-	@(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b
+C10	-	public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(
+C11	-	\bfunction\s+(\w+)\s*\(
+C12	-	\$\(\s*["'][^"']+["']\s*\)
+C13	-	(?m)^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(
+C14	-	\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(
+C15	-	\bunsafe\s*\{
+C16	-	(?m)[ \t]+$
+C17	-	\b0x[0-9a-fA-F]{8,}\b
+C18	-	\b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(
+C19	-	(?i)\b(the|a|an|of|to|is|in)\s+\1\b
+C20	-	[\w.+-]+@[\w-]+\.[\w.-]+
+C21	-	\b\d+\.\d+\.\d+(?:-[\w.]+)?\b
+C22	-	\bgoto\s+\w+;
+C23	-	//.*https?://\S+
+C24	-	(?i)\bdeprecated\b
+C25	-	\bf"[^"]*\{[^}]+\}[^"]*"
+C26	-	\b(?:long|set)jmp\b
+C27	-	(?m)^.{121,}$
+P01	-	(?i)\bwhales?\b
+P02	-	(?i)\b(\w+)\s+\1\b
+P03	-e utf8	“[^”]{5,200}”
+P04	-	\b([A-Z][a-z]+) (?:said|replied|cried|answered)\b
+P05	-	\b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+
+P06	-	(?s)[A-Z][^.!?]*\?
+P07	-	\b\w+ly\b
+P08	-	\b1[5-9]\d\d\b
+P09	-	(?m)^CHAPTER (?:\d+|[IVXLC]+)\.
+P10	-	(?m)^CHAPTER [IVXLC]+\.\s*$
+P11	-	\b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b
+P12	-	(?<=Mr\. )[A-Z]\w+
+P13	-	\b\w+(?=,\s+and\b)
+P14	-	\b[A-Za-z]+(?:-[A-Za-z]+)+\b
+P15	-	\b[A-Z]{4,}\b
+P16	-	\*\*\* START OF .*? \*\*\*
+P17	-	\bMycroft\b
+P18	-	--
+P19	-	(?m)\w-$
+P20	-	(?i)\bthe\b
+P21	-	(?m)^$
+P22	-	\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b
+P23	-	\bwas\s+\w+ing\b
+P24	-e utf8	\b[A-Z]\w+['’]s\b
+P25	-	(?s)\*\*\* START OF.*?\*\*\* END OF
+S01	-	(?m)^[A-Z]{2}\t\d{7}\t\d{8}\t[^\t]* city\t
+S02	-	(?m)^TX\t
+S03	-	(?m)(-?\d+\.\d+)\t(-?\d+\.\d+)\s*$
+S04	-	\t\d+\t0\t\d+\.\d+\t0\.\t
+S05	-	(?m)^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),
+S06	-	\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z
+S07	-	"([^"]*)"
+S08	-	"[^"]*,\s(?:Alaska|Hawaii)"
+S09	-	,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),
+S10	-	"mag":(\d+\.\d+)
+S11	-	"place":"([^"]+)"
+S12	-	"(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")
+S13	-	"felt":[1-9]\d*
+S14	-	"NAME":"([^"]+)"
+S15	-	"ISO_A2":"([A-Z]{2})"
+S16	-	\[-?\d+\.\d+,-?\d+\.\d+\]
+S17	-	"POP_EST":(\d{9,})
+S18	-	<(\w[\w-]*)(?:\s[^>]*)?>
+S19	-	<sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>
+S20	-	\bSection\s+\d+[a-z]?\b
+S21	-	\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?
+S22	-	<action-date date="(\d{8})">
+S23	-	(?s)<!--.*?-->
+S24	-	&[a-z]+;|&#\d+;
+M01	-	<a\s+[^>]*href="([^"#][^"]*)"
+M02	-	</?([a-z][a-z0-9]*)\b
+M03	-	\bid="([^"]+)"
+M04	-	<h([1-6])[^>]*>(.*?)</h\1>
+M05	-	(?s)<!--.*?-->
+M06	-	class="[^"]*\bhighlight\b[^"]*"
+M07	-	(?i)&(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);
+M08	-	<img\b[^>]*\bsrc="([^"]+)"
+M09	-	<script[^>]*\bsrc=
+M10	-	(?m)^([=\-~^]{4,})$
+M11	-	(?m)^\.\. ([a-z]+)::\s*(.*)$
+M12	-	:(?:class|func|meth|attr|mod):`~?([^`]+)`
+M13	-	``[^`]+``
+M14	-	(?m)^\.\. versionadded:: (\d+\.\d+)
+M15	-	\[([^\]]+)\]\(([^)]+)\)
+M16	-	(?m)^#{1,6}\s+.+$
+M17	-	https?://[^\s)>\]]+
+M18	-	(?:Added|Changed|Deprecated) in version \d+\.\d+
+M19	-	<code class="[^"]*"><span class="pre">(\w+)</span></code>
+M20	-	(?i)\bdeprecat\w*
+M21	-	user@example\.invalid
+M22	-	<[^>]+>
+M23	-	(?i)\b(\w+)\s+\1\b
+M24	-	(?m)^\s*$
+N01	-e utf8	\p{Han}+
+N02	-e utf8	\p{Hiragana}+
+N03	-e utf8	\p{Katakana}{2,}
+N04	-e utf8	《[^》]+》
+N05	-e utf8	(\p{Han}+)《(\p{Hiragana}+)》
+N06	-e utf8 --ucp	\b\p{Lu}\p{Ll}+\b
+N07	-e utf8	\p{Cyrillic}+
+N08	-e utf8	\p{Greek}*[άέήίόύώ]\p{Greek}*
+N09	-e utf8	\p{Hebrew}+
+N10	-e utf8	[\x{0591}-\x{05C7}]
+N11	-e utf8 --ucp	(?i)\b\w*[éèêë]\w*\b
+N12	-e utf8 --ucp	\b\w*[äöüÄÖÜß]\w*\b
+N13	-e utf8 --ucp	\b(?:der|die|das|den|dem)\s+\p{Lu}\p{L}+
+N14	-e utf8	(?<!\p{L})\p{Cyrillic}{7,}(?!\p{L})
+N15	-e utf8	[，。！？；：、]
+N16	-e utf8	「[^」]*」
+N17	-e utf8	(?<=，)\p{Han}{4}(?=，)
+N18	-e utf8	[^\x00-\x7f]
+P26	-	(?m)^\s*$
+P27	-	(?m)\w-\r?$
+N19	-e utf8	(?m)^[\x00-\x7f]*$
+N20	-e utf8	[\x{00C0}-\x{00FF}]{4,}
+N21	-e utf8	(?<!\p{L})\p{Lu}{3,}(?!\p{L})
+N22	-e utf8	\p{M}
+N23	-e utf8	\p{Latin}+
+N24	-e utf8	\p{Nd}+
+N25	-e utf8 --ucp	(?i)(?<!\w)и(?!\w)
+B01	-	django-5\.0/[\w/.-]+\.py(?=\x00)
+B02	-	\x89PNG\r\n\x1a\n
+B03	-	\x1f\x8b\x08
+B04	-	\x00{16,}
+B05	-	ustar\x0000
+B06	-	PK\x03\x04
+B07	-	(?s)PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)
+B08	-	1AY&SY
+B09	-	[\x20-\x7e]{8,}
+B10	-	[\x80-\xff]{4,}
+B11	-	\xde\x12\x04\x95
+B12	-	[0-7]{11}\x00
+B13	-	\bpng_[a-z_0-9]+\(
+B14	-	(?m)^#!.*python.*$
+B15	-	\xef\xbb\xbf
+B16	-	\r\n
+B17	-	https?://[\x21-\x7e]+
+B18	-	\x1f\x8b\x08\x08
+B19	-	PK\x05\x06
+B20	-	(?i)permission is hereby granted
+B21	-	\xff\xd8\xff
+B22	-	[\x20-\x7e]{6,}\x00

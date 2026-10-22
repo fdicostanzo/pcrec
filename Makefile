@@ -327,12 +327,14 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 # [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
-# once more with -DPCREC_HARNESS, which adds three options:
+# once more with -DPCREC_HARNESS, which adds four options:
 # `--harness=no-compound`, the compound family's force-decline lever,
 # (R17-b' B1, lane fdb1) `--harness=measures=FILE`, the kit's measurement-set
 # lever (a section-TSV set handed to mf_art_begin; read by no routed finder
 # row before B4), and (R17-b' B2) `--harness=arm-reach`, the kit's per-arm
-# entry counts for a routed finder decision, appended to the artifact
+# entry counts for a routed finder decision, appended to the artifact, and
+# ([KIT-VERIFY] U1 Z2) `--harness=kit-proof`, which routes the `cover` LOCATE
+# row and previews the kit's REPORT routing step (kit_proof.md §7)
 # (PcrecHarnessOptions, src/core/internal.h). Only the test harness and
 # bisects run it; the shipped build/pcrec has no such option.
 $(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
@@ -383,8 +385,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
-      test-spec-history test-plan-lint test-compound test-endmark test-partlayout \
-      test-findall test-subst test-subst-d27 test-ci-shards
+      test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
+      test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -1500,6 +1502,14 @@ test-compound: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-compound.ran"; fi
 	EVERY=$${EVERY:-8} bash tests/compound/run_compound_unit.sh
 
+# [KIT-VERIFY] Z2 (docs/design/kit_proof.md §6.3, §6.4, §7): the `cover`
+# row's verdicts on the harness-routed artifacts, the span slice's
+# statements, and every answer against libpcre2 10.46's committed answers.
+# tests/kitproof/.
+test-kitproof: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-kitproof.ran"; fi
+	bash tests/kitproof/run_cover.sh
+
 # [ENTRY-TABLE] E1 (docs/design/compound_entries.md §3.6): the part-layout
 # controls' checks -- the independent evaluator on the real object, the
 # hand-written precedence and held fixtures, A1 disjointness, the attribute
@@ -1581,6 +1591,13 @@ test-clskit: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-clskit.ran"; fi
 	bash tests/clskit/run_clskit_tests.sh
 
+# [SUBST-CASE] the generated case map (src/core/case_tables.inc) held to
+# libpcre2 10.46's own pcre2_substitute answers for EVERY scalar value, from the
+# committed oracle store (the `case-map` kind); no libpcre2 needed at run time.
+test-casemap:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-casemap.ran"; fi
+	python3 -I tests/oracle/case_map_check.py
+
 test-uprops-utf8: all
 	ENC=utf8 bash tests/uprops/run_uprops_tests.sh
 
@@ -1609,9 +1626,16 @@ test-thread: all
 # call-bearing default entry does not fit a 128 KB thread -- so the arm that
 # reproduces it is a PINNED state, and the script FAILS if it ever stops
 # reproducing, because the record would then be out of date.
+#
+# [DD-10] ITS SECOND SCRIPT ASKS THE SAME OF THE COMPILER: pcrec_compile at the
+# nesting cap, and on long chains, on a thread of docs/spec/limits.md §3.10's
+# stated budget (~5 s, single-process, since K130's fix). The budget is
+# measured at the default CFLAGS, so the script is told where CFLAGS came from
+# and SKIPS otherwise.
 test-stackdepth: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-stackdepth.ran"; fi
 	bash tests/thread/run_stackdepth_tests.sh
+	COMPILE_STACK_CFLAGS_ORIGIN='$(origin CFLAGS)' COMPILE_STACK_CFLAGS='$(CFLAGS)' bash tests/thread/run_compile_stack.sh
 
 # [DD-14.FB] the caller-provided frame buffer's MEASUREMENTS, OPT-IN -- the
 # same shape and the same reasoning as test-specimen below: section 2 reserves
@@ -1676,6 +1700,14 @@ test-spec-history:
 test-plan-lint:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-plan-lint.ran"; fi
 	bash tests/plan_lint/run_plan_lint.sh
+
+# CLAUDE.md files are orientation guides, not history or notes (Frank,
+# 2026-10-22): scripts/check_claudemd_size.sh --all over the tree (limits in
+# its one table) plus its sabotage self-test. Text only, no dependence on
+# `all`. The commit-time gate is the pre-commit hook's --staged row.
+test-claudemd-size:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-claudemd-size.ran"; fi
+	bash tests/claudemd_size/run_claudemd_size.sh
 
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
 # analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
@@ -2128,7 +2160,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound test-partlayout test-findall test-subst test-subst-d27 test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

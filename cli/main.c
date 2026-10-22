@@ -291,10 +291,11 @@ static void usage(FILE *f)
           "                 escape form (\\\" \\\\ \\n \\t \\r \\f \\v \\xHH), decoded by\n"
           "                 pcrec's own decoder. Lets a multi-line or high-byte\n"
           "                 pattern be written on one line; \\x00 is refused (K9)\n"
-          "  --no-captures  emit a matcher with no capture output (RX_NCAPS 1,\n"
-          "                 DFA engine). Captures are ON by default; this is\n"
-          "                 the generation axis that recovers the pre-M4.5\n"
-          "                 pure-DFA artifact for a group-bearing pattern\n"
+          "  --no-captures  emit a matcher with no capture output (RX_NCAPS 1;\n"
+          "                 the DFA wherever the pattern allows one). Captures\n"
+          "                 are ON by default; this is the generation axis\n"
+          "                 that recovers the pre-M4.5 pure-DFA artifact for\n"
+          "                 a group-bearing pattern\n"
           "  --emit-ir      print the VM PROGRAM LISTING for the pattern and exit:\n"
           "                 labels, choice points with their preference order,\n"
           "                 capture slot assignments, island boundaries and\n"
@@ -1243,6 +1244,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             st->harness.measures = harness_measures_load(a + 19);
         /* [MEMFN] R17-b' B2 (R-MS6): the kit's arm-entry counter */
         else if (!strcmp(a, "--harness=arm-reach")) st->harness.arm_reach = 1;
+        /* [KIT-VERIFY] U1 Z2: route `cover` and preview the kit's R-26.6 */
+        else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
@@ -1426,6 +1429,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->features = argv[++i];
         }
+        /* `--features=LIST`, the `=value` spelling `--engine=`/`--encoding=`
+         * also take; a later spelling wins either way. */
+        else if (!strncmp(a, "--features=", 11)) st->features = a + 11;
         else if (!strcmp(a, "--explain") || !strcmp(a, "--flavour")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);

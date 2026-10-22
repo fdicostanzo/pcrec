@@ -20,11 +20,17 @@ The five failure rules (§R4.3.4):
      on a synthetic caller every time (the selftest lines);
   3. a `delegated` row's emitter still spells a form (two spellings of one
      search, D122) -- vacuous while there are no delegated rows, and said so;
-  4. a `pending` row's emitter spells nothing: the row is stale.
+  4. a `pending` row's emitter spells nothing: the row is stale. A `preview`
+     row (a site whose door is reached ONLY through a harness lever, not yet
+     shipped) is accepted iff its door is rendered over the corpus pass's
+     harness configs and over NO shipped config (site_census.PASS_CONFIGS,
+     config_class): the second half is the honesty check. Its emitters must
+     spell no form (rule 3), and it is a listed site for rule 2. Flipping
+     `preview` to `delegated` is the step that ships the lever's row.
   5. the `kinds` column against the corpus pass: a kind a site stated over
      the pass that its row does not list, or a listed kind no site stated
      (K35: the column is the population); UNSTATED is no kind;
-Plus the manifest's own shape: two-state status, unique ids, every named
+Plus the manifest's own shape: three-state status (pending, preview, delegated), unique ids, every named
 function and companion defined, and the row count at or above the floor.
 
 Prints PASS:/FAIL: lines and the `checks passed:`/`checks failed:` totals
@@ -42,7 +48,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from c17_lex import scan  # noqa: E402
 import site_census  # noqa: E402
 
-STATUSES = ('delegated', 'pending')     # the ruled vocabulary, no third state
+STATUSES = ('delegated', 'pending', 'preview')   # the ruled vocabulary; `preview` (z2build ruling 2)
+                                                  # is a site only the harness lever routes
 BUDGETS = ('scan', 'loop')
 SCAN_DIRS = ('src/gen', 'src/enc')      # [rev4.6] src/enc/ for N7 (Q54)
 
@@ -95,7 +102,7 @@ def rule5(per_kinds, row_kinds):
         ok('rule 5: every kinds column matches the kinds the corpus pass observed')
 
 
-def rule2(root, cc, deleg_rows, row_kinds):
+def rule2(root, cc, deleg_rows, row_kinds, prev_rows):
     """Rule 2, the dynamic half, re-keyed to the kit's API (R4c, Q3): a call to
     mf_define/mf_emit from a pcrec function no `delegated` row names, counted
     over a corpus compile pass. tests/memfn/site_census.py has the mechanism."""
@@ -104,8 +111,8 @@ def rule2(root, cc, deleg_rows, row_kinds):
     callers = site_census.find_callers(root)
     doors = site_census.find_door_callers(root)
     ncalls = sum(sum(c.values()) for c in callers.values())
-    listed = set().union(*deleg_rows.values()) if deleg_rows else set()
-    if ncalls == 0 and not deleg_rows:
+    listed = set().union(*deleg_rows.values(), *prev_rows.values()) if (deleg_rows or prev_rows) else set()
+    if ncalls == 0 and not deleg_rows and not prev_rows:
         print('UNREACHED: rule 2 (dynamic half): no pcrec source under src/ calls mf_define or '
               'mf_emit and no manifest row is `delegated`, so the corpus compile pass has no '
               'site to count -- declared UNREACHED (K35), NOT passed. Kit calls counted: 0. '
@@ -113,9 +120,9 @@ def rule2(root, cc, deleg_rows, row_kinds):
               'itself is proven by the selftest lines above.')
         return
     if ncalls == 0:
-        bad('rule 2: %d row(s) are `delegated` (%s) but no pcrec source under src/ calls '
-            'mf_define or mf_emit: the rows delegate to nothing' % (len(deleg_rows),
-                                                                  ','.join(sorted(deleg_rows))))
+        bad('rule 2: %d row(s) are `delegated` or `preview` (%s) but no pcrec source under src/ '
+            'calls mf_define or mf_emit: the rows delegate to nothing'
+            % (len(deleg_rows) + len(prev_rows), ','.join(sorted(set(deleg_rows) | set(prev_rows)))))
         return
     # pcrec's doors (site_census.DOORS): each must still call the kit; its
     # CALLERS are the sites and answer to the row rule like direct callers
@@ -145,19 +152,23 @@ def rule2(root, cc, deleg_rows, row_kinds):
             bad('rule 2 (dynamic half): the traced build failed: %s' % why)
             return
         pats = site_census.corpus_patterns(root)
-        okc, per = site_census.run_corpus(exe, pats, tmp)
+        okc, per, tags = site_census.run_corpus(exe, pats, tmp)
         print('corpus pass: %d patterns sampled, %d compiled' % (len(pats), okc))
         if okc < site_census.CORPUS_FLOOR:
             bad('rule 2 (dynamic half): only %d compiles in the corpus pass, below its K35 floor '
                 'of %d: the census is not a census' % (okc, site_census.CORPUS_FLOOR))
             return
-        probs, st = site_census.verdict(per, deleg_rows)
+        probs, st = site_census.verdict(per, deleg_rows, preview=prev_rows, tags=tags)
         print('corpus pass: %d site render(s) over %d compiles (%d render at least one site, at '
               'most %d per compile); by function: %s'
               % (st['calls'], st['compiles'], st['withsite'], st['max'],
                  ', '.join('%s %d' % kv for kv in sorted(st['seen'].items()))))
         for p in probs:
             bad(p)
+        for row, h in sorted(st['preview'].items()):
+            if h['harness'] and not h['shipped']:
+                ok('rule 4 (preview): %s was rendered by %d harness-config compile(s) and by no '
+                   'shipped-config one' % (row, h['harness']))
         rule5(site_census.door_kinds(per), row_kinds)
         if not probs:
             ok('rule 2 (dynamic half): every function that reached the kit over the corpus pass '
@@ -225,6 +236,7 @@ def main():
     seen = {}
     pend_fns, deleg_fns = {}, {}
     deleg_rows = {}      # delegated row id -> its emitters and companions
+    prev_rows = {}       # preview row id -> its emitters and companions
     counts = {s: 0 for s in STATUSES}
     for n, (site, emitters, _op, kinds, budget, _step, status, comps, _ref) in rows:
         where = '%s:%d (%s)' % (os.path.relpath(mpath, root), n, site)
@@ -252,12 +264,13 @@ def main():
                 bad('%s: %s is defined nowhere under %s (renamed or removed?)'
                     % (where, fn, ' or '.join(SCAN_DIRS)))
         for fn in fns:
-            (pend_fns if status == 'pending' else deleg_fns).setdefault(fn, []).append(site)
-        if status == 'delegated':
-            deleg_rows[site] = set(fns) | {c for c in comps.split(',') if c}
-    total = counts['delegated'] + counts['pending']
-    print('manifest: %d rows -- delegated %d / pending %d (K35 floor %d)'
-          % (total, counts['delegated'], counts['pending'], floor))
+            (pend_fns if status == 'pending' else deleg_fns).setdefault(fn, []).append(site)   # preview rides rule 3
+        if status in ('delegated', 'preview'):
+            (deleg_rows if status == 'delegated' else prev_rows)[site] = \
+                set(fns) | {c for c in comps.split(',') if c}
+    total = sum(counts.values())
+    print('manifest: %d rows -- delegated %d / preview %d / pending %d (K35 floor %d)'
+          % (total, counts['delegated'], counts['preview'], counts['pending'], floor))
     if total < floor:
         bad('the manifest holds %d rows, below its K35 floor of %d: a row was '
             'deleted without the floor being lowered in the same change' % (total, floor))
@@ -280,10 +293,10 @@ def main():
            'form is named by a pending row' % len(spells))
 
     # -- rule 2: an unlisted site, dynamic half ----------------------------
-    rule2(root, cc, deleg_rows, row_kinds)
+    rule2(root, cc, deleg_rows, row_kinds, prev_rows)
 
     # -- rule 3: a delegated row whose emitter still spells a form ----------
-    if counts['delegated'] == 0:
+    if counts['delegated'] + counts['preview'] == 0:
         print('VACUOUS: rule 3 (delegated emitter still spells a form): 0 '
               'delegated rows, nothing to check -- not counted as a pass.')
     else:
@@ -295,8 +308,8 @@ def main():
                     'two spellings of one search (D122)'
                     % (at, fn, ','.join(deleg_fns[fn]), lid, ex))
         if r3 == 0:
-            ok('rule 3: no emitter of the %d delegated rows spells a form'
-               % counts['delegated'])
+            ok('rule 3: no emitter of the %d delegated or preview rows spells a form'
+               % (counts['delegated'] + counts['preview']))
 
     # -- rule 4: a pending row whose emitter spells nothing ----------------
     for fn in sorted(pend_fns):

@@ -1,0 +1,20 @@
+--- baseline (want PASS)
+== anchors and positive controls (INVALID if one does not read R)
+E8 VERDICT: PASS
+--- planted_unlisted (want REFUTED)
+== anchors and positive controls (INVALID if one does not read R)
+  UNLISTED LOSS j1-S03 c__f3 +8.0% (gap 1000.0 B, misses/match 0.900)
+  REFUTED: j1-S03 on c__f3: V1 loses +8.0% beyond floor, unlisted (gap 1000.0 B, misses/match 0.900)
+E8 VERDICT: REFUTED
+E8 VERDICT: REFUTED
+--- planted_listed (want PASS)
+== anchors and positive controls (INVALID if one does not read R)
+  LISTED(rule) j1-S03 c__f3 +8.0% gap<=4.0 B (misses/match 0.010)
+  REVISIT j1-S03 c__f3 (1000000 B)
+E8 VERDICT: PASS
+--- planted_invalid (want INVALID)
+== anchors and positive controls (INVALID if one does not read R)
+  INVALID: EL1 reads N, not R
+E8 VERDICT: INVALID
+E8 VERDICT: INVALID
+sabotage pair: ALL FOUR EXPECTATIONS HOLD

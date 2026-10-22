@@ -4,7 +4,7 @@
 # checked manifest; integration.md §R4.3.4). `make test-memfn-manifest`.
 #
 # WHAT IT CHECKS: tests/memfn/site_manifest.tsv (one row per search or
-# span-compare site, status `pending` or `delegated`) against what pcrec's
+# span-compare site, status `pending`, `delegated` or `preview`) against what pcrec's
 # emitters actually spell, read through tests/memfn/search_vocab.tsv (the
 # search-form vocabulary C12 will share). The four rules and the manifest's
 # own shape are in site_manifest_check.py's header. Static: it reads src/ and
@@ -35,7 +35,7 @@
 
 set -u
 
-C17_ROW_FLOOR=13   # M7 (R-8, Q-R8-1): N7U split from N7; M6 (Q-R10-7): VMLAZY listed; D147 add. 12: N6 retired (not a search site), 15 -> 14; R-12 REPLACE (Q-R12-2): VMLAZY deleted (its instances are VMSPAN/VMSTRIDE's), 14 -> 13; R-12 (Q-R12-5): VALID listed, 13 -> 14; R-12 (Q-R12-3, D147 add. 14): N7U retired (utf8's caseless walk is the encoding's, not a kit site), 14 -> 13
+C17_ROW_FLOOR=14   # M7 (R-8, Q-R8-1): N7U split from N7; M6 (Q-R10-7): VMLAZY listed; D147 add. 12: N6 retired (not a search site), 15 -> 14; R-12 REPLACE (Q-R12-2): VMLAZY deleted (its instances are VMSPAN/VMSTRIDE's), 14 -> 13; R-12 (Q-R12-5): VALID listed, 13 -> 14; R-12 (Q-R12-3, D147 add. 14): N7U retired (utf8's caseless walk is the encoding's, not a kit site), 14 -> 13; [KIT-VERIFY] Z2 (lane z2build): COVER listed `preview` (a site only the harness lever routes; rule 4 holds it to harness-config renders only), its render reached through site_census.PASS_CONFIGS, 13 -> 14
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

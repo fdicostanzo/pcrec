@@ -277,13 +277,24 @@ for name, src, tgts in (("multi2", os.path.join(FX, "multi2.rxt"), ["t_web", "t_
 # a compound artifact: every part's object equals the shell's
 r = subprocess.run([PC, "-p", "rx", "--features", "all", "--pattern", r"^\s+|\s+$",
                     "-o", os.path.join(WORK, "cmp.c")], capture_output=True, text=True, timeout=120)
+# [K113] a part inherits the walk's chain and object: one resolve record and
+# one object set for the whole invocation, no per-part ones. The parts' compiles
+# are still witnessed by their reader records (`KSTRACE analysis byte-rate
+# <reader> <bundle>`, one set per attempt), each naming the bundle the shell's
+# one object carries.
 gs = groups(r.stderr)
-objs = {tuple(g["lead"]) for g in gs}
-if r.returncode == 0 and len(gs) >= 3 and len(objs) == 1:
-    ok(f"C-E1-4 a compound artifact's {len(gs)} compiles (the shell and its parts) carry equal objects")
+reads = [ln.split("\t") for ln in r.stderr.split("\n") if ln.startswith("KSTRACE\tanalysis\tbyte-rate\t")]
+picks = [x for x in reads if x[3] == "pcrec_req_pick"]
+lead = gs[0]["lead"] if len(gs) == 1 else []
+bundles = {x[4] for x in reads}
+if (r.returncode == 0 and len(gs) == 1 and len(gs[0]["all"]) == len(lead) > 0
+        and len(picks) >= 3 and bundles == {lead[0][4]}):
+    ok(f"C-E1-4 a compound artifact's {len(picks)} compiles (the shell and its parts) carry the "
+       "walk's one object (built once, no per-part resolve)")
 else:
-    bad(f"C-E1-4 the compound witness: rc {r.returncode}, {len(gs)} compile(s), "
-        f"{len(objs)} distinct object(s) (want >= 3 compiles, 1 object)")
+    bad(f"C-E1-4 the compound witness: rc {r.returncode}, {len(picks)} compile(s) by reader record, "
+        f"{len(gs)} resolve(s), reader bundles {sorted(bundles)} (want >= 3 compiles, 1 resolve, "
+        "1 object, every reader on its bundle)")
 if c4["quiet"] >= 1 and c4["agree"] >= 1:
     ok(f"C-E1-4 the stamp agrees with the object on {c4['agree']} artifact(s); "
        f"{c4['quiet']} OFFERED-NOT-ASKED artifact(s) stamp \"\" with the kind PRESENT")

@@ -11,7 +11,7 @@ the Makefile mentions Unicode.
 WHAT IT READS   `UnicodeData.txt`, `CaseFolding.txt`, `Scripts.txt`,
                 `ScriptExtensions.txt` and `PropertyValueAliases.txt`, beside
                 this file, at the pinned version.
-WHAT IT WRITES  three GENERATED files, never hand-edited
+WHAT IT WRITES  four GENERATED files, never hand-edited
                 (`src/parse/cls_bits.inc`'s precedent):
 
   `src/parse/uprops_tables.inc`      the general-category interval tables
@@ -24,6 +24,11 @@ WHAT IT WRITES  three GENERATED files, never hand-edited
                                      TEXT for the UTF-8 backend's caseless
                                      backreference residual to embed in an
                                      artifact.
+  `src/core/case_tables.inc`          [SUBST-CASE] the one-to-one case MAP
+                                     (upper, lower) compiled substitution's
+                                     `\\U \\L \\u \\l` forcing reads; derived
+                                     from the fold classes above plus
+                                     `UnicodeData.txt`'s general category.
 
     python3 third_party/ucd-16.0.0/generate.py        # writes them
     python3 third_party/ucd-16.0.0/generate.py --check # exits 1 if stale
@@ -146,6 +151,7 @@ ALIAS_SOURCE = os.path.join(HERE, "PropertyValueAliases.txt")
 OUT = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
 FOLD_OUT = os.path.join(REPO, "src", "core", "fold_tables.inc")
 FOLD_TEXT_OUT = os.path.join(REPO, "src", "enc", "utf8_fold_pairs.inc")
+CASE_OUT = os.path.join(REPO, "src", "core", "case_tables.inc")
 
 UNICODE_VERSION = "16.0.0"
 MAXCP = 0x10FFFF
@@ -872,18 +878,132 @@ def emit_fold_artifact_text(f):
     out.extend(body)
     return "".join(out)
 
+# ---------------------------------------------------------------------------
+# (5) [SUBST-CASE] the simple one-to-one case MAP, PCRE2's rule
+# ---------------------------------------------------------------------------
+#
+# Compiled substitution forces case (`\\U \\L \\u \\l`) through ONE simple
+# one-to-one map, and the map PCRE2 10.46 applies is NOT Unicode's
+# `toupper`/`tolower` (no `SpecialCasing`, no `UnicodeData` mapping fields).
+# MEASURED 2026-10-22 over every scalar value (pcre2_substitute `\\U$0` and
+# `\\L$0` in UTF mode; the stored answers are `oracle_store/libpcre2-10.46/
+# case-map.tsv`): the whole behaviour is this rule over the SIMPLE FOLD
+# CLASSES of section (4) and the general category, with no per-entry
+# exception.  `partner(c)`:
+#
+#   * a class member that is not its class's fold TARGET maps to the target
+#     (`K` -> `k`, U+1E9E -> `ß`, U+00B5 -> U+03BC);
+#   * the TARGET maps to the smallest other member of its class (`k` -> `K`,
+#     `σ` -> `Σ`, U+03BC -> U+00B5, U+03B9 -> U+0345, U+A64B -> U+1C88);
+#   * a NON-ASCII code point never maps to an ASCII one (U+212A KELVIN and
+#     U+017F LONG S stay as they are; U+0131 and U+0130 are in no class at all,
+#     the `T` fold lines).
+#
+# and the CATEGORY gates which direction applies the partner: upper forcing
+# moves `Ll` and `Lt`, lower forcing moves `Lu` and `Lt`; every other
+# category (the Roman numerals, U+0345 `Mn`) is left alone in both.  Zero
+# disagreements with libpcre2 over all 1,112,064 scalar values.
+#
+# Lengths can GROW: `ß` -> U+1E9E (2 -> 3 bytes), U+023A -> U+2C65 (2 -> 3),
+# which is why the generator also states the worst UTF-8 byte growth per
+# direction for the sizing pass.
+
+def utf8_len(cp):
+    return 1 if cp < 0x80 else 2 if cp < 0x800 else 3 if cp < 0x10000 else 4
+
+
+def category_of(cats):
+    """{cp: general category} for every code point `cats` lists."""
+    out = {}
+    for name, ivs in cats.items():
+        for lo, hi in ivs:
+            for cp in range(lo, hi + 1):
+                out[cp] = name
+    return out
+
+
+def case_maps(fold, orbits, cats):
+    """(upper, lower): sorted {cp: target} dicts, identity entries omitted."""
+    cat = category_of(cats)
+    orbit = {cp: o for o in orbits for cp in o}
+    upper, lower = {}, {}
+    for cp, o in orbit.items():
+        target = fold.get(cp, cp)
+        partner = target if target != cp else min(m for m in o if m != cp)
+        if cp >= 0x80 and partner < 0x80:
+            continue
+        k = cat.get(cp)
+        if k in ("Ll", "Lt"):
+            upper[cp] = partner
+        if k in ("Lu", "Lt"):
+            lower[cp] = partner
+    return upper, lower
+
+
+CASE_BANNER = """\
+/* case_tables.inc -- GENERATED, DO NOT EDIT.
+ *
+ * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
+ * vendored `CaseFolding.txt` and `UnicodeData.txt` at Unicode {version}.
+ * Regenerate with `make gen-tables`; `make test` re-checks staleness
+ * (`--check`).  Provenance and licence: `third_party/ucd-16.0.0/PROVENANCE.md`.
+ *
+ * WHAT IT IS: the simple ONE-TO-ONE case map PCRE2's substitution case
+ * forcing applies (`\\U \\L \\u \\l`), as two arrays sorted by `cp`.  A code
+ * point NOT listed maps to itself.  The rule that produces it, and the
+ * libpcre2 10.46 measurement that fixes it, are in the generator's section
+ * (5); `tests/oracle/case_map_check.py` holds every entry, and every ABSENCE,
+ * to `oracle_store/libpcre2-10.46/case-map.tsv`.
+ *
+ * TO INCLUDE: `#include "case_tables.inc"` (src/core/).  Self-contained; it
+ * defines `PcrecCaseMap`, `pcrec_case_upper_map[]`, `pcrec_case_lower_map[]`,
+ * their `_count`s and the two byte-growth constants.  Look up by binary
+ * search on `.cp`.
+ *
+ * WORST UTF-8 BYTE GROWTH of one mapped code point (target length - source
+ * length): upper {gu}, lower {gl}.  A one-for-one mapped output is therefore
+ * at most `input_len + n * growth` bytes.
+ *
+ * SUMMARY: {nu} upper entries, {nl} lower entries.
+ */
+"""
+
+
+def emit_case_tables(upper, lower):
+    def growth(m):
+        return max(utf8_len(t) - utf8_len(c) for c, t in m.items())
+    out = [CASE_BANNER.format(version=UNICODE_VERSION, nu=len(upper),
+                              nl=len(lower), gu=growth(upper),
+                              gl=growth(lower))]
+    out.append("\n#ifndef PCREC_CASE_TABLES_INC\n#define PCREC_CASE_TABLES_INC\n")
+    out.append("\ntypedef struct { unsigned cp, to; } PcrecCaseMap;\n")
+    out.append("\n#define PCREC_CASE_UPPER_MAX_GROWTH %d\n" % growth(upper))
+    out.append("#define PCREC_CASE_LOWER_MAX_GROWTH %d\n" % growth(lower))
+    for name, m in (("upper", upper), ("lower", lower)):
+        items = sorted(m.items())
+        out.append("\nstatic const PcrecCaseMap pcrec_case_%s_map[] = {\n" % name)
+        for i in range(0, len(items), 4):
+            out.append("    " + " ".join("{0x%X,0x%X}," % p
+                                         for p in items[i:i + 4]) + "\n")
+        out.append("};\n")
+        out.append("#define PCREC_CASE_%s_COUNT %d\n" % (name.upper(), len(items)))
+    out.append("\n#endif /* PCREC_CASE_TABLES_INC */\n")
+    return "".join(out)
+
 
 def main():
     check = "--check" in sys.argv[1:]
     cats = read_unicodedata(SOURCE)
     fold = read_casefolding(FOLD_SOURCE)
     orbits = fold_orbits(fold)
+    upper, lower = case_maps(fold, orbits, cats)
     aliases = read_value_aliases(ALIAS_SOURCE)
     scripts = read_scripts(SCRIPT_SOURCE)
     products = [
         (OUT, SOURCE, emit(build(cats, aliases, scripts, SCRIPTEXT_SOURCE))),
         (FOLD_OUT, FOLD_SOURCE, emit_fold_tables(orbits)),
         (FOLD_TEXT_OUT, FOLD_SOURCE, emit_fold_artifact_text(fold)),
+        (CASE_OUT, FOLD_SOURCE, emit_case_tables(upper, lower)),
     ]
     if check:
         stale = 0

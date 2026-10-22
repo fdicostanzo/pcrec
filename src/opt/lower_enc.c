@@ -367,17 +367,15 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
                 res = alt;
             }
             /* AN `A_ALT` REPLACEMENT IS SEALED IN AN `A_CAT(A_EMPTY, alt)`
-             * WRAPPER, and the wrapper is load-bearing rather than tidy: the
-             * spliced node sits in whatever SLOT the leaf sat in, and a slot
-             * at the top of a structure whose owner walks its own spine —
-             * `vm_look_behind`'s per-branch chain over `u.look.nbranch`
-             * parse-time branches is the live one — would read a bare
-             * alternation AS more spine. `(?<=[a\x{3b1}])x` compiled to an
-             * internal error ("alternation spine is longer than its stored
-             * branch count") before this wrapper existed; the two extra
-             * nodes emit nothing (`A_EMPTY` is an epsilon in both backends)
-             * and keep every enclosing structure's arity what the parse
-             * said it was. */
+             * WRAPPER. It was load-bearing when it was written: a lookbehind's
+             * branch walk read a bare alternation in its first-branch slot AS
+             * more spine, and `(?<=[a\x{3b1}])x` compiled to an internal
+             * error. Since K123 the one branch split,
+             * `pcrec_lookbehind_branches`, peels exactly `u.look.nbranch - 1`
+             * spine nodes and takes whatever is left as the first branch, so
+             * the seal is now REDUNDANT. It stays because removing it moves
+             * emitted bytes (an abi event); the two extra nodes emit nothing
+             * (`A_EMPTY` is an epsilon in both backends). */
             if (bl.n > 1) {
                 Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
                 seal->l = pcrec_ast_node(lc->cx, A_EMPTY);

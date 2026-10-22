@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# 572-kit-r28-meas: painted-stack peak of pcrec_compile, before (lane/dd10) vs after (+R-28)
+set -u
+ROOT=/home/pcrec/projects/pcrec/worktrees
+B=$ROOT/r28m0 A=$ROOT/r28m SCR=$ROOT/r28/build/r28meas
+PATS=('a' 'abc' 'a(b|c)+d')
+case "${1:-}" in
+    --dry-run)
+        [ -f "$B/tests/thread/compile_stack_driver.c" ] && [ -f "$A/tests/thread/compile_stack_driver.c" ] ||
+            { echo "driver source missing" >&2; exit 1; }
+        echo "would run: make -C $B -j8 build/libpcrec.a; make -C $A -j8 build/libpcrec.a; paint 3 patterns x 2 trees"
+        echo "boxqueue: cap 900"; echo "boxqueue: patience none"
+        echo "boxqueue: expect rows=3 lines=^ROW "
+        exit 0 ;;
+    --ready)
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in
+            pending*|running*) echo held; exit 75;; esac
+        exit 0 ;;
+esac
+mkdir -p "$SCR" || exit 1
+export TMPDIR=$SCR
+for t in "$B" "$A"; do
+    make -C "$t" -j8 build/libpcrec.a || { echo "build failed in $t"; exit 1; }
+done
+meas() { # tree pattern -> hw bytes
+    local t=$1 p=$2 pf d out
+    d=$SCR/$(basename "$t"); mkdir -p "$d"
+    [ -x "$d/drv" ] || gcc -O2 -std=gnu11 -I"$t/lib" -o "$d/drv" "$t/tests/thread/compile_stack_driver.c" \
+        "$t/build/libpcrec.a" -lpthread -lm || return 1
+    pf=$d/pat.txt; printf '%s' "$p" > "$pf"
+    out=$(gnutimeout 120 "$d/drv" 786432 "$pf") || return 1
+    case "$out" in "rc=0 "*) ;; *) echo "bad run: $out" >&2; return 1;; esac
+    echo "$out" | sed -n 's/.* hw=\([0-9]*\).*/\1/p'
+}
+rc=0
+printf '%-4s %-12s %10s %10s %10s\n' '' pattern before_B after_B delta
+for p in "${PATS[@]}"; do
+    b=$(meas "$B" "$p") && a=$(meas "$A" "$p") || { echo "measure failed for $p"; rc=1; continue; }
+    printf 'ROW  %-12s %10d %10d %10d\n' "$p" "$b" "$a" $((a - b))
+done
+[ $rc -eq 0 ] && echo "== r28meas COMPLETE"
+exit $rc

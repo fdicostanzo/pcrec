@@ -96,6 +96,15 @@ else
     ok "[cand-oracle-build] the trace build built"
 fi
 
+# [KIT-VERIFY] U1 Z2: a row whose availability is the TEST HARNESS's lever
+# (`cover`, routed only by `--harness=kit-proof`) is reached by a witness whose
+# FLAGS carry a `--harness=` option, compiled by the trace build's own
+# `pcrec-harness` (the same sources, the same -DPCREC_CAND_TRACE). A SHIPPED
+# build never routes such a row: the [cand-oracle-shipped] check below
+# compiles the same witnesses WITHOUT the option and demands no hit on the row.
+HBIN="$(dirname "$BIN")/pcrec-harness"
+nharness=0
+
 # The table's row identities, read off its source text.
 rows="$(awk '/^static const CandRow cand_rows\[\] = \{/{f=1;next} f&&/^\};/{f=0} f' "$EMIT" \
         | grep -oE '\.c = \{ "[^"]+"' | sed 's/.*"\([^"]*\)"/\1/' | sort -u)"
@@ -120,7 +129,15 @@ while IFS=$'\t' read -r row flags pat; do
     case "$row" in ''|'#'*) continue ;; esac
     nwit=$((nwit + 1))
     fl=(); [ "$flags" != "-" ] && read -r -a fl <<< "$flags"
-    "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all "${fl[@]}" -o "$WORK/w.c" \
+    wbin="$BIN"
+    case " $flags " in
+        *" --harness="*)
+            wbin="$HBIN"; nharness=$((nharness + 1))
+            if [ ! -x "$wbin" ]; then
+                bad "[cand-oracle] no trace-built pcrec-harness beside $BIN for $flags $pat"; continue
+            fi ;;
+    esac
+    "$TIMEOUT_BIN" 60 "$wbin" -p rx --features all "${fl[@]}" -o "$WORK/w.c" \
         --pattern "$pat" > /dev/null 2> "$WORK/err"
     rc=$?
     if grep -q '^CANDORACLE' "$WORK/err"; then
@@ -134,6 +151,33 @@ while IFS=$'\t' read -r row flags pat; do
     fi
     awk -F'\t' '$1=="CANDROW" && $2=="FINISH" {print $4" "$3" "$7}' "$WORK/err" >> "$WORK/cells"
 done < "$WIT"
+
+# [KIT-VERIFY] U1 Z2 THE SHIPPED BUILD DECLINES A HARNESS-ONLY ROW. Every
+# witness that carries a `--harness=` option is compiled again by the shipped
+# trace compiler WITHOUT it, and must print no `CANDROW` hit for its row: a
+# row only the lever routes that a default build reached would be shipped.
+# The population is counted (K35): at least one harness witness exists, and
+# every harness witness is checked.
+nshipped=0
+while IFS=$'\t' read -r row flags pat; do
+    case "$row" in ''|'#'*) continue ;; esac
+    case " $flags " in *" --harness="*) ;; *) continue ;; esac
+    fl=(); read -r -a all <<< "$flags"
+    for o in "${all[@]}"; do case "$o" in --harness=*) ;; *) fl+=("$o") ;; esac; done
+    nshipped=$((nshipped + 1))
+    "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all "${fl[@]}" -o "$WORK/w.c" \
+        --pattern "$pat" > /dev/null 2> "$WORK/err"
+    if grep -q '^CANDORACLE' "$WORK/err"; then
+        bad "[cand-oracle-shipped] $(grep -m1 '^CANDORACLE' "$WORK/err" | tr '\t' ' ') on $pat"
+    elif awk -F'\t' -v r="$row" '$1=="CANDROW" && $4==r {f=1} END {exit !f}' "$WORK/err"; then
+        bad "[cand-oracle-shipped] the SHIPPED compiler reaches harness-only row '$row' on $pat"
+    else
+        ok "[cand-oracle-shipped] the shipped compiler declines '$row' on $pat"
+    fi
+done < "$WIT"
+if [ "$nshipped" -ge 1 ] && [ "$nshipped" -eq "$nharness" ]; then
+    ok "[cand-oracle-shipped] $nshipped harness witnesses, each also compiled without the lever"
+else bad "[cand-oracle-shipped] $nharness harness witnesses reached, $nshipped checked without the lever"; fi
 
 # [OPT-REVEND] L0 THE BOUNDARY PROJECTION (locate_finish.md §1.2, LR-S2): a
 # hybrid whose prefilter's language is the pattern's records `BOUNDARY vm

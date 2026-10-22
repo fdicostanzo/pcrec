@@ -292,7 +292,7 @@ static ExtResult br_name_ref(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
                    "backreference BY NUMBER is spelled \\N or \\g{N})");
     {
         const char *why = NULL;
-        size_t len = pcrec_group_name_scan(body, blen, 0, &why);
+        size_t len = pcrec_group_name_scan(cx, body, blen, 0, &why);
         if (len != blen)
             REFUSE(at, "%s", why ? why : "invalid subpattern name");
     }

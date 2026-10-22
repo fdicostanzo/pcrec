@@ -77,6 +77,7 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   your report; name the last entry applied in STATE AT HANDOFF. Later
   rulings come there, not by message.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
+- NEVER `git stash` (push or pop): the stash is ONE list shared by every worktree of the repo, so a pop takes another session's entry (langfix2 popped the K113 landing's stash, 2026-10-22). Park work in a WIP commit on your branch instead.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log. NOR a
   Monitor/notification on a COMPLETION you then go idle waiting for: an
@@ -163,7 +164,9 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   carry their docs/spec/ hunk in the same change. D76/D94: emitted-
   scaffolding changes ARE an abi bump + identity re-pin, readers found BY
   GREP. Update the owning directory's CLAUDE.md for file adds/removes/role
-  changes. Oracle-verify test expectations.
+  changes; CLAUDE.md is orientation only (12 KB limit, 4 KB for docs/, docs/dev/, docs/dev/lanes/, scripts/; pre-commit and
+  `make test-claudemd-size` enforce it), so history, lessons and session
+  notes go in that directory's NOTES.md (create it on first need). Oracle-verify test expectations.
 - Mech/sabotage: take S-ids from the range YOUR BRIEF names. With no range,
   the highest S-id on main is NOT enough: `memfn/docs/requests.md` reserves
   ranges for the kit (`grep -n 'Sabotage ids' memfn/docs/requests.md`) and
@@ -199,6 +202,8 @@ resource CPU-cap cells) and `class=LOAD-SUSPECT` are the SHAPE's finding, not
 the lane's failure: re-run the named sections solo (`make test-X`); green solo
 = green-by-diagnosis (known_issues K44). `RED-REAL` is the lane's. Do not
 re-run the whole suite at another shape to "check"; the rotation owns shapes.
+
+**TIMING WINDOWS ARE BOX-WIDE (2026-10-21).** Before ANY test or measurement command run outside the queue, single-process included (a compile batch, a sweep, a differential, a `PROCS>1` script), check `scripts/boxqueue status`. If a quiet-gated timing job is running (`idle-ok`, a `-slot`/`-window`/`-parity` name, or a label saying timing), do not run it: queue it as a job, or wait for the window to end. A lane's "light" work at PROCS=8 during the kit's E8 window contaminated its timing (2026-10-21). The quiet gate only checks quiet at the START of a window; keeping the box quiet afterwards is every lane's job. Single-process section runs during the kit's adatwin window (2026-10-21, lane i1tri2, allowed by its brief) still perturbed it: during a timing job, the only commands outside the queue are reads and edits.
 
 ## Queue template: a job script for `scripts/boxqueue` ([BOXQUEUE])
 A job is one executable script named `PRIO-OWNER-REST`, called three ways

@@ -2611,6 +2611,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * parse): the named set, else the build's default (the LATEST set,
          * §3.4). Per attempt because it lives in this attempt's arena. */
         pcrec_meas_resolve(&cx);
+        pcrec_memfn_measures_build(&cx);
         /* [WINDOW-E1] THE ANALYSIS OBJECT, built here and nowhere else: once
          * per attempt, EAGERLY, from the chain just resolved, so its build
          * point does not depend on which kit call comes first
@@ -3413,7 +3414,7 @@ facts_force:
             char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
             pf->dfa = cx.job->fit.chosen == ENGM_DFA;
             pf->degraded = fit_nseq != 0 || fit_fired != 0;
-            pf->locate = pf->dfa ? pcrec_cand_locate_name(&cx) : NULL;
+            pf->end_seeded = pf->dfa && pcrec_cand_locate_end_seeded(&cx);
             pf->ncaps = pf->dfa ? pcrec_dfa_ncaps(&cx) : (int)cx.ncap + 1;
             pf->guarded = *pcrec_startpos_guard_text(&cx, probe, sizeof probe, "",
                                                      "p", "s", "n") != 0 ||

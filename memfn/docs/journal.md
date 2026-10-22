@@ -2575,3 +2575,54 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
 - POSCOST counts: 21 positions, a floor; 408 superset hulls of 603 sites. Filed on main's row.
 - setdig: all five kit sets now load under measures.md. My ruling: a committed card version is append-only, so @2 is new and @1 is kept.
 - Lesson: the idle-notification lesson again. setdig's idle notice predated my ruling, so I checked its tree before acting and re-sent the ruling.
+
+## 2026-10-21 (late) — Frank's ruling: the WALK when the subject is not known (reverses D169's default)
+
+Frank: "the choice, which i agree with, is to use the walk when the subject is not known".
+- Evidence: B4's minimal E8 on real text (V1 loses up to +41% on dense, predictable English text), lane flat (flattening costs more), and lane adatwin (the in-producer adaptive loop does not pay; M64 is the best single form at −7.1% for 2.1x the walk's .text, still with dense English losses).
+- Effect:
+  - set-FIND sites route to the walk by default;
+  - V1/M64 only where a MEASURED or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis);
+  - B4 is re-scoped, since its V1 movers disappear;
+  - M64 and a switch inside pcrec's DFA skip loop are FILED for later, triggered by bench or user evidence.
+
+## 2026-10-21 (close) — R-27 design delivered (no build); session closing on Frank's /close
+
+- R-27 (the REPORT site's speed on sparse text) is DESIGN ONLY, at lane/memfn-r27 @ b4875f947; report docs/dev/lanes/r27_report.md. No build go yet: Frank, "lets see what the design returns. after you wake, run the critic pass on it."
+  - Frank's lens: R-27 IS the D161 window search, whose test covers every REQUIRED term. Design: the stop is the least-mass span-0 position (memchr, or the walk for a set), followed by ofsskip's verify chain.
+  - Extensions to existing rows: E1 (a set scan by the walk in ofsskip), E2 (verify_chain tests ctx items and table-less sets), E4 (a static failure shift, needed for hex8's search_short).
+  - Existing rows alone serve only 3 of 8 cells.
+  - Plants R27-a..f are proposed; ids are owed by main.
+  - Timing job 580-kit-r27-cover is QUEUED and OWED. It lost a handoff to a non-gated job: a queue finding for main.
+- Earlier today, recorded above: Frank's walk ruling and its CLOSED record (docs/design/memfn/walk_vs_v1_record.md); [MEMFN-SKIPSWITCH] moved to Boonies.
+
+## 2026-10-21 (night) — wake: R-27 critic panel, B4 re-scoped and launched, F2 parked
+
+- Woke on branch `lane/memfn-b4scope`, cut from main 9950aa672. Main had merged all four kit branches: e8min, flat, adatwin and r27.
+- **B4 re-scoped (B4′)** under Frank's walk ruling. Main agreed it as posted:
+  - R7w, the walk, is the MEASURED default for every set FIND;
+  - R7, R5 and R0 are withdrawn, and fd-r0, fd-r5 and S916 retire;
+  - lockdown;
+  - empty mover set, no abi event.
+  Main filed [MEMFN-REGIME] as the trigger for any regime-gated wide-form row. Lane `b4p` (sonnet) builds it on `lane/memfn-b4p`, and its heavy run is queued in the kit band.
+- **Q-R17P-27 re-answered by Frank** (via main): F2, the VM hat → V1, is NOT built. It waits for [MEMFN-REGIME] on both engines: "it'll have its day".
+- **R-27 critic panel** (Frank's instruction): three critics (sound, mech, meas). The record is `docs/dev/reviews/2026-10-21-r1-memfn-r27.md`.
+  - Verdict REVISE. M1 is a BLOCKER: RPT re-describes pcrec's site. The fix is to widen ofsskip's contract instead.
+  - E1 and E4 are special cases, to become FIND-slot and body rows. Over-reads are invisible to proof_run. Job 580 does not measure the tie, the FUNC proxy or the SIMD layer.
+  - The proposal to Frank: read 580, run follow-up job 581, write design rev 2, then the build go. No build go was asked.
+- Job 580 started at about 21:38 (main moved it to the front).
+
+## 2026-10-21 (late night) — B4′ delivered; window-site panel; Frank's CONDITIONAL BUILD GO for D172
+
+- B4′ is all green at edeb3344f:
+  - sweep 556: 4 legs rc=0. The first sweep, 555, was red only because the dumps stream read the declared deny delta;
+  - heavy run 560: make test plus mech on 14 rows;
+  - MF_SITE_ABI 18→19.
+  It was merged into lane/memfn-b4scope, `done:` was posted, and main accepted it (it merges after its job 670).
+- Window-site design rev 1 (lane uwin) and its D6 panel r2, three critics: REVISE, no blocker. Rulings are in `docs/dev/reviews/2026-10-21-r2-memfn-window-site.md`:
+  - one restatement step, with no adapter;
+  - the kit's tables carry prefix_k's cost rules, reading pcrec's frequencies, with no interim plan_hint. This follows Frank's question "if we are simply picking the least frequent byte, why do we need pcrec?";
+  - the consumer label is deleted;
+  - end_back becomes a core position.
+- Frank on the failure shift: "not sure you determine when to use it". Job 581 tests a static predictor (predicted survival length from the default byte-rate) against measured wins.
+- **Frank, 2026-10-21: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands."** This is the BUILD GO for D172's unified window site, conditional on rev 2 passing its panel and main's agreement. hex8 is the kit's judgement call, and REPORT routing (B1) proceeds regardless of hex8.

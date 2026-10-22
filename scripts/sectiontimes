@@ -41,14 +41,18 @@ def stamp(side=None):
     added go (stamped) to the file SIDE and are NOT passed on; every other
     line is passed through byte-for-byte, so the caller's log is exactly what
     a run without --debug=j writes (scripts/perfrun uses this form)."""
-    out = sys.stdout
-    sf = open(side, "w") if side else None
-    for line in sys.stdin:
+    # Bytes in, bytes out: make's output may carry non-UTF-8 bytes (a 0xff
+    # killed this filter and truncated a make test log, 2026-10-21); the
+    # patterns are ASCII, so matching on a latin-1 view is exact.
+    out = sys.stdout.buffer
+    sf = open(side, "wb") if side else None
+    for line in sys.stdin.buffer:
+        st = b"%.3f\t" % time.time()
         if sf is None:
-            out.write("%.3f\t%s" % (time.time(), line))
+            out.write(st + line)
             out.flush()
-        elif DBG.match(line):
-            sf.write("%.3f\t%s" % (time.time(), line))
+        elif DBG.match(line.decode("latin-1")):
+            sf.write(st + line)
             sf.flush()
         else:
             out.write(line)

@@ -174,4 +174,13 @@ void      pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *
 PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide);
                                                         /* src/facts/kset.c */
 
+/* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (kit_proof.md §5.2 UL-0): the k-set walk
+ * extended to an EXACT subset walk over the wrapped forward NFA from its
+ * anchored start, every zero-width item applied per thread and per consumed
+ * byte (ctx_span.md §3.3-§3.4, §3.8), filling `*o` with the true per-offset
+ * sets and the exact prefix. Returns `PF_WHY_NONE`, or the decline
+ * (`erased`, `marked`, `nullable`, `dead-start`) with `o` UNSTATED. */
+PfWhyCode pcrec_span_walk(Ctx *cx, const Nfa *nfa, MkLang *o);
+                                                        /* src/facts/kset.c */
+
 #endif /* PCREC_FACTS_DERIVE_H */

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# 570-kit-flat-twin: lane flat's ONE timing window (docs/dev/lanes/flat_report.md): build the flat slot (walk, V1,
+# F8, F64, M64 on 8 J1 cells + 2 grid2 anchors), the correctness gate, then grid2/time.sh (quiet gate, CPU 14,
+# interleaved arms, A/A floor walk#b, launches=3) and the reading. Everything it writes is under $OUT (the flat
+# worktree's build/flat/slot, gitignored); the results are $OUT/time_FLAT.log, $OUT/time/raw_FLAT.tsv,
+# $OUT/reading.md and $OUT/check.log.
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/flat
+F=$W/docs/dev/lanes/flat
+D=$W/docs/dev/lanes
+OUT=$W/build/flat/slot
+export OUT CPU=14 LAUNCHES=3
+case "${1:-}" in
+    --dry-run)
+        for f in build.sh check.sh mkarms.py fbat.c oracle.py read.py; do [ -f "$F/$f" ] || { echo "missing $F/$f" >&2; exit 1; }; done
+        for f in grid1/gdrv.c grid1/arms.py grid2/time.sh grid2/paranoid.sh; do [ -f "$D/$f" ] || { echo "missing $D/$f" >&2; exit 1; }; done
+        for f in mkarms.py oracle.py read.py; do python3 -I -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "$F/$f" || exit 1; done
+        bash -n "$F/build.sh" && bash -n "$F/check.sh" || exit 1
+        [ -d /home/pcrec/projects/pcrec/worktrees/e8min/build/e8slot_r2/bin/j1-P14/V1 ] || { echo "no e8 slot" >&2; exit 1; }
+        [ -f /home/pcrec/projects/pcrec/worktrees/memfn-slot/grid2/bin/dig/V1/art.c ] || { echo "no grid2 anchors" >&2; exit 1; }
+        n=43
+        echo "would run: build.sh $OUT; check.sh $OUT (must be GREEN); quiet gate; grid2/time.sh PHASE=EXT RAW_TAG=FLAT CPU=14 LAUNCHES=3; read.py"
+        echo "design: $n groups (8 J1 cells x their e8 subjects + 2 grid2 anchors), arms walk walk#b walk#c V1 F8 F64 M64, mode all"
+        echo "boxqueue: cap 2400"; echo "boxqueue: patience none"; echo "boxqueue: idle-ok"
+        echo "boxqueue: expect groups=$n last=^time.sh: COMPLETE rows=[0-9]+ groups="
+        echo "boxqueue: witness groups=time.sh: COMPLETE rows=$((n * 6)) groups=$n reruns=0 xreruns=0 requeued=0 wall=700s"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+log() { echo "flat-window: $*"; }
+log "start $(date -Is) load1=$(cut -d' ' -f1 /proc/loadavg)"
+bash "$F/build.sh" "$OUT" || { log "build failed"; exit 1; }
+bash "$F/check.sh" "$OUT" > "$OUT/check.out" 2>&1; rc=$?
+tail -6 "$OUT/check.out"
+[ "$rc" = 0 ] || { log "correctness gate failed rc=$rc ($OUT/check.log)"; exit 1; }
+w=0; while :; do l=$(cut -d' ' -f1 /proc/loadavg); awk "BEGIN{exit !($l < 1.5)}" && break; [ "$w" -ge 1800 ] && break; sleep 30; w=$((w + 30)); done
+log "quiet load1=$(cut -d' ' -f1 /proc/loadavg) waited=${w}s"
+env PHASE=EXT RAW_TAG=FLAT PASS_STATUS="$OUT/time_FLAT.status" bash "$D/grid2/time.sh" > "$OUT/time_FLAT.log" 2>&1
+tail -1 "$OUT/time_FLAT.log"
+grep -q '# ANSWER MISMATCH' "$OUT/time_FLAT.log" && { log "answer mismatch in a timed launch"; exit 1; }
+tail -1 "$OUT/time_FLAT.log" | grep -q 'time.sh: COMPLETE' || { log "timing did not complete"; exit 1; }
+python3 -I "$F/read.py" "$OUT/time_FLAT.log" > "$OUT/reading.md" || exit 1
+tail -12 "$OUT/reading.md"
+log "results: $OUT/time_FLAT.log $OUT/time/raw_FLAT.tsv $OUT/reading.md $OUT/check.log"
+log "end $(date -Is)"
+exit 0

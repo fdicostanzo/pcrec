@@ -1315,7 +1315,7 @@ gate stands.
 | gate | state | evidence | what remains |
 |---|---|---|---|
 | **D163 add. 8**: part layout as caller-settable controls, with the dial's positions as presets over them | **MET** | D163 add. 8-12 (decision log); plan row [ENTRY-TABLE]: E0, E0c and E1 merged (E1 is the part-layout controls, merge 7c0a90479, abi 80; review r1-e1 fixed; [ATTR-TABLE] merged 7d3587441). In the tree: `src/core/part_layout.def` and `src/gen/part_layout.c` are on this branch's base (abi 81) | Nothing that blocks B4. B4's V1 form is R17-b's ported text: `__next_candidate` and the W8 sub-block, `static inline`, with no dispatch helpers (§2.5). That is position `0`'s "as emitted" layout (D163 add. 10), and every preset cell is still `†`. B4's census runs at position `0`, so no preset interacts with it. Q-R17P-21's leaning stands: kit FORMS stay outside the part-layout table, and tuning.md §3's one sentence rides B4's spec hunk (§3.4). E1′ (each preset cell by its own measured diff) and U8 (the dial position handed to the kit as a fact) are later work |
-| **E8 PASS or PROVISIONAL PASS** ([REGIME-EVAL]'s judge) | **NOT MET** | Plan row [REGIME-EVAL] is not started, and no kit journal entry records E3b, E4-E8 or the converter E14 as run. Their inputs exist: E3 is B1's table (on main), and grid2 is E4b's streamed in-sample source | E4, the evaluator build. E4b, the in-sample streamed replay on grid2, which fills §9.3's numbers. E14, the converter `set_to_measures.py`, which turns grid2read's `keys.tsv` into a set. E5, the pre-registration: it carries the evaluator-parameter digest owed since 2026-10-14 and, `[rev4]` new, §9.2a's expected-loss list. Then E6, the site census, E7, the judge (the LEAN plan's two quiet windows, regime_eval rev 2.2), and E8 |
+| **E8 PASS or PROVISIONAL PASS** ([REGIME-EVAL]'s judge) `[e8min, D170]`: the MINIMAL E8 (`e8min/plan.md`, prereg bf70e5dff; E4b and E14 leave this gate) | **NOT MET, window queued** (the struck text after this cell is rev 4's plan) | Plan row [REGIME-EVAL] is not started, and no kit journal entry records E3b, E4-E8 or the converter E14 as run. Their inputs exist: E3 is B1's table (on main), and grid2 is E4b's streamed in-sample source | E4, the evaluator build. E4b, the in-sample streamed replay on grid2, which fills §9.3's numbers. E14, the converter `set_to_measures.py`, which turns grid2read's `keys.tsv` into a set. E5, the pre-registration: it carries the evaluator-parameter digest owed since 2026-10-14 and, `[rev4]` new, §9.2a's expected-loss list. Then E6, the site census, E7, the judge (the LEAN plan's two quiet windows, regime_eval rev 2.2), and E8 |
 | **M0** ([MEASURE-SET]'s first step) | **NOT MET** | Plan row [MEASURE-SET] is not started. [KNOW-SRC] K0-K3, its prerequisite, are done (plan, 2026-10-17) | M0 builds the store, `ksgen`'s measures kind, the embed, `<PREFIX>_MEASURES` and `rx_info.measures`, and `--list-measurements`. If M0 lands after B4, its stamp is a second abi event (§3.1 B4 row) |
 
 **OWED before B4 is briefed** (from grid2read §8-§9, plus rev 4's own consequences):
@@ -1362,6 +1362,10 @@ gate stands.
      (Q-R17P-27)~~ F2 has no density condition now (Q-R17P-27, YES), so the grid no longer
      gates it; it still locates libc's crossover and would sharpen F2's expected loss;
    - hex-run/word-eq find-all timing.
+
+### 3.1b B4' as landed (lane b4p, 2026-10-21; Frank's walk ruling, D169 addendum) `[rev4.2]`
+
+B4 was the routing commit whose content was R7's V1 default. The ruling removed that content; what landed is the lockdown and the deletions the ruling made redundant, with NO pcrec artifact byte moved and NO abi event. R7w (always the walk) is the MEASURED default for every set FIND (E8's real-text verdict, `walk_vs_v1_record.md` §5). R7, R5 and R0 are WITHDRAWN (ids reserved, never reused); their denies `fd-r5` and `fd-r0` retire (the `memfn` floor 14 -> 12, a DECLARED stream-5 delta, `r17b_prime/b4p/`); S916 retires (a design-table id, never a file), S917 reads UNREACHED (no deciding row reads a set key), S922/S1079/S1105 are re-aimed at `fd_row_decides`. Every row decides (the `routed` bit and the listing's `routed`/`locked` columns are deleted); RPT, the REPORT row, stays held for its R-26.6 preview, the one gate left. The trace-only shadow, the `FDKEY` records and the POSCOV field retire; the expected-mover set is EMPTY. Re-open trigger for a wide form: plan row [MEMFN-REGIME]. R7w now USES `site_kind` and SERVES `table_ref` REF (its arm reads the offered table), so a site that states no kind, or offers no table, stays the composer's. Not built (out of scope): the V1 form port, the `drop-kit-bytes` rung and bit 55, `--emit-facts memfn`, PR-10's comment change. The row-edit log is `memfn/docs/finder_history.md`; the report `docs/dev/lanes/b4p_report.md`.
 
 ### 3.2 Why the first delivery needs no measurement set `[rev2]` `[rev3: C11, B6]`
 
@@ -2513,9 +2517,14 @@ green through `scripts/perfrun`.
 never R17-b (the kit branch's V1-everywhere, not on main). A cell's comparison is
 "B4's pick against `--memfn=no-pf-terms-mask` (main's walk)", in absolute u·B, against the
 cell's own A/A floor (§2.5's `floor(cell)`).
-1. [REGIME-EVAL]'s pre-registered bars (G0-G4 per layer and shipped filter) PASS or
+1. ~~[REGIME-EVAL]'s pre-registered bars (G0-G4 per layer and shipped filter) PASS or
    PROVISIONAL PASS on the judge populations (J1 open, J2a), the table's listing hash
-   recorded (regime_eval §5.2); the hash IS the LOCKDOWN digest (§1.8).
+   recorded (regime_eval §5.2); the hash IS the LOCKDOWN digest (§1.8).~~
+   `[e8min, D170]` **The kit-tier bar is the MINIMAL E8** (`r17b_prime/e8min/plan.md`, prereg
+   `e8min/prereg.md` at bf70e5dff): G0 counts, G1 against always-walk, G3, §9.4's per-cell rule
+   against the EL/SS list, and item 2's term-count check, read by `e8min/verdict.py` on J1 (the
+   real users' patterns) in one quiet window. It bars TIMING only. B4's correctness gates are
+   unchanged: 0 answer movers, the identity sweeps, mech for every new or moved anchor, and make test.
 2. G1 at both layers on the mover population: ~~R0 cells NULL against the walk;~~ R7 cells
    (measured shapes only) not worse than the walk beyond the floor on the regime their
    key was measured in `[rev4]` (the member-free slope regime), the EXPECTED-LOSS cells of
@@ -2531,7 +2540,7 @@ cell's own A/A floor (§2.5's `floor(cell)`).
 3. The named residual (bounded dense find-all, dfa-hat on prose (F7), dig on digits,
    vm-hat prose1m) is a STATED LOSS against the walk, shipped under Q-REVAL-1's ruling
    (the regime bars replace D162 add. 1's no-loss gate, Q-R17P-4) and bounded by the
-   judge's G2/G3 caps: REPORTED per cell, and B4 fails if a cap fails. R5 would route those
+   judge's ~~G2/~~G3 caps `[e8min, D170: G2 dropped with E4b]`: REPORTED per cell, and B4 fails if a cap fails. R5 would route those
    cells to the walk, but it reads E at MEASURED provenance only, so on a default compile
    it does not fire; that is the reason the loss ships, said here rather than left implicit.
 4. The official verdict is a bench run on the targeted hardware (D144 add. 4).

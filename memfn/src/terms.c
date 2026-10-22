@@ -44,6 +44,7 @@
  * bytes once a cover renders (B4): a pcrec abi event (§16.3).
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "kit.h"
@@ -190,11 +191,13 @@ static unsigned cands_of(const target *t, unsigned x, mf_sterm *out)
  * only pure arc that can hold both). */
 static void pair_facts(target *t)
 {
-    unsigned run_of[256], off_of[256], deg[256], nib[16][16];
+    /* 16-bit tables: every value is <= 256 (the 5 KB frame this was, R-28) */
+    uint16_t run_of[256], off_of[256], deg[256];
+    uint8_t nib[16][16];
     for (unsigned r = 0; r < t->nrun; r++)
         for (unsigned j = 0; j < t->run_len[r]; j++) {
-            run_of[(t->run_lo[r] + j) & 0xFFu] = r;
-            off_of[(t->run_lo[r] + j) & 0xFFu] = j;
+            run_of[(t->run_lo[r] + j) & 0xFFu] = (uint16_t)r;
+            off_of[(t->run_lo[r] + j) & 0xFFu] = (uint16_t)j;
         }
     /* cube_ix of the spanned cube by nibbles: nib[diff][x] is the base-3
        value of four bits, 2 where x and y differ, x's bit where they agree */
@@ -202,7 +205,7 @@ static void pair_facts(target *t)
         for (unsigned x = 0; x < 16; x++) {
             unsigned v = 0;
             for (int i = 3; i >= 0; i--) v = v * 3 + (((df >> i) & 1) ? 2 : (x >> i) & 1);
-            nib[df][x] = v;
+            nib[df][x] = (uint8_t)v;
         }
     memset(t->joint, 0, sizeof t->joint);
     memset(deg, 0, sizeof deg);
@@ -219,7 +222,7 @@ static void pair_facts(target *t)
             }
         }
     }
-    unsigned start[258] = { 0 };     /* by degree, ties in byte order */
+    uint16_t start[258] = { 0 };     /* by degree, ties in byte order */
     t->nmem = 0;
     for (unsigned x = 0; x < 256; x++)
         if (b_has(&t->set, x)) { start[deg[x] + 1]++; t->nmem++; }
@@ -347,12 +350,11 @@ static void dfs(search *q, bits256 uncovered, unsigned depth, unsigned cost)
     }
 }
 
-int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out)
+/* The two targets are ~30 KB, so they live on the heap (R-28: a stack frame
+ * above 4 KB is a kit defect); a refused allocation is -1, not a decline. */
+static int set_terms_in(target tg[2], const uint8_t set[32], unsigned K, mf_cover *out)
 {
-    target tg[2];
     unsigned members = 0;
-    memset(out, 0, sizeof *out);
-    memset(tg, 0, sizeof tg);
     for (unsigned x = 0; x < 256; x++) {
         if ((set[x >> 3] >> (x & 7)) & 1) { b_set(&tg[0].set, x); members++; }
         else b_set(&tg[1].set, x);
@@ -382,5 +384,15 @@ int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out)
     }
     out->nodes = nodes;
     return 0;
+}
+
+int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out)
+{
+    memset(out, 0, sizeof *out);
+    target *tg = calloc(2, sizeof *tg);
+    if (!tg) return -1;
+    int rc = set_terms_in(tg, set, K, out);
+    free(tg);
+    return rc;
 }
 

@@ -355,6 +355,17 @@ static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
  * selector a property of the ESCAPE, which is how the scanner already treats
  * them (the caret is consumed before the significant-character budget opens
  * and the selector never enters the name). */
+/* A malformed `\p` body is PCRE2's error 146 whatever the enabled set; the
+ * module is promised only while the gate is shut (D28's SYN_MALFORMED rule),
+ * so with it open (WANT_RESULT) the refusal is the syntax error alone and
+ * never asks for a module that is already enabled. */
+#define UP_MALFORMED(pos) do {                                               \
+        if (want == WANT_RESULT)                                             \
+            REFUSE((pos), "\\%c: malformed property escape", sel);         \
+        REFUSE((pos), "\\%c: malformed property escape — requires module " \
+                      "'%s'", sel, rw->module);                              \
+    } while (0)
+
 ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
                                bool in_class, size_t at, size_t from)
 {
@@ -364,8 +375,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
     int sel = rw->sel;   /* 'p' or 'P' */
 
     if (i >= n)
-        REFUSE(i, "\\%c: malformed property escape — requires module '%s'",
-               sel, rw->module);
+        UP_MALFORMED(i);
 
     int c0 = (unsigned char)p[i];
 
@@ -385,6 +395,9 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
                                   sel == 'P');
         if (iv)
             REFUSE(i, "\\%c requires module '%s'", sel, rw->module);
+        if (want == WANT_RESULT)   /* gate open: no module to ask for */
+            REFUSE(i, "\\%c: not a one-letter Unicode property code pcrec "
+                      "recognises", sel);
         REFUSE(i, "\\%c: not a one-letter Unicode property code pcrec "
                   "recognises — requires module '%s'", sel, rw->module);
     }
@@ -398,8 +411,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
          * ONE PAST the bad byte (measured: \p! and \p9 both blame offset 3,
          * not 2), so the byte is consumed before REFUSE fires. */
         i++;
-        REFUSE(i, "\\%c: malformed property escape — requires module '%s'",
-               sel, rw->module);
+        UP_MALFORMED(i);
     }
 
     i++;   /* consume '{' */
@@ -424,8 +436,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
             /* unterminated `{...` — malformed regardless of what the
                partial body contained (measured: \p{L at EOF is 146, same
                as \p{ at EOF). */
-            REFUSE(i, "\\%c: malformed property escape — requires module '%s'",
-                   sel, rw->module);
+            UP_MALFORMED(i);
         int c = (unsigned char)p[i];
         if (c == '}') {
             i++;
@@ -448,8 +459,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
              * count, not the padding). A coincidence worth taking per
              * D26's addendum, never to be chased if a future PCRE2
              * disagrees. */
-            REFUSE(i, "\\%c: malformed property escape — requires module '%s'",
-                   sel, rw->module);
+            UP_MALFORMED(i);
         name[sig_count++] = (char)((c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c);
     }
 

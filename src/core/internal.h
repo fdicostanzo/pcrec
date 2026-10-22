@@ -142,6 +142,8 @@ typedef struct {
 
 /* [COMPOUND] What a part's compile reports (defined in the driver group). */
 typedef struct PcrecPartFacts PcrecPartFacts;
+/* [MEASURE-SET] the measurement set a part inherits (defined beside `Job`). */
+typedef struct PcrecMeasInherit PcrecMeasInherit;
 
 /* [COMPOUND] THE HARNESS-ONLY OPTIONS (compound.md §A.11, D163 add. 2 item
  * 2): outside `pcrec_options` and outside the caller contract, reached only
@@ -162,10 +164,17 @@ typedef struct PcrecPartFacts PcrecPartFacts;
  * prefix, `pcrec_harness_reach_<prefix>` (with its row ids and count; the
  * definitions are appended to the artifact's end, mf_reach_table). Off on
  * every shipped compile, so a default artifact is untouched by it. */
+/* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, "The harness lever's kit channel"):
+ * the fourth, `--harness=kit-proof`: the compile ROUTES the `cover` LOCATE
+ * row (pcrec's half, `locate_cover_applies`) and states to the memfn kit,
+ * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
+ * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
+ * X1/X3) and never shipped; the default and trace builds decline `cover`. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
+    unsigned kit_proof : 1;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -201,6 +210,10 @@ typedef struct {
     PcrecPartFacts *facts;
     /* [COMPOUND] the harness lever (NULL on every shipped path). */
     const PcrecHarnessOptions *harness;
+    /* [MEASURE-SET]/[K113] a compound PART's measurement set and analysis
+     * chain/object, the walking attempt's own (non-NULL exactly on a walk's
+     * part compile): the part takes them and resolves none of its own. */
+    const PcrecMeasInherit *meas;
     /* [COMPOUND] out (the unit drive's decline controls, compound.md §E.4):
      * the last walk's verdict, the first failing conjunct's id or "admit";
      * untouched where no walk ran (NULL: not wanted). */
@@ -226,6 +239,29 @@ typedef struct { ABlock *head; Ctx *cx; } Arena;
 
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
+
+/* ---- the C-stack rule for a recursive walk ([DD-10]) ----
+ *
+ * Marks a helper whose large locals must stay in ITS OWN frame rather than be
+ * inlined into a recursive caller's. A walk bounded by the pattern's nesting
+ * pays its frame once per level, up to `PCREC_MAX_GROUP_DEPTH` times on one
+ * stack (docs/spec/limits.md §3.10 states the resulting budget), so a scratch
+ * array or a by-value analysis struct that is dead before the walk recurses
+ * belongs in a callee marked this way. `tests/thread/run_compile_stack.sh`
+ * measures the result; nothing checks the marking itself. */
+#define PCREC_OWN_FRAME __attribute__((noinline))
+
+/* Loops over the elements of a left-nested `kind` spine (`A_CAT` or `A_ALT`)
+ * rooted at `root`, with `e` naming each in turn: every spine node's right
+ * child from the top down, then the head below the last node, so the order is
+ * right to left in pattern text. A spine is as long as the pattern, not as
+ * deep as its nesting, so a walk iterates it here and recurses only into the
+ * elements ([DD-10]; coding_guide.md §2.4). A `root` of another kind is one
+ * element. `break` and `return` leave the loop as usual. */
+#define PCREC_SPINE_EACH(e, root, kind)                                        \
+    for (const Ast *e##_at_ = (root), *e;                                       \
+         e##_at_ && (e = e##_at_->k == (kind) ? e##_at_->r : e##_at_, 1);       \
+         e##_at_ = e##_at_->k == (kind) ? e##_at_->l : NULL)
 
 /* ---- growable string buffer (codegen output) ---- */
 
@@ -1281,9 +1317,9 @@ struct Ast {
      * are pinned in tests/reject/.
      *
      * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
-     * option run, src/parse/mod_modifiers.c) and PROPAGATED onto A_CAP and
-     * A_ATOMIC from their bodies (src/parse/parse.c, mod_named_groups.c,
-     * mod_atomic_groups.c), and it is READ off an atom of ANY kind by
+     * option run, src/parse/mod_modifiers.c), never propagated: a group
+     * whose body is one is repeatable (K124): `pcrec_wrap_bare_anchor` clears it
+     * at every group's `)`; and it is READ off an atom of ANY kind by
      * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
 
@@ -2944,6 +2980,22 @@ void pcrec_pf_admits_selfcheck(Ctx *cx);
  * by `Job.meas` below; libc-only, like core/ksrc.h. */
 #include "core/ks_measures.h"
 
+/* [MEASURE-SET]/[K113] What a compound part's compile reads instead of
+ * resolving again: the walking attempt's RESOLVED knowledge sources, so P
+ * and its parts can never read two of either (docs/spec/measures.md §5¶8).
+ * The measurement set, its stamp text and the kit view its art is handed
+ * (`Job.meas`, `meas_stamp`, `mf_ms`); the analysis chain and the analysis
+ * object (`Job.find.chain`, `Job.analysis`). One channel for both: a new
+ * resolved source joins this struct, not a parallel parameter. Each lives
+ * in the walking attempt's arena, which outlives the part's compile. */
+struct PcrecMeasInherit {
+    const KsMeasSet *set;
+    const char *stamp;
+    const struct mf_measures *kit;
+    const PcrecFindChain *chain;
+    const struct mf_analysis *analysis;
+};
+
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
@@ -3211,6 +3263,11 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
+     * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
+     * kit's class for the REPORT description), memoized on first ask, NULL
+     * before it. */
+    struct PcrecCover *cover;
     /* [WINDOW-E1] this attempt's analysis object (memfn.h's `mf_analysis`,
      * window_contract.md §3.1), built ONCE, eagerly, by `compile_driver`
      * right after the chain resolves (`pcrec_memfn_analysis_build`), and
@@ -3222,8 +3279,9 @@ typedef struct {
      * both NULL when nothing was named and the build has no default. LOADED
      * is not CONSULTED: `meas_consulted` is the memfn kit's `consulted`
      * (R-MS2), read at this attempt's `mf_art_end`, and only a consulted set
-     * is stamped (§3.5). `mf_ms` is the kit's view of `meas` (its `kit.`
-     * rows, NULL ones left out; R-MS1), built at the art's begin. */
+     * is stamped (§3.5). `mf_ms` is the view the kit's art is handed
+     * (R-MS1), built eagerly beside `meas` by `pcrec_memfn_measures_build`.
+     * A compound part takes all three from its walk (`PcrecEmitIn.meas`). */
     const KsMeasSet *meas;
     const char *meas_stamp;
     bool meas_consulted;
@@ -3844,6 +3902,14 @@ struct Ctx {
     Job                 *job;
 };
 
+/* [KIT-VERIFY] U1 Z2 is this compile the harness lever's `--harness=kit-proof`
+ * (PcrecHarnessOptions.kit_proof): the one place a compile may route `cover`
+ * and preview the kit's R-26.6. False on every shipped compile. */
+static inline bool pcrec_kit_proof_routed(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;
+}
+
 /* [UTF-VALID] Raises `Ctx.lb_max` (PCRE2's `max_lookbehind` fact) to `n`
  * characters: the one spelling of the running max its writers share. */
 static inline void pcrec_lb_raise(Ctx *cx, int n)
@@ -4354,9 +4420,15 @@ typedef struct RegRow RegRow;
 typedef struct {
     ExtWhat what;
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
-    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
-                           pcrec_error.msg, so deferring the format cannot
-                           truncate differently than pcrec_ctx_fail did */
+    /* EXT_REFUSAL: the exact text — a string constant, or formatted into the
+     * compile's arena by `pcrec_ext_msgf`; never NULL on a refusal, and read
+     * on no other outcome. A POINTER and not the `char msg[256]` it was,
+     * because ExtResults sit in every frame of the parser's group recursion:
+     * the inline array made a lookaround nest cost 2,480 bytes per level, the
+     * pointer 736 ([DD-10] lane dd10b; limits.md §3.10). The 256-byte cut
+     * the array implied is kept by `pcrec_ext_msgf`, so a deferred format
+     * still truncates exactly as pcrec_ctx_fail does. */
+    const char *msg;
 
     /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
      * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
@@ -5386,7 +5458,21 @@ const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
  * is a no-op on any node `_pending` declines, so a future second caller
  * cannot use it to re-derive an already-resolved table. */
 bool pcrec_lookaround_width_pending(const Ast *a);
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
+/* K127: `recurses` is the call graph's answer to "does this lookbehind's
+ * length computation re-enter a group containing the lookbehind"
+ * (`pcrec_callgraph_lookbehind_recurses`); true refuses as UNBOUNDED, at
+ * the recorded offset, before the width rule is asked. */
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses);
+
+/* K123: splits a lookbehind body into its `nbr` TOP-LEVEL branches, written
+ * order, into `out[0..nbr-1]`. `nbr` (the parse's `AltInfo.nbr`, stored as
+ * `u.look.nbranch`) is AUTHORITATIVE: exactly `nbr - 1` `A_ALT` spine nodes
+ * are peeled and whatever is left is the first branch, which may itself be
+ * an `A_ALT` — a non-capturing or scoped group `(?<=(?:ab|cd))x` parses to
+ * a bare alternation, indistinguishable by kind from the spine. The one home
+ * of the split: the width rule and `vm_look_behind` both read it. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out);
 
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
@@ -5402,7 +5488,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
  * name a group that exists, and one that is wider accepts a spelling PCRE2
  * refuses. That is the drift `pcrec_is_bare_anchor` was made one function for,
  * one construct later. */
-size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
@@ -5645,6 +5731,15 @@ bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
  * SHARED REGION for `i` at all — a target with no linked site has no region,
  * no entry label, no exit label and no second `goto *`. */
 bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
+/* K127: does lookbehind `look`'s length computation RE-ENTER ITSELF — does a
+ * call in its body, followed through callees' calls, reach a group whose
+ * region contains `look`? Calls inside a nested lookahead are not followed
+ * (they contribute no length); calls inside a nested lookbehind are. libpcre2
+ * 10.46 refuses exactly these with err 125 "length of lookbehind assertion is
+ * not limited": `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`,
+ * `(a(?=(?<=(?1))))`, `((?<=(?2)))(a(?<=(?1)))`, while `(a)(?<=(?1))`,
+ * `(?<=a(?=(?R)))x` and `((?<=(?2)))(a(?=(?1)))` compile. */
+bool        pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
@@ -5847,14 +5942,20 @@ const PosixName *pcrec_registry_posix_names(size_t *n);
  * predate a compile-scoped mask, see enabled.c's own header). */
 ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want);
 
+/* A refusal's text, formatted at claim time into `cx`'s arena and cut at
+ * `pcrec_error.msg`'s size, so it truncates exactly where pcrec_ctx_fail's own
+ * format would. Every formatted `ExtResult.msg` comes from here (REFUSE and
+ * the hand-built refusals alike); a constant text is assigned as is. */
+const char *pcrec_ext_msgf(Ctx *cx, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+
 /* Format a refusal at claim time and return it — relies on the enclosing
- * doorway naming its gated ask level `want`, exactly as ext.c's comment on
- * REFUSE's original site documents. Needs <stdio.h> in the includer for
- * snprintf; every TU that invokes it already carries that include. */
+ * doorway naming its gated ask level `want` and its context `cx`, exactly as
+ * ext.c's comment on REFUSE's original site documents. */
 #define REFUSE(atpos, ...) do {                                              \
-        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos),               \
+                           .msg = pcrec_ext_msgf(cx, __VA_ARGS__),           \
                            .answered_at = want };                            \
-        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
 /* [L3-F5] the base grammar and seven parenthesized-construct doorways/modules
@@ -6723,6 +6824,11 @@ void pcrec_memfn_opts_check(Ctx *cx);
  * once per attempt, right after `pcrec_find_resolve`; records no ask and
  * refuses nothing a reader's ask would not. */
 void pcrec_memfn_analysis_build(Ctx *cx);
+/* [MEASURE-SET] Builds the measurement-set view this attempt's kit art is
+ * handed into `Job.mf_ms` (src/gen/memfn_sites.c): a part's inherited view,
+ * else the harness lever's set, else the `kit.` rows of `Job.meas`. Called
+ * by `compile_driver` once per attempt, right after `pcrec_meas_resolve`. */
+void pcrec_memfn_measures_build(Ctx *cx);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`
@@ -6878,7 +6984,8 @@ void pcrec_find_resolve(Ctx *cx, bool notes);
  *
  * `pcrec_meas_resolve` is the compile's caller (`pcrec_options.measures`/
  * `measures_dirs`), once per attempt, into `Job.meas`/`meas_stamp`; it
- * refuses through `pcrec_ctx_fail`. The store accessors serve the listing
+ * refuses through `pcrec_ctx_fail`. A compound part resolves nothing: it
+ * takes its walk's (`PcrecEmitIn.meas`). The store accessors serve the listing
  * and the checks: entry `i` of `pcrec_meas_store_count()`, its `<id>@<rev>`
  * name, its pre-parse and its embedded TEXT; `pcrec_meas_default_for` is the
  * class a set is the default of, or "". */
@@ -7914,7 +8021,8 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
 struct PcrecPartFacts {
     bool dfa;               /* the DFA emitter wrote it (`fit.chosen`) */
     bool degraded;          /* a fallback-table row fired on its compile */
-    const char *locate;     /* LOCATE's row on its body's route (static) */
+    bool end_seeded;        /* its LOCATE walk is seeded at the subject end
+                               (`CandLocate.end_seeded`, the `rev-end` walk) */
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
@@ -8145,11 +8253,20 @@ const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
  * (no trace record, no hit), before or after emission. A conjunct's read;
  * the trace build holds it to the running conjunct's declared reads. */
 const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route);
+/* [KIT-VERIFY] U1 (kit_proof.md §2.6): the typed reads that replace a row
+ * NAME: does the LOCATE row the plain compile selects on `route` ask NEXT
+ * there (A1), and is the body's LOCATE walk seeded at the subject end (A5,
+ * through the part's facts)? */
+bool pcrec_cand_plain_locate_asks_next(Ctx *cx, int route);
+bool pcrec_cand_locate_end_seeded(Ctx *cx);
 /* The same compile's body route (`CandRoute`: the engine of the machine it
- * runs) and its `<P>_NCAPS`; the LOCATE row's name on the body's route. */
+ * runs) and its `<P>_NCAPS`. */
 int pcrec_cand_body_route(Ctx *cx);
+/* [KIT-VERIFY] U1 Z2 is this compile's FINISHER route CR_DFA (`cover_conj[]`
+ * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
+ * emitter writes, so no group above 0 is live. */
+bool pcrec_cand_finisher_dfa(Ctx *cx);
 int pcrec_dfa_ncaps(Ctx *cx);
-const char *pcrec_cand_locate_name(Ctx *cx);
 #ifdef PCREC_CAND_TRACE
 /* The trace build's declared-read check: the running conjunct's reads
  * (compound.c sets it around `holds`), NULL outside one. */

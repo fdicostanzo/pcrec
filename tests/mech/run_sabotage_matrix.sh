@@ -246,6 +246,13 @@
 #     the heap and glibc aborts, exit 134). Detection-by-abort is a property of
 #     the ALLOCATOR, not of the test, so the flag stays as the guard for a box
 #     where the write lands in slack and nothing notices.
+#   compilestack — added 2026-10-22 ([DD-10]); runs
+#     tests/thread/run_compile_stack.sh against the sabotaged tree's own
+#     build/libpcrec.a: pcrec_compile at the nesting cap and on long chains on
+#     a thread of docs/spec/limits.md §3.10's budget. Its own arm for
+#     `stackdepth`'s reason one level up: a walk that recurses per element, or
+#     a frame that grew, answers every corpus cell correctly on the main
+#     thread's 8 MB, so no answer-checking arm can see it.
 #   utfcheck — added 2026-09-30 ([UTF-VALID], D133); runs
 #     tests/utfcheck/run_utfcheck.sh. Registered with the arm and before
 #     S409-S413, which name it.
@@ -469,6 +476,11 @@
 #     build/libpcrec.a and compiles its memfn/src with -DMF_TRACE.
 #     Registered before S917, S919, S1018, S1020 and S1025. S1089 (R-23)
 #     joined it: the finder check's call-mode family; S919 is retired UNREACHED.
+#     R17-b' B4' (lane b4p, 2026-10-21): S916 retired with R0 (it was a design-
+#     table id, never registered as a file; its id is reserved), S917 is
+#     UNREACHED (LOCKDOWN withdrew R0, R5 and R7, the only rows reading a set
+#     key), S922/S1079/S1105 are re-aimed at fd_row_decides (the `routed` bit
+#     they planted is deleted), S1020 is re-anchored to R7w.
 #     S1092 (R-24) joined it too: the finder check's provenance family L.
 #   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
 #     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
@@ -541,6 +553,13 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   casemap — added 2026-10-22 ([SUBST-CASE], lane substcase); runs
+#     tests/oracle/case_map_check.py: the generated case map
+#     (src/core/case_tables.inc) against the committed libpcre2 10.46 store
+#     for every scalar value. Its own arm because the table is not yet read by
+#     the compiler: a plant on it moves no artifact and no corpus answer, and
+#     only the oracle comparison can be red for it. Verdict: the script's
+#     `checks passed:`/`checks failed:` summary. Registered before S1520.
 #   axesmemfn — added 2026-10-16 ([RUNAXES], lane runaxes); runs
 #     tests/axes/run_axes.sh with MEMFN_REACH_ONLY=1 AXES=--memfn
 #     MEMFN_EVERY=40 from the sabotaged tree (its build/pcrec, python3): the
@@ -560,6 +579,14 @@
 #     admission and its lever are read by no other suite per witness.
 #     Registered before S891-S910. Verdict: `test-compound: PASS|FAIL`, the
 #     FAIL lines counted.
+#   kitproof — added 2026-10-21 (lane z2build, [KIT-VERIFY] Z2); runs
+#     tests/kitproof/run_cover.sh (`make test-kitproof`) from the SABOTAGED
+#     tree: the `cover` row's verdicts on the harness-routed artifacts, the
+#     span slice's statements, and every answer against libpcre2 10.46's
+#     committed ones. Its own arm because the `cover` row is routed only by
+#     the test harness's lever, which no other suite compiles under. Rows:
+#     S1130-S1144, S1148, S1149. Verdict: the script's `checks passed:`/
+#     `checks failed:` trailer.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
 #     docs/spec/: the history-marker check (allowlist + known-debt baseline)
@@ -2317,6 +2344,17 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
                 score_arm "$work/stackdepth.log" "$f" "stackdep:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            compilestack)
+                # [DD-10] tests/thread/run_compile_stack.sh — the COMPILER on a
+                # thread of limits.md §3.10's budget (vocabulary entry above).
+                LIBPCREC="$tree/build/libpcrec.a" PCREC="$tree/build/pcrec" \
+                    CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/thread/run_compile_stack.sh" \
+                    > "$work/compilestack.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/compilestack.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/compilestack.log" | grep -oE '[0-9]+')"
+                score_arm "$work/compilestack.log" "$f" "compstack:${f:-ERR}fail/${p:-?}pass"
+                ;;
             laexpand)
                 # [M6.6.2 wave E2] THE SUBSTITUTION DRIVER (design §6.3),
                 # `tests/lookaround/run_expansion_diff.sh`. A DIFFERENT KIND OF
@@ -2849,6 +2887,20 @@ run_one() {
                 esac
                 score_arm "$work/compound.log" "$f" "compound:${f:-ERR}fail"
                 ;;
+            kitproof)
+                # [KIT-VERIFY] tests/kitproof/run_cover.sh -- `make
+                # test-kitproof`, from the SABOTAGED tree (vocabulary note):
+                # every artifact is compiled by the tree's own
+                # build/pcrec-harness through the `cover` lever, the facts by
+                # its build/pcrec; the expectations are the tree's committed
+                # answers.tsv.
+                PCREC="$tree/build/pcrec" PCREC_HARNESS="$tree/build/pcrec-harness" \
+                    CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/kitproof/run_cover.sh" "$tree" > "$work/kitproof.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/kitproof.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/kitproof.log" | grep -oE '[0-9]+')"
+                score_arm "$work/kitproof.log" "$f" "kitproof:${f:-ERR}fail/${p:-?}pass"
+                ;;
             spechistory)
                 # tests/spec_history/run_spec_history.sh -- reads docs/spec/*.md
                 # text for build history; no binary involved (vocabulary note).
@@ -3371,6 +3423,14 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
                 score_arm "$work/fallbacktable.log" "$f" "fallbacktable:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            casemap)
+                # [SUBST-CASE] see the vocabulary entry above.
+                python3 -I "$tree/tests/oracle/case_map_check.py" \
+                    > "$work/casemap.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/casemap.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/casemap.log" | grep -oE '[0-9]+')"
+                score_arm "$work/casemap.log" "$f" "casemap:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

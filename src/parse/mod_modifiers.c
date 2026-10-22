@@ -245,11 +245,12 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
 
 /* Builds an EXT_REFUSAL ExtResult carrying `msg` -- the option-run semantic
  * port's own refusal helper. */
-static ExtResult modport_refuse(ExtWant want, size_t at, const char *msg)
+static ExtResult modport_refuse(Ctx *cx, ExtWant want, size_t at,
+                                const char *msg)
 {
-    ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",
+    ExtResult res = { .what = EXT_REFUSAL, .at = at,
+                      .msg = pcrec_ext_msgf(cx, "%s", msg),
                       .answered_at = want };
-    snprintf(res.msg, sizeof res.msg, "%s", msg);
     return res;
 }
 
@@ -282,7 +283,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             /* `(?i` — PCRE2 error 114's shape: a RECOGNISED option setting,
              * truncated. The run check already called this a construct;
              * the honest post-gate answer is the truncation itself. */
-            return modport_refuse(want, at,
+            return modport_refuse(cx, want, at,
                                   "missing closing ) for inline option setting");
         int c = (unsigned char)p[i];
         if (c == ')' || c == ':') break;
@@ -290,7 +291,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             if (caret || hyphen)
                 /* PCRE2 stops at the FIRST error (error 194) — the ordering
                  * is part of the measured rule, mod-grammar block above. */
-                return modport_refuse(want, i,
+                return modport_refuse(cx, want, i,
                                       "invalid hyphen in option setting");
             hyphen = true;
             i++;
@@ -336,7 +337,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              * semantics pcrec's anchors have with no module at all. */
             if (!hyphen) {
                 if (!pcrec_feature_enabled(cx->enabled_features, FEAT_ASSERTIONS))
-                    return modport_refuse(want, i,
+                    return modport_refuse(cx, want, i,
                         "inline option 'm' (multiline) requires module "
                         "'assertions'");
                 set_m = true;
@@ -397,7 +398,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              * a compile error rather than a convention. */
             if (!hyphen) {
                 if (!pcrec_feature_enabled(cx->enabled_features, FEAT_BACKREFS))
-                    return modport_refuse(want, i,
+                    return modport_refuse(cx, want, i,
                         "inline option 'J' (dupnames) requires module "
                         "'backrefs'");
                 set_J = true;
@@ -427,11 +428,8 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             if (!hyphen) {
                 const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
                 if (!e->restrict_ok) {
-                    char buf[112];
-                    snprintf(buf, sizeof buf,
-                             "inline option 'r' (caseless-restrict) is not "
-                             "implemented under encoding '%s'", e->name);
-                    return modport_refuse(want, i, buf);
+                    REFUSE(i, "inline option 'r' (caseless-restrict) is not "
+                              "implemented under encoding '%s'", e->name);
                 }
             }
             break;
@@ -462,7 +460,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
         default:
             /* Unreachable: option_run_ok admitted the run. A wall, not a
              * decline — declining here would re-read the construct. */
-            return modport_refuse(want, i,
+            return modport_refuse(cx, want, i,
                 "internal error: option-run port saw a byte the grammar rejects");
         }
         i++;
@@ -544,7 +542,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
         if (cx->pos >= n || p[cx->pos] != ')') {
             *cx->mods = saved_mods;
             cx->pos = saved_pos;
-            return modport_refuse(want, at, PCREC_MISSING_CLOSE_PAREN_MSG);
+            return modport_refuse(cx, want, at, PCREC_MISSING_CLOSE_PAREN_MSG);
         }
         size_t end = cx->pos + 1;
         *cx->mods = saved_mods;

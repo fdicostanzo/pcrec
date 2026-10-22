@@ -50,7 +50,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 CC="${CC:-cc}"
 DEF="$ROOT_DIR/src/gen/memfn_sites.def"
-D91_SCAN="PF PRE OFS SETREST VERIFY MLINE"
+# COVER ([KIT-VERIFY] U1 Z2): the `cover` row's REPORT site, the search
+# entry's one walk per call: budget 1.
+D91_SCAN="PF PRE OFS SETREST VERIFY MLINE COVER"
 # N7 ([MEMFN] M7, RULED Q-R8-10): the encoding seam's span compare runs at
 # every VM backreference / variable step, so it is D91's budget 2.
 # VMSTRIDE ([MEMFN] M6): the VM cursor rung's strided span loop runs at every

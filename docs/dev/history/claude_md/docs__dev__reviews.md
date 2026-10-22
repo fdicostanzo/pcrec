@@ -1,0 +1,577 @@
+# History of docs/dev/reviews/CLAUDE.md - moved verbatim from docs/dev/reviews/CLAUDE.md at commit d3d4c5834 (replaced there by a short index)
+# docs/reviews — compiled checkpoint critic reviews
+
+One file per checkpoint (D6): the adversarial critic panel's findings, the
+triage decision on each, and a reflection. These are the densest source of
+"why is it like this" in the project — most of the non-obvious code in src/ and
+most of the odd-looking test cases trace to a finding recorded here.
+
+## Files
+
+- **2026-08-09-m1.md** — R1, end of M0/M1.
+- **2026-08-09-m2.md** — R2, mid-M2.
+- **2026-08-09-m2-close.md** — R3, M2 close. The largest: a live stack
+  regression, a 56x compile-time cliff, two holes in guards written the same
+  day, and five refuted claims.
+- **2026-08-09-sr1-registry.md** — R4, SR-1 (the syntax construct registry).
+  Nine rows asserting a PCRE2 semantic that does not exist, a row deletion that
+  was invisible to a 116-check suite, a sweep covering two of the four doorways
+  it claimed, and a citation of a guard (TS-1) that does not guard what was
+  claimed — already copied into two source files before it was caught.
+- **2026-08-10-r5-sr2-sr4.md** — R5, the SR-2/SR-3/SR-4 arc. SR-2's
+  byte-identity claim HELD under a stronger instrument than the one that made
+  it; everything else found was pre-existing, and there was a lot of it. Four
+  confirmed bugs (K3–K6), **two of them miscompiles of the exact class the
+  charter forbids**, plus a false "this fails the build" claim in three of my
+  own comments and a silent hole in my own harness where byte 0x0A became the
+  empty string. Two critics converged independently on the class-bracket bugs.
+  The most productive question was "which of the branches I just added can no
+  test see?" — asked because a sabotage returned zero, and every other bug came
+  from pointing it somewhere else.
+
+- **2026-08-10-r7-fix1.md** — R7, FIX-1 (K5/K6, the two brace miscompiles).
+  The panel found a THIRD miscompile of the same class in the same function
+  (K8, whitespace in `{m,n}`), one space away from all 49 forms the fix had
+  been certified against — invisible because those probes compared VERDICTS and
+  the bug lives where both engines accept. Also: nothing in the repo asserted an
+  error offset, though the code kept per-number state for no other purpose; the
+  over-reach guard was tested on one half of a two-sided rule; `{k,k}` did not
+  exist anywhere in the suite; the exact-count hazard was measured disarming the
+  one row the commit called irreplaceable, in a two-line diff, which is what the
+  new MANIFEST answers. Four of my claims were false, one of them a number I had
+  inferred from an error message and copied into four files.
+
+- **2026-08-10-r8-pc3-q1.md** — R8, PC-3 and Q1 (the first EXTERNAL check).
+  Three of the new instrument's four headline claims failed the same way — a
+  control sharing a source with the thing it controls: the "external" candidate
+  pool could contribute zero names with nothing failing, the fabrication check
+  was defeated by hiding a row's syntax in a PCRE2 comment, and the row check
+  never ran pcrec at all. Two real bugs on axes the sweep held fixed (a missing
+  magnitude rule, a name-length boundary the candidate cap sat below), a fix
+  whose guard scored ZERO until two probe forms were added, and the headline:
+  the over-promise Q1 removed at the doorway with ONE row is still open at the
+  doorways with 24 and 3, which are 217x and 900x wider. The panel's closing
+  report then found a LIVE wrong-module bug — `(?*...)` is the non-atomic
+  positive lookahead and was answered "requires module 'modifiers'" — with the
+  registry the only one of its three homes that had it wrong.
+
+- **2026-08-10-r9-fix2.md** — R9, FIX-2 (K3/K4 and the class-bracket doorway).
+  **The panel that ran a session late**, because FIX-2 was committed before its
+  critics could be convened. The split is the point: both critics who attacked
+  the RULE confirmed it — one over 1,239,480 generated patterns, one over ~2.4
+  billion POSIX-name probes against libpcre2, with the 16-name table
+  independently regenerated and found exactly right — while both critics who
+  attacked the CHECKS found defects. Undefined behaviour in the new
+  differential's one nested-opener shape (a `const char *` read as `%c`), so the
+  construct it existed to sweep appeared ZERO times for two of three delimiters
+  while the header printed 1680; a `size_t` underflow held safe only by an
+  unrelated function's length-check-before-memcmp; a MANIFEST entry hollowed by
+  a duplicated row, plus two more duplicates the critic's own inventory missed;
+  and three of four counts in a CLAUDE.md contradicting the commit that wrote
+  them. The liveness guard added for the first finding **was wrong in the same
+  way the finding was** and passed its sabotage until the positive control was
+  run.
+
+- **2026-08-11-r10-mod0-design.md** — R10, MOD-0's DESIGN (D29 and the MOD-0
+  substeps). **The first panel run against a design rather than an
+  implementation, and the cheapest review in the project's history**: comparable
+  severity to R9, found before a line was written, every fix an edit to a
+  paragraph. D29's spine survived — recogniser-per-row, two ports with two
+  signatures, the semantic port recursing into `p_alt`, no allocation in
+  recognition. Its central guard did not: "exactly one recogniser may answer"
+  FIRES ON A CORRECT REGISTRY, because every tailed bucket has a tail-less
+  fallback row whose honest recogniser is "always matches" and two buckets hold
+  opposite verdicts; and it is a UNIQUENESS guard traded for the REACHABILITY
+  guard it retired, proved on D29's own `-\d+)` collapse, which would have been a
+  tier-2 regression. Both proposed controls were the defect they were meant to
+  cure — `--explain` never enters a doorway, and module-shipped probes are
+  co-location (the drift cure) applied to a circularity problem. The most
+  serious finding is D27's own mechanism turned on the designer:
+  `src/parse/registry.c:62-72`, dated the day before, says *"Do not design a
+  handler signature that assumes it can"* about the exact signature D29
+  specifies, and D29 neither cites nor answers it. And "17 tailed rows,
+  measured" was 18 — measured by one grep for a macro NAME, missing the one
+  tailed row not written through a macro, which was the centrepiece of the
+  argument the number supported. The generalisation, sharper than D27 reached:
+  D29's three defences were all LIVENESS arguments where every failure this
+  project records is a VALUE or SET argument — ask not "does this check run" but
+  **"what would have to be true for it to fail, and who chose that input".**
+- **2026-08-11-r11-parse1-mod01.md** — R11, two panels in one session:
+  PARSE-1's design+implementation and MOD-0.1's design. The PARSE-1 half is
+  absorbed into D31; its sharpest finding arrived **after the commit** —
+  `p_alt` had no linkage, so the step titled "make `p_alt` a usable module
+  callback" had left the callback uncallable, and the rule "re-poll before
+  compiling" was applied twice successfully and lost anyway because its
+  boundary was the build, not the panel. **A checkpoint is not closed until
+  every critic has IDLED.** The MOD-0.1 half REFUTES PARTS OF D30 the way R10
+  refuted D29 and is deliberately left unresolved: D30 §2's non-optional check
+  ("promise a module wherever libpcre2 DISPATCHES") is false — 93 counterexamples
+  in 1,672 probes, ALL of them pcrec being correct, because "dispatched" does not
+  imply a module is owed; D30 §3 gets that right and D30 §2 ignores it two
+  sections apart. Rank is almost entirely unchecked (20 of 22 rows accept any
+  value to 250; the one prefix pair is a single THRESHOLD, not an ordering) and
+  two of D30's three required checks fire on identical boundaries in all 5,632
+  probes. And the returning-doorway defect is FOUR call sites across three
+  doorways, one of which is undefined behaviour: making `pcrec_ext_escape`
+  return makes `build/pcrec` itself SIGSEGV on `[a\qb]`, while `a\qb` silently
+  launders the pointer out of `%rax`. Of the group-discard class, 7 of 18
+  generated patterns are byte-identical to a smaller pattern and 0 of 18 behave
+  as the contract promises. Second process finding: a five-part critic brief
+  delivered materially worse than a brief with one clear primary item — two of
+  four produced only headers.
+
+- **2026-08-11-r12-d32-comparative.md** — R12, a COMPARATIVE design panel on two
+  candidate MOD-0 interfaces. **(Listed late: this entry was omitted when the
+  file was committed.)** Nothing built. Four lenses, one primary question each —
+  and 4 of 4 delivered, against R11's 2 of 4 with five-part briefs, which is the
+  measurement that made narrow briefs the standard. The ordered-list design was
+  killed on the SHIPPED TABLE with no edit required, trial mode was refuted by
+  building it, and a third shape emerged that neither author had proposed. Five
+  of the author's claims were refuted.
+
+- **2026-08-11-r13-extension-design.md** — R13, five lenses on the extension
+  mechanism design. **The design was partly refuted: eight load-bearing claims
+  fell, four to independent measurement by more than one critic.** Selection is
+  NOT position-independent (`(a)x12\12` is a backreference, `(a)x12[\12]` is
+  still OCTAL); the endpoint rule is decided by the DOORWAY not a shape column
+  (`[0-\p{Foo}]` is 147, not 150); `\Q...\E` fits none of the five outcomes and
+  the natural reading is a tier-1 miscompile (`^\Qab\E*$` matches "abbb", not
+  "ababab"); a NULL class port has at least three meanings. **The checks did
+  worst**: 26 findings against ten, two of them the K10 shape the design cites
+  as its own template — check 4 is vacuous for ~90 of 100 rows because the
+  shared handler IS its own definition, and `RK_VERB`'s single row is
+  `REG_SEL_ANY`, so that bucket's coverage is permanently zero. One live bug
+  found and recorded (K13, twelve rows). **Two method lessons, both from the
+  same session and both about measurement rather than code:** the design's
+  position-independence claim was evidenced on the only bucket that could not
+  falsify it; and two CORRECT sweeps of `PCRE2_UTF` reached opposite conclusions
+  because one generator could not express a ten-character construct — which
+  corrected a committed R10 result in D30 §4. *Counting a population by a
+  generator that cannot produce it counts the generator.* Third session running
+  in which critics delivered substantial material AFTER the commit.
+
+## Conventions
+
+Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and
+triaged FIX-NOW | PLAN | DOC | REJECTED | NOTED. Every review also carries a
+PROBED-AND-HELD list with case counts, because a negative result with evidence
+behind it is worth as much as a finding and stops the same ground being
+re-covered next time.
+
+Two rules earned the hard way and enforced here:
+
+- **Do not declare a milestone reviewed until the reports are in hand.** R3 was
+  compiled as self-audit-only because the panel had not reported; the panel
+  then found a live segfault, a hole in a freshly-built guard, and a regression
+  five independent nets had missed.
+- **Review the artifact a stranger would get, not the working tree.** R1 and R2
+  both missed that `.gitignore`'s unanchored `core` had excluded `src/core/`
+  from every commit since M0, so a fresh clone did not build. Cloning and
+  building is now step 5 of the process critic's brief.
+
+- **2026-08-11-r14-part2.md** — R14, three lenses on the design's PART II
+  (the post-ruling redesign), run the same session it was written, ~5,400
+  probes. **Part II's two central factual claims were refuted**: §16.2's
+  "exactly ONE deviating cell" (the second cell, `[:<:]` low-side 130, was
+  printed in the design's own table and read as confirmation; 5,041-pair
+  generated differential, 71 disagreements all one item, plus a FIVE-step
+  evaluation order the 33 curated cells were blind to) and §14.2's digit
+  rule (`\81` is err 115 at any count — the probe set had no run beginning
+  8/9). "backrefs can land alone" withdrawn (the count-scan is a
+  group-header sub-parser; `(?|` needs the nesting-aware branch scan R13
+  used to kill TERMINAL); quote mode is scoped to atom/class-item positions
+  (`(\Q?\E:a)` is a CAPTURING group); quantifiability found as a third
+  unmodelled per-row axis (`a\b*` is 109 — R13's `\Qab\E*` mechanism on 22+
+  rows); three critics independently saved `pcrec_ext_class_pair_opens`
+  from its own deletion. C3's verdict on the first §17.3: "an invariant
+  with no population, no oracle and no sabotage is not a weaker check — it
+  is a sentence." All corrections applied inline marked R14; five decisions
+  left for Frank in §18. Method lesson, third instance: the falsifying
+  bucket was one probe away, and the fix that worked was feeding the
+  predictor from the oracle, never from the row.
+
+- **2026-08-11-r15-mod02.md** — R15, three narrow-brief read-only critics on
+  the LANDED MOD-0.2 migration (the design had R10/R11/R12; this attacked
+  the implementation). No behavioural divergence found (systematic bucket
+  enumeration + live probes). Three findings fixed same-session: the
+  registry_check suite had no count/manifest guard in the directory whose
+  own docs record why that matters (now mirrored from PC-3, plus a NEGATIVE
+  needle — the retired check's PASS line must not reappear); nothing probed
+  the `ambiguous` flag over a swept space after the D32 §9.5 scaffold's
+  deletion (now the no-ambiguity sweep, 261,193 probes, validated in the
+  failing direction); tails-only-at-esc/group was prose discipline (now an
+  assertion). One stale-as-current doc fixed (K10's "four nets" named a
+  deleted check; the successors' shared blindness is now stated). **The
+  sharpest lesson runs the other way**: the checks critic proved two new
+  checks blind to winner-swaps and concluded `make test` would pass one —
+  measured FALSE in one sabotage build; `check_table_to_parser` (D32 §9.1's
+  primary instrument) catches it twice. Verify a critic's consequence claim
+  the way you verify your own: run it.
+
+- **2026-08-12-r16-mod03.md** — R16, MOD-0.3 close (module `classes`, the
+  first producers). Three narrow-brief critics; every lens landed. The
+  checks critic proved the corpus blind to a lower/upper bitmap swap on a
+  box without libpcre2 (measured: 43/43 green with the swap live; ten
+  discriminating pins added — "a caseless pin is not a pin of the two sets
+  it folds together"). The engine critic found a LIVE tier-2 divergence
+  the milestone itself made reachable — \N{2,3} refused where PCRE2
+  parses a quantifier — fixed with the table's first custom recogniser
+  sharing ONE brace-shape scan with try_quant; boundary measured first
+  (probe_nbrace.c, 22 cells), floors moved with predictions. The docs
+  critic filed seven stale-as-current-fact findings, all fixed, including
+  the compliance survey gaining OK-GATED. Also: an engine-critic
+  self-reported-and-reverted overreach (the brief discipline working),
+  and two wrong cells in critics' own reports corrected by measurement.
+
+- **2026-08-12-r17-mod05.md** — R17, MOD-0.5 close (module `modifiers`).
+  Three narrow-brief critics, and a panel first: zero wrong cells in any
+  report (every brief demanded both-sides measurement per claim). The
+  checks critic found three correct-today-unguarded port corners (the
+  a-sub two-homes rule, x-level adjacency/downgrade, unset-wins) — all
+  pinned + sabotage rows S24-26, with the failing direction measured by
+  running the rows against the unpinned HEAD first. The engine critic
+  found bare `(?`-at-EOF answering in the 111 family where PCRE2 gives
+  the same 114 bare `(` gets — fixed in ext.c; the Q2-era pin whose prose
+  claimed PCRE2 agreement moved with its third measured answer in three
+  eras. The docs critic caught tests/modifiers/CLAUDE.md still in the
+  pre-landing voice (the R16 failure mode, one module later) + four more,
+  all fixed. First adversarial read of the option-run grammar (the
+  MOD-0.8 note discharged early).
+
+- **2026-08-12-r18-mod04.md** — R18, MOD-0.4 close (module `verbs`, the
+  migration test). Second consecutive clean panel; zero tier-1 divergences.
+  Checks → S27's offset-blindness generalized to five more REFUSE families,
+  closed with per-family offset pins + S30; engine → the offset-divergence
+  inventory (tier 2, no action, with the two counter-cells that DO match the
+  oracle now measured) and K15 (the too-long category divergence, a linked
+  pair with PC-3's identifier-only length generator); docs → two live-doc
+  staleness fixes (the §5.3 location claim had aged through TWO moves) and
+  the SR-6 as-built naming correction.
+
+- **2026-08-12-r19-mod06.md** — R19, MOD-0.6 close (module
+  `unicode-props`). One tier-2 opened (K16: the `\p{...}` body scanner
+  never detects libpcre2's malformed-body-byte class — 164 of 256 body
+  bytes; ruled DEFER to first producer), the sweep-template lesson's
+  fourth recurrence (three instruments all stopped at the same brace
+  boundary), mech's first UNDETECTED rows triaged as
+  predictions-misread rather than harness failures, and the
+  message-only-pin lesson recurring three lines below a comment citing
+  it. Session-shape note: both implementation lanes died mid-flight;
+  the manager finished the landings from worktree state.
+- **2026-08-12-r20-mod08.md** — R20, MOD-0.8 checkpoint (Q2+SR-9
+  option-run surface, MOD-0.7 `--explain`, docs). The option-run grammar
+  survived ~513M differential probes unrefuted; the tier-1 was an
+  INHERITED precondition nobody re-measured — probe/explain hand ports a
+  Ctx with no setjmp, safe only while no port could `ctx_fail`, and the
+  first producing port had ended that (`--features modifiers --explain
+  '(?i:[)'` → SIGSEGV). Both tier-1s (this and D27's `a(?i)*`
+  miscompile) were reached by GENERATION, fixed same session. Origin of
+  the differential-gate principle (gate-ON, focused per feature) and the
+  carried-forward-comment lesson.
+- **2026-08-14-r21-m4-design.md** — R21, the [M4.3] hard gate: three
+  critics over BOTH M4 design docs plus the two previously-unpaneled
+  ruled inputs. The panel drew blood everywhere it aimed: a LIVE shipped
+  miscompile (K17 — DFA loses leftmost-first priority on lazy nullable
+  prefix + nested nullable star + outer star; found by executing the
+  design's own P-1 probe; 1284 corpus tests and the span-comparing
+  fuzzer had missed it on joint-probability rarity), the design's
+  empty-guard wrong for bounded repeats (60/225,240 vs libpcre2; 0 with
+  guard iff rmax==-1), the Θ(n) frame/trail working set capping capture
+  matching at ~2 KB of subject under the thread-stack budget, a measured
+  silent-stack-smash hazard in the span array-typedef spelling, and the
+  fixed-literal ABI types failing to compile in their own composition
+  case. ASK-1's oracle-disagreement prediction REFUTED (python vs PCRE2:
+  0/225,240 — the planned exclusion mechanism would have hidden K17;
+  replaced by the three-way 2-1-minority rule). Dispositions ratified as
+  D44 (+ the D40 working-baseline calibration); fixes applied by the
+  r21-fixes lane same day; K17 fixed by its own code lane. Eleven of
+  eleven STRUCTURAL citations held; what broke was what was marked
+  BELIEVED.
+
+- **2026-08-15-r22-m45d-capture-author.md** — R22, the [M4.5d] D27-blinded
+  capture author's cell delivery: 85 m/ms cases + 145 group lines,
+  python-derived and twice-verified, 230/230 green against the VM after a
+  whole-line comment normalisation — the strongest independent
+  capture-correctness evidence in the project. Two contract-text gaps
+  (cross-iteration retention; empty-final-iteration overwrite) arbitrated
+  three-way UNANIMOUS and recorded as match_api_m4.md §2.2. Also records
+  the manager's cell-hygiene slip and the stale mk_d27_cell.sh allowlist
+  (still owed). Appendix: 2026-08-15-r22-appendix-author-notes.md (the
+  author's own notes, verbatim).
+- **2026-08-15-r23-k18-memo.md** — R23, panel on the K18 memo design note.
+  The decisive finding (S16): the prototype's `clo_visit` restores the
+  open-loop stack's depth but not its entries, and that single bug WAS the
+  note's entire cost residual — 44 s at the parser's nesting cap becomes
+  0.419 s with a two-line fix — so §6 ruling 1 (the D=64 inexactness
+  threshold) was WITHDRAWN rather than put to Frank. Also: `nonstacktop==0`
+  refuted on the note's own prototype (358/4,369; the corpus could not
+  reach the failure), the cost law posed on the wrong variable (context
+  count, not depth — bounded repeats replicate), a fourth K18 sub-case
+  (preferred-arm, not laziness; two of the K18 entry's controls are live
+  miscompiles with arms swapped), and an invalid-pattern hole in the
+  adversarial generator. A2 itself survived every attack: zero cells
+  A2-wrong-shipped-right across ~330,000 independent span cells; every
+  population count reproduced exactly. Appendix:
+  2026-08-15-r23-appendix-critic-findings.md (three lanes' findings,
+  verbatim); the semantics critic's toolkit archived at
+  docs/design/k18_measurements/r23_semantics/.
+
+- **2026-08-15-r24-eng-brep.md** — R24, panel on the [ENG-BREP] design
+  note, run the same session the note was written and merged. The central
+  result HELD and was strengthened (the repaired greedy possessification
+  rule at 0 counterexamples against libpcre2 too — closing the note's own
+  §8 gap from outside — and the transitive-FOLLOW line surviving a
+  42,336-pair attack with failing-direction controls); the note's LAZY
+  extension was REFUTED (316 cells both oracles; the note's own probe
+  structurally skipped every lazy row and nothing said half the question
+  was unasked), §3.4's derivation had dropped its zero-iteration clause
+  (42% of its own validated population), and every rung-census "distinct"
+  figure was an undercount with ONE cause found at fix time — an
+  uncommitted `sort -u` under a UTF-8 locale, whose collation merges
+  regexes differing only in punctuation. Fixes applied by the note's own
+  author lane same session (merge 9c7a257), including the corpus census
+  moving 18%→17% under the repaired rule and engine_m4.md §6.3/§6.4 —
+  which still stated the refuted rule as "designed, built M4.6" —
+  annotated in place both directions. One new upstream row (U9: PCRE2
+  10.46 won't backtrack into a preceding item after a possessive bounded
+  repeat of a group — python-possessive and PCRE2-possessive are not
+  interchangeable oracles). §9 carries SIX rulings for Frank.
+
+- **2026-08-17-r26-k23.md** — R26, panel + same-day verification pass on
+  the [M4.6c] K23 design note (MRL pruning). The R25 shape again:
+  the soundness ARGUMENT held and was strengthened (the engine critic
+  set out to break preference-blindness and instead PROVED it; the
+  closed-form step law exact out of sample), while the EMITTED FORM was
+  refuted — the §4.1 clamp lands off the iteration lattice on stride>1
+  cursor rungs (5/8 subjects wrong on a live-population shape) and the
+  855-cell differential was structurally blind to it (single-byte
+  corpora; the lane's own §11.1 lesson unapplied to its own generator).
+  Lane revision same session: lattice rule in, corpus regenerated with
+  stride+residue axes, 1,059 cells / 0 disagreements, and the sabotage
+  arm PROVING the blindness (101 red, zero at stride 1). Verification:
+  V1-V7, one PARTIAL (a stale sparse table — the carried-number defect
+  in the exact cell finding 10(a) had flagged). Panel-contributed
+  improvements with provenance: the lattice rule itself, the
+  prefilter-window ceiling (ruling 6 to Frank), the ratio-tracking
+  python argument. Critic self-disclosures recorded, including R24
+  M-F1 reproduced verbatim by the critic's own `sort -u`. Two Frank
+  rulings queue: adopt-MRL; prefilter-ceiling v1-vs-fallback.
+
+- **2026-08-17-r27-dd13a.md** — R27, two critics (+ forks) on the
+  [DD-13a] format requirements note. The census survived a ~50-point
+  re-derivation EXACTLY; the blocker was three-way independently
+  confirmed and was the note's own §13-warned failure — an unreproduced
+  "grep returns 3 hits" claim (real: 6) hiding subst_template_design.md
+  §8.1's repl/s/sg/serr, the most concrete format prior art in the
+  repo. One finding ran in the note's FAVOR (R-GEN-1 is n=5, not the
+  self-criticized n=1). The DIALECT conclusion survived its own
+  steelman. Author fix pass merged same session (4b2e0b7).
+- **2026-08-17-r28-mrl-landing.md** — R28, the [M4.6d] LANDING panel
+  (three lenses on the delivered branch; the design had R26). Soundness:
+  SOUND TO MERGE, six of six claims survived a ~285k-cell independent
+  battery including a DFA-engine oracle that terminates where python
+  hangs (instrument adopted). Two instrument MAJORS closed before merge:
+  MRL had zero sabotage coverage (now S58-S63, all DETECTED), and the
+  answer-more exemption's "2 cells" was per-PATTERN reports miscounted
+  as cells (real: 22 — now counted, printed, asserted, and refereed
+  22/22 by a --no-captures DFA third arm). The panel's best find, from
+  two directions independently: the lattice rounding is behaviorally
+  DEAD (the folded loop bound is SELF-ROUNDING; the shipped emitter
+  cannot express R26 E1), its named guard grepped an argument rather
+  than the property, and the actually load-bearing underflow guard's
+  removal is an ASan overflow invisible to answer sweeps.
+
+The NOTED list of the most recent review is the honest inventory of what is
+still unguarded; read it before starting new work.
+
+Maintenance: add a file per checkpoint and list it here.
+- **2026-08-18-r29-match-api-spec.md** — R29, the D6 panel over
+  docs/spec/match_api.md (the first spec document, [M4.7f]), riding the
+  [M4.7g] close. Three lenses (artifact / ruled-corpus / adversarial
+  consumer). Matching semantics held everywhere (§5, §5.1, anchoring,
+  composition, §7 truncation — span-for-span vs python re, both
+  engines); the blockers were all in the surrounding surface: BOTH
+  shipped doc-comments (emitted rx_matchfn block + lib/pcrec.h searcher
+  comment) affirmatively deny the give-up-code space §4 promises and
+  the artifacts produce (−2/−3 measured); §2 quoted a corrected comment
+  as if shipped; §8's calling sequence cannot compile a pattern
+  (pcrec_default_options and pcrec_output/_free absent); §3.1's
+  find-all instruction is an infinite loop on empty-matching patterns.
+  Panel-vs-manager-read lesson: the manager's end-to-end read checked
+  the spec against its own citations; the critics checked it against
+  alphabets the document didn't choose. A7 adds a DOCUMENTATION
+  instance to the controls-share-a-source catalogue (evidence quoted
+  from the engine where the claimed branch is unreachable). Fix pass:
+  lane/m47g-fix.
+- `2026-08-25-r35-wave-g-panel.md` — [DD-14] WAVE G pre-merge critic panel
+  (lane/srG at 2219dda): critG-engine (opus) + critG-checks (sonnet), both
+  read-only. E1 BLOCKS: a spliced target reaching a LINKED target overflows
+  the splice save block — two computations of |W| (`spl_nw` vs `rgn_nw`)
+  from two mechanisms, and the corpus had ZERO artifacts with both linkages
+  (113 spliced-only, 37 linked-only), so every bar was structurally blind;
+  the lesson is a MISSING CELL, not a missing assertion. Three riders
+  (false pass-reorder argument, a false `--emit-ir` diagnostic, a stale
+  emit_dfa.c comment), four check fixes already landed by the lane. Held:
+  the narrowed-W nesting theorem under four constructions, nfa.c exactness
+  against a hand-inlined python oracle, elision partial-on-DFA impossible.
+- `2026-08-25-r36-frame-buffer-code-panel.md` — [DD-14.FB] CODE-HALF pre-merge
+  critic panel (lane/srFBc 79873cb → rebased 454c5b0): critFB-engine
+  (opus) + critFB-checks (sonnet), read-only. Skeleton committed before
+  the reports; findings and dispositions filled as they arrive.
+- `2026-08-28-r39-optk-design.md` — [OPT-K] DESIGN-NOTE panel (lane/optk
+  d13f5be, before the emitter side): critic-sem (opus) + critic-cost +
+  critic-arch (sonnet), read-only. Skeleton with two lenses' findings
+  and dispositions committed first; the semantics lens appended on arrival.
+- `2026-08-30-r46-w11-impl.md` — panel on the [DD-13b.W1.1] MERGE (r46sem opus / r46chk sonnet, during battery 4): 1 BLOCKER (leg B's escape emits the table index, not the byte), 8 must-fixes, the 'agree on the corpus, diverge outside it' class; triage table → fix lane w11f.
+- `2026-08-30-r47-opt41.md` — one-critic review of [OPT-4.1] (r47sel, sonnet, during the lane's Phase 2): 1 must-fix (the declined-nullable flag's missing collapsible-rep conjunct — reproduced, fixed, pair-checked), 1 benign note; the minw predicate survived structural induction.
+- `2026-09-02-r51-opt5-step2-impl.md` — the D6 panel on the [OPT-5] STEP 2 IMPLEMENTATION (merged da4fe60, abi 16), run read-only beside the union battery: soundness HELD under live witnesses on six attack surfaces (r51sound); six weaknesses in the shipped CHECKS, none in the emitter (r51check) — three of the learnings-§3 shape (a grep-for-identifier wiring check, a copied population floor, a check with no sabotage row) — to fix lane r51fix after the battery.
+- `2026-09-12-r57-w23-format.md` — TWO-ROUND panel on the [DD-13b.W23]
+  format design revision (rev 3 + 3.1 + 3.2 on lane/w23design). Round 1:
+  three opus critics (grammar/schema/consumer), 3 blockers / 12 must-fix
+  / 14 should, all FIX-NOW — the central catch reached independently by
+  two lenses: the BLOCK SCALAR was a second, undeclared structural
+  device, so the structure layer took two schema parameters while
+  claiming one. Also: the constraint-kind set missing four of W23's own
+  refusal rules (one needing the cross-scope kind the same section
+  deferred), a bench check satisfied by a refusal with an EMPTY
+  population (K35 caught at design time), and a fifth accept→reject
+  narrowing found by probing the shipped binary (`x_y` beside `x-y`).
+  Round 2 (focused re-check on rev 3.2): blockers b/c HOLD outright;
+  blocker a's fix failed on its own axis — S0 declares three line
+  classes and S1/S3 ruled two (the COMMENT line and the WHITESPACE-ONLY
+  line each have shipped structural effects the layers couldn't
+  produce; one of them is multi-paragraph prose's only spelling) — plus
+  a census scope hole and a latent cardinality narrowing-generator.
+  Fix rounds: w23fix (rev 3.2, three accepted pushbacks incl. K57 filed
+  and narrowings-AVOIDED-not-taken), w23fix2 (rev 3.3). The method note
+  worth keeping: every fix round's own instrument, swept across the
+  whole delivery rather than the finding's section, found the next
+  round's defect.
+- `2026-09-17-r60-opt-dial-design.md` — three-critic panel on [OPT-DIAL] STEP 1 (lane dialdesign, parked): 6 blockers / 16 must-fix / 8 should / 3 nit; the lambda arithmetic and ~25 numbers verified exact; fix round (lane dialfix) ordered; the Frank queue REFRAMED (Q2/Q2b/Q3 not decidable as delivered; phi graduates to the blocking measurement).
+- `2026-09-23-r1-var-design.md` — three-critic panel (mech/opus, spec/sonnet, test/sonnet) on the [VAR] design (variables_common.md, variables_pattern.md, replace_design.md, variables_roadmap.md; lane vardesign). 30 findings, 2 blockers; the central claim (a pattern variable is a backreference with a caller-supplied span) survived every lens. MECH-B1 (VM-only ≠ prefilter-free) applied; MECH-B2 (`<prefix>_match` IS rx_matchfn) RULED by Frank same day = D121 (variables passed BY NAME, riding rx_ctx, resolved once per entry call; lane varnames applied it). Every ACCEPTed disposition applied to the notes by lane varfix.
+- `2026-09-25-r1-litscan-s1.md` — S1 LIGHT panel (s1crit-cost + s1crit-sem, sonnet) on the [OPT-LITSCAN] S1 design note (litscan_s1.md, lane s1design), applied by lane s1rev same day. 3 findings from s1crit-cost (a program-identity claim with no artifact, now reproduced; the census's own B-branch predicate corrected — the corpus "program changes" count moves 523 → **513**, not the hand-adjusted number, 8 rows excluded rather than 3; the k-set table's status as a feeder analysis, not a parallel selector, flagged for Frank's sign-off) and 7 from s1crit-sem (the loop guard's ASan read-safety widening; §8.1's "K64 sibling gap" REFUTED and closed, with a note that k64fix's own conjunct is more conservative than required; the caseless exclusion rewritten as a structural consequence rather than a rule, with `(?i)`-no-letters shown to move soundly; a soundness-argument grounding fix (clause 2, never `k0`); the G1 admission conjunct specified exactly; a seeded-machine performance hazard; two implementation obligations). No finding refutes S1's mechanism or its acceptance targets. Frank's §9 Q1–Q3 recorded PENDING (unruled).
+- `2026-09-25-r2-findings-design.md` — three-critic D6 panel (fcrit-model, fcrit-sound, fcrit-analyzer) on the [FINDINGS] design note (`docs/design/findings/design.md`, lane findesign), applied by lane findrev the same day as ONE disposition table (the note's §R) plus `[r2 <id>]`-marked in-place edits. Five blocking findings, all applied: the bundle-level (query, encoding) collision rule and the settled digest (M-B1); `--analysis` FILL-ONLY and the first stop = the compiling file only (M-B2/M-B3, RULED by D123 addendum 8); **K65** (the necessary-byte pick decides a no-DFA-front VM give-up), which widens the invariant to answers AND give-ups with GIVEUP1 as its check (S-F1); and C3's soundness argument (S-F2). The revision found one more K65-shaped case itself (C2b, the run-window choice; argued, not measured). Three items are OPEN to Frank. Its record is honest about what the relay did not carry: fcrit-model notes 13–19 and fcrit-sound F4/F7/F12 are NOT dispositioned. Verdict: no blocking item remains in the design; a focused re-check is recommended; B2 has three external preconditions.
+- `2026-09-25-r3-litscan-s1-panel.md` — the FULL D6 panel D122 addendum 4
+  item 3 requires on `[OPT-LITSCAN]` S1 revision 2 (s1crit-sound/opus,
+  s1crit-axis/sonnet, s1crit-consumer/sonnet), applied by lane `s1r3` the
+  same day as revision 3's `§R3`. **No BLOCKING finding; the mechanism
+  holds.** Sharpest items: a G1 pseudocode fix that keeps
+  `dfa_cand_scan_byte`'s own DFA-scan guard and `ENG_ATTEMPT` arm verbatim
+  (dropping them would have called a DFA-shaped derivation on exactly the
+  no-DFA routes K65/K66 live on); **K66 filed** (`known_issues.md`), the
+  RUN-WINDOW analogue of K65 (C2b, the fcrit-sound-argued case from r2
+  now MEASURED on the k65fix build), with a stated coupling invariant (S1's
+  pin and the eventual C2b fix must read the SAME `Job.req_run` field) and
+  step 6 (Q1's floating-run conversion) SEQUENCED after GIVEUP1
+  (`lane/chkgaps`) merges and a ruling on K66; the R4 deny-widening site
+  list corrected (`compile.c:1576` was missing) and replaced with a grep
+  recipe, plus an ordering rule (the bit-32 `#define` must not land first);
+  a coordination paragraph added to BOTH `litscan_s1.md` §1.5 and
+  `findings/design.md` §6.2a naming the shared `req_admit`/G1 site and
+  which lane rebases onto which; and the two open N1-N3 items from
+  revision 2's own §9 ruled (two-bit deny ACCEPTED, a `!views` alternative
+  REJECTED with R7 ratified, row (j)'s reachability upgraded to a hard
+  delivery-bar item).
+- `2026-10-03-r1-litscan-s4-c3.md` — LIGHT D6 panel (s4crit1 soundness/opus, s4crit2 contract/sonnet) on [OPT-LITSCAN] S4 commit C3 (the caseless necessary run, litscan_s4.md §2.3). The core idea holds (a cube run is a sound necessary condition), but C3 is NOT built until §2.3 is revised: an order-dependent alternation head/tail that DELETES a match (`(?:S(?i:ab)|(?i:sab))` on `sab`; fix = the cube hull), a false "req_byte -1 on every mover" premise whose consequences are a false RX_REQ_BYTE stamp and a NOMATCH→give-up regression (witness `(x?)([a-z]+)+S\d(?i:select)\1`), a second pick-a-byte/window rule (D126 Q4), an incomplete reader list, and additive admission defeating the caseless run (overturns the manager's Q5 ruling). C0/C1 unaffected; C2 held (D77).
+- `2026-10-04-r1-k82-handoff.md` — LIGHT D6 panel (k82hcrit1 soundness/opus, measured; k82hcrit2 checks/sonnet) on the K82(B) handoff design (litscan_k82h.md, lane/k82hand). The mechanism SURVIVES ~60 measured shapes at every startpos (0 diffs, controls firing); not build-ready: the gate's RETURN VALUE becomes load-bearing (leftmost, ≥ search_from — a later-occurrence gate gave 6,549/18,052 wrong cells), controls share the K walk with the build, the every-artifact stamp misses the byte-count reader class, encoding-check and strategy-denial gaps, ill-formed utf8 round-up, the hybrid prefilter as a third \G reader, and the give-up→match allowance narrowed to count-collapsed prefilters only. All 17 findings ACCEPTED; revision lane k82hrev.
+- `2026-10-05-r1-option-sets.md` — LIGHT D6 panel (setcrit1 model/opus, measured; setcrit2 surfaces/sonnet) on the [OPT-SETS] design note (option_sets.md). The idea holds (dial members byte-identical, checked); not ready: today's cross-source composition misdescribed (raw bits UNION, features WHOLE-LIST; deny/force is ONE axis — BLOCKER), the constraint table is not first-match (rows co-fire), headline rules hold only within one source, RX_SETS has no consumer and stamps the spelling, checks derive from the table they check, v4/SVE members never run on any house box, two of three triggers not real. All ACCEPTED; revision lane optsrev.
+- `2026-10-05-r2-memfn-k0.md` — LIGHT D6 panel (k0crit1 price model/opus, re-derived from transcripts; k0crit2 boundary/checks/sonnet) on [MEMFN] integration.md rev 2 (K0 price query; pcrec arch-blind). Architecture holds (selection re-derives correctly; opacity achievable). The measurement layer is not ready: the price regime (dependent/independent, hit/miss) flips verdicts; corner-dominance is a model, not a proof; pcrec rows priced from the kit's hand loops (shared source) while prefix_k.c already holds measured constants; prices keyed on arch but compiler-dependent; recalibration would move bytes without an abi event; the C4 regex misses most arch vocabulary; the C3 control has no home, no long subjects, no armv8 arm. All ACCEPTED; revision lane memfnk0r3.
+- `2026-10-05-r3-memfn-delegation.md` — LIGHT D6 panel (delcrit1 contract/opus, read against the emitters; delcrit2 guards/sonnet) on [MEMFN] integration.md rev 3 (D146 delegation). No blocker; architecture holds. Byte-identical migration is NOT reachable through the hooks as specified (real sites return/break/are whole functions/are guard-conjoined expressions; ADVANCE lacks count/peek; in-emitter denies have no channel; form tallies; empty/wrapped ranges; the K82 gate needs a positioned ALL_PRESENT; REQUIRED vs OPTIONAL terms; totality needs a generic scalar row); the stamp contradicts Q3; shipped denies unswept; C9 cannot run; standing questions unanswered. All ACCEPTED; revision lane memfndel4.
+- `2026-10-05-r4-startset.md` — the FULL D6 panel on START-SET (`startset.md`, D148): ssc-sound (opus), ssc-checks and ssc-cost (sonnet), read-only; critic files and the soundness harness in `2026-10-05-r4-startset/` (own CLAUDE.md). Consolidated by lane ssrev with every id dispositioned (34/34) and duplicates merged explicitly.
+  - **One BLOCKER** (sound-F1): the DFA hat's `T = S ∩ E` deletes matches on 6 corpus movers. Resolved by measurement: (a) `S ∩ E*` ≡ (b) `S` on every seeded machine, 0 diffs over 13.58M cells; mover-identical to (c) under the `T ⊊ E` admission.
+  - **The fact's control could not fail where it mattered**: no seeded machine, and a tautological twin. It is rebuilt with walk plants and a start-byte oracle.
+  - **The forced-VM sweep that D148 Q7 relied on did not exist.**
+  - **Six questions for Frank**: Q-R1..Q-R6.
+- `2026-10-05-r5-memfn-rev45.md` (+ `2026-10-05-r5-memfn-rev45/critic_{A,B}.md`, the critics' full texts) — LIGHT D6 panel (critic A contract-vs-emitters at abi 61/opus; critic B Q55 + stamps + staleness/sonnet) on [MEMFN] integration.md rev 4.5 (memfn R-2). ONE BLOCKER: the set-leads lead is REQUIRED on no-DFA routes (K65), not OPTIONAL. Majors: `use` is per-instance; pcrec stamps describe the kit's scan form; 28 mech rows anchored in M1 emitters; composite `empty`; `MEMFN_FORMS` constant `none` at SIMD-off; bench attribution; C11 unreached; the libc record's control and idiom loads; Q54's cite/scope. All 23 ACCEPTED (kit session); revision lane memfnr46. Carries the kit session's Q53-Q55 recommendations.
+- `2026-10-06-r2-starttable-recheck.md` — the SHORT RE-CHECK (start_table.md §6 Q9) of `docs/design/start_table.md` revision 2 by the light panel's two critics (checks/sonnet, soundness/opus; panel `2026-10-06-r-starttable-panel.md` + `…-crit-checks.md`/`…-crit-sound.md`): both "CLEARS with listed fixes", no blocker, majors C-N1 (61 owner-`?` anchor sites), C-N2 (no trace instrument), S-N1 (termination is a per-row obligation, not a type). Disposition table (all ACCEPTED, C-M2 with a measured nuance), applied as the note's revision 2.1 by lane starttabrev3; three findings filed: S169 is shared by two row files, bits 12/13 have the [AXES-DENY-MASK] shape, `-fno-length-prune` is a start-table input.
+- `2026-10-07-r-poss-arms-panel.md` — FULL D6 panel on [ART-POSS-ARMS] (poss_arms.md rev 1): critic A soundness/opus vs 10.46, B checks-tests/sonnet, C contract-staleness/sonnet; read-only, against post-K93 main. Both arms are sound only as revised. BLOCKER A-F1: A1 drops K93's joined call-site contexts, so `(a+(?:\b|))|b(?1)a` on `baa` would be (1,3) vs (0,3). HIGH: the arms flip atomic-discharge routes VM→DFA, an uncounted population that makes the deny bits engine-selecting; A1 needs a P-indexed follow. Check BLOCKERS: possdiff can't reach the plants, no claim-vs-mark check, empty ablation controls. K94 is NOT a prerequisite. The possessify decision family is filed as [POSS-CTX-TABLE]. All ACCEPTED; rev 2 + measurements to lane possarms2, then a light re-check.
+- `2026-10-07-r1-memfn-rowcon.md` (+ `2026-10-07-r1-memfn-rowcon/`: the four critics' full texts and the kit manager's dispositions) — D6 panel (soundness/opus; reach, visibility, contract/sonnet) on [MEMFN-ROWCON] row_contracts.md rev 1 (Frank, after K96). All four: core sound, not ready as written. 8 blockers: the define/use mask-equality rule refuses every PRE/OFS site pcrec sends (fields need a binding time); Q-ROW-1's `miss` default would refuse live PRE handoff sites; T3 cannot be zero-mover (S2-S7 become contract rules plus refusals); reach is counted at too coarse a grain to catch K96 (per row×field×value-class); the controls are not independent; the record has no reader and does not map onto the start-table trace; the charter question was never asked. 71 ids by id, themes T-A..T-J; revision is rev 2. Q-ROW-1 (contract rulings) and Q-ROW-4 (charter) go to Frank.
+- `2026-10-07-r2-memfn-rowcon.md` (+ `2026-10-07-r2-memfn-rowcon/`: the critics' texts and the dispositions) — D6 RE-CHECK of [MEMFN-ROWCON] rev 2.1 (the pcrec-customer lens/opus, the soundness re-check/opus, the reach/visibility/contract re-check/sonnet). 47 ids (5/20/22). Verdicts: customers hostable "yes-with-changes"; not yet sound; revise-minor. Blockers:
+  - the engine re-introduces zero-means-X (routes 0 is DFA-only in pcrec, scope 0 is a real slot);
+  - the predicate signature is incompatible with pcrec's bool predicates;
+  - no-silent-defaults reaches only pointer hooks (it needs a stated bitmask);
+  - the snapshot has no placement for EXPR/FUNC/ASSIGN/ADVANCE and breaks -Werror on unused locals.
+
+  Themes U-A..U-O; rev 3 follows. Q-ROW-5 (the stated-bit scope) and Q-ROW-6 (a snapshot without a public deny) go to Frank; Q-ROW-4 is still pending.
+- `2026-10-07-r3-memfn-rowcon-spotcheck.md` — the one-critic (opus) soundness spot-check of [MEMFN-ROWCON] rev 3: all r2 blockers resolved but one partly; NEW B1 (`UNSTATED` in serves is inert, and Appendix B's precheck uses would decline every PRE site, a T3a mover). Majors: MF_SELECT lacks scope/rec/opts; rows don't serve every field pcrec states; snapshot of non-value hooks and nested sites; the `_mf` prefix vs `-p`; fit_rungs' NULL means skip; 0-meaningful used fields. All answered by row_contracts.md §8 (rev 3.1); T0 ready.
+- `2026-10-07-r4-memfn-rowcon-light.md` — LIGHT one-critic (opus) re-check of [MEMFN-ROWCON] rev 4, the narrowed K96 generalization. B1: the gate ran at define only, but most hooks are use-time, so N3 would have deleted the call-time half of the K96 fix (now a use-phase re-check). M1: the poison differential misses a row that IGNORES a field (a semantic differential is added). M2: N3 entry re-runs the census after R-6. M3: the UNSTATED layout bump is cut. S2-S8 are closed by the IDENT/JUMP text classes and the generic floor-agreement refusal. Answered in rev 4.1; N1 builds with no further panel.
+- `2026-10-07-r-poss-arms-panel.md` — FULL D6 panel on [ART-POSS-ARMS] (poss_arms.md rev 1): critic A soundness/opus vs 10.46, B checks-tests/sonnet, C contract-staleness/sonnet; read-only, against post-K93 main. Both arms are sound only as revised. BLOCKER A-F1: A1 drops K93's joined call-site contexts, so `(a+(?:\b|))|b(?1)a` on `baa` would be (1,3) vs (0,3). HIGH: the arms flip atomic-discharge routes VM→DFA, an uncounted population that makes the deny bits engine-selecting; A1 needs a P-indexed follow. Check BLOCKERS: possdiff can't reach the plants, no claim-vs-mark check, empty ablation controls. K94 is NOT a prerequisite. The possessify decision family is filed as [POSS-CTX-TABLE]. All ACCEPTED; rev 2 + measurements to lane possarms2. Re-check (critic R): DOES NOT CLEAR — N1 BLOCKER (A0+B miscompile: arm B reads a zero-width gate as captured text), N2 (greedy-only IS load-bearing; the lazy ablation was blind), population shared across all instruments → rev 2.1 + a D27-blinded composition pass.
+- `2026-10-08-r9-memfn-simd.md` (+ `2026-10-08-r9-memfn-simd/`: the three critics' full texts) — D6 panel on the memfn SIMD layer design (R-9, integration.md rev 4.9 §R4.9; correctness/opus, measurement/sonnet, fit/sonnet). 43 findings (2 BLOCKER, 20 MAJOR, 21 MINOR), all dispositioned. BLOCKERs:
+  - F-1: batch 1's row is not reachable through `arms[]`, because PRE's FUNC body is rendered by a direct call. A zero-mover FUNC-body form-table seam comes first, and there is no decorator.
+  - M-1: the verdict box, REFRAMED by D144 addendum 4 (official verdicts are pcrec-bench runs on each targeted hardware: Zen 1 bench box, Zen 4 dev box with AVX-512, Mac).
+
+  Majors:
+  - `T` is defined two ways, one of them over-reading;
+  - the cascade guard survives `-mgeneral-regs-only`;
+  - C-SEL is red on size-quoting stamps (new Q-R9-9: D84 cap vs guarded bytes);
+  - G2 and the answer sweep miss most wrong vector paths;
+  - the acceptance record and bar are underspecified and gameable;
+  - three deny carriers and a cloned walk (one carrier, one walk);
+  - five projections of one paired compile, which should be one sweep arm.
+
+  F-6 (a SIMD ADVANCE bound in M6's ABI 8) was decided NO (D77). The revision follows; Q-R9-n go to Frank after it.
+
+- `2026-10-09-r9b-memfn-simd.md` — LIGHT two-critic (sonnet) re-check of integration.md §R4.9 after D155 and add. 1: contract critic (deliverable after RC-1/RC-2), docs critic (BLOCKER DS-10, C18 still described as two legs); all 21 findings applied, by-id table inside.
+- `2026-10-09-r-revend-panel.md` — LIGHT D6 panel (rvcrit1 exactness/opus, ~70 new twins vs 10.46; rvcrit2 fit+checks/sonnet) on [OPT-REVEND] (revend.md, lane revdes). Exactness UPHELD (47 new shapes, 0 diffs beyond K74). Four HIGH: a dead speculative seed is an OOB read (end_pin admits trailing lookarounds, contrary to the note), CT_VERDICT has no accepting successor in WINDOW, R2b dereferences NULL, `.routes = CR_DFA` breaks route-independence; stamp-value readers missing from §5.3. Q1 (REVEND before W1) RE-OPENED to measurement: 3 passes vs 2 on bounded patterns, and W1-first needs no width conjunct (lane revq1). Bench predictions held pending the `.txt` re-run.
+- `2026-10-09-r-locfin-panel.md` — FULL D6 panel (lfcrit1 exactness/opus, measured vs 10.46; lfcrit2 table fit + checks/sonnet; lfcrit3 generality + unlocks/opus) on D156's locate × finish note (lane locfin). The frame holds, and stage 2 is NEUTRAL (0 / 5.2M window diffs). Not build-ready:
+  - the types and finishers shrink to the general form: start-interval × end-set, and four finishers × an engine hat;
+  - FINISH folds in `dfa_matches[]` and the VERIFIER/LOOP/CALLER nodes;
+  - totality is keyed on (locator route, finisher route);
+  - posture splits into a join plus a contract, with a give-up differential as its control;
+  - O4 admitted a wrong answer (E2);
+  - rev-inner per-occurrence CAND is unsound under backrefs in S (E1), which also corrects where_to_start.md §2.2.
+  Unlocks filed: a forward relaxed-backref prefilter, seed-set walks, fixed-width RECOVER. Revision lane locfin2.
+- `2026-10-09-r-startlanding-panel.md` — D6 panel (slcrit1 exactness/opus, slcrit2 fit+checks/sonnet, slcrit3 generality+unlocks/opus) on [START-LANDING] (start_landing.md, lane landdes). The rows are EXACT: ~558M per-call checks, 0 differences. Two critics independently found the utf8 guard QUADRATIC on ill-formed lead runs (7 s vs 0.12 ms at k=1e5), and two linear forms exist. The checks and readers are hand-listed and incomplete (empty engines, run_search_pinned/nomatch_caps/scan_edge gates, dead-group fill, three rows going unreached, no standing detector). Unlocks: fixed-margin captures, the byte-width interval for W1 under utf8. Revision lane landrev.
+- `2026-10-11-r1-rinner-g2.md` — one critic (critsound, opus) on D151 addendum 5's factor-free G2 arm and the manager's Q2 (per-branch inner_split), before [ENG-TACTICS] stage 1's build. Arm SOUND WITH CONDITIONS (floor = previous verified occurrence start + 1; fold-variant set; trimmed NFA x KMP; the model re-run per F6); Q2 UNSOUND as called, revised in D151 addendum 6 (one common L, per-branch verify in increasing s*_i). Lens: the "where a start lies relative to a landmark" family becomes one derived fact.
+- `2026-10-11-r2-lossreview-fixes.md` (+ `2026-10-11-r2-lossreview-fixes/`: the three critics' texts) — D6 panel (cause/opus, family/opus, rank/sonnet; desk reads, no timing) on [LOSS-REVIEW] phase 2's fixes.md. No blocker; not ready to rank. Cand 1's counts and refute bar wrong (3.94M calls; per-cell bands; specialization only on 1-char captures); DENSE-SKIP's (iii) ruled out and (i)/(ii) inseparable on totals (five-arm per-subject design; boundary-pair skip filed); R4d's extrapolation unsupported; cand 6 = [OPT-3-RUNEND](a), already timed as noise; pricing must split on D146's line; `model_cost` IS the primitive; the kit density fields exist and are empty; FIND is one table already; two new families filed. All 19 ACCEPTED; revision lane lrrev.
+- `2026-10-11-r3-memfn-r17.md` — D6 panel on [MEMFN] R-17's general set-FIND row (r17s_report §3.4, plus the step-2 timing reading): three read-only critics (correctness/over-read, regime/density admission, contract vs emitters; all sonnet). The direction holds (one term-list row, no parallel mechanism). It is NOT build-ready.
+  - BLOCKER C1-1: `hi` wraps at n = 0, and the check skips that case.
+  - The term derivation is unspecified and untested.
+  - The two-halves rollout moves SIMD-off bytes twice: route once, then zero-mover SIMD rows.
+  - The SIMD-off half needs pcrec-side facts (the include query, table-unread, a uniform FIND description) and spec hunks.
+  - The 300k loss is not yet decision-grade (table non-monotone, i.i.d. placement, grid holes, K unreadable).
+  - 36 ids dispositioned. Q-R17-1 (density admission on positive evidence, so the row is inert until N1) and Q-R17-2 (one routing event for every PF site) go to Frank via main. Next: revision 2 (setfind.md) plus a follow-up measurement.
+- `2026-10-12-r4-memfn-setfind.md` — LIGHT re-check (K1 soundness/opus, K2 contract fit + D157/sonnet) of [MEMFN] R-17 revision 2 (`setfind.md`: the degenerate window search, stateful mask/ring forms + adaptive, one routing event, kit-owned body storage), alongside lane r17dry's harness dry run (4.04G calls, 0 mismatches; planted 152/152). There is NO blocker: the equality proof, shifts, LOWEST, ring capacity and storage dominance all hold, and r3's C1-1 is closed. Six must-fixes:
+  - K1-1: adapt names the VM hat's function-local table from a prologue helper;
+  - K1-2: S833 is an equivalent mutant;
+  - K1-3: the dirty-stack control fails safe;
+  - K2-1: no file-scope buffer at the DFA table point; define from `emit_block`;
+  - K2-2: "move once" holds for PF only;
+  - K2-8: R17-b's reader census is spec-only.
+
+  24 ids are dispositioned in a revision 2.1, text only. The timing proceeds independently.
+- `2026-10-12-r5-memfn-setfind22.md` — LIGHT re-check (one critic, opus) of [MEMFN] R-17 revision 2.2 and its bench draft (already relayed as I-148). There is NO blocker: the `next_candidate` proof under the s/n binding holds, and no site loses a form. Must-fixes:
+  - K3-1: the all-widths shared block moves every SIMD-off artifact on any new width; the fix is per-width sub-guards emitted on use;
+  - K3-2: the guard reads the live `n`, the helper the bound one, and K1-4's trace check went vacuous;
+  - K3-5: the bench gate rejects on noise (one A/A draw, same-binary layout blindness); the fix is a re-run plus a standing spread plus a layout-perturbed A/A;
+  - K3-4: "state-losing by construction" sent to the bench.
+
+  The last two need an I-148 corrigendum. K3-7 (refuse the reserved `-p` stem) is pcrec-side, N6. 11 ids; revision 2.3 follows.
+- `2026-10-11-r3-prior-cost-unify.md` (+ `2026-10-11-r3-prior-cost-unify/`) — light D6 panel (sound/opus, fit/sonnet) on [PRIOR-COST-UNIFY] rev 1: frame holds, not build-ready (D158 check tests nothing today; U1 zero-mover via unstated adapters; signature misses its own terms; census miscounted; silent stop_reentry default; three checks cannot fail). All accepted; rev 2 by lane pcurev; Q1, Q4 to Frank.
+- `plan_triage_2026-10-12.md` — [PLAN-LINT] step 1 (lane plantri, sonnet, read-only): plan.md classified item by item (262 rows + 40 free-text blocks: COMPLETED / SUPERSEDED / DUPLICATE / STALE / JUNK / LIVE with evidence and a proposed action each), Frank's named examples answered, the file's own rule violations listed, format inconsistencies counted by kind, and a proposed canonical row format with lint rules P1-P19 for step 3. A record of the file at main 43f78acc1; line numbers are that commit's.
+- `2026-10-12-r1-memfn-r17b.md` (+ `-critA.md`, `-critB.md`) — LIGHT code review of [MEMFN] R17-b (lane/r17b 174f3e320, abi 77): critic A emitted-code correctness/opus, critic B contract + package/sonnet. 0 BLOCKER, 10 SHOULD. No wrong answer, over-read or UB (exhaustive W8 masks; stateful == stateless for n <= 20). The SHOULDs: `mf_use` does not check s/n; the budget is a visible constant (lane r17b2); compile time 3-7x; slot25's judges are toothless; four doc misstatements; no artifact-level cover check; the +2.2 KB per site moves the refusal set (main ruled a general size-ladder rung declared by kit row attribute, same commit). By-id disposition table inside; fixes go to lane r17c.
+- `2026-10-14-r1-measure-sets.md` — D6 panel (msc1 checks/independence/staleness opus, msc2 contract/boundaries/family sonnet, msc3 measurement validity sonnet) on [MEASURE-SET] measure_sets.md (lane msetdes). 4 blockers (immutable MOVERS vs HEAD census; the python pre-parse checked against its own twin; the envelope default unbuildable before a second official set and moving selections at n=1; answer identity unable to reach runtime dispatch), 22 majors (invented wire shape; stamp vs `_FINDINGS` conventions; kit-vocabulary key columns; staleness not transitive and gating on the bench; per-column envelope; unpinned units and regimes; install gate), the SIBLING FAMILY (one knowledge-source module for analysis/measures/picks). All ACCEPTED; Q-MS-1 re-put and the stale-default policy go to Frank; revision lane msetrev.
+- `2026-10-14-r1-memfn-regime-eval.md` — D6 panel (crit-meas measurement/pre-registration, crit-indep independence, crit-contract boundary/staleness; all sonnet, read-only) on [REGIME-EVAL] regime_eval.md rev 1. Three ACCEPT-WITH-FIXES verdicts with two BLOCKERS:
+  - I-1: the pick checks compare the kit's one selection function with itself; a blinded prose-row oracle is needed.
+  - I-2: G4 cannot pass and row deletion passes vacuously; unscorable rows go to the twin, and controls are tested per moved cell.
+
+  Majors:
+  - the caps come from repeated-buffer data but gate streamed cells;
+  - noise is summed linearly;
+  - the consumer-bound class hides pick losses;
+  - winner's curse, and a tautological A/A;
+  - held-out contamination and no sealed holdout;
+  - uncounted populations;
+  - undetectable evaluator plants;
+  - a wrong-box set is blamed on the table;
+  - J2a's generators would write into pcrec-bench;
+  - unbuilt knobs; no shadow trace before routing;
+  - the census is misnamed.
+
+  33 ids in 20 themes, all ACCEPTED; rev 2 by lane regeval3. All three critics converged on the same unlock: a table-agnostic judge interface (picks.tsv), with only the interface accepted (D77).
+- `2026-10-16-r1-memfn-r17bp.md` — D6 panel (critic A contract vs main's emitters/opus; B zero-mover + checks; C measurement; D generality + unlocks U1-U6) on [MEMFN] R17-b′ `r17b_prime.md` rev 2 (lane/memfn-r17 c90d65e53). 70 ids (A 11/12, B 1/9/7 — its header said 8/8 —, C 6/7 — its header said 8 MINOR —, D 5/6, U1-U6), all dispositioned by the kit manager, none rejected. BLOCKER B1 (no SIMD-on instrument) and B2 (no `-fcomments` arm) resolved by lane sweeparm (S981/S982, with B0); B8/B10 by D167; A7/A10/A11 ruled by D167 addendum 1. Sharpest: the read-back "at `mf_define`" runs AFTER the readers' row selection (A4; becomes a DEFINE-TIME QUERY, facts in, form CLASS out); the merged site's first use sits above its storage point and straddles two functions on a hybrid (A1/A3); MLINE has no span 0 (A5); M is a runtime parameter (A6); zero-mover routing is unobservable (B5); R7 moves unmeasured shapes (C3); `fd_rows[]` is a fourth table instead of a `kit_table` (D1). By-id completeness table inside; rev 3 by lane r17bp4.
+- `2026-10-16-r2-measure-sets-recheck.md` — light re-check (one opus critic with the unlock lens, lane msrecheck) of measure_sets.md revision 2 ("rev 2.1", e8d35840e) against r1, D166 + addenda and [KNOW-SRC]. 0 blockers, 8 majors, 11 minors, 5 unlocks. r1 discharge good (msc1-5 and msc2-9 PARTIAL); the new findings sit in §9 ([KNOW-SRC], unreviewed before): the fourth ruled kind (evaluator parameters) missing; the shared resolver contradicting the analysis kind's shipped spelling and S2 rules; round-trip checks sharing reader and writer with their subject; the census tool duplicating `emit_sweep.py`; one digest column unable to express analysis's two digests; the `lib` resolver an unplaced, already-drifted third member; the reach lever needing a kit request; a core→parse link edge in the kinds table. Revision 3 by lane msrev3.
+- `2026-10-16-r3-compound-entries.md` — D6 panel (checks/totality/independence opus, linkage gcc 15.2 sonnet, family/iterator contract sonnet) on [COMPOUND] compound_entries.md rev 2 (lane cmprev; the part-layout dial row, L0-L11). 3 blockers, all one root: the table ignored attributes the emitters already write. `+1`'s decline was not the `0` object, since L1-L4 ran first and L4 would inline [OPT-1]'s load-bearing `_deep`; the VM entry chain and the row both wrote the matcher; and L0's "no attribute" was false of today's objects and inverted `findall_iter.md` §2.2. 15 majors: missing family members (`_deep`, clskit, DFA helpers, the λ row); no population or emitted witness per row (`<p>__q_match` does not exist); `θ_hot` presumed R3; the control shared its source and `-fno-inline` hides `always_inline` edges; `entry_rows[]` and its rank column do not exist; per-wrapper forward legality; `noclone`; `has_push` legality; I3 before the first cell; a stamp duplicating `RX_TUNE`; the "eight deciders" recount. All ACCEPTED (manager 2026-10-16); revision 3 lane cmprev2, discharge map at the file's end.
+- `2026-10-16-r4-window-contract-rev3.md` — light panel (one critic, read-only) on window_contract.md revision 3 (lane wcrev3, E-1's design). 1 blocker (B1: the offer's raising derivation would refuse compiles that succeed today on the deny arms × an underivable bundle, and G1-E1 could not reach the analysis axis, K35), 5 majors (`arrives` not keeping a kind absent; provenance re-derived from the link though each block declares it; the stamp's render point unplaced before `mf_art_end`; C-CONS blind on its population; the offer built at a lazy first-caller point), 6 minors, 4 unlocks. All ACCEPTED (manager 2026-10-16); discharged by window_contract.md revision 3.1 (lane wcfix), disposition and discharge table at the file's end.
+- `2026-10-16-r5-findall-iter-rev2.md` — two-critic panel (itcrit2 checks/emitter reality/staleness sonnet, itcrit1 semantics/caller contract opus, both with the unlock lens) on [FINDALL-NEXT] `findall_iter.md` revision 2 (lane iterrev). IC1-IC9 (the F-1 relocation check covering one of three twins and passing without `-fPIC`; S's detectors all UNREACHED at I1; the batch region moving every artifact's `<prefix>_buffers` surface; detectors outside `make test`), IT1-IT15 (bind not writing the option fields; a drained batch re-running the failed search; the owner check not covering buffers; no spec hunk for subject immutability; §3.4a resting on the open Q-I1), F12/F13 stale cites. All ACCEPTED except IT4, REJECTED by D165 addendum 3 (no per-call owner check; misuse is undefined); IT3/IC3 take the manager's fix (the batch region through the iterator's own setter). Discharged by revision 3 (lane iterrev3), disposition and discharge table at the file's end.
+- `2026-10-18-r4-ctx-span.md` — D6 panel (A semantics vs 10.46/opus, B checks + staging + kit contract/opus, C simplification + family + unlocks/sonnet) on ctx_span.md (re-scoped [DD-11.5], D168). REVISE: BLOCKER A1 (the reverse machine reads `bot_ok` as left-absent; `[a-z]+\b` loses its start), 12 majors (identity-gate population by `\b` text; newline conventions; possessify nullability; the kit carrier claim false; abi readers by grep; unclaimed VM/route movers; hand-made re-aim list; a non-reaching witness; weak controls; staging vs kit_proof §7; F-1 = a false exact_len on the wire; C3's composition alternative; C4's fourth per-offset walk). The 9-cell tables and every deleted site verified. Q-r4-1..3 to Frank.

@@ -154,7 +154,7 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 
 <a id="s4-p2"></a>[4¶2] The value is `id@rev:values_digest` of the LOADED set when a reader consulted it, and the empty string otherwise. A reader is pcrec's own (none exists today) or the search-code kit's, which reports whether any of its rows resolved a key against the set, found or absent. A key looked up and not found still consults: the artifact depends on the set's not holding it.
 
-<a id="s4-p3"></a>[4¶3] The stamp is written after every reader has run. It lists the set if ANY attempt of the compile consulted it, a discarded retry attempt included, and on a compound if P's compile or any part's compile consulted it.
+<a id="s4-p3"></a>[4¶3] The stamp is written after every reader has run. It lists the set if ANY attempt of the compile consulted it, a discarded retry attempt included, and on a compound if P's compile or any part's compile consulted it. P and its parts read one set (§5¶8), so the value names that set whichever of them consulted.
 
 <a id="s4-p4"></a>[4¶4] With the stamp empty, the artifact's bytes are the same under every set. No kit row reads a set key today, so every artifact's stamp is `""`.
 
@@ -176,6 +176,8 @@ token    := [A-Za-z0-9_+-]+ , and not the single character "-"
 <a id="s5-p6"></a>[5¶6] **The default.** A compile that names no set reads the build's default for its class. Today there is one class, `idk` (a compile that declares none), and its default is the latest committed set: `zen4-grid1@1`, measured on one box.
 
 <a id="s5-p7"></a>[5¶7] Loading moves no artifact byte: only a CONSULTED set is stamped (§4).
+
+<a id="s5-p8"></a>[5¶8] **A compound's parts.** Each part of a compound (`match_api.md` §3.7) reads the set P's compile loaded: the same document, so the same `id@rev` and values. A part does not load a set of its own, so no file, `-I` stop or default can give it a different one.
 
 <a id="s6"></a>
 ## 6. The listing: `--list-measurements`

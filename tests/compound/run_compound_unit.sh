@@ -26,7 +26,9 @@
 #       (check_admitted.py, against admitted.tsv); G7, the lever's fence
 #       (run_lever_fence.sh); the lever's two-directional property
 #       (check_lever.py, also test-axes' internal arm); the call-site rows,
-#       the namespace table and drop-compound (run_shell_checks.sh). G2 and
+#       the namespace table and drop-compound (run_shell_checks.sh); the
+#       parts' inherited measurement set and the shell's MEASURES union, in a
+#       -DPCREC_CAND_TRACE build (run_part_measures.sh). G2 and
 #       G1's re-check need libpcre2-8 and SKIP loudly without it.
 #
 # The internal driver (compound_drive.c) links build/libpcrec.a through
@@ -75,6 +77,10 @@ echo "== B4: the lever moves nothing else (both directions) =="
 python3 "$SCRIPT_DIR/check_lever.py" "$PCREC" "$HARNESS" "$ROOT_DIR" --jobs "$JOBS" || rc=1
 echo "== B4: the shell's structure (call-site rows, namespace table, drop-compound) =="
 CC="$CC" PCREC="$PCREC" PCREC_HARNESS="$HARNESS" bash "$SCRIPT_DIR/run_shell_checks.sh" || rc=1
+echo "== the parts' measurement set (inherited) and the shell's MEASURES union =="
+CC="$CC" bash "$SCRIPT_DIR/run_part_measures.sh" || rc=1
+echo "== the parts' analysis chain and object (inherited, K113) =="
+CC="$CC" bash "$SCRIPT_DIR/run_part_analysis.sh" || rc=1
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
 if [ "${PCRE2_AVAILABLE:-0}" = 1 ]; then
     echo "== B4 G2+G4: the split compound against the lever and libpcre2 =="

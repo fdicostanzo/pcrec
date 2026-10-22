@@ -22,7 +22,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 ### C11's routing leg (lane r4e0b, R4e'.0b)
 - **routing_shape.py** — C18's ROUTING leg (D155 item 6 and addendum 1): every offset-skip/pre-check function in an artifact (a `static inline size_t` named by pcrec's ...
 ### C15 and C16 (lane memfnskel)
-- **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make test` section.
+- **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make test` section; C15, C16 and R-28's frame check (no kit function over a 4 KB stack frame, `-O2 -fstack-usage`, with a planted-fat-frame witness).
 - **c15_allowlist.txt** — C15's exceptions, one undecorated symbol per line, each with its reason.
 ### C5 and C10 (lane r4ccore, R4c)
 - **arm_fixtures.c** — (R17-a, MF_SITE_ABI 11, lane r17a: every kit call states a forward FIND's window as pcrec's builders do, `fx_win`/`FXW`, applied after the fixture's ...

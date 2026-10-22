@@ -62,7 +62,7 @@
  * terms, or that states a window itself, is passed unchanged. The window
  * cases (seq_case) call the kit on the site as written. */
 /* MF_SITE_ABI 18 (R-26.1/R-26.2): a forward FIND's predicate STATES its class
- * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_today,
+ * as pcrec's builders do (src/gen/memfn_sites.c pcrec_memfn_span0_stated,
  * pcrec_memfn_context_stop): a context stop (every term below the candidate)
  * is CONTEXT, absent FAILS, consumable NO, with the site's read_floor
  * SUBJECT; every other one is span 0, BOUNDED with its prefix facts stated
@@ -1305,14 +1305,14 @@ static void gate_cases(void)
 
 /* ---- R17-b' B1: the finder table's fixtures and the kit's B1 entries -----
  *
- * (r17b_prime.md rev 3 §1, §4.5, §4.7; lane fdb1.) No finder row is ROUTED at
- * B1, so a finder decision renders nothing: it is the MF_TRACE build's
- * SHADOW (memfn/src/finder.c `fd_shadow`), whose `MFTRACE FD` records are
- * what these fixtures produce. They render only when named:
+ * (r17b_prime.md rev 3 §1, §4.5, §4.7; lane fdb1; B4', lane b4p: every row
+ * decides, the trace-only shadow is retired.) A FIND decision is the routed
+ * `MFTRACE FDROUTE` record and a PRES decision the `MFTRACE FD ... slot=PRES`
+ * record. Fixtures render only when named:
  *
- *   arm_fixtures OUTDIR --only fd-<name>   one shadow witness (rows.tsv's
- *       table `fd`): a site rendered under a fixture set; its .def/.use are
- *       the pre-table form's text, its FD records the shadow's decision
+ *   arm_fixtures OUTDIR --only fd-<name>   one witness (rows.tsv's table
+ *       `fd`): a site rendered under a fixture set; its .def/.use are the
+ *       decided row's text, its FDROUTE/FD records the decision
  *   arm_fixtures --fd-site SITE [--fd-set FILE] [--opts STR] [--fd-an FID]
  *       one site under a set FILE and a `--memfn=` string, and (R-24) with an
  *       analysis object whose kinds all state `mf_prov.fidelity` FID
@@ -1324,23 +1324,6 @@ static void gate_cases(void)
  *   arm_fixtures --pay-grid        the pay rule over stdin's operand lines
  *
  * Every expectation is finder_check.py's, never this file's. */
-
-/* A fixture's own sets, written here (they share no source with the kit). */
-static const mf_measure FDS_R0_ROWS[] = {
-    { "kit.saving.V1.WALK.r2", 0, "ratio", "fixture" },
-    { "kit.saving.V1.WALK.r2e0c0", 0, "ratio", "fixture" },
-    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
-};
-static const mf_measure FDS_R7_ROWS[] = {
-    { "kit.saving.V1.WALK.r1e0c0", 500000, "ratio", "fixture" },
-    { "kit.saving.V1.WALK.r2e0c0", 500000, "ratio", "fixture" },
-    { "kit.saving.V1.WALK.r2", 500000, "ratio", "fixture" },
-    { "kit.eps.streamed.slope", 10000, "ratio", "fixture" },
-};
-static const mf_measures FDS_R0 = { "fixture-r0", 1, "0000000000000000", "-", "synthetic", 0,
-                                    3, FDS_R0_ROWS };
-static const mf_measures FDS_R7 = { "fixture-r7", 1, "0000000000000000", "-", "synthetic", 0,
-                                    4, FDS_R7_ROWS };
 
 /* The finder fixtures' sites: the PF shape pcrec's find_site states (one
  * term, the window the candidate, `body` ONESHOT, a storage point on a
@@ -1572,15 +1555,12 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
     return 0;
 }
 
-/* --only fd-<row>: the shadow witnesses and their controls. */
+/* --only fd-<row>: the finder witnesses and their controls. */
 static int fd_fixture(const char *dir, const char *name)
 {
     static const struct { const char *name, *site; const mf_measures *ms; const char *opts;
                           int preview; } fx[] = {
-        { "fd-R0",      "set2r",  &FDS_R0, NULL, 0 },    /* r2 cover, saving inside eps: R0 */
-        { "fd-R7-r2",   "set2r",  &FDS_R7, NULL, 0 },    /* the same cover, saving > eps: R7 */
-        { "fd-R7",      "set10",  &FDS_R7, NULL, 0 },    /* r1 cover, saving > eps: R7     */
-        { "fd-R7w",     "set10",  NULL, NULL, 0 },       /* no set: R7w                    */
+        { "fd-R7w",     "set10",  NULL, NULL, 0 },       /* a set FIND: R7w, the default   */
         { "fd-D2",      "run3",   NULL, NULL, 0 },       /* a RUN landmark: D2 (routed: the walk) */
         { "fd-P0",      "pre-req", NULL, NULL, 0 },      /* a REQUIRED presence span: P0   */
         { "fd-P3",      "pre-opt", NULL, NULL, 0 },      /* an OPTIONAL one: P3, the pick  */
@@ -1589,7 +1569,7 @@ static int fd_fixture(const char *dir, const char *name)
         { "fd-P4-den",  "pre-lead-run", NULL, "no-pres-set-lead", 0 }, /* P4 denied: the run alone */
         { "fd-P2",      "pre-dom", NULL, NULL, 0 },      /* the proof stands: P2 (asked) */
         { "fd-P2-den",  "pre-dom", NULL, "no-fd-pres-g1", 0 }, /* P2 denied: P3 (asked) */
-        { "fd-nobody",  "set10-nobody", &FDS_R7, NULL, 0 }, /* body UNSTATED: refused (R-23, S1089's witness) */
+        { "fd-nobody",  "set10-nobody", NULL, NULL, 0 }, /* body UNSTATED: refused (R-23, S1089's witness) */
         /* R-26.6: a REPORT site on an art previewing R-26.6: the REPORT row */
         { "fd-RPT",     "report2", NULL, NULL, 1 },
     };
@@ -1702,10 +1682,10 @@ static int finder_rows_mode(void)
     mf_finder_rows(&l);
     size_t n = l.n;
     const mf_finder_row *r = l.rows;
-    printf("#id\tslot\tneeds\tpick\tunpaid\tdeny\tbasis\trouted\tlocked\tstep\tkeys\n");
+    printf("#id\tslot\tneeds\tpick\tunpaid\tdeny\tbasis\tstep\tkeys\n");
     for (size_t i = 0; i < n; i++) {
-        printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%u\t%u\t%s\t", r[i].id, r[i].slot, r[i].needs,
-               r[i].pick, r[i].unpaid, r[i].deny, r[i].basis, r[i].routed, r[i].locked,
+        printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t", r[i].id, r[i].slot, r[i].needs,
+               r[i].pick, r[i].unpaid, r[i].deny, r[i].basis,
                r[i].step);
         for (unsigned k = 0; k < r[i].nkeys; k++)
             printf("%s%s", k ? ";" : "", r[i].keys[k].key);
@@ -1810,7 +1790,7 @@ int main(int argc, char **argv)
     const char *dir = argv[1];
     int perturb = argc > 2 && !strcmp(argv[2], "--perturb");
     if (argc > 3 && !strcmp(argv[2], "--only")) only = argv[3];
-    if (only && !strncmp(only, "fd-", 3)) {         /* the finder shadow's fixtures */
+    if (only && !strncmp(only, "fd-", 3)) {         /* the finder fixtures */
         int rc = fd_fixture(dir, only);
         if (rc == 2) fprintf(stderr, "arm_fixtures: --only %s matched no fixture\n", only);
         return rc;

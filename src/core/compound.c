@@ -50,10 +50,14 @@ static unsigned part_kept(unsigned need)
  * request (nothing exported, `need` kept) and part mode, its derivation's
  * report to `report` and its facts to `facts` (each NULL: not wanted).
  * `unrendered` keeps the placeholder prefix, for text the compound splices
- * into its own (which renders it). The part is already checked. */
+ * into its own (which renders it). `meas` is the walking attempt's
+ * measurement set and analysis chain/object, which the part reads instead of
+ * resolving `parent`'s options again (NULL: no walk, as from `pcrec_compile_part`). The part is
+ * already checked. */
 static int part_compile(const char *pattern, const pcrec_options *parent,
                         const CompPart *part, PcrecDeriveReport *report,
                         PcrecPartFacts *facts, bool unrendered, PcrecEntry pe,
+                        const PcrecMeasInherit *meas,
                         pcrec_output *out, pcrec_error *err)
 {
     pcrec_options o;
@@ -67,7 +71,7 @@ static int part_compile(const char *pattern, const pcrec_options *parent,
                              .part_entry = pe,
                              .bound = part->bound, .derive = part->derive->fn,
                              .derive_report = report, .unrendered = unrendered,
-                             .facts = facts, .harness = NULL };
+                             .facts = facts, .harness = NULL, .meas = meas };
     return pcrec_compile_driver(pattern, &o, out, err, NULL, NULL, NULL, NULL,
                                 NULL, &in);
 }
@@ -108,7 +112,7 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
         return -1;
     }
     return part_compile(pattern, parent, part, report, NULL, false,
-                        PCREC_ENTRY_COMP_A, out, err);
+                        PCREC_ENTRY_COMP_A, NULL, out, err);
 }
 
 /* ---- [COMPOUND] B4: THE ROW TABLE, THE PLACEMENT TABLE AND THE WALK -------
@@ -159,10 +163,14 @@ struct CompWalk {
 
 /* Part `i` of the walk's row, compiled on its first ask: 0, or -1 (the part
  * refused). Its parent options are P's own (the placeholder prefix: the text
- * is spliced unrendered, so K79 holds across the compound). */
+ * is spliced unrendered, so K79 holds across the compound), and so is its
+ * measurement set: this attempt's resolved one, never resolved again. */
 static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
+        const Job *job = w->cx->job;
+        const PcrecMeasInherit meas = { job->meas, job->meas_stamp, job->mf_ms,
+                                        &job->find.chain, job->analysis };
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
@@ -172,7 +180,7 @@ static int walk_part(CompWalk *w, int i)
                                  * part-layout mark names: its operand's */
                                 i == w->row->arg[0] ? PCREC_ENTRY_COMP_A
                                                     : PCREC_ENTRY_COMP_B,
-                                &w->out[i],
+                                &meas, &w->out[i],
                                 &w->err[i]);
     }
     return w->rc[i];
@@ -185,8 +193,10 @@ static void walk_free(CompWalk *w)
 }
 
 /* A1: P's plain compile runs today's attempt loop over every start -- a DFA
- * artifact on the ATTEMPT route whose BOUND is `all` and whose LOCATE is the
- * attempt loop itself. A fully anchored P is already one attempt. */
+ * artifact on the ATTEMPT route whose BOUND is `all` and whose LOCATE row
+ * hands its result to NEXT there (the attempt loop itself; [KIT-VERIFY]
+ * kit_proof.md §2.6, a field read, never the row's name). A fully anchored P
+ * is already one attempt. */
 static const CompRead a1_reads[] = {
     { CAND_SLOT_BOUND, CAND_ROUTE_ATTEMPT }, { CAND_SLOT_LOCATE, CAND_ROUTE_ATTEMPT },
 };
@@ -196,8 +206,7 @@ static bool a1_attempt_all(CompWalk *w)
     return cx->job->fit.chosen == ENGM_DFA &&
            pcrec_cand_body_route(cx) == CAND_ROUTE_ATTEMPT &&
            !strcmp(pcrec_cand_plain_selection(cx, CAND_SLOT_BOUND, CAND_ROUTE_ATTEMPT), "all") &&
-           !strcmp(pcrec_cand_plain_selection(cx, CAND_SLOT_LOCATE, CAND_ROUTE_ATTEMPT),
-                   "composite");
+           pcrec_cand_plain_locate_asks_next(cx, CAND_ROUTE_ATTEMPT);
 }
 
 /* A2: Q's derivation ran and did not decline (it killed a floor anchor and
@@ -227,12 +236,13 @@ static bool a4_parts_dfa(CompWalk *w)
     return true;
 }
 
-/* A5, PIN-ONLY: Q is never (the floor-only form), or Q's LOCATE is `rev-end`
- * -- an end-pinned Q has at most the end matches per subject; an unanchored
- * Q's many-match cost waits for B5's cost conjunct. */
+/* A5, PIN-ONLY: Q is never (the floor-only form), or Q's LOCATE walk is
+ * seeded at the subject end (the `rev-end` walk's field, [KIT-VERIFY]
+ * kit_proof.md §2.6) -- an end-pinned Q has at most the end matches per
+ * subject; an unanchored Q's many-match cost waits for B5's cost conjunct. */
 static bool a5_pin_only(CompWalk *w)
 {
-    return w->rep[SPLIT_Q].never || !strcmp(w->facts[SPLIT_Q].locate, "rev-end");
+    return w->rep[SPLIT_Q].never || w->facts[SPLIT_Q].end_seeded;
 }
 
 static const CompConj split_conj[] = {

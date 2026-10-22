@@ -1,0 +1,319 @@
+# grid2 time.sh method=kit-grid@2 Wed Oct 21 11:33:40 PM UTC 2026 frank-desktop phase=EXT load1=1.49 gov=performance cpu=14 launches=3 rerun_extra=2 rerun_null=0.031 cross_launch_trigger=on base_copies=3 loadmax=1.5 loadbreach=3.0
+# ns = ns per pass (median over launches of each launch's 7-round median); delta = arm - base; floor = |base#b - base| (A/A); aac = |base#c - base| (the held-out A/A);
+# spread = per-launch min..max as % of the arm's median; per_match = delta / matches (all mode); verdict NULL when |delta| <= floor
+# raw per-launch values: /home/pcrec/projects/pcrec/worktrees/flat/build/flat/slot/time/raw_FLAT.tsv
+cell       subject                                mode  arm              ns         base       delta     floor       aac        spread  per_match verdict
+# quiet gate: j1-L10 logs__apache_access.log all waited 1x20s, load1 now 1.09
+j1-L10     logs__apache_access.log                all   walk#b   1461474.00   1457123.47    +4350.53   4350.53  10354.51   -0.8..+0.4%          - A/A
+j1-L10     logs__apache_access.log                all   walk#c   1467477.98   1457123.47   +10354.51   4350.53  10354.51   -1.6..+0.1%          - A/A
+j1-L10     logs__apache_access.log                all   V1       1727834.91   1457123.47  +270711.44   4350.53  10354.51   -0.0..+0.1%          - LOSS
+j1-L10     logs__apache_access.log                all   F8       1994714.00   1457123.47  +537590.53   4350.53  10354.51   -0.0..+0.0%          - LOSS
+j1-L10     logs__apache_access.log                all   F64      2589051.97   1457123.47 +1131928.50   4350.53  10354.51   -0.0..+0.1%          - LOSS
+j1-L10     logs__apache_access.log                all   M64      1898248.06   1457123.47  +441124.59   4350.53  10354.51   -0.1..+0.0%          - LOSS
+# group 1 done: j1-L10 logs__apache_access.log all load1-at-start=1.09 load1-at-end=1.08 waits=1 launches=3
+j1-L10     logs__apache_error.log                 all   walk#b   2751386.44   2757204.94    -5818.50   5818.50   2984.06   -0.2..+0.2%          - A/A
+j1-L10     logs__apache_error.log                 all   walk#c   2754220.88   2757204.94    -2984.06   5818.50   2984.06   -0.1..+0.0%          - A/A
+j1-L10     logs__apache_error.log                 all   V1       3852201.75   2757204.94 +1094996.81   5818.50   2984.06   -0.0..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   F8       4534774.88   2757204.94 +1777569.94   5818.50   2984.06   -0.0..+0.1%          - LOSS
+j1-L10     logs__apache_error.log                 all   F64      5582935.31   2757204.94 +2825730.37   5818.50   2984.06   -0.1..+0.0%          - LOSS
+j1-L10     logs__apache_error.log                 all   M64      3785240.50   2757204.94 +1028035.56   5818.50   2984.06   -0.0..+0.2%          - LOSS
+# group 2 done: j1-L10 logs__apache_error.log all load1-at-start=1.08 load1-at-end=1.06 waits=0 launches=3
+j1-L10     logs__bgl.log                          all   walk#b  13127686.50  13007397.25  +120289.25 120289.25  36974.75   -0.7..+0.3%          - A/A
+j1-L10     logs__bgl.log                          all   walk#c  13044372.00  13007397.25   +36974.75 120289.25  36974.75   -0.3..+0.4%          - A/A
+j1-L10     logs__bgl.log                          all   V1      11980655.38  13007397.25 -1026741.87 120289.25  36974.75   -0.0..+0.0%          - WIN
+j1-L10     logs__bgl.log                          all   F8      13340460.25  13007397.25  +333063.00 120289.25  36974.75   -0.0..+0.0%          - LOSS
+j1-L10     logs__bgl.log                          all   F64     17247759.00  13007397.25 +4240361.75 120289.25  36974.75   -0.0..+0.0%          - LOSS
+j1-L10     logs__bgl.log                          all   M64     11662707.25  13007397.25 -1344690.00 120289.25  36974.75   -0.0..+0.2%          - WIN
+# group 3 done: j1-L10 logs__bgl.log all load1-at-start=1.14 load1-at-end=1.11 waits=0 launches=3
+j1-L10     logs__hadoop.log                       all   walk#b  30815921.00  30806743.50    +9177.50   9177.50  14307.50   -0.0..+0.0%     +0.491 A/A
+j1-L10     logs__hadoop.log                       all   walk#c  30821051.00  30806743.50   +14307.50   9177.50  14307.50   -0.1..+0.0%     +0.766 A/A
+j1-L10     logs__hadoop.log                       all   V1      35973635.00  30806743.50 +5166891.50   9177.50  14307.50   -0.0..+0.3%   +276.526 LOSS
+j1-L10     logs__hadoop.log                       all   F8      42274538.50  30806743.50 +11467795.00   9177.50  14307.50   -0.1..+0.0%   +613.743 LOSS
+j1-L10     logs__hadoop.log                       all   F64     51677125.00  30806743.50 +20870381.50   9177.50  14307.50   -0.0..+0.0%  +1116.959 LOSS
+j1-L10     logs__hadoop.log                       all   M64     37698070.50  30806743.50 +6891327.00   9177.50  14307.50   -0.0..+0.0%   +368.816 LOSS
+# group 4 done: j1-L10 logs__hadoop.log all load1-at-start=1.11 load1-at-end=1.09 waits=0 launches=3
+j1-L10     logs__linux_syslog.log                 all   walk#b   1233346.28   1233421.42      -75.14     75.14    646.53   -0.2..+0.0%          - A/A
+j1-L10     logs__linux_syslog.log                 all   walk#c   1234067.95   1233421.42     +646.53     75.14    646.53   -0.1..+0.1%          - A/A
+j1-L10     logs__linux_syslog.log                 all   V1       1730936.72   1233421.42  +497515.30     75.14    646.53   -0.1..+0.0%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   F8       2103799.00   1233421.42  +870377.58     75.14    646.53   -0.0..+0.1%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   F64      2609862.12   1233421.42 +1376440.70     75.14    646.53   -0.1..+0.2%          - LOSS
+j1-L10     logs__linux_syslog.log                 all   M64      1759504.62   1233421.42  +526083.20     75.14    646.53   -0.0..+0.3%          - LOSS
+# group 5 done: j1-L10 logs__linux_syslog.log all load1-at-start=1.09 load1-at-end=1.07 waits=0 launches=3
+j1-L10     logs__openstack.log                    all   walk#b  28578332.50  28573653.50    +4679.00   4679.00  29996.00   -0.0..+0.0%          - A/A
+j1-L10     logs__openstack.log                    all   walk#c  28543657.50  28573653.50   -29996.00   4679.00  29996.00   -0.0..+0.1%          - A/A
+j1-L10     logs__openstack.log                    all   V1      34002749.00  28573653.50 +5429095.50   4679.00  29996.00   -0.1..+0.1%          - LOSS
+j1-L10     logs__openstack.log                    all   F8      39604970.50  28573653.50 +11031317.00   4679.00  29996.00   -0.6..+0.2%          - LOSS
+j1-L10     logs__openstack.log                    all   F64     50029984.50  28573653.50 +21456331.00   4679.00  29996.00   -0.2..+0.1%          - LOSS
+j1-L10     logs__openstack.log                    all   M64     35805733.00  28573653.50 +7232079.50   4679.00  29996.00   -0.0..+0.0%          - LOSS
+# group 6 done: j1-L10 logs__openstack.log all load1-at-start=1.07 load1-at-end=1.06 waits=0 launches=3
+j1-L10     logs__zookeeper.log                    all   walk#b   5195770.38   5182475.31   +13295.07  13295.07   3904.25   -0.1..+0.0%    +76.850 A/A
+j1-L10     logs__zookeeper.log                    all   walk#c   5186379.56   5182475.31    +3904.25  13295.07   3904.25   -0.2..+0.2%    +22.568 A/A
+j1-L10     logs__zookeeper.log                    all   V1       6104834.88   5182475.31  +922359.57  13295.07   3904.25   -0.3..+0.1%  +5331.558 LOSS
+j1-L10     logs__zookeeper.log                    all   F8       7128457.75   5182475.31 +1945982.44  13295.07   3904.25   -0.1..+0.0% +11248.453 LOSS
+j1-L10     logs__zookeeper.log                    all   F64      9542331.12   5182475.31 +4359855.81  13295.07   3904.25   -0.0..+0.1% +25201.479 LOSS
+j1-L10     logs__zookeeper.log                    all   M64      6109932.56   5182475.31  +927457.25  13295.07   3904.25   -0.1..+0.0%  +5361.025 LOSS
+# group 7 done: j1-L10 logs__zookeeper.log all load1-at-start=1.06 load1-at-end=1.04 waits=0 launches=3
+# rerun: j1-P14 prose__pg1184.txt all (within-launch A/A beyond NULL=198483: 0; cross-launch spread of F8 beyond max(A/A floor, NULL)=198483: 1): +2 launches
+j1-P14     prose__pg1184.txt                      all   walk#b   6409979.50   6403866.62    +6112.88   6112.88   9668.38   -0.1..+1.6%     +3.103 A/A
+j1-P14     prose__pg1184.txt                      all   walk#c   6413535.00   6403866.62    +9668.38   6112.88   9668.38   -0.2..+1.6%     +4.908 A/A
+j1-P14     prose__pg1184.txt                      all   V1       7694831.75   6403866.62 +1290965.13   6112.88   9668.38   -0.0..+0.5%   +655.312 LOSS
+j1-P14     prose__pg1184.txt                      all   F8       7809859.88   6403866.62 +1405993.26   6112.88   9668.38   -0.7..+2.6%   +713.702 LOSS
+j1-P14     prose__pg1184.txt                      all   F64      8638425.75   6403866.62 +2234559.13   6112.88   9668.38   -0.2..+0.2%  +1134.294 LOSS
+j1-P14     prose__pg1184.txt                      all   M64      7599721.25   6403866.62 +1195854.63   6112.88   9668.38   -0.2..+0.0%   +607.033 LOSS
+# group 8 done: j1-P14 prose__pg1184.txt all load1-at-start=1.04 load1-at-end=1.03 waits=0 launches=5
+j1-P14     prose__pg135.txt                       all   walk#b   7866137.25   7870052.00    -3914.75   3914.75   6334.50   -0.0..+0.2%     -0.935 A/A
+j1-P14     prose__pg135.txt                       all   walk#c   7876386.50   7870052.00    +6334.50   3914.75   6334.50   -0.2..+0.2%     +1.513 A/A
+j1-P14     prose__pg135.txt                       all   V1       9470081.12   7870052.00 +1600029.12   3914.75   6334.50   -0.0..+0.2%   +382.051 LOSS
+j1-P14     prose__pg135.txt                       all   F8       9560601.62   7870052.00 +1690549.62   3914.75   6334.50   -0.0..+0.9%   +403.665 LOSS
+j1-P14     prose__pg135.txt                       all   F64     10670084.62   7870052.00 +2800032.62   3914.75   6334.50   -0.1..+0.1%   +668.585 LOSS
+j1-P14     prose__pg135.txt                       all   M64      9375825.88   7870052.00 +1505773.88   3914.75   6334.50   -0.0..+0.1%   +359.545 LOSS
+# group 9 done: j1-P14 prose__pg135.txt all load1-at-start=1.03 load1-at-end=1.02 waits=0 launches=3
+j1-P14     prose__pg1400.txt                      all   walk#b   2525036.91   2526669.06    -1632.15   1632.15   1714.81   -0.1..+0.0%     -1.379 A/A
+j1-P14     prose__pg1400.txt                      all   walk#c   2524954.25   2526669.06    -1714.81   1632.15   1714.81   -0.0..+0.1%     -1.448 A/A
+j1-P14     prose__pg1400.txt                      all   V1       3046776.16   2526669.06  +520107.10   1632.15   1714.81   -0.1..+0.5%   +439.280 LOSS
+j1-P14     prose__pg1400.txt                      all   F8       3063002.34   2526669.06  +536333.28   1632.15   1714.81   -0.0..+0.1%   +452.984 LOSS
+j1-P14     prose__pg1400.txt                      all   F64      3405713.81   2526669.06  +879044.75   1632.15   1714.81   -0.1..+0.1%   +742.436 LOSS
+j1-P14     prose__pg1400.txt                      all   M64      2999821.69   2526669.06  +473152.63   1632.15   1714.81   -0.5..+0.0%   +399.622 LOSS
+# group 10 done: j1-P14 prose__pg1400.txt all load1-at-start=1.02 load1-at-end=1.02 waits=0 launches=3
+# rerun: j1-P14 prose__pg2600.txt all (within-launch A/A beyond NULL=241485: 0; cross-launch spread of M64 beyond max(A/A floor, NULL)=241485: 1): +2 launches
+j1-P14     prose__pg2600.txt                      all   walk#b   7792596.00   7789837.12    +2758.88   2758.88   1777.13   -0.1..+0.1%     +1.852 A/A
+j1-P14     prose__pg2600.txt                      all   walk#c   7791614.25   7789837.12    +1777.13   2758.88   1777.13   -0.0..+0.0%     +1.193 A/A
+j1-P14     prose__pg2600.txt                      all   V1       9422011.62   7789837.12 +1632174.50   2758.88   1777.13   -0.2..+0.2%  +1095.419 LOSS
+j1-P14     prose__pg2600.txt                      all   F8       9514964.38   7789837.12 +1725127.26   2758.88   1777.13   -0.2..+0.9%  +1157.804 LOSS
+j1-P14     prose__pg2600.txt                      all   F64     10606703.88   7789837.12 +2816866.76   2758.88   1777.13   -0.1..+0.1%  +1890.515 LOSS
+j1-P14     prose__pg2600.txt                      all   M64      9318216.00   7789837.12 +1528378.88   2758.88   1777.13   -0.9..+3.7%  +1025.758 LOSS
+# group 11 done: j1-P14 prose__pg2600.txt all load1-at-start=1.02 load1-at-end=1.01 waits=0 launches=5
+j1-P14     prose__pg2701.txt                      all   walk#b   3029325.75   3027886.78    +1438.97   1438.97   1668.44   -0.1..+0.0%     +0.585 A/A
+j1-P14     prose__pg2701.txt                      all   walk#c   3026218.34   3027886.78    -1668.44   1438.97   1668.44   -0.0..+0.0%     -0.679 A/A
+j1-P14     prose__pg2701.txt                      all   V1       3656816.56   3027886.78  +628929.78   1438.97   1668.44   -0.0..+0.0%   +255.766 LOSS
+j1-P14     prose__pg2701.txt                      all   F8       3684030.38   3027886.78  +656143.60   1438.97   1668.44   -0.2..+1.3%   +266.834 LOSS
+j1-P14     prose__pg2701.txt                      all   F64      4118727.38   3027886.78 +1090840.60   1438.97   1668.44   -0.1..+0.0%   +443.611 LOSS
+j1-P14     prose__pg2701.txt                      all   M64      3632227.06   3027886.78  +604340.28   1438.97   1668.44   -0.4..+0.1%   +245.767 LOSS
+# group 12 done: j1-P14 prose__pg2701.txt all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=3
+j1-P14     prose__pg996.txt                       all   walk#b   5527252.81   5524169.50    +3083.31   3083.31    413.94   -0.0..+0.4%     +1.804 A/A
+j1-P14     prose__pg996.txt                       all   walk#c   5523755.56   5524169.50     -413.94   3083.31    413.94   -0.0..+0.0%     -0.242 A/A
+j1-P14     prose__pg996.txt                       all   V1       6784246.38   5524169.50 +1260076.88   3083.31    413.94   -0.0..+0.4%   +737.318 LOSS
+j1-P14     prose__pg996.txt                       all   F8       6863414.38   5524169.50 +1339244.88   3083.31    413.94   -0.1..+0.1%   +783.642 LOSS
+j1-P14     prose__pg996.txt                       all   F64      7682487.12   5524169.50 +2158317.62   3083.31    413.94   -0.0..+0.1%  +1262.913 LOSS
+j1-P14     prose__pg996.txt                       all   M64      6730619.00   5524169.50 +1206449.50   3083.31    413.94   -0.6..+0.2%   +705.939 LOSS
+# group 13 done: j1-P14 prose__pg996.txt all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=3
+j1-C16     code__c.src                            all   walk#b   7831828.75   7841950.38   -10121.63  10121.63  26635.26   -0.7..+0.2%     -7.774 A/A
+j1-C16     code__c.src                            all   walk#c   7815315.12   7841950.38   -26635.26  10121.63  26635.26   -0.1..+0.1%    -20.457 A/A
+j1-C16     code__c.src                            all   V1       8565704.88   7841950.38  +723754.50  10121.63  26635.26   -0.0..+1.2%   +555.879 LOSS
+j1-C16     code__c.src                            all   F8       7905024.38   7841950.38   +63074.00  10121.63  26635.26   -0.0..+0.6%    +48.444 LOSS
+j1-C16     code__c.src                            all   F64      8271266.00   7841950.38  +429315.62  10121.63  26635.26   -0.4..+0.1%   +329.735 LOSS
+j1-C16     code__c.src                            all   M64      7685252.50   7841950.38  -156697.88  10121.63  26635.26   -0.2..+1.7%   -120.352 WIN
+# group 14 done: j1-C16 code__c.src all load1-at-start=1.01 load1-at-end=1.00 waits=0 launches=3
+j1-C16     code__java.src                         all   walk#b  23094506.75  23119025.25   -24518.50  24518.50  77683.75   -0.4..+0.1%          - A/A
+j1-C16     code__java.src                         all   walk#c  23041341.50  23119025.25   -77683.75  24518.50  77683.75   -0.1..+0.5%          - A/A
+j1-C16     code__java.src                         all   V1      27745262.00  23119025.25 +4626236.75  24518.50  77683.75   -0.6..+0.0%          - LOSS
+j1-C16     code__java.src                         all   F8      25992878.00  23119025.25 +2873852.75  24518.50  77683.75   -0.1..+0.1%          - LOSS
+j1-C16     code__java.src                         all   F64     27723917.00  23119025.25 +4604891.75  24518.50  77683.75   -0.2..+0.1%          - LOSS
+j1-C16     code__java.src                         all   M64     25648043.00  23119025.25 +2529017.75  24518.50  77683.75   -0.3..+0.0%          - LOSS
+# group 15 done: j1-C16 code__java.src all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-C16     code__javascript.src                   all   walk#b   3093485.19   3089635.09    +3850.10   3850.10   1949.63   -0.6..+0.6%   +641.683 A/A
+j1-C16     code__javascript.src                   all   walk#c   3091584.72   3089635.09    +1949.63   3850.10   1949.63   -1.2..+0.2%   +324.938 A/A
+j1-C16     code__javascript.src                   all   V1       3158447.56   3089635.09   +68812.47   3850.10   1949.63   -0.0..+0.1% +11468.745 LOSS
+j1-C16     code__javascript.src                   all   F8       3040981.88   3089635.09   -48653.21   3850.10   1949.63   -0.0..+0.1%  -8108.868 WIN
+j1-C16     code__javascript.src                   all   F64      2832344.31   3089635.09  -257290.78   3850.10   1949.63   -0.3..+0.0% -42881.797 WIN
+j1-C16     code__javascript.src                   all   M64      2627731.22   3089635.09  -461903.87   3850.10   1949.63   -0.1..+0.1% -76983.978 WIN
+# group 16 done: j1-C16 code__javascript.src all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-C16     code__python.src                       all   walk#b  14851524.50  14825653.50   +25871.00  25871.00   9352.50   -0.1..+0.2%          - A/A
+j1-C16     code__python.src                       all   walk#c  14835006.00  14825653.50    +9352.50  25871.00   9352.50   -0.1..+0.0%          - A/A
+j1-C16     code__python.src                       all   V1      18339447.50  14825653.50 +3513794.00  25871.00   9352.50   -0.0..+0.0%          - LOSS
+j1-C16     code__python.src                       all   F8      15768131.75  14825653.50  +942478.25  25871.00   9352.50   -0.0..+0.3%          - LOSS
+j1-C16     code__python.src                       all   F64     19086876.00  14825653.50 +4261222.50  25871.00   9352.50   -0.0..+0.0%          - LOSS
+j1-C16     code__python.src                       all   M64     17658947.50  14825653.50 +2833294.00  25871.00   9352.50   -0.0..+0.0%          - LOSS
+# group 17 done: j1-C16 code__python.src all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-C16     code__rust.src                         all   walk#b   1635860.84   1639863.69    -4002.85   4002.85    771.43   -0.4..+0.1%          - A/A
+j1-C16     code__rust.src                         all   walk#c   1640635.12   1639863.69     +771.43   4002.85    771.43   -0.9..+0.3%          - A/A
+j1-C16     code__rust.src                         all   V1       1869060.00   1639863.69  +229196.31   4002.85    771.43   -0.0..+0.0%          - LOSS
+j1-C16     code__rust.src                         all   F8       1698933.12   1639863.69   +59069.43   4002.85    771.43   -0.1..+0.0%          - LOSS
+j1-C16     code__rust.src                         all   F64      1863972.91   1639863.69  +224109.22   4002.85    771.43   -0.1..+0.0%          - LOSS
+j1-C16     code__rust.src                         all   M64      1736375.25   1639863.69   +96511.56   4002.85    771.43   -0.1..+0.2%          - LOSS
+# group 18 done: j1-C16 code__rust.src all load1-at-start=1.00 load1-at-end=1.00 waits=0 launches=3
+j1-N08     nonenglish__pg2650.txt                 all   walk#b    205322.82    205367.43      -44.61     44.61    106.07   -0.0..+0.1%          - A/A
+j1-N08     nonenglish__pg2650.txt                 all   walk#c    205473.50    205367.43     +106.07     44.61    106.07   -0.0..+0.1%          - A/A
+j1-N08     nonenglish__pg2650.txt                 all   V1         95642.85    205367.43  -109724.58     44.61    106.07   -5.7..+0.5%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   F8         94332.95    205367.43  -111034.48     44.61    106.07   -4.5..+0.3%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   F64        81915.53    205367.43  -123451.90     44.61    106.07   -0.4..+0.1%          - WIN
+j1-N08     nonenglish__pg2650.txt                 all   M64        81676.08    205367.43  -123691.35     44.61    106.07   -0.1..+0.6%          - WIN
+# group 19 done: j1-N08 nonenglish__pg2650.txt all load1-at-start=1.24 load1-at-end=1.20 waits=0 launches=3
+j1-N08     nonenglish__pg6698.txt                 all   walk#b    232210.45    232258.89      -48.44     48.44     12.29   -0.0..+0.0%          - A/A
+j1-N08     nonenglish__pg6698.txt                 all   walk#c    232271.18    232258.89      +12.29     48.44     12.29   -0.0..+0.0%          - A/A
+j1-N08     nonenglish__pg6698.txt                 all   V1        107742.98    232258.89  -124515.91     48.44     12.29   -0.4..+0.4%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   F8        106625.46    232258.89  -125633.43     48.44     12.29   -0.5..+0.2%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   F64        92184.15    232258.89  -140074.74     48.44     12.29   -0.1..+0.5%          - WIN
+j1-N08     nonenglish__pg6698.txt                 all   M64        92088.43    232258.89  -140170.46     48.44     12.29   -0.0..+0.1%          - WIN
+# group 20 done: j1-N08 nonenglish__pg6698.txt all load1-at-start=1.20 load1-at-end=1.16 waits=0 launches=3
+j1-N08     nonenglish__pg798.txt                  all   walk#b    203744.18    203790.83      -46.65     46.65      2.94   -0.0..+0.1%          - A/A
+j1-N08     nonenglish__pg798.txt                  all   walk#c    203793.77    203790.83       +2.94     46.65      2.94   -0.0..+0.1%          - A/A
+j1-N08     nonenglish__pg798.txt                  all   V1         94011.01    203790.83  -109779.82     46.65      2.94   -0.3..+1.0%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   F8         89462.37    203790.83  -114328.46     46.65      2.94   -0.1..+4.1%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   F64        81337.65    203790.83  -122453.18     46.65      2.94   -0.1..+0.0%          - WIN
+j1-N08     nonenglish__pg798.txt                  all   M64        80991.25    203790.83  -122799.58     46.65      2.94   -0.1..+0.0%          - WIN
+# group 21 done: j1-N08 nonenglish__pg798.txt all load1-at-start=1.16 load1-at-end=1.12 waits=0 launches=3
+j1-N10     nonenglish__pg2650.txt                 all   walk#b    205367.75    205281.45      +86.30     86.30    171.30   -0.0..+0.1%          - A/A
+j1-N10     nonenglish__pg2650.txt                 all   walk#c    205452.75    205281.45     +171.30     86.30    171.30   -0.1..+0.0%          - A/A
+j1-N10     nonenglish__pg2650.txt                 all   V1         95152.70    205281.45  -110128.75     86.30    171.30   -5.2..+0.6%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   F8         90191.57    205281.45  -115089.88     86.30    171.30   -0.0..+5.5%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   F64        81715.83    205281.45  -123565.62     86.30    171.30   -0.1..+0.0%          - WIN
+j1-N10     nonenglish__pg2650.txt                 all   M64        81646.76    205281.45  -123634.69     86.30    171.30   -0.2..+0.0%          - WIN
+# group 22 done: j1-N10 nonenglish__pg2650.txt all load1-at-start=1.12 load1-at-end=1.17 waits=0 launches=3
+# rerun: j1-N10 nonenglish__pg6698.txt all (within-launch A/A beyond NULL=7191.09: 0; cross-launch spread of V1 beyond max(A/A floor, NULL)=7191.09: 1): +2 launches
+j1-N10     nonenglish__pg6698.txt                 all   walk#b    231996.45    232040.08      -43.63     43.63     50.49   -0.0..+0.0%          - A/A
+j1-N10     nonenglish__pg6698.txt                 all   walk#c    231989.59    232040.08      -50.49     43.63     50.49   -0.0..+0.1%          - A/A
+j1-N10     nonenglish__pg6698.txt                 all   V1        106613.72    232040.08  -125426.36     43.63     50.49   -4.4..+2.3%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   F8        107030.58    232040.08  -125009.50     43.63     50.49   -4.8..+2.7%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   F64        92438.64    232040.08  -139601.44     43.63     50.49   -0.1..+0.4%          - WIN
+j1-N10     nonenglish__pg6698.txt                 all   M64        92143.05    232040.08  -139897.03     43.63     50.49   -0.2..+0.1%          - WIN
+# group 23 done: j1-N10 nonenglish__pg6698.txt all load1-at-start=1.17 load1-at-end=1.12 waits=0 launches=5
+j1-N10     nonenglish__pg798.txt                  all   walk#b    203553.00    203581.42      -28.42     28.42      3.13   -0.0..+0.1%          - A/A
+j1-N10     nonenglish__pg798.txt                  all   walk#c    203578.29    203581.42       -3.13     28.42      3.13   -0.0..+0.0%          - A/A
+j1-N10     nonenglish__pg798.txt                  all   V1         93644.54    203581.42  -109936.88     28.42      3.13   -4.5..+1.3%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   F8         89624.24    203581.42  -113957.18     28.42      3.13   -0.2..+0.0%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   F64        81041.56    203581.42  -122539.86     28.42      3.13   -0.0..+0.3%          - WIN
+j1-N10     nonenglish__pg798.txt                  all   M64        80750.23    203581.42  -122831.19     28.42      3.13   -0.0..+0.1%          - WIN
+# group 24 done: j1-N10 nonenglish__pg798.txt all load1-at-start=1.12 load1-at-end=1.10 waits=0 launches=3
+j1-B10     binary__BILLS-118-1-hr.zip             all   walk#b 133546673.50 133574020.00   -27346.50  27346.50  55019.00   -0.1..+0.1%     -0.018 A/A
+j1-B10     binary__BILLS-118-1-hr.zip             all   walk#c 133519001.00 133574020.00   -55019.00  27346.50  55019.00   -0.0..+0.1%     -0.037 A/A
+j1-B10     binary__BILLS-118-1-hr.zip             all   V1     106281728.50 133574020.00 -27292291.50  27346.50  55019.00   -0.4..+0.1%    -18.233 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   F8     109363621.50 133574020.00 -24210398.50  27346.50  55019.00   -0.0..+0.0%    -16.174 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   F64    114608991.50 133574020.00 -18965028.50  27346.50  55019.00   -0.0..+0.1%    -12.670 WIN
+j1-B10     binary__BILLS-118-1-hr.zip             all   M64     98501387.00 133574020.00 -35072633.00  27346.50  55019.00   -0.0..+0.0%    -23.431 WIN
+# group 25 done: j1-B10 binary__BILLS-118-1-hr.zip all load1-at-start=1.10 load1-at-end=1.13 waits=0 launches=3
+j1-B10     binary__django-5.0.tar                 all   walk#b  17502119.50  17508957.50    -6838.00   6838.00  14570.00   -0.0..+0.5%     -0.032 A/A
+j1-B10     binary__django-5.0.tar                 all   walk#c  17494387.50  17508957.50   -14570.00   6838.00  14570.00   -0.1..+0.6%     -0.069 A/A
+j1-B10     binary__django-5.0.tar                 all   V1      10789970.75  17508957.50 -6718986.75   6838.00  14570.00   -0.0..+0.1%    -31.698 WIN
+j1-B10     binary__django-5.0.tar                 all   F8      11296949.88  17508957.50 -6212007.62   6838.00  14570.00   -0.1..+0.4%    -29.306 WIN
+j1-B10     binary__django-5.0.tar                 all   F64     11553965.50  17508957.50 -5954992.00   6838.00  14570.00   -0.0..+0.0%    -28.094 WIN
+j1-B10     binary__django-5.0.tar                 all   M64      9992461.75  17508957.50 -7516495.75   6838.00  14570.00   -0.3..+0.2%    -35.460 WIN
+# group 26 done: j1-B10 binary__django-5.0.tar all load1-at-start=1.13 load1-at-end=1.09 waits=0 launches=3
+j1-B10     binary__libpng-1.6.43.tar              all   walk#b   1435106.28   1435464.77     -358.49    358.49   1536.17   -0.0..+0.0%     -0.100 A/A
+j1-B10     binary__libpng-1.6.43.tar              all   walk#c   1437000.94   1435464.77    +1536.17    358.49   1536.17   -0.2..+0.7%     +0.427 A/A
+j1-B10     binary__libpng-1.6.43.tar              all   V1        516886.00   1435464.77  -918578.77    358.49   1536.17   -0.2..+0.2%   -255.303 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   F8        535147.52   1435464.77  -900317.25    358.49   1536.17   -0.0..+0.1%   -250.227 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   F64       513243.12   1435464.77  -922221.65    358.49   1536.17   -0.3..+0.4%   -256.315 WIN
+j1-B10     binary__libpng-1.6.43.tar              all   M64       452226.65   1435464.77  -983238.12    358.49   1536.17   -3.1..+0.2%   -273.274 WIN
+# group 27 done: j1-B10 binary__libpng-1.6.43.tar all load1-at-start=1.09 load1-at-end=1.07 waits=0 launches=3
+j1-B10     binary__libpng-1.6.43.tar.gz           all   walk#b   4401014.12   4402513.88    -1499.76   1499.76    551.69   -0.0..+0.4%     -0.030 A/A
+j1-B10     binary__libpng-1.6.43.tar.gz           all   walk#c   4401962.19   4402513.88     -551.69   1499.76    551.69   -0.1..+0.1%     -0.011 A/A
+j1-B10     binary__libpng-1.6.43.tar.gz           all   V1       3491535.31   4402513.88  -910978.57   1499.76    551.69   -0.3..+0.1%    -18.442 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   F8       3590789.81   4402513.88  -811724.07   1499.76    551.69   -0.0..+0.2%    -16.433 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   F64      3765363.19   4402513.88  -637150.69   1499.76    551.69   -0.0..+0.0%    -12.899 WIN
+j1-B10     binary__libpng-1.6.43.tar.gz           all   M64      3235929.25   4402513.88 -1166584.63   1499.76    551.69   -0.0..+0.1%    -23.617 WIN
+# group 28 done: j1-B10 binary__libpng-1.6.43.tar.gz all load1-at-start=1.07 load1-at-end=1.06 waits=0 launches=3
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   walk#b  23815434.00  23846958.50   -31524.50  31524.50    986.50   -0.5..+0.2%     -0.127 A/A
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   walk#c  23845972.00  23846958.50     -986.50  31524.50    986.50   -0.6..+0.1%     -0.004 A/A
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   V1      18473510.00  23846958.50 -5373448.50  31524.50    986.50   -0.1..+0.0%    -21.565 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   F8      18922691.50  23846958.50 -4924267.00  31524.50    986.50   -0.0..+0.1%    -19.763 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   F64     19661058.00  23846958.50 -4185900.50  31524.50    986.50   -0.1..+0.0%    -16.799 WIN
+j1-B10     binary__python-3.12.7-docs-html.tar.bz2 all   M64     16915691.75  23846958.50 -6931266.75  31524.50    986.50   -0.0..+0.0%    -27.817 WIN
+# group 29 done: j1-B10 binary__python-3.12.7-docs-html.tar.bz2 all load1-at-start=1.06 load1-at-end=1.04 waits=0 launches=3
+# rerun: j1-P05 prose__pg1184.txt all (within-launch A/A beyond NULL=21303.7: 1; cross-launch spread of walk beyond max(A/A floor, NULL)=21303.7: 1): +2 launches
+j1-P05     prose__pg1184.txt                      all   walk#b    687076.02    686612.41     +463.61    463.61   5056.56   -0.7..+0.6%    +46.361 A/A
+j1-P05     prose__pg1184.txt                      all   walk#c    681555.85    686612.41    -5056.56    463.61   5056.56   -0.6..+1.3%   -505.656 A/A
+j1-P05     prose__pg1184.txt                      all   V1        496638.24    686612.41  -189974.17    463.61   5056.56   -0.2..+0.2% -18997.417 WIN
+j1-P05     prose__pg1184.txt                      all   F8        472588.08    686612.41  -214024.33    463.61   5056.56   -1.1..+0.1% -21402.433 WIN
+j1-P05     prose__pg1184.txt                      all   F64       464748.30    686612.41  -221864.11    463.61   5056.56   -0.1..+0.2% -22186.411 WIN
+j1-P05     prose__pg1184.txt                      all   M64       442555.47    686612.41  -244056.94    463.61   5056.56   -0.1..+0.1% -24405.694 WIN
+# group 30 done: j1-P05 prose__pg1184.txt all load1-at-start=1.04 load1-at-end=1.03 waits=0 launches=5
+# rerun: j1-P05 prose__pg135.txt all (within-launch A/A beyond NULL=24131.8: 1; cross-launch spread of walk#c beyond max(A/A floor, NULL)=24131.8: 1): +2 launches
+j1-P05     prose__pg135.txt                       all   walk#b    778283.15    776029.30    +2253.85   2253.85   4022.89   -1.7..+2.9%    +42.525 A/A
+j1-P05     prose__pg135.txt                       all   walk#c    780052.19    776029.30    +4022.89   2253.85   4022.89   -1.9..+3.2%    +75.904 A/A
+j1-P05     prose__pg135.txt                       all   V1        547858.01    776029.30  -228171.29   2253.85   4022.89   -0.2..+0.1%  -4305.119 WIN
+j1-P05     prose__pg135.txt                       all   F8        517807.31    776029.30  -258221.99   2253.85   4022.89   -0.1..+0.1%  -4872.113 WIN
+j1-P05     prose__pg135.txt                       all   F64       454443.75    776029.30  -321585.55   2253.85   4022.89   -0.1..+0.7%  -6067.652 WIN
+j1-P05     prose__pg135.txt                       all   M64       469852.95    776029.30  -306176.35   2253.85   4022.89   -0.3..+0.1%  -5776.912 WIN
+# group 31 done: j1-P05 prose__pg135.txt all load1-at-start=1.03 load1-at-end=1.02 waits=0 launches=5
+# rerun: j1-P05 prose__pg1400.txt all (within-launch A/A beyond NULL=7324.26: 1; cross-launch spread of walk#c beyond max(A/A floor, NULL)=7324.26: 1): +2 launches
+j1-P05     prose__pg1400.txt                      all   walk#b    239571.68    236586.52    +2985.16   2985.16   7302.12   -1.8..+6.5%     +3.508 A/A
+j1-P05     prose__pg1400.txt                      all   walk#c    243888.64    236586.52    +7302.12   2985.16   7302.12   -2.9..+2.6%     +8.581 A/A
+j1-P05     prose__pg1400.txt                      all   V1        162521.19    236586.52   -74065.33   2985.16   7302.12   -0.2..+0.1%    -87.033 WIN
+j1-P05     prose__pg1400.txt                      all   F8        154153.71    236586.52   -82432.81   2985.16   7302.12   -0.1..+0.2%    -96.866 WIN
+j1-P05     prose__pg1400.txt                      all   F64       151820.16    236586.52   -84766.36   2985.16   7302.12   -0.1..+0.3%    -99.608 WIN
+j1-P05     prose__pg1400.txt                      all   M64       143326.83    236586.52   -93259.69   2985.16   7302.12   -0.1..+0.6%   -109.588 WIN
+# group 32 done: j1-P05 prose__pg1400.txt all load1-at-start=1.02 load1-at-end=1.01 waits=0 launches=5
+# rerun: j1-P05 prose__pg2600.txt all (within-launch A/A beyond NULL=22581.8: 0; cross-launch spread of walk#c beyond max(A/A floor, NULL)=22581.8: 1): +2 launches
+j1-P05     prose__pg2600.txt                      all   walk#b    737584.10    728446.34    +9137.76   9137.76   6566.04   -0.9..+0.5%   +702.905 A/A
+j1-P05     prose__pg2600.txt                      all   walk#c    735012.38    728446.34    +6566.04   9137.76   6566.04   -1.2..+4.0%   +505.080 A/A
+j1-P05     prose__pg2600.txt                      all   V1        504776.34    728446.34  -223670.00   9137.76   6566.04   -0.0..+0.1% -17205.385 WIN
+j1-P05     prose__pg2600.txt                      all   F8        471602.97    728446.34  -256843.37   9137.76   6566.04   -0.1..+0.2% -19757.182 WIN
+j1-P05     prose__pg2600.txt                      all   F64       415802.25    728446.34  -312644.09   9137.76   6566.04   -0.1..+0.1% -24049.545 WIN
+j1-P05     prose__pg2600.txt                      all   M64       385911.50    728446.34  -342534.84   9137.76   6566.04   -0.1..+0.0% -26348.834 WIN
+# group 33 done: j1-P05 prose__pg2600.txt all load1-at-start=1.01 load1-at-end=1.01 waits=0 launches=5
+# rerun: j1-P05 prose__pg2701.txt all (within-launch A/A beyond NULL=8243.88: 1; cross-launch spread of walk#b beyond max(A/A floor, NULL)=8243.88: 1): +2 launches
+j1-P05     prose__pg2701.txt                      all   walk#b    265696.62    266155.14     -458.52    458.52   1952.58   -0.6..+4.2%     -5.592 A/A
+j1-P05     prose__pg2701.txt                      all   walk#c    268107.72    266155.14    +1952.58    458.52   1952.58   -1.4..+0.5%    +23.812 A/A
+j1-P05     prose__pg2701.txt                      all   V1        175845.85    266155.14   -90309.29    458.52   1952.58   -0.0..+0.1%  -1101.333 WIN
+j1-P05     prose__pg2701.txt                      all   F8        163194.11    266155.14  -102961.03    458.52   1952.58   -0.2..+0.1%  -1255.622 WIN
+j1-P05     prose__pg2701.txt                      all   F64       149147.66    266155.14  -117007.48    458.52   1952.58   -0.1..+0.2%  -1426.920 WIN
+j1-P05     prose__pg2701.txt                      all   M64       142874.88    266155.14  -123280.26    458.52   1952.58   -0.1..+1.6%  -1503.418 WIN
+# group 34 done: j1-P05 prose__pg2701.txt all load1-at-start=1.01 load1-at-end=1.00 waits=0 launches=5
+# rerun: j1-P05 prose__pg996.txt all (within-launch A/A beyond NULL=17005.4: 1; cross-launch spread of walk#b beyond max(A/A floor, NULL)=17005.4: 1): +2 launches
+j1-P05     prose__pg996.txt                       all   walk#b    548508.45    547630.32     +878.13    878.13   5130.53   -1.5..+4.1%   +878.130 A/A
+j1-P05     prose__pg996.txt                       all   walk#c    542499.79    547630.32    -5130.53    878.13   5130.53   -0.4..+2.6%  -5130.530 A/A
+j1-P05     prose__pg996.txt                       all   V1        381795.31    547630.32  -165835.01    878.13   5130.53   -0.1..+0.5% -165835.010 WIN
+j1-P05     prose__pg996.txt                       all   F8        359128.45    547630.32  -188501.87    878.13   5130.53   -0.2..+0.9% -188501.870 WIN
+j1-P05     prose__pg996.txt                       all   F64       322937.50    547630.32  -224692.82    878.13   5130.53   -0.0..+0.1% -224692.820 WIN
+j1-P05     prose__pg996.txt                       all   M64       292103.41    547630.32  -255526.91    878.13   5130.53   -0.0..+0.1% -255526.910 WIN
+# group 35 done: j1-P05 prose__pg996.txt all load1-at-start=1.00 load1-at-end=1.08 waits=0 launches=5
+j1-P12     prose__pg1184.txt                      all   walk#b   1729342.09   1739550.69   -10208.60  10208.60  12995.43   -0.1..+1.1%  -1134.289 A/A
+j1-P12     prose__pg1184.txt                      all   walk#c   1752546.12   1739550.69   +12995.43  10208.60  12995.43   -0.9..+0.0%  +1443.937 A/A
+j1-P12     prose__pg1184.txt                      all   V1       1699545.62   1739550.69   -40005.07  10208.60  12995.43   -0.0..+0.1%  -4445.008 WIN
+j1-P12     prose__pg1184.txt                      all   F8       1761778.84   1739550.69   +22228.15  10208.60  12995.43   -0.0..+0.0%  +2469.794 LOSS
+j1-P12     prose__pg1184.txt                      all   F64      2252058.19   1739550.69  +512507.50  10208.60  12995.43   -0.1..+0.4% +56945.278 LOSS
+j1-P12     prose__pg1184.txt                      all   M64      1806614.28   1739550.69   +67063.59  10208.60  12995.43   -0.0..+0.0%  +7451.510 LOSS
+# group 36 done: j1-P12 prose__pg1184.txt all load1-at-start=1.08 load1-at-end=1.07 waits=0 launches=3
+j1-P12     prose__pg135.txt                       all   walk#b   2131551.69   2128420.19    +3131.50   3131.50   4829.06   -0.3..+0.0%    +60.221 A/A
+j1-P12     prose__pg135.txt                       all   walk#c   2133249.25   2128420.19    +4829.06   3131.50   4829.06   -0.8..+0.5%    +92.867 A/A
+j1-P12     prose__pg135.txt                       all   V1       2060250.12   2128420.19   -68170.07   3131.50   4829.06   -0.1..+0.3%  -1310.963 WIN
+j1-P12     prose__pg135.txt                       all   F8       2140237.44   2128420.19   +11817.25   3131.50   4829.06   -0.1..+0.0%   +227.255 LOSS
+j1-P12     prose__pg135.txt                       all   F64      2731518.41   2128420.19  +603098.22   3131.50   4829.06   -0.0..+0.0% +11598.043 LOSS
+j1-P12     prose__pg135.txt                       all   M64      2234077.09   2128420.19  +105656.90   3131.50   4829.06   -0.1..+0.1%  +2031.863 LOSS
+# group 37 done: j1-P12 prose__pg135.txt all load1-at-start=1.07 load1-at-end=1.05 waits=0 launches=3
+j1-P12     prose__pg1400.txt                      all   walk#b    670276.47    669580.86     +695.61    695.61   1279.21   -0.1..+0.2%     +1.087 A/A
+j1-P12     prose__pg1400.txt                      all   walk#c    670860.07    669580.86    +1279.21    695.61   1279.21   -0.1..+0.0%     +1.999 A/A
+j1-P12     prose__pg1400.txt                      all   V1        658149.00    669580.86   -11431.86    695.61   1279.21   -0.1..+0.1%    -17.862 WIN
+j1-P12     prose__pg1400.txt                      all   F8        674877.02    669580.86    +5296.16    695.61   1279.21   -0.1..+0.0%     +8.275 LOSS
+j1-P12     prose__pg1400.txt                      all   F64       782578.20    669580.86  +112997.34    695.61   1279.21   -0.0..+0.0%   +176.558 LOSS
+j1-P12     prose__pg1400.txt                      all   M64       665580.98    669580.86    -3999.88    695.61   1279.21   -0.1..+0.0%     -6.250 WIN
+# group 38 done: j1-P12 prose__pg1400.txt all load1-at-start=1.05 load1-at-end=1.04 waits=0 launches=3
+j1-P12     prose__pg2600.txt                      all   walk#b   2021625.16   2029981.22    -8356.06   8356.06   3762.06   -0.1..+0.1%   -835.606 A/A
+j1-P12     prose__pg2600.txt                      all   walk#c   2033743.28   2029981.22    +3762.06   8356.06   3762.06   -0.5..+0.1%   +376.206 A/A
+j1-P12     prose__pg2600.txt                      all   V1       1964683.47   2029981.22   -65297.75   8356.06   3762.06   -0.1..+0.0%  -6529.775 WIN
+j1-P12     prose__pg2600.txt                      all   F8       2036933.66   2029981.22    +6952.44   8356.06   3762.06   -0.0..+0.1%   +695.244 NULL
+j1-P12     prose__pg2600.txt                      all   F64      2636104.81   2029981.22  +606123.59   8356.06   3762.06   -0.3..+0.1% +60612.359 LOSS
+j1-P12     prose__pg2600.txt                      all   M64      2131420.81   2029981.22  +101439.59   8356.06   3762.06   -0.1..+0.1% +10143.959 LOSS
+# group 39 done: j1-P12 prose__pg2600.txt all load1-at-start=1.04 load1-at-end=1.10 waits=0 launches=3
+j1-P12     prose__pg2701.txt                      all   walk#b    695344.26    697761.86    -2417.60   2417.60   2807.24   -0.4..+0.4%    -41.683 A/A
+j1-P12     prose__pg2701.txt                      all   walk#c    700569.10    697761.86    +2807.24   2417.60   2807.24   -0.9..+2.0%    +48.401 A/A
+j1-P12     prose__pg2701.txt                      all   V1        657570.49    697761.86   -40191.37   2417.60   2807.24   -0.1..+0.0%   -692.955 WIN
+j1-P12     prose__pg2701.txt                      all   F8        680716.23    697761.86   -17045.63   2417.60   2807.24   -0.4..+0.0%   -293.890 WIN
+j1-P12     prose__pg2701.txt                      all   F64       868087.33    697761.86  +170325.47   2417.60   2807.24   -0.1..+0.1%  +2936.646 LOSS
+j1-P12     prose__pg2701.txt                      all   M64       712358.59    697761.86   +14596.73   2417.60   2807.24   -0.1..+0.1%   +251.668 LOSS
+# group 40 done: j1-P12 prose__pg2701.txt all load1-at-start=1.10 load1-at-end=1.08 waits=0 launches=3
+j1-P12     prose__pg996.txt                       all   walk#b   1268868.30   1250935.28   +17933.02  17933.02   2592.69   -0.4..+0.0% +17933.020 A/A
+j1-P12     prose__pg996.txt                       all   walk#c   1248342.59   1250935.28    -2592.69  17933.02   2592.69   -0.5..+0.6%  -2592.690 A/A
+j1-P12     prose__pg996.txt                       all   V1       1175239.50   1250935.28   -75695.78  17933.02   2592.69   -0.1..+0.1% -75695.780 WIN
+j1-P12     prose__pg996.txt                       all   F8       1210634.33   1250935.28   -40300.95  17933.02   2592.69   -0.1..+0.2% -40300.950 WIN
+j1-P12     prose__pg996.txt                       all   F64      1544811.34   1250935.28  +293876.06  17933.02   2592.69   -0.1..+0.1% +293876.060 LOSS
+j1-P12     prose__pg996.txt                       all   M64      1261147.50   1250935.28   +10212.22  17933.02   2592.69   -0.0..+0.1% +10212.220 NULL
+# group 41 done: j1-P12 prose__pg996.txt all load1-at-start=1.08 load1-at-end=1.06 waits=0 launches=3
+# rerun: an-dig g2-dig-n64k-g8-L1k-reg-S all (within-launch A/A beyond NULL=653.834: 0; cross-launch spread of F64 beyond max(A/A floor, NULL)=653.834: 1): +2 launches
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   walk#b     21093.64     21091.41       +2.23      2.23      6.84   -0.0..+0.1%     +0.001 A/A
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   walk#c     21098.25     21091.41       +6.84      2.23      6.84   -0.1..+0.2%     +0.002 A/A
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   V1         28453.47     21091.41    +7362.06      2.23      6.84   -0.0..+0.1%     +1.797 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   F8         47181.55     21091.41   +26090.14      2.23      6.84   -0.1..+0.0%     +6.370 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   F64        37957.16     21091.41   +16865.75      2.23      6.84  -0.2..+10.8%     +4.118 LOSS
+an-dig     g2-dig-n64k-g8-L1k-reg-S               all   M64        27027.49     21091.41    +5936.08      2.23      6.84   -0.1..+0.0%     +1.449 LOSS
+# group 42 done: an-dig g2-dig-n64k-g8-L1k-reg-S all load1-at-start=1.06 load1-at-end=1.11 waits=0 launches=5
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   walk#b     44884.95     44934.80      -49.85     49.85      4.06   -0.0..+0.1%     -0.000 A/A
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   walk#c     44938.86     44934.80       +4.06     49.85      4.06   -0.1..+0.0%     +0.000 A/A
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   V1         48779.77     44934.80    +3844.97     49.85      4.06   -0.1..+0.6%     +0.029 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   F8         51025.34     44934.80    +6090.54     49.85      4.06   -0.1..+0.5%     +0.046 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   F64        69797.97     44934.80   +24863.17     49.85      4.06   -0.1..+0.4%     +0.190 LOSS
+an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S             all   M64        59054.16     44934.80   +14119.36     49.85      4.06   -0.0..+0.7%     +0.108 LOSS
+# group 43 done: an-dfa-hat g2-dfa-hat-n64k-ginf-L32-S all load1-at-start=1.11 load1-at-end=1.09 waits=0 launches=3
+
+time.sh: COMPLETE rows=258 groups=43 reruns=10 xreruns=10 requeued=0 wall=748s

@@ -1,0 +1,135 @@
+# tests/named_groups/utf8_names.rxt — group names under `-e utf8` (K116).
+#
+# libpcre2 10.46 with PCRE2_UTF accepts a non-ASCII group name, and its rule
+# was censused over every code point in both positions (lane langfix,
+# `(?<X>x)` and `(?<aX>x)`): the FIRST character is \p{L} or `_`, a LATER
+# one is \p{L}, \p{Nd} or `_`. Set-equal to those classes; no other category
+# (Nl, Mn, Pc) is a name character. The length wall stays 128 BYTES (code
+# units): 64 two-byte letters compile, 65 are error 148. Under `byte` the rule
+# is ASCII-only and unchanged (d27/name_syntax.rxt's `(?<namé>a)` perr).
+#
+# Every spelling that reads a name goes through the one grammar function,
+# so a reference by a Unicode name is checked here for each reader:
+# `\k<..>`, `(?P=..)`, `\g{..}`, `\k{..}` and `(?&..)`.
+#
+# ORACLE: libpcre2 10.46 PCRE2_UTF, every block run against it by lane
+# langfix. python `re` follows Python identifier rules, which differ from
+# PCRE2's at the margins measured here, so every block is `# pcre2-only`.
+
+# ---- declarations and references by a Unicode name ------------------------
+
+# pcre2-only
+pattern (?<é>a)\k<é>
+features named-groups,backrefs
+encoding utf8
+m "aa" 0 2
+g 1 0 1
+n "a"
+
+# pcre2-only
+pattern (?'é'a)(?P=é)
+features named-groups,backrefs
+encoding utf8
+m "aa" 0 2
+g 1 0 1
+
+# pcre2-only
+pattern (?P<aé1>a)\g{aé1}
+features named-groups,backrefs
+encoding utf8
+m "aa" 0 2
+g 1 0 1
+
+# pcre2-only
+pattern (?<日本>a)\k{日本}
+features named-groups,backrefs
+encoding utf8
+m "aa" 0 2
+g 1 0 1
+
+# pcre2-only
+pattern (?<_é>a)(?&_é)
+features named-groups,recursion
+encoding utf8
+m "aa" 0 2
+g 1 0 1
+
+# ---- \p{Nd} is a name character after the first position ------------------
+
+# pcre2-only
+pattern (?<a٣>a)
+features named-groups
+encoding utf8
+m "a" 0 1
+g 1 0 1
+
+# ---- refusals: a leading Nd, an Nl letter number, a Pc, a combining mark ---
+
+# U+0663 ARABIC-INDIC DIGIT THREE first: error 144
+# pcre2-only
+pattern (?<٣>a)
+features named-groups
+encoding utf8
+perr
+
+# U+2170 SMALL ROMAN NUMERAL ONE (Nl): error 162
+# pcre2-only
+pattern (?<ⅰ>a)
+features named-groups
+encoding utf8
+perr
+
+# U+203F UNDERTIE (Pc) after a letter: error 142
+# pcre2-only
+pattern (?<a‿>a)
+features named-groups
+encoding utf8
+perr
+
+# `e` + U+0301 COMBINING ACUTE (Mn): error 142
+# pcre2-only
+pattern (?<é>a)
+features named-groups
+encoding utf8
+perr
+
+# ---- the referenced name is matched byte-exactly ---------------------------
+
+# pcre2-only
+pattern (?<é>a)\k<e>
+features named-groups,backrefs
+encoding utf8
+perr
+
+# ---- duplicates: refused without (?J), allowed under it --------------------
+
+# pcre2-only
+pattern (?<é>a)(?<é>b)
+features named-groups
+encoding utf8
+perr
+
+# pcre2-only
+pattern (?J)(?<é>a)|(?<é>b)
+features named-groups,backrefs,modifiers
+encoding utf8
+m "b" 0 1
+g 2 0 1
+m "xa" 1 2
+g 1 1 2
+
+# ---- the length wall is 128 bytes, not 128 characters ---------------------
+
+# 64 x U+00E9 = 128 bytes
+# pcre2-only
+pattern (?<éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé>a)
+features named-groups
+encoding utf8
+m "a" 0 1
+
+# 65 x U+00E9 = 130 bytes: error 148
+# pcre2-only
+pattern (?<ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé>a)
+features named-groups
+encoding utf8
+perr

@@ -3644,6 +3644,7 @@ tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6
 # these blocks' VM-forced artifacts are VM-hat movers, which the hat's own vmhat_checks.py measured); no existing row moved.
 # b3bfix (2026-10-18, b3brev finding 2): +8/-1: the eight tests/litscan/presence_deny.rxt blocks the forced VM hats (the new corpus file); tests/utf8/wclass_illformed.rxt:445 `x.y` under utf8 leaves because presence_deny.rxt:577 holds the same (text, options) and now sorts first and takes its id (ssbuild3's ctxnode precedent); census_s1.py on lane/memfn-b3b 54d582e8b (-fno-start-set / -fno-req-handoff arms), corpus rows only, bench rows NOT refreshed; no other row moved.
 # pinfix (2026-10-18): +1: tests/litscan/presence_deny.rxt:643 `a.{1,5}z` (the emit_sweep no-fd-pres-pick manifest pattern joined the corpus); census_s1.py not re-run, the row is the vmhat_checks mover list's own report (corpus row only, bench rows NOT refreshed); no other row moved.
+# lf3tri (2026-10-22): +81 rows, every one a block of a new language-fix corpus file (the language-fix corpus files possessive_ungreedy, base/xbrace_space, lookaround/lookbehind_group_alt, modifiers/optrun_group, modifiers/xmode_utf8, named_groups/utf8_names, recursion/inlookaround_self, utf8/octal_wide); correct VM-hat movers never pinned; census_s1.py on lane/langfix2 (-fno-start-set arm, bench rows NOT refreshed), 0 existing rows gone, 0 changed.
 tests/endmark/b3_rows.rxt:123		615c6e7b302c327d24
 tests/endmark/b3_rows.rxt:178		615c6e7b302c327d3f24
 tests/endmark/b3_rows.rxt:186	--features classes	283f3a5c732b7c785c732a3f2924
@@ -3753,3 +3754,84 @@ tests/findall/global.rxt:736	--features all	61625c4b
 tests/findall/global.rxt:758	--features all	615c4b62
 tests/findall/global.rxt:900	--features all	28617c292a3f62
 tests/findall/global.rxt:1271	--features all	615c4b7c62
+tests/atomic_groups/possessive_ungreedy.rxt:101	--features atomic-groups,classes,modifiers --engine=vm	61283f55295c737b2c327d2b
+tests/atomic_groups/possessive_ungreedy.rxt:109	--features atomic-groups,classes,modifiers	283f5529612a2b61
+tests/atomic_groups/possessive_ungreedy.rxt:115	--features atomic-groups,classes,modifiers --engine=vm	283f5529612a2b61
+tests/atomic_groups/possessive_ungreedy.rxt:141	--features atomic-groups,classes,modifiers	283f553a5c732a2b2962
+tests/atomic_groups/possessive_ungreedy.rxt:147	--features atomic-groups,classes,modifiers --engine=vm	283f553a5c732a2b2962
+tests/atomic_groups/possessive_ungreedy.rxt:154	--features atomic-groups,classes,modifiers	283f5529612b3f623f3f
+tests/atomic_groups/possessive_ungreedy.rxt:161	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b3f623f3f
+tests/atomic_groups/possessive_ungreedy.rxt:169	--features atomic-groups,classes,modifiers	283f5529612b
+tests/atomic_groups/possessive_ungreedy.rxt:175	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b
+tests/atomic_groups/possessive_ungreedy.rxt:32	--features atomic-groups,classes,modifiers	283f5529612b2b
+tests/atomic_groups/possessive_ungreedy.rxt:39	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b2b
+tests/atomic_groups/possessive_ungreedy.rxt:62	--features atomic-groups,classes,modifiers	283f5529617b322c337d2b
+tests/atomic_groups/possessive_ungreedy.rxt:70	--features atomic-groups,classes,modifiers --engine=vm	283f5529617b322c337d2b
+tests/atomic_groups/possessive_ungreedy.rxt:79	--features atomic-groups,classes,modifiers	283f5529617b322c7d2b
+tests/atomic_groups/possessive_ungreedy.rxt:86	--features atomic-groups,classes,modifiers --engine=vm	283f5529617b322c7d2b
+tests/atomic_groups/possessive_ungreedy.rxt:94	--features atomic-groups,classes,modifiers	61283f55295c737b2c327d2b
+tests/base/xbrace_space.rxt:15		5c787b2034317d
+tests/base/xbrace_space.rxt:19		5c787b3431207d
+tests/base/xbrace_space.rxt:23		5c787b093431097d
+tests/base/xbrace_space.rxt:27		5c787b20203461207d2b
+tests/base/xbrace_space.rxt:31		5b5c787b2034317d2d5c787b203433207d5d2b
+tests/base/xbrace_space.rxt:37	--encoding=utf8	5c787b203362317d
+tests/base/xbrace_space.rxt:42	--encoding=utf8	5c787b20313046464646207d
+tests/lookaround/lookbehind_group_alt.rxt:23	--features lookaround	283f3c3d283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:31	--features lookaround	283f3c3d283f3a61627c63647c6566292978
+tests/lookaround/lookbehind_group_alt.rxt:39	--features lookaround	283f3c3d283f3a61627c6364297c652978
+tests/lookaround/lookbehind_group_alt.rxt:46	--features lookaround	283f3c3d657c283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:53	--features lookaround	283f3c3d283f3a2861297c286229292978
+tests/lookaround/lookbehind_group_alt.rxt:64	--features lookaround,modifiers	283f3c3d283f693a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:71	--features lookaround	282a706c623a283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:77	--features lookaround	283f3c21283f3a61627c6364292978
+tests/lookaround/lookbehind_group_alt.rxt:84	--features lookaround	283f3c3d283f3a617b327d7c6263292978
+tests/lookaround/lookbehind_group_alt.rxt:91	--features lookaround	283f3c3d283f3a61283f3a627c63297c64283f3a657c6629292978
+tests/modifiers/optrun_group.rxt:17	--features modifiers	283f3a283f6929292a61
+tests/modifiers/optrun_group.rxt:23	--features modifiers	28283f7329293f61
+tests/modifiers/optrun_group.rxt:30	--features modifiers,lookaround,assertions	283f3d283f6d29292b61
+tests/modifiers/optrun_group.rxt:35	--features modifiers	283f3a283f2d6929297b327d61
+tests/modifiers/optrun_group.rxt:41	--features modifiers	283f3a283f6929297b307d61
+tests/modifiers/optrun_group.rxt:47	--features modifiers	283f3a283f6929292b61
+tests/modifiers/optrun_group.rxt:53	--features modifiers,atomic-groups	283f3e283f6929292a61
+tests/modifiers/optrun_group.rxt:59	--features modifiers	283f693a283f7329292a61
+tests/modifiers/optrun_group.rxt:65	--features modifiers,named-groups	283f3c6e3e283f6929292b61
+tests/modifiers/optrun_group.rxt:71	--features modifiers	78283f3a283f6929293f61
+tests/modifiers/optrun_group.rxt:77	--features modifiers	283f3a283f5529292a612b
+tests/modifiers/optrun_group.rxt:82	--features modifiers	283f3a283f6929283f7329292a61
+tests/modifiers/xmode_utf8.rxt:102	--features modifiers --encoding=utf8	283f7878295be280a85d
+tests/modifiers/xmode_utf8.rxt:112	--features modifiers --encoding=byte	283f782961c28562
+tests/modifiers/xmode_utf8.rxt:118	--features modifiers --encoding=byte	283f782961e280a862
+tests/modifiers/xmode_utf8.rxt:23	--features modifiers --encoding=utf8	283f782961c28562
+tests/modifiers/xmode_utf8.rxt:29	--features modifiers --encoding=utf8	283f782961e2808e62
+tests/modifiers/xmode_utf8.rxt:35	--features modifiers --encoding=utf8	283f782961e2808f62
+tests/modifiers/xmode_utf8.rxt:41	--features modifiers --encoding=utf8	283f782961e280a862
+tests/modifiers/xmode_utf8.rxt:50	--features modifiers --encoding=utf8	283f782961e280a92b62
+tests/modifiers/xmode_utf8.rxt:56	--features modifiers --encoding=utf8	283f782961e280a87b327d62
+tests/modifiers/xmode_utf8.rxt:64	--features modifiers --encoding=utf8	283f7829615ce280a862
+tests/modifiers/xmode_utf8.rxt:73	--features modifiers --encoding=utf8	283f782961c2a062
+tests/modifiers/xmode_utf8.rxt:80	--features modifiers --encoding=utf8	283f782961e3808062
+tests/modifiers/xmode_utf8.rxt:88	--features modifiers --encoding=utf8	283f78296123e280a862
+tests/modifiers/xmode_utf8.rxt:96	--features modifiers --encoding=utf8	283f78295be280a85d
+tests/named_groups/utf8_names.rxt:113	--features named-groups,backrefs,modifiers --encoding=utf8	283f4a29283f3cc3a93e61297c283f3cc3a93e6229
+tests/named_groups/utf8_names.rxt:125	--features named-groups --encoding=utf8	283f3cc3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a93e6129
+tests/named_groups/utf8_names.rxt:22	--features named-groups,backrefs --encoding=utf8	283f3cc3a93e61295c6b3cc3a93e
+tests/named_groups/utf8_names.rxt:30	--features named-groups,backrefs --encoding=utf8	283f27c3a9276129283f503dc3a929
+tests/named_groups/utf8_names.rxt:37	--features named-groups,backrefs --encoding=utf8	283f503c61c3a9313e61295c677b61c3a9317d
+tests/named_groups/utf8_names.rxt:44	--features named-groups,backrefs --encoding=utf8	283f3ce697a5e69cac3e61295c6b7be697a5e69cac7d
+tests/named_groups/utf8_names.rxt:51	--features named-groups,recursion --encoding=utf8	283f3c5fc3a93e6129283f265fc3a929
+tests/named_groups/utf8_names.rxt:60	--features named-groups --encoding=utf8	283f3c61d9a33e6129
+tests/recursion/inlookaround_self.rxt:106	--features recursion,lookaround	28283f3c3d283f32292961292862283f3d283f31292929
+tests/recursion/inlookaround_self.rxt:115	--features recursion,lookaround	28283f3c3d283f322929292861283f3d283f31292929
+tests/recursion/inlookaround_self.rxt:122	--features recursion,lookaround	28283f3c3d283f322929292861283f21283f31292929
+tests/recursion/inlookaround_self.rxt:92	--features recursion,lookaround	283f3c3d283f312929286129
+tests/recursion/inlookaround_self.rxt:99	--features recursion,lookaround	286129283f3c3d283f312929
+tests/utf8/octal_wide.rxt:15	--features backrefs --encoding=utf8	5c343030
+tests/utf8/octal_wide.rxt:23	--features backrefs --encoding=utf8	5c373737
+tests/utf8/octal_wide.rxt:30	--encoding=utf8	5b5c3430305d
+tests/utf8/octal_wide.rxt:36	--encoding=utf8	5b5c3430302d5c3737375d
+tests/utf8/octal_wide.rxt:45	--encoding=utf8	5b5e5c3430305d
+tests/utf8/octal_wide.rxt:51	--features backrefs --encoding=utf8	2861295c343030
+tests/utf8/octal_wide.rxt:59	--features backrefs --encoding=utf8	5c3430302b
+tests/utf8/octal_wide.rxt:66	-i --features backrefs,modifiers --encoding=utf8	5c343030
+tests/utf8/octal_wide.rxt:74	--features backrefs --encoding=utf8	5c31303030

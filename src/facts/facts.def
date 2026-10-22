@@ -58,4 +58,5 @@ PF_FACT(KSET_WALK,     "kset_walk",     3, PF_CORE,    0,                       
 PF_FACT(RUN_PIN,       "run_pin",       3, PF_DERIVED, 0,                                   "src/facts/kset.c",    "kset_walk req_run")
 PF_FACT(LAND_CHAR,     "land_char",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 PF_FACT(WIDTH,         "width",         3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
+PF_FACT(SPAN,          "span_facts",    3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 #undef PF_FACT

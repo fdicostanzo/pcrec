@@ -1,0 +1,494 @@
+# History of tests/lib/CLAUDE.md: the full original text, moved verbatim from commit d3d4c5834 when the file was reduced to an index.
+
+# tests/lib — infrastructure shared by every suite
+
+Not a test suite itself: helpers other suites' scripts and the Makefile's
+section targets depend on.
+
+## Files
+
+- **assoc.sh** — [MACPORT] a bash-3.2-safe `declare -A` shim, for the
+  handful of maps in this tree whose keys are genuinely STRINGS (filenames,
+  feature-set text, C macro names, CLI flag spellings) rather than
+  scripts/safekill's more common PID/PGID pattern (fixed there by switching
+  `-A` to `-a` under a bash-version guard instead — a real associative
+  array is needless when every key is already numeric). This box's
+  `/bin/bash` is 3.2.57 and has no associative arrays at all
+  (`declare -A` errors "invalid option", verified live); `assoc_set`/
+  `assoc_get`/`assoc_has`/`assoc_keys`/`assoc_count` are pass-throughs to a
+  real global `declare -A` array on bash 4+ (byte-identical to the
+  original inline syntax there) and an `od`-hex-mangled-scalar + companion
+  indexed-array emulation on bash 3.2. Used by tests/harness/run.sh
+  (file_fail_count/features_seen/declared_names) and
+  tests/registry/axes_registry_check.sh (HDR_BIT/CLI_MACRO).
+- **loadavg.sh** — [MACPORT] `load1`/`load3`: a real load-average reading on
+  darwin (`sysctl -n vm.loadavg`, no `/proc` at all) instead of the
+  `2>/dev/null || echo 0` fallback several call sites already had — which
+  on darwin was ALWAYS the fallback path, silently. Used by
+  tests/lib/load_guard.sh, tests/harness/run.sh's SIZELOG timing line,
+  tests/size/run_size_log.sh, scripts/battery.sh.
+- **shard_split.sh** — `shard_split N IN OUTPREFIX` then `NSHARD="$SHARD_COUNT"`: portable awk line-chunk split, exactly min(N, lines) balanced contiguous shards (BSD `split` has no `-n`; the old `|| cp pats sh/p00; NSHARD=1` fallbacks made darwin silently serial). LOUD by construction: fewer shards than asked prints a stderr NOTE, an empty/failed split is FATAL (rc 1), `SHARD_SPLIT_VERBOSE=1` prints the count on every call. Used by anchored/run_anchored_diff.sh and the six codegen sweeps run_dfa_stamps/run_dfa_uniform_fold/run_form_census/run_anchored_match/run_vm_frameless/run_search_pinned ([portsplit], portsplit_report.md). A new sharded sweep uses it; never `split -n`.
+- **ncpu.sh** — [MACPORT] `$NCPU`, resolved once: `nproc` (present via
+  Homebrew on this box) else `sysctl -n hw.ncpu` else
+  `getconf _NPROCESSORS_ONLN` else the project's pre-existing fallback
+  constant (2). Answers "how many CPUs does this box have" — TOTAL
+  capacity, including efficiency cores on darwin — which is the right
+  question for scripts/battery.sh and tests/lib/load_guard.sh's
+  load-average ratio (a real contention signal has to be measured against
+  every schedulable cycle, not just the fast ones). Most
+  `nproc 2>/dev/null || echo N` call sites in this tree already degrade
+  safely without this — it exists for a box with no `nproc` on PATH at
+  all, which `|| echo N` alone cannot distinguish from "nproc ran and said
+  N". **[CORPUS-PCAP] moved every WORKER-CONCURRENCY default site (as
+  opposed to a total-capacity reading) onto procs_default.sh below**, which
+  falls back to this file's `$NCPU` on Linux/non-Apple-silicon boxes —
+  see that entry for the sites. See docs/dev/lanes/macport_report.md for
+  the original full site survey this file's own landing did.
+- **procs_default.sh** — [CORPUS-PCAP] `$PROCS_DEFAULT`, the shared answer
+  to "how many concurrent WORKERS should a parallel test section default
+  to" — a DIFFERENT quantity from ncpu.sh's `$NCPU` above: on this box
+  (8 performance + 2 efficiency cores) `$NCPU`/`nproc` reads 10, but
+  docs/dev/lanes/tt4m2_report.md measured the real concurrency KNEE at
+  P=8, the performance-core count, and tri87 diagnosed `test-corpus`'s
+  intermittent `TIMED OUT (>10s)` reds as exactly the oversubscription
+  above that knee (docs/dev/lanes/tri87_report.md, plan.md
+  [CORPUS-PCAP]). Resolution: `sysctl -n hw.perflevel0.physicalcpu` on
+  darwin when present, else ncpu.sh's `$NCPU` (Linux/CI/an Intel Mac —
+  unchanged there). Sourceable (sets `$PROCS_DEFAULT`, same convention
+  ncpu.sh's call sites use) AND directly executable (prints the number —
+  a Makefile recipe's `$$(tests/lib/procs_default.sh)` in place of the old
+  `$$(nproc)`), self-locating in either mode via `$0`. Wired into every
+  Makefile `PROCS=`/`GROUP_PROCS=` `nproc` default, `tests/size/
+  run_size_log.sh`, `tests/registry/run_definitions_oracle.sh`/`run_pc4.sh`
+  (their `JOBS` halving), `tests/mech/run_sabotage_matrix.sh` (its `JOBS`/
+  `INNER_PROCS` division), `tests/lib/run_san_group.sh` (its own
+  `INNER_PROCS` division), `tests/axes/run_axes.sh`,
+  `tests/lookaround/run_expansion_diff.sh`,
+  `tests/anchored/run_anchored_diff.sh`,
+  `tests/codegen/run_lookaround_identity.sh` (`JOBS`), and the `NSHARD`
+  default in `tests/codegen/run_dfa_uniform_fold.sh`/`run_dfa_stamps.sh`/
+  `run_form_census.sh`/`run_anchored_match.sh`/`run_vm_frameless.sh`/
+  `run_search_pinned.sh`. NOT wired into `tests/lib/load_guard.sh`,
+  `tests/lib/loadavg.sh`, `scripts/battery.sh` or `tests/bench/`'s own
+  `nproc` mentions — those read total capacity for a load-average ratio or
+  print it as diagnostic text, a different question this file does not
+  answer. An explicit `PROCS=`/`JOBS=`/`NSHARD=` still overrides every one
+  of these sites, unchanged.
+- **cc_resolve.sh** — [MACPORT] resolves a real GNU gcc when the bare `gcc`
+  on PATH is Apple clang wearing gcc's name (verified: `/usr/bin/gcc
+  --version` prints "Apple clang"). Tries `gcc-16`/`gcc-15`/`gcc-14`/
+  `gcc-13` (Homebrew's versioned naming) in that order, newest first; falls
+  back to plain `gcc` if none is a real GNU compiler (never a hard
+  failure). Does NOT touch the top-level Makefile's own `CC ?= gcc`
+  default (escalated in the lane report instead). Wired into every test
+  script whose own `CC="${CC:-gcc}"` default this lane found (see the
+  report for the full list and the two files using `$ROOT` instead of
+  `$ROOT_DIR`).
+- **c_artifact_cmp.sh** — `cmp_c_artifacts FILE1 FILE2` (adm71 item 5,
+  2026-09-19): compares two pcrec-emitted `.c` files for identity while
+  ignoring the `#include "<basename>.h"` line, which two artifacts written
+  to different `-o` basenames always differ on regardless of everything
+  else (the fourth recorded instance of the trap, per
+  `docs/dev/lanes/dd8_report.md` §3.1 — `scripts/emit_sweep.py` avoids it
+  with `-o -`, `run_cli_tests.sh`/`run_trie_identity.sh` avoid it the same
+  way, and two ad-hoc header-stripping idioms already existed
+  independently before this shared one, `run_offset_skip.sh`'s
+  `drop_own_header` and `run_island_tests.sh`'s `grep -v '^#include "'`).
+  Wired into `run_anchored_match.sh` and `run_search_pinned.sh`'s own §1
+  negative controls, which compared `on.c`/`off.c` with a raw `cmp -s` and
+  were structurally unable to ever report "identical" — see
+  `docs/dev/lanes/adm71_report.md` item 5 for the full site survey and
+  why those two were the only sites needing the swap.
+- **unit_cc.sh** — [REVW.U L5-R0] `unit_build <outbin> <src.c> [extra
+  args...]`, the ONE build for the unit tier's internal-property checks
+  (`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R0: ten C programs
+  scattered across six directories with four divergent flag policies
+  before this file, one of them, `tests/codegen/cpset_model_check.c`,
+  never built under a sanitizer despite its whole argument being "reaches
+  paths the corpus cannot"). Sources `cc_resolve.sh`; resolves
+  `-Ilib -Isrc`, threads `$SANFLAGS` (SAN-1), links `$LIBPCREC` (default
+  `<root>/build/libpcrec.a`), `-Werror` UNCONDITIONALLY — a test-compile
+  policy argued against R5-Q1 rather than in ignorance of it (K28's own
+  precedent: `-Werror` on a compile path found a maybe-uninitialized read
+  no answer check could see). Adopted in place at the seven pre-existing
+  checks that link only `libpcrec.a`; the two `fold_agreement_check.c`
+  sites and `startbnd_backend_check.c`, which compile alongside a
+  GENERATED artifact through `$GENCFLAGS`/`gen_cc`, stay on that existing
+  regime deliberately — see this file's own header for the argument.
+  Cost budget stated as a SHAPE in the header (one gcc invocation, one
+  process spawn, per SUBJECT — R0.4), not a stopwatch.
+- **timeout_bin.sh** — [TT-6] resolves `TIMEOUT_BIN` ONCE per process: the
+  coreutils `timeout` binary every suite should invoke instead of a bare
+  `timeout`. THE FINDING (docs/dev/tt4_measurement.md, "The `timeout`
+  binary itself"): this box's default `/usr/bin/timeout` is uutils
+  coreutils 0.8.0, which POLLS its child instead of blocking on it —
+  MEASURED ~108.7ms of pure wall per call, ~0 CPU; `/usr/bin/gnutimeout`
+  (GNU coreutils 9.7) does the identical job in ~4.2ms. Detection order:
+  env override, else the default `timeout` bare if it self-identifies as
+  GNU (the common case, changes nothing for a stranger's box — D2/R5-Q1),
+  else `/usr/bin/gnutimeout`, else `gtimeout` (Homebrew/macOS), else plain
+  `timeout` (a box with no GNU coreutils `timeout` pays the uutils tax
+  exactly as before this file existed — never a hard failure). Announces
+  the resolved choice once per top-level script to stderr, only when it
+  differs from plain `timeout`, gated by an exported
+  `TT6_TIMEOUT_BIN_ANNOUNCED` so a script sourcing this both directly and
+  transitively (via `gen_timeout.sh`) prints exactly once. POSIX sh, no
+  bashisms — sourced from bash scripts AND from `scripts/Makefile`'s
+  recipe under its default `/bin/sh`. A SEPARATE file from `gen_timeout.sh`
+  because not every bare-`timeout` caller sources that file (`tests/
+  reject/run_reject_tests.sh`, `tests/bench/run_bench.sh`, `tests/bench/
+  compare/compare.sh` do not — folding this in would make them take on
+  D45's CPU/wall-budget machinery just to get a binary name); those three
+  plus `scripts/Makefile` source `timeout_bin.sh` directly instead.
+  MEASURED (docs/testing.md "The `timeout` binary itself"): 6.31x wall on
+  an isolated `make test-corpus` run (identical case counts before/after),
+  a wash on the full `-j12 -Otarget make test` total (concurrent sections
+  hide a sleeping worker's wall time — the tax shows where sections run
+  closer to serially: the sanitizer axes, `make mech` rows, `PROCS=1`).
+- **gen_timeout.sh** — D45's ONE implementation of the generated-code
+  compile budget — CPU-PRIMARY since the D45 third addendum (2026-08-16):
+  `gen_cpu_secs` (10s plain / 60s sanitizer, `GENCPU`/`GENCPU_SAN`,
+  RLIMIT_CPU — load-resilient: contention inflates CPU ~2x at worst,
+  measured, where wall stretches unboundedly) with
+  `gen_timeout_secs` as the wall BACKSTOP (60s/180s,
+  `GENTIMEOUT`/`GENTIMEOUT_SAN`) for the stuck-without-working class CPU
+  cannot see; axis derived from the flags. Every compile of emitted C
+  routes through its `gen_cc`, and exceeding either budget is a loud
+  FAILURE naming the case AND the clock that fired, never a hang. Since 2026-08-16 (D45 second addendum) it
+  also owns the EXECUTION budget for generated matchers: `gen_run_secs`
+  (10s plain, 60s sanitizer, `GENRUNTIMEOUT`/`GENRUNTIMEOUT_SAN`; also
+  runnable as `bash tests/lib/gen_timeout.sh runsecs` for python callers)
+  and `gen_run <label> <argv...>`, which routes a run through
+  `scripts/watchdog` — run budget plus a 512m peak-tree-RSS ceiling
+  (`GENRUNMEM`) plus one section-tagged log line per execution in
+  `build/watchdog.log`; 124 = run timeout, 122 = memory kill, both loud
+  failures checked exactly. Per-pattern run sites use `gen_run`; inner
+  loops with hundreds+ of sub-millisecond runs use bare
+  `timeout`/`subprocess timeout=` reading the same number, because
+  watchdog's fixed startup cost would multiply the loop's runtime.
+  **[TT-3] `CCACHE=1` (2026-08-21)** gates two more things in this file,
+  both no-ops when unset: `_gen_cc_run` reshapes `gen_cc`'s compile+link
+  calls into a `-c` compile per source then a link (the shape ccache can
+  cache — a raw compile-and-link cannot), and `gen_cc_relativize` rewrites
+  the call's own `-I<outdir>` to the textually-stable `-I.` after `cd`-ing
+  into it (every call site's own `-o` directory), because a fresh per-case
+  `mktemp` path in that flag defeated caching even with the shape fixed —
+  `CCACHE_NOHASHDIR=1`/`CCACHE_BASEDIR` are exported alongside it for the
+  same reason under `-g`. MEASURED (docs/testing.md "Compile caching"): a
+  clear NO for `make test` (a cold/warm cycle came in at 4x+ the plain
+  baseline even at a real 64.59% hit rate — thousands of sub-millisecond
+  compiles is the wrong shape for caching's own overhead), a qualified YES
+  for `make mech`'s per-sabotage tree rebuild. **[TT-6] sources
+  `timeout_bin.sh`** (above) for `gen_cc`'s own wall wrapper, which now
+  invokes `"$TIMEOUT_BIN"` rather than a bare `timeout` — this is
+  sabotage S43's anchor line, re-derived in the same change.
+  **[K37] (2026-08-25) IT ALSO OWNS THE COMPILER'S OWN INVOCATION BUDGET,
+  ONE HELPER EVERY SUITE CALLS RATHER THAN EACH RE-WRAPPING ITS OWN CALL
+  SITES**: `pcrec_timeout_secs` (20s plain / 60s sanitizer,
+  `PCRECTIMEOUT`/`PCRECTIMEOUT_SAN` — a different quantity from the
+  generated-code numbers above, calibrated separately: pcrec's own compiles
+  are sub-millisecond to under a second even on the worst corpus case) and
+  `pcrec_run [--hostile] <pcrec-argv...>`, which every harness script now
+  routes a compiler invocation through instead of calling `"$PCREC"`/
+  `build/pcrec` bare. Fixes docs/dev/known_issues.md K37: sabotage row S159
+  made the compiler loop forever on `((?1)*a)`, and
+  `tests/recursion/run_recursion_diff.sh` called the compiler with no bound
+  at all, turning a `make mech` row that should have read one FAILED ARM
+  into a 50-minute hang a human had to kill by PID. TWO PATHS, MEASURED
+  rather than uniform: the default is a bare `"$TIMEOUT_BIN"
+  "$(pcrec_timeout_secs)"` wrap (~2.5ms/call, MEASURED 2026-08-25) —
+  `scripts/watchdog` is used instead (wall + tree-RSS + CPU + a
+  `build/watchdog.log` line) only when the invocation's last argument (the
+  pattern, pcrec's own `--` convention) is CALL-BEARING (`(?R)`, `(?0)`,
+  `(?N)`, `(?±N)`, `(?&name)`, `(?P>name)`, `\g<...>`, `\g'...'` — S159's own
+  construct family) or the caller passes `--hostile` explicitly, because
+  watchdog's own per-call cost is ~171ms/call (MEASURED, ~68x
+  `"$TIMEOUT_BIN"`'s) and routing the ~360 call sites this fix swept through
+  it unconditionally would multiply the harness's wall time rather than
+  merely bound it — see the function's own comment in this file for the
+  full measurement and the construct list. `tests/codegen/
+  run_codegen_tests.sh`'s "[K37] THE BARE-COMPILER-CALL GUARD IS STRUCTURAL"
+  is the standing check: every `tests/**/*.sh` compiler-token site must be
+  guarded (`pcrec_run`/`"$TIMEOUT_BIN"`/`gen_run`/`gen_cc` on the line) or
+  match a reasoned, non-vacuity-checked allowlist entry, so a new bare call
+  site cannot recur silently. **NOT COVERED**: two python callers
+  (`tests/registry/compliance_section.py`, `tests/vm/vm_oracle.py`) invoke
+  the compiler via `subprocess.run()` with no `timeout=` at all — the
+  identical hazard, outside this bash-only mechanism's reach; recorded in
+  K37's own known_issues.md entry, not silently swept into this fix.
+- **size_count.sh** — [ART-SIZE.1b]'s ONE implementation of "the census's
+  own definition" of an emitted artifact's SIZE: total source bytes minus
+  `/* */`/`//` comment-line bytes (docs/dev/artifact_size_census.md §5's
+  `prose` bucket). `size_count_bytes FILE...` sums that quantity over any
+  number of files, forcing `LC_ALL=C` internally (MEASURED: under this
+  box's ambient `en_US.UTF-8`, `awk`'s `length()` counts CHARACTERS, not
+  bytes, and a handful of `[DD-14.FB]`-annotation comments contain
+  multi-byte UTF-8 punctuation — this silently undercounted a real
+  artifact's prose bytes by 8 and 1 respectively; forcing the locale inside
+  the function rather than trusting an inherited export fixes it
+  regardless of caller). VERIFIED byte-for-byte against
+  `docs/dev/artifact_size_census/census.py`'s own `attribute_source()`
+  Python classifier on a real split artifact (both a small synthetic
+  pattern's `gen.c`/`gen.h` and the corpus's own largest witness,
+  `((a)|ab){4000}c`) — a FLAT top-to-bottom comment scan agrees with the
+  census's depth-aware, function/table-tracking classifier exactly,
+  because the census's own comment-detection rule is applied verbatim at
+  every nesting depth with no depth-dependent variation (this file's own
+  header has the full argument). `size_count_row FILE_C FILE_H [PREFIX]` is
+  the ONE-SUBPROCESS combination `tests/harness/run.sh`'s SIZELOG call site
+  actually uses: the same size scan PLUS the D46 stamp extraction
+  (`<PREFIX>_ENGINE`/`<PREFIX>_VM_RUNGS`/`<PREFIX>_VM_PREFILTER`, uppercased,
+  same shapes `census.py`'s `extract_stamps()` greps under the default
+  prefix) in ONE `awk` invocation, because the first cut of that call site
+  (2x `awk` + 3x `sed` + 1x `awk` + 1x `cut` + 1x `grep` — 8 spawns per
+  compile) cost 20.4% of `test-corpus`'s own wall time on a 712-artifact
+  sample; consolidated to 1 spawn, MEASURED 1.79% (see this function's own
+  header and docs/testing.md "The artifact-size log" for both transcripts).
+  **[TT-4M] STEP 2c FIX, 2026-09-08:** `PREFIX` (default `"rx"`, unchanged
+  for every call site before this) is now an explicit third parameter —
+  the stamp grep used to hardcode the literal `RX_*` spellings, which are
+  only correct when the artifact's own `-p` prefix is exactly `rx`; every
+  caller used that prefix until `HARNESS_BATCH`'s per-member `-c`
+  sub-compiles (`hbNNNNNN` prefixes), which the old hardcoding silently
+  blanked all three stamp columns for. NOT derived from FILE_C/FILE_H's own
+  names (a first attempt did this and was wrong: `run.sh`'s unbatched path
+  always names its output `gen.c`/`gen.h` regardless of `-p`, so a
+  filename-derived guess blanked the UNBATCHED stamp too). Sourced by
+  `tests/harness/run.sh` only — no other suite needs an artifact's byte
+  count today.
+- **lib_srcs.sh** — [MEMFN] R4a: `pcrec_lib_srcs ROOT`, THE ONE LIST of
+  libpcrec's C sources for a test script that builds a compiler (or a TSan
+  library) from source instead of linking `build/libpcrec.a`: every `.c`
+  under `ROOT/src` and, when present, `ROOT/memfn/src` (the kit libpcrec
+  links since R4a), `LC_ALL=C` sorted; fails naming ROOT when `src/` holds
+  none. Replaced eleven hand-spelled `find "$ROOT_DIR/src" -name '*.c'`
+  lines (the run_*_identity reference builds, run_anchored_match,
+  run_n1_budget, run_size_term, run_cpset_structure's scratch witness,
+  run_resource_tests' REFCAP, run_thread_tests' TSan library, and
+  run_recursion_identity's moving FILEPIN reference). The archived-PIN
+  references of pre-module commits keep their own `find` over the archive:
+  those trees predate the kit.
+- **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
+  (the RULED contract for tabular `pcrec` command output — `#` comments,
+  header-names-columns, append-only, optional `#section NAME` blocks), the
+  same single-implementation shape `gen_timeout.sh` established for the
+  compile budget. Sourced by shell/awk consumers of a dump (tests/reject/
+  run_reject_tests.sh, tests/cli/run_cli_tests.sh case10, tests/spec_mod0/
+  check09_every_feature_toggles.sh) instead of each hand-rolling its own
+  index map or a literal field-count guard — the D65 failure shape
+  (docs/design/registry_built_status_memo.md's Correction section): two
+  consumers hard-coded `NF != 15`, an appended 16th column (`built`) broke
+  both, and the header-deriving consumer (tests/spec_mod0/spec_common.h,
+  the contract's own house exemplar, left untouched by this file on
+  purpose) did not notice. `table_col_index FILE COL [SECTION]` resolves a
+  column BY NAME; `table_header_ncols FILE [SECTION]` is the header's own
+  declared field count, never a literal; `table_awk_map [-s SECTION] FILE
+  COL...` emits an `-v name=idx ...` string ready to splice into an
+  `awk -F'\t' $(table_awk_map ...) '...'` invocation, so an awk PROGRAM
+  reads `$module`/`$status`/... instead of a bare `$4` a reader has to
+  cross-reference against the header by hand; `table_check_truthfulness
+  FILE [SECTION]` is the contract's HEADER TRUTHFULNESS check (every data
+  row's field count equals the header's declared count) — the durable
+  final form of the old case10 `NF != 16` pin. Sections
+  (`#section NAME`) are supported per the contract: reading a
+  multi-section file with no `section` argument fails LOUDLY rather than
+  silently parsing whichever header came last. **[MEMFN] R4a:
+  `table_main FILE` ("-" = stdin)** selects the LEADING ANONYMOUS TABLE of
+  a stream whose main table stays unnamed while named sections follow it
+  (every line before the first `#section`; table_contract.md §4¶6): `--list-axes` gained the kit's `memfn` section, and its consumers
+  (axes_registry_check.sh, tests/axes/run_axes.sh, run_comments_axis.sh)
+  read pcrec's table through it. **[DD-8], 2026-09-19: the
+  file gained its ROW-reading half** — `table_section_rows FILE SECTION`
+  (a section's data rows, never another section's: consumer rule 4),
+  `table_field FILE SECTION COL` (one column of every row, resolved by
+  header NAME) and `table_lookup FILE SECTION KEYCOL KEY VALCOL` (the
+  key/value shape a `fact`/`value` section is read with). They exist
+  because `--emit-ir` is now the contract's first multi-section producer
+  with consumers OUTSIDE this file, and D106's own diagnosis of those
+  consumers — fixed-position greps that went stale once, "declaration-based
+  parsing is the durable fix" — is what they implement. Each fails loudly
+  on an absent section, column or key rather than returning nothing, because
+  an extractor that returns nothing when its section was renamed reads
+  exactly like a population that legitimately has no rows. Every failure names
+  what it could not resolve (the column, the file, the section) rather than
+  returning an empty string a caller might silently splice into `$0` — a
+  caller whose own resolution call can fail (table_awk_map,
+  table_header_ncols) MUST check its exit status before using the result,
+  or an unresolved column reads as an unset awk variable (field 0, or
+  "") rather than a failure; tests/reject/run_reject_tests.sh's own comment
+  at its call site names this trap. compliance_section.py is python and
+  cannot source this file; it re-implements the identical two rules
+  (comment-skip, "the last `#` line before the first data row is the
+  header") and cross-checks its own `COLS` list against the dump's live
+  header on every run (table_contract.md §5¶2, GENERATOR AGREEMENT), so
+  the two implementations cannot silently disagree about what a header
+  says. Also runnable as a command for a sabotage control or a non-shell
+  caller: `bash tests/lib/table.sh table-col-index FILE COL [SECTION]`
+  (and `table-header-ncols`/`table-awk-map`/`table-check`/
+  `table-section-rows`/`table-field`/`table-lookup`/`table-main`), same coda shape
+  as `gen_timeout.sh`'s `secs`/`runsecs`/`cpusecs`, `table-`-prefixed
+  because this file is SOURCED by scripts whose own `$1` is often a short
+  word ("check") a collision with an unprefixed command name would
+  silently misfire against.
+- **load_guard.sh** — [TT-10] (2026-08-25) a THIRD outcome — INCONCLUSIVE,
+  never PASS, never FAIL — for a check whose budget is a CPU-time cap sized
+  against a quiet box. `tests/resource`'s 45s compile-CPU cap is already
+  CPU-accounted through `scripts/watchdog -c` and still measured going RED
+  under real contention (K31 addendum, docs/dev/plan.md): CPU-time
+  ACCOUNTING itself inflates under contention, not merely wall stretching.
+  `load_guard_ratio` reads the 1-minute load average / `nproc` (via
+  tests/lib/loadavg.sh/ncpu.sh since [MACPORT] — the old direct
+  `/proc/loadavg` read fell back to a hardcoded "0.00, never trips" on any
+  box without `/proc`, which on darwin was every single call, silently
+  defeating the guard);
+  `load_guard_tripped` compares it against `LOAD_GUARD_RATIO` (default
+  2.0, justified in the file's own header from this project's measured
+  "~2x CPU inflation" figure and the K31 addendum's own 2.58 failure
+  ratio) and returns true when the box is too contended for a CPU-bounded
+  verdict to mean what it says. Callers own their own THIRD counter
+  (`inc()`, printed and totalled separately from pass/fail) and check the
+  guard only at the point a watchdog CPU/wall kill (123/124) actually
+  fires — every other outcome keeps its full meaning regardless of load.
+  Sourced by `tests/resource/run_resource_tests.sh` and
+  `tests/counterk/run_counterk_tests.sh`; see `docs/testing.md`'s "The
+  load guard" section for the full measurement and the validated numbers.
+- **run_gen_timeout_tests.sh** — its own section in `make test`
+  (`test-gentimeout`) — a positive control that the wrapper FIRES, plus a
+  coverage assertion that every suite routes through it, because a
+  test-infrastructure property is invisible to every other suite in the
+  tree. The run bound gets the full mirror: per-axis budget checks, a fire
+  control on a REAL over-budget run (budget-bound so the control
+  terminates even if the wrapper breaks), an oracle-verified pass-through
+  control, a growing run-coverage list, and hand-rolled-number greps. The
+  122 memory path's positive control deliberately lives in
+  `scripts/test_watchdog.sh` instead: no real generated artifact can
+  runaway on RSS (allocation-free), so a synthetic allocator there is
+  honest where a stub here would only pretend to be an artifact.
+- **run_group.sh** ([TT-2], 2026-08-15) — runs N independent shell commands
+  (suite scripts) CONCURRENTLY as one Makefile section recipe, used by
+  `test-codegen` (`run_codegen_tests.sh` + `run_trie_identity.sh`) and
+  `test-vm` (`run_vm_identity.sh` + `run_ir_listing.sh` + `run_vm_tests.sh`)
+  — the sections whose own recipe used to just be N sequential script lines.
+  `GROUP_PROCS=1` runs the scripts serially in argument order with no
+  backgrounding at all, byte-for-byte the old flat recipe; any other value
+  (the Makefile passes `$${PROCS:-$$(nproc)}`, the same knob every other
+  [TT-2] path honours) runs every script at once — there are only ever 2-3
+  scripts per group, never enough to want real job-pool throttling. Output
+  is replayed in argument order, each script's complete stdout+stderr as one
+  contiguous block, once every script has finished, so nothing interleaves
+  mid-line. A script whose wrapping subshell dies before it can record an
+  exit code (crashed, killed, OOM) is a HARD FAILURE distinct from an
+  ordinary nonzero exit, and is named as such — never silently read as a
+  pass. Both failure paths (ordinary nonzero exit via `kill -9` on the
+  script's own process, and total loss via `kill -9` on the wrapping
+  subshell before it can write its result) are sabotage-validated; see
+  docs/testing.md "Internal parallelism and section composition ([TT-2])"
+  for the measured wall-time wins and the mechanism this file shares with
+  `tests/reject/run_reject_tests.sh`'s own (call-index, not script-index)
+  sharding.
+
+  **[K35], 2026-08-25 ([DD-14] close):** it also `export LC_ALL=C` right
+  after `set -u`, so no grouped script inherits the ambient locale — a
+  `sort -u` under `en_US.UTF-8` collates punctuation as ignorable and
+  silently drops a third of a regex corpus (1,784 vs 2,758 patterns,
+  measured). The same export sits in `tests/harness/run.sh`; both are the
+  GENERAL half of K35's fix, with every site guarded individually as well.
+
+- **mlscan.py** — [M6.2] wave C: WHERE IS `(?m)` IN FORCE, decided from the
+  pattern TEXT. Three committed checks need that same answer, so it lives
+  here once — `tests/codegen/run_mlinectx_identity.sh` (which patterns the
+  `-DPCREC_NO_MLINECTX` knob can change, i.e. its corpus split),
+  `tests/assertions/run_mline_diff.sh` (which patterns its python arm must
+  skip under U11b), and the `.rxt` corpus generator (which blocks are
+  `# pcre2-only`). It is the M2.12 rule applied to a fork that has not
+  happened yet.
+  **It is a GRAMMAR scan, never a call into pcrec**: a split derived from
+  `Dfa.clsctx` or any other verdict pcrec computes about the pattern under
+  test would be the check reading its own subject's answer.
+  **Two traps, both of which cost a real run before this file existed.**
+  (1) A `^` inside a bracket expression is a CLASS NEGATION, not an anchor —
+  half this module's corpus is `[^c]`-shaped, and missing that excluded
+  `(?m)[^c]{1,3}$`, the D47.5 GUARD CELL, from python cross-verification.
+  Exactly the trap `run_wordctx_identity.sh` documents for `[\b]`.
+  (2) Setting `m` is not enough; an ANCHOR must receive it — `(?m)\Aa`,
+  `(?m)\Bfoo` and `a$(?m)` all set the option and build no multiline node,
+  and a coarser split reported ten such patterns as a dead reference knob.
+  Scoping follows the parser (bare runs mutate the enclosing scope, `(?m:`
+  scopes to its body, `(?^...)` resets), verified against libpcre2 on
+  `((?m))a$` and `(?:(?m))a$`. **It carries its own self-check**: run
+  `python3 tests/lib/mlscan.py` — 27 cases including every trap above and
+  the three scoping cells, exit 1 on any failure. A scanner nobody exercises
+  is a scanner that drifts.
+- **san_scripts.txt** — [TT-9]'s ONE manifest for `make ubsan`/`make asan`/
+  `make san`'s suite list (a plain path-per-line text file, not a Makefile
+  variable, so `tests/codegen/run_codegen_tests.sh`'s "[TT-9] THE SANITIZER
+  SUITE LIST IS STRUCTURAL" check can read the identical list from bash
+  without parsing Makefile syntax — see its own header for the full note).
+  Fixes the drift the ruling names: wave B+C's first patch added
+  `tests/recursion/run_recursion_diff.sh` to `ubsan`'s own hand-maintained
+  copy and `san` silently never ran it, because there were three copies to
+  keep in sync and nothing that checked they agreed. Also added the five
+  `run_*_diff.sh` scripts the [TT-9] structural check's own sweep found
+  absent from all three lists with no stated reason (the ruling's lookaround
+  example, plus three sibling scripts in `tests/assertions/` the search
+  also surfaced) — all five compile generated C exactly like their already-
+  listed siblings.
+
+- **test_trailer.sh** — `make test`'s COMPLETION TRAILER (2026-08-26,
+  manager finding: `make -j12 test` printed "Waiting for unfinished jobs"
+  on an early section's failure and launched NO FURTHER targets —
+  `test-premul-table`, last in the Makefile's `TEST_SECTIONS` list, never
+  ran in two batteries, invisible to the checks-passed/checks-failed COUNT
+  aggregation since an unlaunched target contributes nothing to either
+  side of the sum). Paired with the Makefile's own `test:` recipe, which
+  now invokes `$(MAKE) -k TEST_TRAILER_DIR=<dir> $(TEST_SECTIONS)` (the
+  parent's jobserver is inherited automatically, so `-j` parallelism is
+  unaffected) instead of listing the sections as prerequisites; every
+  section target's recipe touches `<dir>/<name>.ran` as its FIRST line,
+  before running its real script, so the marker means "make launched this
+  recipe" independent of whether the recipe itself then passed. This
+  script counts markers against the section-name list its CALLER passes
+  (never re-derives the list from the Makefile — one list, two uses, not
+  two lists), prints `sections ran: N/M`, and names every missing section;
+  a zero-argument call is a hard failure (an empty expected list would
+  read as a vacuous 0/0 pass). See docs/testing.md "make test completion
+  trailer" for the reproduced bug, the fix's two halves, and the
+  detect-demonstration transcripts (a genuinely-skipped section under the
+  old shape; the trailer's own 0/N detection when a shared prerequisite
+  fails even under the new one).
+
+## Conventions
+
+A script grouped by `run_group.sh` must isolate itself the same way every
+other parallel path in this tree does: its own `mktemp -d` workdir, and
+read-only against `build/pcrec`/`build/libpcrec.a` — never shared mutable
+state with a sibling script in its group.
+
+Maintenance: update this file when files are added/removed or their roles
+change.
+
+  [CI-SHARD]: optional env `TRAILER_TITLE`/`TRAILER_LIST_NAME` let `make
+  test-shard` word its heading and last line for the shard's list; unset, the
+  text is unchanged.
+- **spec_extract.sh** — [decfbB0b] sourced, never run: the registry check's
+  hand-written-set extractors (`extract_md_table_values`,
+  `extract_c_return_values`) over `docs/spec/match_api.md` §6.3's value-set
+  tables — each directly under a `<!-- value-set: RX_NAME -->` marker, the
+  anchor every caller uses (lane specclean, 2026-10-09, which also retired
+  `extract_line_values`/`extract_prose_values`) — and a C function's
+  `return "..."` literals, moved here verbatim from `tests/registry/axes_registry_check.sh`
+  so it and `tests/codegen/run_fallback_table.sh` read the spec's sets
+  through ONE implementation. Defines functions only.
+- **compound_art.sh / compound_art.py** — [COMPOUND] B4 (lane cpb4,
+  2026-10-12), sourced/imported, never run: ONE answer to "is this artifact a
+  compound" (`compound_row`, `is_compound`), read off `<PREFIX>_COMPOUND`.
+  A corpus sweep that holds a MACHINE stamp to the emitted text skips a
+  compound and COUNTS the skip: a compound's machine stamps read
+  `"compound"` (match_api.md §6.3.12) and are held in one place,
+  `tests/codegen/run_dfa_stamps.sh`'s compound bucket.
+
+## [DD-11.5] (lane ctxbuild, 2026-10-19)
+
+`run_mlinectx_identity.sh` left `san_scripts.txt` with its retirement;
+`mlscan.py`'s readers are now `run_wordctx_identity.sh` (its population split),
+`run_endvar_identity.sh` and `run_mline_diff.sh`.
