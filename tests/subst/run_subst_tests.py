@@ -16,7 +16,7 @@ A cell is one TAB-separated line (`#` lines are comments):
   FLAGS     pcrec's rx flags beyond `--features all` (`-` none): `-e utf8`,
             `-i`, `--no-captures`; `-e utf8` and `-i` also set the oracle's
   PATTERN   as written; `rep:N:TEXT` is TEXT repeated N times; `rxt:NAME`
-            is the target of NAME.rxt beside the cell file, a COMPOSED rx
+            is the target of NAME.rxtin beside the cell file, a COMPOSED rx
             (subst_api.md §3¶3: no map is refused at the context setup;
             pcre2 cannot answer, so P2 is na)
   TEMPLATE  as written, compiled through --subst-file; `esc:T` decodes T's
@@ -172,7 +172,7 @@ def main():
         args = [pcrec, '--features', 'all', '-p', 'r%d' % i, '-o', os.path.join(work, 'r%d.c' % i)]
         args += [] if flags == '-' else flags.split()
         if pat.startswith('rxt:'):    # a copy whose target carries this rx's prefix
-            with open(os.path.join(os.path.dirname(os.path.abspath(cells_path)), pat[4:] + '.rxt')) as f:
+            with open(os.path.join(os.path.dirname(os.path.abspath(cells_path)), pat[4:] + '.rxtin')) as f:
                 text = re.sub(r'(?m)^target[^=\n]*=', 'target r%d =' % i, f.read())
             rf = os.path.join(work, 'r%d.rxt' % i)
             with open(rf, 'w') as f:

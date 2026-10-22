@@ -2,7 +2,7 @@
 # §2¶7-¶14a, §4¶7-¶8, §4¶14, §4¶22).
 #
 # Plant: the check accepts the no-map form on a composed rx.
-# Witness: the `composed` cell of tests/subst/cells.tsv (`[$0]` on a composed rx, tests/subst/composed.rxt): the check with no map must be MISMATCH (subst_api.md §3¶3); sabotaged it is 0.
+# Witness: the `composed` cell of tests/subst/cells.tsv (`[$0]` on a composed rx, tests/subst/composed.rxtin): the check with no map must be MISMATCH (subst_api.md §3¶3); sabotaged it is 0.
 # Reach (K35): token S1538; tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
 SAB_ID="S1538-composed-nomap-accepted"
 SAB_FILE="src/gen/emit_subst.c"

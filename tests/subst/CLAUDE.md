@@ -25,7 +25,7 @@ maps, the check, the support unit, replace-all; lane substb2).
   against libpcre2 when linkable, and checks every arm. Floors: `REACH_NEED`
   tokens (per cell file, by its directory) each carried by a passing cell
   (K35), and a pcre2-compared count. Template prefixes `utf8:` then `ext:`;
-  a `rxt:NAME` pattern is a composed rx from `NAME.rxt` here.
+  a `rxt:NAME` pattern is a composed rx from `NAME.rxtin` here.
 - `subst_drv.c` — the driver (its header lists every arm): per cell the
   check over the by-name helper's map (and against an abi + 1 record, and
   with no map), the spec's per-match, batch and RX_FOREACH recipes,
@@ -41,7 +41,7 @@ maps, the check, the support unit, replace-all; lane substb2).
 - `cells.tsv` — the cells: ID FLAGS PATTERN TEMPLATE STRICT LIMIT SUBJECT VARS
   EXPECT P2 LABEL REACH. `P2` states libpcre2's answer where it differs
   (labelled with the subst_api.md §9 row) or `same`.
-- `composed.rxt` — a composed rx (a delivered group, `ngroups` 0, `ncaps` 2)
+- `composed.rxtin` — a composed rx (a delivered group, `ngroups` 0, `ncaps` 2)
   for the `composed` cell: the no-map form refused at the context setup.
 
 - `run_d27.sh` — `make test-subst-d27` (its own section, CI shard 1; NOT in

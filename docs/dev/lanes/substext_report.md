@@ -67,7 +67,7 @@ a go"). Design of record: `docs/design/replace_design.md` through §R4c and
 - **CLI.** `--features subst-extended` is accepted with `--subst`. Any other
   `--features` value is refused.
 - **OWED 5** (the substb2 witness). The `composed` cell runs on
-  `tests/subst/composed.rxt`, a composed rx (`ngroups` 0, `ncaps` 2). With no
+  `tests/subst/composed.rxtin`, a composed rx (`ngroups` 0, `ncaps` 2). With no
   map, the check and the context setup refuse it with MISMATCH. Row S1538
   covers it.
 
