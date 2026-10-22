@@ -452,7 +452,22 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # [LOSS-REVIEW] candidate 1 (abi 76): the span compares and the back-step are
 # `static inline` definitions ahead of the VM body now, hence the
 # `static inline ptrdiff_t` head; their regions are excised as before.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(_?)(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+# [FINDALL-NEXT] I1's residual TWINS: an out-of-line entry's body is the
+# static `rx__<name>` (counted under the entry's key, with the guarded
+# attribute and `static` lines above it), and the exported `rx_<name>` is a
+# one-line forwarder, encoding-free text present where the entry is, counted
+# under `forwarder`.
+TWINNED = ('next_pos', 'valid_upto', 'var_valid')
+TWIN_PREAMBLE = ('static', '#endif', '__attribute__((noclone))',
+                 '#if __has_attribute(noclone)', '# define __has_attribute(x) 0',
+                 '#ifndef __has_attribute')
+# [FINDALL-NEXT] the iterator's bind check `rx__bind_checks` IS the K50
+# caller-position prologue run once per iterator, so it exists exactly where
+# that prologue has text (the backend's start guard): its definition and its
+# one call block in `rx__enter` are excised and counted together.
+BIND_DEF_RE = re.compile(r'^static int rx__bind_checks\(')
+BIND_CALL_RE = re.compile(r'^\s*int r = rx__bind_checks\(')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
@@ -499,7 +514,9 @@ UTFCHK_STAMP_RE = re.compile(r'^(#define RX_UTF_CHECK ")(?:inert|off|whole)(")$'
 # one per action — for the enctriage reason above: its marker comment is
 # NONESSENTIAL and absent from a default artifact. Under `-fcomments` the
 # marker opens a region that ends at that same statement.
-K73_ZERO_RE = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos) == 0 && '
+# [FINDALL-NEXT] `ctx.pos`: the VM iterator's retry `rx__retry` writes the
+# rule over its own local `rx_ctx`.
+K73_ZERO_RE = re.compile(r'^\s*if \((search_from|start|attempt_position|ctx->pos|ctx\.pos) == 0 && '
                          r'!\(.*\)\) (do \1\+\+; while \(!\(.*\)\);|return -1;|continue;)$')
 K73_ZERO_OPEN = '[K73] Offset 0 is a match start only if it is a character'
 
@@ -556,7 +573,7 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # an encoding test). The definition was excised from the start; the two-line
 # call was not, so this file's own `^${v}$` witness has diverged in the strict
 # bucket since the day it was added.
-VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
+VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx__?var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
 VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
 # [R4e'.0b] the run pre-check FUNCTION is two definitions since the routing
 # (D155 item 6): the loop under `rx_reqrun__body`, then the one-call selector
@@ -999,7 +1016,8 @@ def excise(text, label, drop_run=False):
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-              'handoff_overlong': 0, 'reentry_block': 0}
+              'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
+              'bind_checks': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1048,9 +1066,31 @@ def excise(text, label, drop_run=False):
             in_reqrun = True
         elif in_reqrun and line.rstrip('\n') == '}':
             in_reqrun = False
+        if BIND_DEF_RE.match(line):
+            j = i
+            while j < n and lines[j].rstrip('\n') != '}':
+                j += 1
+            if j + 1 < n and not lines[j + 1].strip():
+                j += 1
+            out.append("/* [FINDALL-NEXT] bind check excised for comparison */\n")
+            counts['bind_checks'] += 1
+            i = j + 1
+            continue
+        if (line.rstrip('\n') == '    {' and i + 3 < n
+                and BIND_CALL_RE.match(lines[i + 1])
+                and lines[i + 3].rstrip('\n') == '    }'):
+            out.append("/* [FINDALL-NEXT] bind check call excised for comparison */\n")
+            counts['bind_checks'] += 1
+            i += 4
+            continue
         m = SIG_RE.match(line)
         if m:
-            name = m.group(1)
+            name = m.group(2)
+            if name in TWINNED and not m.group(1):
+                name = 'forwarder'
+            elif name in TWINNED:
+                while out and out[-1].strip() in TWIN_PREAMBLE:
+                    out.pop()
             # [VAR lane, 2026-09-23] `span_ci_`, not `bref_ci_`. The seam's
             # compare pair was renamed when it was generalised to serve a
             # backreference AND a `${name}` variable, and its three private
@@ -1321,7 +1361,8 @@ def main():
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-           'handoff_overlong': 0, 'reentry_block': 0}
+           'handoff_overlong': 0, 'reentry_block': 0, 'forwarder': 0,
+           'bind_checks': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1578,7 +1619,8 @@ def main():
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
-              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong'):
+              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong',
+              'forwarder', 'bind_checks'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
