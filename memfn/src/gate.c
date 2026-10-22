@@ -503,33 +503,6 @@ static int cl_stride(const gate_in *in)
     return w == 1 ? CL_ONE : w >= 2 && w <= MF_MAX_TERM ? CL_MANY : CL_OTHER;
 }
 
-/* W0 (MF_SITE_ABI 11): read on a forward FIND only (kit_window_site); off
- * one it is no field of the site's (site_check refuses a stated 1), so it
- * reads as unstated and no row need serve it. */
-static int cl_window_stated(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    return kit_window_site(in->s) ? flag01(in->s->pred.window_stated) : -1;
-}
-
-/* W1: D_MIN where the window is the candidate, OTHER for any other stated
- * value (back > 0 or the reserved MF_MOVE_UNBOUNDED); unstated where W0
- * states nothing. */
-static int cl_move_back(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    if (!kit_window_site(in->s) || in->s->pred.window_stated != 1) return -1;
-    return in->s->pred.move_back == kit_d_min(&in->s->pred) ? CL_D_MIN : CL_OTHER;
-}
-
-/* W2: ZERO or OTHER; unstated where W0 states nothing. */
-static int cl_overshoot(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    if (!kit_window_site(in->s) || in->s->pred.window_stated != 1) return -1;
-    return in->s->pred.overshoot == 0 ? CL_ZERO : CL_OTHER;
-}
-
 /* W4: a site fact on every site, 0 a stated value (OBLIG). */
 static int cl_decl_point(const gate_in *in)
 {
@@ -556,109 +529,10 @@ static int cl_site_kind(const gate_in *in) { return in->fd ? in->fd->kind : -1; 
 static int cl_layer(const gate_in *in)     { return in->fd ? in->fd->layer : -1; }
 static int cl_need(const gate_in *in)      { return in->fd ? in->fd->need : -1; }
 
-/* ---- R-26 (MF_SITE_ABI 18): span 0's prefix, the context spans, the floor
- *
- * site_check has refused every UNSTATED fact where it is read before any
- * selection runs, so a -1 here is "no field of this site's". */
-
-/* Span 0, a forward FIND's BOUNDED `pred` stating its prefix facts, or NULL. */
-static const mf_pred *stated_span0(const gate_in *in)
-{
-    const mf_site *s = in->s;
-    if (!s || !kit_window_site(s) || s->pred.span_class != MF_SPAN_BOUNDED ||
-        s->pred.prefix_stated != MF_PREFIX_STATED)
-        return NULL;
-    return &s->pred;
-}
-
-static int len_class(unsigned v)
-{
-    return v == 0 ? CL_ZERO : v == 1 ? CL_ONE : CL_MANY;
-}
-
-static int cl_prefix_stated(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    return stated_span0(in) ? CL_YES : -1;
-}
-
-static int cl_exact_len(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    const mf_pred *p = stated_span0(in);
-    return p ? len_class(p->exact_len) : -1;
-}
-
-static int cl_consumable_len(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    const mf_pred *p = stated_span0(in);
-    return p ? len_class(p->consumable_len) : -1;
-}
-
-/* The CLASS SET of a two-valued fact over the site's CONTEXT predicates (a
- * context stop's `pred`, every `ctx` entry): `yes`'s class for each stating
- * `yes`, NO's for each stating the other value, OTHER for any value outside
- * those two; 0 where the site has no CONTEXT predicate. `which` picks the
- * fact: 0 `absent` (YES = SATISFIES), 1 `consumable` (YES = YES). */
-static kit_set context_classes(const mf_site *s, int which)
-{
-    kit_set m = 0;
-    unsigned yes = which ? MF_CONSUMABLE_YES : MF_ABSENT_SATISFIES;
-    unsigned no = which ? MF_CONSUMABLE_NO : MF_ABSENT_FAILS;
-    for (unsigned i = 0; i <= s->nctx; i++) {
-        const mf_pred *p = i < s->nctx ? (s->ctx ? &s->ctx[i] : NULL)
-                         : kit_window_site(s) && s->pred.span_class == MF_SPAN_CONTEXT
-                         ? &s->pred : NULL;
-        if (!p) continue;
-        unsigned v = which ? p->consumable : p->absent;
-        m |= v == yes ? CM(YES) : v == no ? CM(NO) : CM(OTHER);
-    }
-    return m;
-}
-
 /* A bit set's single NAMED class (a refusal names one): its lowest. */
 static int first_class(kit_set m)
 {
     return kit_set_low(m);
-}
-
-static int cl_absent(const gate_in *in)
-{
-    return in->s ? first_class(context_classes(in->s, 0)) : CL_OTHER;
-}
-
-static int cl_consumable(const gate_in *in)
-{
-    return in->s ? first_class(context_classes(in->s, 1)) : CL_OTHER;
-}
-
-/* The context spans as the CLASS SET they carry: BACK for an entry before
- * span 0 (a term below the candidate), NONNEG for one after it; NONE for no
- * entry. */
-static kit_set ctx_classes(const mf_site *s)
-{
-    kit_set m = 0;
-    for (unsigned i = 0; s->ctx && i < s->nctx; i++)
-        for (unsigned t = 0; t < s->ctx[i].nterm && t < MF_MAX_TERM; t++)
-            m |= s->ctx[i].term[t].offset < 0 ? CM(BACK) : CM(NONNEG);
-    return m ? m : CM(NONE);
-}
-
-static int cl_ctx(const gate_in *in)
-{
-    return in->s ? first_class(ctx_classes(in->s)) : CL_OTHER;
-}
-
-static int cl_read_floor(const gate_in *in)
-{
-    if (!in->s) return CL_OTHER;
-    switch ((mf_read_floor)in->s->read_floor) {
-    case MF_FLOOR_UNSTATED: return -1;
-    case MF_FLOOR_SUBJECT:  return CL_ZERO;
-    case MF_FLOOR_LO:       return CL_OTHER;
-    }
-    return CL_OTHER;
 }
 
 /* ---- the window site's facts (D172 S2 commit 1; window.c) -----------------
@@ -886,15 +760,12 @@ static int class_of(unsigned f, const gate_in *in)
 }
 
 /* The classes field `f` carries in `in`, given its named class `k` (>= 0):
- * one class for every field but the bit sets `policy`, `ctx`, `absent` and
- * `consumable`, which carry one per member (R2 holds iff the row serves them
+ * one class for every field but the bit sets `policy`, `span_start` and
+ * `verify`, which carry one per member (R2 holds iff the row serves them
  * all). */
 static kit_set class_set_of(unsigned f, const gate_in *in, int k)
 {
     if (f == FLD_policy && in->s) return policy_classes(in->s->policy);
-    if (f == FLD_ctx && in->s) return ctx_classes(in->s);
-    if (f == FLD_absent && in->s) return context_classes(in->s, 0);
-    if (f == FLD_consumable && in->s) return context_classes(in->s, 1);
     if (f == FLD_span_start) return wspan_classes(in, 0);
     if (f == FLD_verify) return wspan_classes(in, 1);
     return (kit_set)1 << k;

@@ -1,41 +1,42 @@
 /* tests/memfn/proof_check.c — [MEMFN] R-26.1-R-26.5 (lane r26z1, MF_SITE_ABI
- * 18): the kit's checks for span 0's prefix facts, the context spans, the
- * absent rule, the read floor, the REPORT kind and the per-offset proof
- * (docs/design/kit_proof.md rev 2.1 §4.1-§4.3, §6.4; memfn/docs/requests.md
- * R-26). It reads the kit through memfn.h only (no kit.h).
+ * 18), as D172 S2 commit 6 (lane wsc6, MF_SITE_ABI 20) left them: the kit's
+ * checks for span 0's and a context stop's class, the REPORT kind and the
+ * per-offset proof (docs/design/kit_proof.md rev 2.1 §4.1-§4.3, §6.4;
+ * memfn/docs/requests.md R-26), and the window site's RENDERER INTERFACE
+ * refusal (R-29; the kit manager's R1). Span 0's prefix facts, the context
+ * spans, the absent rule, `consumable`, `read_floor` and `consumer` left the
+ * site at that commit, and their checks with them. It reads the kit through
+ * memfn.h only (no kit.h).
  *
- *   A  REFUSALS: one site per rule, each UNSTATED field among them
- *      (`prefix_stated`, `span_class`, `absent` -- "UNSTATED absent read as
- *      0" --, `consumable`, `read_floor`), `exact_len`/`consumable_len`, the
- *      `ctx` shape, MF_FLOOR_LO with a term below the origin, and the REPORT
- *      kind's (`consumer`, an OPTIONAL term or item, and a well-formed one,
- *      which no row serves before R-26.6), each held to the field its refusal
- *      names in backquotes, beside ACCEPT controls of every shape.
+ *   A  REFUSALS: one site per rule (`span_class` UNSTATED, PRESENCE or on a
+ *      reverse FIND; a CONTEXT pred reading its candidate; the REPORT kind's
+ *      OPTIONAL term, missing span 0, and a well-formed one, which no row
+ *      serves on a plain art; a window site stating each renderer-interface
+ *      field), each held to the field its refusal names in backquotes,
+ *      beside ACCEPT controls of every shape.
  *   B  THE CLASS: proven[] at negative offsets, inside span 0, after it,
  *      with the copies proven0 == proven[0] and proven_prev == proven[-1];
  *      the expected sets are member strings (never a bitset built the way the
  *      input's is).
  *   C  C-PROOF and the GENERATED FAMILY (`--gen DIR`): a seeded space of
- *      forward FIND sites (span 0 with 0..2 context items each stating
- *      `absent` either way, OPTIONAL terms and items among them; context
- *      stops; FUNC sites), each defined and used on its own art, its class
- *      asked again under -fmemfn-simd and under each level's deny and held
- *      EQUAL (C-PROOF), its text and its GENERATED facts written to
+ *      forward FIND sites (span 0, OPTIONAL terms among them; context stops;
+ *      FUNC sites), each defined and used on its own art, its class asked
+ *      again under -fmemfn-simd and under each level's deny and held EQUAL
+ *      (C-PROOF), its text and its GENERATED facts written to
  *      DIR/proof_sites.c for tests/memfn/proof_run.c, the byte-loop oracle.
  *      Since R-26.6 (lane r26zk) every such site also renders on an art
  *      PREVIEWING "R-26.6" and its text must be byte-identical there (only
  *      the REPORT row moves), and the family adds REPORT sites (span 0 of
- *      1..3 REQUIRED terms, width-1 context items under either `absent`, the
- *      offset-skip FUNC shape) rendered on a preview art: decided by the
- *      REPORT row, refused on a plain art, proven[d] EQUAL at every d to the
- *      REQUIRED terms' sets read from their MEMBER STRINGS, and written for
- *      the same oracle.
+ *      1..3 REQUIRED terms, the offset-skip FUNC shape) rendered on a preview
+ *      art: decided by the REPORT row, refused on a plain art, proven[d]
+ *      EQUAL at every d to the REQUIRED terms' sets read from their MEMBER
+ *      STRINGS, and written for the same oracle.
  *   D  THE PREVIEW AND THE REPORT ROW (R-26.6): mf_preview refused twice,
  *      after the first define, for a step the kit does not name and for no
  *      step, with an accepted control; every `--memfn=` spelling of it
  *      refused by mf_opts_check and no options.def row naming it; a REPORT
- *      site whose form cannot prove a REQUIRED set exactly (a two-offset
- *      SATISFIES item) refused on a preview art, with its FAILS control.
+ *      site with a two-offset term below its candidate served by the REPORT
+ *      row.
  *
  * Expected outcomes are written here from the request's text, never read
  * from the kit's sources. Prints `checks passed:`/`checks failed:`.
@@ -149,19 +150,9 @@ static void t_run(mf_term *t, int off, const char *run, mf_need need)
     t->need = need;
 }
 
-/* The window, as pcrec states it on every forward FIND (W0-W2). */
-static void window(mf_pred *p)
-{
-    int32_t d = p->term[0].offset;
-    for (unsigned i = 1; i < p->nterm; i++)
-        if (p->term[i].offset < d) d = p->term[i].offset;
-    p->window_stated = 1;
-    p->move_back = d;
-    p->overshoot = 0;
-}
-
 /* A forward FIND / STMT / ASSIGN site whose span 0 is one SET term `a` at 0,
- * stated as pcrec states it (BOUNDED, prefix facts STATED / 0 / 0). */
+ * stated BOUNDED (the renderer interface, as the window family's translation
+ * and G2 state it). */
 static mf_site span_site(void)
 {
     mf_site s;
@@ -173,7 +164,6 @@ static mf_site span_site(void)
     s.empty = MF_EMPTY_MISS;
     s.on_miss_leaves = 1;       /* `on_miss` returns the miss (stmt_hooks) */
     s.use = MF_USE_POSITION;
-    s.consumer = MF_C_ENGINE;
     s.ret_pred = MF_NO_PRED;
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
@@ -185,41 +175,45 @@ static mf_site span_site(void)
     s.pred.plan_hint = MF_NO_PRED;
     t_set(&s.pred.term[0], 0, "a", MF_REQUIRED);
     s.pred.span_class = MF_SPAN_BOUNDED;
-    s.pred.prefix_stated = MF_PREFIX_STATED;
-    window(&s.pred);
     return s;
 }
 
-/* A context item: one SET term at `off`. */
-static mf_pred ctx_item(int off, const char *members, mf_absent absent)
-{
-    mf_pred p;
-    memset(&p, 0, sizeof p);
-    p.nterm = 1;
-    p.need = MF_REQUIRED;
-    p.plan_hint = MF_NO_PRED;
-    t_set(&p.term[0], off, members, MF_REQUIRED);
-    p.span_class = MF_SPAN_CONTEXT;
-    p.absent = (uint8_t)absent;
-    p.consumable = MF_CONSUMABLE_NO;
-    return p;
-}
-
-/* A context stop: MLINE's shape, `{\n\r}` at -1, as pcrec states it (two
- * members: the routed one-byte row D1c takes MLINE's own one-byte stop only
- * with its hooks, src/gen/emit_dfa.c find_hooks). */
+/* A context stop: MLINE's shape, `{\n\r}` at -1 (two members: the routed
+ * one-byte row D1c takes MLINE's own one-byte stop only with its hooks,
+ * src/gen/emit_dfa.c find_hooks). A read below the subject fails its term. */
 static mf_site stop_site(void)
 {
     mf_site s = span_site();
     t_set(&s.pred.term[0], -1, "\n\r", MF_REQUIRED);
     s.pred.span_class = MF_SPAN_CONTEXT;
-    s.pred.prefix_stated = 0;
-    s.pred.absent = MF_ABSENT_FAILS;
-    s.pred.consumable = MF_CONSUMABLE_NO;
-    s.read_floor = MF_FLOOR_SUBJECT;
     s.empty = MF_EMPTY_AT_N;
     s.site_kind = MF_SK_DFA_ATTEMPT;
-    window(&s.pred);
+    return s;
+}
+
+/* A WINDOW site stating its facts only (R-29's table): one alternative with
+ * no entry fact, span 0 `{0: a}` verify YES, core all, the floor SUBJECT;
+ * its `pred` carries the FUNC name and nothing else. */
+static mf_wspan win_span;
+static mf_walt win_alt;
+static mf_site win_site(void)
+{
+    mf_site s = span_site();
+    memset(&s.pred, 0, sizeof s.pred);
+    memset(&win_span, 0, sizeof win_span);
+    win_span.start = 0;
+    win_span.len = 1;
+    win_span.verify = MF_VERIFY_YES;
+    win_span.core = MF_CORE_STATED;
+    win_span.core_lo = 0;
+    win_span.core_len = 1;
+    set_of(win_span.set[0], "a");
+    win_alt.entry = MF_ENTRY_NONE;
+    win_alt.nspan = 1;
+    win_alt.spans = &win_span;
+    s.nalt = 1;
+    s.alts = &win_alt;
+    s.wfloor = MF_WFLOOR_SUBJECT;
     return s;
 }
 
@@ -306,216 +300,73 @@ static void accept(const char *name, const mf_site *s)
 static void family_a(void)
 {
     mf_site s;
-    mf_pred c[3];
 
     /* controls: every shape the refusals below perturb, accepted as stated */
     s = span_site();
-    accept("span 0 BOUNDED, prefix STATED / 0 / 0", &s);
+    accept("span 0 BOUNDED", &s);
     s = stop_site();
-    accept("context stop CONTEXT / FAILS / NO, read_floor SUBJECT", &s);
-    s = stop_site();
-    s.pred.absent = MF_ABSENT_SATISFIES;
-    accept("context stop under SATISFIES", &s);
-    s = span_site();
-    c[0] = ctx_item(-1, "x", MF_ABSENT_SATISFIES);
-    c[1] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 2;
-    s.read_floor = MF_FLOOR_SUBJECT;
-    accept("ctx before (SATISFIES) and after (FAILS), read_floor SUBJECT", &s);
-    s = span_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_SATISFIES);
-    s.ctx = c;
-    s.nctx = 1;
-    accept("ctx after only, read_floor UNSTATED (a wildcard there)", &s);
-    s = span_site();
-    t_run(&s.pred.term[0], 0, "ab", MF_REQUIRED);
-    s.pred.exact_len = 2;
-    s.pred.consumable_len = 1;
-    accept("exact_len 2 over a run, consumable_len 1", &s);
-    s = span_site();
-    s.read_floor = MF_FLOOR_LO;
-    accept("read_floor LO with no term below the origin", &s);
+    accept("context stop CONTEXT", &s);
+    s = win_site();
+    accept("a window site stating its facts only", &s);
+    s = win_site();
+    s.pred.plan_hint = MF_NO_PRED;
+    accept("a window site with plan_hint MF_NO_PRED (no term named)", &s);
 
-    /* R-26.1: span 0 */
-    s = span_site();
-    s.pred.prefix_stated = MF_PREFIX_UNSTATED;
-    refuse("prefix_stated UNSTATED on span 0", &s, "`prefix_stated`");
-    s = span_site();
-    s.pred.prefix_stated = 2;
-    refuse("prefix_stated outside mf_prefix", &s, "`prefix_stated`");
+    /* R-26.1/R-26.2: the class of a forward FIND's `pred` */
     s = span_site();
     s.pred.span_class = MF_SPAN_UNSTATED;
-    s.pred.prefix_stated = 0;
     refuse("span_class UNSTATED on a forward FIND", &s, "`span_class`");
     s = span_site();
     s.pred.span_class = MF_SPAN_PRESENCE;
     refuse("span_class PRESENCE on a forward FIND", &s, "`span_class`");
     s = span_site();
-    s.pred.exact_len = MF_MAX_SPAN_POS + 1;
-    refuse("exact_len > MF_MAX_SPAN_POS", &s, "`exact_len`");
-    s = span_site();
-    s.pred.exact_len = 2;
-    refuse("exact_len over a position no term sends", &s, "`exact_len`");
-    s = span_site();
-    s.pred.exact_len = 1;
-    s.pred.consumable_len = 2;
-    refuse("consumable_len > exact_len", &s, "`consumable_len`");
-    s = stop_site();
-    s.pred.prefix_stated = MF_PREFIX_STATED;
-    refuse("prefix_stated on a context stop", &s, "`prefix_stated`");
-    s = span_site();
-    c[0] = ctx_item(-1, "x", MF_ABSENT_FAILS);
-    c[0].prefix_stated = MF_PREFIX_STATED;
-    s.ctx = c;
-    s.nctx = 1;
-    s.read_floor = MF_FLOOR_SUBJECT;
-    refuse("prefix_stated on a ctx entry", &s, "`prefix_stated`");
-    s = span_site();
     s.reverse = 1;
-    s.pred.window_stated = 0;
-    s.pred.move_back = 0;
     refuse("span_class on a reverse FIND", &s, "`span_class`");
-
-    /* R-26.2: the context facts */
     s = stop_site();
-    s.pred.absent = MF_ABSENT_UNSTATED;
-    refuse("absent UNSTATED on a context stop (never read as 0)", &s, "`absent`");
-    s = span_site();
-    c[0] = ctx_item(-1, "x", MF_ABSENT_UNSTATED);
-    s.ctx = c;
-    s.nctx = 1;
-    s.read_floor = MF_FLOOR_SUBJECT;
-    refuse("absent UNSTATED on a ctx entry (never read as 0)", &s, "`absent`");
-    s = span_site();
-    c[0] = ctx_item(1, "x", 3);
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("absent outside mf_absent", &s, "`absent`");
-    s = stop_site();
-    s.pred.consumable = MF_CONSUMABLE_UNSTATED;
-    refuse("consumable UNSTATED on a context stop", &s, "`consumable`");
-    s = span_site();
-    c[0] = ctx_item(1, "x", MF_ABSENT_FAILS);
-    c[0].consumable = MF_CONSUMABLE_UNSTATED;
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("consumable UNSTATED on a ctx entry", &s, "`consumable`");
-    s = span_site();
-    s.pred.absent = MF_ABSENT_FAILS;
-    refuse("absent on span 0 (not a CONTEXT predicate)", &s, "`absent`");
-    s = span_site();
-    s.pred.consumable = MF_CONSUMABLE_YES;
-    refuse("consumable on span 0", &s, "`consumable`");
-    s = span_site();
-    t_set(&s.pred.term[0], 0, "a", MF_REQUIRED);
-    s.pred.span_class = MF_SPAN_CONTEXT;
-    s.pred.prefix_stated = 0;
-    s.pred.absent = MF_ABSENT_FAILS;
-    s.pred.consumable = MF_CONSUMABLE_NO;
+    t_set(&s.pred.term[0], 0, "x", MF_REQUIRED);
     refuse("a CONTEXT pred reading its candidate", &s, "`span_class`");
-
-    /* R-26.2: the read floor */
-    s = stop_site();
-    s.read_floor = MF_FLOOR_UNSTATED;
-    refuse("read_floor UNSTATED under a context stop", &s, "`read_floor`");
-    s = span_site();
-    c[0] = ctx_item(-1, "x", MF_ABSENT_SATISFIES);
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("read_floor UNSTATED under a ctx entry before span 0", &s, "`read_floor`");
-    s = span_site();
-    c[0] = ctx_item(-1, "x", MF_ABSENT_SATISFIES);
-    s.ctx = c;
-    s.nctx = 1;
-    s.read_floor = MF_FLOOR_LO;
-    refuse("read_floor LO with a CONTEXT term below the origin", &s, "`read_floor`");
-    s = stop_site();
-    s.read_floor = MF_FLOOR_LO;
-    refuse("read_floor LO under a context stop", &s, "`read_floor`");
-    s = span_site();
-    s.pred.nterm = 2;
-    t_set(&s.pred.term[1], -1, "z", MF_REQUIRED);
-    window(&s.pred);
-    s.read_floor = MF_FLOOR_LO;
-    refuse("read_floor LO with a span-0 term below the origin", &s, "`read_floor`");
-    s = span_site();
-    s.read_floor = 3;
-    refuse("read_floor outside mf_read_floor", &s, "`read_floor`");
-
-    /* R-26.2: the ctx shape */
-    s = span_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    c[1] = c[0];
-    c[2] = c[0];
-    s.ctx = c;
-    s.nctx = MF_MAX_CTX + 1;
-    refuse("nctx > MF_MAX_CTX", &s, "MF_MAX_CTX");
-    s = span_site();
-    s.nctx = 1;
-    refuse("nctx without ctx", &s, "`nctx`");
-    s = span_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 0;
-    refuse("ctx without nctx", &s, "`ctx`");
-    s = stop_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("ctx on a site with no BOUNDED span 0 (a context stop)", &s, "`ctx`");
-    s = span_site();
-    c[0] = ctx_item(2, "y", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("a ctx term past k + MF_MAX_AHEAD", &s, "`ctx`");
-    s = span_site();
-    c[0] = ctx_item(-MF_MAX_BACK - 1, "y", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 1;
-    s.read_floor = MF_FLOOR_SUBJECT;
-    refuse("a ctx term below -MF_MAX_BACK", &s, "MF_MAX_BACK");
-    s = span_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    c[0].span_class = MF_SPAN_UNSTATED;
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("a ctx entry leaving span_class UNSTATED", &s, "`span_class`");
-    s = span_site();
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    c[0].window_stated = 1;
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("a ctx entry stating a window", &s, "`window_stated`");
 
     /* R-26.3: REPORT */
     s = span_site();
     s.site_kind = MF_SK_REPORT;
-    s.consumer = MF_C_RESULT;
     s.pred.nterm = 2;
     t_set(&s.pred.term[1], 1, "b", MF_OPTIONAL);
-    window(&s.pred);
     refuse("REPORT with one OPTIONAL span-0 term", &s, "`need`");
-    s = span_site();
-    s.site_kind = MF_SK_REPORT;
-    s.consumer = MF_C_RESULT;
-    c[0] = ctx_item(1, "y", MF_ABSENT_FAILS);
-    c[0].need = MF_OPTIONAL;
-    s.ctx = c;
-    s.nctx = 1;
-    refuse("REPORT with an OPTIONAL context item", &s, "`need`");
     s = stop_site();
     s.site_kind = MF_SK_REPORT;
-    s.consumer = MF_C_RESULT;
     refuse("REPORT with no BOUNDED span 0", &s, "BOUNDED");
     s = span_site();
     s.site_kind = MF_SK_REPORT;
-    s.consumer = MF_C_RESULT;
     refuse("REPORT well-formed on a plain art: the REPORT row is unrouted", &s,
            "`site_kind` REPORT");
     s = span_site();
     s.site_kind = MF_SK_REPORT + 1;
     refuse("site_kind outside mf_site_kind", &s, "`site_kind`");
+
+    /* D172 S2 commit 6 (R1): a window site states no renderer-interface
+       field, each refused naming it */
+    s = win_site();
+    s.pred.nterm = 1;
+    t_set(&s.pred.term[0], 0, "a", MF_REQUIRED);
+    refuse("a window site stating a term", &s, "`pred.nterm`");
+    s = win_site();
+    s.pred.need = MF_REQUIRED;
+    refuse("a window site stating pred.need", &s, "`pred.need`");
+    s = win_site();
+    s.pred.plan_hint = 1;
+    refuse("a window site stating plan_hint", &s, "`plan_hint`");
+    s = win_site();
+    s.pred.plan_pos = 1;
+    refuse("a window site stating plan_pos", &s, "`plan_pos`");
+    s = win_site();
+    s.pred.rank_n = 1;
+    refuse("a window site stating a ranking", &s, "`rank_n`");
+    s = win_site();
+    s.pred.span_class = MF_SPAN_BOUNDED;
+    refuse("a window site stating span_class", &s, "`span_class`");
+    s = win_site();
+    s.end_back = 1;
+    refuse("a window site stating end_back", &s, "`end_back`");
 }
 
 /* ---- B: the class -------------------------------------------------------- */
@@ -540,16 +391,11 @@ static const char *expect(const uint8_t bits[32], const char *members)
 static void family_b(void)
 {
     mf_site s = span_site();
-    mf_pred c[2];
     t_run(&s.pred.term[0], 0, "ab", MF_REQUIRED);
-    s.pred.nterm = 2;
+    s.pred.nterm = 4;
     t_set(&s.pred.term[1], 2, "cd", MF_OPTIONAL);
-    window(&s.pred);
-    c[0] = ctx_item(-2, "x", MF_ABSENT_SATISFIES);
-    c[1] = ctx_item(3, "yz", MF_ABSENT_FAILS);
-    s.ctx = c;
-    s.nctx = 2;
-    s.read_floor = MF_FLOOR_SUBJECT;
+    t_set(&s.pred.term[2], -2, "x", MF_REQUIRED);
+    t_set(&s.pred.term[3], 3, "yz", MF_REQUIRED);
     mf_class cls;
     char err[512];
     const char *form = define(&s, err, sizeof err, &cls);
@@ -619,8 +465,8 @@ static void rand_term(mf_term *t, int off, mf_need need, int allow_run)
 
 static mf_need rand_need(void) { return rnd(3) ? MF_REQUIRED : MF_OPTIONAL; }
 
-/* Site `i` of the family, into *s with its ctx entries in c[]. */
-static void family_site(unsigned i, mf_site *s, mf_pred *c)
+/* Site `i` of the family, into *s. */
+static void family_site(unsigned i, mf_site *s)
 {
     *s = span_site();
     unsigned shape = i % 4;
@@ -628,8 +474,6 @@ static void family_site(unsigned i, mf_site *s, mf_pred *c)
         *s = stop_site();
         if (rnd(2)) t_run(&s->pred.term[0], -2, rnd(2) ? "ab" : "a\n", MF_REQUIRED);
         else t_set(&s->pred.term[0], -1, rnd(2) ? "ab" : "b\n", MF_REQUIRED);
-        s->pred.absent = rnd(2) ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS;
-        window(&s->pred);
         return;
     }
     if (shape == 3) {                            /* a FUNC / RETURN site */
@@ -653,7 +497,6 @@ static void family_site(unsigned i, mf_site *s, mf_pred *c)
                 t_set(&s->pred.term[t], len + (int)rnd(2), m, rand_need());
             }
             s->pred.plan_hint = 0;
-            window(&s->pred);
             return;
         }
     }
@@ -665,33 +508,11 @@ static void family_site(unsigned i, mf_site *s, mf_pred *c)
     if (nt == 1 && (s->pred.term[0].kind == MF_T_SET || s->pred.term[0].run_len == 1))
         t_set(&s->pred.term[0], 0, rnd(2) ? "ab" : "bcd", MF_REQUIRED);
     for (unsigned t = 1; t < nt; t++) rand_term(&s->pred.term[t], (int)rnd(3), rand_need(), 1);
-    window(&s->pred);
-    if (shape == 1) return;                      /* no context */
-    long k = 0;
-    for (unsigned t = 0; t < nt; t++) {
-        long e = s->pred.term[t].offset +
-                 (s->pred.term[t].kind == MF_T_RUN ? (long)s->pred.term[t].run_len : 1);
-        if (e > k) k = e;
+    if (shape == 0 && rnd(4)) {     /* a term below the candidate (once a context item's) */
+        mf_term *t = &s->pred.term[s->pred.nterm++];
+        if (rnd(3) == 0) t_run(t, -2, rnd(2) ? "xa" : "ab", rand_need());
+        else rand_term(t, -1 - (int)rnd(2), rand_need(), 0);
     }
-    unsigned n = 0;
-    if (rnd(4)) {                                /* an item before span 0 */
-        mf_need nd = rand_need();
-        c[n] = ctx_item(-1, "x", rnd(2) ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS);
-        if (rnd(3) == 0) t_run(&c[n].term[0], -2, rnd(2) ? "xa" : "ab", nd);
-        else rand_term(&c[n].term[0], -1 - (int)rnd(2), nd, 0);
-        c[n].need = nd;
-        n++;
-    }
-    if (rnd(4)) {                                /* an item after it */
-        mf_need nd = rand_need();
-        c[n] = ctx_item((int)k, "x", rnd(2) ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS);
-        rand_term(&c[n].term[0], (int)k, nd, 0);
-        c[n].need = nd;
-        n++;
-    }
-    s->ctx = n ? c : NULL;
-    s->nctx = (uint8_t)n;
-    s->read_floor = MF_FLOOR_SUBJECT;
 }
 
 static const char *fn_name(void *u, uint32_t ref) { (void)ref; return u; }
@@ -730,7 +551,7 @@ static void put_pred(FILE *o, const mf_pred *p, int context)
         fprintf(o, ", %d }", tm->need == MF_REQUIRED ? PM_REQ : PM_OPT);
     }
     fprintf(o, "}, %d, %d, %d }", p->need == MF_REQUIRED ? PM_REQ : PM_OPT, context,
-            p->absent == MF_ABSENT_SATISFIES ? PM_SAT : p->absent == MF_ABSENT_FAILS ? PM_FAILS : 0);
+            context ? PM_FAILS : 0);
 }
 
 /* ---- the REPORT sites (R-26.6) ------------------------------------------- */
@@ -761,14 +582,13 @@ static void r_run(rdesc *d, mf_term *t, int off, const char *run)
     snprintf(r->bytes, sizeof r->bytes, "%s", run);
 }
 
-/* REPORT site `i`: every term and item REQUIRED (R-26.3), `consumer` RESULT,
- * span 0 BOUNDED, context items one offset wide. Shapes: 0 span 0 alone, 1
- * the offset-skip FUNC shape, 2 span 0 with one or two context items. */
-static void family_report(unsigned i, mf_site *s, mf_pred *c, rdesc *d)
+/* REPORT site `i`: every term REQUIRED (R-26.3), span 0 BOUNDED. Shapes: 0
+ * span 0 alone, 1 the offset-skip FUNC shape, 2 span 0 with one term below
+ * its candidate (once a context item's). */
+static void family_report(unsigned i, mf_site *s, rdesc *d)
 {
     *s = span_site();
     s->site_kind = MF_SK_REPORT;
-    s->consumer = MF_C_RESULT;
     memset(d, 0, sizeof *d);
     unsigned shape = i % 3;
     char m[8];
@@ -789,7 +609,6 @@ static void family_report(unsigned i, mf_site *s, mf_pred *c, rdesc *d)
             r_set(d, &s->pred.term[t], len + (int)rnd(2), one);
         }
         s->pred.plan_hint = 0;
-        window(&s->pred);
         return;
     }
     unsigned nt = 1 + rnd(3);
@@ -807,28 +626,9 @@ static void family_report(unsigned i, mf_site *s, mf_pred *c, rdesc *d)
             r_set(d, &s->pred.term[t], off, m);
         }
     }
-    window(&s->pred);
     if (shape == 0) return;
-    long k = 0;
-    for (unsigned t = 0; t < d->n; t++)
-        if (d->t[t].off + d->t[t].len > k) k = d->t[t].off + d->t[t].len;
-    unsigned n = 0;
-    int before = rnd(4) != 0, after = !before || rnd(2);
-    if (before) {
-        c[n] = ctx_item(-1, "x", rnd(2) ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS);
-        rand_members(m);
-        r_set(d, &c[n].term[0], -1 - (int)rnd(2), m);
-        n++;
-    }
-    if (after) {
-        c[n] = ctx_item((int)k, "x", rnd(2) ? MF_ABSENT_SATISFIES : MF_ABSENT_FAILS);
-        rand_members(m);
-        r_set(d, &c[n].term[0], (int)k, m);
-        n++;
-    }
-    s->ctx = c;
-    s->nctx = (uint8_t)n;
-    s->read_floor = MF_FLOOR_SUBJECT;
+    rand_members(m);
+    r_set(d, &s->pred.term[s->pred.nterm++], -1 - (int)rnd(2), m);
 }
 
 /* "" iff `proven` holds, at every offset, exactly the bytes every generated
@@ -898,10 +698,9 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
     for (unsigned i = 0; i < nsites + nreport; i++) {
         int rep = i >= nsites, stop = !rep && i % 4 == 2;
         mf_site s;
-        mf_pred c[MF_MAX_CTX];
         rdesc rd;
-        if (rep) family_report(i - nsites, &s, c, &rd);
-        else     family_site(i, &s, c);
+        if (rep) family_report(i - nsites, &s, &rd);
+        else     family_site(i, &s);
         char fn[32];
         snprintf(fn, sizeof fn, "pm_f%u", i);
         char *pfx = a_alloc(NULL, 16);      /* one art per site: names its own */
@@ -999,13 +798,8 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         else
             cproof++;
         /* the facts, then the claim */
-        unsigned np = 1 + s.nctx;
-        fprintf(o, "  { \"%u\", %d, %u, {\n    ", i, stop, np);
+        fprintf(o, "  { \"%u\", %d, 1, {\n    ", i, stop);
         put_pred(o, &s.pred, s.pred.span_class == MF_SPAN_CONTEXT);
-        for (unsigned k = 0; k < s.nctx; k++) {
-            fputs(",\n    ", o);
-            put_pred(o, &s.ctx[k], 1);
-        }
         fputs(" },\n    {", o);
         for (unsigned d = 0; d < MF_MAX_FWD - MF_PROOF_LO; d++) {
             if (d) fputs(",", o);
@@ -1033,7 +827,7 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
              rexact, nreport, rplain);
     verdict(name, rexact == nreport && rplain == nreport && nreport >= 100 ? ""
                   : "a REPORT site failed, or the population is short");
-    printf("C family: %u span+ctx, %u span, %u stop, %u func, %u report; forms:", shapes[0],
+    printf("C family: %u span+below, %u span, %u stop, %u func, %u report; forms:", shapes[0],
            shapes[1], shapes[2], shapes[3], nrep);
     unsigned nf = 0, nrf = 0;
     for (unsigned f = 0; f < 16 && forms[f][0]; f++) {
@@ -1104,30 +898,19 @@ static void family_d(void)
         if (strstr(op[i].name, "preview") || strstr(op[i].name, "rpt")) named = op[i].name;
     verdict("D no options.def row names the preview or the REPORT row", named);
 
-    /* the row does not apply where its form cannot prove exactly: a REPORT
-       site with a two-offset SATISFIES item before span 0 (its inner offset
-       is unconstrained at c = 1: r26z1_report.md F-3), refused on a preview
-       art; the same item under FAILS is served */
-    mf_pred c[1];
+    /* a REPORT site with a two-offset term below its candidate (once a
+       context item's, under FAILS) is served by the REPORT row. Its decline
+       arm (a form that cannot prove a REQUIRED set exactly) lost its last
+       witness, the two-offset SATISFIES item, with `absent` (D172 S2 commit
+       6); RPT itself retires at S3 (window_site.md §4) */
     char err[512], row[16] = "";
-    for (int fails = 0; fails < 2; fails++) {
-        s = span_site();
-        s.site_kind = MF_SK_REPORT;
-        s.consumer = MF_C_RESULT;
-        c[0] = ctx_item(-2, "x", fails ? MF_ABSENT_FAILS : MF_ABSENT_SATISFIES);
-        t_run(&c[0].term[0], -2, "xa", MF_REQUIRED);
-        s.ctx = c;
-        s.nctx = 1;
-        s.read_floor = MF_FLOOR_SUBJECT;
-        const char *form = define_on(&s, err, sizeof err, NULL, 1, row);
-        if (fails)
-            verdict("D REPORT with a two-offset FAILS item: served by RPT",
-                    !form ? err : strcmp(row, "RPT") ? "not the REPORT row" : "");
-        else
-            verdict("D REPORT with a two-offset SATISFIES item: the row does not apply",
-                    form ? "rendered" : strstr(err, "`site_kind` REPORT") ? ""
-                                                                          : "refused for another reason");
-    }
+    s = span_site();
+    s.site_kind = MF_SK_REPORT;
+    s.pred.nterm = 2;
+    t_run(&s.pred.term[1], -2, "xa", MF_REQUIRED);
+    const char *form = define_on(&s, err, sizeof err, NULL, 1, row);
+    verdict("D REPORT with a two-offset term below its candidate: served by RPT",
+            !form ? err : strcmp(row, "RPT") ? "not the REPORT row" : "");
 }
 
 int main(int argc, char **argv)

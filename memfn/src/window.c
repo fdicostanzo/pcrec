@@ -247,6 +247,24 @@ static int rd_core(const wf_dec *d, const wf_pos *p)
 
 static int in_enum(unsigned v, unsigned last) { return v <= last; }
 
+/* NULL iff window site `s` states none of the RENDERER INTERFACE's fields
+ * (memfn.h "A WINDOW SITE STATES NOTHING ELSE"; the kit manager's R1, D172
+ * S2 commit 6): those are the translation's and G2's, never a host's, so a
+ * window site stating one beside its window facts is refused, naming it. */
+static const char *wf_old_fields(const mf_site *s)
+{
+    const mf_pred *p = &s->pred;
+    if (p->nterm) return "a window site states terms (`pred.nterm`): its spans are its statement";
+    if (p->need) return "a window site states `pred.need` (the renderer interface's)";
+    if (p->plan_hint && p->plan_hint != MF_NO_PRED)
+        return "a window site states `plan_hint` (the renderer interface's)";
+    if (p->plan_pos) return "a window site states `plan_pos` (the renderer interface's)";
+    if (p->rank_n) return "a window site states a ranking (`rank_n`; the renderer interface's)";
+    if (p->span_class) return "a window site states `span_class` (the renderer interface's)";
+    if (s->end_back) return "a window site states `end_back` (the renderer interface's)";
+    return NULL;
+}
+
 const char *wf_check(const mf_site *s, int frame)
 {
     if (!s->nalt && !s->alts) {
@@ -254,6 +272,8 @@ const char *wf_check(const mf_site *s, int frame)
         return NULL;
     }
     if (!s->nalt || !s->alts) return "`nalt` and `alts` are stated together";
+    const char *old = wf_old_fields(s);
+    if (old) return old;
     if (s->nalt > MF_WMAX_ALT) return "`nalt` > MF_WMAX_ALT";
     if (!in_enum(s->wfloor, MF_WFLOOR_EXPR)) return "`wfloor` outside mf_wfloor";
     int below = 0, parked = 0, reseed = 0;
@@ -553,11 +573,8 @@ static void a_none_choose(wf_x *x)
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
     [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, [FLD_table_ref] = MF_ANY, \
-    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_window_stated] = MF_ANY, \
-    [FLD_move_back] = MF_ANY, [FLD_overshoot] = MF_ANY, [FLD_decl_point] = MF_ANY, \
-    [FLD_body] = MF_ANY, [FLD_prefix_stated] = MF_ANY, [FLD_exact_len] = MF_ANY, \
-    [FLD_consumable_len] = MF_ANY, [FLD_ctx] = MF_ANY, [FLD_absent] = MF_ANY, \
-    [FLD_consumable] = MF_ANY, [FLD_read_floor] = MF_ANY, [FLD_site_kind] = MF_ANY, \
+    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_decl_point] = MF_ANY, \
+    [FLD_body] = MF_ANY, [FLD_site_kind] = MF_ANY, \
     [FLD_layer] = MF_ANY, [FLD_need] = MF_ANY, [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, \
     [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, [FLD_result] = MF_ANY, \
     [FLD_result_decl] = MF_ANY, [FLD_miss] = MF_ANY, [FLD_on_miss] = MF_ANY, \
@@ -1206,9 +1223,6 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
     t->span_hi = s->span_hi;
     t->cand_ppm_lo = s->cand_ppm_lo;
     t->cand_ppm_hi = s->cand_ppm_hi;
-    /* `consumer` retires at S2 (window_site.md §4); the old row's site states
-       it, DERIVED from the kind: the candidate is the answer only on REPORT */
-    t->consumer = s->site_kind == MF_SK_REPORT ? MF_C_RESULT : MF_C_ENGINE;
     t->policy = s->policy;
     t->denies = s->denies;
     t->opts = s->opts;
@@ -1287,22 +1301,10 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
         }
         p->rank_n = (uint8_t)n;
     }
-    /* span 0's class and window facts (MF_SITE_ABI 11, 18), stated as every
-       old builder states them */
-    int32_t dmin = p->term[0].offset;
-    p->window_stated = 1;
-    p->move_back = dmin;
-    p->overshoot = 0;
-    if (below) {
-        p->span_class = MF_SPAN_CONTEXT;
-        p->absent = MF_ABSENT_FAILS;            /* every tested position is core */
-        p->consumable = MF_CONSUMABLE_NO;
-    } else {
-        p->span_class = MF_SPAN_BOUNDED;
-        p->prefix_stated = MF_PREFIX_STATED;
-    }
-    for (unsigned k = 0; k < p->nterm; k++)
-        if (p->term[k].offset < 0) t->read_floor = MF_FLOOR_SUBJECT;
+    /* span 0's class (MF_SITE_ABI 18): a context stop where every tested
+       position lies below the candidate (each is core: a read outside the
+       subject fails its term, the one rule the rows render), else span 0 */
+    p->span_class = below ? MF_SPAN_CONTEXT : MF_SPAN_BOUNDED;
 }
 
 /* ---- TABLE E: the frame (window_site.md §2.6) ------------------------------ */
@@ -1448,7 +1450,6 @@ void wf_part_site(const mf_site *s, unsigned i, mf_site *out)
     out->empty = MF_EMPTY_MISS;
     out->use = MF_USE_POSITION;
     out->body = MF_BODY_ONESHOT;
-    out->consumer = MF_C_ENGINE;
     out->site_kind = s->site_kind;
     out->policy = s->policy;
     out->denies = s->denies;

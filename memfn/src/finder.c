@@ -161,22 +161,15 @@ typedef struct {
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
     [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, \
-    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_window_stated] = MF_ANY, \
-    [FLD_move_back] = MF_ANY, [FLD_overshoot] = MF_ANY, [FLD_decl_point] = MF_ANY, \
+    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_decl_point] = MF_ANY, \
     [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, \
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
     [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
-    [FLD_moved] = MF_ANY, \
-    MF_SERVES_PROOF_ANY
-/* Every row but the REPORT row picks a form that tests no `ctx` entry and
-   renders `absent` FAILS; the REPORT row's pick is the composer's walk, whose
-   rows serve those fields themselves (the generic row tests both), and its
-   class is held to the REQUIRED sets (SF_PROOF_EXACT), so it serves both. */
+    [FLD_moved] = MF_ANY,
 #define FD_SERVES_REST(table) \
     FD_SERVES_COMMON \
-    [FLD_table_ref] = (table), \
-    [FLD_ctx] = CM(NONE), [FLD_absent] = CM(NO),
+    [FLD_table_ref] = (table),
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -221,12 +214,10 @@ FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,   
 FD_CT(ct_p4,  "P4",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 /* R-26.6: the REPORT row serves the REPORT kind alone (no other row's kinds
-   hold it), span 0 REQUIRED (R-26.3 refuses anything else) and every context
-   span and absent rule its pick serves */
+   hold it) and span 0 REQUIRED (R-26.3 refuses anything else) */
 static const gate_contract ct_rpt = { "fd", "RPT", NU(use_kind), {
     FD_SERVES_COMMON
     [FLD_table_ref] = MF_ANY,
-    [FLD_ctx] = MF_ANY, [FLD_absent] = MF_ANY,
     [FLD_site_kind] = CM(REPORT), [FLD_need] = CM(N_REQUIRED),
     [FLD_body] = MF_ANY, [FLD_layer] = LY_ALL,
 } };

@@ -6,9 +6,10 @@
  *
  *   a term holds at c iff every byte it reads lies in [0, n) and matches
  *   (rule 2, §14.7; the floor is 0 here);
- *   a CONTEXT item (a context stop, a `ctx` entry) whose reads fall outside
- *   [0, n) takes its `absent` verdict, SATISFIES holds and FAILS does not
- *   (R-26.2), and is its terms' conjunction otherwise;
+ *   a CONTEXT item (a context stop) whose reads fall outside [0, n) does not
+ *   hold (FAILS, the one rule since D172 S2 commit 6 retired `absent`; the
+ *   SATISFIES arm below stays for a fact file that states it), and is its
+ *   terms' conjunction otherwise;
  *   the range is [lo, n) for span 0, [lo, n] for a context stop (Q-R7-1).
  *
  * For each site, each subject over its alphabet (every string of length
@@ -28,9 +29,10 @@
  *          included, lies before the answer;
  * and per site: every REQUIRED term's set at d contains proven[d] (binding),
  * and a REQUIRED position is proven (the position-wise superset).
- * Floors (K35) on the cells the request names: a candidate at c = 0 yielded
- * through a SATISFIES item before span 0, one at c + k = n through one after
- * it, and the FAILS cells refused there.
+ * Floor (K35) on the cell the request names that the family still reaches:
+ * the FAILS cell refused below the subject (a context stop at c = 0). The
+ * SATISFIES cells and the after-span-0 cell left with the context spans
+ * (D172 S2 commit 6); their counts are printed, unfloored.
  *
  * READS (D172 S2 review S2, lane wsc1): every call is repeated with the
  * subject in an EXACT-SIZE buffer ending at a guard page (a read at or past
@@ -403,11 +405,10 @@ int main(void)
            "layouts\n", pm_nsites, cells, cands, read_calls);
     printf("absent cells: SATISFIES yielded before span 0 %ld, after it %ld; FAILS refused "
            "before %ld, after %ld\n", sat_before, sat_after, fails_before, fails_after);
-    /* K35: the cells R-26.2 names, each reached */
-    int floor_ok = sat_before >= 100 && sat_after >= 100 && fails_before >= 100 &&
-                   fails_after >= 100 && pm_nsites >= 300;
+    /* K35: the FAILS cell below the subject, reached */
+    int floor_ok = fails_before >= 100 && pm_nsites >= 300;
     if (!floor_ok) {
-        printf("FAIL: a floor: every absent cell >= 100, sites >= 300\n");
+        printf("FAIL: a floor: the FAILS cell before span 0 >= 100, sites >= 300\n");
         failed++;
     } else {
         passed++;

@@ -493,7 +493,7 @@ int main(int argc, char **argv)
         to_kit(&x, &s, alts, spans);
         s.abi = MF_SITE_ABI;
         s.form = MF_FORM_STMT; s.op = MF_OP_FIND; s.handoff = MF_H_ASSIGN;
-        s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT; s.consumer = MF_C_ENGINE;
+        s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT;
         mf_art *art = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         mf_wreply r;
         if (mf_wdecide(art, &s, &r)) fail(-1, "control", "mf_wdecide refused on a plain art");
