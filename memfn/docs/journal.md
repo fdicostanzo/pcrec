@@ -2691,3 +2691,14 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - R-28: delivered (lane/memfn-r28 @ 4e49ed417). The painted stack for `a` went from 61,616 to 25,552 B. Main merges it after dd10.
 - Variant tag-floor bisect (job 577): the counts are identical from 9950aa672 through ce5aa67a8. The re-pin is main's.
 - Frank's hex8 ideas, a boundary pair (left context + S_0) and a core probe, plus random and utf8 classes: **job 584-kit-r27c-probe is QUEUED** (lane/memfn-r27c @ 8269bd171). Its differential stage is green.
+
+## 2026-10-22 (afternoon) — D172 S2: 583 red on one arm, fixed forward in wsc8
+
+- Job 583 (wsc7 @ 170c5fac6) was RED on sweep_arms only. The `-fcomments` arm moved 39-43 patterns per stream. Everything else was green: four sweeps, the other 45 arms, facts DECLARED MOVES 3,356, mech 155 rows with 0 unexpected, reach, wreply, and make test (that run was load-contaminated).
+- Cause (triage lane tri583, then the manager's own probe): wsc5 32f9b1781 made a FUNC part carry only `fn_ref` and its window. `req_site_note` still took `masked` from `p->term[0].mask`, which is now always NULL. So a masked run (e.g. `((?i:abc))`) printed the exact-bytes [OPT-REQPOS] note, and [K66] was likewise affected. Comment text only; no essential byte moved.
+- Fix: lane wsc8 @ 5fed19321. `req_note_run` reads masked off the req_run fact (window mask for test 0, whole-run mask for test 1).
+  - 48 of 48 compiles are identical to the ref binary with -fcomments (13 patterns, byte/utf8, auto/vm, two of them masked [K66]).
+  - 20 of 20 are identical to wsc7 without it.
+  - strict is clean.
+- Re-validation 585-kit-wsc8-heavy (build, strict, five sweeps, test-codegen; job script at 349f424d5) is to be queued AFTER main's 710-findbench-parity has run, at main's request.
+  - mech, reach, wreply and make test are carried from 583: the change is non-essential comment text only.
