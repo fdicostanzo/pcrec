@@ -123,7 +123,8 @@ for pat, subj in [(r'a\Kb', 'abab'), (r'\Ka', 'aa'), (r'a\K', 'aaa'), (r'(?:a\K)
                   (r'x|(?<=(?1))y|(\Kx)', 'xy'), (r'^|(?<=(?1))y|(?!)(\Kz)', 'zy')]:
     add(K, '', pat, '[$0|$1]', subj, mode='known:9' if 'Kz)' in pat else 'diff')
     add(K, '', pat, '[$0]', subj, limit=1)
-    add(K, '', pat, '[$0]', subj, mode='known:9' if 'Kz)' in pat else 'nogap')   # Kx) agrees with libpcre2 now (substtri retag)
+    add(K, '', pat, '[$0]', subj, mode='known:9' if 'Kz)' in pat else ('diff' if 'Kx)' in pat else 'nogap'))
+    # Kx): with gaps the BADSPAN agrees with libpcre2's -60 (substtri retag, d27 FIXED?); the nogap arm is not run for it
 
 # the three spans §4¶5 / §9 row 9 name, with gaps, all matches: BADSPAN, or row 9's rendering
 add(K, '', r'x(?=(?1))|(b\K)', '[$0]', 'xb')
