@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `82` on every artifact today (lane m0build bumped it
+- **`rx_info.abi` is `87` on every artifact today (lane corefix bumped it
+  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; 83-86 were
+  allocated to other branches, and whichever lands later renumbers).** Two
+  defect fixes in the VM emitter. K128: an unbounded repeat `X{m,}` (m >= 1)
+  with a nullable body now records where its last mandatory iteration began
+  in the star's guard slot (one `slot_values[...] = scan_position` write
+  with its trail entry, on the frames rung's last copy or the counter rung's
+  last trip/residue copy) and the star tests it at entry (one `if` line and
+  a label); the counter rung's pre-pass now counts that guard, so slot
+  bases after it move by one on those patterns. K129: every VM entry's
+  `<prefix>_vars_resolve` call moved above the proof-based exits (the
+  search body's end window, necessary byte, root width, prefilter and
+  start-set seek; the anchored bodies' K73 offset-0 rule). Bounded,
+  `rmin == 0`, non-nullable, possessive and var-free patterns emit the same
+  text as at 82 apart from the number. Answers move only where they were
+  wrong (match_api.md §5.1¶3a; vars.md §5). The mover census is in
+  docs/dev/lanes/corefix_report.md.
+- **`rx_info.abi` was `82` (lane m0build bumped it
   from 81, 2026-10-21: [MEASURE-SET] M0, docs/design/measure_sets.md rev 3
   §3.5-§3.6, D166 and addenda; and the K112 rider).** Every artifact gains
   `<PREFIX>_MEASURES` (written right after `<PREFIX>_FINDINGS`) and
