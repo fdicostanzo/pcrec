@@ -2748,3 +2748,12 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - lane/memfn-ws was fast-forwarded. done: R-29 is posted at 25ec6f665 and main is told.
 - Lesson: a lane that ENDS before a GO arrives misses it. A GO for a stopped lane goes to a fresh lane, and the old lane must be TaskStopped first so it cannot wake and race the new one in the same worktree.
 - Next: S3 (B1) after main merges. Frank's call is owed on the r27c reading (HRS for wide sets, plus a cost term in the selector).
+
+## 2026-10-22 (night) — S3 rulings
+
+- Lane s3 STOPPED at a design gap (s3_report.md @ 6f100c00f, nits commit f7bc3cf05). No row renders the routed REPORT form: legacy_ok declines context cover sites, and no row does find-then-verify.
+- Kit ruling Q1: a new Table E row `E-find` (the family's find-then-verify renderer), NOT keyed on REPORT. The table order is E-func, E-stmt (legacy), E-find, E-generic, so the movers are exactly REPORT plus D-hors. Its deny makes mf_ask refuse, so OFF = DEF.
+- Q3: two deny rows (window_site §5.2); memfn floor 12→14.
+- Main's ruling Q2: in the same abi commit go the .list re-index, RX_DFA_SCAN "cover", C17 → delegated, and the §6.1 readers found by grep. Flag bit 57 is NO (main files it under [IFACE-PUSH]).
+- Main's conditions: the spec hunks travel in the same commit; the --list-axes delta is a declared manifest; the movers are a predicted manifest named by id; OFF is byte-identical to main; abi 84 is PROVISIONAL (the I1+I2 iterators may take it).
+- Build lane s3b (opus) is briefed. The window_site rev 3.3 fold of E-find is OWED after the build.
