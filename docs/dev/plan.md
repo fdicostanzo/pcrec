@@ -534,7 +534,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-21 manager, from the kit's notice of Frank's D169 addendum ruling ("use the walk when the subject is not known")
   status (2026-10-21): filed; nothing built. The walk is the default for unknown subjects (D169 addendum); no single mask form is safe on dense and sparse text alike (kit lanes flat, adatwin).
   trigger: bench or user evidence of dense-and-sparse mixed workloads where the walk leaves a measured gain on the table.
-  refs: docs/dev/decisions.md D169 addendum; memfn/docs/responses.md (kit notice 2026-10-21, lane/memfn-r27 cf5909eb1)
+  refs: docs/dev/decisions.md D169 addendum; memfn/docs/responses.md (kit notice 2026-10-21, lane/memfn-r27 cf5909eb1); docs/design/memfn/walk_vs_v1_record.md (the closed record: what not to retry, when to re-open)
   Charter: a set-FIND site switches between the walk and a wide-mask form at run time inside pcrec's DFA skip loop, so a subject's sparse stretches get the mask's gain and its dense stretches keep the walk. Note: the kit's adatwin found a per-stretch adaptive PRODUCER does not pay; this row is the switch at pcrec's skip-loop level, a different site.
 - [MEMFN-POSCOST] STATE:not-started — PRICE A SET-FIND'S SCAN POSITION BY ITS SET'S FORM, PLUS SUPERSET COVERS
   filed: 2026-10-21 kit session (Frank to the kit: "file as items to follow up later; build as agreed now; put such refinements in if timing and survey suggest benefit"); filed in plan.md by the manager
