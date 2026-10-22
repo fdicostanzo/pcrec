@@ -579,6 +579,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
+  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
+  status (2026-10-22): filed; nothing built. Today every -o output is overwritten in place.
+  next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
+  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
+  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
 - [ITER-BLOCK] STATE:not-started — FIND-ALL BY BLOCKS: SEARCH A BLOCK, RETURN ITS MATCHES, ELSE THE NEXT BLOCK
   filed: 2026-10-21 Frank (I2 discussion: "search a block for answers, if you find at least one, stop and return them, if you find none, go to the next block. that way the oversearch is bounded")
   status (2026-10-21): filed; nothing built. I2 ships with the batch doubling from 1 (bounds the early-break over-scan with no new mechanism); this row is the general form.
