@@ -496,6 +496,11 @@ const ReqRun  *pcrec_fact_req_whole_run_stated(Ctx *cx);
  * trace build's `used` column is the default build's. */
 const ReqRun  *pcrec_fact_req_run_stated(Ctx *cx);
 int            pcrec_fact_req_byte_stated(Ctx *cx);
+/* The same non-pass read of `run_pin`, for the window statement's run R
+ * (D172 S2 commit 2, src/gen/emit_dfa.c `pf_window_of`): R's offsets are
+ * stated beside the old fields and read by no pass before commit 4, so
+ * `used` stays today's. Its reader owes the kind gate, as the pass read's. */
+const RunPin  *pcrec_fact_run_pin_stated(Ctx *cx);
 /* E2 derived: the window's `maxoff` where a run shipped, -1 where none
  * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
 long long      pcrec_fact_req_run_maxoff(Ctx *cx);

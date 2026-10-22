@@ -473,6 +473,88 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
     term_unknown_density(t);
 }
 
+mf_walt *pcrec_memfn_walts(Ctx *cx, int n)
+{
+    return pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_walt));
+}
+
+mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n)
+{
+    mf_wspan *w = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_wspan));
+    a->entry = (uint8_t)entry;
+    a->nspan = (uint8_t)n;
+    a->spans = w;
+    return w;
+}
+
+void pcrec_memfn_wspan(mf_wspan *w, int start, int len, mf_verify v)
+{
+    memset(w, 0, sizeof *w);
+    w->start = start;
+    w->len = (uint8_t)len;
+    w->verify = (uint8_t)v;
+    w->core = MF_CORE_STATED;
+    w->core_lo = 0;
+    w->core_len = (uint8_t)len;
+}
+
+void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len)
+{
+    w->core_lo = (uint8_t)(len ? lo : 0);
+    w->core_len = (uint8_t)len;
+}
+
+void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer)
+{
+    memset(w->set[j], 0, 32);
+    for (int b = 0; b < 256; b++)
+        if (set[b]) w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+    w->table_ref[j] = offer;
+}
+
+void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32])
+{
+    memcpy(w->set[j], bits, 32);
+}
+
+void pcrec_memfn_wpos_any(mf_wspan *w, int j)
+{
+    memset(w->set[j], 0xFF, 32);
+}
+
+void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask)
+{
+    memset(w->set[j], 0, 32);
+    for (unsigned b = 0; b < 256; b++)
+        if ((b & mask) == (byte & mask)) w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+}
+
+void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
+                               mf_wfloor fl)
+{
+    if (n < 1 || n > MF_WMAX_ALT)
+        pcrec_ctx_fail(cx, 0, "internal error: a window site states %d alternatives "
+                       "(1..MF_WMAX_ALT) (src/gen/memfn_sites.c)", n);
+    for (int a = 0; a < n; a++) {
+        if (alts[a].nspan < 1 || alts[a].nspan > MF_WMAX_SPAN)
+            pcrec_ctx_fail(cx, 0, "internal error: a window alternative states %u spans "
+                           "(1..MF_WMAX_SPAN) (src/gen/memfn_sites.c)",
+                           (unsigned)alts[a].nspan);
+        for (int i = 0; i < alts[a].nspan; i++) {
+            const mf_wspan *w = &alts[a].spans[i];
+            if (w->len < 1 || w->len > MF_WSPAN_POS || w->start < -MF_MAX_BACK ||
+                w->start + w->len > MF_WREACH)
+                pcrec_ctx_fail(cx, 0, "internal error: a window span of %u positions at "
+                               "%d lies outside the kit's shape bounds (MF_WSPAN_POS, "
+                               "[-MF_MAX_BACK, MF_WREACH)) (src/gen/memfn_sites.c)",
+                               (unsigned)w->len, (int)w->start);
+        }
+    }
+    s->nalt = (uint8_t)n;
+    s->alts = alts;
+    s->wfloor = (uint8_t)fl;
+}
+
 void pcrec_memfn_window_is_candidate(mf_pred *p)
 {
     int32_t d = p->term[0].offset;

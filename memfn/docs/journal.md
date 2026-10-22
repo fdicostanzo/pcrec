@@ -2648,3 +2648,9 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - G2's window family (`memfn/tests/run_g2_win.sh`) green; plants WSC1-P1..P8 all red (ids pending in S1400-S1429). proof_run gained read-limit layouts (review S2), witness WSC1-R1.
 - Finding F-1 for the next design revision: C-meet must not merge a PARKED alternative's R into its verify-YES positions unless the plan re-seeds. The rest (F-2..F-18) are in `docs/dev/lanes/wsc1_report.md` §5.
 - Heavy run `575-kit-wsc1-heavy` (emit_sweep plain vs 7050f8652, make test) queued.
+
+## 2026-10-22 — D172 S2 rulings on commit 1, commits 2 and 3 (lane wsc2)
+
+- Plant ids assigned: S1400-S1407 (wsc1's WSC1-P1..P8), S1408 (proof_run's over-read witness), S1409 (F-8). The F-8 ruling is built: R is identified by its shape and must be unique per alternative; `wf_check` refuses a second R-shaped span loudly.
+- Commit 2 (pcrec path): pcrec states R-29's facts beside the old fields at PF (both alternatives), the offset-skip block, MLINE (both callers), the VM hat and Z2's cover. The pre-check's FUNC parts are NOT stated: the kit refuses window facts on a site with no pred terms, and two parts are two candidate definitions. Asked; leaning: a per-part statement at commit 4.
+- Commit 3 (kit path): the trace shadow `wf_shadow` (MF_TRACE, lever `MF_WSHADOW`) and `memfn/tests/wshadow.py`. Full corpus reading, 7087 sites: reseed 0, pin 0, stop 35, plan/group 558, arm/text 45. The two classes are the bounded PF's `{1: any}` D11 position entering the family's plan (523 sites; 45 render pf_walk for pf_memchr), and an empty VM-hat start set read as A-empty (35 sites, text equal). `576-kit-wsc2-heavy` is owed (docs/dev/lanes/wsc2_report.md).

@@ -60,7 +60,7 @@ Everything below is reachable ONLY on an art previewing `"window-family"`
   held the box lock (a correctness run, not a timing window): no quiet gate
   was in force. `emit_sweep` takes the box lock itself, so it is in the
   queued heavy job instead of run by hand (§4).
-- `proof_run`'s new READS check has its own planted witness, `WSC1-R1` in
+- `proof_run`'s new READS check has its own planted witness, `S1408` (placeholder `WSC1-R1` at delivery) in
   `tests/memfn/run_proof.sh` (the generic row's read bound one byte loose):
   RED, "READS: a fault (guard at s + n)".
 - The final window-family numbers at the tip are in "Validation at the
@@ -83,26 +83,26 @@ Final runs on the tip's build (scratchpad logs; seed 20261022, 1500 sites):
   among them), ofsskip 29, pf_walk 17. ASan+UBSan driver 3000/0. W1
   ref-defects 2-5 each red.
 - `bash memfn/tests/run_g2_win.sh --plants`: **8 of 8 RED** (table §3).
-- `bash tests/memfn/run_proof.sh --plant WSC1-R1`: **RED** (READS: a fault,
+- `bash tests/memfn/run_proof.sh --plant S1408`: **RED** (READS: a fault,
   guard at s + n).
 
 ## 3. The plants
 
 `memfn/tests/run_g2_win.sh --plant ID` copies `memfn/src`, replaces one
 string, rebuilds the kit objects, regenerates and re-runs; it must go red.
-Placeholder ids WSC1-P1..P8 until the kit manager assigns S1400-S1429 ones
+Placeholder ids WSC1-P1..P8 at delivery; the kit manager assigned S1400-S1407 in order (renamed by lane wsc2, below)
 (asked 2026-10-22).
 
 | id | the defect | verdict (first red) |
 |---|---|---|
-| WSC1-P1 | an edge guard dropped (the floor's `c >= F + |d|` clause) | RED: READS, a fault in layout L (guard at s + F) |
-| WSC1-P2 | C-run merging singletons (positions one-position spans cover grouped) | RED: DECIDE, the compare at plan[3] (3 sites) |
-| WSC1-P3 | a margin direction flipped | RED: DECIDE, alt (225 sites) |
-| WSC1-P4 | a tie flipped (A-mass at a set position to the HIGHER offset) | RED: DECIDE, stop (44 sites) |
-| WSC1-P5 | a core position read as outside the core (the plan's last tested position) | RED: PLAN (664 sites) |
-| WSC1-P6 | an empty meet not sent to the floor (§5.2's list) | RED: 314 sites (DECIDE; first printed: the query's class differs from the define's) |
-| WSC1-P7 | C-pin splitting the stretch (§5.2's list) | RED: DECIDE grouping (39) |
-| WSC1-P8 | an untested offset claimed (§5.2's list: the class proves one past each tested position) | RED: PROOF (356) |
+| S1400 (WSC1-P1) | an edge guard dropped (the floor's `c >= F + |d|` clause) | RED: READS, a fault in layout L (guard at s + F) |
+| S1401 (WSC1-P2) | C-run merging singletons (positions one-position spans cover grouped) | RED: DECIDE, the compare at plan[3] (3 sites) |
+| S1402 (WSC1-P3) | a margin direction flipped | RED: DECIDE, alt (225 sites) |
+| S1403 (WSC1-P4) | a tie flipped (A-mass at a set position to the HIGHER offset) | RED: DECIDE, stop (44 sites) |
+| S1404 (WSC1-P5) | a core position read as outside the core (the plan's last tested position) | RED: PLAN (664 sites) |
+| S1405 (WSC1-P6) | an empty meet not sent to the floor (§5.2's list) | RED: 314 sites (DECIDE; first printed: the query's class differs from the define's) |
+| S1406 (WSC1-P7) | C-pin splitting the stretch (§5.2's list) | RED: DECIDE grouping (39) |
+| S1407 (WSC1-P8) | an untested offset claimed (§5.2's list: the class proves one past each tested position) | RED: PROOF (356) |
 
 P5 as first written (a core position's own test spelled three-way) went
 GREEN: it is EQUIVALENT, since the hoisted bound already holds every core

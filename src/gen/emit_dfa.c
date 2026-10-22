@@ -5709,6 +5709,10 @@ struct DfaForm {
     const DfaView *view;
     const DfaSeed *seed;
     const DfaAcc  *acc;
+    /* D172 S2 commit 2 the start analysis this form was derived from: the
+     * forward search machine's PF site and offset-skip block state their
+     * window facts from it (`pf_window_of`) */
+    const UnanchStart *us;
     /* [K82] the expression the walk STARTS at, which its seed reads the byte
      * before: `search_from`, or `handoff_position` where the run pre-check's
      * candidate became the forward search's scan start
@@ -6552,12 +6556,35 @@ static const char *const find_table_tag[PCREC_FIND_NTABLE] = {
     [PCREC_FIND_START_SET]   = "start_set",
 };
 
+/* D172 S2 commit 2 THE WINDOW STATEMENT's TABLE OFFERS (R-29: per position,
+ * a membership table pcrec already emits for that set): one id space the PF
+ * site's and the offset-skip block's `table_name` hooks both resolve, apart
+ * from either site's term ids, so the two builders state one statement.
+ * WIN_OFFER_FIND + a PcrecFindTable names `<p>_<tag>`, WIN_OFFER_OFS + k the
+ * offset-k verify table `<p>_ofs_k<k>` (`ofsk_tbl_name`). */
+enum { WIN_OFFER_FIND = 0x100, WIN_OFFER_OFS = 0x200 };
+static const char *ofsk_tbl_name(Ctx *cx, const char *p, int k);
+
+/* A window offer's table name for prefix `p`, or NULL where `ref` is no
+ * window offer (a term's own id). */
+static const char *win_offer_name(Ctx *cx, const char *p, uint32_t ref)
+{
+    if (ref >= WIN_OFFER_OFS && ref < WIN_OFFER_OFS + PCREC_PREFIX_K_MAX)
+        return ofsk_tbl_name(cx, p, (int)(ref - WIN_OFFER_OFS));
+    if (ref > WIN_OFFER_FIND && ref < WIN_OFFER_FIND + PCREC_FIND_NTABLE)
+        return dfa_fragf(cx, "%s_%s", p, find_table_tag[ref - WIN_OFFER_FIND]);
+    return NULL;
+}
+
 /* The kit's table-name hook: `<p>_<tag>` for the site's table_ref, which is
- * the PcrecFindTable value (rule 7: the table is pcrec's, named by pcrec). */
+ * the PcrecFindTable value (rule 7: the table is pcrec's, named by pcrec),
+ * or a window offer's table (`win_offer_name`). */
 static const char *find_table_name(void *u, uint32_t ref)
 {
     const PcrecMfU *pu = u;
     const PcrecFind *f = pu->own;
+    const char *w = win_offer_name(pu->cx, f->p, ref);
+    if (w) return w;
     if (ref == 0 || ref >= PCREC_FIND_NTABLE)
         pcrec_ctx_fail(pu->cx, 0, "internal error: the PF site's table_ref %u "
                        "names no table (src/gen/emit_dfa.c, find_table_name)",
@@ -6574,9 +6601,106 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
     return ((const PcrecFind *)((const PcrecMfU *)u)->own)->stem;
 }
 
+/* D172 S2 commit 2 THE DFA PREFILTER's WINDOW STATEMENT (window_site.md rev
+ * 3.2 §1.2's PF row, R-29's fact table), stated by the forward search
+ * machine's PF site and by its offset-skip block alike, from `us`. Fills
+ * `*out` with its alternatives and returns how many (1 or 2):
+ *   PARKED  {0: k0}, the start state's escape set (`us->cand`), verify YES,
+ *           its table offered (`can_begin_match`); plus the run R where
+ *           §1.1's pin fact holds: an exact position of R at offset 0, the
+ *           one-byte filter, k0 = F0 = {that byte};
+ *   RESEED  where `-fno-offset-skip` is not given and prefix_k's own gate
+ *           holds (k0 with 1-255 members, the walk stated): {0: F0} verify
+ *           YES, then EVERY walked offset k >= 1 as its own one-position
+ *           span, verify NO, core [0], in walk-index (ascending) order, its
+ *           `<p>_ofs_k<k>` offered where it has two or more members; then R.
+ * `bounded` (the PF site's D11 `end_back`) adds a core `{1: any}` to each
+ * offset-0 span. R is the necessary run's window (`req_run`), each position
+ * exact or its cube, verify NO, core all, at the offset its pinned stretch
+ * fixes (`run_pin`: o - at), never its member or stretch (the reply's);
+ * not stated under `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`, nor
+ * where the pin would place the window below the match start. The facts are
+ * read without a pass (`_stated`) where no pass of this compile asked them,
+ * and only where prefix_k already weighed the walk (`us->ofsk.walk`), so
+ * neither the facts' `used` record nor the byte-rate's consulted population
+ * moves. No rank, pick or plan is computed here (D157). */
+static int pf_window_of(Ctx *cx, const UnanchStart *us, bool bounded, mf_walt **out)
+{
+    const KsetWalk *wk = us->ofsk.walk;
+    bool reseed = wk && wk->nwalk >= 1 && us->cand.count >= 1 && us->cand.count < 256 &&
+                  !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP);
+    const ReqRun *r = NULL;
+    int w = 0;          /* R's offset from the candidate */
+    if (wk && us->kind != DFA_PF_NONE && !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&
+        !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {
+        r = pcrec_fact_req_run_stated(cx);
+        const RunPin *pin = r->len >= 2 ? pcrec_fact_run_pin_stated(cx) : NULL;
+        if (pin && pin->pinned && pin->o >= pin->at) w = pin->o - pin->at;
+        else r = NULL;
+    }
+    bool parked_r = r && w == 0 && r->mask[0] == 0xFF && us->kind == DFA_PF_ONE_BYTE &&
+                    us->cand.count == 1 && us->cand.byte == r->bytes[0] && wk &&
+                    wk->nwalk >= 1 && wk->k[0].count == 1 && wk->k[0].byte == r->bytes[0];
+    int n = reseed ? 2 : 1, z = bounded ? 2 : 1;
+    mf_walt *a = pcrec_memfn_walts(cx, n);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
+    pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
+    pcrec_memfn_wpos_table(&sp[0], 0, us->cand.set, WIN_OFFER_FIND + PCREC_FIND_CAN_BEGIN);
+    if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+    mf_wspan *rsp[2] = { parked_r ? &sp[1] : NULL, NULL };
+    if (reseed) {
+        int nw = wk->nwalk - 1;
+        sp = pcrec_memfn_walt_spans(cx, &a[1], MF_ENTRY_RESEED, 1 + nw + (r != NULL));
+        pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
+        pcrec_memfn_wpos_table(&sp[0], 0, wk->k[0].set,
+                               wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
+        if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+        for (int j = 1; j < wk->nwalk; j++) {
+            const PrefixK *k = &wk->k[j];
+            pcrec_memfn_wspan(&sp[j], k->k, 1, MF_VERIFY_NO);
+            pcrec_memfn_wpos_table(&sp[j], 0, k->set,
+                                   k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
+        }
+        if (r) rsp[1] = &sp[1 + nw];
+    }
+    for (int i = 0; i < 2; i++) {
+        if (!rsp[i]) continue;
+        pcrec_memfn_wspan(rsp[i], w, r->len, MF_VERIFY_NO);
+        for (int j = 0; j < r->len; j++)
+            pcrec_memfn_wpos_cube(rsp[i], j, r->bytes[j], r->mask[j]);
+    }
+    *out = a;
+    return n;
+}
+
 /* The site for FIND `f`: its window is its candidate (W0-W2, R17-a), and a
  * FIND that names a storage stem (`f->stem`, the set sites) offers its
  * declaration point (W4) and states the stem's hook id (W5). */
+/* D172 S2 commit 2 FIND `f`'s window statement on site `s`, beside its old
+ * fields (window_site.md §1.2): the DFA prefilter's alternatives where its
+ * builder supplied them (`f->walts`), else the term's own one alternative
+ * with no entry fact: the VM hat's seek `{0: S}` (its table offered), and
+ * MLINE's predecessor stop `{-1: \n}`, whose floor is the expression
+ * `f->floor` (reads in [0, F) are its attempt loop's edge). A D11 bound
+ * (`holdback`, today's `end_back`) is a core `{1: any}`. */
+static void find_window(const PcrecFind *f, mf_site *s)
+{
+    Ctx *cx = f->cx;
+    if (f->walts) {
+        pcrec_memfn_window_stated(cx, s, f->walts, f->nwalt, MF_WFLOOR_SUBJECT);
+        return;
+    }
+    mf_walt *a = pcrec_memfn_walts(cx, 1);
+    mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
+    pcrec_memfn_wspan(sp, f->offset, f->holdback ? 2 : 1, MF_VERIFY_YES);
+    if (f->table != PCREC_FIND_NO_TABLE)
+        pcrec_memfn_wpos_table(sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
+    else
+        pcrec_memfn_wpos_bits(sp, 0, s->pred.term[0].set);
+    if (f->holdback) pcrec_memfn_wpos_any(sp, 1);
+    pcrec_memfn_window_stated(cx, s, a, 1, f->floor ? MF_WFLOOR_EXPR : MF_WFLOOR_SUBJECT);
+}
+
 static mf_site *find_site(const PcrecFind *f)
 {
     Ctx *cx = f->cx;
@@ -6624,6 +6748,7 @@ static mf_site *find_site(const PcrecFind *f)
     else      pcrec_memfn_span0_stated(cx, &s->pred);
     s->decl_point = f->stem != NULL;
     s->pred.fn_ref = f->stem != NULL;
+    find_window(f, s);
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
     return s;
 }
@@ -6818,10 +6943,13 @@ static const char *pf_moved_reseed_of(Ctx *cx, const char *p, const DfaDir *dir)
  * forward scan); unbounded, a miss leaves the whole search (`return 0;`),
  * bounded it clamps to n-1, and the DFA hat re-seeds where the skip moved
  * (PR-2). The form (one memchr, a walk) is the kit's, from the facts. */
-static PcrecFind pf_site_of(Ctx *cx, const CandRow *pf, const uint8_t *set, bool views)
+static PcrecFind pf_site_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
+                            const uint8_t *set, bool views)
 {
     bool hat = pf->u.pf.scan_set != NULL;
-    return (PcrecFind){ .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
+    mf_walt *walts;
+    int nwalt = pf_window_of(cx, us, views, &walts);
+    return (PcrecFind){ .walts = walts, .nwalt = nwalt, .cx = cx, .site = DELEG_PF, .p = cx->opt->prefix, .offset = 0,
                         .table = hat ? PCREC_FIND_START_BYTES : PCREC_FIND_CAN_BEGIN,
                         .set = set, .pos = "scan_position", .subject = "subject",
                         .len = "subject_length", .holdback = views ? 1 : 0,
@@ -6846,7 +6974,7 @@ static PcrecFind pf_find_of(const DfaForm *f, int holdback)
         pcrec_ctx_fail(f->cx, 0, "internal error: a prefilter FIND off the forward "
                        "search machine, or with a D11 bound its form's `views` does "
                        "not hold (src/gen/emit_dfa.c, pf_find_of)");
-    return pf_site_of(f->cx, f->pf, f->cand.set, f->views);
+    return pf_site_of(f->cx, f->us, f->pf, f->cand.set, f->views);
 }
 
 /* [MEMFN] R17-a the set rows' define point (`u.pf.emit_define`, called at
@@ -7245,6 +7373,8 @@ static const char *ofs_site_table_name(void *u, uint32_t table_ref)
 {
     const PcrecMfU *pu = u;
     const DfaForm *f = pu->own;
+    const char *w = win_offer_name(pu->cx, f->p, table_ref);
+    if (w) return w;
     return ofsk_tbl_name(pu->cx, f->p, (int)table_ref - 1);
 }
 
@@ -7265,6 +7395,13 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
     pcrec_memfn_window_is_candidate(&s->pred);
     pcrec_memfn_span0_stated(f->cx, &s->pred);  /* R-26.1, Z2 */
+    {   /* D172 S2 commit 2: the DFA prefilter's window statement, as the PF
+           site states it; the function returns any candidate below n, so no
+           D11 core position (the caller's text clamps) */
+        mf_walt *walts;
+        int n = pf_window_of(f->cx, f->us, false, &walts);
+        pcrec_memfn_window_stated(f->cx, s, walts, n, MF_WFLOOR_SUBJECT);
+    }
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
@@ -7968,7 +8105,7 @@ static PcrecFind cand_pf_site(Ctx *cx, const UnanchStart *us, const CandRow *pf)
 {
     CandSet *sc = pcrec_arena_alloc(&cx->arena, sizeof *sc);
     pf_scan_set_of(cx, &cx->job->dfa, us, pf, sc);
-    return pf_site_of(cx, pf, sc->set, us->views);
+    return pf_site_of(cx, us, pf, sc->set, us->views);
 }
 
 /* THE MLINE SITE: ENG_ATTEMPT's predecessor-byte FIND (DELEG_SITES row MLINE,
@@ -12135,6 +12272,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     } else
         f->pf  = cand_fallback(CAND_SLOT_NEXT, s.route);
     f->views   = us->views;
+    f->us      = us;
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
     if (f->pf->u.pf.scan_set) pf_scan_set_of(cx, d, us, f->pf, &f->cand);

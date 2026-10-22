@@ -1351,6 +1351,8 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (wpath)
         fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
                 art->trace_id, h, wpath, row->id, rid ? rid : "-");
+    /* D172 S2 commit 3: the trace shadow (the localizer), lever MF_WSHADOW */
+    if (ws->nalt && !wf_active(art)) wf_shadow(art, ws, def, gphases, h);
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what

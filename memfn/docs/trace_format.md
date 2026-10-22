@@ -108,6 +108,23 @@ also writes its PATH ID (window_site.md §2.7):
   form id of today's row the plan was translated for);
 - `fd`: the finder row whose routed pick decided its find, `-` for none.
 
+THE TRACE SHADOW (D172 S2 commit 3, the LOCALIZER; window.c `wf_shadow`):
+under the harness lever `MF_WSHADOW` (environment) a window site defined on
+an art that does NOT preview the family writes, after its old row is chosen:
+
+    MFTRACE WSHADOW art=A site=H reseed=O/F stop=O/F plan=O/F pin=O/F group=O/F arm=O/F text=O/F alt=E path=P
+
+each column the OLD path's value (read off the old fields: the scanned term
+`plan_hint`/`plan_pos`, the tested terms' offsets; a FUNC frame is the
+offset-skip block, so `reseed` 1) then the FAMILY's (mf_wdecide's reply):
+`stop` -999 for none; `plan` and `group` comma lists in ascending offset
+order (`-` empty; group ids are each side's own, compared canonically);
+`arm` and `text` each side's row and normalized text hash
+(`mf_form_hash_text`), both rendered on a scratch art (prefix
+`mf_wshadow`, never shadowed itself); `alt` the chosen alternative's entry;
+`path` the family's path id. `memfn/tests/wshadow.py` counts mismatches by
+column over the corpus. A shared MODEL: a localizer, never acceptance.
+
 `grep 'MFTRACE END' | grep 'would_decline=1'` is the would-decline census:
 selections the gate changed, plus refused uses. `chosen=-` lines are the
 define/run refusals; `chosen=none` lines are not (an optional slot that

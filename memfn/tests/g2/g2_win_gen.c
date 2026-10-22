@@ -357,6 +357,39 @@ static void gen_facts(int fam, gfacts *x)
                 x->wfloor = G2W_F_SUBJECT;
 }
 
+/* 1 iff span `g` has the run R's shape: two or more positions, each one
+ * member or a one-bit cube (G2's own reading, written from the F-8 ruling). */
+static int g_run_shaped(const gspan *g)
+{
+    if (g->len < 2) return 0;
+    for (int j = 0; j < g->len; j++) {
+        int m[3], k = 0;
+        for (int b = 0; b < 256 && k < 3; b++)
+            if (g->set[j][b >> 3] >> (b & 7) & 1) m[k++] = b;
+        if (!(k == 1 || (k == 2 && __builtin_popcount((unsigned)(m[0] ^ m[1])) == 1))) return 0;
+    }
+    return 1;
+}
+
+/* The run R is identified by its SHAPE and is UNIQUE per alternative (the
+ * kit manager's F-8 ruling): 1 iff some alternative of `x` states two such
+ * spans. fix: give every such span after an alternative's first a
+ * three-member position 0, so the statement states one R. */
+static int two_runs(gfacts *x, int fix)
+{
+    int any = 0;
+    for (int ai = 0; ai < x->nalt; ai++) {
+        int n = 0;
+        for (int i = 0; i < x->alt[ai].nspan; i++) {
+            gspan *g = &x->alt[ai].span[i];
+            if (!g_run_shaped(g)) continue;
+            if (n++ && fix) { set_add(g->set[0], 'b'); set_add(g->set[0], 'c'); set_add(g->set[0], 'x'); }
+        }
+        if (n > 1) any = 1;
+    }
+    return any;
+}
+
 /* ---- G2's facts as the kit's statement ------------------------------------------ */
 
 static void to_kit(const gfacts *x, mf_site *s, mf_walt *alts, mf_wspan (*spans)[G2W_MAXSPAN])
@@ -424,7 +457,7 @@ static const char *h_table_name(void *u, uint32_t ref)
 
 /* ---- main ------------------------------------------------------------------------ */
 
-static long fails, refused_ok, rendered, asked_ok;
+static long fails, refused_ok, rendered, asked_ok, two_run_refused;
 
 static void fail(int id, const char *what, const char *detail)
 {
@@ -489,6 +522,24 @@ int main(int argc, char **argv)
         gfacts gf;
         gen_facts(fam, &gf);
         famn[fam]++;
+        /* TWO SPANS OF R'S SHAPE in one alternative are REFUSED (F-8 ruling;
+           wf_check): count it on a preview art, then state one R */
+        if (two_runs(&gf, 0)) {
+            mf_site t;
+            memset(&t, 0, sizeof t);
+            mf_walt talts[2];
+            static mf_wspan tspans[2][G2W_MAXSPAN];
+            to_kit(&gf, &t, talts, tspans);
+            t.abi = MF_SITE_ABI;
+            t.op = MF_OP_FIND;
+            mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+            mf_preview(ar, "window-family");
+            mf_wreply tr;
+            if (!mf_wdecide(ar, &t, &tr))
+                fail(id, "two runs", "an alternative stating two spans of R's shape was decided");
+            else { refused_ok++; two_run_refused++; }
+            two_runs(&gf, 1);
+        }
         /* every offer its own id within the site (one table per id) */
         for (int ai = 0, k = 0; ai < gf.nalt; ai++)
             for (int i = 0; i < gf.alt[ai].nspan; i++)
@@ -773,8 +824,8 @@ int main(int argc, char **argv)
     printf("g2_win_gen: %ld sites rendered of %d; families:", rendered, nsites);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
-           "queries agreeing %ld\n", frames[0], frames[1], frames[2], frames[3], refused_ok,
-           asked_ok);
+           "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
+           frames[3], refused_ok, asked_ok, two_run_refused);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }
