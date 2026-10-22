@@ -7,7 +7,7 @@ R=$(mktemp -d) || exit 1
 trap 'rm -rf "$R"' EXIT
 R=$R/; export NO_STALE_ROOT=$R
 mkdir -p "$R/big/sub" "$R/small/sub" || exit 1
-head -c 30000 /dev/zero | tr '\0' x > "$R/big/CLAUDE.md"
+head -c 40000 /dev/zero | tr '\0' x > "$R/big/CLAUDE.md"
 head -c 100 /dev/zero | tr '\0' x > "$R/small/CLAUDE.md"
 fail=0
 t() { # name want json

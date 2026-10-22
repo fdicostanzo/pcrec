@@ -9,13 +9,13 @@
 # BLOCKED: tool_input.file_path (or notebook_path) lies under
 #   /home/pcrec/projects/pcrec/worktrees/<name>/ and any CLAUDE.md in a
 #   directory from <name>/ down to the file's directory (inclusive) is
-#   larger than 24 KB (24576 bytes). Use Bash (sed -n / grep / cat > heredoc).
+#   larger than 32 KB (32768 bytes; main's largest live CLAUDE.md is src/parse at ~25 KB, the smallest stale one ~49 KB). Use Bash (sed -n / grep / cat > heredoc).
 # ALLOWED: every other path, including main-tree files. The hook also
 #   protects subagents (shared project settings).
 # Fails OPEN on anything it cannot parse (no path, odd JSON, stat failure):
 # a hook bug must never lock the tool. Bash + one awk, no jq (~3 ms).
 # NO_STALE_ROOT overrides the worktrees/ root (the test uses it).
-LIMIT=24576
+LIMIT=32768
 ROOT=${NO_STALE_ROOT:-/home/pcrec/projects/pcrec/worktrees/}
 f=$(awk '
 BEGIN { DQ = "\""; BS = "\\" }
