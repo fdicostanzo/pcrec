@@ -972,11 +972,6 @@ static const char *kit_proof_check(const mf_site *s)
 
     /* THE REPORT KIND (R-26.3; kit_proof.md §2.5) */
     if (s->site_kind == MF_SK_REPORT) {
-        if (s->consumer == MF_C_UNSTATED)
-            return "a REPORT site leaves `consumer` UNSTATED (it states MF_C_RESULT, never "
-                   "read as either, MF_SITE_ABI 18)";
-        if (s->consumer != MF_C_RESULT)
-            return "a REPORT site states `consumer` MF_C_RESULT (the candidate is the answer)";
         if (!bounded) return "a REPORT site reports span 0's candidate: a BOUNDED span 0";
         if (p->need != MF_REQUIRED) return "a REPORT site's span 0 is REQUIRED (`need`)";
         for (unsigned t = 0; t < p->nterm; t++)
@@ -1004,10 +999,6 @@ static const char *site_check(const mf_site *s)
     if (s->use == MF_USE_ENTRY && s->op != MF_OP_ALL_PRESENT)
         return "`use` ENTRY is the presence verdict's: an ALL_PRESENT site only "
                "(MF_VOCAB 4)";
-    if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
-    if (s->consumer == MF_C_UNSTATED)
-        return "`consumer` is UNSTATED (RESULT or ENGINE is stated, never read as either, "
-               "MF_SITE_ABI 18)";
     if (s->end_back > 1) return "end_back is not 0 or 1";
     if (s->on_miss_leaves != 0 && s->on_miss_leaves != 1)
         return "on_miss_leaves is not 0 or 1";

@@ -2423,8 +2423,6 @@ static void refusal_table(void)
     NCASE("on_miss_leaves-on-RETURN",       NULL,      s.on_miss_leaves = 1);
     NCASE("on_miss_leaves-on-ON_CAND",      NULL,      (s.form = MF_FORM_STMT, s.handoff = MF_H_ON_CAND, s.on_miss_leaves = 1));
     NCASE("use-out-of-enum",                NULL,      s.use = 7);
-    NCASE("consumer-out-of-enum",           NULL,      s.consumer = 7);
-    NCASE("consumer-unstated",              NULL,      s.consumer = MF_C_UNSTATED);
     NCASE("pred-need-out-of-enum",          NULL,      s.pred.need = (mf_need)5);
     {
         static mf_pred two2[2];

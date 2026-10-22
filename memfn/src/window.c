@@ -1509,6 +1509,7 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
         mf_pred *q = &np[i];
         q->nterm = leg->pred.nterm;
         memcpy(q->term, leg->pred.term, sizeof q->term);
+        q->need = leg->pred.need;
         q->plan_hint = leg->pred.plan_hint;
         q->plan_pos = leg->pred.plan_pos;
         q->rank_n = leg->pred.rank_n;

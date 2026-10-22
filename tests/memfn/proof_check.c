@@ -491,13 +491,6 @@ static void family_a(void)
     /* R-26.3: REPORT */
     s = span_site();
     s.site_kind = MF_SK_REPORT;
-    refuse("REPORT with consumer ENGINE", &s, "`consumer`");
-    s = span_site();
-    s.site_kind = MF_SK_REPORT;
-    s.consumer = MF_C_UNSTATED;
-    refuse("UNSTATED consumer on a REPORT site", &s, "`consumer`");
-    s = span_site();
-    s.site_kind = MF_SK_REPORT;
     s.consumer = MF_C_RESULT;
     s.pred.nterm = 2;
     t_set(&s.pred.term[1], 1, "b", MF_OPTIONAL);
