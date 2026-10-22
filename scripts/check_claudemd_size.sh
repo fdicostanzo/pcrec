@@ -19,6 +19,8 @@ set -u
 limit_for() {
     case $1 in
         CLAUDE.md) echo 20480 ;;   # repo root: the working agreement, not a directory guide
+        docs/CLAUDE.md|docs/dev/CLAUDE.md|docs/dev/lanes/CLAUDE.md|scripts/CLAUDE.md)
+                   echo 4096 ;;    # hot path: every manager/lane session loads these (Frank, 2026-10-22)
         *)         echo 12288 ;;   # every directory guide
     esac
 }
