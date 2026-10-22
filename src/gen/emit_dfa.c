@@ -2390,6 +2390,7 @@ static void emit_rx_abi_types(StrBuf *sb)
     pcrec_sb_puts(sb,
         "struct rx_iter;\n"
         "typedef int (*rx_nextfn)(struct rx_iter *it, ptrdiff_t (*caps)[2]);\n"
+        "typedef size_t (*rx_nextnfn)(struct rx_iter *it, ptrdiff_t (*caps)[2], size_t k);\n"
         "\n"
         );
     pcrec_sb_scaffold_close(sb);
@@ -2636,6 +2637,8 @@ static void emit_rx_abi_types(StrBuf *sb)
     pcrec_sb_puts(sb,
         "    /* <prefix>_next, the find-all iterator; NULL where not exported */\n"
         "    rx_nextfn             next;\n"
+        "    /* <prefix>_next_n, up to k matches per call; NULL exactly where next is */\n"
+        "    rx_nextnfn            next_n;\n"
         );
     pcrec_sb_scaffold_close(sb);
     pcrec_sb_puts(sb,
@@ -3482,9 +3485,10 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * how a holder of the record reaches it). */
     pcrec_sb_scaffold_open(c);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
-        pcrec_sb_printf(c, "    .next = %s_next,\n", cx->opt->prefix);
+        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = %s_next_n,\n",
+                        cx->opt->prefix, cx->opt->prefix);
     else
-        pcrec_sb_puts(c, "    .next = NULL,\n");
+        pcrec_sb_puts(c, "    .next = NULL,\n    .next_n = NULL,\n");
     pcrec_sb_scaffold_close(c);
     pcrec_sb_puts(c,   "};\n");
 }
@@ -3576,7 +3580,7 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
     ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
-    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p));
+    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, pcrec_entry_storage(cx, PCREC_ENTRY_NEXT)));
 #undef ENTRY_DECL
 }
 

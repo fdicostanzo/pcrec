@@ -104,10 +104,14 @@ void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix)
     pcrec_sb_scaffold_close(sb);
 }
 
-void pcrec_emit_next_decl(StrBuf *sb, const char *prefix)
+/* The two controllers' declarations; the caller writes the first line's
+ * storage, `storage` is the second's (the NEXT entry's, for both). */
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage)
 {
     pcrec_sb_scaffold_open(sb);
     pcrec_sb_printf(sb, "int %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2]);\n", prefix);
+    pcrec_sb_printf(sb, "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k);\n",
+                    storage, prefix);
     pcrec_sb_scaffold_close(sb);
 }
 
@@ -297,24 +301,17 @@ static void emit_step_own(StrBuf *c, const char *p, const char *up,
         "}\n\n", p, p, p, p, up, up, p);
 }
 
-void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
-                        const PcrecIterText *t)
+/* `<p>__one`, ONE search of the iterator (findall_iter_i2.md §2.3): I1's
+ * `<prefix>_next` body under a static always_inline name -- bind a non-BOUND
+ * header, one STEP (the caller's storage or the artifact's own on the VM),
+ * and on the end path ENDED with `rc` and `lo`. Both controllers inline it,
+ * so `_next` IS this body and `_next_n` is a loop of it. */
+static void emit_one(StrBuf *c, const char *p, const char *up,
+                     const PcrecIterText *t)
 {
-    const char *p = cx->opt->prefix;
-    pcrec_sb_scaffold_open(c);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "/* [FINDALL-NEXT] THE FIND-ALL ITERATOR (pcrec docs/spec/match_api.md\n"
-        " * S3.8): bind once, then one search per call, advancing as PCRE2's\n"
-        " * global iteration does. */\n");
-    pcrec_sb_cmt_close(c);
-    bool checks = emit_bind_checks(cx, c, p);
-    emit_enter(c, p, checks);
-    emit_step(cx, c, p, t);
-    if (t->vm) emit_step_own(c, p, g->upper, t);
-    pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
-        "%sint %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2])\n"
+        "static inline __attribute__((always_inline)) int %s__one(rx_iter *it,\n"
+        "                                                      ptrdiff_t (*capture_spans)[2])\n"
         "{\n"
         "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
         "    ptrdiff_t (*c)[2] = capture_spans ? capture_spans : local;\n"
@@ -322,7 +319,7 @@ void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
         "    int r;\n"
         "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
         "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n",
-        pcrec_entry_storage(cx, PCREC_ENTRY_NEXT), p, g->upper, p);
+        p, up, p);
     if (t->vm)
         pcrec_sb_printf(c,
             "    if (it->bufs) {                                    /* the caller's storage */\n"
@@ -341,5 +338,50 @@ void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
         "    it->hdr = PCREC_ITER_ENDED;                        /* sticky */\n"
         "    return 0;\n"
         "}\n\n");
+}
+
+/* The two exported controllers over `<p>__one`, both with the NEXT entry's
+ * linkage (no entry of their own: `.next_n` is NULL exactly where `.next`
+ * is): `<prefix>_next`, one search; `<prefix>_next_n`, up to `k` searches
+ * into consecutive NCAPS-pair entries, stopping at the first that ends the
+ * iterator. `k == 0` runs nothing, in every state. */
+static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up)
+{
+    const char *st = pcrec_entry_storage(cx, PCREC_ENTRY_NEXT);
+    pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
+    pcrec_sb_printf(c,
+        "%sint %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2])\n"
+        "{\n"
+        "    return %s__one(it, capture_spans);\n"
+        "}\n\n", st, p, p);
+    pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
+    pcrec_sb_printf(c,
+        "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k)\n"
+        "{\n"
+        "    size_t i = 0;\n"
+        "    while (i < k && %s__one(it, capture_spans ? capture_spans + i * %s_NCAPS\n"
+        "                                              : (ptrdiff_t (*)[2])0))\n"
+        "        ++i;\n"
+        "    return i;\n"
+        "}\n\n", st, p, p, up);
+}
+
+void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
+                        const PcrecIterText *t)
+{
+    const char *p = cx->opt->prefix;
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* [FINDALL-NEXT] THE FIND-ALL ITERATOR (pcrec docs/spec/match_api.md\n"
+        " * S3.8): bind once, then one search per call, advancing as PCRE2's\n"
+        " * global iteration does. */\n");
+    pcrec_sb_cmt_close(c);
+    bool checks = emit_bind_checks(cx, c, p);
+    emit_enter(c, p, checks);
+    emit_step(cx, c, p, t);
+    if (t->vm) emit_step_own(c, p, g->upper, t);
+    emit_one(c, p, g->upper, t);
+    emit_controllers(cx, c, p, g->upper);
     pcrec_sb_scaffold_close(c);
 }

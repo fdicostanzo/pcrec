@@ -8045,7 +8045,7 @@ void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c);
  * `iterate`'s one emitter (the bind, the step, `<prefix>_next`). */
 void pcrec_emit_iter_abi_types(StrBuf *sb);
 void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix);
-void pcrec_emit_next_decl(StrBuf *sb, const char *prefix);
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage);
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
                         const PcrecIterText *t);
 
