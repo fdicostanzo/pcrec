@@ -19,11 +19,11 @@
 #include "parse_mods.h"
 
 /* Builds this module's refusal ExtResult carrying `msg` at `at`. */
-static ExtResult ucp_refuse(ExtWant want, size_t at, const char *msg)
+static ExtResult ucp_refuse(Ctx *cx, ExtWant want, size_t at, const char *msg)
 {
-    ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",
+    ExtResult res = { .what = EXT_REFUSAL, .at = at,
+                      .msg = pcrec_ext_msgf(cx, "%s", msg),
                       .answered_at = want };
-    snprintf(res.msg, sizeof res.msg, "%s", msg);
     return res;
 }
 
@@ -49,7 +49,7 @@ ExtResult pcrec_ucpport_utf(Ctx *cx, const RegRow *rw, ExtWant want,
                             size_t at, size_t from)
 {
     if (pcrec_enc_by_id(cx->opt->encoding)->max_cp < 0x10FFFFu)
-        return ucp_refuse(want, at, rw->msg);
+        return ucp_refuse(cx, want, at, rw->msg);
     return ucp_option_node(cx, want, at, from);
 }
 

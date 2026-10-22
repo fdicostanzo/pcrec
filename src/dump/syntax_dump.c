@@ -1228,8 +1228,8 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
     if (r.what == EXT_REFUSAL) pcrec_sb_puts(&sb, r.msg);
     pcrec_sb_putc(&sb, '\n');
     /* A PRODUCING port allocates its node from this arena and nothing below
-     * reads it (`sb` holds only the rendered TSV, and `r.msg` is an inline
-     * array). `--explain` has freed its arena since MOD-0.7; this call site
+     * reads it (`sb` holds only the rendered TSV; `r.msg`, which may live in
+     * this arena, was copied into it above). `--explain` has freed its arena since MOD-0.7; this call site
      * was the one that did not, which R20's critic noted while reading the
      * crash — the guard above makes the omission a leak on two paths instead
      * of one, so both are closed here. */

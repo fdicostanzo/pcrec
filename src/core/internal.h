@@ -4365,9 +4365,15 @@ typedef struct RegRow RegRow;
 typedef struct {
     ExtWhat what;
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
-    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
-                           pcrec_error.msg, so deferring the format cannot
-                           truncate differently than pcrec_ctx_fail did */
+    /* EXT_REFUSAL: the exact text — a string constant, or formatted into the
+     * compile's arena by `pcrec_ext_msgf`; never NULL on a refusal, and read
+     * on no other outcome. A POINTER and not the `char msg[256]` it was,
+     * because ExtResults sit in every frame of the parser's group recursion:
+     * the inline array made a lookaround nest cost 2,480 bytes per level, the
+     * pointer 736 ([DD-10] lane dd10b; limits.md §3.10). The 256-byte cut
+     * the array implied is kept by `pcrec_ext_msgf`, so a deferred format
+     * still truncates exactly as pcrec_ctx_fail does. */
+    const char *msg;
 
     /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
      * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
@@ -5858,14 +5864,20 @@ const PosixName *pcrec_registry_posix_names(size_t *n);
  * predate a compile-scoped mask, see enabled.c's own header). */
 ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want);
 
+/* A refusal's text, formatted at claim time into `cx`'s arena and cut at
+ * `pcrec_error.msg`'s size, so it truncates exactly where pcrec_ctx_fail's own
+ * format would. Every formatted `ExtResult.msg` comes from here (REFUSE and
+ * the hand-built refusals alike); a constant text is assigned as is. */
+const char *pcrec_ext_msgf(Ctx *cx, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+
 /* Format a refusal at claim time and return it — relies on the enclosing
- * doorway naming its gated ask level `want`, exactly as ext.c's comment on
- * REFUSE's original site documents. Needs <stdio.h> in the includer for
- * snprintf; every TU that invokes it already carries that include. */
+ * doorway naming its gated ask level `want` and its context `cx`, exactly as
+ * ext.c's comment on REFUSE's original site documents. */
 #define REFUSE(atpos, ...) do {                                              \
-        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos),               \
+                           .msg = pcrec_ext_msgf(cx, __VA_ARGS__),           \
                            .answered_at = want };                            \
-        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
 /* [L3-F5] the base grammar and seven parenthesized-construct doorways/modules

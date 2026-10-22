@@ -47,6 +47,7 @@
  * value-returning doorway is now an ordinary -Wreturn-type warning that
  * `make strict` promotes. */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -97,6 +98,21 @@ ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want)
  * A decline is a CLAIM-level answer — "not mine" costs nothing to say. */
 #define DECLINE() return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "", \
                                       .answered_at = WANT_CLAIM }
+
+/* [DD-10] dd10b: the refusal text leaves the ExtResult for the arena, so the
+ * parser's per-group frames stop carrying 256 bytes each (internal.h's
+ * `ExtResult.msg`). Cut at `pcrec_error.msg`'s size, so the text a probe
+ * channel prints is the text pcrec_ctx_fail would have reported. */
+const char *pcrec_ext_msgf(Ctx *cx, const char *fmt, ...)
+{
+    const size_t n = sizeof ((pcrec_error *)0)->msg;
+    char *m = pcrec_arena_alloc(&cx->arena, n);
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(m, n, fmt, ap);
+    va_end(ap);
+    return m;
+}
 
 /* The ONE epilogue (D33 §5/§8): a refusal fires here, and only here. A caller
  * that must override a claim — the endpoint rule, D33 §6 — looks at the
@@ -318,10 +334,12 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
             const RegDef *def = pcrec_def_resolve(cx, r);
             if (def && def->kind == DEFK_SET) {
                 char cons[3] = { '\\', (char)c, 0 };
+                char err[sizeof ((pcrec_error *)0)->msg];
                 res.node = pcrec_setdef_class(cx, def->set, p->scalar != 0,
-                                              cons, res.msg, sizeof res.msg);
+                                              cons, err, sizeof err);
                 if (!res.node) {
                     res.what = EXT_REFUSAL;
+                    res.msg = pcrec_ext_msgf(cx, "%s", err);
                     return res;
                 }
             } else {
@@ -360,11 +378,11 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
          * PCRE2's "invalid range in character class". The message changes;
          * what the caller knows about the construct must not. */
         if (want == WANT_RESULT)
-            snprintf(res.msg, sizeof res.msg,
+            res.msg = pcrec_ext_msgf(cx,
                      "module '%s' " PCREC_UNBUILT_MARKER " \\%c in a class "
                      "is not implemented yet", r->module, c);
         else
-            snprintf(res.msg, sizeof res.msg,
+            res.msg = pcrec_ext_msgf(cx,
                      "\\%c in a class requires module '%s'", c, r->module);
         return res;
     }
@@ -736,7 +754,7 @@ static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
         res.ep_set_certain = r->class_expect &&
                              strncmp(r->class_expect, "set ", 4) == 0;
         res.end = close_at + 2;
-        snprintf(res.msg, sizeof res.msg, "%s", r->msg);
+        res.msg = pcrec_ext_msgf(cx, "%s", r->msg);
         return res;
     }
 }

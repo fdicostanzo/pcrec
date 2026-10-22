@@ -1168,10 +1168,10 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
         p++; ndig++;
     }
     if (val > 0xff) {
-        ExtResult err = { .what = EXT_REFUSAL, .at = p, .msg = "",
+        ExtResult err = { .what = EXT_REFUSAL, .at = p,
+                          .msg = "octal value is greater than \\377 in 8-bit "
+                                 "non-UTF-8 mode",
                           .answered_at = want };
-        snprintf(err.msg, sizeof err.msg,
-                 "octal value is greater than \\377 in 8-bit non-UTF-8 mode");
         return err;
     }
     res.scalar = val;
