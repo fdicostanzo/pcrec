@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# 581-kit-r27-follow: lane r27b (MEASUREMENT ONLY): the 580 job's follow-up. The 650 harness's 8 cells x 3
+# regimes x 3 classes over DEF COV AA PRO PRO2 SHF HRS (+ PRR on year4/hex8-bounded, + PRF on lit-l8/
+# foobar/file-ext-order), 5 launches, one pinned core, BEHIND a no-clock differential stage that aborts
+# the job if red. Reading rule and stages: measure_581.sh / read_581.py headers.
+# Queue it with:  scripts/boxqueue add --name 581-kit-r27-follow FILE
+# Everything it writes is under $OUT (the r27b worktree's build/r27b/job, gitignored).
+#   --dry-run  measure_581.sh smoke on TWO cells (build + differential + gates): NO clock
+#   --ready    580's quiet gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no
+#              box-lock holder
+#   (work)     exec measure_581.sh run
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/r27b
+E=$W/docs/dev/lanes/r27b_evidence
+OUT=$W/build/r27b/job
+MAIN=/home/pcrec/projects/pcrec
+export TMPDIR=$W/build/tmp
+export MEASURE_CPU=7 MEASURE_SIBLING=15
+export PCREC=$W/build/r27b/bin/pcrec HARNESS=$W/build/r27b/bin/pcrec-harness
+L=5 T=20000000 N=9
+case "${1:-}" in
+    --dry-run)
+        mkdir -p "$TMPDIR" "$OUT" || exit 1
+        [ -x "$PCREC" ] && [ -x "$HARNESS" ] || { echo "$PCREC / $HARNESS missing (the 580 compilers, copied into build/r27b/bin)" >&2; exit 1; }
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' \
+            "$E/read_581.py" "$E/proto_bodies_581.py" "$E/diff_581.py" "$E/pop_581.py" || exit 1
+        SMOKE_CELLS="lit-l8 hex8-bounded" bash "$E/measure_581.sh" smoke "$OUT" > "$OUT/dry.out" 2>&1 ||
+            { tail -8 "$OUT/dry.out" >&2; exit 1; }
+        tail -3 "$OUT/dry.out" | sed 's/^/dry: /'
+        echo "would run: measure_581.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF COV AA PRO PRO2 SHF HRS PRR PRF"
+        echo "boxqueue: cap 3000"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect done=1 lines=^== r27b COMPLETE"
+        exit 0 ;;
+    --ready)
+        mkdir -p "$OUT" || exit 1
+        st=$OUT/ready.state
+        now=$(date +%s)
+        if ls "$MAIN"/worktrees/.boxqueue/running/* > /dev/null 2>&1; then rm -f "$st"; echo "a queue job is running"; exit 75; fi
+        h=$("$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case "$h" in HELD*) rm -f "$st"; echo "box lock $h"; exit 75 ;; esac
+        l=$(cut -d' ' -f1 /proc/loadavg)
+        if ! awk -v l="$l" 'BEGIN { exit !(l < 2.0) }'; then rm -f "$st"; echo "load1 $l >= 2.0"; exit 75; fi
+        first=$(cat "$st" 2>/dev/null || echo 0)
+        if [ "$first" -gt 0 ] && [ $((now - first)) -le 600 ]; then
+            [ $((now - first)) -ge 55 ] && exit 0
+            echo "second quiet sample due in $((55 - now + first)) s (load1 $l)"; exit 75
+        fi
+        echo "$now" > "$st"
+        echo "first quiet sample taken (load1 $l); the second is due in 55 s"; exit 75 ;;
+esac
+rm -f "$OUT/ready.state"
+exec bash "$E/measure_581.sh" run "$OUT" "$L" "$T" "$N"
