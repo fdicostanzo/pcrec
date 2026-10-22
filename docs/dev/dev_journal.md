@@ -27217,3 +27217,7 @@ J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about
 - Writing a file into an old worktree's docs/dev/lanes/ re-injected the old (pre-de-bulk) CLAUDE.md files. Write rulings with Bash heredocs.
 
 **Next:** see wake.md.
+
+## 2026-10-22 — landlang: lane/langfix2 landed on main
+
+Merged lane/langfix2 (speclang, langfix, langfix2, langfix3, lf3tri: docs/spec/pattern_language.md, syntax_index_check.py, K115-K118, K122-K127) as 19be546b1. The only conflict was the lanes history index (docs/dev/history/claude_md/docs__dev__lanes.md), resolved by keeping both sides. Branch validation was green before the merge (707-lf3tri-test full make test, 699-langfix3-mech, 708-langfix3-k124diff zero unattributed movers); on main only the light checks ran: make, make strict, test-plan-lint, test-spec-history, test-registry, all clean. [SPEC-LANG] moved to plan_completed.md (refs corrected to pattern_language.md); four candidate rows filed (LOWERENC-SEAL, LANG-DIAG-WORDING, LANG-K118-LETTER-MODULE, LANG-F8-F9); the stale compliance row on whitespace inside braces corrected through the annotation store. [M3.0] is streaming and not closed by this lane.

@@ -288,7 +288,7 @@ S210 pins the structural-byte guard (`(a\Qb)c\E)`).
 
 | syntax | status | becomes |
 |---|---|---|
-| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — |
+| whitespace inside `{ }` in `\g{ 2 }`, `\k{ n }`, `\p{ L }`, `\x{ 41 }` | `OK` | — |
 | `\u{...}` (ALT_BSUX) | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: braced-items -->
@@ -298,13 +298,14 @@ S210 pins the structural-byte guard (`(a\Qb)c\E)`).
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`base:braced-whitespace-scope`**
+**`base:braced-whitespace-scope`** (2026-10-22)
 
-Reached only via constructs that are themselves rejected. **This row's
-scope was too narrow and its dismissal was wrong for the case that
-mattered** (R7): the REPEAT quantifier is base-tier and very much reached,
-and pcrec silently compiled `a{ 1}` as literal text until K8. See the
-Quantifiers section.
+Spaces and tabs (never a newline) around the contents of a braced item are
+accepted for `\g{ 1 }`, `\k{ n }`, `\p{ L }` and, since K117, `\x{ 41 }`,
+as libpcre2 10.46 does (tests/base/xbrace_space.rxt). The earlier verdict
+that this was REJECTED was wrong for the quantifier (K8, see the
+Quantifiers section) and is stale for the escapes. `\o{ 101 }` and
+`\N{ U+41 }` accept padding in PCRE2 but are not built in pcrec.
 
 **`base:alt-bsux-u-brace`**
 

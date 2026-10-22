@@ -221,6 +221,30 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   (2) STREAMING, with the AOT-specific win: a streaming replace needs a HOLDBACK buffer for a partial match at the chunk boundary, and pcrec knows the pattern's maximum width AT COMPILE TIME (cwmax/maxw, already load-bearing for lookbehind) — so a bounded-width pattern's artifact STAMPS ITS OWN REQUIRED HOLDBACK CAPACITY (caller supplies a fixed buffer of stamped size, zero allocation; the [DD-14.FB] BufSurface precedent for caller-provided capacity), and an unbounded-width pattern REFUSES streaming mode honestly by name. No runtime engine can promise a compile-time holdback bound; it falls out of the architecture. Positioning note: this is a completeness-category differentiator (memory pcrec-post-spine-direction, 09-06) — subst is where full PCRE semantics + AOT beats both the subset engines (no captures/templates) and pcre2 (runtime template interpretation)
 
 ## Candidates ([OPTLOOP])
+- [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; the K127 fix made the seal redundant (langfix3_report.md)
+  next: rides the next abi event (retirement is an abi bump plus identity re-pin, D76/D94)
+  refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
+  The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
+- [LANG-DIAG-WORDING] STATE:not-started — refusal wording and blame offsets from the language fixes (D26 tier)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; collected from the langfix reports, all diagnostic position or wording, none a match answer
+  next: file-only; fix when a diagnostic row is touched anyway (D26: probably the wrong tier to spend effort on)
+  refs: docs/dev/lanes/langfix3_report.md; docs/dev/lanes/langfix2_report.md; decisions D26
+  `\p{Xyz}` refusal wording (with K118's tier); the pre-existing `\x{ }` blame offsets; the K127 blame offset on multi-lookbehind cycles.
+- [LANG-K118-LETTER-MODULE] STATE:not-started — per-letter module column on the option-letter rows (K118, (?J) ownership)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; needs a --list-syntax schema change, so a manager and owner call
+  next: rides [IFACE-PUSH] (the one interface push); not before
+  refs: docs/dev/lanes/langfix_report.md; [IFACE-PUSH]
+  The column would be read by the letter gate in mod_modifiers.c instead of hard-coded FEAT_BACKREFS/FEAT_ASSERTIONS, shown by --list-syntax, and compared by an open-gate --explain clause.
+- [LANG-F8-F9] STATE:not-started — unknown \p name refusal shape (F8) and \p{ ^Greek} caret after space (F9)
+  filed: 2026-10-22 lane landlang
+  status (2026-10-22): not started; langfix2 F8/F9 as the report states them
+  next: a uprops row; start on the manager's word
+  refs: docs/dev/lanes/langfix2_report.md; docs/spec/pattern_language.md §2.4
+  F8: pcrec answers shape 2 (enabled but not implemented) where libpcre2 answers a grammar error (shape 7) for \p{Foo}, \p{InGreek}, \p{gc=L}, \p{Hrkt}, \c at end, [\c], \N{U+41} under byte; telling unknown from unbuilt needs a name census against 10.46. F9: \p{ ^Greek} / \p{ ^L} are refused where libpcre2 accepts them; the fix is in the pinned uprops scanner.
 - [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model
   filed: 2026-09-27 filer not recorded
   status (2026-10-12): step 1 was DESIGNED 2026-10-03 and NOT built (docs/design/sel_cost.md, selcostdes_report.md): no bucket clears D119 as a compile-time selection term because the material losses flip sign by subject or regime; the live part is the ADMISSION RULE and its trigger…
@@ -647,14 +671,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts on Frank's word; no row-specific trigger recorded
   refs: docs/dev/lanes/parkmeas_report.md; decisions D137
   why the whole-suite saving is ~9.5% against the prototype's 4.28x/18.65x isolated ratios (tt4m_time.md attributes it STRUCTURALLY to 3 of the then-38 sections reaching run.sh — that is a claim, not a measurement; no per-section timestamps survive in either log, tt4m_time.md s.206). METHOD needs no src/ edit: run each `TEST_SECTIONS` target as its own serial `make <section>` under wall/CPU/RSS capture, both arms back to back on ubuntubudu (executor, `gnutimeout`, quiet box, bench handshake first). DECIDES: whether the saving is exactly the reached sections' deltas (flip HARNESS_BATCH — the ceiling is unreached-section cost) or a reached section's ratio is far below 4.28x (the win is eaten inside it; report names where); either way names the dominant unreached sections. Exact command block + result criteria: docs/dev/lanes/parkmeas_report.md A8.
-- [SPEC-LANG] STATE:not-started — the missing spec: pcrec's own definition of the regex language it supports
-  filed: 2026-10-09 Frank
-  status (2026-10-09): not started; FILED 2026-10-09 by Frank, session 102, from reading docs/spec/match_api.md; FOR EVALUATION, unscheduled
-  next: starts on Frank's word; no row-specific trigger recorded
-  refs: docs/spec/match_api.md; docs/spec/syntax.md; docs/pcre2_compliance.md; scripts/mk_d27_cell.sh; decisions D26 D27
-  `docs/spec/syntax.md` (name provisional): every accepted construct, its meaning (match semantics, captures, priority), its module gate and refusal, per encoding and option, stated as pcrec's contract rather than as a delta to PCRE2. TODAY the nearest things are comparisons or indexes, not a definition: docs/pcre2_compliance.md (a construct-by-construct survey AGAINST PCRE2, declared spec-tier in place at [SPEC-1.9]), registry.md / `--list-syntax` (a generated construct index), the per-module design notes. The new doc is what those then COMPARE AGAINST (the compliance page becomes the delta; the registry index its generated cross-check).
-  VALIDATION (Frank): an adversarial lane given ONLY the tool (build/pcrec + emitted artifacts) and THE DOC — no src/ or tests/ (D27 cell shape: scripts/mk_d27_cell.sh with an allowlist of the doc + binary) — with "a penchant for mischief": its job is to make the doc and the tool disagree (constructs the doc omits, sentences the binary contradicts, edge cases at module gates/encodings/options), each disagreement a doc fix or a filed defect; libpcre2 available as a reference oracle where the doc claims PCRE2 equivalence.
-  EVAL QUESTIONS: generated vs hand-written halves (DOC-DRV's three-component model is the precedent: generated facts + independent prose + keyed annotations); grammar form (EBNF vs table-per-construct); D26 tiering (exact for what MATCHES and which module owns a construct, loose for diagnostic wording); how it stays true (a check that every `--list-syntax` row has a doc entry and vice versa). Cost M-L.
 - [RXT-ONE-READER] STATE:not-started — ONE .rxt PARSER
   filed: 2026-10-10 Frank
   status (2026-10-10): not started; FILED 2026-10-10 by Frank, session 105: "it should be unified. but we have to focus" — UNSCHEDULED, admin column
