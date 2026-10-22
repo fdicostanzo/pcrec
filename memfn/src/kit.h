@@ -796,6 +796,14 @@ void wf_floor_class(const struct wf_plan *plan, mf_class *out);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
 extern const arm wf_floor_arm;
+#ifdef MF_TRACE
+/* D172 S2 commit 3 THE TRACE SHADOW (window.c): under the lever MF_WSHADOW,
+ * window site `s` defined as handle `h` on a non-preview art, the family's
+ * decision and text beside the old path's, one MFTRACE WSHADOW record. */
+#define wf_shadow MF_NS(wf_shadow)
+void wf_shadow(const mf_art *art, const mf_site *s, const mf_hooks *def, unsigned gphases,
+               uint32_t h);
+#endif
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 
