@@ -43,6 +43,15 @@
 #     those six;
 #   - the population is counted and floored at 1 (K35).
 #
+# R-28 -- no kit function has a C stack frame over 4 KB (-O2
+#   -fstack-usage over every memfn/src file). The kit runs inside
+#   pcrec_compile, which a caller may run on a small thread; two 36 KB frames
+#   (pcrec_mf_form_hash, pcrec_mf_set_terms) were the compiler's whole stack
+#   floor. Controls: a PROBE source with a 5 KB-frame function must be flagged
+#   by the same extraction, and the population (functions measured) is
+#   floored (K35). Frame sizes are gcc's and move with the compiler and -O
+#   level, so the limit has headroom (the kit's largest is 3,600 B).
+#
 # What neither sees: C15 reads one archive, build/libpcrec.a (LIB=
 # overrides), not a shared library or a sanitizer tree's copy; C16 reads
 # headers by line shape, so an SPDX id spelled inside a comment's prose on
@@ -213,6 +222,43 @@ if [ -z "$out" ]; then
 else
     bad "[C16] kit provenance defects:"
     printf '%s\n' "$out" | sed 's/^/    /'
+fi
+
+echo
+echo "== R-28: no kit stack frame over 4 KB =="
+FRAME_LIMIT=4096
+FRAME_FLOOR=100
+# Prints "bytes function" for every function of the sources $1.. compiled
+# -O2 -fstack-usage into a fresh $WORKDIR/su.
+frames_of() {
+    local f
+    mkdir -p "$WORKDIR/su"
+    rm -f "$WORKDIR"/su/*.su
+    for f in "$@"; do
+        "$CC" -O2 -std=gnu11 -I"$KITDIR/include" -I"$KITDIR/src" -fstack-usage -c \
+            -o "$WORKDIR/su/$(basename "$f" .c).o" "$f" 2>/dev/null || echo "0 COMPILE-FAILED:$f"
+    done
+    cat "$WORKDIR"/su/*.su 2>/dev/null | awk -F'\t' '{ n = split($1, a, ":"); print $2, a[n] }'
+}
+printf 'int r28_probe_small(void) { return 1; }\nint r28_probe_fat(int i) { volatile char b[5000]; b[i] = 1; return b[0]; }\n' > "$WORKDIR/fat.c"
+probe_fat="$(frames_of "$WORKDIR/fat.c" | awk -v l="$FRAME_LIMIT" '$1 > l { print $2 }' | tr '\n' ' ')"
+if [ "$probe_fat" = "r28_probe_fat " ]; then
+    ok "[R-28 witness] a planted 5 KB-frame function is the one flagged"
+else
+    bad "[R-28 witness] expected exactly r28_probe_fat flagged in the probe source, got: '$probe_fat'"
+fi
+frames_of "$KITDIR"/src/*.c | LC_ALL=C sort -rn > "$WORKDIR/frames"
+nfr="$(wc -l < "$WORKDIR/frames" | tr -d ' ')"
+if [ "$nfr" -lt "$FRAME_FLOOR" ]; then
+    bad "[R-28 population] $nfr kit functions measured, under the floor $FRAME_FLOOR -- -fstack-usage read less than the kit holds"
+else
+    ok "[R-28 population] $nfr kit functions measured, floor $FRAME_FLOOR; largest frame: $(head -1 "$WORKDIR/frames")"
+fi
+fat="$(awk -v l="$FRAME_LIMIT" '$1 > l' "$WORKDIR/frames" | tr '\n' ';')"
+if [ -z "$fat" ]; then
+    ok "[R-28] no kit function has a stack frame over $FRAME_LIMIT B"
+else
+    bad "[R-28] kit frame(s) over $FRAME_LIMIT B (bytes function): $fat -- move the working storage off the stack (memfn/CLAUDE.md, Compile-time stack)"
 fi
 
 finish

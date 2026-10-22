@@ -120,8 +120,7 @@ void mf_form_hash_text(const char *text, char out[17])
         }
     }
     /* pass 2: per line, trim, drop blanks, rename identifiers; hash */
-    const char *names[256];
-    size_t nlen[256];
+    const char *names[256];             /* each ends where id_char stops */
     unsigned nn = 0;
     uint64_t h = 1469598103934665603ull;
     const char *s = a.p ? a.p : "";
@@ -156,8 +155,8 @@ void mf_form_hash_text(const char *text, char out[17])
                     nb_put(&line, s + i, j - i);
                 } else {
                     unsigned k = 0;
-                    while (k < nn && !(nlen[k] == j - i && !strncmp(names[k], s + i, j - i))) k++;
-                    if (k == nn && nn < 256) { names[nn] = s + i; nlen[nn] = j - i; nn++; }
+                    while (k < nn && (strncmp(names[k], s + i, j - i) || id_char(names[k][j - i]))) k++;
+                    if (k == nn && nn < 256) names[nn++] = s + i;
                     char tok[16];
                     int w = snprintf(tok, sizeof tok, "$%u", k);
                     nb_put(&line, tok, (size_t)w);
@@ -182,14 +181,23 @@ void mf_form_hash_text(const char *text, char out[17])
 
 /* ---- the canonical instances ----------------------------------------------- */
 
-/* A scratch arena over malloc whose blocks are freed after the rendering. */
+/* A scratch arena over malloc whose blocks are freed after the rendering.
+ * The block table is heap too (a 4096-slot array was a 32 KB stack frame, R-28);
+ * a refused table growth sets `full` like the cap does, a loud -1. */
 enum { FH_MAXBLK = 4096 };
-typedef struct { void *blk[FH_MAXBLK]; unsigned n; int full; } fh_arena;
+typedef struct { void **blk; unsigned n, cap; int full; } fh_arena;
 
 static void *fh_alloc(void *u, size_t n)
 {
     fh_arena *a = u;
     if (a->n == FH_MAXBLK) { a->full = 1; return NULL; }
+    if (a->n == a->cap) {
+        unsigned cap = a->cap ? a->cap * 2 : 64;
+        void **q = realloc(a->blk, cap * sizeof *q);
+        if (!q) { a->full = 1; return NULL; }
+        a->blk = q;
+        a->cap = cap;
+    }
     void *p = calloc(1, n ? n : 1);
     if (p) a->blk[a->n++] = p;
     return p;
@@ -198,7 +206,9 @@ static void *fh_alloc(void *u, size_t n)
 static void fh_free(fh_arena *a)
 {
     for (unsigned i = 0; i < a->n; i++) free(a->blk[i]);
-    a->n = 0;
+    free(a->blk);
+    a->blk = NULL;
+    a->n = a->cap = 0;
 }
 
 static void fh_puts(void *u, const char *s) { nb_put(u, s, strlen(s)); }
@@ -276,7 +286,7 @@ int mf_form_hash(const char *form_id, char out[17])
     mf_site s;
     mf_hooks h;
     if (!form_id || canon(form_id, &s, &h)) return -1;
-    fh_arena fa = { .n = 0 };
+    fh_arena fa = { 0 };
     mf_arena ar = { &fa, fh_alloc };
     nbuf body = { 0 }, file = { 0 };
     mf_sink sb = { .u = &body, .puts = fh_puts, .vprintf = fh_vprintf, .cmt_open = fh_cmt_open };

@@ -2908,3 +2908,15 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the Q-R17P-27 notice.
 - notice: 2026-10-21 — **D172's brief names sabotage range S1257-S1290.** The window-site panel (G6) found no file in that range on any branch; the only mentions are wake.md and decisions.md:9880. Please correct the range.
 - notice: 2026-10-21 — **Frank's build go for D172 (the unified window site), CONDITIONAL**: "if the critics and main like the plan then i approve. please proceed and test. for hex, make the judgement call. we need this regardless of where hex lands." Proposed D172 addendum text, for main to file: "Build go (Frank, 2026-10-21, to the kit): conditional on window_site rev 2 passing its D6 panel and main's agreement. hex8-bounded is the kit's judgement call; REPORT routing (B1) does not wait on hex8." Rev 2 is being written now. Its pcrec-builder restatement comes to you as ONE request text for you to file.
+- done: 2026-10-22 — **R-28 (the kit's compile-time stack frames): READY TO MERGE. Branch `lane/memfn-r28` @ (this commit). Report `docs/dev/lanes/r28_report.md`, including §9 "Live-path correction".**
+  - **Frames:** no kit frame is above 4 KB; the largest is 3,600 B.
+    - `pcrec_mf_form_hash` 36,368 → 3,600 B;
+    - `pcrec_mf_set_terms` now a small heap wrapper;
+    - `kit_report_exact` 4,448 → 3,184 B;
+    - `form_hash_text` 4,352 → 2,304 B.
+  - **Peak:** stated in memfn/CLAUDE.md. A guard in test-memfn-link fails any kit function above 4096 B, with a planted witness and a floor.
+  - **Live compile stack**, dd10 + R-28, painted (job 572): `a` 61,616 → 25,552 B; `abc` 24,120 → 24,068 B; `a(b|c)+d` 62,912 → 28,424 B. The earlier "no caller" claim was wrong: set_terms is reached via emit_dfa → cand_ask → mf_ask → find_facts (main's dd10b, gdb).
+  - **Zero movers:**
+    - an old-vs-new driver over 23,004 lines is byte-identical;
+    - job 571: 8 of 9 emit_sweep arms rc=0, with 0 movers on every arm (dumps included), mech S1255 DETECTED, make test green (section-errors=0).
+  - **The 9th arm (`--variant all`) is RED on BASE-LEVEL stale tag floors only.** It fails identically on the reference side. Bisect job 577 shows the counts identical at 9950aa672, 6a0ad4029, 5893e47dc and ce5aa67a8, so the cause predates both. Main owns the re-pin.
