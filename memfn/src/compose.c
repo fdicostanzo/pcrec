@@ -258,6 +258,8 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
  * mf_use's re-check. The trace still labels the walk `define`. A row with an
  * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
+static const char *site_check(const mf_site *s);
+
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
@@ -288,6 +290,18 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
     if (s->site_kind == MF_SK_REPORT && !rid) return NULL;
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
+}
+
+/* 1 iff site `s` is in the vocabulary and the walk above (the finder's routed
+ * pick included) chooses a row for it under the gate's `gphases`: asked
+ * quietly, writing nothing (the window family's Table E, window.c: a plan
+ * renders through today's row only where today's row serves its frame). */
+int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                      unsigned gphases)
+{
+    gate_verdict why = { 0, 0 };
+    const char *rid;
+    return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid) != NULL;
 }
 
 /* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13, 18) ---------

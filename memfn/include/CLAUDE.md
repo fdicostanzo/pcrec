@@ -41,6 +41,8 @@
   R4h's frozen target render (tests/memfn/pins/r4h_target/, lane advtarget)
   and, since M6 prep, the strided render (tests/memfn/pins/m6_target/).
 
+D172 S2 commit 1 (lane wsc1) appended, with NO `MF_SITE_ABI` number move (the number moves at commit 6, when the old fields retire): THE WINDOW SITE's facts `mf_wspan` (start, len, verify `mf_verify`, core `mf_core` + core_lo/core_len, per-position sets and table offers), `mf_walt` (entry `mf_entry`, spans), `mf_site.nalt`/`alts`/`wfloor` (`mf_wfloor`), the bounds `MF_WSPAN_POS`, `MF_WMAX_SPAN`, `MF_WMAX_ALT`, `MF_WREACH`, `MF_WPLAN_MAX`, the phase-1 reply `mf_wreply` and its entry `mf_wdecide`, and the preview step `"window-family"`; all read only on an art previewing it.
+
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a
 struct here; an `MF_VOCAB` change adds an op, handoff or term kind.

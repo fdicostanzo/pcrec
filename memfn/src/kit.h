@@ -784,6 +784,11 @@ int wf_active(const mf_art *art);
 int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
                unsigned gphases, int quiet, const mf_site **legacy,
                const struct wf_plan **plan, const char **path, const char **why);
+/* (compose.c) 1 iff the composer's walk chooses a row for site `s`, asked
+ * quietly: the window family's E-func/E-stmt predicate over its translation. */
+#define kit_legacy_serves MF_NS(kit_legacy_serves)
+int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                      unsigned gphases);
 /* The class of the floor row's text for `plan` (R-25: the positions it
  * TESTS, the stop's find included), and whether that text reads a table of
  * pcrec's (mf_defined's `reads_table`). */

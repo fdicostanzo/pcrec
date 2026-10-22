@@ -17,6 +17,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - Zero-mover seam rules (R17-a): storage point protocol (`mf_locals` refused where `decl_point` is 0, twice, or with other `s`/`n` text; `mf_art_end` refuses "never placed"/"placed, never read" before "never used").
 - SIMD rows (`vrun.c`) exist only as guarded, deny-able, ISA-gated forms; `policy` is a stated bit-set (PORTABLE/INLOOP/SIZE/NONE) a row must serve fully; scalar contracts serve MF_ANY; each SIMD form must beat scalar or show a named benefit (memory pcrec-post-spine-direction).
 - Keep `mf_options()` (`--list-axes`) and `mf_opts_check()` (`--memfn=` acceptance) one table (`options.def`).
+- THE WINDOW FAMILY (`window.c`, D172 S2 commit 1, `docs/design/memfn/window_site.md` rev 3.2) is reachable ONLY on an art previewing `"window-family"` (`mf_preview`); a site stating window facts (`mf_site.nalt`/`alts`/`wfloor`, appended last, no `MF_SITE_ABI` number move before commit 6) is checked as a statement on every art and decided by nothing on a default art. Its fields.def fields classify only through `gate_in.wf` (unstated in every other walk, so no older row can be declined by them). Every cost row reads `plan_cost.def`; every tie reads `wf_ties[]` (the TIE table); its E-func/E-stmt rows render the plan TRANSLATED into today's row's site (the composer's walk, the finder's routed pick included), so their text is today's; E-generic is the family's floor (`wf_floor_arm`). Its G2 family is `memfn/tests/run_g2_win.sh` (plants `--plants`).
 
 ## Files
 
@@ -35,8 +36,10 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - `gate.c` — row-contract gate: classifiers, `gate_check`, `gate_describe`, `MF_MISS_N`/`mf_miss_n`, `kit_is_ident`, shape helpers, MF_TRACE records, `policy` `class_set_of`.
 - `options.def`, `options.c` — option registry `MF_OPT(...)`; `mf_options`, `mf_opts_check`, `kit_opt_denied` (`no-<name>`).
 - `finder.c` — the finder table (`fd_rows[]`, `fd_decide`, `fd_route`, `fd_pres`, `mf_finder_rows`).
+- `window.c` — the window family (D172 S2 commit 1): `wf_check`, Tables A (stop) / M (the MARGIN) / C (plan) / D (resume) / E (frame), the TIE table, `mf_wdecide` (phase 1), `wf_prepare` (phase 2), the floor row `wf_floor_arm` and its class.
+- `plan_cost.def` — the window family's cost table `MF_COST(name, value, unit, provenance, box, basis)`: prefix_k's integers verbatim (window_site.md §3.3).
 - `terms.c` — `mf_set_terms` cover search (R17-b; renderers at B4).
-- `presence.c` — KW-8 ports `mf_pres_ports` / `kit_pres_picks` (read by the routed PRES slot; S458, S1094..7).
+- `presence.c` — KW-8 ports `mf_pres_ports` / `kit_pres_picks` (read by the routed PRES slot; S458, S1094..7); the byte-rate and its masses `kit_byte_rate`/`kit_set_mass`/`kit_set_sum` (the window family reads them too).
 - `formhash.c` — `mf_form_hash[_text]` (R-MS3 form identity; allocates with `malloc`, listing only).
 
 ## Pointers

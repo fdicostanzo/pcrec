@@ -312,7 +312,8 @@ const char *wf_check(const mf_site *s, int frame)
                 const mf_wspan *sp = &al->spans[i];
                 if (sp->verify != MF_VERIFY_YES) continue;
                 for (unsigned j = sp->core_lo; j < (unsigned)sp->core_lo + sp->core_len; j++)
-                    if (sp->start + (int32_t)j > hy[a]) hy[a] = sp->start + (int32_t)j;
+                    if (sp->start + (int32_t)j >= 0 && sp->start + (int32_t)j > hy[a])
+                        hy[a] = sp->start + (int32_t)j;
             }
         }
         if (hy[0] != hy[1])
@@ -386,18 +387,26 @@ static int walked(const mf_walt *a, unsigned i)
     return a->spans[i].len == 1 && a->spans[i].start != 0;
 }
 
+/* 1 iff walked span `i` may be the STOP: one member, and core (B finds the
+ * next byte of its set inside the subject, so a candidate whose stop lies off
+ * it would be lost: §1.2 states every walked offset core). */
+static int scan_ok(const mf_walt *a, unsigned i)
+{
+    return walked(a, i) && a->spans[i].core_len && count(a->spans[i].set[0]) == 1;
+}
+
 static int a_model_holds(const wf_x *x)
 {
     const mf_walt *a = x->d->a[x->ai].alt;
     if (f0_of(a) < 0) return 0;
     for (unsigned i = 0; i < a->nspan; i++)
-        if (walked(a, i) && count(a->spans[i].set[0]) == 1) return 1;
+        if (scan_ok(a, i)) return 1;
     return 0;
 }
 
 /* A-MODEL and C-MODEL: prefix_k's selection (§3.2), over the alternative's
  * walked spans' OWN sets. The scan (the stop) runs over every walked span of
- * one member (scan cost C_MEMCHR), in listed order; per scan, the other
+ * one member and core (scan cost C_MEMCHR), in listed order; per scan, the other
  * walked spans by ascending mass through prefix_k's exchange sort, taken
  * greedily (`continue`, never an early stop) while the plan holds fewer than
  * MAX_SET - 1 offsets, F0 the first; the least cost, strict, wins. */
@@ -413,7 +422,7 @@ static void a_model_choose(wf_x *x)
     unsigned best_n = 0;
     unsigned long long best = 0;
     for (unsigned si = 0; si < a->nspan; si++) {
-        if (!walked(a, si) || count(a->spans[si].set[0]) != 1) continue;
+        if (!scan_ok(a, si)) continue;
         int order[MF_WMAX_SPAN], no = 0;
         for (unsigned j = 0; j < a->nspan; j++)
             if (walked(a, j) && j != si) order[no++] = (int)j;
@@ -955,8 +964,9 @@ const char *wf_preview_step(const char *step)
 int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
 {
     memset(out, 0, sizeof *out);
+    /* the decision reads no frame fact (§0): only the window facts are held */
     if (art->err[0] || !wf_active(art) || site->abi != MF_SITE_ABI || !site->nalt ||
-        wf_check(site, 1))
+        wf_check(site, 0))
         return -1;
     wf_dec d;
     decide(art, site, 1, &d);
@@ -1233,13 +1243,23 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
 typedef struct {
     const wf_dec         *d;
     const struct wf_plan *w;
+    const mf_hooks       *def;
+    unsigned              gphases;
 } wf_ex;
 
+/* E-func / E-stmt hold where the plan translates with its own semantics
+ * (legacy_ok) AND today's rows serve the translation in this frame (the
+ * composer's walk, the finder's routed pick included, asked quietly): a
+ * frame today's PF rows never meet (ON_MISS, AT_N, a NOP that does not
+ * leave, ...) is E-generic's. REPORT routes at S3 (window_site.md §5.2). */
 static int e_legacy_holds(const void *x)
 {
     const wf_ex *e = x;
     unsigned eb;
-    return e->d->s->site_kind != MF_SK_REPORT && legacy_ok(e->d, e->w, &eb);
+    if (e->d->s->site_kind == MF_SK_REPORT || !legacy_ok(e->d, e->w, &eb)) return 0;
+    wf_legacy L;
+    translate(e->d, e->w, eb, &L);
+    return kit_legacy_serves(e->d->art, &L.site, e->def, e->gphases);
 }
 
 static const gate_use use_e_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -1302,7 +1322,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     gate_in in = { s, def, NULL, NULL, &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict v = { 0, 0 };
-    wf_ex e = { d, w };
+    wf_ex e = { d, w, def, gphases };
     size_t r = kit_walk(&wf_etable, 0, &in, gphases, 0, &e, &tc, &v);
     if (r >= WF_NEROWS) {
         /* E-generic is the table's last row: only its contract can leave a
