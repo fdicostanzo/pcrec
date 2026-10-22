@@ -984,6 +984,11 @@ fi
 # setters in the shared block, rx_nextfn, rx_info.next, the ITER_RETRY stamp,
 # <prefix>__find, the residual twins' forwarders and <prefix>_next. Measured
 # against the I0 commit's compiler at the same `-o -`.
+#
+# RE-RECORDED 2026-10-21 at lane i1tri2 (I1's own abi 83 event, no bump): all
+# twelve EMITTED_BYTES rows -145, exactly `<prefix>_iter_buffers`' two-line doc
+# comment, which lane i1tri made NON-ESSENTIAL (D112 item 2) after the I1
+# re-record above; nothing else moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

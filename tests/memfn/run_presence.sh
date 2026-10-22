@@ -102,16 +102,17 @@ def order_reason(t, kind):
     each verdict (the byte's memchr, the run's `_reqrun(...search_from)`)
     before the first `for (start = `. Every occurrence, not the first one: a
     verdict split around the attempt is the defect too (the negative control
-    moves ONE line)."""
+    moves ONE line). [FINDALL-NEXT] I1 moved both engines' body into
+    `<prefix>__find`, which `_search` (and `_search_run`) forward to."""
     if kind == "vm":
         if '#define RX_VM_PREFILTER "none"' not in t:
             return "not a no-DFA VM artifact"
-        run = t.find("_search_run(const unsigned char")
+        run = t.find("int rx__find(const unsigned char")
         pres, att = ["memchr(subject + search_from"], "ctx.pos = "
     else:
         if '#define RX_DFA_SCAN "attempt"' not in t:
             return "not a DFA attempt-route artifact"
-        run = t.find("int rx_search(const unsigned char")
+        run = t.find("int rx__find(const unsigned char")
         pres, att = ["memchr(subject + search_from", "_reqrun(subject, subject_length, search_from)"], "for (start = "
     if run < 0:
         return "no search body"
@@ -129,8 +130,7 @@ def plant(t, kind):
     """The negative control's text: the pre-check's first statement line moved
     to just after the attempt marker's line (a reordered artifact)."""
     lines = t.split("\n")
-    run = next(i for i, l in enumerate(lines) if ("_search_run(const unsigned char" if kind == "vm"
-                                                  else "int rx_search(const unsigned char") in l)
+    run = next(i for i, l in enumerate(lines) if "int rx__find(const unsigned char" in l)
     pi = next(i for i in range(run, len(lines)) if "memchr(subject + search_from" in lines[i]
               or "_reqrun(subject, subject_length, search_from)" in lines[i])
     ai = next(i for i in range(run, len(lines)) if ("ctx.pos = " if kind == "vm" else "for (start = ") in lines[i])

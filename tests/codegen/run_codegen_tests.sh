@@ -374,7 +374,9 @@ if gen casehot 'Hello|World' -i; then
     else
         ok "OS-1: -i output contains no run-time case conversion at all"
     fi
-    if grep -q '^int rx_search(const unsigned char \*subject, size_t subject_length, size_t search_from, ptrdiff_t (\*capture_spans)\[2\])$' "$WORKDIR/casehot.body"; then
+    # [FINDALL-NEXT] the entry's definition head, read from the artifact:
+    # the .body is now `rx__find`'s, behind the forwarder.
+    if grep -q '^int rx_search(const unsigned char \*subject, size_t subject_length, size_t search_from, ptrdiff_t (\*capture_spans)\[2\])$' "$WORKDIR/casehot.c"; then
         ok "OS-1: -i leaves the entry-point signature unchanged (a singleton dimension is not in the signature)"
     else
         bad "OS-1: -i changed the entry-point signature — a compiled-away option must not appear at run time (D18)"
@@ -441,8 +443,10 @@ elif pcrec_run "$PCREC" -p rx -o - --pattern '.*=.*' > "$WORKDIR/multi.c" 2>/dev
         # / `rx_search_run` are excluded by the `_`. VERIFIED byte-identical
         # to GNU `\b` semantics on this exact body before landing.
         # [FINDALL-NEXT] I1: the body is `rx__find`'s, renamed and made an
-        # extern definition so it is the declared `rx_search_b`.
+        # extern definition so it is the declared `rx_search_b`. Both heads
+        # occur: '^a|b' takes the DFA attempt route's `static noinline` one.
         sed -e 's/^static inline __attribute__((always_inline)) int /int /' \
+            -e 's/^static __attribute__((noinline)) int /int /' \
             -e 's/rx__find\([^_A-Za-z0-9]\)/rx_search_b\1/g' "$WORKDIR/engb.body"
     } >> "$WORKDIR/multi.c"
 
