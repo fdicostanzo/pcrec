@@ -2576,39 +2576,22 @@ Heavy validation: boxqueue `500-kit-r26zk-heavy`.
 - setdig: all five kit sets now load under measures.md. My ruling: a committed card version is append-only, so @2 is new and @1 is kept.
 - Lesson: the idle-notification lesson again. setdig's idle notice predated my ruling, so I checked its tree before acting and re-sent the ruling.
 
-## 2026-10-21 (evening) — B4's E8 on real text: V1 is not a safe default; B4 HELD for Frank
+## 2026-10-21 (late) — Frank's ruling: the WALK when the subject is not known (reverses D169's default)
 
-- The window ran twice: run 1 was disturbed by an unlocked compile run; run 2 is the record.
-- Run 2 is formally INVALID on one anchor, SS2d, which read N at +9.1% against grid2's +9.3%. Both runs agree on the substance.
-- J1 movers (19 patterns, 94 cells, subjects ≥ 1 MiB): V1 WINS 46 cells (−3..−55%), LOSES 35 (+2..+41%), NULL 13. Absolute sum: V1 saves 93.6 ms and loses 35.5 ms.
-  - The wins are non-English text (−39..−55%), some binaries, and two prose patterns.
-  - The losses are English logs (L10 +17..+41%, including zero-match cells), code (C16) and prose (P14 ~+20%).
-- e8why (counts only, docs/dev/lanes/e8why_report.md):
-  - Both arms stop at the same bytes; only the cost between stops differs.
-  - The losses come from DENSE and PREDICTABLE stops: E ≤ 0.4 empty 8-byte blocks and Q < 0.8 mispredicts per stop. That rule catches every loss of +9% or more, with 5 small false positives; both terms are needed.
-  - Set size, shape, position and density alone do not separate losers from winners.
-  - grid2's anchors fit the same axis.
-  - D169's premise ("unknown predictability → presume irregular") fails for structured English text, where stops are predictable.
-- Taken to Frank as a decision. B4 stays held.
+Frank: "the choice, which i agree with, is to use the walk when the subject is not known".
+- Evidence: B4's minimal E8 on real text (V1 loses up to +41% on dense, predictable English text), lane flat (flattening costs more), and lane adatwin (the in-producer adaptive loop does not pay; M64 is the best single form at −7.1% for 2.1x the walk's .text, still with dense English losses).
+- Effect:
+  - set-FIND sites route to the walk by default;
+  - V1/M64 only where a MEASURED or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis);
+  - B4 is re-scoped, since its V1 movers disappear;
+  - M64 and a switch inside pcrec's DFA skip loop are FILED for later, triggered by bench or user evidence.
 
-## 2026-10-21 (night) — Frank's flattening idea measured (lane flat): it does not fix the losses; a 64-byte mask with ctz is best
+## 2026-10-21 (close) — R-27 design delivered (no build); session closing on Frank's /close
 
-- Run 570-kit-flat-twin: green, 0 answer mismatches. ns-weighted sum vs the walk: V1 −4.1%, F8 +0.1%, F64 +13.1%, M64 −7.3%.
-- Flattening into a position list COSTS at both widths, for example L10 +33.7% (F8) against V1's +14.9%. The lane's reading: on dense text the DFA's run after a stop consumes later candidates, so the list fills with stale entries. Draining them brings the unpredictable branch back, once per discarded position.
-- M64 (a 64-byte mask with ctz/blsr) is the best arm. Sparse wins grow (non-English −60%, P05 −42%). Dense losers barely move (L10 +19%, P14 +20%). It costs on 32-byte calls.
-- The per-stretch counts separate the classes:
-  - e64 high: wide wins;
-  - e64≈0 with transitions 10-23: the losers;
-  - e64≈0 with transitions ~31: random-dense, wins.
-  So Frank's per-stretch adaptive loop (walk ↔ M64) has its inputs. Next: a count-only simulation before any timing or build.
-- adasim (count-only, d1be27483): the walk ↔ M64 per-64-byte rule is simulated at −13.2% vs the walk on flat's J1 cells (M64 −7.4%, oracle −16.8%). It keeps 90-93% of M64's wins. The dense-regular losers fall to +0.3..+3.6%; the worst cell is +8-10%.
-  - It is decided by three unmeasured things: the observation cost ob (at 6 ns the gain mostly goes); whether the mode carries across calls (a cold start per call → −1.3%); and R2 carried across calls on short dfa-hat cells (+36%).
-  - Verdict: worth ONE timed twin, as a pricing probe for ob. Taken to Frank.
-
-## 2026-10-21 (late) — adaptive loop timed (adatwin, 98f4a50f8): it does not pay; M64 is the best single form; B4's choice goes back to Frank
-
-- ns-weighted vs the walk: V1 −3.9%, M64 −7.1%, ADAPT −2.2%, ADAPT carried +13.5%.
-- The dense English losses remain: P14 +29%, C16 +29%. The cause comes from the mode counts: walk mode INSIDE the producer is not the walk. The per-stretch reading (ob) costs 5-7 ns, adasim's losing case.
-- Size per artifact (.text): walk 1.30 KB, V1 1.94, M64 2.71, ADAPT 3.30. Speed gain per added KB: M64 over V1 +4.3%/KB; ADAPT pays negative.
-- Contamination: a main triage lane ran outside the queue from 20:40 to 20:56. Groups saw max load1 2.39 with 6 harness waits; the lane's report has no contamination section. The arms are interleaved, and the conclusions are relative and mechanism-backed (mode counts, ob). I judge them directionally safe and did not re-run; a re-run is available if Frank wants firm numbers.
-- R-27 note: REPORT's sparse slowness wants the SKIP the default build already has, not a new form.
+- R-27 (the REPORT site's speed on sparse text) is DESIGN ONLY, at lane/memfn-r27 @ b4875f947; report docs/dev/lanes/r27_report.md. No build go yet: Frank, "lets see what the design returns. after you wake, run the critic pass on it."
+  - Frank's lens: R-27 IS the D161 window search, whose test covers every REQUIRED term. Design: the stop is the least-mass span-0 position (memchr, or the walk for a set), followed by ofsskip's verify chain.
+  - Extensions to existing rows: E1 (a set scan by the walk in ofsskip), E2 (verify_chain tests ctx items and table-less sets), E4 (a static failure shift, needed for hex8's search_short).
+  - Existing rows alone serve only 3 of 8 cells.
+  - Plants R27-a..f are proposed; ids are owed by main.
+  - Timing job 580-kit-r27-cover is QUEUED and OWED. It lost a handoff to a non-gated job: a queue finding for main.
+- Earlier today, recorded above: Frank's walk ruling and its CLOSED record (docs/design/memfn/walk_vs_v1_record.md); [MEMFN-SKIPSWITCH] moved to Boonies.

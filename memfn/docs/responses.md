@@ -2831,3 +2831,23 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Fix:** generate.py is corrected and the sets regenerated. kit-interim-grid1 now digests to 13a6536315af1520, equal to zen4-grid1@1. The `kit-synthetic@2` card was appended; @1 is kept as committed. b4prep's lever set has the same fix.
   - **Check:** finder_check C now holds each set by the spec digest, ks_ref.py and `--list-measurements`. The old files read red: 12 FAILs.
   - **Validation:** emit_sweep plain arm rc 0, 0 movers on 11 streams. No pcrec source changed.
+- ack: 2026-10-21 — **R-27 (the REPORT site's search is slow on sparse subjects; B1 is NO-GO as routed).** Branch `lane/memfn-r27` (cut from main). Taken. RPT's pick is the composer's exact form, which scans byte by byte and so has no fast skip on sparse text. The fix is the kit's choice of search form for REPORT sites. The bar is as filed: no real/none throughput or search_short cell slower than default beyond its floor, dense kept, zero answer changes.
+  - Timing: the lane starts after tonight's adaptive-loop twin (adatwin) reads. Its V1/M64/walk findings decide which skip form the REPORT row should use, so R-27 does not re-derive them.
+  - I tell Frank, since this follows on from his R-26 build go.
+- notice: 2026-10-21 — **Frank's ruling for main to file, a D169 addendum that reverses its default: "use the walk when the subject is not known".** Proposed text:
+
+  > D169 addendum (Frank, 2026-10-21). On real held-out text, B4's kit-tier E8 refuted the V1 default. Under the minimal-E8 plan (D170), V1 lost 2-41% on 35 of 94 cells: dense, predictable stops in English logs, code and prose. The two later twins found no form that is safe everywhere:
+  > - flattening the mask costs more (lane flat);
+  > - a per-stretch adaptive producer does not pay, and its walk mode is not the walk (lane adatwin);
+  > - M64 is the best single form, at −7.1% for 2.1x the walk's .text, and it still loses on dense English.
+  >
+  > Ruling: when the subject is not known, a set-FIND site uses the WALK. V1 or a wider mask form is chosen only where a measured or caller-stated regime says the stops are sparse or irregular (R5's MEASURED path, or a future subject analysis). Revisit if bench or user evidence shows the gain without the dense losses. That evidence could come from a switch placed in pcrec's DFA skip loop, now filed.
+
+  - Effect on B4: its V1 movers disappear, so B4 is re-scoped by the kit, routing the existing rows with no default byte move expected. The [MEMFN-POSCOST] counts stand, but its triggers now need a non-walk default to matter.
+  - A plan row to file: [MEMFN-SKIPSWITCH], the walk ↔ wide-mask switch inside the DFA skip loop, triggered by bench or user evidence of dense-and-sparse mixed workloads.
+- notice: 2026-10-21 — **R-27, DESIGN delivered, no build yet.** `lane/memfn-r27` @ b4875f947, `docs/dev/lanes/r27_report.md`.
+  - The design: the REPORT site served by the D161 window search, as extensions E1/E2/E4 to existing rows (no REPORT-only row).
+  - Frank asked for a critic pass on the design before any build go. It runs at the kit's next wake.
+  - Timing job `580-kit-r27-cover` is queued and waits for a quiet box. Its result is pasted into the report's §5.
+  - Sabotage ids for plants R27-a..f will be requested after the critic pass.
+  - **Queue finding for [WATCH-IDLE]:** a quiet-gated job loses every handoff to a ready, non-gated job. 580 missed its turn when load was 3.8 as 613 ended, and 621 started instead.
