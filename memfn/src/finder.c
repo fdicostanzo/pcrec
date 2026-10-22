@@ -26,8 +26,8 @@
  * they decide nothing today. The rows are listed through `mf_finder_rows`
  * (R-MS4: needs, keys, basis, refutation).
  *
- * THE ROWS (§1.3, §1.4). Slot FIND: R8 R3a R3b R4 R1 R2 D1 D1c D1w D2 R7w
- * (R0, R5 and R7 are WITHDRAWN, ids reserved; F0, F1, F2 are designed and
+ * THE ROWS (§1.3, §1.4). Slot FIND: R8 R3a R3b R4 R1 R2 D1 D1c D1w R7w
+ * (R0, R5 and R7 are WITHDRAWN and D2 RETIRED (D172 S2 commit 6), ids reserved; F0, F1, F2 are designed and
  * BUILT at B5, after lockdown, as formal row additions), then RPT, the REPORT
  * row (R-26.6, kit_proof.md §2.5: held for its preview step; listed after
  * slot PRES so no earlier row's index moves). Slot PRES: P0 P2 P3 P4 P9 (P1
@@ -68,7 +68,7 @@ enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
 /* Slot FIND: a form, the kit's names (D157). 0 is UNSTATED (refused by the
  * self-check). */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
-               FF_W64, FF_RUN, FF_A3, FF_PROOF } fd_form;
+               FF_W64, FF_A3, FF_PROOF } fd_form;
 static const char *const ff_name[] = {
     "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "RUN", "A3", "PROOF",
 };
@@ -93,7 +93,7 @@ enum {
     SF_ONE_MEMBER   = 1u << 1,  /* the stop is one byte                        */
     SF_CONTEXT_STOP = 1u << 2,  /* no span 0; one context predicate (MLINE)    */
     SF_SEEK_ROLE    = 1u << 3,  /* span 0 of a VM_ATTEMPT site                 */
-    SF_RUN_TERM     = 1u << 4,  /* span 0 is a RUN term (a handoff landmark)   */
+    /* 1u << 4 was SF_RUN_TERM (span 0 a RUN term), D2's alone: retired with it */
     SF_PROVEN       = 1u << 5,  /* span 0's proof covers this span (P2, B3a)   */
     SF_E_MEASURED   = 1u << 6,  /* E at MEASURED provenance (never before B3a) */
     SF_TERMINAL_FAST = 1u << 7, /* the terminal pick is V1 or W64              */
@@ -161,22 +161,15 @@ typedef struct {
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
     [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, \
-    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_window_stated] = MF_ANY, \
-    [FLD_move_back] = MF_ANY, [FLD_overshoot] = MF_ANY, [FLD_decl_point] = MF_ANY, \
+    [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_decl_point] = MF_ANY, \
     [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, \
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
     [FLD_fn_name] = MF_ANY, [FLD_note] = MF_ANY, [FLD_note_tag] = MF_ANY, \
     [FLD_comment_tier] = MF_ANY, [FLD_fold] = MF_ANY, [FLD_start] = MF_ANY, \
-    [FLD_moved] = MF_ANY, \
-    MF_SERVES_PROOF_ANY
-/* Every row but the REPORT row picks a form that tests no `ctx` entry and
-   renders `absent` FAILS; the REPORT row's pick is the composer's walk, whose
-   rows serve those fields themselves (the generic row tests both), and its
-   class is held to the REQUIRED sets (SF_PROOF_EXACT), so it serves both. */
+    [FLD_moved] = MF_ANY,
 #define FD_SERVES_REST(table) \
     FD_SERVES_COMMON \
-    [FLD_table_ref] = (table), \
-    [FLD_ctx] = CM(NONE), [FLD_absent] = CM(NO),
+    [FLD_table_ref] = (table),
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
 static const gate_use use_none[] = { { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS } };
@@ -208,7 +201,6 @@ FD_CT(ct_r2,  "R2",  use_mn,      KD_ALL,            NEED_ALL,        CM(ONESHOT
 FD_CT(ct_d1,  "D1",  use_kind,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_d1c, "D1c", use_kind,    CM(DFA_ATTEMPT),   NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_d1w, "D1w", use_kind,    KD_ALL & ~CM(DFA_ATTEMPT), NEED_ALL, MF_ANY,     LY_ALL)
-FD_CT(ct_d2,  "D2",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 /* R7w's pick is the walk (pf_walk), which reads pcrec's offered table
    (walk_applies serves table_ref REF): a routed pick its arm does not serve is
    REFUSED, never fallen back from, so the row serves exactly what its arm does
@@ -222,12 +214,10 @@ FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,   
 FD_CT(ct_p4,  "P4",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 /* R-26.6: the REPORT row serves the REPORT kind alone (no other row's kinds
-   hold it), span 0 REQUIRED (R-26.3 refuses anything else) and every context
-   span and absent rule its pick serves */
+   hold it) and span 0 REQUIRED (R-26.3 refuses anything else) */
 static const gate_contract ct_rpt = { "fd", "RPT", NU(use_kind), {
     FD_SERVES_COMMON
     [FLD_table_ref] = MF_ANY,
-    [FLD_ctx] = MF_ANY, [FLD_absent] = MF_ANY,
     [FLD_site_kind] = CM(REPORT), [FLD_need] = CM(N_REQUIRED),
     [FLD_body] = MF_ANY, [FLD_layer] = LY_ALL,
 } };
@@ -289,12 +279,6 @@ static const fd_row fd_rows[] = {
       "one member anywhere else (the VM hat's seek, Q-R5; fd-d1's OFF arm): the table walk "
       "over the one-member table",
       "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0 },
-    { "D2", FD_FIND, KN_P, SF_SPAN0 | SF_RUN_TERM, 0,
-      { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_RUN, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "B3b",
-      "span 0 a RUN term (a handoff landmark longer than one byte): the run search (the "
-      "nested fn_rows[] walk), today's rule",
-      "a measured run form beating the nested walk", &ct_d2, 0 },
     /* THE DEFAULT for every set FIND, MEASURED (Frank's walk ruling, D169
        addendum: E8's real-text verdict, docs/design/memfn/walk_vs_v1_record.md
        §5). WITHDRAWN rows, ids reserved and never reused: R7 (V1 on covers of
@@ -836,8 +820,7 @@ static void find_facts(fd_x *q)
         if (q->members == 1) q->facts |= SF_ONE_MEMBER;
     } else if (t->kind == MF_T_RUN && t->offset >= 0) {
         q->facts |= SF_SPAN0;
-        if (t->run_len > 1) q->facts |= SF_RUN_TERM;
-        else q->facts |= SF_ONE_MEMBER;
+        if (t->run_len == 1) q->facts |= SF_ONE_MEMBER;
     }
     /* SF_SEEK_ROLE: span 0 of a VM_ATTEMPT site (the kind pcrec states, B2) */
     if (q->ff.kind == CL_VM_ATTEMPT && (q->facts & SF_SPAN0)) q->facts |= SF_SEEK_ROLE;
@@ -880,9 +863,10 @@ const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 
  * a proven fact is decided once, and every layer inherits it), over the
  * consumer kind pcrec STATES. The pick names the arm that renders it: LIBC
  * the memchr rows (bounded by end_back), LIBC_BACK the memchr below the
- * candidate, WALK the walks, and RUN (D2, routed at B3b) the composer's own
- * walk (`fd_nested_walk`: the nested fn_rows[] decide, their denies
- * unchanged). A routed row whose pick has no arm here is a kit build error,
+ * candidate, WALK the walks, and PROOF (RPT) the composer's own walk
+ * (`fd_nested_walk`: the nested fn_rows[] decide, their denies unchanged).
+ * D2's RUN pick retired with D2 (D172 S2 commit 6): a RUN span 0 takes the
+ * composer's walk with no routed row, the same text. A routed row whose pick has no arm here is a kit build error,
  * refused loudly by the caller (no B2 or B3b row has one).
  *
  * `quiet`: the query's walk (mf_ask) records nothing and counts no reach; a
@@ -930,7 +914,6 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     case FF_LIBC:      a = s->end_back ? &pf_memchr_bounded_arm : &pf_memchr_arm; break;
     case FF_LIBC_BACK: a = &pf_memchr_back_arm; break;
     case FF_WALK:      a = s->end_back ? &pf_walk_bounded_arm : &pf_walk_arm; break;
-    case FF_RUN:       a = &fd_nested_walk; break;     /* D2: the composer's walk */
     case FF_PROOF:     a = &fd_nested_walk; break;     /* RPT: the same walk, its
                                                           class held EXACT */
     case FF_UNSTATED: case FF_NONE: case FF_V1: case FF_W64: case FF_A3:

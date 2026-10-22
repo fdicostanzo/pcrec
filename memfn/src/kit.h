@@ -186,11 +186,12 @@ static inline const char *kit_miss(const mf_hooks *h)
     return h->miss == MF_MISS_N ? h->n : h->miss;
 }
 
-/* ---- the window (W0-W3, MF_SITE_ABI 11; setfind.md §2.2) ---------------- */
+/* ---- the forward FIND ---------------------------------------------------- */
 
-/* 1 iff site `s` is one the window fields describe: a FORWARD FIND. Its
- * pred states window_stated 1; every other site and every preds[] entry
- * states 0 (site_check). */
+/* 1 iff site `s` is a FORWARD FIND: the one op whose `pred` is span 0 or a
+ * context stop (span_class BOUNDED or CONTEXT, kit_proof_check). The window
+ * fields W0-W2 that once described its window retired at D172 S2 commit 6
+ * (a window site states its spans; MF_SITE_ABI 20). */
 static inline int kit_window_site(const mf_site *s)
 {
     return s->op == MF_OP_FIND && !s->reverse;
@@ -206,39 +207,19 @@ static inline int32_t kit_d_min(const mf_pred *p)
     return d;
 }
 
-/* Every row born before the window fields reads none of them and keeps no
- * storage: it serves the window AS THE CANDIDATE (W0 YES, W1 == d_min, W2
- * ZERO) and any declaration point (W4), which is exactly today's sites
- * (setfind.md §11.1 "Kit side"). A row that reads a window, or keeps
- * storage, states its own. R17-b' B1 (MF_SITE_ABI 12) adds the two facts
- * R-19 states on every site: no row born before B1 reads the call mode or
- * the START hook, so each renders the same for any value of either. */
+/* Every row born before the window fields keeps no storage: it serves any
+ * declaration point (W4). R17-b' B1 (MF_SITE_ABI 12) adds the two facts R-19
+ * states on every site: no row born before B1 reads the call mode or the
+ * START hook, so each renders the same for any value of either. A row that
+ * keeps storage, or reads either, states its own. (W0-W2 and R-26's prefix
+ * facts, context spans, `absent`/`consumable` and `read_floor` left the
+ * field table at D172 S2 commit 6, MF_SITE_ABI 20.) */
 #define MF_SERVES_WINDOW_ONLY \
-    [FLD_window_stated]   = CM(YES), \
-    [FLD_move_back]       = CM(D_MIN), \
-    [FLD_overshoot]       = CM(ZERO), \
     [FLD_decl_point]      = MF_ANY, \
     [FLD_body]            = MF_ANY, \
     [FLD_start]           = MF_ANY,
-/* R-26 (MF_SITE_ABI 18): no row born before it reads span 0's prefix facts,
- * a context predicate's `consumable` or the site's `read_floor` (facts for a
- * choice, never an obligation on a form), so each serves every value; none
- * tests a `ctx` entry, and each renders a context stop's `absent` FAILS (a
- * read outside the subject fails its term), so each serves only NONE and NO
- * there. The generic row states its own (it tests both). */
-#define MF_SERVES_PROOF_ANY \
-    [FLD_prefix_stated]   = MF_ANY, \
-    [FLD_exact_len]       = MF_ANY, \
-    [FLD_consumable_len]  = MF_ANY, \
-    [FLD_consumable]      = MF_ANY, \
-    [FLD_read_floor]      = MF_ANY,
-#define MF_SERVES_PROOF_TODAY \
-    MF_SERVES_PROOF_ANY \
-    [FLD_ctx]             = CM(NONE), \
-    [FLD_absent]          = CM(NO),
 #define MF_SERVES_WINDOW_TODAY \
-    MF_SERVES_WINDOW_ONLY \
-    MF_SERVES_PROOF_TODAY
+    MF_SERVES_WINDOW_ONLY
 
 /* ---- the per-artifact state ---------------------------------------------- */
 
@@ -537,7 +518,7 @@ const char *fd_preview_step(const char *step);
 /* 1 iff the form the composer's walk chooses for REPORT site `s` under the
  * gate's phases `gphases` proves, at every offset in [MF_PROOF_LO,
  * MF_MAX_FWD), EXACTLY the intersection of the REQUIRED terms' sets there
- * (span 0's and every `ctx` entry's; all ones where none reads): the REPORT
+ * (span 0's; all ones where none reads): the REPORT
  * row's applicability (R-26.3, K96), never a check of it (compose.c). */
 #define kit_report_exact MF_NS(kit_report_exact)
 int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
@@ -753,13 +734,11 @@ int run_cmp_sat(const mf_term *t);
  *
  * window_site.md rev 3.2 §2: Tables A (the stop, its alternative half) with
  * the MARGIN row, C (the verify plan), D (the resume), E (the frame) and the
- * TIE table, over a window site's facts, on an art previewing
- * "window-family" (mf_preview) and nowhere else. */
+ * TIE table, over a window site's facts: since S2 commit 6 the route of
+ * every site stating alternatives, on every art. */
 struct wf_plan;
 
 #define wf_check        MF_NS(wf_check)
-#define wf_preview_step MF_NS(wf_preview_step)
-#define wf_active       MF_NS(wf_active)
 #define wf_prepare      MF_NS(wf_prepare)
 #define wf_floor_class  MF_NS(wf_floor_class)
 #define wf_floor_arm    MF_NS(wf_floor_arm)
@@ -769,10 +748,6 @@ struct wf_plan;
  * statements the family describes; on a site stating none, NULL. `frame`
  * 1: also the frame rules the family reads (the preview's own route). */
 const char *wf_check(const mf_site *s, int frame);
-/* The kit's spelling of `step` where it is the window family's, else NULL. */
-const char *wf_preview_step(const char *step);
-/* 1 iff `art` previews the window family. */
-int wf_active(const mf_art *art);
 /* PHASE 2's selection for window site `s` (wf_check'd) under the define
  * hooks `def` (the frame's), the gate reading `gphases`, traced unless
  * `quiet`: the decision (phase 1), then Table E. On the
@@ -816,14 +791,6 @@ void wf_floor_class(const struct wf_plan *plan, mf_class *out);
 int  wf_plan_reads_table(const struct wf_plan *plan);
 /* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
 extern const arm wf_floor_arm;
-#ifdef MF_TRACE
-/* D172 S2 commit 3 THE TRACE SHADOW (window.c): under the lever MF_WSHADOW,
- * window site `s` defined as handle `h` on a non-preview art, the family's
- * decision and text beside the old path's, one MFTRACE WSHADOW record. */
-#define wf_shadow MF_NS(wf_shadow)
-void wf_shadow(const mf_art *art, const mf_site *s, const mf_hooks *def, unsigned gphases,
-               uint32_t h);
-#endif
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 

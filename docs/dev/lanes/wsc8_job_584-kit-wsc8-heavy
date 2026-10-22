@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# 584-kit-wsc8-heavy: lane wsc8 (D172 S2 commit 6 fix-forward, comment text only: the
+# [OPT-REQPOS]/[K66] note reads `masked` off the run fact). Re-validation of 583's one red
+# (sweep_arms, the -fcomments arm), same flags and declared moves as 583:
+#   1. make -j16; make strict
+#   2. emit_sweep against pre-S2 main 3cd809da1 x5 (plain, --arms start,
+#      -fno-run-prefilter, -fmemfn-simd, --engine=vm)
+#   3. make test-codegen
+# mech/reach/make test/wreply were green at 170c5fac6 and this change is comment text only.
+# Correctness run: no quiet gate; held while i2build-parity or 710-findbench-parity is
+# pending or running.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/wsc8
+BASE=3cd809da1
+OUT=$TREE/build/wsc8/heavy
+STREAMS=c-default,c-vm,emit-ir,composition,dumps,facts,emit-ir-auto,stderr
+case "${1:-}" in
+    --dry-run)
+        [ -e "$TREE/.git" ] || { echo "no tree $TREE" >&2; exit 1; }
+        git -C "$TREE" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "BASE $BASE unknown" >&2; exit 1; }
+        git -C "$TREE" diff --quiet HEAD || { echo "worktree dirty" >&2; exit 1; }
+        python3 "$TREE/scripts/emit_sweep.py" --help >/dev/null 2>&1 || { echo "emit_sweep --help fails" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; make strict; emit_sweep (declared facts+dumps deltas) vs $BASE x5 (plain, --arms start, -fno-run-prefilter, -fmemfn-simd, --engine=vm); make test-codegen"
+        echo "boxqueue: cap 7200"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect sweeps=5 lines=^emit_sweep: DONE rc=0\$"
+        exit 0 ;;
+    --ready)
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state 710-findbench-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+TIP=$(git rev-parse HEAD)
+echo "== wsc8 heavy tip $TIP vs $BASE"
+mkdir -p "$OUT"
+bad=0
+step() {
+    local name=$1; shift
+    echo "== wsc8 step $name: $*"
+    "$@" > "$OUT/$name.log" 2>&1
+    local rc=$?
+    grep -E 'strict:|movers=|DONE rc=|\*\*\* \[|checks (passed|failed)|plants:|mech run COMPLETE|mech-reach-only: DONE|UNEXPECTED|ANOMALY' "$OUT/$name.log" | tail -40
+    echo "== wsc8 step $name rc=$rc"
+    [ "$rc" -eq 0 ] || bad=$((bad + 1))
+}
+step build make -j16
+step strict make strict
+step sweep_plain python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --streams "$STREAMS" --out "$OUT/sw_plain"
+step sweep_arms python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --arms start --out "$OUT/sw_arms"
+step sweep_norun python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=-fno-run-prefilter --out "$OUT/sw_norun"
+step sweep_simd python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=-fmemfn-simd --out "$OUT/sw_simd"
+step sweep_vm python3 scripts/emit_sweep.py --ref "$BASE" --bin build/pcrec --tree "$TREE" --no-self-check --facts-declared-moves='span_facts:used:yes>no' --dumps-declared-rows=--list-limits:PCREC_OFSK_MAX_SET --extra=--engine=vm --no-differ-floor --out "$OUT/sw_vm"
+step codegen make test-codegen
+echo "== wsc8 heavy: $bad step(s) failed"
+[ "$bad" -eq 0 ]

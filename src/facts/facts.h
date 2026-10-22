@@ -517,6 +517,11 @@ const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
 const MkLang   *pcrec_fact_span(Ctx *cx);        /* E3 [KIT-VERIFY] U1 Z2 */
+/* The same non-pass read of `span`, for the trace build's cover shadow
+ * (`locate_cover_applies` -> `pcrec_cover` -> C8): a check, not a pass, so
+ * the trace build's `used` column is the default build's. The harness-routed
+ * cover decision keeps the pass ask (`cc_exact`). */
+const MkLang   *pcrec_fact_span_stated(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *
@@ -542,6 +547,14 @@ void pcrec_facts_force_failed(Ctx *cx);
  * one call. `pcrec_fact_render` reads the memo only and asks nothing: it is
  * the listing's, which must never change what the passes asked. */
 const char *pcrec_fact_stamp(Ctx *cx, PfFactId f);
+/* D172 S2 commit 6 (window_site.md §3.4): the `req_run` and `req_byte`
+ * stamps' text with the run's MEMBER `member` (a window position), the one
+ * the memfn kit's window family's reply names, asked as `pcrec_fact_stamp`
+ * asks: `req_run`'s `@idx`, and `req_byte`'s run byte where that position is
+ * exact (else the set's pick, the fact's own). The listing keeps the fact's
+ * own index, the run window's statement (`req_run.idx`). */
+const char *pcrec_fact_stamp_req_run(Ctx *cx, int member);
+const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member);
 const char *pcrec_fact_render(Ctx *cx, PfFactId f);
 
 #endif /* PCREC_FACTS_H */

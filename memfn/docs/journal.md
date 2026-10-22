@@ -2662,6 +2662,33 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Full shadow: 0 on every column over 8157 sites (1070 parts) and G2. Finding: known.o lacked its memfn.h dependency (stale incremental object declined `cover`); fixed in the pcrec-path commit.
 - Heavy job `578-kit-wsc3-heavy` (emit_sweep ×4 vs 3cd809da1, make test) queued and owed (docs/dev/lanes/wsc3_report.md).
 
+## 2026-10-22 — D172 S2 commit 4: the two-phase ask under the lever (lane wsc4)
+
+- The lever is the harness option `--harness=window-reply` (build/pcrec-harness only): the art previews `"window-family"` at setup (phase 2: the family renders every site stating window facts), and pcrec asks phase 1 (`mf_wdecide`) over the DFA prefilter's statement. The offset rows' pick clauses read the reply through emit_dfa.c's declared map `next_keys[]`: run-pinned = C-pin and RE-SEED, offset-set = the RESEED alternative; RE-SEED reaching a non-re-seeding row is refused. Default path unchanged; the default flips at commit 5.
+- No kit change: the reply already carried alt, reseed, pinned, member/stretch and path.
+- Witness `tests/memfn/run_wreply.sh`: lever ON vs OFF identity (65 cases), reach through a perturbed statement (RESEED unstated; R under `-fno-run-prefilter`), plants S1412-S1414 red; `--sweep` is emit_sweep over the corpus with the lever binary, commit 5's rerun. Heavy job `579-kit-wsc4-heavy` owed (docs/dev/lanes/wsc4_report.md).
+
+## 2026-10-22 — D172 S2 commits 5 and 6: the flip, then the old path deleted (lane wsc5)
+
+- Commit 5: pcrec previews the window family on every art and NEXT reads the phase-1 reply by default; the old path behind the inverse harness lever `window-legacy` (and a kit-proof art). emit_sweep vs 3cd809da1: 0 movers on plain, `--arms start`, `-fno-run-prefilter`, `-fmemfn-simd`, `--engine=vm`. Derived mech set: REACH_ONLY 173 rows, 0 unreached; full 30 rows, 27 DETECTED + 3 EXPECTED. S281/S289 retired; successors S1415/S1416 (C-pin's clause 4 and identity in `c_pin`), DETECTED.
+- Commit 6 (kit): the family is every art's (window_route; the old path and the trace shadow `wf_shadow`/`wshadow.py` deleted; `mf_wdecide` on any art); the `"window-family"` preview step retired; finder row D2 retired with FF_RUN/SF_RUN_TERM (16 rows); `MF_SITE_ABI` 19 -> 20 (meaning only; no layout, MF_VOCAB or MF_CLASS_V move).
+- Commit 6 (pcrec): NEXT and the offset rows' candidate test read the reply only; `src/opt/prefix_k.c` deleted (its model is window.c's A-model/C-model); the run member's one resolver `req_run_member`; S187/S188 retired for S1417 (MARGIN never adopts) and S1418 (F0 stated as k0).
+- NOT done, rulings asked: R1 (which old fields leave `mf_site`: the translation and G2 still use plan_hint/rank_*/end_back/span_class/need), R2 (R's placement once the pin's selection retires), R3 (RPT/kit_report_exact: window_site.md §4 keeps them with R-26.6 until S3; Appendix A retires them at S2).
+- Heavy job `580-kit-wsc5-heavy` owed (docs/dev/lanes/wsc5_report.md §7).
+
+
+## 2026-10-22 — D172 S2 commit 6 completed: R1-R3 (lane wsc6)
+
+- R1: pcrec's window sites and FUNC parts state R-29's facts only (6-p3); the kit deleted W0-W2, the prefix facts, `absent`/`consumable`, `ctx`/`nctx` (and the generic row's context test), `read_floor` and `consumer` with their rules and gate fields (6-k4, 6-k5). `plan_hint`, `plan_pos`, `rank_*`, `end_back`, `span_class` BOUNDED/CONTEXT and `need` stay as the RENDERER INTERFACE (the translation's and G2's); `wf_check` refuses a window site or part stating any (`wf_old_fields`, plant S1419). `MF_SITE_ABI` 20's text records the layout move; no MF_VOCAB or MF_CLASS_V move. FILED: the interface as a kit-internal struct (trigger: the next G2 site-builder regeneration, or a renderer change).
+- R2: the FALLBACK. The general form retires the `run_pin` fact's selection, a facts-stream mover on every listing; filed with its kit rule (per-offset R-meet, mass, ties HIGHER) and trigger (a mover census, main's acceptance).
+- R3: RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF` and R-26.6 stay until S3 (window_site.md notes). After R1 no old-field REPORT site exists that RPT cannot prove exactly: S1255/S1256 declared equivalent.
+- Checks moved: G2's `consumer` variant removed (its draw kept); proof_check/proof_run lose the retired facts; arm pins lose the W0-W2 cases (floor 89); test-memfn-rank asserts pcrec states no ranking. Light checks green after 6-p4 (6-p3 missed one `end_back` reader, the set FIND's storage point). Heavy job `582-kit-wsc6-heavy` owed (docs/dev/lanes/wsc6_report.md §7).
+
+
+## 2026-10-22 — D172 S2 commit 6, final fixes (lane wsc7)
+
+- Trace shadow: `pcrec_fact_span_stated` (non-pass) for C8 unless the harness routes the cover; the 6-p4 positional D11-bound read replaced by the define's own holdback; F-3 reworded. S293 retired for S1421; S1138 re-aimed (solo DETECTED both). Declared facts delta (span_facts used yes->no, facts_listing.md section 4.1 paragraph 2; main approved) and the one --list-limits row are checked both ways by emit_sweep. Light checks green. Heavy job `583-kit-wsc7-heavy` owed (docs/dev/lanes/wsc7_report.md section 5).
+
 ## 2026-10-22 (morning) — D172 S2 commits 4-6 built; heavy 582 running
 
 - Commit 4 (wsc4, the two-phase ask under a lever): heavy 579 was RED on test-compound's G7 lever fence only, a test-layout fence. The cause: run_wreply.sh spelled `--harness=window-reply` outside the allowlist. It was fixed forward in 6-t1, and commits 4-5 are marked "red on G7 only" for bisect.

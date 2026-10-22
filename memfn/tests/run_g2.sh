@@ -952,7 +952,7 @@ grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 # --- 4w. G2's WINDOW family (D172 S2 commit 1): its own runner -------------
 # memfn/tests/run_g2_win.sh: GENERATED window sites (spans, cores, verify
 # facts, negative starts, one or two alternatives, floors) rendered by the
-# kit's window family under mf_preview("window-family"), the phase-1 reply
+# kit's window family (every art's since D172 S2 commit 6), the phase-1 reply
 # held to a reference decision written from window_site.md, every answer to
 # the facts in guard-page and sentinel-padded layouts, its own floors and W1.
 # It links the PLAIN library: the family's walks are not rows of section 4b's

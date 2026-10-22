@@ -59,10 +59,9 @@
 # span's final link (the define's records, phase define; P2's, whose
 # pre-check is never defined, the presence ask's, phase ask, chosen at phase
 # SHADOW); P9 is reached under P3's deny (`--memfn=no-fd-pres-pick`), P4's
-# signature is the HEAD member's `+P4`. D2 routes a FIND site over a RUN span
-# 0, which no pcrec builder states (the handoff landmark is the ALL_PRESENT
-# site's window, not a FIND's span 0), so it keeps its fixture and waits for
-# the merged landmark site (R-18).
+# signature is the HEAD member's `+P4`. D2 (a FIND site over a RUN span 0, no
+# pcrec builder ever stated one) RETIRED at D172 S2 commit 6 (window_site.md
+# §2.2), its row with it.
 # R7w, the default every set FIND takes (B4', MEASURED by the walk ruling), is
 # `pcrec`: its signature is the FDROUTE record's, its control a one-byte site D1
 # claims. A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
@@ -116,7 +115,6 @@ fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
-fd	D2	pending-site:R-18	fixture	-	fd-D2	 row=D2 arm=generic	-	fd-R7w
 fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=

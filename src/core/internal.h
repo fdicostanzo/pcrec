@@ -2942,29 +2942,13 @@ struct PcrecMeasInherit {
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
 
-/* ---- [OPT-K] the offset-k SELECTION (src/opt/prefix_k.c) ----
+/* ---- [OPT-K] the offset-k skip ----
  *
- * The walk it selects from is the `kset_walk` fact (`KsetWalk`,
- * src/facts/facts.h; derived in src/facts/kset.c, [PATFACTS] step 3.4). */
-
-typedef struct {
-    const KsetWalk *walk;             /* the fact the selection read */
-    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on walk->k[j].set */
-    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
-     * keeps exactly the offset-0 filter it had before this row. */
-    int      nsel;
-    int      sel[PCREC_OFSK_MAX_SET]; /* indices into walk->k[], ASCENDING by offset */
-    int      scan;                    /* index into sel[]: the memchr offset */
-    int      maxk;                    /* walk->k[sel[nsel-1]].k */
-    unsigned rate_ppm;                /* predicted candidate rate, selected */
-    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
-} PrefixKSets;
-
-/* `k0` is the offset-0 byte set the DFA derivation already owns
- * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
- * it. See docs/design/offset_k_skip.md §3. Asked only on the `ENG_UNANCH`
- * branch, after the E3 seal: the walk is an E3 fact. */
-void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o);
+ * The walk it reads is the `kset_walk` fact (`KsetWalk`, src/facts/facts.h;
+ * derived in src/facts/kset.c). WHICH offsets it tests is the memfn kit's
+ * window family's (D172 S2 commit 6: memfn/src/window.c's A-model/C-model,
+ * prefix_k's selection transcribed; window_site.md §3.2), read off its
+ * phase-1 reply; pcrec states the walk and nothing chosen. */
 
 /* D164 B3 THE `rev-end` WALK's FORM: the rows of `revend_forms[]`
  * (src/gen/emit_dfa.c; docs/design/endmark.md §R.1), in table order.

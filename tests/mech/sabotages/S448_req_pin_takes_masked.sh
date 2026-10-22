@@ -20,15 +20,12 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a[bc]de"
 SAB_REACH_EXPECT="REACH-KEPT-PIN"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    int ro = pin.o, rl = pin.len, sp = ro + pin.idx;
-    t->scan_k    = sp;
-    t->scan_byte = r->bytes[pin.at + pin.idx];
-    t->run_o     = ro;
-    t->run_len   = rl;
-    t->run_bytes = r->bytes + pin.at;'
-SAB_AFTER='    int ro = pin.o - pin.at, rl = r->len, sp = pin.o + pin.idx;   /* SABOTAGE S448 */
-    t->scan_k    = sp;
-    t->scan_byte = r->bytes[pin.at + pin.idx];
-    t->run_o     = ro;
-    t->run_len   = rl;
-    t->run_bytes = r->bytes;'
+# RE-AIMED (D172 S2 commit 6, lane wsc5): the run term's stretch is the
+# window family's reply (C-pin's), read by ofs_test_of; the plant takes the
+# whole masked window instead, as before.
+SAB_BEFORE='        t->run_o = w->run_lo;
+        t->run_len = w->run_len;
+        t->run_bytes = r->bytes + (w->run_lo - (pin.o - pin.at));'
+SAB_AFTER='        t->run_o = pin.o - pin.at;   /* SABOTAGE S448 */
+        t->run_len = r->len;
+        t->run_bytes = r->bytes;'

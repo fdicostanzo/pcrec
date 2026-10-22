@@ -8,8 +8,8 @@
  * negative ones included, sets, cores and verify facts; one or two
  * alternatives with their ENTRY; table offers; the floor, SUBJECT or an
  * expression; byte-rates NONE, skewed or tie-heavy), and for each:
- *   asks the kit's PHASE 1 (mf_wdecide) on an art previewing
- *   "window-family", and copies the reply;
+ *   asks the kit's PHASE 1 (mf_wdecide) on a plain art (the family is every
+ *   art's since S2 commit 6), and copies the reply;
  *   renders PHASE 2 (mf_emit) in one of the frames Table E serves (FUNC/
  *   RETURN, STMT/ASSIGN into a variable or in place into `lo`, STMT/ON_MISS),
  *   with each empty outcome and on_miss shape the frame allows;
@@ -480,8 +480,9 @@ int main(int argc, char **argv)
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
-    /* THE CONTROL (the lever): a window site on an art that does not preview
-       the family is not decided, and stating only spans there is refused */
+    /* THE CONTROL (S2 commit 6: the family is every art's): a window site on
+       an art that previews nothing is decided, and a site stating only spans
+       renders there */
     {
         gfacts x;
         gen_facts(FAM_PARKED, &x);
@@ -492,10 +493,10 @@ int main(int argc, char **argv)
         to_kit(&x, &s, alts, spans);
         s.abi = MF_SITE_ABI;
         s.form = MF_FORM_STMT; s.op = MF_OP_FIND; s.handoff = MF_H_ASSIGN;
-        s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT; s.consumer = MF_C_ENGINE;
+        s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT;
         mf_art *art = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
         mf_wreply r;
-        if (!mf_wdecide(art, &s, &r)) fail(-1, "control", "mf_wdecide decided without the lever");
+        if (mf_wdecide(art, &s, &r)) fail(-1, "control", "mf_wdecide refused on a plain art");
         else refused_ok++;
         buf b1 = { 0 }, b2 = { 0 };
         mf_sink sb = mk_sink(&b1), sf = mk_sink(&b2);
@@ -503,15 +504,15 @@ int main(int argc, char **argv)
         memset(&h, 0, sizeof h);
         h.s = "s"; h.n = "n"; h.lo = "lo"; h.result = "r"; h.miss = "((size_t)-1)";
         mf_result res;
-        if (!mf_emit(art, &s, &h, &sb, &sf, &res))
-            fail(-1, "control", "a spans-only site rendered without the lever");
-        else if (!mf_art_error(art) || !strstr(mf_art_error(art), "window-family"))
-            fail(-1, "control", "the spans-only refusal does not name the lever");
+        if (mf_emit(art, &s, &h, &sb, &sf, &res))
+            fail(-1, "control", mf_art_error(art));
         else refused_ok++;
-        /* a second preview, and a preview after a define, are refused */
+        if (strcmp(res.form_id, "") == 0) fail(-1, "control", "a spans-only site named no form");
+        else refused_ok++;
+        /* "window-family" is no longer a step the kit names (S2 commit 6) */
         mf_art *a2 = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
-        if (mf_preview(a2, "window-family") || !mf_preview(a2, "window-family"))
-            fail(-1, "control", "mf_preview(window-family) twice was not refused");
+        if (!mf_preview(a2, "window-family"))
+            fail(-1, "control", "mf_preview(window-family) was accepted after its retirement");
         else refused_ok++;
     }
 
@@ -533,7 +534,6 @@ int main(int argc, char **argv)
             t.abi = MF_SITE_ABI;
             t.op = MF_OP_FIND;
             mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
-            mf_preview(ar, "window-family");
             mf_wreply tr;
             if (!mf_wdecide(ar, &t, &tr))
                 fail(id, "two runs", "an alternative stating two spans of R's shape was decided");
@@ -590,7 +590,6 @@ int main(int argc, char **argv)
         snprintf(pfx, sizeof pfx, "g2w%d", id);
         mf_art *art = mf_art_begin(&g_arena, pfx, MF_P_PORTABLE_ONLY, 0, NULL,
                                    x.rate_kind ? &an : NULL);
-        if (mf_preview(art, "window-family")) { fail(id, "preview", mf_art_error(art)); continue; }
         mf_wreply r;
         if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", NULL); continue; }
         /* the reply, field by field */
@@ -647,7 +646,6 @@ int main(int argc, char **argv)
             buf b1 = { 0 }, b2 = { 0 };
             mf_sink s1 = mk_sink(&b1), s2 = mk_sink(&b2);
             mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
-            mf_preview(ar, "window-family");
             mf_result rr;
             if (!mf_emit(ar, &t, &th, &s1, &s2, &rr) || !strstr(mf_art_error(ar), "NOP"))
                 fail(id, "NOP refusal", "two alternatives disagreeing on the empty range rendered");
@@ -696,8 +694,6 @@ int main(int argc, char **argv)
                                       x.rate_kind ? &an : NULL);
             mf_art *ad = mf_art_begin(&g_arena, pfx, MF_P_PORTABLE_ONLY, 0, NULL,
                                       x.rate_kind ? &an : NULL);
-            mf_preview(aq, "window-family");
-            mf_preview(ad, "window-family");
             buf b3 = { 0 };
             mf_sink s3 = mk_sink(&b3);
             uint32_t hd;

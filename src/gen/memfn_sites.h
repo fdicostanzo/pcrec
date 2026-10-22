@@ -128,9 +128,9 @@ void pcrec_memfn_term_run(mf_term *t, int off, const unsigned char *run,
  * (window_site.md rev 3.2 §1): one or two alternatives, each its ENTRY and
  * its spans (start, one set per position, a contiguous core, verify), the
  * table offers, and the floor. Facts only (D157): no rank, no pick, no plan;
- * the kit decides from them and from the byte-rate it already holds. Nothing
- * reads them on a default art until the family's lever flips (commit 5), so
- * stating them moves no byte. */
+ * the kit decides from them and from the byte-rate it already holds: since
+ * S2 commit 6 the window family decides every art's window sites from them
+ * alone. */
 /* `n` zeroed alternatives in the arena. */
 mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
 /* Gives alternative `a` its ENTRY and `n` zeroed spans in the arena, which
@@ -155,7 +155,10 @@ void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask);
 /* States alternatives `alts[0..n)` and floor `fl` on site `s`, checking
  * pcrec's own bounds against the kit's shape bounds (MF_WMAX_ALT,
  * MF_WMAX_SPAN, MF_WSPAN_POS, [-MF_MAX_BACK, MF_WREACH)) loudly: a statement
- * past one is pcrec's defect, never truncated. */
+ * past one is pcrec's defect, never truncated. A window site states its
+ * frame and these facts ONLY (D172 S2 commit 6, R-29's fact table): its
+ * `pred` carries no term, need, plan, ranking or class, and the site no
+ * `end_back` (the kit's renderer interface, memfn.h; the kit refuses them). */
 void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
                                mf_wfloor fl);
 /* The same statement on a pre-check's FUNC part `p` (a `preds[]` entry), the
@@ -163,26 +166,6 @@ void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
  * ruling 3: window facts PER PART), with the same bound checks. */
 void pcrec_memfn_part_window_stated(Ctx *cx, mf_pred *p, const mf_walt *alts, int n,
                                     mf_wfloor fl);
-
-/* States the window facts (W0-W2, MF_SITE_ABI 11; setfind.md §2.2) of a
- * forward FIND's predicate `p`, its terms already filled, whose window IS its
- * candidate, as every FIND pcrec builds today: window_stated 1, move_back the
- * least term offset (d_min, the span's beginning: 0 at offset 0, -1 for
- * MLINE's predecessor term), overshoot 0. */
-void pcrec_memfn_window_is_candidate(mf_pred *p);
-/* [MEMFN] R-26.1/R-26.2 (MF_SITE_ABI 18; kit_proof.md §4.1, §7's Z1 row):
- * a forward FIND's predicate is SPAN 0 or a CONTEXT STOP, and each states its
- * class's facts. span0_stated: BOUNDED, prefix_stated STATED, exact_len the
- * true exact prefix over the sent sets ([KIT-VERIFY] Z2, kit_proof.md §5.2:
- * the span slice's S_d, 0 where a term reads below the candidate or no slice
- * is stated), consumable_len 0 (nothing consumes it before B1). `p`'s terms
- * are filled first. context_stop: site `s`'s predicate, every term below the
- * candidate (MLINE's `{\n}` at -1), is CONTEXT with absent FAILS (no byte
- * before the subject start, no candidate there: the attempt loop's edge
- * attempt covers it) and consumable NO, and the site's read_floor SUBJECT
- * (its reads below the origin go down to offset 0). */
-void pcrec_memfn_span0_stated(Ctx *cx, mf_pred *p);
-void pcrec_memfn_context_stop(mf_site *s);
 
 /* The answering block's provenance stanza onto `p` (R-24, MF_SITE_ABI 15):
  * `p->bytes` is the block's `provenance bytes` row (0 when it declares none)

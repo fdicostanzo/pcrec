@@ -13,7 +13,6 @@
 # Columns (tab-separated): scope, path, class, allowed count, reason.
 # classes: 1 isa-name 2 arch-macro 3 intrinsic 4 intrin-header 5 targeting
 #          6 arch-noun 7 kit-identity 8 reads-kit-output 9 include-graph
-code	src/opt/prefix_k.c	1	1	a comment citing glibc's AVX2 memchr measurement (the C_MEMCHR row's cost note); leaves with M5, which moves the scan plan into the kit
 doc	src/gen/CLAUDE.md	6	1	the sentence stating the ISA-neutral rule itself ("an x86 slot")
 tests	tests/assertions/d27/lib_pcre2.py	6	1	a Linux libpcre2 library path (x86_64-linux-gnu), not branching on an architecture
 tests	tests/codegen/CLAUDE.md	6	1	a box description in a measurement note

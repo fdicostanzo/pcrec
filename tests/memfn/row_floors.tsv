@@ -75,8 +75,8 @@
 # pcrec floors were PINNED 2026-10-18 from the N2 census at a35ca8f90 (lane
 # b3breach's chain, `--propose`: floor(0.9 x chosen), and for P2, decided at the
 # PRESENCE ASK, floor(0.9 x asked)); their g2 floors stay PLACEHOLDER (G2's log
-# carries no per-row reach count; OWED, docs/dev/lanes/b3b_report.md §14). D2 stays `pending-site:R-18` (no pcrec site states a RUN
-# span 0), so its pcrec floor stays `-`.
+# carries no per-row reach count; OWED, docs/dev/lanes/b3b_report.md §14). D2 RETIRED at D172 S2 commit 6
+# (no pcrec site ever stated a RUN span 0), its row with it.
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
@@ -108,7 +108,6 @@ fd	R2	-	PLACEHOLDER
 fd	D1	129159	PLACEHOLDER
 fd	D1c	4287	PLACEHOLDER
 fd	D1w	211402	PLACEHOLDER
-fd	D2	-	PLACEHOLDER
 fd	R7w	300852	PLACEHOLDER
 fd	P0	618251	PLACEHOLDER
 fd	P2	1359454	PLACEHOLDER

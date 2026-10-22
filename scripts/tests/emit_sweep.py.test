@@ -198,6 +198,34 @@ for b in (b"a\\b", b"\t\n\r", "é{2}".encode(), bytes(range(256))):
     assert es.decode_escape(es.encode_escape(b)) == b, b
 PY
 
+# --facts-declared-moves, judged BOTH ways (the declared-delta check): the
+# declared move passes and is counted; an unmoved declared row, the move the
+# other way, and an undeclared row's move each fail.
+python3 - "$here" <<'PY' && ok "facts declared delta: both directions" || bad "facts declared delta control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+row = "byte\t%s\tpattern\tE3\tderived\t%s\tv\t\tn\n"
+def lst(span, kset): return ("#section facts\n" + row % ("kset_walk", kset) + row % ("span_facts", span)).encode()
+m = es.parse_fact_moves("span_facts:used:yes>no")
+assert es.facts_declared_delta(lst("yes", "yes"), lst("no", "yes"), m) == ([], 1)
+assert es.facts_declared_delta(lst("no", "yes"), lst("no", "yes"), m) == ([], 0)
+assert es.facts_declared_delta(lst("yes", "yes"), lst("yes", "yes"), m)[0]
+assert es.facts_declared_delta(lst("no", "yes"), lst("yes", "yes"), m)[0]
+assert es.facts_declared_delta(lst("yes", "yes"), lst("no", "no"), m)[0]
+PY
+
+# --dumps-declared-rows, both directions: the declared row's move passes; an
+# unmoved declared row, an undeclared row's move and a line-count change fail.
+python3 - "$here" <<'PY' && ok "dumps declared rows: both directions" || bad "dumps declared rows control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+f = "--list-limits"
+d = lambda: {(f, "K1"): False}
+base = b"K0\tx\nK1\told\n"
+assert es.dumps_declared_delta(f, base, b"K0\tx\nK1\tnew\n", d()) == []
+assert es.dumps_declared_delta(f, base, base, d())
+assert es.dumps_declared_delta(f, base, b"K0\ty\nK1\tnew\n", d())
+assert es.dumps_declared_delta(f, base, b"K0\tx\n", d())
+PY
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

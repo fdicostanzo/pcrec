@@ -5,15 +5,14 @@ which builds the PROBE compiler (`-DPCREC_RANK_PROBE`: src/gen/memfn_sites.c
 prints one `RANK` line per predicate of every PRE/OFS site it hands the kit,
 with the ranking that predicate carries).
 
-THE CLAIM. A predicate whose plan_hint names a RUN term carries a ranking of
-EVERY position of that term (rank_n == the run length), ordered by the
-position's rate, lowest first, ties to the higher offset, each with its rate
-in ppm summed over the position's members, under the compile's byte-rate (or
-the uniform rate where the compile has none). Every other predicate carries
-rank_n 0. On the PRE site the scanned position (plan_pos) is rank_pos[0]. The
-brute force shares no code with pcrec: it enumerates each cube's members
-itself and reads the rate from the `--list-analysis default` listing (NONE
-wherever the listing's resolution row has no digest, `-e utf8` today).
+THE CLAIM (since D172 S2 commit 6, lane wsc6; the kit manager's R1). pcrec
+hands the kit NO ranking: the ranking (`rank_n`/`rank_pos`/`rank_ppm`) and
+`plan_hint` are the kit's RENDERER INTERFACE, written by the window family's
+translation and by G2, never by a host. Every predicate of every PRE/OFS site
+pcrec defines therefore carries rank_n 0 and names no RUN term. (Until then
+the claim was that pcrec's ranking equals a brute force; that ranking, its
+builder `ofs_pred_rank` and its reader `pcrec_find_run_rank` retired with
+it, and the kit's own ranking is the translation's.)
 
 N4, THE FIND DOOR (R17-a, setfind.md §11.1 item 4): the same probe build
 asserts, wherever pcrec emits the table a DEFINED FIND names (the DFA set
@@ -22,10 +21,7 @@ bytes are the set the kit was handed; a pass prints one `FINDDOOR` line, a
 difference fails the compile with an `N4 door` internal error. Red on any
 such error; the passes are floored per table (K35).
 
-NON-VACUITY (K35): floors on the run predicates seen, per site (PRE, OFS),
-per encoding, on masked runs, on rankings the rate moves off the positional
-order (a positional ranking is red there), on data ties broken by the rule
-(a leftmost tie is red there), and on the rank_n-0 predicates.
+NON-VACUITY (K35): a floor on the predicates seen, and the door floors.
 
 Prints `checks passed: N` / `checks failed: N`; exit 1 on any failure.
 """
@@ -56,55 +52,17 @@ NAMED = [
 DOOR_CBM_FLOOR = 1400   # 1,574
 DOOR_SB_FLOOR = 70      # 78
 DOOR_SS_FLOOR = 3100    # 3,441
-# Floors, measured at the landing (rq2_report.md, the figure in each comment)
-# and set ~10% below it: a FLOOR, never an equality pin.
+# The predicates seen (lane wsc6, D172 S2 commit 6; the figure beside it).
+PRED_FLOOR = 5300  # rq2's landing read 5,891 predicate records (4,643 + 1,111 + 137); each remains, now rank_n 0
+# Floors (K35), ~10% below the figure measured at the landing beside each:
+# a FLOOR, never an equality pin.
 FLOORS = {
-    'run-PRE': 1000,       # the pre-check composite's window / whole runs (1,111)
-    'run-OFS': 120,        # the offset-skip block's pinned run (137)
-    'run-byte': 800,       # a real byte-rate decides, byte and vm arms (879)
-    'run-utf8': 330,       # NONE decides (U8-PICK: cube size, then positional) (369)
-    'masked': 120,         # a cube position with two members (142)
-    'prior-not-positional': 590,  # the ranking is not [n-1, ..., 0] (653)
-    'data-tie': 225,       # >= 2 positions share a mass under a real rate (252)
-    'norun': 4000,         # predicates that must carry rank_n 0 (4,643)
+    'pred': PRED_FLOOR,    # every predicate of every PRE/OFS site defined
     # R17-a (lane r17a): N4's door passes, per table (measured at landing)
     'door-can_begin_match': DOOR_CBM_FLOOR,
     'door-start_bytes': DOOR_SB_FLOOR,
     'door-start_set': DOOR_SS_FLOOR,
 }
-
-
-def load_rate(pcrec):
-    """{encoding: [256 ppm] or None} from the listing's own sections."""
-    rc, out, _ = es.run([pcrec, '--list-analysis', 'default'], 60)
-    if rc != 0:
-        raise SystemExit('rank_check: --list-analysis default failed')
-    sec, have, ppm = None, {}, [0] * 256
-    for ln in out.decode().splitlines():
-        if ln.startswith('#section '):
-            sec = ln.split()[1]
-            continue
-        if not ln or ln.startswith('#'):
-            continue
-        f = ln.split('\t')
-        if sec == 'resolution' and f[0] == 'byte-rate':
-            have[f[1]] = f[6] not in ('', 'none')
-        elif sec == 'freq':
-            ppm[int(f[0], 16)] = int(f[2])
-    return {enc: (ppm if ok else None) for enc, ok in have.items()}
-
-
-def cube_cost(rate, b, m):
-    members = [x for x in range(256) if (x & m) == b]
-    if rate is None:
-        return len(members) * 1000000 // 256
-    return sum(rate[x] for x in members)
-
-
-def brute_rank(rate, run, mask):
-    """[(pos, mass)] rarest first, ties to the rightmost."""
-    cost = [(cube_cost(rate, run[i], mask[i]), -i) for i in range(len(run))]
-    return [(-ni, c) for c, ni in sorted(cost)]
 
 
 def doors(stderr):
@@ -149,9 +107,6 @@ def main():
         failed.append(msg)
         print('FAIL: ' + msg)
 
-    rates = load_rate(a.probe)
-    if 'byte' not in rates or 'utf8' not in rates:
-        bad('the listing has no byte-rate resolution row for byte and utf8')
     corpus = es.enumerate_corpus(a.probe, TREE, 30)
     pats = sorted({p for _, _, p in corpus})
     pats = [p for i, p in enumerate(pats) if i % a.every == 0] + NAMED
@@ -166,52 +121,25 @@ def main():
 
     jobs = [(p, arm, argv) for p in pats for arm, argv in ARMS]
     n = {k: 0 for k in FLOORS}
-    n['ofs-ka-rank0'] = 0
-    longest = {}
-    wrong, ka_wrong, norun_wrong, door_bad = [], [], [], []
+    stated, door_bad = [], []
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         for pat, arm, rc, recs, (dn, derr) in ex.map(one, jobs):
             for tag, k in dn.items():
                 n['door-' + tag] = n.get('door-' + tag, 0) + k
             if derr:
                 door_bad.append((pat, arm))
-            enc = 'utf8' if arm == 'utf8' else 'byte'
-            rate = rates.get(enc)
             for site, run, mask, ka, rn, pos, mass in recs:
-                if run is None:
-                    n['norun'] += 1
-                    if rn != 0:
-                        norun_wrong.append((pat, arm, site, rn))
-                    continue
-                want = brute_rank(rate, run, mask)
-                longest[site] = max(longest.get(site, 0), len(run))
-                n['run-' + site] = n.get('run-' + site, 0) + 1
-                n['run-' + enc] += 1
-                n['masked'] += any(m != 0xFF for m in mask)
-                n['prior-not-positional'] += [p for p, _ in want] != \
-                    sorted(range(len(run)), reverse=True)
-                n['data-tie'] += rate is not None and \
-                    len({c for _, c in want}) < len(want)
-                if rn != len(run) or list(zip(pos, mass)) != want:
-                    wrong.append((pat, arm, site, run.hex() + '/' + mask.hex(),
-                                  (rn, pos), [p for p, _ in want]))
-                if site == 'PRE' and pos[:1] != [ka]:
-                    ka_wrong.append((pat, arm, run.hex(), ka, pos[:1]))
-                if site == 'OFS':
-                    n['ofs-ka-rank0'] += pos[:1] == [ka]
-    for w in wrong[:20]:
-        print('  %r [%s] %s %s: carries %s, brute force %s' % w)
-    if wrong:
-        bad('%d run rankings differ from the brute force' % len(wrong))
+                n['pred'] += 1
+                if run is not None or rn != 0:
+                    stated.append((pat, arm, site, rn))
+    for w in stated[:20]:
+        print('  %r [%s] %s: a ranking or a scanned RUN term stated (rank_n %d)' % w)
+    if stated:
+        bad('%d predicates pcrec hands the kit state a ranking or a plan_hint naming a RUN '
+            'term (the renderer interface is the kit\'s)' % len(stated))
     else:
-        ok('every run ranking (rank_n, positions, rates) equals the brute force '
-           '(%d runs)' % (n['run-byte'] + n['run-utf8']))
-    for w in norun_wrong[:20]:
-        print('  %r [%s] %s: rank_n %d on a predicate with no RUN term' % w)
-    if norun_wrong:
-        bad('%d predicates without a RUN term carry a ranking' % len(norun_wrong))
-    else:
-        ok('every predicate without a RUN term carries rank_n 0 (%d)' % n['norun'])
+        ok('no predicate pcrec hands the kit states a ranking or a scanned RUN term (%d)'
+           % n['pred'])
     for w in door_bad[:20]:
         print('  %r [%s]: N4 door: a FIND set differs from its emitted table' % w)
     if door_bad:
@@ -219,17 +147,6 @@ def main():
     else:
         ok('N4 door: every defined FIND\'s set equals its emitted table (%d tables)'
            % sum(v for k, v in n.items() if k.startswith('door-')))
-    for w in ka_wrong[:20]:
-        print('  %r [%s] %s: scanned %r, rank_pos[0] %r' % w)
-    if ka_wrong:
-        bad('%d PRE predicates scan a position other than rank_pos[0]' % len(ka_wrong))
-    else:
-        ok('every PRE predicate scans rank_pos[0] (%d)' % n.get('run-PRE', 0))
-    print('NOTE: OFS predicates scanning rank_pos[0]: %d of %d (not asserted: '
-          'the OFS scan member is the offset selection\'s, not the run reader\'s)'
-          % (n['ofs-ka-rank0'], n.get('run-OFS', 0)))
-    print('NOTE: longest run term per site: %s (MF_RANK_MAX 32)'
-          % ', '.join('%s %d' % kv for kv in sorted(longest.items())))
     for k, floor in FLOORS.items():
         got = n.get(k, 0)
         if a.every != 1:

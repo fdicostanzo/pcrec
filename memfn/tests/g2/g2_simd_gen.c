@@ -62,12 +62,6 @@
 
 #include "memfn.h"
 
-/* MF_SITE_ABI 11 (R17-a, setfind.md §2.2): a FORWARD FIND STATES its window,
- * and today's window IS its candidate: window_stated 1, move_back the least
- * term offset (d_min), overshoot 0. pcrec's builders state it; G2 states it
- * at the kit call, after every perturbation, so a refusal case keeps the
- * refusal it was written for. A site with no terms, or that states a window
- * itself, is passed unchanged. (Not part of the blinded text: lane r17a.) */
 /* MF_SITE_ABI 13 (R17-b' B2, PR-4): mf_need is RE-NUMBERED with an UNSTATED
  * zero, and every term and read predicate STATES its need. G2's sites were
  * written when 0 meant REQUIRED (their memset/zero-filled terms say
@@ -95,12 +89,12 @@ static void g2_need(mf_site *w)
 }
 
 /* MF_SITE_ABI 18 (R-26.1/R-26.2, lane r26z1; NOT blinded text): a forward
- * FIND's predicate STATES its class as pcrec's builders do, applied at the
- * kit call with the window, after every perturbation: a context stop (every
- * term below the candidate) is CONTEXT, absent FAILS (every row's reading of
- * a read outside the subject, G2's reference's too), consumable NO, the site's
- * read_floor SUBJECT; every other one is span 0, BOUNDED, its prefix facts
- * stated as today's truth (exact_len 0). A site stating a class keeps it. */
+ * FIND's predicate STATES its class (the renderer interface since MF_SITE_ABI
+ * 20, which G2 drives directly), applied at the kit call after every
+ * perturbation: a context stop (every term below the candidate) is CONTEXT;
+ * every other one is span 0, BOUNDED. A site stating a class keeps it. (The
+ * window facts W0-W2 and R-26's prefix/context facts this once stated left
+ * the site at D172 S2 commit 6.) */
 static void g2_span0(mf_site *w)
 {
     if (w->op != MF_OP_FIND || w->reverse || !w->pred.nterm || w->pred.span_class) return;
@@ -109,15 +103,7 @@ static void g2_span0(mf_site *w)
         const mf_term *t = &w->pred.term[i];
         if (t->offset + (t->kind == MF_T_RUN ? (int32_t)t->run_len : 1) > 0) below = 0;
     }
-    if (below) {
-        w->pred.span_class = MF_SPAN_CONTEXT;
-        w->pred.absent = MF_ABSENT_FAILS;
-        w->pred.consumable = MF_CONSUMABLE_NO;
-        if (!w->read_floor) w->read_floor = MF_FLOOR_SUBJECT;
-    } else {
-        w->pred.span_class = MF_SPAN_BOUNDED;
-        w->pred.prefix_stated = MF_PREFIX_STATED;
-    }
+    w->pred.span_class = below ? MF_SPAN_CONTEXT : MF_SPAN_BOUNDED;
 }
 
 static mf_site g2_win(const mf_site *s)
@@ -125,14 +111,6 @@ static mf_site g2_win(const mf_site *s)
     mf_site w = *s;
     g2_need(&w);
     g2_span0(&w);
-    if (w.op == MF_OP_FIND && !w.reverse && !w.pred.window_stated && w.pred.nterm) {
-        int32_t d = w.pred.term[0].offset;
-        for (unsigned i = 1; i < w.pred.nterm && i < MF_MAX_TERM; i++)
-            if (w.pred.term[i].offset < d) d = w.pred.term[i].offset;
-        w.pred.window_stated = 1;
-        w.pred.move_back = d;
-        w.pred.overshoot = 0;
-    }
     return w;
 }
 #define G2W(s) (&(struct { mf_site v; }){ g2_win(s) }.v)
@@ -354,7 +332,6 @@ static void build_site(vsite *v)
     mf_site *s = &v->site;
     memset(s, 0, sizeof *s);
     s->abi = MF_SITE_ABI;
-    s->consumer = MF_C_ENGINE;
     s->form = MF_FORM_FUNC;
     s->op = MF_OP_FIND;
     s->handoff = MF_H_RETURN;
