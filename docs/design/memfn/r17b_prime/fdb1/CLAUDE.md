@@ -26,3 +26,5 @@ R17-b′ step B1 (lane fdb1, 2026-10-16; `../../r17b_prime.md` rev 3 §1.6
   command is in its header); the counts are in `docs/dev/lanes/fdb1_report.md`.
   SUPERSEDED for B4 by `../fdb2/predicted_movers_B4.tsv` (B2's floor-token
   correction, rev 3 [C4]); this file stays as B1 wrote it, B1's record.
+
+- Lane e8min (2026-10-21): `shadow_census.py manifest --patterns FILE` takes a pattern list (`id <TAB> extra argv or - <TAB> pattern`, e8min/mk_j1_patterns.py) instead of emit_sweep's corpus population; one arm per line, the TSV gains a trailing `qid` column in that mode only (corpus mode's format is unchanged).
