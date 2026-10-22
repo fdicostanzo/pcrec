@@ -233,6 +233,17 @@ typedef struct { ABlock *head; Ctx *cx; } Arena;
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
 
+/* ---- the C-stack rule for a recursive walk ([DD-10]) ----
+ *
+ * Marks a helper whose large locals must stay in ITS OWN frame rather than be
+ * inlined into a recursive caller's. A walk bounded by the pattern's nesting
+ * pays its frame once per level, up to `PCREC_MAX_GROUP_DEPTH` times on one
+ * stack (docs/spec/limits.md §3.10 states the resulting budget), so a scratch
+ * array or a by-value analysis struct that is dead before the walk recurses
+ * belongs in a callee marked this way. `tests/thread/run_compile_stack.sh`
+ * measures the result; nothing checks the marking itself. */
+#define PCREC_OWN_FRAME __attribute__((noinline))
+
 /* ---- growable string buffer (codegen output) ---- */
 
 /* `cx` is the owning compile, or NULL — and unlike Arena, NULL is a REAL case

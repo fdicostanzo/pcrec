@@ -172,7 +172,7 @@ PCREC_LIMIT(PCREC_MAX_POSS_REF_DEPTH, 64, "levels", "compile budget", NONE, "", 
 PCREC_LIMIT(PCREC_MAX_REVDET_BODY_GROUPS, 64, "groups", "compile budget", NONE, "", "[ENG-BREP]: capturing groups a quantifier body may contain before revdet.c declines the reverse-deterministic rung", LIMITS_H)
 PCREC_LIMIT(PCREC_MAX_ALTCLS_FACTOR_DEPTH, 64, "levels", "compile budget", NONE, "", "[OPT-ALTCLS] stage 2: how deep prefix factoring may recurse into a group that just split", LIMITS_H)
 PCREC_LIMIT(PCREC_MAX_REPEAT, 65535, "count", "compile budget", NONE, "", "FIX-1/K5: the largest {n,m} quantifier count PCRE2 accepts (measured against libpcre2 10.46)", LIMITS_H)
-PCREC_LIMIT(PCREC_MAX_GROUP_DEPTH, 250, "levels", "compile budget", NONE, "", "PCRE2's own nested-group depth ceiling (measured); also bounds parser/AST recursion depth", LIMITS_H)
+PCREC_LIMIT(PCREC_MAX_GROUP_DEPTH, 250, "levels", "compile budget", NONE, "3.10", "PCRE2's own nested-group depth ceiling (measured); also bounds parser/AST recursion depth and so the compiler's C stack ([DD-10])", LIMITS_H)
 PCREC_LIMIT(PCREC_MAX_GROUP_NAME, 128, "bytes", "identifier cap", NONE, "", "[M6.3]: a named group's name, measured against libpcre2 10.46 (PCRE2 error 148 above it)", LIMITS_H)
 PCREC_LIMIT(PCREC_VERB_NAME_MAX, 128, "bytes", "identifier cap", NONE, "", "a (*VERB) name; PCRE2-internals tier, measured over both name tables", LIMITS_H)
 PCREC_LIMIT(PCREC_VERB_LIMIT_ACC_MAX, 429496728, "", "compile budget", NONE, "", "(*LIMIT_MATCH=N) and friends: the accumulator magnitude PCRE2 refuses at (UINT32_MAX/10 - 1)", LIMITS_H)

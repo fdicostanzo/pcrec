@@ -21,6 +21,7 @@
   - [§3.7](#s3-7) Findings data
   - [§3.8](#s3-8) Module `ucp`: which UCP sets compile
   - [§3.9](#s3-9) The DFA's context sets and atoms
+  - [§3.10](#s3-10) The compiler's C stack
 - [§4](#s4) Worked example: `^(a(?1)?b)$`
 - [§5](#s5) The default entries and the C stack
 - [§6](#s6) Left recursion: a documented divergence
@@ -38,7 +39,7 @@
 - [§8b](#s8b) Three `limits.def` knees `--tune=N` moves
 <!-- spec-toc:end -->
 
-<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.9 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
+<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.10 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
 
 <a id="s1"></a>
 ## 1. Scope of the guarantee
@@ -198,6 +199,19 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 - <a id="s3-9-p3"></a>[3.9¶3] `PCREC_MAX_CTX_ATOMS` = 16 context atoms: the distinct membership vectors the machine's bytes realize over those sets, plus the empty one (an absent side).
 
 <a id="s3-9-p4"></a>[3.9¶4] Over either, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). A truncated partition is never produced. Neither is movable by a flag.
+
+<a id="s3-10"></a>
+### 3.10 The compiler's C stack
+
+<a id="s3-10-p1"></a>[3.10¶1] `pcrec_compile` runs on the caller's thread, and its C-stack use grows with the pattern's parenthesis nesting and with nothing else: a concatenation, an alternation or a run of assertions of any length costs no stack per element. Nesting is capped at `PCREC_MAX_GROUP_DEPTH` = 250 levels, PCRE2's own limit; a group at level 251 is refused with "parentheses are too deeply nested", an ordinary compile error.
+
+<a id="s3-10-p2"></a>[3.10¶2] The cap is what bounds the stack, and the budget it yields is 768 KB (786,432 bytes): `pcrec_compile` uses at most that much C stack for any pattern, whether it accepts or refuses it. `make test-stackdepth` compiles the worst measured shapes at depth 250 and 251, and long chains, on a thread of exactly that size.
+
+<a id="s3-10-p3"></a>[3.10¶3] The measured worst, on x86-64 Linux with gcc at `-O2`, is nested lookarounds: about 14.5 KB plus 2.5 KB per level, 634,504 bytes at depth 250 and 636,520 bytes for the refusal at 251. Plain groups cost about 0.95 KB per level (250,504 bytes at depth 250). Every compile also pays a floor of about 62 KB whatever its shape.
+
+<a id="s3-10-p4"></a>[3.10¶4] A thread smaller than the budget compiles shallower patterns. At musl's default thread stack of 128 KB (131,072 bytes) that is nesting up to 47 levels of lookaround, or 123 levels of plain groups, measured the same way. pcrec does not detect a stack too small for the pattern: past those depths an undersized thread overflows rather than refusing, and the remedy is a larger thread. There is no caller-settable nesting limit.
+
+<a id="s3-10-p5"></a>[3.10¶5] The figures are measurements on one platform, not portable constants; another architecture or compiler moves them, which is why the budget carries about 20% headroom over the measured worst.
 
 <a id="s4"></a>
 ## 4. Worked example: `^(a(?1)?b)$`

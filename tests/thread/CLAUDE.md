@@ -17,6 +17,8 @@ section target, `make test-thread`.
 - **ts3_driver.c** — the TS-3 driver.
 - **run_stackdepth_tests.sh** — **[TS-4]/[DD-14.FB], 2026-08-25.** A SEPARATE suite from `run_thread_tests.sh` and NOT under ThreadSanitizer, which is the first thing to ...
 - **ts4_driver.c** — the [TS-4] driver.
+- **run_compile_stack.sh** — **[DD-10], 2026-10-22.** The COMPILER's own stack: `pcrec_compile` at nesting depth 250 and 251 for the worst measured families, long chains (a walk that recursed per element dies), and a too-small-thread control that must die, all on a thread of `docs/spec/limits.md` §3.10's stated budget. Second line of `make test-stackdepth`; prints a RECORD line (high-water bytes) per case.
+- **compile_stack_driver.c** — its driver: one `pcrec_compile` on an mmap'd, painted, guard-paged thread stack; prints `rc=` `hw=` `msg=`.
 - Platform note ([K33 DARWIN ADDENDUM], 2026-09-10): arm A's death assertion is LINUX-ONLY (MEASURED on darwin/gcc-16/ARM64).
 - On that box the ARM64 frame is within 16 B of Linux's, so the frame is not the reason; see the history file for the full account.
 

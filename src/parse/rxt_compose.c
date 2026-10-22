@@ -453,8 +453,14 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
     case A_WCLASS:   /* [CLS-TREE] S3: never at parse time; its child */
         return rc_find_root_call(a->l, pend);
     case A_CAT: case A_ALT: {
-        const Ast *h = rc_find_root_call(a->l, pend);
-        return h ? h : rc_find_root_call(a->r, pend);
+        /* The left-nested spine, iteratively ([DD-10]): visited right to left,
+         * so the LAST hit is the leftmost call in text order. */
+        const AKind k = a->k;
+        const Ast *h = NULL, *x;
+        for (; a->k == k; a = a->l)
+            if ((x = rc_find_root_call(a->r, pend)) != NULL) h = x;
+        x = rc_find_root_call(a, pend);
+        return x ? x : h;
     }
     }
     return NULL;

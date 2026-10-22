@@ -90,11 +90,13 @@ static bool em_is_tail(const EndMark *em, const Ast *a)
  * (D164 B3), a `$`/`\Z` in the end mark's tail set answers `\z`: the view of
  * the tree with those tails lowered to `\n?\z`, the question `complete` asks.
  *
- * The `A_CAT` spine is walked ITERATIVELY down `->r` for `src/opt/mrl.c`'s
- * reason. A left-leaning concatenation puts the long spine on `->l`, so this
- * walk's iteration is the CHEAP direction and its recursion the expensive
- * one — the mirror image of `src/facts/startanch.c`'s, which is why the two are
- * separate functions rather than one with a direction parameter. */
+ * Both spines are walked ITERATIVELY for `src/opt/mrl.c`'s reason, the
+ * `A_CAT` spine in both of its directions: the trailing factor decides, and a
+ * zero-width one hands the question to its left sibling, which is the long
+ * `->l` spine itself ([DD-10]: a run of zero-width factors once recursed one
+ * frame each). This is the mirror image of `src/facts/startanch.c`'s walk,
+ * which is why the two are separate functions rather than one with a
+ * direction parameter. */
 static int ew_walk_marked(const Ast *a, const EndMark *em)
 {
     for (;;) {
@@ -106,10 +108,17 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
              * exact test for "always zero-width"; `pcrec_minw(r) == 0` would
              * be "zero-width on SOME path" and would let `abc$(?:x|)` claim
              * the anchor on the path that consumed the `x`. */
-            int r = ew_walk_marked(a->r, em);
-            if (pcrec_cwmax(a->r) != 0) return r;
-            if (r == EW_Z) return EW_Z;
-            { int l = ew_walk_marked(a->l, em); return l > r ? l : r; }
+            /* A zero-width trailing factor hands the question LEFT, down the
+             * spine, so that direction is iterative too ([DD-10]): `m` is the
+             * strongest anchor the zero-width factors passed so far promise. */
+            int m = EW_NONE;
+            for (; a->k == A_CAT; a = a->l) {
+                int r = ew_walk_marked(a->r, em);
+                if (pcrec_cwmax(a->r) != 0) return r > m ? r : m;
+                if (r == EW_Z) return EW_Z;
+                if (r > m) m = r;
+            }
+            { int l = ew_walk_marked(a, em); return l > m ? l : m; }
         }
         case A_CAP:
         case A_ATOMIC:
@@ -122,8 +131,12 @@ static int ew_walk_marked(const Ast *a, const EndMark *em)
         case A_ALT: {
             /* THE WEAKEST OF THE TWO, because the claim is "every match": a
              * `\z` branch and a `$` branch together promise only `$`. */
-            int l = ew_walk_marked(a->l, em), r = ew_walk_marked(a->r, em);
-            return l < r ? l : r;
+            int m = ew_walk_marked(a->r, em);
+            for (a = a->l; a->k == A_ALT; a = a->l) {
+                int r = ew_walk_marked(a->r, em);
+                if (r < m) m = r;
+            }
+            { int l = ew_walk_marked(a, em); return l < m ? l : m; }
         }
         case A_REP:
             /* At `rmin >= 1` the LAST iteration ends where the repeat ends,

@@ -67,9 +67,10 @@
  * every path, an unset bit is "not known", never "known false". The empty set
  * is therefore always a legal answer and is what every undecidable arm gives.
  *
- * The `A_CAT` spine is walked ITERATIVELY for `src/opt/mrl.c`'s reason — a
- * left-leaning concatenation is as long as the pattern, not as deep as its
- * nesting — and the recursion that remains descends one paren level per frame. */
+ * Both spines are walked ITERATIVELY for `src/opt/mrl.c`'s reason — a
+ * left-leaning concatenation or alternation is as long as the pattern, not as
+ * deep as its nesting — and the recursion that remains descends one paren
+ * level per frame. */
 static unsigned sa_walk(const Ast *a)
 {
     unsigned acc = 0;
@@ -84,7 +85,15 @@ static unsigned sa_walk(const Ast *a)
              * would let `(?:x|)^y` claim `^`'s anchor on the path that
              * consumed the `x`. The asymmetry is the whole correctness
              * argument for this arm. */
-            if (pcrec_cwmax(a->l) == 0) { acc |= sa_walk(a->l); a = a->r; continue; }
+            if (pcrec_cwmax(a->l) == 0) {
+                /* Then EVERY element of the left spine is zero-width and each
+                 * contributes its own facts; walked iteratively ([DD-10]). */
+                const Ast *t = a->l;
+                for (; t->k == A_CAT; t = t->l) acc |= sa_walk(t->r);
+                acc |= sa_walk(t);
+                a = a->r;
+                continue;
+            }
             a = a->l;
             continue;
         case A_CAP:
@@ -102,8 +111,9 @@ static unsigned sa_walk(const Ast *a)
             /* INTERSECTION, because the claim is "every match", and a match of
              * the alternation is a match of one branch. A fact must hold on
              * both to hold on the alternation. */
-            unsigned l = sa_walk(a->l), r = sa_walk(a->r);
-            return acc | (l & r);
+            unsigned m = sa_walk(a->r);
+            for (a = a->l; a->k == A_ALT; a = a->l) m &= sa_walk(a->r);
+            return acc | (m & sa_walk(a));
         }
         case A_REP:
             /* `rmin == 0` admits the empty iteration, which asserts nothing
