@@ -657,4 +657,66 @@ for the re-run.
 |---|---|---|
 | R-28.1 | the kit's compile-time C stack use per call is bounded and small compared with a 128 KB thread (target: no single kit frame above 4 KB; the kit states its peak) | dd10's `tests/thread/run_compile_stack.sh` (in `test-stackdepth` once lane/dd10 merges) stays green; the `a` baseline drops by the frames removed; zero emitted-byte movers |
 
-**Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** kit-side on request (main ledger next free S1400).
+**Not asked:** any method (D157). **Sequencing:** none; any time. **Sabotage ids:** S1430-S1439 allocated to the kit (main ledger; S1400-S1429 went to D172 S2).
+
+## R-29 (2026-10-22, pcrec manager) — the window site stated as spans, alternatives and frequencies; the decision and its text are the kit's
+
+
+**Customer:** D172 (Frank, 2026-10-21: "pcrec states spans; the find-window and REPORT are the same
+request; choices are table-driven"), and integration.md §14.9 items 2-3 / Q40 (RULED YES: the kit
+decides adoption).
+
+**Facts pcrec will state, for every FIND site of the family (PF, PF bounded, MLINE at both callers,
+the VM hat seek, the offset-skip block, the pre-check's FUNC parts, Z2's cover site):**
+
+| fact | meaning |
+|---|---|
+| spans | per span: a signed start offset from the candidate, one byte set per position, a contiguous required core (possibly empty), verify YES (every yielded candidate satisfies it) or NO (a true filter) |
+| the core rule | at candidate c, a position d off the subject PASSES outside the core and FAILS inside it; on the subject the byte must be in the set |
+| table offers | per position, where pcrec already emits a membership table for that set, its name |
+| floor | SUBJECT, or an expression F; per non-core position the guard is three-way: off the subject passes, inside `[0, F)` is pcrec's edge (the candidate is not covered), else membership |
+| alternatives | an UNORDERED set of one or two span lists, each a sound candidate definition alone, each with its ENTRY: PARKED (candidates where the parked machine leaves its start state) or RESEED (candidates from the walk; the machine is re-seeded at each) |
+| frame (phase 2 only) | form/op/handoff/empty/use/body/decl_point/hooks, span range, whether it is the VM attempt's seek |
+| frequencies | the analysis object's byte-rate and the measure set, as already passed on `mf_art_begin` |
+
+**Producer obligations pcrec asserts:** a verify-NO core is a subset of the positions where absence
+truly fails; each alternative is sound alone under its entry; R on a PARKED alternative holds only if
+the matcher is re-seeded at the candidate; each walked offset is its own one-position span, the walked
+spans listed in walk-index (ascending offset) order; the run R is stated as its positions (exact or
+cube) and offsets, never a chosen member or stretch; the pinned run R (verify NO) is stated in the RESEED alternative, and in the
+PARKED one only where an exact position of R is at offset 0, the filter is one byte and k0 = F0 =
+{R's byte there} (a parked candidate is otherwise not a match start). Under the deny bits
+`PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`, pcrec does not state R at all.
+
+pcrec stops stating `plan_hint`, `plan_pos`, `rank_*`, `ctx[]`, `absent`, `consumable`,
+`consumable_len`, `exact_len`, `prefix_stated`, `span_class` BOUNDED/CONTEXT, `read_floor`, W0-W2,
+`end_back`, per-term `need`, `consumer` and REPORT's kind meaning.
+
+**What pcrec needs back:** (phase 1, no text) the chosen alternative, the stop (offset and set), the
+positions the plan tests, whether the pinned run is compared whole, the run's member and stretch where
+R is stated, and a RE-SEED bit (whether the plan needs the matcher re-seeded at each candidate);
+(phase 2) the C text in the stated frame and the proof class as today. pcrec's NEXT rows and the
+`DFA_PREFILTER`, `_OFFSETS` and `REQ_RUN` `@idx` stamps read the phase-1 reply (window_site.md §3.4's
+table); the reply is the only owner of the pinned run member and its stretch.
+
+**The kit retires `[rev3 rR7]`:** RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2, ofsskip
+and pffind as arms (folded), and every reader of the fields above in ofsskip.c, precheck.c and vrun.c.
+
+**Landing bar** (window_site.md §5): one branch of six commits, one landing; zero movers on every
+emit_sweep arm, stamps included; the findings mover manifests unchanged; reach floors met; every deny
+keeps its identity, the `memfn` floor stays 12; one `MF_SITE_ABI` (and `MF_CLASS_V`) event, numbered at
+landing; the derived sabotage list green.
+
+**Not asked:** any method. How the kit picks, plans, finds or resumes is the kit's (D157).
+
+**Sequencing:** after B4′; S3 (REPORT routed, D-hors) follows as its own byte-moving event, judged on
+the scalar layer against the default build with every slower cell named and capped (window_site.md §6),
+the SIMD-on layer reported beside it. Users WILL see about 1.53x slower on all-hex dense bulk input
+(D-hors routes hex8 to HRS), accepted for the 2-6x wins on real and no-hit text.
+
+**Sabotage ids:** kit-side S1400-S1429 (30 ids, ALLOCATED by main to D172 S2; dd10 holds S1336-S1345,
+S1386-S1393 are taken, R-28 holds S1430-S1439); pcrec-side
+from main's ledger above the highest id on main and in worktrees at filing. The Z2 cover rows that exist are S1130-S1141, S1144,
+S1148 and S1149; S1257-S1290 does not exist.
+
+**Filing note (main, 2026-10-22):** text verbatim from window_site.md rev 3.2, Appendix A (lane/memfn-ws @ b5603b3c0). Main agreed with rev 3.1 plus seven notes, which are folded into 3.2. Frank's build go is conditional on that agreement (D172 addendum). **Ruling on §9's new question (the readers of `ReqRun.idx`):** AGREE with the kit's leaning. Where a family site states R, `REQ_BYTE` via `pcrec_req_pick`, the `[OPT-REQPOS]` comment, `req_set_leads_own` and the pick shadow take the reply's member at commit 6. The truncation window, and artifacts where no site states R, keep pcrec's index. CONDITIONS: (a) ONE pcrec function resolves the member (reply if stated, else pcrec's index), and every reader calls it, with no per-reader branch; (b) commit 6's zero-mover sweep covers these readers' stamps.
