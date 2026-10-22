@@ -76,6 +76,13 @@ two places where a disposition settles something Frank stated or was asked.
 | Q1-Q4 | manager's call with the panel, Frank may reverse | Q1 refuse past the buffer; Q2 one abi check per loop (fam-4's wording); Q3 an early break skips, stated in the spec; Q4 the internal batch is withdrawn for good and the callback entry dissolved | §11 |
 | ids | CONFIRMED | S1309-S1318 for this stage (from I1's range); the two new rows take S1319-S1320 | §5.4 |
 
+### R2a. The build's corrections (lane i2build, 2026-10-21)
+
+| what | finding | ruling | where |
+|---|---|---|---|
+| §5.3's chk-8 control | I4's `_next` object is NOT identical to I1's on c3, c6 or c4 (gcc 15.2 `-O2`). Pasting I1's literal `_next` text into the I4 artifact gives the same object as `return __one(...)` (c3, c6), so the cause is the TU gaining `_next_n`, a second caller of the shared statics, not `__one`. No text spelling removes it | manager R1: the objdump identity is WITHDRAWN. It is replaced by a TEXT check (the I4 artifact's `__one` body equals the I1 compiler's `_next` body byte for byte, on DFA unanchored, DFA attempt and VM, with a planted control; `tests/findall/run_one_body.sh`) and by gate 1 "`_next` unharmed" as the deciding measurement | §5.3 |
+| §4.1 H1-H3 | H1 TRUE on the unanchored DFA (no call in the loop; `__enter` only on the cold bind path). H2 TRUE on c6 (one `call __find` per match, no second copy). H1 FALSE as stated on the VM: the loop calls the hybrid's out-of-line `rx_prefilter` at the same two sites `_next` has in I1. H3 FALSE: `caps` and `k` are spilled and reloaded per match (c3: 2 loads and 1 store per match) | recorded as findings; the timing gates measure their cost | §4.1; `docs/dev/lanes/i2build/objdump/` |
+
 ---
 
 ## 0. Answers first
@@ -561,11 +568,14 @@ proposed: moving those cases into `tests/findall/cells.tsv`, and a `next`-only a
 ### 5.3 Spec and structural checks
 
 - `make test-spec-history` (the new §3.8.1/§3.8.2 anchors; §6 row 31).
-- **`_next` is I1's** `[r1 chk-8]`. An objdump of `<prefix>_next` from the I4 compiler is
-  compared with the I1 compiler's, on one artifact of each body shape (DFA unanchored, DFA
-  attempt, VM), with symbol names and addresses normalized. They must be identical. With
-  `__one` (§2.3) this holds by construction; the compare is the control that would catch a
-  change to `__one`'s text or attributes.
+- **`_next` is I1's** `[r1 chk-8]`, **as text** (§R2a, ruling R1). The body of `__one` in
+  the I4 artifact is compared with the body of `<prefix>_next` that the I1 compiler emitted,
+  on one artifact of each body shape (DFA unanchored, DFA attempt, VM): they must be
+  byte-identical, and a planted one-token change must fail the compare
+  (`tests/findall/run_one_body.sh`; the expectations in `tests/findall/one_body/` were
+  written by the I1 compiler). The objdump compare first designed here is withdrawn: the
+  object code of `_next` moves once `_next_n` exists, whatever `_next`'s text, so "`_next`
+  unharmed" is gate 1's measurement (§4).
 - `run_residual_twins.sh` / the relocation check: `_next_n` calls no exported symbol (no
   `R_X86_64_PLT32 <p>_next` from `_next_n` under `-fPIC`), with a population floor of one
   per artifact that defines `next`.

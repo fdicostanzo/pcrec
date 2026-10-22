@@ -290,6 +290,10 @@ every oracle exclusion has an entry there.
   about what §3.1's loop does, so a second reading of §3.1 would prove
   nothing); the second drives `<prefix>_search` and `<prefix>_match_caps` side
   by side on one artifact, which is R30 E8's replacement obligation.
+  [FINDALL-NEXT] I4: `run_gstart_diff.sh` §1b links each find-all artifact
+  with `tests/findall/iter_drv.c` instead and holds the iterator (`fa_next`,
+  `fa_next_n`, RX_FOREACH) to libpcre2's global iteration over every sweep
+  subject.
 - **run_gstart_diff.sh** — [M6.2] WAVE D's behavioural instrument, run by
   `make test-assertions`. Four sections: find-all CONTIGUITY against libpcre2
   driven through the SAME §3.1 loop (never a hand-written span list); a

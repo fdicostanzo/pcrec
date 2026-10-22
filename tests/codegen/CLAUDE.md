@@ -927,6 +927,12 @@ decides whether to perform it — and then run the row through
   answer. Its own section, `make test-entry-shape-identity`, part of `make
   test` and NOT of `make smoke`: `run_premul_table.sh`'s measured argument
   (it emits and compiles 70 artifacts).
+  - **[FINDALL-NEXT] I4: THE ITERATOR ARM** (findall_iter_i2.md §5.2). Each
+    rung's artifact is also linked with `tests/findall/iter_drv.c` over the
+    witness's subjects: RX_FOREACH, `_next_n` and `_next` against each other
+    and `_next` against libpcre2's global loop. Rung identity is not its
+    expectation (the iterator answers PCRE2's iteration, which the find-all
+    loop does not claim). SKIPS that arm loudly without libpcre2.
   - **WHY IT IS A FILE AND NOT A SCRATCH SWEEP.** The write phase ran exactly
     this comparison ad hoc — 14 patterns × 409 subjects, 0 mismatches — and
     the run died with its scratchpad. The branch carried a CLAIM and not a
