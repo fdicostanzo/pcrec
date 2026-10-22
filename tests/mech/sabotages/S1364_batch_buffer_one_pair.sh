@@ -2,7 +2,8 @@
 # docs/spec/subst_api.md).
 #
 # Plant: the glue's batch buffer holds kmax pairs, not kmax * ncaps.
-# Witness: the `ncaps30`/`ncaps300` cells (next_n writes ncaps pairs per entry): a stack overrun.
+# Witness: the `ncaps30`/`ncaps300` cells (next_n writes ncaps pairs per entry): a stack overrun,
+# which run_subst_tests.sh section 4 (the cells under ASan, lane substfix) sees on any box.
 # Reach (K35): token nogroupceiling (cell ncaps300); tests/subst/run_subst_tests.py fails a run where a REACH_NEED token is carried by no passing cell.
 SAB_ID="S1364-batch-buffer-one-pair"
 SAB_FILE="src/gen/emit_subst.c"

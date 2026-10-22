@@ -63,7 +63,7 @@ REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1349', 'S1350', 'S1351', 'S1352',
               'S1353', 'S1354', 'S1355', 'nogroupceiling', 'batch64', 'illformed',
               'badspancorner', 'nul', 'vars', 'abi', 'giveup',
               'subject', 'before', 'after', 'amp', 'start', 'agree', 'utf8tmpl', 'encbind',
-              'fresh', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap']
+              'fresh', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap', 'blen', 'negnum']
 
 
 def decode(t):
@@ -209,6 +209,10 @@ def main():
     reached = {'S1350'} if out and out[0] == 'unit\tput=1,0' else set()
     got = {}
     for ln in out[1:]:
+        if ln.startswith('shape\t'):
+            if check(ln == 'shape\tneg=0', 'rx_shape_match took a needed row numbered -3: %r' % ln):
+                reached.add('negnum')
+            continue
         f = ln.split('\t')
         got[f[0]] = dict(x.split('=', 1) for x in f[1:])
 
@@ -253,6 +257,9 @@ def main():
             if check(g['mis'] == str(CODES['MISMATCH']), '%s: element took a foreign ncap: %s (S1351)' % (cid, g['mis'])):
                 reached.add('S1351')
             mm = str(CODES['MISMATCH'])
+            if 'blen' in g and check(g['blen'] == str(CODES['BADSPAN']),
+                                     '%s: element took a match end past ctx->len: %s' % (cid, g['blen'])):
+                reached.add('blen')
             if check(g.get('unk') == mm, '%s: element took an unknown flag: %s' % (cid, g.get('unk'))):
                 reached.add('unk')
             it_ = str(CODES['ITER'])

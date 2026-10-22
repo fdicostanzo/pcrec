@@ -32,6 +32,8 @@
  *   stale  the glue over a BOUND iterator (one <rx>_next taken), then over
  *          an ENDED one: the two codes
  *   unk    the element called with an unknown flag bit: rc
+ *   blen   (templates with no ${!name}) the element over a match whose end
+ *          is past ctx->len: rc
  *   bmis   bind with one run too few (`na` when the template names none),
  *          then against a copy of the rx record with ncaps 0: the two codes
  *   vmis   for a template with ${!name}: the element with ctx->vars NULL,
@@ -47,7 +49,8 @@
  *   p2short  pcre2_substitute with outlength == the main length (NOSPACE
  *          by its NUL): rc, the length it reports
  *
- * and once, before the cells, the `unit` line: rx_subst_put's saturation at
+ * and once, before the cells, the `shape` line (a negative needed number)
+ * and the `unit` line: rx_subst_put's saturation at
  * w = SIZE_MAX - 5 (S1350's witness). */
 
 #include <stdio.h>
@@ -224,11 +227,21 @@ static void unit_saturation(void)
     printf("unit\tput=%d,%d\n", cur.w == SIZE_MAX, cur.fits);
 }
 
+/* The `shape` line: rx_shape_match refuses a needed row with a negative
+ * number (subst_api.md §3¶3): the row's index, or -1 when it was taken. */
+static void unit_shape(void)
+{
+    rx_group_entry neg[] = { { NULL, -3, -1, NULL } };
+    rx_subst_run runs[1];
+    printf("shape\tneg=%d\n", rx_shape_match(neg, 1, subst_rx[0], runs));
+}
+
 int main(void)
 {
     static char line[1 << 18];
     static unsigned char out[OUTMAX], out2[OUTMAX];
     unit_saturation();
+    unit_shape();
     while (fgets(line, sizeof line, stdin)) {
         char *f[8];
         int nf = 0;
@@ -318,6 +331,16 @@ int main(void)
             ctx.ncap = (size_t)b.ncaps + 1;
             printf("\tmis=%d", sb->render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 0,
                                           RX_SUBST_GAPS, out2, sizeof out2, &cur));
+            if (!sb->nvrefs) {   /* a match end past ctx->len (§4¶5) */
+                ptrdiff_t (*bc)[2] = malloc((size_t)b.ncaps * sizeof *bc);
+                for (int j = 0; j < b.ncaps; j++) bc[j][0] = bc[j][1] = -1;
+                bc[0][0] = 0; bc[0][1] = (ptrdiff_t)n + 1;
+                cur = (rx_subst_cur){ 0, 0, 1 };
+                ctx.ncap = (size_t)b.ncaps;
+                printf("\tblen=%d", sb->render(&b, &ctx, (const ptrdiff_t (*)[2])bc, 1,
+                                               RX_SUBST_GAPS, out2, sizeof out2, &cur));
+                free(bc);
+            }
             cur = (rx_subst_cur){ 0, 0, 1 };
             ctx.ncap = (size_t)b.ncaps;
             printf("\tunk=%d", sb->render(&b, &ctx, (const ptrdiff_t (*)[2])caps, 0,
