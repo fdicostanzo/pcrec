@@ -155,4 +155,39 @@ tripwire, axes allowances) are checked by job 704-corefix-test's full
 
 ## 7. State at handoff
 
-(filled below)
+- **Branch `lane/corefix`.** Commits:
+  - `40037b6d9` (fix);
+  - `8efbeace8` (tests, rows, spec, K rows, U21);
+  - `95cbb048b` (abi 87, census and differential scripts);
+  - `e864b50fb` (pins, docs);
+  - then this report.
+
+  Nothing is merged.
+- **Rulings file:** the last entry applied is R1 (proceed; abi 87 with the full
+  ritual; mover census + differential required).
+- **OWED, queued and not yet run at handoff.** Five jobs: 704-corefix-census,
+  -diff, -reach, -test, -mech. Section 5 has each job's completion line and
+  green condition.
+  - Each job holds on `i2build-parity`, and they run in this order: census,
+    diff, reach; test, then mech.
+  - Logs: `worktrees/.boxqueue/{done,failed}/<TS>-704-corefix-<job>/job.log`.
+  - Census table: `build/cf/census_full.tsv`.
+  - Differential outputs: `build/cf/diff_{lane,base}.out`.
+  - Reach logs: `build/cf/reach_{lane,base}.log`.
+  - `make test` writes `docs/dev/artifact_size_log.tsv` in this worktree, as
+    a full corpus run does.
+- **At merge:**
+  - renumber the abi if 83-86 land first (every reader: section 3);
+  - re-pin `run_recursion_identity.sh` FILEPIN to the merge commit.
+
+| promise (brief) | state |
+|---|---|
+| F4 fixed generally (greedy/lazy/possessive, bounded/unbounded, nested) | done. Lazy/greedy unbounded fixed; possessive and bounded byte-identical and right (controls in the corpus) |
+| libpcre2 differential, a few hundred patterns, both engines, captures | job 704-corefix-diff, 600 patterns, OWED. Hand probes and the 1070-case corpus file agree with libpcre2 |
+| no previously-right answer moves | corpus file controls green. `make test` OWED (704-corefix-test); census (704-corefix-census) OWED |
+| pinned cases in the corpus | `tests/captures/empty_iteration.rxt` |
+| F3: every entry checks vars first, every entry tested | done; vars arm 3, six entries x eight artifacts |
+| K128, K129 rows FIXED on this branch | done |
+| sabotage rows S1470-S1479 | S1470-S1475 written, fields valid; measured by 704-corefix-mech (OWED) |
+| spec hunks (D80) | match_api.md §5.1¶3a, vars.md §5 |
+| abi (R1) | 82 -> 87, every grep'd reader |
