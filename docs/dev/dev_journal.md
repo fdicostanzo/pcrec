@@ -27221,3 +27221,19 @@ J1 has 19 movers (13 byte, 6 utf8) of 177 patterns; the plan had estimated about
 ## 2026-10-22 — landlang: lane/langfix2 landed on main
 
 Merged lane/langfix2 (speclang, langfix, langfix2, langfix3, lf3tri: docs/spec/pattern_language.md, syntax_index_check.py, K115-K118, K122-K127) as 19be546b1. The only conflict was the lanes history index (docs/dev/history/claude_md/docs__dev__lanes.md), resolved by keeping both sides. Branch validation was green before the merge (707-lf3tri-test full make test, 699-langfix3-mech, 708-langfix3-k124diff zero unattributed movers); on main only the light checks ran: make, make strict, test-plan-lint, test-spec-history, test-registry, all clean. [SPEC-LANG] moved to plan_completed.md (refs corrected to pattern_language.md); four candidate rows filed (LOWERENC-SEAL, LANG-DIAG-WORDING, LANG-K118-LETTER-MODULE, LANG-F8-F9); the stale compliance row on whitespace inside braces corrected through the annotation store. [M3.0] is streaming and not closed by this lane.
+
+## 2026-10-22 (session 123) — Frank's "1,2,3 go" (subst, stack depth, language spec): reviews, D27 adversaries, fixes; langfix landed
+
+**Accomplished:**
+- LANDED on main: lane/langfix2 (speclang + langfix + langfix2 + langfix3 + lf3tri; K115-K127, docs/spec/pattern_language.md), a8897e529, CI green. K74 widened (22ef344ce).
+- [DD-10] on lane/dd10b: pre-merge review (dd10rev: no code bugs, 3 test/spec must-fixes) applied by dd10fix (K130 fixed, PCREC_SPINE_EACH, measured budget 432 KB); dd10tri re-anchored 3 sabotage rows; the landing hit a parse.c conflict with K125, so dd10merge merged main INTO lane/dd10b (87e89a6ed). Re-validation queued.
+- Core defects found by the iterator adversary (iterd27: 43,783 checks, NO iterator defect): K128 wrong capture after an empty repeat iteration, K129 unset vars missed by _search. Fixed on lane/corefix (abi 87) plus a pre-existing vm_counter_fits defect (cfcount) that the fix exposed via a 1.9x size regression (NEST8); FULLY GREEN.
+- Subst: code review (substcode) + D27 blinded corpus (substd27, ~1,763 cases; `$_` wrong output) fixed by substfix, corpus adopted as test-subst-d27; then Frank ruled an interface rework (R4-R8: optional lookup table, name helper, piece output with no malloc, subst-extended, blank-unset default, helpers in a standalone `pcrec --emit-support` unit, flatten kept). Design R4 delivered (lane/subst 7cea1fcb6), no build go.
+- Iterator spec corrections (iterdoc, lane/iterdoc) ride the I1+I2 landing. Frank's find-all bench prepared (lane/findbench; smoke green; timing job ready).
+- Kit: R-28 done (lane/memfn-r28 4e49ed417); D172 S2 commits 1-6 + fixes on lane/memfn-wsc7, heavy queued; main agreed two declared listing deltas. The kit's bisect cleared it of the variant tag-floor drop: cause M0's stamps (813f43ec8), legitimate; re-pinned on lane/vrepin.
+
+**Mistakes / lessons:**
+- Several queue jobs failed on their own scripts (wrong expect line, wrong `state` key, str/bytes, a dependency on a replaced job): job scripts need the same review as code. One job pasted the values it then checked (green by construction); removed.
+- A lane counted declared-UNREACHED rows as unreached; a base built from `git archive` cannot run the mech clean-tree clone.
+
+**Next:** see wake.md.
