@@ -124,7 +124,7 @@ producer declines it (§7).
 | VM hat seek (VM_ATTEMPT) | one, `{0: S}` | `[0]` | YES |
 | MLINE `(?m)^` stop (`mline_find_of` + `pcrec_memfn_context_stop`) | one, `{-1: \n}` | `[-1]` (today's `absent` FAILS) | YES; floor = the expression `start` (the edge is pcrec's) |
 | offset-skip FUNC (`ofs_pred_of`) and the pre-check's FUNC parts | two: R = the run (REQUIRED today) and K = the scan byte and the selected k-set positions (OPTIONAL today) | R: all its positions; K: all its positions | R YES, K NO |
-| cover / REPORT (`known.c`, `cover_ctx_item`) | span 0 `{0..k-1: S_d}`; one span per context item, `{-1: C_{-1}}` and/or `{k: C_k}` | span 0: `[0, k)`; an item: its position if FAILS, empty if SATISFIES | all YES |
+| cover / REPORT, main's Z2 (aeb381c25: `known.c` `cover_ctx_item` and the site builder, `emit_dfa.c` `emit_cover`, `DELEG_COVER`; routed only through the harness lever `--harness=kit-proof`, which calls `mf_preview(art, "R-26.6")`) | span 0 `{0..k-1: S_d}`; one span per context item, `{-1: C_{-1}}` and/or `{k: C_k}` | span 0: `[0, k)`; an item: its position if FAILS, empty if SATISFIES | all YES |
 | kit_proof §3.3 rows: `\b`/`\B`, `(?<=X)`, `(?<!X)`, `(?m)$`, `(?=X)`/`(?!X)` width 1, `\z` (`C_k = ∅`, SATISFIES) | a one-position span at -1 or k | FAILS → in core; SATISFIES → empty core | as the consumer needs |
 
 `\z` shows the rule's reach: an empty set with an empty core means "this position must not
@@ -338,7 +338,8 @@ A-model and the family has one stop rule.
 | `consumer` (folded into the consumer category) | W4 | `memfn.h`, compose.c, `emit_dfa.c`, `emit_vm.c`, `memfn_sites.c`, `known.c`, `formhash.c`, `memfn/tests/g2/g2_gen.c` |
 | ofsskip/pffind as arms (their narrow intakes: one-byte scan, tables required, `plan_hint` required) | W1 | compose.c `arms[]`, precheck.c (FUNC parts), `tests/memfn/rows.tsv`, finder.c's `fd_route` arm map |
 | `plan_hint`, `plan_pos`, `rank_n`/`rank_pos`/`rank_ppm` | W5c | `memfn.h`, ofsskip.c, precheck.c, vrun.c, compose.c, formhash.c, `emit_dfa.c` (`ofs_pred_of`, `ofs_pred_rank`), `memfn_sites.c`, `known.c`, `memfn/tests/g2/*`, `tests/memfn/{proven_check.c,arm_fixtures.c,rank_check.py,proof_check.c}`, the `[OPT-REQPOS]` note and the `REQ_RUN @idx` spec text (§14.9 item 1's re-spec, a `docs/spec/findings.md` hunk) |
-| `mf_preview("R-26.6")` | stays until B1; then its step name retires with RPT | as listed by the R-26.6 sabotage rows S1251-S1254 |
+| `mf_preview("R-26.6")` | stays until B1; then its step name retires with RPT | `memfn_sites.c` (`pcrec_memfn_art`, behind `pcrec_kit_proof_routed`), `src/core/internal.h`, the R-26.6 sabotage rows S1251-S1254 |
+| Z2's cover statement in R-26 terms (ctx items, REPORT kind, `consumer` RESULT, prefix facts `exact_len = consumable_len = k`, `read_floor` SUBJECT) | restated at W3, old spelling gone at W4 | `known.c` (`cover_ctx_item`, the site builder, `pcrec_cover_proof_diff`), `emit_dfa.c` (`emit_cover`), `memfn_sites.c` (`pcrec_memfn_span0_stated`: the true `exact_len` stays pcrec-internal), the kitproof arm's rows (§5.1) |
 
 ---
 
@@ -348,7 +349,7 @@ A-model and the family has one stop rule.
 |---|---|---|---|---|---|---|
 | W1 | kit | the INTERNAL span form: one function reads today's `mf_site` (terms, needs, `ctx[]`, `absent`, the context stop, `floor`/`read_floor`, `plan_hint`) into spans + core + verify + offers; tables A-E; ofsskip/pffind become rows of it | 0, MEASURED (emit_sweep every arm, identity gates, G2, `REACH_ONLY=1` mech re-aim) | none | none | none (no byte moves) |
 | W2 | kit | R-27 on the family: A-mass, C-own, the core bound, E-stmt for REPORT; RPT and `kit_report_exact` retire into the family's plan-derived proof; preview-only (`mf_preview`) | 0 default; preview arts move (harness only) | none | none | owed at B1 (panel Q1) |
-| W3 | pcrec (a request main files: "the window site stated as spans") + kit | pcrec's builders state spans directly (PF, MLINE, VM hat, OFS, pre-check FUNC parts, cover); the kit's trace build asserts W1's internal form from the OLD fields equals the STATED spans on every compile | 0, MEASURED | 19 (appended fields) | none | none |
+| W3 | pcrec (a request main files: "the window site stated as spans") + kit | pcrec's builders state spans directly (PF, MLINE, VM hat, OFS, pre-check FUNC parts, and Z2's cover site, §5.1); the kit's trace build asserts W1's internal form from the OLD fields equals the STATED spans on every compile | 0, MEASURED | 19 (appended fields) | none | none |
 | W4 | kit + pcrec builders | the old fields leave the contract (§4's W4 rows) | 0, MEASURED | 20 (layout) | none | none |
 | W5a/b/c | kit (transcription, switch) + pcrec (stop computing) | §3 | 0, MEASURED at each | 21 at W5c | none | none |
 | B1 | kit + pcrec, ONE commit | REPORT routed by default (the cover site renders the family's text); also waits for R17-b′ B4 (R-27's sequencing) | YES: the cover artifacts | none | YES, same commit (readers by grep, D76/D94; G1 both layers; R-27.1's 650 re-run) | YES, born in this commit |
@@ -357,6 +358,52 @@ A-model and the family has one stop rule.
 Every `MF_SITE_ABI` event is a kit-contract change: memfn journal, ledger, `memfn.h` comment,
 `memfn/include/CLAUDE.md`. W3 is the only step pcrec must REQUEST (main files it on main before
 its lane is briefed); W4 and W5c each carry a pcrec builder hunk in the same commit as the kit's.
+
+### 5.1 W3's pcrec restatement includes Z2's cover site `[addendum: kit manager, 2026-10-21]`
+
+Main's Z2 (merged `aeb381c25`, harness-only, 0 default movers) states the cover site in
+R-26's terms: `ctx[]` items, the REPORT kind, `consumer` RESULT, span 0's prefix facts and
+`read_floor` SUBJECT, with `mf_preview("R-26.6")` on the lever's arts. W3's request names
+it as one of the builders it restates, beside PF, MLINE, the VM hat, OFS and the pre-check
+FUNC parts:
+
+| Z2 states today (R-26 terms) | W3 states | moves |
+|---|---|---|
+| `pred` = span 0, k SET terms, all REQUIRED, BOUNDED, `exact_len = consumable_len = k` | span 0 `{0..k-1: S_d}`, core `[0, k)`, verify YES; `exact_len` stays in `MkLang` (C8/X0 keep reading it there) | nothing (harness-only arts) |
+| `ctx[]` items at -1 and k (`cover_ctx_item`), `absent`, `consumable` YES | one span per item, core per §1.2, verify YES | nothing |
+| `site_kind` REPORT, `consumer` RESULT | the consumer category's RESULT value (§9 Q3) | nothing |
+| `read_floor` SUBJECT | floor SUBJECT | nothing |
+| `pcrec_cover_proof_diff` (the DEFAULT build holds the kit's class to the stated sets, C14) | unchanged in meaning: the stated sets are the verify spans' sets; it stays pcrec's check | nothing |
+| `mf_preview("R-26.6")` behind the lever | unchanged until B1 | nothing |
+
+Its zero-mover witness is the same as Z2's: emit_sweep (every arm) for the default build,
+plus the lever's own arts compared before/after the restatement (`--harness=kit-proof`,
+the kitproof arm's 393 cells and X1), because the default build never renders the cover
+site.
+
+**Sabotage re-aims are DERIVED, never hand-listed.** At each W step (W1-W5, B1), in the
+step's own commit, the build lane runs this rule over EVERY row in `tests/mech/sabotages/`
+(Z2's S1130-S1141, S1144, S1148, S1149 and whatever of S1257-S1290 exists by then are
+members, not the list):
+1. **Candidates** = rows whose `SAB_FILE` is in `git diff --name-only <base>..HEAD`.
+2. **Anchor test**: `VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh <candidates>`;
+   a row whose `SAB_BEFORE` no longer resolves MUST be re-aimed.
+3. **Intent test**: a candidate whose `SAB_BEFORE`/`SAB_AFTER` text lies inside a changed
+   hunk of the diff (grep the anchor's lines against `git diff -U0`), or names an identifier
+   §4 retires at this step, is re-aimed with its intent re-verified (BOILERPLATE: "a re-anchor
+   needs its intent re-verified").
+4. **Reach test**: `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` over the arms the
+   step touches (`kitproof`, `memfnfinder`, `memfng2`); every row whose witness no longer
+   reaches its site is re-aimed.
+5. The step's report prints the derived list with the rule's output (the union of 2-4) and
+   the count; a row may be RETIRED only where §4 retires the code it plants in, named with
+   its successor plant (e.g. S1256 "NONE accepted on REPORT" becomes the floor-row plant on
+   an all-verify site).
+
+Illustration only (not the list): an identifier pre-screen at main `ca4ec4d10`, restricted
+to the files the W steps edit, already flags about 22 rows (S1101, S1102, S1133, S1137,
+S1222-S1226, S1251, S1252, S1256, S689, S736, S737, S750-S754, S794, S849, S917). Steps 1-4
+find the rest, Z2's rows anchored in edited hunks included.
 
 Why W1 before W3: R-27 is not blocked on pcrec. The kit can normalize today's fields itself and
 prove the family at zero movers; pcrec's restatement then has a comparator ready.
@@ -500,4 +547,5 @@ libpcre2); the kit side is ready the day it lands.
 | standing questions | §8 | done |
 | no edits under memfn/src, src/, cli/, lib/, tests/; no make; no timing | — | held |
 | a row in docs/design/memfn/CLAUDE.md | that file | done |
+| addendum (kit manager): W3's restatement includes Z2's cover statement; sabotage re-aims DERIVED by rule + grep | §5.1 | done (rule stated; its output is each build step's) |
 | claims needing a run | §5 every "MEASURED" zero; §2.4 C-run's grouping = today's (W3's identity gate); §3 the comparator population floor | OWED to the build lanes |
