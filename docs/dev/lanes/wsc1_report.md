@@ -8,8 +8,10 @@ Design of record: `docs/design/memfn/window_site.md` rev 3.2. Scope: §5.1
 COMMIT 1 ONLY, the kit side. No pcrec builder edit, no `MF_SITE_ABI` number
 change, no D-hors.
 
-STATE AT HANDOFF: see "Validation" (light checks complete; the heavy run,
-`make test` and the emit_sweep identity sweep, is QUEUED and OWED).
+STATE AT HANDOFF: every light check run and green (§2, "Validation at the
+tip"); the heavy run (emit_sweep plain vs 7050f8652 with the dumps stream,
+then `make test`) is QUEUED as `575-kit-wsc1-heavy` and OWED (§4). No
+rulings file was named.
 
 ## 1. What was built, mapped to the design
 
@@ -41,19 +43,48 @@ Everything below is reachable ONLY on an art previewing `"window-family"`
 | check | command | verdict |
 |---|---|---|
 | build | `make -j16` | clean, no warning |
-| strict | `make strict` | OWED-IN-THIS-REPORT: see §2.1 |
-| sabotage anchors | `python3 -I scripts/m6read_check_sab_anchors.py` | see §2.1 |
-| codegen | `bash tests/codegen/run_codegen_tests.sh` | see §2.1 |
-| test-core | `make test-core` | see §2.1 |
-| every test-memfn-* | `make test-memfn-{link,manifest,g2,stamps,arms,deleg,arch,forms,reach,rows,finder,rank,guarded,simdfloor}` | see §2.1 |
+| strict | `make strict` | **clean** ("whole tree compiles clean with -Werror -Wshadow") |
+| sabotage anchors | `python3 -I scripts/m6read_check_sab_anchors.py` | **all anchors resolve** (901 sabotages, 932 anchor sites) |
+| codegen | `bash tests/codegen/run_codegen_tests.sh` | **331 passed, 0 failed** (a first run read 330/1 on `[DD-14-RECURSION rule 3]` "pcrec failed to compile the fixture": I had rebuilt `build/pcrec` while it ran; the fixture compiles rc 0 alone, and the re-run on the stable build is green) |
+| test-core | `make test-core` | **rc 0** |
+| every test-memfn-* | `make test-memfn-{link,manifest,stamps,arms,deleg,arch,forms,reach,rows,finder,rank,guarded,simdfloor}` | **each rc 0** (finder: finder_check 958/0, proven 31/0, arm_reach 16/0, pr11 5/0, presence 24/0, proof 1288/0 with proof_run's new read-limit layouts: 550 sites, 21,479,052 layout calls) |
+| G2 quick | `make test-memfn-g2` (run_g2.sh --quick, with section 4w) | **rc 0, checks passed 71,217,801, failed 0**; section 4w "PASS: window family (checks passed: 6031)" |
 | G2 window family | `bash memfn/tests/run_g2_win.sh` (TMPDIR the scratchpad) | **GREEN: checks passed 6031, failed 0** (1500 sites rendered, 3,745,812 answer calls in four layouts, 622,264 hits; ASan+UBSan driver passed 3000 failed 0; W1 ref-defects 2-5 each red) |
 | plants | `bash memfn/tests/run_g2_win.sh --plants` | **8 of 8 RED** (§3) |
 | emit_sweep plain vs 7050f8652 | queued (§4): the box lock was held by 571-kit-r28-heavy | OWED |
 | make test | queued (§4) | OWED |
 
-### 2.1 Light-check verdicts
+### 2.1 Notes on the light checks
 
-(filled below at the tip; see "Validation at the tip")
+- Every light check ran on this box while the queue's `571-kit-r28-heavy`
+  held the box lock (a correctness run, not a timing window): no quiet gate
+  was in force. `emit_sweep` takes the box lock itself, so it is in the
+  queued heavy job instead of run by hand (§4).
+- `proof_run`'s new READS check has its own planted witness, `WSC1-R1` in
+  `tests/memfn/run_proof.sh` (the generic row's read bound one byte loose):
+  RED, "READS: a fault (guard at s + n)".
+- The final window-family numbers at the tip are in "Validation at the
+  tip" below.
+
+## Validation at the tip
+
+Final runs on the tip's build (scratchpad logs; seed 20261022, 1500 sites):
+
+- `bash memfn/tests/run_g2_win.sh`: **checks passed 6031, failed 0, rc 0.**
+  1500 of 1500 sites rendered, 26 lever controls and NOP refusals refused
+  as they must be, 1500 queries agreeing with a same-phase define;
+  3,745,812 answer calls (each in layouts U, L, S-in, S-out), 622,264 hits;
+  paths empty 197, parked 317, reseed 117, mass 745, floor 124, pinned 39,
+  RE-SEED set 257; MARGIN chose RESEED 117, PARKED 151; ties decided: mass
+  255, model 63 (a MARGIN tie never arose: no floor holds it); cells:
+  edge rejections 24,575, core positions off the subject 1,788,589,
+  non-core 544,594, reads below the candidate 1,029,683, NOP empties
+  147,501; forms wf-floor 821, generic 398, pf_memchr 235 (pf_memchr_back
+  among them), ofsskip 29, pf_walk 17. ASan+UBSan driver 3000/0. W1
+  ref-defects 2-5 each red.
+- `bash memfn/tests/run_g2_win.sh --plants`: **8 of 8 RED** (table §3).
+- `bash tests/memfn/run_proof.sh --plant WSC1-R1`: **RED** (READS: a fault,
+  guard at s + n).
 
 ## 3. The plants
 
@@ -69,7 +100,7 @@ Placeholder ids WSC1-P1..P8 until the kit manager assigns S1400-S1429 ones
 | WSC1-P3 | a margin direction flipped | RED: DECIDE, alt (225 sites) |
 | WSC1-P4 | a tie flipped (A-mass at a set position to the HIGHER offset) | RED: DECIDE, stop (44 sites) |
 | WSC1-P5 | a core position read as outside the core (the plan's last tested position) | RED: PLAN (664 sites) |
-| WSC1-P6 | an empty meet not sent to the floor (§5.2's list) | RED: DECIDE (314) |
+| WSC1-P6 | an empty meet not sent to the floor (§5.2's list) | RED: 314 sites (DECIDE; first printed: the query's class differs from the define's) |
 | WSC1-P7 | C-pin splitting the stretch (§5.2's list) | RED: DECIDE grouping (39) |
 | WSC1-P8 | an untested offset claimed (§5.2's list: the class proves one past each tested position) | RED: PROOF (356) |
 
@@ -81,7 +112,24 @@ outside the core can change an answer.
 
 ## 4. The queued heavy run
 
-(filled below)
+Job `575-kit-wsc1-heavy` (kit band, `idle-ok`, cap 14400 s, a correctness
+run with no quiet gate; `--ready` exits 0). At the lane tip it runs:
+`make -j16`; `python3 scripts/emit_sweep.py --ref 7050f8652 --bin build/pcrec
+--tree worktrees/wsc1 --no-self-check --streams c-default,c-vm,emit-ir,
+composition,facts,emit-ir-auto,stderr,dumps` (zero movers required: the
+family is unreachable without the lever, so every stream must read
+`movers=0`); then `scripts/perfrun --label wsc1 -- build/wsc1/heavy/
+maketest.make.log` (`make test`).
+
+- Logs: `worktrees/wsc1/build/wsc1/heavy/{build,sweep_plain,maketest}.log`,
+  the make output `build/wsc1/heavy/maketest.make.log` (+ `.perfrun`), the
+  sweep's own `build/wsc1/heavy/sw_plain/`; the queue's job.log under
+  `worktrees/.boxqueue/done/<ts>-575-kit-wsc1-heavy/`.
+- Completion lines: `emit_sweep: DONE rc=0` (the declared population,
+  `expect sweeps=1`), `== wsc1 heavy: 0 step(s) failed`; the make verdict
+  is `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' maketest.make.log`
+  (empty = green). Read it with `scripts/verdict`.
+- OWED: both verdicts. A fresh agent reads them.
 
 ## 5. Where the design was wrong, silent or unbuildable as written
 
@@ -176,6 +224,10 @@ revision of window_site.md can rule on it.
   (define phases); mf_emit reads the use hooks too, so E-func/E-stmt may
   hold at the query and not at the one-call entry (a use-phase field today's
   row does not serve). G2 compares the query with a same-phase define.
+- **F-18 (a table offer is an id).** Appendix A says a table offer names
+  pcrec's table; built as today's `table_ref` id per position, rendered
+  through the `table_name` hook (rule 7), so `mf_defined.reads_table` says
+  whether pcrec emits it.
 - **F-17 (`proof_run` had no read-limit layout).** Review S2's
   sentinel-padded exact-size buffers did not exist: `tests/memfn/proof_run.c`
   called every site on a fixed 8-byte stack array. Added: each call repeated
