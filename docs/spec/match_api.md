@@ -1039,8 +1039,9 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
 <a id="s5-1"></a>
 ### 5.1 What a written slot holds
 
-<a id="s5-1-p1"></a>[5.1¶1] Two rules govern which value a group inside a repeated construct holds,
-measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
+<a id="s5-1-p1"></a>[5.1¶1] Three rules govern which value a group inside a repeated construct holds.
+The first two are three-way unanimous (python `re`, libpcre2 and pcrec
+agree); the third is libpcre2's, and python `re` differs from it:
 
 1. <a id="s5-1-p2"></a>[5.1¶2] **Cross-iteration retention.** A group inside a quantifier whose
    subexpression did not run in the FINAL iteration keeps its value from the
@@ -1048,6 +1049,16 @@ measured three-way unanimous (python `re`, libpcre2 and pcrec agree):
    2 as `[0,1)`. Unset means "never participated in the whole match".
 2. <a id="s5-1-p3"></a>[5.1¶3] **An empty final iteration still overwrites.** `(a*)*` and `(a?)*` over
    `"aaa"` both report group 1 as `[3,3)`.
+3. <a id="s5-1-p3a"></a>[5.1¶3a] **An iteration that matched empty ends an unbounded repeat,
+   and the repeat's last MANDATORY iteration is one of them.** After an
+   iteration of `X*`, `X+` or `X{m,}` that consumed nothing, no further
+   iteration runs: the continuation follows, and a failure there backtracks
+   into that iteration. For `m >= 1` this includes iteration `m`; iterations
+   `1..m-1`, and every copy of a bounded `X{m,n}`, are not covered.
+   `(?:()|a)+?b` over `"ab"` matches `[0,2)` with group 1 UNSET: iteration 1
+   takes `()`, which is empty, so no second iteration may follow it, and the
+   match is found by backtracking into iteration 1 and taking `a`. python
+   `re` reports group 1 as `[0,0)` there.
 
 <a id="s5-1-p4"></a>[5.1¶4] After a successful match a slot holds the group's last-executed span or is
 genuinely unset; a caller never reasons about which iteration produced it.

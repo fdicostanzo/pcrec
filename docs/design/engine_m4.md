@@ -720,6 +720,20 @@ design would, with no guard slot and no suppression test at all — the
 `rmax == -1` case to begin with, and this ruling makes that scope
 explicit rather than implicit.
 
+**K128 (lane corefix, 2026-10-22) — the guard's scope includes the LAST
+MANDATORY iteration.** The ruling above is right about WHICH repeats carry the
+rule and left implicit WHERE it starts. PCRE2 compiles `X{m,}` (m >= 1) as m-1
+plain copies and ONE repeating bracket, so iteration m is the bracket's first
+and its empty-match test applies to it: after an empty iteration m no further
+iteration runs. pcrec emitted m mandatory copies and started the guard at the
+star, so `(?:()|a)+?b` over "ab" kept group 1 = (0,0) from an empty iteration
+1 followed by iteration 2 = `a`, where libpcre2 backtracks into iteration 1
+and leaves the group unset. python `re` agrees with the old pcrec (U21), which
+is why D44's 225,240-pair measurement — scored against both oracles — could
+not see it. The fix keeps one guard per loop: the last mandatory copy writes
+it and the star tests it at entry (`src/gen/emit_vm.c`, `vm_star`). The
+"(?:a*)*" capture rule (an empty iteration's writes STAND) is unchanged.
+
 **Compliance note (E-2's side-finding, flagged for a
 `docs/pcre2_compliance.md` row at implementation time, not resolved
 here):** PCRE2 itself REFUSES sufficiently large bounded repeats (`(a*)

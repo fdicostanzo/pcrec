@@ -6413,7 +6413,12 @@ static int vm_lastg_entry(Vm *v, int entry, int lastg)
  * by reading the code.
  *
  * The body is moved VERBATIM: same locals, same order, same emitted text. Its
- * one parameter change is the entry label's name. */
+ * one parameter change is the entry label's name.
+ *
+ * `lastg` is the guard slot the caller's LAST MANDATORY iteration wrote
+ * (vm_star_lastg), or -1 where there is none: the star then reuses it as its
+ * own guard and tests it once at entry (K128, below). With -1 the emitted
+ * text is the extraction's, byte for byte. */
 static void vm_star(Vm *v, int cur, const Ast *a, int next, int lastg)
 {
     /* the unbounded star */
