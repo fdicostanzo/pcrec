@@ -292,39 +292,43 @@ static bool la_has_kreset(const Ast *a)
 static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
                       long long *bad_lo, long long *bad_hi)
 {
-    int i = nbr;
-    const Ast *a = body;
+    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *br);
+    pcrec_lookbehind_branches(cx, body, nbr, br);
 
-    for (; a->k == A_ALT; a = a->l) {
-        /* A SPINE LONGER THAN `nbr - 1` IS AN INTERNAL ERROR, NOT A PATTERN
-         * ERROR, so it aborts the compile by name rather than being folded
-         * into §2.5's capability refusal — a caller told "your lookbehind is
-         * variable-length" about a compiler bug has been told something
-         * false. `pcrec_ctx_fail` is the same channel `vm_look`'s own impossible
-         * arms use. */
-        if (i <= 1)
-            pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
-                            "spine is longer than its reported branch count");
-        i--;
-        long long lo = pcrec_cwmin(a->r), hi = pcrec_cwmax(a->r);
+    /* Checked LAST-WRITTEN FIRST, the walk's historical order, so the branch
+     * whose range a refusal reports is the one it always reported. */
+    for (int i = nbr - 1; i >= 0; i--) {
+        long long lo = pcrec_cwmin(br[i]), hi = pcrec_cwmax(br[i]);
         if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
             *bad_lo = lo; *bad_hi = hi;
             return false;
         }
         out[i] = (int)hi;
     }
-    if (i != 1)
-        pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
-                        "is shorter than its reported branch count");
-    {
-        long long lo = pcrec_cwmin(a), hi = pcrec_cwmax(a);
-        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
-            *bad_lo = lo; *bad_hi = hi;
-            return false;
-        }
-        out[0] = (int)hi;
-    }
     return true;
+}
+
+/* K123: the top-level branch split, `internal.h`'s declaration states the
+ * contract. A spine SHORTER than `nbr - 1` is an internal error, not a
+ * pattern error, so it aborts the compile by name rather than being folded
+ * into §2.5's capability refusal — a caller told "your lookbehind is
+ * variable-length" about a compiler bug has been told something false.
+ * There is deliberately no "longer" error: an `A_ALT` left over after
+ * `nbr - 1` peels is a GROUP's alternation in the first branch
+ * (`(?<=(?:a|bc)|d)x`), which is legal, and treating it as spine was K123's
+ * internal error on every such pattern. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out)
+{
+    const Ast *a = body;
+    for (int i = nbr - 1; i >= 1; i--) {
+        if (a->k != A_ALT)
+            pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
+                            "spine is shorter than its reported branch count");
+        out[i] = a->r;
+        a = a->l;
+    }
+    out[0] = a;
 }
 
 /* [DD-14.LB] §2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS.

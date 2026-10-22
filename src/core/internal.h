@@ -5388,6 +5388,16 @@ const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
 bool pcrec_lookaround_width_pending(const Ast *a);
 void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
 
+/* K123: splits a lookbehind body into its `nbr` TOP-LEVEL branches, written
+ * order, into `out[0..nbr-1]`. `nbr` (the parse's `AltInfo.nbr`, stored as
+ * `u.look.nbranch`) is AUTHORITATIVE: exactly `nbr - 1` `A_ALT` spine nodes
+ * are peeled and whatever is left is the first branch, which may itself be
+ * an `A_ALT` — a non-capturing or scoped group `(?<=(?:ab|cd))x` parses to
+ * a bare alternation, indistinguishable by kind from the spine. The one home
+ * of the split: the width rule and `vm_look_behind` both read it. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out);
+
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
  * Scans a subpattern name at `p[i..n)`: a leading ASCII letter or `_`, then
