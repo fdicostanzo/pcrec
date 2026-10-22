@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# 650-covertime-slot: [KIT-VERIFY] `measure`: the harness-routed `cover` artifacts against the default
+# ones, 8 cells x 3 regimes x 3 classes x 3 arms (DEF, COV, AA), 5 launches, one pinned core.
+# docs/design/kit_proof/measure/CLAUDE.md; reading rule in docs/dev/lanes/covertime_report.md.
+# Queue it with:  scripts/boxqueue add --name 650-covertime-slot FILE   (MAIN tree's script)
+# Everything it writes is under $OUT (the covertime worktree's build/covertime, gitignored).
+#   --dry-run  build (cached) + the answer gate over every arm and subject: NO clock
+#   --ready    the quiet gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job,
+#              no box-lock holder; the first good sample is recorded in $OUT/ready.state
+#   (work)     exec measure.sh run: build, gate (stops on any disagreement), timing, table
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/covertime
+M=$W/docs/design/kit_proof/measure
+OUT=$W/build/covertime
+MAIN=/home/pcrec/projects/pcrec
+export TMPDIR=$W/build/tmp
+export MEASURE_CPU=7 MEASURE_SIBLING=15
+L=5 T=20000000 N=9
+case "${1:-}" in
+    --dry-run)
+        mkdir -p "$TMPDIR" "$OUT" || exit 1
+        [ -x "$W/build/pcrec" ] && [ -x "$W/build/pcrec-harness" ] || { echo "build/pcrec or build/pcrec-harness missing in $W" >&2; exit 1; }
+        for f in measure.sh cdrv.c gen_subjects.py read.py cells.tsv; do [ -f "$M/$f" ] || { echo "missing $M/$f" >&2; exit 1; }; done
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$M/read.py" "$M/gen_subjects.py" || exit 1
+        bash "$M/measure.sh" smoke "$OUT" > "$OUT/dry.out" 2>&1 || { tail -5 "$OUT/dry.out" >&2; exit 1; }
+        tail -3 "$OUT/dry.out" | sed 's/^/dry: /'
+        ncov=$(cat "$OUT/ncover")
+        [ "$ncov" -ge 4 ] || { echo "only $ncov cells read cover on the harness build (the lane's stop rule is 4)" >&2; exit 1; }
+        echo "would run: measure.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU, sibling $MEASURE_SIBLING idle), $ncov cover cells"
+        echo "boxqueue: cap 900"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect done=1 lines=^== covertime COMPLETE"
+        exit 0 ;;
+    --ready)
+        mkdir -p "$OUT" || exit 1
+        st=$OUT/ready.state
+        now=$(date +%s)
+        if ls "$MAIN"/worktrees/.boxqueue/running/* > /dev/null 2>&1; then rm -f "$st"; echo "a queue job is running"; exit 75; fi
+        h=$("$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case "$h" in HELD*) rm -f "$st"; echo "box lock $h"; exit 75 ;; esac
+        l=$(cut -d' ' -f1 /proc/loadavg)
+        if ! awk -v l="$l" 'BEGIN { exit !(l < 2.0) }'; then rm -f "$st"; echo "load1 $l >= 2.0"; exit 75; fi
+        first=$(cat "$st" 2>/dev/null || echo 0)
+        if [ "$first" -gt 0 ] && [ $((now - first)) -le 600 ]; then
+            [ $((now - first)) -ge 55 ] && exit 0
+            echo "second quiet sample due in $((55 - now + first)) s (load1 $l)"; exit 75
+        fi
+        echo "$now" > "$st"
+        echo "first quiet sample taken (load1 $l); the second is due in 55 s"; exit 75 ;;
+esac
+rm -f "$OUT/ready.state"
+exec bash "$M/measure.sh" run "$OUT" "$L" "$T" "$N"
