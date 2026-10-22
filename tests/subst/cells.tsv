@@ -1,0 +1,54 @@
+# tests/subst/cells.tsv -- [M4-SUBST] the subst artifact's cells (run_subst_tests.py's
+# header defines every column). TAB-separated:
+# ID FLAGS PATTERN TEMPLATE UNSET LIMIT SUBJECT VARS EXPECT P2 LABEL REACH
+# P2 `same` is held to libpcre2 10.46's pcre2_substitute; a stated difference
+# carries pcre2's own answer and its replace_design.md §R3.10 row in LABEL.
+tail	-	a	b	empty	all	xa y	-	out:xb y:1	same	-	S1355
+words	-	(\w+)	<$1>	empty	all	hello big world	-	out:<hello> <big> <world>:3	same	-	-
+words1	-	(\w+)	<$1>	empty	1	hello big world	-	out:<hello> big world:1	same	-	-
+emptyg	-	a*	[$0]	empty	all	bab	-	out:[]b[a][]b[]:4	same	-	-
+emptyg1	-	a*	[$0]	empty	1	bab	-	out:[]bab:1	same	-	-
+lim0	-	a*	[$0]	empty	0	bab	-	out:bab:0	na	-	-
+lim4	-	a	b	empty	4	aaaaaaaa	-	out:bbbbaaaa:4	na	-	-
+lim2	-	(\w+)	<$1>	empty	2	a b c d e	-	out:<a> <b> c d e:2	na	-	-
+nomatch	-	z	y	empty	all	abc	-	out:abc:0	same	-	-
+emptysubj	-	a*	[$0]	empty	all		-	out:[]:1	same	-	-
+emptytmpl	-	a		empty	all	banana	-	out:bnn:3	same	-	-
+dense	-	a	bb	empty	all	rep:200:a	-	out:rep:200:bb:200	same	-	batch64
+dense1	-	a	b	empty	all	rep:1000:xa	-	out:rep:1000:xb:1000	same	-	batch64
+dollar	-	(b)	x\ny$$$1	empty	all	abc	-	out:ax\\ny$bc:1	same	-	-
+brace	-	(b)	${1}2	empty	all	abc	-	out:ab2c:1	same	-	-
+greedynum	-	(b)	$12	empty	all	abc	-	bind:MISSING_REF:0	rc:-49	R3.10 row 4: an unknown group is refused at bind	-
+greedyname	-	(?<g>b)	[$gx]	empty	all	abc	-	bind:MISSING_REF:0	rc:-49	R3.10 row 4: an unknown group is refused at bind	-
+barename	-	(?<g>b)	[$g]x	empty	all	abc	-	out:a[b]xc:1	same	-	-
+bracename	-	(?<g>b)	[${g}]	empty	all	abcb	-	out:a[b]c[b]:2	same	-	-
+zero	-	b	<${0}|$0>	empty	all	abc	-	out:a<b|b>c:1	same	-	-
+nosuchname	-	(a)	${nope}	empty	all	a	-	bind:MISSING_REF:0	rc:-49	R3.10 row 4: an unknown group is refused at bind	-
+nosuchnum	-	(a)	$1$2	empty	all	a	-	bind:MISSING_REF:1	rc:-49	R3.10 row 4: an unknown group is refused at bind	-
+nocaps	--no-captures	(a)b	$1	empty	all	ab	-	bind:MISSING_REF:0	out:a:1	a --no-captures artifact offers no group slot (match_api 5.4p3)	-
+nocaps0	--no-captures	(a)b	[$0]	empty	all	xabab	-	out:x[ab][ab]:2	same	-	-
+nul	-	b	esc:<\x00>	empty	all	abc	-	out:a<\x00>c:1	same	-	nul
+argform	-	(b)	arg:[$1]	empty	all	abc	-	out:a[b]c:1	same	-	-
+unset	-	(a)|(b)	[$1|$2]	empty	all	ab	-	out:[a|][|b]:2	same	-	-
+unseterr	-	(a)|(b)	[$1|$2]	error	all	ab	-	rc:UNSET	rc:-55	R3.10 row 5: the same class (pcre2 -55)	S1354
+unseterrok	-	(a)(b)?	[$1]	error	all	ab a	-	out:[a] [a]:2	same	-	-
+namedunset	-	(?<n>a)?b	[${n}]	empty	all	b ab	-	out:[] [a]:2	same	-	-
+duprun	-	(?J)(?<n>a)|(?<n>b)	[${n}]	empty	all	xaby	-	out:x[a][b]y:2	same	-	S1348
+duprun3	-	(?J)(?<n>a)|(?<n>b)|(?<n>c)	<$n>	empty	all	cba	-	out:<c><b><a>:3	same	-	S1348
+kreset	-	ab\Kc	[$0]	empty	all	abcabc	-	out:ab[c]ab[c]:2	same	-	-
+lbcap	-	(?<=(a))b	[$1$0]	empty	all	abab	-	out:a[ab]a[ab]:2	same	-	-
+backward	-	x(?=(?1))|(b\K)	[$0]	empty	all	xb	-	rc:BADSPAN	rc:-60	R3.10 row 9: the same class (pcre2 -60)	S1347
+overlap	-	x|(?<=(?1))y|(\Kx)	[$0]	empty	all	xy	-	rc:BADSPAN	rc:-60	R3.10 row 9: the same class (pcre2 -60)	S1346
+corner	-	^|(?<=(?1))y|(?!)(\Kz)	[$0]	empty	all	zy	-	out:[][zy]:2	rc:-60	R3.10 row 9: pcre2 tests the SEARCH start, pcrec the previous END	badspancorner
+utf8	-e utf8	.	<$0>	empty	all	\xc3\xa9 a	-	out:<\xc3\xa9>< ><a>:3	same	-	-
+utf8empty	-e utf8	x*	[$0]	empty	all	a\xc3\xa9	-	out:[]a[]\xc3\xa9[]:3	same	-	-
+illformed	-e utf8	x*	[$0]	empty	all	a\xffb	-	out:[]a[]\xff[]b[]:4	out:[]a\xff[]b[]:3	R3.10 row 11: pcre2's anchored retry reports a match past the ill-formed byte (C1)	illformed
+caseless	-i	(A)	<$1>	empty	all	aA	-	out:<a><A>:2	same	-	-
+ncaps30	-	rep:29:(a)	<$29$1>	empty	all	rep:60:a	-	out:<aa><aa>aa:2	same	-	-
+ncaps300	-	rep:300:(a)	<$300>	empty	all	rep:601:a	-	out:<a><a>a:2	same	-	nogroupceiling
+var	-	(a)	${!v}-$1	empty	all	a	v=X	out:X-a:1	na	-	vars
+varunset	-	(a)	${!v}-$1	empty	all	aa	-	out:-a-a:2	na	-	S1352
+varnull	-	(a)	${!v}-$1	empty	all	a	v	out:-a:1	na	-	-
+varfirst	-	(a)	${!v}-$1	empty	all	a	v=1,v=2	out:1-a:1	na	-	-
+varerr	-	(a)	${!v}-$1	error	all	a	-	rc:UNSET_VAR	na	-	-
+varerrok	-	(a)	${!v}-$1	error	all	a	v=	out:-a:1	na	-	-
