@@ -63,5 +63,11 @@ SAB_DOC_FIGURE="MEASURED 2026-10-06 (lane r4clx, single-row mech): DETECTED -- u
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-PINNED-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='    t->maxk     = o->maxk > ro + rl - 1 ? o->maxk : ro + rl - 1;'
-SAB_AFTER='    t->maxk     = o->maxk;   /* SABOTAGE S287: not widened for the run */'
+# RE-AIMED (D172 S2 commit 6, lane wsc5): ofs_test_of reads the window
+# family's reply since the planner's selection retired; the guard is the
+# largest offset tested, and the plant keeps it from widening over the pinned
+# stretch, the same under-cover of the run compare.
+SAB_BEFORE='        if (o > maxk) maxk = o;
+        if (o != w->stop) n++;'
+SAB_AFTER='        if (o > maxk && !(t->run_len && o >= t->run_o)) maxk = o;   /* SABOTAGE S287: not widened for the run */
+        if (o != w->stop) n++;'

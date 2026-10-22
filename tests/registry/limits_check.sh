@@ -328,17 +328,10 @@ done <<< "$anchored"
 #   SELECT_MAX_ROUNDS (select_engine.c) — a bounded-loop iteration cap with a
 #     from-day-one-bound argument at the loop itself (src/core/CLAUDE.md's
 #     [SEL-1] section), not a value a pattern can be measured against
-#   C_MEMCHR, C_BITMAP, C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM,
-#     MATERIAL_DEN (src/opt/prefix_k.c) — D107's seven "argued at site"
-#     dispositions, admitted here for the first time. They are the COST MODEL
-#     of one comparison (relative cycle weights for four prefilter shapes, a
-#     branch-mispredict charge, and the 2/1 materiality ratio), carrying 12
-#     lines of derivation at their own site. None is a value a pattern is
-#     measured against: they are the coefficients of a ranking, and changing
-#     one changes which prefilter WINS, never what pcrec accepts or refuses.
-#     Each is one term of a single expression, so moving them into
-#     `limits.def` would scatter a formula across two files — the mirror
-#     image of the reason TRIE_MAX_RDEPTH stays put.
+#   (C_MEMCHR, C_BITMAP, C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM and
+#     MATERIAL_DEN, src/opt/prefix_k.c's cost model, left this list with that
+#     file at D172 S2 commit 6: the selection is the memfn kit's, its
+#     constants memfn/src/plan_cost.def's, outside this scan.)
 #
 # THE NON-LIMIT ALLOWLIST — numbers that are not bounds at all. D107 names
 # three kinds and the population needed a fourth:
@@ -544,14 +537,7 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
-SELECT_MAX_ROUNDS
-C_MEMCHR
-C_BITMAP
-C_VERIFY
-C_ENTER
-C_MISPRED
-MATERIAL_NUM
-MATERIAL_DEN"
+SELECT_MAX_ROUNDS"
 
 NONLIMIT_ALLOWLIST="PREMUL_DEAD
 REG_SEL_ANY

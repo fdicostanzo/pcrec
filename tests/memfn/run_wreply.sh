@@ -1,37 +1,30 @@
 #!/usr/bin/env bash
-# tests/memfn/run_wreply.sh — D172 S2's LEVER CHECK (docs/design/memfn/
-# window_site.md rev 3.2 §2.4, §3.5, §5.1; lane wsc4, INVERTED at commit 5 by
-# lane wsc5): the window family is the DEFAULT (build/pcrec's art previews
-# the memfn kit's window family, and the DFA prefilter's NEXT rows read the
-# family's PHASE-1 reply, emit_dfa.c `next_keys[]`); the INVERSE lever
-# `--harness=window-legacy` (build/pcrec-harness) restores the old path, the
-# planner's pick, so a mover can be localized by flipping back.
+# tests/memfn/run_wreply.sh — D172 S2's REPLY CHECK (docs/design/memfn/
+# window_site.md rev 3.2 §2.4, §3.5, §5.1; lane wsc4, inverted at commit 5 and
+# reduced at commit 6 by lane wsc5): the DFA prefilter's NEXT rows read the
+# memfn kit's window-family PHASE-1 reply (emit_dfa.c `next_keys[]`), and
+# since commit 6 nothing else (the planner's pick, and the inverse lever
+# `window-legacy` that restored it, are deleted; commit 5's
+# identity against that lever is history, docs/dev/lanes/wsc5_report.md).
 #
 # THE BAR:
-#   1. IDENTITY: build/pcrec (the reply) is byte-identical to the inverse
-#      lever (the pick): the artifact, stderr and rc, over WITNESSES that
-#      reach every NEXT key (each row below states the row the default must
-#      stamp), at every flag set of FLAGSETS. The corpus-wide form is
-#      emit_sweep against pre-S2 main for build/pcrec and, through `--sweep
-#      REF`, for the inverse-lever binary (box lock, heavy).
-#   2. REACH: identity alone cannot tell "NEXT reads the reply" from "NEXT
-#      still reads the pick" (the two agree on every artifact, the shadow's
-#      zero). So a COPY of the tree is built with the statement PERTURBED,
-#      which moves the reply and never the pick (the old path does not read
-#      the statement):
-#        P-a  the RESEED alternative is not stated: by default no witness
-#             may stamp an offset-set row (the reply cannot choose RESEED);
-#             the inverse lever stamps them as the clean tree does;
+#   1. STAMPS: every WITNESS (each reaching one NEXT key, its row below)
+#      stamps its row at the default flags and compiles at every flag set of
+#      FLAGSETS; K35 floors on cases and keys.
+#   2. REACH: a stamp alone cannot tell "NEXT reads the reply" from a reader
+#      that happens to agree. So a COPY of the tree is built with the
+#      statement PERTURBED, which moves the reply:
+#        P-a  the RESEED alternative is not stated: no witness may stamp an
+#             offset-set row (the reply cannot choose RESEED), and at least
+#             five offset-set witnesses must move off it; the control is (1);
 #        P-b  R is stated under PCREC_NO_RUN_PREFILTER (V2 broken): under
 #             `-fno-run-prefilter`, a PARKED + C-pin witness's reply sets
 #             RE-SEED, its run-pinned rows are denied, NEXT reaches `memchr`,
-#             and the default compile must be REFUSED loudly (§3.5); the
-#             inverse lever compiles it.
+#             and the compile must be REFUSED loudly (§3.5); the control is
+#             the clean tree compiling it.
 #   --plant ID / --plants: the same run with one more planted defect in the
 #   copy (the table below); the run must go red. Writes only its work dir.
 #
-# Controls: every witness row's stamp is checked (a witness that stopped
-# reaching its key fails, [MECH-REACH]); K35 floors on cases and keys.
 # Takes the box lock (scripts/boxlock) unless its caller holds it.
 # Env: TMPDIR (the work dir's parent), JOBS (the copy's make -j, default 16).
 set -u
@@ -39,8 +32,6 @@ export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/tests/lib/timeout_bin.sh"
 P="$ROOT/build/pcrec"
-H="$ROOT/build/pcrec-harness"
-LEVER="--harness=window-legacy"
 JOBS="${JOBS:-16}"
 # THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
 # over the sweep cap, so the run takes the lock unless its caller holds it
@@ -55,7 +46,7 @@ bad() { echo "FAIL: $*"; fail=$((fail + 1)); }
 verdict() { echo "checks passed: $pass"; echo "checks failed: $fail"; [ "$fail" -eq 0 ]; exit $?; }
 
 # THE WITNESSES: PATTERN|ROW, the row `<P>_DFA_PREFILTER` stamps at the
-# default flags, on either path; the comment names the reply.
+# default flags; the comment names the reply.
 WITNESSES=(
     '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|offset-set'  # RESEED
     '\d{4}-\d{2}-\d{2}|offset-set'                                             # RESEED
@@ -84,19 +75,18 @@ PERTS=(
     'src/gen/emit_dfa.c@@    bool reseed = wk && wk->nwalk >= 1 && us->cand.count >= 1@@    bool reseed = 0 && wk && wk->nwalk >= 1 && us->cand.count >= 1'
     'src/gen/emit_dfa.c@@!pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&\n        !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {@@!pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP)) {'
 )
-# THE PLANTS (pcrec-side ids from S1412, the kit manager's wsc4 brief):
+# THE PLANTS (pcrec-side ids from S1412, the kit manager's wsc4 brief; S1412,
+# a NEXT row reading the planner's pick, retired at commit 6 with the pick):
 plant_spec() {
     case "$1" in
-        # a NEXT row reading the planner's pick where the family answered
-        S1412) echo 'src/gen/emit_dfa.c@@    if (!u->wr_stated) return next_keys[k].pick(s);@@    return next_keys[k].pick(s);' ;;
         # the RE-SEED bit ignored where it reaches a row that does not re-seed
         S1413) echo 'src/gen/emit_dfa.c@@        if (us->wr_stated && us->wr.reseed && !f->pf->u.pf.reseeds)@@        if (us->wr_stated && 0 && !f->pf->u.pf.reseeds)' ;;
         # the run-pinned key not reading C-pin (a RESEED reply without it takes the run rows)
-        S1414) echo 'src/gen/emit_dfa.c@@nk_pick_run_pinned, WR_ANY, 1, 1,@@nk_pick_run_pinned, WR_ANY, 1, WR_ANY,' ;;
+        S1414) echo 'src/gen/emit_dfa.c@@    [NK_RUN_PINNED] = { "run-pinned[-bounded]", WR_ANY, 1, 1,@@    [NK_RUN_PINNED] = { "run-pinned[-bounded]", WR_ANY, 1, WR_ANY,' ;;
         *) return 1 ;;
     esac
 }
-PLANTS="S1412 S1413 S1414"
+PLANTS="S1413 S1414"
 
 # Applies FILE@@FROM@@TO specs ("\n" a newline) to tree copy $1.
 apply() {
@@ -126,7 +116,7 @@ build_copy() {
     (cd "$ROOT" && git ls-files -z | tar --null --ignore-failed-read -T - -cf -) |
         tar -xf - -C "$dir" || return 1
     apply "$dir" "$@" || return 1
-    "$TIMEOUT_BIN" 900 make -C "$dir" -j"$JOBS" build/pcrec build/pcrec-harness \
+    "$TIMEOUT_BIN" 900 make -C "$dir" -j"$JOBS" build/pcrec \
         >"$WORK/$name.build.log" 2>&1 || { tail -5 "$WORK/$name.build.log"; return 1; }
     echo "$dir/build"
 }
@@ -141,73 +131,51 @@ comp() {
 }
 stamp() { sed -n 's/^#define RX_DFA_PREFILTER "\(.*\)"$/\1/p' "$1/o.c" 2>/dev/null; }
 
-# --- 1. identity over the witnesses, and each witness's key ----------------
-identity() {   # $1 the default binary (the reply), $2 the harness binary (the lever: the pick), $3 label
+# --- 1. the witnesses' stamps, at every flag set ----------------------------
+stamps() {   # $1 the binary, $2 label
     local n=0 w pat row f k
     declare -A seen=()
     for w in "${WITNESSES[@]}"; do
         pat="${w%|*}" row="${w##*|}"
         for f in "${FLAGSETS[@]}"; do
             n=$((n + 1))
-            comp "$1" "" "$f" "$pat" "$WORK/$3/a"
-            comp "$2" "$LEVER" "$f" "$pat" "$WORK/$3/b"
-            if cmp -s "$WORK/$3/a/o.c" "$WORK/$3/b/o.c" && cmp -s "$WORK/$3/a/err" "$WORK/$3/b/err" &&
-               cmp -s "$WORK/$3/a/rc" "$WORK/$3/b/rc"; then ok
-            else bad "$3 identity: '$pat' [$f] differs across the lever (rc $(cat "$WORK/$3/a/rc")/$(cat "$WORK/$3/b/rc"))"; fi
+            comp "$1" "" "$f" "$pat" "$WORK/$2/a"
+            [ "$(cat "$WORK/$2/a/rc")" = 0 ] && ok || bad "$2: '$pat' [$f] refused: $(head -1 "$WORK/$2/a/err")"
             [ -z "$f" ] || continue
-            if [ "$(stamp "$WORK/$3/a")" = "$row" ]; then ok; seen[$row]=$(( ${seen[$row]:-0} + 1 ))
-            else bad "$3 reach: '$pat' stamps '$(stamp "$WORK/$3/a")' by default, its row is '$row'"; fi
+            if [ "$(stamp "$WORK/$2/a")" = "$row" ]; then ok; seen[$row]=$(( ${seen[$row]:-0} + 1 ))
+            else bad "$2 reach: '$pat' stamps '$(stamp "$WORK/$2/a")', its row is '$row'"; fi
         done
     done
-    [ "$n" -ge "$CASE_FLOOR" ] && ok || bad "$3: $n cases ran, floor $CASE_FLOOR"
+    [ "$n" -ge "$CASE_FLOOR" ] && ok || bad "$2: $n cases ran, floor $CASE_FLOOR"
     for kf in $KEY_FLOORS; do
         k="${kf%:*}"
-        [ "${seen[$k]:-0}" -ge "${kf##*:}" ] && ok || bad "$3: key row $k reached by ${seen[$k]:-0} witnesses, floor ${kf##*:}"
+        [ "${seen[$k]:-0}" -ge "${kf##*:}" ] && ok || bad "$2: key row $k reached by ${seen[$k]:-0} witnesses, floor ${kf##*:}"
     done
-    echo "$3: $n identity cases over ${#WITNESSES[@]} witnesses"
+    echo "$2: $n cases over ${#WITNESSES[@]} witnesses"
 }
 
-# --- 2. reach: the perturbed statement moves the reply, never the pick -------
+# --- 2. reach: the perturbed statement moves the reply -----------------------
 reach() {   # $1 the perturbed copy's build dir, $2 label
-    local w pat row off on moved=0
+    local w pat row on moved=0
     for w in "${WITNESSES[@]}"; do
         pat="${w%|*}" row="${w##*|}"
-        comp "$1/pcrec-harness" "$LEVER" "" "$pat" "$WORK/$2/off"
         comp "$1/pcrec" "" "" "$pat" "$WORK/$2/on"
-        off="$(stamp "$WORK/$2/off")" on="$(stamp "$WORK/$2/on")"
-        [ "$off" = "$row" ] && ok || bad "$2 P-a control: '$pat' stamps '$off' under the inverse lever, its row is '$row'"
-        [ "$(cat "$WORK/$2/on/rc")" = 0 ] && ok || bad "$2 P-a: '$pat' refused by default: $(head -1 "$WORK/$2/on/err")"
+        on="$(stamp "$WORK/$2/on")"
+        [ "$(cat "$WORK/$2/on/rc")" = 0 ] && ok || bad "$2 P-a: '$pat' refused: $(head -1 "$WORK/$2/on/err")"
         case "$on" in
-            offset-set*) bad "$2 P-a: '$pat' stamps '$on' by default with no RESEED alternative stated (NEXT read the pick)" ;;
+            offset-set*) bad "$2 P-a: '$pat' stamps '$on' with no RESEED alternative stated (NEXT did not read the reply)" ;;
             *) ok ;;
         esac
         case "$row" in offset-set*) [ "$on" != "$row" ] && moved=$((moved + 1)) ;; esac
     done
     [ "$moved" -ge 5 ] && ok || bad "$2 P-a: $moved offset-set witnesses moved, floor 5"
-    comp "$1/pcrec-harness" "$LEVER" "$PB_FLAGS" "$PB_PAT" "$WORK/$2/pboff"
     comp "$1/pcrec" "" "$PB_FLAGS" "$PB_PAT" "$WORK/$2/pbon"
-    [ "$(cat "$WORK/$2/pboff/rc")" = 0 ] && ok || bad "$2 P-b control: '$PB_PAT' [$PB_FLAGS] refused under the inverse lever"
     if [ "$(cat "$WORK/$2/pbon/rc")" != 0 ] && grep -q "$PB_MSG" "$WORK/$2/pbon/err"; then ok
-    else bad "$2 P-b: '$PB_PAT' [$PB_FLAGS] by default was not refused for RE-SEED (rc $(cat "$WORK/$2/pbon/rc"), stamp '$(stamp "$WORK/$2/pbon")')"; fi
+    else bad "$2 P-b: '$PB_PAT' [$PB_FLAGS] was not refused for RE-SEED (rc $(cat "$WORK/$2/pbon/rc"), stamp '$(stamp "$WORK/$2/pbon")')"; fi
     echo "$2: P-a moved $moved offset-set witnesses off the offset rows; P-b refused"
 }
 
-for b in "$P" "$H"; do
-    [ -x "$b" ] || { echo "FAIL: $b not built (make first)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
-done
-
-if [ "${1:-}" = "--sweep" ]; then
-    # the corpus-wide identity of the OLD path: emit_sweep with the inverse
-    # lever's binary as the working side (a wrapper: emit_sweep's --extra
-    # reaches both sides); build/pcrec's own sweep is plain emit_sweep;
-    # the rest of the arguments are emit_sweep's (--ref REV or --ref-bin B, ...)
-    shift
-    wrap="$WORK/pcrec-wreply"
-    printf '#!/bin/sh\nexec "%s" %s "$@"\n' "$H" "$LEVER" >"$wrap"
-    chmod +x "$wrap"
-    python3 -I "$ROOT/scripts/emit_sweep.py" --bin "$wrap" --tree "$ROOT" "$@"
-    exit $?
-fi
+[ -x "$P" ] || { echo "FAIL: $P not built (make first)"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
 if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     ids="${2:-}"
@@ -217,12 +185,11 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     for id in $ids; do
         spec="$(plant_spec "$id")" || { echo "FAIL: no plant $id"; exit 2; }
         before=$fail
-        if [ "$id" = S1414 ]; then      # caught by identity alone
+        if [ "$id" = S1414 ]; then      # caught by the witnesses' stamps alone
             bd="$(build_copy "plant_$id" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
-            identity "$bd/pcrec" "$bd/pcrec-harness" "plant_$id" >"$WORK/plant_$id.log" 2>&1
+            stamps "$bd/pcrec" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         else
             bd="$(build_copy "plant_$id" "${PERTS[@]}" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
-            fail=0; pass=0
             reach "$bd" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         fi
         first="$(grep -m1 '^FAIL' "$WORK/plant_$id.log")"
@@ -236,7 +203,9 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     exit $?
 fi
 
-identity "$P" "$H" clean
+stamps "$P" clean
+comp "$P" "" "$PB_FLAGS" "$PB_PAT" "$WORK/pbctl"
+[ "$(cat "$WORK/pbctl/rc")" = 0 ] && ok || bad "P-b control: '$PB_PAT' [$PB_FLAGS] refused on the clean tree"
 bd="$(build_copy perturbed "${PERTS[@]}")" || { bad "the perturbed copy does not build"; verdict; }
 reach "$bd" perturbed
 verdict

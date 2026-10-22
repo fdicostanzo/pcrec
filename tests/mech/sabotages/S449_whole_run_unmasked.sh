@@ -20,6 +20,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)(?i:
 SAB_REACH_EXPECT="REACH-K66-MASKED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx);'
-SAB_AFTER='    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + r->idx);
+# RE-ANCHORED (D172 S2 commit 6, lane wsc5): the scan member is the
+# resolver's (`m`), the intent unchanged.
+SAB_BEFORE='    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + m);'
+SAB_AFTER='    ofs_test_run(&t[1], r->whole, r->whole_mask, r->whole_len, r->at + m);
     t[1].run_mask = NULL;   /* SABOTAGE S449: the whole run loses its mask */'

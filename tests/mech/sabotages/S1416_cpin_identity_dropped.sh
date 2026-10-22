@@ -9,7 +9,7 @@
 # SUCCESSOR of S289 (retired at commit 5): S289 dropped the same clause 3
 # (IDENTITY) from the planner's pick (`nk_pick_run_pinned`), which since the
 # lever's default flipped decides only under the inverse lever
-# `--harness=window-legacy`; the default NEXT reads the family's reply
+# `window-legacy` (deleted at commit 6); the default NEXT reads the family's reply
 # (window_site.md rev 3.2 §2.3 C-pin: "the stop IS R's member"). Same
 # witness, same detectors, same intent.
 #
