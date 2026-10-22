@@ -250,12 +250,20 @@ static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
           "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
+          "       pcrec [-p PREFIX] [--unset=empty|error] -o OUT.c --subst 'TEMPLATE'\n"
           "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
           "                 below); each is compiled exactly as the other\n"
           "                 form compiles a literal --pattern. A prefix\n"
           "                 collision across files is refused, naming both\n"
           "  --pattern 'X'  compile the literal pattern X instead of a file.\n"
           "                 Exactly one; does not combine with a FILE operand\n"
+          "  --subst 'T'    compile the SUBSTITUTION TEMPLATE T ($n ${n}\n"
+          "                 $name ${name} $$, and ${!var}) into a subst\n"
+          "                 artifact: a render element any rx whose groups\n"
+          "                 fit binds to at run time (docs/spec/subst.md)\n"
+          "  --subst-file F the template is FILE's bytes, verbatim\n"
+          "  --unset=V      a subst's unset group or variable: empty\n"
+          "                 (default) renders nothing, error refuses\n"
           "  -o FILE        output C file; a matching header FILE with .h is\n"
           "                 also written. '-o -' prints self-contained C to\n"
           "                 stdout with no header file. '-o DIR' writes\n"
@@ -525,6 +533,11 @@ typedef struct {
     /* [REL-1.10] the literal PATTERN, set ONLY by `--pattern` (D118): the
      * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
+    /* [M4-SUBST] a SUBST compile (docs/spec/subst.md §5): the template text
+     * (`--subst`) or its file (`--subst-file`), and `--unset=`. */
+    const char *subst;
+    const char *subst_file;
+    int         unset_error;
     int         list_syntax;
     int         list_definitions;
     int         list_verbs;
@@ -1077,6 +1090,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->pattern = argv[++i];
         }
+        /* [M4-SUBST] a template, not a pattern: its own compile mode. */
+        else if (!strcmp(a, "--subst") || !strcmp(a, "--subst-file")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (st->subst || st->subst_file) {
+                cli_err("exactly one --subst or --subst-file expected");
+                return 1;
+            }
+            if (a[7] == '-') st->subst_file = argv[++i];
+            else st->subst = argv[++i];
+        }
+        else if (!strcmp(a, "--unset=empty")) st->unset_error = 0;
+        else if (!strcmp(a, "--unset=error")) st->unset_error = 1;
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -2019,6 +2047,87 @@ static int compile_sources(const CliState *cli)
 
 static int cli_dispatch(CliState st);
 
+/* Reads FILE whole into a malloc'd buffer, its length in *len. NULL (with a
+ * diagnostic) on failure. */
+static char *read_whole_file(const char *path, size_t *len)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) { perror(path); return NULL; }
+    size_t cap = 4096, n = 0;
+    char *buf = malloc(cap);
+    while (buf) {
+        n += fread(buf + n, 1, cap - n, f);
+        if (n < cap) break;
+        char *nb = realloc(buf, cap * 2);
+        if (!nb) { free(buf); buf = NULL; break; }
+        buf = nb;
+        cap *= 2;
+    }
+    if (!buf) perror("malloc");
+    else if (ferror(f)) { perror(path); free(buf); buf = NULL; }
+    fclose(f);
+    *len = n;
+    return buf;
+}
+
+/* [M4-SUBST] THE SUBST COMPILE MODE (docs/spec/subst.md §5): `--subst
+ * TEMPLATE` or `--subst-file FILE` with `-o`, writing the `.c` and its `.h`
+ * (`-o -`: one self-contained `.c` on stdout). Exclusive with `--pattern`,
+ * a file operand and every query. Returns 0, or 1 on any refusal. */
+static int cli_subst(const CliState *st)
+{
+    if (st->pattern || st->nfiles || cli_modes_active(st)) {
+        cli_err("--subst/--subst-file compiles a template, so it takes no "
+                "--pattern, file operand or query");
+        return 1;
+    }
+    if (!st->outpath) {
+        cli_err("--subst/--subst-file needs -o");
+        return 1;
+    }
+    size_t len = 0;
+    char *owned = NULL;
+    const char *tmpl = st->subst;
+    if (st->subst_file) {
+        if (!(owned = read_whole_file(st->subst_file, &len))) return 1;
+        tmpl = owned;
+    } else
+        len = strlen(tmpl);
+
+    int to_stdout = !strcmp(st->outpath, "-");
+    char *hpath = NULL;
+    PcrecSubstOptions so = { st->opt.prefix, NULL, st->unset_error != 0 };
+    if (!to_stdout) {
+        size_t ol = strlen(st->outpath);
+        if (!(hpath = malloc(ol + 3))) { perror("malloc"); free(owned); return 1; }
+        strcpy(hpath, st->outpath);
+        if (ol > 2 && !strcmp(hpath + ol - 2, ".c")) strcpy(hpath + ol - 2, ".h");
+        else strcat(hpath, ".h");
+        so.header_name = base_name(hpath);
+    }
+    pcrec_output out;
+    pcrec_error err;
+    int rc = 0;
+    if (pcrec_subst_compile(tmpl, len, &so, &out, &err) != 0) {
+        cli_err("%s (template offset %zu)", err.msg, err.pos);
+        rc = 1;
+    } else {
+        if (to_stdout) {
+            fputs(out.c_src, stdout);
+            if (fflush(stdout) != 0 || ferror(stdout)) {
+                cli_err("write error on stdout");
+                rc = 1;
+            }
+        } else if (write_file(st->outpath, out.c_src) != 0 ||
+                   write_file(hpath, out.h_src) != 0)
+            rc = 1;
+        pcrec_output_free(&out);
+    }
+    free(hpath);
+    free(owned);
+    return rc;
+}
+
 /* Parses the command line via `cli_parse`, refuses the conflicts every mode
  * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
  * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
@@ -2045,6 +2154,18 @@ int main(int argc, char **argv)
      * exits 0, one line, stdout. */
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
+    if (st.subst || st.subst_file) {
+        const int rc = cli_subst(&st);
+        free(st.libdirs);
+        free(st.files);
+        return rc;
+    }
+    if (st.unset_error) {
+        cli_err("--unset= applies to --subst/--subst-file only");
+        free(st.libdirs);
+        free(st.files);
+        return 1;
+    }
 
     /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE
      * OPERAND ALONE, and this is refused HERE — above every query — for two

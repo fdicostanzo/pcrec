@@ -202,6 +202,27 @@ bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
     return true;
 }
 
+/* [M4-SUBST] Compiles a substitution template into a subst artifact: the
+ * prefix check `pcrec_compile` applies, the template parse, the emitter.
+ * Not a pattern compile, so it does not run `compile_driver` and has no
+ * `Ctx` (docs/spec/subst.md §5). */
+int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
+                        pcrec_output *out, pcrec_error *err)
+{
+    Arena a = { NULL, NULL };
+    SubstTmpl t;
+    out->c_src = out->h_src = NULL;
+    if (!pcrec_prefix_acceptable(o->prefix, err->msg, sizeof err->msg)) {
+        err->pos = 0;
+        err->input = PCREC_ERR_INPUT_TEMPLATE;
+        return -1;
+    }
+    int rc = pcrec_subst_parse(&a, tmpl, len, &t, err);
+    if (rc == 0) pcrec_emit_subst(tmpl, len, &t, o, out);
+    pcrec_arena_free(&a);
+    return rc;
+}
+
 /* Frees every heap array and StrBuf a Job may have allocated
  * (NFA/DFA/reverse-DFA/optional-anchored-DFA state+table arrays, the
  * text/header/vm/ir scratch buffers, the two [ART-SIZE] scratch buffers, the

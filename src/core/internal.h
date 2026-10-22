@@ -7685,19 +7685,64 @@ void pcrec_emit_rx_abi_block(StrBuf *sb);
 int  pcrec_artifact_abi(void);
 void pcrec_emit_comment_bytes(StrBuf *sb, const char *s, size_t len);
 
-/* [M4-SUBST] THE SUBSTITUTION-TEMPLATE COMPILER (src/gen/emit_subst.c,
- * docs/spec/subst.md, replace_design.md §R3). Compiles `tmpl[0, len)` (the
- * core template language) into a subst artifact: `out->c_src` and
- * `out->h_src`, both malloc'd, freed by `pcrec_output_free`. `prefix` must be
- * a valid emitted-symbol prefix; `header_name` is the `.h` the `.c` includes;
- * `unset_error` selects `--unset=error`. Returns 0, or -1 with `err` filled
- * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). The
- * only caller is the CLI; out of memory aborts (a detached StrBuf). */
+/* [M4-SUBST] A PARSED SUBSTITUTION TEMPLATE (src/parse/subst_template.c,
+ * docs/spec/subst.md §2): a flat item list in template order, and the NEEDED
+ * shape, every group the template references, each once. Arena-owned. */
+typedef enum {
+    SUBST_LIT,     /* template bytes [off, off + len) */
+    SUBST_GROUP,   /* `$k` / `${k}`: group `ref`, a constant slot (D61) */
+    SUBST_NAME,    /* `$name` / `${name}`: needs[ref], run `ref` of the binding */
+    SUBST_VAR      /* `${!name}`: vrefs[ref], the caller's variable */
+} SubstItemKind;
+
+typedef struct {
+    SubstItemKind kind;
+    size_t        off, len;   /* the item's own template bytes */
+    int           ref;
+} SubstItem;
+
+/* One NEEDED row (replace_design.md §R3.2): a name with number -1, or a
+ * number with name NULL. */
+typedef struct {
+    const char *name;
+    int         number;
+} SubstNeed;
+
+typedef struct {
+    SubstItem   *items;
+    size_t       nitems;
+    SubstNeed   *needs;        /* rows [0, nnamed) named, then the numbered */
+    int          nneeds, nnamed;
+    const char **vrefs;        /* `${!name}` names, first-reference order */
+    int          nvrefs;
+    int          maxnum;       /* the highest group number, or 0 */
+    bool         uses_pcrec;   /* a module `subst-pcrec` form appears */
+} SubstTmpl;
+
+/* Parses `s[0, n)` into `t`. Returns 0, or -1 with `err` filled
+ * (`err->input` = PCREC_ERR_INPUT_TEMPLATE, `pos` a template offset). */
+int pcrec_subst_parse(Arena *a, const char *s, size_t n, SubstTmpl *t,
+                      pcrec_error *err);
+
+/* [M4-SUBST] The subst artifact's generation options (docs/spec/subst.md
+ * §5). `prefix` must already be acceptable (`pcrec_prefix_acceptable`);
+ * `header_name` is the `.h` the `.c` includes, or NULL for one
+ * self-contained `.c`; `unset_error` is `--unset=error`. */
 typedef struct {
     const char *prefix;
     const char *header_name;
     bool        unset_error;
 } PcrecSubstOptions;
+
+/* Emits the subst artifact for `t` (src/gen/emit_subst.c): `out->c_src`, and
+ * `out->h_src` when a header is named, both malloc'd. */
+void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
+                      const PcrecSubstOptions *o, pcrec_output *out);
+
+/* THE SUBSTITUTION-TEMPLATE COMPILER (src/core/compile.c): parse, then
+ * emit. Returns 0, or -1 with `err` filled. The only caller is the CLI until
+ * [IFACE-PUSH] gives the template a library entry; there is no `Ctx` on this
+ * path, so out of memory aborts (an `Arena`/`StrBuf` with no `.cx`). */
 int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
                         pcrec_output *out, pcrec_error *err);
 /* True iff `p` is a prefix `pcrec_compile` accepts (a C identifier within
