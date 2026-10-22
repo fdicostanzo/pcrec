@@ -302,7 +302,9 @@ renders every match of `it` (FRESH, its setters applied; an iterator in any
 other state returns `PCREC_ERR_ITER` and is left as it was), up to `limit`
 of them: the gap before each, each match, then the tail after the last.
 `limit` 1 is PCRE2's non-global substitution, `SIZE_MAX` its global one, and
-0 copies the subject and leaves the iterator FRESH. The glue requests no
+0 copies the subject and leaves the iterator FRESH, running no search and
+so no check of the subject either (a `-futf-check` artifact's refusal comes
+from its search). The glue requests no
 match past `limit`: `limit = 1` runs exactly one search.
 
 <a id="s6-p2"></a>[6¶2] **Returns** 0 or a negative code (§8). `*outlen` and `*nsubst` are written
