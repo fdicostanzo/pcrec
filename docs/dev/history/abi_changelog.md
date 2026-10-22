@@ -23,7 +23,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `83` on every artifact today (lane i1build bumped it
+- **`rx_info.abi` is `84` on every artifact today (lane i2build bumped it
+  from 83, 2026-10-21: [FINDALL-NEXT] I4, docs/design/findall_iter_i2.md
+  rev 2, D171).** Every artifact gains `<prefix>_next_n(rx_iter *, caps, k)`,
+  up to `k` matches per call, declared in the header beside `<prefix>_next`
+  with the NEXT entry's linkage; the shared ABI block carries `rx_nextnfn`
+  and the caller-side loop `RX_FOREACH(info, it, m)` with its state
+  `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull` and the
+  caller-overridable `RX_FOREACH_PAIRS` (256); `struct rx_info` appends
+  `next_n` after `next`. I1's `<prefix>_next` body is now the static
+  `always_inline` `<prefix>__one`, which both `<prefix>_next` and
+  `<prefix>_next_n`'s loop inline. All of it is scaffold. `rx_iter` does not
+  change (`PCREC_ITER_LAYOUT` stays 3). No answer of an existing entry moves
+  (match_api.md §3.8.1, §3.8.2, §6¶14c).
+- **`rx_info.abi` was `83` (lane i1build bumped it
   from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
   as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all
   iterator `<prefix>_next(rx_iter *, caps)`: the shared ABI block carries
