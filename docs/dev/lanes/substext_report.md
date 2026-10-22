@@ -16,7 +16,7 @@ a go"). Design of record: `docs/design/replace_design.md` through §R4c and
   `test-registry` (limits manifest 78 rows), `test-spec-history`,
   `test-plan-lint`, `test-claudemd-size` and `test-ci-shards`, all green.
 - Queued through the box queue (owner substext; `build/STAGES` in the
-  worktree): `340-substext-<batch>.{build,strict,test,mech}`. The test
+  worktree): `340-343-substext-b202610221444001401697.{build,strict,test,mech}`. The test
   stage is a full `make test` through `scripts/perfrun`. The mech stage runs
   54 rows: every row on `emit_subst.c`, `subst_template.c`, `cli/main.c` and
   `definitions.c`, plus S1381. Their verdicts are OWED.
@@ -139,6 +139,6 @@ disagree. This needs a manager ruling (see below).
 
 ## OWED
 
-- The verdicts of `340-substext-*` (build, strict, test, mech).
+- The verdicts of 340-343-substext-b202610221444001401697 (build, strict, test, mech).
 - D27: no blinded author tested the extended forms. The design's witnesses
   and pcre2 are the controls here.
