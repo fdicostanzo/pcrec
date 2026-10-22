@@ -94,7 +94,10 @@ Do not start a new milestone unprompted — milestones start with Frank
   `docs/dev/upstream_issues.md` (other engines) rows as findings warrant.
 - Every directory has a CLAUDE.md; a lane that adds/removes files or changes
   a file's role must update the owning directory's CLAUDE.md in the same
-  change.
+  change. CLAUDE.md is orientation only (purpose, files, conventions,
+  pointers; 12 KB limit, enforced by `scripts/check_claudemd_size.sh`):
+  history, lessons, rationale and session notes go in the directory's
+  NOTES.md (created on first need), with one pointer line from CLAUDE.md.
 
 ## 3. Delegate — prefer subagents over doing it yourself
 

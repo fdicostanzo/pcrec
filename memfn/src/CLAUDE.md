@@ -16,6 +16,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - MF_TRACE (compile-time, off by default; format `../docs/trace_format.md`): `MFTRACE` records and reach counters; `REACH_DROPPED n=N` when the 32-row registry fills; `chosen=N asked=A`; keep `would_decline` meaning "the gate moved this selection".
 - Zero-mover seam rules (R17-a): storage point protocol (`mf_locals` refused where `decl_point` is 0, twice, or with other `s`/`n` text; `mf_art_end` refuses "never placed"/"placed, never read" before "never used").
 - SIMD rows (`vrun.c`) exist only as guarded, deny-able, ISA-gated forms; `policy` is a stated bit-set (PORTABLE/INLOOP/SIZE/NONE) a row must serve fully; scalar contracts serve MF_ANY; each SIMD form must beat scalar or show a named benefit (memory pcrec-post-spine-direction).
+- STACK (R-28): no function over a 4 KB frame (`tests/memfn/run_link_checks.sh` holds it; the peak is stated in `../CLAUDE.md` "Compile-time stack"). A table that would pass it goes on the heap with a refusal path (`terms.c` targets, `formhash.c` arena), or into a narrower type.
 - Keep `mf_options()` (`--list-axes`) and `mf_opts_check()` (`--memfn=` acceptance) one table (`options.def`).
 
 ## Files
@@ -35,7 +36,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - `gate.c` — row-contract gate: classifiers, `gate_check`, `gate_describe`, `MF_MISS_N`/`mf_miss_n`, `kit_is_ident`, shape helpers, MF_TRACE records, `policy` `class_set_of`.
 - `options.def`, `options.c` — option registry `MF_OPT(...)`; `mf_options`, `mf_opts_check`, `kit_opt_denied` (`no-<name>`).
 - `finder.c` — the finder table (`fd_rows[]`, `fd_decide`, `fd_route`, `fd_pres`, `mf_finder_rows`).
-- `terms.c` — `mf_set_terms` cover search (R17-b; renderers at B4).
+- `terms.c` — `mf_set_terms` cover search (R17-b; renderers at B4); its two ~15 KB targets are heap, -1 on a refused allocation.
 - `presence.c` — KW-8 ports `mf_pres_ports` / `kit_pres_picks` (read by the routed PRES slot; S458, S1094..7).
 - `formhash.c` — `mf_form_hash[_text]` (R-MS3 form identity; allocates with `malloc`, listing only).
 

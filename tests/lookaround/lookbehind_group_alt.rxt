@@ -1,0 +1,119 @@
+# tests/lookaround/lookbehind_group_alt.rxt -- K123 (lane langfix2): a
+# lookbehind ALTERNATIVE that is itself a non-capturing or scoped group with
+# two or more alternatives. Such a group parses to a bare A_ALT, the same kind
+# as the lookbehind's own top-level spine, and before the fix both the width
+# rule and `vm_look_behind` read it AS spine and failed every such pattern
+# with "internal error: a lookbehind body's alternation spine is longer than
+# its reported branch count". The branch count the parse reported is now
+# authoritative (`pcrec_lookbehind_branches`).
+#
+# Two halves. ACCEPTED: the group's alternatives share one length, so the
+# top-level branch is fixed-width and compiles (first branch, later branch,
+# scoped `(?i:...)`, the `(*plb:` spelling, negative, captures inside). And
+# VARIABLE: the group's alternatives differ in length, libpcre2 10.46 accepts
+# (variable-length lookbehind) and pcrec refuses by capability (§7.4, shape
+# 5) -- a clean `perr`, the same answer `(?<=(a|bc))x` has always had, never
+# the internal error.
+#
+# EVERY EXPECTATION WAS PRODUCED BY libpcre2 10.46 (tests/lib/p2gen.py over
+# p2probe); the `perr` blocks are pcrec's documented capability refusal and
+# libpcre2 ACCEPTS them, which each block's comment says.
+
+# THE ADVERSARY'S CELL: a non-capturing group of two same-length alternatives.
+pattern (?<=(?:ab|cd))x
+features lookaround
+m "cdx" 2 3
+m "abx" 2 3
+n "adx"
+n "x"
+
+# Three alternatives, one length.
+pattern (?<=(?:ab|cd|ef))x
+features lookaround
+m "efx" 2 3
+m "abx" 2 3
+n "aex"
+
+# The group is the FIRST of two top-level branches (it is what the spine walk
+# leaves over), different length from the second.
+pattern (?<=(?:ab|cd)|e)x
+features lookaround
+m "cdx" 2 3
+m "ex" 1 2
+n "dx"
+
+# The group is the LAST top-level branch.
+pattern (?<=e|(?:ab|cd))x
+features lookaround
+m "cdx" 2 3
+m "ex" 1 2
+n "bx"
+
+# Captures inside the group: which alternative committed is observable.
+pattern (?<=(?:(a)|(b)))x
+features lookaround
+m "bx" 1 2
+g 1 -1 -1
+g 2 0 1
+m "ax" 1 2
+g 1 0 1
+g 2 -1 -1
+n "cx"
+
+# A scoped `(?i:...)` group (the adversary's second shape), same length.
+pattern (?<=(?i:ab|cd))x
+features lookaround,modifiers
+m "CDx" 2 3
+m "aBx" 2 3
+n "cbx"
+
+# The `(*plb:` spelling.
+pattern (*plb:(?:ab|cd))x
+features lookaround
+m "abx" 2 3
+n "acx"
+
+# Negative polarity.
+pattern (?<!(?:ab|cd))x
+features lookaround
+n "abx"
+m "acx" 2 3
+m "x" 0 1
+
+# A counted repeat inside the group, same length.
+pattern (?<=(?:a{2}|bc))x
+features lookaround
+m "aax" 2 3
+m "bcx" 2 3
+n "ax"
+
+# Nested groups of alternatives.
+pattern (?<=(?:a(?:b|c)|d(?:e|f)))x
+features lookaround
+m "acx" 2 3
+m "dfx" 2 3
+n "adx"
+
+# VARIABLE: libpcre2 10.46 ACCEPTS (variable-length lookbehind); pcrec refuses by
+# capability (§7.4), not by internal error.
+pattern (?<=(?:a|bc))x
+features lookaround
+perr
+
+# VARIABLE, scoped: libpcre2 10.46 ACCEPTS; pcrec refuses by capability.
+pattern (?<=(?i:a|bc))x
+features lookaround,modifiers
+perr
+
+# VARIABLE, the group first of two branches: libpcre2 10.46 ACCEPTS; pcrec
+# refuses by capability.
+pattern (?<=(?:a|bc)|d)x
+features lookaround
+perr
+
+# VARIABLE, negative `(*plb:`-free spelling: libpcre2 10.46 ACCEPTS; pcrec
+# refuses by capability.
+pattern (?<!(?:a|bc))x
+features lookaround
+perr
+

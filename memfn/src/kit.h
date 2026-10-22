@@ -478,7 +478,8 @@ typedef struct {
 #define mf_set_terms MF_NS(set_terms)
 /* The fewest-terms cover of `set` (bit x of set[x >> 3] at x & 7) within K
  * (<= MF_SET_K) terms: 1 and *out, or 0 (DECLINE: no cover, the budget
- * exceeded, |S| 0 or 256). Deterministic. */
+ * exceeded, |S| 0 or 256), or -1 (the scratch allocation was refused: a
+ * failure, never a decline). Deterministic. */
 int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
 
 /* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */

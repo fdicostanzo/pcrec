@@ -292,39 +292,43 @@ static bool la_has_kreset(const Ast *a)
 static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
                       long long *bad_lo, long long *bad_hi)
 {
-    int i = nbr;
-    const Ast *a = body;
+    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *br);
+    pcrec_lookbehind_branches(cx, body, nbr, br);
 
-    for (; a->k == A_ALT; a = a->l) {
-        /* A SPINE LONGER THAN `nbr - 1` IS AN INTERNAL ERROR, NOT A PATTERN
-         * ERROR, so it aborts the compile by name rather than being folded
-         * into §2.5's capability refusal — a caller told "your lookbehind is
-         * variable-length" about a compiler bug has been told something
-         * false. `pcrec_ctx_fail` is the same channel `vm_look`'s own impossible
-         * arms use. */
-        if (i <= 1)
-            pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
-                            "spine is longer than its reported branch count");
-        i--;
-        long long lo = pcrec_cwmin(a->r), hi = pcrec_cwmax(a->r);
+    /* Checked LAST-WRITTEN FIRST, the walk's historical order, so the branch
+     * whose range a refusal reports is the one it always reported. */
+    for (int i = nbr - 1; i >= 0; i--) {
+        long long lo = pcrec_cwmin(br[i]), hi = pcrec_cwmax(br[i]);
         if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
             *bad_lo = lo; *bad_hi = hi;
             return false;
         }
         out[i] = (int)hi;
     }
-    if (i != 1)
-        pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
-                        "is shorter than its reported branch count");
-    {
-        long long lo = pcrec_cwmin(a), hi = pcrec_cwmax(a);
-        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
-            *bad_lo = lo; *bad_hi = hi;
-            return false;
-        }
-        out[0] = (int)hi;
-    }
     return true;
+}
+
+/* K123: the top-level branch split, `internal.h`'s declaration states the
+ * contract. A spine SHORTER than `nbr - 1` is an internal error, not a
+ * pattern error, so it aborts the compile by name rather than being folded
+ * into §2.5's capability refusal — a caller told "your lookbehind is
+ * variable-length" about a compiler bug has been told something false.
+ * There is deliberately no "longer" error: an `A_ALT` left over after
+ * `nbr - 1` peels is a GROUP's alternation in the first branch
+ * (`(?<=(?:a|bc)|d)x`), which is legal, and treating it as spine was K123's
+ * internal error on every such pattern. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out)
+{
+    const Ast *a = body;
+    for (int i = nbr - 1; i >= 1; i--) {
+        if (a->k != A_ALT)
+            pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
+                            "spine is shorter than its reported branch count");
+        out[i] = a->r;
+        a = a->l;
+    }
+    out[0] = a;
 }
 
 /* [DD-14.LB] §2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS.
@@ -341,8 +345,8 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
  * epilogue is `pcrec_ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
  * `REFUSE(at, "%s", buf)` here and `pcrec_ctx_fail(cx, at, "%s", buf)` there render
  * the same string at the same offset through the same formatter. `buf` is 256
- * bytes for `ExtResult.msg`'s reason, which is the buffer the hook's text used
- * to be formatted straight into. It cannot truncate: the longest arm is 148
+ * bytes because `ExtResult.msg` was once a 256-byte array the hook's text was
+ * formatted straight into, and `pcrec_ext_msgf` still cuts there. It cannot truncate: the longest arm is 148
  * bytes of template and 166 with both widths at their widest
  * (`PCREC_W_UNBOUNDED` is `1 << 40`, 13 digits) — and a width that large is
  * refused by the arm ABOVE it anyway, so 166 is a ceiling no live path
@@ -419,9 +423,17 @@ bool pcrec_lookaround_width_pending(const Ast *a)
  * maximum — UNBOUNDED still, and exactly, for a callee in a cycle (design
  * §3.4(d): libpcre2 refuses that itself, err 125). Nothing about the RULE
  * moved; only the moment it is asked. */
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses)
 {
     if (!pcrec_lookaround_width_pending(a)) return;
+
+    /* K127: a lookbehind whose length re-enters a group containing it has no
+     * length (libpcre2's err 125), whatever its branches would measure. */
+    if (recurses) {
+        char buf[LA_MSG_MAX];
+        la_width_refusal(buf, sizeof buf, 0, PCREC_W_UNBOUNDED);
+        pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
+    }
 
     const int nbr = a->u.look.nbranch;
     if (nbr < 1)
@@ -598,8 +610,10 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         long long lo = 0, hi = 0;
         int *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
         if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
-            char buf[LA_MSG_MAX];
-            la_width_refusal(buf, sizeof buf, lo, hi);
+            /* In the arena, not this frame: this port is a level of the
+             * parser's group recursion (limits.md §3.10, dd10b). */
+            char *buf = pcrec_arena_alloc(&cx->arena, LA_MSG_MAX);
+            la_width_refusal(buf, LA_MSG_MAX, lo, hi);
             REFUSE(at, "%s", buf);
         }
         a->u.look.widths  = w;
@@ -607,18 +621,10 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         la_lb_raise(cx, w, info.nbr);
     }
 
-    /* PROPAGATED, not defaulted — A_CAP's rule and A_ATOMIC's, for their
-     * reason: `not_repeatable` is a property of what this construct RETURNS to
-     * `p_rep`, and `p_rep` tests the returned node's own flag. Note what this
-     * does and does not decide. `(?=a)*` and the other thirteen quantified
-     * forms compile (§2.6, and `pcrec_is_bare_anchor` answers FALSE for
-     * A_LOOK, which is what lets them); `(?=(?i))*` COMPILES in libpcre2 10.46
-     * (measured at this wave) and pcrec refuses it, exactly as pcrec already
-     * refuses `((?i))*` and `(?>(?i))*`. That is ONE pre-existing question
-     * about a bare option run — parse.c's A_CAP arm records it — and
-     * propagating here keeps it one question instead of giving this construct
-     * a second, divergent answer. */
-    a->not_repeatable = body->not_repeatable;
+    /* `not_repeatable` stays the arena's false (K124): a lookaround is a
+     * repeatable item whatever its body — `(?=(?i))*` COMPILES in libpcre2
+     * 10.46, as `((?i))*` and `(?>(?i))*` do — so the body's flag is not
+     * copied up. */
 
     /* SR-8/D67: the stamp, from the row this port was dispatched on — the ROW
      * and not a copy of its mask, so `engines` keeps exactly one home and

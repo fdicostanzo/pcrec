@@ -246,6 +246,13 @@
 #     the heap and glibc aborts, exit 134). Detection-by-abort is a property of
 #     the ALLOCATOR, not of the test, so the flag stays as the guard for a box
 #     where the write lands in slack and nothing notices.
+#   compilestack — added 2026-10-22 ([DD-10]); runs
+#     tests/thread/run_compile_stack.sh against the sabotaged tree's own
+#     build/libpcrec.a: pcrec_compile at the nesting cap and on long chains on
+#     a thread of docs/spec/limits.md §3.10's budget. Its own arm for
+#     `stackdepth`'s reason one level up: a walk that recurses per element, or
+#     a frame that grew, answers every corpus cell correctly on the main
+#     thread's 8 MB, so no answer-checking arm can see it.
 #   utfcheck — added 2026-09-30 ([UTF-VALID], D133); runs
 #     tests/utfcheck/run_utfcheck.sh. Registered with the arm and before
 #     S409-S413, which name it.
@@ -2315,6 +2322,17 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
                 score_arm "$work/stackdepth.log" "$f" "stackdep:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            compilestack)
+                # [DD-10] tests/thread/run_compile_stack.sh — the COMPILER on a
+                # thread of limits.md §3.10's budget (vocabulary entry above).
+                LIBPCREC="$tree/build/libpcrec.a" PCREC="$tree/build/pcrec" \
+                    CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/thread/run_compile_stack.sh" \
+                    > "$work/compilestack.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/compilestack.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/compilestack.log" | grep -oE '[0-9]+')"
+                score_arm "$work/compilestack.log" "$f" "compstack:${f:-ERR}fail/${p:-?}pass"
                 ;;
             laexpand)
                 # [M6.6.2 wave E2] THE SUBSTITUTION DRIVER (design §6.3),

@@ -233,6 +233,29 @@ typedef struct { ABlock *head; Ctx *cx; } Arena;
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
 
+/* ---- the C-stack rule for a recursive walk ([DD-10]) ----
+ *
+ * Marks a helper whose large locals must stay in ITS OWN frame rather than be
+ * inlined into a recursive caller's. A walk bounded by the pattern's nesting
+ * pays its frame once per level, up to `PCREC_MAX_GROUP_DEPTH` times on one
+ * stack (docs/spec/limits.md §3.10 states the resulting budget), so a scratch
+ * array or a by-value analysis struct that is dead before the walk recurses
+ * belongs in a callee marked this way. `tests/thread/run_compile_stack.sh`
+ * measures the result; nothing checks the marking itself. */
+#define PCREC_OWN_FRAME __attribute__((noinline))
+
+/* Loops over the elements of a left-nested `kind` spine (`A_CAT` or `A_ALT`)
+ * rooted at `root`, with `e` naming each in turn: every spine node's right
+ * child from the top down, then the head below the last node, so the order is
+ * right to left in pattern text. A spine is as long as the pattern, not as
+ * deep as its nesting, so a walk iterates it here and recurses only into the
+ * elements ([DD-10]; coding_guide.md §2.4). A `root` of another kind is one
+ * element. `break` and `return` leave the loop as usual. */
+#define PCREC_SPINE_EACH(e, root, kind)                                        \
+    for (const Ast *e##_at_ = (root), *e;                                       \
+         e##_at_ && (e = e##_at_->k == (kind) ? e##_at_->r : e##_at_, 1);       \
+         e##_at_ = e##_at_->k == (kind) ? e##_at_->l : NULL)
+
 /* ---- growable string buffer (codegen output) ---- */
 
 /* `cx` is the owning compile, or NULL — and unlike Arena, NULL is a REAL case
@@ -1269,9 +1292,9 @@ struct Ast {
      * are pinned in tests/reject/.
      *
      * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
-     * option run, src/parse/mod_modifiers.c) and PROPAGATED onto A_CAP and
-     * A_ATOMIC from their bodies (src/parse/parse.c, mod_named_groups.c,
-     * mod_atomic_groups.c), and it is READ off an atom of ANY kind by
+     * option run, src/parse/mod_modifiers.c), never propagated: a group
+     * whose body is one is repeatable (K124): `pcrec_wrap_bare_anchor` clears it
+     * at every group's `)`; and it is READ off an atom of ANY kind by
      * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
 
@@ -4354,9 +4377,15 @@ typedef struct RegRow RegRow;
 typedef struct {
     ExtWhat what;
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
-    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
-                           pcrec_error.msg, so deferring the format cannot
-                           truncate differently than pcrec_ctx_fail did */
+    /* EXT_REFUSAL: the exact text — a string constant, or formatted into the
+     * compile's arena by `pcrec_ext_msgf`; never NULL on a refusal, and read
+     * on no other outcome. A POINTER and not the `char msg[256]` it was,
+     * because ExtResults sit in every frame of the parser's group recursion:
+     * the inline array made a lookaround nest cost 2,480 bytes per level, the
+     * pointer 736 ([DD-10] lane dd10b; limits.md §3.10). The 256-byte cut
+     * the array implied is kept by `pcrec_ext_msgf`, so a deferred format
+     * still truncates exactly as pcrec_ctx_fail does. */
+    const char *msg;
 
     /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
      * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
@@ -5386,7 +5415,21 @@ const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
  * is a no-op on any node `_pending` declines, so a future second caller
  * cannot use it to re-derive an already-resolved table. */
 bool pcrec_lookaround_width_pending(const Ast *a);
-void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
+/* K127: `recurses` is the call graph's answer to "does this lookbehind's
+ * length computation re-enter a group containing the lookbehind"
+ * (`pcrec_callgraph_lookbehind_recurses`); true refuses as UNBOUNDED, at
+ * the recorded offset, before the width rule is asked. */
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a, bool recurses);
+
+/* K123: splits a lookbehind body into its `nbr` TOP-LEVEL branches, written
+ * order, into `out[0..nbr-1]`. `nbr` (the parse's `AltInfo.nbr`, stored as
+ * `u.look.nbranch`) is AUTHORITATIVE: exactly `nbr - 1` `A_ALT` spine nodes
+ * are peeled and whatever is left is the first branch, which may itself be
+ * an `A_ALT` — a non-capturing or scoped group `(?<=(?:ab|cd))x` parses to
+ * a bare alternation, indistinguishable by kind from the spine. The one home
+ * of the split: the width rule and `vm_look_behind` both read it. */
+void pcrec_lookbehind_branches(Ctx *cx, const Ast *body, int nbr,
+                               const Ast **out);
 
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
@@ -5402,7 +5445,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
  * name a group that exists, and one that is wider accepts a spelling PCRE2
  * refuses. That is the drift `pcrec_is_bare_anchor` was made one function for,
  * one construct later. */
-size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
@@ -5645,6 +5688,15 @@ bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
  * SHARED REGION for `i` at all — a target with no linked site has no region,
  * no entry label, no exit label and no second `goto *`. */
 bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
+/* K127: does lookbehind `look`'s length computation RE-ENTER ITSELF — does a
+ * call in its body, followed through callees' calls, reach a group whose
+ * region contains `look`? Calls inside a nested lookahead are not followed
+ * (they contribute no length); calls inside a nested lookbehind are. libpcre2
+ * 10.46 refuses exactly these with err 125 "length of lookbehind assertion is
+ * not limited": `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`,
+ * `(a(?=(?<=(?1))))`, `((?<=(?2)))(a(?<=(?1)))`, while `(a)(?<=(?1))`,
+ * `(?<=a(?=(?R)))x` and `((?<=(?2)))(a(?=(?1)))` compile. */
+bool        pcrec_callgraph_lookbehind_recurses(Ctx *cx, const Ast *look);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
@@ -5847,14 +5899,20 @@ const PosixName *pcrec_registry_posix_names(size_t *n);
  * predate a compile-scoped mask, see enabled.c's own header). */
 ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want);
 
+/* A refusal's text, formatted at claim time into `cx`'s arena and cut at
+ * `pcrec_error.msg`'s size, so it truncates exactly where pcrec_ctx_fail's own
+ * format would. Every formatted `ExtResult.msg` comes from here (REFUSE and
+ * the hand-built refusals alike); a constant text is assigned as is. */
+const char *pcrec_ext_msgf(Ctx *cx, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+
 /* Format a refusal at claim time and return it — relies on the enclosing
- * doorway naming its gated ask level `want`, exactly as ext.c's comment on
- * REFUSE's original site documents. Needs <stdio.h> in the includer for
- * snprintf; every TU that invokes it already carries that include. */
+ * doorway naming its gated ask level `want` and its context `cx`, exactly as
+ * ext.c's comment on REFUSE's original site documents. */
 #define REFUSE(atpos, ...) do {                                              \
-        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos),               \
+                           .msg = pcrec_ext_msgf(cx, __VA_ARGS__),           \
                            .answered_at = want };                            \
-        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
 /* [L3-F5] the base grammar and seven parenthesized-construct doorways/modules

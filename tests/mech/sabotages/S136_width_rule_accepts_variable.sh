@@ -47,7 +47,11 @@ SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="la_widths accepts a top-level branch whose pcrec_cwmin and pcrec_cwmax disagree, storing cwmax as if it were the branch's fixed width. §2.5's refusal disappears and (?<=(a|bc))x compiles, stepping back two characters for a branch that may match one"
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/refused.rxt RED on the variable-width perr blocks (they now compile); gated.rxt RED on its capability cell; and on the (?<! spelling the emitted end-check returns HARD, which the harness scores as an error rather than a span. The same-width cells in lookbehind.rxt stay GREEN. Canonical figure owed from run_sabotage_matrix.sh S136."
-SAB_COUNT=2
+# RE-ANCHORED 2026-10-22 (lane langfix2, K123): la_widths now reads its
+# branches through `pcrec_lookbehind_branches` and tests every branch in ONE
+# loop, so the refusal test that used to appear twice (the spine arm and the
+# first-branch arm) appears once: SAB_COUNT 2 -> 1, same text, same column.
+SAB_COUNT=1
 SAB_BEFORE='        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
             *bad_lo = lo; *bad_hi = hi;
             return false;

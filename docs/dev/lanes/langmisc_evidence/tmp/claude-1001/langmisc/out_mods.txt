@@ -1,0 +1,668 @@
+   AGREE         M001 '(?x)a b' {'feats': 'all'}
+   AGREE         M002 '(?x)a#c\nb' {'feats': 'all'}
+   AGREE         M003 '(?x)a\\ b' {'feats': 'all'}
+   AGREE         M004 '(?x)[ a]' {'feats': 'all'}
+   AGREE         M005 '(?xx)[ a]' {'feats': 'all'}
+   AGREE         M006 '(?x)a+ ?' {'feats': 'all'}
+   BOTH-REFUSE   M007 '(?x)( ?:a)' {'feats': 'all'}
+   BOTH-REFUSE   M008 '(?x)(? i)' {'feats': 'all'}
+   AGREE         M009 '(?x)a {2}' {'feats': 'all'}
+   AGREE         M010 '(?x)a{2} ?' {'feats': 'all'}
+   AGREE         M011 '(?x)a { 2 }' {'feats': 'all'}
+   AGREE         M012 '(?x)a{ 2 }' {'feats': 'all'}
+   AGREE         M013 '(?x)\\x{ 41 }' {'feats': 'all'}
+   AGREE         M014 '(?x)a\x0bb' {'feats': 'all'}
+   AGREE         M015 '(?x)a\x0cb' {'feats': 'all'}
+   AGREE         M016 '(?x)a\rb' {'feats': 'all'}
+   AGREE         M017 '(?x)\\Q a\\E' {'feats': 'all'}
+   AGREE         M018 '(?x)[#]' {'feats': 'all'}
+   AGREE         M019 '(?x)a(?-x) b' {'feats': 'all'}
+   AGREE         M020 '(?x)(?i) a' {'feats': 'all'}
+   AGREE         M021 '(?x)a\\x{20}b' {'feats': 'all'}
+   AGREE         M022 '(?x)\\ ' {'feats': 'all'}
+   AGREE         M023 '(?x)a#' {'feats': 'all'}
+   AGREE         M024 '(?x)#\na' {'feats': 'all'}
+   AGREE         M025 '(?x)a#c\\\nb' {'feats': 'all'}
+!! PCREC-REFUSE  M026 '(?x)a(?#c) b' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'comments' is enabled but (?#...) is not implemented yet (pattern offset 5)"}
+     pcre2: {"res": ["M 0 2", "N", "N", "N", "M 1 3", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 0 2", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         M027 '(?x)a |b' {'feats': 'all'}
+   AGREE         M028 '(?x)( a )' {'feats': 'all'}
+   AGREE         M029 '(?x)a* +' {'feats': 'all'}
+   AGREE         M030 '(?x)a+ +' {'feats': 'all'}
+   AGREE         M031 '(?x)a ? ?' {'feats': 'all'}
+   AGREE         M032 '(?x)\\d +' {'feats': 'all'}
+   AGREE         M033 '(?x)a (?= b)' {'feats': 'all'}
+   AGREE         M034 '(?x)a\\\tb' {'feats': 'all'}
+   AGREE         M035 '(?x)[a #]c' {'feats': 'all'}
+   AGREE         M036 '(?xx)[a #]c' {'feats': 'all'}
+   AGREE         M037 '(?xx)[\\ a]' {'feats': 'all'}
+   AGREE         M038 '(?xx)[a\tb]' {'feats': 'all'}
+   AGREE         M039 '(?xx)[^ a]' {'feats': 'all'}
+   AGREE         M040 '(?xx)[a- c]' {'feats': 'all'}
+   AGREE         M041 '(?xx)[a -c]' {'feats': 'all'}
+   AGREE         M042 '(?x-x)a b' {'feats': 'all'}
+   AGREE         M043 '(?xx-x)[ a]' {'feats': 'all'}
+   AGREE         M044 '(?x)(?-xx)a b' {'feats': 'all'}
+   AGREE         M045 '(?x:a b)c d' {'feats': 'all'}
+   AGREE         M046 '(?x)a(?x-x: b) c' {'feats': 'all'}
+   AGREE         M047 '(?xx)[[:alpha:] ]' {'feats': 'all'}
+   AGREE         M048 '(?x)\\p{ L }' {'feats': 'all'}
+   AGREE         M049 '(?x)a{1 , 2}' {'feats': 'all'}
+   AGREE         M050 '(?x)(?<n> a)' {'feats': 'all'}
+   BOTH-REFUSE   M051 '(?x)(?P<n>a)\\k< n>' {'feats': 'all'}
+   BOTH-REFUSE   M052 '(?x)\\k<n >(?<n>a)' {'feats': 'all'}
+   AGREE         M053 '(?x)(?<n>a) \\k<n>' {'feats': 'all'}
+   AGREE         M054 '(?x)a\\Q b\\E c' {'feats': 'all'}
+   AGREE         M055 '(?x)(?i:a b)' {'feats': 'all'}
+   AGREE         M056 '(?x)[]a ]' {'feats': 'all'}
+   AGREE         M057 '(?x)a\\#' {'feats': 'all'}
+   AGREE         M058 '(?x)\\x2 0' {'feats': 'all'}
+   BOTH-REFUSE   M059 '(?x)\\x 20' {'feats': 'all'}
+   AGREE         M060 '(?x)\\0 1' {'feats': 'all'}
+   AGREE         M061 '(?xxx)a b' {'feats': 'all'}
+   AGREE         M062 '(?x)(?^)a b' {'feats': 'all'}
+   AGREE         M063 '(?x)(?^x)a b' {'feats': 'all'}
+   AGREE         M064 '(?x)a#b(?-x)c\nd' {'feats': 'all'}
+   AGREE         M065 '(?x)(a) \\1' {'feats': 'all'}
+   AGREE         M066 '(?x)(a)\\ 1' {'feats': 'all'}
+   AGREE         M067 '(?x)a{2 }' {'feats': 'all'}
+   AGREE         M068 '(?x)a{2\n}' {'feats': 'all'}
+   AGREE         M069 '(?x)a{2,\n3}' {'feats': 'all'}
+   AGREE         M070 '(?x)a\n{2}' {'feats': 'all'}
+   AGREE         M071 '(?x)(?>a b)' {'feats': 'all'}
+   AGREE         M072 '(?x)a++ b' {'feats': 'all'}
+   AGREE         M073 '(?x)a+ + b' {'feats': 'all'}
+   AGREE         M074 'a(?i)b|c' {'feats': 'all'}
+   AGREE         M075 '(a(?i)b|c)' {'feats': 'all'}
+   AGREE         M076 '(?i:a)b' {'feats': 'all'}
+   AGREE         M077 '(?^i)a' {'feats': 'all'}
+   BOTH-REFUSE   M078 '(?^-i)a' {'feats': 'all'}
+   AGREE         M079 '(?i-i)a' {'feats': 'all'}
+   AGREE         M080 '(?-)a' {'feats': 'all'}
+   AGREE         M081 '(?)a' {'feats': 'all'}
+   AGREE         M082 '(?i)(?^)a' {'feats': 'all'}
+   AGREE         M083 '(?i)(?-i)a' {'feats': 'all'}
+   AGREE         M084 '(?ii)a' {'feats': 'all'}
+   AGREE         M085 '(?i-)a' {'feats': 'all'}
+   AGREE         M086 '(?-i:a)' {'feats': 'all'}
+   AGREE         M087 '(?i)a(?-i:b)' {'feats': 'all'}
+   AGREE         M088 '(?s:.)b' {'feats': 'all'}
+   AGREE         M089 '(?s).(?-s).' {'feats': 'all'}
+   AGREE         M090 '(?U)a+' {'feats': 'all'}
+   AGREE         M091 '(?U)a+?' {'feats': 'all'}
+   AGREE         M092 '(?U)a{1,2}' {'feats': 'all'}
+   AGREE         M093 '(?U)a{1,2}?' {'feats': 'all'}
+   AGREE         M094 '(?U)(a+)(a*)' {'feats': 'all'}
+   AGREE         M095 '(?n)(a)(b)' {'feats': 'all'}
+   AGREE         M096 '(?n)(?<x>a)(b)' {'feats': 'all'}
+   AGREE         M097 '(a(?n)(b))(c)' {'feats': 'all'}
+   AGREE         M098 '(?n:(a))(b)' {'feats': 'all'}
+   AGREE         M099 '(a)(?n)|(b)' {'feats': 'all'}
+   AGREE         M100 '(?r)a' {'feats': 'all'}
+   AGREE         M101 '(?ir)k' {'feats': 'all'}
+   AGREE         M102 '(?^n)(a)' {'feats': 'all'}
+   AGREE         M103 '(?J)(?<n>a)|(?<n>b)' {'feats': 'all'}
+   AGREE         M104 '(?-J)a' {'feats': 'all'}
+   BOTH-REFUSE   M105 '(?i' {'feats': 'all'}
+   BOTH-REFUSE   M106 '(?i:a' {'feats': 'all'}
+   BOTH-REFUSE   M107 '(?L)a' {'feats': 'all'}
+   BOTH-REFUSE   M108 '(?q)a' {'feats': 'all'}
+   AGREE         M109 '(?^x)a b' {'feats': 'all'}
+   AGREE         M110 '(?a)a' {'feats': 'all'}
+   AGREE         M111 '(?aD)a' {'feats': 'all'}
+   BOTH-REFUSE   M112 '(?aQ)a' {'feats': 'all'}
+   BOTH-REFUSE   M113 '(?ab)a' {'feats': 'all'}
+   AGREE         M114 '(?a-a)a' {'feats': 'all'}
+   AGREE         M115 '(?-a)a' {'feats': 'all'}
+   AGREE         M116 '(?aD-aW)a' {'feats': 'all'}
+   BOTH-REFUSE   M117 '(?x^)a' {'feats': 'all'}
+   BOTH-REFUSE   M118 '(?i^)a' {'feats': 'all'}
+   BOTH-REFUSE   M119 '(?^^)a' {'feats': 'all'}
+   AGREE         M120 '(?^)a' {'feats': 'all'}
+   AGREE         M121 '(?i)(?s)(?m)^a$' {'feats': 'all'}
+   AGREE         M122 '(?im-s)a' {'feats': 'all'}
+   AGREE         M123 '(?i:a|b)c' {'feats': 'all'}
+   AGREE         M124 '(?i)a|b' {'feats': 'all'}
+   AGREE         M125 'a|(?i)b' {'feats': 'all'}
+   AGREE         M126 '(?i:)a' {'feats': 'all'}
+   AGREE         M127 '(?-x)a' {'feats': 'all'}
+   AGREE         M128 '(?xx-x)a' {'feats': 'all'}
+   AGREE         M129 '(?i)(?x-i) a' {'feats': 'all'}
+   AGREE         M130 '(?:(?i)a)b' {'feats': 'all'}
+   AGREE         M131 '((?i)a)b' {'feats': 'all'}
+   AGREE         M132 '(?i:a(?-i)b)' {'feats': 'all'}
+   AGREE         M133 '(?i)\\x41' {'feats': 'all'}
+   AGREE         M134 '(?i)[^\\x41]' {'feats': 'all'}
+   AGREE         M135 '(?i)(?U)a+?' {'feats': 'all'}
+   AGREE         M136 '(a)\\10' {'feats': 'all'}
+   AGREE         M137 '(a)\\11' {'feats': 'all'}
+   AGREE         M138 '\\18' {'feats': 'all'}
+   AGREE         M139 '(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10' {'feats': 'all'}
+   AGREE         M140 '(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\1' {'feats': 'all'}
+   AGREE         M141 '(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\11' {'feats': 'all'}
+   BOTH-REFUSE   M142 '\\8' {'feats': 'all'}
+   BOTH-REFUSE   M143 '\\9' {'feats': 'all'}
+   BOTH-REFUSE   M144 '(a)\\8' {'feats': 'all'}
+   BOTH-REFUSE   M145 '(a)\\2' {'feats': 'all'}
+   BOTH-REFUSE   M146 '\\g{0}' {'feats': 'all'}
+   BOTH-REFUSE   M147 '(a)\\g{-2}' {'feats': 'all'}
+   AGREE         M148 '(a)\\g{-1}' {'feats': 'all'}
+   AGREE         M149 '(a)\\g-1' {'feats': 'all'}
+   AGREE         M150 '\\g{+1}(a)' {'feats': 'all'}
+   AGREE         M151 '\\g+1(a)' {'feats': 'all'}
+   AGREE         M152 '(a)\\g1' {'feats': 'all'}
+   AGREE         M153 '(a)\\g{1}' {'feats': 'all'}
+   AGREE         M154 '(?<n>a)\\k<n>' {'feats': 'all'}
+   AGREE         M155 "(?<n>a)\\k'n'" {'feats': 'all'}
+   AGREE         M156 '(?<n>a)\\k{n}' {'feats': 'all'}
+   AGREE         M157 '(?<n>a)\\g{n}' {'feats': 'all'}
+   AGREE         M158 '(?<n>a)(?P=n)' {'feats': 'all'}
+   AGREE         M159 '\\1(a)' {'feats': 'all'}
+   AGREE         M160 '(a\\1)' {'feats': 'all'}
+   AGREE         M161 '(a\\2|b)(c)' {'feats': 'all'}
+   AGREE         M162 '(?J)(?<n>a)(?<n>b)\\k<n>' {'feats': 'all'}
+   AGREE         M163 '(?J)(?:(?<n>a)|(?<n>b))\\k<n>' {'feats': 'all'}
+   AGREE         M164 '(a|b\\1)+' {'feats': 'all'}
+   AGREE         M165 '(?=(a))\\1' {'feats': 'all'}
+   AGREE         M166 '(a)?\\1' {'feats': 'all'}
+   AGREE         M167 '(a)?b\\1?' {'feats': 'all'}
+   AGREE         M168 '(a*)\\1' {'feats': 'all'}
+   AGREE         M169 '(a*)b\\1' {'feats': 'all'}
+   AGREE         M170 '\\0' {'feats': 'all'}
+   AGREE         M171 '\\08' {'feats': 'all'}
+   AGREE         M172 '\\012' {'feats': 'all'}
+   AGREE         M173 '\\12' {'feats': 'all'}
+   AGREE         M174 '(a)\\12' {'feats': 'all'}
+   AGREE         M175 '\\19' {'feats': 'all'}
+   BOTH-REFUSE   M176 '\\81' {'feats': 'all'}
+   BOTH-REFUSE   M177 '(a)\\9' {'feats': 'all'}
+   BOTH-REFUSE   M178 '\\k<m>' {'feats': 'all'}
+   BOTH-REFUSE   M179 '(a)\\g{+0}' {'feats': 'all'}
+   BOTH-REFUSE   M180 '(a)\\g0' {'feats': 'all'}
+   BOTH-REFUSE   M181 '(a)\\g{-0}' {'feats': 'all'}
+   BOTH-REFUSE   M182 '(a)\\g' {'feats': 'all'}
+   BOTH-REFUSE   M183 '(a)\\g{' {'feats': 'all'}
+   BOTH-REFUSE   M184 '(a)\\g{1' {'feats': 'all'}
+   BOTH-REFUSE   M185 '\\k' {'feats': 'all'}
+   BOTH-REFUSE   M186 '\\k<' {'feats': 'all'}
+   BOTH-REFUSE   M187 '(?<n>a)\\k<n' {'feats': 'all'}
+   AGREE         M188 '(a)|\\1b' {'feats': 'all'}
+   AGREE         M189 '(a)\\1{2}' {'feats': 'all'}
+   AGREE         M190 '(a|ab)\\1' {'feats': 'all'}
+   AGREE         M191 '(a)\\g{01}' {'feats': 'all'}
+   AGREE         M192 '(a)\\g001' {'feats': 'all'}
+!! PCREC-REFUSE  M193 '(a)(?<=\\1)' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one is unbounded) (pattern offset 3)"}
+     pcre2: {"res": ["M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "N", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 2 3 2 3", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 1 2 1 2", "M 0 1 0 1", "N", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "N", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1"], "ncap": 1}
+   AGREE         M194 '(a)\\1*b' {'feats': 'all'}
+   AGREE         M195 '(?i)(a)\\1' {'feats': 'all'}
+   AGREE         M196 '((a)\\2)' {'feats': 'all'}
+   AGREE         M197 '(a)(?:\\1|b)+' {'feats': 'all'}
+   AGREE         M198 '(\\1a|b)+' {'feats': 'all'}
+   AGREE         M199 '(?:(a)|b)\\1' {'feats': 'all'}
+   AGREE         M200 '(a)\\001' {'feats': 'all'}
+   AGREE         M201 '\\0012' {'feats': 'all'}
+   AGREE         M202 '(a)\\1(?<n>b)\\k<n>' {'feats': 'all'}
+   AGREE         M203 '(?P<n>a)(?P=n)' {'feats': 'all'}
+   AGREE         M204 '(?P=n)(?P<n>a)' {'feats': 'all'}
+   AGREE         M205 '(a)\\g{-1}{2}' {'feats': 'all'}
+   BOTH-REFUSE   M206 '\\g{x}' {'feats': 'all'}
+   AGREE         M207 '(?<x>a)\\g{x}' {'feats': 'all'}
+   AGREE         M208 '(?<n>.)\\k{ n }' {'feats': 'all'}
+   BOTH-REFUSE   M209 '(?<n>.)\\k< n>' {'feats': 'all'}
+   AGREE         M210 '(?<n>.)\\g{ n }' {'feats': 'all'}
+   AGREE         M211 '(?<n>.)\\k<n>{2}' {'feats': 'all'}
+   AGREE         M212 '(a)\\100' {'feats': 'all'}
+   BOTH-REFUSE   M213 '(a)\\400' {'feats': 'all'}
+   BOTH-REFUSE   M214 '\\400' {'feats': 'all'}
+   AGREE         M215 '(?=(a|ab))\\1c' {'feats': 'all'}
+   AGREE         M216 '(?*(a|ab))\\1c' {'feats': 'all'}
+   AGREE         M217 '(?=(a))a' {'feats': 'all'}
+   AGREE         M218 '(?!(a))b' {'feats': 'all'}
+   AGREE         M219 '(?<=b)a' {'feats': 'all'}
+   AGREE         M220 '(?<=a|bc)x' {'feats': 'all'}
+!! PCREC-REFUSE  M221 '(?<=(a|bc))x' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 characters) (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "M 2 3 0 2", "N", "N", "N", "N", "N", "M 1 2 0 1", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 2 3 0 2"], "ncap": 1}
+   BOTH-REFUSE   M222 '(?<=a+)x' {'feats': 'all'}
+!! PCREC-REFUSE  M223 '(?<=a{1,3})x' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..3 characters) (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 1 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         M224 '(?<=a{2})b' {'feats': 'all'}
+   AGREE         M225 '(?<=ab|b)x' {'feats': 'all'}
+!! PCREC-REFUSE  M226 '(?<=(?:a|bc))x' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: internal error: a lookbehind body's alternation spine is longer than its reported branch count (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "M 2 3", "N", "N", "N", "N", "N", "M 1 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 2 3"], "ncap": 0}
+   AGREE         M227 '(?<=a(?:b|c))x' {'feats': 'all'}
+   AGREE         M228 '(?<=\\b)a' {'feats': 'all'}
+   AGREE         M229 '(?<=^)a' {'feats': 'all'}
+   AGREE         M230 '(?<!^)a' {'feats': 'all'}
+   AGREE         M231 '(?<=\\A)b' {'feats': 'all'}
+   AGREE         M232 '(?<!a)b' {'feats': 'all'}
+   AGREE         M233 '(?<=(a))b' {'feats': 'all'}
+   AGREE         M234 '(?=a)*b' {'feats': 'all'}
+   AGREE         M235 '(?=a){2}a' {'feats': 'all'}
+   AGREE         M236 '(?!a)+b' {'feats': 'all'}
+   AGREE         M237 '(?=(a))?a' {'feats': 'all'}
+   AGREE         M238 '(?=(a)){0}a' {'feats': 'all'}
+   AGREE         M239 '(?=(a)){1,3}a' {'feats': 'all'}
+   AGREE         M240 '(?!a)?b' {'feats': 'all'}
+   AGREE         M241 '(?<=a)?b' {'feats': 'all'}
+   AGREE         M242 '(*pla:a)a' {'feats': 'all'}
+   AGREE         M243 '(*nla:a)b' {'feats': 'all'}
+   AGREE         M244 '(*plb:a)b' {'feats': 'all'}
+   AGREE         M245 '(*nlb:a)b' {'feats': 'all'}
+   AGREE         M246 '(*napla:(a|ab))\\1c' {'feats': 'all'}
+   AGREE         M247 '(*naplb:a)b' {'feats': 'all'}
+   BOTH-REFUSE   M248 '(*nanla:a)' {'feats': 'all'}
+   BOTH-REFUSE   M249 '(*nanlb:a)' {'feats': 'all'}
+   AGREE         M250 '(?<*a)b' {'feats': 'all'}
+!! PCREC-REFUSE  M251 '(?<*(a|ab))b' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 characters) (pattern offset 0)"}
+     pcre2: {"res": ["M 1 2 0 1", "M 1 2 0 1", "N", "N", "N", "N", "N", "M 2 3 1 2", "M 1 2 0 1", "N", "N", "N", "N", "N", "N", "M 2 3 1 2", "N", "M 1 2 0 1", "N", "N", "M 1 2 0 1", "N", "M 2 3 1 2", "N"], "ncap": 1}
+   BOTH-REFUSE   M252 '(?=a\\K)' {'feats': 'all'}
+   BOTH-REFUSE   M253 '(?<=a\\K)b' {'feats': 'all'}
+   BOTH-REFUSE   M254 '(?!\\K)' {'feats': 'all'}
+   AGREE         M255 '(?=(?<=a)b)' {'feats': 'all'}
+   AGREE         M256 '(?<=a(?=b))b' {'feats': 'all'}
+   AGREE         M257 '(?<=a(?=b))' {'feats': 'all'}
+   AGREE         M258 '(?<=\\z)' {'feats': 'all'}
+   AGREE         M259 '(?<=$)' {'feats': 'all'}
+   AGREE         M260 '(?<=a$)' {'feats': 'all'}
+   AGREE         M261 '(?<=.)a' {'feats': 'all'}
+   AGREE         M262 '(?<=\\d)a' {'feats': 'all'}
+   AGREE         M263 '(?=.*b)a' {'feats': 'all'}
+   AGREE         M264 '\\w+(?=\\d)' {'feats': 'all'}
+   AGREE         M265 '(?=a)a' {'feats': 'all'}
+   AGREE         M266 '(?<=\\x{e9})a' {'feats': 'all'}
+   AGREE         M267 '(?<=(?=a)a)a' {'feats': 'all'}
+   AGREE         M268 '(?<=(a)(b))x' {'feats': 'all'}
+   AGREE         M269 '(?<=a|)b' {'feats': 'all'}
+   AGREE         M270 '(?<=)b' {'feats': 'all'}
+   BOTH-REFUSE   M271 '(?<=a*)b' {'feats': 'all'}
+!! PCREC-REFUSE  M272 '(?<=(?>a|bc))x' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 characters) (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N", "M 2 3", "N", "N", "N", "N", "N", "M 1 2", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "M 2 3"], "ncap": 0}
+   BOTH-REFUSE   M273 '(?<=a++)x' {'feats': 'all'}
+!! PCREC-REFUSE  M274 '(?<=a?)b' {'feats': 'all'}
+     pcrec: {"msg": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 0..1 characters) (pattern offset 0)"}
+     pcre2: {"res": ["M 1 2", "M 1 2", "M 0 1", "N", "M 0 1", "N", "M 0 1", "M 2 3", "M 1 2", "M 0 1", "N", "N", "N", "N", "N", "M 0 1", "N", "M 1 2", "N", "N", "M 1 2", "N", "M 2 3", "N"], "ncap": 0}
+   AGREE         M275 '(?<=[ab])b' {'feats': 'all'}
+   BOTH-REFUSE   M276 '(?<=\\x{100})' {'feats': 'all'}
+   AGREE         M277 '(?=(?=(a))a)\\1' {'feats': 'all'}
+   AGREE         M278 '(?!(?!a)b)' {'feats': 'all'}
+   AGREE         M279 '(?=a|ab)(?=ab)ab' {'feats': 'all'}
+   AGREE         M280 '((?=a))' {'feats': 'all'}
+   AGREE         M281 '(?=()a)' {'feats': 'all'}
+   AGREE         M282 '(?<=a)(?<=b)' {'feats': 'all'}
+   AGREE         M283 '(?<!(a))b' {'feats': 'all'}
+   AGREE         M284 '(?=(a))(?=(b))' {'feats': 'all'}
+   AGREE         M285 '(?<=\\Ga)b' {'feats': 'all'}
+   AGREE         M286 '(?<=\\G)a' {'feats': 'all'}
+   AGREE         M287 '(?<!b|ab)x' {'feats': 'all'}
+   AGREE         M288 '(?<=bc|c)x' {'feats': 'all'}
+   AGREE         M289 '(?=(a)|b)\\1?' {'feats': 'all'}
+   AGREE         M290 '(?:(?=(a))|b)+' {'feats': 'all'}
+   AGREE         M291 'a(?=b(?=c))' {'feats': 'all'}
+   AGREE         M292 '(?<=a(?<=b))c' {'feats': 'all'}
+   BOTH-REFUSE   M293 '(?<=a\\Kb)c' {'feats': 'all'}
+   AGREE         M294 '(?<=\\x{e9})a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M295 '(?<=.)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M296 '(?<=[^a])a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M297 '(?<=\\x{10000})a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M298 '(?i)(?<=k)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M299 '(?<=\\p{L})a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M300 '(?<=\\W)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M301 '(?<=\\D)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M302 '(?<!\\x{e9})a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M303 '(?<=.)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M304 '(?<=..)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M305 '(?>a|ab)c' {'feats': 'all'}
+   AGREE         M306 'a++a' {'feats': 'all'}
+   AGREE         M307 'a{1,2}+a' {'feats': 'all'}
+   BOTH-REFUSE   M308 'a*+?' {'feats': 'all'}
+   AGREE         M309 '(?>a*)*' {'feats': 'all'}
+   AGREE         M310 '(a++)+' {'feats': 'all'}
+   AGREE         M311 '(?>(a))' {'feats': 'all'}
+   AGREE         M312 '(?>a)+b' {'feats': 'all'}
+   AGREE         M313 '(ab|a)++b' {'feats': 'all'}
+   AGREE         M314 '(?>a*)b' {'feats': 'all'}
+   AGREE         M315 '(?>(a)|(b))+' {'feats': 'all'}
+   AGREE         M316 '(?>a?)?a' {'feats': 'all'}
+   AGREE         M317 '(?>)' {'feats': 'all'}
+   AGREE         M318 '(?>(a)b|a)' {'feats': 'all'}
+   AGREE         M319 '(a?+)+' {'feats': 'all'}
+   AGREE         M320 '(?>(a|ab))(?>b|c)' {'feats': 'all'}
+   AGREE         M321 'a?+a' {'feats': 'all'}
+   AGREE         M322 '(?>a+?)' {'feats': 'all'}
+   AGREE         M323 '(?>a+?)b' {'feats': 'all'}
+   AGREE         M324 '(?:(?>a)|b)+' {'feats': 'all'}
+   AGREE         M325 'a{2,}+' {'feats': 'all'}
+   AGREE         M326 'a{,2}+a' {'feats': 'all'}
+   AGREE         M327 '(a){1,2}+' {'feats': 'all'}
+   AGREE         M328 '(?>a)*?b' {'feats': 'all'}
+   AGREE         M329 '(?>a|ab)+c' {'feats': 'all'}
+   AGREE         M330 '(?>(?=(a)))\\1' {'feats': 'all'}
+   AGREE         M331 '(?>a(?=b))' {'feats': 'all'}
+   AGREE         M332 '[ab]++b' {'feats': 'all'}
+   AGREE         M333 '(?:a|b)*+b' {'feats': 'all'}
+   AGREE         M334 '(?>(a+)b)+' {'feats': 'all'}
+   AGREE         M335 '(a*)++b' {'feats': 'all'}
+   AGREE         M336 '(?<n>a)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M337 "(?'n'a)" {'enc': 'byte', 'feats': 'all'}
+   AGREE         M338 '(?P<n>a)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M339 '(?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M340 '(?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M341 '(?<1a>a)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M342 '(?<_>a)\\k<_>' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M343 '(?<n>a)(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M344 '(?<n>a)|(?J)(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M345 '(?<Ã©>a)\\k<Ã©>' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M346 '(?<é>a)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M347 '(?<a-b>a)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M348 '(?<>a)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M349 '(?<n>a)(?<n2>b)(c)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M350 '(?<aÙ£>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M351 '(?<Ù£a>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M352 '(?<aÌ\x81>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M353 '(?<Ã©xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M354 '(?<Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M355 '(?<Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©Ã©>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M356 '(?<aÂ²>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M357 '(?<aâ\x85\xa0>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M358 '(?<ä¸\x80>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M359 '(?<aÂ·>a)' {'enc': 'utf8', 'feats': 'all'}
+   BOTH-REFUSE   M360 '(?<aâ\x80\x8d>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M361 '(?<Ê°>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M362 '(?<a_ð\x9d\x9f\x8e>a)' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M363 '(?P<n>a)(?P>n)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M364 '(?<n>a)(?&n)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M365 '(?<n>a)\\g<n>' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M366 '(?&n)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M367 '(?<n>a' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M368 '(?<n' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M369 "(?'n>a)" {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M370 '(?P<n>a)(?P=m)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M371 '(?Pa)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M372 '(?P' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M373 '(?<n>a)(?<N>b)\\k<N>\\k<n>' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M374 '(?J)(?<n>a)(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M375 '(?<n>a)(?J)(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M376 '(?J:(?<n>a))(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M377 '(?<n>a)(?J:(?<n>b))' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M378 '(?n)(?<n>a)(b)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M379 '(?J)(?<n>a)|(?<n>b)' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M380 '(?|(?<n>a))' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 1 2 1 2", "N", "M 0 1 0 1"], "ncap": 1}
+   AGREE         M381 '\\Qa.b\\E.' {'feats': 'all'}
+   AGREE         M382 '\\Q\\\\E' {'feats': 'all'}
+   AGREE         M383 '\\Qab\\E+' {'feats': 'all'}
+   AGREE         M384 'a\\Q\\E*' {'feats': 'all'}
+   AGREE         M385 '(?x)\\Qa b\\E' {'feats': 'all'}
+   AGREE         M386 '[\\Qa-c\\E]' {'feats': 'all'}
+   AGREE         M387 '[\\Q]\\E]' {'feats': 'all'}
+   AGREE         M388 '(a\\Qb)c\\E)' {'feats': 'all'}
+   AGREE         M389 '\\Qab' {'feats': 'all'}
+   AGREE         M390 'a\\E' {'feats': 'all'}
+   BOTH-REFUSE   M391 '[\\E]' {'feats': 'all'}
+   AGREE         M392 '[a\\Q\\E-c]' {'feats': 'all'}
+   AGREE         M393 '\\Qab\\E{2}' {'feats': 'all'}
+   AGREE         M394 '[\\Q^\\Ea]' {'feats': 'all'}
+   AGREE         M395 '[\\Q\\E^a]' {'feats': 'all'}
+   AGREE         M396 '[\\Q\\E]a]' {'feats': 'all'}
+   AGREE         M397 'a{1\\Q\\E,2}' {'feats': 'all'}
+   BOTH-REFUSE   M398 '\\x{4\\Q1\\E}' {'feats': 'all'}
+   AGREE         M399 '\\Q' {'feats': 'all'}
+   AGREE         M400 '\\E' {'feats': 'all'}
+   AGREE         M401 '\\Q\\E' {'feats': 'all'}
+   BOTH-REFUSE   M402 '[\\Q\\E]' {'feats': 'all'}
+   AGREE         M403 '\\Q\\Q\\E' {'feats': 'all'}
+   AGREE         M404 '\\Qx\\\\Ey' {'feats': 'all'}
+   AGREE         M405 'a\\Q\\E+' {'feats': 'all'}
+   BOTH-REFUSE   M406 '\\Q\\E+' {'feats': 'all'}
+   AGREE         M407 '(\\Q\\E)' {'feats': 'all'}
+   AGREE         M408 '\\Q(\\E' {'feats': 'all'}
+   BOTH-REFUSE   M409 '[^\\Q\\E]' {'feats': 'all'}
+   AGREE         M410 '[\\Q\\]\\E]' {'feats': 'all'}
+   AGREE         M411 '\\Qa\\E\\Q\\E+' {'feats': 'all'}
+   BOTH-REFUSE   M412 '\\E+' {'feats': 'all'}
+   AGREE         M413 'a\\E+' {'feats': 'all'}
+   AGREE         M414 'a\\E\\E+' {'feats': 'all'}
+   AGREE         M415 '[a\\E-c]' {'feats': 'all'}
+   AGREE         M416 '[a-\\Ec]' {'feats': 'all'}
+   AGREE         M417 '\\Q*\\E' {'feats': 'all'}
+   AGREE         M418 'a\\Q{2}\\E' {'feats': 'all'}
+   AGREE         M419 '\\Q$\\E' {'feats': 'all'}
+   AGREE         M420 '\\Q${x}\\E' {'feats': 'all'}
+   AGREE         M421 '[\\Q\\E-a]' {'feats': 'all'}
+   BOTH-REFUSE   M422 '\\Q\\E{2}' {'feats': 'all'}
+   BOTH-REFUSE   M423 '^\\Q\\E*' {'feats': 'all'}
+!! DIFF          M424 '(?R)' {'feats': 'all'}
+     pcrec: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M425 'a(?R)?b' {'feats': 'all'}
+   AGREE         M426 '^(a(?1)?b)$' {'feats': 'all'}
+   AGREE         M427 '(a|b(?1))' {'feats': 'all'}
+   AGREE         M428 '^(a|ab)(?1)c$' {'feats': 'all'}
+   AGREE         M429 '(a|b)(?1)' {'feats': 'all'}
+   AGREE         M430 '(?(DEFINE)(?<d>\\d+))(?&d)-(?&d)' {'feats': 'all'}
+   BOTH-REFUSE   M431 '(?-1)(a)' {'feats': 'all'}
+   AGREE         M432 '(?+1)(a)' {'feats': 'all'}
+   AGREE         M433 '(?01)(a)' {'feats': 'all'}
+   AGREE         M434 '(a)(?01)' {'feats': 'all'}
+!! DIFF          M435 '(?00)' {'feats': 'all'}
+     pcrec: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M436 'a(?00)?b' {'feats': 'all'}
+   AGREE         M437 '(a)\\g<01>' {'feats': 'all'}
+   AGREE         M438 "(a)\\g'-1'" {'feats': 'all'}
+   BOTH-REFUSE   M439 '(?&x)' {'feats': 'all'}
+   AGREE         M440 '(a)(?i)(?1)' {'feats': 'all'}
+   AGREE         M441 '(?i:(a))(?-i)(?1)' {'feats': 'all'}
+   AGREE         M442 '((?i)a)(?1)' {'feats': 'all'}
+   AGREE         M443 '(a)(?1)\\1' {'feats': 'all'}
+   AGREE         M444 '(?1)(a)' {'feats': 'all'}
+   AGREE         M445 '^(?:(a)|b(?1))+$' {'feats': 'all'}
+   AGREE         M446 '^((.)(?1)\\2|.?)$' {'feats': 'all'}
+   BOTH-REFUSE   M447 '(a)(?2)' {'feats': 'all'}
+   BOTH-REFUSE   M448 '(?(DEFINE)a|c)' {'feats': 'all'}
+   AGREE         M449 '(?(DEFINE)a)' {'feats': 'all'}
+   AGREE         M450 '(?(DEFINE)(a))(?1)b' {'feats': 'all'}
+   AGREE         M451 '\\((?:[^()]|(?R))*\\)' {'feats': 'all'}
+!! GIVEUP        M452 '(a|(?R)b)' {'feats': 'all'}
+     pcrec: {"res": ["E -3", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "E -3", "M 0 1 0 1", "E -3", "E -3", "E -3", "M 0 1 0 1", "M 0 1 0 1", "E -3", "E -3", "E -3", "M 0 1 0 1", "E -3", "E -3"], "ncap": 1, "err": ""}
+     pcre2: {"res": ["N", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "M 0 1 0 1", "E -52", "M 0 1 0 1", "E -52", "E -52", "E -52", "M 0 1 0 1", "M 0 1 0 1", "E -52", "E -52", "E -52", "M 0 1 0 1", "E -52", "E -52"], "ncap": 1}
+!! GIVEUP        M453 '(?R)a|b' {'feats': 'all'}
+     pcrec: {"res": ["E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["N", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+!! GIVEUP        M454 'a|(?R)b' {'feats': 'all'}
+     pcrec: {"res": ["E -3", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "E -3", "M 0 1", "E -3", "E -3", "E -3", "M 0 1", "M 0 1", "E -3", "E -3", "E -3", "M 0 1", "E -3", "E -3"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["N", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "M 0 1", "E -52", "M 0 1", "E -52", "E -52", "E -52", "M 0 1", "M 0 1", "E -52", "E -52", "E -52", "M 0 1", "E -52", "E -52"], "ncap": 0}
+!! GIVEUP        M455 '^(?R)?a' {'feats': 'all'}
+     pcrec: {"res": ["N", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "M 0 1", "N", "E -3", "N", "E -3", "N", "E -3", "E -3", "N", "N", "N", "E -3", "E -3", "E -3"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["N", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "N", "E -52", "N", "E -52", "N", "E -52", "E -52", "N", "N", "N", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M456 '(a(?1)?)' {'feats': 'all'}
+   AGREE         M457 '(?1)(?2)(a)(b)' {'feats': 'all'}
+   AGREE         M458 '(a(?2))(b(?1)?)' {'feats': 'all'}
+   AGREE         M459 '(?(DEFINE)(?<a>a(?&b)?)(?<b>b(?&a)?))(?&a)' {'feats': 'all'}
+   AGREE         M460 '(a)(?-1)(?+1)(b)' {'feats': 'all'}
+   BOTH-REFUSE   M461 '(?+0)' {'feats': 'all'}
+   BOTH-REFUSE   M462 '(?-0)' {'feats': 'all'}
+   BOTH-REFUSE   M463 '(a)(?+1)' {'feats': 'all'}
+   BOTH-REFUSE   M464 '(a)(?10)' {'feats': 'all'}
+   AGREE         M465 '(a)\\g<+1>(b)' {'feats': 'all'}
+   AGREE         M466 '(a)\\g<-1>' {'feats': 'all'}
+!! DIFF          M467 '\\g<0>' {'feats': 'all'}
+     pcrec: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+!! DIFF          M468 '(?0)' {'feats': 'all'}
+     pcrec: {"res": ["N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M469 '(a)(?R)?b' {'feats': 'all'}
+   AGREE         M470 '((a)|b)(?1)' {'feats': 'all'}
+   AGREE         M471 '(?=(?1))(a)' {'feats': 'all'}
+   AGREE         M472 '(?<=(?1))(a)' {'feats': 'all'}
+!! GIVEUP        M473 '(?!(?R))a' {'feats': 'all'}
+     pcrec: {"res": ["N", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "N", "E -3", "N", "E -3", "N", "E -3", "E -3", "N", "N", "N", "E -3", "E -3", "E -3"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["N", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "N", "E -52", "N", "E -52", "N", "E -52", "E -52", "N", "N", "N", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M474 '(a)(?1){2}' {'feats': 'all'}
+   AGREE         M475 '(a)(?1)+' {'feats': 'all'}
+!! DIFF          M476 '(?:a|(?R))+' {'feats': 'all'}
+     pcrec: {"res": ["N", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "M 0 1", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3", "M 0 2", "E -3", "E -3", "E -3", "E -3", "E -3", "E -3"], "ncap": 0, "err": ""}
+     pcre2: {"res": ["E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52", "E -52"], "ncap": 0}
+   AGREE         M477 '((a)(?1)?b)' {'feats': 'all'}
+   BOTH-REFUSE   M478 '(?P>n)' {'feats': 'all'}
+   BOTH-REFUSE   M479 '(a)\\g<1' {'feats': 'all'}
+   BOTH-REFUSE   M480 '(a)(?1' {'feats': 'all'}
+   AGREE         M481 '(?(DEFINE))' {'feats': 'all'}
+   AGREE         M482 '(?(DEFINE)(?<w>\\w))(?&w)+' {'feats': 'all'}
+   AGREE         M483 '(?i)(?(DEFINE)(?<k>k))(?-i)(?&k)' {'feats': 'all'}
+   AGREE         M484 '(?(DEFINE)(?<k>k))(?i)(?&k)' {'feats': 'all'}
+   AGREE         M485 '(a)(?1)(?1)(?1)' {'feats': 'all'}
+   AGREE         M486 '^(a|b(?1)c)$' {'feats': 'all'}
+   AGREE         M487 '(a\\1?)(?1)' {'feats': 'all'}
+   AGREE         M488 '(*UCP)a' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M489 '(*UTF)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*UTF) requires --encoding=utf8 (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "E -4", "E -3"], "ncap": 0}
+   AGREE         M490 '(*UTF)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M491 '(*UTF8)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M492 '(*UCP)(*UTF)a' {'enc': 'utf8', 'feats': 'all'}
+!! PCREC-REFUSE  M493 '(*UTF)(*UCP)\\w' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: UCP \\w is a wide set (930 intervals) and is refused under encoding 'utf8' until a kit-sized class route exists ([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use -e byte (pattern offset 12)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "M 0 1", "N", "M 0 2", "M 0 2"], "ncap": 0}
+   BOTH-REFUSE   M494 'a(*UCP)' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M495 '(*CR)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M496 '(*LF)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M497 '(*LIMIT_MATCH=10)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*LIMIT_MATCH) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M498 '(*COMMIT)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*COMMIT) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M499 'a(*FAIL)|b' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 1)"}
+     pcre2: {"res": ["N", "M 1 2", "M 0 1", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M500 'a(*F)|b' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 1)"}
+     pcre2: {"res": ["N", "M 1 2", "M 0 1", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M501 'a(*ACCEPT)b' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 1)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M502 '(*MARK:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*MARK) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M503 '(*:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*MARK) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M504 'a(*THEN)b' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*THEN) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 1)"}
+     pcre2: {"res": ["N", "M 0 2", "N", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   M505 '(*foo)a' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M506 '(*atomic:a)' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M507 '(*sr:a)' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M508 '(*NOTEMPTY)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M509 '(*NO_AUTO_POSSESS)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*NO_AUTO_POSSESS) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   M510 '(*UTF16)a' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M511 '(*UTF32)a' {'enc': 'utf8', 'feats': 'all'}
+   AGREE         M512 '(*UCP)(*UCP)a' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M513 '(*ucp)a' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M514 '(*UCP' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M515 '(*)a' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M516 '(*:)a' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M517 '(*PRUNE:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*PRUNE) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M518 '(*SKIP)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*SKIP) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   M519 '(*scs:(1)a)' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M520 '(*NO_JIT)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*NO_JIT) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M521 '(*CASELESS_RESTRICT)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*CASELESS_RESTRICT) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   M522 '(*TURKISH_CASING)a' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M523 '(*LIMIT_HEAP=1)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*LIMIT_HEAP) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M524 '(*LIMIT_DEPTH=1)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*LIMIT_DEPTH) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["E -53", "E -53", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M525 '(*LIMIT_RECURSION=1)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*LIMIT_RECURSION) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["E -53", "E -53", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M526 '(*NOTEMPTY_ATSTART)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M527 '(*BSR_ANYCRLF)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M528 '(*NUL)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M529 '(*ANY)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M530 '(*CRLF)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M531 '(*ANYCRLF)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M532 '(*BSR_UNICODE)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M533 '(*asr:a)' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M534 '(*script_run:a)' {'enc': 'utf8', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+   AGREE         M535 '(*positive_lookahead:a)a' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M536 '(*pla:a)' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M537 '(*pla:)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M538 '(*pla)' {'enc': 'byte', 'feats': 'all'}
+   BOTH-REFUSE   M539 '(*PLA:a)' {'enc': 'byte', 'feats': 'all'}
+!! PCREC-REFUSE  M540 '(*NO_START_OPT)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*NO_START_OPT) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M541 '(*NO_DOTSTAR_ANCHOR)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*NO_DOTSTAR_ANCHOR) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M542 '(*THEN:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*THEN) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M543 '(*COMMIT:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*COMMIT) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M544 '(*ACCEPT:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0", "M 0 0"], "ncap": 0}
+!! PCREC-REFUSE  M545 '(*FAIL:x)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["N", "N", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M546 '(*UCP)(*CR)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 6)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+!! PCREC-REFUSE  M547 '(*CR)(*UCP)a' {'enc': 'byte', 'feats': 'all'}
+     pcrec: {"msg": "pcrec: (*...) requires module 'verbs' (pattern offset 0)"}
+     pcre2: {"res": ["M 0 1", "M 0 1", "N", "N", "N", "N"], "ncap": 0}
+   BOTH-REFUSE   M548 '(?i)(*UCP)a' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M549 '(*UCP)(?i)\\xe9' {'enc': 'byte', 'feats': 'all'}
+   AGREE         M550 '(*UCP)[[:alpha:]]' {'enc': 'byte', 'feats': 'all'}

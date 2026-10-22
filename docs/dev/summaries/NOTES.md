@@ -1,0 +1,8 @@
+# NOTES — history, lessons and rationale for this directory
+
+Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim from it (2026-10-22, size limit) lives below.
+
+## Index entries: 2026-10-11 start-landing summaries
+
+- `2026-10-11-o97-start-landing-state3-exec-summary.md` — pcrec's reading of pcrec-bench outbox O-97 ([START-LANDING] state 3, pin `b8337c33`, abi 74; lane o97read): 298/298 movers reproduced, 76% (`end-minus-width`) and 78% (`landing`) of mover cells faster beyond trial overlap against a 2.6%/1.8% null, whole-subject form and tail family flat, grok +19% not repeated, Vectorscan SOM reading. Per-mover-set verdict table, a PROPOSED disposition for the [START-LANDING] plan row (close; carry the utf8 residue), a triage of the bench's three asks (utf8 search-short +1.3-6% on 12 patterns; datefinder emit-c x2.53; K103 and the litrun whole rows), and the [ENG-TACTICS] §6 table of loglines/* and altwide sfx-* medians read against the HELD rev-inner and rev-end-width triggers. Cites the bench ledger `docs/dev/ledgers/2026-10-11-start-landing-state3-b8337c33.md` and outbox O-97.
+- `2026-10-11-three-state-revend-start-landing.md` — the bench's three-state comparison ([B135], I-142; a15fb77b abi 72 -> 7388f1c0 [OPT-REVEND] abi 73 -> b8337c33 [START-LANDING] abi 74; lane threestate) as one before -> after view: per-suite and per-regime step medians, a per-mover-family table with both step ratios and the cross-window control, top cells by total gain with the delivering step, regressions with the step that introduced each, caveats and relay questions. Cites the two bench ledgers `2026-10-10-opt-revend-states12-7388f1c0.md` and `2026-10-11-start-landing-state3-b8337c33.md`.

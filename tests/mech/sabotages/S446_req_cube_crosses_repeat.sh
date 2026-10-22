@@ -20,8 +20,15 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sel(
 SAB_REACH_EXPECT="REACH-MIN0-SPLIT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                acc.runs = rr_cat(rr_none(rw), acc.runs);'
-SAB_AFTER='                acc.runs = rr_cat(rb_walk(w, a->l).runs, acc.runs);   /* SABOTAGE S446 */'
+SAB_BEFORE='            rb_gap_into(acc, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));'
+SAB_AFTER='            acc->set  = rb_union(rb_empty(), acc->set, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));
+            acc->runs = rr_cat(t[0].runs, acc->runs);   /* SABOTAGE S446 */'
+# RE-ANCHORED (lane dd10tri, 2026-10-22, dd10 stack-depth branch): the walk's
+# arms became rb_*_into helpers over `acc` by pointer (PCREC_OWN_FRAME); the
+# min-0 repeat arm is now one rb_gap_into call (shared with the class and
+# unbounded arms, so the plant lands at THIS call site, not in the helper).
+# Intent unchanged: the set shift kept, the body's runs joined across the
+# zero-iteration repeat.
 # RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): the min-0 repeat's
 # arm now also shifts the SET's offsets (`rb_union(rb_empty(), acc.set, rw)`)
 # and names the width `rw`; the plant still joins the body's runs across the

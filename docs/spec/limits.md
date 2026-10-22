@@ -21,6 +21,7 @@
   - [§3.7](#s3-7) Findings data
   - [§3.8](#s3-8) Module `ucp`: which UCP sets compile
   - [§3.9](#s3-9) The DFA's context sets and atoms
+  - [§3.10](#s3-10) The compiler's C stack
 - [§4](#s4) Worked example: `^(a(?1)?b)$`
 - [§5](#s5) The default entries and the C stack
 - [§6](#s6) Left recursion: a documented divergence
@@ -38,7 +39,7 @@
 - [§8b](#s8b) Three `limits.def` knees `--tune=N` moves
 <!-- spec-toc:end -->
 
-<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.9 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
+<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.10 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
 
 <a id="s1"></a>
 ## 1. Scope of the guarantee
@@ -198,6 +199,19 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 - <a id="s3-9-p3"></a>[3.9¶3] `PCREC_MAX_CTX_ATOMS` = 16 context atoms: the distinct membership vectors the machine's bytes realize over those sets, plus the empty one (an absent side).
 
 <a id="s3-9-p4"></a>[3.9¶4] Over either, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). A truncated partition is never produced. Neither is movable by a flag.
+
+<a id="s3-10"></a>
+### 3.10 The compiler's C stack
+
+<a id="s3-10-p1"></a>[3.10¶1] `pcrec_compile` runs on the caller's thread, and its C-stack use grows with the pattern's parenthesis nesting and with nothing else: a concatenation, an alternation or a run of assertions of any length costs no stack per element. Nesting is capped at `PCREC_MAX_GROUP_DEPTH` = 250 levels, PCRE2's own limit; a group at level 251 is refused with "parentheses are too deeply nested", an ordinary compile error.
+
+<a id="s3-10-p2"></a>[3.10¶2] The cap is what bounds the stack, and the budget pcrec states is 432 KB (442,368 bytes, the `limits.def` row `PCREC_COMPILE_STACK_BUDGET`). The budget is MEASURED, not proved: on every nesting family named in ¶3, at the nesting cap and at the default build flags (gcc `-O2 -g`), `pcrec_compile` stays under it whether it accepts the pattern or refuses it, and the budget is the worst of them with about 20% headroom (¶5). No code enforces it, and a nesting shape not measured here could need more. `make test-stackdepth` compiles those families at depth 250 and 251, and long chains, on a thread of exactly that size; it skips, saying so, when the library was built with other CFLAGS.
+
+<a id="s3-10-p3"></a>[3.10¶3] The measured worst, on x86-64 Linux with gcc at `-O2`, is nested optional groups, `(a(a…)?)?`: about 1.4 KB per level, 362,736 bytes at depth 250. Nested lookarounds, atomic groups, named groups and scoped inline options such as `(?i:…)` cost about 0.75 KB per level, at most 210,904 bytes at depth 250; plain groups cost about 0.4 KB per level, 118,760 bytes. A call back into the nest, `((…a…))(?1)` or its innermost group's `(?250)`, costs no more than the plain nest. The compound route, where the compile of the whole pattern compiles its parts inside it, costs 221,656 bytes on `^(?i:(?i:…a…))|b$` at depth 250, about 11 KB over the same nest compiled plainly. Conditionals and branch reset are not implemented yet: a nest of either is refused at its first construct, using 16,792 bytes, and is not measured as a nest. A refusal at depth 251 stops in the parser and uses at most 212,360 bytes. Independently of nesting, the search code a pattern selects costs between about 24 KB and 63 KB (`abc` 24,120 bytes, `a` and `(a)` about 62 KB); it is paid after the parse, so it is not added to the nesting cost, and a compile uses the larger of the two.
+
+<a id="s3-10-p4"></a>[3.10¶4] A thread smaller than the budget compiles shallower patterns. At musl's default thread stack of 128 KB (131,072 bytes) that is nesting up to 81 levels of optional groups `(a(a…)?)?`, 148 to 161 levels of lookarounds, atomic groups, named groups or scoped inline options, and the full 250 levels of plain groups, measured the same way. pcrec does not detect a stack too small for the pattern: past those depths an undersized thread overflows rather than refusing, and the remedy is a larger thread. There is no caller-settable nesting limit.
+
+<a id="s3-10-p5"></a>[3.10¶5] The figures are measurements on one platform, not portable constants; another architecture or compiler moves them, which is why the budget carries about 20% headroom over the measured worst.
 
 <a id="s4"></a>
 ## 4. Worked example: `^(a(?1)?b)$`

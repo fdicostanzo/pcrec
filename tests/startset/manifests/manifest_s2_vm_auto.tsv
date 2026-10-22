@@ -25,6 +25,7 @@
 # -fno-req-handoff as well (the hat suites deny the re-entered handoff on both arms). Corpus rows regenerated on
 # the lane's build, every change a handoff.rxt row; the bench rows are the pinned ones, untouched (counted, never checked).
 # cpb4 (2026-10-12, [COMPOUND] B4): +1 row, a tests/compound/split.rxt block (a VM-hat mover the new corpus file brings); census_s1.py on lane/cpb4 (-fno-start-set arm), corpus rows only -- bench rows NOT refreshed (m7fix's note); 0 other rows moved.
+# lf3tri (2026-10-22): +15 rows, every one a block of a new language-fix corpus file (tests/atomic_groups/possessive_ungreedy.rxt, named_groups/utf8_names.rxt, recursion/inlookaround_self.rxt); correct VM-hat movers never pinned; census_s1.py on lane/langfix2 (-fno-start-set arm, bench rows NOT refreshed), 0 existing rows gone, 0 changed.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -476,3 +477,18 @@ tests/captures/empty_iteration.rxt:1187	--features all --engine=vm	283f3a28297c6
 tests/captures/empty_iteration.rxt:1220	--features all --engine=vm	283f3a28297c61297b312c337d3f62
 tests/captures/empty_iteration.rxt:1256	--features all --engine=vm	283f3a28297c61292b2b62
 tests/captures/empty_iteration.rxt:1288	--features all --engine=vm	283f3e283f3a28297c61292b3f2962
+tests/atomic_groups/possessive_ungreedy.rxt:101	--features atomic-groups,classes,modifiers --engine=vm	61283f55295c737b2c327d2b
+tests/atomic_groups/possessive_ungreedy.rxt:115	--features atomic-groups,classes,modifiers --engine=vm	283f5529612a2b61
+tests/atomic_groups/possessive_ungreedy.rxt:147	--features atomic-groups,classes,modifiers --engine=vm	283f553a5c732a2b2962
+tests/atomic_groups/possessive_ungreedy.rxt:161	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b3f623f3f
+tests/atomic_groups/possessive_ungreedy.rxt:175	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b
+tests/atomic_groups/possessive_ungreedy.rxt:39	--features atomic-groups,classes,modifiers --engine=vm	283f5529612b2b
+tests/atomic_groups/possessive_ungreedy.rxt:70	--features atomic-groups,classes,modifiers --engine=vm	283f5529617b322c337d2b
+tests/atomic_groups/possessive_ungreedy.rxt:86	--features atomic-groups,classes,modifiers --engine=vm	283f5529617b322c7d2b
+tests/named_groups/utf8_names.rxt:22	--features named-groups,backrefs --encoding=utf8	283f3cc3a93e61295c6b3cc3a93e
+tests/named_groups/utf8_names.rxt:30	--features named-groups,backrefs --encoding=utf8	283f27c3a9276129283f503dc3a929
+tests/named_groups/utf8_names.rxt:37	--features named-groups,backrefs --encoding=utf8	283f503c61c3a9313e61295c677b61c3a9317d
+tests/named_groups/utf8_names.rxt:44	--features named-groups,backrefs --encoding=utf8	283f3ce697a5e69cac3e61295c6b7be697a5e69cac7d
+tests/recursion/inlookaround_self.rxt:106	--features recursion,lookaround	28283f3c3d283f32292961292862283f3d283f31292929
+tests/recursion/inlookaround_self.rxt:115	--features recursion,lookaround	28283f3c3d283f322929292861283f3d283f31292929
+tests/recursion/inlookaround_self.rxt:122	--features recursion,lookaround	28283f3c3d283f322929292861283f21283f31292929

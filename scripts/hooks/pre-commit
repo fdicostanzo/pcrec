@@ -66,4 +66,15 @@ if printf '%s\n' "$staged" | grep -qE '\.(md|txt|tsv|py|sh|c|h)$|(^|/)Makefile$'
         fi
     fi
 fi
+
+# (3) CLAUDE.md size: orientation guides, not history (12 KB; root 20 KB; the
+# table is in scripts/check_claudemd_size.sh). Judges the STAGED content.
+if printf '%s\n' "$staged" | grep -qE '(^|/)CLAUDE\.md$'; then
+    if [ ! -x scripts/check_claudemd_size.sh ]; then
+        echo "pre-commit: scripts/check_claudemd_size.sh is missing in this tree; size check skipped" >&2
+    elif ! scripts/check_claudemd_size.sh --staged; then
+        echo "pre-commit: a staged CLAUDE.md is over its size limit — commit blocked (or bypass once with 'git commit --no-verify')." >&2
+        rc=1
+    fi
+fi
 exit $rc

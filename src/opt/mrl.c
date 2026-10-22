@@ -71,6 +71,7 @@
  * what changed is that they are now claims rather than defaults.
  */
 
+#include <limits.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -140,11 +141,12 @@ long long pcrec_sat_mul(long long a, long long b, long long cap)
 /* THE C-STACK DEPTH IS Θ(pattern depth), which is the rule K18 actually
  * teaches (k23_design.md §4.3's first bullet, corrected against this note's
  * own refuted prediction 2). `clo_visit` was not a problem because it
- * recursed; it was a problem because it recursed Θ(d²). Two shapes here are
+ * recursed; it was a problem because it recursed Θ(d²). Three shapes here are
  * NOT bounded by paren depth and are therefore walked ITERATIVELY, for
- * src/ir/nfa.c's R-2 reason: a left-leaning `A_CAT` spine and an `A_CAP`
- * chain are both as long as the pattern, not as deep as its nesting. What
- * remains recursive — an A_CAT's right child, an A_ALT's branches, an A_REP's
+ * src/ir/nfa.c's R-2 reason: the left-leaning `A_CAT` and `A_ALT` spines and
+ * an `A_CAP` chain are all as long as the pattern, not as deep as its nesting
+ * (the `A_ALT` spine was the one missed until [DD-10]). What remains
+ * recursive — a spine element's right child, the spine's head, an A_REP's
  * body — descends one paren level per frame. */
 long long pcrec_minw(const Ast *a)
 {
@@ -270,8 +272,14 @@ long long pcrec_minw(const Ast *a)
             a = a->l;
             continue;
         case A_ALT: {
-            long long l = pcrec_minw(a->l), r = pcrec_minw(a->r);
-            return pcrec_sat_add(acc, l < r ? l : r, MRL_MINW_MAX);
+            /* The left-nested spine, iteratively ([DD-10]: one frame per
+             * branch overflowed an 8 MB stack at 200,000 branches). */
+            long long m = LLONG_MAX;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_minw(b);
+                if (r < m) m = r;
+            }
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP:
             /* `rmax == -1` (unbounded) is not special: the MINIMUM is rmin
@@ -618,8 +626,13 @@ long long pcrec_cwmax(const Ast *a)
             a = a->l;
             continue;
         case A_ALT: {
-            long long l = pcrec_cwmax(a->l), r = pcrec_cwmax(a->r);
-            return pcrec_sat_add(acc, l > r ? l : r, MRL_MINW_MAX);
+            /* The left-nested spine, iteratively: `pcrec_minw`'s arm. */
+            long long m = LLONG_MIN;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_cwmax(b);
+                if (r > m) m = r;
+            }
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP: {
             /* `rmax == -1` (unbounded) IS special here, unlike in `minw`:
@@ -708,8 +721,13 @@ long long pcrec_cwmin(const Ast *a)
             a = a->l;
             continue;
         case A_ALT: {
-            long long l = pcrec_cwmin(a->l), r = pcrec_cwmin(a->r);
-            return pcrec_sat_add(acc, l < r ? l : r, MRL_MINW_MAX);
+            /* The left-nested spine, iteratively: `pcrec_minw`'s arm. */
+            long long m = LLONG_MAX;
+            PCREC_SPINE_EACH(b, a, A_ALT) {
+                long long r = pcrec_cwmin(b);
+                if (r < m) m = r;
+            }
+            return pcrec_sat_add(acc, m, MRL_MINW_MAX);
         }
         case A_REP:
             return pcrec_sat_add(acc,

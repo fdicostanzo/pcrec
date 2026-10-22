@@ -7,7 +7,7 @@ SAB_ID="S23-xskip-comment-any-skip-byte"
 SAB_FILE="src/parse/parse.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/modifiers/xmode.rxt"
-SAB_DESC="xskip: '#'-comment scan stops at any xskip_byte(), not just 0x0a"
+SAB_DESC="xskip: '#'-comment scan stops at any xskip_char() byte, not just 0x0a"
 SAB_DOC_FIGURE="measured MOD-0.5e: 1 harness case (tests/modifiers/xmode.rxt, the trailing-comment block -- the embedded SPACE in 'trailing comment' is itself a skip-set byte, so this does not need an embedded-newline byte the .rxt format cannot express)"
 SAB_COUNT=1
 # ANCHOR RE-DERIVED 2026-08-31 from the live file: [M4-QUOTING] nested
@@ -20,6 +20,6 @@ SAB_BEFORE="            if (c == '#') {
             }"
 SAB_AFTER="            if (c == '#') {
                 cx->pos++;
-                while ((c = peekc(cx)) >= 0 && !xskip_byte(c)) cx->pos++;
+                while ((c = peekc(cx)) >= 0 && !xskip_char((unsigned)c)) cx->pos++;
                 continue;
             }"
