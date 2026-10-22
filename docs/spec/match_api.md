@@ -1129,9 +1129,10 @@ from). Every other field's value is unspecified to the caller.
 values in every state. `vars` and `nvars` hold theirs once the iterator is
 BOUND (the first call normalizes them) and, while it is FRESH, only if
 `rx_iter_vars` was called (`PCREC_ITER_OPT_VARS` set in `hdr`). The shared
-blocks (`RX_FOREACH`, and a subst artifact's block, `docs/spec/subst_api.md` §7)
-read exactly these fields under exactly these conditions; a caller still
-reads none of them, and uses `rx_subst_ctx_init` where it needs a context.
+blocks (`RX_FOREACH`, and the subst types block's context setup,
+`docs/spec/subst_api.md` §7¶3) read exactly these fields under exactly these
+conditions; a caller still reads none of them, and uses `rx_subst_ctx_init`
+where it needs a context.
 
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an
 independent iterator at the same point, and either may be advanced. Each
