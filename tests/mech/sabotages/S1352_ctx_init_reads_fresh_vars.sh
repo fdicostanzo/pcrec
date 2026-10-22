@@ -8,7 +8,7 @@ SAB_ID="S1352-ctx-init-reads-fresh-vars"
 SAB_FILE="src/gen/emit_subst.c"
 SAB_SUITES="subst"
 SAB_DESC='rx_subst_ctx_init reads it->vars on a FRESH iterator with no rx_iter_vars (F-R3-1)'
-SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1352.'
+SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb2_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1352.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='"    if (it->hdr == PCREC_ITER_BOUND\n"'

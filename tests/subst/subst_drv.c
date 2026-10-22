@@ -21,6 +21,7 @@
  *   check  rx_subst_ctx_init's code and *bad_ref over the helper's map
  *          (the helper's own code when it refuses)
  *   babi   the check against a copy of the record with abi + 1: the code
+ *   nmchk  (no named reference) the check with map NULL: code, *bad_ref
  *   main   §6¶2's per-match recipe (<rx>_next, the element at k = 1, the
  *          pieces flattened, the tail), LIMIT matches at most: rc, length,
  *          match count, output
@@ -65,7 +66,7 @@
  *   p2ro   pcre2_substitute with SUBSTITUTE_REPLACEMENT_ONLY: rc, output
  *
  * and once, before the cells, the `unit` line: flatten's SIZE_MAX total and
- * its untouched short buffer, the helper on a negative group number, and
+ * its untouched short buffer, the helper on group number -1, and
  * MAP_ABSENT's count. */
 
 #include <stdio.h>
@@ -363,7 +364,7 @@ static void oracle(const unsigned char *pat, size_t plen, unsigned p2opts,
 
 /* The `unit` line: flatten's SIZE_MAX total (1 when it is SIZE_MAX) and
  * its untouched short buffer (1 when untouched); the helper's code on a
- * record with a numbered reference -3; MAP_ABSENT's code, *nabsent and
+ * record with a numbered reference -1; MAP_ABSENT's code, *nabsent and
  * *bad_ref on a name the rx lacks. */
 static void unit(void)
 {
@@ -376,7 +377,7 @@ static void unit(void)
     printf("unit\tflat=%d,%d,%zu", t1 == SIZE_MAX, !memcmp(out, "xxxx", 4), t2);
 
     struct rx_subst_info neg = *subst_sb[0];
-    rx_group_entry negrow[1] = { { NULL, -3, -1, NULL } };
+    rx_group_entry negrow[1] = { { NULL, -1, -1, NULL } };   /* -1 is RX_SUBST_NOGROUP's value */
     int slot[8], bad;
     rx_subst_run run[4];
     rx_subst_map map;
@@ -438,6 +439,10 @@ int main(void)
             int bad2;
             sb2.abi++;
             printf("\tbabi=%d", pcrec_subst_check(&sb2, &map, rx, 0, &bad2));
+        }
+        if (!has_names(sb)) {   /* nmchk: the check with no map, the numbers the slots */
+            int bad2, rc2 = pcrec_subst_check(sb, NULL, rx, 0, &bad2);
+            printf("\tnmchk=%d,%d", rc2, bad2);
         }
         size_t mainlen = 0, len, k;
         int mainrc = crc;

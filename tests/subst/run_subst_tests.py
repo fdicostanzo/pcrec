@@ -72,7 +72,7 @@ REACH_NEED = ['S1346', 'S1347', 'S1348', 'S1352', 'S1354', 'S1355',
               'agree', 'utf8tmpl', 'encbind', 'unk', 'bmis', 'vmis', 'vuerr', 'nogap',
               'blen', 'negnum', 'flatsat', 'absent', 'lim', 'short', 'exact', 'size',
               'count', 'batch', 'foreach', 'dirty', 'stale', 'nomap', 'hand', 'room',
-              'mis', 'nog', 'pairs']
+              'mis', 'nog', 'pairs', 'nmchk']
 
 
 def decode(t):
@@ -105,7 +105,7 @@ def raw(t):
 
 # The `unit` line's answer (subst_drv.c's unit()): flatten's total saturates
 # at SIZE_MAX and a short buffer is left untouched, its total still 4
-# (§10¶4); the helper refuses a numbered reference -3 as MISSING_REF
+# (§10¶4); the helper refuses a numbered reference -1 as MISSING_REF (it would read as RX_SUBST_NOGROUP)
 # (§3¶13); under RX_SUBST_MAP_ABSENT a name and a number the rx lacks are
 # both NOGROUP, counted 2, *bad_ref the first (§3¶15).
 UNIT_WANT = 'unit\tflat=1,1,4\tneg=-16\tabsent=0,2,0,-1'
@@ -248,6 +248,12 @@ def main():
         all_ = c[5].split('@')[0] == 'all'
         if check(g.get('babi') == mm, '%s: the check took a record of another abi: %s' % (cid, g.get('babi'))):
             reached.add('abi')
+        if 'nmchk' in g:
+            # with no map the numbers are the slots: the same verdict as the
+            # helper's map (§3¶8, §3¶14)
+            want_nm = g['check'] if kind == 'check' or chk[0] == '0' else '0,-1'
+            if check(g['nmchk'] == want_nm, '%s: the check with no map %s, want %s' % (cid, g['nmchk'], want_nm)):
+                reached.add('nmchk')
         if kind == 'check':
             name, row = rest.rsplit(':', 1)
             check(chk == [str(CODES[name]), row], '%s: check %s, want %s,%s' % (cid, g['check'], CODES[name], row))
