@@ -1,0 +1,141 @@
+grid: 1930 configs, best obj -0.1720 at a=0 b=33 h=11; 44 within 0.003: a in [0, 1], b in [29, 30, 31, 32, 33], h in [5, 6, 7, 8, 9, 10, 11, 12], leave-band lo in [6, 7, 8, 9, 10, 11, 12, 13] hi in [20, 21, 22, 23, 24, 25, 26]
+chosen (1, 31, 8): obj -0.1705 (rank 25 of 1930), worst fit-cell d/walk +0.082
+CARRY flat J1 (fit, calibrated): n=41 | total vs walk: ADAPT -13.2%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 19; >5% ADAPT 4, M64 16 | M64 wins kept 0.90 | oracle share 0.79 | worst cell +8.2% (j1-P12 prose__pg2600.txt)
+COLD  flat J1 (fit, calibrated): n=41 | total vs walk: ADAPT -1.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -15.7%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 25, M64 19; >1% ADAPT 11, M64 19; >5% ADAPT 4, M64 16 | M64 wins kept 0.13 | oracle share 0.08 | worst cell +8.2% (j1-P12 prose__pg2600.txt)
+CARRY flat anchors: n=2 | total vs walk: ADAPT +0.9%  M64 +30.3%  ORACLE +0.0% | mean per cell: ADAPT +1.1%  M64 +29.8%  ORACLE +0.0% | losses>floor ADAPT 2, M64 2; >1% ADAPT 1, M64 2; >5% ADAPT 0, M64 2 | M64 wins kept nan | oracle share nan | worst cell +1.5% (an-dig g2-dig-n64k-g8-L1k-reg-S)
+COLD  flat anchors: n=2 | total vs walk: ADAPT +0.9%  M64 +30.3%  ORACLE +0.0% | mean per cell: ADAPT +1.1%  M64 +29.8%  ORACLE +0.0% | losses>floor ADAPT 2, M64 2; >1% ADAPT 1, M64 2; >5% ADAPT 0, M64 2 | M64 wins kept nan | oracle share nan | worst cell +1.5% (an-dig g2-dig-n64k-g8-L1k-reg-S)
+CARRY e8-only (hold-out, raw model): n=49 | total vs walk: ADAPT +10.6%  M64 +10.6%  ORACLE -8.3% | mean per cell: ADAPT -8.9%  M64 -11.5%  ORACLE -18.6% | losses>floor ADAPT 5, M64 5; >1% ADAPT 5, M64 5; >5% ADAPT 5, M64 4 | M64 wins kept 0.73 | oracle share -1.28 | worst cell +97.3% (j1-B09 inary__libpng-1.6.43.tar)
+COLD  e8-only (hold-out, raw model): n=49 | total vs walk: ADAPT -3.1%  M64 +10.6%  ORACLE -8.3% | mean per cell: ADAPT -12.9%  M64 -11.5%  ORACLE -18.6% | losses>floor ADAPT 4, M64 5; >1% ADAPT 5, M64 5; >5% ADAPT 2, M64 4 | M64 wins kept 0.70 | oracle share 0.38 | worst cell +31.0% (j1-B22 inary__libpng-1.6.43.tar)
+CARRY e8-only (hold-out, V1-calibrated): n=49 | total vs walk: ADAPT -6.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.3%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7 | M64 wins kept 0.79 | oracle share 0.33 | worst cell +30.8% (j1-B09 inary__libpng-1.6.43.tar)
+COLD  e8-only (hold-out, V1-calibrated): n=49 | total vs walk: ADAPT -10.5%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -7.4%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 10, M64 7 | M64 wins kept 0.77 | oracle share 0.57 | worst cell +9.4% (j1-P15 prose__pg1184.txt)
+CARRY flat J1 with the V1-calibrated costs instead of the M64-calibrated: n=41 | total vs walk: ADAPT -12.8%  M64 -6.9%  ORACLE -16.3% | mean per cell: ADAPT -18.9%  M64 -11.9%  ORACLE -21.4% | losses>floor ADAPT 19, M64 16; >1% ADAPT 5, M64 16; >5% ADAPT 0, M64 16 | M64 wins kept 0.91 | oracle share 0.79 | worst cell +2.6% (j1-L10 logs__openstack.log)
+V1-calibrated M64 total vs measured M64 on the 41 flat cells: |err| median 0.031 p90 0.099 max 0.136 (fraction of walk)
+raw-model M64 total vs measured M64 on the 41 flat cells (in-sample): |err| median 0.062 p90 0.171 max 0.221
+  j1-B10  binary__BILLS-118-1-hr.zip walk  133574020 M64  -26.3% ADAPT  -23.9% ORACLE  -26.3% Mshare 0.95 sw 30766 floor 0.02%
+  j1-B10  binary__django-5.0.tar     walk   17508958 M64  -42.9% ADAPT  -43.1% ORACLE  -50.7% Mshare 0.93 sw 13891 floor 0.04%
+  j1-B10  binary__libpng-1.6.43.tar  walk    1435465 M64  -68.5% ADAPT  -67.4% ORACLE  -68.7% Mshare 0.99 sw   569 floor 0.02%
+  j1-B10  nary__libpng-1.6.43.tar.gz walk    4402514 M64  -26.5% ADAPT  -24.7% ORACLE  -26.5% Mshare 0.97 sw   667 floor 0.03%
+  j1-B10  n-3.12.7-docs-html.tar.bz2 walk   23846958 M64  -29.1% ADAPT  -26.8% ORACLE  -29.1% Mshare 0.96 sw  5255 floor 0.13%
+  j1-C16  code__c.src                walk    7841950 M64   -2.0% ADAPT   +0.5% ORACLE   -5.4% Mshare 0.01 sw  1118 floor 0.13%
+  j1-C16  code__java.src             walk   23119025 M64  +10.9% ADAPT   +1.2% ORACLE   -0.0% Mshare 0.04 sw  5590 floor 0.11%
+  j1-C16  code__javascript.src       walk    3089635 M64  -15.0% ADAPT   -0.8% ORACLE  -15.4% Mshare 0.10 sw   784 floor 0.12%
+  j1-C16  code__python.src           walk   14825654 M64  +19.1% ADAPT   +1.3% ORACLE   -0.1% Mshare 0.03 sw  2870 floor 0.17%
+  j1-C16  code__rust.src             walk    1639864 M64   +5.9% ADAPT   +0.6% ORACLE   -1.5% Mshare 0.01 sw   174 floor 0.24%
+  j1-L10  logs__apache_access.log    walk    1457123 M64  +30.3% ADAPT   +1.1% ORACLE   -0.4% Mshare 0.01 sw   288 floor 0.30%
+  j1-L10  logs__apache_error.log     walk    2757205 M64  +37.3% ADAPT   +0.9% ORACLE   -0.0% Mshare 0.00 sw     0 floor 0.21%
+  j1-L10  logs__bgl.log              walk   13007397 M64  -10.3% ADAPT   -1.1% ORACLE  -24.0% Mshare 0.95 sw 46695 floor 0.92%
+  j1-L10  logs__hadoop.log           walk   30806744 M64  +22.4% ADAPT   +0.7% ORACLE   -1.8% Mshare 0.00 sw   548 floor 0.03%
+  j1-L10  logs__linux_syslog.log     walk    1233421 M64  +42.7% ADAPT   +0.8% ORACLE   -0.2% Mshare 0.01 sw    44 floor 0.01%
+  j1-L10  logs__openstack.log        walk   28573654 M64  +25.3% ADAPT   +3.6% ORACLE   -1.5% Mshare 0.09 sw 81416 floor 0.02%
+  j1-L10  logs__zookeeper.log        walk    5182475 M64  +17.9% ADAPT   +1.4% ORACLE   -2.6% Mshare 0.01 sw  1942 floor 0.26%
+  j1-N08  nonenglish__pg2650.txt     walk     205367 M64  -60.2% ADAPT  -60.2% ORACLE  -60.2% Mshare 1.00 sw     1 floor 0.02%
+  j1-N08  nonenglish__pg6698.txt     walk     232259 M64  -60.4% ADAPT  -60.4% ORACLE  -60.4% Mshare 1.00 sw     1 floor 0.02%
+  j1-N08  nonenglish__pg798.txt      walk     203791 M64  -60.3% ADAPT  -60.3% ORACLE  -60.3% Mshare 1.00 sw     1 floor 0.02%
+  j1-N10  nonenglish__pg2650.txt     walk     205281 M64  -60.2% ADAPT  -60.2% ORACLE  -60.2% Mshare 1.00 sw     1 floor 0.04%
+  j1-N10  nonenglish__pg6698.txt     walk     232040 M64  -60.3% ADAPT  -60.3% ORACLE  -60.3% Mshare 1.00 sw     1 floor 0.02%
+  j1-N10  nonenglish__pg798.txt      walk     203581 M64  -60.3% ADAPT  -60.3% ORACLE  -60.3% Mshare 1.00 sw     1 floor 0.01%
+  j1-P05  prose__pg1184.txt          walk     686612 M64  -35.5% ADAPT  -33.4% ORACLE  -35.6% Mshare 1.00 sw     7 floor 0.07%
+  j1-P05  prose__pg135.txt           walk     776029 M64  -39.5% ADAPT  -37.9% ORACLE  -39.6% Mshare 1.00 sw    39 floor 0.29%
+  j1-P05  prose__pg1400.txt          walk     236587 M64  -39.4% ADAPT  -37.8% ORACLE  -39.7% Mshare 1.00 sw     5 floor 1.26%
+  j1-P05  prose__pg2600.txt          walk     728446 M64  -47.0% ADAPT  -45.7% ORACLE  -47.0% Mshare 1.00 sw     7 floor 1.25%
+  j1-P05  prose__pg2701.txt          walk     266155 M64  -46.3% ADAPT  -45.5% ORACLE  -46.4% Mshare 1.00 sw     5 floor 0.17%
+  j1-P05  prose__pg996.txt           walk     547630 M64  -46.7% ADAPT  -44.8% ORACLE  -46.7% Mshare 0.99 sw    71 floor 0.16%
+  j1-P12  prose__pg1184.txt          walk    1739551 M64   +3.9% ADAPT   +7.2% ORACLE   -2.2% Mshare 0.96 sw   732 floor 0.59%
+  j1-P12  prose__pg135.txt           walk    2128420 M64   +5.0% ADAPT   +7.5% ORACLE   -2.0% Mshare 0.92 sw  1656 floor 0.15%
+  j1-P12  prose__pg1400.txt          walk     669581 M64   -0.6% ADAPT   +2.9% ORACLE   -3.3% Mshare 0.94 sw   397 floor 0.10%
+  j1-P12  prose__pg2600.txt          walk    2029981 M64   +5.0% ADAPT   +8.2% ORACLE   -2.1% Mshare 0.97 sw   650 floor 0.41%
+  j1-P12  prose__pg2701.txt          walk     697762 M64   +2.1% ADAPT   +5.1% ORACLE   -3.7% Mshare 0.95 sw   435 floor 0.35%
+  j1-P12  prose__pg996.txt           walk    1250935 M64   +0.8% ADAPT   +2.9% ORACLE   -4.9% Mshare 0.95 sw   797 floor 1.43%
+  j1-P14  prose__pg1184.txt          walk    6403867 M64  +18.7% ADAPT   +0.2% ORACLE   -0.0% Mshare 0.00 sw   104 floor 0.10%
+  j1-P14  prose__pg135.txt           walk    7870052 M64  +19.1% ADAPT   +0.3% ORACLE   -0.0% Mshare 0.00 sw   112 floor 0.05%
+  j1-P14  prose__pg1400.txt          walk    2526669 M64  +18.7% ADAPT   +0.5% ORACLE   -0.0% Mshare 0.01 sw   148 floor 0.06%
+  j1-P14  prose__pg2600.txt          walk    7789837 M64  +19.6% ADAPT   +0.3% ORACLE   -0.0% Mshare 0.00 sw   128 floor 0.04%
+  j1-P14  prose__pg2701.txt          walk    3027887 M64  +20.0% ADAPT   +0.2% ORACLE   -0.0% Mshare 0.00 sw    36 floor 0.05%
+  j1-P14  prose__pg996.txt           walk    5524170 M64  +21.8% ADAPT   +0.4% ORACLE   -0.0% Mshare 0.01 sw   250 floor 0.06%
+e8-only (V1-calibrated, CARRY) worst ADAPT cells (V1 measured, V1 model, ADAPT, M64-proxy as % of walk):
+  j1-B09  binary__libpng-1.6.43.tar  V1meas   +9.2% ADAPT  +30.8% M64proxy  +30.6% Mshare 0.85 e=0.04 k=57.3 t=3.6
+  j1-B09  binary__django-5.0.tar     V1meas   +5.6% ADAPT  +25.1% M64proxy  +21.5% Mshare 0.79 e=0.07 k=49.2 t=4.7
+  j1-B22  binary__libpng-1.6.43.tar  V1meas   +3.7% ADAPT  +18.4% M64proxy  +17.9% Mshare 0.85 e=0.04 k=57.3 t=3.6
+  j1-B22  binary__django-5.0.tar     V1meas   +3.3% ADAPT  +17.3% M64proxy  +14.6% Mshare 0.79 e=0.07 k=49.2 t=4.7
+  j1-P15  prose__pg1184.txt          V1meas   +7.5% ADAPT   +9.5% M64proxy   +5.3% Mshare 0.96 e=0.30 k=1.3 t=2.5
+  j1-P15  prose__pg2600.txt          V1meas   +7.2% ADAPT   +9.1% M64proxy   +5.0% Mshare 0.97 e=0.32 k=1.3 t=2.3
+  j1-P15  prose__pg135.txt           V1meas   +7.4% ADAPT   +8.4% M64proxy   +5.4% Mshare 0.92 e=0.32 k=1.8 t=2.6
+  j1-P15  prose__pg1400.txt          V1meas   +6.0% ADAPT   +8.0% M64proxy   +3.9% Mshare 0.94 e=0.27 k=1.4 t=2.7
+R2 grid best (kc, b, h) = (2, 33, 12) obj -0.1681 (R1 chosen obj -0.1705)
+CARRY R2 flat J1: n=41 | total vs walk: ADAPT -13.4%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 12, M64 19; >5% ADAPT 5, M64 16 | M64 wins kept 0.93 | oracle share 0.80 | worst cell +8.4% (j1-P12 prose__pg2600.txt)
+COLD  R2 flat J1: n=41 | total vs walk: ADAPT -1.0%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -15.5%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 25, M64 19; >1% ADAPT 12, M64 19; >5% ADAPT 5, M64 16 | M64 wins kept 0.14 | oracle share 0.06 | worst cell +8.4% (j1-P12 prose__pg2600.txt)
+CARRY R2 e8-only V1-cal: n=49 | total vs walk: ADAPT -13.3%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -8.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 7, M64 7 | M64 wins kept 0.84 | oracle share 0.72 | worst cell +9.7% (j1-P15 prose__pg1184.txt)
+COLD  R2 e8-only V1-cal: n=49 | total vs walk: ADAPT -11.5%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -7.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 23, M64 14; >1% ADAPT 23, M64 12; >5% ADAPT 11, M64 7 | M64 wins kept 0.79 | oracle share 0.63 | worst cell +9.8% (j1-P15 prose__pg1184.txt)
+CARRY R2 flat anchors: n=2 | total vs walk: ADAPT +24.9%  M64 +30.3%  ORACLE +0.0% | mean per cell: ADAPT +18.7%  M64 +29.8%  ORACLE +0.0% | losses>floor ADAPT 2, M64 2; >1% ADAPT 2, M64 2; >5% ADAPT 1, M64 2 | M64 wins kept nan | oracle share nan | worst cell +36.0% (an-dfa-hat -dfa-hat-n64k-ginf-L32-S)
+COLD  R2 flat anchors: n=2 | total vs walk: ADAPT +0.9%  M64 +30.3%  ORACLE +0.0% | mean per cell: ADAPT +1.1%  M64 +29.8%  ORACLE +0.0% | losses>floor ADAPT 2, M64 2; >1% ADAPT 1, M64 2; >5% ADAPT 0, M64 2 | M64 wins kept nan | oracle share nan | worst cell +1.5% (an-dig g2-dig-n64k-g8-L1k-reg-S)
+R2 e8-only worst cells: [('j1-P15', 'se__pg1184.txt', 9.7), ('j1-P15', 'se__pg2600.txt', 9.3), ('j1-P15', 'ose__pg135.txt', 8.9), ('j1-P15', 'se__pg1400.txt', 8.3), ('j1-P24', 'se__pg1400.txt', 6.6), ('j1-P04', 'ose__pg135.txt', 5.4)]
+R2 switches/MiB (flat J1): binary 220.5; code 358.3; logs 1651.3; non-English 0.9; prose 31.0
+ob=0 R1 fit: n=41 | total vs walk: ADAPT -14.1%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -19.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 20, M64 19; >1% ADAPT 9, M64 19; >5% ADAPT 0, M64 16 | M64 wins kept 0.
+       R1 hold: n=49 | total vs walk: ADAPT -7.7%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -9.3%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 14, M64 14; >1% ADAPT 12, M64 12; >5% ADAPT 6, M64 7 | M64 wins kept 0.85
+       R2 fit: n=41 | total vs walk: ADAPT -14.4%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -19.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 20, M64 19; >1% ADAPT 10, M64 19; >5% ADAPT 0, M64 16 | M64 wins kept 0
+       R2 hold: n=49 | total vs walk: ADAPT -14.5%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -11.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 9, M64 14; >1% ADAPT 8, M64 12; >5% ADAPT 1, M64 7 | M64 wins kept 0.91
+ob=6 R1 fit: n=41 | total vs walk: ADAPT -11.4%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -16.3%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 12, M64 19; >5% ADAPT 7, M64 16 | M64 wins kept 0
+       R1 hold: n=49 | total vs walk: ADAPT -2.5%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -0.3%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 31, M64 14; >1% ADAPT 31, M64 12; >5% ADAPT 30, M64 7 | M64 wins kept 0.6
+       R2 fit: n=41 | total vs walk: ADAPT -11.5%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -16.1%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 13, M64 19; >5% ADAPT 8, M64 16 | M64 wins kept 0
+       R2 hold: n=49 | total vs walk: ADAPT -10.8%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -2.7%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 27, M64 14; >1% ADAPT 27, M64 12; >5% ADAPT 25, M64 7 | M64 wins kept 0.
+R2 thr=(0, 33, 12) fit: n=41 | total vs walk: ADAPT -12.9%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.8%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 10, M64 19; >5% ADAPT 5, M64 16 | M64 wins kept 0
+             hold: n=49 | total vs walk: ADAPT -13.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -8.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 7, M64 7 | M64 wins kept 0.8
+R2 thr=(4, 33, 12) fit: n=41 | total vs walk: ADAPT -13.2%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 14, M64 19; >5% ADAPT 6, M64 16 | M64 wins kept 0
+             hold: n=49 | total vs walk: ADAPT -14.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -8.8%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 7, M64 7 | M64 wins kept 0.8
+R2 thr=(8, 33, 12) fit: n=41 | total vs walk: ADAPT -12.6%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.9%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 21, M64 19; >1% ADAPT 13, M64 19; >5% ADAPT 8, M64 16 | M64 wins kept 0
+             hold: n=49 | total vs walk: ADAPT -14.6%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -8.9%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 8, M64 7 | M64 wins kept 0.8
+R2 thr=(2, 33, 4) fit: n=41 | total vs walk: ADAPT -8.1%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -16.8%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 11, M64 19; >5% ADAPT 5, M64 16 | M64 wins kept 0.
+             hold: n=49 | total vs walk: ADAPT -5.3%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -7.0%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 7, M64 7 | M64 wins kept 0.33
+R2 thr=(2, 29, 12) fit: n=41 | total vs walk: ADAPT -12.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.1%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 18, M64 19; >5% ADAPT 9, M64 16 | M64 wins kept 0
+             hold: n=49 | total vs walk: ADAPT -14.6%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -8.9%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 21, M64 14; >1% ADAPT 21, M64 12; >5% ADAPT 7, M64 7 | M64 wins kept 0.9
+R2 thr=(2, 33, 0) fit: n=41 | total vs walk: ADAPT -5.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -16.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 11, M64 19; >5% ADAPT 5, M64 16 | M64 wins kept 0.
+             hold: n=49 | total vs walk: ADAPT -3.4%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -5.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 24, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 17, M64 7 | M64 wins kept 0.2
+CARRY flat J1: ADAPT vs measured-best-arm per cell: mean +3.2% median +1.4% worst +16.7%; cells >floor above best-arm: 35 of 41
+CARRY flat anchors: ADAPT vs measured-best-arm per cell: mean +1.1% median +1.1% worst +1.5%; cells >floor above best-arm: 2 of 2
+CARRY e8-only: ADAPT vs measured-best-arm per cell: mean +2.2% median +2.7% worst +30.8%; cells >floor above best-arm: 32 of 49
+measured V1 on flat J1: loses (> floor) in 17 of 41 cells; >1% in 17; >5% in 16
+measured M64 on flat J1: loses (> floor) in 19 of 41 cells; >1% in 19; >5% in 16
+measured V1 on flat anchors: loses (> floor) in 2 of 2 cells; >1% in 2; >5% in 2
+measured M64 on flat anchors: loses (> floor) in 2 of 2 cells; >1% in 2; >5% in 2
+measured V1 on e8-only: loses (> floor) in 23 of 49 cells; >1% in 20; >5% in 6
+CARRY switches/MiB (and M-mode share of bytes) by class: anchors an-dfa-hat 0.0 (0%); anchors an-dig 0.0 (0%); binary 870.5 (86%); code 182.7 (50%); logs 938.9 (30%); non-English 114.5 (96%); prose 255.0 (82%); structured 10351.2 (56%)
+COLD  switches/MiB (and M-mode share of bytes) by class: anchors an-dfa-hat 0.0 (0%); anchors an-dig 0.0 (0%); binary 2337.9 (42%); code 203.8 (50%); logs 938.8 (30%); non-English 194.0 (81%); prose 818.9 (76%); structured 7118.6 (30%)
+S=0  fit: n=41 | total vs walk: ADAPT -13.4%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.3%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 1
+      hold: n=49 | total vs walk: ADAPT -6.2%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.5%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12;
+S=1  fit: n=41 | total vs walk: ADAPT -13.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.3%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 1
+      hold: n=49 | total vs walk: ADAPT -6.1%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.4%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12;
+S=3  fit: n=41 | total vs walk: ADAPT -13.2%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 1
+      hold: n=49 | total vs walk: ADAPT -6.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.3%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12;
+S=5  fit: n=41 | total vs walk: ADAPT -13.1%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.1%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 1
+      hold: n=49 | total vs walk: ADAPT -5.8%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.1%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12;
+S=10 fit: n=41 | total vs walk: ADAPT -12.8%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.0%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 12, M64 1
+      hold: n=49 | total vs walk: ADAPT -5.4%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -5.8%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 26, M64 14; >1% ADAPT 25, M64 12;
+bk=0.0 fit: n=41 | total vs walk: ADAPT -13.5%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.4%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 15, M64 19; >1% ADAPT 7, M64 19
+bk=1.0 fit: n=41 | total vs walk: ADAPT -12.7%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.7%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 16, M64 1
+thr=(0, 31, 8) fit: n=41 | total vs walk: ADAPT -13.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 9, M64 19; >5% ADAPT 4, M64 1
+            hold: n=49 | total vs walk: ADAPT -6.1%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.4%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(2, 31, 8) fit: n=41 | total vs walk: ADAPT -12.9%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.0%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 12, M64 19; >5% ADAPT 5, M64 
+            hold: n=49 | total vs walk: ADAPT -5.4%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.0%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(3, 31, 8) fit: n=41 | total vs walk: ADAPT -12.5%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.7%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 14, M64 19; >5% ADAPT 7, M64 
+            hold: n=49 | total vs walk: ADAPT -5.4%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.0%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(1, 27, 8) fit: n=41 | total vs walk: ADAPT -12.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.0%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 17, M64 19; >5% ADAPT 10, M64
+            hold: n=49 | total vs walk: ADAPT -7.9%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.7%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 11, M64 7
+thr=(1, 33, 8) fit: n=41 | total vs walk: ADAPT -12.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.1%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 11, M64 19; >5% ADAPT 4, M64 
+            hold: n=49 | total vs walk: ADAPT -2.7%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -5.6%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(1, 31, 5) fit: n=41 | total vs walk: ADAPT -12.2%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.0%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 10, M64 19; >5% ADAPT 3, M64 
+            hold: n=49 | total vs walk: ADAPT -4.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.1%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 10, M64 7
+thr=(1, 31, 11) fit: n=41 | total vs walk: ADAPT -13.3%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -18.2%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 13, M64 19; >5% ADAPT 5, M64 
+            hold: n=49 | total vs walk: ADAPT -7.0%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.3%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(1, 31, 3) fit: n=41 | total vs walk: ADAPT -10.5%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.6%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 23, M64 19; >1% ADAPT 9, M64 19; >5% ADAPT 4, M64 1
+            hold: n=49 | total vs walk: ADAPT -3.9%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -6.1%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 27, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 11, M64 7
+thr=(4, 28, 4) fit: n=41 | total vs walk: ADAPT -11.7%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -17.1%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 19, M64 19; >5% ADAPT 8, M64 
+            hold: n=49 | total vs walk: ADAPT -5.7%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -5.9%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+thr=(6, 30, 6) fit: n=41 | total vs walk: ADAPT -10.7%  M64 -7.4%  ORACLE -16.8% | mean per cell: ADAPT -16.3%  M64 -12.0%  ORACLE -21.7% | losses>floor ADAPT 22, M64 19; >1% ADAPT 14, M64 19; >5% ADAPT 11, M64
+            hold: n=49 | total vs walk: ADAPT -5.1%  M64 -10.0%  ORACLE -18.3% | mean per cell: ADAPT -5.9%  M64 -9.6%  ORACLE -15.0% | losses>floor ADAPT 25, M64 14; >1% ADAPT 25, M64 12; >5% ADAPT 12, M64 7
+loop == vectorised on 6 cells: True
+walk-obs {'rho': 1.0, 'N': 0} on 32 cells (<=120k stretches): n=32 | total vs walk: ADAPT -4.9%  M64 +5.7%  ORACLE -7.8% | mean per cell: ADAPT -20.6%  M64 -14.9%  ORACLE -23.5% | losses>floor ADAPT 17, M64 14; >1% ADAPT 7, M64 14; >5% ADAPT 4, M64 11 | M64 wins
+walk-obs {'rho': 0.5, 'N': 0} on 32 cells (<=120k stretches): n=32 | total vs walk: ADAPT -3.4%  M64 +5.7%  ORACLE -7.8% | mean per cell: ADAPT -19.8%  M64 -14.9%  ORACLE -23.5% | losses>floor ADAPT 18, M64 14; >1% ADAPT 6, M64 14; >5% ADAPT 4, M64 11 | M64 wins
+walk-obs {'rho': 0.5, 'N': 16, 'pns': 4.0} on 32 cells (<=120k stretches): n=32 | total vs walk: ADAPT -4.4%  M64 +5.7%  ORACLE -7.8% | mean per cell: ADAPT -20.4%  M64 -14.9%  ORACLE -23.5% | losses>floor ADAPT 17, M64 14; >1% ADAPT 9, M64 14; >5% ADAPT 4, M64 11 | M64 wins
+walk-obs {'rho': 0.25, 'N': 16, 'pns': 4.0} on 32 cells (<=120k stretches): n=32 | total vs walk: ADAPT -4.4%  M64 +5.7%  ORACLE -7.8% | mean per cell: ADAPT -20.4%  M64 -14.9%  ORACLE -23.5% | losses>floor ADAPT 17, M64 14; >1% ADAPT 9, M64 14; >5% ADAPT 4, M64 11 | M64 wins
+early-exit cells excluded (not priceable): ['j1-S03 structured__govinfo_bills.xml', 'j1-S03 structured__ne_10m_admin_0_countries.geojson', 'j1-S03 structured__usgs_2024q1.csv', 'j1-S03 structured__usgs_2024q1.geojson']
+done
