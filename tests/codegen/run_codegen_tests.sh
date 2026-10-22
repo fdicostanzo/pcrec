@@ -1245,7 +1245,7 @@ residual_names() {
             if (line == "rx_search" || line == "rx_match" || line == "rx_match_caps" ||
                 line == "rx_search_in" || line == "rx_match_in" ||
                 line == "rx_match_caps_in" || line == "rx_info" ||
-                line == "rx_next") next
+                line == "rx_next" || line == "rx_next_n") next
             print line
         }
     ' "$1" | LC_ALL=C sort -u
