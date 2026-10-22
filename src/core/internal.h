@@ -5402,7 +5402,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
  * name a group that exists, and one that is wider accepts a spelling PCRE2
  * refuses. That is the drift `pcrec_is_bare_anchor` was made one function for,
  * one construct later. */
-size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+size_t pcrec_group_name_scan(Ctx *cx, const char *p, size_t n, size_t i,
                              const char **why);
 
 /* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing

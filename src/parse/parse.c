@@ -300,7 +300,12 @@ Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
  *
  *   - the skip set is {09,0A,0B,0C,0D,20,85} — 0x85 (NEL) is skipped, so
  *     this is NOT \s's set (census 6), and the set is written out here
- *     rather than derived from any class table;
+ *     rather than derived from any class table. It is a set of pattern
+ *     CHARACTERS, read in the pattern's encoding: under `utf8` it is
+ *     Unicode Pattern_White_Space, which adds U+200E U+200F U+2028 U+2029
+ *     (K115: libpcre2 10.46 PCRE2_UTF census over every code point, lane
+ *     langfix); under `byte` no character exceeds 0xFF, so those four are
+ *     inert and the byte set is unchanged;
  *   - a `#` comment runs to the next 0x0A ONLY — 0x0D and even the skipped
  *     0x85 do NOT terminate it (`(?x)a#c\rb` matches just "a"): the
  *     terminator is the NEWLINE convention (NEWLINE_LF, DD-11), not the
@@ -317,13 +322,26 @@ Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
  *
  * xlevel == 0 makes every call a no-op, which is what keeps the base
  * grammar byte-identical with the module disabled. */
-/* True for the seven bytes (?x)'s pattern-whitespace skip set includes --
+/* True for the characters (?x)'s pattern-whitespace skip set includes --
  * deliberately NOT \s's set (0x85 NEL included), per the banner above's
  * measured table. */
-static bool xskip_byte(int c)
+static bool xskip_char(unsigned c)
 {
     return c == 0x09 || c == 0x0a || c == 0x0b || c == 0x0c ||
-           c == 0x0d || c == 0x20 || c == 0x85;
+           c == 0x0d || c == 0x20 || c == 0x85 ||
+           c == 0x200e || c == 0x200f || c == 0x2028 || c == 0x2029;
+}
+
+/* The byte length of the skippable pattern character at cx->pos, 0 if it is
+ * not one. A byte >= 0x80 is decoded in the pattern's encoding
+ * (pcrec_pat_char), so ill-formed text refuses here exactly as it would one
+ * step later as a literal. */
+static int xskip_len(Ctx *cx, int c)
+{
+    if (c < 0x80) return xskip_char((unsigned)c) ? 1 : 0;
+    int len;
+    unsigned cp = pcrec_pat_char(cx, cx->pos, &len);
+    return xskip_char(cp) ? len : 0;
 }
 
 /* [M4-QUOTING] true iff `\Q` at cx->pos would quote NOTHING: the next two
@@ -378,7 +396,8 @@ static void xskip(Ctx *cx)
                 while ((c = peekc(cx)) >= 0 && c != 0x0a) cx->pos++;
                 continue;
             }
-            if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
+            int n = c >= 0 ? xskip_len(cx, c) : 0;
+            if (n) { cx->pos += (size_t)n; continue; }
         }
         if (pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
             peekc(cx) == '\\' && peekc2(cx) == 'E') {
@@ -896,6 +915,10 @@ int pcrec_hexval(int c)
     return -1;
 }
 
+/* Skips the spaces and tabs a brace interior admits (defined with try_quant;
+ * `\x{...}` reads the same measured set, K117). */
+static void skip_quant_space(Ctx *cx);
+
 /* Shared control/metachar escape decoding; returns byte value or -1 if the
  * escape is not a plain character escape. `epos` = offset of the '\'. */
 static int esc_char_value(Ctx *cx, size_t epos)
@@ -928,6 +951,7 @@ static int esc_char_value(Ctx *cx, size_t epos)
             long long v = 0;
             int ndig = 0;
             cx->pos++;                                     /* the '{' */
+            skip_quant_space(cx);   /* K117: 10.46 admits spaces/tabs */
             while (pcrec_hexval(peekc(cx)) >= 0) {
                 v = v * 16 + pcrec_hexval(nextc(cx));
                 if (v > 0x7FFFFFFFll) v = 0x7FFFFFFFll;    /* saturate: any
@@ -935,6 +959,7 @@ static int esc_char_value(Ctx *cx, size_t epos)
                     a 100-digit operand from overflowing the accumulator */
                 ndig++;
             }
+            skip_quant_space(cx);   /* ... around the digits, never inside */
             if (peekc(cx) != '}') {
                 /* Not '}' and not a hex digit (the loop above consumed those)
                  * — 10.46's err-167 shape, which also covers the unclosed
