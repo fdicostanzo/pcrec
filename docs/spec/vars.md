@@ -127,6 +127,16 @@ the empty subject. `${name:?}` is how a caller asks for both to be refused.
 Under an encoding with multi-byte characters, a resolved value that is not
 well formed raises the same code, checked once per call before the match.
 
+**Every entry refuses before it answers.** Each entry resolves the
+variables right after its caller-position checks (`startpos > n`, the
+character-boundary guard and, under `-futf-check`, the subject check) and
+before anything that could answer from a proof: the search entries' skips
+over positions no match can begin at (a necessary byte, the start set, the
+minimum width, an end-anchor window, a prefilter) and the anchored entries'
+offset-0 rule. So `a${v}` with `v` unset is `PCREC_ERR_UNSET_VAR` from
+`<prefix>_search` on `"bbb"`, not `0`, exactly as it is from
+`<prefix>_match` (`match_api.md` §3.2¶2: same checks, same order).
+
 ## 6. Every refusal
 
 | situation | when | what it says |

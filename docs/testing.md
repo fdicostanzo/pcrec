@@ -219,7 +219,11 @@ current oracle-exclusion catalog).
   (`^*` — python accepts, PCRE2 rejects error 109), past-end `pos`
   clamping for nullable patterns (python clamps; pcrec/PCRE2 reject), and
   repeat counts above 65535 (`a{65536}` — python's ceiling is 4294967294,
-  PCRE2's is 65535 with error 105; U5, added 2026-08-10 with K5's fix). Blocks
+  PCRE2's is 65535 with error 105; U5, added 2026-08-10 with K5's fix), and
+  an unbounded repeat after an EMPTY last mandatory iteration (`(?:()|a)+?b`
+  on "ab": python iterates again and keeps group 1 = (0,0), PCRE2 does not
+  iterate and leaves it unset; U21, `tests/captures/empty_iteration.rxt`,
+  K128, 2026-10-22). Blocks
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
   the skip count. Keep such cases rare and justified; every exclusion must

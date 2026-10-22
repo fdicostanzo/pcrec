@@ -25,8 +25,8 @@ step-budget	500000000	backtrack resumptions
 resume-frames	2048	
 trail-entries	3072	
 subject-ceiling	1024	bytes
-labels	16	
-events	45	
+labels	18	
+events	51	
 resume-points	3	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	2	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
@@ -60,45 +60,51 @@ L0	unclamped	frames rung, unbounded {1,}, greedy
 
 #section program
 #label	op	args	target	note
-L0	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+L0	label			the last mandatory iteration: record where it began
+	set	slot_values[4] <- scan_position		empty-iteration guard: where the last mandatory iteration began
 	goto		L3	
-L3	label			alternation entry (2 branches)
-	push		L7	branch 1 of 2 preferred; resume tries branch 2
-	goto		L5	
-L7	label			alternation resume: try branch 2 of 2
-	goto		L6	
-L5	label			empty
+L3	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
 	goto		L4	
-L6	label			
-	consume	'a'	L4	
+L4	label			alternation entry (2 branches)
+	push		L8	branch 1 of 2 preferred; resume tries branch 2
+	goto		L6	
+L8	label			alternation resume: try branch 2 of 2
+	goto		L7	
+L6	label			empty
+	goto		L5	
+L7	label			
+	consume	'a'	L5	
 	fail			backtrack
-L4	label			group 1 closes
+L5	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L2	
-L2	label			unbounded repeat, greedy, frames rung, nullable body (empty-iteration guard)
-	set	slot_values[4] <- scan_position		empty-iteration guard: where this iteration began
-	push		L10	another iteration preferred; resume is the EXIT
-	goto		L8	
-L8	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L11	
-L11	label			alternation entry (2 branches)
-	push		L15	branch 1 of 2 preferred; resume tries branch 2
-	goto		L13	
-L15	label			alternation resume: try branch 2 of 2
-	goto		L14	
-L13	label			empty
+L2	label			unbounded repeat: entered after the mandatory iterations
+	note			empty-iteration rule: the last mandatory iteration consumed nothing, so the loop does not iterate (K128)
 	goto		L12	
-L14	label			
-	consume	'a'	L12	
-	fail			backtrack
-L12	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+L12	label			unbounded repeat, greedy, frames rung, nullable body (empty-iteration guard)
+	set	slot_values[4] <- scan_position		empty-iteration guard: where this iteration began
+	push		L11	another iteration preferred; resume is the EXIT
 	goto		L9	
-L9	label			unbounded repeat: one iteration done
+L9	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L13	
+L13	label			alternation entry (2 branches)
+	push		L17	branch 1 of 2 preferred; resume tries branch 2
+	goto		L15	
+L17	label			alternation resume: try branch 2 of 2
+	goto		L16	
+L15	label			empty
+	goto		L14	
+L16	label			
+	consume	'a'	L14	
+	fail			backtrack
+L14	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L10	
-L10	label			unbounded repeat: the exit
+L10	label			unbounded repeat: one iteration done
+	goto		L11	
+L11	label			unbounded repeat: the exit
 	goto		L1	
 L1	label			the pattern is complete
 	accept			
@@ -107,9 +113,9 @@ fail	label			the ONLY backtracker and the only indirect jump; one step charged h
 
 #section choicepoints
 #label	resume	note
-L3	L7	branch 1 of 2 preferred; resume tries branch 2
-L2	L10	another iteration preferred; resume is the EXIT
-L11	L15	branch 1 of 2 preferred; resume tries branch 2
+L4	L8	branch 1 of 2 preferred; resume tries branch 2
+L12	L11	another iteration preferred; resume is the EXIT
+L13	L17	branch 1 of 2 preferred; resume tries branch 2
 
 #section islands
 #label	width	note
