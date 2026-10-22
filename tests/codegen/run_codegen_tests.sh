@@ -569,9 +569,13 @@ if [ -f "$WORKDIR/dprx.h" ] && [ -f "$WORKDIR/dpqq.h" ]; then
         sed -e "s/^#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_abi\$/#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_old/" \
             -e "s/^#define PCREC_RX_ABI_H $k80_abi\$/#define PCREC_RX_ABI_H $k80_old/" \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/older.h"
-        # the pre-54 block: an EMPTY guard and no prelude
-        awk '/^#if defined\(PCREC_RX_ABI_H\)/ { skip = 3 } skip > 0 { skip--; next }
-             /^#define PCREC_RX_ABI_H [0-9]+$/ { print "#define PCREC_RX_ABI_H"; next } { print }' \
+        # the pre-54 block: an EMPTY guard and no prelude. The block's own C
+        # (not its directives) may read the guard's value — RX_FOREACH's abi
+        # check does, [FINDALL-NEXT] I2 — and a pre-54 block had no such
+        # code, so those reads keep the real abi rather than the empty guard.
+        awk -v abi="$k80_abi" '/^#if defined\(PCREC_RX_ABI_H\)/ { skip = 3 } skip > 0 { skip--; next }
+             /^#define PCREC_RX_ABI_H [0-9]+$/ { print "#define PCREC_RX_ABI_H"; next }
+             !/^#/ { gsub(/PCREC_RX_ABI_H/, abi) } { print }' \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/legacy.h"
         k80_rewrote=1
         grep -q "^#define PCREC_RX_ABI_H $k80_old\$" "$WORKDIR/k80/older.h" || k80_rewrote=0
