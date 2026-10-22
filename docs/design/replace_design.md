@@ -20,7 +20,11 @@ light panel (`../dev/reviews/2026-10-22-r2-subst-r4-panel.md`, two critics);
 the §R4 passages it changed are edited in place.** **REVISION 4b (lane substr4c,
 2026-10-22): §R4.16 applies rulings R9-R11 (pieces are `unsigned char`, the
 support unit is emitted, one replace-all function in the support unit); each
-change is marked `[R4b]`, and the interface has no open question.**
+change is marked `[R4b]`, and the interface has no open question.** **REVISION 4c
+(lane substb2, 2026-10-22): §R4.17 applies ruling R13 (the use-case fit
+review's G1, F0, G6 and G10 adopted; G2-names and G4 filed as candidates);
+each change is marked `[R4c]`. The build of the interface follows on this
+branch.**
 
 ## REVISION 4 — the interface rework: an independent template, an optional map, pieces, one support unit (lane substr4, 2026-10-22) — READ THIS FIRST
 
@@ -1034,6 +1038,38 @@ no tail, by the §6¶1 error rule. The batch recipe is its reference, and the
 equivalence test pins them together.
 
 **Open questions for the interface: none.**
+
+### R4.17 Ruling R13 applied (revision 4c, lane substb2, 2026-10-22)
+
+Frank: "Agree with subst changes." The source is the use-case fit review
+(`../dev/reviews/2026-10-22-r3-subst-usecase-fit.md` on lane/substuc
+2ff5940ab, 29 blind use cases, 0 wrong answers from the design).
+
+| id | adopted change | where |
+|---|---|---|
+| G1 | `rx_subst_replace_all` returns the NUMBER OF MATCHES substituted (`>= 0`, `INT_MAX` when there are more), `pcre2_substitute`'s own convention. A caller learns "did anything change?" and the count without the recipe. The ten parameters stay (R12) | draft §10¶6-¶7, §6¶8, §8 |
+| G10 | `out == NULL` with `cap == 0` SIZES ONLY, as the flatten does: the count is returned and `*len` is the total, with nothing written. One sizing rule for both byte writers | draft §10¶7 |
+| F0 | a short tested SETUP WRAPPER (one call per rx and template into a caller buffer) in `examples/` and in the spec's §6 recipes. No API change | draft §6¶9; `examples/subst/` |
+| G6 | a template whose encoding is `byte` (or -1, all ASCII) emits the ASCII case step INLINE in its element and needs no support unit. Only the UTF-8 case table lives in the unit. So "a plain template is one `.c`" holds for byte-mode case forcing too | draft §1¶5, §10¶1 (the extended-forms build applies it) |
+| static assert | the spec states the build-time check a no-map caller can write: `_Static_assert(<S>_MAXNUM < <RX>_NCAPS, ...)` | draft §3¶3 |
+
+FILED AS CANDIDATES (not built):
+
+- **G2-names**: `<PREFIX>_GROUP_<name>` stamps on the rx and a per-template
+  reference X-macro, so a by-name map is checked at build time. Trigger: a
+  user asking for build-time name checks.
+- **G4**: an in-place flatten that stages the pieces its writes would
+  overwrite in scratch. Trigger: the first in-place user.
+
+**What the interface build (lane substb2) builds of §R4.** Everything but
+the extended module: the core template language over pieces, the map, the
+check and the setup, the support unit with its content id and
+`PCREC_SUPPORT_STATIC`, the flatten, the helper (C), replace-all, the
+recipes, `--emit-support`, and the HOOKS the extended forms need (the
+scratch fields of `rx_subst_out`, `sneed`, the scratch NOSPACE rule, `uses`
+and `support`/`support_id` in the record). Module `subst-extended`
+(§R4.13), the case table and G6's inline step come with the extended-forms
+build; until then the module is refused at compile as today.
 
 ---
 

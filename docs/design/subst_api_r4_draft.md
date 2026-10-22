@@ -3,7 +3,8 @@
      docs/dev/lanes/subst_rulings.md applied; the R4 light panel's
      dispositions applied by lane substr4b, docs/dev/reviews/
      2026-10-22-r2-subst-r4-panel.md; REVISION 4b, lane substr4c: rulings
-     R9-R11 applied, the ONE replace-all function of section 10). Design only: it replaces
+     R9-R11 applied, the ONE replace-all function of section 10; REVISION 4c,
+     lane substb2: ruling R13 applied, each change marked [R4c]). Design only: it replaces
      docs/spec/subst_api.md at build time, when this comment goes. Below this
      comment the text is facts-only, in the spec's numbered form. -->
 # Compiled substitution — the subst artifact contract
@@ -99,8 +100,10 @@ and support unit built before it.
 <a id="s1-p5"></a>[1¶5] **Self-contained.** `-o -` writes one `.c` to stdout holding the
 shared blocks and the definitions, with no header. A template without case
 forcing then needs nothing else: the check and the context setup are in the
-shared block (§1¶1). A template with case forcing also needs the support unit
-(§10), whose case mapping it calls.
+shared block (§1¶1). [R4c] Neither does a case-forcing template whose
+encoding is `byte` (or -1): its element carries the ASCII case step inline.
+Only a `utf8` template with case forcing also needs the support unit (§10),
+whose UTF-8 case mapping it calls.
 
 <a id="s2"></a>
 ## 2. The template language
@@ -326,7 +329,10 @@ rx, the template's `$k` is then the rx's group k. On a COMPOSED rx
 (match_api.md §5.5¶5), so the check refuses the no-map form there outright
 (`PCREC_SUBST_MISMATCH`): a composed rx takes a map, by hand or from the
 by-name helper (§3¶13). The no-map form is for a template and a pattern
-written together.
+written together. [R4c] A caller can check it at build time from the two
+artifacts' stamps: `_Static_assert(DMY_MAXNUM < RX_NCAPS, "the template
+references a group the regex lacks");` holds on every rx that is not
+composed, and named references need a map anyway.
 
 <a id="s3-p4"></a>[3¶4] **The map:**
 
@@ -792,7 +798,35 @@ rc = rx_subst_replace_all(rx_info.next_n, &it, &dmy_subst_info, &ctx, map, flags
                           &o, buf, cap, &len);
 if (rc == PCREC_SUBST_NOSPACE && o.sneed <= o.scap)
     /* buf was too small: len bytes suffice; grow buf and call again on a FRESH iterator */;
+/* [R4c] rc >= 0: the number of matches substituted; 0 means buf holds the subject unchanged */
 ```
+
+<a id="s6-p9"></a>[6¶9] [R4c] **The setup wrapper.** A program writes the setup and the
+replace-all call once, for any rx and any template, and then substitutes in
+one call. `examples/subst/` builds and runs this exact text:
+
+```c
+/* every match of rx over s[0, n) substituted by t into out[0, cap): the
+ * number of matches (>= 0) with *len the length, or a negative code */
+static int sub_all(const struct rx_info *rx, const struct rx_subst_info *t,
+                   const rx_subst_map *map, unsigned flags,
+                   const unsigned char *s, size_t n,
+                   unsigned char *out, size_t cap, size_t *len)
+{
+    rx_iter it = RX_ITER_INIT(s, n);
+    rx_var vres[t->nvrefs > 0 ? t->nvrefs : 1];
+    rx_subst_piece pc[64 * (size_t)t->npieces];
+    rx_subst_out o = { pc, 64 * (size_t)t->npieces };   /* plus scratch, if the template forces case */
+    rx_ctx ctx;
+    int bad, rc = rx_subst_ctx_init(&ctx, &it, rx, t, map, vres, flags, &bad);
+    if (rc < 0) return rc;
+    return rx_subst_replace_all(rx->next_n, &it, t, &ctx, map, flags, &o, out, cap, len);
+}
+```
+
+`sub_all(&ip_info, &ipm_subst_info, NULL, 0, s, n, buf, sizeof buf, &len)` is
+then the whole substitution. A call with `out == NULL` and `cap == 0` sizes it
+(§10¶7).
 
 <a id="s7"></a>
 ## 7. The caller contract
@@ -848,7 +882,8 @@ An iterator follows match_api.md §3.8¶11.
 
 <a id="s8-p1"></a>[8¶1] The codes sit below `PCREC_ERR_ITER`, and none of them is a
 give-up (match_api.md §4). Nothing here returns -1. The value −13 is
-reserved.
+reserved. [R4c] On success the element, the check, the setup and the helper
+return 0, and `rx_subst_replace_all` returns its match count (§10¶7).
 
 | code | value | returned by | meaning |
 |---|---|---|---|
@@ -897,9 +932,11 @@ and every rx, shares: `pcrec_subst_map_names` (§3¶13), `rx_group_run`
 UTF-8 case mapping used by case regions (§2¶14). No subst artifact defines any of them. The check and the
 context setup are NOT here: they are `static` in the shared types block
 (§3¶8, §7¶3). So a program links one support unit only when it calls a
-helper, flatten or replace-all, or uses a template with case forcing (whose element calls the case
-mapping, and fails to link without it). A template with neither needs no
-support unit.
+helper, flatten or replace-all, or uses a `utf8` template with case forcing
+(whose element calls the case mapping, and fails to link without it). [R4c]
+A `byte` (or -1) template with case forcing carries the ASCII case step
+inline and calls nothing here. A template with neither needs no support
+unit.
 
 <a id="s10-p2"></a>[10¶2] **`pcrec --emit-support [-o FILE]`** writes it: one file, to
 stdout by default or to FILE. It needs no other argument, and it refuses any
@@ -972,10 +1009,14 @@ Its only storage besides `o` is one stack array of `RX_FOREACH_PAIRS` capture
 pairs (match_api.md §3.8.2), so a batch is `k` matches, the least of
 `RX_FOREACH_PAIRS / ctx->ncap`, `o->cap / P` and 64. `P` is `t->npieces`.
 
-<a id="s10-p7"></a>[10¶7] **Result.** It returns 0 when the whole result, every
+<a id="s10-p7"></a>[10¶7] **Result.** [R4c] It returns the NUMBER OF MATCHES substituted,
+`>= 0` (`INT_MAX` when there are more), when the whole result, every
 replacement and every gap and the tail, is in `out[0, *len)`; `*len` is its
-length. A call that returns anything else leaves `out` unspecified and counts
-none of it as output. `flags` takes `RX_SUBST_STRICT` and nothing else: the
+length. 0 means no match: `out` holds the subject unchanged. A call that
+returns a negative code leaves `out` unspecified and counts none of it as
+output. [R4c] `out == NULL` with `cap == 0` only SIZES, as the flatten does
+(§10¶5): the same count, `*len` the total, nothing written. `out == NULL`
+with `cap > 0` is `PCREC_SUBST_MISMATCH`. `flags` takes `RX_SUBST_STRICT` and nothing else: the
 function always renders gaps (`RX_SUBST_GAPS`), and another bit is
 `PCREC_SUBST_MISMATCH`, as is a `ctx->subject` or `ctx->len` that is not the
 iterator's, a NULL argument, a `t->render` or `next_n` that is NULL, a record
