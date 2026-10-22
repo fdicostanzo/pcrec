@@ -54,3 +54,16 @@ no emitter change = corpus/tag move, legitimate).
    at branch HEAD.
 2. Paste pins_all_head.py into VARIANT_PINS (pprint width 120), add a dated RE-PINNED block (cause above, 813f43ec8),
    then queue `emit_sweep --ref HEAD --tree-rev HEAD --variant all` as 710-vrepin-all, expect green.
+
+## vrepin3 (sonnet, 2026-10-22): pins pasted, runs queued
+- Merged main (a8897e529; one conflict, the lanes.md index, kept both sides). The merge brought new corpus files
+  (tests/utf8/octal_wide, language-fix corpora), so 709's values (taken at the pre-merge branch HEAD) may be stale.
+- Pasted `pins_all_head.py` (709) into `VARIANT_PINS` through pprint (width 120) with a dated RE-PINNED block
+  (cause 813f43ec8, this report). Diff vs the old pins: the lowsize/lowboth tag cells named above, plus every reach and
+  rising floor (corpus growth since 7900bfeb2; not all of it is M0), and utf8's yes-collapsed manifest witness
+  `a{2,4}+a` -> `(a){2,4}` (a shorter new witness).
+- Queued: 711-vrepin-remeasure (`--variant all --emit-pins` at the merged HEAD -> build/vrepin/pins_all_head2.py),
+  then 710-vrepin-all (ready only after 711 is green; its prelude pastes pins_all_head2.py via build/vrepin/paste_pins.py
+  and leaves the edit UNCOMMITTED, then runs `--variant all` with floors).
+- OWED: after 711, diff pins_all_head2.py vs the pasted pins; any cell moving by more than the merge's corpus rows
+  explains is the STOP RULE (report). After 710 is green, commit the script (if 710's prelude changed it) and END.
