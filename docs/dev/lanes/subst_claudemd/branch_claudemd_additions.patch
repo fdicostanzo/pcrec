@@ -1,0 +1,423 @@
+diff --git a/docs/design/CLAUDE.md b/docs/design/CLAUDE.md
+index f533a7fd3..be1d31bc4 100644
+--- a/docs/design/CLAUDE.md
++++ b/docs/design/CLAUDE.md
+@@ -210,7 +210,36 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
+   PREPROCESSING THE VALUE is the thing to decline, for a structural reason: a
+   fold is a relation between two sides, the subject side is not folded, and
+   under `utf8` there is no canonical byte string to fold to.
+-- `replace_design.md` — SEARCH/REPLACE, the variable layer (2026-09-23, lane
++- `replace_design.md` — **REVISION 3 (lane substr3, 2026-10-22, design only;
++  read §R3 first) applies the D6 panel r1
++  (`../dev/reviews/2026-10-22-r1-subst-design.md`, every finding accepted).**
++  The element is batch-shaped (k matches per call, gaps inside, length in a
++  `size_t` cursor). Names bind to `(first, count)` runs of `rx->groups`
++  through one `rx_group_run` helper. The binding carries the rx, its `ncaps`
++  and a tag. The glue drives `next_n` with a buffer sized from `ncaps` and
++  never fetches past `limit`. Every span is checked (`PCREC_SUBST_BADSPAN`;
++  §R2.5 rule 1 was false). There are six distinct codes, `*outlen` is written
++  on every path, and lengths saturate. One pcrec build serves both artifacts
++  (no new version number). The note also states the differences from
++  `pcre2_substitute`, the per-match-consumer family, and the rebuilt timing
++  cell. Two probes are recorded: the iterator terminates on both
++  backward-span patterns, and on ill-formed UTF-8 it is consistent with §9,
++  with libpcre2's anchored retry located as the difference. §R2 passages R3
++  replaces carry `[R3: ...]` markers. **REVISION 2 (lane subst, 2026-10-21,
++  design only): compiled substitution as an INDEPENDENT ELEMENT** (Frank's
++  2026-10-21 direction, to be D173). A subst artifact per template (render
++  + record), bound once to any rx whose `rx_info` shape delivers its
++  references (numbers constant by D61, names through a slot table), run by a
++  prefix-independent glue over `RX_FOREACH` (gaps, `limit`, single-pass
++  sizing). §R2.1 is the row-by-row staleness table against D38's design.
++  The template language STANDS, the pattern+template coupling is
++  SUPERSEDED, resolution MOVES to bind, and the emitted loop is CLOSED by
++  the iterator. §R2.3 is [MEASURED] 12 cells against `pcre2_substitute`, 0
++  diffs (`subst_measurements/`). §R2.6 restates in-place/streaming as
++  contracts, §R2.8 names the unmeasured costs and the phase-B timing cell,
++  §R2.11 holds the open questions. Superseded passages are marked in place
++  here, in `subst_template_design.md` and in `variables_roadmap.md` M9.
++  Original text: SEARCH/REPLACE, the variable layer (2026-09-23, lane
+   vardesign; PROPOSED over a RULED baseline; **PANELED (r1) AND REVISED
+   (lane varfix, same day) — §3.9's `.rxt` var-line proposal moved to
+   `variables_common.md` §3.5 (it was documented substitution-only though
+@@ -259,7 +288,12 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
+   (c) already names), the DFA route (a measured throughput bottleneck plus the
+   placement precondition), width declarations, and `[V-E]`/`[LIB]`. §6 maps
+   the design onto five plan rows.
+-- `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
++- `subst_measurements/` — `replace_design.md` §R2.3's probe (glue + bind over
++  the find-all iterator vs libpcre2 `pcre2_substitute`; `run.sh PCREC OUTDIR`,
++  transcript; own CLAUDE.md).
++- `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14;
++  **its pattern+template COUPLING is superseded by `replace_design.md` §R2,
++  2026-10-21; banner at top, passages marked in place**):
+   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
+   because Frank's ratified observation is that the template compiler consumes
+   only the capture-offset CONTRACT. **PROPOSED throughout; no panel has seen
+@@ -3222,6 +3256,8 @@ exactly +34 bytes.
+ - `findall_iter.md` — **[FINDALL-NEXT] THE FIND-ALL ITERATOR, PROPOSED, design + hand twin** (lane `iterdes`, 2026-10-14, main `ee01f4dbb`, abi 78; D165 + addendum 1). `rx_iter` (a stable 8-byte prefix with a header word FRESH/FRESH_AT/BOUND and `rc`; `lo`, the bound `s`/`n`/`owner`, `vars`; an inline buffer of S = 56 B derived from a storage-row table, align 8), `RX_ITER_INIT` as one store (measured), `<prefix>_next` (one exported call per match where today's loop makes two; the body one parameterized function inlined into `_search` and `_next`, except the DFA attempt route's static-label body, 233 corpus artifacts, which stays one shared static function), `next_n` twinned and held for a measured trigger. Semantics = PCRE2's global iteration (the NOTEMPTY_ATSTART retry, gated by a new fact `reports_empty` = nullable OR `\K`): 1,063 of 29,502 corpus pairs differ from today's loop and 374 of those refute §3.1.3¶9's subset claim. The kit seam (regions of `st`, zero-fresh, M as the body's mode parameter, R-20 requested), the parity gate's design, the abi event's readers, spec hunks, the `mg` `.rxt` line, the driver migration, S923-S942, staged commits I0-I4, unlocks, four questions for Frank. Evidence: `findall_iter/`. (This describes revision 1. Its S = 56 B, FRESH_AT, the one-store init and the `owner` field are superseded; see the revisions below.)
+   **REVISION 2 (lane `iterrev`, 2026-10-16), the short revision before its D6 panel (D163 addendum 7 Q4); read its §R2 first.** `next` is an `iterate` row of `entry_rows[]` and the retry a guarded `first-nonzero` (split's combinator; the row gains a `meter` column); `__find`'s layout comes from `compound_entries.md`'s part-layout row with revision 1's §2.2 kept as the `0` cell; INTERNAL batching in a new `batch` region of `<prefix>_buffers` (D165 add. 2), answer/give-up-identical to K = 1, in I1 only if the parity slot's `B64` arm wins; `(s, n)` bound at init with setters; F-1's residual twins; S derived from declared carried words, 64 B today (D167 add. 1 A10); §8a names every new item's home. Q-I1..Q-I4 for Frank.
+   **REVISION 3 (lane `iterrev3`, 2026-10-16) answers the two-critic panel r5 (`../dev/reviews/2026-10-16-r5-findall-iter-rev2.md`; all accepted except IT4, rejected by D165 addendum 3); read its §R3 first.** There is no owner check: handing an iterator or its buffers to another artifact is undefined, stated in the spec beside subject immutability (IT5). The batch region comes through the iterator's own setter `rx_iter_batch`, so `<prefix>_buffers` and its callers are untouched (the manager's IT3/IC3 ruling). The batch ABI is in I1 unconditionally, and the fill is the `iterate` row's `batch` cell, which the parity slot sets: one layout event. S and `st` move to I2 with the first held row and the C compiler's check (IC2). Bind normalizes every optional field (IT1); a drained batch with a pending code ends without searching, with a counted-work cell (IT2); §3.4a and §0.3 are conditional on Q-I1 (still open). One plant and population floor per residual twin, in `make test-codegen` on a `-fPIC` build (IC1). Every detector names its target, and the ASan cells run inside `make test` (IC6). New sabotage rows take S1038..S1046. `sizeof(rx_iter)` is measured at 96 B (I1) and 160 B (I2); revision 2's layout was 152 B. Q-I2/Q-I3 are settled, and Q-I4 is answer-free.
++- `findall_iter_i2.md` — **[FINDALL-NEXT] I4: `<prefix>_next_n` AND THE GENERIC `RX_FOREACH`, PROPOSED, design only** (lane `i2design`, 2026-10-21, from `lane/i1build`, abi 83; the file keeps the lane's "i2" name). It is a delta note over `findall_iter.md` rev 3 + §12 and says why it is separate (§ header). `size_t <prefix>_next_n(it, caps, k)` writes up to k full-capture entries; a return below k means the iterator ended; no `rx_iter` change. `RX_FOREACH(info, it, m)` lives in the shared block and runs through `rx_info.next_n` with a doubling stack buffer (4,168 B, no allocation), usable without the artifact's `.h`. The internal batch (rev 3 §2.3) is WITHDRAWN on the parity slot's `off` verdict and D171.
++  **REVISION 2 (lane `i2rev`, 2026-10-21) applies the light D6 panel r1 (`../dev/reviews/2026-10-21-r1-findall-i2.md`, critics chk/sem/fam, every disposition applied); read its §R2 first.** One body flipped: I1's `_next` body is the static `always_inline` `__one`, `_next` = `__one`, `_next_n` = a loop of `__one` (no fold prediction, no fallback). No new `PcrecEntry`: the one `iterate` row emits both, so `.next_n` is NULL exactly where `.next` is. Revision 3's stage numbers are kept (this stage is I4; revision 1's rename is undone). The doubling starts at 1 (1→64; the manager's call, Frank may reverse). Timing: A/A pairs with per-ratio floors, a re-queue rule, gates "`_next` unharmed", "never worse" on c1/c3/c4/c6, a POSITIVE gain on c3-4k R2 and c3-1m R2, bounds on c7 and a sparse early-break cell, an objdump hypothesis first. Checks: batch-boundary arms, k = 0 in every state, entry_shape's arm against `_next` and libpcre2, `_next`'s identity with I1's as a control, S1309-S1320 CONFIRMED with witnesses and reach counts. The spec states when `it.rc` is meaningful, that resuming after an early exit is undefined, and the meanings of `PCREC_ERR_ITER`. The callback entry is dissolved. Q1-Q4 settled (the manager's call, Frank may reverse); unlocks U-I2-7..10.
+ - `findall_iter/` — that note's probes: the libpcre2 global-loop semantics probe, the corpus harvest and gate census (`sem/`), the iterator hand twin over real artifacts with its size and init-codegen probes (`twin/`), and revision 3's struct-layout probe (`rev3/`) (own CLAUDE.md).
+ - `compound_entries.md` — **EVERY EXPORTED ENTRY AS A COMPOUND CONTROLLER OVER SHARED PARTS, AND THE DIAL DECIDING WHAT IS INLINE, ASSESSMENT / DESIGN NOTE, PROPOSED, nothing built** (lane `cmpentry`, 2026-10-14, main `d6e7fa993`, abi 78; Frank's charter quoted at the top). §1 the ENTRY MAP: every exported entry as a combinator over LOCATE / FINISH / STATE / residual parts, how each is emitted today (three emitters plus a hand edge list in `entries.c`), and the gaps (the STATE part, the kit's stream state, captures-on-demand). §2 measured compile-only and with clockless callgrind Ir: two HARD constraints from gcc's own errors (a static label table cannot be copied, which pins split's F; a computed goto cannot be inlined, which pins the framed VM body), a single-caller part must never be shared (+112 B for nothing), a shared static part costs 5-29 instructions per call, an exported-sibling call through the PLT about 4.8 more, and gcc's own entry layout flips with `-fPIC` (1.5-20% smaller on eight of nine witnesses). §3 ONE `part-layout` dial row generalizing the VM entry chain's `--vm-entry-shape` (an eight-member sibling family): `0` as emitted (no-op cell kept), `shared`/`hot-inline`/`inline` elsewhere, every non-zero cell `†` pending the D166 quantities, constraint rows H1-H7. §4 CONVERGENCE: one declared entry table `entry_rows[]` with the controller a column and the edges derived; the iterator's NOTEMPTY retry is split's own `first-nonzero` combinator; I1 stays one abi event if the zero-mover table (E0) lands first. §5 stages, standing questions, unlocks, Q1-Q5 for Frank (D103 pinned cell vs D166 measured selection the sharpest). §6 findings F-1..F-6 (the compound controller PLT-calls `_next_pos`/`_valid_upto` under `-fPIC`). Probes: `compound_entries/`. **Revision 3** (lane `cmprev2`, 2026-10-16, main `74ac73f7f`) answers panel r3 (`docs/dev/reviews/2026-10-16-r3-compound-entries.md`, all 27 ACCEPTED; read its §R3 first): the `0` layout is the OWNING design's (I4), an artifact table T0-T3 runs before any part (so `+1`'s decline is the `0` object), an OWNED row P1 keeps the VM entry chain, [OPT-1]'s `_deep` and the seam, one `copyable` fact (`may_attr` on the VM), a wrapper table W1/W2, the layout rendered after every length decision (I5); `entry_rows[]` must ADD a rank column (new data); `θ_hot` gains `none`; only `_WHY`/`_THETA` are stamped; the family recount (one built decision, one designed) drops the unification-threshold argument; adjacent pairs witnessed or UNWITNESSED; checks with a separate evaluator; sabotage S999-S1008 PROPOSED; Q6-Q9 open. **Revision 4** (lane `cmprev4`, 2026-10-16, main `8eec6f874`) applies D163 addendum 8; read its §R4 first. The layout becomes three caller-settable VALUED controls: `--part-layout=CLASS:V` (classes `prefilter`/`compound`/`find`/`wrap`; `auto`/`shared`/`inline`), `--part-inline-rank=R` (`none`, `R3`..`R0`, `measured`) and `--part-residual=V`. They consume no flag bits; `--vm-entry-shape` stays the owned VM entry chain's control. The five positions are PRESETS, rows of control values in `TUNE_TABLE`. The part table's position rows become control rows P4-P10 behind constraints P1-P3. A held request is stamped `/held`, never refused, and `<PREFIX>_PART_LAYOUT` returns. The note also gives per-control `.o` size directions from scratch probes (`compound_entries/rev4_*`), the NEW-DATASET homes with the D80 hunks owed at E1 (§3.9), Q6 ruled and Q7-Q9 reframed.
+   **REVISION 2 (lane `cmprev`, 2026-10-16) applies D163 addendum 7 (Frank's rulings on Q1-Q5); read its §R2 first.** The part-layout row gets five DISTINCT pinned policies: `−2` `all-shared` (one static body per multi-caller part, wrappers forward frameless), `−1` `shared-but-inner` (as `−2`, rank-R3 inner-loop parts inlined), `0` `as-emitted`, `+1` `hot-inline` (parts of edge rank ≥ `θ_hot` inlined, the rest as at `0`), `+2` `all-inline`. Hotness is a static EDGE RANK R0-R3 (rare / conditional / per-call / inner) read off `entry_rows[]`. `θ_hot` is the one value read from the D166 measurement set: a derived row whose inputs are named. With no `θ_hot` in the set, `+1` declines to `as-emitted` with a stamped reason; no set carries it today, so it is labelled UNMEASURED. It is all ONE declared first-match table, L0-L11, with constraint rows ahead of every non-zero position, plus a caller-observable table per position. §3.0 keeps the invariants (compound controllers, E0 before I1, no exported-to-exported call). §3.7 is the family lens: a dial row that unifies the inline/shared family, a sibling of `compound_place[]` under `entry_rows[]`, and not an axis, engine-selection or regime-table member. §3.8 lists what the iterator's short revision consumes. §5.4 records the rulings, and §5.5 has Q6-Q9 for Frank.
+diff --git a/docs/design/findall_iter/CLAUDE.md b/docs/design/findall_iter/CLAUDE.md
+index a5cf9a228..33a35cf77 100644
+--- a/docs/design/findall_iter/CLAUDE.md
++++ b/docs/design/findall_iter/CLAUDE.md
+@@ -79,6 +79,15 @@ stay in `out/` as the record.
+ - `parity_expect.py` — G3's independent answers (python `re` over the subject bytes).
+ - `parity_verdict.py` — §5.3's table and verdict rule (floor from the A/A arm, I and B64
+   gates, the batch cell, I_shared/N64 reported), ending `== parity COMPLETE <rows>`.
++- **[FINDALL-NEXT] I4 (lane i2build, `../findall_iter_i2.md` §4):** `PARITY_I4=1` (implies
++  `PARITY_POST=1`, `PCREC_OLD` = the I1 compiler) adds arms `I_i1`/`I_i1b` (the I1 artifact's
++  `_next`, two compiles), `I` (this compiler's `_next`), `F`/`Fb` (RX_FOREACH over `rx_info`,
++  two compiles), `I_info` (`rx_info.next` per match), `N4`/`N64` (`_next_n`, entries NCAPS
++  apart), cell `c8` (one match at byte 16 of 1 MiB, stop 1); the answer reference is `I_i1`;
++  G4 expects no PLT call of the rx_info arms. `tdrv.c` gains `ARM_FOREACH`, `ARM_INFO` and
++  `NEXTN_K`. `i4_verdict.py` (called by `parity_verdict.py` when an `Fb` arm is present):
++  per-ratio A/A floors over the launches, gates G1 `I/I_i1`, G2 `F/I` never worse, G3 the
++  positive gain on c3-4k/c3-1m R2, G4 c7/c8, and the `QUIET` line the queue job re-queues on.
+ - `parity_job.sh` — the `150-parity-slot` boxqueue job (`--dry-run` a no-clock build and
+   the quick gate; `--ready` the quiet gate, load1 < 2.0 twice a minute apart, read back
+   from `queue.log`; the work `exec taskset -c 7 parity.sh run`).
+diff --git a/docs/design/subst_measurements/CLAUDE.md b/docs/design/subst_measurements/CLAUDE.md
+new file mode 100644
+index 000000000..57a31971c
+--- /dev/null
++++ b/docs/design/subst_measurements/CLAUDE.md
+@@ -0,0 +1,14 @@
++# docs/design/subst_measurements/
++
++The probe behind `../replace_design.md` §R2 (lane subst, 2026-10-21, design
++only). Answer measurements, no timing.
++
++- `glue.c` — the independent substitution element's generic half (bind
++  through `rx_info`, the glue loop over `RX_FOREACH`) plus four hand-written
++  renders standing in for what a template compiler would emit, compared cell
++  by cell with libpcre2's `pcre2_substitute` (GLOBAL | UNSET_EMPTY |
++  OVERFLOW_LENGTH). Not built or run by `make`.
++- `run.sh PCREC OUTDIR` — compiles the nine artifacts with the given pcrec
++  into OUTDIR (use a gitignored `build/` path), links, runs.
++- `transcript.txt` — the run §R2 cites (12 cells + the undersized-buffer
++  case, `fails=0`).
+diff --git a/docs/dev/lanes/CLAUDE.md b/docs/dev/lanes/CLAUDE.md
+index 1177f8a85..1a9407ff1 100644
+--- a/docs/dev/lanes/CLAUDE.md
++++ b/docs/dev/lanes/CLAUDE.md
+@@ -4018,3 +4018,11 @@ never edited afterwards.
+ - `b4prep_report.md` — R17-b′ B4's five pre-brief OWED items (2026-10-21, lane b4prep, opus-tier; measurement and record only, no kit code): the V1 attribution (text, object code and driver byte-identical in grid1 and grid2 on the six shared cells, so the text does not explain M9), main's walk against the slot's walk (identical but for the abi number and one unread stamp macro), the pre-registered expected-loss list with the relay draft and one rule gap for main, the term-count lever set and tooling for the regenerated mover manifest; the F3 re-time and the manifest sweep are QUEUED (`520-kit-b4prep-f3rr`, `521-kit-b4prep-manifest`) and OWED. Artifacts under `docs/design/memfn/r17b_prime/b4prep/`.
+ - `parity_report.md` — [FINDALL-NEXT] the pre-build PARITY SLOT (2026-10-21, lane parity, opus; harness only, nothing under `src/`): the twin re-spelled to findall_iter.md revision 3 (bind at init, header-only compare, setters, IT2 fill, batch cell off|fill, ASan mode), drv.c's batched `I == B` check, the timing driver `tdrv.c`, `parity.sh` (12 subcells x 9 arms x R1/R2; an answer gate G1-G4 before any clock) and the `150-parity-slot` boxqueue job (quiet gate, cpu7 pinned, 5 launches); queued, not run. Report has STATE AT HANDOFF, the arm decisions and readings for the manager.
+ - `watchidle_report.md` — [WATCH-IDLE] BUILT (2026-10-21, lane watchidle, sonnet; scripts and docs only): boxqueue's three honesty gates at add/retry/batch (bare `expect none` refused, `log=PATH`, `last=` needs a read-back `witness`, valid forms printed; queued jobs keep the lenient grammar) and the idle-box alarm in the runner (IDLE-SUSPECT per job, HOLDER-IDLE-SUSPECT for a foreign lock holder, UNMEASURED defaults, `idle-ok`, never kills); boxqueue.test 53 -> 79 checks with 6 new plants.
++- `i1build_report.md` (+ `i1build_rulings.md`) — [FINDALL-NEXT] I0 + I1 BUILT (2026-10-21, lane i1build, opus; abi 82 -> 83): the `reports_empty` fact, the DFA notempty root, the `mg` line (I0, zero emitted bytes), then `<prefix>_next` over `rx_iter` with `rx_nextfn`/`rx_info.next`, the NOTEMPTY retry (DFA notempty root, VM accept guard), checks hoisted to bind, the residual twins, no batch ABI (ruling); tests/findall/, run_residual_twins.sh, S1297-S1308; validation queued at handoff.
++- `i1tri_report.md` — TRIAGE of I1's red `make test` (job 610) (2026-10-21, lane i1tri, opus; continues lane/i1build, abi 83 unchanged): 610 was TRUNCATED (scripts/sectiontimes died on a non-UTF-8 byte, make took SIGPIPE), so compound/partlayout/encoding-checks never reported; fix-by-fix table: stale checks the `__find` split and twins moved (body extractors, M5-SEAM parsers, reseed/anchored/start readers, facts MACHINERY, inline arm B, n1 budget + limits.md), four real I1 defects fixed (utf8 vars resolver before its twin, the setter's non-essential comment, the fold stamp's retry machine, widths.c's shared WCLASS arm), FILEPIN re-pinned, S02/S05 re-anchored; jobs 611-641 queued with their green lines.
++- `i1tri2_report.md` — TRIAGE round 2 of I1's red `make test` (job 611) (2026-10-21, lane i1tri2, opus; continues lane/i1build, abi 83 unchanged): eight red sections; three real I1 defects fixed (the part layout's FIND owner bit and the label-table `__find`'s copyable fact; a kept residual's stray static declaration), the rest stale readers of the `__find` split, the twins and round 1's own moves (codegen OS-1/OS-0b, cpset -145, C4 allowlist, pr8, E0 fixture, B0 kept-twin, DD12a(i) twins/forwarders/bind_checks, partlayout writers, startset global.rxt movers); jobs 609/612 queued.
++- `i1tri3_report.md` — TRIAGE round 3 of I1's compound-part failures (job 609) (2026-10-21, lane i1tri3, opus; continues lane/i1build, abi 83 unchanged, no C change): B1's hand controller called F's static residuals by their pre-I1 names (a static residual is its twin `<p>__f__next_pos` under F-1; test fix, same root as round 2's fix (c)); round 2's fix (b) judged RIGHT on evidence (F's label table is in its noinline `__f__find`, the `_search` subject copies, and `_next` is a second caller), so `held-compound` is re-pinned as `compound-inline` (P5/P5) with tuning §2.51¶1a and match_api §6.3.11 hunks; test-compound PASS and test-partlayout 49/0 seen; chain re-queued as 613.
++- `s1300_report.md` — disposition of I1's UNDETECTED sabotage S1300 (2026-10-21, lane s1300, opus): MISSING WITNESS, not an equivalent plant. findall_iter.md §6.8 names `a\x80a`; cells.tsv never carried a stray continuation byte after a non-empty match. Adds `a\x80a`/`\xc3\xa9\x80a` to the six non-empty utf8 patterns × 3 flag sets (36 cells, libpcre2 the run-time oracle). The clean findall section and the S1300 mech row are queued (622-i1build-findall1300 then 622-i1build-mech1300); verdicts OWED.
++- `i2design_report.md` — [FINDALL-NEXT] I2 design note (2026-10-21, lane i2design, opus; design only, from lane/i1build): delivers `docs/design/findall_iter_i2.md`. It designs `<prefix>_next_n` (k full-capture entries; a return below k means ENDED; k calls of `next` by construction; no rx_iter change) and the shared-block `RX_FOREACH` over `rx_info.next_n` (4→64 doubling stack buffer, no allocation, no artifact `.h` needed). It withdraws the internal batch. Its REVISION 2 section (lane i2rev) applies panel r1 (`../reviews/2026-10-21-r1-findall-i2.md`): one body `__one`, no new entry, revision 3's stage numbers kept (this stage is I4), doubling from 1, a rebuilt timing gate, S1309-S1320 with witnesses and reach counts, and Q1-Q4 settled. It also lists five items for the manager.
++- `i2build_report.md` — [FINDALL-NEXT] I4 BUILD (2026-10-21, lane i2build, opus; abi 83 -> 84, on lane/i2build from lane/i2design): `<p>__one` (I1's `_next` body) with `_next` and `_next_n` over it, `RX_FOREACH` + `rx_foreach` + `rx_nextnfn` in the shared block, `rx_info.next_n`; spec §3.8.1/§3.8.2; the R1 ruling (the objdump identity of `_next` is unattainable once `_next_n` exists, replaced by a text check, run_one_body.sh); H1-H3 results; an I1 defect the gstart iterator arm found and fixed (a DFA `\G` artifact reported an empty match at n+1 forever); I4 arms in tests/findall (reach floors), encseam, gstart, entry_shape; S1309-S1321; the PARITY_I4 timing cell. make test, mech, census and timing queued (660-663).
++- `subst_report.md` — [M4-SUBST] phase A DESIGN (2026-10-21, lane subst, opus; design only, on lane/subst from lane/i2build, abi 84 unchanged): `replace_design.md` §R2 makes compiled substitution an INDEPENDENT ELEMENT per Frank's 2026-10-21 direction (to be D173). A subst artifact per template (`<s>_render` + record) binds once through `rx_info` to any rx of the right shape, and a prefix-independent glue over `RX_FOREACH` runs it (gaps, `limit`, single-pass sizing). There is no rx abi event. 18-row staleness table vs D38's design: the language STANDS, the coupling is SUPERSEDED, resolution MOVES to bind, the emitted loop is CLOSED by the iterator, Q10 is DUE. 12+1 probe cells vs `pcre2_substitute`, 0 diffs (`docs/design/subst_measurements/`). Costs are unmeasured, with the phase-B timing cell named. 4 Frank / 5 manager questions. **REVISION 3 (lane substr3, 2026-10-22, its own section and STATE AT HANDOFF in the same file)** applies the D6 panel r1 (`../reviews/2026-10-22-r1-subst-design.md`, 25 findings, all ACCEPT) as `replace_design.md` §R3: a batch-shaped element, names bound to runs, a binding that carries the rx, a glue over `next_n` with no group ceiling, per-span `BADSPAN` (§R2.5 rule 1 was false), six distinct codes, and one pcrec build for both artifacts. Two probe facts: the iterator terminates on both backward-span patterns; on ill-formed UTF-8 it is consistent with §9 (libpcre2's anchored retry is the difference). Candidates C1-C5; Frank's Q-F1..Q-F4 stay open.
+diff --git a/docs/dev/reviews/CLAUDE.md b/docs/dev/reviews/CLAUDE.md
+index 14264122d..6280790de 100644
+--- a/docs/dev/reviews/CLAUDE.md
++++ b/docs/dev/reviews/CLAUDE.md
+@@ -574,3 +574,5 @@ Maintenance: add a file per checkpoint and list it here.
+ - `2026-10-16-r4-window-contract-rev3.md` — light panel (one critic, read-only) on window_contract.md revision 3 (lane wcrev3, E-1's design). 1 blocker (B1: the offer's raising derivation would refuse compiles that succeed today on the deny arms × an underivable bundle, and G1-E1 could not reach the analysis axis, K35), 5 majors (`arrives` not keeping a kind absent; provenance re-derived from the link though each block declares it; the stamp's render point unplaced before `mf_art_end`; C-CONS blind on its population; the offer built at a lazy first-caller point), 6 minors, 4 unlocks. All ACCEPTED (manager 2026-10-16); discharged by window_contract.md revision 3.1 (lane wcfix), disposition and discharge table at the file's end.
+ - `2026-10-16-r5-findall-iter-rev2.md` — two-critic panel (itcrit2 checks/emitter reality/staleness sonnet, itcrit1 semantics/caller contract opus, both with the unlock lens) on [FINDALL-NEXT] `findall_iter.md` revision 2 (lane iterrev). IC1-IC9 (the F-1 relocation check covering one of three twins and passing without `-fPIC`; S's detectors all UNREACHED at I1; the batch region moving every artifact's `<prefix>_buffers` surface; detectors outside `make test`), IT1-IT15 (bind not writing the option fields; a drained batch re-running the failed search; the owner check not covering buffers; no spec hunk for subject immutability; §3.4a resting on the open Q-I1), F12/F13 stale cites. All ACCEPTED except IT4, REJECTED by D165 addendum 3 (no per-call owner check; misuse is undefined); IT3/IC3 take the manager's fix (the batch region through the iterator's own setter). Discharged by revision 3 (lane iterrev3), disposition and discharge table at the file's end.
+ - `2026-10-18-r4-ctx-span.md` — D6 panel (A semantics vs 10.46/opus, B checks + staging + kit contract/opus, C simplification + family + unlocks/sonnet) on ctx_span.md (re-scoped [DD-11.5], D168). REVISE: BLOCKER A1 (the reverse machine reads `bot_ok` as left-absent; `[a-z]+\b` loses its start), 12 majors (identity-gate population by `\b` text; newline conventions; possessify nullability; the kit carrier claim false; abi readers by grep; unclaimed VM/route movers; hand-made re-aim list; a non-reaching witness; weak controls; staging vs kit_proof §7; F-1 = a false exact_len on the wire; C3's composition alternative; C4's fourth per-offset walk). The 9-cell tables and every deleted site verified. Q-r4-1..3 to Frank.
++- `2026-10-21-r1-findall-i2.md` — light D6 panel (i2crit-chk checks/gate sonnet, i2crit-sem semantics/macro opus, i2crit-fam family/ABI/unlocks opus) on [FINDALL-NEXT] `findall_iter_i2.md` revision 1 (lane i2design; `next_n` + `RX_FOREACH`). No blocker; the macro text and the PCRE2/K75 equivalence were confirmed by hand. 21 findings plus a simplification: no A/A floor, no positive gain cell, and c6 explained by assumption (chk-1..3); the entry_shape arm was not an oracle; no batch-boundary sabotage; witnesses and reach were missing (chk-5..7); a start-4 fill scans bytes past an early stop; `rc` after a break; the call-count formula (sem-1..3); a separate `NEXT_N` entry breaks ".next_n NULL ⇔ .next NULL" (fam-1); flip to one body `__one` (fam-2); keep revision 3's stage numbers (fam-3). All ACCEPT / NOTE / UNLOCK (the manager, 2026-10-21); Q1-Q4 settled as the manager's call. Applied by revision 2 (lane i2rev); the disposition table is at the top, the critics' text verbatim below it.
++- `2026-10-22-r1-subst-design.md` — D6 panel (substcrit1 semantics vs PCRE2/opus, substcrit2 modularity/cost/unlocks/opus, substcrit3 embedder/sonnet) on [M4-SUBST] `replace_design.md` §R2 (lane subst; the independent substitution element, D173). One real BLOCKER: §R2.5's "spans ordered and non-overlapping by construction" is false, because a `\K` reached through a subroutine call from a lookaround reports backward and overlapping spans and the glue's gap wraps. It is fixed by a per-span check (`PCREC_SUBST_BADSPAN`), not a §3.8 sentence. crit3's three blockers (codes, binding identity, length arithmetic) are fixed by construction. The design changed in four places: a batch-shaped element (crit2-1), names bound to runs (crit1-2), the binding carrying the rx (crit3-2), and the glue driving `next_n` with no group ceiling (crit2-3). All 25 findings ACCEPT. The manager's two probe facts are recorded: the iterator terminates on both patterns, and on ill-formed UTF-8 it is consistent with §9 (libpcre2's anchored retry is the difference). Applied by revision 3 (lane substr3). Candidates C1-C5 and PROPOSED sabotage rows S1346-S1355 are listed; Frank's Q-F1..Q-F4 stay open.
+diff --git a/src/facts/CLAUDE.md b/src/facts/CLAUDE.md
+index 976db5639..5ad28e4f4 100644
+--- a/src/facts/CLAUDE.md
++++ b/src/facts/CLAUDE.md
+@@ -129,6 +129,15 @@ defect traced to that edge (design §4.2.1, §10).
+   compile. Witnesses: `run_facts_checks.sh` [facts-e1] (its sixth column)
+   and `run_prefilter_collapse.sh` [anch]; sabotage S611 (the start half
+   dropped), S613 (a nullable call with no empty path) anchor here.
++  **[FINDALL-NEXT] I0 (lane i1build, 2026-10-21): `reports_empty`** (E1, no
++  deny, `pcrec_pattern_reports_empty`): can some match's REPORTED span be
++  empty -- a nullable pattern, or one whose `\K` can be crossed with no
++  byte after it (`ab\K`). One walk computes, per subtree, the least
++  consumed length of a path that crosses no `\K` and the least length after
++  the last `\K` a path crosses (`RepW`). `pf_check_e1` holds it to the
++  lowered tree and `nullable ⇒ reports_empty`. Its readers are the
++  find-all iterator's retry gate (compile.c's notempty machine, the VM
++  accept guard, `<PREFIX>_ITER_RETRY`).
+ 
+ - **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
+   ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which
+diff --git a/src/gen/CLAUDE.md b/src/gen/CLAUDE.md
+index fbff04aaf..cd55c0e92 100644
+--- a/src/gen/CLAUDE.md
++++ b/src/gen/CLAUDE.md
+@@ -1299,6 +1299,8 @@ a record's class reads `subject_class` alone; `owned_inline` reads
+ 
+ ## Files
+ 
++- **emit_iter.c** — [FINDALL-NEXT] I1 + I4: the find-all iterator's text (`<prefix>_next`, `<prefix>_next_n`, the one body `<p>__one` both inline, its bind/step parts, the shared block's `rx_iter`, setters and `RX_FOREACH`); the section below.
++
+ - **part_layout.c** — [ENTRY-TABLE] E1's three part-layout tables, the marks,
+   the render and the two listings' rows (section above). A part row's layout
+   reaches its text through `layout_attr`, a map onto `attr_text.c`'s values.
+@@ -4516,3 +4518,69 @@ only when the kit consulted a set key, else `""`, at the ks-mark render
+ point after `mf_art_end`. No kit row reads a set key before B4, so the
+ stamp is `""` on every artifact today. The VM's `^`/`(?m)^` role text is
+ K112's corrected wording (`src/core/ctxfn.def`).
++
++## [FINDALL-NEXT] I1 — the find-all iterator (lane i1build, 2026-10-21; abi 82 -> 83)
++
++`docs/design/findall_iter.md` rev 3 as cut by the I1 rulings (§12 there);
++`docs/spec/match_api.md` §3.8 is the contract.
++
++- **emit_iter.c** (new) writes the iterator: the shared block's `rx_iter`,
++  its states and setters (`pcrec_emit_iter_abi_types`), the header's
++  `<prefix>_iter_buffers` and `_next` declaration, and the iterator's text
++  (`pcrec_emit_iterate`, the `iterate` combinator of `entry_rows[]`):
++  `<p>__bind_checks` (the caller-position prologue `<prefix>_search` runs,
++  via `pcrec_emit_startpos_guard`, run once at bind), `<p>__enter` (the state
++  machine and the setters' normalization), `<p>__step` (the retry, the
++  search, PCRE2's advance; commits only on a match), the VM's
++  `<p>__step_own` (the storage binding `<prefix>_search` makes, tiered or
++  frameless) and `<prefix>_next`. The engine emitters supply the search body
++  `<p>__find` and the retry `<p>__retry` and say the step's shape
++  (`PcrecIterText`).
++- **The split.** emit_dfa.c's `<prefix>_search` is a wrapper
++  (`pcrec_emit_search_wrapper`: the head and the caller-position prologue)
++  over `<p>__find`, which `emit_search_head` writes with the FIND entry's
++  linkage; `find_body_shared` makes it `noinline` on the attempt route's
++  label-table body and `always_inline` elsewhere. emit_vm.c's search loop is
++  `<p>__find`, and `<searchfn>_run` is the range test and guard over it
++  (`vm_emit_search_run_prologue`).
++- **The retry.** DFA: `pcrec_emit_dfa_retry` scans `Job.nedfa` (the notempty
++  root, built by compile.c's `build_notempty_dfa` where `reports_empty`)
++  anchored at `q` (direction `dfa_dir_retry`). VM: `vm_emit_retry`, the
++  match-caps run with `run->notempty` set, and the accept label's guard
++  `if (run->notempty && scan_position == ctx->pos) goto <p>_fail;`.
++  `<PREFIX>_ITER_RETRY` names which.
++- **The residual twins** (src/enc/enc.c): every out-of-line residual entry
++  is a static `<p>__<name>`; the exported name is a one-line forwarder.
++  Every reference writes the twin's second `_` through
++  `pcrec_enc_twin_mark`, a scaffold byte, so a renamed call is the length it
++  was. Checked by tests/codegen/run_residual_twins.sh (no PLT call in a
++  -fPIC object).
++- **THE SCAFFOLD BRACKET** (`pcrec_sb_scaffold_open`/`_close`/`_putc`,
++  src/core/sb.c): every byte of the iterator, the split's new heads and the
++  twins' forwarders is excluded from every length decision, the RQ-3 SIMD
++  bracket's rules with its own count. Measured on a sample of DFA, VM,
++  hybrid, utf8, `-futf-check`, var-bearing and compound artifacts: the
++  counted size moves only where the DFA notempty root is built (a machine,
++  counted like one) and by one byte on a compound shell's `__next_pos`
++  reference. A new iterator line goes inside the bracket.
++- **`rx_info.next`** (`emit_info_def`) points at `<prefix>_next`; `rx_nextfn`
++  is declared on the tag `struct rx_iter` ahead of `struct rx_info`.
++
++## [FINDALL-NEXT] I4 — `<prefix>_next_n` and `RX_FOREACH` (lane i2build, 2026-10-21; abi 83 -> 84)
++
++`docs/design/findall_iter_i2.md` rev 2; `docs/spec/match_api.md` §3.8.1-§3.8.2.
++
++- **One body, two controllers** (emit_iter.c `emit_one`, `emit_controllers`):
++  I1's `_next` body is the static `always_inline` `<p>__one`; `_next` is
++  `return <p>__one(...)` and `_next_n` a loop of it up to `k`. No new
++  `PcrecEntry`: the `iterate` row emits both, with the NEXT entry's linkage
++  (`pcrec_emit_next_decl` takes that storage for `_next_n`'s declaration), so
++  `rx_info.next_n` is NULL exactly where `.next` is (`emit_info_def`).
++- **The shared block** gains `rx_nextnfn` (beside `rx_nextfn`, emit_dfa.c)
++  and, from `pcrec_emit_iter_abi_types`, `RX_FOREACH_PAIRS` (the block's one
++  `#ifndef` default), `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull` and
++  `RX_FOREACH`. All of it is scaffold.
++- **`_next`'s OBJECT is not I1's** (the TU gains a second caller of the shared
++  statics); its body TEXT is, checked by `tests/findall/run_one_body.sh`
++  (ruling R1, `docs/dev/lanes/i2build_report.md`).
++
+diff --git a/src/ir/CLAUDE.md b/src/ir/CLAUDE.md
+index e09201ed2..d271a8360 100644
+--- a/src/ir/CLAUDE.md
++++ b/src/ir/CLAUDE.md
+@@ -33,7 +33,7 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
+ `cli/main.c` `raise_only_limits[]` table also raises `PCREC_MAX_DFA_STATES_
+ GOTO` and `PCREC_MAX_SUBSET_ELEMS`; see `lib/pcrec.h`'s comment on the four
+ new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; pcrec_nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
+-- **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start); **[UCP] U2 (ucp_design.md §2.4): THE CLASS AXIS IS A PER-MACHINE CONTEXT-SET LIST.** `ctx_collect` fills `Dfa.ctx[]` from a contributor table (every A_CTX set — `\b`/`\B`'s word set, a recognized one-character lookaround's set — then the newline set of `(?m)^/$`, then the encoding's non-start set for K50's gate), `eqclasses` refines by each, and a byte's context is its ATOM (membership vector); `DState.up[]`, `s1u[]`/`s1g[]` are atom-indexed and sized to the realized count, `upc_of_class` is a table read. Overlapping sets are exact by construction (the old fixed UPC if-chain was exact only for disjoint sets). Over `PCREC_MAX_CTX_SETS`/`PCREC_MAX_CTX_ATOMS` the build is declined like a state-cap overflow. The `-DPCREC_NO_WORDCTX`/`NO_MLINECTX` reference knobs sit in `ctx_entry_live`, the list's two consumers. The closure's N_CTX arm is one truth-function read, whatever spelling produced the node.
++- **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start); **[UCP] U2 (ucp_design.md §2.4): THE CLASS AXIS IS A PER-MACHINE CONTEXT-SET LIST.** `ctx_collect` fills `Dfa.ctx[]` from a contributor table (every A_CTX set — `\b`/`\B`'s word set, a recognized one-character lookaround's set — then the newline set of `(?m)^/$`, then the encoding's non-start set for K50's gate), `eqclasses` refines by each, and a byte's context is its ATOM (membership vector); `DState.up[]`, `s1u[]`/`s1g[]` are atom-indexed and sized to the realized count, `upc_of_class` is a table read. Overlapping sets are exact by construction (the old fixed UPC if-chain was exact only for disjoint sets). Over `PCREC_MAX_CTX_SETS`/`PCREC_MAX_CTX_ATOMS` the build is declined like a state-cap overflow. The `-DPCREC_NO_WORDCTX`/`NO_MLINECTX` reference knobs sit in `ctx_entry_live`, the list's two consumers. The closure's N_CTX arm is one truth-function read, whatever spelling produced the node. **[FINDALL-NEXT] I0 (lane i1build, 2026-10-21): THE NOTEMPTY START ROOT.** `Dfa.notempty` (an input, a memo key in `src/opt/dfamemo.c`) builds every START state as the start closure with its accepting threads removed and no accept pruning (`Mach.noacc`), closed with `\G` true, so the machine's matches are the preferred NON-EMPTY match at the start: the find-all iterator's NOTEMPTY_ATSTART retry (findall_iter.md §3.3). Every state after the first byte is the ordinary construction's.
+   **[ENG-ABS] (2026-08-29) `pcrec_build_dfa` TAKES ITS ROOT AND ITS
+   OPTIONALITY AS PARAMETERS, and neither is a special case.** `root` used to be
+   `nfa->start` implicitly — the state `pcrec_nfa_wrap_unanchored` installs. The
+diff --git a/tests/CLAUDE.md b/tests/CLAUDE.md
+index 5a865357f..f81b79c77 100644
+--- a/tests/CLAUDE.md
++++ b/tests/CLAUDE.md
+@@ -799,6 +799,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
+   `measures` kind too (`run_measures_tests.sh`, with its own independent
+   reader `ks_ref.py`), plus the measures store and loading checks.
+ 
++- **findall/** — [FINDALL-NEXT] I1 (lane i1build, 2026-10-21): `make
++  test-findall`, the find-all iterator `<prefix>_next` against libpcre2's
++  global iteration (three engine arms, the iterator's state-machine arms,
++  the `ITER_RETRY` stamp, ASan cells), and `global.rxt`, the `mg` corpus
++  riding `test-corpus`. See its own CLAUDE.md.
++
+ - **partlayout/** — [ENTRY-TABLE] E1 (`docs/design/compound_entries.md` rev 4
+   §3.6): `make test-partlayout`, the part-layout controls' checks — the
+   INDEPENDENT EVALUATOR (an attribute-stripped call graph, the owners'
+diff --git a/tests/assertions/CLAUDE.md b/tests/assertions/CLAUDE.md
+index b0272edb0..ff6f5c5ce 100644
+--- a/tests/assertions/CLAUDE.md
++++ b/tests/assertions/CLAUDE.md
+@@ -290,6 +290,10 @@ every oracle exclusion has an entry there.
+   about what §3.1's loop does, so a second reading of §3.1 would prove
+   nothing); the second drives `<prefix>_search` and `<prefix>_match_caps` side
+   by side on one artifact, which is R30 E8's replacement obligation.
++  [FINDALL-NEXT] I4: `run_gstart_diff.sh` §1b links each find-all artifact
++  with `tests/findall/iter_drv.c` instead and holds the iterator (`fa_next`,
++  `fa_next_n`, RX_FOREACH) to libpcre2's global iteration over every sweep
++  subject.
+ - **run_gstart_diff.sh** — [M6.2] WAVE D's behavioural instrument, run by
+   `make test-assertions`. Four sections: find-all CONTIGUITY against libpcre2
+   driven through the SAME §3.1 loop (never a hand-written span list); a
+diff --git a/tests/codegen/CLAUDE.md b/tests/codegen/CLAUDE.md
+index bac8cf1cf..cb87d3089 100644
+--- a/tests/codegen/CLAUDE.md
++++ b/tests/codegen/CLAUDE.md
+@@ -927,6 +927,12 @@ decides whether to perform it — and then run the row through
+   answer. Its own section, `make test-entry-shape-identity`, part of `make
+   test` and NOT of `make smoke`: `run_premul_table.sh`'s measured argument
+   (it emits and compiles 70 artifacts).
++  - **[FINDALL-NEXT] I4: THE ITERATOR ARM** (findall_iter_i2.md §5.2). Each
++    rung's artifact is also linked with `tests/findall/iter_drv.c` over the
++    witness's subjects: RX_FOREACH, `_next_n` and `_next` against each other
++    and `_next` against libpcre2's global loop. Rung identity is not its
++    expectation (the iterator answers PCRE2's iteration, which the find-all
++    loop does not claim). SKIPS that arm loudly without libpcre2.
+   - **WHY IT IS A FILE AND NOT A SCRATCH SWEEP.** The write phase ran exactly
+     this comparison ad hoc — 14 patterns × 409 subjects, 0 mismatches — and
+     the run died with its scratchpad. The branch carried a CLAIM and not a
+@@ -4138,6 +4144,17 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
+   domain witness `\zabc` under `-fno-req-handoff`; `run_offset_skip.sh`'s uuid
+   guard adds `-fno-req-handoff`.
+ 
++## [FINDALL-NEXT] I1 (lane i1build, 2026-10-21, abi 83)
++
++- **run_residual_twins.sh** — IC1, the residual twins (findall_iter.md §2.4):
++  each exported residual entry is a forwarder to a static `<prefix>__<name>`
++  and every call inside the artifact reaches the twin, read off a -O2 -fPIC
++  OBJECT (`nm` pairs a global `<p>_X` with a local `<p>__X`; a PLT32/PC32
++  relocation against the global is a miss). Seven artifacts (the iterator,
++  the subject check, variables, both engines, a compound shell), a PLANT
++  (one twin call respelled to the exported name must read as a miss) and a
++  population floor of (artifact, residual) pairs. In `make test-codegen`.
++
+ ## [DD-11.5] part 2 (lane ctxbuild, 2026-10-19)
+ 
+ `run_mlinectx_identity.sh` is RETIRED with its knob (`-DPCREC_NO_MLINECTX`)
+diff --git a/tests/encseam/CLAUDE.md b/tests/encseam/CLAUDE.md
+index bcc7c7e03..dfe79de59 100644
+--- a/tests/encseam/CLAUDE.md
++++ b/tests/encseam/CLAUDE.md
+@@ -32,7 +32,10 @@ engine, and the two engines reach a span through completely different code.
+   which is [M5-SEAM]'s whole claim (and, since [K75], the NON-EMPTY arm too:
+ `fa_next_pos(s, n, end - 1)`, a no-op under this suite's byte encoding).
+ Prefix fixed at `fa` (a driver cannot
+-  be generic over a C identifier prefix).
++  be generic over a C identifier prefix). `findall_driver iter SUBJ`
++  ([FINDALL-NEXT] I4) runs RX_FOREACH over `fa_info` instead; the runner holds
++  it to `re.finditer` on every case, so the lossy class is exact under it,
++  and counts the lossy runs that agree (floor: every lossy case, both arms).
+ - **findall_cases.txt** — TAB-separated CLASS / PATTERN / SUBJECT. The
+   twelve agreeing pairs and three lossy ones are R29's set, re-measured
+   here rather than cited; ten more were added at [M5-SEAM], including two
+diff --git a/tests/findall/CLAUDE.md b/tests/findall/CLAUDE.md
+new file mode 100644
+index 000000000..0433f4f5f
+--- /dev/null
++++ b/tests/findall/CLAUDE.md
+@@ -0,0 +1,66 @@
++# tests/findall — the find-all iterator's checks ([FINDALL-NEXT] I1)
++
++`<prefix>_next(rx_iter *, caps)` (docs/spec/match_api.md §3.8) held to
++libpcre2's GLOBAL iteration, the loop of pcre2demo.c (after an empty match,
++retry anchored with NOTEMPTY_ATSTART, else step one character). `make
++test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
++
++## Files
++
++- **iter_drv.c** — the driver, built against one artifact and libpcre2-8.
++  Per subject: the iterator's spans (`I`), libpcre2's global loop (`G`, the
++  oracle) and match_api.md §3.1.3's loop (`L`), plus the state-machine arms
++  (sticky, endset, nullcaps, poison, dirty-init, info, at1), and the I4 arms
++  (`<prefix>_next_n` at k = 1, 2, 3, 64; its NULL-caps count; `_next` and
++  `_next_n` alternating; RX_FOREACH; RX_FOREACH with a break after 1, 3, 5, 7;
++  k = 0 on FRESH/BOUND/ENDED; the fill count against a simulation; a record of
++  another abi refused). Each subject's `R=` field lists the reach tokens of
++  sabotage rows S1309-S1320, which `run_iter_diff.sh` floors (`REACH_NEED`).
++  Verdicts OK /
++  DIFF / GIVEUP / ILLFORMED / SKIP (its header defines each). The caps buffer
++  and the `rx_iter` are heap-allocated at their exact sizes, so an over-write
++  is an ASan error in the ASan cells.
++- **run_iter_diff.sh** — the differential over a cell file, grouped by
++  (encoding, flags, pattern), each group on `auto`, `--engine=vm` and
++  `--engine=dfa` (a DFA refusal is not a cell). Also holds
++  `<PREFIX>_ITER_RETRY` to the text (`vm-guard` iff the accept guard,
++  `dfa-root` iff a retry machine). Floors: compiled groups, RETRY cells
++  (subjects where `I` differs from `L`, i.e. the retry decided a match), and
++  at least one artifact of each retry form, and every I4 reach token. A
++  GIVEUP is a failure except under `-futf-check` (the documented refusal of
++  an ill-formed subject) and `--step-budget` (the cells that end mid-batch);
++  ILLFORMED (a utf subject that is not well-formed, the iterator agreeing
++  with the loop) is counted, the documented boundary difference.
++- **run_findall_tests.sh** — the section: `run_iter_diff.sh cells.tsv`,
++  `run_one_body.sh`, then the ASan cells (a subset rebuilt with
++  `-fsanitize=address,undefined -DRX_FOREACH_PAIRS=8`, so the 3-group cell's
++  kmax is 2 and the 10-group cell is refused).
++  `run_iter_diff.sh` is also in `tests/lib/san_scripts.txt` ([TT-9]), so the
++  sanitizer axes run it through `$GENCFLAGS`.
++- **run_one_body.sh** — [FINDALL-NEXT] I4 (ruling R1): `rx__one`'s body in
++  this compiler's artifact equals, as text, the `rx_next` body the I1
++  compiler wrote (`one_body/*.i1_next_body.txt`, never regenerated by this
++  compiler), on `\w+`, `^a|b` and `(a)`, with a planted one-token control.
++- **one_body/** — those three expectations.
++- **cells.tsv** — the cells: lane iterdes's targeted byte set
++  (docs/design/findall_iter/sem/targeted.tsv), the retry shapes the design
++  names (`\K`, lookaround, anchors, compound splits) over 18 subjects, and
++  utf8 groups with ill-formed subjects, plain, `-futf-check` and
++  `-fstartpos-guard=align` (`a\x80a` and `\xc3\xa9\x80a` put a stray right
++  after a non-empty match: S1300's witness, K75's aligned end).
++- **gen_global.py** — writes **global.rxt**, the `mg` corpus
++  (rxt_format.md §1.7.1), from libpcre2's counts through `iter_drv.c`, with
++  `# pcre2-only` computed against python `re.finditer`. global.rxt rides
++  `test-corpus` (run.sh's `mg` arm drives `<prefix>_next`; verify_rxt.py
++  re-verifies with `re.finditer`).
++
++- **mover_census.py** — IT15's MOVER CENSUS (not a `make test` section; a
++  delivery-bar run): every corpus pattern under the parent compiler and the
++  iterator's, default engine and `--engine=vm`, comparing the outcome, the
++  engine stamps and the COUNTED size (`--warn-emit-bytes=1`'s report, what a
++  length decision reads). A counted move is explained only by a dfa-root
++  retry machine, or by one byte on a compound shell.
++
++The pattern column is the pattern as written; the subject column is the
++`.rxt` subject-escape vocabulary. libpcre2 is resolved by
++tests/lib/resolve_pcre2.sh; without it the section SKIPS loudly.
+diff --git a/tests/harness/CLAUDE.md b/tests/harness/CLAUDE.md
+index 2c919e8d5..ec30cd5b6 100644
+--- a/tests/harness/CLAUDE.md
++++ b/tests/harness/CLAUDE.md
+@@ -55,7 +55,7 @@ Test runner and driver template. The runner (run.sh) orchestrates compilation an
+   refusal printed `giveup -9` and `make test-axes`' utfcheck arm failed all
+   990 ill-formed cells (docs/dev/lanes/axtri_report.md). A new code's word
+   goes HERE.
+-- **driver.c** — test driver template: calls generated matcher (rx_search), decodes escape sequences in subjects, prints match/nomatch result. **[DD-13b.W23.3] TWO ADDITIVE ARGUMENTS, H15/H6 and H7.** An `@`-prefixed `<subject>` names a FILE whose bytes are the subject, read BYTE-EXACT — no escape decoding, no trailing-newline rule, no encoding assumption — which is the only way `format_design.md` §2.18's `@file:"path"` subject can carry a NUL and ill-formed UTF-8 at all, since argv cannot carry a NUL. The prefix is a MARKER and therefore a collision, closed on the other side: `run.sh` stages an ordinary quoted subject whose first byte is `@` with that byte written `\x40` (MEASURED: three corpus subjects begin with `@`), an escape this decoder already produces as `@`. And an optional FOURTH argument `[mode]` (`one`, the default and every existing invocation, or `count`) selects `docs/spec/match_api.md` §3.1's FIND-ALL LOOP, printing `count <n>` — the `mc` line's question, with the empty-match advance going through the artifact's own `<prefix>_next_pos` residual and off the MATCH'S OWN START, never the bench's `pos = max(end, pos+1)`, which double-counts an empty match found beyond the scan position. A give-up anywhere in the loop prints its own word and exits 3 rather than reporting a partial count. **[M4.4] (D44.2, 2026-08-14):** consumes the caps-array search signature (`ptrdiff_t (*caps)[2]`, not the retired `rx_span *m` out-struct) and prints `caps[0][0]`/`caps[0][1]` via `%td` (`ptrdiff_t`'s conversion specifier), not `m.start`/`m.end` via `%zu` — textually identical decimal output for the corpus's byte offsets, so no .rxt expectation changes. **[M4.5a] (2026-08-14):** prints EVERY `caps[k][0]`/`caps[k][1]` pair for `k` in `[0, RX_NCAPS)`, not just slot 0 — since `RX_NCAPS` is always 1 before [M4.5]'s VM lands, this is a superset that is byte-identical to before on the whole pre-existing corpus, not a reshape. **[K21-class fix, 2026-08-15]:** `rx_search`'s return is THREE-valued, not boolean — the driver used to test it with `if (found)`, which is C-truthy on the negative VM give-up sentinels (`PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES`, unprefixed since [ABI-NS]/D60) too, so a give-up took the match branch and printed `caps`, which the give-up path never writes (uninitialized stack reported as a confident match — verified live: the pre-fix driver against a tiny `--step-budget` artifact printed a fabricated `match` line with garbage spans). Now discriminates `found == 1`/`found == 0`/otherwise explicitly, printing `"steps\n"`/`"frames\n"` and exiting 3 (distinct from the normal exit 0 and the usage/malformed-input exit 2) on a give-up, so run.sh can — and now does — score it as its own HARD harness-level failure rather than comparing it against a `match`/`nomatch` expectation. Same bug shape as `tests/fuzz/fuzz_driver.c` (fixed, fuzzfix arc) and `src/gen/emit_dfa.c`'s `pcrec_emit_main` (K21, docs/dev/known_issues.md); `tests/registry/pc4_driver.c` still has the untouched `if (rx_search(...))` form as of this fix — a fourth, still-open site, flagged rather than silently patched here since PC-4 is a different subsystem outside this fix's scope. **[DD-14 wave A, 2026-08-24]:** the give-up print itself had the SAME bug shape one level down — it named exactly `PCREC_ERR_STEPS` and folded every OTHER code into `"frames"`, so a `PCREC_ERR_WORK` give-up (reachable via `tests/vm/`'s own driver, just never through this one before this fix) printed as a frame-capacity failure. Now an explicit chain names all four give-up codes (`steps`/`frames`/`work`/`recurse`; `recurse` is `PCREC_ERR_RECURSE`, reserved with no producer yet, D71 item 1) and an unrecognized negative return prints `"giveup %d\n"` rather than guessing. **[DD-14 wave A commit 2, 2026-08-24, D71 item 1]:** a FIFTH word, `"internal"` (`PCREC_ERR_INTERNAL`), joins the chain — it is BELOW the give-up floor and is NOT a give-up (the artifact caught its own analysis/emission inconsistency; module `lookaround`'s negative-polarity lookbehind end-check is the one producer today), but it still exits 3 like the four give-up codes, since this driver has no third outcome shape, and run.sh's `gu` directive refuses to let any corpus block EXPECT it. **[DD-14.FB] critic pass, 2026-08-25:** on any non-default route the driver ALSO cross-checks `<prefix>_match_in` and `<prefix>_match_caps_in` against their un-suffixed siblings on the same `rx_ctx`, exiting **4** (its own outcome, named by run.sh ahead of the `gu` branch so it applies to every case kind) on a disagreement. This exists because those two entries had **no behavioural coverage anywhere in the tree** — every cell, driver and measurement drove `<prefix>_search_in` alone, so three entries shipped and one was exercised. It is a CROSS-CHECK rather than a second answer: the `.rxt` `m`/`n` vocabulary means a SEARCH and the anchored entries answer a different question, so each is compared to its OWN sibling (§10.2's "its un-suffixed sibling in every respect") and needs no oracle. The permitted divergence is SYMMETRIC — when a buffer is supplied the two may differ if EITHER is a give-up, since the caller's capacity is not the stamped one — and getting that wrong is how the check introduced itself: the first version allowed only the downward direction and went RED on a correct build at the `1024,8192` cell, where the `_in` entry MATCHES what its sibling refuses, which is the whole feature. MEASURED non-vacuous: an emitter whose `<prefix>_match_in` ignores its descriptor takes framebuffer.rxt from 16/0 to 12/4. **[DD-14.FB], 2026-08-25:** takes an optional THIRD argument, the ENTRY ROUTE (`default`/absent, `null`, `<n>`, `<frames>,<trail>`) that run.sh's `frames-buffer=` directive supplies. It changes WHICH ENTRY answers and nothing else — same subject, same startpos, same printed protocol, same exit codes — which is what makes a route a control rather than a variant. Buffers are `malloc`'d (so `RX_BUFFER_ALIGN` holds by definition) and sized in BYTES from the artifact's own `RX_RESUME_FRAME_SIZE`/`RX_TRAIL_FRAME_SIZE`, i.e. through exactly the arithmetic spec §10.4 publishes those macros for; on an artifact whose sizes read 0 (every DFA artifact) the route degenerates to a NULL descriptor, which that engine ignores anyway. The two capacities are separately settable on purpose: sabotage row S180 (each capacity bound to the other's array) is a NO-OP under any equal pair, so a route that could only set them equal could not detect it. Dormant here today: nothing in the .rxt `flags`/`features` directive vocabulary can select `--engine=vm` or a tiny budget, so no corpus case reaches the give-up path — deliberately not exercised by a new .rxt case in this commit (see this file's `run.sh` entry for the follow-on `gu`/`engine`/`budget` directives)
++- **driver.c** — test driver template: calls generated matcher (rx_search), decodes escape sequences in subjects, prints match/nomatch result. **[DD-13b.W23.3] TWO ADDITIVE ARGUMENTS, H15/H6 and H7.** An `@`-prefixed `<subject>` names a FILE whose bytes are the subject, read BYTE-EXACT — no escape decoding, no trailing-newline rule, no encoding assumption — which is the only way `format_design.md` §2.18's `@file:"path"` subject can carry a NUL and ill-formed UTF-8 at all, since argv cannot carry a NUL. The prefix is a MARKER and therefore a collision, closed on the other side: `run.sh` stages an ordinary quoted subject whose first byte is `@` with that byte written `\x40` (MEASURED: three corpus subjects begin with `@`), an escape this decoder already produces as `@`. And an optional FOURTH argument `[mode]` (`one`, the default and every existing invocation, or `count`) selects `docs/spec/match_api.md` §3.1's FIND-ALL LOOP, printing `count <n>` — the `mc` line's question, with the empty-match advance going through the artifact's own `<prefix>_next_pos` residual and off the MATCH'S OWN START, never the bench's `pos = max(end, pos+1)`, which double-counts an empty match found beyond the scan position. A give-up anywhere in the loop prints its own word and exits 3 rather than reporting a partial count. **[M4.4] (D44.2, 2026-08-14):** consumes the caps-array search signature (`ptrdiff_t (*caps)[2]`, not the retired `rx_span *m` out-struct) and prints `caps[0][0]`/`caps[0][1]` via `%td` (`ptrdiff_t`'s conversion specifier), not `m.start`/`m.end` via `%zu` — textually identical decimal output for the corpus's byte offsets, so no .rxt expectation changes. **[M4.5a] (2026-08-14):** prints EVERY `caps[k][0]`/`caps[k][1]` pair for `k` in `[0, RX_NCAPS)`, not just slot 0 — since `RX_NCAPS` is always 1 before [M4.5]'s VM lands, this is a superset that is byte-identical to before on the whole pre-existing corpus, not a reshape. **[K21-class fix, 2026-08-15]:** `rx_search`'s return is THREE-valued, not boolean — the driver used to test it with `if (found)`, which is C-truthy on the negative VM give-up sentinels (`PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES`, unprefixed since [ABI-NS]/D60) too, so a give-up took the match branch and printed `caps`, which the give-up path never writes (uninitialized stack reported as a confident match — verified live: the pre-fix driver against a tiny `--step-budget` artifact printed a fabricated `match` line with garbage spans). Now discriminates `found == 1`/`found == 0`/otherwise explicitly, printing `"steps\n"`/`"frames\n"` and exiting 3 (distinct from the normal exit 0 and the usage/malformed-input exit 2) on a give-up, so run.sh can — and now does — score it as its own HARD harness-level failure rather than comparing it against a `match`/`nomatch` expectation. Same bug shape as `tests/fuzz/fuzz_driver.c` (fixed, fuzzfix arc) and `src/gen/emit_dfa.c`'s `pcrec_emit_main` (K21, docs/dev/known_issues.md); `tests/registry/pc4_driver.c` still has the untouched `if (rx_search(...))` form as of this fix — a fourth, still-open site, flagged rather than silently patched here since PC-4 is a different subsystem outside this fix's scope. **[DD-14 wave A, 2026-08-24]:** the give-up print itself had the SAME bug shape one level down — it named exactly `PCREC_ERR_STEPS` and folded every OTHER code into `"frames"`, so a `PCREC_ERR_WORK` give-up (reachable via `tests/vm/`'s own driver, just never through this one before this fix) printed as a frame-capacity failure. Now an explicit chain names all four give-up codes (`steps`/`frames`/`work`/`recurse`; `recurse` is `PCREC_ERR_RECURSE`, reserved with no producer yet, D71 item 1) and an unrecognized negative return prints `"giveup %d\n"` rather than guessing. **[DD-14 wave A commit 2, 2026-08-24, D71 item 1]:** a FIFTH word, `"internal"` (`PCREC_ERR_INTERNAL`), joins the chain — it is BELOW the give-up floor and is NOT a give-up (the artifact caught its own analysis/emission inconsistency; module `lookaround`'s negative-polarity lookbehind end-check is the one producer today), but it still exits 3 like the four give-up codes, since this driver has no third outcome shape, and run.sh's `gu` directive refuses to let any corpus block EXPECT it. **[DD-14.FB] critic pass, 2026-08-25:** on any non-default route the driver ALSO cross-checks `<prefix>_match_in` and `<prefix>_match_caps_in` against their un-suffixed siblings on the same `rx_ctx`, exiting **4** (its own outcome, named by run.sh ahead of the `gu` branch so it applies to every case kind) on a disagreement. This exists because those two entries had **no behavioural coverage anywhere in the tree** — every cell, driver and measurement drove `<prefix>_search_in` alone, so three entries shipped and one was exercised. It is a CROSS-CHECK rather than a second answer: the `.rxt` `m`/`n` vocabulary means a SEARCH and the anchored entries answer a different question, so each is compared to its OWN sibling (§10.2's "its un-suffixed sibling in every respect") and needs no oracle. The permitted divergence is SYMMETRIC — when a buffer is supplied the two may differ if EITHER is a give-up, since the caller's capacity is not the stamped one — and getting that wrong is how the check introduced itself: the first version allowed only the downward direction and went RED on a correct build at the `1024,8192` cell, where the `_in` entry MATCHES what its sibling refuses, which is the whole feature. MEASURED non-vacuous: an emitter whose `<prefix>_match_in` ignores its descriptor takes framebuffer.rxt from 16/0 to 12/4. **[DD-14.FB], 2026-08-25:** takes an optional THIRD argument, the ENTRY ROUTE (`default`/absent, `null`, `<n>`, `<frames>,<trail>`) that run.sh's `frames-buffer=` directive supplies. It changes WHICH ENTRY answers and nothing else — same subject, same startpos, same printed protocol, same exit codes — which is what makes a route a control rather than a variant. Buffers are `malloc`'d (so `RX_BUFFER_ALIGN` holds by definition) and sized in BYTES from the artifact's own `RX_RESUME_FRAME_SIZE`/`RX_TRAIL_FRAME_SIZE`, i.e. through exactly the arithmetic spec §10.4 publishes those macros for; on an artifact whose sizes read 0 (every DFA artifact) the route degenerates to a NULL descriptor, which that engine ignores anyway. The two capacities are separately settable on purpose: sabotage row S180 (each capacity bound to the other's array) is a NO-OP under any equal pair, so a route that could only set them equal could not detect it. Dormant here today: nothing in the .rxt `flags`/`features` directive vocabulary can select `--engine=vm` or a tiny budget, so no corpus case reaches the give-up path — deliberately not exercised by a new .rxt case in this commit (see this file's `run.sh` entry for the follow-on `gu`/`engine`/`budget` directives) **[FINDALL-NEXT] I1 (lane i1build, 2026-10-21):** mode `global` (the `mg` line, rxt_format.md §1.7.1) counts through `<prefix>_next` from `startpos` (`rx_iter_at`), binding the block's variables with `rx_iter_vars`; a code that ends the iterator prints at `it.lo` and exits 3, as `count` does.
+ 
+   **[DD-13b.W1.2] H11, THE TARGET BUILD PATH — a CROSS-CHECK, not a second
+   set of expectations.** For a head-bearing file, `run.sh` reads the
+@@ -109,6 +109,7 @@ Test runner and driver template. The runner (run.sh) orchestrates compilation an
+   `leaks(1)` tool instead of a local LSan run).
+ 
+ - **[DD-13b.W23.3] THE W23 PRODUCTIONS REACH BOTH HARNESS LEGS**, and the split between them is the format's own: every W23 schema row reads `validated_by: pcrec`, so legs B and C RECOGNISE these lines and CONSUME their bodies while pcrec VALIDATES them (`format_design.md` §2.14's last paragraph, published per row and rendered into §2.24's D4 table). What the two legs owe is STRUCTURE, and both gained it in the same shape: an ATTACHMENT STACK (leg A's `RxtFrame` stack — one entry per open level, so a DEDENT must land EXACTLY on an open level, which is what makes a mis-indented line inside an `ext` body a local error naming its own line) plus S3's OPAQUE REGION as streaming state (leg A reads the whole file and scans forward for a region's end; these two read one line at a time, so the same extent rule — to the first CONTENT line at or left of the opener's indent, a BLANK, or a COMMENT — is expressed as "a region is open, and this line either belongs to it or ends it"). The region is deliberately NOT the stack's business: a region's lines may be RAGGED, which the stack's exact-indent rule would refuse and all three legs accept. New arms in both: `pattern-esc` (a SECOND BLOCK OPENER; leg B passes the still-encoded text through with `pcrec --pattern-esc` and **decodes nothing in bash** — a `printf %b` approximation would be a second escape vocabulary drifting from pcrec's by construction — while leg C decodes with the eight-escape table it already has for subjects, and both refuse `\x00` by name citing K9), `mc` (the find-all count, §3.1's protocol in C and in python, **never `re.finditer`**, which differs on an empty-preferring pattern), `@file:` subjects with independently optional `as <id>` / `sha256 <hex64>` (the digest checked by whatever READS the subject; the `as` binding a FUNCTIONAL DEPENDENCY and not a uniqueness key, so restating it is normal and only a CONFLICTING re-binding is refused, naming both lines), `under` (a COUNTED, LABELLED SKIP in both legs — scoring a second correct answer per convention needs pcrec's convention BY NAME, which the harness must not hold, and AR-3's failure mode is exactly a skip nobody counted), `tag`/`oracle` (recognised and value-checked), and `provenance`/`variant`/`ext` (sub-block openers whose bodies are consumed; inside an `ext` OPEN SUBTREE nothing is dispatched at all, so a body key colliding with `pattern`/`m`/`provenance` produces no extra block, no extra case and no record anywhere). A block carrying a `@file:` subject, an `mc` case or a `pattern-esc` line is **not eligible for `HARNESS_BATCH`** (nor, since 2026-09-26, is a var-bearing block — module `vars`' `${name}` grows the artifact's own `<prefix>_search` signature by a trailing `vars, nvars` pair `dispatch_gen.sh` was never taught, see its own entry) — `dispatch.c` reproduces the default driver invocation only, and a second escape/counting vocabulary inside `dispatch_gen.sh` is the drift this format keeps declining. Leg B's `rxt_escape` gained `\n` in the same change and it is a CORRECTNESS fix rather than a cosmetic one: a prose region's value is the first dumped field that can contain a newline, and an unescaped one breaks the TSV row's framing (leg A's `put_escaped` and leg C's `DUMP_CTRL` both escape it already). **ONE THING THE THREE LEGS DO NOT AGREE ON, stated rather than left to be found**: the dump's `pattern` column for a `pattern-esc` block is the DECODED text in leg A and the text AS WRITTEN in legs B and C, because leg B cannot decode; the population is ZERO at this pin and the `esc` column W23.4 adds is what settles it.
++- **[FINDALL-NEXT] I0 (lane i1build, 2026-10-21): `mg`, THE GLOBAL COUNT** (rxt_format.md §1.7.1) in all three legs: `mc`'s shape in run.sh's arms (inline, `@file:`, `under`), driver mode `global` (`<prefix>_next`), batching-ineligible as `mc` is; leg C verifies it with `re.finditer` (which IS PCRE2's global iteration), skipping, counted, a utf8 subject with a byte above 0x7F, where python steps a byte rather than a character. Its corpus is tests/findall/global.rxt.
+ - **verify_rxt.py** — python-re oracle: cross-checks every corpus expectation (D4); `# pcre2-only` blocks are skipped (see docs/testing.md). Understands the `features` directive as a no-op (python re has no module gate; gate-only constructs are `# pcre2-only` blocks like any python-inexpressible pattern). Honours `flags i` as `re.IGNORECASE | re.ASCII` — the `re.ASCII` is load-bearing, since python's IGNORECASE otherwise folds Unicode (Kelvin sign, long s) and would silently disagree with pcrec's ASCII-only fold. **[M4.5a] (2026-08-14):** checks `g`/`gp` lines against python `re`'s `match.span(<slot>)` on the preceding `m`/`ms` case's subject/startpos, identically for `g` and `gp` (pending-ness is a fact about the pcrec ARTIFACT this oracle has no notion of); a slot beyond the pattern's own `compiled.groups` is always a hard failure. **[DD-14 wave A commit 3]:** had NO notion of `gu`/`engine`/`budget` — its parser raised `ValueError` on any of the three (an unrecognized line, the same as a typo). That entry called it "harmless by construction" because the default `BASE_DIR` glob was `tests/base/*.rxt` only, so no automated invocation reached it, and recorded it as "a live gap, recorded rather than silently worked around". **[DD-13b.W1.1] CLOSED IT, and the gap turned out to be the CONDITION on that step rather than a footnote.** The moment this oracle is pointed at the whole corpus — which W1.1 does, because C3 has no meaning otherwise — the three unknown kinds stop being unreachable and become five files that DIE BEFORE SCORING A SINGLE EXPECTATION (`harness/giveup.rxt`, `recursion/d27/sr_depth.rxt`, `recursion/framebuffer.rxt`, `recursion/quantified.rxt`, `size/size_term.rxt`). Corpus census: `gu` 23 lines, `frames-buffer=` 9, `engine` 5, `budget` 3. All four now PARSE; `engine`/`budget`/`frames-buffer=` are recognised and ignored (they size and select pcrec's own machinery and mean nothing to python `re`), and `gu` is a COUNTED SKIP for the reason the old entry gave — a give-up is a pcrec-VM property no oracle can arbitrate — rather than an ignored line, because a population nobody counts is not a population. **The old entry was RIGHT that the gap was harmless and RIGHT to record it; what it could not see is that "no automated invocation reaches it" was a fact about the WIRING, and the wiring was the thing about to change.** Also new at W1.1: `name`/`description`/`encoding`/`features only` (the W1 block directives), a head-bearing file REFUSED BY NAME (the head has one parser, pcrec's, and a fourth would be one more thing to keep in step), directory discovery by `os.walk` instead of the one-level glob that made `verify_rxt.py tests` verify ZERO files and exit 0, a `--min-files N` short-list HARD FAIL whose floor is supplied by the caller and never derived from the discovery it checks, an aggregate `SKIP=` total broken out by reason (there was no total at all before, so "the same skip count" had nothing to read), and `--dump` — leg C of `tests/rxtsource/`'s three-way parse differential. **[r46 / w11f fix lane, 2026-08-30]:** `file_has_name` was computed correctly as a whole-file scan and then immediately RE-INITIALIZED to `False` a few lines later, shadowing it for the composed-block skip's entire scope (r46sem finding 5 / r46chk finding 1) — the dead re-init and its equally-dead `cur_name` companion are removed. `open()` now takes `errors='surrogateescape'`, matching legs A/B's byte-clean reading of a `.rxt` file rather than crashing on the first invalid-UTF-8 byte anywhere in it (finding 17). `parse_rxt` itself now REFUSES anything before the first `pattern` line that is not a named HEAD word (finding 16, previously silently dropped by `dump_file`), a whitespace-only line (finding 15, previously an indentation-check false positive), `flags`/`engine` values outside the RULED vocabulary (findings 3/4 — only `i`/`vm`), and a malformed `name`/`encoding` (finding 19) or a duplicate block `name` (finding 20) — all at PARSE time, so both the `--dump` differential and the oracle-check loop see the same refusal instead of only the latter. `run_supervised`'s exit status now counts an unallowed timeout as a failure (`--allow-timeouts N`, finding 6 — previously a bound exceeded was neither pass, fail, nor skip and left the exit status alone). See `docs/dev/reviews/2026-08-30-r46-w11-impl.md` and `tests/rxtsource/fixtures/*.rxtin` for the full witness list. **[C3 THREE-WAY VERDICT, 2026-09-10/11, lane `pyrole`]:** a `m`/`n`/`ms`/`ns`/`g`/`gp` cell whose python answer DISAGREES with the corpus expectation is no longer unconditionally a FAILURE — `_verdict_match_at`/`_verdict_captures` consult a COMMITTED oracle store (`oracle_store/libpcre2-10.48/`, never a live library at check time, `tests/oracle/oracle_store.py`'s `lookup()`) and the disagreement becomes a FAILURE only if the store also disagrees (a real transcription tripwire) or does not cover the exact question (`STORE-UNCOVERED`, falling back to the pre-existing python-only verdict); if the store CONFIRMS the expectation, the cell lands in a new, separately-counted, always-printed `INFO` bucket instead — never a failure, no gate on its count (modelled on `tests/thread/run_stackdepth_tests.sh`'s `record()` bucket). `run_supervised` (the multi-file subprocess-per-file path C3's own wall bound uses) aggregates `INFO=`/`STOREUNCOVERED=` the same way it already aggregated `PASS=`/`SKIP=`. Design: `docs/design/c3_three_way.md`; the store's own capture script is `tests/rxtsource/build_c3_store.py`; the measured python-version record behind the seven cells this redesign resolves is `docs/dev/upstream_issues.md` U17. **[RULEFIX, 2026-09-15]:** the attachment check just above `seen_pattern`'s first dispatch (`first != 'pattern'`, raised at the file's own first non-comment, non-head-word line) had no `pattern-esc` exemption, so leg C REFUSED any file whose first block opened with `pattern-esc` even though legs A (`pcrec --list-source`) and B (`run.sh --dump`) both accepted it — found by w235 (`docs/dev/lanes/w235_report.md` §2) and recorded there rather than fixed. Fixed per Frank's ruling: the test is now `first not in ('pattern', 'pattern-esc')`, since `pattern-esc` is S2's second block opener (`format_design.md` §2.19, the schema table's own `opens_group` column) wherever `pattern` may open a file's first block. The VALUE seam this fix does NOT touch: a `pattern-esc` row's dump column still reports the text AS WRITTEN here, never decoded (`tests/rxtsource/run_rxtsource_tests.sh`'s R-A check asserts that half unchanged) — only the OPENER recognition was broken. **[K57FIX, 2026-09-15]:** the prose-region arm's dedent (the block that appends a continuation line's decoded text, indented under a bare `\|` value) gained the same shallow-indent refusal `src/parse/rxt_source.c` and `run.sh`'s `prose_take` do, class `value-shape`. `_fail` already raises immediately here, so no latch was needed — unlike leg B's streaming per-line loop, this function's caller never sees a partially-refused region.
+ - **giveup.rxt** — **[DD-14 wave A commit 3, 2026-08-24]** the `gu` directive's own positive corpus: two cells (`steps`, `frames`) where a give-up code IS reachable today via `engine vm` + `budget`, driving the SAME two bounds `tests/vm/run_vm_tests.sh`'s own `build()` calls drive with the SAME budgets. Lives here (not under a module directory) because it tests HARNESS VOCABULARY, not a regex construct. Picked up by `run.sh`'s tree-wide `.rxt` discovery and by every `tests/codegen/run_*_identity.sh` script's `grep -h '^pattern '` extraction (harmless there — both patterns are ordinary VM-engine loop shapes with no special identity-gate interaction); NOT picked up by `tests/mrl/maxw_check.c`'s sweep in any way that matters (its line scanner ignores unrecognized directives, so these two blocks register with zero spans and no violation). **[MECH-REACH fix, lane axesfix, 2026-09-22]:** [OPTLOOP.1.impl] batch 1's [OPT-REQBYTE] (src/opt/reqbyte.c) landed a whole-window `memchr` pre-check for a pattern's one necessary byte, and this file's two witnesses are deliberately 'b'/'c'-free subjects — the SAME shape `tests/vm/run_vm_tests.sh`'s own copies hit, which that suite fixes with an explicit `-fno-req-byte` on its own `build()` calls. A `pattern` block has no directive that can deny a compiler axis (`pcrec --list-schema`: the `pcrec` raw-flags line is `config`-scope only; `RXTFLAGS` is the format's one escape hatch for an axis with no directive, but it is run-wide, not per-file), so this file cannot reach its VM the same way. Fixed at the PATTERN instead: the trailing literal became a two-member class (`(a*)*b` → `(a*)*[bc]`, `((a)|b)*c` → `((a)|b)*[cd]`) that the subject still never satisfies — [OPT-REQBYTE] declines outright on a class of more than one member (its own documented "safe direction" arm), verified by both patterns stamping `RX_REQ_BYTE "none"`, so the VM genuinely runs under bare default flags again with the identical backtracking shape, subjects and budgets. No directive, line count or block count moved, so no `tests/rxtsource/` pin or `verify_rxt.py` `gu`-census moved either.
+ 

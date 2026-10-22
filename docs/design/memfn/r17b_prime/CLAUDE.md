@@ -85,3 +85,6 @@ is where their split between V1 and the walk is OWED.
 - `b4prep/` — lane b4prep's closure of B4's pre-brief OWED items (2026-10-21): the V1-text attribution, the
   main-vs-slot walk compare, the term-count lever set and regenerated mover manifest (`fdb2/`'s is left as is), the
   pre-registered expected-loss list, the F3 re-time. Own CLAUDE.md.
+- `e8min/` — B4's kit-tier verdict (E8) cut to the minimum (2026-10-21, Frank: build only what is needed): the plan and its KEEP/DROP list; see its own CLAUDE.md.
+- `b4p/` — step B4''s instruments (lane b4p, 2026-10-21; own CLAUDE.md): the
+  declared stream-5 registry delta (`fd-r0`, `fd-r5` removed) checked both ways.

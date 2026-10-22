@@ -15,6 +15,26 @@ that instant. So it is VM-only, it cannot have a prefilter, its caseless form
 is the encoding seam's second residual entry, and the thing most likely to be
 wrong about an implementation is WHICH pair of positions it reads.
 
+## Files
+
+- **numeric.rxt** — `\1`..`\9` and above: the UNSET rule (PCRE2 FAILS an unset reference, it does not match empty — `^(a)?\1$` on `""` is no match), the EMPTY rule (a ...
+- **octal.rxt** — §5's four ordered questions, each with a DISCRIMINATOR subject so "it compiled" is never mistaken for "it is a backreference". The ASYMMETRY is the ...
+- **octal_class.rxt** — the CLASS position, run with the module ENABLED. Every cell is a MUST-NOT-CHANGE pin: inside a class a backreference is impossible, so `\0`..`\7` ...
+- **selfref.rxt** — self-references, forward references, **and the RE-ENTRY class, which is this file's reason for existing.** `(a|b\1)+` on "ab" is libpcre2 (0,1) with ...
+- **nested.rxt** — the trail as behaviour.
+- **spellings.rxt** — every spelling, and the `\g` doorway's OTHER construct.
+- **caseless.rxt** — WHERE the `(?i)` is read and WHAT the compare folds.
+- **caseless_ucp.rxt** ([K94]) — the caseless compare under `--ucp` in the byte encoding: Latin-1 pairs fold (`(\xe9)\1` on `\xe9\xc9`), `\xb5 \xdf \xff` and `\xd7/\xf7` ...
+- **dupnames.rxt** — `(?J)`'s scoping rule (checked AT EACH DECLARATION against the scoped state, which four separating cells establish) and §8.3's resolution rule, plus ...
+- **gated.rxt** — what each partial enable buys, and the class column that does not move.
+- **run_backref_diff.sh** — ten sections, five EXACT population guards.
+- **run_dupnames_diff.sh** — §8.3 swept rather than sampled, and checked THREE ways: pcrec against libpcre2, an INDEPENDENTLY WRITTEN model of the rule against libpcre2, ...
+- **bref_batch.c / bref_entries.c** — the batch drivers, one process per (pattern, arm) rather than per cell.
+- **bref_oracle.py** — the libpcre2 side in one process, with the group list PADDED to the requested count (libpcre2 truncates trailing unset pairs, so without padding the ...
+- **fold_agreement_check.c** — the mechanism that discharges R32 E8. pcrec's ASCII fold exists TWICE and cannot be made to exist once (a parse-time class widener; ...
+- **fold_agreement_ucp_check.c** ([K94]) — the `--ucp` BYTE half, run as `run_backref_diff.sh` §9c: the shipped `$_span_match_caseless` of an artifact compiled `--ucp` ...
+- **fold_agreement_utf8_check.c** — the same obligation for the `utf8` encoding ([M5.0] stage 4, `utf8_design.md` §4.6), run as `run_backref_diff.sh` §9b.
+
 ## THE CORPUS IS GENERATED, and that is a property rather than a convenience
 
 `gen_corpus.py` wrote every expectation in every `.rxt` here by driving the
@@ -44,204 +64,7 @@ tests/harness/run.sh tests/backrefs/*.rxt` passes 681/681 over this
 directory's own cells (2026-10-08, s670cell; the 455/455 and 234/234 this
 sentence carried predate caseless_ucp.rxt and the S670 cells).
 
-**The two harness figures differ, and the command is why.** `run.sh
-tests/backrefs/` (the DIRECTORY, no glob) also walks `d27/` — the [M6.5.3]
-blinded corpus — and reports 662. Both numbers are correct for what they
-were asked; quote the command with the figure. (The 442 this paragraph
-carried until 2026-08-22 was the pre-d27 value of the 455 figure, correct
-when written and made confusing only by d27 landing beside it.)
-
-The 2026-08-22 additions are the "EMPTY CAPTURE UNDER AN UNBOUNDED
-QUANTIFIER" block in `numeric.rxt` (+7 cells, +13 harness cases): the live
-population of the empty-iteration guard, without which sabotage row S107
-scored UNDETECTED against a module that was correct. See that block's own
-comment and the row's header.
-
-## Files
-
-- **numeric.rxt** — `\1`..`\9` and above: the UNSET rule (PCRE2 FAILS an unset
-  reference, it does not match empty — `^(a)?\1$` on `""` is no match), the
-  EMPTY rule (a group that captured the empty string is SET, and the two are
-  ONE `if` apart), quantified references, and the startpos sweep. Fully
-  python-verifiable, which is unusual in this directory and is why the file
-  exists as its own: it is the half of the semantics a base-tier oracle can
-  still arbitrate.
-- **octal.rxt** — §5's four ordered questions, each with a DISCRIMINATOR
-  subject so "it compiled" is never mistaken for "it is a backreference". The
-  ASYMMETRY is the finding: `\1`..`\9` see the WHOLE pattern (`\1(a)` compiles)
-  while `\10`+ see only what PRECEDES them (`\10(a)..(j)` is the octal byte
-  0x08). **No test that only uses groups-before will notice** an
-  implementation that gets it backwards, which is why sabotage rows S112 and
-  S113 are separate.
-- **octal_class.rxt** — the CLASS position, run with the module ENABLED. Every
-  cell is a MUST-NOT-CHANGE pin: inside a class a backreference is impossible,
-  so `\0`..`\7` are octal and `\8` `\9` `\g` `\k` are the literal characters,
-  and that is BASE syntax the gate never touches. Sabotage S110 makes the atom
-  port claim the class position and these twelve cells are the only thing that
-  sees it.
-- **selfref.rxt** — self-references, forward references, **and the RE-ENTRY
-  class, which is this file's reason for existing.** `(a|b\1)+` on "ab" is
-  libpcre2 (0,1) with group 1 = (0,1); the write-on-traverse model the first
-  design was built on answers (0,2) with group 1 = (1,2), and
-  `^(?:(a|b\1)y)+` on "aybay" makes that model's emitted compare UNDERFLOW a
-  `size_t`. The first design's `selfref.rxt` took only the S/F cells that
-  AGREED — and cells that agree under both publication disciplines cannot
-  detect the difference between them.
-- **nested.rxt** — the trail as behaviour. `^(?:(a|b)\1)+$` on "aabb" is (0,4)
-  with group 1 = **(2,3)**, not (0,1): the reference must compare against THIS
-  iteration's capture, and on backtracking the PREVIOUS iteration's value must
-  come back. Also the reverse-deterministic shape (a group in the loop body,
-  the reference OUTSIDE it), which was traced correct and UNTESTED in the first
-  design, and nested backreferences.
-- **spellings.rxt** — every spelling, and the `\g` doorway's OTHER construct.
-  `^(a|b)\g<1>$` matches "ab" (a SUBROUTINE call re-runs the group's pattern)
-  where `^(a|b)\g{1}$` does not (a backreference compares the captured text),
-  so the two halves belong to two different modules and this one may claim only
-  one of them.
-- **caseless.rxt** — WHERE the `(?i)` is read and WHAT the compare folds. The
-  load-bearing pair is `^(a)(?i:\1)$` (matches "aA") beside `^(?i:(a))\1$`
-  (does NOT): the caselessness is the option in force AT THE REFERENCE, not at
-  the group, and an implementation reading it at the group passes one and fails
-  the other.
-  **S670's ANSWER DETECTOR lives here** (2026-10-08, lane s670cell): the
-  block "THE SUBJECT ENDS INSIDE A CASELESS REFERENCE" — `(?i)(a+)\1` on
-  `aaa` is (0,2), `(?i)(ab)\1` on `abA` does not match. Before it no cell
-  had a caseless reference the subject runs out inside, so a kit mismatch
-  row reading exhaustion as EQUAL (sabotage S670) answered `(0,6)` on `aaa`
-  with every answer suite green. Generated like the rest of the file.
-- **caseless_ucp.rxt** ([K94]) — the caseless compare under `--ucp` in the
-  byte encoding: Latin-1 pairs fold (`(\xe9)\1` on `\xe9\xc9`), `\xb5 \xdf \xff`
-  and `\xd7/\xf7` do not, no-UCP and no-`(?i)` controls, the scoped `(?i:\1)`
-  pair. Hand-assembled from a libpcre2 10.46 sweep of all 65,536 byte pairs.
-  `fold_agreement_ucp_check.c` is the exhaustive sibling (brefdiff §9c).
-  Sabotage S590 (emitter ignores UCP), S591 (fold rep ASCII-only).
-  **The same exhaustion cells exist in six hand-assembled blocks at the end
-  of this file** (S670: `(*UCP)(?i)(a+)\1`, the Latin-1 `\xe9`/`\xc9` pairs,
-  and `encoding utf8` siblings, all `# pcre2-only`, read from libpcre2 10.46
-  with PCRE2_UCP / PCRE2_UTF set).
-
-- **dupnames.rxt** — `(?J)`'s scoping rule (checked AT EACH DECLARATION against
-  the scoped state, which four separating cells establish) and §8.3's
-  resolution rule, plus the RE-ENTRY cells over a name run that the first
-  design's file had none of.
-- **gated.rxt** — what each partial enable buys, and the class column that does
-  not move.
-
-## The instruments
-
-- **run_backref_diff.sh** — ten sections, five EXACT population guards. Four
-  of the sections exist because nothing else in the tree asks their question:
-  §3 (the RE-ENTRY arm, where publish-at-close is observable AND NOWHERE ELSE —
-  a 5,808-cell arm-vs-arm sweep found the backref-FREE control at 0/0 in BOTH
-  publication disciplines), §4 (the `--no-captures` arm, the only place §6.3's
-  "keeps internal slots, reports none" ruling is exercised) and §8 (the
-  SPAN-DIVERGENCE section, the only possible detector for a prefilter planted
-  on a backref pattern). §9 is the 65,536-pair fold agreement and §9b ([M5.0] stage 4) its `utf8` sibling over the Unicode relation.
-  §10 (added 2026-08-22) is STRUCTURAL and is the lane's own lesson: it reads
-  the empty-iteration guard off the ARTIFACT for 4 unbounded-over-nullable-
-  backreference fixtures and asserts its ABSENCE on 3 bounded controls,
-  because the behavioural half of that property is only visible on a subject
-  where the referenced group captures EMPTY — and the absence of exactly
-  those subjects is what let sabotage row S107 score UNDETECTED against a
-  correct module. Failing direction measured on the S107 build: all 4
-  guard-bearing fixtures emit the marker 0 times.
-  **[EMIT-VERB]/D112, 2026-09-19 — THE MARKER IS A SLOT DECLARATION, NOT A
-  COMMENT.** §10 used to count the role-text phrase `empty-iteration guard`,
-  which `vm_star`/`vm_rep` write into the label's `// <role>` line, so the
-  day emitted comments went off by default it read ZERO on every fixture and
-  all four guard-bearing rows failed NAMING S107 — the regression the section
-  exists to catch, produced by a check that had gone blind. *A comment reader
-  does not fail vaguely; it fails as the defect it was written for.* The
-  guard has a code-level twin written under the SAME `if (guard)` that puts
-  the phrase in the role text (`src/gen/emit_vm.c`, `vm_star`: `gslot = guard
-  ? vm_slot_guard(v, v->nguard++) : -1`), emitted as its own
-  `#define <PREFIX>_SLOT_EMPTY_GUARD<n>` line, so counting the DECLARATION is
-  the stronger reading rather than a workaround — a comment about a slot is
-  one remove from the slot. Measured at the conversion, default axes: 1 on
-  each of the four guard-bearing fixtures and 0 on each of the three
-  controls, identical to the phrase's own figures under comments-on, so the
-  4/3/7 population assertion did not have to be re-based and S107's detection
-  path is unchanged (the plant makes `vm_nullable` answer false for `A_BREF`,
-  no slot is assigned, the count reads 0 exactly as the phrase did).
-- **run_dupnames_diff.sh** — §8.3 swept rather than sampled, and checked THREE
-  ways: pcrec against libpcre2, an INDEPENDENTLY WRITTEN model of the rule
-  against libpcre2, and both populations asserted exact. The `.rxt` cells
-  separate four candidate readings; only a sweep shows no FIFTH fits.
-- **bref_batch.c / bref_entries.c** — the batch drivers, one process per
-  (pattern, arm) rather than per cell. **They report the GROUP SPANS**, unlike
-  their `atomic_groups` siblings, because for this module the group spans are
-  the sharper detector: the re-entry family contains subjects on which the
-  outer span agrees and the group does not.
-
-  **[M6.6.2] `bref_batch.c` HAS A SECOND CONSUMER**, and it is shared rather
-  than copied: `tests/lookaround/run_lookaround_diff.sh` drives it unchanged.
-  Nothing in it is backref-specific — it reads `<subject-file>\t<startpos>`
-  on stdin and prints the span plus every `RX_NCAPS` group pair — and module
-  `lookaround` needs exactly that, group spans included (a capture inside a
-  positive assertion is RETAINED and inside a negative one is DISCARDED, so
-  the group list is that module's discriminator too). A third copy of one
-  mechanism is D24's shape; the file stays here because this is where it was
-  written, and an edit to it now has two callers.
-- **bref_oracle.py** — the libpcre2 side in one process, with the group list
-  PADDED to the requested count (libpcre2 truncates trailing unset pairs, so
-  without padding the two oracles disagree about a SHAPE rather than an
-  answer — and every such block would be marked `# pcre2-only` for no reason).
-  **Shared with `tests/lookaround/` since [M6.6.2]**, for `bref_batch.c`'s
-  reason above: it takes `<key>\t<ngroups>\t<pattern>` and sweeps every
-  startpos over a subject directory, which is generic.
-- **fold_agreement_check.c** — the mechanism that discharges R32 E8. pcrec's
-  ASCII fold exists TWICE and cannot be made to exist once (a parse-time class
-  widener; match-time arithmetic in the encoding residual), so this walks all
-  65,536 ordered byte pairs comparing the SHIPPED
-  `rx_span_match_caseless` — compiled out of an artifact pcrec actually
-  emitted — against `pcrec_ascii_fold`, which `cls_casefold` derives from.
-  Neither side can be edited into agreement with the other.
-  **[LOSS-REVIEW] candidate 1 (abi 76, 2026-10-11)**: the entry is `static
-  inline` and exported by nothing, so this file and its two siblings below
-  `#include "gen.c"` (the artifact's own translation unit) and
-  `run_backref_diff.sh` §9/§9b/§9c compile them without linking gen.c; the
-  population guards read the `static inline` definition in gen.c.
-  **[OPT-LITSCAN] S4 C0 (2026-10-03) adds its (b) arm, the fold's THIRD
-  consumer**: `pcrec_cls_cube` (src/core/cpset.c) of every fold set
-  {c, pcrec_ascii_fold[c]} must be K = 0xDF on the 52 letters and K = 0xFF on
-  the other 204 bytes, T = c & K, plus two negative cells ({a,b}, {a,b,c}) and
-  one non-caseless cube ([0-7], K = 0xF8) so the reader cannot pass by calling
-  everything a cube. The caseless run mask (litscan_s4.md §1.2) is this cube,
-  so the arm ties P2 to P1. Sabotage S442 (a section-relative base) reads red
-  here. The design's (c) arm (an EMITTED 256-position masked run) belongs to
-  C2, which is HELD.
-- **fold_agreement_ucp_check.c** ([K94]) — the `--ucp` BYTE half, run as
-  `run_backref_diff.sh` §9c: the shipped `$_span_match_caseless` of an artifact
-  compiled `--ucp` against `pcrec_fold_latin1` (the class fold) over all
-  65,536 ordered pairs, plus the asserted shape (112 folding bytes, one
-  partner each, `\xb5 \xdf \xff` inert). Sabotage S590/S591.
-- **fold_agreement_utf8_check.c** — the same obligation for the `utf8`
-  encoding ([M5.0] stage 4, `utf8_design.md` §4.6), run as
-  `run_backref_diff.sh` §9b. **A SECOND FILE rather than a wider sweep in the
-  first**: the byte check's domain is byte PAIRS and the utf8 residual
-  compares CHARACTERS, so neither its loop nor its buffer layout transfers.
-
-  **§4.6 proposed a hand-picked SAMPLE and this file sweeps the RELATION**,
-  which is both cheaper and stronger — 2,938 members across 1,454 classes is a
-  few milliseconds, and the eight cells §4.6 lists are a subset of it by
-  construction. Two directions, because a relation has two ways to be wrong:
-  every member of every class must compare EQUAL (a residual folding too
-  little), and 63,486 adjacent-pair controls must compare as the compiler says
-  (a residual folding too MUCH — a question a sample cannot ask at all, since
-  a sample only ever names pairs that do fold).
-
-  **Part C is the one §4.6 does not have, because stage 4 created the hazard
-  it guards.** There are two fold relations in the compiler now — one
-  hand-written and measured against libpcre2, one GENERATED from a vendored
-  file — and the `byte` encoding's answers must not move when that file's
-  VERSION does. Part C asserts the vendored relation restricted to ASCII is
-  `pcrec_ascii_fold`'s 26 pairs exactly. Measured at the landing: 2,938
-  folding code points / 5,972 ordered pairs equal, 63,486 controls, 52 ASCII
-  bytes tied.
-
-`tests/codegen/run_backref_identity.sh` is the module's byte-identity gate and
-lives there with its four siblings; it is OPT-IN (`make test-backrefs-identity`)
-because it is a claim about a MOMENT, not a standing invariant.
+(Rest of this section: see the history file.)
 
 ## What is deliberately NOT here
 
@@ -255,3 +78,7 @@ because it is a claim about a MOMENT, not a standing invariant.
 - **A `PCREC_MATCH_UNSET_BACKREF` arm.** Measured and declined (§3.3): 2 of the
   8 unset cells flip under the bit, and implementing it means a second emitted
   shape for one construct selected by an option pcrec does not have.
+
+- Also (one-line entries for these are in the history file): `d27`.
+
+History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__backrefs.md`.

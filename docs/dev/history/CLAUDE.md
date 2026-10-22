@@ -61,6 +61,7 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
   per bump (D76 addendum [REVW.A1] named its home; it moved here verbatim
   from match_api.md §6). **An `abi` bump adds its entry here in the bump's
   own commit**, beside the spec's `rx_info.abi` sentence (D76/D94's readers).
+- `claude_md/` — one file per de-bulked CLAUDE.md, named by path (`src__gen.md` = `src/gen/CLAUDE.md`): the verbatim pre-index text, moved 2026-10-21 (lane debulka/debulkb). See its own CLAUDE.md.
 
 Maintenance: a future spec cleanup adds its own `<doc>_record.md` here and a
 line above.

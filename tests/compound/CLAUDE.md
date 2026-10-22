@@ -121,6 +121,27 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   - **run_shell_checks.sh** — the call-site rows (a DFA part's calls get rows
     1, 2, 8 only), the namespace table's two rows, and `drop-compound` under
     a cap between the compiler's own plain and compound sizes.
+- **run_part_measures.sh** — [MEASURE-SET] (lane partmeas;
+  docs/spec/measures.md §5¶8, §4¶3): a compound's parts read P's
+  measurement set, and the shell's `MEASURES` is the union over P and the
+  parts. Builds this tree with `-DPCREC_CAND_TRACE` (~5 s at -j4) and drives
+  the split witness under two set arms, the harness lever's synthetic set
+  (not the default) and a shipped `--measures=FILE` copy of the store set:
+  (A) the MFMEAS records (one per kit art, `PCREC_MF_MEAS_TRACE`) all name
+  the FILE's `id@rev:digest`, read by awk, and every part's view and
+  loaded-set ADDRESSES are P's; (B) `PCREC_MF_MEAS_CONSULT=f|q` (a
+  synthetic consult, trace build only, since no kit row reads a set key
+  before the kit's B4) makes the shell stamp the set, macro and
+  `rx_info.measures`; no consult, an unknown role and a non-compound
+  control stamp `""`. Floor 14 checks. MEASURED on the unfixed tree: (A) red
+  on both arms. Mech rows S1291-S1295.
+- **run_part_analysis.sh** — [K113] (lane k113): a compound's parts read P's
+  resolved analysis chain and analysis object (`PcrecEmitIn.meas`, the
+  measure set's channel). Builds this tree with `-DPCREC_KS_TRACE` and counts
+  `KSTRACE ... resolve` and `KSRCTRACE object` lines for the split witness
+  against a non-compound control, two arms (default chain, `--analysis
+  default`); equal counts = the parts resolve and build none. Floor 4
+  checks. Mech rows S1331-S1332.
 - **run_compound_unit.sh** — the section script (B0, E0, B1, B2, B4). `EVERY` (default 1 here,
   8 from the Makefile), `JOBS`, `KEEP=1`. The mech arm `compound` runs it
   from a sabotaged tree (rows S891-S910, S1008).
