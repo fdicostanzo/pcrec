@@ -1,6 +1,15 @@
-"""Scratch generator for tests/subst-extended/cells.tsv: each `same` cell's
-EXPECT is pcre2_substitute's own answer (libpcre2-8 10.46, EXTENDED|GLOBAL|
-OVERFLOW_LENGTH, UNSET_EMPTY unless strict, UTF|MATCH_INVALID_UTF under utf8)."""
+"""tests/subst-extended/gen_cells.py -- writes tests/subst-extended/cells.tsv
+(see that directory's CLAUDE.md). Each `same` cell's EXPECT is
+pcre2_substitute's own answer (libpcre2-8 10.46 by ctypes; EXTENDED, GLOBAL
+when LIMIT is all, OVERFLOW_LENGTH, UNSET_EMPTY unless strict,
+UTF|MATCH_INVALID_UTF under utf8); the other cells state their expectation
+here by hand. argv[1] is the oracle store's case map, the source of the
+whole-map cells' subjects.
+
+Usage, from the repo root:
+  python3 -I tests/subst-extended/gen_cells.py \
+      oracle_store/libpcre2-10.46-utf/case-map.tsv > tests/subst-extended/cells.tsv
+"""
 import sys, ctypes as C
 L = C.CDLL('libpcre2-8.so.0')
 SZ = C.c_size_t

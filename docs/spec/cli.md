@@ -319,7 +319,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s1-19"></a>
 ### 1.19 `--subst TEMPLATE`, `--subst-file FILE`: a subst artifact
 
-<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them (`--features` included, while module `subst-extended` is not built). A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
+<a id="s1-19-p1"></a>[1.19¶1] `pcrec [-p PREFIX] [-e ENC] -o OUT.c --subst TEMPLATE` compiles a substitution template instead of a pattern and writes `OUT.c` and `OUT.h`; `--subst-file FILE` reads the template from FILE byte for byte. `-o -` writes one self-contained `.c` to stdout. Neither combines with `--pattern`, a file operand, a query or `--emit-support`, and every pattern-compile option is refused with them; `--features` is accepted only as `--features subst-extended`, the template module of `subst_api.md` §2¶7. A template refusal exits 1 naming the template offset. The artifact and the template language are `subst_api.md`; unset handling is a flag of the call there, not an option.
 
 <a id="s1-20"></a>
 ### 1.20 `--emit-support`: the subst support unit

@@ -44,7 +44,7 @@ Parser structure (PARSE-1):
 - enabled.c — the enabled feature set (`--features`, `std1` named set, `pcrec_default_features`, `pcrec_enabled_set_label/_modules`)
 - parse.c — base grammar, AST, case fold T2 (`fold_rows`), `\Q\E` lexing, bare-anchor helpers, `pcrec_ast_pin`, `pcrec_parse_body`, `pcrec_parse_mods_init`
 - parse_mods.h — ModState/ParseMods definition; included by nothing outside this directory
-- subst_template.c — [M4-SUBST] the substitution-template parser (`pcrec_subst_parse` -> `SubstTmpl`): PCRE2's non-extended grammar (`$n` `${n}` `$name` `${name}` `$$`, `${!name}` via `src/core/varexp.c`), offsets on every refusal; operator forms refuse as module `subst-extended`. Contract `docs/spec/subst_api.md` §2
+- subst_template.c — [M4-SUBST] the substitution-template parser (`pcrec_subst_parse` -> `SubstTmpl`): PCRE2's non-extended grammar (`$n` `${n}` `$name` `${name}` `$$`, `${!name}` via `src/core/varexp.c`), offsets on every refusal; operator forms refuse as module `subst-extended` unless it is selected, when escapes (the definitions layer's digit-run and `\cX` values), conditionals and case events parse too. Contract `docs/spec/subst_api.md` §2
 - registry.c — construct registry (D24/SR-1): all non-base rows, `bare_rows[]`, index rows, arbitration, `pcrec_registry_verb_name_row`
 - ext.c — three of the four doorways (`pcrec_ext_escape`, `pcrec_ext_group`, `pcrec_ext_class_bracket`), `pcrec_ext_gate`, `pcrec_ext_finish`
 - ctxnode.c — lookaround to context-node lowering table (`ctx-node` row, `-fno-ctx-node`/`PCREC_NO_CTX_NODE`; `pcrec_look_rows`)

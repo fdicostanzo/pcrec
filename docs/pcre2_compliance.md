@@ -2030,7 +2030,9 @@ counts are not the contract.
 
 | syntax | status | becomes |
 |---|---|---|
-| `$1` `${n}` `$<name>` `$&` `` $` `` `$'` `$_` `$+` `$*MARK`, `\l \u \L \U \E` | `OUT-OF-SCOPE` | — |
+| `$1` `${n}` `$&` `` $` `` `$'` `$_` | `OK` | — |
+| `\l \u \L \U \E` | `OK-GATED` | — |
+| `$<name>` `$+` `$*MARK` | `REJECTED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: replacement-strings -->
 
@@ -2041,9 +2043,16 @@ counts are not the contract.
 
 **`base:replacement-strings`**
 
-pcrec compiles a MATCHER. It has no substitution API, and APPROACH does
-not propose one. Listed for completeness because pcre2syntax.html covers
-it; a substitution layer would be a separate product decision.
+A replacement template compiles to its own SUBST ARTIFACT (`pcrec --subst`,
+docs/spec/subst_api.md). The non-extended forms are module `subst`; the
+`PCRE2_SUBSTITUTE_EXTENDED` forms (`\l \u \L \U \E`, `${n:-text}`,
+`${n:+set:unset}`, `\Q..\E` and the escapes) are module `subst-extended`,
+selected by `--features subst-extended` (subst_api.md §2¶7). Both are held
+to libpcre2 10.46's pcre2_substitute by tests/subst/ and
+tests/subst-extended/ (2026-10-22), the case mapping over every code point
+libpcre2 maps. `$*MARK` and `${*MARK}` are refused (no pcrec artifact
+reports a mark name), as are `$<name>` and `$+`. The call-level
+differences from pcre2_substitute are subst_api.md §9.
 
 <!-- END GENERATED -->
 

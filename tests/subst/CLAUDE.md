@@ -16,11 +16,16 @@ maps, the check, the support unit, replace-all; lane substb2).
   `#error`; the support unit (`--emit-support` alone, refusals, identical
   bytes, ASCII, the implementation and STATIC builds); then the cells AGAIN
   under ASan+UBSan (replace-all's stack batch, S1500; `ASAN=0` skips, a
-  compiler without libasan SKIPs loudly).
+  compiler without libasan SKIPs loudly). Module subst-extended rides the
+  same section: its cells (`../subst-extended/cells.tsv`) in both passes,
+  its refusals under `--features subst-extended`, and the `--features`
+  rule of `--subst`.
 - `run_subst_tests.py` — compiles every cell's rx (`-p rN`) and template
   (`-p sN`) and the support unit, generates one table, builds the driver once
   against libpcre2 when linkable, and checks every arm. Floors: `REACH_NEED`
-  tokens each carried by a passing cell (K35), and a pcre2-compared count.
+  tokens (per cell file, by its directory) each carried by a passing cell
+  (K35), and a pcre2-compared count. Template prefixes `utf8:` then `ext:`;
+  a `rxt:NAME` pattern is a composed rx from `NAME.rxt` here.
 - `subst_drv.c` — the driver (its header lists every arm): per cell the
   check over the by-name helper's map (and against an abi + 1 record, and
   with no map), the spec's per-match, batch and RX_FOREACH recipes,
@@ -29,11 +34,15 @@ maps, the check, the support unit, replace-all; lane substb2).
   past ncap, an unknown flag, an end past len, variables), a NOGROUP map
   under STRICT, the element without GAPS, and `pcre2_substitute` (GLOBAL or
   first, UNSET_EMPTY unless STRICT, and REPLACEMENT_ONLY) over the same
-  input; a cell's `LIMIT@START` starts both at START. Then the `unit` line
+  input (EXTENDED for an `ext:` template; never for a P2 `na` cell); a case
+  template's scratch at exactly its `sneed` (`scr`); a cell's `LIMIT@START`
+  starts both at START. Every out carries scratch. Then the `unit` line
   (flatten's saturation, the helper on number -1 and under MAP_ABSENT).
 - `cells.tsv` — the cells: ID FLAGS PATTERN TEMPLATE STRICT LIMIT SUBJECT VARS
   EXPECT P2 LABEL REACH. `P2` states libpcre2's answer where it differs
   (labelled with the subst_api.md §9 row) or `same`.
+- `composed.rxt` — a composed rx (a delivered group, `ngroups` 0, `ncaps` 2)
+  for the `composed` cell: the no-map form refused at the context setup.
 
 - `run_d27.sh` — `make test-subst-d27` (its own section, CI shard 1; NOT in
   the mech arm, it is ~1,500 cases): runs the D27 blinded corpus in `d27/`
@@ -44,5 +53,6 @@ maps, the check, the support unit, replace-all; lane substb2).
 Without libpcre2 the oracle arms are skipped (`SKIP: subst oracle`); every
 other arm runs. Sabotage rows: S1346-S1382 (re-anchored on R4 by substb2;
 S1349, the glue's LIMIT cap, and S1364, the glue's VLA batch, were RETIRED
-with the glue) and S1500-S1504. Maintenance: update this file when files
+with the glue), S1500-S1504, and S1530-S1539 (module subst-extended and the
+composed-rx witness, lane substext). Maintenance: update this file when files
 are added/removed.

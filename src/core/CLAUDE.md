@@ -43,7 +43,7 @@ Maintenance: update this file when files are added/removed or their roles change
 - `sb.c` — string buffer, comment gate, SIMD/layout brackets, text layer, fragf, stamp writers, prefix render.
 - `tune.c` — `--tune` speed-vs-size policy table and accessors (+ part-layout preset columns).
 - `fold.c` — ASCII fold partition, Unicode simple fold walker, Latin-1 fold; `fold_tables.inc` generated.
-- `case_tables.inc` — GENERATED simple case map (`pcrec_case_upper_map[]`/`_lower_map[]`, `PCREC_CASE_*_MAX_GROWTH`) for substitution case forcing; include it by name from any `src/core` unit; checked by `make test-casemap`.
+- `case_tables.inc` — GENERATED simple case map (`pcrec_case_upper_map[]`/`_lower_map[]`, `PCREC_CASE_*_MAX_GROWTH`) for substitution case forcing; include it by name (`src/gen/emit_subst.c` writes it into the support unit); checked by `make test-casemap`.
 - `cpset.c` — code-point interval set, cube, `pcrec_lit_run`, `A_WCLASS` accessors.
 - `varexp.c` — `${...}` expansion grammar parser.
 - `findings.c` / `findings.h` — findings seam (rate accessor, PICK/COMPARE/MASS, stamp, store); `findings_store.inc`, `findings_table.inc` generated and committed.

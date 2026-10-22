@@ -133,8 +133,10 @@ UNSET.
 before a byte that starts no reference; an unterminated or malformed `${...}`;
 a group number above 65535 (`PCREC_MAX_TEMPLATE_GROUP`) or a group name longer
 than 128 bytes; `$*MARK` and `${*MARK}` (no pcrec artifact reports a mark
-name); without module `subst-extended`, every form of §2¶7; and under `-e
-utf8`, a template that is not well-formed UTF-8. The diagnostic's wording is
+name); without module `subst-extended`, the conditional forms of §2¶8; with
+it, the operators §2¶8 refuses, conditionals nested past 10 levels (§2¶9),
+an open `\Q` in conditional text (§2¶9), the escapes of §2¶11 and §2¶12; and
+under `-e utf8`, a template that is not well-formed UTF-8. The diagnostic's wording is
 not part of the contract.
 
 <a id="s2-p5"></a>[2¶5] **Encoding.** A template is read in `-e`'s encoding (§5¶1), as
@@ -158,12 +160,11 @@ by the map (§3¶4), never by the template compiler.
 subst-extended` (§5¶1). It changes the meaning of a backslash, which then
 introduces an escape (§2¶10), and it adds the conditional forms and case
 forcing. Every rule of §2 not changed below still holds. What each form
-renders is libpcre2 10.46's answer (D26: exact). **This pcrec does not build
-the module:** `--features subst-extended` is refused, and so is every form of
-§2¶8-¶14a, as requiring module `subst-extended` (§2¶4). §2¶8-¶14a, §4¶8 and
-§4¶22's case region, and the case mapping of §10¶1 are the module's contract
-for the pcrec that builds it; until then no record has
-`RX_SUBST_USES_SCRATCH`, and every record's `support` is NULL.
+renders is libpcre2 10.46's answer (D26: exact). Without the module, every
+form of §2¶8-¶13 that starts with `$` is refused as requiring module
+`subst-extended` (§2¶4), and a backslash is an ordinary byte (§2¶1). Only a
+template with case forcing has `RX_SUBST_USES_SCRATCH` (§4¶22), and only a
+`utf8` one of those has `support` set (§10¶3).
 
 <a id="s2-p8"></a>[2¶8] **The conditional forms**, where `n` is a group number or name:
 
@@ -177,32 +178,36 @@ for the pcrec that builds it; until then no record has
 <a id="s2-p9"></a>[2¶9] **Conditional text** is itself a template: references,
 `${!name}`, nested conditionals, escapes and case forcing all work inside it
 (`${1:-${2:-z}}`; `${1:+<$1>:${2:+<$2>:none}}`). The text ends at the first
-`}` that is not escaped and does not close a nested `${`. In `:+` text, the
+`}` that is not escaped and does not close a nested `${`; a `{` alone opens
+nothing (`${1:-{x}}` renders `{x` then a literal `}` when group 1 is set). In `:+` text, the
 first unescaped `:` separates `set` from `unset`. In `:-` text, a `:` is
 ordinary (`${1:-a:b}` renders `a:b`). `\:` and `\}` are a literal `:` and
 `}`. A `\Q...\E` inside the text protects `}` and `:` too: `${1:-\Qa}b\E}`
 renders `a}b` when group 1 is unset, and `${1:+a\Q:\Eb:c}` renders `a:b`
 when it is set. A `\Q` left open inside the text is refused at compile
 (libpcre2 gives −58). A reference inside the text that is unset follows
-§4¶23.
+§4¶23. Conditionals nest at most 10 deep (`PCREC_MAX_TEMPLATE_NESTING`,
+libpcre2's own ceiling); an eleventh level is refused at compile.
 
 <a id="s2-p10"></a>[2¶10] **Escapes** under `subst-extended`. Each one is constant bytes, and
 so part of a literal piece:
 
 | escape | renders |
 |---|---|
-| `\a` `\e` `\f` `\n` `\r` `\t` | BEL, ESC, FF, LF, CR, TAB |
+| `\a` `\b` `\e` `\f` `\n` `\r` `\t` `\v` | BEL, BS, ESC, FF, LF, CR, TAB, VT |
 | `\0`, `\0d`, `\0dd` (`\0` and up to two more octal digits) | that byte (`\012` is LF, `\01` is 0x01; `\08` is NUL then `8`) |
-| `\o{ddd}` | that octal value |
-| `\xhh` (up to two hex digits), `\x{h..}` | that value; above 0xFF only under `-e utf8`, written as its UTF-8 |
+| `\o{ddd}` | that octal value; spaces and tabs may surround the digits |
+| `\xhh` (up to two hex digits), `\x{h..}` | that value; above 0xFF only under `-e utf8`, written as its UTF-8 (`\xe9` is the two bytes of `é` there, one byte under `byte`); in braces, spaces and tabs may surround the digits |
 | `\N{U+h..}` | that code point, under `-e utf8` only |
-| `\cX` | the control character of `X` |
+| `\cX` | the control character of `X`, a printable ASCII byte, after a lower-case letter is upper-cased: `X` xor 0x40 (`\ca` is 0x01, `\c?` is 0x7F) |
 | `\` + any other non-alphanumeric byte | that byte (`\$`, `\\`, `\:`, `\}`) |
 | `\Q ... \E` | the bytes between, taken literally (`\Qa$1\E` is `a$1`; outside conditional text an unterminated `\Q` runs to the end; inside it, §2¶9) |
 | `\E` with no open `\Q` | nothing, and it ends case forcing (§2¶13) |
 
 <a id="s2-p11"></a>[2¶11] An escape not in the table (a letter such as `\q`, or a `\` at the end) is
-refused at compile.
+refused at compile, and so is a malformed one: an empty or unclosed brace, a
+digit out of its base, a value above the encoding's range or a surrogate, a
+bare `\x`, `\o` or `\N`, and `\c` before anything but a printable ASCII byte.
 
 <a id="s2-p12"></a>[2¶12] **`\1` to `\9`**, a single digit with no digit after it, are
 group references, the same as `$1` to `$9`, on a pattern of any group count
@@ -276,8 +281,9 @@ only ASCII letters change.
 <a id="s2-p14a"></a>[2¶14a] **Ill-formed UTF-8 under case forcing.** The iterator walks
 ill-formed subjects (§9 row 11), so a case region can copy ill-formed bytes.
 Each byte that does not begin a well-formed character is copied unchanged,
-and counts one byte in the sizing pass (§4¶22). The well-formed characters
-around it map as usual. libpcre2 10.46 has no usable answer here (§9 row
+and counts one byte in the sizing pass (§4¶22). It is one character to the
+case state of §2¶13: it consumes a pending one-shot. The well-formed
+characters around it map as usual. libpcre2 10.46 has no usable answer here (§9 row
 19), so these cells are pcrec's own and stay out of the differential.
 
 <a id="s3"></a>
@@ -632,8 +638,8 @@ produces pieces, not bytes.
 for byte (a template with quotes, `$` or a newline then needs no shell
 escaping). Give exactly one of the two. Neither combines with `--pattern`, a
 file operand or a query. `-e` is the template's encoding (§2¶5, default
-`byte`). `--features subst-extended` will select §2¶7's module; this pcrec
-does not build it, so `--features` is refused with `--subst`. Every other
+`byte`). `--features subst-extended` selects §2¶7's module; `--features`
+naming anything else is refused with `--subst`. Every other
 option is a pattern compile's and is REFUSED with `--subst`, never ignored:
 `-i`, `--no-captures`, `--engine=`, `--emit-main`, `--trace` and the rest.
 Unset handling is a flag of the call (§4¶23), not an option. `-p` follows
@@ -924,8 +930,8 @@ joined by the recipes of §6¶1, to libpcre2's. The differences:
 
 <a id="s10-p1"></a>[10¶1] **The support unit** holds the larger functions that every template,
 and every rx, shares: `pcrec_subst_map_names` (§3¶13), `rx_group_run`
-(§3¶17), `rx_subst_flatten` (§10¶4), `rx_subst_replace_all` (§10¶6), and the
-UTF-8 case mapping used by case regions (§2¶14). No subst artifact defines any of them. The check and the
+(§3¶17), `rx_subst_flatten` (§10¶4), `rx_subst_replace_all` (§10¶6), and
+`rx_subst_case_utf8`, the UTF-8 case mapping used by case regions (§2¶14). No subst artifact defines any of them. The check and the
 context setup are NOT here: they are `static inline` in the shared types block
 (§3¶8, §7¶3). So a program links one support unit only when it calls a
 helper, flatten or replace-all, or uses a `utf8` template with case forcing
