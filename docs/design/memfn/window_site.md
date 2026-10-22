@@ -1,4 +1,4 @@
-# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.1)
+# window_site — the UNIFIED WINDOW SITE: spans with a required core, one row family (design, rev 3.2)
 
 Rev 3: lane uwin3, 2026-10-22 (rev 2 + the kit branch). DESIGN ONLY: no source or test edit, no make,
 no timing. Applies the panel `docs/dev/reviews/2026-10-22-r1-memfn-window-site-rev2.md` and job 581's
@@ -6,6 +6,9 @@ reading (`docs/dev/lanes/r27b_report.md` RESULT). Every code claim was re-read; 
 than the panel, the code wins (`[code]`). Marks: `[rev3 <id>]`, `bB*` build, `dD*` dir, `rR*` rit.
 The step rev 2 called "S3 = B1" is **S3** here (not finding bB1). Appendix B places every finding.
 Rev 3.1 (uwin3, 2026-10-22): the verification critic's V1-V7 text fixes, each re-read in the code; marks `[rev3.1 V<n>]`.
+Rev 3.2 (2026-10-22): main's agreement notes 1-7 (S3 bar names every slower cell, match included; both layers
+reported; R-on-PARKED as a soundness fact + the RE-SEED bit; the reply owns the run pin; tie obligations; one
+tie table + one reply-to-stamp table; sabotage ids); marks `[rev3.2 n<k>]`.
 
 ---
 
@@ -39,7 +42,8 @@ E FRAME. Floor: `generic`. Every rule is keyed on a stated fact, never on a labe
 
 **Staging (§5):** S1+S2 land as ONE branch of six commits `[rev3 seq]`, zero movers, one `MF_SITE_ABI`
 event at the last commit. **S3**: REPORT routed by default, D-hors with it; the one byte-moving step,
-judged on the scalar layer against the default build, with two named, capped losses `[rev3 S3]`.
+judged on the scalar layer against the default build (SIMD-on reported beside it), with EVERY slower cell
+named and capped, all-hex dense bulk input's ~1.53x loss among them `[rev3 S3, rev3.2 n1-n2]`.
 
 ---
 
@@ -67,10 +71,16 @@ the proof declines on pcrec's side (trigger to grow it: a longer lookaround as c
 truncates a long run to its stated stretch (`pcrec_find_run_window_start`) before stating it (§9).
 
 **Producer obligations** (asserted where pcrec builds the site): a verify-NO core is a SUBSET of the
-positions where absence truly fails; each alternative is sound alone under its entry, except that R stated on a PARKED alternative is sound only under C-pin's re-seed, so ONLY C-pin may read R there (no other row, D-hors included) `[rev3.1 W1]`; each walked offset
-is its OWN one-position span `[rev3 bB4]`; the pinned run R (verify NO) is stated in the RESEED alternative,
-and in the PARKED one ONLY where today's `nsel == 0` pin holds as a producer fact (`pf_run_applies_common`:
-pinned scan member at offset 0, `DFA_PF_ONE_BYTE`, k0 = {R's byte there} = F0): R's offsets count from the
+positions where absence truly fails; each alternative is sound alone under its entry; **R on a PARKED
+alternative holds only if the matcher is re-seeded at the candidate** (a soundness FACT; the kit's rows
+enforce it internally, §2, and the reply says whether its plan re-seeds, §3.5) `[rev3.1 W1, rev3.2 n3]`; each
+walked offset is its OWN one-position span `[rev3 bB4]`, and walked spans are LISTED in walk-index
+(ascending offset) order, which prefix_k's ties and exchange sort read (§2.1 TIE) `[rev3.2 n5]`; the run R
+states its positions as facts (exact = one-member set, cube = two), never a pinned member or stretch
+(§2.3 C-pin) `[rev3.2 n4]`; the pinned run R (verify NO) is stated in the RESEED alternative,
+and in the PARKED one ONLY where an EXACT position of R lies at offset 0 with `DFA_PF_ONE_BYTE` and
+k0 = {its byte} = F0 (today's `nsel == 0` pin clause in `pf_run_applies_common`, minus the member choice,
+which is the reply's: C-pin fires only when the reply's member is that position, as today) `[rev3.2 n4]`: R's offsets count from the
 match start, a parked candidate need not be one (`\b\.ab`: k0 = word bytes, R=`.ab` @0, meet empty)
 `[rev3.1 V1]`; R is not stated where its NEXT rows are denied (§2.4) `[rev3.1 V2]`; a whole-item SATISFIES item wider than one byte is declined. Exactness is not a fact
 (R-26.7 dissolves: a SUPERSET item is sent only as verify NO, never readable as a proof).
@@ -139,21 +149,26 @@ moves bytes, a basis; every cost row reads ONE cost table (§3.3). The family em
 | row | holds when | the choice | basis |
 |---|---|---|---|
 | A-parked | the alternative's entry is PARKED | stop = its verify-YES position (k0 at offset 0): the parked scan may skip only bytes that keep the machine parked | role A (prefix_k's comment); today's |
-| A-model | the alternative's entry is RESEED | over its one-member positions at offset != 0 (the model's DOMAIN: the scan moves, as a singleton; MEASURED, §3.2), the least `model_cost` with C-model's plan; ties to the LOWER offset | prefix_k verbatim (§3.2) |
-| A-mass | no entry fact (REPORT, pre-check parts, VM seek, MLINE) | over the core positions, the least mass; ties by the TIE COLUMN below | 580/581 (REPORT); `pcrec_find_run_rank` (parts) |
+| A-model | the alternative's entry is RESEED | over its one-member positions at offset != 0 (the model's DOMAIN: the scan moves, as a singleton; MEASURED, §3.2), the least `model_cost` with C-model's plan; ties per the TIE table | prefix_k verbatim (§3.2) |
+| A-mass | no entry fact (REPORT, pre-check parts, VM seek, MLINE) | over the core positions, the least mass; ties per the TIE table | 580/581 (REPORT); `pcrec_find_run_rank` (parts) |
 | MARGIN | two alternatives stated | a RESEED alternative wins only at less than HALF the least-cost PARKED one: `best * 2 < base` (prefix_k: `best * MATERIAL_NUM >= base * MATERIAL_DEN` rejects) | §4.5's argument; ipv4's 1.5-1.6x inside the error bars |
 | (none) | no core position | the floor row | — |
 
 `base` is the PARKED alternative's cost with an EMPTY plan, `model_cost(k0 one member ? C_MEMCHR :
 C_BITMAP, mass(k0), 0, 1000000)`: prefix_k prices the parked scan by k0's count, not by B's form.
 
-**The TIE COLUMN**, keyed on the position's kind (zero movers needs both; replaces rev 2's single rule
-and dir D5's contingency `[rev3 bB2]`):
+**THE TIE TABLE**, the ONE place every tie rule of the family and of pcrec's statement lives; every other
+section cites it (zero movers needs each; replaces rev 2's single rule, dir D5's contingency and rev 3.1's
+three scattered rules `[rev3 bB2, rev3.2 n6]`):
 
-| position kind | tie | code | basis |
+| where the tie arises | tie goes to | code it reproduces | basis |
 |---|---|---|---|
-| inside a stated run stretch (one-member or cube positions, C-run's grouping) | HIGHER offset | `pcrec_find_run_rank` (stable insertion over `[n-1..0]`), finder P3 "ties to the higher pattern order" | today's; on REPORT literal stretches UNMEASURED DEFAULT |
-| a set position | LOWER offset | prefix_k's strict `<` over ascending offsets | MEASURED on REPORT: job 581's PRR (rightmost) loses 1.23-1.57x on year4, 1.03-1.40x on hex8 `[rev3 581]` |
+| A-mass, a position inside a stated run stretch (one-member or cube positions, C-run's grouping), incl. the run MEMBER C-pin and `@idx` read (§2.3, §3.4) | HIGHER offset | `pcrec_find_run_scan_index`/`pcrec_find_run_rank` (candidates `[n-1..0]`), `pcrec_run_pin` (exact positions listed highest first); finder P3 | today's; on REPORT literal stretches UNMEASURED DEFAULT |
+| A-mass, a set position | LOWER offset | strict `<` over ascending offsets | MEASURED on REPORT: 581's PRR (rightmost) loses 1.23-1.57x on year4, 1.03-1.40x on hex8 `[rev3 581]` |
+| A-model, among stop offsets of equal cost | LOWER offset | prefix_k's strict `cost < best` over `si` in walk-index order | today's; reproduces only under §1.1's walk-index listing obligation `[rev3.2 n5]` |
+| C-model, verify-NO offsets of equal mass | prefix_k's exchange-sort order (unstable, declared as the algorithm, §3.2) | prefix_k's `order[]` over walk-index order | today's; same obligation |
+| MARGIN, `best * 2 == base` | PARKED | prefix_k's `>=` rejects | today's |
+| the truncation window (pcrec's, a limit of the statement, §9) | LEFTMOST window start | `pcrec_find_run_window_start`'s strict `<` | today's |
 
 ### 2.2 Table B — how the stop is found
 
@@ -183,7 +198,7 @@ from it, a trace build asserts rendered = plan. The text shape is the E rows'.
 | 2 select | C-yes | every verify-YES position (on a RESEED alternative: F0 at offset 0, always) |
 |  | C-model | on a RESEED alternative: plus prefix_k's greedy pick among verify-NO walked offsets (§3.2, exact) |
 |  | C-none | otherwise no verify-NO position (PARKED alternatives, REPORT, parts) |
-| 3 pin | C-pin | `[rev3 bB1]` R becomes ONE compare (its selected offsets dropped) when R is stated (length >= 2), the stop IS R's scan member (the run position the mass rule picks; on a PARKED alternative k0 is that one byte), and the plan does not already test all of R. `[code]` narrower than the panel's "a stop inside the stretch": `pf_run_applies_common` requires EQUALITY with the scan member |
+| 3 pin | C-pin | `[rev3 bB1]` R becomes ONE compare (its selected offsets dropped) when R is stated (length >= 2), the stop IS R's MEMBER (the reply's: A-mass over R's exact positions, TIE table; on a PARKED alternative k0 is that one byte), and the plan does not already test all of R. The stretch is the maximal run of exact positions around the member. `[code]` narrower than the panel's "a stop inside the stretch": `pf_run_applies_common` requires EQUALITY with the scan member |
 | 4 drop | C-stop | minus the stop's own position when B's set equals it, except inside a pinned stretch (C-pin keeps it whole) |
 | 5 group | C-run | a maximal stretch of consecutive one-member or cube positions inside ONE stated span is one run compare; never across one-position spans, whose positions stay SEPARATE terms, including a position C-meet merged with any one-position span `[rev3.1 W2]` (`ofs_test_model`, one term per selected offset) unless C-pin made the stretch whole `[rev3 bB4, rev3.1 V3]` |
 | 6 test | C-table / C-own | an offered table (pcrec's name), else the kit's own `set_test` |
@@ -191,6 +206,11 @@ from it, a trace build asserts rendered = plan. The text shape is the E rows'.
 
 `[code]` C-pin is a PLAN row after the choice, not a third alternative: today's `run-pinned` with
 `nsel == 0` is PARKED + C-pin, rendered by the re-seeding emitter with no margin; MARGIN ignores C-pin.
+
+**The reply is the ONE owner of the pinned run member and its stretch `[rev3.2 n4]`.** pcrec states R's
+positions and offsets (§1.1); the reply names member and stretch; `@idx` and the run-pinned NEXT rows read
+it (§3.4). `pcrec_run_pin`'s SELECTION (`kset.c`: PICK over the exact positions, highest first, the
+stretch around it, the walk offset spelling it) retires at commit 6; readers in §4.
 
 ### 2.4 How pcrec's NEXT rows read the reply `[rev3 bB1]`
 
@@ -200,9 +220,9 @@ order reaches them only when `nsel == 0`. After S2 the same rows, order and deni
 
 | row | today | reads instead |
 |---|---|---|
-| `run-pinned[-bounded]` | pin + identity + clause 4 | the reply's plan carries C-pin |
-| `offset-set[-bounded]` | `nsel > 0` | the reply chose the RESEED alternative |
-| rows 5-13 | `nsel == 0` by order | unchanged (the reply chose PARKED with no C-pin) |
+| `run-pinned[-bounded]` | pin + identity + clause 4 | the reply's plan carries C-pin AND its RE-SEED bit is set (§3.5) `[rev3.2 n3]` |
+| `offset-set[-bounded]` | `nsel > 0` | the reply chose the RESEED alternative (RE-SEED set) |
+| rows 5-13 | `nsel == 0` by order | unchanged (the reply chose PARKED, RE-SEED clear) |
 
 `-fno-offset-skip` keeps its identity: denied, pcrec states only the PARKED alternative (and the
 run-pinned pair's deny bits remove C-pin's row from pcrec's NEXT, as today).
@@ -220,8 +240,9 @@ A-model never read R, so the RESEED alternative's choice is unchanged under `PCR
 
 `HORS_MIN` (§3.3) is PROVISIONAL: fit on 8 cells with ONE winner (hex8, stop mass 284,434 ppm; the next
 densest 74,760 ppm), at the gap's geometric middle. Physically: with no rare stop to skip to, skip by the
-window's end (the stop span's core). Its FIRST NEW POPULATION (S1's count, §5.2) is its re-test trigger:
-read (G1, scalar) before the row is called measured.
+window's end (the stop span's core). It is re-read at S3 at BOTH layers (G1, scalar
+and SIMD-on, §6) and on any new population (S1's count, §5.2, is the first) before the row is called
+measured `[rev3.2 n2]`.
 
 D-hors moves bytes: it lands at S3 with its own deny, never at S2. D-shift stays out: 581 fits its rule,
 but HRS serves hex8 and SHF's wins elsewhere are marginal.
@@ -306,10 +327,20 @@ Re-measuring any is a byte-moving kit event (integration.md §21.3): own deny, p
 
 ### 3.4 The stamps read the phase-1 reply
 
-`<PREFIX>_DFA_PREFILTER_OFFSETS` and `<PREFIX>_DFA_PREFILTER`'s `offset-set` value are written from the
-reply (chosen alternative, stop, plan), never from a pcrec-side recomputation; phase 1 makes the reply
-exist before the stamp line. Spec hunks in S2: `match_api.md §6.3.1¶5a`, `tuning.md §2.14¶3` and
-`§2.30¶2`. Their VALUES must not move at S2.
+Every stamp that reports a family choice is written from the reply, never from a pcrec-side
+recomputation; phase 1 makes the reply exist before the stamp line. **THE REPLY-TO-STAMP TABLE**, the one
+declared map (a row per stamp value; a stamp not listed reads no reply) `[rev3.2 n6]`:
+
+| stamp (value) | reply field it reads | site |
+|---|---|---|
+| `<PREFIX>_DFA_PREFILTER` `offset-set[-bounded]` | ALTERNATIVE = RESEED (RE-SEED set) | the PF site |
+| `<PREFIX>_DFA_PREFILTER` `run-pinned[-bounded]` | PLAN carries C-pin, RE-SEED set | the PF site |
+| `<PREFIX>_DFA_PREFILTER_OFFSETS` | STOP offset (the `*`) and the PLAN's tested offsets, C-asc order; under C-pin every offset of the pinned stretch | the PF site, when either row above holds; else `"none"` |
+| `<PREFIX>_REQ_RUN`'s `@idx` | RUN MEMBER (R's position the reply names, TIE table HIGHER) `[rev3.2 n4]` | the site stating R (the PF site's R, or the pre-check's run part: one rule over one statement, so they agree; a trace build asserts it) |
+
+Spec hunks at commit 6: `match_api.md §6.3.1¶5a`, `tuning.md §2.14¶3`, `§2.30¶2`, `findings.md` §4's `@idx`
+and pin rows. Their VALUES must not move at S2.
+`[code]` `ReqRun.idx` (`pcrec_find_run_scan_index`, `req.c`) has readers outside the stamp; §9 asks.
 
 **The `_FINDINGS` consulted line and the UNDERIVABLE/BROKEN diagnostics `[rev3 bB5]`** are raised by the
 first ask of `pcrec_find_byte_rate` (findings.c), today made by askers that retire (prefix_k, the run
@@ -323,6 +354,11 @@ row), NOT keyed on ENTRY: a RESEED choice re-seeds, and so does PARKED + C-pin (
 `run-pinned`, rendered by `pf_emit_ofs`). PARKED without C-pin does not `[rev3 dD1]`.
 Making it unconditional (integration.md §R4.3.5's M5′ item) would mean stating every alternative as
 RESEED: a byte-moving pcrec event, filed if anyone wants it (D77).
+
+**The RE-SEED bit `[rev3.2 n3]`.** The phase-1 reply carries RE-SEED: whether the kit's plan needs the
+matcher re-seeded at each candidate (set on a RESEED choice and on any plan reading R on a PARKED
+alternative, the soundness fact of §1.1). pcrec's run-pinned and offset-set NEXT keys read the bit
+(§2.4); RE-SEED set reaching a non-re-seeding row is a loud refusal. The request names no kit row.
 
 ---
 
@@ -344,6 +380,7 @@ listed per row `[rev3 rR1]`.
 | RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2 | finder.c, kit.h, compose.c, `memfn/src/CLAUDE.md`, `tests/memfn/{rows.tsv,row_floors.tsv,arm_fixtures.c,run_proof.sh,finder_check.py,run_rows.sh,proof_check.c}` |
 | `plan_hint`, `plan_pos`, `rank_n/pos/ppm`, `MF_RANK_MAX` | `memfn.h`, compose.c, formhash.c, ofsskip.c, precheck.c, vrun.c, `memfn/tests/{run_g2_simd.py,g2/*}`, `known.c`, `memfn_sites.c`, `emit_dfa.c` (`ofs_pred_of`, `ofs_pred_rank`), `tests/memfn/{run_rank.sh,rank_check.py,proven_check.c,arm_fixtures.c,proof_check.c}` |
 | pcrec's selection (`pcrec_prefix_ksets`' pick; the walk `kset_walk` STAYS, it is a fact) | `src/opt/prefix_k.c`, `src/core/internal.h`, `emit_dfa.c` (`ofsk`, the NEXT predicates §2.4, `ofs_test_model`), `tests/codegen/{run_offset_skip.sh,run_form_census.sh}` |
+| `pcrec_run_pin`'s selection (commit 6, §2.3) `[rev3.2 n4]` | `src/facts/{kset.c,facts_derive.h,facts.c,facts.def}` (`PF_RUN_PIN`, the `run_pin` text `o`/`o:at+len`), `emit_dfa.c` (`us_run_pin`; `pf_run_applies_common`, `ofs_test_model`, `ofs_test_verifies_run`), `prefix_k.c` (comment); `--emit-facts` makes it caller-visible: `facts_listing.md §4.1.2¶7`, `tuning.md §2.30¶4`, `§2.39¶4`, `findings.md` §4; tests naming it: `tests/rxtsource`, `tests/litscan/{reqcube.rxt,gen_reqcube.py}`, `tests/endmark/b3_*.tsv`, `tests/axes/start_landing_movers.tsv`, mech S280, S285, S306 |
 | ofsskip/pffind as arms | compose.c `arms[]`, precheck.c, `tests/memfn/rows.tsv`, finder.c's arm map |
 | `mf_preview("R-26.6")` | stays until S3; then retires with RPT: `memfn_sites.c`, `src/core/internal.h` |
 
@@ -367,17 +404,17 @@ spans. Every commit builds and passes `make test`.
 |---|---|---|
 | 1 | the kit family under `mf_preview("window-family")` (tables, cost table, plan object, guard, decision ask); G2 generates span sites | kit lane |
 | 2 | pcrec states spans, alternatives with entry, and the byte-rate BESIDE the old fields; the family never reads old fields | pcrec lane |
-| 3 | a trace shadow comparing the family's decision with today's pick per site: a LOCALIZER for commit 5's diffs, never the acceptance | pcrec lane |
+| 3 | a trace shadow comparing the family's decision with today's pick per site, over the emit_sweep corpus AND G2's GENERATED span sites `[rev3.2 n5]`: a LOCALIZER for commit 5's diffs, never the acceptance | pcrec lane |
 | 4 | the two-phase ask under the lever; NEXT predicates read the reply (§2.4) | pcrec lane + kit lane |
 | 5 | the lever's default flips. THE witness: emit_sweep against pre-S2 main on every arm, plus the reach floors | manager reads |
-| 6 | delete the old path and old fields; stamps read the reply; spec hunks; the `MF_SITE_ABI` number (and `MF_CLASS_V` for the reply) at this commit, "next at landing" | both lanes |
+| 6 | delete the old path and old fields (`pcrec_run_pin`'s selection included); stamps read the reply (§3.4's table); spec hunks; the `MF_SITE_ABI` number (and `MF_CLASS_V` for the reply) at this commit, "next at landing" | both lanes |
 
 ### 5.2 The steps
 
 | | S1+S2 (commits 1-6) | S3 (one commit, kit + pcrec) |
 |---|---|---|
 | content | the family; pcrec's builders (PF, MLINE both callers, VM hat, OFS, pre-check FUNC parts, Z2's cover site) state facts only; §4's rows retire; the stamps and the consulted line as §3.4 | REPORT routed by default (the cover site renders the family's E-stmt text); D-hors enters the default table |
-| witness | G2 (generated spans vs the scalar byte loop); `proof_run` (sentinels); emit_sweep byte-identical to pre-S2 main on every arm (default, each deny, `--engine=vm`, both SIMD layers), stamps included; `tests/findings/manifests/*_movers.txt` unchanged `[rev3 rR5]`; reach floors; `REACH_ONLY=1` re-aim | the 650 harness at the SCALAR layer, §6's bar; the answer gate; G1 on every non-REPORT site D-hors moves (emit_sweep's diff names them) |
+| witness | G2 (generated spans vs the scalar byte loop); `proof_run` (sentinels); emit_sweep byte-identical to pre-S2 main on every arm (default, each deny, `--engine=vm`, both SIMD layers), stamps included; `tests/findings/manifests/*_movers.txt` unchanged `[rev3 rR5]`; reach floors; `REACH_ONLY=1` re-aim | the 650 harness at the SCALAR layer (§6's bar) and the SIMD-on layer (reported, §6); the answer gate; G1 on every non-REPORT site D-hors moves (emit_sweep's diff names them) |
 | abi | ONE `MF_SITE_ABI` event (+ `MF_CLASS_V`), at commit 6; NO pcrec abi event | pcrec abi bump (readers by grep, D76/D94) in the same commit |
 | spec | `match_api.md §6.3.1¶5a`, `tuning.md §2.14¶3`, `§2.30¶2`; `registry.md §6¶8a` (`vrun-kb`'s source); `findings.md` §4's reader table: the k-set selection and the run's scan member become the kit's readers, tie orders as declared `[rev3 rR5]` | `registry.md §6¶8a` (two new rows), `§6¶8b` floor 12 → 14; the cover stamps where caller-visible |
 | deny | none new; the `--list-axes` memfn rows and floor (12) do NOT move `[rev3 rR4]` | TWO kit DENY rows (SCALAR, `options.def`): the routed REPORT row and D-hors, names the kit's; each its change's alpha OFF arm; `test-axes` sweeps them via `--list-axes` `[rev3 rR4]` |
@@ -412,25 +449,43 @@ Z2's cover rows are S1130-S1141, S1144, S1148 and S1149. There is no S1257-S1290
 
 ---
 
-## 6. S3's acceptance, and hex8 `[rev3 S3, dD3, 581]`
+## 6. S3's acceptance, and hex8 `[rev3 S3, dD3, 581, rev3.2 n1-n2]`
 
 The kit manager's ruling (panel §2; Frank on hex8: "make the judgement call ... we need this regardless
-of where hex lands"), in substance:
-- **Scalar layer only**; the SIMD verdict is pcrec-bench's (D144 add. 4). Rev 2's "both layers" was wrong.
-- **The floor** is job 580/581's per-cell floor(PRO) column.
-- **The user-facing comparison is DEF** (the default build). COV (today's unrouted, never-shipped REPORT
-  form) is a design-quality check, not a regression bar.
-- **Two named, measured losses, each capped at its measured ratio plus the floor:** hex8-bounded
-  throughput/dense (an all-hex subject; every form loses to DEF: HRS 1.531, PRO 1.412, SHF 1.378, COV
-  1.322; HRS routes hex8 for its 2-6x wins elsewhere: 0.458, 0.490, 0.523, 0.173 against DEF), and
-  file-ext-order search_short/none (PRO/DEF 1.033 against a 0.020 floor; one bounded effort, PRF, read
-  worse at 1.094; accepted).
-- **cat-bounded search_short/dense is not a user regression:** PRO/DEF 0.402; it reads 1.18 only vs COV.
+of where hex lands"), as main agreed it:
+- **Layers.** The go/no-go bar is read on the SCALAR layer, the default (`-fmemfn-simd` is OFF). The
+  SIMD-on layer is ALSO measured and reported in the same reading (memfn/CLAUDE.md's G1 at both layers),
+  each cell against SIMD-on DEF; a SIMD-on loss is a finding for the SIMD thread, not an S3 blocker. The
+  official SIMD verdict stays pcrec-bench's (D144 add. 4). D-hors's PROVISIONAL `HORS_MIN` is re-read here
+  at both layers, and on any new population (§2.5). Rev 3.1's "scalar layer only" is corrected.
+- **The floor** is 581's per-cell floor(PRO) (581 supersedes 580; 580's table, `r27_report.md` §5, has no
+  other cell). **The comparison is DEF**; COV is a design check (cat-bounded search_short/dense: PRO/DEF
+  0.404, 1.18 only vs COV). **Routed form:** D-hors fires on hex8 alone (284,434 ppm; next 74,760): HRS
+  there, PRO elsewhere.
 
-S3's go: zero answer changes; every other `real`/`none`/`dense` throughput and search_short cell not
-slower than DEF beyond its floor(PRO); the two named cells within their caps; G1 green on D-hors's
-non-REPORT movers. This rewords main's R-27.1 bar ("`dense` not slower than COV"); main is asked (§9).
-In family terms, 581's PRO = A-mass + B + C-yes + D-one + E-stmt and HRS = PRO with D-hors.
+**EVERY cell where the routed form is slower than DEF beyond its floor**, all regimes (`match`
+included), from the 581 table; each is capped at its measured ratio plus its floor:
+
+| cell | routed form | 581 ratio / DEF | floor | cap | reason |
+|---|---|---|---|---|---|
+| hex8-bounded throughput/dense | HRS | 1.531 | 0.020 | 1.551 | an all-hex subject has no rare stop; every form loses (PRO 1.412, SHF 1.378, COV 1.322); HRS routes hex8 for its 2-6x wins (throughput real 0.458, none 0.490; search_short real 0.523, none 0.173) |
+| hex8-bounded search_short/dense | HRS | 1.139 | 0.020 | 1.159 | the same subject; PRO 1.132, COV 1.184 |
+| file-ext-order search_short/none | PRO | 1.033 | 0.020 | 1.053 | literal `.` stop on a no-hit short subject; one bounded effort (PRF, the FUNC twin) read worse at 1.094; accepted (one-pass rule) |
+| file-ext-order match/real | PRO | 1.039 | 0.020 | 1.059 | `match` regime (T9), reproduced from 580 (1.043); cause not diagnosed; accepted under the same one-pass rule |
+| file-ext-order match/none | PRO | 1.065 | 0.020 | 1.085 | the same (580: 1.057) |
+
+Cells reading S inside their floor (foobar throughput/none PRO 1.011, hex8 match/real HRS 1.011) are not
+named; the bar holds them at the floor like every other cell.
+
+**Users WILL see about 1.53x slower on all-hex dense bulk input**, because D-hors routes hex8 to HRS. This
+is accepted for the 2-6x wins on real and no-hit text (Frank: "we need this regardless of where hex
+lands"; the kit's judgement call), and it is stated in the S2 request (Appendix A).
+
+S3's go: zero answer changes; on the scalar layer every `real`/`none`/`dense` cell of every regime
+(throughput, search_short, match) not slower than DEF beyond its floor(PRO), the five named cells within
+their caps; G1 green on D-hors's non-REPORT movers; the SIMD-on reading reported. This rewords main's R-27.1
+bar ("`dense` not slower than COV"); main AGREED (rev 3.2). In family terms, 581's PRO = A-mass + B + C-yes
++ D-one + E-stmt and HRS = PRO with D-hors.
 
 ---
 
@@ -447,7 +502,7 @@ as its control).
 ## 8. The three standing questions (`docs/design/CLAUDE.md`)
 
 1. **Measurement regime: RELEVANT at S3 and D-hors only.** S1+S2 move no default byte (emit_sweep reads
-   them). S3: R-27.1's regime (650 harness, three regimes x three classes, SCALAR, Linux, pinned, 581's
+   them). S3: R-27.1's regime (650 harness, three regimes x three classes, SCALAR for the bar and SIMD-on reported, Linux, pinned, 581's
    absolute columns and A/A pair) against DEF. The cost constants are Zen 1 (ubuntubudu), HORS_MIN Zen 4
    (dev box); another box could move the margin's or HORS_MIN's verdict, each its own event.
 2. **Independent control: RELEVANT.** Answers: `proof_run` (sentinels), 581's python `re` differential,
@@ -463,19 +518,20 @@ as its control).
 ## 9. Questions
 
 Ruled: Q1-Q5 (r2: one offset; the kit's rules; no REPORT label; hex8 the kit's, applied §6; `end_back` a
-core position); 581 settles the LEFTMOST tie on set positions and the STMT frame for REPORT.
+core position); 581 settles the LEFTMOST tie on set positions and the STMT frame for REPORT. Main AGREED
+rev 3.1's three leanings (rev 3.2) `[rev3.2 n1, n4]`:
+- **The S3 bar** (§6): DEF the user-facing comparison, every slower cell named and capped, `match` included.
+- **`<PREFIX>_REQ_RUN`'s `@idx`** reads the reply (§3.4's table), at commit 6 with the `findings.md` hunk;
+  the reply is the ONE owner of the pinned member and its stretch, `pcrec_run_pin`'s selection retires (§2.3).
+- **The run truncation window** (`pcrec_find_run_window_start`, ties LEFTMOST, TIE table) stays pcrec's at
+  S2, a limit of the statement like the proof range; revisit when a span longer than
+  `PCREC_MAX_REQ_RUN_EMIT` is stated.
 
-**OPEN, for main:**
-- **The S3 bar wording** (§6): DEF as the user-facing comparison and the two capped losses, which rewords
-  R-27.1's "dense not slower than COV". Leaning: agree (the panel's ruling).
-- **`<PREFIX>_REQ_RUN`'s `@idx`** ("which position of the run the scan tests", `findings.md` §4): after S2
-  the kit picks it by the same mass rule. Read the reply, as OFFSETS does, or stay pcrec's rarity fact?
-  Its value cannot move at S2. Leaning: read the reply, in commit 6, with the findings.md hunk.
-- **The run truncation window** (`pcrec_find_run_window_start`, least mass, ties leftmost) and **C-pin's
-  scan member** (`pcrec_run_pin`: `pcrec_find_pick` over the run's exact positions listed highest index
-  first, so ties go HIGHER, the run-stretch tie rule; the stretch is the maximal exact run around it)
-  `[rev3.1 V5]` are frequency-based choices inside pcrec shaping R. Leaning: pcrec's at S2, a limit of the statement like
-  the proof range; revisit when a span longer than `PCREC_MAX_REQ_RUN_EMIT` is stated.
+**OPEN, for main `[rev3.2 n4]`:** `ReqRun.idx` (pcrec's scan index, the same rule as the reply's member)
+has readers beyond `@idx`: `<PREFIX>_REQ_BYTE` (`pcrec_req_pick`), the truncation window, the
+`[OPT-REQPOS]` comment, `req_set_leads_own`, the pick shadow. Zero movers at S2, but two choosers of one
+value. Leaning: where a family site states R they read the reply (commit 6); the truncation window, and
+artifacts where no site states R, keep pcrec's index as a fact of the statement.
 
 **OPEN, for S1 to measure:** the two counts (§5.2). **Filed:** UL1-UL4 (panel §3); PRF's reading on
 native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC losing on a native site).
@@ -505,9 +561,11 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 > | frequencies | the analysis object's byte-rate and the measure set, as already passed on `mf_art_begin` |
 >
 > **Producer obligations pcrec asserts:** a verify-NO core is a subset of the positions where absence
-> truly fails; each alternative is sound alone under its entry, except that R stated on a PARKED alternative is sound only under C-pin's re-seed, so ONLY C-pin may read R there (no other row, D-hors included) `[rev3.1 W1]`; each walked offset is its own
-> one-position span; the pinned run R (verify NO) is stated in the RESEED alternative, and in the
-> PARKED one only where the pinned scan member is at offset 0, the filter is one byte and k0 = F0 =
+> truly fails; each alternative is sound alone under its entry; R on a PARKED alternative holds only if
+> the matcher is re-seeded at the candidate; each walked offset is its own one-position span, the walked
+> spans listed in walk-index (ascending offset) order; the run R is stated as its positions (exact or
+> cube) and offsets, never a chosen member or stretch; the pinned run R (verify NO) is stated in the RESEED alternative, and in the
+> PARKED one only where an exact position of R is at offset 0, the filter is one byte and k0 = F0 =
 > {R's byte there} (a parked candidate is otherwise not a match start). Under the deny bits
 > `PCREC_NO_OFFSET_SKIP` or `PCREC_NO_RUN_PREFILTER`, pcrec does not state R at all.
 >
@@ -516,9 +574,11 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 > `end_back`, per-term `need`, `consumer` and REPORT's kind meaning.
 >
 > **What pcrec needs back:** (phase 1, no text) the chosen alternative, the stop (offset and set), the
-> positions the plan tests and whether the pinned run is compared whole; (phase 2) the C text in the
-> stated frame and the proof class as today. pcrec's NEXT rows and the `DFA_PREFILTER`/`_OFFSETS` stamps
-> read the phase-1 reply.
+> positions the plan tests, whether the pinned run is compared whole, the run's member and stretch where
+> R is stated, and a RE-SEED bit (whether the plan needs the matcher re-seeded at each candidate);
+> (phase 2) the C text in the stated frame and the proof class as today. pcrec's NEXT rows and the
+> `DFA_PREFILTER`, `_OFFSETS` and `REQ_RUN` `@idx` stamps read the phase-1 reply (window_site.md §3.4's
+> table); the reply is the only owner of the pinned run member and its stretch.
 >
 > **The kit retires `[rev3 rR7]`:** RPT, `kit_report_exact`, `SF_PROOF_EXACT`, `FF_PROOF`, D2, ofsskip
 > and pffind as arms (folded), and every reader of the fields above in ofsskip.c, precheck.c and vrun.c.
@@ -530,10 +590,13 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 >
 > **Not asked:** any method. How the kit picks, plans, finds or resumes is the kit's (D157).
 >
-> **Sequencing:** after B4′; S3 (REPORT routed, D-hors) follows as its own byte-moving event.
+> **Sequencing:** after B4′; S3 (REPORT routed, D-hors) follows as its own byte-moving event, judged on
+> the scalar layer against the default build with every slower cell named and capped (window_site.md §6),
+> the SIMD-on layer reported beside it. Users WILL see about 1.53x slower on all-hex dense bulk input
+> (D-hors routes hex8 to HRS), accepted for the 2-6x wins on real and no-hit text.
 >
-> **Sabotage ids:** kit-side S1400-S1429 (30 ids, reserved by this request; S1331-S1340 and S1386-S1393
-> are taken on main and in worktrees, R-28 names S1400 next free; main confirms at filing); pcrec-side
+> **Sabotage ids:** kit-side S1400-S1429 (30 ids, ALLOCATED by main to D172 S2; dd10 holds S1336-S1345,
+> S1386-S1393 are taken, R-28 holds S1430-S1439); pcrec-side
 > from main's ledger above the highest id on main and in worktrees at filing. The Z2 cover rows that exist are S1130-S1141, S1144,
 > S1148 and S1149; S1257-S1290 does not exist.
 
@@ -551,6 +614,11 @@ STMT frame §2.6; HRS §2.5, §3.3, §6.
 
 **The rev-3 verification critic (rev 3.1):** V1 §1.1, §1.2 PF row, Appendix A; V2 §1.1, §2.4,
 Appendix A; V3 §2.3 C-run; V4 §3.5; V5 §9; V6 §1.2 PF row; V7 Appendix A (range S1400-S1429).
+
+**Main's agreement notes (rev 3.2):** n1 §6 (every slower cell, `match` included; the 1.53x statement),
+Appendix A; n2 §6, §2.5, §5.2, §8; n3 §1.1, §2.4, §3.5 (RE-SEED bit), Appendix A; n4 §2.3, §3.4, §4, §5.1
+commit 6, §9, Appendix A; n5 §1.1, §2.1 TIE, §5.1 commit 3; n6 §2.1 TIE table, §3.4 reply-to-stamp table;
+n7 Appendix A.
 
 **The r2 panel (2026-10-21) and the kit manager's rulings, as they stand in rev 3:** P1 §5.1; P2
 superseded by kit-mgr 1 (§3); P3 §1.4; P4 §2.3; P5 §2.1 tie column, §2.2 (REGIME gone), §2.5 (D-shift
