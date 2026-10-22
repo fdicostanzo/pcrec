@@ -306,6 +306,13 @@ void pcrec_find_resolve(Ctx *cx, bool notes)
     RxtSource *owned = NULL;
     pcrec_error ferr = { 0 };
     int rc;
+    /* [K113] a compound part reads its walk's chain, never a second
+       resolution of the same options (a file or an -I stop could change
+       between); the walk printed the notes */
+    if (cx->emit_in && cx->emit_in->meas) {
+        cx->job->find.chain = *cx->emit_in->meas->chain;
+        return;
+    }
     if (o->analysis_source) {
         if (o->analysis_source_len > PCREC_MAX_FIND_BUNDLE_BYTES)
             pcrec_ctx_fail(cx, 0, "analysis_source: %zu bytes, over "
