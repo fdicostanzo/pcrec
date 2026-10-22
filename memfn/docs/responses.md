@@ -2851,3 +2851,30 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Timing job `580-kit-r27-cover` is queued and waits for a quiet box. Its result is pasted into the report's §5.
   - Sabotage ids for plants R27-a..f will be requested after the critic pass.
   - **Queue finding for [WATCH-IDLE]:** a quiet-gated job loses every handoff to a ready, non-gated job. 580 missed its turn when load was 3.8 as 613 ended, and 621 started instead.
+- notice: 2026-10-21 — **B4 RE-SCOPED under Frank's walk ruling (D169 addendum): the SHAPE, for main's agreement before any brief.** B4 was the routing commit whose content was R7's V1 default. That content is gone. What remains is the lockdown, plus deleting the rows the ruling made redundant. **No default byte move. No pcrec abi event expected** (one exception below).
+  - **The FIND table after B4′, first match:**
+    - D1, D1c, D1w, D2: routed today, unchanged.
+    - R3a/R3b/R4: B9, unchanged.
+    - R8/R2: B6, the SIMD layer, unchanged.
+    - **R7w is the default for every set FIND** (always → main's walk). Its basis moves from UNMEASURED-DEFAULT to **MEASURED**: E8's real-text verdict and `walk_vs_v1_record.md`.
+  - **Withdrawn (ids reserved; reasons in finder.c and the row-edit log):**
+    - **R7** (V1 on ≤ 2-term covers). Under the ruling it could fire only on a stated sparse/irregular regime, and no fact states one today. A row whose form is not ported and whose condition no compile reaches would be built ahead of need (D77). The record's §6 also refutes term count alone as the separator.
+    - **R5** (a stated REGULAR regime → WALK). Its pick is now the default, so the row only repeats R7w. Its deny `fd-r5` retires.
+    - **R0** (was already retiring at B4): `fd-r0` and S916 retire with it.
+  - **One trigger for all of them, a plan row I propose for main to file:** "a MEASURED or caller-stated landing regime exists at the call (a [FINDINGS] `landing-regime` kind, or a caller hint at [IFACE-PUSH])". When it fires, ONE regime-gated row (wide form when sparse/irregular) is designed against the then-current walk, with its own E8-style real-text acceptance. F2 (the VM hat at |S| = 1 → V1 at B5 with no density condition, Q-R17P-27) contradicts the ruling the same way. **Leaning: F2 joins this trigger and is not built at B5.** That needs Frank, via you: Q-R17P-27's YES predates the reversal.
+  - **What B4′ still lands:**
+    - every FIND/PRES `routed` bit = 1 and the bit deleted (LOCKDOWN, §1.6/§1.8); the trace-only shadow and the predicted-mover lever retire. The 1,766-mover manifest is superseded by an EMPTY expected-mover set;
+    - the `--list-axes` delta: `fd-r0` and `fd-r5` retire. This is a DECLARED registry delta, with the identity gate's registry stream re-pinned. That is a stream-5 move, not an artifact byte;
+    - PR-10's method-neutral PF comment, **only if** it moves no default byte. If it changes `-fcomments` text, that is the exception: one abi event, by the ritual. **Leaning: leave PR-10 for [IFACE-PUSH]** and keep B4′ abi-free.
+  - **What B4′ drops:**
+    - R7's V1 port (`terms.c` text, the W8 sub-block, `needs_const_subject`);
+    - the `drop-kit-bytes` size rung and its pcrec bit 55, which have no kit bytes to drop on a default compile;
+    - the `--emit-facts memfn` section (R-20); it rides [IFACE-PUSH] with the other listings unless you want it here;
+    - the M0 stamp (already landed at abi 82).
+  - **Gates:**
+    - E8 is DISCHARGED: its verdict IS the evidence;
+    - M0 is MET;
+    - D163 add. 8 is MET;
+    - the compound-part measure-set fix you ruled before B4 is no longer B4's gate, because B4′ reads no set. It stays your item on its own merits.
+  - **Validation when briefed:** emit_sweep on all arms with 0 movers; movers-by-ID against the empty manifest; the registry delta in both directions; mech on the retired and re-anchored rows; then make test at the same tip.
+  - **Why do it at all:** simplification. Three rows, two denies, one sabotage row and the routed-bit shadow machinery go, and the table states the ruling's default as a MEASURED row. Lane tier: sonnet. Asks for you: (1) agree the shape; (2) relay the F2 question to Frank; (3) file the trigger row.
