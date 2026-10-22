@@ -179,13 +179,15 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, arow *r)
             return;
         }
     } else if (a->entry == G2W_E_RESEED) {
-        /* F0: the first one-position YES span at 0; the walked: one-position
-           spans at offset != 0, in listed (walk-index) order */
+        /* F0: the first YES span starting at 0 (a D11 bound may ride it as a
+           second, full-set position); the walked: one-position spans at
+           offset != 0, in listed (walk-index) order */
         int f0 = -1, w[G2W_MAXSPAN], nw = 0, any1 = 0;
         for (int i = 0; i < a->nspan; i++) {
             const g2w_span *sp = &a->span[i];
+            if (sp->start == 0 && sp->verify == G2W_YES && f0 < 0) { f0 = i; continue; }
             if (sp->len != 1) continue;
-            if (sp->start == 0) { if (f0 < 0 && sp->verify == G2W_YES) f0 = i; continue; }
+            if (sp->start == 0) continue;
             w[nw++] = i;
             if (card(sp->set[0]) == 1 && sp->core_len) any1 = 1;
         }
@@ -238,7 +240,8 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, arow *r)
         int bk = 1 << 30;
         unsigned long long bm = 0;
         for (int off = G2W_LO; off < G2W_REACH; off++) {
-            if (!meet(a, off, 0, set, &core) || !core) continue;
+            /* a full-set position is no stop: the bound alone (wsc3 ruling 1) */
+            if (!meet(a, off, 0, set, &core) || !core || is_full(set)) continue;
             unsigned long long m = mass(rate, set, 0);
             int stretch = long_cover(a, off) && kind_of(set);
             if (bk == 1 << 30 || m < bm) { bk = off; bm = m; continue; }
@@ -294,20 +297,28 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
     d->stop = ra->stop;
     d->reseed = a->entry == G2W_E_RESEED;
     int R = run_of(a);
-    /* R's member: its exact positions' least PICK mass, ties to the higher */
+    /* R's member and stretch, by R's verify (the kit manager's wsc3 rulings
+       3-4): NO, the least PICK mass over its exact positions (ties to the
+       higher) and the exact run around it; YES, over all of R (cube mass)
+       and R whole */
     if (R >= 0) {
         const g2w_span *sp = &a->span[R];
+        int exact = sp->verify == G2W_NO;
         int bj = -1;
         unsigned long long bm = 0;
         for (int j = 0; j < sp->len; j++) {
-            if (card(sp->set[j]) != 1) continue;
+            if (exact && card(sp->set[j]) != 1) continue;
             unsigned long long m = mass(rate, sp->set[j], 0);
             if (bj < 0 || m <= bm) { bj = j; bm = m; }
         }
         if (bj >= 0) {
-            int lo = bj, hi = bj + 1;
-            while (lo > 0 && card(sp->set[lo - 1]) == 1) lo--;
-            while (hi < sp->len && card(sp->set[hi]) == 1) hi++;
+            int lo = 0, hi = sp->len;
+            if (exact) {
+                lo = bj;
+                hi = bj + 1;
+                while (lo > 0 && card(sp->set[lo - 1]) == 1) lo--;
+                while (hi < sp->len && card(sp->set[hi]) == 1) hi++;
+            }
             d->run_stated = 1;
             d->run_member = sp->start + bj;
             d->run_lo = sp->start + lo;
@@ -319,21 +330,39 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
            verify-NO span (it reads R) */
         for (int i = 0; i < a->nspan; i++)
             if (a->span[i].verify == G2W_NO && a->entry == G2W_E_PARKED) d->reseed = 1;
+        /* a position whose read meet is the full set tests nothing: the
+           bound alone (the kit manager's wsc3 ruling 1) */
+        int ro = a->entry == G2W_E_PARKED && !d->reseed;
         for (int off = G2W_LO; off < G2W_REACH; off++) {
-            cover c;
-            covers(a, off, &c);
-            if (c.n) plan_put(d, off);
+            uint8_t ms[32];
+            int mc;
+            if (meet(a, off, ro, ms, &mc) && !is_full(ms)) plan_put(d, off);
         }
     } else {
-        for (int off = G2W_LO; off < G2W_REACH; off++) if (any_yes(a, off)) plan_put(d, off);
+        /* every verify-YES position whose verify-YES meet is not the full set */
+        for (int off = G2W_LO; off < G2W_REACH; off++) {
+            uint8_t ys[32];
+            int yc;
+            if (any_yes(a, off) && meet(a, off, 1, ys, &yc) && !is_full(ys)) plan_put(d, off);
+        }
         if (!strcmp(ra->row, "reseed"))
             for (int i = 0; i < ra->npick; i++) plan_put(d, ra->pick[i]);
         if (d->run_stated && d->run_len >= 2 && d->stop == d->run_member) {
             const g2w_span *sp = &a->span[R];
+            /* missing: a position of R the plan does not test through
+               another span (a C-model pick, another YES span's set) */
             int missing = 0;
             for (int j = 0; j < sp->len; j++) {
-                int o = sp->start + j;
-                if (o != d->stop && !plan_has(d, o)) missing = 1;
+                int o = sp->start + j, other = 0;
+                if (o == d->stop) continue;
+                for (int i = 0; i < ra->npick; i++) other |= ra->pick[i] == o;
+                for (int k = 0; k < a->nspan; k++) {
+                    const g2w_span *q = &a->span[k];
+                    if (k != R && q->verify == G2W_YES && o >= q->start && o < q->start + q->len &&
+                        !is_full(q->set[o - q->start]))
+                        other = 1;
+                }
+                if (!other || !plan_has(d, o)) missing = 1;
             }
             if (missing) {
                 d->pinned = 1;
@@ -376,12 +405,23 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
         }
         d->plan_term[i] = join ? d->plan_term[i - 1] : term++;
     }
-    /* what the text tests: the plan and the stop, each as the plan may read it */
+    /* what the text tests: the plan and the stop, each as the plan may read
+       it, and THE BOUND: a verify-YES core position the plan does not test
+       (its verify-YES meet the full set) must still lie inside the subject */
     d->ntest = 0;
     for (int off = G2W_LO; off < G2W_REACH; off++) {
-        if (!plan_has(d, off) && !(d->has_stop && off == d->stop)) continue;
+        uint8_t ys[32];
+        int yc;
+        int tested = plan_has(d, off) || (d->has_stop && off == d->stop);
+        int bound = !tested && meet(a, off, 1, ys, &yc) && yc;
+        if (!tested && !bound) continue;
         int k = d->ntest++;
         d->toff[k] = off;
+        if (bound) {
+            memset(d->tset[k], 0xFF, 32);
+            d->tcore[k] = 1;
+            continue;
+        }
         meet(a, off, yes_only, d->tset[k], &d->tcore[k]);
         if (d->has_stop && off == d->stop) memcpy(d->stop_set, d->tset[k], 32);
     }
@@ -392,7 +432,6 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
         int yc;
         if (meet(a, off, 1, s, &yc) && yc) { d->hy_set = 1; d->hy = off; }
     }
-    (void)is_full;
 }
 
 /* ---- the answers --------------------------------------------------------------- */

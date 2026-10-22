@@ -1168,7 +1168,10 @@ static site_rec *rec_of(mf_art *art, uint32_t handle, const char *who)
  * an art previewing "window-family" the family decides and renders it from
  * them alone (`*s` becomes the plan translated into a legacy row's site, or
  * `*plan` the family floor's plan), and elsewhere it renders from its old
- * fields, which it must then state. 0, or -1 with *why. */
+ * fields, which it must then state (its `pred`, or a pre-check's `preds`).
+ * A pre-check's FUNC parts state their own (wsc3 ruling 3): checked the same
+ * way, and on the preview each part's plan replaces its terms (`*s` the
+ * translated copy). 0, or -1 with *why. */
 static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *def,
                         unsigned gphases, int quiet, const mf_site **s,
                         const struct wf_plan **plan, const char **path, const char **why)
@@ -1176,11 +1179,14 @@ static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *
     const char *pid;
     *plan = NULL;
     if (path) *path = NULL;
-    if (!site->nalt && !site->alts && !site->wfloor) return 0;
     int on = wf_active(art);
+    if ((*why = wf_parts_check(site))) return -1;
+    if (on && wf_has_parts(site) && wf_parts_prepare(art, site, def, quiet, s, why))
+        return -1;
+    if (!site->nalt && !site->alts && !site->wfloor) return 0;
     if ((*why = wf_check(site, on))) return -1;
     if (!on) {
-        if (!site->pred.nterm) {
+        if (!site->pred.nterm && !site->npred) {
             *why = "a site stating only window facts renders only on an art previewing "
                    "\"window-family\" (mf_preview): it states no old field";
             return -1;
@@ -1352,7 +1358,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         fprintf(stderr, "MFTRACE WPATH art=%u site=%u path=%s arm=%s fd=%s\n",
                 art->trace_id, h, wpath, row->id, rid ? rid : "-");
     /* D172 S2 commit 3: the trace shadow (the localizer), lever MF_WSHADOW */
-    if (ws->nalt && !wf_active(art)) wf_shadow(art, ws, def, gphases, h);
+    if ((ws->nalt || wf_has_parts(ws)) && !wf_active(art)) wf_shadow(art, ws, def, gphases, h);
 #endif
     /* R17-b' B3b: the presence links, by the routed PRES rows, and the
        rendered parts held to their layout (§1.6: a routed row's pick is what

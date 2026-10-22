@@ -784,6 +784,26 @@ int wf_active(const mf_art *art);
 int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
                unsigned gphases, int quiet, const mf_site **legacy,
                const struct wf_plan **plan, const char **path, const char **why);
+/* THE PARTS (the kit manager's wsc3 ruling 3: window facts PER PART). 1 iff
+ * some `preds[]` entry of `s` states window facts. */
+#define wf_has_parts     MF_NS(wf_has_parts)
+#define wf_part_site     MF_NS(wf_part_site)
+#define wf_parts_check   MF_NS(wf_parts_check)
+#define wf_parts_prepare MF_NS(wf_parts_prepare)
+int wf_has_parts(const mf_site *s);
+/* Fills `*out` with FUNC part `i` of pre-check site `s` as the FIND site the
+ * family decides: the offset-skip function's frame (FUNC/RETURN, miss `n`),
+ * the part's predicate, and its window facts as the site's. */
+void wf_part_site(const mf_site *s, unsigned i, mf_site *out);
+/* NULL iff every part's window statement is one the family describes in that
+ * frame (wf_check) and only FUNC parts of an ALL_PRESENT site state one. */
+const char *wf_parts_check(const mf_site *s);
+/* On a preview art: *out is a copy of `s` (the art's arena) whose stating
+ * parts carry the family's plan translated into today's part shape (E-func's
+ * legacy row); refused where a part's plan has no legacy translation. 0, or
+ * -1 with *why. */
+int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, int quiet,
+                     const mf_site **out, const char **why);
 /* (compose.c) 1 iff the composer's walk chooses a row for site `s`, asked
  * quietly: the window family's E-func/E-stmt predicate over its translation. */
 #define kit_legacy_serves MF_NS(kit_legacy_serves)
