@@ -10,7 +10,7 @@
 #                                     judged by the STAGED content (pre-commit)
 #
 # ROOT defaults to the repo root; the env var CLAUDEMD_ROOT overrides it (the
-# self-test's temp tree). Skipped by --all: worktrees/, build*/, third_party/,
+# self-test's temp tree). Skipped by --all: .git/ (linked worktrees keep scratch there), worktrees/, build*/, third_party/,
 # docs/dev/history/claude_md/ (the frozen 2026-10-21 de-bulk archive).
 # Exit 0 clean, 1 a file over its limit.
 set -u
@@ -42,7 +42,7 @@ case $mode in
     --all)
         while IFS= read -r f; do
             report "${f#./}" "$(wc -c < "$root/$f" | tr -d ' ')"
-        done < <(cd "$root" && find . \( -path ./worktrees -o -path './build*' -o -path ./third_party -o -path ./docs/dev/history/claude_md \) -prune \
+        done < <(cd "$root" && find . \( -path ./.git -o -path ./worktrees -o -path './build*' -o -path ./third_party -o -path ./docs/dev/history/claude_md \) -prune \
                     -o -name CLAUDE.md -type f -print | sort)
         ;;
     --staged)
