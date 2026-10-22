@@ -67,7 +67,7 @@ the proof declines on pcrec's side (trigger to grow it: a longer lookaround as c
 truncates a long run to its stated stretch (`pcrec_find_run_window_start`) before stating it (§9).
 
 **Producer obligations** (asserted where pcrec builds the site): a verify-NO core is a SUBSET of the
-positions where absence truly fails; each alternative is sound alone under its entry; each walked offset
+positions where absence truly fails; each alternative is sound alone under its entry, except that R stated on a PARKED alternative is sound only under C-pin's re-seed, so ONLY C-pin may read R there (no other row, D-hors included) `[rev3.1 W1]`; each walked offset
 is its OWN one-position span `[rev3 bB4]`; the pinned run R (verify NO) is stated in the RESEED alternative,
 and in the PARKED one ONLY where today's `nsel == 0` pin holds as a producer fact (`pf_run_applies_common`:
 pinned scan member at offset 0, `DFA_PF_ONE_BYTE`, k0 = {R's byte there} = F0): R's offsets count from the
@@ -185,7 +185,7 @@ from it, a trace build asserts rendered = plan. The text shape is the E rows'.
 |  | C-none | otherwise no verify-NO position (PARKED alternatives, REPORT, parts) |
 | 3 pin | C-pin | `[rev3 bB1]` R becomes ONE compare (its selected offsets dropped) when R is stated (length >= 2), the stop IS R's scan member (the run position the mass rule picks; on a PARKED alternative k0 is that one byte), and the plan does not already test all of R. `[code]` narrower than the panel's "a stop inside the stretch": `pf_run_applies_common` requires EQUALITY with the scan member |
 | 4 drop | C-stop | minus the stop's own position when B's set equals it, except inside a pinned stretch (C-pin keeps it whole) |
-| 5 group | C-run | a maximal stretch of consecutive one-member or cube positions inside ONE stated span is one run compare; never across one-position spans, whose positions stay SEPARATE terms (`ofs_test_model`, one term per selected offset) unless C-pin made the stretch whole `[rev3 bB4, rev3.1 V3]` |
+| 5 group | C-run | a maximal stretch of consecutive one-member or cube positions inside ONE stated span is one run compare; never across one-position spans, whose positions stay SEPARATE terms, including a position C-meet merged with any one-position span `[rev3.1 W2]` (`ofs_test_model`, one term per selected offset) unless C-pin made the stretch whole `[rev3 bB4, rev3.1 V3]` |
 | 6 test | C-table / C-own | an offered table (pcrec's name), else the kit's own `set_test` |
 | 7 order | C-asc | ascending offset (today's) |
 
@@ -505,7 +505,7 @@ native offset-skip FUNC sites (a byte move; trigger: a bench cell showing FUNC l
 > | frequencies | the analysis object's byte-rate and the measure set, as already passed on `mf_art_begin` |
 >
 > **Producer obligations pcrec asserts:** a verify-NO core is a subset of the positions where absence
-> truly fails; each alternative is sound alone under its entry; each walked offset is its own
+> truly fails; each alternative is sound alone under its entry, except that R stated on a PARKED alternative is sound only under C-pin's re-seed, so ONLY C-pin may read R there (no other row, D-hors included) `[rev3.1 W1]`; each walked offset is its own
 > one-position span; the pinned run R (verify NO) is stated in the RESEED alternative, and in the
 > PARKED one only where the pinned scan member is at offset 0, the filter is one byte and k0 = F0 =
 > {R's byte there} (a parked candidate is otherwise not a match start). Under the deny bits
