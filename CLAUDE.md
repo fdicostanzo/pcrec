@@ -162,7 +162,10 @@ tier, and PCRE2 is a moving target with no specification.
 ## Conventions
 
 - Every directory has a CLAUDE.md describing its purpose and files; update it
-  when files are added/removed or change roles.
+  when files are added/removed or change roles. CLAUDE.md is an ORIENTATION
+  guide (12 KB limit, 20 KB for this root, `scripts/check_claudemd_size.sh`):
+  history, lessons, rationale and session notes go in that directory's
+  NOTES.md (created on first need, not auto-injected), which CLAUDE.md points to.
 - Update the STATE tag in docs/dev/plan.md when starting/finishing a step; expand a
   milestone into substeps only when work on it begins.
 - New regex features are drop-in modules: parser hook + lowering + tests in
