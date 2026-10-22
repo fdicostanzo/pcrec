@@ -386,12 +386,13 @@ static void a_parked_choose(wf_x *x)
     m->priced = 1;
 }
 
-/* F0, the first one-position verify-YES span at offset 0, or -1. */
+/* F0, the first verify-YES span starting at offset 0 (its position 0 is F0;
+ * a D11 bound rides it as a core `{1: any}`, window_site.md §1.2's bounded
+ * PF row), or -1. */
 static int f0_of(const mf_walt *a)
 {
     for (unsigned i = 0; i < a->nspan; i++)
-        if (a->spans[i].len == 1 && a->spans[i].start == 0 &&
-            a->spans[i].verify == MF_VERIFY_YES)
+        if (a->spans[i].start == 0 && a->spans[i].verify == MF_VERIFY_YES)
             return (int)i;
     return -1;
 }
@@ -490,12 +491,17 @@ static int in_stretch(const wf_pos *p)
 
 /* A-mass: over the core positions, the least mass (PICK's cube mass), ties
  * per the TIE table (a stretch position to the higher offset, a set position
- * to the lower). */
+ * to the lower). A full-set position is no stop (C-bound: the bound alone). */
+static int mass_domain(const wf_pos *p)
+{
+    return p->present && p->core && !full(p->set);
+}
+
 static int a_mass_holds(const wf_x *x)
 {
     const wf_alt *m = &x->d->a[x->ai];
     for (unsigned k = 0; k < WF_NPOS; k++)
-        if (m->p[k].present && m->p[k].core) return 1;
+        if (mass_domain(&m->p[k])) return 1;
     return 0;
 }
 
@@ -506,7 +512,7 @@ static void a_mass_choose(wf_x *x)
     uint32_t bm = 0;
     for (unsigned k = 0; k < WF_NPOS; k++) {
         const wf_pos *p = &m->p[k];
-        if (!p->present || !p->core) continue;
+        if (!mass_domain(p)) continue;
         uint32_t ms = kit_set_sum(x->d->rate, p->set);
         int row = in_stretch(p) ? T_MASS_STRETCH : T_MASS_SET;
         if (bk < 0 || ms < bm ||
@@ -605,7 +611,7 @@ static const wf_arow wf_arows[] = {
     { a_mass_holds,   a_mass_choose,   &ct_a_mass,   "mass",
       "580/581 (REPORT); pcrec_find_run_rank (parts)" },
     { a_floor_holds,  a_none_choose,   &ct_a_floor,  "floor",
-      "no core position: the floor row" },
+      "no core position constraining a byte: the floor row" },
 };
 #define WF_NAROWS (sizeof wf_arows / sizeof wf_arows[0])
 
@@ -682,10 +688,11 @@ static const kit_table wf_mtable = { "wfM", WF_NMROWS, m_ct, NULL, NULL, m_holds
  *
  * Its rows in step order, each applied where it holds, over the chosen
  * alternative and its stop; the rows sharing a step hold exclusively (C-floor
- * or C-yes; C-model or C-none; C-table or C-own). Two rows are applied
+ * or C-yes; C-model or C-none; C-table or C-own). Three rows are applied
  * elsewhere and listed for the order: C-meet by `merge` (Table A reads the
- * meet) and C-table/C-own by `plan_of` (phase 2, where the hooks say whether
- * pcrec names its tables). */
+ * meet), C-bound inside C-floor and C-yes (the bound itself is `plan_of`'s)
+ * and C-table/C-own by `plan_of` (phase 2, where the hooks say whether pcrec
+ * names its tables). */
 
 /* 1 iff offset `off` is in the plan so far. */
 static int in_plan(const wf_dec *d, int32_t off)
@@ -707,19 +714,30 @@ static void plan_drop(wf_dec *d, int32_t off)
 
 static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
 
-/* R's MEMBER (the reply owns it, §2.3 [rev3.2 n4]): over R's EXACT positions
- * (its own set one member), the least mass, ties per the TIE table's stretch
- * row; and the stretch of exact positions around it. */
+/* R's MEMBER and STRETCH (the reply owns both, §2.3 [rev3.2 n4]), keyed on
+ * R's stated verify (wsc3 rulings 3-4):
+ *   verify NO   R is a filter the plan may skip in part (the DFA prefilter's
+ *               pinned run, stated as its walk-proven positions): the member
+ *               is the least-mass EXACT position (one member), ties per the
+ *               TIE table's stretch row, and the stretch the maximal run of
+ *               exact positions around it (today's run-pinned compare); no
+ *               exact position, no member;
+ *   verify YES  R must hold whole (a pre-check part's run): the member is
+ *               the least-mass position of all of R (PICK's cube mass, the
+ *               same tie: pcrec_find_run_scan_index's rule, the part's scan
+ *               and `@idx`), and the stretch R whole (a masked part is one
+ *               compare today). */
 static void run_member(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
     d->run_stated = m->run >= 0;
     if (!d->run_stated) return;
     const mf_wspan *r = &m->alt->spans[m->run];
+    int exact = r->verify == MF_VERIFY_NO;
     int bj = -1;
     uint32_t bm = 0;
     for (unsigned j = 0; j < r->len; j++) {
-        if (count(r->set[j]) != 1) continue;
+        if (exact && count(r->set[j]) != 1) continue;
         uint32_t ms = kit_set_sum(d->rate, r->set[j]);
         if (bj < 0 || ms < bm ||
             (ms == bm && tie_takes(T_MASS_STRETCH, r->start + (int32_t)j, r->start + bj))) {
@@ -731,9 +749,13 @@ static void run_member(wf_dec *d)
         d->run_stated = 0;
         return;
     }
-    unsigned lo = (unsigned)bj, hi = (unsigned)bj + 1;
-    while (lo > 0 && count(r->set[lo - 1]) == 1) lo--;
-    while (hi < r->len && count(r->set[hi]) == 1) hi++;
+    unsigned lo = 0, hi = r->len;
+    if (exact) {
+        lo = (unsigned)bj;
+        hi = (unsigned)bj + 1;
+        while (lo > 0 && count(r->set[lo - 1]) == 1) lo--;
+        while (hi < r->len && count(r->set[hi]) == 1) hi++;
+    }
     d->member = r->start + bj;
     d->run_lo = r->start + (int32_t)lo;
     d->run_len = (int)(hi - lo);
@@ -763,15 +785,17 @@ static void c_floor(wf_dec *d)
         if (m->alt->spans[i].verify == MF_VERIFY_NO && m->alt->entry == MF_ENTRY_PARKED)
             d->reseed = 1;
     for (unsigned k = 0; k < WF_NPOS; k++)
-        if (m->p[k].present) plan_add(d, (int32_t)k + WF_LO);
+        if (m->p[k].present && !full(rd_set(d, &m->p[k]))) plan_add(d, (int32_t)k + WF_LO);
 }
 
-/* C-yes: every verify-YES position (on a RESEED alternative, F0 at 0). */
+/* C-yes: every verify-YES position whose verify-YES meet constrains a byte
+ * (on a RESEED alternative, F0 at 0); C-bound keeps a full one out. */
 static void c_yes(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
     for (unsigned k = 0; k < WF_NPOS; k++)
-        if (m->p[k].present && m->p[k].yes) plan_add(d, (int32_t)k + WF_LO);
+        if (m->p[k].present && m->p[k].yes && !full(m->p[k].yset))
+            plan_add(d, (int32_t)k + WF_LO);
 }
 
 /* C-model: A-model's greedy picks (prefix_k's `sel[]`). */
@@ -783,9 +807,29 @@ static void c_model(wf_dec *d)
 
 static void c_none(wf_dec *d) { (void)d; }
 
+/* 1 iff the plan tests offset `o` through a span OTHER than R: a C-model
+ * pick, or another verify-YES span constraining a byte there (C-yes). */
+static int tested_elsewhere(const wf_dec *d, int32_t o)
+{
+    const wf_alt *m = chosen(d);
+    if (!in_plan(d, o)) return 0;
+    for (unsigned i = 0; i < m->npick; i++)
+        if (m->pick[i] == o) return 1;
+    for (unsigned i = 0; i < m->alt->nspan; i++) {
+        const mf_wspan *sp = &m->alt->spans[i];
+        if ((int)i == m->run || sp->verify != MF_VERIFY_YES || o < sp->start ||
+            o >= sp->start + sp->len)
+            continue;
+        if (!full(sp->set[o - sp->start])) return 1;
+    }
+    return 0;
+}
+
 /* C-pin: R becomes ONE compare where it is stated (two or more positions),
  * the stop IS its member, and the plan does not already test all of it
- * (`[code]`: pf_run_applies_common requires the member to EQUAL the scan).
+ * through the other spans (`[code]`: pf_run_applies_common requires the
+ * member to EQUAL the scan; its clause 4 asks whether the model's own
+ * selection tests the run, so R's own verify-YES positions do not count).
  * On a PARKED alternative the plan then reads R: it re-seeds. */
 static void c_pin(wf_dec *d)
 {
@@ -794,7 +838,8 @@ static void c_pin(wf_dec *d)
     const mf_wspan *r = &m->alt->spans[m->run];
     int all = 1;
     for (unsigned j = 0; j < r->len; j++)
-        if (r->start + (int32_t)j != m->stop && !in_plan(d, r->start + (int32_t)j)) all = 0;
+        if (r->start + (int32_t)j != m->stop && !tested_elsewhere(d, r->start + (int32_t)j))
+            all = 0;
     if (all) return;
     d->pinned = 1;
     if (m->alt->entry == MF_ENTRY_PARKED) d->reseed = 1;
@@ -868,12 +913,17 @@ static const struct {
     { 2, "C-floor", c_floor_holds, c_floor,
       "the floor row (no stop): every position of the chosen alternative's spans" },
     { 2, "C-yes",   c_stop_holds,  c_yes,   "every verify-YES position" },
+    { 2, "C-bound", c_always,      NULL,
+      "a FULL-SET position is never a plan test: its only role is the hoisted core bound "
+      "(`plan_of`; window_site.md F3, end_back a core position). Applied inside C-yes (over "
+      "the verify-YES meet) and C-floor (over the meet the plan reads)" },
     { 2, "C-model", c_model_holds, c_model,
       "on a RESEED alternative: plus prefix_k's greedy pick among the walked offsets" },
     { 2, "C-none",  c_none_holds,  c_none,  "otherwise no verify-NO position" },
     { 3, "C-pin",   c_stop_holds,  c_pin,
       "R becomes ONE compare when stated, the stop IS its member and the plan does not "
-      "already test all of it; the stretch is the maximal run of exact positions around it" },
+      "already test all of it through the other spans; the stretch is the exact run around "
+      "the member (verify NO) or R whole (verify YES; wsc3 rulings 3-4)" },
     { 4, "C-stop",  c_stop_holds,  c_stop,
       "minus the stop's own position, except inside a pinned stretch" },
     { 5, "C-run",   c_always,      c_run,
@@ -1056,10 +1106,17 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
         }
     }
     w->n = n;
+    /* THE BOUND also spans every verify-YES core position the plan does not
+       test (C-bound's full-set positions: a D11 `{1: any}` is the bound
+       alone), since every yielded candidate must hold it inside the subject */
     for (unsigned k = 0; k < WF_NPOS; k++) {
         const wf_pos *p = &m->p[k];
         int32_t o = (int32_t)k + WF_LO;
-        if (p->present && p->yes && p->ycore && o >= 0 && (!w->hy_set || o > w->hy)) {
+        if (!p->present || !p->yes || !p->ycore) continue;
+        if (!w->ncore || o < w->clo) w->clo = o;
+        if (!w->ncore || o > w->chi) w->chi = o;
+        w->ncore = 1;
+        if (o >= 0 && (!w->hy_set || o > w->hy)) {
             w->hy = o;
             w->hy_set = 1;
         }
@@ -1088,16 +1145,13 @@ typedef struct {
  * *eb its `end_back`. */
 static int legacy_ok(const wf_dec *d, const struct wf_plan *w, unsigned *eb)
 {
-    int32_t t = 0, hp = 0;
-    int terms = 0, fulls = 0, neg_only = 1;
+    int32_t t = 0, tlo = 0;
+    int terms = 0, neg_only = 1;
     for (unsigned i = 0; i < w->n; i++) {
         if (!w->core[i]) return 0;
-        if (full(w->set[i])) {
-            if (!fulls || w->off[i] > hp) hp = w->off[i];
-            fulls = 1;
-            continue;
-        }
+        if (full(w->set[i])) continue;      /* the stop's own set, the whole alphabet */
         if (!terms || w->off[i] > t) t = w->off[i];
+        if (!terms || w->off[i] < tlo) tlo = w->off[i];
         terms = 1;
         if (w->off[i] >= 0) neg_only = 0;
     }
@@ -1107,13 +1161,13 @@ static int legacy_ok(const wf_dec *d, const struct wf_plan *w, unsigned *eb)
     unsigned np = 0;
     for (unsigned i = 0; i < w->n; i++) np += !full(w->set[i]);
     if (np > MF_MAX_TERM) return 0;
+    /* the bound past the terms is the range's end (`end_back`), at 1 only;
+       inside the terms the core terms imply it; below them none expresses it */
     *eb = 0;
-    if (fulls) {
-        /* a full-set position is the range's end only: past every term, at 1 */
-        for (unsigned i = 0; i < w->n; i++)
-            if (full(w->set[i]) && w->off[i] <= t) return 0;
-        if (neg_only || hp > 1) return 0;
-        *eb = (unsigned)hp;
+    if (w->ncore && w->clo < tlo) return 0;
+    if (w->ncore && w->chi > t) {
+        if (neg_only || w->chi > 1) return 0;
+        *eb = (unsigned)w->chi;
     }
     /* the empty range: legacy reads-below `lo > n`, else `lo + eb >= n` */
     int legacy_rb = neg_only && !*eb;
@@ -1365,6 +1419,114 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     legacy_ok(d, w, &eb);
     translate(d, w, eb, L);
     *legacy = &L->site;
+    return 0;
+}
+
+/* ---- THE PARTS (window_site.md §1.2's pre-check row; the kit manager's wsc3
+ * ruling 3: window facts PER PART) ---------------------------------------------
+ *
+ * A pre-check (ALL_PRESENT) site's FUNC part is a candidate definition of its
+ * own: precheck.c renders it as the offset-skip function (FUNC/RETURN, miss
+ * `n`), so a part's window facts ride its `mf_pred` and the family decides
+ * each part as that FIND site (`wf_part_site`). On a preview art the part's
+ * plan, translated into today's part shape (one RUN term, the stop its scan:
+ * E-func's legacy translation), replaces the part's terms; the composite
+ * itself stays precheck's. */
+
+static int part_states(const mf_pred *p)
+{
+    return p->nalt || p->alts || p->wfloor;
+}
+
+int wf_has_parts(const mf_site *s)
+{
+    for (unsigned i = 0; s->preds && i < s->npred; i++)
+        if (part_states(&s->preds[i])) return 1;
+    return 0;
+}
+
+void wf_part_site(const mf_site *s, unsigned i, mf_site *out)
+{
+    const mf_pred *p = &s->preds[i];
+    memset(out, 0, sizeof *out);
+    out->abi = s->abi;
+    out->form = MF_FORM_FUNC;
+    out->op = MF_OP_FIND;
+    out->handoff = MF_H_RETURN;
+    out->empty = MF_EMPTY_MISS;
+    out->use = MF_USE_POSITION;
+    out->body = MF_BODY_ONESHOT;
+    out->consumer = MF_C_ENGINE;
+    out->site_kind = s->site_kind;
+    out->policy = s->policy;
+    out->denies = s->denies;
+    out->opts = s->opts;
+    out->ret_pred = MF_NO_PRED;
+    out->pred = *p;
+    out->pred.nalt = 0;
+    out->pred.alts = NULL;
+    out->pred.wfloor = 0;
+    out->nalt = p->nalt;
+    out->alts = p->alts;
+    out->wfloor = p->wfloor;
+}
+
+const char *wf_parts_check(const mf_site *s)
+{
+    if (part_states(&s->pred))
+        return "`pred` states a part's window facts (mf_pred's `nalt`/`alts`/`wfloor` are a "
+               "pre-check FUNC part's; a site states its own on mf_site)";
+    for (unsigned i = 0; s->preds && i < s->npred; i++) {
+        if (!part_states(&s->preds[i])) continue;
+        if (s->op != MF_OP_ALL_PRESENT || !s->preds[i].fn_ref)
+            return "a `preds[]` entry states window facts but is no FUNC part (`fn_ref`) of "
+                   "an ALL_PRESENT site";
+        mf_site ps;
+        wf_part_site(s, i, &ps);
+        const char *why = wf_check(&ps, 1);
+        if (why) return why;
+    }
+    return NULL;
+}
+
+int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, int quiet,
+                     const mf_site **out, const char **why)
+{
+    mf_site *t = art->a->alloc(art->a->u, sizeof *t);
+    mf_pred *np = art->a->alloc(art->a->u, s->npred * sizeof *np);
+    if (!t || !np) { *why = "out of memory"; return -1; }
+    *t = *s;
+    memcpy(np, s->preds, s->npred * sizeof *np);
+    t->preds = np;
+    /* the part's frame: precheck.c calls the offset-skip function, miss `n` */
+    mf_hooks hd = def ? *def : (mf_hooks){ 0 };
+    if (!hd.miss) hd.miss = MF_MISS_N;
+    for (unsigned i = 0; i < s->npred; i++) {
+        if (!part_states(&s->preds[i])) continue;
+        mf_site ps;
+        const mf_site *leg;
+        const struct wf_plan *plan;
+        const char *pid;
+        wf_part_site(s, i, &ps);
+        if (wf_prepare(art, &ps, &hd, MF_PH_DEFINE, quiet, &leg, &plan, &pid, why)) return -1;
+        if (!leg) {
+            *why = "a pre-check part's plan renders through no legacy row (the family's "
+                   "floor renders a whole site, never a part)";
+            return -1;
+        }
+        mf_pred *q = &np[i];
+        q->nterm = leg->pred.nterm;
+        memcpy(q->term, leg->pred.term, sizeof q->term);
+        q->plan_hint = leg->pred.plan_hint;
+        q->plan_pos = leg->pred.plan_pos;
+        q->rank_n = leg->pred.rank_n;
+        memcpy(q->rank_pos, leg->pred.rank_pos, sizeof q->rank_pos);
+        memcpy(q->rank_ppm, leg->pred.rank_ppm, sizeof q->rank_ppm);
+        q->nalt = 0;
+        q->alts = NULL;
+        q->wfloor = 0;
+    }
+    *out = t;
     return 0;
 }
 
@@ -1714,8 +1876,12 @@ const arm wf_floor_arm = {
  * window site defined on a NON-preview art prints one record comparing what
  * the family would decide and render with what today's old path does:
  *   MFTRACE WSHADOW art= site= reseed=O/F stop=O/F plan=O/F pin=O/F
- *                   group=O/F arm=O/F text=O/F alt= path=
- * O columns are read off the old fields the site still states (the scanned
+ *                   group=O/F arm=O/F text=O/F yields=O/F part= alt= path=
+ * and a pre-check's FUNC parts one record each (`part` its index, `-` on a
+ * site's own record; wsc3 ruling 3), decided as the part's FIND site, its
+ * text the composite's. `yields` is 0 where a side can yield no candidate
+ * (an empty REQUIRED set; the family's A-empty), for wshadow.py's declared
+ * equivalence (wsc3 ruling 2). O columns are read off the old fields the site still states (the scanned
  * term `plan_hint`/`plan_pos`, the terms' offsets: today's ofsk.sel/scan, a
  * FUNC frame being the offset-skip block, so the re-seeding forms), F off
  * the family's phase-1 decision (mf_wdecide's reply). `arm` and `text` are
@@ -1809,14 +1975,21 @@ static void wsh_add(kb *pl, kb *gr, int32_t o, int g)
 /* The old path's columns off the old fields: the scanned term (`plan_hint`,
  * `plan_pos` inside a run; MF_NO_PRED: a one-term site's term, else none,
  * stop -999) and every other tested offset, ascending, a run one compare
- * group. */
-static void wsh_old(const mf_site *s, int32_t *stop, kb *pl, kb *gr, int *pin, int *reseed)
+ * group; `*yields` 0 where a REQUIRED SET term is empty (no candidate can
+ * hold it), else 1. */
+static void wsh_old(const mf_site *s, int32_t *stop, kb *pl, kb *gr, int *pin, int *reseed,
+                    int *yields)
 {
     const mf_pred *p = &s->pred;
     int32_t off[MF_WPLAN_MAX];
     int grp[MF_WPLAN_MAX], n = 0, g = 0;
     *stop = -999;
     *pin = 0;
+    *yields = 1;
+    for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++)
+        if (p->term[i].kind == MF_T_SET && p->term[i].need == MF_REQUIRED &&
+            !count(p->term[i].set))
+            *yields = 0;
     *reseed = s->form == MF_FORM_FUNC && p->plan_hint != MF_NO_PRED;
     unsigned scan = p->plan_hint != MF_NO_PRED ? p->plan_hint : p->nterm == 1 ? 0u : MF_NO_PRED;
     if (scan < p->nterm) {
@@ -1842,36 +2015,71 @@ static void wsh_old(const mf_site *s, int32_t *stop, kb *pl, kb *gr, int *pin, i
     for (int i = 0; i < n; i++) wsh_add(pl, gr, off[i], grp[i]);
 }
 
+/* One record: window site `ws` (a site, or a part's FIND site where `part` >=
+ * 0) decided by the family against the old fields `ws` still states, with
+ * the two texts already rendered (`oh`/`oa`, `fh`/`fa`). A part re-seeds
+ * nothing (the pre-check's run search starts no machine), so its old
+ * `reseed` column is 0. */
+static void wsh_record(const mf_art *art, uint32_t h, int part, const mf_site *ws,
+                       const char *oh, const char *oa, const char *fh, const char *fa)
+{
+    wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
+    if (!d) return;
+    decide(art, ws, 1, d);
+    mf_wreply r;
+    reply_of(d, &r);
+    kb opl, ogr, fpl, fgr, pt;
+    kb_init(&opl, art->a); kb_init(&ogr, art->a);
+    kb_init(&fpl, art->a); kb_init(&fgr, art->a);
+    kb_init(&pt, art->a);
+    int32_t ostop;
+    int opin, ores, oyld;
+    wsh_old(ws, &ostop, &opl, &ogr, &opin, &ores, &oyld);
+    if (part >= 0) {
+        ores = 0;
+        kb_printf(&pt, "%d", part);
+    }
+    for (unsigned i = 0; i < r.nplan; i++) wsh_add(&fpl, &fgr, r.plan[i], r.plan_term[i]);
+    static const char *const entry[] = { "unstated", "none", "parked", "reseed" };
+    uint8_t e = ws->alts[r.alt].entry;
+    fprintf(stderr, "MFTRACE WSHADOW art=%u site=%u reseed=%d/%d stop=%d/%d plan=%s/%s "
+            "pin=%d/%d group=%s/%s arm=%s/%s text=%s/%s yields=%d/%d part=%s alt=%s path=%s\n",
+            art->trace_id, h, ores, r.reseed, (int)ostop, r.has_stop ? (int)r.stop : -999,
+            opl.len ? opl.p : "-", fpl.len ? fpl.p : "-", opin, r.pinned,
+            ogr.len ? ogr.p : "-", fgr.len ? fgr.p : "-", oa, fa, oh, fh, oyld,
+            strcmp(d->path, "empty") != 0, pt.len ? pt.p : "-",
+            e <= MF_ENTRY_RESEED ? entry[e] : "?", r.path);
+}
+
 void wf_shadow(const mf_art *art, const mf_site *s, const mf_hooks *def, unsigned gphases,
                uint32_t h)
 {
     if (!getenv("MF_WSHADOW") || !strcmp(art->prefix, WSH_PREFIX)) return;
-    wf_dec *d = art->a->alloc(art->a->u, sizeof *d);
-    if (!d) return;
-    decide(art, s, 1, d);
-    mf_wreply r;
-    reply_of(d, &r);
-    kb opl, ogr, fpl, fgr;
-    kb_init(&opl, art->a); kb_init(&ogr, art->a);
-    kb_init(&fpl, art->a); kb_init(&fgr, art->a);
-    int32_t ostop;
-    int opin, ores;
-    wsh_old(s, &ostop, &opl, &ogr, &opin, &ores);
-    for (unsigned i = 0; i < r.nplan; i++) wsh_add(&fpl, &fgr, r.plan[i], r.plan_term[i]);
     mf_site old = *s;               /* the old path alone: no window facts */
     old.nalt = 0;
     old.alts = NULL;
     old.wfloor = 0;
+    if (wf_has_parts(s)) {          /* nor any part's */
+        mf_pred *np = art->a->alloc(art->a->u, s->npred * sizeof *np);
+        if (!np) return;
+        memcpy(np, s->preds, s->npred * sizeof *np);
+        for (unsigned i = 0; i < s->npred; i++) {
+            np[i].nalt = 0;
+            np[i].alts = NULL;
+            np[i].wfloor = 0;
+        }
+        old.preds = np;
+    }
     char oh[17], fh[17], oa[48], fa[48];
     wsh_render(art, &old, def, gphases, 0, oh, oa);
     wsh_render(art, s, def, gphases, 1, fh, fa);
-    static const char *const entry[] = { "unstated", "none", "parked", "reseed" };
-    uint8_t e = s->alts[r.alt].entry;
-    fprintf(stderr, "MFTRACE WSHADOW art=%u site=%u reseed=%d/%d stop=%d/%d plan=%s/%s "
-            "pin=%d/%d group=%s/%s arm=%s/%s text=%s/%s alt=%s path=%s\n",
-            art->trace_id, h, ores, r.reseed, (int)ostop, r.has_stop ? (int)r.stop : -999,
-            opl.len ? opl.p : "-", fpl.len ? fpl.p : "-", opin, r.pinned,
-            ogr.len ? ogr.p : "-", fgr.len ? fgr.p : "-", oa, fa, oh, fh,
-            e <= MF_ENTRY_RESEED ? entry[e] : "?", r.path);
+    if (s->nalt) wsh_record(art, h, -1, s, oh, oa, fh, fa);
+    /* the parts: one record each, the composite's text on every one */
+    for (unsigned i = 0; s->preds && i < s->npred; i++) {
+        if (!s->preds[i].nalt) continue;
+        mf_site ps;
+        wf_part_site(s, i, &ps);
+        wsh_record(art, h, (int)i, &ps, oh, oa, fh, fa);
+    }
 }
 #endif

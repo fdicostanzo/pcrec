@@ -112,7 +112,7 @@ THE TRACE SHADOW (D172 S2 commit 3, the LOCALIZER; window.c `wf_shadow`):
 under the harness lever `MF_WSHADOW` (environment) a window site defined on
 an art that does NOT preview the family writes, after its old row is chosen:
 
-    MFTRACE WSHADOW art=A site=H reseed=O/F stop=O/F plan=O/F pin=O/F group=O/F arm=O/F text=O/F alt=E path=P
+    MFTRACE WSHADOW art=A site=H reseed=O/F stop=O/F plan=O/F pin=O/F group=O/F arm=O/F text=O/F yields=O/F part=K alt=E path=P
 
 each column the OLD path's value (read off the old fields: the scanned term
 `plan_hint`/`plan_pos`, the tested terms' offsets; a FUNC frame is the
@@ -121,8 +121,14 @@ offset-skip block, so `reseed` 1) then the FAMILY's (mf_wdecide's reply):
 order (`-` empty; group ids are each side's own, compared canonically);
 `arm` and `text` each side's row and normalized text hash
 (`mf_form_hash_text`), both rendered on a scratch art (prefix
-`mf_wshadow`, never shadowed itself); `alt` the chosen alternative's entry;
-`path` the family's path id. `memfn/tests/wshadow.py` counts mismatches by
+`mf_wshadow`, never shadowed itself); `yields` 0 where the side can yield
+no candidate (an empty REQUIRED set term; the family's `empty` path), the
+input of `wshadow.py`'s declared equivalence `never-yields` (wsc3 ruling 2);
+`part` `-` on a site's own record, else the index of the pre-check FUNC
+part the record decides (one record per part stating window facts, decided
+as that part's FIND site, `reseed` 0 on the old side, `arm`/`text` the
+composite's; wsc3 ruling 3); `alt` the chosen alternative's entry; `path` the
+family's path id. `memfn/tests/wshadow.py` counts mismatches by
 column over the corpus. A shared MODEL: a localizer, never acceptance.
 
 `grep 'MFTRACE END' | grep 'would_decline=1'` is the would-decline census:

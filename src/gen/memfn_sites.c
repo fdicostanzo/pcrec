@@ -529,8 +529,9 @@ void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask)
         if ((b & mask) == (byte & mask)) w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
 }
 
-void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
-                               mf_wfloor fl)
+/* Fails loudly where window statement `alts[0..n)` lies outside the kit's
+ * shape bounds: a statement past one is pcrec's defect, never truncated. */
+static void window_bounds_check(Ctx *cx, const mf_walt *alts, int n)
 {
     if (n < 1 || n > MF_WMAX_ALT)
         pcrec_ctx_fail(cx, 0, "internal error: a window site states %d alternatives "
@@ -550,9 +551,24 @@ void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
                                (unsigned)w->len, (int)w->start);
         }
     }
+}
+
+void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
+                               mf_wfloor fl)
+{
+    window_bounds_check(cx, alts, n);
     s->nalt = (uint8_t)n;
     s->alts = alts;
     s->wfloor = (uint8_t)fl;
+}
+
+void pcrec_memfn_part_window_stated(Ctx *cx, mf_pred *p, const mf_walt *alts, int n,
+                                    mf_wfloor fl)
+{
+    window_bounds_check(cx, alts, n);
+    p->nalt = (uint8_t)n;
+    p->alts = alts;
+    p->wfloor = (uint8_t)fl;
 }
 
 void pcrec_memfn_window_is_candidate(mf_pred *p)

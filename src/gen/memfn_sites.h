@@ -158,6 +158,11 @@ void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask);
  * past one is pcrec's defect, never truncated. */
 void pcrec_memfn_window_stated(Ctx *cx, mf_site *s, const mf_walt *alts, int n,
                                mf_wfloor fl);
+/* The same statement on a pre-check's FUNC part `p` (a `preds[]` entry), the
+ * part being one candidate definition of its own (the kit manager's wsc3
+ * ruling 3: window facts PER PART), with the same bound checks. */
+void pcrec_memfn_part_window_stated(Ctx *cx, mf_pred *p, const mf_walt *alts, int n,
+                                    mf_wfloor fl);
 
 /* States the window facts (W0-W2, MF_SITE_ABI 11; setfind.md §2.2) of a
  * forward FIND's predicate `p`, its terms already filled, whose window IS its

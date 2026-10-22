@@ -740,6 +740,20 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
      * form reads `consumable` */
     uint8_t  absent;
     uint8_t  consumable;
+    /* A PART'S WINDOW STATEMENT (D172, window_site.md rev 3.2 §1.2's
+     * pre-check row; the kit manager's wsc3 ruling 3: window facts PER PART;
+     * appended LAST, no MF_SITE_ABI number move before commit 6): on a
+     * `preds[]` entry that is a FUNC part (`fn_ref` nonzero) of an
+     * ALL_PRESENT site, the part's own alternatives and floor, read exactly
+     * as THE WINDOW SITE's `mf_site.nalt`/`alts`/`wfloor` are, the part
+     * being one FIND candidate definition (its frame the offset-skip
+     * function's: FUNC/RETURN, miss `n`). 0/NULL/0 on every other predicate
+     * (refused there: a site states its own on `mf_site`). Read only on an
+     * art previewing "window-family" (mf_preview); elsewhere checked as
+     * statements and not read */
+    uint8_t         nalt;
+    const mf_walt  *alts;
+    uint8_t         wfloor;
 } mf_pred;
 
 typedef struct {
@@ -1504,11 +1518,13 @@ int      mf_preview(mf_art *, const char *step);
  *               plan_term[i]: the compare position i belongs to (C-run,
  *               C-pin): equal values are ONE compare, in plan order
  *   pinned      1 iff C-pin fired: the run R is compared whole
- *   run_stated  1 iff the chosen alternative states R (its verify-NO span of
- *               two or more positions); then run_member is R's MEMBER (the
- *               offset of its least-mass exact position, ties to the higher
- *               offset), and [run_lo, run_lo + run_len) the stretch of exact
- *               positions around it. The reply is the ONE owner of both
+ *   run_stated  1 iff the chosen alternative states R (its span of two or
+ *               more positions, each one member or a cube); then run_member
+ *               is R's MEMBER and [run_lo, run_lo + run_len) its stretch: on
+ *               a verify-NO R the least-mass EXACT position (ties to the
+ *               higher offset) and the exact run around it; on a verify-YES
+ *               R the least-mass position of all of R (PICK's cube mass) and
+ *               R whole. The reply is the ONE owner of both
  *   path        the decision's path id: "parked", "reseed", "mass", "floor",
  *               "empty", each with "+pin" where C-pin fired
  * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */

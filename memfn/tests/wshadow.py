@@ -14,8 +14,11 @@ lever MF_WSHADOW=1, and reads the kit's `MFTRACE WSHADOW` records
 and the family's, for `reseed` (the RE-SEED bit against "the old site is
 the offset-skip block"), `stop`, `plan` (tested offsets, ascending), `pin`,
 `group` (the compare grouping), `arm` and `text` (each side rendered on a
-scratch art, normalized form hash). It prints the mismatch count per column
-and writes every mismatching record to OUT/mismatch_<column>.tsv.
+scratch art, normalized form hash). A pre-check's FUNC parts are one record
+each (`part`, the kit manager's wsc3 ruling 3). It prints the mismatch count
+per column and writes every mismatching record to OUT/mismatch_<column>.tsv;
+a difference a DECLARED EQUIVALENCE (EQUIV, below) covers is counted under
+its name instead.
 
 G2's GENERATED span sites carry no old fields, so they have no old path to
 shadow: their comparator is G2's own reference decision (g2_win_ref.c,
@@ -33,7 +36,12 @@ hooks), not the artifact's bytes.
 Heavy (thousands of compiles): run it under the box lock
 (`scripts/boxlock run --label wshadow -- python3 -I memfn/tests/wshadow.py`).
 
+--pattern P (repeatable) shadows the given patterns instead of the corpus:
+a witness run (S1411: R stated past the walk-proven stretch reads as plan
+and group mismatches on `xy.*xy(?i:z)`, docs/dev/lanes/wsc3_report.md).
+
 usage: wshadow.py [--tree DIR] [--out DIR] [--jobs N] [--every K] [--g2]
+                  [--pattern P ...]
 """
 import argparse
 import collections
@@ -45,6 +53,21 @@ import sys
 
 COLUMNS = ("reseed", "stop", "plan", "pin", "group", "arm", "text")
 REC = re.compile(r"^MFTRACE WSHADOW (.*)$")
+
+# THE DECLARED EQUIVALENCES: a record whose row holds compares the listed
+# columns SEMANTICALLY, as one decision both sides reach in two spellings, so
+# a difference there is no mismatch; it is counted under the row's name. Every
+# other column of that record is still compared literally (`text` never
+# appears here: the rendered text must be equal). One row per equivalence, its
+# reason beside it; a new spelling difference is a new row, never a special
+# case in the family.
+EQUIV = (
+    # (name, holds(record), columns, reason)
+    ("never-yields", lambda r: r.get("yields") == "0/0", ("stop", "plan", "group"),
+     "the old site scans an EMPTY set (stop 0, no candidate can hold it) and the "
+     "family's A-empty states no stop: both decide that no candidate is ever yielded "
+     "(the kit manager's wsc3 ruling 2: \\p{Cn}-shaped VM hats)"),
+)
 
 
 def build_traced(tree, out):
@@ -103,11 +126,15 @@ def main():
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--every", type=int, default=1)
     ap.add_argument("--g2", action="store_true")
+    ap.add_argument("--pattern", action="append", default=[])
     a = ap.parse_args()
     out = a.out or os.path.join(a.tree, "build", "wshadow")
     os.makedirs(out, exist_ok=True)
     exe = build_traced(a.tree, out)
-    pats = corpus(a.tree, exe)[:: max(1, a.every)]
+    if a.pattern:
+        pats = [("--pattern", None, p) for p in a.pattern]
+    else:
+        pats = corpus(a.tree, exe)[:: max(1, a.every)]
     if not pats:
         print("FAIL: the corpus enumeration is empty")
         return 1
@@ -116,8 +143,11 @@ def main():
     compiles = 0
     failed = 0
     mism = collections.Counter()
+    equiv = collections.Counter()
     rows = collections.defaultdict(list)
     paths = collections.Counter()
+    parts = 0
+    nparts = collections.Counter()      # pre-check sites by their stating parts
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         futs = {ex.submit(one, exe, p, e): (f, p, e) for (f, p, e) in tasks}
         for fu in concurrent.futures.as_completed(futs):
@@ -126,27 +156,41 @@ def main():
             compiles += 1
             if rc is None:
                 failed += 1
+            per = collections.Counter((r.get("art"), r.get("site")) for r in recs
+                                      if r.get("part", "-") != "-")
+            for k in per.values():
+                nparts[k] += 1
             for r in recs:
                 sites += 1
+                parts += r.get("part", "-") != "-"
                 paths[r.get("path", "?")] += 1
                 for c in COLUMNS:
                     o, _, n = r.get(c, "?/?").partition("/")
                     if c == "group":
                         o, n = canon_groups(o), canon_groups(n)
                     if o != n:
+                        why = next((e[0] for e in EQUIV if c in e[2] and e[1](r)), None)
+                        if why:
+                            equiv[why, c] += 1
+                            continue
                         mism[c] += 1
-                        rows[c].append((f, e or "default", p, r.get(c), r.get("alt"),
-                                        r.get("path")))
+                        rows[c].append((f, e or "default", p, r.get(c), r.get("part", "-"),
+                                        r.get("alt"), r.get("path")))
     for c in COLUMNS:
         with open(os.path.join(out, "mismatch_%s.tsv" % c), "w") as fh:
-            fh.write("file\tengine\tpattern\told/family\talt\tpath\n")
+            fh.write("file\tengine\tpattern\told/family\tpart\talt\tpath\n")
             for row in sorted(rows[c]):
                 fh.write("\t".join(str(x).encode("unicode_escape").decode() for x in row) + "\n")
-    print("wshadow: %d patterns, %d compiles (%d timed out), %d window sites shadowed"
-          % (len(pats), compiles, failed, sites))
+    print("wshadow: %d patterns, %d compiles (%d timed out), %d window sites shadowed "
+          "(%d of them pre-check parts)" % (len(pats), compiles, failed, sites, parts))
+    print("wshadow: pre-check sites stating parts, by parts: " +
+          (" ".join("%d=%d" % kv for kv in sorted(nparts.items())) or "none"))
     print("wshadow: family paths: " + " ".join("%s=%d" % kv for kv in sorted(paths.items())))
     for c in COLUMNS:
         print("wshadow: mismatches %-6s %d" % (c, mism[c]))
+    for name, _h, cols, _why in EQUIV:
+        print("wshadow: equivalent %s: %s" % (name, " ".join(
+            "%s=%d" % (c, equiv[name, c]) for c in cols)))
     print("wshadow: records per column in %s/mismatch_<column>.tsv" % out)
     if sites == 0:
         print("FAIL: no window site was shadowed (K35: an empty population)")
