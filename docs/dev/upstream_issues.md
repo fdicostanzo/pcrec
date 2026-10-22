@@ -957,3 +957,30 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   says `\G` "matches at the first matching position in the subject", and
   `pcre2api(3)` says `ANCHORED` limits matching "to matching at the first
   matching position".
+
+---
+
+## U22 — libpcre2 10.46: `pcre2_substitute` case forcing over ill-formed UTF-8 under `MATCH_INVALID_UTF` segfaults or reads past the substring (subst R4 panel r2, C1-2, 2026-10-22)
+
+- **Status**: suspected-bug (candidate upstream report to the PCRE2 project)
+- **Found**: 2026-10-22 by the subst R4 panel's critic C1 (ctypes probes);
+  re-run by lane substr4b on the Linux dev box against `libpcre2-8.so.0`
+  10.46, each case in its own process.
+- **Repro** (pattern compiled with `PCRE2_UTF | PCRE2_MATCH_INVALID_UTF`;
+  `pcre2_substitute` with `SUBSTITUTE_GLOBAL | SUBSTITUTE_OVERFLOW_LENGTH |
+  SUBSTITUTE_EXTENDED`, a 4096-byte output buffer):
+  - pattern `b`, replacement `\U$_`, subject `"ab\xffc"` → SIGSEGV (exit 139);
+  - pattern `b`, replacement `\U$'`, subject `"abc\xc3\xa0\xff"` → SIGSEGV;
+  - pattern `b`, replacement `\U$_`, subject `"abc\xc3"` (a truncated
+    character at the end) → rc 1, output `a` `ABC\xc3\x80` `c\xc3`: the case
+    pass read one byte past the end of `$_` and emitted `\xc3\x80`.
+- **Isolation**: the same subject with no case forcing (`[$_]` over
+  `"ab\xffc"`) renders `a[ab\xffc]\xffc` correctly, so the fault is in the
+  case-forcing pass, which decodes the inserted text as well-formed UTF-8
+  although `MATCH_INVALID_UTF` admitted an ill-formed subject.
+- **Impact on pcrec**: no oracle exists for these cells. pcrec's subst
+  module defines its own answer (ill-formed bytes copied unchanged and
+  counted one each in the scratch sizing pass; `docs/design/
+  subst_api_r4_draft.md` §2¶14a and §9 row 19), and these cells are kept
+  OUT of the libpcre2 differential driver, because they crash the reference
+  process.

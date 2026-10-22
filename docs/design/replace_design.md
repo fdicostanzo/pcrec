@@ -15,7 +15,9 @@ an optional reference map, pieces instead of bytes, no glue, module
 `subst-extended` designed in, one support unit). Read §R4 first; the §R3 and §R2
 passages it replaces carry an `[R4: ...]` marker. Its spec draft is
 `subst_api_r4_draft.md`, which replaces `docs/spec/subst_api.md` at build
-time.**
+time.** **REVISION 4a (lane substr4b, 2026-10-22): §R4.15 applies the R4
+light panel (`../dev/reviews/2026-10-22-r2-subst-r4-panel.md`, two critics);
+the §R4 passages it changed are edited in place.**
 
 ## REVISION 4 — the interface rework: an independent template, an optional map, pieces, one support unit (lane substr4, 2026-10-22) — READ THIS FIRST
 
@@ -151,22 +153,26 @@ typedef struct rx_subst_out   { rx_subst_piece *pc; size_t cap, n;
 #define RX_SUBST_STRICT  0x2u      /* unset group or variable: an error (default: blank) */
 #define RX_SUBST_NOGROUP (-1)      /* a map entry: "no group", always unset, never an error */
 
+/* + in the types block, static, one copy per translation unit (§R4.15, panel r2) */
+static int pcrec_subst_check(const struct rx_subst_info *t, const rx_subst_map *map,
+                             const struct rx_info *rx, unsigned flags, int *bad_ref);
+static int rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it, const struct rx_info *rx,
+                             const struct rx_subst_info *t, const rx_subst_map *map,
+                             rx_var *vres, unsigned flags, int *bad_ref);  /* runs the check */
+
 /* per template */
 int dmy_render(const rx_ctx *ctx, const rx_subst_map *map,      /* map NULL: identity */
-               const ptrdiff_t (*caps)[2], size_t k, unsigned flags, rx_subst_out *o);
+               ptrdiff_t (*caps)[2], size_t k, unsigned flags, rx_subst_out *o);
 
-/* the support unit (pcrec --emit-support), once per program */
-int    pcrec_subst_check(const struct rx_subst_info *t, const rx_subst_map *map,
-                         size_t ncaps, unsigned flags, int *bad_ref);
+/* the support unit (pcrec --emit-support): only for helper or case-forcing users */
 int    pcrec_subst_map_names(const struct rx_subst_info *t, const struct rx_info *rx,
                              unsigned opts, int *slot, size_t nslot,
                              rx_subst_run *run, size_t nrun,
-                             rx_subst_map *map, int *bad_ref);    /* helper (C) */
+                             rx_subst_map *map, int *bad_ref, size_t *nabsent);  /* helper (C) */
 int    rx_group_run(const struct rx_info *rx, const char *name, const char *ref, int *first);
-int    rx_subst_ctx_init(rx_ctx *ctx, const rx_iter *it, size_t ncaps,
-                         const struct rx_subst_info *t, rx_var *vres, unsigned flags);
 size_t rx_subst_flatten(const rx_subst_piece *pc, size_t n,
                         unsigned char *restrict out, size_t cap);
+extern const unsigned long long pcrec_support_id;               /* the unit's content id */
 /* + the UTF-8 case mapping the case regions call */
 ```
 
@@ -230,38 +236,60 @@ returns `MISSING_REF` naming the reference.
 
 ### R4.4 One validation
 
-**One function, `pcrec_subst_check`, in the support unit, validates any map,
-whatever its source** (draft §3¶8-¶12). It refuses:
+**[R4a: rewritten by panel r2, findings C2-2, C1-5 and C2-4, and open
+question 3 adopted (§R4.15).]**
 
-- a record of another abi;
+**One function, `pcrec_subst_check`, validates a template, a map and an rx
+together, whatever the map's source** (draft §3¶8-¶12). It is a `static`
+function in the subst types block, under its shared guard, so a translation
+unit holds one copy however many subst headers it includes. It refuses:
+
+- a record of another abi, or of another support unit's text (the content
+  id, §R4.14);
 - an unknown flag;
+- an rx of another encoding than the record's, when the record's is not -1
+  (C1-5: a `\U$1` template compiled under the default `-e byte` and used with
+  a utf8 rx rendered `STRAßE` silently where PCRE2 renders `STRAẞE`);
+- NO map on a composed rx (`ncaps > ngroups + 1`): the no-map form is for a
+  template and pattern written together, and on a composed rx `$k` above
+  `ngroups` would reach a delivered group by number (C2-4);
 - a map whose arrays are shorter than the reference list;
 - an entry that is neither `RX_SUBST_NOGROUP` nor a slot in `[0, ncaps)`;
 - a run that is empty or reaches past `nslot`;
 - with no map, a number `>= ncaps` or any name.
 
-It is `O(nrefs + nslot)` and never allocates. Helper (C) ends by calling it.
-**Every element call runs it first**, before writing anything (draft §4¶10).
+It reads `ncaps`, `ngroups` and `encoding` from the rx's record (C2-4: a
+bare `ncaps` was an unchecked caller constant). It is `O(nrefs + nslot)` and
+never allocates. Helper (C) ends by calling it.
 
-There are two designs:
+**It runs ONCE, at context setup** (`rx_subst_ctx_init`, now also `static`
+in the types block and taking the rx's record and the map). That makes a bad
+template, map or rx observable on a subject with NO match (C2-2: with the
+check inside the element, a zero-match find-all never called it, so whether
+an error showed depended on the data).
 
-- **R4's: check per call, no token.** No binding struct and no tag. A
-  hand-filled map can never reach the output unchecked, at a cost of one pass
-  over the references per call: a few compares per 64-match batch, and per
-  match in a k = 1 loop. The cost is UNMEASURED.
-- **The alternative: a "checked" token**, written by the check and read by the
-  element, would save that pass. It also brings back a mandatory setup object,
-  and ruling 1's "optional table" reads as no such object.
+**What the per-render check becomes: a memory-safety re-assert** (draft
+§4¶10). Per call the element tests, in `O(1)`, the flag bits, the vars, the
+scratch pointer and the map's two lengths; the run walk, which reads every
+slot it uses anyway, adds one range compare per slot read. Nothing a valid
+setup admits can fail it; it fires only on a context filled by hand without
+the check, or a map changed after it, and then it is a `MISMATCH`, never an
+out-of-bounds read. The full-check pass per call (R4's "check per call, no
+token") is gone, and with it R4's unmeasured per-match cost in a k = 1 loop.
+No token was needed: the setup is the object that was always there (`ctx`).
 
-The trigger for the token: a profile of a user's k = 1 loop showing the check
-(D77). Because the element calls the support unit's one check rather than a
-private copy, a program that uses a subst artifact links the support unit
-(§R4.14). There is one rule and one implementation.
-
-**Identity (B) is checked against `ncaps` only** (draft §3¶3). On a composed
-rx, `$k` above `ngroups` reaches a delivered group by number. That is
-memory-safe, and the draft says so. Helper (C) applies the rx-aware rule
-`k <= ngroups`.
+**Linking (open question 3, ADOPTED as the critic answered it).** Because the
+check and the setup are `static` in the types block, a program that uses a
+template with no case forcing and no helper needs NO support unit: a plain
+template is one `.c` again and `-o -` stays self-contained (APPROACH.md's "no
+dependency on pcrec itself"). Only helper users (`map_names`, `rx_group_run`,
+`flatten`) and case-forcing templates (which call the case mapping) link the
+support unit, and a case-forcing template without one fails to LINK. The
+rule is still written once: the check's text is emitted by one emitter
+function into the one shared block. (Lane note: the critic listed
+`ctx_init` among the optional helpers; it is inline here because the recipes'
+setup call is what makes "a plain template is one `.c`" true in practice,
+and it is the call that runs the check.)
 
 ### R4.5 Pieces
 
@@ -280,7 +308,12 @@ memory-safe, and the draft says so. Helper (C) applies the rx-aware rule
 - **`p` is never NULL.** A zero-length piece points at a valid address that
   must not be read. Rust's `from_raw_parts` and some FFI layers reject NULL
   even at length 0, and the flatten's `memcpy` stays out of the `NULL, 0`
-  undefined case.
+  undefined case. [R4a, C1-9] The sentinel is NAMED: `rx_subst_empty`, a
+  constant byte in the types block, used wherever the source would be NULL or
+  undefined (a `(NULL, 0)` subject, match_api.md §3.1¶8; an unset group's
+  `{-1, -1}`; a variable with `p == NULL`). The `k * P`, `n + k * P` and
+  scratch sums are overflow-checked: overflow is NOSPACE with `need`/`sneed`
+  `SIZE_MAX` (draft §4¶14).
 - **`const unsigned char *`, not ruling 5's `const char *`**, because the
   subject (`rx_iter.s`) and `rx_var.p` are `unsigned char`. A piece is then
   exactly the `{p, len}` half of `rx_var`. This is a question for Frank
@@ -295,7 +328,13 @@ memory-safe, and the draft says so. Helper (C) applies the rx-aware rule
   - a byte buffer that is too small is the caller's flatten, which grows the
     buffer and flattens the same batch again (draft §6¶4);
   - a scratch NOSPACE re-renders the same `caps` with a bigger scratch
-    (draft §6¶7).
+    (draft §6¶7), from `n == 0` and `sn == 0`, because growing scratch
+    invalidates every piece that points into it [R4a, C1-7].
+- **[R4a, C1-6] The scratch sizing pass stops at the first failing match.**
+  It validates each match's spans and unset references as it sizes, and
+  stops before the first that fails, so `sneed` covers only the prefix §4¶21
+  would commit. Before this, `x(?=(?1))|(b\K)` on `"xb"` (span `[2,1)`) under
+  `\U$0` computed `1 − 2` as a size, and NOSPACE asked for nearly `SIZE_MAX`.
 
   This difference from PCRE2 is now in pcrec's favour (draft §9 row 7).
 
@@ -330,20 +369,34 @@ the element owns spans, gaps and references.** The two core shapes:
 ```c
 /* per match: <prefix>_next, gap pieces included, written to a stream */
 while (rx_next(&it, caps)) {
-    o.n = 0;
-    if (dmy_render(&ctx, map, (const ptrdiff_t (*)[2])caps, 1, flags | RX_SUBST_GAPS, &o) < 0) break;
+    o.n = 0; o.sn = 0;
+    if ((rc = dmy_render(&ctx, map, caps, 1, flags | RX_SUBST_GAPS, &o)) < 0)
+        return rc;                                     /* a prefix: no tail */
     for (size_t i = 0; i < o.n; i++) fwrite(pc[i].p, 1, pc[i].len, f);
 }
-fwrite(s + o.prev, 1, n - o.prev, f);                 /* the tail: o.prev is the last end */
+if (it.rc < 0) return it.rc;                           /* a give-up: no tail */
+if (n > o.prev) fwrite(s + o.prev, 1, n - o.prev, f);  /* the tail: o.prev is the last end */
 
 /* batch: <prefix>_next_n, 64 matches per element call */
 do {
     got = rx_next_n(&it, caps, 64);
-    o.n = 0;
-    if (dmy_render(&ctx, map, (const ptrdiff_t (*)[2])caps, got, flags | RX_SUBST_GAPS, &o) < 0) break;
+    o.n = 0; o.sn = 0;
+    if ((rc = dmy_render(&ctx, map, caps, got, flags | RX_SUBST_GAPS, &o)) < 0) return rc;
     consume(pc, o.n);                                  /* writev, rx_subst_flatten, a rope ... */
 } while (got == 64);
+if (it.rc < 0) return it.rc;
 ```
+
+[R4a, C1-7 + C2-1 + C2-8] R4's recipes broke out of the loop on `rc < 0` and
+then wrote the tail, and never read `it.rc`, so an error, a NOSPACE or a
+give-up produced output that looked complete with the later matches left
+unreplaced; §6¶4 also reset `n` but not `sn`, and its flatten computed
+`w + need` before testing `need == SIZE_MAX`. The draft's §6 now states one
+ERROR RULE (a negative return from the setup, the element or the iterator
+means the output is a prefix: return the code, write no tail), and every
+recipe follows it. `tests/subst/` runs each recipe with a forced give-up, a
+forced `BADSPAN` and a forced NOSPACE. The `(const ptrdiff_t (*)[2])` cast is
+gone: the element's `caps` is spelled as the iterators' (C2-3).
 
 - **The gap pieces.** With `RX_SUBST_GAPS`, piece 0 of each match is
   `s[prev, start)`, and the tail `s[o.prev, n)` is the caller's last write.
@@ -403,22 +456,20 @@ Still open, each with a leaning:
      runs.
    - Either way, it is one file. One source file of the program sets a macro
      before including it to get the function bodies (draft §10¶2).
-3. **Every program that uses a template must compile the support file once.**
-   The template's render calls the support file's one validation function,
-   rather than carrying its own copy.
-   - Leaning: yes. One rule, written once. A mismatched or missing support
-     file is a link error, never a wrong answer, because the function names
-     carry the version (draft §10¶3).
-   - The alternative is to give each template a private copy of the check,
-     so that a program with no helpers needs no support file. That means two
-     copies of one rule.
-4. **One PCRE2 spelling cannot survive independence.** In PCRE2's extended
-   templates, `\10` means group 10 if the pattern has at least ten groups,
-   and the byte 0x08 otherwise. A template compiled without its pattern
-   cannot know which.
-   - Leaning: refuse `\10`-style escapes at template compile, and point at
-     `${10}` and `\o{10}`, which are unambiguous. `\1` to `\9` work as
-     usual.
+3. **[ANSWERED by panel r2's adoption, §R4.4.]** Only helper users and
+   case-forcing templates link the support file. The check and the context
+   setup are small `static` functions in the shared types block, one copy per
+   translation unit, written by one emitter function.
+4. **[WIDENED by panel r2, C1-3.]** Every PCRE2 escape whose meaning depends
+   on the pattern's group count: `\` followed by `1`-`9` and at least one
+   more digit. Measured: `\10` is group 10 or byte 0x08, `\101` is group 101
+   or `A`, `\77` is group 77 or `?`, `\81` is group 81 or an unknown-group
+   error, `\400` is group 400 or an error.
+   - Leaning: refuse them all at template compile, pointing at `${10}`,
+     `\o{10}` or `\010`. `\1` to `\9` alone are always group references on
+     any pattern (probed: their meaning never depends on the group count;
+     a missing group is an unknown group, as `$8` is), so they stay
+     accepted, as do `\0dd` and `\o{}`.
 5. **Confirm one reading of rulings 4 and 5.** The generic "substitute
    everything into my buffer" function from R3 (`pcrec_subst`, not tied to any
    regex) goes too: it is string handling, and the recipes replace it. If you
@@ -430,8 +481,9 @@ Manager-level, decided here (say if any is wrong):
 - the stride is fixed, and empty and padding pieces are kept;
 - `p` is never NULL;
 - the matches before a failing one are committed;
-- the check runs per call, with no token;
-- identity is checked against `ncaps` only;
+- the check runs once at context setup; the element re-asserts memory
+  safety only (§R4.4, panel r2);
+- the no-map form is refused on a composed rx (panel r2, C2-4);
 - the reference list is in first-appearance order;
 - the extended module is selected with `--features subst-extended`;
 - the case region runs from the first case escape to the template's end
@@ -446,7 +498,7 @@ stays and its text is mostly new.
 
 **The template parser.** `src/parse/subst_template.c` (296 lines) is KEPT.
 That covers the core language, the greedy rules, names, the UTF check and
-every refusal. It changes in three ways:
+every refusal. It changes in four ways:
 
 - the reference list goes into first-appearance order;
 - adjacent `SUBST_LIT` items merge, and `npieces` is counted;
@@ -455,6 +507,14 @@ every refusal. It changes in three ways:
   conditionals reuse `src/core/varexp.c`, which already parses and refuses
   `${n:-w}` (`subst_template.c`'s header), so its operator forms become
   accepted under the module instead of refused. That is about 250 lines.
+- **[R4a, family (b)] The escapes reuse the pattern parser's decoder**, not a
+  second copy: `esc_char_value` in `src/parse/parse.c` (the control escapes,
+  `\x`/`\x{}` with its encoding range check, and the digit branch it returns
+  as "backref/octal"), the registry rows' definitions for `\o{}`, `\cX` and
+  `\N{U+}` (`src/parse/registry.c`), and `pcrec_clsport_octal` for `\0dd`.
+  The `\NN` refusal is that digit branch's "needs the group count" case. The
+  template parser calls them through a narrow entry; how that entry is cut
+  (the decoder takes a `Ctx`) is a build question.
 
 `SubstTmpl` (`src/core/internal.h`) changes: `nnamed`/`nneeds` become
 `nrefs`, and `npieces` and the case-region start are added. Items gain the
@@ -465,7 +525,8 @@ kinds `COND_UNSET`, `COND_SET` and `CASE_REGION`.
 `unset`, `<S>_NSEGS` and `<S>_SUBST_UNSET`. These are added: `npieces`,
 `uses`, `<S>_PIECES`, and `subst-extended` in `<S>_SUBST_MODULES`.
 
-**bind becomes validate plus helper (C), both in the support unit.** Gone:
+**bind becomes the check (inline, in the types block) plus helper (C) (in the
+support unit)** [R4a]. Gone:
 `pcrec_subst_bind`, `rx_subst_binding` and `PCREC_SUBST_BOUND`.
 `rx_shape_match` becomes `pcrec_subst_map_names`, the same loop writing slots
 and runs, plus the `RX_SUBST_MAP_ABSENT` option. It keeps the negative-number
@@ -497,11 +558,12 @@ goes with it.
 
 **The support unit (NEW, R7 and R8).** `src/gen/emit_subst.c` gains
 `pcrec_emit_support`, which writes the file of draft §10: the shared blocks,
-the declarations, and under `PCREC_SUPPORT_IMPLEMENTATION` the check, helper
-(C), `rx_group_run`, `rx_subst_ctx_init`, the flatten and the UTF-8 case
-mapping. That is about 300 lines of emitted text, most of it moved from
-today's block. The case mapping table is new data (§R4.13). §R4.14 says what
-leaves every header.
+the declarations, and under `PCREC_SUPPORT_IMPLEMENTATION` helper (C),
+`rx_group_run`, the flatten, the UTF-8 case mapping and the content id
+[R4a: the check and `rx_subst_ctx_init` moved to the types block, §R4.4].
+That is about 280 lines of emitted text, most of it moved from today's
+block. The case mapping table is a new GENERATED table from existing
+vendored data (§R4.12). §R4.14 says what leaves every header.
 
 **The CLI.** In `cli/main.c`:
 
@@ -526,7 +588,14 @@ match_api.md §3.8¶9a (it names `rx_subst_ctx_init`) and §4's reservation of
 - `tests/subst/cells.tsv` (75 lines): about 10 `bind:` expectations become
   `check:`, and the `UNSET` column becomes the strict flag. NEW cells: one
   per §R4.13 transcript row, oracle `pcre2_substitute` with `EXTENDED`; the
-  NOGROUP and MAP_ABSENT arms; a scratch NOSPACE re-render.
+  NOGROUP and MAP_ABSENT arms; a scratch NOSPACE re-render. [R4a] Also:
+  the case state table's witness rows (draft §2¶13) as oracle rows; the
+  `\[1-9]\d` refusals and the accepted `\1`-`\9`/`\0dd`/`\o{}`; the
+  encoding refusal and the composed-rx no-map refusal at setup, on a
+  zero-match subject; every draft §6 recipe under a forced give-up, a
+  forced `BADSPAN` and a forced NOSPACE (no tail written, code returned);
+  `\Uß` and `\LȺ` sized by the bound; pcrec-only ill-formed-UTF-8 case
+  cells (draft §2¶14a), never sent to libpcre2 (it crashes, U22).
 - `subst_drv.c` (401 lines): rewritten around the draft §6 recipes, through
   flatten, in the three map modes, linking an emitted support unit.
 
@@ -566,12 +635,17 @@ to a writer blinded to `src/` and given only the draft (D27).
     `nslot`, the gap left out of the stride, a NULL `p`, NOSPACE committing
     part of a batch, an error committing match `i`, flatten writing on a
     short buffer;
-  - the extended module (about 6): `:-` firing on a set-but-empty group,
+  - the extended module (about 8): `:-` firing on a set-but-empty group,
     padding dropped, the case region's state reset at a conditional's end,
-    `\NN` accepted, scratch sized one byte short, NOGROUP erroring under
-    strict;
-  - the support unit (about 2): its names without the abi suffix, and
-    `--emit-support` needing an argument.
+    `\NN` accepted (a three-digit form included), scratch sized one byte
+    short, NOGROUP erroring under strict, a pending one-shot kept when a
+    region is already set (the state table's first row), an ill-formed byte
+    case-mapped;
+  - the panel r2 surfaces (about 3): the setup's encoding compare dropped,
+    the composed-rx no-map refusal dropped, the sizing pass not stopping at a
+    failing match;
+  - the support unit (about 3): its names without the abi suffix,
+    `--emit-support` needing an argument, and the content id not compared.
 
   Ids come at build, from a range the manager names.
 
@@ -650,15 +724,25 @@ trigger is a user's hot `\U` template.
      of the whole job, now with `SUBSTITUTE_EXTENDED` for the module.
    - The recipes in `tests/subst/` are caller code, written by the test
      author and not shipped.
-   - **The case mapping table** is a new data set, and it must not share a
-     source with its check. pcrec's table is DERIVED from the vendored UCD
-     (`third_party/`, through a `generate.py`, the house shape) by PCRE2's
-     single-code-point rule. Its control is libpcre2's own answer for every
-     code point under `\U`, `\L`, `\u` and `\l`. Those answers are collected
-     by RUNNING libpcre2 into `oracle_store/` as a new question kind, which is
-     that store's charter. The NEW-DATASET lens is answered: the product's
-     data lives in `third_party/` plus generated tables, the control's in
-     `oracle_store/`.
+   - **The case mapping table is NOT a new data set** [R4a, family (a),
+     verified against the tree]. PCRE2's observed rule is "the other member of
+     the code point's simple-fold class, chosen by general category" (`ß` →
+     `ẞ`, U+01C6 → U+01C4). The fold classes are the orbits
+     `third_party/ucd-16.0.0/generate.py` already builds from the vendored
+     `CaseFolding.txt` for `src/core/fold_tables.inc`, and the general
+     category is the `UnicodeData.txt` column the same script already reads.
+     UnicodeData's own uppercase column would be wrong here: `00DF` has none,
+     so `ß` would stay `ß`. The case table is therefore a third output of that
+     ONE generator, a sibling of `fold_tables.inc` and of the emitted
+     `src/enc/utf8_fold_pairs.inc` (today's one derived table that reaches
+     generated code), and nothing new is vendored. The generator also asserts
+     the bound's property (no ASCII/non-ASCII crossing; growth at most 3/2).
+     Its control must not share that source: libpcre2's own answer for every
+     code point under `\U`, `\L`, `\u` and `\l`, collected by RUNNING
+     libpcre2 into `oracle_store/libpcre2-10.46/` as a new question kind
+     beside `membership.tsv`, which is that store's charter. NEW-DATASET lens:
+     no new data source; the product's derivation stays in `third_party/`,
+     the control's answers in `oracle_store/`.
    - The populations are counted by the existing runners. A per-code-point
      check counts 0x110000 minus the surrogates.
    - A fresh D27 writer covers the interface promises.
@@ -690,15 +774,16 @@ ctypes and the D27 corpus's `ref_pcre2.py`: 97 cells, answers only. The draft
 | `:` is literal in `:-` text, and the first unescaped `:` splits `:+` text; `}` closes | `[${1:-a:b}]` → `[a:b]`; `[${1:+a}b:c}]` → `[b:c}] [ab:c}]` |
 | an unset reference INSIDE text is −55 unless `UNSET_EMPTY` | `[${1:-$2}]` → −55 (pcrec: blank by default, R6) |
 | unknown group in a condition | `${9:-D}` → −49 (pcrec: `MISSING_REF` or NOGROUP) |
-| escapes | `\n\t\x41\x{42}\101\\\$` → LF TAB `A B A \ $`; `\a\e\f\r\0`; `\o{101}` → `A`; `\cA` → 0x01; `\x4` → 0x04; `\q` and a trailing `\` → −57 |
+| escapes | `\n\t\x41\x{42}\101\\\$` → LF TAB `A B A \ $` (on a pattern below 101 groups; pcrec refuses `\101`, panel r2 C1-3); `\a\e\f\r\0`; `\o{101}` → `A`; `\cA` → 0x01; `\x4` → 0x04; `\q` and a trailing `\` → −57 |
 | UTF-only escapes | `\x{100}` and `\N{U+41}` → −57 without UTF; with UTF, U+0100 as UTF-8 and `A` |
-| `\Q..\E` | `<\Qa$1\E>` → `<a$1>`; an unterminated `\Q` runs to the end |
-| `\1`-`\9` are groups; `\NN` depends on the pattern | `<\1>` → the group; `\8` on one group → −49; `\10` → 0x08 with one group, group 10 with twelve |
+| `\Q..\E` | `<\Qa$1\E>` → `<a$1>`; an unterminated `\Q` runs to the end at top level, and is −58 inside conditional text; inside text `\Q` protects `}` and `:` (`[${1:-\Qa}b\E}]` → `[a}b]`, `[${1:+a\Q:\Eb:c}]` → `[a:b]`) [R4a, C1-10] |
+| `\1`-`\9` are groups on any pattern; every `\[1-9]\d+` depends on the pattern | `<\1>` → the group; `\8` on one group → −49 (as `$8`); `\10` → 0x08 below ten groups, group 10 with twelve; `\101` → `A` or group 101; `\77` → `?` or group 77; `\81` → −49 or group 81; `\400` → −57 [R4a, C1-3] |
 | case forcing persists, applies to literals, and outlives a branch | `\U$1 x \L$2 Y\E z` → `HELLO X world y z`; `${2:-\Ux}y` → `XY`; `${1:+\U$1:x}y$1` → `BYB` |
-| single-character combinations | `\u\Lab` → `Ab`; `\l\UAB` → `aB`; `\L\uAB` → `AB`; `\U\lab` → `ab`; `\L\u$1` acts as `\U` |
+| single-character combinations | `\u\Lab` → `Ab`; `\l\UAB` → `aB`; `\L\uAB` → `AB`; `\U\lab` → `ab`. [R4a, C1-1] R4's reading "`\L\u$1` acts as `\U`" was WRONG (its sources were all uppercase): `\u` ENDS the region, so `\L\uabc` → `Abc`, `\Ua\ubc` → `ABc`, `\u\U\Lab` → `ab`. The rule is the declared state table of draft §2¶13 |
 | `\u` applies to the next character produced, even through a condition | `\u${2:-x}` → `X` |
 | `\E` ends `\Q` first, and then case forcing | `\U\Qa$\E$1` → `A$B` |
-| UTF mapping is single code point and may change length | `ß` → `ẞ` (2 → 3 bytes); U+01C6 → U+01C4 under `\U` and `\u`; `ı` unchanged under `\U`; U+212A and U+0130 unchanged under `\L` |
+| UTF mapping is single code point and may change length | `ß` → `ẞ` (2 → 3 bytes); U+01C6 → U+01C4 under `\U` and `\u`; `ı` unchanged under `\U`; U+212A and U+0130 unchanged under `\L`; a CONSTANT grows too (`\Uß`, `\U\x{df}` → `ẞ`; `\LȺ` → `ⱥ`, 2 → 3) [R4a, C1-4] |
+| ill-formed UTF-8 under case forcing | libpcre2 10.46 SEGFAULTS (`\U$_`, pattern `b`, UTF + MATCH_INVALID_UTF, `"ab\xffc"`) or reads past the substring (`"abc\xc3"` → `\xc3\x80`); pcrec copies ill-formed bytes unchanged (draft §2¶14a, §9 row 19; `upstream_issues.md` U22) [R4a, C1-2] |
 | byte mode changes ASCII only | `\U` on bytes 0xE0 0xC0 leaves them |
 | `$*MARK` renders empty with no mark | pcrec keeps refusing it (no artifact reports a mark), draft §9 row 17 |
 | `${!v}` is −35 | pcrec's own form (draft §9 row 18) |
@@ -729,25 +814,36 @@ ctypes and the D27 corpus's `ref_pcre2.py`: 97 cells, answers only. The draft
   A tighter region (ending at a `\E` that every path reaches) is a later
   refinement with no trigger yet.
 - **Scratch bound.** Under UTF-8 a single-code-point mapping grows a
-  character from at most 2 bytes to 3 (ß → ẞ, ɐ → Ɐ). So the region needs at
-  most its constant bytes plus 1.5 times its copied bytes, and a caller that
-  sizes scratch by that bound never sees NOSPACE. Under other encodings the
-  bytes are exact. The bound is stated in draft §4¶22. Its exactness for all
-  of Unicode is a property of the derived table, and the per-code-point
-  control (§R4.12) checks it.
-- **`\NN` refused** (§R4.9 question 4) and **`$*MARK` refused** are the two
-  places where the extended module differs from PCRE2 in what it accepts.
-  Both are stated in draft §9.
+  character from at most 2 bytes to 3 (ß → ẞ, ɐ → Ɐ, Ⱥ → ⱥ). [R4a, C1-4]
+  R4's bound ("constant bytes plus 1.5 times the copied bytes") undercounted,
+  because forced CONSTANTS grow as well: `\Uß` writes 3 bytes against a
+  bound of 2. The bound is now 1.5 times EVERY byte that enters the region,
+  constants included, rounded up (draft §4¶22). The alternative, a
+  compile-time stamp of the constants' worst case, was not chosen: a
+  constant's forced form depends on the run-time case state (a branch can
+  switch `\U` on), so the stamp would itself be a worst case over states;
+  it would add a stamp, an abi reader and a record field to save at most
+  half the constant bytes of one region, which are few. The exact sizing
+  pass still reports `sneed` exactly; the bound is only for a caller who
+  wants never to see a scratch NOSPACE. Its truth for all of Unicode is a
+  property of the derived table, asserted by the generator and checked by
+  the per-code-point control (§R4.12). Ill-formed bytes count one each.
+- **`\[1-9]\d+` refused** (§R4.9 question 4, widened by C1-3) and
+  **`$*MARK` refused** are the two places where the extended module differs
+  from PCRE2 in what it accepts. Both are stated in draft §9.
 
 ### R4.14 The support unit (R7, R8)
 
-**What it is.** It is one file holding every function that is independent of
-both the regex and the template:
+**What it is.** It is one file holding the larger functions that are
+independent of both the regex and the template:
 
-- `pcrec_subst_check` and `pcrec_subst_map_names`;
-- `rx_group_run` and `rx_subst_ctx_init`;
+- `pcrec_subst_map_names` and `rx_group_run`;
 - `rx_subst_flatten`;
-- the UTF-8 case mapping.
+- the UTF-8 case mapping;
+- `pcrec_support_id`, its content id.
+
+[R4a] `pcrec_subst_check` and `rx_subst_ctx_init` left it for the types
+block (§R4.4, open question 3 adopted).
 
 It also carries the rx shared block and the subst types block under their
 guards (draft §10).
@@ -768,21 +864,44 @@ guards (draft §10).
   pcrec did not emit. The leaning stays the emitted file (§R4.9 question 2).
 
 **Version safety.** Every external name is a macro over a name that carries
-the abi (`pcrec_subst_check` → `pcrec_subst_check_v<abi>`). A subst artifact
+the abi (`rx_subst_flatten` → `rx_subst_flatten_v<abi>`). A subst artifact
 and a support unit from different builds fail to LINK. The run-time abi
 comparison in the check then covers only `dlopen`.
+
+[R4a, C2-6] **The abi alone is not enough**: the unit carries the case table
+and the flatten and helper logic, so a UCD update or a flatten fix changes
+its behaviour under the same abi, and two units of one abi both define the
+same names (a duplicate-symbol error, or with static archives a silent
+pick). So the unit defines `pcrec_support_id`, a 64-bit hash of its own text
+computed by the emitter, and a record whose template calls into the unit
+holds `support = &pcrec_support_id` and `support_id` from its own build;
+the check refuses a difference at setup (draft §10¶3). A record that calls
+nothing there holds NULL and references no support symbol, which keeps the
+plain template link-free. The unit's text is named as a READER of the abi
+number (D76/D94): a change to its text is an abi event, and the identity
+gate pins its bytes.
+
+[R4a, C2-7] **`PCREC_SUPPORT_STATIC`** (draft §10¶3a) makes every definition
+`static` for one translation unit, for a library and an application that
+each want a private copy. And each subst header opens its stamps with
+`#ifdef <PREFIX>_PIECES` / `#error`, so the documented case-only prefix
+collision (`dmy` and `DMY` share `DMY_PIECES`) is caught at compile rather
+than by reading §1¶3.
 
 **What R7 deletes from the as-built block** (presented as the simplification
 it is):
 
-- **Every function body in every subst header.** Today each header carries
-  about 250 lines of `static inline` code: `rx_subst_put`, `rx_subst_span`,
-  `rx_subst_group`, `rx_subst_run_slot`, `rx_group_run`, `rx_shape_match`,
-  `pcrec_subst_bind`, `rx_subst_ctx_init` and `pcrec_subst`. Some of them are
-  withdrawn by §R4.1, and the rest move to the support unit. Of these, only
-  the per-match run walk stays in the artifact, as the render's own private
-  code. A subst header becomes types, macros, the stamps and two
-  declarations.
+- **Almost every function body in every subst header.** Today each header
+  carries about 250 lines of `static inline` code: `rx_subst_put`,
+  `rx_subst_span`, `rx_subst_group`, `rx_subst_run_slot`, `rx_group_run`,
+  `rx_shape_match`, `pcrec_subst_bind`, `rx_subst_ctx_init` and
+  `pcrec_subst`. Some of them are withdrawn by §R4.1, and the rest move to
+  the support unit, except two [R4a]: the check and `rx_subst_ctx_init` stay
+  in the shared types block as `static` functions (about 45 lines, one copy
+  per translation unit under the shared guard), so that a plain template
+  needs no support unit. The per-match run walk stays in the artifact, as the
+  render's own private code. A subst header becomes types, macros, the
+  stamps, the two shared functions and two declarations.
 - **The `rx_shape` spelling of the `subst-block` reservation** (cli.md
   §1.6¶2; review item MF2). Nothing is named `rx_shape*` any more.
 - **What does NOT go, against the rulings file's expectation:**
@@ -804,12 +923,22 @@ describes the subst compile with `--unset=`):
 > `pcrec [-p PREFIX] [-e ENC] [--features subst-extended] -o OUT.c --subst
 > TEMPLATE` (or `--subst-file FILE`) compiles a substitution template
 > (the subst spec's §5). `--features` takes `subst-extended` and no other
-> module there; every pattern-compile option is refused. `pcrec
-> --emit-support [-o FILE]` writes the subst support unit (the subst spec's
-> section 10) to stdout or FILE. It takes no other argument and refuses any.
+> module there; every pattern-compile option is refused.
 
-(The hunk lands in the same commit as the draft, which is when the new
-section 10 exists to be cited by number.)
+and a NEW subsection beside it, `### 1.20 --emit-support: the subst support
+unit`, with its TOC row [R4a, family (e)]:
+
+> `pcrec --emit-support [-o FILE]` writes the subst support unit (the subst
+> spec's section 10) to stdout or FILE. It is the one emit command that
+> takes no pattern (`--emit-main` §1.10, `--emit-ir` §2.10 and
+> `--emit-facts` §2.11 all take one): no pattern, template, query or other
+> option, and it refuses any. Its output depends only on the pcrec build.
+
+cli.md has no emit-mode TABLE today (the panel's "emit-mode table" does not
+exist; the emit commands are separate subsections), so the new mode is a
+subsection that names its three siblings, not a table row. (The hunk lands
+in the same commit as the draft, which is when the new section 10 exists to
+be cited by number.)
 
 **The RX side (out of scope, a CANDIDATE only).** The same treatment applies
 to the rx shared block's inline helpers: the iterator setters, and the
@@ -817,6 +946,39 @@ to the rx shared block's inline helpers: the iterator setters, and the
 the one home for all of pcrec's shared caller-side code. The cost is an rx
 abi event and every rx caller linking the unit. The trigger is a second
 module whose shared code is not hot.
+
+### R4.15 The R4 light panel applied (panel r2, lane substr4b, 2026-10-22)
+
+Two critics reviewed §R4 and the draft: C1 on PCRE2 semantics (probed against
+libpcre2-8 10.46 through ctypes) and C2 on the interface. The record, with
+each finding's text, its disposition and where it landed, is
+`../dev/reviews/2026-10-22-r2-subst-r4-panel.md`. Every finding was ADOPTED
+by the manager; one was narrowed by the evidence (C1-3's single digits).
+
+| id | what changed | where |
+|---|---|---|
+| C1-1 | case forcing is a declared 4-rule state table; R4's "until `\E` or the other one" and "`\L\u$1` acts as `\U`" were wrong; witnesses are oracle rows | draft §2¶13; §R4.13; §R4.10 tests |
+| C1-2 | ill-formed bytes under case forcing are copied unchanged, 1:1 in sizing; kept out of the differential; libpcre2 segfault filed | draft §2¶14a, §9 row 19; `upstream_issues.md` U22 |
+| C1-3 | every `\[1-9]\d+` refused; `\1`-`\9` alone stay (probed: never group-count dependent); `\0dd` and `\o{}` accepted | draft §2¶10, §2¶12, §9 row 16; §R4.9 Q4; §R4.13 |
+| C1-4 | the scratch bound is 1.5× every byte entering the region; the stamp alternative is argued against | draft §4¶22; §R4.13 |
+| C1-5, C2-4 | the setup and the check take the rx's record; encodings compared; no map on a composed rx refused | draft §2¶5, §3¶3, §3¶8-¶12, §7¶3-¶4; §R4.4 |
+| C2-2 | the check runs once at setup (observable on zero matches); the per-render check becomes a memory-safety re-assert | draft §4¶10-¶14; §R4.4 |
+| C1-6 | the sizing pass stops at the first failing match; NOSPACE covers only the committable prefix | draft §4¶14, §4¶21; §R4.5 |
+| C1-7, C2-1, C2-8 | every recipe has a correct error exit (no tail on any negative code, `it.rc` read, `sn` reset with `n`, scratch grown only from `n == 0`, overflow tested first); forced-failure recipe tests | draft §4¶4, §6; §R4.5, §R4.7, §R4.10 |
+| C1-8 | no-overlap rule for scratch and the piece array | draft §7¶1a |
+| C1-9 | the sentinel `rx_subst_empty`; overflow checks on `k * P`, `n + k * P` and the scratch sums | draft §4¶9, §4¶14; §R4.5 |
+| C1-10 | `\Q` inside conditional text; an open `\Q` there refused; NOGROUP-under-STRICT vs PCRE2's −55 | draft §2¶9, §2¶10, §9 row 20 |
+| C2-3 | `caps` spelled `ptrdiff_t (*caps)[2]` exactly as `_next`/`_next_n`/`RX_FOREACH`; the recipes lose their cast | draft §4¶1, §6 |
+| C2-5 | the name helper reports `*nabsent`; MAP_ABSENT recommended off | draft §3¶13-¶16 |
+| C2-6 | the support unit's content id, compared by the check; its text is an abi reader (D76/D94) | draft §1¶4, §3¶1, §10¶3; §R4.14 |
+| C2-7 | `PCREC_SUPPORT_STATIC`; `#error` on the stamp-name collision | draft §1¶3, §10¶3a; §R4.14 |
+| open question 3 | adopted: the check and setup are inline; only helper and case-forcing users link the support unit | §R4.4, §R4.9, draft §10¶1 |
+| family (a) | the case map is a third output of the existing UCD generator, not a new data set; control in `oracle_store/` | §R4.12 |
+| family (b) | the template escapes reuse the pattern parser's decoder | §R4.10 |
+| family (c) | `rx_group_run` is THE implementation of match_api.md §5.4¶6's lookup | draft §3¶17 |
+| family (d) | a shared stamp-header prefix (`rx_info`/`rx_subst_info`): CANDIDATE, not adopted; trigger: a third record kind, or the first skew report | review file |
+| family (e) | `--emit-support` is a new cli.md subsection (no emit-mode table exists) | §R4.14 |
+| unlocks | five recorded as candidates with triggers; none scheduled | review file |
 
 ---
 
