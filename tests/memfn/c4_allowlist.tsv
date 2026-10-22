@@ -21,6 +21,9 @@ tests	tests/codegen/run_scan_edge_dispatch.sh	6	3	the R_X86_64_* relocation name
 tests	tests/codegen/run_residual_twins.sh	6	1	the R_X86_64_* relocation names the script parses out of a compiled object ([FINDALL-NEXT] I1's residual-twin check)
 tests	tests/lib/gen_timeout.sh	6	1	a box description in a comment (Homebrew GCC on ARM64)
 tests	tests/lib/loadavg.sh	6	1	a box description in a comment (macOS/arm64 has no /proc)
+tests	tests/subst/d27/api/build.sh	1	1	a subst artifact's prefix 'sve' (subst + var + error, tests/subst/d27/api), not the SVE instruction set; the blinded files are not edited
+tests	tests/subst/d27/api/t.h	1	1	a subst artifact's prefix 'sve' (subst + var + error, tests/subst/d27/api), not the SVE instruction set; the blinded files are not edited
+tests	tests/subst/d27/api/t_vars.c	1	1	a subst artifact's prefix 'sve' (subst + var + error, tests/subst/d27/api), not the SVE instruction set; the blinded files are not edited
 tests	tests/thread/CLAUDE.md	6	2	a measurement note naming the box it was measured on
 tests	tests/thread/run_stackdepth_tests.sh	6	2	a measurement note naming the box it was measured on
 tests	tests/utf8/axis01_encoded_length.rxt	6	1	a provenance comment naming the host the oracle ran on

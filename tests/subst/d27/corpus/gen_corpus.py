@@ -123,7 +123,7 @@ for pat, subj in [(r'a\Kb', 'abab'), (r'\Ka', 'aa'), (r'a\K', 'aaa'), (r'(?:a\K)
                   (r'x|(?<=(?1))y|(\Kx)', 'xy'), (r'^|(?<=(?1))y|(?!)(\Kz)', 'zy')]:
     add(K, '', pat, '[$0|$1]', subj, mode='known:9' if 'Kz)' in pat else 'diff')
     add(K, '', pat, '[$0]', subj, limit=1)
-    add(K, '', pat, '[$0]', subj, mode='known:9' if ('Kx)' in pat or 'Kz)' in pat) else 'nogap')
+    add(K, '', pat, '[$0]', subj, mode='known:9' if 'Kz)' in pat else 'nogap')   # Kx) agrees with libpcre2 now (substtri retag)
 
 # the three spans §4¶5 / §9 row 9 name, with gaps, all matches: BADSPAN, or row 9's rendering
 add(K, '', r'x(?=(?1))|(b\K)', '[$0]', 'xb')
@@ -139,6 +139,7 @@ for pat in ['x*', '.', r'\w+', r'(.)', '\u00e9', r'[^a]', '', r'(?=.)', r'\b', r
     for subj in ['aéb', 'éé', '日本\U0001F600', b'a\xffb', b'\xc3', b'\xe6\x97', b'\xc0\x80',
                  b'\xed\xa0\x80', b'\xf4\x90\x80\x80', b'a\xc3\xa9\xff\xc3\xa9']:
         illf = subj in (b'a\xffb', b'a\xc3\xa9\xff\xc3\xa9') and pat in ('x*', '', r'(?=.)', r'\b')
+        illf = illf and (pat, subj) not in [(r'(?=.)', b'a\xffb'), (r'\b', b'a\xc3\xa9\xff\xc3\xa9')]   # agree with libpcre2 now (substtri retag)
         add(U, '-e utf8', pat, '[$0]', subj, mode='known:11' if illf else 'diff')
 add(U, '-e utf8 -i', 'é', '[$0]', 'ÉéE')
 add(U, '-e utf8', '(é)', 'è$1è', 'aéb')

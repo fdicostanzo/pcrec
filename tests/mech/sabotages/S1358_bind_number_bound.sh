@@ -11,5 +11,5 @@ SAB_DESC='a numbered reference binds up to ngroups + 1 whatever ncaps delivers'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1358.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"            if (e->number != 0 && (e->number > rx->ngroups || e->number >= rx->ncaps))\n"'
-SAB_AFTER='"            if (e->number != 0 && (e->number > rx->ngroups + 1))   /* SABOTAGE S1358 */\n"'
+SAB_BEFORE='"                                  && (e->number > rx->ngroups || e->number >= rx->ncaps)))\n"'
+SAB_AFTER='"                                  && (e->number > rx->ngroups + 1)))   /* SABOTAGE S1358 */\n"'

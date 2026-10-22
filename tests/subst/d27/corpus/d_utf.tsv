@@ -72,7 +72,7 @@ utf-069	utf	-e utf8		[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	known:11
 utf-070	utf	-e utf8	(?=.)	[$0]	empty	all	a\xc3\xa9b	diff
 utf-071	utf	-e utf8	(?=.)	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
 utf-072	utf	-e utf8	(?=.)	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff
-utf-073	utf	-e utf8	(?=.)	[$0]	empty	all	a\xffb	known:11
+utf-073	utf	-e utf8	(?=.)	[$0]	empty	all	a\xffb	diff
 utf-074	utf	-e utf8	(?=.)	[$0]	empty	all	\xc3	diff
 utf-075	utf	-e utf8	(?=.)	[$0]	empty	all	\xe6\x97	diff
 utf-076	utf	-e utf8	(?=.)	[$0]	empty	all	\xc0\x80	diff
@@ -88,7 +88,7 @@ utf-085	utf	-e utf8	\\b	[$0]	empty	all	\xe6\x97	diff
 utf-086	utf	-e utf8	\\b	[$0]	empty	all	\xc0\x80	diff
 utf-087	utf	-e utf8	\\b	[$0]	empty	all	\xed\xa0\x80	diff
 utf-088	utf	-e utf8	\\b	[$0]	empty	all	\xf4\x90\x80\x80	diff
-utf-089	utf	-e utf8	\\b	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	known:11
+utf-089	utf	-e utf8	\\b	[$0]	empty	all	a\xc3\xa9\xff\xc3\xa9	diff
 utf-090	utf	-e utf8	\\p{L}+	[$0]	empty	all	a\xc3\xa9b	diff
 utf-091	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xc3\xa9\xc3\xa9	diff
 utf-092	utf	-e utf8	\\p{L}+	[$0]	empty	all	\xe6\x97\xa5\xe6\x9c\xac\xf0\x9f\x98\x80	diff

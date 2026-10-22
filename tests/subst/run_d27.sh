@@ -43,7 +43,7 @@ pass=0 fail=0
 ok()  { pass=$((pass + 1)); }
 bad() { fail=$((fail + 1)); echo "FAIL: $*"; }
 
-bash "$SCRIPT_DIR/d27/run_all.sh" "$PCREC" | tee "$OUT_ROOT/run_all.log"
+"$TIMEOUT_BIN" 3000 bash "$SCRIPT_DIR/d27/run_all.sh" "$PCREC" | tee "$OUT_ROOT/run_all.log"
 
 # ---- 1. the families ------------------------------------------------------
 nfam=0

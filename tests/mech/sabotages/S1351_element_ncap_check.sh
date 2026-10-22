@@ -11,5 +11,5 @@ SAB_DESC='the element'\''s ctx->ncap == binding ncaps check is removed'
 SAB_DOC_FIGURE='Owed: lane substb2 queued this row (docs/dev/lanes/substb_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1351.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"        || nc != (size_t)b->ncaps || (flags & ~RX_SUBST_GAPS))\n"'
-SAB_AFTER='"        || (flags & ~RX_SUBST_GAPS))   /* SABOTAGE S1351 */\n"'
+SAB_BEFORE='                       "        || nc != (size_t)b->ncaps || (flags & ~RX_SUBST_GAPS)", p);'
+SAB_AFTER='                       "        || (flags & ~RX_SUBST_GAPS)", p);   /* SABOTAGE S1351 */'

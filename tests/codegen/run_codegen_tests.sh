@@ -569,9 +569,12 @@ if [ -f "$WORKDIR/dprx.h" ] && [ -f "$WORKDIR/dpqq.h" ]; then
         sed -e "s/^#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_abi\$/#if defined(PCREC_RX_ABI_H) \&\& (PCREC_RX_ABI_H + 0) != $k80_old/" \
             -e "s/^#define PCREC_RX_ABI_H $k80_abi\$/#define PCREC_RX_ABI_H $k80_old/" \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/older.h"
-        # the pre-54 block: an EMPTY guard and no prelude
+        # the pre-54 block: an EMPTY guard and no prelude (a later use of the
+        # macro as a VALUE -- rx_foreach_begin's abi test -- reads 0, since an
+        # empty expansion there is not C)
         awk '/^#if defined\(PCREC_RX_ABI_H\)/ { skip = 3 } skip > 0 { skip--; next }
-             /^#define PCREC_RX_ABI_H [0-9]+$/ { print "#define PCREC_RX_ABI_H"; next } { print }' \
+             /^#define PCREC_RX_ABI_H [0-9]+$/ { print "#define PCREC_RX_ABI_H"; next }
+             !/^#/ { gsub(/PCREC_RX_ABI_H/, "0") } { print }' \
             "$WORKDIR/dpqq.h" > "$WORKDIR/k80/legacy.h"
         k80_rewrote=1
         grep -q "^#define PCREC_RX_ABI_H $k80_old\$" "$WORKDIR/k80/older.h" || k80_rewrote=0

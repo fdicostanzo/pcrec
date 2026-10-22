@@ -30,6 +30,7 @@ if [ -z "${PCRE2_AVAILABLE:-}" ]; then
     . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
 fi
 export PCREC CC GENCFLAGS PCRE2_AVAILABLE PCRE2_CFLAGS="${PCRE2_CFLAGS:-}" PCRE2_LIBS="${PCRE2_LIBS:-}"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
 [ "$PCRE2_AVAILABLE" = 1 ] || echo "SKIP: subst oracle (no linkable libpcre2-8): the pcre2 arms do not run"
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/subst.XXXXXX")"
@@ -51,7 +52,7 @@ pass=$((pass + ${p:-0})); fail=$((fail + ${f:-1}))
 # ---- 2. refusals: TEMPLATE<TAB>OFFSET ----------------------------------------
 while IFS=$'\t' read -r tmpl off; do
     case "$tmpl" in ''|'#'*) continue ;; esac
-    if "$PCREC" -p s -o "$WORK/r.c" --subst "$tmpl" > /dev/null 2> "$WORK/r.err"; then
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst "$tmpl" > /dev/null 2> "$WORK/r.err"; then
         bad "template '$tmpl' compiled; want a refusal at offset $off"
     elif grep -q "(template offset $off)\$" "$WORK/r.err"; then ok
     else bad "template '$tmpl': $(head -1 "$WORK/r.err"), want template offset $off"
@@ -76,54 +77,54 @@ EOF
 # under -e utf8 the template is UTF-checked (§2¶3) and names take \p{L}
 # (§2¶1a); under byte the same name is refused
 for t in "$(printf '[\xff]')" "$(printf 'ab\xc3')"; do
-    if "$PCREC" -p s -e utf8 -o "$WORK/r.c" --subst "$t" > /dev/null 2> "$WORK/r.err"; then
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -e utf8 -o "$WORK/r.c" --subst "$t" > /dev/null 2> "$WORK/r.err"; then
         bad "an ill-formed utf8 template compiled"
     elif grep -q '(template offset [12])$' "$WORK/r.err"; then ok
     else bad "ill-formed utf8 template: $(head -1 "$WORK/r.err")"
     fi
 done
 for t in "$(printf '[${\xc3\xa9}]')" "$(printf '[$\xc3\xa9x1]')"; do
-    if "$PCREC" -p s -e utf8 -o "$WORK/r.c" --subst "$t" > /dev/null 2> "$WORK/r.err" &&
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -e utf8 -o "$WORK/r.c" --subst "$t" > /dev/null 2> "$WORK/r.err" &&
        grep -q '"\\303\\251' "$WORK/r.c"; then ok
     else bad "utf8 template '$t' did not compile to a named row: $(head -1 "$WORK/r.err")"
     fi
-    if "$PCREC" -p s -o "$WORK/r.c" --subst "$t" > /dev/null 2>&1; then
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst "$t" > /dev/null 2>&1; then
         bad "byte template '$t' compiled (a byte >= 0x80 names nothing under byte)"
     else ok; fi
 done
 # the subst-block names reserve their families (cli.md §1.6¶2 row 4), on
 # both compile paths
 for pfx in rx_shape rx_subst rx_subst_x rx_group pcrec_subst; do
-    if "$PCREC" -p "$pfx" -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "prefix $pfx compiled a subst"; else ok; fi
-    if "$PCREC" -p "$pfx" -o "$WORK/r.c" --pattern 'a' > /dev/null 2>&1; then bad "prefix $pfx compiled an rx"; else ok; fi
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "prefix $pfx compiled a subst"; else ok; fi
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p "$pfx" -o "$WORK/r.c" --pattern 'a' > /dev/null 2>&1; then bad "prefix $pfx compiled an rx"; else ok; fi
 done
-if "$PCREC" -p rx_shapes -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix rx_shapes (no family) was refused"; fi
+if "$TIMEOUT_BIN" 60 "$PCREC" -p rx_shapes -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "prefix rx_shapes (no family) was refused"; fi
 # every pattern-compile option is refused with --subst, never ignored (§5¶1)
 for fl in -i --no-captures --engine=vm --emit-main --trace "--features all" --ucp --max-nfa-states=99999999; do
-    if "$PCREC" $fl -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "--subst accepted $fl"; else ok; fi
+    if "$TIMEOUT_BIN" 60 "$PCREC" $fl -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then bad "--subst accepted $fl"; else ok; fi
 done
-if "$PCREC" -e utf8 -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "--subst refused -e utf8"; fi
-if "$PCREC" -p 'a__b' -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then
+if "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -p s -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then ok; else bad "--subst refused -e utf8"; fi
+if "$TIMEOUT_BIN" 60 "$PCREC" -p 'a__b' -o "$WORK/r.c" --subst 'x' > /dev/null 2>&1; then
     bad "a reserved prefix (a__b) compiled a subst"
 else ok; fi
-if "$PCREC" -p s -o "$WORK/r.c" --subst 'x' --pattern 'a' > /dev/null 2>&1; then
+if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --subst 'x' --pattern 'a' > /dev/null 2>&1; then
     bad "--subst with --pattern was accepted"
 else ok; fi
 for u in error empty; do
-    if "$PCREC" -p s -o "$WORK/r.c" --unset=$u --pattern 'a' > /dev/null 2>&1; then
+    if "$TIMEOUT_BIN" 60 "$PCREC" -p s -o "$WORK/r.c" --unset=$u --pattern 'a' > /dev/null 2>&1; then
         bad "--unset=$u without --subst was accepted"
     else ok; fi
 done
 
 # ---- 3. the header contract ------------------------------------------------
-"$PCREC" -p hs -o "$WORK/hs.c" --subst '<$1>' || bad "hs did not compile"
+"$TIMEOUT_BIN" 60 "$PCREC" -p hs -o "$WORK/hs.c" --subst '<$1>' || bad "hs did not compile"
 printf '#define PCREC_RX_ABI_H 1\n#include "hs.h"\n' > "$WORK/abi.c"
 if "$CC" $GENCFLAGS -fsyntax-only -I "$WORK" "$WORK/abi.c" 2> "$WORK/abi.err"; then
     bad "a subst header compiled beside an rx block of another abi"
 elif grep -q 'regenerate' "$WORK/abi.err"; then ok
 else bad "abi mismatch failed without the #error: $(head -2 "$WORK/abi.err")"
 fi
-if "$PCREC" -p so -o - --subst '[$0]' > "$WORK/so.c" &&
+if "$TIMEOUT_BIN" 60 "$PCREC" -p so -o - --subst '[$0]' > "$WORK/so.c" &&
    "$CC" $GENCFLAGS -c -o "$WORK/so.o" "$WORK/so.c" 2> "$WORK/so.err"; then ok
 else bad "-o - is not one self-contained .c: $(head -2 "$WORK/so.err" 2>/dev/null)"
 fi
@@ -134,10 +135,10 @@ grep -q '^#define HS_NVREFS 1$' "$WORK/hs.h" && ok || bad "hs.h carries no HS_NV
 # an rx and a subst artifact of ONE prefix, and two subst artifacts whose
 # prefixes differ only in case, in one translation unit (§1¶3)
 mkdir -p "$WORK/tu"
-if "$PCREC" --features all -p pair -o "$WORK/tu/pair.c" --pattern '(a)' &&
-   "$PCREC" -p pair -o "$WORK/tu/pair_sub.c" --subst '[$1]' &&
-   "$PCREC" -p sq -o "$WORK/tu/sq.c" --subst '<$0>' &&
-   "$PCREC" -p sQ -o "$WORK/tu/sQ.c" --subst '[$0]'; then
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all -p pair -o "$WORK/tu/pair.c" --pattern '(a)' &&
+   "$TIMEOUT_BIN" 60 "$PCREC" -p pair -o "$WORK/tu/pair_sub.c" --subst '[$1]' &&
+   "$TIMEOUT_BIN" 60 "$PCREC" -p sq -o "$WORK/tu/sq.c" --subst '<$0>' &&
+   "$TIMEOUT_BIN" 60 "$PCREC" -p sQ -o "$WORK/tu/sQ.c" --subst '[$0]'; then
     printf '%s\n' '#include "pair.h"' '#include "pair_sub.h"' '#include "sq.h"' '#include "sQ.h"' \
         'int main(void) { rx_subst_binding b; rx_subst_run r[PAIR_NREFS]; int bad;' \
         '    return pcrec_subst_bind(&b, &pair_info, &pair_subst_info, r, 1, 0, 0, &bad)' \
