@@ -12,7 +12,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - Vocabulary rules every site must pass live in `site_check` (`pred_kinds`, `rank_ok`, `window_check`, `kit_presence_check`, `kit_proof_check`, `pres_layout_check`); out-of-vocabulary shapes are REFUSED loudly. An UNSTATED `body` is refused (R-23); a PARAM body until B8.
 - No tuning constant without a D149 label (derive, measure, or label unmeasured); overlap lengths and width rules are DERIVED.
 - Generic row (`generic.c`) is the last row of every table, tests every term, honours `floor`/`n`/`end_back`/empty on every op, reads nothing for an empty range (§R4.7 F1). Its `stmt_advance` is pcrec's in-loop skip text for ADVANCE delegated sites (frozen target tests/memfn/pins/r4h_target/; sabotage S214, S616 anchored on its cap line).
-- Finder (`finder.c`): `fd_rows[]` 19 rows; a key ABSENT from the measurement set does not hold (never 0; S917); pay rule T1 strict, T2/T3 ties pass; routed rows (D1/D1c/D1w/D2 and PRES P0,P2,P3,P4,P9) are locked; a refusal is ONE path (`define_sel`); `fd_shadow` writes nothing to any sink; REPORT row RPT is routed 0 pending R-26.6. `memfn/docs/finder_history.md` logs routing.
+- Finder (`finder.c`): `fd_rows[]` 17 rows (R0, R5, R7 withdrawn at B4', ids reserved); LOCKDOWN: every row decides, no `routed` bit, R7w (the walk) the MEASURED default for every set FIND; a key ABSENT from the measurement set does not hold (never 0; S917, UNREACHED since no deciding row reads a key); pay rule T1 strict, T2/T3 ties pass; a refusal is ONE path (`define_sel`); the trace-only shadow is retired; REPORT row RPT is held for its R-26.6 preview. `memfn/docs/finder_history.md` logs routing.
 - MF_TRACE (compile-time, off by default; format `../docs/trace_format.md`): `MFTRACE` records and reach counters; `REACH_DROPPED n=N` when the 32-row registry fills; `chosen=N asked=A`; keep `would_decline` meaning "the gate moved this selection".
 - Zero-mover seam rules (R17-a): storage point protocol (`mf_locals` refused where `decl_point` is 0, twice, or with other `s`/`n` text; `mf_art_end` refuses "never placed"/"placed, never read" before "never used").
 - SIMD rows (`vrun.c`) exist only as guarded, deny-able, ISA-gated forms; `policy` is a stated bit-set (PORTABLE/INLOOP/SIZE/NONE) a row must serve fully; scalar contracts serve MF_ANY; each SIMD form must beat scalar or show a named benefit (memory pcrec-post-spine-direction).
@@ -34,7 +34,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - `fields.def` — the field/class X-macros (`MF_CLASS`, `MF_FIELD`) of the row contracts.
 - `gate.c` — row-contract gate: classifiers, `gate_check`, `gate_describe`, `MF_MISS_N`/`mf_miss_n`, `kit_is_ident`, shape helpers, MF_TRACE records, `policy` `class_set_of`.
 - `options.def`, `options.c` — option registry `MF_OPT(...)`; `mf_options`, `mf_opts_check`, `kit_opt_denied` (`no-<name>`).
-- `finder.c` — the finder table (`fd_rows[]`, `fd_decide`, `fd_route`, `fd_pres`, `fd_shadow`, `mf_finder_rows`, POSCOV trace fields under MF_TRACE).
+- `finder.c` — the finder table (`fd_rows[]`, `fd_decide`, `fd_route`, `fd_pres`, `mf_finder_rows`).
 - `terms.c` — `mf_set_terms` cover search (R17-b; renderers at B4).
 - `presence.c` — KW-8 ports `mf_pres_ports` / `kit_pres_picks` (read by the routed PRES slot; S458, S1094..7).
 - `formhash.c` — `mf_form_hash[_text]` (R-MS3 form identity; allocates with `malloc`, listing only).

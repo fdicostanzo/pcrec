@@ -112,8 +112,8 @@ line:
   `mf_ask` decides (`fd_pres` FD_PRES_ASK; their END records say
   `phase=shadow`, their `MFTRACE FD` records `phase=ask`). A pre-check whose
   every span P2 drops is asked and never defined, so `asked` is the only
-  count of P2. It is NOT every shadow END: the finder's define-time shadow
-  (`fd_shadow`) repeats per slot and layer and stays uncounted. A row whose
+  count of P2. (B4' retired the finder's define-time shadow, `fd_shadow`, which
+  repeated per slot and layer and stayed uncounted.) A row whose
   `tests/memfn/rows.tsv` signature carries ` phase=ask` is held to its floor
   on `asked` by `n2_report.py --floors`; every other row on `chosen`.
 - A cell counts, for each `END` with a chosen row, each field the row USES

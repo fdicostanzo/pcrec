@@ -55,15 +55,9 @@ MF_OPT("precheck-assign-byte", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
  * §5.2). Each denies its fd_rows[] row through the shared walk (kit_walk's
  * `no-<opt>`). At B1 NO row is routed, so every one is ASSERT_ZERO: accepted,
  * and it moves no byte (its row decides nothing that renders). `fd-d1` flips
- * to DIFFER at B2 (its OFF arm is D1w, the walk), `fd-r0`/`fd-r5`/`fd-ndisp`
- * at B4, `fd-r8` at B6. */
-MF_OPT("fd-r0", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
-       "the finder table's row R0: a set cover of two or more RANGE terms whose measured V1 "
-       "saving is inside the null floor keeps the walk; denied, the row is skipped (ASSERT_ZERO "
-       "until it routes at B4)")
-MF_OPT("fd-r5", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
-       "the finder table's row R5: a measured candidate gap below the layer's g* keeps the walk; "
-       "denied, the row is skipped (ASSERT_ZERO until it routes at B4)")
+ * to DIFFER at B2 (its OFF arm is D1w, the walk), `fd-ndisp` stays
+ * ASSERT_ZERO (no dispatch pays), `fd-r8` flips at B6. `fd-r0` and `fd-r5`
+ * RETIRED at B4' with their rows (finder.c; finder_history.md). */
 MF_OPT("fd-r8", MF_OPT_DENY, MF_B_ANY, MF_L_SIMD,
        "the finder table's row R8: a long one-shot call with a measured sparse gap takes the "
        "64-byte form; denied, the row is skipped (ASSERT_ZERO until it routes at B6)")

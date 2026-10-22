@@ -1452,8 +1452,6 @@ typedef struct {
     const char          *basis;     /* MEASURED|DERIVED|UNMEASURED-DEFAULT      */
     const char          *evidence;
     const char          *refuted_by;
-    uint8_t              routed;    /* 1 once its routing step has landed       */
-    uint8_t              locked;    /* = routed until B4 (§1.8)                 */
     const char          *step;      /* the step that routes it                  */
     uint8_t              nkeys;
     const mf_finder_key *keys;

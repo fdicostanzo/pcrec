@@ -483,17 +483,10 @@ int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
 
 /* ---- the finder table (finder.c; r17b_prime.md rev 3 §1) ----------------- */
 
-#define fd_shadow MF_NS(fd_shadow)
-/* THE TRACE-ONLY SHADOW (§1.6, regime_eval §5.3): the finder table's
- * decision for site `handle` (slot FIND for a FIND / STMT site, slot PRES for
- * each predicate of an ALL_PRESENT site), per layer variant, written as
- * MFTRACE records: no byte, no art state, never `consulted`. Called by an
- * MF_TRACE build only (compose.c); elsewhere it would write nothing. */
-void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def);
 /* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
  * that renders the table's pick for FIND site `s` (handle `handle`, the next
- * handle at a define) where the decision's rows are routed (or, R-26.6, their
- * step previewed on `art`), and *row its terminal row's id; NULL where the
+ * handle at a define) where the decision's rows decide (every row since
+ * LOCKDOWN, B4'; the REPORT row, R-26.6, only on an art previewing its step), and *row its terminal row's id; NULL where the
  * site renders its pre-table form (*row NULL), or where a routed pick has no
  * arm (*row set: a kit build error the caller refuses). `gphases` are the
  * selection's gate phases (a REPORT site's exactness is asked under them);

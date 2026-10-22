@@ -18,49 +18,28 @@
  * ABOVE the terminal that read N are asked one by one (`kit_ask`) and become
  * dispatch intervals that must PAY (§2.5) or take their `unpaid` pick.
  *
- * WHAT IT DOES AT B1: NOTHING ROUTED. Every row's `routed` bit is 0, so no
- * site renders the table's pick: every site renders its pre-table form (the
- * composer's arms). The table runs ONLY as the trace build's SHADOW
- * (`fd_shadow`, MF_TRACE): per in-scope site and layer variant it writes
- * `MFTRACE FD` records (the row, its pick, the interval literals) and one
- * `MFTRACE FDKEY` record per set lookup, and moves no byte and no art state;
- * its reads never set `consulted` (§4.7). Its rows are listed through
- * `mf_finder_rows` (R-MS4: needs, keys, basis, refutation, routing).
+ * WHAT IT DOES (LOCKDOWN, B4'): every row decides; the per-row `routed`
+ * bit, the trace-only shadow that predicted B4's movers and the POSCOV survey
+ * field that rode on it are retired. A set FIND is decided by R7w (the walk,
+ * MEASURED); the rows whose forms are not built (R8, R2: W64; R1, R2: a fast
+ * terminal; R3a, R3b, R4: an iterator) hold no fact any compile states, so
+ * they decide nothing today. The rows are listed through `mf_finder_rows`
+ * (R-MS4: needs, keys, basis, refutation).
  *
- * THE 20 ROWS (§1.3, §1.4). Slot FIND: R0 R5 R8 R3a R3b R4 R1 R2 D1 D1c D1w
- * D2 R7 R7w (F0, F1, F2 are designed and BUILT at B5, after lockdown, as
- * formal row additions), then RPT, the REPORT row (R-26.6, kit_proof.md
- * §2.5: unrouted until its step; listed after slot PRES so no earlier row's
- * index moves). Slot PRES: P0 P2 P3 P4 P9 (P1 at B5). Each row's
- * `basis` is mandatory; the self-check (`mf_finder_rows`' readers, tests/
- * memfn/run_finder.sh) holds the rules of §1.2.
+ * THE ROWS (§1.3, §1.4). Slot FIND: R8 R3a R3b R4 R1 R2 D1 D1c D1w D2 R7w
+ * (R0, R5 and R7 are WITHDRAWN, ids reserved; F0, F1, F2 are designed and
+ * BUILT at B5, after lockdown, as formal row additions), then RPT, the REPORT
+ * row (R-26.6, kit_proof.md §2.5: held for its preview step; listed after
+ * slot PRES so no earlier row's index moves). Slot PRES: P0 P2 P3 P4 P9 (P1
+ * at B5). Each row's `basis` is mandatory; the self-check (`mf_finder_rows`'
+ * readers, tests/memfn/run_finder.sh) holds the rules of §1.2.
  *
- * WHAT A B1 SITE CAN TELL IT. pcrec states `body` (ONESHOT, every builder)
- * and the START hook (the storage-point builders) at B1; the consumer kind is
- * STATED from B2 (PR-3), presence spans from B3a, E (the analysis object)
- * is read by no row before B3a (the E-1 agreement), H only in an iterator
- * (B9). So at B1 the rows reading the kind (D1, D1c, D1w, R1's and R5's
- * keys), E (R5, R8), H (R3a, R3b, R4) or B3a's presence facts (P2, P3, P4)
- * never hold, and the shadow says so: a set site's prediction is complete
- * (R0, R7, R7w read neither), a one-member site's is not (its rows read the
- * kind). That is why B4's predicted-mover manifest covers set sites of two
- * or more members only (r17b_prime/fdb1/).
- *
- * KEYS. A comparator names TEMPLATES: `<shape>` (the cover's term counts,
- * `r<RANGE>e<EQ>c<CUBE>`, measure_sets §1.3.3's rev-1 spelling), `<liner>`
+ * KEYS. A comparator names TEMPLATES: `<liner>`
  * (the layer's LINER form: V1 at OFF, W64 at W16/W32), `<kind>` (the
  * consumer kind; unresolvable while unstated), `<t>` (the terminal pick).
  * A key ABSENT from the set does not hold (§1.5 rule 3; never read as 0:
- * S917). The REGIME token of the null floor R0/R7 compare against is the
- * regime their OPERANDS were measured in ([rev3 C4]: "each test reads the
- * floor of the regime its operands were measured in"): a `saving` key is
- * derived from `beta` slopes, which the card measures over member-free
- * single calls (kit-grid@1 `beta`: subject streamed, slope 64Ki-1Mi), so the
- * floor is that regime's A/A p90, `kit.eps.streamed.slope` (gridread F3,
- * 0.173%). Lane fdb1 had spelled streamed find-all's (`kit.eps.findall.l64k`,
- * F1, 3.365%), chosen because it reproduced §3.5's predicted movers; lane
- * fdb2 corrected it (fdb2_report.md, finder_history.md): a floor is read
- * from the operands' regime, never chosen by the outcome it gives. The pay rule's operand keys (`delta`,
+ * S917).
+ * (The null-floor regime paragraph went with R0 and R7: finder_history.md.) The pay rule's operand keys (`delta`,
  * `dfloor`, `cdisp_call`, `cfloor`, `ffloor`, `cdisp_use`, `ufloor`,
  * `wfloor`: one quantity per floored cell kind, so each card has one arity)
  * are spelled here first and are PROVISIONAL until kit-grid@2's cards
@@ -97,10 +76,9 @@ static const char *const ff_name[] = {
  * LIBC_BACK (pf_memchr_back), WALK (pf_walk) and RUN (the fn rows); since
  * R-26.6 PROOF, the composer's own first-match form held to prove every
  * REQUIRED term's set EXACTLY (the REPORT row's pick, SF_PROOF_EXACT). V1
- * (R17-b's `pf_terms_mask`) lands at B4, W64 at B6, NONE at B5, A3 at B9.
- * A row whose pick is unbuilt still DECIDES in the shadow (that is B4's
- * prediction), except where the design makes building the applicability
- * (R7's W64 "where it is BUILT", §1.3; R2's W64 terminal). */
+ * (R17-b's `pf_terms_mask`) is NOT built (R7 is withdrawn, [MEMFN-REGIME]),
+ * W64 lands at B6, NONE at B5, A3 at B9. A row whose pick is W64 does not
+ * hold while it is unbuilt (fd_w64_built). */
 static int fd_w64_built(void) { return 0; }
 
 /* Slot PRES: a link (r17b_prime.md §1.2 [rev3 D3]). */
@@ -119,7 +97,7 @@ enum {
     SF_PROVEN       = 1u << 5,  /* span 0's proof covers this span (P2, B3a)   */
     SF_E_MEASURED   = 1u << 6,  /* E at MEASURED provenance (never before B3a) */
     SF_TERMINAL_FAST = 1u << 7, /* the terminal pick is V1 or W64              */
-    SF_COVER_R2     = 1u << 8,  /* the cover's shape class r2: >= 2 RANGE terms */
+    /* bit 8: SF_COVER_R2, retired with R0 (B4') */
     SF_PRES_SPLIT   = 1u << 9,  /* one member of a necessary set, or a run's
                                    window (PR-5's unpicked spans, B3a)        */
     SF_SET_RARER    = 1u << 10, /* the set's pick strictly rarer than the run's
@@ -158,16 +136,12 @@ typedef struct {
     fd_form     pick;           /* slot FIND                                 */
     fd_form     unpaid;         /* FF_UNSTATED: the row is dropped unpaid    */
     fd_link     link;           /* slot PRES                                 */
-    uint8_t     routed;         /* [rev3 D6] 1 once its routing step landed  */
     const char *opt;            /* options.def name, or NULL                 */
     fd_basis    basis;          /* [rev3 C2] mandatory                       */
     const char *step;           /* the routing step                          */
     const char *evidence;
     const char *refuted_by;     /* [rev3 D11]                                */
     const gate_contract *ct;
-    uint8_t     liner;          /* the pick is the layer's LINER form ([rev3
-                                   D8]): V1 at OFF, W64 at W16/W32, where it
-                                   is BUILT (R5, R7)                        */
     uint8_t     pay;            /* an N-dispatch row: its interval pays by
                                    T1-T3 (§2.5) or takes its unpaid (R1, R2) */
 } fd_row;
@@ -186,7 +160,7 @@ typedef struct {
     [FLD_pred] = MF_ANY, [FLD_preds] = MF_ANY, [FLD_ret_pred] = MF_ANY, \
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
-    [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, [FLD_table_ref] = MF_ANY, \
+    [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, \
     [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_window_stated] = MF_ANY, \
     [FLD_move_back] = MF_ANY, [FLD_overshoot] = MF_ANY, [FLD_decl_point] = MF_ANY, \
     [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, \
@@ -199,8 +173,9 @@ typedef struct {
    renders `absent` FAILS; the REPORT row's pick is the composer's walk, whose
    rows serve those fields themselves (the generic row tests both), and its
    class is held to the REQUIRED sets (SF_PROOF_EXACT), so it serves both. */
-#define FD_SERVES_REST \
+#define FD_SERVES_REST(table) \
     FD_SERVES_COMMON \
+    [FLD_table_ref] = (table), \
     [FLD_ctx] = CM(NONE), [FLD_absent] = CM(NO),
 
 /* The `uses` a row declares: the fields whose UNSTATED value declines it. */
@@ -215,15 +190,15 @@ static const gate_use use_mn_kind[] = {
 
 /* One contract per row: its uses, then its four constrained serves. `body`
  * MF_ANY on a row that reads no M (its text is the same for any mode). */
-#define FD_CT(name, row, uses, kinds, needs, body, layers) \
+#define FD_CT_T(name, row, uses, kinds, needs, body, layers, table) \
     static const gate_contract name = { "fd", row, NU(uses), { \
-        FD_SERVES_REST \
+        FD_SERVES_REST(table) \
         [FLD_site_kind] = (kinds), [FLD_need] = (needs), \
         [FLD_body] = (body), [FLD_layer] = (layers), \
     } };
+#define FD_CT(name, row, uses, kinds, needs, body, layers) \
+    FD_CT_T(name, row, uses, kinds, needs, body, layers, MF_ANY)
 
-FD_CT(ct_r0,  "R0",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_OFF)
-FD_CT(ct_r5,  "R5",  use_kind,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_r8,  "R8",  use_mn_kind, KD_ALL,            NEED_ALL,        CM(ONESHOT), LY_SIMD)
 FD_CT(ct_r3a, "R3a", use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_SIMD)
 FD_CT(ct_r3b, "R3b", use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_SIMD)
@@ -234,8 +209,13 @@ FD_CT(ct_d1,  "D1",  use_kind,    KD_ALL,            NEED_ALL,        MF_ANY,   
 FD_CT(ct_d1c, "D1c", use_kind,    CM(DFA_ATTEMPT),   NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_d1w, "D1w", use_kind,    KD_ALL & ~CM(DFA_ATTEMPT), NEED_ALL, MF_ANY,     LY_ALL)
 FD_CT(ct_d2,  "D2",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
-FD_CT(ct_r7,  "R7",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
-FD_CT(ct_r7w, "R7w", use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_OFF)
+/* R7w's pick is the walk (pf_walk), which reads pcrec's offered table
+   (walk_applies serves table_ref REF): a routed pick its arm does not serve is
+   REFUSED, never fallen back from, so the row serves exactly what its arm does
+   and a table-less site stays the composer's (K96: a row's applicability
+   covers every field its form does not honour). It uses the consumer kind:
+   a site that states none is decided by no default (no presumed value). */
+FD_CT_T(ct_r7w, "R7w", use_kind,  KD_ALL,            NEED_ALL,        MF_ANY,      LY_OFF, CM(REF))
 FD_CT(ct_p0,  "P0",  use_none,    KD_ALL,            CM(N_REQUIRED),  MF_ANY,      LY_ALL)
 FD_CT(ct_p2,  "P2",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
 FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
@@ -246,6 +226,7 @@ FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,   
    span and absent rule its pick serves */
 static const gate_contract ct_rpt = { "fd", "RPT", NU(use_kind), {
     FD_SERVES_COMMON
+    [FLD_table_ref] = MF_ANY,
     [FLD_ctx] = MF_ANY, [FLD_absent] = MF_ANY,
     [FLD_site_kind] = CM(REPORT), [FLD_need] = CM(N_REQUIRED),
     [FLD_body] = MF_ANY, [FLD_layer] = LY_ALL,
@@ -254,115 +235,107 @@ static const gate_contract ct_rpt = { "fd", "RPT", NU(use_kind), {
 /* ---- THE TABLE (r17b_prime.md rev 3 §1.3, §1.4) ---------------------------
  *
  * Slot FIND in first-match order (§1.3's #4-#17; F0/F1/F2, #1-#3, at B5),
- * then slot PRES (§1.4's P0, P2, P3, P4, P9; P1 at B5). Every `routed` bit
- * is 0 at B1 (§1.6): the commit that routes a group sets its rows' bits. An
- * edit to a row is logged in memfn/docs/finder_history.md in the commit that
- * makes it (§1.8); a routed row is LOCKED. */
-#define K_SAVE   "kit.saving.<liner>.WALK.<shape>"
-#define K_EPS    "kit.eps.streamed.slope"
+ * then slot PRES (§1.4's P0, P2, P3, P4, P9; P1 at B5). LOCKDOWN (B4'): every
+ * row decides, so the per-row `routed` bit is gone (the one exception is a
+ * row held for a preview step, fd_previews). An edit to a row is logged in
+ * memfn/docs/finder_history.md in the commit that makes it (§1.8). */
 static const fd_row fd_rows[] = {
-    { "R0", FD_FIND, KN_P | KN_A, SF_SPAN0 | SF_COVER_R2, 0,
-      { { FL_KEY, "kit.saving.V1.WALK.r2", FO_LE, K_EPS, NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-r0", FB_DERIVED, "B4",
-      "a cover of >= 2 RANGE terms (r2) whose V1 saving over the walk is inside the null "
-      "floor: the walk (derived from M2, M3, M6)",
-      "a grid that times an r2 cover's V1 below the walk by more than the floor", &ct_r0, 0, 0 },
-    { "R5", FD_FIND, KN_P | KN_E | KN_A, SF_SPAN0 | SF_E_MEASURED, 0,
-      { { FL_E_G, NULL, FO_LT, "kit.gstar.<liner>.<kind>", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-r5", FB_MEASURED, "B4",
-      "a MEASURED candidate gap below g* for the layer's LINER form: the walk (M15)",
-      "a dense subject on which the LINER form beats the walk below g*", &ct_r5, 1, 0 },
     { "R8", FD_FIND, KN_P | KN_N | KN_M | KN_E | KN_A, SF_SPAN0 | SF_E_MEASURED, 0,
       { { FL_N, NULL, FO_GE, "kit.lstar.W64.<kind>", NULL },
         { FL_E_G, NULL, FO_GE, "kit.g8.W64.<kind>", NULL } },
-      FF_W64, FF_V1, { 0, 0, 0, 0 }, 0, "fd-r8", FB_DERIVED, "B6",
+      FF_W64, FF_V1, { 0, 0, 0, 0 }, "fd-r8", FB_DERIVED, "B6",
       "a long one-shot call with a measured sparse gap: the 64-byte form (gridread §6.3 D2)",
-      "a sparse long call on which W64 loses to V1", &ct_r8, 0, 0 },
+      "a sparse long call on which W64 loses to V1", &ct_r8, 0 },
     { "R3a", FD_FIND, KN_H, SF_SPAN0, 0,
       { { FL_H_SPAN, NULL, FO_LT, "kit.h3a", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_MEASURED, "B9",
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
       "PROVISIONAL: an iterator whose history shows short spans: the walk",
-      "an iterator cell where short-span history favours the block form", &ct_r3a, 0, 0 },
+      "an iterator cell where short-span history favours the block form", &ct_r3a, 0 },
     { "R3b", FD_FIND, KN_H, SF_SPAN0, 0,
       { { FL_H_SPAN, NULL, FO_IN, "kit.h3a", "kit.h3b" } },
-      FF_A3, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_MEASURED, "B9",
+      FF_A3, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
       "PROVISIONAL: an iterator with middle spans: A3",
-      "an iterator cell where A3 loses at middle spans", &ct_r3b, 0, 0 },
+      "an iterator cell where A3 loses at middle spans", &ct_r3b, 0 },
     { "R4", FD_FIND, KN_H | KN_P, SF_SPAN0, 0,
       { { FL_H_POP, NULL, FO_LT, "kit.gstar.<liner>.<kind>", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_MEASURED, "B9",
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B9",
       "an iterator whose population says dense: the walk for that block",
-      "an iterator cell where the dense block wins on the LINER form", &ct_r4, 0, 0 },
+      "an iterator cell where the dense block wins on the LINER form", &ct_r4, 0 },
     { "R1", FD_FIND, KN_P | KN_M | KN_N | KN_A, SF_SPAN0 | SF_TERMINAL_FAST, 0,
       { { FL_N, NULL, FO_LT, "kit.xover.<t>.WALK.<kind>", NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, "fd-ndisp", FB_DERIVED, "B4",
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, "fd-ndisp", FB_DERIVED, "B4",
       "a one-shot call shorter than the fast terminal's crossover: the walk (M9; the "
       "interval pays by T1-T3 or is dropped)",
-      "a short-call cell where the fast terminal beats the walk below the crossover", &ct_r1,
-      0, 1 },
+      "a short-call cell where the fast terminal beats the walk below the crossover", &ct_r1, 1 },
     { "R2", FD_FIND, KN_P | KN_M | KN_N | KN_A, SF_SPAN0 | SF_TERMINAL_FAST, 0,
       { { FL_N, NULL, FO_LT, "kit.block.W64", NULL } },
-      FF_V1, FF_WALK, { 0, 0, 0, 0 }, 0, "fd-ndisp", FB_DERIVED, "B6",
+      FF_V1, FF_WALK, { 0, 0, 0, 0 }, "fd-ndisp", FB_DERIVED, "B6",
       "a one-shot call shorter than W64's block: V1 (M11)",
-      "a sub-block call on which W64's tail beats V1", &ct_r2, 0, 1 },
+      "a sub-block call on which W64's tail beats V1", &ct_r2, 1 },
     { "D1", FD_FIND, KN_P, SF_SPAN0 | SF_ONE_MEMBER, SF_SEEK_ROLE,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_LIBC, FF_UNSTATED, { 0, 0, 0, 0 }, 1, "fd-d1", FB_UNMEASURED_DEFAULT, "B2",
+      FF_LIBC, FF_UNSTATED, { 0, 0, 0, 0 }, "fd-d1", FB_UNMEASURED_DEFAULT, "B2",
       "Q-WR-1's count rule, today's: one member, not a VM attempt seek: the libc search",
-      "a measured libc-free one-byte form beating libc (F1, M19-M21)", &ct_d1, 0, 0 },
+      "a measured libc-free one-byte form beating libc (F1, M19-M21)", &ct_d1, 0 },
     { "D1c", FD_FIND, KN_P, SF_CONTEXT_STOP, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_LIBC_BACK, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B2",
+      FF_LIBC_BACK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "B2",
       "MLINE: no span 0, one context byte one before the origin: the libc back search "
       "(pf_memchr_back, LOOP_EXIT)",
-      "a measured libc-free back FIND beating libc on (?m)^ (B7, Q-WR-7)", &ct_d1c, 0, 0 },
+      "a measured libc-free back FIND beating libc on (?m)^ (B7, Q-WR-7)", &ct_d1c, 0 },
     { "D1w", FD_FIND, KN_P, SF_SPAN0 | SF_ONE_MEMBER, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B2",
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "B2",
       "one member anywhere else (the VM hat's seek, Q-R5; fd-d1's OFF arm): the table walk "
       "over the one-member table",
-      "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0, 0 },
+      "grid2's VM_ATTEMPT one-byte cells timing V1 below the walk (F2, B5)", &ct_d1w, 0 },
     { "D2", FD_FIND, KN_P, SF_SPAN0 | SF_RUN_TERM, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_RUN, FF_UNSTATED, { 0, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B3b",
+      FF_RUN, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "B3b",
       "span 0 a RUN term (a handoff landmark longer than one byte): the run search (the "
       "nested fn_rows[] walk), today's rule",
-      "a measured run form beating the nested walk", &ct_d2, 0, 0 },
-    { "R7", FD_FIND, KN_P | KN_A, SF_SPAN0, 0,
-      { { FL_KEY, K_SAVE, FO_GT, K_EPS, NULL } },
-      FF_V1, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_DERIVED, "B4",
-      "the layer's LINER form where its cover shape's measured saving over the walk exceeds "
-      "the null floor (M3/M4/M5 derived); an unmeasured shape does not hold",
-      "a grid timing the shape's LINER form inside the floor of the walk", &ct_r7, 1, 0 },
+      "a measured run form beating the nested walk", &ct_d2, 0 },
+    /* THE DEFAULT for every set FIND, MEASURED (Frank's walk ruling, D169
+       addendum: E8's real-text verdict, docs/design/memfn/walk_vs_v1_record.md
+       §5). WITHDRAWN rows, ids reserved and never reused: R7 (V1 on covers of
+       at most 2 terms), R5 (a stated REGULAR regime -> the walk: its pick is
+       now this default) and R0 (retired earlier at B4, with S916): under the
+       ruling a wide form could fire only on a stated sparse or irregular
+       regime, no fact states one at a call today, and a row whose form is not
+       ported and whose condition no compile reaches is built ahead of need
+       (D77). The re-open trigger is plan row [MEMFN-REGIME]; the edit is
+       logged in memfn/docs/finder_history.md (§1.8). */
     { "R7w", FD_FIND, KN_P, SF_SPAN0, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_UNMEASURED_DEFAULT, "B4",
-      "the default: main's walk (zero-mover)",
-      "any measured shape whose LINER form saves more than the floor (then R7 holds)", &ct_r7w, 0, 0 },
+      FF_WALK, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_MEASURED, "B4",
+      "the default for every set FIND: main's walk (zero-mover; the walk ruling, D169 "
+      "addendum)",
+      "a MEASURED or caller-stated landing regime at the call on which a wide form beats the "
+      "walk by E8-style real-text acceptance ([MEMFN-REGIME])", &ct_r7w, 0 },
     /* slot PRES (§1.4) */
     { "P0", FD_PRES, KN_P, SF_REQUIRED, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL, FB_DERIVED, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, NULL, FB_DERIVED, "B3b",
       "a REQUIRED span: every member and the whole run verified before the first element "
       "(K65, K66; G-1, G-2); undeniable (D158)",
-      "none: derived from the answer contract", &ct_p0, 0, 0 },
+      "none: derived from the answer contract", &ct_p0, 0 },
     { "P2", FD_PRES, KN_P | KN_E, SF_PROVEN, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 0, 1, 0, 0 }, 1, "fd-pres-g1", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 0, 1, 0, 0 }, "fd-pres-g1", FB_UNMEASURED_DEFAULT, "B3b",
       "G1, ported: span 0's proof covers the span (identity, run_verified, or the density "
       "conjunct on the prior): dropped",
-      "a measured cell where the dominated pre-check pays for itself", &ct_p2, 0, 0 },
+      "a measured cell where the dominated pre-check pays for itself", &ct_p2, 0 },
     { "P3", FD_PRES, KN_P | KN_E, SF_PRES_SPLIT, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 1, 0 }, 1, "fd-pres-pick", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 1, 0 }, "fd-pres-pick", FB_UNMEASURED_DEFAULT, "B3b",
       "the pick, ported: the rarest member by the frequency kind (ties to the higher pattern "
       "order), or the run's scan window",
-      "a measured cell where another member or window verifies cheaper", &ct_p3, 0, 0 },
+      "a measured cell where another member or window verifies cheaper", &ct_p3, 0 },
     { "P4", FD_PRES, KN_P | KN_E, SF_SET_RARER, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, "pres-set-lead", FB_UNMEASURED_DEFAULT, "B3b",
       "set-leads, ported: the set's pick strictly rarer than the run's scan member leads",
-      "a measured cell where the run leading is cheaper", &ct_p4, 0, 0 },
+      "a measured cell where the run leading is cheaper", &ct_p4, 0 },
     { "P9", FD_PRES, KN_P, 0, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, 1, NULL, FB_UNMEASURED_DEFAULT, "B3b",
+      FF_UNSTATED, FF_UNSTATED, { 1, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "B3b",
       "the total default: verify (Q-WR-9)",
-      "a TUG cell measured losing for want of the priced pre-scan (P1, B5)", &ct_p9, 0, 0 },
+      "a TUG cell measured losing for want of the priced pre-scan (P1, B5)", &ct_p9, 0 },
     /* slot FIND, appended after slot PRES so every earlier row keeps its index
        (mf_class.pres_row carries 1 + an index): the REPORT row (R-26.6,
        kit_proof.md §2.5, §7 Zk), the last FIND row, UNROUTED until its step;
@@ -370,12 +343,12 @@ static const fd_row fd_rows[] = {
        so its place among the FIND rows decides nothing */
     { "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
-      FF_PROOF, FF_UNSTATED, { 0, 0, 0, 0 }, 0, NULL, FB_DERIVED, "R-26.6",
+      FF_PROOF, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_DERIVED, "R-26.6",
       "a REPORT site (R-26.3): the candidate is the answer, so the form proves every "
       "REQUIRED term exactly; the composer's own form where its class proves each REQUIRED "
       "set at every offset, and no row (never NONE) where it does not",
       "none: derived from the answer contract (R-26.3); a form that cannot prove every "
-      "REQUIRED set exactly does not apply (K96)", &ct_rpt, 0, 0 },
+      "REQUIRED set exactly does not apply (K96)", &ct_rpt, 0 },
 };
 #define FD_NROWS (sizeof fd_rows / sizeof fd_rows[0])
 
@@ -406,11 +379,15 @@ const char *fd_preview_step(const char *step)
     return NULL;
 }
 
-/* 1 iff row `r` decides on `art`: its routing step has landed (`routed`), or
- * the art previews that step. */
-static int fd_row_routed(const mf_art *art, const fd_row *r)
+/* 1 iff row `r` decides on `art`: every row does (LOCKDOWN, B4'), except a
+ * row whose step is one a host previews (fd_previews: the REPORT row), which
+ * decides only on an art previewing that step. */
+static int fd_row_decides(const mf_art *art, const fd_row *r)
 {
-    return r->routed || (art->preview && !strcmp(art->preview, r->step));
+    for (size_t i = 0; i < sizeof fd_previews / sizeof fd_previews[0]; i++)
+        if (!strcmp(r->step, fd_previews[i]))
+            return art->preview && !strcmp(art->preview, r->step);
+    return 1;
 }
 
 const gate_contract *fd_row_contract(size_t i)
@@ -434,13 +411,10 @@ typedef struct {
     const mf_pred  *span;       /* the span decided                           */
     int             pred_ix;    /* PRES: the predicate's index; FIND: -1      */
     uint32_t        facts;
-    unsigned        sh_r, sh_e, sh_c;  /* the cover shape (SF_SPAN0 sets)     */
-    int             has_cover;
     unsigned        members;
     fd_facts        ff;         /* site_kind, layer, need (the gate's)        */
     fd_phase        phase;
     fd_form         terminal;
-    int             trace;      /* write FDKEY records                         */
 } fd_x;
 
 static int layer_ix(int layer_cls)
@@ -490,11 +464,7 @@ static int key_expand(const fd_x *q, const char *tpl, char *buf, size_t n)
             const char *e = strchr(p, '>');
             if (!e) return 0;
             size_t len = (size_t)(e - p - 1);
-            if (len == 5 && !strncmp(p + 1, "shape", 5)) {
-                if (!q->has_cover) return 0;
-                snprintf(tmp, sizeof tmp, "r%ue%uc%u", q->sh_r, q->sh_e, q->sh_c);
-                fill = tmp;
-            } else if (len == 5 && !strncmp(p + 1, "liner", 5)) {
+            if (len == 5 && !strncmp(p + 1, "liner", 5)) {
                 fill = layer_ix(q->ff.layer) ? ff_name[FF_W64] : ff_name[FF_V1];
             } else if (len == 4 && !strncmp(p + 1, "kind", 4)) {
                 if (!(fill = kind_name(q->ff.kind))) return 0;
@@ -520,7 +490,7 @@ static int key_expand(const fd_x *q, const char *tpl, char *buf, size_t n)
 }
 
 /* The set's value of `key`: 1 and *v, or 0 when ABSENT (no set, or no row:
- * a skip, never a 0, §1.5 rule 3). Traced. */
+ * a skip, never a 0, §1.5 rule 3). */
 static int fd_lookup(const fd_x *q, const char *row, const char *key, int64_t *v)
 {
     const mf_measures *ms = q->art->ms;
@@ -531,13 +501,7 @@ static int fd_lookup(const fd_x *q, const char *row, const char *key, int64_t *v
             found = 1;
             break;
         }
-#ifdef MF_TRACE
-    if (q->trace)
-        fprintf(stderr, "MFTRACE FDKEY art=%u site=%u row=%s key=%s found=%d\n",
-                q->art->trace_id, q->handle, row, key, found);
-#else
     (void)row;
-#endif
     return found;
 }
 
@@ -550,11 +514,10 @@ static int fd_value(const fd_x *q, const char *row, const char *tpl, int64_t *v)
 
 /* ---- the row predicate -------------------------------------------------------- */
 
-/* Row `r`'s pick for the walk input `q`: the layer's LINER form for a liner
- * row, else its own. */
+/* Row `r`'s pick for the walk input `q`. */
 static fd_form fd_pick_of(const fd_row *r, const fd_x *q)
 {
-    if (r->liner) return layer_ix(q->ff.layer) ? FF_W64 : FF_V1;
+    (void)q;
     return r->pick;
 }
 
@@ -871,16 +834,6 @@ static void find_facts(fd_x *q)
         }
         q->facts |= SF_SPAN0;
         if (q->members == 1) q->facts |= SF_ONE_MEMBER;
-        mf_cover c;
-        if (mf_set_terms(t->set, MF_SET_K, &c)) {
-            q->has_cover = 1;
-            for (unsigned i = 0; i < c.n; i++) {
-                if (c.t[i].kind == MF_ST_ARC) q->sh_r++;
-                else if (c.t[i].a == 0xFF) q->sh_e++;
-                else q->sh_c++;
-            }
-            if (q->sh_r >= 2) q->facts |= SF_COVER_R2;
-        }
     } else if (t->kind == MF_T_RUN && t->offset >= 0) {
         q->facts |= SF_SPAN0;
         if (t->run_len > 1) q->facts |= SF_RUN_TERM;
@@ -913,267 +866,6 @@ static int fd_scope(const mf_site *s)
         return 1 << FD_FIND;
     if (s->op == MF_OP_ALL_PRESENT && s->npspan && s->pspans) return 1 << FD_PRES;
     return 0;
-}
-
-/* ---- the shadow ----------------------------------------------------------------- *
- *
- * Compiled in every build (so the table's walk is type-checked with it) and
- * CALLED only by an MF_TRACE build (compose.c); its records print only
- * there. */
-
-#ifdef MF_TRACE
-/* ---- POSCOV, THE POSITION-COST SURVEY FIELD (trace build only; lane b4close2,
- * [MEMFN-POSCOST]) ---------------------------------------------------------
- *
- * Survey instrumentation, not a selection input: nothing below is read by a
- * row, a gate or an arm, and it moves no byte and no art state. A trace-build
- * pcrec (src/gen/emit_dfa.c under -DPCREC_MF_POSCOV, never the default build)
- * hands the walk-routed FIND site's SPAN here just before it defines the
- * site: the k-set walk's byte set at each offset 0..n-1 from the candidate
- * start (pcrec's `kset_walk` fact, the bytes every match carries there), and
- * the scanned set with its offset. fd_shadow prints three fields on each FIND
- * record:
- *   poscov=t0,t1,...  the exact cover's TERM COUNT at each walk position
- *                     (`mf_set_terms` at MF_SET_K, the cover the form would
- *                     render); `x` where it declines (no cover within K
- *                     terms or the budget); `-` when no walk was handed.
- *   hull=E/T          the SCANNED position's best SUPERSET of at most 2
- *                     terms: E = its extra members (hull minus the set), T
- *                     the terms it uses (1 or 2); `exact` where the scanned
- *                     set's own cover already has <= 2 terms (extras 0);
- *                     `>16` where no 1- or 2-term superset has <= 16 extras.
- *   walk0=same|diff|-  whether the walk's position 0 is the scanned set
- *                     (it differs where the scan set is narrower than the
- *                     first-byte set, e.g. the DFA hat's S ∩ E*).
- * HULL CONSTRUCTION (exact, not a heuristic): the terms are the cover
- * vocabulary's own, every CUBE (care mask M, value V: 3^8 of them) and every
- * ARC (L, W: 1 <= W <= 128). Let S be the scanned set. L = the terms T with
- * T ∩ S nonempty and |T \ S| <= 16 (an arc grows monotonically in W, so the
- * enumeration stops at the first width over budget). The hull is the minimum,
- * over one term A in L, or two A, B in L with S ⊆ A ∪ B, of |(A ∪ B) \ S|;
- * ties go to fewer terms. Because any superset pair with <= 16 extras has
- * each member inside L, the search over L x L is complete for that budget:
- * `>16` means NO 2-term superset has <= 16 extras. The terms need not lie
- * inside S (a hull is a SUPERSET filter, its extras are candidates a verify
- * must reject). */
-#define FD_PC_MAX 32
-static struct {
-    int      have;
-    uint8_t  scan[32];
-    int32_t  off;
-    unsigned n;
-    uint8_t  pos[FD_PC_MAX][32];
-} fd_pc;
-static char fd_pc_text[256];            /* " poscov=.. hull=.. walk0=.." for this site */
-
-void MF_NS(trace_poscov)(const uint8_t scan[32], int32_t off, unsigned n,
-                         const uint8_t (*pos)[32]);
-void MF_NS(trace_poscov)(const uint8_t scan[32], int32_t off, unsigned n,
-                         const uint8_t (*pos)[32])
-{
-    memset(&fd_pc, 0, sizeof fd_pc);
-    memcpy(fd_pc.scan, scan, 32);
-    fd_pc.off = off;
-    fd_pc.n = n > FD_PC_MAX ? FD_PC_MAX : n;
-    for (unsigned i = 0; i < fd_pc.n; i++) memcpy(fd_pc.pos[i], pos[i], 32);
-    fd_pc.have = 1;
-}
-
-typedef struct { uint64_t w[4]; } pc_bits;
-
-static unsigned pc_pop(const pc_bits *b)
-{
-    return (unsigned)(__builtin_popcountll(b->w[0]) + __builtin_popcountll(b->w[1]) +
-                      __builtin_popcountll(b->w[2]) + __builtin_popcountll(b->w[3]));
-}
-
-/* The minimum-extras 1- or 2-term superset of `set` (see the header): returns
- * 1 and *extra, *nt, or 0 for none within 16 extras. */
-static int pc_hull(const uint8_t set[32], unsigned *extra, unsigned *nt)
-{
-    pc_bits S, notS;
-    memcpy(&S, set, 32);
-    for (int i = 0; i < 4; i++) notS.w[i] = ~S.w[i];
-    size_t cap = 4096, n = 0;
-    pc_bits *L = malloc(cap * sizeof *L);
-    if (!L) return 0;
-    for (unsigned M = 0; M < 256; M++)
-        for (unsigned V = 0; V < 256; V++) {
-            if (V & ~M) continue;
-            pc_bits t = { { 0, 0, 0, 0 } };
-            for (unsigned x = 0; x < 256; x++)
-                if ((x & M) == V) t.w[x >> 6] |= 1ull << (x & 63);
-            pc_bits in = { { t.w[0] & S.w[0], t.w[1] & S.w[1], t.w[2] & S.w[2], t.w[3] & S.w[3] } };
-            pc_bits out = { { t.w[0] & notS.w[0], t.w[1] & notS.w[1], t.w[2] & notS.w[2],
-                              t.w[3] & notS.w[3] } };
-            if (!pc_pop(&in) || pc_pop(&out) > 16) continue;
-            if (n == cap) {
-                cap *= 2;
-                pc_bits *g = realloc(L, cap * sizeof *L);
-                if (!g) { free(L); return 0; }
-                L = g;
-            }
-            L[n++] = t;
-        }
-    for (unsigned a = 0; a < 256; a++) {
-        pc_bits t = { { 0, 0, 0, 0 } };
-        for (unsigned w = 1; w <= 128; w++) {
-            unsigned x = (a + w - 1) & 0xFFu;
-            t.w[x >> 6] |= 1ull << (x & 63);
-            pc_bits out = { { t.w[0] & notS.w[0], t.w[1] & notS.w[1], t.w[2] & notS.w[2],
-                              t.w[3] & notS.w[3] } };
-            if (pc_pop(&out) > 16) break;
-            pc_bits in = { { t.w[0] & S.w[0], t.w[1] & S.w[1], t.w[2] & S.w[2], t.w[3] & S.w[3] } };
-            if (!pc_pop(&in)) continue;
-            if (n == cap) {
-                cap *= 2;
-                pc_bits *g = realloc(L, cap * sizeof *L);
-                if (!g) { free(L); return 0; }
-                L = g;
-            }
-            L[n++] = t;
-        }
-    }
-    unsigned best = 17, bt = 0;
-    for (size_t i = 0; i < n; i++) {
-        pc_bits rem = { { S.w[0] & ~L[i].w[0], S.w[1] & ~L[i].w[1], S.w[2] & ~L[i].w[2],
-                          S.w[3] & ~L[i].w[3] } };
-        if (!(rem.w[0] | rem.w[1] | rem.w[2] | rem.w[3])) {
-            pc_bits o = { { L[i].w[0] & notS.w[0], L[i].w[1] & notS.w[1], L[i].w[2] & notS.w[2],
-                            L[i].w[3] & notS.w[3] } };
-            unsigned e = pc_pop(&o);
-            if (e < best || (e == best && bt != 1)) { best = e; bt = 1; }
-            continue;
-        }
-        for (size_t j = 0; j < n; j++) {
-            if ((rem.w[0] & ~L[j].w[0]) | (rem.w[1] & ~L[j].w[1]) | (rem.w[2] & ~L[j].w[2]) |
-                (rem.w[3] & ~L[j].w[3]))
-                continue;
-            pc_bits o = { { (L[i].w[0] | L[j].w[0]) & notS.w[0], (L[i].w[1] | L[j].w[1]) & notS.w[1],
-                            (L[i].w[2] | L[j].w[2]) & notS.w[2], (L[i].w[3] | L[j].w[3]) & notS.w[3] } };
-            unsigned e = pc_pop(&o);
-            if (e < best || (e == best && bt == 0)) { best = e; bt = 2; }
-        }
-    }
-    free(L);
-    if (best > 16) return 0;
-    *extra = best;
-    *nt = bt;
-    return 1;
-}
-
-/* Builds fd_pc_text for the FIND site `s` (consumes the note). */
-static void pc_prepare(const mf_site *s)
-{
-    char *p = fd_pc_text, *e = fd_pc_text + sizeof fd_pc_text;
-    const mf_term *t = &s->pred.term[0];
-    int ok = fd_pc.have && t->kind == MF_T_SET && t->offset == fd_pc.off &&
-             !memcmp(fd_pc.scan, t->set, 32);
-    if (!ok) {
-        snprintf(fd_pc_text, sizeof fd_pc_text, " poscov=- hull=- walk0=-");
-        fd_pc.have = 0;
-        return;
-    }
-    p += snprintf(p, (size_t)(e - p), " poscov=");
-    for (unsigned i = 0; i < fd_pc.n; i++) {
-        mf_cover c;
-        if (mf_set_terms(fd_pc.pos[i], MF_SET_K, &c))
-            p += snprintf(p, (size_t)(e - p), "%s%u", i ? "," : "", c.n);
-        else
-            p += snprintf(p, (size_t)(e - p), "%sx", i ? "," : "");
-    }
-    if (!fd_pc.n) p += snprintf(p, (size_t)(e - p), "-");
-    mf_cover c0;
-    unsigned ex = 0, nt = 0;
-    if (mf_set_terms(t->set, MF_SET_K, &c0) && c0.n <= 2)
-        p += snprintf(p, (size_t)(e - p), " hull=exact");
-    else if (pc_hull(t->set, &ex, &nt))
-        p += snprintf(p, (size_t)(e - p), " hull=%u/%u", ex, nt);
-    else
-        p += snprintf(p, (size_t)(e - p), " hull=>16");
-    snprintf(p, (size_t)(e - p), " walk0=%s",
-             !fd_pc.n ? "-" : !memcmp(fd_pc.pos[0], t->set, 32) ? "same" : "diff");
-    fd_pc.have = 0;
-}
-#endif
-
-static void put_decision(const fd_x *q, int slot, const fd_decision *d)
-{
-#ifndef MF_TRACE
-    (void)q; (void)slot; (void)d;
-#else
-    fprintf(stderr, "MFTRACE FD art=%u site=%u slot=%s", q->art->trace_id, q->handle,
-            slot == FD_FIND ? "FIND" : "PRES");
-    if (slot == FD_PRES) fprintf(stderr, " pred=%d", q->pred_ix);
-    fprintf(stderr, " layer=%s kind=%s need=%s members=%u", layer_name[layer_ix(q->ff.layer)],
-            kind_name(q->ff.kind) ? kind_name(q->ff.kind) : "UNSTATED",
-            q->ff.need == CL_N_REQUIRED ? "REQUIRED" : "OPTIONAL", q->members);
-    if (q->has_cover) fprintf(stderr, " shape=r%ue%uc%u", q->sh_r, q->sh_e, q->sh_c);
-    else fputs(" shape=-", stderr);
-    if (slot == FD_FIND) fputs(fd_pc_text, stderr);       /* poscov= hull= walk0= */
-    const fd_row *t = d->terminal < FD_NROWS ? &fd_rows[d->terminal] : NULL;
-    fprintf(stderr, " row=%s", t ? t->id : "-");
-    if (slot == FD_FIND) {
-        fprintf(stderr, " pick=%s basis=%s routed=%d intervals=",
-                t ? ff_name[fd_pick_of(t, q)] : "-",
-                t ? fb_name[t->basis] : "-", t ? t->routed : 0);
-        if (d->npiece <= 1) {
-            fputs("-", stderr);
-        } else {
-            for (unsigned j = 0; j < d->npiece; j++) {
-                fprintf(stderr, "%s[%llu,", j ? ";" : "", d->lo[j]);
-                if (d->hi[j] == FD_INF) fputs("inf", stderr);
-                else fprintf(stderr, "%llu", d->hi[j]);
-                fprintf(stderr, "):%s@%s", ff_name[d->pick[j]], d->row[j]);
-            }
-        }
-    } else {
-        fprintf(stderr, " link=v%dp%dm%do%d basis=%s routed=%d", t ? t->link.verify : 0,
-                t ? t->link.proven_by : 0, t ? t->link.member : 0, t ? t->link.order : 0,
-                t ? fb_name[t->basis] : "-", t ? t->routed : 0);
-    }
-    fputs("\n", stderr);
-#endif
-}
-
-void fd_shadow(const mf_art *art, uint32_t handle, const mf_site *s, const mf_hooks *def)
-{
-    /* slot PRES is ROUTED since B3b: its decision is the define's own
-       (fd_pres, recorded there), so the shadow walks slot FIND only */
-    int scope = fd_scope(s) & (1 << FD_FIND);
-    if (!scope) return;
-#ifdef MF_TRACE
-    pc_prepare(s);                      /* the survey field; one per site, all layers */
-#endif
-    /* the layer variants: SIMD-off always; W16 and W32 where the site may
-       carry SIMD text (its policy has no PORTABLE_ONLY) */
-    int nly = (s->policy & MF_P_PORTABLE_ONLY) ? 1 : 3;
-    static const int lyc[3] = { CL_L_OFF, CL_L_W16, CL_L_W32 };
-    for (int slot = FD_FIND; slot <= FD_PRES; slot++) {
-        if (!(scope >> slot & 1)) continue;
-        for (int pi = 0; pi < 1; pi++) {
-            for (int l = 0; l < nly; l++) {
-                fd_x q;
-                memset(&q, 0, sizeof q);
-                q.art = art;
-                q.handle = handle;
-                q.site = s;
-                q.pred_ix = -1;
-                q.trace = 1;
-                q.ff.kind = kind_cl(s->site_kind);  /* PR-3, stated from B2 */
-                q.ff.layer = lyc[l];
-                find_facts(&q);
-                report_facts(&q, def, MF_PH_DEFINE);
-                q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL
-                                                                 : CL_N_REQUIRED;
-                gate_in in = { s, NULL, NULL, &q.ff };
-                gate_tctx tc = { art, "fd", handle, MF_PH_SHADOW, &in, 1, 0, 0 };
-                fd_decision d;
-                fd_decide(&q, slot, &tc, &d);
-                put_decision(&q, slot, &d);
-            }
-        }
-    }
 }
 
 const arm fd_nested_walk = { "fd-nested-walk", 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0,
@@ -1226,11 +918,11 @@ const arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
     gate_tctx tc = { art, "fd", handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &tc, &d);
-    if (d.terminal >= FD_NROWS || !fd_row_routed(art, &fd_rows[d.terminal])) return NULL;
+    if (d.terminal >= FD_NROWS || !fd_row_decides(art, &fd_rows[d.terminal])) return NULL;
     for (unsigned j = 0; j < d.npiece; j++) {
         size_t ri = 0;
         while (ri < FD_NROWS && strcmp(fd_rows[ri].id, d.row[j])) ri++;
-        if (ri >= FD_NROWS || !fd_row_routed(art, &fd_rows[ri])) return NULL;
+        if (ri >= FD_NROWS || !fd_row_decides(art, &fd_rows[ri])) return NULL;
     }
     if (d.npiece != 1) return NULL;     /* a routed DISPATCH: none before B4/B8 */
     const arm *a = NULL;
@@ -1318,7 +1010,6 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         q.site = s;
         q.span = sp;
         q.pred_ix = (int)i;
-        q.trace = !quiet;
         q.ff.kind = kind_cl(s->site_kind);
         q.ff.layer = CL_L_OFF;
         if (sp->need == MF_NEED_UNSTATED) { *why = "a presence span's `need` UNSTATED"; return -1; }
@@ -1335,7 +1026,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;
         fd_decide(&q, FD_PRES, &tc, &d);
-        if (d.terminal >= FD_NROWS || !fd_row_routed(art, &fd_rows[d.terminal])) {
+        if (d.terminal >= FD_NROWS || !fd_row_decides(art, &fd_rows[d.terminal])) {
             *why = "a presence span no routed PRES row decides";
             return -1;
         }
@@ -1396,7 +1087,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             const mf_link *k = &cls->pres[i];
             const mf_pred *sp = &s->pspans[i];
             fprintf(stderr, "MFTRACE FD art=%u site=%u slot=PRES pred=%u layer=OFF kind=%s "
-                    "need=%s members=%u shape=- row=%s%s link=v%dp%dm%do%d basis=%s routed=1"
+                    "need=%s members=%u shape=- row=%s%s link=v%dp%dm%do%d basis=%s"
                     " phase=%s\n",
                     art->trace_id, handle, i,
                     kind_name(kind_cl(s->site_kind)) ? kind_name(kind_cl(s->site_kind)) : "UNSTATED",
@@ -1456,9 +1147,9 @@ void mf_finder_rows(mf_finder_listing *out)
             keys[nk++] = (mf_finder_key){ pay_keys[k], "" };
         out->rows[i] = (mf_finder_row){
             r->id, r->slot == FD_FIND ? "FIND" : "PRES", needs,
-            r->slot == FD_FIND ? (r->liner ? "LINER" : ff_name[r->pick]) : pick,
+            r->slot == FD_FIND ? ff_name[r->pick] : pick,
             ff_name[r->unpaid], r->opt ? r->opt : "-", fb_name[r->basis],
-            r->evidence, r->refuted_by, r->routed, r->routed, r->step,
+            r->evidence, r->refuted_by, r->step,
             (uint8_t)nk, keys,
         };
     }
