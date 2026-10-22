@@ -209,6 +209,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
+- [DD-10] STATE:started — remaining unbounded C-stack recursion in the compiler
+  filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
+  status (2026-10-22): built on lane/dd10 (Frank's go 2026-10-21; ruling R1 option (a)): spine iteration (K114 FIXED), fat frames off the recursion, limits.md §3.10's 768 KB budget held by tests/thread/run_compile_stack.sh; worst at depth 250 5.4 MB -> 634,504 B; pending merge (docs/dev/lanes/dd10_report.md)
+  next: manager merge verdict; then completed -> plan_completed.md
+  refs: tests/cli; decisions D19
+  (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone ABSORBED [TS-4] (was STATE:not-started; merged 2026-10-12, plclean [PLAN-LINT] step 2): — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points).
+  Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH THREAD-SAFETY CONTEXT (D19; audit paragraph moved here from the retired section intro 2026-10-12): audited 2026-08-09, generated code and the library are BOTH thread-safe today (every emitted static is const, no file-scope mutable state anywhere in src/, Ctx and its jmp_buf are locals of pcrec_compile); these steps exist to keep that true, because it is invisible to every current test and a one-line change can destroy it.
 
 ## Candidates ([OPTLOOP])
 - [SEL-COST] STATE:not-started — auto's engine choice has no measured cost model
@@ -826,13 +833,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-08-13): not started
   next: starts on Frank's word; no row-specific trigger recorded
   (R1 A-10)
-- [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler
-  filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
-  status (2026-08-13): not started
-  next: starts on Frank's word; no row-specific trigger recorded
-  refs: tests/cli; decisions D19
-  (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone ABSORBED [TS-4] (was STATE:not-started; merged 2026-10-12, plclean [PLAN-LINT] step 2): — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points).
-  Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH THREAD-SAFETY CONTEXT (D19; audit paragraph moved here from the retired section intro 2026-10-12): audited 2026-08-09, generated code and the library are BOTH thread-safe today (every emitted static is const, no file-scope mutable state anywhere in src/, Ctx and its jmp_buf are locals of pcrec_compile); these steps exist to keep that true, because it is invisible to every current test and a one-line change can destroy it.
 - [OS-0] STATE:not-started — the optional engine finder module (D20)
   filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
   status (2026-08-13): not started
