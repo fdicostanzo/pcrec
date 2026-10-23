@@ -55,8 +55,10 @@ cases=(
     'x+y|--memfn=no-fd-d1|D1w|aaaxyz|aaa|9'
     '(x[a-z]+)y\1||D1w|zzxabyab|zzz|0'
     '(?m)^ab||D1c|zzab\nab|ab|0|1'
-    '\B(?<!a)d||D1|zzd|xd|1|1'
+    '\B(?<!a)d+||D1|zzd|xd|1|1'
 )
+# (D172 S3: `\B(?<!a)d`, a fixed-width cover, became `cover` and its site the
+# window family's E-find, which no finder row routes; `d+` keeps the PF site)
 n=0
 for c in "${cases[@]}"; do
     IFS='|' read -r pat flags row hit miss mstart mrc <<<"$c"

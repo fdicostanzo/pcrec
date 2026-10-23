@@ -54,9 +54,11 @@ if [ -n "$quick" ]; then
     FLOORS=(artifacts=480 dfa=260 vm=215 idiom=37 calls-memchr=275
             calls-memcmp=23 funcs=107)
 else
+    # D172 S3 (lane s3): funcs 169 -> 141, pinned AT the measure: the cover row
+    # took the fixed-width patterns, whose search defines no offset-skip function
     FLOORS=(artifacts=820 dfa=310 vm=500 composition=45 none=300 idiom=80
             calls-memchr=470 calls-memcmp=40 calls-strlen=40 calls-printf=38
-            calls-fprintf=85 funcs=169)
+            calls-fprintf=85 funcs=141)
 fi
 fl=()
 for f in "${FLOORS[@]}"; do fl+=(--floor "$f"); done

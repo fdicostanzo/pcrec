@@ -93,7 +93,9 @@ FLOORS = {
     'two-blocks': 200,      # WITNESS artifacts with the VM program's block
     'ladder-moved': 1,      # UNROLL_K_WHY "size-model" (the ladder ran)
     'refused': 1,           # both sides refused alike, stderr included
-    'simd-form': 5,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured)
+    'simd-form': 3,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
+                            # 3 at D172 S3, pinned AT the measure, lane s3: the fixed-width caseless
+                            # runs became `cover`)
 }
 
 

@@ -20,7 +20,7 @@
  *
  * RE-MEASURING ANY ROW IS A BYTE-MOVING KIT EVENT (integration.md §21.3): its
  * own deny, a pcrec abi event, G1 at both layers. HORS_MIN (§3.3's last row)
- * is NOT here: it is D-hors's, which lands at S3 with its own deny. */
+ * is D-hors's (window.c Table D), landed at S3 with its own deny `wf-hors`. */
 #ifndef MF_COST
 #define MF_COST(name, value, unit, provenance, box, basis)
 #define MF_PLAN_COST_UNDEF
@@ -52,6 +52,16 @@ MF_COST(MAX_SET, 4, "positions",
         "src/core/limits.def PCREC_OFSK_MAX_SET: F0 plus the scan plus at most two verify-NO "
         "offsets (a compile budget)",
         "-", "UNMEASURED DEFAULT")
+/* D172 S3: D-hors's threshold on the stop set's mass (window_site.md §2.5).
+   PROVISIONAL: job 581 had ONE winning cell (hex8, stop mass 284,434 ppm;
+   the next densest stop 74,760 ppm), so the rule is in-sample and the
+   threshold is the gap's geometric middle, floor(sqrt(74760 * 284434)).
+   Re-read at S3's acceptance (job 588, both layers) and on any new
+   population before the row is called measured. */
+MF_COST(HORS_MIN, 145822, "ppm of the stop set's mass (MF_PPM_FULL)",
+        "docs/dev/lanes/r27b_report.md RESULT (job 581): the geometric middle of "
+        "(74,760, 284,434]",
+        "dev box, Ryzen 7 7700X", "PROVISIONAL")
 
 #ifdef MF_PLAN_COST_UNDEF
 #undef MF_COST

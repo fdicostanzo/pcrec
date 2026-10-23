@@ -40,9 +40,13 @@ trap 'rm -rf "$WORK"' EXIT
 
 # --- the floors (K35): hand-written literals, measured 2026-10-22 on the
 # Linux dev box (seed 20261022, 1500 sites, lane wsc1), less ~10%. Raise them
-# when the space grows; never lower one to make a run pass.
-FLOOR_SITES=1500                # every generated site renders (no refusal)
-FLOOR_CONTROLS=23               # the lever's controls and the NOP refusals (26)
+# when the space grows; never lower one to make a run pass. D172 S3 (lane s3,
+# 2026-10-22) appended 400 DENSE REPORT sites from their own stream (the 1500
+# before them unchanged) and moved the S2 sites E-find renders off the floor:
+# wf-floor's floor fell with them (792 -> 486 measured; pinned AT 486, the
+# seeded space's deterministic count, at the S3 review), wf-find's is new.
+FLOOR_SITES=1900                # every generated site renders (no refusal)
+FLOOR_CONTROLS=104              # the controls, the NOP and REPORT refusals (116)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
 FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
 FLOOR_CALLS=3300000             # answer calls, each in four layouts (3745812)
@@ -53,7 +57,13 @@ FLOOR_PINNED=34                 # (39)
 FLOOR_RESEED_BIT=230            # (257)
 TIE_FLOORS="mass:230 model:55"
 CELL_FLOORS="edge_rejects:22000 core_off:1600000 noncore_off:490000 neg_reads:920000 nop_empty:130000"
-FORM_FLOORS="wf-floor:740 generic:355 pf_memchr:210 ofsskip:26 pf_walk:15"
+FORM_FLOORS="wf-find:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27 pf_walk:15"
+# D172 S3: E-find's reach by its text's parts (the generator's census of the
+# kit's own text, a population count, never a verdict): B's LIBC and WALK
+# forms, D-hors, a C-run compare, a stop below the candidate, REPORT sites;
+# and the REPORT sites E-find cannot render, each refused (measured 357 220
+# 124 129 110 413 19)
+EFIND_FLOORS="libc:320 walk:195 hors:110 run:115 below:95 report:370 refused:17"
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
@@ -61,7 +71,8 @@ FORM_FLOORS="wf-floor:740 generic:355 pf_memchr:210 ofsskip:26 pf_walk:15"
 plant_spec() {
     case "$1" in
     S1400) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
-        echo 'window.c@@                kb_printf(t, "(%s >= %s + %d \&\& ", rc->C, rc->FL, -d);\n                rc->used |= PARAM_FL;@@                kb_printf(t, "(");' ;;
+        # (re-aimed at D172 S3: the guard moved into wf_pos_test, which the floor and E-find share)
+        echo 'window.c@@        kb_printf(t, "(%s >= %s + %d \&\& ", rc->C, rc->FL, -d);\n        rc->used |= PARAM_FL;@@        kb_printf(t, "(");' ;;
     S1401) # C-run merging singletons: positions one-position spans cover grouped into one compare
         echo 'window.c@@                join = !p->one_pos \&\& !q->one_pos \&\&@@                join =' ;;
     S1402) # the MARGIN's direction flipped
@@ -80,13 +91,19 @@ plant_spec() {
         echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
         echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
+    S1422) # D172 S3: E-find denied but rendering (`--memfn=no-wf-find` ignored): the
+        # control's REPORT site renders where it must be refused (window_site.md §5.2)
+        echo 'window.c@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  "wf-find" },@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  NULL },' ;;
+    S1423) # D172 S3: D-hors's bound one short (job 581's own plant: `c + K > n` read
+        # as `c + K - 1 > n`): the probe and the verify read s[n]
+        echo 'window.c@@        kb_printf(\&b, "if (%s + %d >= %s) break; ", rc->C, w->chi, rc->N);@@        kb_printf(\&b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
     S1410) # a full-set position tested: C-yes takes a verify-YES position whose meet is every byte
         # (the kit manager's wsc3 ruling 1: such a position is the bound alone)
         echo 'window.c@@        if (m->p[k].present \&\& m->p[k].yes \&\& !full(m->p[k].yset))@@        if (m->p[k].present \&\& m->p[k].yes)' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -156,9 +173,13 @@ if s.count(a) != 1:
 open(p, 'w').write(s.replace(a, b))
 EOF
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
-        one_run "plant_$id" "$WORK/pk_$id"/*.o
-        c="$(counts "$WORK/plant_$id.run.log")"
+        # a planted kit whose text no longer compiles warning-free is red too
+        # (one_run says so on its own output; D172 S3: E-find declares F only
+        # where its text reads it, so S1400's dropped read is a compile error)
+        built=$(one_run "plant_$id" "$WORK/pk_$id"/*.o | grep -m1 '^FAIL')
+        c="$(counts "$WORK/plant_$id.run.log" 2>/dev/null)"
         red=$(grep -h '^FAIL' "$WORK/plant_$id.gen.log" "$WORK/plant_$id.run.log" 2>/dev/null | head -1)
+        [ -n "$red" ] || red="$built"
         if [ -n "$red" ]; then
             echo "PLANT $id RED   (driver passed failed: $c): $red"
         else
@@ -223,6 +244,8 @@ for mf in $MARGIN_FLOORS; do floor "margin ${mf%%:*}" "$(val margin "${mf%%:*}")
 for tf_ in $TIE_FLOORS; do floor "tie ${tf_%%:*}" "$(val ties "${tf_%%:*}")" "${tf_#*:}"; done
 for cf in $CELL_FLOORS; do floor "cell ${cf%%:*}" "$(val cells "${cf%%:*}")" "${cf#*:}"; done
 for ff in $FORM_FLOORS; do floor "form ${ff%%:*}" "$(val forms "${ff%%:*}")" "${ff#*:}"; done
+efv() { grep -h '^g2_win_gen: e-find' "$WORK/plain.gen.log" | grep -oE "$1 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
+for ef in $EFIND_FLOORS; do floor "e-find ${ef%%:*}" "$(efv "${ef%%:*}")" "${ef#*:}"; done
 
 echo "checks passed: $tp"
 echo "checks failed: $tf"

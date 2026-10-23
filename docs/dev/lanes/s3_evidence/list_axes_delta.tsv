@@ -1,0 +1,11 @@
+# docs/dev/lanes/s3_evidence/list_axes_delta.tsv — D172 S3's DECLARED `pcrec --list-axes` delta
+# (the manager's R4 condition 2), against main c3ea619c3. One row per line that leaves (-) or
+# enters (+) the listing, keyed by its identity: a pcrec axis row by (axis, index, value), a kit
+# `memfn` row by its name. list_axes_delta.sh holds the real delta to it BOTH WAYS: every
+# declared row moves, and no other row does (a changed description is a - and a + of one key).
+#sign	key
+-	locate	2	unanchored
++	locate	2	cover
++	locate	3	unanchored
++	memfn	wf-find
++	memfn	wf-hors

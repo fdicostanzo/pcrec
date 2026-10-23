@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 83
+#define PCREC_ARTIFACT_ABI 84
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -4702,20 +4702,15 @@ static bool locate_rev_end_applies(const CandSel *s)
     return pcrec_fact_end_pin(s->cx) != PCREC_EPIN_NONE;               /* R1 */
 }
 
-/* [KIT-VERIFY] U1 `cover`'s predicate (kit_proof.md §1.1, §2.2, §7's Z2 row):
+/* [KIT-VERIFY] U1 `cover`'s predicate (kit_proof.md §1.1, §2.2, §7's B1 row):
  * `cover_conj[]` walked in order (src/gen/known.c, one decision per attempt),
- * true where every row holds AND the harness lever routes the row. Z2's
- * routing: the default build declines without reading anything; the trace
- * build reads the whole table (its `KITPROOF` record, K35's input, and C8's
- * producers-disagree assertion) and then declines as the default does; only
- * `--harness=kit-proof` admits. */
+ * true where every row holds. Routed by default since D172 S3 (B1): C13 asks
+ * the memfn kit, whose window family renders the REPORT site by its E-find
+ * row; the kit's deny `--memfn=no-wf-find` declines C13 and with it the row
+ * (the OFF arm: `composite`, the default before S3). */
 static bool locate_cover_applies(const CandSel *s)
 {
-    Ctx *cx = s->cx;
-#ifndef PCREC_CAND_TRACE
-    if (!pcrec_kit_proof_routed(cx)) return false;
-#endif
-    return pcrec_cover(cx)->why == NULL && pcrec_kit_proof_routed(cx);
+    return pcrec_cover(s->cx)->why == NULL;
 }
 
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
@@ -9851,20 +9846,23 @@ static const CandRow cand_rows[] = {
      * No machine runs. Admitted by cover_conj[] (§1.1), read in order. After
      * `rev-end`, before `composite`; CAND_ROUTE_DFA only (C1 asks the
      * finisher's). Its walk answers presence itself (`whole`) and asks
-     * RECOVER nothing. At Z2 it carries no `.list` and no deny: the listing
-     * and the FACT deny `PCREC_NO_KIT_PROOF` land at B1 (§7). The kit ask
-     * C13 makes is of the REPORT description alone, which no slot's
-     * selection describes (§2.2), so it is no edge of the read graph. */
+     * RECOVER nothing. Routed by default and listed since D172 S3 (B1); its
+     * deny is the memfn kit's `wf-find` (C13), so the row carries no pcrec
+     * flag (a pcrec FACT deny `-fno-kit-proof` is filed under [IFACE-PUSH]).
+     * The kit ask C13 makes is of the REPORT description alone, which no
+     * slot's selection describes (§2.2), so it is no edge of the read graph. */
     { .c = { "cover", 0, locate_cover_applies }, .slot = CAND_SLOT_LOCATE,
       .routes = CR_DFA, .tok = "cover", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
+      .list = { [CAND_ROUTE_DFA] = { "locate", 2, "cover" } },
+      .desc = "every match is one fixed-width window whose bytes, and the one byte before and after it, decide a match exactly: the window search's first hit IS the leftmost match, reported [c, c + k) with no automaton run; turned off by --memfn=no-wf-find",
       .needs = { [CAND_ROUTE_DFA] = { 0, 0, CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_cover },
                     .scan = { [CAND_ROUTE_DFA] = "cover" },
                     .whole = true, .fin = CT_START | CT_VERDICT } },
     { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
       .routes = CAND_ALL_ROUTES, .tok = "composite", .map = CM_NONE, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "locate", 2, "unanchored" } },
+      .list = { [CAND_ROUTE_DFA] = { "locate", 3, "unanchored" } },
       .desc = "always (fallback): the forward scan from search_from, the candidate-start slots inside it, then the reverse pass for the start (`attempt` on an ENG_ATTEMPT body: the per-start attempt loop; the VM's attempt loop on a VM artifact)",
       .needs = { [CAND_ROUTE_DFA]     = { CAND_MF, CN(CAND_SLOT_NEXT) | CN(CAND_SLOT_RECOVER),
                                           CAND_FRONT_DFA },

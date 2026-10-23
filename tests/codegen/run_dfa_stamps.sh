@@ -207,7 +207,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says. Any value outside
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
-SCAN_VALUES="unanchored rev-end attempt empty"
+SCAN_VALUES="unanchored rev-end cover attempt empty"
 PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded handoff"
 
 # ---------------------------------------------------------------------------
@@ -249,6 +249,11 @@ read_artifact() {
         # goto star, never by a _step call -- so it is the anchor that does
         # not go stale when the table it used to name stops existing.
         /forward_state = rx_forward_step\(/    { unanch = 1 }                   # emit_unanchored: the forward step call
+        # D172 S3 THE COVER WALK: the report of [c, c + k) off the kit candidate
+        # (emit_cover: emit_search_success over `scan_position`, its only caller
+        # with that start); no machine runs in it
+        /capture_spans\[0\]\[0\] = \(ptrdiff_t\)scan_position; capture_spans\[0\]\[1\] = \(ptrdiff_t\)scan_position \+ [0-9]+;/ \
+                                               { cover = 1 }                    # emit_cover
         /const void \*q = memchr\(subject \+ start, /   { pf_at = 1 }           # emit_attempt: D63 attempt skip
         /const void \*q = memchr\(subject \+ scan_position, / {                 # emit_unanchored: the memchr arm
                                                  pf_mc = 1
@@ -316,7 +321,7 @@ read_artifact() {
                                 f_pf   = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
         END {
             eng = vm ? "vm" : "dfa"
-            scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-")))
+            scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (cover ? "cover" : (mtnothing ? "empty" : "-"))))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
             else if (pf_ho) pf = "handoff"
@@ -408,9 +413,9 @@ mirror_check() {
 # `rx_can_begin_match` table as the plain form, but a loop bounded at n-1 that
 # cannot early-exit, so it must NOT stamp the same value as its unbounded twin.
 witness() {
-    exp_scan="$1"; exp_pf="$2"; wpat="$3"
+    exp_scan="$1"; exp_pf="$2"; wpat="$3"; wflags="${4:-}"
     art="$WORKDIR/w.c"
-    if ! pcrec_run "$PCREC" --features all -p rx -o - --pattern "$wpat" > "$art" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all $wflags -p rx -o - --pattern "$wpat" > "$art" 2>/dev/null; then
         bad "[witness] '$wpat' does not compile — the row cannot assert anything"; return
     fi
     set -- $(read_artifact < "$art")
@@ -433,20 +438,25 @@ witness() {
 # witnesses than the old ones: each names its value for a structural reason
 # (a one-byte pattern cannot have an offset 1) instead of by happening to
 # fall on the near side of a cost model.
-witness unanchored memchr             'a'
-witness unanchored byte-class         '[af]'
+# D172 S3: a one-byte pattern is a k = 1 `cover` (the kit's window site
+# finds it) by default, so the offset-0 forms' witnesses compile under the
+# cover row's deny, `--memfn=no-wf-find`, which is the default build before
+# S3 (registry.md §6¶8a); `a` itself is the cover witness.
+witness cover      none               'a'
+witness unanchored memchr             'a' --memfn=no-wf-find
+witness unanchored byte-class         '[af]' --memfn=no-wf-find
 # [OPT-REVEND] L2 the two `-bounded` rows read a WORD-CONTEXT accept: an
 # end-pinned `a$`/`[af]$` now walks back from the end (`rev-end`, below) and
 # carries no forward scan to bound.
-witness unanchored memchr-bounded     'a\b'
-witness unanchored byte-class-bounded '[af]\b'
+witness unanchored memchr-bounded     'a\b' --memfn=no-wf-find
+witness unanchored byte-class-bounded '[af]\b' --memfn=no-wf-find
 witness rev-end    none               'a$'
 witness rev-end    none               '[af]+\z'
 witness unanchored none               '.*'
 # [START-SET] stage 3, THE DFA HAT's two forms: a seeded machine whose start set
 # is a proper subset of the escape set (\b's E is the 63 word bytes).
 witness unanchored first-class-bounded  '\b(?:ab|cd)\b'
-witness unanchored first-memchr-bounded '\B(?<!a)d'
+witness unanchored first-memchr-bounded '\B(?<!a)d' --memfn=no-wf-find
 # [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark at K = 3.
 witness unanchored handoff            '(?:\d{1,3}\.){3}\d{1,3}'
 witness attempt    memchr             '(?m)^ERROR'
@@ -468,13 +478,13 @@ witness empty      none               '^\B\b'
 # `\d{4}-\d{2}-\d{2}` is `iso-ts`'s prefix: no view, no word context, so the
 # skip keeps its early-out. `\b[0-9a-f]{8}-[0-9a-f]{4}` is `uuid`'s: the `\b`
 # puts a word context on the machine, so it takes the D11 clamp.
-witness unanchored offset-set         '\d{4}-\d{2}-\d{2}'
-witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}'
+witness unanchored offset-set         '\d{4}-\d{2}-\d{2}' --memfn=no-wf-find
+witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}' --memfn=no-wf-find
 # [OPT-LITSCAN] S1 THE TWO RUN-PINNED FORMS: router (class B, a scan at
 # offset 0 with no model selection) and `foo\b` (the bounded twin under the
 # trailing word context).
-witness unanchored run-pinned         '/user|/users'
-witness unanchored run-pinned-bounded 'foo\b'
+witness unanchored run-pinned         '/user|/users' --memfn=no-wf-find
+witness unanchored run-pinned-bounded 'foo\b' --memfn=no-wf-find
 
 # ---------------------------------------------------------------------------
 # THE VM SIDE, AS AN IFF — [DD-13c], r37 finding #6.

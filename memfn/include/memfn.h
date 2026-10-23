@@ -399,20 +399,18 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  * refused. (`consumer`, which stood beside it, retired at D172 S2 commit 6,
  * MF_SITE_ABI 20: the kind alone says what consumes the candidates.) */
 /*   REPORT       (MF_SITE_ABI 18, R-26.3; kit_proof.md §2.5) the candidate IS
- *                the answer, with no engine behind it: an old-field site of
- *                this kind states a BOUNDED span 0 and every span-0 term and
- *                the predicate REQUIRED (each refused otherwise); a window
- *                site of this kind (Z2's cover) states every span verify
- *                YES. NONE is not a legal reply: a row that cannot
- *                serve every REQUIRED term does not apply (K96). The finder
- *                gate admits it wherever a REPORT row exists. The REPORT row
- *                (R-26.6) is UNROUTED until its routing step: a REPORT site
- *                that passes those checks is REFUSED at selection on every
- *                art except one previewing that step (mf_preview), where the
- *                row decides as it will once routed. On a site it serves, its
- *                class's proven[d] EQUALS the intersection of the REQUIRED
- *                terms' sets at d, at every d (the host checks equality, C14);
- *                where its form could not make it so, it does not apply */
+ *                the answer, with no engine behind it: a window site of this
+ *                kind (pcrec's cover) states every span verify YES. NONE is
+ *                not a legal reply. Since D172 S3 the window family renders
+ *                it by its E-find row (find, then verify every tested
+ *                position), and only there: an old-field site of this kind
+ *                (terms in `pred`) is REFUSED at selection, and so is a
+ *                window site E-find does not render (its deny `wf-find`; a
+ *                frame other than STMT/ASSIGN; no stop), since the floor
+ *                serves no REPORT site. On a site it renders, the class's
+ *                proven[d] is the set the text tests at d (R-25), which on a
+ *                REPORT site is every span's set (the host checks EQUALITY,
+ *                C14) */
 typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
                MF_SK_VM_ATTEMPT, MF_SK_DFA_ATTEMPT, MF_SK_REPORT } mf_site_kind;
 /* §14.5: how the site's result is consumed. POSITION: read as a position;
@@ -1279,7 +1277,6 @@ typedef struct mf_analysis {
 #define mf_finder_rows    MF_NS(finder_rows)
 #define mf_reach          MF_NS(reach)
 #define mf_reach_table    MF_NS(reach_table)
-#define mf_preview        MF_NS(preview)
 
 /* Begin an artifact's kit state. `prefix` is pcrec's D143 placeholder, the
  * stem of every kit-declared name. `denies` are the compile's MF_D_* bits:
@@ -1391,17 +1388,11 @@ int      mf_stamps(const mf_art *, mf_sink *);
  * mf_reach was never called on. */
 int      mf_reach(mf_art *, const char *stem);
 int      mf_reach_table(const mf_art *, mf_sink *file_scope);
-/* (R-26.6) THE ROUTING PREVIEW: a TEST-HARNESS facility, never called by a
- * shipped compile. The host states that this art is a harness preview of
- * the kit's routing step `step` (R-26's "R-26.6"); its artifacts are
- * evidence and are never shipped. What the kit decides on such an art is the
- * kit's. Called at most once, before the first define; refused after, twice,
- * or for a step the kit does not name. It is no `--memfn=` option (no
- * options.def row), so mf_opts_check refuses every spelling of it. */
-int      mf_preview(mf_art *, const char *step);
-/* (D172) The step "window-family" previewed THE WINDOW FAMILY through S2
- * commit 5; since commit 6 the family is every art's and the step is no
- * longer one the kit names (refused). */
+/* (R-26.6, RETIRED at D172 S3) `mf_preview`, the test-harness routing
+ * preview, previewed THE WINDOW FAMILY ("window-family") through S2 commit 5
+ * and the REPORT row ("R-26.6") through S2; the family is every art's since
+ * commit 6 and REPORT renders by its E-find row since S3, so the entry is
+ * gone (window_site.md §4). */
 
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *

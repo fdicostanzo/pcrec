@@ -158,11 +158,13 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * definitions are appended to the artifact's end, mf_reach_table). Off on
  * every shipped compile, so a default artifact is untouched by it. */
 /* [KIT-VERIFY] U1 Z2 (kit_proof.md §7, "The harness lever's kit channel"):
- * the fourth, `--harness=kit-proof`: the compile ROUTES the `cover` LOCATE
- * row (pcrec's half, `locate_cover_applies`) and states to the memfn kit,
- * once at art setup and before any ask (mf_preview(art, "R-26.6")), that the
- * art previews the kit's REPORT routing step. Its artifacts are evidence (Z2's
- * X1/X3) and never shipped; the default and trace builds decline `cover`. */
+ * the fourth, `--harness=kit-proof`. Through S2 it routed the `cover` LOCATE
+ * row and previewed the kit's REPORT step (mf_preview "R-26.6"); since D172
+ * S3 the default build routes `cover` and the preview is retired, so the
+ * lever is INERT: its artifacts are the default ones, and it survives only as
+ * the KITPROOF trace record's `routed` field and the spelling its callers
+ * (tests/kitproof/, site_census.py, the 650 harness) still pass. Its
+ * retirement is filed (docs/dev/lanes/s3_report.md). */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
@@ -3845,8 +3847,9 @@ struct Ctx {
 };
 
 /* [KIT-VERIFY] U1 Z2 is this compile the harness lever's `--harness=kit-proof`
- * (PcrecHarnessOptions.kit_proof): the one place a compile may route `cover`
- * and preview the kit's R-26.6. False on every shipped compile. */
+ * (PcrecHarnessOptions.kit_proof)? INERT since D172 S3 (the default routes
+ * `cover`): read only by the KITPROOF trace record. False on every shipped
+ * compile. */
 static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 {
     return cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->kit_proof;

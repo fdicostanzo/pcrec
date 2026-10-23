@@ -1,8 +1,10 @@
 # tests/kitproof/ — [KIT-VERIFY] Z2's `cover` checks (`make test-kitproof`)
 
 `docs/design/kit_proof.md` §6.3, §6.4, §7 Z2. The `cover` LOCATE row is routed
-only by the test harness's lever (`PcrecHarnessOptions.kit_proof`), so every
-artifact here is compiled by `build/pcrec-harness` through it. A `make test`
+by the default build since D172 S3 (before it, only by the test harness's lever,
+`PcrecHarnessOptions.kit_proof`, now inert and kept for its callers); the
+artifacts here are still compiled by `build/pcrec-harness` through it, which
+since S3 renders the default build's text. A `make test`
 section (about 1.5 s); mech arm `kitproof` (rows S1130-S1141, S1144, S1148,
 S1149).
 

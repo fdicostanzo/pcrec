@@ -55,9 +55,22 @@ def bad(msg):
     print("FAIL: [OPT-LITSCAN S4] " + msg)
 
 
+# D172 S3: every witness here is compiled under the `cover` row's deny,
+# `--memfn=no-wf-find` (registry.md §6¶8a): a fixed-width witness is a `cover`
+# artifact by default, whose search is the memfn kit's window site, not the
+# offset-skip block this check reads; the deny renders the default build
+# before S3, the artifact this check was written against. The DEFAULT_PATH
+# witnesses are the exception: compiled without the deny, they must read
+# `RX_DFA_SCAN "cover"`, and the same checks hold of the run compare the
+# kit's window site writes there (its C-run, through the same row table).
+COVER_DENY = "--memfn=no-wf-find"
+DEFAULT_PATH = {"cover7"}
+
+
 def emit(tag, pat, *flags):
     out = os.path.join(WORK, "rc_" + tag + ".c")
-    r = subprocess.run([PCREC, "--features", "all", "-p", "rx", *flags,
+    deny = () if tag.split("_")[0] in DEFAULT_PATH else (COVER_DENY,)
+    r = subprocess.run([PCREC, "--features", "all", "-p", "rx", *deny, *flags,
                         "-o", out, "--pattern", pat],
                        capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
@@ -144,6 +157,7 @@ WITNESSES = [
     ("quote", 'a"b', ("-fno-offset-skip",), [(b'a"b', "subject + cand", 0)]),
     ("cmt", r"\*/x", ("-fno-offset-skip",), [(b"*/x", "subject + cand", 0)]),
     ("island", "foo(?:username|password|passphrase)bar", ("--engine=vm",), None),
+    ("cover7", "ABCDEFG", (), [(b"ABCDEFG", "rx_mf1_s + rx_mf1_c", 0)]),
 ]
 POOL = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
 for L in (3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15):
@@ -156,6 +170,11 @@ for tag, pat, flags, runs in WITNESSES:
         bad(f"'{pat}' {' '.join(flags)}: refused")
         continue
     path, text = got
+    if tag in DEFAULT_PATH:
+        if re.search(r'^#define RX_DFA_SCAN "cover"$', text, re.M):
+            ok(f"'{pat}': the default build reads RX_DFA_SCAN \"cover\"")
+        else:
+            bad(f"'{pat}': a DEFAULT_PATH witness that no longer reads RX_DFA_SCAN \"cover\"")
     cs = chains(text)
     stamp = re.search(r"^#define RX_RUN_WORDS (\d+)$", text, re.M)
     nwords = int(stamp.group(1)) if stamp else -1
@@ -191,7 +210,8 @@ for tag, pat, flags, runs in WITNESSES:
     decl = sorted(int(m) for m in re.findall(r"^static inline uint\d+_t rx_w([248])\(const void \*p\)", text, re.M))
     if decl != used:
         bad(f"'{pat}': helpers declared for widths {decl}, the compares use {used}")
-    elif cs and text.index("static inline uint%d_t rx_w%d(" % (8 * used[0], used[0])) > text.index("rx_w%d(subject" % used[0]):
+    elif cs and text.index("static inline uint%d_t rx_w%d(" % (8 * used[0], used[0])) > \
+            re.search(r"rx_w%d\((?!const void)" % used[0], text).start():
         bad(f"'{pat}': the rx_w{used[0]} helper is declared after its first use")
     else:
         ok(f"'{pat}': helpers declared for exactly the widths used ({used}), ahead of use")

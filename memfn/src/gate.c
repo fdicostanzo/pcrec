@@ -467,9 +467,13 @@ static int cl_fn_ref(const gate_in *in)
     return in->s->pred.fn_ref ? CL_REF : -1;
 }
 
+/* A window site states no terms (window.c wf_check refuses them): its
+ * offers are its spans' `toffer`, so its `table_ref` is UNSTATED, not a
+ * stated "no table" (fields.def's OBLIG is the term builders'). */
 static int cl_table_ref(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
+    if (in->s->nalt || in->s->alts) return -1;
     if (pred_tabled(&in->s->pred)) return CL_REF;
     for (unsigned i = 0; in->s->preds && i < in->s->npred; i++)
         if (pred_tabled(&in->s->preds[i])) return CL_REF;

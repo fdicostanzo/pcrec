@@ -12,9 +12,11 @@
 # §4.6), `head_max` the handoff's K (the run window's largest offset from a
 # match start) where the site hands its landmark on, else 0.
 #
+# (D172 S3: the fixed-width handoff witness is a `cover` artifact by default, with
+# no pre-check; it is compiled under the cover row's deny, the default before S3.)
 # flags	pattern	kind	members	runlen	need	head_max
 -	foo.*bar	DFA_SCAN	5	3	OPTIONAL	0
 -	(x+)abcd	HYB_PF	5	4	OPTIONAL	0
 --engine=vm	(a+)+zq	VM_ATTEMPT	3	2	REQUIRED	0
 -	(?m)^abc	DFA_ATTEMPT	3	3	OPTIONAL	0
--	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4
+--memfn=no-wf-find	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4

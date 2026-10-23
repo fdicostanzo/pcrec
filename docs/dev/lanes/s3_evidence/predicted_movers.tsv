@@ -1,0 +1,37 @@
+# docs/dev/lanes/s3_evidence/predicted_movers.tsv — lane s3's PREDICTED mover manifest for the
+# light byte-diff (D172 S3; the manager's R4 condition 3), written BEFORE any diff was run.
+# Compared: `pcrec -p rx -fcomments --features all [FLAGS] --pattern P` at the S3 commit against
+# main c3ea619c3 (REF), each artifact's `.c` and `.h`, with the abi digits masked (83 -> 84 is the
+# declared delta on EVERY artifact: the provenance line, `#error`/`PCREC_RX_ABI_H`, `.abi =`).
+# prediction: MOVES-cover = the artifact becomes `RX_DFA_SCAN "cover"` (the default build routes
+#   the cover LOCATE row; the kit renders it by E-find); MOVES-cover-hors = the same with D-hors
+#   (a dense stop: window_site.md §6 names hex8 alone); ABI-ONLY = identical but the abi digits.
+# Basis: the 581 cells are kit_proof's harness-routed cover cells (cells.tsv); the others are not
+# one fixed-width window (variable width, an alternation of unequal widths, anchored, end-pinned),
+# so cover_conj declines them (C4/C7/C8) and S3 moves nothing of theirs. The OFF arm (both kit
+# denies, `--memfn=no-wf-find,no-wf-hors`) is predicted ABI-ONLY on EVERY row.
+#pattern	flags	prediction	why
+abcdefgh	-	MOVES-cover	581 lit-l8
+\d{4}	-	MOVES-cover	581 year4
+\.tar|\.tar\.gz	-	MOVES-cover	581 file-ext-order (the first literal wins at every start)
+\b[0-9a-f]{8}\b	-	MOVES-cover-hors	581 hex8-bounded (stop mass 284,434 ppm >= HORS_MIN)
+foobar	-	MOVES-cover	581 foobar
+\bcat\b	-	MOVES-cover	581 cat-bounded
+(?m)done$	-	MOVES-cover	581 done-eol
+\w(?=\d)\w	-	MOVES-cover	581 word-digit
+a(b|c)+d	-	ABI-ONLY	unbounded repeat (C7)
+x+y	-	ABI-ONLY	unbounded repeat (C7)
+colou?r	-	ABI-ONLY	two widths (C7)
+foo|barbaz	-	ABI-ONLY	two widths (C7)
+[0-9]{2,4}	-	ABI-ONLY	a counted range (C7)
+é{2,3}cat	-	ABI-ONLY	a counted range (C7)
+a.*b	-	ABI-ONLY	unbounded (C7)
+^abc	-	ABI-ONLY	anchored (C4 anchored-A: an attempt body)
+abc$	-	ABI-ONLY	end-pinned: rev-end precedes cover
+(ab)+	-	ABI-ONLY	unbounded (C7)
+\w+@\w+\.com	-	ABI-ONLY	unbounded (C7)
+[a-z]+ing	-	ABI-ONLY	unbounded (C7)
+\d+\.\d+	-	ABI-ONLY	unbounded (C7)
+\bthe\b\s+\w+	-	ABI-ONLY	unbounded (C7)
+(?i)hello world	--engine=vm	ABI-ONLY	the VM engine: no DFA scan (C1)
+abcdefgh	--engine=vm	ABI-ONLY	the VM engine: no DFA scan (C1)

@@ -123,10 +123,14 @@ build_copy() {
 
 # One compile: binary $1, extra args $2, flags $3, pattern $4, into dir $5
 # (o.c, err, rc). The output name is the same on every side (the -o trap).
+# D172 S3: under the `cover` row's deny, `--memfn=no-wf-find` (registry.md
+# §6¶8a): the witnesses are fixed-width windows, `cover` artifacts by default,
+# where no prefilter NEXT row reads the reply; the deny renders the default
+# build before S3, on which these rows and keys were written.
 comp() {
     mkdir -p "$5"
     # shellcheck disable=SC2086
-    "$TIMEOUT_BIN" 60 "$1" $2 -p rx --features all $3 -o "$5/o.c" --pattern "$4" >"$5/out" 2>"$5/err"
+    "$TIMEOUT_BIN" 60 "$1" $2 -p rx --features all --memfn=no-wf-find $3 -o "$5/o.c" --pattern "$4" >"$5/out" 2>"$5/err"
     echo $? >"$5/rc"
 }
 stamp() { sed -n 's/^#define RX_DFA_PREFILTER "\(.*\)"$/\1/p' "$1/o.c" 2>/dev/null; }

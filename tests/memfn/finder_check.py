@@ -102,11 +102,11 @@ import sys
 passed = failed = 0
 unreached = []
 
-# R-26.6 (lane r26zk): RPT, the REPORT row, the last FIND row (listed after
-# slot PRES in the table), UNROUTED: no row routes before its step
 # D172 S2 commit 6 (lane wsc5): D2 RETIRED (window_site.md §2.2), id reserved
+# D172 S3 (lane s3): RPT, the REPORT row, RETIRED with its R-26.6 preview
+# (window_site.md §4), id reserved
 FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w",
-             "R7w", "RPT"]
+             "R7w"]
 # the ids B4' withdrew (reserved, never reused) and their denies (retired)
 WITHDRAWN_ROWS = ["R0", "R5", "R7"]
 RETIRED_DENIES = ["fd-r0", "fd-r5"]

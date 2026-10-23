@@ -1294,17 +1294,12 @@ static mf_site fd_pf_site(const char *members, int table, int body)
 }
 
 /* One site's define, storage point (where it offers one) and use, in an art
- * begun with `ms` (and previewing routing step R-26.6 where `preview`, the
- * REPORT row's fixture); `CONSULTED` from its end. */
+ * begun with `ms`; `CONSULTED` from its end. */
 static int fd_render(const char *dir, const char *name, const mf_site *s,
-                     const mf_measures *ms, const mf_analysis *an, int preview)
+                     const mf_measures *ms, const mf_analysis *an)
 {
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", s->policy, s->denies, ms, an);
-    if (preview && mf_preview(art, "R-26.6")) {
-        printf("REFUSED\t%s\n", mf_art_error(art) ? mf_art_error(art) : "-");
-        return 1;
-    }
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
     Fx fx = { s, "rx_pf", "    " };
@@ -1413,20 +1408,6 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         s->body = MF_BODY_ONESHOT;
         s->site_kind = MF_SK_DFA_ATTEMPT;
     }
-    /* R-26.6: a REPORT site, two REQUIRED one-byte terms ("xy" at 0), as
-       R-26.3 states one (span 0 BOUNDED via fx_win) */
-    else if (!strcmp(name, "report2")) {
-        *s = pf_site(0, 0);
-        t_byte(&s->pred.term[0], 0, 'x');
-        t_byte(&s->pred.term[1], 1, 'y');
-        s->pred.nterm = 2;
-        s->pred.term[0].need = s->pred.term[1].need = MF_REQUIRED;
-        s->pred.need = MF_REQUIRED;
-        s->empty = MF_EMPTY_MISS;
-        s->on_miss_leaves = 1;
-        s->body = MF_BODY_ONESHOT;
-        s->site_kind = MF_SK_REPORT;
-    }
     else if (!strcmp(name, "run3")) {
         *s = pf_site(0, 0);
         t_run(&s->pred.term[0], 0, "abc", NULL);
@@ -1506,20 +1487,20 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
 /* --only fd-<row>: the finder witnesses and their controls. */
 static int fd_fixture(const char *dir, const char *name)
 {
+    /* (D172 S3: `fd-RPT`, the REPORT row's witness on an art previewing
+       R-26.6, retired with RPT and the preview, window_site.md §4) */
     static const struct { const char *name, *site; const mf_measures *ms; const char *opts;
-                          int preview; } fx[] = {
-        { "fd-R7w",     "set10",  NULL, NULL, 0 },       /* a set FIND: R7w, the default   */
-        { "fd-D2",      "run3",   NULL, NULL, 0 },       /* a RUN landmark: D2 (routed: the walk) */
-        { "fd-P0",      "pre-req", NULL, NULL, 0 },      /* a REQUIRED presence span: P0   */
-        { "fd-P3",      "pre-opt", NULL, NULL, 0 },      /* an OPTIONAL one: P3, the pick  */
-        { "fd-P9",      "pre-opt", NULL, "no-fd-pres-pick", 0 }, /* the pick denied: P9 */
-        { "fd-P4",      "pre-lead", NULL, NULL, 0 },     /* a member rarer than the run: P4 */
-        { "fd-P4-den",  "pre-lead-run", NULL, "no-pres-set-lead", 0 }, /* P4 denied: the run alone */
-        { "fd-P2",      "pre-dom", NULL, NULL, 0 },      /* the proof stands: P2 (asked) */
-        { "fd-P2-den",  "pre-dom", NULL, "no-fd-pres-g1", 0 }, /* P2 denied: P3 (asked) */
-        { "fd-nobody",  "set10-nobody", NULL, NULL, 0 }, /* body UNSTATED: refused (R-23, S1089's witness) */
-        /* R-26.6: a REPORT site on an art previewing R-26.6: the REPORT row */
-        { "fd-RPT",     "report2", NULL, NULL, 1 },
+                        } fx[] = {
+        { "fd-R7w",     "set10",  NULL, NULL },       /* a set FIND: R7w, the default   */
+        { "fd-D2",      "run3",   NULL, NULL },       /* a RUN landmark: D2 (routed: the walk) */
+        { "fd-P0",      "pre-req", NULL, NULL },      /* a REQUIRED presence span: P0   */
+        { "fd-P3",      "pre-opt", NULL, NULL },      /* an OPTIONAL one: P3, the pick  */
+        { "fd-P9",      "pre-opt", NULL, "no-fd-pres-pick" }, /* the pick denied: P9 */
+        { "fd-P4",      "pre-lead", NULL, NULL },     /* a member rarer than the run: P4 */
+        { "fd-P4-den",  "pre-lead-run", NULL, "no-pres-set-lead" }, /* P4 denied: the run alone */
+        { "fd-P2",      "pre-dom", NULL, NULL },      /* the proof stands: P2 (asked) */
+        { "fd-P2-den",  "pre-dom", NULL, "no-fd-pres-g1" }, /* P2 denied: P3 (asked) */
+        { "fd-nobody",  "set10-nobody", NULL, NULL }, /* body UNSTATED: refused (R-23, S1089's witness) */
     };
     for (size_t i = 0; i < sizeof fx / sizeof fx[0]; i++) {
         if (strcmp(name, fx[i].name)) continue;
@@ -1530,7 +1511,7 @@ static int fd_fixture(const char *dir, const char *name)
         s.opts = fx[i].opts;
         if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
             return fd_ask_links(name, &s) ? 1 : 0;
-        return fd_render(dir, name, &s, fx[i].ms, NULL, fx[i].preview) ? 1 : 0;
+        return fd_render(dir, name, &s, fx[i].ms, NULL) ? 1 : 0;
     }
     return 2;
 }
@@ -1621,7 +1602,7 @@ static int fd_site_mode(const char *site, const char *setpath, const char *opts,
     if (s.op == MF_OP_ALL_PRESENT && s.npspan && !s.npred)
         return fd_ask_links(site, &s) ? 1 : 0;
     return fd_render(NULL, site, &s, setpath ? &ms : NULL,
-                     fid >= 0 ? fd_an_make(fid) : NULL, 0) ? 1 : 0;
+                     fid >= 0 ? fd_an_make(fid) : NULL) ? 1 : 0;
 }
 
 static int finder_rows_mode(void)

@@ -18,8 +18,9 @@
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (R-26's kit-side rows S1221, S1224, S1225 (S1222,
 #                  S1223 and S1226 retired with `absent`, D172 S2 commit 6),
-#                  S1419 (a window site's renderer-interface field accepted), and
-#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7; S1408,
+#                  S1419 (a window site's renderer-interface field accepted;
+#                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7 retired at
+#                  D172 S3 with RPT and mf_preview, window_site.md §4); S1408,
 #                  D172 S2's witness that proof_run's read-limit layouts
 #                  catch an over-read; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
@@ -46,37 +47,13 @@ plant_spec() {
     S1419) # a window site's renderer-interface field accepted (`plan_hint` stated beside
         # its window facts: D172 S2 commit 6, the kit manager's R1)
         echo 'window.c@@    if (p->plan_hint \&\& p->plan_hint != MF_NO_PRED)\n@@    if (0)\n' ;;
-    # R-26.6 (lane r26zk): the REPORT row and the preview. S1251-S1256 are
-    # mech rows (ids reserved by main); ZK6/ZK7 are plants with no id yet.
-    S1256) # the REPORT row applies without its exactness fact
-        echo 'finder.c@@{ "RPT", FD_FIND, KN_P, SF_SPAN0 | SF_PROOF_EXACT, 0,@@{ "RPT", FD_FIND, KN_P, SF_SPAN0, 0,' ;;
-    S1255) # the exactness test compares span 0's offsets only (d >= 0)
-        echo 'compose.c@@    for (long d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {@@    for (long d = 0; d < MF_MAX_FWD; d++) {' ;;
-    S1252) # mf_preview accepted twice
-        echo 'compose.c@@    if (art->preview)\n        return kit_fail(art, "mf_preview: called twice@@    if (0)\n        return kit_fail(art, "mf_preview: called twice' ;;
-    S1251) # mf_preview accepted after the first define
-        echo 'compose.c@@    if (art->nsites)\n        return kit_fail(art, "mf_preview: called after@@    if (0)\n        return kit_fail(art, "mf_preview: called after' ;;
-    S1253) # mf_preview accepts any step a row names (B4, B1, ...)
-        echo 'finder.c@@        if (strcmp(step, fd_previews[i])) continue;@@        if (0) continue;' ;;
-    ZK6) # the preview leaks: the REPORT row decides on every art
-        echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 1;' ;;
-    ZK7) # a preview art routes nothing (the REPORT row never decides)
-        echo 'finder.c@@            return art->preview \&\& !strcmp(art->preview, r->step);@@            return 0;' ;;
-    S1254) # a `--memfn=` spelling reaches the preview (an options.def row)
-        echo 'options.def@@MF_OPT("vrun-w32", MF_OPT_DENY,@@MF_OPT("preview", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR, "plant")\nMF_OPT("vrun-w32", MF_OPT_DENY,' ;;
     S1408) # an over-read past n (D172 S2 review S2's witness for proof_run's read-limit layouts):
         # a term's read bound one byte loose, so the generic row reads s[n]
         echo 'generic.c@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s", rc->N);@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s + 1", rc->N);' ;;
     *) return 1 ;;
     esac
 }
-# S1255 and S1256 are not in the list: since D172 S2 commit 6 retired `absent`,
-# no old-field REPORT site exists on which the chosen form proves other than
-# exactly its REQUIRED sets (every REPORT term is REQUIRED and every row tests
-# those), so the REPORT row's exactness fact and its comparison range are
-# unobservable (declared EQUIVALENT in their mech rows) until S3 retires the
-# row (window_site.md §4). `--plant S1255` still runs one.
-PLANTS="S1221 S1224 S1225 S1419 S1251 S1252 S1253 S1254 ZK6 ZK7 S1408"
+PLANTS="S1221 S1224 S1225 S1419 S1408"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

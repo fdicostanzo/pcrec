@@ -68,7 +68,9 @@ def art(tag, flags, pat):
     return open(o, "rb").read()
 
 # A
-WIT = [([], "é{2}cat"), (["--engine=vm"], "é{2}cat"), (["-e", "utf8"], "a{3}(?i:cat)"),
+# (D172 S3: the fixed-width witnesses `é{2}cat` and `a{3}(?i:cat)` became
+# `cover`, which runs no pre-check; a variable count keeps their route)
+WIT = [([], "é{2,3}cat"), (["--engine=vm"], "é{2,3}cat"), (["-e", "utf8"], "a{3,4}(?i:cat)"),
        ([], "(?:user|USER)[ \\t]*="), (["-e", "byte"], "(x?)([a-z]+)+Z.@#\\1")]
 na = 0
 for i, (fl, pat) in enumerate(WIT):

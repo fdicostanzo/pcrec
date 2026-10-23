@@ -72,19 +72,20 @@
 # requires its witness to be ASKED (asked >= 1) and its control not, and every
 # traced compile's `asked` to equal its own `phase=ask` FD records (P4 counted
 # from `P3+P4`).
-# R-26.6 (lane r26zk): RPT, the REPORT row, is held for its preview step: only
-# an art previewing it (mf_preview "R-26.6") decides it, and no pcrec build
-# calls mf_preview before Z2's harness lever (kit_proof.md §7), so its reach
-# is `pending-site:Z2`. Its witness `fd-RPT` is a REPORT site on a preview art
-# (its signature the FDROUTE record); its control is `fd-R7w`, a set site
-# on a plain art (the row is not chosen there; the same REPORT site on a plain
-# art is refused, which tests/memfn/proof_check.c holds).
+# R-26.6 (lane r26zk): RPT, the REPORT row, held for its preview step, RETIRED
+# at D172 S3 with the preview (window_site.md §4): a REPORT site is a window
+# site, rendered by the window family's E-find row; one stated in terms is
+# refused on every art, which tests/memfn/proof_check.c holds.
 #
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
 # run_rows.sh also holds every signature to EVERY artifact it compiled and
 # every fixture: wherever the signature appears, the trace must show its row.
 #
+# D172 S3: the fixed-width witnesses of pf_memchr_bounded, pf_walk_bounded,
+# fn-pair and vrun-w16/w32 are `cover` artifacts by default (the memfn kit's
+# window site, no prefilter or pre-check), so witness and control both carry
+# the cover row's deny `--memfn=no-wf-find`, the default build before S3.
 # table	row	reach	wkind	wflags	witness	signature	cflags	control
 arms	ofsskip	pcrec	pattern	-	abc[0-9]+xyz	rx_ofsskip(const unsigned char *subject, size_t n,	-fno-offset-skip	=
 arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
@@ -92,9 +93,9 @@ arms	precheck_assign	pcrec	pattern	-	(ab)c?userpass	 = rx_reqrun(	-fno-req-hando
 arms	precheck_assign_byte	pcrec	pattern	-	(?:\d{1,3}\.){3}\d{1,3}	_q = subject_length > search_from ? memchr(	--memfn=no-precheck-assign-byte	=
 arms	runcmp	pcrec	pattern	--engine=vm	abc[0-9]+xyz	rx_w2(subject + scan_position)	--engine=vm -fno-lit-run	=
 arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - scan_position);	-	=
-arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff	(?!x)abc	subject_length - 1 - scan_position)	-	=
+arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-wf-find	(?!x)abc	subject_length - 1 - scan_position)	--memfn=no-wf-find	=
 arms	pf_walk	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	while (scan_position < subject_length && !	-fno-offset-skip	abc[0-9]+xyz
-arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	-	=
+arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff --memfn=no-wf-find	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	--memfn=no-wf-find	=
 arms	pf_memchr_back	pcrec	pattern	-	(?m)^abc	 - subject) + 1;	-	abc[0-9]+xyz
 arms	mismatch_inplace	pcrec	pattern	-	(?i)(ab)\1	unsigned char x, y;	-	(ab)\1
 arms	generic	pcrec	pattern	-	a[^x]*	subject_length) && (	-	abc
@@ -102,10 +103,10 @@ runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
 runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=
 runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
 runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
-fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold	=
+fn	fn-pair	pcrec	pattern	--memfn=no-wf-find	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold --memfn=no-wf-find	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
-fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
-fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
+fn	vrun-w16	pcrec	pattern	-fmemfn-simd --memfn=no-wf-find	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16,no-wf-find	=
+fn	vrun-w32	pcrec	pattern	-fmemfn-simd --memfn=no-wf-find	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32,no-wf-find	=
 fd	R8	pending-site:B6	-	-	-	-	-	-
 fd	R3a	pending-site:B9	-	-	-	-	-	-
 fd	R3b	pending-site:B9	-	-	-	-	-	-
@@ -121,4 +122,3 @@ fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=a
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=
-fd	RPT	pending-site:Z2	fixture	-	fd-RPT	 row=RPT arm=generic	-	fd-R7w

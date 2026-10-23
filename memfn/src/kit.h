@@ -251,10 +251,11 @@ typedef struct {
        -1 when the art does not count) */
     const char       *fd_row;
     int               reach_k;
-    /* D172 S2 commit 1: a window site the family rendered on a preview art
-       (window.c). `wplan` is the plan its FLOOR row renders (NULL where the
-       family's text is a legacy row's, `site` then holding the plan
-       translated into that row's site); `wpath` the decision's path id */
+    /* A window site the family rendered (window.c; every art since D172
+       S2 commit 6). `wplan` is the plan its own row renders, E-find or the
+       floor (NULL where the family's text is a legacy row's, `site` then
+       holding the plan translated into that row's site); `wpath` the
+       decision's path id */
     const struct wf_plan *wplan;
     const char       *wpath;
 } site_rec;
@@ -295,9 +296,6 @@ struct mf_art {
     const char  *reach_stem;
     const char **reach_row;
     uint32_t     nreach, reach_cap;
-    /* R-26.6: the routing step this art PREVIEWS (mf_preview; the kit's own
-       spelling from finder.c's fd_previews[]), NULL on every shipped art */
-    const char  *preview;
     char        err[256];
 };
 
@@ -503,33 +501,33 @@ int mf_set_terms(const uint8_t set[32], unsigned K, mf_cover *out);
 /* The ROUTED decision (finder.c, R17-b' B2, r17b_prime.md §1.6): the arm
  * that renders the table's pick for FIND site `s` (handle `handle`, the next
  * handle at a define) where the decision's rows decide (every row since
- * LOCKDOWN, B4'; the REPORT row, R-26.6, only on an art previewing its step), and *row its terminal row's id; NULL where the
- * site renders its pre-table form (*row NULL), or where a routed pick has no
- * arm (*row set: a kit build error the caller refuses). `gphases` are the
- * selection's gate phases (a REPORT site's exactness is asked under them);
- * `quiet` 1 for the query (no record, no reach). */
+ * LOCKDOWN, B4'), and *row its terminal row's id; NULL where the site renders
+ * its pre-table form (*row NULL), or where a routed pick has no arm (*row
+ * set: a kit build error the caller refuses). `quiet` 1 for the query (no
+ * record, no reach). */
 #define fd_route MF_NS(fd_route)
 const struct arm *fd_route(const mf_art *art, uint32_t handle, const mf_site *s,
-                           const mf_hooks *def, unsigned gphases, int quiet,
-                           const char **row);
-/* The kit's own spelling of routing step `step` where the finder table names
- * it as previewable (mf_preview, R-26.6), else NULL. */
-#define fd_preview_step MF_NS(fd_preview_step)
-const char *fd_preview_step(const char *step);
-/* 1 iff the form the composer's walk chooses for REPORT site `s` under the
- * gate's phases `gphases` proves, at every offset in [MF_PROOF_LO,
- * MF_MAX_FWD), EXACTLY the intersection of the REQUIRED terms' sets there
- * (span 0's; all ones where none reads): the REPORT
- * row's applicability (R-26.3, K96), never a check of it (compose.c). */
-#define kit_report_exact MF_NS(kit_report_exact)
-int kit_report_exact(const mf_art *art, const mf_site *s, const mf_hooks *def,
-                     unsigned gphases);
-/* fd_route's answer for a routed pick that IS the composer's own walk (D2's
- * RUN: the nested fn_rows[] walk, its BODY/PREFIX rows and their denies
- * unchanged, R17-b' B3b): a marker, never rendered or read; the caller walks
- * the arms and reports the routed row. */
-#define fd_nested_walk MF_NS(fd_nested_walk)
-extern const struct arm fd_nested_walk;
+                           const mf_hooks *def, int quiet, const char **row);
+/* Slot FIND's picks: a form, the kit's names (D157). 0 is UNSTATED (refused
+ * by the finder's self-check). The window family's E-find renders the pick
+ * of the row that decides its stop (window.c's Table B renderers). */
+typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
+               FF_W64, FF_A3, FF_PAIR } fd_form;
+/* A window site's STOP as Table B is asked about it (window_site.md §2.2):
+ * its set and its offset d* from the candidate (negative: below it). */
+typedef struct {
+    const uint8_t *set;
+    int32_t        off;
+} fd_stop;
+/* THE FAMILY'S FIND ASK (finder.c, D172 S3, code review r1 C1/C3): slot
+ * FIND's decision for the stop `st` of window site `ws` under its define
+ * hooks `def` (its kind, body, policy and options; the OFF variant, §1.5
+ * rule 1, as fd_route): 1 with the deciding row's pick and id, or 0 where no
+ * row decides (or a dispatch would, none before B4/B8). `quiet` 1: no record,
+ * no reach; 0: a SELECTION (traced, counted). */
+#define fd_find MF_NS(fd_find)
+int fd_find(const mf_art *art, const mf_site *ws, const mf_hooks *def, const fd_stop *st,
+            int quiet, fd_form *pick, const char **row);
 /* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
  * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
  * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
@@ -671,10 +669,44 @@ void ofs_fn_scan(const mf_pred *p, int *k, int *a, int *b);
  * (§R4.9.2.5: with no PREFIX row, one call to `<fn>__body`). */
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o);
+/* The same, for predicate `p` of site `site` where that site is not the
+ * defined site record's own (the window family's E-find: the plan
+ * translated into the offset-skip predicate, window.c's B-fn row); the
+ * walks' gate and the SIMD rows' shape read `site`. */
+#define ofs_fn_define_at MF_NS(ofs_fn_define_at)
+int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
+                     const mf_pred *p, const char *fn, mf_sink *o);
+/* 1 iff the function serves predicate `p` of site `site` under the define
+ * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
+ * asked quietly. */
+#define ofs_fn_serves MF_NS(ofs_fn_serves)
+int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
+                  const mf_pred *p);
 /* Writes its call, `<fn>(<s>, <n>, <lo>[, tables])`, the definition's
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
                 const char *fn, mf_sink *o);
+/* THE PAIR LEAPFROG, one renderer for its two customers (code review r2
+ * R2-6): fn-pair's body (ofsskip.c) and the window family's B-pair
+ * (window.c). The caller's names and layout: */
+typedef struct {
+    const char *subject, *n;    /* the subject and its length                 */
+    const char *ha, *hb, *fresh, *q, *cand;  /* the pending hits, the first-
+                                   round flag, memchr's result, the candidate */
+    const char *at, *len;       /* the search's start (`pos + k`), its length */
+    const char *lim;            /* the re-search bound: a hit below it is
+                                   stale (`at`, so the hit that produced a
+                                   failed candidate is searched past)         */
+    const char *miss;           /* the statement where neither stream hits    */
+    const char *ind, *in2, *nl; /* a statement's indent, a block's added
+                                   indent, the line end                       */
+} ofs_pair;
+/* Writes into `o` the two streams (bytes m[0], m[1] at offset `k` from the
+ * candidate), each searched again only once `lim` passes its hit (`fresh`:
+ * the first round searches both), then the nearer hit less `k` as the
+ * candidate, `miss` where neither hit. The caller guards `at` < `n`. */
+#define ofs_pair_text MF_NS(ofs_pair_text)
+void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k);
 
 /* ---- the run compare, shared by three arms (runcmp.c) --------------------
  *
@@ -741,18 +773,22 @@ struct wf_plan;
 
 #define wf_check        MF_NS(wf_check)
 #define wf_prepare      MF_NS(wf_prepare)
-#define wf_floor_class  MF_NS(wf_floor_class)
+#define wf_plan_class   MF_NS(wf_plan_class)
+#define wf_plan_row     MF_NS(wf_plan_row)
 #define wf_floor_arm    MF_NS(wf_floor_arm)
+#define wf_find_arm     MF_NS(wf_find_arm)
 #define wf_plan_reads_table MF_NS(wf_plan_reads_table)
+#define wf_plan_brow    MF_NS(wf_plan_brow)
 
 /* NULL iff site `s`'s window facts (alts, spans, entries, wfloor) are
  * statements the family describes; on a site stating none, NULL. `frame`
- * 1: also the frame rules the family reads (the preview's own route). */
+ * 1: also the frame rules the family reads (a part's route, wf_parts_check). */
 const char *wf_check(const mf_site *s, int frame);
 /* PHASE 2's selection for window site `s` (wf_check'd) under the define
  * hooks `def` (the frame's), the gate reading `gphases`, traced unless
- * `quiet`: the decision (phase 1), then Table E. On the
- * family's FLOOR row, *plan is the plan it renders and *legacy NULL; on a
+ * `quiet`: the decision (phase 1), then Table E. On the family's own rows
+ * (E-find, the FLOOR), *plan is the plan its row renders (wf_plan_row) and
+ * *legacy NULL; on a
  * row reproducing today's text, *legacy is the plan translated into that
  * row's site (selected by the composer's walk as ever) and *plan NULL. Both
  * live in the art's arena. *path is the decision's path id. 0, or -1 with
@@ -774,7 +810,7 @@ void wf_part_site(const mf_site *s, unsigned i, mf_site *out);
 /* NULL iff every part's window statement is one the family describes in that
  * frame (wf_check) and only FUNC parts of an ALL_PRESENT site state one. */
 const char *wf_parts_check(const mf_site *s);
-/* On a preview art: *out is a copy of `s` (the art's arena) whose stating
+/* On every art: *out is a copy of `s` (the art's arena) whose stating
  * parts carry the family's plan translated into today's part shape (E-func's
  * legacy row); refused where a part's plan has no legacy translation. 0, or
  * -1 with *why. */
@@ -785,13 +821,21 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
 #define kit_legacy_serves MF_NS(kit_legacy_serves)
 int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
                       unsigned gphases);
-/* The class of the floor row's text for `plan` (R-25: the positions it
- * TESTS, the stop's find included), and whether that text reads a table of
- * pcrec's (mf_defined's `reads_table`). */
-void wf_floor_class(const struct wf_plan *plan, mf_class *out);
+/* The class of the family row's text for `plan` (R-25: the positions it
+ * TESTS, the stop's find included; the libc and include bounds of the text
+ * for THIS plan, not the row's widest), the row itself (E-find's or the
+ * floor's: mf_define's arm), and whether that text reads a table of pcrec's
+ * (mf_defined's `reads_table`). */
+void wf_plan_class(const struct wf_plan *plan, mf_class *out);
+const struct arm *wf_plan_row(const struct wf_plan *plan);
+/* The FIND slot's row deciding E-find's stop (Table B: fd_find), or NULL
+ * (the floor; E-find under D-hors, which finds no stop). */
+const char *wf_plan_brow(const struct wf_plan *plan);
 int  wf_plan_reads_table(const struct wf_plan *plan);
-/* The floor row (Table E's E-generic; window_site.md §2 "floor: generic"). */
+/* The floor row (Table E's E-generic; window_site.md §2 "floor: generic")
+ * and E-find's row (D172 S3: the family's own find-then-verify text). */
 extern const arm wf_floor_arm;
+extern const arm wf_find_arm;
 
 /* ---- MF_TRACE: the selection records (gate.c; trace_format.md) ---------- */
 

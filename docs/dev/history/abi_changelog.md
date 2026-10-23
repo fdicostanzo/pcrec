@@ -23,9 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `83` on every artifact today (lane corefix bumped it
-  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; the number was first taken as 87, renumbered to 83 at landing; 84-87 are
-  allocated to other branches, and whichever lands later renumbers).** Two
+- **`rx_info.abi` is `84` on every artifact today (lane s3 bumped it from
+  83, 2026-10-22: [MEMFN] D172 S3, docs/design/memfn/window_site.md rev 3.2
+  §5.2, §6; kit_proof.md §7's B1 row; PROVISIONAL: 84-87 are allocated to
+  other branches, so whichever lands later renumbers with the same grep).**
+  The `cover` LOCATE row is ROUTED by default: a pattern whose every match
+  is one fixed-width window the memfn kit's REPORT site proves exactly
+  (`cover_conj[]`, C1-C14) is searched by the kit's window family (its new
+  E-find row: the stop's find, then every tested position; D-hors's
+  Horspool skip on a dense stop) and reported `[c, c + k)` with no machine
+  run, so its search body, stamps (`<PREFIX>_DFA_SCAN "cover"`,
+  `<PREFIX>_MEMFN_LIBC`) and `rx_info.scan` move; `--list-axes` lists
+  `cover` at `locate` 2 and re-indexes `unanchored` 2 -> 3, and the memfn
+  section gains `wf-find` and `wf-hors`. Every other artifact moves only
+  the abi digits. The OFF arm `--memfn=no-wf-find,no-wf-hors` is the
+  parent's text but for those digits. The mover census is in
+  docs/dev/lanes/s3_report.md.
+- **`rx_info.abi` was `83` (lane corefix bumped it
+  from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; the number was first taken as 87, renumbered to 83 at landing).** Two
   defect fixes in the VM emitter. K128: an unbounded repeat `X{m,}` (m >= 1)
   with a nullable body now records where its last mandatory iteration began
   in the star's guard slot (one `slot_values[...] = scan_position` write

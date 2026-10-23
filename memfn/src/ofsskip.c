@@ -237,38 +237,52 @@ typedef struct fn_row {
     const mf_formdecl *decl;
 } fn_row;
 
-/* fn-pair's body: two `memchr` streams, members `a` and `b` of the cube at
- * offset `k`, each holding its one pending hit as an OFFSET (never a
- * pointer, so nothing NULL is compared relationally). `fresh` makes the
- * first iteration search both. */
+/* THE PAIR LEAPFROG (kit.h's ofs_pair): each stream holds its one pending
+ * hit as an OFFSET (never a pointer, so nothing NULL is compared
+ * relationally); a stream is searched again only once `lim` passes its
+ * hit, so the nearer hit is always the leftmost of the two bytes at or past
+ * `at`. */
+void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)
+{
+    const char *hit[2] = { t->ha, t->hb };
+    for (unsigned i = 0; i < 2; i++)
+        kb_printf(o, "%sif (%s || %s < %s) {%s%s%sconst void *%s = memchr(%s + %s, %d, %s);%s"
+                     "%s%s%s = %s ? (size_t)((const unsigned char *)%s - %s) : %s;%s%s}%s",
+                  t->ind, t->fresh, hit[i], t->lim, t->nl,
+                  t->ind, t->in2, t->q, t->subject, t->at, m[i], t->len, t->nl,
+                  t->ind, t->in2, hit[i], t->q, t->q, t->subject, t->n, t->nl, t->ind, t->nl);
+    kb_printf(o, "%s%s = 0;%s", t->ind, t->fresh, t->nl);
+    kb_printf(o, "%s%s = %s < %s ? %s : %s;%s", t->ind, t->cand, t->ha, t->hb, t->ha, t->hb,
+              t->nl);
+    kb_printf(o, "%sif (%s >= %s) %s;%s", t->ind, t->cand, t->n, t->miss, t->nl);
+    if (k) kb_printf(o, "%s%s -= %d;%s", t->ind, t->cand, k, t->nl);
+}
+
+/* fn-pair's body: the PAIR leapfrog (ofs_pair_text) over members `a` and
+ * `b` of the cube at offset `k`, inside the function's guarded loop. */
 static int pair_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
     const mf_pred *p = x->p;
     int maxk = x->maxk, k = x->k, a = x->a, b = x->b;
-    kb at, len;
+    kb at, len, lf;
     kb_init(&at, art->a);
     kb_init(&len, art->a);
+    kb_init(&lf, art->a);
     if (k) { kb_printf(&at, "pos + %d", k); kb_printf(&len, "n - pos - %d", k); }
     else   { kb_puts(&at, "pos");          kb_puts(&len, "n - pos"); }
     if (at.oom || len.oom) return kit_fail(art, "ofsskip: out of memory");
     const char *lim = at.p;   /* the re-search bound: a hit below pos + k is stale */
+    const ofs_pair t = { "subject", "n", "ha", "hb", "fresh", "q", "cand", at.p, len.p, lim,
+                         "return n", "        ", "    ", "\n" };
+    const int m[2] = { a, b };
+    ofs_pair_text(&lf, &t, m, k);
+    if (lf.oom || !lf.p) return kit_fail(art, "ofsskip: out of memory");
 
     o->puts(o->u, "    size_t ha = 0, hb = 0;\n"
                   "    int fresh = 1;\n");
     kit_out(o, "    while (pos + %d < n) {\n", maxk);
     o->puts(o->u,   "        size_t cand;\n");
-    kit_out(o, "        if (fresh || ha < %s) {\n"
-               "            const void *q = memchr(subject + %s, %d, %s);\n"
-               "            ha = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-               "        }\n", lim, at.p, a, len.p);
-    kit_out(o, "        if (fresh || hb < %s) {\n"
-               "            const void *q = memchr(subject + %s, %d, %s);\n"
-               "            hb = q ? (size_t)((const unsigned char *)q - subject) : n;\n"
-               "        }\n", lim, at.p, b, len.p);
-    o->puts(o->u,   "        fresh = 0;\n"
-                    "        cand = ha < hb ? ha : hb;\n"
-                    "        if (cand >= n) return n;\n");
-    if (k) kit_out(o, "        cand -= %d;\n", k);
+    o->puts(o->u, lf.p);
     kit_out(o, "        if (cand + %d >= n) return n;\n", maxk);
     o->puts(o->u,   "        if (");
     if (verify_chain(art, h, p, o)) return -1;
@@ -386,13 +400,14 @@ const gate_contract *fn_row_contract(size_t i)
     return i < NFN ? fn_rows[i].ct : NULL;
 }
 
-/* The row slot `slot` chooses for predicate `x` of site `handle`, NULL when
- * none does. A BODY with no row is an error (the slot has a floor); an empty
- * PREFIX is the ordinary answer, and renders nothing. */
+/* The row slot `slot` chooses for predicate `x` of site `handle` (the site
+ * the gate reads is `x->site`), NULL when none does. A BODY with no row is an
+ * error (the slot has a floor); an empty PREFIX is the ordinary answer, and
+ * renders nothing. */
 static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
-    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL, NULL };
+    gate_in in = { x->site, h, NULL, NULL, NULL };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
@@ -404,6 +419,21 @@ static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                  f[0] ? f : "(no row applies; the slot lost its floor)");
     }
     return NULL;
+}
+
+/* 1 iff the function serves predicate `p` of site `site` under the define
+ * hooks `h`: ofs_fn_applies, then the BODY slot's walk, asked quietly (the
+ * gate reads `site`: what fn_select would decline is not served). */
+int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
+                  const mf_pred *p)
+{
+    if (!ofs_fn_applies(p, h)) return 0;
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
+    ofs_fn_scan(p, &x.k, &x.a, &x.b);
+    gate_in in = { site, h, NULL, NULL, NULL };
+    gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
+    gate_verdict why = { 0, 0 };
+    return kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why) < NFN;
 }
 
 /* The PREFIX row named `name` (a declaration's rung), NFN when none. */
@@ -423,7 +453,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     unsigned nr = 0;
     rung[nr++] = top;
-    gate_in in = { &art->sites[handle - 1].site, h, NULL, NULL, NULL };
+    gate_in in = { x->site, h, NULL, NULL, NULL };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
@@ -542,7 +572,13 @@ static void fn_note_form(mf_art *art, const fn_row *const *rung, unsigned nr)
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o)
 {
-    fn_in x = { p, max_reach(p), 0, 0, 0, &art->sites[handle - 1].site, NULL, NULL,
+    return ofs_fn_define_at(art, handle, &art->sites[handle - 1].site, h, p, fn, o);
+}
+
+int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
+                     const mf_pred *p, const char *fn, mf_sink *o)
+{
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL,
                 o->simd_open && o->simd_close };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     art->includes |= MF_INC_STRING_H;   /* memchr */

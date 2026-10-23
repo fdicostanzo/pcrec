@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# 588-kit-s3-timing: lane s3, D172 S3's ACCEPTANCE (docs/design/memfn/window_site.md rev 3.2 §6): the
+# 650 harness's 8 cells x 3 regimes x 3 classes, the S3 compiler's routed artifacts against its own
+# OFF arm (DEF: --memfn=no-wf-find,no-wf-hors, byte-identical to main c3ea619c3 but for the abi
+# digits), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
+# T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
+# s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, PASS/FAIL vs §6's bar,
+# the five named caps, the G1 alpha of wf-find and wf-hors at both layers). Beside the bar (the S3
+# review's item E, FINDINGS only, never in `== s3t BAR PASS|FAIL`): the MOVER SAMPLE, ~24 other
+# cover movers from s3_evidence/sample_588.tsv (pick_588.py's committed, seeded, stratified pick),
+# DEF vs routed at both layers, same core and calibration, printed under "Mover sample (not the §6
+# bar)". ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~1,900 items, ~6 min,
+# plus ~1 min of build/differential/gate; the sample ~1,700 items (24 rows x 2 regimes x <= 3
+# classes x the distinct arm texts, 5 launches), ~5 min, plus ~1.5 min of subjects/build/gate;
+# about 14 min in all against ~7 before (cap 3600 s unchanged).
+# Queue it with:  scripts/boxqueue add --name 588-kit-s3-timing FILE
+# Everything it writes is under $OUT (the s3 worktree's build/s3/job588, gitignored).
+#   --dry-run  measure_588.sh smoke on ONE cell, hex8-bounded (build + premises + differential + gate),
+#              and on the mover sample's first row (subjects + build + premises + gate): NO clock
+#   --ready    HELD while main's timing job i2build-parity is pending/running; then r27c's quiet
+#              gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no box-lock holder
+#   (work)     exec measure_588.sh run
+set -u
+W=/home/pcrec/projects/pcrec/worktrees/s3
+E=$W/docs/dev/lanes/s3_evidence
+OUT=$W/build/s3/job588
+MAIN=/home/pcrec/projects/pcrec
+export TMPDIR=$W/build/tmp
+export MEASURE_CPU=7 MEASURE_SIBLING=15
+export PCREC=$W/build/s3/bin/pcrec
+L=5 T=20000000 N=9
+case "${1:-}" in
+    --dry-run)
+        mkdir -p "$TMPDIR" "$OUT" || exit 1
+        [ -x "$PCREC" ] || { echo "$PCREC missing (the S3 commit's build/pcrec, copied into build/s3/bin)" >&2; exit 1; }
+        python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/read_588.py" || exit 1
+        DRY=$W/build/s3/dry588
+        SMOKE_CELLS="hex8-bounded" SMOKE_SAMPLE="smp01" bash "$E/measure_588.sh" smoke "$DRY" > "$DRY.out" 2>&1 ||
+            { tail -8 "$DRY.out" >&2; exit 1; }
+        grep -q '^sample-gate: [1-9][0-9]* arm cells read; 1 sample rows live$' "$DRY.out" ||
+            { grep -E '^(SAMPLE|sample-)' "$DRY.out" | tail -5 >&2; echo "the mover sample's smoke row did not survive" >&2; exit 1; }
+        tail -3 "$DRY.out" | sed 's/^/dry: /'
+        echo "would run: measure_588.sh run $OUT $L $T $N (pinned to cpu $MEASURE_CPU), differential first, arms DEF RTE RT2 (NOH where D-hors fires) DEFs RTEs (NOHs)"
+        echo "boxqueue: cap 3600"
+        echo "boxqueue: patience none"
+        echo "boxqueue: idle-ok"
+        echo "boxqueue: expect done=1 lines=^== s3t COMPLETE"
+        exit 0 ;;
+    --ready)
+        case "$(bash /home/pcrec/projects/pcrec/scripts/boxqueue state i2build-parity 2>/dev/null)" in pending*|running*) echo held; exit 75;; esac
+        mkdir -p "$OUT" || exit 1
+        st=$OUT/ready.state
+        now=$(date +%s)
+        if ls "$MAIN"/worktrees/.boxqueue/running/* > /dev/null 2>&1; then rm -f "$st"; echo "a queue job is running"; exit 75; fi
+        h=$("$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case "$h" in HELD*) rm -f "$st"; echo "box lock $h"; exit 75 ;; esac
+        l=$(cut -d' ' -f1 /proc/loadavg)
+        if ! awk -v l="$l" 'BEGIN { exit !(l < 2.0) }'; then rm -f "$st"; echo "load1 $l >= 2.0"; exit 75; fi
+        first=$(cat "$st" 2>/dev/null || echo 0)
+        if [ "$first" -gt 0 ] && [ $((now - first)) -le 600 ]; then
+            [ $((now - first)) -ge 55 ] && exit 0
+            echo "second quiet sample due in $((55 - now + first)) s (load1 $l)"; exit 75
+        fi
+        echo "$now" > "$st"
+        echo "first quiet sample taken (load1 $l); the second is due in 55 s"; exit 75 ;;
+esac
+rm -f "$OUT/ready.state"
+exec bash "$E/measure_588.sh" run "$OUT" "$L" "$T" "$N"

@@ -255,8 +255,10 @@ static bool cc_width(CoverSt *st)
  * exact [r3rc m2]; the slice stating less is an under-statement, sound. */
 static bool cc_exact(CoverSt *st)
 {
-    const MkLang *l = st->cv->lang = pcrec_kit_proof_routed(st->cx)
-        ? pcrec_fact_span(st->cx) : pcrec_fact_span_stated(st->cx);
+    /* read as the statement it is checked against (`used` stays the passes'
+       record, facts_listing.md §4.1¶2): the same read on every build since
+       D172 S3 routed `cover` by default */
+    const MkLang *l = st->cv->lang = pcrec_fact_span_stated(st->cx);
     int k = st->w.k;
     if (!st->w.exact) { st->detail = "machine-inexact"; return false; }
     if (l->stated != MK_LANG_STATED) { st->detail = "producer-unstated"; return false; }
@@ -361,8 +363,9 @@ static bool cc_proven(CoverSt *st)
 
 /* THE TABLE (kit_proof.md §1.1), read in order; the first failing row is the
  * `why`. The ids are stable and C2 keeps its number by being absent:
- * `origin-start` is RETIRED [r3rc M-A]. `fact-denied` is C13's detail under
- * `-fno-kit-proof`, which is B1's bit (§7): no row here. */
+ * `origin-start` is RETIRED [r3rc M-A]. B1's pcrec FACT deny
+ * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
+ * `--memfn=no-wf-find` declines C13 (`refused`), D172 S3. */
 typedef struct {
     const char *cid;            /* C1..C14                                   */
     const char *id;             /* the `why`                                 */

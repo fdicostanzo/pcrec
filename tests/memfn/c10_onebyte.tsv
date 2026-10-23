@@ -16,10 +16,11 @@
 # until PRE routes (B3b); the PF/MLINE fixtures witness the same kind values at
 # the FIND sites.
 # The expectations come from the design (§1.6/§4.3), not from a recorded run.
+# (D172 S3: `\B(?<!a)d`, a fixed-width cover since S3, became `\B(?<!a)d+`.)
 #
 # flags (`-` none)	pattern	site	kind
 -	x+y	PF	DFA_SCAN
-assertions,lookaround	\B(?<!a)d	PF	DFA_HAT
+assertions,lookaround	\B(?<!a)d+	PF	DFA_HAT
 -	(x+)y	PF	HYB_PF
 backrefs	(x[a-z]+)y\1	PF	VM_ATTEMPT
 assertions,modifiers	(?m)^ab	MLINE	DFA_ATTEMPT

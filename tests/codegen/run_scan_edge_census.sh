@@ -81,6 +81,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 PCREC=${PCREC:-build/pcrec}
+# D172 S3: every compile below carries the `cover` row's deny (registry.md
+# §6¶8a): this census's witnesses and population are the scan machines' edges,
+# and a fixed-width pattern is a `cover` artifact by default, running no
+# machine; the deny renders the default build before S3.
+COVER_DENY=--memfn=no-wf-find
 # [K37] pcrec_run: every compiler invocation below runs under a bound. The
 # check that enforces this is tests/codegen/run_codegen_tests.sh's K37 leg,
 # and it caught this file's three unbounded calls on the first battery run.
@@ -172,7 +177,7 @@ for row in "${MANIFEST[@]}"; do
     # fixed-width or one-character row (`foo\B`, `[0-9]{3}\z`) recovers its
     # start without the REVERSE machine whose edges it counts, so both new
     # RECOVER rows are denied too (byte-identical where they do not apply).
-    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -fno-start-width -fno-start-landing -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments $COVER_DENY -fno-rev-end -fno-start-width -fno-start-landing -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
         bad "'$pat' failed to compile: $(head -1 "$TMP/err")"
         continue
     fi
@@ -202,7 +207,7 @@ done
 #     that is where precondition (8) still applies, and it is the half of the
 #     STEP 1 census that was misread.
 for pat in '\Bfoo\B' '\bfoo\B'; do
-    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" --pattern "$pat" >/dev/null 2>&1 || { bad "'$pat' failed to compile"; continue; }
+    pcrec_run "$PCREC" -p rx --features all -fcomments $COVER_DENY -o "$TMP/a.c" --pattern "$pat" >/dev/null 2>&1 || { bad "'$pat' failed to compile"; continue; }
     if [ "$(grep -c 'RX_DFA_PREFILTER "offset-set-bounded"' "$TMP/a.c")" -ne 1 ]; then
         bad "'$pat' no longer takes an offset-set prefilter -- the census's own hazard witness moved"
         continue
@@ -267,7 +272,7 @@ p1=0; p2=0; p2e=0; p3=0; npat=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     npat=$((npat+1))
-    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/p.c" --pattern "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all -fcomments $COVER_DENY -o "$TMP/p.c" --pattern "$pat" >/dev/null 2>&1 || continue
     grep -qE 'RX_DFA_PREFILTER "(offset-set|run-pinned)' "$TMP/p.c" || continue
     p1=$((p1+1))
     grep -q 'rx_forward_seed_state' "$TMP/p.c" || continue
@@ -327,7 +332,7 @@ for row in "${VEDGE[@]}"; do
         continue
     fi
     for deny in "" -fno-view-edge; do
-        if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -fno-start-width -fno-start-landing $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx --features all -fcomments $COVER_DENY -fno-rev-end -fno-start-width -fno-start-landing $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
             bad "'$pat' $deny failed to compile: $(head -1 "$TMP/err")"
             continue
         fi

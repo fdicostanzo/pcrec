@@ -56,11 +56,16 @@ sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
 
-MOVERS_FLOOR = 39      # (pattern, engine) movers, corpus + named: 44 measured at w16 (R-13), ~90%
-SIMD_FUNC_FLOOR = 39   # SIMD FUNCs over the movers: 44 measured, ~90%
+# D172 S3 (lane s3): 33 and 33 measured, pinned AT the measure (a deterministic
+# count of emitted text): the cover row took the fixed-width caseless runs (their
+# search is the kit's window site, no SIMD FUNC)
+MOVERS_FLOOR = 33      # (pattern, engine) movers, corpus + named: 44 measured at w16 (R-13); 33 at D172 S3
+SIMD_FUNC_FLOOR = 33   # SIMD FUNCs over the movers: 44 measured (R-13); 33 at D172 S3
 LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 NAMED = [
-    ('mod-i (DFA, ASSIGN)', '(?i)cat', []),
+    # D172 S3: `(?i)cat` is a fixed-width `cover` artifact by default; under the
+    # cover row's deny it is the DFA ASSIGN pre-check FUNC this witness names
+    ('mod-i (DFA, ASSIGN)', '(?i)cat', ['--memfn=no-wf-find']),
     ('union-select (DFA)', '(?i)union.*?select.*?from', []),
     ('union-select (no-DFA, ON_MISS)', '(?i)union.*?select.*?from', ['--engine=vm']),
     ('no-DFA ON_MISS', '(?i)\\d+cat', ['--engine=vm']),
