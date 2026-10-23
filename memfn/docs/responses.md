@@ -2997,3 +2997,11 @@ the compiler, and is never adopted silently. Proposed for main to file
     3. Units: costs are recorded RELATIVE to the scalar walk's per-byte cost on the same box (as measures.md already designs). The raw absolute readings (ns, box, clock, compiler, commit) are kept as provenance and listed beside them. The resolution must be fine enough that near-ties are decided by rates, not rounding.
   - Agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements.
 - notice: 2026-10-23 — **Stop-ranking Q2 (Frank: "Yes. It sounds simpler as well"):** the Horspool skip (D-hors) becomes one METHOD in Table A's priced choice, priced (probe + rate × verify) / E[sh]. HORS_MIN and the separate admission rule are DELETED. It builds with Q1's first step, after the probe cost is measured. The simplification counts as a benefit.
+- notice: 2026-10-23 — **Stop-ranking Q3 (Frank: "Yes but make it a formal thing and build it as a library of values … then update the item you found. Get measurements far enough to do the table for this box, but everything else can stay in the item"):**
+  - **NOW (kit):** measure this box (zen4, the dev box) far enough to fill Q1's cost table: the memchr, two-stream pair and Horspool-probe method cards plus verify per hit, beside the walk rows. They are written as a new revision of the box's set in measure_store/ (after M0 merges), in a night window cleared with Frank. This is gated on the step-0 census (after C1 merges).
+  - **INTO [MEASURE-SET] (main's item; not scheduled now):**
+    - a canned, self-contained pcrec script (no bench or lane-harness dependency) that measures any machine into a set;
+    - closest-match selection over the library (declared fallback rows: microarch → ISA level → arch family → generic, visible in --list-measurements, stamped per artifact);
+    - targeting another machine (--measures/config, built);
+    - the generic "best guess current hardware" envelope (M2).
+    - The kit contributes its method cards to that script; plan_cost.def's rows migrate into the sets.
