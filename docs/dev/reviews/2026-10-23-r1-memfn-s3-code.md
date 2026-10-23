@@ -50,7 +50,14 @@ The project's first blinded CODE critic round, run at Frank's request (2026-10-2
 | C16 | LOW | The `--harness=kit-proof` lever is inert but still live code. | quality | FILE: removal with a trigger. |
 | C17 | LOW | Smaller items: stale or missing headers, a 320-byte buffer literal, "wf-find" spelled in 3 places, find_groups on the query path, libc=1 declared even on Horspool text, the fd_find_form + define_sel stack chain (~7 KB). | quality, design | FIX in the C1 build where touched; otherwise file. |
 
-**Compliant, as the critics confirmed:**
+**Triage in the house labels:**
+- FIX-NOW (the C1 build): C1, C3, C7, C9, C11, C13, C14, C15, C17-where-touched.
+- PLAN: C5, C6, C16.
+- DOC: C4 (window_site rev 3.3).
+- NOTED: C12 (run-skip to ideas.md), C2 (a process rule for main's guide), C10 (gate change agreed by main).
+- REJECTED: none.
+
+**PROBED-AND-HELD, as the critics confirmed:**
 - Table A (A-mass, TIE rows) and Table C rows are declared.
 - C-run groups go through runcmp.
 - The shared hoisted bound and guards are reused.
