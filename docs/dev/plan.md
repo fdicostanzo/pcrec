@@ -657,6 +657,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: unscheduled; a one-pass look (which spelling is larger and why) when the VM front end is next touched
   refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md
   Two spellings with the same meaning should compile to the same matcher, the same claim the case-spelling check makes for letter case. Once fixed, the check's flag-spelling group can compare (?i)abc against (?i:ABC) directly.
+- [GATE-RUNS] STATE:not-started — CHECKS OUTSIDE make test HAVE NO REGULAR RUNNER AND NO RETAINED VERDICT
+  filed: 2026-10-23 manager, from research lane gatecensus (docs/dev/gate_census_2026-10-23.md)
+  status (2026-10-23): research only. Full mech last ran about 10-08; san 10-03; ubsan/asan 09-26; lint not since September; seven checks have no runner at all
+  next: owner's call on the shape (manager's leaning: a scheduled battery through the box queue on bench nights, verdicts retained)
+  refs: scripts/battery.sh; decisions D136; [RECID-A]; docs/dev/gate_census_2026-10-23.md
+  The census: every check outside `make test` depends on a hand-launched scripts/battery.sh, which keeps no verdict on this box (battery verdicts survive only as journal prose), and pins inside those checks are re-pinned with nothing exercising them between launches. Seven checks have no runner: ksweep, memfn-g2-full, lbsweep, specimen, tiered-entry, uprops-utf8, spec. test-recursion-identity is the third gate to go silently red (D136 recorded the second).
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
