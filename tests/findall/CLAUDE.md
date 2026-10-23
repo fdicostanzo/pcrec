@@ -53,6 +53,11 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   `test-corpus` (run.sh's `mg` arm drives `<prefix>_next`; verify_rxt.py
   re-verifies with `re.finditer`).
 
+- **retry_anchor.rxt** — hand-written `mg` rows for the retry past offset 0
+  (review 2026-10-23-r2, CONTRACT-1: `^`/`\A` are false at the retry
+  position), libpcre2 10.46's global counts, python re agreeing; rides
+  `test-corpus` like global.rxt.
+
 - **mover_census.py** — IT15's MOVER CENSUS (not a `make test` section; a
   delivery-bar run): every corpus pattern under the parent compiler and the
   iterator's, default engine and `--engine=vm`, comparing the outcome, the

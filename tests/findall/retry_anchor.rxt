@@ -1,0 +1,33 @@
+# tests/findall/retry_anchor.rxt -- [FINDALL-NEXT] the find-all retry at a
+# position past 0 (code review 2026-10-23-r2, CONTRACT-1): after an empty
+# match at q > 0 the NOTEMPTY_ATSTART retry is an anchored attempt at q, where
+# `^` and `\A` are FALSE. The DFA retry machine used to start from the
+# subject-start root there and report a match `^x` cannot make. The `mg`
+# counts are libpcre2 10.46's GLOBAL counts (pcre2demo.c's loop: an empty
+# match retried with NOTEMPTY_ATSTART|ANCHORED, else one character on),
+# hand-run per subject; python3 re.finditer agrees on every one.
+
+pattern \x20*|^x+
+features all
+mg "  x" 3
+mg "x x" 5
+
+pattern |^x
+features all
+mg "xx" 4
+mg "  x" 4
+mg "x" 3
+
+pattern |(?:^a|b)
+features all
+mg "aab" 6
+
+pattern |\Ax
+features all
+mg "ax" 3
+mg "xx" 4
+mg " x" 3
+
+pattern (?m)|^x
+features all
+mg "a\nx" 5
