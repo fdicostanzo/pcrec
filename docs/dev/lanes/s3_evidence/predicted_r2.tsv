@@ -1,0 +1,54 @@
+# docs/dev/lanes/s3_evidence/predicted_r2.tsv — code review r2's PAIR widening (R2-1) and
+# shared two-stream renderer (R2-6): the PREDICTED mover manifest (lane s3pair, 2026-10-23),
+# committed BEFORE any byte-diff ran. Compared: `pcrec -p rx -fcomments --features all [FLAGS]
+# --pattern P` at this build (NEW) against the C1 tip (PRE: ae83da9d4, S3 commit b5b85aeac's
+# code), `.c` and `.h`, nothing masked (both abi 84). bytediff_r2.sh reads the class from the
+# two texts:
+#   IDENTICAL        byte-identical to PRE;
+#   MOVES-pair       NEW renders B-pair (E-find's two streams, `_mfN_ha < `) where PRE had none:
+#                    a two-byte stop that PRE walked (not a cube, or a cube outside a run stretch);
+#   MOVES-pair-text  both render B-pair: PRE's own stream text, NEW's the shared renderer's
+#                    (ofs_pair_text; the search-past-the-subject guard is one `break` up front);
+#   MOVES-other      anything else (never predicted).
+# The OFF arm (both kit denies on both sides) is predicted IDENTICAL on every row.
+#pattern	flags	prediction	why
+[\x80-\xff]q	-	IDENTICAL	emit F3 probe: the stop is the 128-member set (A-mass), no PAIR (two bytes only): the walk
+[\x80-\xff]x	-	IDENTICAL	emit F3 probe: the same
+[\x80-\xff]j	-	IDENTICAL	emit F3 probe: the same
+[^\x00-\x7f]e	-	IDENTICAL	emit F3 probe: the same
+[\x00-\x08]z	-	IDENTICAL	emit F3 probe: a nine-member stop, the walk
+the[qx]	-	MOVES-pair	emit F3 probe: the stop {q,x}, not a cube
+ab[qj]cd	-	MOVES-pair	emit F3 probe: {j,q}
+ee[qj]ee	-	MOVES-pair	emit F3 probe: {j,q}
+ee[qj]ee	-fmemfn-simd	MOVES-pair	no SIMD row over B-pair: the same text at both layers
+e[qj]e	-	MOVES-pair	emit F3 probe: {j,q}
+ab(?=[Qq])	-	MOVES-pair	slot F1: a cube in a one-position context item, outside any stretch
+[xq]abc	-	MOVES-pair	verify.md: {q,x} at offset 0
+[a-]	-	MOVES-pair	smp14 (588's WALK/one/norun): {-,a}
+[[:]	-	MOVES-pair	smp19: {:,[}
+[:a]	-	MOVES-pair	smp24: {:,a}
+(?:(?!a)z|w)	-	MOVES-pair	smp09: {w,z}
+[a[:b]	-	IDENTICAL	four members {:,[,a,b}: no PAIR
+(?i)q	-	MOVES-pair	a one-position cube, no stretch: PRE walked it; one SET term, so B-fn declines
+[xq]	-	MOVES-pair	a one-position two-byte window
+(?i)\bfoo\b	-	MOVES-pair-text	PRE's B-pair (a cube in the run stretch, context items): the shared text
+(?i)\bfoo\b	-fmemfn-simd	MOVES-pair-text	the same
+\b(?i:foobar)\b	-	MOVES-pair-text	slot F2's probe, B-pair before
+(?i)foo[0-9]bar	-	MOVES-pair-text	the same
+(?i)foobar	-	IDENTICAL	B-fn: fn-pair's body, its bytes held by the shared renderer
+(?i)foobar	-fmemfn-simd	IDENTICAL	B-fn with vrun's rungs
+(?i)abc	-	IDENTICAL	B-fn
+[Qq]uery	-	IDENTICAL	B-fn
+(?i)cat\d+	-	IDENTICAL	not a cover: the pre-check's fn-pair (native), byte-identical through the shared renderer
+(?i)cat\d+	-fmemfn-simd	IDENTICAL	the same with vrun
+(?<=[qj])[a-z]	-	IDENTICAL	a two-byte stop BELOW the candidate: still no row (PAIR reads SPAN0), the cover declines as at PRE
+(?<=q)[a-z]{2}	-	IDENTICAL	D1c
+foobar	-	IDENTICAL	one-member stop: D1
+\b[0-9a-f]{8}\b	-	IDENTICAL	D-hors (Table D's text now dispatched from its rows; bytes unchanged)
+[0-9a-f]{8}	-	IDENTICAL	D-hors
+\d{4}	-	IDENTICAL	a ten-member stop: the walk
+\w(?=\d)\w	-	IDENTICAL	a set stop
+[ab]x	-	IDENTICAL	the stop x, one member
+a(b|c)+d	-	IDENTICAL	not a cover
+x+y	-	IDENTICAL	not a cover
+(?i)hello world	--engine=vm	IDENTICAL	the VM engine

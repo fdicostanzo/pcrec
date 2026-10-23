@@ -20,7 +20,8 @@
 # regimes, 2 distinct arm texts: a cover artifact's SIMD text is its scalar text; 5 launches), ~1.7
 # min, plus ~0.5 min of subjects/build/gate: about 16-17 min in all (cap 3600 s unchanged).
 # Queue it with:  scripts/boxqueue add --name 588-kit-s3-timing FILE
-# Everything it writes is under $OUT (the s3 worktree's build/s3/job588, gitignored).
+# Everything it writes is under $OUT (the s3pair worktree's build/s3/job588, gitignored; re-staged
+# there by lane s3pair, code review r2: the PAIR widening's tree, PCREC its build).
 #   --dry-run  measure_588.sh smoke on ONE cell, hex8-bounded (build + premises + differential + gate),
 #              on the mover sample's first row and on the E[sh] site esh02 (subjects + build +
 #              premises + gate): NO clock
@@ -28,7 +29,7 @@
 #              gate: load1 < 2.0 on two samples >= 55 s apart, no running queue job, no box-lock holder
 #   (work)     exec measure_588.sh run
 set -u
-W=/home/pcrec/projects/pcrec/worktrees/s3
+W=/home/pcrec/projects/pcrec/worktrees/s3pair
 E=$W/docs/dev/lanes/s3_evidence
 OUT=$W/build/s3/job588
 MAIN=/home/pcrec/projects/pcrec

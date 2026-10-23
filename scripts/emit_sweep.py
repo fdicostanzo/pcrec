@@ -497,7 +497,13 @@ DIFFER_PINS = {
     # (`(?i)cat` is the shortest); -fcomments adds the artifact's prose to
     # EVERY compiled pattern, so its floor is "nearly all" and the manifest `a`
     # (its commentary diff is the orientation + legend blocks) is the witness.
-    ("byte", "-fmemfn-simd", "c-default"): (9, 0, b"((?i:abc))"),    # S3 re-pin (was 20, b"(?i)cat")
+    # code review r2 R2-3 (lane s3pair): S3's lowering to 9/10 was measured before the C1
+    # build restored the caseless runs' SIMD rows (B-fn); job 606's sweep_start read 22/15 at
+    # the C1 tip, which the PAIR widening leaves unchanged (B-pair's text is the same at both
+    # layers), so the cell is pinned back AT the measure. Its members against main are named
+    # by s3_evidence/simd_members.py (s3_report.md §8.8): a JUDGED trade, SIMD off by default
+    # and a SIMD-on loss the SIMD thread's finding (window_site.md §6).
+    ("byte", "-fmemfn-simd", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
     ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
     ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
     ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
@@ -528,7 +534,7 @@ DIFFER_PINS = {
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
-    ("utf8", "-fmemfn-simd", "c-default"): (10, 0, b"((?i:abc))"),    # S3 re-pin (was 15, b"(?i)cat")
+    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
     ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),

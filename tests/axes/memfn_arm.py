@@ -113,6 +113,19 @@ MEMFN_CLASS = {
     ("fd-ndisp", "simd"): ("ASSERT_ZERO", {}, []),
     ("fd-r8", "default"): ("ASSERT_ZERO", {}, []),
     ("fd-r8", "simd"): ("ASSERT_ZERO", {}, []),
+    # D172 S3's two window-search denies (wf-find: the search itself, so `cover` declines;
+    # wf-hors: its skip for a common byte set), absent from this table since S3 while
+    # `--list-axes` listed them (code review r2 R2-4: the population check above could only
+    # fail). CLASSIFIED STATICALLY by lane s3pair (2026-10-23, single compiles of the
+    # witnesses at both layers; the box was held by job 606): both DIFFER on the default
+    # engine, wf-hors in byte only (`\b[0-9a-f]{8}\b` is the same under utf8), neither on
+    # the VM engine (`cover` is a DFA-route row). FLOORS OWED: the counts of job 587's
+    # `axes_measure` step (this file's --measure over the four cells) are pinned here
+    # by the agent that reads it; until then the witnesses are the cells' only reach.
+    **{("wf-find", ly): ("DIFFER", {},
+        [("byte", "c-default", b"\\bcat\\b"), ("utf8", "c-default", b"\\bcat\\b")]) for ly in ("default", "simd")},
+    **{("wf-hors", ly): ("DIFFER", {},
+        [("byte", "c-default", b"\\b[0-9a-f]{8}\\b")]) for ly in ("default", "simd")},
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},

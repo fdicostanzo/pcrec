@@ -27,7 +27,8 @@
  * removes its skip table.
  *
  *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400;
- *                                    G2W_C1_SITES: the caseless sites, 300)
+ *                                    G2W_C1_SITES: the caseless sites, 300;
+ *                                    G2W_R2_SITES: the two-byte sites, 300)
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -144,7 +145,8 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * S3's DENSE sites, appended after it (G2W_S3_SITES of them), draw from a
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
-static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull;
+static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
+                          rng5 = 0x2B1A1250ull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
 /* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
@@ -156,6 +158,16 @@ static int s3_dense;                    /* generating S3's dense sites */
 static int c1_caseless;
 static const uint8_t CUBES[][2] = { { 'A', 'a' }, { '0', '1' }, { 0xC4, 0xE4 } };
 #define NCUBES (sizeof CUBES / sizeof CUBES[0])
+/* THE TWO-BYTE SITES (code review r2 R2-1, after the caseless ones, from a
+ * stream of their own): REPORT windows with one position holding ANY two
+ * bytes (rarely a one-bit cube), the others one of three bytes drawn with
+ * them, and sometimes an item after the window holding two bytes (a
+ * lookahead's `[Qq]`), so that Table B's widened PAIR decides their stop and
+ * B-pair renders it. The bytes are the driver's subject alphabet's, so a
+ * dropped stream deletes matches. */
+static int r2_two;
+static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
+#define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
 {
     unsigned long long r = *rngp;
@@ -338,7 +350,7 @@ static void gen_facts(int fam, gfacts *x)
     case FAM_REPORT: {
         galt *a = &x->alt[0];
         a->entry = G2W_E_NONE;
-        int k = c1_caseless ? 2 + (int)rnd(7) : 1 + (int)rnd(5);
+        int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8) : 1 + (int)rnd(5);
         rand_span(&a->span[a->nspan++], 0, k, G2W_YES, 0);
         a->span[0].core_lo = 0;
         a->span[0].core_len = k;
@@ -350,6 +362,28 @@ static void gen_facts(int fam, gfacts *x)
                 const uint8_t *c = CUBES[rnd(NCUBES)];
                 set_add(a->span[0].set[j], c[0]);
                 if (!mixed || rnd(4)) set_add(a->span[0].set[j], c[1]);
+                a->span[0].table[j] = 0;
+            }
+        }
+        uint8_t tw[3];
+        if (r2_two) {       /* one position two bytes; the rest all three, or
+                               (one in six) one of them, so the pair is
+                               mostly the rarest position: PAIR's stop */
+            x->assign = 1;
+            tw[0] = TWOB[rnd(NTWOB)];
+            do tw[1] = TWOB[rnd(NTWOB)]; while (tw[1] == tw[0]);
+            do tw[2] = TWOB[rnd(NTWOB)]; while (tw[2] == tw[0] || tw[2] == tw[1]);
+            int jp = (int)rnd((unsigned)k);
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                if (j == jp) {
+                    set_add(a->span[0].set[j], tw[0]);
+                    set_add(a->span[0].set[j], tw[1]);
+                } else if (rnd(6) == 0) {
+                    set_add(a->span[0].set[j], tw[rnd(3)]);
+                } else {
+                    for (int q = 0; q < 3; q++) set_add(a->span[0].set[j], tw[q]);
+                }
                 a->span[0].table[j] = 0;
             }
         }
@@ -380,6 +414,12 @@ static void gen_facts(int fam, gfacts *x)
             gspan *it = &a->span[a->nspan++];
             it->core_lo = 0;
             it->core_len = rnd(2);
+            if (r2_two && rnd(2)) {     /* a lookahead's two bytes */
+                memset(it->set[0], 0, 32);
+                set_add(it->set[0], tw[0]);
+                set_add(it->set[0], tw[2]);
+                it->table[0] = 0;
+            }
         }
         if (rnd(c1_caseless ? 6 : 3) == 0) x->wfloor = G2W_F_EXPR;
         break;
@@ -646,6 +686,8 @@ int main(int argc, char **argv)
     int n3 = s3n ? atoi(s3n) : 400;
     const char *c1n = getenv("G2W_C1_SITES");
     int n4 = c1n ? atoi(c1n) : 300;
+    const char *r2n = getenv("G2W_R2_SITES");
+    int n5 = r2n ? atoi(r2n) : 300;
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -683,7 +725,7 @@ int main(int argc, char **argv)
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3 + n4; id++) {
+    for (int id = 0; id < nsites + n3 + n4 + n5; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
@@ -693,7 +735,12 @@ int main(int argc, char **argv)
             s3_dense = 0;
             c1_caseless = 1;
         }
-        int fam = s3_dense || c1_caseless ? FAM_REPORT
+        if (id == nsites + n3 + n4) {   /* the two-byte sites: theirs */
+            rngp = &rng5;
+            c1_caseless = 0;
+            r2_two = 1;
+        }
+        int fam = s3_dense || c1_caseless || r2_two ? FAM_REPORT
                 : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
@@ -1052,8 +1099,8 @@ int main(int argc, char **argv)
     fprintf(f, "const g2w_fn g2w_fns[] = {\n%s};\n", table.p ? table.p : "");
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
-    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d); families:", rendered,
-           nsites + n3 + n4, n3, n4);
+    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d); "
+           "families:", rendered, nsites + n3 + n4 + n5, n3, n4, n5);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
