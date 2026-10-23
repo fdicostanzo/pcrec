@@ -2793,3 +2793,15 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - Lesson: a scripted edit must assert that the line count moved only by the intended delta before writing. I did that for the next two edits.
 - D174 applied: the match_api cover prose is worded by behaviour (92432b552).
 - 587's dry-run (the 108-row mech validation, ~90 s) exceeded boxqueue's 30 s bound, so it now runs as the job's first step (ba6ebf720). 587 is QUEUED. 588's slot is to be asked of main after 587 is green.
+
+## 2026-10-23 (night) — job 600's reds fixed; 604 queued
+
+- Job 600 (S3 heavy) was RED in 5 of 13 steps, with NO answer change. Triage tri600 found moved witnesses, floors and manifests (S3 routes fixed-width patterns to cover), plus 32 mech rows that no longer reached.
+- My R1 ("cover stamps the wrong DFA_TABLE") was WRONG. A cover artifact carries the anchored machine (rx_match, "unwrapped"), so the stamp is true; the gap was run_premul_table.sh's missing cover marker. I withdrew R1 on the lane's evidence.
+- Lane s3red: the S3 commit is now 7e1caad08 (+ a no-byte spec clarification §6.3.4¶8/¶9). Follow-up 34ee758a1:
+  - 32 SAB_REACH rows re-aimed to no-wf-find;
+  - 10 sections green when rerun;
+  - DIFFER_PINS at their measured values, with armcause.py showing every leaver is cover;
+  - a census class for utf8 cover facts.
+- Findings on main (since S2, measured at c3ea619c3): S284's claim expired (now DETECTED), and S283's plant moves nothing (UNDETECTED). Sent to main.
+- 604-kit-s3-heavy is queued after main's iterland 602/603. The iterators will likely take abi 84, so S3 renumbers to 85 at landing.
