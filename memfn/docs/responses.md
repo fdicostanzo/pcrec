@@ -3024,3 +3024,6 @@ the compiler, and is never adopted silently. Proposed for main to file
 - notice: 2026-10-23 — **Stop-ranking Q6 (Frank: "Yes file it. Nice generalization"):** the two-stream find's row contract widens from "a one-bit case pair inside a literal stretch" to ANY two-byte set at ANY window position, as a Table B row-contract edit, not a new mechanism. It is FILED, not built.
   - **Trigger:** step 0's census shows a real population of two-byte non-case-pair stops, AND the pair method card is measured on the box.
   - **The arbitrary-pair SIMD kernel** (two compares + OR, versus the one-bit fold) is a separate filed SIMD-layer row that must beat scalar.
+- notice: 2026-10-23 — **Stop-ranking truncation sub-question (study rev 2 §2.4), Frank: "Yes unless it has reason not to":** pcrec states the positions beyond the verify slice of a long literal as cheap candidate spans, so the priced stop choice can pick its stop from the whole literal.
+  - **Default is YES.** pcrec omits them only for a stated reason (e.g. a statement-size limit), and that reason is visible: named in the statement/listing, never a silent drop.
+  - It rides the [MEMFN-UNBOUNDED-SPANS] statement change (the same MF_SITE_ABI event).
