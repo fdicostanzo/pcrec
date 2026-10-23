@@ -1,9 +1,15 @@
-# s3 — D172 S3 (REPORT routed + D-hors): BUILT, review fixes folded (a962449c4); jobs 587, 588 staged
+# s3 — D172 S3 (REPORT routed + D-hors): BUILT, review fixes folded, fix C withdrawn (d3886a656); jobs 587, 588 staged
 
 Lane s3, 2026-10-22 (opus). Worktree `worktrees/s3`, branch `lane/memfn-s3w`. Part 2 (the build, below)
 was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) is the first lane's
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
+
+STATE AT HANDOFF (part 4, supersedes part 3's shas): THE S3 COMMIT is now **d3886a656**: a962449c4
+without review fix C (Frank 2026-10-23), so D-hors admits exactly as e1e95a584 did, plus fix B's two
+asserts. The K27 fixture runs on both arms (ee0d4488d, F-5). Job 588 gains the "D-hors admission
+(E[sh])" reading (86b9afa69, findings only). Light checks green; 587 and 588 dry-run clean. Part 4 is
+below this block, before Part 3.
 
 STATE AT HANDOFF (part 3, the review fixes, supersedes part 2's shas): THE S3 COMMIT is now
 **a962449c4** (e1e95a584 amended with fixes A-H); light checks green; jobs 587/588 re-staged (§3.8).
@@ -32,6 +38,141 @@ STATE AT HANDOFF (part 2):
 
 ---
 
+# Part 4. Fix C withdrawn; E[sh] reading (2026-10-23)
+
+Frank's ruling (2026-10-23): fix C (D-hors declines where max(sh) == 1) moved bytes on an argument
+with no measurement. It is taken out. Job 588 measures D-hors's admission instead, on the expected
+shift per probe under the byte-rate prior: E[sh] = Σ_b rate[b]·sh[b].
+
+## 4.1 Commits (ONE-S3-COMMIT kept)
+
+| sha | what |
+|---|---|
+| f7bc3cf05 | part 1's review nits (unchanged) |
+| **d3886a656** | **THE S3 COMMIT, amended again**: a962449c4 without fix C. Built with `git reset --hard a962449c4`, the C paths restored from e1e95a584 (fix B's asserts re-added), then `git reset --soft f7bc3cf05` and one commit. No interactive rebase |
+| b8bcb23b1, 492461e74 | the part 1-3 report commits (d712939e5, 316f515f4), cherry-picked unchanged |
+| ee0d4488d | `s3: K27 NULL-subject fixture on both arms (F-5)`, test-only |
+| 86b9afa69 | job 588's E[sh] reading: esh_588.py, pick_esh_588.py, esh_588.tsv, measure_588.sh, read_588.py and the job's header |
+| (next) | this part, the history-index entry, ideas.md |
+
+What left the S3 commit (`git diff --stat a962449c4 d3886a656`, 8 files):
+- window.c: the decline and `hors_table`'s return value;
+- registry.md §6¶8a, the `wf-hors` row's decline clause;
+- memfn/src/CLAUDE.md and memfn/tests/CLAUDE.md, the decline and plant S1424;
+- g2_win_gen.c: the G2 decline control and `ctl_render_at`;
+- run_g2_win.sh: plant S1424, and the controls note back to 116 (fix G's wf-floor 486 pin is kept);
+- predicted_movers.tsv: fix C's note and its three rows;
+- the 587 job header's plant list.
+
+Everything else of fixes A, B and D-H is unchanged.
+
+**The window.c diff against e1e95a584** is fix B's two asserts and nothing else, so D-hors's
+admission is e1e95a584's:
+
+```diff
+@@ -1459,6 +1459,7 @@ static int run_group_ok(const struct wf_plan *w, unsigned from, unsigned to)
++_Static_assert(MF_MAX_TERM - 1 <= INT8_MAX, "a C-run term index (< MF_MAX_TERM) is an int8_t: w->grp[k] = (int8_t)nterm");
+ static int find_groups(const mf_art *art, const wf_dec *d, struct wf_plan *w)
+@@ -1530,6 +1531,7 @@ static int d_hors_holds(const wf_dec *d, const struct wf_plan *w, int32_t *wlo,
++_Static_assert(MF_MAX_SPAN_POS < 256, "a D-hors shift (at most a window's length) is a uint8_t: sh[b] = (uint8_t)t");
+ static void hors_table(const struct wf_plan *w, int32_t wlo, int32_t whi, uint8_t sh[256])
+```
+
+**Finding F-8 (the manager's K27 edit).** The uncommitted edit to tests/codegen/run_codegen_tests.sh
+had TRUNCATED the file: it ended after the new K27 loop's `done`, at 1,751 lines instead of 3,836. The
+2,098 lines from the K27 pair arm to the end of the file were gone. I rebuilt it from the edit plus
+HEAD's lines after the old K27 block, so the commit is +24/-14. `make test-codegen` reads the whole
+file: 16/16.
+
+## 4.2 Checks (d3886a656's tree; ee0d4488d for codegen)
+
+| check | result |
+|---|---|
+| `make -j16` | clean |
+| `make strict` | "whole tree compiles clean with -Werror -Wshadow" |
+| `memfn/tests/run_g2_win.sh` | 7,640 passed, 0 failed; controls refused 116 |
+| `memfn/tests/run_g2_win.sh --plants` | **12 of 12 RED** (S1400-S1407, S1409, S1410, S1422, S1423) |
+| `tests/memfn/run_link_checks.sh` | 11 passed, 0 failed |
+| `tests/memfn/run_wreply.sh` | 112 passed, 0 failed |
+| bytediff vs c3ea619c3, default arm | **24 of 24 AGREE**: 16 ABI-ONLY, 7 MOVES-cover, 1 MOVES-cover-hors (hex8) |
+| bytediff, OFF arm (`--memfn=no-wf-find,no-wf-hors`) | 24 of 24 ABI-ONLY |
+| new vs e1e95a584's build (24 rows) | 24 of 24 identical |
+| `(?s)[^a]..`, `(?s)[0-9a-f].[0-9a-f]`, `[0-9a-f].[0-9a-f]` vs e1e95a584 | identical (only the `#include` name differs). All three are cover with a `_sh[256]` table: D-hors again |
+| `make test-codegen` (ee0d4488d) | 16/16 scripts passed. `[K27]` and `[K27 no-wf-find]` both PASS |
+| 588 `--dry-run` | rc 0, 6 s: `esh-gate: 8 arm cells read; 1 esh rows live` (esh02) |
+| all 12 E[sh] sites, smoke without a clock (under boxlock) | 12 of 12 built and premised; esh-gate 112 arm cells equal to python `re` |
+| 587 `--dry-run` | rc 0, 98 s: 12 steps, mech 108 rows |
+
+Not run, per the brief: make test, mech, timing. The two ref compilers (c3ea619c3, e1e95a584) were
+built from `git archive` under build/.
+
+## 4.3 The E[sh] reading (job 588, findings only)
+
+- `esh_588.py` computes each value from pcrec's own text.
+  - **sh[]** comes from the default artifact's `rx_mf<N>_sh[256]`.
+  - **E[sh]** = Σ rate[b]·sh[b] / 10^6.
+  - **max(sh)** is the largest entry of sh[].
+  - **The stop set** is the `--memfn=no-wf-hors` artifact's D-one walk condition, evaluated by gcc
+    over all 256 bytes inside a copy of that artifact.
+  - **The stop mass** is Σ rate over the stop set, capped at 10^6 (kit_set_mass's arithmetic).
+  - The prior is tests/findings/default_ppm.tsv.
+- `pick_esh_588.py` (seed 20261023) draws the sites from 6 corpus D-hors movers and 19 hand
+  patterns (24 candidates). §6's cells are excluded.
+  - The strata are: e1 (E = 1, both forced), b1 [1, 1.5), b2 [1.5, 2.5), b3 [2.5, 3.5),
+    b4 [3.5, 5) and b5 [5, hex8].
+  - hex8-bounded is E[sh] **6.009**, the top of the span.
+  - Dropped: `\N{2}` (not generatable), and `[0-9A-F]{6}` and `[0-9a-f]-[0-9a-f]{2}` (not D-hors).
+
+| site | stratum | pattern | E[sh] | max(sh) | stop mass ppm | source |
+|---|---|---|---:|---:|---:|---|
+| esh01 | e1 | `(?s)[0-9a-f].[0-9a-f]` | 1.000 | 1 | 284,434 | forced |
+| esh02 | e1 | `(?s)[^a]..` | 1.000 | 1 | 945,837 | forced |
+| esh03 | b1 | `[aeiou]..[aeiou]` | 1.030 | 4 | 252,788 | hand |
+| esh04 | b1 | `\b\w*?\B\w` | 1.193 | 2 | 807,006 | corpus |
+| esh05 | b2 | `\w{5}` | 1.772 | 5 | 807,006 | hand |
+| esh06 | b2 | `[a-z][a-z0-9]{3}` | 1.785 | 4 | 663,413 | hand |
+| esh07 | b3 | `[a-z]{6}` | 2.683 | 6 | 663,413 | hand |
+| esh08 | b3 | `[0-9a-f]{4}` | 3.147 | 4 | 284,434 | hand |
+| esh09 | b4 | `[0-9a-f]{5}` | 3.862 | 5 | 284,434 | hand |
+| esh10 | b4 | `[0-9a-f]{6}` | 4.578 | 6 | 284,434 | hand |
+| esh11 | b5 | `[0-9a-f]{7}` | 5.293 | 7 | 284,434 | hand |
+| esh12 | b5 | `[0-9a-f]{8}` | 6.009 | 8 | 284,434 | hand |
+
+- esh03 is the case fix C's rule would have kept: max(sh) 4, but E[sh] 1.030. The reading tells
+  them apart.
+- **How the sites are timed.** measure_588.sh's side-set machinery is now shared (`use_set`) by
+  the mover sample and this set.
+  - Arms: NOH (`--memfn=no-wf-hors`, D-one) and RTE (default, D-hors), with NOHs/RTEs at
+    `-fmemfn-simd`. All 12 sites have SIMD text equal to their scalar text (cover carries no SIMD
+    form), so each is built and timed once and read for both layers.
+  - Regimes: throughput and search_short.
+  - Classes: real, random, and none where the prose does not match. Only esh09-12 get `none`, so
+    there are 28 class subjects.
+  - Same core (cpu 7), calibration (T = 20 ms, N = 9) and 5 launches as §6's cells.
+  - Premise: both arms read cover, RTE has `_sh[256]` and NOH does not.
+- **What read_588.py prints** under "D-hors admission (E[sh])":
+  - per site, regime and class: E[sh], max(sh), the stop mass, NOH ns, the scalar and SIMD alpha
+    (RTE/NOH), the floor (this run's A/A in the regime) and SLOWER/within/FASTER;
+  - then a per-site summary sorted by E[sh] (geometric-mean alpha [min, max], SLOWER/FASTER counts),
+    so a cut-off, if there is one, is visible.
+  - It is outside `== s3t BAR PASS|FAIL` and changes no default. Tested on synthetic data only.
+- **588's wall time:** 560 more timed items (about 1.7 min) plus about 0.5 min of
+  subjects/build/gate, so **about 16-17 min** against about 14 before. The cap stays 3600 s.
+
+## 4.4 Queue commands (from the MAIN tree)
+
+```
+scripts/boxqueue add --name 587-kit-s3-heavy worktrees/s3/docs/dev/lanes/s3_job_587-kit-s3-heavy
+scripts/boxqueue add --name 588-kit-s3-timing worktrees/s3/docs/dev/lanes/s3_job_588-kit-s3-timing
+```
+
+- Queue 588 after 587 is green.
+- 588 reads `worktrees/s3/build/s3/bin/pcrec`, now refreshed to d3886a656's build (sha256
+  8d53dc29df1a; part 3's copy was ddbbf3191e9b).
+- The ideas log gains the E[sh] admission row (memfn/docs/ideas.md, 2026-10-23).
+
+---
+
 # Part 3. Review fixes (lane s3fix, 2026-10-22/23)
 
 The D6 review of S3 found no correctness bug. Its fixes A-I are folded in under the kit manager's
@@ -49,7 +190,7 @@ build go, and the ONE-S3-COMMIT structure is kept:
 |---|---|
 | A abi reader miss | `docs/spec/match_api.md` §1¶7 guard sample `!= 83` -> `!= 84`. Re-grep in §3.3 |
 | B latent wrap | `memfn/src/window.c`: `_Static_assert(MF_MAX_SPAN_POS < 256, ...)` above `hors_table`; `_Static_assert(MF_MAX_TERM - 1 <= INT8_MAX, ...)` above `find_groups`, which writes `grp[k] = (int8_t)nterm`. No byte move |
-| C no-op D-hors | `window.c`: `hors_table` now returns its largest shift, and `d_hors_holds` builds the table (into `w->sh`, the one source of the shift) and declines when it returns 1. Then D-one serves. The registry.md §6¶8a `wf-hors` row states the decline (D80). Updated: memfn/src/CLAUDE.md, memfn/tests/CLAUDE.md. Manifest, diff and G2 in §3.2 |
+| C no-op D-hors (**WITHDRAWN in Part 4**) | `window.c`: `hors_table` now returns its largest shift, and `d_hors_holds` builds the table (into `w->sh`, the one source of the shift) and declines when it returns 1. Then D-one serves. The registry.md §6¶8a `wf-hors` row states the decline (D80). Updated: memfn/src/CLAUDE.md, memfn/tests/CLAUDE.md. Manifest, diff and G2 in §3.2 |
 | D 587 census arms | `s3_evidence/census.py`: arms `c-simd` (`-fmemfn-simd`) and `c-norun` (`-fno-run-prefilter`). Each is judged both ways against NEW's own `RX_DFA_SCAN "cover"` stamp on that arm. Their OFF arms `off-simd` and `off-norun` (the same flag on both sides, both denies on NEW) are expected at zero movers. 587's header is updated. Smoke (2 patterns x 10 arms): hex8 moves on c-default/c-simd/c-norun (cover + D-hors), and is identical on all three OFF arms and on c-vm/ir. `x+y` is identical on all 10 arms |
 | E 588 mover sample | `s3_evidence/pick_588.py` (the pick rule), `sample_588.tsv` (the committed pick, §3.4), `gen_sample_588.py` (subjects), `measure_588.sh` (stages `sample-build` and `sample-gate`, items after each launch's cells), `read_588.py` (section "Mover sample (not the §6 bar)"), `s3_job_588-kit-s3-timing` (dry run covers the sample, plus the estimate). The bar and `== s3t BAR PASS\|FAIL` are unchanged |
 | F default-path witnesses | §3.5 |
@@ -57,7 +198,7 @@ build go, and the ONE-S3-COMMIT structure is kept:
 | H small items | (1) The facts_listing.md §4.1¶2 sentence that states the `cc_exact` read: *"Stating a span to the kit never sets `used`, and neither does the `cover` LOCATE row's admission (`match_api.md` §6.3.4¶2, routed by default since D172 S3), which reads `span_facts` as the statement its exact-language check (`kit_proof.md` §1.1's C8) holds the anchored machine to, on every build alike."* It was already there, so nothing was added. (2) `tests/mech/run_sabotage_matrix.sh`: B4''s stale clause "S922/S1079/S1105 are re-aimed at fd_row_decides" is removed, and its history is moved into the S3 paragraph's S1079/S1105 sentence. (3) ZK6/ZK7's retirement is recorded in that header beside S1251-S1256 |
 | I ideas log | `memfn/docs/ideas.md`: three 2026-10-23 entries (widen D-hors's window to the contiguous tested core run; priced probe choice under the byte-rate; D-hors at non-REPORT E-find sites), each with its trigger. They are in the report commit, not the S3 commit |
 
-## 3.2 Item C: the mover manifest delta
+## 3.2 Item C: the mover manifest delta (WITHDRAWN in Part 4: none of this is in d3886a656)
 
 The prediction was committed BEFORE the diff ran (WIP ac5ae250b, squashed into a962449c4).
 `predicted_movers.tsv` gains three rows:

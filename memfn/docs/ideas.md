@@ -762,3 +762,10 @@ call restarts cold.
 - The general form: let E-find (and so D-hors) serve a DFA_SCAN/ADVANCE site the legacy rows serve today, where a dense stop and a window of two or more tested positions make Horspool's skip pay. That would be a per-site choice between the legacy text and E-find+D-hors, priced, in Table E's order.
 - Answers: unchanged (E-find is find-then-verify of the same plan). Saving: the 581 hex8 result (2-6x on real and no-hit text) at scan sites with the same shape.
 - Trigger: a measured scan site (not REPORT) with a dense stop and a >= 2-position tested window, losing to a Horspool form in a G1 or bench reading.
+
+## 2026-10-23 — D-hors admission priced on E[sh] (Frank's ruling on the S3 review's fix C)
+
+- D-hors admits today on the stop set's mass alone (HORS_MIN, PROVISIONAL) and a window of two or more positions. The review's fix C (decline where max(sh) == 1) was withdrawn as a byte move without a measurement.
+- The general form: D-hors admission priced on E[sh] = sum over bytes b of rate[b] x sh[b] (the expected shift per probe under the byte-rate), as ONE declared row replacing or joining HORS_MIN: D-hors pays where its skip outweighs its per-candidate overhead relative to D-one.
+- Answers: unchanged (D-hors and D-one are both exact find-then-verify). Saving: the D-hors sites where E[sh] is near 1 (`(?s)[^a]..`, `[aeiou]..[aeiou]`) would stop paying the probe.
+- Trigger: job 588's "D-hors admission (E[sh])" reading (s3_report.md Part 4; esh_588.tsv's 12 sites, alpha sorted by E[sh]).
