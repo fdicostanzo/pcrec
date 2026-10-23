@@ -2823,3 +2823,12 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - foobar match/real becomes a named layout cap;
   - E[sh] admission waits.
 - Awaiting his go. Report: s3_report.md Part 6 (3f81ed7c3, a017fe98a).
+
+## 2026-10-23 (afternoon) — first blinded CODE critic round on S3; C1 build briefed
+
+- At Frank's request, four read-only critics reviewed 7e1caad08 + 34ee758a1, BLINDED to the 605 finding: cc-design (opus), cc-perf (opus, emitted vs replaced), cc-quality (sonnet) and cc-tests (sonnet).
+- The find-form gap was caught by cc-perf (loops and asm, plus the SIMD loss hidden by the 39→33 floor re-pin) and by cc-design (§2.2's PAIR row unreachable), and partly by cc-tests. cc-quality missed it.
+- The review is docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md (C1-C17, with lessons for the skill), and main has it. Main started docs/dev/guide/ (lane "guide") at Frank's ask: coding, architecture, style, critics, plus addenda/kit.md (mine).
+- Lane s3c1 (opus) is briefed: E-find asks Table B the design's question and renders its pick (PAIR/SIMD included). It also covers Table D as a kit_table and C9/C11/C13/C14/C15/C2. The window_site rev 3.3 draft is included.
+  - C5/C6/C8/C12/C16 are out of scope.
+  - The sample joins the bar, and foobar match/real gets a layout cap of 1.052.
