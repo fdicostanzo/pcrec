@@ -9873,6 +9873,8 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 
 **Noted for I2 (not decided here).** The public `next_n` (k = 64) arm measured 0.58x of today's loop on prose through the PLT (c3-4k R2) and 0.94x on c1. It also measured 26x on c7, where it filled 64 matches for a caller who wanted 3. B64's internal cache kept one exported call per match and lost, so the gain comes from removing calls, not from caching. Frank's idea of a caller-side macro over a local buffer is that shape; see the journal for 2026-10-21.
 
+**Gloss (lane i2build, 2026-10-21).** "Noted for I2" above means the stage `findall_iter.md` revision 3 numbers I4 (`docs/design/findall_iter_i2.md` rev 2, fam-3): I2 stays the kit's `st` stage. The decision text is unchanged.
+
 ## D172 — ONE unified window site replaces the REPORT-specific path (Frank, 2026-10-21, given to the kit; filed by main)
 
 - **Decision:** pcrec states FACTS, not a layout ("don't overspecify representation"): spans, each with a start offset (negative allowed), a set per position, a required core, and a per-span verify-exactly flag, plus the subject facts. An off-subject position outside the core passes; inside the core it fails (absence only at the edges). Find-window and REPORT are the SAME request (REPORT = verify everything; the kit fast-finds a stop, then verifies). The stop choice moves to the kit as tables (M5, whose first row reproduces prefix_k: zero movers). Fixed lookbehinds and post-span lookaheads longer than 1 come with it, sourced from main's D168 producer; the UL-8 cap lift dissolves. Retiring, staged at zero movers: `ctx[]` and its caps, the REPORT kind, RPT's separate check, `plan_hint` (after the reproduction).

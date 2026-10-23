@@ -8,7 +8,10 @@
  *                `_search`)
  *   -DARM_ITER   <p>_next with caps, no batch region, K = 1 (I, I_shared, I_fill)
  *   -DARM_BATCH  <p>_next with caps and a 64-entry region bound by rx_iter_batch (B64)
- *   -DARM_NEXTN  <p>_next_n with k = 64 (N64)
+ *   -DARM_NEXTN  <p>_next_n with k = NEXTN_K (default 64; N64, and I4's N4), its entries
+ *                NCAPS pairs apart on a built artifact (one pair apart on the twin)
+ *   -DARM_FOREACH RX_FOREACH over the artifact's own rx_info (I4: F, F')
+ *   -DARM_INFO   rx_info.next per match, the generic caller with no macro (I4: I_info)
  * plus -DPFX=<prefix> -DPFXU=<PREFIX> -DHDR="<prefix>.h".
  *
  *   tdrv check SUBJECT STOP              one find-all; prints "count C hash H code R"
@@ -31,7 +34,9 @@
 #define CAT(a, b) CAT2(a, b)
 #define F(x) CAT(PFX, x)
 #include HDR
+#ifndef PCREC_ITER_LAYOUT   /* a built artifact (abi >= 83) declares rx_iter itself */
 #include "iter_abi.h"
+#endif
 #define NCAPS CAT(PFXU, _NCAPS)
 
 #if defined(ARM_ITER) || defined(ARM_BATCH) || defined(ARM_NEXTN)
@@ -39,6 +44,14 @@ int F(_next)(rx_iter *it, ptrdiff_t (*caps)[2]);
 #endif
 #ifdef ARM_NEXTN
 size_t F(_next_n)(rx_iter *it, ptrdiff_t (*out)[2], size_t k);
+#ifndef NEXTN_K
+#define NEXTN_K 64
+#endif
+#ifdef RX_FOREACH   /* a built artifact (abi >= 84): full captures, NCAPS pairs per entry */
+#define NN_STRIDE NCAPS
+#else               /* the pre-build twin's _next_n: one span pair per entry */
+#define NN_STRIDE 1
+#endif
 #endif
 
 #define FNV_PRIME 1099511628211ull
@@ -79,20 +92,36 @@ static size_t findall(const unsigned char *s, size_t n, size_t stop, uint64_t *h
     }
     if (k != stop) *code = it.rc;
 #elif defined(ARM_NEXTN)
-    static ptrdiff_t out[64][2];
+    static ptrdiff_t out[NEXTN_K * NN_STRIDE][2];
     rx_iter it = RX_ITER_INIT(s, n);
     size_t got;
-    while ((got = F(_next_n)(&it, out, 64)) > 0) {
+    while ((got = F(_next_n)(&it, out, NEXTN_K)) > 0) {
         for (size_t i = 0; i < got; i++) {
-            ACC(out[i][0], out[i][1]);
+            ACC(out[i * NN_STRIDE][0], out[i * NN_STRIDE][1]);
             if (k == stop) goto done;
         }
-        if (got < 64) break;
+        if (got < NEXTN_K) break;
     }
     *code = it.rc;
 done:
+#elif defined(ARM_FOREACH)
+    rx_iter it = RX_ITER_INIT(s, n);
+    RX_FOREACH(&F(_info), &it, m) {
+        ACC(m[0][0], m[0][1]);
+        if (k == stop) break;
+    }
+    if (k != stop) *code = it.rc;
+#elif defined(ARM_INFO)
+    ptrdiff_t caps[NCAPS][2];
+    const struct rx_info *inf = &F(_info);
+    rx_iter it = RX_ITER_INIT(s, n);
+    while (inf->next(&it, caps)) {
+        ACC(caps[0][0], caps[0][1]);
+        if (k == stop) break;
+    }
+    if (k != stop) *code = it.rc;
 #else
-#error "one of ARM_LOOP ARM_ITER ARM_BATCH ARM_NEXTN"
+#error "one of ARM_LOOP ARM_ITER ARM_BATCH ARM_NEXTN ARM_FOREACH ARM_INFO"
 #endif
     *sumv = sum;
     return k;

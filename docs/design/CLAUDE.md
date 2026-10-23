@@ -105,3 +105,4 @@ Modules (design notes with `*_measurements/` siblings)
 - `APPROACH.md`, `docs/dev/decisions.md` (D-ids cited per note), `docs/dev/plan.md` rows, `docs/dev/reviews/` (panel files), `docs/dev/lanes/` (lane reports), `docs/spec/` (the contract, D80), `docs/dev/learnings.md` §3, `memfn/CLAUDE.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__design.md
+- `findall_iter_i2.md` (+ r1 panel) — [FINDALL-NEXT] I4 `_next_n` and `RX_FOREACH` design; entry text in NOTES.md.

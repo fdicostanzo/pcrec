@@ -626,7 +626,9 @@ $(xargs awk < "$FILES" '
     # above: this awk counted five, and nothing failed while the corpus had
     # zero `mc` lines; tests/compound/split.rxt is the first to carry them
     # (3,504), and all three legs already emitted them as case rows.
-    /^(m|n|ms|ns|mc|gu|perr|g|gp)([ \t]|$)/ { lines++ }
+    # [FINDALL-NEXT] `mg` (rxt_format.md §1.7.1, the global count) joins it,
+    # before its first corpus file (tests/findall/global.rxt) lands.
+    /^(m|n|ms|ns|mc|mg|gu|perr|g|gp)([ \t]|$)/ { lines++ }
     END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
   | awk '{ f += $1; b += $2; l += $3 } END { printf "%d %d %d\n", f, b, l }')
 EOF
@@ -670,7 +672,7 @@ $(grep '/known_fail/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
     # for all three parsers. All three legs read 3995 where this read 3994.
     /^pattern-esc[ \t]/ { blocks++; next }
     /^pattern[ \t]/ { blocks++; next }
-    /^(m|n|ms|ns|mc|gu|perr|g|gp)([ \t]|$)/ { lines++ }
+    /^(m|n|ms|ns|mc|mg|gu|perr|g|gp)([ \t]|$)/ { lines++ }
     END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
   | awk '{ f += $1; b += $2; l += $3 } END { printf "%d %d %d\n", f+0, b+0, l+0 }')
 EOF
@@ -690,7 +692,7 @@ $(grep -E '/findings/(adversarial|witness|golden)/' "$FILES" | tr '\n' '\0' | xa
     FNR == 1 { files++ }
     /^pattern-esc[ \t]/ { blocks++; next }
     /^pattern[ \t]/ { blocks++; next }
-    /^(m|n|ms|ns|mc|gu|perr|g|gp)([ \t]|$)/ { lines++ }
+    /^(m|n|ms|ns|mc|mg|gu|perr|g|gp)([ \t]|$)/ { lines++ }
     END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
   | awk '{ f += $1; b += $2; l += $3 } END { printf "%d %d %d\n", f+0, b+0, l+0 }')
 EOF
@@ -1214,15 +1216,16 @@ c_cases=$(awk -F'\t' '$1 == "case" { n++ } END { print n+0 }' "$DUMP_C")
 # ([COMPOUND] B4, lane cpb4, and D164 B3, lane b3build, independently):
 # tests/compound/split.rxt and tests/endmark/b3_rows.rxt use it, and all three
 # legs already emitted its rows as cases while these awks did not count them
-# -- K35 again, as `pattern-esc` above.
-# So the case rows are the six kinds that carry a subject. This awk is
+# -- K35 again, as `pattern-esc` above. `mg` (rxt_format.md §1.7.1) joined
+# them before its first corpus file, lane i1build, 2026-10-21.
+# So the case rows are the seven kinds that carry a subject. This awk is
 # the same independent pass the census uses, and the RECONCILIATION below
 # is what makes it a check rather than a restatement: if the six kinds,
 # the perr lines and the g/gp lines do not add back up to the census, one
 # of the two counts is wrong and neither is trusted.
 read -r kind_cases kind_perr kind_group <<EOF
 $(xargs awk < "$FILES" '
-    /^(m|n|ms|ns|mc|gu)([ \t]|$)/ { c++; next }
+    /^(m|n|ms|ns|mc|mg|gu)([ \t]|$)/ { c++; next }
     /^perr([ \t]|$)/           { p++; next }
     /^(g|gp)([ \t]|$)/         { g++ }
     END { printf "%d %d %d\n", c+0, p+0, g+0 }' \

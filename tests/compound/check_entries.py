@@ -102,7 +102,12 @@ def check_one(d, pid, req, exported, kept):
     if text == open(os.path.join(d, pid + ".plain.c"), "rb").read():
         fails.append("%s %s: positive control: identical to the plain artifact" % (pid, req))
     names = [] if kept == "-" else kept.split(",")
-    keep = [("rx_" + n) for n in names if ("rx_" + n) in P]
+    # [FINDALL-NEXT] an exported residual entry is a forwarder to its static
+    # twin `rx__<name>` (a local symbol of the plain object), and a kept one
+    # is the twin alone.
+    PL = nm(plain_o, False)
+    keep = [("rx__" + n) if ("rx__" + n) in PL else ("rx_" + n)
+            for n in names if ("rx_" + n) in P]
     tu = src
     if keep:
         tu = os.path.join(d, "%s.%s.tu.c" % (pid, req))

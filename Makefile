@@ -391,7 +391,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
-      test-kitproof test-casemap test-ci-shards
+      test-kitproof test-casemap test-findall test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -654,7 +654,8 @@ test-codegen: all
 	    'bash tests/codegen/run_cand_rows.sh' \
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh' \
-	    'bash tests/codegen/run_rev_end.sh'
+	    'bash tests/codegen/run_rev_end.sh' \
+	    'bash tests/codegen/run_residual_twins.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
@@ -1522,6 +1523,12 @@ test-partlayout: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-partlayout.ran"; fi
 	bash tests/partlayout/run_partlayout_tests.sh
 
+# [FINDALL-NEXT] the find-all iterator: its answer differential against
+# libpcre2's global iteration and its ASan cells (tests/findall/).
+test-findall: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findall.ran"; fi
+	bash tests/findall/run_findall_tests.sh
+
 # D164 B3 (docs/design/endmark.md §R.6): the `rev-end` walk's form table, its
 # answers under three arms, the probe census, the gates and the declines.
 test-endmark: all
@@ -2144,7 +2151,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

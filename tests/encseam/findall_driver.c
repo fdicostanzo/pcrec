@@ -13,7 +13,12 @@
  * it against the python `re` oracle's line for the same case.
  *
  * The prefix is fixed at `fa` (the runner compiles every fixture with
- * `-p fa`), because a driver cannot be generic over a C identifier prefix. */
+ * `-p fa`), because a driver cannot be generic over a C identifier prefix.
+ *
+ * `findall_driver iter <subject>` runs the find-all ITERATOR instead, through
+ * RX_FOREACH over the artifact's own record (§3.8.2, [FINDALL-NEXT] I4): its
+ * matches are PCRE2's global iteration's, so the runner holds them to
+ * `re.finditer`, where the loop above is held to the protocol oracle. */
 #include <stdio.h>
 #include <string.h>
 
@@ -26,7 +31,20 @@ int main(int argc, char **argv)
     ptrdiff_t caps[FA_NCAPS][2];
     int first = 1;
 
-    if (argc < 2) { fprintf(stderr, "usage: %s <subject>\n", argv[0]); return 2; }
+    if (argc < 2) { fprintf(stderr, "usage: %s [iter] <subject>\n", argv[0]); return 2; }
+    if (argc == 3 && strcmp(argv[1], "iter") == 0) {
+        rx_iter it;
+        s = (const unsigned char *)argv[2];
+        n = strlen(argv[2]);
+        it = RX_ITER_INIT(s, n);
+        RX_FOREACH(&fa_info, &it, m) {
+            printf("%s%td,%td", first ? "" : " ", m[0][0], m[0][1]);
+            first = 0;
+        }
+        printf("\n");
+        if (it.rc < 0) { fprintf(stderr, "give-up code %d\n", it.rc); return 3; }
+        return 0;
+    }
     s = (const unsigned char *)argv[1];
     n = strlen(argv[1]);
 

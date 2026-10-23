@@ -91,3 +91,8 @@ tests/core/run_core_tests.sh
 # emitted variable resolver and both seam entries; the oracle arm is a python
 # process the sanitizers do not instrument and costs nothing here.
 tests/vars/run_vars_tests.sh
+
+# [FINDALL-NEXT] I1 — the find-all iterator's differential against libpcre2's
+# global loop. Its drivers compile every artifact with $GENCFLAGS, so the
+# sanitizer axes reach `<prefix>_next`, its bind/step parts and the retry.
+tests/findall/run_iter_diff.sh

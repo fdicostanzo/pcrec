@@ -70,14 +70,14 @@ int @P_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2
         do from++; while (!(from >= n || (s[from] & 0xC0) != 0x80));
 #endif
 #if UTF && UCHECK
-    if (@P__f_valid_upto(s, n, from) != n) return PCREC_ERR_UTF;
+    if (@P__f__valid_upto(s, n, from) != n) return PCREC_ERR_UTF;
 #endif
     if (from > n) return 0;
     size_t qf = from;
     if (from == 0 || HAS_G) {
         int r = @P__f_search(s, n, from, caps);
         if (r != 0) return r;
-        qf = @P__f_next_pos(s, n, from);
+        qf = @P__f__next_pos(s, n, from);
     }
 #if QNEVER
     (void)qf;

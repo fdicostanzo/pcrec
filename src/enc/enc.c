@@ -10,6 +10,7 @@
  * own `name` string rather than a literal of its own. [SR-10]'s motivating
  * instance was exactly this pair of hand-written strings (compile.c's
  * diagnostic and cli/main.c's name mapping) drifting apart. */
+#include <ctype.h>
 #include <string.h>
 
 #include "enc/enc.h"
@@ -98,7 +99,9 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, unsigned drop, unsigned stat)
 {
     if (!e || !e->entries) return;
-    mask = pcrec_enc_mask_close(e, mask) & ~drop;
+    /* [FINDALL-NEXT] a `stat` entry is its twin alone, defined ahead of
+     * every caller (`pcrec_enc_emit_twins`), so it has no declaration. */
+    mask = pcrec_enc_mask_close(e, mask) & ~drop & ~stat;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && !t->inline_def) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
@@ -107,7 +110,6 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
             }
-            if (stat & t->id) pcrec_sb_puts(sb, "static ");
             pcrec_enc_emit_text(sb, t->decls, prefix, NULL);
         }
 }
@@ -177,12 +179,149 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         }
 }
 
-/* The out-of-line entries' definitions (the artifact's epilogue). */
+/* [FINDALL-NEXT] F-1 (compound_entries.md §6): THE OUT-OF-LINE ENTRIES'
+ * STATIC TWINS. Every out-of-line entry (`inline_def` false: the residual
+ * leaves a caller may call, `next_pos`, `valid_upto`, `var_valid`) has its
+ * body written ONCE as `static <p>__<name>`, and every call from inside the
+ * artifact goes to the twin, so under `-fPIC` no internal call reaches an
+ * interposable exported symbol (a PLT call). The exported entry, where the
+ * linkage exports it, is a forwarder to its twin (`pcrec_enc_emit_defs`),
+ * so the two cannot drift. A twin is NAMED from its entry's declaration
+ * (`$_<name>(`, the first identifier after `$_`), and inside a twin's text
+ * every `$_<name>` that names another out-of-line entry is rendered as that
+ * entry's twin too (`var_valid`'s body calls `valid_upto`). */
+
+/* The out-of-line entry name `t` declares (`$_<name>(`), into `buf`; "" when
+ * the declaration has none. */
+static const char *enc_entry_name(const PcrecEncEntry *t, char *buf, size_t cap)
+{
+    const char *q = t->decls ? strstr(t->decls, "$_") : NULL;
+    size_t k = 0;
+    if (q) {
+        q += 2;
+        while (k + 1 < cap && (isalnum((unsigned char)q[k]) || q[k] == '_')) {
+            buf[k] = q[k];
+            k++;
+        }
+    }
+    buf[k] = '\0';
+    return buf;
+}
+
+/* True iff `name` (of length `len`) is an out-of-line entry of `e` in `mask`. */
+static bool enc_is_twinned(const PcrecEnc *e, unsigned mask, const char *name,
+                           size_t len)
+{
+    char nb[64];
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++) {
+        if (t->inline_def || !(mask & t->id)) continue;
+        enc_entry_name(t, nb, sizeof nb);
+        if (strlen(nb) == len && memcmp(nb, name, len) == 0) return true;
+    }
+    return false;
+}
+
+/* `text` with `$` the prefix, except that `$_<name>` for an out-of-line
+ * entry in `mask` is `<prefix>__<name>`, its twin. */
+static void enc_emit_twin_text(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                               const char *text, const char *prefix)
+{
+    for (const char *q = text; *q; q++) {
+        if (*q != '$') {
+            pcrec_sb_putc(sb, *q);
+            continue;
+        }
+        pcrec_sb_puts(sb, prefix);
+        if (q[1] != '_') continue;
+        size_t len = 0;
+        while (isalnum((unsigned char)q[2 + len]) || q[2 + len] == '_') len++;
+        if (enc_is_twinned(e, mask, q + 2, len)) pcrec_enc_twin_mark(sb);
+    }
+}
+
+/* The one byte that turns `<p>_<name>` into its twin `<p>__<name>`, inside
+ * the scaffold bracket, so a renamed reference is the length it was. */
+void pcrec_enc_twin_mark(StrBuf *sb)
+{
+    pcrec_sb_scaffold_putc(sb, '_');
+}
+
+void pcrec_enc_emit_twins(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                          const char *prefix, const char *attr, unsigned drop)
+{
+    if (!e || !e->entries) return;
+    mask = pcrec_enc_mask_close(e, mask);
+    const unsigned live = mask & ~drop;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++) {
+        if (t->inline_def || !(live & t->id)) continue;
+        if (pcrec_enc_site(e, t->id))
+            pcrec_ctx_fail(sb->cx, 0, "internal error: an out-of-line residual "
+                           "entry states site data, which its twin cannot carry");
+        /* the attribute and the linkage on lines of their own, inside the
+         * scaffold bracket, so the body is the length it was (findall_iter.md
+         * §6.4: no length decision reads the iterator's scaffold) */
+        pcrec_sb_scaffold_open(sb);
+        pcrec_sb_puts(sb, attr);
+        pcrec_sb_puts(sb, "static\n");
+        pcrec_sb_scaffold_close(sb);
+        enc_emit_twin_text(sb, e, mask, t->defs, prefix);
+    }
+}
+
+/* The exported entry `t` as a forwarder to its twin, built from its own
+ * declaration: `RET $_name(PARAMS);` becomes `RET $_name(PARAMS) { return
+ * $__name(ARGS); }`, ARGS each parameter's last identifier. */
+static void enc_emit_forwarder(StrBuf *sb, const PcrecEncEntry *t,
+                               const char *prefix)
+{
+    const char *d = t->decls;
+    const char *open = strchr(d, '(');
+    const char *close = strrchr(d, ')');
+    char nb[64];
+    if (!open || !close || close < open)
+        pcrec_ctx_fail(sb->cx, 0, "internal error: a residual declaration has "
+                       "no parameter list to forward");
+    pcrec_enc_emit_text(sb, pcrec_sb_fragf(&sb->cx->arena, "%.*s\n{\n    return $__%s(",
+                                           (int)(close + 1 - d), d,
+                                           enc_entry_name(t, nb, sizeof nb)),
+                        prefix, NULL);
+    const char *p = open + 1;
+    bool first = true;
+    while (p < close) {
+        const char *comma = memchr(p, ',', (size_t)(close - p));
+        const char *end = comma ? comma : close;
+        const char *q = end;
+        while (q > p && !(isalnum((unsigned char)q[-1]) || q[-1] == '_')) q--;
+        const char *s = q;
+        while (s > p && (isalnum((unsigned char)s[-1]) || s[-1] == '_')) s--;
+        pcrec_sb_printf(sb, "%s%.*s", first ? "" : ", ", (int)(q - s), s);
+        first = false;
+        p = comma ? comma + 1 : close;
+    }
+    pcrec_sb_puts(sb, ");\n}\n");
+}
+
+/* The out-of-line entries' definitions (the artifact's epilogue): every
+ * EXPORTED one as its doc and a forwarder to its twin. A `stat` entry is its
+ * twin alone (`pcrec_enc_emit_twins`), which every internal caller calls. */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix, const PcrecEncSiteText *sites,
                          size_t nsites, unsigned drop, unsigned stat)
 {
-    enc_emit_defs(sb, e, mask, prefix, false, sites, nsites, drop, stat);
+    (void)sites; (void)nsites;
+    if (!e || !e->entries) return;
+    mask = pcrec_enc_mask_close(e, mask) & ~drop;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++) {
+        if (t->inline_def || !(mask & t->id) || (stat & t->id)) continue;
+        if (t->defs_doc) {
+            pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+            pcrec_enc_emit_text(sb, t->defs_doc, prefix, NULL);
+            pcrec_sb_cmt_close(sb);
+        }
+        pcrec_sb_scaffold_open(sb);
+        enc_emit_forwarder(sb, t, prefix);
+        pcrec_sb_scaffold_close(sb);
+    }
 }
 
 /* The `static inline` entries' definitions, placed by the caller ahead of

@@ -43,6 +43,7 @@ static const StampRow stamp_rows[] = {
     { "ALTCLS_FACTORED",    false, SK_PATTERN },
     { "STARTPOS_GUARD",     false, SK_PATTERN },      /* the caller contract */
     { "UTF_CHECK",          false, SK_PATTERN },
+    { "ITER_RETRY",         false, SK_PATTERN },      /* the shell's own iterator */
     { "END_WINDOW",         false, SK_MACHINE_STR },  /* the search entry's clamp */
     { "REQ_BYTE",           false, SK_PATTERN },      /* the analysis: a pattern fact */
     { "REQ_RUN",            false, SK_PATTERN },

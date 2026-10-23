@@ -10,6 +10,15 @@
 #   constraint row (P1-P3) beats every control; `measured` declines only
 #   through T1.
 #
+#   compound-inline: a class value reaches a compound's parts. Since
+#   [FINDALL-NEXT] I1 a part's label table is in its own noinline
+#   `<prefix>__<role>__find`, so F's subject (its `_search` wrapper) copies,
+#   and the shell's always_inline `__find` gives each part `_next` as a
+#   caller too: split no longer stops at P2/P3 (the row was `held-compound`
+#   before I1). No CLI input reaches a compound constraint row now (a single-
+#   caller part needs a driver entry request without `_next`); `/held` is
+#   witnessed by the `constraint-*` rows, the same stamp code for every class.
+#
 # Columns: id, flags (or -), pattern, controls (space-separated), rows
 # (FUNCTION=ROW, comma list; ROW `T0` where no control asked), stamp (or -),
 # why (or -).
@@ -29,7 +38,7 @@ constraint-copy	-	^(a)b	--part-layout=prefilter:inline	prefilter=P2	prefilter=in
 constraint-single	-	(a|ab)(c|bcd)(d*)	--part-layout=prefilter:inline	prefilter=P3	prefilter=inline/held	-
 constraint-rung	--vm-entry-shape=1	(a)b	--part-residual=inline --part-layout=prefilter:shared	prefilter=P3	residual=inline;prefilter=shared/held	-
 fold-rung	--vm-entry-shape=4	(?>a*)a	--part-layout=prefilter:shared	prefilter=P4	prefilter=shared	-
-held-compound	-	^\s+|\s+$	--part-layout=compound:inline	comp_a=P2,comp_b=P3	compound=inline/held	-
+compound-inline	-	^\s+|\s+$	--part-layout=compound:inline	comp_a=P5,comp_b=P5	compound=inline	-
 held-wrap	-	(a)b	--part-layout=wrap:shared	prefilter=P10	wrap=shared/none	-
 held-other-class	-	(a)b	--part-layout=compound:inline	prefilter=P10	compound=inline/none	-
 stamp-order	-	(a)b	--part-layout=wrap:inline,prefilter:shared --part-inline-rank=R0 --part-residual=shared	prefilter=P4	residual=shared;rank=R0;prefilter=shared;wrap=inline/none	-

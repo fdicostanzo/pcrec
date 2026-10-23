@@ -1712,3 +1712,66 @@ replaced by the STATE part of the `iterate` row).
     ("Only the internal batch fill (R3, HELD) would separate them");
   - re-read §3.1's "co-resident ... disjoint subjects" claim (the A1 VM entry chain against
     this row, now through P1 `owned`) against the `-1` witness that §2.2 designs.
+
+## 12. Addendum: the I1 build (lane i1build, 2026-10-21)
+
+The build went from revision 3 with the manager's two I1 rulings
+(docs/dev/lanes/i1build_rulings.md entries 1-2) and Frank's go ("Proceed through
+all items", 2026-10-21). Where the build departs from revision 3 it is recorded
+here; docs/dev/lanes/i1build_report.md carries the evidence.
+
+- **No batch ABI in I1 (manager ruling).** I1 ships `<prefix>_next` only: no
+  `rx_iter_batch`, no batch fields, no `PCREC_ITER_OPT_BATCH`, no `__fill`, no
+  `<prefix>_next_n`. `rx_iter` is 72 bytes on LP64 at `PCREC_ITER_LAYOUT` 3:
+  `hdr rc flags` (12 bytes, then 4 of padding) `s n lo vars nvars bufs`. **I2
+  appends, at layout 4:** `rc_next` (int32, in the padding at offset 12), then
+  `batch`, `nbatch`, `bhead`, `bcount` and the fill state `st` after `bufs`;
+  `PCREC_ITER_OPT_BATCH` takes bit `0x80` of `PCREC_ITER_OPT_MASK`; `struct
+  rx_info` appends `next_n` (an `rx_nextnfn`) after `next`. No I1 field moves.
+- **`rx_iter`, `rx_nextfn` and `rx_info.next` (ruling 2).** `rx_iter` is a fixed
+  type of the shared block; `rx_nextfn` is declared on the tag `struct rx_iter`
+  ahead of `struct rx_info` so `rx_info` can carry `next`.
+- **`reports_empty` is the minimum REPORTED width**, not "nullable OR holds
+  `\K`": `a\Kb` is `no` (its reported span is never empty), `ab\Kc?` `yes`
+  (src/facts/widths.c, `RepW`).
+- **The notempty root is its own mandatory machine** (`Job.nedfa`, built from
+  the plain NFA at `anch_start`, `Dfa.notempty` + `Mach.noacc` in src/ir/dfa.c),
+  not interned with the anchored match-here machine: the anchored machine is
+  optional and prunes accepts, the retry needs neither. It is built only on a
+  `reports_empty` DFA artifact (a compound's shell included, never a part);
+  its overflow behaves as any mandatory machine's.
+- **The split of `_search` is two entries, not a mode parameter.** The DFA's
+  `<prefix>_search` is a wrapper (head + caller-position prologue) over
+  `<prefix>__find`; the VM's search loop is `<prefix>__find` behind
+  `<prefix>_search_run`'s range test and guard. `__find` is `always_inline`
+  except on the attempt route's label-table body, where it is `noinline`.
+- **The VM retry** is `<prefix>__retry`, `<prefix>_match_caps_run`'s body with
+  `run->notempty` set after the init; the accept label rejects an empty
+  REPORTED span at `ctx->pos` (slot 0 where a `\K` exists). The DFA retry is
+  `<prefix>__retry`, an anchored scan of the notempty machine.
+- **The residual twins are `<prefix>__<name>`** (`__next_pos`, `__valid_upto`,
+  `__var_valid`), the mechanical spelling, not `__adv`.
+- **Variable resolution stays per search**: only the caller-position checks
+  (the startpos guard or alignment, `-futf-check`) are hoisted to bind.
+  Hoisting the resolution needs resolved state carried in `rx_iter`, which is
+  I2's struct.
+- **The scaffold bracket is a second bracket beside RQ-3's** (`StrBuf.scaf_*`,
+  src/core/sb.c), with the SIMD bracket's rules and its own count, so
+  `<PREFIX>_SIMD_GUARDED_BYTES` keeps its meaning. A shared "excluded from
+  length decisions" bracket with a kind field is the unification, filed for
+  the next third member.
+- **Part layout: class `find` has no subject yet.** `__find`'s layout is fixed
+  (above); registering it as a `find` subject needs the default attribute
+  moved into the part table's `auto` row, a part-layout change of its own.
+- **I0 carried no tests/findall/.** The harness drives `<prefix>_next`, so it
+  landed with I1; I0's `mg` parser support and the fact landed first, with
+  zero artifact movers (report).
+- **The `mg` line is §1.7.1 of rxt_format.md**, a subsection of `mc`'s.
+
+**Pointer: I4 (lanes i2design/i2rev, 2026-10-21).** The `next_n` stage's design is
+`findall_iter_i2.md` (revision 2, after panel r1): `<prefix>_next_n` and the generic
+`RX_FOREACH` over `rx_info.next_n`. It keeps this note's stage numbers (§6.9: I2 the
+kit's `st`, I3 `pair-hits`, I4 `next_n`). It WITHDRAWS the internal batch (§2.3, §3.4a,
+the `batch` column, `rx_iter_batch`, `rc_next`/`bhead`/`bcount`, the `B64` arm) on the
+parity slot's `off` verdict and D171. The "I2 appends" list above therefore shrinks to
+the kit's `st`, which keeps §1.3's rule. `rx_iter` is unchanged at I4.

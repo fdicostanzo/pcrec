@@ -218,10 +218,11 @@ pf_scan() { # pf_scan <label> <pattern>
         && bad "§2 [$lbl] '$pat' calls the [OPT-K] offset-k skip INSIDE rx_match — same defect, offset-set arm"
     # ...and the POSITIVE half: the search this artifact carries DOES have one,
     # so the absence above is a property of the anchored body and not of a
-    # compiler that emits no prefilters at all.
-    sed -n '/^int rx_search(const unsigned char \*subject/,/^}$/p' "$f" \
+    # compiler that emits no prefilters at all. [FINDALL-NEXT] I1: the search
+    # body is `rx__find`, which `rx_search` calls.
+    sed -n '/^static .*int rx__find(const unsigned char \*subject/,/^}$/p' "$f" \
         | grep -qE 'memchr\(subject \+ scan_position|rx_can_begin_match\[|rx_start_bytes\[|rx_ofsskip\(' \
-        || bad "§2 [$lbl] '$pat' has NO prefilter in rx_search either — this witness cannot tell 'the anchored body declines one' from 'this compiler emits none', so the negative above is vacuous"
+        || bad "§2 [$lbl] '$pat' has NO prefilter in its search body (rx__find) either — this witness cannot tell 'the anchored body declines one' from 'this compiler emits none', so the negative above is vacuous"
 }
 pf_scan "memchr arm"    'foo[0-9]+bar'
 pf_scan "bitmap arm"    '[fgh]oo[0-9]+bar'

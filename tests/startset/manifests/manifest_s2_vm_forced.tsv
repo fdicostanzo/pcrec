@@ -3856,3 +3856,17 @@ tests/utf8/octal_wide.rxt:51	--features backrefs --encoding=utf8	2861295c343030
 tests/utf8/octal_wide.rxt:59	--features backrefs --encoding=utf8	5c3430302b
 tests/utf8/octal_wide.rxt:66	-i --features backrefs,modifiers --encoding=utf8	5c343030
 tests/utf8/octal_wide.rxt:74	--features backrefs --encoding=utf8	5c31303030
+# i1tri2 (2026-10-21, [FINDALL-NEXT] I1): +13 rows, every one a tests/findall/global.rxt block (I1's new corpus file, never pinned here); the vmhat_checks.py mover rule on lane/i1build; no existing row moved.
+tests/findall/global.rxt:30	--features all	783f79
+tests/findall/global.rxt:174	--features all	6128627c2963
+tests/findall/global.rxt:339	--features all	5b302d395d2b
+tests/findall/global.rxt:378	--features all	617b322c7d
+tests/findall/global.rxt:417	--features all	283f3a61627c6129
+tests/findall/global.rxt:477	--features all	2e
+tests/findall/global.rxt:516	--features all	616224
+tests/findall/global.rxt:615	--features all	78
+tests/findall/global.rxt:654	--features all	61
+tests/findall/global.rxt:736	--features all	61625c4b
+tests/findall/global.rxt:758	--features all	615c4b62
+tests/findall/global.rxt:900	--features all	28617c292a3f62
+tests/findall/global.rxt:1271	--features all	615c4b7c62

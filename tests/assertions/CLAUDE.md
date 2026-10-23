@@ -116,3 +116,4 @@ recorded in `src/parse/mod_modifiers.c`.
 (Rest of this section: see the history file.)
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__assertions.md`.
+- `run_gstart_diff.sh` §1b ([FINDALL-NEXT] I4) holds the iterator to libpcre2 global iteration via `tests/findall/iter_drv.c`.

@@ -100,3 +100,4 @@ the count is unstable between builds (171 and 176 observed for the same edit).
 The hoist form above is memory-safe by construction.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__codegen.md`.
+- **run_residual_twins.sh** — [FINDALL-NEXT] I1 residual-twin forwarders check; the premul table also has an iterator arm (NOTES.md).

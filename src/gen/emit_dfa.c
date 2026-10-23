@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 83
+#define PCREC_ARTIFACT_ABI 84
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -837,8 +837,10 @@ static void emit_utf_check(Ctx *cx, StrBuf *c, const char *indent,
         "%s * end. The same call gives the caller the offset. */\n",
         indent, indent, indent, indent);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c, "%sif (%s_valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
-                    indent, cx->opt->prefix, subjvar, lenvar, posvar, lenvar);
+    pcrec_sb_printf(c, "%sif (%s_", indent, cx->opt->prefix);
+    pcrec_enc_twin_mark(c);   /* the static twin, [FINDALL-NEXT] */
+    pcrec_sb_printf(c, "valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
+                    subjvar, lenvar, posvar, lenvar);
 }
 
 /* The CALLER-STARTPOS ENTRY PROLOGUE written straight into the artifact, at
@@ -1881,9 +1883,16 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
  * storage class ("" for the exported entry, "static " for the prefilter or a
  * part), and [ENTRY-TABLE] E1's part-layout mark, written after the storage
  * class where `ent` is a part a control lays out (src/gen/part_layout.c). */
+static bool find_body_shared(Ctx *cx);
+
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              PcrecEntry ent)
 {
+    /* [FINDALL-NEXT] the body's head is the iterator's scaffold (the entry's
+     * own head, below the body, is the one a length decision reads). `find`
+     * is no part-layout subject in I1, so no mark is written inside it. */
+    const bool scaf = ent == PCREC_ENTRY_FIND;
+    if (scaf) pcrec_sb_scaffold_open(c);
     /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
      * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
      * not see it at all rather than see it and warn. The `__has_attribute`
@@ -1903,6 +1912,21 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
     pcrec_sb_cmt_close(c);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_puts(c, pcrec_entry_storage(cx, ent));
+    /* [FINDALL-NEXT] `<p>__find`, the search body without its caller-position
+     * prologue (findall_iter.md §2.2): its `0` layout is one copy in each of
+     * its two callers, except on a body that keeps label addresses in a
+     * static table (the DFA attempt route's direct threading), which gcc
+     * refuses to duplicate and which stays one shared function. The layout
+     * is fixed: the part table's class `find` has no subject yet. */
+    if (ent == PCREC_ENTRY_FIND) {
+        const bool shared = find_body_shared(cx);
+        pcrec_sb_puts(c, pcrec_attr_text(shared ? PCREC_ATTR_NOINLINE : PCREC_ATTR_INLINE));
+        /* An always_inline body is OWNED (A1's shape): a part it calls is
+         * called from its callers, `_search` and `_next` (part_layout.c's
+         * `callers`). */
+        if (!shared)
+            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_FIND);
+    }
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s)\n{\n",
@@ -1914,6 +1938,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                   * because the alternative is a second definition of "which
                   * entries take the pair" living in one engine's emitter. */
                  pcrec_vars_param_text(cx));
+    if (scaf) pcrec_sb_scaffold_close(c);
     /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
      * fill below uses, and for the same reason: this emitter has TWO customers
      * and only one of them is a caller-facing entry. The other is the VM
@@ -1926,9 +1951,33 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
      * through the body they call, and the three `_in` entries through their
      * un-suffixed siblings. */
-    if (cand_finish_of(cx) != CAND_ROUTE_VM)
+    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);
+}
+
+/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
+ * that it must stay one function? The DFA attempt route's direct-threaded
+ * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
+ * other body do not. */
+static bool find_body_shared(Ctx *cx)
+{
+    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
+}
+
+/* [FINDALL-NEXT] `<p>_search` over its body (findall_iter.md §2.1): the
+ * entry's attributes and caller-position prologue, then the body,
+ * `<p>__find`, which `<p>_next` runs at every step with no prologue at all.
+ * With the body always_inline the entry compiles to today's one function.
+ * Scaffold (§6.4): no length decision reads the new lines; the head is the
+ * entry's own, as it always was. */
+void pcrec_emit_search_wrapper(Ctx *cx, StrBuf *c, const char *fn)
+{
+    emit_search_head(cx, c, fn, PCREC_ENTRY_SEARCH);
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_printf(c, "    return %s__find(subject, subject_length, search_from, capture_spans%s);\n"
+                       "}\n", cx->opt->prefix, pcrec_vars_arg_text(cx));
+    pcrec_sb_scaffold_close(c);
 }
 
 /* [COMPOUND] The search head for a caller outside this file: a compound's
@@ -2230,6 +2279,18 @@ static void emit_rx_abi_types(StrBuf *sb)
          * rule, for a caller's `switch` written today. */
         "#define PCREC_ERR_UTF (-9)  /* [UTF-VALID] below PCREC_ERR_FLOOR: "
         "NOT a give-up -- an ill-formed subject was REFUSED (-futf-check) */\n"
+        /* [FINDALL-NEXT] the find-all iterator's refusal: a header that is
+         * neither FRESH, BOUND nor ENDED (an uninitialized iterator, a setter
+         * on a BOUND one). Below the floor, the same rule as the three
+         * above; every artifact defines it, and rx_iter.rc carries it. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "#define PCREC_ERR_ITER (-10)  /* [FINDALL-NEXT] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- the iterator was refused */\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
@@ -2267,6 +2328,20 @@ static void emit_rx_abi_types(StrBuf *sb)
          * variable names, function names) — so a struct TAGGED rx_info and
          * a variable NAMED rx_info coexist with no conflict, verified
          * directly against gcc. */
+        /* [FINDALL-NEXT] the find-all iterator's entry type, every
+         * artifact's `<prefix>_next` whatever its prefix (i1build ruling 2):
+         * declared on the struct TAG, so it precedes `rx_iter`'s body below
+         * and `rx_info.next` can carry it. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "struct rx_iter;\n"
+        "typedef int (*rx_nextfn)(struct rx_iter *it, ptrdiff_t (*caps)[2]);\n"
+        "typedef size_t (*rx_nextnfn)(struct rx_iter *it, ptrdiff_t (*caps)[2], size_t k);\n"
+        "\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "struct rx_info {\n"
         "    unsigned      abi;             /* layout version */\n"
         "    uint64_t      flags;           /* PCREC_* option bits, as compiled */\n"
@@ -2502,6 +2577,18 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    /* <PREFIX>_MEASURES: the measurement set a reader consulted,\n"
         "       id@rev:digest; \"\" when none consulted */\n"
         "    const char           *measures;\n"
+        /* [FINDALL-NEXT] appended (i1build ruling 2): a caller holding only
+         * the record iterates without the header. */
+        );
+    pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
+    pcrec_sb_puts(sb,
+        "    /* <prefix>_next, the find-all iterator; NULL where not exported */\n"
+        "    rx_nextfn             next;\n"
+        "    /* <prefix>_next_n, up to k matches per call; NULL exactly where next is */\n"
+        "    rx_nextnfn            next_n;\n"
+        );
+    pcrec_sb_scaffold_close(sb);
+    pcrec_sb_puts(sb,
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -2544,6 +2631,11 @@ static void emit_rx_abi_types(StrBuf *sb)
          * different encodings into one TU share this block, and only the
          * first copy survives the guard. What is per-encoding is the
          * residual's BODY, which is not here. */
+        );
+    /* [FINDALL-NEXT] the iterator's type and setters, inside the block's
+     * ESSENTIAL region and its scaffold bracket (findall_iter.md §1.1). */
+    pcrec_emit_iter_abi_types(sb);
+    pcrec_sb_puts(sb,
         "/* Every generated artifact also exports one RESIDUAL entry per\n"
         " * encoding (pcrec DD-12/D58), <prefix>-scoped and therefore declared\n"
         " * outside this shared block:\n"
@@ -3339,6 +3431,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     else
         pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
     pcrec_emit_ks_mark(c, PCREC_KS_MARK_INIT);
+    /* [FINDALL-NEXT] the artifact's own iterator, where it exports one (a
+     * request that keeps `next` static still points at it: the record is
+     * how a holder of the record reaches it). */
+    pcrec_sb_scaffold_open(c);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = %s_next_n,\n",
+                        cx->opt->prefix, cx->opt->prefix);
+    else
+        pcrec_sb_puts(c, "    .next = NULL,\n    .next_n = NULL,\n");
+    pcrec_sb_scaffold_close(c);
     pcrec_sb_puts(c,   "};\n");
 }
 
@@ -3429,6 +3531,7 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
     ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
+    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, pcrec_entry_storage(cx, PCREC_ENTRY_NEXT)));
 #undef ENTRY_DECL
 }
 
@@ -3472,14 +3575,6 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
-     * characters `<prefix>_valid_upto` steps back before it validates
-     * (PCRE2's `max_lookbehind`, `Ctx.lb_max`). Emitted on every artifact
-     * whatever the encoding — a backend whose body does not step back leaves
-     * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
-     * only, beside the definitions that read it. */
-    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
-                    cx->lb_max);
     size_t ns;
     const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
     /* [EMIT-ENTRIES] each out-of-line entry at its linkage: omitted ones are
@@ -3500,6 +3595,21 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
     const PcrecEncSiteText *st = residual_sites(cx, enc, true, &ns);
     pcrec_enc_emit_inline_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                                st, ns);
+    /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many
+     * characters `<prefix>_valid_upto` steps back before it validates
+     * (PCRE2's `max_lookbehind`, `Ctx.lb_max`). Emitted on every artifact
+     * whatever the encoding — a backend whose body does not step back leaves
+     * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
+     * only, ahead of the twin that reads it ([FINDALL-NEXT] F-1). */
+    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
+                    cx->lb_max);
+    /* [FINDALL-NEXT] F-1 the out-of-line entries' static twins, every one
+     * this artifact defines (`noclone`: compound_entries.md §6 F-3 found gcc
+     * splitting `_valid_upto` into a `.part` clone, K24's shape), ahead of
+     * every body that calls one. */
+    pcrec_enc_emit_twins(sb, enc, cx->job->enc_mask, cx->opt->prefix,
+                         pcrec_attr_text(PCREC_ATTR_NOCLONE),
+                         pcrec_entry_enc_omit(cx));
 }
 
 /* Writes the artifact's whole `.h` into `cx->job->hsb`: the provenance and
@@ -3533,6 +3643,8 @@ static void emit_header(Ctx *cx, const GenNames *g, int ncaps,
     emit_ncaps_macros(h, upper, ncaps);
     emit_vars_macros(h, cx, upper);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        pcrec_emit_iter_buffers_setter(h, cx->opt->prefix);
     pcrec_sb_putc(h, '\n');
     /* [DD-14.FB] The three `_in` entries join the header UNCONDITIONALLY,
      * beside the siblings they mirror -- spec §10.4's "the three `_in`
@@ -4861,7 +4973,8 @@ static const char *dfa_scan_edge_name(Ctx *cx)
  * three masks in §6.3 are masks because a rung or a strategy is chosen PER
  * QUANTIFIER and a scalar would LIE on a mixed artifact, where this is a
  * whole-artifact total with no axis to mix. Two tables per machine are
- * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6.
+ * foldable (`<m>_next_state`, `<m>_is_accepting`), so the value runs 0..6,
+ * or 0..8 with the find-all iterator's retry machine.
  *
  * WHY IT IS OWED RATHER THAN SYMMETRY. The fold makes a table ABSENT, and
  * this project has gone back and REMOVED a check that read a fact off a
@@ -4902,6 +5015,11 @@ static int dfa_uniform_folds(Ctx *cx)
     const Dfa *mach[3];
     int n = 0, nm = dfa_member_machines(cx, mach);
     for (int k = 0; k < nm; k++) n += uniform_folds_of(cx, mach[k]);
+    /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
+     * path, but its tables are the artifact's and fold like any machine's
+     * (`pcrec_emit_dfa_retry`), so they count where it is emitted. */
+    if (cx->job->retry_ok && pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+        n += uniform_folds_of(cx, &cx->job->nedfa);
     return n;
 }
 
@@ -13812,6 +13930,64 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g)
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
 }
 
+/* [FINDALL-NEXT] THE RETRY MACHINE's DIRECTION (findall_iter.md §3.3): the
+ * anchored direction's strings under the machine name `retry`, so its
+ * accessor block cannot collide with the anchored machine's in one file. */
+static const DfaDir dfa_dir_retry = {
+    { "retry", 0, cand_always },
+    "Retry", "RETRY", "retry_state", "retry_view_state",
+    "scan_position", "last_accept_position",
+    "    ", "        ", false, false,
+    "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
+    "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
+    "     * anchored machine whose start state never accepts and keeps every\n"
+    "     * thread below the empty match, so its last accept is the preferred\n"
+    "     * NON-EMPTY match beginning there.\n"
+    "     *\n",
+    "a non-empty match beginning at search_from may end",
+    "    if (search_from > subject_length) return -1;\n", "return -1;",
+    NULL, NULL,
+    "scan_position >= subject_length",
+    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
+    dir_fwd_skip, dir_fwd_bound_accept,
+    "scan_position < subject_length", "scan_position - 1",
+};
+
+/* [FINDALL-NEXT] `<p>__retry`, the DFA iterator's retry R (findall_iter.md
+ * §3.3): the notempty machine (`Job.nedfa`) run forward from `search_from`
+ * exactly as the anchored match-here body runs, writing the match into
+ * `capture_spans` (the dead groups unset, `_search`'s rule) and returning its
+ * length, or -1. Its tables are a machine's and count like one; no
+ * candidate-start prefilter, for the match-here's reason (`anch_start`). */
+void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
+{
+    UnanchStart base, aus;
+    DfaForm f;
+    memset(&base, 0, sizeof base);
+    base.kind = DFA_PF_NONE;
+    anch_start(&cx->job->nedfa, &base, &aus);
+    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dfa_dir_retry, &f);
+    if (f.d->tagged)
+        pcrec_ctx_fail(cx, 0, "internal error: the iterator's retry machine is "
+                       "tagged (it is built from the plain forward NFA)");
+    f.repr->emit_token(c, &f);
+    emit_scan_defs(c, &f);
+    pcrec_sb_printf(c,
+        "static ptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
+        "                          size_t search_from, ptrdiff_t (*capture_spans)[2])\n"
+        "{\n", cx->opt->prefix);
+    emit_machine_tables(c, &f);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+    emit_scan_loop(c, &f);
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
+               "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
+               "    capture_spans[0][1] = (ptrdiff_t)last_accept_position;\n");
+    emit_dead_group_fill(cx, c, "    ");
+    pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+               "}\n\n");
+}
+
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
 
 /* One `&&label` target for computed-goto tables below: `tgt < 0` is the
@@ -13996,8 +14172,10 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_sb_cmt_close(c);
     /* [ENTRY-TABLE] E1: a body that keeps label addresses in a static table
      * can never be copied into a caller (gcc's own refusal, H1), so the part
-     * layout's P2 reads this as the body's `copyable` fact. */
-    if (d->n > 0) cx->job->pl.uncopyable = true;
+     * layout's P2 reads this as the body's `copyable` fact. [FINDALL-NEXT]
+     * Not a `<p>__find` body: that one is `noinline` (`find_body_shared`)
+     * and the subject is its `_search` wrapper, which copies. */
+    if (d->n > 0 && ent != PCREC_ENTRY_FIND) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
@@ -14819,6 +14997,18 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                                                   "p", "s", "n")
                          ? "guarded" : "permissive");
     }
+    /* [FINDALL-NEXT] `<PREFIX>_ITER_RETRY` (findall_iter.md §6.3): how the
+     * iterator retries an empty match at its position. "none" where it
+     * never reports an empty span (or exports no iterator), "dfa-root"
+     * where the retry is the notempty-rooted machine (compile.c's
+     * `retry_ok`, the flag the retry's emitter reads), "vm-guard" where it
+     * is the VM accept label's guard. */
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY",
+                 !pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) ||
+                 !pcrec_fact_reports_empty(cx) ? "none"
+                 : cx->job->retry_ok ? "dfa-root" : "vm-guard");
+    pcrec_sb_scaffold_close(c);
     /* [UTF-VALID] `<PREFIX>_UTF_CHECK` — THE SUBJECT CHECK'S CONTRACT, the
      * startpos-guard stamp's family (a) sibling: unconditional, on every
      * artifact of both engines, a closed token. "inert" where the encoding
@@ -15019,6 +15209,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_vars_macros(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
+        if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+            pcrec_emit_iter_buffers_setter(c, cx->opt->prefix);
         pcrec_sb_putc(c, '\n');
         emit_entry_decls(cx, c, g, true, true);
         pcrec_sb_putc(c, '\n');
@@ -15494,6 +15686,8 @@ void pcrec_emit_dfa(Ctx *cx)
          * first part's one attempt as the `finish-at` pair */
         const PcrecFinish part = { PCREC_FIN_PART, shell };
         const PcrecEntryText t = { .fin = &part, .shell = shell };
+        /* [FINDALL-NEXT] F-1 the residual twins the controller calls */
+        pcrec_emit_residual_inline(cx, c);
         pcrec_emit_compound_parts(cx, shell);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_SEARCH, &t);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_MATCH, &t);
@@ -15532,6 +15726,14 @@ void pcrec_emit_dfa(Ctx *cx)
 in_entries:
     emit_in_entry_defs(cx, c, &g);
     pcrec_sb_puts(c, "\n");
+    /* [FINDALL-NEXT] the find-all iterator: the retry machine where the
+     * artifact can report an empty span, then `iterate`'s entry. */
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT)) {
+        const PcrecIterText it = { .vm = false, .retry = cx->job->retry_ok };
+        const PcrecEntryText t = { .iter = &it };
+        if (it.retry) pcrec_emit_dfa_retry(cx, c);
+        pcrec_emit_entry(cx, &g, PCREC_ENTRY_NEXT, &t);
+    }
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_INFO)) {

@@ -99,6 +99,10 @@ per call, before the match begins.
 - `<prefix>_search` and its `_in` siblings are not `rx_ctx`-shaped, so **on a
   var-bearing artifact only** they gain a trailing `const rx_var *vars,
   size_t nvars` pair, before the `_in` descriptor.
+- The find-all iterator `<prefix>_next` takes the array once, bound by
+  `rx_iter_vars(&it, vars, nvars)` before its first call, and every search it
+  runs uses it (`match_api.md` §3.8); the array must stay valid and unchanged
+  until the iterator ends. Unbound, every search sees no variables.
 - `rx_info.vars` / `rx_info.nvars` list the names this pattern mentions, in
   first-mention order, for a caller that wants to validate a name before
   calling. Nothing in the match path depends on that check running.

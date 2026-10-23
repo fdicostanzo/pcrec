@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # S902 ([COMPOUND] B4, lane cpb4; docs/design/compound.md §E.4 CMP-12) -- the parts are compiled with their own startpos guard and -futf-check, and the controller's search prologue is removed: a refusal now comes from inside a part, where the dead call-site trap turns it into a crash.
+# RE-ANCHORED 2026-10-21 (lane i1build, [FINDALL-NEXT] I1): the search head's guard skips the FIND body (the guard runs in the wrapper); same plant, same detector.
 SAB_ID='S902-cmp12-parts-guarded-no-prologue'
 SAB_FILE='src/core/compound.c'
 SAB_SUITES='compound'
@@ -13,9 +14,9 @@ SAB_AFTER='#define SPLIT_GUARDS_OFF_SET   0   /* SABOTAGE S902 */
 #define SPLIT_GUARDS_OFF_CLEAR 0'
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
-SAB_BEFORE2='    if (cand_finish_of(cx) != CAND_ROUTE_VM)
+SAB_BEFORE2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);'
-SAB_AFTER2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && !cx->job->comp_shell)   /* SABOTAGE S902 */
+SAB_AFTER2='    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND && !cx->job->comp_shell)   /* SABOTAGE S902 */
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);'

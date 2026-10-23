@@ -1,0 +1,65 @@
+6d5
+< mov    (%rdi),%eax
+13c12
+< cmp    $0x49540302,%eax
+---
+> cmpl   $0x49540302,(%rdi)
+17d15
+< mov    0x10(%rbx),%rdi
+18a17
+> mov    0x10(%rbx),%rdi
+31c30
+< jne    <rx_next+0x10d>
+---
+> jne    <rx_next+0xa0>
+36a36
+> nopl   0x0(%rax,%rax,1)
+38d37
+< movq   $0x49540303,(%rbx)
+40c39,40
+< jmp    <rx_next+0x63>
+---
+> movq   $0x49540303,(%rbx)
+> jmp    <rx_next+0x62>
+42,64c42,45
+< cmp    $0x49540303,%eax
+< je     <rx_next+0x8b>
+< mov    %eax,%edx
+< and    $0xf,%dl
+< cmp    $0x49540301,%edx
+< jne    <rx_next+0xe8>
+< test   $0x10,%al
+< je     <rx_next+0x100>
+< mov    0x20(%rbx),%r12
+< test   $0x20,%al
+< jne    <rx_next+0xc0>
+< movq   $0x0,0x28(%rbx)
+< movq   $0x0,0x30(%rbx)
+< test   $0x40,%al
+< jne    <rx_next+0xcc>
+< movq   $0x0,0x38(%rbx)
+< movabs $0x149540302,%rax
+< movl   $0x0,0x8(%rbx)
+< mov    %rax,(%rbx)
+< jmp    <rx_next+0x34>
+< nopl   (%rax)
+< movabs $0xfffffff649540303,%rax
+< mov    %rax,(%rbx)
+---
+> mov    %rbx,%rdi
+> call   <rx__enter>
+> test   %eax,%eax
+> jne    <rx_next+0x2f>
+66,73c47,49
+< jmp    <rx_next+0x63>
+< nopl   0x0(%rax)
+< movq   $0x0,0x20(%rbx)
+< xor    %r12d,%r12d
+< jmp    <rx_next+0xac>
+< call   <rx_next+0x112>
+< 			23e: R_X86_64_PLT32	__stack_chk_fail-0x4
+< nopl   (%rax)
+---
+> jmp    <rx_next+0x62>
+> call   <rx_next+0xa5>
+> 			RELOC: R_X86_64_PLT32	__stack_chk_fail-0x4

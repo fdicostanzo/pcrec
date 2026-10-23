@@ -291,8 +291,13 @@ read_artifact() {
         # [OPT-REVEND] L2.1 HOW THE START IS RECOVERED, from the text: a
         # reverse machine anywhere (its accessors are `rx_reverse_*`), else the
         # start write of the pinned body, else no recovery at all.
+        # [FINDALL-NEXT] I1: the iterator retry `rx__retry` (the notempty
+        # machine, anchored at search_from) writes the pinned start too, and
+        # is no part of the search entry, so its body is read past.
+        /^static .*ptrdiff_t rx__retry\(/               { in_retry = 1 }
+        in_retry && /^}$/                               { in_retry = 0 }
         /rx_reverse_/                                   { rev = 1 }
-        /capture_spans\[0\]\[0\] = \(ptrdiff_t\)search_from;/ { pinned = 1 }
+        !in_retry && /capture_spans\[0\]\[0\] = \(ptrdiff_t\)search_from;/ { pinned = 1 }
         # [START-LANDING] the two rows that recover the start with no reverse
         # machine: the end minus the fixed width, or the record of the NEXT block.
         /size_t match_start_position = last_accept_position - [0-9]+;/ { emw = 1 }

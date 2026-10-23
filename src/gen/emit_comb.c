@@ -506,8 +506,14 @@ static void comb_finish_at(Ctx *cx, StrBuf *c, const GenNames *g, PcrecEntry e,
 
 static const char *const comb_names[] = {
     "locate-then-finish", "finish-at", "forward", "first-nonzero",
-    "leaf", "data", "driver",
+    "iterate", "leaf", "data", "driver",
 };
+
+/* [FINDALL-NEXT] the search body's name, `<p>__find` (entries.c's FIND). */
+static const char *find_name(Ctx *cx)
+{
+    return pcrec_sb_fragf(&cx->arena, "%s__find", cx->opt->prefix);
+}
 
 bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
                       const PcrecEntryText *t)
@@ -527,12 +533,25 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
     case PCREC_COMB_LOCATE_FINISH:
         if (!t->body) break;
         /* `locate-then-finish`'s ONE emitter: the DFA search body under the
-         * entry's name and linkage. */
+         * entry's name and linkage. [FINDALL-NEXT] The search entry's body is
+         * `<p>__find` (its FIND row), and `<p>_search` is its prologue over
+         * that body. */
+        if (e == PCREC_ENTRY_SEARCH) {
+            pcrec_emit_dfa_engine(cx, find_name(cx), PCREC_ENTRY_FIND);
+            pcrec_emit_search_wrapper(cx, c, g->searchfn);
+            return true;
+        }
         pcrec_emit_dfa_engine(cx, t->body, e);
         return true;
     case PCREC_COMB_FIRST_NONZERO:
         if (!t->shell || e != PCREC_ENTRY_SEARCH) break;
-        pcrec_emit_compound_search(cx, c, t->shell, g->searchfn, g->upper);
+        pcrec_emit_compound_search(cx, c, t->shell, find_name(cx), PCREC_ENTRY_FIND,
+                                   g->upper);
+        pcrec_emit_search_wrapper(cx, c, g->searchfn);
+        return true;
+    case PCREC_COMB_ITERATE:
+        if (!t->iter) break;
+        pcrec_emit_iterate(cx, c, g, t->iter);
         return true;
     case PCREC_COMB_LEAF:
     case PCREC_COMB_DATA:

@@ -20,12 +20,31 @@
 # Prints the table, one VERDICT line per (subcell, regime), the batch line, then
 # `parity: DONE rc=0` and `== parity COMPLETE <verdict rows>`.
 #
+# POST-BUILD ([FINDALL-NEXT] I1, parity.sh under PARITY_POST=1): the arms are L_old (the
+# parent's artifact), L_new, A and I (the built iterator); the B64/N64/I_shared rows and
+# the batch line are absent, and I is GATED on cells 1, 3 and 4 (D171: cells 2, 5, 6 and 7
+# are reported), printed as `GATE` / `REPORT`.
+#
+# I4 ([FINDALL-NEXT] I4, lane i2build; findall_iter_i2.md §4; parity.sh under PARITY_I4=1):
+# the arms are I_i1/I_i1b (the I1 artifact's _next, two compiles), I (this artifact's _next),
+# F/Fb (RX_FOREACH, two compiles), I_info, N4, N64. Each gated ratio has its own floor from
+# its A/A pair, over the launches: floor = max(|median(X/X') - 1|, IQR(X/X')/median(X/X'))
+# with X = I_i1 for gate 1 and X = F for gates 2-4. Gates (a loss is a FINDING):
+#   1 "_next unharmed"  I/I_i1 <= 1 + floor_I        every cell, R1 and R2
+#   2 "never worse"     F/I <= 1 + floor_F           c1, c3, c4, c6
+#   3 "the gain"        F/I <  1 - floor_F           c3-4k R2 and c3-1m R2
+#   4 "early stop"      F/I <= 1 + floor_F           c7, c8
+# N4/I, N64/I, I_info/I and (I_info - F) per match on c1-4k are reported. QUIET is "no"
+# where a launch's median load1 is above 1.0 or its SMT sibling was above 25 % busy
+# (UNMEASURED DEFAULTS, the note's re-queue rule). The rules live in i4_verdict.py.
+#
 # usage: python3 -I parity_verdict.py RESULTS.tsv
 import sys
 from collections import defaultdict
 
 ARMS = ["L_old", "L_new", "A", "L_tw", "I", "N64", "I_shared", "B64", "I_fill"]
 DENSE = ("c1-", "c3-")
+GATED = ("c1-", "c3-", "c4")   # D171: the post-build gate's cells
 
 
 def median(v):
@@ -45,6 +64,10 @@ def quantile(v, q):
 
 
 rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1], encoding="ascii")]
+if any(r[3] == "Fb" for r in rows[1:]):
+    sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.abspath(__file__)))
+    import i4_verdict
+    sys.exit(i4_verdict.main(rows))
 hdr, rows = rows[0], rows[1:]
 col = {h: i for i, h in enumerate(hdr)}
 data = defaultdict(list)
@@ -84,9 +107,15 @@ for cid in cells:
                 print(f"   {a:<9}{m:>14.2f} ns  [{iqr * 100:5.2f}%]  ratio {m / base:.4f}")
         out = []
         ri = st["I"][0] / base
-        out.append(f"I {'PASS' if ri <= 1 + floor else 'FINDING'} {ri:.4f}")
+        post = "B64" not in st
+        tag = ("GATE " if cid.startswith(GATED) else "REPORT ") if post else ""
+        out.append(f"{tag}I {'PASS' if ri <= 1 + floor else 'FINDING'} {ri:.4f}")
         rn = st["L_new"][0] / base
         out.append(f"L_new {'unharmed' if abs(rn - 1) <= floor else 'OUTSIDE-FLOOR'} {rn:.4f}")
+        if post:
+            print(f"VERDICT {cid} {reg} floor {floor * 100:.2f}%: " + "; ".join(out))
+            nverd += 1
+            continue
         rb = st["B64"][0] / base
         if cid.startswith("c7"):
             out.append(f"B64 cost-reported {rb:.4f} (B64/I {st['B64'][0] / st['I'][0]:.4f})")
@@ -102,7 +131,8 @@ for cid in cells:
         out.append(f"N64 {st['N64'][0] / base:.4f}")
         print(f"VERDICT {cid} {reg} floor {floor * 100:.2f}%: " + "; ".join(out))
         nverd += 1
-print("BATCH dense rows: " + "; ".join(batch_rows))
-print(f"BATCH CELL: {'fill' if batch_ok and batch_rows else 'off'}")
+if batch_rows:
+    print("BATCH dense rows: " + "; ".join(batch_rows))
+    print(f"BATCH CELL: {'fill' if batch_ok else 'off'}")
 print("parity: DONE rc=0")
 print(f"== parity COMPLETE {nverd} verdict rows")

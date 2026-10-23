@@ -52,7 +52,19 @@ def fn_body(src, name):
 
 def c_name(entry):
     """The emitted function an entry name denotes at prefix `rx`."""
+    if entry == "find":
+        return "rx__find"        # [FINDALL-NEXT] the search body
     return "main" if entry == "main" else "rx_" + entry
+
+
+def entry_body(src, entry):
+    """The text an entry's call sites live in: its function's body, and for
+    a VM `search_run` also the search loop `rx__find` it calls, which is
+    emitted with it ([FINDALL-NEXT] I1's split)."""
+    body = fn_body(src, c_name(entry))
+    if entry == "search_run" and body is not None and "rx__find(" in body:
+        body += fn_body(src, "rx__find") or ""
+    return body
 
 
 def drive_ranks(drive, outdir, cases):
@@ -123,7 +135,7 @@ def check_fixture(drive, work):
             print("FAIL: %s: entry_rows[] says %s, the fixture %s" % (tag, got, r["rank"]))
             fails += 1
         with open(os.path.join(out, r["id"] + ".c"), encoding="latin-1") as fh:
-            body = fn_body(fh.read(), c_name(r["from"]))
+            body = entry_body(fh.read(), r["from"])
         n = body.count(r["site"]) if body is not None else -1
         if n != int(r["count"]):
             print("FAIL: %s: %r occurs %d times in %s's body, the fixture says %s"
@@ -152,7 +164,7 @@ def check_reseed_population(drive, pcrec, tree, work, every):
         if rk is None:
             continue
         with open(os.path.join(out, cid + ".c"), encoding="latin-1") as fh:
-            body = fn_body(fh.read(), "rx_search_run")
+            body = entry_body(fh.read(), "search_run")
         sites = body.count("rx_prefilter(") if body is not None else 0
         want = "R3" if sites >= 2 else "R2"
         if rk != want or sites < 1:

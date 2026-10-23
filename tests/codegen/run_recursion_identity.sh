@@ -1269,7 +1269,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<PREFIX>_MEASURES ""` stamp and `.measures = ""`; the VM's `^` role text
 # changes (K112). `9e4b87e90` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-813f43ec8}"   # the [MEASURE-SET] M0 merge (2026-10-21), abi 82 (was 9e4b87e90, the lane self-pin; before it d06b530f7, abi 81)
+# [FINDALL-NEXT] I4 SELF-PIN (lane i2build, 2026-10-21), abi 83 -> 84: every
+# artifact gains rx_nextnfn, the RX_FOREACH block and rx_info.next_n in the
+# shared block, `.next_n =`, <prefix>__one with <prefix>_next/_next_n over it,
+# and the STEP's past-the-end line. `881eac3cf` is the lane's last src commit;
+# the manager re-pins to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-881eac3cf}"   # the [FINDALL-NEXT] I4 lane self-pin (2026-10-21), abi 84 (was 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
