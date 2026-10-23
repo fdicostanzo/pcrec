@@ -53,9 +53,9 @@ the bump's own commit.**
     rev 2, D171).** Every artifact gains `<prefix>_next_n(rx_iter *, caps, k)`,
     up to `k` matches per call, declared in the header beside `<prefix>_next`
     with the NEXT entry's linkage; the shared ABI block carries `rx_nextnfn`
-    and the caller-side loop `RX_FOREACH(info, it, m)` with its state
-    `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull` and the
-    caller-overridable `RX_FOREACH_PAIRS` (256); `struct rx_info` appends
+    (the caller-side `RX_FOREACH` macro family this part first carried was
+    DROPPED before landing, D175, 2026-10-23: a caller loops over
+    `info->next` or `info->next_n`); `struct rx_info` appends
     `next_n` after `next`. I1's `<prefix>_next` body is now the static
     `always_inline` `<prefix>__one`, which both `<prefix>_next` and
     `<prefix>_next_n`'s loop inline. All of it is scaffold. `rx_iter` does not

@@ -265,9 +265,9 @@ else
 fi
 
 # 5. decisions = stamps, on a DFA, a hybrid and a VM artifact.
-# ITER_INIT is the shared ABI block's iterator initializer ([FINDALL-NEXT] I1)
-# and FOREACH its find-all loop (I2): caller macros and no decisions.
-MACHINERY=' TIER_NOTE CHARGE_WORK PRUNE_TOO_SHORT PRUNE_CLAMP_SPAN TRAIL SET PUSH CUT CALL ITER_INIT FOREACH '
+# ITER_INIT is the shared ABI block's iterator initializer ([FINDALL-NEXT] I1):
+# a caller macro and no decision.
+MACHINERY=' TIER_NOTE CHARGE_WORK PRUNE_TOO_SHORT PRUNE_CLAMP_SPAN TRAIL SET PUSH CUT CALL ITER_INIT '
 nstamp=0; dbad=""
 for spec in "dfa|/user|/users|" "hybrid|(a|b)+c|" "vm|(a|b)+\\1c|--features all --engine=vm"; do
     what="${spec%%|*}"; rest="${spec#*|}"; pat="${rest%|*}"; extra="${rest##*|}"

@@ -3,7 +3,7 @@
 
   - **[FINDALL-NEXT] I4: THE ITERATOR ARM** (findall_iter_i2.md §5.2). Each
     rung's artifact is also linked with `tests/findall/iter_drv.c` over the
-    witness's subjects: RX_FOREACH, `_next_n` and `_next` against each other
+    witness's subjects: the generic info loops, `_next_n` and `_next` against each other
     and `_next` against libpcre2's global loop. Rung identity is not its
     expectation (the iterator answers PCRE2's iteration, which the find-all
     loop does not claim). SKIPS that arm loudly without libpcre2.

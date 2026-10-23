@@ -7,8 +7,7 @@
 #   2. the ASan cells (IC6): the retry shapes (a DFA notempty root, a VM
 #      accept guard, \K, a compound shell) and a -futf-check utf8 group,
 #      artifact and driver built with AddressSanitizer + UBSan, every region
-#      the iterator reads or writes heap-backed by the driver; built with
-#      -DRX_FOREACH_PAIRS=8 for the I4 cells (findall_iter_i2.md §5.1).
+#      the iterator reads or writes heap-backed by the driver.
 #   3. (I4) run_one_body.sh: <p>__one's body is the pinned text (iteropt2).
 # The `mg` corpus (global.rxt) rides test-corpus like every other .rxt file.
 # env: as run_iter_diff.sh; ASAN=0 skips part 2 (a build without libasan).
@@ -30,12 +29,9 @@ if [ "${ASAN:-1}" = "1" ]; then
     if ! printf 'int main(void){return 0;}\n' | "${CC:-cc}" -fsanitize=address -x c - -o "$WORK/probe" 2>/dev/null; then
         echo "SKIP: findall: the compiler cannot build -fsanitize=address; the ASan cells did not run" >&2
     else
-        # [FINDALL-NEXT] I4: RX_FOREACH_PAIRS=8 makes the macro's buffer 8
-        # pairs, so the 3-group cell's kmax is 2 (an uncapped fill overruns
-        # the object: S1317) and the 10-group cell is refused.
-        GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -DRX_FOREACH_PAIRS=8" \
+        GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
         ARMS="auto vm" MIN_GROUPS=10 MIN_RETRY=10 ASAN_OPTIONS=detect_leaks=1 \
-        REACH_NEED="n3m4 split f2 fstopend kmaxcap frefused" \
+        REACH_NEED="n3m4 split g2" \
             bash "$SCRIPT_DIR/run_iter_diff.sh" "$WORK/asan.tsv" || fail=1
     fi
 fi

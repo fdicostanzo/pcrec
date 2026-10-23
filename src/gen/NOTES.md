@@ -23,7 +23,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 
 ## [FINDALL-NEXT] lane iterland: additions carried from lane/itertri (verbatim)
 
-- **emit_iter.c** — [FINDALL-NEXT] I1 + I4: the find-all iterator's text (`<prefix>_next`, `<prefix>_next_n`, the one body `<p>__one` both inline, its bind/step parts, the shared block's `rx_iter`, setters and `RX_FOREACH`); the section below.
+- **emit_iter.c** — [FINDALL-NEXT] I1 + I4: the find-all iterator's text (`<prefix>_next`, `<prefix>_next_n`, the one body `<p>__one` both inline, its bind/step parts, the shared block's `rx_iter`, and setters); the section below.
 
 
 ## [FINDALL-NEXT] I1 — the find-all iterator (lane i1build, 2026-10-21; abi 82 -> 83)
@@ -73,7 +73,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 - **`rx_info.next`** (`emit_info_def`) points at `<prefix>_next`; `rx_nextfn`
   is declared on the tag `struct rx_iter` ahead of `struct rx_info`.
 
-## [FINDALL-NEXT] I4 — `<prefix>_next_n` and `RX_FOREACH` (lane i2build, 2026-10-21; abi 83 -> 84)
+## [FINDALL-NEXT] I4 — `<prefix>_next_n` (lane i2build, 2026-10-21; abi 83 -> 84)
 
 `docs/design/findall_iter_i2.md` rev 2; `docs/spec/match_api.md` §3.8.1-§3.8.2.
 
@@ -84,9 +84,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
   (`pcrec_emit_next_decl` takes that storage for `_next_n`'s declaration), so
   `rx_info.next_n` is NULL exactly where `.next` is (`emit_info_def`).
 - **The shared block** gains `rx_nextnfn` (beside `rx_nextfn`, emit_dfa.c)
-  and, from `pcrec_emit_iter_abi_types`, `RX_FOREACH_PAIRS` (the block's one
-  `#ifndef` default), `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull` and
-  `RX_FOREACH`. All of it is scaffold.
+  (scaffold). `RX_FOREACH` was dropped before landing (D175).
 - **`_next`'s OBJECT is not I1's** (the TU gains a second caller of the shared
   statics); its body TEXT is, checked by `tests/findall/run_one_body.sh`
   (ruling R1, `docs/dev/lanes/i2build_report.md`).

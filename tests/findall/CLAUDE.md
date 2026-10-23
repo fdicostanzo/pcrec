@@ -12,10 +12,9 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   oracle) and match_api.md §3.1.3's loop (`L`), plus the state-machine arms
   (sticky, endset, nullcaps, poison, dirty-init, info, at1), and the I4 arms
   (`<prefix>_next_n` at k = 1, 2, 3, 64; its NULL-caps count; `_next` and
-  `_next_n` alternating; RX_FOREACH; RX_FOREACH with a break after 1, 3, 5, 7;
-  k = 0 on FRESH/BOUND/ENDED; the fill count against a simulation; a record of
-  another abi refused). Each subject's `R=` field lists the reach tokens of
-  sabotage rows S1309-S1320, which `run_iter_diff.sh` floors (`REACH_NEED`).
+  `_next_n` alternating; the generic loops over `info->next` (G1) and
+  `info->next_n` (GN, batches of 4); k = 0 on FRESH/BOUND/ENDED). Each subject's `R=` field lists the reach tokens of
+  sabotage rows S1309-S1314, S1319, S1321, which `run_iter_diff.sh` floors (`REACH_NEED`).
   Verdicts OK /
   DIFF / GIVEUP / ILLFORMED / SKIP (its header defines each). The caps buffer
   and the `rx_iter` are heap-allocated at their exact sizes, so an over-write
@@ -33,8 +32,7 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   with the loop) is counted, the documented boundary difference.
 - **run_findall_tests.sh** — the section: `run_iter_diff.sh cells.tsv`,
   `run_one_body.sh`, then the ASan cells (a subset rebuilt with
-  `-fsanitize=address,undefined -DRX_FOREACH_PAIRS=8`, so the 3-group cell's
-  kmax is 2 and the 10-group cell is refused).
+  `-fsanitize=address,undefined`).
   `run_iter_diff.sh` is also in `tests/lib/san_scripts.txt` ([TT-9]), so the
   sanitizer axes run it through `$GENCFLAGS`.
 - **run_one_body.sh** — [FINDALL-NEXT] I4 (ruling R1), re-pinned by lane

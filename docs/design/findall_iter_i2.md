@@ -1,5 +1,7 @@
 # [FINDALL-NEXT] I4 — `<prefix>_next_n` and the generic `RX_FOREACH` (DESIGN NOTE, revision 2)
 
+> **SUPERSEDED IN PART (D175, Frank 2026-10-23): `RX_FOREACH` was DROPPED before landing.** `_next` and `_next_n` stay; generic callers loop over `info->next` / `info->next_n` (match_api.md §3.8.2). Every `RX_FOREACH` passage below is the design as proposed, kept as the record.
+
 **Revision 2** (lane `i2rev`, 2026-10-21, on `lane/i2design`) applies every disposition of
 the light D6 panel r1 (`docs/dev/reviews/2026-10-21-r1-findall-i2.md`: critics `i2crit-chk`,
 `i2crit-sem`, `i2crit-fam`; 21 findings, 16 ACCEPT, 1 NOTE, 4 UNLOCK, plus one

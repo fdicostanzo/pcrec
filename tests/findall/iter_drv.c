@@ -39,17 +39,13 @@
  *            is an ASan error in the ASan cells), every group compared
  *   nnnull   <p>_next_n with caps == NULL counts what I listed
  *   X        <p>_next and <p>_next_n(.., 2) alternating on one iterator
- *   F        RX_FOREACH(&<p>_info, ..), refused (no body, PCREC_ERR_ITER)
- *            where the record's ncaps exceeds RX_FOREACH_PAIRS
- *   Fstop    RX_FOREACH with a break after j = 1, 3, 5, 7: I's first j
+ *   G1       a plain loop over info->next (&<p>_info, one match per call), as a
+ *            caller serving any artifact writes it (match_api.md §3.8.2)
  *   N0       <p>_next_n(.., 0) is inert on a FRESH (the setter after it
  *            still applies), a BOUND (the continuation is I's) and an ENDED
  *            (returns 0, rc kept) iterator
- *   Fcount   RX_FOREACH over a copy of the record whose next_n counts its
- *            calls: the count equals a simulation of the fills (1, 2, 4, ..
- *            capped at min(64, RX_FOREACH_PAIRS / ncaps)) over I's matches
- *   Fabi     RX_FOREACH over a copy with abi + 1: no body, rc ==
- *            PCREC_ERR_ITER, ENDED, lo untouched
+ *   GN       a plain loop over info->next_n (a batch of 4 per call, the
+ *            stride the record's ncaps), as the same caller writes it
  * R= lists the REACH tokens of the cell (run_iter_diff.sh counts them, K35):
  * the condition each sabotage row's witness needs (§5.4).
  *
@@ -300,41 +296,34 @@ static void x_drain(rx_iter *it, Out *o)
     free(e);
 }
 
-/* I4: RX_FOREACH over `info`; `stop` > 0 breaks after that many matches and
- * then writes no end code (the iterator's rc is not meaningful after an early
- * exit, match_api.md §3.8.2¶4). Returns the number of bodies run. */
-static int fe_drain(const struct rx_info *info, rx_iter *it, Out *o, int stop)
+/* The generic loops (§3.8.2): over the record alone, as a caller that serves
+ * any artifact writes them. g1_drain: one match per call through info->next;
+ * gn_drain: batches of 4 through info->next_n, the stride info->ncaps. */
+static void g1_drain(const struct rx_info *info, rx_iter *it, Out *o)
 {
-    int j = 0;
+    ptrdiff_t (*e)[2] = malloc(sizeof(*e) * NCAPS);
+    if (!e) abort();
     out_reset(o);
-    RX_FOREACH(info, it, m) {
-        out_match(o, (const ptrdiff_t (*)[2])m, ngroups);
-        if (++j == stop || o->k >= MAXM) break;
-    }
-    if (stop == 0) out_end(o, it->rc);
-    return j;
+    while (o->k < MAXM && info->next(it, e))
+        out_match(o, (const ptrdiff_t (*)[2])e, ngroups);
+    out_end(o, it->rc);
+    free(e);
 }
 
-static size_t fcount_calls;
-static size_t fcount_next_n(struct rx_iter *it, ptrdiff_t (*c)[2], size_t k)
+static void gn_drain(const struct rx_info *info, rx_iter *it, Out *o)
 {
-    fcount_calls++;
-    return F(_next_n)(it, c, k);
-}
-
-/* The calls RX_FOREACH makes for `mm` matches, by simulating its fills: the
- * first asks 1, each full fill doubles up to kmax, and the first fill that
- * returns fewer than it asked is the last (0 where kmax is 0: refused). */
-static size_t fills_for(size_t mm, size_t kmax)
-{
-    size_t calls = 0, got = 0, k = 1;
-    if (kmax == 0) return 0;
+    size_t nc = (size_t)info->ncaps;
+    ptrdiff_t (*e)[2] = malloc(sizeof(*e) * nc * 4);
+    if (!e) abort();
+    out_reset(o);
     for (;;) {
-        calls++;
-        if (mm - got < k) return calls;
-        got += k;
-        if (k < kmax) k = 2 * k < kmax ? 2 * k : kmax;
+        size_t r = info->next_n(it, e, 4);
+        for (size_t i = 0; i < r; i++)
+            out_match(o, (const ptrdiff_t (*)[2])(e + i * nc), ngroups);
+        if (r < 4 || o->k >= MAXM) break;
     }
+    out_end(o, it->rc);
+    free(e);
 }
 
 /* `a` equals `b` up to `a`'s give-up: `a` is a prefix of `b`'s matches. */
@@ -363,9 +352,6 @@ int main(int argc, char **argv)
     if (re) pcre2_pattern_info(re, PCRE2_INFO_CAPTURECOUNT, &pc);
     ngroups = (int)pc + 1 < NCAPS ? (int)pc + 1 : NCAPS;
     Out oI = { 0 }, oG = { 0 }, oL = { 0 }, oX = { 0 }, oY = { 0 };
-    size_t ncaps_rec = F(_info).ncaps > 0 ? (size_t)F(_info).ncaps : 0;
-    size_t kmax = ncaps_rec && ncaps_rec <= RX_FOREACH_PAIRS ? RX_FOREACH_PAIRS / ncaps_rec : 0;
-    if (kmax > 64) kmax = 64;
     ptrdiff_t c[NCAPS][2];
     while (fgets(line, sizeof line, stdin)) {
         size_t len = strlen(line);
@@ -462,31 +448,17 @@ int main(int argc, char **argv)
             if (strcmp(oX.p, oI.p) != 0) strcat(fail, " X");
         }
         {
-            rx_iter ifr = RX_ITER_INIT(s, n);
-            int ran = fe_drain(&F(_info), &ifr, &oX, 0);
-            if (kmax == 0) {
-                if (ran || ifr.rc != PCREC_ERR_ITER || ifr.hdr != PCREC_ITER_ENDED) strcat(fail, " F");
-                strcat(reach, " frefused");
-            } else {
-                if (strcmp(oX.p, oI.p) != 0) strcat(fail, " F");
-                if (mI >= 1) strcat(reach, " f1");
-                if (mI >= 2) strcat(reach, " f2");
-                if (kmax < 64 && mI >= 3) strcat(reach, " kmaxcap");
-            }
+            rx_iter ig = RX_ITER_INIT(s, n);
+            g1_drain(&F(_info), &ig, &oX);
+            if (strcmp(oX.p, oI.p) != 0) strcat(fail, " G1");
+            if (mI >= 1) strcat(reach, " g1");
+            if (mI >= 2) strcat(reach, " g2");
         }
-        if (kmax) {
-            static const int js[] = { 1, 3, 5, 7 };   /* 1, 3, 7 end the fills 1, 2, 4 */
-            int atend = 0;
-            for (int q = 0; q < 4; q++) {
-                rx_iter is = RX_ITER_INIT(s, n), ij = RX_ITER_INIT(s, n);
-                fe_drain(&F(_info), &is, &oX, js[q]);
-                out_reset(&oY);
-                for (int t = 0; t < js[q] && F(_next)(&ij, c); t++)
-                    out_match(&oY, (const ptrdiff_t (*)[2])c, ngroups);
-                if (strcmp(oX.p, oY.p) != 0) { strcat(fail, " Fstop"); break; }
-                if (js[q] != 5 && mI > (size_t)js[q]) atend = 1;
-            }
-            if (atend) strcat(reach, " fstopend");
+        {
+            rx_iter ig = RX_ITER_INIT(s, n);
+            if (F(_info).next_n) gn_drain(&F(_info), &ig, &oX);   /* a NULL is the info arm's */
+            if (strcmp(oX.p, oI.p) != 0) strcat(fail, " GN");
+            if (mI >= 5) strcat(reach, " gn5");
         }
         {
             ptrdiff_t (*e)[2] = malloc(sizeof(*e) * NCAPS);
@@ -513,26 +485,6 @@ int main(int argc, char **argv)
             strcat(reach, " n0ended");
             if (!ok) strcat(fail, " N0");
             free(e);
-        }
-        if (kmax) {
-            struct rx_info ci = F(_info);
-            ci.next_n = fcount_next_n;
-            rx_iter icn = RX_ITER_INIT(s, n);
-            fcount_calls = 0;
-            fe_drain(&ci, &icn, &oX, 0);
-            if (strcmp(oX.p, oI.p) != 0 || fcount_calls != fills_for(mI, kmax)) strcat(fail, " Fcount");
-            if (mI >= 2) strcat(reach, " fcount2");
-            if (mI >= 63) strcat(reach, " fcount63");
-        }
-        {
-            struct rx_info ca = F(_info);
-            ca.abi += 1;
-            rx_iter iab = RX_ITER_INIT(s, n);
-            iab.lo = 0x5A5A;
-            int ran = fe_drain(&ca, &iab, &oX, 0);
-            if (ran || iab.rc != PCREC_ERR_ITER || iab.hdr != PCREC_ITER_ENDED || iab.lo != 0x5A5A)
-                strcat(fail, " Fabi");
-            strcat(reach, " fabi");
         }
 
         const char *v;

@@ -18,7 +18,7 @@
   - [§3.7](#s3-7) Compounds
   - [§3.8](#s3-8) `<prefix>_next` — the find-all iterator
     - [§3.8.1](#s3-8-1) `<prefix>_next_n` — several matches per call
-    - [§3.8.2](#s3-8-2) `RX_FOREACH` — every match through any artifact's record
+    - [§3.8.2](#s3-8-2) Looping over any artifact's record
 - [§4](#s4) Give-up and refusal codes
 - [§5](#s5) Captures and groups
   - [§5.1](#s5-1) What a written slot holds
@@ -153,8 +153,7 @@ scoped by neither of the above. In declaration order the types are
 `rx_var`, `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_renderfn`,
 `rx_group_entry`, `rx_nextfn`, `rx_nextnfn`, `struct rx_info`, `rx_iter` (with
 its initializer `rx_iter_init` / `RX_ITER_INIT` and the setters `rx_iter_at`
-and `rx_iter_vars`, §3.8) and `rx_foreach` (with `rx_foreach_begin`,
-`rx_foreach_pull`, `RX_FOREACH` and `RX_FOREACH_PAIRS`, §3.8.2). They are spelled `rx_*` regardless of
+and `rx_iter_vars`, §3.8). They are spelled `rx_*` regardless of
 the prefix, so that two differently-prefixed matchers compose in one
 translation unit (one matcher links directly as another's callout, with no
 adapter). They live inside their own `PCREC_RX_ABI_H` guard, separate from
@@ -168,9 +167,7 @@ on every artifact, a DFA-only one included: the give-up and refusal codes
 constants `PCREC_ENGINE_DFA` / `PCREC_ENGINE_VM` (§6), the nine stamp
 bit constants `PCREC_VM_RUNG_*` / `PCREC_VM_STRAT_*` / `PCREC_VM_PRUNE_*`
 (§6.3), and the iterator's `PCREC_ITER_*` constants (§3.8). No per-prefix spelling of any of them exists.
-`RX_FOREACH_PAIRS` is the block's one caller-overridable default: it is
-defined under `#ifndef`, so a translation unit may define it before the first
-pcrec header (§3.8.2). What stays per-prefix
+What stays per-prefix
 is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 (including the three masks), and the budget, capacity and sizing macros.
 
@@ -358,67 +355,6 @@ static inline void rx_iter_at(rx_iter *it, size_t pos)
 /* The caller's variables, by name, for every search of this find-all. */
 static inline void rx_iter_vars(rx_iter *it, const rx_var *v, size_t nv)
 { PCREC_ITER_SET_(it, (it->vars = v, it->nvars = nv), PCREC_ITER_OPT_VARS); }
-
-/* RX_FOREACH(info, it, m) { ... }: every match of a FRESH or BOUND
- * iterator through any artifact's record (info->next_n), m pointing at
- * info->ncaps pairs. The matches are fetched in batches into a stack
- * buffer of RX_FOREACH_PAIRS pairs (batch sizes unspecified, at most 64
- * entries), so the iterator is finished when the loop exits, however it
- * exits; it.rc is meaningful only after a loop that ran to its end. A
- * record of another abi, with no next_n, or with more groups than the
- * buffer holds ends the iterator with PCREC_ERR_ITER and no body run.
- * Needs C99; m must be an identifier. */
-#ifndef RX_FOREACH_PAIRS
-#define RX_FOREACH_PAIRS 256    /* the macro's buffer, in pairs: 64 entries at NCAPS <= 4 */
-#endif
-typedef struct rx_foreach {
-    rx_nextnfn fn;
-    rx_iter   *it;
-    ptrdiff_t (*cur)[2];        /* the match being delivered */
-    size_t     ncaps, k, kmax, head, count;
-    int        brk;             /* 1 while the body runs; left 1 by a break */
-    ptrdiff_t  buf[RX_FOREACH_PAIRS][2];   /* last, so an over-run leaves the object */
-} rx_foreach;
-
-static inline rx_foreach *rx_foreach_begin(rx_foreach *f, const struct rx_info *info,
-                                           rx_iter *it)
-{
-    size_t nc = 0;
-    f->it = it; f->head = f->count = 0; f->brk = 0;
-    if (info->abi == PCREC_RX_ABI_H && info->next_n && info->ncaps > 0)
-        nc = (size_t)info->ncaps;
-    f->fn = nc ? info->next_n : (rx_nextnfn)0;
-    f->ncaps = nc;
-    f->kmax = nc ? RX_FOREACH_PAIRS / nc : 0;
-    if (f->kmax > 64) f->kmax = 64;
-    f->k = f->kmax ? 1 : 0;
-    if (f->k == 0 && it->hdr != PCREC_ITER_ENDED) {   /* refused */
-        it->rc = PCREC_ERR_ITER;
-        it->hdr = PCREC_ITER_ENDED;
-    }
-    return f;
-}
-
-static inline int rx_foreach_pull(rx_foreach *f)
-{
-    if (f->head == f->count) {
-        size_t k = f->k;
-        if (k == 0) return 0;                       /* ended, or refused at begin */
-        f->count = f->fn(f->it, f->buf, k);
-        f->head = 0;
-        if (f->count < k) f->k = 0;                 /* it ended inside this fill */
-        else if (k < f->kmax) f->k = 2 * k < f->kmax ? 2 * k : f->kmax;
-        if (f->count == 0) return 0;
-    }
-    f->cur = f->buf + f->head++ * f->ncaps;
-    return 1;
-}
-
-#define RX_FOREACH(info_, it_, m_)                                                       \
-    for (rx_foreach rx_fe_##m_, *rx_fp_##m_ = rx_foreach_begin(&rx_fe_##m_, (info_), (it_)); \
-         !rx_fp_##m_->brk && rx_foreach_pull(rx_fp_##m_); )                              \
-        for (ptrdiff_t (*m_)[2] = (rx_fp_##m_->brk = 1, rx_fp_##m_->cur);                \
-             rx_fp_##m_->brk; rx_fp_##m_->brk = 0)
 ```
 
 <a id="s2-p2"></a>[2¶2] The block ends with a comment describing `<prefix>_next_pos` and then
@@ -641,8 +577,8 @@ is §9.
 <a id="s3-1-3-p1"></a>[3.1.3¶1] `<prefix>_search` is one-shot: it finds the first match at or after
 `startpos`. The find-all iterator `<prefix>_next` (§3.8) reports every match
 as PCRE2's global iteration does, validating the subject once rather than
-per search, and `RX_FOREACH` (§3.8.2) is the recommended way to loop over it;
-a caller who wants the one-shot entry's own iteration instead
+per search, a caller that serves any artifact loops over its record's `next`
+or `next_n` (§3.8.2); a caller who wants the one-shot entry's own iteration instead
 writes this loop:
 
 ```c
@@ -1200,62 +1136,46 @@ is not refused. A `0` from `k == 0` says nothing about the iterator.
 `rx_info.next` is (§6).
 
 <a id="s3-8-2"></a>
-#### 3.8.2 `RX_FOREACH` — every match through any artifact's record
+#### 3.8.2 Looping over any artifact's record
+
+<a id="s3-8-2-p1"></a>[3.8.2¶1] A caller that serves any artifact (a catalog, a loader over `dlsym`)
+holds only its `rx_info` (§6¶14b-c) and loops over `info->next` (one match per
+call, `rx_nextfn`) or `info->next_n` (a batch per call, `rx_nextnfn`). Neither
+needs the artifact's own header, only the shared ABI block of the same `abi`
+(§1¶5). `info->ncaps` is the stride of a batch, in pairs; `info->next_n` is
+NULL exactly where `info->next` is.
+
+<a id="s3-8-2-p2"></a>[3.8.2¶2] **One match per call:**
 
 ```c
 rx_iter it = RX_ITER_INIT(s, n);          /* setters as usual, while FRESH */
-int stopped = 0;
-RX_FOREACH(&rx_info, &it, m) {            /* any artifact's rx_info */
-    report(m[0][0], m[0][1]);             /* m: ptrdiff_t (*)[2], info->ncaps pairs */
-    if (enough) { stopped = 1; break; }
-}
-if (!stopped && it.rc < 0) ...            /* the code that ended it (§4) */
+ptrdiff_t caps[NCAPS][2];                 /* info->ncaps pairs */
+while (info->next(&it, caps))
+    report(caps[0][0], caps[0][1]);
+if (it.rc < 0) ...                        /* the code that ended it (§4) */
 ```
 
-<a id="s3-8-2-p1"></a>[3.8.2¶1] `RX_FOREACH(info, it, m)` runs its body once per match of the iterator
-`it`, a FRESH or BOUND `rx_iter *`, through the record `info`, a `const
-struct rx_info *`. In the body `m` is a `ptrdiff_t (*)[2]` pointing at the
-match's `info->ncaps` pairs, as `<prefix>_search` writes `caps`. The macro and
-its state (`rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) are in the
-shared ABI block (§1¶5): a translation unit that includes any pcrec header of
-the same `abi` can iterate any artifact whose `rx_info` it holds, without that
-artifact's own header.
+<a id="s3-8-2-p3"></a>[3.8.2¶3] **A batch per call** (`buf` holds `k * info->ncaps` pairs; a return below `k`
+means the iterator has ended, §3.8.1¶3):
 
-<a id="s3-8-2-p2"></a>[3.8.2¶2] **Control flow is a plain loop's.** `break` ends the loop, `continue`
-goes to the next match, and `return` or `goto` leave it. Each argument is
-evaluated once. The loop's variables are declared in `for` initializers, so
-it needs C99 or later. `m` must be a plain identifier: it also names the
-macro's state, so nested `RX_FOREACH` loops with distinct `m` compile. The
-inner initializer uses the comma operator, so clang's `-Wcomma` warns at each
-use.
+```c
+rx_iter it = RX_ITER_INIT(s, n);
+ptrdiff_t buf[8 * NCAPS][2];
+size_t r, w = (size_t)info->ncaps;
+do {
+    r = info->next_n(&it, buf, 8);
+    for (size_t i = 0; i < r; i++)
+        report(buf[i * w][0], buf[i * w][1]);
+} while (r == 8);
+if (it.rc < 0) ...
+```
 
-<a id="s3-8-2-p3"></a>[3.8.2¶3] **Batches.** The macro fetches matches through `info->next_n` into a
-buffer of `RX_FOREACH_PAIRS` pairs (default 256) in its own automatic
-storage, one `rx_foreach` object (4,168 bytes on LP64 at the default). It
-never allocates. The batch sizes are UNSPECIFIED beyond at most 64 entries
-and at most `RX_FOREACH_PAIRS` pairs per call. `RX_FOREACH_PAIRS` may be
-defined before the first pcrec header; translation units with different
-values work together, because the buffer never crosses a call except as a
-pair pointer.
-
-<a id="s3-8-2-p4"></a>[3.8.2¶4] **An iterator handed to `RX_FOREACH` is finished when the loop exits,
-however it exits.** After an early exit the macro may already have fetched
-matches the body never saw, and the iterator is positioned after the last one
-fetched; it may even be ENDED. So `it.rc` is meaningful only after a loop that
-ran to its end, and calling `<prefix>_next`, `<prefix>_next_n` or
-`RX_FOREACH` on that iterator after an early exit is UNDEFINED. A caller who
-wants to stop and resume uses `<prefix>_next`. The body does not advance the
-iterator itself: matches it takes with `<prefix>_next` or `<prefix>_next_n`
-are skipped by the macro's next fetch.
-
-<a id="s3-8-2-p5"></a>[3.8.2¶5] **When the macro refuses.** The loop runs no body and ends the iterator
-with `it.rc == PCREC_ERR_ITER` when the record's `abi` is not the including
-header's `PCREC_RX_ABI_H`, when `info->next_n` is NULL, when
-`info->ncaps` is 0, or when it exceeds `RX_FOREACH_PAIRS`. `it.lo` is not set by a refusal (the
-iterator never searched). An iterator that is already ENDED is not touched:
-its `rc` stays, and no body runs. The `abi` compare is all-or-nothing and is
-made once per loop: a record of any other `abi` is refused even where the two
-layouts happen to agree.
+<a id="s3-8-2-p4"></a>[3.8.2¶4] **Either loop may stop early and resume.** Both entries leave the
+iterator exactly after the last match they delivered, so a caller may leave
+the loop at any point and continue with either entry; `it.rc` is meaningful
+once an entry has returned `0` (or fewer than `k`). The two deliver the same
+matches (§3.8.1); `next_n` spends fewer calls on cheap dense matches, `next`
+suits a caller that stops early or works on small subjects.
 
 ---
 
@@ -1279,7 +1199,7 @@ meaning the same thing at every entry: `<prefix>_search`, every `rx_matchfn`
 | `PCREC_ERR_STARTPOS` | −7 | below the floor | refused: the caller's `startpos` / `ctx->pos` is not a character boundary |
 | `PCREC_ERR_UNSET_VAR` | −8 | below the floor | refused: an unset or ill-formed variable value (`docs/spec/vars.md`) |
 | `PCREC_ERR_UTF` | −9 | below the floor | refused: `-futf-check` found an ill-formed subject |
-| `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5), or a record `RX_FOREACH` cannot use (§3.8.2¶5); `<prefix>_next`, `<prefix>_next_n` and `RX_FOREACH` leave it, in `it.rc` |
+| `PCREC_ERR_ITER` | −10 | below the floor | refused: an `rx_iter` written outside its rules (§3.8¶5); `<prefix>_next` and `<prefix>_next_n` leave it, in `it.rc` |
 
 <a id="s4-p2"></a>[4¶2] **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
 resource. A DFA artifact has no counter and never returns one, though it
@@ -1340,11 +1260,7 @@ under a different encoding or engine. None renumbers the give-up partition.
   was handed an `rx_iter` whose header is not a state it wrote (never
   initialized, zeroed) or that a setter wrote after the first call
   (§3.8¶5). It is delivered in `it.rc`, with `<prefix>_next` returning `0`;
-  `<prefix>_next_n` leaves it the same way (§3.8.1), and so does `RX_FOREACH`
-  (§3.8.2), which also leaves it for four causes of its own: the record's
-  `abi` is not the including header's, the record has no `next_n`, its
-  `ncaps` is 0, or its `ncaps` exceeds `RX_FOREACH_PAIRS` (§3.8.2¶5; `it.lo`
-  is not set by these).
+  `<prefix>_next_n` leaves it the same way (§3.8.1).
   No other entry returns it.
 
 <a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
@@ -1773,8 +1689,8 @@ so a caller holding only an artifact's `rx_info` (a catalog, a loader over
 `dlsym`) iterates with `info->next(&it, caps)` and needs no header.
 
 <a id="s6-p14c"></a>[6¶14c] **`next_n`** is the same iterator's several-per-call entry (§3.8.1),
-of the one type `rx_nextnfn`, and `NULL` exactly where `next` is. It is what
-`RX_FOREACH` calls (§3.8.2).
+of the one type `rx_nextnfn`, and `NULL` exactly where `next` is. Generic loops
+over it are §3.8.2's.
 
 <a id="s6-p15"></a>[6¶15] **`frame_capacity`'s sentinel differs from the same-named option's.** On the
 INPUT side `pcrec_options.frame_capacity == 0` means "let the compiler size

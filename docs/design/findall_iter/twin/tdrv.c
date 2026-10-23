@@ -47,9 +47,9 @@ size_t F(_next_n)(rx_iter *it, ptrdiff_t (*out)[2], size_t k);
 #ifndef NEXTN_K
 #define NEXTN_K 64
 #endif
-#ifdef RX_FOREACH   /* a built artifact (abi >= 84): full captures, NCAPS pairs per entry */
+#ifndef NN_STRIDE_ONE   /* a built artifact (abi >= 84): full captures, NCAPS pairs per entry */
 #define NN_STRIDE NCAPS
-#else               /* the pre-build twin's _next_n: one span pair per entry */
+#else                   /* the pre-build twin's _next_n: one span pair per entry */
 #define NN_STRIDE 1
 #endif
 #endif

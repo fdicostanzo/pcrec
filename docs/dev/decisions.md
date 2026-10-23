@@ -9897,3 +9897,11 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Scope:** not retroactive. The existing `--memfn=` namespace and the spellings already shipped stay. It binds new names and new spec sentences from 2026-10-22; the [IFACE-PUSH] review may apply it to old ones.
 - **First applications:** the [IFACE-PUSH] candidate flag bit 57 is filed by behaviour (working name `PCREC_NO_WINDOW_REPORT`, not `PCREC_NO_KIT_PROOF`); the kit's S3 "cover" spec prose (its new match_api and tuning paragraphs) is reworded by behaviour before delivery; S3's two deny rows stay under `--memfn=`.
 - **Revisit when:** [IFACE-PUSH] opens (decide whether to rename the legacy spellings there).
+
+## D175 — RX_FOREACH dropped; `_next` is the default find-all, `_next_n` the batch form (Frank, 2026-10-23)
+
+`<prefix>_next` and `<prefix>_next_n` (and `rx_info.next` / `rx_info.next_n`) stay. The `RX_FOREACH` macro family (`RX_FOREACH`, `RX_FOREACH_PAIRS`, `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) is dropped before landing, with the abi 83 -> 84 event amended (still 84; the branch had not landed).
+
+Evidence (find-all timing, job 599): RX_FOREACH was 4-11% slower than `_next` on cheap dense matches and 32-78% slower on tiny subjects and early stops; it won only on costly matches, where `_next_n` wins as much. A plain loop over `rx_info.next` costs 0.3-0.4% over a direct `_next`, and `rx_info.next_n` gives generic code the batching.
+
+Generic-loop rule: a caller that serves any artifact loops over `info->next` (one match per call) or `info->next_n` (a batch); the spec shows both (match_api.md §3.8.2). No macro stands between the caller and the entry. Supersedes the RX_FOREACH parts of `docs/design/findall_iter_i2.md` (D171).

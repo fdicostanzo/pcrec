@@ -84,7 +84,7 @@ stay in `out/` as the record.
   `_next`, two compiles), `I` (this compiler's `_next`), `F`/`Fb` (RX_FOREACH over `rx_info`,
   two compiles), `I_info` (`rx_info.next` per match), `N4`/`N64` (`_next_n`, entries NCAPS
   apart), cell `c8` (one match at byte 16 of 1 MiB, stop 1); the answer reference is `I_i1`;
-  G4 expects no PLT call of the rx_info arms. `tdrv.c` gains `ARM_FOREACH`, `ARM_INFO` and
+  G4 expects no PLT call of the rx_info arms. The F/Fb arms (`ARM_FOREACH`) need a compiler from before D175 (RX_FOREACH was dropped, 2026-10-23); they are the evidence behind that ruling and no longer build against this tree. `tdrv.c` gains `ARM_FOREACH`, `ARM_INFO` and
   `NEXTN_K`. `i4_verdict.py` (called by `parity_verdict.py` when an `Fb` arm is present):
   per-ratio A/A floors over the launches, gates G1 `I/I_i1`, G2 `F/I` never worse, G3 the
   positive gain on c3-4k/c3-1m R2, G4 c7/c8, and the `QUIET` line the queue job re-queues on.

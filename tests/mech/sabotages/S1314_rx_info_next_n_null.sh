@@ -2,8 +2,8 @@
 # docs/spec/match_api.md §3.8.1-§3.8.2). Old label: as S1306 for next.
 #
 # Plant: rx_info.next_n is NULL on every artifact.
-# Witness: F: RX_FOREACH refuses where I reports matches; the info arm (rx_info.next_n must be <prefix>_next_n).
-# Reach (K35): reach token f1 (artifacts that define next with >= 1 match); tests/findall/run_iter_diff.sh fails a run where it is 0.
+# Witness: the info arm (rx_info.next_n must be <prefix>_next_n); GN, the plain loop over info->next_n (iter_drv.c gn_drain), which has no entry to call.
+# Reach (K35): reach token g1 (artifacts that define next with >= 1 match); tests/findall/run_iter_diff.sh fails a run where it is 0.
 SAB_ID="S1314-rx-info-next-n-null"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="findall"

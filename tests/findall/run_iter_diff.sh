@@ -27,8 +27,7 @@
 #   lines are comments.
 # env: PCREC, CC, GENCFLAGS, PROCS (default 8), MIN_RETRY (default 25),
 #   MIN_GROUPS (default 20), ARMS (default "auto vm dfa"), KEEP=1,
-#   REACH_NEED (default: every I4 token but kmaxcap/frefused, which only an
-#   -DRX_FOREACH_PAIRS=8 build reaches)
+#   REACH_NEED (default: every I4 token)
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,7 +40,7 @@ PROCS="${PROCS:-8}"
 MIN_RETRY="${MIN_RETRY:-25}"
 MIN_GROUPS="${MIN_GROUPS:-20}"
 ARMS="${ARMS:-auto vm dfa}"
-REACH_NEED="${REACH_NEED:-n3m4 split gumid done63 vmcaps2 f1 f2 fstopend n0fresh n0bound n0ended fcount2 fcount63 fabi}"
+REACH_NEED="${REACH_NEED:-n3m4 split gumid done63 vmcaps2 g1 g2 gn5 n0fresh n0bound n0ended}"
 KEEP="${KEEP:-0}"
 export WATCHDOG_SECTION="${WATCHDOG_SECTION:-findall}"
 # the oracle's flags, once (tests/lib/resolve_pcre2.sh: pkg-config, else a

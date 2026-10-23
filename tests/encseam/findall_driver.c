@@ -16,7 +16,7 @@
  * `-p fa`), because a driver cannot be generic over a C identifier prefix.
  *
  * `findall_driver iter <subject>` runs the find-all ITERATOR instead, through
- * RX_FOREACH over the artifact's own record (§3.8.2, [FINDALL-NEXT] I4): its
+ * a plain loop over the artifact's own record, fa_info.next_n (§3.8.2, [FINDALL-NEXT] I4): its
  * matches are PCRE2's global iteration's, so the runner holds them to
  * `re.finditer`, where the loop above is held to the protocol oracle. */
 #include <stdio.h>
@@ -37,9 +37,14 @@ int main(int argc, char **argv)
         s = (const unsigned char *)argv[2];
         n = strlen(argv[2]);
         it = RX_ITER_INIT(s, n);
-        RX_FOREACH(&fa_info, &it, m) {
-            printf("%s%td,%td", first ? "" : " ", m[0][0], m[0][1]);
-            first = 0;
+        for (;;) {
+            ptrdiff_t batch[4][FA_NCAPS][2];
+            size_t r = fa_info.next_n(&it, &batch[0][0], 4);
+            for (size_t i = 0; i < r; i++) {
+                printf("%s%td,%td", first ? "" : " ", batch[i][0][0], batch[i][0][1]);
+                first = 0;
+            }
+            if (r < 4) break;
         }
         printf("\n");
         if (it.rc < 0) { fprintf(stderr, "give-up code %d\n", it.rc); return 3; }

@@ -33,7 +33,7 @@ engine, and the two engines reach a span through completely different code.
 `fa_next_pos(s, n, end - 1)`, a no-op under this suite's byte encoding).
 Prefix fixed at `fa` (a driver cannot
   be generic over a C identifier prefix). `findall_driver iter SUBJ`
-  ([FINDALL-NEXT] I4) runs RX_FOREACH over `fa_info` instead; the runner holds
+  ([FINDALL-NEXT] I4) runs a plain `fa_info.next_n` loop instead; the runner holds
   it to `re.finditer` on every case, so the lossy class is exact under it,
   and counts the lossy runs that agree (floor: every lossy case, both arms).
 - **findall_cases.txt** — TAB-separated CLASS / PATTERN / SUBJECT. The

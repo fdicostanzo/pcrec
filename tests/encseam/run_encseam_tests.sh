@@ -141,7 +141,7 @@ while IFS=$'\t' read -r cls pat subj || [ -n "${cls:-}" ]; do
         elif [ "$got" != "$want_p" ]; then
             bad "encseam [$arm]: '$pat' over '$subj' -> [$got], oracle protocol says [$want_p] (re.finditer: [$want_f])"
         fi
-        # [FINDALL-NEXT] I4: the iterator (RX_FOREACH over fa_info) is PCRE2's
+        # [FINDALL-NEXT] I4: the iterator (a next_n loop over fa_info) is PCRE2's
         # global iteration, so it answers re.finditer on EVERY case: the lossy
         # class is exact under it (match_api.md §3.8, §3.8.2).
         got="$(gen_run "encseam iter $arm '$pat'" "$d/drv" iter "$subj")"; rc=$?
