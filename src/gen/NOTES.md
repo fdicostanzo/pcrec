@@ -43,19 +43,28 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
   frameless) and `<prefix>_next`. The engine emitters supply the search body
   `<p>__find` and the retry `<p>__retry` and say the step's shape
   (`PcrecIterText`).
-- **The split.** emit_dfa.c's `<prefix>_search` is a wrapper
-  (`pcrec_emit_search_wrapper`: the head and the caller-position prologue)
-  over `<p>__find`, which `emit_search_head` writes with the FIND entry's
-  linkage; `find_body_shared` makes it `noinline` on the attempt route's
-  label-table body and `always_inline` elsewhere. emit_vm.c's search loop is
-  `<p>__find`, and `<searchfn>_run` is the range test and guard over it
-  (`vm_emit_search_run_prologue`).
-- **The retry.** DFA: `pcrec_emit_dfa_retry` scans `Job.nedfa` (the notempty
-  root, built by compile.c's `build_notempty_dfa` where `reports_empty`)
-  anchored at `q` (direction `dfa_dir_retry`). VM: `vm_emit_retry`, the
-  match-caps run with `run->notempty` set, and the accept label's guard
-  `if (run->notempty && scan_position == ctx->pos) goto <p>_fail;`.
-  `<PREFIX>_ITER_RETRY` names which.
+- **The split** (iterfix2: only where it buys something). Where the search
+  entry's caller-position prologue writes anything
+  (`pcrec_startpos_prologue_on`: a UTF check, or an encoding start guard
+  that is on) and an iterator is requested, emit_dfa.c's `<prefix>_search`
+  is a wrapper (`pcrec_emit_search_wrapper`) over `<p>__find`, which
+  `emit_search_head` writes as an EF_BODY row (entries.c);
+  `find_body_shared` makes it `noinline` on the attempt route's label-table
+  body and `always_inline` elsewhere; emit_vm.c's search loop is `<p>__find`
+  and `<searchfn>_run` is the range test then the guard over it
+  (`vm_emit_search_run_prologue`). Elsewhere nothing splits: the entries
+  are their pre-iterator text (EMIT-1: instruction-identical) and the step
+  calls the search entry itself.
+- **The retry** is THE RETRY TABLE (emit_iter.c): the first row that applies
+  names the stamp value and what the build needs (`PCREC_ITER_NEEDS_*`;
+  compile.c builds `Job.nedfa` only on NEEDS_NEDFA). DFA:
+  `pcrec_emit_dfa_retry` is one anchored attempt of `Job.nedfa` at `q`
+  (`dfa_dir_anchored` with `^`/`\A` false past 0, through
+  `dfa_start_from_context`). VM: `vm_emit_retry` runs
+  `<p>__match_notempty`, a textual copy of the matcher
+  (`vm_emit_guarded_matcher`) whose accept carries
+  `if (scan_position == ctx->pos) goto <p>_fail;`, so no existing entry
+  carries the guard.
 - **The residual twins** (src/enc/enc.c): every out-of-line residual entry
   is a static `<p>__<name>`; the exported name is a one-line forwarder.
   Every reference writes the twin's second `_` through
@@ -79,10 +88,10 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 
 - **One body, two controllers** (emit_iter.c `emit_one`, `emit_controllers`):
   I1's `_next` body is the static `always_inline` `<p>__one`; `_next` is
-  `return <p>__one(...)` and `_next_n` a loop of it up to `k`. No new
-  `PcrecEntry`: the `iterate` row emits both, with the NEXT entry's linkage
-  (`pcrec_emit_next_decl` takes that storage for `_next_n`'s declaration), so
-  `rx_info.next_n` is NULL exactly where `.next` is (`emit_info_def`).
+  `return <p>__one(...)` and `_next_n` a loop of it up to `k`. Each is its
+  own `PcrecEntry` (NEXT, NEXT_N; iterfix2) with its own linkage; NEXT_N's
+  parts include NEXT (a NULL `capture_spans` goes through
+  `<p>__one_local` -> `_next`), so `.next` is set wherever `.next_n` is.
 - **The shared block** gains `rx_nextnfn` (beside `rx_nextfn`, emit_dfa.c)
   (scaffold). `RX_FOREACH` was dropped before landing (D175).
 - **`_next`'s OBJECT is not I1's** (the TU gains a second caller of the shared

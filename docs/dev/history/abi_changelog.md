@@ -74,7 +74,20 @@ the bump's own commit.**
     `always_inline` `<prefix>__one_call` (`<prefix>_next`'s body, whose cursor
     is the iterator's own fields) and `<prefix>_next_n`, which holds the cursor
     in locals across its loop and returns before the bind when `k == 0`.
-    Still scaffold; no answer moves.
+    Still scaffold; no answer moves. Folded in by lane iterfix2 (2026-10-23,
+    the code review's fixes, before the landing): the search splits into
+    `<prefix>__find` only where the search entry's caller-position prologue
+    writes anything (a UTF check, or an encoding's start guard that is on);
+    elsewhere `<prefix>_search`/`<prefix>_search_run` keep their abi-83 text
+    and the iterator calls them. The DFA retry honours `^`/`\A` at a retry
+    position past 0 (an answer fix of the iterator only). The VM retry is a
+    guarded copy of the matcher, `<prefix>__match_notempty`, so the existing
+    matcher and entries carry no guard. `<prefix>__one_local` calls
+    `<prefix>_next` rather than holding a third step. `<prefix>_next_n` has
+    its own entry and linkage (`rx_info.next_n`). `<PREFIX>_ITER_RETRY`'s
+    values are `"none"`, `"retry"`, `"retry-budgeted"` (were `"none"`,
+    `"dfa-root"`, `"vm-guard"`; match_api.md §6.3.13). The iterator's text
+    carries no comments. No answer of an existing entry moves.
 - **`rx_info.abi` was `83` (lane corefix bumped it
   from 82, 2026-10-22: K128 and K129, docs/dev/known_issues.md; the number was first taken as 87, renumbered to 83 at landing; 84-87 are
   allocated to other branches, and whichever lands later renumbers).** Two

@@ -11,7 +11,8 @@
 #     parts' lines too, all compared).
 # Every byte of the iterator is scaffold, excluded from the counted size, except
 # the DFA notempty retry machine (a machine, counted like one). So a counted-size
-# move is EXPLAINED where the new artifact stamps ITER_RETRY "dfa-root"; a
+# move is EXPLAINED where the new artifact stamps ITER_RETRY "retry" (a DFA
+# artifact's retry machine; the VM's guarded matcher is scaffold); a
 # compound shell may move by one byte (its `__next_pos` reference). Every other
 # move, and every outcome or engine difference, is listed.
 #
@@ -81,7 +82,7 @@ def cell(job):
     if a[1] == b[1]:
         return ("same", pat, eng, None, None)
     retry, comp = b[3]
-    if retry == b"dfa-root":
+    if retry == b"retry":
         return ("moved-retry-root", pat, eng, a[1], b[1])
     if comp not in (b"", b"none"):
         da = [int(x[1]) for x in a[1]]

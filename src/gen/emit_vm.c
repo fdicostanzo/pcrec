@@ -12519,8 +12519,8 @@ static const char *vm_vars_resolve_insert(Vm *v, const char *ctxexpr)
  *
  * A COPY, NOT A FLAG: a guard on a run-state flag in the one matcher costs
  * every search and match entry a load and a test at each accept, and
- * reshapes the out-of-line matcher (measured +10-14% on nullable patterns,
- * 2026-10-23 r2 EMIT-1); the program's computed goto keeps gcc from
+ * reshapes the out-of-line matcher (measured +10-14% on nullable
+ * patterns); the program's computed goto keeps gcc from
  * inlining or cloning it, so only a second text keeps the entries' code
  * unchanged. Scaffold (§6.4): no length decision reads it. Written where the
  * retry table's winner needs it (`PCREC_ITER_NEEDS_GUARDED`), above the

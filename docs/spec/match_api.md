@@ -2096,7 +2096,7 @@ call site's `subject[pos++]` is still evaluated). Two tables per machine are
 foldable, `<m>_next_state` and `<m>_is_accepting`, over the same machines
 `_DFA_TABLE` and `_DFA_SCAN_EDGE` compose (so none of the three can name a
 machine the artifact does not contain), plus the find-all iterator's retry machine where the
-artifact carries it (`<PREFIX>_ITER_RETRY` `"dfa-root"`, §6.3.13), so the value runs `0..8`;
+artifact carries it (a DFA artifact whose `<PREFIX>_ITER_RETRY` is `"retry"`, §6.3.13), so the value runs `0..8`;
 `0` on `"attempt"` and `"empty"` apart from that retry machine. It is family (b) in nature — what the emitted machine turned out to
 contain — and is owed because a fold is visible only as a table's ABSENCE.
 `tests/codegen/run_dfa_uniform_fold.sh` reads it. The artifact is smaller and
@@ -2855,14 +2855,20 @@ plain artifact: the forms an artifact built under `-fmemfn-simd` differs by.
 
 <a id="s6-3-13-p1"></a>[6.3.13¶1] **`<PREFIX>_ITER_RETRY`** — how `<prefix>_next` (§3.8) finds the
 non-empty match after an empty one at the same position, on every artifact
-of both engines: `"none"` (the artifact never reports an empty span, the
-`reports_empty` fact, or does not define `<prefix>_next`), `"dfa-root"` (an
-anchored machine whose start states admit no empty match) or `"vm-guard"`
-(the VM's accept rejects an empty match at the attempt's start). It is
-pattern-level and emitted beside `<PREFIX>_UTF_CHECK`.
+of both engines. Each value says what the caller sees:
+
+| value | the caller sees |
+|---|---|
+| `"none"` | no retry: the artifact never reports an empty span (the `reports_empty` fact), or defines neither `<prefix>_next` nor `<prefix>_next_n` |
+| `"retry"` | an empty match is retried once at its position (one anchored, non-empty attempt, PCRE2's NOTEMPTY_ATSTART); the retry is linear in the subject and counts against no match budget |
+| `"retry-budgeted"` | the same retry, run under the artifact's match budget: a retry that exhausts it ends the iterator with that budget's give-up code, as a search would |
+
+<a id="s6-3-13-p2"></a>[6.3.13¶2] The value is the first row of the artifact's retry table that applies
+(`src/gen/emit_iter.c`, THE RETRY TABLE). It is pattern-level and emitted
+beside `<PREFIX>_UTF_CHECK`.
 
 ```c
-#define RX_ITER_RETRY "dfa-root"
+#define RX_ITER_RETRY "retry"
 ```
 
 ---

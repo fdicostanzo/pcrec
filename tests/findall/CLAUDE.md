@@ -22,8 +22,8 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
 - **run_iter_diff.sh** — the differential over a cell file, grouped by
   (encoding, flags, pattern), each group on `auto`, `--engine=vm` and
   `--engine=dfa` (a DFA refusal is not a cell). Also holds
-  `<PREFIX>_ITER_RETRY` to the text (`vm-guard` iff the accept guard,
-  `dfa-root` iff a retry machine). Floors: compiled groups, RETRY cells
+  `<PREFIX>_ITER_RETRY` to the text (`retry-budgeted` iff the guarded
+  matcher `<p>__match_notempty`, `retry` iff a retry machine). Floors: compiled groups, RETRY cells
   (subjects where `I` differs from `L`, i.e. the retry decided a match), and
   at least one artifact of each retry form, and every I4 reach token. A
   GIVEUP is a failure except under `-futf-check` (the documented refusal of
@@ -62,8 +62,8 @@ test-findall` runs `run_findall_tests.sh`; mech arm `findall`.
   delivery-bar run): every corpus pattern under the parent compiler and the
   iterator's, default engine and `--engine=vm`, comparing the outcome, the
   engine stamps and the COUNTED size (`--warn-emit-bytes=1`'s report, what a
-  length decision reads). A counted move is explained only by a dfa-root
-  retry machine, or by one byte on a compound shell.
+  length decision reads). A counted move is explained only by a DFA
+  retry machine (`retry`), or by one byte on a compound shell.
 
 The pattern column is the pattern as written; the subject column is the
 `.rxt` subject-escape vocabulary. libpcre2 is resolved by
