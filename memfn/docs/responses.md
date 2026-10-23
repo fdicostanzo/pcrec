@@ -2996,3 +2996,4 @@ the compiler, and is never adopted silently. Proposed for main to file
        A check asserts that every cost an artifact used is a declared row of its stamped set.
     3. Units: costs are recorded RELATIVE to the scalar walk's per-byte cost on the same box (as measures.md already designs). The raw absolute readings (ns, box, clock, compiler, commit) are kept as provenance and listed beside them. The resolution must be fine enough that near-ties are decided by rates, not rounding.
   - Agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements.
+- notice: 2026-10-23 — **Stop-ranking Q2 (Frank: "Yes. It sounds simpler as well"):** the Horspool skip (D-hors) becomes one METHOD in Table A's priced choice, priced (probe + rate × verify) / E[sh]. HORS_MIN and the separate admission rule are DELETED. It builds with Q1's first step, after the probe cost is measured. The simplification counts as a benefit.
