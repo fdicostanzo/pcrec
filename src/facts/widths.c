@@ -238,7 +238,12 @@ static RepW rw_node(const Ast *a, bool has_k)
     RepW acc = zero;
     for (;;) {
         switch (a->k) {
-        case A_WCLASS: case A_CLASS: {   /* a class consumes a character */
+        case A_WCLASS: {   /* a wide class consumes a character (its own arm:
+                            * tests/codegen/run_cpset_structure.sh [5b]) */
+            RepW x = { RW_POS, RW_INF };
+            return rw_cat(x, acc);
+        }
+        case A_CLASS: {    /* so does a byte class */
             RepW x = { RW_POS, RW_INF };
             return rw_cat(x, acc);
         }
