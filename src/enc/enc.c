@@ -238,11 +238,13 @@ static void enc_emit_twin_text(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     }
 }
 
-/* The one byte that turns `<p>_<name>` into its twin `<p>__<name>`, inside
- * the scaffold bracket, so a renamed reference is the length it was. */
+/* The one byte that turns `<p>_<name>` into its twin `<p>__<name>`, a
+ * scaffold byte, so a renamed reference is the length it was; inside an open
+ * scaffold bracket (the iterator's bind checks) every byte already is one. */
 void pcrec_enc_twin_mark(StrBuf *sb)
 {
-    pcrec_sb_scaffold_putc(sb, '_');
+    if (sb->scaf_open) pcrec_sb_putc(sb, '_');
+    else pcrec_sb_scaffold_putc(sb, '_');
 }
 
 void pcrec_enc_twin_name(StrBuf *sb, const char *prefix, const char *name)
