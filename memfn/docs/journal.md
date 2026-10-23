@@ -2805,3 +2805,21 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - a census class for utf8 cover facts.
 - Findings on main (since S2, measured at c3ea619c3): S284's claim expired (now DETECTED), and S283's plant moves nothing (UNDETECTED). Sent to main.
 - 604-kit-s3-heavy is queued after main's iterland 602/603. The iterators will likely take abi 84, so S3 renumbers to 85 at landing.
+
+## 2026-10-23 (morning) — S3 timing 605: bar passes, mover sample shows a regression
+
+- 604 (S3 heavy) is GREEN. 605 (S3 timing) is GREEN as a run; BAR FAIL on one cell only, foobar match/real 1.032.
+  - That cell is a layout effect: rx_match is instruction-identical and only moved (rx_search shrank).
+  - All 5 caps are inside.
+  - Scalar: 41 faster, 26 within, 5 slower; best wins 0.17 and 0.24.
+- The mover sample (24 rows, outside the bar) is SLOWER on 40 of 122 cells: WALK/one 39 of 46, up to 29x on `(?i)x/1234`, 7.4x on `(?i)foobar`.
+  - Cause, from a manager probe: E-find's B knows only memchr (one byte) or a byte walk. A two-member caseless stop {B,b} walks byte by byte, where DEF hands off with two memchr streams.
+  - 581's bar cells had no caseless literal, so the bar missed it.
+- E[sh]: D-hors is slower at E ≈ 1 (1.7-2.7x) and faster from about 1.2 (down to 0.24). max(sh) does not predict it. E[sh] is supported; the cut-off is not fixed.
+- Leaning put to Frank:
+  - S3 does not land as is;
+  - E-find's B takes the kit's full FIND form set (the two-stream find included);
+  - the stratified sample becomes part of the gate;
+  - foobar match/real becomes a named layout cap;
+  - E[sh] admission waits.
+- Awaiting his go. Report: s3_report.md Part 6 (3f81ed7c3, a017fe98a).
