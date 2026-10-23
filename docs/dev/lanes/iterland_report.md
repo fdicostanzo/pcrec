@@ -156,3 +156,38 @@ here (the (A) reference is main's to move).
 - Re-pins, each from the check's own output: rxtsource CENSUS/RUNSH blocks 6043 -> 6048, lines 73986 -> 74005; C3 PASS 21942 -> 21957, SKIP 51958 -> 51962, SKIP_PCRE2ONLY 19373 -> 19377, VERIFIABLE 24174 -> 24189 (test-rxtsource 298/0); `manifest_s2_vm_forced.tsv` four global.rxt rows renumbered (736/758/900/1271 -> 738/760/902/1273, same patterns), +3 rows (1610, 1619, 1628) (test-startset 22/0).
 - Light verdicts: test-rxtsource, test-findall, test-partlayout, test-codegen, test-registry, test-spec-history (173/0 and 11/0), test-plan-lint, test-startset, test-start-landing, test-ci-shards all green after the re-pins; no engine regression seen.
 - Queued: `602-iterland-test` (retry of the killed run, `expect sections=77`), then `603-iterland-mech` (23 rows: S1297-S1314, S1319, S1321, S02, S05, S693; the retired macro rows S1315-S1318 and S1320 are out; dry-run needed `BOXQUEUE_DRY_BOUND=120` on the loaded box).
+
+## iterpin (2026-10-23): re-aim of the checks iterfix2 moved
+
+Cause: iterfix2 (88ef44996 / 9a8f07602 / ba7da2ab6) splits the search only
+where a UTF-check / start-guard prologue exists. A byte artifact keeps the body
+in `rx_search` (DFA) or `rx_search_run` (VM) with no `rx__find`; a utf8 one has
+the body in `rx__find` and a thin wrapper under the old name. The VM anchored
+program is also written a second time as the scaffold copy
+`<prefix>__match_notempty`. Every check was RE-AIMED, none weakened; a check
+that finds nothing to read now FAILS.
+
+| check | old assertion | new site | sabotage proof |
+|---|---|---|---|
+| run_anchored_match.sh §2 positive half | search carries a prefilter, read from `rx__find` | `rx__find`, else the `rx_search` definition; neither found = RED ("neither rx__find nor an rx_search body") | shim removing every prefilter spelling from the artifact: all 4 §2 rows RED ("NO prefilter in its search body"); shim planting `memchr(subject + scan_position` in `rx_match`: all 4 §2 rows RED |
+| run_presence.sh [pr8] | verdict precedes first attempt, in `rx__find` | `search_body_start`: first of rx__find / rx_search_run / rx_search DEFINITION (attribute-prefixed heads included) that carries the attempt marker; none = RED "no search body"; `plant` uses the same finder | rename the three candidate names in the file: 4 [pr8] rows RED "no search body"; the existing [pr8-negative] reorder plants still report (24/24 green) |
+| run_encoding_checks.sh DD12a(i) | byte vs utf8 text equal outside named encoding-owned regions | new counted region `search_split`: utf8's wrapper `rx_search`/`rx_search_run` (K50 guard shell around `return rx__find(`) excised, the bounds line `if (search_from > subject_length) return 0;` (moved into the wrapper) excised, body head and iterator call name canonicalised to `rx__BODY`. Hot loop beneath compared text for text. 625 hits in the slice; added to the vacuity list (zero = RED) | shim planting `if (subject_length == 12345) return 0;` in every utf8 `rx__find` body: RED again, 231 of 237 strict pairs differ, FINDING lines |
+| run_simd_guarded.sh arithmetic | stamp = blocks x block size, blocks counted over the whole text | `strip_blocks` also returns blocks inside the scaffold copy `__match_notempty`; the stamp counts SIMD bytes outside it (the copy is scaffold bytes, `scaf_guarded`, read by no decision), so arithmetic uses `nblk - ncopy`; floor `scaffold-copy` 200 (328 measured) | witness shim bumping the stamp by one nibble: arithmetic RED in every arm; witness shim renaming the copy function: RED (NEUTRALITY trips first, copy blocks unaccounted) |
+
+UNKNOWN verdicts:
+- Encoding: the byte/utf8 difference is ONLY the prologue split (wrapper shell,
+  moved bounds line, symbol names, and the already-excised K49 advance / guards).
+  The hot loop is identical, so the comparison was re-aimed rather than stopped.
+- memfn-guarded: stamp 2 blocks vs 3 blocks in the text on the ladder named
+  witness and 328 corpus cells: the third is the scaffold copy's inner block
+  (`vm_emit_guarded_matcher`, iterfix2 f298d084e), counted as scaffold bytes by
+  design. Neutrality (artifact equal with blocks stripped) held throughout.
+test-vm / test-memfn-finder carry the run_presence.sh fix. test-vm also runs
+tests/codegen/run_ir_listing.sh (the triage's "test-anchored-match" ir-listing
+item; run_anchored_match / anchored_diff / anchored_dead_entry were all green):
+
+| run_ir_listing.sh PROGRAM + CHOICE POINTS + resume-point cap | labels and `RX_PUSH` sites read from the whole artifact | the artifact is split into the program text and the scaffold copy `__match_notempty` (a separate C function, so each label legitimately appears once per function); the program is read from the former; the copy is held to its own shape (labels non-empty, no duplicate within it, subset of the program's) | shim duplicating a label inside the program: RED "defines a label more than once" on every VM row; shim hiding the copy's name so the split finds nothing: RED on (a*)*, (|a)+, ((a)(b))* (the original failure) |
+
+Light run (boxlock, detached): test-vm test-anchored-match test-memfn-finder
+test-encoding-checks test-memfn-guarded green (no `*** [test-` line, rc 0);
+`make strict` clean. Sabotage shims lived in the scratchpad only.
