@@ -2784,3 +2784,4 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 
 - Frank: "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." The flag is unbuilt; main files it under [IFACE-PUSH]. A responses notice is posted with suggestions (PCREC_NO_DIRECT_REPORT / PCREC_NO_WINDOW_REPORT).
 - Asked Frank whether the same lens covers the `--memfn=no-*` deny spellings and the spec's "memfn kit" wording.
+- Frank's follow-up: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." It is a naming guide for NEW caller-facing names and spec prose; existing --memfn= names stay. Applied to S3's new spec prose at delivery.
