@@ -86,3 +86,22 @@ The light chain agreed (only test-rxtsource, rc=2).
 | test-rxtsource | (a) stale pin | merge took main's census/RUNSH/C3 values; the lane's new `tests/findall/global.rxt` was not in them. Measured from the check's own output: +1 file, +62 blocks, +1404 lines (CENSUS 293/6038/73976, RUNSH 269/6038/73976); C3 PASS +1188 (21932), SKIP +216 (51958), pcre2-only +216 (19373), verifiable +1188 (24164). The W23-S7 corpus control, the case-row derivation and the C3 reconciliation (21932+51958-3+89=73976) all follow from these pins. | the commit "iterland: re-pin rxtsource census/RUNSH/C3 for tests/findall/global.rxt" on lane/iterland | OWED: `build/il/fix-rxtsource.log` (detached, waiting on the box lock behind queue job 604-kit-s3-heavy); read with `scripts/verdict`. |
 
 Not re-pinned (not red, nothing measured): C3_FILES, the five golden findings files' HARNESS FAILURE lines (the known unparseable-head set, printed by the W23-S7 control as before).
+
+## Macro removal (nomacro)
+
+Lane nomacro (sonnet), 2026-10-23, Frank's ruling: `RX_FOREACH` dropped, `_next` / `_next_n` and `rx_info.next` / `rx_info.next_n` stay (D175). abi stays 84 (the event is unlanded; its changelog entry is amended).
+
+**Sites changed.** Emission: `src/gen/emit_iter.c` (the whole RX_FOREACH block: `RX_FOREACH_PAIRS`, `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`, the macro; `rx_nextnfn` stays, it types `rx_info.next_n`). Spec: `docs/spec/match_api.md` (contents entry, §1¶5/¶6, the §2 listing, §3.1.3, §3.8.2 rewritten as "Looping over any artifact's record" with a loop for `info->next` and one for `info->next_n`, §4 table and ¶9a, §6¶14c; anchors `s3-8-2` and `s3-8-2-p1..p4` kept, the old p3-p5 content gone and no citer left). Tests: `tests/findall/iter_drv.c` (F, Fstop, Fcount, Fabi cells replaced by `g1_drain` / `gn_drain` plain loops over the record, cells G1 and GN), `run_iter_diff.sh` (REACH_NEED), `run_findall_tests.sh` (ASan build loses `-DRX_FOREACH_PAIRS=8`), `cells.tsv` comment, `tests/encseam/findall_driver.c` (a plain `fa_info.next_n` loop), comments in tests/assertions, tests/codegen, tests/resource, CLAUDE.md/NOTES.md of src/gen, tests/findall, tests/encseam. `run_facts_checks.sh`: `FOREACH` removed from MACHINERY. Docs: decisions.md D175; abi_changelog.md 84 entry amended; plan.md [FINDALL-NEXT] row; `findall_iter_i2.md` gets a superseded-in-part banner; the twin harness `docs/design/findall_iter/twin/` keeps its F/Fb arms as the evidence behind D175 (they need a pre-D175 compiler; noted in its CLAUDE.md), `tdrv.c`'s stride probe now `-DNN_STRIDE_ONE` instead of `#ifdef RX_FOREACH`.
+
+**Rows retired** (git-deleted, the S293/S1421 precedent): S1315 (doubling), S1316 (brk), S1317 (kmax), S1318 (abi unchecked), and S1320 (refills early; also macro-only, not named in the brief). S1314 (`rx_info.next_n` NULL) stays, re-aimed: its witness is the info arm plus GN, the plain `next_n` loop, reach token `g1`. VALIDATE_ONLY on S1314: valid.
+
+**Pins moved** (each from the check's own output):
+- reach tokens (`run_iter_diff.sh`, `run_findall_tests.sh`): `f1 f2 fstopend fcount2 fcount63 fabi kmaxcap frefused` -> `g1 g2 gn5`; test-findall prints `reach n3m4=72 split=118 g2=144` (ASan run), green.
+- `tests/codegen/manifests/m5_stage1_stamps.tsv` (test-cpset-structure check [3]): all twelve EMITTED_BYTES rows -2,686 (uniform; no other row moved), now 29 checks pass.
+- `tests/codegen/run_recursion_identity.sh` FILEPIN (the (B) pin): 934f8bed1 -> 24d2888f5 (this lane's src commit; the manager re-pins to the merge).
+- abi number readers: none move (84 stays); test-codegen 331+ checks green, abi 84 sentences intact.
+- `tests/resource` byte pin: unmoved (the macro was in the .h, the pin counts the .c); test-resource 42 green.
+
+**Commits:** 24d2888f5 (removal, tests, spec, decisions), 351f30ff7 (manifest re-record, FILEPIN).
+
+**Validation run by this lane:** make -j16, make strict, test-findall, test-encseam, test-codegen, test-registry, test-plan-lint, test-spec-history, test-claudemd-size, test-cpset-structure, test-entry-shape-identity, test-resource: green. Queued, not run: iterland-test, iterland-mech (see the handback).
