@@ -1,9 +1,21 @@
-# s3 — D172 S3 (REPORT routed + D-hors): BUILT; code review r1's C1 build folded (S3 commit b5b85aeac); jobs 587, 588 re-staged
+# s3 — D172 S3 (REPORT routed + D-hors): BUILT; code review r1's C1 build and r2's fixes + PAIR widening folded (S3 commit bc675b020); jobs 587, 588 re-staged
 
 Lane s3, 2026-10-22 (opus). Worktree `worktrees/s3`, branch `lane/memfn-s3w`. Part 2 (the build, below)
 was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) is the first lane's
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
+
+STATE AT HANDOFF (part 8, code review r2's fixes + the PAIR widening, lane s3pair; supersedes every
+earlier sha): THE S3 COMMIT is now **bc675b020** (b5b85aeac + this round's code and spec, by plumbing,
+parent f7bc3cf05; the 13 commits after it replayed unchanged), on branch `lane/memfn-s3pair`
+(worktree `worktrees/s3pair`); the design draft 48494f406, the follow-up eef859891. PAIR decides a
+window stop of ANY two bytes (R2-1); B-pair and fn-pair share one renderer (R2-6); Table D's rows carry
+their actions (R2-7); spec rows by behaviour (R2-5); test-axes' memfn arm classifies wf-find/wf-hors
+(R2-4, floors OWED). No answer moved: G2 10,042/0, 18/18 plants red, the predicted manifest 40/40, the
+OFF arms identical. OWED (job 606 held the box throughout): the armed chain
+`build/chainrun/20261023-133141-s3pair-checks/` (differential, wreply, codegen, census_r2,
+axes_measure) and `build/s3pair/simd_members.log`; then jobs 587 and 588, re-staged, not queued.
+Part 8 is below this block.
 
 STATE AT HANDOFF (part 7, the code review r1 C1 build, supersedes every earlier sha): THE S3 COMMIT is now
 **b5b85aeac** (7e1caad08 + the C1 build, by plumbing, parent f7bc3cf05; the ten commits after it replayed
@@ -52,6 +64,180 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 8. Code review r2 fixes + PAIR widening (lane s3pair, 2026-10-23)
+
+Lane s3pair (opus), worktree `worktrees/s3pair`, branch `lane/memfn-s3pair` (from `lane/memfn-s3w`
+ae83da9d4). Build go: Frank, 2026-10-23, "Widen two pair s3 now". Brief source: code review r2
+(`worktrees/memfn/docs/dev/reviews/2026-10-23-r2-memfn-s3-c1-code.md`, §3), its FIX-NOW items. No
+rulings file was named. Job 606 (the C1 tip's heavy job, worktrees/s3) held the box for this whole
+lane, so every box-wide check is ARMED, not read (8.7).
+
+## 8.1 Commits
+
+| sha | what |
+|---|---|
+| **bc675b020** | THE S3 COMMIT: b5b85aeac plus this round's code and spec (R2-1 PAIR widened, R2-6 one two-stream renderer, R2-7, R2-5's spec hunks), by plumbing on b5b85aeac's tree, parent f7bc3cf05; ONE byte-moving commit, abi 84 PROVISIONAL unchanged (the widening rides S3's abi event) |
+| 223537114 .. bf33a6aa2 | the 13 commits after S3, cherry-picked unchanged (none touches a folded file: memfn/src, finder_history.md, registry.md, tuning.md) |
+| 48494f406 | window_site.md rev 3.3 DRAFT: ranked goals (R2-10), PAIR's contract, the one renderer, D-hors's `whi >= 0` (R2-9), Table D's row actions |
+| eef859891 | the follow-up: G2 two-byte stream + plant S1540 + re-aims + floors; test-axes' MEMFN_CLASS (R2-4); emit_sweep's SIMD cells (R2-3); the r2 manifest, census, differential and SIMD-members scripts; jobs 587/588 re-staged |
+| (next) | this part |
+
+The tree at bf33a6aa2 differs from ae83da9d4 by exactly the nine folded files (`git diff --stat`).
+
+## 8.2 PAIR's contract (R2-1)
+
+| | facts (finder.c) | in words |
+|---|---|---|
+| BEFORE (C1) | `SF_SPAN0 \| SF_STRETCH_CUBE` | a window site's stop that is a two-member one-bit cube inside a stated run stretch (fn-pair's scope) |
+| AFTER | `SF_SPAN0 \| SF_TWO_MEMBER \| SF_WINDOW_STOP` | a window site's stop of ANY two bytes at or past the candidate |
+
+- `SF_TWO_MEMBER` is a fact of the set, stated by `set_facts` for EVERY asker (native routes too).
+- `SF_WINDOW_STOP` is stated only by `fd_find`: PAIR's renderers are the window family's, and
+  `fd_route` has no arm for FF_PAIR (a routed pick with no arm is a refusal), so a native one-term
+  FIND site with a two-byte set keeps R7w's walk. This is a renderer fact, not a label: its
+  trigger to drop is a native pair arm.
+- `SF_STRETCH_CUBE` (bit 13) retires, unreused; window.c's `stop_stretch_cube`/`in_stretch_at` go.
+- Basis (UNMEASURED-DEFAULT) and place (after D1w, before R7w) unchanged; no deny (it moves bytes
+  only under E-find's `wf-find`). Logged in memfn/docs/finder_history.md.
+- Still no row: a stop of two bytes BELOW the candidate (PAIR keeps SPAN0; R2-8, D176's priced choice).
+- Under `-fmemfn-simd`: B-pair has no SIMD row, so the widened scalar PAIR is the text at both
+  layers where B-fn (a plain caseless literal, vrun's rows) does not hold. The arbitrary-pair kernel
+  is [MEMFN-PAIRSIMD], not built.
+
+**What the widening does to the other sites that reach PAIR.** Native routes: nothing (the
+WINDOW_STOP fact). Window sites that are not REPORT (a native window site whose legacy rows decline
+reaches E-find): they move exactly like cover sites, a two-byte stop that R7w walked now taking
+B-pair. G2 counts them in its own space: on the SAME 2,200 sites as the C1 tip, 103 stops moved from
+the walk to PAIR (walk 217 -> 114, pair 141 -> 244, libc 598 -> 701); the predicted manifest's native
+fn-pair sites (the pre-check's `(?i)cat\d+`, both layers) are byte-identical. The corpus count of
+non-REPORT movers is census_r2's (8.7): it judges every B-pair artifact on either side, cover or not.
+
+## 8.3 R2-6: one two-stream renderer
+
+`ofs_pair_text` (ofsskip.c, kit.h `ofs_pair`): the two streams, the nearer hit, the miss, `cand -= k`,
+over the caller's names and layout. fn-pair's body renders through it (its bytes unchanged: the
+manifest's B-fn and native rows IDENTICAL). B-pair renders through it on one line, with its guard
+moved out front (`if (C + d >= N) break;`, then the shared text; before, each `memchr` carried its own
+`P < N ? ... : 0`). Both callers keep their own member array, so the plants S1428 (B-pair) and S1429
+(fn-pair) still drop one caller's stream, and the new S1540 drops the shared text's.
+
+## 8.4 Movers: predicted, then actual
+
+`s3_evidence/predicted_r2.tsv` (committed as WIP c017a282b before any diff ran): 40 rows, the
+C1 tip (ae83da9d4, `git archive` build) vs this build.
+
+| check | result |
+|---|---|
+| `bytediff_r2.sh` default | **40/40 agree**: 13 MOVES-pair, 4 MOVES-pair-text, 23 IDENTICAL |
+| `bytediff_r2.sh` OFF arm, `--memfn=no-wf-find,no-wf-hors` both sides | **40/40 IDENTICAL** |
+| the same, `--memfn=no-wf-find` alone | 40/40 IDENTICAL |
+| `bytediff.sh` (S3's 29 rows) vs main c3ea619c3 | 29/29 agree; OFF arm 29/29 ABI-ONLY |
+| `--memfn=no-wf-hors` alone | 17 rows move, as they must (E-find stays on; not an OFF arm) |
+
+The corpus census (`census_r2.py`, 9 arms) is OWED (8.7).
+
+## 8.5 The probes: the find each renders now
+
+`pcrec -p rx --features all`, the E-find loop's find (names shortened); before = the C1 tip.
+
+| pattern | before | now |
+|---|---|---|
+| `[\x80-\xff]q` | walk `s[c] >= 128` at 0 | the same (the stop is the 128-member set: no PAIR) |
+| `[\x80-\xff]x`, `[\x80-\xff]j`, `[^\x00-\x7f]e` | the same walk | the same |
+| `[\x00-\x08]z` | walk `s[c] <= 8` | the same (nine members) |
+| `the[qx]` | walk `{q,x}` at +3 | B-pair: `memchr` 113 and 120 at +3 |
+| `ab[qj]cd` | walk `{j,q}` at +2 | B-pair: 106 / 113 at +2 |
+| `ee[qj]ee` | walk `{j,q}` at +2 | B-pair: 106 / 113 at +2 (both layers) |
+| `e[qj]e` | walk `{j,q}` at +1 | B-pair: 106 / 113 at +1 |
+| `ab(?=[Qq])` | walk `{Q,q}` at +2 | B-pair: 81 / 113 at +2 |
+| `[xq]abc` | walk `{q,x}` at 0 | B-pair: 113 / 120 at 0 |
+
+Five of the critic's nine (the high-byte and control-range sets) are NOT two-byte stops: A-mass
+picks a many-member set over a rarer-to-find single literal, and only the priced stop choice (D176
+Q1; [MEMFN-PAIRSTOP]; R2-8's family) moves them. The widening serves the other four and both of
+the slot lens's (`ab(?=[Qq])`, `[xq]abc`), and 588's WALK/one/norun rows `[a-]`, `[[:]`, `[:a]`,
+`(?:(?!a)z|w)` (manifest rows 13-16); `[a[:b]` (four members) stays the walk.
+
+## 8.6 R2 items
+
+| item | state |
+|---|---|
+| R2-1 PAIR widening | DONE (8.2) |
+| R2-3 SIMD pin | RECORDED (8.8); emit_sweep's two cells pinned back AT 606's measure (22/15) |
+| R2-4 test-axes memfn arm | DONE STATICALLY: MEMFN_CLASS gains wf-find/wf-hors (both layers; DIFFER; witnesses `\bcat\b` byte+utf8, `\b[0-9a-f]{8}\b` byte, each checked by single compiles at both layers; neither moves the VM engine, wf-hors does not move utf8). The arm's population check now equals `--list-axes` (14 = 14, read with the arm's own reader). FLOORS OWED: `axes_measure` (8.7, and job 587); the arm itself OWED to 587's `axes_memfn` |
+| R2-5 spec by behaviour | DONE: registry.md §6¶8a's wf-find/wf-hors rows, tuning.md §2.43¶3d, `--list-axes`' wf-find desc; no E-find/D-hors/HORS_MIN/"kit refuses"; wf-find's row says the jump per position size, the caseless-literal SIMD case, the below-candidate exclusion and the deny's effect |
+| R2-6 one renderer | DONE (8.3) |
+| R2-7 Table D dispatch | DONE: rows carry `finds` and `prepare`; `wf_d_text[]` (head, resume, file-scope text) in wf_drows' order with a `_Static_assert`; `w->hors` is gone (`w->drow`; B's index is `WF_NBROWS` under D-hors, so `bren == B_FN`/`B_PAIR` alone decide) |
+| R2-7 const cast | DONE: `hors_window` runs in the setup; `d_hors_holds` reads a const `wf_dx` |
+| R2-7 320-byte bound | DONE: the comment states the real texts (176-byte REPORT text, 34-byte head, gate_describe truncating) and labels 320 an UNMEASURED DEFAULT |
+| R2-7 `"wf-hors"` once | DONE: `WF_HORS_ID` |
+| R2-7 find_groups | DONE: `find_groups` groups only (no flag, no allocation); `build_runs` builds the define's terms. The query keeps the grouping (its class reads the count) |
+| R2-7 headers | DONE: `wf_b_search`'s, kit.h's three "preview art" and window.c's one; one-line headers on wf_find_expr/use, wf_floor_applies/define/use, wf_need, wf_plan_*, d_one_holds, wf_has_parts, wf_part_site, wf_parts_check/prepare, part_states, wf_prepare, wf_plan_class |
+| R2-9, R2-10 (DOC) | DONE in rev 3.3 DRAFT (48494f406), with PAIR's widened contract |
+| not touched | the REPORT refusal's "(the kit manager's R2 ruling)" text (house F7; not in R2-7's list); `b_fn_holds`/`e_legacy_holds` still translate inside a predicate (house F1's other two) |
+
+## 8.7 Checks
+
+| check | verdict |
+|---|---|
+| `make -j16`, `make strict` | clean ("whole tree compiles clean with -Werror -Wshadow") |
+| `tests/memfn/run_link_checks.sh` | 11/0 |
+| `memfn/tests/run_g2_win.sh` | 10,042/0 (ASan+UBSan 5,000/0); E-find 1,294: libc 995, walk 114, hors 131, run 421, below 175, report 1,013, pair 352, fn 54 |
+| `memfn/tests/run_g2_win.sh --plants` | **18/18 RED** (S1428 red on 135 sites, was 15; S1540 on 143) |
+| mech anchors in the edited files | 37/37 rows' SAB_BEFORE found exactly once (S450/S455's fn-pair anchors kept verbatim) |
+| byte-diffs and OFF arms | 8.4 |
+| `list_axes_delta.sh` vs main | 5 row(s), exactly as declared (vs the C1 tip: wf-find's description alone) |
+| differential smoke (`diff_r2.py`, 6 patterns) | 120 cases, 0 bad (5 witnesses) |
+| `tests/memfn/run_wreply.sh` | OWED: it takes the box lock and waited 600 s behind job 606; my timeout ended it |
+| ARMED, OWED (the box was job 606's) | chain `build/chainrun/20261023-133141-s3pair-checks/` (scripts/chainrun, detached, `--keep-going`; each stage takes the box lock): `diff_r2` (120 patterns x 30 subjects x 2 layers, ASan+UBSan, FAILS under 1,000 witness cases; trailer `== diff_r2 COMPLETE`), `wreply`, `codegen` (make test-codegen), `census_r2` (`== r2 census COMPLETE ... unexpected=0`), `axes_measure` (the four cells' counts for MEMFN_CLASS's floors). Completion: `== CHAIN DONE` or `== CHAIN FAILED` in chain.log; read with `scripts/verdict`. Also `build/s3pair/simd_members.log` (boxlock-waiting, nohup): `== simd_members COMPLETE` |
+
+A light slip, recorded: the R2-4 witness probe ran 128 single compiles in one loop outside the box
+lock (seconds; job 606 was a correctness run, not a timing window).
+
+## 8.8 R2-3: the `-fmemfn-simd` DIFFER pin, a judged trade
+
+- History: main 20 byte / 15 utf8 (`(?i)cat`); job 600 measured S3 (before C1) at 9 / 10 and pinned
+  them there; C1 restored B-fn's SIMD rows but not the pins (the r2 critics' R2-13); job 606's
+  `sweep_start` at the C1 tip read **22 / 15**. This round moves no SIMD form (B-pair's text is the
+  same at both layers), so the cells are pinned back AT 22 / 15, the manifest `((?i:abc))` checked a
+  member at both bases.
+- The trade: membership changed though the count did not fall. LEFT the cell (vrun at main, none
+  now): a caseless word beside a boundary, lookahead or class position (`(?i)\bthe\b`,
+  `(?i)\bhello\b`, `(?i)\bthe`, `(?i)the\b`, `(?i)abc(?=d)`, `(?i)[0-9]hello`, `(?i)abc[xy]`,
+  `\b(?i:foobar)\b`, `(?i)foo[0-9]bar`: verify.md's nine, single compiles), whose plan is not the
+  offset-skip function's predicate, so B-pair renders it with no SIMD row. JOINED: pure caseless
+  runs that had a byte-class walk (`(?i)ab`, `(?i)ss`, `(?i)qu`, ...: emit's eight). The corpus
+  members by name are `simd_members.py`'s (OWED, 8.7).
+- Judged: ACCEPTED for S3. SIMD is off by default; window_site.md §6 makes a SIMD-on loss a finding
+  for the SIMD thread, not an S3 blocker. The unlock is the emit critic's G3 (B-fn's post-filter
+  carries the extra verify positions) or [MEMFN-PAIRSIMD]; trigger: the default flip of
+  `-fmemfn-simd` (R4f) or a SIMD-layer witness on `(?i)\bthe\b`.
+
+## 8.9 Jobs re-staged (not queued)
+
+- **587-kit-s3-heavy** on `worktrees/s3pair`: as before plus `c1ref` (ae83da9d4 built under
+  $OUT/c1ref), `census_r2`, `evidence_r2` (bytediff_r2 default and OFF), `diff_r2`, `axes_measure`,
+  `axes_memfn` (AXES=--memfn MEMFN_REACH_ONLY=1), plant S1540, mech 126 rows (S1026 added: the axes
+  memfn arm's own row). 19 steps; `--dry-run` rc 0 in 0.07 s.
+- **588-kit-s3-timing** on `worktrees/s3pair`, PCREC `build/s3/bin/pcrec` re-copied (sha256
+  6688a940c46c). `--dry-run` rc 0 in 6.5 s. Prediction: the WALK/one/norun stratum's rows now take
+  B-pair; 605 measured 1.2-4.5x losses for their walk.
+- Commands (from the MAIN tree): `scripts/boxqueue add --name 587-kit-s3-heavy
+  worktrees/s3pair/docs/dev/lanes/s3_job_587-kit-s3-heavy`, then `scripts/boxqueue add --name
+  588-kit-s3-timing worktrees/s3pair/docs/dev/lanes/s3_job_588-kit-s3-timing` after 587 is green.
+
+## 8.10 Findings
+
+- **F-R2-1.** The widening moves frequent-letter case pairs too (`(?i)a`, `(?i)e`, `[xq]`: a
+  one-position window walked before, two `memchr` streams now). For a byte that dense the
+  walk-vs-memchr crossover is UNMEASURED (as D1's for one byte). 588's sample has no such row.
+- **F-R2-2.** Five of the critic's nine probes are not two-byte stops (8.5): the stop choice, not
+  the find, is their cause (D176 Q1).
+- **F-R2-3.** PAIR's pcrec-side reach floor is still `PLACEHOLDER` (slot F12); G2's pair floor (316)
+  is its only count.
 
 ---
 
