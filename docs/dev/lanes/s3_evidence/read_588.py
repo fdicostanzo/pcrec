@@ -16,11 +16,16 @@
 #   wf-find  med(RTE)/med(DEF)    (its deny IS the DEF arm), and RTEs/DEFs
 #   wf-hors  med(RTE)/med(NOH)    where NOH was timed (its text differs: D-hors fires), and
 #            RTEs/NOHs; elsewhere "same text".
-# THE MOVER SAMPLE (the S3 review's item E; FINDINGS, NEVER the bar): s3t_sample.tsv, printed under
-#   "Mover sample (not the §6 bar)": per (row, regime, class) R = med(RTE)/med(DEF) and
-#   Rs = med(RTEs)/med(DEFs), where an arm built once for both layers (same text) is read for both;
-#   its floor is THIS run's A/A in that regime (the largest |med(RT2)/med(RTE) - 1| over §6's
-#   cells and classes), and a ratio above 1 + floor is flagged SLOWER.
+# THE MOVER SAMPLE (the S3 review's item E; PART OF THE BAR since the S3 code review r1, main
+#   agreed, C10): s3t_sample.tsv, printed under "Mover sample (part of the bar)": per (row,
+#   regime, class) R = med(RTE)/med(DEF) and Rs = med(RTEs)/med(DEFs), where an arm built once for
+#   both layers (same text) is read for both; its floor is THIS run's A/A in that regime (the
+#   largest |med(RT2)/med(RTE) - 1| over §6's cells and classes). Every cell prints PASS (R <= 1 +
+#   floor) or FAIL, every row PASS iff all its cells pass, and every STRATUM (the committed pick's,
+#   sample_588.tsv) PASS iff its cells' geometric-mean R is <= 1 + the largest floor of its regimes:
+#   NO STRATUM SLOWER THAN DEF BEYOND ITS FLOOR is the bar's sample term (scalar layer; the SIMD
+#   layer reported). A row of sample.tsv with no timed cell (dropped by a premise, a compile or the
+#   answer gate) FAILS the bar too: a dropped row is never a pass.
 # THE D-HORS ADMISSION READING (Frank's ruling 2026-10-23; FINDINGS, NEVER the bar, no default
 #   moves): s3t_esh.tsv over esh_588.tsv's sites, printed under "D-hors admission (E[sh])": per
 #   site E[sh], max(sh) and the stop mass (esh_588.py, committed in the site file), and per
@@ -44,6 +49,9 @@ CAPS = {
     ("file-ext-order", "search_short", "none"): 1.053,
     ("file-ext-order", "match", "real"): 1.059,
     ("file-ext-order", "match", "none"): 1.085,
+    # job 605's one failing cell, a LAYOUT effect (s3_report.md §6.2: rx_match byte-identical, its
+    # placement moved); the manager's cap, 2026-10-23: 605's ratio 1.032 plus its 581 floor 0.020
+    ("foobar", "match", "real"): 1.052,
 }
 
 # job 581's floor(PRO) per cell, from its committed Table A
@@ -145,6 +153,9 @@ for a, b, name in (("RTE", "DEF", "wf-find, scalar"), ("RTEs", "DEFs", "wf-find,
         print("- %s: no cell timed (the deny's text equals the routed text everywhere)" % name)
 print()
 sfile = out + "/s3t_sample.tsv"
+sample_fails = []
+if not os.path.exists(sfile):
+    sample_fails.append("no s3t_sample.tsv (the sample is part of the bar)")
 if os.path.exists(sfile):
     sd = defaultdict(list)
     for r in csv.DictReader(open(sfile), delimiter="\t"):
@@ -168,15 +179,20 @@ if os.path.exists(sfile):
         x, y = smed(sid, g, cl, a), smed(sid, g, cl, b)
         return x / y if x and y else None
 
-    print("## Mover sample (not the §6 bar)")
+    print("## Mover sample (part of the bar)")
     print()
     print("Other cover movers (sample_588.tsv, pick_588.py's stratified pick), each DEF vs routed at both "
-          "layers; floor = this run's A/A in the regime; FINDINGS for the manager, never the bar.")
+          "layers; floor = this run's A/A in the regime. PART OF THE BAR (scalar): every stratum's "
+          "geometric-mean RTE/DEF within 1 + its floor, every sample.tsv row timed; cells and rows "
+          "print PASS/FAIL; the SIMD layer is reported.")
     print()
-    print("| row | stratum | pattern | regime | class | DEF ns/pass | RTE/DEF | floor | reading "
+    print("| row | stratum | pattern | regime | class | DEF ns/pass | RTE/DEF | floor | verdict "
           "| RTEs/DEFs (SIMD) | SIMD reading |")
     print("|" + "---|" * 11)
     slow, ssl, nrow = [], [], 0
+    rowfail = defaultdict(list)
+    strat = defaultdict(list)        # stratum -> [(R, floor)]
+    strat_s = defaultdict(list)
     sids = sorted({k[0] for k in sd})
     for sid in sids:
         st, pat = meta.get(sid, ("?", "?"))
@@ -188,22 +204,55 @@ if os.path.exists(sfile):
                 nrow += 1
                 fl = aa.get(g)
                 Rs = sratio(sid, g, cl, "RTEs", "DEFs")
-                rd = "-" if fl is None else ("SLOWER" if R > 1 + fl else "within")
+                rd = "-" if fl is None else ("FAIL" if R > 1 + fl else "PASS")
                 sr = "-" if fl is None or Rs is None else ("SLOWER" if Rs > 1 + fl else "within")
-                if rd == "SLOWER":
+                if fl is not None:
+                    strat[st].append((R, fl))
+                    if Rs is not None:
+                        strat_s[st].append((Rs, fl))
+                if rd != "PASS":
                     slow.append("%s %s/%s %.3f" % (sid, g, cl, R))
+                    rowfail[sid].append("%s/%s %.3f" % (g, cl, R))
                 if sr == "SLOWER":
                     ssl.append("%s %s/%s %.3f" % (sid, g, cl, Rs))
                 print("| %s | %s | `%s` | %s | %s | %.0f | %s | %s | %s | %s | %s |" % (
                     sid, st, pat.replace("|", "\\|"), g, cl, smed(sid, g, cl, "DEF"), fmt(R), fmt(fl),
                     rd, fmt(Rs), sr))
     print()
+    print("### Sample rows (PASS iff every cell passes)")
+    print()
+    for sid in sorted(set(meta) | set(sids)):
+        st, pat = meta.get(sid, ("?", "?"))
+        if sid not in sids:
+            print("- %s %s `%s`: FAIL (no timed cell: dropped by a premise, a compile or the gate)"
+                  % (sid, st, pat))
+            sample_fails.append("%s dropped" % sid)
+        else:
+            print("- %s %s `%s`: %s" % (sid, st, pat, "PASS" if not rowfail.get(sid) else
+                                        "FAIL (" + "; ".join(rowfail[sid]) + ")"))
+    print()
+    print("### Sample strata: the bar's term (no stratum slower than DEF beyond its floor)")
+    print()
+    print("| stratum | cells | RTE/DEF gmean [min, max] | floor | verdict | RTEs/DEFs gmean (SIMD, reported) |")
+    print("|" + "---|" * 6)
+    for st in sorted(strat):
+        v = [r for r, _ in strat[st]]
+        fl = max(f for _, f in strat[st])
+        gmv = statistics.geometric_mean(v)
+        ok = gmv <= 1 + fl
+        if not ok:
+            sample_fails.append("stratum %s %.3f > %.3f" % (st, gmv, 1 + fl))
+        vs = [r for r, _ in strat_s.get(st, [])]
+        print("| %s | %d | %.3f [%.3f, %.3f] | %.3f | %s | %s |" % (
+            st, len(v), gmv, min(v), max(v), fl, "PASS" if ok else "FAIL",
+            "%.3f" % statistics.geometric_mean(vs) if vs else "-"))
+    print()
     rs = [x for x in (sratio(s_, g, cl, "RTE", "DEF") for s_ in sids for g in REG
                       for cl in ("real", "none", "random")) if x]
     if rs:
         print("- sample, scalar RTE/DEF: %d rows over %d patterns, geometric mean %.3f, min %.3f, max %.3f"
               % (len(rs), len(sids), statistics.geometric_mean(rs), min(rs), max(rs)))
-    print("- sample SLOWER beyond floor, scalar: %s" % ("; ".join(slow) if slow else "none"))
+    print("- sample cells FAIL (beyond floor), scalar: %s" % ("; ".join(slow) if slow else "none"))
     print("- sample SLOWER beyond floor, SIMD layer: %s" % ("; ".join(ssl) if ssl else "none"))
     print()
 efile = out + "/s3t_esh.tsv"
@@ -293,6 +342,7 @@ if missing:
     print("MISSING: %s" % "; ".join(" ".join(m) for m in missing))
 print("SIMD-on reading (reported, not the bar): %s" % (
     "every cell within its scalar limit" if not sfails else "SLOWER: " + "; ".join(sfails)))
-print("== s3t BAR %s: %d cells read on the scalar layer%s" % (
-    "PASS" if not fails and not missing else "FAIL", n,
-    "" if not fails else "; FAILING: " + "; ".join(fails)))
+print("== s3t BAR %s: %d cells read on the scalar layer%s; sample %s" % (
+    "PASS" if not fails and not missing and not sample_fails else "FAIL", n,
+    "" if not fails else "; FAILING: " + "; ".join(fails),
+    "PASS" if not sample_fails else "FAIL: " + "; ".join(sample_fails)))

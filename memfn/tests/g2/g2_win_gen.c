@@ -26,7 +26,8 @@
  * it (and sends any other site to the floor); D-hors's deny `no-wf-hors`
  * removes its skip table.
  *
- *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400)
+ *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400;
+ *                                    G2W_C1_SITES: the caseless sites, 300)
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -113,7 +114,7 @@ typedef struct {
     uint32_t table[G2W_MAXPOS];
 } gspan;
 typedef struct { int entry, nspan; gspan span[G2W_MAXSPAN]; } galt;
-typedef struct { int nalt; galt alt[2]; int wfloor, floor_is_lo, dense; } gfacts;
+typedef struct { int nalt; galt alt[2]; int wfloor, floor_is_lo, dense, assign; } gfacts;
 
 /* The read-only view of `f` in `x`, its spans in `v`. */
 static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
@@ -143,9 +144,18 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * S3's DENSE sites, appended after it (G2W_S3_SITES of them), draw from a
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
-static unsigned long long rng, rng3 = 0xD172535ull;
+static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
+/* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
+ * stream of their own): REPORT windows whose positions are mostly two-member
+ * cubes (a caseless literal's shape, a high-byte cube among them), so that
+ * Table B's PAIR decides their stop and E-find renders it two ways, B-fn
+ * (the offset-skip function) and B-pair (the loop's two streams, where a
+ * context item keeps the plan from being the function's predicate). */
+static int c1_caseless;
+static const uint8_t CUBES[][2] = { { 'A', 'a' }, { '0', '1' }, { 0xC4, 0xE4 } };
+#define NCUBES (sizeof CUBES / sizeof CUBES[0])
 static unsigned rnd(unsigned n)
 {
     unsigned long long r = *rngp;
@@ -328,14 +338,26 @@ static void gen_facts(int fam, gfacts *x)
     case FAM_REPORT: {
         galt *a = &x->alt[0];
         a->entry = G2W_E_NONE;
-        int k = 1 + (int)rnd(5);
+        int k = c1_caseless ? 2 + (int)rnd(7) : 1 + (int)rnd(5);
         rand_span(&a->span[a->nspan++], 0, k, G2W_YES, 0);
         a->span[0].core_lo = 0;
         a->span[0].core_len = k;
+        if (c1_caseless) {  /* every position a cube, or (mixed) three in four */
+            x->assign = 1;
+            int mixed = (int)rnd(2);
+            for (int j = 0; j < k; j++) {
+                memset(a->span[0].set[j], 0, 32);
+                const uint8_t *c = CUBES[rnd(NCUBES)];
+                set_add(a->span[0].set[j], c[0]);
+                if (!mixed || rnd(4)) set_add(a->span[0].set[j], c[1]);
+                a->span[0].table[j] = 0;
+            }
+        }
         if (s3_dense) {     /* D172 S3: a DENSE window (every position three to
                                five draws of the alphabet, under the tie-heavy
                                rate: D-hors's population, window_site.md §2.5) */
             x->dense = 1;
+            x->assign = 1;
             for (int j = 0; j < k; j++) {
                 memset(a->span[0].set[j], 0, 32);
                 unsigned m = 3 + rnd(3);
@@ -343,20 +365,23 @@ static void gen_facts(int fam, gfacts *x)
                 a->span[0].table[j] = 0;
             }
         }
-        if (rnd(2)) {       /* an item before span 0: FAILS (core) or SATISFIES */
+        /* the caseless sites state an item less often (with none, the plan
+           can be the offset-skip function's predicate: B-fn) */
+        if (c1_caseless ? rnd(4) == 0 : rnd(2) != 0) {  /* an item before span 0:
+                                                            FAILS (core) or SATISFIES */
             int w = 1 + (int)rnd(2);
             rand_span(&a->span[a->nspan], -w, w, rnd(3) ? G2W_YES : G2W_NO, 1);
             gspan *it = &a->span[a->nspan++];
             it->core_lo = 0;
             it->core_len = rnd(2) ? w : 0;
         }
-        if (rnd(2)) {       /* one after it */
+        if (c1_caseless ? rnd(4) == 0 : rnd(2) != 0) {  /* one after it */
             rand_span(&a->span[a->nspan], k, 1, rnd(3) ? G2W_YES : G2W_NO, 0);
             gspan *it = &a->span[a->nspan++];
             it->core_lo = 0;
             it->core_len = rnd(2);
         }
-        if (rnd(3) == 0) x->wfloor = G2W_F_EXPR;
+        if (rnd(c1_caseless ? 6 : 3) == 0) x->wfloor = G2W_F_EXPR;
         break;
     }
     default: {
@@ -484,6 +509,7 @@ static long fails, refused_ok, rendered, asked_ok, two_run_refused;
 /* D172 S3: E-find's reach by its text's parts (K35), and the REPORT sites
    E-find cannot render, each refused */
 static long ef_n, ef_libc, ef_walk, ef_hors, ef_run, ef_below, ef_report, report_refused;
+static long ef_pair, ef_fn;     /* Table B's PAIR: in the loop (B-pair), the function (B-fn) */
 
 static void fail(int id, const char *what, const char *detail)
 {
@@ -618,6 +644,8 @@ int main(int argc, char **argv)
     int nsites = atoi(argv[2]);
     const char *s3n = getenv("G2W_S3_SITES");
     int n3 = s3n ? atoi(s3n) : 400;
+    const char *c1n = getenv("G2W_C1_SITES");
+    int n4 = c1n ? atoi(c1n) : 300;
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -655,12 +683,18 @@ int main(int argc, char **argv)
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3; id++) {
+    for (int id = 0; id < nsites + n3 + n4; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
         }
-        int fam = s3_dense ? FAM_REPORT : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
+        if (id == nsites + n3) {        /* the caseless sites: theirs */
+            rngp = &rng4;
+            s3_dense = 0;
+            c1_caseless = 1;
+        }
+        int fam = s3_dense || c1_caseless ? FAM_REPORT
+                : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
         famn[fam]++;
@@ -780,7 +814,7 @@ int main(int argc, char **argv)
         /* D172 S3: a dense window is a REPORT site in an ASSIGN frame, the
            shape D-hors renders (E-find; the legacy rows serve a whole-core
            window of any other kind) */
-        if (gf.dense) {
+        if (gf.assign) {
             s.site_kind = MF_SK_REPORT;
             frames[fr]--;
             fr = rnd(2) && below_n ? G2W_FR_ASSIGN_LO : G2W_FR_ASSIGN;
@@ -882,6 +916,8 @@ int main(int argc, char **argv)
                       strstr(t, "_w8(") || strstr(t, " & 0x") || strstr(t, ") & ");
             ef_below += ref.has_stop && ref.stop < 0;
             ef_report += s.site_kind == MF_SK_REPORT;
+            ef_pair += strstr(t, "_ha < ") != NULL;
+            ef_fn += strstr(ft, "_ofsskip__body(") != NULL;
         }
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
@@ -1016,14 +1052,15 @@ int main(int argc, char **argv)
     fprintf(f, "const g2w_fn g2w_fns[] = {\n%s};\n", table.p ? table.p : "");
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
-    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d); families:", rendered, nsites + n3, n3);
+    printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d); families:", rendered,
+           nsites + n3 + n4, n3, n4);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
            frames[3], refused_ok, asked_ok, two_run_refused);
-    printf("g2_win_gen: e-find %ld: libc %ld walk %ld hors %ld run %ld below %ld report %ld; "
-           "report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run, ef_below, ef_report,
-           report_refused);
+    printf("g2_win_gen: e-find %ld: libc %ld walk %ld hors %ld run %ld below %ld report %ld "
+           "pair %ld fn %ld; report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run,
+           ef_below, ef_report, ef_pair, ef_fn, report_refused);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

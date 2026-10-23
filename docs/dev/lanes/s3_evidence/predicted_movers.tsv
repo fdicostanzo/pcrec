@@ -35,3 +35,11 @@ abc$	-	ABI-ONLY	end-pinned: rev-end precedes cover
 \bthe\b\s+\w+	-	ABI-ONLY	unbounded (C7)
 (?i)hello world	--engine=vm	ABI-ONLY	the VM engine: no DFA scan (C1)
 abcdefgh	--engine=vm	ABI-ONLY	the VM engine: no DFA scan (C1)
+# Code review r1 C1 (lane s3, 2026-10-23), predicted before this diff ran: the caseless windows the
+# fix renders by PAIR (vs main: still MOVES-cover, the OFF arm ABI-ONLY), and the one cover the fix
+# withdraws (a two-member stop below the candidate: no FIND form, so main's composite exactly)
+(?i)foobar	-	MOVES-cover	smp10: a caseless window (the C1 build: PAIR through fn-pair)
+(?i)foobar	-fmemfn-simd	MOVES-cover	the same at the SIMD layer (fn-pair's SIMD rungs)
+(?i)x/1234	-	MOVES-cover	smp20
+(?i)\bfoo\b	-	MOVES-cover	PAIR in E-find's loop (the boundary items)
+(?<=[qj])[a-z]	-	ABI-ONLY	no FIND form for {q,j} below the candidate: refused, main's composite

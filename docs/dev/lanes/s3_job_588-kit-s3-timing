@@ -5,11 +5,12 @@
 # digits), SCALAR layer (the bar) and -fmemfn-simd (reported), job 581's calibration (L=5,
 # T=20 ms, N=9), pinned to cpu 7, BEHIND a no-clock differential stage. Reading rule:
 # s3_evidence/read_588.py's header (per cell: ratio to DEF, 581's floor, PASS/FAIL vs §6's bar,
-# the five named caps, the G1 alpha of wf-find and wf-hors at both layers). Beside the bar (the S3
-# review's item E, FINDINGS only, never in `== s3t BAR PASS|FAIL`): the MOVER SAMPLE, ~24 other
-# cover movers from s3_evidence/sample_588.tsv (pick_588.py's committed, seeded, stratified pick),
-# DEF vs routed at both layers, same core and calibration, printed under "Mover sample (not the §6
-# bar)". ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~1,900 items, ~6 min,
+# the five named caps and job 605's layout cap foobar match/real 1.052, the G1 alpha of wf-find and
+# wf-hors at both layers). PART OF THE BAR since the S3 code review r1 (C10, main agreed): the MOVER
+# SAMPLE, the 24 other cover movers of s3_evidence/sample_588.tsv (pick_588.py's committed, seeded,
+# stratified pick), DEF vs routed at both layers, same core and calibration, printed under "Mover
+# sample (part of the bar)": every cell and row PASS/FAIL, and `== s3t BAR` FAILS where a stratum's
+# geometric-mean RTE/DEF exceeds 1 + its floor (this run's A/A) or a row was dropped. ESTIMATE (measured 0.18 s per timed item, lane s3fix): the §6 cells ~1,900 items, ~6 min,
 # plus ~1 min of build/differential/gate; the sample ~1,700 items (24 rows x 2 regimes x <= 3
 # classes x the distinct arm texts, 5 launches), ~5 min, plus ~1.5 min of subjects/build/gate;
 # about 14 min in all against ~7 before. Beside both (Frank's ruling 2026-10-23, FINDINGS only, never

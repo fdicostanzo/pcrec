@@ -327,7 +327,9 @@ int main(int argc, char **argv)
             if (k > bc) { bc = k; best = b; }
             if (k < wc) { wc = k; worst = b; }
         }
-        static const uint8_t pref[] = { 'a', 'A', 'b', 'c', '0', '1', '\n', 'x' };
+        /* the generator's caseless sites' high-byte cube last (code review
+           r1 C1/C13): no earlier site's sets hold it, so their subjects stay */
+        static const uint8_t pref[] = { 'a', 'A', 'b', 'c', '0', '1', '\n', 'x', 0xC4, 0xE4 };
         for (unsigned i = 0; i < sizeof pref && na < 3; i++) {
             int used = 0;
             for (int ai = 0; ai < x->nalt && !used; ai++)

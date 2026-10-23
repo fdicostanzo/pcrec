@@ -31,7 +31,8 @@
 #   4 time    L launches; cpu_busy of the pinned CPU and its sibling per launch
 #   5 table   read_588.py
 #
-# THE MOVER SAMPLE (the S3 review's item E; FINDINGS for the manager, NEVER part of the bar):
+# THE MOVER SAMPLE (the S3 review's item E; PART OF THE BAR since the S3 code review r1, C10:
+# read_588.py's strata rule, a dropped row a FAIL):
 # sample_588.tsv (pick_588.py's committed pick: ~24 other cover movers, stratified by B form x D x
 # C-run). Subjects by gen_sample_588.py (classes real / none / random where generatable), regimes
 # throughput and search_short, arms DEF RTE at the scalar layer and DEFs RTEs at the SIMD layer;
@@ -39,8 +40,8 @@
 # built and timed once and read for both. Its stages (sample-build, sample-gate) run after the
 # gate and its items after each launch's cells, in the same launches, same calibration and core;
 # a sample row that fails a premise, a compile or the answer gate is DROPPED with a loud
-# `SAMPLE ... ` line and never stops the job. Results: s3t_sample.tsv; read_588.py prints them under
-# "Mover sample (not the §6 bar)".
+# `SAMPLE ... ` line and never stops the job (read_588.py then FAILS the bar for it). Results:
+# s3t_sample.tsv; read_588.py prints them under "Mover sample (part of the bar)".
 #
 # THE D-HORS ADMISSION SITES (Frank's ruling 2026-10-23 on the S3 review's fix C: measure, do not
 # decline; FINDINGS, NEVER part of the bar, no default changes): esh_588.tsv (pick_esh_588.py's

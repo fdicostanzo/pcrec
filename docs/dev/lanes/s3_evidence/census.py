@@ -36,6 +36,13 @@ judgment, BOTH WAYS, per arm:
   off-norun           three flag settings)
 D-HORS (Table D's dense-stop resume) appears as a file-scope skip table `_sh[256]`; it may appear
 only in a COVER artifact (counted: `hors`), never elsewhere (UNEXPECTED).
+THE BLOCK'S OPTIONS (code review r1 C11): a corpus pattern is compiled under its own block's
+options, read from `pcrec --list-source` (the .rxt as written): `flags` i -> `-i`, u -> `--ucp`,
+`encoding` -> `-e ENC` (rxt_format.md §1.5¶4; the corpus states no per-block raw `pcrec` flags
+and no `with`/`from` cascade on a pattern row, and a row stating one is counted and REFUSED, not
+compiled without it). A pattern is one task per distinct (pattern, options); the options come
+first on every arm's command line, so an arm's own `-e` overrides a block's. The tally line
+`options:` counts the option-driven tasks and the cover artifacts among them.
 Trailer: `== s3 census COMPLETE: patterns=P compiles=C movers=M unexpected=U`; exit 0 iff U == 0.
 """
 import argparse
@@ -98,13 +105,52 @@ def utf8_rows_only(a, b):
                                       for x, y in zip(la, lb))
 
 
+FLAG_ARGV = {"i": "-i", "u": "--ucp"}
+
+
+def block_options(row):
+    """The pcrec options of one `--list-source` pattern row (its columns as written), or
+    None where it states something this census does not pass (a raw `pcrec` flag, a
+    `with`/`from` cascade, an unknown flag letter)."""
+    flags, enc, cascade_with, cascade_from, raw = row[5], row[8], row[12], row[13], row[14]
+    if raw or cascade_with or cascade_from or any(c not in FLAG_ARGV for c in flags):
+        return None
+    opts = [FLAG_ARGV[c] for c in flags]
+    if enc:
+        opts += ["-e", enc]
+    return tuple(opts)
+
+
+def corpus_tasks(es, pcrec_bin, tree):
+    """(rows, tasks, refused): every corpus pattern row with its block's options; the
+    distinct (pattern, options) tasks; the rows whose options this census cannot pass."""
+    rows, refused = 0, []
+    tasks = set()
+    for f in es.find_files(tree, (".rxt",)):
+        rc, out, _ = run([pcrec_bin, "--list-source", f], 60)
+        if rc:
+            continue
+        for ln in out.decode("utf-8", errors="surrogateescape").splitlines():
+            c = ln.split("\t")
+            if ln.startswith("#") or len(c) < 15 or c[0] not in ("pattern", "pattern-esc"):
+                continue
+            rows += 1
+            opts = block_options(c)
+            if opts is None:
+                refused.append((os.path.relpath(f, tree), c[1]))
+                continue
+            tasks.add((es.decode_escape(c[4]), opts))
+    return rows, sorted(tasks), refused
+
+
 def one(task):
-    base, new, pat = task
+    base, new, pat, opts = task
+    opts = list(opts)
     res = []
     dcover = ucover = 0
     for arm, fb, fn, stamped in ARMS:
-        rb, ob, eb = run([base] + fb + ["--pattern", pat])
-        rn, on, en = run([new] + (fn or fb) + ["--pattern", pat])
+        rb, ob, eb = run([base] + opts + fb + ["--pattern", pat])
+        rn, on, en = run([new] + opts + (fn or fb) + ["--pattern", pat])
         what = []
         if rb != rn:
             what.append("rc base=%d new=%d" % (rb, rn))
@@ -123,7 +169,7 @@ def one(task):
             cover = (dcover or (ucover and utf8_rows_only(ob, norm(on)))) and rb == rn and eb == norm(en)
             ucover = cover and not dcover
         res.append((arm, "; ".join(what), cover, HORS in on, arm == "facts" and ucover))
-    return pat, res
+    return pat, tuple(opts), res
 
 
 def main():
@@ -137,15 +183,22 @@ def main():
     a = ap.parse_args()
     sys.path.insert(0, os.path.join(a.tree, "scripts"))
     import emit_sweep  # noqa: E402  (the corpus enumeration, one implementation)
-    corpus = emit_sweep.enumerate_corpus(a.new, a.tree, 60)
-    pats = sorted(set(p for _, _, p in corpus))
+    nrows, tasks, refused = corpus_tasks(emit_sweep, a.new, a.tree)
     if a.limit:
-        pats = pats[:a.limit]
+        tasks = tasks[:a.limit]
+    pats = tasks
     tally = {arm: {"cover": 0, "moved": 0, "hors": 0, "u8": 0} for arm, _, _, _ in ARMS}
+    optn = {"tasks": 0, "cover": 0}
     unexpected, rows = [], []
+    for f, line in refused:
+        unexpected.append(("-", "refused", "%s:%s" % (f, line),
+                           "a block option this census does not pass (raw pcrec flags, a cascade)"))
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as ex:
-        for pat, res in ex.map(one, [(a.base, a.new, p) for p in pats], chunksize=8):
-            ep = emit_sweep.encode_escape(pat)
+        for pat, opts, res in ex.map(one, [(a.base, a.new, p, o) for p, o in tasks], chunksize=8):
+            ep = emit_sweep.encode_escape(pat) + (" [" + " ".join(opts) + "]" if opts else "")
+            if opts:
+                optn["tasks"] += 1
+                optn["cover"] += any(arm == "c-default" and cover for arm, _, cover, _, _ in res)
             for arm, what, cover, hors, u8 in res:
                 t = tally[arm]
                 t["cover"] += cover
@@ -165,7 +218,9 @@ def main():
                 % (a.base, a.new, len(pats)))
         for r in unexpected + rows:
             f.write("\t".join(x.replace("\t", "\\t").replace("\n", "\\n") for x in r) + "\n")
-    print("census: corpus rows %d, distinct patterns %d" % (len(corpus), len(pats)))
+    print("census: corpus rows %d, distinct (pattern, options) tasks %d" % (nrows, len(pats)))
+    print("  options: %d tasks under their block's options (flags i/u, encoding), %d of them "
+          "cover at c-default; %d rows refused" % (optn["tasks"], optn["cover"], len(refused)))
     for arm, _, _, stamped in ARMS:
         t = tally[arm]
         print("  %-9s cover %5d (D-hors %4d)  movers %5d  declared: %s" % (

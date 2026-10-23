@@ -45,7 +45,10 @@ trap 'rm -rf "$WORK"' EXIT
 # before them unchanged) and moved the S2 sites E-find renders off the floor:
 # wf-floor's floor fell with them (792 -> 486 measured; pinned AT 486, the
 # seeded space's deterministic count, at the S3 review), wf-find's is new.
-FLOOR_SITES=1900                # every generated site renders (no refusal)
+# Code review r1 (lane s3, 2026-10-23) appended 300 CASELESS REPORT sites from
+# a stream of their own (G2W_C1_SITES; the 1900 before them unchanged): the
+# population of Table B's PAIR in E-find, both renderers.
+FLOOR_SITES=2200                # every generated site renders (no refusal)
 FLOOR_CONTROLS=104              # the controls, the NOP and REPORT refusals (116)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
 FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
@@ -62,8 +65,9 @@ FORM_FLOORS="wf-find:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27 pf_wa
 # kit's own text, a population count, never a verdict): B's LIBC and WALK
 # forms, D-hors, a C-run compare, a stop below the candidate, REPORT sites;
 # and the REPORT sites E-find cannot render, each refused (measured 357 220
-# 124 129 110 413 19)
-EFIND_FLOORS="libc:320 walk:195 hors:110 run:115 below:95 report:370 refused:17"
+# 124 129 110 413 19); code review r1: PAIR in the loop (B-pair) and through
+# the offset-skip function (B-fn) (measured 141 54, with the caseless sites)
+EFIND_FLOORS="libc:320 walk:195 hors:110 run:115 below:95 report:370 refused:17 pair:125 fn:48"
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
@@ -93,17 +97,35 @@ plant_spec() {
         echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
     S1422) # D172 S3: E-find denied but rendering (`--memfn=no-wf-find` ignored): the
         # control's REPORT site renders where it must be refused (window_site.md §5.2)
-        echo 'window.c@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  "wf-find" },@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  NULL },' ;;
+        # (re-anchored at code review r1 C17: E-find's id is spelled once, WF_FIND_ID)
+        echo 'window.c@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  WF_FIND_ID },@@    [E_FIND]    = { e_find_holds,    \&wf_find_ct,  NULL },' ;;
     S1423) # D172 S3: D-hors's bound one short (job 581's own plant: `c + K > n` read
         # as `c + K - 1 > n`): the probe and the verify read s[n]
         echo 'window.c@@        kb_printf(\&b, "if (%s + %d >= %s) break; ", rc->C, w->chi, rc->N);@@        kb_printf(\&b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
+    # code review r1 C13 (S1424 was the S3 review's fix C plant, withdrawn with it: not reused)
+    S1425) # code review r1 C13: D-hors's shift VALUE one too far (sh[b] + 1): a candidate
+        # the window's last byte admits is skipped
+        echo 'window.c@@        sh[b] = (uint8_t)t;@@        sh[b] = (uint8_t)(t + 1);' ;;
+    S1426) # code review r1 C13: C-run's mask word dropped: a cube stretch compared as its
+        # lower bytes (an exact compare), so a candidate holding an upper member fails
+        echo 'window.c@@                t->mask = exact ? NULL : mask;@@                t->mask = NULL;' ;;
+    S1427) # code review r1 C13: the walk's set short one entry (B-walk tests the stop's set
+        # less its highest member, a set of two or more), so a candidate whose stop byte is
+        # that member is walked past
+        echo 'window.c@@    if (wf_member(rc, b, (unsigned)rc->w->stop_ix)) return -1;@@    { uint8_t t[32]; memcpy(t, rc->w->set[rc->w->stop_ix], 32); for (unsigned x = 256; x-- > 0 \&\& count(t) > 1;) if (in_set(t, x)) { t[x >> 3] \&= (uint8_t)~(1u << (x \& 7)); break; } kb by; kb_init(\&by, rc->art->a); kb_printf(\&by, "%s[%s]", rc->S, p); kit_set_test(b, t, by.p); }' ;;
+    S1428) # code review r1 C13: Table B's PAIR in the loop (B-pair) with one stream dropped:
+        # both streams search the cube's first member
+        echo 'window.c@@        wf_b_search(rc, b, p, d, m[k]);@@        wf_b_search(rc, b, p, d, m[0]);' ;;
+    S1429) # code review r1 C13: PAIR through the offset-skip function (B-fn; fn-pair's body,
+        # the native sites' too) with its second stream searching the first member
+        echo 'ofsskip.c@@lim, at.p, b, len.p);@@lim, at.p, a, len.p);' ;;
     S1410) # a full-set position tested: C-yes takes a verify-YES position whose meet is every byte
         # (the kit manager's wsc3 ruling 1: such a position is the bound alone)
         echo 'window.c@@        if (m->p[k].present \&\& m->p[k].yes \&\& !full(m->p[k].yset))@@        if (m->p[k].present \&\& m->p[k].yes)' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

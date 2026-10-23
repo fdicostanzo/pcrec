@@ -64,7 +64,9 @@
 # §2.2), its row with it.
 # R7w, the default every set FIND takes (B4', MEASURED by the walk ruling), is
 # `pcrec`: its signature is the FDROUTE record's, its control a one-byte site D1
-# claims. A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
+# claims. PAIR (code review r1 C1, lane s3) decides the stop of a window site
+# E-find renders (fd_find); its FDROUTE record names `arm=E-find`, its control
+# the same pattern under E-find's deny (the composite path, no window stop). A row DECIDED AT THE ASK (lane b3breach, the kit manager's ruling)
 # says so in its SIGNATURE: the `MFTRACE FD` record's ` phase=ask` is part of
 # it (P2 today, whose pre-check is asked and never defined). n2_report.py
 # --floors holds such a row to its floor on the REACH line's `asked=N`
@@ -82,10 +84,14 @@
 # run_rows.sh also holds every signature to EVERY artifact it compiled and
 # every fixture: wherever the signature appears, the trace must show its row.
 #
-# D172 S3: the fixed-width witnesses of pf_memchr_bounded, pf_walk_bounded,
-# fn-pair and vrun-w16/w32 are `cover` artifacts by default (the memfn kit's
-# window site, no prefilter or pre-check), so witness and control both carry
-# the cover row's deny `--memfn=no-wf-find`, the default build before S3.
+# D172 S3: the fixed-width witnesses of pf_memchr_bounded and pf_walk_bounded
+# are `cover` artifacts by default (the memfn kit's window site, no
+# prefilter), so witness and control both carry the cover row's deny
+# `--memfn=no-wf-find`, the default build before S3. Since the S3 code review
+# (C1, C2) fn-pair's and vrun-w16/w32's witness `(?i)cat` is on the DEFAULT
+# path again: the cover's window search stops at a cube, decided PAIR, and
+# renders the offset-skip function `<prefix>_mf<h>_ofsskip` (fn-pair's body,
+# vrun's rungs under -fmemfn-simd); each control is the row's own deny.
 # table	row	reach	wkind	wflags	witness	signature	cflags	control
 arms	ofsskip	pcrec	pattern	-	abc[0-9]+xyz	rx_ofsskip(const unsigned char *subject, size_t n,	-fno-offset-skip	=
 arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
@@ -103,10 +109,10 @@ runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
 runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=
 runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
 runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
-fn	fn-pair	pcrec	pattern	--memfn=no-wf-find	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold --memfn=no-wf-find	=
+fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold --memfn=no-wf-find	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
-fn	vrun-w16	pcrec	pattern	-fmemfn-simd --memfn=no-wf-find	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16,no-wf-find	=
-fn	vrun-w32	pcrec	pattern	-fmemfn-simd --memfn=no-wf-find	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32,no-wf-find	=
+fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
+fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
 fd	R8	pending-site:B6	-	-	-	-	-	-
 fd	R3a	pending-site:B9	-	-	-	-	-	-
 fd	R3b	pending-site:B9	-	-	-	-	-	-
@@ -116,6 +122,7 @@ fd	R2	pending-site:B6	-	-	-	-	-	-
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
 fd	D1w	pcrec	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]+)y\1
+fd	PAIR	pcrec	pattern	-	(?i)foobar	 row=PAIR arm=E-find	--memfn=no-wf-find	=
 fd	R7w	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=

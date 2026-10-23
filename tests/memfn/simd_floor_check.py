@@ -56,16 +56,20 @@ sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
 
-# D172 S3 (lane s3): 33 and 33 measured, pinned AT the measure (a deterministic
-# count of emitted text): the cover row took the fixed-width caseless runs (their
-# search is the kit's window site, no SIMD FUNC)
-MOVERS_FLOOR = 33      # (pattern, engine) movers, corpus + named: 44 measured at w16 (R-13); 33 at D172 S3
-SIMD_FUNC_FLOOR = 33   # SIMD FUNCs over the movers: 44 measured (R-13); 33 at D172 S3
+# D172 S3 (lane s3) measured 33 and 33: the cover row took the fixed-width
+# caseless runs, and its window search then rendered no SIMD FUNC (a LOWERED
+# performance-form count, code review r1 C2: a trade never judged). Code review
+# r1 C1 (lane s3): a caseless window's stop is decided PAIR again and rendered by
+# fn-pair with its SIMD rows over it, so 46 and 46 measured; pinned AT the
+# measure (a deterministic count of emitted text)
+MOVERS_FLOOR = 46      # (pattern, engine) movers, corpus + named: 44 at w16 (R-13); 33 at D172 S3; 46 at r1 C1
+SIMD_FUNC_FLOOR = 46   # SIMD FUNCs over the movers: 44 (R-13); 33 at D172 S3; 46 at r1 C1
 LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 NAMED = [
-    # D172 S3: `(?i)cat` is a fixed-width `cover` artifact by default; under the
-    # cover row's deny it is the DFA ASSIGN pre-check FUNC this witness names
-    ('mod-i (DFA, ASSIGN)', '(?i)cat', ['--memfn=no-wf-find']),
+    # `(?i)cat` is a fixed-width `cover` artifact by default (D172 S3); since code
+    # review r1 C1 its window search's SIMD FUNC is fn-pair's again, on the DEFAULT
+    # path (S3 had moved the witness under `--memfn=no-wf-find`)
+    ('mod-i (DFA, ASSIGN)', '(?i)cat', []),
     ('union-select (DFA)', '(?i)union.*?select.*?from', []),
     ('union-select (no-DFA, ON_MISS)', '(?i)union.*?select.*?from', ['--engine=vm']),
     ('no-DFA ON_MISS', '(?i)\\d+cat', ['--engine=vm']),

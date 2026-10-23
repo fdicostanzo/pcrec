@@ -3,7 +3,8 @@
 # S3 (window_site.md rev 3.2 §5.2, §6; the manager's R1-R6). Stages, each "== s3 step NAME rc=N":
 #   build, strict   make -j16; make strict
 #   refbuild        main c3ea619c3 built from `git archive` under $OUT/ref (the reference compiler)
-#   census          s3_evidence/census.py: every distinct corpus pattern x {c-default, c-utf8, c-vm,
+#   census          s3_evidence/census.py: every distinct corpus (pattern, its block's options:
+#                   flags i/u, encoding; code review r1 C11) x {c-default, c-utf8, c-vm,
 #                   --emit-ir, --emit-facts, the OFF arm --memfn=no-wf-find,no-wf-hors, and (the
 #                   S3 review's item D) c-simd (-fmemfn-simd) and c-norun (-fno-run-prefilter) with
 #                   their own OFF arms off-simd/off-norun} against the reference, abi digits mapped
@@ -18,12 +19,15 @@
 #   codegen         make test-codegen
 #   test            the full make test through scripts/perfrun (verdict: make's *** [..test-X] lines)
 #   memfn_link      make test-memfn-link
-#   plants          memfn/tests/run_g2_win.sh --plants (S1400-S1410, S1422, S1423),
+#   plants          memfn/tests/run_g2_win.sh --plants (S1400-S1410, S1422, S1423, S1425-S1429),
 #                   tests/memfn/run_proof.sh --plants, tests/memfn/run_wreply.sh --plants
 #   mech            the derived sabotage union (window_site.md §5.4; s3_report.md "Build" part): the
 #                   rows re-anchored (S693 S1079 S1105) and every row of an arm whose detector S3
 #                   edited (nomatchcaps dfastamps offsetskip scanedge facts memfnfinder memfnarms
-#                   memfnmanifest; the codegen arm's rows tied to its edited blocks): 108 rows
+#                   memfnmanifest; the codegen arm's rows tied to its edited blocks): 108 rows;
+#                   and (the S3 code review r1's C1 build) every row whose SAB_FILE or detector is a
+#                   file that build edited (window/finder/ofsskip/gate/compose/kit, fields/options.def,
+#                   the G2 window family, rows.tsv/finder_check/simd floors): 125 rows in all
 #   reach           REACH_ONLY=1 over the whole matrix ([MECH-REACH]: cover took 828 DFA witnesses)
 # Correctness run: no quiet gate; held while i2build-parity is pending or running.
 set -u
@@ -32,18 +36,21 @@ BASE=c3ea619c3
 OUT=$TREE/build/s3/heavy587
 E=$TREE/docs/dev/lanes/s3_evidence
 NSTEPS=13
-IDS="S185 S186 S227 S279 S284 S285 S287 S296 S297 S298 S299 S300 S302 S303 S306 S307 S318 S438 S439 S443 S444 S446 S447 S448 S449 S450 S451 S452 S453 S454 S455 S510 S511 S512 S528 S613 S617 S618 S619 S666 S667 S669 S670 S671 S673 S676 S677 S681 S682 S684 S685 S686 S687 S688 S690 S691 S692 S693 S694 S695 S709 S712 S773 S774 S782 S783 S787 S788 S791 S800 S801 S802 S803 S804 S846 S847 S848 S917 S919 S921 S1018 S1020 S1025 S1079 S1080 S1081 S1082 S1083 S1084 S1089 S1091 S1092 S1100 S1103 S1105 S1106 S1107 S1108 S1109 S1110 S1122 S1221 S1224 S1225 S1416 S1417 S1418 S1419"
+IDS="S185 S186 S227 S277 S278 S279 S284 S285 S287 S296 S297 S298 S299 S300 S302 S303 S306 S307 S316 S318 S438 S439 S443 S444 S446 S447 S448 S449 S450 S451 S452 S453 S454 S455 S457 S458 S459 S510 S511 S512 S520 S528 S570 S596 S613 S617 S618 S619 S666 S667 S669 S670 S671 S673 S676 S677 S681 S682 S684 S685 S686 S687 S688 S689 S690 S691 S692 S693 S694 S695 S709 S712 S724 S728 S729 S730 S754 S773 S774 S782 S783 S787 S788 S791 S800 S801 S802 S803 S804 S846 S847 S848 S917 S919 S921 S1018 S1020 S1025 S1079 S1080 S1081 S1082 S1083 S1084 S1089 S1091 S1092 S1100 S1103 S1105 S1106 S1107 S1108 S1109 S1110 S1122 S1221 S1224 S1225 S1415 S1416 S1417 S1418 S1419 S1421"
 case "${1:-}" in
     --dry-run)
         [ -e "$TREE/.git" ] || { echo "no tree $TREE" >&2; exit 1; }
         git -C "$TREE" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "BASE $BASE unknown" >&2; exit 1; }
-        git -C "$TREE" diff --quiet HEAD || { echo "worktree dirty" >&2; exit 1; }
+        # docs/dev/artifact_size_log.tsv is a full-suite run's byproduct (tests/size/run_size_log.sh),
+        # dirty after any `make test` in this tree and never this job's input
+        git -C "$TREE" diff --quiet HEAD -- . ':(exclude)docs/dev/artifact_size_log.tsv' ||
+            { echo "worktree dirty" >&2; exit 1; }
         python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/census.py" || exit 1
         python3 "$TREE/scripts/emit_sweep.py" --help >/dev/null 2>&1 || { echo "emit_sweep --help fails" >&2; exit 1; }
         [ -x "$TREE/scripts/perfrun" ] || { echo "no scripts/perfrun" >&2; exit 1; }
-        # the 108-row mech field validation takes ~90 s, over boxqueue's 30 s
+        # the 125-row mech field validation takes ~100 s, over boxqueue's 30 s
         # dry-run bound, so it runs as the job's FIRST step (mechval) instead
-        echo "would run in $TREE: mechval(108 ids) build strict refbuild census sweep_start evidence codegen test memfn_link plants mech(108 rows) reach"
+        echo "would run in $TREE: mechval(125 ids) build strict refbuild census sweep_start evidence codegen test memfn_link plants mech(125 rows) reach"
         echo "boxqueue: cap 21600"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"
@@ -93,7 +100,7 @@ mechval() {
     out=$(VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) || { printf '%s\n' "$out" | tail -3; return 1; }
     n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
     echo "mechval: ${n:-none} ids valid"
-    [ "$n" = 108 ]
+    [ "$n" = 125 ]
 }
 step mechval mechval
 step build make -j16

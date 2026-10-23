@@ -104,9 +104,10 @@ unreached = []
 
 # D172 S2 commit 6 (lane wsc5): D2 RETIRED (window_site.md §2.2), id reserved
 # D172 S3 (lane s3): RPT, the REPORT row, RETIRED with its R-26.6 preview
-# (window_site.md §4), id reserved
+# (window_site.md §4), id reserved; code review r1 C1 (lane s3): PAIR, ofsskip's
+# fn-pair scope as a FIND-slot row (window_site.md §2.2), read by E-find's stop
 FIND_ROWS = ["R8", "R3a", "R3b", "R4", "R1", "R2", "D1", "D1c", "D1w",
-             "R7w"]
+             "PAIR", "R7w"]
 # the ids B4' withdrew (reserved, never reused) and their denies (retired)
 WITHDRAWN_ROWS = ["R0", "R5", "R7"]
 RETIRED_DENIES = ["fd-r0", "fd-r5"]
