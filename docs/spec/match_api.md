@@ -473,7 +473,7 @@ two on a counted class run — and size. A pinned search at `startpos > 0` on a
 machine whose start state depends on the preceding byte (`\b`, `(?m)^`) can
 begin in a state from which nothing matches and returns `0`; the emitted
 artifact keeps that test and marks it load-bearing. A `"cover"` scan
-(§6.3.4¶2) takes none of the four: the memfn kit's search yields the match
+(§6.3.4¶2) takes none of the four: its window search yields the match
 start itself, so it recovers nothing (`"attempt-start"`).
 
 <a id="s3-1-p22"></a>[3.1¶22] **The subject is `n` bytes and nothing more.** A `0x00` byte inside `s` is an
@@ -1719,7 +1719,7 @@ apart. Mirrored by `rx_info.scan`.
 |---|---|
 | `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
-| `"cover"` | every match is one fixed-width window of `k` bytes whose every position, and the one context byte before and after it, the memfn kit's REPORT site PROVES exactly (`docs/design/kit_proof.md` §1.1's `cover_conj`): the kit's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. Default since D172 S3 (`tuning.md` §2.43¶3d); `--memfn=no-wf-find` denies it, and the artifact is then the `"unanchored"` one |
+| `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly (`docs/design/kit_proof.md` §1.1's `cover_conj`): the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. Default since D172 S3 (`tuning.md` §2.43¶3d); `--memfn=no-wf-find` denies it, and the artifact is then the `"unanchored"` one |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
 | `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings): the search body is one `return 0` with no table, loop or skip, on either engine |
 
@@ -1846,7 +1846,7 @@ the DFA-scan scope, not `_DFA_MATCH`'s.
 | `"end-minus-width"` | every match of the pattern has the same byte width `W` (the `width` fact, `facts_listing.md` §4.1.2¶7b), so the start is the verified end minus `W`. The artifact carries NO reverse machine. Not on a `"rev-end"` scan, whose ends are speculative (`tuning.md` §2.47) |
 | `"landing"` | every one-character path from the pattern's start ends dead or accepting (the `land_char` fact, `facts_listing.md` §4.1.2¶7a), so the start is the position the forward scan's candidate-start skip last landed on, stepped forward to the first character start where the character there does not decode (§9). The artifact carries NO reverse machine (`tuning.md` §2.48) |
 | `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact the three rows above decline (in particular every one whose start state does not accept and whose matches neither have one width nor end one character after their start), every `"rev-end"` artifact, and any such build under the deny flags |
-| `"attempt-start"` | the search recovers no start: its scan is `"attempt"` (each attempt begins at a known position, and a match is reported from the attempt that found it), `"cover"` (the kit's candidate is the match start) or `"empty"` (nothing matches). No reverse pass runs (§6.3.1¶5a) |
+| `"attempt-start"` | the search recovers no start: its scan is `"attempt"` (each attempt begins at a known position, and a match is reported from the attempt that found it), `"cover"` (the window search's candidate is the match start) or `"empty"` (nothing matches). No reverse pass runs (§6.3.1¶5a) |
 
 <a id="s6-3-4-p12"></a>[6.3.4¶12] The four forms are answer-identical (`docs/design/opt5_step2_twopass.md` and
 `docs/design/start_landing.md` are the proofs; `tuning.md` §2.19 the axis).
