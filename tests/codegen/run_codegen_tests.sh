@@ -1708,37 +1708,47 @@ fi
 # regression — that is why K27 was invisible to the battery before: the
 # corpus never passes s == NULL, so the instrumented axis had nothing to see.
 # The fixture pattern is chosen to take the single-escape-byte memchr arm,
-# which is the arm that held the defect.
-if pcrec_run "$PCREC" -p k27 --no-captures -o - --pattern 'abc' > "$WORKDIR/k27null.c" 2>/dev/null; then
-    if ! grep -q 'memchr' "$WORKDIR/k27null.c"; then
-        bad "[K27]: the fixture artifact carries no memchr prefilter at all — this check has lost the arm it exists to cover"
+# which is the arm that held the defect. Since D172 S3 `abc` is a `cover`
+# artifact by default (E-find's guarded LIBC find), so the fixture runs TWICE:
+# on the default build, where the contract reaches cover, and under
+# --memfn=no-wf-find, the pre-S3 artifact, so the old pf_memchr prefilter arm
+# keeps its K27 witness (s3_report.md F-5).
+for k27arm in default no-wf-find; do
+k27flags=""; k27tag="K27"; k27f="k27null"
+if [ "$k27arm" = no-wf-find ]; then k27flags="--memfn=no-wf-find"; k27tag="K27 no-wf-find"; k27f="k27nulld"; fi
+if pcrec_run "$PCREC" -p k27 --no-captures $k27flags -o - --pattern 'abc' > "$WORKDIR/$k27f.c" 2>/dev/null; then
+    if [ "$k27arm" = no-wf-find ] && grep -q '_DFA_SCAN "cover"' "$WORKDIR/$k27f.c"; then
+        bad "[$k27tag]: the deny arm still renders cover -- this check has lost the pre-S3 pf_memchr arm it exists to cover"
+    elif ! grep -q 'memchr' "$WORKDIR/$k27f.c"; then
+        bad "[$k27tag]: the fixture artifact carries no memchr prefilter at all — this check has lost the arm it exists to cover"
     else
-        cat > "$WORKDIR/k27null_drv.c" <<'K27EOF'
+        cat > "$WORKDIR/${k27f}_drv.c" <<K27EOF
 #include <stdio.h>
-#include "k27null.c"
+#include "$k27f.c"
 int main(void)
 {
     printf("%d %zu\n", k27_search(NULL, 0, 0, NULL), k27_next_pos(NULL, 0, 0));
     return 0;
 }
 K27EOF
-        if ! gen_cc "K27 NULL-subject driver" "$CC" $GENCFLAGS -I"$WORKDIR" \
-                    -o "$WORKDIR/k27null_drv" "$WORKDIR/k27null_drv.c"; then
-            bad "[K27]: the NULL-subject driver failed to compile: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+        if ! gen_cc "$k27tag NULL-subject driver" "$CC" $GENCFLAGS -I"$WORKDIR" \
+                    -o "$WORKDIR/${k27f}_drv" "$WORKDIR/${k27f}_drv.c"; then
+            bad "[$k27tag]: the NULL-subject driver failed to compile: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
         else
-            k27out="$(gen_run "K27 NULL subject" "$WORKDIR/k27null_drv" 2>&1)"; k27rc=$?
+            k27out="$(gen_run "$k27tag NULL subject" "$WORKDIR/${k27f}_drv" 2>&1)"; k27rc=$?
             if [ "$k27rc" -ne 0 ]; then
-                bad "[K27]: <prefix>_search(NULL, 0, 0, NULL) did not run cleanly (status $k27rc): $(printf '%s' "$k27out" | head -3 | tr '\n' ' ')"
+                bad "[$k27tag]: <prefix>_search(NULL, 0, 0, NULL) did not run cleanly (status $k27rc): $(printf '%s' "$k27out" | head -3 | tr '\n' ' ')"
             elif [ "$k27out" = "0 1" ]; then
-                ok "[K27]: the legal (s == NULL, n == 0) subject runs clean through the memchr prefilter and the residual entry (search 0, next_pos 1)"
+                ok "[$k27tag]: the legal (s == NULL, n == 0) subject runs clean through the memchr prefilter and the residual entry (search 0, next_pos 1)"
             else
-                bad "[K27]: NULL-subject probe answered '$k27out', want '0 1' (search must report no-match; next_pos must not read s)"
+                bad "[$k27tag]: NULL-subject probe answered '$k27out', want '0 1' (search must report no-match; next_pos must not read s)"
             fi
         fi
     fi
 else
     bad "[K27]: pcrec failed to compile the NULL-subject fixture 'abc'"
 fi
+done
 
 # ---- [K27] the same contract through the PAIR ARM ([OPT-LITSCAN] S4 C3) -----
 # The caseless necessary run's pair block (two leapfrogged memchr streams)
