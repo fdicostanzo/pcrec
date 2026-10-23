@@ -151,7 +151,8 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   `scripts/boxlock run --label NAME -- CMD` or as a `heavy` chainrun stage.
   `PCREC_BOXLOCK=0` opts out, only with the manager's say-so.
 - If your task WRITES CODE (anything under `src/`, `cli/`, `lib/`): read
-  docs/dev/coding_guide.md before your first edit — house disciplines, the
+  docs/dev/guide/README.md and the files it names for your area (coding.md
+  at least) before your first code edit — house disciplines, the
   taught primitives in their current state, emitted-text and anchor-column
   rules, the altitude rubric, the do-nots.
 - Before writing/altering any CHECK: docs/dev/learnings.md §3.
