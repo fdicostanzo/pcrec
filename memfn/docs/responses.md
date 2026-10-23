@@ -3005,3 +3005,4 @@ the compiler, and is never adopted silently. Proposed for main to file
     - targeting another machine (--measures/config, built);
     - the generic "best guess current hardware" envelope (M2).
     - The kit contributes its method cards to that script; plan_cost.def's rows migrate into the sets.
+- notice: 2026-10-23 — **Frank's standing rule:** "going forwards, update measurement scripts when new methods appear." Any new find/scan/skip/verify method adds its card to the measurement script in the same change. Until a box is re-measured its row reads UNMEASURED visibly. This is for main's guide (critics.md / addenda/kit.md); the kit will add it to addenda/kit.md at the next main sync.
