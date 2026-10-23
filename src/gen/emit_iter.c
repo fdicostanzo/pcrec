@@ -421,6 +421,7 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up)
         "static %sint %s__one_local(rx_iter *it)\n"
         "{\n"
         "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
+        "    local[0][0] = local[0][1] = 0;   /* -Wmaybe-uninitialized: gcc cannot see the search write them */\n"
         "    return %s__one(it, local);\n"
         "}\n\n", pcrec_attr_text(PCREC_ATTR_NOINLINE), p, up, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));

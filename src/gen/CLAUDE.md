@@ -4583,4 +4583,11 @@ K112's corrected wording (`src/core/ctxfn.def`).
 - **`_next`'s OBJECT is not I1's** (the TU gains a second caller of the shared
   statics); its body TEXT is, checked by `tests/findall/run_one_body.sh`
   (ruling R1, `docs/dev/lanes/i2build_report.md`).
+- **Lane iteropt (2026-10-22, folded into abi 84):** a NULL `capture_spans`
+  goes to the `noinline` `<p>__one_local`, the one function owning the
+  NCAPS-pair stack buffer, so neither controller carries the
+  `-fstack-protector-strong` canary; `rx_iter_init` writes every field, so
+  `<p>__enter` stores only the header (plus the bind checks) and is
+  `static inline`. `<p>__one`'s text is unchanged.
+  `docs/dev/lanes/iteropt_report.md` has the instruction counts.
 
