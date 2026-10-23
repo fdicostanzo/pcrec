@@ -9888,3 +9888,10 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Effect:** supersedes [M4-SUBST]'s "pattern AND replacement template compiled together into one emitted C function". Lane subst (worktrees/subst, off lane/i2build) revises the design (phase A, design only), then a D6 panel and Frank's discussion before any build.
 - **Revisit when:** the revision shows modularity has a measured cost.
 
+
+## D174 — caller-facing names describe behaviour, never architecture (2026-10-22)
+
+- **Decision:** Frank, relayed by the kit session: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." A caller-facing name (a flag, an `rx_info` field or value, a CLI option, a stamp, spec prose a caller reads) names the BEHAVIOUR a caller sees or turns off, never an internal module or mechanism ("kit", "memfn", "proof", family letters, lane or row ids).
+- **Scope:** not retroactive. The existing `--memfn=` namespace and the spellings already shipped stay. It binds new names and new spec sentences from 2026-10-22; the [IFACE-PUSH] review may apply it to old ones.
+- **First applications:** the [IFACE-PUSH] candidate flag bit 57 is filed by behaviour (working name `PCREC_NO_WINDOW_REPORT`, not `PCREC_NO_KIT_PROOF`); the kit's S3 "cover" spec prose (its new match_api and tuning paragraphs) is reworded by behaviour before delivery; S3's two deny rows stay under `--memfn=`.
+- **Revisit when:** [IFACE-PUSH] opens (decide whether to rename the legacy spellings there).
