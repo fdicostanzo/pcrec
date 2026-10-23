@@ -238,14 +238,36 @@ static void emit_enter(StrBuf *c, const char *p, bool checks)
         "}\n\n");
 }
 
+/* The STEP's cursor parameters, `<p>__step`'s and its own-storage wrappers'
+ * (lane iteropt2): the subject, the next search position `*lop` and, where
+ * the retry is emitted, `*flp` (the iterator's `lo` and `flags`), plus the
+ * caller's variables on a variable-bearing artifact. The controllers hold
+ * `lo` and `flags` in locals, loaded from `rx_iter` once per call and stored
+ * back once, so nothing the search body calls makes gcc reload them through
+ * `it`. */
+static const char *cursor_params(Ctx *cx, const PcrecIterText *t)
+{
+    return pcrec_sb_fragf(&cx->arena, "const unsigned char *s, size_t n, size_t *lop%s%s",
+                          t->retry ? ", uint32_t *flp" : "",
+                          t->vars ? ", const rx_var *vars, size_t nvars" : "");
+}
+
+/* The same cursor as arguments, forwarded by name from a function that has
+ * the cursor parameters. */
+static const char *cursor_args(Ctx *cx, const PcrecIterText *t)
+{
+    return pcrec_sb_fragf(&cx->arena, "s, n, lop%s%s", t->retry ? ", flp" : "",
+                          t->vars ? ", vars, nvars" : "");
+}
+
 /* `<p>__step`, one STEP (findall_iter.md §2.1, §3.1-§3.3): past the end
  * (`lo > n`, where an empty match at `n` leaves it) done, with no search: the
  * search body has no caller-position guard, and a `\G` artifact's would
  * report an empty match at `lo` there. Where RETRY is set
  * the retry R at `lo` and, on its no match, the search one character on;
  * else the search at `lo`. Returns 1 (a match in `c`, `NCAPS` pairs, and the
- * iterator advanced), 0 (done) or a code; `*at` is the start of the search
- * that answered. It COMMITS the iterator only on 1, so a step a tier gave up
+ * cursor advanced), 0 (done) or a code; `*at` is the start of the search
+ * that answered. It COMMITS the cursor only on 1, so a step a tier gave up
  * on runs again from the same state. The advance after a non-empty match is
  * the aligned end (K75); after an empty one it is the retry at its position,
  * or the end at `n`; on an artifact whose reported span is never empty it is
@@ -255,19 +277,18 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
     const char *runp = t->vm ? ", " : "";
     const char *runt = t->vm ? pcrec_sb_fragf(&cx->arena, "%s_run_state *run", p) : "";
     const char *runa = t->vm ? ", run" : "";
-    const char *va = t->vars ? ", it->vars, it->nvars" : "";
+    const char *va = t->vars ? ", vars, nvars" : "";
     pcrec_sb_printf(c,
-        "static inline __attribute__((always_inline)) int %s__step(rx_iter *it, ptrdiff_t (*c)[2]%s%s,\n"
-        "                                                       size_t *at)\n"
+        "static inline __attribute__((always_inline)) int %s__step(%s,\n"
+        "                                                       ptrdiff_t (*c)[2]%s%s, size_t *at)\n"
         "{\n"
-        "    const unsigned char *s = it->s;\n"
-        "    size_t n = it->n;\n"
-        "    size_t lo = it->lo;\n"
+        "    size_t lo = *lop;\n"
         "    int r;\n"
-        "    if (lo > n) { *at = lo; return 0; }   /* an empty match at n ended it */\n", p, runp, runt);
+        "    if (lo > n) { *at = lo; return 0; }   /* an empty match at n ended it */\n",
+        p, cursor_params(cx, t), runp, runt);
     if (t->retry)
         pcrec_sb_printf(c,
-            "    if (it->flags & PCREC_ITER_F_RETRY) {   /* an empty match was reported at lo */\n"
+            "    if (*flp & PCREC_ITER_F_RETRY) {   /* an empty match was reported at lo */\n"
             "        ptrdiff_t len;\n"
             "        *at = lo;\n"
             "        len = %s__retry(s, n, lo, c%s%s);\n"
@@ -283,21 +304,21 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         pcrec_sb_printf(c,
             "%s_matched:\n"
             "    if (c[0][1] > c[0][0]) {\n"
-            "        it->lo = %s__next_pos(s, n, (size_t)c[0][1] - 1);   /* K75: the aligned end */\n"
-            "        it->flags = 0;\n"
+            "        *lop = %s__next_pos(s, n, (size_t)c[0][1] - 1);   /* K75: the aligned end */\n"
+            "        *flp = 0;\n"
             "    } else if ((size_t)c[0][0] < n) {\n"
-            "        it->lo = (size_t)c[0][0];                          /* PCRE2: retry at the empty match */\n"
-            "        it->flags = PCREC_ITER_F_RETRY;\n"
+            "        *lop = (size_t)c[0][0];                          /* PCRE2: retry at the empty match */\n"
+            "        *flp = PCREC_ITER_F_RETRY;\n"
             "    } else {\n"
-            "        it->lo = n + 1;                                    /* an empty match at n ends it */\n"
-            "        it->flags = 0;\n"
+            "        *lop = n + 1;                                    /* an empty match at n ends it */\n"
+            "        *flp = 0;\n"
             "    }\n"
             "    return 1;\n"
             "}\n\n", p, p);
     else
         pcrec_sb_printf(c,
-            "    it->lo = c[0][1] > c[0][0] ? %s__next_pos(s, n, (size_t)c[0][1] - 1)   /* K75 */\n"
-            "                               : %s__next_pos(s, n, (size_t)c[0][0]);\n"
+            "    *lop = c[0][1] > c[0][0] ? %s__next_pos(s, n, (size_t)c[0][1] - 1)   /* K75 */\n"
+            "                             : %s__next_pos(s, n, (size_t)c[0][0]);\n"
             "    return 1;\n"
             "}\n\n", p, p);
 }
@@ -305,47 +326,50 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
 /* The VM's own-storage STEP, `<p>__step_own`: the binding `<p>_search` makes
  * when no buffers are bound into the iterator -- the stamped default, the fast
  * tier escalating to the deep one on a FRAMES give-up ([OPT-1]: the deep re-run
- * is the same step from the same state, its answer the default's), or the
+ * is the same step from the same cursor, its answer the default's), or the
  * frameless forward's empty storage. */
-static void emit_step_own(StrBuf *c, const char *p, const char *up,
+static void emit_step_own(Ctx *cx, StrBuf *c, const char *p, const char *up,
                           const PcrecIterText *t)
 {
+    const char *cp = cursor_params(cx, t);
+    const char *ca = cursor_args(cx, t);
     switch (t->own) {
     case PCREC_FWD_OWN_TIERED:
         pcrec_sb_printf(c,
-            "static %sint %s__step_deep(rx_iter *it, ptrdiff_t (*c)[2], size_t *at)\n"
+            "static %sint %s__step_deep(%s,\n"
+            "                           ptrdiff_t (*c)[2], size_t *at)\n"
             "{\n"
             "    %s_run_state run;\n"
             "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
             "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
             "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s__step(it, c, &run, at);\n"
+            "    return %s__step(%s, c, &run, at);\n"
             "}\n\n"
-            "static inline __attribute__((always_inline)) int %s__step_own(rx_iter *it, ptrdiff_t (*c)[2],\n"
-            "                                                           size_t *at)\n"
+            "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
+            "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
             "{\n"
             "    %s_run_state run;\n"
             "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
             "    int r;\n"
             "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
             "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    r = %s__step(it, c, &run, at);\n"
+            "    r = %s__step(%s, c, &run, at);\n"
             "    if (r != %s) return r;\n"
             "    %s_TIER_NOTE();\n"
-            "    return %s__step_deep(it, c, at);\n"
+            "    return %s__step_deep(%s, c, at);\n"
             "}\n\n",
-            pcrec_attr_text(PCREC_ATTR_NOINLINE), p, p, p, p, up, up, p,
-            p, p, p, p, up, up, p, t->frames_code, up, p);
+            pcrec_attr_text(PCREC_ATTR_NOINLINE), p, cp, p, p, p, up, up, p, ca,
+            p, cp, p, p, p, up, up, p, ca, t->frames_code, up, p, ca);
         return;
     case PCREC_FWD_EMPTY:
         pcrec_sb_printf(c,
-            "static inline __attribute__((always_inline)) int %s__step_own(rx_iter *it, ptrdiff_t (*c)[2],\n"
-            "                                                           size_t *at)\n"
+            "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
+            "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
             "{\n"
             "    %s_run_state run;   /* frameless: no storage to bind */\n"
             "    %s_run_state_bind(&run, (void *)0, 0, (void *)0, 0);\n"
-            "    return %s__step(it, c, &run, at);\n"
-            "}\n\n", p, p, p, p);
+            "    return %s__step(%s, c, &run, at);\n"
+            "}\n\n", p, cp, p, p, p, ca);
         return;
     case PCREC_FWD_OWN:
     case PCREC_FWD_INERT:
@@ -353,68 +377,84 @@ static void emit_step_own(StrBuf *c, const char *p, const char *up,
         break;
     }
     pcrec_sb_printf(c,
-        "static inline __attribute__((always_inline)) int %s__step_own(rx_iter *it, ptrdiff_t (*c)[2],\n"
-        "                                                           size_t *at)\n"
+        "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
+        "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
         "{\n"
         "    %s_run_state run;\n"
         "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
         "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
         "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-        "    return %s__step(it, c, &run, at);\n"
-        "}\n\n", p, p, p, p, up, up, p);
+        "    return %s__step(%s, c, &run, at);\n"
+        "}\n\n", p, cp, p, p, p, up, up, p, ca);
 }
 
-/* `<p>__one`, ONE search of the iterator (findall_iter_i2.md §2.3): I1's
- * `<prefix>_next` body under a static always_inline name -- bind a non-BOUND
- * header, one STEP (the caller's storage or the artifact's own on the VM),
- * and on the end path ENDED with `rc` and `lo`. Both controllers inline it,
- * so `_next` IS this body and `_next_n` is a loop of it. Its `local` is dead
- * wherever the caller's pointer is known non-NULL (the controllers' hot
- * paths), and only `<p>__one_local` keeps it. */
-static void emit_one(StrBuf *c, const char *p, const char *up,
-                     const PcrecIterText *t)
+/* `<p>__one`, ONE search of a BOUND iterator from the caller's cursor
+ * (findall_iter_i2.md §2.3; lane iteropt2): one STEP (the caller's storage
+ * or the artifact's own on the VM), and on the end path the cursor's `lo`
+ * set to the search that ended it and the iterator ENDED with `rc`. `c` is
+ * never NULL. The controllers own the cursor: `<p>__one_call` (`_next`'s
+ * body) loads and stores it around one call, `_next_n` around its loop. */
+static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
 {
+    const char *sa = pcrec_sb_fragf(&cx->arena, "s, n, lop%s%s", t->retry ? ", flp" : "",
+                                    t->vars ? ", it->vars, it->nvars" : "");
     pcrec_sb_printf(c,
-        "static inline __attribute__((always_inline)) int %s__one(rx_iter *it,\n"
-        "                                                      ptrdiff_t (*capture_spans)[2])\n"
+        "static inline __attribute__((always_inline)) int %s__one(rx_iter *it, const unsigned char *s,\n"
+        "                                                      size_t n, size_t *lop%s,\n"
+        "                                                      ptrdiff_t (*c)[2])\n"
         "{\n"
-        "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
-        "    ptrdiff_t (*c)[2] = capture_spans ? capture_spans : local;\n"
         "    size_t at;\n"
-        "    int r;\n"
-        "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
-        "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n",
-        p, up, p);
+        "    int r;\n", p, t->retry ? ", uint32_t *flp" : "");
     if (t->vm)
         pcrec_sb_printf(c,
             "    if (it->bufs) {                                    /* the caller's storage */\n"
             "        const %s_buffers *b = (const %s_buffers *)it->bufs;\n"
             "        %s_run_state run;\n"
             "        %s_run_state_bind(&run, b->frames, b->nframes, b->trail, b->ntrail);\n"
-            "        r = %s__step(it, c, &run, &at);\n"
+            "        r = %s__step(%s, c, &run, &at);\n"
             "    } else\n"
-            "        r = %s__step_own(it, c, &at);\n", p, p, p, p, p, p);
+            "        r = %s__step_own(%s, c, &at);\n", p, p, p, p, p, sa, p, sa);
     else
-        pcrec_sb_printf(c, "    r = %s__step(it, c, &at);\n", p);
+        pcrec_sb_printf(c, "    r = %s__step(%s, c, &at);\n", p, sa);
     pcrec_sb_puts(c,
         "    if (r == 1) return 1;\n"
-        "    it->lo = at;                                       /* the search that ended it */\n"
+        "    *lop = at;                                         /* the search that ended it */\n"
         "    it->rc = r;\n"
         "    it->hdr = PCREC_ITER_ENDED;                        /* sticky */\n"
         "    return 0;\n"
         "}\n\n");
 }
 
-/* The two exported controllers over `<p>__one`, both with the NEXT entry's
- * linkage (no entry of their own: `.next_n` is NULL exactly where `.next`
- * is): `<prefix>_next`, one search; `<prefix>_next_n`, up to `k` searches
- * into consecutive NCAPS-pair entries, stopping at the first that ends the
- * iterator. `k == 0` runs nothing, in every state. A NULL `capture_spans`
- * goes to `<p>__one_local`, the one function that owns the NCAPS-pair stack
- * buffer STEP then writes: with that array out of the controllers, gcc's
- * -fstack-protector-strong (Ubuntu's default) puts no canary on them, which
- * it did on every call (lane iteropt, measured 6-7 instructions per call). */
-static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up)
+/* `<p>__one_call`, one `<prefix>_next` call: bind a non-BOUND header, then
+ * one `<p>__one` whose cursor is the iterator's own `lo` and `flags`. One
+ * search loads and stores them once anyway; a local copy would only add a
+ * store on the end path, where `lo` has not moved (measured, lane iteropt2). */
+static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
+{
+    pcrec_sb_printf(c,
+        "static inline __attribute__((always_inline)) int %s__one_call(rx_iter *it,\n"
+        "                                                           ptrdiff_t (*capture_spans)[2])\n"
+        "{\n"
+        "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
+        "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n"
+        "    return %s__one(it, it->s, it->n, &it->lo%s, capture_spans);\n"
+        "}\n\n", p, p, p, t->retry ? ", &it->flags" : "");
+}
+
+/* The two exported controllers, both with the NEXT entry's linkage (no
+ * entry of their own: `.next_n` is NULL exactly where `.next` is):
+ * `<prefix>_next`, one `<p>__one_call`; `<prefix>_next_n`, up to `k`
+ * searches into consecutive NCAPS-pair entries, stopping at the first that
+ * ends the iterator, with the cursor in locals across the whole loop (lane
+ * iteropt2: `it->lo` was loaded and stored around every search). `k == 0`
+ * runs nothing, in every state, so it returns before the bind. A NULL
+ * `capture_spans` goes to `<p>__one_local`, the one function that owns the
+ * NCAPS-pair stack buffer STEP then writes: with that array out of the
+ * controllers, gcc's -fstack-protector-strong (Ubuntu's default) puts no
+ * canary on them, which it did on every call (lane iteropt, measured 6-7
+ * instructions per call). */
+static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
+                             const PcrecIterText *t)
 {
     const char *st = pcrec_entry_storage(cx, PCREC_ENTRY_NEXT);
     pcrec_sb_printf(c,
@@ -422,28 +462,41 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up)
         "{\n"
         "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
         "    local[0][0] = local[0][1] = 0;   /* -Wmaybe-uninitialized: gcc cannot see the search write them */\n"
-        "    return %s__one(it, local);\n"
+        "    return %s__one_call(it, local);\n"
         "}\n\n", pcrec_attr_text(PCREC_ATTR_NOINLINE), p, up, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
         "%sint %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2])\n"
         "{\n"
         "    if (__builtin_expect(!capture_spans, 0)) return %s__one_local(it);\n"
-        "    return %s__one(it, capture_spans);\n"
+        "    return %s__one_call(it, capture_spans);\n"
         "}\n\n", st, p, p, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
         "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k)\n"
         "{\n"
-        "    size_t i = 0;\n"
+        "    const unsigned char *s;\n"
+        "    size_t n, lo, i = 0;\n"
+        "%s"
         "    if (__builtin_expect(!capture_spans, 0)) {\n"
         "        while (i < k && %s__one_local(it)) ++i;\n"
         "        return i;\n"
         "    }\n"
-        "    while (i < k && %s__one(it, capture_spans + i * %s_NCAPS))\n"
+        "    if (k == 0) return 0;                              /* nothing, in every state */\n"
+        "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
+        "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n"
+        "    s = it->s;\n"
+        "    n = it->n;\n"
+        "    lo = it->lo;\n"
+        "%s"
+        "    while (i < k && %s__one(it, s, n, &lo%s, capture_spans + i * %s_NCAPS))\n"
         "        ++i;\n"
+        "    it->lo = lo;\n"
+        "%s"
         "    return i;\n"
-        "}\n\n", st, p, p, p, up);
+        "}\n\n", st, p, t->retry ? "    uint32_t flags;\n" : "", p, p,
+        t->retry ? "    flags = it->flags;\n" : "", p, t->retry ? ", &flags" : "", up,
+        t->retry ? "    it->flags = flags;\n" : "");
 }
 
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
@@ -460,8 +513,9 @@ void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
     bool checks = emit_bind_checks(cx, c, p);
     emit_enter(c, p, checks);
     emit_step(cx, c, p, t);
-    if (t->vm) emit_step_own(c, p, g->upper, t);
-    emit_one(c, p, g->upper, t);
-    emit_controllers(cx, c, p, g->upper);
+    if (t->vm) emit_step_own(cx, c, p, g->upper, t);
+    emit_one(cx, c, p, t);
+    emit_one_call(c, p, t);
+    emit_controllers(cx, c, p, g->upper, t);
     pcrec_sb_scaffold_close(c);
 }
