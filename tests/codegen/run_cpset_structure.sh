@@ -1004,6 +1004,10 @@ fi
 # Only the iterator entry moved (rx_iter_begin's initializer, rx__enter,
 # rx__step, rx__one, rx__one_call, rx__one_local, rx_next, rx_next_n). Measured
 # at the same `-o -` and diffed against the i2build compiler (bed4bef84).
+# RE-RECORDED 2026-10-23 at lane nomacro (RX_FOREACH dropped, D175; abi stays
+# 84): all twelve EMITTED_BYTES rows -2,686, the same on every artifact: the
+# RX_FOREACH block (its comment, RX_FOREACH_PAIRS, rx_foreach, rx_foreach_begin,
+# rx_foreach_pull, the macro) is gone from the shared block; nothing else moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
