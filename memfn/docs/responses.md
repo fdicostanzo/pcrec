@@ -2984,3 +2984,15 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Proposed decision text:** caller-facing names (public flags, `rx_info` fields and values, CLI options, stamps, spec prose a caller reads) describe BEHAVIOUR. They never use internal architecture names ("kit", "memfn", "proof", window-family letters).
   - **Not retroactive:** the existing `--memfn=` option namespace and its rows stay as they are, with no disruption. The guide binds every NEW name and new spec sentence from 2026-10-23.
   - **Kit application:** S3's new spec prose for `"cover"` and its tuning row will be worded by behaviour before delivery. S3's two new deny rows stay in the existing `--memfn=` namespace (no disruption).
+
+- notice: 2026-10-23 — **Frank's rulings on the stop-ranking study (lane/memfn-stopstudy 0567def22, stop_ranking_study.md §10), Q1:** "I agree."
+  - **The ruling:** "which stop, found how" becomes ONE priced choice in the kit's Table A, over (alternative × stop position × find method). Table B quotes each method's price for a set at an offset.
+  - **Conditions (Frank):**
+    1. Cost facts are VISIBLE in a table, never magic numbers. There is ONE cost table: the measurement set (plan_cost.def's rows move into it or are listed with it), shown through the existing `--list-measurements`, not a new listing. Each artifact stamps the cost set and revision it priced with.
+    2. A cost that changes under an option does so through a visible key column or a different row, never a hidden adjustment:
+       - the SIMD layer changes which methods are available, not their cost;
+       - the target box or ISA selects the set;
+       - encoding is a fact about rates (the prior), not costs.
+       A check asserts that every cost an artifact used is a declared row of its stamped set.
+    3. Units: costs are recorded RELATIVE to the scalar walk's per-byte cost on the same box (as measures.md already designs). The raw absolute readings (ns, box, clock, compiler, commit) are kept as provenance and listed beside them. The resolution must be fine enough that near-ties are decided by rates, not rounding.
+  - Agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements.
