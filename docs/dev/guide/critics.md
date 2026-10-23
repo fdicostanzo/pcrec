@@ -2,6 +2,11 @@
 
 First version; the 2026-10-23 S3 code-review round will refine it.
 
+The procedure for running a round (freeze, blind, pick lenses, verify, compile)
+is the `pcrec-code-critic` skill (`.claude/skills/pcrec-code-critic/SKILL.md`);
+this page holds the rules it reviews against. Lenses are chosen per change from
+the skill's lens table; no lens set is standard because an earlier round used it.
+
 A critic reviews a diff against the guide (`coding.md`, `architecture.md`,
 `style.md`, the area's `addenda/`). Critics are read-only and never run `make`
 (D6). Where a finding is already known, use blinded critics (D27). Label
