@@ -997,6 +997,13 @@ fi
 # the shared block, `.next_n =` in rx_info, <prefix>__one with <prefix>_next
 # and <prefix>_next_n over it, <prefix>_next_n's header declaration, and the
 # STEP's past-the-end line; nothing else moved.
+#
+# RE-RECORDED 2026-10-22 at lane itertri (lane iteropt2's iterator text, no
+# abi bump): the twelve EMITTED_BYTES rows +703 (DFA), +751 (a(b|c)+d and the
+# VM artifacts) .. +826 (`(a(?1)?b)`); the other stamps read identically.
+# Only the iterator entry moved (rx_iter_begin's initializer, rx__enter,
+# rx__step, rx__one, rx__one_call, rx__one_local, rx_next, rx_next_n). Measured
+# at the same `-o -` and diffed against the i2build compiler (bed4bef84).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
