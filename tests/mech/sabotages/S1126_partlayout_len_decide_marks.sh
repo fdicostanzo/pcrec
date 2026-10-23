@@ -14,6 +14,7 @@
 # -fcomments), so every attempt the abort could stop is one the caps refuse
 # anyway. UNREACHED: the probe asks for a witness whose prose exceeds two
 # thirds of its raw bytes.
+# RE-ANCHORED 2026-10-21 (lane i1build, [FINDALL-NEXT] I1): the subtraction gained the scaffold term on a continuation line; same plant, same detector.
 SAB_ID="S1126-partlayout-len-decide-marks"
 SAB_FILE="src/core/sb.c"
 SAB_SUITES="partlayout"
@@ -24,5 +25,7 @@ SAB_EXPECT_REASON='the early abort fires at 3 x the code cap, and an attempt wit
 SAB_COUNT=1
 SAB_REACH='out=$("$PCREC" -p rx -fcomments --warn-emit-bytes=1 --part-residual=shared -o "$REACH_TMP/x.c" --pattern "((a)|ab){0,500}c" 2>&1); t=$(echo "$out" | sed -n "s/.*large artifact: \([0-9]*\) bytes.*/\1/p"); k=$(echo "$out" | sed -n "s/.*(\([0-9]*\) of code).*/\1/p"); echo "total=$t code=$k"; [ -n "$t" ] && [ $((3 * k)) -lt "$t" ] && echo REACH-PROSE-OVER-TWO-THIRDS'
 SAB_REACH_EXPECT='REACH-PROSE-OVER-TWO-THIRDS'
-SAB_BEFORE='    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded - sb->layout_bytes;'
-SAB_AFTER='    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded;   /* SABOTAGE S1126 */'
+SAB_BEFORE='    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded - sb->layout_bytes
+             - sb->scaf_guarded;'
+SAB_AFTER='    size_t n = pcrec_sb_len_uncut(sb) - sb->simd_guarded
+             - sb->scaf_guarded;   /* SABOTAGE S1126 */'

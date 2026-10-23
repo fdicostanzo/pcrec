@@ -9873,6 +9873,8 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 
 **Noted for I2 (not decided here).** The public `next_n` (k = 64) arm measured 0.58x of today's loop on prose through the PLT (c3-4k R2) and 0.94x on c1. It also measured 26x on c7, where it filled 64 matches for a caller who wanted 3. B64's internal cache kept one exported call per match and lost, so the gain comes from removing calls, not from caching. Frank's idea of a caller-side macro over a local buffer is that shape; see the journal for 2026-10-21.
 
+**Gloss (lane i2build, 2026-10-21).** "Noted for I2" above means the stage `findall_iter.md` revision 3 numbers I4 (`docs/design/findall_iter_i2.md` rev 2, fam-3): I2 stays the kit's `st` stage. The decision text is unchanged.
+
 ## D172 — ONE unified window site replaces the REPORT-specific path (Frank, 2026-10-21, given to the kit; filed by main)
 
 - **Decision:** pcrec states FACTS, not a layout ("don't overspecify representation"): spans, each with a start offset (negative allowed), a set per position, a required core, and a per-span verify-exactly flag, plus the subject facts. An off-subject position outside the core passes; inside the core it fails (absence only at the edges). Find-window and REPORT are the SAME request (REPORT = verify everything; the kit fast-finds a stop, then verifies). The stop choice moves to the kit as tables (M5, whose first row reproduces prefix_k: zero movers). Fixed lookbehinds and post-span lookaheads longer than 1 come with it, sourced from main's D168 producer; the UL-8 cap lift dissolves. Retiring, staged at zero movers: `ctx[]` and its caps, the REPORT kind, RPT's separate check, `plan_hint` (after the reproduction).
@@ -9929,3 +9931,11 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
 - **Window:** a bench/box night window cleared with Frank (the box is shared). "Schedule" never means start now. The run takes the box lock and is not a timing run, so it needs no quiet gate, only a free lock and no running queue job.
 - **Retained verdicts:** each run's logs are kept at `build/full_suite/<date>_<sha>/` (gitignored) with a one-line `summary.txt`; the manager copies it into the ledger's Runs table. Mechanics: `scripts/fullsuite_job.sh` (a box-queue job; runs at a frozen commit in its own detached worktree so merges cannot enter mid-run).
 - **Revisit when:** a red battery is found that a trigger should have caught earlier.
+
+## D175 — RX_FOREACH dropped; `_next` is the default find-all, `_next_n` the batch form (Frank, 2026-10-23)
+
+`<prefix>_next` and `<prefix>_next_n` (and `rx_info.next` / `rx_info.next_n`) stay. The `RX_FOREACH` macro family (`RX_FOREACH`, `RX_FOREACH_PAIRS`, `rx_foreach`, `rx_foreach_begin`, `rx_foreach_pull`) is dropped before landing, with the abi 83 -> 84 event amended (still 84; the branch had not landed).
+
+Evidence (find-all timing, job 599): RX_FOREACH was 4-11% slower than `_next` on cheap dense matches and 32-78% slower on tiny subjects and early stops; it won only on costly matches, where `_next_n` wins as much. A plain loop over `rx_info.next` costs 0.3-0.4% over a direct `_next`, and `rx_info.next_n` gives generic code the batching.
+
+Generic-loop rule: a caller that serves any artifact loops over `info->next` (one match per call) or `info->next_n` (a batch); the spec shows both (match_api.md §3.8.2). No macro stands between the caller and the entry. Supersedes the RX_FOREACH parts of `docs/design/findall_iter_i2.md` (D171).

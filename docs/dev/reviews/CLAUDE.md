@@ -51,3 +51,4 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 `docs/dev/decisions.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
+- `2026-10-21-r1-findall-i2.md` — light D6 panel on findall_iter_i2.md rev 1.

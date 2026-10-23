@@ -17,5 +17,7 @@ SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 3 fail"
 SAB_COUNT=1
 # [M6-READ] Single-quoted: the guard added to body() contains $ and \t, and
 # a double-quoted anchor needed four levels of escaping to say so.
-SAB_BEFORE='        $0 ~ "^(static )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }'
+# [FINDALL-NEXT] I1 (lane i1tri) RE-ANCHORED: the head also admits `inline`
+# and one attribute (the engine body is `<prefix>__find`); same mechanism.
+SAB_BEFORE='        $0 ~ "^(static )?(inline )?(__attribute__\\(\\([a-z_]+\\)\\) )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }'
 SAB_AFTER="        { inside = 1 }"

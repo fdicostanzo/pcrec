@@ -74,3 +74,4 @@ Maintenance: update this file when subdirectories/test modules are added or remo
 - Also (one-line entries for these are in the history file): `axes`, `core`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests.md`.
+- **findall/** — [FINDALL-NEXT] `make test-findall`: the iterator vs libpcre2 global iteration, `global.rxt`; own CLAUDE.md.

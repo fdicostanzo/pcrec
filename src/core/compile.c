@@ -210,6 +210,9 @@ static void job_cleanup(Ctx *cx)
          * it stopped. */
         free(cx->job->adfa.st);
         free(cx->job->adfa.tab);
+        /* [FINDALL-NEXT] the iterator's retry machine, the same terms. */
+        free(cx->job->nedfa.st);
+        free(cx->job->nedfa.tab);
         /* D164 B3 the set of machines that is not live (see Job.xnfa). */
         free(cx->job->xnfa.st);
         free(cx->job->xrnfa.st);
@@ -335,6 +338,28 @@ static void build_anchored_dfa(Ctx *cx)
     pcrec_scanedge_dfa(cx, &cx->job->adfa,
                        pcrec_dfa_scan_state_written(cx, &cx->job->adfa), true);
     cx->job->anchored_ok = true;
+}
+
+/* [FINDALL-NEXT] I1 THE ITERATOR'S RETRY MACHINE (findall_iter.md §3.3,
+ * Job.nedfa): where a DFA artifact can report an empty span, `<prefix>_next`
+ * answers PCRE2's global iteration, whose NOTEMPTY_ATSTART retry is an
+ * anchored attempt at the empty match's position that rejects the empty
+ * match there. A DFA has no guard to reject it with, so the retry is its own
+ * machine: the anchored construction over the PLAIN forward NFA (built before
+ * any lowered set is swapped in), rooted at `nfa.anch_start`, with the
+ * notempty start root. MANDATORY and built BEFORE the optional anchored
+ * machine (`build_anchored_dfa`'s rule 1: an optional machine built first
+ * could push this one over the subset budget). Built where the retry table's
+ * winner needs it (`pcrec_iter_retry_of`): not where no `<prefix>_next` is
+ * exported or no empty span is ever reported. */
+static void build_notempty_dfa(Ctx *cx)
+{
+    if (!(pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA)) return;
+    cx->job->nedfa.notempty = true;
+    pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->nedfa, true, false,
+                        PCREC_MAX_DFA_STATES_TABLE, cx->job->nfa.anch_start, false);
+    pcrec_scanedge_dfa(cx, &cx->job->nedfa,
+                       pcrec_dfa_scan_state_written(cx, &cx->job->nedfa), true);
 }
 
 /* D164 B3 ONE OPTIONAL MACHINE of the `tagged` form, built from `nfa` and
@@ -2916,6 +2941,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                    pcrec_dfa_scan_state_written(&cx, &cx.job->dfa), true);
                 pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
                                    pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
+                build_notempty_dfa(&cx);
                 build_anchored_dfa(&cx);
                 /* D164 B3 the `rev-end` walk's form, once the three machines
                  * exist (endmark.md §R.2.1's order). */
@@ -2935,6 +2961,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     pcrec_build_min_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
                                         false, mg, cx.job->nfa.start, false);
                 }
+                build_notempty_dfa(&cx);
                 /* [OPT-5] NOT run on ENG_ATTEMPT's machine, and the reason is
                  * [OPT-3]'s own for exempting that engine one row earlier:
                  * its states are LABELS and a step is
@@ -3336,6 +3363,8 @@ facts_force:
             pf->utf_check = pcrec_utf_check_on(&cx);
             pf->simd_guarded = cx.job->csb.simd_guarded;
             pf->simd_size = cx.job->csb.simd_size;
+            pf->scaf_guarded = cx.job->csb.scaf_guarded;
+            pf->scaf_size = cx.job->csb.scaf_size;
             pf->copyable = !cx.job->pl.uncopyable;
             pf->layout_bytes = cx.job->csb.layout_bytes;
             if (!pf->into || !cx.job->memfn_forms)

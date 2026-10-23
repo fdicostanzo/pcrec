@@ -94,6 +94,22 @@ for i, (fl, pat) in enumerate(WIT):
 (good if na >= 4 else fail)("[alias-population] %d alias witnesses (floor 4)" % na)
 
 # B
+import re
+def search_body_start(t, att):
+    """Offset of the function holding the search body, or -1. Since iterfix2
+    (EMIT-1, "no split without a prologue") the body is `rx__find` where a
+    UTF-check/start-guard prologue exists, `rx_search_run` for a VM artifact
+    without one, and `rx_search` itself for a DFA byte artifact. The holder is
+    the first of those DEFINITIONS (not the prototype) whose text carries the
+    attempt marker `att`; none found is a RED (-1), never a pass."""
+    for name in ("rx__find", "rx_search_run", "rx_search"):
+        m = re.search(r"^(?:static )?(?:__attribute__\(\(\w+\)\) )?int %s\(const unsigned char[^;{]*\{" % name, t, re.M)
+        if m:
+            e = t.find("\n}\n", m.start())
+            if att in t[m.start():e if e >= 0 else len(t)]:
+                return m.start()
+    return -1
+
 def order_reason(t, kind):
     """None where the presence verdict precedes the first attempt; else why
     not. In the search function's own body (to its closing `}` at column 0),
@@ -102,17 +118,17 @@ def order_reason(t, kind):
     each verdict (the byte's memchr, the run's `_reqrun(...search_from)`)
     before the first `for (start = `. Every occurrence, not the first one: a
     verdict split around the attempt is the defect too (the negative control
-    moves ONE line)."""
+    moves ONE line). [FINDALL-NEXT] I1 moved both engines' body into
+    `<prefix>__find`, which `_search` (and `_search_run`) forward to."""
     if kind == "vm":
         if '#define RX_VM_PREFILTER "none"' not in t:
             return "not a no-DFA VM artifact"
-        run = t.find("_search_run(const unsigned char")
         pres, att = ["memchr(subject + search_from"], "ctx.pos = "
     else:
         if '#define RX_DFA_SCAN "attempt"' not in t:
             return "not a DFA attempt-route artifact"
-        run = t.find("int rx_search(const unsigned char")
         pres, att = ["memchr(subject + search_from", "_reqrun(subject, subject_length, search_from)"], "for (start = "
+    run = search_body_start(t, att)
     if run < 0:
         return "no search body"
     end = t.find("\n}\n", run)
@@ -129,8 +145,8 @@ def plant(t, kind):
     """The negative control's text: the pre-check's first statement line moved
     to just after the attempt marker's line (a reordered artifact)."""
     lines = t.split("\n")
-    run = next(i for i, l in enumerate(lines) if ("_search_run(const unsigned char" if kind == "vm"
-                                                  else "int rx_search(const unsigned char") in l)
+    att0 = "ctx.pos = " if kind == "vm" else "for (start = "
+    run = t.count("\n", 0, search_body_start(t, att0))
     pi = next(i for i in range(run, len(lines)) if "memchr(subject + search_from" in lines[i]
               or "_reqrun(subject, subject_length, search_from)" in lines[i])
     ai = next(i for i in range(run, len(lines)) if ("ctx.pos = " if kind == "vm" else "for (start = ") in lines[i])

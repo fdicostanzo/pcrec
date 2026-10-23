@@ -973,6 +973,47 @@ fi
 # `#define RX_MEASURES ""`, `.measures = "",` and the `measures` member with its
 # two-line comment in the shared ABI block (diffed at the same `-o` against a
 # build of the branch point; nothing else moves but the same-width abi digits).
+#
+# RE-RECORDED 2026-10-21 at [FINDALL-NEXT] I1 (lane i1build, abi 82 -> 83):
+# every EMITTED_BYTES row moves by the iterator's scaffold, nothing else (the
+# other stamps read identically): +6,429 on a DFA artifact with no empty
+# report, +6,417 on `^foo$` (its attempt-route `__find` is `noinline`, 12
+# bytes shorter than `always_inline`), +7,137
+# on a VM artifact (its `__step_own` binding and the buffers branch), +7,549
+# on `(a(?1)?b)` (its tiered `__step_deep`). The text is rx_iter and its
+# setters in the shared block, rx_nextfn, rx_info.next, the ITER_RETRY stamp,
+# <prefix>__find, the residual twins' forwarders and <prefix>_next. Measured
+# against the I0 commit's compiler at the same `-o -`.
+#
+# RE-RECORDED 2026-10-21 at lane i1tri2 (I1's own abi 83 event, no bump): all
+# twelve EMITTED_BYTES rows -145, exactly `<prefix>_iter_buffers`' two-line doc
+# comment, which lane i1tri made NON-ESSENTIAL (D112 item 2) after the I1
+# re-record above; nothing else moved.
+#
+# RE-RECORDED 2026-10-21 at [FINDALL-NEXT] I4 (lane i2build, abi 83 -> 84): all
+# twelve EMITTED_BYTES rows +3,645, the same on DFA, VM and tiered artifacts:
+# rx_nextnfn, the RX_FOREACH block (its comment, RX_FOREACH_PAIRS, rx_foreach,
+# rx_foreach_begin, rx_foreach_pull, the macro) and the rx_info.next_n member in
+# the shared block, `.next_n =` in rx_info, <prefix>__one with <prefix>_next
+# and <prefix>_next_n over it, <prefix>_next_n's header declaration, and the
+# STEP's past-the-end line; nothing else moved.
+#
+# RE-RECORDED 2026-10-22 at lane itertri (lane iteropt2's iterator text, no
+# abi bump): the twelve EMITTED_BYTES rows +703 (DFA), +751 (a(b|c)+d and the
+# VM artifacts) .. +826 (`(a(?1)?b)`); the other stamps read identically.
+# Only the iterator entry moved (rx_iter_begin's initializer, rx__enter,
+# rx__step, rx__one, rx__one_call, rx__one_local, rx_next, rx_next_n). Measured
+# at the same `-o -` and diffed against the i2build compiler (bed4bef84).
+# RE-RECORDED 2026-10-23 at lane nomacro (RX_FOREACH dropped, D175; abi stays
+# 84): all twelve EMITTED_BYTES rows -2,686, the same on every artifact: the
+# RX_FOREACH block (its comment, RX_FOREACH_PAIRS, rx_foreach, rx_foreach_begin,
+# rx_foreach_pull, the macro) is gone from the shared block; nothing else moved.
+# RE-RECORDED 2026-10-23 at lane iterfix2 (the r2 review's fixes; abi stays
+# 84): the twelve EMITTED_BYTES rows -796 (DFA) .. -878 (VM), -799 on
+# `(a(?1)?b)`; the other stamps read identically. The iterator's text only:
+# no emitted comments, `__one_local` calls `_next`, `_next_n` its own entry;
+# none of the twelve splits its search any more (byte artifacts, no prologue).
+# Versus BASE 02f357b39 (before the iterator): +7,150 (DFA) .. +8,389.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

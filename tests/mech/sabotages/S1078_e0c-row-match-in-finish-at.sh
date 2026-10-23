@@ -7,5 +7,5 @@ SAB_DESC='the table'"'"'s combinator column is the live selector: with the DFA _
 SAB_DOC_FIGURE='OWED: the single-row mech figure at the slot (lane e0c chain, build/v/mech-S1078.log); hand validation in docs/dev/lanes/e0c_report.md.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_match),      EM_ONESHOT },'
-SAB_AFTER='    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FINISH_AT,     PARTS(pr_to_match),      EM_ONESHOT },   /* SABOTAGE S1078 */'
+SAB_BEFORE='    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_match),      EF_ENTRY },'
+SAB_AFTER='    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FINISH_AT,     PARTS(pr_to_match),      EF_ENTRY },   /* SABOTAGE S1078 */'

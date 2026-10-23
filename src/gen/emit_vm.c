@@ -12466,11 +12466,13 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
      * already have. */
     if (pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
                             PCREC_ENCE_VAR_VALID)) {
-        for (unsigned i = 0; i < cx->n_var_exps; i++)
+        for (unsigned i = 0; i < cx->n_var_exps; i++) {
+            pcrec_sb_puts(c, "    if (!");
+            pcrec_enc_twin_name(c, v->p, "var_valid");   /* the static twin, [FINDALL-NEXT] */
             pcrec_sb_printf(c,
-                "    if (!%s_var_valid(run->var_value[%u], run->var_length[%u]))\n"
-                "        return PCREC_ERR_UNSET_VAR;\n",
-                v->p, i, i);
+                "(run->var_value[%u], run->var_length[%u]))\n"
+                "        return PCREC_ERR_UNSET_VAR;\n", i, i);
+        }
     }
 
     pcrec_sb_puts(c, "    return 0;\n}\n\n");
@@ -12502,6 +12504,77 @@ static const char *vm_vars_resolve_insert(Vm *v, const char *ctxexpr)
          * which is D49's rule and the shape the four give-up lines below
          * already take. */
         strcmp(ctxexpr, "&ctx") == 0 ? "(int)vr" : "vr");
+}
+
+/* [FINDALL-NEXT] `<prefix>__match_notempty`, the find-all iterator's retry
+ * matcher (findall_iter.md §3.3): `<prefix>_match_anchored`'s text,
+ * written just above at `matcher_at`, again under its own name with one
+ * line more at its accept label (`guard_at`): a match whose REPORTED span is
+ * empty at `ctx->pos` is rejected and the program backtracks to its next
+ * alternative, exactly as PCRE2's NOTEMPTY_ATSTART retry does. The reported
+ * span is `[start, scan_position)` with `ctx->pos <= start <= scan_position`
+ * (`start` is the `\K` slot where one was crossed), so it is empty AT
+ * `ctx->pos` exactly when `scan_position == ctx->pos`; an empty span a `\K`
+ * moved past `ctx->pos` (`ab\K`) is a match.
+ *
+ * A COPY, NOT A FLAG: a guard on a run-state flag in the one matcher costs
+ * every search and match entry a load and a test at each accept, and
+ * reshapes the out-of-line matcher (measured +10-14% on nullable
+ * patterns); the program's computed goto keeps gcc from
+ * inlining or cloning it, so only a second text keeps the entries' code
+ * unchanged. Scaffold (§6.4): no length decision reads it. Written where the
+ * retry table's winner needs it (`PCREC_ITER_NEEDS_GUARDED`), above the
+ * `#undef`s, while the program's macros are defined. */
+static void vm_emit_guarded_matcher(Vm *v, size_t matcher_at, size_t guard_at)
+{
+    StrBuf *c = &v->cx->job->csb;
+    if (!(pcrec_iter_retry_of(v->cx)->needs & PCREC_ITER_NEEDS_GUARDED)) return;
+    const char *name = pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored(", v->p);
+    const char *at = strstr(c->p + matcher_at, name);
+    if (!at || (size_t)(at - c->p) > guard_at)
+        pcrec_ctx_fail(v->cx, 0, "internal error: the guarded matcher's source has "
+                       "no `_match_anchored` head (src/gen/emit_vm.c)");
+    const size_t name_at = (size_t)(at - c->p), end_at = c->len;
+    const char *copy = pcrec_sb_fragf(&v->cx->arena,
+        "%.*s%s__match_notempty(%.*s"
+        "    if (scan_position == ctx->pos) goto %s_fail;\n"
+        "%.*s",
+        (int)(name_at - matcher_at), c->p + matcher_at, v->p,
+        (int)(guard_at - name_at - strlen(name)), c->p + name_at + strlen(name),
+        v->p, (int)(end_at - guard_at), c->p + guard_at);
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_puts(c, copy);
+    pcrec_sb_scaffold_close(c);
+}
+
+/* [FINDALL-NEXT] `<prefix>_search_run`, the one static every search entry
+ * calls: its caller-position prologue -- the range test (the body has none:
+ * the iterator's step tests `lo > n` before every call), then the K50
+ * boundary guard (site 1 of 3 on this engine) and the subject check -- over
+ * the search loop `<prefix>__find`, which the find-all iterator runs at
+ * every step with none of it (its first position is checked once, at bind).
+ * The guard is HERE, at the one static every rung of the entry ladder passes
+ * through, for [CC-DIFF] STEP 2's reason: the rungs delegate in opposite
+ * directions, so guarding the six entries would be six copies of one test. */
+static void vm_emit_search_run_prologue(Vm *v, const GenNames *g, const VmEntry *en)
+{
+    StrBuf *c = &v->cx->job->csb;
+    /* the head, the range test and the guard are the text the loop carried
+     * before the split, counted as before; the lines that are new are
+     * scaffold (findall_iter.md §6.4) */
+    pcrec_sb_printf(c,
+        "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
+        "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
+        "{\n",
+        en->ai, g->searchfn, v->p, pcrec_vars_param_text(v->cx));
+    pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
+    pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
+                              "subject_length", false);
+    pcrec_sb_scaffold_open(c);
+    pcrec_sb_printf(c,
+        "    return %s__find(subject, subject_length, search_from, capture_spans, run%s);\n"
+        "}\n\n", v->p, pcrec_vars_arg_text(v->cx));
+    pcrec_sb_scaffold_close(c);
 }
 
 static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
@@ -12544,10 +12617,6 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    run->trail_cap    = ntrail;\n"
         "}\n\n",
         en->ai, v->p, v->p, v->p, v->p);
-
-    /* [VAR] THE ONCE-PER-CALL RESOLUTION (variables_common.md §3.2, §5's
-     * EXPANSION half), emitted only on a var-bearing artifact. */
-    vm_emit_vars_resolve(v, en);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -12678,6 +12747,12 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         if (v->nwcls) pcrec_sb_puts(c, "\n");
     }
 
+    /* [VAR] THE ONCE-PER-CALL RESOLUTION (variables_common.md §3.2, §5's
+     * EXPANSION half), emitted only on a var-bearing artifact. Below the
+     * residual entries: it calls `<prefix>__var_valid`, a static twin
+     * ([FINDALL-NEXT] F-1) with no declaration ahead of its definition. */
+    vm_emit_vars_resolve(v, en);
+
     /* ---- the prefilter (§6.1, §4.7) ------------------------------------ */
     const char *prefn = NULL;
     if (job->fit.prefilter) {
@@ -12728,6 +12803,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * It is emitted ONLY where the program contains an MRL bound, so an
      * artifact with no clamp keeps the signature it had before MRL existed
      * and stays byte-identical. */
+    const size_t matcher_at = c->len;   /* [FINDALL-NEXT] the guarded copy's source */
     pcrec_sb_printf(c,
         "static %sptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n"
         "{\n"
@@ -12873,6 +12949,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
         "     * filled by the ENTRY, not here (3.4). */\n");
     pcrec_sb_cmt_close(c);
+    const size_t guard_at = c->len;   /* where the guarded copy's accept test goes */
     pcrec_sb_printf(c,
         "%s"
         "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
@@ -12984,6 +13061,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             "}\n\n");
     }
 
+    vm_emit_guarded_matcher(v, matcher_at, guard_at);
     pcrec_sb_printf(c, "#undef %s_TRAIL\n#undef %s_SET\n#undef %s_PUSH\n\n",
               v->up, v->up, v->up);
 
@@ -13084,17 +13162,40 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "/* The search loop. Called by both entries below with a run state\n"
         " * already pointed at its working storage. */\n");
     pcrec_sb_cmt_close(c);
+    /* [FINDALL-NEXT] Where the iterator skips a caller-position prologue
+     * (`PCREC_ENTRY_FIND` is emitted), THE LOOP IS `<prefix>__find`, the
+     * search body without it, which the iterator's every step runs; the
+     * `_run` static the entries call is that prologue over it, written
+     * after the body (findall_iter.md §2.1). Its head is scaffold: the head
+     * every length decision reads is the `_run` static's, which is the text
+     * this function's head was. Elsewhere the loop is the `_run` static
+     * itself, today's one function, and the iterator calls it. */
+    const bool split = pcrec_entry_emitted(cx, PCREC_ENTRY_FIND);
+    if (split) {
+        pcrec_sb_scaffold_open(c);
+        pcrec_sb_printf(c,
+            "static %sint %s__find(const unsigned char *subject, size_t subject_length,\n"
+            "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
+            "{\n",
+            en->ai, v->p, v->p, pcrec_vars_param_text(cx));
+        pcrec_sb_scaffold_close(c);
+    } else
+        pcrec_sb_printf(c,
+            "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
+            "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
+            "{\n",
+            en->ai, g->searchfn, v->p, pcrec_vars_param_text(cx));
     pcrec_sb_printf(c,
-        "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
-        "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
-        "{\n"
         "    rx_ctx ctx;\n"
         "    ptrdiff_t result;\n"
         "    size_t attempt_position;\n"
-        "%s"
-        "    if (search_from > subject_length) return 0;\n",
-        en->ai, g->searchfn, v->p, pcrec_vars_param_text(cx),
+        "%s",
         v->nclamp > 0 ? "    size_t window_end;\n" : "");
+    if (!split) {
+        pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
+        pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
+                                  "subject_length", false);
+    }
 
     /* [K50] The caller-startpos boundary guard, site 1 of 3 on this engine.
      * It goes AFTER the range test above by placement and does not depend on
@@ -13107,8 +13208,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * The `_run` statics are the one point every rung of that ladder passes
      * through, so guarding here is what makes the six entries agree by
      * construction instead of by six copies of one test. */
-    pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
-                              "subject_length", false);
+    /* [FINDALL-NEXT] (the guard itself is in the `_run` prologue, written
+     * after this body: `vm_emit_search_run_prologue`.) */
 
     /* [VAR] K129: THE VARIABLES ARE RESOLVED HERE, right after the caller-
      * position guard and above every check that can answer `0` from a proof
@@ -13518,6 +13619,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    return 1;\n"
         "}\n\n",
         v->p);
+    if (split) vm_emit_search_run_prologue(v, g, en);
 }
 
 /* [K50]/[UTF-VALID] The two ANCHORED `_run` bodies' caller-position
@@ -13528,6 +13630,41 @@ static void vm_emit_match_guard(Vm *v, StrBuf *c)
 {
     pcrec_emit_startpos_guard(v->cx, c, "    ", "ctx->pos", "ctx->subject",
                               "ctx->len", true);
+}
+
+/* The matcher call's trailing arguments: the MRL ceiling and the `\G`
+ * start where the program has them (`<prefix>_match_anchored`'s head). */
+static const char *vm_matcher_args(Vm *v, const char *len, const char *pos)
+{
+    return pcrec_sb_fragf(&v->cx->arena, "%s%s%s%s", v->nclamp > 0 ? ", " : "",
+                          v->nclamp > 0 ? len : "", v->ngst > 0 ? ", " : "",
+                          v->ngst > 0 ? pos : "");
+}
+
+/* THE ANCHORED ATTEMPT, the one text of the VM's three anchored callers
+ * (`<prefix>_match_run`, `<prefix>_match_caps_run` and the find-all
+ * iterator's retry `<prefix>__retry`): a fresh run state, then one attempt
+ * of `matcher` at `ctx->pos` into `result`. Each caller writes its own
+ * prologue (the caller-position checks and the variables, in that order,
+ * K129) before it. The retry's matcher is the guarded copy
+ * (`vm_emit_guarded_matcher`), so the entries' text and code are the ones
+ * they were before the iterator. */
+static void vm_emit_anchored_attempt(Vm *v, StrBuf *c, const char *matcher)
+{
+    pcrec_sb_printf(c,
+        "    %s_run_state_init(run);\n"
+        "    result = %s(ctx, run%s);\n",
+        v->p, matcher, vm_matcher_args(v, "ctx->len", "ctx->pos"));
+}
+
+/* The attempt's capture report into `caps` on a match, then its answer. */
+static void vm_emit_attempt_report(Vm *v, StrBuf *c, const char *caps)
+{
+    pcrec_sb_printf(c,
+        "    if (result < 0) return result;\n"
+        "    if (%s) %s_report_captures(run, %s, ctx->pos, result);\n"
+        "    return result;\n"
+        "}\n\n", caps, v->p, caps);
 }
 
 /* `<prefix>_match`'s one implementation, `<prefix>_match_run`: the guard,
@@ -13576,21 +13713,16 @@ static void vm_emit_match_run(Vm *v, const GenNames *g, const VmEntry *en)
      * position that is not a character start. */
     pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
                           "ctx->len", PCREC_START0_NOMATCH);
-    pcrec_sb_printf(c,
-        "    %s_run_state_init(run);\n"
-        "    result = %s_match_anchored(ctx, run%s%s);\n",
-        v->p, v->p,
-        v->nclamp > 0 ? ", ctx->len" : "",
-        /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
-         * `ctx->pos` — it is threaded, not absent — so `\G` here is
-         * `pos == ctx->pos`, trivially true at entry. That makes the two
-         * entries AGREE EXACTLY for a fully-`\G` pattern, and legitimately
-         * DISAGREE for a partial one (`\Gfoo|bar`): `<prefix>_search` may
-         * find `bar` at a later offset where this entry's caller asked about
-         * one position only. tests/assertions/run_gstart_diff.sh pins both
-         * halves, scoped, because an unscoped "the entries agree" test would
-         * be red on correct behaviour. */
-        v->ngst > 0 ? ", ctx->pos" : "");
+    vm_emit_anchored_attempt(v, c, pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored", v->p));
+    /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
+     * `ctx->pos` — it is threaded, not absent — so `\G` here is
+     * `pos == ctx->pos`, trivially true at entry. That makes the two
+     * entries AGREE EXACTLY for a fully-`\G` pattern, and legitimately
+     * DISAGREE for a partial one (`\Gfoo|bar`): `<prefix>_search` may
+     * find `bar` at a later offset where this entry's caller asked about
+     * one position only. tests/assertions/run_gstart_diff.sh pins both
+     * halves, scoped, because an unscoped "the entries agree" test would
+     * be red on correct behaviour. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "    /* No translation and no clamp: the impl's return space IS this\n"
@@ -13631,16 +13763,19 @@ static void vm_emit_match_caps_run(Vm *v, const GenNames *g, const VmEntry *en)
     pcrec_sb_puts(c, vm_vars_resolve_insert(v, "ctx"));   /* K129: as _match */
     pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
                           "ctx->len", PCREC_START0_NOMATCH);
-    pcrec_sb_printf(c,
-        "    %s_run_state_init(run);\n"
-        "    result = %s_match_anchored(ctx, run%s%s);\n"
-        "    if (result < 0) return result;\n"
-        "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
-        "    return result;\n"
-        "}\n\n",
-        v->p, v->p,
-        v->nclamp > 0 ? ", ctx->len" : "",
-        v->ngst > 0 ? ", ctx->pos" : "", v->p);
+    vm_emit_anchored_attempt(v, c, pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored", v->p));
+    vm_emit_attempt_report(v, c, "capture_spans_out");
+}
+
+/* How an entry that binds its own storage binds it, on this artifact's entry
+ * rung: forward through the empty descriptor (the frameless forward rungs),
+ * the fast tier with a FRAMES escalation ([OPT-1]), or the stamped default.
+ * The three un-suffixed entries and the find-all iterator read this one
+ * answer. */
+static PcrecFwdBind vm_own_binding(const VmEntry *en, const VmPlan *pl)
+{
+    return en->fwd_entries ? PCREC_FWD_EMPTY
+         : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN;
 }
 
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
@@ -13718,8 +13853,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [COMPOUND] E0c: the six entries are written through their rows'
      * `forward` emitter (src/gen/emit_comb.c): the un-suffixed three on this
      * artifact's entry rung, the `_in` three on the caller's descriptor. */
-    const PcrecFwdBind own = en->fwd_entries ? PCREC_FWD_EMPTY
-                           : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN;
+    const PcrecFwdBind own = vm_own_binding(en, pl);
     const PcrecFwd own_search = { own, "PCREC_ERR_FRAMES" };
     const PcrecFwd own_match = { own, pl->frames_sentinel };
     const PcrecFwd caller = { PCREC_FWD_CALLER, NULL };
@@ -13808,6 +13942,58 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_IN, &t_in);
     pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_CAPS, &t_match);
     pcrec_emit_entry(cx, g, PCREC_ENTRY_MATCH_CAPS_IN, &t_in);
+}
+
+/* [FINDALL-NEXT] `<prefix>__retry`, the VM iterator's retry R
+ * (findall_iter.md §3.3): THE ANCHORED ATTEMPT at `q` on the guarded
+ * matcher, with a fresh meter of its own (one logical search, D165
+ * addendum 4). Its prologue is the variables alone: `q` is a reported
+ * match start, so in range and a character boundary, which the
+ * caller-position checks would only re-establish. Returns the consumed
+ * length with the captures in `capture_spans`, -1, or a code. */
+static void vm_emit_retry(Vm *v)
+{
+    StrBuf *c = &v->cx->job->csb;
+    pcrec_sb_printf(c,
+        "static %sptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
+        "                          size_t q, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
+        "{\n"
+        "    rx_ctx retry_ctx;\n"
+        "    const rx_ctx *ctx = &retry_ctx;\n"
+        "    ptrdiff_t result;\n"
+        "    retry_ctx.subject = subject; retry_ctx.len = subject_length; retry_ctx.pos = q;\n"
+        "    retry_ctx.ncap = 0; retry_ctx.caps = NULL; retry_ctx.user = NULL;\n",
+        pcrec_attr_text(PCREC_ATTR_INLINE), v->p, v->p,
+        pcrec_vars_param_text(v->cx));
+    pcrec_sb_puts(c, v->cx->n_var_exps ? "    retry_ctx.vars = vars; retry_ctx.nvars = nvars;\n"
+                                       : "    retry_ctx.vars = NULL; retry_ctx.nvars = 0;\n");
+    pcrec_sb_puts(c, vm_vars_resolve_insert(v, "ctx"));
+    vm_emit_anchored_attempt(v, c, pcrec_sb_fragf(&v->cx->arena, "%s__match_notempty", v->p));
+    vm_emit_attempt_report(v, c, "capture_spans");
+}
+
+/* [FINDALL-NEXT] The VM artifact's iterator: the retry where the artifact can
+ * report an empty span, then `iterate`'s entry, its own storage bound the
+ * way `<prefix>_search` binds it (the entry rung's binding). */
+static void vm_emit_iterator(Vm *v, const GenNames *g, const VmPlan *pl,
+                             const VmEntry *en)
+{
+    Ctx *cx = v->cx;
+    if (!pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT)) return;
+    const PcrecIterText it = {
+        .vm = true,
+        .retry = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_GUARDED) != 0,
+        .vars = cx->n_var_exps > 0,
+        .own = vm_own_binding(en, pl),
+        .frames_code = "PCREC_ERR_FRAMES",
+    };
+    const PcrecEntryText t = { .iter = &it };
+    if (it.retry) {
+        pcrec_sb_scaffold_open(&cx->job->csb);
+        vm_emit_retry(v);
+        pcrec_sb_scaffold_close(&cx->job->csb);
+    }
+    pcrec_emit_entry(cx, g, PCREC_ENTRY_NEXT, &t);
 }
 
 /* Closes the artifact: the residual encoding helpers, `rx_info`, an optional
@@ -13936,10 +14122,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * (`en.ai`, `vm_plan_entry`), and then a part they call is called from
      * their callers instead (`callers`, src/gen/part_layout.c). The matcher
      * body's own attribute (`en.ai_body`) is not folded: the one part a VM
-     * artifact has, the hybrid's prefilter, is called from `_search_run`
-     * alone, never from `_match_anchored`. */
+     * artifact has, the hybrid's prefilter, is called from the search loop
+     * alone (`_search_run`, or `<p>__find` where it splits, which carries
+     * the same attribute), never from `_match_anchored`. */
     if (en.shape != PCREC_VM_ENTRY_PLAIN)
         cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_SEARCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_FIND) |
                                     PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_RUN) |
                                     PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_CAPS_RUN);
     /* [OPT-CLSPACK] the pool is final: choose how its table-read classes
@@ -13965,6 +14153,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             .prefilter_retry = cx->job->fit.prefilter &&
                 (v.nclamp > 0 || (rs.row && pcrec_cand_reseed(rs.row)->action !=
                                             CAND_RS_A_FIXED)),
+            .retry = pcrec_iter_retry_of(cx)->needs != 0,
+            .find = pcrec_iter_requested(cx) && pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }
@@ -13980,6 +14170,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     pcrec_cand_finish_vm(cx, v.mrl_win);
     vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
+    vm_emit_iterator(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */

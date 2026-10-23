@@ -19,6 +19,7 @@
     - [§1.5.1](#s1-5-1) The `<subject>` escapes
   - [§1.6](#s1-6) Named subjects — the `@file:` form
   - [§1.7](#s1-7) `mc` — the find-all count
+    - [§1.7.1](#s1-7-1) `mg` — the global count
   - [§1.8](#s1-8) `under` — a second correct answer, per convention
   - [§1.9](#s1-9) `provenance` — where a pattern came from
   - [§1.10](#s1-10) `analysis` — the bundle
@@ -693,7 +694,8 @@ off.
 <a id="s1-5-p23"></a>[1.5¶23] Seven more block-scoped lines each have their own section, because each
 carries more than a sentence:
 
-- <a id="s1-5-p24"></a>[1.5¶24] `mc "<subject>" <n>` — a FIND-ALL COUNT case (§1.7).
+- <a id="s1-5-p24"></a>[1.5¶24] `mc "<subject>" <n>` — a FIND-ALL COUNT case (§1.7); `mg "<subject>" <n>`, its
+  GLOBAL count through the iterator (§1.7.1).
 - <a id="s1-5-p25"></a>[1.5¶25] `under <convention> <case-line>` — a second correct answer, qualified
   by convention (§1.8).
 - <a id="s1-5-p26"></a>[1.5¶26] `tag <item>{, <item>}` — block-level classification, the same grammar
@@ -855,6 +857,29 @@ the same skip before its first search: `x?` over `"\x80\x80\x80"` is **1**
 (the empty match at the end), and over `"a\x80\x80\x80"` is **2** (offset
 0, then the advance above to the end) — both libpcre2's counts under
 `PCRE2_MATCH_INVALID_UTF` driven through this loop.
+
+<a id="s1-7-1"></a>
+#### 1.7.1 `mg` — the global count
+
+<a id="s1-7-1-p1"></a>[1.7.1¶1] `mg "<subject>" <n>` (or the `@file:` form above) asserts that the
+find-all iterator over the subject, `<prefix>_next` from offset 0
+(`match_api.md` §3.8), reports exactly `<n>` matches. It takes no startpos.
+
+<a id="s1-7-1-p2"></a>[1.7.1¶2] The count is libpcre2's GLOBAL ITERATION's (the loop of pcre2demo.c):
+after a non-empty match, search on from its end; after an empty match at
+`q`, retry ANCHORED at `q` with `PCRE2_NOTEMPTY_ATSTART` and, where that
+fails, search on one character past `q`; an empty match at the subject's
+end ends the loop. `a*?` over `"aaa"` is **7** and `x*|y` over `"xyy"`
+is **6**, where §1.7's `mc` counts 4 and 4.
+
+<a id="s1-7-1-p3"></a>[1.7.1¶3] On a pattern whose reported span is never empty (the `reports_empty`
+fact, `facts_listing.md`), the two counts are equal for every subject, so
+an `mc` line also states the iterator's count there. The harness checks
+`mg` through `<prefix>_next` and `mc` through `<prefix>_search`.
+
+<a id="s1-7-1-p4"></a>[1.7.1¶4] A give-up or refusal that ends the iterator prints as a single search's
+does (§1.5), at the position of the search that ended it (`it.lo`), and is
+not a count.
 
 <a id="s1-8"></a>
 ### 1.8 `under` — a second correct answer, per convention

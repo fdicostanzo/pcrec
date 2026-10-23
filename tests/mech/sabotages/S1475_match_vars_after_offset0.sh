@@ -19,10 +19,12 @@ SAB_AFTER='    /* SABOTAGE S1475: resolved after the offset-0 rule, below */
     /* [K73] The offset-0 start rule, NOMATCH form'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='        "    %s_run_state_init(run);\n"
-        "    result = %s_match_anchored(ctx, run%s%s);\n",
-        v->p, v->p,'
-SAB_AFTER2='        "    %s_run_state_init(run);\n"
-        "%s"   /* SABOTAGE S1475 */
-        "    result = %s_match_anchored(ctx, run%s%s);\n",
-        v->p, vm_vars_resolve_insert(v, "ctx"), v->p,'
+SAB_BEFORE2='    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    vm_emit_anchored_attempt(v, c, pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored", v->p));
+    /* [M6.2 wave D, R30 E8]'
+SAB_AFTER2='    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    pcrec_sb_puts(c, vm_vars_resolve_insert(v, "ctx"));   /* SABOTAGE S1475 */
+    vm_emit_anchored_attempt(v, c, pcrec_sb_fragf(&v->cx->arena, "%s_match_anchored", v->p));
+    /* [M6.2 wave D, R30 E8]'

@@ -31,3 +31,4 @@ AST -> priority Thompson NFA (nfa.c) -> DFA via priority subset construction (df
 `docs/design/locate_finish.md`, `engine_m4.md`, `ucp_design.md` §2.4, `assertions_design.md`, `lookaround_design.md`, `subroutines_design.md`, `k18_memo_design.md`, `ctx_span.md` (DD-11.5), `anchored_match_unwrapped.md`, `utf8_design.md`; decisions D3, D7, D9, D10, D31.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__ir.md
+- **dfa.c notempty root** ([FINDALL-NEXT] I0): `Dfa.notempty` builds start states without accepting threads; detail in NOTES.md.

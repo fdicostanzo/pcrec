@@ -39,3 +39,4 @@ ONE organized record of what a pattern HAS (kind mask, nullability, necessary by
 `docs/design/patfacts/design.md`, `findings/design.md`, `litscan_s1.md`, `litscan_s4.md`, `start_landing.md`, `startset.md`, `kit_proof.md` §5.2, `ctx_span.md`; D77, D119, D120, D126, D148; `tests/codegen/run_facts_checks.sh`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/src__facts.md
+- **reports_empty** ([FINDALL-NEXT] I0): fact `pcrec_pattern_reports_empty`, the iterator retry gate; detail in NOTES.md.

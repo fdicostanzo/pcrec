@@ -2040,14 +2040,14 @@ static void close_section_frame(Arena *a, RxtSource *src,
     }
 }
 
-/* [DD-13b.W23.4] is `kind` one of the eight real CASE-kind spellings? An
+/* [DD-13b.W23.4] is `kind` one of the nine real CASE-kind spellings? An
  * `under` line's wrapped case-line is free text until this says so — the
  * schema has already routed us here on the OUTER `under` row alone, so
  * nothing has checked that its tail actually names a real kind. */
 static int is_case_kind(const char *kind)
 {
     static const char *const k[] = {
-        "m", "n", "ms", "ns", "mc", "gu", "g", "gp"
+        "m", "n", "ms", "ns", "mc", "mg", "gu", "g", "gp"
     };
     for (size_t i = 0; i < sizeof k / sizeof *k; i++)
         if (!strcmp(kind, k[i])) return 1;
@@ -2074,7 +2074,7 @@ static void parse_case_body(const char *rest, const char *kind, RxtCase *c,
         if (s > w) c->startpos = arena_strndup(a, w, (size_t)(s - w));
         s = skip_ws(s);
     } else if (!strcmp(kind, "m") || !strcmp(kind, "n") || !strcmp(kind, "mc") ||
-              !strcmp(kind, "gu")) {
+               !strcmp(kind, "mg") || !strcmp(kind, "gu")) {
         c->startpos = "0";
     }
 
@@ -2150,7 +2150,7 @@ static void parse_case_body(const char *rest, const char *kind, RxtCase *c,
         w = s;
         while (isdigit((unsigned char)*s)) s++;
         if (s > w) c->end = arena_strndup(a, w, (size_t)(s - w));
-    } else if (!strcmp(kind, "mc")) {
+    } else if (!strcmp(kind, "mc") || !strcmp(kind, "mg")) {
         const char *w = s;
         while (isdigit((unsigned char)*s)) s++;
         if (s > w) c->count = arena_strndup(a, w, (size_t)(s - w));
