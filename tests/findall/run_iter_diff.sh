@@ -73,10 +73,10 @@ if [ "${1:-}" = "--group" ]; then
         retry=0
         grep -q '_ITER_RETRY "none"' "$a/rx.c" || retry=1
         # the stamp against the text that does the retry (match_api.md
-        # §6.3.13): the VM accept guard, else a retry machine, else neither
+        # §6.3.13): the VM's guarded matcher, else a retry machine, else neither
         st="$(grep -o '_ITER_RETRY "[a-z-]*"' "$a/rx.c" | head -1 | cut -d'"' -f2)"
-        if grep -q 'run->notempty && scan_position' "$a/rx.c"; then want=vm-guard
-        elif grep -q '^static.*rx__retry(' "$a/rx.c"; then want=dfa-root
+        if grep -q 'rx__match_notempty(' "$a/rx.c"; then want=retry-budgeted
+        elif grep -q '^static.*rx__retry(' "$a/rx.c"; then want=retry
         else want=none; fi
         [ "$st" = "$want" ] || echo "STAMPBAD	$arm	$pat: ITER_RETRY is '$st', the text says '$want'"
         echo "STAMP	$arm	$st"
@@ -140,12 +140,12 @@ ngu="$(grep -c '^GIVEUP' "$WORKDIR/all.out")"
 nskip="$(grep -c '^SKIP' "$WORKDIR/all.out")"
 nill="$(grep -c "^ILLFORMED" "$WORKDIR/all.out")"
 nretry="$(grep -c '^RETRYCELL' "$WORKDIR/all.out")"
-nroot="$(grep -c '^STAMP	.*	dfa-root$' "$WORKDIR/all.out")"
-nguard="$(grep -c '^STAMP	.*	vm-guard$' "$WORKDIR/all.out")"
+nroot="$(grep -c '^STAMP	.*	retry$' "$WORKDIR/all.out")"
+nguard="$(grep -c '^STAMP	.*	retry-budgeted$' "$WORKDIR/all.out")"
 fail=0
 # both retry forms reached, or the stamp check reads one side of nothing
 [ "$nroot" -ge 1 ] && [ "$nguard" -ge 1 ] ||
-    { echo "FAIL: findall: $nroot dfa-root and $nguard vm-guard artifacts: a retry form is not reached" >&2; fail=1; }
+    { echo "FAIL: findall: $nroot retry and $nguard retry-budgeted artifacts: a retry form is not reached" >&2; fail=1; }
 while IFS= read -r l; do echo "FAIL: findall: $l" >&2; fail=1; done \
     < <(grep -E '^(DIFF|REFUSED|CCFAIL|RUNFAIL|STAMPBAD)' "$WORKDIR/all.out" | head -40)
 # a give-up is the documented difference only under -futf-check
