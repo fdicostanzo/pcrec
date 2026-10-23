@@ -2785,3 +2785,11 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Frank: "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." The flag is unbuilt; main files it under [IFACE-PUSH]. A responses notice is posted with suggestions (PCREC_NO_DIRECT_REPORT / PCREC_NO_WINDOW_REPORT).
 - Asked Frank whether the same lens covers the `--memfn=no-*` deny spellings and the spec's "memfn kit" wording.
 - Frank's follow-up: "Outside the developers of pcrec, compiler architecture names have no meaning. I don't want to cause a disruption for memfn but use the guide moving forwards." It is a naming guide for NEW caller-facing names and spec prose; existing --memfn= names stay. Applied to S3's new spec prose at delivery.
+
+## 2026-10-23 — S3 fix C withdrawn, 587 queued
+
+- s3hors: the S3 commit is d3886a656 (window.c = e1e95a584 + B's asserts). It also delivered the K27 both-arms fixture (ee0d4488d) and 588's E[sh] reading, 12 sites with E[sh] 1.000..6.009 (86b9afa69). The light tier is green.
+- F-8, the manager's own mistake: my hand edit of run_codegen_tests.sh wrote back only the head of the file (1,751 of 3,836 lines). The lane rebuilt it.
+  - Lesson: a scripted edit must assert that the line count moved only by the intended delta before writing. I did that for the next two edits.
+- D174 applied: the match_api cover prose is worded by behaviour (92432b552).
+- 587's dry-run (the 108-row mech validation, ~90 s) exceeded boxqueue's 30 s bound, so it now runs as the job's first step (ba6ebf720). 587 is QUEUED. 588's slot is to be asked of main after 587 is green.
