@@ -73,3 +73,16 @@ Measured here: `make -j16` builds the merged tree clean; the staged pre-commit c
 2. Re-run the touched section; if any src moved (it should not), FILEPIN moves to that last src commit.
 3. Jobs 602 and 603 follow on their own; read both with `scripts/verdict`.
 4. Merge to main only on Frank's RX_FOREACH ruling.
+
+## Triage (iterfix)
+
+Job 602 (`make test`, perfrun `section-errors=1 class=RED-REAL`): the ONLY red section was `test-rxtsource`
+(make line `*** [Makefile:593: test-rxtsource] Error 1`); every other section green, so startset
+(manifest_s2_vm_forced union), cpset_structure and resource byte pins and the compound stamps were NOT red.
+The light chain agreed (only test-rxtsource, rc=2).
+
+| section | class | cause | fix commit | solo verdict |
+|---|---|---|---|---|
+| test-rxtsource | (a) stale pin | merge took main's census/RUNSH/C3 values; the lane's new `tests/findall/global.rxt` was not in them. Measured from the check's own output: +1 file, +62 blocks, +1404 lines (CENSUS 293/6038/73976, RUNSH 269/6038/73976); C3 PASS +1188 (21932), SKIP +216 (51958), pcre2-only +216 (19373), verifiable +1188 (24164). The W23-S7 corpus control, the case-row derivation and the C3 reconciliation (21932+51958-3+89=73976) all follow from these pins. | the commit "iterland: re-pin rxtsource census/RUNSH/C3 for tests/findall/global.rxt" on lane/iterland | OWED: `build/il/fix-rxtsource.log` (detached, waiting on the box lock behind queue job 604-kit-s3-heavy); read with `scripts/verdict`. |
+
+Not re-pinned (not red, nothing measured): C3_FILES, the five golden findings files' HARNESS FAILURE lines (the known unparseable-head set, printed by the W23-S7 control as before).
