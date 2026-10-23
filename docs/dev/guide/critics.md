@@ -40,3 +40,20 @@ findings CONFIRMED (with repro) or SUSPECTED and carry a PROBED-AND-HELD list
   stays long, and the finding says so.
 
 ## Lessons from review rounds
+
+Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
+(`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, landing with lane/memfn-s3,
+§4). Three of four caught a 29x caseless-literal slowdown from the code alone.
+1. **Review the EMITTED artifact, both arms.** The emitted-vs-replaced lens
+   caught it with loops and asm; the source-only code-quality lens missed it.
+2. **Trace every slot to its named table.** The design lens caught it by
+   showing a declared row (the PAIR find form) was unreachable. This is how a
+   parallel mechanism shows up.
+3. **A lowered performance-form floor is a trade to judge,** not a pin (the
+   rule above).
+4. **Blinding leaks** through report headers and git log. Give each blinded
+   critic a clean worktree at the subject sha plus a denylist.
+5. **The manager's rulings are review subjects too.** The defect entered
+   through a ruling.
+6. **Staffing:** at least one strong-model critic on emitted behaviour and one
+   on design; the weaker-model lenses found real but smaller issues.

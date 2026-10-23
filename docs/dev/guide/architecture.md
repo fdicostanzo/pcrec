@@ -18,8 +18,12 @@ per row. **Source:** Frank 2026-09-28 and 2026-10-12; D122, D151.
 ## One table per slot: no private copy of a declared mechanism
 If a table or mechanism already declares how a slot is done, extend that table
 and call it. A private smaller copy beside it is the failure mode.
+Narrowing the table counts as a copy: mapping it onto a smaller enum or
+keying rules on a label instead of on facts drops rows silently.
 **Why:** the copy drifts from the table and the table's optimizations never
-reach it. **Source:** 2026-10-23 S3 code review (E-find).
+reach it. S3's find step mapped the kit's FIND table onto a two-value enum and
+lost the two-stream form (29x on caseless literals). **Source:** 2026-10-23
+S3 code review (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, C1/C3, C5).
 
 ## Build the general form; no parallel mechanisms or special cases
 A recognizer, fold or desugar that exists only to reproduce a known construct
