@@ -3006,3 +3006,13 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the generic "best guess current hardware" envelope (M2).
     - The kit contributes its method cards to that script; plan_cost.def's rows migrate into the sets.
 - notice: 2026-10-23 — **Frank's standing rule:** "going forwards, update measurement scripts when new methods appear." Any new find/scan/skip/verify method adds its card to the measurement script in the same change. Until a box is re-measured its row reads UNMEASURED visibly. This is for main's guide (critics.md / addenda/kit.md); the kit will add it to addenda/kit.md at the next main sync.
+- notice: 2026-10-23 — **Stop-ranking Q4 (Frank: "Yes let's go with these ideas"), REVISING the study's "keep separate":**
+  - Presence (reject by absence) and the stop (where candidates are) stay two QUESTIONS with different prices, but ONE decider: the kit's window family, at the window site's decision phase, from ONE statement.
+  - **The statement:** the window's array of spans (each with its backtrack to 0 and its overshoot; the first span is 0,0) also carries spans whose offset is UNBOUNDED. These are required bytes with no known distance (e.g. `b` in `a.*b`), sent with "no offset".
+    - A span with a bounded offset range is a stop candidate.
+    - An unbounded one is presence-only.
+    - The use reads off the range, a fact; no pattern-shape rules.
+  - **pcrec's change:** pcrec states the required set and run it already knows (req_set, req_whole_run) as such spans, and may state positions beyond the verify slice as cheap candidate spans (this eases the truncation question).
+  - **The fold is one general rule:** when the chosen stop's first find, scanned from the subject start, covers the presence byte, the presence pass is dropped. The cover path already behaves this way.
+  - **Cost:** an MF_SITE_ABI event. It may retire the separate pre-check site's statement later (its own step and measurement).
+  - **OPEN for the design revision:** whether today's span already carries a backtrack range (so only its upper bound opens) or a fixed offset (generalize it to a range).
