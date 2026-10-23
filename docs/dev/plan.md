@@ -621,6 +621,24 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: B4's regenerated mover manifest shows enough walk-routed set sites with a <= 2-term position inside their span (the B4-prep closing lane counts it), and grid/bench timing shows the gain.
   refs: memfn/docs/ideas.md 2026-10-21; docs/design/memfn/r17b_prime.md §1.3a R7/R7w; memfn/docs/responses.md (kit notice 2026-10-21)
   Charter: (1) a set FIND may filter at a cheaper position inside its span, then verify the costly head positions per candidate; the scan position is priced by rate AND by the form its set takes (V1 at <= 2 terms, `kit.terms.V1max`), not by rate alone. (2) a >= 3-term set may be searched through a <= 2-term SUPERSET filter, then verified exactly (e.g. `\w` through `[0-9]|[A-z]`, 5 extra members); a FIND filter only, never a proof for a REPORT site. (3) VERIFY order and form: a candidate's span verify tests its positions in an order priced by rejection rate per cost, not pattern order (today ofsskip's `verify_chain` tests ascending by offset; K82/R-1 showed lead order is part of a form's cost); each position takes its cheapest exact test (a word compare over literal runs, a set test, possibly a superset test first); proven offsets skipped as R-14's trim does. Part 3's trigger adds a verify-cost reading on dense-candidate cells.
+- [MEMFN-UNBOUNDED-SPANS] STATE:not-started — STATE req_set / req_whole_run TO THE KIT AS UNBOUNDED-OFFSET SPANS
+  filed: 2026-10-23 manager, from Frank's stop-ranking Q4 ruling (D176)
+  status (2026-10-23): filed; nothing built. Kit side (one decider, the window family) is the kit's; open design question: does today's span carry a backtrack range or a fixed offset.
+  trigger: the kit's window-family revision that consumes unbounded-offset spans lands on its branch (an MF_SITE_ABI event: pcrec abi bump, identity re-pin and spec hunk in the same change).
+  refs: docs/dev/decisions.md D176; memfn/docs/responses.md (stop-ranking Q4 notice); [MEMFN-POSCOST]
+  Charter: pcrec states the required set and run it already knows (req_set, req_whole_run) as spans with an UNBOUNDED offset ("no offset"), e.g. `b` in `a.*b`, for presence only, and may state positions beyond the verify slice as cheap candidate spans. A bounded-offset span is a stop candidate; the use reads off the range, with no pattern-shape rules. Facts only (D157).
+- [MEMFN-PAIRSTOP] STATE:not-started — TWO-STREAM FIND ROW CONTRACT WIDENS TO ANY TWO-BYTE SET AT ANY WINDOW POSITION
+  filed: 2026-10-23 manager, from Frank's stop-ranking Q6 ruling ("Yes file it. Nice generalization"; D176)
+  status (2026-10-23): filed, not built. A Table B row-contract edit, not a new mechanism: from "a one-bit case pair inside a literal stretch" to any two-byte set at any position.
+  trigger: step 0's census shows a real population of two-byte non-case-pair stops AND the pair method card is measured on the box.
+  refs: docs/dev/decisions.md D176; memfn/docs/responses.md (stop-ranking Q6 notice); [MEASURE-SET]; [MEMFN-ROWCON]
+  Charter: widen the two-stream find's declared row contract (Table B) to ANY two-byte set at ANY window position, priced like every other method in the stop choice.
+- [MEMFN-PAIRSIMD] STATE:not-started — ARBITRARY-PAIR SIMD KERNEL (TWO COMPARES + OR)
+  filed: 2026-10-23 manager, from Frank's stop-ranking Q6 ruling (D176)
+  status (2026-10-23): filed, not built; separate from [MEMFN-PAIRSTOP]: the SIMD-layer kernel for an arbitrary byte pair versus the one-bit fold.
+  trigger: [MEMFN-PAIRSTOP] fires AND the kernel is measured to beat the scalar form on the targeted hardware (the SIMD layer must beat scalar or show a named benefit).
+  refs: docs/dev/decisions.md D176; [MEMFN-PAIRSTOP]; [OPT-SIMD]
+  Charter: a SIMD-layer kernel finding either of two arbitrary bytes (two compares and an OR) in place of the one-bit case fold, opt-in under the SIMD layer.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
