@@ -21,7 +21,7 @@ Validation (this worktree, `make -j16` first): test-findall PASS (full diff 256 
 16 groups), test-encseam 3/0, test-spec-history 11/0, test-plan-lint 2/0, test-partlayout 50/0.
 
 ## OWED to the manager / iterfix2
-- `tests/findall/global.rxt` NOT regenerated: the 5 new blocks (and 2 extra subjects in an existing
+- `tests/findall/global.rxt` NOT regenerated: the 5 new blocks (and 1 extra subject in an existing
   block) move the rxtsource census, the startset manifests and the axes allowances, which this lane
   may not touch. Regenerate with `python3 -I tests/findall/gen_global.py build/pcrec cc
   tests/findall/global.rxt` together with the pin moves.
