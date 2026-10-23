@@ -24,7 +24,7 @@ Documents that track execution against the design, not the product. Memos live h
 - Trackers: `plan.md` (active), `plan_completed.md`, `dev_journal.md`, `decisions.md`, `known_issues.md`, `upstream_issues.md`, `learnings.md`, `guide/`.
 - Hand-off: `wake.md`, `owner.md` (untracked).
 - Sequencing/triage memos: `bench_wishlist.md`, `chunks_2026-10-11.md`, `backlog_triage_2026-09-22.md`, `ph3_reassessment_2026-09-28.md`, `dd11_family_2026-10-18.md`, `nf25_notes_for_authors.md`.
-- Test-infrastructure measurements: `gate_census_2026-10-23.md` (checks outside make test, their runners and last verdicts), `chain_profile.md`, `tt*.md`, `ttune_measurement.md`, `xarch_step0*`, `artifact_size_*`, `spec_survey.md`, `bare_pcrec_survey.txt`.
+- Test-infrastructure measurements: `gate_census_2026-10-23.md` (checks outside make test, their runners and last verdicts), `flag_spell_findings_2026-10-23.md` ([FLAG-SPELL] cause), `chain_profile.md`, `tt*.md`, `ttune_measurement.md`, `xarch_step0*`, `artifact_size_*`, `spec_survey.md`, `bare_pcrec_survey.txt`.
 - Optimization/design measurement memos (one lane each; plan.md rows hold dispositions): `opt*`, `ccdiff_*`, `form_char_*`, `cls_tree_study.md`, `k60/k75_measurement.md`, `*_census.md`, `*_study.md`, etc.
 - Subdirectories: `compat_fold_facts/` ([COMPAT-FOLD] research), `history/` (build history out of the spec tier), `lanes/` (BOILERPLATE.md, reports), `reviews/`, `summaries/`, `optloop/`, `devmethods/`, `meta/`, `findings_measure/`, `utf8_attrib_twin/`, `reseed/`, `lookaround_census/` (most have their own CLAUDE.md).
 
