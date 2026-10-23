@@ -9,6 +9,12 @@ PANEL OUTCOME / "REVISION n" / "§R" block before any section.
 
 ## Standing questions every design note answers (Frank, 2026-10-05)
 
+**Every design note opens with GOALS** (Frank, 2026-10-23): 3-5 goals, each
+with who benefits and a measurable form (comparison + margin), a priority
+order for conflicts, and non-goals. Rule and example:
+`docs/dev/guide/architecture.md`. Not retroactive: a note gains the section
+at its next revision.
+
 A design that introduces a MEASURED quantity, a CHECK or a DATA file answers
 each of these in its own short section. First say whether the question is
 RELEVANT; if not, say why in one line.

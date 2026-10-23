@@ -62,6 +62,12 @@ twice). 2-5 critics per round; never a lens with nothing in scope.
 | plain C structure | **house rules** | Against `coding.md` and `style.md`: duplication (name the shared abstraction), altitude, tables used as if-chains, side effects in predicates. | sonnet |
 | rulings relied on | **ruling check** | For each ruling the work relied on, does it agree with the design and the guide? A ruling is a review subject, not an axiom. Fold into slot tracing when that lens runs. | strong |
 
+Every round also asks the **goals question**, folded into the contract or
+slot-tracing lens: does the cited design state ranked, checkable goals
+(`architecture.md`), and does the code serve them in that order? A design
+without goals is itself a finding (DOC), and the critic reviews against the
+goals the design implies, saying so.
+
 Always add the two standing questions to one lens of your choice (say
 which): **sibling of a family** (is a new predicate/table a member of an
 existing decision family?) and **general form + unlocks** (what is the

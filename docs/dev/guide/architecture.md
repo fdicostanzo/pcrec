@@ -4,6 +4,19 @@ Design rules for new mechanisms, tables and interfaces. Each: the rule, a Why,
 a Source. Code-level rules are in `coding.md`; names and comments in `style.md`.
 Decision numbers are in `docs/dev/decisions.md`.
 
+## A design states its goals, ranked, in checkable form
+Every design note opens with a short Goals section: three to five goals, each
+naming who benefits and a measurable form (the comparison and the margin, e.g.
+"a find-all loop over `_next` costs no more than the hand `_search` loop on
+dense subjects, within the A/A floor"); a PRIORITY ORDER saying which goal wins
+when two conflict; and NON-GOALS. Lane briefs restate the goals their work
+serves; critics review the code against them; a measurement that misses a goal
+is a finding against the design, not just a number.
+**Why:** "fast with low overhead" cannot fail a review. RX_FOREACH failed its
+prototype gates and survived to the final timing run because no goal said
+what it was for or whether genericity could cost speed; a ranked goal would
+have cut it early. **Source:** Frank 2026-10-23 (the iterator find-all timing, job 599).
+
 ## Decisions are declared tables, not if-chains
 A selection (engine, form, route, start strategy) is a table of named rows
 with a predicate, a per-row deny, and an action; one selector walks it. First
