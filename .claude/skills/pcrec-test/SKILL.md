@@ -38,33 +38,36 @@ short brief, reads nothing else, and lets scripts do the waiting.
 
 ## 3. The monitor brief (fill the <...>; keep it this short)
 
-    MONITOR <mode> run <KEY> (haiku). Keep it going; alert only on a problem
-    or the verdict. Scope: read-only in /home/pcrec/projects/pcrec; never
-    edit, commit, merge, cancel or retry; never run make or any suite.
+    MONITOR <mode> run <KEY> (haiku). Keep it going; act only by the table
+    in /home/pcrec/projects/pcrec/.claude/skills/pcrec-test/monitor_rules.md
+    (read it once, now). Scope: /home/pcrec/projects/pcrec only; never edit
+    code, merge, cancel, kill or run make or any suite.
+    TRAILER=<path> SUMMARY=<path> LEDGER=docs/dev/full_suite_ledger.md
     LOOP until done:
-      timeout 590 bash /home/pcrec/projects/pcrec/scripts/watchrun --log <TRAILER> --max-sec 570
-      (exit with no line = cap, loop again; read only its one output line)
-    On each line: CHAIN-END / BATTERY DONE -> read <SUMMARY> (one line) and
-    `bash /home/pcrec/projects/pcrec/scripts/boxqueue state <KEY>`; send the
-    manager ONE message: "MON <KEY>: <summary line>" then END.
-    QUIET or DIED or LOCK-ORPHAN -> send "MON <KEY> PROBLEM: <the line>",
-    then keep looping (the manager decides; you never act on the run).
-    Do not read logs beyond the one summary line; do not explain.
+      timeout 590 bash /home/pcrec/projects/pcrec/scripts/watchrun --on stage --log <TRAILER> --max-sec 570
+    Read only its one output line (and, on a stage END, that stage's rc).
+    Do not read stage logs; do not explain.
 
 For `full`: TRAILER = `build/full_suite/<date>_<sha>/trailer.log` (the
-job's frozen.txt names it once the run starts; until it exists, loop on
-`scripts/boxqueue state <KEY>` every 5 min with `sleep` inside a bounded
-`timeout 590`), SUMMARY = `summary.txt` beside it.
+job's frozen.txt names it once the run starts; until it exists, poll
+`scripts/boxqueue state <KEY>` inside `timeout 590` with a 5-min sleep),
+SUMMARY = `summary.txt` beside it.
+
+The monitor's actions are the first-match table in `monitor_rules.md`
+beside this file: mechanical fixes it may run itself (each ONCE, then it
+alerts), the triage launch on a red stage, and the green bookkeeping. A
+new fix joins that table only when a run has shown its shape (section 5).
 
 ## 4. On the verdict (manager)
 
-- GREEN: copy summary.txt's line into docs/dev/full_suite_ledger.md
-  "Runs", reset the counters (D177), commit named paths; prune the run's
-  worktree with `scripts/wtprune`; tell Frank in one line.
-- RED or a problem: a TRIAGE lane (sonnet, read-only first): per red
-  stage, stale pin vs real regression, with evidence; one short report.
-  The manager rules; fixes go to lanes. Never read the stage logs yourself.
-- TaskStop the monitor once its message is in; delete the alarm.
+- GREEN: the monitor has appended the ledger line and committed it; check
+  the commit, reset nothing by hand (the ledger line IS the reset, D177);
+  prune the run's worktree (`scripts/wtprune`); tell Frank in one line.
+- RED: the monitor has already launched the triage lane (it starts at the
+  FIRST red stage, while later stages still run). Read its report, rule,
+  send fixes to lanes. Never read the stage logs yourself.
+- A PROBLEM message: decide (the monitor never cancels or kills).
+- TaskStop the monitor once its final message is in; delete the alarm.
 
 ## 5. Lessons
 
