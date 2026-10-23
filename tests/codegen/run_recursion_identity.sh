@@ -1269,7 +1269,9 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<PREFIX>_MEASURES ""` stamp and `.measures = ""`; the VM's `^` role text
 # changes (K112). `9e4b87e90` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-813f43ec8}"   # the [MEASURE-SET] M0 merge (2026-10-21), abi 82 (was 9e4b87e90, the lane self-pin; before it d06b530f7, abi 81)
+# [corefix] K128/K129, abi 82 -> 83 (lane recpin re-pin): the corefix merge
+# `bf33d2dab` is the last commit that moved the artifact's bytes for abi 83.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-bf33d2dab}"   # the corefix merge (2026-10-22), abi 83 (was 813f43ec8, the M0 merge, abi 82)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
