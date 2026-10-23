@@ -21,6 +21,13 @@
 #   Rs = med(RTEs)/med(DEFs), where an arm built once for both layers (same text) is read for both;
 #   its floor is THIS run's A/A in that regime (the largest |med(RT2)/med(RTE) - 1| over §6's
 #   cells and classes), and a ratio above 1 + floor is flagged SLOWER.
+# THE D-HORS ADMISSION READING (Frank's ruling 2026-10-23; FINDINGS, NEVER the bar, no default
+#   moves): s3t_esh.tsv over esh_588.tsv's sites, printed under "D-hors admission (E[sh])": per
+#   site E[sh], max(sh) and the stop mass (esh_588.py, committed in the site file), and per
+#   (regime, class) the wf-hors G1 alpha med(RTE)/med(NOH) (D-hors over D-one; < 1: D-hors is
+#   faster) at the scalar layer and med(RTEs)/med(NOHs) at the SIMD layer, with the same floor as
+#   the mover sample; then each site's alphas summarized and SORTED BY E[sh], so a cut-off (if
+#   any) is visible.
 import csv
 import os
 import statistics
@@ -198,6 +205,89 @@ if os.path.exists(sfile):
               % (len(rs), len(sids), statistics.geometric_mean(rs), min(rs), max(rs)))
     print("- sample SLOWER beyond floor, scalar: %s" % ("; ".join(slow) if slow else "none"))
     print("- sample SLOWER beyond floor, SIMD layer: %s" % ("; ".join(ssl) if ssl else "none"))
+    print()
+efile = out + "/s3t_esh.tsv"
+if os.path.exists(efile):
+    ed = defaultdict(list)
+    for r in csv.DictReader(open(efile), delimiter="\t"):
+        ed[(r["cell"], r["regime"], r["class"], r["arm"])].append(float(r["ns"]))
+    emeta = {}
+    if os.path.exists(out + "/esh.tsv"):
+        for ln in open(out + "/esh.tsv", encoding="utf-8"):
+            if ln.strip() and not ln.startswith("#"):
+                f = ln.rstrip("\n").split("\t")
+                emeta[f[0]] = {"st": f[1], "pat": f[2], "esh": float(f[3]), "max": f[4], "mass": f[5]}
+    eaa = {}
+    for g in REG:
+        v = [abs(x - 1) for x in (ratio(c, g, cl, "RT2", "RTE") for c in cells for cl in CLS) if x]
+        eaa[g] = max(v) if v else None
+
+    def emed(sid, g, cl, a):
+        v = ed.get((sid, g, cl, a)) or ed.get((sid, g, cl, a.rstrip("s")))
+        return statistics.median(v) if v else None
+
+    def eratio(sid, g, cl, a, b):
+        x, y = emed(sid, g, cl, a), emed(sid, g, cl, b)
+        return x / y if x and y else None
+
+    def flag(x, fl):
+        if x is None or fl is None:
+            return "-"
+        return "SLOWER" if x > 1 + fl else ("FASTER" if x < 1 - fl else "within")
+
+    ESHREG = ("throughput", "search_short")
+    ECLS = ("real", "none", "random")
+    esids = sorted({k[0] for k in ed}, key=lambda s_: (emeta.get(s_, {}).get("esh", 0), s_))
+    print("## D-hors admission (E[sh]) (not the §6 bar)")
+    print()
+    print("D-hors sites (esh_588.tsv, pick_esh_588.py's pick stratified by E[sh], the expected shift per "
+          "probe under the default byte-rate prior), D-hors (RTE) vs D-one (NOH, `--memfn=no-wf-hors`) at "
+          "both layers; alpha = wf-hors's G1 ratio (< 1: D-hors faster); floor = this run's A/A in the "
+          "regime; where a site's SIMD-layer text equals its scalar text (a cover artifact carries no SIMD "
+          "form) the arm was built and timed once and the SIMD alpha IS the scalar one; FINDINGS for the "
+          "manager and Frank, never the bar, no default moves.")
+    print()
+    print("| site | pattern | E[sh] | max(sh) | stop mass ppm | regime | class | NOH ns/pass | alpha scalar "
+          "(RTE/NOH) | floor | reading | alpha SIMD (RTEs/NOHs) | SIMD reading |")
+    print("|" + "---|" * 13)
+    summ = []
+    for sid in esids:
+        m = emeta.get(sid, {"pat": "?", "esh": float("nan"), "max": "?", "mass": "?"})
+        al, als = [], []
+        for g in ESHREG:
+            for cl in ECLS:
+                A = eratio(sid, g, cl, "RTE", "NOH")
+                if A is None:
+                    continue
+                As = eratio(sid, g, cl, "RTEs", "NOHs")
+                fl = eaa.get(g)
+                al.append((A, flag(A, fl)))
+                if As is not None:
+                    als.append((As, flag(As, fl)))
+                print("| %s | `%s` | %.3f | %s | %s | %s | %s | %.0f | %s | %s | %s | %s | %s |" % (
+                    sid, m["pat"].replace("|", "\\|"), m["esh"], m["max"], m["mass"], g, cl,
+                    emed(sid, g, cl, "NOH"), fmt(A), fmt(fl), flag(A, fl), fmt(As), flag(As, fl)))
+        summ.append((m["esh"], sid, m, al, als))
+    print()
+    print("### alpha sorted by E[sh] (geometric mean over regimes and classes; counts of SLOWER/FASTER cells)")
+    print()
+    print("| E[sh] | site | pattern | max(sh) | stop mass ppm | scalar alpha gmean [min, max] | scalar SLOWER/FASTER "
+          "| SIMD alpha gmean [min, max] | SIMD SLOWER/FASTER |")
+    print("|" + "---|" * 9)
+
+    def gm(v):
+        x = [a for a, _ in v]
+        return "%.3f [%.3f, %.3f]" % (statistics.geometric_mean(x), min(x), max(x)) if x else "-"
+
+    def cnt(v):
+        return "%d/%d of %d" % (sum(1 for _, f in v if f == "SLOWER"), sum(1 for _, f in v if f == "FASTER"), len(v))
+
+    for e, sid, m, al, als in sorted(summ, key=lambda t: (t[0], t[1])):
+        print("| %.3f | %s | `%s` | %s | %s | %s | %s | %s | %s |" % (
+            e, sid, m["pat"].replace("|", "\\|"), m["max"], m["mass"], gm(al), cnt(al), gm(als), cnt(als)))
+    print()
+    print("- E[sh] reading: %d sites live of %d in esh.tsv (findings only; no part of the bar)"
+          % (len(esids), len(emeta)))
     print()
 if missing:
     print("MISSING: %s" % "; ".join(" ".join(m) for m in missing))

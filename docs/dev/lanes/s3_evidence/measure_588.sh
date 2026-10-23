@@ -7,7 +7,8 @@
 #
 #   measure_588.sh smoke OUT        build + differential + answer gate: NO clock. SMOKE_CELLS="c1 c2"
 #                                   restricts every per-cell stage (the queue's --dry-run), and
-#                                   SMOKE_SAMPLE="smp01" the mover sample's (below)
+#                                   SMOKE_SAMPLE="smp01" the mover sample's and SMOKE_ESH="esh02"
+#                                   the D-hors admission sites' (below)
 #   measure_588.sh run OUT [L T N]  smoke over ALL cells, then L launches (rotated order, pinned),
 #                                   then read_588.py's table
 #
@@ -40,6 +41,15 @@
 # a sample row that fails a premise, a compile or the answer gate is DROPPED with a loud
 # `SAMPLE ... ` line and never stops the job. Results: s3t_sample.tsv; read_588.py prints them under
 # "Mover sample (not the §6 bar)".
+#
+# THE D-HORS ADMISSION SITES (Frank's ruling 2026-10-23 on the S3 review's fix C: measure, do not
+# decline; FINDINGS, NEVER part of the bar, no default changes): esh_588.tsv (pick_esh_588.py's
+# committed pick: ~12 D-hors sites stratified by E[sh], the expected shift per probe under the
+# default byte-rate prior, esh_588.py). The same machinery as the mover sample (use_set), with arms
+# NOH (--memfn=no-wf-hors: D-one) and RTE (default: D-hors) at the scalar layer and NOHs/RTEs at the
+# SIMD layer; premise: both read cover, RTE carries `_sh[256]` and NOH does not. Stages esh-build,
+# esh-gate; items after the sample's in each launch; results s3t_esh.tsv; read_588.py prints them
+# under "D-hors admission (E[sh])".
 set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=$(cd "$here/../../../.." && pwd)
@@ -53,6 +63,7 @@ REGIMES="throughput search_short match"
 CLASSES="real none dense"
 ALLARMS="DEF RTE RT2 NOH DEFs RTEs NOHs"
 SAMPLE=$here/sample_588.tsv
+ESH=$here/esh_588.tsv
 SREGIMES="throughput search_short"
 SCLASSES="real none random"
 say() { printf '%s\n' "$*"; }
@@ -119,73 +130,93 @@ stage_build() {
     say "build: $nhors cell(s) where D-hors fires (NOH's text differs from RTE's)"
 }
 
-# the sample's ids (SMOKE_SAMPLE restricts them outside `run`) and their patterns
+# TWO SIDE SETS ride the cells' launches, both FINDINGS (never the bar), one machinery: `use_set`
+# selects one. sample: the mover sample (DEF vs routed). esh: the D-hors admission sites (D-one, the
+# `no-wf-hors` deny NOH, vs D-hors, routed RTE).
+use_set() {
+    SET=$1
+    case $1 in
+        sample) SET_FILE=$SAMPLE SET_SMOKE=${SMOKE_SAMPLE:-} SET_TAG=SAMPLE SET_SUBJ=ssubj SET_ARTS=sarts
+                SET_ARMS="DEF RTE DEFs RTEs" ;;
+        esh)    SET_FILE=$ESH SET_SMOKE=${SMOKE_ESH:-} SET_TAG=ESH SET_SUBJ=esubj SET_ARTS=earts
+                SET_ARMS="NOH RTE NOHs RTEs" ;;
+    esac
+}
+# the set's ids (SET_SMOKE restricts them outside `run`) and their patterns
 sids() {
-    if [ -n "${SMOKE_SAMPLE:-}" ] && [ "${ALLCELLS:-0}" != 1 ]; then echo $SMOKE_SAMPLE | tr ' ' '\n'
-    else grep -v '^#' "$SAMPLE" | cut -f1; fi
+    if [ -n "$SET_SMOKE" ] && [ "${ALLCELLS:-0}" != 1 ]; then echo $SET_SMOKE | tr ' ' '\n'
+    else grep -v '^#' "$SET_FILE" | cut -f1; fi
 }
 spat_of() { python3 -I -c 'import sys; sys.path.insert(0, sys.argv[2]); import emit_sweep
 for l in open(sys.argv[1]):
     f = l.rstrip("\n").split("\t")
-    if f[0] == sys.argv[3]: sys.stdout.buffer.write(bytes(emit_sweep.decode_escape(f[2])))' "$SAMPLE" "$TREE/scripts" "$1"; }
-# the surviving sample rows (a dropped row has no arms file)
-live_sids() { for s in $(sids); do [ -s "$OUT/sarts/$s/arms" ] && echo "$s"; done; }
+    if f[0] == sys.argv[3]: sys.stdout.buffer.write(bytes(emit_sweep.decode_escape(f[2])))' "$SET_FILE" "$TREE/scripts" "$1"; }
+# the surviving rows (a dropped row has no arms file)
+live_sids() { for s in $(sids); do [ -s "$OUT/$SET_ARTS/$s/arms" ] && echo "$s"; done; }
+# a row's PREMISE: sample, RTE reads cover and DEF does not; esh, both read cover, RTE carries
+# D-hors's `_sh[256]` table and NOH (D-one) does not
+set_premise() {
+    local a=$OUT/$SET_ARTS/$1
+    case $SET in
+        sample) [ "$(stamp_of "$a/RTE/a.c")" = cover ] && [ "$(stamp_of "$a/DEF/a.c")" != cover ] ;;
+        esh)    [ "$(stamp_of "$a/RTE/a.c")" = cover ] && [ "$(stamp_of "$a/NOH/a.c")" = cover ] &&
+                    command grep -q '_sh\[256\]' "$a/RTE/a.c" && ! command grep -q '_sh\[256\]' "$a/NOH/a.c" ;;
+    esac
+}
 
-stage_sample_build() {
-    say "== s3t STAGE sample-build"
-    rm -rf "$OUT/ssubj" "$OUT/sarts"
-    mkdir -p "$OUT/ssubj" "$OUT/sarts" || return 1
-    [ -f "$SAMPLE" ] || { say "SAMPLE MISSING: $SAMPLE"; return 0; }
-    if [ -n "${SMOKE_SAMPLE:-}" ] && [ "${ALLCELLS:-0}" != 1 ]; then
-        { grep '^#' "$SAMPLE"; for s in $SMOKE_SAMPLE; do grep "^$s	" "$SAMPLE"; done; } > "$OUT/sample.tsv"
-    else cp "$SAMPLE" "$OUT/sample.tsv"; fi
-    python3 -I "$here/gen_sample_588.py" "$OUT/sample.tsv" "$OUT/ssubj" || { say "SAMPLE SUBJECTS FAILED"; return 0; }
+stage_set_build() {
+    say "== s3t STAGE $SET-build"
+    rm -rf "$OUT/$SET_SUBJ" "$OUT/$SET_ARTS"
+    mkdir -p "$OUT/$SET_SUBJ" "$OUT/$SET_ARTS" || return 1
+    [ -f "$SET_FILE" ] || { say "$SET_TAG MISSING: $SET_FILE"; return 0; }
+    if [ -n "$SET_SMOKE" ] && [ "${ALLCELLS:-0}" != 1 ]; then
+        { grep '^#' "$SET_FILE"; for s in $SET_SMOKE; do grep "^$s	" "$SET_FILE"; done; } > "$OUT/$SET.tsv"
+    else cp "$SET_FILE" "$OUT/$SET.tsv"; fi
+    python3 -I "$here/gen_sample_588.py" "$OUT/$SET.tsv" "$OUT/$SET_SUBJ" || { say "$SET_TAG SUBJECTS FAILED"; return 0; }
     local sid arm d pat twin arms nok=0
     for sid in $(sids); do
         pat=$(spat_of "$sid")
         arms=""
-        for arm in DEF RTE DEFs RTEs; do
-            d=$OUT/sarts/$sid/$arm
+        for arm in $SET_ARMS; do
+            d=$OUT/$SET_ARTS/$sid/$arm
             mkdir -p "$d"
             # shellcheck disable=SC2046
             "$PCREC" --features all -p rx $(flags_of "$arm") -o "$d/a.c" --pattern "$pat" > "$d/compile.log" 2>&1 ||
-                { say "SAMPLE COMPILE FAILED: $sid $arm (dropped)"; arms=""; break; }
+                { say "$SET_TAG COMPILE FAILED: $sid $arm (dropped)"; arms=""; break; }
             twin=${arm%s}
-            if [ "$twin" != "$arm" ] && cmp -s "$d/a.c" "$OUT/sarts/$sid/$twin/a.c"; then continue; fi
+            if [ "$twin" != "$arm" ] && cmp -s "$d/a.c" "$OUT/$SET_ARTS/$sid/$twin/a.c"; then continue; fi
             { $CC -O2 -c -o "$d/a.o" "$d/a.c" && $CC -O2 -DHDR="\"a.h\"" -I"$d" -c -o "$d/d.o" "$M/cdrv.c" &&
-                $CC -O2 -o "$d/bin" "$d/d.o" "$d/a.o"; } || { say "SAMPLE BUILD FAILED: $sid $arm (dropped)"; arms=""; break; }
+                $CC -O2 -o "$d/bin" "$d/d.o" "$d/a.o"; } || { say "$SET_TAG BUILD FAILED: $sid $arm (dropped)"; arms=""; break; }
             arms="$arms $arm"
         done
         [ -n "$arms" ] || continue
-        if [ "$(stamp_of "$OUT/sarts/$sid/RTE/a.c")" != cover ] || [ "$(stamp_of "$OUT/sarts/$sid/DEF/a.c")" = cover ]; then
-            say "SAMPLE PREMISE FAILED: $sid (RTE must read cover, DEF must not; dropped)"; continue
-        fi
-        echo $arms > "$OUT/sarts/$sid/arms"
+        set_premise "$sid" || { say "$SET_TAG PREMISE FAILED: $sid (dropped)"; continue; }
+        echo $arms > "$OUT/$SET_ARTS/$sid/arms"
         nok=$((nok + 1))
-        say "sample-build: $sid: timed arms$arms"
+        say "$SET-build: $sid: timed arms$arms"
     done
-    say "sample-build: $nok of $(sids | wc -l) sample rows built"
+    say "$SET-build: $nok of $(sids | wc -l) $SET rows built"
 }
 
-stage_sample_gate() {
-    say "== s3t STAGE sample-gate"
+stage_set_gate() {
+    say "== s3t STAGE $SET-gate"
     local sid arm cls reg f n=0 bad
     for sid in $(live_sids); do
         bad=0
-        for arm in $(cat "$OUT/sarts/$sid/arms"); do
+        for arm in $(cat "$OUT/$SET_ARTS/$sid/arms"); do
             for cls in $SCLASSES; do
-                [ -f "$OUT/ssubj/$sid.$cls.raw" ] || continue
+                [ -f "$OUT/$SET_SUBJ/$sid.$cls.raw" ] || continue
                 for reg in $SREGIMES; do
                     case $reg in throughput) f=raw;; search_short) f=srec;; esac
                     n=$((n + 1))
-                    [ "$("$OUT/sarts/$sid/$arm/bin" check "$reg" "$OUT/ssubj/$sid.$cls.$f")" = "$(cat "$OUT/ssubj/$sid.$cls.$reg.expect")" ] ||
-                        { say "SAMPLE ANSWER MISMATCH: $sid/$cls/$reg arm $arm (the row is dropped; a FINDING)"; bad=1; }
+                    [ "$("$OUT/$SET_ARTS/$sid/$arm/bin" check "$reg" "$OUT/$SET_SUBJ/$sid.$cls.$f")" = "$(cat "$OUT/$SET_SUBJ/$sid.$cls.$reg.expect")" ] ||
+                        { say "$SET_TAG ANSWER MISMATCH: $sid/$cls/$reg arm $arm (the row is dropped; a FINDING)"; bad=1; }
                 done
             done
         done
-        [ "$bad" = 0 ] || rm -f "$OUT/sarts/$sid/arms"
+        [ "$bad" = 0 ] || rm -f "$OUT/$SET_ARTS/$sid/arms"
     done
-    say "sample-gate: $n arm cells read; $(live_sids | wc -l) sample rows live"
+    say "$SET-gate: $n arm cells read; $(live_sids | wc -l) $SET rows live"
 }
 
 stage_diff() {
@@ -245,7 +276,8 @@ timeloop() {
     local L=$1 T=$2 N=$3 l cell reg cls f arm order k=0 rot out nitems=0 arms m
     printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_results.tsv"
     printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_sample.tsv"
-    SK=0 SITEMS=0
+    printf 'launch\tcell\tregime\tclass\tarm\tns\tmin\treps\tops\tbytes\n' > "$OUT/s3t_esh.tsv"
+    SK=0
     for l in $(seq 1 "$L"); do
         say "launch $l/$L start $(date +%T) load1=$(cut -d' ' -f1 /proc/loadavg) cpu$CPU=$(cpu_busy "$CPU" 1)% sibling cpu$SIB=$(cpu_busy "$SIB" 1)%"
         for cell in $(cells); do
@@ -267,42 +299,46 @@ timeloop() {
                 done
             done
         done
-        timeloop_sample "$l" "$T" "$N"
+        use_set sample; timeloop_set "$l" "$T" "$N" "$OUT/s3t_sample.tsv"
+        use_set esh; timeloop_set "$l" "$T" "$N" "$OUT/s3t_esh.tsv"
     done
-    say "time: $SITEMS sample items over $L launches"
+    say "time: $(( $(wc -l < "$OUT/s3t_sample.tsv") - 1 )) sample items over $L launches"
+    say "time: $(( $(wc -l < "$OUT/s3t_esh.tsv") - 1 )) esh items over $L launches"
     say "time: $nitems timed arm cells over $L launches"
 }
 
-# the sample's items, one launch: rotated as the cells' are; into s3t_sample.tsv
-timeloop_sample() {
-    local l=$1 T=$2 N=$3 sid reg cls f arm order m arms rot out
+# the selected set's items, one launch: rotated as the cells' are; into TSV
+timeloop_set() {
+    local l=$1 T=$2 N=$3 tsv=$4 sid reg cls f arm order m arms rot out
     for sid in $(live_sids); do
-        arms=$(cat "$OUT/sarts/$sid/arms"); m=$(echo $arms | wc -w)
+        arms=$(cat "$OUT/$SET_ARTS/$sid/arms"); m=$(echo $arms | wc -w)
         for reg in $SREGIMES; do
             case $reg in throughput) f=raw;; search_short) f=srec;; esac
             for cls in $SCLASSES; do
-                [ -f "$OUT/ssubj/$sid.$cls.$f" ] || continue
+                [ -f "$OUT/$SET_SUBJ/$sid.$cls.$f" ] || continue
                 rot=$(( (SK + l) % m )); SK=$((SK + 1))
                 set -- $arms $arms
                 shift "$rot"
                 order=""; for _ in $(seq 1 "$m"); do order="$order $1"; shift; done
                 for arm in $order; do
-                    out=$(taskset -c "$CPU" "$OUT/sarts/$sid/$arm/bin" time "$reg" "$OUT/ssubj/$sid.$cls.$f" "$T" "$N") ||
-                        { say "SAMPLE TIME FAILED: $sid/$cls/$reg/$arm"; continue; }
+                    out=$(taskset -c "$CPU" "$OUT/$SET_ARTS/$sid/$arm/bin" time "$reg" "$OUT/$SET_SUBJ/$sid.$cls.$f" "$T" "$N") ||
+                        { say "$SET_TAG TIME FAILED: $sid/$cls/$reg/$arm"; continue; }
                     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$l" "$sid" "$reg" "$cls" "$arm" \
-                        "$(echo "$out" | awk '{print $2"\t"$4"\t"$6"\t"$8"\t"$10}')" >> "$OUT/s3t_sample.tsv"
-                    SITEMS=$((SITEMS + 1))
+                        "$(echo "$out" | awk '{print $2"\t"$4"\t"$6"\t"$8"\t"$10}')" >> "$tsv"
                 done
             done
         done
     done
 }
 
+# both side sets' build and answer gate (each drops its own failing rows, never stops the job)
+sets() { local x; for x in sample esh; do use_set $x; stage_set_build && stage_set_gate || return $?; done; }
+
 cmd=${1:-}; OUT=${2:-}
 [ -n "$OUT" ] || { sed -n '2,30p' "$0"; exit 64; }
 mkdir -p "$OUT" "${TMPDIR:-$OUT}" || exit 1
 case $cmd in
-    smoke) stage_build && stage_diff && stage_gate && stage_sample_build && stage_sample_gate ;;
+    smoke) stage_build && stage_diff && stage_gate && sets ;;
     run)
         L=${3:-5}; T=${4:-20000000}; N=${5:-9}
         ALLCELLS=1
@@ -310,8 +346,7 @@ case $cmd in
         stage_build || exit $?
         stage_diff || exit $?
         stage_gate || exit $?
-        stage_sample_build || exit $?
-        stage_sample_gate || exit $?
+        sets || exit $?
         say "== s3t STAGE time"
         timeloop "$L" "$T" "$N" || exit 1
         say "end sibling cpu$SIB=$(cpu_busy "$SIB" 2)% cpu$CPU=$(cpu_busy "$CPU" 2)%"
