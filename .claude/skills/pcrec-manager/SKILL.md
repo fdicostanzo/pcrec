@@ -245,6 +245,8 @@ requests back to the lane (SendMessage to a still-running agent, or a fresh
 agent with the review notes) rather than silently fixing large problems
 yourself; small landing-bar items you may finish directly.
 
+At each landing, add a line to docs/dev/full_suite_ledger.md (major/minor/none) and check D177's triggers; queue `scripts/fullsuite_job.sh` for the next window when one fires (a run covers every pending trigger).
+
 ## 5. Adversarial critic rounds on designs and code
 
 New designs (before a build go) and major code (before landing) get a critic
