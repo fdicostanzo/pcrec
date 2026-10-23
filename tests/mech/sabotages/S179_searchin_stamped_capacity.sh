@@ -48,15 +48,8 @@ SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25, sabotaged emitter vs tests/recursion/
 # where the entry is the search and `buffers->nframes` elsewhere, so the
 # match pair's `_in` entries emit as before and the population is unchanged.
 SAB_COUNT=1
-SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(%s, &run%s);\n"
-        "}\n\n",
-        p, name, s->args, va, p, name, s->args, va);'
-SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, %s,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(%s, &run%s);\n"
-        "}\n\n",
-        p, name, s->args, va, p,
-        s->entry == PCREC_ENTRY_SEARCH ? pcrec_sb_fragf(&cx->arena, "%s_RESUME_FRAMES", g->upper) : "buffers->nframes",
-        name, s->args, va);   /* SABOTAGE S179 */'
+SAB_BEFORE='    pcrec_emit_caller_bind(c, p, "buffers");'
+SAB_AFTER='    if (s->entry == PCREC_ENTRY_SEARCH)   /* SABOTAGE S179 */
+        pcrec_sb_printf(c, "    %s_run_state_bind(&run, buffers->frames, %s_RESUME_FRAMES,\n"
+                        "                            buffers->trail,  buffers->ntrail);\n", p, g->upper);
+    else pcrec_emit_caller_bind(c, p, "buffers");'

@@ -16,9 +16,7 @@ SAB_COUNT=1
 # engine B's entry to itself, so the two-engine fixture keeps one `rx_search`
 # and the compile fails.
 #
-# [FINDALL-NEXT] I1 (lane i1tri) RE-ANCHORED: engine B's body is its
-# `rx__find`, renamed to `rx_search_b`; the row leaves it `rx__find`, so the
-# two-engine fixture defines `rx__find` twice and the compile fails (1 fail,
-# the mechanism unchanged).
-SAB_BEFORE="            -e 's/rx__find\\([^_A-Za-z0-9]\\)/rx_search_b\\1/g' \"\$WORKDIR/engb.body\""
-SAB_AFTER="            -e 's/rx__find\\([^_A-Za-z0-9]\\)/rx__find\\1/g' \"\$WORKDIR/engb.body\""
+# [FINDALL-NEXT] (iterfix2) back to BASE's anchor: a byte artifact's search
+# body is `rx_search` again (no split without a caller-position prologue).
+SAB_BEFORE="        sed 's/rx_search\\([^_A-Za-z0-9]\\)/rx_search_b\\1/g' \"\$WORKDIR/engb.body\""
+SAB_AFTER="        sed 's/rx_search\\([^_A-Za-z0-9]\\)/rx_search\\1/g' \"\$WORKDIR/engb.body\""

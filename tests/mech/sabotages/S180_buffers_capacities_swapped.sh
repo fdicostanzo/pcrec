@@ -29,7 +29,7 @@ SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 14pass/2fail, in TWO diffe
 # The one bind line serves all three `_in` entries, so SAB_COUNT is 1 where
 # it was 3; the plant still swaps the capacities in all three, as before.
 SAB_COUNT=1
-SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"'
-SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, buffers->ntrail,\n"
-        "                            buffers->trail,  buffers->nframes);   /* SABOTAGE S180 */\n"'
+SAB_BEFORE='        "    %s_run_state_bind(&run, %s->frames, %s->nframes,\n"
+        "                            %s->trail,  %s->ntrail);\n", p, d, d, d, d);'
+SAB_AFTER='        "    %s_run_state_bind(&run, %s->frames, %s->ntrail,\n"
+        "                            %s->trail,  %s->nframes);   /* SABOTAGE S180 */\n", p, d, d, d, d);'

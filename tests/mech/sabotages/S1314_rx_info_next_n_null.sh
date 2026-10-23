@@ -11,5 +11,5 @@ SAB_DESC='rx_info.next_n is NULL on every artifact'
 SAB_DOC_FIGURE='Owed: lane i2build queued this row (docs/dev/lanes/i2build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1314.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = %s_next_n,\n",'
-SAB_AFTER='        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = NULL, /* %s SABOTAGE S1314 */\n",'
+SAB_BEFORE='        pcrec_sb_printf(c, "    .next_n = %s_next_n,\n", cx->opt->prefix);'
+SAB_AFTER='        pcrec_sb_printf(c, "    .next_n = NULL, /* %s SABOTAGE S1314 */\n", cx->opt->prefix);'

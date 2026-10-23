@@ -11,5 +11,5 @@ SAB_DESC='_next_n runs its first search whatever k is, so k == 0 is not inert'
 SAB_DOC_FIGURE='Owed: lane i2build queued this row (docs/dev/lanes/i2build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1313.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        "    if (k == 0) return 0;                              /* nothing, in every state */\n"'
+SAB_BEFORE='        "    if (k == 0) return 0;\n"'
 SAB_AFTER='        "    if (k == 0) k = 1;   /* SABOTAGE S1313 */\n"'

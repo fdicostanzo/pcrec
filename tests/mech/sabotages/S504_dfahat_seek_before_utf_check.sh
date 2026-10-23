@@ -25,7 +25,7 @@ SAB_REACH='"$PCREC" --features all -e utf8 -futf-check -p rx -o "$REACH_TMP/o.c"
 SAB_REACH_EXPECT='REACH-UTF8-MOVER-CHECKED'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_printf(c, "%sif (%s_", indent, cx->opt->prefix);'
+SAB_BEFORE='    pcrec_sb_printf(c, "%sif (", indent);'
 SAB_AFTER='    if (pcrec_artifact_has_dfa_scan(cx) && !strcmp(posvar, "search_from") &&
         !strncmp(dfa_prefilter_name(cx), "first-", 6)) {   /* SABOTAGE S504 */
         const StartSet *ss = pcrec_fact_start_set(cx);
@@ -34,4 +34,4 @@ SAB_AFTER='    if (pcrec_artifact_has_dfa_scan(cx) && !strcmp(posvar, "search_fr
         pcrec_sb_printf(c, "}; size_t s504_q = %s; while (s504_q < %s && !s504_t[%s[s504_q]]) s504_q++; if (s504_q >= %s) return 0; }\n",
                         posvar, lenvar, subjvar, lenvar);
     }
-    pcrec_sb_printf(c, "%sif (%s_", indent, cx->opt->prefix);'
+    pcrec_sb_printf(c, "%sif (", indent);'
