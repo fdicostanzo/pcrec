@@ -70,3 +70,10 @@ first run of the `pcrec-code-critic` skill, five lenses picked by profile.
 2. **Only the emitted-vs-replaced lens saw a regression to EXISTING entries.** Ask that lens to
    diff every pre-existing entry BASE vs SUBJECT, not only the new path.
 3. **A known result re-found blind calibrates the round** (`_next_n` at k=1 slower than `_next`).
+
+Round 2026-10-23 r2, kit S3 C1 build (`docs/dev/reviews/2026-10-23-r2-memfn-s3-c1-code.md`, lane/memfn-s3, §6), the skill's first use by the kit.
+1. **The hidden-issue test passed again with the strong lenses:** both opus lenses found, blind, that two-or-more-member non-case-pair stops get a scalar walk.
+2. **Verification earns its place:** it corrected a modelled magnitude (same-set windows re-read 1.1-2.5 bytes/byte on dense input, not 6-12) and showed the lane's example patterns were controls, not witnesses.
+3. **Keep the check-adequacy lens whenever checks or flags change:** it alone found a broken gate (`make test-axes`'s memfn arm: MEMFN_CLASS lacked the new forms).
+4. **The slot lens lists each ruling's CONSEQUENCES,** not only its agreement with the design.
+
