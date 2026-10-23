@@ -636,6 +636,10 @@ test-examples: all
 # src/ cli/ lib/ for a comparison reading a start-table row name (dfa_pfs[]
 # until [START-TABLE] C3, cand_rows[]'s NEXT/RECOVER rows since), well under a
 # second.
+# [CASESPELL] run_case_spelling_identity.sh joins on the same footing: six
+# groups of three spellings, each compiled and gcc'd per engine and encoding
+# (about 5 s) -- the check that letter case in a caseless pattern never
+# reaches the emitted code.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/lib/run_group.sh \
@@ -654,7 +658,8 @@ test-codegen: all
 	    'bash tests/codegen/run_cand_rows.sh' \
 	    'bash tests/codegen/run_prefix_invariance.sh' \
 	    'bash tests/codegen/run_nomatch_caps.sh' \
-	    'bash tests/codegen/run_rev_end.sh'
+	    'bash tests/codegen/run_rev_end.sh' \
+	    'bash tests/codegen/run_case_spelling_identity.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
