@@ -5,6 +5,11 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+STATE AT HANDOFF (part 5, job 600's reds, supersedes part 4's shas): THE S3 COMMIT is now
+**7e1caad08** (d3886a656 + the §6.3.4¶8/¶9 cover clarification; no code change: R1's premise
+did not hold, see 5.2); the R2-R6 follow-up is 34ee758a1. Every red family was rerun green by
+section; the full job (587's script) is re-staged, dry-run rc 0. Part 5 is below this block.
+
 STATE AT HANDOFF (part 4, supersedes part 3's shas): THE S3 COMMIT is now **d3886a656**: a962449c4
 without review fix C (Frank 2026-10-23), so D-hors admits exactly as e1e95a584 did, plus fix B's two
 asserts. The K27 fixture runs on both arms (ee0d4488d, F-5). Job 588 gains the "D-hors admission
@@ -35,6 +40,242 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 5. Job 600 reds (lane s3fix600, 2026-10-23)
+
+Job 600 is job 587's script, run at ba6ebf720. It was RED in five steps (census, sweep_start,
+test, mech, reach) and changed NO answer: every red was a reader of a witness that became a
+`cover` artifact by default. **No answer changed anywhere**, and none of the runs below shows
+one:
+- census: c-vm, ir and every OFF arm have 0 movers;
+- every mech row's corpus arm is clean on the clean tree;
+- the sections' differentials (start-landing §5, anchored diff, startset vmhat_diff) answer
+  identically.
+
+## 5.1 Commits
+
+| sha | what |
+|---|---|
+| **7e1caad08** | **THE S3 COMMIT**: d3886a656 plus the R1 spec hunk below. Built by `reset --hard d3886a656`, applying the hunk, then `reset --soft f7bc3cf05` and one commit. abi stays 84 (PROVISIONAL). `git diff d3886a656 7e1caad08` = match_api.md only |
+| b3fba6b28 .. fc795da15 | the seven later commits (b8bcb23b1 .. ba6ebf720), cherry-picked unchanged |
+| 34ee758a1 | `s3: witnesses, pins and manifests after the cover default (job 600)`: R2-R6 |
+| (next) | this part |
+
+The WIP tip 260dd1bbf has a tree identical to 34ee758a1's.
+
+## 5.2 R1: the stamp is not a lie. Spec clarified; code unchanged
+
+The ruling's premise does not hold. I reported this to main on 2026-10-23 and had no reply
+before the restructure:
+- Every cover artifact carries the ANCHORED machine. `cover_conj`'s C4 (`anchored-A`) requires
+  it, `_DFA_MATCH` reads `"unwrapped"`, and `rx_anchored_next_state[]` and `rx_anchored_step`
+  are in `rx_match`.
+- `_DFA_TABLE`, `_UNIFORM_FOLDS` and `_SCAN_EDGE` fold over `dfa_member_machines`, the path
+  members, which on cover is {anchored}. So `"premultiplied"` is that machine's real
+  encoding. Under `-fno-premul-table`, `abc` stamps `"indexed"` and carries
+  `short rx_anchored_next_state[16]`. On `[0-9a-f]{4}`, FOLDS 1 and SCAN_EDGE `"bitmap"` are
+  the anchored machine's folded step and its edge.
+- §6.3.4¶7's `"mixed"` row already counts the anchored machine, ¶8 keeps the name when a table
+  is folded, and ¶9 forbids naming a machine the artifact does NOT carry. Stamping `"none"`
+  would hide that machine's encoding.
+
+**The red was a check gap.** `run_premul_table.sh`'s matcher-text scan markers had no cover
+shape; `run_dfa_stamps.sh` gained one in S3. That gap produced all 811 `[iff]` reds, and
+`[agreement] 811` is the same drift count. The fix (in 34ee758a1) adds the cover marker, so
+the agreement check compares the stamp against the anchored tables.
+- First rerun: the marker's comment carried an apostrophe and closed the single-quoted awk
+  program (a syntax error, fixed).
+- After the fix, `make test-premul-table`: **16 passed, 0 failed**.
+  - stamp distribution premultiplied=2992 indexed=53 mixed=40 none=511;
+  - 1798 anchored machines read.
+
+**Spec hunk (in 7e1caad08), worded by behaviour:**
+- §6.3.4¶8 gains: "On a `"cover"` scan the search itself steps no machine, so the composition
+  is the one machine the artifact still carries, the anchored one under
+  `<PREFIX>_DFA_MATCH "unwrapped"`: the value is that machine's encoding (`"premultiplied"`
+  or `"indexed"`), and `"none"` where the artifact carries no anchored machine either. The
+  same holds for `_DFA_UNIFORM_FOLDS` and `_DFA_SCAN_EDGE` below."
+- §6.3.4¶9's zero list gains: "and on `"cover"` at most `2` (the anchored machine's two
+  tables)".
+
+**cpset-structure was never R1's.** Its drift is RX_DFA_PREFILTER and EMITTED_BYTES on the four
+cover sample patterns (R4 below). If main still wants `"none"`, that is a code change: the
+abi 84 artifacts move again and premul's agreement check needs a cover clause. Say so and a
+lane can do it.
+
+## 5.3 R2: mech/reach, the 32 rows, by ID
+
+Every row's SAB_REACH compile(s) gained `--memfn=no-wf-find` (S283: both compiles). A dated
+`RE-AIMED` comment says why.
+- REACH_ONLY over the 33 rows: **33 reached, 0 unreached** (reach33.log).
+- Mech over the same 33 (mech33.log): **32 DETECTED**, S283 UNDETECTED (R3).
+- Rerun of S283/S284 after the flips: `mech run COMPLETE: 2 rows (unexpected: 0)`.
+
+| row | detecting arm(s) after the re-aim |
+|---|---|
+| S1121 | partlayout 1 |
+| S1415 | prechecks 1 |
+| S1416 | prechecks 3, offsetskip 9 |
+| S1421 | prechecks 4, corpus 4 |
+| S227 | scanedge 11 (corpus 0: `foo\B` is cover by default) |
+| S267, S270, S280, S282, S288, S468 | prechecks (S468: corpus 0) |
+| S279, S285, S287 | offsetskip 3 (+ corpus) |
+| S447, S448, S450, S454 | corpus (reqcube.rxt) + codegen |
+| S455, S571 | codegen |
+| S464 | corpus 25 (handoff.rxt still reaches at the default) |
+| S482-S484 | dfahat |
+| S517 | memfnstamps |
+| S607 | candoracle |
+| S686, S688, S694 | memfnarms (+ corpus / memfnstamps) |
+| S786 | startlanding + corpus |
+| S787 | dfastamps + startlanding |
+
+**Where the point is also the default path:** cover's own default witnesses already cover it:
+- run_dfa_stamps.sh's `a` cover witness and its `[start]` agreement (S786, S787 and the
+  start-landing family);
+- runcmp_check.py's cover witness (fix F) and G2's window family (the run/pair rows S279,
+  S285, S447-S455, S686-S694).
+
+No row needed a harness-flag mechanism: every row whose harness arm went blind (S227, S468)
+is detected by its structural arm. A `SAB_HARNESS_RXTFLAGS` field I drafted was removed
+unused (D77).
+
+## 5.4 R3: S284 (and S283)
+
+**S284 is DETECTED, and the cause predates S3.**
+- Since D172 S2 commit 6 (32f9b1781), `dfa_form_derive` refuses a NEXT row whose `reseeds`
+  disagrees with the window reply's RE-SEED path, as an internal error.
+- Under the plant every seeded run-row site refuses at compile: `foo\B` and `(foo\B)` in the
+  scan-edge census, `/user|/users` and `a\K/user` in run_pinned.rxt. That is a loud refusal,
+  never a wrong answer.
+- Measured with a scratch build of the plant (p284.log):
+
+  | tree | scanedge | run_pinned.rxt |
+  |---|---|---|
+  | c3ea619c3 | 3 fail / 18 pass | 42 fail / 13 pass |
+  | S3 | 3 fail / 18 pass | 4 fail / 51 pass (cover asks no NEXT row) |
+
+- The row's header and SAB_DOC_FIGURE say this, and SAB_EXPECT reads DETECTED. This is not a
+  cover-path detection: the claim expired at S2. Job 587/600 was the first matrix run of this
+  row since then.
+
+**S283 is UNDETECTED (EXPECTED), found by this lane's re-aim run, and it also predates S3.**
+- `pf_window_of` states no run R under PCREC_NO_OFFSET_SKIP, so no reply carries C-pin and no
+  run row applies, whatever the row's mask says.
+- A scratch plant build at c3ea619c3 and at S3: `/user|/users -fno-offset-skip
+  -fno-req-handoff` stays "memchr", identical to the clean build.
+- The row records the reason and what would close it.
+
+## 5.5 R4: make test sections
+
+| section | change | cause |
+|---|---|---|
+| cli | the vrun block's 12 `(?i)cat` compiles take `--memfn=no-wf-find` (folded into the one `--memfn=` list: the last `--memfn=` wins) | `(?i)cat` is cover, no reqrun helper |
+| assertions (wordctx) | a 4th legitimate non-difference, **cover, deny-proved**: the artifact is cover AND its `--memfn=no-wf-find` arm DOES differ between the two builds (else still UNEXPLAINED) | the 2 (`-*?(?:\b\|\B)\W`, `\W+?(?:\b){0,2}`) are cover: no scan machine, and the anchored machine's language is unchanged by their vacuous assertions; under the deny both differ (measured) |
+| premul-table | the cover scan marker (R1) | the 811 stamp-without-a-scan reds |
+| search-pinned | `not nullable` 'abc' row adds the deny | abc is cover |
+| start-landing | §1 abcd and [a-z] rows add the deny (cover's default stamp attempt-start is run_dfa_stamps.sh's witness). §3 floors pinned AT the measured value: end-minus-width 510 (was 1124), product reach 705 (was 1290), landing untouched (195 above 168). §5 adds `ab\|cd` (not a window, end-minus-width) | the fixed-width windows left end-minus-width |
+| prechecks | a file-level `COVER_DENY` on `emit()` and `fact()`, run_scan_edge_census.sh's own shape | the witnesses are cover; every non-cover artifact is byte-identical under the deny (census: default movers == cover artifacts), so it moves nothing else |
+| anchored-match | the §2 offset-k arm `\d{4}-\d{2}-\d{2}` takes the deny (pf_scan gained extra args); K53_DENY gains it | cover search carries no prefilter; cover artifacts fit the K53 cap with the anchored machine |
+| cpset-structure | manifest re-recorded, 4 rows (`a`, `abc`, `\bword\b`, `(?i)HeLLo`): PREFILTER -> "none", EMITTED_BYTES 21348->18944, 22179->19267, 25144->20690, 25544->21700; the other 8 untouched; note in the script | cover: no scan, no forward/reverse machine |
+| encoding-checks | **the region is declared**: the cover window search's pick | see below |
+| startset | manifest_s3_dfa.tsv **-25 rows**, each cover by default and still a hat mover under the deny (measured per row, listed in the manifest header); `[dfa-wit]` `\B(?<!a)d` and `\bab\b` take the deny | the premise is not inverted: the manifest names hat movers, cover artifacts have no hat (0 joiners) |
+
+**encoding-checks (K50/DD12a(i)): it is cover, not something else.** All of the 11 diverging
+strict pairs except the three `\b`/`\B` ones are cover artifacts on both sides (`fo|foo|fool`, `x\By`, `\bcat\b`, `\Bcat`,
+`\bcat`, `(?i)\bcat\b`, `(?m)abc$`, ...).
+- **Mechanism.** Their window search scans the run pick, which reads the byte-keyed prior
+  exactly as the run pre-check's pick does: byte takes the rarest member (`c@0`), utf8
+  (prior NONE) the rightmost (`t@2`). REQ_RUN/REQ_BYTE declare the pick.
+- **The other two (`\b`, `\B`) are not S3's.** They diverge identically under main's own
+  binary (a2d4d9738, wsmain's green job 586) and are excused there by the undeclared-form
+  manifest.
+- **What the check now does:** when both sides are cover and their stamped picks differ, it
+  normalizes ONLY the search clause and counts it (`cover_pick`, added to the
+  never-excised-region floor):
+  - memchr form `memchr(s + c [+ K], B, ...)` with its `- K` back-off;
+  - class form `while (c [+ K] < n && !(s[c+K] == B || ...)) c++;`.
+- **What still holds:** each side is held to its own stamps (the searched bytes are the
+  REQ_RUN member at K, or its cube, else REQ_BYTE). The verify in the same statement is still
+  compared token for token.
+- **Result:** `make test-encoding-checks` (S3 binary, ENC_MAX_BLOCKS=250) **11 passed, 0
+  failed**. The ref tree's own script with the ref binary: 11/0 (encref.log).
+
+## 5.6 R5: sweep_start
+
+**DIFFER_PINS re-pins.** 20 c-default cells were pinned AT the measured values, under the S3
+RE-PIN header. Each cell's comment keeps its old value.
+
+| base | arm | differ/stamp floor | manifest |
+|---|---|---|---|
+| byte | -fno-offset-skip | 328/328 (was 513) | `ab+` (was `ab`) |
+| byte | -fno-run-prefilter | 54/54 (was 127) | `(ABC)` (was `fi`) |
+| byte | -fno-start-set | floors held | `(\b)x` (was `\Bx`) |
+| byte | -fno-req-handoff | 226/226 (was 339) | `ab?c` (was `SS`) |
+| byte | -fno-req-run | stamp 102 (was 208) | `SS` kept |
+| byte | -fno-req-run-fold | stamp 26 (was 32) | kept |
+| byte | -fmemfn-simd | 9 (was 20) | `((?i:abc))` (was `(?i)cat`) |
+| utf8 | -fno-offset-skip | 376/376 (was 604) | `ab+` |
+| utf8 | -fno-run-prefilter | 2/2 (was 3) | `frank\|fred` |
+| utf8 | -fno-start-set | floors held | `(\b)x` |
+| utf8 | -fno-req-handoff | 349/347 (was 519/517) | `ab?c` |
+| utf8 | -fno-req-run | stamp 58 (was 79) | kept |
+| utf8 | -fno-req-run-fold | stamp 27 (was 31) | kept |
+| utf8 | -fmemfn-simd | 10 (was 15) | `((?i:abc))` |
+| byte, utf8 | no-pres-set-lead | 14, 7 (was 16, 8) | `x{2,5}(?i:cat)` |
+| byte, utf8 | no-fd-pres-g1 | 944, 873 (was 1271, 1105) | `a+` (was `ab`) |
+| byte, utf8 | no-fd-pres-pick | 167, 231 (was 188, 263) | kept |
+
+**The cause, per pattern.** `docs/dev/lanes/s3_evidence/armcause.py` (new; armcause2.tsv)
+compiles BASE and BASE+FLAG at the default and under `--memfn=no-wf-find`, with the `--memfn`
+lists merged.
+- On all 20 cells, every leaver is a default-cover pattern (DIFFER and STAMP).
+- There are 0 joiners.
+- The cause "S3 routes N fixed-width patterns to cover" holds with N = 208, 74, 30, 125, 11,
+  263, 1, 19, 181, 5, 2, 1, 382, 301, 23, 34 (and the stamp-only leavers 112, 6, 21, 4).
+
+**Rerun:** `emit_sweep --arms start` -> **DONE rc=0**, no cell short (sweep_start.log).
+
+## 5.7 R6: census
+
+census.py's facts rule gains ONE class. A pattern whose `-e utf8` .c is cover (but whose
+default .c is not) may move its `utf8` listing rows and nothing else. This is job 600's
+three: `\p{Zl}`, `\p{Zp}` and `\p{sc=Thaana}` are `empty` under byte and `cover` under utf8,
+with utf8 end_window E2's `used` going yes -> no.
+
+Rerun (vs the c3ea619c3 ref): `== s3 census COMPLETE: patterns=4755 compiles=95100
+movers=3812 unexpected=0`; facts reads `utf8-cover 25` (3 of them moved).
+
+## 5.8 Commands run (all on this tree; logs under build/s3fix600/)
+
+| command | verdict |
+|---|---|
+| armcause.py (boxlock) x2 | 20/20 cells cause holds (the first run's `--memfn` cells were void: the last `--memfn=` wins; fixed) |
+| scratch S284 plant, both trees | above |
+| scratch S283 plant, both trees | memchr, unchanged |
+| `REACH_ONLY=1 run_sabotage_matrix.sh` 33 rows | 33 reached |
+| `run_sabotage_matrix.sh` 33 rows | 32 DETECTED, S283 UNDETECTED (flipped after) |
+| `run_sabotage_matrix.sh S283 S284` | unexpected 0 |
+| `make -k test-cli test-assertions test-premul-table test-search-pinned test-start-landing test-prechecks test-anchored-match test-cpset-structure test-encoding-checks test-startset` | 9 green; premul red on my own awk-quoting slip |
+| `make test-premul-table` (after the fix) | 16/0 |
+| run_encoding_checks.sh, S3 binary / ref tree+binary | 11/0, 11/0 |
+| census.py | unexpected=0 |
+| `emit_sweep --arms start` | rc=0 |
+| `s3_job_587-kit-s3-heavy --dry-run` | rc 0, 0.1 s |
+
+Not run here, per the brief: the full `make test`, timing. The manager re-queues the full job
+(same script).
+
+## 5.9 Re-staged job
+
+The script is the same (`docs/dev/lanes/s3_job_587-kit-s3-heavy`); its dry-run is rc 0 in
+0.1 s on the clean tree (tip of this part). Queue it from the MAIN tree:
+
+```
+scripts/boxqueue add --name 6NN-kit-s3-heavy worktrees/s3/docs/dev/lanes/s3_job_587-kit-s3-heavy
+```
 
 ---
 
