@@ -18,6 +18,10 @@
 #   before I1). No CLI input reaches a compound constraint row now (a single-
 #   caller part needs a driver entry request without `_next`); `/held` is
 #   witnessed by the `constraint-*` rows, the same stamp code for every class.
+#   compound-shared is the class row's other value on the same subject (P4):
+#   with compound-inline it pins that BOTH compound parts reach the class
+#   rows, i.e. that neither fell to a constraint row (P1-P3), the only
+#   CLI-reachable witness of that absence (iterchk, r2 review T4).
 #
 # Columns: id, flags (or -), pattern, controls (space-separated), rows
 # (FUNCTION=ROW, comma list; ROW `T0` where no control asked), stamp (or -),
@@ -39,6 +43,7 @@ constraint-single	-	(a|ab)(c|bcd)(d*)	--part-layout=prefilter:inline	prefilter=P
 constraint-rung	--vm-entry-shape=1	(a)b	--part-residual=inline --part-layout=prefilter:shared	prefilter=P3	residual=inline;prefilter=shared/held	-
 fold-rung	--vm-entry-shape=4	(?>a*)a	--part-layout=prefilter:shared	prefilter=P4	prefilter=shared	-
 compound-inline	-	^\s+|\s+$	--part-layout=compound:inline	comp_a=P5,comp_b=P5	compound=inline	-
+compound-shared	-	^\s+|\s+$	--part-layout=compound:shared	comp_a=P4,comp_b=P4	compound=shared	-
 held-wrap	-	(a)b	--part-layout=wrap:shared	prefilter=P10	wrap=shared/none	-
 held-other-class	-	(a)b	--part-layout=compound:inline	prefilter=P10	compound=inline/none	-
 stamp-order	-	(a)b	--part-layout=wrap:inline,prefilter:shared --part-inline-rank=R0 --part-residual=shared	prefilter=P4	residual=shared;rank=R0;prefilter=shared;wrap=inline/none	-
