@@ -1071,8 +1071,10 @@ boundary inside the checked range, and runs neither check.
 that order, the first search resolves the bound variables before it attempts
 any match (`docs/spec/vars.md`); an unset or ill-formed value at a bare
 `${name}` ends the iteration with `PCREC_ERR_UNSET_VAR`, `it.lo` the start
-position, whatever the subject holds. A later search resolves the same array,
-which ¶8 forbids changing, so it can refuse no differently.
+position, whatever the subject holds, except that a start past `n` ends the
+iteration with rc `0` before any check, as `<prefix>_search` does. A later
+search resolves the same array, which ¶8 forbids changing, so it can refuse
+no differently.
 
 <a id="s3-8-p7"></a>[3.8¶7] **Once ended, it stays ended.** Every call after one that returned `0`
 returns `0`, runs no search and leaves `it.rc` as it was.
@@ -1149,7 +1151,7 @@ NULL exactly where `info->next` is.
 
 ```c
 rx_iter it = RX_ITER_INIT(s, n);          /* setters as usual, while FRESH */
-ptrdiff_t caps[NCAPS][2];                 /* info->ncaps pairs */
+ptrdiff_t caps[info->ncaps][2];           /* a VLA: the caller has no NCAPS */
 while (info->next(&it, caps))
     report(caps[0][0], caps[0][1]);
 if (it.rc < 0) ...                        /* the code that ended it (§4) */
@@ -1160,8 +1162,8 @@ means the iterator has ended, §3.8.1¶3):
 
 ```c
 rx_iter it = RX_ITER_INIT(s, n);
-ptrdiff_t buf[8 * NCAPS][2];
 size_t r, w = (size_t)info->ncaps;
+ptrdiff_t buf[8 * w][2];                  /* 8 * info->ncaps pairs */
 do {
     r = info->next_n(&it, buf, 8);
     for (size_t i = 0; i < r; i++)
@@ -1174,8 +1176,10 @@ if (it.rc < 0) ...
 iterator exactly after the last match they delivered, so a caller may leave
 the loop at any point and continue with either entry; `it.rc` is meaningful
 once an entry has returned `0` (or fewer than `k`). The two deliver the same
-matches (§3.8.1); `next_n` spends fewer calls on cheap dense matches, `next`
-suits a caller that stops early or works on small subjects.
+matches (§3.8.1). Use `next` for one match per call, for a caller that stops
+early or works on small subjects: `next_n` with `k = 1` costs more per match
+than `next`, and `next_n` pays from `k ≥ 4`, where its batch spends fewer
+calls on cheap dense matches.
 
 ---
 

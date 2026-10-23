@@ -14,7 +14,16 @@
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
-bash "$SCRIPT_DIR/run_iter_diff.sh" "$SCRIPT_DIR/cells.tsv" || fail=1
+# exit 77 = no libpcre2 oracle: the whole section SKIPS, loudly, with its own
+# trailer (PC-3's shape), never a PASS with one check
+bash "$SCRIPT_DIR/run_iter_diff.sh" "$SCRIPT_DIR/cells.tsv"
+rc=$?
+if [ "$rc" -eq 77 ]; then
+    echo "SKIP: test-findall (no libpcre2 oracle; the iterator differential, the ASan cells and the one-body check did not run)"
+    echo "checks passed: 0"; echo "checks failed: 0"; echo "checks skipped: 1"
+    exit 0
+fi
+[ "$rc" -eq 0 ] || fail=1
 bash "$SCRIPT_DIR/run_one_body.sh" || fail=1
 
 if [ "${ASAN:-1}" = "1" ]; then
@@ -28,6 +37,7 @@ if [ "${ASAN:-1}" = "1" ]; then
         "$SCRIPT_DIR/cells.tsv" > "$WORK/asan.tsv"
     if ! printf 'int main(void){return 0;}\n' | "${CC:-cc}" -fsanitize=address -x c - -o "$WORK/probe" 2>/dev/null; then
         echo "SKIP: findall: the compiler cannot build -fsanitize=address; the ASan cells did not run" >&2
+        asan_skipped=1
     else
         GENCFLAGS="-O1 -g -std=gnu11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
         ARMS="auto vm" MIN_GROUPS=10 MIN_RETRY=10 ASAN_OPTIONS=detect_leaks=1 \
@@ -39,6 +49,11 @@ if [ "$fail" -ne 0 ]; then
     echo "FAIL: test-findall" >&2
     echo "checks passed: 0"; echo "checks failed: 1"
     exit 1
+fi
+if [ "${asan_skipped:-0}" = 1 ]; then
+    echo "PASS (ASan half SKIPPED): test-findall"
+    echo "checks passed: 1"; echo "checks failed: 0"; echo "checks skipped: 1"
+    exit 0
 fi
 echo "PASS: test-findall"
 echo "checks passed: 1"; echo "checks failed: 0"

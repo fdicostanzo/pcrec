@@ -47,7 +47,16 @@
  *   GN       a plain loop over info->next_n (a batch of 4 per call, the
  *            stride the record's ncaps), as the same caller writes it
  * R= lists the REACH tokens of the cell (run_iter_diff.sh counts them, K35):
- * the condition each sabotage row's witness needs (§5.4).
+ * the condition each sabotage row's witness needs (§5.4); a token is
+ * written only when its condition held on the cell, never unconditionally:
+ *   vmretry / dfaretry  a retry cell (I differs from L) on the VM / DFA
+ *                       engine: S1297 + S1308 / S1298 + S1307
+ *   kretry              a retry cell of a \\K pattern (S1299)
+ *   stray               a non-empty match ending right before a stray
+ *                       continuation byte (S1300)
+ *   bpoison             a setter on a BOUND iterator (S1302)
+ *   n0fresh / n0ended   the FRESH iterator stayed FRESH after k = 0 and had
+ *                       matches / the iterator was ENDED when k = 0 hit it
  *
  * ILLFORMED: a utf subject that is not well-formed UTF-8, where the iterator
  * answers what match_api.md §3.1.3's loop answers and libpcre2 (under
@@ -55,7 +64,11 @@
  * over ill-formed input (match_api.md §9), not the iterator's; counted.
  * GIVEUP: the iterator ended with a give-up code where libpcre2 answered; the
  * loop must then give up at the same match (checked), and the cell is counted
- * apart, never as a pass. SKIP: libpcre2 refused the subject or the pattern.
+ * apart, never as a pass. SKIP: libpcre2 refused the subject or the pattern
+ * AND every oracle-free arm above held; an arm failure on such a cell is a
+ * DIFF (FAIL= names the arms), never hidden by the SKIP.
+ * W= ends each line: `ill` for an ill-formed subject in a utf group, else `ok`;
+ * the runner excuses a -futf-check give-up only on W=ill cells.
  * A DIFF line's I/G/L are what the runner reports.
  */
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -136,7 +149,11 @@ static void out_end(Out *o, int code)
     if (code < 0) { snprintf(b, sizeof b, " GU%d", code); out_put(o, b); }
 }
 
+static int utf;
 static int ngroups;   /* pairs compared: min(NCAPS, libpcre2's own) */
+static const unsigned char *cur_s;   /* the subject being drained, for the reach token below */
+static size_t cur_n;
+static int stray_after_match;        /* a non-empty match ended right before a continuation byte */
 
 /* Drains an iterator into `o`. The caps buffer is heap-allocated at its
  * exact size, so a write past NCAPS pairs is an ASan error under the ASan
@@ -146,7 +163,11 @@ static void iter_drain(rx_iter *it, Out *o)
     ptrdiff_t (*c)[2] = malloc(sizeof(*c) * NCAPS);
     if (!c) abort();
     out_reset(o);
-    while (o->k < MAXM && F(_next)(it, c)) out_match(o, (const ptrdiff_t (*)[2])c, ngroups);
+    while (o->k < MAXM && F(_next)(it, c)) {
+        out_match(o, (const ptrdiff_t (*)[2])c, ngroups);
+        if (utf && c[0][1] > c[0][0] && (size_t)c[0][1] < cur_n && (cur_s[c[0][1]] & 0xC0) == 0x80)
+            stray_after_match = 1;
+    }
     out_end(o, it->rc);
     free(c);
 }
@@ -166,7 +187,6 @@ static void loop_from(const unsigned char *s, size_t n, size_t p, Out *o)
     out_end(o, 0);
 }
 
-static int utf;
 
 static size_t next_char(const unsigned char *s, size_t n, size_t p)
 {
@@ -358,12 +378,15 @@ int main(int argc, char **argv)
         if (len && line[len - 1] == '\n') line[--len] = 0;
         size_t n = unesc(line, len, s);
         char fail[256] = "";
+        char reach[256] = "";
 
         rx_iter *itp = malloc(sizeof *itp);   /* heap: exact size, as the caps */
         if (!itp) abort();
         *itp = RX_ITER_INIT(s, n);
 #define it (*itp)
+        cur_s = s; cur_n = n; stray_after_match = 0;
         iter_drain(&it, &oI);
+        int stray = stray_after_match;
         int rc = it.rc;
         loop_from(s, n, 0, &oL);
         int g = re ? loop_G(re, md, s, n, 0, &oG) : -1;
@@ -384,6 +407,7 @@ int main(int argc, char **argv)
             if (F(_next)(&ip, c) && ip.hdr == PCREC_ITER_BOUND) {
                 rx_iter_at(&ip, 0);
                 if (F(_next)(&ip, c) || ip.rc != PCREC_ERR_ITER || ip.hdr != PCREC_ITER_ENDED) ok = 0;
+                strcat(reach, " bpoison");
             }
             rx_iter ig;
             memset(&ig, 0, sizeof ig);
@@ -418,7 +442,6 @@ int main(int argc, char **argv)
             strcat(fail, " info");   /* rx_info.next / .next_n, match_api.md §6¶14b-c */
 
         /* ---- the I4 arms (findall_iter_i2.md §5.1) ---- */
-        char reach[256] = "";
         size_t mI = (size_t)oI.k;
         int split = 0, gumid = 0;
         {
@@ -438,6 +461,15 @@ int main(int argc, char **argv)
             if (cnt <= MAXM) cnt += r;
             if (cnt != mI || iz.rc != rc) strcat(fail, " nnnull");
         }
+        /* the first-round rows' witnesses (S1297-S1300): a retry cell on the
+           engine whose retry form the row plants, a \K retry cell, a stray
+           continuation byte right after a non-empty match */
+        if (retry && strcmp(oI.p, oL.p) != 0) {
+            if (F(_info).engine == PCREC_ENGINE_VM) strcat(reach, " vmretry");
+            if (F(_info).engine == PCREC_ENGINE_DFA) strcat(reach, " dfaretry");
+            if (strstr(argv[1], "\\K")) strcat(reach, " kretry");
+        }
+        if (stray) strcat(reach, " stray");
         if (split) strcat(reach, " split");
         if (gumid) strcat(reach, " gumid");
         if (rc == 0 && mI >= 1 && mI <= 63) strcat(reach, " done63");
@@ -466,10 +498,11 @@ int main(int argc, char **argv)
             if (!e) abort();
             rx_iter i0 = RX_ITER_INIT(s, n);                /* FRESH */
             if (F(_next_n)(&i0, e, 0) != 0) ok = 0;
+            int stayed_fresh = i0.hdr == PCREC_ITER_FRESH;     /* k = 0 kept FRESH */
             rx_iter_at(&i0, 0);
             iter_drain(&i0, &oX);
             if (strcmp(oX.p, oI.p) != 0) ok = 0;
-            strcat(reach, " n0fresh");
+            if (stayed_fresh && mI >= 1) strcat(reach, " n0fresh");
             rx_iter i1 = RX_ITER_INIT(s, n);                /* BOUND */
             if (F(_next)(&i1, c)) {
                 out_reset(&oY);
@@ -480,21 +513,27 @@ int main(int argc, char **argv)
                 if (strcmp(oY.p, oI.p) != 0) ok = 0;
                 if (mI >= 2) strcat(reach, " n0bound");
             }
+            int was_ended = it.hdr == PCREC_ITER_ENDED;
             if (F(_next_n)(&it, e, 0) != 0 || it.rc != rc ||       /* ENDED */
                 F(_next_n)(&it, e, 3) != 0 || it.rc != rc) ok = 0;
-            strcat(reach, " n0ended");
+            if (was_ended) strcat(reach, " n0ended");
             if (!ok) strcat(fail, " N0");
             free(e);
         }
 
+        /* an arm failure is read BEFORE any oracle-dependent verdict: the arms
+           that need no oracle (sticky, endset, poison, dirty, info, at1, N*, X,
+           G*) must not vanish into SKIP when libpcre2 refuses the cell */
         const char *v;
-        if (g < 0) v = "SKIP";
+        if (g < 0) v = fail[0] ? "DIFF" : "SKIP";
         else if (strcmp(oI.p, oG.p) == 0) v = fail[0] ? "DIFF" : "OK";
         else if (rc < 0 && prefix_of(&oI, &oG)) v = fail[0] ? "DIFF" : "GIVEUP";
         else if (utf && !utf8_ok(s, n) && strcmp(oI.p, oL.p) == 0) v = fail[0] ? "DIFF" : "ILLFORMED";
         else { v = "DIFF"; strcat(fail, " answer"); }
-        printf("%s\tI=%s\tG=%s\tL=%s\tR=%s%s%s\n", v, oI.p, g < 0 ? "-" : oG.p, oL.p,
-               reach, fail[0] ? "\tFAIL=" : "", fail);
+        /* W=ill: an ill-formed subject in a utf group, the only subjects whose
+           give-up -futf-check excuses (run_iter_diff.sh) */
+        printf("%s\tI=%s\tG=%s\tL=%s\tR=%s%s%s\tW=%s\n", v, oI.p, g < 0 ? "-" : oG.p, oL.p,
+               reach, fail[0] ? "\tFAIL=" : "", fail, utf && !utf8_ok(s, n) ? "ill" : "ok");
 #undef it
         free(itp);
     }

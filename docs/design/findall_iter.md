@@ -634,7 +634,7 @@ anyway:
 |---|---|---|
 | `<p>_next_pos` | `<p>__adv` | STEP's advances (§3.1); the compound controller's `LOWER(next_pos(f))` |
 | `<p>_valid_upto` | `<p>__valid_upto` | `__enter`'s once-per-iterator `-futf-check` (§3.6); every `-futf-check` entry prologue, the compound's included |
-| `<p>_var_valid` | `<p>__var_valid` | `__enter`'s once-per-iterator variable check (§3.7); the `_search` prologue of a var-bearing artifact |
+| `<p>_var_valid` | `<p>__var_valid` | the variable check run in every search (`rx_vars_resolve` inside `<p>__find`; as built, §12: resolution stays per search, not hoisted to `__enter`); the `_search` prologue of a var-bearing artifact |
 
 - **One emitter writes each body once**, as the twin, and the exported residual is
   `return <p>__twin(args);` (`compound_entries.md` §3.4's wrapper-table row W1 `forward`: an unchanged argument
