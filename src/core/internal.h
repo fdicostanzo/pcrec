@@ -8091,6 +8091,18 @@ typedef struct {
     const char *frames_code;   /* OWN_TIERED: the give-up code that escalates */
 } PcrecFwd;
 
+/* src/gen/emit_comb.c -- `forward`'s binding texts for a caller that is not
+ * one of the six entries (the find-all iterator's step): the CALLER binding
+ * of descriptor `d` to the local `run`, and the OWN/OWN_TIERED wrapper
+ * `name(params)` that binds its own storage and hands it to
+ * `callee(runargs)` (`deepargs` on the deep tier's re-run). */
+void pcrec_emit_caller_bind(StrBuf *c, const char *p, const char *d);
+void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
+                            const char *storage, const char *ret, const char *name,
+                            const char *callee, const char *params,
+                            const char *runargs, const char *deepargs,
+                            const char *frames_code);
+
 /* `finish-at`: which body answers `_match`/`_match_caps` -- axis G's forms
  * (the FINISH row's action) and the compound's. */
 typedef enum {

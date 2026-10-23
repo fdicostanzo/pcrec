@@ -309,68 +309,24 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const char *body,
 }
 
 /* The VM's own-storage STEP, `<p>__step_own`: the binding `<p>_search` makes
- * when no buffers are bound into the iterator -- the stamped default, the fast
- * tier escalating to the deep one on a FRAMES give-up ([OPT-1]: the deep re-run
- * is the same step from the same cursor, its answer the default's), or the
- * frameless forward's empty storage. */
-static void emit_step_own(Ctx *cx, StrBuf *c, const char *p, const char *up,
+ * when no buffers are bound into the iterator, written by `forward`'s own
+ * emitter (src/gen/emit_comb.c): the stamped default, or the fast tier
+ * escalating to the deep one on a FRAMES give-up ([OPT-1]: the deep re-run is
+ * the same step from the same cursor, its answer the default's). The
+ * frameless forward's EMPTY binding has no step of its own: `<p>__one` binds
+ * the static empty descriptor, as `<p>_search` forwards to `_in` with it. */
+static void emit_step_own(Ctx *cx, StrBuf *c, const char *p, const GenNames *g,
                           const PcrecIterText *t)
 {
-    const char *cp = cursor_params(cx, t);
+    if (t->own == PCREC_FWD_EMPTY) return;
     const char *ca = cursor_args(cx, t);
-    switch (t->own) {
-    case PCREC_FWD_OWN_TIERED:
-        pcrec_sb_printf(c,
-            "static %sint %s__step_deep(%s,\n"
-            "                           ptrdiff_t (*c)[2], size_t *at)\n"
-            "{\n"
-            "    %s_run_state run;\n"
-            "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
-            "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-            "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-            "    return %s__step(%s, c, &run, at);\n"
-            "}\n\n"
-            "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
-            "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
-            "{\n"
-            "    %s_run_state run;\n"
-            "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
-            "    int r;\n"
-            "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
-            "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    r = %s__step(%s, c, &run, at);\n"
-            "    if (r != %s) return r;\n"
-            "    %s_TIER_NOTE();\n"
-            "    return %s__step_deep(%s, c, at);\n"
-            "}\n\n",
-            pcrec_attr_text(PCREC_ATTR_NOINLINE), p, cp, p, p, p, up, up, p, ca,
-            p, cp, p, p, p, up, up, p, ca, t->frames_code, up, p, ca);
-        return;
-    case PCREC_FWD_EMPTY:
-        pcrec_sb_printf(c,
-            "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
-            "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
-            "{\n"
-            "    %s_run_state run;   /* frameless: no storage to bind */\n"
-            "    %s_run_state_bind(&run, (void *)0, 0, (void *)0, 0);\n"
-            "    return %s__step(%s, c, &run, at);\n"
-            "}\n\n", p, cp, p, p, p, ca);
-        return;
-    case PCREC_FWD_OWN:
-    case PCREC_FWD_INERT:
-    case PCREC_FWD_CALLER:
-        break;
-    }
-    pcrec_sb_printf(c,
-        "static inline __attribute__((always_inline)) int %s__step_own(%s,\n"
-        "                                                           ptrdiff_t (*c)[2], size_t *at)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
-        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-        "    return %s__step(%s, c, &run, at);\n"
-        "}\n\n", p, cp, p, p, p, up, up, p, ca);
+    pcrec_emit_own_binding(cx, c, g, t->own == PCREC_FWD_OWN_TIERED,
+        "static inline __attribute__((always_inline)) ", "int",
+        pcrec_sb_fragf(&cx->arena, "%s__step_own", p),
+        pcrec_sb_fragf(&cx->arena, "%s__step", p),
+        pcrec_sb_fragf(&cx->arena, "%s, ptrdiff_t (*c)[2], size_t *at", cursor_params(cx, t)),
+        pcrec_sb_fragf(&cx->arena, "%s, c, &run, at", ca),
+        pcrec_sb_fragf(&cx->arena, "%s, c, at", ca), t->frames_code);
 }
 
 /* `<p>__one`, ONE search of a BOUND iterator from the caller's cursor
@@ -390,16 +346,24 @@ static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         "{\n"
         "    size_t at;\n"
         "    int r;\n", p, t->retry ? ", uint32_t *flp" : "");
-    if (t->vm)
+    if (t->vm && t->own == PCREC_FWD_EMPTY) {
+        /* frameless: the caller's storage or the empty descriptor, one bind */
+        pcrec_sb_printf(c,
+            "    const %s_buffers *b = it->bufs ? (const %s_buffers *)it->bufs : &%s_no_buffers;\n"
+            "    %s_run_state run;\n", p, p, p, p);
+        pcrec_emit_caller_bind(c, p, "b");
+        pcrec_sb_printf(c, "    r = %s__step(%s, c, &run, &at);\n", p, sa);
+    } else if (t->vm) {
         pcrec_sb_printf(c,
             "    if (it->bufs) {                                    /* the caller's storage */\n"
             "        const %s_buffers *b = (const %s_buffers *)it->bufs;\n"
-            "        %s_run_state run;\n"
-            "        %s_run_state_bind(&run, b->frames, b->nframes, b->trail, b->ntrail);\n"
+            "        %s_run_state run;\n", p, p, p);
+        pcrec_emit_caller_bind(c, p, "b");
+        pcrec_sb_printf(c,
             "        r = %s__step(%s, c, &run, &at);\n"
             "    } else\n"
-            "        r = %s__step_own(%s, c, &at);\n", p, p, p, p, p, sa, p, sa);
-    else
+            "        r = %s__step_own(%s, c, &at);\n", p, sa, p, sa);
+    } else
         pcrec_sb_printf(c, "    r = %s__step(%s, c, &at);\n", p, sa);
     pcrec_sb_puts(c,
         "    if (r == 1) return 1;\n"
@@ -504,7 +468,7 @@ void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
     bool checks = emit_bind_checks(cx, c, p);
     emit_enter(c, p, checks);
     emit_step(cx, c, p, body, t);
-    if (t->vm) emit_step_own(cx, c, p, g->upper, t);
+    if (t->vm) emit_step_own(cx, c, p, g, t);
     emit_one(cx, c, p, t);
     emit_one_call(c, p, t);
     emit_controllers(cx, c, p, g->upper, t);

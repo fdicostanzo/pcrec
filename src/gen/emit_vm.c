@@ -13767,6 +13767,17 @@ static void vm_emit_match_caps_run(Vm *v, const GenNames *g, const VmEntry *en)
     vm_emit_attempt_report(v, c, "capture_spans_out");
 }
 
+/* How an entry that binds its own storage binds it, on this artifact's entry
+ * rung: forward through the empty descriptor (the frameless forward rungs),
+ * the fast tier with a FRAMES escalation ([OPT-1]), or the stamped default.
+ * The three un-suffixed entries and the find-all iterator read this one
+ * answer. */
+static PcrecFwdBind vm_own_binding(const VmEntry *en, const VmPlan *pl)
+{
+    return en->fwd_entries ? PCREC_FWD_EMPTY
+         : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN;
+}
+
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
  * `<prefix>_match` / `<prefix>_match_caps` and the `_in` sibling of each,
  * the caller-buffer variant that binds the caller's own storage.
@@ -13842,8 +13853,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [COMPOUND] E0c: the six entries are written through their rows'
      * `forward` emitter (src/gen/emit_comb.c): the un-suffixed three on this
      * artifact's entry rung, the `_in` three on the caller's descriptor. */
-    const PcrecFwdBind own = en->fwd_entries ? PCREC_FWD_EMPTY
-                           : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN;
+    const PcrecFwdBind own = vm_own_binding(en, pl);
     const PcrecFwd own_search = { own, "PCREC_ERR_FRAMES" };
     const PcrecFwd own_match = { own, pl->frames_sentinel };
     const PcrecFwd caller = { PCREC_FWD_CALLER, NULL };
@@ -13974,8 +13984,7 @@ static void vm_emit_iterator(Vm *v, const GenNames *g, const VmPlan *pl,
         .vm = true,
         .retry = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_GUARDED) != 0,
         .vars = cx->n_var_exps > 0,
-        .own = en->fwd_entries ? PCREC_FWD_EMPTY
-             : pl->tiered ? PCREC_FWD_OWN_TIERED : PCREC_FWD_OWN,
+        .own = vm_own_binding(en, pl),
         .frames_code = "PCREC_ERR_FRAMES",
     };
     const PcrecEntryText t = { .iter = &it };
