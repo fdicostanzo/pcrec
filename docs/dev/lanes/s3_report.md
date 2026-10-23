@@ -210,7 +210,7 @@ These are every test file the S3 commit re-aimed to `--memfn=no-wf-find`.
 | `list_axes_delta.sh` | "5 row(s), exactly as declared" |
 | runcmp_check.py (standalone, the file test-codegen runs) | 104 passed, 0 failed |
 | 588 `--dry-run` | rc 0, 6 s. hex8 cell: build, premises, differential and gate. Sample row smp01: `sample-gate: 12 arm cells read; 1 sample rows live` |
-| 587 `--dry-run` | after the report commit (it needs a clean tree); result in the handback |
+| 587 `--dry-run` | NOT run: it needs a clean tree (the report commit), and by then 598-findbench-parity-opt (a timing window) held the box, where only reads and edits are allowed. `boxqueue add` dry-runs it at enqueue (108 mech ids, census.py parse, clean tree); 587's only changes are census.py's 4 arms (smoke-run in-process, §3.1 D) and its header |
 
 **NOT run** (per the brief): make test, mech, timing.
 - The G floors were pinned from the S3 lane's measured logs, not re-measured. A single-section
