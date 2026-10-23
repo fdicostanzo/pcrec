@@ -35,7 +35,14 @@ the bump's own commit.**
   `always_inline` `<prefix>__one`, which both `<prefix>_next` and
   `<prefix>_next_n`'s loop inline. All of it is scaffold. `rx_iter` does not
   change (`PCREC_ITER_LAYOUT` stays 3). No answer of an existing entry moves
-  (match_api.md §3.8.1, §3.8.2, §6¶14c).
+  (match_api.md §3.8.1, §3.8.2, §6¶14c). Folded into the same event by lane
+  iteropt (2026-10-22, before the landing): `rx_iter_init` writes every field
+  (the setters' neutral values, `rc` 1, `flags` 0), so `<prefix>__enter` no
+  longer stores them a second time and is `static inline`; a NULL
+  `capture_spans` goes to the new `noinline` `<prefix>__one_local`, the one
+  function that owns the NCAPS-pair stack buffer, so `<prefix>_next` and
+  `<prefix>_next_n` declare no local array (match_api.md §3.8¶5). Still
+  scaffold; no answer moves.
 - **`rx_info.abi` was `83` (lane i1build bumped it
   from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
   as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all

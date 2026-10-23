@@ -31,7 +31,8 @@ A7	static-inline	^P(__[a-z0-9]+)?_(ofsskip|ofsskip__body|reqrun|reqrun__body|req
 I1	always_inline	^P(__[a-z0-9]+)?__find$	[FINDALL-NEXT] the search body `<p>__find` (emit_dfa.c `emit_search_head`), not a part	PCREC_ATTR_INLINE
 I1	noinline	^P(__[a-z0-9]+)?__find$	[FINDALL-NEXT] `<p>__find` on the attempt route's label-table body (`find_body_shared`), not a part	PCREC_ATTR_NOINLINE
 I1	always_inline	^P__(step|step_own|one)$	[FINDALL-NEXT] the iterator's step and (I4) its one body `<p>__one` (emit_iter.c `pcrec_emit_iterate`), not a part	own
-I1	noinline	^P__step_deep$	[FINDALL-NEXT] the iterator's deep tier (emit_iter.c), not a part	PCREC_ATTR_NOINLINE
+I1	noinline	^P__(step_deep|one_local)$	[FINDALL-NEXT] the iterator's deep tier, and (lane iteropt) `<p>__one_local`, the NULL-caps path that owns the stack buffer (emit_iter.c), not a part	PCREC_ATTR_NOINLINE
+I1	static-inline	^P__enter$	[FINDALL-NEXT] the iterator's bind `<p>__enter` (emit_iter.c; lane iteropt: inline, one store with no checks), not a part	own
 I1	always_inline	^P__retry$	[FINDALL-NEXT] the VM iterator's retry (emit_vm.c `vm_emit_retry`), not a part	PCREC_ATTR_INLINE
 I1	noclone	^P_next(_n)?$	[FINDALL-NEXT] `<prefix>_next` and (I4) `<prefix>_next_n` (emit_iter.c), K24's guard shape	PCREC_ATTR_NOCLONE
 I1	noclone	^P__(next_pos|valid_upto|var_valid)$	[FINDALL-NEXT] F-1's residual twins (src/enc/enc.c, through `pcrec_emit_residual_inline`), not a part	PCREC_ATTR_NOCLONE

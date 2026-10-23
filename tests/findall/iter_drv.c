@@ -25,8 +25,9 @@
  *   nullcaps <p>_next with caps == NULL counts what I listed (IT10)
  *   poison   a setter on a BOUND iterator makes the next call refuse with
  *            PCREC_ERR_ITER; a zeroed header refuses too
- *   dirty    every field RX_ITER_INIT does not write holds 0xA5 garbage, and
- *            the answers are I's (bind normalizes them, IT1)
+ *   dirty    RX_ITER_INIT over a struct holding 0xA5 garbage writes every
+ *            field: lo 0, no variables, no buffers, flags 0, rc 1 (IT1), and
+ *            the answers are I's
  *   info     rx_info.next / .next_n are this artifact's <p>_next / _next_n
  *   at1      rx_iter_at(&it, 1) answers libpcre2's global loop started at 1
  *            (or, on a no-retry artifact, the loop from 1)
@@ -406,8 +407,9 @@ int main(int argc, char **argv)
         {
             rx_iter id;
             memset(&id, 0xA5, sizeof id);
-            rx_iter fresh = RX_ITER_INIT(s, n);
-            id.hdr = fresh.hdr; id.s = fresh.s; id.n = fresh.n;
+            id = RX_ITER_INIT(s, n);
+            if (id.lo != 0 || id.vars || id.nvars != 0 || id.bufs || id.flags != 0 || id.rc != 1)
+                strcat(fail, " dirty");
             iter_drain(&id, &oX);
             if (strcmp(oX.p, oI.p) != 0) strcat(fail, " dirty");
         }

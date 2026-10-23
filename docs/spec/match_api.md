@@ -345,7 +345,7 @@ typedef struct rx_iter {
 } rx_iter;
 
 static inline rx_iter rx_iter_init(const unsigned char *s, size_t n)
-{ rx_iter it; it.hdr = PCREC_ITER_FRESH; it.s = s; it.n = n; return it; }
+{ rx_iter it = { PCREC_ITER_FRESH, 1, 0, s, n, 0, (const rx_var *)0, 0, (const void *)0 }; return it; }
 #define RX_ITER_INIT(s_, n_) rx_iter_init((s_), (n_))
 
 #define PCREC_ITER_SET_(it_, stores_, bit_) \
@@ -1088,8 +1088,9 @@ through `RX_ITER_INIT` and the setters, and only while it is FRESH:
 <a id="s3-8-p5"></a>[3.8¶5] A setter on an ENDED iterator changes nothing. A setter on a BOUND iterator
 makes the next call return `0` with `it.rc == PCREC_ERR_ITER`, ending it; so
 does a first call on a struct whose `hdr` is none of the three states (a
-zeroed or never-initialized struct). Every field `RX_ITER_INIT` does not
-write may hold any value before the first call.
+zeroed or never-initialized struct). `RX_ITER_INIT` writes every field: the
+setters' defaults in the table above, `rc` 1 and `flags` 0, so the first call
+binds a FRESH iterator without writing them again.
 
 <a id="s3-8-p6"></a>[3.8¶6] **The start position is checked once.** The first call runs
 `<prefix>_search`'s caller-position prologue on the start position: the

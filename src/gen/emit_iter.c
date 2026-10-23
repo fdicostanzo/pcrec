@@ -68,7 +68,7 @@ void pcrec_emit_iter_abi_types(StrBuf *sb)
         "} rx_iter;\n"
         "\n"
         "static inline rx_iter rx_iter_init(const unsigned char *s, size_t n)\n"
-        "{ rx_iter it; it.hdr = PCREC_ITER_FRESH; it.s = s; it.n = n; return it; }\n"
+        "{ rx_iter it = { PCREC_ITER_FRESH, 1, 0, s, n, 0, (const rx_var *)0, 0, (const void *)0 }; return it; }\n"
         "#define RX_ITER_INIT(s_, n_) rx_iter_init((s_), (n_))\n"
         "\n"
         "#define PCREC_ITER_SET_(it_, stores_, bit_) \\\n"
@@ -207,14 +207,17 @@ static bool emit_bind_checks(Ctx *cx, StrBuf *c, const char *p)
 }
 
 /* `<p>__enter`, the slow path (findall_iter.md §1.2): an ENDED iterator
- * returns 0 with no work; a FRESH one is BOUND -- every optional field its
- * setters did not write takes its neutral value (IT1), the once-per-iterator
- * checks run, and the bare BOUND word is stored, after which nothing reads an
- * option bit; any other header refuses with PCREC_ERR_ITER and ends. */
+ * returns 0 with no work; a FRESH one is BOUND -- the once-per-iterator
+ * checks run and the bare BOUND word is stored, after which nothing reads an
+ * option bit; any other header refuses with PCREC_ERR_ITER and ends. Every
+ * field a setter did not write already holds its neutral value, because
+ * `rx_iter_init` writes them all (IT1; lane iteropt: the bind used to store
+ * them a second time), so with no checks a bind is one store and gcc inlines
+ * it into both controllers. */
 static void emit_enter(StrBuf *c, const char *p, bool checks)
 {
     pcrec_sb_printf(c,
-        "static int %s__enter(rx_iter *it)\n"
+        "static inline int %s__enter(rx_iter *it)\n"
         "{\n"
         "    uint32_t h = it->hdr;\n"
         "    if (h == PCREC_ITER_ENDED) return 0;\n"
@@ -222,12 +225,7 @@ static void emit_enter(StrBuf *c, const char *p, bool checks)
         "        it->rc = PCREC_ERR_ITER;\n"
         "        it->hdr = PCREC_ITER_ENDED;\n"
         "        return 0;\n"
-        "    }\n"
-        "    if (!(h & PCREC_ITER_OPT_AT)) it->lo = 0;\n"
-        "    if (!(h & PCREC_ITER_OPT_VARS)) { it->vars = (const rx_var *)0; it->nvars = 0; }\n"
-        "    if (!(h & PCREC_ITER_OPT_IN)) it->bufs = (const void *)0;\n"
-        "    it->rc = 1;\n"
-        "    it->flags = 0;\n", p);
+        "    }\n", p);
     if (checks)
         pcrec_sb_printf(c,
             "    {\n"
@@ -370,7 +368,9 @@ static void emit_step_own(StrBuf *c, const char *p, const char *up,
  * `<prefix>_next` body under a static always_inline name -- bind a non-BOUND
  * header, one STEP (the caller's storage or the artifact's own on the VM),
  * and on the end path ENDED with `rc` and `lo`. Both controllers inline it,
- * so `_next` IS this body and `_next_n` is a loop of it. */
+ * so `_next` IS this body and `_next_n` is a loop of it. Its `local` is dead
+ * wherever the caller's pointer is known non-NULL (the controllers' hot
+ * paths), and only `<p>__one_local` keeps it. */
 static void emit_one(StrBuf *c, const char *p, const char *up,
                      const PcrecIterText *t)
 {
@@ -409,26 +409,40 @@ static void emit_one(StrBuf *c, const char *p, const char *up,
  * linkage (no entry of their own: `.next_n` is NULL exactly where `.next`
  * is): `<prefix>_next`, one search; `<prefix>_next_n`, up to `k` searches
  * into consecutive NCAPS-pair entries, stopping at the first that ends the
- * iterator. `k == 0` runs nothing, in every state. */
+ * iterator. `k == 0` runs nothing, in every state. A NULL `capture_spans`
+ * goes to `<p>__one_local`, the one function that owns the NCAPS-pair stack
+ * buffer STEP then writes: with that array out of the controllers, gcc's
+ * -fstack-protector-strong (Ubuntu's default) puts no canary on them, which
+ * it did on every call (lane iteropt, measured 6-7 instructions per call). */
 static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up)
 {
     const char *st = pcrec_entry_storage(cx, PCREC_ENTRY_NEXT);
+    pcrec_sb_printf(c,
+        "static %sint %s__one_local(rx_iter *it)\n"
+        "{\n"
+        "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
+        "    return %s__one(it, local);\n"
+        "}\n\n", pcrec_attr_text(PCREC_ATTR_NOINLINE), p, up, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
         "%sint %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2])\n"
         "{\n"
+        "    if (__builtin_expect(!capture_spans, 0)) return %s__one_local(it);\n"
         "    return %s__one(it, capture_spans);\n"
-        "}\n\n", st, p, p);
+        "}\n\n", st, p, p, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
         "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k)\n"
         "{\n"
         "    size_t i = 0;\n"
-        "    while (i < k && %s__one(it, capture_spans ? capture_spans + i * %s_NCAPS\n"
-        "                                              : (ptrdiff_t (*)[2])0))\n"
+        "    if (__builtin_expect(!capture_spans, 0)) {\n"
+        "        while (i < k && %s__one_local(it)) ++i;\n"
+        "        return i;\n"
+        "    }\n"
+        "    while (i < k && %s__one(it, capture_spans + i * %s_NCAPS))\n"
         "        ++i;\n"
         "    return i;\n"
-        "}\n\n", st, p, p, up);
+        "}\n\n", st, p, p, p, up);
 }
 
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,

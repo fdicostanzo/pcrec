@@ -11,5 +11,5 @@ SAB_DESC='the loop test of _next_n is i <= k, so a call writes one entry past th
 SAB_DOC_FIGURE='Owed: lane i2build queued this row (docs/dev/lanes/i2build_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1309.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        "    while (i < k && %s__one(it, capture_spans ? capture_spans + i * %s_NCAPS\n"'
-SAB_AFTER='        "    while (i <= k && %s__one(it, capture_spans ? capture_spans + i * %s_NCAPS   /* SABOTAGE S1309 */\n"'
+SAB_BEFORE='        "    while (i < k && %s__one(it, capture_spans + i * %s_NCAPS))\n"'
+SAB_AFTER='        "    while (i <= k && %s__one(it, capture_spans + i * %s_NCAPS))   /* SABOTAGE S1309 */\n"'
