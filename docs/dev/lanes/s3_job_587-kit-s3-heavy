@@ -31,7 +31,7 @@ TREE=/home/pcrec/projects/pcrec/worktrees/s3
 BASE=c3ea619c3
 OUT=$TREE/build/s3/heavy587
 E=$TREE/docs/dev/lanes/s3_evidence
-NSTEPS=12
+NSTEPS=13
 IDS="S185 S186 S227 S279 S284 S285 S287 S296 S297 S298 S299 S300 S302 S303 S306 S307 S318 S438 S439 S443 S444 S446 S447 S448 S449 S450 S451 S452 S453 S454 S455 S510 S511 S512 S528 S613 S617 S618 S619 S666 S667 S669 S670 S671 S673 S676 S677 S681 S682 S684 S685 S686 S687 S688 S690 S691 S692 S693 S694 S695 S709 S712 S773 S774 S782 S783 S787 S788 S791 S800 S801 S802 S803 S804 S846 S847 S848 S917 S919 S921 S1018 S1020 S1025 S1079 S1080 S1081 S1082 S1083 S1084 S1089 S1091 S1092 S1100 S1103 S1105 S1106 S1107 S1108 S1109 S1110 S1122 S1221 S1224 S1225 S1416 S1417 S1418 S1419"
 case "${1:-}" in
     --dry-run)
@@ -41,11 +41,9 @@ case "${1:-}" in
         python3 -I -c 'import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]' "$E/census.py" || exit 1
         python3 "$TREE/scripts/emit_sweep.py" --help >/dev/null 2>&1 || { echo "emit_sweep --help fails" >&2; exit 1; }
         [ -x "$TREE/scripts/perfrun" ] || { echo "no scripts/perfrun" >&2; exit 1; }
-        out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
-            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
-        n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
-        [ "$n" = 108 ] || { echo "mech ids: ${n:-none} valid, want 108" >&2; exit 1; }
-        echo "would run in $TREE: build strict refbuild census sweep_start evidence codegen test memfn_link plants mech($n rows) reach"
+        # the 108-row mech field validation takes ~90 s, over boxqueue's 30 s
+        # dry-run bound, so it runs as the job's FIRST step (mechval) instead
+        echo "would run in $TREE: mechval(108 ids) build strict refbuild census sweep_start evidence codegen test memfn_link plants mech(108 rows) reach"
         echo "boxqueue: cap 21600"
         echo "boxqueue: patience none"
         echo "boxqueue: idle-ok"
@@ -90,6 +88,14 @@ plants() {
     bash tests/memfn/run_wreply.sh --plants || r=1
     return $r
 }
+mechval() {
+    local out n
+    out=$(VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) || { printf '%s\n' "$out" | tail -3; return 1; }
+    n=$(printf '%s\n' "$out" | sed -n 's/^== mech FIELD VALIDATION COMPLETE: \([0-9]*\) def.*/\1/p')
+    echo "mechval: ${n:-none} ids valid"
+    [ "$n" = 108 ]
+}
+step mechval mechval
 step build make -j16
 step strict make strict
 step refbuild refbuild
