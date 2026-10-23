@@ -674,6 +674,16 @@ while (p <= n) {
   matches, as libpcre2 with `PCRE2_MATCH_INVALID_UTF` through the same loop
   does). `end - 1` cannot underflow (a non-empty match has `end >= 1`), and
   `end - 1 < n` keeps `<prefix>_next_pos` in its boundary-skipping domain.
+- <a id="s3-1-3-p4a"></a>[3.1.3¶4a] **Where the aligned restart differs from libpcre2's own loop.**
+  libpcre2's global iteration restarts a search AT `end`, stray continuation
+  byte or not, where the loop here (and `<prefix>_next`, §3.8¶2) restarts at
+  `<prefix>_next_pos(s, n, end - 1)`, past the stray bytes. Only a pattern that
+  reads the restart position can tell: on the subject `61 80 61` under
+  `-e utf8`, `\G.` reports `(0,1) (2,3)` here and `(0,1)` alone in libpcre2's
+  loop, and `.*?` reports `(0,0) (0,1) (2,2) (2,3) (3,3)` against libpcre2's
+  `(0,0) (0,1) (3,3)`. So "PCRE2's global iteration" (§3.1.3¶10, §3.8¶2) holds
+  exactly on a well-formed subject, and on an ill-formed one up to this
+  restart rule. (docs/dev/known_issues.md K75 records the rule.)
 - <a id="s3-1-3-p5"></a>[3.1.3¶5] **Termination.** `p` moves strictly forward every iteration
   (`<prefix>_next_pos` returns a position strictly greater than its
   argument), and `p > n` ends the loop.
@@ -681,9 +691,10 @@ while (p <= n) {
   — `0`, an aligned match end, a `<prefix>_next_pos` advance — is a boundary,
   on a well-formed subject or an ill-formed one, so a caller who writes it as
   shown never sees `PCREC_ERR_STARTPOS` from it. A continuation byte is never
-  a match START (§9.5), so stepping over one cannot lose a match. (The
-  empty-match family at an ill-formed subject END is `docs/dev/
-  known_issues.md` K74.)
+  a match START (§9.5), so stepping over one loses no match that begins at a
+  character boundary. libpcre2 does report an EMPTY match at a stray
+  continuation byte, which pcrec never does (§9.5¶2). (The empty-match family
+  at an ill-formed subject END is `docs/dev/known_issues.md` K74, §9.5¶3.)
 - <a id="s3-1-3-p7"></a>[3.1.3¶7] **Do not inline `+ 1` in place of `<prefix>_next_pos`.** The loop as written
   is final for every encoding: compiled against a `-e utf8` artifact it
   advances by characters with no source change.
@@ -732,6 +743,12 @@ both identical to libpcre2 driven through the same loop
 (`tests/assertions/run_kreset_diff.sh` §5). PCRE2's own global iteration,
 and `<prefix>_next`, report `ab\K` over `"ababab"` three times, `2,2 4,4
 6,6`.
+
+<a id="s3-1-3-p11a"></a>[3.1.3¶11a] **On an ill-formed subject "contiguous" is the loop's, not libpcre2's.**
+After a non-empty match that ends before a stray continuation byte the next
+search starts past the stray bytes (¶4a), where `\G` holds, so the loop and
+`<prefix>_next` can report a match that is not adjacent to the previous one:
+`\G.` over `61 80 61` under `-e utf8` gives `(0,1) (2,3)`.
 
 <a id="s3-1-1"></a>
 #### 3.1.1 `<prefix>_next_pos` — the encoding residual
@@ -1069,6 +1086,15 @@ starts at `<prefix>_next_pos(s, n, q)`. An empty match at `n` ends the
 iteration. `\G` asserts at each search's start, as it does in PCRE2's loop.
 The reported span is the one `<prefix>_search` reports, `\K` included.
 
+<a id="s3-8-p2a"></a>[3.8¶2a] **Where it is not PCRE2's.** On a well-formed subject the matches are
+PCRE2's exactly. On an ill-formed one two rules differ from libpcre2's loop:
+the restart after a non-empty match that ends before a stray continuation byte
+(§3.1.3¶4a), and the anchored retry, which does not cross an ill-formed
+sequence (§9.3¶4). PCRE2 and `pcre2test` also step over a CRLF pair as one
+unit after a failed retry under a CRLF, ANY or ANYCRLF newline convention;
+pcrec has no newline convention yet (plan row `[DD-11]`), so the advance is
+`<prefix>_next_pos` and nothing here promises more.
+
 <a id="s3-8-p3"></a>[3.8¶3] **Each search has its own budget.** The anchored retry at `q` and the search
 after it are two searches; each runs with the step, work and frame budgets a
 `<prefix>_search` call runs with (§3.5, §10.9), and a give-up in either ends
@@ -1092,6 +1118,11 @@ zeroed or never-initialized struct). `RX_ITER_INIT` writes every field: the
 setters' defaults in the table above, `rc` 1 and `flags` 0, so the first call
 binds a FRESH iterator without writing them again.
 
+<a id="s3-8-p5a"></a>[3.8¶5a] **`it.hdr` carries the state and four option bits.** Bits `0x10`, `0x20`
+and `0x40` are owned by the setters of ¶4; bit `0x80` is reserved. A reserved
+bit is ignored: a FRESH header with it set is FRESH. A caller sets none of the
+four itself.
+
 <a id="s3-8-p6"></a>[3.8¶6] **The start position is checked once.** The first call runs
 `<prefix>_search`'s caller-position prologue on the start position: the
 startpos guard or alignment (§9.2) and, on a `-futf-check` artifact, the
@@ -1099,6 +1130,13 @@ subject check over `[start − LB, n)` (§9.4), with `<prefix>_search`'s codes i
 its order. A refusal ends the iteration with that code before any search.
 Every later search starts at a position the iteration computed, a character
 boundary inside the checked range, and runs neither check.
+
+<a id="s3-8-p6a"></a>[3.8¶6a] **The variable check is the first search's.** After those two checks, in
+that order, the first search resolves the bound variables before it attempts
+any match (`docs/spec/vars.md`); an unset or ill-formed value at a bare
+`${name}` ends the iteration with `PCREC_ERR_UNSET_VAR`, `it.lo` the start
+position, whatever the subject holds. A later search resolves the same array,
+which ¶8 forbids changing, so it can refuse no differently.
 
 <a id="s3-8-p7"></a>[3.8¶7] **Once ended, it stays ended.** Every call after one that returned `0`
 returns `0`, runs no search and leaves `it.rc` as it was.
@@ -1113,7 +1151,10 @@ and none is detected.
 <a id="s3-8-p9"></a>[3.8¶9] **`it.lo`** is defined only after `<prefix>_next` has returned `0` with
 `it.rc < 0`: it is then the start of the search that ended the iteration
 (on a `PCREC_ERR_UTF` refusal, the position `<prefix>_valid_upto` is asked
-from). Every other field's value is unspecified to the caller.
+from). The exception is `PCREC_ERR_ITER` (¶5): no search ran, `it.lo` is not
+written, and it holds what it held before the call (for a BOUND iterator
+whose setter was refused, the position its next search would have started
+at). Every other field's value is unspecified to the caller.
 
 <a id="s3-8-p10"></a>[3.8¶10] **Copies.** `rx_iter` holds no pointer into itself: a copy is an
 independent iterator at the same point, and either may be advanced. Each
@@ -1209,8 +1250,8 @@ are skipped by the macro's next fetch.
 
 <a id="s3-8-2-p5"></a>[3.8.2¶5] **When the macro refuses.** The loop runs no body and ends the iterator
 with `it.rc == PCREC_ERR_ITER` when the record's `abi` is not the including
-header's `PCREC_RX_ABI_H`, when `info->next_n` is NULL, or when
-`info->ncaps` exceeds `RX_FOREACH_PAIRS`. `it.lo` is not set by a refusal (the
+header's `PCREC_RX_ABI_H`, when `info->next_n` is NULL, when
+`info->ncaps` is 0, or when it exceeds `RX_FOREACH_PAIRS`. `it.lo` is not set by a refusal (the
 iterator never searched). An iterator that is already ENDED is not touched:
 its `rc` stays, and no body runs. The `abi` compare is all-or-nothing and is
 made once per loop: a record of any other `abi` is refused even where the two
@@ -1300,9 +1341,10 @@ under a different encoding or engine. None renumbers the give-up partition.
   initialized, zeroed) or that a setter wrote after the first call
   (§3.8¶5). It is delivered in `it.rc`, with `<prefix>_next` returning `0`;
   `<prefix>_next_n` leaves it the same way (§3.8.1), and so does `RX_FOREACH`
-  (§3.8.2), which also leaves it for three causes of its own: the record's
-  `abi` is not the including header's, the record has no `next_n`, or its
-  `ncaps` exceeds `RX_FOREACH_PAIRS` (§3.8.2¶5; `it.lo` is not set by these).
+  (§3.8.2), which also leaves it for four causes of its own: the record's
+  `abi` is not the including header's, the record has no `next_n`, its
+  `ncaps` is 0, or its `ncaps` exceeds `RX_FOREACH_PAIRS` (§3.8.2¶5; `it.lo`
+  is not set by these).
   No other entry returns it.
 
 <a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
@@ -3349,6 +3391,17 @@ byte (`0xFF`, a truncated `0xE3`) is a valid start and is attempted.
   start other than `ctx->pos`, a second stated divergence on which both entry
   shapes agree.
 
+- <a id="s9-3-p4"></a>[9.3¶4] **The iterator's anchored retry does not cross an ill-formed sequence.**
+  After an empty match at `q`, `<prefix>_next` retries a non-empty match
+  anchored at `q` (§3.8¶2). libpcre2's `PCRE2_ANCHORED | PCRE2_NOTEMPTY_ATSTART`
+  retry under `PCRE2_MATCH_INVALID_UTF` can advance over an ill-formed
+  sequence and report a match that starts after `q`; pcrec's retry reports a
+  match starting at `q` or none, and the iteration then steps on. `\G|.` over
+  `f5 61` under `-e utf8` gives `(0,0) (1,1) (1,2) (2,2)` here (the retry at 0
+  fails: an ill-formed lead is attempted, ¶1, and `.` cannot match it) and
+  `(0,0) (1,2) (2,2)` in libpcre2's loop; `c0 80 61` and `ed a0 80 61` behave
+  alike.
+
 <a id="s9-4"></a>
 ### 9.4 `-futf-check`: refusing an ill-formed subject
 
@@ -3412,6 +3465,18 @@ unconditionally and under every setting of the guard: an unanchored search's
 candidate match starts, a failed attempt's retry, and a search's first attempt
 at offset 0 (§9.3). A reported match span never begins inside a character, on
 any subject. The guard axis governs only where a CALLER may point an entry.
+
+- <a id="s9-5-p2"></a>[9.5¶2] **No empty match at a stray continuation byte.** libpcre2 under
+  `PCRE2_MATCH_INVALID_UTF` treats the offset of a stray continuation byte as
+  the end of a valid segment and can report an empty match there; pcrec never
+  starts a match at a continuation byte (¶1). `(?<=.)` over `61 80 61` under
+  `-e utf8` reports `(3,3)` against libpcre2's `(1,1) (3,3)`, and over
+  `c3 a9 80 c3` reports nothing against libpcre2's `(2,2)`. The loop (§3.1.3)
+  and `<prefix>_next` inherit this from `<prefix>_search`.
+- <a id="s9-5-p3"></a>[9.5¶3] **An ill-formed subject END** is a related divergence of the empty-match
+  family (`$`, `\z`, `\Z`, `(?m)$`, `\B`, `(?<!.)`), recorded as
+  `docs/dev/known_issues.md` K74 (which names `$` and `\B`): over `e3 81` pcrec reports `(2,2)` for `$`
+  where libpcre2 reports nothing.
 
 ---
 
