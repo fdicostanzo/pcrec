@@ -639,6 +639,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: [MEMFN-PAIRSTOP] fires AND the kernel is measured to beat the scalar form on the targeted hardware (the SIMD layer must beat scalar or show a named benefit).
   refs: docs/dev/decisions.md D176; [MEMFN-PAIRSTOP]; [OPT-SIMD]
   Charter: a SIMD-layer kernel finding either of two arbitrary bytes (two compares and an OR) in place of the one-bit case fold, opt-in under the SIMD layer.
+- [RECID-A] STATE:not-started — RECURSION-IDENTITY (A): RE-BASE OR RETIRE THE NEVER-MOVING PRE-MODULE PIN
+  filed: 2026-10-23 manager, from lane recpin (docs/dev/lanes/recpin_report.md)
+  status (2026-10-23): (B) re-pinned to bf33d2dab and green (5c9bde73b); (A) RED on main: 78/126/78/54 call-free regions differ from ac4917d; 69 are K128 (corefix), 9 are (?U)+possessive patterns already red before corefix (DFA-selected in every build; cause unbisected)
+  next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
+  refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
+  The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
