@@ -5,6 +5,8 @@ was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) 
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
 
+STATE AT HANDOFF (part 6, job 605's RESULT, supersedes nothing): job 605 GREEN (1,890 rows); the bar reads FAIL on one cell, foobar match/real 1.032 > 1.020, diagnosed as layout (identical rx_match code, 6.2); all five capped cells inside their caps. Part 6 is below this block.
+
 STATE AT HANDOFF (part 5, job 600's reds, supersedes part 4's shas): THE S3 COMMIT is now
 **7e1caad08** (d3886a656 + the §6.3.4¶8/¶9 cover clarification; no code change: R1's premise
 did not hold, see 5.2); the R2-R6 follow-up is 34ee758a1. Every red family was rerun green by
@@ -40,6 +42,236 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 6. RESULT (job 605, 2026-10-23)
+
+Job 605-kit-s3-timing is job 588's script run at the S3 build (pcrec 8d53dc29df1a), GREEN: rc 0,
+wall 805 s, 1,890 rows, 5 launches (L=5, T=20 ms, N=9; cpu 7, sibling 15; gcc 15.2.0 -O2, no -march).
+Stages build, diff (112 arm builds equal to python `re`, asan on), gate (504 arm cells), sample-gate
+and esh-gate all passed before any clock. **No answer differs anywhere.** The job's own verdict:
+
+    == s3t BAR FAIL: 72 cells read on the scalar layer; FAILING: foobar match/real 1.032 > 1.020
+
+Evidence (copied from the job's OUT dir and log, `docs/dev/lanes/s3_evidence/`):
+`results_605_table.md` (every table below, as printed), `results_605_header.md`,
+`s3t_results_605.tsv.gz` (the §6 cells' raw rows), `s3t_sample_605.tsv.gz`, `s3t_esh_605.tsv.gz`,
+`read_605_summary.py` (the tallies below, recomputed from the table). Reading rule throughout:
+FASTER < 1 - floor, SLOWER > 1 + floor, else within; floor = 581's floor for the cell (the bar) or
+this run's A/A in the regime (sample, E[sh]).
+
+## 6.1 The §6 bar (scalar layer; 72 cells; RTE/DEF)
+
+**The five capped cells** (cap = 581's ratio plus its floor, window_site.md §6):
+
+| cell | measured RTE/DEF | cap | verdict |
+|---|---:|---:|---|
+| hex8-bounded throughput/dense | 1.543 | 1.551 | within cap |
+| hex8-bounded search_short/dense | 0.962 | 1.159 | within cap (and FASTER than DEF) |
+| file-ext-order search_short/none | 1.032 | 1.053 | within cap |
+| file-ext-order match/real | 1.050 | 1.059 | within cap |
+| file-ext-order match/none | 1.067 | 1.085 | within cap |
+
+All five are inside their caps. The single failing cell is **not** one of the five: it is
+foobar match/real, 1.032 against the uncapped 1 + floor = 1.020 (the cell was FASTER in 581, 6.2).
+
+**Every cell's RTE/DEF, by group** (scalar; 72 cells):
+
+| group | cells | notes |
+|---|---:|---|
+| FASTER beyond floor | 41 | |
+| within floor | 26 | |
+| SLOWER beyond floor | 5 | the four capped cells that read SLOWER (file-ext-order search_short/none 1.032, match/real 1.050, match/none 1.067; hex8-bounded throughput/dense 1.543, which is the 1.53x statement) and foobar match/real 1.032 |
+
+- Biggest wins: hex8-bounded search_short/none 0.173; file-ext-order search_short/dense 0.242;
+  word-digit throughput/none 0.256; lit-l8 throughput/dense 0.267 and search_short/dense 0.268;
+  word-digit throughput/real 0.274; foobar throughput/dense 0.308 and search_short/dense 0.299.
+- Biggest losses: hex8-bounded throughput/dense 1.543 (capped), file-ext-order match/none 1.067 and
+  match/real 1.050 (capped), file-ext-order search_short/none 1.032 (capped), foobar match/real
+  1.032 (the failing cell).
+- Every `throughput` and `search_short` cell not named above is FASTER or within; all 24 `match`
+  cells are within except file-ext-order real/none and foobar real (above).
+- **A/A (RT2/RTE, 72 cells):** min 0.970, max 1.039, geometric mean 0.999. 67 of 72 within 2%, 64
+  within 1%. The five outside 2%: lit-l8 search_short/dense 0.970, year4 search_short/dense 0.975,
+  done-eol search_short/none 0.978, word-digit throughput/dense 0.980, done-eol match/dense 1.039.
+  RT2 and RTE are the same text compiled and linked twice, so the A/A shows timing noise and
+  nothing else (it cannot show a layout effect between different texts, 6.2).
+
+## 6.2 One bounded diagnosis: foobar match/real (1.032)
+
+Method: the job's own compiled artifacts, `build/s3/job588/arts/foobar/{DEF,RTE}/` (a.c, a.h, a.o,
+bin, d.o). Nothing was compiled or timed new; objdump and diff only.
+
+- **The harness's match regime** (docs/design/kit_proof/measure/cdrv.c) is one `rx_match(&ctx)` per
+  record at pos 0, through `pass()`. It never calls `rx_search`.
+- **The anchored function's C text is identical** between the arms (`rx_match`, its three
+  `rx_anchored_*` tables and the `rx_anchored_*` helpers: `diff` empty). The only differences in
+  a.c are the three `RX_DFA_*` stamps, the `RX_DFA_START` stamp, `rx_search` (DEF: forward DFA with
+  `rx_ofsskip`; RTE: the inlined window scan), the removed forward tables and helpers, and the
+  `rx_info` scan/prefilter/search_form strings. a.h and the harness's d.o are byte-identical.
+- **The object code is identical** instruction for instruction: `rx_match` is 0xf9 bytes in both
+  arms, 73 objdump lines each, the same mnemonics and operands. The only differences are
+  displacements and relocation targets (branch targets, `lea` of the rodata tables), which move with
+  the section layout. `pass()` is likewise identical but for the displacements of `g_*` and the
+  `call` to `rx_match` / `rx_next_pos`.
+- **What differs is placement, caused by `rx_search` shrinking** (nm -S on the linked bins):
+
+  | | DEF | RTE |
+  |---|---:|---:|
+  | `rx_search` size | 0x169 | 0xc1 |
+  | `rx_match` address (mod 64) | 0x1e70 (48) | 0x1dd0 (16) |
+  | `rx_anchored_byte_class` (256 B) address (mod 64) | 0x3200 (0) | 0x21e0 (32) |
+  | `rx_anchored_next_state` (72 B) address (mod 64) | 0x31a0 (32) | 0x2180 (0) |
+  | `rx_anchored_is_accepting` (36 B) address (mod 64) | 0x3300 (0) | 0x22e0 (32; crosses a line) |
+  | `a.o` text + rodata | 2048 + (rodata 0x32a) | 1429 + (rodata 0x184) |
+
+  The hot code moves 32 bytes within its cache line group, the 256-byte class table goes from
+  4 lines to 5 (it was line-aligned, now it straddles), and the accepting table now crosses a line.
+  Symbol order is unchanged. gcc inlines the same helpers in both. The `.rodata` shrinks
+  because the forward tables are gone.
+- **Does the match regime touch anything the cover changed?** No. It reads only `rx_match` and the
+  anchored tables. S3's cover change is in `rx_search` (and the `rx_info` strings, not read here).
+- **581's reading of the same cell:** the same code (the anchored machine did not change) read
+  FASTER there: foobar match/real COV/DEF 0.979 (F), PRO/DEF 0.972 (F), AA 0.994, while HRS/DEF
+  1.043 and PRF/DEF 1.045 read SLOWER, and match/none COV 0.932 (F), HRS 1.002 / PRF 1.073 (S). In 581 the
+  `rx_match` text was equally the same across arms; only the surrounding arm code changed. So in
+  two jobs the same instruction stream has read anywhere from 0.93 to 1.07 in the match regime of
+  this cell, with the sign following the arm's other code.
+- **The other match-regime cells in this job (RTE/DEF, scalar):** 21 of 24 within. lit-l8
+  1.002/1.011/1.017; year4 1.000/1.001/0.998; file-ext-order 1.050/1.067/1.001 (the first two
+  capped); hex8-bounded 1.002/1.001/0.999; foobar 1.032/1.000/1.006; cat-bounded
+  1.001/1.000/0.976; done-eol 1.003/1.000/0.994; word-digit 0.985/0.984/0.997 (order real/none/dense).
+  SIMD-on: the same pattern (foobar match/real 1.033, file-ext-order match/real 1.034, none 1.066).
+  The spread is all in cells whose `rx_search` shrank or changed, never in a cell whose anchored
+  code differs.
+
+**Conclusion: a layout/alignment effect. There is no S3 code on the path.** The measured function is
+byte-for-byte the same, and its code and tables moved (the forward machine's removal shifted
+everything after `rx_search`). The A/A cannot catch it because RT2 and RTE are the same text and so
+the same layout. Not measured here (and deliberately not run): a padded control arm that restores
+`rx_match`'s old address; if the manager wants the cell to read green by evidence rather than by
+argument, that is one small compile-and-time job, not a code change. Caveat: this is an argument from
+identical instructions plus a placement difference, supported by 581's opposite-sign reading, not a
+proof that the 3.2% is alignment and not, say, i-cache set conflicts with `pass()` (also identical
+text).
+
+## 6.3 SIMD-on reading (RTEs/DEFs; reported, not the bar)
+
+| group | cells |
+|---|---:|
+| FASTER beyond floor | 44 |
+| within floor | 23 |
+| SLOWER beyond floor | 5 |
+
+The five SLOWER are the same cells as the scalar layer: foobar match/real 1.033, file-ext-order
+search_short/none 1.031, match/real 1.034, match/none 1.066, hex8-bounded throughput/dense 1.538.
+The job's SIMD line: `SLOWER: foobar match/real 1.033 > 1.020` (the others sit within their caps).
+Wins are the same cells at nearly the same ratios (hex8-bounded search_short/none 0.172, file-ext-order
+search_short/dense 0.229). The cover carries no SIMD form, so scalar and SIMD ratios differ only by the
+SIMD DEF's own search (up to 0.03 on a few cells: word-digit throughput/dense 0.629 against 0.655,
+done-eol match/dense 1.026 against 0.994).
+
+## 6.4 Mover sample (24 rows, 122 row-regime-class cells; NOT the bar)
+
+Per-stratum counts, scalar layer (reading against this run's A/A):
+
+| stratum | FASTER | within | SLOWER |
+|---|---:|---:|---:|
+| LIBC/one/norun (smp01, 06, 11, 16, 21) | 23 | 3 | 0 |
+| LIBC/one/run (smp02, 07, 12, 17, 22) | 13 | 17 | 0 |
+| WALK/hors/norun (smp03, 08, 13, 18, 23) | 19 | 0 | 1 |
+| WALK/one/norun (smp04, 09, 14, 19, 24) | 2 | 2 | 18 |
+| WALK/one/run (smp05, 10, 15, 20) | 3 | 0 | 21 |
+| **all** | **60** | **22** | **40** |
+
+SIMD-on layer: 57 / 22 / 43 (WALK/one/run 0 / 0 / 24; the other strata unchanged).
+**Overall median RTE/DEF: 0.9715 scalar, 0.985 SIMD-on** (over the 122 cells; geometric mean
+1.074 scalar, 1.339 SIMD-on, pulled up by the walk rows below).
+
+**Every SLOWER row, scalar (ratio, throughput / search_short, real / none / random):**
+
+| row | pattern | stratum | SLOWER cells (RTE/DEF) |
+|---|---|---|---|
+| smp04 | `[a[:b]` | WALK/one/norun | thr/random 4.464; short/random 1.951 |
+| smp05 | `(?:(?i:abs)\|(?i:ab)S)` | WALK/one/run | thr/none 4.908, thr/random 2.268; short/real 1.653, none 2.292, random 1.934 |
+| smp08 | `\b\w*?\B\w` | WALK/hors/norun | thr/random 1.139 |
+| smp09 | `(?:(?!a)z\|w)` | WALK/one/norun | thr/real 1.157, random 1.317; short/real 1.253, random 1.413 |
+| smp10 | `(?i)foobar` | WALK/one/run | thr/none 7.352, random 3.276; short/real 2.567, none 3.936, random 3.201 |
+| smp14 | `[a-]` | WALK/one/norun | thr/random 1.216; short/real 1.244, random 1.611 |
+| smp15 | `(?i)abc` | WALK/one/run | thr/none 5.127, random 2.319; short/real 1.711, none 2.372, random 1.905 |
+| smp19 | `[[:]` | WALK/one/norun | thr/real 1.891, none 1.461, random 1.251; short/real 1.659, none 1.346, random 1.626 |
+| smp20 | `(?i)x/1234` | WALK/one/run | thr/real 10.263, none 29.071, random 8.913; short/real 3.160, none 5.933, random 3.673 |
+| smp24 | `[:a]` | WALK/one/norun | thr/random 1.249; short/real 1.224, random 1.623 |
+
+Ten of 24 rows have at least one SLOWER cell (40 cells); nine of them are WALK/one, the tenth is a
+single WALK/hors cell. No LIBC row is SLOWER. At the SIMD layer the smp05/10/15 rows also
+go SLOWER on `real` (9.5x, 12.8x, 9.9x throughput/real; the largest SIMD ratios 11.8-18.2x on
+none), the SIMD DEF being the faster baseline for those. Facts only: these are the walk sites where the
+cover's find window replaced a (possibly SIMD) literal/class prefilter in DEF; whether those
+movers are the intended trade is a ruling for main, not this section.
+
+## 6.5 E[sh] reading (12 D-hors sites; D-hors RTE vs D-one NOH; NOT the bar)
+
+All 12 sites' SIMD text equals their scalar text, so the SIMD alpha IS the scalar alpha (the
+columns are equal in every row). alpha = RTE/NOH; < 1: D-hors is faster. Geometric mean over
+regimes and classes, sorted by E[sh]; per-class and per-regime means beside:
+
+| site | pattern | E[sh] | max(sh) | stop ppm | alpha gmean [min, max] | SLOWER/FASTER of cells | real | random | none | throughput | search_short |
+|---|---|---:|---:|---:|---|---|---:|---:|---:|---:|---:|
+| esh01 | `(?s)[0-9a-f].[0-9a-f]` | 1.000 | 1 | 284434 | 2.130 [1.699, 2.733] | 4/0 of 4 | 1.886 | 2.405 | | 1.897 | 2.392 |
+| esh02 | `(?s)[^a]..` | 1.000 | 1 | 945837 | 0.976 [0.900, 1.005] | 0/1 of 4 | 1.003 | 0.950 | | 1.002 | 0.951 |
+| esh03 | `[aeiou]..[aeiou]` | 1.030 | 4 | 252788 | 1.766 [0.955, 3.821] | 3/1 of 4 | 1.087 | 2.868 | | 1.434 | 2.174 |
+| esh04 | `\b\w*?\B\w` | 1.193 | 2 | 807006 | 0.899 [0.823, 0.974] | 0/4 of 4 | 0.954 | 0.848 | | 0.922 | 0.877 |
+| esh05 | `\w{5}` | 1.772 | 5 | 807006 | 0.735 [0.589, 0.883] | 0/4 of 4 | 0.833 | 0.648 | | 0.793 | 0.680 |
+| esh06 | `[a-z][a-z0-9]{3}` | 1.785 | 4 | 663413 | 0.938 [0.825, 0.991] | 0/2 of 4 | 0.974 | 0.904 | | 0.894 | 0.985 |
+| esh07 | `[a-z]{6}` | 2.683 | 6 | 663413 | 0.605 [0.252, 1.100] | 2/2 of 4 | 1.067 | 0.342 | | 0.694 | 0.526 |
+| esh08 | `[0-9a-f]{4}` | 3.147 | 4 | 284434 | 0.512 [0.402, 0.637] | 0/4 of 4 | 0.489 | 0.537 | | 0.616 | 0.426 |
+| esh09 | `[0-9a-f]{5}` | 3.862 | 5 | 284434 | 0.396 [0.286, 0.524] | 0/6 of 6 | 0.387 | 0.417 | 0.386 | 0.516 | 0.304 |
+| esh10 | `[0-9a-f]{6}` | 4.578 | 6 | 284434 | 0.322 [0.221, 0.458] | 0/6 of 6 | 0.326 | 0.332 | 0.309 | 0.439 | 0.236 |
+| esh11 | `[0-9a-f]{7}` | 5.293 | 7 | 284434 | 0.273 [0.182, 0.401] | 0/6 of 6 | 0.285 | 0.278 | 0.258 | 0.378 | 0.198 |
+| esh12 | `[0-9a-f]{8}` | 6.009 | 8 | 284434 | 0.235 [0.153, 0.348] | 0/6 of 6 | 0.250 | 0.236 | 0.220 | 0.327 | 0.169 |
+
+Facts:
+- D-hors is slower on every cell at esh01 (E 1.000; 1.70-2.73x) and on three of four at esh03
+  (E 1.030; one 0.955; the others 1.24-3.82x).
+- At E[sh] >= 1.19 it is faster on every cell at esh04, esh05, esh08-esh12 (monotone from 0.51 at
+  E 3.1 to 0.24 at E 6.0), mixed at esh06 (faster on throughput, within on search_short) and at
+  esh07 (E 2.68: `real` 1.035 and 1.100 SLOWER, `random` 0.465 and 0.252 FASTER).
+- Not a clean cut-off on E[sh]: esh02 is also E = 1.000 yet within/faster (1.003, 0.950). It has
+  the highest stop mass of the set (945,837 ppm) while esh01's is 284,434 and esh03's 252,788.
+- **max(sh) does not predict it**: esh02 (max 1) is fine, esh03 (max 4) is slower, esh01 (max 1)
+  is slower. **Stop mass** separates esh01/esh03 (<= 285k, slower) from esh02 (946k, not), but
+  esh08-12 share esh01's stop mass (284,434, same class) and are fast, so stop mass alone does not
+  decide either; E[sh] > ~3 does within that stop mass.
+- The only `random`/`real` split of consequence: esh03 and esh07 are slower on `real` and far
+  faster (esh07) or far slower (esh03) on `random`; class matters beside E[sh].
+- 12 sites, one per E[sh] point, four to six cells each: the evidence is suggestive of a
+  threshold in E[sh] (below roughly 1.1 with low stop mass D-hors is slower; above roughly 2.7 it
+  is faster in all but one cell) and is not enough to fix one.
+
+**What it supports:** E[sh] discriminates better than max(sh) (the withdrawn fix C's rule would have
+kept esh03, which is the slower site at E 1.030); the loss region is E[sh] close to 1 with a low
+stop mass, and the win is large and monotone above E[sh] ~3. No default moved.
+
+## 6.6 What this supports / does not support
+
+- Supports: the cover's routed artifacts are not slower than the OFF arm on 67 of 72 §6 cells at
+  the scalar layer (41 FASTER, 26 within); the four capped cells and hex8-bounded throughput/dense
+  all land inside their caps, including the 1.53x statement (1.543 against 1.551).
+- Supports: foobar match/real is not S3 code on the path (6.2); the anchored function is identical
+  down to the instruction, only its placement moved.
+- Does not support: calling the bar PASS as run. The script's rule fails one cell at 1.032 > 1.020,
+  and 6.2 is an argument that the cell is layout, not a measurement that it is; reading it GREEN is a
+  ruling for main (or one padded control arm).
+- Does not support: the mover sample as a clean result. Ten of 24 sample rows (nine WALK/one) have
+  SLOWER cells, to 29x at smp20 (`(?i)x/1234`) and 18x at the SIMD layer on smp10; the whole WALK/one
+  stratum reads SLOWER on 39 of 48 cells. This is outside §6's bar and is a finding for main.
+- Supports (weakly): D-hors helps from E[sh] ~3 up and hurts near E[sh] 1 with a low stop mass.
+  Does not support moving an admission default: 12 sites, one pattern family above E 3, a
+  non-monotone middle (esh06, esh07).
+- Does not support: any SIMD verdict. The SIMD-on layer mirrors the scalar one here; the official
+  SIMD verdict stays pcrec-bench's (D144 addendum 4).
 
 ---
 
