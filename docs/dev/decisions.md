@@ -9909,3 +9909,23 @@ P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS 
   - **Standing rule (Frank):** "going forwards, update measurement scripts when new methods appear." Any new find/scan/skip/verify method adds its measurement card in the same change; until a box is re-measured the row reads UNMEASURED visibly.
 - **Effect:** agreeing the target shape is not a build go: the build waits for the step-0 census and the method measurements. Rows: [MEMFN-UNBOUNDED-SPANS] (Q4, pcrec side), [MEMFN-PAIRSTOP] (Q6), [MEMFN-PAIRSIMD] (Q6 kernel); [MEASURE-SET] carries Q1/Q3. The standing rule is in docs/dev/guide/addenda/kit.md.
 - **Revisit when:** step 0's census or the method cards show the single priced choice mispicking where the separate rules did not.
+
+
+## D177 — the full suite runs on a declared schedule, verdicts retained (Frank, 2026-10-23)
+
+- **Decision:** Frank's schedule, verbatim: "Full Suite schedule: 1. run it tonight. 2. run it before any major version shift. 3. schedule it after any major code refactor 4. schedule it after 2-3 major changes. 5. schedule after 4-6 minor changes. Schedule means next window, not right away. Try and combine." The full suite is `scripts/battery.sh` (test, strict, axes, san, alloc, lint, mech, recidentity). Cause: the gate census (gate_census_2026-10-23.md, [GATE-RUNS]) found every check outside `make test` depending on a hand-launched battery that kept no verdict (full mech last ran about 10-08; recursion-identity went red unseen).
+- **Triggers, first match decides WHEN** (the table is the rule; a run covers all of them):
+
+  | row | trigger | when |
+  |---|---|---|
+  | 1 | tonight (the one-off, 2026-10-23) | now: the first window, after the iterator landing |
+  | 2 | a major version shift | before: the run reads green first |
+  | 3 | a major code refactor lands | next window |
+  | 4 | 2-3 major changes landed since the last green run | next window |
+  | 5 | 4-6 minor changes landed since the last green run | next window |
+
+- **Major vs minor** (the manager classifies at each landing, in docs/dev/full_suite_ledger.md): major = a new capability, an abi event, a refactor of a shared mechanism, a new engine path; minor = a fix, a re-pin, a check-only change. A landing that touches no code, check, script or data store (docs, design notes, studies) is listed as `none` and does not count.
+- **Combine:** one run covers every pending trigger. A queued run is not duplicated by a later trigger. The counters reset when a run reads green (every stage's verdict from make's `*** [...] Error` lines or the stage rc, not "sections ran"); a red run resets nothing.
+- **Window:** a bench/box night window cleared with Frank (the box is shared). "Schedule" never means start now. The run takes the box lock and is not a timing run, so it needs no quiet gate, only a free lock and no running queue job.
+- **Retained verdicts:** each run's logs are kept at `build/full_suite/<date>_<sha>/` (gitignored) with a one-line `summary.txt`; the manager copies it into the ledger's Runs table. Mechanics: `scripts/fullsuite_job.sh` (a box-queue job; runs at a frozen commit in its own detached worktree so merges cannot enter mid-run).
+- **Revisit when:** a red battery is found that a trigger should have caught earlier.
