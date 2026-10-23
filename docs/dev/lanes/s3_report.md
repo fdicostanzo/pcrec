@@ -1,9 +1,19 @@
-# s3 — D172 S3 (REPORT routed + D-hors): BUILT, review fixes folded, fix C withdrawn (d3886a656); jobs 587, 588 staged
+# s3 — D172 S3 (REPORT routed + D-hors): BUILT; code review r1's C1 build folded (S3 commit b5b85aeac); jobs 587, 588 re-staged
 
 Lane s3, 2026-10-22 (opus). Worktree `worktrees/s3`, branch `lane/memfn-s3w`. Part 2 (the build, below)
 was done by the resumed lane under main's rulings R1-R6. Part 1 (further below) is the first lane's
 stop: its questions, its decisions, and the abi readers it found. Build go: D172 addendum (Frank
 2026-10-21); main cleared S3 on 2026-10-22. No rulings file was named.
+
+STATE AT HANDOFF (part 7, the code review r1 C1 build, supersedes every earlier sha): THE S3 COMMIT is now
+**b5b85aeac** (7e1caad08 + the C1 build, by plumbing, parent f7bc3cf05; the ten commits after it replayed
+unchanged); the C1 tests/pins/manifests/jobs are d190e3a70, the window_site.md rev 3.3 DRAFT 15a4e5390. E-find
+asks Table B the design's question and renders the deciding row's pick: caseless windows get fn-pair's two
+memchr streams, and their SIMD kernels under -fmemfn-simd. Light checks green (7.12); no answer moved (G2,
+3,600 differential cases, the OFF arms identical). OWED: jobs 587 (correctness, 125 mech rows, REACH_ONLY)
+and 588 (timing; the mover sample is now part of the bar), both dry-run clean, not queued. Predicted: 588's
+bar FAILS on stratum WALK/one/norun (two-byte non-cube stops; F-C1-1, a design question for Frank). Part 7
+is below this block.
 
 STATE AT HANDOFF (part 6, job 605's RESULT, supersedes nothing): job 605 GREEN (1,890 rows); the bar reads FAIL on one cell, foobar match/real 1.032 > 1.020, diagnosed as layout (identical rx_match code, 6.2); all five capped cells inside their caps. Part 6 is below this block.
 
@@ -42,6 +52,245 @@ STATE AT HANDOFF (part 2):
   - the bench `[inbox]` relay (kit_proof.md §6.1; the manager's, at merge);
   - `PCREC_NO_KIT_PROOF` (R3: main files it under [IFACE-PUSH]);
   - the kit's journal and responses ledger (the kit session's).
+
+---
+
+# Part 7. C1 build (code review r1, 2026-10-23)
+
+Lane s3 (opus), the build of the S3 code review r1 (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`,
+on the memfn branch's worktree), findings C1-C17. Build go: Frank, 2026-10-23 ("We absolutely will"). The
+manager's brief is the charter; no rulings file was named.
+
+## 7.1 Commits
+
+| sha | what |
+|---|---|
+| b5b85aeac | THE S3 COMMIT, now with the C1 build folded in (memfn/src, the cover desc in src/gen/emit_dfa.c, `registry.md` §6¶8a's two rows, `finder_history.md`, `trace_format.md`, the two CLAUDE.md files): built by plumbing from 7e1caad08's tree plus the code diff, parent f7bc3cf05; ONE byte-moving commit, abi 84 PROVISIONAL, unchanged |
+| (replayed) | the ten commits after S3 (b3fba6b28 .. a017fe98a), their diffs applied unchanged (none touches a folded file) |
+| d190e3a70 | the C1 follow-up: G2 (caseless stream, plants S1425-S1429, floors), the manifests (`rows.tsv`, `row_floors.tsv`, `finder_check.py`, `run_rows.sh`), the SIMD floors (`simd_floor_check.py`, `simd_guarded_check.py`), census options, the C1 mover manifest and its script, jobs 587/588 re-staged (587's clean-tree check now ignores `docs/dev/artifact_size_log.tsv`, a full-suite run's byproduct, dirty here and not this lane's) |
+| 15a4e5390 | window_site.md rev 3.3 DRAFT (C4), its own commit, for the manager |
+| (next) | this report |
+
+## 7.2 Table B: the question as built (C1, C3)
+
+`fd_find` (finder.c) replaces `fd_find_form`. It asks slot FIND about:
+- **the site:** the window site itself, under its define hooks: its consumer kind, `body`, `policy`, options
+  (`fd-d1` and the VM seek role keep their effect). No synthetic one-term site, no `MF_SPAN_BOUNDED`.
+- **the stop:** its own set, its ACTUAL offset d* (below the candidate: a CONTEXT stop), and the stretch fact
+  `SF_STRETCH_CUBE` (the stop, a two-member cube, inside a stated run stretch: a neighbour position of a span
+  holding it is one member or a cube). Need REQUIRED: B's find is the stop's test at every candidate it yields.
+- **the layer:** the OFF variant, as `fd_route` (the finder's §1.5 rule 1). This is a JUDGEMENT the manager
+  should check against the brief's "the ACTUAL layer": at a SIMD layer the slot has no built row for a set
+  stop (R7w is OFF-only; R8/R2's W64 is unbuilt), so an actual-layer ask would refuse every multi-member
+  stop under `-fmemfn-simd`. The SIMD forms are instead the offset-skip function's PREFIX rows over PAIR's
+  body, which read the site's actual `policy` (B-fn, 7.4). No `table_ref` is invented (7.3).
+- **the answer:** the deciding row's id and its pick (`fd_form`, now in kit.h); E-find renders the pick.
+  `fd_find` is asked quietly in E-find's setup and once more, traced, when the define chose E-find (the
+  selection's record and reach); the row id reaches the trace (`MFTRACE FDROUTE ... arm=E-find`, `WPATH fd=`).
+
+## 7.3 Row-contract changes, each justified
+
+| change | why |
+|---|---|
+| PAIR added (slot FIND, facts SPAN0 + STRETCH_CUBE, pick FF_PAIR, KD_STOP, LY_ALL, no deny, UNMEASURED-DEFAULT, step S3), after D1w and before R7w | window_site.md §2.2's "now a FIND-slot row"; its facts are disjoint from D1/D1c/D1w's (two members), so its place among them decides nothing and the existing ORDER is unchanged; only a window site states the stretch fact, so no native route meets it (`fd_route` has no arm for it). No deny: it moves bytes only inside E-find, under `wf-find` (fn-pair has none either) |
+| KD_ALL's REPORT widening REVERTED for R8, R3a, R3b, R4, R1, R2 and P0-P9 | no REPORT site asks them ("KEPT UNCHANGED"; the PRES rows serve an ALL_PRESENT site's kinds). Zero bytes |
+| REPORT kept on D1, D1w, R7w (KD_STOP) and added to PAIR | the rows whose pick renders a window site's stop: a REPORT site is the window family's since RPT retired |
+| D1c gains REPORT beside DFA_ATTEMPT | §2.2 re-keys D1c to "the stop lies below the candidate" ([rev3 bB7]); a one-byte REPORT stop below the candidate is now decided D1c (before: the synthetic ask's D1 at offset 0). Its text is the same memchr-with-raise (zero bytes, 7.11's manifest row 13) |
+| R7w keeps `table_ref` REF; gate.c's `cl_table_ref` reads a window site's `table_ref` as UNSTATED | NARROW, not invent: a window site states no terms (wf_check refuses them), so the OBLIG "0 = no table" never applies to it; its offers are `toffer`, which E-find's walk reads (C-table) or does without (C-own). Native sites state terms and are unchanged. R7w's comment says so |
+| no row for a stop of two or more members BELOW the candidate | D1c is one byte; R7w and PAIR need the stop at or past the candidate (SF_SPAN0, unchanged to keep native routing). E-find declines such a plan; a REPORT site's cover then declines (the default build's composite, byte-for-byte: manifest row `(?<=[qj])[a-z]`). Finding F-C1-2 |
+
+## 7.4 E-find renders the pick (C1): B's renderer rows and the probes
+
+`wf_brows` (window.c), first match over the pick and the plan; they decide nothing about the find:
+
+| row | holds | renders |
+|---|---|---|
+| B-fn | PAIR, and the plan IS the offset-skip function's predicate (legacy_ok, no range end past the terms, one RUN term holding the stop's cube, `ofs_fn_serves`: the BODY walk takes it) | `ofs_fn_define_at` over the translated predicate: fn-pair's body, vrun's SIMD rungs under `-fmemfn-simd`, named `<prefix>_mf<h>_ofsskip` (the FUNC suffix D155's routing rule reads); E-find's frame calls it |
+| B-pair | PAIR elsewhere (a context item, a floor, a non-core position) | two `memchr` streams in E-find's loop (`_ha`/`_hb`, `_fr` for the first round) |
+| B-memchr | LIBC (D1), LIBC_BACK (D1c) | today's E-find memchr, raise included (bytes unchanged) |
+| B-walk | WALK (R7w, D1w) | today's E-find walk (bytes unchanged) |
+
+Why B-fn renders through the function at BOTH layers: the SIMD rows sit over fn-pair's body (vrun's `over`),
+and D155's seam makes a SIMD-on artifact the SIMD-off text plus guarded rungs; an in-loop pair at OFF with a
+function at SIMD would give the two layers different scalar text. One-byte stops keep E-find's inline memchr
+(no SIMD row sits over fn-memchr), so the 41 FASTER cells of job 605 keep their bytes.
+
+**The probes** (`-p rx`, default and `-fmemfn-simd`; before = the S3 tip a017fe98a):
+
+| pattern | before (both layers) | after, default | after, `-fmemfn-simd` |
+|---|---|---|---|
+| `(?i)foobar` | byte walk `{B,b}` at +3 | fn-pair: `memchr(.., 66, ..)` and `memchr(.., 98, ..)` at +3 | the same body + `__w16`, `__w32` (MEMFN_FORMS `vrun@w32+w16`) |
+| `(?i)x/1234` | byte walk `{X,x}` at 0 | fn-pair, memchr 88 / 120 at 0 | + `__w16`, `__w32` |
+| `(?i)abc` | byte walk `{B,b}` at +1 | fn-pair, memchr 66 / 98 at +1 | + `__w16`, `__w32` |
+| `[Qq]uery` | byte walk `{Q,q}` at 0 | fn-pair, memchr 81 / 113 at 0 | + `__w16`, `__w32` |
+| `[0-9a-f]{8}` | Horspool (D-hors) | Horspool, byte-identical | Horspool, byte-identical |
+
+Answers: 3,600 cases of these and `(?i)\bfoo\b` (B-pair) and `(?:(?i:abs)|(?i:ab)S)`, both layers, compiled
+`-O2 -march=native` (the w32 rung live), against Python `re` (ASCII): 0 differ.
+
+## 7.5 Deleted code
+
+- `fd_find_form` (finder.c, ~45 lines, one stack `mf_site`, 3,456 B frame) and its enum `FD_FORM_NONE/LIBC/WALK`
+  (kit.h); `fd_find` is 560 B.
+- E-find's two-valued B (`wf_find_b`'s LIBC/WALK switch): now one renderer per pick, keyed by `wf_brows`.
+- `e_find_holds`'s write through a const predicate (C14): Tables D and B are decided ONCE in `wf_find_decide`
+  before Table E walks; the predicate reads `fx->holds`.
+- The duplicated frame and loop (C9): `wf_find_use`'s copy of the ASSIGN/NOP frame, `wf_find_expr`'s copy of
+  the `({ ... })` head and tail, and `wf_find_test`/`wf_test`'s two candidate tests. Shared now: `wf_frame`
+  (ON_MISS and ASSIGN/NOP, the floor's and E-find's), `wf_open`/`wf_cand`/`wf_close`, `wf_test_to` (the floor's
+  `grp` is -1 throughout). The floor's emitted bytes are unchanged (manifests, codegen, G2).
+- Table D's ad hoc `if` in `wf_find_prepare` and the hand deny check (C7).
+
+## 7.6 Table D as a kit_table (C7)
+
+`wf_dtable` ("wfD") on `kit_walk`: rows D-hors (`d_hors_holds`: mass >= HORS_MIN, window >= 2 positions, its
+last at an offset >= 0, exactly as before; no new admission predicate) and D-one; a contract each (D-hors's
+`core` CORED, both serving the frame and the window fields); the deny `wf-hors` read by the walk; trace and
+reach through the walk at the define's traced setup; the path id gains `+hors` (`mass+hors`).
+
+## 7.7 C14, C15, C17
+
+- C14: 7.5.
+- C15 (D174): `--list-axes` descs by behaviour: cover ("every match is one fixed-width window whose bytes, and
+  the one byte before and after it, decide a match exactly: the window search's first hit IS the leftmost
+  match ...; turned off by --memfn=no-wf-find"), wf-find ("the window search: jump to the next byte of one
+  window position's set (memchr, two memchr streams for a letter's two cases, or a byte walk; SIMD under
+  -fmemfn-simd), then test the rest of the window; ..."), wf-hors ("the window search's skip for a common byte
+  set ..."). No pinned test reads the desc text (`list_axes_delta.sh` keys rows by identity; the registry
+  check counts rows and authored descs). `registry.md` §6¶8a's two rows reworded the same way (they described
+  the find as "the C library for one byte, a table walk otherwise", now wrong).
+- C17 where touched: window.c's and finder.c's headers; WF_WHY_MAX names the 320-byte refusal buffer;
+  `WF_FIND_ID` spells "wf-find" once (Table E's deny, the arm's id and deny, the refusals; G2 plant S1422
+  re-anchored to it, same intent); `find_groups` builds its run terms only at the define (the query counts
+  them, `nrun`, for the class); the class's libc/includes are the plan's own (`w->libc`/`w->includes`:
+  memchr where B calls it or a run compare exists), not the arm's widest; `mf_defined` reports them;
+  `fd_find`'s frame replaces the 3,456 B `mf_site`. Not touched: `pcrec_mf_form_hash` and `define_sel`
+  (3,600 / 3,456 B, unchanged).
+
+## 7.8 Plants (C13), G2 (memfn/tests/run_g2_win.sh)
+
+G2 gained 300 CASELESS REPORT sites from their own stream (`G2W_C1_SITES`; cube windows of 2-8 positions,
+`A/a`, `0/1` and the high-byte cube `0xC4/0xE4`, fewer context items; the 1,900 sites before them unchanged;
+the driver's subject alphabet gains the high-byte pair last, so no earlier site's subjects move). E-find
+census: `pair 141` (B-pair), `fn 54` (B-fn), floors 125 / 48; FLOOR_SITES 1,900 -> 2,200.
+
+| plant | defect | verdict |
+|---|---|---|
+| S1425 | D-hors's shift VALUE +1 | RED (67 sites: a candidate skipped) |
+| S1426 | C-run's mask word dropped (a cube stretch compared as its lower bytes) | RED (62) |
+| S1427 | the walk's set short its highest member (sets of 2+) | RED (67) |
+| S1428 | B-pair's second stream searches the first member (the Table B pick's own text) | RED (15) |
+| S1429 | fn-pair's second stream searches the first member (B-fn; native sites too) | RED (9) |
+
+All 17 plants RED (S1400-S1407, S1409, S1410, S1422, S1423, S1425-S1429; S1424 was fix C's withdrawn plant and is not reused), each on answers but S1400 (its text stops
+compiling, as before) and S1405/S1409/S1422 (refusal controls, as before). S1427's first draft emptied a
+one-member D1w set and went red only by a compile error; it was narrowed to sets of two or more and is red on
+answers.
+
+## 7.9 Census options (C11)
+
+`census.py` enumerates every corpus pattern row WITH its block's options (`--list-source`'s `flags`: i ->
+`-i`, u -> `--ucp`; `encoding` -> `-e`), one task per distinct (pattern, options), the options first on every
+arm's command line (an arm's own `-e` overrides). A row stating a raw `pcrec` flag or a `with`/`from` cascade
+is REFUSED as UNEXPECTED rather than compiled without it (the corpus has none). Light enumeration: 5,966 rows,
+4,967 tasks, 881 under options (`-e utf8` 465, `-e byte` 169, `-i` 146, `-i -e utf8` 76, `--ucp -e utf8` 9,
+`-i -e byte` 5, `--ucp -e byte` 5, `--ucp` 4), 0 refused. Compiled at c-default (the C1 build, 1,762 compiles under the box lock): 199 of the 881 read cover under their own options; 18 of those read cover ONLY under them (17 `-e utf8`, 1 `-i -e utf8`); and 183 read cover compiled plain but NOT under their block's options. S3's census, which passed no options, counted those 183 as cover and missed the 18. The census's own tally line
+(`options: N tasks ..., C of them cover at c-default`) is job 587's.
+
+## 7.10 SIMD floors re-measured (C2)
+
+| check | S3 (lowered) | now | floor |
+|---|---|---|---|
+| `simd_floor_check.py` movers / SIMD FUNCs | 33 / 33 | 46 / 46 (pre-S3 measure: 44) | 46 / 46, pinned AT the measure |
+| `simd_guarded_check.py` simd-form | 3 | 6 (pre-S3: 6) | 6 |
+
+`(?i)cat`'s witness is back on the DEFAULT path (`[]`, was `--memfn=no-wf-find`), and so are `rows.tsv`'s
+fn-pair, vrun-w16 and vrun-w32 witnesses (`(?i)cat` default / `-fmemfn-simd`; signatures `size_t ha = 0, hb =
+0;`, `_ofsskip__w16(const unsigned char`, `_ofsskip__w32(...`; each control the row's own deny, fn-pair's the
+OFF arm with `-fno-req-run-fold`): `test-memfn-rows` 231/0. Leg (d), D155's routing
+rule over the ON text, needed the function's suffix: the first name, `_find`, read as a work function holding
+`#if` (13 rows red); renamed `_ofsskip`, which it is.
+
+## 7.11 Movers (re-predicted FIRST)
+
+- `s3_evidence/predicted_c1.tsv` (committed as WIP 73da45fc4 before any diff ran; that pre-fold history,
+  old tips 3073fbbe7 and bb65e8c81, is in the reflog; folded into d190e3a70): 31 rows, C1 build vs the S3 tip
+  before it (a017fe98a, built from `git archive`): `bytediff_c1.sh` **31/31 agree** (9 MOVES-fn/-fn-simd, 2
+  MOVES-pair, 1 MOVES-uncover, 19 IDENTICAL); OFF arm (both denies, both sides) **31/31 IDENTICAL**.
+- `s3_evidence/predicted_movers.tsv` (S3's, vs main c3ea619c3), 5 rows added first: `bytediff.sh` **29/29
+  agree**; OFF arm **29/29 ABI-ONLY**.
+
+## 7.12 Checks (this tree, the final code)
+
+| check | verdict |
+|---|---|
+| `make -j16`, `make strict` | clean; "whole tree compiles clean with -Werror -Wshadow" |
+| `make test-codegen` | 16/16 scripts |
+| `tests/memfn/run_link_checks.sh` | 11/0 (R-28: largest frame 3,600 B) |
+| `memfn/tests/run_g2_win.sh` | 8,842/0 (ASan+UBSan 4,400/0) |
+| `memfn/tests/run_g2_win.sh --plants` | 17/17 RED (S1425-S1429 re-run under their final ids, all RED) |
+| `tests/memfn/run_wreply.sh` | 112/0 |
+| `make test-memfn-finder`, `-rows`, `-simdfloor`, `-guarded`, `-g2` | all green (rows 231/0 with the re-aimed witnesses; g2: the window family 8,842 among 70.4 M checks, 0 failed) |
+| `make test-memfn-arms`, `-deleg`, `-forms`, `-reach`, `-rank`, `-manifest`, `-stamps`, `-arch` | green, at the final code |
+| byte-diffs and OFF arms | 7.11 |
+| `list_axes_delta.sh` vs main | 5 row(s), exactly as declared (descriptions moved, keys did not) |
+| mech: the 61 rows anchored in the touched files | every anchor applies exactly once (S596's intent unchanged); FULL runs OWED to 587 |
+| differential vs Python `re` | 7.4 |
+
+## 7.13 Jobs re-staged
+
+- **587-kit-s3-heavy** (correctness): the mech union grows 108 -> 125 (every row anchored in a file this build
+  edited); the census runs per (pattern, options); the plants step runs all 17 G2 plants. Its REACH_ONLY step
+  is the [MECH-REACH] re-aim check PAIR and B-fn's new firing places need: OWED to it.
+- **588-kit-s3-timing**: the mover sample is PART OF THE BAR (`read_588.py`): every cell and row prints
+  PASS/FAIL, a stratum FAILS where its cells' geometric-mean RTE/DEF exceeds 1 + its floor (this run's A/A), a
+  dropped row FAILS; foobar match/real is a named layout cap at 1.052. Read over job 605's own data the new
+  reader prints foobar match/real 1.032 "within" its cap and FAILS the bar on strata WALK/one/run (2.429; the
+  rows this build moves to PAIR) and WALK/one/norun (1.381).
+- `PCREC` for 588 is `build/s3/bin/pcrec`, re-copied from this build (sha256 0680489570db).
+- Commands (from the MAIN tree; not queued here):
+  `scripts/boxqueue add --name 587-kit-s3-heavy worktrees/s3/docs/dev/lanes/s3_job_587-kit-s3-heavy`, then
+  `scripts/boxqueue add --name 588-kit-s3-timing worktrees/s3/docs/dev/lanes/s3_job_588-kit-s3-timing`
+  (588 after 587 is green; 588 holds for i2build-parity and r27c's quiet gate as before).
+- Dry runs: 587 rc 0 in 0.1 s (its 125 mech ids are validated as the job's first step, ~100 s, over the 30 s bound, as before); 588 rc 0 in 10.5 s (one §6 cell, sample row smp01, E[sh] site esh02: build, premises, differential, gate; no clock).
+
+## 7.14 Findings
+
+- **F-C1-1 (the bar will most likely still FAIL on WALK/one/norun).** Its five rows (`[a[:b]`,
+  `(?:(?!a)z|w)`, `[a-]`, `[[:]`, `[:a]`) stop at two-member sets that are NOT one-bit cubes (`{a,-}`,
+  `{w,z}`, ...), which PAIR's scope ("today's": a cube inside a run stretch) does not take, so they keep the
+  walk and 605's 1.2-4.5x losses. Two `memchr` streams find any two bytes; widening PAIR to every two-member
+  stop is a one-fact change in the kit, but it widens a row the design scoped as "today's", so it is a design
+  question for Frank (I did not build it). Their other cause is C8's (pricing the stop by its find method).
+- **F-C1-2 (an honest refusal).** A stop of two or more members below the candidate has no Table B row; S3's
+  synthetic ask walked it. Such a cover now declines to the default build's composite (manifest row
+  `(?<=[qj])[a-z]`). The corpus count is in 587's census (a cover in main's sense that leaves cover reads as an
+  UNEXPECTED non-mover only if it moved before; it reads ABI-ONLY here).
+- **F-C1-3 (the layer reading, 7.2).** The FIND slot is asked at the OFF variant, as every native FIND site is;
+  the brief asked for the actual layer. Recorded for the manager.
+- **F-C1-4.** `[Qq]uery` and `(?i)x/1234` still stop at the cube (A-mass's rarity, C8 not built): now PAIR.
+
+## 7.15 C1-C17
+
+| id | state |
+|---|---|
+| C1 | DONE: Table B's pick rendered (B-fn, B-pair, B-memchr, B-walk); PAIR and the SIMD rows reachable; probes 7.4 |
+| C2 | DONE: the floors (46/46, 6) re-measured and the witnesses (simd_floor_check's `(?i)cat`, rows.tsv's fn-pair/vrun) back on the default path (7.10) |
+| C3 | DONE: the honest question (7.2), the contracts (7.3); D1c reachable |
+| C4 | DONE as a DRAFT: window_site.md rev 3.3, its own commit, for the manager |
+| C5 | NOT IN SCOPE |
+| C6 | NOT IN SCOPE |
+| C7 | DONE (7.6) |
+| C8 | NOT IN SCOPE (F-C1-1, F-C1-4 name where it bites) |
+| C9 | DONE (7.5) |
+| C10 | DONE in 588's reader (the sample in the bar); G2's alphabet and width widened only for the new caseless stream (a high-byte cube, windows to 8); NUL/utf8 and windows to 13 NOT done |
+| C11 | DONE (7.9) |
+| C12 | NOT IN SCOPE |
+| C13 | DONE: S1425-S1429 (7.8) |
+| C14 | DONE (7.5) |
+| C15 | DONE (7.7) |
+| C16 | NOT IN SCOPE |
+| C17 | DONE where touched (7.7); `define_sel`'s frame untouched |
 
 ---
 
