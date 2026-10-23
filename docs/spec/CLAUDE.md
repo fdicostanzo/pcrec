@@ -21,6 +21,9 @@ documents for the reasoning behind a design without repeating it.
 - Each spec's history lives in `docs/dev/history/<doc>_record.md` (match_api:
   `match_api_record.md` and `abi_changelog.md`), never in the spec.
 - Keep the literal shapes that scripts read (see the Files list).
+- **Caller-facing names describe behaviour, never architecture** (D174, Frank
+  2026-10-22): no "kit"/"memfn"/"proof"/family letters in a new flag, stamp,
+  field, option or spec sentence a caller reads. Not retroactive.
 - `docs/pcre2_compliance.md` is SPEC-TIER IN PLACE ([SPEC-1.9]): it meets this
   tier through its own three-component annotated-derivation discipline
   (`.claude/skills/compliance-refresh/SKILL.md`) and stays at its path because

@@ -30,7 +30,7 @@ restart/status-recovery record for the project. Measurement/analysis memos live 
   it is the citable rationale behind oracle exclusions.
 - `learnings.md`: read THIS instead of the whole journal for inherited lessons; update only at session close
   and only when a NEW lesson class appears.
-- `coding_guide.md` is WIRED (root CLAUDE.md situation-index row + `lanes/BOILERPLATE.md`): a writer of C under
+- `guide/` (was `coding_guide.md`, now `guide/coding.md`; the old path is a stub) is WIRED (root CLAUDE.md situation-index row + `lanes/BOILERPLATE.md`): a writer of C under
   `src/`/`cli/`/`lib/` reads it before its first edit. It holds rules, not findings; `[wave N]` markers mark
   primitives a refactor wave will change, and are deleted (rule restated) when the wave lands; it never
   instructs use of an unbuilt primitive.
@@ -51,7 +51,7 @@ restart/status-recovery record for the project. Measurement/analysis memos live 
 Process records
 - `plan.md` — ACTIVE tracker (Policy / Active / Candidates / Backlog / Boonies / Deferred; mirrors APPROACH §9).
 - `plan_completed.md` — verbatim archive of completed rows and the plan.md cleanup archives (`grep -c "STATE:completed"`).
-- `dev_journal.md`, `decisions.md`, `known_issues.md`, `upstream_issues.md`, `learnings.md`, `coding_guide.md` — see rules above.
+- `dev_journal.md`, `decisions.md`, `known_issues.md`, `upstream_issues.md`, `learnings.md`, `guide/` — see rules above.
 - `bench_wishlist.md` — pcrec-side list of bench cells wanted but not yet asked for; pull from it when a bench set opens.
 - `chunks_2026-10-11.md` — sequencing view after session 108 (chunks 0-6 with gates; plan.md rows stay the per-item record).
 - `backlog_triage_2026-09-22.md` — [BACKLOG-TRIAGE] 93-row inventory by D86 lane column (record: `lanes/backtri_report.md`).

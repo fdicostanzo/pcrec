@@ -32,6 +32,16 @@ import sys
 import specdoc
 
 BEGIN = "<!-- spec-toc:begin -->"
+def excl_match(f, prefix):
+    """A cite_exclude.tsv path prefix; a `*` in it is a glob segment
+    (docs/dev/reviews/*/ = every review's critic-text directory, not the
+    review files themselves)."""
+    if "*" in prefix:
+        import fnmatch
+        return fnmatch.fnmatchcase(f, prefix + "*")
+    return f.startswith(prefix)
+
+
 SKIP_DIRS = {".git", "worktrees", "node_modules", "__pycache__"}
 
 
@@ -270,8 +280,8 @@ def check_cites(root, name, path, files, doc_text=None, reader=None, excl=None,
     dangling = []
     linecites = []
     for f in files:
-        skip_all = any(f.startswith(r[0]) and r[1] in ("all", "cites") for r in excl)
-        skip_line = any(f.startswith(r[0]) and r[1] in ("all", "line") for r in excl)
+        skip_all = any(excl_match(f, r[0]) and r[1] in ("all", "cites") for r in excl)
+        skip_line = any(excl_match(f, r[0]) and r[1] in ("all", "line") for r in excl)
         text = reader(f)
         if text is None or name not in text:
             continue
