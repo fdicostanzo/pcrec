@@ -2779,3 +2779,8 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - 588 gains a D-hors admission reading stratified by E[sh]. These are findings, outside the §6 bar.
   - The admission rule (one declared row priced on E[sh], with HORS_MIN) is decided from that reading.
 - Lane s3hors is doing it. The K27 both-arms fixture (F-5) also ships as a test-only commit.
+
+## 2026-10-23 — Frank: public names must not expose internal modules
+
+- Frank: "I don't like the flag name PCREC_NO_KIT_PROOF because it mentions internal module names." The flag is unbuilt; main files it under [IFACE-PUSH]. A responses notice is posted with suggestions (PCREC_NO_DIRECT_REPORT / PCREC_NO_WINDOW_REPORT).
+- Asked Frank whether the same lens covers the `--memfn=no-*` deny spellings and the spec's "memfn kit" wording.
