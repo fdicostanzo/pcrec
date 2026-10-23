@@ -27,7 +27,7 @@ short brief, reads nothing else, and lets scripts do the waiting.
    (normal: the branch's job file). NEVER test a job with `boxqueue add`
    into a scratch queue: that arms a real runner (2026-10-23 incident);
    `JOB --dry-run` is the only safe check.
-3. Launch the monitor (section 3): `model: haiku`, background, name
+3. Launch the monitor (section 3): `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md: haiku, 1-hour cache), background, name
    `mon-<mode>-<short>`, the brief below with the job key and log path
    filled in. Nothing else in its prompt.
 4. `full` only: set ONE one-shot alarm (CronCreate, not recurring) at the
