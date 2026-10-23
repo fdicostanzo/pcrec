@@ -17,7 +17,7 @@ studies; listed, not counted).
 Baseline: the last full run on record is about 2026-10-08 (docs/dev/gate_census_2026-10-23.md: full mech
 ~10-08, san 10-03, alloc 10-08, axes 10-20 only); no battery verdict is retained from it.
 
-**major: 24, minor: 80** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
+**major: 25, minor: 80** (plus 107 no-code landings, not counted). Seeded 2026-10-23 from
 `git log --first-parent --merges --since=2026-10-08 main` (merges named "merge main into" excluded).
 PROVISIONAL: class is set by a mechanical rule (path touched, abi-event wording in the merge subject,
 a short capability keyword list); manager to confirm. Landings dated 2026-10-08 may predate the
@@ -30,6 +30,7 @@ after the iterator landing.
 
 ### major
 
+- 2026-10-23 b8c66a739 major — merge lane/iterland: find-all iterators, abi 84
 - 2026-10-21 813f43ec8 major — Merge lane/m0build: [MEASURE-SET] M0, the measures kind + <PREFIX>_MEASURES / rx_info.measures, abi 81 -> 82 (
 - 2026-10-20 73c2bb655 major — Merge lane/ctxp2d: P2d (\A/\z at the NFA layer), zero movers, abi 81
 - 2026-10-20 d06b530f7 major — Merge lane/ctxbuild: [DD-11.5] P2a-P2c, (?m)^/(?m)$ into A_CTX, abi 80 -> 81 (heavy validation green)
