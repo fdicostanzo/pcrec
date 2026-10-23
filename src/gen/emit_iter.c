@@ -19,6 +19,50 @@
  * emitter, and count like one. */
 #include "core/internal.h"
 
+/* The retry rows' predicates. `none`: nothing is retried -- no
+ * `<prefix>_next`, a compound part (which never iterates), or no empty span
+ * is ever reported. */
+static bool retry_none_applies(Ctx *cx)
+{
+    return !pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) || pcrec_is_part(cx) ||
+           !pcrec_fact_reports_empty(cx);
+}
+/* `notempty-machine`: a DFA artifact. */
+static bool retry_machine_applies(Ctx *cx)
+{
+    return cx->job->fit.chosen == ENGM_DFA;
+}
+/* `guarded-matcher`: a VM artifact. */
+static bool retry_matcher_applies(Ctx *cx)
+{
+    return cx->job->fit.chosen == ENGM_VM;
+}
+
+/* THE RETRY TABLE (internal.h), first match. `retry`: the anchored scan of
+ * a machine whose start never accepts, so it cannot give up. `retry-budgeted`:
+ * one anchored attempt of the VM program with its accept guarded, metered
+ * like any search, so a give-up can end the iteration there. */
+static const PcrecIterRetryRow iter_retry_rows[] = {
+    { "none",             "none",           retry_none_applies,    0 },
+    { "notempty-machine", "retry",          retry_machine_applies, PCREC_ITER_NEEDS_NEDFA },
+    { "guarded-matcher",  "retry-budgeted", retry_matcher_applies, PCREC_ITER_NEEDS_GUARDED },
+};
+
+const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx)
+{
+    /* `none` reads the request, which the driver can ask before emission;
+     * `next` is a root no row calls, so the closure emits it exactly then */
+    if (cx->job->entry_shaped &&
+        pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) != pcrec_entry_requested(cx, PCREC_ENTRY_NEXT))
+        pcrec_ctx_fail(cx, 0, "internal error: `next` is emitted where the entry "
+                       "request does not name it, or the reverse");
+    for (size_t i = 0; i < sizeof iter_retry_rows / sizeof *iter_retry_rows; i++)
+        if (iter_retry_rows[i].applies(cx)) return &iter_retry_rows[i];
+    pcrec_ctx_fail(cx, 0, "internal error: an artifact that reports an empty "
+                   "span has no find-all retry row (src/gen/emit_iter.c)");
+    return NULL;
+}
+
 /* The shared block's iterator text: `PCREC_ERR_ITER` sits with the other
  * codes (emit_dfa.c); this is the type, its states and its setters. */
 void pcrec_emit_iter_abi_types(StrBuf *sb)
@@ -211,7 +255,8 @@ static const char *cursor_args(Ctx *cx, const PcrecIterText *t)
  * the aligned end (K75); after an empty one it is the retry at its position,
  * or the end at `n`; on an artifact whose reported span is never empty it is
  * today's loop's `next_pos(start)`, unreachable but exact. */
-static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
+static void emit_step(Ctx *cx, StrBuf *c, const char *p, const char *body,
+                      const PcrecIterText *t)
 {
     const char *runp = t->vm ? ", " : "";
     const char *runt = t->vm ? pcrec_sb_fragf(&cx->arena, "%s_run_state *run", p) : "";
@@ -237,8 +282,8 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
             "    }\n", p, runa, va, p, p);
     pcrec_sb_printf(c,
         "    *at = lo;\n"
-        "    r = %s__find(s, n, lo, c%s%s);\n"
-        "    if (r != 1) return r;\n", p, runa, va);
+        "    r = %s(s, n, lo, c%s%s);\n"
+        "    if (r != 1) return r;\n", body, runa, va);
     if (t->retry)
         pcrec_sb_printf(c,
             "%s_matched:\n"
@@ -390,8 +435,9 @@ static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
  * `capture_spans` goes to `<p>__one_local`, the one function that owns the
  * NCAPS-pair stack buffer STEP then writes: with that array out of the
  * controllers, gcc's -fstack-protector-strong (Ubuntu's default) puts no
- * canary on them, which it did on every call (lane iteropt, measured 6-7
- * instructions per call). */
+ * canary on them, which it did on every call (measured, 6-7 instructions
+ * per call). It CALLS `<prefix>_next` with that buffer rather than holding
+ * a third copy of the step (and of the search body inlined into it). */
 static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
                              const PcrecIterText *t)
 {
@@ -401,7 +447,7 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
         "{\n"
         "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
         "    local[0][0] = local[0][1] = 0;   /* -Wmaybe-uninitialized: gcc cannot see the search write them */\n"
-        "    return %s__one_call(it, local);\n"
+        "    return %s_next(it, local);\n"
         "}\n\n", pcrec_attr_text(PCREC_ATTR_NOINLINE), p, up, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
@@ -449,9 +495,14 @@ void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
         " * S3.8): bind once, then one search per call, advancing as PCRE2's\n"
         " * global iteration does. */\n");
     pcrec_sb_cmt_close(c);
+    /* the search the step runs: the body without the prologue the bind ran,
+     * or the search itself where it has none (entries.c's `pr_next_*`) */
+    const char *body = pcrec_entry_emitted(cx, PCREC_ENTRY_FIND)
+        ? pcrec_sb_fragf(&cx->arena, "%s__find", p)
+        : t->vm ? pcrec_sb_fragf(&cx->arena, "%s_run", g->searchfn) : g->searchfn;
     bool checks = emit_bind_checks(cx, c, p);
     emit_enter(c, p, checks);
-    emit_step(cx, c, p, t);
+    emit_step(cx, c, p, body, t);
     if (t->vm) emit_step_own(cx, c, p, g->upper, t);
     emit_one(cx, c, p, t);
     emit_one_call(c, p, t);

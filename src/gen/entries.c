@@ -108,6 +108,15 @@ static bool sh_tie(const PcrecEntryShape *s)        { return s->search_match; }
 static bool sh_hybrid(const PcrecEntryShape *s)     { return s->hybrid; }
 static bool sh_vars(const PcrecEntryShape *s)       { return s->vars; }
 static bool sh_cb(const PcrecEntryShape *s)         { return s->comp_b; }
+static bool sh_find(const PcrecEntryShape *s)       { return s->find; }
+static bool sh_tie_whole(const PcrecEntryShape *s)  { return s->search_match && !s->find; }
+static bool sh_cb_whole(const PcrecEntryShape *s)   { return s->comp_b && !s->find; }
+static bool sh_whole(const PcrecEntryShape *s)      { return !s->find; }
+static bool sh_plain_find(const PcrecEntryShape *s) { return sh_plain_dfa(s) && s->find; }
+static bool sh_vm_find(const PcrecEntryShape *s)    { return s->vm && s->find; }
+static bool sh_hybrid_whole(const PcrecEntryShape *s) { return s->hybrid && !s->find; }
+static bool sh_vars_whole(const PcrecEntryShape *s) { return s->vars && !s->find; }
+static bool sh_comp_find(const PcrecEntryShape *s)  { return sh_comp(s) && s->find; }
 
 #define PARTS(a) a, (int)(sizeof a / sizeof *a)
 #define NOPARTS NULL, 0
@@ -116,13 +125,16 @@ static bool sh_cb(const PcrecEntryShape *s)         { return s->comp_b; }
  * text of each shape (emit_dfa.c's `pcrec_emit_dfa`, emit_compound.c's
  * `first-nonzero` emitters, emit_vm.c's `vm_emit_entries` and search body,
  * the src/enc/ residual templates, `pcrec_emit_main`). */
-/* [FINDALL-NEXT] a DFA `<p>_search` is its caller-position prologue and the
- * body, `<p>__find`, which the iterator's every step runs too. */
+/* [FINDALL-NEXT] where `<p>_next` is emitted, a DFA `<p>_search` is its
+ * caller-position prologue over the body, `<p>__find`, which the iterator's
+ * every step runs too; elsewhere it is one function, the body its own. */
 static const PartRef pr_dfa_search[] = {
-    { PCREC_ENTRY_FIND,        sh_always, rk_r2 },
+    { PCREC_ENTRY_FIND,        sh_find,      rk_r2 },
+    /* a `rev-end` walk that can tie verifies the tie with `_match` */
+    { PCREC_ENTRY_MATCH,       sh_tie_whole, rk_r0 },
     /* every caller-position prologue runs the subject check
      * (`pcrec_emit_startpos_guard`) */
-    { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r2 },
+    { PCREC_ENTRY_VALID_UPTO,  sh_utf,       rk_r2 },
 };
 static const PartRef pr_dfa_find[] = {
     /* a `rev-end` walk that can tie verifies the tie with `_match` */
@@ -135,8 +147,11 @@ static const PartRef pr_to_caps[]   = { { PCREC_ENTRY_MATCH_CAPS, sh_always, rk_
 /* split's `first-nonzero(F @ x, Q @ next_pos(x))` (§B.2): F where the floor
  * can be live, a relocation and Q unless Q is `never`. */
 static const PartRef pr_comp_search[] = {
-    { PCREC_ENTRY_FIND,        sh_always, rk_r2 },
-    { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r2 },
+    { PCREC_ENTRY_FIND,        sh_find,     rk_r2 },
+    { PCREC_ENTRY_VALID_UPTO,  sh_utf,      rk_r2 },
+    { PCREC_ENTRY_COMP_A,      sh_whole,    rk_comp_a },
+    { PCREC_ENTRY_NEXT_POS,    sh_cb_whole, rk_r1 },
+    { PCREC_ENTRY_COMP_B,      sh_cb_whole, rk_r2 },
 };
 static const PartRef pr_comp_find[] = {
     { PCREC_ENTRY_COMP_A,      sh_always, rk_comp_a },
@@ -172,10 +187,17 @@ static const PartRef pr_vm_caps_in[]    = {
     { PCREC_ENTRY_MATCH_CAPS_RUN, sh_always, rk_r1 },
 };
 /* VM: the search loop asks the hybrid's embedded DFA search for its window;
- * every `_run` body runs the subject check and resolves the variables. */
+ * every `_run` body runs the subject check and resolves the variables.
+ * [FINDALL-NEXT] Where `<p>_next` skips a caller-position prologue, the
+ * search `_run` static is that prologue over the loop, `<p>__find`. */
 static const PartRef pr_vm_search_run[] = {
+    { PCREC_ENTRY_FIND,        sh_find,         rk_r2 },
+    { PCREC_ENTRY_PREFILTER,   sh_hybrid_whole, rk_prefilter },
+    { PCREC_ENTRY_VALID_UPTO,  sh_utf,          rk_r2 },
+    { PCREC_ENTRY_VAR_VALID,   sh_vars_whole,   rk_r2 },
+};
+static const PartRef pr_vm_find[] = {
     { PCREC_ENTRY_PREFILTER,   sh_hybrid, rk_prefilter },
-    { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r2 },
     { PCREC_ENTRY_VAR_VALID,   sh_vars,   rk_r2 },
 };
 static const PartRef pr_vm_run[] = {
@@ -183,16 +205,19 @@ static const PartRef pr_vm_run[] = {
     { PCREC_ENTRY_VAR_VALID,   sh_vars,   rk_r2 },
 };
 /* [FINDALL-NEXT] the iterator (findall_iter.md §2.1): every step runs the
- * search body (a DFA's `<p>__find`, a VM's search loop, emitted with
- * `<p>_search_run`) and advances with the `next_pos` twin; the once-per-
- * iterator bind runs the subject check where the artifact has one. */
+ * search body (`<p>__find` where the search entry has a prologue to skip,
+ * else the search itself: a DFA's `<p>_search`, a VM's `<p>_search_run`)
+ * and advances with the `next_pos` twin; the once-per-iterator bind runs the
+ * subject check where the artifact has one. */
 static const PartRef pr_next_dfa[] = {
-    { PCREC_ENTRY_FIND,        sh_always, rk_r2 },
+    { PCREC_ENTRY_FIND,        sh_find,   rk_r2 },
+    { PCREC_ENTRY_SEARCH,      sh_whole,  rk_r2 },
     { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r2 },
     { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
 };
 static const PartRef pr_next_vm[] = {
-    { PCREC_ENTRY_SEARCH_RUN,  sh_always, rk_r2 },
+    { PCREC_ENTRY_FIND,        sh_find,   rk_r2 },
+    { PCREC_ENTRY_SEARCH_RUN,  sh_whole,  rk_r2 },
     { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r2 },
     { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
 };
@@ -206,14 +231,14 @@ static const PartRef pr_var_valid[] = { { PCREC_ENTRY_VALID_UPTO, sh_always, rk_
 static const EntryRow entry_rows[] = {
     /* DFA (not a compound) */
     { PCREC_ENTRY_SEARCH,       sh_plain_dfa,  PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_search),    EM_ONESHOT },
-    { PCREC_ENTRY_FIND,         sh_plain_dfa,  PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_find),      EM_ITER },
+    { PCREC_ENTRY_FIND,         sh_plain_find, PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_find),      EM_ITER },
     { PCREC_ENTRY_MATCH,        sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_dfa_own),       EM_ONESHOT },
     { PCREC_ENTRY_MATCH,        sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EM_ONESHOT },
     { PCREC_ENTRY_MATCH_CAPS,   sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_to_match),      EM_ONESHOT },
     { PCREC_ENTRY_MATCH_CAPS,   sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EM_ONESHOT },
     /* a compound's controller (emit_compound.c) */
     { PCREC_ENTRY_SEARCH,       sh_comp,       PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_search),   EM_ONESHOT },
-    { PCREC_ENTRY_FIND,         sh_comp,       PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_find),     EM_ITER },
+    { PCREC_ENTRY_FIND,         sh_comp_find,  PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_find),     EM_ITER },
     { PCREC_ENTRY_MATCH,        sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EM_ONESHOT },
     { PCREC_ENTRY_MATCH_CAPS,   sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EM_ONESHOT },
     { PCREC_ENTRY_COMP_A,       sh_comp,       PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EM_ONESHOT },
@@ -234,6 +259,7 @@ static const EntryRow entry_rows[] = {
     { PCREC_ENTRY_MATCH_CAPS,   sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_fwd),   EM_ONESHOT },
     { PCREC_ENTRY_MATCH_CAPS_IN, sh_vm,        PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_in),    EM_ONESHOT },
     { PCREC_ENTRY_SEARCH_RUN,   sh_vm,         PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_search_run), EM_ONESHOT },
+    { PCREC_ENTRY_FIND,         sh_vm_find,    PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_find),       EM_ITER },
     { PCREC_ENTRY_MATCH_RUN,    sh_vm,         PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EM_ONESHOT },
     { PCREC_ENTRY_MATCH_CAPS_RUN, sh_vm,       PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EM_ONESHOT },
     { PCREC_ENTRY_PREFILTER,    sh_vm_hybrid,  PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EM_ONESHOT },
@@ -398,6 +424,14 @@ const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e)
 bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e)
 {
     return pcrec_entry_linkage(cx, e) != PCREC_LINK_OMITTED;
+}
+
+bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e)
+{
+    const PcrecEntryReq dr = entry_default_req(cx);
+    const PcrecEntryReq *r =
+        cx->emit_in && cx->emit_in->req ? cx->emit_in->req : &dr;
+    return ((r->exported | r->kept) & PCREC_ENTRY_BIT(e)) != 0;
 }
 
 /* The src/enc/ ids among the residual rows with linkage `want`. */

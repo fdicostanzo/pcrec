@@ -927,6 +927,16 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
     emit_utf_check(cx, c, indent, posvar, subjvar, lenvar);
 }
 
+bool pcrec_startpos_prologue_on(Ctx *cx)
+{
+    StrBuf g = { .cx = cx };
+    pcrec_emit_startpos_guard(cx, &g, "    ", "search_from", "subject",
+                              "subject_length", false);
+    const bool on = g.len > 0 || g.cmt_dropped > 0;
+    pcrec_sb_free(&g);
+    return on;
+}
+
 /* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
  * is not a character start of this artifact's encoding, no match is attempted
  * there, and the site does what `act` names instead — SEEK moves `posvar` on to
@@ -4237,13 +4247,26 @@ static bool dfa_needs_gseed(const Dfa *d)
     return false;
 }
 
+/* Does this machine's start depend on the left context at all: mechanism 4's
+ * seeding, or a boundary start `s0` that is not the interior one (a `^` or
+ * `\A` at the start, which the seeded form honours by starting in `s0` at
+ * `search_from == 0` alone)? The search routes' machines never have the
+ * second (ENG_UNANCH implies no start-of-subject node,
+ * `start_pinned_assert_routing`); the find-all iterator's retry machine, run
+ * at any position, does. The one derivation the seed form and the seed
+ * table's dead-cell readers share. */
+static bool dfa_start_from_context(const Dfa *d)
+{
+    return dfa_needs_seed(d) || d->s0 != d->s1u[UPC_PLAIN];
+}
+
 /* Does this machine's emitted seed table hold a dead cell? The loop mirrors
  * `emit_seed_table`'s own, so the two cannot disagree about which cells are
  * emitted; a machine with no seed table has none. Read by `dfa_premul`'s seed
  * precondition and by `dfa_entry_can_be_dead` — one fact, both readers. */
 static bool dfa_seed_has_dead(const Dfa *d)
 {
-    if (!dfa_needs_seed(d)) return false;
+    if (!dfa_start_from_context(d)) return false;
     for (int cl = 0; cl < d->ncls; cl++)
         if (d->s1u[upc_of_class(d, cl)] < 0) return true;
     return false;
@@ -5018,7 +5041,7 @@ static int dfa_uniform_folds(Ctx *cx)
     /* [FINDALL-NEXT] the iterator's retry machine is no member of the search
      * path, but its tables are the artifact's and fold like any machine's
      * (`pcrec_emit_dfa_retry`), so they count where it is emitted. */
-    if (cx->job->retry_ok && pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
+    if (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA)
         n += uniform_folds_of(cx, &cx->job->nedfa);
     return n;
 }
@@ -6355,7 +6378,7 @@ static const DfaView dfa_views[] = {
 
 /* AXIS D's first candidate: does this machine need mechanism 4's start
  * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
-static bool seed_applies(const CandSel *s) { return dfa_needs_seed(s->d); }
+static bool seed_applies(const CandSel *s) { return dfa_start_from_context(s->d); }
 
 /* The start state's cell, the dead cell when `s0` is dead. [UCP] U2: a
  * REVERSE machine's `s0` ("no character to the right") is dead for a pattern
@@ -13817,6 +13840,34 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
     o->empty   = false;   /* the caller's candidate already excluded it */
 }
 
+/* The anchored scan's head: machine `f`'s tables and the scan's two locals,
+ * the scan starting at `search_from`. */
+static void emit_anchored_scan_head(StrBuf *c, const DfaForm *f)
+{
+    emit_machine_tables(c, f);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
+               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
+               "    // scan, so the longest match wins; no reverse pass,\n"
+               "    // because the start is the caller's.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+}
+
+/* THE ANCHORED BODY, one for both of its callers: an untagged machine `f`
+ * run forward from `search_from` to its last accept, returning -1 from the
+ * enclosing function where none was recorded. `<prefix>_match`'s
+ * `unwrapped` form runs it over the anchored machine; the find-all
+ * iterator's retry over the notempty machine (`pcrec_emit_dfa_retry`). Each
+ * caller writes its own prologue before it and its answer after it. */
+static void emit_anchored_scan(StrBuf *c, const DfaForm *f)
+{
+    emit_anchored_scan_head(c, f);
+    emit_scan_loop(c, f);
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n");
+}
+
 /* THE MATCH-HERE BODY. `<prefix>_match` stops being a wrapper around
  * `<prefix>_search` and becomes a scan of its own — the artifact's THIRD
  * machine, run forward from `ctx->pos`, with no reverse pass and no
@@ -13879,22 +13930,13 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
                               "subject_length", true);
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_NOMATCH);
-    emit_machine_tables(c, f);
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
-               "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
-               "    // scan, so the longest match wins; no reverse pass,\n"
-               "    // because the start is the caller's.\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
     if (!f->d->tagged) {
-        emit_scan_loop(c, f);
-        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-                   "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+        emit_anchored_scan(c, f);
+        pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
                    "}\n");
         return;
     }
+    emit_anchored_scan_head(c, f);
     /* D164 B3 the LOWERED anchored machine (one lowering per artifact,
      * endmark.md §R.2.1): its accept carries the distance back to the marked
      * end (`DfaForm.accv`), and the length is to that end. */
@@ -13930,43 +13972,36 @@ void pcrec_emit_dfa_anchored_match(Ctx *cx, StrBuf *c, const GenNames *g)
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
 }
 
-/* [FINDALL-NEXT] THE RETRY MACHINE's DIRECTION (findall_iter.md §3.3): the
- * anchored direction's strings under the machine name `retry`, so its
- * accessor block cannot collide with the anchored machine's in one file. */
-static const DfaDir dfa_dir_retry = {
-    { "retry", 0, cand_always },
-    "Retry", "RETRY", "retry_state", "retry_view_state",
-    "scan_position", "last_accept_position",
-    "    ", "        ", false, false,
-    "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
-    "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
-    "     * anchored machine whose start state never accepts and keeps every\n"
-    "     * thread below the empty match, so its last accept is the preferred\n"
-    "     * NON-EMPTY match beginning there.\n"
-    "     *\n",
-    "a non-empty match beginning at search_from may end",
-    "    if (search_from > subject_length) return -1;\n", "return -1;",
-    NULL, NULL,
-    "scan_position >= subject_length",
-    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
-    dir_fwd_skip, dir_fwd_bound_accept,
-    "scan_position < subject_length", "scan_position - 1",
-};
-
 /* [FINDALL-NEXT] `<p>__retry`, the DFA iterator's retry R (findall_iter.md
- * §3.3): the notempty machine (`Job.nedfa`) run forward from `search_from`
- * exactly as the anchored match-here body runs, writing the match into
- * `capture_spans` (the dead groups unset, `_search`'s rule) and returning its
- * length, or -1. Its tables are a machine's and count like one; no
- * candidate-start prefilter, for the match-here's reason (`anch_start`). */
+ * §3.3): the anchored body (`emit_anchored_scan`) over the notempty machine
+ * (`Job.nedfa`) from `search_from`, writing the match into `capture_spans`
+ * (the dead groups unset, `_search`'s rule) and returning its length, or -1.
+ * Its direction is the anchored one under the machine name `retry`, so its
+ * accessor block cannot collide with the anchored machine's in one file; its
+ * start state is the left context's (`seed_applies`), so a `^` or `\A` holds
+ * at `search_from == 0` alone. Its tables are a machine's and count like one;
+ * no candidate-start prefilter, for the match-here's reason (`anch_start`). */
 void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
 {
-    UnanchStart base, aus;
+    DfaDir dir = dfa_dir_anchored;
+    dir.c.name = "retry";
+    dir.title = "Retry";
+    dir.label = "RETRY";
+    dir.statev = "retry_state";
+    dir.viewv = "retry_view_state";
+    dir.tbl_hdr =
+        "    /* ---- RETRY TABLES: [FINDALL-NEXT] after an EMPTY match at\n"
+        "     * search_from, the find-all iterator's NOTEMPTY_ATSTART retry: the\n"
+        "     * anchored machine whose start state never accepts and keeps every\n"
+        "     * thread below the empty match, so its last accept is the preferred\n"
+        "     * NON-EMPTY match beginning there.\n"
+        "     *\n";
+    dir.acc_meaning = "a non-empty match beginning at search_from may end";
+    const UnanchStart none = { .kind = DFA_PF_NONE };
+    UnanchStart aus;
     DfaForm f;
-    memset(&base, 0, sizeof base);
-    base.kind = DFA_PF_NONE;
-    anch_start(&cx->job->nedfa, &base, &aus);
-    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dfa_dir_retry, &f);
+    anch_start(&cx->job->nedfa, &none, &aus);
+    dfa_form_derive(cx, &cx->job->nedfa, &aus, &dir, &f);
     if (f.d->tagged)
         pcrec_ctx_fail(cx, 0, "internal error: the iterator's retry machine is "
                        "tagged (it is built from the plain forward NFA)");
@@ -13976,12 +14011,8 @@ void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c)
         "static ptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
         "                          size_t search_from, ptrdiff_t (*capture_spans)[2])\n"
         "{\n", cx->opt->prefix);
-    emit_machine_tables(c, &f);
-    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
-               "    size_t last_accept_position = (size_t)-1;\n");
-    emit_scan_loop(c, &f);
-    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-               "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
+    emit_anchored_scan(c, &f);
+    pcrec_sb_puts(c, "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
                "    capture_spans[0][1] = (ptrdiff_t)last_accept_position;\n");
     emit_dead_group_fill(cx, c, "    ");
     pcrec_sb_puts(c, "    return (ptrdiff_t)(last_accept_position - search_from);\n"
@@ -14998,16 +15029,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          ? "guarded" : "permissive");
     }
     /* [FINDALL-NEXT] `<PREFIX>_ITER_RETRY` (findall_iter.md §6.3): how the
-     * iterator retries an empty match at its position. "none" where it
-     * never reports an empty span (or exports no iterator), "dfa-root"
-     * where the retry is the notempty-rooted machine (compile.c's
-     * `retry_ok`, the flag the retry's emitter reads), "vm-guard" where it
-     * is the VM accept label's guard. */
+     * iterator retries an empty match at its position, the retry table's
+     * winner (`pcrec_iter_retry_of`, src/gen/emit_iter.c). */
     pcrec_sb_scaffold_open(c);
-    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY",
-                 !pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) ||
-                 !pcrec_fact_reports_empty(cx) ? "none"
-                 : cx->job->retry_ok ? "dfa-root" : "vm-guard");
+    pcrec_sb_stamp_str(c, g->upper, "ITER_RETRY", pcrec_iter_retry_of(cx)->tok);
     pcrec_sb_scaffold_close(c);
     /* [UTF-VALID] `<PREFIX>_UTF_CHECK` — THE SUBJECT CHECK'S CONTRACT, the
      * startpos-guard stamp's family (a) sibling: unconditional, on every
@@ -15662,6 +15687,8 @@ void pcrec_emit_dfa(Ctx *cx)
             .compound = shell != NULL,
             .comp_b = shell && shell->text[1],
             .comp_floor_any = shell && shell->floor_any,
+            .find = pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) &&
+                    pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }
@@ -15729,7 +15756,10 @@ in_entries:
     /* [FINDALL-NEXT] the find-all iterator: the retry machine where the
      * artifact can report an empty span, then `iterate`'s entry. */
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT)) {
-        const PcrecIterText it = { .vm = false, .retry = cx->job->retry_ok };
+        const PcrecIterText it = {
+            .vm = false,
+            .retry = (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA) != 0,
+        };
         const PcrecEntryText t = { .iter = &it };
         if (it.retry) pcrec_emit_dfa_retry(cx, c);
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_NEXT, &t);

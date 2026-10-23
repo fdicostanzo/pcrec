@@ -3098,9 +3098,9 @@ typedef struct {
      * NOTEMPTY start root (`Dfa.notempty`). Built on a DFA artifact whose
      * reported span can be empty (`pcrec_fact_reports_empty`), where it is the
      * iterator's only correct retry, so it is MANDATORY: an overflow is the
-     * DFA engine's like any machine's. `retry_ok` says it was built. */
+     * DFA engine's like any machine's. Built where THE RETRY TABLE's winner
+     * needs it (`PCREC_ITER_NEEDS_NEDFA`). */
     Dfa    nedfa;
-    bool   retry_ok;
     /* [ENG-ABS] Did that machine BUILD, on an artifact whose `_match` this
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
@@ -6823,6 +6823,11 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 /* [UTF-VALID] Is the subject check emitted in this artifact (the flag, on an
  * encoding with ill-formed byte strings)? src/gen/emit_dfa.c. */
 bool pcrec_utf_check_on(Ctx *cx);
+/* [FINDALL-NEXT] Does the caller-position prologue above write anything on
+ * this artifact (a search's, unanchored)? Where it does not, a search entry
+ * has nothing the find-all iterator skips, so it stays one function and the
+ * iterator calls it (findall_iter.md §2.2). src/gen/emit_dfa.c. */
+bool pcrec_startpos_prologue_on(Ctx *cx);
 /* [K73] What a site does when offset 0 is not a character start: a search
  * SEEKs the next start, an anchored match-here entry answers NOMATCH, an
  * attempt loop SKIPs the attempt. See `pcrec_emit_start_zero`. */
@@ -7553,6 +7558,11 @@ typedef struct {
                          * `never`), so the search relocates to it */
     bool comp_floor_any; /* compound: the first operand is asked on every
                          * call (`\G`), not only at offset 0 */
+    bool find;          /* the search entry (DFA: `_search`; VM: `_search_run`)
+                         * is its caller-position prologue over the body
+                         * `<p>__find`, which `<p>_next` runs without it: where
+                         * `next` is emitted and the prologue writes anything
+                         * ([FINDALL-NEXT]); else the iterator calls the entry */
 } PcrecEntryShape;
 
 typedef enum {
@@ -7590,6 +7600,10 @@ PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
 const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e);
 /* True iff `e` is emitted at all (not OMITTED). */
 bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
+/* True iff the entry request names `e` (exported or kept): answerable
+ * before the shape is stated, and `pcrec_entry_emitted` for an entry no row
+ * calls (`next`), which only the request can make live. */
+bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e);
 /* [COMPOUND] E0c: the combinator of `e`'s `entry_rows[]` row on the stated
  * shape. Asked of an entry with no row there, or before the shape is
  * stated, it fails as an internal error. */
@@ -8140,6 +8154,21 @@ void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix);
 void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage);
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
                         const PcrecIterText *t);
+/* [FINDALL-NEXT] src/gen/emit_iter.c -- THE RETRY TABLE: how the find-all
+ * iterator retries an empty match at its position (PCRE2's NOTEMPTY_ATSTART
+ * retry), one declared row per way, first match. A row's `needs` names what
+ * the artifact must carry for it: the driver builds the notempty machine
+ * (`Job.nedfa`) where the winner needs it, the VM emitter writes the
+ * guarded matcher copy, and `<PREFIX>_ITER_RETRY` prints the winner's
+ * `tok`. */
+enum { PCREC_ITER_NEEDS_NEDFA = 1u << 0, PCREC_ITER_NEEDS_GUARDED = 1u << 1 };
+typedef struct {
+    const char *name;                   /* the row */
+    const char *tok;                    /* the stamp's value: what a caller sees */
+    bool      (*applies)(Ctx *cx);
+    unsigned    needs;                  /* PCREC_ITER_NEEDS_* */
+} PcrecIterRetryRow;
+const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx);
 
 /* src/gen/stamp_kinds.c -- THE STAMP CATALOGUE (compound.md §A.7): every
  * stamp an emitter writes, PATTERN-level (true of the pattern and the caller

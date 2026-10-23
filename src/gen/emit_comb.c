@@ -533,10 +533,10 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
     case PCREC_COMB_LOCATE_FINISH:
         if (!t->body) break;
         /* `locate-then-finish`'s ONE emitter: the DFA search body under the
-         * entry's name and linkage. [FINDALL-NEXT] The search entry's body is
-         * `<p>__find` (its FIND row), and `<p>_search` is its prologue over
-         * that body. */
-        if (e == PCREC_ENTRY_SEARCH) {
+         * entry's name and linkage. [FINDALL-NEXT] Where the iterator runs
+         * the body too (the FIND row is live), the search entry's body is
+         * `<p>__find`, and `<p>_search` is its prologue over that body. */
+        if (e == PCREC_ENTRY_SEARCH && pcrec_entry_emitted(cx, PCREC_ENTRY_FIND)) {
             pcrec_emit_dfa_engine(cx, find_name(cx), PCREC_ENTRY_FIND);
             pcrec_emit_search_wrapper(cx, c, g->searchfn);
             return true;
@@ -545,6 +545,11 @@ bool pcrec_emit_entry(Ctx *cx, const GenNames *g, PcrecEntry e,
         return true;
     case PCREC_COMB_FIRST_NONZERO:
         if (!t->shell || e != PCREC_ENTRY_SEARCH) break;
+        if (!pcrec_entry_emitted(cx, PCREC_ENTRY_FIND)) {
+            pcrec_emit_compound_search(cx, c, t->shell, g->searchfn, PCREC_ENTRY_SEARCH,
+                                       g->upper);
+            return true;
+        }
         pcrec_emit_compound_search(cx, c, t->shell, find_name(cx), PCREC_ENTRY_FIND,
                                    g->upper);
         pcrec_emit_search_wrapper(cx, c, g->searchfn);
