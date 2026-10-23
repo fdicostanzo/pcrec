@@ -42,7 +42,14 @@ the bump's own commit.**
   `capture_spans` goes to the new `noinline` `<prefix>__one_local`, the one
   function that owns the NCAPS-pair stack buffer, so `<prefix>_next` and
   `<prefix>_next_n` declare no local array (match_api.md §3.8¶5). Still
-  scaffold; no answer moves.
+  scaffold; no answer moves. Folded in by lane iteropt2 (2026-10-22, before
+  the landing): `<prefix>__step` and `<prefix>__one` take a cursor (the
+  subject, `lo` and, with the retry, `flags`, by pointer) instead of reading
+  and writing `rx_iter`; the bind moves out of `<prefix>__one` into the new
+  `always_inline` `<prefix>__one_call` (`<prefix>_next`'s body, whose cursor
+  is the iterator's own fields) and `<prefix>_next_n`, which holds the cursor
+  in locals across its loop and returns before the bind when `k == 0`.
+  Still scaffold; no answer moves.
 - **`rx_info.abi` was `83` (lane i1build bumped it
   from 82, 2026-10-21: [FINDALL-NEXT] I1, docs/design/findall_iter.md rev 3
   as cut by the I1 rulings, D165, D171).** Every artifact gains the find-all

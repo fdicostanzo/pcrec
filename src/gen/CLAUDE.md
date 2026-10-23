@@ -4588,6 +4588,14 @@ K112's corrected wording (`src/core/ctxfn.def`).
   NCAPS-pair stack buffer, so neither controller carries the
   `-fstack-protector-strong` canary; `rx_iter_init` writes every field, so
   `<p>__enter` stores only the header (plus the bind checks) and is
-  `static inline`. `<p>__one`'s text is unchanged.
-  `docs/dev/lanes/iteropt_report.md` has the instruction counts.
+  `static inline`. `docs/dev/lanes/iteropt_report.md` has the instruction
+  counts.
+- **Lane iteropt2 (2026-10-22, folded into abi 84): the cursor.** `<p>__step`
+  and `<p>__one` take the subject, `*lop` and (with the retry) `*flp` instead
+  of `rx_iter` fields (`cursor_params`/`cursor_args`); `<p>__one` no longer
+  binds. `<p>__one_call` (`_next`'s body, also `<p>__one_local`'s) binds and
+  passes the iterator's own `&it->lo`/`&it->flags`; `_next_n` binds once,
+  holds `s`/`n`/`lo`/`flags` in locals across its loop and stores them once.
+  `run_one_body.sh` was re-pinned to this `<p>__one`.
+  `docs/dev/lanes/iteropt2_report.md` has the instruction counts.
 
