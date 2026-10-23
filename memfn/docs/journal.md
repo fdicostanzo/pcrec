@@ -2769,3 +2769,13 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - the floors had ~10% slack.
 - Lane s3fix (opus) folds all of it into the ONE S3 commit. 588 gains a stratified mover sample, read as findings and not part of the §6 bar.
 - 587 waits for s3fix plus main's 598.
+
+## 2026-10-23 — Frank's ruling: D-hors decline withdrawn, measure E[sh]
+
+- Frank asked about the cost/benefit of review fix C ("D-hors declines when no shift exceeds 1"). He said the metric should be defined and measured.
+- The manager agreed that C was a byte move on an argument, with no measurement (D77). The defined metric is E[sh] = Σ rate[b]·sh[b], the expected shift under the byte-rate prior, read as the wf-hors alpha (D-hors vs D-one) at both layers. "max sh = 1" is only the degenerate case E[sh] = 1.
+- Ruling (Frank: "Agree"):
+  - C is OUT of the S3 commit; B's asserts stay.
+  - 588 gains a D-hors admission reading stratified by E[sh]. These are findings, outside the §6 bar.
+  - The admission rule (one declared row priced on E[sh], with HORS_MIN) is decided from that reading.
+- Lane s3hors is doing it. The K27 both-arms fixture (F-5) also ships as a test-only commit.
