@@ -3021,3 +3021,6 @@ the compiler, and is never adopted silently. Proposed for main to file
   - The resolution must be fine enough that the prior's rates are never collapsed (`\d\dxyz`: 997 vs 498 ppm no longer tie).
   - Prices within the measurement-noise band count as a tie, decided by the existing declared tie rows.
   - Built in the study's step 4 with the other pricing folds; a byte move with a mover census.
+- notice: 2026-10-23 — **Stop-ranking Q6 (Frank: "Yes file it. Nice generalization"):** the two-stream find's row contract widens from "a one-bit case pair inside a literal stretch" to ANY two-byte set at ANY window position, as a Table B row-contract edit, not a new mechanism. It is FILED, not built.
+  - **Trigger:** step 0's census shows a real population of two-byte non-case-pair stops, AND the pair method card is measured on the box.
+  - **The arbitrary-pair SIMD kernel** (two compares + OR, versus the one-bit fold) is a separate filed SIMD-layer row that must beat scalar.

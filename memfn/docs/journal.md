@@ -2832,3 +2832,16 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Lane s3c1 (opus) is briefed: E-find asks Table B the design's question and renders its pick (PAIR/SIMD included). It also covers Table D as a kit_table and C9/C11/C13/C14/C15/C2. The window_site rev 3.3 draft is included.
   - C5/C6/C8/C12/C16 are out of scope.
   - The sample joins the bar, and foobar match/real gets a layout cap of 1.052.
+
+## 2026-10-23 (evening) — stop-ranking study ruled, Q1-Q6
+
+- Study: lane/memfn-stopstudy 0567def22, docs/design/memfn/stop_ranking_study.md. It found 7 of 20 surveyed choosers answer one question, "which stop, found how".
+- Frank's rulings (full text in responses.md):
+  - **Q1 yes:** one priced choice in Table A over position × method, with Table B quoting prices. Costs live in ONE visible table (the measurement set, via --list-measurements, relative to the walk, raw readings as provenance, stamped per artifact). An option changes a cost only through a visible key or row.
+  - **Q2 yes:** D-hors becomes a priced method; HORS_MIN is deleted.
+  - **Q3 yes:** this box is measured now (memchr, pair, probe, verify cards → zen4-grid1 rev 2, night, after the census). The canned self-contained script, closest-match library, other-machine targeting and generic envelope go into [MEASURE-SET], updated by main at 2ed772381.
+  - **Standing rule:** a new method adds its measurement card.
+  - **Q4 REVISED to:** one decider for presence and stop; the window's span array also carries UNBOUNDED-offset spans (presence-only); the fold is a general rule.
+  - **Q5:** higher-resolution fixed-point integers, not depending on compiler options; within-noise prices are ties.
+  - **Q6:** filed (the pair row for any two bytes).
+- OWED: a study rev 2 folding the rulings (the Q4 revision especially), then the step-0 census after C1 merges.
