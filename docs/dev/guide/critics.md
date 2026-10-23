@@ -62,3 +62,11 @@ Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
    through a ruling.
 6. **Staffing:** at least one strong-model critic on emitted behaviour and one
    on design; the weaker-model lenses found real but smaller issues.
+
+Round 2026-10-23 r2, find-all iterators (`docs/dev/reviews/2026-10-23-r2-iter-code.md`), the
+first run of the `pcrec-code-critic` skill, five lenses picked by profile.
+1. **Pick lenses by what the change touches.** The contract and slot-tracing lenses, absent from
+   the earlier fixed four, found the answer bug and its cause (a private copy of the anchored body).
+2. **Only the emitted-vs-replaced lens saw a regression to EXISTING entries.** Ask that lens to
+   diff every pre-existing entry BASE vs SUBJECT, not only the new path.
+3. **A known result re-found blind calibrates the round** (`_next_n` at k=1 slower than `_next`).

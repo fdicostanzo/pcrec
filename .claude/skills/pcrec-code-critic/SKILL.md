@@ -86,7 +86,8 @@ Brief = title line `CRITIC <lens> (<model>): <topic>`, then:
 - inputs: `docs/dev/guide/README.md` + the files it names for the lens, the
   area's addendum, the design doc(s) and spec sections the change cites;
 - the denylist (section 1.4);
-- output: findings to `<scratchpad>/crit-<topic>-<lens>.md`, written
+- output: CREATE the findings file `<scratchpad>/crit-<topic>-<lens>.md`
+  (say it does not exist yet; critics took a named file for an input) and write it
   INCREMENTALLY, each labelled CONFIRMED (with a repro: pattern, command,
   observed vs expected) or SUSPECTED, with severity (answer / speed / size /
   maintenance / doc), effort, blast radius; plus a PROBED-AND-HELD list with
