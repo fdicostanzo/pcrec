@@ -3027,3 +3027,6 @@ the compiler, and is never adopted silently. Proposed for main to file
 - notice: 2026-10-23 — **Stop-ranking truncation sub-question (study rev 2 §2.4), Frank: "Yes unless it has reason not to":** pcrec states the positions beyond the verify slice of a long literal as cheap candidate spans, so the priced stop choice can pick its stop from the whole literal.
   - **Default is YES.** pcrec omits them only for a stated reason (e.g. a statement-size limit), and that reason is visible: named in the statement/listing, never a silent drop.
   - It rides the [MEMFN-UNBOUNDED-SPANS] statement change (the same MF_SITE_ABI event).
+- notice: 2026-10-23 — **Frank: "Widen two pair s3 now"**, superseding the Q6 FILE disposition for the scalar row. S3 itself creates the need: code review r2's R2-1 (2026-10-23-r2-memfn-s3-c1-code.md) shows non-case-pair two-member stops and case pairs outside a run stretch getting a scalar walk.
+  - PAIR's row contract widens INSIDE S3 to any two-byte set at any window position, plus case pairs outside a run stretch. It is a row-contract edit, not a new mechanism, measured by 588.
+  - The arbitrary-pair SIMD kernel stays FILED ([MEMFN-PAIRSIMD]).
