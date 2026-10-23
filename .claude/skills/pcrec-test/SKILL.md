@@ -73,3 +73,7 @@ new fix joins that table only when a run has shown its shape (section 5).
 
 Append dated lessons here when a run teaches one (a missed wake, a wrong
 trailer, a monitor that read too much).
+- 2026-10-23, first run (iterland test + mech): worked end to end (red caught, triage
+  launched, green reported). A teammate monitor cannot spawn NAMED agents (launch triage
+  unnamed); the triage's final reply reached the manager, not the monitor, so the triage
+  FILE is the delivery and the monitor must not wait for a reply.

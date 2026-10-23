@@ -7,7 +7,7 @@
 | 3 | the job is PENDING, not ready, for over 60 min | read the not-ready reason from `boxqueue status` (one line) | PROBLEM with that line; keep looping |
 | 4 | `df -h /home` above 95% at any check | nothing | PROBLEM; keep looping |
 | 5 | a stage END with rc=0 | nothing | keep looping |
-| 6 | the FIRST stage END with rc != 0 | launch ONE triage agent: `model: sonnet`, background, name `tri-<KEY>`, prompt = "TRIAGE <KEY>: read /home/pcrec/projects/pcrec/.claude/skills/pcrec-test/triage_brief.md and follow it. LOGDIR=<dir of TRAILER>; stage=<name>." | message the manager "MON <KEY>: stage <name> RED, triage tri-<KEY> launched"; keep looping |
+| 6 | the FIRST stage END with rc != 0 | launch ONE triage agent: `model: sonnet`, background, NO name (a teammate cannot spawn named agents), prompt = "TRIAGE <KEY>: read /home/pcrec/projects/pcrec/.claude/skills/pcrec-test/triage_brief.md and follow it. LOGDIR=<dir of TRAILER>; stage=<name>." | message the manager "MON <KEY>: stage <name> RED, triage launched; its table: /tmp/claude-1001/<triage dir>/triage.md"; keep looping |
 | 7 | a later red stage | append its name to `<LOGDIR>/red_stages.txt` (the triage lane reads it) | keep looping |
 | 8 | QUIET, DIED, LOCK-ORPHAN, FAILED-FAST, CAP-FIRED | nothing (never kill, cancel or retry) | PROBLEM with the line; QUIET: keep looping; the rest: END after the message |
 | 9 | BATTERY DONE / the job's DONE line, all stages green | append SUMMARY's line under "## Runs" in LEDGER; `git -C /home/pcrec/projects/pcrec commit -m "ledger: full suite green <sha>" -- docs/dev/full_suite_ledger.md` (named path only) | message "MON <KEY>: GREEN <summary line>"; END |
