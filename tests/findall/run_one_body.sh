@@ -15,7 +15,10 @@
 # `_next_n`. The expectations in one_body/ were therefore re-written by the
 # iteropt2 compiler (`-p rx`, default flags); that the iteration still
 # answers as I1's did is carried by the answer checks (run_findall_tests.sh's
-# differential arms, the twins), not by this text.
+# differential arms, the twins), not by this text. RE-PINNED by lane
+# iterfix2 (2026-10-23, review r2 HOUSE-1/SLOT-1): the body carries no
+# comments (they survived -fno-comments), and the VM's caller-storage bind
+# is `forward`'s one text (`pcrec_emit_caller_bind`); no statement moved.
 #
 # Why not the object code: adding `_next_n` gives the shared statics a second
 # caller, and gcc then compiles I1's own `_next` text to different

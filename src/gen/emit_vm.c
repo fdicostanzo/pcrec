@@ -14122,10 +14122,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * (`en.ai`, `vm_plan_entry`), and then a part they call is called from
      * their callers instead (`callers`, src/gen/part_layout.c). The matcher
      * body's own attribute (`en.ai_body`) is not folded: the one part a VM
-     * artifact has, the hybrid's prefilter, is called from `_search_run`
-     * alone, never from `_match_anchored`. */
+     * artifact has, the hybrid's prefilter, is called from the search loop
+     * alone (`_search_run`, or `<p>__find` where it splits, which carries
+     * the same attribute), never from `_match_anchored`. */
     if (en.shape != PCREC_VM_ENTRY_PLAIN)
         cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_SEARCH_RUN) |
+                                    PCREC_ENTRY_BIT(PCREC_ENTRY_FIND) |
                                     PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_RUN) |
                                     PCREC_ENTRY_BIT(PCREC_ENTRY_MATCH_CAPS_RUN);
     /* [OPT-CLSPACK] the pool is final: choose how its table-read classes

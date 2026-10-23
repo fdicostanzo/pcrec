@@ -8107,10 +8107,10 @@ typedef struct {
 
 /* src/gen/emit_comb.c -- `forward`'s binding texts for a caller that is not
  * one of the six entries (the find-all iterator's step): the CALLER binding
- * of descriptor `d` to the local `run`, and the OWN/OWN_TIERED wrapper
+ * of descriptor `d` to the local `run` at `indent`, and the OWN/OWN_TIERED wrapper
  * `name(params)` that binds its own storage and hands it to
  * `callee(runargs)` (`deepargs` on the deep tier's re-run). */
-void pcrec_emit_caller_bind(StrBuf *c, const char *p, const char *d);
+void pcrec_emit_caller_bind(StrBuf *c, const char *indent, const char *p, const char *d);
 void pcrec_emit_own_binding(Ctx *cx, StrBuf *c, const GenNames *g, bool tiered,
                             const char *storage, const char *ret, const char *name,
                             const char *callee, const char *params,

@@ -76,14 +76,15 @@ static const char *fwd_name(const GenNames *g, PcrecEntry e)
          : e == PCREC_ENTRY_MATCH  ? g->matchfn : g->matchcapsfn;
 }
 
-/* The CALLER binding's one text: the run state `run` bound to the regions of
- * the descriptor `d`, frames-then-trail (the order sabotage row S180 swaps).
- * `fwd_in` and the find-all iterator's caller-storage step write it. */
-void pcrec_emit_caller_bind(StrBuf *c, const char *p, const char *d)
+/* The CALLER binding's one text at `indent`: the run state `run` bound to
+ * the regions of the descriptor `d`, frames-then-trail (the order sabotage
+ * row S180 swaps). `fwd_in` and the find-all iterator's caller-storage step
+ * write it. */
+void pcrec_emit_caller_bind(StrBuf *c, const char *indent, const char *p, const char *d)
 {
     pcrec_sb_printf(c,
-        "    %s_run_state_bind(&run, %s->frames, %s->nframes,\n"
-        "                            %s->trail,  %s->ntrail);\n", p, d, d, d, d);
+        "%s%s_run_state_bind(&run, %s->frames, %s->nframes,\n"
+        "%s                        %s->trail,  %s->ntrail);\n", indent, p, d, d, indent, d, d);
 }
 
 /* Writes an `_in` entry, `forward`'s two bindings that take the caller's
@@ -113,7 +114,7 @@ static void fwd_in(Ctx *cx, StrBuf *c, const GenNames *g, const FwdSig *s,
     pcrec_sb_printf(c,
         "    %s_run_state run;\n"
         "    if (!buffers) return %s(%s%s);\n", p, name, s->args, va);
-    pcrec_emit_caller_bind(c, p, "buffers");
+    pcrec_emit_caller_bind(c, "    ", p, "buffers");
     pcrec_sb_printf(c,
         "    return %s_run(%s, &run%s);\n"
         "}\n\n", name, s->args, va);

@@ -349,14 +349,14 @@ static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         pcrec_sb_printf(c,
             "    const %s_buffers *b = it->bufs ? (const %s_buffers *)it->bufs : &%s_no_buffers;\n"
             "    %s_run_state run;\n", p, p, p, p);
-        pcrec_emit_caller_bind(c, p, "b");
+        pcrec_emit_caller_bind(c, "    ", p, "b");
         pcrec_sb_printf(c, "    r = %s__step(%s, c, &run, &at);\n", p, sa);
     } else if (t->vm) {
         pcrec_sb_printf(c,
             "    if (it->bufs) {\n"
             "        const %s_buffers *b = (const %s_buffers *)it->bufs;\n"
             "        %s_run_state run;\n", p, p, p);
-        pcrec_emit_caller_bind(c, p, "b");
+        pcrec_emit_caller_bind(c, "        ", p, "b");
         pcrec_sb_printf(c,
             "        r = %s__step(%s, c, &run, &at);\n"
             "    } else\n"
