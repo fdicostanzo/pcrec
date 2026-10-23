@@ -1274,7 +1274,8 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # shared block, `.next_n =`, <prefix>__one with <prefix>_next/_next_n over it,
 # and the STEP's past-the-end line. `881eac3cf` is the lane's last src commit;
 # the manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-881eac3cf}"   # the [FINDALL-NEXT] I4 lane self-pin (2026-10-21), abi 84 (was 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
+# lane iterland (2026-10-22): the stack lands as one 83 -> 84 event; re-pinned to its merge 934f8bed1.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-934f8bed1}"   # the lane/iterland merge (2026-10-22), I1+I4 as ONE abi event 83 -> 84, src identical to its last src commit (was 881eac3cf, the I4 lane self-pin; before it 8d5536143, the I1 lane self-pin, abi 83; before it 813f43ec8, the [MEASURE-SET] M0 merge, abi 82)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
