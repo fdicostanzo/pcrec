@@ -651,6 +651,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts after every open item and its follow-ups complete (Frank 2026-10-23); design note first (coordinator design round)
   refs: third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
   A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
+- [FLAG-SPELL] STATE:not-started — A WHOLE-PATTERN FLAG AND ITS SCOPED-GROUP SPELLING EMIT DIFFERENT CODE
+  filed: 2026-10-23 manager, from lane casespell
+  status (2026-10-23): measured, not investigated: --engine=vm emits RX_VM_PROGRAM_BYTES 634 for (?i)abc and 577 for (?i:abc)
+  next: unscheduled; a one-pass look (which spelling is larger and why) when the VM front end is next touched
+  refs: tests/codegen/run_case_spelling_identity.sh; docs/dev/lanes/casespell_report.md
+  Two spellings with the same meaning should compile to the same matcher, the same claim the case-spelling check makes for letter case. Once fixed, the check's flag-spelling group can compare (?i)abc against (?i:ABC) directly.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
   status (2026-10-21): filed; nothing built. Worked around by hand: 631-i1build-census's --ready held until 580-kit-r27-cover ended.
