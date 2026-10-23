@@ -2845,3 +2845,12 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - **Q5:** higher-resolution fixed-point integers, not depending on compiler options; within-noise prices are ties.
   - **Q6:** filed (the pair row for any two bytes).
 - OWED: a study rev 2 folding the rulings (the Q4 revision especially), then the step-0 census after C1 merges.
+
+## 2026-10-23 (late) — PAIR widened in S3; kit sabotage range
+
+- Frank: "Widen two pair s3 now". Lane s3r2fix delivered lane/memfn-s3pair @ 457bd231a (S3 commit bc675b020):
+  - PAIR serves any two-byte window stop at or past the candidate, plus the r2 review fixes.
+  - Light tier green; 40/40 movers as predicted; OFF identical.
+  - Its ASan differential, census and axes measure are queued behind 606.
+- Main reserved the kit's sabotage-id range **S1540-S1559** (S1540 = the new PAIR plant); main's lanes stay below S1540.
+- The critic skill was renamed pcrec-critic: one opus coordinator per round, results as files, framework notes in docs/dev/meta/coordinator_framework.md.
