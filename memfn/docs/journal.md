@@ -2757,3 +2757,15 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
 - Main's ruling Q2: in the same abi commit go the .list re-index, RX_DFA_SCAN "cover", C17 → delegated, and the §6.1 readers found by grep. Flag bit 57 is NO (main files it under [IFACE-PUSH]).
 - Main's conditions: the spec hunks travel in the same commit; the --list-axes delta is a declared manifest; the movers are a predicted manifest named by id; OFF is byte-identical to main; abi 84 is PROVISIONAL (the I1+I2 iterators may take it).
 - Build lane s3b (opus) is briefed. The window_site rev 3.3 fold of E-find is OWED after the build.
+
+## 2026-10-23 (early) — S3 built; D6 review; fixes folded
+
+- Lane s3b built S3 as ONE commit, e1e95a584 (E-find, D-hors, wf-find/wf-hors, abi 83→84 provisional, retirements, C17 delegated). The light tier is green, and 828 of 2263 DFA artifacts now read cover.
+- Critic 1 (over-read, opus): NO bug. About 330 compiles under ASan+UBSan matched python re at every start. It found a latent uint8 sh[] wrap (assert it) and a no-op D-hors when max shift is 1 (decline it). It also proposed three unlocks (wider window, priced probe, non-REPORT sites) for ideas.md.
+- Critic 2 (contract): one abi reader was missed (match_api.md §1¶7, the guard sample still compares against 83). Other findings:
+  - 587 lacked SIMD-on and norun byte checks;
+  - no timing covers movers beyond 581's cells;
+  - the re-aimed sections had no default witness;
+  - the floors had ~10% slack.
+- Lane s3fix (opus) folds all of it into the ONE S3 commit. 588 gains a stratified mover sample, read as findings and not part of the §6 bar.
+- 587 waits for s3fix plus main's 598.
