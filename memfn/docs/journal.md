@@ -2854,3 +2854,4 @@ Frank: "the choice, which i agree with, is to use the walk when the subject is n
   - Its ASan differential, census and axes measure are queued behind 606.
 - Main reserved the kit's sabotage-id range **S1540-S1559** (S1540 = the new PAIR plant); main's lanes stay below S1540.
 - The critic skill was renamed pcrec-critic: one opus coordinator per round, results as files, framework notes in docs/dev/meta/coordinator_framework.md.
+- 2026-10-23 evening: the iterators LANDED on main (b8c66a739) and took **abi 84**, so S3 renumbers to **85** at its landing (merge main into the S3 branch, then the grep ritual). Frank's full-suite battery (D177) runs from the box queue until about 08:00 2026-10-24: no timing until then (588 waits for main's word), and heavy correctness queues behind it.
