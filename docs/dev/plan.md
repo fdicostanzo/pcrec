@@ -649,7 +649,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-23 Frank
   status (2026-10-23): filed; syntax leaning given, not ruled
   next: starts after every open item and its follow-ups complete (Frank 2026-10-23); design note first (coordinator design round)
-  refs: third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
+  refs: docs/dev/compat_fold_facts/ (research, 2026-10-23); third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
   A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
 - [FLAG-SPELL] STATE:not-started — A WHOLE-PATTERN FLAG AND ITS SCOPED-GROUP SPELLING EMIT DIFFERENT CODE
   filed: 2026-10-23 manager, from lane casespell
