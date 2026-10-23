@@ -168,20 +168,21 @@ void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage)
  * whose prologue is empty has no bind check. */
 static bool emit_bind_checks(Ctx *cx, StrBuf *c, const char *p)
 {
+    /* the position is the caller's `lo` itself, so an alignment the guard
+     * makes is stored before the subject check can refuse: `lo` is then the
+     * position `<prefix>_valid_upto` was asked from (§3.8¶9) */
     StrBuf g = { .cx = cx };
     pcrec_sb_comments(&g, !c->cmt_drop);
-    pcrec_emit_startpos_guard(cx, &g, "    ", "search_from", "subject",
+    pcrec_emit_startpos_guard(cx, &g, "    ", "(*pos)", "subject",
                               "subject_length", false);
     bool any = g.len > 0 || g.cmt_dropped > 0;
     if (any) {
         pcrec_sb_printf(c,
             "static int %s__bind_checks(const unsigned char *subject, size_t subject_length,\n"
             "                          size_t *pos)\n"
-            "{\n"
-            "    size_t search_from = *pos;\n", p);
+            "{\n", p);
         pcrec_sb_puts(c, g.p ? g.p : "");
         pcrec_sb_puts(c,
-            "    *pos = search_from;\n"
             "    return 0;\n"
             "}\n\n");
     }
