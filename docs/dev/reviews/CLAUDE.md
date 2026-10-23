@@ -34,7 +34,7 @@ non-obvious code in src/ and odd-looking test cases trace to a finding here.
   the history file. Where a review has critic texts they sit in a sibling
   directory of the same name (e.g. `2026-10-05-r4-startset/`,
   `2026-10-07-r1-memfn-rowcon/`, `2026-10-08-r9-memfn-simd/`).
-- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the `pcrec-code-critic` skill: the find-all iterators on lane/iterland.
+- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
 - `2026-09-17-code-review.md`, `2026-09-20-code-org.md`,
   `2026-09-20-frank-tour.md`, `2026-09-20-r61-fable-personal-review.md`,
   `2026-09-20-readability-experiments.md` (+ `2026-09-20-readability-data/`)

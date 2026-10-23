@@ -1,9 +1,9 @@
-# How a code critic uses the guide
+# How a critic uses the guide
 
 First version; the 2026-10-23 S3 code-review round will refine it.
 
 The procedure for running a round (freeze, blind, pick lenses, verify, compile)
-is the `pcrec-code-critic` skill (`.claude/skills/pcrec-code-critic/SKILL.md`);
+is the `pcrec-critic` skill (`.claude/skills/pcrec-critic/SKILL.md`; design, code or both, run by a coordinator agent);
 this page holds the rules it reviews against. Lenses are chosen per change from
 the skill's lens table; no lens set is standard because an earlier round used it.
 
@@ -44,6 +44,26 @@ findings CONFIRMED (with repro) or SUSPECTED and carry a PROBED-AND-HELD list
   draft's Addendum 2); a long function that passes the five altitude questions
   stays long, and the finding says so.
 
+## Design rounds
+A design round reviews a document before a build go. Rules a design critic
+applies, beyond `architecture.md`:
+- **Design panels are the cheapest reviews.** A finding in a document is a
+  paragraph edit; the same finding in built code is a fix lane (learnings §5).
+- **Question premises, not only errors.** "Do we really need this?" and "is this
+  really constant?" each killed a mechanism several panels had accepted; every
+  panel was internally sound on an unexamined premise (learnings §5).
+- **Simulate against the real data before adopting.** A proposed table or rule
+  is run over the real corpus; prototype rival mechanisms head to head and let
+  measurement pick (learnings §5).
+- **Propose the general form and its unlocks,** with triggers, not only
+  refutations (Frank 2026-10-09).
+- **Sibling of a family:** at about three dispersed members of a decision
+  family, propose the unified table (Frank 2026-10-06, "forest for the trees").
+- **BELIEVED marks are the target list:** what a design marks as believed rather
+  than measured is where it breaks (learnings §5).
+- **Mark the cost:** costlier proposals must prove more; raise cost as a
+  challenge, not a veto (Frank 2026-10-17).
+
 ## Lessons from review rounds
 
 Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
@@ -64,7 +84,7 @@ Round 2026-10-23 r1, kit S3 (D172's REPORT routing), four blinded critics
    on design; the weaker-model lenses found real but smaller issues.
 
 Round 2026-10-23 r2, find-all iterators (`docs/dev/reviews/2026-10-23-r2-iter-code.md`), the
-first run of the `pcrec-code-critic` skill, five lenses picked by profile.
+first run of the `pcrec-critic` skill, five lenses picked by profile.
 1. **Pick lenses by what the change touches.** The contract and slot-tracing lenses, absent from
    the earlier fixed four, found the answer bug and its cause (a private copy of the anchored body).
 2. **Only the emitted-vs-replaced lens saw a regression to EXISTING entries.** Ask that lens to

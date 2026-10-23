@@ -245,22 +245,16 @@ requests back to the lane (SendMessage to a still-running agent, or a fresh
 agent with the review notes) rather than silently fixing large problems
 yourself; small landing-bar items you may finish directly.
 
-## 5. Adversarial critic panels on designs and major code
+## 5. Adversarial critic rounds on designs and code
 
-New designs and major code pieces get a **multi-subagent adversarial critic
-panel** (D6) before or at close: 2–4 independent read-only critics with
-distinct lenses (e.g. checks/tests, engine semantics vs the oracle, docs
-staleness), briefed to refute and to measure both sides of every claimed
-cell. Compile findings into `docs/dev/reviews/YYYY-MM-DD-rN-<topic>.md` with
-triage dispositions, then fix-with-measurement before disposition.
-
-**Standing lens on every panel and design note (Frank, 2026-10-06, "forest
-for the trees"): SIBLING-OF-A-FAMILY** — is this new predicate, table or
-row another member of an existing decision family growing dispersed
-(start strategy, engine selection, admission rows, deny/force axes, ...)?
-If yes, name the family; at ~3 dispersed members propose the unified
-first-match table yourself instead of waiting to be asked. Critics
-are read-only and never run `make`.
+New designs (before a build go) and major code (before landing) get a critic
+round (D6): the `pcrec-critic` skill. The manager launches ONE coordinator
+agent, which runs the round (lenses chosen per subject, blinded critics,
+verification, a drafted review with proposed dispositions, and a process log
+of the round itself); the manager rules every disposition, launches the fixes
+and accepts or declines the proposed process changes. Rules critics review
+against: `docs/dev/guide/` (critics.md for the lenses' rules). Launch rounds at
+discretion, no go-ahead ask (Frank 2026-10-05).
 
 ## 6. Session end or pause — rewrite wake.md
 
