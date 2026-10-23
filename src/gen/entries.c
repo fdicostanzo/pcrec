@@ -48,14 +48,16 @@
  * controller's body holds a call only on some of the shapes its row serves
  * (the subject check, a `rev-end` tie). The combinator column chooses
  * which ONE emitter writes each entry (E0c, src/gen/emit_comb.c, through
- * `pcrec_entry_comb`); the mode column is recorded for the iterator (I1)
- * and nothing reads it yet. The combinator enum is `PcrecEntryComb`
- * (core/internal.h). */
+ * `pcrec_entry_comb`); the form column says whether the function is an
+ * entry or a search BODY (`pcrec_entry_is_body`). The combinator enum is
+ * `PcrecEntryComb` (core/internal.h). */
 
-/* How the entry is called (compound_entries.md §3.5): ONESHOT, or ITER, a
- * row the find-all iterator's every step runs ([FINDALL-NEXT] I1). Recorded
- * for the kit's mode fact (findall_iter.md §4.2, R-20); nothing reads it. */
-typedef enum { EM_ONESHOT, EM_ITER } EntryMode;
+/* What the function is ([FINDALL-NEXT]): an ENTRY, with its own head and
+ * caller-position prologue, or a BODY, a search without that prologue which
+ * its callers run after theirs (`<p>__find`): its head is the iterator's
+ * scaffold, it writes no guard of its own, and it is copied into its callers
+ * unless it keeps label addresses (src/gen/emit_dfa.c's search head). */
+typedef enum { EF_ENTRY, EF_BODY } EntryForm;
 
 static PcrecEdgeRank rk_r0(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R0_RARE; }
 static PcrecEdgeRank rk_r1(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R1_CONDITIONAL; }
@@ -88,7 +90,7 @@ typedef struct {
     PcrecEntryComb comb;
     const PartRef *parts;
     int nparts;
-    EntryMode mode;
+    EntryForm form;
 } EntryRow;
 
 /* The shapes a row or a part reference serves. */
@@ -230,47 +232,47 @@ static const PartRef pr_var_valid[] = { { PCREC_ENTRY_VALID_UPTO, sh_always, rk_
  * that shape (the closure must never reach one: `pcrec_entry_shape` checks). */
 static const EntryRow entry_rows[] = {
     /* DFA (not a compound) */
-    { PCREC_ENTRY_SEARCH,       sh_plain_dfa,  PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_search),    EM_ONESHOT },
-    { PCREC_ENTRY_FIND,         sh_plain_find, PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_find),      EM_ITER },
-    { PCREC_ENTRY_MATCH,        sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_dfa_own),       EM_ONESHOT },
-    { PCREC_ENTRY_MATCH,        sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS,   sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_to_match),      EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS,   sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EM_ONESHOT },
+    { PCREC_ENTRY_SEARCH,       sh_plain_dfa,  PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_search),    EF_ENTRY },
+    { PCREC_ENTRY_FIND,         sh_plain_find, PCREC_COMB_LOCATE_FINISH, PARTS(pr_dfa_find),      EF_BODY },
+    { PCREC_ENTRY_MATCH,        sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_dfa_own),       EF_ENTRY },
+    { PCREC_ENTRY_MATCH,        sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS,   sh_plain_own,  PCREC_COMB_FINISH_AT,     PARTS(pr_to_match),      EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS,   sh_plain_wrap, PCREC_COMB_FINISH_AT,     PARTS(pr_to_search),     EF_ENTRY },
     /* a compound's controller (emit_compound.c) */
-    { PCREC_ENTRY_SEARCH,       sh_comp,       PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_search),   EM_ONESHOT },
-    { PCREC_ENTRY_FIND,         sh_comp_find,  PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_find),     EM_ITER },
-    { PCREC_ENTRY_MATCH,        sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS,   sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EM_ONESHOT },
-    { PCREC_ENTRY_COMP_A,       sh_comp,       PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EM_ONESHOT },
-    { PCREC_ENTRY_COMP_B,       sh_comp_b,     PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EM_ONESHOT },
+    { PCREC_ENTRY_SEARCH,       sh_comp,       PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_search),   EF_ENTRY },
+    { PCREC_ENTRY_FIND,         sh_comp_find,  PCREC_COMB_FIRST_NONZERO, PARTS(pr_comp_find),     EF_BODY },
+    { PCREC_ENTRY_MATCH,        sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS,   sh_comp,       PCREC_COMB_FINISH_AT,     PARTS(pr_comp_match),    EF_ENTRY },
+    { PCREC_ENTRY_COMP_A,       sh_comp,       PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EF_ENTRY },
+    { PCREC_ENTRY_COMP_B,       sh_comp_b,     PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EF_ENTRY },
     /* DFA and compound: the `_in` entries are the un-suffixed ones plus an
      * unused descriptor (emit_comb.c's `forward`, INERT) */
-    { PCREC_ENTRY_SEARCH_IN,    sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_search),     EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_match),      EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS_IN, sh_dfa,       PCREC_COMB_FORWARD,       PARTS(pr_to_caps),       EM_ONESHOT },
+    { PCREC_ENTRY_SEARCH_IN,    sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_search),     EF_ENTRY },
+    { PCREC_ENTRY_MATCH_IN,     sh_dfa,        PCREC_COMB_FORWARD,       PARTS(pr_to_match),      EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS_IN, sh_dfa,       PCREC_COMB_FORWARD,       PARTS(pr_to_caps),       EF_ENTRY },
     /* VM */
-    { PCREC_ENTRY_SEARCH,       sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_search),     EM_ONESHOT },
-    { PCREC_ENTRY_SEARCH,       sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_search_fwd), EM_ONESHOT },
-    { PCREC_ENTRY_SEARCH_IN,    sh_vm,         PCREC_COMB_FORWARD,       PARTS(pr_vm_search_in),  EM_ONESHOT },
-    { PCREC_ENTRY_MATCH,        sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_match),      EM_ONESHOT },
-    { PCREC_ENTRY_MATCH,        sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_match_fwd),  EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_IN,     sh_vm,         PCREC_COMB_FORWARD,       PARTS(pr_vm_match_in),   EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS,   sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_caps),       EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS,   sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_fwd),   EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS_IN, sh_vm,        PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_in),    EM_ONESHOT },
-    { PCREC_ENTRY_SEARCH_RUN,   sh_vm,         PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_search_run), EM_ONESHOT },
-    { PCREC_ENTRY_FIND,         sh_vm_find,    PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_find),       EM_ITER },
-    { PCREC_ENTRY_MATCH_RUN,    sh_vm,         PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EM_ONESHOT },
-    { PCREC_ENTRY_MATCH_CAPS_RUN, sh_vm,       PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EM_ONESHOT },
-    { PCREC_ENTRY_PREFILTER,    sh_vm_hybrid,  PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EM_ONESHOT },
+    { PCREC_ENTRY_SEARCH,       sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_search),     EF_ENTRY },
+    { PCREC_ENTRY_SEARCH,       sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_search_fwd), EF_ENTRY },
+    { PCREC_ENTRY_SEARCH_IN,    sh_vm,         PCREC_COMB_FORWARD,       PARTS(pr_vm_search_in),  EF_ENTRY },
+    { PCREC_ENTRY_MATCH,        sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_match),      EF_ENTRY },
+    { PCREC_ENTRY_MATCH,        sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_match_fwd),  EF_ENTRY },
+    { PCREC_ENTRY_MATCH_IN,     sh_vm,         PCREC_COMB_FORWARD,       PARTS(pr_vm_match_in),   EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS,   sh_vm_direct,  PCREC_COMB_FORWARD,       PARTS(pr_vm_caps),       EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS,   sh_vm_fwd,     PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_fwd),   EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS_IN, sh_vm,        PCREC_COMB_FORWARD,       PARTS(pr_vm_caps_in),    EF_ENTRY },
+    { PCREC_ENTRY_SEARCH_RUN,   sh_vm,         PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_search_run), EF_ENTRY },
+    { PCREC_ENTRY_FIND,         sh_vm_find,    PCREC_COMB_LOCATE_FINISH, PARTS(pr_vm_find),       EF_BODY },
+    { PCREC_ENTRY_MATCH_RUN,    sh_vm,         PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EF_ENTRY },
+    { PCREC_ENTRY_MATCH_CAPS_RUN, sh_vm,       PCREC_COMB_FINISH_AT,     PARTS(pr_vm_run),        EF_ENTRY },
+    { PCREC_ENTRY_PREFILTER,    sh_vm_hybrid,  PCREC_COMB_LOCATE_FINISH, NOPARTS,                 EF_ENTRY },
     /* both: the residuals, the stamp object, and `main` driving the search */
-    { PCREC_ENTRY_NEXT_POS,     sh_always,     PCREC_COMB_LEAF,          NOPARTS,                 EM_ONESHOT },
-    { PCREC_ENTRY_VALID_UPTO,   sh_always,     PCREC_COMB_LEAF,          NOPARTS,                 EM_ONESHOT },
-    { PCREC_ENTRY_VAR_VALID,    sh_always,     PCREC_COMB_LEAF,          PARTS(pr_var_valid),     EM_ONESHOT },
-    { PCREC_ENTRY_INFO,         sh_always,     PCREC_COMB_DATA,          NOPARTS,                 EM_ONESHOT },
-    { PCREC_ENTRY_NEXT,         sh_dfa,        PCREC_COMB_ITERATE,       PARTS(pr_next_dfa),      EM_ITER },
-    { PCREC_ENTRY_NEXT,         sh_vm,         PCREC_COMB_ITERATE,       PARTS(pr_next_vm),       EM_ITER },
-    { PCREC_ENTRY_MAIN,         sh_always,     PCREC_COMB_DRIVER,        PARTS(pr_to_search),     EM_ONESHOT },
+    { PCREC_ENTRY_NEXT_POS,     sh_always,     PCREC_COMB_LEAF,          NOPARTS,                 EF_ENTRY },
+    { PCREC_ENTRY_VALID_UPTO,   sh_always,     PCREC_COMB_LEAF,          NOPARTS,                 EF_ENTRY },
+    { PCREC_ENTRY_VAR_VALID,    sh_always,     PCREC_COMB_LEAF,          PARTS(pr_var_valid),     EF_ENTRY },
+    { PCREC_ENTRY_INFO,         sh_always,     PCREC_COMB_DATA,          NOPARTS,                 EF_ENTRY },
+    { PCREC_ENTRY_NEXT,         sh_dfa,        PCREC_COMB_ITERATE,       PARTS(pr_next_dfa),      EF_ENTRY },
+    { PCREC_ENTRY_NEXT,         sh_vm,         PCREC_COMB_ITERATE,       PARTS(pr_next_vm),       EF_ENTRY },
+    { PCREC_ENTRY_MAIN,         sh_always,     PCREC_COMB_DRIVER,        PARTS(pr_to_search),     EF_ENTRY },
 };
 
 #define NROWS ((int)(sizeof entry_rows / sizeof *entry_rows))
@@ -389,6 +391,7 @@ void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape)
     for (int e = 0; e < PCREC_ENTRY_N; e++) {
         const EntryRow *row = entry_row_of(shape, (PcrecEntry)e);
         cx->job->entry_comb[e] = row ? (unsigned char)(row->comb + 1) : 0;
+        if (row && row->form == EF_BODY) cx->job->entry_body |= PCREC_ENTRY_BIT(e);
     }
     cx->job->entry_shaped = true;
 }
@@ -424,6 +427,11 @@ const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e)
 bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e)
 {
     return pcrec_entry_linkage(cx, e) != PCREC_LINK_OMITTED;
+}
+
+bool pcrec_entry_is_body(const Ctx *cx, PcrecEntry e)
+{
+    return (cx->job->entry_body & PCREC_ENTRY_BIT(e)) != 0;
 }
 
 bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e)

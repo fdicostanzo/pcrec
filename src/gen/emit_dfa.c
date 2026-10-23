@@ -929,12 +929,13 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 
 bool pcrec_startpos_prologue_on(Ctx *cx)
 {
-    StrBuf g = { .cx = cx };
-    pcrec_emit_startpos_guard(cx, &g, "    ", "search_from", "subject",
-                              "subject_length", false);
-    const bool on = g.len > 0 || g.cmt_dropped > 0;
-    pcrec_sb_free(&g);
-    return on;
+    /* the axis writes a guard where the encoding restricts a start and the
+     * guard is not off (align writes one whatever `-fno-startpos-guard`
+     * says), and the subject check where it is on */
+    const bool restricts = pcrec_enc_by_id(cx->opt->encoding)->start_guard != NULL;
+    return pcrec_utf_check_on(cx) ||
+           (restricts && (pcrec_opt_has(cx->opt, PCREC_FORCE_STARTPOS_ALIGN) ||
+                          !pcrec_opt_has(cx->opt, PCREC_NO_STARTPOS_GUARD)));
 }
 
 /* Writes the OFFSET-0 START RULE at one site: when `posvar` is 0 and offset 0
@@ -1879,6 +1880,15 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
     pcrec_sb_printf(c, "%sreturn 1;\n", ind);
 }
 
+/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
+ * that it must stay one function? The DFA attempt route's direct-threaded
+ * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
+ * other body do not. */
+static bool find_body_shared(Ctx *cx)
+{
+    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
  * argued above) and the caller-startpos boundary guard. NOTHING HERE MAY WRITE
@@ -1893,16 +1903,14 @@ static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
  * storage class ("" for the exported entry, "static " for the prefilter or a
  * part), and [ENTRY-TABLE] E1's part-layout mark, written after the storage
  * class where `ent` is a part a control lays out (src/gen/part_layout.c). */
-static bool find_body_shared(Ctx *cx);
-
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              PcrecEntry ent)
 {
     /* [FINDALL-NEXT] the body's head is the iterator's scaffold (the entry's
      * own head, below the body, is the one a length decision reads). `find`
      * is no part-layout subject in I1, so no mark is written inside it. */
-    const bool scaf = ent == PCREC_ENTRY_FIND;
-    if (scaf) pcrec_sb_scaffold_open(c);
+    const bool body = pcrec_entry_is_body(cx, ent);
+    if (body) pcrec_sb_scaffold_open(c);
     /* [CC-CLANG] `noclone` is a gcc extension (documented since 4.5) with no
      * clang equivalent, so a strange compiler's `-Wattributes -Werror` must
      * not see it at all rather than see it and warn. The `__has_attribute`
@@ -1928,14 +1936,14 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * static table (the DFA attempt route's direct threading), which gcc
      * refuses to duplicate and which stays one shared function. The layout
      * is fixed: the part table's class `find` has no subject yet. */
-    if (ent == PCREC_ENTRY_FIND) {
+    if (body) {
         const bool shared = find_body_shared(cx);
         pcrec_sb_puts(c, pcrec_attr_text(shared ? PCREC_ATTR_NOINLINE : PCREC_ATTR_INLINE));
         /* An always_inline body is OWNED (A1's shape): a part it calls is
          * called from its callers, `_search` and `_next` (part_layout.c's
          * `callers`). */
         if (!shared)
-            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(PCREC_ENTRY_FIND);
+            cx->job->pl.owned_inline |= PCREC_ENTRY_BIT(ent);
     }
     pcrec_part_head_mark(cx, c, ent);
     pcrec_sb_printf(c, "int %s(const unsigned char *subject, size_t subject_length, "
@@ -1948,7 +1956,7 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                   * because the alternative is a second definition of "which
                   * entries take the pair" living in one engine's emitter. */
                  pcrec_vars_param_text(cx));
-    if (scaf) pcrec_sb_scaffold_close(c);
+    if (body) pcrec_sb_scaffold_close(c);
     /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
      * fill below uses, and for the same reason: this emitter has TWO customers
      * and only one of them is a caller-facing entry. The other is the VM
@@ -1961,18 +1969,9 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * all six public entries: `<prefix>_match`/`_match_caps` reach the guard
      * through the body they call, and the three `_in` entries through their
      * un-suffixed siblings. */
-    if (cand_finish_of(cx) != CAND_ROUTE_VM && ent != PCREC_ENTRY_FIND)
+    if (cand_finish_of(cx) != CAND_ROUTE_VM && !body)
         pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                                   "subject_length", false);
-}
-
-/* [FINDALL-NEXT] Does `<p>__find` keep label addresses in a static table, so
- * that it must stay one function? The DFA attempt route's direct-threaded
- * body does (`emit_attempt`'s `targets_N[]`); a compound controller and every
- * other body do not. */
-static bool find_body_shared(Ctx *cx)
-{
-    return !cx->job->comp_shell && cand_route_of(cx) == CAND_ROUTE_ATTEMPT;
 }
 
 /* [FINDALL-NEXT] `<p>_search` over its body (findall_iter.md §2.1): the
@@ -14206,7 +14205,7 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
      * layout's P2 reads this as the body's `copyable` fact. [FINDALL-NEXT]
      * Not a `<p>__find` body: that one is `noinline` (`find_body_shared`)
      * and the subject is its `_search` wrapper, which copies. */
-    if (d->n > 0 && ent != PCREC_ENTRY_FIND) cx->job->pl.uncopyable = true;
+    if (d->n > 0 && !pcrec_entry_is_body(cx, ent)) cx->job->pl.uncopyable = true;
     for (int i = 0; i < d->n; i++) {
         pcrec_sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);

@@ -1474,7 +1474,10 @@ gen_deny() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 $3 -o - --pat
 # dead-capture elision's four patterns still show up as differing here: on the
 # pre-module reference they were VM-selected and HAVE a region, and today they
 # are DFA-selected and do not.
-prog_region_raw() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+# The FIRST region only: a VM artifact whose iterator retries an empty match
+# carries the matcher's guarded copy `<p>__match_notempty` after it, a second
+# `goto rx_L0;` .. `rx_accept:` (iterfix2, review 2026-10-23-r2 EMIT-1).
+prog_region_raw() { awk '/^    goto rx_L0;$/{on=1} on{print} on&&/^rx_accept:/{exit}'; }
 # [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
 # every deny-axis build alike, passes the seventh exception's canonicalizer
 # (adv_layout_canon, below) so it composes with every excuse bucket.

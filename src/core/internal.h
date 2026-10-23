@@ -3293,6 +3293,9 @@ typedef struct {
      * its `entry_rows[]` row (PcrecEntryComb + 1; 0 where the entry has no
      * row on the shape). Read only through `pcrec_entry_comb`. */
     unsigned char entry_comb[PCREC_ENTRY_N];
+    /* [FINDALL-NEXT] the entries whose row on this shape is a search BODY
+     * (EF_BODY), as PCREC_ENTRY_BIT; read through `pcrec_entry_is_body`. */
+    unsigned entry_body;
     /* [COMPOUND] the compound this attempt emits in place of the plain
      * artifact's engine and entries (compound.md §A.3, §A.5), or NULL: the
      * walk's record, owned here (`job_cleanup` frees it with its texts). */
@@ -7604,6 +7607,10 @@ bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
  * before the shape is stated, and `pcrec_entry_emitted` for an entry no row
  * calls (`next`), which only the request can make live. */
 bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e);
+/* True iff `e`'s row on this shape is a search BODY (entries.c's form
+ * column): a scaffold head, no caller-position prologue of its own, copied
+ * into its callers. */
+bool pcrec_entry_is_body(const Ctx *cx, PcrecEntry e);
 /* [COMPOUND] E0c: the combinator of `e`'s `entry_rows[]` row on the stated
  * shape. Asked of an entry with no row there, or before the shape is
  * stated, it fails as an internal error. */
