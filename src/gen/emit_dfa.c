@@ -837,9 +837,9 @@ static void emit_utf_check(Ctx *cx, StrBuf *c, const char *indent,
         "%s * end. The same call gives the caller the offset. */\n",
         indent, indent, indent, indent);
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c, "%sif (%s_", indent, cx->opt->prefix);
-    pcrec_enc_twin_mark(c);   /* the static twin, [FINDALL-NEXT] */
-    pcrec_sb_printf(c, "valid_upto(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
+    pcrec_sb_printf(c, "%sif (", indent);
+    pcrec_enc_twin_name(c, cx->opt->prefix, "valid_upto");   /* the static twin, [FINDALL-NEXT] */
+    pcrec_sb_printf(c, "(%s, %s, %s) != %s) return PCREC_ERR_UTF;\n",
                     subjvar, lenvar, posvar, lenvar);
 }
 
@@ -2338,7 +2338,7 @@ static void emit_rx_abi_types(StrBuf *sb)
          * a variable NAMED rx_info coexist with no conflict, verified
          * directly against gcc. */
         /* [FINDALL-NEXT] the find-all iterator's entry type, every
-         * artifact's `<prefix>_next` whatever its prefix (i1build ruling 2):
+         * artifact's `<prefix>_next` whatever its prefix:
          * declared on the struct TAG, so it precedes `rx_iter`'s body below
          * and `rx_info.next` can carry it. */
         );
@@ -2586,7 +2586,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    /* <PREFIX>_MEASURES: the measurement set a reader consulted,\n"
         "       id@rev:digest; \"\" when none consulted */\n"
         "    const char           *measures;\n"
-        /* [FINDALL-NEXT] appended (i1build ruling 2): a caller holding only
+        /* [FINDALL-NEXT] appended: a caller holding only
          * the record iterates without the header. */
         );
     pcrec_sb_scaffold_open(sb);   /* [FINDALL-NEXT] iterator scaffold, findall_iter.md §6.4 */
@@ -3548,15 +3548,16 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
 #undef ENTRY_DECL
 }
 
-/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the entries in
- * one half (`inline_half`, enc.h's `inline_def`): every entry this artifact
+/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the `inline_def`
+ * entries (enc.h; an out-of-line entry states no site data, which
+ * `pcrec_enc_emit_twins` refuses): every entry this artifact
  * carries whose backend states site data (PcrecEncSite) has its loop
  * described to the kit (N7, pcrec_memfn_span_site) and rendered through the
  * attempt's art; the backend's text carries the token PCREC_ENC_SITE where
  * the loop goes, and the seam substitutes the rendered string for it. The
  * backend keeps the rest of its text. Returns the arena array, `*ns` long. */
 static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
-                                              bool inline_half, size_t *ns)
+                                              size_t *ns)
 {
     unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
     size_t nt = 0;
@@ -3565,7 +3566,7 @@ static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
     PcrecEncSiteText *st = pcrec_arena_alloc(&cx->arena, nt * sizeof *st);
     for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
         const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
-        if (!(m & t->id) || t->inline_def != inline_half || !es) continue;
+        if (!(m & t->id) || !t->inline_def || !es) continue;
         StrBuf loop = { 0 };
         loop.cx = cx;
         mf_hooks h;
@@ -3588,11 +3589,9 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
     /* [EMIT-ENTRIES] each out-of-line entry at its linkage: omitted ones are
-     * not written, kept ones are `static`. */
-    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns,
+     * not written, kept ones are their twin alone. */
+    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                         pcrec_entry_enc_omit(cx), pcrec_entry_enc_static(cx));
 }
 
@@ -3605,7 +3604,7 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
     size_t ns;
-    const PcrecEncSiteText *st = residual_sites(cx, enc, true, &ns);
+    const PcrecEncSiteText *st = residual_sites(cx, enc, &ns);
     pcrec_enc_emit_inline_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
                                st, ns);
     /* [UTF-VALID] LB, the one PATTERN fact a residual body reads: how many

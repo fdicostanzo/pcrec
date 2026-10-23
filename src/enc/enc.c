@@ -139,25 +139,25 @@ static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
     pcrec_sb_puts(sb, col ? "\n};\n\n" : "};\n\n");
 }
 
-/* Emits every entry's `defs` text (and, gated through the comment layer, its
- * defs_doc) whose id is set in the CLOSED `mask` and whose `inline_def` is
- * `inline_half` -- pcrec_enc_emit_decls' own sibling loop over the
- * DEFINITIONS half -- with each entry's site token replaced by its rendered
- * text from `sites` ([MEMFN] M7). A backend with no table emits nothing. */
-static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                          const char *prefix, bool inline_half,
-                          const PcrecEncSiteText *sites, size_t nsites,
-                          unsigned drop, unsigned stat)
+/* Emits every `inline_def` entry's `defs` text (and, gated through the
+ * comment layer, its decls_doc and defs_doc) whose id is set in the CLOSED
+ * `mask`, with each entry's site token replaced by its rendered text from
+ * `sites` ([MEMFN] M7). A backend with no table emits nothing. The
+ * out-of-line half is the twins' (`pcrec_enc_emit_twins`) and the
+ * forwarders' (`pcrec_enc_emit_defs`). */
+static void enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                                 const char *prefix,
+                                 const PcrecEncSiteText *sites, size_t nsites)
 {
     if (!e || !e->entries) return;
-    mask = pcrec_enc_mask_close(e, mask) & ~drop;
+    mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
-        if ((mask & t->id) && t->inline_def == inline_half) {
+        if ((mask & t->id) && t->inline_def) {
             if (t->id == PCREC_ENCE_SPAN_CASELESS_UCP)
                 enc_emit_latin1_fold_table(sb, prefix);
             /* An inline entry has no declaration, so its contract doc
              * (`decls_doc`) rides with its definition. */
-            if (inline_half && t->decls_doc) {
+            if (t->decls_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
@@ -174,7 +174,6 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 pcrec_ctx_fail(sb->cx, 0, "internal error: residual entry %u "
                                "states site data and no loop was rendered for it",
                                t->id);
-            if (stat & t->id) pcrec_sb_puts(sb, "static ");
             pcrec_enc_emit_text(sb, t->defs, prefix, site);
         }
 }
@@ -246,6 +245,13 @@ void pcrec_enc_twin_mark(StrBuf *sb)
     pcrec_sb_scaffold_putc(sb, '_');
 }
 
+void pcrec_enc_twin_name(StrBuf *sb, const char *prefix, const char *name)
+{
+    pcrec_sb_printf(sb, "%s_", prefix);
+    pcrec_enc_twin_mark(sb);
+    pcrec_sb_puts(sb, name);
+}
+
 void pcrec_enc_emit_twins(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, const char *attr, unsigned drop)
 {
@@ -305,10 +311,8 @@ static void enc_emit_forwarder(StrBuf *sb, const PcrecEncEntry *t,
  * EXPORTED one as its doc and a forwarder to its twin. A `stat` entry is its
  * twin alone (`pcrec_enc_emit_twins`), which every internal caller calls. */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                         const char *prefix, const PcrecEncSiteText *sites,
-                         size_t nsites, unsigned drop, unsigned stat)
+                         const char *prefix, unsigned drop, unsigned stat)
 {
-    (void)sites; (void)nsites;
     if (!e || !e->entries) return;
     mask = pcrec_enc_mask_close(e, mask) & ~drop;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++) {
@@ -331,7 +335,7 @@ void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                                 const char *prefix,
                                 const PcrecEncSiteText *sites, size_t nsites)
 {
-    enc_emit_defs(sb, e, mask, prefix, true, sites, nsites, 0, 0);
+    enc_emit_inline_defs(sb, e, mask, prefix, sites, nsites);
 }
 
 /* True iff entry `id` in `e`'s table is marked engine_callable; false for an

@@ -223,13 +223,12 @@ static RepW rw_node(const Ast *a, bool has_k);
 static RepW rw_alt(const Ast *a, bool has_k)
 {
     RepW u = { RW_INF, RW_INF };
-    for (;;) {
-        RepW x = rw_node(a->k == A_ALT ? a->r : a, has_k);
+    PCREC_SPINE_EACH(e, a, A_ALT) {
+        RepW x = rw_node(e, has_k);
         u.nok = rw_min(u.nok, x.nok);
         u.k = rw_min(u.k, x.k);
-        if (a->k != A_ALT) return u;
-        a = a->l;
     }
+    return u;
 }
 
 /* The (no-`\K`, `\K`-tail) minimum widths of `a`'s paths. */
@@ -239,11 +238,7 @@ static RepW rw_node(const Ast *a, bool has_k)
     RepW acc = zero;
     for (;;) {
         switch (a->k) {
-        case A_WCLASS: {   /* a wide class consumes a character */
-            RepW x = { RW_POS, RW_INF };
-            return rw_cat(x, acc);
-        }
-        case A_CLASS: {    /* so does a byte class */
+        case A_WCLASS: case A_CLASS: {   /* a class consumes a character */
             RepW x = { RW_POS, RW_INF };
             return rw_cat(x, acc);
         }
@@ -263,13 +258,10 @@ static RepW rw_node(const Ast *a, bool has_k)
             a = a->l;
             continue;
         case A_CAT:
-            /* the spine is left-nested: fold its right items into `acc`, the
-             * tail that follows, from the right */
-            while (a->k == A_CAT) {
-                acc = rw_cat(rw_node(a->r, has_k), acc);
-                a = a->l;
-            }
-            continue;
+            /* fold the items into `acc`, the tail that follows, from the
+             * right: the spine's own order */
+            PCREC_SPINE_EACH(e, a, A_CAT) acc = rw_cat(rw_node(e, has_k), acc);
+            return acc;
         case A_ALT:
             return rw_cat(rw_alt(a, has_k), acc);
         case A_REP: {

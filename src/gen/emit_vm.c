@@ -12467,10 +12467,10 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
     if (pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
                             PCREC_ENCE_VAR_VALID)) {
         for (unsigned i = 0; i < cx->n_var_exps; i++) {
-            pcrec_sb_printf(c, "    if (!%s_", v->p);
-            pcrec_enc_twin_mark(c);   /* the static twin, [FINDALL-NEXT] */
+            pcrec_sb_puts(c, "    if (!");
+            pcrec_enc_twin_name(c, v->p, "var_valid");   /* the static twin, [FINDALL-NEXT] */
             pcrec_sb_printf(c,
-                "var_valid(run->var_value[%u], run->var_length[%u]))\n"
+                "(run->var_value[%u], run->var_length[%u]))\n"
                 "        return PCREC_ERR_UNSET_VAR;\n", i, i);
         }
     }

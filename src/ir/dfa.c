@@ -1634,7 +1634,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                                (size_t)nfa->n * 3 * d->natoms * sizeof(int));
     int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
-    Mach m = { prune, reverse, false, has_end, has_gst, d->natoms, d->atomvec };
+    Mach m = { .prune = prune, .reverse = reverse, .noacc = false,
+               .has_end = has_end, .has_gst = has_gst,
+               .natoms = d->natoms, .atomvec = d->atomvec };
     /* [FINDALL-NEXT] I0 the notempty root's START closures: unpruned, so
      * every thread below an empty accept survives, and never accepting, so
      * the empty matches at the start are gone (Dfa.notempty). */

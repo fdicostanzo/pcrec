@@ -1,16 +1,19 @@
-/* [FINDALL-NEXT] I1 THE FIND-ALL ITERATOR'S EMITTER (docs/design/findall_iter.md
- * revision 3, as cut by the I1 ruling: no batch ABI, no `next_n`).
+/* [FINDALL-NEXT] THE FIND-ALL ITERATOR'S EMITTER (docs/design/findall_iter.md,
+ * findall_iter_i2.md; contract: docs/spec/match_api.md §3.8).
  *
- * `<prefix>_next(rx_iter *, caps)` is the `iterate` row of `entry_rows[]`
- * (src/gen/entries.c): bind once (`<p>__enter`, the iterator's own state
- * machine plus the once-per-iterator checks), then one STEP per call
- * (`<p>__step`): the NOTEMPTY_ATSTART retry where the artifact can report an
- * empty span, the search body at `lo`, and PCRE2's global-iteration advance.
- * This file writes the shared block's `rx_iter` and its setters, the header's
- * two lines, and the iterator's static steps; the engine emitter writes the
- * search body (`<p>__find`, a DFA body split off `<p>_search`, or the VM's
- * search loop split off `<p>_search_run`) and the retry (`<p>__retry`), and
- * says which shape the STEP has (`PcrecIterText`).
+ * The two controllers are the `iterate` rows of `entry_rows[]`
+ * (src/gen/entries.c): `<prefix>_next(rx_iter *, caps)`, one match per
+ * call, and `<prefix>_next_n(rx_iter *, caps, k)`, up to `k` matches per
+ * call. Both bind once (`<p>__enter`: the iterator's own state machine plus
+ * the once-per-iterator checks), then run one STEP per match (`<p>__step`):
+ * the NOTEMPTY_ATSTART retry where the artifact can report an empty span,
+ * the search at `lo`, and PCRE2's global-iteration advance. This file writes
+ * the shared block's `rx_iter` and its setters, the header's lines, THE
+ * RETRY TABLE (how an empty match is retried, one row per way), and the
+ * iterator's static steps. The engine emitter writes the search the step
+ * runs (`<p>__find` where the search entry has a caller-position prologue to
+ * skip, else the search entry itself) and the retry (`<p>__retry`), and says
+ * which shape the STEP has (`PcrecIterText`).
  *
  * EVERYTHING HERE IS SCAFFOLD (findall_iter.md §6.4): fixed text, the same on
  * every artifact of a shape, emitted inside the scaffold bracket
@@ -191,9 +194,8 @@ static bool emit_bind_checks(Ctx *cx, StrBuf *c, const char *p)
  * checks run and the bare BOUND word is stored, after which nothing reads an
  * option bit; any other header refuses with PCREC_ERR_ITER and ends. Every
  * field a setter did not write already holds its neutral value, because
- * `rx_iter_init` writes them all (IT1; lane iteropt: the bind used to store
- * them a second time), so with no checks a bind is one store and gcc inlines
- * it into both controllers. */
+ * `rx_iter_init` writes them all (IT1), so with no checks a bind is one store
+ * and gcc inlines it into both controllers. */
 static void emit_enter(StrBuf *c, const char *p, bool checks)
 {
     pcrec_sb_printf(c,
@@ -218,8 +220,8 @@ static void emit_enter(StrBuf *c, const char *p, bool checks)
         "}\n\n");
 }
 
-/* The STEP's cursor parameters, `<p>__step`'s and its own-storage wrappers'
- * (lane iteropt2): the subject, the next search position `*lop` and, where
+/* The STEP's cursor parameters, `<p>__step`'s and its own-storage wrappers':
+ * the subject, the next search position `*lop` and, where
  * the retry is emitted, `*flp` (the iterator's `lo` and `flags`), plus the
  * caller's variables on a variable-bearing artifact. The controllers hold
  * `lo` and `flags` in locals, loaded from `rx_iter` once per call and stored
@@ -265,11 +267,11 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const char *body,
         "{\n"
         "    size_t lo = *lop;\n"
         "    int r;\n"
-        "    if (lo > n) { *at = lo; return 0; }   /* an empty match at n ended it */\n",
+        "    if (lo > n) { *at = lo; return 0; }\n",
         p, cursor_params(cx, t), runp, runt);
     if (t->retry)
         pcrec_sb_printf(c,
-            "    if (*flp & PCREC_ITER_F_RETRY) {   /* an empty match was reported at lo */\n"
+            "    if (*flp & PCREC_ITER_F_RETRY) {\n"
             "        ptrdiff_t len;\n"
             "        *at = lo;\n"
             "        len = %s__retry(s, n, lo, c%s%s);\n"
@@ -285,20 +287,20 @@ static void emit_step(Ctx *cx, StrBuf *c, const char *p, const char *body,
         pcrec_sb_printf(c,
             "%s_matched:\n"
             "    if (c[0][1] > c[0][0]) {\n"
-            "        *lop = %s__next_pos(s, n, (size_t)c[0][1] - 1);   /* K75: the aligned end */\n"
+            "        *lop = %s__next_pos(s, n, (size_t)c[0][1] - 1);\n"
             "        *flp = 0;\n"
             "    } else if ((size_t)c[0][0] < n) {\n"
-            "        *lop = (size_t)c[0][0];                          /* PCRE2: retry at the empty match */\n"
+            "        *lop = (size_t)c[0][0];\n"
             "        *flp = PCREC_ITER_F_RETRY;\n"
             "    } else {\n"
-            "        *lop = n + 1;                                    /* an empty match at n ends it */\n"
+            "        *lop = n + 1;\n"
             "        *flp = 0;\n"
             "    }\n"
             "    return 1;\n"
             "}\n\n", p, p);
     else
         pcrec_sb_printf(c,
-            "    *lop = c[0][1] > c[0][0] ? %s__next_pos(s, n, (size_t)c[0][1] - 1)   /* K75 */\n"
+            "    *lop = c[0][1] > c[0][0] ? %s__next_pos(s, n, (size_t)c[0][1] - 1)\n"
             "                             : %s__next_pos(s, n, (size_t)c[0][0]);\n"
             "    return 1;\n"
             "}\n\n", p, p);
@@ -326,7 +328,7 @@ static void emit_step_own(Ctx *cx, StrBuf *c, const char *p, const GenNames *g,
 }
 
 /* `<p>__one`, ONE search of a BOUND iterator from the caller's cursor
- * (findall_iter_i2.md §2.3; lane iteropt2): one STEP (the caller's storage
+ * (findall_iter_i2.md §2.3): one STEP (the caller's storage
  * or the artifact's own on the VM), and on the end path the cursor's `lo`
  * set to the search that ended it and the iterator ENDED with `rc`. `c` is
  * never NULL. The controllers own the cursor: `<p>__one_call` (`_next`'s
@@ -351,7 +353,7 @@ static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         pcrec_sb_printf(c, "    r = %s__step(%s, c, &run, &at);\n", p, sa);
     } else if (t->vm) {
         pcrec_sb_printf(c,
-            "    if (it->bufs) {                                    /* the caller's storage */\n"
+            "    if (it->bufs) {\n"
             "        const %s_buffers *b = (const %s_buffers *)it->bufs;\n"
             "        %s_run_state run;\n", p, p, p);
         pcrec_emit_caller_bind(c, p, "b");
@@ -363,9 +365,9 @@ static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
         pcrec_sb_printf(c, "    r = %s__step(%s, c, &at);\n", p, sa);
     pcrec_sb_puts(c,
         "    if (r == 1) return 1;\n"
-        "    *lop = at;                                         /* the search that ended it */\n"
+        "    *lop = at;\n"
         "    it->rc = r;\n"
-        "    it->hdr = PCREC_ITER_ENDED;                        /* sticky */\n"
+        "    it->hdr = PCREC_ITER_ENDED;\n"
         "    return 0;\n"
         "}\n\n");
 }
@@ -373,7 +375,7 @@ static void emit_one(Ctx *cx, StrBuf *c, const char *p, const PcrecIterText *t)
 /* `<p>__one_call`, one `<prefix>_next` call: bind a non-BOUND header, then
  * one `<p>__one` whose cursor is the iterator's own `lo` and `flags`. One
  * search loads and stores them once anyway; a local copy would only add a
- * store on the end path, where `lo` has not moved (measured, lane iteropt2). */
+ * store on the end path, where `lo` has not moved (measured). */
 static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
 {
     pcrec_sb_printf(c,
@@ -381,7 +383,7 @@ static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
         "                                                           ptrdiff_t (*capture_spans)[2])\n"
         "{\n"
         "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
-        "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n"
+        "        if (!%s__enter(it)) return 0;\n"
         "    return %s__one(it, it->s, it->n, &it->lo%s, capture_spans);\n"
         "}\n\n", p, p, p, t->retry ? ", &it->flags" : "");
 }
@@ -390,15 +392,18 @@ static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
  * calls `next`, so `next` is emitted wherever either is):
  * `<prefix>_next`, one `<p>__one_call`; `<prefix>_next_n`, up to `k`
  * searches into consecutive NCAPS-pair entries, stopping at the first that
- * ends the iterator, with the cursor in locals across the whole loop (lane
- * iteropt2: `it->lo` was loaded and stored around every search). `k == 0`
+ * ends the iterator, with the cursor in locals across the whole loop (rather
+ * than `it->lo` loaded and stored around every search). `k == 0`
  * runs nothing, in every state, so it returns before the bind. A NULL
  * `capture_spans` goes to `<p>__one_local`, the one function that owns the
  * NCAPS-pair stack buffer STEP then writes: with that array out of the
  * controllers, gcc's -fstack-protector-strong (Ubuntu's default) puts no
  * canary on them, which it did on every call (measured, 6-7 instructions
  * per call). It CALLS `<prefix>_next` with that buffer rather than holding
- * a third copy of the step (and of the search body inlined into it). */
+ * a third copy of the step (and of the search body inlined into it); the
+ * buffer's first pair is zeroed only because gcc's -Wmaybe-uninitialized
+ * cannot see the search write it. The emitted text carries no comments of
+ * its own (D112: they would survive `-fno-comments`); the reasons are here. */
 static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
                              const PcrecIterText *t)
 {
@@ -408,8 +413,8 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
     pcrec_sb_printf(c,
         "static %sint %s__one_local(rx_iter *it)\n"
         "{\n"
-        "    ptrdiff_t local[%s_NCAPS][2];   /* STEP writes NCAPS pairs whatever caps is */\n"
-        "    local[0][0] = local[0][1] = 0;   /* -Wmaybe-uninitialized: gcc cannot see the search write them */\n"
+        "    ptrdiff_t local[%s_NCAPS][2];\n"
+        "    local[0][0] = local[0][1] = 0;\n"
         "    return %s_next(it, local);\n"
         "}\n\n", pcrec_attr_text(PCREC_ATTR_NOINLINE), p, up, p);
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
@@ -431,9 +436,9 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
         "        while (i < k && %s__one_local(it)) ++i;\n"
         "        return i;\n"
         "    }\n"
-        "    if (k == 0) return 0;                              /* nothing, in every state */\n"
+        "    if (k == 0) return 0;\n"
         "    if (__builtin_expect(it->hdr != PCREC_ITER_BOUND, 0))\n"
-        "        if (!%s__enter(it)) return 0;                  /* bind; or refuse; or ENDED */\n"
+        "        if (!%s__enter(it)) return 0;\n"
         "    s = it->s;\n"
         "    n = it->n;\n"
         "    lo = it->lo;\n"

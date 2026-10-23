@@ -40,7 +40,7 @@
  * token and, beside its text, a SITE-DATA row (PcrecEncSite below: the fold
  * kind, the fold's text, the failure statement). The gen layer reads that
  * row, describes the site to the memfn kit, and passes the kit's rendered
- * loop back into `pcrec_enc_emit_defs` as a STRING, which substitutes it as
+ * loop back into `pcrec_enc_emit_inline_defs` as a STRING, which substitutes it as
  * it substitutes `$`. Data flows enc -> gen -> kit -> gen -> enc: this
  * directory never calls up and never includes a gen or kit header, which is
  * why it is a string and a data row and not a callback (a callback would
@@ -545,14 +545,12 @@ static inline int pcrec_enc_ready(const PcrecEnc *e)
  * The declarations write no `stat` entry: it is its static twin alone. */
 void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, unsigned drop, unsigned stat);
-/* [MEMFN] M7 (D58 addendum 2): `sites[0..nsites)` are the kit's rendered
- * loops for the entries whose definitions carry PCREC_ENC_SITE; each is
- * substituted for its entry's token. A token with no text, a text whose
- * entry has no token, or any other `@`, is an internal error through the
- * buffer's Ctx (`pcrec_ctx_fail`). */
+/* [FINDALL-NEXT] the out-of-line entries' definitions (the artifact's
+ * epilogue): each EXPORTED one in `mask` (closed over `requires`) and not in
+ * `drop` or `stat`, as its doc and a forwarder to its static twin
+ * (`pcrec_enc_emit_twins`, which holds the body and any delegated loop). */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                         const char *prefix, const PcrecEncSiteText *sites,
-                         size_t nsites, unsigned drop, unsigned stat);
+                         const char *prefix, unsigned drop, unsigned stat);
 /* [FINDALL-NEXT] F-1 the out-of-line entries' STATIC TWINS: each entry in
  * `mask` (closed over `requires`) and not in `drop` whose `inline_def` is
  * false, written as `attr` (the caller's guarded attribute text; the enc
@@ -564,6 +562,10 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 /* [FINDALL-NEXT] writes the twin's second `_` (`<p>_` + this + `<name>`)
  * inside the scaffold bracket. */
 void pcrec_enc_twin_mark(StrBuf *sb);
+/* The name of out-of-line entry `name`'s twin, `<prefix>__<name>`, for a
+ * call from inside the artifact: the one place that knows the mark goes
+ * between the prefix and the name. */
+void pcrec_enc_twin_name(StrBuf *sb, const char *prefix, const char *name);
 void pcrec_enc_emit_twins(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, const char *attr, unsigned drop);
 /* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
