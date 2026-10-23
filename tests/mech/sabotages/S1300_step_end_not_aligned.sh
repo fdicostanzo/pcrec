@@ -13,5 +13,5 @@ SAB_DESC='after a non-empty match the iterator resumes at its end, not at the al
 SAB_DOC_FIGURE='Owed: lane s1300 queued this row after adding its witness (docs/dev/lanes/s1300_report.md, STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1300.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            "        it->lo = %s__next_pos(s, n, (size_t)c[0][1] - 1);   /* K75: the aligned end */\n"'
-SAB_AFTER='            "        it->lo = (size_t)c[0][1]; (void)%s__next_pos;   /* SABOTAGE S1300 */\n"'
+SAB_BEFORE='            "        *lop = %s__next_pos(s, n, (size_t)c[0][1] - 1);   /* K75: the aligned end */\n"'
+SAB_AFTER='            "        *lop = (size_t)c[0][1]; (void)%s__next_pos;   /* SABOTAGE S1300 */\n"'

@@ -1,0 +1,16 @@
+{
+    size_t at;
+    int r;
+    if (it->bufs) {                                    /* the caller's storage */
+        const rx_buffers *b = (const rx_buffers *)it->bufs;
+        rx_run_state run;
+        rx_run_state_bind(&run, b->frames, b->nframes, b->trail, b->ntrail);
+        r = rx__step(s, n, lop, c, &run, &at);
+    } else
+        r = rx__step_own(s, n, lop, c, &at);
+    if (r == 1) return 1;
+    *lop = at;                                         /* the search that ended it */
+    it->rc = r;
+    it->hdr = PCREC_ITER_ENDED;                        /* sticky */
+    return 0;
+}
