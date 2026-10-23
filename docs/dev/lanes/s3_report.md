@@ -124,7 +124,7 @@ bin, d.o). Nothing was compiled or timed new; objdump and diff only.
   | `rx_anchored_byte_class` (256 B) address (mod 64) | 0x3200 (0) | 0x21e0 (32) |
   | `rx_anchored_next_state` (72 B) address (mod 64) | 0x31a0 (32) | 0x2180 (0) |
   | `rx_anchored_is_accepting` (36 B) address (mod 64) | 0x3300 (0) | 0x22e0 (32; crosses a line) |
-  | `a.o` text + rodata | 2048 + (rodata 0x32a) | 1429 + (rodata 0x184) |
+  | `a.o` `.text` / `.rodata` size | 0x318 / 0x32a | 0x278 / 0x184 |
 
   The hot code moves 32 bytes within its cache line group, the 256-byte class table goes from
   4 lines to 5 (it was line-aligned, now it straddles), and the accepting table now crosses a line.
@@ -133,11 +133,12 @@ bin, d.o). Nothing was compiled or timed new; objdump and diff only.
 - **Does the match regime touch anything the cover changed?** No. It reads only `rx_match` and the
   anchored tables. S3's cover change is in `rx_search` (and the `rx_info` strings, not read here).
 - **581's reading of the same cell:** the same code (the anchored machine did not change) read
-  FASTER there: foobar match/real COV/DEF 0.979 (F), PRO/DEF 0.972 (F), AA 0.994, while HRS/DEF
-  1.043 and PRF/DEF 1.045 read SLOWER, and match/none COV 0.932 (F), HRS 1.002 / PRF 1.073 (S). In 581 the
-  `rx_match` text was equally the same across arms; only the surrounding arm code changed. So in
-  two jobs the same instruction stream has read anywhere from 0.93 to 1.07 in the match regime of
-  this cell, with the sign following the arm's other code.
+  FASTER there: foobar match/real COV/DEF 0.979 (F), PRO/DEF 0.972 (F), SHF 0.997, AA 0.994, while
+  HRS/DEF 1.043 and PRF/DEF 1.045 read SLOWER; match/none COV 0.932 (F), PRO 0.929 (F), SHF 1.002,
+  HRS 0.997, PRF 0.997. In 581 the `rx_match` text was equally the same across arms (the anchored
+  machine did not change); only the surrounding arm code differed. So across two jobs the same
+  anchored instruction stream has read from 0.93 to 1.045 in the match regime of this cell, with
+  the value following the arm's other code.
 - **The other match-regime cells in this job (RTE/DEF, scalar):** 21 of 24 within. lit-l8
   1.002/1.011/1.017; year4 1.000/1.001/0.998; file-ext-order 1.050/1.067/1.001 (the first two
   capped); hex8-bounded 1.002/1.001/0.999; foobar 1.032/1.000/1.006; cat-bounded
@@ -168,9 +169,8 @@ The five SLOWER are the same cells as the scalar layer: foobar match/real 1.033,
 search_short/none 1.031, match/real 1.034, match/none 1.066, hex8-bounded throughput/dense 1.538.
 The job's SIMD line: `SLOWER: foobar match/real 1.033 > 1.020` (the others sit within their caps).
 Wins are the same cells at nearly the same ratios (hex8-bounded search_short/none 0.172, file-ext-order
-search_short/dense 0.229). The cover carries no SIMD form, so scalar and SIMD ratios differ only by the
-SIMD DEF's own search (up to 0.03 on a few cells: word-digit throughput/dense 0.629 against 0.655,
-done-eol match/dense 1.026 against 0.994).
+search_short/dense 0.229). The largest scalar/SIMD gaps are a few points (word-digit throughput/dense 0.629
+against 0.655, done-eol match/dense 1.026 against 0.994).
 
 ## 6.4 Mover sample (24 rows, 122 row-regime-class cells; NOT the bar)
 
@@ -207,9 +207,9 @@ SIMD-on layer: 57 / 22 / 43 (WALK/one/run 0 / 0 / 24; the other strata unchanged
 Ten of 24 rows have at least one SLOWER cell (40 cells); nine of them are WALK/one, the tenth is a
 single WALK/hors cell. No LIBC row is SLOWER. At the SIMD layer the smp05/10/15 rows also
 go SLOWER on `real` (9.5x, 12.8x, 9.9x throughput/real; the largest SIMD ratios 11.8-18.2x on
-none), the SIMD DEF being the faster baseline for those. Facts only: these are the walk sites where the
-cover's find window replaced a (possibly SIMD) literal/class prefilter in DEF; whether those
-movers are the intended trade is a ruling for main, not this section.
+none), the SIMD DEF being the faster baseline for those. Facts only; why these walk
+rows lose to DEF was not investigated here, and whether they are the intended trade is a ruling for
+main.
 
 ## 6.5 E[sh] reading (12 D-hors sites; D-hors RTE vs D-one NOH; NOT the bar)
 
@@ -266,7 +266,7 @@ stop mass, and the win is large and monotone above E[sh] ~3. No default moved.
   ruling for main (or one padded control arm).
 - Does not support: the mover sample as a clean result. Ten of 24 sample rows (nine WALK/one) have
   SLOWER cells, to 29x at smp20 (`(?i)x/1234`) and 18x at the SIMD layer on smp10; the whole WALK/one
-  stratum reads SLOWER on 39 of 48 cells. This is outside §6's bar and is a finding for main.
+  stratum reads SLOWER on 39 of 46 cells. This is outside §6's bar and is a finding for main.
 - Supports (weakly): D-hors helps from E[sh] ~3 up and hurts near E[sh] 1 with a low stop mass.
   Does not support moving an admission default: 12 sites, one pattern family above E 3, a
   non-monotone middle (esh06, esh07).
