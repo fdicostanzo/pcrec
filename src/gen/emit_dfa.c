@@ -3445,10 +3445,13 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * how a holder of the record reaches it). */
     pcrec_sb_scaffold_open(c);
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT))
-        pcrec_sb_printf(c, "    .next = %s_next,\n    .next_n = %s_next_n,\n",
-                        cx->opt->prefix, cx->opt->prefix);
+        pcrec_sb_printf(c, "    .next = %s_next,\n", cx->opt->prefix);
     else
-        pcrec_sb_puts(c, "    .next = NULL,\n    .next_n = NULL,\n");
+        pcrec_sb_puts(c, "    .next = NULL,\n");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT_N))
+        pcrec_sb_printf(c, "    .next_n = %s_next_n,\n", cx->opt->prefix);
+    else
+        pcrec_sb_puts(c, "    .next_n = NULL,\n");
     pcrec_sb_scaffold_close(c);
     pcrec_sb_puts(c,   "};\n");
 }
@@ -3540,7 +3543,8 @@ static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
     ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
     ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
-    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, pcrec_entry_storage(cx, PCREC_ENTRY_NEXT)));
+    ENTRY_DECL(PCREC_ENTRY_NEXT,          pcrec_emit_next_decl(sb, p, false));
+    ENTRY_DECL(PCREC_ENTRY_NEXT_N,        pcrec_emit_next_decl(sb, p, true));
 #undef ENTRY_DECL
 }
 
@@ -15686,8 +15690,8 @@ void pcrec_emit_dfa(Ctx *cx)
             .compound = shell != NULL,
             .comp_b = shell && shell->text[1],
             .comp_floor_any = shell && shell->floor_any,
-            .find = pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) &&
-                    pcrec_startpos_prologue_on(cx),
+            .retry = pcrec_iter_retry_of(cx)->needs != 0,
+            .find = pcrec_iter_requested(cx) && pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }

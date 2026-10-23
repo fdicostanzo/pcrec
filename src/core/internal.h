@@ -59,15 +59,20 @@ typedef enum {
     PCREC_ENTRY_NEXT_POS, PCREC_ENTRY_VALID_UPTO, PCREC_ENTRY_VAR_VALID,
     PCREC_ENTRY_INFO, PCREC_ENTRY_MAIN,
     PCREC_ENTRY_NEXT,                      /* [FINDALL-NEXT] the find-all iterator */
+    PCREC_ENTRY_NEXT_N,                    /* ... and its batch form */
     PCREC_ENTRY_PUBLIC_N,                  /* rows below are internal */
     PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
     PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
     PCREC_ENTRY_PREFILTER,
     PCREC_ENTRY_COMP_A, PCREC_ENTRY_COMP_B,
-    /* [FINDALL-NEXT] a DFA artifact's search BODY, `<p>__find`: what
-     * `<p>_search` runs after its caller-position prologue and what
-     * `<p>_next` runs at every step with none (findall_iter.md §2.1). */
+    /* [FINDALL-NEXT] the search BODY, `<p>__find`: what the search entry
+     * (DFA `<p>_search`, VM `<p>_search_run`) runs after its caller-position
+     * prologue and what `<p>_next` runs at every step with none
+     * (findall_iter.md §2.1), where that prologue writes anything. */
     PCREC_ENTRY_FIND,
+    /* [FINDALL-NEXT] the iterator's retry `<p>__retry`: one anchored attempt
+     * after an empty match, under NOTEMPTY_ATSTART (findall_iter.md §3.3). */
+    PCREC_ENTRY_RETRY,
     PCREC_ENTRY_N
 } PcrecEntry;
 
@@ -7561,6 +7566,8 @@ typedef struct {
                          * `never`), so the search relocates to it */
     bool comp_floor_any; /* compound: the first operand is asked on every
                          * call (`\G`), not only at offset 0 */
+    bool retry;         /* the iterator retries an empty match (THE RETRY
+                         * TABLE's winner is not `none`) */
     bool find;          /* the search entry (DFA: `_search`; VM: `_search_run`)
                          * is its caller-position prologue over the body
                          * `<p>__find`, which `<p>_next` runs without it: where
@@ -8170,7 +8177,9 @@ void pcrec_emit_dfa_retry(Ctx *cx, StrBuf *c);
  * `iterate`'s one emitter (the bind, the step, `<prefix>_next`). */
 void pcrec_emit_iter_abi_types(StrBuf *sb);
 void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix);
-void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage);
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, bool batch);
+/* Does the entry request name the find-all iterator (`next` or `next_n`)? */
+bool pcrec_iter_requested(const Ctx *cx);
 void pcrec_emit_iterate(Ctx *cx, StrBuf *c, const GenNames *g,
                         const PcrecIterText *t);
 /* [FINDALL-NEXT] src/gen/emit_iter.c -- THE RETRY TABLE: how the find-all

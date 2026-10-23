@@ -14151,8 +14151,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             .prefilter_retry = cx->job->fit.prefilter &&
                 (v.nclamp > 0 || (rs.row && pcrec_cand_reseed(rs.row)->action !=
                                             CAND_RS_A_FIXED)),
-            .find = pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) &&
-                    pcrec_startpos_prologue_on(cx),
+            .retry = pcrec_iter_retry_of(cx)->needs != 0,
+            .find = pcrec_iter_requested(cx) && pcrec_startpos_prologue_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
     }

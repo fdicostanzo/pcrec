@@ -62,6 +62,7 @@ typedef enum { EF_ENTRY, EF_BODY } EntryForm;
 static PcrecEdgeRank rk_r0(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R0_RARE; }
 static PcrecEdgeRank rk_r1(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R1_CONDITIONAL; }
 static PcrecEdgeRank rk_r2(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R2_PER_CALL; }
+static PcrecEdgeRank rk_r3(const PcrecEntryShape *s) { (void)s; return PCREC_RANK_R3_INNER; }
 /* The hybrid's embedded search: per attempt where the retry re-seeds from
  * it (emit_vm.c's `retry_win`/`retry_seed`), else only the entry's call. */
 static PcrecEdgeRank rk_prefilter(const PcrecEntryShape *s)
@@ -116,6 +117,7 @@ static bool sh_cb_whole(const PcrecEntryShape *s)   { return s->comp_b && !s->fi
 static bool sh_whole(const PcrecEntryShape *s)      { return !s->find; }
 static bool sh_plain_find(const PcrecEntryShape *s) { return sh_plain_dfa(s) && s->find; }
 static bool sh_vm_find(const PcrecEntryShape *s)    { return s->vm && s->find; }
+static bool sh_retry(const PcrecEntryShape *s)      { return s->retry; }
 static bool sh_hybrid_whole(const PcrecEntryShape *s) { return s->hybrid && !s->find; }
 static bool sh_vars_whole(const PcrecEntryShape *s) { return s->vars && !s->find; }
 static bool sh_comp_find(const PcrecEntryShape *s)  { return sh_comp(s) && s->find; }
@@ -214,13 +216,33 @@ static const PartRef pr_vm_run[] = {
 static const PartRef pr_next_dfa[] = {
     { PCREC_ENTRY_FIND,        sh_find,   rk_r2 },
     { PCREC_ENTRY_SEARCH,      sh_whole,  rk_r2 },
+    { PCREC_ENTRY_RETRY,       sh_retry,  rk_r1 },
     { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r2 },
     { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
 };
 static const PartRef pr_next_vm[] = {
     { PCREC_ENTRY_FIND,        sh_find,   rk_r2 },
     { PCREC_ENTRY_SEARCH_RUN,  sh_whole,  rk_r2 },
+    { PCREC_ENTRY_RETRY,       sh_retry,  rk_r1 },
     { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r2 },
+    { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
+};
+/* `<prefix>_next_n` runs the same step in its loop, and a NULL
+ * `capture_spans` through `<prefix>_next` with a local buffer */
+static const PartRef pr_next_n_dfa[] = {
+    { PCREC_ENTRY_NEXT,        sh_always, rk_r0 },
+    { PCREC_ENTRY_FIND,        sh_find,   rk_r3 },
+    { PCREC_ENTRY_SEARCH,      sh_whole,  rk_r3 },
+    { PCREC_ENTRY_RETRY,       sh_retry,  rk_r1 },
+    { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r3 },
+    { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
+};
+static const PartRef pr_next_n_vm[] = {
+    { PCREC_ENTRY_NEXT,        sh_always, rk_r0 },
+    { PCREC_ENTRY_FIND,        sh_find,   rk_r3 },
+    { PCREC_ENTRY_SEARCH_RUN,  sh_whole,  rk_r3 },
+    { PCREC_ENTRY_RETRY,       sh_retry,  rk_r1 },
+    { PCREC_ENTRY_NEXT_POS,    sh_always, rk_r3 },
     { PCREC_ENTRY_VALID_UPTO,  sh_utf,    rk_r1 },
 };
 /* the residual validator steps through the subject validator (enc.h's
@@ -272,6 +294,9 @@ static const EntryRow entry_rows[] = {
     { PCREC_ENTRY_INFO,         sh_always,     PCREC_COMB_DATA,          NOPARTS,                 EF_ENTRY },
     { PCREC_ENTRY_NEXT,         sh_dfa,        PCREC_COMB_ITERATE,       PARTS(pr_next_dfa),      EF_ENTRY },
     { PCREC_ENTRY_NEXT,         sh_vm,         PCREC_COMB_ITERATE,       PARTS(pr_next_vm),       EF_ENTRY },
+    { PCREC_ENTRY_NEXT_N,       sh_dfa,        PCREC_COMB_ITERATE,       PARTS(pr_next_n_dfa),    EF_ENTRY },
+    { PCREC_ENTRY_NEXT_N,       sh_vm,         PCREC_COMB_ITERATE,       PARTS(pr_next_n_vm),     EF_ENTRY },
+    { PCREC_ENTRY_RETRY,        sh_retry,      PCREC_COMB_FINISH_AT,     NOPARTS,                 EF_BODY },
     { PCREC_ENTRY_MAIN,         sh_always,     PCREC_COMB_DRIVER,        PARTS(pr_to_search),     EF_ENTRY },
 };
 
@@ -306,9 +331,9 @@ static void entry_derive(const PcrecEntryShape *s,
 
 static const char *const entry_names[PCREC_ENTRY_N] = {
     "search", "search_in", "match", "match_in", "match_caps", "match_caps_in",
-    "next_pos", "valid_upto", "var_valid", "info", "main", "next",
+    "next_pos", "valid_upto", "var_valid", "info", "main", "next", "next_n",
     "search_run", "match_run", "match_caps_run", "prefilter", "comp_a", "comp_b",
-    "find",
+    "find", "retry",
 };
 
 const char *pcrec_entry_name(PcrecEntry e)
@@ -432,6 +457,12 @@ bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e)
 bool pcrec_entry_is_body(const Ctx *cx, PcrecEntry e)
 {
     return (cx->job->entry_body & PCREC_ENTRY_BIT(e)) != 0;
+}
+
+bool pcrec_iter_requested(const Ctx *cx)
+{
+    return pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) ||
+           pcrec_entry_requested(cx, PCREC_ENTRY_NEXT_N);
 }
 
 bool pcrec_entry_requested(const Ctx *cx, PcrecEntry e)

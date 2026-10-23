@@ -24,7 +24,7 @@
  * is ever reported. */
 static bool retry_none_applies(Ctx *cx)
 {
-    return !pcrec_entry_requested(cx, PCREC_ENTRY_NEXT) || pcrec_is_part(cx) ||
+    return !pcrec_iter_requested(cx) || pcrec_is_part(cx) ||
            !pcrec_fact_reports_empty(cx);
 }
 /* `notempty-machine`: a DFA artifact. */
@@ -51,11 +51,12 @@ static const PcrecIterRetryRow iter_retry_rows[] = {
 const PcrecIterRetryRow *pcrec_iter_retry_of(Ctx *cx)
 {
     /* `none` reads the request, which the driver can ask before emission;
-     * `next` is a root no row calls, so the closure emits it exactly then */
+     * only `next_n` calls `next`, so the closure emits `next` exactly where
+     * the request names either */
     if (cx->job->entry_shaped &&
-        pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) != pcrec_entry_requested(cx, PCREC_ENTRY_NEXT))
+        pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) != pcrec_iter_requested(cx))
         pcrec_ctx_fail(cx, 0, "internal error: `next` is emitted where the entry "
-                       "request does not name it, or the reverse");
+                       "request names no iterator, or the reverse");
     for (size_t i = 0; i < sizeof iter_retry_rows / sizeof *iter_retry_rows; i++)
         if (iter_retry_rows[i].applies(cx)) return &iter_retry_rows[i];
     pcrec_ctx_fail(cx, 0, "internal error: an artifact that reports an empty "
@@ -148,14 +149,16 @@ void pcrec_emit_iter_buffers_setter(StrBuf *sb, const char *prefix)
     pcrec_sb_scaffold_close(sb);
 }
 
-/* The two controllers' declarations; the caller writes the first line's
- * storage, `storage` is the second's (the NEXT entry's, for both). */
-void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, const char *storage)
+/* A controller's declaration, `<prefix>_next` or (`batch`) `_next_n`; the
+ * caller writes its storage. */
+void pcrec_emit_next_decl(StrBuf *sb, const char *prefix, bool batch)
 {
     pcrec_sb_scaffold_open(sb);
-    pcrec_sb_printf(sb, "int %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2]);\n", prefix);
-    pcrec_sb_printf(sb, "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k);\n",
-                    storage, prefix);
+    if (batch)
+        pcrec_sb_printf(sb, "size_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k);\n",
+                        prefix);
+    else
+        pcrec_sb_printf(sb, "int %s_next(rx_iter *it, ptrdiff_t (*capture_spans)[2]);\n", prefix);
     pcrec_sb_scaffold_close(sb);
 }
 
@@ -383,8 +386,8 @@ static void emit_one_call(StrBuf *c, const char *p, const PcrecIterText *t)
         "}\n\n", p, p, p, t->retry ? ", &it->flags" : "");
 }
 
-/* The two exported controllers, both with the NEXT entry's linkage (no
- * entry of their own: `.next_n` is NULL exactly where `.next` is):
+/* The two exported controllers, each with its own entry's linkage (`next_n`
+ * calls `next`, so `next` is emitted wherever either is):
  * `<prefix>_next`, one `<p>__one_call`; `<prefix>_next_n`, up to `k`
  * searches into consecutive NCAPS-pair entries, stopping at the first that
  * ends the iterator, with the cursor in locals across the whole loop (lane
@@ -400,6 +403,8 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
                              const PcrecIterText *t)
 {
     const char *st = pcrec_entry_storage(cx, PCREC_ENTRY_NEXT);
+    const char *stn = pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT_N)
+        ? pcrec_entry_storage(cx, PCREC_ENTRY_NEXT_N) : NULL;
     pcrec_sb_printf(c,
         "static %sint %s__one_local(rx_iter *it)\n"
         "{\n"
@@ -414,6 +419,7 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
         "    if (__builtin_expect(!capture_spans, 0)) return %s__one_local(it);\n"
         "    return %s__one_call(it, capture_spans);\n"
         "}\n\n", st, p, p, p);
+    if (!stn) return;
     pcrec_sb_puts(c, pcrec_attr_text(PCREC_ATTR_NOCLONE));
     pcrec_sb_printf(c,
         "%ssize_t %s_next_n(rx_iter *it, ptrdiff_t (*capture_spans)[2], size_t k)\n"
@@ -437,7 +443,7 @@ static void emit_controllers(Ctx *cx, StrBuf *c, const char *p, const char *up,
         "    it->lo = lo;\n"
         "%s"
         "    return i;\n"
-        "}\n\n", st, p, t->retry ? "    uint32_t flags;\n" : "", p, p,
+        "}\n\n", stn, p, t->retry ? "    uint32_t flags;\n" : "", p, p,
         t->retry ? "    flags = it->flags;\n" : "", p, t->retry ? ", &flags" : "", up,
         t->retry ? "    it->flags = flags;\n" : "");
 }
