@@ -96,20 +96,24 @@ has_guard()   { grep -q '_decode(subject, subject_length, landing_position' "$1"
 # (never harvested from the artifact). `a\bb` is the EMPTY engine: its path
 # asks no RECOVER, so it stamps the absence value. The mechanism is asserted
 # with the stamp, so a row cannot pass on a stamp whose machinery is absent.
+# D172 S3 (job 600): `abcd` and `[a-z]` are fixed-width windows, `cover`
+# artifacts by default (RX_DFA_START "attempt-start", no RECOVER row asked;
+# run_dfa_stamps.sh holds that witness), so their rows carry the cover row's
+# deny `--memfn=no-wf-find`, which renders the build before S3.
 W1="$WORKDIR/w1"
 printf '%s\n' \
-    'byte	abcd	-	end-minus-width' \
-    'byte	abcd	-fno-start-width	reverse-pass' \
-    'byte	abcd	-fno-start-landing	end-minus-width' \
+    'byte	abcd	--memfn=no-wf-find	end-minus-width' \
+    'byte	abcd	--memfn=no-wf-find -fno-start-width	reverse-pass' \
+    'byte	abcd	--memfn=no-wf-find -fno-start-landing	end-minus-width' \
     'byte	\w+	-	landing' \
     'byte	\w+	-fno-start-width	landing' \
     'byte	\w+	-fno-start-landing	reverse-pass' \
     'utf8	.	-	landing' \
     'utf8	.	-fno-start-landing	reverse-pass' \
     'utf8	\w+	-	landing' \
-    'byte	[a-z]	-	end-minus-width' \
-    'byte	[a-z]	-fno-start-width	landing' \
-    'byte	[a-z]	-fno-start-width -fno-start-landing	reverse-pass' \
+    'byte	[a-z]	--memfn=no-wf-find	end-minus-width' \
+    'byte	[a-z]	--memfn=no-wf-find -fno-start-width	landing' \
+    'byte	[a-z]	--memfn=no-wf-find -fno-start-width -fno-start-landing	reverse-pass' \
     'byte	(?s).	-	end-minus-width' \
     'byte	(?s).	-fno-start-width	reverse-pass' \
     'byte	a\bb	-	attempt-start' \
@@ -270,9 +274,15 @@ fi
 # apply), and `guard` the landings that carry the guard (a `-e utf8` pattern
 # line in the corpus compiles here under byte, so the guarded population
 # comes from §1, §5 and §6, and this floor is 0 by construction).
+# S3 RE-PIN (lane s3, job 600, 2026-10-23): D172 S3 routes the fixed-width
+# windows to `cover` by default (RX_DFA_START "attempt-start"), so they leave
+# end-minus-width and with them the product arm's reach. MEASURED at the S3
+# tree (ba6ebf720's job 600, 4,870 patterns): end-minus-width 510 (was
+# floor 1,124), product-arm reach 705 (was 1,290); pinned AT the measured
+# value. Landing (195) stays above its floor and is untouched.
 FLOOR_LAND=${FLOOR_LAND:-168}
-FLOOR_EMW=${FLOOR_EMW:-1124}
-FLOOR_PROD=${FLOOR_PROD:-1290}
+FLOOR_EMW=${FLOOR_EMW:-510}
+FLOOR_PROD=${FLOOR_PROD:-705}
 if [ "$n_land" -lt "$FLOOR_LAND" ] || [ "$n_emw" -lt "$FLOOR_EMW" ] || [ "$n_prod" -lt "$FLOOR_PROD" ]; then
     bad "§3 the populations fell below their floors: landing $n_land (floor $FLOOR_LAND), end-minus-width $n_emw (floor $FLOOR_EMW), product-arm reach $n_prod (floor $FLOOR_PROD) — the corpus moved or a row stopped selecting; read it before re-pinning"
 else
@@ -314,7 +324,11 @@ x*y xxy y
 a\xc3a\xe2\x82\xacb
 \x80\xc3\xa9z\xf0\x9f\x98\x80
 EOF
+# D172 S3 (job 600): `abcd` is a cover artifact by default now (still a
+# differential: cover against the reverse pass), so `ab|cd` joins as the third
+# end-minus-width row the floor counts (not a window: no cover).
 DIFF_ROWS='byte	abcd
+byte	ab|cd
 byte	\w+
 byte	(?s).
 byte	[a-z]+\d*

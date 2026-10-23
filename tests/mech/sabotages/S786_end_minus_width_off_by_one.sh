@@ -6,7 +6,10 @@ SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='startlanding harness'
 SAB_DESC='the end-minus-width start subtracts W - 1, so every fixed-width match is reported one byte short at its start'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S786.'
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/o.c" --pattern "abcd" && grep -q "last_accept_position - 4;" "$REACH_TMP/o.c" && echo REACH-EMW'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find -p rx -o "$REACH_TMP/o.c" --pattern "abcd" && grep -q "last_accept_position - 4;" "$REACH_TMP/o.c" && echo REACH-EMW'
 SAB_REACH_EXPECT='REACH-EMW'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

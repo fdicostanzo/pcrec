@@ -22,7 +22,10 @@ SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_DESC="the run-pinned prefilter rows compare the pinned run one byte past its proved offset (cand + run_o + 1), so the candidate test refuses every real match start and the skip returns n: every m cell of every run-pinned artifact reads nomatch"
 SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED -- reach:ok(1/1), corpus:27fail/28pass (tests/offsetskip/run_pinned.rxt, before the C0 block was added), offsetskip:3fail/25pass (run_offset_skip.sh §2 names the router/foo-b/ab-user run terms missing). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S279."
 # [MECH-REACH] the router takes a run row and emits the P4 run term at cand.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "rx_w4(subject + cand) == rx_w4(\"/use\") && rx_w4(subject + cand + 1) == rx_w4(\"user\")" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the verify
 # chain lost its `DfaForm` (litscan_s1.md §1.3's narrowing), so `f->cx` reads

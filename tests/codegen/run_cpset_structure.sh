@@ -973,6 +973,17 @@ fi
 # `#define RX_MEASURES ""`, `.measures = "",` and the `measures` member with its
 # two-line comment in the shared ABI block (diffed at the same `-o` against a
 # build of the branch point; nothing else moves but the same-width abi digits).
+#
+# RE-RECORDED 2026-10-23 at D172 S3 (lane s3fix600, job 600, abi 83 -> 84,
+# same-width digits): the four sample patterns that are fixed-width windows
+# (`a`, `abc`, `\bword\b`, `(?i)HeLLo`) are `cover` artifacts by default, and
+# both of their moved readings are that ruling: RX_DFA_PREFILTER reads "none"
+# (no scan, so no candidate-start filter; was memchr / run-pinned /
+# offset-set-bounded / handoff) and EMITTED_BYTES falls by the forward and
+# reverse machines the cover artifact does not carry (21,348 -> 18,944;
+# 22,179 -> 19,267; 25,144 -> 20,690; 25,544 -> 21,700). RX_DFA_TABLE stays
+# "premultiplied": it names the anchored `_match` machine those artifacts
+# still carry. The other eight rows did not move.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

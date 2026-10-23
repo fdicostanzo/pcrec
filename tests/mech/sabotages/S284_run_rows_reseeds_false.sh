@@ -27,13 +27,25 @@
 # rows included) and dfa_form_derive's precondition-(8) read-back — the
 # latter reads the same field, so it cannot, which is recorded here rather
 # than discovered.
+# FLIPPED TO DETECTED 2026-10-23 (lane s3fix600, job 600's NOW DETECTED). The
+# derivation above still holds for precondition (8); what expired the claim is
+# a SECOND reader of the field. Since D172 S2 commit 6 (32f9b1781, NEXT reads
+# the window family's reply) `dfa_form_derive` refuses a NEXT row whose
+# `reseeds` disagrees with the reply's RE-SEED path, as an internal error. Under
+# this plant every seeded run-row site refuses at compile: `foo\B`/`(foo\B)` in
+# the scan-edge census, `/user|/users` and `a\K/user` in run_pinned.rxt. A loud
+# refusal, never a wrong answer. MEASURED by a scratch build of this exact
+# plant on BOTH c3ea619c3 (before S3: scanedge 3 fail/18 pass, run_pinned.rxt
+# 42 fail/13 pass) and the S3 tree (scanedge 3/18, run_pinned.rxt 4/51: S3's
+# cover artifacts ask no NEXT row). So the expiry predates S3; job 587/600's
+# mech set was the first matrix run of this row since S2.
 SAB_ID="S284-run-rows-reseeds-false"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="scanedge harness"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
-SAB_EXPECT=UNDETECTED
-SAB_DESC="the run-pinned rows declare reseeds = false though their emitters reseed a seeded machine, so scanedge.c's precondition (8) stops refusing a chain head that is a seed target on those machines — unreachable on every run-row machine the corpus, the bench and 21 constructed witnesses produce"
-SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build): a scratch build with this plant moves 0 artifacts over 151 corpus + 94 bench run-row artifact-configs (2 seeded, both wild-secrets-github-pat) and 21 constructed seeded witnesses (docs/dev/optloop/s1/rowj_reach_output.txt); single-row mech: UNDETECTED (EXPECTED) -- reach:ok(1/1), scanedge:0fail/14pass, corpus:0fail/55pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S284."
+SAB_EXPECT=DETECTED
+SAB_DESC="the run-pinned rows declare reseeds = false though their emitters reseed a seeded machine: scanedge.c's precondition (8) stops refusing a chain head that is a seed target on those machines (unreachable there), and dfa_form_derive refuses every seeded run-row site whose window-family reply says RE-SEED (an internal error at compile)"
+SAB_DOC_FIGURE="MEASURED 2026-10-23 (lane s3fix600): DETECTED at c3ea619c3 (scanedge 3fail/18pass, run_pinned.rxt 42fail/13pass) and at the S3 tree (scanedge 3fail/18pass, run_pinned.rxt 4fail/51pass), both through dfa_form_derive's RE-SEED refusal. Before D172 S2 (the claim below, expired): MEASURED 2026-09-25 (lane s1build): a scratch build with this plant moves 0 artifacts over 151 corpus + 94 bench run-row artifact-configs (2 seeded, both wild-secrets-github-pat) and 21 constructed seeded witnesses (docs/dev/optloop/s1/rowj_reach_output.txt); single-row mech: UNDETECTED (EXPECTED) -- reach:ok(1/1), scanedge:0fail/14pass, corpus:0fail/55pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S284."
 # [MECH-REACH] the site IS exercised: a seeded run-row machine with a scan edge.
 SAB_REACH='"$PCREC" --features all -p rx -fcomments -o "$REACH_TMP/o.c" --pattern "\\bat /user[0-9]{2,50}x" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned-bounded\"" "$REACH_TMP/o.c" && grep -q "rx_forward_seed_state" "$REACH_TMP/o.c" && grep -q "SCAN EDGE" "$REACH_TMP/o.c" && echo REACH-SEEDED-RUN-ROW-WITH-EDGE'
 SAB_REACH_EXPECT="REACH-SEEDED-RUN-ROW-WITH-EDGE"

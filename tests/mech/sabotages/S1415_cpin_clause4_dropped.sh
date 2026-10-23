@@ -19,7 +19,10 @@ SAB_FILE="memfn/src/window.c"
 SAB_SUITES="prechecks"
 SAB_DESC="the window family's C-pin no longer declines a plan that already tests all of R through its other spans (clause 4), so class A artifacts (whose offset-set selection already verifies the pinned run) move to run-pinned: keyword in|instanceof stamps run-pinned instead of offset-set"
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1415."
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "in|instanceof" && grep -q "^#define RX_DFA_PREFILTER \"offset-set\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && echo REACH-CLASS-A-KEYWORD'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "in|instanceof" && grep -q "^#define RX_DFA_PREFILTER \"offset-set\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && echo REACH-CLASS-A-KEYWORD'
 SAB_REACH_EXPECT="REACH-CLASS-A-KEYWORD"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

@@ -990,6 +990,64 @@ def pick_form(text):
     return 'exact'
 
 
+# D172 S3 (job 600): THE COVER WINDOW SEARCH'S PICK. A `cover` artifact's
+# search is the window family's find-then-verify statement
+# (`scan_position = ({ ... })`), and the position it SEARCHES for is the run
+# pick (`<PREFIX>_REQ_RUN`'s offset K and member, else `<PREFIX>_REQ_BYTE`),
+# which reads the byte-keyed prior exactly as the run pre-check's pick does
+# (`req_pick` above): byte takes the rarest member, utf8 (prior NONE) the
+# rightmost. So when both sides are cover and their picks differ, the search
+# clause alone is normalized on both sides -- the memchr form (`memchr(s + c
+# [+ K], B, ...)` and its `- K` back-off) or the class form (`while (c [+ K]
+# < n && !(s[c + K] == B || ...)) c++;`) -- counted (`cover_pick`), and each
+# side is held to its own stamp below (`cover_pick_bad`): the bytes it
+# searches are the stamped pick's, at the stamped offset. The verify that
+# follows in the same statement is still compared token for token.
+COVER_SCAN_RE = re.compile(r'^#define RX_DFA_SCAN "cover"$', re.M)
+COVER_MEMCHR_RE = re.compile(
+    r'\{ const void \*(rx_mf\d+)_q = \1_c(?: \+ (\d+))? < \1_n \? memchr\(\1_s \+ \1_c(?: \+ (\d+))?, (\d+), '
+    r'\1_n - (?:\1_c|\(\1_c \+ (\d+)\))\) : 0; if \(!\1_q\) break; '
+    r'\1_c = \(size_t\)\(\(const unsigned char \*\)\1_q - \1_s\)(?: - (\d+))?; \}')
+COVER_CLASS_RE = re.compile(
+    r'while \((rx_mf\d+)_c(?: \+ (\d+))? < \1_n && !\(\(((?:\1_s\[\1_c(?: \+ \d+)?\] == \d+(?: \|\| )?)+)\)\)\) \1_c\+\+;')
+
+
+def cover_pick(text):
+    """(normalized text, [(K, {bytes})] per search clause) for a cover artifact's find."""
+    picks = []
+
+    def m_memchr(m):
+        ks = {int(x) for x in (m.group(2), m.group(3), m.group(5), m.group(6)) if x}
+        picks.append((ks.pop() if len(ks) == 1 else (-1 if ks else 0), {int(m.group(4))}))
+        return '{ /* cover pick K,B normalized */ }'
+
+    def m_class(m):
+        k = int(m.group(2) or 0)
+        picks.append((k, {int(b) for b in re.findall(r'== (\d+)', m.group(3))}))
+        return 'while (/* cover pick K,B normalized */) c++;'
+
+    out = []
+    for line in text.splitlines(keepends=True):
+        if line.startswith('    scan_position = ({ const unsigned char *rx_mf'):
+            line = COVER_CLASS_RE.sub(m_class, COVER_MEMCHR_RE.sub(m_memchr, line))
+        out.append(line)
+    return ''.join(out), picks
+
+
+def cover_pick_stamped(text):
+    """(K, {bytes}) the stamps declare: REQ_RUN's member (its cube if masked) at K, else REQ_BYTE."""
+    m = REQRUN_STAMP_VAL_RE.search(text)
+    if m and '@' in m.group(1):
+        st, _, mask = m.group(1).partition('/')
+        hx, k = st.split('@')
+        k = int(k)
+        member = int(hx[2 * k:2 * k + 2], 16)
+        km = int(mask[2 * k:2 * k + 2], 16) if mask else 0xff
+        return k, {member & km, (member & km) | (~km & 0xff)}
+    mb = REQBYTE_STAMP_VAL_RE.search(text)
+    return None, ({int(mb.group(1))} if mb and mb.group(1).isdigit() else set())
+
+
 def excise(text, label, drop_run=False):
     counts = {'next_pos': 0, 'valid_upto': 0, 'utf_check_stamp': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
@@ -999,7 +1057,7 @@ def excise(text, label, drop_run=False):
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-              'handoff_overlong': 0, 'reentry_block': 0}
+              'handoff_overlong': 0, 'reentry_block': 0, 'cover_pick': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1321,7 +1379,7 @@ def main():
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-           'handoff_overlong': 0, 'reentry_block': 0}
+           'handoff_overlong': 0, 'reentry_block': 0, 'cover_pick': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
@@ -1375,8 +1433,27 @@ def main():
             # and each side is held to its own stamp below.
             if not drop_run and pick_form(tb) != pick_form(tu):
                 drop_run = True
+            ncov_pick = 0
+            cov_bad = []
+            if COVER_SCAN_RE.search(tb) and COVER_SCAN_RE.search(tu) and \
+                    cover_pick_stamped(tb) != cover_pick_stamped(tu):
+                for side in ('byte', 'utf8'):
+                    t = tb if side == 'byte' else tu
+                    nt, picks = cover_pick(t)
+                    k, want = cover_pick_stamped(t)
+                    if len(picks) != 1:
+                        cov_bad.append("%s cover find carries %d search clause(s), not 1" % (side, len(picks)))
+                    elif picks[0][1] != want or (k is not None and picks[0][0] != k):
+                        cov_bad.append("%s cover find searches %s at +%s, the stamps declare %s at +%s"
+                                       % (side, sorted(picks[0][1]), picks[0][0], sorted(want), k))
+                    if side == 'byte':
+                        tb = nt
+                    else:
+                        tu = nt
+                    ncov_pick += len(picks)
             nb, cb = excise(tb, "byte#%d" % idx, drop_run)
             nu, cu = excise(tu, "utf8#%d" % idx, drop_run)
+            cb['cover_pick'] = ncov_pick
             npairs += 1
             for k in agg:
                 agg[k] += cb[k] + cu[k]
@@ -1512,6 +1589,7 @@ def main():
                     and ew['byte'] != ew['utf8'] and ew['utf8'] != 'none'):
                 bad_sel.append("END_WINDOW byte \"%s\" vs utf8 \"%s\" -- not the utf8 decline"
                                % (ew['byte'], ew['utf8']))
+            bad_sel += cov_bad
             if bad_sel:
                 nselect_bad += 1
                 if len(findings) < 20:
@@ -1578,7 +1656,7 @@ def main():
               'end_window', 'end_window_stamp', 'req_run_offset0',
               'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
               'req_pick', 'start_zero', 'findings_stamp', 'req_run_asym',
-              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong'):
+              'handoff_gate', 'handoff_block', 'handoff_stamp', 'handoff_overlong', 'cover_pick'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     for p in gate_pats:
@@ -1633,7 +1711,7 @@ else
         fi
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp; do
+        for k in next_pos valid_upto utf_check_stamp back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick start_zero findings_stamp req_run_asym handoff_gate handoff_block handoff_stamp cover_pick; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"

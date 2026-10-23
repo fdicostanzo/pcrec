@@ -26,7 +26,10 @@ judgment, BOTH WAYS, per arm:
                       unchanged: the listing mirrors the artifact's stamps (its RX_DFA_* rows) and
                       records which facts a pass asked (`used`, facts_listing.md §4.1: passes the
                       composite ran asked them, the cover walk runs none); a cover pattern whose
-                      listing did not move is counted, not red
+                      listing did not move is counted, not red. ALSO (job 600's three rows,
+                      `\\p{Zl}` `\\p{Zp}` `\\p{sc=Thaana}`: byte `empty`, utf8 `cover`) a pattern whose
+                      -e utf8 .c is COVER may move its `utf8` rows and nothing else
+                      (`utf8-cover` in the tally line)
   c-simd, c-norun     as c-default, at the SIMD layer and under -fno-run-prefilter: the cover
                       stamp is read from NEW's artifact on THAT arm
   off, off-simd,      nothing may move (the OFF arm renders the parent's text, at each of the
@@ -89,10 +92,16 @@ def first_diff(a, b):
     return ""
 
 
+def utf8_rows_only(a, b):
+    la, lb = a.split(b"\n"), b.split(b"\n")
+    return len(la) == len(lb) and all(x == y or (x.startswith(b"utf8\t") and y.startswith(b"utf8\t"))
+                                      for x, y in zip(la, lb))
+
+
 def one(task):
     base, new, pat = task
     res = []
-    dcover = 0
+    dcover = ucover = 0
     for arm, fb, fn, stamped in ARMS:
         rb, ob, eb = run([base] + fb + ["--pattern", pat])
         rn, on, en = run([new] + (fn or fb) + ["--pattern", pat])
@@ -106,10 +115,14 @@ def one(task):
         cover = stamped and rn == 0 and COVER in on
         if arm == "c-default":
             dcover = cover
+        if arm == "c-utf8":
+            ucover = cover
         if arm == "facts":
-            # declared: a default-cover pattern's listing, its `used` cells only
-            cover = dcover and rb == rn and eb == norm(en)
-        res.append((arm, "; ".join(what), cover, HORS in on))
+            # declared: a default-cover pattern's listing, its `used` cells only; or a
+            # utf8-only-cover pattern's listing, its `utf8` rows only
+            cover = (dcover or (ucover and utf8_rows_only(ob, norm(on)))) and rb == rn and eb == norm(en)
+            ucover = cover and not dcover
+        res.append((arm, "; ".join(what), cover, HORS in on, arm == "facts" and ucover))
     return pat, res
 
 
@@ -128,14 +141,15 @@ def main():
     pats = sorted(set(p for _, _, p in corpus))
     if a.limit:
         pats = pats[:a.limit]
-    tally = {arm: {"cover": 0, "moved": 0, "hors": 0} for arm, _, _, _ in ARMS}
+    tally = {arm: {"cover": 0, "moved": 0, "hors": 0, "u8": 0} for arm, _, _, _ in ARMS}
     unexpected, rows = [], []
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as ex:
         for pat, res in ex.map(one, [(a.base, a.new, p) for p in pats], chunksize=8):
             ep = emit_sweep.encode_escape(pat)
-            for arm, what, cover, hors in res:
+            for arm, what, cover, hors, u8 in res:
                 t = tally[arm]
                 t["cover"] += cover
+                t["u8"] += u8
                 t["hors"] += hors and cover
                 if what:
                     t["moved"] += 1
@@ -157,7 +171,8 @@ def main():
         print("  %-9s cover %5d (D-hors %4d)  movers %5d  declared: %s" % (
             arm, t["cover"], t["hors"], t["moved"],
             "movers == cover artifacts" if stamped else
-            "movers within default-cover patterns" if arm == "facts" else "no mover"))
+            "movers within default-cover patterns, utf8-cover %d" % t["u8"] if arm == "facts"
+            else "no mover"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)
     print("== s3 census COMPLETE: patterns=%d compiles=%d movers=%d unexpected=%d"

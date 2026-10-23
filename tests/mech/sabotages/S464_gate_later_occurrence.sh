@@ -13,7 +13,10 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/handoff.rxt"
 SAB_DESC='the handoff gate returns a LATER occurrence of the run'\''s window than the first at or after search_from (the leftmost-occurrence contract, r1 S-F1): a correct discard gate, and under the handoff the scan starts past the match'\''s own window'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/k82hbuild_report.md §6); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S464.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?i)cat'\'' && grep -q '\''size_t handoff_position = rx_reqrun(subject, subject_length, search_from);'\'' "$REACH_TMP/o.c" && echo REACH-HANDOFF-GATE'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?i)cat'\'' && grep -q '\''size_t handoff_position = rx_reqrun(subject, subject_length, search_from);'\'' "$REACH_TMP/o.c" && echo REACH-HANDOFF-GATE'
 SAB_REACH_EXPECT='REACH-HANDOFF-GATE'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^ms 0 "CAT CAT" 0 3$|1'
 SAB_EXPECT=DETECTED

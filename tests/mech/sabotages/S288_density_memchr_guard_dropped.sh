@@ -19,7 +19,10 @@ SAB_DESC="req_byte_dominated_by drops the density conjunct's !cs->memchr_form gu
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S288."
 # [MECH-REACH] the witness's one-byte pre-check stays emitted (never
 # dominated by the offset-set scan) on the clean tree.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]\x80[0-9]{3}\x81" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-DENSITY-PRECHECK-NOT-DOMINATED'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]\x80[0-9]{3}\x81" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-DENSITY-PRECHECK-NOT-DOMINATED'
 SAB_REACH_EXPECT="REACH-DENSITY-PRECHECK-NOT-DOMINATED"
 SAB_COUNT=1
 # [FINDINGS] B1: the anchor's context line was the density conjunct's own

@@ -113,8 +113,8 @@ fi
 # sub-match in both builds, and `\b` still builds the node, so the positive
 # control below is unchanged. T3's own identity is tests/ucp/
 # run_ctxnode_tests.sh's (the corpus both ways, and the route manifest).
-gen_a() { pcrec_run "$PCREC" --features all -fno-ctx-node -p rx -o - --pattern "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -fno-ctx-node -p rx -o - --pattern "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -fno-ctx-node -p rx ${2:+"$2"} -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -fno-ctx-node -p rx ${2:+"$2"} -o - --pattern "$1" 2>/dev/null; }
 
 # ---- the corpus ----------------------------------------------------------
 # Every `pattern` line from every .rxt under tests/, known_fail included: a
@@ -282,7 +282,17 @@ vacuous_only() {
 vacuous_mutant() {
     printf '%s' "$1" | sed -E 's/\(\?:(\\[bB])\|\)/(?:\1)/g; s/\(\?:\|(\\[bB])\)/(?:\1)/g; s/\(\?:(\\[bB])\)\?\??/(?:\1)/g'
 }
-ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0; ctl_same_vac=0
+# FOURTH LEGITIMATE NON-DIFFERENCE (D172 S3, job 600): a `cover` artifact
+# (`RX_DFA_SCAN "cover"`). Its search runs no machine: the window test is
+# decided from the pattern's own facts (match_api.md §6.3.4¶2), so the only
+# automaton left is the anchored `_match` machine, and on a pattern whose
+# assertion cannot change that machine's language the two builds agree. The
+# corpus's two (`-*?(?:\b|\B)\W`, `\W+?(?:\b){0,2}`) carry assertions the
+# vacuous wrappers above do not spell. PROVED, never assumed: the same pattern
+# under the cover row's deny (`--memfn=no-wf-find`, the unanchored scan the
+# artifact had before S3) MUST differ between the builds; one whose deny arm
+# also agrees stays UNEXPLAINED, so the bucket cannot absorb a dead knob.
+ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0; ctl_same_vac=0; ctl_same_cover=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -298,6 +308,10 @@ while IFS= read -r pat; do
             && [ "$mut" != "$pat" ] && [ "$(gen_a "$mut")" != "$(gen_b "$mut")" ]; then
         ctl_same_vac=$((ctl_same_vac + 1))
         echo "  vacuous-assertion control (mutant $mut differs): $pat" >&2
+    elif printf '%s' "$a" | grep -q '^#define RX_DFA_SCAN "cover"$' \
+            && [ "$(gen_a "$pat" --memfn=no-wf-find)" != "$(gen_b "$pat" --memfn=no-wf-find)" ]; then
+        ctl_same_cover=$((ctl_same_cover + 1))
+        echo "  cover control (its --memfn=no-wf-find arm differs): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -305,9 +319,9 @@ while IFS= read -r pat; do
 done < "$WORKDIR/bpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_vac carry only vacuous assertions, each proved by a live-assertion mutant that DOES differ) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_vac carry only vacuous assertions, each proved by a live-assertion mutant that DOES differ; $ctl_same_cover are cover artifacts whose --memfn=no-wf-find arm DOES differ) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_same_vac vacuous-assertion ones agree (expected, mutant-proved), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_same_vac vacuous-assertion ones agree (expected, mutant-proved), $ctl_same_cover cover ones agree (expected, deny-proved), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------
@@ -341,7 +355,7 @@ fi
 echo
 echo "== Summary =="
 echo "  identity population   compared $((same + diff))  identical $same  differing $diff  rejected-by-both $rej"
-echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  agree-vacuous $ctl_same_vac  rejected-by-both $ctl_rej"
+echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  agree-vacuous $ctl_same_vac  agree-cover $ctl_same_cover  rejected-by-both $ctl_rej"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

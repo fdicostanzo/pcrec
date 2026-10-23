@@ -68,7 +68,10 @@ SAB_DESC="ofs_test_of leaves OfsTest.maxk at the walk's own o->maxk without wide
 SAB_DOC_FIGURE="MEASURED 2026-10-06 (lane r4clx, single-row mech): DETECTED -- ubuntubudu at 91f5b607 reach:ok(1/1),corpus:51fail/4pass; the Mac figure is in docs/dev/lanes/r4clx_report.md. The plant is refused at compile time by ofs_pred_of's maxk consistency check (R4c). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S287."
 # [MECH-REACH] the router's run row emits a maxk that already covers the run
 # (o->maxk vs ro+rl-1) on the clean tree; confirms the widened form is live.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]/user" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && echo REACH-RUN-PINNED-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-PINNED-EMITTED"
 SAB_COUNT=1
 # RE-AIMED (D172 S2 commit 6, lane wsc5): ofs_test_of reads the window

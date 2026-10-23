@@ -15,7 +15,10 @@ SAB_FILE="src/gen/memfn_sites.c"
 SAB_SUITES="codegen"
 SAB_DESC="pcrec's in-emitter deny map sends no MF_D_RUN_OVERLAP for -fno-run-overlap, so the kit renders word compares under the deny on every site"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/m1b_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S571."
-SAB_REACH='"$PCREC" --features all -fno-run-overlap -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand, \"/user\", 5)" "$REACH_TMP/o.c" && echo REACH-DENIED-RUN-TERM-IS-MEMCMP'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -fno-run-overlap -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand, \"/user\", 5)" "$REACH_TMP/o.c" && echo REACH-DENIED-RUN-TERM-IS-MEMCMP'
 SAB_REACH_EXPECT="REACH-DENIED-RUN-TERM-IS-MEMCMP"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

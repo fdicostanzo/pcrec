@@ -327,10 +327,14 @@ def corpus_checks():
 
 
 # (pattern, options, expected RX_DFA_PREFILTER, why) -- written from F's conjuncts.
+# D172 S3 (job 600): `\B(?<!a)d` and `\bab\b` are fixed-width windows, `cover`
+# artifacts by default (no scan, so no prefilter: "none"); their rows carry the
+# cover row's deny `--memfn=no-wf-find`, which renders the build before S3.
 FA = ["--features", "all"]
+NOCOVER = ["--memfn=no-wf-find"]
 WITNESSES = [
     (b"\\b(?:true|false|null)\\b", FA, "first-class-bounded", "E = the 63 word bytes, S = {t, f, n}"),
-    (b"\\B(?<!a)d", FA, "first-memchr-bounded", "S = {d}: the one-byte twin"),
+    (b"\\B(?<!a)d", FA + NOCOVER, "first-memchr-bounded", "S = {d}: the one-byte twin"),
     (b"(?:\\b|xy)a", FA, "first-class-bounded", "S = {a, x}; the conditional re-seed's witness (§6.4.3 item 1)"),
     (b"\\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\\b", FA, "first-memchr-bounded", "a VM hybrid's inlined scan takes the DFA hat (aws, S = {A})"),
     (b"\\B(a|b){1,3}", FA + ["-fprefilter-collapse"], "first-class-bounded", "a COUNT-COLLAPSED hybrid prefilter (sound-F5(d)'s witness)"),
@@ -338,7 +342,7 @@ WITNESSES = [
     (b"(?<=\\w) *a", FA, "byte-class-bounded", "S = {' ', a}: the space keeps every seed, so it is outside E and T = S does not narrow E (the ss3 panel's BLOCKER: the old T == S assertion refused this)"),
     (b"(?<=[ab])\\W*?b", FA, "byte-class-bounded", "S holds every non-word byte, none of them in E (the BLOCKER's 193-byte witness)"),
     (b"(?<=\\w) *(a)", FA, "byte-class-bounded", "the BLOCKER's VM-hybrid witness: the prefilter declines the same way"),
-    (b"\\bab\\b", FA, "offset-set-bounded", "the offset rows sit above the DFA hat"),
+    (b"\\bab\\b", FA + NOCOVER, "offset-set-bounded", "the offset rows sit above the DFA hat"),
     (b"a+|b+", FA, "byte-class", "UNSEEDED: E is already S"),
     (b"(?m)^(?:ab|\\bcd)", FA, "memchr", "the ATTEMPT scan keeps attempt_cand's own skip (S490's conjunct)"),
     (b"\\b(?:x*|ab)", FA, "none", "NULLABLE: the start state accepts, no skip at all"),

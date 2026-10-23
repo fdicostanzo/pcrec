@@ -6,7 +6,10 @@ SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='dfastamps startlanding'
 SAB_DESC='unanch_scan dispatches end-minus-width selections whose pattern also satisfies the one-character fact to the landing body, while the stamp and rx_info.search_form still read end-minus-width'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S787.'
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/o.c" --pattern "[a-z]" && grep -q "^#define RX_DFA_START \"end-minus-width\"" "$REACH_TMP/o.c" && echo REACH-BOTH-APPLY'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find -p rx -o "$REACH_TMP/o.c" --pattern "[a-z]" && grep -q "^#define RX_DFA_START \"end-minus-width\"" "$REACH_TMP/o.c" && echo REACH-BOTH-APPLY'
 SAB_REACH_EXPECT='REACH-BOTH-APPLY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

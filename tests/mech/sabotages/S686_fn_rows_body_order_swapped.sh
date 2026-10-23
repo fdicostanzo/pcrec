@@ -20,7 +20,10 @@ SAB_SUITES="harness memfnarms"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
 SAB_DESC="fn_rows[]' BODY slot asks its floor (fn-memchr) before fn-pair, so a FUNC whose scanned position is a two-member cube scans one member and deletes the other's matches"
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0_report.md §4. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S686."
-SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "(?i)select"'
+# RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
+# window, a `cover` artifact by default (no scan, so not this site); the probe's
+# compile takes the cover row's deny --memfn=no-wf-find, the build before S3.
+SAB_REACH='"$PCREC" --memfn=no-wf-find --features all -p rx -o - --pattern "(?i)select"'
 SAB_REACH_EXPECT='    size_t ha = 0, hb = 0;'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
