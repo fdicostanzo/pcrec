@@ -3697,8 +3697,14 @@ fi
 # while the stamp still reads "adaptive"), S372 (the two calibration rows
 # swapped) and S441 (row `anchored` deleted) are this block's sabotage rows.
 rs_stamp() { sed -n 's/^#define RX_VM_RESEED "\([a-z-]*\)"$/\1/p' "$1" | head -1; }
-rs_body() {   # <prefix>_search_run's body, and nothing past its closing brace
-    awk '/^static .*int rx_search_run\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+rs_body() {   # the search loop's body, and nothing past its closing brace: `rx__find`
+    # where `_search_run` has a caller-position prologue to split off (the
+    # utf8 witnesses), else `rx_search_run` itself
+    if grep -q '^static .*int rx__find(' "$1"; then
+        awk '/^static .*int rx__find\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+    else
+        awk '/^static .*int rx_search_run\(/{f=1} f{print} f&&/^}/{exit}' "$1"
+    fi
 }
 rs_calls() { rs_body "$1" | grep -c 'rx_prefilter(subject'; }
 rs_ok=1

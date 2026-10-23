@@ -1008,6 +1008,12 @@ fi
 # 84): all twelve EMITTED_BYTES rows -2,686, the same on every artifact: the
 # RX_FOREACH block (its comment, RX_FOREACH_PAIRS, rx_foreach, rx_foreach_begin,
 # rx_foreach_pull, the macro) is gone from the shared block; nothing else moved.
+# RE-RECORDED 2026-10-23 at lane iterfix2 (the r2 review's fixes; abi stays
+# 84): the twelve EMITTED_BYTES rows -796 (DFA) .. -878 (VM), -799 on
+# `(a(?1)?b)`; the other stamps read identically. The iterator's text only:
+# no emitted comments, `__one_local` calls `_next`, `_next_n` its own entry;
+# none of the twelve splits its search any more (byte artifacts, no prologue).
+# Versus BASE 02f357b39 (before the iterator): +7,150 (DFA) .. +8,389.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
