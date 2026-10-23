@@ -3016,3 +3016,8 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **The fold is one general rule:** when the chosen stop's first find, scanned from the subject start, covers the presence byte, the presence pass is dropped. The cover path already behaves this way.
   - **Cost:** an MF_SITE_ABI event. It may retire the separate pre-check site's statement later (its own step and measurement).
   - **OPEN for the design revision:** whether today's span already carries a backtrack range (so only its upper bound opens) or a fixed offset (generalize it to a range).
+- notice: 2026-10-23 — **Stop-ranking Q5 (Frank: "Use the higher precision integers … The solution should [not] depend on compiler options"):**
+  - Prices are higher-resolution FIXED-POINT INTEGERS, so the pick is deterministic by construction on every host and compiler, with no float evaluation rules.
+  - The resolution must be fine enough that the prior's rates are never collapsed (`\d\dxyz`: 997 vs 498 ppm no longer tie).
+  - Prices within the measurement-noise band count as a tie, decided by the existing declared tie rows.
+  - Built in the study's step 4 with the other pricing folds; a byte move with a mover census.
