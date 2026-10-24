@@ -3,8 +3,12 @@
 pcre2_substitute's own answer (libpcre2-8 10.46 by ctypes; EXTENDED, GLOBAL
 when LIMIT is all, OVERFLOW_LENGTH, UNSET_EMPTY unless strict,
 UTF|MATCH_INVALID_UTF under utf8); the other cells state their expectation
-here by hand. argv[1] is the oracle store's case map, the source of the
-whole-map cells' subjects.
+here by hand. argv[1] is the oracle store's case map: its code points, and
+the vendored UnicodeData.txt's (fields 12/13, D180), are the whole-map cells'
+subjects. The whole-map cells over code points where libpcre2 and the UCD
+agree are `same`; those over the 150 where they differ (the store against
+the UCD, case_map_check.py's pinned list) state the UCD answer and are
+pcrec-only (P2 na).
 
 Usage, from the repo root:
   python3 -I tests/subst-extended/gen_cells.py \
@@ -92,26 +96,73 @@ same('c12', rb'(a)|(b)', rb'<${2:+\U$2:\l$1}>', b'xAaBby', 'cond')
 same('c13', rb'(\w)', rb'\U$1\E-$1', rb'ab', '-', strict=True)
 same('cdense', rb'a', rb'\U[$0]', b'xa' * 300)
 # ---- utf8 case: the mapping, §2¶14 ----
-same('u1', rb'(.+)', U(r'\U$1'), U('straße'), 'S1533,S1534', utf=True)
-# every code point libpcre2 maps, from the oracle store's own case-map rows
-# (oracle_store/libpcre2-10.46-utf/case-map.tsv), never from pcrec's table
-cps = {}
+fixed('u1', rb'(.+)', U(r'\U$1'), U('straße'), 'out:' + enc(U('STRAßE')) + ':1', 'na', '-', 'S1533,S1534', utf=True)
+# every code point libpcre2 maps (the oracle store's own case-map rows, never
+# pcrec's table) and every code point the UCD maps (UnicodeData.txt fields 12/13)
+import os
+def pairs_of(tok): return {int(x.split('>')[0], 16): int(x.split('>')[1], 16) for x in tok.split()}
+p2m = {}
 for ln in open(sys.argv[1]):
     if ln.startswith('#'): continue
     f = ln.rstrip('\n').split('\t')
-    cps[f[1]] = [int(x.split('>')[0], 16) for x in f[3].split()]
-allcp = sorted(set(cps['upper']) | set(cps['lower']))
-SUBJ = ''.join(chr(c) for c in allcp).encode('utf-8')
-same('bup', rb'.+', U(r'\U$0'), SUBJ, 'bound,S1534', utf=True)
-same('blow', rb'.+', U(r'\L$0'), SUBJ, 'bound', utf=True)
-same('bone', rb'.', U(r'\u$0\l$0'), SUBJ, '-', utf=True)
-same('btwo', rb'..', U(r'\L\u$0|\U\l$0'), SUBJ, '-', utf=True)
+    p2m[f[1]] = pairs_of(f[3])
+ucd = {'upper': {}, 'lower': {}}
+for ln in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'third_party', 'ucd-16.0.0', 'UnicodeData.txt')):
+    fl = ln.split(';')
+    cp = int(fl[0], 16)
+    for d, t in (('upper', fl[12]), ('lower', fl[13])):
+        if t and int(t, 16) != cp: ucd[d][cp] = int(t, 16)
+allcp = sorted(set(p2m['upper']) | set(p2m['lower']) | set(ucd['upper']) | set(ucd['lower']))
+differ = sorted(c for c in allcp for d in ('upper', 'lower') if p2m[d].get(c, c) != ucd[d].get(c, c))
+differ = sorted(set(differ))
+agree = [c for c in allcp if c not in set(differ)]
+up = lambda c: ucd['upper'].get(c, c)
+lo = lambda c: ucd['lower'].get(c, c)
+def U8(cps): return ''.join(chr(c) for c in cps).encode('utf-8')
+def rc_count(kind, cps):
+    return 1 if kind in ('bup', 'blow') else len(cps) if kind == 'bone' else len(cps) // 2
+def model(kind, cps):
+    """the UCD answer to each whole-map template over a list of code points"""
+    if kind == 'bup': return [up(c) for c in cps]
+    if kind == 'blow': return [lo(c) for c in cps]
+    if kind == 'bone': return [x for c in cps for x in (up(c), lo(c))]
+    r = []                                   # btwo: pairs `..`, an odd tail is copied
+    for i in range(0, len(cps) - 1, 2):
+        a, b = cps[i], cps[i + 1]
+        r += [up(a), b, ord('|'), lo(a), b]      # \u / \l after \L / \U end the mode (m4)
+    if len(cps) % 2: r.append(cps[-1])
+    return r
+WHOLE = (('bup', rb'.+', r'\U$0', 'bound,S1534'), ('blow', rb'.+', r'\L$0', 'bound'),
+         ('bone', rb'.', r'\u$0\l$0', '-'), ('btwo', rb'..', r'\L\u$0|\U\l$0', '-'))
+for cid, pat, tpl, reach in WHOLE:
+    same(cid, pat, U(tpl), U8(agree), reach, utf=True)
+for cid, pat, tpl, reach in WHOLE:
+    exp = model(cid, differ)
+    # the model is checked against libpcre2 where the two agree, before it is trusted
+    rc, o = p2(pat, U(tpl), U8(agree), True, False, 'all')
+    assert o == U8(model(cid, agree)), cid
+    fixed('d' + cid[1:], pat, U(tpl), U8(differ), 'out:%s:%d' % (enc(U8(exp)), rc_count(cid, differ)),
+          'na', '-', reach if cid in ('bup', 'blow') else '-', utf=True)
 same('u2', rb'b', U(r'\u\x{e9}'), b'abc', 'esc', utf=True)
-same('u3', rb'b', U(r'\Uß\Eß'), b'abc', '-', utf=True)
-same('u4', rb'(.+)', U(r'\L$1'), U('ȺẞK') + b'I' + U('İ'), '-', utf=True)
+fixed('u3', rb'b', U(r'\Uß\Eß'), b'abc', 'out:a' + enc(U('ßß')) + 'c:1', 'na', '-', '-', utf=True)
+fixed('u4', rb'(.+)', U(r'\L$1'), U('ȺẞK') + b'I' + U('İ'), 'out:' + enc(U('ⱥßkii')) + ':1', 'na', '-', '-', utf=True)
 same('u5', rb'(.+)', U(r'\u$1|\l$1'), U('ǆǄ'), '-', utf=True)
-same('u6', rb'(.+)', U(r'\U$1'), U('ıǅ'), '-', utf=True)
+fixed('u6', rb'(.+)', U(r'\U$1'), U('ıǅ'), 'out:' + enc(U('IǄ')) + ':1', 'na', '-', '-', utf=True)
 same('u7', rb'(\S+)', U(r'\u\L$1'), U('éCOLE ÉCOLE'), '-', utf=True)
+# ---- D180: one code point of each group where libpcre2 10.46 differs from the UCD, each direction ----
+# group 1 (\U gives a result not in the requested case): U+01C5; \L agrees with libpcre2
+fixed('g1u', rb'(.+)', U(r'\U$1'), U('ǅ'), 'out:' + enc(U('Ǆ')) + ':1', 'na', '-', '-', utf=True)
+same('g1l', rb'(.+)', U(r'\L$1'), U('ǅ'), '-', utf=True)
+# group 2 (U+00DF has no simple upper mapping, libpcre2 gives U+1E9E); \L agrees
+fixed('g2u', rb'(.+)', U(r'\U$1'), U('ß'), 'out:' + enc(U('ß')) + ':1', 'na', '-', '-', utf=True)
+same('g2l', rb'(.+)', U(r'\L$1'), U('ß'), '-', utf=True)
+# group 3 (non-ASCII <-> ASCII mappings libpcre2 refuses): upper of U+0131 and U+017F, lower of U+0130 and U+212A
+fixed('g3u', rb'(.+)', U(r'\U$1'), U('ıſ'), 'out:' + enc(U('IS')) + ':1', 'na', '-', '-', utf=True)
+fixed('g3l', rb'(.+)', U(r'\L$1'), U('İ\u212a'), 'out:' + enc(U('ik')) + ':1', 'na', '-', '-', utf=True)
+# group 4 (the category gate: Roman numerals, circled letters, U+0345)
+fixed('g4u', rb'(.+)', U(r'\U$1'), U('ⅰⓐ\u0345'), 'out:' + enc(U('ⅠⒶ\u0399')) + ':1', 'na', '-', '-', utf=True)
+fixed('g4l', rb'(.+)', U(r'\L$1'), U('ⅠⒶ'), 'out:' + enc(U('ⅰⓐ')) + ':1', 'na', '-', '-', utf=True)
+fixed('g4o', rb'(.+)', U(r'\u$1|\l$1'), U('ⅰⅠ'), 'out:' + enc(U('ⅠⅠ|ⅰⅠ')) + ':1', 'na', '-', '-', utf=True)
 fixed('u8', rb'b', U(r'\Uß'), b'abc', 'a' + enc('ß'.encode()) + 'c:1', 'same', '-', '-', pre='ext:')
 fixed('encbind', rb'(b)', rb'\U$1', b'abc', 'check:MISMATCH:-1', 'na', '-', 'S1539', flags='-e utf8', pre='ext:')
 # ---- ill-formed UTF-8 under case forcing: pcrec's own (§2¶14a; libpcre2 crashes, §9 row 19) ----
