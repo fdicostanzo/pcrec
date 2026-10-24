@@ -305,3 +305,14 @@ shaped like the iterland 602/603 jobs.
   subst-suite rows S1346-S1539 (incl. S1500) + S334 S336 S1195. Completion line
   owed: `== mech run COMPLETE: 53 rows`; S1352 expected to be the question (see FLAG).
 - Job scripts were in /tmp/claude-1001/substland3/ (scratch, not committed).
+
+## s1352 (lane s1352, sonnet, 2026-10-24)
+- S1352 retired as an EQUIVALENT MUTANT (S903 shape, c40fe4d18): SAB_EXPECT=UNDETECTED
+  plus the reasoning comment in tests/mech/sabotages/S1352_ctx_init_reads_fresh_vars.sh.
+  Step 1: match_api 3.8p5 "RX_ITER_INIT writes every field", rx_iter_init emits
+  { FRESH, 1, 0, s, n, 0, NULL, 0, NULL }; FRESH/BOUND/ENDED/refused-setter (hdr=0)
+  states all keep vars/nvars as init/rx_iter_vars set them, so the unconditional
+  read is value-identical. Only an uninitialized struct differs (outside contract). No observable state found.
+- S1303 left unchanged: the findall suite's dirty arm (tests/findall/iter_drv.c) still exists; only the subst suite's was retired.
+- Mech: S1352 alone under boxlock: UNDETECTED (EXPECTED), unexpected 0.
+- STATE AT HANDOFF: committed on lane/substland; rulings file read, no entries applied. docs/dev/artifact_size_log.tsv dirty (not mine, not committed).
