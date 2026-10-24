@@ -113,6 +113,39 @@ env_for green; rm -f "$ST" "$ST".*
 l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 2>&1)
 case $l in *"CAP "*) ok "a fresh state on a queue with only ended jobs reports nothing (history seeded, exit 6)" ;; *) bad "history replayed: $l" ;; esac
 
+# the first launch on a RESTARTED-job history: jobs put back to pending log a START each time (many STARTs, one END), and
+# the running job has abandoned attempts before its live run. Hand-built queue dir, no runner and no `boxqueue add`.
+# First launch: no historic event; the running job's run still yields its START, stage ENDs and JOB-DONE once each.
+hist() { # hist QDIR: fill the history by hand; echoes nothing
+    local q=$1 i ld=$1/logs/R1; mkdir -p "$q/done/20261001T000000-jobH" "$q/running/jobR" "$q/pending" "$q/failed" "$ld"
+    : > "$q/queue.log"
+    for i in 1 2 3 4; do echo "== job jobH START owner=h cap=60 expect=none 2026-10-0${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    echo "== job jobH END rc=0 outcome=green verdict=GREEN wall=5s" >> "$q/queue.log"
+    for i in 5 6; do echo "== job jobH START owner=h cap=60 expect=none 2026-10-0${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    for i in 1 2 3; do echo "== job jobR START owner=r cap=60 expect=none 2026-10-1${i}T00:00:00-04:00" >> "$q/queue.log"; done
+    echo "== logdir $ld" > "$q/running/jobR/job.log"
+    echo "== stage a rc=0 END" > "$ld/trailer.log"
+}
+once() { # once QDIR STATE: relaunch until CAP; print every event line except RUNNER-DEAD (no runner in a hand-built dir)
+    local l
+    while l=$("$TO" 30 bash "${QW}" --queue "$1" --state "$2" --no-ci --every 1 --confirm 1 --max-sec 2 --disk-pct 101 2>&1); do
+        case $l in *RUNNER-DEAD*) ;; *CAP*) break ;; *) echo "$l" ;; esac
+    done
+}
+hist_case() { # hist_case WATCHER TAG: the three phases; echoes the events seen per phase, | separated
+    local q=$T/qh$2 st=$T/sth$2 ld=$T/qh$2/logs/R1 a b c
+    hist "$q"; QW=$1
+    a=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ owner=.*//; s/ rc=0 logdir=.*/ rc=0/' | tr '\n' '|')
+    echo "== stage b rc=0 END" >> "$ld/trailer.log"
+    b=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ rc=0 logdir=.*/ rc=0/' | tr '\n' '|')
+    echo "== job jobR END rc=0 outcome=green verdict=GREEN wall=9s" >> "$q/queue.log"; mv "$q/running/jobR" "$q/done/20261013T000000-jobR"
+    c=$(once "$q" "$st" | sed 's/^queuewatch: //; s/ logdir=.*//; s/ wall=[0-9]*s//' | tr '\n' '|')
+    echo "$a#$b#$c"
+}
+r=$(hist_case "$QW" ok)
+[ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] \
+    && ok "first launch on a restarted-job history (jobH: 6 STARTs, 1 END; jobR: 3 STARTs, running): no historic event; the running run's START, stage ENDs and JOB-DONE once each" || bad "restart history: $r"
+
 # a watcher SIGKILLed while waiting leaves the state usable: the lock dies with it, the next launch is clean
 env_for green
 bash "$QW" --state "$ST" --every 5 --confirm 1 --max-sec 20 > /dev/null 2>&1 & kp=$!
@@ -141,6 +174,7 @@ PY
 }
 P1=$(plant nostate 'mark() { printf '"'"'%s\n'"'"' "$1" >> "$state"; }' 'mark() { :; }') || bad "plant nostate did not land"
 P2=$(plant swallow '[ "$closed" = 1 ] && mark "$id"; done <<<"$all"' 'mark "$id"; done <<<"$all"') || bad "plant swallow did not land"
+P4=$(plant oldseed 'closed=1; [ "${isopen[$ln]:-0}" = 1 ] && [ -d "$Q/running/$name" ] && closed=0' 'closed=0; [ "$ln" -le "$(grep -n "END" "$Q/queue.log" | tail -1 | cut -d: -f1)" ] && [ "${isreal[$ln]:-0}" = 1 ] && closed=1') || bad "plant oldseed did not land"
 P3=$(plant noclamp 's=$every; [ "$left" -lt "$s" ] && s=$left' 's=$every') || bad "plant noclamp did not land"
 if [ -n "$P1" ] && [ -n "$P2" ]; then
     ( QW=$P1 BUDGET=25 KILLONE=0 scenario pn burst ) &
@@ -149,6 +183,10 @@ if [ -n "$P1" ] && [ -n "$P2" ]; then
     exp_pass pn > "$T/exp.pn"; exp_pass ps > "$T/exp.ps"
     norm "$T/ev.pn" | diff -q "$T/exp.pn" - > /dev/null 2>&1 && bad "PLANT state-not-written not caught" || ok "PLANT state-not-written: the sequence is wrong ($(grep -c 'JOB-START' "$T/ev.pn") JOB-STARTs), so the exactly-once case catches it"
     norm "$T/ev.ps" | diff -q "$T/exp.ps" - > /dev/null 2>&1 && bad "PLANT first-launch-swallows-live-events not caught" || ok "PLANT first-launch-swallows-live-events: START/early ENDs of the running job are lost, so the case catches it"
+fi
+if [ -n "$P4" ]; then
+    r=$(hist_case "$P4" oldseed)
+    [ "$r" = "JOB-START jobR|STAGE-END jobR a rc=0|#STAGE-END jobR b rc=0|#JOB-DONE jobR outcome=green rc=0 verdict=GREEN|" ] && bad "PLANT old-seeding (only the first START per ended job marked) not caught" || ok "PLANT old-seeding: stale historic JOB-STARTs leak after the first launch, so the restart-history case catches it"
 fi
 if [ -n "$P3" ]; then
     bound "$P3"; rc=$?
