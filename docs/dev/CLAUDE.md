@@ -36,3 +36,4 @@ Documents that track execution against the design, not the product. Memos live h
 Full rule detail and the per-file list (verbatim): NOTES.md here.
 
 History (not auto-injected): docs/dev/history/claude_md/docs__dev.md
+- `utf_wants_2026-10-24.md` — survey of Unicode regex wants vs plain-regex workarounds (A/B/C), pcrec status, ranked top list (lane utfwant).
