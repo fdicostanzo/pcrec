@@ -151,3 +151,117 @@ Not done: they depend on the ruling above.
 
 None. 610-substland-test and 611-substland-mech were not queued. A full
 `make test` on this tree would be red for the known cause.
+
+---
+
+# substland2 (opus, 2026-10-24): RX_FOREACH removal done; STOPPED on a second main-side change
+
+## STATE AT HANDOFF
+
+- **STOPPED by the stop rule:** test-subst is red for a reason other than
+  the ruled change (below, "The stop"). Step 3's re-pins found nothing to
+  move. **No queue job was added**: 610/611 would be red for that one cause.
+- Commits: 3c26c37f2 (the ruled change), and this report.
+- Rulings file: empty at every checkpoint; no ruling applied from it (the
+  brief's ruling of 2026-10-24 is what was applied).
+- Premise test held: the tree built; the support unit failed only when
+  compiled by test-subst (`RX_FOREACH_PAIRS` undeclared), as reported above.
+
+## The ruled change (3c26c37f2)
+
+- **Support unit** (`src/gen/emit_subst.c`, `support_defs`): opens with
+  `#ifndef RX_SUBST_BATCH_PAIRS` / `#define RX_SUBST_BATCH_PAIRS 256`, inside
+  the implementation guard, so the defining TU may set it first. 256 is the
+  value `RX_FOREACH_PAIRS` had (7a3c6f991, `#define RX_FOREACH_PAIRS 256`).
+  replace-all's stack array, its `k` and its comment use it; the MISMATCH
+  rule and the batch logic are unchanged. Content id changes; nothing else.
+- **Spec hunks:** subst_api §1¶3 (the header carries `rx_iter` and the
+  record a generic loop calls), §4¶1a (`caps` spelled as `_next`/`_next_n`,
+  so as `rx_info.next`/`next_n`), §6¶5 (rewritten: the loop over a record's
+  `next`, VLA sized by `ncaps`, per match.D175's generic-loop rule; §6¶2
+  already IS the direct `<prefix>_next` loop, so ¶5 became its any-artifact
+  form rather than a copy), §6¶5a (+ "a batch over the record is §6¶4's loop
+  with `rx->next_n`"), §10¶6a (the bound, its default, who may override it),
+  §10¶7 (MISMATCH stated with the new name); match_api §3.8¶9a (the context
+  setup is the one shared reader). test-spec-history green.
+- **Checks:** subst_drv.c arm `fe` -> `gen` (`rec_generic`, a loop over
+  `rx_info.next`; reach token `foreach` -> `generic`); with no bound, the
+  >256-pair `ncaps300` cell now wants `same` from `gen` (it wanted
+  PCREC_ERR_ITER from RX_FOREACH); `ra`/`size` still carry `pairs`.
+  run_subst_tests.py's cite of the retired §3.8.2¶5 is gone.
+  examples/subst `each()` loops over `rx->next` (+ README).
+- **D27** (each marked `substland2` with its reason): `cli/inc_body.c` counts
+  through the record's `next_n` (§1¶3/§6¶5a) instead of RX_FOREACH;
+  `cli/cli.sh` `foreachpairs.{256,1024,100000}` -> `batchpairs.{2,3,1024}`:
+  `RX_SUBST_BATCH_PAIRS` set by the defining TU, replace-all answers the
+  per-match loop's count and length, and 2 (< 3 pairs a match) is MISMATCH
+  (CLI floor 76 holds: pass=89); `api/t_glue.c` and `lib/diff_driver.c` name
+  the new bound; d27/CLAUDE.md, tests/subst/CLAUDE.md follow.
+- **S1500** re-anchored to the renamed line (same column, same plant).
+  No other sabotage row anchors a changed line (grep of tests/mech/sabotages
+  for the changed text and for SAB_FILEs under tests/subst, examples/subst).
+
+## ABI re-check: holds
+
+The previous lane's method and script (abicmp.sh, its 11 patterns x 4 flag
+sets above), this tree's build/pcrec vs its main 6ec3a2108 reference build
+(re-verified: its src/ and lib/ equal `git archive 6ec3a2108`; main's tip
+76e1f499d has no src/lib/cli change since): **compiles=44 identical=44
+differ=0** (.c, .h, stderr). No rx abi event.
+
+## Light suites (this tree, 3c26c37f2)
+
+Green: strict, test-registry, test-plan-lint, test-ci-shards,
+test-claudemd-size, test-casemap, test-rxtsource, test-spec-history
+(11/0), test-subst-d27 (23/0; cli pass=89 fail=0, batchpairs.* PASS).
+**Red: test-subst, 1077 passed / 4 failed** (log
+/tmp/claude-1001/substland2/test-subst.log): `subst` and `subst-extended`
+driver exited -11; `asan`/`asanx` UBSan "member access within misaligned
+address 0xa5a5a5a5a5a5a5a5 for type 'const struct r1_buffers'" at the
+artifact's `_one` (`if (it->bufs)`).
+
+## The stop: main's iterator no longer tolerates the driver's "dirty" iterator
+
+The `dirty` arm (subst_drv.c `iter_fresh(..., dirty=1)`) memsets the
+iterator to 0xA5 and writes only hdr, s, n: it tested the branch-era
+§3.8¶5 sentence "Every field `RX_ITER_INIT` does not write may hold any
+value before the first call". Main (lane iteropt, 6eef1c312: "init writes
+every field, bind is one inline store") replaced it with "`RX_ITER_INIT`
+writes every field ... so the first call binds a FRESH iterator without
+writing them again". The 0xA5 `bufs` is now read as a buffers pointer.
+**Diagnosis confirmed:** with the dirty branch disabled (a scratch edit,
+reverted, never committed) test-subst is green, 7841 passed / 0 failed
+(log /tmp/claude-1001/substland2/test-subst-diag.log).
+
+Same root, spec side: the branch's match_api §3.8¶9a still says `vars` and
+`nvars` hold their values once BOUND "(the first call normalizes them)" and
+while FRESH only after `rx_iter_vars`. On main nothing normalizes them;
+`RX_ITER_INIT` writes NULL/0, so they hold valid values in every state.
+
+**Leaning, for the ruling:**
+- Retire the `dirty` arm and its `dirty` reach token: under main's §3.8¶5 a
+  struct with fields not written by `RX_ITER_INIT` or the setters is outside
+  the contract, and the set of fields "RX_ITER_INIT does not write" is
+  empty, so the arm can only equal `ra`. (Its docstring line in
+  run_subst_tests.py goes with it.)
+- Restate §3.8¶9a: `s`, `n`, `vars` and `nvars` hold valid values in every
+  state (`RX_ITER_INIT` writes all of them, §3.8¶5; `rx_iter_vars` sets the
+  last two while FRESH); the context setup reads exactly these. The
+  context setup's OPT_VARS condition then reads more than it needs but
+  stays correct, so no code change; whether to simplify it is a separate
+  (abi-bearing, subst-block) question I would not take here.
+
+## Re-pins (step 3)
+
+None moved. No pin reads the support unit's text or id (grep of tests/
+and scripts/ for `support_id`, `--emit-support`, `support.h`: only the subst
+runner, which pins nothing of it). The subst reach set changed only by
+`foreach` -> `generic` (same cells). Sabotage: S1500 re-anchored (above),
+no other row reaches a changed site. No S-id from S1550-S1559 used.
+
+## Queued jobs
+
+None (the stop). After the ruling: 610-substland-test (make test via
+perfrun) and 611-substland-mech (S1500 + the subst arm, plus the
+definitions.c rows S334 S336 S1195, S1381, S1538 the previous lane listed),
+shaped like the iterland 602/603 jobs.
