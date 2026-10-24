@@ -15,6 +15,7 @@ never in your head: you keep no "seen" list and you do not read logs.
     ROOT=/home/pcrec/projects/pcrec          # the MAIN tree on the box that owns the queue
     BOX=                                      # empty here. On another box: BOX="ssh pcrec@192.168.1.17"
     QW="$BOX bash $ROOT/scripts/queuewatch"  # prefix every ROOT command below with $BOX the same way
+    QWOPTS=                                   # empty outside TEST MODE (section "TEST MODE")
     LEDGER=$ROOT/docs/dev/full_suite_ledger.md
     MANAGER=pcrecdev1                         # the manager session's name (ListAgents, 2026-10-24); every "main"
                                               # below means it. The STARTUP message proves it; if it fails, your
@@ -24,6 +25,20 @@ Over ssh the loop below is the same: `$QW` runs on the queue's box, its one line
 back on stdout, the ledger append/commit and `boxqueue start` run there too. Messages
 (SendMessage) are local to your session host and so only work where the target sessions
 live; on another box, print the line for your user instead. Scope: the pcrec repo only.
+
+## How you were started (session or subagent: read this once)
+
+One skill, two ways to run it (Frank, 2026-10-24: "I want both methods supported").
+
+| | (a) SESSION | (b) SUBAGENT |
+|---|---|---|
+| started by | Frank: `/pcrec-monitor` in a separate haiku session | the manager or a lane: `Agent`, `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md, haiku, 1-hour cache) |
+| MANAGER | `pcrecdev1` (cross-session SendMessage by name) | `main`: SendMessage `to: "main"` reaches the session that launched you. Your parent's cross-session NAME would be a message to yourself |
+| how the loop waits | step 1a: `$QW --max-sec 3000` in the BACKGROUND; the harness wakes you when it exits | step 1b: a FOREGROUND call (below). A subagent that ends its turn is finished and its background shell dies with it (measured 2026-10-24, lane montest: a `sleep 60` started with run_in_background was killed at the subagent's end, nothing woke it), so you must never end your turn while watching |
+| between runs | Frank `/clear`s you | you end (reply "run done") when your brief's STOP condition is met; the launcher starts a fresh one for the next run |
+
+If your prompt names MANAGER, TEST MODE or STOP_AT, it overrides the defaults here. Everything else
+(STARTUP, the action table, NEVER) is identical.
 
 ## STARTUP (once, before the loop)
 
@@ -42,14 +57,18 @@ live; on another box, print the line for your user instead. Scope: the pcrec rep
 
 ## The loop
 
-1. Once, read this file. Then run, in the BACKGROUND (Bash `run_in_background`):
+1. Once, read this file. Then wait for the next event:
 
-       $QW --max-sec 3000
+   (a) SESSION, in the BACKGROUND (Bash `run_in_background`): `$QW $QWOPTS --max-sec 3000`
+   (b) SUBAGENT, in the FOREGROUND (Bash `timeout` 590000 ms): `timeout 580 $QW $QWOPTS --max-sec 540`
+       (inner 540 + one poll (default --every 15) < outer 580 < the tool's 600 s); a CAP line comes back every
+       540 s at most, which costs you one cheap wake: relaunch at once. Do not end your turn in between.
 
-   It prints ONE line and exits, so the harness wakes you exactly once per event. It
-   stops itself at 3000 s (`CAP ... relaunch`), before any outer timeout.
-2. When it exits, read its one line, apply the table, relaunch step 1. Always relaunch
-   unless the table says END. Relaunching can never miss or repeat an event.
+   It prints ONE line and exits, so you wake exactly once per event. It stops itself at its --max-sec
+   (`CAP ... relaunch`, exit 6), before any outer timeout. QWOPTS is empty outside TEST MODE.
+2. Read its one line, apply the table, relaunch step 1. Always relaunch unless the table says END
+   (or, subagent only, your STOP condition from the prompt is met: then reply with one line and end).
+   Relaunching can never miss or repeat an event.
 
 ## Action table (first match wins)
 
@@ -90,9 +109,51 @@ before the next run" and keep looping: your user clears you whenever convenient.
 a fresh start is a burst of old events, that is the first launch seeding itself: it only
 seeds jobs that had ENDED and reports a running job from its START, once.
 
+## TEST MODE (rehearse the whole skill against a scratch queue)
+
+Only when your prompt/user says `TEST_MODE=1`. The driver `scripts/monitor_rehearsal setup DIR` builds a
+SCRATCH queue of four simulated jobs (green, red:axes, quiet:san, die:alloc) and prints these variables:
+
+    TEST_MODE=1   MANAGER=<who gets the messages>   BOXQUEUE=DIR/q   STATE=DIR/state   ACTIONLOG=DIR/action.log
+    QWOPTS="--queue DIR/q --state DIR/state --every 2 --confirm 2 --quiet-sec 15 --max-sec 300 --no-ci"
+    STOP_AT=130-test-simdie       # end after the JOB-DONE of this job (for a restart check: 110-test-simred first)
+
+(CI is off with `--no-ci`; to include it, drop `--no-ci`: the real `gh` is read-only and fine.) Rules, and only these differ:
+
+1. QWOPTS is used on every queuewatch launch (and `monitor_preflight --no-ci`). A subagent keeps `--max-sec` below its
+   foreground bound (the driver's 300 is under 540). Never use the live queue or the live state.
+2. ACTION LOG: after you handle EACH line (rows 1-13, every row, including the do-nothing ones) append ONE line to
+   $ACTIONLOG: `ROW=<n> | <the queuewatch line exactly> | <action taken> | <the message text, or none>`. Append, never
+   rewrite. Your STARTUP `MON up` message is not logged. Row 1 (CAP) lines are logged and ignored by the compare.
+3. SIMULATED logdir (`<logdir>/SIMULATED` exists, or the path has `full_suite_sim`; here always): row 4 does NOT launch
+   the triage agent: action `would launch triage`; rows 6/7 never touch the ledger or commit: action `would append
+   ledger`; row 5 appends nothing: `would append red_stages`; row 8 never starts a runner: `would start runner`.
+4. Every message is real (SendMessage to $MANAGER) but its text begins `MON TEST ` (e.g. `MON TEST 110-test-simred: stage axes
+   RED (rc=2), triage launched` becomes `MON TEST 110-test-simred: stage axes RED (rc=2), would launch triage`).
+5. Stop: after the JOB-DONE of STOP_AT (or exit 75/2), reply in one line and END. State and action log stay for the next
+   monitor: a fresh one with the same STATE and ACTIONLOG must neither repeat nor miss an event.
+
+Compare: `scripts/monitor_rehearsal compare DIR` (expected vs actual rows/events, no real triage or ledger action, ledger
+checksum unchanged), `status DIR` (queue + log tail), `teardown DIR` (kills the scratch runner, removes DIR).
+
+### Rehearsing method (a), the standing session, yourself (Frank)
+
+1. In any shell on the box (not the live queue; this touches only DIR): `scripts/monitor_rehearsal setup /tmp/monrehearsal`
+   (use a scratch dir you may delete). It prints the variables and detaches a feeder that queues the four jobs once the
+   monitor's first queuewatch launch appears (~4 min of simulated stages in all).
+2. In the separate haiku session type: `/pcrec-monitor TEST_MODE=1 MANAGER=pcrecdev1 ` plus the three printed
+   variable lines (BOXQUEUE/STATE/ACTIONLOG, QWOPTS, STOP_AT), copied as printed.
+3. You should see: the preflight PASS lines, a `MON up` message, then `MON TEST ...` messages arriving at the manager
+   (green once; red: `stage axes RED ... would launch triage` and `RED ...`; quiet: `PROBLEM QUIET ...` then `GREEN`; die:
+   `RED ...`), and the monitor ending with a one-line reply after the `130-test-simdie` JOB-DONE.
+4. `scripts/monitor_rehearsal compare /tmp/monrehearsal` must print PASS x3; then `... teardown /tmp/monrehearsal`.
+   For the restart check use STOP_AT=110-test-simred, `/clear` the session, restart it with the same variables
+   (STOP_AT=130-test-simdie) and compare: the log must show no repeat and no miss.
+
 ## Testing without a real run (simulate mode)
 
 `scripts/fullsuite_job.sh --simulate green|red[:STAGE]|quiet[:STAGE]|die[:STAGE]|burst` is
 the full-suite job with only the stage payloads faked (header of scripts/battery.sh). The
 test `scripts/tests/queuewatch.test` drives it through a SCRATCH queue; never `boxqueue add`
-into a scratch queue by hand (a runner armed for a real job once started a real battery).
+into a scratch queue by hand (a runner armed for a real job once started a real battery):
+`scripts/monitor_rehearsal` does it with pure simulate wrappers.
