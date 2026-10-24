@@ -256,4 +256,6 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 
 | date | commit | test | strict | axes | san | alloc | lint | mech | recidentity | log | duration |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| (no run since the schedule was ruled) | | | | | | | | | | | |
+| 2026-10-23 | 5596c3207 | TODO | TODO | RED | TODO | TODO | TODO | RED | TODO | build/full_suite/20261023_5596c3207/ | TODO |
+
+TODO: copy the run's `summary.txt` (build/full_suite/20261023_5596c3207/summary.txt, absent when this was written) into the row above. RED run: counters do not reset. Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.

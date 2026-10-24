@@ -13,6 +13,6 @@ SAB_DOC_FIGURE="MEASURED by lane e1fix 2026-10-18 (one mech row, solo, Linux dev
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH='"$PCREC" --features all --part-layout=prefilter:inline --emit-facts --pattern "^(a)b" | tr "\t" " "'
-SAB_REACH_EXPECT='byte prefilter prefilter 2 R2 no P2 not-copyable as-emitted 0'
+SAB_REACH_EXPECT='byte prefilter prefilter 4 R2 no P2 not-copyable as-emitted 0'
 SAB_BEFORE='{ (void)pl; return !p->copyable; }'
 SAB_AFTER='{ (void)pl; (void)p; return false; }   /* SABOTAGE S1112 */'
