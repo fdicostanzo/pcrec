@@ -27,17 +27,14 @@ short brief, reads nothing else, and lets scripts do the waiting.
    (normal: the branch's job file). NEVER test a job with `boxqueue add`
    into a scratch queue: that arms a real runner (2026-10-23 incident);
    `JOB --dry-run` is the only safe check.
-3. The monitor: ask whether the STANDING session is up (`/pcrec-monitor`, Frank starts it; it
-   watches the whole queue by itself, nothing to hand it: the job's OWNER field in its key
-   says whom it messages). If it is up, launch nothing. If not, launch the per-run FALLBACK
-   (section 3): `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md: haiku, 1-hour
-   cache), background, name `mon-<mode>-<short>`, the brief below with the job key filled in.
-   (The standing session starts with its own tools test, `scripts/monitor_preflight`, and a
-   `MON up` message to the manager; it also watches CI on main, `CI-RED`/`CI-CANCELLED`
-   lines, which the per-run fallback ignores.)
-   Either way, rehearse a new queue/monitor change first with simulate mode
-   (`scripts/fullsuite_job.sh --simulate red:axes --dry-run` is the safe check; the whole
-   path is `scripts/tests/queuewatch.test`).
+3. The monitor, ONE skill, two methods (.claude/skills/pcrec-monitor/SKILL.md, "How you were started"):
+   (a) the STANDING session: Frank starts `/pcrec-monitor` (haiku, separate session, MANAGER=pcrecdev1). It
+   watches the whole queue by itself, nothing to hand it (the job's OWNER field in its key says whom it messages);
+   if it is up, launch nothing. (b) a SUBAGENT when no session is up: `Agent`, `subagent_type: pcrec-monitor`
+   (.claude/agents/pcrec-monitor.md: haiku, 1-hour cache), background, name `mon-<mode>-<short>`; prompt =
+   the brief in section 3 (MANAGER=main: its SendMessage to `main` reaches the launcher). Both CI-watch main.
+   Rehearse any queue/monitor change first in TEST MODE: `scripts/monitor_rehearsal setup DIR` (scratch queue,
+   simulated jobs only, never `boxqueue add` by hand), run either method against it, `compare DIR`.
 4. `full` only: set ONE one-shot alarm (CronCreate, not recurring) at the
    expected end + 2 h. When it fires and no monitor verdict has arrived,
    read `scripts/boxqueue state <KEY>` and `build/full_suite/*/trailer.log`
@@ -53,15 +50,15 @@ one) and follows its own first-match table: triage on the first red stage, ledge
 verdict, `boxqueue start` once for a dead runner, a message to the job's owner session only
 on a red, a problem or a verdict. The manager sends it nothing. Frank `/clear`s it between runs.
 
-FALLBACK (no standing session up): one per-run agent, the same loop on the one run. Brief
+SUBAGENT (method b; no standing session up): one per-run agent, the same skill on the one run. Brief
 (fill the <...>; keep it this short):
 
     MONITOR <mode> run <KEY> (haiku). Keep it going; act only by the table in
     /home/pcrec/projects/pcrec/.claude/skills/pcrec-monitor/SKILL.md (read it once, now),
     for events of the job <KEY> only. Scope: /home/pcrec/projects/pcrec only; never edit
     code, merge, cancel, kill or run make or any suite.
-    LOOP until JOB-DONE for <KEY>, in the background:
-      bash /home/pcrec/projects/pcrec/scripts/queuewatch --max-sec 3000
+    MANAGER=main. LOOP until JOB-DONE for <KEY>, then end: the skill's loop 1b (a FOREGROUND
+    `timeout 580 scripts/queuewatch --max-sec 540`; never end your turn while watching).
     Read only its one output line. Do not read stage logs; do not explain.
 
 The fallback replaces the old watchrun/trailer-grep loop and `monitor_rules.md` (kept for
