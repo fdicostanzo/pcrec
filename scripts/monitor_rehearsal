@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# monitor_rehearsal — end-to-end rehearsal driver for the /pcrec-monitor skill ([MONITOR-QUEUE], lane montest, 2026-10-24).
+# Lives in scripts/ (not scripts/tests/) because a HUMAN runs it too (Frank, to rehearse the standing session); it is a
+# driver plus a comparer, not a pass/fail self-test, and it takes minutes. SAFETY, same as scripts/tests/queuewatch.test:
+# the queue, the box lock and the simulate dir are all under DIR; every queued job is a wrapper whose only action is
+# `exec fullsuite_job.sh --simulate SCENARIO` (asserted before anything is added); this tool never touches the live
+# queue, the live queuewatch state or the ledger (it checksums the ledger at setup and `compare` verifies it).
+#
+#   scripts/monitor_rehearsal setup DIR [--step S] [--quiet S]   build the scratch queue, print the TEST MODE
+#                         variables to give the monitor, write DIR/expected.log; DETACH a feeder that queues the four jobs
+#                         (arming the scratch runner) once the monitor's first queuewatch launch has created its state
+#                         lock: green, red:axes, quiet:san, die:alloc, in that order. --step 4 s per stage, --quiet 40 s.
+#   scripts/monitor_rehearsal compare DIR [--upto NAME]   diff the monitor's ACTION LOG (DIR/action.log) with the expected
+#                         log (row + event; CAP/startup lines ignored), check no real triage/ledger action, ledger unchanged
+#   scripts/monitor_rehearsal status DIR   the scratch queue's status and the action log tail
+#   scripts/monitor_rehearsal teardown DIR  kill the scratch runner/battery/feeder (scripts/safekill) and rm -rf DIR
+# Prints ONE `monitor_rehearsal: DONE rc=N` line on every ending.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ROOT=$(cd "$here/.." && pwd)
+done_() { echo "monitor_rehearsal: DONE rc=$1"; exit "$1"; }
+sub=${1:-}; D=${2:-}
+[ -n "$sub" ] && [ -n "$D" ] || { sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; done_ 64; }
+shift 2
+case $D in /*) ;; *) echo "monitor_rehearsal: DIR must be absolute" >&2; done_ 64 ;; esac
+LEDGER=$ROOT/docs/dev/full_suite_ledger.md
+
+killtree() { # safekill every scratch runner / battery / feeder we know of
+    local f p
+    for f in "$D"/q/runner.pid; do [ -f "$f" ] && p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$f") && [ -n "$p" ] && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    for f in "$D"/sim/*/battery.pid "$D"/feeder.pid; do [ -f "$f" ] && read -r p < "$f" && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    return 0
+}
+
+stages="test strict axes san alloc lint mech recidentity"
+# the expected action log: ROW | event (normalised, no dates/walls/logdir)
+expected() {
+    local j s
+    row_job() { # NAME scenario
+        echo "2 | JOB-START $1 owner=O"
+        for s in $stages; do
+            case "$2:$s" in red:axes) echo "4 | STAGE-END $1 $s rc=2" ;; *)
+                [ "$2" = die ] && case $s in alloc|lint|mech|recidentity) continue ;; esac
+                [ "$2" = quiet ] && [ $s = san ] && echo "9 | QUIET $1"
+                echo "3 | STAGE-END $1 $s rc=0" ;; esac
+        done
+        case $2 in green|quiet) echo "6 | JOB-DONE $1 outcome=green rc=0 verdict=GREEN" ;;
+                   red) echo "7 | JOB-DONE $1 outcome=failed rc=1 verdict=RED reds=axes(rc=2)" ;;
+                   die) echo "7 | JOB-DONE $1 outcome=failed rc=1 verdict=RED" ;; esac
+    }
+    row_job 100-test-simgreen green; row_job 110-test-simred red; row_job 120-test-simquiet quiet; row_job 130-test-simdie die
+}
+# normalise one action-log line to "ROW | event"
+norm() { awk -F' \\| ' 'NF >= 2 { print $1 " | " $2 }' | sed -E 's/^ROW=//; s/ owner=[^ ]+ [0-9T:+-]+$/ owner=O/; s/ wall=[0-9]+s//; s/ logdir=[^ ]+//; s/ reason=[^ ]+//; s/ \| queuewatch: / | /; s/^(9 \| QUIET [^ ]+) no log growth.*/\1/' | awk -F' \\| ' '$1 != 1'; }
+
+case $sub in
+setup)
+    step=4 quiet=40
+    while [ $# -gt 0 ]; do case $1 in --step) step=$2; shift 2 ;; --quiet) quiet=$2; shift 2 ;; *) echo "unknown arg $1" >&2; done_ 64 ;; esac; done
+    [ -e "$D" ] && { echo "monitor_rehearsal: $D exists (teardown first)" >&2; done_ 64; }
+    mkdir -p "$D/q"/{pending,running,done,failed} "$D/sim" || done_ 2
+    : > "$D/action.log"
+    for sc in green:100-test-simgreen red:axes:110-test-simred quiet:san:120-test-simquiet die:alloc:130-test-simdie; do
+        name=${sc##*:}; scen=${sc%:*}
+        printf '#!/usr/bin/env bash\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$scen" > "$D/job_$name"; chmod +x "$D/job_$name"
+        n=$(wc -l < "$D/job_$name"); grep -q "^exec bash $here/fullsuite_job.sh --simulate $scen \"\$@\"\$" "$D/job_$name" && [ "$n" = 2 ] || { echo "SAFETY: wrapper $name is not a pure simulate wrapper" >&2; rm -rf "$D"; done_ 3; }
+    done
+    expected > "$D/expected.log"
+    sha256sum "$LEDGER" > "$D/ledger.sha"
+    cat > "$D/feeder.sh" <<EOF
+#!/usr/bin/env bash
+# waits for the monitor's FIRST queuewatch launch (its state lock appears), lets it seed an empty queue, then queues the jobs
+export PCREC_BOXQUEUE_DIR=$D/q PCREC_BOXLOCK_FILE=$D/box FULLSUITE_SIM_DIR=$D/sim BOXQUEUE_EVERY=1 BOXQUEUE_READY_BOUND=5 BOXQUEUE_LOCK_WAIT=1 BOXQUEUE_MONITOR=0.5 SIM_STEP=$step SIM_QUIET=$quiet
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT BATTERY_SIMULATE
+for _ in \$(seq 1800); do [ -e "$D/state.lock" ] && break; sleep 1; done
+[ -e "$D/state.lock" ] || { echo "feeder: no monitor launch in 1800 s" > "$D/feeder.log"; exit 1; }
+sleep 8
+for n in 100-test-simgreen 110-test-simred 120-test-simquiet 130-test-simdie; do
+    bash "$here/boxqueue" add --name \$n "$D/job_\$n" >> "$D/feeder.log" 2>&1 || echo "ADD FAILED \$n" >> "$D/feeder.log"
+done
+echo "feeder: queued" >> "$D/feeder.log"
+EOF
+    setsid nohup bash "$D/feeder.sh" > /dev/null 2>&1 < /dev/null & echo $! > "$D/feeder.pid"
+    cat <<EOF
+TEST MODE variables for /pcrec-monitor (paste these in the line that starts it):
+  TEST_MODE=1 MANAGER=<who receives MON TEST messages> BOXQUEUE=$D/q STATE=$D/state ACTIONLOG=$D/action.log
+  QWOPTS="--queue $D/q --state $D/state --every 2 --confirm 2 --quiet-sec 15 --max-sec 300 --no-ci"
+  STOP_AT=130-test-simdie      (end after this job's JOB-DONE; for a restart check use STOP_AT=110-test-simred first)
+The four simulated jobs are queued by a detached feeder when the monitor's FIRST queuewatch launch appears (so it sees
+every event). Expected action log: $D/expected.log ($(wc -l < "$D/expected.log") lines). Then: scripts/monitor_rehearsal compare $D
+EOF
+    done_ 0 ;;
+compare)
+    upto=""
+    while [ $# -gt 0 ]; do case $1 in --upto) upto=$2; shift 2 ;; *) done_ 64 ;; esac; done
+    [ -f "$D/action.log" ] || { echo "no action log" >&2; done_ 2; }
+    rc=0
+    norm < "$D/action.log" > "$D/got.norm"
+    if [ -n "$upto" ]; then awk -v n="$upto" '{print} $0 ~ /JOB-DONE/ && index($0, n) {exit}' "$D/expected.log" > "$D/exp.norm"; else cp "$D/expected.log" "$D/exp.norm"; fi
+    if diff -u "$D/exp.norm" "$D/got.norm" > "$D/diff.txt"; then echo "PASS action log == expected ($(wc -l < "$D/exp.norm") lines, every event once, in order, right row)"
+    else echo "FAIL action log differs:"; head -30 "$D/diff.txt"; rc=1; fi
+    if grep -E '\|\s*(launched triage|appended ledger|committed)' "$D/action.log" | grep -qv 'would'; then echo "FAIL a real triage/ledger action is logged"; rc=1
+    else echo "PASS no real triage launch or ledger action logged"; fi
+    if (cd "$ROOT" && sha256sum -c "$D/ledger.sha" >/dev/null 2>&1); then echo "PASS ledger unchanged"; else echo "FAIL ledger changed"; rc=1; fi
+    grep -q 'would launch triage' "$D/action.log" && echo "PASS row 4 logged 'would launch triage'" || { echo "NOTE no 'would launch triage' line (fine before the red)"; }
+    done_ $rc ;;
+status)
+    PCREC_BOXQUEUE_DIR=$D/q PCREC_BOXLOCK_FILE=$D/box bash "$here/boxqueue" status 2>&1 | head -20
+    echo "--- action log tail"; tail -8 "$D/action.log" 2>/dev/null
+    done_ 0 ;;
+teardown)
+    killtree; sleep 1; killtree
+    rm -rf "$D"; done_ 0 ;;
+*) echo "monitor_rehearsal: unknown subcommand $sub" >&2; done_ 64 ;;
+esac
