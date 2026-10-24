@@ -19,9 +19,11 @@ THE DECLARED POPULATION is read from NEW's OWN ARTIFACT on that arm, a pcrec-sid
 from the kit and never from the diff: a .c arm's pattern is class COVER iff NEW's artifact on that
 arm reads `#define RX_DFA_SCAN "cover"` (D172 S3: the cover LOCATE row routed by default). The
 judgment, BOTH WAYS, per arm:
-  c-default, c-utf8   a COVER artifact MUST move, and nothing else may (a cover artifact that did
-                      not move, or a non-cover mover, is UNEXPECTED)
-  c-vm, ir            nothing may move (cover is a DFA-route row)
+  c-default, c-utf8   a COVER artifact MUST move; so must a PAIR artifact (below); nothing else
+                      may (a cover or pair artifact that did not move, or a mover that is
+                      neither, is UNEXPECTED)
+  c-vm                no cover (a DFA-route row); a PAIR artifact must move, nothing else may
+  ir                  nothing may move (the VM listing carries no C text)
   facts               THE TWIN RULE (job 606): the listing carries one row set per encoding E
                       (`--emit-facts=byte,utf8`), each mirroring that encoding's artifact: its
                       `RX_*` rows are the artifact's `#define RX_*` stamps one for one, and its
@@ -39,8 +41,19 @@ judgment, BOTH WAYS, per arm:
                       tally line counts the judged population (tasks x 2 encodings)
   c-simd, c-norun     as c-default, at the SIMD layer and under -fno-run-prefilter: the cover
                       stamp is read from NEW's artifact on THAT arm
-  off, off-simd,      nothing may move (the OFF arm renders the parent's text, at each of the
-  off-norun           three flag settings)
+  off, off-simd,      nothing may move but a PAIR artifact, which must (the OFF arm renders the
+  off-norun           parent's text but for the two-stream find's bounded look-ahead, at each
+                      of the three flag settings)
+THE PAIR CLASS (the S3 final review's EMIT-1 fix; the manager's ruling R-d): the two-stream find
+(kit.h's ofs_pair, one renderer for fn-pair's body, the run pre-check's pair block and the window
+search's B-pair) now bounds each stream's look-ahead, so every artifact carrying it moves, cover
+or not. A non-cover artifact is class PAIR iff NEW's artifact carries the bounded form's
+declaration (`size_t ha = 0, hb = 0, wa = ...`, any prefix); declared from NEW's own text, and
+judged BOTH WAYS against BASE's own text: a PAIR artifact must move, carry exactly as many
+two-stream declarations as BASE's carries of the unbounded form (`size_t ha = 0, hb = 0;`, the
+`fresh` flag's), and keep every `#define RX_` stamp (the look-ahead moves no stamp); a non-PAIR
+artifact whose BASE carries the unbounded form is UNEXPECTED (a two-stream find that vanished).
+The tally counts `pair` per arm.
 D-HORS (Table D's dense-stop resume) appears as a file-scope skip table `_sh[256]`; it may appear
 only in a COVER artifact (counted: `hors`), never elsewhere (UNEXPECTED).
 THE BLOCK'S OPTIONS (code review r1 C11): a corpus pattern is compiled under its own block's
@@ -55,6 +68,7 @@ Trailer: `== s3 census COMPLETE: patterns=P compiles=C movers=M unexpected=U`; e
 import argparse
 import concurrent.futures
 import os
+import re
 import subprocess
 import sys
 
@@ -62,6 +76,9 @@ ABI = [(b"(abi 85)", b"(abi 84)"), (b"(PCREC_RX_ABI_H + 0) != 85", b"(PCREC_RX_A
        (b"#define PCREC_RX_ABI_H 85", b"#define PCREC_RX_ABI_H 84"), (b"    .abi = 85,", b"    .abi = 84,")]
 COVER = b'#define RX_DFA_SCAN "cover"'
 HORS = b"_sh[256]"
+# the two-stream find's declaration: NEW's bounded form, BASE's unbounded one (the PAIR class)
+PAIR_NEW = re.compile(rb"size_t (\w*)ha = 0, \1hb = 0, \1wa = ")
+PAIR_OLD = re.compile(rb"size_t (\w*)ha = 0, \1hb = 0;")
 OFF = "--memfn=no-window-search,no-window-skip"
 
 # (arm, base argv, new argv, judged by the artifact's own stamp?)
@@ -210,10 +227,18 @@ def one(task):
             what.append("stderr " + first_diff(eb, norm(en)))
         cover = stamped and rn == 0 and COVER in on
         problems, twins, text_only = [], [], []
+        npair = 0 if cover or arm in ("ir", "facts") else len(PAIR_NEW.findall(on))
+        opair = 0 if cover or arm in ("ir", "facts") else len(PAIR_OLD.findall(ob))
+        if npair or opair:
+            if npair != opair:
+                problems.append("two-stream finds: base %d unbounded, new %d bounded" % (opair, npair))
+            if stamps(ob) != stamps(norm(on)):
+                problems.append("a pair artifact moved a stamp: " + first_diff(
+                    b"\n".join(stamps(ob)), b"\n".join(stamps(norm(on)))))
         if arm == "facts":
             # declared: the twin rule (facts_judge), both ways; rc and stderr unchanged
             problems, twins, text_only = facts_judge(base, new, opts, pat, (rb, ob, eb), (rn, on, en), norm)
-        res.append((arm, "; ".join(what), cover, HORS in on, problems, twins, text_only))
+        res.append((arm, "; ".join(what), cover, npair > 0, HORS in on, problems, twins, text_only))
     return pat, tuple(opts), res
 
 
@@ -232,7 +257,7 @@ def main():
     if a.limit:
         tasks = tasks[:a.limit]
     pats = tasks
-    tally = {arm: {"cover": 0, "moved": 0, "hors": 0, "twin": 0, "text": 0, "judged": 0, "refused": 0} for arm, _, _, _ in ARMS}
+    tally = {arm: {"cover": 0, "pair": 0, "moved": 0, "hors": 0, "twin": 0, "text": 0, "judged": 0, "refused": 0} for arm, _, _, _ in ARMS}
     optn = {"tasks": 0, "cover": 0}
     unexpected, rows = [], []
     for f, line in refused:
@@ -243,15 +268,16 @@ def main():
             ep = emit_sweep.encode_escape(pat) + (" [" + " ".join(opts) + "]" if opts else "")
             if opts:
                 optn["tasks"] += 1
-                optn["cover"] += any(arm == "c-default" and cover for arm, _, cover, _, _, _, _ in res)
-            for arm, what, cover, hors, problems, twins, text_only in res:
+                optn["cover"] += any(arm == "c-default" and cover for arm, _, cover, _, _, _, _, _ in res)
+            for arm, what, cover, pair, hors, problems, twins, text_only in res:
                 t = tally[arm]
                 t["cover"] += cover
+                t["pair"] += pair
                 t["hors"] += hors and cover
                 if what:
                     t["moved"] += 1
                     rows.append((arm, "TWIN" if arm == "facts" and twins else
-                                 "COVER" if cover else "other", ep, what))
+                                 "COVER" if cover else "PAIR" if pair else "other", ep, what))
                 if arm == "facts":
                     if twins is None:
                         t["refused"] += 1
@@ -260,10 +286,14 @@ def main():
                         t["twin"] += len(twins)
                         t["text"] += len(text_only)
                     unexpected += [(arm, "twin", ep, p) for p in problems]
-                elif cover and not what:
-                    unexpected.append((arm, "COVER", ep, "a cover artifact did NOT move"))
-                elif what and not cover:
-                    unexpected.append((arm, "other", ep, what))
+                else:
+                    unexpected += [(arm, "PAIR", ep, p) for p in problems]
+                    if cover and not what:
+                        unexpected.append((arm, "COVER", ep, "a cover artifact did NOT move"))
+                    elif pair and not what:
+                        unexpected.append((arm, "PAIR", ep, "a pair artifact did NOT move"))
+                    elif what and not (cover or pair):
+                        unexpected.append((arm, "other", ep, what))
                 if hors and not cover:
                     unexpected.append((arm, "other", ep, "a D-hors skip table outside a cover artifact"))
     with open(a.out, "w", encoding="utf-8", errors="backslashreplace") as f:
@@ -276,13 +306,13 @@ def main():
           "cover at c-default; %d rows refused" % (optn["tasks"], optn["cover"], len(refused)))
     for arm, _, _, stamped in ARMS:
         t = tally[arm]
-        print("  %-9s cover %5d (D-hors %4d)  movers %5d  declared: %s" % (
-            arm, t["cover"], t["hors"], t["moved"],
-            "movers == cover artifacts" if stamped else
+        print("  %-9s cover %5d (D-hors %4d)  pair %5d  movers %5d  declared: %s" % (
+            arm, t["cover"], t["hors"], t["pair"], t["moved"],
+            "movers == cover + pair artifacts" if stamped else
             "the twin rule, both ways: %d encodings judged, %d twin stamps moved, %d text-only, "
             "%d listings refused" % (t["judged"], t["twin"], t["text"], t["refused"])
             if arm == "facts"
-            else "no mover"))
+            else "no mover" if arm == "ir" else "movers == pair artifacts"))
     for u in unexpected[:20]:
         print("  UNEXPECTED %s %s %s: %s" % u)
     print("== s3 census COMPLETE: patterns=%d compiles=%d movers=%d unexpected=%d"
