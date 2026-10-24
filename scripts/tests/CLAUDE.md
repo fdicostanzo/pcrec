@@ -154,3 +154,6 @@ script's test coverage changes meaningfully.
   must name the anchor), a repeated number, a file with no markers (left
   untouched) and one with no numbered headings, each reported; `--check`
   writes nothing. Pure python, no pcrec.
+
+- **fullsuite_job.sh.test** — `--simulate` ([MONITOR-QUEUE]): the five scenarios through the real job + battery.sh, PATH shims proving no make/gcc ran, simulate-only logdirs, ledger and worktree list untouched, plus a plant (simulate branch disabled -> the shim sees `make`).
+- **queuewatch.test** — scripts/queuewatch against the REAL boxqueue in a scratch queue (scratch box lock, wrapper jobs that only `exec fullsuite_job.sh --simulate`): every scenario's events exactly once and in order across relaunches, the conditions, the bound, the lock; three plants (state not written, live events swallowed, sleep not clamped).

@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# queuewatch self-test ([MONITOR-QUEUE]): the watcher against the REAL box queue (scripts/boxqueue, a runner
+# armed in a SCRATCH queue dir with a SACRIFICIAL box lock) running REAL scripts/fullsuite_job.sh --simulate
+# jobs (only the stage payloads fake; see that script). SAFETY: every queued job is a wrapper this file writes
+# whose only action is `exec fullsuite_job.sh --simulate SCENARIO` (asserted below before anything is added),
+# PCREC_BOXQUEUE_DIR and PCREC_BOXLOCK_FILE point into $T, and nothing here ever calls `boxqueue add` without
+# them (2026-10-23: an add into a scratch queue ARMED A REAL RUNNER that ran a real battery).
+# Each scenario's watcher is relaunched after EVERY event, with a 2 s --max-sec between events (CAP
+# relaunches), and must show each event exactly once, in order. Bugs PLANTED into a
+# scratch copy must turn the cases red: state not written (repeats), the first launch swallowing live events
+# (misses), the sleep not clamped to --max-sec (overrun past a caller's timeout).
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/queuewatch.test.XXXXXX")
+cleanup() {
+    local f p
+    for f in "$T"/q*/runner.pid; do [ -f "$f" ] && p=$(sed -n 's/^pid=\([0-9]*\).*/\1/p' "$f") && [ -n "$p" ] && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    for f in "$T"/sim*/*/battery.pid; do [ -f "$f" ] && read -r p < "$f" && [ -d "/proc/$p" ] && bash "$here/safekill" "$p" >/dev/null 2>&1; done
+    rm -rf "$T"
+}
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+unset PCREC_BOXLOCK_HELD PCREC_BOXLOCK PCREC_BOXLOCK_WAIT BATTERY_SIMULATE
+export BOXQUEUE_EVERY=1 BOXQUEUE_READY_BOUND=5 BOXQUEUE_LOCK_WAIT=1 BOXQUEUE_MONITOR=0.5 SIM_STEP=1 SIM_QUIET=9
+QW=${QW:-$here/queuewatch}
+
+# env_for TAG: the scratch environment of one scenario (queue, lock, simulate dir, state)
+env_for() { Q=$T/q$1; export PCREC_BOXQUEUE_DIR=$Q PCREC_BOXLOCK_FILE=$T/box.$1 FULLSUITE_SIM_DIR=$T/sim$1; ST=$T/state.$1; }
+# wrapper TAG SCENARIO: the only job shape this file queues; echoes its path
+wrapper() { local f=$T/job_$1; printf '#!/usr/bin/env bash\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$2" > "$f"; chmod +x "$f"; echo "$f"; }
+# collect OUT [watcher opts]: relaunch the watcher until a JOB-DONE line (or 150 s); one line per launch result
+collect() {
+    local out=$1 end l rc; shift; : > "$out"; end=$(( $(date +%s) + ${BUDGET:-150} ))
+    while [ "$(date +%s)" -lt "$end" ]; do
+        l=$("$TO" 60 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 2 "$@" 2>&1); rc=$?
+        case $rc in
+            0) echo "$l" >> "$out"; case $l in *JOB-DONE*) return 0 ;; esac ;;
+            6) ;;
+            *) echo "RC=$rc $l" >> "$out"; return 1 ;;
+        esac
+    done
+    echo "TIMEOUT" >> "$out"; return 1
+}
+# scenario TAG SCEN [opts]: queue one simulated job in its own scratch queue, then collect
+scenario() {
+    local tag=$1 sc=$2 w; shift 2; env_for "$tag"; w=$(wrapper "$tag" "$sc")
+    grep -q -- "--simulate $sc" "$w" || { echo "SAFETY: wrapper is not a simulate wrapper" > "$T/ev.$tag"; return 1; }
+    bash "$here/boxqueue" add --name "100-test-sim$tag" "$w" > "$T/add.$tag" 2>&1 || { echo "ADD FAILED" > "$T/ev.$tag"; return 1; }
+    for _ in $(seq 100); do grep -q '^== job .* START' "$Q/queue.log" 2>/dev/null && break; sleep 0.2; done   # the job is RUNNING at the first launch
+    collect "$T/ev.$tag" "$@"
+}
+# norm: dates and walls out of the lines so the sequence can be compared whole
+norm() { sed -E 's/ owner=[^ ]+ [0-9T:+-]+$/ owner=O/; s/ wall=[0-9]+s//; s/ logdir=[^ ]+//; s/ reason=[^ ]+//; s/^queuewatch: //; s/^(QUIET [^ ]+) no log growth.*/\1/' "$1"; }
+stages="test strict axes san alloc lint mech recidentity"
+expect() { # expect TAG [stage=rc ...] -- tail lines...: the full expected sequence
+    local tag=$1 s r st; shift; echo "JOB-START 100-test-sim$tag owner=O"
+    for s in $stages; do r=0; for st in "$@"; do case $st in $s=*) r=${st#*=} ;; esac; done; echo "STAGE-END 100-test-sim$tag $s rc=$r"; done
+}
+cmp_seq() { # cmp_seq TAG DESC EXPECTED-FILE
+    if norm "$T/ev.$1" | diff -u "$3" - > "$T/diff.$1" 2>&1; then ok "$2"; else bad "$2: $(head -12 "$T/diff.$1" | tr '\n' '|')"; fi
+}
+
+exp_pass() { echo "JOB-START 100-test-sim$1 owner=O"; local s; for s in $stages; do echo "STAGE-END 100-test-sim$1 $s rc=0"; done; echo "JOB-DONE 100-test-sim$1 outcome=green rc=0 verdict=GREEN"; }
+
+run5() { # the five scenarios in parallel (each its own queue, lock, sim dir and state)
+    local tag sc opts k
+    for tag in green red burst die quiet; do
+        case $tag in green) sc=green k=0 ;; red) sc=red:axes k=0 ;; burst) sc=burst k=0 ;; die) sc=die:alloc k=0 ;; quiet) sc=quiet:san k=0 ;; esac
+        opts=(); [ $tag = quiet ] && opts=(--quiet-sec 4)
+        ( KILLONE=$k; scenario "$tag" "$sc" ${opts[@]+"${opts[@]}"} ) &
+    done
+    wait
+}
+run5
+exp_pass green > "$T/exp.green"
+cmp_seq green "all-green (watcher relaunched after every event and every 2 s): START, 8 STAGE-ENDs in order, JOB-DONE green, each once" "$T/exp.green"
+{ echo "JOB-START 100-test-simred owner=O"; for s in $stages; do r=0; [ $s = axes ] && r=2; echo "STAGE-END 100-test-simred $s rc=$r"; done
+  echo "JOB-DONE 100-test-simred outcome=failed rc=1 verdict=RED reds=axes(rc=2)"; } > "$T/exp.red"
+cmp_seq red "red at axes, later stages still run: axes rc=2 reported, then the rest, JOB-DONE failed with reds=axes(rc=2)" "$T/exp.red"
+exp_pass burst > "$T/exp.burst"
+cmp_seq burst "two ENDs within one poll (strict, axes): both reported, once each, in order" "$T/exp.burst"
+{ echo "JOB-START 100-test-simdie owner=O"; for s in test strict axes san; do echo "STAGE-END 100-test-simdie $s rc=0"; done
+  echo "JOB-DONE 100-test-simdie outcome=failed rc=1 verdict=RED"; } > "$T/exp.die"
+cmp_seq die "battery SIGKILLed with no DONE line: 4 stage ENDs, then JOB-DONE failed (no alloc END invented)" "$T/exp.die"
+{ echo "JOB-START 100-test-simquiet owner=O"; for s in test strict axes; do echo "STAGE-END 100-test-simquiet $s rc=0"; done
+  echo "QUIET 100-test-simquiet"; for s in san alloc lint mech recidentity; do echo "STAGE-END 100-test-simquiet $s rc=0"; done
+  echo "JOB-DONE 100-test-simquiet outcome=green rc=0 verdict=GREEN"; } > "$T/exp.quiet"
+cmp_seq quiet "a stage silent past --quiet-sec: exactly one QUIET between the stage's START and END, nothing repeated" "$T/exp.quiet"
+env_for green
+grep -q "^== runner START pid=[0-9]* every=1s queue=$T/qgreen" "$T/qgreen/queue.log" && ok "the runner was the scratch queue's (queue=$T/qgreen), never the live one" || bad "runner/queue provenance"
+
+# conditions in a queue with NO runner: a job is pending (added --no-start)
+env_for dead; w=$(wrapper dead green)
+bash "$here/boxqueue" add --no-start --name 100-test-simdead "$w" > "$T/add.dead" 2>&1
+: > "$T/ev.dead"
+for i in 1 2 3 4; do l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 --stuck-sec 1 --disk-pct 101 2>&1); echo "$l" >> "$T/ev.dead"; done
+n1=$(grep -c '^queuewatch: RUNNER-DEAD ' "$T/ev.dead"); n2=$(grep -c '^queuewatch: PENDING-STUCK 100-test-simdead ' "$T/ev.dead")
+[ "$n1" = 1 ] && [ "$n2" = 1 ] && ! grep -q DISK-HIGH "$T/ev.dead" && ok "no runner + a pending job: RUNNER-DEAD once, PENDING-STUCK once across 4 relaunches; no DISK-HIGH at 101%" || bad "runner-dead/stuck: $(cat "$T/ev.dead")"
+l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 --disk-pct 0 2>&1); l2=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 --disk-pct 0 2>&1)
+case $l in "queuewatch: DISK-HIGH "*) case $l2 in *DISK-HIGH*) bad "DISK-HIGH repeated within one episode" ;; *) ok "DISK-HIGH (threshold 0): once, not repeated in the same episode" ;; esac ;; *) bad "disk: $l" ;; esac
+"$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 --disk-pct 101 > /dev/null 2>&1
+l3=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 --disk-pct 0 2>&1)
+case $l3 in "queuewatch: DISK-HIGH "*) ok "DISK-HIGH re-arms after the condition clears (a new episode reports again)" ;; *) bad "disk re-arm: $l3" ;; esac
+bash "$here/boxqueue" cancel simdead > /dev/null 2>&1
+
+# the first launch seeds history: the finished green job is not news to a fresh state
+env_for green; rm -f "$ST" "$ST".*
+l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 3 2>&1)
+case $l in *"CAP "*) ok "a fresh state on a queue with only ended jobs reports nothing (history seeded, exit 6)" ;; *) bad "history replayed: $l" ;; esac
+
+# a watcher SIGKILLed while waiting leaves the state usable: the lock dies with it, the next launch is clean
+env_for green
+bash "$QW" --state "$ST" --every 5 --confirm 1 --max-sec 20 > /dev/null 2>&1 & kp=$!
+sleep 1; kill -9 $kp 2>/dev/null; wait $kp 2>/dev/null
+l=$("$TO" 30 bash "$QW" --state "$ST" --every 1 --confirm 1 --max-sec 2 2>&1); rc=$?
+[ "$rc" = 6 ] && ok "after a SIGKILLed watcher the next launch gets the lock and the same state (nothing replayed, exit 6)" || bad "after SIGKILL: rc=$rc $l"
+
+# the bound: the sleep is cut to the time left (--every 10, --max-sec 3)
+bound() { local t0 rc; t0=$(date +%s); "$TO" 40 bash "${1:-$QW}" --state "$T/state.bound.$$" --queue "$T/qgreen" --every 10 --max-sec 3 --disk-pct 101 > /dev/null 2>&1; rc=$?; el=$(( $(date +%s) - t0 )); return $rc; }
+bound; rc=$?
+[ "$rc" = 6 ] && [ "$el" -le 5 ] && ok "--max-sec holds inside the sleep: --every 10 --max-sec 3 returned CAP in ${el}s" || bad "bound: rc=$rc el=$el"
+( "$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 6 --disk-pct 101 > /dev/null 2>&1 & ); sleep 1
+"$TO" 20 bash "$QW" --state "$T/state.lock" --queue "$T/qgreen" --every 1 --max-sec 2 --disk-pct 101 > /dev/null 2>&1; [ $? = 75 ] && ok "a second watcher on one state file is refused (75)" || bad "double watcher accepted"
+
+# PLANTS: a scratch copy of the watcher with one bug each; the matching case must go red
+plant() { # plant NAME FROM TO: echo the path of the patched copy
+    local d=$T/plant_$1; mkdir -p "$d"
+    python3 - "$here/queuewatch" "$d/queuewatch" "$2" "$3" <<'PY' || return 1
+import sys
+src, dst, a, b = sys.argv[1:5]
+s = open(src).read()
+assert s.count(a) == 1, "anchor"
+open(dst, "w").write(s.replace(a, b))
+PY
+    echo "$d/queuewatch"
+}
+P1=$(plant nostate 'mark() { printf '"'"'%s\n'"'"' "$1" >> "$state"; }' 'mark() { :; }') || bad "plant nostate did not land"
+P2=$(plant swallow '[ "$closed" = 1 ] && mark "$id"; done <<<"$all"' 'mark "$id"; done <<<"$all"') || bad "plant swallow did not land"
+P3=$(plant noclamp 's=$every; [ "$left" -lt "$s" ] && s=$left' 's=$every') || bad "plant noclamp did not land"
+if [ -n "$P1" ] && [ -n "$P2" ]; then
+    ( QW=$P1 BUDGET=25 KILLONE=0 scenario pn burst ) &
+    ( QW=$P2 BUDGET=40 KILLONE=0 scenario ps burst ) &
+    wait
+    exp_pass pn > "$T/exp.pn"; exp_pass ps > "$T/exp.ps"
+    norm "$T/ev.pn" | diff -q "$T/exp.pn" - > /dev/null 2>&1 && bad "PLANT state-not-written not caught" || ok "PLANT state-not-written: the sequence is wrong ($(grep -c 'JOB-START' "$T/ev.pn") JOB-STARTs), so the exactly-once case catches it"
+    norm "$T/ev.ps" | diff -q "$T/exp.ps" - > /dev/null 2>&1 && bad "PLANT first-launch-swallows-live-events not caught" || ok "PLANT first-launch-swallows-live-events: START/early ENDs of the running job are lost, so the case catches it"
+fi
+if [ -n "$P3" ]; then
+    bound "$P3"; rc=$?
+    [ "$el" -ge 9 ] && ok "PLANT sleep-not-clamped: CAP only after ${el}s (> a 3 s bound), so the bound case catches it" || bad "PLANT noclamp not caught: rc=$rc el=$el"
+fi
+echo "queuewatch.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

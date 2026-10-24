@@ -61,6 +61,19 @@
 #   LOGDIR   directory for the per-stage logs + PID file (default:
 #            build/battery_<timestamp>/, created if missing). Printed on
 #            stdout before detaching so the caller can start polling.
+#
+# SIMULATE ([MONITOR-QUEUE], Frank 2026-10-24): BATTERY_SIMULATE=NAME[:STAGE]
+# replaces ONLY each stage's payload (the `case "$stage"` of make commands)
+# with sim_payload, a fake that writes a few log lines, sleeps SIM_STEP s (2)
+# and exits with a scripted rc. Everything else is the real path: setsid
+# detach, battery.pid, the trailer, the START/END/DONE lines, the stage list.
+# The box lock is NOT taken (a simulated run must never wait behind, or block,
+# a real suite). Scenarios (sim_payload): green; red[:STAGE=axes] (that stage
+# exits 2, later stages still run); quiet[:STAGE=san] (that stage prints one
+# line then sleeps SIM_QUIET s (12) silently); die[:STAGE=alloc] (the battery
+# is SIGKILLed at that stage: no END, no DONE line); burst (strict and axes
+# take 0 s: two ENDs within milliseconds). The trailer's second line records
+# `== SIMULATED scenario=...` so a simulated log can never pass for a real one.
 set -u
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -122,6 +135,21 @@ SAN_PROCS="${SAN_PROCS:-4}"
 # PROCS it is given, so this is the PRE-pairing width (nproc by default).
 AXES_PROCS="${AXES_PROCS:-$NCPU}"
 
+# sim_payload STAGE: the ONLY payload that runs under BATTERY_SIMULATE (see the header)
+sim_payload() {
+    local stage=$1 name=${BATTERY_SIMULATE%%:*} arg="" step=${SIM_STEP:-2} rc=0
+    case "$BATTERY_SIMULATE" in *:*) arg=${BATTERY_SIMULATE#*:} ;; esac
+    echo "simulated payload for stage $stage (scenario $BATTERY_SIMULATE)"
+    case "$name:$stage" in burst:strict|burst:axes) step=0 ;; esac
+    [ "$step" = 0 ] || sleep "$step"
+    echo "simulated output line 1 of stage $stage"
+    if [ "$name" = quiet ] && [ "$stage" = "${arg:-san}" ]; then echo "simulated stage $stage going quiet"; sleep "${SIM_QUIET:-12}"; fi
+    if [ "$name" = die ] && [ "$stage" = "${arg:-alloc}" ]; then echo "simulated stage $stage: battery killed"; kill -9 $$; sleep 5; fi
+    if [ "$name" = red ] && [ "$stage" = "${arg:-axes}" ]; then echo "simulated FAIL in stage $stage"; rc=2; fi
+    echo "simulated output line 2 of stage $stage"
+    return $rc
+}
+
 run_battery() {
     local overall=0 rc
     {
@@ -138,9 +166,13 @@ run_battery() {
     # records the chosen set so a reduced run can never masquerade as full.
     local stages="${BATTERY_STAGES:-test strict axes san alloc lint mech recidentity}"
     echo "== stages: $stages" >> "$TRAILER"
+    [ -n "${BATTERY_SIMULATE:-}" ] && echo "== SIMULATED scenario=$BATTERY_SIMULATE (no real stage runs)" >> "$TRAILER"
     for stage in $stages; do
         local slog="$LOGDIR/$stage.log"
         echo "== stage $stage START $(date -Iseconds) load=$(load3)" >> "$TRAILER"
+        if [ -n "${BATTERY_SIMULATE:-}" ]; then
+            sim_payload "$stage" > "$slog" 2>&1
+        else
         case "$stage" in
             test)
                 make -k -j"$TEST_MAKE_J" PROCS="$TEST_PROCS" test > "$slog" 2>&1
@@ -194,6 +226,7 @@ run_battery() {
                 make test-recursion-identity > "$slog" 2>&1
                 ;;
         esac
+        fi
         rc=$?
         echo "== stage $stage rc=$rc END $(date -Iseconds)" >> "$TRAILER"
         [ "$rc" -ne 0 ] && overall=1
@@ -204,13 +237,15 @@ run_battery() {
 
 echo "battery.sh: logging to $LOGDIR (trailer: $TRAILER)"
 echo "battery.sh: poll the trailer for stage START/END/rc lines and the final '== BATTERY DONE rc=' line"
-echo "battery.sh: takes the box lock (scripts/boxlock status); a wait for another holder is logged in setsid.log"
+if [ -n "${BATTERY_SIMULATE:-}" ]; then echo "battery.sh: SIMULATED ($BATTERY_SIMULATE): fake stage payloads, no box lock"
+else echo "battery.sh: takes the box lock (scripts/boxlock status); a wait for another holder is logged in setsid.log"; fi
 
 # THE BOX LOCK ([runkit], scripts/boxlock): the battery holds it for its whole
 # run (every stage is heavy; the stages that take it themselves — mech,
 # test-axes — nest under it). It waits for a holder, naming it in setsid.log;
 # PCREC_BOXLOCK=0 opts out.
-_battery_setsid "$ROOT_DIR/scripts/boxlock" run --label battery -- bash -c "$(declare -f run_battery); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); CC=$(printf '%q' "$CC"); run_battery" \
+if [ -n "${BATTERY_SIMULATE:-}" ]; then LOCKCMD=(); else LOCKCMD=("$ROOT_DIR/scripts/boxlock" run --label battery --); fi
+_battery_setsid ${LOCKCMD[@]+"${LOCKCMD[@]}"} bash -c "$(declare -f run_battery sim_payload); ROOT_DIR=$(printf '%q' "$ROOT_DIR"); cd \"\$ROOT_DIR\"; LOGDIR=$(printf '%q' "$LOGDIR"); TRAILER=$(printf '%q' "$TRAILER"); TEST_MAKE_J=$(printf '%q' "$TEST_MAKE_J"); TEST_PROCS=$(printf '%q' "$TEST_PROCS"); MECH_PROCS=$(printf '%q' "$MECH_PROCS"); SAN_PROCS=$(printf '%q' "$SAN_PROCS"); AXES_PROCS=$(printf '%q' "$AXES_PROCS"); CC=$(printf '%q' "$CC"); BATTERY_SIMULATE=$(printf '%q' "${BATTERY_SIMULATE:-}"); SIM_STEP=$(printf '%q' "${SIM_STEP:-2}"); SIM_QUIET=$(printf '%q' "${SIM_QUIET:-12}"); run_battery" \
     < /dev/null > "$LOGDIR/setsid.log" 2>&1 &
 echo $! > "$PIDFILE"
 disown

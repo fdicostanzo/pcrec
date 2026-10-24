@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# fullsuite_job.sh --simulate self-test ([MONITOR-QUEUE]): every scenario through the REAL job and battery.sh
+# code (only the stage payloads are fake), plus the hard guarantees: a simulated run never runs make or gcc
+# (PATH shims that record any call), writes only under its simulate logdir, leaves the ledger and the worktree
+# list alone, and a PLANTED battery.sh whose simulate branch is disabled goes RED on the no-real-stage check.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+root=$(cd "$here/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/tmp}/fsjob.test.XXXXXX")
+cleanup() { rm -rf "$T"; }
+trap cleanup EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+export SIM_STEP=1 SIM_QUIET=4 FULLSUITE_SIM_DIR=$T/sim
+unset BATTERY_SIMULATE PCREC_BOXLOCK_HELD
+mkdir -p "$T/shim"
+# (battery.sh's own cc_resolve probes `gcc --version` at startup: not a stage, not recorded)
+for c in make gcc cc; do printf '#!/bin/sh\ncase "$1" in --version|-dumpversion|-v) exit 0 ;; esac\necho "$0 $*" >> "%s/shim.calls"\nexit 0\n' "$T" > "$T/shim/$c"; chmod +x "$T/shim/$c"; done
+ledger=$root/docs/dev/full_suite_ledger.md
+lsum() { cksum < "$ledger" 2>/dev/null || echo none; }
+wts() { git -C "$root" worktree list 2>/dev/null | wc -l; }
+L0=$(lsum) W0=$(wts)
+
+# run SCENARIO [JOB]: the job in the background-able form; output $T/out.<tag>, rc $T/rc.<tag>
+run() { local tag=${1//[^A-Za-z0-9]/_}; PATH=$T/shim:$PATH "$TO" 120 bash "${2:-$here/fullsuite_job.sh}" --simulate "$1" > "$T/out.$tag" 2>&1; echo $? > "$T/rc.$tag"; }
+for sc in green red:axes quiet:san die:alloc burst; do run "$sc" & done
+wait
+get() { cat "$T/$1.${2//[^A-Za-z0-9]/_}" 2>/dev/null; }
+ld() { sed -n 's/^== logdir //p' "$T/out.${1//[^A-Za-z0-9]/_}" | head -1; }
+nstage() { grep -c "^== stage [a-z]* rc=$2 END" "$(ld "$1")/trailer.log"; }
+
+# green
+[ "$(get rc green)" = 0 ] && [ "$(nstage green 0)" = 8 ] && grep -q '^== battery_v5 DONE stages=8 rc=0' "$T/out.green" && grep -q '^== BATTERY DONE rc=0' "$(ld green)/trailer.log" && ok "green: 8 stages green, rc 0, the job's DONE line and the battery's trailer" || bad "green: rc=$(get rc green) $(cat "$T/out.green")"
+# red at one named stage, later stages still run
+tr=$(ld red:axes)/trailer.log
+[ "$(get rc red:axes)" = 1 ] && grep -q '^== stage axes rc=2 END' "$tr" && [ "$(nstage red:axes 0)" = 7 ] && grep -q 'axes=RED(rc=2)' "$T/out.red_axes" && grep -q '^== stage recidentity rc=0 END' "$tr" && ok "red:axes: axes rc=2, the other 7 stages still ran, job rc 1, summary names RED(rc=2)" || bad "red: $(cat "$T/out.red_axes")"
+# quiet: the stage is silent for SIM_QUIET s
+tr=$(ld quiet:san)/trailer.log
+s1=$(date -d "$(sed -n 's/^== stage san START \([^ ]*\).*/\1/p' "$tr")" +%s) s2=$(date -d "$(sed -n 's/^== stage san rc=0 END \([^ ]*\).*/\1/p' "$tr")" +%s)
+[ "$(get rc quiet:san)" = 0 ] && [ $((s2 - s1)) -ge 4 ] && grep -q 'going quiet' "$(ld quiet:san)/san.log" && ok "quiet:san: the stage logged once then sat silent $((s2 - s1))s (>= SIM_QUIET 4), then finished green" || bad "quiet: rc=$(get rc quiet:san) dt=$((s2 - s1))"
+# the battery dying with no DONE line
+tr=$(ld die:alloc)/trailer.log
+[ "$(get rc die:alloc)" != 0 ] && ! grep -q '^== BATTERY DONE' "$tr" && ! grep -q '^== stage alloc rc=' "$tr" && grep -q 'battery died without a DONE trailer' "$T/out.die_alloc" && grep -q 'alloc=MISSING' "$T/out.die_alloc" && grep -q 'rc=none' "$T/out.die_alloc" && ok "die:alloc: SIGKILLed battery: no alloc END, no DONE line, the job reports it, alloc=MISSING" || bad "die: $(cat "$T/out.die_alloc")"
+# two ENDs within one poll interval
+tr=$(ld burst)/trailer.log
+a=$(sed -n 's/^== stage strict rc=0 END \([^ ]*\).*/\1/p' "$tr") b=$(sed -n 's/^== stage axes rc=0 END \([^ ]*\).*/\1/p' "$tr")
+[ "$(get rc burst)" = 0 ] && [ "$a" = "$b" ] && ok "burst: strict and axes ENDs carry the same second ($a)" || bad "burst: strict=$a axes=$b"
+
+# hard guarantees
+[ ! -s "$T/shim.calls" ] && ok "no make/gcc/cc was ever called by any simulated scenario" || bad "a REAL command ran: $(head -3 "$T/shim.calls")"
+bad_dirs=$(for sc in green red:axes quiet:san die:alloc burst; do d=$(ld "$sc"); case $d in "$T"/sim/sim_*) ;; *) echo "$d" ;; esac; done)
+[ -z "$bad_dirs" ] && ls "$T"/sim/*/SIMULATED > /dev/null 2>&1 && grep -q '^== SIMULATED scenario=' "$(ld green)/trailer.log" && ok "every logdir is under the simulate dir, marked SIMULATED (file and trailer line)" || bad "logdirs: $bad_dirs"
+[ "$(lsum)" = "$L0" ] && ok "docs/dev/full_suite_ledger.md untouched" || bad "ledger changed"
+[ "$(wts)" = "$W0" ] && ! ls "$root"/worktrees/fullsuite-run-sim* > /dev/null 2>&1 && ok "no worktree created (decision: simulate creates none, so there is nothing to prune)" || bad "worktree list changed"
+bash "$here/fullsuite_job.sh" --simulate green --ready && ok "--ready is 0 under simulate, whatever the box lock holds" || bad "--ready"
+bash "$here/fullsuite_job.sh" --simulate nosuch --dry-run > /dev/null 2>&1; [ $? = 64 ] && ok "an unknown scenario is refused (64)" || bad "unknown scenario accepted"
+out=$(bash "$here/fullsuite_job.sh" --simulate green --dry-run); echo "$out" | grep -q '^boxqueue: cap ' && echo "$out" | grep -q '^boxqueue: expect stages=8' && ok "--dry-run under simulate declares cap/patience/expect like the real job" || bad "dry-run: $out"
+# a stray BATTERY_SIMULATE must not fake a REAL run: the real branch unsets it (checked in the source, not run)
+grep -q 'unset BATTERY_SIMULATE' "$here/fullsuite_job.sh" && ok "the real (non-simulate) branch unsets BATTERY_SIMULATE" || bad "real branch does not unset BATTERY_SIMULATE"
+
+# PLANT: a battery.sh whose simulate branch is disabled runs the real `make` payload -> the shim sees it
+P=$T/plant; mkdir -p "$P/scripts" "$P/tests/lib"
+cp "$here/battery.sh" "$here/fullsuite_job.sh" "$here/boxlock" "$P/scripts/"; cp "$root"/tests/lib/*.sh "$P/tests/lib/"
+python3 - "$P/scripts/battery.sh" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+a = 'if [ -n "${BATTERY_SIMULATE:-}" ]; then\n            sim_payload'
+assert s.count(a) == 1, "anchor"
+open(p, "w").write(s.replace(a, 'if false; then\n            sim_payload'))
+PY
+if [ $? = 0 ]; then
+    rm -f "$T/shim.calls"; BATTERY_STAGES="test strict" PATH=$T/shim:$PATH "$TO" 60 bash "$P/scripts/fullsuite_job.sh" --simulate green > "$T/out.plant" 2>&1
+    [ -s "$T/shim.calls" ] && ok "PLANT sim-branch-disabled: the real make payload ran and the shim caught it, so the no-real-stage check can go red" || bad "PLANT not caught: $(tail -3 "$T/out.plant")"
+else bad "plant did not land (anchor moved?)"; fi
+
+echo "fullsuite_job.sh.test: $pass passed, $fail failed"
+[ "$fail" = 0 ]

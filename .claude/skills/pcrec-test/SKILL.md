@@ -1,6 +1,6 @@
 ---
 name: pcrec-test
-description: Run pcrec's test suites as a delegated, monitored box-queue job. `full` = the whole battery (scripts/battery.sh via scripts/fullsuite_job.sh, D177) on main at a frozen commit; `normal` = make test on a branch or main. The manager queues the job and launches ONE small monitor agent that keeps the run going and alerts only on a problem or the verdict; the manager never watches the log. Args: full|normal [branch], plus an optional note.
+description: Run pcrec's test suites as a delegated, monitored box-queue job. `full` = the whole battery (scripts/battery.sh via scripts/fullsuite_job.sh, D177) on main at a frozen commit; `normal` = make test on a branch or main. The manager queues the job; the standing /pcrec-monitor session (Frank's separate haiku session, scripts/queuewatch) keeps the run going and alerts only on a problem or the verdict, with a per-run monitor agent as the fallback when no session is up; the manager never watches the log. Args: full|normal [branch], plus an optional note.
 ---
 
 # pcrec test run (delegated)
@@ -27,36 +27,43 @@ short brief, reads nothing else, and lets scripts do the waiting.
    (normal: the branch's job file). NEVER test a job with `boxqueue add`
    into a scratch queue: that arms a real runner (2026-10-23 incident);
    `JOB --dry-run` is the only safe check.
-3. Launch the monitor (section 3): `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md: haiku, 1-hour cache), background, name
-   `mon-<mode>-<short>`, the brief below with the job key and log path
-   filled in. Nothing else in its prompt.
+3. The monitor: ask whether the STANDING session is up (`/pcrec-monitor`, Frank starts it; it
+   watches the whole queue by itself, nothing to hand it: the job's OWNER field in its key
+   says whom it messages). If it is up, launch nothing. If not, launch the per-run FALLBACK
+   (section 3): `subagent_type: pcrec-monitor` (.claude/agents/pcrec-monitor.md: haiku, 1-hour
+   cache), background, name `mon-<mode>-<short>`, the brief below with the job key filled in.
+   Either way, rehearse a new queue/monitor change first with simulate mode
+   (`scripts/fullsuite_job.sh --simulate red:axes --dry-run` is the safe check; the whole
+   path is `scripts/tests/queuewatch.test`).
 4. `full` only: set ONE one-shot alarm (CronCreate, not recurring) at the
    expected end + 2 h. When it fires and no monitor verdict has arrived,
    read `scripts/boxqueue state <KEY>` and `build/full_suite/*/trailer.log`
    yourself (one look; a problem goes to a triage lane, section 4).
 5. Update docs/dev/owner.md (what is running, expected end).
 
-## 3. The monitor brief (fill the <...>; keep it this short)
+## 3. The monitor
 
-    MONITOR <mode> run <KEY> (haiku). Keep it going; act only by the table
-    in /home/pcrec/projects/pcrec/.claude/skills/pcrec-test/monitor_rules.md
-    (read it once, now). Scope: /home/pcrec/projects/pcrec only; never edit
+STANDING (the default): the session started with `/pcrec-monitor`
+(.claude/skills/pcrec-monitor/SKILL.md). It loops `scripts/queuewatch` in the background (one
+event per wake; the reported-events state is a file, so a relaunch never misses or repeats
+one) and follows its own first-match table: triage on the first red stage, ledger line on the
+verdict, `boxqueue start` once for a dead runner, a message to the job's owner session only
+on a red, a problem or a verdict. The manager sends it nothing. Frank `/clear`s it between runs.
+
+FALLBACK (no standing session up): one per-run agent, the same loop on the one run. Brief
+(fill the <...>; keep it this short):
+
+    MONITOR <mode> run <KEY> (haiku). Keep it going; act only by the table in
+    /home/pcrec/projects/pcrec/.claude/skills/pcrec-monitor/SKILL.md (read it once, now),
+    for events of the job <KEY> only. Scope: /home/pcrec/projects/pcrec only; never edit
     code, merge, cancel, kill or run make or any suite.
-    TRAILER=<path> SUMMARY=<path> LEDGER=docs/dev/full_suite_ledger.md
-    LOOP until done:
-      timeout 590 bash /home/pcrec/projects/pcrec/scripts/watchrun --on stage --log <TRAILER> --max-sec 480
-    Read only its one output line (and, on a stage END, that stage's rc).
-    Do not read stage logs; do not explain.
+    LOOP until JOB-DONE for <KEY>, in the background:
+      bash /home/pcrec/projects/pcrec/scripts/queuewatch --max-sec 3000
+    Read only its one output line. Do not read stage logs; do not explain.
 
-For `full`: TRAILER = `build/full_suite/<date>_<sha>/trailer.log` (the
-job's frozen.txt names it once the run starts; until it exists, poll
-`scripts/boxqueue state <KEY>` inside `timeout 590` with a 5-min sleep),
-SUMMARY = `summary.txt` beside it.
-
-The monitor's actions are the first-match table in `monitor_rules.md`
-beside this file: mechanical fixes it may run itself (each ONCE, then it
-alerts), the triage launch on a red stage, and the green bookkeeping. A
-new fix joins that table only when a run has shown its shape (section 5).
+The fallback replaces the old watchrun/trailer-grep loop and `monitor_rules.md` (kept for
+reference; its rows 1/5/6 assumed a watchrun that missed battery stage ENDs). A new fix joins
+the monitor SKILL's table only when a run has shown its shape (section 5).
 
 ## 4. On the verdict (manager)
 
@@ -79,11 +86,13 @@ trailer, a monitor that read too much).
   FILE is the delivery and the monitor must not wait for a reply.
 - 2026-10-23, full run: watchrun checks `--max-sec` only at poll boundaries (`--every`,
   60 s), so 570 + 60 overran the monitor's `timeout 590` and every call ended 124 with no
-  line. Keep max-sec + every under the outer timeout (480 now).
-- 2026-10-23, full run: the monitor MISSED a red stage (axes rc=2). Root cause (found
-  2026-10-24): battery.sh writes `== stage axes rc=2 END`, chainrun writes `== stage N END rc=`;
-  watchrun's stage-END pattern `^== stage [^ ]* END` matches only chainrun's shape, so
-  `--on stage` NEVER fires on a battery trailer. (The relaunch baseline is a second, smaller
-  gap: an END landing between two capped calls is folded into the next baseline.) For multi-hour runs the monitor greps the trailer's END lines
-  itself and keeps its own SEEN list (mon-full2's brief); watchrun stays right for a single
-  wait. TODO: rewrite section 3 + monitor_rules.md rows 1/5/6 to the trailer-grep loop.
+  line. FIXED 2026-10-24 in scripts/queuewatch (the sleep is cut to the time left).
+- 2026-10-23, full run: the monitor MISSED a red stage (axes rc=2). Causes (2026-10-24,
+  lane monwatch): (a) battery.sh writes `== stage axes rc=2 END`, chainrun `== stage N END rc=`,
+  and watchrun matched only chainrun's shape (FIXED: both shapes, stage and rc extracted);
+  (b) each watchrun relaunch baselined the ENDs already in the log, so an END landing between
+  two capped calls was never reported; (c) the outer timeout killed watchrun silently;
+  (d) a haiku monitor keeping its own "seen" list missed `== BATTERY DONE`. Lesson: what has
+  been reported is STATE and belongs in a script. FIX: scripts/queuewatch (persistent state
+  file, one event per launch, clamped bound) + the standing /pcrec-monitor session that only
+  acts on its lines; proven against simulate-mode jobs (scripts/tests/queuewatch.test).
