@@ -669,12 +669,44 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: after I1+I2 land: bisect the 9 and check their answers against libpcre2; then rule re-base vs a ninth exception
   refs: tests/codegen/run_recursion_identity.sh; decisions D136 D94; K128
   The gate's (A) half compares against a pin from before the recursion module and absorbs every later ruled emission change as a named canonicalizing exception (eight so far). K128 would need a ninth with a slot rule (label renumbering plus a split guard/counter slot), and the 9 (?U)-possessive movers predate it. It went silently red a THIRD time (D136 recorded the second) because it runs only in the merge battery. Manager's leaning (test harness minimal): re-base (A) to a recent ruled commit, so it defends "no unruled change to call-free regions" without growing canonicalizers, and keep the refusal-mismatch positive control on a separate reference if re-basing breaks it; the cost of the never-moving pin now exceeds what it defends for a module that landed in August.
-- [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
-  filed: 2026-10-23 Frank
-  status (2026-10-24): go (Frank); first a research lane (utfwant) on what Unicode users want that plain regex cannot easily do; it may reshape this row
-  next: read utfwant's survey with Frank; then after open items, a design note (coordinator design round)
-  refs: lane/utfwant docs/dev/utf_wants_2026-10-24.md; docs/dev/compat_fold_facts/ (research, 2026-10-23); third_party/ucd-16.0.0 (DD-1 case fold shape); docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); decisions D22 D26 D174; [IFACE-PUSH]; SR-10
-  A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
+- [SEQ-FOLD] STATE:not-started — ONE CHARACTER MATCHES A SEQUENCE: one fold table for full case, accent and look-alike folding
+  filed: 2026-10-24 Frank ("The general mechanism sounds good"), from lane utfwant's survey
+  status (2026-10-24): go (Frank); starts after every open item and its follow-ups complete; children are rows of ONE fold mechanism, full case folding first (demand), look-alike last (no outside demand found)
+  next: a design note (coordinator design round): the 1:n fold table, then each child as its rows
+  refs: docs/dev/utf_wants_2026-10-24.md (wants 4, 5; the NFKC finding); docs/dev/compat_fold_facts/; third_party/ucd-16.0.0 (CaseFolding.txt F entries); memory general-mechanisms; D26 D174
+  General form (Frank 2026-10-24): a pattern character also matches every sequence the active fold maps to or from it; one table of (code point -> sequence) rows generated from UCD, one matcher mechanism for the 1:n arm. Full case folding, canonical equivalence and compatibility folding are three data sets for it, not three features. Design questions shared by all: 1:n and n:1 inside classes and ranges, symmetry, \b and lookbehind length, emitted size.
+  - [FULL-CASEFOLD] STATE:not-started — (?i) uses full case folding: ß matches ss, ligatures match their letters
+    filed: 2026-10-24 manager (utfwant want 4; Unicode TS #18 requires it; ICU and Python regex ship it)
+    status (2026-10-24): first child of [SEQ-FOLD]; pcrec is simple-fold only today; 104 F entries in the vendored CaseFolding.txt
+    next: the [SEQ-FOLD] design note
+    refs: docs/dev/utf_wants_2026-10-24.md; third_party/ucd-16.0.0
+  - [CANON-EQUIV] STATE:not-started — composed and decomposed accents match each other (é = e + combining acute)
+    filed: 2026-10-24 manager (utfwant want 5; recurring questions; Java CANON_EQ ships it)
+    status (2026-10-24): second child of [SEQ-FOLD]; the general case is hard, a literal's alternatives are a table lookup
+    next: after [FULL-CASEFOLD]
+    refs: docs/dev/utf_wants_2026-10-24.md
+  - [COMPAT-FOLD] STATE:not-started — LOOK-ALIKE CHARACTERS MATCH: Unicode compatibility folding (f also matches ｆ, 𝐟, ⓕ)
+    filed: 2026-10-23 Frank
+    status (2026-10-24): third child of [SEQ-FOLD] (Frank 2026-10-24); a pcrec novelty: no engine offers it and no request was found (utfwant)
+    next: after [CANON-EQUIV]
+    refs: docs/dev/compat_fold_facts/; docs/pcre2_compliance.md ((?r), (*CASELESS_RESTRICT), (*TURKISH_CASING) rows); [IFACE-PUSH]; SR-10
+    A pattern literal or class member also matches every code point whose Unicode compatibility mapping (NFKC, generated from UCD like the case fold) is that character; with (?i) the case variants too. Not in PCRE2: a pcrec extension behind --features (SR-10). Syntax leaning (manager, to rule in the design): a whole-pattern option first (a behaviour-named option bit + CLI + .rxt attribute) and a start-of-pattern verb mirroring PCRE2's own fold verbs; a scoped inline letter deferred until a use case needs part-pattern folding. Design questions: 1:n mappings (ligature U+FB01 to "fi", like the case fold's 1:n arm), whether the equivalence is symmetric (pattern 'ｆ' matches 'f'), interaction with classes/ranges and \b, size cost of the widened classes. Test sibling: tests/codegen case-spelling identity (spellings equal under the fold compile to the same matcher).
+- [GRAPHEME] STATE:not-started — \X and grapheme boundaries match what a reader sees as one character
+  filed: 2026-10-24 manager (utfwant want 1; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
+  Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2.
+- [UPROP-MORE] STATE:not-started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
+  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; earlier refused as no measured demand, the survey is the first outside evidence (an open Go request, the \p{Emoji} digit gotcha); cheap for an AOT compiler
+  next: starts on Frank's word; check [UCD-RECORD] first (one shared per-code-point table)
+  refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
+- [CLASS-SETOPS] STATE:not-started — character-class set operations: subtraction, intersection, nesting
+  filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
+  status (2026-10-24): filed, unscheduled; TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED; the only plain workaround is lookaheads
+  next: starts on Frank's word
+  refs: docs/dev/utf_wants_2026-10-24.md
 - [FLAG-SPELL] STATE:not-started — AN EMPTY NODE IN A CONCATENATION IS NEVER REMOVED (flag spellings emit different code)
   filed: 2026-10-23 manager, from lane casespell; cause found by research lane flagspell (docs/dev/flag_spell_findings_2026-10-23.md)
   status (2026-10-23): cause known: a bare option run (?i) parses to an A_EMPTY node (src/parse/mod_modifiers.c ~505-525) that nothing removes; the VM emits a dead label + goto (+57 B on every pair); on the DFA a mid-pattern a(?i)bc loses the required-run fact (prefilter memchr vs handoff), a speed loss; answers agree
