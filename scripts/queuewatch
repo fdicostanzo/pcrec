@@ -44,8 +44,10 @@
 # event whose ID is in the file is never printed again, so a relaunch between or during events
 # neither misses nor repeats one. Lifecycle events (START/STAGE-END/DONE) come from queue.log and the
 # trailers, which are append-only, so they replay in order. The FIRST launch (no state file) seeds the
-# state with the events of jobs that had already ended (history is not news) and reports everything
-# of a job still running. Conditions (QUIET, RUNNER-DEAD, PENDING-STUCK, DISK-HIGH) are episodes: the
+# state with EVERY event present (history is not news: all START/END lines, abandoned or repeated STARTs of
+# restarted jobs, old trailers) EXCEPT the run in progress: a job in running/ keeps its LAST START (nothing
+# after it) and that run's stage ENDs unseen, so its future stages and JOB-DONE (and the START, if not yet
+# reported) still surface. Run k of a job is its k-th real START (one followed by its END, or last) and k-th END. Conditions (QUIET, RUNNER-DEAD, PENDING-STUCK, DISK-HIGH) are episodes: the
 # ID names the episode (QUIET: the last-change epoch; RUNNER-DEAD: the runner.pid it died with;
 # DISK-HIGH and RUNNER-DEAD are forgotten when the condition clears), so a new episode reports again.
 # QUIET's last-change record per job sits beside the state file (state.sig.NAME).
@@ -100,18 +102,36 @@ stage_ends() { # stage_ends TRAILER: `STAGE RC` per END line, either shape
     sed -nE 's/^== stage ([^ ]+) rc=([0-9]+) END.*/\1 \2/p; s/^== stage ([^ ]+) END rc=([0-9]+).*/\1 \2/p' "$1" 2>/dev/null
 }
 
-# lifecycle: print `ID<TAB>CLOSED<TAB>LINE` for every lifecycle event in order. CLOSED=1 when the job has ended.
+# start_runs: `LINENO REAL OPEN` per START line of queue.log. A job that is not ready is logged START and put back
+# to pending, so one job can carry hundreds of STARTs and one END (live 2026-10-24: 342 STARTs, 151 ENDs). REAL=1 when the
+# START is followed by its END, or is the job's last line (a run in progress); a START followed by another START is an
+# abandoned attempt. OPEN=1 when nothing follows it at all.
+start_runs() {
+    grep -nE '^== job [^ ]+ (START|END) ' "$Q/queue.log" | awk -F'[: ]' '
+        { ln = $1; kind = $5; name = $4
+          if (kind == "START") { if (name in prev) { r[prev[name]] = 0; o[prev[name]] = 0 } prev[name] = ln; r[ln] = 0; o[ln] = 0; order[++n] = ln }
+          else if (name in prev) { r[prev[name]] = 1; delete prev[name] } }
+        END { for (name in prev) { r[prev[name]] = 1; o[prev[name]] = 1 }
+              for (i = 1; i <= n; i++) print order[i], r[order[i]], o[order[i]] }'
+}
+
+# lifecycle: print `ID<TAB>CLOSED<TAB>LINE` for every lifecycle event in order. CLOSED=1 unless the event belongs to the run
+# in progress (the job's last START, nothing after it, the job in running/): the first launch marks every CLOSED event
+# as history, so only a job running at that moment has news. Run k of a job (its k-th REAL start, its k-th END) is the
+# k-th of job_dirs.
 lifecycle() {
     [ -f "$Q/queue.log" ] || return 0
-    local line kind name k dir ld tr st rc seq reds
-    local -A nth=() nend=()
-    while read -r name; do nend[$name]=$(( ${nend[$name]:-0} + 1 )); done < <(sed -nE 's/^== job ([^ ]+) END .*/\1/p' "$Q/queue.log")
+    local line ln kind name k dir ld tr st rc seq reds closed real open
+    local -A nrun=() nend=() isreal=() isopen=()
+    while read -r ln real open; do isreal[$ln]=$real isopen[$ln]=$open; done < <(start_runs)
     while IFS= read -r line; do
+        ln=${line%%:*}; line=${line#*:}
         case "$line" in
             "== job "*" START "*)
-                name=${line#== job }; name=${name%% *}; k=$(( ${nth[$name]:-0} + 1 )); nth[$name]=$k
-                dir=$(job_dirs "$name" | sed -n "${k}p")
-                closed=0; [ "$k" -le "${nend[$name]:-0}" ] && closed=1    # the k-th START has its k-th END in the log
+                name=${line#== job }; name=${name%% *}
+                closed=1; [ "${isopen[$ln]:-0}" = 1 ] && [ -d "$Q/running/$name" ] && closed=0
+                dir=""
+                if [ "${isreal[$ln]:-0}" = 1 ]; then k=$(( ${nrun[$name]:-0} + 1 )); nrun[$name]=$k; dir=$(job_dirs "$name" | sed -n "${k}p"); fi
                 printf 'S|%s\t%s\tJOB-START %s owner=%s %s\n' "$line" "$closed" "$name" "$(sed -n 's/.* owner=\([^ ]*\).*/\1/p' <<<"$line")" "${line##* }"
                 ld=""; [ -n "$dir" ] && ld=$(logdir_of "$dir")
                 if [ -n "$ld" ] && [ -f "$ld/trailer.log" ]; then
@@ -122,7 +142,7 @@ lifecycle() {
                 ;;
             "== job "*" END "*)
                 name=${line#== job }; name=${name%% *}
-                dir=$(job_dirs "$name" | sed -n "${nth[$name]:-1}p")
+                k=$(( ${nend[$name]:-0} + 1 )); nend[$name]=$k; dir=$(job_dirs "$name" | sed -n "${k}p")
                 reds="" ld=""
                 if [ -n "$dir" ]; then ld=$(logdir_of "$dir"); [ -n "$ld" ] && reds=$(stage_ends "$ld/trailer.log" | awk '$2 != 0 { printf " %s(rc=%s)", $1, $2 }'); fi
                 printf 'D|%s\t1\tJOB-DONE %s outcome=%s rc=%s verdict=%s wall=%s%s\n' "$line" "$name" \
@@ -134,7 +154,7 @@ lifecycle() {
                 printf 'D|%s\t1\tJOB-DONE %s %s (never ran)\n' "$line" "$name" "$(sed -n 's/.*\(outcome=[^ ]*\).*/\1/p' <<<"$line")"
                 ;;
         esac
-    done < <(grep -E '^(== job [^ ]+ (START|END) |  job [^ ]+ ENDED WITHOUT RUNNING )' "$Q/queue.log")
+    done < <(grep -nE '^(== job [^ ]+ (START|END) |  job [^ ]+ ENDED WITHOUT RUNNING )' "$Q/queue.log")
 }
 
 # conditions: print `ID<TAB>0<TAB>LINE` for each current condition episode; forget the episodes that cleared.
