@@ -696,7 +696,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-24): filed, unscheduled; registry PLANNED-HARD; needs the UAX #29 grapheme break data vendored (a new data set: name its home, design lens NEW-DATASET)
   next: starts on Frank's word
   refs: docs/dev/utf_wants_2026-10-24.md; [UCD-RECORD]
-  Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2.
+  Emoji ZWJ sequences, flags and Hangul syllables are not approximable with ordinary classes; most engines ship \X; TR18 Level 2. DATA RULE (Frank 2026-10-24): the data comes from an official Unicode source only (UCD auxiliary/GraphemeBreakProperty.txt, emoji-data.txt), vendored in third_party/ at a named Unicode version, with Unicode's own GraphemeBreakTest.txt as the oracle; pcrec may build functionality but claims a Unicode standard only where that official test passes, and never defines its own variant under the standard's name.
 - [UPROP-MORE] STATE:not-started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
   filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
   status (2026-10-24): filed, unscheduled; earlier refused as no measured demand, the survey is the first outside evidence (an open Go request, the \p{Emoji} digit gotcha); cheap for an AOT compiler
