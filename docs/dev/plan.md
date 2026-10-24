@@ -703,6 +703,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: a design note (coordinator design round): the 1:n fold table, then each child as its rows
   refs: docs/dev/utf_wants_2026-10-24.md (wants 4, 5; the NFKC finding); docs/dev/compat_fold_facts/; third_party/ucd-16.0.0 (CaseFolding.txt F entries); memory general-mechanisms; D26 D174
   General form (Frank 2026-10-24; widened the same day after Frank asked about n:1 and n:m): BOTH sides pass through the same per-code-point fold (code point -> sequence, generated from UCD) and the folded sequences are compared, so 1:n, n:1 and n:m (ﬃ vs ﬀi, ệ vs ẹ + ̂) are one case. The pattern side folds at compile time; the subject folds as it is read. Full case folding, canonical equivalence and compatibility folding are three data sets for it, not three features. Design questions: match ends inside one character's fold image (s against half of ß: refuse, as ICU does?), mapping offsets and captures back to the subject, combining-mark reordering for canonical equivalence (a bounded buffer; Unicode's stream-safe limit is 30 marks), classes and ranges, \b and lookbehind length, emitted size.
+  - [CASE-COMPAT] STATE:not-started — a PCRE2-compatible case mapping as a selectable data set
+    filed: 2026-10-24 Frank (D180: "follow Unicode for now then have a pcre2 compatibility version later")
+    status (2026-10-24): substitution's case table is Unicode's simple mappings (D180); PCRE2 10.46 differs on 150 code points (lane substr1fix's breakdown in docs/dev/lanes/substland_report.md)
+    next: the [SEQ-FOLD] design note names how a mapping data set is selected; no demand yet
+    refs: D180; docs/dev/reviews/2026-10-24-r1-subst-code.md (EMIT-5)
   - [FULL-CASEFOLD] STATE:not-started — (?i) uses full case folding: ß matches ss, ligatures match their letters
     filed: 2026-10-24 manager (utfwant want 4; Unicode TS #18 requires it; ICU and Python regex ship it)
     status (2026-10-24): first child of [SEQ-FOLD]; pcrec is simple-fold only today; 104 F entries in the vendored CaseFolding.txt
