@@ -12,6 +12,7 @@
 | **Modified?** | **No.** The files are byte-for-byte as retrieved. |
 | **Stage-4 addition** | `CaseFolding.txt` retrieved 2026-09-08 by lane `utf8s4`, [M5.0] stage 4, from the same directory at the same version. |
 | **Stage-5 addition** | `Scripts.txt`, `ScriptExtensions.txt` and `PropertyValueAliases.txt` retrieved 2026-09-09 by lane `utf8s5`, [M5.0] stage 5, from the same directory at the same version. |
+| **[UPROP-MORE] addition** | `PropList.txt`, `DerivedCoreProperties.txt`, `emoji-data.txt`, `DerivedBidiClass.txt`, `PropertyAliases.txt`, `Blocks.txt` and `DerivedAge.txt` retrieved 2026-10-24 by lane `upropb` (Frank's go, D178), by `curl -o` to a file, from `https://www.unicode.org/Public/16.0.0/ucd/` (`emoji/emoji-data.txt` and `extracted/DerivedBidiClass.txt` from its `emoji/` and `extracted/` subdirectories). Each file's header line names 16.0.0, except `emoji-data.txt`, whose header is `# emoji-data.txt` with the date 2024-05-01 (the file lives under the 16.0.0 directory; Unicode does not stamp a version in that file's name). |
 
 ### Files, with the checksum each was retrieved at
 
@@ -22,6 +23,13 @@
 | `Scripts.txt` | `9e88f0a677df47311106340be8ede2ecdacd9c1c931831218d2be6d5508e0039` | 189,588 |
 | `ScriptExtensions.txt` | `049117ce26b9769fe2749b06eef51a50a89faef4a97764dd2d81daa715980700` | 20,576 |
 | `PropertyValueAliases.txt` | `440fd3e5460b9bfe31da67b6f923992e1989d31fe2ed91e091c4b8f8e2620bf9` | 80,773 |
+| `PropList.txt` | `53d614508e2a0b2305a8aa21cd60d993de9326cdf65993660dfcce4503548583` | 144,253 |
+| `DerivedCoreProperties.txt` | `39d35161f2954497f69e08bdb9e701493f476a3d30222de20028feda36c1dabd` | 1,115,959 |
+| `emoji-data.txt` | `f1365a5173eee18e1f98b240cdc492e84a25f1ce7e0c9d1094eb29c41a22696a` | 113,024 |
+| `DerivedBidiClass.txt` | `71ed943a49c58568d8d92e80ecc2ba2f06e62aee9c8ebb0e6e8bd2c3ed8b180e` | 171,034 |
+| `PropertyAliases.txt` | `33a9f2266ad6b8e8de05c0ea3dfac411ac62cf8839ff1c94057471e4c5f6a2b3` | 9,389 |
+| `Blocks.txt` | `f3907b395d410f1b97342292ca6bc83dd12eb4b205f2a0c48efdef99e517d7b0` | 11,397 |
+| `DerivedAge.txt` | `60caa81b99a4dfb0bc5d38440d323073e3f356f46f9ca7869da848cd0715408b` | 134,680 |
 
 Verify with `shasum -a 256 third_party/ucd-16.0.0/*.txt`.
 
@@ -32,7 +40,7 @@ audit both actually need — from the source outward.
 
 | derived artifact | produced by | consumed by |
 |---|---|---|
-| `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup. From `UnicodeData.txt` (the general categories) and, since [M5.0] stage 5, from `Scripts.txt` + `ScriptExtensions.txt` + `PropertyValueAliases.txt` (the 171 script values, their spellings, and the two sets each answers to) |
+| `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup. From `UnicodeData.txt` (the general categories, and `Bidi_Mirrored` from field 9), since [M5.0] stage 5 from `Scripts.txt` + `ScriptExtensions.txt` + `PropertyValueAliases.txt` (the 171 script values, their spellings, and the two sets each answers to), and since [UPROP-MORE] from `PropList.txt` + `DerivedCoreProperties.txt` + `emoji-data.txt` (the binary properties) with `PropertyAliases.txt` (their spellings), `DerivedBidiClass.txt` (`Bidi_Class`, `@missing` defaults included) and, as pcrec extensions beyond PCRE2, `Blocks.txt` and `DerivedAge.txt` (the names from `PropertyValueAliases.txt`). The generator FAILS if a promised name has no source line |
 | `src/core/fold_tables.inc` | the same generator, from `CaseFolding.txt` | `src/core/fold.c` — the `pcrec_fold_ucd_simple` relation the `utf8` encoding's caseless class constructor closes over ([M5.0] stage 4, DD-1) |
 | `src/enc/utf8_fold_pairs.inc` | the same generator, from `CaseFolding.txt` | `src/enc/enc_utf8.c` — **the one derived artifact that IS emitted**, as C source text inside the caseless-backreference residual (see below) |
 | `src/core/case_tables.inc` | the same generator, from `CaseFolding.txt` + `UnicodeData.txt` (general category) | the simple one-to-one case map (upper, lower) that compiled substitution's `\U \L \u \l` forcing reads ([SUBST-CASE]); not yet read by any `src/` unit. The rule is PCRE2's, measured against libpcre2 10.46 (generator section 5); held to the committed `oracle_store/libpcre2-10.46-utf/case-map.tsv` by `make test-casemap` |

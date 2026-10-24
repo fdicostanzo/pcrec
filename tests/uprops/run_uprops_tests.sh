@@ -2,7 +2,7 @@
 # tests/uprops/run_uprops_tests.sh — module `unicode-props` ([M5.0] stage 3):
 # the structural and differential checks a `.rxt` file cannot make.
 #
-# FIVE SECTIONS, each asking something none of the others can:
+# SIX SECTIONS (§6 is [UPROP-MORE]'s, below §5), each asking something none of the others can:
 #
 #   §1 THE GENERATED TABLE IS NOT STALE. `third_party/ucd-16.0.0/generate.py
 #      --check` re-derives `src/parse/uprops_tables.inc` from the vendored UCD
@@ -33,6 +33,12 @@
 #   §5 THE SIZE-CAP LADDER'S LAST RUNG ([PF-DROP], D135): `(\p{Xwd})` under
 #      `utf8`, rescued at default axes by dropping the VM hybrid's
 #      prefilter, matches `\p{Xwd}` over the whole code-point space.
+#
+#   §6 BLOCK, AGE AND THE PYTHON CROSS-CHECKS ([UPROP-MORE], D178). Block and Age
+#      are pcrec extensions libpcre2 refuses, so the data files are their own
+#      oracle (uprops_ucdref.py re-reads them); Bidi_Mirrored and Bidi_Class
+#      are also held to python's unicodedata where it is Unicode 16.0.0; and the
+#      new axes' spelling identities and caseless invariance, oracle-free.
 #
 # Env: PCREC, CC, KEEP=1, ENC (limit to one encoding), UPROPS_NAMES (limit the
 #   name set — for bisecting, never for a green run).
