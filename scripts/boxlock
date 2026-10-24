@@ -82,13 +82,10 @@ owner_line() { [ -s "$1" ] && head -1 "$1"; }
 owner_alive() { local p s; p=$(field pid "$1") || return 1; s=$(field start "$1") || return 1; [ "$(pid_start "$p")" = "$s" ]; }
 # is_held FILE: some process holds the flock (probe on a fresh fd)
 is_held() { ( exec 7>>"$1" && ! flock -n 7 ) 2>/dev/null; }
-holders() { # live pids with the lock file open
-    local f p out=""
-    for f in /proc/[0-9]*/fd/*; do
-        [ "$(readlink "$f" 2>/dev/null)" = "$1" ] || continue
-        p=${f#/proc/}; p=${p%%/*}; case " $out " in *" $p "*) ;; *) out="$out $p" ;; esac
-    done
-    printf '%s\n' "${out# }"
+holders() { # live pids with the lock file open (one find, not a readlink fork per fd: 12 s on a busy box)
+    find /proc -maxdepth 3 -path '/proc/[0-9]*/fd/*' -lname "$1" -printf '%h\n' 2>/dev/null |
+        sed 's|^/proc/||; s|/fd$||' | sort -un | tr '\n' ' ' | sed 's/ $//'
+    echo
 }
 age() { local s; s=$(field epoch "$1") || { echo "?"; return; }; echo "$(( ($(date +%s) - s) / 60 ))m"; }
 describe() { # describe LINE -> human holder text

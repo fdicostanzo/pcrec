@@ -26,8 +26,12 @@ plant() {
     echo "$d/boxlock"
 }
 holder() { # holder SECONDS LABEL: hold the lock in the background, wait until it is held
-    "$TO" 60 bash "$BL" run --label "$2" -- sleep "$1" & kids+=($!)
-    for _ in $(seq 50); do bash "$BL" status >/dev/null; [ $? = 1 ] && return 0; sleep 0.1; done; return 1
+    # The hold time starts when the command RUNS (it drops a marker first), so a
+    # holder that is slow to start under load still holds for SECONDS; the wait
+    # is on that marker, not on a count of status polls.
+    local m=$T/held.$2.$RANDOM; rm -f "$m"
+    "$TO" 120 bash "$BL" run --label "$2" -- sh -c ': > "$1"; sleep "$2"' sh "$m" "$1" & kids+=($!)
+    for _ in $(seq 300); do [ -e "$m" ] && return 0; sleep 0.1; done; return 1
 }
 
 # 1. free
